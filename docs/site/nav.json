@@ -264,6 +264,16 @@
           "blurb": "Server-Timing, time budgets and per-route percentiles, as middleware."
         },
         {
+          "slug": "reference/perftest",
+          "label": "perftest",
+          "blurb": "Fails the build when a screen or a cold start is slower than perf's budgets."
+        },
+        {
+          "slug": "reference/budget",
+          "label": "budget",
+          "blurb": "Measures how long a test package takes, so `rastrillo budget test` can hold it to its time budget."
+        },
+        {
           "slug": "reference/pow",
           "label": "pow",
           "blurb": "The front door for a public form: bound proof of work, sealed challenge, honeypot."

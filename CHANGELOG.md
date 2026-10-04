@@ -10,6 +10,24 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+### Added: budgets for directory size, test time and screen time
+
+A new app's `make ci` now holds each directory to 5,000 lines of code and
+8,000 of tests (`make budget`), each test package to 10 seconds (`make
+test`), and every GET screen to 150ms to first byte and a cold start to
+500ms (`make perf`). The timing budgets fail only on CI. Exceptions go in
+`.rastrillo/budgets.txt`, each with a reason. There is a new `budget`
+package, a new `perf/perftest` package, and a new `rastrillo budget`
+command. [Testing](/docs/testing) explains all of it.
+
+The scaffold also changed: tests copy a migrated `dbtest` template
+instead of migrating, every example test runs in parallel, `perf`'s
+middleware is mounted by default, and `App` is split into `Router` and
+`Mux`, with a new `Configure` that `main.go` calls.
+
+Apps scaffolded earlier keep their old gate. To adopt the budgets, follow
+"Adopting the budgets in an existing app" in [Testing](/docs/testing).
+
 ### Changed: a new app's `make ci` runs govulncheck and gitleaks, on a pinned Go
 
 `rastrillo new` now adds `govulncheck` and `gitleaks` to `make ci`, as `.amadan/ci.d` steps 26 and 27, and the Makefile exports `GOTOOLCHAIN` so the gate and `make release` run on one named Go release, fetched on first use. Both tools go through `go run` at the versions rastrillo's own gate uses. Apps scaffolded earlier keep their old gate; to add these, put this in the Makefile and add `govulncheck gitleaks` to the `ci:` line after `staticcheck`:

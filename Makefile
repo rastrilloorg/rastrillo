@@ -4,7 +4,7 @@
 # silently no-op with "Nothing to be done" - exit 0, and the sweep never
 # runs. None of the four names a real file, so the pattern rule already
 # reruns unconditionally without needing .PHONY's safety here.
-.PHONY: ci gofmt root staticcheck govulncheck gitleaks chromedp-graph gorm-free race generate-check scaffold-smoke browser \
+.PHONY: ci gofmt budget root staticcheck govulncheck gitleaks chromedp-graph gorm-free race generate-check scaffold-smoke browser \
         mirror mirror-check money
 
 # The READMEs' documented sweeps all run with GOFLAGS=-mod=mod: the tests
@@ -42,7 +42,7 @@ EXAMPLES := helloworld blog tickets notes
 # ci is the one gate: what a runner executes and what you run before
 # pushing are the same definition. .amadan/ci.d/ reports these one by
 # one; it never keeps its own copy of a command.
-ci: gofmt money root staticcheck govulncheck gitleaks chromedp-graph gorm-free race \
+ci: gofmt budget money root staticcheck govulncheck gitleaks chromedp-graph gorm-free race \
     example-helloworld example-blog example-tickets example-notes \
     generate-check scaffold-smoke browser
 
@@ -59,6 +59,15 @@ ci: gofmt money root staticcheck govulncheck gitleaks chromedp-graph gorm-free r
 gofmt:
 	@out=$$(find . -name '.?*' -type d -prune -o -name '*.go' -type f -print0 | xargs -0 gofmt -l) || exit 1; \
 	if [ -n "$$out" ]; then echo "gofmt needed on:"; echo "$$out"; exit 1; fi
+
+# Each directory at 5,000 source and 8,000 test lines, the budget every
+# scaffolded app carries; .rastrillo/budgets.txt records the exceptions.
+# money and the examples are separate modules, each measured from its
+# own root (the root walk stops at a nested go.mod).
+budget: | $(BIN)/tmp
+	go run ./cmd/rastrillo budget size
+	go run ./cmd/rastrillo budget size money
+	@for e in $(EXAMPLES); do go run ./cmd/rastrillo budget size examples/$$e || exit 1; done
 
 money:
 	cd money && go build ./... && go vet ./... && go test ./... -count=1
@@ -133,7 +142,7 @@ GORM_FREE = ./migrate ./pow ./sessions ./blobs ./jobs ./eventlog ./auth \
             ./password ./passkey ./totp ./secondfactor ./vault ./csrf \
             ./mail ./carlos ./crypto ./flash ./form ./dbtest ./clientip ./nodetest ./background \
             ./xlsx ./table \
-            ./perf ./lastsignin
+            ./perf ./lastsignin ./budget ./perf/perftest
 # go list runs on its own line so its failure fails the target: piped
 # straight into grep, a path that stopped resolving printed nothing and
 # the fence passed without checking anything.

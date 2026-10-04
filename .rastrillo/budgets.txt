@@ -1,0 +1,6 @@
+# Rastrillo's own exceptions to the budgets every scaffolded app carries
+# (docs/site/testing.md). The ratchet holds each one: a stated ceiling
+# more than 40% above its count fails until it is lowered.
+size cmd/rastrillo         5650  -     the CLI carries every scaffold template as a Go constant; moving them to their own package is owed
+size internal/designsystem 10500 8700  the design-system site generator and its checks: one sample per ui component; split by section owed
+size ui                    -     25500 one golden test per component partial, plus the phone sizing and shell browser checks; grows with the vocabulary

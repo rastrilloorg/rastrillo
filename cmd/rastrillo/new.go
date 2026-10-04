@@ -94,6 +94,7 @@ func runNew(args []string) error {
 		filepath.Join(name, "internal", pkg, "icons"),
 		filepath.Join(name, "internal", pkg+"test"),
 		filepath.Join(name, ".amadan", "ci.d"),
+		filepath.Join(name, ".rastrillo"),
 	}
 	for _, d := range dirs {
 		if err := os.MkdirAll(d, 0o755); err != nil {
@@ -158,10 +159,13 @@ func runNew(args []string) error {
 		// harness. browser_test.go, never harness_test.go: that name
 		// (and word) already belongs to the httptest HTTP harness.
 		filepath.Join(name, "internal", pkg+"test", "browser_test.go"): fmt.Sprintf(browserTestTemplate, name, pkg, strings.ToUpper(pkg)),
-		filepath.Join(name, "README.md"):                               fmt.Sprintf(readmeTemplate, name, pkg),
-		filepath.Join(name, "manifest", "README.md"):                   fmt.Sprintf(manifestReadme, name, pkg),
-		filepath.Join(name, "Makefile"):                                fmt.Sprintf(makefileTemplate, name, staticcheckVersion, govulncheckVersion, gitleaksVersion, goToolchain),
-		filepath.Join(name, ".gitignore"):                              fmt.Sprintf(gitignoreTemplate, name),
+		// The perf lane and the exemptions file every budget reads.
+		filepath.Join(name, "internal", pkg+"test", "perf_test.go"): fmt.Sprintf(perfTestTemplate, name, pkg),
+		filepath.Join(name, ".rastrillo", "budgets.txt"):            budgetsTxtTemplate,
+		filepath.Join(name, "README.md"):                            fmt.Sprintf(readmeTemplate, name, pkg),
+		filepath.Join(name, "manifest", "README.md"):                fmt.Sprintf(manifestReadme, name, pkg),
+		filepath.Join(name, "Makefile"):                             fmt.Sprintf(makefileTemplate, name, staticcheckVersion, govulncheckVersion, gitleaksVersion, goToolchain),
+		filepath.Join(name, ".gitignore"):                           fmt.Sprintf(gitignoreTemplate, name),
 		// The app's icon set, on the same terms as tokens.css and
 		// rastrillo.js: delivered once, app-owned from here on.
 		filepath.Join(appDir, "icons", "icons.go"): string(rendered.Source),
@@ -222,11 +226,13 @@ func runNew(args []string) error {
 	ciScripts := map[string]string{
 		filepath.Join(name, ".amadan", "ci"):                         amadanCI,
 		filepath.Join(name, ".amadan", "ci.d", "10-vet"):             amadanStep("vet"),
+		filepath.Join(name, ".amadan", "ci.d", "15-budget"):          amadanStep("budget"),
 		filepath.Join(name, ".amadan", "ci.d", "20-fmt"):             amadanStep("fmt-check"),
 		filepath.Join(name, ".amadan", "ci.d", "25-staticcheck"):     amadanStep("staticcheck"),
 		filepath.Join(name, ".amadan", "ci.d", "26-govulncheck"):     amadanStep("govulncheck"),
 		filepath.Join(name, ".amadan", "ci.d", "27-gitleaks"):        amadanStep("gitleaks"),
 		filepath.Join(name, ".amadan", "ci.d", "30-test"):            amadanStep("test"),
+		filepath.Join(name, ".amadan", "ci.d", "35-perf"):            amadanStep("perf"),
 		filepath.Join(name, ".amadan", "ci.d", "40-migration-check"): amadanStep("migration-check"),
 	}
 	for path, content := range ciScripts {
@@ -249,7 +255,7 @@ func runNew(args []string) error {
 	fmt.Printf("  internal/%stest/     (harness + example tests, passing out of the box;\n", pkg)
 	fmt.Println("                        browser_test.go = the browser drive, go test -tags browser ./...)")
 	fmt.Println("  manifest/            (the declarative path: drop a <name>.toml here, see its README)")
-	fmt.Println("  Makefile             (make ci = vet + fmt + staticcheck + govulncheck + gitleaks + test + migration check, the one gate definition;")
+	fmt.Println("  Makefile             (make ci = vet + fmt + staticcheck + govulncheck + gitleaks + budget + test + perf + migration check, the one gate definition;")
 	fmt.Println("                        make release = the stripped binary)")
 	fmt.Println("  .gitignore           (build output and the local database)")
 	fmt.Println("  .amadan/ci, ci.d/    (amadan runner CI, executable, delegating to make)")
@@ -344,6 +350,7 @@ package main
 import (
 	"log/slog"
 	"os"
+	"time"
 
 	"amadan.net/rastrillo/rastrillo"
 	"amadan.net/rastrillo/rastrillo/db"
@@ -352,6 +359,9 @@ import (
 )
 
 func main() {
+	// First, so perf's cold budget counts the whole start: a hibernated
+	// instance pays all of it on someone's click.
+	started := time.Now()
 	logger := slog.New(slog.NewTextHandler(os.Stderr, nil))
 
 	// Resolve, not Run: this app opens its own database handle via
@@ -388,12 +398,11 @@ func main() {
 		os.Exit(1)
 	}
 
-	opts.Mux = mux
+	// Configure sets Mux, ErrorPage (wire render.go's ErrorPage to
+	// Ctx.ErrorPage too as the app grows handlers) and perf's timing,
+	// the same options the perf test measures through.
+	%[2]s.Configure(&opts, mux, started)
 	opts.DBPath = ""
-	// The same page a handler's own error path renders (render.go's
-	// ErrorPage — wire it to Ctx.ErrorPage too as the app grows
-	// handlers), so a panic and a handled failure look identical.
-	opts.ErrorPage = %[2]s.ErrorPage
 	if err := rastrillo.Serve(opts); err != nil {
 		logger.Error("serve failed", "err", err)
 		os.Exit(1)
@@ -407,17 +416,22 @@ import (
 	"context"
 	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 
+	"amadan.net/rastrillo/rastrillo"
 	"amadan.net/rastrillo/rastrillo/csrf"
 	"amadan.net/rastrillo/rastrillo/db"
 	"amadan.net/rastrillo/rastrillo/migrate"
+	"amadan.net/rastrillo/rastrillo/perf"
 )
 
 // App wires the whole app: schema, router, static files. It returns a
 // *http.ServeMux because rastrillo.Options.Mux is typed that way — the
-// chi router mounts inside it. origin is the app's external origin
+// chi router mounts inside it. Router and Mux are its two halves,
+// separate only so the perf test can walk the chi routes while measuring
+// through the same handler production serves. origin is the app's external origin
 // ("https://app.example.com") — the CSRF check's yardstick, and, once
 // the app grows accounts, sessions.Config.Origin too.
 //
@@ -428,8 +442,19 @@ import (
 // amadan.net/rastrillo/rastrillo, not in the module you depend on, so
 // read it there rather than looking for the directory). Adding a subsystem
 // also means adding its Schema to migrations.go's BootSchema — see
-// the comment there.
+// the comment there. Past 5,000 lines here, split by feature: a package
+// per feature under internal/%[1]s/, each with Mount(r chi.Router, deps)
+// called from Router (docs/site/testing.md).
 func App(d *db.DB, origin string, logger *slog.Logger) (*http.ServeMux, error) {
+	r, err := Router(d, origin, logger)
+	if err != nil {
+		return nil, err
+	}
+	return Mux(r), nil
+}
+
+// Router applies the schema and builds the routes.
+func Router(d *db.DB, origin string, logger *slog.Logger) (chi.Router, error) {
 	// Apply BootSchema, not Schema: BootSchema is everything this
 	// app needs at boot (its own migrations plus any subsystem's),
 	// while Schema (migrations.go) stays just this app's own so the
@@ -454,7 +479,11 @@ func App(d *db.DB, origin string, logger *slog.Logger) (*http.ServeMux, error) {
 	// or forget in a form.
 	r.Use(csrf.Protect(origin))
 	r.Get("/", a.index)%[2]s
+	return r, nil
+}
 
+// Mux mounts the static files beside the router.
+func Mux(r http.Handler) *http.ServeMux {
 	mux := http.NewServeMux()
 	// The app serves its own static files — the framework never does.
 	// They are embedded (render.go) and fingerprinted: templates link
@@ -462,7 +491,22 @@ func App(d *db.DB, origin string, logger *slog.Logger) (*http.ServeMux, error) {
 	// handler serves cacheable-forever.
 	mux.Handle("GET /static/", assets.Handler())
 	mux.Handle("/", r)
-	return mux, nil
+	return mux
+}
+
+// Configure is the one place the serving options are set, so main.go and
+// the perf test cannot drift apart: what the perf lane measures is what
+// production serves.
+//
+// ErrorPage is the page a handler's own error path renders, so a panic
+// and a handled failure look identical. perf.Middleware times every
+// request against 150ms to first byte (500ms for the first one after
+// start, counted from started) and logs what is over budget.
+func Configure(opts *rastrillo.Options, mux *http.ServeMux, started time.Time) {
+	opts.Mux = mux
+	opts.ErrorPage = ErrorPage
+	var rec perf.Recorder
+	opts.Wrap = perf.Middleware(&rec, perf.Options{Started: started, Logger: opts.Logger})
 }
 `
 
@@ -754,11 +798,13 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"path/filepath"
+	"os"
 	"strings"
 	"testing"
 
+	"amadan.net/rastrillo/rastrillo/budget"
 	"amadan.net/rastrillo/rastrillo/db"
+	"amadan.net/rastrillo/rastrillo/dbtest"
 
 	%[2]s "%[1]s/internal/%[2]s"
 )
@@ -767,12 +813,26 @@ import (
 // same-origin evidence — the pair a browser form submission would be.
 const testOrigin = "http://app.test"
 
-// newApp builds the whole app per test over a fresh temp database,
-// exactly as main.go does.
+// schema is migrated once per test binary and copied for each test:
+// migrating a fresh database in every test is the cost Tito Go measured
+// at 207ms a test against 2.5ms for a copy.
+var schema = dbtest.FromSet(%[2]s.BootSchema)
+
+// TestMain prints this package's time for rastrillo budget test (make
+// test), then removes the template, which outlives every test that
+// copied it.
+func TestMain(m *testing.M) {
+	code := budget.Main(m)
+	schema.Remove()
+	os.Exit(code)
+}
+
+// newApp builds the whole app per test over its own copy of the
+// migrated database, exactly as main.go does.
 func newApp(t *testing.T) http.Handler {
 	t.Helper()
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
-	d, err := db.Open(filepath.Join(t.TempDir(), "app.db"), logger)
+	d, err := db.Open(schema.Path(t), logger)
 	if err != nil {
 		t.Fatalf("db.Open: %%v", err)
 	}
@@ -859,6 +919,7 @@ var vendoredIsMine = map[string]bool{
 // so a file added to the library's vendored set is pinned here without
 // this file changing.
 func TestVendoredAssetsMatchTheLibrary(t *testing.T) {
+	t.Parallel()
 	assets, ok := ui.VendoredAssets(vendoredTheme)
 	if !ok {
 		t.Fatalf("unknown theme %%q", vendoredTheme)
@@ -913,7 +974,11 @@ var hashedStylesheet = regexp.MustCompile(` + "`" + `/static/tokens\.[0-9a-f]{16
 // Said in the failure messages too, and not only here. The reader who
 // needs it is looking at a red gate, and the gate prints messages
 // rather than source.
+//
+// Each test's first statement is t.Parallel(): anything before it runs
+// serially, and a fixture built there is held for the whole run.
 func TestIndexRenders(t *testing.T) {
+	t.Parallel()
 	rec := get(t, newApp(t), "/")
 	if rec.Code != http.StatusOK {
 		t.Fatalf("GET /: status %%d, want 200. If you have put %%q behind sign-in this is the placeholder test, not a fault: a signed-out GET redirects, and this test is yours to repoint or delete", rec.Code, "/")
@@ -924,6 +989,7 @@ func TestIndexRenders(t *testing.T) {
 }
 
 func TestIndexLinksFingerprintedStylesheet(t *testing.T) {
+	t.Parallel()
 	h := newApp(t)
 	href := hashedStylesheet.FindString(get(t, h, "/").Body.String())
 	if href == "" {
@@ -941,6 +1007,7 @@ func TestIndexLinksFingerprintedStylesheet(t *testing.T) {
 // The bare name keeps working, just never long-cached — so a changed
 // file always shows on an ordinary reload.
 func TestBareAssetNameStaysFresh(t *testing.T) {
+	t.Parallel()
 	rec := get(t, newApp(t), "/static/tokens.css")
 	if rec.Code != http.StatusOK {
 		t.Fatalf("GET /static/tokens.css: status %%d, want 200", rec.Code)
@@ -955,6 +1022,7 @@ func TestBareAssetNameStaysFresh(t *testing.T) {
 // pins that a panic's page is the framework's error-page partial, not
 // a stray net/http default.
 func TestErrorPageRendersFrameworkPartial(t *testing.T) {
+	t.Parallel()
 	rec := httptest.NewRecorder()
 	%[2]s.ErrorPage(rec, httptest.NewRequest(http.MethodGet, "/", nil), http.StatusInternalServerError, "abc123")
 	if rec.Code != http.StatusInternalServerError {
@@ -1309,7 +1377,13 @@ RELEASE_BIN := releases/$(APP)-$(RELEASE_GOOS)-$(RELEASE_GOARCH)
 #   make release VERSION=v0.1.0
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null)
 
-.PHONY: build release version-check test vet fmt-check staticcheck govulncheck gitleaks migration-check ci
+# One target at a time, even under make -j: the perf lane measures time,
+# and a suite running beside it would be measured too.
+.NOTPARALLEL:
+
+.PHONY: build release version-check test vet fmt-check staticcheck govulncheck gitleaks budget perf migration-check ci
+
+RASTRILLO := go run amadan.net/rastrillo/rastrillo/cmd/rastrillo
 
 # build is the compile check: with more than one package matched, go
 # build discards the output, so this catches a broken package without
@@ -1365,8 +1439,25 @@ version-check:
 		exit 1;; \
 	esac
 
+# budget size holds each directory to 5,000 source and 8,000 test lines.
+# Past that, split by feature (docs/site/testing.md); a record in
+# .rastrillo/budgets.txt with a reason is the exception, not the fix.
+budget:
+	$(RASTRILLO) budget size
+
+# budget test runs go test itself, so its exit status survives, and holds
+# each package to 10s using the time budget.Main prints in the package's
+# TestMain, cached runs included. Timing fails only on CI (AMADAN_CI or
+# CI set); here it reports.
 test:
-	go test ./...
+	$(RASTRILLO) budget test ./...
+
+# The perf lane: every GET screen at 150ms to first byte, cold boot at
+# 500ms. Serial (-p 1 -parallel 1) and uncached (-count=1), because a
+# measurement taken beside other work, or replayed from a cache, is not
+# one. -require fails the lane if the perf tests did not both run.
+perf:
+	$(RASTRILLO) budget test -no-time -require TestPerfScreens,TestPerfBoot -tags perf -count=1 -p 1 -parallel 1 -run '^TestPerf' ./...
 
 vet:
 	go vet ./...
@@ -1385,11 +1476,12 @@ fmt-check:
 # directive: a staticcheck older than your Go does not know that
 # release's deprecations, and says nothing.
 #
-# -tags browser so the browser drive is read too; no file is left out by
-# it, so it covers everything the plain build does.
+# -tags browser,perf so the browser drive and the perf tests are read
+# too; no file is left out by them, so it covers everything the plain
+# build does.
 STATICCHECK := honnef.co/go/tools/cmd/staticcheck@%[2]s
 staticcheck:
-	go run $(STATICCHECK) -tags browser ./...
+	go run $(STATICCHECK) -tags browser,perf ./...
 
 # govulncheck reports only the vulnerabilities your code can reach: a call
 # path, not a module that merely sits in go.sum. It reads the live
@@ -1437,7 +1529,7 @@ migration-check:
 # fails the build the moment models.go and migrations/ disagree,
 # instead of at boot on whatever machine notices next. If the app
 # declares manifest resources, also add: rastrillo generate --check
-ci: vet fmt-check staticcheck govulncheck gitleaks test migration-check
+ci: vet fmt-check staticcheck govulncheck gitleaks budget test perf migration-check
 `
 
 const gitignoreTemplate = `# Build output. make release writes here; nothing in it is source.
@@ -1503,7 +1595,7 @@ mechanically.
   be held to.
 - Screens work with JavaScript disabled; destructive actions get their
   own confirm-page URL.
-- The gate is ` + "`make ci`" + ` (vet, gofmt, staticcheck, govulncheck, gitleaks, tests and the migration check), the same definition CI runs. Run it before every push. ` + "`CGO_ENABLED=0`" + ` throughout: the stack is cgo-free by design. The Makefile names the Go release the gate and ` + "`make release`" + ` use (` + "`GOTOOLCHAIN`" + `); raise it with each Go security release.
+- The gate is ` + "`make ci`" + ` (vet, gofmt, staticcheck, govulncheck, gitleaks, budgets, tests, the perf lane and the migration check), the same definition CI runs. Run it before every push. ` + "`CGO_ENABLED=0`" + ` throughout: the stack is cgo-free by design. The Makefile names the Go release the gate and ` + "`make release`" + ` use (` + "`GOTOOLCHAIN`" + `); raise it with each Go security release.
 - Two of the scaffolded tests are about the **placeholder index page**
   and are yours to rewrite: ` + "`TestIndexRenders`" + ` and
   ` + "`TestIndexLinksFingerprintedStylesheet`" + `. Putting ` + "`/`" + ` behind sign-in
@@ -1511,7 +1603,28 @@ mechanically.
   working, not the gate finding a fault. Repoint them at a page that
   is public in your app, or delete them. The gate is a definition of
   done for *your* tests; it does not promise the ones you were handed
-  are still describing your app.
+  are still describing your app. ` + "`TestPerfScreens`" + ` will then want
+  ` + "`Signin`" + ` in its config, so it measures the page rather than the redirect.
+
+## Testing and budgets
+
+- While editing: ` + "`go test -short ./internal/<app>/... ./internal/<app>test/`" + `.
+  Before pushing: ` + "`make ci`" + `. If it is too slow to run before every
+  push, a budget has already failed: fix that, never skip the gate.
+- Budgets: 5,000 source and 8,000 test lines per directory (` + "`make budget`" + `),
+  10s per test package (` + "`make test`" + `), 150ms to first byte per GET
+  screen and 500ms cold boot (` + "`make perf`" + `). Timing fails only on CI.
+  Exceptions go in ` + "`.rastrillo/budgets.txt`" + `, each with a reason.
+- Past 5,000 lines, split ` + "`internal/<app>`" + ` by feature:
+  ` + "`internal/<app>/<feature>`" + ` with ` + "`Mount(r chi.Router, deps)`" + `, called
+  from ` + "`Router`" + `.
+- Every test package has ` + "`func TestMain(m *testing.M) { os.Exit(budget.Main(m)) }`" + `
+  (or calls ` + "`budget.Main`" + ` inside its own), every test starts with
+  ` + "`t.Parallel()`" + ` (perf tests excepted), and tests copy the
+  ` + "`dbtest`" + ` template rather than migrating.
+- A test whose inputs Go cannot see (it execs ` + "`go build`" + `, reads files
+  outside its package, or uses the network) gets its own make target
+  with ` + "`-count=1`" + `, or Go's test cache will replay a stale pass.
 
 ## Serving
 

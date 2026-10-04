@@ -70,12 +70,13 @@ Imports: `amadan.net/rastrillo/rastrillo` and subpackages `db`,
 `migrate`, `scope`, `sessions`, `password`, `csrf`, `flash`, `form`,
 `jobs`; `github.com/go-chi/chi/v5`; `gorm.io/gorm`.
 
-`cmd/<app>/main.go`, in order:
+`cmd/<app>/main.go`, in order: `started := time.Now()`;
 `opts, err := rastrillo.Resolve(rastrillo.Options{DBPath: "notes.db",
 Logger: logger})`; `d, err := db.Open(opts.DBPath, logger)` (`*db.DB`,
 §2); `defer d.Close()`; `mux, err := notes.App(d, origin, logger)`;
-`opts.Mux = mux`; `opts.DBPath = ""`; `rastrillo.Serve(opts)`. On any
-err: `logger.Error`, `os.Exit(1)`.
+`notes.Configure(&opts, mux, started)` (sets `Mux`, `ErrorPage`, and
+`perf.Middleware` as `Wrap`); `opts.DBPath = ""`; `rastrillo.Serve(opts)`.
+On any err: `logger.Error`, `os.Exit(1)`.
 
 **Use `Resolve` + `Serve`, never `Run`, when the app opens its own
 database:** `Run` re-parses argv and repopulates `Options.DBPath`, so
@@ -86,7 +87,8 @@ LISTEN_FDS, $STATE_DIRECTORY, /healthz, /api/version, SIGTERM drain,
 baseline security headers (your own Set wins). Never hand-roll any of it.
 
 `App(d *db.DB, origin string, logger *slog.Logger) (*http.ServeMux,
-error)` in `app.go`, in order:
+error)` in `app.go` is `Router` (returns the `chi.Router`) then `Mux`
+(adds `/static/`), split so the perf test walks the routes. `Router`, in order:
 `migrate.Apply(context.Background(), d, BootSchema)`; writer `*sql.DB`
 via `d.G.DB()` (sessions wants it);
 `sessions.New(sessions.Config{DB: writer, Origin: origin, Logger:
@@ -96,9 +98,11 @@ chi.NewRouter()`; `r.Use(csrf.Protect(origin))`; `ph`'s handlers at
 GET+POST `/signin`, `/signup` and POST `/signout` (§5); owned-model
 CRUD (§3/§4) inside
 `r.Group(func(r chi.Router) { r.Use(sess.Require); ... })`; return
-`http.NewServeMux()` with `mux.Handle("/", r)`. `render.go` parses one
+`r`. `render.go` parses one
 `*template.Template` per page (layout + page), so two pages can both
-define `"content"`.
+define `"content"`. Past 5,000 lines in `internal/<app>`, split by
+feature: `internal/<app>/<feature>` exposing `Mount(r chi.Router, deps)`,
+called from `Router`; `make budget` enforces it.
 
 Locales: `Options.Locales`/`DefaultLocale`/`LocaleFS`, flat TOML per
 code; twelve ship translated. **Any locale you add must translate the
@@ -413,6 +417,22 @@ An empty list is step 1, not an exception: `empty-state` says what the
 screen is for and carries the one link — do not pre-empt it with the
 create form. Destructive actions are the same shape, with `confirm-form`
 on its own URL at step 2, never a modal fired from the row.
+
+## 7a. Tests and budgets
+
+`make ci` holds each directory to 5,000 source and 8,000 test lines,
+each test package to 10s, each GET screen to 150ms to first byte and a
+cold boot to 500ms; exceptions go in `.rastrillo/budgets.txt`, each with
+a reason. Timing fails only on CI (`AMADAN_CI`/`CI` set). Every test
+package's `TestMain` calls `os.Exit(budget.Main(m))`: it prints the time
+`rastrillo budget test` judges, cached runs included. Tests start with
+`t.Parallel()` (perf tests never) and open a copy of a `dbtest` template
+instead of migrating. Screens are gated by `perf/perftest` in `make
+perf`; a new GET route fails there until measured or recorded. While
+editing, test the package you touch plus `internal/<app>test`; `make ci`
+before pushing. A test whose inputs Go cannot see (execs `go build`,
+reads outside its package, uses the network) gets its own `-count=1`
+target. docs/site/testing.md
 
 ## 8. What NOT to do
 
