@@ -32,6 +32,15 @@ go vet ./...
 # once failed this check on its first run (an unused test helper) while
 # build and vet stayed green, because nothing ran it.
 make staticcheck
+make govulncheck
+# Before git init the app has no history, so gitleaks has nothing to scan
+# and says so. Then commit the scaffold and scan it for real: a fresh app
+# must not carry anything the default rules call a secret.
+make gitleaks
+git init -q
+git add -A
+git -c user.name=smoke -c user.email=smoke@example.invalid commit -q -m scaffold
+make gitleaks
 go build -o smokeapp ./cmd/smokeapp
 
 ./smokeapp -addr 127.0.0.1:8199 &
