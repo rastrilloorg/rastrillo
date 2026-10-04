@@ -102,22 +102,36 @@ func runNew(args []string) error {
 	}
 
 	appDir := filepath.Join(name, "internal", pkg)
+
+	// The sidebar and console shells open on a phone to the index, with
+	// its content hidden there (ui's phone layout), so those two shells
+	// alone get a second page to hold it, plus the route, handler and
+	// test that go with it. Every other shell keeps today's one page.
+	indexHTML, routes, handlers, pages, extraTests := indexTemplate, "", "", `"index", "errors"`, ""
+	if twoPageShells[*shell] {
+		indexHTML = fmt.Sprintf(sectionsIndexTemplate, scaffoldOverview)
+		routes = "\n\tr.Get(\"/overview\", a.overview)"
+		handlers = overviewHandler
+		pages = `"index", "overview", "errors"`
+		extraTests = overviewTest
+	}
+
 	files := map[string]string{
 		filepath.Join(name, "go.mod"): fmt.Sprintf(goModTemplate,
 			name, rastrilloVersion(), chiPinnedVersion, gormPinnedVersion),
 		filepath.Join(name, "cmd", name, "main.go"): fmt.Sprintf(mainTemplate, name, pkg, strings.ToUpper(pkg)),
-		filepath.Join(appDir, "app.go"):             fmt.Sprintf(appTemplate, pkg),
+		filepath.Join(appDir, "app.go"):             fmt.Sprintf(appTemplate, pkg, routes),
 		filepath.Join(appDir, "models.go"):          fmt.Sprintf(modelsTemplate, pkg),
 		filepath.Join(appDir, "migrations.go"):      fmt.Sprintf(migrationsTemplate, pkg),
-		filepath.Join(appDir, "handlers.go"):        fmt.Sprintf(handlersTemplate, pkg),
-		filepath.Join(appDir, "render.go"):          fmt.Sprintf(renderTemplate, name, pkg),
+		filepath.Join(appDir, "handlers.go"):        fmt.Sprintf(handlersTemplate, pkg, handlers),
+		filepath.Join(appDir, "render.go"):          fmt.Sprintf(renderTemplate, name, pkg, pages),
 		// The page frame, chosen by --shell and delivered verbatim from
 		// ui.Layout: app-owned from here on, exactly like tokens.css.
 		// Its chrome is blocks with working defaults (title, lang, dir,
 		// and in the chrome shells brand/nav/account/locale/foot), so a
 		// page overrides only what it cares about.
 		filepath.Join(appDir, "templates", "layout.html"): string(layoutHTML),
-		filepath.Join(appDir, "templates", "index.html"):  indexTemplate,
+		filepath.Join(appDir, "templates", "index.html"):  indexHTML,
 		filepath.Join(appDir, "templates", "errors.html"): errorsTemplate,
 		// The initial migration and the schema.sql snapshot it adds up
 		// to, both static: the scaffold's Note model is fixed and
@@ -139,7 +153,7 @@ func runNew(args []string) error {
 		// reviewer runs the suite and knows static/'s ~56KB is the
 		// library's, not app diff to read line by line.
 		filepath.Join(name, "internal", pkg+"test", "vendored_test.go"): fmt.Sprintf(vendoredTestTemplate, pkg, *theme),
-		filepath.Join(name, "internal", pkg+"test", "index_test.go"):    fmt.Sprintf(indexTestTemplate, name, pkg),
+		filepath.Join(name, "internal", pkg+"test", "index_test.go"):    fmt.Sprintf(indexTestTemplate, name, pkg, extraTests),
 		// The browser drive, on the same delivered-once terms as the
 		// harness. browser_test.go, never harness_test.go: that name
 		// (and word) already belongs to the httptest HTTP harness.
@@ -165,8 +179,13 @@ func runNew(args []string) error {
 	//	theme.css      the colour, type family and shape tokens
 	//	               tokens.css paints its classes with; swap it for
 	//	               another of ui.ThemeNames() or edit it freely
+	//	shell.css      the sidebar and console shells' slide between
+	//	               the index and a page on a phone
 	//	rastrillo.js   the fragment shim behind data-poll and menu dismiss
 	//	busy.js        the busy rule: every submit button, data-busy opts out
+	//	shell.js       the same two shells' phone navigation: the slide's
+	//	               direction, a back control that reuses history,
+	//	               focus returned to the section the reader left
 	//	select.js      field-select's searchable enhancement, inert
 	//	               until a <select> opts in with data-rst-select
 	//	datetime.js    the date fields' natural-language combobox,
@@ -178,7 +197,15 @@ func runNew(args []string) error {
 	// that script and its tag; nothing else changes. The date fields are
 	// two files, and deleting one of the pair is the awkward case: drop
 	// calendar.js alone and the field still works, with its button
-	// falling back to the browser's own picker.
+	// falling back to the browser's own picker. shell.js and shell.css
+	// are written for every shell like the rest (select.js and calendar.js
+	// already ship to apps that never link them), and are deletable where
+	// the shell does not link them; the app's vendoring test then needs
+	// them in vendoredIsMine, or it fails on the missing files.
+	if twoPageShells[*shell] {
+		files[filepath.Join(appDir, "templates", "overview.html")] = fmt.Sprintf(overviewTemplate, scaffoldOverview)
+	}
+
 	for name, content := range vendored {
 		files[filepath.Join(appDir, "static", name)] = string(content)
 	}
@@ -426,7 +453,7 @@ func App(d *db.DB, origin string, logger *slog.Logger) (*http.ServeMux, error) {
 	// is born covered. Origin-checking, not tokens — nothing to mint
 	// or forget in a form.
 	r.Use(csrf.Protect(origin))
-	r.Get("/", a.index)
+	r.Get("/", a.index)%[2]s
 
 	mux := http.NewServeMux()
 	// The app serves its own static files — the framework never does.
@@ -552,7 +579,7 @@ type app struct {
 func (a *app) index(w http.ResponseWriter, r *http.Request) {
 	render(w, "index", nil)
 }
-`
+%[2]s`
 
 const renderTemplate = `package %[2]s
 
@@ -582,7 +609,7 @@ var assets = rastrillo.NewAssets(appFS)
 var pages = map[string]*template.Template{}
 
 func init() {
-	for _, name := range []string{"index", "errors"} {
+	for _, name := range []string{%[3]s} {
 		pages[name] = template.Must(
 			// ui's partials and their helpers first, so every page can
 			// call one without registering anything. WithIcons points
@@ -631,6 +658,64 @@ func ErrorPage(w http.ResponseWriter, r *http.Request, status int, ref string) {
 const indexTemplate = `{{define "content"}}
 <h1>Hello, World — this is a rastrillo app.</h1>
 {{end}}
+`
+
+// twoPageShells are the shells whose phone layout is an index page and a
+// back control. A scaffold of one of them with a single page would open
+// on a phone to a title and an empty list, because that page is the
+// index and its content is hidden there, so these get an index with one
+// section and the page it opens.
+var twoPageShells = map[string]bool{"sidebar": true, "console": true}
+
+// scaffoldOverview is the one section's name. It is user-facing copy, so
+// a change to it goes through the copy review.
+const scaffoldOverview = "Overview"
+
+// sectionsIndexTemplate is templates/index.html for the two-page shells.
+// %[1]s is the section's name.
+const sectionsIndexTemplate = `{{/* index.html: the home page, and on a phone the list of
+     sections: the view block says this page is the index, so below
+     800px the rail is the whole page and this content is hidden; on a
+     desktop the rail sits beside it. Give each section a nav link with
+     an id here, and give its page an up block naming /#<that id>, so a
+     phone comes back to the row it left. */}}
+{{define "view"}}index{{end}}
+{{define "nav"}}<a id="nav-overview" href="/overview">%[1]s</a>{{end}}
+{{define "content"}}
+<h1>Hello, World — this is a rastrillo app.</h1>
+{{end}}
+`
+
+// overviewTemplate is templates/overview.html, the one section page.
+const overviewTemplate = `{{/* overview.html: a section. up is its way back: the index, with
+     this section's nav link as the fragment, which is where focus
+     returns on a phone even with scripts off. */}}
+{{define "up"}}/#nav-overview{{end}}
+{{define "nav"}}<a id="nav-overview" href="/overview" aria-current="page">%[1]s</a>{{end}}
+{{define "content"}}
+<h1>Hello, World — this is a rastrillo app.</h1>
+{{end}}
+`
+
+// overviewHandler is appended to handlers.go for the two-page shells.
+const overviewHandler = `
+func (a *app) overview(w http.ResponseWriter, r *http.Request) {
+	render(w, "overview", nil)
+}
+`
+
+// overviewTest is appended to index_test.go for the two-page shells: the
+// section page renders, and its back control goes to the index's row.
+const overviewTest = `
+func TestOverviewRenders(t *testing.T) {
+	rec := get(t, newApp(t), "/overview")
+	if rec.Code != http.StatusOK {
+		t.Fatalf("GET /overview: status %d, want 200", rec.Code)
+	}
+	if !strings.Contains(rec.Body.String(), ` + "`" + `href="/#nav-overview" rel="up"` + "`" + `) {
+		t.Errorf("GET /overview: no back control to the index's row:\n%s", rec.Body.String())
+	}
+}
 `
 
 // errorsTemplate is templates/errors.html: the whole page is ui's
@@ -756,6 +841,11 @@ const vendoredTheme = "%[2]s"
 // upgrade) can tell it from drift.
 var vendoredIsMine = map[string]bool{
 	// "tokens.css": true,
+	//
+	// Only the sidebar and console shells link shell.js and shell.css.
+	// An app on another shell that deletes them records it here, or this
+	// test fails on the missing files:
+	// "shell.js": true, "shell.css": true,
 }
 
 // The scaffold delivered these files once; they are app-owned from
@@ -878,7 +968,7 @@ func TestErrorPageRendersFrameworkPartial(t *testing.T) {
 		t.Errorf("ErrorPage body missing the ref:\n%%s", body)
 	}
 }
-`
+%[3]s`
 
 // browserTestTemplate is the scaffolded browser drive, delivered once
 // like the harness: app-owned from here on. The existing

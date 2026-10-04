@@ -31,7 +31,8 @@ v1 renamed `check-circle`, `alert-triangle`, `x-circle` and
 
 `kebab` and `menu` are the pair worth keeping straight: `kebab` is the
 three dots that mean "more actions on this row", `menu` the three lines
-that mean navigation. The shells use `menu` when they collapse.
+that mean navigation. The topbar and console use `menu` for their phone
+menu.
 
 The payoff is that `{{icon "search"}}` means the same thing everywhere
 and the shipped `ui/` partials never change when the set does.

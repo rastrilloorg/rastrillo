@@ -155,6 +155,15 @@ type Options struct {
 	// and simply wins.
 	CSP string
 
+	// NoSpeculationRules turns off prerendering of shell navigation. By
+	// default every response carries a Speculation-Rules header naming
+	// SpeculationRulesPath, which Serve answers; with this set there is
+	// neither, and the path reaches the app like any other. An app whose
+	// pages are expensive to render turns it off here, or deletes the
+	// header in a handler or Options.Wrap. A CSP does not turn it off,
+	// because a header ruleset is not a script.
+	NoSpeculationRules bool
+
 	// Locales declares the app's locale codes (design doc §10) — the
 	// catalogs LocaleFS carries as locales/<code>.toml. Empty means a
 	// monolingual app: no locale middleware is installed and requests
@@ -435,7 +444,7 @@ const defaultCSP = "default-src 'self'; " +
 // in a handler or Options.Wrap middleware — replaces the default, and
 // a Del removes it. Framework-owned for the same reason csrf is:
 // hand-rolled per-app hygiene is where apps ship gaps.
-func securityHeaders(csp string, next http.Handler) http.Handler {
+func securityHeaders(csp string, speculate bool, next http.Handler) http.Handler {
 	if csp == "" {
 		csp = defaultCSP
 	}
@@ -453,6 +462,12 @@ func securityHeaders(csp string, next http.Handler) http.Handler {
 		// both commit hosts beyond this app's own, which is the app
 		// owner's call — set a wider value in a handler or Options.Wrap.
 		h.Set("Strict-Transport-Security", "max-age=31536000")
+		// On every response rather than sniffed for HTML: browsers act
+		// on it for documents and ignore it elsewhere. A structured-field
+		// list of one string, which is the header's form.
+		if speculate {
+			h.Set("Speculation-Rules", `"`+SpeculationRulesPath+`"`)
+		}
 		next.ServeHTTP(w, r)
 	})
 }
@@ -521,6 +536,13 @@ func buildHandler(opts Options) (http.Handler, error) {
 	if opts.NextDue != nil {
 		mux.HandleFunc("GET /api/next-due", nextDueHandler(opts.NextDue))
 	}
+	// Before mux.Handle("/", app) and before the no-locales return, so
+	// both return paths serve it; the method-and-path pattern outranks an
+	// app's "/" catch-all. The locale middleware lets an unprefixed path
+	// through (it negotiates a locale rather than requiring a prefix).
+	if !opts.NoSpeculationRules {
+		mux.HandleFunc("GET "+SpeculationRulesPath, serveSpeculationRules)
+	}
 	app := http.Handler(opts.Mux)
 	if opts.Wrap != nil {
 		if app = opts.Wrap(opts.Mux); app == nil {
@@ -530,7 +552,7 @@ func buildHandler(opts Options) (http.Handler, error) {
 	mux.Handle("/", app)
 
 	if len(opts.Locales) == 0 {
-		return recoverPanics(opts.ErrorPage, opts.Logger, securityHeaders(opts.CSP, mux)), nil
+		return recoverPanics(opts.ErrorPage, opts.Logger, securityHeaders(opts.CSP, !opts.NoSpeculationRules, mux)), nil
 	}
 	def := opts.DefaultLocale
 	if def == "" {
@@ -555,7 +577,7 @@ func buildHandler(opts Options) (http.Handler, error) {
 	// Registered after mux.Handle("/", app) only for readability:
 	// ServeMux prefers the more specific pattern whatever the order.
 	mux.Handle("POST "+LocaleSwitchPath, loc.SwitchHandler())
-	return recoverPanics(opts.ErrorPage, opts.Logger, securityHeaders(opts.CSP, loc.Middleware(mux))), nil
+	return recoverPanics(opts.ErrorPage, opts.Logger, securityHeaders(opts.CSP, !opts.NoSpeculationRules, loc.Middleware(mux))), nil
 }
 
 // buildMux resolves the Mux/Router choice. Router runs after the

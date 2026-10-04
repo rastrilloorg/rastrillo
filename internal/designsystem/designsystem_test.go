@@ -94,7 +94,16 @@ const maxPageBytes = 128 << 10
 // the first attempt — the entry was marked used because a page of that
 // name existed — so it has a gate of its own:
 // TestTheDebtTableCannotOutliveTheDebt.
-var pageBudgetDebt = map[string]int{}
+var pageBudgetDebt = map[string]int{
+	// The form page in Hindi, the widest locale, is about 225 bytes over:
+	// field-url's three samples brought it to within 75 bytes of the
+	// budget, and every page's index now links shell.css, shell.js and
+	// row-menu. Neither is padding, and cutting a sample or an index
+	// link to fit would hide a component from the page that documents
+	// it. The fix is to make the form page lighter, at which point this
+	// entry fails the unused-entry check and must go.
+	"form.html": 132 << 10,
+}
 
 // pageKinds() is built from two sources since the split — the sections
 // written out in the table, and one row per family read off samples.go —
@@ -124,7 +133,7 @@ func TestNoTwoPageKindsShareAName(t *testing.T) {
 	// The tree's other files, which a page kind must not collide with
 	// either: a family called "modal" or "demo" would land on top of a
 	// demo page.
-	for _, taken := range []string{"modal.html", "demo.html"} {
+	for _, taken := range []string{"modal.html", "demo.html", "demo-dashboard.html", "demo-requests.html", "demo-request.html"} {
 		if files[taken] {
 			t.Errorf("a page kind renders to %q, which is a demo page of this tree", taken)
 		}
@@ -434,8 +443,8 @@ func TestEveryPageStaysUnderItsBudget(t *testing.T) {
 // not: it marked an entry used because a page of that name existed, so
 // `"tokens.html": 400 << 10` — for a page of at most 32,930 bytes —
 // passed, and a fixed components.html would have kept its 3× permission
-// slip forever. It is empty now, and this holds the property that let it
-// empty itself.
+// slip forever. It emptied itself once, and this holds the property
+// that let it.
 //
 // So this asserts the property rather than the wiring: at the budget an
 // entry is not consumed, above it the entry is what raises the ceiling,
@@ -742,7 +751,7 @@ func TestNoGalleryPageOpensAModalOverTheGallery(t *testing.T) {
 }
 
 // Every theme × locale × page kind × shell combination is present, plus
-// the root index and the eight shared assets — the tree's shape is part
+// the root index and the ten shared assets — the tree's shape is part
 // of its contract with the website's sync script. The page kinds come
 // off pageKinds(), so a sixth page is expected in every directory the
 // moment its row lands and nothing here has to be remembered.
@@ -750,7 +759,7 @@ func TestTreeShapeIsComplete(t *testing.T) {
 	files := render(t)
 	want := []string{
 		"index.html",
-		"tokens.css", "rastrillo.js", "busy.js", "select.js", "datetime.js", "calendar.js",
+		"tokens.css", "rastrillo.js", "busy.js", "shell.js", "shell.css", "select.js", "datetime.js", "calendar.js",
 		"gallery.js", "gallery.css",
 	}
 	for _, theme := range ui.ThemeNames() {
@@ -758,9 +767,14 @@ func TestTreeShapeIsComplete(t *testing.T) {
 		for _, locale := range rastrillo.BaseLocales() {
 			want = append(want, galleryFiles(theme, locale)...)
 			want = append(want, fmt.Sprintf("%s/%s/modal.html", theme, locale))
-			want = append(want, fmt.Sprintf("%s/%s/demo.html", theme, locale))
+			for _, demo := range []string{"demo", "demo-dashboard", "demo-requests", "demo-request"} {
+				want = append(want, fmt.Sprintf("%s/%s/%s.html", theme, locale, demo))
+			}
 			for _, shell := range ui.LayoutNames() {
 				want = append(want, fmt.Sprintf("%s/%s/shells/%s.html", theme, locale, shell))
+			}
+			for _, shell := range []string{"sidebar", "console"} {
+				want = append(want, fmt.Sprintf("%s/%s/shells/%s-page.html", theme, locale, shell))
 			}
 		}
 	}
@@ -1450,8 +1464,10 @@ func TestNoEnglishProseReachesATranslatedPage(t *testing.T) {
 	// loop walks would leave the gate passing over fewer pages, which
 	// is the failure mode it was once extended to fix. Per theme, per
 	// non-English locale: one page per kind, a modal demo, the demo
-	// application and one page per shell.
-	if want := len(ui.ThemeNames()) * (len(rastrillo.BaseLocales()) - 1) * (len(pageKinds()) + 2 + len(ui.LayoutNames())); len(names) != want {
+	// application's four documents (1 + 3: the 2 counts the modal and
+	// the demo's index), one page per shell and the content pages of
+	// the two shells with an index.
+	if want := len(ui.ThemeNames()) * (len(rastrillo.BaseLocales()) - 1) * (len(pageKinds()) + 2 + 3 + len(ui.LayoutNames()) + 2); len(names) != want {
 		t.Errorf("sweeping %d translated pages, want %d", len(names), want)
 	}
 
@@ -2874,6 +2890,12 @@ var templateFixtures = map[string]bool{
 	"rastrillo": true,
 	// The type specimen beside each font-size token.
 	"Ag": true,
+	// The sidebar and console layouts' view block, in the demo and the
+	// shell demos: a machine value the layout writes into the root's
+	// attribute, which tokens.css and shell.js match. Never shown, and
+	// translating it would break the match.
+	"index": true,
+	"page":  true,
 	// The shell demos' sample screen: its nav, its section headings,
 	// its column headers, its rows, and its count line.
 	"Posts":                           true,

@@ -54,6 +54,7 @@ type requestInfo struct{ method, url string }
 type config struct {
 	withoutPRFAtCreation bool
 	withScrollbars       bool
+	coarsePointer        bool
 }
 
 // Option adjusts what New builds.
@@ -72,6 +73,18 @@ type Option func(*config)
 // its control page asks for the shift and requires to see it.
 func WithScrollbars() Option {
 	return func(c *config) { c.withScrollbars = true }
+}
+
+// WithCoarsePointer launches Chromium with a touch screen as its
+// primary pointer, so (pointer: coarse) matches and (hover: hover) does
+// not. It is a launch option because nothing later can do it:
+// Emulation.setTouchEmulationEnabled, a mobile setDeviceMetricsOverride
+// and setEmulatedMedia all leave matchMedia("(pointer: coarse)") false
+// in this Chromium, while these Blink settings, read once at launch,
+// make it true. A phone drive that silently ran on a fine pointer would
+// pass at desktop sizes, so check the media query before measuring.
+func WithCoarsePointer() Option {
+	return func(c *config) { c.coarsePointer = true }
 }
 
 // New boots the rig. Order is the point: a passkey app needs its
@@ -112,6 +125,13 @@ func New(t *testing.T, build func(origin string) http.Handler, opts ...Option) *
 		// After the defaults, so it wins: chromedp.Headless set this
 		// true and the flag map keeps the last value written.
 		allocOpts = append(allocOpts, chromedp.Flag("hide-scrollbars", false))
+	}
+	if cfg.coarsePointer {
+		// 2 is Blink's PointerType coarse and 1 its HoverType none; the
+		// available* pair has to agree or any-pointer disagrees with
+		// pointer, which no real phone does.
+		allocOpts = append(allocOpts, chromedp.Flag("blink-settings",
+			"primaryPointerType=2,availablePointerTypes=2,primaryHoverType=1,availableHoverTypes=1"))
 	}
 	allocCtx, cancelAlloc := chromedp.NewExecAllocator(context.Background(), allocOpts...)
 	ctx, cancelCtx := chromedp.NewContext(allocCtx)
