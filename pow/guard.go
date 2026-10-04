@@ -210,6 +210,12 @@ type Parent struct {
 // transaction. It reads the form, so bound the body with
 // http.MaxBytesReader first.
 //
+// Admit reads the store through the store's own connection, not the
+// caller's, so call it before beginning the transaction: only
+// Commit(ctx, tx) belongs inside. On a writer pool of one connection
+// (the usual SQLite setup) an Admit inside the transaction waits for
+// the connection the transaction holds, and the handler deadlocks.
+//
 // Order: honeypot, then the seal before anything it vouches for, then
 // every cheap check (each failure recorded, so the log shows what a
 // refusal was also wrong about), and only then, if all passed, the one
@@ -307,6 +313,11 @@ func (a Admission) Commit(ctx context.Context, ex Execer) error {
 // cannot make it answer busy. For a handler that redirects after every
 // POST or has no transaction of its own, where the spend must land
 // before mail or a probe does.
+//
+// It reads and spends through the store's own connection, so never
+// call it inside an open transaction: on a writer pool of one
+// connection it waits for the connection that transaction holds, and
+// the handler deadlocks.
 func (g *Guard) Check(r *http.Request, w Want) Admission {
 	a := g.admit(r, w, false)
 	if !a.OK {
@@ -329,6 +340,11 @@ func (g *Guard) Check(r *http.Request, w Want) Admission {
 // Guard sharing the instance key verifies any of the app's unbound
 // tokens. A bound token is refused: its proof cannot be checked without
 // the value it was bound to, which such a request does not carry.
+//
+// Verify reads the store through the store's own connection, so call it
+// before beginning a transaction, never inside one: on a writer pool of
+// one connection it waits for the connection that transaction holds,
+// and the handler deadlocks.
 func (g *Guard) Verify(r *http.Request) (Parent, Reason, bool) {
 	if err := r.ParseForm(); err != nil {
 		return Parent{}, ReasonBounds, false
