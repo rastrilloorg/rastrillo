@@ -406,6 +406,40 @@ func TestBrowserBoundFormResolvesAfterTheBindingChanges(t *testing.T) {
 	}
 }
 
+// TestBrowserAnEmptyBindingSaysSo: the binding input here is optional,
+// so native validation passes it empty or holding only spaces. pow
+// cannot bind to nothing; without its own error the visitor would get
+// neither a message nor a submit.
+func TestBrowserAnEmptyBindingSaysSo(t *testing.T) {
+	for _, c := range []struct{ name, value string }{{"empty", ""}, {"only spaces", "   "}} {
+		t.Run(c.name, func(t *testing.T) {
+			fr := newFormRig(t, rigOpts{cfg: func(c *pow.Config) { c.Bind = true }, page: powPage(true, false, "")})
+			fr.waitReady(t)
+			fr.Run(chromedp.Evaluate(fmt.Sprintf(`document.getElementById("email").value = %q`, c.value), nil),
+				chromedp.Click(`#go`, chromedp.ByQuery))
+			time.Sleep(500 * time.Millisecond)
+			var msg string
+			fr.Run(chromedp.Evaluate(`document.getElementById("email").validationMessage`, &msg))
+			if msg == "" {
+				t.Fatal("submitting with an empty binding reported no error on the binding input")
+			}
+			if n := fr.posts.Load(); n != 0 {
+				t.Fatalf("%d POSTs with an empty binding, want 0", n)
+			}
+			// Typing clears the error pow set, and the corrected form goes.
+			fr.Run(chromedp.SendKeys(`#email`, "b@example.com", chromedp.ByQuery))
+			fr.Run(chromedp.Evaluate(`document.getElementById("email").validationMessage`, &msg))
+			if msg != "" {
+				t.Fatalf("after typing, the binding still reports %q", msg)
+			}
+			fr.Run(chromedp.Click(`#go`, chromedp.ByQuery))
+			if res := fr.result(t); res != "ok" {
+				t.Fatalf("the corrected form = %s, want ok", res)
+			}
+		})
+	}
+}
+
 func TestBrowserLeavingDuringAHoldNeverSubmits(t *testing.T) {
 	fr := newFormRig(t, rigOpts{
 		cfg:  func(c *pow.Config) { c.MinAge = 2 * time.Second },

@@ -84,6 +84,7 @@ function setup(form) {
     solution: null,
     held: null,
     releasing: false,
+    bindingError: false, // emptyBinding set the binding's custom validity
   };
   // A form missing a piece is a wiring bug. Enabling its submit would
   // post something the server is certain to refuse; leave it disabled,
@@ -95,6 +96,13 @@ function setup(form) {
   }
   states.set(form, st);
   form.addEventListener("submit", (e) => onSubmit(st, e));
+  if (bound) {
+    st.binding.addEventListener("input", () => {
+      if (!st.bindingError) return;
+      st.bindingError = false;
+      st.binding.setCustomValidity("");
+    });
+  }
   for (const b of st.submits) b.disabled = false;
   // A disabled control cannot take autofocus, so a one-tap button
   // rendered disabled loses the focus its page promised the visitor
@@ -175,11 +183,27 @@ function onSubmit(st, e) {
   e.preventDefault();
   if (st.held) return; // a second click while held changes nothing
   const value = st.bound ? st.binding.value : "";
-  if (st.bound && !value.trim()) {
-    st.binding.reportValidity();
+  if (st.bound && !keyOf(value)) {
+    emptyBinding(st);
     return;
   }
   hold(st, e.submitter || null);
+}
+
+// A bound proof needs a value to bind to, but an optional input left
+// empty, or a required one holding only spaces, passes native
+// validation: reportValidity alone would show nothing, and the visitor
+// would get neither an error nor a submit. So the binding is marked
+// invalid with the browser's own "fill this in" message (read from a
+// required, empty probe, so it is in the visitor's language), and pow
+// clears only the error it set, on the next input, never one the app
+// set itself.
+function emptyBinding(st) {
+  const probe = document.createElement("input");
+  probe.required = true;
+  st.binding.setCustomValidity(probe.validationMessage || "Please fill out this field.");
+  st.bindingError = true;
+  st.binding.reportValidity();
 }
 
 // hold keeps a submit until the solve and the minimum age are both done.
