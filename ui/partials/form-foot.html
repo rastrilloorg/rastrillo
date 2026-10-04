@@ -18,10 +18,16 @@
      Keys:
        Submit       string, required — the submit button's text
        CancelHref   string, optional — the cancel link target, with
-       CancelLabel  string           — its visible text */}}
-{{define "form-foot"}}<div rst-form-foot>
-  <button rst-btn="primary lg" type="submit">{{.Submit}}</button>
+       CancelLabel  string           — its visible text
+       Proof        *pow.Form, optional: when it needs a script, the
+                    submit is rendered disabled for pow.js to enable,
+                    with the status line and a <noscript> line. Render
+                    .Proof.Fields and .Proof.Attrs on the form and
+                    .Proof.Script once on the page yourself. */}}
+{{define "form-foot"}}{{$p := opt . "Proof"}}{{$gated := and $p $p.NeedsScript}}<div rst-form-foot>
+  <button rst-btn="primary lg" type="submit"{{if $gated}} disabled data-pow-submit{{end}}>{{.Submit}}</button>
   {{- if .CancelHref}}
   <a rst-btn="lg" href="{{.CancelHref}}">{{.CancelLabel}}</a>
   {{- end}}
-</div>{{end}}
+</div>{{if $gated}}
+{{$p.StatusLine (T "rastrillo.ui.pow_status")}}<noscript><p>{{T "rastrillo.ui.pow_noscript"}}</p></noscript>{{end}}{{end}}

@@ -35,6 +35,7 @@ import (
 	"amadan.net/rastrillo/rastrillo/harness"
 	"amadan.net/rastrillo/rastrillo/migrate"
 	"amadan.net/rastrillo/rastrillo/passkey"
+	"amadan.net/rastrillo/rastrillo/pow"
 	"amadan.net/rastrillo/rastrillo/secondfactor"
 	"amadan.net/rastrillo/rastrillo/sessions"
 	"amadan.net/rastrillo/rastrillo/ui"
@@ -61,10 +62,20 @@ func newScreenApp(t *testing.T) (*screenApp, func(origin string) http.Handler) {
 			t.Fatal(err)
 		}
 		t.Cleanup(func() { d.Close() })
-		if _, err := migrate.Apply(context.Background(), d, migrate.Merge(sessions.Schema, Schema, passkey.Schema, secondfactor.Schema)); err != nil {
+		if _, err := migrate.Apply(context.Background(), d, migrate.Merge(sessions.Schema, Schema, passkey.Schema, secondfactor.Schema, pow.Schema)); err != nil {
 			t.Fatal(err)
 		}
-		a, err := New(Config{DB: d.Writer(), Origin: origin, InstanceKey: "browser-instance-key", Mailer: app.mail, SigninScreen: true})
+		// A real Guard, so every journey that presses Continue waits for the
+		// shipped module's solve (milliseconds at 10 bits) instead of
+		// bypassing the gate the screen exists to carry.
+		powAssets := rastrillo.NewAssets(pow.Assets())
+		g, err := pow.New(pow.Config{InstanceKey: "browser-instance-key", Nonces: pow.SQLNonces(d.Writer()),
+			Difficulty: 10, MinAge: 100 * time.Millisecond,
+			ScriptURL: "/pow" + powAssets.Path("pow.js"), WorkerURL: "/pow" + powAssets.Path("pow-worker.js")})
+		if err != nil {
+			t.Fatalf("pow.New: %v", err)
+		}
+		a, err := New(Config{DB: d.Writer(), Origin: origin, InstanceKey: "browser-instance-key", Mailer: app.mail, SigninScreen: true, Proof: g})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -88,6 +99,7 @@ func newScreenApp(t *testing.T) (*screenApp, func(origin string) http.Handler) {
 			`{{define "content"}}{{template "signin" (dict "State" .Signin "Brand" .Brand)}}{{end}}`))
 
 		mux := http.NewServeMux()
+		mux.Handle("GET /pow/", http.StripPrefix("/pow/", powAssets.Handler()))
 		assets, _ := ui.VendoredAssets("day")
 		for name, body := range assets {
 			ct := "text/css; charset=utf-8"
@@ -390,7 +402,8 @@ func signOut(t *testing.T, rig *harness.Rig) {
 // wide spills off the START edge too, and no scrollbar reaches that.
 // What sits inside a clipping or scrolling box is that box's business,
 // not the page's: the backdrop's art is drawn wider than the screen on
-// purpose and cut off by its scene.
+// purpose and cut off by its scene. Likewise pow's honeypot, which is
+// parked at -9999px on purpose so that only a bot fills it.
 const reflowJS = `(() => {
   const de = document.documentElement;
   const over = [];
@@ -402,7 +415,7 @@ const reflowJS = `(() => {
   };
   document.querySelectorAll("body *").forEach(el => {
     const r = el.getBoundingClientRect();
-    if (r.width === 0 || clipped(el)) return;
+    if (r.width === 0 || clipped(el) || el.closest('[data-pow-form] > div[aria-hidden="true"]')) return;
     if (r.right > de.clientWidth + 1 || r.left < -1 || r.top + scrollY < -1) {
       over.push(el.tagName.toLowerCase() + " [" + Math.round(r.left) + "…" + Math.round(r.right) + ", top " + Math.round(r.top + scrollY) + "]");
     }
@@ -585,9 +598,11 @@ func TestSigninScreenInTheBrowser(t *testing.T) {
 	rig.Screen("#provider", "the provider, reached by the fallback link")
 	keymail.holdRefresh.Store(false)
 
-	// Scripts off: the passkey door stays hidden, an address still gets
-	// its Sent page, and the keymail continuation still moves on — the
-	// meta refresh needs no script.
+	// Scripts off: the passkey door stays hidden, and the sign-in form,
+	// which carries a proof only the module can solve, stays disabled
+	// and says so in its <noscript> line instead of posting something
+	// the server is certain to refuse. The keymail continuation page has
+	// no form: its meta refresh needs no script and still moves on.
 	// The same half-second is given to the page scripts-on would need to
 	// reveal the door, so "hidden" is the scripts' absence and not a read
 	// taken before they ran.
@@ -601,20 +616,16 @@ func TestSigninScreenInTheBrowser(t *testing.T) {
 	if ok {
 		t.Fatal("with scripts off the passkey door is hidden and the or beside it is showing")
 	}
-	run(t, rig,
-		chromedp.SetValue("#rst-signin-email", "sam@example.com", chromedp.ByQuery),
-		chromedp.Click(`form[action="/signin"] button[type="submit"]`, chromedp.ByQuery),
-	)
-	if s = awaitSent(t, rig); s != "sam@example.com" {
-		t.Fatalf("scripts off, Sent names %q", s)
+	eval(t, rig, `document.querySelector('form[action="/signin"] button[type="submit"]').disabled`, &ok)
+	if !ok {
+		t.Fatal("with scripts off the sign-in submit is enabled; nothing can solve its proof")
 	}
-	rig.Screen("[rst-signin]", "the Sent screen, scripts off")
+	eval(t, rig, `document.querySelector('form[action="/signin"] noscript').textContent.trim()`, &s)
+	if want := catalog["rastrillo.ui.pow_noscript"]; s != want {
+		t.Fatalf("with scripts off the form says %q, want %q", s, want)
+	}
 	before := conts.count()
-	run(t, rig, chromedp.Navigate(rig.Origin+"/signin"), chromedp.WaitVisible("#rst-signin-email", chromedp.ByQuery))
-	run(t, rig,
-		chromedp.SetValue("#rst-signin-email", "kay@example.org", chromedp.ByQuery),
-		chromedp.Click(`form[action="/signin"] button[type="submit"]`, chromedp.ByQuery),
-	)
+	run(t, rig, chromedp.Navigate(rig.Origin+"/signin?continue="+id))
 	if went := awaitURL(t, keymail); !app.auth.validAuthorizeURL(went) {
 		t.Fatalf("scripts off, the continuation went to %q", went)
 	}

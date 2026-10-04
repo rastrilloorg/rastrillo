@@ -2,12 +2,14 @@
 {{template "page-header" dict "Title" "Sign in"}}
 {{with .Content}}
 {{template "form-error" .Error}}
-<form rst-form method="post" action="/signin">
+<form rst-form method="post" action="/signin"{{with .Proof}} {{.Attrs}}{{end}}>
+{{with .Proof}}{{.Fields}}{{end}}
 <input type="hidden" name="return_to" value="{{.ReturnTo}}">
 {{template "field-text" dict "Name" "email" "Label" "Email" "Type" "email" "Value" .Email "Required" true "Autofocus" true "Autocomplete" "email"}}
 {{template "field-text" dict "Name" "password" "Label" "Password" "Type" "password" "Required" true "Autocomplete" "current-password"}}
-{{template "form-foot" dict "Submit" "Sign in"}}
+{{template "form-foot" dict "Submit" "Sign in" "Proof" .Proof}}
 </form>
+{{with .Proof}}{{.Script}}{{end}}
 {{end}}
 <p><a href="/signup">Need an account? Sign up</a></p>
 {{end}}

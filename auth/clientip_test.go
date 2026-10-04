@@ -36,7 +36,7 @@ func TestSigninBudgetIgnoresAForgedPrefix(t *testing.T) {
 		// is never what refuses.
 		last = beginFrom(t, a, fmt.Sprintf("p%d@example.com", i), fmt.Sprintf("198.51.100.%d, 203.0.113.9", i))
 	}
-	if last != "/signin?err=rate" {
+	if last != "/signin?err=rate&force=1" { // these posts send force=1, which an error now keeps (problemURL)
 		t.Fatalf("21st sign-in from one client behind forged prefixes → %q, want the rate refusal", last)
 	}
 }
@@ -61,7 +61,7 @@ func TestSigninBudgetWithNoTrustedHopsIsThePeers(t *testing.T) {
 	for i := 0; i < 21; i++ {
 		last = beginFrom(t, a, fmt.Sprintf("p%d@example.com", i), fmt.Sprintf("203.0.113.%d", i))
 	}
-	if last != "/signin?err=rate" {
+	if last != "/signin?err=rate&force=1" { // these posts send force=1, which an error now keeps (problemURL)
 		t.Fatalf("21st sign-in through one proxy with no trusted hops → %q, want the rate refusal", last)
 	}
 }
@@ -76,7 +76,7 @@ func TestSigninBudgetOnCarlosTrustsTheEdge(t *testing.T) {
 	for i := 0; i < 21; i++ {
 		last = beginFrom(t, a, fmt.Sprintf("p%d@example.com", i), fmt.Sprintf("198.51.100.%d, 203.0.113.9", i))
 	}
-	if last != "/signin?err=rate" {
+	if last != "/signin?err=rate&force=1" { // these posts send force=1, which an error now keeps (problemURL)
 		t.Fatalf("21st sign-in from one visitor on CARLOS -> %q, want the rate refusal", last)
 	}
 }
@@ -101,7 +101,7 @@ func TestExplicitZeroHopsWinsOnCarlos(t *testing.T) {
 	for i := 0; i < 21; i++ {
 		last = beginFrom(t, a, fmt.Sprintf("p%d@example.com", i), fmt.Sprintf("203.0.113.%d", i))
 	}
-	if last != "/signin?err=rate" {
+	if last != "/signin?err=rate&force=1" { // these posts send force=1, which an error now keeps (problemURL)
 		t.Fatalf("explicit 0 on CARLOS -> %q, want every visitor on the peer's one budget", last)
 	}
 }

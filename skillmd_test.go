@@ -121,7 +121,25 @@ import (
 // framework is reliably producing good apps across a variety of them,
 // which today it is not. Until that pass: write the rule down, keep it
 // short, and do not read this number as room to fill.
-const skillBudget = 30_000
+//
+// Raised 30,000 -> 30,750 on 2026-10-04, the 2026-09-02 shape again: a
+// textually clean merge summing two branches that each passed alone.
+// main's budgets section (§7a), phone shells and row/prerender rules
+// met pow-admission's front door (auth and password refuse to start
+// without a proof choice; Admit before BeginTx; Check for
+// redirect-after-POST; Recovery after a refusal), landing at 30,732.
+// Each is a rule an agent gets silently wrong otherwise: a form that
+// 500s on ErrSpent, a cached challenge shared by every visitor, a
+// vendored pow.js drifting from the verifier, a test package nobody
+// times. The duplicated Proof/ProofOff rule is stated once, which
+// leaves the file at 30,608. A deeper squeeze of the pow paragraph was
+// tried and reverted on review: it dropped why Check exists and that
+// the app owns and sweeps the Guard, which is the failure the ceiling
+// must never cause. 30,750 is the smallest round number above that,
+// so the 142 bytes over the file's size are slack for a one-line
+// correction, not room to fill; the deferred human pruning pass above
+// still stands.
+const skillBudget = 30_750
 
 // TestSkillMDStaysWithinBudget makes the budget mechanical rather than
 // remembered: several release evenings have ended with a wc -c dance

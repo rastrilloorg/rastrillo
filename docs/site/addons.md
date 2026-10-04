@@ -70,6 +70,7 @@ if err != nil {
 }
 ph, err := password.New(password.Config{
 	Sessions:     sess,
+	Proof:        guard, // the app's pow.Guard: see /docs/reference/pow
 	Lookup:       lookupUser(d.G),
 	Create:       roster.Admitting(createUser(d.G)),
 	RenderSignin: renderSignin,

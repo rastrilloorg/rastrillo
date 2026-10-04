@@ -6,6 +6,7 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"gorm.io/gorm"
@@ -13,11 +14,13 @@ import (
 	"notes/gen"
 
 	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/background"
 	"amadan.net/rastrillo/rastrillo/csrf"
 	"amadan.net/rastrillo/rastrillo/db"
 	"amadan.net/rastrillo/rastrillo/jobs"
 	"amadan.net/rastrillo/rastrillo/migrate"
 	"amadan.net/rastrillo/rastrillo/password"
+	"amadan.net/rastrillo/rastrillo/pow"
 	"amadan.net/rastrillo/rastrillo/sessions"
 	"amadan.net/rastrillo/rastrillo/ui"
 )
@@ -29,7 +32,7 @@ import (
 //
 // models.go and handlers.go are the only files this example asks a
 // reader to actually study; everything here is plumbing to get there.
-func App(d *db.DB, origin string, logger *slog.Logger) (*http.ServeMux, error) {
+func App(d *db.DB, origin, instanceKey string, bg *background.Group, logger *slog.Logger) (*http.ServeMux, error) {
 	// BootSchema (migrations.go) is this app's own Schema plus every
 	// framework subsystem's — sessions' shared core and the generated
 	// bookmarks store — merged in apply order. One call replaces what
@@ -51,6 +54,31 @@ func App(d *db.DB, origin string, logger *slog.Logger) (*http.ServeMux, error) {
 		return nil, err
 	}
 
+	// The front door for sign-in and sign-up. The Guard is built after
+	// migrate.Apply above, because New checks pow's table exists; the
+	// app owns it, so the app sweeps it.
+	powAssets := rastrillo.NewAssets(pow.Assets())
+	guard, err := pow.New(pow.Config{
+		InstanceKey: instanceKey,
+		Nonces:      pow.SQLNonces(writer),
+		// 16 bits: the largest difficulty whose p95 solve stays under 1s at
+		// 6x CPU throttle in Chromium (pow/measure_browser_test.go,
+		// 2026-10-04: p95 796ms, p99 879ms); a one-tap visitor waits the
+		// whole solve.
+		Difficulty: 16,
+		MinAge:     500 * time.Millisecond,
+		ScriptURL:  "/pow" + powAssets.Path("pow.js"),
+		WorkerURL:  "/pow" + powAssets.Path("pow-worker.js"),
+	})
+	if err != nil {
+		return nil, err
+	}
+	bg.Loop(context.Background(), 10*time.Minute, func() {
+		if err := guard.Sweep(time.Now()); err != nil {
+			logger.Warn("sweep spent challenges", "err", err)
+		}
+	})
+
 	a := &app{db: d.G, jobs: jobs.New(logger)}
 
 	jh, err := jobs.NewHandlers(jobs.Config{
@@ -64,6 +92,7 @@ func App(d *db.DB, origin string, logger *slog.Logger) (*http.ServeMux, error) {
 
 	ph, err := password.New(password.Config{
 		Sessions:     sess,
+		Proof:        guard,
 		Lookup:       lookupUser(d.G),
 		Create:       createUser(d.G),
 		RenderSignin: renderSignin,
@@ -120,6 +149,10 @@ func App(d *db.DB, origin string, logger *slog.Logger) (*http.ServeMux, error) {
 		r.Get("/jobs/{id}/fragment", jh.Fragment)
 		r.Get("/jobs/{id}/events", jh.Events)
 	})
+
+	// pow's script and worker, outside Require for the same reason: a
+	// visitor solving the challenge is not signed in yet.
+	r.Handle("/pow/*", http.StripPrefix("/pow/", powAssets.Handler()))
 
 	// The fragment shim, outside Require: it is a static asset, not a
 	// protected route, the same way a scaffolded app's static/

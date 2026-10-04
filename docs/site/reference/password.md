@@ -28,9 +28,22 @@ type Config struct {
 	SecondFactor func(w http.ResponseWriter, r *http.Request, sess sessions.Session) (done bool, err error)
 	RenderSignin func(w http.ResponseWriter, r *http.Request, d PageData)
 	RenderSignup func(w http.ResponseWriter, r *http.Request, d PageData)
+	Proof        *pow.Guard
+	ProofOff     bool
 	Logger       *slog.Logger
 }
 ```
+
+```go
+var ErrProofUnset, ErrProofMode error // from New: neither Proof nor ProofOff; a bound Guard
+
+const (
+	ScopeSignin = "rastrillo/password/signin"
+	ScopeSignup = "rastrillo/password/signup"
+)
+```
+
+`Proof` is the front door for `Signin` and `Signup`, required unless `ProofOff`; [Passwords](/docs/passwords#the-front-door) and [pow](/docs/reference/pow) cover it.
 
 `Lookup` receives an email already lowercased and trimmed, and returns
 `sql.ErrNoRows` for an unknown address — treated identically to a wrong
@@ -105,6 +118,7 @@ type PageData struct {
 	Error    string
 	Email    string
 	ReturnTo string
+	Proof    *pow.Form
 }
 ```
 

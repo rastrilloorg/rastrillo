@@ -40,7 +40,7 @@ func TestKeymailServersRefusesWhatIsNotAHost(t *testing.T) {
 		".", "..",
 	} {
 		d := newTestAuthDB(t)
-		if _, err := New(Config{DB: d, Origin: "http://app.test", InstanceKey: "k", Mailer: &captureMailer{}, KeymailServers: []string{bad}}); err == nil {
+		if _, err := New(Config{DB: d, Origin: "http://app.test", InstanceKey: "k", Mailer: &captureMailer{}, ProofOff: true, KeymailServers: []string{bad}}); err == nil {
 			t.Errorf("KeymailServers %q was accepted; it can never match a host, so every keymail user would silently get a link", bad)
 		}
 	}
@@ -49,7 +49,7 @@ func TestKeymailServersRefusesWhatIsNotAHost(t *testing.T) {
 	// hosts an operator may fairly write.
 	for _, good := range []string{"keymail.test:8443", "[::1]:443", "keymail.dev:443", "keymail.dev.", "KeyMail.Dev"} {
 		d := newTestAuthDB(t)
-		if _, err := New(Config{DB: d, Origin: "http://app.test", InstanceKey: "k", Mailer: &captureMailer{}, KeymailServers: []string{good}}); err != nil {
+		if _, err := New(Config{DB: d, Origin: "http://app.test", InstanceKey: "k", Mailer: &captureMailer{}, ProofOff: true, KeymailServers: []string{good}}); err != nil {
 			t.Errorf("KeymailServers %q was refused: %v", good, err)
 		}
 	}

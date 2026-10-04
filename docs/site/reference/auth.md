@@ -29,6 +29,8 @@ type Config struct {
 	DB               *sql.DB
 	Origin           string
 	InstanceKey      string
+	Proof            *pow.Guard
+	ProofOff         bool
 	Mailer           mail.Sender
 	Authorize        func(address string) bool
 	SecondFactor     func(w http.ResponseWriter, r *http.Request, sess sessions.Session) (done bool, err error)
@@ -42,6 +44,13 @@ type Config struct {
 	KeymailServers   []string
 }
 ```
+
+```go
+var ErrProofUnset, ErrProofMode error // from New: neither Proof nor ProofOff; a bound Guard
+const ProofScope = "rastrillo/auth/begin"
+```
+
+`Proof` is sign-in's front door, required unless `ProofOff`; [Magic links](/docs/magic-links#the-front-door) and [pow](/docs/reference/pow) cover it.
 
 `SigninScreen` turns on the shipped sign-in screen's side of `auth`: the attempt and continuation cookies, the keymail continuation, and remembering the way in. Off, nothing about `Begin` or `Callback` changes. `BeginPath` and `ForgetPath` (default `/signin` and `/signin/forget`) are where you mounted `Begin` and `Forget`, for the screen's forms. `Remember` set to `false` keeps the screen and stops remembering.
 
@@ -127,6 +136,8 @@ type SigninState struct {
 	ContinueURL string
 	BeginPath   string
 	ForgetPath  string
+	Force       bool
+	Proof       *pow.Form
 	Passkey     *PasskeyDoor
 }
 func (s SigninState) Door() string
@@ -151,6 +162,7 @@ const (
 	ProblemKeymail SigninProblem = "keymail"
 	ProblemGeneric SigninProblem = "generic"
 	ProblemReauth  SigninProblem = "reauth"
+	ProblemCheck   SigninProblem = "check"
 )
 
 type Remembered struct{ Method, Address string }

@@ -312,6 +312,7 @@ var coveredElsewhere = map[string]string{
 	"migrate/dump":      "reference/migrate",
 	"migrate/gormfn":    "reference/migrate",
 	"migrate/modeldiff": "reference/migrate",
+	"pow/powtest":       "reference/pow",
 }
 
 // TestEveryPackageHasAReferencePage is the other half of the

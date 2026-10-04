@@ -4,12 +4,14 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/keymaildev/signin"
 
 	"amadan.net/rastrillo/rastrillo/clientip"
 	"amadan.net/rastrillo/rastrillo/lastsignin"
+	"amadan.net/rastrillo/rastrillo/pow"
 	"amadan.net/rastrillo/rastrillo/sessions"
 )
 
@@ -19,6 +21,10 @@ import (
 // outbound DNS/HTTPS calls decided by the submitted address (a blind-
 // SSRF surface by design, per signin's own README), so a cross-site
 // form must never reach it.
+//
+// With Config.Proof set, the submission must also carry a solved
+// challenge, checked before anything below reads a field or spends the
+// rate budget; a refusal lands on ?err=check&rec=1.
 //
 // Form fields: address (required); force (any non-empty value) skips
 // classification and goes straight to the magic link — the escape hatch
@@ -43,32 +49,37 @@ func (a *Auth) Begin(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "cross-origin form submission refused", http.StatusForbidden)
 		return
 	}
+	recovered, ok := a.frontDoor(w, r)
+	if !ok {
+		return
+	}
+	force := r.FormValue("force") != ""
 	address := r.FormValue("address")
-	var force signin.Method
-	if r.FormValue("force") != "" {
-		force = signin.MethodMagicLink
+	var method signin.Method
+	if force {
+		method = signin.MethodMagicLink
 	}
 
-	next, err := a.flow.Begin(r.Context(), address, clientip.From(r, a.hops), force)
+	next, err := a.flow.Begin(r.Context(), address, clientip.From(r, a.hops), method)
 	switch {
 	case errors.Is(err, signin.ErrRateLimited):
 		a.noteAttempt(w, attemptProblem, address, false)
-		a.redirect(w, r, a.cfg.SigninPath+"?err=rate")
+		a.redirect(w, r, a.problemURL("rate", recovered, force))
 		return
 	case errors.Is(err, signin.ErrBadAddress):
 		a.noteAttempt(w, attemptProblem, address, false)
-		a.redirect(w, r, a.cfg.SigninPath+"?err=address")
+		a.redirect(w, r, a.problemURL("address", recovered, force))
 		return
 	case err != nil:
 		a.cfg.Logger.Error("rastrillo/auth: begin sign-in", "err", err)
 		a.noteAttempt(w, attemptProblem, address, false)
-		a.redirect(w, r, a.cfg.SigninPath+"?err=1")
+		a.redirect(w, r, a.problemURL("1", recovered, force))
 		return
 	}
 
 	if next.Kind == signin.NextKeymail {
 		if a.cfg.SigninScreen {
-			a.continueKeymail(w, r, address, next)
+			a.continueKeymail(w, r, address, next, recovered)
 			return
 		}
 		a.setCookie(w, a.pendingCookie(), next.Pending, int(pendingTTL.Seconds()))
@@ -81,24 +92,77 @@ func (a *Auth) Begin(w http.ResponseWriter, r *http.Request) {
 	a.answerSent(w, r, address)
 }
 
+// frontDoor is the Config.Proof check every POST to the sign-in form
+// meets first, Begin's and AnswerAsSent's alike. One function so the
+// two cannot drift: an admission wrapper calls Begin for a member and
+// AnswerAsSent for anyone else, so if AnswerAsSent skipped this, a post
+// with no proof would be refused for a member and answered sent=1 for a
+// stranger, telling anyone who is a member without a single solve. It
+// also spends the token on both paths, or a stranger's one solved token
+// could be replayed for ever where a member's works once. ok false
+// means the refusal has been written. With Proof unset it admits
+// everything and writes nothing.
+func (a *Auth) frontDoor(w http.ResponseWriter, r *http.Request) (recovered, ok bool) {
+	if a.cfg.Proof == nil {
+		return false, true
+	}
+	// First, before any FormValue: FormValue swallows a parse error and
+	// a later ParseForm does not repeat it, so reading a field first
+	// would let a malformed body past the guard's bounds check. Check
+	// rather than Admit: every outcome redirects, the next GET mints a
+	// new challenge, and the spend must land before a probe or a mail
+	// does.
+	adm := a.cfg.Proof.Check(r, pow.Want{Scope: ProofScope})
+	if !adm.OK {
+		a.cfg.Logger.Debug("rastrillo/auth: sign-in refused at the front door", "reason", adm.Reason, "also", adm.Also)
+		a.noteAttempt(w, attemptProblem, r.FormValue("address"), false)
+		a.redirect(w, r, a.problemURL("check", true, r.PostFormValue("force") != ""))
+		return false, false
+	}
+	return adm.Recovered(), true
+}
+
+// problemURL is the sign-in page for a problem. rec keeps recovery
+// sticky: a visitor whose password manager fills the honeypot was
+// given a trapless form, and an ordinary form after their next typo
+// would trap them again. force keeps the send-a-link-instead choice a
+// failed keymail exchange offered: without it, a refusal would drop it
+// and Begin would classify the address back to the failing provider.
+// Both are attacker-controllable and select nothing a script can use:
+// a recovery form costs the same proof.
+func (a *Auth) problemURL(problem string, rec, force bool) string {
+	q := url.Values{"err": {problem}}
+	if rec {
+		q.Set("rec", "1")
+	}
+	if force {
+		q.Set("force", "1")
+	}
+	return a.cfg.SigninPath + "?" + q.Encode()
+}
+
 // continueKeymail is the keymail answer with SigninScreen on. A 303
 // straight to the provider is refused by the default CSP, whose
 // form-action 'self' covers a form's whole redirect chain; so this
 // stays on the origin — the pending cookie as today, a continuation
 // cookie holding the authorize URL, and a redirect to the sign-in page,
-// whose Continue state navigates on by itself.
-func (a *Auth) continueKeymail(w http.ResponseWriter, r *http.Request, address string, next signin.Next) {
+// whose Continue state navigates on by itself. recovered keeps rec=1
+// on its failures as on Begin's: a visitor holding a recovery form
+// would otherwise be handed the honeypot again after a failure that
+// was not theirs. force is always false here, since a forced post never
+// reaches keymail.
+func (a *Auth) continueKeymail(w http.ResponseWriter, r *http.Request, address string, next signin.Next, recovered bool) {
 	if !a.validAuthorizeURL(next.Redirect) {
 		// A correct library never builds one. If one appears it is not
 		// turned into a link, and nothing is left half-set.
 		a.cfg.Logger.Error("rastrillo/auth: the keymail authorize URL failed the predicate; not continuing")
-		a.redirect(w, r, a.cfg.SigninPath+"?err=1")
+		a.redirect(w, r, a.problemURL("1", recovered, false))
 		return
 	}
 	id, value, err := a.sealContinuation(next.Redirect, next.Pending)
 	if err != nil {
 		a.cfg.Logger.Error("rastrillo/auth: seal continuation", "err", err)
-		a.redirect(w, r, a.cfg.SigninPath+"?err=1")
+		a.redirect(w, r, a.problemURL("1", recovered, false))
 		return
 	}
 	a.setCookie(w, a.pendingCookie(), next.Pending, int(pendingTTL.Seconds()))
@@ -116,11 +180,18 @@ func (a *Auth) continueKeymail(w http.ResponseWriter, r *http.Request, address s
 // and sends nothing. With SigninScreen off that is today's plain
 // ?sent=1 and no cookie.
 //
+// With Config.Proof set it checks and spends the challenge first, as
+// Begin does, and refuses a post that fails with Begin's own ?err=check
+// answer; only an admitted post is answered as sent.
+//
 // It does not hide what classification and the per-address rate limit
 // reveal; docs/site/magic-links.md says what does.
 func (a *Auth) AnswerAsSent(w http.ResponseWriter, r *http.Request) {
 	if !a.sameOrigin(r) {
 		http.Error(w, "cross-origin form submission refused", http.StatusForbidden)
+		return
+	}
+	if _, ok := a.frontDoor(w, r); !ok {
 		return
 	}
 	a.answerSent(w, r, r.FormValue("address"))

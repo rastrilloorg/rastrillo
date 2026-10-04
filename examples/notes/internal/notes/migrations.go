@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"amadan.net/rastrillo/rastrillo/migrate"
+	"amadan.net/rastrillo/rastrillo/pow"
 	"amadan.net/rastrillo/rastrillo/sessions"
 
 	bookmarksstore "notes/gen/store/bookmarks"
@@ -58,5 +59,6 @@ var genSchema = genSchemaSet()
 // first (nothing here depends on it, but it is the shared core every
 // multi-user app composes ahead of its own tables), then the
 // generated bookmarks store, then this app's own Schema. migrate.Merge's
-// argument order is apply order.
-var BootSchema = migrate.Merge(sessions.Schema, genSchema, Schema)
+// argument order is apply order. pow's spent-nonce table is applied here
+// because pow.New checks it exists and refuses to build without it.
+var BootSchema = migrate.Merge(sessions.Schema, pow.Schema, genSchema, Schema)

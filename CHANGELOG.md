@@ -10,6 +10,33 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+### Changed: sign-in and sign-up are behind `pow` by default, and `pow`'s API is new; wire a Guard or set `ProofOff`, and re-vendor `busy.js`
+
+**`auth.New` and `password.New` now refuse to start until you choose.** Set `Proof` to a `*pow.Guard`, or set `ProofOff`. With neither, `New` returns `ErrProofUnset`. With a Guard, `auth.Begin`, `password.Signin` and `password.Signup` refuse any post without a solved challenge before they send mail, look up a domain, hash a password or spend any rate budget. Those forms then need JavaScript.
+
+To upgrade:
+
+1. Merge `pow.Schema` into the set you pass to `migrate.Apply`, and apply it before `pow.New`, which checks that the table is there (`ErrNoSchema`).
+2. Serve `pow.Assets()` behind `rastrillo.NewAssets`, and build one Guard from your stored instance key, `pow.SQLNonces(writer)` and the two script URLs. For sign-in, use `Difficulty: 16` and `MinAge: 500 * time.Millisecond`. Sweep the Guard from a `background.Group` loop.
+3. Pass the Guard as `auth.Config.Proof` and `password.Config.Proof`, or set `ProofOff` on either.
+4. Render `.Proof` in your password templates: `.Proof.Attrs` on the form, `.Proof.Fields` inside it, `.Proof.Script` once on the page, and `"Proof" .Proof` to `form-foot`. The shipped sign-in screen already does this for `auth`. A sign-in page of your own renders `SigninState(r).Proof` the same way and shows `?err=check`.
+5. Run `rastrillo doctor --fix` to re-vendor `busy.js`. The new copy leaves a form `pow` protects to `pow`, and drops a held submit as soon as the visitor starts to navigate away, not when the next page arrives. An old copy can hold a protected form's submit a second time and leave it unable to send.
+6. Tests that post to these forms either set `ProofOff`, or fetch the page, solve it with `powtest.Fill` and wait out `MinAge` before posting.
+
+A sign-in page left open across the deploy posts no challenge. Its visitor sees "Your browser couldn't finish a security check. Try again." once, and gets in on the second try. The new messages are in all twelve languages.
+
+`pow` itself has a new shape. Nothing outside rastrillo is known to import it, but if your app does:
+
+- `Issue(now)` is `Form(now, scope)`, and every token is sealed to the scope you pass. `Challenge.FormAttrs(workerURL)` is `Form.Attrs()`, beside `Form.Script`, `Form.StatusLine` and `Form.NeedsScript`. `Config.ScriptURL` and `Config.WorkerURL` are required unless `Difficulty` is `NoProof` (`ErrNoAssets`).
+- `Check(r, binding) (Reason, bool)` is now `Admit(r, pow.Want{Scope: ...})` followed by `adm.Commit(ctx, tx)` in your transaction, so a validation error no longer burns the token. `Check(r, pow.Want{...})` is both at once, for a handler that redirects. Both return an `Admission`.
+- Work is no longer bound to an input unless you set `Config.Bind`.
+- The form fields changed: `pow_issued_at` is gone, and forms carry `pow_scope`, `pow_issued` and `pow_expires` (milliseconds) and `pow_flags`. The seal changed with them, so a challenge rendered by the old version is refused.
+- `ReasonNonceSpent` (`nonce_spent`) is now `ReasonSpent` (`spent`). New reasons: `ReasonMissing`, `ReasonAttempts` and `ReasonBusy`.
+- `NonceStore` gains `Spent` and `Ready`, and `Spend` takes the caller's transaction. `pow.Schema`'s second migration recreates `pow_spent_nonces` with a millisecond `expires_ms` column, dropping any rows in it.
+- New: `NoProof`, `FollowOn`, `Recovery` and `Admission.Recovered`, `Guard.Verify` and `Parent` for requests made on a form's behalf, the `pow/powtest` package, and `init` and `whenSolved` exported from `pow.js`.
+
+See [pow](/docs/reference/pow), [Magic links](/docs/magic-links#the-front-door) and [Passwords](/docs/passwords#the-front-door).
+
 ### Fixed: a link to a heading on a phone no longer lands under the back control
 
 On a sidebar or console content page, the back control stays pinned at the top of a phone screen, and a link to a heading scrolled that heading underneath it. Re-copy `tokens.css` with `rastrillo doctor --fix`.

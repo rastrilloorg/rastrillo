@@ -1,17 +1,16 @@
 package pow
 
 import (
+	"context"
 	"crypto/sha256"
 	"errors"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 )
 
-// Reason is why a submission was refused. The set is closed on purpose:
-// a refusal you log has to be one of these, so the log stays countable
-// and nothing that reaches it can carry anything a submitter typed.
+// Reason is why a submission was refused. The set is closed so a log
+// of refusals stays countable and nothing a submitter typed reaches it.
 type Reason string
 
 const (
@@ -20,63 +19,97 @@ const (
 	ReasonTooFast     Reason = "too_fast"
 	ReasonTooOld      Reason = "too_old"
 	ReasonShort       Reason = "pow_short"
-	ReasonNonceSpent  Reason = "nonce_spent"
-
-	// ReasonBounds is a request body that would not parse as a form at
-	// all — a truncated post, or one past http.MaxBytesReader's limit.
+	ReasonSpent       Reason = "spent"
+	// ReasonBounds: a body that would not parse as a form at all.
 	ReasonBounds Reason = "bounds"
-
-	// ReasonUnavailable is the nonce store failing. It is the one
-	// refusal the submitter had nothing to do with, and it is still a
-	// refusal: letting a submission through when replay protection is
-	// unreachable turns a database outage into unlimited replay.
+	// ReasonUnavailable: the nonce store failed. Still a refusal:
+	// letting a submission through when replay protection is unreachable
+	// turns a database outage into unlimited replay.
 	ReasonUnavailable Reason = "unavailable"
+	// ReasonMissing: no challenge was posted at all. The form was never
+	// wired, or predates this release; an operator needs to tell that
+	// apart from an attack, so it is not seal_invalid.
+	ReasonMissing Reason = "missing"
+	// ReasonAttempts: this token has been admitted Config.Attempts times.
+	ReasonAttempts Reason = "attempts"
+	// ReasonBusy: Config.Tracked tokens are already being counted.
+	ReasonBusy Reason = "busy"
 )
 
-// ErrNoNonceStore means Config.Nonces was nil. There is no default,
-// because the default would have to be "no replay protection": one
-// solved challenge stays good for its whole MaxAge window, and every
-// replay costs the attacker nothing and your app another row, another
-// message, another whatever the form spends. Passing MemoryNonces is a
-// decision somebody typed.
-var ErrNoNonceStore = errors.New("rastrillo/pow: Config.Nonces must not be nil")
+const (
+	// NoProof is Config.Difficulty for a token-only form: a sealed,
+	// single-use challenge and the honeypot, no proof of work, and no
+	// JavaScript needed to submit it.
+	NoProof         = -1
+	DefaultAttempts = 20
+	DefaultTracked  = 100_000
+)
 
-// ErrEmptyInstanceKey means Config.InstanceKey was empty. Without it
-// the seal is forgeable and every check below is theatre.
-var ErrEmptyInstanceKey = errors.New("rastrillo/pow: Config.InstanceKey must not be empty")
+var (
+	// ErrNoNonceStore means Config.Nonces was nil. There is no default,
+	// because the default would have to be "no replay protection": one
+	// solved challenge stays good for its whole MaxAge window, and every
+	// replay costs the attacker nothing and your app another row, another
+	// message, another whatever the form spends. Passing MemoryNonces is a
+	// decision somebody typed.
+	ErrNoNonceStore     = errors.New("rastrillo/pow: Config.Nonces must not be nil")
+	ErrEmptyInstanceKey = errors.New("rastrillo/pow: Config.InstanceKey must not be empty")
+	// ErrNoAssets: a proof-of-work form the browser cannot complete must
+	// not boot. A URL being set does not prove it is served; the status
+	// line covers the visitor's side of that.
+	ErrNoAssets = errors.New("rastrillo/pow: Config.ScriptURL and Config.WorkerURL are required unless Difficulty is NoProof")
+	// ErrBindNeedsProof: NoProof has no work to bind, and a Bind that is
+	// silently ignored is a setting somebody believes is protecting them.
+	ErrBindNeedsProof = errors.New("rastrillo/pow: Config.Bind needs proof of work; it means nothing with NoProof")
+	// ErrSpent: the token was spent by an identical request, or expired
+	// before the spend. Refuse; never 500. Commit does not look further
+	// to tell the two apart (see Execer).
+	ErrSpent = errors.New("rastrillo/pow: challenge spent or expired")
+	// ErrNotAdmitted: Commit of a refused admission. A handler that went
+	// on past a refusal would otherwise create its row with nothing
+	// consumed.
+	ErrNotAdmitted = errors.New("rastrillo/pow: commit of a refused admission")
+)
 
-// Config configures New. InstanceKey and Nonces are required;
-// everything else has a default worth keeping until you have measured
-// otherwise.
+// Config configures New. InstanceKey and Nonces are required, and the
+// asset URLs unless Difficulty is NoProof.
 type Config struct {
-	// InstanceKey seals challenges, derived as
-	// sha256("rastrillo/pow/challenge\x00" + InstanceKey). It is the
-	// same instance key auth takes, and the label is what stops a
-	// token minted by one subsystem verifying in the other.
+	// InstanceKey seals challenges, derived under its own label so a
+	// token minted by another subsystem never verifies here.
 	InstanceKey string
-
-	// Nonces remembers which challenges have been spent. SQLNonces for
-	// anything that survives a restart; MemoryNonces for a single
-	// process that can afford to forget.
-	Nonces NonceStore
-
-	// Difficulty defaults to DefaultDifficulty. Measure before you
-	// change it, at p95 and p99 rather than the mean.
+	Nonces      NonceStore
+	// Difficulty defaults to DefaultDifficulty; NoProof for token-only.
 	Difficulty int
-
+	// Bind ties the work to the [data-pow-binding] input. Off by
+	// default: with single-use tokens one solve already buys one
+	// submission, and binding means solving cannot start before submit.
+	Bind bool
 	// MinAge and MaxAge default to DefaultMinAge and DefaultMaxAge.
+	// MaxAge is read once, at issue, and sealed into the token.
 	MinAge, MaxAge time.Duration
+	// Attempts and Tracked bound Admit's per-token counting; defaults
+	// DefaultAttempts and DefaultTracked. Check never counts.
+	Attempts, Tracked int
+	// ScriptURL and WorkerURL are the fingerprinted URLs of pow.js and
+	// pow-worker.js as the app serves pow.Assets().
+	ScriptURL, WorkerURL string
 }
 
-// Guard is one form's front door.
+// Guard is a front door. One Guard serves many forms: the scope passed
+// to Form and Want keeps their tokens apart.
 type Guard struct {
-	key            []byte
-	nonces         NonceStore
-	difficulty     int
-	minAge, maxAge time.Duration
+	key                  []byte
+	nonces               NonceStore
+	difficulty           int // 0: no proof
+	bind                 bool
+	minAge, maxAge       time.Duration
+	scriptURL, workerURL string
+	attempts             *attempts
+	now                  func() time.Time
 }
 
-// New returns a Guard, or an error naming the field that was missing.
+// New returns a Guard, or an error naming what is missing. It checks
+// the store is ready, so apply pow.Schema before calling it.
 func New(cfg Config) (*Guard, error) {
 	if cfg.InstanceKey == "" {
 		return nil, ErrEmptyInstanceKey
@@ -86,14 +119,24 @@ func New(cfg Config) (*Guard, error) {
 	}
 	key := sha256.Sum256([]byte("rastrillo/pow/challenge\x00" + cfg.InstanceKey))
 	g := &Guard{
-		key:        key[:],
-		nonces:     cfg.Nonces,
-		difficulty: cfg.Difficulty,
-		minAge:     cfg.MinAge,
-		maxAge:     cfg.MaxAge,
+		key: key[:], nonces: cfg.Nonces, bind: cfg.Bind,
+		minAge: cfg.MinAge, maxAge: cfg.MaxAge,
+		scriptURL: cfg.ScriptURL, workerURL: cfg.WorkerURL,
+		now: time.Now,
 	}
-	if g.difficulty <= 0 {
+	switch {
+	case cfg.Difficulty == NoProof:
+		g.difficulty = 0
+	case cfg.Difficulty <= 0:
 		g.difficulty = DefaultDifficulty
+	default:
+		g.difficulty = cfg.Difficulty
+	}
+	if g.difficulty > 0 && (cfg.ScriptURL == "" || cfg.WorkerURL == "") {
+		return nil, ErrNoAssets
+	}
+	if cfg.Bind && g.difficulty == 0 {
+		return nil, ErrBindNeedsProof
 	}
 	if g.minAge <= 0 {
 		g.minAge = DefaultMinAge
@@ -101,104 +144,240 @@ func New(cfg Config) (*Guard, error) {
 	if g.maxAge <= 0 {
 		g.maxAge = DefaultMaxAge
 	}
+	limit, max := cfg.Attempts, cfg.Tracked
+	if limit <= 0 {
+		limit = DefaultAttempts
+	}
+	if max <= 0 {
+		max = DefaultTracked
+	}
+	g.attempts = newAttempts(limit, max)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := cfg.Nonces.Ready(ctx); err != nil {
+		return nil, err
+	}
 	return g, nil
 }
 
-// Issue mints a challenge for a form about to render. It writes
-// nothing, so a crawler hitting the page a thousand times costs a
-// thousand HMACs and no rows.
-func (g *Guard) Issue(now time.Time) Challenge {
-	return newChallenge(g.key, now, g.difficulty)
+// Bound reports Config.Bind, for a package that renders forms it cannot
+// bind (auth's sign-in) and must refuse a bound Guard at boot.
+func (g *Guard) Bound() bool { return g.bind }
+
+// Want is what the server expects of a submission: the scope it issued
+// the form under, and, for a bound Guard, the submitted value.
+type Want struct {
+	Scope   string
+	Binding string
 }
 
-// Check runs the whole front door against a submitted form, and is the
-// only thing a handler needs to call. It returns the reason a
-// submission was refused, and whether it passed.
+// Admission is Admit's verdict, and the handle that spends it.
+type Admission struct {
+	OK     bool
+	Reason Reason   // the first failure
+	Also   []Reason // every other cheap failure, for the log
+	g      *Guard
+	c      Challenge
+	sealed bool
+}
+
+func (a *Admission) fail(r Reason) {
+	a.OK = false
+	if a.Reason == "" {
+		a.Reason = r
+		return
+	}
+	a.Also = append(a.Also, r)
+}
+
+// Recovered reports that the posted token was a recovery token. Only
+// after the seal verified: an unverified flag is a number the submitter
+// chose. A handler that re-renders uses it to keep recovery sticky, or
+// a trapless attempt that fails on a wrong password comes back with the
+// trap and is refused again.
+func (a Admission) Recovered() bool { return a.sealed && a.c.Flags&flagTrapOmitted != 0 }
+
+// Parent is a token Verify authenticated, for a request made on a
+// parent form's behalf.
+type Parent struct {
+	Scope      string
+	Nonce      string // canonical: key allowances by it
+	Difficulty int
+	Issued     time.Time
+}
+
+// Admit decides and writes nothing; Commit spends, inside the caller's
+// transaction. It reads the form, so bound the body with
+// http.MaxBytesReader first.
 //
-// binding is the value the proof of work was bound to — the address the
-// form submitted, in the usual case. Pass exactly what the browser's
-// [data-pow-binding] input held; the package normalises it identically
-// on both sides.
+// Admit reads the store through the store's own connection, not the
+// caller's, so call it before beginning the transaction: only
+// Commit(ctx, tx) belongs inside. On a writer pool of one connection
+// (the usual SQLite setup) an Admit inside the transaction waits for
+// the connection the transaction holds, and the handler deadlocks.
 //
-// The order is not an implementation detail. The honeypot first,
-// because it is free, needs no seal, and must not sit behind anything
-// that writes. The seal before the clock, because until the signature
-// holds, the timestamp is a number the submitter chose. The proof of
-// work before the nonce is spent, so a submission that was never going
-// to pass does not cost a row. And the nonce spent before the caller
-// does anything at all, because a solved challenge is otherwise
-// replayable for its whole MaxAge window.
-//
-// It reads the form, so it calls ParseForm. Bound the body with
-// http.MaxBytesReader before you call it — a free-text field is
-// otherwise an invitation to post a gigabyte.
-//
-// What to do with a refusal is the caller's, and mostly the answer is
-// to render the same page every outcome renders. A form that says "you
-// are already signed up" is a form anybody can ask about anybody.
-func (g *Guard) Check(r *http.Request, binding string) (Reason, bool) {
+// Order: honeypot, then the seal before anything it vouches for, then
+// every cheap check (each failure recorded, so the log shows what a
+// refusal was also wrong about), and only then, if all passed, the one
+// database read and the attempt count.
+func (g *Guard) Admit(r *http.Request, w Want) Admission { return g.admit(r, w, true) }
+
+func (g *Guard) admit(r *http.Request, w Want, count bool) Admission {
+	a := Admission{g: g}
 	if err := r.ParseForm(); err != nil {
-		return ReasonBounds, false
+		a.fail(ReasonBounds)
+		return a
 	}
-	if strings.TrimSpace(r.PostFormValue(fieldHoneypot)) != "" {
-		return ReasonHoneypot, false
+	c, reason := readChallenge(r)
+	if reason != "" {
+		a.fail(reason)
+		return a
 	}
-	c := Challenge{
-		Nonce:      r.PostFormValue(fieldNonce),
-		IssuedAt:   atoi64(r.PostFormValue(fieldIssuedAt)),
-		Difficulty: atoi(r.PostFormValue(fieldDifficulty)),
-		Seal:       r.PostFormValue(fieldSeal),
+	// The flag is unverified here; if it lies, the seal check below
+	// refuses the request anyway.
+	if c.Flags&flagTrapOmitted == 0 && Trapped(r) {
+		a.fail(ReasonHoneypot)
 	}
-	now := time.Now()
-	if reason, ok := verifySeal(g.key, c, now, g.minAge, g.maxAge); !ok {
-		return reason, false
+	if !sealOK(g.key, c) || c.Scope != w.Scope {
+		a.fail(ReasonSealInvalid)
+		return a
 	}
-	// The difficulty is inside the seal, so this compares a value the
-	// submitter could not edit against the one the guard is set to. A
-	// challenge minted before the difficulty was lowered is still
-	// honoured; one claiming less than it was minted with cannot exist.
-	if c.Difficulty < g.difficulty {
-		return ReasonSealInvalid, false
+	a.c, a.sealed = c, true
+	now := g.now()
+	if now.Sub(c.Issued) < g.minAge {
+		a.fail(ReasonTooFast)
 	}
-	if !Verify(c.Nonce, binding, r.PostFormValue(fieldCounter), c.Difficulty) {
-		return ReasonShort, false
+	// Sealed expiry, and never longer than this Guard's MaxAge: a deploy
+	// that raised MaxAge must not revive tokens already spent and swept.
+	if now.After(c.Expires) || c.Expires.Sub(c.Issued) > g.maxAge {
+		a.fail(ReasonTooOld)
 	}
-	fresh, err := g.nonces.Spend(r.Context(), c.Nonce, c.expiry(g.maxAge))
+	if c.Difficulty < g.difficulty || (c.Flags&flagBound != 0) != g.bind {
+		a.fail(ReasonSealInvalid)
+	}
+	if c.Difficulty > 0 {
+		binding := ""
+		if g.bind {
+			binding = w.Binding
+		}
+		// A bound Guard with no binding is a caller that forgot
+		// Want.Binding. Checking the work against "" would accept a
+		// client that solved unbound: refuse instead.
+		if g.bind && strings.TrimSpace(binding) == "" ||
+			!Verify(c.Nonce, binding, r.PostFormValue(fieldCounter), c.Difficulty) {
+			a.fail(ReasonShort)
+		}
+	}
+	if a.Reason != "" {
+		return a
+	}
+	spent, err := g.nonces.Spent(r.Context(), c.Nonce)
+	switch {
+	case err != nil:
+		a.fail(ReasonUnavailable)
+		return a
+	case spent:
+		a.fail(ReasonSpent)
+		return a
+	}
+	if count {
+		if reason := g.attempts.take(c.Nonce, c.Expires, now); reason != "" {
+			a.fail(reason)
+			return a
+		}
+	}
+	a.OK = true
+	return a
+}
+
+// Commit spends the admitted token on ex: the caller's transaction, so
+// a validation failure never reaches it and a rollback undoes it. nil
+// spends on the store's own handle.
+func (a Admission) Commit(ctx context.Context, ex Execer) error {
+	if !a.OK || a.g == nil {
+		return ErrNotAdmitted
+	}
+	fresh, err := a.g.nonces.Spend(ctx, ex, a.c.Nonce, a.c.Expires)
 	if err != nil {
-		// The store is the one step that can fail for a reason the
-		// submitter had nothing to do with. Refusing is the only safe
-		// answer: letting it through would make an unreachable
-		// database into unlimited replay.
-		return ReasonUnavailable, false
+		return err
 	}
 	if !fresh {
-		return ReasonNonceSpent, false
+		return ErrSpent
 	}
-	return "", true
+	return nil
 }
 
-// Trapped reports whether the honeypot was filled, for a handler that
-// wants to answer before doing anything else and is not calling Check.
-// Check does this itself, first.
+// Check is Admit and Commit at once, on the store's own handle, without
+// the attempt count: it spends immediately, so there is nothing
+// uncommitted to count, and a map filled through Admit by another form
+// cannot make it answer busy. For a handler that redirects after every
+// POST or has no transaction of its own, where the spend must land
+// before mail or a probe does.
+//
+// It reads and spends through the store's own connection, so never
+// call it inside an open transaction: on a writer pool of one
+// connection it waits for the connection that transaction holds, and
+// the handler deadlocks.
+func (g *Guard) Check(r *http.Request, w Want) Admission {
+	a := g.admit(r, w, false)
+	if !a.OK {
+		return a
+	}
+	fresh, err := g.nonces.Spend(r.Context(), nil, a.c.Nonce, a.c.Expires)
+	switch {
+	case err != nil:
+		a.fail(ReasonUnavailable)
+	case !fresh:
+		a.fail(ReasonSpent)
+	}
+	return a
+}
+
+// Verify authenticates a parent token for a request made on its form's
+// behalf (an email check, an upload): seal, expiry, proof at the
+// sealed difficulty, not spent. It neither counts nor spends, and
+// returns the authenticated scope for the caller to authorise. Any
+// Guard sharing the instance key verifies any of the app's unbound
+// tokens. A bound token is refused: its proof cannot be checked without
+// the value it was bound to, which such a request does not carry.
+//
+// Verify reads the store through the store's own connection, so call it
+// before beginning a transaction, never inside one: on a writer pool of
+// one connection it waits for the connection that transaction holds,
+// and the handler deadlocks.
+func (g *Guard) Verify(r *http.Request) (Parent, Reason, bool) {
+	if err := r.ParseForm(); err != nil {
+		return Parent{}, ReasonBounds, false
+	}
+	c, reason := readChallenge(r)
+	if reason != "" {
+		return Parent{}, reason, false
+	}
+	if !sealOK(g.key, c) || c.Flags&flagBound != 0 {
+		return Parent{}, ReasonSealInvalid, false
+	}
+	now := g.now()
+	if now.After(c.Expires) || c.Expires.Sub(c.Issued) > g.maxAge {
+		return Parent{}, ReasonTooOld, false
+	}
+	if c.Difficulty > 0 && !Verify(c.Nonce, "", r.PostFormValue(fieldCounter), c.Difficulty) {
+		return Parent{}, ReasonShort, false
+	}
+	spent, err := g.nonces.Spent(r.Context(), c.Nonce)
+	if err != nil {
+		return Parent{}, ReasonUnavailable, false
+	}
+	if spent {
+		return Parent{}, ReasonSpent, false
+	}
+	return Parent{Scope: c.Scope, Nonce: c.Nonce, Difficulty: c.Difficulty, Issued: c.Issued}, "", true
+}
+
+// Trapped reports whether the honeypot was filled.
 func Trapped(r *http.Request) bool {
 	return strings.TrimSpace(r.PostFormValue(fieldHoneypot)) != ""
 }
 
-// Sweep drops spent nonces that are past their expiry. Correctness
-// never depends on it — an expired challenge is refused on age alone —
-// its job is keeping the table from growing for the life of the
-// instance. Call it from an existing tick; it needs no schedule of its
-// own.
-func (g *Guard) Sweep(now time.Time) error {
-	return g.nonces.Sweep(now)
-}
-
-func atoi(s string) int {
-	n, _ := strconv.Atoi(s)
-	return n
-}
-
-func atoi64(s string) int64 {
-	n, _ := strconv.ParseInt(s, 10, 64)
-	return n
-}
+// Sweep drops spent rows past their sealed expiry and the margin, at
+// most a batch per call. Call it from a tick the app already has.
+func (g *Guard) Sweep(now time.Time) error { return g.nonces.Sweep(now) }

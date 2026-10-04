@@ -4,25 +4,23 @@ import (
 	"crypto/hmac"
 	"crypto/rand"
 	"crypto/sha256"
+	"encoding/binary"
 	"encoding/hex"
 	"fmt"
 	"html/template"
+	"net/http"
+	"strconv"
 	"strings"
 	"time"
 )
 
-// A challenge is minted when the form renders and presented back when
-// it is submitted. It carries a nonce, the moment it was issued, and
-// the difficulty the solver had to meet — all three sealed, so none of
-// them can be edited on the way back.
-//
-// Nothing is written to the database when one is minted. That is
-// deliberate, and it is the second design this had: persisting a row
-// per challenge made every page view a serialised write against a
-// single-writer SQLite file, so a crawler, a link scanner or a
-// prefetcher became a denial of service against the one resource every
-// submission needs. Nonces are recorded as *spent* instead, on
-// acceptance, where each row has already cost a solve.
+// A challenge is minted when a form renders and presented back when it
+// is submitted. Nothing is written when one is minted: a row per render
+// made every page view a serialised write against a single-writer
+// SQLite file, so a crawler or a prefetcher was a denial of service
+// against the one resource every submission needs. Nonces are recorded
+// as spent on acceptance instead, where each row has already cost a
+// solve.
 
 const (
 	// DefaultMinAge is a claim about people, not throughput: nobody
@@ -35,14 +33,16 @@ const (
 	DefaultMaxAge = 2 * time.Hour
 )
 
-// The form field names. They are unexported because nothing outside
-// this package should be writing or reading them by hand: Fields
-// renders every one of them and Check reads every one of them, which
-// is the only way the two halves cannot drift.
+// The form field names. Unexported because Fields renders every one and
+// readChallenge reads every one, which is the only way the halves
+// cannot drift.
 const (
+	fieldScope      = "pow_scope"
 	fieldNonce      = "pow_nonce"
-	fieldIssuedAt   = "pow_issued_at"
+	fieldIssued     = "pow_issued"  // milliseconds
+	fieldExpires    = "pow_expires" // milliseconds
 	fieldDifficulty = "pow_difficulty"
+	fieldFlags      = "pow_flags"
 	fieldSeal       = "pow_seal"
 	fieldCounter    = "pow_counter"
 
@@ -55,73 +55,132 @@ const (
 	fieldHoneypot = "hp"
 )
 
-// Challenge travels to the browser as hidden fields and comes back the
-// same way. Render it with Fields and FormAttrs rather than by hand.
+const (
+	// flagTrapOmitted marks a recovery challenge: rendered without the
+	// honeypot, so a password manager that filled it cannot fill it
+	// again, and Admit skips the honeypot for this token only.
+	flagTrapOmitted uint8 = 1 << 0
+	// flagBound marks work bound to a submitted value. Sealed so a bound
+	// challenge cannot be presented as unbound and verified without the
+	// value it was bound to.
+	flagBound uint8 = 1 << 1
+)
+
+// maxScopeLen bounds the one free-text sealed field. Scopes are short
+// names chosen by the server; anything longer was sent by somebody
+// probing, and is refused before it is hashed.
+const maxScopeLen = 256
+
+// maxDifficulty bounds the posted difficulty before it is used: SHA-256
+// has 256 bits, and an int32 in the seal must not be fed a value that
+// wraps.
+const maxDifficulty = 256
+
+// Challenge travels to the browser as hidden fields and back the same
+// way. Every field is sealed; the seal is a signature, not encryption.
 type Challenge struct {
+	Scope      string
 	Nonce      string
-	IssuedAt   int64
-	Difficulty int
+	Issued     time.Time // millisecond precision, the precision it is sealed at
+	Expires    time.Time // absolute; fixed at issue so a later MaxAge cannot extend it
+	Difficulty int       // 0 for a NoProof guard
+	Flags      uint8
 	Seal       string
 }
 
-func sealOf(key []byte, nonce string, issuedAt int64, difficulty int) string {
+// sealInput is the exact byte string the HMAC covers. Every variable
+// length field is length-prefixed and every number fixed width, so no
+// two different challenges share an input.
+func sealInput(c Challenge) []byte {
+	b := []byte("pow/v2")
+	b = binary.AppendUvarint(b, uint64(len(c.Scope)))
+	b = append(b, c.Scope...)
+	b = binary.AppendUvarint(b, uint64(len(c.Nonce)))
+	b = append(b, c.Nonce...)
+	b = binary.BigEndian.AppendUint64(b, uint64(c.Issued.UnixMilli()))
+	b = binary.BigEndian.AppendUint64(b, uint64(c.Expires.UnixMilli()))
+	b = binary.BigEndian.AppendUint32(b, uint32(int32(c.Difficulty)))
+	return append(b, c.Flags)
+}
+
+func sealOf(key []byte, c Challenge) string {
 	m := hmac.New(sha256.New, key)
-	fmt.Fprintf(m, "%s\x00%d\x00%d", nonce, issuedAt, difficulty)
+	m.Write(sealInput(c))
 	return hex.EncodeToString(m.Sum(nil))
 }
 
-// newChallenge mints one. The seal is a signature, not encryption:
-// nothing in a challenge needs to be secret from the person holding it,
-// it only needs to be impossible for them to alter.
-func newChallenge(key []byte, now time.Time, difficulty int) Challenge {
+func sealOK(key []byte, c Challenge) bool {
+	return hmac.Equal([]byte(sealOf(key, c)), []byte(c.Seal))
+}
+
+// validNonce is exactly what newChallenge mints. Checked before the
+// HMAC, so the nonce is also a canonical identifier: one token, one
+// string, and nothing else reaches the hash or the database.
+func validNonce(s string) bool {
+	if len(s) != 32 {
+		return false
+	}
+	for i := 0; i < len(s); i++ {
+		c := s[i]
+		if !(c >= '0' && c <= '9' || c >= 'a' && c <= 'f') {
+			return false
+		}
+	}
+	return true
+}
+
+func newChallenge(key []byte, issued time.Time, maxAge time.Duration, scope string, difficulty int, flags uint8) Challenge {
 	var raw [16]byte
 	if _, err := rand.Read(raw[:]); err != nil {
-		// crypto/rand failing is not a condition to degrade through:
-		// every anti-abuse property here rests on this nonce being
-		// unguessable.
+		// Every anti-abuse property here rests on the nonce being
+		// unguessable; there is no degraded mode to fall back to.
 		panic("rastrillo/pow: crypto/rand unavailable")
 	}
-	nonce := hex.EncodeToString(raw[:])
-	issued := now.Unix()
-	return Challenge{
-		Nonce:      nonce,
-		IssuedAt:   issued,
+	at := time.UnixMilli(issued.UnixMilli())
+	c := Challenge{
+		Scope:      scope,
+		Nonce:      hex.EncodeToString(raw[:]),
+		Issued:     at,
+		Expires:    at.Add(maxAge),
 		Difficulty: difficulty,
-		Seal:       sealOf(key, nonce, issued, difficulty),
+		Flags:      flags,
 	}
+	c.Seal = sealOf(key, c)
+	return c
 }
 
-// verifySeal reports why a challenge is unacceptable, and whether it is
-// acceptable at all.
-//
-// The order matters: the signature is checked before the timestamp,
-// because until the signature holds, IssuedAt is a number the submitter
-// chose. A check of an unverified timestamp is not a check.
-func verifySeal(key []byte, c Challenge, now time.Time, minAge, maxAge time.Duration) (Reason, bool) {
-	want := sealOf(key, c.Nonce, c.IssuedAt, c.Difficulty)
-	if !hmac.Equal([]byte(want), []byte(c.Seal)) {
-		return ReasonSealInvalid, false
+// readChallenge parses the posted fields. No seal and no nonce is
+// ReasonMissing: the form was never wired, which an operator needs to
+// tell apart from an attack. Anything present but malformed is
+// ReasonSealInvalid, one reason for every shape, so a prober learns
+// nothing from the difference.
+func readChallenge(r *http.Request) (Challenge, Reason) {
+	f := r.PostForm
+	nonce, seal := f.Get(fieldNonce), f.Get(fieldSeal)
+	if nonce == "" && seal == "" {
+		return Challenge{}, ReasonMissing
 	}
-	age := now.Sub(time.Unix(c.IssuedAt, 0))
-	switch {
-	case age < minAge:
-		return ReasonTooFast, false
-	case age > maxAge:
-		return ReasonTooOld, false
+	scope := f.Get(fieldScope)
+	if !validNonce(nonce) || len(seal) != 2*sha256.Size || len(scope) > maxScopeLen {
+		return Challenge{}, ReasonSealInvalid
 	}
-	return "", true
+	issued, err1 := strconv.ParseInt(f.Get(fieldIssued), 10, 64)
+	expires, err2 := strconv.ParseInt(f.Get(fieldExpires), 10, 64)
+	diff, err3 := strconv.Atoi(f.Get(fieldDifficulty))
+	flags, err4 := strconv.ParseUint(f.Get(fieldFlags), 10, 8)
+	if err1 != nil || err2 != nil || err3 != nil || err4 != nil || diff < 0 || diff > maxDifficulty {
+		return Challenge{}, ReasonSealInvalid
+	}
+	return Challenge{
+		Scope: scope, Nonce: nonce,
+		Issued: time.UnixMilli(issued), Expires: time.UnixMilli(expires),
+		Difficulty: diff, Flags: uint8(flags), Seal: seal,
+	}, ""
 }
 
-// expiry is when a spent nonce stops needing to be remembered: a
-// challenge older than maxAge is refused on age alone, so a record
-// beyond that point protects nothing.
-func (c Challenge) expiry(maxAge time.Duration) time.Time {
-	return time.Unix(c.IssuedAt, 0).Add(maxAge)
-}
-
-// Fields renders everything the form has to carry: the four sealed
-// challenge fields, the empty input the solver writes its counter into,
-// and the honeypot.
+// Fields renders everything the form has to carry: every sealed
+// challenge field, the empty input the solver writes its counter into,
+// and the honeypot, unless this is a recovery challenge.
 //
 // One call rather than a documented list of inputs, because each piece
 // has a way of being subtly wrong. The honeypot most of all: it needs
@@ -142,16 +201,21 @@ func (c Challenge) Fields() template.HTML {
 		fmt.Fprintf(&b, "<input type=\"hidden\" name=\"%s\" value=\"%s\">\n",
 			name, template.HTMLEscapeString(value))
 	}
+	hidden(fieldScope, c.Scope)
 	hidden(fieldNonce, c.Nonce)
-	hidden(fieldIssuedAt, fmt.Sprint(c.IssuedAt))
-	hidden(fieldDifficulty, fmt.Sprint(c.Difficulty))
+	hidden(fieldIssued, strconv.FormatInt(c.Issued.UnixMilli(), 10))
+	hidden(fieldExpires, strconv.FormatInt(c.Expires.UnixMilli(), 10))
+	hidden(fieldDifficulty, strconv.Itoa(c.Difficulty))
+	hidden(fieldFlags, strconv.Itoa(int(c.Flags)))
 	hidden(fieldSeal, c.Seal)
 	fmt.Fprintf(&b, "<input type=\"hidden\" name=\"%s\" value=\"\" data-pow-counter>\n", fieldCounter)
-	fmt.Fprintf(&b,
-		"<div aria-hidden=\"true\" style=\"%s\">"+
-			"<label for=\"%s\">Leave this field empty</label>"+
-			"<input type=\"text\" id=\"%s\" name=\"%s\" tabindex=\"-1\" autocomplete=\"off\"></div>\n",
-		honeypotStyle, fieldHoneypot, fieldHoneypot, fieldHoneypot)
+	if c.Flags&flagTrapOmitted == 0 {
+		fmt.Fprintf(&b,
+			"<div aria-hidden=\"true\" style=\"%s\">"+
+				"<label for=\"%s\">Leave this field empty</label>"+
+				"<input type=\"text\" id=\"%s\" name=\"%s\" tabindex=\"-1\" autocomplete=\"off\"></div>\n",
+			honeypotStyle, fieldHoneypot, fieldHoneypot, fieldHoneypot)
+	}
 	return template.HTML(b.String())
 }
 
@@ -170,19 +234,3 @@ const honeypotStyle = "position:absolute;left:-9999px;width:1px;height:1px;overf
 // the policy through Options.CSP must restate them, or its public forms
 // show the trap field.
 const HoneypotStyleHash = "'sha256-yJxAE4rjdcckohdlnvecSporPcqS9xOaA4hJxi87LMc='"
-
-// FormAttrs renders the attributes browser/pow.js looks for on the form
-// element:
-//
-//	<form method="post" {{.Challenge.FormAttrs .WorkerURL}}>
-//
-// workerURL is the fingerprinted URL of browser/pow-worker.js. The
-// module cannot guess it — assets are content-hashed, and the hash
-// changes with the bytes — so the template that has the Assets registry
-// supplies it.
-func (c Challenge) FormAttrs(workerURL string) template.HTMLAttr {
-	return template.HTMLAttr(fmt.Sprintf(
-		"data-pow-form data-pow-nonce=\"%s\" data-pow-difficulty=\"%d\" data-pow-worker=\"%s\"",
-		template.HTMLEscapeString(c.Nonce), c.Difficulty,
-		template.HTMLEscapeString(workerURL)))
-}

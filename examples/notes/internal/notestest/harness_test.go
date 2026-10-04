@@ -15,8 +15,11 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
+	"amadan.net/rastrillo/rastrillo/background"
 	"amadan.net/rastrillo/rastrillo/db"
+	"amadan.net/rastrillo/rastrillo/pow/powtest"
 
 	"notes/internal/notes"
 )
@@ -40,7 +43,9 @@ func newApp(t *testing.T) *httptest.Server {
 	// and only assign Config.Handler before Start() runs, never after.
 	ts := httptest.NewUnstartedServer(nil)
 	origin := "http://" + ts.Listener.Addr().String()
-	mux, err := notes.App(d, origin, slog.New(slog.NewTextHandler(io.Discard, nil)))
+	bg := &background.Group{}
+	t.Cleanup(bg.Stop)
+	mux, err := notes.App(d, origin, "notes-test-instance-key", bg, slog.New(slog.NewTextHandler(io.Discard, nil)))
 	if err != nil {
 		t.Fatalf("notes.App: %v", err)
 	}
@@ -105,17 +110,32 @@ func (cl *client) postForm(path string, vals url.Values) *http.Response {
 	return resp
 }
 
+// filled GETs path and returns form with the page's challenge solved,
+// as the browser would post it. It waits out the example's 500ms
+// minimum age first; a person always has.
+func (cl *client) filled(path string, form url.Values) url.Values {
+	cl.t.Helper()
+	resp, err := cl.c.Get(cl.ts.URL + path)
+	if err != nil {
+		cl.t.Fatalf("GET %s: %v", path, err)
+	}
+	body, _ := io.ReadAll(resp.Body)
+	resp.Body.Close()
+	time.Sleep(600 * time.Millisecond)
+	return powtest.Fill(cl.t, body, form)
+}
+
 // signup drives the real HTTP signup flow and returns the client
 // signed in as the new user.
 func (cl *client) signup(email, password string) *http.Response {
 	cl.t.Helper()
-	return cl.postForm("/signup", url.Values{"email": {email}, "password": {password}})
+	return cl.postForm("/signup", cl.filled("/signup", url.Values{"email": {email}, "password": {password}}))
 }
 
 // signin drives the real HTTP signin flow.
 func (cl *client) signin(email, password string) *http.Response {
 	cl.t.Helper()
-	return cl.postForm("/signin", url.Values{"email": {email}, "password": {password}})
+	return cl.postForm("/signin", cl.filled("/signin", url.Values{"email": {email}, "password": {password}}))
 }
 
 // body reads and closes a response's body, for tests that just want

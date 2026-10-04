@@ -14,6 +14,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"amadan.net/rastrillo/rastrillo"
 	"amadan.net/rastrillo/rastrillo/auth"
@@ -3633,4 +3634,18 @@ func TestFieldInputmode(t *testing.T) {
 		Required, Short, Primary, Autofocus                                                                      bool
 	}
 	render(t, "field", oldCaller{ID: "x", Name: "x", Label: "X"})
+}
+
+func TestFormFootRendersTheProofSubmit(t *testing.T) {
+	g := proofGuard(t, 12)
+	f := g.Form(time.Now(), "s")
+	out := render(t, "form-foot", map[string]any{"Submit": "Sign in", "Proof": &f})
+	for _, want := range []string{`data-pow-submit`, `disabled`, `data-pow-status`, `<noscript>`} {
+		if !strings.Contains(out, want) {
+			t.Errorf("form-foot with Proof lacks %s", want)
+		}
+	}
+	if plain := render(t, "form-foot", map[string]any{"Submit": "Save"}); strings.Contains(plain, "disabled") {
+		t.Error("form-foot without Proof renders a disabled submit")
+	}
 }

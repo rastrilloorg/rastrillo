@@ -19,6 +19,7 @@ import (
 
 	"amadan.net/rastrillo/rastrillo/db"
 	"amadan.net/rastrillo/rastrillo/migrate"
+	"amadan.net/rastrillo/rastrillo/pow"
 	"amadan.net/rastrillo/rastrillo/secondfactor"
 	"amadan.net/rastrillo/rastrillo/sessions"
 )
@@ -75,7 +76,7 @@ func newTestAuthDB(t *testing.T) *sql.DB {
 	t.Cleanup(func() { d.Close() })
 	// secondfactor.Schema as well: the screen's tests hold sign-ins at a
 	// real secondfactor.Gate, whose half-session table must exist.
-	if _, err := migrate.Apply(context.Background(), d, migrate.Merge(sessions.Schema, Schema, secondfactor.Schema)); err != nil {
+	if _, err := migrate.Apply(context.Background(), d, migrate.Merge(sessions.Schema, Schema, secondfactor.Schema, pow.Schema)); err != nil {
 		t.Fatalf("migrate.Apply: %v", err)
 	}
 	return d.Writer()
@@ -89,6 +90,10 @@ func newTestAuth(t *testing.T, mut func(*Config)) (*Auth, *captureMailer) {
 		Origin:      "http://app.test",
 		InstanceKey: "test-instance-key",
 		Mailer:      m,
+		// The front door has its own tests (proof_test.go); everything
+		// else here exercises Begin as it behaved before it. A mut that
+		// sets Proof must clear this, as newProofAuth does.
+		ProofOff: true,
 	}
 	if mut != nil {
 		mut(&cfg)
@@ -114,10 +119,10 @@ func TestNewValidatesConfig(t *testing.T) {
 		name string
 		cfg  Config
 	}{
-		{"empty origin", Config{DB: sqlDB, InstanceKey: "k"}},
-		{"relative origin", Config{DB: sqlDB, InstanceKey: "k", Origin: "app.test"}},
-		{"empty instance key", Config{DB: sqlDB, Origin: "https://app.test"}},
-		{"nil db", Config{Origin: "https://app.test", InstanceKey: "k"}},
+		{"empty origin", Config{DB: sqlDB, InstanceKey: "k", ProofOff: true}},
+		{"relative origin", Config{DB: sqlDB, InstanceKey: "k", Origin: "app.test", ProofOff: true}},
+		{"empty instance key", Config{DB: sqlDB, Origin: "https://app.test", ProofOff: true}},
+		{"nil db", Config{Origin: "https://app.test", InstanceKey: "k", ProofOff: true}},
 	}
 	for _, c := range cases {
 		if _, err := New(c.cfg); err == nil {

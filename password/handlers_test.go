@@ -162,6 +162,7 @@ func newTestEnv(t *testing.T, mut func(*password.Config)) testEnv {
 		Create:       store.create,
 		RenderSignin: signinRec.render,
 		RenderSignup: signupRec.render,
+		ProofOff:     true,
 	}
 	if mut != nil {
 		mut(&cfg)

@@ -20,6 +20,7 @@ a, err := auth.New(auth.Config{
 	DB:          writer,
 	Origin:      origin,
 	InstanceKey: instanceKey,
+	Proof:       guard, // see "The front door" below
 	Mailer:      mailer,
 })
 if err != nil {
@@ -54,6 +55,7 @@ a, err := auth.New(auth.Config{
 	DB:           writer,
 	Origin:       origin,
 	InstanceKey:  instanceKey,
+	Proof:        guard,
 	Mailer:       mailer,
 	SigninScreen: true,
 })
@@ -120,11 +122,41 @@ The `stage` shell is made for this page: one card over a generated backdrop. Red
 | `?err=address` | the address was rejected |
 | `?err=expired` | the link had expired or was already used |
 | `?err=1` | something else went wrong |
+| `?err=check&rec=1` | the front door refused the post; the page shows a recovery challenge, which `SigninState` mints for `rec=1` |
 | `?reauth=1` | a fresh sign-in is needed to continue |
 
 #### An admission check in front of Begin
 
-If you put an admission check in front of `Begin`, refusing addresses that are not members before any mail goes out, answer a refusal with `a.AnswerAsSent(w, r)` rather than a redirect of your own. With the screen on, a sent link leaves a cookie and an `attempt=` behind; a plain `?sent=1` for a refusal would look different on the very first try, and anyone could learn who is a member. `AnswerAsSent` answers exactly as a sent link does and sends nothing, so the page and the cookies give nothing away. It does not stop the per-address rate limit or keymail classification from revealing something about an address; that is separate work, and this does not do it.
+If you put an admission check in front of `Begin`, refusing addresses that are not members before any mail goes out, answer a refusal with `a.AnswerAsSent(w, r)` rather than a redirect of your own. With the screen on, a sent link leaves a cookie and an `attempt=` behind; a plain `?sent=1` for a refusal would look different on the very first try, and anyone could learn who is a member. `AnswerAsSent` checks the challenge first when `Proof` is set, as `Begin` does, then answers exactly as a sent link does and sends nothing, so the page and the cookies give nothing away. It does not stop the per-address rate limit or keymail classification from revealing something about an address; that is separate work, and this does not do it.
+
+## The front door
+
+`auth.New` won't start until you decide whether sign-in sits behind [pow](/docs/reference/pow). Build a Guard and pass it as `Proof`, or set `ProofOff`:
+
+```go
+guard, err := pow.New(pow.Config{
+	InstanceKey: instanceKey,
+	Nonces:      pow.SQLNonces(writer),
+	Difficulty:  16,
+	MinAge:      500 * time.Millisecond,
+	ScriptURL:   "/pow" + powAssets.Path("pow.js"),
+	WorkerURL:   "/pow" + powAssets.Path("pow-worker.js"),
+})
+```
+
+[The pow reference](/docs/reference/pow#wiring-it-up) covers the rest of building it: apply `pow.Schema` before `pow.New`, serve `pow.Assets()`, and sweep the Guard from a background loop. 16 bits and 500ms are what sign-in needs; [Choosing a difficulty](/docs/reference/pow#choosing-a-difficulty) says why. If you use [passwords](/docs/passwords) too, give both the same Guard.
+
+With neither set, `New` returns `ErrProofUnset`, which names both fixes; setting both is an error too. A Guard with `Bind` on is `ErrProofMode`, because the sign-in forms carry the address in different shapes and none of them is bound.
+
+With `Proof` set, `Begin` checks the challenge first: after the same-origin check, and before the rate limit, classifying the address, or any mail. Someone who hasn't solved it can't make your server look up a domain they chose, send a link, or spend another person's rate budget. `Begin` uses `Check` under `auth.ProofScope` (`rastrillo/auth/begin`), so the token is spent before anything goes out.
+
+So the sign-in form needs JavaScript. That's deliberate: if a post without a proof were let through, every bot would take that path. A `NoProof` Guard is accepted, and its button renders enabled, if you want the token and honeypot without the work.
+
+A refusal redirects to `?err=check&rec=1`. The shipped screen shows "Your browser couldn't finish a security check. Try again." on the ask step with the address filled in, and `rec=1` makes `SigninState` mint a recovery challenge, one without the honeypot, so a visitor whose password manager filled the trap gets through next time. Every other error redirect from `Begin` keeps `rec=1` when the post was itself a recovery, so the trap doesn't come back after a mistyped address. And every redirect keeps `force=1` when the post had it: a visitor who chose "send a link instead" after a failed keymail approval, and was then refused, still gets their link instead of being sent back to the provider that just failed them.
+
+`SigninState(r).Proof` is the page's challenge. It's set whenever `Proof` is, with the screen on or off. The `signin` partial renders it on whichever Begin form the state shows (the fields, a disabled button the module enables, the status line, a `<noscript>` line, and the script once), and the Forget form carries none of it. A sign-in page of your own renders `.Proof` as [the pow reference](/docs/reference/pow#rendering-a-form) shows, renders the hidden `force` input when `.Force` is true, and must not be cached: call `PrepareSigninResponse`, which sets `Cache-Control: no-store`, or set the header yourself.
+
+`Begin` logs each refusal at debug level with its reason. Right after an upgrade, `missing` is a sign-in page that was open before the deploy, and the visitor gets in on their second try.
 
 ## Configuration worth understanding
 
@@ -209,10 +241,9 @@ even when expired, because a presented token is spent either way.
 
 ## Rate limiting
 
-A per-address budget, the same shape the
-[password plugin](/docs/passwords) uses: repeated failures answer 429
-until one ages out, and a success resets it. In-memory, so per-process.
-IP-level throttling is the deployment's job.
+Every post to `Begin` that gets past the front door counts against two budgets, whether or not it succeeds: 20 per client IP and 5 per address, each in a fixed 15-minute window that starts with the first attempt. A success doesn't reset either one. Over budget, `Begin` redirects to `?err=rate`.
+
+The IP budget is checked first, so a script hammering the endpoint uses up its own budget before any DNS lookup. The address budget is checked once the address parses, so a typo never spends a real person's allowance. Both are in memory, so they're per process and reset on restart. Behind a proxy, [`TrustedProxyHops`](/docs/reference/clientip) decides which address is the client's.
 
 ## Aside: the keymail upgrade
 
