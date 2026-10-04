@@ -6,8 +6,10 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+	"time"
 
 	"amadan.net/rastrillo/rastrillo/auth"
+	"amadan.net/rastrillo/rastrillo/pow"
 )
 
 const keymailURL = "https://keymail.test/oauth/authorize?client_id=https%3A%2F%2Fapp.test&code_challenge=cccc&code_challenge_method=S256&redirect_uri=https%3A%2F%2Fapp.test%2Fauth%2Fcallback&scope=identify&state=ssss"
@@ -634,4 +636,74 @@ func cssRuleSays(css, selector, decl string) bool {
 		}
 	}
 	return false
+}
+
+func proofGuard(t *testing.T, difficulty int) *pow.Guard {
+	t.Helper()
+	g, err := pow.New(pow.Config{InstanceKey: "ui", Nonces: pow.MemoryNonces(), Difficulty: difficulty,
+		ScriptURL: "/pow/pow.js", WorkerURL: "/pow/pow-worker.js"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return g
+}
+
+var (
+	beginForm  = regexp.MustCompile(`(?s)<form rst-signin-form method="post" action="/signin"[^>]*>.*?</form>`)
+	forgetFull = regexp.MustCompile(`(?s)<form rst-signin-form method="post" action="/signin/forget">.*?</form>`)
+)
+
+func TestSigninRendersTheChallengeOnTheOneBeginForm(t *testing.T) {
+	g := proofGuard(t, 12)
+	for _, c := range signinStates() {
+		st := c.st
+		f := g.Form(time.Now(), auth.ProofScope)
+		st.Proof = &f
+		out := render(t, "signin", signinData(st))
+		forms := beginForm.FindAllString(out, -1)
+		switch st.Door() {
+		case "sent", "continue":
+			if len(forms) != 0 || strings.Contains(out, "pow_seal") {
+				t.Errorf("%s: a %s page carries a challenge", c.name, st.Door())
+			}
+			continue
+		}
+		if len(forms) != 1 {
+			t.Fatalf("%s: %d Begin forms, want exactly 1", c.name, len(forms))
+		}
+		form := forms[0]
+		for _, want := range []string{`data-pow-form`, `name="pow_seal"`, `data-pow-submit`, `disabled`, `data-pow-status`, `<noscript>`} {
+			if !strings.Contains(form, want) {
+				t.Errorf("%s: Begin form lacks %s", c.name, want)
+			}
+		}
+		if strings.Count(out, `<script type="module" src="/pow/pow.js">`) != 1 {
+			t.Errorf("%s: pow.js is not loaded exactly once", c.name)
+		}
+		if forget := forgetFull.FindString(out); strings.Contains(forget, "pow_") {
+			t.Errorf("%s: the Forget form carries a challenge", c.name)
+		}
+	}
+}
+
+func TestSigninNoProofRendersAnEnabledSubmit(t *testing.T) {
+	g := proofGuard(t, pow.NoProof)
+	f := g.Form(time.Now(), auth.ProofScope)
+	out := render(t, "signin", signinData(auth.SigninState{Step: auth.StepAsk, Proof: &f}))
+	form := beginForm.FindString(out)
+	if strings.Contains(form, "disabled") || strings.Contains(out, "pow.js") {
+		t.Fatal("a NoProof sign-in form renders a disabled submit or loads a module it does not need")
+	}
+	if !strings.Contains(form, `name="pow_seal"`) {
+		t.Fatal("a NoProof sign-in form lost its token")
+	}
+}
+
+func TestSigninForceComesFromState(t *testing.T) {
+	g := proofGuard(t, 12)
+	f := g.Recovery(time.Now(), auth.ProofScope)
+	out := render(t, "signin", signinData(auth.SigninState{Step: auth.StepAsk, Problem: auth.ProblemCheck, Force: true, Proof: &f}))
+	if !strings.Contains(beginForm.FindString(out), `name="force" value="1"`) {
+		t.Fatal("a check refusal after a keymail failure dropped the send-a-link-instead choice")
+	}
 }

@@ -96,6 +96,11 @@ function setup(form) {
   states.set(form, st);
   form.addEventListener("submit", (e) => onSubmit(st, e));
   for (const b of st.submits) b.disabled = false;
+  // A disabled control cannot take autofocus, so a one-tap button
+  // rendered disabled loses the focus its page promised the visitor
+  // (and Enter does nothing) until this hands it back.
+  const af = st.submits.find((b) => b.hasAttribute("autofocus"));
+  if (af && (!document.activeElement || document.activeElement === document.body)) af.focus();
   if (st.status) st.status.hidden = true;
   form.setAttribute("data-pow-ready", "");
   // Unbound work can start now, while the visitor reads and types, so
