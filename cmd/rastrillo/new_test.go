@@ -273,7 +273,7 @@ func TestMainTemplateWiresErrorPage(t *testing.T) {
 	if strings.Index(src, "started := time.Now()") > strings.Index(src, "rastrillo.Resolve(") {
 		t.Error("started must be taken before anything else, or perf's cold budget misses part of the start")
 	}
-	app := fmt.Sprintf(appTemplate, "blogapp")
+	app := fmt.Sprintf(appTemplate, "blogapp", "")
 	for _, want := range []string{
 		"func Configure(opts *rastrillo.Options, mux *http.ServeMux, started time.Time)",
 		"opts.ErrorPage = ErrorPage",
@@ -292,7 +292,7 @@ func TestMainTemplateWiresErrorPage(t *testing.T) {
 // at) and registers "errors" as a page, so render(w, "errors", …)
 // resolves.
 func TestRenderTemplateWiresErrorPage(t *testing.T) {
-	src := fmt.Sprintf(renderTemplate, "blogapp", "blogapp")
+	src := fmt.Sprintf(renderTemplate, "blogapp", "blogapp", `"index", "errors"`)
 	if !strings.Contains(src, `[]string{"index", "errors"}`) {
 		t.Errorf("render.go's pages init loop does not include \"errors\":\n%s", src)
 	}

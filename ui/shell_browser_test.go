@@ -222,6 +222,10 @@ type railReading struct {
 	RailScrolled           int
 	PersonOverhangScrolled int
 	LocaleBefore           bool
+	// The phone index's two: how far the foot sits below the nav, and
+	// where the open language menu ends.
+	FootAfterNav int
+	MenuBottom   int
 }
 
 // railMeasure is the one reading every leg of the rail drive takes, so
@@ -268,7 +272,9 @@ const railMeasure = `(() => {
     RailScrolled: scrolled,
     PersonOverhang: Math.round(p.bottom - window.innerHeight),
     PersonOverhangScrolled: personAfter,
-    LocaleBefore: !!(loc.compareDocumentPosition(person) & Node.DOCUMENT_POSITION_FOLLOWING)
+    LocaleBefore: !!(loc.compareDocumentPosition(person) & Node.DOCUMENT_POSITION_FOLLOWING),
+    FootAfterNav: Math.round(document.querySelector("[rst-shell-rail-foot]").getBoundingClientRect().top - document.querySelector("[rst-shell-nav]").getBoundingClientRect().bottom),
+    MenuBottom: Math.round(m.bottom)
   });
 })()`
 
@@ -285,6 +291,9 @@ const railMeasure = `(() => {
 //     edge is at or above its summary's top edge; a dropdown's would
 //     be below it. Zero script does this: it is the same <details>
 //     menu with inset-block-end: 100% instead of top: 100%.
+//
+// The 390 leg measures the phone index, where the rail is the whole
+// page: its foot follows the nav and the language menu stays on screen.
 func TestTheSidebarRailPutsThePersonAtItsFootAndTheLanguageMenuOpensUpward(t *testing.T) {
 	src, ok := Layout("sidebar")
 	if !ok {
@@ -302,6 +311,13 @@ func TestTheSidebarRailPutsThePersonAtItsFootAndTheLanguageMenuOpensUpward(t *te
 	// Cloned BEFORE anything executes: html/template refuses to Clone a
 	// tree that has already run.
 	tall := template.Must(tmpl.Clone())
+	index := template.Must(tmpl.Clone())
+	template.Must(index.Parse(`{{define "view"}}index{{end}}`))
+	var indexPage strings.Builder
+	if err := index.ExecuteTemplate(&indexPage, "layout", nil); err != nil {
+		t.Fatalf("rendering the sidebar's index: %v", err)
+	}
+	indexHTML := indexPage.String()
 
 	var page strings.Builder
 	if err := tmpl.ExecuteTemplate(&page, "layout", nil); err != nil {
@@ -330,6 +346,10 @@ func TestTheSidebarRailPutsThePersonAtItsFootAndTheLanguageMenuOpensUpward(t *te
 
 	mux := http.NewServeMux()
 	stylesheets(t, mux)
+	mux.HandleFunc("GET /index", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		fmt.Fprint(w, indexHTML)
+	})
 	mux.HandleFunc("GET /tall", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		fmt.Fprint(w, tallHTML)
@@ -409,46 +429,37 @@ func TestTheSidebarRailPutsThePersonAtItsFootAndTheLanguageMenuOpensUpward(t *te
 		t.Errorf("the language menu's panel ends %dpx BELOW its summary's top edge: it is a dropdown, not the dropup a menu at the foot of the rail has to be", -got.MenuLift)
 	}
 
-	// And the collapse. Below 800px the rail is not a full-height
-	// column at all. It is still a flex column — the media query adds
-	// block-size: 100dvh and nothing else — but a content-height one
-	// the chrome strip discloses, with the whole page under it, so the
-	// auto margin has no free space to distribute and the foot simply
-	// follows the nav. RailHeight is asserted below for that reason
-	// rather than as a sanity check: it is what would catch a later
-	// min-block-size on the disclosed rail, which would put the gap
-	// back while FootGap stayed small. And the language menu goes back
-	// to opening DOWNWARD, because up there is the nav and down there
-	// is the rest of the page.
+	// And the phone index, which replaced the drawer. The rail IS the
+	// page there, at least the height of the window, and its foot FOLLOWS
+	// the nav by a fixed gap rather than floating to the bottom: an auto
+	// margin in a rail with a min-height would put the language menu at
+	// the foot of the screen, opening off it. So the foot's distance from
+	// the nav is the measurement, and the language menu is asserted to be
+	// on screen whichever way it opened.
 	var narrow string
 	if err := chromedp.Run(ctx,
 		chromedp.EmulateViewport(390, 780),
-		chromedp.Navigate(rig.Origin+"/"),
-		chromedp.WaitVisible(`[rst-shell-chrome] > summary`, chromedp.ByQuery),
-		chromedp.Click(`[rst-shell-chrome] > summary`, chromedp.ByQuery),
+		chromedp.Navigate(rig.Origin+"/index"),
 		chromedp.WaitVisible(`#rail-person`, chromedp.ByQuery),
 		chromedp.Click(`#rail-locale > summary`, chromedp.ByQuery),
 		chromedp.WaitVisible(`#rail-locale [rst-dropdown-menu]`, chromedp.ByQuery),
 		chromedp.Evaluate(railMeasure, &narrow),
 	); err != nil {
-		t.Fatalf("driving the collapsed rail: %v", err)
+		t.Fatalf("driving the phone index: %v", err)
 	}
 	var small railReading
 	if err := json.Unmarshal([]byte(narrow), &small); err != nil {
-		t.Fatalf("reading the collapsed measurement (%q): %v", narrow, err)
+		t.Fatalf("reading the index measurement (%q): %v", narrow, err)
 	}
-	t.Logf("collapsed: rail %dpx in a %dpx viewport, person %dpx above the rail's foot", small.RailHeight, small.Viewport, small.FootGap)
-	if small.RailHeight == 0 {
-		t.Fatal("the disclosed rail has no height below 800px; the chrome strip does not open it")
+	t.Logf("index: rail %dpx in a %dpx viewport, foot %dpx after the nav", small.RailHeight, small.Viewport, small.FootAfterNav)
+	if small.RailHeight < small.Viewport-1 {
+		t.Errorf("the phone index's rail is %dpx in a %dpx window; the rail is the page there", small.RailHeight, small.Viewport)
 	}
-	if small.RailHeight > 700 {
-		t.Errorf("the collapsed rail is %dpx tall in a 780px window; the auto margin is still stretching it to the viewport", small.RailHeight)
+	if small.FootAfterNav < 30 || small.FootAfterNav > 50 {
+		t.Errorf("the foot is %dpx after the nav on the index; it should follow it by var(--rst-sp-6), not float to the bottom", small.FootAfterNav)
 	}
-	if small.FootGap > 48 {
-		t.Errorf("the collapsed rail leaves %dpx under the person block; the foot is not simply following the nav", small.FootGap)
-	}
-	if small.MenuLift >= 0 {
-		t.Errorf("the language menu still opens upward in the collapsed rail (%dpx above its summary); below 800px there is nothing above it but the nav", small.MenuLift)
+	if small.MenuBottom > small.Viewport {
+		t.Errorf("the language menu on the index ends %dpx below the window", small.MenuBottom-small.Viewport)
 	}
 
 	// And a SHORT window, which is the other half of "fits the
@@ -547,6 +558,7 @@ type barReading struct {
 	AccountEndPx int  // gap from the account menu's inline end to the bar's
 	AccountMenu  bool // the account dropdown's panel is drawn
 	Overflow     int  // how far the document scrolls past its own client width
+	MainTop      int  // main's block-start edge: the page under the bar
 }
 
 // TestTheTopbarCollapsesItsTailBehindOneDisclosure is §9: the topbar
@@ -563,8 +575,8 @@ type barReading struct {
 //     account at the inline end, which is the layout that shipped before
 //     the collapse existed.
 //  2. Narrow, one control. Below 800px the tail is not drawn until the
-//     disclosure is opened, and opened it is a stack rather than a
-//     second wrapped row.
+//     disclosure is opened, and opened it is a card over the page: three
+//     stacked rows that push nothing down.
 //  3. THE TRAP. The account menu is <details name="rst-menus">. Opening
 //     it must not close the navigation it was opened from. <details
 //     name> exclusivity is document-wide rather than sibling-scoped, so
@@ -635,7 +647,8 @@ func TestTheTopbarCollapsesItsTailBehindOneDisclosure(t *testing.T) {
 	    Rows: rows,
 	    AccountEndPx: Math.round(bar.getBoundingClientRect().right - account.getBoundingClientRect().right),
 	    AccountMenu: shown(panel),
-	    Overflow: de.scrollWidth - de.clientWidth
+	    Overflow: de.scrollWidth - de.clientWidth,
+	    MainTop: Math.round(document.querySelector("main").getBoundingClientRect().top)
 	  });
 	})()`
 
@@ -718,6 +731,11 @@ func TestTheTopbarCollapsesItsTailBehindOneDisclosure(t *testing.T) {
 	}
 	if open.Rows != 3 {
 		t.Errorf("the opened tail puts its three blocks on %d rows, want 3 — collapsed, they stack; a wrapped row is the state this replaced", open.Rows)
+	}
+	// The opened tail is a card OVER the page, not a column in the
+	// bar's flow: the page under it does not move.
+	if open.MainTop != closed.MainTop {
+		t.Errorf("opening the disclosure moved the page down %dpx; the tail is a card that overlays it", open.MainTop-closed.MainTop)
 	}
 	if open.Overflow > 1 {
 		t.Errorf("the opened topbar spills %dpx sideways at 390px", open.Overflow)
@@ -1746,7 +1764,9 @@ func TestAMenuOpenedInsideAShortFrameIsStillUsable(t *testing.T) {
 
 		// A three-item menu is 103px and the floor is 8rem, so it must
 		// fit whole — in an 80px frame as much as a 260px one. This is
-		// the assertion that was 12-of-103 before the floor.
+		// the assertion that was 12-of-103 before the floor. These frames
+		// are 420px wide, inside the touch query, where the rows are
+		// 44px taps and the floor is three of them: the same claim.
 		if f.ShortClient < f.ShortScroll {
 			t.Errorf("in a %dpx frame a three-item menu shows %d of its %dpx: the cap has collapsed it, and a reader opening this menu sees a sliver", f.FrameHeight, f.ShortClient, f.ShortScroll)
 		}

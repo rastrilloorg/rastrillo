@@ -411,8 +411,15 @@ const reflowJS = `(() => {
   return over.slice(0, 8).join("; ");
 })()`
 
+// requireReflow waits for the load event first. The Sent page arrives
+// by a form submission, and its marker is visible before tokens.css has
+// applied: measured then, an unstyled address with no break in it is
+// one line, and the page reads several times wider than 320px although
+// the styled page fits. A head stylesheet holds the load event, so
+// "complete" means the rules that wrap the address are in.
 func requireReflow(t *testing.T, rig *harness.Rig, what string) {
 	t.Helper()
+	run(t, rig, chromedp.Poll(`document.readyState === "complete"`, nil, chromedp.WithPollingTimeout(10*time.Second)))
 	var over string
 	eval(t, rig, reflowJS, &over)
 	if over != "" {

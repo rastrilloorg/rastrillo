@@ -42,3 +42,36 @@ func TestNewHandsBuildTheOriginBeforeServing(t *testing.T) {
 		t.Fatalf("page shows %q, want %q", onPage, r.Origin)
 	}
 }
+
+// WithCoarsePointer is the only way a drive gets a phone's pointer:
+// CDP's touch emulation leaves (pointer: coarse) false in this engine.
+// The default rig is the control — if it already reported coarse, the
+// option's true would prove nothing about the option.
+func TestWithCoarsePointerMakesThePrimaryPointerCoarse(t *testing.T) {
+	build := func(string) http.Handler {
+		mux := http.NewServeMux()
+		mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, _ *http.Request) {
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			fmt.Fprint(w, `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>pointer</title></head><body><p>pointer</p></body></html>`)
+		})
+		return mux
+	}
+	read := func(r *Rig) (coarse, hover bool) {
+		r.Run(
+			chromedp.Navigate(r.Origin+"/"),
+			chromedp.Evaluate(`matchMedia("(pointer: coarse)").matches`, &coarse),
+			chromedp.Evaluate(`matchMedia("(hover: hover)").matches`, &hover),
+		)
+		return coarse, hover
+	}
+	if coarse, _ := read(New(t, build)); coarse {
+		t.Fatal("CONTROL: a default rig already reports a coarse pointer, so the option's reading below proves nothing")
+	}
+	coarse, hover := read(New(t, build, WithCoarsePointer()))
+	if !coarse {
+		t.Error("WithCoarsePointer: (pointer: coarse) is false; every touch leg would measure desktop density")
+	}
+	if hover {
+		t.Error("WithCoarsePointer: (hover: hover) is true; a phone's primary pointer cannot hover")
+	}
+}

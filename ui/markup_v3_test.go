@@ -327,10 +327,35 @@ func skipTo(s string, i int, open, close byte) int {
 // the two must weigh the same, or an app that changed nothing would
 // start rendering differently.
 func TestEveryClassSelectorHasAnAttributeTwin(t *testing.T) {
-	css := string(TokensCSS())
+	assertTwins(t, "tokens.css", string(TokensCSS()), 300)
+}
+
+// TestNoAttributeSelectorIsAnOrphan is the same invariant from the
+// other end: every rst- attribute selector in tokens.css must be some
+// class selector's twin, in its own rule. An attribute rule with no
+// class beside it would style the new spelling and not the old one,
+// which is the breakage stage 1 exists to avoid.
+func TestNoAttributeSelectorIsAnOrphan(t *testing.T) {
+	assertNoOrphans(t, "tokens.css", string(TokensCSS()))
+}
+
+// shell.css is written with exactly one pair, the console bar's
+// view-transition-name, and its floor is that one, so the gate cannot
+// pass on a shell.css that lost it: the 300 floor tokens.css carries
+// would make any small file fail.
+func TestShellCSSPairsBothSpellings(t *testing.T) {
+	assertTwins(t, "shell.css", string(ShellCSS()), 1)
+	assertNoOrphans(t, "shell.css", string(ShellCSS()))
+}
+
+// assertTwins holds every rule of css to the pairing rule, and floor is
+// the fewest pairs the file may have, so a bulk deletion cannot pass by
+// leaving nothing to check.
+func assertTwins(t *testing.T, name, css string, floor int) {
+	t.Helper()
 	rules := parseCSSRules(css)
 	if len(rules) == 0 {
-		t.Fatal("tokens.css parsed to no rules at all — the reader is broken, not the file")
+		t.Fatal(name + " parsed to no rules at all — the reader is broken, not the file")
 	}
 
 	paired := 0
@@ -345,7 +370,7 @@ func TestEveryClassSelectorHasAnAttributeTwin(t *testing.T) {
 				continue // nothing to translate: a twin, or a utility, or not ours
 			}
 			if !present[twin] {
-				t.Errorf("tokens.css:%d: %q has no attribute twin in its rule.\n"+
+				t.Errorf(name+":%d: %q has no attribute twin in its rule.\n"+
 					"\tadd %q beside it, or the attribute spelling of this rule styles nothing.\n"+
 					"\tthe rule reads: %s",
 					rule.line, sel, twin, strings.Join(rule.selectors, ", "))
@@ -353,27 +378,20 @@ func TestEveryClassSelectorHasAnAttributeTwin(t *testing.T) {
 			}
 			paired++
 			if a, b := specificity(sel), specificity(twin); a != b {
-				t.Errorf("tokens.css:%d: the pair does not weigh the same — %q is %v but %q is %v.\n"+
+				t.Errorf(name+":%d: the pair does not weigh the same — %q is %v but %q is %v.\n"+
 					"\ta twin that shifts the cascade changes how an app that changed nothing renders.",
 					rule.line, sel, a, twin, b)
 			}
 		}
 	}
-	// A floor, so a bulk deletion cannot pass by leaving nothing to check.
-	if paired < 300 {
-		t.Errorf("only %d selectors are paired; tokens.css carried 358 pairs when stage 1 landed, "+
-			"so this is a wholesale loss rather than an edit", paired)
+	if paired < floor {
+		t.Errorf("only %d selectors are paired in %s, the floor is %d, so this is a wholesale loss rather than an edit", paired, name, floor)
 	}
 	t.Logf("%d class selectors paired with an attribute twin", paired)
 }
 
-// TestNoAttributeSelectorIsAnOrphan is the same invariant from the
-// other end: every rst- attribute selector in tokens.css must be some
-// class selector's twin, in its own rule. An attribute rule with no
-// class beside it would style the new spelling and not the old one,
-// which is the breakage stage 1 exists to avoid.
-func TestNoAttributeSelectorIsAnOrphan(t *testing.T) {
-	css := string(TokensCSS())
+func assertNoOrphans(t *testing.T, name, css string) {
+	t.Helper()
 	for _, rule := range parseCSSRules(css) {
 		twins := make(map[string]bool, len(rule.selectors))
 		for _, sel := range rule.selectors {
@@ -386,7 +404,7 @@ func TestNoAttributeSelectorIsAnOrphan(t *testing.T) {
 				continue
 			}
 			if !twins[sel] {
-				t.Errorf("tokens.css:%d: %q is an attribute selector with no class selector it is the twin of.\n"+
+				t.Errorf(name+":%d: %q is an attribute selector with no class selector it is the twin of.\n"+
 					"\tuntil stage 3 retires the class spelling, every rule styles both.\n"+
 					"\tthe rule reads: %s", rule.line, sel, strings.Join(rule.selectors, ", "))
 			}

@@ -213,6 +213,27 @@ func families() []family {
 					},
 				},
 				{
+					Name:  "row-menu",
+					Blurb: "A row's other actions, behind a ⋮ button. A destructive one links to its confirm page.",
+					States: []sample{
+						{State: "Links, a form and a destructive item", Data: map[string]any{
+							"Name": "Grace Hopper",
+							"Items": []any{
+								map[string]any{"Label": "Edit", "Href": "/orders/AB3PX/edit"},
+								map[string]any{"Label": "Archive", "Action": "/orders/AB3PX/archive", "Hidden": [][2]string{{"state", "archived"}}},
+								map[string]any{"Label": "Delete order…", "Href": "/orders/AB3PX/delete", "Danger": true},
+							},
+						}, Note: "Put the destructive item last and end its label with …. It opens a page that asks before anything is deleted."},
+						{State: "Links only, for a list inside a selection form", Data: map[string]any{
+							"Name": "Alan Turing",
+							"Items": []any{
+								map[string]any{"Label": "Edit", "Href": "/orders/CD4QY/edit"},
+								map[string]any{"Label": "Delete order…", "Href": "/orders/CD4QY/delete", "Danger": true},
+							},
+						}, Note: "Inside a form, every item must be a link. An action that posts goes through a page of its own."},
+					},
+				},
+				{
 					Name:  "seg-tabs",
 					Blurb: "A segmented control of server-rendered links. The current tab is aria-current on a link.",
 					States: []sample{

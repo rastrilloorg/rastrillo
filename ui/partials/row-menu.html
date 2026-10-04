@@ -1,0 +1,52 @@
+{{/* row-menu: a row's secondary actions behind a kebab, in a native
+     <details> in the shared menu group, so opening one closes any other
+     menu, with no script. rastrillo.js closes it on an outside click and
+     on Escape. Render it in a list grid row's last cell (--rst-cols
+     ending in var(--rst-col-menu)) or through list-row-action's Menu.
+
+     Its summary sits above the row's link, so tapping it never opens the
+     row.
+
+     A POST item is a one-button form: csrf.Protect checks the origin, so
+     it carries no token. busy.js shows its spinner beside the label, in a
+     slot tokens.css reserves so the item never changes size.
+
+     INSIDE A BULK-SELECTION FORM, EVERY ITEM MUST BE A LINK (Href). A
+     POST item is its own <form>, and a form inside a form is dropped by
+     the parser: the button would submit the whole selection form, every
+     checked box with it, to the wrong action. An action that must POST
+     from such a list goes through a page of its own, as a destructive
+     item does.
+
+     Keys:
+       Name       string, required: the row's name, used only in the
+                  trigger's accessible name ("Actions for {name}")
+       Items      list, required, in the order they render:
+                    Label   string, required
+                    Href    string: a GET link, or
+                    Action  string: a POST; exactly one of the two
+                    Hidden  [][2]string, optional, POST only, in order
+                    Danger  bool, optional, Href only: the destructive
+                            item, a link to its confirm page. Put it
+                            last, its label ending in "…"; a rule is
+                            drawn before the first one that follows a
+                            plain item.
+                  An item that breaks these rules stops the render
+                  rather than being dropped.
+       MenuGroup  string, optional: the <details name> group; default
+                  rst-menus. */}}
+{{define "row-menu"}}<details rst-row-menu name="{{menuGroup .}}">
+  <summary aria-label="{{Tf "rastrillo.ui.row_menu" "name" .Name}}">{{icon "kebab"}}</summary>
+  <div rst-row-menu-panel>
+    {{- range rowMenuItems .}}
+    {{- if .Rule}}
+    <hr>
+    {{- end}}
+    {{- if .Action}}
+    <form method="post" action="{{.Action}}">{{range .Hidden}}<input type="hidden" name="{{index . 0}}" value="{{index . 1}}">{{end}}<button type="submit">{{.Label}}</button></form>
+    {{- else}}
+    <a{{if .Danger}} class="rst-danger"{{end}} href="{{.Href}}">{{.Label}}</a>
+    {{- end}}
+    {{- end}}
+  </div>
+</details>{{end}}
