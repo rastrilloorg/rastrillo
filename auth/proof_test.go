@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"reflect"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -177,5 +179,79 @@ func TestSigninStateCarriesProofAndForce(t *testing.T) {
 	off, _ := newTestAuth(t, nil)
 	if st := off.SigninState(httptest.NewRequest(http.MethodGet, "/signin", nil)); st.Proof != nil {
 		t.Fatal("ProofOff still renders a challenge")
+	}
+}
+
+// TestAnAdmissionWrapperIsNoOracleWithProof is the wrapper of
+// TestAnAdmissionWrapperIsNoOracle with the front door on. A wrapper
+// calls Begin for a member and AnswerAsSent for anyone else; if only
+// Begin checked the challenge, a post with no proof, a forged one or a
+// replayed one would be refused for a member and answered sent=1 for a
+// stranger, and membership would cost nothing to learn.
+func TestAnAdmissionWrapperIsNoOracleWithProof(t *testing.T) {
+	for _, screen := range []bool{false, true} {
+		t.Run("SigninScreen="+strconv.FormatBool(screen), func(t *testing.T) {
+			a, _ := newProofAuth(t, func(c *Config) { c.SigninScreen = screen })
+			base := url.Values{"address": {"ada@example.com"}, "force": {"1"}}
+			solved := func() url.Values { return filled(t, a, "", base) }
+			paths := []struct {
+				name string
+				h    http.HandlerFunc
+			}{{"member (Begin)", a.Begin}, {"stranger (AnswerAsSent)", a.AnswerAsSent}}
+			// answers posts one form per path, each from a fresh browser
+			// that has first run prepare (if any) against the same path.
+			answers := func(form func() url.Values, prepare bool) [2]*httptest.ResponseRecorder {
+				var out [2]*httptest.ResponseRecorder
+				for i, p := range paths {
+					b, f := newBrowser(), form()
+					if prepare {
+						if q := location(t, b.do(p.h, http.MethodPost, "/signin", f)); q.Get("sent") != "1" {
+							t.Fatalf("%s: the first, solved post was not answered as sent: %v", p.name, q)
+						}
+						b = newBrowser()
+					}
+					out[i] = b.do(p.h, http.MethodPost, "/signin", f)
+				}
+				return out
+			}
+			alike := func(c string, w [2]*httptest.ResponseRecorder) {
+				t.Helper()
+				if w[0].Code != w[1].Code || redirectShape(w[0]) != redirectShape(w[1]) ||
+					!reflect.DeepEqual(cookieShape(w[0]), cookieShape(w[1])) {
+					t.Fatalf("%s: member and stranger differ:\n member   %d %q %v\n stranger %d %q %v", c,
+						w[0].Code, redirectShape(w[0]), cookieShape(w[0]),
+						w[1].Code, redirectShape(w[1]), cookieShape(w[1]))
+				}
+			}
+			refused := func(c string, w [2]*httptest.ResponseRecorder) {
+				t.Helper()
+				alike(c, w)
+				if q := location(t, w[0]); q.Get("err") != "check" || q.Get("rec") != "1" {
+					t.Fatalf("%s: → %s, want the front door's err=check&rec=1", c, w[0].Header().Get("Location"))
+				}
+			}
+
+			refused("missing", answers(func() url.Values { return base }, false))
+			refused("tampered seal", answers(func() url.Values {
+				f := solved()
+				seal := []byte(f.Get("pow_seal"))
+				if seal[0] == 'A' {
+					seal[0] = 'B'
+				} else {
+					seal[0] = 'A'
+				}
+				f.Set("pow_seal", string(seal))
+				return f
+			}, false))
+			refused("replayed", answers(solved, true))
+
+			ok := answers(solved, false)
+			alike("solved", ok)
+			for i, w := range ok {
+				if location(t, w).Get("sent") != "1" {
+					t.Fatalf("%s: a solved post → %s, want sent=1", paths[i].name, w.Header().Get("Location"))
+				}
+			}
+		})
 	}
 }

@@ -127,7 +127,7 @@ The `stage` shell is made for this page: one card over a generated backdrop. Red
 
 #### An admission check in front of Begin
 
-If you put an admission check in front of `Begin`, refusing addresses that are not members before any mail goes out, answer a refusal with `a.AnswerAsSent(w, r)` rather than a redirect of your own. With the screen on, a sent link leaves a cookie and an `attempt=` behind; a plain `?sent=1` for a refusal would look different on the very first try, and anyone could learn who is a member. `AnswerAsSent` answers exactly as a sent link does and sends nothing, so the page and the cookies give nothing away. It does not stop the per-address rate limit or keymail classification from revealing something about an address; that is separate work, and this does not do it.
+If you put an admission check in front of `Begin`, refusing addresses that are not members before any mail goes out, answer a refusal with `a.AnswerAsSent(w, r)` rather than a redirect of your own. With the screen on, a sent link leaves a cookie and an `attempt=` behind; a plain `?sent=1` for a refusal would look different on the very first try, and anyone could learn who is a member. `AnswerAsSent` checks the challenge first when `Proof` is set, as `Begin` does, then answers exactly as a sent link does and sends nothing, so the page and the cookies give nothing away. It does not stop the per-address rate limit or keymail classification from revealing something about an address; that is separate work, and this does not do it.
 
 ## The front door
 

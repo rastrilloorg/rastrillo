@@ -49,23 +49,9 @@ func (a *Auth) Begin(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "cross-origin form submission refused", http.StatusForbidden)
 		return
 	}
-	recovered := false
-	if a.cfg.Proof != nil {
-		// First, before any FormValue: FormValue swallows a parse error
-		// and a later ParseForm does not repeat it, so reading a field
-		// first would let a malformed body past the guard's bounds check.
-		// Check rather than Admit: every outcome below redirects, the
-		// next GET mints a new challenge, and the spend must land before
-		// a probe or a mail does.
-		adm := a.cfg.Proof.Check(r, pow.Want{Scope: ProofScope})
-		force := r.PostFormValue("force") != ""
-		if !adm.OK {
-			a.cfg.Logger.Debug("rastrillo/auth: sign-in refused at the front door", "reason", adm.Reason, "also", adm.Also)
-			a.noteAttempt(w, attemptProblem, r.FormValue("address"), false)
-			a.redirect(w, r, a.problemURL("check", true, force))
-			return
-		}
-		recovered = adm.Recovered()
+	recovered, ok := a.frontDoor(w, r)
+	if !ok {
+		return
 	}
 	force := r.FormValue("force") != ""
 	address := r.FormValue("address")
@@ -104,6 +90,36 @@ func (a *Auth) Begin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	a.answerSent(w, r, address)
+}
+
+// frontDoor is the Config.Proof check every POST to the sign-in form
+// meets first, Begin's and AnswerAsSent's alike. One function so the
+// two cannot drift: an admission wrapper calls Begin for a member and
+// AnswerAsSent for anyone else, so if AnswerAsSent skipped this, a post
+// with no proof would be refused for a member and answered sent=1 for a
+// stranger, telling anyone who is a member without a single solve. It
+// also spends the token on both paths, or a stranger's one solved token
+// could be replayed for ever where a member's works once. ok false
+// means the refusal has been written. With Proof unset it admits
+// everything and writes nothing.
+func (a *Auth) frontDoor(w http.ResponseWriter, r *http.Request) (recovered, ok bool) {
+	if a.cfg.Proof == nil {
+		return false, true
+	}
+	// First, before any FormValue: FormValue swallows a parse error and
+	// a later ParseForm does not repeat it, so reading a field first
+	// would let a malformed body past the guard's bounds check. Check
+	// rather than Admit: every outcome redirects, the next GET mints a
+	// new challenge, and the spend must land before a probe or a mail
+	// does.
+	adm := a.cfg.Proof.Check(r, pow.Want{Scope: ProofScope})
+	if !adm.OK {
+		a.cfg.Logger.Debug("rastrillo/auth: sign-in refused at the front door", "reason", adm.Reason, "also", adm.Also)
+		a.noteAttempt(w, attemptProblem, r.FormValue("address"), false)
+		a.redirect(w, r, a.problemURL("check", true, r.PostFormValue("force") != ""))
+		return false, false
+	}
+	return adm.Recovered(), true
 }
 
 // problemURL is the sign-in page for a problem. rec keeps recovery
@@ -160,11 +176,18 @@ func (a *Auth) continueKeymail(w http.ResponseWriter, r *http.Request, address s
 // and sends nothing. With SigninScreen off that is today's plain
 // ?sent=1 and no cookie.
 //
+// With Config.Proof set it checks and spends the challenge first, as
+// Begin does, and refuses a post that fails with Begin's own ?err=check
+// answer; only an admitted post is answered as sent.
+//
 // It does not hide what classification and the per-address rate limit
 // reveal; docs/site/magic-links.md says what does.
 func (a *Auth) AnswerAsSent(w http.ResponseWriter, r *http.Request) {
 	if !a.sameOrigin(r) {
 		http.Error(w, "cross-origin form submission refused", http.StatusForbidden)
+		return
+	}
+	if _, ok := a.frontDoor(w, r); !ok {
 		return
 	}
 	a.answerSent(w, r, r.FormValue("address"))
