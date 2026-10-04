@@ -523,3 +523,71 @@ func TestAnOldConsoleLayoutKeepsItsRailOpen(t *testing.T) {
 		}
 	}
 }
+
+// backStripJS reads the back strip's bottom edge, the fragment target's
+// top edge (both as the viewport sees them, after any landing scroll
+// has settled), and the root's resolved scroll-padding-block-start, so
+// one probe serves both the narrow leg and the wide one. -1 stands in
+// for an element the page does not have, which the narrow leg's content
+// page always does and the wide leg's assertion never looks at.
+const backStripJS = `(() => {
+  const back = document.querySelector("[rst-shell-back]"), target = document.getElementById("target");
+  return JSON.stringify({
+    BackBottom: back ? Math.round(back.getBoundingClientRect().bottom) : -1,
+    TargetTop: target ? Math.round(target.getBoundingClientRect().top) : -1,
+    ScrollPadding: getComputedStyle(document.documentElement).scrollPaddingBlockStart,
+  });
+})()`
+
+type backStripReading struct {
+	BackBottom, TargetTop int
+	ScrollPadding         string
+}
+
+// TestAFragmentLinkLandsBelowTheBackStrip: the back strip is sticky at
+// the top of a phone content page (tokens.css, just above), so the
+// browser's native landing scroll for a #fragment link parks the
+// target's top edge at the document root's scroll origin — which a
+// sticky strip then covers, because a sticky element is not part of the
+// flow a plain scroll-to-element measures against. A reader who follows
+// a link to a heading finds the heading hidden under Back.
+//
+// Both shells, at 390 with a coarse pointer; and, because the fix must
+// not reach past the media query that gates the strip itself, a second
+// leg per shell at 1280 holding the root's scroll-padding unchanged.
+func TestAFragmentLinkLandsBelowTheBackStrip(t *testing.T) {
+	content := `{{define "content"}}<h1>Invoices</h1><div style="block-size: 150vh"></div><h2 id="target">Target</h2><div style="block-size: 150vh"></div>{{end}}`
+	for _, shell := range []string{"sidebar", "console"} {
+		src, _ := Layout(shell)
+		pages := map[string]string{"/page": shellLayoutPage(t, src, "ltr", content)}
+
+		t.Run(shell+" at 390", func(t *testing.T) {
+			rig := harness.New(t, func(string) http.Handler { return shellAssets(t, pages) }, harness.WithCoarsePointer())
+			ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
+			defer cancel()
+			mustRun(t, ctx, chromedp.EmulateViewport(390, 844), chromedp.Navigate(rig.Origin+"/page#target"), chromedp.WaitVisible("#target", chromedp.ByQuery))
+			requirePointer(t, ctx, true)
+			settled(t, ctx)
+			var got backStripReading
+			at(t, ctx, backStripJS, &got)
+			if got.BackBottom < 0 || got.TargetTop < 0 {
+				t.Fatalf("the back strip or #target is missing from the page: %+v", got)
+			}
+			if got.TargetTop < got.BackBottom {
+				t.Errorf("#target's top is %dpx and the strip's bottom is %dpx; the heading landed %dpx under the strip", got.TargetTop, got.BackBottom, got.BackBottom-got.TargetTop)
+			}
+		})
+
+		t.Run(shell+" at 1280 is unchanged", func(t *testing.T) {
+			rig := harness.New(t, func(string) http.Handler { return shellAssets(t, pages) })
+			ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
+			defer cancel()
+			mustRun(t, ctx, chromedp.EmulateViewport(1280, 900), chromedp.Navigate(rig.Origin+"/page#target"), chromedp.WaitReady("body"))
+			var got backStripReading
+			at(t, ctx, backStripJS, &got)
+			if got.ScrollPadding != "auto" && got.ScrollPadding != "0px" {
+				t.Errorf("the root's scroll-padding-block-start at 1280 is %q, want auto or 0px: the narrow-screen fix must not reach the desktop", got.ScrollPadding)
+			}
+		})
+	}
+}

@@ -10,6 +10,10 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+### Fixed: a link to a heading on a phone no longer lands under the back control
+
+On a sidebar or console content page, the back control stays pinned at the top of a phone screen, and a link to a heading scrolled that heading underneath it. Re-copy `tokens.css` with `rastrillo doctor --fix`.
+
 ### Added: budgets for directory size, test time and screen time
 
 A new app's `make ci` now holds each directory to 5,000 lines of code and
