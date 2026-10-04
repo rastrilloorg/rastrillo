@@ -465,18 +465,34 @@ func TestBrowserBackForwardRestoresTheForm(t *testing.T) {
 	if n := fr.posts.Load(); n != 0 {
 		t.Fatalf("a held submit fired after pagehide: %d POSTs", n)
 	}
-	// The cache restores the DOM as it was left, and a page can leave a
-	// submit disabled (busy.js does while it holds). Without disabling it
-	// here, "enabled" below would be true whether or not pageshow ran.
-	fr.Run(chromedp.Evaluate(`document.getElementById("go").disabled = true`, nil))
-	var enabled bool
-	fr.Run(chromedp.Evaluate(`dispatchEvent(new PageTransitionEvent("pageshow", {persisted: true})); !document.getElementById("go").disabled`, &enabled))
-	if !enabled {
-		t.Fatal("pageshow from the back-forward cache left the submit disabled")
+	// pagehide ended the hold, so the restored page shows a submit that
+	// is neither busy nor disabled, and it works.
+	var usable bool
+	fr.Run(chromedp.Evaluate(`dispatchEvent(new PageTransitionEvent("pageshow", {persisted: true}));
+		(b => !b.disabled && !b.hasAttribute("aria-busy"))(document.getElementById("go"))`, &usable))
+	if !usable {
+		t.Fatal("pageshow from the back-forward cache left the held submit disabled or busy")
 	}
 	fr.Run(chromedp.Click(`#go`, chromedp.ByQuery))
 	if res := fr.result(t); res != "ok" {
 		t.Fatalf("after restore = %s", res)
+	}
+}
+
+// TestBrowserPageshowLeavesAnAppDisabledSubmitAlone: once setup has
+// enabled the submit, its disabled state is the app's. A restore that
+// enabled every submit would let the visitor post a form the app was
+// still refusing (here, terms not yet ticked).
+func TestBrowserPageshowLeavesAnAppDisabledSubmitAlone(t *testing.T) {
+	fr := newFormRig(t, rigOpts{page: powPage(false, false, "")})
+	fr.waitReady(t)
+	var disabled bool
+	fr.Run(chromedp.Evaluate(`document.getElementById("go").disabled = true;
+		dispatchEvent(new PageTransitionEvent("pagehide", {persisted: true}));
+		dispatchEvent(new PageTransitionEvent("pageshow", {persisted: true}));
+		document.getElementById("go").disabled`, &disabled))
+	if !disabled {
+		t.Fatal("pageshow from the back-forward cache enabled a submit the app had disabled")
 	}
 }
 

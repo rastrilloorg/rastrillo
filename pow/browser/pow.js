@@ -307,12 +307,16 @@ function onPageHide() {
   }
 }
 
-// The cache restores the DOM as it was left. Hand every form back and
-// restart unfinished unbound work.
+// The cache restores the DOM as it was left. Restart unfinished unbound
+// work, and leave every submit's disabled state alone: the only one pow
+// ever owns is the server-rendered one, which setup handed back before
+// any snapshot could be taken, and a hold disables nothing and ended at
+// pagehide. A submit disabled now is the app's (terms not yet ticked) or
+// busy.js's, which restores its own; enabling it here would let the
+// visitor post a form the app had refused.
 function onPageShow(e) {
   if (!e.persisted) return;
   for (const st of states.values()) {
-    for (const b of st.submits) b.disabled = false;
     if (!st.bound && !st.solution) solve(st, "").catch(() => {});
   }
 }
