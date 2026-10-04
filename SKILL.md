@@ -337,10 +337,11 @@ needs no JavaScript; any proof of work does. With a transaction:
 `adm := g.Admit(r, pow.Want{Scope: s})` BEFORE `BeginTx` (the writer has
 one connection), validate, then `adm.Commit(ctx, tx)` inside it (GORM:
 `tx.Statement.ConnPool`); `ErrSpent` means refuse, never 500.
-Redirect-after-POST or no transaction: `g.Check(r, want)`. After a
-refusal re-render `g.Recovery(now, scope)` (trapless; sticky via
-`adm.Recovered()`). It recovers the challenge only: refilling the
-visitor's answers is the app's risk and needs an idempotent write.
+Redirect-after-POST or no transaction: `g.Check(r, want)`, never inside
+an open tx. After a refusal re-render `g.Recovery(now, scope)`
+(trapless; sticky via `adm.Recovered()`). It recovers the challenge
+only: refilling the visitor's answers is the app's risk and needs an
+idempotent write.
 docs/site/reference/pow.md
 
 ## 6. Background work
