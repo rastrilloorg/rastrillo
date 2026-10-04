@@ -323,11 +323,12 @@ servers are trusted; other addresses get a link.
 **Public forms** (`rastrillo/pow`: sealed single-use challenge,
 honeypot, proof of work). Apply `pow.Schema` BEFORE `pow.New` (else
 `ErrNoSchema`): `pow.New(Config{InstanceKey, Nonces:
-pow.SQLNonces(writer), ScriptURL, WorkerURL})`, URLs from
-`rastrillo.NewAssets(pow.Assets())` (e.g. at `/pow/`); never vendor the
-JS (a copy drifting from the Go verifier fails silently). One Guard
-serves every form, `auth` and `password` included; `guard.Sweep(now)`
-it from a `background.Group` loop. Sign-in: `Difficulty: 16` (p95 under
+pow.SQLNonces(writer), ScriptURL, WorkerURL})`, the URLs where you
+mount `rastrillo.NewAssets(pow.Assets())` (e.g. at `/pow/`): serve the
+JS from the module, never vendor it (a copy drifting from the Go
+verifier fails silently). The app owns one Guard for every form, `auth`
+and `password` included, and sweeps it with `guard.Sweep(now)` from a
+`background.Group` loop. Sign-in: `Difficulty: 16` (p95 under
 1s at 6x CPU throttle; default 18), `MinAge: 500ms`. Render `f :=
 g.Form(now, scope)`: `.Attrs` on the `<form>`, `.Fields` inside,
 `.Script` once per page, `"Proof"` to `form-foot` (disabled
@@ -338,8 +339,8 @@ carrying a challenge** (`no-store`): every visitor gets one token.
 In a transaction: `adm := g.Admit(r, pow.Want{Scope: s})` BEFORE
 `BeginTx` (one writer connection), validate, `adm.Commit(ctx, tx)`
 inside (GORM: `tx.Statement.ConnPool`); `ErrSpent` is a refusal, never
-a 500. Without one: `g.Check(r, want)`, never inside an open tx. After a
-refusal render `g.Recovery(now, scope)` (trapless; sticky via
+a 500. Redirect-after-POST, or without a transaction: `g.Check(r,
+want)`, never inside an open tx. After a refusal render `g.Recovery(now, scope)` (trapless; sticky via
 `adm.Recovered()`): it recovers the challenge, not the visitor's answers
 (refilling those is the app's risk and needs an idempotent write).
 docs/site/reference/pow.md
