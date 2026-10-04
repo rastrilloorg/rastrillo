@@ -170,7 +170,7 @@ if err != nil {
 }
 defer tx.Rollback()
 if err := adm.Commit(ctx, tx); errors.Is(err, pow.ErrSpent) {
-	a.renderMaybeSent(w, a.guard.Form(time.Now(), contactScope))
+	a.renderMaybeSent(w, a.guard.Recovery(time.Now(), contactScope))
 	return
 } else if err != nil {
 	// ...
