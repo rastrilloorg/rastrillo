@@ -79,7 +79,7 @@ func (a *Auth) Begin(w http.ResponseWriter, r *http.Request) {
 
 	if next.Kind == signin.NextKeymail {
 		if a.cfg.SigninScreen {
-			a.continueKeymail(w, r, address, next)
+			a.continueKeymail(w, r, address, next, recovered)
 			return
 		}
 		a.setCookie(w, a.pendingCookie(), next.Pending, int(pendingTTL.Seconds()))
@@ -146,19 +146,23 @@ func (a *Auth) problemURL(problem string, rec, force bool) string {
 // form-action 'self' covers a form's whole redirect chain; so this
 // stays on the origin — the pending cookie as today, a continuation
 // cookie holding the authorize URL, and a redirect to the sign-in page,
-// whose Continue state navigates on by itself.
-func (a *Auth) continueKeymail(w http.ResponseWriter, r *http.Request, address string, next signin.Next) {
+// whose Continue state navigates on by itself. recovered keeps rec=1
+// on its failures as on Begin's: a visitor holding a recovery form
+// would otherwise be handed the honeypot again after a failure that
+// was not theirs. force is always false here, since a forced post never
+// reaches keymail.
+func (a *Auth) continueKeymail(w http.ResponseWriter, r *http.Request, address string, next signin.Next, recovered bool) {
 	if !a.validAuthorizeURL(next.Redirect) {
 		// A correct library never builds one. If one appears it is not
 		// turned into a link, and nothing is left half-set.
 		a.cfg.Logger.Error("rastrillo/auth: the keymail authorize URL failed the predicate; not continuing")
-		a.redirect(w, r, a.cfg.SigninPath+"?err=1")
+		a.redirect(w, r, a.problemURL("1", recovered, false))
 		return
 	}
 	id, value, err := a.sealContinuation(next.Redirect, next.Pending)
 	if err != nil {
 		a.cfg.Logger.Error("rastrillo/auth: seal continuation", "err", err)
-		a.redirect(w, r, a.cfg.SigninPath+"?err=1")
+		a.redirect(w, r, a.problemURL("1", recovered, false))
 		return
 	}
 	a.setCookie(w, a.pendingCookie(), next.Pending, int(pendingTTL.Seconds()))

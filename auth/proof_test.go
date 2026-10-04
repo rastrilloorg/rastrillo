@@ -12,6 +12,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/keymaildev/signin"
+
 	"amadan.net/rastrillo/rastrillo/pow"
 	"amadan.net/rastrillo/rastrillo/pow/powtest"
 )
@@ -253,5 +255,21 @@ func TestAnAdmissionWrapperIsNoOracleWithProof(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+// TestAContinuationFailureKeepsRecovery: a recovered post that reaches
+// keymail and then fails on our side must keep rec=1, or the visitor
+// whose password manager fills the honeypot is trapped again by a
+// failure that was not theirs.
+func TestAContinuationFailureKeepsRecovery(t *testing.T) {
+	a, _ := newProofAuth(t, func(c *Config) { c.SigninScreen = true })
+	wireKeymail(a, kayFake())
+	a.flow.Keymail = func(server string) *signin.Keymail {
+		return &signin.Keymail{Base: "https://" + server + "/evil", Origin: a.cfg.Origin, RedirectPath: callbackPath}
+	}
+	w := newBrowser().do(a.Begin, http.MethodPost, "/signin", filled(t, a, "?err=check&rec=1", url.Values{"address": {"kay@example.org"}}))
+	if q := location(t, w); q.Get("err") != "1" || q.Get("rec") != "1" || q.Get("force") != "" {
+		t.Fatalf("recovered post, bad authorize URL → %s, want err=1&rec=1", w.Header().Get("Location"))
 	}
 }
