@@ -10,6 +10,24 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+### Added: budgets for directory size, test time and screen time
+
+A new app's `make ci` now holds each directory to 5,000 lines of code and
+8,000 of tests (`make budget`), each test package to 10 seconds (`make
+test`), and every GET screen to 150ms to first byte and a cold start to
+500ms (`make perf`). The timing budgets fail only on CI. Exceptions go in
+`.rastrillo/budgets.txt`, each with a reason. There is a new `budget`
+package, a new `perf/perftest` package, and a new `rastrillo budget`
+command. [Testing](/docs/testing) explains all of it.
+
+The scaffold also changed: tests copy a migrated `dbtest` template
+instead of migrating, every example test runs in parallel, `perf`'s
+middleware is mounted by default, and `App` is split into `Router` and
+`Mux`, with a new `Configure` that `main.go` calls.
+
+Apps scaffolded earlier keep their old gate. To adopt the budgets, follow
+"Adopting the budgets in an existing app" in [Testing](/docs/testing).
+
 ### Fixed: `KeymailServers: []string{}` now means no server, ever — a behaviour change for anyone already passing it
 
 `auth.Config.KeymailServers` is meant to be nil for "any delegated server" (the default) and non-nil for a closed allowlist. But `keymailServers` read `len(list) == 0` rather than `list == nil`, so a non-nil *empty* slice silently fell back to "any server" too — continuation.go's own predicate already checked `a.servers == nil`, not `len() == 0`; only the parser disagreed with it. An app with no real keymail federation partners had no way to say so: every sign-in still probed the address's own domain — a real DNS `_keymail` lookup, then an HTTPS `.well-known/keymail` request if that resolved anything — before giving up. A domain that accepts the TCP connection but never answers costs the classifier's full 5s timeout, on every single sign-in.

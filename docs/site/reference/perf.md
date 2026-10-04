@@ -52,6 +52,10 @@ An over-budget request logs a warning, at most once a minute per route
 and 120 times a minute in all, so a slow database does not flood the
 log.
 
+`perf` reports budgets in production. [`perftest`](/docs/reference/perftest)
+enforces the same budgets in CI, and fails a build that makes a screen or a
+cold start slower than them.
+
 ## Grouping
 
 Requests are grouped by the route pattern they matched, such as
