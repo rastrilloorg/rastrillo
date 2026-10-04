@@ -279,12 +279,17 @@ as a duplicate email unless it wraps `password.ErrRefused` (via
 `password.Refuse(msg)`); and the plugin writes the status (422/403/429),
 so a render callback must not. Signin and Signup share a per-email
 failure budget answering 429 (IP throttling belongs to deployment).
+`New` needs `Proof` (an unbound `*pow.Guard`, else `ErrProofMode`) or
+`ProofOff`, else `ErrProofUnset`; render `PageData.Proof` on both forms.
 docs/site/passwords.md
 
 **Magic links** (`rastrillo/auth`: sign-in by emailed link, upgrading
 to the keymail ceremony where the address has one): `auth.New` with
 `Begin`/`Callback`/`Verify`/`Signout` and `RequireSession`, same
-`sessions` core, same rate-limit shape. **Under `auth`, never
+`sessions` core. `New` needs `Proof` (an unbound `*pow.Guard`, else
+`ErrProofMode`) or `ProofOff`, else `ErrProofUnset`; `Begin` checks it
+before the limiter, refuses to `?err=check&rec=1`, and
+`SigninState(r).Proof` is the challenge to render. **Under `auth`, never
 `sessions.UserID`:** the Subject is the verified email, so it returns
 `(0, false)` and the §3 seam would scope every query to `user_id = 0`.
 Use `auth.From(r)` or `sessions.Current(r)` and map the address to your
@@ -312,20 +317,30 @@ data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
 https://keymail.dev`. `auth.Config.KeymailServers` limits which keymail
 servers are trusted; other addresses get a link.
 
-**Public forms** (`rastrillo/pow`: the front door for anything the
-internet can post to — proof of work, sealed challenge, honeypot).
-`pow.New(Config{InstanceKey, Nonces: pow.SQLNonces(d.Writer())})` plus
-`pow.Schema`; `Issue(now)` mints a challenge and **writes nothing** (a
-row per challenge makes every page view a serialised write);
-`Challenge.Fields`/`FormAttrs` render the hidden fields and the
-honeypot; `Check(r, binding)` runs honeypot → seal → clock → proof of
-work → single-use nonce, in that order, returning a closed `Reason`.
-The work is bound to the submitted value, so one solve buys one
-address, not a list. Render the submit **disabled** inside a form with a
-`<noscript>` — the module enables it, and JS cannot enable a control
-inside `<noscript>`. Serve both halves from the module
-(`rastrillo.NewAssets(pow.Assets())`); never vendor the JS, because a
-copy that drifts from the Go verifier fails silently in the browser.
+**Public forms** (`rastrillo/pow`: sealed single-use challenge,
+honeypot, proof of work). Apply `pow.Schema` BEFORE `pow.New`, which
+checks the table (`ErrNoSchema`). `pow.New(Config{InstanceKey, Nonces:
+pow.SQLNonces(writer), ScriptURL, WorkerURL})`, the URLs from
+`rastrillo.NewAssets(pow.Assets())` mounted e.g. at `/pow/`: serve the JS
+from the module, never vendor it (a copy that drifts from the Go
+verifier fails silently). The app owns the Guard: one serves every form,
+is shared by `auth` and `password`, and the app sweeps it
+(`guard.Sweep(now)` from a `background.Group` loop). Sign-in: `Difficulty:
+16` (measured: p95 under 1s at 6x CPU throttle; the default stays 18),
+`MinAge: 500ms`. Render `f := g.Form(now, scope)`: `.Attrs` on the
+`<form>`, `.Fields` inside, `.Script` once per page, `form-foot`'s
+`"Proof"` key (disabled submit with `data-pow-submit`, status line,
+`<noscript>`). Scope is sealed and compared: namespace it
+(`myapp/contact`). **Never cache a page carrying a challenge**
+(`no-store`): one token for every visitor. `NoProof` (token + honeypot)
+needs no JavaScript; any proof of work does. With a transaction:
+`adm := g.Admit(r, pow.Want{Scope: s})` BEFORE `BeginTx` (the writer has
+one connection), validate, then `adm.Commit(ctx, tx)` inside it (GORM:
+`tx.Statement.ConnPool`); `ErrSpent` means refuse, never 500.
+Redirect-after-POST or no transaction: `g.Check(r, want)`. After a
+refusal re-render `g.Recovery(now, scope)` (trapless; sticky via
+`adm.Recovered()`). It recovers the challenge only: refilling the
+visitor's answers is the app's risk and needs an idempotent write.
 docs/site/reference/pow.md
 
 ## 6. Background work

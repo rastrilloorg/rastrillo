@@ -34,13 +34,16 @@ import (
 )
 
 // DefaultDifficulty is how many leading zero bits a solution must have:
-// roughly 262k expected hashes.
+// roughly 262k expected hashes. It suits a form people spend a while
+// on, because the solve runs while they type.
 //
-// It is an estimate, not a measurement. Re-set it against real
-// mid-range hardware before you launch, recording p95 and p99 rather
-// than the mean — solve time is geometric, so p99 is about 4.6x the
-// average, and calibrating on the average ships a form that hangs for
-// one visitor in a hundred.
+// Sign-in is different: a returning visitor tapping a one-tap button
+// waits for the whole solve. For sign-in use 16 bits, the largest
+// difficulty whose p95 stayed at or under one second in Chromium at 6x
+// CPU throttle (measure_browser_test.go, 2026-10-04: 16 bits p95 796ms,
+// 18 bits p95 1494ms). Measure p95 and p99, never the mean: solve time
+// is geometric, so p99 is about 4.6x the average, and a difficulty
+// chosen on the average hangs for one visitor in a hundred.
 const DefaultDifficulty = 18
 
 // normalize lowercases ASCII and nothing else.
@@ -87,17 +90,16 @@ func leadingZeroBits(sum []byte) int {
 // Verify checks one candidate solution. O(1) here, ~2^difficulty for
 // whoever had to find it.
 //
-// binding is whatever the challenge was bound to — the address the form
-// submitted, in the usual case. The binding is inside the hash and that
-// is the whole point: an unbound challenge is solved once and replayed
-// against every address in a list, so it costs an attacker one solve in
-// total. Bound, it costs one solve per address, which is the axis a
-// bulk signup attack actually scales along. It is also why a form like
-// this needs JavaScript at all — the work cannot begin until the
-// visitor has typed the value it is bound to.
+// binding is "" for an unbound challenge, the default, or the value of
+// the form's [data-pow-binding] input for a Guard with Config.Bind.
+// Unbound is the default because the token is single use: one solve
+// already buys exactly one submission whatever it carries, and leaving
+// the value out of the hash lets the work start at page load instead of
+// after the visitor has typed it.
 //
-// Guard.Check calls this for you. Reach for it directly only when you
-// are wiring the pieces yourself.
+// Guard.Admit, Check and Verify call this for you, and powtest uses it
+// to solve in tests. Reach for it directly only when you are wiring the
+// pieces yourself.
 func Verify(nonce, binding, counter string, difficulty int) bool {
 	if counter == "" {
 		return false

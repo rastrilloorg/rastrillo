@@ -32,7 +32,9 @@ if err != nil {
 }
 defer d.Close()
 
-mux, err := notes.App(d, origin, logger)
+instanceKey := os.Getenv("NOTES_INSTANCE_KEY") // stored, not made up per process
+bg := &background.Group{}
+mux, err := notes.App(d, origin, instanceKey, bg, logger)
 if err != nil {
 	logger.Error("build", "err", err)
 	os.Exit(1)
@@ -40,6 +42,7 @@ if err != nil {
 
 opts.Mux = mux
 opts.DBPath = ""
+opts.Background = bg
 if err := rastrillo.Serve(opts); err != nil {
 	logger.Error("serve", "err", err)
 	os.Exit(1)
@@ -78,7 +81,7 @@ that.
 The whole wiring, in order:
 
 ```go
-func App(d *db.DB, origin string, logger *slog.Logger) (*http.ServeMux, error) {
+func App(d *db.DB, origin, instanceKey string, bg *background.Group, logger *slog.Logger) (*http.ServeMux, error) {
 	if _, err := migrate.Apply(context.Background(), d, BootSchema); err != nil {
 		return nil, err
 	}
@@ -91,9 +94,27 @@ func App(d *db.DB, origin string, logger *slog.Logger) (*http.ServeMux, error) {
 		return nil, err
 	}
 
+	powAssets := rastrillo.NewAssets(pow.Assets())
+	guard, err := pow.New(pow.Config{
+		InstanceKey: instanceKey,
+		Nonces:      pow.SQLNonces(writer),
+		Difficulty:  16,
+		MinAge:      500 * time.Millisecond,
+		ScriptURL:   "/pow" + powAssets.Path("pow.js"),
+		WorkerURL:   "/pow" + powAssets.Path("pow-worker.js"),
+	})
+	if err != nil {
+		return nil, err
+	}
+	bg.Loop(context.Background(), 10*time.Minute, func() {
+		if err := guard.Sweep(time.Now()); err != nil {
+			logger.Warn("sweep spent challenges", "err", err)
+		}
+	})
+
 	a := &app{db: d.G}
 	ph, err := password.New(password.Config{
-		Sessions: sess, Lookup: lookupUser(d.G), Create: createUser(d.G),
+		Sessions: sess, Proof: guard, Lookup: lookupUser(d.G), Create: createUser(d.G),
 		RenderSignin: renderSignin, RenderSignup: renderSignup,
 	})
 	if err != nil {
@@ -102,6 +123,7 @@ func App(d *db.DB, origin string, logger *slog.Logger) (*http.ServeMux, error) {
 
 	r := chi.NewRouter()
 	r.Use(csrf.Protect(origin))
+	r.Handle("/pow/*", http.StripPrefix("/pow/", powAssets.Handler()))
 	r.Get("/signin", ph.SigninPage)
 	r.Post("/signin", ph.Signin)
 	r.Get("/signup", ph.SignupPage)
@@ -124,6 +146,9 @@ route you add in six months is protected without you remembering
 anything. Signed-in routes live in a `chi.Group` with `sess.Require`,
 while sign-in and sign-up sit outside it, since a signed-out visitor has
 to be able to reach them.
+
+The Guard is built after `migrate.Apply` because `pow.New` checks its
+table is there; [pow](/docs/reference/pow) covers the rest.
 
 `App` returns the `*http.ServeMux` that `main.go` hands to `Serve` as
 `opts.Mux`.

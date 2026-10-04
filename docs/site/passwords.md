@@ -9,6 +9,7 @@ An email-and-password identity plugin over the
 ```go
 ph, err := password.New(password.Config{
 	Sessions:     sess,
+	Proof:        guard, // see "The front door" below
 	Lookup:       lookupUser(d.G),
 	Create:       createUser(d.G),
 	RenderSignin: renderSignin,
@@ -70,12 +71,35 @@ an error rather than letting you discover it at request time.
 func renderSignin(w http.ResponseWriter, r *http.Request, d password.PageData)
 ```
 
-`PageData` carries `Error`, `Email` and `ReturnTo` — enough to
+`PageData` carries `Error`, `Email`, `ReturnTo` and `Proof` — enough to
 re-render the form with the address still filled in and the problem
 stated.
 
 Your callback must not write a status. `password` has already written
 it before calling you — 422, 403 or 429, depending on the outcome.
+
+## The front door
+
+`password.New` won't start until you decide whether sign-in and sign-up sit behind [pow](/docs/reference/pow). Pass a Guard as `Proof`, or set `ProofOff`. With neither, `New` returns `ErrProofUnset`, which names both fixes. A Guard with `Bind` on is `ErrProofMode`, because these forms have nothing to bind to until the visitor has typed it. If you use [magic links](/docs/magic-links#the-front-door) too, give both the same Guard; their tokens are kept apart by scope (`password.ScopeSignin`, `password.ScopeSignup`).
+
+`Signin` and `Signup` check the challenge before the rate limit. A post that hasn't solved it costs no password hashing, no lookup and no new row, and it spends nobody's budget. A refusal re-renders the form at 422 with "Your browser couldn't finish a security check. Try again.", the email kept and the password cleared, as for any other failure.
+
+Your render callbacks get the challenge in `PageData.Proof`. Render it on the form and hand it to `form-foot`:
+
+```html
+<form rst-form method="post" action="/signin"{{with .Proof}} {{.Attrs}}{{end}}>
+{{with .Proof}}{{.Fields}}{{end}}
+<!-- your fields -->
+{{template "form-foot" dict "Submit" "Sign in" "Proof" .Proof}}
+</form>
+{{with .Proof}}{{.Script}}{{end}}
+```
+
+`.Proof` is nil with `ProofOff`, hence the `with`s. With proof of work on, the forms need JavaScript, and `form-foot` renders the `<noscript>` line that says so.
+
+`password` picks the kind of challenge for you. After a refusal it's a recovery challenge, with no honeypot, and it stays one on every later re-render for a visitor who posted one, so a password manager that filled the trap once can't trap them again after a wrong password. Render whatever it hands you.
+
+Every page and re-render goes out with `Cache-Control: no-store`, set before your callback runs. The page carries a single-use token, and a cached copy would be one token for everyone who loaded it.
 
 ## Methods and their verbs
 
