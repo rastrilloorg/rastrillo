@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -167,6 +168,171 @@ func TestAmadanCITargetsMatchStepFiles(t *testing.T) {
 	for target := range ciTargets {
 		if !stepTargets[target] {
 			t.Errorf("Makefile's `ci:` target depends on %q, but no .amadan/ci.d/* step execs `make %s` — amadan's runner silently skips this half of `make ci`", target, target)
+		}
+	}
+}
+
+// TestAmadanSuiteShardsMatchRoles pins the suite step's @N to the
+// Makefile's SUITE. amadan starts N shards and each runs the role at
+// its index, so the two numbers are one fact written twice: a role
+// added without raising N runs nowhere while every shard reports ok.
+// hack/suite.sh refuses the mismatch at run time; this says so before
+// a runner is involved. It also refuses a role that is a ci
+// prerequisite as well, which would run it twice.
+func TestAmadanSuiteShardsMatchRoles(t *testing.T) {
+	if _, err := exec.LookPath("make"); err != nil {
+		t.Skip("make is not installed; the gate itself runs under make")
+	}
+	var step, shards string
+	for name, target := range amadanCIDTargets(t) {
+		if target != "suite" {
+			continue
+		}
+		if step != "" {
+			t.Fatalf("two .amadan/ci.d steps exec `make suite` (%s, %s); each would run every role", step, name)
+		}
+		step = name
+		if i := strings.LastIndex(name, "@"); i >= 0 {
+			shards = name[i+1:]
+		}
+	}
+	if step == "" {
+		t.Fatal("no .amadan/ci.d step execs `make suite`, so the suite's roles run nowhere under amadan")
+	}
+
+	out, err := exec.Command("make", "-s", "--no-print-directory", "suite-roles").Output()
+	if err != nil {
+		t.Fatalf("make suite-roles: %v", err)
+	}
+	roles := strings.Fields(string(out))
+	if len(roles) == 0 {
+		t.Fatal("make suite-roles printed no roles")
+	}
+	if want := strconv.Itoa(len(roles)); shards != want {
+		t.Errorf(".amadan/ci.d/%s runs as %q shards, but the Makefile's SUITE has %d roles; rename it to end in @%s", step, shards, len(roles), want)
+	}
+
+	mk, err := os.ReadFile("Makefile")
+	if err != nil {
+		t.Fatalf("reading Makefile: %v", err)
+	}
+	m := ciPrereqPattern.FindStringSubmatch(string(mk))
+	if m == nil {
+		t.Fatal("Makefile has no `ci:` target")
+	}
+	ci := map[string]bool{}
+	for _, f := range strings.Fields(strings.ReplaceAll(m[1], "\\\n", " ")) {
+		ci[f] = true
+	}
+	seen := map[string]bool{}
+	for _, r := range roles {
+		if seen[r] {
+			t.Errorf("SUITE lists %q twice; two shards would run it", r)
+		}
+		seen[r] = true
+		if ci[r] {
+			t.Errorf("%q is both a suite role and a prerequisite of ci, so make ci runs it twice", r)
+		}
+	}
+}
+
+// sliceRolePattern reads a sliced role: <mode>.<pkg>~<k>of<n>, mode
+// browser or test.
+var sliceRolePattern = regexp.MustCompile(`^(browser|test)\.(.+)~([0-9]+)of([0-9]+)$`)
+
+// TestSlicesPartitionTheirPackages is what lets a package run under
+// -run at all. ui/ui_test.go refuses a hand-written -run on ./ui/
+// because a filter that matches nothing exits 0; a slice is a -run
+// too, so this proves the slices cannot leave a test out: every slice
+// 1..n of a package is a suite role, and hack/gotest.sh's deal puts
+// each name in exactly one slice and leaves no slice empty. The names
+// are every weighted one plus synthetic ones, so this compiles
+// nothing; the real list is dealt by the same function at run time.
+func TestSlicesPartitionTheirPackages(t *testing.T) {
+	if _, err := exec.LookPath("make"); err != nil {
+		t.Skip("make is not installed; the gate itself runs under make")
+	}
+	out, err := exec.Command("make", "-s", "--no-print-directory", "suite-roles").Output()
+	if err != nil {
+		t.Fatalf("make suite-roles: %v", err)
+	}
+	type sliced struct{ mode, pkg string }
+	slices := map[sliced]map[int]bool{}
+	counts := map[sliced]int{}
+	for _, r := range strings.Fields(string(out)) {
+		m := sliceRolePattern.FindStringSubmatch(r)
+		if m == nil {
+			continue
+		}
+		k, _ := strconv.Atoi(m[3])
+		n, _ := strconv.Atoi(m[4])
+		key := sliced{m[1], strings.ReplaceAll(m[2], ".", "/")}
+		if prev, ok := counts[key]; ok && prev != n {
+			t.Fatalf("%s %s is sliced both %d and %d ways", key.mode, key.pkg, prev, n)
+		}
+		counts[key] = n
+		if slices[key] == nil {
+			slices[key] = map[int]bool{}
+		}
+		slices[key][k] = true
+	}
+	if len(counts) == 0 {
+		t.Skip("no package is sliced")
+	}
+
+	weights, err := os.ReadFile("hack/test-weights.txt")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for key, n := range counts {
+		name := key.mode + " " + key.pkg
+		for k := 1; k <= n; k++ {
+			if !slices[key][k] {
+				t.Errorf("%s is sliced %d ways but slice %d is no suite role, so its tests run nowhere", name, n, k)
+			}
+		}
+
+		var names []string
+		for _, l := range strings.Split(string(weights), "\n") {
+			if f := strings.Fields(l); len(f) == 4 && f[0] == key.mode && f[1] == key.pkg {
+				names = append(names, f[2])
+			}
+		}
+		for i := 0; i < 5*n; i++ {
+			names = append(names, "TestUnweighted"+strconv.Itoa(i))
+		}
+		deal := exec.Command("sh", "hack/gotest.sh", "--deal", key.mode, key.pkg, strconv.Itoa(n))
+		deal.Stdin = strings.NewReader(strings.Join(names, "\n") + "\n")
+		got, err := deal.Output()
+		if err != nil {
+			t.Fatalf("dealing %s: %v", name, err)
+		}
+		dealt := map[string]int{}
+		used := map[int]bool{}
+		for _, l := range strings.Split(strings.TrimSpace(string(got)), "\n") {
+			f := strings.Fields(l)
+			if len(f) != 2 {
+				t.Fatalf("deal line %q is not `<k> <name>`", l)
+			}
+			k, err := strconv.Atoi(f[0])
+			if err != nil || k < 1 || k > n {
+				t.Errorf("%s: %s was dealt to slice %q, outside 1..%d", name, f[1], f[0], n)
+			}
+			used[k] = true
+			dealt[f[1]]++
+		}
+		for _, nm := range names {
+			if dealt[nm] != 1 {
+				t.Errorf("%s: %s was dealt %d times, not once", name, nm, dealt[nm])
+			}
+		}
+		if len(dealt) != len(names) {
+			t.Errorf("%s: dealt %d names from %d", name, len(dealt), len(names))
+		}
+		for k := 1; k <= n; k++ {
+			if !used[k] {
+				t.Errorf("%s: slice %d of %d was dealt nothing from %d names", name, k, n, len(names))
+			}
 		}
 	}
 }

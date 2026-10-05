@@ -79,6 +79,14 @@ same targets one step at a time and never keeps its own copy of a
 command; add to the `Makefile` and to `ci.d/` together, or a
 step-reporting runner silently skips what you added.
 
+Most of the gate is one target, `suite`, whose roles (the Makefile's
+`SUITE`) amadan runs side by side as the shards of
+`.amadan/ci.d/50-suite@N`; by hand they run one after another. A new
+check usually belongs in `SUITE`, and then the `@N` in that step's
+name goes up by one: `amadan_ci_test.go` fails until the two agree. A
+package that grows slow gets an `@n` in `BROWSER_PKGS`, or joins
+`ROOT_SPLIT` for its plain tests, and runs as n slices of its tests.
+
 The examples under `examples/` are **separate Go modules** with a
 `replace` back to the checkout, so the root `go test ./...` does not
 compile them. Test them from their own directories.

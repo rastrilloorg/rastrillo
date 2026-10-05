@@ -1,6 +1,7 @@
 package migrate_test
 
 import (
+	"os"
 	"os/exec"
 	"path/filepath"
 	"testing"
@@ -27,8 +28,25 @@ func TestExamplesPassMigrationCheck(t *testing.T) {
 		t.Fatalf("building the CLI: %v\n%s", err, out)
 	}
 
+	// A copy, not the example itself: `migration check` writes a loader
+	// package into the module it reads and deletes it afterwards, and
+	// make ci's suite builds, vets and scans examples/notes in other
+	// shards at the same moment. Any of them could load that package
+	// half-written or after it is gone. The copy's replace points back
+	// at this checkout, as the original's ../.. does.
+	root := repoRoot(t)
+	notes := filepath.Join(t.TempDir(), "notes")
+	if err := os.CopyFS(notes, os.DirFS(filepath.Join(root, "examples", "notes"))); err != nil {
+		t.Fatalf("copying examples/notes: %v", err)
+	}
+	edit := exec.Command("go", "mod", "edit", "-replace", "amadan.net/rastrillo/rastrillo="+root)
+	edit.Dir = notes
+	if out, err := edit.CombinedOutput(); err != nil {
+		t.Fatalf("pointing the copy at this checkout: %v\n%s", err, out)
+	}
+
 	cmd := exec.Command(bin, "migration", "check")
-	cmd.Dir = filepath.Join(repoRoot(t), "examples", "notes")
+	cmd.Dir = notes
 	if out, err := cmd.CombinedOutput(); err != nil {
 		t.Fatalf("examples/notes is out of sync:\n%s", out)
 	}

@@ -4,7 +4,7 @@
 # silently no-op with "Nothing to be done" - exit 0, and the sweep never
 # runs. None of the four names a real file, so the pattern rule already
 # reruns unconditionally without needing .PHONY's safety here.
-.PHONY: ci gofmt budget root staticcheck govulncheck gitleaks chromedp-graph gorm-free race generate-check scaffold-smoke browser \
+.PHONY: ci suite suite-roles gofmt budget root staticcheck govulncheck gitleaks chromedp-graph gorm-free race generate-check scaffold-smoke browser \
         mirror mirror-check money
 
 # The READMEs' documented sweeps all run with GOFLAGS=-mod=mod: the tests
@@ -42,9 +42,43 @@ EXAMPLES := helloworld blog tickets notes
 # ci is the one gate: what a runner executes and what you run before
 # pushing are the same definition. .amadan/ci.d/ reports these one by
 # one; it never keeps its own copy of a command.
-ci: gofmt budget money root staticcheck govulncheck gitleaks chromedp-graph gorm-free race \
-    example-helloworld example-blog example-tickets example-notes \
-    generate-check scaffold-smoke browser
+#
+# The cheap checks go first and alone, so a stray gofmt still costs
+# seconds. generate-check is among them because it rewrites
+# examples/*/gen: run beside the example builds, it could hand one a
+# half-written file. Everything else is the suite.
+ci: gofmt chromedp-graph gorm-free generate-check suite
+
+# The suite's roles. Under amadan, .amadan/ci.d/50-suite@N runs N
+# shards at once and each runs one role, so the run takes as long as
+# the slowest role rather than the sum of them all; by hand, or as a
+# step with no @N, the roles run one after another. N must equal the
+# number of roles here: hack/suite.sh refuses any other count rather
+# than run some roles twice and others nowhere, and amadan_ci_test.go
+# checks the two agree before a runner ever sees them.
+#
+# The slowest role is how long the suite takes, so the slow packages
+# are roles of their own. The browser packages are a role each, and
+# ROOT_SPLIT's packages leave root's go test ./... for test.<pkg> roles.
+# A package written pkg@n is n roles, each a slice of its tests, dealt
+# by hack/gotest.sh. In a role's name a / in the path is a . so
+# internal/designsystem@6 becomes browser.internal.designsystem~1of6
+# to ~6of6.
+BROWSER_PKGS := harness webauthn ui@2 pow internal/designsystem@6 auth
+ROOT_SPLIT := internal/designsystem@4 cmd/rastrillo@2 cmd/dsgen
+go-roles = $(foreach p,$(2),$(if $(findstring @,$(p)),$(call go-slices,$(1),$(subst /,.,$(word 1,$(subst @, ,$(p)))),$(word 2,$(subst @, ,$(p)))),$(1).$(subst /,.,$(p))))
+go-slices = $(foreach k,$(shell seq 1 $(3)),$(1).$(2)~$(k)of$(3))
+BROWSER_ROLES := $(call go-roles,browser,$(BROWSER_PKGS))
+TEST_ROLES := $(call go-roles,test,$(ROOT_SPLIT))
+SUITE := root $(TEST_ROLES) staticcheck govulncheck gitleaks money budget race \
+         $(addprefix example-,$(EXAMPLES)) scaffold-smoke $(BROWSER_ROLES)
+
+suite:
+	@MAKE='$(MAKE)' ./hack/suite.sh $(SUITE)
+
+# What amadan_ci_test.go counts against the step's @N.
+suite-roles:
+	@echo $(SUITE)
 
 # The repo's own Go files, not everything under the checkout: GOTMPDIR is
 # .build/tmp, and a go command killed mid-build (a Ctrl-C, or a runner
@@ -77,10 +111,15 @@ money:
 # node would otherwise go green having checked none of the JavaScript
 # twins. Override with RASTRILLO_TEST_REQUIRE_NODE= to run without it.
 RASTRILLO_TEST_REQUIRE_NODE ?= 1
+# root tests every package but ROOT_SPLIT's, whose tests run in the
+# test.<pkg> roles; `make root $(TEST_ROLES)` is the old whole.
 root:
 	go build ./...
 	go vet ./...
-	RASTRILLO_TEST_REQUIRE_NODE=$(RASTRILLO_TEST_REQUIRE_NODE) go test ./... -count=1
+	RASTRILLO_TEST_REQUIRE_NODE=$(RASTRILLO_TEST_REQUIRE_NODE) ./hack/gotest.sh root '$(ROOT_SPLIT)'
+
+test.%: | $(BIN)/tmp
+	RASTRILLO_TEST_REQUIRE_NODE=$(RASTRILLO_TEST_REQUIRE_NODE) ./hack/gotest.sh test '$*'
 
 # staticcheck catches what vet does not: deprecated APIs, values that are
 # never read, and the &*x that looks like a copy and is not (SA4001 found
@@ -121,9 +160,16 @@ govulncheck:
 # .gitleaks.toml allows the committed test vectors by directory and two
 # single non-secrets by value. --redact keeps anything it does find out
 # of the CI log.
+#
+# The history of HEAD, not of every ref: gitleaks' default is
+# `git log --all`, and a runner's clone keeps a ref for every branch it
+# has built, so one branch's leak turned every other branch red,
+# main included. A leak on a branch is that branch's own run's to find.
+# The rest of the options are gitleaks' own defaults, which --log-opts
+# replaces wholesale.
 GITLEAKS := github.com/zricethezav/gitleaks/v8@v8.30.1
 gitleaks:
-	go run $(GITLEAKS) git --no-banner --redact .
+	go run $(GITLEAKS) git --no-banner --redact --log-opts='--full-history --diff-filter=tuxdb HEAD' .
 
 # The README promises chromedp stays out of the ordinary build graph.
 # This is that sentence, executable.
@@ -206,9 +252,10 @@ scaffold-smoke: build-cli
 
 # The browser drive: the ui select journey, the harness's own checks,
 # the design system's, webauthn's PRF ceremonies including the
-# prfByAssertion fallback, and the sign-in screen's whole journey. -p 1
-# serialises the packages - parallel Chromium cold-starts contend for
-# one machine. RASTRILLO_BROWSER_OPTIONAL
+# prfByAssertion fallback, and the sign-in screen's whole journey, one
+# package or slice per browser.<pkg>[~<k>of<n>] target (a / in the path
+# is a . in the name). `make browser` runs them one after another, as
+# the old -p 1 did; the suite runs each as its own shard. RASTRILLO_BROWSER_OPTIONAL
 # stays unset on purpose: a skip is not a pass, so a machine that loses
 # its browser fails loudly instead of reporting green.
 # Chromium profiles also need room when the shared /tmp tmpfs fills.
@@ -216,8 +263,10 @@ scaffold-smoke: build-cli
 # phone and desktop widths and takes 7-8 minutes on a quiet machine, so
 # go test's default 10 minutes killed it whenever the box was shared
 # with other builds. The limit is per package; a real hang still dies.
-browser:
-	TMPDIR="$${TMPDIR:-/var/tmp}" go test -tags browser -p 1 -timeout 20m ./harness/ ./webauthn/ ./ui/ ./pow/ ./internal/designsystem/ ./auth/ -count=1
+browser: $(BROWSER_ROLES)
+
+browser.%: | $(BIN)/tmp
+	./hack/gotest.sh browser '$*'
 
 # origin (amadan) is where work lands; the GitHub remote is a mirror and
 # nothing else. Deliberately NOT part of ci: a runner must not push, and a
@@ -259,7 +308,7 @@ mirror-check:
 	echo "with an ordinary amadan branch merge (not -squash), then: make mirror"; \
 	exit 1
 
-root staticcheck govulncheck gitleaks money chromedp-graph race build-cli browser: | $(BIN)/tmp
+root staticcheck govulncheck gitleaks money chromedp-graph race build-cli: | $(BIN)/tmp
 
 $(BIN)/tmp:
 	mkdir -p "$@"

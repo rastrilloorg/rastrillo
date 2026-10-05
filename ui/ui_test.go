@@ -3338,6 +3338,9 @@ func TestFieldDaterangeLegendCanBeHidden(t *testing.T) {
 // some other step.
 var browserJobPattern = regexp.MustCompile(`go test -tags browser -p 1 ([^\n]*?) -count=1`)
 
+// browserPkgsPattern pulls the Makefile's list of browser packages.
+var browserPkgsPattern = regexp.MustCompile(`(?m)^BROWSER_PKGS :=([^\n]*)$`)
+
 // uiFilterPattern matches any attempt to run ./ui/ under a -run
 // filter, which is how this package was narrowed before issue #86 was
 // fixed and how it would quietly be narrowed again.
@@ -3385,13 +3388,15 @@ func checkBrowserGate(t *testing.T, path string, content []byte) {
 // job at all — the exact failure this branch has already shipped once.
 // So the package list is gated rather than trusted.
 //
-// The Makefile's browser: target — run by .amadan/ci.d/99-browser — is
-// what actually executes on every runner now, so it is checked
-// unconditionally: a missing or non-matching Makefile is a hard
-// failure. ci.yml is checked too, as long as it still exists, so it
-// cannot silently drift from the Makefile while both are read; once
-// plan Task 9 deletes it (`git rm .github/workflows/ci.yml`), its
-// absence is not a failure — the Makefile alone is the gate by then.
+// The Makefile is what executes on every runner now, so it is checked
+// unconditionally: ./ui/ must be in BROWSER_PKGS, whole or as ui@n.
+// ui@n is the one -run this allows, because nobody writes it:
+// hack/gotest.sh deals the n slices from the package's own test list,
+// refuses a slice dealt nothing, and amadan_ci_test.go checks the deal
+// is a partition, so a drive added next to the others lands in a slice
+// by itself. A hand-written -run on ./ui/ anywhere in the Makefile is
+// still refused. ci.yml (the GitHub mirror's workflow) is checked too,
+// as long as it still exists, so it cannot silently narrow either.
 //
 // Deliberately NOT build-tagged: it must run in the plain suite, where
 // everyone sees it, even though the drives it protects only compile
@@ -3400,9 +3405,24 @@ func TestTheUIDrivesRunWholeInTheBrowserJob(t *testing.T) {
 	const makefile = "../Makefile"
 	mk, err := os.ReadFile(makefile)
 	if err != nil {
-		t.Fatalf("reading %s: %v — the Makefile's browser: target, run by .amadan/ci.d/99-browser, is where these drives actually run", makefile, err)
+		t.Fatalf("reading %s: %v — the Makefile's browser roles are where these drives actually run", makefile, err)
 	}
-	checkBrowserGate(t, makefile, mk)
+	m := browserPkgsPattern.FindSubmatch(mk)
+	if m == nil {
+		t.Fatalf("%s has no `BROWSER_PKGS :=` line; every browser drive in this repo now runs in no CI job", makefile)
+	}
+	var found bool
+	for _, pkg := range strings.Fields(string(m[1])) {
+		if pkg == "ui" || strings.HasPrefix(pkg, "ui@") {
+			found = true
+		}
+	}
+	if !found {
+		t.Errorf("%s's BROWSER_PKGS is %q, which does not include ui; every drive in ui/browser_test.go and ui/shell_browser_test.go would run in no CI job", makefile, string(m[1]))
+	}
+	if loc := uiFilterPattern.FindIndex(mk); loc != nil {
+		t.Errorf("%s runs ./ui/ under a -run filter (%q): a filter matching nothing exits 0, so that step passes while testing less than it claims. Fix the drive instead", makefile, mk[loc[0]:loc[1]])
+	}
 
 	const workflow = "../.github/workflows/ci.yml"
 	yml, err := os.ReadFile(workflow)
