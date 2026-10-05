@@ -168,7 +168,7 @@ func TestTheTopbarMenuIsACardOverThePage(t *testing.T) {
 				// and does not follow the link. A page with no Menu also
 				// ends the wait: that is the link followed, which
 				// clickAndStay then reports as the navigation it was.
-				clickAndStay(t, ctx, probe(t, ctx, "#main-link", 0.5, 0.5, 0, 0), "", `(() => { const m = document.querySelector("[rst-shell-menu]"); return !m || !m.open; })()`)
+				clickAndStay(t, ctx, probeScripted(t, ctx, scripts, "#main-link", 0.5, 0.5, 0, 0), "", `(() => { const m = document.querySelector("[rst-shell-menu]"); return !m || !m.open; })()`)
 			})
 		}
 	}
@@ -417,7 +417,7 @@ func TestTheConsoleBarIsTheSameCard(t *testing.T) {
 			if open.Basis != "auto" || open.Inner != "0px" {
 				t.Errorf("the console's open tail has flex-basis %s and gap %s; the card's auto and 0 lost to the console's own rule", open.Basis, open.Inner)
 			}
-			clickAndStay(t, ctx, probe(t, ctx, "#main-link", 0.5, 0.5, 0, 0), "", `!document.querySelector("[rst-shell-menu]").open`)
+			clickAndStay(t, ctx, probeScripted(t, ctx, scripts, "#main-link", 0.5, 0.5, 0, 0), "", `!document.querySelector("[rst-shell-menu]").open`)
 			if scripts {
 				mustRun(t, ctx, chromedp.Navigate(rig.Origin+"/"), chromedp.WaitVisible("[rst-shell-menu] > summary", chromedp.ByQuery),
 					chromedp.Click("[rst-shell-menu] > summary", chromedp.ByQuery), chromedp.WaitVisible("[rst-shell-tail] [rst-shell-account] > summary", chromedp.ByQuery),

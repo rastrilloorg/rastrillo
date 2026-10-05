@@ -80,10 +80,10 @@ func rowsPages(t *testing.T) map[string]string {
 }
 
 // at evaluates a JS expression returning JSON into v.
-func at(t *testing.T, ctx context.Context, js string, v any) {
+func at(t *testing.T, ctx context.Context, js string, v any, opts ...chromedp.EvaluateOption) {
 	t.Helper()
 	var raw string
-	if err := chromedp.Run(ctx, chromedp.Evaluate(js, &raw)); err != nil {
+	if err := chromedp.Run(ctx, chromedp.Evaluate(js, &raw, opts...)); err != nil {
 		t.Fatalf("evaluating: %v\n%s", err, js)
 	}
 	if err := json.Unmarshal([]byte(raw), v); err != nil {
@@ -99,12 +99,32 @@ type point struct {
 
 // probe returns the point at (x, y) in the box of sel, where fx/fy are
 // fractions of the width and height and dx/dy pixel offsets from that.
+//
+// It reads the page as it will be painted, two frames either side of
+// its scroll. A script may answer the last action, or this scroll, in
+// its next animation frame: select.js places an opened list and
+// scrolls its active row into view there. Read at once, the target
+// moves whenever that frame falls between the reading and the click,
+// which a loaded machine makes likely: a probe of Option 7 in a just
+// opened combobox clicked Option 3. The frames before the scroll let
+// queued work land so it cannot undo the scroll; the frames after let
+// the page answer the scroll itself.
 func probe(t *testing.T, ctx context.Context, sel string, fx, fy, dx, dy float64) point {
 	t.Helper()
+	return probeScripted(t, ctx, true, sel, fx, fy, dx, dy)
+}
+
+// probeScripted is probe for a leg that may run with script execution
+// disabled. There no frame callback ever runs, so a wait for one never
+// ends (the evaluation fails with "Promise was collected"); nor can a
+// script have queued work for a frame, so there is nothing to wait for.
+func probeScripted(t *testing.T, ctx context.Context, scripts bool, sel string, fx, fy, dx, dy float64) point {
+	t.Helper()
 	var p point
-	at(t, ctx, fmt.Sprintf(`(() => { const el = document.querySelector(%q); el.scrollIntoView({block: "center", inline: "center"}); const r = el.getBoundingClientRect();
+	at(t, ctx, fmt.Sprintf(`(async () => { const frames = () => %v ? new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))) : null;
+	  await frames(); const el = document.querySelector(%q); el.scrollIntoView({block: "center", inline: "center"}); await frames(); const r = el.getBoundingClientRect();
 	  const x = r.left + r.width * %v + %v, y = r.top + r.height * %v + %v; const h = document.elementFromPoint(x, y);
-	  return JSON.stringify({X: x, Y: y, Hit: h ? (h.id || h.tagName) : "nothing"}); })()`, sel, fx, dx, fy, dy), &p)
+	  return JSON.stringify({X: x, Y: y, Hit: h ? (h.id || h.tagName) : "nothing"}); })()`, scripts, sel, fx, dx, fy, dy), &p, awaitPromise)
 	return p
 }
 
