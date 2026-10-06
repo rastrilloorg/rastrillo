@@ -177,6 +177,15 @@ verified address, may it have a session? Nil admits every verified
 address. Membership tables, roles and admin bootstrap are your policy
 layered on this hook, not something the framework models for you.
 
+`Refused func(w, r, Identity)` answers an address that verified but that
+`Authorize` would not admit. Left nil, the plugin answers a bare-text 403,
+"This address is verified but not admitted here." — no page you would
+show anybody. Set it to send people back to your sign-in page with an
+error of your own and the form for a different address; a redirect to
+`SigninPath` with a query of your own is enough. No session is minted.
+Only someone who has just proved they hold the address gets here, so
+saying "not admitted" is no oracle.
+
 `SecondFactor` is the same seam the password plugin has.
 [Passkeys](/docs/passkeys) covers it.
 
