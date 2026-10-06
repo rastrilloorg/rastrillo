@@ -14,12 +14,13 @@ import (
 )
 
 // The scheme follows a page back from the back/forward cache. On a
-// phone the toggle is on the index only, and shell.js sends Back
-// through history, so a section page comes back from the cache
-// without re-running anything: open Form in System, go Back to the
-// index, choose Dark, go Forward, and Form must be dark, previews and
-// all. The control first: the Forward really was a cache restore. A
-// leg that silently reloaded Form would pass on start-up code alone.
+// phone shell.js sends Back through history, so a section page comes
+// back from the cache without re-running anything: open Form in
+// System, go Back to the index, choose Dark in its display settings
+// menu, go Forward, and Form must be dark, previews and all, and its
+// own menu's toggle pressed on Dark. The control first: the Forward
+// really was a cache restore. A leg that silently reloaded Form would
+// pass on start-up code alone.
 //
 // This has a package of its own, apart from both internal/designsystem
 // and internal/designsystem/sweep, because the headless shell the cloud
@@ -58,7 +59,7 @@ func TestTheSchemeFollowsAPageBackFromTheCache(t *testing.T) {
 			t.Fatalf("%s: going back: %v", step, err)
 		}
 		until(t, ctx, step+", the index", `location.pathname.endsWith("/index.html") && !!document.querySelector('#ds-prefs [data-ds-scheme="`+c.scheme+`"]')`)
-		if err := chromedp.Run(ctx, chromedp.Evaluate(`document.querySelector('#ds-prefs [data-ds-scheme="`+c.scheme+`"]').click(); history.forward(); true`, nil)); err != nil {
+		if err := chromedp.Run(ctx, chromedp.Evaluate(`document.getElementById("ds-prefs").open = true; document.querySelector('#ds-prefs [data-ds-scheme="`+c.scheme+`"]').click(); history.forward(); true`, nil)); err != nil {
 			t.Fatalf("%s: choosing %s and going forward: %v", step, c.scheme, err)
 		}
 		until(t, ctx, step+", Form again", `location.pathname.endsWith("/form.html") && window.__restored !== undefined`)
@@ -85,8 +86,9 @@ func TestTheSchemeFollowsAPageBackFromTheCache(t *testing.T) {
 		until(t, ctx, step+", painted", fmt.Sprintf(`(() => {
 		  const loaded = [...document.querySelectorAll(".ds-view__frame")].filter(f => { const d = f.contentDocument; return d && d.URL === f.src; });
 		  return (document.documentElement.getAttribute("data-theme") || "") === %q && loaded.length > 0 &&
-		    loaded.every(f => (f.contentDocument.documentElement.getAttribute("data-theme") || "") === %q);
-		})()`, c.attr, c.attr))
+		    loaded.every(f => (f.contentDocument.documentElement.getAttribute("data-theme") || "") === %q) &&
+		    [...document.querySelectorAll('[data-ds-scheme=%q]')].every(b => b.getAttribute("aria-pressed") === "true");
+		})()`, c.attr, c.attr, c.scheme))
 		if err := chromedp.Run(ctx, chromedp.Evaluate(`history.back(); true`, nil)); err != nil {
 			t.Fatalf("%s: back to the index: %v", step, err)
 		}

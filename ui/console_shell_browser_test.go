@@ -101,13 +101,15 @@ const consoleMeasure = `(() => {
   const rr = rail.getBoundingClientRect();
   const nr = nav.getBoundingClientRect();
   const mr = main.getBoundingClientRect();
-  // The inline-end gap of the LAST thing on the bar. Measured on the
-  // locale menu rather than on the account, because the account is not
-  // last: margin-inline-start: auto pushes the whole tail to the end
-  // and the locale menu is what lands against it. Measuring the account
-  // would read the width of the word "Language" and call it a layout.
-  const lr = locale.getBoundingClientRect();
+  // The inline-end gap of the LAST thing on the bar, whichever of the
+  // two menus that is: the current layout puts the language first and
+  // the account last, a layout from before the profile the other way
+  // round. margin-inline-start: auto pushes the pair to the end, and
+  // measuring the one that is not last would read the other's width
+  // and call it a layout.
+  const lr = locale.getBoundingClientRect(), ar = account.getBoundingClientRect();
   const ltr = getComputedStyle(de).direction !== "rtl";
+  const end = ltr ? Math.max(lr.right, ar.right) : Math.min(lr.left, ar.left);
   // Every <summary> a reader can see anywhere in the document. The
   // claim "one control" is a count, not an assertion about one element:
   // a second disclosure added beside this one would satisfy every
@@ -122,7 +124,7 @@ const consoleMeasure = `(() => {
     VisibleSummaries: summaries,
     AccountMenu: shown(panel),
     BackShown: shown(document.querySelector("[rst-shell-back] a")),
-    TailEndPx: Math.round(ltr ? br.right - lr.right : lr.left - br.left),
+    TailEndPx: Math.round(ltr ? br.right - end : end - br.left),
     BarAboveRail: Math.round(br.bottom) <= Math.round(rr.top) + 1,
     RailBeforeMain: ltr ? Math.round(rr.right) <= Math.round(mr.left) + 1
                         : Math.round(rr.left) >= Math.round(mr.right) - 1,

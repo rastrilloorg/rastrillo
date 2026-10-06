@@ -9,6 +9,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"go/format"
+	"go/scanner"
+	"go/token"
 	"os"
 	"regexp"
 	"sort"
@@ -200,6 +202,90 @@ func Fill(src string, approved map[string]string) (string, int, error) {
 	if err != nil {
 		return "", n, err
 	}
+	if i := strings.IndexAny(out, "⟦⟧"); i >= 0 {
+		return "", n, fmt.Errorf("unreadable marker %q", leftover(out[i:]))
+	}
+	return out, n, nil
+}
+
+// FillFile is Fill for a named file, with the refusals the file's own
+// syntax calls for rather than Fill's blanket ones. In Go source a
+// marker inside a raw string literal may become text with double quotes
+// and backslashes, and only a backtick, which would end the literal, is
+// refused; inside an interpreted literal, or anywhere else in Go, a
+// quote or a backslash is refused. In any other file (Markdown, a
+// template) there is no literal to end, so quotes and backticks are
+// written as approved: backticks are how the docs mark code. The em
+// dash is refused everywhere, as clean says.
+func FillFile(name, src string, approved map[string]string) (string, int, error) {
+	if !strings.HasSuffix(name, ".go") {
+		return fill(src, approved, func(int) string { return "" })
+	}
+	raw, err := rawStrings(src)
+	if err != nil {
+		return "", 0, fmt.Errorf("%s: %w", name, err)
+	}
+	return fill(src, approved, func(at int) string {
+		for _, r := range raw {
+			if at >= r[0] && at < r[1] {
+				return "`"
+			}
+		}
+		return "\"\\"
+	})
+}
+
+// rawStrings is the byte span of every raw string literal in a Go
+// source, read with go/scanner so a backtick in a comment or inside an
+// interpreted string is not taken for one.
+func rawStrings(src string) ([][2]int, error) {
+	fset := token.NewFileSet()
+	file := fset.AddFile("", fset.Base(), len(src))
+	var s scanner.Scanner
+	var bad error
+	s.Init(file, []byte(src), func(pos token.Position, msg string) {
+		if bad == nil {
+			bad = fmt.Errorf("%s: %s", pos, msg)
+		}
+	}, scanner.ScanComments)
+	var out [][2]int
+	for {
+		pos, tok, lit := s.Scan()
+		if tok == token.EOF {
+			break
+		}
+		if tok == token.STRING && strings.HasPrefix(lit, "`") {
+			off := file.Offset(pos)
+			out = append(out, [2]int{off, off + len(lit)})
+		}
+	}
+	return out, bad
+}
+
+// fill is FillFile's loop: refused(at) names the characters the text
+// may not carry at that byte offset of src.
+func fill(src string, approved map[string]string, refused func(at int) string) (string, int, error) {
+	var b strings.Builder
+	n, last := 0, 0
+	for _, loc := range marker.FindAllStringSubmatchIndex(src, -1) {
+		id := src[loc[2]:loc[3]]
+		text, ok := approved[id]
+		if !ok {
+			return "", n, fmt.Errorf("%s: no approved text", id)
+		}
+		if bad := refused(loc[0]); bad != "" && strings.ContainsAny(text, bad) {
+			return "", n, fmt.Errorf("%s: %q cannot sit where its marker is without escaping (it carries one of %q)", id, text, bad)
+		}
+		if strings.Contains(text, "—") {
+			return "", n, fmt.Errorf("%s: %q carries an em dash", id, text)
+		}
+		b.WriteString(src[last:loc[0]])
+		b.WriteString(text)
+		last = loc[1]
+		n++
+	}
+	b.WriteString(src[last:])
+	out := b.String()
 	if i := strings.IndexAny(out, "⟦⟧"); i >= 0 {
 		return "", n, fmt.Errorf("unreadable marker %q", leftover(out[i:]))
 	}

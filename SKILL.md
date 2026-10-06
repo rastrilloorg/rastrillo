@@ -399,9 +399,9 @@ design-system vocabulary (§8) before building a custom component.
 Customise with a thin app-owned CSS layer loaded after `tokens.css` and
 `theme.css` through the shell's `head` block. Prefer `--rst-*` token
 overrides for colour, type and shape; use app-specific classes for layout
-or components the system does not cover. Keep the base styles intact so
-framework fixes remain easy to adopt. Follow an explicit user design
-requirement when it calls for more, but reuse the system wherever it fits.
+or components the system does not cover. Keep base styles intact so
+framework fixes stay easy to adopt. An explicit user design requirement
+wins; reuse the system wherever it fits.
 docs/site/templates.md
 
 Shells on a phone: `topbar` and `console` put their narrow chrome in
@@ -409,9 +409,10 @@ the Menu card. `sidebar` and `console` rails become an index page: mark
 it `{{define "view"}}index{{end}}`; every other page names its way back
 with `{{define "up"}}/#nav-x{{end}}` and the nav link gets
 `id="nav-x"`. Never build a hamburger drawer.
+`profile` holds who is signed in (avatar, name, email); `account` holds only links.
 
 **One screen, one job.** A screen shows a thing, or asks for one thing —
-never both. The failure it prevents is stacking: a list page that also
+never both. It prevents stacking: a list page that also
 carries a create form, an import panel and a dropzone, so the first
 thing a person meets is four half-started decisions and no obvious one.
 

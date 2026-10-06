@@ -209,12 +209,17 @@ var styleguideSamples = map[string]string{
 	// at the top returns to the index, the page whose view block says
 	// index, where the rail is the whole page. The back link's href is
 	// the page's up block, the index with this page's nav link as the
-	// fragment. No JavaScript: every view is a server-rendered page.
+	// fragment. The index's heading is the brand, with the page's title
+	// as its fallback. The rail's foot is the profile menu: the avatar,
+	// and a card with the name, the language and the account's links,
+	// which the phone index shows at its top instead. No JavaScript:
+	// every view is a server-rendered page.
 	"shell-sidebar": `<div rst-shell-sidebar="page">
   <a rst-skip href="#main">Skip to content</a>
   <div rst-shell-back><a href="/#nav-reports" rel="up" aria-label="Back to Sections">Sections</a></div>
-  <aside rst-shell-rail><h1 rst-shell-title>Notes</h1><a rst-shell-brand href="/">Notes</a>
+  <aside rst-shell-rail><h1 rst-shell-title><span><a rst-shell-brand href="/">Notes</a></span><span>Reports</span></h1><a rst-shell-brand href="/">Notes</a>
     <nav rst-shell-nav><span rst-shell-group>Work</span><a id="nav-dashboard" href="/dashboard">Dashboard</a><a id="nav-reports" href="/reports" aria-current="page">Reports</a></nav>
+    <div rst-shell-rail-foot><details rst-dropdown rst-shell-profile name="rst-shell-menu"><summary><span rst-shell-avatar><span rst-person-av aria-hidden="true">A</span><span rst-person-name>Ada Lovelace</span></span></summary><div rst-dropdown-menu><div rst-shell-who><span rst-person-av aria-hidden="true">A</span><span rst-person-name>Ada Lovelace</span><span rst-person-email>ada@example.com</span></div><a href="/settings">Settings</a></div></details></div>
   </aside>
   <main rst-shell-main id="main"><div rst-page>Content.</div></main>
 </div>`,

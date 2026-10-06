@@ -25,7 +25,7 @@ func TestEveryPageWithAHeaderLinksTheOneStylesheetThatRetiresTheRakeLine(t *test
 	if err != nil {
 		t.Fatalf("Render: %v", err)
 	}
-	const link = `<link rel="stylesheet" href="` + mountPath + `/tokens.css">`
+	link := `<link rel="stylesheet" href="` + assetHref("tokens.css") + `">`
 	names := make([]string, 0, len(files))
 	for name := range files {
 		names = append(names, name)
@@ -49,7 +49,7 @@ func TestEveryPageWithAHeaderLinksTheOneStylesheetThatRetiresTheRakeLine(t *test
 			framesChecked++
 		}
 		if !strings.Contains(body, link) {
-			t.Errorf("%s renders a page header and links no %s/tokens.css; whatever retires the rake line, it is not reaching this document", name, mountPath)
+			t.Errorf("%s renders a page header and links no %s; whatever retires the rake line, it is not reaching this document", name, assetHref("tokens.css"))
 		}
 	}
 	if documents == 0 || withHeader == 0 || framesChecked == 0 {

@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"amadan.net/rastrillo/rastrillo/internal/designsystem"
@@ -129,7 +130,19 @@ func TestWriteLeavesNoTraceOfAnEarlierRender(t *testing.T) {
 		t.Errorf("the ink/ directory survived the second run")
 	}
 	// And the run that cleaned up still produced the whole gallery.
-	for _, name := range []string{"index.html", "tokens.css", designsystem.RootTheme() + "/en/index.html"} {
+	// tokens.css is written under its content-hashed name, read off the
+	// render rather than spelled here, so this checks the same file the
+	// render produced whatever its bytes are this week.
+	tokens := ""
+	for name := range want {
+		if strings.HasPrefix(name, "tokens.") && strings.HasSuffix(name, ".css") {
+			tokens = name
+		}
+	}
+	if tokens == "" {
+		t.Fatal("the render has no tokens.<hash>.css")
+	}
+	for _, name := range []string{"index.html", tokens, designsystem.RootTheme() + "/en/index.html"} {
 		got, err := os.ReadFile(filepath.Join(dir, filepath.FromSlash(name)))
 		if err != nil {
 			t.Fatalf("%s after the second run: %v", name, err)

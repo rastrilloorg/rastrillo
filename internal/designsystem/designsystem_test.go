@@ -2,6 +2,8 @@ package designsystem
 
 import (
 	"bytes"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"html"
 	"html/template"
@@ -495,6 +497,11 @@ var anchorHref = regexp.MustCompile(`<a[^>]*\shref="([^"]*)"`)
 // mountPrefix is where every internal link starts.
 const mountPrefix = mountPath + "/"
 
+// assetHref is how a page links an asset: its content-hashed name under
+// the mount. Asserting the plain name would pass vacuously now that the
+// plain name is never written, so every gate below asks for this.
+func assetHref(name string) string { return mountPrefix + hashedNames()[name] }
+
 // outboundLinks is the whole list of addresses this tree is allowed to
 // point at that are not in it, each with the reason it is there. Same
 // convention as pageBudgetDebt above and axeExempt in a11y_test.go: a
@@ -676,7 +683,7 @@ func TestNoGalleryPageLoadsTheEnhancementScripts(t *testing.T) {
 		for _, locale := range rastrillo.BaseLocales() {
 			for _, name := range galleryFiles(theme, locale) {
 				for _, s := range []string{"select.js", "calendar.js", "datetime.js"} {
-					if strings.Contains(string(files[name]), `src="`+mountPrefix+s+`"`) {
+					if strings.Contains(string(files[name]), `src="`+assetHref(s)+`"`) {
 						t.Errorf("%s loads %s, which nothing on the page uses", name, s)
 					}
 				}
@@ -951,19 +958,19 @@ func TestNoGalleryPageOpensAModalOverTheGallery(t *testing.T) {
 }
 
 // Every theme × locale × page kind × shell combination is present, plus
-// the root index and the ten shared assets — the tree's shape is part
+// the root index and the shared assets, each under its hashed name and
+// its plain one (see TestEveryAssetIsWrittenHashedAndPlainAndPagesLinkTheHash) — the tree's shape is part
 // of its contract with the website's sync script. The page kinds come
 // off pageKinds(), so a sixth page is expected in every directory the
 // moment its row lands and nothing here has to be remembered.
 func TestTreeShapeIsComplete(t *testing.T) {
 	files := render(t)
-	want := []string{
-		"index.html",
-		"tokens.css", "rastrillo.js", "busy.js", "shell.js", "shell.css", "select.js", "datetime.js", "calendar.js",
-		"gallery.js", "gallery.css",
+	want := []string{"index.html"}
+	for _, name := range []string{"tokens.css", "rastrillo.js", "busy.js", "shell.js", "shell.css", "select.js", "datetime.js", "calendar.js", "gallery.js", "gallery.css"} {
+		want = append(want, hashedNames()[name], name)
 	}
 	for _, theme := range ui.ThemeNames() {
-		want = append(want, "theme-"+theme+".css")
+		want = append(want, hashedNames()["theme-"+theme+".css"], "theme-"+theme+".css")
 		for _, locale := range rastrillo.BaseLocales() {
 			want = append(want, galleryFiles(theme, locale)...)
 			want = append(want, fmt.Sprintf("%s/%s/modal.html", theme, locale))
@@ -999,7 +1006,7 @@ func TestTreeShapeIsComplete(t *testing.T) {
 	for _, theme := range ui.ThemeNames() {
 		for _, locale := range rastrillo.BaseLocales() {
 			for _, path := range galleryFiles(theme, locale) {
-				if want := `href="` + mountPrefix + `theme-` + theme + `.css"`; !strings.Contains(string(files[path]), want) {
+				if want := `href="` + assetHref("theme-"+theme+".css") + `"`; !strings.Contains(string(files[path]), want) {
 					t.Errorf("%s does not link its own theme (%s)", path, want)
 				}
 			}
@@ -1007,6 +1014,67 @@ func TestTreeShapeIsComplete(t *testing.T) {
 	}
 	if len(files) != len(want) {
 		t.Errorf("tree has %d files, expected exactly %d", len(files), len(want))
+	}
+}
+
+// Every stylesheet and script is written twice at the tree root: under
+// its content-hashed name, in the framework's own spelling (name.<16
+// hex of its sha256>.ext, what rastrillo.Assets serves as immutable),
+// and under its plain name, byte for byte the same file. Pages link the
+// hashed name and only the hashed name: the static edge that serves the
+// tree caches assets, and a page linking a plain name could be paired
+// by a deploy with yesterday's cached copy. The plain copies are for
+// what is not a page of this tree: a hotlink from the Getting Started
+// page's readers, and the website's own checks, which look for
+// tokens.css and theme-<theme>.css by name.
+func TestEveryAssetIsWrittenHashedAndPlainAndPagesLinkTheHash(t *testing.T) {
+	files := render(t)
+	hashed := regexp.MustCompile(`^([a-z-]+)\.([0-9a-f]{16})\.(css|js)$`)
+	hashes, plains := 0, 0
+	for name, body := range files {
+		if strings.Contains(name, "/") || name == "index.html" {
+			continue
+		}
+		m := hashed.FindStringSubmatch(name)
+		if m == nil {
+			if _, ok := galleryAssets()[name]; !ok {
+				t.Errorf("%s is at the tree root and is neither an asset's plain name nor a hashed one", name)
+			}
+			plains++
+			continue
+		}
+		hashes++
+		sum := sha256.Sum256(body)
+		if want := hex.EncodeToString(sum[:])[:16]; m[2] != want {
+			t.Errorf("%s carries hash %s and its bytes hash to %s: a cached copy of the old file would be served for the new one", name, m[2], want)
+		}
+		plain, ok := files[m[1]+"."+m[3]]
+		if !ok {
+			t.Errorf("%s has no plain copy %s.%s for a hotlink or the site's checks", name, m[1], m[3])
+		} else if !bytes.Equal(plain, body) {
+			t.Errorf("%s.%s is not byte-identical to %s: a hotlink would get different bytes from the page", m[1], m[3], name)
+		}
+	}
+	if want := len(galleryAssets()); hashes != want || plains != want {
+		t.Errorf("%d hashed and %d plain assets at the tree root, the tree ships %d of each", hashes, plains, want)
+	}
+	// The pages link the hashed names, never a plain one: every href or
+	// src under the mount that ends .css or .js.
+	ref := regexp.MustCompile(`(?:href|src)="` + regexp.QuoteMeta(mountPrefix) + `([^"/]+\.(?:css|js))"`)
+	links := 0
+	for name, body := range files {
+		if !strings.HasSuffix(name, ".html") {
+			continue
+		}
+		for _, m := range ref.FindAllStringSubmatch(string(body), -1) {
+			links++
+			if _, ok := files[m[1]]; !ok || !hashed.MatchString(m[1]) {
+				t.Errorf("%s links %s, which is not a hashed asset in the tree", name, m[1])
+			}
+		}
+	}
+	if links < len(files)/2 {
+		t.Errorf("only %d asset links across %d files; the matcher is not reading the pages", links, len(files))
 	}
 }
 
@@ -1022,8 +1090,8 @@ func TestRootIndexIsTheDefaultThemeInEnglishAtTheTreeRoot(t *testing.T) {
 	if root == "" || nested == "" {
 		t.Fatalf("root or %s index missing", nestedPath)
 	}
-	if !strings.Contains(root, `href="`+mountPrefix+`tokens.css"`) {
-		t.Errorf("root index does not link %stokens.css", mountPrefix)
+	if !strings.Contains(root, `href="`+assetHref("tokens.css")+`"`) {
+		t.Errorf("root index does not link %s", assetHref("tokens.css"))
 	}
 	if root != nested {
 		t.Errorf("the root index is not byte-identical to %s", nestedPath)
@@ -1073,7 +1141,7 @@ func TestEnhancedControlsAreOnTheComponentPages(t *testing.T) {
 				continue
 			}
 			found = true
-			if !strings.Contains(doc, mountPrefix+c.script) {
+			if !strings.Contains(doc, assetHref(c.script)) {
 				t.Errorf("a preview carries %s and does not load %s — the enhancement has nothing to boot from", c.hook, c.script)
 			}
 		}
@@ -1901,14 +1969,14 @@ var dsClass = regexp.MustCompile(`class="[^"]*\bds-`)
 func TestEveryGalleryPageLinksTheStylesheet(t *testing.T) {
 	files := render(t)
 	const asset = "gallery.css"
-	served, ok := files[asset]
+	served, ok := files[hashedNames()[asset]]
 	if !ok {
 		t.Fatalf("the tree does not serve %s at its root", asset)
 	}
 	if !bytes.Equal(served, GalleryCSS()) {
 		t.Errorf("the tree serves %d bytes of %s and the package holds %d", len(served), asset, len(GalleryCSS()))
 	}
-	link := `<link rel="stylesheet" href="` + mountPrefix + asset + `">`
+	link := `<link rel="stylesheet" href="` + assetHref(asset) + `">`
 
 	var styled, linked int
 	names := make([]string, 0, len(files))
@@ -1969,7 +2037,7 @@ func TestEveryGalleryPageLinksTheStylesheet(t *testing.T) {
 // control into a bar they are already looking at.
 func TestGalleryScriptLoadsBeforeTheBody(t *testing.T) {
 	page := galleryPage(t, render(t), RootTheme(), "en", "overview")
-	tag := `<script src="` + mountPrefix + `gallery.js"></script>`
+	tag := `<script src="` + assetHref("gallery.js") + `"></script>`
 	i := strings.Index(page, tag)
 	if i < 0 {
 		t.Fatalf("no blocking gallery.js tag on the page (want %s)", tag)
@@ -1977,7 +2045,7 @@ func TestGalleryScriptLoadsBeforeTheBody(t *testing.T) {
 	if body := strings.Index(page, "<body>"); i > body {
 		t.Error("gallery.js loads after <body> — the scheme it restores will flash")
 	}
-	if strings.Contains(page, `<script defer src="`+mountPrefix+`gallery.js"></script>`) {
+	if strings.Contains(page, `<script defer src="`+assetHref("gallery.js")+`"></script>`) {
 		t.Error("gallery.js is deferred; see its header comment for why it is not")
 	}
 }
@@ -2897,7 +2965,7 @@ func TestTheGettingStartedPageWeighsTheRealAssets(t *testing.T) {
 				continue
 			}
 			for _, a := range want {
-				served, ok := files[a.file]
+				served, ok := files[hashedNames()[a.file]]
 				if !ok {
 					t.Errorf("%s: the page lists %s and the tree does not serve it", name, a.file)
 					continue
@@ -2908,7 +2976,10 @@ func TestTheGettingStartedPageWeighsTheRealAssets(t *testing.T) {
 				weight := template.HTMLEscapeString(proseIn(locale, "{bytes} bytes", "bytes", len(served)))
 				for _, w := range []string{
 					`id="` + anchorID("asset", a.file) + `" data-ds-anchor`,
-					`href="` + mountPrefix + a.file + `"`,
+					// The hashed address, saved under the plain name: a reader
+					// downloading tokens.css should not get a file called
+					// tokens.<hash>.css to vendor and rename.
+					`href="` + assetHref(a.file) + `" download="` + a.file + `"`,
 					weight,
 				} {
 					if !strings.Contains(page, w) {
@@ -3953,8 +4024,8 @@ func TestNoTitleOrStateLabelCarriesAnEmDash(t *testing.T) {
 
 var (
 	shellRoot = regexp.MustCompile(`<div rst-shell-sidebar="([a-z]+)">`)
-	backLink  = regexp.MustCompile(`<a rst-skip href="#main">[^<]*</a>\n<div rst-shell-back><a href="([^"]*)" rel="up" aria-label="([^"]*)">([^<]*)</a></div>`)
-	railFoot  = regexp.MustCompile(`(?s)<div rst-shell-rail-foot id="ds-prefs">(.*?)</aside>`)
+	backLink  = regexp.MustCompile(`<a rst-skip href="#main">[^<]*</a>\n<div rst-shell-back><a href="([^"]*)" rel="up" aria-label="([^"]*)">([^<]*)</a>`)
+	prefsCard = regexp.MustCompile(`(?s)<details rst-dropdown class="ds-prefs" id="ds-prefs" name="ds-prefs"><summary aria-label="([^"]*)">(.*?)</summary><div rst-dropdown-menu>(.*?)</div></details>`)
 	barCtl    = regexp.MustCompile(`(?s)<div class="ds-top__controls">(.*?)</header>`)
 	indexNav  = regexp.MustCompile(`(?s)<nav class="ds-index" rst-shell-nav aria-label="([^"]*)">(.*?)</nav>`)
 	schemeVal = regexp.MustCompile(`data-ds-scheme="([a-z]+)"`)
@@ -3994,19 +4065,37 @@ func TestTheGalleryIsTheShippedShell(t *testing.T) {
 						t.Errorf("%s: the back control reads %q named %q, want %q named %q", name, backs[0][3], backs[0][2], label, aria)
 					}
 				}
-				for _, piece := range []string{`<h1 rst-shell-title>`, `<p class="ds-index-lead">`, `<nav class="ds-index"`, `<div rst-shell-rail-foot id="ds-prefs">`} {
+				for _, piece := range []string{`<h1 rst-shell-title>`, `<p class="ds-index-lead">`, `<nav class="ds-index"`} {
 					if strings.Contains(page, piece) != index {
 						t.Errorf("%s: %s present=%v; it belongs on the Overview and nowhere else", name, piece, !index)
 					}
 				}
+				// The phone's display settings: one menu on every page, in
+				// the index's header row beside the heading, and at the
+				// inline end of a content page's back strip. The foot that
+				// used to hold them on the index is gone.
+				if strings.Contains(page, "<div rst-shell-rail-foot") {
+					t.Errorf("%s: the rail still has a foot; the controls are in the display settings menu", name)
+				}
+				if n := strings.Count(page, `class="ds-prefs"`); n != 1 {
+					t.Errorf("%s: %d display settings menus, want one", name, n)
+				}
+				where := `<div rst-shell-back><a `
 				if index {
-					if m := railFoot.FindStringSubmatch(page); m == nil || strings.TrimSpace(m[1]) == "</div>" {
-						t.Errorf("%s: the index's foot is empty", name)
+					where = `<h1 rst-shell-title><span>` + template.HTMLEscapeString(proseIn(locale, "rastrillo design system")) + `</span></h1>` + "\n" + `<details rst-dropdown class="ds-prefs"`
+				}
+				if !strings.Contains(page, where) {
+					t.Errorf("%s: the display settings menu is not where a phone looks for it (%s)", name, where)
+				}
+				if !index {
+					strip := page[strings.Index(page, "<div rst-shell-back>"):]
+					if strings.Index(strip, `class="ds-prefs"`) > strings.Index(strip, "</div>\n") {
+						t.Errorf("%s: the display settings menu is not inside the back strip", name)
 					}
 				}
 				for _, want := range []string{
-					`<link rel="stylesheet" href="` + mountPrefix + `shell.css">`,
-					`<script defer blocking="render" src="` + mountPrefix + `shell.js"></script>`,
+					`<link rel="stylesheet" href="` + assetHref("shell.css") + `">`,
+					`<script defer blocking="render" src="` + assetHref("shell.js") + `"></script>`,
 				} {
 					if !strings.Contains(page, want) {
 						t.Errorf("%s: no %s; the slide, Back through history and the focus return are shell.css and shell.js", name, want)
@@ -4090,42 +4179,69 @@ func TestThePhoneIndexSaysItsDemosOpenANewTab(t *testing.T) {
 	}
 }
 
-// The Overview writes its controls twice, in the bar for a wide screen
-// and in the index's foot for a phone, and only one is ever shown. The
-// two must not drift when the next control is added to one: same
-// themes, same schemes, same languages, in the same order. The foot's
-// links carry #ds-prefs, so a reader switching there lands with the
-// controls on screen; the bar's carry no fragment, because gallery.js
-// sets one at the moment of the click. Neither carries an id but the
-// foot's own, since an id written twice is two elements one fragment
-// cannot both reach.
+// Every page writes its controls twice, in the bar for a wide screen
+// and in the display settings menu for a phone, and only one is ever
+// shown. The two must not drift when the next control is added to one:
+// same themes, same schemes, same languages, in the same order, and no
+// fragment on either, because gallery.js adds the reader's place to
+// both at the moment of the click. Neither carries an id, since an id
+// written twice is two elements one fragment cannot both reach. The
+// menu's button is an icon, so its name is the approved string, and
+// the icon beside it is decoration.
 func TestTheTwoCopiesOfTheControlsAgree(t *testing.T) {
 	files := render(t)
 	for _, theme := range ui.ThemeNames() {
 		for _, locale := range rastrillo.BaseLocales() {
-			page := galleryPage(t, files, theme, locale, "overview")
-			foot, bar := railFoot.FindStringSubmatch(page), barCtl.FindStringSubmatch(page)
-			if foot == nil || bar == nil {
-				t.Fatalf("%s/%s: foot found %v, bar found %v", theme, locale, foot != nil, bar != nil)
-			}
-			fh, bh := anchorHref.FindAllStringSubmatch(foot[1], -1), anchorHref.FindAllStringSubmatch(bar[1], -1)
-			if len(fh) == 0 || len(fh) != len(bh) {
-				t.Errorf("%s/%s: %d links in the foot, %d in the bar", theme, locale, len(fh), len(bh))
-				continue
-			}
-			for i := range fh {
-				if strings.Contains(bh[i][1], "#") || fh[i][1] != bh[i][1]+"#ds-prefs" {
-					t.Errorf("%s/%s link %d: foot %s, bar %s; want the bar's address and the foot's with #ds-prefs", theme, locale, i, fh[i][1], bh[i][1])
+			for _, pk := range pageKinds() {
+				page := galleryPage(t, files, theme, locale, pk.Kind)
+				where := theme + "/" + locale + "/" + pk.File
+				card, bar := prefsCard.FindStringSubmatch(page), barCtl.FindStringSubmatch(page)
+				if card == nil || bar == nil {
+					t.Fatalf("%s: display settings found %v, bar found %v", where, card != nil, bar != nil)
+				}
+				if want := template.HTMLEscapeString(proseIn(locale, "Display settings")); card[1] != want {
+					t.Errorf("%s: the display settings button is named %q, want %q", where, card[1], want)
+				}
+				if !strings.HasPrefix(card[2], `<svg class="icon"`) || !strings.Contains(card[2], `aria-hidden="true"`) || strings.Contains(card[2], "<span") {
+					t.Errorf("%s: the display settings button is not the bare, hidden icon its name stands for: %s", where, card[2])
+				}
+				ch, bh := anchorHref.FindAllStringSubmatch(card[3], -1), anchorHref.FindAllStringSubmatch(bar[1], -1)
+				if len(ch) == 0 || len(ch) != len(bh) {
+					t.Errorf("%s: %d links in the menu, %d in the bar", where, len(ch), len(bh))
+					continue
+				}
+				for i := range ch {
+					if strings.Contains(bh[i][1], "#") || ch[i][1] != bh[i][1] {
+						t.Errorf("%s link %d: menu %s, bar %s; want the same address and no fragment", where, i, ch[i][1], bh[i][1])
+					}
+				}
+				if a, b := schemeVal.FindAllString(card[3], -1), schemeVal.FindAllString(bar[1], -1); strings.Join(a, " ") != strings.Join(b, " ") || len(a) != 3 {
+					t.Errorf("%s: scheme buttons %v in the menu, %v in the bar", where, a, b)
+				}
+				for what, html := range map[string]string{"menu": card[3], "bar": bar[1]} {
+					if elementID.MatchString(html) {
+						t.Errorf("%s: the %s's controls carry an id", where, what)
+					}
 				}
 			}
-			if a, b := schemeVal.FindAllString(foot[1], -1), schemeVal.FindAllString(bar[1], -1); strings.Join(a, " ") != strings.Join(b, " ") || len(a) != 3 {
-				t.Errorf("%s/%s: scheme buttons %v in the foot, %v in the bar", theme, locale, a, b)
-			}
-			for where, html := range map[string]string{"foot": foot[1], "bar": bar[1]} {
-				if elementID.MatchString(html) {
-					t.Errorf("%s/%s: the %s's controls carry an id", theme, locale, where)
-				}
-			}
+		}
+	}
+}
+
+// The filter box carries the search icon at its inline start, drawn by
+// the icon set and hidden from the accessible name, which is the
+// field's label.
+func TestTheFilterBoxCarriesTheSearchIcon(t *testing.T) {
+	files := render(t)
+	box := regexp.MustCompile(`(?s)<search class="ds-search">(.*?)</search>`)
+	for _, pk := range pageKinds() {
+		m := box.FindStringSubmatch(galleryPage(t, files, RootTheme(), "en", pk.Kind))
+		if m == nil {
+			t.Fatalf("%s: no filter box", pk.File)
+		}
+		icon, input := strings.Index(m[1], string(rastrillo.Icon("search"))), strings.Index(m[1], "<input")
+		if icon < 0 || input < icon {
+			t.Errorf("%s: the filter box has no search icon before its field: %s", pk.File, m[1])
 		}
 	}
 }

@@ -119,15 +119,22 @@ const DefaultMount = "/design-system"
 //	<theme>/<locale>/shells/<shell>.html  one full-page demo per shell, and
 //	<theme>/<locale>/shells/<shell>-page.html  a section page for the sidebar
 //	                                      and console
-//	tokens.css theme-<theme>.css shell.css  the stylesheets, once each
-//	rastrillo.js busy.js shell.js          the framework's scripts
-//	select.js datetime.js calendar.js     (calendar.js draws the month grid
+//	tokens.<hash>.css theme-<theme>.<hash>.css shell.<hash>.css
+//	                                      the stylesheets, once each
+//	rastrillo.<hash>.js busy.<hash>.js shell.<hash>.js
+//	                                      the framework's scripts
+//	select.<hash>.js datetime.<hash>.js calendar.<hash>.js
+//	                                      (calendar.js draws the month grid
 //	                                      datetime.js opens)
-//	gallery.js gallery.css                the gallery's own furniture,
+//	gallery.<hash>.js gallery.<hash>.css  the gallery's own furniture,
 //	                                      once each
 //
 // The assets are shared by every page rather than copied per theme, so
-// the tree's size is the documents plus one copy of the library.
+// the tree's size is the documents plus the library, twice. Each is
+// written under its content-hashed name (see hashedNames), which every
+// page links, so a cache can never hand a new page an old asset; and
+// under its plain name, linked by no page, for hotlinks and the site's
+// checks.
 //
 // mount is the URL path the tree will be served from — DefaultMount for
 // rastrillo.org. Every link and asset URL in the output is an absolute
@@ -138,24 +145,22 @@ func Render(mount string) (map[string][]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	out := map[string][]byte{
-		"tokens.css":   ui.TokensCSS(),
-		"rastrillo.js": ui.ShimJS(),
-		"busy.js":      ui.BusyJS(),
-		"shell.js":     ui.ShellJS(),
-		"shell.css":    ui.ShellCSS(),
-		"select.js":    ui.SelectJS(),
-		"datetime.js":  ui.DatetimeJS(),
-		"calendar.js":  ui.CalendarJS(),
-		"gallery.js":   GalleryJS(),
-		"gallery.css":  GalleryCSS(),
-	}
 	for _, theme := range ui.ThemeNames() {
-		css, ok := ui.ThemeCSS(theme)
-		if !ok {
+		if _, ok := ui.ThemeCSS(theme); !ok {
 			return nil, fmt.Errorf("designsystem: no theme %q", theme)
 		}
-		out["theme-"+theme+".css"] = css
+	}
+	// Every asset twice. The hashed name is the only one a page links,
+	// so a deploy can never pair new HTML with an old cached stylesheet
+	// or script: a page asks for exactly the bytes it was rendered
+	// against. The plain name is the same bytes, linked by no page, kept
+	// for what is not a page of this tree: a reader hotlinking tokens.css
+	// as the Getting Started page invites, and the website's own checks,
+	// which look for tokens.css and theme-<theme>.css by name.
+	out := map[string][]byte{}
+	for name, body := range galleryAssets() {
+		out[hashedNames()[name]] = body
+		out[name] = body
 	}
 
 	for _, theme := range ui.ThemeNames() {

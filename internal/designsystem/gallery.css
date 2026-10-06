@@ -444,7 +444,13 @@ ds-s { color: var(--rst-tone-warning-fg); }
    is a complete list of every anchor on the page either way. */
 .ds-search { display: none; }
 :root[data-rst-js] .ds-search { display: block; }
-.ds-search input { background: var(--rst-bg); border: 1px solid var(--rst-line-strong); border-radius: var(--rst-radius-sm); box-sizing: border-box; color: var(--rst-text); font: inherit; font-size: var(--rst-fs-sm); inline-size: 100%; padding: 0.35rem 0.5rem; }
+/* The magnifier sits inside the field at its inline start, over the
+   field's padding, and lets a tap through to the field under it. It is
+   the icon set's own search glyph, aria-hidden, because the field's
+   label already names it. */
+:root[data-rst-js] .ds-search { position: relative; }
+.ds-search > .icon { color: var(--rst-text-faint); inset-block-start: 50%; inset-inline-start: 0.55rem; pointer-events: none; position: absolute; transform: translateY(-50%); }
+.ds-search input { background: var(--rst-bg); border: 1px solid var(--rst-line-strong); border-radius: var(--rst-radius-sm); box-sizing: border-box; color: var(--rst-text); font: inherit; font-size: var(--rst-fs-sm); inline-size: 100%; padding-block: 0.35rem; padding-inline: 1.9rem 0.5rem; }
 .ds-search input:focus-visible { border-color: var(--rst-accent); outline: 2px solid var(--rst-accent); outline-offset: -1px; }
 .ds-nav__empty { color: var(--rst-text-muted); font-size: var(--rst-fs-sm); margin: var(--rst-sp-3) 0 0; }
 /* The rail's filter box is 12.5px like everything else in here, and a
@@ -511,13 +517,17 @@ ds-s { color: var(--rst-tone-warning-fg); }
    800px and up the Overview is a page with the rail beside it, as the
    shell's index is, and these would be a second list under the tree
    and a second set of controls beside the bar's. */
-.ds-index-lead, .ds-rail > .ds-index, .ds-rail > [rst-shell-rail-foot] { display: none; }
+.ds-index-lead, .ds-rail > .ds-index { display: none; }
 @media (max-width: 799.98px) {
   /* On a phone a section page is the way back and the content, and the
-     controls are in the index's foot, under the list. */
+     controls are in the display settings menu at the top of every page
+     (below). */
   .ds-top { display: none; }
   [rst-shell-sidebar~="index"] .ds-index-lead { color: var(--rst-text-muted); display: block; margin: 0 0 var(--rst-sp-4); padding-inline: 0.25rem; }
-  [rst-shell-sidebar~="index"] > .ds-rail > :is(.ds-index, [rst-shell-rail-foot]) { display: flex; }
+  [rst-shell-sidebar~="index"] > .ds-rail > .ds-index { display: flex; }
+  /* The rail on the index has no gap of its own (the rows sit flush
+     under the heading), so the field would touch the first row. */
+  [rst-shell-sidebar~="index"] .ds-search { margin-block-end: var(--rst-sp-3); }
   /* A query swaps the rows for the tree it filters. Two rules, so an
      engine without :has() drops both and shows rows and tree one after
      the other: long, but with no route missing. */
@@ -543,4 +553,44 @@ ds-s { color: var(--rst-tone-warning-fg); }
   /* Content-box sizing under max-inline-size: 100%: a border here
      would make a full-width box 2px wider than the screen. */
   .ds-view__box { border-inline-width: 0; border-radius: 0; }
+}
+
+/* ── Display settings, on a phone ────────────────────────────────────
+   Below 800px the pinned bar is gone, and the theme, scheme and language
+   controls are one menu at the top of every page: in the index's header
+   row beside the heading, where the framework's own profile menu sits,
+   and at the inline end of a content page's back strip. It is an
+   rst-dropdown, so rastrillo.js closes it on an outside click and on
+   Escape, and its card is the framework's anchored panel. At 800px and
+   up the bar has the controls and the menu is not drawn. */
+.ds-prefs { display: none; }
+/* border-box, so the touch block's 44px minimum is the whole button
+   rather than 44px of icon inside its padding. */
+.ds-prefs > summary { border-radius: var(--rst-radius-sm); box-sizing: border-box; color: var(--rst-text); justify-content: center; padding: 0.4rem; }
+.ds-prefs > summary > .icon { block-size: 1.25rem; inline-size: 1.25rem; }
+.ds-prefs > summary:hover, .ds-prefs[open] > summary { background: var(--rst-accent-soft); }
+.ds-prefs > summary:focus-visible { outline: 2px solid var(--rst-accent); outline-offset: -2px; }
+/* Scripts off, a tap outside the card still closes it: the open
+   summary grows a layer over the viewport, under the card, so the tap
+   is a click on the summary. The framework's menu cards do the same. */
+.ds-prefs[open] > summary::before { content: ""; cursor: default; inset: 0; position: fixed; z-index: 1; }
+/* Taller than a menu's usual 20rem cap: with the language list open in
+   place the card holds twelve 44px rows, and the screen is the room it
+   has, not a row of a toolbar. */
+.ds-prefs > [rst-dropdown-menu] { align-items: flex-start; box-sizing: border-box; display: flex; flex-direction: column; gap: var(--rst-sp-3); inline-size: max-content; max-block-size: calc(100dvh - 6rem); max-inline-size: calc(100vw - 1.5rem); padding: var(--rst-sp-3); }
+/* The language menu inside the card opens in place: a popover inside a
+   popover has nowhere to go on a phone. It is the card's full width so
+   its rows read as rows. */
+.ds-prefs [rst-locale] { align-self: stretch; }
+.ds-prefs [rst-dropdown-menu] [rst-dropdown-menu] { border: 0; box-shadow: none; inset: auto; margin: 0; max-block-size: none; min-width: 0; padding-block: 0; padding-inline: 0.5rem 0; position: static; }
+/* The card's own button rule (a full-width menu row) would stretch the
+   scheme buttons out of their segmented group. */
+.ds-prefs .ds-scheme button { border-radius: 0; inline-size: auto; }
+@media (max-width: 799.98px) {
+  .ds-prefs { display: block; }
+  /* Lifted into the index's header row, the place and size of the
+     framework's profile menu: the rail is positioned on the index, and
+     the heading keeps that corner clear. */
+  [rst-shell-sidebar~="index"] > .ds-rail > .ds-prefs { align-items: center; block-size: 2.75rem; display: flex; inset-block-start: var(--rst-sp-5); inset-inline-end: var(--rst-sp-4); position: absolute; }
+  [rst-shell-back] > .ds-prefs { margin-inline-start: auto; }
 }

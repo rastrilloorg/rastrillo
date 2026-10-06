@@ -1953,8 +1953,58 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
    measures that gap for exactly that reason. */
 .rst-shell__rail-foot, [rst-shell-rail-foot] { display: flex; flex-direction: column; gap: var(--rst-sp-3); margin-block-start: auto; }
 /* An un-overridden shell renders the wrapper with nothing in it; draw
-   no gap for it, the same way .rst-shell__foot handles its own. */
+   no gap for it, the same way .rst-shell__foot handles its own. Kept
+   for layouts from before the profile menu, whose foot held the two
+   blocks bare. */
 .rst-shell__rail-foot:empty, [rst-shell-rail-foot]:empty { display: none; }
+/* The profile menu: the rail foot's one control, an avatar button
+   whose card holds the person's name, the language and the account's
+   links. It is an rst-dropdown, so rastrillo.js already closes it on an
+   outside click and on Escape, and the anchored-menu rules already keep
+   its card on screen; these rules are its shape.
+
+   The foot goes only for the layout's placeholder (the empty avatar
+   named Account, marked placeholder) when there is also nothing to
+   choose: a button opening an empty card. A real person stays even
+   with no language and no links, because the signed-in person must not
+   vanish from the rail. Without :has() the placeholder stays, a button
+   opening a card that holds "Account", which is harmless. */
+.rst-shell__rail-foot:has(.rst-shell__who:only-child .rst-person__av--placeholder), [rst-shell-rail-foot]:has([rst-shell-who]:only-child [rst-person-av~="placeholder"]) { display: none; }
+/* The avatar is the person partial's own circle at its own size. The
+   name stays in the summary, clipped rather than hidden, because it is
+   the button's accessible name: the circle is aria-hidden decoration.
+   The email is out of the name, display: none, so a screen reader hears
+   who, not their address. */
+.rst-shell__avatar, [rst-shell-avatar] { align-items: center; display: inline-flex; justify-content: center; }
+.rst-shell__avatar .rst-person__name, [rst-shell-avatar] [rst-person-name] { block-size: 1px; clip-path: inset(50%); inline-size: 1px; overflow: hidden; position: absolute; white-space: nowrap; }
+.rst-shell__avatar .rst-person__email, [rst-shell-avatar] [rst-person-email] { display: none; }
+/* inline-flex, not the dropdown summary's flex: a summary as wide as
+   the rail would draw the round hover fill as a long oval. */
+.rst-shell__profile > summary, [rst-shell-profile] > summary { border-radius: 50%; color: var(--rst-text); display: inline-flex; justify-content: center; padding: 4px; }
+.rst-shell__profile > summary:hover, [rst-shell-profile] > summary:hover, .rst-shell__profile[open] > summary, [rst-shell-profile][open] > summary { background: var(--rst-accent-soft); }
+.rst-shell__profile > summary:focus-visible, [rst-shell-profile] > summary:focus-visible { outline: 2px solid var(--rst-accent); outline-offset: 2px; }
+.rst-shell__profile > .rst-dropdown__menu, [rst-shell-profile] > [rst-dropdown-menu] { box-sizing: border-box; inline-size: min(17rem, calc(100vw - 1.5rem)); }
+/* CLOSING ON AN OUTSIDE TAP with scripts off, the topbar card's way:
+   while open the summary grows an invisible layer over the viewport,
+   under the card, so a tap outside the card is a click on the summary
+   and closes it natively. On a desktop the rail is lifted while the
+   menu is open (the wide block below). */
+.rst-shell__profile[open] > summary::before, [rst-shell-profile][open] > summary::before { content: ""; cursor: default; inset: 0; position: fixed; z-index: 1; }
+/* The card's head: the name and the email the summary keeps out of
+   sight. The avatar is already on screen as the button. The console
+   writes the same head into its tail, where it shows only on the phone
+   index; hidden here so the wide bar's display: contents cannot make
+   it a flex item of the bar. */
+.rst-shell__who, [rst-shell-who] { border-block-end: 1px solid var(--rst-line); margin-block-end: 0.25rem; min-inline-size: 0; padding-block: 0.35rem 0.55rem; padding-inline: 0.65rem; }
+.rst-shell__who .rst-person__av, [rst-shell-who] [rst-person-av] { display: none; }
+.rst-shell__tail > .rst-shell__who, [rst-shell-tail] > [rst-shell-who] { display: none; }
+/* A menu inside the card (the language switcher) opens IN PLACE, as
+   the topbar card's do: a popover inside a popover has nowhere good to
+   go on a phone, and on a desktop it would cover the card it came
+   from. Its summary reads as one of the card's rows. */
+.rst-shell__profile .rst-dropdown__menu .rst-dropdown__menu, [rst-shell-profile] [rst-dropdown-menu] [rst-dropdown-menu] { border: 0; box-shadow: none; inset: auto; margin: 0; max-block-size: none; min-width: 0; padding-block: 0; padding-inline: 0.5rem 0; position: static; }
+.rst-shell__profile .rst-dropdown__menu .rst-dropdown > summary, [rst-shell-profile] [rst-dropdown-menu] [rst-dropdown] > summary { border-radius: var(--rst-radius-sm); color: var(--rst-text); font-size: var(--rst-fs-sm); justify-content: space-between; padding: 0.4rem 0.65rem; }
+.rst-shell__profile .rst-dropdown__menu .rst-dropdown > summary:hover, [rst-shell-profile] [rst-dropdown-menu] [rst-dropdown] > summary:hover { background: var(--rst-accent-soft); }
 @media (min-width: 800px) {
   .rst-shell-sidebar, [rst-shell-sidebar] { display: grid; grid-template-columns: 15rem 1fr; }
   /* LEGACY: the old drawer, see above. */
@@ -1983,6 +2033,26 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
   @supports (position-area: block-end) and (position-try-fallbacks: flip-block) {
     .rst-shell__rail-foot .rst-dropdown__menu, [rst-shell-rail-foot] [rst-dropdown-menu] { inset: auto; margin-block-start: 4px; }
   }
+  /* The profile card is a drop-up anchored at the button's inline
+     start, so it grows from the rail's edge across the page rather than
+     off the side of the window. Written out rather than left to the
+     flip above, which turns a menu upward only when below is full: the
+     card is meant to open upward from the foot whatever the room, and
+     flip-block still turns it down in a window too short for it.
+     Without anchor positioning the card is absolute in the rail, which
+     scrolls, so it takes the rail's width rather than overhanging it. */
+  .rst-shell__rail-foot .rst-shell__profile > .rst-dropdown__menu, [rst-shell-rail-foot] [rst-shell-profile] > [rst-dropdown-menu] { inline-size: auto; inset-inline: 0; }
+  /* The rail is lifted while the profile menu is open because here it
+     is sticky, a stacking context of its own, and the card reaches past
+     it over the page, where anything the page positions at z-index 1 or
+     more (a row's controls, a pinned bar) would otherwise paint over the
+     card and catch the tap. Only while open, as with the topbar's bar:
+     lifted for good, the rail would sit over a modal's scrim. Below
+     800px the index's rail is no stacking context and needs no lift. */
+  .rst-shell-sidebar > .rst-shell__rail:has(.rst-shell__profile[open]), [rst-shell-sidebar] > [rst-shell-rail]:has([rst-shell-profile][open]) { z-index: 45; }
+  @supports (position-area: block-end) and (position-try-fallbacks: flip-block) {
+    .rst-shell__rail-foot .rst-shell__profile > .rst-dropdown__menu, [rst-shell-rail-foot] [rst-shell-profile] > [rst-dropdown-menu] { inline-size: min(17rem, calc(100vw - 1.5rem)); inset: auto; margin-block: 0 4px; position-area: block-start span-inline-end; }
+  }
 }
 
 
@@ -2007,6 +2077,13 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
 .rst-shell-console .rst-shell__menu, [rst-shell-console] [rst-shell-menu] { margin-inline-start: auto; }
 .rst-shell-console .rst-shell__menu > summary, [rst-shell-console] [rst-shell-menu] > summary { align-items: center; border: 1px solid var(--rst-line); border-radius: var(--rst-radius-sm); cursor: pointer; display: flex; font-size: var(--rst-fs-sm); font-weight: 550; gap: 0.35rem; list-style: none; min-block-size: 24px; padding-block: 0.3rem; padding-inline: 0.55rem; }
 .rst-shell-console .rst-shell__menu > summary::-webkit-details-marker, [rst-shell-console] [rst-shell-menu] > summary::-webkit-details-marker { display: none; }
+/* The Menu summary carries both faces: the icon and its word, and the
+   person's avatar, which only the phone index shows (the index block
+   below). display: contents keeps the icon and the word flex items of
+   the summary, laid out exactly as they were before the span wrapped
+   them. */
+.rst-shell__menu-label, [rst-shell-menu-label] { display: contents; }
+.rst-shell__menu .rst-shell__avatar, [rst-shell-menu] [rst-shell-avatar] { display: none; }
 /* The rail, narrow: a full-width column under the bar, disclosed. It
    holds navigation and nothing else — the language switcher and the
    person are on the bar — so there is no rail-foot here and nothing
@@ -2055,6 +2132,13 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
   .rst-shell-console .rst-shell__menu[open] + .rst-shell__tail,
   [rst-shell-console] [rst-shell-menu][open] + [rst-shell-tail] { display: contents; }
   .rst-shell-console .rst-shell__tail > .rst-shell__account, [rst-shell-console] [rst-shell-tail] > [rst-shell-account] { margin-inline-start: auto; }
+  /* The language menu is first in the tail, ahead of the account
+     (see the layout), so the auto margin that pushes the pair to the
+     bar's inline end goes on whichever comes first after the card's
+     head, and the account after it sits beside it. A layout from
+     before the head keeps the margin on its account. */
+  .rst-shell-console .rst-shell__tail > .rst-shell__who + *, [rst-shell-console] [rst-shell-tail] > [rst-shell-who] + * { margin-inline-start: auto; }
+  .rst-shell-console .rst-shell__tail > .rst-shell__who + * ~ .rst-shell__account, [rst-shell-console] [rst-shell-tail] > [rst-shell-who] + * ~ [rst-shell-account] { margin-inline-start: 0; }
   .rst-shell-console > .rst-shell__rail, [rst-shell-console] > [rst-shell-rail] { border-block-end: 0; border-inline-end: 1px solid var(--rst-line); display: flex; grid-area: rail; }
   /* The undo is a rule of ITS OWN, and this is the whole reason: a
      selector list is invalid as a whole if any selector in it is
@@ -2161,6 +2245,22 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
    back strip and the title are hidden by the rule just below, and
    nothing here needs undoing. ─────────────────────────────────────── */
 .rst-shell__back, [rst-shell-back], .rst-shell__title, [rst-shell-title] { display: none; }
+/* The heading's two spans: the brand, then the page's title, which
+   shows only when the brand's span rendered nothing, so an app that
+   blanks its brand still has a heading. Each elides on its one line.
+   The brand link fills the row's height, so a tap on the heading's
+   line is a tap on it. */
+.rst-shell__title > *, [rst-shell-title] > * { min-inline-size: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rst-shell__title > :not(:empty) + *, [rst-shell-title] > :not(:empty) + * { display: none; }
+/* A brand drawn from data that has none usually renders whitespace,
+   which :empty does not match, and a template cannot trim another
+   template's output. So where :has() is known, a brand span with no
+   element in it counts as blank: it is hidden and the title shows. The
+   cost is a brand written as bare text, with no link or element round
+   it, which reads as blank too; every shipped brand is a link. */
+.rst-shell__title > :first-child:not(:has(*)) + *, [rst-shell-title] > :first-child:not(:has(*)) + * { display: block; }
+.rst-shell__title > :first-child:not(:has(*)), [rst-shell-title] > :first-child:not(:has(*)) { display: none; }
+.rst-shell__title .rst-shell__brand, [rst-shell-title] [rst-shell-brand] { color: inherit; display: block; font-weight: inherit; line-height: 2.75rem; overflow: hidden; text-decoration: none; text-overflow: ellipsis; white-space: nowrap; }
 @media (max-width: 799.98px) {
   /* The content view: a sticky strip of its own at the top, first in
      the reading order after the skip link. Its z-index 9 sits above the
@@ -2176,24 +2276,32 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
      padding is what makes that landing spot the strip's bottom edge
      instead. */
   :root:has(.rst-shell-sidebar--page), :root:has([rst-shell-sidebar~="page"]), :root:has(.rst-shell-console--page), :root:has([rst-shell-console~="page"]) { scroll-padding-block-start: calc(2.75rem + 1px); }
-  .rst-shell__back a, [rst-shell-back] a { align-items: center; border-radius: var(--rst-radius-sm); color: var(--rst-accent); display: inline-flex; font-size: 1rem; font-weight: 500; gap: 0.5rem; min-block-size: 2.75rem; padding-inline: 0.75rem; text-decoration: none; }
+  /* The strip's own link only, by the child combinator: anything else
+     a page puts in the strip (a menu at its inline end) is not a back
+     control, and would otherwise get the accent colour and a chevron. */
+  .rst-shell__back > a, [rst-shell-back] > a { align-items: center; border-radius: var(--rst-radius-sm); color: var(--rst-accent); display: inline-flex; font-size: 1rem; font-weight: 500; gap: 0.5rem; min-block-size: 2.75rem; padding-inline: 0.75rem; text-decoration: none; }
   /* The chevron is drawn, not an icon: there is no left chevron in the
      set and no icon mirroring, and a drawn one stays out of the
      accessible name. Two borders of a small square, turned; physical on
      purpose, like the switch's knob, because it is a drawing, and
      mirrored by the rule after it. */
-  .rst-shell__back a::before, [rst-shell-back] a::before { block-size: 0.55rem; border-left: 2px solid currentColor; border-top: 2px solid currentColor; content: ""; flex: none; inline-size: 0.55rem; transform: rotate(-45deg); }
-  [dir="rtl"] .rst-shell__back a::before, [dir="rtl"] [rst-shell-back] a::before { transform: rotate(135deg); }
-  .rst-shell__back a:focus-visible, [rst-shell-back] a:focus-visible { outline: 2px solid var(--rst-accent); outline-offset: -2px; }
+  .rst-shell__back > a::before, [rst-shell-back] > a::before { block-size: 0.55rem; border-left: 2px solid currentColor; border-top: 2px solid currentColor; content: ""; flex: none; inline-size: 0.55rem; transform: rotate(-45deg); }
+  [dir="rtl"] .rst-shell__back > a::before, [dir="rtl"] [rst-shell-back] > a::before { transform: rotate(135deg); }
+  .rst-shell__back > a:focus-visible, [rst-shell-back] > a:focus-visible { outline: 2px solid var(--rst-accent); outline-offset: -2px; }
   .rst-shell-console--page > .rst-shell__rail, [rst-shell-console~="page"] > [rst-shell-rail] { display: none; }
 
   /* The index view: the rail is the page. main and the skip link go with
-     it, so the skip link never points at nothing; the sidebar's brand,
-     which would link to this very page, gives way to the title, the one
-     h1 here. On the index a page has no main landmark, which is the
+     it, so the skip link never points at nothing; the brand gives way to
+     the title, the one h1 here, which holds the brand itself. Matched as
+     the title's next sibling, which is where both layouts write the
+     brand block, so the brand inside the heading stays and a console
+     layout from before the heading moved into its bar keeps its bar's
+     brand. On the index a page has no main landmark, which is the
      point: the page is navigation. */
-  .rst-shell-sidebar--index > .rst-shell__main, [rst-shell-sidebar~="index"] > [rst-shell-main], .rst-shell-sidebar--index > .rst-skip, [rst-shell-sidebar~="index"] > [rst-skip], .rst-shell-console--index > .rst-shell__main, [rst-shell-console~="index"] > [rst-shell-main], .rst-shell-console--index > .rst-skip, [rst-shell-console~="index"] > [rst-skip], .rst-shell-sidebar--index .rst-shell__brand, [rst-shell-sidebar~="index"] [rst-shell-brand] { display: none; }
-  .rst-shell-sidebar--index > .rst-shell__rail, [rst-shell-sidebar~="index"] > [rst-shell-rail] { background: var(--rst-bg); border-block-end: 0; display: flex; gap: 0; min-block-size: 100dvh; padding: var(--rst-sp-5) var(--rst-sp-4); }
+  .rst-shell-sidebar--index > .rst-shell__main, [rst-shell-sidebar~="index"] > [rst-shell-main], .rst-shell-sidebar--index > .rst-skip, [rst-shell-sidebar~="index"] > [rst-skip], .rst-shell-console--index > .rst-shell__main, [rst-shell-console~="index"] > [rst-shell-main], .rst-shell-console--index > .rst-skip, [rst-shell-console~="index"] > [rst-skip], .rst-shell-sidebar--index .rst-shell__title + .rst-shell__brand, [rst-shell-sidebar~="index"] [rst-shell-title] + [rst-shell-brand], .rst-shell-console--index .rst-shell__title + .rst-shell__brand, [rst-shell-console~="index"] [rst-shell-title] + [rst-shell-brand] { display: none; }
+  /* position: relative is for the profile menu, lifted from the foot to
+     the top of this rail (below). */
+  .rst-shell-sidebar--index > .rst-shell__rail, [rst-shell-sidebar~="index"] > [rst-shell-rail] { background: var(--rst-bg); border-block-end: 0; display: flex; gap: 0; min-block-size: 100dvh; padding: var(--rst-sp-5) var(--rst-sp-4); position: relative; }
   /* The console's index is the bar, then the rail, then the foot. The
      three share the window: the root is a column at least the window
      tall and the rail takes what the bar and the foot leave, so a short
@@ -2203,7 +2311,14 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
      console rail is already border-box. */
   .rst-shell-console--index, [rst-shell-console~="index"] { display: flex; flex-direction: column; min-block-size: 100dvh; }
   .rst-shell-console--index > .rst-shell__rail, [rst-shell-console~="index"] > [rst-shell-rail] { background: var(--rst-bg); border-block-end: 0; display: flex; flex: 1 0 auto; gap: 0; padding: var(--rst-sp-5) var(--rst-sp-4); }
-  .rst-shell-sidebar--index .rst-shell__title, [rst-shell-sidebar~="index"] [rst-shell-title], .rst-shell-console--index .rst-shell__title, [rst-shell-console~="index"] [rst-shell-title] { display: block; font-size: 1.75rem; font-weight: 700; letter-spacing: -0.02em; line-height: 1.2; margin: 0 0 var(--rst-sp-2); padding-inline: 0.25rem; }
+  /* The heading is the app's name in a header row, not a page title:
+     one line at about 21px, eliding rather than wrapping, the height of
+     the avatar beside it so the two centre on one line. The sidebar's
+     reserves the avatar's room at its inline end, since the avatar is
+     lifted over the rail rather than laid out beside it. */
+  .rst-shell-sidebar--index .rst-shell__title, [rst-shell-sidebar~="index"] [rst-shell-title], .rst-shell-console--index .rst-shell__title, [rst-shell-console~="index"] [rst-shell-title] { align-items: center; display: flex; font-size: 1.3125rem; font-weight: 700; letter-spacing: -0.01em; line-height: 1.2; margin: 0 0 var(--rst-sp-2); min-block-size: 2.75rem; min-inline-size: 0; padding-inline: 0.25rem; }
+  .rst-shell-sidebar--index .rst-shell__title, [rst-shell-sidebar~="index"] [rst-shell-title] { padding-inline-end: calc(2.75rem + var(--rst-sp-3)); }
+  .rst-shell-console--index .rst-shell__bar > .rst-shell__title, [rst-shell-console~="index"] [rst-shell-bar] > [rst-shell-title] { flex: 1 1 0; margin: 0; }
   /* The rows: every link a full-width row, at least 3rem, 1rem text, a
      chevron at the end. The grouping is the markup apps already write,
      a group label and then its links: a run of rows is rounded at its
@@ -2231,6 +2346,34 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
      foot to the bottom of the screen, where the language menu would open
      off it (the rail-foot comment above has the long version). */
   .rst-shell-sidebar--index .rst-shell__rail-foot, [rst-shell-sidebar~="index"] [rst-shell-rail-foot] { margin-block-start: var(--rst-sp-6); }
+  /* ...unless it is the profile menu, which goes to the top inline-end
+     of the index, beside the heading, because the foot of a long index
+     is out of reach and the top is where a phone keeps the person. One
+     element moved, not a second copy: the blocks inside it are the
+     app's markup, ids and all. It stays last in the reading order,
+     after the sections, which are what the index is for. Gated on the
+     profile being there with :has(), so a layout from before the menu,
+     whose foot is two bare blocks, keeps its foot under the nav. Its
+     card drops down from the avatar by the anchored-menu rules as they
+     are, ending at the avatar's inline end. */
+  .rst-shell-sidebar--index .rst-shell__rail-foot:has(> .rst-shell__profile), [rst-shell-sidebar~="index"] [rst-shell-rail-foot]:has(> [rst-shell-profile]) { align-items: center; block-size: 2.75rem; flex-direction: row; inset-block-start: var(--rst-sp-5); inset-inline-end: var(--rst-sp-4); margin: 0; position: absolute; }
+  /* The console's Menu becomes the profile menu on its index: the
+     avatar instead of the icon and its word, a round button like the
+     sidebar's, and the card headed by the person's name. Its open state
+     keeps the card's pressed ring. */
+  .rst-shell-console--index .rst-shell__menu-label, [rst-shell-console~="index"] [rst-shell-menu-label] { display: none; }
+  .rst-shell-console--index .rst-shell__menu .rst-shell__avatar, [rst-shell-console~="index"] [rst-shell-menu] [rst-shell-avatar] { display: inline-flex; }
+  .rst-shell-console--index .rst-shell__menu > summary, [rst-shell-console~="index"] [rst-shell-menu] > summary { border-color: transparent; border-radius: 50%; justify-content: center; padding: 4px; }
+  .rst-shell-console--index .rst-shell__tail > .rst-shell__who, [rst-shell-console~="index"] [rst-shell-tail] > [rst-shell-who] { display: block; }
+  /* The account's links laid out flat in the index card, as the
+     sidebar's are: the Account summary goes and the closed menu's
+     content is shown, through ::details-content. An engine without it
+     keeps the Account menu, one tap deeper. */
+  @supports selector(::details-content) {
+    .rst-shell-console--index .rst-shell__tail > .rst-shell__account > summary, [rst-shell-console~="index"] [rst-shell-tail] > [rst-shell-account] > summary { display: none; }
+    .rst-shell-console--index .rst-shell__tail > .rst-shell__account::details-content, [rst-shell-console~="index"] [rst-shell-tail] > [rst-shell-account]::details-content { content-visibility: visible; }
+    .rst-shell-console--index .rst-shell__tail > .rst-shell__account > .rst-dropdown__menu, [rst-shell-console~="index"] [rst-shell-tail] > [rst-shell-account] > [rst-dropdown-menu] { padding-inline: 0; }
+  }
 }
 @keyframes rst-shell-flash { from { background: var(--rst-accent-soft); } }
 @media (prefers-reduced-motion: reduce) {
@@ -2499,7 +2642,7 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
      weighs the same as the index's row rule and comes later, so without
      this it would shrink the rows to 44px on exactly the screens the
      index is for. */
-  .rst-shell__back a, [rst-shell-back] a { min-inline-size: var(--rst-tap); }
+  .rst-shell__back > a, [rst-shell-back] > a { min-inline-size: var(--rst-tap); }
   .rst-shell-sidebar--index .rst-shell__nav > a, [rst-shell-sidebar~="index"] [rst-shell-nav] > a, .rst-shell-console--index .rst-shell__nav > a, [rst-shell-console~="index"] [rst-shell-nav] > a { min-block-size: 3rem; }
 }
 

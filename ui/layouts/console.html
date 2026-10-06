@@ -53,6 +53,14 @@
 <div rst-shell-console="{{block "view" .}}page{{end}}">
 <a rst-skip href="#main">{{T "rastrillo.ui.shell_skip"}}</a>
 <header rst-shell-bar>
+{{/* The phone index's heading, in the bar because on the index the bar
+     is the header row: the app's name at the start, the avatar at the
+     end. The brand, then the page's title for an app that blanks its
+     brand (tokens.css shows the title only when the brand's span is
+     :empty). Executed again rather than redefined, so an id inside the
+     brand would appear twice. Shown only on the phone index, where the
+     bar's own brand gives way to it, so no page exposes two h1s. */}}
+<h1 rst-shell-title><span>{{template "brand" .}}</span><span>{{template "title" .}}</span></h1>
 {{block "brand" .}}<a rst-shell-brand href="/">{{T "rastrillo.ui.shell_home"}}</a>{{end}}
 {{/* name="rst-shell-menu", and NOT rst-menus — the same group the
      topbar's disclosure is in, for the same reason. <details name>
@@ -61,7 +69,15 @@
      it just revealed, and the card would close under the reader's
      finger. Read this as the reason for the gates rather than as advice
      to change the line below. */}}
-<details rst-shell-menu name="rst-shell-menu"><summary>{{icon "menu"}}{{T "rastrillo.ui.shell_menu"}}</summary></details>
+{{/* On the phone index the Menu is the profile menu: its summary shows
+     the person's avatar (the profile block, the same avatar the
+     sidebar's rail foot opens) instead of its label, and its card is
+     headed by the person's name. The account and language are already
+     in this card, so the index needs no second menu. Both spans are
+     always in the markup and tokens.css shows one: the label is
+     display: contents everywhere else, so a content page and a desktop
+     lay out exactly as they did before the avatar existed. */}}
+<details rst-shell-menu name="rst-shell-menu"><summary><span rst-shell-menu-label>{{icon "menu"}}{{T "rastrillo.ui.shell_menu"}}</span><span rst-shell-avatar>{{block "profile" .}}<span rst-person-av="empty placeholder" aria-hidden="true"></span><span rst-person-name>{{T "rastrillo.ui.shell_account"}}</span>{{end}}</span></summary></details>
 {{/* The tail is a SIBLING of the disclosure, not its content: a closed
      <details> hides its own content and no CSS reliably un-hides it,
      so the wide layout could not be recovered from inside one. Above
@@ -70,16 +86,27 @@
 
      account here is the DROPDOWN'S MENU BODY, exactly as in topbar:
      the layout owns the details/summary and an override supplies only
-     the links inside [rst-dropdown-menu]. sidebar's account block is
-     the other shape — a bare slot in the rail — so a screen moving
-     between console and sidebar edits that one block, while console
-     and topbar are interchangeable. */}}
+     the links inside [rst-dropdown-menu]. The sidebar's account block
+     is the same links, inside its profile card, so a screen's account
+     block moves between the three shells unedited.
+
+     rst-shell-who is the card's head on the phone index, the person's
+     name and email; tokens.css hides it everywhere else, including at
+     800px and up, where display: contents would otherwise make it a
+     flex item of the bar.
+
+     The language comes before the account, in the DOM and so in the
+     reading order, because the card reads as the sidebar's profile
+     card does: the person, the language, then the account's links,
+     which on the phone index are laid out flat. tokens.css keeps the
+     wide bar's two menus at its inline end. */}}
 <div rst-shell-tail>
+<div rst-shell-who>{{template "profile" .}}</div>
+{{block "locale" .}}{{end}}
 <details rst-dropdown rst-shell-account name="rst-menus">
 <summary>{{T "rastrillo.ui.shell_account"}}<span rst-caret aria-hidden="true">{{icon "chevron-down"}}</span></summary>
 <div rst-dropdown-menu>{{block "account" .}}{{end}}</div>
 </details>
-{{block "locale" .}}{{end}}
 </div>
 </header>
 <div rst-shell-back><a href="{{block "up" .}}/{{end}}" rel="up" aria-label="{{Tf "rastrillo.ui.shell_up" "name" (T "rastrillo.ui.shell_up_label")}}">{{T "rastrillo.ui.shell_up_label"}}</a></div>
@@ -91,10 +118,8 @@
      under the window — has nothing here to pin. What it has instead is
      a nav that sticks: see the max-block-size in tokens.css, which is
      measured against the viewport and gated against the viewport. Its
-     <h1> is the page's title, shown only on the phone index, as in the
-     sidebar. */}}
+     phone index's <h1> is up in the bar. */}}
 <aside rst-shell-rail>
-<h1 rst-shell-title>{{template "title" .}}</h1>
 <nav rst-shell-nav>{{block "nav" .}}{{end}}</nav>
 </aside>
 <main rst-shell-main id="main">

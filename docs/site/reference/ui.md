@@ -428,8 +428,9 @@ stands alone, such as the sign-in screen. Its blocks are `title`,
 A shell executes `{{template "content" .}}` for the page body and wraps
 it in chrome made of blocks with working defaults: `title`, `lang`,
 `dir` and `head` in all five, plus `brand`, `nav`, `account` and
-`locale` in the three chrome shells, and `foot` in `topbar` and
-`console`. No block reads a field off the data, so a shell renders the
+`locale` in the three chrome shells, `profile`, `view` and `up` in
+`sidebar` and `console`, and `foot` in `topbar` and `console`. No block
+reads a field off the data, so a shell renders the
 same whether a handler passes a struct, a `dict`-built map, or nil.
 
 `head` is the one that is not chrome: it is an empty slot at the foot of

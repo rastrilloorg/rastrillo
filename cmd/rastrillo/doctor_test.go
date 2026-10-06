@@ -1168,3 +1168,77 @@ func TestOldShellLayoutReadsAViewBlockInAnySpelling(t *testing.T) {
 		t.Error(`a sidebar layout whose only block is "views" reads as having a view block`)
 	}
 }
+
+// A sidebar layout with the profile menu, and a template whose account
+// block still holds the person (rst-person, or the old rail's
+// rst-shell-account wrapper), and no template defining profile: the
+// person would show up inside the menu under a placeholder avatar.
+// Doctor says so in one line, naming the layout, and the exit code does
+// not change. An app that has moved the person to profile, or whose
+// account block is only links, hears nothing, and neither does an old
+// layout with no profile menu, which the layout advisory covers.
+func TestDoctorAdvisesMovingThePersonToProfile(t *testing.T) {
+	sidebar, _ := ui.Layout("sidebar")
+	legacy, _ := os.ReadFile("../../ui/testdata/legacy/sidebar.html")
+	person := `{{define "account"}}<div rst-shell-account><a rst-person href="/me"><span rst-person-av aria-hidden="true">A</span><span rst-person-meta><span rst-person-name>Ada</span></span></a></div>{{end}}`
+	links := `{{define "account"}}<a href="/settings">Settings</a>{{end}}`
+	profile := `{{define "profile"}}<span rst-person-av aria-hidden="true">A</span><span rst-person-name>Ada</span>{{end}}`
+	for _, c := range []struct {
+		name   string
+		layout []byte
+		pages  map[string]string
+		advise bool
+	}{
+		{"person in account", sidebar, map[string]string{"index.html": person}, true},
+		{"the old wrapper alone", sidebar, map[string]string{"index.html": `{{define "account"}}<div rst-shell-account><a href="/me">Ada</a></div>{{end}}`}, true},
+		{"person moved to profile", sidebar, map[string]string{"index.html": person, "shared.html": profile}, false},
+		{"links only", sidebar, map[string]string{"index.html": links}, false},
+		{"no profile menu in the layout", legacy, map[string]string{"index.html": person}, false},
+	} {
+		dir := doctorApp(t, rastrilloVersion(), "day")
+		tdir := filepath.Join(dir, "internal", "demoapp", "templates")
+		mustWrite(t, filepath.Join(tdir, "layout.html"), string(c.layout))
+		for name, body := range c.pages {
+			mustWrite(t, filepath.Join(tdir, name), body)
+		}
+		rep, err := diagnose(dir, "")
+		if err != nil {
+			t.Fatal(err)
+		}
+		out := printed(rep, false)
+		line := filepath.Join("internal", "demoapp", "templates", "layout.html") + ": " + doctorProfileAdvisory
+		if got := strings.Contains(out, line); got != c.advise {
+			t.Errorf("%s: advisory printed %v, want %v:\n%s", c.name, got, c.advise, out)
+		}
+		if code := exitCode(t, rep.exit()); code != 0 {
+			t.Errorf("%s: exit %d; the advisory must not change the exit code", c.name, code)
+		}
+	}
+	if strings.Contains(doctorProfileAdvisory, "\u2014") {
+		t.Error("the advisory carries an em dash")
+	}
+}
+
+// Markup named in a template comment is prose about markup, not
+// markup: a comment in the layout mentioning rst-shell-profile, or one
+// in a page mentioning rst-person or a profile define, must not trip
+// the advisory or stop it.
+func TestProfileAdvisoryIgnoresTemplateComments(t *testing.T) {
+	sidebar, _ := ui.Layout("sidebar")
+	topbar, _ := ui.Layout("topbar")
+	person := `{{define "account"}}<a rst-person href="/me">Ada</a>{{end}}`
+	for _, c := range []struct {
+		name   string
+		layout string
+		pages  map[string]string
+		want   bool
+	}{
+		{"a layout comment naming the profile menu", `{{/* rst-shell-profile is the sidebar's */}}` + string(topbar), map[string]string{"a.html": person}, false},
+		{"an account comment naming rst-person", string(sidebar), map[string]string{"a.html": `{{define "account"}}{{- /* no rst-person here */ -}}<a href="/s">Settings</a>{{end}}`}, false},
+		{"a comment naming a profile define", string(sidebar), map[string]string{"a.html": person + `{{/* {{define "profile"}} goes here one day */}}`}, true},
+	} {
+		if got := profileAdvisory(c.layout, c.pages); got != c.want {
+			t.Errorf("%s: advisory %v, want %v", c.name, got, c.want)
+		}
+	}
+}

@@ -58,6 +58,12 @@ func shellSite(t *testing.T) func(origin string) http.Handler {
 			"/q/":         shellDoc("index", "/q/?tab=all", navQ, `<h1>Q</h1>`),
 			"/q/orders":   shellDoc("page", "/q/?tab=all#nav-q-orders", navQ, content("Q orders")),
 			"/q/cafe":     shellDoc("page", "/q/?tab=all#nav-caf%C3%A9", navQ, content("Café")),
+			// A content page whose back strip also holds a menu, the way
+			// the gallery puts its display settings there, with a link to
+			// the very page the back control points at.
+			"/strip": strings.Replace(shellDoc("page", "/#nav-invoices", nav, content("Strip")),
+				`rel="up">Sections</a></div>`,
+				`rel="up">Sections</a><details open><summary>Settings</summary><a id="strip-menu-link" href="/?theme=other">Other theme</a></details></div>`, 1),
 		}
 		mux := http.NewServeMux()
 		stylesheets(t, mux)
@@ -443,5 +449,41 @@ func TestTheSlideKnowsWhichWayItIsGoing(t *testing.T) {
 				t.Errorf("pagereveal saw %s, want %s", log, want)
 			}
 		})
+	}
+}
+
+// TestALinkBesideTheBackControlIsNotTheBackControl: a page may put more
+// in the back strip than the back link (the gallery's display settings
+// menu sits at its inline end), and those links are ordinary links. A
+// click on one must not record a "back" for the slide, nor call
+// history.back() when the entry behind happens to be the same page: it
+// is followed, and history grows by one.
+func TestALinkBesideTheBackControlIsNotTheBackControl(t *testing.T) {
+	rig := harness.New(t, shellSite(t))
+	init := `(() => { const set = Storage.prototype.setItem, back = History.prototype.back;
+	  Storage.prototype.setItem = function (k, v) { if (k === "rst-shell-back") set.call(this, "__went_back", v); return set.call(this, k, v); };
+	  History.prototype.back = function () { sessionStorage.setItem("__history_back", "1"); return back.call(this); }; })()`
+	ctx, done, thrown := tab(t, rig, init)
+	defer done()
+	// The entry behind /strip is the very page its menu link names, so
+	// the back control's own rule would reuse history for it.
+	visit(t, ctx, rig.Origin+"/?theme=other")
+	revealed(t, ctx)
+	visit(t, ctx, rig.Origin+"/strip")
+	revealed(t, ctx)
+	before := state(t, ctx)
+	follow(t, ctx, "#strip-menu-link", `location.pathname === "/" && location.search === "?theme=other"`)
+	revealed(t, ctx)
+	after := state(t, ctx)
+	var rec struct{ WentBack, HistoryBack string }
+	at(t, ctx, `JSON.stringify({WentBack: sessionStorage.getItem("__went_back") || "", HistoryBack: sessionStorage.getItem("__history_back") || ""})`, &rec)
+	if rec.WentBack != "" || rec.HistoryBack != "" {
+		t.Errorf("a menu link in the back strip was taken for the back control: recorded back %q, history.back called %q", rec.WentBack, rec.HistoryBack)
+	}
+	if after.Len != before.Len+1 {
+		t.Errorf("history %d -> %d after the menu link; want it followed (+1)", before.Len, after.Len)
+	}
+	if errs, _ := scriptErrors(t, *thrown); len(errs) > 0 {
+		t.Errorf("uncaught: %v", errs)
 	}
 }

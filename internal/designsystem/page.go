@@ -17,7 +17,7 @@ import (
 // ── The page model ───────────────────────────────────────────────────
 //
 // Every URL on a page is an absolute path under mount: an asset is
-// /design-system/tokens.css, a shell demo is
+// /design-system/tokens.<hash>.css (hashed.go), a shell demo is
 // /design-system/day/en/shells/topbar.html, wherever the page holding
 // the link sits in the tree. There used to be a pair of "../../" depth
 // prefixes here instead; designsystem.go's mount comment has the
@@ -149,8 +149,9 @@ type pageView struct {
 	// renderBody, which is the only thing that ever sets it.
 	Body template.HTML
 
-	// Mount is mount, so the template can write
-	// href="{{.Mount}}/tokens.css" without knowing it.
+	// Mount is mount, so the template can write an absolute address
+	// without knowing it. Assets are the exception: they are linked
+	// through the asset func, which knows their hashed names.
 	Mount string
 
 	// Home is the Overview's address, which the bar's brand links, and
@@ -167,13 +168,13 @@ type pageView struct {
 	Rows  []indexRow
 	Demos navSection
 
-	// Bar and Foot are the theme, scheme and language controls. The
-	// Overview writes them twice, in the pinned bar for a wide screen
-	// and in the index's foot for a phone, because the rail is a grid
-	// item and nothing inside it can be placed in the bar's cell; one
-	// copy is ever shown. Every other page has the bar's alone.
-	Bar  controls
-	Foot controls
+	// Bar is the theme, scheme and language controls. Every page writes
+	// them twice, in the pinned bar for a wide screen and in the display
+	// settings menu for a phone, because on a phone the bar's cell is
+	// gone and the menu has to sit in the index's header row or the back
+	// strip; one copy is ever shown. Both are this one value, so the two
+	// cannot list different things.
+	Bar controls
 
 	Colours   []tokenGroup
 	Structure []tokenGroup
@@ -683,6 +684,7 @@ func renderGallery(mount, theme, locale string) (map[string][]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("parsing partials: %w", err)
 	}
+	tmpl.Funcs(template.FuncMap{"asset": assetFunc(mount, theme)})
 	if _, err := tmpl.Parse(pageTemplate); err != nil {
 		return nil, fmt.Errorf("parsing the page frame: %w", err)
 	}
@@ -759,7 +761,7 @@ func renderGallery(mount, theme, locale string) (map[string][]byte, error) {
 		if view.Family == nil {
 			view.TitleID = pk.Kind
 		}
-		view.Bar = newControls(mount, theme, locale, pk.File, localeName, "")
+		view.Bar = newControls(mount, theme, locale, pk.File, localeName)
 		if pk.Kind != "overview" {
 			view.Up = view.Home + "#nav-" + pk.Kind
 		}
@@ -771,7 +773,6 @@ func renderGallery(mount, theme, locale string) (map[string][]byte, error) {
 		view.Nav = galleryNav(mount, theme, locale, pk.Kind, view)
 		if pk.Kind == "overview" {
 			view.Rows, view.Demos = indexRows(view.Nav)
-			view.Foot = newControls(mount, theme, locale, pk.File, localeName, "#ds-prefs")
 		}
 
 		body, err := renderBody(tmpl, pk.Kind, view)
@@ -894,25 +895,17 @@ type controls struct {
 	LocaleName string
 }
 
-// newControls builds the switchers for one page. fragment is appended
-// to every theme and language link: "" in the bar, where gallery.js
-// adds the reader's place at the moment of the click, and #ds-prefs in
-// the phone index's foot, a fixed place that needs no script, so a
-// reader who switches there lands with the controls on screen.
-func newControls(mount, theme, locale, file, localeName, fragment string) controls {
-	c := controls{
+// newControls builds the switchers for one page. Their links carry no
+// fragment: gallery.js adds the reader's place at the moment of the
+// click, in the bar and in the phone's menu alike. With scripts off a
+// switch lands at the top of the page, where the phone's menu is.
+func newControls(mount, theme, locale, file, localeName string) controls {
+	return controls{
 		Themes:     themeLinks(mount, theme, locale, file),
 		Schemes:    schemeButtons(locale),
 		Locales:    localeLinks(mount, theme, locale, file),
 		LocaleName: localeName,
 	}
-	for i := range c.Themes {
-		c.Themes[i].Href += fragment
-	}
-	for i := range c.Locales {
-		c.Locales[i].Href += fragment
-	}
-	return c
 }
 
 // indexRow is one row of the phone index: a section's page, by title,
@@ -1679,8 +1672,8 @@ func previewDocStyled(mount, theme, locale, title, style, body string) string {
 	// a screen reader announces on entering the frame, so the two names
 	// agreeing is the point rather than a coincidence.
 	b.WriteString("<title>" + template.HTMLEscapeString(title) + "</title>\n")
-	b.WriteString(`<link rel="stylesheet" href="` + mount + `/tokens.css">` + "\n")
-	b.WriteString(`<link rel="stylesheet" href="` + mount + `/theme-` + theme + `.css">` + "\n")
+	b.WriteString(`<link rel="stylesheet" href="` + assetURL(mount, "tokens.css") + `">` + "\n")
+	b.WriteString(`<link rel="stylesheet" href="` + assetURL(mount, "theme-"+theme+".css") + `">` + "\n")
 	// A component sample gets breathing room; a whole-page sample —
 	// a shell frame, the modal's backdrop, a stage frame — fills the
 	// frame, because insetting a page inside a page is not what any of
@@ -1694,7 +1687,7 @@ func previewDocStyled(mount, theme, locale, title, style, body string) string {
 	for _, s := range previewScripts {
 		for _, hook := range s.hooks {
 			if strings.Contains(body, hook) {
-				b.WriteString(`<script defer src="` + mount + "/" + s.asset + `"></script>` + "\n")
+				b.WriteString(`<script defer src="` + assetURL(mount, s.asset) + `"></script>` + "\n")
 				break
 			}
 		}
@@ -2011,6 +2004,7 @@ type shellData struct {
 	Index   string
 	Locales []localeLink
 	Account template.HTML
+	Profile template.HTML
 	// Signin and Brand are the stage demo's card: the plain Ask state,
 	// with no problem, nothing remembered and no passkey door, because
 	// the demo is about the shell and the card is only what it frames;
@@ -2025,21 +2019,20 @@ type shellData struct {
 	PageHref string
 }
 
-// accountMarkup is the one block whose shape differs between the
-// chrome shells: topbar and console own the details/summary and an
-// override supplies only the menu body, while sidebar's block is a
-// bare slot in the rail. Moving markup between the two shapes needs an
-// edit, which is exactly what ui/layouts documents — and the two that
-// share a shape are spelled with the same literal here rather than
-// with two, so a reader can see that they are the same.
-var accountMarkup = map[string]template.HTML{
-	"topbar":  `<a href="#">Profile</a><a href="#">Billing</a><hr><a href="#">Sign out</a>`,
-	"console": `<a href="#">Profile</a><a href="#">Billing</a><hr><a href="#">Sign out</a>`,
-	"sidebar": `<div rst-shell-account><a rst-person href="#">` +
-		`<span rst-person-av aria-hidden="true">G</span>` +
-		`<span rst-person-meta><span rst-person-name>Grace Hopper</span>` +
-		`<span rst-person-email>grace@example.com</span></span></a></div>`,
-}
+// accountMarkup is the account block of every chrome shell: the menu
+// body, the links. topbar and console wrap it in their Account menu,
+// and the sidebar puts it in its profile menu's card under the person,
+// so one literal serves all three, which is what lets a screen's
+// account block move between them unedited. The person is the profile
+// block, profileMarkup.
+const accountMarkup template.HTML = `<a href="#">Profile</a><a href="#">Billing</a><hr><a href="#">Sign out</a>`
+
+// profileMarkup is the person the profile menu shows: the avatar that
+// opens it (the sidebar's rail foot, the console's Menu on its phone
+// index) and the name and email heading its card. Sample data, so it
+// stays English in every locale, as a person's name would.
+const profileMarkup template.HTML = `<span rst-person-av aria-hidden="true">G</span>` +
+	`<span rst-person-name>Grace Hopper</span><span rst-person-email>grace@example.com</span>`
 
 // renderShell builds one shell's full-page demo: ui.Layout's own
 // template, its chrome blocks filled with sample links so the frame is
@@ -2053,13 +2046,7 @@ func renderShell(mount, theme, locale, shell string) (map[string][]byte, error) 
 		return nil, fmt.Errorf("no shell %q", shell)
 	}
 	funcs := galleryFuncs(locale)
-	funcs["asset"] = func(p string) string {
-		name := strings.TrimPrefix(p, "static/")
-		if name == "theme.css" {
-			name = "theme-" + theme + ".css"
-		}
-		return mount + "/" + name
-	}
+	funcs["asset"] = assetFunc(mount, theme)
 	tmpl, err := template.New("designsystem").Funcs(funcs).ParseFS(ui.Templates(), "*.html")
 	if err != nil {
 		return nil, fmt.Errorf("parsing partials: %w", err)
@@ -2085,7 +2072,8 @@ func renderShell(mount, theme, locale, shell string) (map[string][]byte, error) 
 		Mount:    mount,
 		Index:    indexHref(mount, theme, locale),
 		Locales:  localeLinks(mount, theme, locale, "index.html"),
-		Account:  accountMarkup[shell],
+		Account:  accountMarkup,
+		Profile:  profileMarkup,
 		Signin:   auth.SigninState{Step: auth.StepAsk, BeginPath: "/signin", ForgetPath: "/signin/forget"},
 		Brand:    galleryBrand,
 		PageHref: "#",
@@ -2154,6 +2142,7 @@ func renderModal(mount, theme, locale string) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("parsing partials: %w", err)
 	}
+	tmpl.Funcs(template.FuncMap{"asset": assetFunc(mount, theme)})
 	if _, err := tmpl.Parse(modalTemplate); err != nil {
 		return nil, fmt.Errorf("parsing the modal demo: %w", err)
 	}
@@ -2253,13 +2242,7 @@ func renderDemo(mount, theme, locale string) (map[string][]byte, error) {
 		return nil, fmt.Errorf("no shell %q to build the demo application in", demoShell)
 	}
 	funcs := galleryFuncs(locale)
-	funcs["asset"] = func(p string) string {
-		name := strings.TrimPrefix(p, "static/")
-		if name == "theme.css" {
-			name = "theme-" + theme + ".css"
-		}
-		return mount + "/" + name
-	}
+	funcs["asset"] = assetFunc(mount, theme)
 	tmpl, err := template.New("designsystem").Funcs(funcs).ParseFS(ui.Templates(), "*.html")
 	if err != nil {
 		return nil, fmt.Errorf("parsing partials: %w", err)
@@ -2348,7 +2331,7 @@ const demoCSS = `
 // fully localised frame that is a Japanese reader's first sight of this
 // system.
 const demoTemplate = `
-{{define "head"}}<script src="{{.Mount}}/gallery.js"></script>
+{{define "head"}}<script src="{{asset "gallery.js"}}"></script>
 <style>` + demoCSS + `</style>{{end}}
 {{define "lang"}}{{.Locale}}{{end}}
 {{define "dir"}}{{.Dir}}{{end}}
@@ -2358,7 +2341,7 @@ const demoTemplate = `
 {{define "brand"}}<a rst-shell-brand href="{{.Home}}">Harbour</a>{{end}}
 {{define "nav"}}<a id="nav-dashboard" href="{{.Dashboard}}"{{if or (eq .View "index") (eq .View "dashboard")}} aria-current="page"{{end}}>{{P "Dashboard"}}</a><a id="nav-requests" href="{{.Requests}}"{{if or (eq .View "requests") (eq .View "request")}} aria-current="page"{{end}}>{{P "Requests"}}</a>{{end}}
 {{define "locale"}}<details rst-dropdown rst-locale name="rst-menus"><summary>{{T "rastrillo.ui.shell_language"}}<span rst-caret aria-hidden="true">{{icon "chevron-down"}}</span></summary><div rst-dropdown-menu>{{range .Locales}}<a href="{{.Href}}" lang="{{.Code}}" dir="{{.Dir}}"{{if .Current}} aria-current="true"{{end}}>{{.Name}}</a>{{end}}</div></details>{{end}}
-{{define "account"}}<div rst-shell-account><a rst-person href="{{.Dashboard}}"><span rst-person-av aria-hidden="true">A</span><span rst-person-meta><span rst-person-name>Ada Lovelace</span><span rst-person-email>ada@example.com</span></span></a></div>{{end}}
+{{define "profile"}}<span rst-person-av aria-hidden="true">A</span><span rst-person-name>Ada Lovelace</span><span rst-person-email>ada@example.com</span>{{end}}
 {{define "content"}}
 {{if or (eq .View "index") (eq .View "dashboard")}}
 <section class="app-view" id="view-dashboard">
@@ -2563,7 +2546,7 @@ func buildAssets(mount, theme, locale string) assetsView {
 		out.List = append(out.List, assetView{
 			ID:    anchorID("asset", name),
 			Name:  name,
-			Href:  mount + "/" + name,
+			Href:  assetURL(mount, name),
 			Bytes: len(body),
 			Blurb: proseIn(locale, blurb, args...),
 		})
@@ -2650,9 +2633,10 @@ func buildAssets(mount, theme, locale string) assetsView {
 // through history and the focus return with nothing written here. Two
 // departures, each for a reason: the index's pieces are on the Overview
 // only, and the controls live in a bar pinned over main on a wide
-// screen and in the index's foot on a phone, so the Overview writes them
-// twice. That is dogfooding with a point: the shell is one of the
-// things this page documents.
+// screen and, on a phone, in a display settings menu at the top of
+// every page (the index's header row, a content page's back strip), so
+// every page writes them twice. That is dogfooding with a point: the
+// shell is one of the things this page documents.
 // viewTemplate is the preview widget, once, used by every example on
 // the page. The Code tab only exists where there is source worth
 // copying, which is everywhere but the shell demos.
@@ -2691,36 +2675,47 @@ const viewTemplate = `{{define "ds-view"}}<div class="ds-view{{.Class}}" style="
 {{end}}</div>{{end}}
 </div>{{end}}`
 
+// slidersIcon is the display settings button's glyph, Lucide's
+// sliders-horizontal (ISC, as icons.go), drawn the way the icon set
+// draws its own. The framework's set has no settings glyph, and this
+// one button is the gallery's furniture, not something an app is
+// offered, so it is not worth a slug every scaffoldable set would then
+// have to carry. aria-hidden: the button's name is its aria-label.
+const slidersIcon = `<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">` +
+	`<path d="M10 5H3"/><path d="M12 19H3"/><path d="M14 3v4"/><path d="M16 17v4"/><path d="M21 12h-9"/><path d="M21 19h-5"/><path d="M21 5h-7"/><path d="M8 10v4"/><path d="M8 12H3"/></svg>`
+
 const pageTemplate = `{{define "ds-controls"}}<nav rst-seg-tabs aria-label="{{P "Theme"}}">{{range .Themes}}<a href="{{.Href}}"{{if .Current}} aria-current="page"{{end}}>{{.Label}}</a>{{end}}</nav>
 <div class="ds-scheme" role="group" aria-label="{{P "Colour scheme"}}">{{range .Schemes}}<button type="button" data-ds-scheme="{{.Value}}" aria-pressed="{{.Pressed}}">{{.Label}}</button>{{end}}</div>
 <details rst-dropdown rst-locale name="rst-menus">
 <summary>{{T "rastrillo.ui.shell_language"}}<span rst-caret aria-hidden="true">{{icon "chevron-down"}}</span><span class="rst-sr-only">{{P ", currently {language}" "language" .LocaleName}}</span></summary>
 <div rst-dropdown-menu>{{range .Locales}}<a href="{{.Href}}" lang="{{.Code}}" dir="{{.Dir}}"{{if .Current}} aria-current="true"{{end}}>{{.Name}}</a>{{end}}</div>
 </details>{{end}}
+{{define "ds-prefs"}}<details rst-dropdown class="ds-prefs" id="ds-prefs" name="ds-prefs"><summary aria-label="{{P "Display settings"}}">` + slidersIcon + `</summary><div rst-dropdown-menu>{{template "ds-controls" .}}</div></details>{{end}}
 {{define "ds-page"}}<!doctype html>
 <html lang="{{.Locale}}" dir="{{.Dir}}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width">
 <title>{{.DocTitle}}</title>
-<link rel="stylesheet" href="{{.Mount}}/tokens.css">
-<link rel="stylesheet" href="{{.Mount}}/theme-{{.Theme}}.css">
-<link rel="stylesheet" href="{{.Mount}}/shell.css">
-<link rel="stylesheet" href="{{.Mount}}/gallery.css">
-<script src="{{.Mount}}/gallery.js"></script>
-<script defer src="{{.Mount}}/rastrillo.js"></script>
-<script defer blocking="render" src="{{.Mount}}/shell.js"></script>
+<link rel="stylesheet" href="{{asset "tokens.css"}}">
+<link rel="stylesheet" href="{{asset "theme.css"}}">
+<link rel="stylesheet" href="{{asset "shell.css"}}">
+<link rel="stylesheet" href="{{asset "gallery.css"}}">
+<script src="{{asset "gallery.js"}}"></script>
+<script defer src="{{asset "rastrillo.js"}}"></script>
+<script defer blocking="render" src="{{asset "shell.js"}}"></script>
 </head>
 <body>
 <div rst-shell-sidebar="{{if .Rows}}index{{else}}page{{end}}">
 <a rst-skip href="#main">{{T "rastrillo.ui.shell_skip"}}</a>
-{{with .Up}}<div rst-shell-back><a href="{{.}}" rel="up" aria-label="{{Tf "rastrillo.ui.shell_up" "name" (T "rastrillo.ui.shell_up_label")}}">{{T "rastrillo.ui.shell_up_label"}}</a></div>
+{{with .Up}}<div rst-shell-back><a href="{{.}}" rel="up" aria-label="{{Tf "rastrillo.ui.shell_up" "name" (T "rastrillo.ui.shell_up_label")}}">{{T "rastrillo.ui.shell_up_label"}}</a>{{template "ds-prefs" $.Bar}}</div>
 {{end}}<aside class="ds-rail" rst-shell-rail>
-{{if .Rows}}<h1 rst-shell-title>{{P "rastrillo design system"}}</h1>
+{{if .Rows}}<h1 rst-shell-title><span>{{P "rastrillo design system"}}</span></h1>
+{{template "ds-prefs" .Bar}}
 <p class="ds-index-lead">{{P "The Rastrillo design system aims to be a starter framework for any app to get a consistent, polished, accessible UI with no or minimal JavaScript dependence, available in multiple languages, and using clean, modern HTML and CSS. It's designed to be delightful to use with or without LLM assistance, and easily remixable."}}</p>
 {{end}}  <search class="ds-search">
     <label class="rst-sr-only" for="ds-filter">{{P "Filter"}}</label>
-    <input id="ds-filter" type="search" placeholder="{{P "Filter"}}" autocomplete="off" aria-controls="ds-nav" data-ds-filter>
+    {{icon "search"}}<input id="ds-filter" type="search" placeholder="{{P "Filter"}}" autocomplete="off" aria-controls="ds-nav" data-ds-filter>
   </search>
   <p class="ds-nav__empty" data-ds-filter-empty role="status" hidden>{{P "No matches"}}</p>
 {{if .Rows}}  <nav class="ds-index" rst-shell-nav aria-label="{{T "rastrillo.ui.shell_up_label"}}">{{range .Rows}}<a id="{{.ID}}" href="{{.Href}}">{{.Title}}</a>{{end}}<p rst-shell-group>{{.Demos.Title}}</p>{{range .Demos.Items}}<a href="{{.Href}}" target="_blank" rel="noopener">{{.Label}}<span class="rst-sr-only"> ({{P "opens in a new tab"}})</span></a>{{end}}</nav>
@@ -2728,8 +2723,7 @@ const pageTemplate = `{{define "ds-controls"}}<nav rst-seg-tabs aria-label="{{P 
 {{range .Nav}}{{if .Items}}    <details{{if .Current}} open aria-current="page"{{end}}><summary><span rst-caret aria-hidden="true">{{icon "chevron-down"}}</span>{{.Title}}</summary>{{range .Items}}<a href="{{.Href}}"{{if .Aria}} aria-label="{{.Aria}}"{{end}}{{if .Code}} class="rst-mono"{{end}}{{if .Blank}} target="_blank" rel="noopener"{{end}}{{if .Terms}} data-ds-terms="{{.Terms}}"{{end}}>{{.Label}}</a>{{end}}</details>
 {{else}}    <a class="ds-nav__page" href="{{.Href}}"{{if .Current}} aria-current="page"{{end}}>{{.Title}}</a>
 {{end}}{{end}}  </nav>
-{{if .Rows}}<div rst-shell-rail-foot id="ds-prefs">{{template "ds-controls" .Foot}}</div>
-{{end}}</aside>
+</aside>
 <header class="ds-top">
 <a class="ds-top__brand" href="{{.Home}}">{{P "rastrillo design system"}}</a>
 <div class="ds-top__controls">{{template "ds-controls" .Bar}}</div>
@@ -2806,7 +2800,7 @@ const gettingStartedBody = `{{define "ds-body-getting-started"}}
 <h2 class="ds-sub">{{P "What each file weighs"}}</h2>
 <p class="ds-note">{{P "Filesizes for the various components."}}</p>
 <ul class="ds-files">{{range .Assets.List}}
-<li id="{{.ID}}" data-ds-anchor><a class="rst-mono" href="{{.Href}}">{{.Name}}</a><span>{{.Blurb}}</span><span class="rst-mono">{{P "{bytes} bytes" "bytes" .Bytes}}</span></li>{{end}}
+<li id="{{.ID}}" data-ds-anchor><a class="rst-mono" href="{{.Href}}" download="{{.Name}}">{{.Name}}</a><span>{{.Blurb}}</span><span class="rst-mono">{{P "{bytes} bytes" "bytes" .Bytes}}</span></li>{{end}}
 </ul>
 <p class="ds-lead">{{P "A new app gets {bytes} bytes of CSS and JavaScript in total: tokens.css, one theme, and the scripts." "bytes" .Assets.AppBytes}}</p>
 
@@ -2939,7 +2933,7 @@ const shellsBody = `{{define "ds-body-shells"}}
 // answer to "what is the head block FOR": an app's favicon, an app's
 // stylesheet, an app's one script that has to run early.
 const shellCommon = `
-{{define "head"}}<script src="{{.Mount}}/gallery.js"></script>{{end}}
+{{define "head"}}<script src="{{asset "gallery.js"}}"></script>{{end}}
 {{define "lang"}}{{.Locale}}{{end}}
 {{define "dir"}}{{.Dir}}{{end}}
 {{define "title"}}{{.Title}}{{end}}
@@ -2955,6 +2949,7 @@ const shellTemplate = `
 {{define "brand"}}<a rst-shell-brand href="{{.Index}}">rastrillo</a>{{end}}
 {{define "nav"}}<a id="nav-posts" href="{{.PageHref}}" aria-current="page">Posts</a><a id="nav-comments" href="{{.PageHref}}">Comments</a><a id="nav-settings" href="{{.PageHref}}">Settings</a>{{end}}
 {{define "account"}}{{.Account}}{{end}}
+{{define "profile"}}{{.Profile}}{{end}}
 {{define "locale"}}<details rst-dropdown rst-locale name="rst-menus"><summary>{{T "rastrillo.ui.shell_language"}}<span rst-caret aria-hidden="true">{{icon "chevron-down"}}</span></summary><div rst-dropdown-menu>{{range .Locales}}<a href="{{.Href}}" lang="{{.Code}}" dir="{{.Dir}}"{{if .Current}} aria-current="true"{{end}}>{{.Name}}</a>{{end}}</div></details>{{end}}
 {{define "foot"}}<a href="{{.Index}}">{{P "Back to the design system"}}</a>{{end}}
 {{define "content"}}
@@ -3010,8 +3005,8 @@ const modalTemplate = `{{define "ds-modal"}}<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width">
 <title>{{.Title}}</title>
-<link rel="stylesheet" href="{{.Mount}}/tokens.css">
-<link rel="stylesheet" href="{{.Mount}}/theme-{{.Theme}}.css">
+<link rel="stylesheet" href="{{asset "tokens.css"}}">
+<link rel="stylesheet" href="{{asset "theme.css"}}">
 </head>
 <body>
 <div rst-backdrop inert>

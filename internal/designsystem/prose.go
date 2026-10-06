@@ -5130,4 +5130,17 @@ var prose = map[string]map[string]string{
 		`vi`:      `Tone mặc định là neutral, nên lời gọi này bỏ nó đi.`,
 		`ar`:      `قيمة Tone الافتراضية هي neutral، لذا يحذفها هذا الاستدعاء.`,
 	},
+	`Display settings`: {
+		`ga`:      `Socruithe taispeána`,
+		`zh-Hans`: `显示设置`,
+		`es`:      `Ajustes de visualización`,
+		`hi`:      `डिस्प्ले सेटिंग्स`,
+		`pt`:      `Definições de visualização`,
+		`bn`:      `প্রদর্শন সেটিংস`,
+		`ru`:      `Настройки отображения`,
+		`ja`:      `表示設定`,
+		`yue`:     `顯示設定`,
+		`vi`:      `Cài đặt hiển thị`,
+		`ar`:      `إعدادات العرض`,
+	},
 }

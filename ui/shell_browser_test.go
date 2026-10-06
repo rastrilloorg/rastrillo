@@ -222,10 +222,10 @@ type railReading struct {
 	RailScrolled           int
 	PersonOverhangScrolled int
 	LocaleBefore           bool
-	// The phone index's two: how far the foot sits below the nav, and
-	// where the open language menu ends.
-	FootAfterNav int
-	MenuBottom   int
+	// The phone index's two: how far the foot sits from the top of the
+	// rail, and where the open card ends.
+	FootFromTop int
+	MenuBottom  int
 }
 
 // railMeasure is the one reading every leg of the rail drive takes, so
@@ -233,10 +233,10 @@ type railReading struct {
 // above it — which is how the frame went missing the first time.
 const railMeasure = `(() => {
   const rail = document.querySelector("[rst-shell-rail]");
-  const person = document.querySelector("#rail-person");
+  const person = document.querySelector("[rst-shell-profile] > summary");
   const loc = document.querySelector("#rail-locale");
-  const sum = loc.querySelector("summary");
-  const menu = loc.querySelector("[rst-dropdown-menu]");
+  const sum = person;
+  const menu = document.querySelector("[rst-shell-profile] > [rst-dropdown-menu]");
   // Both scrollers wound back to the top first. chromedp.Click scrolls
   // its target into view, and the locale summary sits at the foot of
   // the rail — so on a rail that overflows, opening the language menu
@@ -272,29 +272,28 @@ const railMeasure = `(() => {
     RailScrolled: scrolled,
     PersonOverhang: Math.round(p.bottom - window.innerHeight),
     PersonOverhangScrolled: personAfter,
-    LocaleBefore: !!(loc.compareDocumentPosition(person) & Node.DOCUMENT_POSITION_FOLLOWING),
-    FootAfterNav: Math.round(document.querySelector("[rst-shell-rail-foot]").getBoundingClientRect().top - document.querySelector("[rst-shell-nav]").getBoundingClientRect().bottom),
+    LocaleBefore: !!(loc.compareDocumentPosition(document.querySelector("#acct-profile")) & Node.DOCUMENT_POSITION_FOLLOWING),
+    FootFromTop: Math.round(document.querySelector("[rst-shell-rail-foot]").getBoundingClientRect().top - r.top),
     MenuBottom: Math.round(m.bottom)
   });
 })()`
 
-// TestTheSidebarRailPutsThePersonAtItsFootAndTheLanguageMenuOpensUpward
+// TestTheSidebarRailPutsThePersonAtItsFootAndTheProfileMenuOpensUpward
 // is the other live-page bug: the sidebar shell left the person block
 // mid-rail, directly under the nav, with acres of empty rail below it.
 //
 // Two claims, both measured rather than asserted about the CSS text:
 //
-//  1. The person sits at the rail's foot — the distance from the
-//     bottom of the person block to the bottom of the rail is small.
-//     Before the fix it was most of a 900px window.
-//  2. The language switcher above it is a DROPUP. Its panel's bottom
-//     edge is at or above its summary's top edge; a dropdown's would
-//     be below it. Zero script does this: it is the same <details>
-//     menu with inset-block-end: 100% instead of top: 100%.
+//  1. The person, now the profile menu's avatar, sits at the rail's
+//     foot — the distance from its bottom to the bottom of the rail is
+//     small. Before the fix it was most of a 900px window.
+//  2. The profile menu is a DROPUP. Its card's bottom edge is at or
+//     above the avatar's top edge; a dropdown's would be below it.
 //
 // The 390 leg measures the phone index, where the rail is the whole
-// page: its foot follows the nav and the language menu stays on screen.
-func TestTheSidebarRailPutsThePersonAtItsFootAndTheLanguageMenuOpensUpward(t *testing.T) {
+// page and the same menu sits at the top beside the heading: the foot
+// is at the top of the rail and the open card stays on screen.
+func TestTheSidebarRailPutsThePersonAtItsFootAndTheProfileMenuOpensUpward(t *testing.T) {
 	src, ok := Layout("sidebar")
 	if !ok {
 		t.Fatal("no sidebar layout")
@@ -305,7 +304,8 @@ func TestTheSidebarRailPutsThePersonAtItsFootAndTheLanguageMenuOpensUpward(t *te
 	}).Parse(string(src)))
 	template.Must(tmpl.Parse(`{{define "content"}}<p>Content.</p>{{end}}`))
 	template.Must(tmpl.Parse(`{{define "nav"}}<a href="#" aria-current="page">Posts</a><a href="#">Drafts</a>{{end}}`))
-	template.Must(tmpl.Parse(`{{define "account"}}<div rst-shell-account id="rail-person"><a rst-person href="#"><span rst-person-av aria-hidden="true">G</span><span rst-person-meta><span rst-person-name>Grace Hopper</span><span rst-person-email>grace@example.com</span></span></a></div>{{end}}`))
+	template.Must(tmpl.Parse(`{{define "profile"}}<span rst-person-av aria-hidden="true">G</span><span rst-person-name>Grace Hopper</span><span rst-person-email>grace@example.com</span>{{end}}`))
+	template.Must(tmpl.Parse(`{{define "account"}}<a id="acct-profile" href="#">Profile</a>{{end}}`))
 	template.Must(tmpl.Parse(`{{define "locale"}}<details rst-dropdown rst-locale id="rail-locale" name="rst-menus"><summary>Language</summary><div rst-dropdown-menu><a href="#" lang="en">English</a><a href="#" lang="ga">Gaeilge</a></div></details>{{end}}`))
 
 	// Cloned BEFORE anything executes: html/template refuses to Clone a
@@ -367,7 +367,9 @@ func TestTheSidebarRailPutsThePersonAtItsFootAndTheLanguageMenuOpensUpward(t *te
 	if err := chromedp.Run(ctx,
 		chromedp.EmulateViewport(1280, 900),
 		chromedp.Navigate(rig.Origin+"/"),
-		chromedp.WaitVisible(`#rail-person`, chromedp.ByQuery),
+		chromedp.WaitVisible(`[rst-shell-profile] > summary`, chromedp.ByQuery),
+		chromedp.Click(`[rst-shell-profile] > summary`, chromedp.ByQuery),
+		chromedp.WaitVisible(`#rail-locale > summary`, chromedp.ByQuery),
 		chromedp.Click(`#rail-locale > summary`, chromedp.ByQuery),
 		chromedp.WaitVisible(`#rail-locale [rst-dropdown-menu]`, chromedp.ByQuery),
 		chromedp.Evaluate(railMeasure, &raw),
@@ -423,24 +425,25 @@ func TestTheSidebarRailPutsThePersonAtItsFootAndTheLanguageMenuOpensUpward(t *te
 		t.Errorf("the person block ends %dpx above the foot of a %dpx rail; the profile is not at the rail's foot", got.FootGap, got.RailHeight)
 	}
 	if !got.LocaleBefore {
-		t.Error("the person block comes before the language switcher in the rail; the switcher belongs directly above the profile")
+		t.Error("the account's links come before the language switcher in the card; the language follows the name and the links close the card")
 	}
 	if got.MenuLift < 0 {
-		t.Errorf("the language menu's panel ends %dpx BELOW its summary's top edge: it is a dropdown, not the dropup a menu at the foot of the rail has to be", -got.MenuLift)
+		t.Errorf("the profile card ends %dpx BELOW the avatar's top edge: it is a dropdown, not the dropup a menu at the foot of the rail has to be", -got.MenuLift)
 	}
 
 	// And the phone index, which replaced the drawer. The rail IS the
-	// page there, at least the height of the window, and its foot FOLLOWS
-	// the nav by a fixed gap rather than floating to the bottom: an auto
-	// margin in a rail with a min-height would put the language menu at
-	// the foot of the screen, opening off it. So the foot's distance from
-	// the nav is the measurement, and the language menu is asserted to be
-	// on screen whichever way it opened.
+	// page there, at least the height of the window, and the profile
+	// menu is lifted to its top, beside the heading: at the foot of a
+	// long index it would be out of reach. So the foot's distance from
+	// the rail's top is the measurement, and the card, language open,
+	// is asserted to be on screen.
 	var narrow string
 	if err := chromedp.Run(ctx,
 		chromedp.EmulateViewport(390, 780),
 		chromedp.Navigate(rig.Origin+"/index"),
-		chromedp.WaitVisible(`#rail-person`, chromedp.ByQuery),
+		chromedp.WaitVisible(`[rst-shell-profile] > summary`, chromedp.ByQuery),
+		chromedp.Click(`[rst-shell-profile] > summary`, chromedp.ByQuery),
+		chromedp.WaitVisible(`#rail-locale > summary`, chromedp.ByQuery),
 		chromedp.Click(`#rail-locale > summary`, chromedp.ByQuery),
 		chromedp.WaitVisible(`#rail-locale [rst-dropdown-menu]`, chromedp.ByQuery),
 		chromedp.Evaluate(railMeasure, &narrow),
@@ -451,15 +454,15 @@ func TestTheSidebarRailPutsThePersonAtItsFootAndTheLanguageMenuOpensUpward(t *te
 	if err := json.Unmarshal([]byte(narrow), &small); err != nil {
 		t.Fatalf("reading the index measurement (%q): %v", narrow, err)
 	}
-	t.Logf("index: rail %dpx in a %dpx viewport, foot %dpx after the nav", small.RailHeight, small.Viewport, small.FootAfterNav)
+	t.Logf("index: rail %dpx in a %dpx viewport, foot %dpx from the rail's top", small.RailHeight, small.Viewport, small.FootFromTop)
 	if small.RailHeight < small.Viewport-1 {
 		t.Errorf("the phone index's rail is %dpx in a %dpx window; the rail is the page there", small.RailHeight, small.Viewport)
 	}
-	if small.FootAfterNav < 30 || small.FootAfterNav > 50 {
-		t.Errorf("the foot is %dpx after the nav on the index; it should follow it by var(--rst-sp-6), not float to the bottom", small.FootAfterNav)
+	if small.FootFromTop < 0 || small.FootFromTop > 32 {
+		t.Errorf("the profile menu is %dpx from the top of the index's rail; it belongs in the header row, by the rail's padding", small.FootFromTop)
 	}
 	if small.MenuBottom > small.Viewport {
-		t.Errorf("the language menu on the index ends %dpx below the window", small.MenuBottom-small.Viewport)
+		t.Errorf("the profile card on the index ends %dpx below the window", small.MenuBottom-small.Viewport)
 	}
 
 	// And a SHORT window, which is the other half of "fits the
@@ -491,7 +494,9 @@ func TestTheSidebarRailPutsThePersonAtItsFootAndTheLanguageMenuOpensUpward(t *te
 	if err := chromedp.Run(ctx,
 		chromedp.EmulateViewport(1280, 420),
 		chromedp.Navigate(rig.Origin+"/tall"),
-		chromedp.WaitVisible(`#rail-person`, chromedp.ByQuery),
+		chromedp.WaitVisible(`[rst-shell-profile] > summary`, chromedp.ByQuery),
+		chromedp.Click(`[rst-shell-profile] > summary`, chromedp.ByQuery),
+		chromedp.WaitVisible(`#rail-locale > summary`, chromedp.ByQuery),
 		chromedp.Click(`#rail-locale > summary`, chromedp.ByQuery),
 		chromedp.WaitVisible(`#rail-locale [rst-dropdown-menu]`, chromedp.ByQuery),
 		chromedp.Evaluate(railMeasure, &shortRaw),

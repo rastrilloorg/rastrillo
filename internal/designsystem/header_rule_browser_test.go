@@ -35,6 +35,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"path"
 	"sort"
 	"strings"
 	"testing"
@@ -310,7 +311,9 @@ func rakeLineHandler(t *testing.T) http.Handler {
 `
 	t.Logf("CONTROL: serving tokens.css with the rake line appended; this run is EXPECTED to fail on every page")
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if !strings.HasSuffix(r.URL.Path, "/tokens.css") {
+		// tokens.<hash>.css: the tree writes every asset under its
+		// content hash.
+		if base := path.Base(r.URL.Path); !strings.HasPrefix(base, "tokens.") || !strings.HasSuffix(base, ".css") {
 			tree.ServeHTTP(w, r)
 			return
 		}

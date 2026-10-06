@@ -121,7 +121,7 @@ func (p *place) switchTheme(where string) landing {
 	p.t.Helper()
 	var next string
 	p.run(where, chromedp.Evaluate(`(() => { const a = document.querySelector('.ds-top__controls [rst-seg-tabs] a:not([aria-current])'); a.click(); return a.textContent; })()`, &next))
-	p.run(where, chromedp.WaitReady(`link[href$="/theme-`+next+`.css"]`, chromedp.ByQuery))
+	p.run(where, chromedp.WaitReady(`link[href*="/theme-`+next+`."][href$=".css"]`, chromedp.ByQuery))
 	return p.landed(where)
 }
 

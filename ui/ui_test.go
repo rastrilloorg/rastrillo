@@ -2141,13 +2141,18 @@ func TestTheBarShellsCollapseBehindTheMenuIconAndTheSidebarHasNoDrawer(t *testin
 			t.Errorf(`layouts/%s.html spends "kebab" on navigation; kebab means "more actions on this row"`, c.layout)
 		}
 	}
-	// The sidebar has no disclosure at all: on a phone its
+	// The sidebar has no navigation disclosure: on a phone its
 	// navigation is an index page, and every other page carries a back
 	// link to it. A drawer control here would be the hamburger the
-	// guidance now discourages.
+	// guidance now discourages. Its one <details> is the profile menu
+	// in the rail's foot, which holds the person and the language,
+	// never the nav.
 	sidebar, _ := Layout("sidebar")
-	if strings.Contains(string(sidebar), "<details") {
-		t.Error("layouts/sidebar.html still has a <details>; its phone navigation is the index page")
+	if tags := detailsOpenTags(string(sidebar)); len(tags) != 1 || !strings.Contains(tags[0], "rst-shell-profile") {
+		t.Errorf("layouts/sidebar.html's disclosures are %q; want only the profile menu, its phone navigation is the index page", tags)
+	}
+	if strings.Contains(string(sidebar), "rst-shell-chrome") {
+		t.Error("layouts/sidebar.html still has the drawer")
 	}
 	if !strings.Contains(string(sidebar), `<div rst-shell-back><a href=`) {
 		t.Error("layouts/sidebar.html has no back link")
@@ -2157,7 +2162,7 @@ func TestTheBarShellsCollapseBehindTheMenuIconAndTheSidebarHasNoDrawer(t *testin
 	if !strings.Contains(Styleguide()["shell-topbar"], `<path d="M4 12h16"/>`) {
 		t.Error(`styleguide sample "shell-topbar" shows a collapse summary with no menu icon in it`)
 	}
-	if s := Styleguide()["shell-sidebar"]; strings.Contains(s, "<details") || !strings.Contains(s, "rst-shell-back") {
+	if s := Styleguide()["shell-sidebar"]; strings.Contains(s, "rst-shell-chrome") || len(detailsOpenTags(s)) != 1 || !strings.Contains(s, "rst-shell-back") {
 		t.Error(`styleguide sample "shell-sidebar" should show the back link and no drawer`)
 	}
 }
@@ -2177,27 +2182,34 @@ func detailsOpenTags(src string) []string {
 // an empty bar rather than an error.
 func TestTheShellsKeepTheirOverridableBlockNames(t *testing.T) {
 	want := map[string][]string{
-		"column":  {"lang", "dir", "title", "head", "content"},
-		"topbar":  {"lang", "dir", "title", "head", "brand", "nav", "account", "locale", "content", "foot"},
-		"sidebar": {"lang", "dir", "title", "head", "view", "up", "title", "brand", "nav", "locale", "account", "content"},
-		// console offers topbar's SET exactly — every block a screen
-		// can override is the same, which is what makes the two shells
-		// interchangeable for a screen and is the whole claim of a
-		// fourth shell that is the other two at once.
+		"column": {"lang", "dir", "title", "head", "content"},
+		"topbar": {"lang", "dir", "title", "head", "brand", "nav", "account", "locale", "content", "foot"},
+		// brand and title appear first as the phone index's <h1>, the
+		// app's name with the page's title as its fallback, reused
+		// rather than redefined; profile twice, as the avatar that opens
+		// the rail's one menu and as the name heading the card.
+		"sidebar": {"lang", "dir", "title", "head", "view", "up", "brand", "title", "brand", "nav", "profile", "profile", "locale", "account", "content"},
+		// console offers topbar's SET, plus the phone index's blocks
+		// (view, up, profile), which a topbar screen can define and the
+		// topbar simply never calls. So a screen moves from console to
+		// topbar unedited, which is the whole claim of a fourth shell
+		// that is the other two at once.
 		//
 		// The ORDER differs, and must: this list is source order, and
 		// console's nav lives in the rail, which comes after the bar.
 		// topbar reads brand, nav, account, locale; console reads
-		// brand, account, locale, nav. Do not "fix" that to match
+		// brand, locale, account, nav. Do not "fix" that to match
 		// topbar — moving nav up the list means moving it into the
 		// bar, which is the sidebar's rail deleted and this shell with
 		// it. Order is irrelevant to the contract anyway: a block is
 		// found by name.
 		//
-		// view and up are the phone index's two blocks, as in sidebar;
-		// title appears twice because the rail's <h1> is the page's own
-		// title, reused rather than redefined.
-		"console": {"lang", "dir", "title", "head", "view", "brand", "account", "locale", "up", "title", "nav", "content", "foot"},
+		// view and up are the phone index's two blocks, as in sidebar.
+		// The index's <h1> is in the bar, the app's name with the
+		// page's title as its fallback, so brand and title come before
+		// the brand block itself; profile twice, as the avatar the
+		// Menu becomes on the index and the name heading its card.
+		"console": {"lang", "dir", "title", "head", "view", "brand", "title", "brand", "profile", "profile", "locale", "account", "up", "nav", "content", "foot"},
 		// stage has no chrome to override. backdrop is the picture
 		// behind the card, foot an optional line under it.
 		"stage": {"lang", "dir", "title", "head", "backdrop", "content", "foot"},
@@ -2765,13 +2777,16 @@ func drawsARule(val string) bool {
 	return true
 }
 
-// The sidebar rail's foot: the person block last, the language switcher
-// directly above it, and both in a wrapper the LAYOUT owns — the account
-// and locale blocks are app-supplied markup, so the shell cannot style
-// them by class, only by the box it puts them in. The geometry (pinned
-// to the foot, the menu opening upward) is measured on a real engine in
-// shell_browser_test.go; this pins the markup the geometry needs.
-func TestTheSidebarRailGroupsLocaleAndAccountAtItsFoot(t *testing.T) {
+// The sidebar rail's foot is one profile menu: an avatar button that
+// opens a card holding the person's name, the language switcher and the
+// account's links, in a wrapper the LAYOUT owns, because the blocks
+// inside it are app-supplied markup the shell cannot style by class. It
+// is a menu rather than the two blocks laid out flat because on a phone
+// the same control sits at the top of the index, and the foot of a long
+// index is out of reach. The geometry (a drop-up at the foot, a dropdown
+// at the top on a phone) is measured in profile_browser_test.go; this
+// pins the markup it needs.
+func TestTheSidebarRailFootIsOneProfileMenu(t *testing.T) {
 	src, ok := Layout("sidebar")
 	if !ok {
 		t.Fatal("no sidebar layout")
@@ -2783,24 +2798,59 @@ func TestTheSidebarRailGroupsLocaleAndAccountAtItsFoot(t *testing.T) {
 	}
 	nav := strings.Index(s, `<nav rst-shell-nav>`)
 	if nav < 0 || nav > foot {
-		t.Error("the rail's nav does not come before its foot")
+		t.Error("the rail's nav does not come before its foot: focus order on a desktop must match the rail, top to bottom")
 	}
-	locale := strings.Index(s, `{{block "locale" .}}`)
-	account := strings.Index(s, `{{block "account" .}}`)
-	if locale < foot || account < foot {
-		t.Error("the locale and account blocks are not inside the rail's foot")
+	// rst-shell-menu, NOT rst-menus: <details name> exclusivity is
+	// document-wide, and the language menu inside the card is in
+	// rst-menus, so sharing that group would close the card the moment
+	// the language menu opened.
+	const open = `<div rst-shell-rail-foot><details rst-dropdown rst-shell-profile name="rst-shell-menu"><summary><span rst-shell-avatar>{{block "profile" .}}`
+	if !strings.HasPrefix(s[foot:], open) {
+		t.Errorf("the rail foot does not open with the profile menu and its avatar summary; it reads %.200q", s[foot:])
 	}
-	if locale > account {
-		t.Error("the account block comes before the locale block; the language switcher belongs directly above the profile")
+	card := strings.Index(s, `<div rst-dropdown-menu><div rst-shell-who>{{template "profile" .}}</div>{{block "locale" .}}{{end}}{{block "account" .}}{{end}}</div></details></div>`)
+	if card < foot {
+		t.Error("the profile card does not hold the person, then the language, then the account's links, in that order and inside the rail foot")
 	}
-	// An un-overridden shell renders an empty wrapper, so the foot has
-	// to be genuinely empty for :empty to hide it — no whitespace text
-	// node between the two blocks. Same discipline as [rst-shell-foot].
-	if !strings.Contains(s, `<div rst-shell-rail-foot>{{block "locale" .}}{{end}}{{block "account" .}}{{end}}</div>`) {
-		t.Error("the rail foot carries whitespace between its blocks; :empty will never match it and an un-overridden rail grows a stray gap")
+	// The default avatar, for an app with no profile block: the empty
+	// avatar circle, named with the shell's existing Account string, so
+	// the button is never unnamed and no new string is needed.
+	out := renderShellLayout(t, "sidebar", `{{define "account"}}<a href="/out">Sign out</a>{{end}}`)
+	if want := `<summary><span rst-shell-avatar><span rst-person-av="empty placeholder" aria-hidden="true"></span><span rst-person-name>` + defaultT("rastrillo.ui.shell_account") + `</span></span></summary>`; !strings.Contains(out, want) {
+		t.Errorf("an app with no profile block renders no default avatar %q:\n%s", want, out)
 	}
-	if !strings.Contains(string(TokensCSS()), "[rst-shell-rail-foot]:empty") {
-		t.Error("tokens.css does not hide an empty rail foot")
+	css := string(TokensCSS())
+	if !strings.Contains(css, `[rst-shell-rail-foot]:has([rst-shell-who]:only-child [rst-person-av~="placeholder"])`) {
+		t.Error("tokens.css does not hide the placeholder profile with nothing to choose: an app with no profile, no account and no language would get a button opening an empty card")
+	}
+}
+
+// The console keeps its account and language in the bar, behind its
+// Menu, so its phone index needs no second menu: on the index the Menu
+// summary shows the person's avatar instead of its label, and the card
+// it opens is headed by the person's name. Both are in every view's
+// markup, and tokens.css shows one or the other, so a content page and
+// a desktop render exactly as before.
+func TestTheConsoleMenuCarriesTheProfileForItsIndex(t *testing.T) {
+	src, ok := Layout("console")
+	if !ok {
+		t.Fatal("no console layout")
+	}
+	s := string(src)
+	for _, want := range []string{
+		`<summary><span rst-shell-menu-label>{{icon "menu"}}{{T "rastrillo.ui.shell_menu"}}</span><span rst-shell-avatar>{{block "profile" .}}`,
+		`<div rst-shell-tail>
+<div rst-shell-who>{{template "profile" .}}</div>
+{{block "locale" .}}{{end}}
+<details rst-dropdown rst-shell-account`,
+	} {
+		if !strings.Contains(s, want) {
+			t.Errorf("layouts/console.html is missing %q", want)
+		}
+	}
+	bar, h1, rail := strings.Index(s, "<header rst-shell-bar>"), strings.Index(s, "<h1 rst-shell-title>"), strings.Index(s, "<aside rst-shell-rail>")
+	if !(bar >= 0 && bar < h1 && h1 < rail) {
+		t.Error("the console's index <h1> is not in the bar: on the index the bar is the header row, the app's name at the start and the avatar at the end")
 	}
 }
 
@@ -3570,10 +3620,12 @@ func renderShellLayout(t *testing.T, name string, defs ...string) string {
 // A page says which view it is with the view block (default page), and
 // names its way back with up (default "/", the brand's href). The back
 // control's visible label is inside its accessible name (WCAG 2.5.3),
-// rel="up" says the relationship, the rail's <h1> is the page's title,
-// the drawer is gone, and only these two shells link shell.js and
-// shell.css, the script with blocking="render" so it is there for the
-// first pagereveal.
+// rel="up" says the relationship, the index's <h1> is the app's name
+// (the brand, with the page's title after it for an app whose brand
+// renders nothing; tokens.css shows the title only then), the drawer
+// is gone, and only these two shells link shell.js and shell.css, the
+// script with blocking="render" so it is there for the first
+// pagereveal.
 func TestTheSidebarAndConsoleNameTheirViewAndTheirWayBack(t *testing.T) {
 	label := defaultT("rastrillo.ui.shell_up_label")
 	name := defaultTf("rastrillo.ui.shell_up", "name", label)
@@ -3585,7 +3637,7 @@ func TestTheSidebarAndConsoleNameTheirViewAndTheirWayBack(t *testing.T) {
 		for _, want := range []string{
 			`<div rst-shell-` + shell + `="page">`,
 			`<div rst-shell-back><a href="/" rel="up" aria-label="` + template.HTMLEscapeString(name) + `">` + template.HTMLEscapeString(label) + `</a></div>`,
-			`<h1 rst-shell-title>Hello</h1>`,
+			`<h1 rst-shell-title><span><a rst-shell-brand href="/">` + template.HTMLEscapeString(defaultT("rastrillo.ui.shell_home")) + `</a></span><span>Hello</span></h1>`,
 			`<link rel="stylesheet" href="/static/shell.css">`,
 			`<script defer blocking="render" src="/static/shell.js"></script>`,
 		} {
@@ -3599,6 +3651,12 @@ func TestTheSidebarAndConsoleNameTheirViewAndTheirWayBack(t *testing.T) {
 		skip, back, rail := strings.Index(page, "rst-skip"), strings.Index(page, "rst-shell-back"), strings.Index(page, "<aside rst-shell-rail>")
 		if !(skip >= 0 && skip < back && back < rail) {
 			t.Errorf("%s: the back control is not after the skip link and before the rail (focus order must match what is seen)", shell)
+		}
+		// A brand that renders nothing. Not {{define "brand"}}{{end}}:
+		// text/template ignores an empty redefinition and keeps the
+		// default, so an empty brand only ever comes from data.
+		if blank := renderShellLayout(t, shell, `{{define "brand"}}{{if false}}x{{end}}{{end}}`); !strings.Contains(blank, `<h1 rst-shell-title><span></span><span>Hello</span></h1>`) {
+			t.Errorf("%s: a blank brand does not leave the title's first span :empty for the fallback to show", shell)
 		}
 		if index := renderShellLayout(t, shell, `{{define "view"}}index{{end}}`); !strings.Contains(index, `<div rst-shell-`+shell+`="index">`) {
 			t.Errorf("%s: the view block does not reach the root", shell)

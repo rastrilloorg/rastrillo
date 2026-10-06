@@ -53,28 +53,47 @@
      the app's own from the moment it is scaffolded. */}}
 <div rst-shell-back><a href="{{block "up" .}}/{{end}}" rel="up" aria-label="{{Tf "rastrillo.ui.shell_up" "name" (T "rastrillo.ui.shell_up_label")}}">{{T "rastrillo.ui.shell_up_label"}}</a></div>
 <aside rst-shell-rail>
-{{/* The index's heading is the page's own title, reused rather than
-     redefined (a second definition would replace it), so on the index,
-     whose title is the app's name, it needs no new string. tokens.css
-     shows it only on the phone index, so no page ever exposes two h1s. */}}
-<h1 rst-shell-title>{{template "title" .}}</h1>
+{{/* The index's heading is the app's name: the brand, in a span of its
+     own, then the page's title for an app whose brand renders nothing
+     (one drawn from data that has none). tokens.css shows the title
+     only when the brand's span is blank, so the heading is never empty
+     and needs no new string. Both are executed again here rather than
+     redefined (a second definition would replace the app's), so an id
+     inside the brand would appear twice. tokens.css shows the heading
+     only on the phone index, so no page ever exposes two h1s. */}}
+<h1 rst-shell-title><span>{{template "brand" .}}</span><span>{{template "title" .}}</span></h1>
 {{block "brand" .}}<a rst-shell-brand href="/">{{T "rastrillo.ui.shell_home"}}</a>{{end}}
 <nav rst-shell-nav>{{block "nav" .}}{{end}}</nav>
-{{/* The rail's foot: the language switcher, then the person, pinned to
-     the bottom of the rail by the wrapper's auto margin. The wrapper is
-     the layout's, not the app's, because both blocks inside it are
-     app-supplied markup the shell cannot style by class — the box it
-     puts them in is the only handle it has.
+{{/* The rail's foot: one profile menu, an avatar that opens a card with
+     the person's name, the language switcher and the account's links.
+     At the foot of the rail on a desktop it opens upward; on the phone
+     index tokens.css lifts the same element to the top of the index,
+     beside the heading, because the foot of a long index is out of a
+     thumb's reach. One element in two places, never two copies: the
+     blocks inside are the app's markup, and a second copy would
+     duplicate every id in them.
 
-     account here is a bare slot: an override supplies the whole thing,
-     chrome included. Topbar's account block is the other shape — the
-     menu body inside a details/summary the layout owns — so moving a
-     block between the two shells needs an edit.
+     profile is the person, as the avatar and the name: an
+     [rst-person-av] and an [rst-person-name] (and an [rst-person-email]
+     if there is one), the inside of the person partial without its
+     link, since a link cannot sit in a summary. The summary shows the
+     avatar and keeps the name for the accessible name only; the card's
+     head shows the name and the email. The default is the empty avatar
+     named Account, so an app with no profile still gets a named button.
 
-     Written on one line on purpose: an un-overridden shell must leave
-     this wrapper genuinely :empty, and a newline between the blocks
-     would be a text node that stops it matching. */}}
-<div rst-shell-rail-foot>{{block "locale" .}}{{end}}{{block "account" .}}{{end}}</div>
+     account is the menu body here, the links, as in topbar and
+     console; it used to be a bare slot holding the whole person.
+
+     name="rst-shell-menu", NOT rst-menus: exclusivity by a details
+     element's name is document-wide, and the language menu inside the
+     card is in rst-menus, so sharing its group would close the card the
+     moment it opened.
+
+     The default avatar is marked placeholder. tokens.css hides the
+     whole foot when the card's head is its only child AND the head is
+     the placeholder: no profile, no account, no language, so a button
+     would open an empty card. A real person is never hidden. */}}
+<div rst-shell-rail-foot><details rst-dropdown rst-shell-profile name="rst-shell-menu"><summary><span rst-shell-avatar>{{block "profile" .}}<span rst-person-av="empty placeholder" aria-hidden="true"></span><span rst-person-name>{{T "rastrillo.ui.shell_account"}}</span>{{end}}</span></summary><div rst-dropdown-menu><div rst-shell-who>{{template "profile" .}}</div>{{block "locale" .}}{{end}}{{block "account" .}}{{end}}</div></details></div>
 </aside>
 <main rst-shell-main id="main">
 <div rst-page>

@@ -43,6 +43,7 @@ func shellLayoutPage(t *testing.T, src []byte, dir string, defs ...string) strin
 	base := []string{
 		`{{define "dir"}}` + dir + `{{end}}`,
 		`{{define "title"}}Harbour{{end}}`,
+		`{{define "brand"}}<a rst-shell-brand href="/">Harbour</a>{{end}}`,
 		`{{define "nav"}}<a id="nav-invoices" href="/invoices">Invoices</a><a id="nav-orders" href="/orders">Orders</a><a id="nav-team" href="/team">Team</a>{{end}}`,
 		`{{define "locale"}}<details rst-dropdown rst-locale id="rail-locale" name="rst-menus"><summary>Language</summary><div rst-dropdown-menu><a href="/go/en" lang="en">English</a><a href="/go/ga" lang="ga">Gaeilge</a></div></details>{{end}}`,
 		`{{define "content"}}<h1>Invoices</h1><p>Content.</p>{{end}}`,
@@ -81,7 +82,7 @@ const viewJS = `(() => {
   const q = s => document.querySelector(s), back = q("[rst-shell-back] a"), br = back ? back.getBoundingClientRect() : null;
   const title = q("[rst-shell-title]"), hr = document.documentElement.getBoundingClientRect();
   return JSON.stringify({Rail: shown(q("[rst-shell-rail] [rst-shell-nav]")), Main: shown(q("[rst-shell-main]")),
-    SkipDisplay: getComputedStyle(q("[rst-skip]")).display, Title: shown(title) ? title.textContent.trim() : "",
+    SkipDisplay: getComputedStyle(q("[rst-skip]")).display, Title: shown(title) ? title.innerText.trim() : "",
     Back: shown(back), BackStart: br ? Math.round(document.documentElement.dir === "rtl" ? hr.right - br.right : br.left - hr.left) : -1,
     BackTop: br ? Math.round(br.top) : -1, Drawer: !!q("[rst-shell-chrome]"),
     H1s: [...document.querySelectorAll("h1")].filter(shown).length, Len: history.length});
@@ -273,8 +274,15 @@ const boxesJS = `(() => { const b = s => { const r = document.querySelector(s).g
   return JSON.stringify({Rail: b("[rst-shell-rail]"), Main: b("[rst-shell-main]")}); })()`
 
 // TestTheWideLayoutIsUnchanged: at 1280, in both directions, both views
-// are exactly the old layout (the same markup rendered through the
+// keep the old layout's boxes (the same markup rendered through the
 // legacy layout is the golden), with no back control and no second h1.
+//
+// One deliberate change, asserted rather than tolerated: the sidebar
+// rail's foot is no longer the language menu and the person laid out
+// flat. It is one avatar button, the profile menu, and the language is
+// inside its card, so the language menu that the legacy layout shows in
+// the foot is not on screen until the avatar is opened. The rail and
+// main boxes do not move, because the foot was always inside the rail.
 func TestTheWideLayoutIsUnchanged(t *testing.T) {
 	for _, c := range []struct{ shell, dir string }{{"sidebar", "ltr"}, {"sidebar", "rtl"}, {"console", "ltr"}, {"console", "rtl"}} {
 		t.Run(c.shell+" "+c.dir, func(t *testing.T) {
@@ -296,9 +304,21 @@ func TestTheWideLayoutIsUnchanged(t *testing.T) {
 				at(t, ctx, viewJS, &v)
 				return boxes, v
 			}
+			footJS := `JSON.stringify({Locale: document.querySelector("#rail-locale > summary").checkVisibility(), Avatar: !!document.querySelector("[rst-shell-rail-foot] [rst-shell-profile] > summary") && document.querySelector("[rst-shell-rail-foot] [rst-shell-profile] > summary").checkVisibility()})`
+			var foot struct{ Locale, Avatar bool }
 			golden, _ := read("/legacy")
+			at(t, ctx, footJS, &foot)
+			if shell == "sidebar" && (!foot.Locale || foot.Avatar) {
+				t.Errorf("the legacy sidebar's foot: language menu shown %v, avatar %v; the golden is the flat foot", foot.Locale, foot.Avatar)
+			}
 			for _, path := range []string{"/index", "/page"} {
 				got, v := read(path)
+				if shell == "sidebar" {
+					at(t, ctx, footJS, &foot)
+					if foot.Locale || !foot.Avatar {
+						t.Errorf("%s %s at 1280: the rail's foot shows the language menu %v and the avatar %v; want the avatar alone, the language inside its card", c.dir, path, foot.Locale, foot.Avatar)
+					}
+				}
 				if got["Rail"] != golden["Rail"] || got["Main"] != golden["Main"] {
 					t.Errorf("%s %s %s at 1280: rail %s main %s; the old layout gives rail %s main %s", shell, c.dir, path, got["Rail"], got["Main"], golden["Rail"], golden["Main"])
 				}

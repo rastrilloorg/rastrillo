@@ -8,7 +8,10 @@
      [rst-shell-sidebar~="index"|"page"], [rst-shell-console~=…]
                            which view the server rendered (the "view"
                            block): .rst-shell-sidebar--index and so on
-     [rst-shell-back] a    the back control; its href is the "up" block
+     [rst-shell-back] > a  the back control, the strip's own link; its
+                           href is the "up" block. Only the direct child:
+                           a page may put a menu in the strip too, and
+                           its links are not a way back
      [rst-shell-nav] a     the index's rows
 
    What it adds, three things:
@@ -33,7 +36,7 @@
   var ROOT = "[rst-shell-sidebar],[rst-shell-console],.rst-shell-sidebar,.rst-shell-console";
   var INDEX = '[rst-shell-sidebar~="index"],[rst-shell-console~="index"],.rst-shell-sidebar--index,.rst-shell-console--index';
   var PAGE = '[rst-shell-sidebar~="page"],[rst-shell-console~="page"],.rst-shell-sidebar--page,.rst-shell-console--page';
-  var BACK = "[rst-shell-back] a[href],.rst-shell__back a[href]";
+  var BACK = "[rst-shell-back] > a[href],.rst-shell__back > a[href]";
   var NAV = "[rst-shell-nav] a[href],.rst-shell__nav a[href]";
   var NARROW = "(max-width: 799.98px)";
   var RETURN = "rst-shell-return", WENT_BACK = "rst-shell-back";

@@ -77,6 +77,44 @@ func TestFillReplacesMarkersWithApprovedText(t *testing.T) {
 	}
 }
 
+// What a marker may become depends on where it is. Inside a raw Go
+// string a double quote is plain text and only a backtick would end the
+// literal; inside an interpreted one a quote or a backslash would. In a
+// Markdown file there is no literal at all, and backticks are how the
+// docs mark code. The em dash is refused everywhere: the operator does
+// not want it in copy.
+func TestFillFileKnowsWhatKindOfStringItIsIn(t *testing.T) {
+	approved := map[string]string{
+		"b.quote": `See "Upgrading" in the guide.`,
+		"b.code":  "Put it in `profile`.",
+		"b.dash":  "One \u2014 two",
+		"b.slash": `C:\path`,
+	}
+	for _, c := range []struct {
+		name, file, src string
+		ok              bool
+		want            string
+	}{
+		{"a quote in a raw Go string", "a.go", "const a = `⟦b.quote⟧`\n", true, "const a = `See \"Upgrading\" in the guide.`\n"},
+		{"a quote in an interpreted Go string", "a.go", "const a = \"⟦b.quote⟧\"\n", false, ""},
+		{"a backtick in a raw Go string", "a.go", "const a = `⟦b.code⟧`\n", false, ""},
+		{"a backtick in an interpreted Go string", "a.go", "const a = \"⟦b.code⟧\"\n", true, "const a = \"Put it in `profile`.\"\n"},
+		{"a quote and code in Markdown", "a.md", "Say ⟦b.quote⟧ ⟦b.code⟧\n", true, "Say See \"Upgrading\" in the guide. Put it in `profile`.\n"},
+		{"an em dash in Markdown", "a.md", "⟦b.dash⟧\n", false, ""},
+		{"a backslash in an interpreted Go string", "a.go", "const a = \"⟦b.slash⟧\"\n", false, ""},
+		{"a backslash in a raw Go string", "a.go", "const a = `⟦b.slash⟧`\n", true, "const a = `C:\\path`\n"},
+	} {
+		got, n, err := FillFile(c.file, c.src, approved)
+		if (err == nil) != c.ok {
+			t.Errorf("%s: err = %v, want ok %v", c.name, err, c.ok)
+			continue
+		}
+		if c.ok && (got != c.want || n == 0) {
+			t.Errorf("%s: FillFile = %q (%d), want %q", c.name, got, n, c.want)
+		}
+	}
+}
+
 // A key whose entry never closes is refused by name rather than cut at
 // a guessed offset, which would delete the wrong bytes and leave a
 // format error that names nothing.

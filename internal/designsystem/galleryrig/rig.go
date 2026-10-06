@@ -303,7 +303,7 @@ func RequireScriptsOff(t *testing.T, ctx context.Context, where string) {
 // what an engine without the feature gets: the menu panel positioned
 // absolutely under its summary instead of fixed against it.
 const WithoutAnchorPositioning = `(async () => {
-  const link = document.querySelector('link[href$="/tokens.css"]');
+  const link = document.querySelector('link[href*="/tokens."][href$=".css"]');
   const css = await (await fetch(link.href)).text();
   const style = document.createElement("style");
   style.textContent = css.replaceAll("@supports (position-area: block-end) and (position-try-fallbacks: flip-block)", "@supports (position-area: rastrillo-no-such-value)");

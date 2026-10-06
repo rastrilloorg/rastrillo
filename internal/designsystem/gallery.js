@@ -97,8 +97,8 @@
     }
   }
 
-  // Every scheme button: the Overview has two sets, the bar's and the
-  // phone index's, and both stay in step.
+  // Every scheme button: every page has two sets, the bar's and the
+  // phone's display settings menu's, and both stay in step.
   function pressed(scheme) {
     var buttons = document.querySelectorAll("[data-ds-scheme]");
     for (var i = 0; i < buttons.length; i++) {
@@ -107,11 +107,11 @@
   }
 
   // A page back from the back/forward cache is reactivated, not re-run,
-  // so none of this happens again. On a phone the toggle is on the index
-  // only and Back goes through history, so without this a page left in
-  // Light comes back Light after Dark was chosen on the index, with no
-  // control on it to fix that. Theme and language are addresses, not
-  // stored choices, and need nothing.
+  // so none of this happens again. On a phone Back goes through
+  // history, so without this a page left in Light comes back Light
+  // after Dark was chosen on the page after it, its own toggle still
+  // pressed on Light. Theme and language are addresses, not stored
+  // choices, and need nothing.
   addEventListener("pageshow", function (event) {
     if (!event.persisted) return;
     apply(stored());
@@ -259,8 +259,9 @@
 
   // ── Keeping your place ──────────────────────────────────────────────
   //
-  // A theme or language link in the pinned bar carries the section being
-  // read, worked out at the click; the address bar is never rewritten.
+  // A theme or language link, in the pinned bar or in the phone's display
+  // settings menu, carries the section being read, worked out at the
+  // click; the address bar is never rewritten.
   //  1. A fragment this document put in place, while its target has not
   //     moved (2px): the case geometry cannot answer, the last partial of
   //     a page that clamps, or a glyph in a row of icons sharing a top.
@@ -338,16 +339,15 @@
   // microtask: that checkpoint comes before activation reads href. Again
   // on pageshow, for a page back from the cache whose timer never ran.
   ready(function () {
-    var bar = document.querySelector(".ds-top");
-    if (!bar) return;
-    var links = bar.querySelectorAll(".ds-top__controls a[href]");
+    var links = document.querySelectorAll(".ds-top__controls a[href], .ds-prefs a[href]");
+    if (!links.length) return;
     for (var i = 0; i < links.length; i++) links[i].dsHref = links[i].getAttribute("href");
     function canonical() {
       for (var i = 0; i < links.length; i++) links[i].setAttribute("href", links[i].dsHref);
     }
     addEventListener("pageshow", canonical);
-    bar.addEventListener("click", function (event) {
-      var a = event.target.closest("a[href]"), id;
+    document.addEventListener("click", function (event) {
+      var a = event.target.closest && event.target.closest("a[href]"), id;
       if (!a || a.dsHref === undefined) return;
       setTimeout(canonical, 0);
       if ((id = place())) a.setAttribute("href", a.dsHref + "#" + encodeURIComponent(id));

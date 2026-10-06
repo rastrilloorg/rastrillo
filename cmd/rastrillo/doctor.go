@@ -165,6 +165,7 @@ type report struct {
 	preMoveNested []string
 	files         []vendoredFile
 	layoutAdvice  string // relative path of an old shell layout, if the app has one
+	profileAdvice string // relative path of a layout whose app keeps the person in account
 }
 
 // skewed reports whether the CLI and the app are on different rastrillo
@@ -247,6 +248,53 @@ func oldShellLayout(src string) bool {
 	return shell && !viewBlockRE.MatchString(src)
 }
 
+// doctorProfileAdvisory is the line doctor prints when a layout has the
+// profile menu but the app's account block still holds the person. It
+// is user-facing copy, so a change to it goes through the copy review.
+const doctorProfileAdvisory = `This layout has a profile menu, but your account block still shows who is signed in. Move the avatar, name and email into a profile block. See "Upgrading" in the templates guide.`
+
+// accountDefineRE finds an account define in any spelling, and
+// profileDefineRE a profile one, so an app that spaces its actions out
+// is read the same as one that does not.
+var (
+	accountDefineRE = regexp.MustCompile(`\{\{-?\s*define\s+"account"\s*-?\}\}`)
+	profileDefineRE = regexp.MustCompile(`\{\{-?\s*define\s+"profile"\s*-?\}\}`)
+	anyDefineRE     = regexp.MustCompile(`\{\{-?\s*define\s+"`)
+)
+
+// profileAdvisory reports whether an app with today's sidebar layout
+// still keeps the person in its account block: the layout has the
+// profile menu, some template's account define holds rst-person or the
+// old rail's rst-shell-account wrapper, and no template defines
+// profile. Such an app renders the person inside the menu under the
+// placeholder avatar. Comments are stripped first, as for
+// oldShellLayout, so a note about the markup is not read as the markup.
+// An account define's body is read to the next define or the end of the
+// file, because a define's {{end}} cannot be told from an {{if}}'s
+// without parsing the template.
+func profileAdvisory(layout string, pages map[string]string) bool {
+	if !strings.Contains(templateCommentRE.ReplaceAllString(layout, ""), "rst-shell-profile") {
+		return false
+	}
+	person := false
+	for _, src := range pages {
+		src = templateCommentRE.ReplaceAllString(src, "")
+		if profileDefineRE.MatchString(src) {
+			return false
+		}
+		for _, loc := range accountDefineRE.FindAllStringIndex(src, -1) {
+			body := src[loc[1]:]
+			if next := anyDefineRE.FindStringIndex(body); next != nil {
+				body = body[:next[0]]
+			}
+			if strings.Contains(body, "rst-person") || strings.Contains(body, "rst-shell-account") {
+				person = true
+			}
+		}
+	}
+	return person
+}
+
 // diagnose does the reading: where the app keeps its vendored files,
 // what version it is on, which theme it chose, and how each file
 // compares. It writes nothing.
@@ -289,6 +337,21 @@ func diagnose(dir, themeFlag string) (*report, error) {
 	layout := filepath.Join(filepath.Dir(staticDir), "templates", "layout.html")
 	if b, err := os.ReadFile(layout); err == nil && oldShellLayout(string(b)) {
 		r.layoutAdvice = rel(dir, layout)
+	} else if err == nil {
+		pages := map[string]string{}
+		if names, _ := filepath.Glob(filepath.Join(filepath.Dir(layout), "*.html")); names != nil {
+			for _, n := range names {
+				if n == layout {
+					continue
+				}
+				if body, err := os.ReadFile(n); err == nil {
+					pages[n] = string(body)
+				}
+			}
+		}
+		if profileAdvisory(string(b), pages) {
+			r.profileAdvice = rel(dir, layout)
+		}
 	}
 
 	pinPath, pin := readPin(dir, pkg)
@@ -589,6 +652,9 @@ func (r *report) print(w io.Writer, fixing bool) {
 
 	if r.layoutAdvice != "" {
 		fmt.Fprintf(w, "%s: %s\n\n", r.layoutAdvice, doctorLayoutAdvisory)
+	}
+	if r.profileAdvice != "" {
+		fmt.Fprintf(w, "%s: %s\n\n", r.profileAdvice, doctorProfileAdvisory)
 	}
 
 	// The summary counts what was compared, not what exists: a file the

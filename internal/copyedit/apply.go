@@ -63,7 +63,7 @@ func Run(path string, w io.Writer) error {
 		if err != nil {
 			return err
 		}
-		out, n, err := Fill(string(src), approved)
+		out, n, err := FillFile(f, string(src), approved)
 		if err != nil {
 			return fmt.Errorf("%s: %w", f, err)
 		}

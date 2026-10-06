@@ -746,15 +746,16 @@ tab beside the preview keeps the routes the sample was written with,
 which are the ones worth copying.
 
 On a desktop three switchers sit in a bar pinned above the page; on a
-phone they sit at the foot of the index. **Theme** is three links, one
-per theme, landing on the same page in that theme's palette. **Colour
-scheme** is System, Light and Dark, and it is the only one of the three
-that needs JavaScript: it writes `data-theme` on `<html>`, remembers the
-choice in `localStorage`, and puts the same attribute on every preview
-frame, because a colour scheme does not reach into an embedded document
-that declares one of its own. **Language** is a menu of twelve links.
-Switching theme or language keeps your place: you land on the section
-you were reading, not the top of the page.
+phone they sit in a Display settings menu at the top of every page.
+**Theme** is three links, one per theme, landing on the same page in
+that theme's palette. **Colour scheme** is System, Light and Dark, and
+it is the only one of the three that needs JavaScript: it writes
+`data-theme` on `<html>`, remembers the choice in `localStorage`, and
+puts the same attribute on every preview frame, because a colour scheme
+does not reach into an embedded document that declares one of its own.
+**Language** is a menu of twelve links. Switching theme or language
+keeps your place: you land on the section you were reading, not the top
+of the page.
 
 The script behind those controls is `gallery.js`, the only JavaScript in
 the tree that is not part of the framework: furniture for the page
@@ -1019,9 +1020,9 @@ block:
 
 The blocks are `title`, `lang`, `dir` and `head` in all five shells,
 plus `brand`, `nav`, `account` and `locale` in `topbar`, `sidebar` and
-`console`, `view` and `up` in `sidebar` and `console`, `foot` in
-`topbar`, `console` and `stage`, and `backdrop` in `stage`. None of them
-reads a field off the data, so a shell renders whether your handler
+`console`, `profile`, `view` and `up` in `sidebar` and `console`, `foot`
+in `topbar`, `console` and `stage`, and `backdrop` in `stage`. None of
+them reads a field off the data, so a shell renders whether your handler
 passes a struct, a `dict`-built map or nil. A shell can never break
 because a page's view model changed shape.
 
@@ -1031,24 +1032,24 @@ that has to run before the body — override it and they go in, last in
 the head, so your own CSS wins the ties it should win against
 `tokens.css` and the theme.
 
-`account` is the one asymmetric block, and it is worth knowing which
-shell you are in. In `topbar` and `console` the layout owns the
-`<details rst-dropdown rst-shell-account>` and its summary, so your
-`account` block is the **menu body only** — the links that go inside
-`[rst-dropdown-menu]`. In `sidebar` there is no dropdown: `account` is a
-bare slot in the rail, and you supply the whole thing. Move a screen
-between `topbar` and `console` and nothing changes; move it to or from
-`sidebar` and this is the one edit you will need.
+`account` is the same in every shell: the links that go inside the
+account menu, such as Settings and Sign out. In `sidebar` and `console`
+the person who is signed in goes in `profile`: the avatar, name and
+email on the button that opens that menu, at the foot of the rail on a
+desktop and at the top of the index on a phone. Move a screen between
+shells and neither block changes.
 
 The chrome attributes live in `tokens.css` like every other idiom:
-`rst-shell-topbar`, `rst-shell-bar`, `rst-shell-brand`,
-`rst-shell-nav`, `rst-shell-account` and `rst-shell-foot` for the
-topbar, with `rst-shell-menu` and `rst-shell-tail` for its phone menu;
+`rst-shell-topbar`, `rst-shell-bar`, `rst-shell-brand`, `rst-shell-nav`,
+`rst-shell-account` and `rst-shell-foot` for the topbar, with
+`rst-shell-menu` and `rst-shell-tail` for its phone menu;
 `rst-shell-sidebar`, `rst-shell-rail`, `rst-shell-group`,
 `rst-shell-main`, `rst-shell-title` and `rst-shell-back` for the
-sidebar; `rst-shell-console` for the console, which reuses the rest;
-and `rst-skip`, the skip link, in all five shells. None of it needs
-JavaScript.
+sidebar, with `rst-shell-rail-foot`, `rst-shell-profile`,
+`rst-shell-avatar`, `rst-shell-who` and `rst-shell-menu-label` for its
+profile menu; `rst-shell-console` for the console, which reuses the
+rest; and `rst-skip`, the skip link, in all five shells. None of it
+needs JavaScript.
 
 `stage` has no chrome. It centres one card, usually the sign-in screen,
 over a full-page backdrop drawn by `{{stageArt "rastrillo"}}` unless you
@@ -1063,8 +1064,9 @@ SVG replaces it outright. Its attributes are `rst-stage`,
 Below 800px, `sidebar` and `console` show each page in one of two ways.
 Your index page is the list of sections. Every other page shows its
 content, with a back control at the top that returns to that list. The
-sections are never behind a menu button: `sidebar` has none, and the
-console's Menu button holds only its account and language menus.
+sections are never behind a menu button: the only one on the index is
+your profile, at the top right, which holds the account and language
+menus.
 
 Mark your index page with the `view` block:
 
@@ -1127,7 +1129,10 @@ still opens. To move to the index:
    block to every other page.
 4. If you already have a template called `view` or `up`, rename it.
    The shells use those names now.
-5. In a list grid, end `--rst-cols` with `var(--rst-col-menu)` instead
+5. If your `account` block shows who is signed in (an avatar, a name, an
+   email), move that into a `profile` block and keep only the links in
+   `account`. `rastrillo doctor` tells you when it finds one.
+6. In a list grid, end `--rst-cols` with `var(--rst-col-menu)` instead
    of `32px`.
 
 `rastrillo new --shell=sidebar` and `--shell=console` now write two
@@ -1173,9 +1178,10 @@ The `locale` block is where the language switcher goes, and
 ```
 
 It renders nothing when `Items` is empty, so a one-locale app can wire
-it and forget it. It sits on `rst-dropdown rst-locale` — the ordinary
-dropdown vocabulary, not a shell-specific name — so it looks and
-behaves the same in either shell. See
+it and forget it. It sits on `rst-dropdown rst-locale`, the ordinary
+dropdown vocabulary rather than a shell-specific name, so it looks and
+behaves the same in every shell, except in `sidebar` and `console`,
+where it opens in place inside the profile menu. See
 [Localization](/docs/localization).
 
 ## Error pages

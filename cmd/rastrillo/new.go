@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"go/token"
+	"html"
 	"os"
 	"path/filepath"
 	"strings"
@@ -110,7 +111,7 @@ func runNew(args []string) error {
 	// test that go with it. Every other shell keeps today's one page.
 	indexHTML, routes, handlers, pages, extraTests := indexTemplate, "", "", `"index", "errors"`, ""
 	if twoPageShells[*shell] {
-		indexHTML = fmt.Sprintf(sectionsIndexTemplate, scaffoldOverview)
+		indexHTML = fmt.Sprintf(sectionsIndexTemplate, scaffoldOverview, html.EscapeString(name))
 		routes = "\n\tr.Get(\"/overview\", a.overview)"
 		handlers = overviewHandler
 		pages = `"index", "overview", "errors"`
@@ -207,7 +208,7 @@ func runNew(args []string) error {
 	// the shell does not link them; the app's vendoring test then needs
 	// them in vendoredIsMine, or it fails on the missing files.
 	if twoPageShells[*shell] {
-		files[filepath.Join(appDir, "templates", "overview.html")] = fmt.Sprintf(overviewTemplate, scaffoldOverview)
+		files[filepath.Join(appDir, "templates", "overview.html")] = fmt.Sprintf(overviewTemplate, scaffoldOverview, html.EscapeString(name))
 	}
 
 	for name, content := range vendored {
@@ -716,7 +717,9 @@ var twoPageShells = map[string]bool{"sidebar": true, "console": true}
 const scaffoldOverview = "Overview"
 
 // sectionsIndexTemplate is templates/index.html for the two-page shells.
-// %[1]s is the section's name.
+// %[1]s is the section's name and %[2]s the app's, which is the brand:
+// the phone index's heading is the brand, and the layout's default
+// brand is the word Home, which on a phone would title the app "Home".
 const sectionsIndexTemplate = `{{/* index.html: the home page, and on a phone the list of
      sections: the view block says this page is the index, so below
      800px the rail is the whole page and this content is hidden; on a
@@ -724,17 +727,21 @@ const sectionsIndexTemplate = `{{/* index.html: the home page, and on a phone th
      an id here, and give its page an up block naming /#<that id>, so a
      phone comes back to the row it left. */}}
 {{define "view"}}index{{end}}
+{{define "brand"}}<a rst-shell-brand href="/">%[2]s</a>{{end}}
 {{define "nav"}}<a id="nav-overview" href="/overview">%[1]s</a>{{end}}
 {{define "content"}}
 <h1>Hello, World — this is a rastrillo app.</h1>
 {{end}}
 `
 
-// overviewTemplate is templates/overview.html, the one section page.
+// overviewTemplate is templates/overview.html, the one section page,
+// with the same two arguments: a block is per page here, so every page
+// names the brand.
 const overviewTemplate = `{{/* overview.html: a section. up is its way back: the index, with
      this section's nav link as the fragment, which is where focus
      returns on a phone even with scripts off. */}}
 {{define "up"}}/#nav-overview{{end}}
+{{define "brand"}}<a rst-shell-brand href="/">%[2]s</a>{{end}}
 {{define "nav"}}<a id="nav-overview" href="/overview" aria-current="page">%[1]s</a>{{end}}
 {{define "content"}}
 <h1>Hello, World — this is a rastrillo app.</h1>

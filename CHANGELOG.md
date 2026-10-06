@@ -10,6 +10,14 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+### Changed: the sidebar's person moves into a profile menu; re-vendor `tokens.css` and `shell.js`
+
+In `sidebar` and `console`, who is signed in now sits on a profile button: at the foot of the rail on a desktop, opening upward, and at the top right of the index on a phone. It opens one menu with their name and email, the language choices and your account links. The phone index's heading is your app's name (`brand`), smaller than before.
+
+Put the avatar, name and email in the new `profile` block and keep only the links in `account`. An `account` block that still holds the person shows up inside the menu instead, and `rastrillo doctor` tells you when yours does. Re-copy `tokens.css` and `shell.js` with `rastrillo doctor --fix`.
+
+The design-system gallery now links its stylesheets and scripts by content-hashed names, so a deploy can no longer pair new pages with an old cached stylesheet.
+
 ### Added: `data-rst-class` on a searchable select's option styles its row
 
 Put classes on an option with `data-rst-class` and its row in the list wears them, as does the closed box while that option is picked. Typing in the box takes them off, so a search reads in the box's own style. Tito uses it to show each font in a font menu set in that font. Re-vendor `select.js` to get it; an option without the attribute renders as before.

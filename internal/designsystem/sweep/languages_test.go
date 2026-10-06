@@ -16,12 +16,12 @@ import (
 	"amadan.net/rastrillo/rastrillo/harness"
 )
 
-// Every language in the index foot's menu can be reached: by Tab, with
-// scripts, and by scrolling the way a finger would, the panel's own
-// scroll and then the document's, in every combination. Which way the
-// panel opens is not asserted: with anchor positioning it may flip
-// upward, and without it, it opens downward and extends the document.
-// The index is scrolled to its end first, the case with no room below.
+// Every language in the phone index's display settings menu can be
+// reached: by Tab, with scripts, and by scrolling the way a finger
+// would, the card's own scroll and then the document's, in every
+// combination. The menu is at the top of the index and drops down, and
+// the language list opens in place inside its card, so the long list is
+// the card's to scroll.
 //
 // "On screen" is inside documentElement's client box, on a rig that
 // draws its scrollbars: innerWidth counts the 15px under the root's
@@ -55,10 +55,10 @@ func TestEveryLanguageIsReachableFromThePhoneIndex(t *testing.T) {
 							t.Fatalf("%s: switching anchor positioning off: %v", where, err)
 						}
 					}
-					requireAnchorPositioning(t, tab, where, "#ds-prefs [rst-dropdown-menu]", anchored)
+					requireAnchorPositioning(t, tab, where, "#ds-prefs > [rst-dropdown-menu]", anchored)
 					requireCoarse(t, tab)
 					requireDrawnScrollbar(t, tab, where)
-					if err := chromedp.Run(tab, chromedp.Evaluate(`scrollTo(0, document.documentElement.scrollHeight);
+					if err := chromedp.Run(tab, chromedp.Evaluate(`document.getElementById("ds-prefs").open = true;
 					  const d = document.querySelector("#ds-prefs [rst-locale]"); d.open = true; d.querySelector("summary").focus(); true`, nil)); err != nil {
 						t.Fatalf("%s: opening the menu: %v", where, err)
 					}
@@ -110,7 +110,7 @@ func TestEveryLanguageIsReachableFromThePhoneIndex(t *testing.T) {
 		if err := chromedp.Run(ctx, chromedp.EmulateViewport(390, 700),
 			chromedp.Navigate(rig.Origin+indexHref(mountPath, "day", "en")),
 			chromedp.WaitVisible(`#ds-prefs`, chromedp.ByQuery),
-			chromedp.Evaluate(`document.querySelector("#ds-prefs [rst-locale]").open = true; true`, nil)); err != nil {
+			chromedp.Evaluate(`document.getElementById("ds-prefs").open = true; document.querySelector("#ds-prefs [rst-locale]").open = true; true`, nil)); err != nil {
 			t.Fatalf("%s: returning to day/en to activate %s: %v", where, code, err)
 		}
 		want := indexHref(mountPath, "day", code)
@@ -133,7 +133,7 @@ func TestEveryLanguageIsReachableFromThePhoneIndex(t *testing.T) {
 	requireScriptsOff(t, off, offWhere)
 	wantAr := indexHref(mountPath, "day", "ar")
 	if err := chromedp.Run(off,
-		chromedp.Evaluate(`document.querySelector("#ds-prefs [rst-locale]").open = true; true`, nil),
+		chromedp.Evaluate(`document.getElementById("ds-prefs").open = true; document.querySelector("#ds-prefs [rst-locale]").open = true; true`, nil),
 		chromedp.Evaluate(`document.querySelector('#ds-prefs [rst-dropdown-menu] a[lang="ar"]').click(); true`, nil)); err != nil {
 		t.Fatalf("%s: activating ar: %v", offWhere, err)
 	}

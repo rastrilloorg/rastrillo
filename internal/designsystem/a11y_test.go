@@ -481,8 +481,11 @@ func shownIn(t *testing.T, bctx context.Context, where, sel string) bool {
 	js := `(() => {
 	  const el = document.querySelector(` + "`" + sel + "`" + `);
 	  if (!el) return false;
+	  // checkVisibility as well as a box: the content of a closed
+	  // <details> still lays out when asked (the engine hides it with
+	  // content-visibility), so its box alone reads as shown.
 	  const r = el.getBoundingClientRect();
-	  return r.width > 0 && r.height > 0;
+	  return el.checkVisibility() && r.width > 0 && r.height > 0;
 	})()`
 	if err := chromedp.Run(bctx, chromedp.Evaluate(js, &shown)); err != nil {
 		t.Fatalf("%s: reading whether %q is on screen: %v", where, sel, err)
@@ -621,18 +624,27 @@ func TestA11yScansTheShellsCollapsed(t *testing.T) {
 						shownIn(t, ctx, where, "[rst-shell-rail] [rst-shell-nav] a"), shownIn(t, ctx, where, "[rst-shell-main]"))
 				}
 				axe(where, scheme, "window.axe")
+				// The whole document with the profile card open (the
+				// console's is its Menu, the avatar on the index), every
+				// rule but target-size. With the card open everything
+				// outside it lies under the summary's ::before
+				// light-dismiss layer, which axe cannot see (it works out
+				// what obscures a target from element boxes): a rail row
+				// half under the card read as a target cut to 22px
+				// (signal's measure) when no tap can reach it at all. The
+				// rows' size is measured with the card closed, just above.
+				noTargetSize := `{run: (target, opts) => window.axe.run(target, Object.assign(opts, {rules: {"target-size": {enabled: false}}}))}`
 				if shell == "console" {
-					// The whole document with the card open, every rule but
-					// target-size. With the card open everything outside it
-					// lies under the summary's ::before light-dismiss layer,
-					// which axe cannot see (it works out what obscures a
-					// target from element boxes): a rail row half under the
-					// card read as a target cut to 22px (signal's measure)
-					// when no tap can reach it at all. The rows' size is
-					// measured with the card closed, just above.
 					where := theme + "/en console index at 390px, card open (" + scheme + ")"
-					open(where, "[rst-shell-menu] > summary", "[rst-shell-tail] [rst-shell-account] > summary")
-					axe(where, scheme, `{run: (target, opts) => window.axe.run(target, Object.assign(opts, {rules: {"target-size": {enabled: false}}}))}`)
+					// On the index the account's links are laid out flat in
+					// the card, so a link is what the click reveals.
+					open(where, "[rst-shell-menu] > summary", "[rst-shell-tail] [rst-shell-account] [rst-dropdown-menu] a")
+					axe(where, scheme, noTargetSize)
+				} else {
+					where := theme + "/en sidebar index at 390px, profile card open (" + scheme + ")"
+					open(where, "[rst-shell-profile] > summary", "[rst-shell-profile] [rst-shell-who] [rst-person-name]")
+					open(where+", language open", "[rst-shell-profile] [rst-locale] > summary", "[rst-shell-profile] [rst-locale] [rst-dropdown-menu] a")
+					axe(where, scheme, noTargetSize)
 				}
 
 				where = theme + "/en " + shell + " content page at 390px (" + scheme + ")"
@@ -651,8 +663,24 @@ func TestA11yScansTheShellsCollapsed(t *testing.T) {
 			}
 		}
 	}
+	// The sidebar's profile menu on a desktop, the drop-up at the
+	// rail's foot, open with the language inside it, in every theme and
+	// scheme. target-size is off for the same layer as above: the page
+	// under the card is behind it.
+	for _, theme := range ui.ThemeNames() {
+		for _, scheme := range a11ySchemes {
+			where := theme + "/en sidebar content page at 1280px, profile card open (" + scheme + ")"
+			if err := chromedp.Run(ctx, chromedp.EmulateViewport(1280, 720), chromedp.Navigate(rig.Origin+shellPageHref(mountPath, theme, "en", "sidebar")),
+				chromedp.WaitVisible("[rst-shell-profile] > summary", chromedp.ByQuery)); err != nil {
+				t.Fatalf("%s: loading: %v", where, err)
+			}
+			open(where, "[rst-shell-profile] > summary", "[rst-shell-profile] [rst-shell-who] [rst-person-name]")
+			open(where+", language open", "[rst-shell-profile] [rst-locale] > summary", "[rst-shell-profile] [rst-locale] [rst-dropdown-menu] a")
+			axe(where, scheme, `{run: (target, opts) => window.axe.run(target, Object.assign(opts, {rules: {"target-size": {enabled: false}}}))}`)
+		}
+	}
 	if total == 0 {
-		t.Logf("clean: %d scans at 390px, %v", scans, axeTags)
+		t.Logf("clean: %d scans at 390px and the desktop profile card, %v", scans, axeTags)
 	}
 }
 

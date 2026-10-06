@@ -97,15 +97,15 @@ func TestThePhoneIndexAndTheWayBack(t *testing.T) {
 			}
 		}
 
-		// Tab runs filter, rows, then the foot's controls, in screen order.
+		// Tab runs the display settings button in the header row, then
+		// the filter and the rows, in screen order. The controls are in
+		// the menu, closed, so nothing follows the rows.
 		var seq []string
 		if err := chromedp.Run(ctx, chromedp.Evaluate(`document.activeElement && document.activeElement.blur(); scrollTo(0, 0); true`, nil)); err != nil {
 			t.Fatalf("%s: resetting focus: %v", where, err)
 		}
 		var expect []string
-		if err := chromedp.Run(ctx, chromedp.Evaluate(`["#ds-filter", ...[...document.querySelectorAll(".ds-index > a")].map(a => a.id ? "#" + a.id : a.getAttribute("href")),
-		  ...[...document.querySelectorAll("#ds-prefs [rst-seg-tabs] a")].map(a => a.getAttribute("href")),
-		  "scheme:system", "scheme:light", "scheme:dark", "summary"]`, &expect)); err != nil {
+		if err := chromedp.Run(ctx, chromedp.Evaluate(`["summary", "#ds-filter", ...[...document.querySelectorAll(".ds-index > a")].map(a => a.id ? "#" + a.id : a.getAttribute("href"))]`, &expect)); err != nil {
 			t.Fatalf("%s: listing the expected order: %v", where, err)
 		}
 		for range expect {
@@ -118,12 +118,24 @@ func TestThePhoneIndexAndTheWayBack(t *testing.T) {
 		if strings.Join(seq, " ") != strings.Join(expect, " ") {
 			t.Errorf("%s: Tab order\n got %v\nwant %v", where, seq, expect)
 		}
-		var short []string
-		if err := chromedp.Run(ctx, chromedp.Evaluate(`[...document.querySelectorAll("#ds-prefs [data-ds-scheme]")].filter(b => b.getBoundingClientRect().height < 44).map(b => b.dataset.dsScheme)`, &short)); err != nil {
-			t.Fatalf("%s: measuring the scheme buttons: %v", where, err)
+		// The filter: the search icon inside the field at its inline
+		// start, and a gap of at least 8px between the field and the
+		// first row.
+		var filter struct {
+			IconIn bool
+			Gap    float64
 		}
-		if len(short) > 0 {
-			t.Errorf("%s: scheme buttons under 44px: %v", where, short)
+		if err := chromedp.Run(ctx, chromedp.Evaluate(`(() => { const i = document.getElementById("ds-filter").getBoundingClientRect(), g = document.querySelector(".ds-search > .icon").getBoundingClientRect();
+		  const rtl = document.documentElement.dir === "rtl", row = document.querySelector(".ds-index > a").getBoundingClientRect();
+		  const start = rtl ? i.right - g.right : g.left - i.left;
+		  return JSON.stringify({IconIn: g.width > 0 && g.top >= i.top && g.bottom <= i.bottom && start >= 0 && start < 16, Gap: row.top - i.bottom}); })()`, &raw)); err != nil {
+			t.Fatalf("%s: measuring the filter: %v", where, err)
+		}
+		if err := json.Unmarshal([]byte(raw), &filter); err != nil {
+			t.Fatalf("%s: decoding %q: %v", where, raw, err)
+		}
+		if !filter.IconIn || filter.Gap < 8 {
+			t.Errorf("%s: the search icon is inside the field at its inline start %v, and the field is %.1fpx above the first row; want the icon there and a gap of at least 8px", where, filter.IconIn, filter.Gap)
 		}
 
 		// A row opens its page as a content page: Back first after the
@@ -137,7 +149,7 @@ func TestThePhoneIndexAndTheWayBack(t *testing.T) {
 		  const back = document.querySelector("[rst-skip] + [rst-shell-back] > a");
 		  return JSON.stringify({Back: !!back && box("[rst-shell-back]"), Href: back ? back.getAttribute("href") : "",
 		    Rail: box("[rst-shell-rail]"), Bar: box(".ds-top"),
-		    Switch: [...document.querySelectorAll("[data-ds-scheme], [rst-seg-tabs] a, [rst-locale]")].some(e => e.getBoundingClientRect().width > 0)});
+		    Switch: [...document.querySelectorAll("[data-ds-scheme], [rst-seg-tabs] a, [rst-locale]")].some(e => e.checkVisibility() && e.getBoundingClientRect().width > 0)});
 		})()`, &page)); err != nil {
 			t.Fatalf("%s: reading Form: %v", where, err)
 		}
@@ -162,12 +174,19 @@ func TestThePhoneIndexAndTheWayBack(t *testing.T) {
 		}
 		until(t, ctx, where+", back on the index", `location.pathname.endsWith("/index.html") && document.activeElement && document.activeElement.id === "nav-form"`)
 
-		// A foot theme link lands on the other theme's index with the
-		// controls on screen.
-		if err := chromedp.Run(ctx, chromedp.Evaluate(`document.querySelector('#ds-prefs [rst-seg-tabs] a[href*="/signal/"]').click(); true`, nil)); err != nil {
-			t.Fatalf("%s: switching theme in the foot: %v", where, err)
-		}
-		until(t, ctx, where+", switched to signal", `location.pathname.includes("/signal/") && location.hash === "#ds-prefs" && (() => { const r = document.getElementById("ds-prefs").getBoundingClientRect(); return r.top >= 0 && r.top < innerHeight; })()`)
+		// A theme link in the display settings menu lands on the other
+		// theme's index, with the menu's button on screen at its top.
+		// A real tap, so first the end of Back's slide: a tap during a
+		// view transition lands on its snapshot and does nothing.
+		until(t, ctx, where+", the slide over", `document.readyState === "complete"`)
+		settleMotion(t, ctx, where+", the slide over")
+		// Taps at the elements' centres, read off the page: after a
+		// history traversal chromedp's own node lookups wait on a document
+		// it never re-read, so selector actions would wait forever.
+		tapAt(t, ctx, where, ".ds-prefs > summary")
+		until(t, ctx, where+", the menu open", `document.querySelector(".ds-prefs").open`)
+		tapAt(t, ctx, where, `.ds-prefs [rst-seg-tabs] a[href*="/signal/"]`)
+		until(t, ctx, where+", switched to signal", `location.pathname.includes("/signal/") && (() => { const r = document.querySelector(".ds-prefs > summary").getBoundingClientRect(); return r.height > 0 && r.top >= 0 && r.top < innerHeight; })()`)
 	}
 
 	// Scripts off: Back is the link, the row is the :target, and the
@@ -220,11 +239,22 @@ func TestA11yScansThePhoneViews(t *testing.T) {
 				}
 				paint(t, ctx, scheme)
 				total += report(t, where, scan(t, ctx, where, "window.axe", "document", "false"))
+				// And with the display settings open, the language inside
+				// it too. target-size is off for the same reason as the
+				// shells' cards: the page outside the card is under the
+				// summary's light-dismiss layer, which axe cannot see.
+				where += ", display settings open"
+				if err := chromedp.Run(ctx, chromedp.Click(".ds-prefs > summary", chromedp.ByQuery), chromedp.WaitVisible(".ds-prefs [rst-locale] > summary", chromedp.ByQuery),
+					chromedp.Click(".ds-prefs [rst-locale] > summary", chromedp.ByQuery), chromedp.WaitVisible(".ds-prefs [rst-locale] [rst-dropdown-menu] a", chromedp.ByQuery)); err != nil {
+					t.Fatalf("%s: opening: %v", where, err)
+				}
+				settleMotion(t, ctx, where)
+				total += report(t, where, scan(t, ctx, where, `{run: (target, opts) => window.axe.run(target, Object.assign(opts, {rules: {"target-size": {enabled: false}}}))}`, "document", "false"))
 			}
 		}
 	}
 	if total == 0 {
-		t.Logf("clean: both phone views in %d themes × %d schemes", len(ui.ThemeNames()), len(a11ySchemes))
+		t.Logf("clean: both phone views, menu closed and open, in %d themes × %d schemes", len(ui.ThemeNames()), len(a11ySchemes))
 	}
 }
 
