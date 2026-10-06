@@ -57,6 +57,7 @@ func signinStates() []struct {
 		{"sent, unbound", auth.SigninState{Step: auth.StepSent}, ""},
 		{"sent instead of keymail", auth.SigninState{Step: auth.StepSent, SentTo: "kay@example.org", SentInstead: true}, ""},
 		{"continue", auth.SigninState{Step: auth.StepContinue, ContinueURL: keymailURL}, ""},
+		{"confirm", auth.SigninState{Step: auth.StepConfirm, Confirm: &auth.ConfirmPageData{Token: "tok", Action: "/auth/verify", Host: "app.test"}}, "onetap"},
 		{"rate", auth.SigninState{Step: auth.StepAsk, Problem: auth.ProblemRate, Address: "ada@example.com"}, "callout"},
 		{"address", auth.SigninState{Step: auth.StepAsk, Problem: auth.ProblemAddress, Address: "ada@example"}, "field"},
 		{"expired", auth.SigninState{Step: auth.StepAsk, Problem: auth.ProblemExpired}, "callout"},
@@ -283,6 +284,26 @@ func TestContinueURLCannotLeaveItsAttribute(t *testing.T) {
 	}
 	if !regexp.MustCompile(`<a rst-btn="primary block" href="[^"]*">`).MatchString(out) {
 		t.Errorf("the fallback link gained an attribute:\n%s", out)
+	}
+}
+
+// The confirm step is one form: the link's token in a hidden field,
+// posted back where the link landed, behind a button that says Sign in.
+// The token came off a query string anyone can write, so it stays one
+// attribute value however it is spelled.
+func TestConfirmPostsTheTokenBack(t *testing.T) {
+	hostile := `tok" autofocus onfocus="alert(1)`
+	out := render(t, "signin", signinData(auth.SigninState{Step: auth.StepConfirm,
+		Confirm: &auth.ConfirmPageData{Token: hostile, Action: "/enter", Host: "app.test"}}))
+	form := regexp.MustCompile(`(?s)<form rst-signin-form method="post" action="/enter">\s*<input type="hidden" name="token" value="([^"]*)">\s*<button rst-btn="primary block" type="submit" autofocus>([^<]*)</button>\s*</form>`).FindStringSubmatch(out)
+	if form == nil {
+		t.Fatalf("no confirm form of the expected shape:\n%s", out)
+	}
+	if got := html.UnescapeString(form[1]); got != hostile {
+		t.Errorf("token field holds %q, want %q", got, hostile)
+	}
+	if got, want := form[2], defaultT("rastrillo.ui.signin_confirm_submit"); got != want || want != "Sign in" {
+		t.Errorf("button reads %q, want %q (Sign in)", got, want)
 	}
 }
 
@@ -527,8 +548,9 @@ func TestThePasskeyButtonAndItsMessageAreOneDoorChild(t *testing.T) {
 }
 
 // An app that mounts auth somewhere else must get a screen that posts
-// there: every form action is BeginPath or ForgetPath, and the forget
-// form is the only one posting to ForgetPath.
+// there: every form action is BeginPath or ForgetPath — or, on Confirm,
+// the path Verify was reached on — and the forget form is the only one
+// posting to ForgetPath.
 func TestEveryFormPostsWhereTheAppMountedAuth(t *testing.T) {
 	action := regexp.MustCompile(`<form\b[^>]*\saction="([^"]*)"`)
 	for _, c := range signinStates() {
@@ -545,6 +567,7 @@ func TestEveryFormPostsWhereTheAppMountedAuth(t *testing.T) {
 			case st.BeginPath:
 			case st.ForgetPath:
 				forget++
+			case confirmAction(st):
 			default:
 				t.Errorf("%s: a form posts to %q, neither BeginPath nor ForgetPath", c.name, f[1])
 			}
@@ -553,6 +576,15 @@ func TestEveryFormPostsWhereTheAppMountedAuth(t *testing.T) {
 			t.Errorf("%s: %d forms post to ForgetPath but the page has a different number of Use a different email buttons", c.name, forget)
 		}
 	}
+}
+
+// confirmAction is where Confirm's button posts. On every other step it
+// is a path no form can have, so only BeginPath and ForgetPath pass.
+func confirmAction(st auth.SigninState) string {
+	if st.Step == auth.StepConfirm && st.Confirm != nil {
+		return st.Confirm.Action
+	}
+	return "\x00"
 }
 
 // orDivider is the "or" between the email form and the passkey door,
@@ -662,7 +694,7 @@ func TestSigninRendersTheChallengeOnTheOneBeginForm(t *testing.T) {
 		out := render(t, "signin", signinData(st))
 		forms := beginForm.FindAllString(out, -1)
 		switch st.Door() {
-		case "sent", "continue":
+		case "sent", "continue", "confirm":
 			if len(forms) != 0 || strings.Contains(out, "pow_seal") {
 				t.Errorf("%s: a %s page carries a challenge", c.name, st.Door())
 			}

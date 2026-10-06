@@ -41,6 +41,26 @@ A sign-in page left open across the deploy posts no challenge. Its visitor sees 
 
 See [pow](/docs/reference/pow), [Magic links](/docs/magic-links#the-front-door) and [Passwords](/docs/passwords#the-front-door).
 
+### Changed: an emailed sign-in link opens a Sign in button; mount `auth.Verify` on POST as well as GET
+
+Mail-security gateways, such as Microsoft Defender's Safe Links and Proofpoint URL Defense, open every link in an incoming email before the recipient does. `GET /auth/verify` used to sign in on sight, so behind such a gateway the link was spent before the person clicked it, and they were told it had expired.
+
+Opening the link now spends nothing. It shows a page with one button, Sign in, which posts the link back. That post signs in, runs `Authorize`, and answers a used or unknown link with `?err=expired` as before. It is same-origin checked like `Begin`.
+
+To upgrade:
+
+1. Add the POST route. Without it the Sign in button gets a 405 and nobody signs in.
+
+   ```go
+   r.Get("/auth/verify", a.Verify)
+   r.Post("/auth/verify", a.Verify) // new
+   ```
+
+2. With `SigninScreen` on, set `auth.Config.RenderConfirm` to your sign-in page's handler. `SigninState` answers the new `StepConfirm` there, and the `signin` partial draws the button in your layout and language. Without it you get a plain English page.
+3. Tests that sign in by GETting the link must now post its token, with same-origin evidence, to the link's path.
+
+New: `Config.RenderConfirm`, `ConfirmPageData`, `StepConfirm`, `SigninState.Confirm`, and the `rastrillo.ui.signin_confirm_submit` string in all twelve languages. See [Magic links](/docs/magic-links#link-scanners-eat-magic-links).
+
 ### Fixed: a link to a heading on a phone no longer lands under the back control
 
 On a sidebar or console content page, the back control stays pinned at the top of a phone screen, and a link to a heading scrolled that heading underneath it. Re-copy `tokens.css` with `rastrillo doctor --fix`.

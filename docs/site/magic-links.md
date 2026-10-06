@@ -30,8 +30,14 @@ if err != nil {
 r.Post("/signin", a.Begin)
 r.Get("/auth/callback", a.Callback)
 r.Get("/auth/verify", a.Verify)
+r.Post("/auth/verify", a.Verify)
 r.Post("/signout", a.Signout)
 ```
+
+Mount `Verify` on GET and POST. Opening the link draws a Sign in
+button and spends nothing; the button's POST signs in. The reason is
+[link scanners](#link-scanners-eat-magic-links). Mount only the GET and
+the button gets a 405: nobody signs in.
 
 The migration order is not optional:
 
@@ -51,6 +57,7 @@ thing happening next whether that address gets a link or Keymail, and a
 one-tap for someone coming back.
 
 ```go
+var signinPage http.HandlerFunc // defined below; RenderConfirm draws it too
 a, err := auth.New(auth.Config{
 	DB:           writer,
 	Origin:       origin,
@@ -58,9 +65,13 @@ a, err := auth.New(auth.Config{
 	Proof:        guard,
 	Mailer:       mailer,
 	SigninScreen: true,
+	// The page an emailed link opens: this screen, with a Sign in button.
+	RenderConfirm: func(w http.ResponseWriter, r *http.Request, _ auth.ConfirmPageData) {
+		signinPage(w, r)
+	},
 })
 
-r.Get("/signin", func(w http.ResponseWriter, r *http.Request) {
+signinPage = func(w http.ResponseWriter, r *http.Request) {
 	st := a.SigninState(r)
 	st.Passkey = &auth.PasskeyDoor{ // only if you mounted passkey discovery
 		BeginPath:  "/passkey/discover/begin",
@@ -70,7 +81,8 @@ r.Get("/signin", func(w http.ResponseWriter, r *http.Request) {
 	}
 	a.PrepareSigninResponse(w, st)
 	render(w, "signin", map[string]any{"Signin": st, "Brand": map[string]any{"Name": "Harbour"}})
-})
+}
+r.Get("/signin", signinPage)
 r.Post("/signin/forget", a.Forget)
 r.Get("/passkey/webauthn.mjs", serveJS(webauthn.JS()))
 r.Get("/passkey/signin.mjs", serveJS(passkey.JS()))
@@ -236,6 +248,65 @@ r.Use(a.RequireSession)
 and `a.RequireFreshSession(maxAge)` for step-up, matching
 `sessions.Require` and `sessions.RequireFresh` — see
 [Sessions](/docs/sessions).
+
+## Link scanners eat magic links
+
+Corporate mail goes through a security gateway — Microsoft Defender's
+Safe Links, Proofpoint URL Defense, Barracuda, a long tail of others.
+They fetch every URL in an inbound message before the recipient opens
+it. A single-use sign-in link that redeems on GET is therefore spent by
+the time the person clicks it, and all they see is "that link has
+expired". Forward the message and it happens again.
+
+So `GET /auth/verify` consumes nothing. It draws a page with one button,
+Sign in, which POSTs the token back; the POST spends the link and runs
+`Authorize`, and answers a bad or used link with `?err=expired` as
+before. Scanners issue GETs, not form submissions, so the link survives
+them. The cost is one extra click.
+
+That is the whole defence. It is deliberately not user-agent sniffing:
+gateways drive real headless browsers now, and you cannot win that game
+for long.
+
+Two consequences worth knowing. A link that has already been used still
+draws the page, and only the button reports `?err=expired`, because the
+GET looks nothing up. And the POST is same-origin-checked like `Begin`
+and `Signout`, so a refused post doesn't spend the link on its way to
+the 403.
+
+### Drawing the page
+
+With `SigninScreen` on, set `RenderConfirm` to your sign-in page's
+handler, as in [Use the shipped screen](#use-the-shipped-screen-or-your-own).
+Inside it, `SigninState(r)` answers `StepConfirm`, and the `signin`
+partial draws a Sign in button in your layout and language.
+
+Without the screen, leave `RenderConfirm` nil for a plain built-in page
+(English, no assets), or draw your own:
+
+```go
+a, err := auth.New(auth.Config{
+	// ...
+	RenderConfirm: func(w http.ResponseWriter, r *http.Request, d auth.ConfirmPageData) {
+		page.Confirm(w, d) // d.Token, d.Action, d.Host
+	},
+})
+```
+
+Your form needs `method="post"`, `action` set to `d.Action`, and a
+hidden field named `token` holding `d.Token`. Miss one and nobody signs
+in.
+
+rastrillo sets `Cache-Control: no-store`, `Referrer-Policy:
+strict-origin`, `X-Frame-Options: DENY` and `frame-ancestors 'none'`
+before calling it. Leave them be. The page's address holds the live
+link, and `strict-origin` keeps it out of the `Referer` your layout's
+CSS, scripts and images are fetched with. Don't change it to
+`no-referrer`: some browsers then send the button's POST with
+`Origin: null`, and the same-origin check refuses it. Without the
+framing pair, someone can frame the page carrying a token minted for
+*their* address, coax a click out of your user, and land them in the
+attacker's account.
 
 ## Links are single-use
 

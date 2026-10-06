@@ -18,6 +18,10 @@ const (
 	StepReturning SigninStep = "returning"
 	StepSent      SigninStep = "sent"
 	StepContinue  SigninStep = "continue"
+	// StepConfirm is the page an emailed link lands on, drawn only
+	// inside Config.RenderConfirm: one Sign in button that posts the
+	// link's token to Verify.
+	StepConfirm SigninStep = "confirm"
 )
 
 // SigninProblem is what went wrong on the way to the page, if anything.
@@ -69,8 +73,12 @@ type SigninState struct {
 	// as template.URL or template.HTML, or a URL that somehow carried a
 	// quote would become an attribute of the renderer's choosing.
 	ContinueURL string
-	BeginPath   string
-	ForgetPath  string
+	// Confirm is what the Sign in button posts, on Confirm only. Its
+	// Token came off the emailed link's query: data, escaped like
+	// ContinueURL.
+	Confirm    *ConfirmPageData
+	BeginPath  string
+	ForgetPath string
 	// Force carries force=1 from the query: the partial renders the
 	// send-a-link-instead input from it rather than from the problem,
 	// because a refusal replaces the keymail problem and the visitor
@@ -138,6 +146,14 @@ const advisoryText = "rastrillo/auth: SigninScreen is off: under the default CSP
 func (a *Auth) SigninState(r *http.Request) SigninState {
 	q := r.URL.Query()
 	st := SigninState{BeginPath: a.cfg.BeginPath, ForgetPath: a.cfg.ForgetPath, Force: q.Get("force") == "1"}
+	// Before the proof and the cookies: the confirm step posts to
+	// Verify, which checks no proof and reads none of them, and the
+	// request it is drawn for may carry a token another browser was
+	// sent, so nothing about this browser belongs on the page.
+	if d, ok := confirmFrom(r); ok {
+		st.Step, st.Confirm = StepConfirm, &d
+		return st
+	}
 	if a.cfg.Proof != nil {
 		now := a.now()
 		f := a.cfg.Proof.Form(now, ProofScope)
@@ -265,17 +281,19 @@ func (a *Auth) Forget(w http.ResponseWriter, r *http.Request) {
 }
 
 // Door is which way in the page offers, derived here rather than in the
-// template so the rules are Go and tested: "sent" and "continue" for
-// those steps; "ask" for any error problem, so the visitor can correct
-// what they typed; for Returning, the remembered method's one-tap —
-// "keymail", "link", or "passkey" when the app wired a passkey door —
-// and "ask" otherwise.
+// template so the rules are Go and tested: "sent", "continue" and
+// "confirm" for those steps; "ask" for any error problem, so the visitor
+// can correct what they typed; for Returning, the remembered method's
+// one-tap — "keymail", "link", or "passkey" when the app wired a passkey
+// door — and "ask" otherwise.
 func (s SigninState) Door() string {
 	switch s.Step {
 	case StepSent:
 		return "sent"
 	case StepContinue:
 		return "continue"
+	case StepConfirm:
+		return "confirm"
 	}
 	if s.Problem != ProblemNone && s.Problem != ProblemReauth {
 		return "ask"
@@ -300,7 +318,8 @@ func (s SigninState) Door() string {
 // Focus is where focus starts on an ordinary load (§2's matrix): the
 // email field for an address problem, whose error it carries; the
 // callout for any other error; the one-tap for a keymail or link
-// Returning door; the email field for Ask; nothing for the passkey door,
+// Returning door, and Confirm's Sign in button, which is the only thing
+// a person who just opened their link came to press; the email field for Ask; nothing for the passkey door,
 // Sent and Continue, whose new title is the announcement.
 func (s SigninState) Focus() string {
 	switch {
@@ -310,7 +329,7 @@ func (s SigninState) Focus() string {
 		return "callout"
 	}
 	switch s.Door() {
-	case "keymail", "link":
+	case "keymail", "link", "confirm":
 		return "onetap"
 	case "ask":
 		return "field"

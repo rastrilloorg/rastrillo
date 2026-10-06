@@ -25,7 +25,7 @@ func TestRefusedHookRendersTheRefusal(t *testing.T) {
 	beginSignin(t, a, "stranger@example.com")
 	link := linkRE.FindString(m.sentBody())
 	w := httptest.NewRecorder()
-	a.Verify(w, httptest.NewRequest("GET", link, nil))
+	a.Verify(w, redeemRequest(t, link))
 	if w.Code != http.StatusSeeOther || w.Header().Get("Location") != "/signin?err=refused" {
 		t.Fatalf("refused address with a Refused hook: %d %q, want the app's own answer", w.Code, w.Header().Get("Location"))
 	}
@@ -46,7 +46,7 @@ func TestRefusedNilKeepsTheBareRefusal(t *testing.T) {
 	})
 	beginSignin(t, a, "stranger@example.com")
 	w := httptest.NewRecorder()
-	a.Verify(w, httptest.NewRequest("GET", linkRE.FindString(m.sentBody()), nil))
+	a.Verify(w, redeemRequest(t, linkRE.FindString(m.sentBody())))
 	if w.Code != http.StatusForbidden || !strings.Contains(w.Body.String(), "not admitted") {
 		t.Fatalf("no hook: %d %q, want the plugin's own 403", w.Code, w.Body.String())
 	}

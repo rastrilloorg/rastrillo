@@ -1278,6 +1278,9 @@ func signinMatrix() map[string]auth.SigninState {
 		"continue": s(func(st *auth.SigninState) {
 			st.Step, st.ContinueURL = auth.StepContinue, "https://keymail.example/oauth/authorize"
 		}),
+		"confirm": s(func(st *auth.SigninState) {
+			st.Step, st.Confirm = auth.StepConfirm, &auth.ConfirmPageData{Token: "token", Action: "/auth/verify", Host: "app.example"}
+		}),
 		"problem-rate":    s(func(st *auth.SigninState) { st.Problem, st.Address = auth.ProblemRate, graceAddress }),
 		"problem-address": s(func(st *auth.SigninState) { st.Problem, st.Address = auth.ProblemAddress, "grace@example" }),
 		"problem-expired": s(func(st *auth.SigninState) { st.Problem = auth.ProblemExpired }),

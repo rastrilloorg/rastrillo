@@ -146,6 +146,24 @@ func beginSignin(t *testing.T, a *Auth, address string) *httptest.ResponseRecord
 
 var linkRE = regexp.MustCompile(`http://app\.test/auth/verify\?token=[A-Za-z0-9_-]+`)
 
+// redeemRequest is the confirm page's POST: the emailed token in the
+// form, with same-origin evidence, aimed at the link's own path.
+// Landing the link is a GET that consumes nothing now — see
+// TestVerifyGetConsumesNothing — so every test that wants a session
+// posts.
+func redeemRequest(t *testing.T, link string) *http.Request {
+	t.Helper()
+	u, err := url.Parse(link)
+	if err != nil {
+		t.Fatalf("parse link %q: %v", link, err)
+	}
+	form := url.Values{"token": {u.Query().Get("token")}}
+	r := httptest.NewRequest("POST", u.Path, strings.NewReader(form.Encode()))
+	r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	r.Header.Set("Sec-Fetch-Site", "same-origin")
+	return r
+}
+
 func TestMagicLinkEndToEnd(t *testing.T) {
 	a, m := newTestAuth(t, nil)
 
@@ -163,7 +181,7 @@ func TestMagicLinkEndToEnd(t *testing.T) {
 	}
 
 	// Verify: land the link, get a session.
-	r := httptest.NewRequest("GET", link, nil)
+	r := redeemRequest(t, link)
 	w = httptest.NewRecorder()
 	a.Verify(w, r)
 	if w.Code != http.StatusSeeOther || w.Header().Get("Location") != "/" {
@@ -184,7 +202,7 @@ func TestMagicLinkEndToEnd(t *testing.T) {
 
 	// The link is single-use.
 	w = httptest.NewRecorder()
-	a.Verify(w, httptest.NewRequest("GET", link, nil))
+	a.Verify(w, redeemRequest(t, link))
 	if w.Header().Get("Location") != "/signin?err=expired" {
 		t.Fatalf("second Verify: %q, want /signin?err=expired", w.Header().Get("Location"))
 	}
@@ -247,7 +265,7 @@ func TestVerifySecondFactorIntercepts(t *testing.T) {
 		t.Fatalf("no verify link in mail body:\n%s", m.sentBody())
 	}
 	w := httptest.NewRecorder()
-	a.Verify(w, httptest.NewRequest("GET", link, nil))
+	a.Verify(w, redeemRequest(t, link))
 
 	if w.Code != http.StatusSeeOther || w.Header().Get("Location") != "/passkey/confirm" {
 		t.Fatalf("gated verify: %d -> %q, want 303 -> /passkey/confirm", w.Code, w.Header().Get("Location"))
@@ -267,7 +285,7 @@ func TestRequireFreshSessionStepUp(t *testing.T) {
 	beginSignin(t, a, "person@example.com")
 	link := linkRE.FindString(m.sentBody())
 	w := httptest.NewRecorder()
-	a.Verify(w, httptest.NewRequest("GET", link, nil))
+	a.Verify(w, redeemRequest(t, link))
 	var session *http.Cookie
 	for _, c := range w.Result().Cookies() {
 		if c.Name == a.SessionCookie() && c.Value != "" {
@@ -373,7 +391,7 @@ func TestAuthorizeGate(t *testing.T) {
 	beginSignin(t, a, "stranger@example.com")
 	link := linkRE.FindString(m.sentBody())
 	w := httptest.NewRecorder()
-	a.Verify(w, httptest.NewRequest("GET", link, nil))
+	a.Verify(w, redeemRequest(t, link))
 	if w.Code != http.StatusForbidden {
 		t.Fatalf("unadmitted address: %d, want 403", w.Code)
 	}
@@ -381,7 +399,7 @@ func TestAuthorizeGate(t *testing.T) {
 	beginSignin(t, a, "member@example.com")
 	link = linkRE.FindString(m.sentBody())
 	w = httptest.NewRecorder()
-	a.Verify(w, httptest.NewRequest("GET", link, nil))
+	a.Verify(w, redeemRequest(t, link))
 	if w.Code != http.StatusSeeOther || w.Header().Get("Location") != "/" {
 		t.Fatalf("admitted address: %d → %q, want a session", w.Code, w.Header().Get("Location"))
 	}
@@ -795,7 +813,7 @@ func TestSubjectForRemapsTheStoredSubject(t *testing.T) {
 		t.Fatalf("no verify link in mail body:\n%s", m.sentBody())
 	}
 	w := httptest.NewRecorder()
-	a.Verify(w, httptest.NewRequest("GET", link, nil))
+	a.Verify(w, redeemRequest(t, link))
 
 	if authorized != "person@example.com" {
 		t.Errorf("Authorize saw %q, want the address, not the remapped subject", authorized)
@@ -854,7 +872,7 @@ func TestSubjectForErrorRefusesSignin(t *testing.T) {
 	beginSignin(t, a, "person@example.com")
 	link := linkRE.FindString(m.sentBody())
 	w := httptest.NewRecorder()
-	a.Verify(w, httptest.NewRequest("GET", link, nil))
+	a.Verify(w, redeemRequest(t, link))
 
 	if w.Code != http.StatusInternalServerError {
 		t.Fatalf("verify with a failing SubjectFor: %d, want 500", w.Code)

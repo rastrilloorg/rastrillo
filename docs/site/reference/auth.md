@@ -41,6 +41,7 @@ type Config struct {
 	BeginPath        string
 	ForgetPath       string
 	Remember         *bool
+	RenderConfirm    func(w http.ResponseWriter, r *http.Request, d ConfirmPageData)
 	KeymailServers   []string
 }
 ```
@@ -106,10 +107,13 @@ the sessions table, and `migrate.Merge`'s argument order is apply order.
 ```text
 POST /signin         -> Auth.Begin
 GET  /auth/verify    -> Auth.Verify     (the emailed link's landing)
+POST /auth/verify    -> Auth.Verify     (confirming that landing)
 GET  /auth/callback  -> Auth.Callback   (the keymail OAuth return)
 POST /signout        -> Auth.Signout
 POST /signin/forget  -> Auth.Forget
 ```
+
+`Verify` needs both methods mounted. The GET draws a page with a Sign in button and spends nothing; the POST spends the link, runs `Authorize`, and answers a bad or used link with `?err=expired`. Anything else gets a 405. See [Magic links](/docs/magic-links#link-scanners-eat-magic-links).
 
 These handlers report outcomes by redirecting to `SigninPath`: `?sent=1`, `?err=rate|address|expired|1`, `?err=keymail` with `?force=1` after a failed keymail approval, and, with `SigninScreen` on, `?sent=1&attempt=<id>` and `?continue=<id>`. The shipped screen reads them through `SigninState`; a page of your own renders them itself.
 
@@ -123,7 +127,7 @@ func (a *Auth) AnswerAsSent(w http.ResponseWriter, r *http.Request)
 func (a *Auth) RememberJar() *lastsignin.Jar
 ```
 
-`SigninState` reads the query and this browser's own cookies and returns what the page shows, as plain data. It consults nothing else, so the page cannot reveal whether an address is known. Set `Passkey` on the result if you mounted passkey discovery. `PrepareSigninResponse` writes what goes with it: `Cache-Control: no-store`, `Referrer-Policy: no-referrer` on the page that moves on to Keymail, and deletions for any cookie that could not be trusted. Call it before rendering. With `SigninScreen` off, `SigninState` reads only the query and logs one warning per process.
+`SigninState` reads the query and this browser's own cookies and returns what the page shows, as plain data. It consults nothing else, so the page cannot reveal whether an address is known. Set `Passkey` on the result if you mounted passkey discovery. `PrepareSigninResponse` writes what goes with it: `Cache-Control: no-store`, `Referrer-Policy: no-referrer` on the page that moves on to Keymail, and deletions for any cookie that could not be trusted. Call it before rendering. With `SigninScreen` off, `SigninState` reads only the query and logs one warning per process. On the request `RenderConfirm` is given, `SigninState` answers `StepConfirm` with `Confirm` set and nothing else from the browser, and the partial draws the Sign in button.
 
 ```go
 type SigninState struct {
@@ -134,6 +138,7 @@ type SigninState struct {
 	SentInstead bool
 	Remembered  *Remembered
 	ContinueURL string
+	Confirm     *ConfirmPageData
 	BeginPath   string
 	ForgetPath  string
 	Force       bool
@@ -150,6 +155,7 @@ const (
 	StepReturning SigninStep = "returning"
 	StepSent      SigninStep = "sent"
 	StepContinue  SigninStep = "continue"
+	StepConfirm   SigninStep = "confirm"
 )
 
 type SigninProblem string
@@ -205,6 +211,32 @@ upstream ceremony produces, so it cannot drift from it.
 `NewToken` and `HashToken` re-export the
 [sessions](/docs/reference/sessions) helpers, so a caller already
 holding an `*Auth` need not import both.
+
+## The confirm page
+
+```go
+type ConfirmPageData struct {
+	Token  string // carry it in a hidden field named "token"
+	Action string // where the form posts: the request's own path
+	Host   string // Config.Origin without its scheme, for the copy
+}
+```
+
+`Config.RenderConfirm` draws the page in your layout. With
+`SigninScreen` on, set it to your sign-in page's handler: `SigninState`
+answers `StepConfirm` on the request it gets. Nil gets a self-contained
+English page, so upgrading needs no code change beyond the POST route.
+
+Before calling you, `Verify` sets `Cache-Control: no-store`,
+`Referrer-Policy: strict-origin`, `X-Robots-Tag: noindex, nofollow`,
+`X-Frame-Options: DENY` and adds `Content-Security-Policy:
+frame-ancestors 'none'` beside the app's own policy. `strict-origin`
+keeps the token in the page's address out of the `Referer` of its
+asset requests, and still sends a real `Origin` on the button's POST,
+where `no-referrer` would send `Origin: null` and fail the same-origin
+check. The framing headers are login-CSRF defence: a framed confirm
+button carrying an attacker's token signs your user into the attacker's
+account.
 
 ## Links are single-use
 

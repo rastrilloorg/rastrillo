@@ -292,7 +292,10 @@ to the keymail ceremony where the address has one): `auth.New` with
 `Begin`/`Callback`/`Verify`/`Signout` and `RequireSession`, same
 `sessions` core, `Proof`/`ProofOff` as for `password`. `Begin` checks
 the proof before the limiter, refuses to `?err=check&rec=1`, and
-`SigninState(r).Proof` is the challenge to render. **Under `auth`, never
+`SigninState(r).Proof` is the challenge to render. **Mount `Verify` on
+GET *and* POST:** GET draws a Sign in button and spends nothing, POST
+redeems, so a mail scanner's fetch can't spend the link; GET alone
+405s. **Under `auth`, never
 `sessions.UserID`:** the Subject is the verified email, so it returns
 `(0, false)` and the §3 seam would scope every query to `user_id = 0`.
 Use `auth.From(r)` or `sessions.Current(r)` and map the address to your
@@ -302,7 +305,8 @@ user row's id before scoping.
 `{{template "signin" (dict "State" .Signin "Brand" .Brand)}}` (title:
 `signin-title`) in the `stage` shell, from `st := a.SigninState(r)` —
 set `st.Passkey` if passkey discovery is mounted — then
-`a.PrepareSigninResponse(w, st)` before rendering. Mount
+`a.PrepareSigninResponse(w, st)` before rendering; make that handler
+`RenderConfirm` too. Mount
 `POST /signin/forget` → `a.Forget`; with passkeys, serve `passkey.JS()`
 beside `webauthn.JS()`, set both URLs (`ScriptURL`, `ModuleURL`) on
 `st.Passkey`, and wire `passkey.Config.Remember: a.RememberJar()`. An admission check in front
@@ -510,17 +514,15 @@ target. docs/site/testing.md
   `.design-system/`. docs/site/templates.md
 - **Modern CSS is the floor, not a hazard.** `tokens.css` plus a shipped
   theme already require Chrome 123, Safari 17.5, Firefox 121 — none older
-  than late 2023 — because every theme colour is a `light-dark()`. Reach
-  for the modern feature: anything that shipped at or below that floor is
-  free, `oklch()` and `color-mix()` included, with no hex twin and no
-  `@supports`. A hex fallback protects nobody anyway — an engine too old
-  for `oklch()` dropped the whole `light-dark()` palette several
-  declarations earlier. And self-contained means the CSS fetches nothing:
-  no imports, no remote assets, no webfont, held by `ui_test.go`. It has
-  never meant old engines. Go above the floor with `@supports`, or move
-  the floor and say so. The bar for adopting something newer is a year in
-  all three engines; `cssfloor_test.go` fails once the floor has gone nine
-  months unreviewed.
+  than late 2023 — because every theme colour is a `light-dark()`. Anything
+  that shipped at or below that floor is free, `oklch()` and `color-mix()`
+  included, with no hex twin and no `@supports`: an engine too old for
+  `oklch()` dropped the whole `light-dark()` palette several declarations
+  earlier. Self-contained means the CSS fetches nothing — no imports, no
+  remote assets, no webfont, held by `ui_test.go` — never that old engines
+  are supported. Go above the floor with `@supports`, or move the floor and
+  say so. The bar is a year in all three engines; `cssfloor_test.go` fails
+  once the floor has gone nine months unreviewed.
   docs/site/templates.md
 - **Never hand-roll an error page.** `view.Fail`/`NotFound`/`Forbidden`
   render styled pages inside the shell; a 500 shows a ref matching the

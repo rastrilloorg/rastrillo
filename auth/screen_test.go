@@ -152,7 +152,16 @@ func (failingMailer) Send(context.Context, string, string, string) error {
 	return errors.New("the mail server is down")
 }
 
-func pathOf(link string) string { return strings.TrimPrefix(link, "http://app.test") }
+// redeem is pressing Sign in on the page an emailed link lands on: the
+// link's token posted back to its path. Opening the link spends
+// nothing (confirm_test.go), so every sign-in here posts.
+func (b *browser) redeem(a *Auth, link string) *httptest.ResponseRecorder {
+	u, err := url.Parse(link)
+	if err != nil {
+		panic(err)
+	}
+	return b.do(a.Verify, http.MethodPost, u.Path, url.Values{"token": {u.Query().Get("token")}})
+}
 
 // TestScreenOffIsToday holds the switch's promise on every path this
 // task touches: with SigninScreen off and KeymailServers unset, whatever
@@ -198,11 +207,11 @@ func TestScreenOffIsToday(t *testing.T) {
 			want("over budget", post(a.Begin, "bea@example.com", nil), "/signin?err=rate&force=1", nil)
 			want("AnswerAsSent", post(a.AnswerAsSent, "cal@example.com", nil), "/signin?sent=1", nil)
 
-			want("admit", b.do(a.Verify, http.MethodGet, pathOf(adaLink), nil), "/", []string{"rastrillo_session"})
+			want("admit", b.redeem(a, adaLink), "/", []string{"rastrillo_session"})
 
 			a.cfg.SecondFactor = holdingGate(t, a).Hold
 			post(a.Begin, "dee@example.com", nil)
-			want("admit, held", b.do(a.Verify, http.MethodGet, pathOf(linkRE.FindString(m.sentBody())), nil),
+			want("admit, held", b.redeem(a, linkRE.FindString(m.sentBody())),
 				"/signin/confirm", []string{"rastrillo_secondfactor"})
 
 			a.flow.Mailer = failingMailer{}
@@ -362,7 +371,7 @@ func TestAdmitRemembersTheWayInAndEndsTheAttempt(t *testing.T) {
 	signIn := func(t *testing.T, a *Auth, m *captureMailer, b *browser, address string) *httptest.ResponseRecorder {
 		t.Helper()
 		b.do(a.Begin, http.MethodPost, "/signin", url.Values{"address": {address}, "force": {"1"}})
-		return b.do(a.Verify, http.MethodGet, pathOf(linkRE.FindString(m.sentBody())), nil)
+		return b.redeem(a, linkRE.FindString(m.sentBody()))
 	}
 	remembered := func(a *Auth, b *browser) (lastsignin.Record, lastsignin.ReadResult) {
 		return a.jar.Read(b.request(http.MethodGet, "/signin", nil))
