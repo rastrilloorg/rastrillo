@@ -101,7 +101,7 @@ func formatDocs() []formatDoc {
 </section>
 <div rst-box-head><h2>Import</h2></div>
 <section rst-box>
-  <div rst-job><span rst-spin aria-hidden="true"></span> <strong>Import</strong> is running — 128 of 400…<progress rst-job-bar value="32" min="0" max="100" aria-hidden="true"></progress></div>
+  <div rst-job><span rst-spin aria-hidden="true"></span> <strong>Import</strong> is running: 128 of 400…<progress rst-job-bar value="32" min="0" max="100" aria-hidden="true"></progress></div>
 </section>`,
 		},
 		{
@@ -180,21 +180,25 @@ func formatDocs() []formatDoc {
 }
 
 // buildFormats renders every section for one theme and locale.
-func buildFormats(mount, theme, locale string) []formatView {
+func buildFormats(mount, theme, locale string, files previewSet) ([]formatView, error) {
 	docs := formatDocs()
 	out := make([]formatView, 0, len(docs))
 	for _, doc := range docs {
 		id := anchorID("format", doc.Key)
+		preview, file := newPreview(mount, theme, locale, "formats", id+"-0",
+			previewTitle(locale, doc.Key, "Dates, numbers and names"), doc.Markup, doc.Markup, id)
+		if err := files.add(file); err != nil {
+			return nil, err
+		}
 		out = append(out, formatView{
-			Title:  proseIn(locale, doc.Title),
-			ID:     id,
-			Marker: marker("format", doc.Key),
-			Body:   proseIn(locale, doc.Body),
-			Preview: newPreview(mount, theme, locale, id+"-0",
-				previewTitle(locale, doc.Key, "Dates, numbers and names"), doc.Markup, id),
+			Title:   proseIn(locale, doc.Title),
+			ID:      id,
+			Marker:  marker("format", doc.Key),
+			Body:    proseIn(locale, doc.Body),
+			Preview: preview,
 		})
 	}
-	return out
+	return out, nil
 }
 
 // formatNav is this page's rail entries.
@@ -208,12 +212,12 @@ func formatNav(mount, theme, locale string, view pageView) []navItem {
 }
 
 const formatsBody = `{{define "ds-body-formats"}}
-<div class="ds-head"><h2 id="formats">{{P "Dates, numbers and names"}}</h2></div>
 <p class="ds-lead">{{P "How to show dates, numbers, money, names and addresses, and which ones people mix up."}}</p>
+<p class="ds-lead">{{P "Each example is live, but its links go nowhere."}}</p>
 {{range .Formats}}
 <article class="ds-partial" id="{{.ID}}" data-ds-anchor>
 {{.Marker}}
-<h3>{{.Title}}</h3>
+<h2 class="ds-partial__name">{{.Title}}</h2>
 <p class="ds-lead">{{.Body}}</p>
 <div class="ds-sample">
 {{template "ds-view" .Preview}}

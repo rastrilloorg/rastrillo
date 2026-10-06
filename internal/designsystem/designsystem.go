@@ -115,6 +115,7 @@ const DefaultMount = "/design-system"
 //	<theme>/<locale>/demo-dashboard.html  its three section pages beside it
 //	<theme>/<locale>/demo-requests.html
 //	<theme>/<locale>/demo-request.html
+//	<theme>/<locale>/<page>/<group>.html  one preview document per example
 //	<theme>/<locale>/shells/<shell>.html  one full-page demo per shell, and
 //	<theme>/<locale>/shells/<shell>-page.html  a section page for the sidebar
 //	                                      and console
@@ -165,19 +166,25 @@ func Render(mount string) (map[string][]byte, error) {
 				return nil, fmt.Errorf("designsystem: %s: %w", dir, err)
 			}
 			for file, page := range pages {
-				out[dir+file] = page
+				if err := put(out, dir+file, page); err != nil {
+					return nil, err
+				}
 			}
 			modal, err := renderModal(mount, theme, locale)
 			if err != nil {
 				return nil, fmt.Errorf("designsystem: %s: %w", dir+"modal.html", err)
 			}
-			out[dir+"modal.html"] = modal
+			if err := put(out, dir+"modal.html", modal); err != nil {
+				return nil, err
+			}
 			docs, err := renderDemo(mount, theme, locale)
 			if err != nil {
 				return nil, fmt.Errorf("designsystem: %s: %w", dir+"demo.html", err)
 			}
 			for name, doc := range docs {
-				out[dir+name] = doc
+				if err := put(out, dir+name, doc); err != nil {
+					return nil, err
+				}
 			}
 			for _, shell := range ui.LayoutNames() {
 				docs, err := renderShell(mount, theme, locale, shell)
@@ -185,7 +192,9 @@ func Render(mount string) (map[string][]byte, error) {
 					return nil, fmt.Errorf("designsystem: %s: %w", dir+"shells/"+shell+".html", err)
 				}
 				for name, doc := range docs {
-					out[dir+"shells/"+name] = doc
+					if err := put(out, dir+"shells/"+name, doc); err != nil {
+						return nil, err
+					}
 				}
 			}
 		}
@@ -234,6 +243,18 @@ func CleanMount(mount string) (string, error) {
 		return "", fmt.Errorf("designsystem: mount path %q is the site root; the tree needs a directory of its own", mount)
 	}
 	return clean, nil
+}
+
+// put adds one file to the tree and refuses a second writer. The
+// preview files share their directories with the pages and the shell
+// demos, and a name one of them took from another would replace a
+// document with no gate noticing.
+func put(out map[string][]byte, name string, body []byte) error {
+	if _, dup := out[name]; dup {
+		return fmt.Errorf("designsystem: %s is produced twice", name)
+	}
+	out[name] = body
+	return nil
 }
 
 // RootTheme is the theme the tree root serves: the first name

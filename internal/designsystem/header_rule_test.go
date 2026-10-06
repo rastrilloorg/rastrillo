@@ -38,33 +38,18 @@ func TestEveryPageWithAHeaderLinksTheOneStylesheetThatRetiresTheRakeLine(t *test
 			continue
 		}
 		body := string(files[name])
-
-		// A file is not a document. Every srcdoc preview inside a page is
-		// a document of its own with its own <link>, and judging the file
-		// as a whole would let a preview that lost its link ride on the
-		// outer page's — while the previews are exactly the documents
-		// this most needs to be true of. srcdocs() unescapes them; each
-		// one is then held to the same rule as a file in the tree.
-		for _, frame := range srcdocs(body) {
-			documents++
-			if !strings.Contains(frame, "rst-page-header") {
-				continue
-			}
-			withHeader++
-			framesChecked++
-			if !strings.Contains(frame, link) {
-				t.Errorf("%s: a preview frame renders a page header and links no %s/tokens.css of its own. It is a separate document; the page around it retires nothing on its behalf", name, mountPath)
-			}
-		}
-
 		documents++
-		outer := srcdocAttr.ReplaceAllString(body, "")
-		if !strings.Contains(outer, "rst-page-header") {
+		if !strings.Contains(body, "rst-page-header") {
 			continue
 		}
 		withHeader++
-		if !strings.Contains(outer, link) {
-			t.Errorf("%s renders a page header and links no %s/tokens.css; whatever retires the rake line, it is not reaching this page", name, mountPath)
+		// A preview is a separate document; the page that frames it
+		// retires nothing on its behalf.
+		if isPreviewDoc(body) {
+			framesChecked++
+		}
+		if !strings.Contains(body, link) {
+			t.Errorf("%s renders a page header and links no %s/tokens.css; whatever retires the rake line, it is not reaching this document", name, mountPath)
 		}
 	}
 	if documents == 0 || withHeader == 0 || framesChecked == 0 {
@@ -143,7 +128,7 @@ func TestTheHeaderRuleTokenIsOnTheTokensPageWithItsColour(t *testing.T) {
 			// Grouping. "Other" is the bucket an unclaimed token falls
 			// into, and it is both the wrong place for a line colour and
 			// a heading with no translation.
-			head := strings.LastIndex(page[:at], `<h3 class="ds-sub"`)
+			head := strings.LastIndex(page[:at], `<h2 class="ds-sub"`)
 			if head < 0 || !strings.Contains(page[head:at], group) {
 				got := "no heading above it"
 				if head >= 0 {

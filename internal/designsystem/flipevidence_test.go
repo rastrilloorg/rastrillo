@@ -19,10 +19,11 @@ package designsystem
 //
 // Run it against ONE tree first — RST_BEFORE and RST_AFTER the same
 // directory — and require zero. That is the control this drive needs
-// more than any other: a page holds up to thirty <iframe srcdoc>
-// documents, and a drive that reads one before it has settled reports a
-// difference between a tree and itself. RST_PAGES=day/en,signal/ar
-// narrows it to a theme and locale while iterating.
+// more than any other: a page holds up to thirty preview frames, each
+// loading a file of its own, and a drive that reads one before it has
+// settled reports a difference between a tree and itself.
+// RST_PAGES=day/en,signal/ar narrows it to a theme and locale while
+// iterating.
 
 import (
 	"context"
@@ -150,7 +151,7 @@ func TestTheFlipDidNotMoveAPixel(t *testing.T) {
 // readTwiceUntilStable navigates and reads the page twice, and accepts
 // the reading only when the two agree.
 //
-// A shells page holds whole documents inside <iframe srcdoc>, each with
+// A shells page holds whole documents inside preview frames, each with
 // its own deferred scripts, and waiting for readyState and fonts is not
 // enough: the same tree gave the same page 271 elements one pass and
 // 465 the next. Waiting longer is a guess about how long is long
@@ -178,6 +179,16 @@ func readTwiceUntilStable(ctx context.Context, t *testing.T, url string) ([]stri
 		var got []string
 		if err := json.Unmarshal([]byte(raw), &got); err != nil {
 			t.Fatalf("%s: %v", url, err)
+		}
+		// NEVER-SETTLED is the digest script giving up on a frame, not a
+		// reading of one. Comparing it as data would let two trees that
+		// both gave up on the same frame pass as identical when neither
+		// was actually read — exactly the failure "force eager" above
+		// exists to prevent, caught here in case it still happens.
+		for _, s := range got {
+			if strings.Contains(s, "IFRAME-NEVER-SETTLED") {
+				t.Fatalf("%s: a frame never settled inside 5s even forced eager: %s", url, s)
+			}
 		}
 		if last != nil && sameReading(last, got) {
 			return got, true
@@ -234,26 +245,33 @@ var digest = func() string {
 	return fmt.Sprintf(`(async () => {
   const out = [];
   // Measure a settled page or measure noise. A gallery page holds thirty
-  // <iframe srcdoc> documents; reading before their fonts have resolved
-  // gives a layout that is a few pixels different from the one a person
-  // sees, and — worse for a comparison — different from the one the same
+  // preview frames; reading before their fonts have resolved gives a
+  // layout that is a few pixels different from the one a person sees,
+  // and — worse for a comparison — different from the one the same
   // page gives on the next run. A fixed sleep was doing that: a Bengali
   // page came out different between two runs of the SAME tree.
   await document.fonts.ready;
-  // A fresh <iframe srcdoc> is about:blank with readyState "complete"
-  // for a tick before its own document replaces it, so "complete" is
-  // not the question — WHICH document is. Poll until the frame is
-  // showing its srcdoc, then wait for that document's fonts. Without
-  // this a frame is sometimes walked while empty, which shows up as a
-  // page whose element COUNT differs between two runs of one tree.
+  // A fresh frame is about:blank with readyState "complete" for a tick
+  // before its own document replaces it, so "complete" is not the
+  // question — WHICH document is. Poll until the frame is showing its
+  // own document, then wait for that document's fonts. Without this a
+  // frame is sometimes walked while empty, which shows up as a page
+  // whose element COUNT differs between two runs of one tree.
   const settled = f => {
     let d = null;
     try { d = f.contentDocument; } catch (e) { return null; }
     if (!d || d.readyState !== "complete") return null;
-    if (f.hasAttribute("srcdoc") && d.URL === "about:blank") return null;
+    if ((f.hasAttribute("srcdoc") || f.hasAttribute("src")) && d.URL === "about:blank") return null;
     return d;
   };
   for (const f of document.querySelectorAll("iframe")) {
+    // Lazy frames below the fold never load on their own here: nothing
+    // scrolls them into view the way a reader would. Force eager before
+    // polling, the way eagerly() does for the browser gates (browser_test.go),
+    // or every frame past the first screen burns the whole 5s cap below
+    // and reports NEVER-SETTLED on both trees, which then compares as a
+    // match instead of the unread frames it actually is.
+    f.loading = "eager";
     let d = settled(f), waited = 0;
     while (d === null && waited < 5000) {
       await new Promise(function (r) { setTimeout(r, 20); });
@@ -273,10 +291,10 @@ var digest = func() string {
   const props = %s;
   const origins = [null, "::before", "::after"];
 
-  // Every sample on a gallery page renders inside its own <iframe
-  // srcdoc> document, so a walk of the top document alone would compare
-  // the chrome and none of the components. srcdoc frames are
-  // same-origin, so descend into each one.
+  // Every sample on a gallery page renders inside its own preview
+  // frame, so a walk of the top document alone would compare the
+  // chrome and none of the components. Preview frames are same-origin,
+  // so descend into each one.
   const walk = (doc, where) => {
     for (const el of doc.querySelectorAll("body *")) {
       let s = where + "/" + el.tagName;

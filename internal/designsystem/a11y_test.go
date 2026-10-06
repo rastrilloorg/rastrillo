@@ -50,6 +50,7 @@ import (
 	"github.com/chromedp/chromedp"
 	"github.com/chromedp/chromedp/kb"
 
+	"amadan.net/rastrillo/rastrillo"
 	"amadan.net/rastrillo/rastrillo/auth"
 	"amadan.net/rastrillo/rastrillo/harness"
 	"amadan.net/rastrillo/rastrillo/ui"
@@ -312,7 +313,7 @@ func a11yTargets() []a11yTarget {
 		// one carries markup the others do not, and a heading level, a
 		// landmark or a duplicate id can only be wrong on the page it
 		// is on.
-		{"day/en overview", page("day", "en", "overview"), "the root page: the chrome, the rail and the page header with nothing else in the way"},
+		{"day/en overview", page("day", "en", "overview"), "the root page: the pinned bar with its brand and switchers, the rail's tree, and the page's own header, paragraph, routes and framed demo application"},
 		{"day/en getting started", page("day", "en", "getting-started"), "a page of prose, a list of links out to the assets and two source blocks: the plainest document in the tree, and the one where a heading level or a list semantic has nothing else to hide behind"},
 		{"day/en tokens", page("day", "en", "tokens"), "the swatch grid — every palette token painted at once, in the theme's own colours"},
 		{"day/en icons", page("day", "en", "icons"), "one inline SVG per slug the framework answers, each aria-hidden beside its own name: the one page in the tree where an icon is the content rather than furniture, and where an accessible name accidentally coming off a decorative glyph would show"},
@@ -324,7 +325,7 @@ func a11yTargets() []a11yTarget {
 		// ids it carries. Each is named for the thing it has that its
 		// neighbours do not.
 		{"day/en list screen", page("day", "en", "list-screen"), "sixteen preview widgets, with the escaped source of a toolbar, a search form and a pagination strip beside them"},
-		{"day/en display", page("day", "en", "display"), "thirty widgets over nine partials — five states each of the pill, the badge and the meter — which is a great many radio groups and generated ids in one document"},
+		{"day/en display", page("day", "en", "display"), "every display partial, the pill, the badge and the meter as one frame of all their states and the rest a widget per state: a great many radio groups and generated ids in one document"},
 		{"day/en form", page("day", "en", "form"), "the field partials, whose source blocks carry the labels, hints and error messages a reader copies out"},
 		{"day/en date and time", page("day", "en", "date-and-time"), "the heaviest page in the tree and the one nearest the byte budget: whatever is added to the gallery next is most likely to be added here"},
 		{"day/en route", page("day", "en", "route"), "the shortest of the five, and the only one whose samples are whole responses rather than pieces of one"},
@@ -350,13 +351,29 @@ func a11yTargets() []a11yTarget {
 	}
 }
 
+// isGalleryPage says whether href is one of the gallery's own pages,
+// in any theme and language, rather than a demo or a shell it links.
+// Matched whole, because a demo's index.html ends like the Overview's.
+func isGalleryPage(href string) bool {
+	for _, theme := range ui.ThemeNames() {
+		for _, locale := range rastrillo.BaseLocales() {
+			for _, pk := range pageKinds() {
+				if href == pageHref(mountPath, theme, locale, pk.File) {
+					return true
+				}
+			}
+		}
+	}
+	return false
+}
+
 // TestEveryPageKindHasAnAccessibilityTarget holds the curated list to
 // the table.
 //
 // a11yTargets() is a REPRESENTATIVE sample with a written reason per
-// entry, and that is worth keeping: scanning 253 pages would say
-// nothing the twelve do not, and the reasons are what make the sample
-// arguable. What it must not be is a list that quietly stops covering
+// entry, and that is worth keeping: scanning every page in the tree,
+// in every theme and language, would say nothing this sample does not,
+// and the reasons are what make the sample arguable. What it must not be is a list that quietly stops covering
 // something.
 //
 // A page kind added to pageKinds() whose author forgets an entry here
@@ -419,6 +436,18 @@ func TestA11yScansTheGallery(t *testing.T) {
 	total := 0
 	for _, tc := range a11yTargets() {
 		t.Logf("scanning %s — %s", tc.name, tc.why)
+		// The gallery's own pages are scanned wide. Below 800px the
+		// Overview is the phone index, with no main, and every other
+		// page hides its rail and the pinned bar, so at the default
+		// 780px viewport the bar, the Overview's content and the rail's
+		// tree would never be read. The phone views of the gallery are
+		// driven elsewhere. Every other target keeps the default width,
+		// because its reason above names what it shows there: the
+		// back control on the content pages, the index of the demo.
+		size := chromedp.Action(chromedp.EmulateReset())
+		if isGalleryPage(tc.href) {
+			size = chromedp.EmulateViewport(1280, 900)
+		}
 		for _, scheme := range a11ySchemes {
 			where := tc.name + " (" + scheme + ")"
 			// Injected per page rather than as a boot script: the
@@ -426,6 +455,7 @@ func TestA11yScansTheGallery(t *testing.T) {
 			// would parse half a megabyte of engine into every one of
 			// them. The frames get their own pass below.
 			if err := chromedp.Run(ctx,
+				size,
 				chromedp.Navigate(rig.Origin+tc.href),
 				chromedp.WaitReady("body"),
 				chromedp.Evaluate(axeJS, nil),
@@ -727,10 +757,10 @@ func previewPageKinds() []string {
 // TestA11yScansThePreviewDocuments scans inside the frames.
 //
 // This is where the components actually live. Every example on a
-// gallery page is an <iframe srcdoc> holding a whole document — the partial,
-// the tree's stylesheets, and nothing else — so a scan of the index
-// with iframes:false has not looked at a single component. It has
-// looked at the gallery's furniture.
+// gallery page is an <iframe> loading a preview file of its own —
+// the partial, the tree's stylesheets, and nothing else — so a scan of
+// the index with iframes:false has not looked at a single component.
+// It has looked at the gallery's furniture.
 //
 // Scanned in the frame, not extracted and re-served: a component's
 // accessible name and its contrast are properties of the document it is
@@ -790,7 +820,7 @@ func TestA11yScansThePreviewDocuments(t *testing.T) {
 				  f.scrollIntoView({block: "center"});
 				  const settled = () => {
 				    const d = f.contentDocument;
-				    return d && d.readyState === "complete" && d.body && d.body.children.length ? d : null;
+				    return d && d.URL === f.src && d.readyState === "complete" && d.body && d.body.children.length ? d : null;
 				  };
 				  for (let i = 0; i < 200; i++) {
 				    const d = settled();
@@ -854,8 +884,8 @@ func TestA11yScansThePreviewDocuments(t *testing.T) {
 					// frame on a page holding a hundred of them and reported
 					// the empty result as a clean one — which is precisely
 					// the failure this gate exists to notice. Same-origin
-					// srcdoc means contentWindow.axe is right there, so the
-					// scan runs where the document is.
+					// a same-origin frame means contentWindow.axe is right
+					// there, so the scan runs where the document is.
 					where := fmt.Sprintf("%s/%s %s %s preview %s %s", pg.theme, pg.locale, kind, scheme, f.Of, titles[i])
 					engine := fmt.Sprintf("document.querySelector(%q).contentWindow.axe", f.Sel)
 					target := fmt.Sprintf("document.querySelector(%q).contentDocument", f.Sel)
@@ -888,6 +918,10 @@ func TestA11yReflowsAt320(t *testing.T) {
 	defer cancel()
 
 	// 320×640 is the criterion's own number: 1280 CSS px at 400% zoom.
+	// That is a desktop browser, so not mobile emulation: a phone's
+	// overlay scrollbar takes no room, while the root's stable gutter on
+	// a zoomed desktop leaves the page 305px to reflow into, the harder
+	// of the two.
 	// Every page kind, because reflow is a property of the content: the
 	// token grid, the sample frames, the class-idiom callouts and the
 	// shell sections each lay themselves out differently, and a split
@@ -914,23 +948,31 @@ func TestA11yReflowsAt320(t *testing.T) {
 	// page spills past the left, and a measurement that only knows
 	// about the right one reports the Arabic page as 330px wide with
 	// nothing to blame.
+	//
+	// The edge is the root's own laid-out box, not clientWidth. Over a
+	// stable gutter the two differ by 15px wherever no scrollbar is
+	// drawn: with chromedp's hidden scrollbars on every page, and on a
+	// scroll-locked page such as the modal route even with them drawn.
+	// Measured against clientWidth, an overflow of up to 15px read as
+	// none.
 	const measure = `(() => {
 	  const de = document.documentElement;
+	  const w = Math.round(de.getBoundingClientRect().width);
 	  const over = [];
 	  document.querySelectorAll("body *").forEach(el => {
 	    const r = el.getBoundingClientRect();
 	    if (r.width === 0) return;
-	    if (r.right > de.clientWidth + 1 || r.left < -1) {
+	    if (r.right > w + 1 || r.left < -1) {
 	      const cls = (el.className || "").toString().trim().split(/\s+/)[0];
 	      over.push(el.tagName.toLowerCase() + (cls ? "." + cls : "") + " [" + Math.round(r.left) + "…" + Math.round(r.right) + "]");
 	    }
 	  });
-	  return JSON.stringify({doc: de.scrollWidth, client: de.clientWidth, body: document.body.scrollWidth, over: over.slice(0, 8)});
+	  return JSON.stringify({doc: de.scrollWidth, client: w, body: document.body.scrollWidth, over: over.slice(0, 8)});
 	})()`
 	for _, p := range pages {
 		if err := chromedp.Run(ctx,
 			chromedp.ActionFunc(func(c context.Context) error {
-				return emulation.SetDeviceMetricsOverride(320, 640, 1, true).Do(c)
+				return emulation.SetDeviceMetricsOverride(320, 640, 1, false).Do(c)
 			}),
 			chromedp.Navigate(rig.Origin+p.href),
 			chromedp.WaitReady("body"),
@@ -949,7 +991,7 @@ func TestA11yReflowsAt320(t *testing.T) {
 			t.Fatalf("%s: decoding the measurement: %v", p.name, err)
 		}
 		if m.Doc > m.Client || m.Body > m.Client {
-			t.Errorf("%s scrolls sideways at 320px (WCAG 1.4.10): document %dpx, body %dpx in a %dpx viewport\n    widest: %s",
+			t.Errorf("%s scrolls sideways at 320px (WCAG 1.4.10): document %dpx, body %dpx in a %dpx page\n    widest: %s",
 				p.name, m.Doc, m.Body, m.Client, strings.Join(m.Over, "\n    "))
 		}
 	}
@@ -964,11 +1006,12 @@ const focusablesJS = `'a[href], button:not([disabled]), input:not([disabled]):no
 //
 // Two things it has to get right that a first attempt does not.
 //
-// Focus inside a frame: the form page is thirty <iframe
-// srcdoc> documents (the Overview it split off from carries none), and
-// once focus enters one, the top document's activeElement is the frame
-// and stays the frame for every element inside it. Read naively that looks like focus refusing to move —
-// which is exactly what a keyboard trap looks like, and it is not one.
+// Focus inside a frame: the form page holds thirty preview frames
+// (the Overview it split off from carries none), and once focus enters
+// one, the top document's activeElement is the frame and stays the
+// frame for every element inside it. Read naively that looks like focus
+// refusing to move — which is exactly what a keyboard trap looks like,
+// and it is not one.
 // So the probe descends: through the frame, into the document, to the
 // element a person is actually on.
 //
@@ -1079,21 +1122,19 @@ const walkJS = `(() => {
 // all the way round, which is the trap question answered globally: a
 // reader can always Tab their way back out.
 //
-// WHERE the thirty start is the whole design of this test, and it took
-// a review to get right. From the top of the page they land on the skip
-// link, the mobile chrome disclosure, the filter box and then
-// sixty-odd rail links — one control repeated until the budget runs
-// out, and nothing below the rail covered at all. Everything the split
-// added lives below it: the section tab strip, which is the only
-// visible way between the five pages once the shell folds the rail away
-// below 800px, and then the page's own content.
+// WHERE the thirty start is the whole design of this test. From the
+// top of the page they land on the skip link, the filter box and then
+// sixty-odd rail links, one control repeated until the budget runs
+// out, and nothing below the rail covered at all.
 //
-// So the walk Tabs past the rail first, unasserted, and spends its
-// thirty stops from the tab strip onwards. The seek is Tab presses too,
-// not a .focus() call, so the thirty are still a keyboard journey and
-// :focus-visible still means what it means. Where the rail's own stops
-// are covered: they are the same anchors on every page, and the axe
-// scan reads the rail on all twelve of its targets.
+// So the walk runs at a desktop width, where the rail and the pinned
+// bar are both on screen, Tabs past them first, unasserted, and spends
+// its thirty stops in the page's own content. The seek is Tab presses
+// too, not a .focus() call, so the thirty are still a keyboard journey
+// and :focus-visible still means what it means. Where the rail's own
+// stops are covered: they are the same anchors on every page, and the
+// axe scan reads the rail on every gallery page it scans, at the same
+// desktop width.
 func TestA11yWalksTheKeyboard(t *testing.T) {
 	rig := harness.New(t, func(string) http.Handler { return treeHandler(t) })
 	ctx, cancel := context.WithTimeout(rig.Context(), 300*time.Second)
@@ -1101,37 +1142,46 @@ func TestA11yWalksTheKeyboard(t *testing.T) {
 
 	var count int
 	if err := chromedp.Run(ctx,
+		chromedp.EmulateViewport(1280, 900),
 		chromedp.Navigate(rig.Origin+pageHref(mountPath, "day", "en", fileOf("form"))),
 		chromedp.WaitReady("body"),
-		chromedp.Evaluate(`document.querySelectorAll(`+focusablesJS+`).length`, &count),
 	); err != nil {
 		t.Fatalf("preparing the keyboard walk: %v", err)
 	}
+	// Every frame loaded before the first Tab. A lazy frame focused
+	// while its document is committed but not yet parsed swallows the
+	// next Tab, which the walk would report as a keyboard trap: that is
+	// a loading race in the test, not a trap a reader meets.
+	eagerly(t, ctx, "form")
+	if err := chromedp.Run(ctx,
+		chromedp.Evaluate(`document.querySelectorAll(`+focusablesJS+`).length`, &count),
+	); err != nil {
+		t.Fatalf("counting the form page's stops: %v", err)
+	}
 	t.Logf("form: %d focusable elements in its own document, before any frame", count)
 
-	// Tab past the rail. The stop this lands on is the first entry of
-	// the section tab strip, which is the first thing after the rail in
-	// the reading order — and the first stop the thirty below assert.
-	// Bounded rather than counted: the rail's length is a property of
-	// how many partials ui ships, and a seek that had to be updated
-	// every time one landed would be a second list to maintain.
+	// Tab past the rail and the bar. The stop this lands on is the first
+	// focusable in the content column, which is the first stop the
+	// thirty below assert. Bounded rather than counted: the rail's
+	// length is a property of how many partials ui ships.
 	const seekLimit = 250
-	inStrip := `!!(document.activeElement && document.activeElement.closest(".ds-switch"))`
+	inPage := `!!(document.activeElement && document.activeElement.closest("[rst-page]"))`
 	var reached bool
 	for i := 0; i < seekLimit && !reached; i++ {
-		if err := chromedp.Run(ctx, chromedp.KeyEvent(kb.Tab), chromedp.Evaluate(inStrip, &reached)); err != nil {
-			t.Fatalf("seeking to the section tabs, tab %d: %v", i+1, err)
+		if err := chromedp.Run(ctx, chromedp.KeyEvent(kb.Tab), chromedp.Evaluate(inPage, &reached)); err != nil {
+			t.Fatalf("seeking to the content, tab %d: %v", i+1, err)
 		}
 	}
 	if !reached {
-		t.Fatalf("%d Tabs never reached the section tab strip; the walk would have covered the rail and nothing else", seekLimit)
+		t.Fatalf("%d Tabs never reached the content column; the walk would have covered the rail and nothing else", seekLimit)
 	}
 
 	const steps = 30
 	rings := 0
 	for i := 0; i < steps; i++ {
-		// The first stop is where the seek left focus — the tab strip
-		// itself — so the Tab comes after the reading, not before it.
+		// The first stop is where the seek left focus — the first
+		// focusable in the content — so the Tab comes after the
+		// reading, not before it.
 		var raw string
 		actions := []chromedp.Action{chromedp.Evaluate(walkJS, &raw)}
 		if i > 0 {
@@ -1280,7 +1330,7 @@ func TestA11yScansEverySigninState(t *testing.T) {
 			if err := tmpl.ExecuteTemplate(&b, "ds-screen-stage", map[string]any{"State": st, "Brand": galleryBrand, "Preview": true, "Art": false}); err != nil {
 				t.Fatalf("%s: %v", name, err)
 			}
-			pages["/signin-matrix/"+theme+"/"+name+".html"] = []byte(srcdoc(mountPath, theme, "en", "Sign-in state "+name, b.String()))
+			pages["/signin-matrix/"+theme+"/"+name+".html"] = []byte(previewDoc(mountPath, theme, "en", "Sign-in state "+name, b.String()))
 		}
 	}
 	rig := harness.New(t, func(string) http.Handler {

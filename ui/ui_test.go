@@ -1752,6 +1752,33 @@ func tokensStyle(css, name string) bool {
 	return strings.Contains(css, "["+name+"]")
 }
 
+// The reference's list of Styleguide's keys is every key and no other.
+// It is what a reader picks an idiom from without opening the source,
+// so an idiom missing from it is one nobody reaches for.
+func TestTheReferenceListsEveryIdiom(t *testing.T) {
+	doc, err := os.ReadFile("../docs/site/reference/ui.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	m := regexp.MustCompile(`(?s)keyed by idiom name \((.*?)\)\.`).FindSubmatch(doc)
+	if m == nil {
+		t.Fatal("docs/site/reference/ui.md has no \"keyed by idiom name (...)\" list")
+	}
+	var listed []string
+	for _, k := range regexp.MustCompile("`([a-z-]+)`").FindAllSubmatch(m[1], -1) {
+		listed = append(listed, string(k[1]))
+	}
+	var keys []string
+	for k := range Styleguide() {
+		keys = append(keys, k)
+	}
+	sort.Strings(listed)
+	sort.Strings(keys)
+	if !reflect.DeepEqual(listed, keys) {
+		t.Errorf("ui.md lists the idioms %q; Styleguide has %q", listed, keys)
+	}
+}
+
 // TestIdiomClassesAreStyled is the F10 lesson in both directions: every
 // class a sample emits must have a selector in tokens.css (a sample
 // cannot reference a class that does not exist), and every selector this

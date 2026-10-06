@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"amadan.net/rastrillo/rastrillo/auth"
+	"amadan.net/rastrillo/rastrillo/internal/codeview"
 )
 
 // The Screens page: whole screens rather than pieces of them.
@@ -184,7 +185,7 @@ func screenDocs() []screenDoc {
 		{
 			Key:   "signin-social",
 			Name:  "Google, Apple and the rest",
-			Blurb: "We give you the buttons, drawn the way each company requires. We do not give you the sign-in itself — you wire that up to whichever provider you use.",
+			Blurb: "We give you the buttons, drawn the way each company requires. We do not give you the sign-in itself: you wire that up to whichever provider you use.",
 			// The Google G keeps its four colours as fill literals, which
 			// nothing else in the gallery may carry: Google's branding
 			// rules require the multicolour mark, so a theme-following G
@@ -228,7 +229,7 @@ func screenDocs() []screenDoc {
 }
 
 // buildScreens renders every screen for one theme and locale.
-func buildScreens(mount, theme, locale string, tmpl *template.Template) ([]screenView, error) {
+func buildScreens(mount, theme, locale string, tmpl *template.Template, files previewSet) ([]screenView, error) {
 	docs := screenDocs()
 	out := make([]screenView, 0, len(docs))
 	first := true
@@ -254,7 +255,11 @@ func buildScreens(mount, theme, locale string, tmpl *template.Template) ([]scree
 		}
 		title := previewTitle(locale, doc.Key, "Screens")
 		if doc.Signin == nil {
-			view.Preview = newPreview(mount, theme, locale, id+"-0", title, doc.Markup, id)
+			preview, file := newPreview(mount, theme, locale, "screens", id+"-0", title, doc.Markup, doc.Markup, id)
+			if err := files.add(file); err != nil {
+				return nil, err
+			}
+			view.Preview = preview
 			out = append(out, view)
 			continue
 		}
@@ -266,8 +271,12 @@ func buildScreens(mount, theme, locale string, tmpl *template.Template) ([]scree
 			return nil, fmt.Errorf("screen %s: %w", doc.Key, err)
 		}
 		first = false
-		view.Preview = newPreview(mount, theme, locale, id+"-0", title, buf.String(), id)
-		view.Preview.Source = signinSource
+		preview, file := newPreview(mount, theme, locale, "screens", id+"-0", title, buf.String(), "", id)
+		if err := files.add(file); err != nil {
+			return nil, err
+		}
+		view.Preview = preview
+		view.Preview.Source = codeview.Highlight(signinSource)
 		out = append(out, view)
 	}
 	return out, nil
@@ -289,15 +298,15 @@ func screenNav(mount, theme, locale string, view pageView) []navItem {
 }
 
 const screensBody = `{{define "ds-body-screens"}}
-<div class="ds-head"><h2 id="screens">{{P "Screens"}}</h2></div>
 <p class="ds-lead">{{P "The sign-in screens are the shipped signin partial, shown in its states. The last two are examples to copy."}}</p>
+<p class="ds-lead">{{P "Each example is live, but its links go nowhere."}}</p>
 <p class="ds-lead">{{range .ScreenPartials}}{{.Marker}}<code id="{{.ID}}" data-ds-anchor>{{.Name}}</code> {{end}}</p>
-<div class="ds-head"><h3 id="signing-in">{{P "Signing in"}}</h3></div>
-<p class="ds-lead">{{P "Show one main way in, with the others underneath. Do not split sign-up from sign-in — one button that works for both is less to explain and less to get wrong."}}</p>
+<div class="ds-head"><h2 id="signing-in">{{P "Signing in"}}</h2></div>
+<p class="ds-lead">{{P "Show one main way in, with the others underneath. Do not split sign-up from sign-in: one button that works for both is less to explain and less to get wrong."}}</p>
 {{range .Screens}}
 <article class="ds-partial" id="{{.ID}}" data-ds-anchor>
 {{.Marker}}
-<h4>{{.Name}}</h4>
+<h3 class="ds-partial__name">{{.Name}}</h3>
 <p class="ds-lead">{{.Blurb}}</p>
 {{.Warning}}
 <div class="ds-sample">

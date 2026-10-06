@@ -345,7 +345,7 @@ func TestSelectContract(t *testing.T) {
 	// dividers, compact boxes and borrowed validity. Splitting the pure
 	// ranking into its own file was tried and rejected: importing it makes
 	// this an ES module, which every app's classic <script defer> tag and
-	// the design system's srcdoc previews would have to change for, and an
+	// the design system's preview files would have to change for, and an
 	// app that re-vendored without editing its layout would lose the
 	// enhancement silently. Most of the growth is the why-comments, which
 	// are what let the app owner who now owns it read it in one sitting.

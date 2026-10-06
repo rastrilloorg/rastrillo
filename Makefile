@@ -5,7 +5,7 @@
 # runs. None of the four names a real file, so the pattern rule already
 # reruns unconditionally without needing .PHONY's safety here.
 .PHONY: ci suite suite-roles gofmt budget root staticcheck govulncheck gitleaks chromedp-graph gorm-free race generate-check scaffold-smoke browser \
-        mirror mirror-check money
+        browser-sweep mirror mirror-check money
 
 # The READMEs' documented sweeps all run with GOFLAGS=-mod=mod: the tests
 # that build scratch modules (replace => this repo) rely on it to resolve
@@ -64,7 +64,7 @@ ci: gofmt chromedp-graph gorm-free generate-check suite
 # by hack/gotest.sh. In a role's name a / in the path is a . so
 # internal/designsystem@6 becomes browser.internal.designsystem~1of6
 # to ~6of6.
-BROWSER_PKGS := harness webauthn ui@2 pow internal/designsystem@6 auth
+BROWSER_PKGS := harness webauthn ui@2 pow internal/designsystem@6 internal/designsystem/sweep internal/designsystem/history auth
 ROOT_SPLIT := internal/designsystem@4 cmd/rastrillo@2 cmd/dsgen
 go-roles = $(foreach p,$(2),$(if $(findstring @,$(p)),$(call go-slices,$(1),$(subst /,.,$(word 1,$(subst @, ,$(p)))),$(word 2,$(subst @, ,$(p)))),$(1).$(subst /,.,$(p))))
 go-slices = $(foreach k,$(shell seq 1 $(3)),$(1).$(2)~$(k)of$(3))
@@ -283,11 +283,28 @@ browser: $(BROWSER_ROLES)
 
 # The browser packages that need full Chromium rather than a headless
 # shell, where both are installed (hack/gotest.sh). ui's busy-button
-# drive needs the back/forward cache, which the shell never restores.
-export FULL_CHROMIUM := ui
+# drive needs the back/forward cache, which the shell never restores;
+# the history package's bfcache and new-tab legs need the same cache
+# restore, plus a Ctrl-click actually opening a new tab, which the
+# shell also never does. Not sweep: those legs used to live there, but
+# sweep's own heavy sweeps (real rendering at many widths and locales)
+# were already most of its 20-minute package timeout, and full Chromium
+# pushed them past it on the cloud runner. history holds only the legs
+# that need full Chromium, so it stays cheap there.
+export FULL_CHROMIUM := ui internal/designsystem/history
 
 browser.%: | $(BIN)/tmp
 	./hack/gotest.sh browser '$*'
+
+# browser-sweep is the sweep package's full size: every locale a sweep
+# covers, not the suite's narrower subsets (sweepLocales and
+# narrowLocales in internal/designsystem/sweep). Run it by hand before
+# any release that changes locale strings, the pinned bar's controls or
+# preview content: those are exactly what the dropped locales could
+# regress unevenly. Deliberately not a suite role: at full size the
+# pinned-bar fit alone took 284 of the package's 385 seconds under load.
+browser-sweep:
+	TMPDIR="$${TMPDIR:-/var/tmp}" RASTRILLO_SWEEP=full go test -tags browser -timeout 20m ./internal/designsystem/sweep/ -count=1
 
 # origin (amadan) is where work lands; the GitHub remote is a mirror and
 # nothing else. Deliberately NOT part of ci: a runner must not push, and a

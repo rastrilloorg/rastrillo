@@ -48,8 +48,9 @@ import (
 	"amadan.net/rastrillo/rastrillo/ui"
 )
 
-// headerRuleSweep forces every iframe to load, then reads every page
-// header in the document and in every frame it can reach.
+// headerRuleSweep reads every page header in the document and in every
+// frame it can reach; the caller has already loaded every frame with
+// eagerly.
 //
 // The colour comes back as a hex string painted through a 1×1 canvas,
 // for the reason ui's drive gives: getComputedStyle serialises a
@@ -66,19 +67,6 @@ import (
 // gallery page.
 const headerRuleSweep = `(async () => {
   const frames = [...document.querySelectorAll("iframe")];
-  await Promise.all(frames.map(f => new Promise(done => {
-    const ready = () => {
-      try { return f.contentDocument && f.contentDocument.readyState === "complete" && f.contentDocument.body; }
-      catch (e) { return false; }
-    };
-    if (ready()) { done(); return; }
-    f.addEventListener("load", () => done(), { once: true });
-    // Re-assigning srcdoc reloads a frame the lazy loader has not
-    // reached yet, which below the fold is most of them.
-    f.loading = "eager";
-    if (f.hasAttribute("srcdoc")) { f.srcdoc = f.getAttribute("srcdoc"); }
-    setTimeout(done, 5000);
-  })));
 
   const canvas = document.createElement("canvas");
   canvas.width = canvas.height = 1;
@@ -123,7 +111,10 @@ const headerRuleSweep = `(async () => {
   for (const f of frames) {
     let d = null;
     try { d = f.contentDocument; } catch (e) { d = null; }
-    if (!d || !d.body) { continue; }
+    // about:blank is a frame whose file has not replaced it yet, not a
+    // document to scan; counting it as read would let FramesRead reach
+    // Frames before every preview actually loaded.
+    if (!d || !d.body || d.URL === "about:blank") { continue; }
     out.FramesRead++;
     if (scan(d, "frame: " + (f.getAttribute("title") || "?")) > 0) { out.FramesWithHeaders++; }
   }
@@ -213,15 +204,18 @@ func TestNoGalleryPageStillDrawsTheRakeLine(t *testing.T) {
 		name := tg.theme + "/" + tg.locale + "/" + tg.file
 		url := rig.Origin + pageHref(mountPath, tg.theme, tg.locale, tg.file)
 
-		var raw string
 		if err := chromedp.Run(ctx,
 			chromedp.EmulateViewport(1280, 900),
 			chromedp.Navigate(url),
 			chromedp.WaitVisible(`[rst-page-header]`, chromedp.ByQuery),
-			chromedp.Evaluate(headerRuleSweep, &raw,
-				func(p *runtime.EvaluateParams) *runtime.EvaluateParams { return p.WithAwaitPromise(true) }),
 		); err != nil {
 			t.Fatalf("%s: driving the page: %v", name, err)
+		}
+		eagerly(t, ctx, name)
+		var raw string
+		if err := chromedp.Run(ctx, chromedp.Evaluate(headerRuleSweep, &raw,
+			func(p *runtime.EvaluateParams) *runtime.EvaluateParams { return p.WithAwaitPromise(true) })); err != nil {
+			t.Fatalf("%s: sweeping the headers: %v", name, err)
 		}
 		var got headerRuleSweepResult
 		if err := json.Unmarshal([]byte(raw), &got); err != nil {

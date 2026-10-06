@@ -15,6 +15,16 @@ package ui
 // template actions, so there is nothing to execute a template func
 // against.
 var styleguideSamples = map[string]string{
+	// button: the set that behaves differently rather than every
+	// combination. Variant and size are words in one attribute, so
+	// rst-btn="primary sm" composes the way a class list would; a link
+	// takes the same look, because a GET is a link even when it looks
+	// like an action. The busy state is not here: form-foot's idle and
+	// working pair is the one picture of it.
+	"button": `<p><button rst-btn type="button">Cancel</button> <button rst-btn="primary" type="button">Save</button> <button rst-btn="ghost" type="button">Preview</button> <button rst-btn="danger" type="button">Delete</button></p>
+<p><button rst-btn="primary sm" type="button">Save</button> <button rst-btn="primary lg" type="button">Save</button> <a rst-btn href="/orders">View orders</a></p>
+<p><button rst-btn="primary block" type="button">Continue</button></p>
+<p><button rst-btn type="button" disabled>Archived</button></p>`,
 	"box": `<div rst-box-head><h2>Payout</h2><a rst-btn href="/payout/edit">Edit</a></div>
 <section rst-box><p>Everything on a screen sits inside boxes.</p><div rst-box-foot>Last updated 2 hours ago</div></section>`,
 	"stat-band": `<div rst-stats>

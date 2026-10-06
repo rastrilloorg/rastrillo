@@ -465,9 +465,9 @@ an arbitrary caller body, such as the section box, the list-grid card,
 the modal route and the page shells, that a `html/template` partial
 can't wrap because it doesn't know that body's shape in advance.
 `tokens.css` ships the vocabulary; `Styleguide` is the exercised markup
-that goes with it, keyed by idiom name (`box`, `list-grid`, `dropdown`,
-`form-layout`, `tblock`, `modal`, `help`, `selbox`, `shell-topbar`,
-`shell-sidebar`). The design-system page renders every sample it
+that goes with it, keyed by idiom name (`box`, `button`, `stat-band`,
+`list-grid`, `dropdown`, `form-layout`, `tblock`, `modal`, `help`,
+`selbox`, `shell-topbar`, `shell-sidebar`). The design-system page renders every sample it
 returns, and `ui_test.go`'s `TestIdiomClassesAreStyled` holds them
 honest against `tokens.css` in both directions: a sample can't write an
 attribute the stylesheet doesn't style, and an idiom can't ship

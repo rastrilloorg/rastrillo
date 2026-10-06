@@ -26,7 +26,6 @@ import (
 	"fmt"
 	"math"
 	"net/http"
-	"path"
 	"sort"
 	"strconv"
 	"strings"
@@ -39,44 +38,9 @@ import (
 
 	"amadan.net/rastrillo/rastrillo"
 	"amadan.net/rastrillo/rastrillo/harness"
+	"amadan.net/rastrillo/rastrillo/internal/designsystem/galleryrig"
 	"amadan.net/rastrillo/rastrillo/ui"
 )
-
-// treeHandler serves the rendered tree at the mount path the pages
-// expect. Every URL in a page is absolute under /design-system/, so
-// serving it anywhere else would 404 the stylesheet and the script and
-// the drive would be measuring an unstyled, unscripted page.
-//
-// It serves Render's output rather than a directory, which is now the
-// only thing there is to serve: the tree is not committed, and the site
-// generates it at build time. That is stricter than reading a copy off
-// disk as well as simpler — the accessibility gate in a11y_test.go, which
-// used to scan the committed files, now scans the exact bytes dsgen
-// would write.
-func treeHandler(t *testing.T) http.Handler {
-	t.Helper()
-	files, err := Render(mountPath)
-	if err != nil {
-		t.Fatalf("Render: %v", err)
-	}
-	types := map[string]string{
-		".html": "text/html; charset=utf-8",
-		".css":  "text/css; charset=utf-8",
-		".js":   "text/javascript; charset=utf-8",
-	}
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		name := strings.TrimPrefix(r.URL.Path, mountPrefix)
-		body, ok := files[name]
-		if !ok {
-			http.NotFound(w, r)
-			return
-		}
-		if ct, ok := types[path.Ext(name)]; ok {
-			w.Header().Set("Content-Type", ct)
-		}
-		w.Write(body)
-	})
-}
 
 // TestSchemeToggleDrivesTheWholeJourney is the drive.
 //
@@ -122,11 +86,14 @@ func TestSchemeToggleDrivesTheWholeJourney(t *testing.T) {
 		return chromedp.ActionFunc(func(context.Context) error { reached = name; return nil })
 	}
 
+	// Every selector is scoped to the bar: on the Overview the controls
+	// are written twice, and the first copy in the document is the
+	// phone index's foot, hidden at this width.
 	// pressed reads the label of whichever scheme button is currently
 	// pressed. One probe for the whole ARIA question: exactly one
 	// button carries aria-pressed="true", and it is the right one.
 	const pressed = `(() => {
-	  const on = document.querySelectorAll('[data-ds-scheme][aria-pressed="true"]');
+	  const on = document.querySelectorAll('.ds-top [data-ds-scheme][aria-pressed="true"]');
 	  return on.length === 1 ? on[0].dataset.dsScheme : "pressed=" + on.length;
 	})()`
 
@@ -134,29 +101,33 @@ func TestSchemeToggleDrivesTheWholeJourney(t *testing.T) {
 	const themeAttr = `document.documentElement.getAttribute("data-theme") ?? "(none)"`
 
 	if err := chromedp.Run(ctx,
+		// Wide, because the bar is hidden below 800px and the default
+		// headless viewport is 780px: there the Overview is the phone
+		// index and the bar's toggle never becomes visible.
+		chromedp.EmulateViewport(1280, 900),
 		chromedp.Navigate(url), at("navigated"),
-		chromedp.WaitVisible(`[data-ds-scheme="dark"]`, chromedp.ByQuery), at("toggle-visible"),
+		chromedp.WaitVisible(`.ds-top [data-ds-scheme="dark"]`, chromedp.ByQuery), at("toggle-visible"),
 
 		// A first visit is System: no attribute, nothing stored, and
 		// the toggle is on screen because gallery.js said so.
 		chromedp.Evaluate(`document.documentElement.getAttribute("data-rst-js") ?? "(none)"`, &jsMarker),
 		chromedp.Evaluate(themeAttr, &freshTheme),
 		chromedp.Evaluate(stored, &freshStored),
-		chromedp.Evaluate(`getComputedStyle(document.querySelector(".ds-scheme")).display !== "none"`, &toggleShown),
+		chromedp.Evaluate(`getComputedStyle(document.querySelector(".ds-top .ds-scheme")).display !== "none"`, &toggleShown),
 		// The scriptless half, asked of the real engine rather than of
 		// the stylesheet text: take the marker away and the control
 		// goes with it, which is exactly what a reader with JavaScript
 		// off sees.
 		chromedp.Evaluate(`(() => {
 		  document.documentElement.removeAttribute("data-rst-js");
-		  const gone = getComputedStyle(document.querySelector(".ds-scheme")).display === "none";
+		  const gone = getComputedStyle(document.querySelector(".ds-top .ds-scheme")).display === "none";
 		  document.documentElement.setAttribute("data-rst-js", "on");
 		  return gone;
 		})()`, &toggleHiddenWithNoJS),
 		at("first-visit-read"),
 
 		// Choose Dark.
-		chromedp.Click(`[data-ds-scheme="dark"]`, chromedp.ByQuery), at("clicked-dark"),
+		chromedp.Click(`.ds-top [data-ds-scheme="dark"]`, chromedp.ByQuery), at("clicked-dark"),
 		chromedp.WaitReady(`html[data-theme="dark"]`, chromedp.ByQuery), at("dark-applied"),
 		chromedp.Evaluate(themeAttr, &darkTheme),
 		chromedp.Evaluate(stored, &darkStored),
@@ -170,7 +141,7 @@ func TestSchemeToggleDrivesTheWholeJourney(t *testing.T) {
 		chromedp.Evaluate(pressed, &reloadPressed),
 
 		// Back to System: the attribute goes, and so does the memory.
-		chromedp.Click(`[data-ds-scheme="system"]`, chromedp.ByQuery), at("clicked-system"),
+		chromedp.Click(`.ds-top [data-ds-scheme="system"]`, chromedp.ByQuery), at("clicked-system"),
 		chromedp.WaitReady(`html:not([data-theme])`, chromedp.ByQuery), at("system-applied"),
 		chromedp.Evaluate(themeAttr, &systemTheme),
 		chromedp.Evaluate(stored, &afterSystemStored),
@@ -227,9 +198,9 @@ type railState struct {
 	Shown []string `json:"shown"`
 	// Pages is the rail's page links — the sections that have nothing
 	// anchored under them yet and are drawn as a plain link rather than
-	// a disclosure. They are how a reader reaches that page, not
-	// entries in a list of anchors, so the filter leaves them alone and
-	// this is where that is asserted rather than assumed.
+	// a disclosure, such as Overview. They filter like any other entry,
+	// so a junk query cannot leave No matches on screen beside a link
+	// that still shows.
 	Pages   []string `json:"pages"`
 	Folded  int      `json:"folded"`
 	Open    []bool   `json:"open"`
@@ -559,10 +530,10 @@ func TestTheSidebarFilterDrivesTheWholeJourney(t *testing.T) {
 	if len(junk.Shown) != 0 {
 		t.Errorf("junk left %d entries on screen: %v", len(junk.Shown), junk.Shown)
 	}
-	// The page links are not entries; a query that matches nothing
-	// still leaves a reader a way to every page of the gallery.
-	if len(junk.Pages) != len(fresh.Pages) || len(fresh.Pages) == 0 {
-		t.Errorf("junk left %d of %d page links on screen; a page link is how you leave this page, not a search result", len(junk.Pages), len(fresh.Pages))
+	// The page links filter too: a junk query leaves none on screen, so
+	// No matches is never shown next to a link that still works.
+	if len(junk.Pages) != 0 || len(fresh.Pages) == 0 {
+		t.Errorf("junk left %d of %d page links on screen; a page link filters like any other entry", len(junk.Pages), len(fresh.Pages))
 	}
 	if !junk.Empty {
 		t.Error("junk matched nothing and the page never said so")
@@ -775,7 +746,7 @@ func TestPreviewWidgetDrivesTheWholeJourney(t *testing.T) {
 
 		// 6. The reader chooses Dark, and the previews follow without
 		// a line of script inside them.
-		chromedp.Click(`[data-ds-scheme="dark"]`, chromedp.ByQuery),
+		chromedp.Click(`.ds-top [data-ds-scheme="dark"]`, chromedp.ByQuery),
 		chromedp.Sleep(400*time.Millisecond),
 		chromedp.Evaluate(read(widget), &dark),
 	); err != nil {
@@ -938,22 +909,12 @@ func TestPreviewWidgetDrivesTheWholeJourney(t *testing.T) {
 // logged and not gated.
 func TestPreviewFrameHeightsFitTheirContent(t *testing.T) {
 	rig := harness.New(t, func(string) http.Handler { return treeHandler(t) })
-	ctx, cancel := context.WithTimeout(rig.Context(), 420*time.Second)
+	// About four times its measured time on a quiet runner (11.79s on
+	// 2026-10-05, with frames waited on rather than slept for). Twice
+	// was not enough: one run on a shared box took 18.7s, and CI
+	// runners here sit at load 40 to 80. A real hang still dies.
+	ctx, cancel := context.WithTimeout(rig.Context(), 48*time.Second)
 	defer cancel()
-
-	const measure = `(() => {
-		  const out = {};
-		  for (const f of document.querySelectorAll(".ds-view__frame")) {
-		    const section = f.closest("article, section");
-		    const id = section ? section.id : "?";
-		    const d = f.contentDocument;
-		    const need = d ? Math.ceil(Math.max(d.body.getBoundingClientRect().height, d.body.scrollHeight)) : -1;
-		    const box = Math.round(parseFloat(getComputedStyle(f).height));
-		    const was = out[id];
-		    if (!was || need > was[0]) out[id] = [need, box];
-		  }
-		  return JSON.stringify(out);
-		})()`
 
 	// Every page that frames anything, because previewHeights is one
 	// table over the whole tree: the partial samples are spread over
@@ -974,26 +935,9 @@ func TestPreviewFrameHeightsFitTheirContent(t *testing.T) {
 	// of those is a rendering bug in the tree while the second is a
 	// flake in this job; a message that only offers the second sends
 	// the reader looking in the wrong place.
-	rows := []struct {
-		kind  string
-		least int
-		owed  string
-	}{
-		{"overview", 1, "the demo application is framed here"},
-		{"primitives", len(ui.Styleguide()), "every sample ui.Styleguide() ships has a section here"},
-		{"shells", len(ui.LayoutNames()), "every shell ui.LayoutNames() reports has a section here"},
-		{"screens", len(screenDocs()), "every screen screenDocs() ships has a section here"},
-		{"formats", len(formatDocs()), "every section formatDocs() ships has a sample here"},
-	}
-	for _, fam := range families() {
-		rows = append(rows, struct {
-			kind  string
-			least int
-			owed  string
-		}{fam.Key, len(fam.Partials), "every partial samples.go puts in this family has a section here"})
-	}
-	// The rows above are hand-written, with a reason each, and that is
-	// worth keeping — but a page kind whose author forgets to add one is
+	//
+	// The rows are hand-written, with a reason each, and that is worth
+	// keeping — but a page kind whose author forgets to add one is
 	// never height-checked at all, and the only symptom is a preview
 	// clipped halfway down a button. That is exactly what happened when
 	// the Screens page landed: axe had a gate saying it was unscanned,
@@ -1001,97 +945,61 @@ func TestPreviewFrameHeightsFitTheirContent(t *testing.T) {
 	//
 	// So the list is held to pageKinds(), with the pages that frame
 	// nothing named and reasoned rather than silently absent.
-	framesNothing := map[string]string{
-		"tokens":          "a swatch grid and two scale tables; no preview frames",
-		"icons":           "inline SVG drawn directly on the page, not framed",
-		"getting-started": "prose, links and two source blocks",
-	}
 	covered := map[string]bool{}
-	for _, tc := range rows {
-		covered[tc.kind] = true
+	for _, row := range heightRows() {
+		covered[row.Kind] = true
 	}
 	for _, pk := range pageKinds() {
-		if covered[pk.Kind] || framesNothing[pk.Kind] != "" {
+		if covered[pk.Kind] || galleryrig.FramesNothing[pk.Kind] != "" {
 			continue
 		}
 		t.Errorf("page kind %q has no row in this drive and is not listed as framing nothing, so its preview heights are never measured — add a row with the count it owes, or say here why it frames nothing", pk.Kind)
 	}
 
-	for _, tc := range rows {
-		kind := tc.kind
-		var desktop, mobile string
+	for _, row := range heightRows() {
+		kind := row.Kind
+		where := kind + " at 1500px"
+		var desktop, mobile, clicked string
 		if err := chromedp.Run(ctx,
 			chromedp.EmulateViewport(1500, 1000),
 			chromedp.Navigate(rig.Origin+pageHref(mountPath, RootTheme(), "en", fileOf(kind))),
 			chromedp.WaitVisible(`.ds-view__frame`, chromedp.ByQuery),
-			chromedp.Evaluate(`(() => {
-			  document.querySelectorAll(".ds-view__frame").forEach(f => { f.loading = "eager"; });
-			  return "ok";
-			})()`, new(string)),
-			chromedp.Sleep(8*time.Second),
-			chromedp.Evaluate(measure, &desktop),
-			// And the same page on the other tab. The mobile height is
-			// one factor off the desktop one rather than a second table,
-			// so this is where that factor is checked.
-			chromedp.Evaluate(`document.querySelectorAll(".ds-view__tab--m input").forEach(i => i.click()); "ok"`, new(string)),
-			chromedp.Sleep(4*time.Second),
-			chromedp.Evaluate(measure, &mobile),
 		); err != nil {
-			t.Fatalf("measuring the %s frames: %v", kind, err)
+			t.Fatalf("%s: loading: %v", where, err)
+		}
+		eagerly(t, ctx, where)
+		if err := chromedp.Run(ctx, chromedp.Evaluate(galleryrig.MeasureFrames, &desktop)); err != nil {
+			t.Fatalf("%s: measuring Desktop: %v", where, err)
+		}
+		// And the same page on the other tab. The mobile height is one
+		// factor off the desktop one rather than a second table, so this
+		// is where that factor is checked.
+		if err := chromedp.Run(ctx, chromedp.Evaluate(clickedMobile, &clicked)); err != nil {
+			t.Fatalf("%s: choosing Mobile: %v", where, err)
+		}
+		var movedMobile struct{ Clicked, Moved int }
+		if err := json.Unmarshal([]byte(clicked), &movedMobile); err != nil {
+			t.Fatalf("%s: reading the Mobile click (%q): %v", where, clicked, err)
+		}
+		if movedMobile.Moved == 0 {
+			// Nothing moved means the clicks never landed, so a reading
+			// taken after them is a reading of the Desktop state
+			// mislabelled as Mobile.
+			t.Fatalf("%s: clicked %d Mobile radios and 0 moved — the Mobile reading below would be the Desktop state again", where, movedMobile.Clicked)
+		}
+		mobileSettle(t, ctx, where)
+		if err := chromedp.Run(ctx, chromedp.Evaluate(galleryrig.MeasureFrames, &mobile)); err != nil {
+			t.Fatalf("%s: measuring Mobile: %v", where, err)
 		}
 		for _, tab := range []struct{ name, raw string }{{"Desktop", desktop}, {"Mobile", mobile}} {
-			if n := measured(t, kind+" "+tab.name, tab.raw); n < tc.least {
+			if n := len(galleryrig.Measured(t, kind+" "+tab.name, tab.raw, false)); n < row.Least {
 				t.Errorf("%s %s: %d sections have a rendered example, want at least %d — %s. "+
 					"Either something ui ships is documented with nothing to look at (a partial with no sample "+
 					"state, an idiom with no styleguide entry, a shell with no demo), or the frames on this "+
-					"page did not all load", kind, tab.name, n, tc.least, tc.owed)
+					"page did not all load", kind, tab.name, n, row.Least, row.Owed)
 			}
 		}
 	}
-}
-
-// measured holds one tab's readings: section id → [what the document
-// needs, what the frame gives it]. It returns how many sections it saw,
-// so the caller can insist the three pages between them measured the
-// whole gallery.
-func measured(t *testing.T, tab, raw string) int {
-	t.Helper()
-	var got map[string][2]int
-	if err := json.Unmarshal([]byte(raw), &got); err != nil {
-		t.Fatalf("%s: reading the measurements: %v", tab, err)
-	}
-	if len(got) == 0 {
-		t.Fatalf("%s: no section on this page has a rendered example at all — either the page rendered none, or no frame on it loaded", tab)
-	}
-	names := make([]string, 0, len(got))
-	for name := range got {
-		names = append(names, name)
-	}
-	sort.Strings(names)
-	for _, id := range names {
-		name := tab + " " + id
-		need, box := got[id][0], got[id][1]
-		if need < 0 {
-			t.Errorf("%s: the frame has no document in it", name)
-			continue
-		}
-		// The 48px is the sidebar shell, and it is a property of the
-		// shell rather than of the number: its rail is
-		// block-size: 100dvh, so the page is always exactly as tall as
-		// whatever window it is in plus the margin under its content.
-		// No frame height can fit it, and chasing one is a loop —
-		// raising the box raises the requirement by the same amount.
-		// Everything else fits with room to spare: the console's phone
-		// index shares the window between bar, rail and foot, so it fits
-		// its frame like any other.
-		if need > box+48 {
-			t.Errorf("%s: its document needs %dpx and its frame is %dpx; raise previewHeights[%q] to at least %d", name, need, box, name, need+20)
-		}
-		if box > need*4 && box-need > 120 {
-			t.Logf("%s: %dpx of frame for %dpx of document — deliberate headroom, or a number to bring down", name, box, need)
-		}
-	}
-	return len(got)
 }
 
 // ── The demo application ─────────────────────────────────────────────
@@ -1356,27 +1264,10 @@ const minShownSample = 32.0
 // --ds-kmin in gallery.css. 12.5px is the type that dominates most
 // pages of this gallery (--rst-fs-sm) and 12.5 × 0.72 = 9.0px, which is
 // about where rendered text stops being read and starts being texture.
-// Everything else follows from it, including stageThreshold. Rechecked
-// for phones: the Mobile tab is a 390px frame, inside the touch query,
-// where --rst-fs-sm is 14px and 14 × 0.72 is 10.1px, so the floor only
-// gets more legible there and the value stands.
+// Everything else follows from it, including stageThreshold. Only
+// Desktop ever reaches the floor: Mobile lays out at the stage's width,
+// up to 390px, so it is never scaled.
 const kMin = 0.72
-
-// scrollbarGutter is what a classic scrollbar takes out of a box's
-// content when the box can pan, in CSS pixels, measured in this engine
-// with scrollbar-width: thin and the platform's scrollbars drawn.
-//
-// It is here because the harness hides scrollbars — chromedp's headless
-// default, copied from Puppeteer — so every reading this drive takes is
-// of a platform that charges nothing for one. That is the condition
-// under which a scrollbar eating a third of a 52px box is invisible,
-// and it was: measured, a classic bar took 15px of a 50.4px content box
-// and clipped 5px off the sample. scrollbar-width: thin brought it to
-// 10px, which the slack in previewHeights covers. The allowance is
-// subtracted below wherever a box can pan, so the floor is asserted
-// against the worse of the two platforms rather than the one that
-// happens to be running.
-const scrollbarGutter = 10.0
 
 // previewBox is one widget's geometry as the engine has it. Tabs are
 // identified by POSITION — 0 Desktop, 1 Mobile, 2 Code — and not by
@@ -1386,24 +1277,26 @@ type previewBox struct {
 	ID     string
 	Hidden bool    // the Code tab is showing, so there is no frame to measure
 	Box    float64 // the painted height of .ds-view__box
-	Width  string  // --ds-w as the box computes it: which rendering is on screen
+	Width  string  // the frame's laid-out width, "NNNpx": which rendering is on screen. Read off the frame, because Mobile's --ds-w is now min(390px, 100cqw) and an unregistered property reads back as that text.
 	// Desk is --ds-wd, the width this widget's DESKTOP rendering is
 	// laid out at, and it is read separately from Width because the two
 	// differ exactly when the reading is interesting: on the mobile
-	// rendering Width is 390px and Desk is still the widget's own
-	// class. Every threshold in this file is derived from it rather
+	// rendering Width is the stage's width, at most 390px, and Desk is
+	// still the widget's own class. Every threshold in this file is derived from it rather
 	// than written down, so the two width classes cannot drift apart
 	// from their gates. See gallery.css, "Two width classes".
-	Desk    string
-	Scale   string  // the frame's computed transform
-	Lit     []int   // the tabs the reader sees highlighted
-	Checked []int   // the radios that are actually checked
-	View    float64 // .ds-view, which is the query container
-	Stage   float64 // .ds-view__stage, which is what 100cqw used to be
-	Doc     float64 // the framed document's own height, in VIRTUAL px
-	Inner   float64 // the box's content height: what it can show
-	PanX    float64 // how much wider than the box its scrolled content is
-	OverX   string  // computed overflow-x: whether a reader can reach it
+	Desk       string
+	Scale      string  // the frame's computed transform
+	Lit        []int   // the tabs the reader sees highlighted
+	Checked    []int   // the radios that are actually checked
+	View       float64 // .ds-view, which is the query container
+	Stage      float64 // .ds-view__stage, which is what 100cqw used to be
+	Doc        float64 // the framed document's own height, in VIRTUAL px
+	Inner      float64 // the box's content height: what it can show
+	PanX       float64 // how much wider than the box its scrolled content is
+	OverX      string  // computed overflow-x: whether a reader can reach it
+	BoxL, BoxR float64 // the box's inline edges in the viewport
+	DocW       float64 // the document's client width
 }
 
 const readBoxes = `(() => {
@@ -1425,7 +1318,7 @@ const readBoxes = `(() => {
       ID: section && section.id ? section.id : "widget-" + out.length,
       Hidden: getComputedStyle(stage).display === "none",
       Box: Math.round(box.getBoundingClientRect().height * 10) / 10,
-      Width: getComputedStyle(box).getPropertyValue("--ds-w").trim(),
+      Width: frame.offsetWidth + "px",
       Desk: getComputedStyle(box).getPropertyValue("--ds-wd").trim(),
       Scale: getComputedStyle(frame).transform,
       Lit: lit,
@@ -1441,7 +1334,8 @@ const readBoxes = `(() => {
       // so how much is out there and whether anyone can get to it are
       // two readings, not one.
       PanX: Math.round((box.scrollWidth - box.clientWidth) * 10) / 10,
-      OverX: getComputedStyle(box).overflowX
+      OverX: getComputedStyle(box).overflowX,
+      BoxL: box.getBoundingClientRect().left, BoxR: box.getBoundingClientRect().right, DocW: document.documentElement.clientWidth,
     });
   });
   return JSON.stringify(out);
@@ -1451,40 +1345,12 @@ const readBoxes = `(() => {
 // whether the clicks moved anything. It is the instrument's own
 // control: a reading taken after a click that did not land is a
 // reading of the state before it.
-var clickedMobile = clickEvery("m")
+var clickedMobile = galleryrig.ClickEvery("m")
 
 // clickedDesktop is the same for the Desktop tab. The drive used to
 // click one label and then report on thirty widgets, twenty-nine of
 // which were still in the default state.
-var clickedDesktop = clickEvery("d")
-
-func clickEvery(mod string) string {
-	return `(() => {
-  let clicked = 0, moved = 0;
-  document.querySelectorAll(".ds-view__tab--` + mod + ` input").forEach(i => {
-    const before = i.checked;
-    i.click();
-    clicked++;
-    if (i.checked && !before) moved++;
-  });
-  return JSON.stringify({clicked: clicked, moved: moved});
-})()`
-}
-
-// eagerly turns every lazy frame on the page on and waits for the
-// documents to arrive. Measuring what a reader SEES means reaching
-// inside each srcdoc frame, and a frame that never loaded reports zero
-// height — which is indistinguishable from a collapsed preview, and
-// would read as this gate's own headline failure.
-func eagerly(t *testing.T, ctx context.Context, where string) {
-	t.Helper()
-	if err := chromedp.Run(ctx, chromedp.Evaluate(`(() => {
-	  document.querySelectorAll(".ds-view__frame").forEach(f => { f.loading = "eager"; });
-	  return "ok";
-	})()`, new(string)), chromedp.Sleep(6*time.Second)); err != nil {
-		t.Fatalf("%s: loading the framed documents: %v", where, err)
-	}
-}
+var clickedDesktop = galleryrig.ClickEvery("d")
 
 // clickAll clicks every radio of one kind and refuses to go on unless
 // the clicks moved something. A reading taken after a click that did
@@ -1552,6 +1418,13 @@ func tabName(n int) string {
 	return tabNames[n]
 }
 
+// mobileWidth is the Mobile rendering's width for one widget: the
+// stage's, up to 390px. On a desktop that is 390px; on a phone it is
+// the phone's own width.
+func mobileWidth(r previewBox) string {
+	return fmt.Sprintf("%dpx", int(math.Round(math.Min(390, r.View))))
+}
+
 // showsItsSample is the assertion this drive exists for, and it is on
 // the rendering rather than on the box.
 //
@@ -1583,17 +1456,17 @@ func showsItsSample(t *testing.T, where string, rows []previewBox) {
 			t.Fatalf("%s: %s frames a document with no height at all — the reading is of an empty frame, not of a sample", where, r.ID)
 		}
 		k := scaleOf(t, where, r)
-		inner := r.Inner
-		if r.PanX > 1 {
-			inner -= scrollbarGutter
-		}
-		shown := math.Min(r.Doc*k, inner)
+		// Inner is clientHeight, read in a browser that draws its
+		// scrollbars, so a panning box's own bar is already out of it.
+		// The hidden-scrollbar default charged nothing for one, and a
+		// classic bar once clipped 5px off a 52px sample unseen.
+		shown := math.Min(r.Doc*k, r.Inner)
 		if shown < worst {
 			worst, worstID = shown, r.ID
 		}
 		if shown < minShownSample {
-			say("%s: %s shows %.1fpx of its sample. The document is %.0f virtual px tall, the frame is scaled to %.3f, and the box can show %.1fpx (%.1fpx once a classic scrollbar has taken its gutter) — a reader sees a sliver whatever the box measures",
-				where, r.ID, shown, r.Doc, k, r.Inner, inner)
+			say("%s: %s shows %.1fpx of its sample. The document is %.0f virtual px tall, the frame is scaled to %.3f, and the box can show %.1fpx — a reader sees a sliver whatever the box measures",
+				where, r.ID, shown, r.Doc, k, r.Inner)
 		}
 		if k < kMin-0.005 {
 			say("%s: %s is scaled to %.3f, under the %.2f floor. At that scale this gallery's 12.5px type renders at %.1fpx",
@@ -1650,7 +1523,7 @@ func agree(t *testing.T, where string, rows []previewBox) {
 		case 0:
 			w = r.Desk
 		case 1:
-			w = "390px"
+			w = mobileWidth(r)
 		default:
 			say("%s: %s lights %s and still shows a frame", where, r.ID, tabName(r.Lit[0]))
 			continue
@@ -1674,11 +1547,15 @@ func opensOn(t *testing.T, where string, rows []previewBox, tab int, width strin
 	t.Helper()
 	say := loudly(t, where, len(rows))
 	for _, r := range rows {
+		want := width
+		if want == "" {
+			want = mobileWidth(r)
+		}
 		if len(r.Checked) != 0 {
 			say("%s: %s opens with %v already checked; CSS cannot tell that from a choice the reader made, so the width can never pick the opening view", where, r.ID, r.Checked)
 		}
-		if r.Width != width {
-			say("%s: %s opens rendering at --ds-w: %s, want %s — the opening view does not follow the reader's width", where, r.ID, r.Width, width)
+		if r.Width != want {
+			say("%s: %s opens with its frame laid out %s wide (offsetWidth), want %s — the opening view does not follow the reader's width", where, r.ID, r.Width, want)
 		}
 		if len(r.Lit) != 1 || r.Lit[0] != tab {
 			say("%s: %s opens with %v lit, want %s", where, r.ID, r.Lit, tabName(tab))
@@ -1775,7 +1652,9 @@ func calibrate(t *testing.T, ctx context.Context, origin, kind string) {
 }
 
 func TestThePreviewWidgetIsUsableOnAPhone(t *testing.T) {
-	rig := harness.New(t, func(string) http.Handler { return treeHandler(t) })
+	// Scrollbars drawn, because the box is held to the document's width
+	// below: see requireDrawnScrollbar.
+	rig := harness.New(t, func(string) http.Handler { return treeHandler(t) }, harness.WithScrollbars())
 	ctx, cancel := context.WithTimeout(rig.Context(), 300*time.Second)
 	defer cancel()
 
@@ -1796,7 +1675,10 @@ func TestThePreviewWidgetIsUsableOnAPhone(t *testing.T) {
 	// pages, so asking it once is enough.
 	calibrate(t, ctx, rig.Origin, "overview")
 
-	for _, kind := range []string{"display", "overview"} {
+	// Display for the component width class and Shells for the page
+	// one. Not the Overview: below 800px it is the phone index, its main
+	// has no box, and its framed demo application is a Demos row.
+	for _, kind := range []string{"display", "shells"} {
 		url := rig.Origin + pageHref(mountPath, RootTheme(), "en", fileOf(kind))
 
 		// CONTROL 1. A wide viewport, where the answer has been known
@@ -1835,8 +1717,9 @@ func TestThePreviewWidgetIsUsableOnAPhone(t *testing.T) {
 			t.Fatalf("%s at 390px: loading: %v", kind, err)
 		}
 		eagerly(t, ctx, kind+" at 390px")
+		requireDrawnScrollbar(t, ctx, kind+" at 390px")
 		phone := boxes(t, ctx, kind+" at 390px")
-		opensOn(t, kind+" at 390px, opened", phone, 1, "390px")
+		opensOn(t, kind+" at 390px, opened", phone, 1, "")
 		agree(t, kind+" at 390px, opened", phone)
 		showsItsSample(t, kind+" at 390px, opened", phone)
 		noSidewaysPage(t, ctx, kind+" at 390px, opened")
@@ -1857,7 +1740,7 @@ func TestThePreviewWidgetIsUsableOnAPhone(t *testing.T) {
 			t.Fatalf("%s at 320px: resizing: %v", kind, err)
 		}
 		narrow := boxes(t, ctx, kind+" at 320px")
-		opensOn(t, kind+" at 320px, opened", narrow, 1, "390px")
+		opensOn(t, kind+" at 320px, opened", narrow, 1, "")
 		agree(t, kind+" at 320px, opened", narrow)
 		showsItsSample(t, kind+" at 320px, opened", narrow)
 		noSidewaysPage(t, ctx, kind+" at 320px, opened")
@@ -1886,9 +1769,9 @@ func TestThePreviewWidgetIsUsableOnAPhone(t *testing.T) {
 		agree(t, kind+" at 390px, Desktop chosen", chosen)
 		showsItsSample(t, kind+" at 390px, Desktop chosen", chosen)
 		// And it pans rather than crops: at 390px the clamped scale
-		// puts 864px of a page frame — or 648px of a component — in a
-		// 309px box, so there has to be somewhere for the rest of it
-		// to go. Either way it is more than twice the box.
+		// puts 864px of a page frame, or 648px of a component, in a box
+		// the screen's width, so there has to be somewhere for the rest
+		// of it to go.
 		panned := 0
 		for _, r := range chosen {
 			if r.PanX > 1 && scrolls(r.OverX) {
@@ -1897,6 +1780,14 @@ func TestThePreviewWidgetIsUsableOnAPhone(t *testing.T) {
 		}
 		if panned != len(chosen) {
 			t.Errorf("%s at 390px with Desktop chosen: %d of %d boxes both overflow and can be scrolled. --ds-k is clamped at %.2f, so a virtual page is drawn %.0f%% of its own width inside a box only the column's width; if the box is not a scroller the right-hand half of every sample is cropped and unreachable, and overflow: hidden reports the same scrollWidth as a scroller does", kind, panned, len(chosen), kMin, kMin*100)
+		}
+		// And it pans across the whole screen: on a phone the box bleeds
+		// to the viewport's edges, so a reader pans the screen's width of
+		// it, not a column's.
+		for _, r := range chosen {
+			if math.Abs(r.BoxL) > 1 || math.Abs(r.BoxR-r.DocW) > 1 {
+				t.Errorf("%s at 390px with Desktop chosen: %s's box runs %.1f…%.1f in a %.0fpx document; it should span the screen", kind, r.ID, r.BoxL, r.BoxR, r.DocW)
+			}
 		}
 		noSidewaysPage(t, ctx, kind+" at 390px, Desktop chosen")
 
@@ -1954,7 +1845,7 @@ func TestThePreviewWidgetIsUsableOnAPhone(t *testing.T) {
 		t.Fatal("gallery.js ran on the scriptless page — the scriptless leg proves nothing")
 	}
 	off := boxes(t, offCtx, "display at 390px, scripts off")
-	opensOn(t, "display at 390px, scripts off", off, 1, "390px")
+	opensOn(t, "display at 390px, scripts off", off, 1, "")
 	agree(t, "display at 390px, scripts off", off)
 	showsItsSample(t, "display at 390px, scripts off", off)
 
@@ -2074,12 +1965,12 @@ func TestThePreviewDefaultIsMonotoneInStageWidth(t *testing.T) {
 	// its own sake: each class has its own pair of container queries
 	// now, so a sweep of one page would leave the other pair — and the
 	// other threshold — with no gate at all. Display is components at
-	// 900px; the Overview frames the demo application at 1200px. The
+	// 900px; Shells frames five page demos at 1200px. The
 	// control at the foot requires that the sweep really did see both,
 	// so a page that stopped carrying the class it was chosen for fails
 	// here rather than silently halving the coverage.
 	classes := map[float64]string{}
-	for _, kind := range []string{"display", "overview"} {
+	for _, kind := range []string{"display", "shells"} {
 		monotoneSweep(t, ctx, rig.Origin, kind, classes)
 	}
 	if len(classes) < 2 {
@@ -2106,8 +1997,12 @@ func monotoneSweep(t *testing.T, ctx context.Context, origin, kind string, class
 	// the viewport stops being monotone in the stage.
 	// 1184 and 1186 straddle the threshold itself: with the rail in,
 	// the stage is the window less 321px, so those two windows put it
-	// at 863px and 865px. Without them the sweep's nearest pair is
-	// 779px and 879px and the threshold could sit anywhere between.
+	// at 863px and 865px. Below 800px the stage is the window less a
+	// scrollbar, because the widget bleeds to the screen's edges, so a
+	// component opens on Desktop in a window about 66px narrower than
+	// it once did; the property asserted, monotone in the stage, does
+	// not move. Without them the sweep's nearest pair is 779px and
+	// 879px and the threshold could sit anywhere between.
 	widths := []int{280, 320, 360, 390, 600, 700, 760, 799, 800, 900, 1000, 1100, 1184, 1186, 1200, 1280, 1500}
 	readings := make([]stageReading, 0, len(widths))
 	for _, vw := range widths {

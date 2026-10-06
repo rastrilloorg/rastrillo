@@ -25,10 +25,6 @@
 .ds-head h2 { font-size: 1.35rem; letter-spacing: -0.01em; margin: 0; }
 .ds-lead { color: var(--rst-text-muted); margin: 0 0 var(--rst-sp-4); max-width: 62ch; }
 .ds-sub { font-size: var(--rst-fs-base); margin: var(--rst-sp-5) 0 var(--rst-sp-2); }
-.ds-switch { align-items: center; display: flex; flex-wrap: wrap; gap: var(--rst-sp-3); margin: var(--rst-sp-4) 0; }
-.ds-chrome { align-items: center; border-block-end: 1px solid var(--rst-line); display: flex; flex-wrap: wrap; gap: var(--rst-sp-3); justify-content: flex-end; padding: var(--rst-sp-2) var(--rst-sp-4); }
-.ds-chrome [rst-dropdown] { position: relative; }
-.ds-chrome [rst-dropdown] > summary { padding-block: 0.25rem; }
 /* The toggle is hidden until gallery.js says it is there. With scripts
    off it never appears, and the page stays on the theme's own
    color-scheme: light dark — which is the System position anyway, so
@@ -37,16 +33,28 @@
    reveal the reader sees happen. */
 .ds-scheme { display: none; }
 :root[data-rst-js] .ds-scheme { align-items: stretch; border: 1px solid var(--rst-line); border-radius: var(--rst-radius-sm); display: inline-flex; overflow: hidden; }
-.ds-scheme button { background: none; border: 0; box-sizing: border-box; color: var(--rst-text-muted); cursor: pointer; font: inherit; font-size: var(--rst-fs-sm); padding: 0.25rem 0.6rem; }
-.ds-scheme button + button { border-inline-start: 1px solid var(--rst-line); }
-.ds-scheme button:hover { background: var(--rst-accent-soft); color: var(--rst-text); }
-.ds-scheme button[aria-pressed="true"] { background: var(--rst-accent-soft); color: var(--rst-accent); font-weight: 600; }
-.ds-scheme button:focus-visible { outline: 2px solid var(--rst-accent); outline-offset: -2px; }
+.ds-scheme button, .ds-viewall button { background: none; border: 0; box-sizing: border-box; color: var(--rst-text-muted); cursor: pointer; font: inherit; font-size: var(--rst-fs-sm); padding: 0.25rem 0.6rem; }
+.ds-scheme button + button, .ds-viewall button + button { border-inline-start: 1px solid var(--rst-line); }
+.ds-scheme button:hover, .ds-viewall button:hover { background: var(--rst-accent-soft); color: var(--rst-text); }
+.ds-scheme button[aria-pressed="true"], .ds-viewall button[aria-pressed="true"] { background: var(--rst-accent-soft); color: var(--rst-accent); font-weight: 600; }
+.ds-scheme button:focus-visible, .ds-viewall button:focus-visible { outline: 2px solid var(--rst-accent); outline-offset: -2px; }
+/* The page-wide view group, hidden until gallery.js is there to make
+   it work: with scripts off the per-sample radios are the whole of the
+   widget, as they always were. */
+.ds-viewall { display: none; }
+:root[data-rst-js] .ds-viewall { align-items: stretch; border: 1px solid var(--rst-line); border-radius: var(--rst-radius-sm); display: inline-flex; margin: 0 0 var(--rst-sp-4); overflow: hidden; }
 .ds-partial { margin: var(--rst-sp-5) 0; }
-.ds-partial > :is(h3, h4) { font-size: var(--rst-fs-base); margin: 0 0 var(--rst-sp-1); }
+/* The section headings are styled by class, not by level: the outline
+   moved once when the pages got real titles, and a rule keyed to h3 or
+   h4 would silently unstyle every heading the next time it moves. */
+.ds-partial__name { font-size: var(--rst-fs-base); margin: 0 0 var(--rst-sp-1); }
 .ds-sample { background: var(--rst-surface-2); border: 1px solid var(--rst-line); border-radius: var(--rst-radius); margin: var(--rst-sp-3) 0; padding: var(--rst-sp-4); }
 .ds-state { color: var(--rst-text-faint); font-size: var(--rst-fs-xs); font-weight: 650; letter-spacing: 0.06em; margin: 0 0 var(--rst-sp-3); text-transform: uppercase; }
 .ds-note { border-inline-start: 2px solid var(--rst-line-strong); color: var(--rst-text-muted); font-size: var(--rst-fs-sm); margin: var(--rst-sp-3) 0 0; max-width: 62ch; padding-inline-start: var(--rst-sp-3); }
+/* A grouped widget's note names its state on a line of its own, so no
+   joining punctuation has to be written, and translated, between the
+   two. */
+.ds-note__state { display: block; font-weight: 600; }
 .ds-toks { display: grid; gap: var(--rst-sp-3); grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr)); list-style: none; margin: 0 0 var(--rst-sp-5); padding: 0; }
 .ds-tok { align-items: center; display: flex; gap: var(--rst-sp-3); min-inline-size: 0; }
 .ds-tok__text { min-inline-size: 0; }
@@ -89,14 +97,47 @@
 .ds-updown__prev { grid-column: 1; justify-self: start; }
 .ds-updown__next { grid-column: 2; justify-self: end; text-align: end; }
 .ds-shell { margin: var(--rst-sp-5) 0; }
-.ds-shell h3 { font-size: 1.05rem; margin: 0 0 var(--rst-sp-1); }
-/* A source block scrolls sideways when a line is longer than its column,
-   and a box that scrolls must be reachable from the keyboard (axe's
-   scrollable-region-focusable; WCAG 2.1.1), so every pre.ds-src carries
-   tabindex="0" in page.go. Whether a given block overflows depends on the
-   font the browser found, which is why it showed only on one machine. */
+.ds-shell__name { font-size: 1.05rem; margin: 0 0 var(--rst-sp-1); }
+/* A source block can still scroll sideways where a single token is wider
+   than its column, and a box that scrolls must be reachable from the
+   keyboard (axe's scrollable-region-focusable; WCAG 2.1.1), so every
+   pre.ds-src carries tabindex="0" in page.go. Whether a given block
+   overflows depends on the font the browser found. */
 .ds-src { background: var(--rst-surface); border: 1px solid var(--rst-line); border-radius: var(--rst-radius); margin: var(--rst-sp-3) 0; overflow-x: auto; padding: var(--rst-sp-4); }
-.ds-src code { white-space: pre; }
+/* Source soft-wraps rather than scrolling sideways. An inline run (a
+   meter's whole output, a choice card) is one line however long,
+   because breaking inside it would change the space a reader sees;
+   so the block wraps it on screen, and copying takes textContent,
+   which has no soft breaks in it. */
+.ds-src code { overflow-wrap: anywhere; white-space: pre-wrap; }
+/* Code is left to right in every language. Inheriting an Arabic page's
+   rtl, a block sits against the right edge and the bidi algorithm
+   mirrors its brackets and moves trailing punctuation to the front, so
+   what a reader sees is not what Copy puts on the clipboard. isolate
+   keeps a name inside a sentence (the wrapper line's) from reordering
+   the words around it. */
+.ds-src, .ds-wrap code { direction: ltr; text-align: start; unicode-bidi: isolate; }
+/* The five token colours, from theme tokens so they follow theme and
+   scheme. TestHighlightColoursPassAgainstTheCodeBackground holds each
+   to 4.5:1 on --rst-surface, the block's background, in every theme
+   and both schemes; it reads these lines, one rule per element. */
+ds-t { color: var(--rst-accent); }
+ds-a { color: var(--rst-tone-negative-fg); }
+ds-v { color: var(--rst-tone-positive-fg); }
+ds-x { color: var(--rst-text-muted); }
+ds-s { color: var(--rst-tone-warning-fg); }
+.ds-wrap { color: var(--rst-text-muted); font-size: var(--rst-fs-sm); margin: 0 0 var(--rst-sp-2); }
+.ds-html { margin-block-start: var(--rst-sp-2); }
+.ds-html > summary { color: var(--rst-text-muted); cursor: pointer; font-size: var(--rst-fs-sm); }
+.ds-html > summary:focus-visible { outline: 2px solid var(--rst-accent); outline-offset: 2px; }
+/* Sits directly before the block it copies. inline-size: fit-content with
+   margin-inline-start: auto pushes a block-level button to the far edge
+   without a flex wrapper around it — and does so on the inline axis, so
+   it lands on the right in a left-to-right page and the left in Arabic
+   or Hebrew without a direction check anywhere in gallery.js. */
+.ds-copy { background: none; border: 1px solid var(--rst-line); border-radius: var(--rst-radius-sm); color: var(--rst-text-muted); cursor: pointer; display: block; font: inherit; font-size: var(--rst-fs-sm); inline-size: fit-content; margin-inline-start: auto; padding-block: 0.2rem; padding-inline: 0.6rem; }
+.ds-copy:hover { background: var(--rst-accent-soft); color: var(--rst-text); }
+.ds-copy:focus-visible { outline: 2px solid var(--rst-accent); outline-offset: 2px; }
 
 /* The preview widget: [Desktop] [Mobile] [Code] over one frame.
 
@@ -200,11 +241,9 @@
 
    54rem is also comfortably over the 718px the stage can reach before
    the rail arrives, so the page class's default flips once as a window
-   widens rather than three times. Under it the 390px rendering is the
-   opening view: not because it is perfect — at a real 390px phone the
-   stage is 309px and that rendering is scaled to 0.79, so its 12.5px
-   type lands at 9.9px — but because it is three times the 0.26 the
-   desktop rendering would be scaled to in the same column.
+   widens rather than three times. Under it the Mobile rendering is the
+   opening view, and on a phone it is that phone's page at its own
+   size: the stage is the screen's width and Mobile is never scaled.
 
    The component class's threshold is the same identity at its own
    width: 900 × 0.72 = 648px = 40.5rem. It is LOWER, and that is the
@@ -306,8 +345,11 @@
    that position, and it cannot catch one that parses it and then fails
    to resolve it. The min-block-size above is what covers the second
    case; this guard covers the first. */
-.ds-view { --ds-wd: 900px; --ds-w: var(--ds-wd); --ds-h: 220px; --ds-hm: 330px; --ds-kmin: 0.72; container-name: ds-view; container-type: inline-size; margin: var(--rst-sp-3) 0; }
+.ds-view { --ds-wd: 900px; --ds-w: var(--ds-wd); --ds-wm: 390px; --ds-h: 220px; --ds-hm: 330px; --ds-kmin: 0.72; container-name: ds-view; container-type: inline-size; margin: var(--rst-sp-3) 0; }
 .ds-view--page { --ds-wd: 1200px; }
+/* A grouped row's frame sits flush with its tabs, not centred: its
+   states start at the inline start like the labels above them. */
+.ds-view--rows .ds-view__box { margin-inline-start: 0; }
 .ds-view__tabs { border: 0; display: flex; margin: 0 0 var(--rst-sp-2); padding: 0; }
 .ds-view__tab { align-items: center; border: 1px solid var(--rst-line); color: var(--rst-text-muted); cursor: pointer; display: inline-flex; font-size: var(--rst-fs-sm); padding: 0.2rem 0.7rem; }
 .ds-view__tab + .ds-view__tab { border-inline-start: 0; }
@@ -330,35 +372,46 @@
 @container ds-view (min-width: 40.5rem) { .ds-view:not(.ds-view--page):not(:has(input:checked)) .ds-view__tab--d { background: var(--rst-accent-soft); color: var(--rst-accent); font-weight: 600; } }
 @container ds-view not (min-width: 40.5rem) {
   .ds-view:not(.ds-view--page):not(:has(input:checked)) .ds-view__tab--m { background: var(--rst-accent-soft); color: var(--rst-accent); font-weight: 600; }
-  .ds-view:not(.ds-view--page):not(:has(.ds-view__tab--d input:checked)) .ds-view__box { --ds-h: var(--ds-hm); --ds-w: 390px; }
+  .ds-view:not(.ds-view--page):not(:has(.ds-view__tab--d input:checked)) .ds-view__box { --ds-h: var(--ds-hm); --ds-w: var(--ds-wm); }
 }
 @container ds-view (min-width: 54rem) { .ds-view--page:not(:has(input:checked)) .ds-view__tab--d { background: var(--rst-accent-soft); color: var(--rst-accent); font-weight: 600; } }
 @container ds-view not (min-width: 54rem) {
   .ds-view--page:not(:has(input:checked)) .ds-view__tab--m { background: var(--rst-accent-soft); color: var(--rst-accent); font-weight: 600; }
-  .ds-view--page:not(:has(.ds-view__tab--d input:checked)) .ds-view__box { --ds-h: var(--ds-hm); --ds-w: 390px; }
+  .ds-view--page:not(:has(.ds-view__tab--d input:checked)) .ds-view__box { --ds-h: var(--ds-hm); --ds-w: var(--ds-wm); }
 }
 @supports not (container-type: inline-size) { .ds-view:not(:has(input:checked)) .ds-view__tab--d { background: var(--rst-accent-soft); color: var(--rst-accent); font-weight: 600; } }
 .ds-view__tab:has(input:focus-visible) { outline: 2px solid var(--rst-accent); outline-offset: 2px; }
 .ds-view__box { --ds-k: 1; background: var(--rst-bg); block-size: calc(var(--ds-h) * var(--ds-k)); border: 1px solid var(--rst-line); border-radius: var(--rst-radius); inline-size: calc(var(--ds-w) * var(--ds-k)); margin-inline: auto; max-inline-size: 100%; min-block-size: calc(var(--ds-h) * var(--ds-kmin)); overflow: hidden; overflow-x: auto; overscroll-behavior-x: contain; position: relative; resize: vertical; scrollbar-width: thin; }
-.ds-view__frame { block-size: calc(100% / var(--ds-k)); border: 0; inline-size: var(--ds-w); left: 0; min-block-size: 100%; position: absolute; top: 0; transform: scale(var(--ds-k)); transform-origin: top left; }
+.ds-view__frame { block-size: calc(100% / var(--ds-k)); border: 0; inline-size: var(--ds-w); inset-block-start: 0; inset-inline-start: 0; min-block-size: 100%; position: absolute; transform: scale(var(--ds-k)); transform-origin: top left; }
+/* transform-origin has no logical keywords, so the side is a selector,
+   as tokens.css does for its drawn chevrons. Anchored at the physical
+   left, a right-to-left box could not scroll to the frame's start. */
+[dir="rtl"] .ds-view__frame { transform-origin: top right; }
 @supports (block-size: calc(1px * clamp(0.5, tan(atan2(100cqw, 1200px)), 1))) {
+  /* Mobile is the stage's width up to 390px. Only below 390px of stage
+     was Mobile ever scaled, and that is exactly when laying the page
+     out at the stage's width is what that screen would show; min()
+     keeps a 760px window's Mobile the 390px phone rather than a 760px
+     tablet. --ds-k is then at least 1, so Mobile is never scaled. The
+     cqw resolves where --ds-w is used, inside .ds-view, its container.
+     An engine without container units keeps 390px and the old scale. */
+  .ds-view { --ds-wm: min(390px, 100cqw); }
   .ds-view__box { --ds-k: clamp(var(--ds-kmin), tan(atan2(100cqw, var(--ds-w))), 1); }
 }
 /* An explicit Mobile beats the width, at either class and any size.
    The two width-driven copies of this declaration are up in the
    container queries; this one answers a click and needs no condition
    beyond it. */
-.ds-view:has(.ds-view__tab--m input:checked) .ds-view__box { --ds-h: var(--ds-hm); --ds-w: 390px; }
+.ds-view:has(.ds-view__tab--m input:checked) .ds-view__box { --ds-h: var(--ds-hm); --ds-w: var(--ds-wm); }
 .ds-view__code { display: none; margin-block-start: 0; }
 .ds-view:has(.ds-view__tab--c input:checked) .ds-view__stage { display: none; }
 .ds-view:has(.ds-view__tab--c input:checked) .ds-view__code { display: block; }
 
-/* The sidebar. The rail itself is the framework's own sidebar shell —
-   rst-shell-sidebar, rst-shell-rail, rst-shell-nav, and the details
-   chrome strip that collapses the rail below 800px — so the page that
-   documents the vocabulary is laid out in it. What is left here is the
-   two things a rail of links has no class for yet: a collapsible
-   section per group, and the filter over them. */
+/* The rail is the shipped sidebar layout's, below 800px the phone
+   index on the Overview and hidden on every other page, all by
+   tokens.css's own rules. What is left here is what a rail of links
+   has no attribute for: a collapsible section per group, and the
+   filter over them. */
 .ds-rail { gap: var(--rst-sp-2); }
 .ds-nav > details > summary { align-items: center; color: var(--rst-text-faint); cursor: pointer; display: flex; font-size: var(--rst-fs-xs); font-weight: 650; gap: 0.35rem; letter-spacing: 0.06em; list-style: none; padding-block: 0.35rem; text-transform: uppercase; }
 .ds-nav > details > summary::-webkit-details-marker { display: none; }
@@ -401,4 +454,93 @@
    outranks that rule and has to say the same thing again. */
 @media (pointer: coarse) {
   .ds-search input { font-size: max(1rem, 1em); }
+  /* tokens.css lifts a button to the 44px tap floor only through
+     .rst-btn/[rst-btn]; .ds-copy carries neither, so it has to say the
+     same thing again rather than inherit it. */
+  .ds-copy { min-block-size: var(--rst-tap); min-inline-size: var(--rst-tap); }
+}
+
+/* ── The frame ───────────────────────────────────────────────────────
+   At 800px and up the bar is pinned over main. A grid item's
+   containing block is its grid area and a sticky box cannot leave it,
+   so a bar in a one-row area has no room to stick; it gets the rail's
+   shape instead, an area spanning every row, with the first row
+   reserving its height. Lines are numbered, not sided, so in Arabic
+   the rail is on the right and the bar over main on the left with no
+   rule here.
+
+   --ds-bar-h is the bar's border-box height per band, the measured
+   tallest over every theme and language. From 1024px the no-wrap rule
+   below keeps the bar to one row everywhere, so the reservation is
+   that one line's height. Below 1024px the controls can still wrap to
+   a second line, and the reservation is the measured two-row maximum.
+   TestThePinnedBarFitsItsReservation measures what is inside the bar
+   against it. */
+:root { --ds-bar-h: 3.25rem; }
+/* measured over every theme and locale on 2026-10-05: room for two. */
+@media (min-width: 800px) and (max-width: 1023.98px) { :root { --ds-bar-h: 5rem; } }
+.ds-top { align-items: center; border-block-end: 1px solid var(--rst-line); display: flex; flex-wrap: wrap; gap: var(--rst-sp-2) var(--rst-sp-3); justify-content: space-between; padding: var(--rst-sp-2) var(--rst-sp-4); }
+.ds-top__brand { color: var(--rst-text); font-weight: 650; text-decoration: none; }
+.ds-top__controls { align-items: center; display: flex; flex-wrap: wrap; gap: var(--rst-sp-3); justify-content: flex-end; }
+.ds-top__controls [rst-dropdown] { position: relative; }
+.ds-top__controls [rst-dropdown] > summary { padding-block: 0.25rem; }
+/* The bar's own box is fixed at --ds-bar-h and cannot grow to a second
+   row without overflowing its grid area (above), so from 1024px it
+   must not wrap at all. The brand is what yields: eliding its text
+   leaves its accessible name untouched, while every control has to
+   stay whole for its hit target and its label to both still work. */
+@media (min-width: 1024px) {
+  .ds-top { flex-wrap: nowrap; }
+  .ds-top__controls { flex-shrink: 0; }
+  .ds-top__brand { min-inline-size: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+}
+@media (min-width: 800px) {
+  body > [rst-shell-sidebar] { grid-template-rows: var(--ds-bar-h) 1fr; }
+  body > [rst-shell-sidebar] > [rst-shell-rail] { grid-column: 1; grid-row: 1 / -1; }
+  /* Opaque, and above page content (auto, the positioned preview boxes
+     and transformed frames included) but below the skip link's 60. */
+  .ds-top { align-self: start; background: var(--rst-bg); block-size: var(--ds-bar-h); box-sizing: border-box; grid-column: 2; grid-row: 1 / -1; inset-block-start: 0; position: sticky; z-index: 10; }
+  body > [rst-shell-sidebar] > [rst-shell-main] { grid-column: 2; grid-row: 2; }
+  /* Fragments and focus stop below the pinned bar (WCAG technique C43).
+     Only here: below 800px what is pinned is the framework's back
+     strip, and its clearance is tokens.css's to set; a rule on html at
+     every width would override that. */
+  html { scroll-padding-block-start: calc(var(--ds-bar-h) + var(--rst-sp-2)); }
+}
+/* Pieces only the phone index shows, written on the Overview alone. At
+   800px and up the Overview is a page with the rail beside it, as the
+   shell's index is, and these would be a second list under the tree
+   and a second set of controls beside the bar's. */
+.ds-index-lead, .ds-rail > .ds-index, .ds-rail > [rst-shell-rail-foot] { display: none; }
+@media (max-width: 799.98px) {
+  /* On a phone a section page is the way back and the content, and the
+     controls are in the index's foot, under the list. */
+  .ds-top { display: none; }
+  [rst-shell-sidebar~="index"] .ds-index-lead { color: var(--rst-text-muted); display: block; margin: 0 0 var(--rst-sp-4); padding-inline: 0.25rem; }
+  [rst-shell-sidebar~="index"] > .ds-rail > :is(.ds-index, [rst-shell-rail-foot]) { display: flex; }
+  /* A query swaps the rows for the tree it filters. Two rules, so an
+     engine without :has() drops both and shows rows and tree one after
+     the other: long, but with no route missing. */
+  [rst-shell-sidebar~="index"]:not(:has(#ds-filter:not(:placeholder-shown))) > .ds-rail > .ds-nav { display: none; }
+  [rst-shell-sidebar~="index"]:has(#ds-filter:not(:placeholder-shown)) > .ds-rail > .ds-index { display: none; }
+}
+/* The scheme buttons are the gallery's own and under 30px tall; the
+   theme links and the language summary are framework controls the
+   touch block already sizes. Same query as tokens.css's touch block. */
+@media (pointer: coarse), (max-width: 40rem) {
+  .ds-scheme button, .ds-viewall button { min-block-size: var(--rst-tap); }
+}
+@media (max-width: 799.98px) {
+  /* On a phone the stage is the screen's width. The bleed is what sits
+     between the widget and the screen's edge: the page's padding, and
+     inside a sample card its padding and border as well. Written per
+     context rather than measured, so a change to either shows up as a
+     sideways scroll in the reflow and phone drives instead of a quietly
+     narrower stage. The tabs and the code stay in the text column. */
+  .ds-view { --ds-bleed: var(--rst-sp-4); margin-inline: calc(-1 * var(--ds-bleed)); }
+  .ds-sample .ds-view { --ds-bleed: calc(2 * var(--rst-sp-4) + 1px); }
+  .ds-view__tabs, .ds-view__code { margin-inline: var(--ds-bleed); }
+  /* Content-box sizing under max-inline-size: 100%: a border here
+     would make a full-width box 2px wider than the screen. */
+  .ds-view__box { border-inline-width: 0; border-radius: 0; }
 }

@@ -72,6 +72,18 @@ type sample struct {
 	// Build supplies Data that only exists once the page's locale is
 	// known — locale-menu's twelve items, and nothing else so far.
 	Build func(locale string) any
+
+	// Bind maps a data key to the dot field its call shows instead of
+	// the value: locale-menu's Items are []rastrillo.LocaleItem, a value
+	// an app gets from rastrillo.LocaleItems(r) and never writes out, so
+	// its call reads .Locales. The rest of the data stays literal.
+	Bind map[string]string
+
+	// Illustration marks a state that pictures what a script writes at
+	// run time (form-foot's Working state, rastrillo.js mid-submit), not
+	// markup an app pastes. Its block gets no copy button; its State
+	// label already says what it is.
+	Illustration bool
 }
 
 // partialDoc is one partial's whole section on the page.
@@ -80,6 +92,13 @@ type partialDoc struct {
 	Blurb  string
 	Wrap   wrapper
 	States []sample
+
+	// Row puts every state in one frame, a row that wraps into rows on a
+	// phone, instead of one widget per state. For small inline pieces
+	// (a pill, a badge, a meter), where a widget of their own cost a
+	// 190px card and a tab bar apiece and Display ran to 10,900px on a
+	// phone. A list, not a judgement: a partial is grouped by saying so.
+	Row bool
 }
 
 // family groups partials the way ui's own doc comment does: the list
@@ -111,6 +130,24 @@ type family struct {
 // all of them side by side is the only way a missing pair in a new theme
 // shows up as something other than a passing contrast test.
 var tones = []string{"neutral", "positive", "warning", "negative"}
+
+// searchTerms are the words people type for a component whose name is
+// not their word, keyed by the anchor id the rail links (anchorID's
+// kind-prefixed id). They ride on the rail link and the filter matches
+// them beside the name. English and untranslated: these are the
+// web-platform words a developer types, on the same footing as the
+// partial names, which are code. A matching sentence (the Blurb) was
+// measured instead and would have put 11 KB of Hindi into every rail.
+// TestEverySearchTermNamesAnAnchor fails on an id that no longer exists.
+var searchTerms = map[string]string{
+	"partial-field-check":  "checkbox toggle switch",
+	"idiom-modal":          "dialog popup",
+	"partial-choice-field": "radio",
+	"idiom-list-grid":      "table",
+	"idiom-box":            "card panel",
+	"partial-person":       "avatar user",
+	"idiom-button":         "button submit cta",
+}
 
 // selectOptions builds an n-option list for field-select. Past ten
 // options the partial arms select.js, so the same builder produces both
@@ -331,16 +368,19 @@ func families() []family {
 					Name:   "status-pill",
 					Blurb:  "A record's status as a tinted pill, colour and label.",
 					States: statusPillStates(),
+					Row:    true,
 				},
 				{
 					Name:   "badge",
 					Blurb:  "An uppercase bordered chip for small static markers. Distinct from status-pill, which is record status.",
 					States: badgeStates(),
+					Row:    true,
 				},
 				{
 					Name:   "meter",
 					Blurb:  "A capacity bar with its number.",
 					States: meterStates(),
+					Row:    true,
 				},
 				{
 					Name:   "stat",
@@ -399,7 +439,7 @@ func families() []family {
 				},
 				{
 					Name:  "job-status",
-					Blurb: "A background job's polled fragment. The data-poll attribute is emitted only while the job runs — omitting it is how polling stops.",
+					Blurb: "A background job's polled fragment. The data-poll attribute is emitted only while the job runs: leaving it out is how polling stops.",
 					States: []sample{
 						{State: "Running", Data: map[string]any{
 							"Name": "Import", "Status": "running", "Progress": "128 of 400", "Percent": 32,
@@ -483,7 +523,7 @@ func families() []family {
 				},
 				{
 					Name:  "choice-field",
-					Blurb: "Option cards — the preferred radio or checkbox group. Title stays short; Desc explains.",
+					Blurb: "Option cards: the preferred radio or checkbox group. Title stays short; Desc explains.",
 					Wrap:  wrapForm,
 					States: []sample{
 						{State: "Pick one", Data: map[string]any{
@@ -520,11 +560,12 @@ func families() []family {
 						// spinner stands in for the label. Showing
 						// the data-busy-label variant here instead
 						// would picture the exception as the rule.
-						{State: "Idle — the button before anything happens", Data: map[string]any{
+						{State: "Idle: the button before anything happens", Data: map[string]any{
 							"Submit": "Publish", "CancelHref": "/posts", "CancelLabel": "Back to posts",
 						}, Note: "A button that CHANGES something gets a loading state; a button that only reveals something, e.g. a disclosure, a dropdown, a tab, does not. rastrillo.js applies that rule to every submit button in every form, with nothing to opt into."},
-						{State: "Working — what rastrillo.js writes on the way out",
-							Note: "Only the button that was clicked: every other submit button in the form keeps its name and its value, and the form itself is guarded against a second submit. data-busy=\"false\" opts out, on the form or on one button; data-busy-label replaces the text. With scripts off none of this happens and the form submits exactly as it always did, so idempotency stays the server's job.",
+						{State: "Working: what rastrillo.js writes on the way out",
+							Note:         "Only the button that was clicked: every other submit button in the form keeps its name and its value, and the form itself is guarded against a second submit. data-busy=\"false\" opts out, on the form or on one button; data-busy-label replaces the text. With scripts off none of this happens and the form submits exactly as it always did, so idempotency stays the server's job.",
+							Illustration: true,
 							Raw: `<div rst-form-foot>
 <button rst-btn="primary lg" type="submit" aria-busy="true" disabled><span rst-spin aria-hidden="true"></span>Publish</button>
 <a rst-btn="lg" href="/posts">Back to posts</a>
@@ -614,7 +655,8 @@ func families() []family {
 					Blurb: "The language switcher: a details menu of one-field POST forms to /_locale, so the choice lands in the locale cookie and the reader stays on the same path.",
 					States: []sample{
 						{State: "Twelve languages, current highlighted.", Build: localeMenuData,
-							Note: "This one posts to /_locale, which would require a server. The switcher in this page's own header is the links-only version."},
+							Bind: map[string]string{"Items": "Locales"},
+							Note: "This one posts to /_locale, so it needs a server. Its Items come from rastrillo.LocaleItems(r). The switcher in this page's own header is the links-only version."},
 					},
 				},
 			},
@@ -626,8 +668,15 @@ func statusPillStates() []sample {
 	labels := map[string]string{
 		"neutral": "Draft", "positive": "Published", "warning": "Scheduled", "negative": "Failed",
 	}
-	out := []sample{{State: "Default tone (neutral)", Data: map[string]any{"Label": "Draft"}}}
+	out := make([]sample, 0, len(tones))
 	for _, tone := range tones {
+		// Neutral is the default, so its call leaves Tone out: the call a
+		// reader copies is the shortest one that renders this pill.
+		if tone == "neutral" {
+			out = append(out, sample{State: tone, Data: map[string]any{"Label": labels[tone]},
+				Note: "Tone defaults to neutral, so this call leaves it out."})
+			continue
+		}
 		out = append(out, sample{State: tone, Data: map[string]any{"Tone": tone, "Label": labels[tone]}})
 	}
 	return out
@@ -699,7 +748,10 @@ func calloutStates() []sample {
 		"negative": {"The last import failed", "Nothing was changed. Fix row 91 and try again."},
 	}
 	order := []string{"info", "positive", "warning", "negative"}
-	out := []sample{{State: "Default tone (info), no title", Data: map[string]any{"Body": bodies["info"][1]}}}
+	// info is the partial's default tone, so its loop entry below already
+	// renders what a prepended "default tone" state used to: the two were
+	// byte-identical, one state shown twice under two names.
+	var out []sample
 	for _, tone := range order {
 		b := bodies[tone]
 		data := map[string]any{"Tone": tone, "Body": b[1]}
@@ -776,7 +828,7 @@ func fieldSelectStates() []sample {
 			"ID": "sel_many", "Name": "sel_many", "Label": "City", "Options": many,
 			"Help": "Start typing to filter.",
 		}, Note: "Past ten options the partial arms select.js. Below ten it does not: search over a handful of items is furniture, not help."},
-		{State: "Twelve options, Plain — the enhancement opted out", Data: map[string]any{
+		{State: "Twelve options, Plain: the enhancement opted out", Data: map[string]any{
 			"ID": "sel_plain", "Name": "sel_plain", "Label": "City", "Options": many, "Plain": true,
 		}},
 		{State: "Required, with an error", Data: map[string]any{
@@ -813,7 +865,7 @@ func dateStates(name, value, hint string) []sample {
 			"Name": name + "_bounded", "Label": "Within this year", "Value": value,
 			"Min": minFor(name), "Max": maxFor(name),
 		}},
-		{State: "Plain — the bare native input", Data: map[string]any{
+		{State: "Plain: the bare native input", Data: map[string]any{
 			"Name": name + "_plain", "Label": "Publish on", "Value": value, "Plain": true,
 		}, Note: "No enhancement attributes at all, so datetime.js has nothing to find. The native picker still opens."},
 	}
@@ -846,7 +898,7 @@ func timeStates() []sample {
 			"Name": "time_bounded", "Label": "Between nine and eleven", "Value": "19:30",
 			"Min": "09:00", "Max": "23:00",
 		}},
-		{State: "Plain — the bare native input", Data: map[string]any{
+		{State: "Plain: the bare native input", Data: map[string]any{
 			"Name": "time_plain", "Label": "Doors open", "Value": "19:30", "Plain": true,
 		}},
 	}
@@ -871,7 +923,7 @@ func errorPageStates() []sample {
 		})
 	}
 	out = append(out, sample{
-		State: "Anything else — the generic pair",
+		State: "Anything else: the generic pair",
 		Data:  map[string]any{"Status": 418, "HomeHref": "/"},
 		Note:  "Five statuses are worded in the framework catalog. A sixth falls back to the generic pair rather than rendering a missing key's name at a reader.",
 	})
@@ -881,15 +933,15 @@ func errorPageStates() []sample {
 func statusLabel(status int) string {
 	switch status {
 	case 404:
-		return "404 — not found"
+		return "404: not found"
 	case 403:
-		return "403 — forbidden"
+		return "403: forbidden"
 	case 422:
-		return "422 — unprocessable"
+		return "422: unprocessable"
 	case 500:
-		return "500 — server error"
+		return "500: server error"
 	case 503:
-		return "503 — unavailable"
+		return "503: unavailable"
 	}
 	return "Other"
 }

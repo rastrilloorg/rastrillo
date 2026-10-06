@@ -14,6 +14,7 @@ import (
 	"testing"
 
 	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/internal/codeview"
 	"amadan.net/rastrillo/rastrillo/internal/iconsets"
 	"amadan.net/rastrillo/rastrillo/ui"
 )
@@ -52,17 +53,16 @@ const mountPath = DefaultMount
 //
 // ── Where the weight is, because the next page will be asked ─────────
 //
-// Each sample is written into the page twice: as the escaped document
-// its preview frame carries, and as the escaped source its Code tab
-// shows. Attribute-escaping a run of markup costs about 40% on top,
-// because every quote in it becomes six characters. Add ~360 bytes of
-// document preamble and ~450 of widget markup per example, and the five
-// component pages carry most of the 110 examples in the gallery.
+// Each sample was once written into its page twice, as the escaped
+// document its frame carried and as its source. The documents are files
+// now, so a page carries the source and the widget around it: about 450
+// bytes of widget per example, and whatever the Code tab shows.
 //
 // The heaviest of them is the one to watch. The date and time fields
 // are the largest samples in the gallery — four fields whose enhanced
 // markup runs to several kilobytes each — and their page clears the
-// budget by rather less than a locale's worth of prose.
+// budget with tens of kilobytes to spare now that the preview
+// documents are files rather than a second escaped copy on the page.
 //
 // ── The lever that used to be here ───────────────────────────────────
 //
@@ -94,16 +94,7 @@ const maxPageBytes = 128 << 10
 // the first attempt — the entry was marked used because a page of that
 // name existed — so it has a gate of its own:
 // TestTheDebtTableCannotOutliveTheDebt.
-var pageBudgetDebt = map[string]int{
-	// The form page in Hindi, the widest locale, is about 225 bytes over:
-	// field-url's three samples brought it to within 75 bytes of the
-	// budget, and every page's index now links shell.css, shell.js and
-	// row-menu. Neither is padding, and cutting a sample or an index
-	// link to fit would hide a component from the page that documents
-	// it. The fix is to make the form page lighter, at which point this
-	// entry fails the unused-entry check and must go.
-	"form.html": 132 << 10,
-}
+var pageBudgetDebt = map[string]int{}
 
 // pageKinds() is built from two sources since the split — the sections
 // written out in the table, and one row per family read off samples.go —
@@ -526,25 +517,240 @@ var outboundLinks = map[string]string{
 		"under the ISC licence, and the only place a reader can see the rest of it",
 }
 
-// srcdocAttr finds the documents the previews carry. Every example on
-// an index page is framed rather than rendered inline, and the frame's
-// whole document lives in a srcdoc attribute — HTML-escaped, which is
-// what keeps it invisible to every other pattern in this file. The
-// gates below unescape it and hold it to the same rules a file in the
-// tree is held to, because it is a page: a reader looks at it, follows
-// links in it, and reads it in the language they chose.
-//
-// The value cannot contain a bare " (html/template writes it as &#34;),
-// so the attribute really does end at the first quote.
-var srcdocAttr = regexp.MustCompile(`srcdoc="([^"]*)"`)
+// srcdocAttr finds a frame that still carries its document inline. No
+// frame in the tree may: the previews are files, and an escaped second
+// copy of every sample inside a page is the weight that put Form over
+// its budget. TestEveryPreviewIsAFileOneFrameNames holds the absence.
+var srcdocAttr = regexp.MustCompile(`<iframe[^>]*\ssrcdoc="`)
 
-// srcdocs returns one page's preview documents, unescaped.
-func srcdocs(page string) []string {
-	var out []string
-	for _, m := range srcdocAttr.FindAllStringSubmatch(page, -1) {
-		out = append(out, html.UnescapeString(m[1]))
+// previewMarker is the line only a preview document carries. A shell
+// demo under shells/ has the same path shape as a preview file, so the
+// path cannot tell the two apart and this line can.
+const previewMarker = `<meta name="robots" content="noindex">`
+
+func isPreviewDoc(doc string) bool { return strings.Contains(doc, previewMarker) }
+
+// frameDoc is one preview widget's frame and the document it shows.
+type frameDoc struct {
+	Src  string // the src attribute, as written
+	Name string // the tree path it names
+	Doc  string
+}
+
+// frameSrc finds every preview widget's frame. The class is the marker,
+// so a frame a sample draws inside its own document is not one.
+var frameSrc = regexp.MustCompile(`<iframe class="ds-view__frame"[^>]*\ssrc="([^"]*)"`)
+
+// frameDocs returns every .ds-view__frame on a page with the document
+// it shows, read from the tree by src. A frame naming nothing fails
+// here, so a gate reading previews through this cannot pass on a frame
+// a reader would see as a 404.
+func frameDocs(t *testing.T, files map[string][]byte, page string) []frameDoc {
+	t.Helper()
+	var out []frameDoc
+	for _, m := range frameSrc.FindAllStringSubmatch(page, -1) {
+		name := strings.TrimPrefix(m[1], mountPrefix)
+		body, ok := files[name]
+		if !ok {
+			t.Errorf("a preview frame names %s, which is not in the tree", m[1])
+			continue
+		}
+		out = append(out, frameDoc{Src: m[1], Name: name, Doc: string(body)})
 	}
 	return out
+}
+
+// previewBody is a preview document's body: what the frame shows,
+// without the head that loads its stylesheets and scripts.
+func previewBody(doc string) string {
+	_, after, _ := strings.Cut(doc, "<body>\n")
+	body, _, _ := strings.Cut(after, "\n</body>")
+	return body
+}
+
+// sampleTree is the tree renderSample executes in for one locale: ui's
+// partials with the gallery's funcs, and the hand-written samples.
+func sampleTree(t *testing.T, locale string) *template.Template {
+	t.Helper()
+	tmpl, err := partialTree(locale)
+	if err != nil {
+		t.Fatalf("parsing partials for %s: %v", locale, err)
+	}
+	if err := parseRawSamples(tmpl); err != nil {
+		t.Fatalf("parsing the hand-written samples for %s: %v", locale, err)
+	}
+	return tmpl
+}
+
+// pageKindOf maps a tree path to the gallery page it belongs to: the
+// page itself, or a preview file in the directory named after it. A
+// path belonging to no page kind (a demo, the modal, a shell demo) maps
+// to "".
+func pageKindOf(name string) string {
+	parts := strings.SplitN(name, "/", 3)
+	if len(parts) < 3 {
+		return ""
+	}
+	for _, pk := range pageKinds() {
+		if parts[2] == pk.File {
+			return pk.Kind
+		}
+		// shells.html's own examples point Src at an existing shell demo
+		// page (shellViews) rather than calling newPreview, so there is
+		// no preview file under a "shells/" directory to match — only
+		// the shell demos themselves, shells/<shell>.html and
+		// shells/<shell>-page.html, whole pages of their own that this
+		// prefix match would otherwise wrongly claim for the Shells page.
+		if pk.Kind == "shells" {
+			continue
+		}
+		if strings.HasPrefix(parts[2], strings.TrimSuffix(pk.File, ".html")+"/") {
+			return pk.Kind
+		}
+	}
+	return ""
+}
+
+func TestPageKindOf(t *testing.T) {
+	for _, c := range []struct{ name, want string }{
+		{"day/en/list-screen.html", "list-screen"},
+		{"day/en/list-screen/partial-page-header-0.html", "list-screen"},
+		{"day/en/shells.html", "shells"},
+		{"day/en/shells/sidebar.html", ""},
+		{"day/en/shells/sidebar-page.html", ""},
+		{"day/en/modal.html", ""},
+		{"day/en/demo.html", ""},
+		{"index.html", ""},
+	} {
+		if got := pageKindOf(c.name); got != c.want {
+			t.Errorf("pageKindOf(%q) = %q, want %q", c.name, got, c.want)
+		}
+	}
+}
+
+// No frame anywhere in the tree carries srcdoc, every frame's src
+// names a file, and every preview file is named by exactly one frame.
+// An orphan is a document nothing shows, written 36 times, and a file
+// two frames share is two examples showing one document.
+func TestEveryPreviewIsAFileOneFrameNames(t *testing.T) {
+	files := render(t)
+	named := map[string]int{}
+	var frames, previews int
+	for name, body := range files {
+		if !strings.HasSuffix(name, ".html") {
+			continue
+		}
+		page := string(body)
+		if srcdocAttr.MatchString(page) {
+			t.Errorf("%s still carries a frame with srcdoc", name)
+		}
+		for _, fd := range frameDocs(t, files, page) {
+			frames++
+			if isPreviewDoc(fd.Doc) {
+				named[fd.Name]++
+			}
+		}
+	}
+	for name, body := range files {
+		if !isPreviewDoc(string(body)) {
+			continue
+		}
+		previews++
+		if n := named[name]; n != 1 {
+			t.Errorf("%s is named by %d frames, want exactly 1", name, n)
+		}
+	}
+	if frames == 0 || previews == 0 {
+		t.Fatalf("%d frames and %d preview files in the tree; this gate is checking nothing", frames, previews)
+	}
+	t.Logf("%d frames, %d preview files", frames, previews)
+}
+
+// The gallery pages load no enhancement script of their own. Every
+// control select.js, calendar.js or datetime.js boots on is inside a
+// preview document, which loads what it needs; the page loading them
+// as well cost 150,823 bytes a visit for nothing on it.
+func TestNoGalleryPageLoadsTheEnhancementScripts(t *testing.T) {
+	files := render(t)
+	for _, theme := range ui.ThemeNames() {
+		for _, locale := range rastrillo.BaseLocales() {
+			for _, name := range galleryFiles(theme, locale) {
+				for _, s := range []string{"select.js", "calendar.js", "datetime.js"} {
+					if strings.Contains(string(files[name]), `src="`+mountPrefix+s+`"`) {
+						t.Errorf("%s loads %s, which nothing on the page uses", name, s)
+					}
+				}
+			}
+		}
+	}
+}
+
+// A preview document is the sample, wrapped and deadened, and nothing
+// else: its body is exactly deaden(wrap(renderSample)) and then the
+// sink, if and only if the sample holds a form. The Code tab's call is
+// held to renderSample's bytes separately, so between the two gates
+// the preview and the call cannot drift apart unseen.
+func TestEveryPreviewIsItsSampleWrappedAndDeadened(t *testing.T) {
+	files := render(t)
+	const sink = "\n<iframe name=\"ds-void\" hidden></iframe>"
+	var checked int
+	for _, locale := range rastrillo.BaseLocales() {
+		tmpl := sampleTree(t, locale)
+		for _, fam := range families() {
+			for _, doc := range fam.Partials {
+				id := anchorID("partial", doc.Name)
+				if doc.Row {
+					// One <ul>, one <li> per state in samples.go order: the
+					// label, then the sample wrapped and deadened. Each
+					// state is here once, and in no single-state file.
+					want := "<ul>"
+					for i, s := range doc.States {
+						html, err := renderSample(tmpl, doc.Name, i, s, locale)
+						if err != nil {
+							t.Fatalf("%s (%s): %v", doc.Name, s.State, err)
+						}
+						want += "<li><p>" + template.HTMLEscapeString(proseIn(locale, s.State)) + "</p>" + deaden(mountPath, wrap(doc.Wrap, string(html))) + "</li>"
+						if _, single := files[fmt.Sprintf("%s/%s/%s/%s-%d.html", RootTheme(), locale, fam.Key, id, i+1)]; single {
+							t.Errorf("%s/%s: a grouped partial also has a single-state preview %d", locale, doc.Name, i+1)
+						}
+					}
+					want += "</ul>"
+					if strings.Contains(want, "<form") {
+						want += sink
+					}
+					name := fmt.Sprintf("%s/%s/%s/%s-0.html", RootTheme(), locale, fam.Key, id)
+					if got := previewBody(string(files[name])); got != want {
+						t.Errorf("%s: the grouped preview is not its states in order\n got: %.300s\nwant: %.300s", name, got, want)
+					}
+					checked++
+					continue
+				}
+				for i, s := range doc.States {
+					html, err := renderSample(tmpl, doc.Name, i, s, locale)
+					if err != nil {
+						t.Fatalf("%s (%s): %v", doc.Name, s.State, err)
+					}
+					want := deaden(mountPath, wrap(doc.Wrap, string(html)))
+					if strings.Contains(want, "<form") {
+						want += sink
+					}
+					name := fmt.Sprintf("%s/%s/%s/%s-%d.html", RootTheme(), locale, fam.Key, anchorID("partial", doc.Name), i)
+					file, ok := files[name]
+					if !ok {
+						t.Errorf("no preview file %s", name)
+						continue
+					}
+					if got := previewBody(string(file)); got != want {
+						t.Errorf("%s: the preview body is not the sample wrapped and deadened\n got: %.300s\nwant: %.300s", name, got, want)
+					}
+					checked++
+				}
+			}
+		}
+	}
+	if checked == 0 {
+		t.Fatal("no preview checked")
+	}
 }
 
 // resolves reports whether an absolute in-tree URL names a file the
@@ -585,24 +791,20 @@ func TestEveryPageIsAWholeLocalisedDocument(t *testing.T) {
 	var framed int
 	for _, name := range names {
 		body := string(files[name])
-		locale := localeOfPath(name)
-		wholeDocument(t, files, name, locale, body)
-		// The same rules over the documents the previews carry. A
-		// srcdoc is a page too — a reader looks at it, reads it in the
-		// language they chose and clicks the links in it — and it is
-		// escaped, so nothing else in this file can see inside one.
-		for i, doc := range srcdocs(body) {
+		wholeDocument(t, files, name, localeOfPath(name), body)
+		// The preview files are documents in the tree like any other,
+		// so the loop holds them to the same contract.
+		if isPreviewDoc(body) {
 			framed++
-			wholeDocument(t, files, fmt.Sprintf("%s srcdoc %d", name, i), locale, doc)
 		}
 	}
-	// Asserted rather than assumed: a srcdoc that stopped being emitted,
-	// or an extractor that stopped matching, would leave the loop above
-	// checking the outer pages only and passing.
+	// Asserted rather than assumed: previews that stopped being written
+	// as files, or lost the line that marks them, would leave this gate
+	// checking the pages only and passing.
 	if framed == 0 {
-		t.Error("no preview documents found at all — the srcdoc extractor has stopped working, and this gate with it")
+		t.Error("no preview documents in the tree at all; they are written as files, each one marked noindex")
 	}
-	t.Logf("%d pages, %d preview documents", len(names), framed)
+	t.Logf("%d documents, %d of them previews", len(names), framed)
 }
 
 // wholeDocument holds one document — a file in the tree, or the
@@ -707,12 +909,10 @@ func localeOfPath(p string) string {
 // stylesheet and any of them could grow a sample that laid an overlay
 // over it.
 //
-// The cure is the shells': escaped source in a <pre>, with the markup
-// live at its own URL. Escaped source cannot trip this gate, and since
-// the markup flip the discriminator is the angle bracket rather than
-// the quote: an attribute name is not escaped, but the < that opens the
-// tag it sits in becomes &lt;. So `<div rst-modal-overlay` occurs only
-// where a browser would actually lay the overlay out.
+// The cure is the shells': the source in a <pre>, highlighted and
+// therefore escaped, with the markup live at its own URL. In a source
+// block the < that opens the tag is &lt;, so <div rst-modal-overlay
+// occurs only where a browser would lay the overlay out.
 //
 // The second half of the gate is the one that matters a year from now:
 // the source and the demo link have to be there. A gate that only
@@ -740,8 +940,8 @@ func TestNoGalleryPageOpensAModalOverTheGallery(t *testing.T) {
 			// — and naming the page rather than sweeping for it is what
 			// makes this fail if the idiom is dropped altogether.
 			page := galleryPage(t, files, theme, locale, "primitives")
-			if !strings.Contains(page, `&lt;div rst-modal-overlay&gt;`) {
-				t.Errorf("%s/%s/%s does not show the modal sample as escaped source", theme, locale, fileOf("primitives"))
+			if !strings.Contains(strings.Join(sourceTexts(page), "\n"), `<div rst-modal-overlay>`) {
+				t.Errorf("%s/%s/%s does not show the modal sample as source", theme, locale, fileOf("primitives"))
 			}
 			if href := modalHref(mountPath, theme, locale); !strings.Contains(page, `href="`+href+`"`) {
 				t.Errorf("%s/%s/%s does not link its modal demo (%s)", theme, locale, fileOf("primitives"), href)
@@ -775,6 +975,15 @@ func TestTreeShapeIsComplete(t *testing.T) {
 			}
 			for _, shell := range []string{"sidebar", "console"} {
 				want = append(want, fmt.Sprintf("%s/%s/shells/%s-page.html", theme, locale, shell))
+			}
+			// Every preview file a page's frames name: the shape of the
+			// tree includes them, and the count below stays exact.
+			for _, page := range galleryFiles(theme, locale) {
+				for _, m := range frameSrc.FindAllStringSubmatch(string(files[page]), -1) {
+					if name := strings.TrimPrefix(m[1], mountPrefix); isPreviewDoc(string(files[name])) {
+						want = append(want, name)
+					}
+				}
 			}
 		}
 	}
@@ -845,7 +1054,9 @@ func TestEnhancedControlsAreOnTheComponentPages(t *testing.T) {
 	// for it.
 	var frames []string
 	for _, pk := range componentPages() {
-		frames = append(frames, srcdocs(galleryPage(t, files, RootTheme(), "en", pk.Kind))...)
+		for _, fd := range frameDocs(t, files, galleryPage(t, files, RootTheme(), "en", pk.Kind)) {
+			frames = append(frames, fd.Doc)
+		}
 	}
 	if len(frames) == 0 {
 		t.Fatal("no preview documents on the component pages at all")
@@ -882,11 +1093,11 @@ func TestEnhancedControlsAreOnTheComponentPages(t *testing.T) {
 // ── The preview widget ───────────────────────────────────────────────
 
 // widgetOpen matches the opening tag of a preview widget in either
-// width class. The optional modifier is spelled out rather than matched
-// loosely, because `<div class="ds-view` alone also matches the
-// ds-view__stage and ds-view__box divs inside every widget and would
-// cut each one into four.
-var widgetOpen = regexp.MustCompile(`<div class="ds-view(?: ds-view--page)?" style=`)
+// width class, or a grouped row. The optional modifier is spelled out
+// rather than matched loosely, because `<div class="ds-view` alone also
+// matches the ds-view__stage and ds-view__box divs inside every widget
+// and would cut each one into four.
+var widgetOpen = regexp.MustCompile(`<div class="ds-view(?: ds-view--(?:page|rows))?" style=`)
 
 // widgetsOf cuts a page into its preview widgets: everything from one
 // widget's opening tag up to the next one (or to the end).
@@ -939,7 +1150,7 @@ func TestEveryExampleIsFramedDesktopMobileAndCode(t *testing.T) {
 		pageWidth += strings.Count(page, `ds-view--page`)
 		total += len(widgets)
 		groups := map[string]bool{}
-		var withCode int
+		var withCode, withCall int
 		for i, w := range widgets {
 			radios := regexp.MustCompile(`<input type="radio" name="([^"]*)"( checked)?>`).FindAllStringSubmatch(w, -1)
 			if len(radios) < 2 || len(radios) > 3 {
@@ -970,13 +1181,43 @@ func TestEveryExampleIsFramedDesktopMobileAndCode(t *testing.T) {
 			}
 			if strings.Contains(w, "ds-view__tab--c") {
 				withCode++
-				if !strings.Contains(w, `<pre class="ds-src ds-view__code`) {
+				pres := strings.Count(w, `<pre class="ds-src`)
+				switch disclosures := strings.Count(w, `<details class="ds-html">`); {
+				case !strings.Contains(w, `<div class="ds-view__code">`):
 					t.Errorf("%s widget %d offers a Code tab with no source behind it", name, i)
+				case disclosures == 1:
+					// A partial sample's call then its rendering; a grouped
+					// row's calls, one per state, then one disclosure with
+					// a rendering per state.
+					calls := strings.Count(w, `<code><ds-x>{{</ds-x><ds-x>template</ds-x>`)
+					withCall += calls
+					if calls == 0 || pres != 2*calls {
+						t.Errorf("%s widget %d: %d calls and %d blocks; each call has its rendering in the disclosure", name, i, calls, pres)
+					}
+				case disclosures == 0 && pres != 1:
+					t.Errorf("%s widget %d: %d source blocks and no call; markup with no call is one block", name, i, pres)
 				}
 			}
 		}
 		if want := len(widgets) - framedPages; withCode != want {
 			t.Errorf("%s: %d widgets show source, want %d (all but the framed pages)", name, withCode, want)
+		}
+		// One call per partial sample that is not hand-written, and none
+		// anywhere else: the families say how many each page owes.
+		wantCalls := 0
+		for _, fam := range families() {
+			if strings.HasSuffix(name, "/"+fam.Key+".html") {
+				for _, doc := range fam.Partials {
+					for _, s := range doc.States {
+						if s.Raw == "" {
+							wantCalls++
+						}
+					}
+				}
+			}
+		}
+		if withCall != wantCalls {
+			t.Errorf("%s: %d widgets lead with a call, want %d (every partial sample with data)", name, withCall, wantCalls)
 		}
 
 	}
@@ -1026,10 +1267,17 @@ func TestEveryExampleIsFramedDesktopMobileAndCode(t *testing.T) {
 		// identities in an engine rather than trusting this arithmetic.
 		`@container ds-view (min-width: 40.5rem) { .ds-view:not(.ds-view--page):not(:has(input:checked)) .ds-view__tab--d {`,
 		`.ds-view:not(.ds-view--page):not(:has(input:checked)) .ds-view__tab--m {`,
-		`.ds-view:not(.ds-view--page):not(:has(.ds-view__tab--d input:checked)) .ds-view__box { --ds-h: var(--ds-hm); --ds-w: 390px; }`,
+		`.ds-view:not(.ds-view--page):not(:has(.ds-view__tab--d input:checked)) .ds-view__box { --ds-h: var(--ds-hm); --ds-w: var(--ds-wm); }`,
 		`@container ds-view (min-width: 54rem) { .ds-view--page:not(:has(input:checked)) .ds-view__tab--d {`,
 		`.ds-view--page:not(:has(input:checked)) .ds-view__tab--m {`,
-		`.ds-view--page:not(:has(.ds-view__tab--d input:checked)) .ds-view__box { --ds-h: var(--ds-hm); --ds-w: 390px; }`,
+		`.ds-view--page:not(:has(.ds-view__tab--d input:checked)) .ds-view__box { --ds-h: var(--ds-hm); --ds-w: var(--ds-wm); }`,
+		// Mobile is the stage's width up to 390px, so on a phone it is
+		// the phone's page at 1:1 and never scaled.
+		`.ds-view { --ds-wm: min(390px, 100cqw); }`,
+		// Anchored at the inline start: a right-to-left box can only
+		// scroll leftward, so a frame hanging off its right edge was
+		// unreachable.
+		`[dir="rtl"] .ds-view__frame { transform-origin: top right; }`,
 		// The two widths themselves. Without the second declaration
 		// every example is a component and the shells lose their
 		// window; without the first every example is 1200px again and
@@ -1094,15 +1342,19 @@ func TestSampleLinksAndFormsAreDeadInThePreviews(t *testing.T) {
 	// would leave the rest unchecked.
 	var docs []string
 	for _, name := range galleryFiles(RootTheme(), "en") {
-		docs = append(docs, srcdocs(string(files[name]))...)
+		for _, fd := range frameDocs(t, files, string(files[name])) {
+			if isPreviewDoc(fd.Doc) {
+				docs = append(docs, fd.Doc)
+			}
+		}
 	}
 	if len(docs) == 0 {
 		t.Fatal("no preview documents anywhere in the gallery")
 	}
 	// The link half. TestEveryPageIsAWholeLocalisedDocument holds the
-	// whole tree to this, srcdocs included, and would fail first — but
-	// a gate named for links that did not look at one is a gate that
-	// can be quietly narrowed to nothing, so it looks.
+	// whole tree to this, preview files included, and would fail first —
+	// but a gate named for links that did not look at one is a gate
+	// that can be quietly narrowed to nothing, so it looks.
 	var links int
 	for i, doc := range docs {
 		for _, m := range anchorHref.FindAllStringSubmatch(doc, -1) {
@@ -1149,7 +1401,9 @@ func TestSampleLinksAndFormsAreDeadInThePreviews(t *testing.T) {
 	// gate's.
 	var kept bool
 	for _, pk := range componentPages() {
-		kept = kept || strings.Contains(galleryPage(t, files, RootTheme(), "en", pk.Kind), `href=&#34;/posts/1/edit&#34;`)
+		for _, text := range sourceTexts(galleryPage(t, files, RootTheme(), "en", pk.Kind)) {
+			kept = kept || strings.Contains(text, `href="/posts/1/edit"`)
+		}
 	}
 	if !kept {
 		t.Error("no sample source on any component page keeps a real route — the Code tab has been deadened with the preview")
@@ -1343,10 +1597,11 @@ func TestEveryProseKeyIsTranslated(t *testing.T) {
 const proseLeakFloor = 12
 
 // proseFixtureCollisions names the prose keys that are ALSO sample data
-// somewhere in the tree, against the page kind the fixture lives on.
-// The sweep skips such a key on those pages and keeps checking it
-// everywhere else, so the guard stays where the prose actually is
-// rather than being dropped for the whole tree.
+// somewhere in the tree, against the page kind whose page or preview
+// files may carry the key in English. The sweep skips such a key on
+// that page kind and keeps checking it everywhere else, so the guard
+// stays where the prose actually is rather than being dropped for the
+// whole tree.
 //
 // ── The boundary this map sits on ────────────────────────────────────
 //
@@ -1372,7 +1627,7 @@ var proseFixtureCollisions = map[string]string{
 	// page-header is in the list screen family — so on that page an
 	// English "Write a post" is the fixture doing its job, and on a
 	// shell demo it would be a leak.
-	"Write a post": "list-screen.html",
+	"Write a post": "list-screen",
 	// The modal idiom's sample and this package's own modal demo say
 	// the same two sentences, because the demo was written FROM the
 	// sample. The sample is a fixture — English markup a reader copies
@@ -1382,8 +1637,8 @@ var proseFixtureCollisions = map[string]string{
 	// where the modal idiom lives. On modal.html the same words are the
 	// page speaking and must be translated, and the sweep still says so
 	// there.
-	"Close settings": "primitives.html",
-	"Update the name and photo shown across the account.": "primitives.html",
+	"Close settings": "primitives",
+	"Update the name and photo shown across the account.": "primitives",
 }
 
 // escapedSource strips the <pre class="ds-src"> blocks out of a page.
@@ -1411,8 +1666,8 @@ func escapedSource(page string) string {
 // — drop a key from prose.go and it stops being checked — and these
 // three cannot be: the gate asserts they are present in English first.
 var proseSentinels = []string{
-	"An overview of everything the design system provides.",
-	"Links here are inactive",
+	"Buttons come in four variants and three sizes, and a link can look like one.",
+	"Each example is live, but its links go nowhere.",
 	"Screens stack vertically",
 }
 
@@ -1431,8 +1686,8 @@ func TestNoEnglishProseReachesATranslatedPage(t *testing.T) {
 	keys := proseKeysRendered(t)
 	// Every English page of the root theme, joined: the three
 	// sentinels are on three different pages since the split — the
-	// opening sentence on every one of them, the dead-link callout on
-	// the pages that frame samples, and the list-grid rule under UI
+	// Buttons blurb under UI primitives, the live-examples sentence
+	// on the pages that frame samples, and the list-grid rule under UI
 	// primitives — and the point of a sentinel is that it is somewhere
 	// in English, not that it is on one named file.
 	var en string
@@ -1467,7 +1722,18 @@ func TestNoEnglishProseReachesATranslatedPage(t *testing.T) {
 	// application's four documents (1 + 3: the 2 counts the modal and
 	// the demo's index), one page per shell and the content pages of
 	// the two shells with an index.
-	if want := len(ui.ThemeNames()) * (len(rastrillo.BaseLocales()) - 1) * (len(pageKinds()) + 2 + 3 + len(ui.LayoutNames()) + 2); len(names) != want {
+	// The preview files are documents in every language too: one per
+	// preview frame on the English root theme's pages, in every theme
+	// and translated locale.
+	var perDir int
+	for _, page := range galleryFiles(RootTheme(), "en") {
+		for _, m := range frameSrc.FindAllStringSubmatch(string(files[page]), -1) {
+			if isPreviewDoc(string(files[strings.TrimPrefix(m[1], mountPrefix)])) {
+				perDir++
+			}
+		}
+	}
+	if want := len(ui.ThemeNames()) * (len(rastrillo.BaseLocales()) - 1) * (len(pageKinds()) + 2 + 3 + len(ui.LayoutNames()) + 2 + perDir); len(names) != want {
 		t.Errorf("sweeping %d translated pages, want %d", len(names), want)
 	}
 
@@ -1490,7 +1756,7 @@ func TestNoEnglishProseReachesATranslatedPage(t *testing.T) {
 			}
 		}
 		for _, key := range sentences {
-			if on, ok := proseFixtureCollisions[key]; ok && strings.HasSuffix(name, on) {
+			if on, ok := proseFixtureCollisions[key]; ok && pageKindOf(name) == on {
 				continue
 			}
 			if strings.Contains(page, key) {
@@ -1502,7 +1768,7 @@ func TestNoEnglishProseReachesATranslatedPage(t *testing.T) {
 
 // ── The chrome ───────────────────────────────────────────────────────
 
-// The three switchers sit in the gallery's own <header>, above main,
+// The three switchers sit in the pinned bar, between the rail and main,
 // and each says which of its options is the current one. The scheme
 // toggle's server-rendered answer is System, because System is the only
 // state a page with no JavaScript can be in.
@@ -1520,31 +1786,34 @@ func TestTheChromeCarriesTheThreeSwitchers(t *testing.T) {
 			for _, pk := range pageKinds() {
 				name := theme + "/" + locale + "/" + pk.File
 				page := string(files[name])
-				// The chrome is read out of the page by its own element,
-				// not by cutting at main. That was written when the
-				// head carried an inline <style> whose aria-pressed
-				// selector a looser slice counted as a fourth button;
-				// the stylesheet is an asset now, and reading the
-				// element is still the right instrument.
-				_, after, ok := strings.Cut(page, `<header class="ds-chrome">`)
-				if !ok {
-					t.Errorf("%s: no gallery header", name)
+				// The bar is the shell's grid item between the rail and
+				// main, outside main, so it is the page's one banner and
+				// the skip link skips it with the rail.
+				at := strings.Index(page, `<header class="ds-top">`)
+				if at < 0 || !strings.Contains(page[:at], "</aside>") {
+					t.Errorf("%s: no bar after the rail", name)
 					continue
 				}
-				chrome, rest, ok := strings.Cut(after, "</header>")
+				bar, rest, ok := strings.Cut(page[at:], "</header>")
 				if !ok {
-					t.Errorf("%s: the gallery header never closes", name)
+					t.Errorf("%s: the bar never closes", name)
 					continue
 				}
-				// The chrome moved inside the shell's main column when the
-				// sidebar landed, so what follows it is the content
-				// column rather than main itself. It is still the first
-				// thing in the reading order of the page's own content.
-				if !strings.HasPrefix(strings.TrimSpace(rest), `<div rst-page>`) {
-					t.Errorf("%s: the gallery header is not the element immediately before the content column", name)
+				if !strings.HasPrefix(strings.TrimSpace(rest), `<main rst-shell-main id="main">`) {
+					t.Errorf("%s: main does not follow the bar", name)
 				}
-				if _, chromeStart, _ := strings.Cut(page, `<main rst-shell-main id="main">`); !strings.HasPrefix(strings.TrimSpace(chromeStart), `<header class="ds-chrome">`) {
-					t.Errorf("%s: the gallery header is not the first thing inside main", name)
+				if _, m, _ := strings.Cut(rest, `<main rst-shell-main id="main">`); !strings.HasPrefix(strings.TrimSpace(m), `<div rst-page>`) {
+					t.Errorf("%s: main does not open with the content column", name)
+				}
+				if want := `<a class="ds-top__brand" href="` + indexHref(mountPath, theme, locale) + `">`; !strings.Contains(bar, want) {
+					t.Errorf("%s: the bar's brand does not link the Overview", name)
+				}
+				// The link count reads the controls, not the bar: the
+				// brand is an in-tree link too.
+				_, chrome, ok := strings.Cut(bar, `<div class="ds-top__controls">`)
+				if !ok {
+					t.Errorf("%s: the bar has no controls", name)
+					continue
 				}
 				// The theme switcher: one link per theme, exactly one current.
 				if n := strings.Count(chrome, `aria-current="page"`); n != 1 {
@@ -1603,8 +1872,8 @@ func TestTheChromeCarriesTheThreeSwitchers(t *testing.T) {
 // whose class list carries a ds- name. Escaped source cannot trip it —
 // html/template writes a sample's quotes as &#34;, so class="…" occurs
 // only where a browser would actually apply the rule — and neither can
-// a preview document, which reaches the page inside a srcdoc attribute
-// with the same escaping.
+// a preview document: it is a file of its own, not embedded in this
+// page's bytes at all.
 var dsClass = regexp.MustCompile(`class="[^"]*\bds-`)
 
 // Every page that wears the gallery's own classes links the gallery's
@@ -1727,24 +1996,23 @@ func TestGalleryScriptStaysInertAndFirstParty(t *testing.T) {
 	if strings.Contains(js, "\t") {
 		t.Error("gallery.js uses two-space indentation, not tabs")
 	}
-	// 8 KiB was the budget when this file did one thing, and 10 KiB
-	// when it did two — the toggle and the sidebar filter. It stays
-	// 10 KiB, and the reason is worth a line, because the third entry
-	// in the header nearly moved it.
+	// 22,832 bytes: the script with every feature the gallery gives it
+	// (copy buttons, search terms, the page-wide view, keeping the
+	// reader's place), weighed when the cap was set, plus 10%. The first ceilings (8 KiB, then 10 KiB,
+	// outgrown with 32 bytes to spare) and a later estimate of 15 KiB
+	// all undercounted the code and the comments that say why it is the
+	// way it is; a ceiling that tight buys cut comments rather than less
+	// code. It is the docs site's own script, never shipped to an app,
+	// loaded once and then cached. Measured running totals, each
+	// feature's addition beside it:
 	//
-	// Every example is now drawn in an iframe of its own, and a colour
-	// scheme is not propagated into an embedded document that declares
-	// one — so a reader who chose Dark got a dark gallery full of
-	// light previews, and the toggle had to reach the frames. That is
-	// not a third feature; it is the first one following the page. It
-	// cost 1,273 bytes, about 300 of them code (two short functions, a
-	// load listener, one call in the click handler) and the rest the
-	// paragraph saying why an iframe needs telling.
-	//
-	// It fit, with 32 bytes to spare. That is uncomfortably close, and
-	// it is the honest number: the next thing here needs the ceiling
-	// raised, and raising it should buy comments rather than code.
-	if n := len(js); n > 10*1024 {
+	//   the colour scheme, its frames and the rail filter      9,553
+	//   copy buttons                                   +2,956 12,509
+	//   search terms and the plain page links            +467 12,976
+	//   the page-wide view, and storage shared with it  +2,580 15,555
+	//   keeping your place, the scheme after a
+	//     back/forward cache restore                  +5,201 20,762
+	if n := len(js); n > 22832 {
 		t.Errorf("gallery.js is %d bytes; it is the gallery's own furniture and should stay readable in one sitting", n)
 	}
 	// The two halves of the scriptless story: the toggle is hidden
@@ -2012,9 +2280,9 @@ func TestTheRailSaysWhichPageYouAreOn(t *testing.T) {
 // preference: the sidebar shell is one of the three things this page
 // exists to show, and a gallery that documented rst-shell-sidebar while
 // being built out of something else would be advertising, not
-// documentation. The mobile collapse comes with it — the <details>
-// chrome strip is the shell's own, so the rail folds away below 800px
-// with no JavaScript and nothing here to write.
+// documentation. The markup itself is held by
+// TestTheGalleryIsTheShippedShell; this one holds the rail and its
+// filter.
 func TestTheSidebarIsTheShellTheGalleryDocuments(t *testing.T) {
 	files := render(t)
 	for _, theme := range ui.ThemeNames() {
@@ -2023,8 +2291,6 @@ func TestTheSidebarIsTheShellTheGalleryDocuments(t *testing.T) {
 				name := theme + "/" + locale + "/" + pk.File
 				page := string(files[name])
 				for _, want := range []string{
-					`<div rst-shell-sidebar>`,
-					`<details rst-shell-chrome>`,
 					`<aside class="ds-rail" rst-shell-rail>`,
 					`<nav class="ds-nav" rst-shell-nav id="ds-nav"`,
 					`<main rst-shell-main id="main">`,
@@ -2106,61 +2372,6 @@ func TestTheSidebarIsTheShellTheGalleryDocuments(t *testing.T) {
 				}
 				if want := `aria-label="` + template.HTMLEscapeString(proseIn(locale, "Sections and demos")) + `"`; !strings.Contains(page, want) {
 					t.Errorf("%s: the sidebar nav is not named in this page's language", name)
-				}
-			}
-		}
-	}
-}
-
-// The section tab strip over the page names every page of this
-// directory, exactly one of them current, and the current one is the
-// page you are on.
-//
-// It is the rail's job done again in a row, and it is not decoration:
-// below 800px the sidebar shell folds the rail away behind a
-// disclosure, so this strip is the only VISIBLE way between the five
-// pages on a phone. It shipped with no gate at all — dropping the
-// aria-current from it, and cutting it down to a single link, both left
-// the suite green — which is why the two assertions below are stated
-// separately rather than as one count.
-func TestTheSectionTabsNameEveryPage(t *testing.T) {
-	files := render(t)
-	strip := regexp.MustCompile(`(?s)<div class="ds-switch">.*?</div>`)
-	for _, theme := range ui.ThemeNames() {
-		for _, locale := range rastrillo.BaseLocales() {
-			for _, pk := range pageKinds() {
-				name := theme + "/" + locale + "/" + pk.File
-				found := strip.FindString(string(files[name]))
-				if found == "" {
-					t.Errorf("%s: no section tab strip", name)
-					continue
-				}
-				links := regexp.MustCompile(`<a href="([^"]*)"([^>]*)>([^<]*)</a>`).FindAllStringSubmatch(found, -1)
-				if len(links) != len(pageKinds()) {
-					t.Errorf("%s: the section tabs have %d entries, want one per page kind (%d)", name, len(links), len(pageKinds()))
-					continue
-				}
-				var current int
-				for i, pk2 := range pageKinds() {
-					if want := pageHref(mountPath, theme, locale, pk2.File); links[i][1] != want {
-						t.Errorf("%s: section tab %d links %q, want %q", name, i, links[i][1], want)
-					}
-					if want := template.HTMLEscapeString(proseIn(locale, pk2.Title)); links[i][3] != want {
-						t.Errorf("%s: section tab %d is labelled %q, want %q", name, i, links[i][3], want)
-					}
-					marked := strings.Contains(links[i][2], `aria-current="page"`)
-					if marked {
-						current++
-					}
-					if marked != (pk2.Kind == pk.Kind) {
-						t.Errorf("%s: the %s tab is marked current=%v; the page you are on is %s", name, pk2.Kind, marked, pk.Kind)
-					}
-				}
-				if current != 1 {
-					t.Errorf("%s: %d section tabs marked current, want exactly 1", name, current)
-				}
-				if want := `aria-label="` + template.HTMLEscapeString(proseIn(locale, "Sections")) + `"`; !strings.Contains(found, want) {
-					t.Errorf("%s: the section tabs are not named in this page's language", name)
 				}
 			}
 		}
@@ -2354,10 +2565,15 @@ func TestEveryPageEndsWithItsPlaceInTheSequence(t *testing.T) {
 					t.Errorf("%s: the prev/next strip is named %q, want %q", name, attrs, want)
 				}
 				// At the foot: nothing of the page's own content comes
-				// after it. The strip closes the content column.
-				_, rest, _ := strings.Cut(page, `</nav>`+"\n\n</div>\n</main>")
-				if rest == "" {
-					t.Errorf("%s: the prev/next strip is not the last thing in the content column", name)
+				// after it, only the copy status region, which is not
+				// content but the live region gallery.js's Copy buttons
+				// announce through. The strip and that region close the
+				// content column. The region's data-copy/copied/failed
+				// values are localised text, so the check brackets them
+				// rather than naming them, to hold on every locale.
+				_, afterNav, foundNav := strings.Cut(page, `</nav>`+"\n"+`<p class="rst-sr-only" role="status" data-ds-copy-status`)
+				if !foundNav || !strings.Contains(afterNav, `></p>`+"\n\n</div>\n</main>") {
+					t.Errorf("%s: the prev/next strip is not followed immediately by the copy status region and the end of the content column", name)
 				}
 				kinds := pageKinds()
 				var want []string
@@ -2488,8 +2704,8 @@ const (
 // The Icons page is a reading of rastrillo.IconSlugs() and of nothing
 // else.
 //
-// This is the gate the brief asked for in as many words: a thirteenth
-// slug has to appear on the page with no edit to the page's code. The
+// What it holds: a thirteenth slug has to appear on the page with no
+// edit to the page's code. The
 // way to hold that is not to check the twelve that are there — a list
 // of twelve in here would be exactly the list of twelve the page was
 // forbidden to have — but to check the page against the set, in both
@@ -2510,8 +2726,8 @@ const (
 // ── What this gate can and cannot see about provenance ───────────────
 //
 // The address beside each slug is checked TWICE, and the two checks are
-// worth telling apart because a review found the first one alone
-// overclaiming.
+// worth telling apart because the first one alone claims more than it
+// can see.
 //
 // The first is against iconsets.LucideName — the same function
 // buildIcons called to render it. That holds the PAGE to the function,
@@ -2761,13 +2977,13 @@ func TestPaulsParagraphOpensTheOverview(t *testing.T) {
 // moved into preview frames, where their ids are escaped and this gate
 // could no longer see them.
 //
-// So it walks both: the 181 files, and the 3,959 documents the frames
-// carry. Every one of them is a document in its own right, and a
-// duplicate inside one is exactly as broken as a duplicate out here —
-// with the difference that a reader who opens a Code tab is being
-// shown it as markup to copy. They are all clean today; the point of
-// checking is that a field id repeated across two states of one
-// partial would have been invisible otherwise.
+// So it walks every file, and the preview documents are files now.
+// Every one of them is a document in its own right, and a duplicate
+// inside one is exactly as broken as a duplicate out here — with the
+// difference that a reader who opens a Code tab is being shown it as
+// markup to copy. They are all clean today; the point of checking is
+// that a field id repeated across two states of one partial would have
+// been invisible otherwise.
 func TestNoPageCarriesTheSameIdTwice(t *testing.T) {
 	files := render(t)
 	names := make([]string, 0, len(files))
@@ -2780,21 +2996,22 @@ func TestNoPageCarriesTheSameIdTwice(t *testing.T) {
 	if len(names) == 0 {
 		t.Fatal("no HTML pages rendered")
 	}
-	// The escaped source blocks cannot trip this: html/template writes
-	// a sample's quotes as &#34;, so `id="` occurs only where a browser
-	// would actually build an element. That is also why the preview
-	// documents have to be unescaped before they can be looked at.
 	var framed int
 	for _, name := range names {
 		page := string(files[name])
-		uniqueIDs(t, name, page, true)
-		for i, doc := range srcdocs(page) {
+		// A preview with no id in it is an ordinary sample; a page of
+		// this tree always carries main's.
+		preview := isPreviewDoc(page)
+		if preview {
 			framed++
-			uniqueIDs(t, fmt.Sprintf("%s srcdoc %d", name, i), doc, false)
 		}
+		// Ids are read with the source blocks cut out: whether the
+		// highlighting happens to split an id="…" a sample writes must
+		// not decide what counts as an element's id.
+		uniqueIDs(t, name, escapedSource(page), !preview)
 	}
 	if framed == 0 {
-		t.Error("no preview documents found at all — the srcdoc extractor has stopped working, and half this gate with it")
+		t.Error("no preview documents found at all; half this gate is checking nothing")
 	}
 }
 
@@ -3240,12 +3457,17 @@ func TestTheSigninScreensAreThePartial(t *testing.T) {
 		if end := strings.Index(section[1:], `<article class="ds-partial"`); end > 0 {
 			section = section[:end+1]
 		}
-		if !strings.Contains(section, "rst-signin") || !strings.Contains(section, "rst-stage") {
+		docs := frameDocs(t, files, section)
+		if len(docs) != 1 {
+			t.Errorf("screen %s frames %d documents, want 1", key, len(docs))
+			continue
+		}
+		if !strings.Contains(docs[0].Doc, "rst-signin") || !strings.Contains(docs[0].Doc, "rst-stage") {
 			t.Errorf("screen %s is not the signin partial in a stage frame", key)
 		}
 		// A brand column with a name alone is half a card of nothing;
 		// the sample brand shows every part an app's can have.
-		if !strings.Contains(section, "rst-signin-mark") || !strings.Contains(section, "rst-signin-pitch") {
+		if !strings.Contains(docs[0].Doc, "rst-signin-mark") || !strings.Contains(docs[0].Doc, "rst-signin-pitch") {
 			t.Errorf("screen %s shows a brand with no mark or pitch", key)
 		}
 	}
@@ -3256,10 +3478,10 @@ func TestTheSigninScreensAreThePartial(t *testing.T) {
 	}
 	// Counted exactly: a screen dropped from screenDocs, or a hand-written
 	// one that quietly became a stage frame, changes one of these.
-	frames := regexp.MustCompile(`<iframe class="ds-view__frame"[^>]*\ssrcdoc="([^"]*)"`).FindAllStringSubmatch(page, -1)
+	frames := frameDocs(t, files, page)
 	stages := 0
 	for _, f := range frames {
-		if strings.Contains(html.UnescapeString(f[1]), "<div rst-stage>") {
+		if strings.Contains(f.Doc, "<div rst-stage>") {
 			stages++
 		}
 	}
@@ -3281,5 +3503,747 @@ func TestTheSigninScreensAreThePartial(t *testing.T) {
 	}
 	if !strings.Contains(page, anchorID("screen", "signin-password")) || !strings.Contains(page, anchorID("screen", "signin-social")) {
 		t.Error("the two screens ui does not ship (password, social) are gone; they stay as examples to copy")
+	}
+}
+
+// sourceBlock finds every source block on a page: the code a reader
+// copies, highlighted.
+var sourceBlock = regexp.MustCompile(`(?s)<pre class="ds-src[^"]*"[^>]*><code>(.*?)</code></pre>`)
+
+var anyTag = regexp.MustCompile(`<[^>]*>`)
+
+// sourceTexts is every source block in a fragment as a reader sees and
+// copies it: the highlighting removed and the entities decoded. Gates
+// that look for a route or a tag in the source read this, because
+// highlighting splits href="…" into three elements.
+func sourceTexts(fragment string) []string {
+	var out []string
+	for _, m := range sourceBlock.FindAllStringSubmatch(fragment, -1) {
+		out = append(out, html.UnescapeString(anyTag.ReplaceAllString(m[1], "")))
+	}
+	return out
+}
+
+var codePanel = regexp.MustCompile(`(?s)<div class="ds-view__code">.*?</div>`)
+
+// codePanels cuts a page into its widgets' Code panels, in page order.
+func codePanels(page string) []string { return codePanel.FindAllString(page, -1) }
+
+// The text on screen is the text copied: every Code panel's blocks,
+// with the highlighting removed, are exactly the source they stand
+// for, in order. That is the call's Source, then the formatted
+// rendering, for a partial sample; the formatted markup for a
+// hand-written sample, an idiom, a screen or a format; signinSource for
+// a sign-in screen. Entities in a sample (the stat band's &euro;) must
+// survive as written.
+func TestTheTextOnScreenIsTheTextCopied(t *testing.T) {
+	files := render(t)
+	for _, locale := range []string{"en", "ar"} {
+		tmpl := sampleTree(t, locale)
+		want := map[string][]string{}
+		for _, fam := range families() {
+			for _, doc := range fam.Partials {
+				var calls, rendered []string
+				for i, s := range doc.States {
+					html, err := renderSample(tmpl, doc.Name, i, s, locale)
+					if err != nil {
+						t.Fatal(err)
+					}
+					if s.Raw == "" {
+						c, err := callFor(doc.Name, s, locale)
+						if err != nil {
+							t.Fatal(err)
+						}
+						calls = append(calls, c.Source)
+					}
+					rendered = append(rendered, codeview.Format(string(html)))
+					// A partial with a widget per state shows its call and
+					// then its rendering, state by state.
+					if !doc.Row {
+						want[fam.Key] = append(want[fam.Key], calls...)
+						want[fam.Key] = append(want[fam.Key], rendered...)
+						calls, rendered = nil, nil
+					}
+				}
+				// A grouped partial shows every call, then one disclosure
+				// with every rendering, under the same labels.
+				want[fam.Key] = append(want[fam.Key], calls...)
+				want[fam.Key] = append(want[fam.Key], rendered...)
+			}
+		}
+		samples := ui.Styleguide()
+		names := make([]string, 0, len(samples))
+		for name := range samples {
+			names = append(names, name)
+		}
+		sort.Strings(names)
+		for _, name := range names {
+			want["primitives"] = append(want["primitives"], codeview.Format(samples[name]))
+		}
+		for _, doc := range formatDocs() {
+			want["formats"] = append(want["formats"], codeview.Format(doc.Markup))
+		}
+		for _, doc := range screenDocs() {
+			if doc.Signin != nil {
+				want["screens"] = append(want["screens"], signinSource)
+			} else {
+				want["screens"] = append(want["screens"], codeview.Format(doc.Markup))
+			}
+		}
+		for kind, blocks := range want {
+			page := galleryPage(t, files, RootTheme(), locale, kind)
+			var got []string
+			for _, panel := range codePanels(page) {
+				got = append(got, sourceTexts(panel)...)
+			}
+			if len(got) != len(blocks) {
+				t.Errorf("%s/%s: %d source blocks in the Code panels, want %d", locale, kind, len(got), len(blocks))
+				continue
+			}
+			for i := range blocks {
+				if got[i] != blocks[i] {
+					t.Errorf("%s/%s block %d: on screen\n%s\nwant\n%s", locale, kind, i, got[i], blocks[i])
+				}
+			}
+		}
+		if locale == "en" {
+			if s := strings.Join(sourceTexts(galleryPage(t, files, RootTheme(), "en", "primitives")), "\n"); !strings.Contains(s, "&euro;48,210") {
+				t.Error("the stat band's &euro; did not survive as written in its source block")
+			}
+		}
+	}
+}
+
+// wrapperPrefixes is the markup wrap puts around a sample for its
+// frame. It is the page's container and not the partial's, so it is
+// never in the Code tab, and the placeholder action="#" never reaches a
+// clipboard.
+var wrapperPrefixes = []string{"<section rst-box>", "<div rst-list>", "<div rst-stats>"}
+
+func TestTheCodeTabNeverCarriesTheDemoWrapper(t *testing.T) {
+	files := render(t)
+	for _, name := range galleryFiles(RootTheme(), "en") {
+		page := string(files[name])
+		for _, text := range sourceTexts(page) {
+			if strings.Contains(text, `action="#"`) {
+				t.Errorf("%s: a source block carries the placeholder action=\"#\"", name)
+			}
+		}
+	}
+	for _, pk := range componentPages() {
+		page := galleryPage(t, files, RootTheme(), "en", pk.Kind)
+		for i, panel := range codePanels(page) {
+			for _, text := range sourceTexts(panel) {
+				for _, w := range wrapperPrefixes {
+					if strings.HasPrefix(text, w) {
+						t.Errorf("%s panel %d: a source block starts with the demo wrapper %s", pk.Kind, i, w)
+					}
+				}
+			}
+		}
+	}
+	// And the wrapper is said once, above the code, for a wrapped sample.
+	form := galleryPage(t, files, RootTheme(), "en", "form")
+	if n := strings.Count(form, `<p class="ds-wrap">Put this inside <code>&lt;section rst-box&gt;&lt;form rst-form&gt;</code>.</p>`); n == 0 {
+		t.Error("no wrapped sample on Form says which container it goes in")
+	}
+}
+
+// The grouped Code panel has no wrapper note: a grouped partial with a
+// Wrap would show its frame inside the container and hand the reader
+// markup without it.
+func TestAGroupedPartialNeedsNoWrapper(t *testing.T) {
+	grouped := 0
+	for _, fam := range families() {
+		for _, doc := range fam.Partials {
+			if !doc.Row {
+				continue
+			}
+			grouped++
+			if w := wrapperMarkup(doc.Wrap); w != "" {
+				t.Errorf("%s is grouped and wrapped in %s; the grouped Code panel would drop the note saying so. Give the grouped panel the note, or show this partial a widget per state", doc.Name, w)
+			}
+		}
+	}
+	if grouped == 0 {
+		t.Fatal("no grouped partial in samples.go, so this checked nothing")
+	}
+}
+
+// A grouped widget's notes name their state in an element of its own,
+// with nothing written between the two. A joiner would be copy no
+// review saw, and the ASCII colon the notes used to be joined with is
+// wrong punctuation in ja, zh-Hans and yue.
+func TestAGroupedNoteNamesItsStateApart(t *testing.T) {
+	files := render(t)
+	notes := 0
+	for _, locale := range rastrillo.BaseLocales() {
+		for _, fam := range families() {
+			page := string(files[RootTheme()+"/"+locale+"/"+fileOf(fam.Key)])
+			for _, doc := range fam.Partials {
+				if !doc.Row {
+					continue
+				}
+				for _, st := range doc.States {
+					if st.Note == "" {
+						continue
+					}
+					notes++
+					state, note := proseIn(locale, st.State), proseIn(locale, st.Note)
+					want := `<p class="ds-note"><b class="ds-note__state">` + template.HTMLEscapeString(state) + "</b>\n" + template.HTMLEscapeString(note) + "</p>"
+					if !strings.Contains(page, want) {
+						t.Errorf("%s/%s %s: no note reading %q", locale, fam.Key, doc.Name, want)
+					}
+					if joined := template.HTMLEscapeString(state + ": " + note); strings.Contains(page, joined) {
+						t.Errorf("%s/%s %s: the note is joined to its state as %q", locale, fam.Key, doc.Name, joined)
+					}
+				}
+			}
+		}
+	}
+	if notes == 0 {
+		t.Fatal("no grouped partial carries a note, so this checked nothing")
+	}
+}
+
+// darkHalf is lightHalf's other side: the second argument of a
+// whole-value light-dark(<light>, <dark>), split at the top-level comma.
+func darkHalf(v string) string {
+	const prefix = "light-dark("
+	if !strings.HasPrefix(v, prefix) || !strings.HasSuffix(v, ")") {
+		return v
+	}
+	inner, depth := v[len(prefix):len(v)-1], 0
+	for i := 0; i < len(inner); i++ {
+		switch inner[i] {
+		case '(':
+			depth++
+		case ')':
+			depth--
+		case ',':
+			if depth == 0 {
+				return strings.TrimSpace(inner[i+1:])
+			}
+		}
+	}
+	return v
+}
+
+var highlightRule = regexp.MustCompile(`(?m)^(ds-[tavxs]) \{ color: var\((--rst-[a-z0-9-]+)\); \}`)
+
+// Every highlight colour reaches 4.5:1 against the code block's
+// --rst-surface, in every theme and both schemes, resolved from the
+// themes' own light-dark() pairs. The axe leg checks the rendered
+// cascade; this checks every pair, including the ones a page with no
+// such token on it would never show axe.
+func TestHighlightColoursPassAgainstTheCodeBackground(t *testing.T) {
+	pairs := map[string]string{}
+	for _, m := range highlightRule.FindAllStringSubmatch(string(GalleryCSS()), -1) {
+		pairs[m[1]] = m[2]
+	}
+	if len(pairs) != 5 {
+		t.Fatalf("gallery.css colours %d highlight elements, want 5: %v", len(pairs), pairs)
+	}
+	for _, theme := range ui.ThemeNames() {
+		raw, _ := ui.ThemeCSS(theme)
+		body, err := blockBody(string(raw), ":root {")
+		if err != nil {
+			t.Fatal(err)
+		}
+		values := map[string]string{}
+		for _, m := range declPattern.FindAllStringSubmatch(body, -1) {
+			values[m[1]] = strings.TrimSpace(m[2])
+		}
+		for scheme, half := range map[string]func(string) string{"light": lightHalf, "dark": darkHalf} {
+			bg := half(values["--rst-surface"])
+			for el, token := range pairs {
+				fg := half(values[token])
+				r, err := ui.ContrastRatio(fg, bg)
+				if err != nil {
+					t.Errorf("%s %s %s (%s on %s): %v", theme, scheme, el, fg, bg, err)
+					continue
+				}
+				if r < 4.5 {
+					t.Errorf("%s %s: %s is %s (%s) on %s, %.2f:1, under 4.5:1", theme, scheme, el, token, fg, bg, r)
+				}
+			}
+		}
+	}
+}
+
+// A block marked data-ds-nocopy is an illustration, what a script
+// writes at run time and not markup to paste, and it is the only kind
+// of block that gets no copy button. So it may sit only on a sample
+// marked Illustration, which has no call.
+func TestOnlyAnIllustrationRefusesTheCopyButton(t *testing.T) {
+	files := render(t)
+	for _, pk := range componentPages() {
+		page := galleryPage(t, files, RootTheme(), "en", pk.Kind)
+		want := 0
+		for _, fam := range families() {
+			if fam.Key != pk.Kind {
+				continue
+			}
+			for _, doc := range fam.Partials {
+				for _, s := range doc.States {
+					if s.Illustration {
+						want++
+						if s.Raw == "" {
+							t.Errorf("%s (%s) is an illustration with data; an illustration is markup no call produces", doc.Name, s.State)
+						}
+					}
+				}
+			}
+		}
+		if got := strings.Count(page, `<pre class="ds-src rst-mono" tabindex="0" data-ds-nocopy>`); got != want {
+			t.Errorf("%s: %d blocks refuse a copy button, want %d", pk.Kind, got, want)
+		}
+		for _, panel := range codePanels(page) {
+			if strings.Contains(panel, "data-ds-nocopy") && strings.Contains(panel, `<details class="ds-html">`) {
+				t.Errorf("%s: an illustration's panel carries a call", pk.Kind)
+			}
+		}
+	}
+	if !strings.Contains(galleryPage(t, files, RootTheme(), "en", "form"), "data-ds-nocopy") {
+		t.Error("form-foot's Working state is not marked as an illustration")
+	}
+}
+
+// Every page that frames examples opens by saying, once, that the
+// examples are live and their links go nowhere; the five component
+// pages add that Code holds the call to copy. That replaced a callout
+// and four notes saying the same at length, and Shells, which has no
+// Code tab and frames whole pages of the tree, says neither.
+func TestTheFramedPagesOpenWithTheTwoPlainSentences(t *testing.T) {
+	files := render(t)
+	live, code := proseIn("en", "Each example is live, but its links go nowhere."), proseIn("en", "Code shows the template call to copy.")
+	components := map[string]bool{}
+	for _, pk := range componentPages() {
+		components[pk.Kind] = true
+	}
+	for _, pk := range pageKinds() {
+		page := galleryPage(t, files, RootTheme(), "en", pk.Kind)
+		framed := components[pk.Kind] || pk.Kind == "primitives" || pk.Kind == "formats" || pk.Kind == "screens"
+		if got := strings.Count(page, live); framed != (got == 1) || got > 1 {
+			t.Errorf("%s says %q %d times, want %d", pk.Kind, live, got, map[bool]int{true: 1}[framed])
+		}
+		if got := strings.Count(page, code); components[pk.Kind] != (got == 1) || got > 1 {
+			t.Errorf("%s says %q %d times, want %d", pk.Kind, code, got, map[bool]int{true: 1}[components[pk.Kind]])
+		}
+		// <div rst-callout is a live callout: in a source block the < is &lt;.
+		if strings.Contains(page, `<div rst-callout`) && pk.Kind != "primitives" && pk.Kind != "screens" {
+			t.Errorf("%s still opens with a callout", pk.Kind)
+		}
+	}
+	gs := galleryPage(t, files, RootTheme(), "en", "getting-started")
+	snippet := `<link rel="stylesheet" href="tokens.css">` + "\n" + `<link rel="stylesheet" href="theme-` + RootTheme() + `.css">`
+	if texts := sourceTexts(gs); !slices.Contains(texts, snippet) {
+		t.Errorf("Getting started has no copyable link snippet %q; its source blocks are %q", snippet, texts)
+	}
+}
+
+var (
+	mainRegion = regexp.MustCompile(`(?s)<main rst-shell-main id="main">(.*)</main>`)
+	headingTag = regexp.MustCompile(`<h([1-6])\b[^>]*>(.*?)</h[1-6]>`)
+	titleTag   = regexp.MustCompile(`<title>([^<]*)</title>`)
+)
+
+// Every page's main opens with an <h1> that is its own topic, no two
+// pages in a directory share one, and no heading skips a level: the
+// outline a screen reader lists is the page's real structure. The
+// pages used to share one <h1>, "rastrillo design system", with the
+// real title an <h2> further down.
+func TestEveryPagesH1IsItsOwnTitle(t *testing.T) {
+	files := render(t)
+	for _, theme := range ui.ThemeNames() {
+		for _, locale := range rastrillo.BaseLocales() {
+			seen := map[string]string{}
+			for _, pk := range pageKinds() {
+				name := theme + "/" + locale + "/" + pk.File
+				m := mainRegion.FindStringSubmatch(string(files[name]))
+				if m == nil {
+					t.Errorf("%s: no main", name)
+					continue
+				}
+				hs := headingTag.FindAllStringSubmatch(m[1], -1)
+				if len(hs) == 0 || hs[0][1] != "1" {
+					t.Errorf("%s: main does not open with an h1", name)
+					continue
+				}
+				if want := template.HTMLEscapeString(proseIn(locale, pk.Title)); hs[0][2] != want {
+					t.Errorf("%s: the h1 is %q, want the page's own title %q", name, hs[0][2], want)
+				}
+				if other, dup := seen[hs[0][2]]; dup {
+					t.Errorf("%s and %s share the h1 %q", other, name, hs[0][2])
+				}
+				seen[hs[0][2]] = name
+				level := 1
+				for _, h := range hs[1:] {
+					n := int(h[1][0] - '0')
+					if n == 1 {
+						t.Errorf("%s: a second h1 in main, %q", name, h[2])
+					}
+					if n > level+1 {
+						t.Errorf("%s: %q is an h%d after an h%d; the outline skips a level", name, h[2], n, level)
+					}
+					level = n
+				}
+			}
+		}
+	}
+}
+
+// Every document title and frame name uses the separators copy review
+// approved, which replaced an em dash a screen reader announces or
+// swallows depending on its settings: " · " between a page, the site
+// and the theme, and ", " before a frame's state.
+func TestTitlesUseTheApprovedSeparators(t *testing.T) {
+	files := render(t)
+	for _, pk := range pageKinds() {
+		name := RootTheme() + "/en/" + pk.File
+		m := titleTag.FindStringSubmatch(string(files[name]))
+		if want := template.HTMLEscapeString(docTitle(proseIn("en", pk.Title), "rastrillo design system", RootTheme())); m == nil || m[1] != want {
+			t.Errorf("%s: <title> %v, want %q", name, m, want)
+		}
+	}
+	if got := docTitle("Form", "rastrillo design system", "day"); got != "Form · rastrillo design system · day" {
+		t.Errorf("docTitle gives %q", got)
+	}
+	if got := docTitle("The modal route", "rastrillo design system", ""); got != "The modal route · rastrillo design system" {
+		t.Errorf("docTitle with no theme gives %q", got)
+	}
+	if got := previewTitle("en", "field-text", "Required"); got != "field-text sample standalone preview, Required" {
+		t.Errorf("previewTitle gives %q", got)
+	}
+}
+
+var stateLabel = regexp.MustCompile(`<p class="ds-state">([^<]*)</p>`)
+
+// No title, frame name or state label anywhere in the tree carries an
+// em dash, in any language. The state labels used to, and they reach a
+// frame's name through its qualifier, so replacing the separators alone
+// left "Working — what rastrillo.js writes" in a frame title.
+//
+// Each kind is counted, because a pattern that stopped matching after a
+// markup change would read nothing and pass.
+func TestNoTitleOrStateLabelCarriesAnEmDash(t *testing.T) {
+	frameTitle := regexp.MustCompile(`<iframe[^>]*\stitle="([^"]*)"`)
+	noteState := regexp.MustCompile(`<b class="ds-note__state">([^<]*)</b>`)
+	kinds := map[string]*regexp.Regexp{"title": titleTag, "frame name": frameTitle, "state label": stateLabel, "note's state": noteState}
+	read := map[string]int{}
+	for name, body := range render(t) {
+		if !strings.HasSuffix(name, ".html") {
+			continue
+		}
+		for what, re := range kinds {
+			for _, m := range re.FindAllStringSubmatch(string(body), -1) {
+				read[what]++
+				if strings.Contains(m[1], "—") {
+					t.Errorf("%s: the %s %q carries an em dash", name, what, m[1])
+				}
+			}
+		}
+	}
+	for what := range kinds {
+		if read[what] == 0 {
+			t.Errorf("no %s anywhere in the tree, so this read none", what)
+		}
+	}
+}
+
+var (
+	shellRoot = regexp.MustCompile(`<div rst-shell-sidebar="([a-z]+)">`)
+	backLink  = regexp.MustCompile(`<a rst-skip href="#main">[^<]*</a>\n<div rst-shell-back><a href="([^"]*)" rel="up" aria-label="([^"]*)">([^<]*)</a></div>`)
+	railFoot  = regexp.MustCompile(`(?s)<div rst-shell-rail-foot id="ds-prefs">(.*?)</aside>`)
+	barCtl    = regexp.MustCompile(`(?s)<div class="ds-top__controls">(.*?)</header>`)
+	indexNav  = regexp.MustCompile(`(?s)<nav class="ds-index" rst-shell-nav aria-label="([^"]*)">(.*?)</nav>`)
+	schemeVal = regexp.MustCompile(`data-ds-scheme="([a-z]+)"`)
+)
+
+// The gallery is the sidebar layout an app is scaffolded with,
+// attribute for attribute, so every shell rule in tokens.css and
+// shell.css applies to it and the gallery re-implements none of the
+// phone navigation: the Overview is the index, every other page a
+// content page whose back control comes first after the skip link.
+// The index's own pieces are on the Overview alone, because on any
+// other page they would show at no width.
+func TestTheGalleryIsTheShippedShell(t *testing.T) {
+	files := render(t)
+	for name, body := range files {
+		if strings.HasSuffix(name, ".html") && strings.Contains(string(body), "rst-shell-chrome") {
+			t.Errorf("%s writes the retired drawer, rst-shell-chrome", name)
+		}
+	}
+	for _, theme := range ui.ThemeNames() {
+		for _, locale := range rastrillo.BaseLocales() {
+			tr := translator(locale)
+			label := tr("rastrillo.ui.shell_up_label")
+			for _, pk := range pageKinds() {
+				name := theme + "/" + locale + "/" + pk.File
+				page := string(files[name])
+				index := pk.Kind == "overview"
+				want := map[bool]string{true: "index", false: "page"}[index]
+				if m := shellRoot.FindAllStringSubmatch(page, -1); len(m) != 1 || m[0][1] != want {
+					t.Errorf("%s: shell root %v, want one rst-shell-sidebar=%q", name, m, want)
+				}
+				backs := backLink.FindAllStringSubmatch(page, -1)
+				if n := strings.Count(page, "<div rst-shell-back>"); index && n != 0 || !index && (n != 1 || len(backs) != 1) {
+					t.Errorf("%s: %d back controls (%d right after the skip link), want %d", name, n, len(backs), map[bool]int{false: 1}[index])
+				} else if !index {
+					if aria := template.HTMLEscapeString(tr("rastrillo.ui.shell_up", "name", label)); backs[0][2] != aria || backs[0][3] != template.HTMLEscapeString(label) {
+						t.Errorf("%s: the back control reads %q named %q, want %q named %q", name, backs[0][3], backs[0][2], label, aria)
+					}
+				}
+				for _, piece := range []string{`<h1 rst-shell-title>`, `<p class="ds-index-lead">`, `<nav class="ds-index"`, `<div rst-shell-rail-foot id="ds-prefs">`} {
+					if strings.Contains(page, piece) != index {
+						t.Errorf("%s: %s present=%v; it belongs on the Overview and nowhere else", name, piece, !index)
+					}
+				}
+				if index {
+					if m := railFoot.FindStringSubmatch(page); m == nil || strings.TrimSpace(m[1]) == "</div>" {
+						t.Errorf("%s: the index's foot is empty", name)
+					}
+				}
+				for _, want := range []string{
+					`<link rel="stylesheet" href="` + mountPrefix + `shell.css">`,
+					`<script defer blocking="render" src="` + mountPrefix + `shell.js"></script>`,
+				} {
+					if !strings.Contains(page, want) {
+						t.Errorf("%s: no %s; the slide, Back through history and the focus return are shell.css and shell.js", name, want)
+					}
+				}
+			}
+		}
+	}
+}
+
+// Every content page's back control returns to its own row on the
+// index: index.html#nav-<kind>, a fragment naming a link inside the
+// rows nav whose href is that very page. The rows are the sections
+// the tree lists, in its order, then Demos and the tree's demo links.
+func TestEveryWayUpNamesItsRow(t *testing.T) {
+	files := render(t)
+	for _, theme := range ui.ThemeNames() {
+		for _, locale := range rastrillo.BaseLocales() {
+			overview := galleryPage(t, files, theme, locale, "overview")
+			m := indexNav.FindStringSubmatch(overview)
+			if m == nil {
+				t.Fatalf("%s/%s: no rows nav on the Overview", theme, locale)
+			}
+			if want := template.HTMLEscapeString(translator(locale)("rastrillo.ui.shell_up_label")); m[1] != want {
+				t.Errorf("%s/%s: the rows nav is labelled %q, want the back control's word %q, so Back to it lands on a list of that name", theme, locale, m[1], want)
+			}
+			rows := m[2]
+			for _, pk := range pageKinds() {
+				if pk.Kind == "overview" {
+					continue
+				}
+				page := galleryPage(t, files, theme, locale, pk.Kind)
+				b := backLink.FindStringSubmatch(page)
+				href := pageHref(mountPath, theme, locale, pk.File)
+				if want := indexHref(mountPath, theme, locale) + "#nav-" + pk.Kind; b == nil || b[1] != want {
+					t.Errorf("%s/%s/%s: way up %v, want %s", theme, locale, pk.File, b, want)
+				}
+				if row := `<a id="nav-` + pk.Kind + `" href="` + href + `">`; !strings.Contains(rows, row) {
+					t.Errorf("%s/%s: no row %s", theme, locale, row)
+				}
+			}
+			// The same sections as the tree, in the same order.
+			var tree, listed []string
+			for _, g := range railSections(railOf(t, "overview", overview)) {
+				tree = append(tree, g.Title)
+			}
+			for _, r := range regexp.MustCompile(`<a id="nav-[^"]+" href="[^"]*">([^<]*)</a>`).FindAllStringSubmatch(rows, -1) {
+				listed = append(listed, r[1])
+			}
+			if want := tree[1 : len(tree)-1]; strings.Join(listed, "|") != strings.Join(want, "|") {
+				t.Errorf("%s/%s: rows %v, want the tree's sections but the Overview and Demos, %v", theme, locale, listed, want)
+			}
+			if !strings.Contains(rows, `<p rst-shell-group>`+tree[len(tree)-1]+`</p>`) {
+				t.Errorf("%s/%s: the rows do not end with the Demos group", theme, locale)
+			}
+		}
+	}
+}
+
+// The phone index's Demos rows open a new tab, and say so to a screen
+// reader in the words the Overview's own demo link uses: a reader who
+// is not told finds Back dead and their filter gone.
+func TestThePhoneIndexSaysItsDemosOpenANewTab(t *testing.T) {
+	files := render(t)
+	blank := regexp.MustCompile(`<a href="[^"]*" target="_blank" rel="noopener">(.*?)</a>`)
+	for _, locale := range rastrillo.BaseLocales() {
+		m := indexNav.FindStringSubmatch(galleryPage(t, files, RootTheme(), locale, "overview"))
+		if m == nil {
+			t.Fatalf("%s: no rows nav on the Overview", locale)
+		}
+		rows := blank.FindAllStringSubmatch(m[2], -1)
+		if len(rows) == 0 {
+			t.Fatalf("%s: no Demos row opens a new tab, so this checked nothing", locale)
+		}
+		say := `<span class="rst-sr-only"> (` + template.HTMLEscapeString(proseIn(locale, "opens in a new tab")) + `)</span>`
+		for _, r := range rows {
+			if !strings.HasSuffix(r[1], say) {
+				t.Errorf("%s: the Demos row %q opens a new tab without saying %s", locale, r[1], say)
+			}
+		}
+	}
+}
+
+// The Overview writes its controls twice, in the bar for a wide screen
+// and in the index's foot for a phone, and only one is ever shown. The
+// two must not drift when the next control is added to one: same
+// themes, same schemes, same languages, in the same order. The foot's
+// links carry #ds-prefs, so a reader switching there lands with the
+// controls on screen; the bar's carry no fragment, because gallery.js
+// sets one at the moment of the click. Neither carries an id but the
+// foot's own, since an id written twice is two elements one fragment
+// cannot both reach.
+func TestTheTwoCopiesOfTheControlsAgree(t *testing.T) {
+	files := render(t)
+	for _, theme := range ui.ThemeNames() {
+		for _, locale := range rastrillo.BaseLocales() {
+			page := galleryPage(t, files, theme, locale, "overview")
+			foot, bar := railFoot.FindStringSubmatch(page), barCtl.FindStringSubmatch(page)
+			if foot == nil || bar == nil {
+				t.Fatalf("%s/%s: foot found %v, bar found %v", theme, locale, foot != nil, bar != nil)
+			}
+			fh, bh := anchorHref.FindAllStringSubmatch(foot[1], -1), anchorHref.FindAllStringSubmatch(bar[1], -1)
+			if len(fh) == 0 || len(fh) != len(bh) {
+				t.Errorf("%s/%s: %d links in the foot, %d in the bar", theme, locale, len(fh), len(bh))
+				continue
+			}
+			for i := range fh {
+				if strings.Contains(bh[i][1], "#") || fh[i][1] != bh[i][1]+"#ds-prefs" {
+					t.Errorf("%s/%s link %d: foot %s, bar %s; want the bar's address and the foot's with #ds-prefs", theme, locale, i, fh[i][1], bh[i][1])
+				}
+			}
+			if a, b := schemeVal.FindAllString(foot[1], -1), schemeVal.FindAllString(bar[1], -1); strings.Join(a, " ") != strings.Join(b, " ") || len(a) != 3 {
+				t.Errorf("%s/%s: scheme buttons %v in the foot, %v in the bar", theme, locale, a, b)
+			}
+			for where, html := range map[string]string{"foot": foot[1], "bar": bar[1]} {
+				if elementID.MatchString(html) {
+					t.Errorf("%s/%s: the %s's controls carry an id", theme, locale, where)
+				}
+			}
+		}
+	}
+}
+
+// No page asks to be prerendered. The gallery is static files, served
+// by a site with no headers file, and an inline speculation ruleset
+// would need a CSP the framework deliberately avoids; reading down the
+// index would also fetch pages of up to ~120 KB nobody opens, on a
+// phone's data. The slide and the focus return work without it.
+func TestNoGalleryPageAsksForPrerender(t *testing.T) {
+	for name, body := range render(t) {
+		if strings.Contains(string(body), "speculationrules") || strings.Contains(string(body), "_speculation-rules") {
+			t.Errorf("%s asks for prerendering", name)
+		}
+	}
+}
+
+// Every synonym names an anchor that exists, and rides on the rail
+// link to it. A synonym whose anchor was renamed would leave its words
+// pointing at nothing, and a reader typing "checkbox" would see No
+// matches again.
+func TestEverySearchTermNamesAnAnchor(t *testing.T) {
+	files := render(t)
+	var all, rail string
+	for _, name := range galleryFiles(RootTheme(), "en") {
+		all += string(files[name])
+	}
+	rail = railOf(t, "overview", galleryPage(t, files, RootTheme(), "en", "overview"))
+	for id, terms := range searchTerms {
+		if !strings.Contains(all, `id="`+id+`" data-ds-anchor`) {
+			t.Errorf("searchTerms names %q, which no page anchors", id)
+		}
+		if !regexp.MustCompile(`<a href="[^"]*#` + regexp.QuoteMeta(id) + `"[^>]* data-ds-terms="` + regexp.QuoteMeta(terms) + `"`).MatchString(rail) {
+			t.Errorf("the rail link to %s does not carry its terms %q", id, terms)
+		}
+	}
+	if len(searchTerms) == 0 {
+		t.Fatal("no search terms")
+	}
+}
+
+// The page-wide group is on exactly the pages that have a Code tab,
+// Auto pressed as rendered, labelled in the page's language, and
+// hidden until gallery.js says it can work.
+func TestThePageWideViewIsOnEveryPageWithCode(t *testing.T) {
+	files := render(t)
+	for _, locale := range []string{"en", "ja"} {
+		for _, pk := range pageKinds() {
+			page := galleryPage(t, files, RootTheme(), locale, pk.Kind)
+			hasCode := strings.Contains(page, "ds-view__tab--c")
+			group := regexp.MustCompile(`<div class="ds-viewall" role="group" aria-label="([^"]*)">(.*?)</div>`).FindStringSubmatch(page)
+			if hasCode != (group != nil) {
+				t.Errorf("%s/%s: Code tab %v, page-wide group %v; the group is for pages with a Code tab", locale, pk.Kind, hasCode, group != nil)
+				continue
+			}
+			if group == nil {
+				continue
+			}
+			if group[1] != template.HTMLEscapeString(proseIn(locale, "Show every example as")) {
+				t.Errorf("%s/%s: the group is labelled %q", locale, pk.Kind, group[1])
+			}
+			for _, v := range []string{`data-ds-view="auto" aria-pressed="true"`, `data-ds-view="desktop" aria-pressed="false"`, `data-ds-view="mobile" aria-pressed="false"`, `data-ds-view="code" aria-pressed="false"`} {
+				if !strings.Contains(group[2], v) {
+					t.Errorf("%s/%s: the group has no %s", locale, pk.Kind, v)
+				}
+			}
+		}
+	}
+	css := string(GalleryCSS())
+	if !strings.Contains(css, ".ds-viewall { display: none; }") || !strings.Contains(css, ":root[data-rst-js] .ds-viewall") {
+		t.Error("the page-wide group is not hidden until gallery.js sets data-rst-js")
+	}
+}
+
+// A section's anchor id is the same in every theme and locale, because
+// it is built from English: that is what lets a switch keep the reader
+// on the section they were reading, and a link into the gallery survive
+// a change of language.
+func TestAnchorIDsAreTheSameInEveryThemeAndLocale(t *testing.T) {
+	files := render(t)
+	for _, pk := range pageKinds() {
+		var want string
+		for _, m := range anchorMarker.FindAllStringSubmatch(galleryPage(t, files, RootTheme(), "en", pk.Kind), -1) {
+			want += m[1] + " "
+		}
+		for _, theme := range ui.ThemeNames() {
+			for _, locale := range rastrillo.BaseLocales() {
+				var got string
+				for _, m := range anchorMarker.FindAllStringSubmatch(galleryPage(t, files, theme, locale, pk.Kind), -1) {
+					got += m[1] + " "
+				}
+				if got != want {
+					t.Errorf("%s/%s/%s: anchors differ from %s/en's", theme, locale, pk.File, RootTheme())
+				}
+			}
+		}
+	}
+}
+
+// Two states of one partial that render the same bytes are one state
+// shown twice, which is what status-pill's "Default tone (neutral)"
+// and "neutral" were. Only byte-identical output counts: badge's quiet
+// default renders differently from its neutral and stays.
+func TestNoTwoStatesOfAPartialRenderAlike(t *testing.T) {
+	tmpl := sampleTree(t, "en")
+	for _, fam := range families() {
+		for _, doc := range fam.Partials {
+			seen := map[string]string{}
+			for i, s := range doc.States {
+				html, err := renderSample(tmpl, doc.Name, i, s, "en")
+				if err != nil {
+					t.Fatal(err)
+				}
+				if other, dup := seen[string(html)]; dup {
+					t.Errorf("%s: %q and %q render the same bytes", doc.Name, other, s.State)
+				}
+				seen[string(html)] = s.State
+			}
+		}
 	}
 }
