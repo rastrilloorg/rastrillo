@@ -297,13 +297,16 @@ Your form needs `method="post"`, `action` set to `d.Action`, and a
 hidden field named `token` holding `d.Token`. Miss one and nobody signs
 in.
 
-rastrillo sets `Cache-Control: no-store`, `X-Frame-Options: DENY` and
-`frame-ancestors 'none'` before calling it. Leave them be. Without the
+rastrillo sets `Cache-Control: no-store`, `Referrer-Policy:
+strict-origin`, `X-Frame-Options: DENY` and `frame-ancestors 'none'`
+before calling it. Leave them be. The page's address holds the live
+link, and `strict-origin` keeps it out of the `Referer` your layout's
+CSS, scripts and images are fetched with. Don't change it to
+`no-referrer`: some browsers then send the button's POST with
+`Origin: null`, and the same-origin check refuses it. Without the
 framing pair, someone can frame the page carrying a token minted for
 *their* address, coax a click out of your user, and land them in the
-attacker's account. Don't add `Referrer-Policy: no-referrer` either:
-under it some browsers send the button's POST with `Origin: null`, and
-the same-origin check refuses it.
+attacker's account.
 
 ## Links are single-use
 

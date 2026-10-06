@@ -85,37 +85,63 @@ func TestConfirmPageCarriesToken(t *testing.T) {
 }
 
 // TestConfirmPageIsNotCachedOrFramed: the page holds a live credential
-// in its markup, and its button is a one-click sign-in. no-store keeps
-// the token out of caches; frame-ancestors is login-CSRF defence —
-// without it an attacker could frame this page bearing a token minted
-// for their own address and coax a click, landing the viewer in the
-// attacker's account. And no no-referrer: under it the button's POST
-// carries Origin: null, which csrf.SameOrigin refuses in a browser that
-// sends no Sec-Fetch-Site.
+// in its URL and its markup, and its button is a one-click sign-in.
+// no-store keeps the token out of caches; frame-ancestors is login-CSRF
+// defence — without it an attacker could frame this page bearing a
+// token minted for their own address and coax a click, landing the
+// viewer in the attacker's account.
+//
+// Referrer-Policy is strict-origin, over the app's baseline: the
+// baseline sends the full URL, token and all, as the Referer of every
+// same-origin request the page makes, so an app layout's CSS, scripts
+// and images would copy a still-redeemable link into asset and proxy
+// logs. strict-origin sends the origin alone, and still lets the
+// button's POST carry a real Origin, where no-referrer would make it
+// "null" and fail csrf.SameOrigin in a browser without Sec-Fetch-Site.
+// Both renderers, and the screen's PrepareSigninResponse inside one,
+// must leave it in place.
 func TestConfirmPageIsNotCachedOrFramed(t *testing.T) {
-	a, m := newTestAuth(t, nil)
-	beginSignin(t, a, "person@example.com")
-	link := linkRE.FindString(m.sentBody())
-
-	w := httptest.NewRecorder()
-	a.Verify(w, httptest.NewRequest("GET", link, nil))
-	want := map[string]string{
-		"Cache-Control":   "no-store",
-		"Referrer-Policy": "",
-		"X-Robots-Tag":    "noindex, nofollow",
-		"X-Frame-Options": "DENY",
-	}
-	if strings.Contains(w.Body.String(), "no-referrer") {
-		t.Errorf("the default page asks for no-referrer in its markup:\n%s", w.Body.String())
-	}
-	for h, v := range want {
-		if got := w.Header().Get(h); got != v {
-			t.Errorf("%s = %q, want %q", h, got, v)
+	for _, screen := range []bool{false, true} {
+		name := "the default page"
+		if screen {
+			name = "the sign-in screen"
 		}
-	}
-	if !slices.Contains(w.Header().Values("Content-Security-Policy"), "frame-ancestors 'none'") {
-		t.Errorf("Content-Security-Policy = %q, want a frame-ancestors 'none' entry",
-			w.Header().Values("Content-Security-Policy"))
+		t.Run(name, func(t *testing.T) {
+			var a *Auth
+			a, m := newTestAuth(t, func(c *Config) {
+				if screen {
+					c.SigninScreen = true
+					c.RenderConfirm = func(w http.ResponseWriter, r *http.Request, _ ConfirmPageData) {
+						a.PrepareSigninResponse(w, a.SigninState(r))
+					}
+				}
+			})
+			beginSignin(t, a, "person@example.com")
+			link := linkRE.FindString(m.sentBody())
+
+			w := httptest.NewRecorder()
+			// What serve.go's securityHeaders has already written.
+			w.Header().Set("Referrer-Policy", "strict-origin-when-cross-origin")
+			a.Verify(w, httptest.NewRequest("GET", link, nil))
+			want := map[string]string{
+				"Cache-Control":   "no-store",
+				"Referrer-Policy": "strict-origin",
+				"X-Robots-Tag":    "noindex, nofollow",
+				"X-Frame-Options": "DENY",
+			}
+			for h, v := range want {
+				if got := w.Header().Values(h); len(got) != 1 || got[0] != v {
+					t.Errorf("%s = %q, want exactly %q", h, got, v)
+				}
+			}
+			if strings.Contains(w.Body.String(), "referrer") {
+				t.Errorf("the page sets a referrer policy in its markup, which would override the header:\n%s", w.Body.String())
+			}
+			if !slices.Contains(w.Header().Values("Content-Security-Policy"), "frame-ancestors 'none'") {
+				t.Errorf("Content-Security-Policy = %q, want a frame-ancestors 'none' entry",
+					w.Header().Values("Content-Security-Policy"))
+			}
+		})
 	}
 }
 

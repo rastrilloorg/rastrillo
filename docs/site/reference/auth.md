@@ -228,13 +228,15 @@ answers `StepConfirm` on the request it gets. Nil gets a self-contained
 English page, so upgrading needs no code change beyond the POST route.
 
 Before calling you, `Verify` sets `Cache-Control: no-store`,
-`X-Robots-Tag: noindex, nofollow`, `X-Frame-Options: DENY` and adds
-`Content-Security-Policy: frame-ancestors 'none'` beside the app's own
-policy. The framing headers are login-CSRF defence: a framed confirm
+`Referrer-Policy: strict-origin`, `X-Robots-Tag: noindex, nofollow`,
+`X-Frame-Options: DENY` and adds `Content-Security-Policy:
+frame-ancestors 'none'` beside the app's own policy. `strict-origin`
+keeps the token in the page's address out of the `Referer` of its
+asset requests, and still sends a real `Origin` on the button's POST,
+where `no-referrer` would send `Origin: null` and fail the same-origin
+check. The framing headers are login-CSRF defence: a framed confirm
 button carrying an attacker's token signs your user into the attacker's
-account. It leaves the referrer policy alone: under `no-referrer` a
-form POST can carry `Origin: null`, which the same-origin check
-refuses.
+account.
 
 ## Links are single-use
 

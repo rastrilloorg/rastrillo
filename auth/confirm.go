@@ -62,13 +62,16 @@ func (a *Auth) confirm(w http.ResponseWriter, r *http.Request) {
 	// address and trick a viewer into clicking "Sign in", landing them
 	// in the attacker's account.
 	//
-	// No Referrer-Policy: no-referrer, though the URL is a credential.
-	// Under it a form POST sends Origin: null, and a browser without
-	// Sec-Fetch-Site then fails csrf.SameOrigin on the very button this
-	// page exists for (PrepareSigninResponse keeps the app's policy on
-	// every form state for the same reason). The baseline
-	// strict-origin-when-cross-origin already sends another origin no
-	// path or query, so the token stays on this origin either way.
+	// Referrer-Policy is strict-origin because the URL is a credential.
+	// The app's baseline, strict-origin-when-cross-origin, sends the
+	// full URL as the Referer of every same-origin request, so an app
+	// layout drawn by RenderConfirm would copy a still-redeemable token
+	// into the requests for its CSS, scripts and images, and into
+	// whatever logs them. strict-origin sends the origin alone. Not
+	// no-referrer: under it the button's POST carries Origin: null,
+	// which csrf.SameOrigin refuses in a browser that sends no
+	// Sec-Fetch-Site (PrepareSigninResponse keeps it off every form
+	// state for the same reason). strict-origin leaves Origin intact.
 	//
 	// frame-ancestors is Added, not Set. serve.go's securityHeaders has
 	// already Set the app's real Content-Security-Policy, and replacing
@@ -77,6 +80,7 @@ func (a *Auth) confirm(w http.ResponseWriter, r *http.Request) {
 	// both.
 	h := w.Header()
 	h.Set("Cache-Control", "no-store")
+	h.Set("Referrer-Policy", "strict-origin")
 	h.Set("X-Robots-Tag", "noindex, nofollow")
 	h.Set("X-Frame-Options", "DENY")
 	h.Add("Content-Security-Policy", "frame-ancestors 'none'")
