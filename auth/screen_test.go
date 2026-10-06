@@ -152,8 +152,6 @@ func (failingMailer) Send(context.Context, string, string, string) error {
 	return errors.New("the mail server is down")
 }
 
-func pathOf(link string) string { return strings.TrimPrefix(link, "http://app.test") }
-
 // redeem is pressing Sign in on the page an emailed link lands on: the
 // link's token posted back to its path. Opening the link spends
 // nothing (confirm_test.go), so every sign-in here posts.
