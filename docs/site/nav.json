@@ -127,6 +127,11 @@
           "slug": "addons",
           "label": "Addons",
           "blurb": "Modules that ship outside the framework, the four rules they follow, and how to fetch their skills."
+        },
+        {
+          "slug": "writing-addons",
+          "label": "Writing an addon",
+          "blurb": "Choose between core and an addon, then build one and get it listed."
         }
       ]
     },
