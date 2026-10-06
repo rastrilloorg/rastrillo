@@ -10,6 +10,10 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+### Added: `auth.Config.Refused`, so a verified-but-not-admitted address gets your page
+
+A first factor that verified for an address `Authorize` refuses used to end on a bare-text 403, "This address is verified but not admitted here.". Set `Refused` to answer it yourself — your sign-in page with an error and a way to use a different address. Nil keeps the old answer. Oficina's apps hit this with Keymail sign-in, where a non-member reaches Keymail before admission is asked.
+
 ### Changed: sign-in and sign-up are behind `pow` by default, and `pow`'s API is new; wire a Guard or set `ProofOff`, and re-vendor `busy.js`
 
 **`auth.New` and `password.New` now refuse to start until you choose.** Set `Proof` to a `*pow.Guard`, or set `ProofOff`. With neither, `New` returns `ErrProofUnset`. With a Guard, `auth.Begin`, `password.Signin` and `password.Signup` refuse any post without a solved challenge before they send mail, look up a domain, hash a password or spend any rate budget. Those forms then need JavaScript.

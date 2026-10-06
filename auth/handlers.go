@@ -325,6 +325,10 @@ func (a *Auth) admit(w http.ResponseWriter, r *http.Request, id Identity) {
 	// finding 25).
 	a.jar.EndAttempt(w)
 	if a.cfg.Authorize != nil && !a.cfg.Authorize(id.Address) {
+		if a.cfg.Refused != nil {
+			a.cfg.Refused(w, r, id)
+			return
+		}
 		http.Error(w, "This address is verified but not admitted here.", http.StatusForbidden)
 		return
 	}
