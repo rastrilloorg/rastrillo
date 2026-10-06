@@ -163,9 +163,13 @@ func (s *Sessions) create(hash string, sess Session, now time.Time) error {
 
 // lookup resolves a token hash to its Session, expiry-checked.
 func (s *Sessions) lookup(hash string, now time.Time) (Session, bool, error) {
+	return s.lookupContext(context.Background(), hash, now)
+}
+
+func (s *Sessions) lookupContext(ctx context.Context, hash string, now time.Time) (Session, bool, error) {
 	var sess Session
 	var method, authTime, created, expires string
-	err := s.cfg.DB.QueryRow(`SELECT subject, method, auth_time, created_at, expires_at
+	err := s.cfg.DB.QueryRowContext(ctx, `SELECT subject, method, auth_time, created_at, expires_at
 		FROM sessions WHERE token_hash = ?`, hash).
 		Scan(&sess.Subject, &method, &authTime, &created, &expires)
 	if err == sql.ErrNoRows {
@@ -278,19 +282,33 @@ func (s *Sessions) From(r *http.Request) (Session, bool) {
 	return sess, ok
 }
 
+// FromContext bounds session lookup by the caller's operation deadline. A
+// canceled lookup refuses access without deleting or refreshing the session.
+// From retains its existing behavior for callers without an operation bound.
+func (s *Sessions) FromContext(ctx context.Context, r *http.Request) (Session, bool) {
+	sess, ok, _ := s.resolveContext(ctx, r)
+	return sess, ok
+}
+
 // resolve is From plus one more bit: stale means the request presented
 // a cookie that definitively resolved to no session (missing row or
 // expired) — as opposed to no cookie at all, or a lookup error, which
 // is logged and reported not-stale so a transient DB failure never
 // gets a live cookie cleared.
 func (s *Sessions) resolve(r *http.Request) (sess Session, ok, stale bool) {
+	return s.resolveContext(context.Background(), r)
+}
+
+func (s *Sessions) resolveContext(ctx context.Context, r *http.Request) (sess Session, ok, stale bool) {
 	c, err := r.Cookie(s.CookieName())
 	if err != nil {
 		return Session{}, false, false
 	}
-	sess, ok, err = s.lookup(HashToken(c.Value), time.Now())
+	sess, ok, err = s.lookupContext(ctx, HashToken(c.Value), time.Now())
 	if err != nil {
-		s.cfg.Logger.Error("rastrillo/sessions: session lookup", "err", err)
+		if ctx.Err() == nil || !errors.Is(err, ctx.Err()) {
+			s.cfg.Logger.Error("rastrillo/sessions: session lookup", "err", err)
+		}
 		return Session{}, false, false
 	}
 	return sess, ok, !ok
