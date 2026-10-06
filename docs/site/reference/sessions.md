@@ -108,6 +108,8 @@ nothing. `RequireFresh` is `Require` plus step-up — past `maxAge` a
 `Sessions.From` resolves the session from a request directly, for code
 outside the middleware chain.
 
+`Sessions.FromContext(ctx, r)` uses the same cookie and session validation as `From`. Its context bounds the database lookup, including waiting for a connection. Cancellation, lookup failure, or a missing, expired or revoked session returns `ok=false`. Canceling a lookup leaves the stored session unchanged.
+
 ## Fresh
 
 ```go

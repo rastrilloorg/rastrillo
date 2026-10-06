@@ -10,6 +10,10 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+### Added: `Sessions.FromContext`, a session lookup the caller's context can cancel
+
+`Sessions.FromContext(ctx, r)` bounds database session lookup by the caller's context, including waiting for a connection. Existing `From(r)` behavior is unchanged.
+
 ### Added: `auth.Config.Refused`, so a verified-but-not-admitted address gets your page
 
 A first factor that verified for an address `Authorize` refuses used to end on a bare-text 403, "This address is verified but not admitted here.". Set `Refused` to answer it yourself — your sign-in page with an error and a way to use a different address. Nil keeps the old answer. Oficina's apps hit this with Keymail sign-in, where a non-member reaches Keymail before admission is asked.
