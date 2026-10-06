@@ -8,7 +8,90 @@ This file starts at v0.23.0. Earlier releases are in the git history and their
 tags; nothing has been reconstructed for them, because a changelog written
 backwards from commits is a guess wearing a date.
 
-## Unreleased
+## v0.28.0
+
+A sign-in screen with proof of work in front of it, a phone layout for every shell, and new packages for timing, spreadsheet exports, background work, tests and authenticator apps. The first three sections change what an existing app does without a compile error: read them before you upgrade.
+
+### Changed: an emailed sign-in link opens a Sign in button; mount `auth.Verify` on POST as well as GET
+
+Mail-security gateways, such as Microsoft Defender's Safe Links and Proofpoint URL Defense, open every link in an incoming email before the recipient does. `GET /auth/verify` used to sign in on sight, so behind such a gateway the link was spent before the person clicked it, and they were told it had expired.
+
+Opening the link now spends nothing. It shows a page with one button, Sign in, which posts the link back. That post signs in, runs `Authorize`, and answers a used or unknown link with `?err=expired` as before. It is same-origin checked like `Begin`.
+
+To upgrade:
+
+1. Add the POST route. Without it the Sign in button gets a 405 and nobody signs in.
+
+   ```go
+   r.Get("/auth/verify", a.Verify)
+   r.Post("/auth/verify", a.Verify) // new
+   ```
+
+2. With `SigninScreen` on, set `auth.Config.RenderConfirm` to your sign-in page's handler. `SigninState` answers the new `StepConfirm` there, and the `signin` partial draws the button in your layout and language. Without it you get a plain English page.
+3. Tests that sign in by GETting the link must now post its token, with same-origin evidence, to the link's path.
+
+New: `Config.RenderConfirm`, `ConfirmPageData`, `StepConfirm`, `SigninState.Confirm`, and the `rastrillo.ui.signin_confirm_submit` string in all twelve languages. See [Magic links](/docs/magic-links#link-scanners-eat-magic-links).
+
+### Changed — times are stored in UTC, in SQLite's layout, and read back in UTC; back-fill old rows for SQL date maths
+
+`db.Open` now opens SQLite with `_time_format=sqlite&_timezone=UTC`.
+
+**Layout.** A `time.Time` is written as `2026-09-30 11:03:07.457+00:00`.
+Before, the driver wrote Go's `time.Time.String()`:
+`2026-09-30 11:03:07.457 +0000 UTC`, and for a bare `time.Now()` that an
+app assigns itself, a monotonic-clock reading after that, `m=+6980.25`.
+SQLite's own date functions cannot read that. `julianday`, `date` and
+`strftime` returned NULL for every row, so raw SQL doing date arithmetic
+silently got nothing back. A time in a bare numeric zone (`+0100`, as
+`mail.ParseDate` returns) was also written in a form that failed to scan
+back into a `time.Time`.
+
+**Zone.** Every time is converted to UTC before it is written, whatever
+zone it carries. Before, only GORM's own stamps were UTC (`NowFunc` is
+`time.Now().UTC()`). A `time.Now()` on a machine not in UTC, or a parsed
+Date header's `+0900`, was stored in its own zone. SQL that compares
+stored times as text (`WHERE at < ?`, `ORDER BY at`) agrees with the
+instants only while every row is in one zone.
+
+**Reading back.** Every time now comes back in `time.UTC`, where before
+it came back in `time.Local` or a fixed zone. The instant is the same,
+and on a machine that runs in UTC nothing prints differently. On a
+machine that does not, code that formats a time from the database
+without calling `.In(loc)` or `.Local()` now prints it in UTC. Convert
+before you format.
+
+Rows written before this keep scanning into a `time.Time`, because the
+driver reads both layouts. Until you rewrite them, SQL date functions
+return NULL for them, and text comparison against new rows is right only
+where both are UTC and only to the second. If your app does SQL date
+maths or compares times in SQL, rewrite the old rows once, in a
+migration, with these two statements for each `DATETIME` column you
+own. The first takes the old layout to the new one and keeps its zone.
+The second takes every time not in UTC to UTC:
+
+```sql
+UPDATE t SET c = substr(c, 1, instr(substr(c, 12), ' ') + 10)
+       || substr(c, instr(substr(c, 12), ' ') + 12, 3) || ':'
+       || substr(c, instr(substr(c, 12), ' ') + 15, 2)
+ WHERE c GLOB '????-??-?? ??:??:??* [+-][0-9][0-9][0-9][0-9] *';
+
+UPDATE t SET c = strftime('%Y-%m-%d %H:%M:%S', substr(c, 1, 19) || substr(c, -6))
+       || substr(c, 20, length(c) - 25) || '+00:00'
+ WHERE c GLOB '????-??-?? ??:??:??*[+-][0-9][0-9]:[0-9][0-9]'
+   AND substr(c, -6) <> '+00:00';
+```
+
+Each row ends up with exactly the text the driver now writes for the
+same instant. No digit of the fraction is lost. The second statement
+converts the whole seconds on their own and puts the fraction back as
+it was, because `strftime` rounds to the millisecond and would carry
+`.9999999` into the next second.
+
+### Fixed: `KeymailServers: []string{}` now means no server, ever — a behaviour change for anyone already passing it
+
+`auth.Config.KeymailServers` is meant to be nil for "any delegated server" (the default) and non-nil for a closed allowlist. But `keymailServers` read `len(list) == 0` rather than `list == nil`, so a non-nil *empty* slice silently fell back to "any server" too — continuation.go's own predicate already checked `a.servers == nil`, not `len() == 0`; only the parser disagreed with it. An app with no real keymail federation partners had no way to say so. Sign-in still looked up the domain's `_keymail` delegation, then made an HTTPS request to `.well-known/keymail` on the server it named, or on the domain itself when it named none. A server that accepts the TCP connection but never answers costs the classifier's full 5s timeout, and the classifier remembers that "not keymail" answer for only a minute, so in a quiet app the wait comes back on nearly every sign-in from that domain.
+
+`KeymailServers: []string{}` now means none: the classifier never performs a delegation lookup or an HTTPS probe for any address, and sign-in is plain magic-link only. **If your app already sets `KeymailServers` to a dynamically-built slice that can come out empty** (filtered from an env var, say) and relied on empty meaning "any server", it now means "no server" instead — pin it to `nil` explicitly if "any server" is what you want when the list is empty.
 
 ### Changed: the sidebar's person moves into a profile menu; re-vendor `tokens.css` and `shell.js`
 
@@ -56,26 +139,6 @@ A sign-in page left open across the deploy posts no challenge. Its visitor sees 
 - New: `NoProof`, `FollowOn`, `Recovery` and `Admission.Recovered`, `Guard.Verify` and `Parent` for requests made on a form's behalf, the `pow/powtest` package, and `init` and `whenSolved` exported from `pow.js`.
 
 See [pow](/docs/reference/pow), [Magic links](/docs/magic-links#the-front-door) and [Passwords](/docs/passwords#the-front-door).
-
-### Changed: an emailed sign-in link opens a Sign in button; mount `auth.Verify` on POST as well as GET
-
-Mail-security gateways, such as Microsoft Defender's Safe Links and Proofpoint URL Defense, open every link in an incoming email before the recipient does. `GET /auth/verify` used to sign in on sight, so behind such a gateway the link was spent before the person clicked it, and they were told it had expired.
-
-Opening the link now spends nothing. It shows a page with one button, Sign in, which posts the link back. That post signs in, runs `Authorize`, and answers a used or unknown link with `?err=expired` as before. It is same-origin checked like `Begin`.
-
-To upgrade:
-
-1. Add the POST route. Without it the Sign in button gets a 405 and nobody signs in.
-
-   ```go
-   r.Get("/auth/verify", a.Verify)
-   r.Post("/auth/verify", a.Verify) // new
-   ```
-
-2. With `SigninScreen` on, set `auth.Config.RenderConfirm` to your sign-in page's handler. `SigninState` answers the new `StepConfirm` there, and the `signin` partial draws the button in your layout and language. Without it you get a plain English page.
-3. Tests that sign in by GETting the link must now post its token, with same-origin evidence, to the link's path.
-
-New: `Config.RenderConfirm`, `ConfirmPageData`, `StepConfirm`, `SigninState.Confirm`, and the `rastrillo.ui.signin_confirm_submit` string in all twelve languages. See [Magic links](/docs/magic-links#link-scanners-eat-magic-links).
 
 ### Fixed: a link to a heading on a phone no longer lands under the back control
 
@@ -128,12 +191,6 @@ The sidebar shell has no menu button on a phone, and neither does the console's 
 New: the `row-menu` partial, `Menu` on `list-row-action`, `--rst-col-menu`, `ui.ShellJS` and `ui.ShellCSS`, `rastrillo.SpeculationRulesPath` and `Options.NoSpeculationRules`. In this release's sidebar and console layouts, `Serve` prerenders the navigation by default.
 
 Watch for three things. A row control made from a `<div>` with a click handler is now under the row's link; use a real button or link. A template of yours called `view` or `up` clashes with the new blocks; rename it. And once you move to the new layouts, a page linked from the navigation may be prerendered: its scripts run before anyone sees it, so a script that changes something as the page opens must wait until `document.prerendering` is false.
-
-### Fixed: `KeymailServers: []string{}` now means no server, ever — a behaviour change for anyone already passing it
-
-`auth.Config.KeymailServers` is meant to be nil for "any delegated server" (the default) and non-nil for a closed allowlist. But `keymailServers` read `len(list) == 0` rather than `list == nil`, so a non-nil *empty* slice silently fell back to "any server" too — continuation.go's own predicate already checked `a.servers == nil`, not `len() == 0`; only the parser disagreed with it. An app with no real keymail federation partners had no way to say so. Sign-in still looked up the domain's `_keymail` delegation, then made an HTTPS request to `.well-known/keymail` on the server it named, or on the domain itself when it named none. A server that accepts the TCP connection but never answers costs the classifier's full 5s timeout, and the classifier remembers that "not keymail" answer for only a minute, so in a quiet app the wait comes back on nearly every sign-in from that domain.
-
-`KeymailServers: []string{}` now means none: the classifier never performs a delegation lookup or an HTTPS probe for any address, and sign-in is plain magic-link only. **If your app already sets `KeymailServers` to a dynamically-built slice that can come out empty** (filtered from an env var, say) and relied on empty meaning "any server", it now means "no server" instead — pin it to `nil` explicitly if "any server" is what you want when the list is empty.
 
 ### Changed: a new app's `make ci` runs staticcheck
 
@@ -249,61 +306,6 @@ uses `--rst-text-muted`.
 
 Both changes are in `tokens.css`, which your app has its own copy of.
 Run `rastrillo doctor --fix` to take the new one.
-
-### Changed — times are stored in UTC, in SQLite's layout, and read back in UTC; back-fill old rows for SQL date maths
-
-`db.Open` now opens SQLite with `_time_format=sqlite&_timezone=UTC`.
-
-**Layout.** A `time.Time` is written as `2026-09-30 11:03:07.457+00:00`.
-Before, the driver wrote Go's `time.Time.String()`:
-`2026-09-30 11:03:07.457 +0000 UTC`, and for a bare `time.Now()` that an
-app assigns itself, a monotonic-clock reading after that, `m=+6980.25`.
-SQLite's own date functions cannot read that. `julianday`, `date` and
-`strftime` returned NULL for every row, so raw SQL doing date arithmetic
-silently got nothing back. A time in a bare numeric zone (`+0100`, as
-`mail.ParseDate` returns) was also written in a form that failed to scan
-back into a `time.Time`.
-
-**Zone.** Every time is converted to UTC before it is written, whatever
-zone it carries. Before, only GORM's own stamps were UTC (`NowFunc` is
-`time.Now().UTC()`). A `time.Now()` on a machine not in UTC, or a parsed
-Date header's `+0900`, was stored in its own zone. SQL that compares
-stored times as text (`WHERE at < ?`, `ORDER BY at`) agrees with the
-instants only while every row is in one zone.
-
-**Reading back.** Every time now comes back in `time.UTC`, where before
-it came back in `time.Local` or a fixed zone. The instant is the same,
-and on a machine that runs in UTC nothing prints differently. On a
-machine that does not, code that formats a time from the database
-without calling `.In(loc)` or `.Local()` now prints it in UTC. Convert
-before you format.
-
-Rows written before this keep scanning into a `time.Time`, because the
-driver reads both layouts. Until you rewrite them, SQL date functions
-return NULL for them, and text comparison against new rows is right only
-where both are UTC and only to the second. If your app does SQL date
-maths or compares times in SQL, rewrite the old rows once, in a
-migration, with these two statements for each `DATETIME` column you
-own. The first takes the old layout to the new one and keeps its zone.
-The second takes every time not in UTC to UTC:
-
-```sql
-UPDATE t SET c = substr(c, 1, instr(substr(c, 12), ' ') + 10)
-       || substr(c, instr(substr(c, 12), ' ') + 12, 3) || ':'
-       || substr(c, instr(substr(c, 12), ' ') + 15, 2)
- WHERE c GLOB '????-??-?? ??:??:??* [+-][0-9][0-9][0-9][0-9] *';
-
-UPDATE t SET c = strftime('%Y-%m-%d %H:%M:%S', substr(c, 1, 19) || substr(c, -6))
-       || substr(c, 20, length(c) - 25) || '+00:00'
- WHERE c GLOB '????-??-?? ??:??:??*[+-][0-9][0-9]:[0-9][0-9]'
-   AND substr(c, -6) <> '+00:00';
-```
-
-Each row ends up with exactly the text the driver now writes for the
-same instant. No digit of the fraction is lost. The second statement
-converts the whole seconds on their own and puts the fraction back as
-it was, because `strftime` rounds to the millisecond and would carry
-`.9999999` into the next second.
 
 ### Added — `rastrillo/perf`, request timing and budgets
 
