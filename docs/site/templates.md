@@ -619,7 +619,9 @@ words the search matches, such as an ISO code or a calling code.
 `data-rst-name` and `data-rst-desc` split a label into a name and a
 quieter description. `data-rst-short` is what the closed box shows once
 it is picked (`+44`). `data-rst-lead` is a decorative glyph such as a
-flag, drawn before the row and the box. An `<hr>` between two options
+flag, drawn before the row and the box. `data-rst-class` gives the row
+classes of its own, and the closed box too while it shows that pick, so
+a font menu can set each name in its own face. An `<hr>` between two options
 draws a divider in the list, hidden while searching.
 
 A blank that asks rather than answers is a prompt: the blank of a

@@ -10,6 +10,10 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+### Added: `data-rst-class` on a searchable select's option styles its row
+
+Put classes on an option with `data-rst-class` and its row in the list wears them, as does the closed box while that option is picked. Typing in the box takes them off, so a search reads in the box's own style. Tito uses it to show each font in a font menu set in that font. Re-vendor `select.js` to get it; an option without the attribute renders as before.
+
 ### Added: `Sessions.FromContext`, a session lookup the caller's context can cancel
 
 `Sessions.FromContext(ctx, r)` bounds database session lookup by the caller's context, including waiting for a connection. Existing `From(r)` behavior is unchanged.

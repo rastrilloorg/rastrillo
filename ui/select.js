@@ -25,6 +25,10 @@
      data-rst-lead                   a decorative glyph before the row and
                                      the box (a flag); never the only thing
                                      saying which option this is
+     data-rst-class                  classes the row wears, and the closed
+                                     box while it shows this pick (a font
+                                     named in its own face); the box takes
+                                     them off once somebody types
      data-rst-terms                  more words the search matches (an ISO
                                      code, "+971") that the row does not print
      data-rst-first                  leads its ties in an exact search
@@ -237,6 +241,8 @@
         desc: d.rstDesc || "",
         short: d.rstShort || "",
         lead: d.rstLead || "",
+        // is-active is the highlight's: a row wearing it would look arrowed to.
+        classes: (d.rstClass || "").split(/\s+/).filter((c) => c && c !== "is-active"),
         terms: (d.rstTerms || "").split(/\s+/).filter(Boolean),
         marked: d.rstPrompt !== undefined,
         // Whether it is a prompt can change: a sibling script may stop the
@@ -336,6 +342,7 @@
       li.setAttribute("role", "option");
       li.setAttribute("aria-selected", "false");
       if (o.disabled) li.setAttribute("aria-disabled", "true");
+      if (o.classes.length) li.classList.add(...o.classes);
       if (o.lead) {
         const glyph = el("span", "rst-combo-lead");
         glyph.setAttribute("aria-hidden", "true");
@@ -403,8 +410,17 @@
       showingPick = true;
     };
     const query = () => (showingPick ? "" : input.value);
+    // The pick's data-rst-class, off while typing: a query in the picked
+    // font would read as already chosen.
+    let worn = [];
+    const wear = (classes) => {
+      input.classList.remove(...worn);
+      worn = classes;
+      input.classList.add(...worn);
+    };
     const showPick = () => {
       const o = picked();
+      wear(o && !o.prompt ? o.classes : []);
       lead.textContent = (o && o.lead) || "";
       lead.hidden = !lead.textContent;
       if (wrap.hasAttribute("rst-combo-has-lead") === lead.hidden) wrap.toggleAttribute("rst-combo-has-lead", !lead.hidden);
@@ -781,6 +797,7 @@
         lead.hidden = true;
         wrap.removeAttribute("rst-combo-has-lead");
       }
+      if (worn.length) wear([]);
       openList(false);
       searchTyping();
     });
@@ -907,7 +924,7 @@
         list.appendChild(li);
         // index -1, so markSelected can never call one selected.
         opts.push({ text: row.label, name: row.label, desc: row.meta || "", short: "", lead: "",
-          terms: [], first: false, disabled: false, index: -1, group: null, el: null, li, run: row.run });
+          terms: [], classes: [], first: false, disabled: false, index: -1, group: null, el: null, li, run: row.run });
       }
       shown = opts;
       if (open) filter(query());
@@ -961,7 +978,11 @@
       // An open list re-reads its rows: a blank that just became a prompt
       // must leave it, and must not stay the highlight.
       if (open) {
-        if (showingPick) showText();
+        if (showingPick) {
+          showText();
+          const o = picked();
+          wear(o && !o.prompt ? o.classes : []);
+        }
         filter(query());
       } else {
         showText();
@@ -1066,6 +1087,7 @@
           showingPick = false;
           lead.hidden = true;
           wrap.removeAttribute("rst-combo-has-lead");
+          wear([]);
           filter(resume.typed);
         }
         const was = resume.extra >= 0 ? opts.filter((o) => o.run)[resume.extra]

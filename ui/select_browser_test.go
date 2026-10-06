@@ -1643,3 +1643,89 @@ func TestSelectPlacement(t *testing.T) {
 		t.Error("equal room above and below opened upward: a tie goes down")
 	}
 }
+
+// data-rst-class: a row wears its option's classes, the closed box wears
+// the pick's while it shows the pick, takes them off once somebody types
+// (their words are a search, not the pick), and wears the new pick's
+// once one is chosen. An option without the attribute adds nothing, and
+// is-active, the highlight's own class, is never taken from an option.
+func TestSelectOptionClassStylesRowAndBox(t *testing.T) {
+	t.Parallel()
+	var got struct {
+		Rows      []string `json:"rows"`
+		Closed    string   `json:"closed"`
+		External  []string `json:"external"`
+		Typing    string   `json:"typing"`
+		Escaped   string   `json:"escaped"`
+		Chosen    string   `json:"chosen"`
+		Plain     string   `json:"plain"`
+		Submitted string   `json:"submitted"`
+	}
+	drive(t, `
+		const frame = () => `+afterFrame+`;
+		const host = document.createElement('div');
+		host.innerHTML = '<label for="face">Face</label><select data-rst-select id="face" name="face">' +
+			'<option value="serif" data-rst-class="f-serif big" selected>Serif</option>' +
+			'<option value="mono" data-rst-class="f-mono is-active">Mono</option>' +
+			'<option value="none">None</option></select>';
+		document.querySelector('form').append(host);
+		document.dispatchEvent(new CustomEvent('rst:select-scan', { detail: { root: host } }));
+		await Promise.resolve();
+		const input = document.querySelector('#face-combo');
+		const native = document.querySelector('#face');
+		const own = () => [...input.classList].sort().join(' ');
+		const out = {};
+		out.rows = [...document.querySelectorAll('#face-listbox [role=option]')].map((li) => [...li.classList].sort().join(' '));
+		out.closed = own();
+		// The page changing the pick, with nobody typing: each pick's own
+		// classes, and none left over from the one before.
+		const set = (v) => { native.value = v; native.dispatchEvent(new Event('change', { bubbles: true })); return own(); };
+		out.external = [set('mono'), set('none'), set('serif')];
+		input.focus();
+		input.value = 'mo';
+		input.dispatchEvent(new Event('input', { bubbles: true }));
+		await frame();
+		out.typing = own();
+		input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+		await frame();
+		out.escaped = own();
+		input.value = 'mono';
+		input.dispatchEvent(new Event('input', { bubbles: true }));
+		await frame();
+		input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+		await frame();
+		out.chosen = own();
+		out.submitted = document.querySelector('#face').value;
+		document.querySelector('#face').value = 'none';
+		document.querySelector('#face').dispatchEvent(new Event('change', { bubbles: true }));
+		input.focus();
+		input.value = 'none';
+		input.dispatchEvent(new Event('input', { bubbles: true }));
+		await frame();
+		input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+		await frame();
+		out.plain = own();
+		return out;
+	`, &got)
+	if strings.Join(got.Rows, "|") != "big f-serif|f-mono|" {
+		t.Errorf("rows wear %q, want each its own option's classes and the plain row none", got.Rows)
+	}
+	if got.Closed != "big f-serif" {
+		t.Errorf("the closed box showing Serif wears %q, want %q", got.Closed, "big f-serif")
+	}
+	if strings.Join(got.External, "|") != "f-mono||big f-serif" {
+		t.Errorf("the page picking Mono, None, then Serif left the box wearing %q, want each pick's classes and nothing else", got.External)
+	}
+	if got.Typing != "" {
+		t.Errorf("the box wears %q while somebody types, want nothing: a query is not the pick", got.Typing)
+	}
+	if got.Escaped != "big f-serif" {
+		t.Errorf("Escape put the pick back but the box wears %q, want %q", got.Escaped, "big f-serif")
+	}
+	if got.Submitted != "mono" || got.Chosen != "f-mono" {
+		t.Errorf("after choosing Mono the select holds %q and the box wears %q, want mono and %q", got.Submitted, got.Chosen, "f-mono")
+	}
+	if got.Plain != "" {
+		t.Errorf("a pick with no data-rst-class leaves the box wearing %q, want nothing", got.Plain)
+	}
+}

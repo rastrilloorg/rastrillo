@@ -371,7 +371,12 @@ func TestSelectContract(t *testing.T) {
 	// (data-rst-select-floor), the list's padding and borders counted
 	// against the room, and the gap re-read — Tito Go #3146's rule, which
 	// the checkout widget's iPhone keyboard needed.
-	if n := len(SelectJS()); n > 50*1024 {
+	//
+	// Then to 51KB (measured 52,098 bytes) by data-rst-class, a row and the
+	// closed box styled per option: Tito Go's font menus set each name in
+	// its own face. Comments were trimmed to the one that says why typing
+	// takes the classes off.
+	if n := len(SelectJS()); n > 51*1024 {
 		t.Fatalf("select.js is %d bytes; it is split out of the shim precisely to stay readable — trim it", n)
 	}
 	if bytes.Contains(SelectJS(), []byte("\t")) {
