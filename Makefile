@@ -138,6 +138,17 @@ test.%: | $(BIN)/tmp
 # The examples' rastrillo_actions files stay out - they are generator
 # input, rewritten before they compile.
 STATICCHECK := honnef.co/go/tools/cmd/staticcheck@v0.7.0
+# staticcheck keeps its cache in the user cache directory, ~/.cache,
+# which a sandboxed CI runner mounts read-only: "failed to initialize
+# build cache ... read-only file system". Where the runner hands the job
+# an absolute GOCACHE, staticcheck's goes inside it: writable wherever
+# Go's is, and evicted with it. Anywhere else it stays where staticcheck
+# puts it. Not beside it: a writable GOCACHE says nothing about its
+# parent.
+ifneq ($(filter /%,$(firstword $(GOCACHE))),)
+export STATICCHECK_CACHE ?= $(GOCACHE)/staticcheck
+endif
+
 staticcheck:
 	go run $(STATICCHECK) -tags browser ./...
 	cd money && go run $(STATICCHECK) ./...
@@ -172,9 +183,14 @@ gitleaks:
 	go run $(GITLEAKS) git --no-banner --redact --log-opts='--full-history --diff-filter=tuxdb HEAD' .
 
 # The README promises chromedp stays out of the ordinary build graph.
-# This is that sentence, executable.
+# This is that sentence, executable. go list runs on its own line for
+# the reason gorm-free's does: piped straight into grep, a go list that
+# could not run printed nothing and the check passed. It did, on the
+# cloud runner's first rastrillo job, where go could not fetch its
+# toolchain and every later step failed for that reason.
 chromedp-graph:
-	@if go list -deps ./... | grep -i chromedp; then \
+	@deps=$$(go list -deps ./...) || exit 1; \
+	if echo "$$deps" | grep -i chromedp; then \
 		echo "go list -deps ./... pulls chromedp - the README's promise is broken"; \
 		exit 1; \
 	fi
@@ -264,6 +280,11 @@ scaffold-smoke: build-cli
 # go test's default 10 minutes killed it whenever the box was shared
 # with other builds. The limit is per package; a real hang still dies.
 browser: $(BROWSER_ROLES)
+
+# The browser packages that need full Chromium rather than a headless
+# shell, where both are installed (hack/gotest.sh). ui's busy-button
+# drive needs the back/forward cache, which the shell never restores.
+export FULL_CHROMIUM := ui
 
 browser.%: | $(BIN)/tmp
 	./hack/gotest.sh browser '$*'

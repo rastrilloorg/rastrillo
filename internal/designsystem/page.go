@@ -2340,7 +2340,7 @@ const viewTemplate = `{{define "ds-view"}}<div class="ds-view{{.Class}}" style="
 {{if .Source}}<label class="ds-view__tab ds-view__tab--c"><input type="radio" name="{{.Group}}">{{P "Code"}}</label>{{end}}
 </fieldset>
 <div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="{{.Title}}" loading="lazy"{{if .Src}} src="{{.Src}}"{{else}} srcdoc="{{.Doc}}"{{end}}></iframe></div></div>
-{{if .Source}}<pre class="ds-src ds-view__code rst-mono"><code>{{.Source}}</code></pre>{{end}}
+{{if .Source}}<pre class="ds-src ds-view__code rst-mono" tabindex="0"><code>{{.Source}}</code></pre>{{end}}
 </div>{{end}}`
 
 const pageTemplate = `{{define "ds-page"}}<!doctype html>
@@ -2474,9 +2474,9 @@ const gettingStartedBody = `{{define "ds-body-getting-started"}}
 
 <h3 class="ds-sub">{{P "In a new rastrillo app"}}</h3>
 <p class="ds-lead">{{P "rastrillo new writes these into the app's static directory and links them from the layout, tokens.css first. They're yours from then on: edit them, or delete what you don't use."}}</p>
-<pre class="ds-src rst-mono"><code>{{.Assets.Scaffold}}</code></pre>
+<pre class="ds-src rst-mono" tabindex="0"><code>{{.Assets.Scaffold}}</code></pre>
 <p class="ds-lead">{{P "The theme is pinned twice. --theme decides which shipped theme is copied to static/theme.css, and logged at app generation time."}}</p>
-<pre class="ds-src rst-mono"><code>{{.Assets.Pin}}</code></pre>
+<pre class="ds-src rst-mono" tabindex="0"><code>{{.Assets.Pin}}</code></pre>
 
 <h3 class="ds-sub">{{P "Using it without the framework"}}</h3>
 <p class="ds-lead">{{P "The names above are links. Take tokens.css and one theme and you have the whole visual system: plain classes, ordinary HTML, no build step."}}</p>
@@ -2510,9 +2510,9 @@ const iconsBody = `{{define "ds-body-icons"}}
 
 <h3 class="ds-sub">{{P "An icon the framework does not ship"}}</h3>
 <p class="ds-lead">{{P "The icons package rastrillo new writes is app-owned source: add the glyph there and call it like any other. ui.WithIcons is the seam that puts your set in front of the framework's own."}}</p>
-<pre class="ds-src rst-mono"><code>{{.Icons.Wiring}}</code></pre>
+<pre class="ds-src rst-mono" tabindex="0"><code>{{.Icons.Wiring}}</code></pre>
 <p class="ds-lead">{{P "The trap, and it is a silent one: ui.FuncsWith rebinds icon and iconAssets back to the built-in set. An app that scaffolded its own icons has to pass both seams on every call, or its icons revert to Lucide on every request while still rendering something perfectly plausible."}}</p>
-<pre class="ds-src rst-mono"><code>{{.Icons.Rebind}}</code></pre>
+<pre class="ds-src rst-mono" tabindex="0"><code>{{.Icons.Rebind}}</code></pre>
 {{end}}`
 
 const tokensBody = `{{define "ds-body-tokens"}}

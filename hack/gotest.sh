@@ -98,9 +98,66 @@ if [ "$mode" = browser ] && [ -z "${TMPDIR:-}" ] && [ -w /var/tmp ]; then
 	export TMPDIR
 fi
 
+# The headless shell never restores a page from the back/forward cache,
+# and ui's TestBusyButtonDrive needs one (no flag changes that; full
+# Chromium of the same version does). Where `chromium` is a headless
+# shell, as amadan's cloud runner links it, the packages the Makefile
+# names in FULL_CHROMIUM use full Chromium for Testing from beside it
+# when it is installed there. Only those: on the fleet full Chromium
+# took the design system's slices from minutes to as long as twenty.
+# Discovery only: a readlink without -f leaves the browser to the
+# harness's own search rather than failing the role.
+case " ${FULL_CHROMIUM:-} " in
+*" $rel "*) full=yes ;;
+*) full= ;;
+esac
+if [ "$mode" = browser ] && [ -n "$full" ] && [ -z "${RASTRILLO_CHROME:-}" ] &&
+	shell=$(command -v chromium 2>/dev/null) && shell=$(readlink -f "$shell" 2>/dev/null); then
+	case "${shell##*/}" in
+	headless_shell | chrome-headless-shell)
+		# The same build number as the shell: one Playwright installs both.
+		build=${shell#*/chromium_headless_shell-}
+		for c in "${shell%/chromium_headless_shell-*}/chromium-${build%%/*}"/chrome-linux*/chrome; do
+			if [ -x "$c" ]; then
+				RASTRILLO_CHROME=$c
+				export RASTRILLO_CHROME
+			fi
+		done
+		;;
+	esac
+fi
+
+# Full Chromium's crash handler wants a database under its config
+# directory, ~/.config by default, and will not start without one
+# ("chrome_crashpad_handler: --database is required"). The cloud
+# runner's HOME is read-only, so there it gets a scratch one.
+# Which browser a role drove is the first question a red browser role
+# raises, and nothing else in the log answers it.
+if [ "$mode" = browser ]; then
+	echo "gotest: on $(uname -n), driving ${RASTRILLO_CHROME:-the harness's own choice ($(command -v chromium 2>/dev/null || echo none on PATH))}"
+fi
+
+scratch=
+if [ "$mode" = browser ] && [ -z "${CHROME_CONFIG_HOME:-}" ] && ! [ -w "${HOME:-/}" ]; then
+	scratch=$(mktemp -d)
+	CHROME_CONFIG_HOME=$scratch
+	export CHROME_CONFIG_HOME
+fi
+
+# run is exec, unless there is scratch to remove after go test.
+run() {
+	if [ -z "$scratch" ]; then
+		exec "$@"
+	fi
+	status=0
+	"$@" || status=$?
+	rm -rf "$scratch"
+	exit "$status"
+}
+
 if [ -z "$slice" ]; then
 	# shellcheck disable=SC2086 # an empty $tags is no argument at all
-	exec go test $tags -timeout "$timeout" "$pkg" -count=1
+	run go test $tags -timeout "$timeout" "$pkg" -count=1
 fi
 
 k=${slice%of*}
@@ -127,4 +184,4 @@ if [ -z "$mine" ]; then
 fi
 echo "gotest: slice $k of $n of $pkg runs $(printf '%s\n' "$mine" | wc -l) of $total tests"
 # shellcheck disable=SC2086
-exec go test $tags -timeout "$timeout" -run "^($(printf '%s\n' "$mine" | paste -sd'|' -))\$" "$pkg" -count=1
+run go test $tags -timeout "$timeout" -run "^($(printf '%s\n' "$mine" | paste -sd'|' -))\$" "$pkg" -count=1

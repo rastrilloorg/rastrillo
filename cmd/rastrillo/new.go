@@ -1480,6 +1480,17 @@ fmt-check:
 # too; no file is left out by them, so it covers everything the plain
 # build does.
 STATICCHECK := honnef.co/go/tools/cmd/staticcheck@%[2]s
+# staticcheck keeps its cache in the user cache directory, ~/.cache,
+# which a sandboxed CI runner mounts read-only: "failed to initialize
+# build cache ... read-only file system". Where the runner hands the job
+# an absolute GOCACHE, staticcheck's goes inside it: writable wherever
+# Go's is, and evicted with it. Anywhere else it stays where staticcheck
+# puts it. Not beside it: a writable GOCACHE says nothing about its
+# parent.
+ifneq ($(filter /%%,$(firstword $(GOCACHE))),)
+export STATICCHECK_CACHE ?= $(GOCACHE)/staticcheck
+endif
+
 staticcheck:
 	go run $(STATICCHECK) -tags browser,perf ./...
 

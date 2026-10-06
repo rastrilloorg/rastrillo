@@ -2165,8 +2165,12 @@ func TestBusyButtonDrive(t *testing.T) {
 		t.Errorf("the form with the opted-out button sent %q, want %q", got, "action=quiet")
 	}
 	// No spinner, no hold: the 650ms minimum is for a spinner on screen,
-	// and an opted-out button shows none.
-	if waited := time.Since(quietAt); waited > 450*time.Millisecond {
+	// and an opted-out button shows none. The clock covers the 300ms
+	// sleep and the CDP round trips as well as the submit, so the line is
+	// drawn under the hold rather than over the sleep: at 450ms a busy
+	// CI box (31 shards and another repo's suite on one worker) read
+	// 496ms for a submit that was not held at all.
+	if waited := time.Since(quietAt); waited > 600*time.Millisecond {
 		t.Errorf("the opted-out button's submit took %v to arrive; with no spinner to show it must not be held", waited)
 	}
 	const wantQuiet = "form:true btn:- btn-off:false spin:no"

@@ -90,6 +90,11 @@
 .ds-updown__next { grid-column: 2; justify-self: end; text-align: end; }
 .ds-shell { margin: var(--rst-sp-5) 0; }
 .ds-shell h3 { font-size: 1.05rem; margin: 0 0 var(--rst-sp-1); }
+/* A source block scrolls sideways when a line is longer than its column,
+   and a box that scrolls must be reachable from the keyboard (axe's
+   scrollable-region-focusable; WCAG 2.1.1), so every pre.ds-src carries
+   tabindex="0" in page.go. Whether a given block overflows depends on the
+   font the browser found, which is why it showed only on one machine. */
 .ds-src { background: var(--rst-surface); border: 1px solid var(--rst-line); border-radius: var(--rst-radius); margin: var(--rst-sp-3) 0; overflow-x: auto; padding: var(--rst-sp-4); }
 .ds-src code { white-space: pre; }
 
