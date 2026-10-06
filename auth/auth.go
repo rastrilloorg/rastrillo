@@ -171,6 +171,18 @@ type Config struct {
 	// can gate.
 	SecondFactor func(w http.ResponseWriter, r *http.Request, sess sessions.Session) (done bool, err error)
 
+	// Refused answers a first factor that verified but that Authorize
+	// would not admit. Nil keeps the plugin's own answer, a bare-text
+	// 403 "This address is verified but not admitted here." — which is
+	// no page an app would show anybody. An app sets this to render
+	// its own sign-in page with an error and a way to try a different
+	// address (a redirect to SigninPath with a query of its own is
+	// enough). It is called with the verified identity and must write
+	// the whole response; no session is minted, and the attempt is
+	// already over. Only someone who has just proved they hold the
+	// address reaches it, so saying "not admitted" here is no oracle.
+	Refused func(w http.ResponseWriter, r *http.Request, id Identity)
+
 	// TrustedProxyHops is how many proxies you run in front of the app,
 	// which decides the address the per-IP sign-in budget counts:
 	// clientip.From reads that many elements from the right of
