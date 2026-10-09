@@ -31,7 +31,7 @@ export CGO_ENABLED = 0
 # line if you must: make ci GOTOOLCHAIN=local. Raise it with each Go
 # security release; govulncheck naming a stdlib package "Found in" this
 # version is the signal.
-export GOTOOLCHAIN = go1.26.6
+export GOTOOLCHAIN = go1.26.9
 
 BIN := $(CURDIR)/.build
 

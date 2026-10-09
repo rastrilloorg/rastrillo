@@ -1343,7 +1343,7 @@ const staticcheckVersion = "v0.7.0"
 const (
 	govulncheckVersion = "v1.8.0"
 	gitleaksVersion    = "v8.30.1"
-	goToolchain        = "go1.26.6"
+	goToolchain        = "go1.26.9"
 )
 
 // makefileTemplate is the one gate definition: CI steps exec these
