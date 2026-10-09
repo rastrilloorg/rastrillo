@@ -110,7 +110,8 @@ func WithT(t func(key string, args ...any) string) Option {
 //
 // rowMenuItems checks the row-menu partial's Items and hands the partial
 // one ready-to-render item each, stopping the render on an item it
-// cannot show.
+// cannot show. paginationItems reads the pagination partial's Items and
+// marks what a phone shows of them (see its own comment).
 //
 // displayURL and safeHref are form.DisplayURL and form.SafeHref, the
 // read side of field-url: a stored address shown without its scheme,
@@ -121,7 +122,7 @@ func WithT(t func(key string, args ...any) string) Option {
 //	{{with safeHref .Site}}<a href="{{.}}" rel="noopener noreferrer">{{displayURL .}}</a>{{end}}
 //
 // An app is free to add its own entries on top; it must not drop these
-// seventeen. The shipped partials and shells stop parsing without most
+// eighteen. The shipped partials and shells stop parsing without most
 // of them, and the docs promise the rest.
 func Funcs(opts ...Option) template.FuncMap {
 	c := config{
@@ -142,7 +143,7 @@ func Funcs(opts ...Option) template.FuncMap {
 		"opt":          opt, "Tbdi": tbdi(c.t),
 		"stageArt":   stageArt,
 		"displayURL": form.DisplayURL, "safeHref": form.SafeHref,
-		"rowMenuItems": rowMenuItems,
+		"rowMenuItems": rowMenuItems, "paginationItems": paginationItems,
 	}
 }
 
@@ -649,4 +650,122 @@ func searchClear(data any) string {
 func list(items ...any) []any {
 	out := make([]any, 0, len(items))
 	return append(out, items...)
+}
+
+// paginationItem is one pagination control as the partial renders it.
+// Label is whatever the app passed (the partial formats it with
+// number). Step is the item's Rel, "prev" or "next": a phone draws it
+// as a chevron. Wide marks an item only a wide strip shows; Narrow
+// marks an ellipsis only a phone shows.
+type paginationItem struct {
+	Label                  any
+	Href, Step             string
+	Current, Disabled, Gap bool
+	Wide, Narrow           bool
+}
+
+// paginationItems reads the pagination partial's Items, a dict-built
+// list or a slice of an app's own structs, and marks what a phone
+// shows. A wide strip shows every item, as the app passed it. A phone
+// has room for about seven 44px targets, and "Previous 1 … 3 4 5 … 9
+// Next" wrapped onto two rows at 390, so there the items whose Rel is
+// "prev" or "next" become chevrons, and of the pages only the first,
+// the current and the last stay. Each run of items the phone skips
+// shows exactly one ellipsis: the app's own Gap where the run has one,
+// else one marked Narrow, which only a phone shows. The generated list
+// actions list every page with no gaps, and a run hidden without an
+// ellipsis would read as consecutive pages.
+//
+// Rel is what says an item is a step rather than a page. A label
+// cannot: "Previous" is a word in one app's language, "First" is a
+// control that is not a step, and both are text. So a strip with no
+// Rel at all renders on a phone as it always has, every item shown, and
+// an app opts in by marking its two steps. With no Current page there
+// is nothing to keep between the ends, and every page shows. Reading
+// never fails: the partial rendered any Items before this existed, and
+// a strip that shows too much is better than a list screen that will
+// not render.
+func paginationItems(data any) []paginationItem {
+	v := optKey(data, "Items")
+	if !v.IsValid() || (v.Kind() != reflect.Slice && v.Kind() != reflect.Array) {
+		return nil
+	}
+	items := make([]paginationItem, 0, v.Len())
+	steps := false
+	for i := 0; i < v.Len(); i++ {
+		it := v.Index(i).Interface()
+		item := paginationItem{
+			Label: opt(it, "Label"), Href: optString(it, "Href"),
+			Current: optBool(it, "Current"), Disabled: optBool(it, "Disabled"), Gap: optBool(it, "Gap"),
+		}
+		if rel := optString(it, "Rel"); !item.Gap && (rel == "prev" || rel == "next") {
+			item.Step, steps = rel, true
+		}
+		items = append(items, item)
+	}
+	if !steps {
+		return items
+	}
+
+	// What a phone always shows: the steps, and the first, current and
+	// last pages.
+	shown := map[int]bool{}
+	first, last, current := -1, -1, -1
+	for i, it := range items {
+		switch {
+		case it.Step != "":
+			shown[i] = true
+		case it.Gap:
+		default:
+			if first < 0 {
+				first = i
+			}
+			last = i
+			if it.Current && current < 0 {
+				current = i
+			}
+		}
+	}
+	if current < 0 {
+		return items
+	}
+	shown[first], shown[current], shown[last] = true, true, true
+
+	out := make([]paginationItem, 0, len(items)+2)
+	var run []paginationItem
+	flush := func() {
+		if len(run) == 0 {
+			return
+		}
+		gap := -1
+		for j := range run {
+			if run[j].Gap && gap < 0 {
+				gap = j
+				continue
+			}
+			run[j].Wide = true
+		}
+		if gap < 0 {
+			out = append(out, paginationItem{Gap: true, Narrow: true})
+		}
+		out = append(out, run...)
+		run = nil
+	}
+	for i, it := range items {
+		if !shown[i] {
+			run = append(run, it)
+			continue
+		}
+		flush()
+		out = append(out, it)
+	}
+	flush()
+	return out
+}
+
+// optBool is optKey narrowed to a bool: absent, nil or not a bool reads
+// as false.
+func optBool(data any, key string) bool {
+	got := optKey(data, key)
+	return got.IsValid() && got.Kind() == reflect.Bool && got.Bool()
 }

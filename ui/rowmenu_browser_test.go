@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"testing"
 	"time"
 
@@ -15,6 +16,7 @@ import (
 	"github.com/chromedp/chromedp/kb"
 
 	"amadan.net/rastrillo/rastrillo/harness"
+	"amadan.net/rastrillo/rastrillo/internal/designsystem/galleryrig"
 )
 
 // rowMenuPage is three list-grid rows, each with a row menu rendered by
@@ -274,4 +276,181 @@ func TestRowMenuTargetsAreTapsOnAPhone(t *testing.T) {
 		t.Fatalf("measured %d controls in row A's open menu, want the summary and three items", len(got))
 	}
 	assertTargets(t, "390 touch, row A's menu", got)
+}
+
+// TestARowMenuOpensBesideItsOwnKebab: the panel hangs from the kebab,
+// wherever the <details> around it is put. The panel used to hang from
+// the <details>, which only hugged the kebab where something shrank it:
+// a list grid cell, or an engine that applies justify-self to a block.
+// Anywhere else (a flex column here, the gallery's bare sample in
+// Safari) it was as wide as its container and the panel opened at the
+// container's far edge, nowhere near the kebab just pressed.
+//
+// Left alone, the menu sits at its container's trailing edge in every
+// engine, and the panel's trailing edge meets the kebab's. An app that
+// pins it to the leading edge (the /pinned legs) gets a panel that flips
+// to open from the kebab's leading edge instead. An engine without
+// anchor positioning cannot flip, which is why the menu must reach the
+// trailing edge on its own: the no-anchor leg is a kebab that would sit
+// at the leading edge if margins left it there, and its panel must still
+// open on screen. Every leg runs in RTL too, where the edges mirror.
+func TestARowMenuOpensBesideItsOwnKebab(t *testing.T) {
+	menu := render(t, "row-menu", map[string]any{"Name": "Grace Hopper", "Items": []any{
+		map[string]any{"Label": "Edit", "Href": "/go/edit"},
+		map[string]any{"Label": "Archive", "Action": "/act/a"},
+		map[string]any{"Label": "Delete order…", "Href": "/go/delete", "Danger": true},
+	}})
+	stack := func(style string) string {
+		return `<style>#box { display: flex; flex-direction: column; padding: 1rem; } ` + style + `</style><div id="box">` + menu + `</div>`
+	}
+	pages := map[string]string{
+		"/start":  sizingDoc("a menu in a stack", stack("")),
+		"/pinned": sizingDoc("a menu pinned to the leading edge", stack("#box > [rst-row-menu] { margin-inline-start: 0; }")),
+	}
+	rtl := map[string]string{}
+	for path, html := range pages {
+		rtl["/rtl"+path] = strings.Replace(html, `dir="ltr"`, `dir="rtl"`, 1)
+	}
+	for path, html := range rtl {
+		pages[path] = html
+	}
+	type leg struct {
+		name, path string
+		w          int64
+		coarse     bool
+		anchor     bool
+		edge       string // the kebab edge, logical, the panel must share
+	}
+	var legs []leg
+	for _, dir := range []string{"", "/rtl"} {
+		for _, l := range []leg{
+			{"1280, left where it falls", "/start", 1280, false, true, "end"},
+			{"1280, pinned to the leading edge", "/pinned", 1280, false, true, "start"},
+			{"390 touch, left where it falls", "/start", 390, true, true, "end"},
+			{"390 touch, pinned to the leading edge", "/pinned", 390, true, true, "start"},
+			{"1280 without anchor positioning", "/start", 1280, false, false, "end"},
+			{"390 touch without anchor positioning", "/start", 390, true, false, "end"},
+		} {
+			l.path = dir + l.path
+			if dir != "" {
+				l.name = "RTL " + l.name
+			}
+			legs = append(legs, l)
+		}
+	}
+	for _, leg := range legs {
+		t.Run(leg.name, func(t *testing.T) {
+			rig := sizingRig(t, leg.coarse, pages)
+			ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
+			defer cancel()
+			mustRun(t, ctx, chromedp.EmulateViewport(leg.w, 800), chromedp.Navigate(rig.Origin+leg.path), chromedp.WaitVisible("#box", chromedp.ByQuery))
+			requirePointer(t, ctx, leg.coarse)
+			if !leg.anchor {
+				mustRun(t, ctx, chromedp.Evaluate(galleryrig.WithoutAnchorPositioning, nil, awaitPromise))
+			}
+			galleryrig.RequireAnchorPositioning(t, ctx, leg.name, "[rst-row-menu-panel]", leg.anchor)
+			// Edges are read in the inline direction: Start and End are
+			// distances from the root box's leading edge, so one set of
+			// comparisons serves both directions. The root box, not the
+			// viewport: tokens.css reserves a stable scrollbar gutter, and
+			// RTL puts it on the left.
+			var g struct {
+				Open, RTL                                      bool
+				SummaryStart, SummaryEnd, PanelStart, PanelEnd float64
+				PanelTop, SummaryBottom, VW                    float64
+			}
+			at(t, ctx, `(() => { const d = document.querySelector("[rst-row-menu]"); d.querySelector("summary").click();
+			  const s = d.querySelector("summary").getBoundingClientRect(), p = d.querySelector("[rst-row-menu-panel]").getBoundingClientRect();
+			  const rtl = getComputedStyle(d).direction === "rtl", h = document.documentElement.getBoundingClientRect();
+			  const start = r => rtl ? h.right - r.right : r.left - h.left, end = r => rtl ? h.right - r.left : r.right - h.left;
+			  return JSON.stringify({Open: d.open, RTL: rtl, SummaryStart: start(s), SummaryEnd: end(s), PanelStart: start(p), PanelEnd: end(p), PanelTop: p.top, SummaryBottom: s.bottom, VW: h.width}); })()`, &g)
+			if !g.Open {
+				t.Fatalf("the menu did not open; this leg proves nothing")
+			}
+			if g.RTL != strings.HasPrefix(leg.path, "/rtl") {
+				t.Fatalf("the menu's direction is RTL %v; this leg needs %v", g.RTL, !g.RTL)
+			}
+			if leg.edge == "start" && g.SummaryStart > 0.25*g.VW {
+				t.Fatalf("the kebab starts %.0fpx from the leading edge of a %.0fpx viewport; it is not pinned there and this leg proves nothing", g.SummaryStart, g.VW)
+			}
+			switch leg.edge {
+			case "end":
+				if g.SummaryEnd < 0.75*g.VW {
+					t.Errorf("the kebab ends %.0fpx from the leading edge of a %.0fpx viewport; left where it falls it must sit at the trailing edge", g.SummaryEnd, g.VW)
+				}
+				if d := g.PanelEnd - g.SummaryEnd; d < -0.5 || d > 0.5 {
+					t.Errorf("the panel's trailing edge is at %.0f, the kebab's at %.0f; it must open from the kebab", g.PanelEnd, g.SummaryEnd)
+				}
+			case "start":
+				if d := g.PanelStart - g.SummaryStart; d < -0.5 || d > 0.5 {
+					t.Errorf("the panel's leading edge is at %.0f, the kebab's at %.0f; with no room before the kebab it must flip and open from it", g.PanelStart, g.SummaryStart)
+				}
+			}
+			if g.PanelStart < 0 || g.PanelEnd > g.VW+0.5 {
+				t.Errorf("the panel spans %.0f to %.0f from the leading edge of a %.0fpx viewport; it must stay on screen", g.PanelStart, g.PanelEnd, g.VW)
+			}
+			if g.PanelTop < g.SummaryBottom {
+				t.Errorf("the panel starts at %.0f, above the kebab's foot at %.0f; it must drop below the kebab", g.PanelTop, g.SummaryBottom)
+			}
+		})
+	}
+}
+
+// TestARowsKebabSitsAtItsTrailingEdge: below 800px the list grid is
+// three columns, name, one auto cell and the kebab's, whatever
+// --rst-cols says. A row whose middle cells are all rst-m-hide has two
+// children left, and auto-placement put the kebab in the auto cell:
+// mid-row, beside the name, with the empty kebab column to its right.
+// The kebab belongs in the last column at every width.
+//
+// With the kebab there, the empty auto column still cost the name a
+// column gap (13.6px at 390) it could not use, so the name spans it.
+// The control is row V, the same row with its middle cell shown: its
+// name must stop at the cell, not run under it or push it down a line.
+func TestARowsKebabSitsAtItsTrailingEdge(t *testing.T) {
+	for _, leg := range []struct {
+		name           string
+		w              int64
+		coarse, narrow bool
+	}{{"1280 mouse", 1280, false, false}, {"600 mouse", 600, false, true}, {"390 touch", 390, true, true}} {
+		t.Run(leg.name, func(t *testing.T) {
+			rig, _ := rowMenuRig(t, leg.coarse)
+			ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
+			defer cancel()
+			mustRun(t, ctx, chromedp.EmulateViewport(leg.w, 844), chromedp.Navigate(rig.Origin+"/"), chromedp.WaitVisible("#list", chromedp.ByQuery),
+				chromedp.Evaluate(`(() => { const v = document.getElementById("row-a").cloneNode(true); v.id = "row-v"; v.querySelector(".rst-m-hide").classList.remove("rst-m-hide"); document.getElementById("list").append(v); return true; })()`, nil))
+			requirePointer(t, ctx, leg.coarse)
+			var rows []struct {
+				ID                                     string
+				KebabRight, RowEnd, NameEnd, Gap, Menu float64
+				CellStart, NameBottom, CellTop         float64
+			}
+			at(t, ctx, `JSON.stringify([...document.querySelectorAll("#list [rst-lrow]")].map(r => {
+			  const s = getComputedStyle(r), b = r.getBoundingClientRect(), n = r.querySelector(".rst-nm").getBoundingClientRect(), c = r.querySelector(":scope > span").getBoundingClientRect();
+			  return {ID: r.id, KebabRight: r.querySelector("[rst-row-menu] > summary").getBoundingClientRect().right,
+			    RowEnd: b.right - parseFloat(s.paddingRight) - parseFloat(s.borderRightWidth), NameEnd: n.right, Gap: parseFloat(s.columnGap),
+			    Menu: parseFloat(s.gridTemplateColumns.split(" ").pop()), CellStart: c.left, NameBottom: n.bottom, CellTop: c.top};
+			}))`, &rows)
+			if len(rows) != 4 {
+				t.Fatalf("measured %d rows, want 4", len(rows))
+			}
+			for _, r := range rows {
+				if d := r.RowEnd - r.KebabRight; d < -0.5 || d > 0.5 {
+					t.Errorf("%s: the kebab ends at %.0f, %.0fpx short of the row's trailing edge at %.0f", r.ID, r.KebabRight, d, r.RowEnd)
+				}
+				if !leg.narrow {
+					continue
+				}
+				if r.ID == "row-v" {
+					if d := r.CellStart - r.Gap - r.NameEnd; d < -0.5 || d > 0.5 || r.CellTop >= r.NameBottom {
+						t.Errorf("%s: the name ends at %.0f and the shown cell starts at %.0f, at %.0fpx down against the name's foot at %.0fpx; want the name to stop one gap before the cell, on the same line", r.ID, r.NameEnd, r.CellStart, r.CellTop, r.NameBottom)
+					}
+					continue
+				}
+				if want := r.RowEnd - r.Menu - r.Gap; r.NameEnd < want-0.5 || r.NameEnd > want+0.5 {
+					t.Errorf("%s: the name ends at %.0f, %.0fpx short of the kebab column's gap at %.0f; with every middle cell hidden it must take their column", r.ID, r.NameEnd, want-r.NameEnd, want)
+				}
+			}
+		})
+	}
 }

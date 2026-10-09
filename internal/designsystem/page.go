@@ -138,11 +138,6 @@ type pageView struct {
 	DocTitle string
 	TitleID  string
 
-	// ViewGroup is whether the page has a Code tab anywhere, which is
-	// when the page-wide view buttons are worth drawing: read off the
-	// rendered body, so a page that gains its first Code tab gets them.
-	ViewGroup bool
-
 	// Body is the section's own markup: the ds-body-<kind> template,
 	// executed against this same view and handed back to the frame.
 	// template.HTML because it is this package's own output — see
@@ -757,7 +752,7 @@ func renderGallery(mount, theme, locale string) (map[string][]byte, error) {
 		view.Kind = pk.Kind
 		view.Title = proseIn(locale, pk.Title)
 		view.Family = familyOf(families, pk.Kind)
-		view.DocTitle = docTitle(view.Title, proseIn(locale, "rastrillo design system"), theme)
+		view.DocTitle = docTitle(view.Title, proseIn(locale, "Rastrillo Design System"), theme)
 		if view.Family == nil {
 			view.TitleID = pk.Kind
 		}
@@ -780,7 +775,6 @@ func renderGallery(mount, theme, locale string) (map[string][]byte, error) {
 			return nil, fmt.Errorf("%s: %w", pk.File, err)
 		}
 		view.Body = body
-		view.ViewGroup = strings.Contains(string(body), "ds-view__tab--c")
 
 		var buf strings.Builder
 		if err := tmpl.ExecuteTemplate(&buf, "ds-page", view); err != nil {
@@ -1013,8 +1007,8 @@ func shellViews(mount, theme, locale string) []shellView {
 			// The one preview that frames a page of this tree rather
 			// than a document written for it: the shell demos already
 			// exist, at their own URLs, and framing the real file is
-			// both smaller and more honest than copying it. No Code
-			// tab either — a shell's source is a Go template with
+			// both smaller and more honest than copying it. No HTML or
+			// Template tab either — a shell's source is a Go template with
 			// {{block}} in it, not markup to copy, and the two shell
 			// chrome idioms above show the markup it produces.
 			Preview: previewView{
@@ -1255,9 +1249,9 @@ func renderSample(tmpl *template.Template, name string, state int, s sample, loc
 // previewView is one example's widget. Src is the document the frame
 // loads: a preview file written for it (newPreview), or a page of this
 // tree that already exists (the shell demos, the demo application).
-// No Source and no Rows means no Code tab: only those framed pages,
-// whose source is a Go template or a whole application rather than
-// markup to copy.
+// No Source, no Call and no Rows means neither source tab: only those
+// framed pages, whose source is a Go template or a whole application
+// rather than markup to copy.
 type previewView struct {
 	Group string       // the radio group's name, unique on the page
 	Style template.CSS // --ds-h and --ds-hm: the frame's virtual height
@@ -1267,30 +1261,33 @@ type previewView struct {
 	// without a conditional.
 	Class string
 	Src   string
-	// Call is the template call the Code tab leads with, highlighted;
+	// Call is the template call the Template tab shows, highlighted;
 	// empty where the markup is not a partial's (a hand-written sample,
-	// an idiom, a screen, a format). Wrapper is the one line above the
-	// code naming the container a wrapped sample needs: the frame wears
-	// that container, the code does not, so the reader is told rather
-	// than handed a placeholder form to delete.
+	// an idiom, a format). Wrapper is the one line above the code, in
+	// both tabs, naming the container a wrapped sample needs: the frame
+	// wears that container, the code does not, so the reader is told
+	// rather than handed a placeholder form to delete.
 	Call    template.HTML
 	Wrapper template.HTML
-	// Source is the markup the Code tab shows, formatted and
-	// highlighted: under a Rendered HTML disclosure when there is a
-	// call, on its own when there is not.
+	// Source is the markup the HTML tab shows, formatted and
+	// highlighted.
 	Source template.HTML
 	Title  string
 	NoCopy bool // the sample is an Illustration: no copy button
 
-	// Rows is a grouped partial's Code panel: each state's label, call
+	// Rows is a grouped partial's two panels: each state's label, call
 	// and rendering. Source is empty there, since no one rendering is
 	// the widget's.
 	Rows []rowCode
 }
 
-// HasCode says whether the widget draws a Code tab: it has markup to
+// HasHTML says whether the widget draws an HTML tab: it has markup to
 // show, as one block or as a grouped partial's rows.
-func (v previewView) HasCode() bool { return v.Source != "" || len(v.Rows) > 0 }
+func (v previewView) HasHTML() bool { return v.Source != "" || len(v.Rows) > 0 }
+
+// HasTemplate says whether the widget draws a Template tab: it has a
+// call to show, as one block or one per grouped row.
+func (v previewView) HasTemplate() bool { return v.Call != "" || len(v.Rows) > 0 }
 
 // previewFile is one example's document as a file of the tree: its path
 // under the theme × locale directory, and the document.
@@ -1299,7 +1296,8 @@ type previewFile struct {
 	Doc  string
 }
 
-// rowCode is one state of a grouped partial in its Code panel.
+// rowCode is one state of a grouped partial in its HTML and Template
+// panels.
 type rowCode struct {
 	State        string
 	Call, Source template.HTML
@@ -1316,7 +1314,7 @@ const rowsStyle = "body > ul { display: flex; flex-wrap: wrap; gap: 1rem 1.5rem;
 // partial's own, still unique on the page.
 //
 // It wraps the frame's samples in doc.Wrap but writes no "Put this
-// inside" note to the Code panel, so a grouped partial that needed a
+// inside" note to either panel, so a grouped partial that needed a
 // container would be copied without one. Every grouped partial is an
 // inline piece that needs none, and TestAGroupedPartialNeedsNoWrapper
 // holds samples.go to that.
@@ -1652,9 +1650,16 @@ var previewScripts = []struct {
 // every theme declares color-scheme: light dark. The declaration wins,
 // the propagated value is ignored, and the frame resolves against the
 // reader's OS instead of against the gallery. So the gallery paints
-// it: gallery.js writes data-theme on each frame's own <html>, on load
-// and on every toggle. See its "the previews" section, and the drive
-// leg that measured the two apart.
+// it: gallery.js writes data-theme on each frame's own <html>, once
+// each document in the frame is parsed, and on every toggle. See its
+// "the previews" section, and the drive leg that measured the two
+// apart. A frame can paint before gallery.js reaches it, and shows
+// its blank document and its unstyled one before that, so gallery.css
+// hides a frame until gallery.js has painted it, in every scheme.
+// Without that a reader who chose Dark on a light OS saw each frame
+// flash white (TestAFrameNeverShowsTheOtherSchemeWhileItLoads), and so
+// did a reader on System in Safari on a dark phone
+// (TestAFrameShowsNothingUntilItsDocumentIsStyled).
 func previewDocStyled(mount, theme, locale, title, style, body string) string {
 	var b strings.Builder
 	b.WriteString("<!doctype html>\n")
@@ -1715,7 +1720,32 @@ func previewDoc(mount, theme, locale, title, body string) string {
 var (
 	sampleHref = regexp.MustCompile(`href="([^"]*)"`)
 	sampleForm = regexp.MustCompile(`<form\b`)
+	// A start tag, quoted values whole so a ">" or an attribute's name
+	// inside one is not mistaken for the tag's own, and one attribute in
+	// it, with the space before it.
+	startTag = regexp.MustCompile(`<[a-zA-Z](?:[^>"']|"[^"]*"|'[^']*')*>`)
+	tagAttr  = regexp.MustCompile(`\s+([^\s=/>"']+)(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>"']+))?`)
 )
+
+// unfocus takes autofocus off every element of a sample, for deaden. A
+// preview is only ever shown in a frame, and the page around a
+// same-origin frame grants its autofocus: focus left the gallery for
+// the frame and the gallery scrolled to it, so a reader scrolling the
+// screens page was pulled down to a sign-in sample as its lazy frame
+// loaded. The HTML tab keeps the attribute, because it belongs to the
+// markup being taught. The shell demos are framed whole and opened on
+// their own as well, so they keep theirs and gallery.js refuses it in
+// a frame.
+func unfocus(html string) string {
+	return startTag.ReplaceAllStringFunc(html, func(tag string) string {
+		return tagAttr.ReplaceAllStringFunc(tag, func(attr string) string {
+			if strings.EqualFold(tagAttr.FindStringSubmatch(attr)[1], "autofocus") {
+				return ""
+			}
+			return attr
+		})
+	})
+}
 
 // deaden makes one sample's markup safe to click. The samples are
 // written to read like a real application — /posts/1/edit, and a form
@@ -1723,17 +1753,18 @@ var (
 // so following one landed on a missing page. Every link that is not
 // already a fragment or a page of this tree becomes href="#", which
 // goes nowhere and looks like the link it is; every form is aimed at
-// the sink iframe previewDoc appends.
+// the sink iframe previewDoc appends; and no element asks for focus
+// (unfocus).
 //
 // A form's ACTION is deliberately left alone — nineteen of them still
 // name a real route — because the target is what decides where the
 // answer goes, and the target is the sink. The request is made and
 // lands nowhere the reader can see, which is closer to what the sample
 // says it does than a form posting to "#" would be. It also keeps the
-// action a reader reads in the preview the same as the one in the Code
+// action a reader reads in the preview the same as the one in the HTML
 // tab beside it.
 //
-// Only the LIVE rendering is treated. The Code tab beside it shows the
+// Only the LIVE rendering is treated. The HTML tab beside it shows the
 // sample as it was written, routes and all, because those are the
 // hrefs somebody copying this markup wants — a gallery that had quietly
 // replaced them with # would be teaching the wrong thing.
@@ -1745,7 +1776,7 @@ func deaden(mount, html string) string {
 		}
 		return `href="#"`
 	})
-	return sampleForm.ReplaceAllString(out, `<form target="ds-void"`)
+	return unfocus(sampleForm.ReplaceAllString(out, `<form target="ds-void"`))
 }
 
 // copyJoin joins the parts of a copy button's accessible name, the
@@ -1756,7 +1787,7 @@ const copyJoin = ", "
 
 // titleSep and frameSep are the separators copy review approved for
 // titles: " · " between a page, the site and the theme ("Form ·
-// rastrillo design system · day"), and ", " before a preview frame's
+// Rastrillo Design System · day"), and ", " before a preview frame's
 // state ("field-text sample standalone preview, Required"). They
 // replaced an em dash, which a screen reader announces or swallows
 // depending on its settings. Separators, not words, so not translated.
@@ -1804,13 +1835,13 @@ func previewTitle(locale, name, qualifier string) string {
 
 // newPreview is one example's widget and the file its frame loads. body
 // is what the frame shows, and its links are deadened there; code is
-// what the Code tab shows, and is laid out and highlighted here. The
+// what the HTML tab shows, and is laid out and highlighted here. The
 // two differ for a partial sample, whose frame wears the container the
-// partial assumes while its code does not. code empty means no Code
+// partial assumes while its code does not. code empty means no HTML
 // tab. page is the page's file stem, so the file sits in a directory
 // named after the page that frames it.
 //
-// Only the Code tab's copy is formatted: the frame keeps the bytes as
+// Only the HTML tab's copy is formatted: the frame keeps the bytes as
 // rendered, so a measured frame height cannot move because the source
 // beside it was laid out for reading.
 //
@@ -1833,7 +1864,7 @@ func newPreview(mount, theme, locale, page, group, title, body, code, id string)
 }
 
 // wrapperMarkup is the opening markup of the container a wrapper puts
-// a sample in, as the Code tab names it. method and action are left
+// a sample in, as the HTML and Template tabs name it. method and action are left
 // out: they belong to the reader's form, and the gallery's action="#"
 // is a placeholder nobody should copy.
 func wrapperMarkup(w wrapper) string {
@@ -1854,7 +1885,7 @@ func wrapperMarkup(w wrapper) string {
 // rules under Class idioms: rows go in a list, a form's fields go in a
 // form inside a padded box. It runs in Go rather than in the template
 // because the wrapper is part of the sample now — it is inside the
-// frame, and it is in the source the Code tab shows, which is where a
+// frame, and it is in the source the HTML tab shows, which is where a
 // reader learns that a field partial does not bring its own <form>.
 func wrap(w wrapper, html string) string {
 	switch w {
@@ -2068,7 +2099,7 @@ func renderShell(mount, theme, locale, shell string) (map[string][]byte, error) 
 		Locale:   locale,
 		Dir:      rastrillo.Dir(locale),
 		Name:     shell,
-		Title:    docTitle(proseIn(locale, "The {shell} shell", "shell", shell), proseIn(locale, "rastrillo design system"), ""),
+		Title:    docTitle(proseIn(locale, "The {shell} shell", "shell", shell), proseIn(locale, "Rastrillo Design System"), ""),
 		Mount:    mount,
 		Index:    indexHref(mount, theme, locale),
 		Locales:  localeLinks(mount, theme, locale, "index.html"),
@@ -2148,7 +2179,7 @@ func renderModal(mount, theme, locale string) ([]byte, error) {
 	}
 	var buf strings.Builder
 	err = tmpl.ExecuteTemplate(&buf, "ds-modal", modalData{
-		Title:  docTitle(proseIn(locale, "The modal route"), proseIn(locale, "rastrillo design system"), ""),
+		Title:  docTitle(proseIn(locale, "The modal route"), proseIn(locale, "Rastrillo Design System"), ""),
 		Theme:  theme,
 		Locale: locale,
 		Dir:    rastrillo.Dir(locale),
@@ -2274,7 +2305,7 @@ func renderDemo(mount, theme, locale string) (map[string][]byte, error) {
 			Locale:    locale,
 			Dir:       rastrillo.Dir(locale),
 			Mount:     mount,
-			Title:     docTitle(proseIn(locale, "The demo application"), proseIn(locale, "rastrillo design system"), ""),
+			Title:     docTitle(proseIn(locale, "The demo application"), proseIn(locale, "Rastrillo Design System"), ""),
 			Index:     indexHref(mount, theme, locale),
 			Self:      self,
 			Locales:   localeLinks(mount, theme, locale, file),
@@ -2295,7 +2326,7 @@ func renderDemo(mount, theme, locale string) (map[string][]byte, error) {
 
 // demoView is the widget the Overview frames the demo application in:
 // the same preview widget every example on this tree uses, loading the
-// real page rather than a copy of it, and with no Code tab — an
+// real page rather than a copy of it, and with no HTML or Template tab — an
 // application is not a snippet to paste.
 func demoView(mount, theme, locale string) previewView {
 	return previewView{
@@ -2638,8 +2669,12 @@ func buildAssets(mount, theme, locale string) assetsView {
 // every page writes them twice. That is dogfooding with a point: the
 // shell is one of the things this page documents.
 // viewTemplate is the preview widget, once, used by every example on
-// the page. The Code tab only exists where there is source worth
-// copying, which is everywhere but the shell demos.
+// the page. The tabs run Desktop, Mobile, HTML, Template: from the
+// picture to the markup it is, to the call that writes it. A source tab
+// exists only where it has something to show. The shell demos have
+// neither, a sample with no call has no Template, and a sign-in screen,
+// whose markup is the module's to produce, has no HTML; an empty tab
+// would be a click that shows a blank panel.
 //
 // No radio starts checked, and that is not an oversight. It used to be
 // Desktop, so that a page with no JavaScript and no interaction at all
@@ -2648,49 +2683,67 @@ func buildAssets(mount, theme, locale string) assetsView {
 // column is an 18px sliver nobody can read. CSS cannot tell an
 // explicit choice from a shipped default, so as long as one radio
 // arrives checked the opening view can never follow the reader's width
-// without taking the other view away from them. With none of the three
+// without taking the other view away from them. With none of them
 // checked, gallery.css picks the opening rendering from the width and
 // lights the tab that matches it, and a click on either tab still
 // overrides the width at any size. The Desktop label carries a
 // modifier class for the same reason the Mobile one does: the
 // stylesheet has to be able to say which of the two a reader chose.
+//
+// The two renderings and the two sources are each a pair of their own
+// in one radio group, so that where the four do not fit on one line,
+// on a phone or in a language with long words, the source pair moves
+// under the renderings whole rather than one tab overflowing the page.
 const viewTemplate = `{{define "ds-view"}}<div class="ds-view{{.Class}}" style="{{.Style}}">
 <fieldset class="ds-view__tabs"><legend class="rst-sr-only">{{P "Preview"}}</legend>
-<label class="ds-view__tab ds-view__tab--d"><input type="radio" name="{{.Group}}">{{P "Desktop"}}</label>
-<label class="ds-view__tab ds-view__tab--m"><input type="radio" name="{{.Group}}">{{P "Mobile"}}</label>
-{{if .HasCode}}<label class="ds-view__tab ds-view__tab--c"><input type="radio" name="{{.Group}}">{{P "Code"}}</label>{{end}}
-</fieldset>
+<span class="ds-view__pair"><label class="ds-view__tab ds-view__tab--d"><input type="radio" name="{{.Group}}">{{P "Desktop"}}</label>
+<label class="ds-view__tab ds-view__tab--m"><input type="radio" name="{{.Group}}">{{P "Mobile"}}</label></span>
+{{if or .HasHTML .HasTemplate}}<span class="ds-view__pair">{{if .HasHTML}}<label class="ds-view__tab ds-view__tab--h"><input type="radio" name="{{.Group}}">{{P "HTML"}}</label>
+{{end}}{{if .HasTemplate}}<label class="ds-view__tab ds-view__tab--t"><input type="radio" name="{{.Group}}">{{P "Template"}}</label>
+{{end}}</span>
+{{end}}</fieldset>
 <div class="ds-view__stage"><div class="ds-view__box"><iframe class="ds-view__frame" title="{{.Title}}" src="{{.Src}}" loading="lazy"></iframe></div></div>
-{{if .Rows}}<div class="ds-view__code">
+{{if .Rows}}<div class="ds-view__code ds-view__code--h">
+{{range .Rows}}<p class="ds-state">{{.State}}</p>
+<pre class="ds-src rst-mono" tabindex="0"><code>{{.Source}}</code></pre>
+{{end}}</div>
+<div class="ds-view__code ds-view__code--t">
 {{range .Rows}}<p class="ds-state">{{.State}}</p>
 <pre class="ds-src rst-mono" tabindex="0"><code>{{.Call}}</code></pre>
-{{end}}<details class="ds-html"><summary>{{P "Rendered HTML"}}</summary>{{range .Rows}}<p class="ds-state">{{.State}}</p>
-<pre class="ds-src rst-mono" tabindex="0"><code>{{.Source}}</code></pre>
-{{end}}</details>
-</div>{{else if .Source}}<div class="ds-view__code">
+{{end}}</div>
+{{else}}{{if .Source}}<div class="ds-view__code ds-view__code--h">
 {{if .Wrapper}}<p class="ds-wrap">{{.Wrapper}}</p>
-{{end}}{{if .Call}}<pre class="ds-src rst-mono" tabindex="0"><code>{{.Call}}</code></pre>
-<details class="ds-html"><summary>{{P "Rendered HTML"}}</summary><pre class="ds-src rst-mono" tabindex="0"><code>{{.Source}}</code></pre></details>
-{{else}}<pre class="ds-src rst-mono" tabindex="0"{{if .NoCopy}} data-ds-nocopy{{end}}><code>{{.Source}}</code></pre>
-{{end}}</div>{{end}}
-</div>{{end}}`
+{{end}}<pre class="ds-src rst-mono" tabindex="0"{{if .NoCopy}} data-ds-nocopy{{end}}><code>{{.Source}}</code></pre>
+</div>
+{{end}}{{if .Call}}<div class="ds-view__code ds-view__code--t">
+{{if .Wrapper}}<p class="ds-wrap">{{.Wrapper}}</p>
+{{end}}<pre class="ds-src rst-mono" tabindex="0"><code>{{.Call}}</code></pre>
+</div>
+{{end}}{{end}}</div>{{end}}`
 
-// slidersIcon is the display settings button's glyph, Lucide's
-// sliders-horizontal (ISC, as icons.go), drawn the way the icon set
+// cogIcon is the display settings button's glyph, Lucide's settings
+// (ISC, as icons.go; lucide-static 1.31.0), drawn the way the icon set
 // draws its own. The framework's set has no settings glyph, and this
 // one button is the gallery's furniture, not something an app is
 // offered, so it is not worth a slug every scaffoldable set would then
 // have to carry. aria-hidden: the button's name is its aria-label.
-const slidersIcon = `<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">` +
-	`<path d="M10 5H3"/><path d="M12 19H3"/><path d="M14 3v4"/><path d="M16 17v4"/><path d="M21 12h-9"/><path d="M21 19h-5"/><path d="M21 5h-7"/><path d="M8 10v4"/><path d="M8 12H3"/></svg>`
+const cogIcon = `<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">` +
+	`<path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/></svg>`
 
+// pageTemplate is every gallery page. The Overview's phone heading
+// leaves the shell's brand span empty and puts the gallery's name in
+// the title span after it. The shell hides a brand span with no element
+// in it, as a blank brand, and shows the title instead; the name written
+// as bare text in the brand span was hidden that way, and the phone
+// index had no visible heading. A brand link would add a tab stop that
+// goes to the page it is on.
 const pageTemplate = `{{define "ds-controls"}}<nav rst-seg-tabs aria-label="{{P "Theme"}}">{{range .Themes}}<a href="{{.Href}}"{{if .Current}} aria-current="page"{{end}}>{{.Label}}</a>{{end}}</nav>
 <div class="ds-scheme" role="group" aria-label="{{P "Colour scheme"}}">{{range .Schemes}}<button type="button" data-ds-scheme="{{.Value}}" aria-pressed="{{.Pressed}}">{{.Label}}</button>{{end}}</div>
 <details rst-dropdown rst-locale name="rst-menus">
 <summary>{{T "rastrillo.ui.shell_language"}}<span rst-caret aria-hidden="true">{{icon "chevron-down"}}</span><span class="rst-sr-only">{{P ", currently {language}" "language" .LocaleName}}</span></summary>
 <div rst-dropdown-menu>{{range .Locales}}<a href="{{.Href}}" lang="{{.Code}}" dir="{{.Dir}}"{{if .Current}} aria-current="true"{{end}}>{{.Name}}</a>{{end}}</div>
 </details>{{end}}
-{{define "ds-prefs"}}<details rst-dropdown class="ds-prefs" id="ds-prefs" name="ds-prefs"><summary aria-label="{{P "Display settings"}}">` + slidersIcon + `</summary><div rst-dropdown-menu>{{template "ds-controls" .}}</div></details>{{end}}
+{{define "ds-prefs"}}<details rst-dropdown class="ds-prefs" id="ds-prefs" name="ds-prefs"><summary aria-label="{{P "Display settings"}}">` + cogIcon + `</summary><div rst-dropdown-menu>{{template "ds-controls" .}}</div></details>{{end}}
 {{define "ds-page"}}<!doctype html>
 <html lang="{{.Locale}}" dir="{{.Dir}}">
 <head>
@@ -2710,7 +2763,7 @@ const pageTemplate = `{{define "ds-controls"}}<nav rst-seg-tabs aria-label="{{P 
 <a rst-skip href="#main">{{T "rastrillo.ui.shell_skip"}}</a>
 {{with .Up}}<div rst-shell-back><a href="{{.}}" rel="up" aria-label="{{Tf "rastrillo.ui.shell_up" "name" (T "rastrillo.ui.shell_up_label")}}">{{T "rastrillo.ui.shell_up_label"}}</a>{{template "ds-prefs" $.Bar}}</div>
 {{end}}<aside class="ds-rail" rst-shell-rail>
-{{if .Rows}}<h1 rst-shell-title><span>{{P "rastrillo design system"}}</span></h1>
+{{if .Rows}}<h1 rst-shell-title><span></span><span>{{P "Rastrillo Design System"}}</span></h1>
 {{template "ds-prefs" .Bar}}
 <p class="ds-index-lead">{{P "The Rastrillo design system aims to be a starter framework for any app to get a consistent, polished, accessible UI with no or minimal JavaScript dependence, available in multiple languages, and using clean, modern HTML and CSS. It's designed to be delightful to use with or without LLM assistance, and easily remixable."}}</p>
 {{end}}  <search class="ds-search">
@@ -2725,7 +2778,7 @@ const pageTemplate = `{{define "ds-controls"}}<nav rst-seg-tabs aria-label="{{P 
 {{end}}{{end}}  </nav>
 </aside>
 <header class="ds-top">
-<a class="ds-top__brand" href="{{.Home}}">{{P "rastrillo design system"}}</a>
+<a class="ds-top__brand" href="{{.Home}}">{{P "Rastrillo Design System"}}</a>
 <div class="ds-top__controls">{{template "ds-controls" .Bar}}</div>
 </header>
 <main rst-shell-main id="main">
@@ -2737,8 +2790,6 @@ const pageTemplate = `{{define "ds-controls"}}<nav rst-seg-tabs aria-label="{{P 
   </div>
 </header>
 
-{{if .ViewGroup}}<div class="ds-viewall" role="group" aria-label="{{P "Show every example as"}}"><button type="button" data-ds-view="auto" aria-pressed="true">{{P "Auto"}}</button><button type="button" data-ds-view="desktop" aria-pressed="false">{{P "Desktop"}}</button><button type="button" data-ds-view="mobile" aria-pressed="false">{{P "Mobile"}}</button><button type="button" data-ds-view="code" aria-pressed="false">{{P "Code"}}</button></div>
-{{end}}
 {{.Body}}
 
 <nav class="ds-updown" aria-label="{{P "Previous and next"}}">{{with .Prev}}<a class="ds-updown__prev" href="{{.Href}}">{{.Label}}</a>{{end}}{{with .Next}}<a class="ds-updown__next" href="{{.Href}}">{{.Label}}</a>{{end}}</nav>
@@ -2873,7 +2924,7 @@ const tokensBody = `{{define "ds-body-tokens"}}
 const familyBody = `{{define "ds-family"}}{{with .Family}}
 <p class="ds-lead">{{.Blurb}}</p>
 {{end}}
-<p class="ds-lead">{{P "Each example is live, but its links go nowhere."}} {{P "Code shows the template call to copy."}}</p>
+<p class="ds-lead">{{P "Each example is live, but its links go nowhere."}} {{P "HTML shows the markup to copy."}}</p>
 {{range .Family.Partials}}
 {{.Marker}}
 <article class="ds-partial" id="{{.ID}}" data-ds-anchor>
@@ -2932,12 +2983,25 @@ const shellsBody = `{{define "ds-body-shells"}}
 // doing the same job it does on the gallery. It is also the honest
 // answer to "what is the head block FOR": an app's favicon, an app's
 // stylesheet, an app's one script that has to run early.
+//
+// gallery.css stays out (backLinkStyle says why).
 const shellCommon = `
 {{define "head"}}<script src="{{asset "gallery.js"}}"></script>{{end}}
 {{define "lang"}}{{.Locale}}{{end}}
 {{define "dir"}}{{.Dir}}{{end}}
 {{define "title"}}{{.Title}}{{end}}
 `
+
+// backLinkStyle holds the way back in a shell demo's foot, the one
+// gallery control on the demo, to the target floor: as a line of the
+// foot's 12px text it was 15 to 19px tall, and the foot is the
+// framework's and has no floor of its own. It is written on the link
+// rather than in gallery.css, which the demos do not load: that file
+// carries the gallery's own page layout, and its grid for the pinned
+// bar took hold of the sidebar demo, dropping main below an empty
+// strip the demo has no bar for. A demo shows the shell exactly as an
+// app gets it.
+const backLinkStyle = `align-items: center; display: inline-flex; min-block-size: var(--rst-target);`
 
 // shellTemplate fills the rest of the blocks the chrome shells leave
 // open. The blocks a given shell does not declare are simply never
@@ -2951,7 +3015,7 @@ const shellTemplate = `
 {{define "account"}}{{.Account}}{{end}}
 {{define "profile"}}{{.Profile}}{{end}}
 {{define "locale"}}<details rst-dropdown rst-locale name="rst-menus"><summary>{{T "rastrillo.ui.shell_language"}}<span rst-caret aria-hidden="true">{{icon "chevron-down"}}</span></summary><div rst-dropdown-menu>{{range .Locales}}<a href="{{.Href}}" lang="{{.Code}}" dir="{{.Dir}}"{{if .Current}} aria-current="true"{{end}}>{{.Name}}</a>{{end}}</div></details>{{end}}
-{{define "foot"}}<a href="{{.Index}}">{{P "Back to the design system"}}</a>{{end}}
+{{define "foot"}}<a style="` + backLinkStyle + `" href="{{.Index}}">{{P "Back to the design system"}}</a>{{end}}
 {{define "content"}}
 {{template "page-header" dict "Title" "Posts" "Sub" (P "A representative screen, so the chrome around it has something to frame.") "ActionHref" "#" "ActionLabel" (P "Write a post") "ActionIcon" "plus"}}
 <div rst-box-head><h2>{{P "This page"}}</h2><a rst-btn href="{{.Index}}">{{P "Back to the design system"}}</a></div>
@@ -2973,7 +3037,7 @@ const shellTemplate = `
 // styling. The backdrop block is left alone, so the demo shows the
 // default art.
 const stageShellTemplate = `
-{{define "foot"}}<footer rst-stage-foot><a href="{{.Index}}">{{P "Back to the design system"}}</a></footer>{{end}}
+{{define "foot"}}<footer rst-stage-foot><a style="` + backLinkStyle + `" href="{{.Index}}">{{P "Back to the design system"}}</a></footer>{{end}}
 {{define "content"}}{{template "signin" (dict "State" .Signin "Brand" .Brand "Preview" true)}}{{end}}
 `
 

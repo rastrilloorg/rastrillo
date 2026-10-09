@@ -242,10 +242,12 @@ type Row struct {
 }
 
 // PageItem is one control in the pagination strip. Exactly one of Href,
-// Current, Disabled and Gap is meaningful per item.
+// Current, Disabled and Gap is meaningful per item. Rel is "prev" or
+// "next" on the two steps, which a phone draws as chevrons.
 type PageItem struct {
 	Label    string
 	Href     string
+	Rel      string
 	Current  bool
 	Disabled bool
 	Gap      bool
@@ -498,9 +500,9 @@ func BuildPagination(base, q, status string, page, total int) Pagination {
 		return base + "?" + strings.Join(params, "&")
 	}
 
-	items := []PageItem{{Label: "Previous", Disabled: true}}
+	items := []PageItem{{Label: "Previous", Rel: "prev", Disabled: true}}
 	if page > 1 {
-		items[0] = PageItem{Label: "Previous", Href: href(page - 1)}
+		items[0] = PageItem{Label: "Previous", Rel: "prev", Href: href(page - 1)}
 	}
 	for _, n := range pageNumbers(page, pages) {
 		switch {
@@ -512,9 +514,9 @@ func BuildPagination(base, q, status string, page, total int) Pagination {
 			items = append(items, PageItem{Label: strconv.Itoa(n), Href: href(n)})
 		}
 	}
-	next := PageItem{Label: "Next", Disabled: true}
+	next := PageItem{Label: "Next", Rel: "next", Disabled: true}
 	if page < pages {
-		next = PageItem{Label: "Next", Href: href(page + 1)}
+		next = PageItem{Label: "Next", Rel: "next", Href: href(page + 1)}
 	}
 	p.Items = append(items, next)
 	return p

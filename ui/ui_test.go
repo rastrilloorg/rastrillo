@@ -766,21 +766,25 @@ func TestListRowActionNeverNestsAnchors(t *testing.T) {
 func TestPaginationRendersEveryItemKind(t *testing.T) {
 	got := render(t, "pagination", map[string]any{
 		"Items": []any{
-			map[string]any{"Label": "Previous", "Disabled": true},
+			map[string]any{"Label": "Previous", "Disabled": true, "Rel": "prev"},
 			map[string]any{"Label": "1", "Current": true},
 			map[string]any{"Label": "2", "Href": "/posts?page=2"},
 			map[string]any{"Gap": true},
 			map[string]any{"Label": "9", "Href": "/posts?page=9"},
-			map[string]any{"Label": "Next", "Href": "/posts?page=2"},
+			map[string]any{"Label": "Next", "Href": "/posts?page=2", "Rel": "next"},
 		},
 	})
+	// 2 is beside the current page, so only a wide strip shows it; the
+	// ends are steps, their words kept beside the chevron a phone draws.
 	for _, want := range []string{
 		`aria-label="Pagination"`,
-		`<span rst-pagination-disabled>Previous</span>`,
+		`<span rst-pagination-disabled rst-pagination-step="prev">`,
+		`<span rst-pagination-word>Previous</span></span>`,
 		`<span aria-current="page">1</span>`,
-		`<a href="/posts?page=2">2</a>`,
-		`aria-hidden="true"`,
+		`<a href="/posts?page=2" rst-pagination-wide>2</a>`,
+		`<span rst-pagination-gap aria-hidden="true">…</span>`,
 		`<a href="/posts?page=9">9</a>`,
+		`<a href="/posts?page=2" rst-pagination-step="next">`,
 	} {
 		if !strings.Contains(got, want) {
 			t.Errorf("missing %q: %s", want, got)
@@ -789,6 +793,26 @@ func TestPaginationRendersEveryItemKind(t *testing.T) {
 	// The gap item carries no Label, and a gap is never a link.
 	if strings.Contains(got, `<a href="">`) {
 		t.Errorf("the gap item rendered as an empty link: %s", got)
+	}
+}
+
+// A strip whose items carry no Rel, as every app's did before Rel
+// existed, renders exactly the markup it always did: nothing in it says
+// which items are steps, so nothing is drawn as one.
+func TestPaginationWithoutRelRendersAsBefore(t *testing.T) {
+	got := render(t, "pagination", map[string]any{
+		"Items": []any{
+			map[string]any{"Label": "Previous", "Disabled": true},
+			map[string]any{"Label": "1", "Current": true},
+			map[string]any{"Label": "2", "Href": "/posts?page=2"},
+			map[string]any{"Gap": true},
+			map[string]any{"Label": "9", "Href": "/posts?page=9"},
+			map[string]any{"Label": "Next", "Href": "/posts?page=2"},
+		},
+	})
+	want := `<nav rst-pagination aria-label="Pagination"><span rst-pagination-disabled>Previous</span><span aria-current="page">1</span><a href="/posts?page=2">2</a><span rst-pagination-gap aria-hidden="true">…</span><a href="/posts?page=9">9</a><a href="/posts?page=2">Next</a>` + "\n</nav>"
+	if got != want {
+		t.Errorf("got  %s\nwant %s", got, want)
 	}
 }
 
@@ -988,11 +1012,12 @@ func allPartials() []struct {
 		{"pagination", map[string]any{
 			"Label": "Pagination",
 			"Items": []any{
-				map[string]any{"Label": "Previous", "Disabled": true},
+				map[string]any{"Label": "Previous", "Disabled": true, "Rel": "prev"},
 				map[string]any{"Label": "1", "Current": true},
 				map[string]any{"Label": "2", "Href": "/posts?page=2"},
 				map[string]any{"Gap": true},
 				map[string]any{"Label": "9", "Href": "/posts?page=9"},
+				map[string]any{"Label": "Next", "Href": "/posts?page=2", "Rel": "next"},
 			},
 		}},
 		{"badge", map[string]any{"Label": "Draft"}},

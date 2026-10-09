@@ -96,7 +96,9 @@ func TestAdminPaginationAppearsOnlyPastOnePage(t *testing.T) {
 	wantContains(t, body, `<a href="/admin/posts?page=2">2</a>`)
 	// Previous is present but not actionable on page 1 — and visibly
 	// so: the attribute is what tokens.css styles (friction log F10).
-	wantContains(t, body, `<span rst-pagination-disabled>Previous</span>`)
+	// Its word sits beside the chevron a phone draws in its place.
+	wantContains(t, body, `<span rst-pagination-disabled rst-pagination-step="prev">`)
+	wantContains(t, body, `<span rst-pagination-word>Previous</span></span>`)
 }
 
 // html/template escapes & inside an attribute value, so the preserved

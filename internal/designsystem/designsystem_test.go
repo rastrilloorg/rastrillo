@@ -58,7 +58,7 @@ const mountPath = DefaultMount
 // Each sample was once written into its page twice, as the escaped
 // document its frame carried and as its source. The documents are files
 // now, so a page carries the source and the widget around it: about 450
-// bytes of widget per example, and whatever the Code tab shows.
+// bytes of widget per example, and whatever the HTML and Template tabs show.
 //
 // The heaviest of them is the one to watch. The date and time fields
 // are the largest samples in the gallery — four fields whose enhanced
@@ -694,7 +694,7 @@ func TestNoGalleryPageLoadsTheEnhancementScripts(t *testing.T) {
 
 // A preview document is the sample, wrapped and deadened, and nothing
 // else: its body is exactly deaden(wrap(renderSample)) and then the
-// sink, if and only if the sample holds a form. The Code tab's call is
+// sink, if and only if the sample holds a form. The Template tab's call is
 // held to renderSample's bytes separately, so between the two gates
 // the preview and the call cannot drift apart unseen.
 func TestEveryPreviewIsItsSampleWrappedAndDeadened(t *testing.T) {
@@ -757,6 +757,56 @@ func TestEveryPreviewIsItsSampleWrappedAndDeadened(t *testing.T) {
 	}
 	if checked == 0 {
 		t.Fatal("no preview checked")
+	}
+}
+
+// No preview asks for focus. The page around a same-origin frame grants
+// a frame's autofocus, so a sign-in sample loading in a lazy frame took
+// the reader's focus and scrolled the gallery to it. deaden takes the
+// attribute off every sample (unfocus); the shell demos are framed
+// whole and opened on their own, keep theirs, and are refused it in a
+// frame by gallery.js (TestAFrameNeverMovesTheReader).
+//
+// The control is the stage shell, served as written: the sign-in card
+// still asks for focus, so the screens' samples of it would too.
+func TestNoPreviewAsksForFocus(t *testing.T) {
+	asks := regexp.MustCompile(`<[a-zA-Z][^>]*\sautofocus[\s=/>]`)
+	for in, want := range map[string]string{
+		`<input rst-input type="email" autofocus required>`:  `<input rst-input type="email" required>`,
+		`<input autofocus="" id="a">`:                        `<input id="a">`,
+		`<div rst-callout tabindex="-1" autofocus><p>x</p>`:  `<div rst-callout tabindex="-1"><p>x</p>`,
+		`<button title="no autofocus here" AUTOFOCUS>Go</b>`: `<button title="no autofocus here">Go</b>`,
+		`<p>Put autofocus on the first field.</p>`:           `<p>Put autofocus on the first field.</p>`,
+		`<input data-autofocus value='a > autofocus'>`:       `<input data-autofocus value='a > autofocus'>`,
+	} {
+		if got := unfocus(in); got != want {
+			t.Errorf("unfocus(%q) = %q, want %q", in, got, want)
+		}
+	}
+
+	files := render(t)
+	stage := shellHref(mountPath, RootTheme(), "en", "stage")
+	if !asks.Match(files[strings.TrimPrefix(stage, mountPrefix)]) {
+		t.Fatalf("%s no longer asks for focus; this gate has nothing left to compare against", stage)
+	}
+	framed := map[string]bool{}
+	for _, body := range files {
+		for _, m := range frameSrc.FindAllSubmatch(body, -1) {
+			framed[string(m[1])] = true
+		}
+	}
+	var checked int
+	for src := range framed {
+		if strings.Contains(src, "/shells/") {
+			continue
+		}
+		checked++
+		if m := asks.Find(files[strings.TrimPrefix(src, mountPrefix)]); m != nil {
+			t.Errorf("%s asks for focus in its frame: %s", src, m)
+		}
+	}
+	if checked == 0 {
+		t.Fatal("no framed preview checked")
 	}
 }
 
@@ -872,7 +922,7 @@ func wholeDocument(t *testing.T, files map[string][]byte, name, locale, body str
 	// Every link a reader can actually click, anywhere in this tree,
 	// is one of two things: a page of this tree, or "#" — which is
 	// where the sample routes go now. Nothing lands on a 404. The
-	// samples keep their real routes in the Code tab beside them,
+	// samples keep their real routes in the HTML tab beside them,
 	// where they are text to copy rather than a link to follow; see
 	// deaden.
 	for _, m := range anchorHref.FindAllStringSubmatch(body, -1) {
@@ -1169,6 +1219,15 @@ var widgetOpen = regexp.MustCompile(`<div class="ds-view(?: ds-view--(?:page|row
 
 // widgetsOf cuts a page into its preview widgets: everything from one
 // widget's opening tag up to the next one (or to the end).
+// tabClass reads a widget's tabs in order, by their modifier letter.
+var tabClass = regexp.MustCompile(`class="ds-view__tab ds-view__tab--([a-z])"`)
+
+// panelOf is one of a widget's source panels, "h" for HTML or "t" for
+// Template, or "" when the widget has none.
+func panelOf(widget, tab string) string {
+	return regexp.MustCompile(`(?s)<div class="ds-view__code ds-view__code--` + tab + `">.*?</div>`).FindString(widget)
+}
+
 func widgetsOf(page string) []string {
 	parts := widgetOpen.Split(page, -1)
 	if len(parts) < 2 {
@@ -1177,9 +1236,15 @@ func widgetsOf(page string) []string {
 	return parts[1:]
 }
 
-// Every example is shown three ways behind one control, and the control
-// is the browser's own: three radios sharing a name, NONE of them
+// Every example is shown up to four ways behind one control, and the
+// control is the browser's own: radios sharing a name, NONE of them
 // checked, and :has() switching the panels. Nothing here runs.
+//
+// The tabs are Desktop, Mobile, HTML and Template, in that order, and
+// a widget only offers what it has: a framed page of the tree has no
+// source to copy, a sample with no template call has no Template tab,
+// and a screen whose source is the call alone has no HTML tab. An
+// empty tab is a click that shows a blank panel.
 //
 // The unchecked start is the load-bearing part and it is asserted, not
 // assumed. A radio that ships checked is indistinguishable in CSS from
@@ -1195,7 +1260,7 @@ func widgetsOf(page string) []string {
 // perfectly and behaves wrongly — picking Mobile in one example would
 // silently deselect the tab in another — and neither shows up in a
 // screenshot.
-func TestEveryExampleIsFramedDesktopMobileAndCode(t *testing.T) {
+func TestEveryExampleIsFramedDesktopMobileHTMLAndTemplate(t *testing.T) {
 	files := render(t)
 	var total, pageWidth int
 	for _, name := range galleryFiles(RootTheme(), "en") {
@@ -1208,7 +1273,7 @@ func TestEveryExampleIsFramedDesktopMobileAndCode(t *testing.T) {
 		// that grows examples is covered without an entry here.
 		// The examples whose frame is a page of this tree rather than a
 		// document written for it: the three shell demos, and the demo
-		// application on the Overview. Neither kind offers a Code tab —
+		// application on the Overview. Neither kind offers HTML or Template —
 		// a shell's source is a Go template, and an application is not
 		// a snippet to paste.
 		framedPages := strings.Count(page, `<section class="ds-shell"`) + strings.Count(page, `<section class="ds-demo"`)
@@ -1218,11 +1283,11 @@ func TestEveryExampleIsFramedDesktopMobileAndCode(t *testing.T) {
 		pageWidth += strings.Count(page, `ds-view--page`)
 		total += len(widgets)
 		groups := map[string]bool{}
-		var withCode, withCall int
+		var withSource, withCall int
 		for i, w := range widgets {
 			radios := regexp.MustCompile(`<input type="radio" name="([^"]*)"( checked)?>`).FindAllStringSubmatch(w, -1)
-			if len(radios) < 2 || len(radios) > 3 {
-				t.Errorf("%s widget %d has %d tabs, want 2 (a framed page) or 3 (with its source)", name, i, len(radios))
+			if len(radios) < 2 || len(radios) > 4 {
+				t.Errorf("%s widget %d has %d tabs, want 2 (a framed page) to 4 (with its HTML and its template call)", name, i, len(radios))
 				continue
 			}
 			var checked int
@@ -1247,28 +1312,48 @@ func TestEveryExampleIsFramedDesktopMobileAndCode(t *testing.T) {
 			if n := strings.Count(w, "<iframe"); n != 1 {
 				t.Errorf("%s widget %d frames %d documents, want 1", name, i, n)
 			}
-			if strings.Contains(w, "ds-view__tab--c") {
-				withCode++
-				pres := strings.Count(w, `<pre class="ds-src`)
-				switch disclosures := strings.Count(w, `<details class="ds-html">`); {
-				case !strings.Contains(w, `<div class="ds-view__code">`):
-					t.Errorf("%s widget %d offers a Code tab with no source behind it", name, i)
-				case disclosures == 1:
-					// A partial sample's call then its rendering; a grouped
-					// row's calls, one per state, then one disclosure with
-					// a rendering per state.
-					calls := strings.Count(w, `<code><ds-x>{{</ds-x><ds-x>template</ds-x>`)
-					withCall += calls
-					if calls == 0 || pres != 2*calls {
-						t.Errorf("%s widget %d: %d calls and %d blocks; each call has its rendering in the disclosure", name, i, calls, pres)
-					}
-				case disclosures == 0 && pres != 1:
-					t.Errorf("%s widget %d: %d source blocks and no call; markup with no call is one block", name, i, pres)
+			var order string
+			for _, m := range tabClass.FindAllStringSubmatch(w, -1) {
+				order += m[1]
+			}
+			if len(order) != len(radios) {
+				t.Errorf("%s widget %d: %d radios but %d tab labels", name, i, len(radios), len(order))
+			}
+			html, tpl := panelOf(w, "h"), panelOf(w, "t")
+			if strings.Contains(order, "h") != (html != "") || strings.Contains(order, "t") != (tpl != "") {
+				t.Errorf("%s widget %d: tabs %q but HTML panel %v and Template panel %v; a tab with no panel shows nothing, a panel with no tab is unreachable", name, i, order, html != "", tpl != "")
+				continue
+			}
+			calls := strings.Count(tpl, `<code><ds-x>{{</ds-x><ds-x>`)
+			switch order {
+			case "dm":
+				// A framed page of the tree: nothing to copy.
+			case "dmh":
+				withSource++
+				if n := strings.Count(html, `<pre class="ds-src`); n != 1 {
+					t.Errorf("%s widget %d: %d HTML blocks and no call; markup with no call is one block", name, i, n)
 				}
+			case "dmt":
+				// A sign-in screen: its source is the calls an app writes,
+				// and the markup is the module's to produce.
+				withSource++
+				if calls == 0 {
+					t.Errorf("%s widget %d offers only a Template tab with no call in it", name, i)
+				}
+			case "dmht":
+				withSource++
+				// A partial sample's call beside its rendering; a grouped
+				// row's calls and renderings, one of each per state.
+				withCall += strings.Count(tpl, `<code><ds-x>{{</ds-x><ds-x>template</ds-x>`)
+				if pres := strings.Count(html, `<pre class="ds-src`); calls == 0 || pres != calls {
+					t.Errorf("%s widget %d: %d calls and %d renderings; each call has its rendering in the HTML panel", name, i, calls, pres)
+				}
+			default:
+				t.Errorf("%s widget %d: tabs %q; want Desktop, Mobile, then HTML before Template, each only where it has something to show", name, i, order)
 			}
 		}
-		if want := len(widgets) - framedPages; withCode != want {
-			t.Errorf("%s: %d widgets show source, want %d (all but the framed pages)", name, withCode, want)
+		if want := len(widgets) - framedPages; withSource != want {
+			t.Errorf("%s: %d widgets show source, want %d (all but the framed pages)", name, withSource, want)
 		}
 		// One call per partial sample that is not hand-written, and none
 		// anywhere else: the families say how many each page owes.
@@ -1285,7 +1370,7 @@ func TestEveryExampleIsFramedDesktopMobileAndCode(t *testing.T) {
 			}
 		}
 		if withCall != wantCalls {
-			t.Errorf("%s: %d widgets lead with a call, want %d (every partial sample with data)", name, withCall, wantCalls)
+			t.Errorf("%s: %d template calls in the Template panels, want %d (every partial sample with data)", name, withCall, wantCalls)
 		}
 
 	}
@@ -1316,8 +1401,8 @@ func TestEveryExampleIsFramedDesktopMobileAndCode(t *testing.T) {
 	css := string(GalleryCSS())
 	for _, rule := range []string{
 		`.ds-view:has(.ds-view__tab--m input:checked) .ds-view__box`,
-		`.ds-view:has(.ds-view__tab--c input:checked) .ds-view__stage { display: none; }`,
-		`.ds-view:has(.ds-view__tab--c input:checked) .ds-view__code { display: block; }`,
+		`.ds-view:has(.ds-view__tab--h input:checked) .ds-view__stage, .ds-view:has(.ds-view__tab--t input:checked) .ds-view__stage { display: none; }`,
+		`.ds-view:has(.ds-view__tab--h input:checked) .ds-view__code--h, .ds-view:has(.ds-view__tab--t input:checked) .ds-view__code--t { display: block; }`,
 		`.ds-view__box { --ds-k: clamp(var(--ds-kmin), tan(atan2(100cqw, var(--ds-w))), 1); }`,
 		// The opening view follows the STAGE's width, and the
 		// highlight follows it by the same two queries. Without these
@@ -1461,7 +1546,7 @@ func TestSampleLinksAndFormsAreDeadInThePreviews(t *testing.T) {
 	if forms == 0 || sinks == 0 {
 		t.Fatalf("%d forms in %d preview documents with a sink — the sample set has no form in it at all, and this gate is checking nothing", forms, sinks)
 	}
-	// The other half: the Code tab is NOT deadened. A gallery that had
+	// The other half: the HTML tab is NOT deadened. A gallery that had
 	// quietly rewritten the routes a reader copies would be teaching
 	// the wrong markup.
 	// list-row-action's edit link, on whichever component page its
@@ -1474,7 +1559,7 @@ func TestSampleLinksAndFormsAreDeadInThePreviews(t *testing.T) {
 		}
 	}
 	if !kept {
-		t.Error("no sample source on any component page keeps a real route — the Code tab has been deadened with the preview")
+		t.Error("no sample source on any component page keeps a real route — the HTML tab has been deadened with the preview")
 	}
 }
 
@@ -2064,9 +2149,10 @@ func TestGalleryScriptStaysInertAndFirstParty(t *testing.T) {
 	if strings.Contains(js, "\t") {
 		t.Error("gallery.js uses two-space indentation, not tabs")
 	}
-	// 22,832 bytes: the script with every feature the gallery gives it
-	// (copy buttons, search terms, the page-wide view, keeping the
-	// reader's place), weighed when the cap was set, plus 10%. The first ceilings (8 KiB, then 10 KiB,
+	// 27,416 bytes: the script with every feature the gallery gives it
+	// (copy buttons, search terms, keeping the reader's place, frames
+	// that show only once painted), weighed when the cap was last
+	// raised, plus 10%. The first ceilings (8 KiB, then 10 KiB,
 	// outgrown with 32 bytes to spare) and a later estimate of 15 KiB
 	// all undercounted the code and the comments that say why it is the
 	// way it is; a ceiling that tight buys cut comments rather than less
@@ -2080,7 +2166,15 @@ func TestGalleryScriptStaysInertAndFirstParty(t *testing.T) {
 	//   the page-wide view, and storage shared with it  +2,580 15,555
 	//   keeping your place, the scheme after a
 	//     back/forward cache restore                  +5,201 20,762
-	if n := len(js); n > 22832 {
+	//   the page-wide view removed; each example's
+	//     tabs are its only view control              -2,428 19,037
+	//   as released in v0.28.0                               20,814
+	//   frames hidden until painted, and again for each
+	//     document a navigation inside one loads      +1,749 22,563
+	//   frames hidden in every scheme until styled
+	//     (Safari's white about:blank); a framed
+	//     demo's autofocus refused                    +2,361 24,924
+	if n := len(js); n > 27416 {
 		t.Errorf("gallery.js is %d bytes; it is the gallery's own furniture and should stay readable in one sitting", n)
 	}
 	// The two halves of the scriptless story: the toggle is hidden
@@ -3051,7 +3145,7 @@ func TestPaulsParagraphOpensTheOverview(t *testing.T) {
 // So it walks every file, and the preview documents are files now.
 // Every one of them is a document in its own right, and a duplicate
 // inside one is exactly as broken as a duplicate out here — with the
-// difference that a reader who opens a Code tab is being shown it as
+// difference that a reader who opens an HTML tab is being shown it as
 // markup to copy. They are all clean today; the point of checking is
 // that a field id repeated across two states of one partial would have
 // been invisible otherwise.
@@ -3595,18 +3689,19 @@ func sourceTexts(fragment string) []string {
 	return out
 }
 
-var codePanel = regexp.MustCompile(`(?s)<div class="ds-view__code">.*?</div>`)
+var codePanel = regexp.MustCompile(`(?s)<div class="ds-view__code ds-view__code--[ht]">.*?</div>`)
 
-// codePanels cuts a page into its widgets' Code panels, in page order.
+// codePanels cuts a page into its widgets' HTML and Template panels,
+// in page order.
 func codePanels(page string) []string { return codePanel.FindAllString(page, -1) }
 
-// The text on screen is the text copied: every Code panel's blocks,
-// with the highlighting removed, are exactly the source they stand
-// for, in order. That is the call's Source, then the formatted
-// rendering, for a partial sample; the formatted markup for a
-// hand-written sample, an idiom, a screen or a format; signinSource for
-// a sign-in screen. Entities in a sample (the stat band's &euro;) must
-// survive as written.
+// The text on screen is the text copied: every panel's blocks, with
+// the highlighting removed, are exactly the source they stand for, in
+// order. That is the formatted rendering, then the call's Source, for a
+// partial sample; the formatted markup for a hand-written sample, an
+// idiom, a screen or a format; signinSource for a sign-in screen.
+// Entities in a sample (the stat band's &euro;) must survive as
+// written.
 func TestTheTextOnScreenIsTheTextCopied(t *testing.T) {
 	files := render(t)
 	for _, locale := range []string{"en", "ar"} {
@@ -3628,18 +3723,19 @@ func TestTheTextOnScreenIsTheTextCopied(t *testing.T) {
 						calls = append(calls, c.Source)
 					}
 					rendered = append(rendered, codeview.Format(string(html)))
-					// A partial with a widget per state shows its call and
-					// then its rendering, state by state.
+					// A partial with a widget per state shows its rendering
+					// and then its call, state by state.
 					if !doc.Row {
-						want[fam.Key] = append(want[fam.Key], calls...)
 						want[fam.Key] = append(want[fam.Key], rendered...)
+						want[fam.Key] = append(want[fam.Key], calls...)
 						calls, rendered = nil, nil
 					}
 				}
-				// A grouped partial shows every call, then one disclosure
-				// with every rendering, under the same labels.
-				want[fam.Key] = append(want[fam.Key], calls...)
+				// A grouped partial shows every rendering in its HTML
+				// panel, then every call in its Template panel, under the
+				// same labels.
 				want[fam.Key] = append(want[fam.Key], rendered...)
+				want[fam.Key] = append(want[fam.Key], calls...)
 			}
 		}
 		samples := ui.Styleguide()
@@ -3668,7 +3764,7 @@ func TestTheTextOnScreenIsTheTextCopied(t *testing.T) {
 				got = append(got, sourceTexts(panel)...)
 			}
 			if len(got) != len(blocks) {
-				t.Errorf("%s/%s: %d source blocks in the Code panels, want %d", locale, kind, len(got), len(blocks))
+				t.Errorf("%s/%s: %d source blocks in the HTML and Template panels, want %d", locale, kind, len(got), len(blocks))
 				continue
 			}
 			for i := range blocks {
@@ -3687,11 +3783,11 @@ func TestTheTextOnScreenIsTheTextCopied(t *testing.T) {
 
 // wrapperPrefixes is the markup wrap puts around a sample for its
 // frame. It is the page's container and not the partial's, so it is
-// never in the Code tab, and the placeholder action="#" never reaches a
+// never in the HTML tab, and the placeholder action="#" never reaches a
 // clipboard.
 var wrapperPrefixes = []string{"<section rst-box>", "<div rst-list>", "<div rst-stats>"}
 
-func TestTheCodeTabNeverCarriesTheDemoWrapper(t *testing.T) {
+func TestTheHTMLTabNeverCarriesTheDemoWrapper(t *testing.T) {
 	files := render(t)
 	for _, name := range galleryFiles(RootTheme(), "en") {
 		page := string(files[name])
@@ -3713,14 +3809,26 @@ func TestTheCodeTabNeverCarriesTheDemoWrapper(t *testing.T) {
 			}
 		}
 	}
-	// And the wrapper is said once, above the code, for a wrapped sample.
+	// And a wrapped sample says which container it needs above the
+	// code in every panel it has: the HTML and the call each go in it,
+	// and a reader copying either may never open the other.
 	form := galleryPage(t, files, RootTheme(), "en", "form")
 	if n := strings.Count(form, `<p class="ds-wrap">Put this inside <code>&lt;section rst-box&gt;&lt;form rst-form&gt;</code>.</p>`); n == 0 {
 		t.Error("no wrapped sample on Form says which container it goes in")
 	}
+	for i, w := range widgetsOf(form) {
+		if !strings.Contains(w, `class="ds-wrap"`) {
+			continue
+		}
+		for _, tab := range []string{"h", "t"} {
+			if p := panelOf(w, tab); p != "" && !strings.Contains(p, `class="ds-wrap"`) {
+				t.Errorf("form widget %d names its container in one panel and not in its %s panel", i, tab)
+			}
+		}
+	}
 }
 
-// The grouped Code panel has no wrapper note: a grouped partial with a
+// The grouped panels have no wrapper note: a grouped partial with a
 // Wrap would show its frame inside the container and hand the reader
 // markup without it.
 func TestAGroupedPartialNeedsNoWrapper(t *testing.T) {
@@ -3732,7 +3840,7 @@ func TestAGroupedPartialNeedsNoWrapper(t *testing.T) {
 			}
 			grouped++
 			if w := wrapperMarkup(doc.Wrap); w != "" {
-				t.Errorf("%s is grouped and wrapped in %s; the grouped Code panel would drop the note saying so. Give the grouped panel the note, or show this partial a widget per state", doc.Name, w)
+				t.Errorf("%s is grouped and wrapped in %s; the grouped panels would drop the note saying so. Give the grouped panels the note, or show this partial a widget per state", doc.Name, w)
 			}
 		}
 	}
@@ -3869,9 +3977,9 @@ func TestOnlyAnIllustrationRefusesTheCopyButton(t *testing.T) {
 		if got := strings.Count(page, `<pre class="ds-src rst-mono" tabindex="0" data-ds-nocopy>`); got != want {
 			t.Errorf("%s: %d blocks refuse a copy button, want %d", pk.Kind, got, want)
 		}
-		for _, panel := range codePanels(page) {
-			if strings.Contains(panel, "data-ds-nocopy") && strings.Contains(panel, `<details class="ds-html">`) {
-				t.Errorf("%s: an illustration's panel carries a call", pk.Kind)
+		for _, w := range widgetsOf(page) {
+			if strings.Contains(w, "data-ds-nocopy") && panelOf(w, "t") != "" {
+				t.Errorf("%s: an illustration's widget carries a template call", pk.Kind)
 			}
 		}
 	}
@@ -3881,13 +3989,12 @@ func TestOnlyAnIllustrationRefusesTheCopyButton(t *testing.T) {
 }
 
 // Every page that frames examples opens by saying, once, that the
-// examples are live and their links go nowhere; the five component
-// pages add that Code holds the call to copy. That replaced a callout
-// and four notes saying the same at length, and Shells, which has no
-// Code tab and frames whole pages of the tree, says neither.
-func TestTheFramedPagesOpenWithTheTwoPlainSentences(t *testing.T) {
+// examples are live and their links go nowhere. That replaced a callout
+// and four notes saying the same at length, and Shells, which frames
+// whole pages of the tree, does not say it.
+func TestTheFramedPagesOpenWithThePlainSentence(t *testing.T) {
 	files := render(t)
-	live, code := proseIn("en", "Each example is live, but its links go nowhere."), proseIn("en", "Code shows the template call to copy.")
+	live := proseIn("en", "Each example is live, but its links go nowhere.")
 	components := map[string]bool{}
 	for _, pk := range componentPages() {
 		components[pk.Kind] = true
@@ -3897,9 +4004,6 @@ func TestTheFramedPagesOpenWithTheTwoPlainSentences(t *testing.T) {
 		framed := components[pk.Kind] || pk.Kind == "primitives" || pk.Kind == "formats" || pk.Kind == "screens"
 		if got := strings.Count(page, live); framed != (got == 1) || got > 1 {
 			t.Errorf("%s says %q %d times, want %d", pk.Kind, live, got, map[bool]int{true: 1}[framed])
-		}
-		if got := strings.Count(page, code); components[pk.Kind] != (got == 1) || got > 1 {
-			t.Errorf("%s says %q %d times, want %d", pk.Kind, code, got, map[bool]int{true: 1}[components[pk.Kind]])
 		}
 		// <div rst-callout is a live callout: in a source block the < is &lt;.
 		if strings.Contains(page, `<div rst-callout`) && pk.Kind != "primitives" && pk.Kind != "screens" {
@@ -3922,7 +4026,7 @@ var (
 // Every page's main opens with an <h1> that is its own topic, no two
 // pages in a directory share one, and no heading skips a level: the
 // outline a screen reader lists is the page's real structure. The
-// pages used to share one <h1>, "rastrillo design system", with the
+// pages used to share one <h1>, the gallery's name, with the
 // real title an <h2> further down.
 func TestEveryPagesH1IsItsOwnTitle(t *testing.T) {
 	files := render(t)
@@ -3973,14 +4077,14 @@ func TestTitlesUseTheApprovedSeparators(t *testing.T) {
 	for _, pk := range pageKinds() {
 		name := RootTheme() + "/en/" + pk.File
 		m := titleTag.FindStringSubmatch(string(files[name]))
-		if want := template.HTMLEscapeString(docTitle(proseIn("en", pk.Title), "rastrillo design system", RootTheme())); m == nil || m[1] != want {
+		if want := template.HTMLEscapeString(docTitle(proseIn("en", pk.Title), "Rastrillo Design System", RootTheme())); m == nil || m[1] != want {
 			t.Errorf("%s: <title> %v, want %q", name, m, want)
 		}
 	}
-	if got := docTitle("Form", "rastrillo design system", "day"); got != "Form · rastrillo design system · day" {
+	if got := docTitle("Form", "Rastrillo Design System", "day"); got != "Form · Rastrillo Design System · day" {
 		t.Errorf("docTitle gives %q", got)
 	}
-	if got := docTitle("The modal route", "rastrillo design system", ""); got != "The modal route · rastrillo design system" {
+	if got := docTitle("The modal route", "Rastrillo Design System", ""); got != "The modal route · Rastrillo Design System" {
 		t.Errorf("docTitle with no theme gives %q", got)
 	}
 	if got := previewTitle("en", "field-text", "Required"); got != "field-text sample standalone preview, Required" {
@@ -4082,7 +4186,7 @@ func TestTheGalleryIsTheShippedShell(t *testing.T) {
 				}
 				where := `<div rst-shell-back><a `
 				if index {
-					where = `<h1 rst-shell-title><span>` + template.HTMLEscapeString(proseIn(locale, "rastrillo design system")) + `</span></h1>` + "\n" + `<details rst-dropdown class="ds-prefs"`
+					where = `<h1 rst-shell-title><span></span><span>` + template.HTMLEscapeString(proseIn(locale, "Rastrillo Design System")) + `</span></h1>` + "\n" + `<details rst-dropdown class="ds-prefs"`
 				}
 				if !strings.Contains(page, where) {
 					t.Errorf("%s: the display settings menu is not where a phone looks for it (%s)", name, where)
@@ -4205,6 +4309,11 @@ func TestTheTwoCopiesOfTheControlsAgree(t *testing.T) {
 				if !strings.HasPrefix(card[2], `<svg class="icon"`) || !strings.Contains(card[2], `aria-hidden="true"`) || strings.Contains(card[2], "<span") {
 					t.Errorf("%s: the display settings button is not the bare, hidden icon its name stands for: %s", where, card[2])
 				}
+				// A cog, Lucide's settings: the glyph most apps put on a
+				// settings button, so a reader finds it without its name.
+				if !strings.Contains(card[2], `<circle cx="12" cy="12" r="3"/>`) || !strings.Contains(card[2], `<path d="M9.671 4.136`) {
+					t.Errorf("%s: the display settings button is not the cog: %s", where, card[2])
+				}
 				ch, bh := anchorHref.FindAllStringSubmatch(card[3], -1), anchorHref.FindAllStringSubmatch(bar[1], -1)
 				if len(ch) == 0 || len(ch) != len(bh) {
 					t.Errorf("%s: %d links in the menu, %d in the bar", where, len(ch), len(bh))
@@ -4283,36 +4392,32 @@ func TestEverySearchTermNamesAnAnchor(t *testing.T) {
 	}
 }
 
-// The page-wide group is on exactly the pages that have a Code tab,
-// Auto pressed as rendered, labelled in the page's language, and
-// hidden until gallery.js says it can work.
-func TestThePageWideViewIsOnEveryPageWithCode(t *testing.T) {
+// No page carries a page-wide view switcher, and gallery.js neither
+// draws one nor reads the view it used to remember. Each example's own
+// tabs are the one view control. A script that still applied a stored
+// rst-ds-view with no control left to change it would open every page
+// in the view a reader once chose, with no way back.
+func TestNoPageCarriesAPageWideViewSwitcher(t *testing.T) {
 	files := render(t)
-	for _, locale := range []string{"en", "ja"} {
-		for _, pk := range pageKinds() {
-			page := galleryPage(t, files, RootTheme(), locale, pk.Kind)
-			hasCode := strings.Contains(page, "ds-view__tab--c")
-			group := regexp.MustCompile(`<div class="ds-viewall" role="group" aria-label="([^"]*)">(.*?)</div>`).FindStringSubmatch(page)
-			if hasCode != (group != nil) {
-				t.Errorf("%s/%s: Code tab %v, page-wide group %v; the group is for pages with a Code tab", locale, pk.Kind, hasCode, group != nil)
-				continue
-			}
-			if group == nil {
-				continue
-			}
-			if group[1] != template.HTMLEscapeString(proseIn(locale, "Show every example as")) {
-				t.Errorf("%s/%s: the group is labelled %q", locale, pk.Kind, group[1])
-			}
-			for _, v := range []string{`data-ds-view="auto" aria-pressed="true"`, `data-ds-view="desktop" aria-pressed="false"`, `data-ds-view="mobile" aria-pressed="false"`, `data-ds-view="code" aria-pressed="false"`} {
-				if !strings.Contains(group[2], v) {
-					t.Errorf("%s/%s: the group has no %s", locale, pk.Kind, v)
-				}
-			}
+	pages := 0
+	for name, b := range files {
+		if !strings.HasSuffix(name, ".html") {
+			continue
+		}
+		pages++
+		if page := string(b); strings.Contains(page, "ds-viewall") || strings.Contains(page, "data-ds-view=") {
+			t.Errorf("%s carries the page-wide view switcher", name)
 		}
 	}
-	css := string(GalleryCSS())
-	if !strings.Contains(css, ".ds-viewall { display: none; }") || !strings.Contains(css, ":root[data-rst-js] .ds-viewall") {
-		t.Error("the page-wide group is not hidden until gallery.js sets data-rst-js")
+	if pages == 0 {
+		t.Fatal("no pages rendered, so this checked nothing")
+	}
+	for name, src := range map[string]string{"gallery.css": string(GalleryCSS()), "gallery.js": string(GalleryJS())} {
+		for _, gone := range []string{"ds-viewall", "rst-ds-view", "data-ds-view", "dsView"} {
+			if strings.Contains(src, gone) {
+				t.Errorf("%s still mentions %s, which only the page-wide switcher used", name, gone)
+			}
+		}
 	}
 }
 

@@ -8,6 +8,46 @@ This file starts at v0.23.0. Earlier releases are in the git history and their
 tags; nothing has been reconstructed for them, because a changelog written
 backwards from commits is a guess wearing a date.
 
+## Unreleased
+
+### Changed: a row menu sits at the trailing edge of whatever holds it
+
+`rst-row-menu` now pushes itself to the end of its row, so its panel opens beside the kebab in every browser. Before, a browser that stretched the menu across its container opened the panel at the far edge. If you put a row menu anywhere but last in a toolbar of your own, it now moves to the end; wrap it, or put it last.
+
+### Changed: every control is at least 32px on a desktop, and icons in controls are 16px; re-vendor `tokens.css`
+
+A new token, `--rst-target`, sets the smallest size of a button, link, menu or field: 32px on a desktop with a mouse, and `--rst-tap` (44px) on a phone or touch screen. Before, only phones and touch screens had a floor, and desktop controls ran from 24px to 36px. A control's padding and border now count towards the floor, so on a phone a dropdown or Help button that measured 46px to 57px is now 44px. A desktop search box is 34px tall, with its input and clear link at 32px. Icons inside controls are now 16px and the open and close chevrons 12px; before, they followed the size of the text beside them. Re-vendor `tokens.css`, then check any toolbar or row of your own that was built around the old sizes.
+
+### Changed: the phone header strip is 56px; re-vendor `tokens.css`
+
+On a phone, the back strip, the index page's header and the topbar and console bars are 56px tall, with the 44px tap target centred inside. Before, they ranged from 44px to 73px. A new token, `--rst-shell-strip`, sets the height. A link to a heading still lands below the strip, because the page's scroll padding reads the same token.
+
+### Changed: put "Use your email instead" inside `rst-signin-providers`
+
+Make the link back to the email form the last child of `rst-signin-providers`. There it is as easy to tap as the provider buttons. An app that keeps the link after the list looks as it did before, with a link 19px tall.
+
+### Changed: pagination fits one line on a phone; mark Previous and Next with `Rel`, and add `paginationItems` if you build your own FuncMap
+
+Give the Previous item `"Rel" "prev"` and the Next item `"Rel" "next"`. On a phone or touch screen, those two become chevron buttons that still say Previous and Next to a screen reader, and the strip shows only the first page, the current page and the last, spread across one line: ‹ 1 … 4 … 9 ›. A strip without `Rel` renders as it did before. Apps made with `rastrillo new` get `Rel` when they regenerate their list pages.
+
+The partial now calls a new template function, `paginationItems`. `ui.Funcs` includes it. If you build your own FuncMap without `ui.Funcs`, add it, or the partial fails to parse.
+
+Chip styles in `tokens.css` now apply only to the strip's direct children. If your own markup nests a link deeper, move it up a level. Re-vendor `tokens.css`.
+
+### Fixed: the bulk bar's text stays on one line on a phone; re-vendor `tokens.css`
+
+The bar keeps one row when everything fits. When it does not, the close button, the count and Actions share the first row, and "Select all" takes the second. The bulk-bar partial now wraps the count and the "Select all" link in `<span rst-bulkbar-selection>`. If you write the bar's markup yourself, add that span.
+
+### Fixed: rows, lists, detail lists and tabs; re-vendor `tokens.css`
+
+- A narrow row puts its status under its title, at a smaller size, so the title keeps the row's width.
+- A list row's kebab sits at the trailing edge on a phone, and the name takes the space beside it.
+- On a phone, a list title keeps `<bdi>`, `<em>` and an icon on one line with the rest of its text.
+- On a phone, a textarea keeps its 5rem minimum height.
+- On a phone, an icon in a menu item, a button or a row action has a space between it and its label again.
+- A detail list's label lines up with the first line of its value.
+- Segmented tabs leave a 16px gap above the block that follows them. If your tabs sit in a toolbar row, clear that margin there.
+
 ## v0.28.0
 
 A sign-in screen with proof of work in front of it, a phone layout for every shell, and new packages for timing, spreadsheet exports, background work, tests and authenticator apps. The first three sections change what an existing app does without a compile error: read them before you upgrade.

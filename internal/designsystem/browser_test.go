@@ -26,6 +26,7 @@ import (
 	"fmt"
 	"math"
 	"net/http"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -605,9 +606,11 @@ type framing struct {
 	// laying out short, and the assertions below add the two back
 	// together rather than settling for a tolerance.
 	Gutter float64
-	// Which panel is on screen.
-	FrameShown bool
-	CodeShown  bool
+	// Which panel is on screen, and the tabs' labels in order.
+	FrameShown    bool
+	HTMLShown     bool
+	TemplateShown bool
+	Tabs          []string
 	// The colour scheme the framed document resolved to, and the
 	// background it painted with it. It should be the gallery's own —
 	// not by inheritance, which does not reach a framed document that
@@ -657,7 +660,7 @@ func TestPreviewWidgetDrivesTheWholeJourney(t *testing.T) {
 		  const f = v.querySelector(".ds-view__frame");
 		  const box = v.querySelector(".ds-view__box");
 		  const stage = v.querySelector(".ds-view__stage");
-		  const code = v.querySelector(".ds-view__code");
+		  const html = v.querySelector(".ds-view__code--h"), tpl = v.querySelector(".ds-view__code--t");
 		  const d = f.contentDocument;
 		  return JSON.stringify({
 		    Virtual: parseFloat(getComputedStyle(f).width),
@@ -666,7 +669,9 @@ func TestPreviewWidgetDrivesTheWholeJourney(t *testing.T) {
 		    Gutter: d ? d.defaultView.innerWidth - d.documentElement.getBoundingClientRect().width : 0,
 		    Body: d ? d.body.innerHTML.trim().slice(0, 120) : "",
 		    FrameShown: getComputedStyle(stage).display !== "none",
-		    CodeShown: code ? getComputedStyle(code).display !== "none" : false,
+		    HTMLShown: html ? getComputedStyle(html).display !== "none" : false,
+		    TemplateShown: tpl ? getComputedStyle(tpl).display !== "none" : false,
+		    Tabs: [...v.querySelectorAll(".ds-view__tab")].map(l => l.textContent.trim()),
 		    Scheme: d ? getComputedStyle(d.documentElement).colorScheme + " " + getComputedStyle(d.body).backgroundColor : ""
 		  });
 		})()`
@@ -677,7 +682,7 @@ func TestPreviewWidgetDrivesTheWholeJourney(t *testing.T) {
 	  return "ok";
 	})()`
 
-	var desktop, mobile, code, dark, scriptless, resized string
+	var desktop, mobile, htmlTab, tplTab, dark, scriptless, resized string
 	var deadLinks int
 	var mechanism bool
 
@@ -697,10 +702,13 @@ func TestPreviewWidgetDrivesTheWholeJourney(t *testing.T) {
 		chromedp.Sleep(400*time.Millisecond),
 		chromedp.Evaluate(read(widget), &mobile),
 
-		// 3. Code.
-		chromedp.Click(`#partial-callout .ds-view__tab--c`, chromedp.ByQuery),
+		// 3. HTML, then Template.
+		chromedp.Click(`#partial-callout .ds-view__tab--h`, chromedp.ByQuery),
 		chromedp.Sleep(400*time.Millisecond),
-		chromedp.Evaluate(read(widget), &code),
+		chromedp.Evaluate(read(widget), &htmlTab),
+		chromedp.Click(`#partial-callout .ds-view__tab--t`, chromedp.ByQuery),
+		chromedp.Sleep(400*time.Millisecond),
+		chromedp.Evaluate(read(widget), &tplTab),
 
 		// 4. Every link in every framed document goes nowhere. Read
 		// off the documents themselves, not off the page's bytes: this
@@ -719,7 +727,7 @@ func TestPreviewWidgetDrivesTheWholeJourney(t *testing.T) {
 		})()`, &deadLinks),
 
 		// 5. Back to Desktop — the grip is a control on the frame, and
-		// the frame is not on screen while Code is. Which is also a
+		// the frame is not on screen while Template is. Which is also a
 		// second reading of the Desktop tab, this time arrived at by
 		// clicking rather than by the checked attribute.
 		chromedp.Click(`#partial-callout .ds-view__tab:first-of-type`, chromedp.ByQuery),
@@ -767,15 +775,15 @@ func TestPreviewWidgetDrivesTheWholeJourney(t *testing.T) {
 		chromedp.Sleep(2*time.Second),
 		// The tabs are radios and labels; the click is the browser's
 		// own, and :has() does the rest.
-		chromedp.Click(`#partial-callout .ds-view__tab--c`, chromedp.ByQuery),
+		chromedp.Click(`#partial-callout .ds-view__tab--h`, chromedp.ByQuery),
 		chromedp.Sleep(400*time.Millisecond),
 		chromedp.Evaluate(`(() => {
 		  const v = document.querySelector("#partial-callout .ds-view");
 		  const stage = v.querySelector(".ds-view__stage");
-		  const code = v.querySelector(".ds-view__code");
 		  return JSON.stringify({
 		    FrameShown: getComputedStyle(stage).display !== "none",
-		    CodeShown: getComputedStyle(code).display !== "none",
+		    HTMLShown: getComputedStyle(v.querySelector(".ds-view__code--h")).display !== "none",
+		    TemplateShown: getComputedStyle(v.querySelector(".ds-view__code--t")).display !== "none",
 		    Body: "", Virtual: 0, Painted: 0, Inner: 0, Gutter: 0, Scheme: ""
 		  });
 		})()`, &scriptless),
@@ -794,11 +802,11 @@ func TestPreviewWidgetDrivesTheWholeJourney(t *testing.T) {
 		t.Error("gallery.js ran on the scriptless page — the leg below proves nothing")
 	}
 
-	var d, m, c, dk, off framing
+	var d, m, h, tp, dk, off framing
 	for _, p := range []struct {
 		raw  string
 		into *framing
-	}{{desktop, &d}, {mobile, &m}, {code, &c}, {dark, &dk}, {scriptless, &off}} {
+	}{{desktop, &d}, {mobile, &m}, {htmlTab, &h}, {tplTab, &tp}, {dark, &dk}, {scriptless, &off}} {
 		if err := json.Unmarshal([]byte(p.raw), p.into); err != nil {
 			t.Fatalf("reading a framing (%q): %v", p.raw, err)
 		}
@@ -836,8 +844,13 @@ func TestPreviewWidgetDrivesTheWholeJourney(t *testing.T) {
 	// a number in a comment would be a number nobody re-measures. This
 	// is where to read it after changing the column.
 	t.Logf("desktop preview: a %gpx virtual page painted %gpx wide in a 1280px window — scale %.3f", d.Virtual, d.Painted, d.Painted/d.Virtual)
-	if !d.FrameShown || d.CodeShown {
+	if !d.FrameShown || d.HTMLShown || d.TemplateShown {
 		t.Error("the page does not open on the framed rendering")
+	}
+	// The callout is a partial with a call, so it offers all four, in
+	// the order a reader moves from the picture to the code.
+	if want := []string{"Desktop", "Mobile", "HTML", "Template"}; !slices.Equal(d.Tabs, want) {
+		t.Errorf("the callout's tabs are %q, want %q", d.Tabs, want)
 	}
 	if !strings.Contains(d.Body, "rst-callout") {
 		t.Errorf("the framed document is not the callout sample: %q", d.Body)
@@ -854,9 +867,13 @@ func TestPreviewWidgetDrivesTheWholeJourney(t *testing.T) {
 		t.Error("Desktop and Mobile are not the same document")
 	}
 
-	// Code: the frame goes, the source arrives.
-	if c.FrameShown || !c.CodeShown {
-		t.Errorf("the Code tab shows frame=%v code=%v", c.FrameShown, c.CodeShown)
+	// HTML, then Template: the frame goes and that tab's panel, and
+	// only that one, arrives.
+	if h.FrameShown || !h.HTMLShown || h.TemplateShown {
+		t.Errorf("the HTML tab shows frame=%v HTML=%v template=%v", h.FrameShown, h.HTMLShown, h.TemplateShown)
+	}
+	if tp.FrameShown || tp.HTMLShown || !tp.TemplateShown {
+		t.Errorf("the Template tab shows frame=%v HTML=%v template=%v", tp.FrameShown, tp.HTMLShown, tp.TemplateShown)
 	}
 
 	var grip struct{ Before, After, Painted, Box int }
@@ -891,8 +908,8 @@ func TestPreviewWidgetDrivesTheWholeJourney(t *testing.T) {
 	}
 
 	// And the whole widget with scripts off.
-	if off.FrameShown || !off.CodeShown {
-		t.Errorf("with scripts disabled the Code tab shows frame=%v code=%v — the tabs need JavaScript", off.FrameShown, off.CodeShown)
+	if off.FrameShown || !off.HTMLShown || off.TemplateShown {
+		t.Errorf("with scripts disabled the HTML tab shows frame=%v HTML=%v template=%v — the tabs need JavaScript", off.FrameShown, off.HTMLShown, off.TemplateShown)
 	}
 }
 
@@ -1270,12 +1287,12 @@ const minShownSample = 32.0
 const kMin = 0.72
 
 // previewBox is one widget's geometry as the engine has it. Tabs are
-// identified by POSITION — 0 Desktop, 1 Mobile, 2 Code — and not by
-// the modifier classes, so this reading says the same thing about the
-// markup before the fix and after it.
+// identified by POSITION — 0 Desktop, 1 Mobile, 2 HTML, 3 Template —
+// and not by the modifier classes, so this reading says the same thing
+// about the markup before the fix and after it.
 type previewBox struct {
 	ID     string
-	Hidden bool    // the Code tab is showing, so there is no frame to measure
+	Hidden bool    // the HTML or Template tab is showing, so there is no frame to measure
 	Box    float64 // the painted height of .ds-view__box
 	Width  string  // the frame's laid-out width, "NNNpx": which rendering is on screen. Read off the frame, because Mobile's --ds-w is now min(390px, 100cqw) and an unregistered property reads back as that text.
 	// Desk is --ds-wd, the width this widget's DESKTOP rendering is
@@ -1409,7 +1426,7 @@ func boxes(t *testing.T, ctx context.Context, where string) []previewBox {
 }
 
 // tabNames indexes the tabs the way the reading does.
-var tabNames = [...]string{"Desktop", "Mobile", "Code"}
+var tabNames = [...]string{"Desktop", "Mobile", "HTML", "Template"}
 
 func tabName(n int) string {
 	if n < 0 || n >= len(tabNames) {
@@ -1509,7 +1526,7 @@ func agree(t *testing.T, where string, rows []previewBox) {
 			say("%s: %s has %d radios checked (%v) — they are not one group", where, r.ID, len(r.Checked), r.Checked)
 		}
 		if r.Hidden {
-			if r.Lit[0] != 2 {
+			if r.Lit[0] < 2 {
 				say("%s: %s shows the source with %s lit", where, r.ID, tabName(r.Lit[0]))
 			}
 			continue

@@ -1,8 +1,8 @@
 // Package codeview lays out and colours the source a design-system
-// gallery shows in its Code tab. It knows nothing about the gallery: it
-// takes HTML or template source and gives back the same text, broken
-// into lines or marked up for colour, so that the bytes a reader copies
-// are the bytes the source holds.
+// gallery shows in its HTML and Template tabs. It knows nothing about
+// the gallery: it takes HTML or template source and gives back the same
+// text, broken into lines or marked up for colour, so that the bytes a
+// reader copies are the bytes the source holds.
 package codeview
 
 import "strings"

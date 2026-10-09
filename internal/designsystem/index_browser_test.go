@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -71,7 +72,7 @@ func TestThePhoneIndexAndTheWayBack(t *testing.T) {
 		if !ix.Rail || ix.Main || ix.Bar || !ix.Lead {
 			t.Errorf("%s: rail %v, main %v, bar %v, lead %v; the index is the rail and its lead alone", where, ix.Rail, ix.Main, ix.Bar, ix.Lead)
 		}
-		if len(ix.H1) != 1 || ix.H1[0] != proseIn(locale, "rastrillo design system") {
+		if len(ix.H1) != 1 || ix.H1[0] != proseIn(locale, "Rastrillo Design System") {
 			t.Errorf("%s: visible h1s %q, want exactly the index title", where, ix.H1)
 		}
 		var want []string
@@ -212,6 +213,42 @@ func TestThePhoneIndexAndTheWayBack(t *testing.T) {
 	}
 	if strings.TrimPrefix(next, "#") != after {
 		t.Errorf("%s: the Tab after Back lands on %s, want the row after Form, %s", where, next, after)
+	}
+}
+
+// The Overview names the gallery where a reader can see it: as the
+// index's heading on a phone, and as the bar's brand on a desktop. An
+// h1 that has a box is not enough. The heading's text sits in a span,
+// and the shell hides a brand span that has no element in it, so the
+// heading once rendered as an empty 56px row with its title hidden.
+// Read as painted text, a range with a width, in two scripts.
+func TestTheIndexTitleIsVisible(t *testing.T) {
+	rig := phoneRig(t)
+	ctx, cancel := context.WithTimeout(rig.Context(), 120*time.Second)
+	defer cancel()
+	const painted = `(sel => [...document.querySelectorAll(sel)].filter(e => e.checkVisibility()).map(e => {
+	  const r = document.createRange(); r.selectNodeContents(e);
+	  const box = r.getBoundingClientRect();
+	  return box.width > 0 && box.height > 0 ? e.innerText.trim() : "";
+	}).filter(Boolean))`
+	for _, locale := range []string{"en", "ar"} {
+		want := proseIn(locale, "Rastrillo Design System")
+		for _, c := range []struct {
+			w, h int
+			sel  string
+		}{{390, 844, "h1"}, {1280, 800, ".ds-top__brand"}} {
+			where := fmt.Sprintf("day/%s index at %dpx", locale, c.w)
+			var got []string
+			if err := chromedp.Run(ctx, chromedp.EmulateViewport(int64(c.w), int64(c.h)),
+				chromedp.Navigate(rig.Origin+indexHref(mountPath, "day", locale)),
+				chromedp.WaitReady("body"),
+				chromedp.Evaluate(painted+`("`+c.sel+`")`, &got)); err != nil {
+				t.Fatalf("%s: %v", where, err)
+			}
+			if !slices.Contains(got, want) {
+				t.Errorf("%s: painted %s text %q, want %q among it", where, c.sel, got, want)
+			}
+		}
 	}
 }
 

@@ -158,10 +158,10 @@ func TestPaginationIsHiddenAtOnePageAndShownBeyondIt(t *testing.T) {
 		t.Fatalf("eleven posts is two pages; the strip must appear")
 	}
 	want := []blog.PageItem{
-		{Label: "Previous", Disabled: true},
+		{Label: "Previous", Rel: "prev", Disabled: true},
 		{Label: "1", Current: true},
 		{Label: "2", Href: "/admin/posts?page=2"},
-		{Label: "Next", Href: "/admin/posts?page=2"},
+		{Label: "Next", Rel: "next", Href: "/admin/posts?page=2"},
 	}
 	if len(got.Items) != len(want) {
 		t.Fatalf("items = %+v, want %+v", got.Items, want)
@@ -175,11 +175,11 @@ func TestPaginationIsHiddenAtOnePageAndShownBeyondIt(t *testing.T) {
 
 func TestPaginationCarriesTheQueryAndDisablesNextOnTheLastPage(t *testing.T) {
 	got := blog.BuildPagination("/admin/posts", "go", "", 2, 11)
-	if got.Items[0] != (blog.PageItem{Label: "Previous", Href: "/admin/posts?q=go&page=1"}) {
+	if got.Items[0] != (blog.PageItem{Label: "Previous", Rel: "prev", Href: "/admin/posts?q=go&page=1"}) {
 		t.Errorf("Previous = %+v", got.Items[0])
 	}
 	last := got.Items[len(got.Items)-1]
-	if last != (blog.PageItem{Label: "Next", Disabled: true}) {
+	if last != (blog.PageItem{Label: "Next", Rel: "next", Disabled: true}) {
 		t.Errorf("Next on the last page = %+v", last)
 	}
 }
@@ -192,7 +192,7 @@ func TestPaginationCarriesTheQueryAndDisablesNextOnTheLastPage(t *testing.T) {
 func TestPaginationCarriesTheStatusFilterAfterTheQuery(t *testing.T) {
 	got := blog.BuildPagination("/admin/posts", "Note", "draft", 1, blog.PageSize+1)
 	next := got.Items[len(got.Items)-1]
-	if next != (blog.PageItem{Label: "Next", Href: "/admin/posts?q=Note&status=draft&page=2"}) {
+	if next != (blog.PageItem{Label: "Next", Rel: "next", Href: "/admin/posts?q=Note&status=draft&page=2"}) {
 		t.Errorf("Next = %+v", next)
 	}
 }

@@ -241,29 +241,20 @@ func TestPositionSurvivesASwitch(t *testing.T) {
 
 	// The record's start, a fresh load at the last partial: the browser
 	// clamps there too, so only the record written at load can name it.
-	p.open("loaded, no view stored", form("day", "en")+"#"+last)
-	if g := p.geometry("loaded, no view stored"); g == last {
-		t.Fatalf("loaded, no view stored: geometry also picks %s, so this leg cannot tell the load record from rule 2", last)
-	}
-	p.lands("loaded, no view stored, then theme", p.switchTheme("loaded, no view stored, then theme"), last)
-	// Code stored as the page-wide view, Form loaded at the last
-	// partial, and switched at once: that partial, because gallery.js
-	// put the target in place after Code changed the layout. Geometry
-	// agrees here, so this checks what the reader sees, not the record;
-	// the leg above with no view stored is the one that guards it.
-	p.open("code stored", form("day", "en"))
-	p.run("code stored", chromedp.Evaluate(`localStorage.setItem("rst-ds-view", "code"); true`, nil))
 	p.open("loaded at the last partial", form("day", "en")+"#"+last)
+	if g := p.geometry("loaded at the last partial"); g == last {
+		t.Fatalf("loaded at the last partial: geometry also picks %s, so this leg cannot tell the load record from rule 2", last)
+	}
 	p.lands("loaded at the last partial, then theme", p.switchTheme("loaded at the last partial, then theme"), last)
-	// The same load, a screen up, then a reload: a restored scroll is
-	// not a fragment the reader is on, so geometry decides.
+	// Form loaded at the last partial, a screen up, then a reload: a
+	// restored scroll is not a fragment the reader is on, so geometry
+	// decides.
 	p.open("reloaded", form("day", "en")+"#"+last)
 	p.run("reloaded", chromedp.Evaluate(`scrollBy(0, -innerHeight); true`, nil), chromedp.Reload(), chromedp.WaitReady(`.ds-top`, chromedp.ByQuery))
 	until(t, ctx, "reloaded", `document.readyState === "complete"`)
 	p.frames("reloaded")
 	want = p.geometry("reloaded")
 	p.lands("reloaded, then theme", p.switchTheme("reloaded, then theme"), want)
-	p.run("code cleared", chromedp.Evaluate(`localStorage.removeItem("rst-ds-view"); true`, nil))
 
 	// The record's renewal: following the same fragment again after a
 	// layout change above it (no hashchange fires) puts it back.

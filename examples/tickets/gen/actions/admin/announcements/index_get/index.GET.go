@@ -58,9 +58,9 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 	show := int(total) > pageSize
 	var pageItems []listPageItem
 	if show {
-		prev := listPageItem{Label: "Previous", Disabled: true}
+		prev := listPageItem{Label: "Previous", Rel: "prev", Disabled: true}
 		if page > 1 {
-			prev = listPageItem{Label: "Previous", Href: href(search, carry, page-1)}
+			prev = listPageItem{Label: "Previous", Rel: "prev", Href: href(search, carry, page-1)}
 		}
 		pageItems = append(pageItems, prev)
 		for n := 1; n <= totalPages; n++ {
@@ -70,9 +70,9 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 				pageItems = append(pageItems, listPageItem{Label: strconv.Itoa(n), Href: href(search, carry, n)})
 			}
 		}
-		next := listPageItem{Label: "Next", Disabled: true}
+		next := listPageItem{Label: "Next", Rel: "next", Disabled: true}
 		if page < totalPages {
-			next = listPageItem{Label: "Next", Href: href(search, carry, page+1)}
+			next = listPageItem{Label: "Next", Rel: "next", Href: href(search, carry, page+1)}
 		}
 		pageItems = append(pageItems, next)
 	}
@@ -122,6 +122,7 @@ type listPagination struct {
 type listPageItem struct {
 	Label    string
 	Href     string
+	Rel      string
 	Current  bool
 	Disabled bool
 	Gap      bool

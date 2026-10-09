@@ -11,7 +11,6 @@
      rst-ds-scheme, and painted into every preview frame;
    - the rail filter;
    - keeping your place across a theme or language switch;
-   - the page-wide view, remembered as rst-ds-view;
    - copy buttons.
 
    Why it is a blocking <script> in <head> rather than a deferred one at
@@ -42,8 +41,8 @@
   // than returning null. A page whose colour toggle throws is a page
   // with a broken toggle, so both sides degrade to "this visit only".
   //
-  // The scheme and the page-wide view share them; a list's first
-  // value is its default, which is stored as no key at all.
+  // A list's first value is its default, which is stored as no key at
+  // all.
   function load(key, values) {
     try {
       var v = localStorage.getItem(key);
@@ -89,11 +88,22 @@
     for (var i = 0; i < f.length; i++) paint(f[i], scheme);
   }
 
+  // Painting never shows a frame; shown() does, once its document is
+  // parsed and styled. Painting showed about:blank and half-parsed
+  // documents.
   function paint(frame, scheme) {
     try {
       apply(scheme, frame.contentDocument.documentElement);
     } catch (e) {
       /* not loaded yet, or not readable; its load handler will */
+    }
+  }
+
+  function readable(frame) {
+    try {
+      return frame.contentDocument;
+    } catch (e) {
+      return null;
     }
   }
 
@@ -124,6 +134,53 @@
   root.setAttribute("data-rst-js", "on");
   apply(stored());
 
+  // This file also runs in the shell demos, which the shells page
+  // frames whole, and the page around a same-origin frame grants its
+  // autofocus: the stage shell's sign-in field took the reader's focus
+  // as its lazy frame loaded, and the gallery scrolled down to it.
+  // A browser grants autofocus early in a rendering update, to the
+  // first field that asked and can take focus, and runs animation
+  // frame callbacks after (HTML's "update the rendering"). So in a
+  // frame each field that asks is inert from the parser's insertion (a
+  // microtask, before any update) to the first animation frame after
+  // load, and its request is refused. Removing the attribute does not
+  // work (the request is made on insertion), nor does hiding or
+  // inerting the frame (Chromium focuses inside it anyway; measured).
+  // Opened in a tab of its own, the demo keeps its autofocus.
+  var host = null;
+  try {
+    host = window.frameElement;
+  } catch (e) {
+    /* framed by another origin, whose frames are not ours */
+  }
+  if (host && host.classList.contains("ds-view__frame")) {
+    var asked = [];
+    var hold = function (el) {
+      if (el.hasAttribute("autofocus") && !el.inert) {
+        el.inert = true;
+        asked.push(el);
+      }
+    };
+    var inserted = new MutationObserver(function (records) {
+      for (var r = 0; r < records.length; r++) {
+        var added = records[r].addedNodes;
+        for (var n = 0; n < added.length; n++) {
+          if (added[n].nodeType !== 1) continue;
+          hold(added[n]);
+          var inner = added[n].querySelectorAll("[autofocus]");
+          for (var i = 0; i < inner.length; i++) hold(inner[i]);
+        }
+      }
+    });
+    inserted.observe(root, { childList: true, subtree: true });
+    addEventListener("load", function () {
+      inserted.disconnect();
+      requestAnimationFrame(function () {
+        for (var i = 0; i < asked.length; i++) asked[i].inert = false;
+      });
+    });
+  }
+
   // Phase two, once the body exists: wire the buttons up. This file is
   // in <head> and not deferred, so readyState is always "loading" here
   // — the branch is for a copy of it moved to the foot of the page,
@@ -134,13 +191,119 @@
     else fn();
   }
 
+  // Shown even if it could not be painted: a frame in the wrong scheme
+  // beats one that never appears.
+  function shown(frame) {
+    paint(frame, stored());
+    frame.setAttribute("data-ds-painted", "");
+  }
+
+  // DOMContentLoaded does not wait for stylesheets, and a frame shown
+  // then shows its document without them. Each sheet not yet arrived
+  // is waited for, loaded or failed; one that failed before this
+  // looked never says so, and the frame's load shows it instead.
+  function styled(frame, doc) {
+    var links = doc.querySelectorAll('link[rel~="stylesheet"]'), left = 1;
+    function one() {
+      if (--left === 0 && readable(frame) === doc) shown(frame);
+    }
+    for (var i = 0; i < links.length; i++) {
+      if (links[i].sheet) continue;
+      left++;
+      links[i].addEventListener("load", one);
+      links[i].addEventListener("error", one);
+    }
+    one();
+  }
+
+  // Every document a frame loads goes through arm(), the first and each
+  // one a sample's form or link loads in it after, and in this order:
+  // the hook that hides the frame again as the document goes, then the
+  // reveal. Shown first, a document that navigated before its own load
+  // (the old hook waited for load) left the mark in place, and the
+  // next one painted in the OS's scheme, unhidden. Not cleared when
+  // the whole gallery page enters the back/forward cache (persisted),
+  // which unloads nothing and restores as it was.
+  //
+  // Parsed and styled is soon enough to show it: waiting for load kept
+  // a parsed preview an empty box while an image was slow, or for as
+  // long as the network took to give up on one that hung.
+  function arm(frame, armed) {
+    var doc;
+    try {
+      doc = frame.contentDocument;
+    } catch (e) {
+      return false;
+    }
+    if (!doc || doc === armed.doc || doc.URL === "about:blank") return false;
+    armed.doc = doc;
+    doc.defaultView.addEventListener("pagehide", function (event) {
+      if (event.persisted) return;
+      frame.removeAttribute("data-ds-painted");
+      seek(frame, armed);
+    });
+    if (doc.readyState === "loading") {
+      doc.addEventListener("DOMContentLoaded", function () {
+        if (readable(frame) === doc) styled(frame, doc);
+      });
+    } else {
+      styled(frame, doc);
+    }
+    return true;
+  }
+
+  // The parent hears nothing when a navigation inside a frame commits
+  // its next document, so after pagehide it looks until the frame holds
+  // one, and arms it. The look ends there, or at the frame's load,
+  // which arms whatever is there; a document from another origin cannot
+  // be read, and load shows the frame unpainted.
+  //
+  // It also ends when the frame leaves the page, and after SEEK_MS
+  // whatever happens. Without those, a frame removed mid-look, or sent
+  // to another origin whose load hangs, kept a 16ms timer running for
+  // the life of the page, holding the frame and its old document, and
+  // the second kept the frame hidden for good. Giving up shows the
+  // frame unpainted, as load would have.
+  var SEEK_MS = 5000;
+
+  function seek(frame, armed) {
+    clearTimeout(armed.timer);
+    var end = Date.now() + SEEK_MS;
+    (function look() {
+      armed.timer = 0;
+      if (!frame.isConnected || arm(frame, armed)) return;
+      if (Date.now() >= end) shown(frame);
+      else armed.timer = setTimeout(look, 16);
+    })();
+  }
+
+  // A frame's first document reuses the window of the about:blank it
+  // replaces (same origin), so a listener on that window hears the
+  // preview's DOMContentLoaded and arms it while it is still parsing;
+  // the frames are lazy, so nothing looks for them before then. load
+  // stays the fallback, for an engine that does not reuse the window.
+  function watch(frame) {
+    var armed = { doc: null, timer: 0 };
+    try {
+      frame.contentWindow.addEventListener("DOMContentLoaded", function () {
+        arm(frame, armed);
+      });
+    } catch (e) {
+      /* no window yet, or not readable; load will arm it */
+    }
+    frame.addEventListener("load", function () {
+      clearTimeout(armed.timer);
+      arm(frame, armed);
+      shown(frame);
+    });
+    // A document already parsed before this ran (a frame served from
+    // cache) has had its DOMContentLoaded.
+    arm(frame, armed);
+  }
+
   ready(function () {
     var previews = document.querySelectorAll(".ds-view__frame");
-    for (var i = 0; i < previews.length; i++) {
-      previews[i].addEventListener("load", function (event) {
-        paint(event.currentTarget, stored());
-      });
-    }
+    for (var i = 0; i < previews.length; i++) watch(previews[i]);
     frames(stored());
 
     var buttons = document.querySelectorAll("[data-ds-scheme]");
@@ -271,7 +434,7 @@
   //  3. Above every anchor, nothing.
   // The rule-1 record is written only when this document scrolls to a
   // target: at load on a fresh, untouched navigation (redoing the parser's
-  // scroll, which the stored view's layout has since moved), and a frame
+  // scroll, which late layout may have moved), and a frame
   // after a plain, uncancelled click on a fragment link here, the only
   // signal when that fragment is already in the address. History drops
   // it, because Back restores where the reader had scrolled.
@@ -354,55 +517,6 @@
     });
   });
 
-  // ── One view for the whole page ─────────────────────────────────────
-  //
-  // Buttons, not radios, so pressing the pressed one re-applies it after
-  // a reader changed one widget by hand. Pressed is read off the radios,
-  // never off what a width shows: Auto when nothing is checked; a view
-  // when every widget with that tab has it checked and every other has
-  // nothing checked; else none. .checked fires no change event and needs
-  // none, since the panels follow :has(:checked). Applied at
-  // DOMContentLoaded, before load puts a fragment in place against it.
-  var VIEWS = ["auto", "desktop", "mobile", "code"];
-  ready(function () {
-    var group = document.querySelector(".ds-viewall");
-    if (!group) return;
-    var widgets = document.querySelectorAll(".ds-view"), buttons = group.querySelectorAll("button");
-    // .ds-view__tab--d, --m or --c. Auto has none, nor does a view a
-    // widget lacks (a framed page has no Code): it is left on Auto.
-    function radio(w, view) {
-      var tab = w.querySelector(".ds-view__tab--" + view.charAt(0));
-      return tab && tab.querySelector("input");
-    }
-    function choose(view) {
-      for (var i = 0; i < widgets.length; i++) {
-        var want = radio(widgets[i], view), inputs = widgets[i].querySelectorAll(".ds-view__tab input");
-        for (var j = 0; j < inputs.length; j++) inputs[j].checked = inputs[j] === want;
-      }
-    }
-    function show() {
-      var on = "";
-      for (var v = 0; v < VIEWS.length && !on; v++) {
-        for (var i = 0, all = true; i < widgets.length && all; i++) {
-          var r = v && radio(widgets[i], VIEWS[v]);
-          all = r ? r.checked : !widgets[i].querySelector(".ds-view__tab input:checked");
-        }
-        if (all) on = VIEWS[v];
-      }
-      for (var k = 0; k < buttons.length; k++) buttons[k].setAttribute("aria-pressed", String(buttons[k].dataset.dsView === on));
-    }
-    choose(load("rst-ds-view", VIEWS));
-    show();
-    group.addEventListener("click", function (event) {
-      var b = event.target.closest("button");
-      if (!b) return;
-      choose(b.dataset.dsView);
-      save("rst-ds-view", b.dataset.dsView, VIEWS);
-      show();
-    });
-    document.addEventListener("change", show);
-  });
-
   // ── Copy ────────────────────────────────────────────────────────────
   //
   // A button on every source block, drawn only where the clipboard API
@@ -416,19 +530,20 @@
     if (!region || !navigator.clipboard || !navigator.clipboard.writeText) return;
     var d = region.dataset, pres = document.querySelectorAll("pre.ds-src:not([data-ds-nocopy])");
 
-    // The name after the label: the disclosure's summary when the block
-    // is in one, the section (its anchored heading, or on a page of
+    // The name after the label: the tab the block is under (HTML or
+    // Template), the section (its anchored heading, or on a page of
     // prose the last heading before it), and the nearest state label
-    // above. Labels are unique within a section, so names are unique
-    // wherever the labels are.
+    // above. A state shows the same label in both tabs, so without the
+    // tab two buttons in one example would share a name.
     function name(pre) {
       var sec = pre.closest("[data-ds-anchor]"), h = sec && sec.querySelector("h1, h2, h3, h4");
       var all = document.querySelectorAll("main :is(h1, h2, h3, h4)"), sample = pre.closest(".ds-sample");
       if (!h) for (var i = 0; i < all.length && all[i].compareDocumentPosition(pre) & 4; i++) h = all[i];
       for (var s = pre.previousElementSibling; s && !s.matches(".ds-state"); s = s.previousElementSibling);
       s = s || sample && sample.querySelector(":scope > .ds-state");
-      var html = pre.closest("details.ds-html");
-      return [html && html.querySelector("summary"), h, s].filter(Boolean).map(function (e) {
+      var panel = pre.closest(".ds-view__code"), tab = panel && panel.parentNode.querySelector(
+        panel.classList.contains("ds-view__code--t") ? ".ds-view__tab--t" : ".ds-view__tab--h");
+      return [tab, h, s].filter(Boolean).map(function (e) {
         return e.textContent.trim();
       }).join(d.join);
     }

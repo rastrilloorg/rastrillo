@@ -16,13 +16,15 @@ package ui
 // against.
 var styleguideSamples = map[string]string{
 	// button: the set that behaves differently rather than every
-	// combination. Variant and size are words in one attribute, so
+	// combination. The size row labels each button with its size, small,
+	// default and large side by side, so the difference is the only
+	// thing that changes. Variant and size are words in one attribute, so
 	// rst-btn="primary sm" composes the way a class list would; a link
 	// takes the same look, because a GET is a link even when it looks
 	// like an action. The busy state is not here: form-foot's idle and
 	// working pair is the one picture of it.
 	"button": `<p><button rst-btn type="button">Cancel</button> <button rst-btn="primary" type="button">Save</button> <button rst-btn="ghost" type="button">Preview</button> <button rst-btn="danger" type="button">Delete</button></p>
-<p><button rst-btn="primary sm" type="button">Save</button> <button rst-btn="primary lg" type="button">Save</button> <a rst-btn href="/orders">View orders</a></p>
+<p><button rst-btn="primary sm" type="button">Small</button> <button rst-btn="primary" type="button">Default</button> <button rst-btn="primary lg" type="button">Large</button> <a rst-btn href="/orders">View orders</a></p>
 <p><button rst-btn="primary block" type="button">Continue</button></p>
 <p><button rst-btn type="button" disabled>Archived</button></p>`,
 	"box": `<div rst-box-head><h2>Payout</h2><a rst-btn href="/payout/edit">Edit</a></div>

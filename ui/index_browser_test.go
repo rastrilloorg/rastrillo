@@ -170,8 +170,10 @@ func TestThePhoneIndexWorksWithNoScript(t *testing.T) {
 				if pg.Rail || !pg.Main || !pg.Back || pg.BackStart > 8 || pg.H1s != 1 {
 					t.Errorf("the content page: %+v; want main, the back control within 8px of the top inline-start, no rail, one h1", pg)
 				}
-				if shell == "sidebar" && pg.BackTop > 1 {
-					t.Errorf("the sidebar's back control is %dpx from the top", pg.BackTop)
+				// 6px: the 44px control centred in the 56px strip at the
+				// top of the screen (TestThePhoneHeaderStripIs56Pixels).
+				if shell == "sidebar" && pg.BackTop > 7 {
+					t.Errorf("the sidebar's back control is %dpx from the top; want it centred in the strip at the top of the screen, 6px down", pg.BackTop)
 				}
 				// And the rail's nav is shown only on the index.
 				mustRun(t, ctx, chromedp.Click("[rst-shell-back] a", chromedp.ByQuery), chromedp.WaitVisible("[rst-shell-rail] [rst-shell-nav]", chromedp.ByQuery))
@@ -596,6 +598,12 @@ func TestAFragmentLinkLandsBelowTheBackStrip(t *testing.T) {
 			if got.TargetTop < got.BackBottom {
 				t.Errorf("#target's top is %dpx and the strip's bottom is %dpx; the heading landed %dpx under the strip", got.TargetTop, got.BackBottom, got.BackBottom-got.TargetTop)
 			}
+			// Exactly at the strip's edge, not merely below it: a scroll
+			// padding that kept an old strip height, or guessed a bigger
+			// one, leaves a gap or a hidden band whenever the strip grows.
+			if got.TargetTop > got.BackBottom+1 {
+				t.Errorf("#target's top is %dpx and the strip's bottom is %dpx; the heading landed %dpx below the strip, so the scroll padding is not the strip's height", got.TargetTop, got.BackBottom, got.TargetTop-got.BackBottom)
+			}
 		})
 
 		t.Run(shell+" at 1280 is unchanged", func(t *testing.T) {
@@ -607,6 +615,75 @@ func TestAFragmentLinkLandsBelowTheBackStrip(t *testing.T) {
 			at(t, ctx, backStripJS, &got)
 			if got.ScrollPadding != "auto" && got.ScrollPadding != "0px" {
 				t.Errorf("the root's scroll-padding-block-start at 1280 is %q, want auto or 0px: the narrow-screen fix must not reach the desktop", got.ScrollPadding)
+			}
+		})
+	}
+}
+
+// headerStripJS measures a phone header strip and the tap target in
+// it: the strip's border box and the target's, as the viewport sees
+// them, so a target that is 44px but pinned to the strip's top edge
+// reads as off centre rather than passing.
+const headerStripJS = `((strip, target) => {
+  const s = document.querySelector(strip), c = document.querySelector(target);
+  if (!s || !c || !s.checkVisibility() || !c.checkVisibility()) return JSON.stringify({Missing: true});
+  const sr = s.getBoundingClientRect(), cr = c.getBoundingClientRect();
+  return JSON.stringify({Top: sr.top, H: sr.height, TargetH: cr.height, Off: (cr.top + cr.height / 2) - (sr.top + sr.height / 2)});
+})(%q, %q)`
+
+type headerStripReading struct {
+	Missing         bool
+	Top, H, TargetH float64
+	Off             float64
+}
+
+// TestThePhoneHeaderStripIs56Pixels: on a phone every strip a shell
+// puts at the top of the screen is 56px, the height of a mobile app's
+// top bar. At 44px the back strip was the bare tap target with no room
+// round it, and read as cramped next to every native app's header. The
+// tap target inside stays 44px and sits on the strip's centre line: a
+// taller strip with the control at its top edge would make the strip's
+// lower part a dead zone that looks tappable. The index's header row
+// and a content page's back strip are both checked, so going from one
+// to the other does not change the header's height under the slide.
+func TestThePhoneHeaderStripIs56Pixels(t *testing.T) {
+	type strip struct{ where, page, strip, target string }
+	shells := map[string][]strip{
+		"sidebar": {
+			{"the back strip", "/page", "[rst-shell-back]", "[rst-shell-back] > a"},
+			{"the index's header row", "/", "[rst-shell-title]", "[rst-shell-profile] > summary"},
+		},
+		"console": {
+			{"the bar over a page", "/page", "[rst-shell-bar]", "[rst-shell-menu] > summary"},
+			{"the back strip", "/page", "[rst-shell-back]", "[rst-shell-back] > a"},
+			{"the index's header row", "/", "[rst-shell-bar]", "[rst-shell-menu] > summary"},
+		},
+	}
+	for shell, strips := range shells {
+		src, _ := Layout(shell)
+		pages := map[string]string{
+			"/":     shellLayoutPage(t, src, "ltr", append(profileDefs("Harbour"), `{{define "view"}}index{{end}}`)...),
+			"/page": shellLayoutPage(t, src, "ltr", profileDefs("Harbour")...),
+		}
+		t.Run(shell, func(t *testing.T) {
+			rig := harness.New(t, func(string) http.Handler { return shellAssets(t, pages) }, harness.WithCoarsePointer())
+			ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
+			defer cancel()
+			for _, s := range strips {
+				mustRun(t, ctx, chromedp.EmulateViewport(390, 844), chromedp.Navigate(rig.Origin+s.page), chromedp.WaitReady("body"))
+				requirePointer(t, ctx, true)
+				settled(t, ctx)
+				var got headerStripReading
+				at(t, ctx, fmt.Sprintf(headerStripJS, s.strip, s.target), &got)
+				if got.Missing {
+					t.Fatalf("%s on %s: %s or %s is not shown; the leg would be checking nothing", s.where, s.page, s.strip, s.target)
+				}
+				if math.Abs(got.H-56) > 0.5 || got.TargetH < 44 || math.Abs(got.Off) > 1 {
+					t.Errorf("%s on %s is %.1fpx tall with a %.1fpx target %.1fpx off its centre line; want a 56px strip with a 44px target centred in it", s.where, s.page, got.H, got.TargetH, got.Off)
+				}
+				if s.page == "/" && math.Abs(got.Top) > 0.5 {
+					t.Errorf("%s starts %.1fpx down the page; want it at the top, where a content page's strip is", s.where, got.Top)
+				}
 			}
 		})
 	}

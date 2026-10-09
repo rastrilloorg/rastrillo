@@ -3,4 +3,4 @@
 # more than 40% above its count fails until it is lowered.
 size cmd/rastrillo         5650  -     the CLI carries every scaffold template as a Go constant; moving them to their own package is owed
 size internal/designsystem 12000 13000 the design-system site generator and its checks: one sample per ui component, the Code tab's calls and the drives that hold the phone index, the pinned bar and the copy button; split by section owed
-size ui                    -     25500 one golden test per component partial, plus the phone sizing and shell browser checks; grows with the vocabulary
+size ui                    -     27000 one golden test per component partial, plus the phone sizing and shell browser checks, the desktop target floor and the row, list and strip geometry drives; grows with the vocabulary

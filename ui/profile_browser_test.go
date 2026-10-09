@@ -159,15 +159,15 @@ func TestTheProfileMenuOnThePhoneIndex(t *testing.T) {
 					mustRun(t, ctx, append(acts, chromedp.Navigate(rig.Origin+"/long"), chromedp.WaitVisible(p.trigger, chromedp.ByQuery))...)
 					requirePointer(t, ctx, true)
 					lr := readProfile(t, ctx, p)
-					if lr.Title != long || lr.TitleH > 48 || lr.TitleOverflow > 0 {
+					if lr.Title != long || lr.TitleH > 56 || lr.TitleOverflow > 0 {
 						t.Errorf("a long brand: heading %q, %dpx tall, the page %dpx wider than the screen; want the whole name, on one line, eliding inside the screen", lr.Title, lr.TitleH, lr.TitleOverflow)
 					}
 
 					mustRun(t, ctx, chromedp.Navigate(rig.Origin+"/"), chromedp.WaitVisible(p.trigger, chromedp.ByQuery))
 					settled(t, ctx)
 					closed := readProfile(t, ctx, p)
-					if closed.Title != "Harbour" || closed.TitleH > 48 || closed.TitleSize < 19 || closed.TitleSize > 23 {
-						t.Errorf("the heading is %q at %.1fpx, %dpx tall; want the brand, Harbour, at about 21px on one 44px line", closed.Title, closed.TitleSize, closed.TitleH)
+					if closed.Title != "Harbour" || closed.TitleH > 56 || closed.TitleSize < 19 || closed.TitleSize > 23 {
+						t.Errorf("the heading is %q at %.1fpx, %dpx tall; want the brand, Harbour, at about 21px on one line in the 56px header row", closed.Title, closed.TitleSize, closed.TitleH)
 					}
 					if closed.AvTop > 32 || closed.AvEnd > 24 || closed.AvW < 44 || closed.AvH < 44 {
 						t.Errorf("the avatar is %dx%dpx, %dpx from the top and %dpx from the inline end; want a 44px tap at the top inline-end", closed.AvW, closed.AvH, closed.AvTop, closed.AvEnd)

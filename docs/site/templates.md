@@ -23,7 +23,8 @@ so the layout can render a notice. See [Forms](/docs/forms).
 
 `ui.Funcs()` registers `dict`, `list`, `menuGroup`, `searchClear`,
 `icon`, `iconAssets`, `T`, `Tf`, `dateWords`, `opt`, `Tbdi`,
-`stageArt`, `displayURL`, `safeHref` and `rowMenuItems`.
+`stageArt`, `displayURL`, `safeHref`, `rowMenuItems` and
+`paginationItems`.
 
 Each partial takes exactly one data value, and `dict` is how you build
 it at the call site:
@@ -698,8 +699,7 @@ suggest the framework ships those words, so they stay English on every
 page. The shell and modal demos go the other way: they impersonate a
 real application, so their chrome speaks the language you picked.
 
-Every example is shown three ways behind one control: **Desktop**,
-**Mobile** and **Code**. The two previews are an `<iframe>` holding a
+Every example is shown four ways behind one control: **Desktop**, **Mobile**, **HTML** and **Template**. The two previews are an `<iframe>` holding a
 document of its own: the sample, the stylesheets, and nothing else.
 Desktop is laid out at a fixed width and scaled to fit the column you
 are reading in: 900px for a component, which is the width one gets in an
@@ -712,20 +712,7 @@ JavaScript involved in switching them. Each preview is a window on its
 document rather than a fit to it, so a tall sample scrolls inside the
 box, and the box has a resize grip on its bottom edge.
 
-The Code tab leads with the template call to copy: the partial and its
-arguments, exactly as you would write them in a template. Under it,
-behind a Rendered HTML disclosure, is the markup that call produces,
-formatted and highlighted. When a partial only works inside something,
-such as a form or a box, a line above the call says what to put it in.
-Every block has a Copy button, and what it copies is exactly the text
-you see. Status pills, badges and meters show every state in one row,
-with one call per state.
-
-Above the first example, **Show every example as** sets every example on
-the page at once: Auto, Desktop, Mobile or Code. Auto lets each example
-pick Desktop or Mobile from the width of your screen. The choice is
-remembered from page to page, and if you then change one example by
-hand, none of the four stays pressed.
+The HTML tab shows the markup the example renders, formatted and highlighted, ready to copy into any page. The Template tab shows the call that produces it in a rastrillo app: the partial and its arguments, exactly as you would write them in a template. When a partial only works inside something, such as a form or a box, a line above the call says what to put it in. An example with no template call has no Template tab. A sign-in screen is built from template calls alone, so it has no HTML tab. Every block has a Copy button, and what it copies is exactly the text you see. Status pills, badges and meters show every state in one row, with one call per state.
 
 Giving each sample a document of its own is what makes the awkward ones
 work. The two shell frames carry their own `<main>` and the gallery

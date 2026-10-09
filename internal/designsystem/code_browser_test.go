@@ -41,9 +41,9 @@ func TestTheCopyButtonCopiesAnnouncesAndFailsSafely(t *testing.T) {
 		chromedp.EmulateViewport(1280, 900),
 		chromedp.Navigate(form),
 		chromedp.WaitReady(`.ds-copy`, chromedp.ByQuery),
-		// Show the first widget's code, so the selection the failure
-		// makes is a selection a reader could see.
-		chromedp.Evaluate(`document.querySelector(".ds-view__tab--c input").click(); true`, nil),
+		// Show the first widget's template call, so the selection the
+		// failure makes is a selection a reader could see.
+		chromedp.Evaluate(`document.querySelector(".ds-view__tab--t input").click(); true`, nil),
 	); err != nil {
 		t.Fatalf("loading Form with a stubbed clipboard: %v", err)
 	}
@@ -54,7 +54,7 @@ func TestTheCopyButtonCopiesAnnouncesAndFailsSafely(t *testing.T) {
 
 	// A resolved write: the clipboard gets exactly the block's text, the
 	// region says Copied, and the label says it too.
-	const first = `document.querySelector(".ds-view__code .ds-copy")`
+	const first = `document.querySelector(".ds-view__code--t .ds-copy")`
 	if err := chromedp.Run(ctx, chromedp.Evaluate(first+`.click(); true`, nil)); err != nil {
 		t.Fatalf("clicking Copy: %v", err)
 	}
@@ -158,175 +158,60 @@ func assertNames(t *testing.T, ctx context.Context, where string) {
 	}
 }
 
-// viewState is the page-wide group's pressed button and every widget's
-// checked radio: "d", "m", "c", or "" for none.
-const viewState = `JSON.stringify({
-  Pressed: [...document.querySelectorAll(".ds-viewall [aria-pressed=true]")].map(b => b.dataset.dsView),
-  Widgets: [...document.querySelectorAll(".ds-view")].map(v => { const i = v.querySelector(".ds-view__tab input:checked"); return i ? i.closest(".ds-view__tab").className.slice(-1) : ""; }),
-  Stored: (() => { try { return localStorage.getItem("rst-ds-view") || ""; } catch (e) { return "throws"; } })()})`
-
-type viewReading struct {
-	Pressed []string
-	Widgets []string
-	Stored  string
-}
-
-func readView(t *testing.T, ctx context.Context, where string) viewReading {
-	t.Helper()
-	var raw string
-	if err := chromedp.Run(ctx, chromedp.Evaluate(viewState, &raw)); err != nil {
-		t.Fatalf("%s: reading the view: %v", where, err)
-	}
-	var v viewReading
-	if err := json.Unmarshal([]byte(raw), &v); err != nil {
-		t.Fatalf("%s: decoding %q: %v", where, raw, err)
-	}
-	return v
-}
-
-func press(t *testing.T, ctx context.Context, where, view string) {
-	t.Helper()
-	if err := chromedp.Run(ctx, chromedp.Evaluate(`document.querySelector('.ds-viewall [data-ds-view="`+view+`"]').click(); true`, nil)); err != nil {
-		t.Fatalf("%s: pressing %s: %v", where, view, err)
-	}
-}
-
-func every(ws []string, want string) bool {
-	for _, w := range ws {
-		if w != want {
-			return false
-		}
-	}
-	return len(ws) > 0
-}
-
-func TestThePageWideViewAppliesToEveryWidget(t *testing.T) {
-	rig := harness.New(t, func(string) http.Handler { return treeHandler(t) })
-	ctx, cancel := context.WithTimeout(rig.Context(), 120*time.Second)
-	defer cancel()
-	form := rig.Origin + pageHref(mountPath, RootTheme(), "en", fileOf("form"))
-	if err := chromedp.Run(ctx, chromedp.EmulateViewport(1280, 900), chromedp.Navigate(form), chromedp.WaitVisible(`.ds-viewall`, chromedp.ByQuery)); err != nil {
-		t.Fatalf("loading Form: %v", err)
-	}
-	if v := readView(t, ctx, "fresh"); len(v.Pressed) != 1 || v.Pressed[0] != "auto" || !every(v.Widgets, "") {
-		t.Fatalf("fresh: %+v, want Auto pressed and nothing checked", v)
-	}
-	press(t, ctx, "Code", "code")
-	if v := readView(t, ctx, "Code"); len(v.Pressed) != 1 || v.Pressed[0] != "code" || !every(v.Widgets, "c") || v.Stored != "code" {
-		t.Errorf("after Code: %+v, want Code pressed, every widget on Code, code stored", v)
-	}
-	// A reader choosing Mobile in one widget leaves nothing pressed: the
-	// page is mixed, and the group says only what is true of every widget.
-	if err := chromedp.Run(ctx, chromedp.Evaluate(`document.querySelector(".ds-view__tab--m input").click(); true`, nil)); err != nil {
-		t.Fatalf("a local Mobile: %v", err)
-	}
-	until(t, ctx, "mixed", `document.querySelectorAll(".ds-viewall [aria-pressed=true]").length === 0`)
-	// Pressing Code again re-applies it, the case a radio cannot express.
-	press(t, ctx, "Code again", "code")
-	if v := readView(t, ctx, "Code again"); len(v.Pressed) != 1 || v.Pressed[0] != "code" || !every(v.Widgets, "c") {
-		t.Errorf("after Code again: %+v", v)
-	}
-	// The next page opens in Code.
-	if err := chromedp.Run(ctx, chromedp.Navigate(rig.Origin+pageHref(mountPath, RootTheme(), "en", fileOf("display"))), chromedp.WaitVisible(`.ds-viewall`, chromedp.ByQuery)); err != nil {
-		t.Fatalf("loading Display: %v", err)
-	}
-	if v := readView(t, ctx, "the next page"); len(v.Pressed) != 1 || v.Pressed[0] != "code" || !every(v.Widgets, "c") {
-		t.Errorf("Display after Code on Form: %+v, want it opened in Code", v)
-	}
-	press(t, ctx, "Auto", "auto")
-	if v := readView(t, ctx, "Auto"); len(v.Pressed) != 1 || v.Pressed[0] != "auto" || !every(v.Widgets, "") || v.Stored != "" {
-		t.Errorf("after Auto: %+v, want nothing checked and nothing stored", v)
-	}
-	// Scripts off, the group has no box: the per-sample radios are the
-	// scriptless behaviour, unchanged.
-	off := noScripts(t, ctx)
-	var box float64
-	if err := chromedp.Run(off, chromedp.Navigate(form), chromedp.WaitReady(`.ds-viewall`, chromedp.ByQuery),
-		chromedp.Evaluate(`document.querySelector(".ds-viewall").getBoundingClientRect().height`, &box)); err != nil {
-		t.Fatalf("scripts off: %v", err)
-	}
-	if box != 0 {
-		t.Errorf("with scripts off the group is %.0fpx tall; a control that cannot work is not shown", box)
-	}
-}
-
-// Storage that throws on every access (private mode,
-// refused site data) costs persistence and nothing else.
-func TestThePageWideViewWorksWhenStorageThrows(t *testing.T) {
-	rig := harness.New(t, func(string) http.Handler { return treeHandler(t) })
-	ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
-	defer cancel()
-	if err := chromedp.Run(ctx,
-		addInit(`Object.defineProperty(window, "localStorage", {configurable: true, get() { throw new DOMException("denied", "SecurityError"); }});
-		  window.__errors = 0; addEventListener("error", () => window.__errors++);`),
-		chromedp.Navigate(rig.Origin+pageHref(mountPath, RootTheme(), "en", fileOf("form"))),
-		chromedp.WaitVisible(`.ds-viewall`, chromedp.ByQuery)); err != nil {
-		t.Fatalf("loading Form with storage that throws: %v", err)
-	}
-	press(t, ctx, "Code", "code")
-	if v := readView(t, ctx, "Code"); len(v.Pressed) != 1 || v.Pressed[0] != "code" || !every(v.Widgets, "c") || v.Stored != "throws" {
-		t.Errorf("with storage throwing: %+v, want Code applied and pressed", v)
-	}
-	until(t, ctx, "no exception escaped", `window.__errors === 0`)
-}
-
-// With Code chosen for the whole page and every Rendered HTML
-// disclosure open, no source block on the two heaviest pages scrolls
-// sideways at 390px: the soft wrap holds even a 3,800px inline run.
-// The leg first requires that what it opened is on screen, every
-// widget's code and every disclosure's markup: a Code tab that never
-// opened leaves nothing visible to measure, and nothing scrolls.
+// With every widget's HTML tab chosen, and then every Template tab, no
+// source block on the two heaviest pages scrolls sideways at 390px: the
+// soft wrap holds even a 3,800px inline run. Each pass first requires
+// that what it chose is on screen, every widget's panel: a tab that
+// never opened leaves nothing visible to measure, and nothing scrolls.
 func TestNoCodeBlockScrollsSidewaysOnAPhone(t *testing.T) {
 	rig := harness.New(t, func(string) http.Handler { return treeHandler(t) })
 	ctx, cancel := context.WithTimeout(rig.Context(), 120*time.Second)
 	defer cancel()
 	for _, kind := range []string{"form", "date-and-time"} {
-		var raw string
-		if err := chromedp.Run(ctx, chromedp.EmulateViewport(390, 844),
-			chromedp.Navigate(rig.Origin+pageHref(mountPath, RootTheme(), "en", fileOf(kind))),
-			chromedp.WaitReady(`.ds-viewall`, chromedp.ByQuery),
-			chromedp.Evaluate(`document.querySelector('.ds-viewall [data-ds-view="code"]').click();
-			  document.querySelectorAll("details.ds-html").forEach(d => d.open = true); true`, nil),
-			chromedp.Evaluate(`(() => {
-			  // checkVisibility, not height alone: a block inside a closed
-			  // disclosure still measures, because reading its box lays out
-			  // the content the closed details skips.
-			  const shown = p => p.checkVisibility() && p.getBoundingClientRect().height > 0;
-			  const views = [...document.querySelectorAll(".ds-view")].filter(v => v.querySelector(".ds-view__code"));
-			  const blind = [];
-			  let blocks = 0;
-			  views.forEach(v => {
-			    const code = [...v.querySelectorAll(".ds-view__code .ds-src")].filter(p => !p.closest("details") && shown(p)).length;
-			    const html = [...v.querySelectorAll("details.ds-html")].map(d => [...d.querySelectorAll(".ds-src")].filter(shown).length);
-			    if (code === 0 || html.includes(0)) blind.push(v.querySelector("iframe").title);
-			    blocks += code + html.reduce((a, b) => a + b, 0);
-			  });
-			  const wide = [...document.querySelectorAll(".ds-src")].filter(p => shown(p) && p.scrollWidth > p.clientWidth).map(p => p.textContent.slice(0, 50));
-			  return JSON.stringify({Views: views.length, Blocks: blocks, Blind: blind, Wide: wide});
-			})()`, &raw)); err != nil {
-			t.Fatalf("%s at 390px: %v", kind, err)
-		}
-		var got struct {
-			Views, Blocks int
-			Blind, Wide   []string
-		}
-		if err := json.Unmarshal([]byte(raw), &got); err != nil {
-			t.Fatalf("%s at 390px: decoding %q: %v", kind, raw, err)
-		}
-		if got.Views == 0 || len(got.Blind) > 0 {
-			t.Fatalf("%s at 390px: %d widgets with code, and %d show no source block with Code chosen and Rendered HTML open: %q", kind, got.Views, len(got.Blind), got.Blind)
-		}
-		if len(got.Wide) > 0 {
-			t.Errorf("%s at 390px: %d of %d source blocks scroll sideways: %q", kind, len(got.Wide), got.Blocks, got.Wide)
+		for _, tab := range []string{"h", "t"} {
+			where := fmt.Sprintf("%s at 390px, every ds-view__tab--%s chosen", kind, tab)
+			var raw string
+			if err := chromedp.Run(ctx, chromedp.EmulateViewport(390, 844),
+				chromedp.Navigate(rig.Origin+pageHref(mountPath, RootTheme(), "en", fileOf(kind))),
+				chromedp.WaitReady(`.ds-view`, chromedp.ByQuery),
+				chromedp.Evaluate(`document.querySelectorAll(".ds-view__tab--`+tab+` input").forEach(i => i.checked = true); true`, nil),
+				chromedp.Evaluate(`(() => {
+				  const shown = p => p.checkVisibility() && p.getBoundingClientRect().height > 0;
+				  const views = [...document.querySelectorAll(".ds-view")].filter(v => v.querySelector(".ds-view__code--`+tab+`"));
+				  const blind = [];
+				  let blocks = 0;
+				  views.forEach(v => {
+				    const n = [...v.querySelectorAll(".ds-view__code--`+tab+` .ds-src")].filter(shown).length;
+				    if (n === 0) blind.push(v.querySelector("iframe").title);
+				    blocks += n;
+				  });
+				  const wide = [...document.querySelectorAll(".ds-src")].filter(p => shown(p) && p.scrollWidth > p.clientWidth).map(p => p.textContent.slice(0, 50));
+				  return JSON.stringify({Views: views.length, Blocks: blocks, Blind: blind, Wide: wide});
+				})()`, &raw)); err != nil {
+				t.Fatalf("%s: %v", where, err)
+			}
+			var got struct {
+				Views, Blocks int
+				Blind, Wide   []string
+			}
+			if err := json.Unmarshal([]byte(raw), &got); err != nil {
+				t.Fatalf("%s: decoding %q: %v", where, raw, err)
+			}
+			if got.Views == 0 || len(got.Blind) > 0 {
+				t.Fatalf("%s: %d widgets with the panel, and %d show no source block: %q", where, got.Views, len(got.Blind), got.Blind)
+			}
+			if len(got.Wide) > 0 {
+				t.Errorf("%s: %d of %d source blocks scroll sideways: %q", where, len(got.Wide), got.Blocks, got.Wide)
+			}
 		}
 	}
 }
 
-// axe with the Code panels open: the scan of every page never saw one
-// before, because the panels are display: none until a tab is chosen.
-// Each leg first asserts which highlight elements are on the page, so
-// the coverage cannot quietly shrink: all five on Form (its calls carry
-// actions and strings, its HTML tags, attributes and values), the three
+// axe with the HTML and Template panels open: the scan of every page
+// never saw one before, because the panels are display: none until a
+// tab is chosen. Each leg first asserts which highlight elements are
+// on the page, so the coverage cannot quietly shrink: Form's HTML tags,
+// attributes and values, its calls' actions and strings, and the three
 // markup ones on UI primitives, whose samples hold no template action.
 func TestA11yScansTheCodePanels(t *testing.T) {
 	rig := harness.New(t, func(string) http.Handler { return treeHandler(t) })
@@ -335,18 +220,17 @@ func TestA11yScansTheCodePanels(t *testing.T) {
 	axeJS := axeSource(t)
 	total := 0
 	for _, c := range []struct {
-		kind string
-		want []string
-	}{{"form", []string{"ds-t", "ds-a", "ds-v", "ds-x", "ds-s"}}, {"primitives", []string{"ds-t", "ds-a", "ds-v"}}} {
+		kind, tab string
+		want      []string
+	}{{"form", "h", []string{"ds-t", "ds-a", "ds-v"}}, {"form", "t", []string{"ds-x", "ds-s"}}, {"primitives", "h", []string{"ds-t", "ds-a", "ds-v"}}} {
 		for _, theme := range ui.ThemeNames() {
 			for _, scheme := range a11ySchemes {
-				where := fmt.Sprintf("%s/en %s, Code chosen (%s)", theme, c.kind, scheme)
+				where := fmt.Sprintf("%s/en %s, ds-view__tab--%s chosen (%s)", theme, c.kind, c.tab, scheme)
 				var shown []string
 				if err := chromedp.Run(ctx, chromedp.EmulateViewport(1280, 900),
 					chromedp.Navigate(rig.Origin+pageHref(mountPath, theme, "en", fileOf(c.kind))),
-					chromedp.WaitVisible(`.ds-viewall`, chromedp.ByQuery),
-					chromedp.Evaluate(`document.querySelector('.ds-viewall [data-ds-view="code"]').click();
-					  document.querySelectorAll("details.ds-html").forEach(d => d.open = true);
+					chromedp.WaitVisible(`.ds-view`, chromedp.ByQuery),
+					chromedp.Evaluate(`document.querySelectorAll(".ds-view__tab--`+c.tab+` input").forEach(i => i.checked = true);
 					  ["ds-t", "ds-a", "ds-v", "ds-x", "ds-s"].filter(n => [...document.querySelectorAll(n)].some(e => e.getBoundingClientRect().width > 0))`, &shown)); err != nil {
 					t.Fatalf("%s: loading: %v", where, err)
 				}
@@ -364,7 +248,7 @@ func TestA11yScansTheCodePanels(t *testing.T) {
 		}
 	}
 	if total == 0 {
-		t.Log("clean: the Code panels on Form and UI primitives in every theme and scheme")
+		t.Log("clean: the HTML and Template panels on Form and UI primitives in every theme and scheme")
 	}
 }
 

@@ -89,9 +89,26 @@
 
   /* The tap floor on small or touch screens: 44px at the default root,
      and it tracks a reader who raised their default size. Declared here
-     so an app's own CSS can use it; only rules inside the touch query
-     below read it, so desktop density never sees it. */
+     so an app's own CSS can use it; only the touch query below reads
+     it, so desktop density never sees it. */
   --rst-tap: 2.75rem;
+
+  /* The target floor in force, which every control's floor at the end
+     of this file reads: 32px on a desktop with a mouse, raised to
+     --rst-tap by the touch query. One token rather than a second copy
+     of the floor block, so a control cannot be floored on one kind of
+     screen and forgotten on the other. */
+  --rst-target: 2rem;
+
+  /* The header strip at the top of a phone screen: the back strip on a
+     content page, the index's header row, and the bar of a shell that
+     has one. 56px at the default root, a mobile app's top bar, with
+     the 44px target centred in it: the strip at the bare tap height
+     read as cramped beside every native header. Border included, so
+     the strip and the scroll padding that keeps a #fragment's heading
+     out from under it are the same number, and a strip resized here
+     cannot leave a heading half hidden. */
+  --rst-shell-strip: 3.5rem;
 
   /* The list grid's kebab column. A variable rather than the literal
      32px the samples used to write, so the column can grow to a 44px
@@ -143,7 +160,7 @@
 
    The four tokens move and nothing else: the root size, the rem
    spacing and every px geometry stay, and controls grow because their
-   text grows and because the touch block at the end of this file gives
+   text grows and because the floor block at the end of this file gives
    them a minimum box. Display sizes (page titles, stat numbers, avatar
    initials) stay literal on purpose, so a 22px title sits over 16px
    body text. ─────────────────────────────────────────────────────── */
@@ -191,11 +208,25 @@ body {
 }
 
 /* rastrillo.Icon emits class="icon" with no width or height, so the icon
-   sizes from here and tracks the text beside it. */
+   sizes from here and tracks the text beside it: an icon in a heading
+   is the heading's size, one in a line of prose the line's. */
 .icon {
   block-size: 1em;
   flex: none;
   inline-size: 1em;
+}
+/* Inside a control an icon is 16px, whatever text sits beside it.
+   Sized from the font, icons in controls came out anywhere from 9 to
+   20px (a caret in a small summary, a menu icon in a big button), so
+   two icons in one toolbar disagreed. The controls are the ones the
+   target floor at the end of this file holds; a control added there
+   belongs here too. :where() keeps this at .icon's own weight, so a
+   component that sizes its icon (the 12px caret, .rst-caret) still
+   wins. Not the list grid's title: it is the row's name, text that an
+   icon should follow, and the row is its target. */
+:where(.rst-btn, .rst-search, .rst-search__clear, .rst-ftok a, .rst-help, .rst-dropdown > summary, .rst-dropdown__menu a, .rst-dropdown__menu button, .rst-dropdown__menu .rst-menu-group > summary, .rst-row-menu__panel a, .rst-row-menu__panel button, .rst-locale button, .rst-combo__option, .rst-dtp__row, .rst-dtp__pick, .rst-cal__nav, .rst-row__action, .rst-row-menu > summary, .rst-pagination > a, .rst-seg-tabs a, .rst-switch, .rst-choice__cards label, .rst-tblock__head, .rst-bulkbar__close, .rst-bulkbar__escalate, .rst-modal-close, .rst-modal-panel > nav a, .rst-back-nav a, .rst-signin__providers > a, .rst-shell__brand, .rst-shell__nav a, .rst-shell__menu > summary, .rst-shell__chrome > summary, .rst-shell__account > summary, .rst-shell__back > a) .icon, :where([rst-btn], [rst-search], [rst-search-clear], [rst-ftok] a, [rst-help], [rst-dropdown] > summary, [rst-dropdown-menu] a, [rst-dropdown-menu] button, [rst-dropdown-menu] [rst-menu-group] > summary, [rst-row-menu-panel] a, [rst-row-menu-panel] button, [rst-locale] button, [rst-combo-option], [rst-dtp-row], [rst-dtp-pick], [rst-cal-nav], [rst-row-action], [rst-row-menu] > summary, [rst-pagination] > a, [rst-seg-tabs] a, [rst-switch], [rst-choice-cards] label, [rst-tblock-head], [rst-bulkbar-close], [rst-bulkbar-escalate], [rst-modal-close], [rst-modal-panel] > nav a, [rst-back-nav] a, [rst-signin-providers] > a, [rst-shell-brand], [rst-shell-nav] a, [rst-shell-menu] > summary, [rst-shell-chrome] > summary, [rst-shell-account] > summary, [rst-shell-back] > a) .icon {
+  block-size: 1rem;
+  inline-size: 1rem;
 }
 
 /* Focus is visible everywhere inside the app column (.rst-page) and
@@ -849,21 +880,30 @@ body {
   gap: var(--rst-sp-1);
   margin: var(--rst-sp-4) 0;
 }
-.rst-pagination a,
-[rst-pagination] a,
-.rst-pagination span,
-[rst-pagination] span {
+/* border-box because the target floor counts a chip's padding and
+   border; the minimum is written to match, the 2rem the chip's text
+   has always had room for plus the padding and border around it, so a
+   one-digit chip stays 53.19px wide on a desktop. On the content box it
+   came to that by itself, and the floor's border-box narrowed it to
+   32. A chip is a child of the strip: Previous and Next hold a span of
+   their own (the word a phone hides), which drew a chip inside a chip
+   when any span in the strip was one. */
+.rst-pagination > a,
+[rst-pagination] > a,
+.rst-pagination > span,
+[rst-pagination] > span {
   border: 1px solid var(--rst-line);
   border-radius: var(--rst-radius-sm);
+  box-sizing: border-box;
   color: var(--rst-text-muted);
   display: inline-block;
   font-size: var(--rst-fs-sm);
-  min-inline-size: 2rem;
+  min-inline-size: calc(2rem + 2 * 0.6rem + 2px);
   padding: 0.3rem 0.6rem;
   text-align: center;
   text-decoration: none;
 }
-.rst-pagination a:hover, [rst-pagination] a:hover {
+.rst-pagination > a:hover, [rst-pagination] > a:hover {
   background: var(--rst-accent-soft);
   border-color: var(--rst-accent);
   color: var(--rst-text);
@@ -883,6 +923,11 @@ body {
   min-inline-size: 0;
   padding-inline: var(--rst-sp-1);
 }
+/* What only a phone draws: the chevrons Previous and Next become, and
+   the ellipsis for a run of pages the app passed no Gap for, which a
+   wide strip shows in full. */
+.rst-pagination__step .icon, [rst-pagination-step] .icon { display: none; }
+.rst-pagination .rst-pagination__gap--narrow, [rst-pagination] [rst-pagination-gap~="narrow"] { display: none; }
 
 /* badge — uppercase bordered chip; tones reuse the pill tone pairs. */
 .rst-badge, [rst-badge] {
@@ -1056,8 +1101,12 @@ body {
 .rst-callout[data-tone="negative"] > .rst-callout__ic, [rst-callout][rst-tone~="negative"] > [rst-callout-ic] { color: var(--rst-tone-negative-fg); }
 
 /* detail-list — a record's labelled facts as a definition list; the
-   partial emits .rst-detail, .rst-mono marking machine-ish values. */
-.rst-detail, [rst-detail] { display: grid; gap: var(--rst-sp-2) var(--rst-sp-5); grid-template-columns: max-content 1fr; margin: var(--rst-sp-4) 0; }
+   partial emits .rst-detail, .rst-mono marking machine-ish values.
+   A label is smaller than its value, so the two meet on the value's
+   first baseline: stretched to the row, each set at its own top and
+   the label rode above the line it names; centred, it drifted off the
+   first line of a value that wraps. */
+.rst-detail, [rst-detail] { align-items: first baseline; display: grid; gap: var(--rst-sp-2) var(--rst-sp-5); grid-template-columns: max-content 1fr; margin: var(--rst-sp-4) 0; }
 .rst-detail dt, [rst-detail] dt { color: var(--rst-text-muted); font-size: var(--rst-fs-sm); font-weight: 600; }
 .rst-detail dd, [rst-detail] dd { margin: 0; }
 .rst-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: var(--rst-fs-sm); }
@@ -1073,6 +1122,40 @@ body {
   .rst-row, [rst-row] {
     align-items: flex-start;
     flex-wrap: wrap;
+  }
+  /* A row with a status gives its title the row. Side by side, the
+     pill and the action squeezed the title into a narrow column
+     ("Release notes, August" in three lines beside "Published"). The
+     status goes on a line of its own under the title and meta; the
+     title's column is the last explicit one, so it is the same column
+     with or without a lead, and the action and kebab fill the first
+     line's implicit columns after it.
+     The pill is bold and tinted, and beside the title its size was
+     measured against the title. Under the meta line it is measured
+     against the meta, and at the full --rst-fs-xs it competes with it
+     for the eye. One pixel under the scale's smallest step keeps it a
+     tag on the record; calc() against the token, not a literal, so it
+     still moves when the scale does on a phone. */
+  .rst-row:has(> .rst-status), [rst-row]:has(> [rst-status]) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: var(--rst-sp-1);
+  }
+  .rst-row:has(> .rst-row__lead):has(> .rst-status), [rst-row]:has(> [rst-row-lead]):has(> [rst-status]) {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+  .rst-row:has(> .rst-status) > *, [rst-row]:has(> [rst-status]) > * {
+    grid-row: 1;
+  }
+  .rst-row:has(> .rst-status) > .rst-row__main, [rst-row]:has(> [rst-status]) > [rst-row-main] {
+    grid-column: -2;
+  }
+  .rst-row:has(> .rst-status) > .rst-status, [rst-row]:has(> [rst-status]) > [rst-status] {
+    font-size: calc(var(--rst-fs-xs) - 1px);
+    grid-column: -2;
+    grid-row: 2;
+    justify-self: start;
+    padding-block: 0.05rem;
   }
   .rst-page-header h1, [rst-page-header] h1 {
     font-size: 1.25rem;
@@ -1149,11 +1232,35 @@ a.rst-nm:hover { color: var(--rst-accent); }
 @media (max-width: 800px) {
   .rst-m-hide { display: none; }
   .rst-lrow, [rst-lrow], .rst-lrow--head, [rst-lrow~="head"] { grid-template-columns: minmax(0, 1fr) auto var(--rst-col-menu); }
+  /* A row with nothing between its first cell and its kebab leaves the
+     auto column empty, but both column gaps stay: 13.6px the name could
+     not use, enough to push a word onto a second line at 390. The name
+     spans the empty column instead. A row with a shown middle cell, or
+     a head row (whose last cell is not a kebab), does not match. */
+  .rst-lrow:not(:has(> :not(:first-child, .rst-m-hide, .rst-row-menu))) > :first-child,
+  [rst-lrow]:not(:has(> :not(:first-child, .rst-m-hide, [rst-row-menu]))) > :first-child { grid-column: 1 / -2; }
 }
+/* The kebab goes in the last column, never the next free one. Below
+   800px a row whose middle cells are all rst-m-hide has only its name
+   and its kebab left, and auto-placement put the kebab in the auto
+   column: mid-row beside the name, with the empty kebab column after
+   it. */
+.rst-lrow > .rst-row-menu:last-child, [rst-lrow] > [rst-row-menu]:last-child { grid-column-end: -1; }
 
 /* row-menu — the per-row kebab: native details/summary, no JS. The
-   destructive item sits last, class rst-danger, label ending "…". */
-.rst-row-menu, [rst-row-menu] { justify-self: end; position: relative; }
+   destructive item sits last, class rst-danger, label ending "…".
+   The panel hangs from the <details>, so the <details> hugs its kebab:
+   fit-content, because justify-self only shrinks it in a grid cell (and
+   in a block only in engines that apply it there). Left to fill a flex
+   column or a block in Safari, it was as wide as its container and the
+   panel opened at the container's far edge, nowhere near the kebab.
+   The auto margin then puts it at the trailing edge in every engine,
+   which justify-self alone does only in a grid and in Chromium. The
+   panel opens toward the leading side, and without anchor positioning
+   nothing flips it: a hugging menu left at the leading edge hung its
+   panel off the screen. In a grid cell or after a flex: 1 cell the
+   margin has nothing to take, so it changes nothing there. */
+.rst-row-menu, [rst-row-menu] { inline-size: fit-content; justify-self: end; margin-inline-start: auto; position: relative; }
 .rst-row-menu > summary, [rst-row-menu] > summary { align-items: center; border-radius: var(--rst-radius-sm); color: var(--rst-text-faint); cursor: pointer; display: flex; height: 26px; justify-content: center; list-style: none; width: 26px; }
 .rst-row-menu > summary::-webkit-details-marker, [rst-row-menu] > summary::-webkit-details-marker { display: none; }
 .rst-row-menu > summary:hover, [rst-row-menu] > summary:hover, .rst-row-menu[open] > summary, [rst-row-menu][open] > summary { background: var(--rst-accent-soft); color: var(--rst-text); }
@@ -1325,16 +1432,19 @@ a.rst-nm:hover { color: var(--rst-accent); }
 }
 
 .rst-caret, [rst-caret] { align-items: center; color: var(--rst-text-faint); display: inline-flex; font-size: 0.8em; transition: transform 0.15s; }
-.rst-caret svg, [rst-caret] svg, .rst-caret .icon, [rst-caret] .icon { display: block; height: 1em; width: 1em; }
+/* 12px, smaller than an icon's 16: the chevron marks a disclosure and
+   should not read as a second control beside its label. */
+.rst-caret svg, [rst-caret] svg, .rst-caret .icon, [rst-caret] .icon { display: block; height: 0.75rem; width: 0.75rem; }
 details[open] > summary > .rst-caret, details[open] > summary > [rst-caret] { transform: rotate(180deg); }
 
 /* ftok — an applied filter as a removable chip; the × is a plain link
    to the unfiltered URL, so removing a filter is just navigation.
-   The × is 24px square because WCAG 2.2 AA 2.5.8 says a target is, and
-   it was 17px until the accessibility gate measured it. The chip lost
-   its block padding in the same breath to pay for most of that: the
-   chip measures 26.0px tall now against 22.4px before, and would have
-   been 29.2px if the padding had stayed. */
+   The × is a target, so the floor block at the end of this file sizes
+   it at --rst-target (32px with a mouse, 44 on a touch screen); it was
+   17px until the accessibility gate measured it. The 24px here is only
+   its size without that block. The chip has no block padding, so the ×
+   sets its height rather than adding to it: the chip is the × plus its
+   1px border, 34px on a desktop. */
 .rst-ftok, [rst-ftok] { align-items: center; background: var(--rst-surface); border: 1px solid var(--rst-line-strong); border-radius: 7px; display: inline-flex; font-size: var(--rst-fs-xs); gap: 0.45rem; padding-block: 0; padding-inline: 0.6rem 0.2rem; }
 .rst-ftok .rst-ftok__k, [rst-ftok] [rst-ftok-k] { color: var(--rst-text-muted); }
 .rst-ftok a, [rst-ftok] a { align-items: center; border-radius: 4px; color: var(--rst-text-faint); display: inline-flex; height: 24px; justify-content: center; text-decoration: none; width: 24px; }
@@ -1450,8 +1560,12 @@ small.rst-field__hint, small[rst-field-hint] { display: block; font-size: var(--
    It wraps: width: max-content is what a segmented control wants and
    max-inline-size: 100% is what WCAG 2.2 AA 1.4.10 requires, because
    four tabs are 345px wide and a reflow viewport is 320. Two rows beats
-   a sideways scrollbar on the whole page. */
-.rst-seg-tabs, [rst-seg-tabs] { background: var(--rst-accent-soft); border-radius: 8px; display: flex; flex-wrap: wrap; gap: 2px; max-inline-size: 100%; padding: 2px; width: max-content; }
+   a sideways scrollbar on the whole page.
+   The margin below is the one every block leaves: without it the tabs
+   sat flush on the list card under them and read as part of it. A flex
+   or grid parent that lays the tabs out in a row of controls spaces its
+   own items and should zero it. */
+.rst-seg-tabs, [rst-seg-tabs] { background: var(--rst-accent-soft); border-radius: 8px; display: flex; flex-wrap: wrap; gap: 2px; margin-block: 0 var(--rst-sp-4); max-inline-size: 100%; padding: 2px; width: max-content; }
 .rst-seg-tabs a, [rst-seg-tabs] a { border-radius: var(--rst-radius-sm); color: var(--rst-text-muted); font-size: var(--rst-fs-sm); font-weight: 550; padding: 5px 16px; text-decoration: none; }
 .rst-seg-tabs a:hover, [rst-seg-tabs] a:hover { color: var(--rst-text); }
 .rst-seg-tabs a[aria-current], [rst-seg-tabs] a[aria-current] { background: var(--rst-surface); box-shadow: var(--rst-shadow-lift); color: var(--rst-text); font-weight: 600; }
@@ -1606,7 +1720,7 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
    link must carry a full aria-label of its own. */
 .rst-help, [rst-help] { align-items: center; border: 1px solid var(--rst-line-strong); border-radius: 7px; color: var(--rst-text-muted); display: inline-flex; height: 28px; justify-content: center; position: relative; width: 28px; }
 .rst-help:hover, [rst-help]:hover { border-color: var(--rst-text-faint); color: var(--rst-text); }
-.rst-help svg, [rst-help] svg, .rst-help .icon, [rst-help] .icon { height: 15px; width: 15px; }
+.rst-help svg, [rst-help] svg, .rst-help .icon, [rst-help] .icon { height: 1rem; width: 1rem; }
 .rst-tip::after, [rst-tip]::after { background: var(--rst-text); border-radius: var(--rst-radius-sm); color: var(--rst-bg); content: attr(data-tip); font-size: var(--rst-fs-xs); font-weight: 500; inset-inline-end: 0; opacity: 0; padding: 3px 8px; pointer-events: none; position: absolute; top: calc(100% + 6px); transition: opacity 0.12s; white-space: nowrap; z-index: 35; }
 .rst-tip:hover::after, [rst-tip]:hover::after, .rst-tip:focus-visible::after, [rst-tip]:focus-visible::after { opacity: 1; }
 
@@ -1614,7 +1728,11 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
 .rst-bulkbar, [rst-bulkbar] { align-items: center; background: var(--rst-accent-soft); border-bottom: 1px solid var(--rst-line); display: flex; gap: 0.7rem; min-height: 46px; padding-block: 0; padding-inline: 0.6rem 0.85rem; }
 .rst-bulkbar__close, [rst-bulkbar-close] { align-items: center; border-radius: var(--rst-radius-sm); color: var(--rst-text-muted); display: inline-flex; height: 26px; justify-content: center; text-decoration: none; width: 26px; }
 .rst-bulkbar__close:hover, [rst-bulkbar-close]:hover { background: var(--rst-accent-soft); color: var(--rst-text); }
-.rst-bulkbar__close svg, [rst-bulkbar-close] svg, .rst-bulkbar__close .icon, [rst-bulkbar-close] .icon { height: 15px; width: 15px; }
+.rst-bulkbar__close svg, [rst-bulkbar-close] svg, .rst-bulkbar__close .icon, [rst-bulkbar-close] .icon { height: 1rem; width: 1rem; }
+/* The count and the escalate link's box. It lays nothing out on a
+   desktop, where the bar has room for one row; the touch query makes
+   it the box the escalate link wraps in. */
+.rst-bulkbar__selection, [rst-bulkbar-selection] { display: contents; }
 .rst-bulkbar__count, [rst-bulkbar-count] { font-size: var(--rst-fs-sm); font-weight: 600; }
 .rst-bulkbar__escalate, [rst-bulkbar-escalate] { color: var(--rst-accent); font-size: var(--rst-fs-xs); font-weight: 550; text-decoration: none; }
 .rst-bulkbar__escalate:hover, [rst-bulkbar-escalate]:hover { text-decoration: underline; }
@@ -1723,7 +1841,7 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
    its value and its name and is simply moved out of sight by
    .rst-sr-only, because it is what the form submits. */
 .rst-dtp, [rst-dtp] { position: relative; }
-.rst-dtp__input, [rst-dtp-input] { padding-inline-end: 2.25rem; }
+.rst-dtp__input, [rst-dtp-input] { padding-inline-end: 2.5rem; }
 /* The button is anchored to .rst-dtp, which is exactly as wide and as
    tall as the input it wraps once the input is a border box — so
    inset-inline-end puts it at the control's inline end in either
@@ -1732,7 +1850,8 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
    inset-block-start:0.3rem was that centring measured once by hand
    against one font size. .rst-dtp__input's padding-inline-end is the
    room this reserves inside the control, so text never runs under it,
-   with a value or without one. */
+   with a value or without one: 2.5rem clears the floor's 2rem button
+   and its 0.35rem inset. */
 .rst-dtp__pick, [rst-dtp-pick] { align-items: center; background: none; border: 0; border-radius: var(--rst-radius-sm); block-size: 1.75rem; color: var(--rst-text-muted); cursor: pointer; display: flex; inline-size: 1.75rem; inset-block: 0; inset-inline-end: 0.35rem; justify-content: center; margin-block: auto; padding: 0; position: absolute; }
 .rst-dtp__pick:hover, [rst-dtp-pick]:hover { color: var(--rst-text); }
 .rst-dtp__pick svg, [rst-dtp-pick] svg { block-size: 1rem; inline-size: 1rem; }
@@ -1781,7 +1900,7 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
    its max. Dimmed and inert rather than removed, so the header keeps
    its shape and the title stays where the eye left it. */
 .rst-cal__nav:disabled, [rst-cal-nav]:disabled { cursor: default; opacity: 0.35; }
-.rst-cal__nav svg, [rst-cal-nav] svg { block-size: 1.1rem; inline-size: 1.1rem; }
+.rst-cal__nav svg, [rst-cal-nav] svg { block-size: 1rem; inline-size: 1rem; }
 /* One chevron, drawn once and turned round for the other direction, so
    "back" always points at the start of the line — which is the other
    end of the box in a right-to-left page, and handled there by the
@@ -2211,7 +2330,10 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
    tap on any rail link would close the navigation instead of following
    it. An old layout keeps its push-down tail. */
 @media (max-width: 799.98px) {
-  .rst-shell-topbar .rst-shell__bar, [rst-shell-topbar] [rst-shell-bar], .rst-shell-console--page .rst-shell__bar, .rst-shell-console--index .rst-shell__bar, [rst-shell-console~="page"] [rst-shell-bar], [rst-shell-console~="index"] [rst-shell-bar] { position: relative; }
+  /* The bar is the phone's header strip, the same height as the back
+     strip under it and the sidebar's index row; its padding was what
+     set its height before, and with a 44px Menu that made it 61px. */
+  .rst-shell-topbar .rst-shell__bar, [rst-shell-topbar] [rst-shell-bar], .rst-shell-console--page .rst-shell__bar, .rst-shell-console--index .rst-shell__bar, [rst-shell-console~="page"] [rst-shell-bar], [rst-shell-console~="index"] [rst-shell-bar] { box-sizing: border-box; min-block-size: var(--rst-shell-strip); padding-block: 0; position: relative; }
   .rst-shell-topbar .rst-shell__bar:has(> .rst-shell__menu[open]), [rst-shell-topbar] [rst-shell-bar]:has(> [rst-shell-menu][open]), .rst-shell-console--page .rst-shell__bar:has(> .rst-shell__menu[open]), .rst-shell-console--index .rst-shell__bar:has(> .rst-shell__menu[open]), [rst-shell-console~="page"] [rst-shell-bar]:has(> [rst-shell-menu][open]), [rst-shell-console~="index"] [rst-shell-bar]:has(> [rst-shell-menu][open]) { z-index: 45; }
   .rst-shell-topbar .rst-shell__menu[open] > summary, [rst-shell-topbar] [rst-shell-menu][open] > summary, .rst-shell-console--page .rst-shell__menu[open] > summary, .rst-shell-console--index .rst-shell__menu[open] > summary, [rst-shell-console~="page"] [rst-shell-menu][open] > summary, [rst-shell-console~="index"] [rst-shell-menu][open] > summary { background: var(--rst-accent-soft); border-color: var(--rst-accent); }
   .rst-shell-topbar .rst-shell__menu[open] > summary::before, [rst-shell-topbar] [rst-shell-menu][open] > summary::before, .rst-shell-console--page .rst-shell__menu[open] > summary::before, .rst-shell-console--index .rst-shell__menu[open] > summary::before, [rst-shell-console~="page"] [rst-shell-menu][open] > summary::before, [rst-shell-console~="index"] [rst-shell-menu][open] > summary::before { content: ""; cursor: default; inset: 0; position: fixed; z-index: 1; }
@@ -2248,8 +2370,8 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
 /* The heading's two spans: the brand, then the page's title, which
    shows only when the brand's span rendered nothing, so an app that
    blanks its brand still has a heading. Each elides on its one line.
-   The brand link fills the row's height, so a tap on the heading's
-   line is a tap on it. */
+   The brand link is a line the tap floor's height, centred in the
+   header row, so a tap on the heading's line is a tap on it. */
 .rst-shell__title > *, [rst-shell-title] > * { min-inline-size: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rst-shell__title > :not(:empty) + *, [rst-shell-title] > :not(:empty) + * { display: none; }
 /* A brand drawn from data that has none usually renders whitespace,
@@ -2267,15 +2389,15 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
      sticky form bar (5), so a long form scrolled under the strip does
      not paint over Back, and below a modal's scrim (10): above it, Back
      stayed undimmed and live under an open modal on a phone. */
-  .rst-shell-sidebar--page > .rst-shell__back, [rst-shell-sidebar~="page"] > [rst-shell-back], .rst-shell-console--page > .rst-shell__back, [rst-shell-console~="page"] > [rst-shell-back] { align-items: center; background: var(--rst-surface); border-block-end: 1px solid var(--rst-line); display: flex; inset-block-start: 0; min-block-size: 2.75rem; padding-inline: var(--rst-sp-1); position: sticky; z-index: 9; }
+  .rst-shell-sidebar--page > .rst-shell__back, [rst-shell-sidebar~="page"] > [rst-shell-back], .rst-shell-console--page > .rst-shell__back, [rst-shell-console~="page"] > [rst-shell-back] { align-items: center; background: var(--rst-surface); border-block-end: 1px solid var(--rst-line); box-sizing: border-box; display: flex; inset-block-start: 0; min-block-size: var(--rst-shell-strip); padding-inline: var(--rst-sp-1); position: sticky; z-index: 9; }
   /* The strip is sticky, not in the flow a plain scroll-to-fragment
      measures against, so a #fragment link's native landing scroll parks
      the target's top edge at the root's scroll origin — under the
      strip, the one thing on a content page actually sitting there.
-     Reserving the strip's own height, border included, as scroll
-     padding is what makes that landing spot the strip's bottom edge
-     instead. */
-  :root:has(.rst-shell-sidebar--page), :root:has([rst-shell-sidebar~="page"]), :root:has(.rst-shell-console--page), :root:has([rst-shell-console~="page"]) { scroll-padding-block-start: calc(2.75rem + 1px); }
+     Reserving the strip's own height, border included (it is
+     border-box), as scroll padding is what makes that landing spot the
+     strip's bottom edge instead. */
+  :root:has(.rst-shell-sidebar--page), :root:has([rst-shell-sidebar~="page"]), :root:has(.rst-shell-console--page), :root:has([rst-shell-console~="page"]) { scroll-padding-block-start: var(--rst-shell-strip); }
   /* The strip's own link only, by the child combinator: anything else
      a page puts in the strip (a menu at its inline end) is not a back
      control, and would otherwise get the accent colour and a chevron. */
@@ -2300,8 +2422,11 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
      point: the page is navigation. */
   .rst-shell-sidebar--index > .rst-shell__main, [rst-shell-sidebar~="index"] > [rst-shell-main], .rst-shell-sidebar--index > .rst-skip, [rst-shell-sidebar~="index"] > [rst-skip], .rst-shell-console--index > .rst-shell__main, [rst-shell-console~="index"] > [rst-shell-main], .rst-shell-console--index > .rst-skip, [rst-shell-console~="index"] > [rst-skip], .rst-shell-sidebar--index .rst-shell__title + .rst-shell__brand, [rst-shell-sidebar~="index"] [rst-shell-title] + [rst-shell-brand], .rst-shell-console--index .rst-shell__title + .rst-shell__brand, [rst-shell-console~="index"] [rst-shell-title] + [rst-shell-brand] { display: none; }
   /* position: relative is for the profile menu, lifted from the foot to
-     the top of this rail (below). */
-  .rst-shell-sidebar--index > .rst-shell__rail, [rst-shell-sidebar~="index"] > [rst-shell-rail] { background: var(--rst-bg); border-block-end: 0; display: flex; gap: 0; min-block-size: 100dvh; padding: var(--rst-sp-5) var(--rst-sp-4); position: relative; }
+     the top of this rail (below). No padding above: the heading is the
+     header row, the strip's height from the top of the screen, so the
+     header is where a content page's back strip is and does not jump
+     as the slide goes between them. */
+  .rst-shell-sidebar--index > .rst-shell__rail, [rst-shell-sidebar~="index"] > [rst-shell-rail] { background: var(--rst-bg); border-block-end: 0; display: flex; gap: 0; min-block-size: 100dvh; padding: 0 var(--rst-sp-4) var(--rst-sp-5); position: relative; }
   /* The console's index is the bar, then the rail, then the foot. The
      three share the window: the root is a column at least the window
      tall and the rail takes what the bar and the foot leave, so a short
@@ -2314,10 +2439,12 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
   /* The heading is the app's name in a header row, not a page title:
      one line at about 21px, eliding rather than wrapping, the height of
      the avatar beside it so the two centre on one line. The sidebar's
-     reserves the avatar's room at its inline end, since the avatar is
-     lifted over the rail rather than laid out beside it. */
+     is the header row itself, the strip's height, and reserves the
+     avatar's room at its inline end, since the avatar is lifted over
+     the rail rather than laid out beside it. The console's sits in the
+     bar, which is the strip. */
   .rst-shell-sidebar--index .rst-shell__title, [rst-shell-sidebar~="index"] [rst-shell-title], .rst-shell-console--index .rst-shell__title, [rst-shell-console~="index"] [rst-shell-title] { align-items: center; display: flex; font-size: 1.3125rem; font-weight: 700; letter-spacing: -0.01em; line-height: 1.2; margin: 0 0 var(--rst-sp-2); min-block-size: 2.75rem; min-inline-size: 0; padding-inline: 0.25rem; }
-  .rst-shell-sidebar--index .rst-shell__title, [rst-shell-sidebar~="index"] [rst-shell-title] { padding-inline-end: calc(2.75rem + var(--rst-sp-3)); }
+  .rst-shell-sidebar--index .rst-shell__title, [rst-shell-sidebar~="index"] [rst-shell-title] { min-block-size: var(--rst-shell-strip); padding-inline-end: calc(2.75rem + var(--rst-sp-3)); }
   .rst-shell-console--index .rst-shell__bar > .rst-shell__title, [rst-shell-console~="index"] [rst-shell-bar] > [rst-shell-title] { flex: 1 1 0; margin: 0; }
   /* The rows: every link a full-width row, at least 3rem, 1rem text, a
      chevron at the end. The grouping is the markup apps already write,
@@ -2356,7 +2483,7 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
      whose foot is two bare blocks, keeps its foot under the nav. Its
      card drops down from the avatar by the anchored-menu rules as they
      are, ending at the avatar's inline end. */
-  .rst-shell-sidebar--index .rst-shell__rail-foot:has(> .rst-shell__profile), [rst-shell-sidebar~="index"] [rst-shell-rail-foot]:has(> [rst-shell-profile]) { align-items: center; block-size: 2.75rem; flex-direction: row; inset-block-start: var(--rst-sp-5); inset-inline-end: var(--rst-sp-4); margin: 0; position: absolute; }
+  .rst-shell-sidebar--index .rst-shell__rail-foot:has(> .rst-shell__profile), [rst-shell-sidebar~="index"] [rst-shell-rail-foot]:has(> [rst-shell-profile]) { align-items: center; block-size: var(--rst-shell-strip); flex-direction: row; inset-block-start: 0; inset-inline-end: var(--rst-sp-4); margin: 0; position: absolute; }
   /* The console's Menu becomes the profile menu on its index: the
      avatar instead of the icon and its word, a round button like the
      sidebar's, and the card headed by the person's name. Its open state
@@ -2449,6 +2576,12 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
    stop. */
 .rst-signin__providers, [rst-signin-providers] { display: flex; flex-direction: column; gap: var(--rst-sp-3); max-inline-size: 44rem; }
 .rst-signin__providers > form, [rst-signin-providers] > form { margin: 0; }
+/* The way back to the email form goes last in the stack, as a link.
+   On its own line it is a control, not a word in running text, so it
+   takes the target floor: as a bare line of text it was 19px tall.
+   flex-start keeps it the width of its words, so the empty line beside
+   it is not a hidden part of the link. */
+.rst-signin__providers > a, [rst-signin-providers] > a { align-items: center; align-self: flex-start; box-sizing: border-box; display: inline-flex; min-block-size: var(--rst-target); min-inline-size: var(--rst-target); }
 
 /* ── rst-stage: the stage shell (layouts/stage.html) ─────────────────
    One card centred on a full-page backdrop. [rst-stage] is <body> in
@@ -2541,54 +2674,93 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
   touch-action: manipulation;
 }
 
-/* ── Tap targets on small or touch screens ──────────────────────────
-   Every interactive idiom is at least --rst-tap (44px) on both axes,
-   measured as the box a tap ACTIVATES: the label of a label-backed
-   control, the row of a stretched link. Anything that is display:
-   inline today becomes inline-flex or flex here, because min sizes do
-   nothing on an inline box. Each selector repeats the weight of the
-   rule it raises: a floor lighter than the size it raises loses
-   wherever it sits (the topbar's Menu summary is (0,2,1)).
-
-   The block is last before the utilities so it wins ties with every
-   component above it. ui/sizing_test.go fails when a rule styling an
-   a, button, summary or label arrives without a row in the inventory
-   this block implements, and ui/sizing_browser_test.go measures every
-   control at 390 and 1024 with a coarse pointer and at 600 with a
-   mouse. ─────────────────────────────────────────────────────────── */
+/* ── Tap targets on small or touch screens: what the floor needs
+      beyond a size ────────────────────────────────────────────────────
+   The touch query raises --rst-target, which every rule in the floor
+   block below reads, from the desktop's 32px to --rst-tap (44px). What
+   stays here is what a phone needs and a desktop does not: the kebab's
+   wider column, a menu cap that fits three 44px rows, the calendar
+   docked to the bottom of the screen, and the layout that centres a
+   control's text in its 44px. ────────────────────────────── */
 @media (pointer: coarse), (max-width: 40rem) {
-  :root { --rst-col-menu: var(--rst-tap); }
+  :root { --rst-col-menu: var(--rst-tap); --rst-target: var(--rst-tap); }
 
-  .rst-btn, [rst-btn] { justify-content: center; min-block-size: var(--rst-tap); min-inline-size: var(--rst-tap); }
-  /* min-inline-size for a field in a flex row (a bulk bar), which
-     shrinks it past the floor; a stretched field is far wider anyway. */
-  .rst-input, [rst-input], .rst-textarea, [rst-textarea] { min-block-size: var(--rst-tap); min-inline-size: var(--rst-tap); }
-  /* The box is the target, and so is the input inside it: a tap focuses
-     the input, so the input stretches to the box's full height. */
-  .rst-search, [rst-search] { min-block-size: var(--rst-tap); padding-block: 0; }
-  .rst-search input[type="search"], [rst-search] input[type="search"] { align-self: stretch; }
-  .rst-search__clear, [rst-search-clear] { min-block-size: var(--rst-tap); min-inline-size: var(--rst-tap); }
-  .rst-ftok a, [rst-ftok] a { block-size: var(--rst-tap); inline-size: var(--rst-tap); }
-  .rst-help, [rst-help] { block-size: var(--rst-tap); inline-size: var(--rst-tap); }
-
-  .rst-dropdown > summary, [rst-dropdown] > summary { align-items: center; min-block-size: var(--rst-tap); min-inline-size: var(--rst-tap); }
-  .rst-dropdown__menu .rst-menu-group > summary, [rst-dropdown-menu] [rst-menu-group] > summary { align-items: center; display: flex; min-block-size: var(--rst-tap); }
-  .rst-dropdown__menu a, [rst-dropdown-menu] a, .rst-dropdown__menu button, [rst-dropdown-menu] button, .rst-row-menu__panel a, [rst-row-menu-panel] a, .rst-row-menu__panel button, [rst-row-menu-panel] button, .rst-locale button, [rst-locale] button { align-items: center; box-sizing: border-box; display: flex; min-block-size: var(--rst-tap); }
   /* The menu cap's 8rem floor exists so a three-item menu opened in a
      short frame shows whole; three 44px rows are taller than 8rem, so
      here the floor is three taps plus the panel's padding and border
-     (ui's TestAMenuOpenedInsideAShortFrameIsStillUsable). border-box
-     above for the same reason: the dropdown's links were content-box,
-     and their padding made each row 57px instead of 44. */
+     (ui's TestAMenuOpenedInsideAShortFrameIsStillUsable). Three 32px
+     rows fit 8rem, so the desktop keeps the base cap. */
   .rst-dropdown__menu, [rst-dropdown-menu], .rst-row-menu__panel, [rst-row-menu-panel] { max-block-size: min(20rem, max(calc(100dvh - 6rem), calc(3 * var(--rst-tap) + 1rem))); }
-  .rst-combo__option, [rst-combo-option], .rst-dtp__row, [rst-dtp-row] { align-items: center; box-sizing: border-box; display: flex; min-block-size: var(--rst-tap); }
 
-  /* The date field: a 44px pick button, and room in the input so typed
-     text never runs under it. */
+  /* The 44px pick button sits flush with the input's end, because a
+     44px button inset 0.35rem would overhang a 44px input, and the
+     input keeps room for it so typed text never runs under it. */
   .rst-dtp__input, [rst-dtp-input] { padding-inline-end: 3rem; }
-  .rst-dtp__pick, [rst-dtp-pick] { block-size: var(--rst-tap); inline-size: var(--rst-tap); inset-inline-end: 0; }
-  .rst-cal__nav, [rst-cal-nav] { block-size: var(--rst-tap); inline-size: var(--rst-tap); }
-  .rst-cal__day, [rst-cal-day] { block-size: var(--rst-tap); }
+  .rst-dtp__pick, [rst-dtp-pick] { inset-inline-end: 0; }
+
+  /* Layout the phone has had since its floor was 44px, kept off the
+     desktop, whose floor needs none of it: a desktop item is a block
+     that keeps its own spacing and alignment, and these would change
+     it where the floor changes nothing (a row action 9.6px wider, a
+     date suggestion's label off its baseline, a full-width button's
+     label pulled to the middle). On a phone each control grows well
+     past its text, and these centre the text in it. */
+  .rst-btn, [rst-btn] { justify-content: center; }
+  .rst-dropdown__menu .rst-menu-group > summary, [rst-dropdown-menu] [rst-menu-group] > summary, .rst-dropdown__menu a, [rst-dropdown-menu] a, .rst-dropdown__menu button, [rst-dropdown-menu] button, .rst-row-menu__panel a, [rst-row-menu-panel] a, .rst-row-menu__panel button, [rst-row-menu-panel] button, .rst-locale button, [rst-locale] button, .rst-combo__option, [rst-combo-option], .rst-dtp__row, [rst-dtp-row], .rst-modal-panel > nav a, [rst-modal-panel] > nav a { align-items: center; display: flex; }
+  .rst-shell-topbar .rst-shell__nav a, [rst-shell-topbar] [rst-shell-nav] a, .rst-shell-sidebar .rst-shell__nav a, [rst-shell-sidebar] [rst-shell-nav] a, .rst-shell-console .rst-shell__nav a, [rst-shell-console] [rst-shell-nav] a { align-items: center; display: flex; }
+  .rst-pagination > a, [rst-pagination] > a, .rst-pagination > span, [rst-pagination] > span, .rst-seg-tabs a, [rst-seg-tabs] a { align-items: center; display: inline-flex; justify-content: center; }
+  /* A phone's chip is the 44px tap square it has always been, narrower
+     than the desktop's own minimum above. */
+  .rst-pagination > a, [rst-pagination] > a, .rst-pagination > span, [rst-pagination] > span { min-inline-size: var(--rst-target); }
+  .rst-row__action, [rst-row-action] { padding-inline: 1rem; }
+  .rst-selbox, [rst-selbox] { padding: 0; }
+  /* At 390 the bar's parts outgrow one row, and squeezed into it
+     "3 selected" and "Select all 412 matching" each broke over two and
+     three lines. Here they keep one line. When the parts do not fit,
+     the escalate link wraps onto a second row, and the close button
+     and Actions stay on the first: the bar aligns to the top, so they
+     do not drift to the middle of two rows. The 1px of block padding
+     is the space the 46px bar left around a 44px row when it centred
+     it.
+     The second row spans the bar, from where the close button starts,
+     because a long link that started under the count ran out of the
+     card. So the selection box reaches back under the close button (a
+     negative margin of the button and the bar's 0.7rem gap) and its
+     ::before holds the button's place on the first row only; the
+     button sits above the box so a tap still reaches it. Actions
+     still narrows the box, which is what moves the link down when the
+     first row is full.
+     Text wraps only as a last resort: each text is as wide as its one
+     line unless that is wider than the room it has, the bar's width
+     (the bar is the container 100cqi measures) for the link, and the
+     first row beside the close button for the count. Past that it
+     wraps, inside a word if it must, rather than run out of the card. */
+  .rst-bulkbar, [rst-bulkbar] { align-items: flex-start; container-type: inline-size; padding-block: 1px; }
+  .rst-bulkbar__close, [rst-bulkbar-close] { position: relative; z-index: 1; }
+  .rst-bulkbar__selection, [rst-bulkbar-selection] { align-items: center; column-gap: 0.7rem; display: flex; flex: 1 1 auto; flex-wrap: wrap; margin-inline-start: calc(-1 * (var(--rst-target) + 0.7rem)); min-inline-size: 0; }
+  .rst-bulkbar__selection::before, [rst-bulkbar-selection]::before { content: ""; flex: none; inline-size: var(--rst-target); }
+  .rst-bulkbar__count, [rst-bulkbar-count] { align-items: center; display: inline-flex; max-inline-size: calc(100% - var(--rst-target) - 0.7rem); min-block-size: var(--rst-target); overflow-wrap: break-word; }
+  .rst-bulkbar__escalate, [rst-bulkbar-escalate] { flex: none; max-inline-size: 100cqi; overflow-wrap: break-word; }
+  /* "Previous 1 … 3 4 5 … 9 Next" in 44px chips is wider than a phone
+     and wrapped onto two rows. Here it is "‹ 1 … 4 … 9 ›": Previous
+     and Next are chevrons whose words stay for a screen reader, the
+     pages beside the current one are hidden (paginationItems marks
+     them, and the ellipses that stand in for them), and the one line
+     is spread across the width. A step is a 44px square: its padding
+     would only push the chevron off centre. chevron-down turned a
+     quarter points back for Previous and on for Next, and the other
+     way round in a right-to-left page, where the line starts at the
+     right. No gap of its own: space-between spaces the items, and
+     seven of them (five 44px taps, two ellipses) with the 4px gaps
+     were 292px, past the 288 a 320px phone has, so Next wrapped. */
+  .rst-pagination, [rst-pagination] { column-gap: 0; justify-content: space-between; }
+  .rst-pagination .rst-pagination__wide, [rst-pagination] [rst-pagination-wide] { display: none; }
+  .rst-pagination .rst-pagination__gap--narrow, [rst-pagination] [rst-pagination-gap~="narrow"] { display: inline-flex; }
+  .rst-pagination .rst-pagination__step, [rst-pagination] [rst-pagination-step] { padding-inline: 0; }
+  .rst-pagination__step .icon, [rst-pagination-step] .icon { block-size: 1rem; display: block; inline-size: 1rem; }
+  .rst-pagination__step--prev .icon, [rst-pagination-step~="prev"] .icon, [dir="rtl"] .rst-pagination__step--next .icon, [dir="rtl"] [rst-pagination-step~="next"] .icon { transform: rotate(90deg); }
+  .rst-pagination__step--next .icon, [rst-pagination-step~="next"] .icon, [dir="rtl"] .rst-pagination__step--prev .icon, [dir="rtl"] [rst-pagination-step~="prev"] .icon { transform: rotate(-90deg); }
+  .rst-pagination__word, [rst-pagination-word] { block-size: 1px; clip-path: inset(50%); inline-size: 1px; overflow: hidden; position: absolute; white-space: nowrap; }
   /* The calendar docks to the bottom of the viewport on every small or
      touch screen. Anchored, it is placed from the field's inline start,
      and a date field can sit at the trailing end of a field row at any
@@ -2607,42 +2779,129 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
      .is-above sets them (the :is() weighs (0,3,0) and beats it). */
   :is(.rst-cal, .rst-dtp .rst-cal, .rst-dtp.is-above .rst-cal), :is([rst-cal], [rst-dtp] [rst-cal], [rst-dtp].is-above [rst-cal]) { box-sizing: border-box; inline-size: fit-content; inset-block-end: var(--rst-sp-2); inset-block-start: auto; inset-inline: 0; margin: 0 auto; max-block-size: calc(100dvh - 2 * var(--rst-sp-2)); max-inline-size: calc(100vw - 2 * var(--rst-sp-2)); overflow-y: auto; overscroll-behavior: contain; position: fixed; scrollbar-gutter: stable; top: auto; }
   :is(.rst-cal, .rst-dtp .rst-cal) .rst-cal__grid, :is([rst-cal], [rst-dtp] [rst-cal]) [rst-cal-grid] { inline-size: calc(7 * var(--rst-tap)); max-inline-size: 100%; }
+}
 
-  /* The row's own controls. The checkbox's label grows by
-     padding, so the 16px box stays 16px and the label is 44×44. */
-  .rst-row__action, [rst-row-action] { align-items: center; box-sizing: border-box; display: inline-flex; justify-content: center; min-block-size: var(--rst-tap); min-inline-size: var(--rst-tap); padding-inline: 1rem; }
-  .rst-row-menu > summary, [rst-row-menu] > summary { block-size: var(--rst-tap); inline-size: var(--rst-tap); }
-  .rst-selbox, [rst-selbox] { box-sizing: border-box; justify-content: center; min-block-size: var(--rst-tap); min-inline-size: var(--rst-tap); padding: 0; }
-  .rst-lrow > .rst-nm, [rst-lrow] > .rst-nm { align-content: center; display: grid; min-block-size: var(--rst-tap); }
-  a.rst-person, a[rst-person] { min-block-size: var(--rst-tap); min-inline-size: var(--rst-tap); }
+/* ── Target floors, at every width ──────────────────────────────────
+   Every interactive idiom is at least --rst-target on both axes: 32px
+   on a desktop with a mouse, --rst-tap (44px) on a small or touch
+   screen, where the query above raises the token. One list of idioms
+   read through one token, so a control floored on a phone cannot be
+   left at 24px on a desktop, and the two floors cannot drift apart.
+   The size is measured as the box a tap or click ACTIVATES: the label
+   of a label-backed control, the row of a stretched link. Anything
+   that is display: inline today becomes inline-flex or flex here,
+   because min sizes do nothing on an inline box; a block keeps its
+   display and centres its content with align-content. Nothing else
+   belongs here: a declaration that changes a desktop control the floor
+   leaves alone goes in the touch query above. Every floor but the
+   search box's is border-box, so the floor is the whole control: on
+   the content box a control's own padding and border landed on top of
+   it, and a 33.8px dropdown summary became 44.8 (the topbar 61.8) on a
+   desktop where it already cleared 32. Each selector repeats the weight of the rule
+   it raises: a floor lighter than the size it raises loses wherever it
+   sits (the topbar's Menu summary is (0,2,1)).
 
-  .rst-pagination a, [rst-pagination] a, .rst-pagination span, [rst-pagination] span { align-items: center; box-sizing: border-box; display: inline-flex; justify-content: center; min-block-size: var(--rst-tap); min-inline-size: var(--rst-tap); }
-  .rst-seg-tabs a, [rst-seg-tabs] a { align-items: center; box-sizing: border-box; display: inline-flex; justify-content: center; min-block-size: var(--rst-tap); min-inline-size: var(--rst-tap); }
-  .rst-switch, [rst-switch], .rst-choice__cards label, [rst-choice-cards] label, .rst-tblock > .rst-tblock__head, [rst-tblock] > [rst-tblock-head] { min-block-size: var(--rst-tap); }
+   The block is last before the utilities so it wins ties with every
+   component above it. ui/sizing_test.go fails when a rule styling an
+   a, button, summary or label arrives without a row in the inventory
+   this block implements, and ui/sizing_browser_test.go measures every
+   control at 390 and 1024 with a coarse pointer and at 600 with a
+   mouse against 44px, and at 1280 with a mouse against 32px. ─────── */
+/* A flex box drops the whitespace between an icon and the word beside
+   it, so an icon in a menu item or a brand touched its text (4px of
+   space became 0). These are flex boxes at some width: the brand, the
+   row action and the back link at every width (the floors below make
+   them inline-flex), the menu items and nav links on a phone (the
+   touch query above makes them flex). About a space's width puts the
+   space back. On a desktop a menu item is still a block, the gap does
+   nothing, and its own space stays. :where() weighs nothing, so a
+   component that sets its own gap (the index rows) keeps it. */
+:where(.rst-dropdown__menu a, .rst-dropdown__menu button, .rst-row-menu__panel a, .rst-row-menu__panel button, .rst-locale button, .rst-shell__nav a, .rst-modal-panel > nav a, .rst-back-nav a, .rst-shell__brand, .rst-row__action, .rst-signin__providers > a), :where([rst-dropdown-menu] a, [rst-dropdown-menu] button, [rst-row-menu-panel] a, [rst-row-menu-panel] button, [rst-locale] button, [rst-shell-nav] a, [rst-modal-panel] > nav a, [rst-back-nav] a, [rst-shell-brand], [rst-row-action], [rst-signin-providers] > a) { column-gap: 0.3em; }
+.rst-btn, [rst-btn] { box-sizing: border-box; min-block-size: var(--rst-target); min-inline-size: var(--rst-target); }
+/* min-inline-size for a field in a flex row (a bulk bar), which
+   shrinks it past the floor; a stretched field is far wider anyway.
+   No block floor on the textarea: its own min-height of 5rem is over
+   any floor, and min-block-size is the same property under another
+   name, so a floor here replaced it and a note field shrank to two
+   lines. */
+.rst-input, [rst-input] { box-sizing: border-box; min-block-size: var(--rst-target); min-inline-size: var(--rst-target); }
+.rst-textarea, [rst-textarea] { box-sizing: border-box; min-inline-size: var(--rst-target); }
+/* The box is the target, and so is the input inside it: a tap focuses
+   the input, so the input stretches to the box's full height. The one
+   content-box floor: its block padding is zeroed, and the floor is the
+   input's height, inside the box's 1px border. */
+.rst-search, [rst-search] { min-block-size: var(--rst-target); padding-block: 0; }
+.rst-search input[type="search"], [rst-search] input[type="search"] { align-self: stretch; }
+.rst-search__clear, [rst-search-clear] { box-sizing: border-box; min-block-size: var(--rst-target); min-inline-size: var(--rst-target); }
+.rst-ftok a, [rst-ftok] a { block-size: var(--rst-target); box-sizing: border-box; inline-size: var(--rst-target); }
+.rst-help, [rst-help] { block-size: var(--rst-target); box-sizing: border-box; inline-size: var(--rst-target); }
 
-  /* flex: none because the bar is a flex row that, at 390, shrank the
-     close link to 26px wide to make room for the escalate link's text. */
-  .rst-bulkbar__close, [rst-bulkbar-close] { block-size: var(--rst-tap); flex: none; inline-size: var(--rst-tap); }
-  .rst-bulkbar__escalate, [rst-bulkbar-escalate] { align-items: center; display: inline-flex; justify-content: center; min-block-size: var(--rst-tap); min-inline-size: var(--rst-tap); }
-  .rst-modal-close, [rst-modal-close] { align-items: center; display: inline-flex; justify-content: center; min-block-size: var(--rst-tap); min-inline-size: var(--rst-tap); }
-  .rst-modal-panel > nav a, [rst-modal-panel] > nav a { align-items: center; display: flex; min-block-size: var(--rst-tap); }
-  .rst-back-nav a, [rst-back-nav] a { align-items: center; display: inline-flex; min-block-size: var(--rst-tap); min-inline-size: var(--rst-tap); }
+.rst-dropdown > summary, [rst-dropdown] > summary { align-items: center; box-sizing: border-box; min-block-size: var(--rst-target); min-inline-size: var(--rst-target); }
+.rst-dropdown__menu .rst-menu-group > summary, [rst-dropdown-menu] [rst-menu-group] > summary { align-content: center; box-sizing: border-box; min-block-size: var(--rst-target); }
+/* border-box: the dropdown's links were content-box, and their padding
+   made each 44px row 57px. A menu item is a block, so the floor needs
+   no display of its own, and align-content centres a block's content
+   without turning the item into a flex box, which would drop the
+   spaces between the inline pieces of its label. */
+.rst-dropdown__menu a, [rst-dropdown-menu] a, .rst-dropdown__menu button, [rst-dropdown-menu] button, .rst-row-menu__panel a, [rst-row-menu-panel] a, .rst-row-menu__panel button, [rst-row-menu-panel] button, .rst-locale button, [rst-locale] button, .rst-combo__option, [rst-combo-option] { align-content: center; box-sizing: border-box; min-block-size: var(--rst-target); }
+.rst-dtp__row, [rst-dtp-row] { box-sizing: border-box; min-block-size: var(--rst-target); }
 
-  .rst-shell__brand, [rst-shell-brand] { align-items: center; display: inline-flex; min-block-size: var(--rst-tap); min-inline-size: var(--rst-tap); }
-  .rst-shell-topbar .rst-shell__nav a, [rst-shell-topbar] [rst-shell-nav] a, .rst-shell-sidebar .rst-shell__nav a, [rst-shell-sidebar] [rst-shell-nav] a, .rst-shell-console .rst-shell__nav a, [rst-shell-console] [rst-shell-nav] a { align-items: center; box-sizing: border-box; display: flex; min-block-size: var(--rst-tap); }
-  .rst-shell-topbar .rst-shell__menu > summary, [rst-shell-topbar] [rst-shell-menu] > summary, .rst-shell-console .rst-shell__menu > summary, [rst-shell-console] [rst-shell-menu] > summary { min-block-size: var(--rst-tap); min-inline-size: var(--rst-tap); }
-  /* LEGACY: the old drawer's summary. */
-  .rst-shell-sidebar > .rst-shell__chrome > summary, [rst-shell-sidebar] > [rst-shell-chrome] > summary { min-block-size: var(--rst-tap); }
-  /* The card's own summaries: the open Menu (its pressed state is a
-     (0,3,1) rule) and the account menu inside it. */
-  .rst-shell-topbar .rst-shell__menu[open] > summary, [rst-shell-topbar] [rst-shell-menu][open] > summary, .rst-shell-console--page .rst-shell__menu[open] > summary, .rst-shell-console--index .rst-shell__menu[open] > summary, [rst-shell-console~="page"] [rst-shell-menu][open] > summary, [rst-shell-console~="index"] [rst-shell-menu][open] > summary { min-block-size: var(--rst-tap); min-inline-size: var(--rst-tap); }
-  .rst-shell-topbar .rst-shell__tail > .rst-shell__account > summary, [rst-shell-topbar] [rst-shell-tail] > [rst-shell-account] > summary, .rst-shell-console--page .rst-shell__tail > .rst-shell__account > summary, .rst-shell-console--index .rst-shell__tail > .rst-shell__account > summary, [rst-shell-console~="page"] [rst-shell-tail] > [rst-shell-account] > summary, [rst-shell-console~="index"] [rst-shell-tail] > [rst-shell-account] > summary { min-block-size: var(--rst-tap); }
-  /* The back control (its strip is 2.75rem already; the link is the
-     target) and the index rows, which are 3rem: the nav-link floor above
-     weighs the same as the index's row rule and comes later, so without
-     this it would shrink the rows to 44px on exactly the screens the
-     index is for. */
-  .rst-shell__back > a, [rst-shell-back] > a { min-inline-size: var(--rst-tap); }
+/* The date field's pick button and the calendar's controls. */
+.rst-dtp__pick, [rst-dtp-pick] { block-size: var(--rst-target); box-sizing: border-box; inline-size: var(--rst-target); }
+.rst-cal__nav, [rst-cal-nav] { block-size: var(--rst-target); box-sizing: border-box; inline-size: var(--rst-target); }
+.rst-cal__day, [rst-cal-day] { block-size: var(--rst-target); box-sizing: border-box; }
+
+/* The row's own controls. The checkbox's label grows by
+   padding, so the 16px box stays 16px and the label is the target. */
+.rst-row__action, [rst-row-action] { align-items: center; box-sizing: border-box; display: inline-flex; justify-content: center; min-block-size: var(--rst-target); min-inline-size: var(--rst-target); }
+.rst-row-menu > summary, [rst-row-menu] > summary { block-size: var(--rst-target); box-sizing: border-box; inline-size: var(--rst-target); }
+.rst-selbox, [rst-selbox] { box-sizing: border-box; justify-content: center; min-block-size: var(--rst-target); min-inline-size: var(--rst-target); }
+/* The identity cell is already a block (a grid item), so its floor
+   needs no display of its own, and align-content centres a block's
+   content. As a grid it made each inline piece of the title a row:
+   "Order <bdi>AB3PX</bdi>" stacked into two lines. */
+.rst-lrow > .rst-nm, [rst-lrow] > .rst-nm { align-content: center; box-sizing: border-box; min-block-size: var(--rst-target); }
+a.rst-person, a[rst-person] { box-sizing: border-box; min-block-size: var(--rst-target); min-inline-size: var(--rst-target); }
+
+/* Blocks already (an inline-block chip, a tab in a flex row), centred
+   the same way as a menu item. */
+/* The chip's own minimum width is over the floor on a desktop; the
+   touch query sets the phone's. */
+.rst-pagination > a, [rst-pagination] > a, .rst-pagination > span, [rst-pagination] > span { align-content: center; box-sizing: border-box; min-block-size: var(--rst-target); }
+.rst-seg-tabs a, [rst-seg-tabs] a { align-content: center; box-sizing: border-box; min-block-size: var(--rst-target); min-inline-size: var(--rst-target); }
+.rst-switch, [rst-switch], .rst-choice__cards label, [rst-choice-cards] label, .rst-tblock > .rst-tblock__head, [rst-tblock] > [rst-tblock-head] { box-sizing: border-box; min-block-size: var(--rst-target); }
+
+/* flex: none because the bar is a flex row that, at 390, shrank the
+   close link to 26px wide to make room for the escalate link's text. */
+.rst-bulkbar__close, [rst-bulkbar-close] { block-size: var(--rst-target); box-sizing: border-box; flex: none; inline-size: var(--rst-target); }
+.rst-bulkbar__escalate, [rst-bulkbar-escalate] { align-items: center; box-sizing: border-box; display: inline-flex; justify-content: center; min-block-size: var(--rst-target); min-inline-size: var(--rst-target); }
+.rst-modal-close, [rst-modal-close] { align-items: center; box-sizing: border-box; display: inline-flex; justify-content: center; min-block-size: var(--rst-target); min-inline-size: var(--rst-target); }
+.rst-modal-panel > nav a, [rst-modal-panel] > nav a { align-content: center; box-sizing: border-box; min-block-size: var(--rst-target); }
+.rst-back-nav a, [rst-back-nav] a { align-items: center; box-sizing: border-box; display: inline-flex; min-block-size: var(--rst-target); min-inline-size: var(--rst-target); }
+
+.rst-shell__brand, [rst-shell-brand] { align-items: center; box-sizing: border-box; display: inline-flex; min-block-size: var(--rst-target); min-inline-size: var(--rst-target); }
+.rst-shell-topbar .rst-shell__nav a, [rst-shell-topbar] [rst-shell-nav] a, .rst-shell-sidebar .rst-shell__nav a, [rst-shell-sidebar] [rst-shell-nav] a, .rst-shell-console .rst-shell__nav a, [rst-shell-console] [rst-shell-nav] a { align-content: center; box-sizing: border-box; min-block-size: var(--rst-target); }
+/* border-box, here and on the profile's avatar: the floor is the
+   whole button. Measured on the content box, the Menu's padding and
+   border made it 56px and the avatar 52px, filling the header strip
+   they sit in instead of centring a 44px target in it. */
+.rst-shell-topbar .rst-shell__menu > summary, [rst-shell-topbar] [rst-shell-menu] > summary, .rst-shell-console .rst-shell__menu > summary, [rst-shell-console] [rst-shell-menu] > summary { box-sizing: border-box; min-block-size: var(--rst-target); min-inline-size: var(--rst-target); }
+.rst-shell__profile > summary, [rst-shell-profile] > summary { box-sizing: border-box; }
+/* LEGACY: the old drawer's summary. */
+.rst-shell-sidebar > .rst-shell__chrome > summary, [rst-shell-sidebar] > [rst-shell-chrome] > summary { box-sizing: border-box; min-block-size: var(--rst-target); }
+/* The card's own summaries: the open Menu (its pressed state is a
+   (0,3,1) rule) and the account menu inside it. */
+.rst-shell-topbar .rst-shell__menu[open] > summary, [rst-shell-topbar] [rst-shell-menu][open] > summary, .rst-shell-console--page .rst-shell__menu[open] > summary, .rst-shell-console--index .rst-shell__menu[open] > summary, [rst-shell-console~="page"] [rst-shell-menu][open] > summary, [rst-shell-console~="index"] [rst-shell-menu][open] > summary { box-sizing: border-box; min-block-size: var(--rst-target); min-inline-size: var(--rst-target); }
+.rst-shell-topbar .rst-shell__tail > .rst-shell__account > summary, [rst-shell-topbar] [rst-shell-tail] > [rst-shell-account] > summary, .rst-shell-console--page .rst-shell__tail > .rst-shell__account > summary, .rst-shell-console--index .rst-shell__tail > .rst-shell__account > summary, [rst-shell-console~="page"] [rst-shell-tail] > [rst-shell-account] > summary, [rst-shell-console~="index"] [rst-shell-tail] > [rst-shell-account] > summary { box-sizing: border-box; min-block-size: var(--rst-target); }
+/* The back control: its own 2.75rem is already the floor, centred in
+   its strip; the link is the target. */
+.rst-shell__back > a, [rst-shell-back] > a { box-sizing: border-box; min-inline-size: var(--rst-target); }
+/* The index rows are 3rem: the nav-link floor above weighs the same as
+   the index's row rule and comes later, so without this it would
+   shrink the rows to the floor on exactly the screens the index is
+   for. In the index's own query, because above 800px a rail is not an
+   index and its rows are the floor's 32px. */
+@media (max-width: 799.98px) {
   .rst-shell-sidebar--index .rst-shell__nav > a, [rst-shell-sidebar~="index"] [rst-shell-nav] > a, .rst-shell-console--index .rst-shell__nav > a, [rst-shell-console~="index"] [rst-shell-nav] > a { min-block-size: 3rem; }
 }
 

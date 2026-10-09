@@ -33,16 +33,15 @@
    reveal the reader sees happen. */
 .ds-scheme { display: none; }
 :root[data-rst-js] .ds-scheme { align-items: stretch; border: 1px solid var(--rst-line); border-radius: var(--rst-radius-sm); display: inline-flex; overflow: hidden; }
-.ds-scheme button, .ds-viewall button { background: none; border: 0; box-sizing: border-box; color: var(--rst-text-muted); cursor: pointer; font: inherit; font-size: var(--rst-fs-sm); padding: 0.25rem 0.6rem; }
-.ds-scheme button + button, .ds-viewall button + button { border-inline-start: 1px solid var(--rst-line); }
-.ds-scheme button:hover, .ds-viewall button:hover { background: var(--rst-accent-soft); color: var(--rst-text); }
-.ds-scheme button[aria-pressed="true"], .ds-viewall button[aria-pressed="true"] { background: var(--rst-accent-soft); color: var(--rst-accent); font-weight: 600; }
-.ds-scheme button:focus-visible, .ds-viewall button:focus-visible { outline: 2px solid var(--rst-accent); outline-offset: -2px; }
-/* The page-wide view group, hidden until gallery.js is there to make
-   it work: with scripts off the per-sample radios are the whole of the
-   widget, as they always were. */
-.ds-viewall { display: none; }
-:root[data-rst-js] .ds-viewall { align-items: stretch; border: 1px solid var(--rst-line); border-radius: var(--rst-radius-sm); display: inline-flex; margin: 0 0 var(--rst-sp-4); overflow: hidden; }
+/* --rst-target is the framework's floor in force: 32px on a desktop
+   with a mouse, 44px on a small or touch screen. Read here because a
+   ds- control carries no rst- attribute the framework's floors could
+   match, and at 0.25rem of padding these were 27px tall. */
+.ds-scheme button { background: none; border: 0; box-sizing: border-box; color: var(--rst-text-muted); cursor: pointer; font: inherit; font-size: var(--rst-fs-sm); min-block-size: var(--rst-target); padding: 0.25rem 0.6rem; }
+.ds-scheme button + button { border-inline-start: 1px solid var(--rst-line); }
+.ds-scheme button:hover { background: var(--rst-accent-soft); color: var(--rst-text); }
+.ds-scheme button[aria-pressed="true"] { background: var(--rst-accent-soft); color: var(--rst-accent); font-weight: 600; }
+.ds-scheme button:focus-visible { outline: 2px solid var(--rst-accent); outline-offset: -2px; }
 .ds-partial { margin: var(--rst-sp-5) 0; }
 /* The section headings are styled by class, not by level: the outline
    moved once when the pages got real titles, and a rule keyed to h3 or
@@ -55,6 +54,11 @@
    joining punctuation has to be written, and translated, between the
    two. */
 .ds-note__state { display: block; font-weight: 600; }
+/* The Overview's link to the demo is the whole sentence, not a link in
+   running text, so it takes the floor. inline-block, because an inline
+   box's padding is added to its font's content area, not its line, so
+   the same padding came out 28px. */
+.ds-demo > .ds-note > a { display: inline-block; padding-block: max(0px, (var(--rst-target) - 1lh) / 2); }
 .ds-toks { display: grid; gap: var(--rst-sp-3); grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr)); list-style: none; margin: 0 0 var(--rst-sp-5); padding: 0; }
 .ds-tok { align-items: center; display: flex; gap: var(--rst-sp-3); min-inline-size: 0; }
 .ds-tok__text { min-inline-size: 0; }
@@ -94,6 +98,9 @@
    inline end rather than sliding across to where Previous would have
    been. */
 .ds-updown { border-block-start: 1px solid var(--rst-line); display: grid; gap: var(--rst-sp-3); grid-template-columns: 1fr 1fr; margin-block-start: var(--rst-sp-6); padding-block-start: var(--rst-sp-4); }
+/* A grid of one so the floor's height centres the text; the links
+   were their 21px line, 24px on a phone. */
+.ds-updown__prev, .ds-updown__next { align-content: center; display: grid; min-block-size: var(--rst-target); }
 .ds-updown__prev { grid-column: 1; justify-self: start; }
 .ds-updown__next { grid-column: 2; justify-self: end; text-align: end; }
 .ds-shell { margin: var(--rst-sp-5) 0; }
@@ -127,33 +134,37 @@ ds-v { color: var(--rst-tone-positive-fg); }
 ds-x { color: var(--rst-text-muted); }
 ds-s { color: var(--rst-tone-warning-fg); }
 .ds-wrap { color: var(--rst-text-muted); font-size: var(--rst-fs-sm); margin: 0 0 var(--rst-sp-2); }
-.ds-html { margin-block-start: var(--rst-sp-2); }
-.ds-html > summary { color: var(--rst-text-muted); cursor: pointer; font-size: var(--rst-fs-sm); }
-.ds-html > summary:focus-visible { outline: 2px solid var(--rst-accent); outline-offset: 2px; }
 /* Sits directly before the block it copies. inline-size: fit-content with
    margin-inline-start: auto pushes a block-level button to the far edge
    without a flex wrapper around it — and does so on the inline axis, so
    it lands on the right in a left-to-right page and the left in Arabic
-   or Hebrew without a direction check anywhere in gallery.js. */
-.ds-copy { background: none; border: 1px solid var(--rst-line); border-radius: var(--rst-radius-sm); color: var(--rst-text-muted); cursor: pointer; display: block; font: inherit; font-size: var(--rst-fs-sm); inline-size: fit-content; margin-inline-start: auto; padding-block: 0.2rem; padding-inline: 0.6rem; }
+   or Hebrew without a direction check anywhere in gallery.js. It reads
+   the target floor itself, because tokens.css floors a button only
+   through rst-btn: as a line of small text it was 27px with a mouse,
+   and its old 44px reached a coarse pointer but not a narrow mouse
+   window. flex rather than block centres the label in the taller box;
+   border-box so the floor is the whole button, not its text. */
+.ds-copy { align-items: center; background: none; border: 1px solid var(--rst-line); border-radius: var(--rst-radius-sm); box-sizing: border-box; color: var(--rst-text-muted); cursor: pointer; display: flex; font: inherit; font-size: var(--rst-fs-sm); inline-size: fit-content; justify-content: center; margin-inline-start: auto; min-block-size: var(--rst-target); min-inline-size: var(--rst-target); padding-block: 0.2rem; padding-inline: 0.6rem; }
 .ds-copy:hover { background: var(--rst-accent-soft); color: var(--rst-text); }
 .ds-copy:focus-visible { outline: 2px solid var(--rst-accent); outline-offset: 2px; }
 
-/* The preview widget: [Desktop] [Mobile] [Code] over one frame.
+/* The preview widget: [Desktop] [Mobile] [HTML] [Template] over one
+   frame. HTML and Template are there only when the example has that
+   code to show, so a widget has two, three or four tabs.
 
-   No script anywhere in it. The tabs are three radio inputs sharing a
-   name, hidden but focusable inside their labels, and :has() reads
-   which one is checked from the wrapper — so the panels switch on the
-   browser's own form behaviour and a reader with JavaScript off has
-   the same three views as everyone else.
+   No script anywhere in it. The tabs are radio inputs sharing a name,
+   hidden but focusable inside their labels, and :has() reads which one
+   is checked from the wrapper — so the panels switch on the browser's
+   own form behaviour and a reader with JavaScript off has the same
+   views as everyone else.
 
-   None of the three starts checked, and that is the whole of how the
+   None of them starts checked, and that is the whole of how the
    opening view follows the reader. CSS cannot tell "the reader chose
    Desktop" from "Desktop is what the markup shipped checked", so a
    widget that opens on a checked radio can never let the width pick
    the opening view AND still take an explicit choice. With nothing
-   checked the width picks, and either tab, once clicked, overrides it
-   at any size.
+   checked the width picks Desktop or Mobile, and any tab, once
+   clicked, overrides it at any size.
 
    WHICH width picks is the part that took two goes. It is the STAGE's
    width, asked with a container query on .ds-view, and not the
@@ -350,8 +361,16 @@ ds-s { color: var(--rst-tone-warning-fg); }
 /* A grouped row's frame sits flush with its tabs, not centred: its
    states start at the inline start like the labels above them. */
 .ds-view--rows .ds-view__box { margin-inline-start: 0; }
-.ds-view__tabs { border: 0; display: flex; margin: 0 0 var(--rst-sp-2); padding: 0; }
-.ds-view__tab { align-items: center; border: 1px solid var(--rst-line); color: var(--rst-text-muted); cursor: pointer; display: inline-flex; font-size: var(--rst-fs-sm); padding: 0.2rem 0.7rem; }
+/* Two pairs, the renderings and the sources, that wrap as wholes: four
+   tabs in one row are 308px in English and 363px in Portuguese, wider
+   than a sample's column on a 320px phone, and a label that may wrap
+   breaks a tab into two lines of text. */
+.ds-view__tabs { border: 0; display: flex; flex-wrap: wrap; gap: var(--rst-sp-2); margin: 0 0 var(--rst-sp-2); padding: 0; }
+.ds-view__pair { display: inline-flex; }
+/* A tab is a target like any control: the floor in force, border-box so
+   the border and padding are inside it. As its text and padding it was
+   27px with a mouse and 29 on a phone. */
+.ds-view__tab { align-items: center; border: 1px solid var(--rst-line); box-sizing: border-box; color: var(--rst-text-muted); cursor: pointer; display: inline-flex; font-size: var(--rst-fs-sm); min-block-size: var(--rst-target); padding: 0.2rem 0.7rem; white-space: nowrap; }
 .ds-view__tab + .ds-view__tab { border-inline-start: 0; }
 .ds-view__tab:first-of-type { border-end-start-radius: var(--rst-radius-sm); border-start-start-radius: var(--rst-radius-sm); }
 .ds-view__tab:last-of-type { border-end-end-radius: var(--rst-radius-sm); border-start-end-radius: var(--rst-radius-sm); }
@@ -387,6 +406,32 @@ ds-s { color: var(--rst-tone-warning-fg); }
    as tokens.css does for its drawn chevrons. Anchored at the physical
    left, a right-to-left box could not scroll to the frame's start. */
 [dir="rtl"] .ds-view__frame { transform-origin: top right; }
+/* A frame shows nothing of its own until gallery.js marks it, once its
+   document is parsed and styled and has the page's scheme written on
+   it (load if that is missed), and again for each document a
+   navigation inside the frame loads. Before that, in every scheme:
+   - the frame holds the about:blank it was created with, which Safari
+     painted white on a dark page (see the color-scheme rule below);
+   - its document is parsing (Safari shows rgb(30,30,30) on a page of
+     rgb(15,15,15)), or parsed without its stylesheets;
+   - with Light or Dark chosen, it has painted in the OS's scheme: white
+     in Dark on a light Mac, while scrolling to a lazy frame, after a
+     reload at a remembered scroll, or on a click inside one.
+   Hidden, the box behind it shows this page's --rst-bg instead; a
+   hidden frame still lazy-loads (measured). data-rst-js because
+   gallery.js is what shows it: with scripts off nothing would, and the
+   frames show as they come. */
+:root[data-rst-js] .ds-view__frame:not([data-ds-painted]) { visibility: hidden; }
+/* A browser compares a frame's color-scheme with its document's, and
+   Safari draws a document whose scheme differs on an opaque canvas.
+   about:blank declares none, so it is light, and with the frame
+   inheriting a dark page's scheme every frame was white until its
+   document came (measured in WebKit: light dark and dark are white,
+   normal and light transparent). Normal matches it. A preview declares
+   its own scheme and paints its whole canvas, so this changes nothing
+   once it paints. It is all a reader without scripts gets, since
+   nothing hides their frames. */
+.ds-view__frame { color-scheme: normal; }
 @supports (block-size: calc(1px * clamp(0.5, tan(atan2(100cqw, 1200px)), 1))) {
   /* Mobile is the stage's width up to 390px. Only below 390px of stage
      was Mobile ever scaled, and that is exactly when laying the page
@@ -403,9 +448,11 @@ ds-s { color: var(--rst-tone-warning-fg); }
    container queries; this one answers a click and needs no condition
    beyond it. */
 .ds-view:has(.ds-view__tab--m input:checked) .ds-view__box { --ds-h: var(--ds-hm); --ds-w: var(--ds-wm); }
+/* HTML and Template each replace the frame with their own panel, and
+   only theirs: the radios are one group, so one is checked at most. */
 .ds-view__code { display: none; margin-block-start: 0; }
-.ds-view:has(.ds-view__tab--c input:checked) .ds-view__stage { display: none; }
-.ds-view:has(.ds-view__tab--c input:checked) .ds-view__code { display: block; }
+.ds-view:has(.ds-view__tab--h input:checked) .ds-view__stage, .ds-view:has(.ds-view__tab--t input:checked) .ds-view__stage { display: none; }
+.ds-view:has(.ds-view__tab--h input:checked) .ds-view__code--h, .ds-view:has(.ds-view__tab--t input:checked) .ds-view__code--t { display: block; }
 
 /* The rail is the shipped sidebar layout's, below 800px the phone
    index on the Overview and hidden on every other page, all by
@@ -413,7 +460,9 @@ ds-s { color: var(--rst-tone-warning-fg); }
    has no attribute for: a collapsible section per group, and the
    filter over them. */
 .ds-rail { gap: var(--rst-sp-2); }
-.ds-nav > details > summary { align-items: center; color: var(--rst-text-faint); cursor: pointer; display: flex; font-size: var(--rst-fs-xs); font-weight: 650; gap: 0.35rem; letter-spacing: 0.06em; list-style: none; padding-block: 0.35rem; text-transform: uppercase; }
+/* border-box: on the content box the floor came on top of the padding,
+   and the headings grew from 28 to 43px. */
+.ds-nav > details > summary { align-items: center; box-sizing: border-box; color: var(--rst-text-faint); cursor: pointer; display: flex; font-size: var(--rst-fs-xs); font-weight: 650; gap: 0.35rem; letter-spacing: 0.06em; list-style: none; min-block-size: var(--rst-target); padding-block: 0.35rem; text-transform: uppercase; }
 .ds-nav > details > summary::-webkit-details-marker { display: none; }
 /* The disclosure glyph is the framework's own chevron: the vendored
    Lucide chevron-down inside an [rst-caret], which tokens.css already
@@ -449,8 +498,10 @@ ds-s { color: var(--rst-tone-warning-fg); }
    the icon set's own search glyph, aria-hidden, because the field's
    label already names it. */
 :root[data-rst-js] .ds-search { position: relative; }
-.ds-search > .icon { color: var(--rst-text-faint); inset-block-start: 50%; inset-inline-start: 0.55rem; pointer-events: none; position: absolute; transform: translateY(-50%); }
-.ds-search input { background: var(--rst-bg); border: 1px solid var(--rst-line-strong); border-radius: var(--rst-radius-sm); box-sizing: border-box; color: var(--rst-text); font: inherit; font-size: var(--rst-fs-sm); inline-size: 100%; padding-block: 0.35rem; padding-inline: 1.9rem 0.5rem; }
+/* 16px like the framework search box's icon: tokens.css sizes an icon
+   that way only inside its own controls, and this box is the gallery's. */
+.ds-search > .icon { block-size: 1rem; color: var(--rst-text-faint); inline-size: 1rem; inset-block-start: 50%; inset-inline-start: 0.55rem; pointer-events: none; position: absolute; transform: translateY(-50%); }
+.ds-search input { background: var(--rst-bg); border: 1px solid var(--rst-line-strong); border-radius: var(--rst-radius-sm); box-sizing: border-box; color: var(--rst-text); font: inherit; font-size: var(--rst-fs-sm); inline-size: 100%; min-block-size: var(--rst-target); padding-block: 0.35rem; padding-inline: 1.9rem 0.5rem; }
 .ds-search input:focus-visible { border-color: var(--rst-accent); outline: 2px solid var(--rst-accent); outline-offset: -1px; }
 .ds-nav__empty { color: var(--rst-text-muted); font-size: var(--rst-fs-sm); margin: var(--rst-sp-3) 0 0; }
 /* The rail's filter box is 12.5px like everything else in here, and a
@@ -460,10 +511,6 @@ ds-s { color: var(--rst-tone-warning-fg); }
    outranks that rule and has to say the same thing again. */
 @media (pointer: coarse) {
   .ds-search input { font-size: max(1rem, 1em); }
-  /* tokens.css lifts a button to the 44px tap floor only through
-     .rst-btn/[rst-btn]; .ds-copy carries neither, so it has to say the
-     same thing again rather than inherit it. */
-  .ds-copy { min-block-size: var(--rst-tap); min-inline-size: var(--rst-tap); }
 }
 
 /* ── The frame ───────────────────────────────────────────────────────
@@ -483,12 +530,23 @@ ds-s { color: var(--rst-tone-warning-fg); }
    TestThePinnedBarFitsItsReservation measures what is inside the bar
    against it. */
 :root { --ds-bar-h: 3.25rem; }
-/* measured over every theme and locale on 2026-10-05: room for two. */
-@media (min-width: 800px) and (max-width: 1023.98px) { :root { --ds-bar-h: 5rem; } }
+/* measured over every theme and locale on 2026-10-08: room for two.
+   It was 5rem until the 32px target floor reached the bar: the brand's
+   row and the theme tabs' 36px track made the two rows 93px. */
+@media (min-width: 800px) and (max-width: 1023.98px) { :root { --ds-bar-h: 6rem; } }
 .ds-top { align-items: center; border-block-end: 1px solid var(--rst-line); display: flex; flex-wrap: wrap; gap: var(--rst-sp-2) var(--rst-sp-3); justify-content: space-between; padding: var(--rst-sp-2) var(--rst-sp-4); }
-.ds-top__brand { color: var(--rst-text); font-weight: 650; text-decoration: none; }
+/* Padding rather than a min-block-size, because from 1024px the brand
+   elides its text, which a flex or grid box cannot do: the link grows
+   to the floor round its one line, and the bar centres it. */
+.ds-top__brand { color: var(--rst-text); font-weight: 650; padding-block: max(0px, (var(--rst-target) - 1lh) / 2); text-decoration: none; }
 .ds-top__controls { align-items: center; display: flex; flex-wrap: wrap; gap: var(--rst-sp-3); justify-content: flex-end; }
 .ds-top__controls [rst-dropdown] { position: relative; }
+/* The theme switcher is the framework's seg-tabs, which leaves a
+   block's gap under itself. Here it sits in a row and in a column that
+   space their own items: in the bar's centred row the margin lifted the
+   tabs 8px above the scheme buttons, and in the phone card it more than
+   doubled the gap under them. */
+.ds-top__controls [rst-seg-tabs], .ds-prefs [rst-seg-tabs] { margin: 0; }
 .ds-top__controls [rst-dropdown] > summary { padding-block: 0.25rem; }
 /* The bar's own box is fixed at --ds-bar-h and cannot grow to a second
    row without overflowing its grid area (above), so from 1024px it
@@ -534,12 +592,6 @@ ds-s { color: var(--rst-tone-warning-fg); }
   [rst-shell-sidebar~="index"]:not(:has(#ds-filter:not(:placeholder-shown))) > .ds-rail > .ds-nav { display: none; }
   [rst-shell-sidebar~="index"]:has(#ds-filter:not(:placeholder-shown)) > .ds-rail > .ds-index { display: none; }
 }
-/* The scheme buttons are the gallery's own and under 30px tall; the
-   theme links and the language summary are framework controls the
-   touch block already sizes. Same query as tokens.css's touch block. */
-@media (pointer: coarse), (max-width: 40rem) {
-  .ds-scheme button, .ds-viewall button { min-block-size: var(--rst-tap); }
-}
 @media (max-width: 799.98px) {
   /* On a phone the stage is the screen's width. The bleed is what sits
      between the widget and the screen's edge: the page's padding, and
@@ -564,10 +616,9 @@ ds-s { color: var(--rst-tone-warning-fg); }
    Escape, and its card is the framework's anchored panel. At 800px and
    up the bar has the controls and the menu is not drawn. */
 .ds-prefs { display: none; }
-/* border-box, so the touch block's 44px minimum is the whole button
+/* border-box, so the framework's target floor is the whole button
    rather than 44px of icon inside its padding. */
 .ds-prefs > summary { border-radius: var(--rst-radius-sm); box-sizing: border-box; color: var(--rst-text); justify-content: center; padding: 0.4rem; }
-.ds-prefs > summary > .icon { block-size: 1.25rem; inline-size: 1.25rem; }
 .ds-prefs > summary:hover, .ds-prefs[open] > summary { background: var(--rst-accent-soft); }
 .ds-prefs > summary:focus-visible { outline: 2px solid var(--rst-accent); outline-offset: -2px; }
 /* Scripts off, a tap outside the card still closes it: the open
@@ -591,6 +642,6 @@ ds-s { color: var(--rst-tone-warning-fg); }
   /* Lifted into the index's header row, the place and size of the
      framework's profile menu: the rail is positioned on the index, and
      the heading keeps that corner clear. */
-  [rst-shell-sidebar~="index"] > .ds-rail > .ds-prefs { align-items: center; block-size: 2.75rem; display: flex; inset-block-start: var(--rst-sp-5); inset-inline-end: var(--rst-sp-4); position: absolute; }
+  [rst-shell-sidebar~="index"] > .ds-rail > .ds-prefs { align-items: center; block-size: var(--rst-shell-strip); display: flex; inset-block-start: 0; inset-inline-end: var(--rst-sp-4); position: absolute; }
   [rst-shell-back] > .ds-prefs { margin-inline-start: auto; }
 }

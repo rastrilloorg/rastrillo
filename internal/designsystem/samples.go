@@ -321,7 +321,7 @@ func families() []family {
 						{State: "Middle of a long list", Data: map[string]any{
 							"Label": "Posts pages",
 							"Items": []any{
-								map[string]any{"Label": "Previous", "Href": "/posts?page=3"},
+								map[string]any{"Label": "Previous", "Href": "/posts?page=3", "Rel": "prev"},
 								map[string]any{"Label": "1", "Href": "/posts?page=1"},
 								map[string]any{"Gap": true},
 								map[string]any{"Label": "3", "Href": "/posts?page=3"},
@@ -329,15 +329,15 @@ func families() []family {
 								map[string]any{"Label": "5", "Href": "/posts?page=5"},
 								map[string]any{"Gap": true},
 								map[string]any{"Label": "9", "Href": "/posts?page=9"},
-								map[string]any{"Label": "Next", "Href": "/posts?page=5"},
+								map[string]any{"Label": "Next", "Href": "/posts?page=5", "Rel": "next"},
 							},
 						}},
 						{State: "First page, default accessible name", Data: map[string]any{
 							"Items": []any{
-								map[string]any{"Label": "Previous", "Disabled": true},
+								map[string]any{"Label": "Previous", "Disabled": true, "Rel": "prev"},
 								map[string]any{"Label": "1", "Current": true},
 								map[string]any{"Label": "2", "Href": "/posts?page=2"},
-								map[string]any{"Label": "Next", "Href": "/posts?page=2"},
+								map[string]any{"Label": "Next", "Href": "/posts?page=2", "Rel": "next"},
 							},
 						}, Note: "No Label, so the nav's accessible name comes from the catalog."},
 					},

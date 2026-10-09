@@ -11,7 +11,7 @@ import (
 	"amadan.net/rastrillo/rastrillo/ui"
 )
 
-// call is one sample's template call: the source the Code tab shows,
+// call is one sample's template call: the source the Template tab shows,
 // and the value . must be when that source runs, which is empty unless
 // the sample binds a placeholder.
 type call struct {
@@ -20,9 +20,9 @@ type call struct {
 }
 
 // callFor is the call that renders one sample, generated from the same
-// value the preview was rendered from. The Code tab shows the call
-// first because the rendered HTML alone taught the hand-rolling the
-// framework forbids, and lost the partial's own logic: meter clamps
+// value the preview was rendered from. Every partial sample has a
+// Template tab because the rendered HTML alone taught the hand-rolling
+// the framework forbids, and lost the partial's own logic: meter clamps
 // Percent 140 to 100, and HTML copied out of it carries the wrong
 // number. An error names the partial, the state and the value's type,
 // and fails the build.

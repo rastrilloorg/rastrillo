@@ -17,18 +17,33 @@
                 Current   bool   — this is the page being viewed
                 Disabled  bool   — present but not actionable
                 Gap       bool   — the "…" between page ranges
+                Rel       string, optional — "prev" on the Previous
+                          item, "next" on the Next item. Read
+                          reflectively (opt), so a struct without
+                          the field still renders.
               Exactly one of Href / Current / Disabled / Gap is
               meaningful per item.
        Label  string, optional — the <nav>'s accessible name, default
               resolved through T ("rastrillo.ui.pagination" — "Pagination"
               in the framework base catalog; see Funcs/FuncsWith). An app
-              passing its own Label always wins over T. */}}
+              passing its own Label always wins over T.
+
+     On a phone the strip is one line: the items with a Rel are drawn
+     as chevrons, their words kept in rst-pagination-word for a screen
+     reader; only the first, the current and the last page show, with
+     one ellipsis per skipped run. paginationItems (funcs.go) decides
+     which items those are. A strip with no Rel renders on a phone as
+     it always has: nothing else can tell a step from a page.
+     rst-pagination-wide marks what only a wide strip shows, and
+     rst-pagination-gap="narrow" an ellipsis only a phone shows. The
+     chevron is chevron-down turned a quarter, because every icon set
+     an app can scaffold has that one. */}}
 {{define "pagination"}}<nav rst-pagination aria-label="{{if .Label}}{{.Label}}{{else}}{{T "rastrillo.ui.pagination"}}{{end}}">
-  {{- if .Items}}{{range .Items}}
-  {{- if .Gap}}<span rst-pagination-gap aria-hidden="true">…</span>
+  {{- range paginationItems .}}
+  {{- if .Gap}}<span rst-pagination-gap{{if .Narrow}}="narrow"{{end}}{{if .Wide}} rst-pagination-wide{{end}} aria-hidden="true">…</span>
   {{- else if .Current}}<span aria-current="page">{{number .Label}}</span>
-  {{- else if .Disabled}}<span rst-pagination-disabled>{{number .Label}}</span>
-  {{- else}}<a href="{{.Href}}">{{number .Label}}</a>
+  {{- else if .Disabled}}<span rst-pagination-disabled{{with .Step}} rst-pagination-step="{{.}}"{{end}}{{if .Wide}} rst-pagination-wide{{end}}>{{if .Step}}{{icon "chevron-down"}}<span rst-pagination-word>{{number .Label}}</span>{{else}}{{number .Label}}{{end}}</span>
+  {{- else}}<a href="{{.Href}}"{{with .Step}} rst-pagination-step="{{.}}"{{end}}{{if .Wide}} rst-pagination-wide{{end}}>{{if .Step}}{{icon "chevron-down"}}<span rst-pagination-word>{{number .Label}}</span>{{else}}{{number .Label}}{{end}}</a>
   {{- end}}
-  {{- end}}{{end}}
+  {{- end}}
 </nav>{{end}}

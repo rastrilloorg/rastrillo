@@ -44,7 +44,7 @@ func Funcs(opts ...Option) template.FuncMap
 
 Registers `dict`, `list`, `menuGroup`, `searchClear`, `icon`,
 `iconAssets`, `T`, `Tf`, `dateWords`, `opt`, `Tbdi`, `stageArt`,
-`displayURL`, `safeHref` and `rowMenuItems`. `rowMenuItems` checks
+`displayURL`, `safeHref`, `rowMenuItems` and `paginationItems`. `rowMenuItems` checks
 `row-menu`'s items and stops the render on one it cannot show.
 
 `opt` reads an optional key off a partial's data, whether it is a map or

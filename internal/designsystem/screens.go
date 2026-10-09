@@ -120,8 +120,8 @@ func signinScreen(mut func(*auth.SigninState)) *auth.SigninState {
 	return &st
 }
 
-// signinSource is the Code tab for every sign-in state: the two
-// template calls an app writes, not the rendered markup. The markup is
+// signinSource is the Template tab for every sign-in state: the two
+// template calls an app writes. There is no HTML tab. The markup is
 // the partial's to produce, and a copied snapshot of it would freeze a
 // screen the module keeps improving.
 const signinSource = `{{define "title"}}{{template "signin-title" (dict "State" .Signin "Brand" .Brand)}}{{end}}
@@ -198,8 +198,8 @@ func screenDocs() []screenDoc {
   <div rst-signin-providers>
     <form method="post" action="/auth/google"><button rst-btn="block" type="submit"><svg aria-hidden="true" focusable="false" width="1.1em" height="1.1em" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>Continue with Google</button></form>
     <form method="post" action="/auth/apple"><button rst-btn="block" type="submit"><svg aria-hidden="true" focusable="false" width="1.1em" height="1.1em" viewBox="0 0 24 24"><path fill="currentColor" d="M12.15 6.9c-.95 0-2.42-1.08-3.96-1.04-2.04.03-3.91 1.18-4.96 3.01-2.12 3.68-.55 9.1 1.52 12.09 1.01 1.45 2.2 3.09 3.79 3.04 1.52-.07 2.09-.99 3.94-.99 1.83 0 2.35.99 3.96.95 1.64-.03 2.68-1.48 3.68-2.95 1.15-1.69 1.63-3.33 1.66-3.42-.04-.01-3.18-1.22-3.22-4.86-.03-3.04 2.48-4.49 2.6-4.56-1.43-2.09-3.63-2.32-4.39-2.38-2-.15-3.68 1.09-4.62 1.09zm3.38-3.07c.84-1.01 1.4-2.43 1.25-3.83-1.21.05-2.66.8-3.53 1.82-.78.9-1.46 2.34-1.27 3.71 1.34.1 2.71-.69 3.55-1.7z"/></svg>Continue with Apple</button></form>
+    <a href="/signin">Use your email instead</a>
   </div>
-  <p><a href="/signin">Use your email instead</a></p>
 </section>`,
 		},
 		{
@@ -276,7 +276,7 @@ func buildScreens(mount, theme, locale string, tmpl *template.Template, files pr
 			return nil, err
 		}
 		view.Preview = preview
-		view.Preview.Source = codeview.Highlight(signinSource)
+		view.Preview.Call = codeview.Highlight(signinSource)
 		out = append(out, view)
 	}
 	return out, nil

@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
+	"net/http"
 	"strings"
 	"testing"
 	"time"
@@ -106,11 +107,14 @@ func TestTextControlsAreSixteenPixelsOnSmallOrTouchScreens(t *testing.T) {
 
 // TestDesktopDensityIsPinned is §10.1's 1280×900 mouse leg: every value
 // below is today's, measured, and any change fails, except the
-// deliberate desktop changes (§1.5), pinned at their new values: the
-// row checkbox's 24×24 label here, and the whole-row target, which
-// TestTheWholeRowIsTheTarget holds.
+// deliberate desktop changes, pinned at their new values: the whole-row
+// target (§1.5), which TestTheWholeRowIsTheTarget holds, and the 32px
+// desktop floor with its 16px icons and 12px carets (2026-10-07), which
+// lifted the small button, the kebab and the row checkbox's label to 32.
+// Desktop targets had ranged from 24 to 36px, sized one control at a
+// time; the floor is one number for all of them.
 func TestDesktopDensityIsPinned(t *testing.T) {
-	rig := sizingRig(t, false, map[string]string{"/": sizingDoc("sizing", sizingFixture(t))})
+	rig := sizingRig(t, false, map[string]string{"/": sizingDoc("sizing", sizingFixture(t)), "/modal": sizingDoc("modal", Styleguide()["modal"])})
 	ctx, cancel := context.WithTimeout(rig.Context(), 90*time.Second)
 	defer cancel()
 	tr, fonts, primary := readType(t, ctx, rig.Origin+"/", 1280, 900)
@@ -135,32 +139,165 @@ func TestDesktopDensityIsPinned(t *testing.T) {
 	  const box = sel => { const r = document.querySelector(sel).getBoundingClientRect(); return [Math.round(r.width * 100) / 100, Math.round(r.height * 100) / 100]; };
 	  return JSON.stringify({Sm: box("#sizing-btn-sm")[1], Md: box("#sizing-btn")[1], Lg: box("#sizing-btn-lg")[1],
 	    Kebab: box('[data-sample="list-grid"] [rst-row-menu] > summary'), Label: box('[data-sample="selbox"] [rst-selbox]'),
-	    Box: box('[data-sample="selbox"] [rst-selbox] input')});
+	    Box: box('[data-sample="selbox"] [rst-selbox] input'),
+	    Chip: box([...document.querySelectorAll("[rst-pagination] a")].filter(a => /^\d$/.test(a.textContent.trim())).map(a => "#" + (a.id || (a.id = "sizing-chip")))[0])});
 	})()`, &raw)); err != nil {
 		t.Fatal(err)
 	}
 	var d struct {
 		Sm, Md, Lg        float64
 		Kebab, Label, Box [2]float64
+		Chip              [2]float64
 	}
 	if err := json.Unmarshal([]byte(raw), &d); err != nil {
 		t.Fatal(err)
 	}
 	// Measured before the touch rules existed: 27.69, 33.88 and 43.97
 	// (the "about 28/34/44" of tokens.css's header), a 26×26 kebab, a
-	// 16px checkbox.
-	if math.Round(d.Sm) != 28 || math.Round(d.Md) != 34 || math.Round(d.Lg) != 44 {
-		t.Errorf("desktop button heights %v/%v/%v, want 28/34/44", d.Sm, d.Md, d.Lg)
+	// 16px checkbox in a 24×24 label. The floor lifts the small button
+	// to 32 and leaves the two that were already over it alone.
+	if math.Round(d.Sm) != 32 || math.Round(d.Md) != 34 || math.Round(d.Lg) != 44 {
+		t.Errorf("desktop button heights %v/%v/%v, want 32/34/44", d.Sm, d.Md, d.Lg)
 	}
-	if d.Kebab != [2]float64{26, 26} {
-		t.Errorf("desktop kebab %v, want 26×26", d.Kebab)
+	if d.Kebab != [2]float64{32, 32} {
+		t.Errorf("desktop kebab %v, want 32×32", d.Kebab)
 	}
-	if d.Box != [2]float64{16, 16} || d.Label != [2]float64{24, 24} {
-		t.Errorf("desktop row checkbox %v in a label %v, want the 16px box in a 24×24 target", d.Box, d.Label)
+	if d.Box != [2]float64{16, 16} || d.Label != [2]float64{32, 32} {
+		t.Errorf("desktop row checkbox %v in a label %v, want the 16px box in a 32×32 target", d.Box, d.Label)
+	}
+	// A one-digit page chip was 53.19px wide before the floor reached the
+	// desktop (its 2rem minimum on the content box, with its padding and
+	// border on top). The floor's border-box made it 32; the floor
+	// raises the height to 32 and must not narrow it.
+	if d.Chip != [2]float64{53.19, 32} {
+		t.Errorf("desktop page chip %v, want 53.2×32: the old width, at the floor's height", d.Chip)
+	}
+	assertIcons(t, ctx, "1280 mouse")
+	// The floor is a minimum on the whole box, padding and border
+	// included. Measured on the content box it added the padding on top:
+	// a dropdown summary already 33.8px tall grew to 44.8, the topbar
+	// with it to 61.8, and the bulk bar's Actions to 41. These are exact,
+	// because a floor that only checks "at least 32" cannot see growth.
+	var rawFloor string
+	if err := chromedp.Run(ctx, chromedp.Evaluate(`(() => {
+	  const h = sel => Math.round(document.querySelector(sel).getBoundingClientRect().height * 10) / 10;
+	  const group = document.querySelector('[data-sample="dropdown"] [rst-menu-group] > summary');
+	  for (let d = group.closest("details"); d; d = d.parentElement && d.parentElement.closest("details")) d.open = true;
+	  const out = {Summary: h('[data-sample="dropdown"] [rst-dropdown] > summary'), Bulk: h('[data-partial="bulk-bar"] [rst-dropdown] > summary'),
+	    Group: Math.round(group.getBoundingClientRect().height * 10) / 10, Help: h('[data-sample="help"] [rst-help]'),
+	    Bar: h('[data-sample="shell-topbar"] [rst-shell-bar]'),
+	    Search: h('[rst-search]:has([rst-search-clear])'), SearchInput: h('[rst-search]:has([rst-search-clear]) input[type="search"]'),
+	    BulkSearch: h('#sizing-bulk [rst-search]')};
+	  document.querySelectorAll("details[open]").forEach(d => { d.open = false; });
+	  return JSON.stringify(out);
+	})()`, &rawFloor)); err != nil {
+		t.Fatal(err)
+	}
+	var f struct{ Summary, Bulk, Group, Help, Bar, ModalNav, Search, SearchInput, BulkSearch float64 }
+	if err := json.Unmarshal([]byte(rawFloor), &f); err != nil {
+		t.Fatal(err)
+	}
+	if err := chromedp.Run(ctx, chromedp.Navigate(rig.Origin+"/modal"), chromedp.WaitReady("body"),
+		chromedp.Evaluate(`Math.round(document.querySelector("[rst-modal-panel] > nav a").getBoundingClientRect().height * 10) / 10`, &f.ModalNav)); err != nil {
+		t.Fatal(err)
+	}
+	for _, c := range []struct {
+		name      string
+		got, want float64
+	}{
+		{"a dropdown summary (its own padding, over the floor)", f.Summary, 33.8},
+		{"the bulk bar's Actions summary", f.Bulk, 32},
+		{"a menu-group summary", f.Group, 32},
+		{"the help button, border included", f.Help, 32},
+		{"the topbar's bar", f.Bar, 50.8},
+		{"a modal nav link (its own padding, over the floor)", f.ModalNav, 33.8},
+		// Before the floor reached the desktop the search box was 35.6
+		// (a 33 without its clear link) around a 21.4px input, under the
+		// floor. Its input and clear link are the targets, and at 32 with
+		// the box's own 0.3rem block padding on top the box was 43.6 and
+		// every list bar grew with it. The padding goes and the box is
+		// the floor plus its border; the input fills it.
+		{"a search box with its clear link", f.Search, 34},
+		{"a search box's input", f.SearchInput, 32},
+		{"the bulk bar's search box", f.BulkSearch, 34},
+	} {
+		if c.got != c.want {
+			t.Errorf("desktop %s is %vpx tall, want %v", c.name, c.got, c.want)
+		}
 	}
 	c := openCalendar(t, ctx, rig.Origin+"/", 1280, 900)
 	if c.Position != "absolute" || c.InlineSize != "288px" {
 		t.Errorf("desktop calendar is %s, inline-size %s; want today's anchored 18rem (288px) panel", c.Position, c.InlineSize)
+	}
+	// The calendar is outside the target drive (it opens by script), so
+	// its controls are held to the desktop floor here.
+	if c.MinDayW < 31.5 || c.MinDayH < 31.5 || c.MinNavW < 31.5 || c.MinNavH < 31.5 {
+		t.Errorf("desktop calendar: smallest day %.1f×%.1f, month button %.1f×%.1f; want both at least 32×32", c.MinDayW, c.MinDayH, c.MinNavW, c.MinNavH)
+	}
+}
+
+// TestAnIconKeepsItsSpaceBesideItsText: a menu item (a link or a
+// button, in both spellings: a bulk action is a button), a nav link, the
+// brand, the back link, a row action and the sign-in link are flex boxes
+// on a phone, and the ones born inline are on a desktop too, so the
+// floor reaches them. A flex box drops the whitespace between an icon
+// and the word after it, and the icon touched the word (4px of space
+// became 0); each sets a gap, and a control that stays a block keeps its
+// space. This reads the space between the icon's edge and the word's,
+// with a mouse at 1280 and a coarse pointer at 390, in both directions
+// of text.
+func TestAnIconKeepsItsSpaceBesideItsText(t *testing.T) {
+	ids := []string{"icon-item", "icon-button", "icon-button-class", "icon-nav", "icon-brand", "icon-back", "icon-action", "icon-signin"}
+	for _, leg := range []struct {
+		name   string
+		w, h   int64
+		coarse bool
+	}{{"1280x900 mouse", 1280, 900, false}, {"390x844 touch", 390, 844, true}} {
+		rig := sizingRig(t, leg.coarse, map[string]string{"/": sizingDoc("sizing", sizingFixture(t))})
+		ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
+		if err := chromedp.Run(ctx, chromedp.EmulateViewport(leg.w, leg.h), chromedp.Navigate(rig.Origin+"/"), chromedp.WaitReady("body")); err != nil {
+			cancel()
+			t.Fatal(err)
+		}
+		requirePointer(t, ctx, leg.coarse)
+		for _, dir := range []string{"ltr", "rtl"} {
+			var raw string
+			if err := chromedp.Run(ctx, chromedp.Evaluate(fmt.Sprintf(`(() => {
+			  document.documentElement.dir = %q;
+			  document.querySelectorAll('[data-extra="icon-text"] details').forEach(d => { d.open = true; });
+			  const out = {};
+			  for (const id of %s) {
+			    const a = document.getElementById(id);
+			    if (!a.checkVisibility()) continue;
+			    const i = a.querySelector("svg").getBoundingClientRect();
+			    // From the word's first letter: in a block the space is
+			    // the start of the text node, and is the gap itself.
+			    const r = document.createRange(), w = a.lastChild; r.setStart(w, w.textContent.search(/\S/)); r.setEnd(w, w.textContent.length);
+			    const tx = r.getBoundingClientRect();
+			    out[id] = document.documentElement.dir === "rtl" ? i.left - tx.right : tx.left - i.right;
+			  }
+			  document.querySelectorAll('[data-extra="icon-text"] details').forEach(d => { d.open = false; });
+			  return JSON.stringify(out);
+			})()`, dir, "[\""+strings.Join(ids, "\",\"")+"\"]"), &raw)); err != nil {
+				cancel()
+				t.Fatal(err)
+			}
+			var got map[string]float64
+			if err := json.Unmarshal([]byte(raw), &got); err != nil {
+				cancel()
+				t.Fatal(err)
+			}
+			// The rail is not drawn on a phone; every other control is.
+			if want := len(ids) - map[bool]int{true: 1, false: 0}[leg.coarse]; len(got) < want {
+				t.Errorf("%s, %s: measured %d of the icon-and-text controls, want %d: %v", leg.name, dir, len(got), want, got)
+			}
+			for id, gap := range got {
+				if gap < 3 {
+					t.Errorf("%s, %s: in #%s the icon is %.1fpx from its text; it touches the word", leg.name, dir, id, gap)
+				}
+			}
+		}
+		cancel()
 	}
 }
 
@@ -291,10 +428,18 @@ func readTargets(t *testing.T, ctx context.Context, js string) []targetReading {
 	return got
 }
 
-// assertTargets holds every measured control to 44×44, whole in the
-// viewport and hittable at its centre. A link in running text is the
-// one exemption (WCAG 2.5.8's inline exception).
+// assertTargets holds every measured control to 44×44, the floor on a
+// small or touch screen.
 func assertTargets(t *testing.T, where string, got []targetReading) {
+	t.Helper()
+	assertTargetsAt(t, where, got, 44)
+}
+
+// assertTargetsAt holds every measured control to floor×floor, whole in
+// the viewport and hittable at its centre. A link in running text is the
+// one exemption (WCAG 2.5.8's inline exception). The floor is 44 on a
+// small or touch screen and 32 on a desktop with a mouse.
+func assertTargetsAt(t *testing.T, where string, got []targetReading, floor float64) {
 	t.Helper()
 	for _, g := range got {
 		switch {
@@ -303,21 +448,21 @@ func assertTargets(t *testing.T, where string, got []targetReading) {
 		case !g.Owns:
 			t.Errorf("%s: %s is occluded: a tap at its centre lands on %s", where, g.Name, g.Hit)
 		case g.Inline:
-		case g.W < 43.5 || g.H < 43.5:
-			t.Errorf("%s: %s is %.1f×%.1f, under the 44×44 floor", where, g.Name, g.W, g.H)
+		case g.W < floor-0.5 || g.H < floor-0.5:
+			t.Errorf("%s: %s is %.1f×%.1f, under the %v×%v floor", where, g.Name, g.W, g.H, floor, floor)
 		}
 	}
 }
 
 // measureEverything reads the closed page, then every overlay alone,
 // then the combobox's list and the date field's list, each opened by
-// the script that owns it.
-func measureEverything(t *testing.T, ctx context.Context, where string) int {
+// the script that owns it, holding each control to floor.
+func measureEverything(t *testing.T, ctx context.Context, where string, floor float64) int {
 	t.Helper()
 	settleUntil(t, ctx, `!!document.querySelector("[rst-combo] [role=combobox]") && !!document.querySelector("[rst-dtp-pick]")`)
 	got := readTargets(t, ctx, targetsJS)
 	n := len(got)
-	assertTargets(t, where+", overlays closed", got)
+	assertTargetsAt(t, where+", overlays closed", got, floor)
 	for i := 0; ; i++ {
 		var raw string
 		if err := chromedp.Run(ctx, chromedp.Evaluate(fmt.Sprintf("%s(%d)", overlayJS, i), &raw, awaitPromise)); err != nil {
@@ -334,7 +479,7 @@ func measureEverything(t *testing.T, ctx context.Context, where string) int {
 			break
 		}
 		n += len(o.Targets)
-		assertTargets(t, fmt.Sprintf("%s, overlay %d open", where, i), o.Targets)
+		assertTargetsAt(t, fmt.Sprintf("%s, overlay %d open", where, i), o.Targets, floor)
 	}
 	for _, open := range []struct{ name, js, list string }{
 		{"the combobox's list", `(() => { const i = document.querySelector("#sizing-combo").closest("[rst-field]").querySelector("[role=combobox]"); i.focus(); i.click(); return true; })()`, "[rst-combo-list]"},
@@ -349,10 +494,94 @@ func measureEverything(t *testing.T, ctx context.Context, where string) int {
 			t.Fatalf("%s: %s opened with no options to measure", where, open.name)
 		}
 		n += len(got)
-		assertTargets(t, where+", "+open.name, got)
+		assertTargetsAt(t, where+", "+open.name, got, floor)
 		chromedp.Run(ctx, chromedp.KeyEvent(kb.Escape))
 	}
 	return n
+}
+
+// iconsJS reads every rendered icon inside a control on the page as
+// it loads: rastrillo.Icon's svg.icon, sized by the control and not by
+// the text around it, and whether it sits in a caret.
+const iconsJS = `JSON.stringify([...document.querySelectorAll(":is(a[href], button, summary, label, [role=button]) svg.icon")]
+  .filter(i => i.checkVisibility({visibilityProperty: true}))
+  .map(i => { const r = i.getBoundingClientRect(), c = i.closest("a[href], button, summary, label, [role=button]");
+    return {Name: c.tagName.toLowerCase() + [...c.attributes].filter(a => a.name.startsWith("rst-")).map(a => "[" + a.name + "]").join("") + " “" + (c.getAttribute("aria-label") || c.textContent).trim().slice(0, 30) + "”",
+      Caret: !!i.closest("[rst-caret], .rst-caret"), W: Math.round(r.width * 100) / 100, H: Math.round(r.height * 100) / 100}; }))`
+
+// assertIcons holds every icon inside a control to 16×16 and a caret's
+// chevron to 12×12. An icon sized from its font came out 9 to 20px
+// depending on the text beside it (a caret in an xs summary, a menu
+// icon in a 1.25rem button), so two icons in one toolbar disagreed. At
+// least one of each kind must be read, or a fixture that lost its
+// carets would pass with nothing measured.
+func assertIcons(t *testing.T, ctx context.Context, where string) {
+	t.Helper()
+	var raw string
+	if err := chromedp.Run(ctx, chromedp.Evaluate(iconsJS, &raw)); err != nil {
+		t.Fatalf("%s: reading icons: %v", where, err)
+	}
+	var got []struct {
+		Name  string
+		Caret bool
+		W, H  float64
+	}
+	if err := json.Unmarshal([]byte(raw), &got); err != nil {
+		t.Fatal(err)
+	}
+	carets, icons := 0, 0
+	for _, g := range got {
+		want := 16.0
+		if g.Caret {
+			want, carets = 12, carets+1
+		} else {
+			icons++
+		}
+		if g.W != want || g.H != want {
+			t.Errorf("%s: the icon in %s is %v×%v, want %v×%v", where, g.Name, g.W, g.H, want, want)
+		}
+	}
+	if carets == 0 || icons == 0 {
+		t.Errorf("%s: read %d caret icons and %d other icons in controls; the fixture must show at least one of each", where, carets, icons)
+	}
+}
+
+// TestAnIconOutsideAControlFollowsItsText pins where the fixed icon
+// size stops. Inside a control an icon is 16px whatever the text beside
+// it (assertIcons); everywhere else it is 1em and follows its text, as
+// it always did: an icon in a 24px heading is 24px, one in a line of
+// prose or in a link in that line is the line's size. A 1rem .icon
+// made every one of them 16px, shrinking heading icons and growing
+// small print's. The button beside them is the control: 16px.
+func TestAnIconOutsideAControlFollowsItsText(t *testing.T) {
+	page := map[string]string{"/": sizingDoc("icons", `<div rst-page>`+
+		`<h2 id="heading" style="font-size: 24px">`+sizingIcon+` Orders</h2>`+
+		`<p id="prose" style="font-size: 12px">`+sizingIcon+` Shipped. <a href="#guide" id="prose-link">`+sizingIcon+` Read the guide</a></p>`+
+		`<button rst-btn type="button" id="button">`+sizingIcon+` Save</button></div>`)}
+	for _, leg := range []struct {
+		name   string
+		w, h   int64
+		coarse bool
+	}{{"1280x900 mouse", 1280, 900, false}, {"390x844 touch", 390, 844, true}} {
+		rig := sizingRig(t, leg.coarse, page)
+		ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
+		var got map[string]float64
+		var raw string
+		if err := chromedp.Run(ctx, chromedp.EmulateViewport(leg.w, leg.h), chromedp.Navigate(rig.Origin+"/"), chromedp.WaitReady("#button", chromedp.ByQuery),
+			chromedp.Evaluate(`JSON.stringify(Object.fromEntries(["heading", "prose", "prose-link", "button"].map(id => [id, document.querySelector("#" + id + " > svg").getBoundingClientRect().height])))`, &raw)); err != nil {
+			cancel()
+			t.Fatal(err)
+		}
+		cancel()
+		if err := json.Unmarshal([]byte(raw), &got); err != nil {
+			t.Fatal(err)
+		}
+		for id, want := range map[string]float64{"heading": 24, "prose": 12, "prose-link": 12, "button": 16} {
+			if got[id] != want {
+				t.Errorf("%s: the icon in #%s is %vpx, want %v", leg.name, id, got[id], want)
+			}
+		}
+	}
 }
 
 // settleUntil polls a page expression until it is true or 10s pass.
@@ -430,13 +659,16 @@ var fixtureCounts = []struct {
 	{`[data-extra="combobox"] [role=option]`, 12},
 	{`[data-extra="legacy-drawer"] [rst-shell-nav] a`, 2},
 	{`[data-extra="small-parents"] :is(input, textarea)`, 7}, // the bare input is the app's own, not measured
-	// Previous and 1 are spans (disabled, current); 2 and 9 are links.
-	{`[data-partial="pagination"] [rst-pagination] a`, 2},
+	// Previous and 1 are spans (disabled, current); 9 and Next are links
+	// at every width. 2, beside the current page, is a link only a wide
+	// strip shows, so it is measured where it is drawn and not counted.
+	{`[data-partial="pagination"] [rst-pagination] a:not([rst-pagination-wide])`, 2},
 	{`[data-partial="bulk-bar"] [rst-dropdown-menu] button`, 2},
 	{`[data-partial="seg-tabs"] a`, 2},
 	{`[data-partial="dropdown"] [rst-dropdown-menu] a`, 1},
 	{`[data-extra="short-labels"] [rst-bulkbar-escalate]`, 1},
 	{`[data-extra="short-labels"] a[rst-person]`, 1},
+	{`[data-extra="signin-providers"] [rst-signin-providers] > a`, 1},
 }
 
 func assertFixtureCounts(t *testing.T, ctx context.Context, where string) {
@@ -454,7 +686,10 @@ func assertFixtureCounts(t *testing.T, ctx context.Context, where string) {
 
 // TestEveryTapTargetIsAtLeast44Pixels is §10.1's target half, at 390
 // and 1024 with a coarse pointer and at 600 with a mouse, then the modal
-// on a page of its own.
+// on a page of its own. The 1280 mouse leg is the desktop floor: the
+// same drive, every control at least 32×32, so a control that is only
+// floored on touch (a 26px kebab, a 24px clear link) fails there. Every
+// leg also holds the icons inside controls to 16px and a caret's to 12.
 func TestEveryTapTargetIsAtLeast44Pixels(t *testing.T) {
 	pages := map[string]string{
 		"/":      sizingDoc("sizing", sizingFixture(t)),
@@ -464,10 +699,12 @@ func TestEveryTapTargetIsAtLeast44Pixels(t *testing.T) {
 		name   string
 		w, h   int64
 		coarse bool
+		floor  float64
 	}{
-		{"390x844 touch", 390, 844, true},
-		{"1024x768 touch", 1024, 768, true},
-		{"600x800 mouse", 600, 800, false},
+		{"390x844 touch", 390, 844, true, 44},
+		{"1024x768 touch", 1024, 768, true, 44},
+		{"600x800 mouse", 600, 800, false, 44},
+		{"1280x900 mouse", 1280, 900, false, 32},
 	} {
 		t.Run(leg.name, func(t *testing.T) {
 			rig := sizingRig(t, leg.coarse, pages)
@@ -477,7 +714,8 @@ func TestEveryTapTargetIsAtLeast44Pixels(t *testing.T) {
 				t.Fatal(err)
 			}
 			requirePointer(t, ctx, leg.coarse)
-			n := measureEverything(t, ctx, leg.name)
+			assertIcons(t, ctx, leg.name)
+			n := measureEverything(t, ctx, leg.name, leg.floor)
 			t.Logf("%s: %d controls measured", leg.name, n)
 			assertCovered(t, ctx, leg.name, "", leg.w >= 800)
 			assertFixtureCounts(t, ctx, leg.name)
@@ -485,7 +723,7 @@ func TestEveryTapTargetIsAtLeast44Pixels(t *testing.T) {
 				t.Fatal(err)
 			}
 			got := readTargets(t, ctx, targetsJS)
-			assertTargets(t, leg.name+", the modal", got)
+			assertTargetsAt(t, leg.name+", the modal", got, leg.floor)
 			assertCovered(t, ctx, leg.name+", the modal", "modal", leg.w >= 800)
 		})
 	}
@@ -527,11 +765,12 @@ const calJS = `(() => {
   const cal = document.querySelector("[rst-cal]");
   if (!cal || !cal.checkVisibility()) return JSON.stringify({Open: false});
   const items = [...cal.querySelectorAll("[rst-cal-nav], [rst-cal-day]")];
-  let minW = 1e9, minH = 1e9; const unhittable = [];
+  let minW = 1e9, minH = 1e9, navW = 1e9, navH = 1e9; const unhittable = [];
   for (const el of items) {
     el.scrollIntoView({block: "nearest", inline: "nearest"});
     const b = el.getBoundingClientRect();
     if (el.matches("[rst-cal-day]")) { minW = Math.min(minW, b.width); minH = Math.min(minH, b.height); }
+    else { navW = Math.min(navW, b.width); navH = Math.min(navH, b.height); }
     const hit = document.elementFromPoint(b.left + b.width / 2, b.top + b.height / 2);
     if (!hit || !(hit === el || el.contains(hit))) unhittable.push((el.getAttribute("data-rst-day") || "nav") + " -> " + (hit ? hit.tagName : "nothing"));
   }
@@ -541,7 +780,7 @@ const calJS = `(() => {
     VW: document.documentElement.clientWidth, VH: innerHeight, GridW: g.width, ScrollH: cal.scrollHeight, ClientH: cal.clientHeight,
     Gutter: cal.offsetWidth - cal.clientWidth - parseFloat(cs.borderLeftWidth) - parseFloat(cs.borderRightWidth),
     Days: cal.querySelectorAll("[rst-cal-day]").length, Navs: cal.querySelectorAll("[rst-cal-nav]").length,
-    MinDayW: minW, MinDayH: minH, Unhittable: unhittable});
+    MinDayW: minW, MinDayH: minH, MinNavW: navW, MinNavH: navH, Unhittable: unhittable});
 })()`
 
 type calReading struct {
@@ -549,7 +788,7 @@ type calReading struct {
 	Position, InlineSize                      string
 	Left, Top, Right, Bottom, H, VW, VH       float64
 	GridW, ScrollH, ClientH, MinDayW, MinDayH float64
-	Gutter                                    float64
+	MinNavW, MinNavH, Gutter                  float64
 	Days, Navs                                int
 	Unhittable                                []string
 }
@@ -693,4 +932,144 @@ func TestTheCalendarDocksAndItsDaysAreTaps(t *testing.T) {
 		}
 		scancel()
 	}
+}
+
+// floorOnly are the layout declarations the floor block may carry
+// besides the floor, each because the floor does not work without it,
+// keyed by the attribute spelling of the control that carries them.
+// An <a> is inline, and min sizes do nothing on an inline box, so the
+// controls born inline become inline-flex, centred in the box the floor
+// grows (or, blockified by a flex or grid parent, flex). The search
+// box's input is its target, so the box gives up its block padding and
+// the input stretches to the floor; the bulk bar's close button would
+// shrink below the floor in its flex row; the row checkbox centres its
+// 16px box in the label the floor widens.
+var floorOnly = map[string]string{
+	"[rst-row-action]":           "display align-items justify-content",
+	"[rst-bulkbar-escalate]":     "display align-items justify-content",
+	"[rst-modal-close]":          "display align-items justify-content",
+	"[rst-back-nav] a":           "display align-items",
+	"[rst-shell-brand]":          "display align-items",
+	"[rst-search]":               "padding-top padding-bottom",
+	"[rst-search] input":         "align-self",
+	"[rst-bulkbar-close]":        "flex-shrink",
+	"[rst-selbox]":               "justify-content",
+	"[rst-signin-providers] > a": "display align-items align-self",
+}
+
+// mayShrink are the controls the floor makes smaller on a desktop, by
+// selector as the floor block spells it, each with why.
+var mayShrink = map[string]string{
+	"[rst-search]":                      "the box gives up its block padding so its input, the target, can be the floor: 35.6px became 34",
+	`[rst-search] input[type="search"]`: "it stretches to the box's height, and its width loses what the box's border-box floor takes",
+}
+
+// TestTheFloorChangesNothingButSizeOnADesktop: the floor block reaches
+// every width, and the layout it carried from its touch-only days came
+// with it: a row action 9.6px wider than the floor needed, a date
+// suggestion's label moved off its baseline, a full-width button's
+// label pulled to its middle, menu items, tabs and nav links made flex
+// boxes that drop the spaces in their labels. Every control the block
+// names is read at 1280 with a mouse, once as served and once with the
+// block cut out; the two may differ in size, box-sizing and
+// align-content (which centres a block's content in the floor), and in
+// floorOnly's declarations, and in nothing else. And the size may only
+// grow: a floor once replaced the textarea's own 5rem minimum (one
+// property under two names), and a note field shrank to two lines.
+func TestTheFloorChangesNothingButSizeOnADesktop(t *testing.T) {
+	without, block := floorBlock(t)
+	var sels []string
+	for _, r := range leafRules(stripCSSComments(block)) {
+		for _, s := range splitSelectorList(r.selector) {
+			if !strings.HasPrefix(s, ":where(") {
+				sels = append(sels, s)
+			}
+		}
+	}
+	body := sizingFixture(t) + `<div rst-page data-extra="floor-layout"><div rst-dtp-row id="dtp-row"><span>Tomorrow</span><span>Thu 9 Oct</span></div>` +
+		`<p><a rst-btn href="#wide" style="display: flex">Continue</a></p></div>`
+	pages := map[string]string{"/": sizingDoc("floor", body), "/bare": strings.Replace(sizingDoc("floor", body), "/tokens.css", "/tokens-nofloor.css", 1)}
+	rig := harness.New(t, func(string) http.Handler {
+		mux := sizingMux(t, pages)
+		mux.HandleFunc("GET /tokens-nofloor.css", func(w http.ResponseWriter, _ *http.Request) {
+			w.Header().Set("Content-Type", "text/css")
+			fmt.Fprint(w, without)
+		})
+		return mux
+	})
+	ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
+	defer cancel()
+	read := `(() => {
+	  const sels = ` + mustJSON(t, sels) + `, props = ` + mustJSON(t, strings.Fields("display align-items justify-content padding-top padding-right padding-bottom padding-left align-self flex-shrink flex-grow row-gap column-gap text-align vertical-align")) + `;
+	  const seen = new Map();
+	  for (const sel of sels) for (const e of document.querySelectorAll(sel)) if (!seen.has(e)) seen.set(e, sel);
+	  const all = [...document.querySelectorAll("*")];
+	  return JSON.stringify([...seen].map(([e, sel]) => {
+	    const cs = getComputedStyle(e), out = {I: all.indexOf(e), Sel: sel, Name: e.tagName.toLowerCase() + (e.id ? "#" + e.id : "") + " “" + (e.getAttribute("aria-label") || e.textContent).trim().slice(0, 24) + "”", P: {}};
+	    for (const p of props) out.P[p] = cs.getPropertyValue(p);
+	    const box = e.getBoundingClientRect(); out.W = box.width; out.H = box.height;
+	    return out;
+	  }));
+	})()`
+	type styled struct {
+		I         int
+		Sel, Name string
+		P         map[string]string
+		W, H      float64
+	}
+	at := func(path string) map[int]styled {
+		var raw string
+		if err := chromedp.Run(ctx, chromedp.EmulateViewport(1280, 900), chromedp.Navigate(rig.Origin+path), chromedp.WaitReady("#dtp-row", chromedp.ByQuery), chromedp.Evaluate(read, &raw)); err != nil {
+			t.Fatalf("%s: %v", path, err)
+		}
+		var got []styled
+		if err := json.Unmarshal([]byte(raw), &got); err != nil {
+			t.Fatal(err)
+		}
+		out := map[int]styled{}
+		for _, g := range got {
+			out[g.I] = g
+		}
+		return out
+	}
+	served, bare := at("/"), at("/bare")
+	if len(served) < 50 {
+		t.Fatalf("read %d controls the floor block names; the selectors no longer match the fixture", len(served))
+	}
+	for i, s := range served {
+		b, ok := bare[i]
+		if !ok {
+			t.Errorf("%s: not on the page without the floor block", s.Name)
+			continue
+		}
+		if _, ok := mayShrink[s.Sel]; !ok && (s.W < b.W-1 || s.H < b.H-1) {
+			t.Errorf("%s (%s): the floor shrinks it on a desktop from %.1f×%.1f to %.1f×%.1f; a floor only raises", s.Name, s.Sel, b.W, b.H, s.W, s.H)
+		}
+		may := ""
+		for key, props := range floorOnly {
+			if strings.Contains(s.Sel, key) {
+				may += " " + props
+			}
+		}
+		// A gap does nothing outside a flex or grid box; the one that
+		// puts back an icon's space applies where the floor made one,
+		// which is floorOnly's to allow.
+		if d := s.P["display"]; !strings.Contains(d, "flex") && !strings.Contains(d, "grid") || !strings.Contains(b.P["display"], "flex") {
+			may += " column-gap row-gap"
+		}
+		for p, v := range s.P {
+			if v != b.P[p] && !strings.Contains(" "+may+" ", " "+p+" ") {
+				t.Errorf("%s (%s): the floor changes %s on a desktop from %q to %q", s.Name, s.Sel, p, b.P[p], v)
+			}
+		}
+	}
+}
+
+func mustJSON(t *testing.T, v any) string {
+	t.Helper()
+	b, err := json.Marshal(v)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return string(b)
 }

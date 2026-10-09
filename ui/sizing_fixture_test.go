@@ -28,8 +28,12 @@ const sizingExtras = `<style>.sizing-small { font-size: var(--rst-fs-xs); }</sty
 <div rst-field><label rst-field-label for="sizing-bare">Bare</label><input type="text" id="sizing-bare" name="sizing_bare" data-sizing-not-an-idiom></div>
 <div rst-field><label rst-field-label for="sizing-primary">Title</label><input rst-input="primary" type="text" id="sizing-primary" name="sizing_primary"></div>
 <p data-extra="buttons"><button rst-btn="sm" type="button" id="sizing-btn-sm">Small</button> <button rst-btn type="button" id="sizing-btn">Default</button> <button rst-btn="lg" type="button" id="sizing-btn-lg">Large</button></p>
+<div data-extra="signin-providers"><div rst-signin-providers><form method="post" action="/auth/google"><button rst-btn="block" type="submit">Continue with Google</button></form><a href="/signin">Use your email instead</a></div></div>
 <div rst-shell-sidebar data-extra="legacy-drawer"><details rst-shell-chrome><summary>Menu</summary></details><aside rst-shell-rail><nav rst-shell-nav><a href="#legacy-one">Legacy one</a><a href="#legacy-two">Legacy two</a></nav></aside><main rst-shell-main><p>The legacy sidebar, which tokens.css keeps working for old layouts.</p></main></div>
 </div>`
+
+// sizingIcon is an icon as rastrillo.Icon emits one.
+const sizingIcon = `<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 12h16"/></svg>`
 
 // sizingFixture is one page body with every partial (each with its own
 // test data, the set TestRenderEverythingSmoke renders), every
@@ -70,6 +74,24 @@ func sizingFixture(t *testing.T) string {
 			"EscalateHref": "/orders?select=all", "EscalateLabel": "All", "MenuLabel": "Actions", "MenuGroup": "rst-sizing-short",
 		}) +
 		`<div class="sizing-narrow">` + render(t, "person", map[string]any{"Href": "/people/al", "Name": "Al", "Initial": "A"}) + `</div></div>`)
+	// An icon beside a word, in each control the floor makes a flex box.
+	// A flex box drops the space between them, so the icon touched the
+	// word until each set a gap (all of them on a phone, the controls born
+	// inline on a desktop too); no sample or partial
+	// puts an icon beside text in these controls, so only this shows it.
+	b.WriteString(`<div rst-page data-extra="icon-text">` +
+		`<details rst-dropdown name="rst-sizing-icons"><summary>Views</summary><div rst-dropdown-menu><a href="#icon-item" id="icon-item">` + sizingIcon + ` Posts</a><button type="button" id="icon-button">` + sizingIcon + ` Archive</button></div></details>` +
+		// markup-spelling: old-spelling begin — tokens.css floors and
+		// spaces a dropdown's button under both spellings, and the
+		// class one is what this line holds to it.
+		`<details class="rst-dropdown" name="rst-sizing-icons-class"><summary>Bulk</summary><div class="rst-dropdown__menu"><button type="button" id="icon-button-class">` + sizingIcon + ` Archive</button></div></details>` +
+		// markup-spelling: old-spelling end
+		`<div rst-shell-sidebar><aside rst-shell-rail><nav rst-shell-nav><a href="#icon-nav" id="icon-nav">` + sizingIcon + ` Posts</a></nav></aside><main rst-shell-main><p>Main.</p></main></div>` +
+		`<a rst-shell-brand href="#icon-brand" id="icon-brand">` + sizingIcon + ` Acme</a>` +
+		`<nav rst-back-nav><a href="#icon-back" id="icon-back">` + sizingIcon + ` Orders</a></nav>` +
+		`<a rst-row-action href="#icon-action" id="icon-action">` + sizingIcon + ` Edit</a>` +
+		`<div rst-signin-providers><a href="#icon-signin" id="icon-signin">` + sizingIcon + ` Use your email</a></div>` +
+		`</div>`)
 	samples := Styleguide()
 	names := make([]string, 0, len(samples))
 	for name := range samples {

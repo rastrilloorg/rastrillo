@@ -171,9 +171,8 @@ func TestDesktopPansFromTheInlineStart(t *testing.T) {
 				t.Fatalf("%s: loading: %v", where, err)
 			}
 			eagerly(t, ctx, where)
-			// Each widget's own Desktop radio, because Shells has no
-			// Code tab and so no page-wide group, and one route serves
-			// both pages.
+			// Each widget's own Desktop radio: it is the only control
+			// that chooses a widget's view.
 			clickAll(t, ctx, where, clickedDesktop, "Desktop")
 			var raw string
 			if err := chromedp.Run(ctx, chromedp.Evaluate(`(() => {

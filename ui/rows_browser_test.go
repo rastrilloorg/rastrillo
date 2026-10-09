@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math"
 	"strings"
 	"sync"
 	"testing"
@@ -261,15 +262,15 @@ func TestTheWholeRowIsTheTarget(t *testing.T) {
 			}
 
 			// Sizes: 44×44 for everything in the rows on a phone; on the
-			// desktop the checkbox's label is the approved 24×24.
+			// desktop the checkbox's label is the 32×32 desktop floor.
 			home(t, ctx, rig.Origin)
 			if leg.coarse {
 				assertTargets(t, leg.name+", rows", readTargets(t, ctx, `(() => { `+measureFn+`; return JSON.stringify([...measure(document.getElementById("lra")), ...measure(document.getElementById("statuses")), ...measure(document.getElementById("grid")), ...measure(document.getElementById("people"))]); })()`))
 			} else {
 				var box [2]float64
 				at(t, ctx, `(() => { const r = document.getElementById("label-a").getBoundingClientRect(); return JSON.stringify([r.width, r.height]); })()`, &box)
-				if box != [2]float64{24, 24} {
-					t.Errorf("%s: the row checkbox's label is %v, want 24×24", leg.name, box)
+				if box != [2]float64{32, 32} {
+					t.Errorf("%s: the row checkbox's label is %v, want 32×32", leg.name, box)
 				}
 			}
 		})
@@ -522,5 +523,153 @@ func TestFocusDrawsTheRingAroundTheWholeRow(t *testing.T) {
 	}
 	if g.Corner1 != "link-a" || g.Corner2 != "link-a" {
 		t.Errorf("the overlay does not reach the row's corners (%s, %s): the ring is not around the whole row", g.Corner1, g.Corner2)
+	}
+}
+
+// narrowRowsPage is list-row-action with a status in each of the shapes
+// a row can take around it (with and without a lead, an action pill and
+// a kebab), and one status pill outside any row to compare sizes with.
+func narrowRowsPage(t *testing.T) map[string]string {
+	t.Helper()
+	items := []any{map[string]any{"Label": "View", "Href": "/go/view"}}
+	row := func(id string, d map[string]any) string {
+		d["Href"], d["Main"], d["Sub"] = "/go/"+id, "Release notes, August", "Published 2 August · 4 min read"
+		d["StatusTone"], d["StatusLabel"] = "positive", "Published"
+		return `<div id="` + id + `">` + render(t, "list-row-action", d) + `</div>`
+	}
+	return map[string]string{"/": sizingDoc("narrow rows", `<div rst-page><div rst-list>`+
+		row("lead-action", map[string]any{"Lead": "accent", "LeadInitial": "RN", "ActionHref": "/go/edit", "ActionLabel": "Edit", "ActionAria": "Edit Release notes, August"})+
+		row("action-menu", map[string]any{"ActionHref": "/go/edit", "ActionLabel": "Edit", "ActionAria": "Edit Release notes, August", "Menu": items})+
+		row("lead-menu", map[string]any{"Lead": "accent", "LeadInitial": "RN", "Menu": items})+
+		`</div><p id="loose">`+render(t, "status-pill", map[string]any{"Tone": "positive", "Label": "Published"})+`</p></div>`)}
+}
+
+// TestANarrowRowGivesItsTitleTheWidth: on a phone a row held avatar,
+// title, status pill and action side by side, and the title was left a
+// narrow column ("Release notes, August" in three lines beside its
+// pill). Below 34rem the status moves onto its own line under the
+// title and meta, smaller than a pill elsewhere, and the title takes
+// every pixel the row's other first-line items leave. At 1280 the
+// status stays beside the title, the control that this is a narrow
+// rule and not a general one. Every leg runs in RTL too: edges are read
+// from the inline start, so a physical left or right in the rule would
+// put the status under the wrong edge of the title there.
+func TestANarrowRowGivesItsTitleTheWidth(t *testing.T) {
+	ltr := narrowRowsPage(t)["/"]
+	pages := map[string]string{"/": ltr, "/rtl": strings.Replace(ltr, `dir="ltr"`, `dir="rtl"`, 1)}
+	type leg struct {
+		name           string
+		w              int64
+		coarse, narrow bool
+		path           string
+	}
+	var legs []leg
+	for _, path := range []string{"/", "/rtl"} {
+		for _, l := range []leg{{"1280 mouse", 1280, false, false, ""}, {"390 touch", 390, true, true, ""}, {"320 mouse", 320, false, true, ""}} {
+			l.path = path
+			if path == "/rtl" {
+				l.name = "RTL " + l.name
+			}
+			legs = append(legs, l)
+		}
+	}
+	for _, leg := range legs {
+		t.Run(leg.name, func(t *testing.T) {
+			rig := sizingRig(t, leg.coarse, pages)
+			ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
+			defer cancel()
+			mustRun(t, ctx, chromedp.EmulateViewport(leg.w, 844), chromedp.Navigate(rig.Origin+leg.path), chromedp.WaitVisible("#loose", chromedp.ByQuery))
+			requirePointer(t, ctx, leg.coarse)
+			var rows []struct {
+				ID                               string
+				RTL                              bool
+				MainStart, MainEnd, MainB, MainW float64
+				StatusStart, StatusT, Room       float64
+				StatusSize, LooseSize            float64
+			}
+			at(t, ctx, `(() => { const loose = parseFloat(getComputedStyle(document.querySelector("#loose [rst-status]")).fontSize);
+			  const h = document.documentElement.getBoundingClientRect(), rtl = document.documentElement.dir === "rtl";
+			  const start = r => rtl ? h.right - r.right : r.left - h.left, end = r => rtl ? h.right - r.left : r.right - h.left;
+			  return JSON.stringify([...document.querySelectorAll("[rst-list] > div")].map(w => {
+			    const row = w.querySelector("[rst-row]"), cs = getComputedStyle(row), main = row.querySelector("[rst-row-main]").getBoundingClientRect(), st = row.querySelector("[rst-status]");
+			    const sr = st.getBoundingClientRect(), gap = parseFloat(cs.columnGap);
+			    // The room the title is owed: the row's content box less the
+			    // other items on its first line and one gap beside each.
+			    const others = [...row.children].filter(c => !c.matches("[rst-row-main], [rst-status]"));
+			    const room = row.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) - others.reduce((n, c) => n + c.getBoundingClientRect().width + gap, 0);
+			    return {ID: w.id, RTL: getComputedStyle(row).direction === "rtl", MainStart: start(main), MainEnd: end(main), MainB: main.bottom, MainW: main.width,
+			      StatusStart: start(sr), StatusT: sr.top, Room: room, StatusSize: parseFloat(getComputedStyle(st).fontSize), LooseSize: loose};
+			  })); })()`, &rows)
+			if len(rows) != 3 {
+				t.Fatalf("measured %d rows, want 3", len(rows))
+			}
+			for _, r := range rows {
+				if r.RTL != (leg.path == "/rtl") {
+					t.Fatalf("%s: the row's direction is RTL %v; this leg needs %v", r.ID, r.RTL, !r.RTL)
+				}
+				if !leg.narrow {
+					if r.StatusT >= r.MainB || r.StatusStart < r.MainEnd {
+						t.Errorf("%s: at %d the status starts %.0fpx along the line at %.0fpx down, not beside the title ending %.0fpx along with its foot at %.0fpx", r.ID, leg.w, r.StatusStart, r.StatusT, r.MainEnd, r.MainB)
+					}
+					continue
+				}
+				if r.StatusT < r.MainB-0.5 {
+					t.Errorf("%s: the status starts at %.0f, above the foot of the title and meta at %.0f; it must sit on its own line under them", r.ID, r.StatusT, r.MainB)
+				}
+				if d := r.StatusStart - r.MainStart; d < -0.5 || d > 0.5 {
+					t.Errorf("%s: the status starts %.0fpx along the line and the title %.0fpx; it must line up under the title", r.ID, r.StatusStart, r.MainStart)
+				}
+				if r.MainW < r.Room-0.5 {
+					t.Errorf("%s: the title is %.0fpx wide with %.0fpx free on its line; it must take the room", r.ID, r.MainW, r.Room)
+				}
+				if r.StatusSize >= r.LooseSize {
+					t.Errorf("%s: the status is %.1fpx, a pill outside a row %.1fpx; under the title it must be smaller", r.ID, r.StatusSize, r.LooseSize)
+				}
+			}
+		})
+	}
+}
+
+// A list title is a line of text, and what an app writes inside it
+// stays inline: an order number in a <bdi>, an <em>, an icon. The floor
+// on the identity cell once made it a grid, so every inline piece of
+// the title became a grid row of its own and "Order AB3PX" stacked
+// into two lines; the <small> under it is block, and stays on its own
+// line. Read at 1280 with a mouse and at 390 with a coarse pointer,
+// where the floor is 32 and 44.
+func TestAListTitleKeepsItsInlineFormatting(t *testing.T) {
+	page := map[string]string{"/": sizingDoc("titles", `<div rst-page><div rst-card style="--rst-cols: minmax(0, 1fr) auto">`+
+		`<div rst-lrow><a class="rst-nm" id="title" href="/go/x">Order <bdi id="ref">AB3PX</bdi> for <em id="who">Fiona</em><small id="sub">Yesterday</small></a><span class="rst-cell-mut">Paid</span></div>`+
+		`</div></div>`)}
+	for _, c := range []struct {
+		name   string
+		coarse bool
+		w, h   int64
+	}{{"a mouse at 1280px", false, 1280, 900}, {"a coarse pointer at 390px", true, 390, 844}} {
+		rig := sizingRig(t, c.coarse, page)
+		ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
+		if err := chromedp.Run(ctx, chromedp.EmulateViewport(c.w, c.h), chromedp.Navigate(rig.Origin+"/"), chromedp.WaitReady("#title", chromedp.ByQuery)); err != nil {
+			cancel()
+			t.Fatal(err)
+		}
+		var g struct{ Order, Ref, Who, Sub, Cell, Floor float64 }
+		at(t, ctx, `(() => {
+		  const a = document.getElementById("title"), r = document.createRange();
+		  r.setStart(a.firstChild, 0); r.setEnd(a.firstChild, 5);
+		  const top = e => e.getBoundingClientRect().top;
+		  return JSON.stringify({Order: r.getBoundingClientRect().top, Ref: top(document.getElementById("ref")), Who: top(document.getElementById("who")),
+		    Sub: top(document.getElementById("sub")), Cell: a.getBoundingClientRect().height,
+		    Floor: parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--rst-target")) * parseFloat(getComputedStyle(document.documentElement).fontSize)});
+		})()`, &g)
+		cancel()
+		if math.Abs(g.Ref-g.Order) > 1 || math.Abs(g.Who-g.Order) > 1 {
+			t.Errorf("%s: the title's inline pieces are not on one line: \"Order\" at %.1f, the <bdi> at %.1f, the <em> at %.1f", c.name, g.Order, g.Ref, g.Who)
+		}
+		if g.Sub <= g.Order+1 {
+			t.Errorf("%s: the <small> under the title is at %.1f, not on a line below the title at %.1f", c.name, g.Sub, g.Order)
+		}
+		if g.Cell < g.Floor-0.5 {
+			t.Errorf("%s: the identity cell is %.1fpx tall, under the %.0fpx floor", c.name, g.Cell, g.Floor)
+		}
 	}
 }

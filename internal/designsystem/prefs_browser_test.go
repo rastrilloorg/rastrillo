@@ -6,6 +6,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math"
+	"net/http"
 	"testing"
 	"time"
 
@@ -13,6 +15,8 @@ import (
 	"github.com/chromedp/cdproto/cdp"
 	"github.com/chromedp/chromedp"
 	"github.com/chromedp/chromedp/kb"
+
+	"amadan.net/rastrillo/rastrillo/harness"
 )
 
 // prefsJS reads the display settings menu on a phone: where its button
@@ -33,8 +37,9 @@ const prefsJS = `(() => {
       return {Text: el.textContent.trim(), On: b.top >= 0 && b.bottom <= innerHeight && b.left >= h.left && b.right <= h.right,
         Top: !!hit && (hit === el || el.contains(hit)), H: Math.round(b.height)};
     });
-  const strip = q("[rst-shell-back]");
-  return JSON.stringify({Open: d.open, Shown: card.checkVisibility(), Top: Math.round(r.top), End: Math.round(rtl ? r.left - h.left : h.right - r.right),
+  const strip = q("[rst-shell-back]"), sr = strip && strip.checkVisibility() ? strip.getBoundingClientRect() : null;
+  return JSON.stringify({Open: d.open, Shown: card.checkVisibility(), Top: Math.round(r.top), Mid: r.top + r.height / 2,
+    StripH: sr ? sr.height : 0, StripMid: sr ? sr.top + sr.height / 2 : 0, End: Math.round(rtl ? r.left - h.left : h.right - r.right),
     W: Math.round(r.width), H: Math.round(r.height), InStrip: !!strip && strip.contains(d), Controls: controls,
     Themes: card.querySelectorAll("[rst-seg-tabs] a").length, Locales: card.querySelectorAll("[rst-locale] [rst-dropdown-menu] a").length,
     Focus: document.activeElement === s, Path: location.pathname, Hash: location.hash});
@@ -49,6 +54,7 @@ type prefsControl struct {
 type prefsReading struct {
 	Open, Shown, InStrip, Focus bool
 	Top, End, W, H              int
+	Mid, StripH, StripMid       float64
 	Themes, Locales             int
 	Controls                    []prefsControl
 	Path, Hash                  string
@@ -142,9 +148,16 @@ func TestTheDisplaySettingsMenuOnAPhone(t *testing.T) {
 				settleMotion(t, c, where)
 				p := readPrefs(t, c, where)
 				index := file == "index.html"
-				if p.Open || p.Shown || p.W < 44 || p.H < 44 || p.End > 24 || index && p.Top > 32 || !index && (!p.InStrip || p.Top > 1) {
+				if p.Open || p.Shown || p.W < 44 || p.H < 44 || p.End > 24 || index && p.Top > 32 || !index && !p.InStrip {
 					t.Errorf("%s: closed %v shown %v, a %dx%dpx button %dpx from the top and %dpx from the inline end, in the back strip %v; want a closed 44px button at the top inline-end (in the strip on a content page)",
 						where, !p.Open, p.Shown, p.W, p.H, p.Top, p.End, p.InStrip)
+				}
+				// The phone header is 56px, the index's row and a content
+				// page's back strip alike, and the button sits on its centre
+				// line: at the top edge of the taller strip it left a band
+				// under it that looked like part of the button and was not.
+				if index && math.Abs(p.Mid-28) > 1 || !index && (math.Abs(p.StripH-56) > 0.5 || math.Abs(p.Mid-p.StripMid) > 1) {
+					t.Errorf("%s: the button's centre line is at %.1fpx; the back strip is %.1fpx tall with its centre at %.1fpx; want the button centred in a 56px header strip", where, p.Mid, p.StripH, p.StripMid)
 				}
 				if name, want := axNameOf(t, c, where, ".ds-prefs > summary"), proseIn(locale, "Display settings"); name != want {
 					t.Errorf("%s: the button is named %q, want %q", where, name, want)
@@ -245,4 +258,61 @@ func TestTheDisplaySettingsKeepYourPlace(t *testing.T) {
 		t.Fatalf("%s: going back: %v", where, err)
 	}
 	until(t, ctx, where+", back in Dark", `location.pathname.includes("/day/") && document.documentElement.getAttribute("data-theme") === "dark" && [...document.querySelectorAll('[data-ds-scheme="dark"]')].every(b => b.getAttribute("aria-pressed") === "true")`)
+}
+
+// TestTheThemeTabsSitInLineWithTheOtherControls: the theme switcher is
+// the framework's seg-tabs, which leaves a block's gap under itself.
+// In the bar's centred row that margin is centred with the tabs, so
+// they rode 8px above the scheme buttons beside them; in the phone
+// card's column it added to the column gap, so the space under the
+// tabs was more than twice the space between the other groups.
+func TestTheThemeTabsSitInLineWithTheOtherControls(t *testing.T) {
+	t.Run("the bar at 1280", func(t *testing.T) {
+		rig := harness.New(t, func(string) http.Handler { return treeHandler(t) })
+		ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
+		defer cancel()
+		for _, locale := range []string{"en", "ar"} {
+			where := "day/" + locale + "/index.html at 1280"
+			if err := chromedp.Run(ctx, chromedp.EmulateViewport(1280, 900), chromedp.Navigate(rig.Origin+pageHref(mountPath, "day", locale, "index.html")),
+				chromedp.WaitVisible(".ds-top__controls .ds-scheme", chromedp.ByQuery)); err != nil {
+				t.Fatalf("%s: loading: %v", where, err)
+			}
+			var mid [2]float64
+			if err := chromedp.Run(ctx, chromedp.Evaluate(`(() => { const m = s => { const r = document.querySelector(".ds-top__controls " + s).getBoundingClientRect(); return r.top + r.height / 2; };
+			  return [m("[rst-seg-tabs]"), m(".ds-scheme")]; })()`, &mid)); err != nil {
+				t.Fatalf("%s: measuring: %v", where, err)
+			}
+			if math.Abs(mid[0]-mid[1]) > 1 {
+				t.Errorf("%s: the theme tabs' centre line is at %.1fpx and the scheme buttons' at %.1fpx; want them level", where, mid[0], mid[1])
+			}
+		}
+	})
+	t.Run("the phone card at 390", func(t *testing.T) {
+		rig := phoneRig(t)
+		ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
+		defer cancel()
+		for _, locale := range []string{"en", "ar"} {
+			where := "day/" + locale + "/index.html at 390"
+			if err := chromedp.Run(ctx, chromedp.EmulateViewport(390, 844), chromedp.Navigate(rig.Origin+pageHref(mountPath, "day", locale, "index.html")),
+				chromedp.WaitVisible(".ds-prefs > summary", chromedp.ByQuery), chromedp.Click(".ds-prefs > summary", chromedp.ByQuery),
+				chromedp.WaitVisible(".ds-prefs [rst-seg-tabs]", chromedp.ByQuery)); err != nil {
+				t.Fatalf("%s: loading and opening: %v", where, err)
+			}
+			requireCoarse(t, ctx)
+			settleMotion(t, ctx, where)
+			var gaps []float64
+			if err := chromedp.Run(ctx, chromedp.Evaluate(`(() => { const kids = [...document.querySelector(".ds-prefs > [rst-dropdown-menu]").children].filter(k => k.checkVisibility()).map(k => k.getBoundingClientRect());
+			  return kids.slice(1).map((r, i) => r.top - kids[i].bottom); })()`, &gaps)); err != nil {
+				t.Fatalf("%s: measuring: %v", where, err)
+			}
+			if len(gaps) < 2 {
+				t.Fatalf("%s: the card holds %d groups; it needs three for the gaps between them to be compared", where, len(gaps)+1)
+			}
+			for i, g := range gaps[1:] {
+				if math.Abs(g-gaps[0]) > 0.5 {
+					t.Errorf("%s: the gap under the theme tabs is %.1fpx and gap %d is %.1fpx; want every group the same distance apart", where, gaps[0], i+2, g)
+				}
+			}
+		}
+	})
 }
