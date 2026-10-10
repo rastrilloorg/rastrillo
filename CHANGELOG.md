@@ -48,6 +48,12 @@ The bar keeps one row when everything fits. When it does not, the close button, 
 - A detail list's label lines up with the first line of its value.
 - Segmented tabs leave a 16px gap above the block that follows them. If your tabs sit in a toolbar row, clear that margin there.
 
+### Added: `carlos.InstanceKey`, the key CARLOS made for your app
+
+On CARLOS, the platform will make an instance key before your app first starts and back it up. A key your app makes itself can be lost with the box before a backup carries it, leaving data nobody can read.
+
+`carlos.InstanceKey(own)` returns your app's own key if it has one, then `$CARLOS_INSTANCE_KEY`. On CARLOS with neither, it returns `ErrNoInstanceKey`: don't start. Off CARLOS it returns `ErrNotOnCarlos`: load or make a key as before. Nothing changes until you call it.
+
 ## v0.28.0
 
 A sign-in screen with proof of work in front of it, a phone layout for every shell, and new packages for timing, spreadsheet exports, background work, tests and authenticator apps. The first three sections change what an existing app does without a compile error: read them before you upgrade.

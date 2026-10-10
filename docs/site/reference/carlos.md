@@ -16,6 +16,8 @@ carlos schedule set -name sync -every 6h -path /jobs/sync
 
 Your app's whole part is a handler on `/jobs/sync`.
 
+It also gives your app the key the platform made for it. See `InstanceKey`.
+
 ## Tick
 
 ```go
@@ -142,22 +144,59 @@ Drops a timer `ScheduleAt` registered. Cancelling something that
 already fired, or never existed, succeeds, so a cleanup path doesn't
 have to know which.
 
+## InstanceKey
+
+```go
+func InstanceKey(own string) (string, error)
+```
+
+Returns the key your app seals with. Pass it to `auth.Config.InstanceKey`, `pow.Config.InstanceKey` and anything else that takes one.
+
+On CARLOS, the platform makes this key before your app first starts and backs it up before the app runs. Use it instead of making your own. A key your app makes at startup can be lost with the box before a backup carries it. The data comes back on another box, but nothing sealed with that key can be read.
+
+Pass your app's own key as `own`, or `""` if it has none. Read it from your setting or key file, but don't make one yet.
+
+```go
+own, err := loadKeyWithoutMinting(dataDir)
+if err != nil {
+	return err
+}
+key, err := carlos.InstanceKey(own)
+if errors.Is(err, carlos.ErrNotOnCarlos) {
+	key, err = mintKey(dataDir) // off CARLOS: what you did before
+}
+if err != nil {
+	return err // ErrNoInstanceKey: don't start
+}
+```
+
+It returns the first of these that applies:
+
+1. `own`, if it isn't empty. Keep a key your app already has: changing it makes everything sealed with the old one unreadable.
+2. `$CARLOS_INSTANCE_KEY`, exactly as set.
+3. On CARLOS, `ErrNoInstanceKey`. Don't start.
+4. Off CARLOS, `ErrNotOnCarlos`. Load or make a key the way you did before.
+
 ## The errors
 
 ```go
 var (
 	ErrNotOnCarlos      error
+	ErrNoInstanceKey    error
 	ErrUnauthorized     error
 	ErrDeclaredSchedule error
 	ErrTooManyTimers    error
 )
 ```
 
-All four are sentinels; compare with `errors.Is`.
+All five are sentinels; compare with `errors.Is`.
 
 `ErrNotOnCarlos` means there is no control socket in the environment,
 which is what your laptop and your tests look like. Boot code that
 registers timers should treat it as "skip", not as a failure.
+From `InstanceKey`, it means load or make your own key.
+
+`ErrNoInstanceKey` means your app is on CARLOS, has no key of its own, and the platform gave it none. Don't start. A key made now could be lost before a backup carries it.
 
 `ErrUnauthorized` means no `$CARLOS_ADMIN_TOKEN`, or one the agent
 would not take. It is what an instance sees if it was already running

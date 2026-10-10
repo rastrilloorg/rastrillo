@@ -1,5 +1,6 @@
-// Package carlos is the app side of the CARLOS platform's scheduled-work
-// contract: receiving a tick, and registering a one-shot timer.
+// Package carlos is the app side of the CARLOS platform's contracts:
+// receiving a tick, registering a one-shot timer, and sealing with the
+// instance key the platform minted ([InstanceKey]).
 //
 // A CARLOS instance hibernates, so an in-process timer is not a
 // scheduler — the process is not there when it fires. The platform owns
@@ -26,7 +27,8 @@
 //
 // Off CARLOS — a dev laptop, a test — nothing here panics or blocks:
 // [Tick] is false with no token in the environment (fail closed, never
-// open), and [ScheduleAt] returns [ErrNotOnCarlos].
+// open), and [ScheduleAt] and a keyless [InstanceKey] return
+// [ErrNotOnCarlos].
 //
 // The contract itself lives in carlosframework/platform, spec
 // 2026-08-23-scheduled-work-design.md §7.

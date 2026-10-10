@@ -390,6 +390,9 @@ delivery: dedupe on `carlos.TickOccurrence(r)` (stable across retries),
 never the clock. One-offs: `carlos.ScheduleAt(ctx,
 name, at, path)` (upsert by name; `ErrNotOnCarlos` off-platform,
 `ErrDeclaredSchedule`, `ErrTooManyTimers`) and `carlos.ScheduleCancel`.
+Seal with `carlos.InstanceKey(own)`: the app's own key, else the
+platform's; mint one only on `ErrNotOnCarlos`, never start on
+`ErrNoInstanceKey`.
 
 ## 7. Screens and flows
 

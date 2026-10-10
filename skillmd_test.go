@@ -139,7 +139,14 @@ import (
 // so the 142 bytes over the file's size are slack for a one-line
 // correction, not room to fill; the deferred human pruning pass above
 // still stands.
-const skillBudget = 30_750
+//
+// Raised 30,750 -> 30,900 on 2026-10-09 for one sentence: seal with
+// carlos.InstanceKey, mint only on ErrNotOnCarlos. An agent that keeps
+// minting its key on CARLOS ships an app whose rows can outlive their
+// key when region HA relocates it, which no test of the app's own will
+// catch. The file had 3 bytes of slack; no existing line is redundant
+// enough to pay 147 without losing a fact, so this lands at 30,894.
+const skillBudget = 30_900
 
 // TestSkillMDStaysWithinBudget makes the budget mechanical rather than
 // remembered: several release evenings have ended with a wc -c dance

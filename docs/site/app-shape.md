@@ -32,7 +32,11 @@ if err != nil {
 }
 defer d.Close()
 
-instanceKey := os.Getenv("NOTES_INSTANCE_KEY") // stored, not made up per process
+instanceKey, err := carlos.InstanceKey(os.Getenv("NOTES_INSTANCE_KEY")) // your key if set, else the one CARLOS made
+if err != nil {
+	logger.Error("instance key", "err", err)
+	os.Exit(1)
+}
 bg := &background.Group{}
 mux, err := notes.App(d, origin, instanceKey, bg, logger)
 if err != nil {

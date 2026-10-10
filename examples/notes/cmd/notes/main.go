@@ -11,11 +11,13 @@
 package main
 
 import (
+	"errors"
 	"log/slog"
 	"os"
 
 	"amadan.net/rastrillo/rastrillo"
 	"amadan.net/rastrillo/rastrillo/background"
+	"amadan.net/rastrillo/rastrillo/carlos"
 	"amadan.net/rastrillo/rastrillo/db"
 
 	"notes/internal/notes"
@@ -33,13 +35,20 @@ func main() {
 		logger.Warn("NOTES_ORIGIN not set; defaulting", "origin", origin)
 	}
 
-	instanceKey := os.Getenv("NOTES_INSTANCE_KEY")
-	if instanceKey == "" {
+	// On CARLOS the platform's key, minted and backed up before this
+	// process first ran: a key made here could be lost with the box
+	// before a backup carried it, leaving rows nobody can unseal.
+	instanceKey, err := carlos.InstanceKey(os.Getenv("NOTES_INSTANCE_KEY"))
+	if errors.Is(err, carlos.ErrNotOnCarlos) {
 		// Loud for the same reason as the origin: the key seals every
 		// sign-in challenge, and a default shared by every copy of this
 		// example is a key anybody can read.
-		instanceKey = "notes-development-only-instance-key"
+		instanceKey, err = "notes-development-only-instance-key", nil
 		logger.Warn("NOTES_INSTANCE_KEY not set; using a development-only key")
+	}
+	if err != nil {
+		logger.Error("instance key", "err", err)
+		os.Exit(1)
 	}
 
 	// Resolve the platform's activation argv/env ourselves (Resolve's
