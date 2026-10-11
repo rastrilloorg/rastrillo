@@ -22,7 +22,7 @@ amadan discuss new rastrillo/rastrillo -title "..." -body -
 
 ## What an addon costs
 
-An addon pins a Rastrillo version. When a core package it uses changes, such as `sessions` or `migrate`, apps that use the addon cannot upgrade Rastrillo until the addon catches up. Go picks one version of each module for the whole build, so the addon's pin holds the app back.
+An addon is built against one Rastrillo version, and Go uses a single Rastrillo for the whole build. When a core package the addon uses changes in a way that breaks it, such as `sessions` or `migrate`, apps cannot upgrade Rastrillo until the addon catches up.
 
 An addon also needs its own CI, its own frozen migration checksums and its own releases.
 
@@ -40,7 +40,7 @@ A hook must be useful to any addon, not a feature for one. idear needed sign-up 
 
 ## Copy an existing repository
 
-Copy aviso. It is small and has every part. Look at idear if your addon has more wiring:
+Start from aviso, the smaller of the two, and look at idear if your addon has more wiring. Two parts are not in aviso: take the frozen checksum test from idear's `schema_test.go`, and add your own `LICENSE`.
 
 ```text
 go.mod            requires amadan.net/rastrillo/rastrillo at a released tag
@@ -48,7 +48,7 @@ go.mod            requires amadan.net/rastrillo/rastrillo at a released tag
 migrations/       0001_init.sql, embedded
 migrations.go     var Schema = migrate.MustFromFS(migrationFS, "<name>")
 schema_test.go    frozen migration checksums
-example/          a working app; its own Go module with a replace back to ..
+example/          a working app
 SKILL.md          for agents; read instead of the source
 skillmd_test.go   byte budget, and the exported names it must mention
 Makefile          one ci target
@@ -84,9 +84,9 @@ Choose the addon's own licence. It does not inherit Rastrillo's.
 
 `make ci` is the one definition of the addon's checks. Each step in `.amadan/ci.d/` calls a make target and never keeps its own copy of a command, so change the Makefile and the step together.
 
-The usual targets are `go vet`, a `gofmt` check, `go test ./... -count=1`, and a `-race` run with `CGO_ENABLED=1` set for that target only. `-count=1` stops a cached pass from standing in for a fresh run of a database test. If the addon has a browser half, drive it in a real browser with [harness](/docs/reference/harness). A browser test fails when there is no browser. It does not skip.
+The usual targets are `go vet`, a `gofmt` check, `go test ./... -count=1`, and a `-race` run with `CGO_ENABLED=1` set for that target only. `-count=1` stops a cached pass from standing in for a fresh run of a database test. If the addon has a browser half, drive it in a real browser with [harness](/docs/reference/harness). Leave `RASTRILLO_BROWSER_OPTIONAL` unset in the gate, so a run with no browser fails and does not skip.
 
-The example is its own module, so `go test ./...` at the root does not reach it. Test it from its own directory. [Testing](/docs/testing) has the patterns.
+If the example is its own module, as aviso's is, `go test ./...` at the root does not reach it. Test it from its own directory. [Testing](/docs/testing) has the patterns.
 
 ## Write SKILL.md
 
@@ -105,19 +105,19 @@ cat "$(go list -m -f '{{.Dir}}' amadan.net/rastrillo/aviso)/SKILL.md"
 
 The path must work with `go get`. Addons the project maintains live at `amadan.net/rastrillo/<name>`, and amadan serves the `go-import` tag for them. To host yours there, ask in a discussion. Anywhere else `go get` reaches works too.
 
-Before anything depends on the path, check it from a throwaway module:
+Before anything depends on the path, check it from a throwaway module, with your path in place of aviso's:
 
 ```sh
 cd "$(mktemp -d)"
 go mod init example.com/check
-go get amadan.net/rastrillo/<name>
+go get amadan.net/rastrillo/aviso
 ```
 
 ## Release it
 
 Tag semantic versions, `v0.x.y` while the API is settling. Pin Rastrillo to a released tag in `go.mod`, not a commit.
 
-When Rastrillo releases a change to a package your addon uses, update the addon and tag a release soon. Apps cannot upgrade Rastrillo until you do.
+When Rastrillo releases a breaking change to a package your addon uses, update the addon and tag a release soon. Apps cannot upgrade Rastrillo until you do.
 
 ## Get listed
 
@@ -131,7 +131,7 @@ Describe the branch on amadan. It is reviewed and squash-merged like any other c
 - Any hook it needed has landed in core.
 - Its migrations are namespaced and merged into `BootSchema`.
 - `SKILL.md` is under a tested byte budget.
-- The example is its own module and its tests pass.
+- The example runs and its tests pass.
 - `make ci` passes.
 - `go get` works from a throwaway module.
 - It has a released version and pins a released Rastrillo.
