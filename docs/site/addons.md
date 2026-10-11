@@ -217,6 +217,4 @@ general storage library.
 
 ## Publishing an addon
 
-Follow the four rules above, then serve `SKILL.md` at a stable URL and
-send a patch adding an entry here. An addon nobody can find and no agent
-can read is a library, not an addon.
+Read [Writing an addon](/docs/writing-addons) before you start. It covers whether your idea belongs in core, what the repository needs, and how to add an entry here.
