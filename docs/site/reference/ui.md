@@ -500,6 +500,11 @@ control that uses the browser's history when it can, and focus returned
 to the section you left. Only those two layouts link them, and both are
 optional.
 
+`AnchorJS` is `anchor.js`: in a browser without CSS anchor positioning
+it opens a dropdown's menu from its summary's other edge when the menu
+would leave the screen. It does nothing where the browser has the
+feature, so an app can delete it, and its tag, once all its browsers do.
+
 `BusyJS` is `busy.js`,
 the busy rule: every submit button's label gives way to a spinner for
 at least 650ms, the button disables and the form refuses a second

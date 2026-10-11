@@ -1617,12 +1617,15 @@ func heightOf(id string) int {
 // told, by the page, that menus do not close. It costs one script tag
 // in each frame that holds a menu: 20,202 bytes across the whole tree
 // when it was added, 0.13% of it, against a ceiling still 5.3 MiB away.
+// A switch is here for the same reason: its knob slides only with the
+// shim, and a preview whose knob will not drag says switches do not.
 var previewScripts = []struct {
 	asset string
 	hooks []string
 }{
-	{"rastrillo.js", []string{"data-poll", "rst-dropdown", "rst-row-menu"}},
+	{"rastrillo.js", []string{"data-poll", "rst-dropdown", "rst-row-menu", "rst-switch"}},
 	{"busy.js", []string{"data-busy"}},
+	{"anchor.js", []string{"rst-dropdown"}},
 	{"select.js", []string{"data-rst-select"}},
 	// calendar.js comes FIRST, and the order is load-bearing here in a
 	// way it is not on an ordinary page. datetime.js scans the moment it
@@ -2601,9 +2604,11 @@ func buildAssets(mount, theme, locale string) assetsView {
 	add(&out, "shell.css", ui.ShellCSS(),
 		"The slide between pages on a phone, for the sidebar and console shells. Deletable with shell.js.")
 	add(&out, "rastrillo.js", ui.ShimJS(),
-		"The progressive-enhancement shim: polling fragments and light dismiss. Every scaffolded app gets it.")
+		"The progressive-enhancement shim: polling fragments, light dismiss and the switch's drag. Every scaffolded app gets it.")
 	add(&out, "busy.js", ui.BusyJS(),
 		"The busy rule: while a form sends, its button shows a spinner for at least 650ms and refuses a second submit, and Back hands it back. Every scaffolded app gets it.")
+	add(&out, "anchor.js", ui.AnchorJS(),
+		"Keeps a dropdown's menu on the screen in browsers without CSS anchor positioning. It does nothing where they have it: delete it once every browser you support does.")
 	add(&out, "shell.js", ui.ShellJS(),
 		"Phone navigation for the sidebar and console shells: the slide between pages, Back that reuses history, and focus returned to the section you left. Deletable on its own.")
 	add(&out, "select.js", ui.SelectJS(),
@@ -2846,7 +2851,7 @@ const gettingStartedBody = `{{define "ds-body-getting-started"}}
 <p class="ds-lead">{{P "tokens.css is structure: the component classes, the layout, and the scales for type, spacing and radius. Values are references, set elsewhere. themes/<name>.css is colour, type family and shape: one :root block where every colour is declared once as a light-dark() pair."}}</p>
 
 <h2 class="ds-sub">{{P "The scripts"}}</h2>
-<p class="ds-lead">{{P "rastrillo.js is the progressive-enhancement shim: polling fragments, light dismiss. busy.js is the busy rule. select.js and datetime.js are enhancements, each inert until a control opts in and each deletable on its own."}}</p>
+<p class="ds-lead">{{P "rastrillo.js is the progressive-enhancement shim: polling fragments, light dismiss, the switch's drag. busy.js is the busy rule. anchor.js keeps dropdown menus on the screen where CSS cannot. select.js and datetime.js are enhancements, each inert until a control opts in and each deletable on its own."}}</p>
 
 <h2 class="ds-sub">{{P "What each file weighs"}}</h2>
 <p class="ds-note">{{P "Filesizes for the various components."}}</p>

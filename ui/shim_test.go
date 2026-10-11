@@ -271,7 +271,10 @@ func TestBusyRuleIsTheDefault(t *testing.T) {
 // The busy.js split had freed the room; this did not come near the cap.
 // Scoping that Menu to a topbar or a console that names its view, so an
 // old console's rail is never dismissed: 11,424 → 11,957. Holding a
-// prerendered page's polling until it is shown: 11,957 → 12,368.
+// prerendered page's polling until it is shown: 11,957 → 12,368. A
+// switch's draggable knob: 12,368 → 15,340. A dropdown's flip where
+// anchor positioning is missing went in a file of its own, anchor.js,
+// because an app deletes it once its browsers all have the feature.
 //
 // The cap is still the point, and what it protects is the CODE: an app
 // owner owns this file from the moment it is scaffolded and has to be
@@ -376,7 +379,12 @@ func TestSelectContract(t *testing.T) {
 	// closed box styled per option: Tito Go's font menus set each name in
 	// its own face. Comments were trimmed to the one that says why typing
 	// takes the classes off.
-	if n := len(SelectJS()); n > 51*1024 {
+	//
+	// Then to 52KB (measured 53,128 bytes) by selecting the pick on a
+	// focusing click as well as on focus: WebKit put the caret where a
+	// click landed after focus, so clearing "Dublin" took a double-click.
+	// The comment is the one that says why each pointer selects when.
+	if n := len(SelectJS()); n > 52*1024 {
 		t.Fatalf("select.js is %d bytes; it is split out of the shim precisely to stay readable — trim it", n)
 	}
 	if bytes.Contains(SelectJS(), []byte("\t")) {
@@ -384,12 +392,13 @@ func TestSelectContract(t *testing.T) {
 	}
 }
 
-// No scaffolded script may reach off-origin: all six are vendored,
+// No scaffolded script may reach off-origin: all seven are vendored,
 // first-party and dependency-free.
 func TestScriptsAreSelfContained(t *testing.T) {
 	for name, js := range map[string]string{
 		"rastrillo.js": string(ShimJS()),
 		"busy.js":      string(BusyJS()),
+		"anchor.js":    string(AnchorJS()),
 		"select.js":    string(SelectJS()),
 		"datetime.js":  string(DatetimeJS()),
 		"calendar.js":  string(CalendarJS()),
@@ -400,6 +409,27 @@ func TestScriptsAreSelfContained(t *testing.T) {
 				t.Errorf("%s reaches outside the page (%q)", name, bad)
 			}
 		}
+	}
+}
+
+// anchor.js is the one script an app is told to delete in time, so its
+// contract is that it is inert where it is not needed: the feature test
+// returns before any listener is added, and the class it writes is the
+// one tokens.css opens a menu from. Small, like the others.
+func TestAnchorContract(t *testing.T) {
+	js := string(AnchorJS())
+	test, listen := strings.Index(js, `CSS.supports("position-area: block-end")`), strings.Index(js, "addEventListener")
+	if test < 0 || listen < 0 || test > listen {
+		t.Error("anchor.js must test for anchor positioning, and return, before it listens for anything")
+	}
+	if !strings.Contains(js, "is-flip-inline") || !strings.Contains(string(TokensCSS()), "[rst-dropdown].is-flip-inline > [rst-dropdown-menu]") {
+		t.Error("anchor.js and tokens.css no longer agree on .is-flip-inline")
+	}
+	if n := len(js); n > 4*1024 {
+		t.Errorf("anchor.js is %d bytes; it does one thing, keep it small", n)
+	}
+	if strings.Contains(js, "\t") {
+		t.Error("anchor.js uses two-space indentation, not tabs")
 	}
 }
 

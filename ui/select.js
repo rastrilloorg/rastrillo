@@ -781,14 +781,36 @@
     };
 
     let resuming = false;
+    // Focusing the box selects the pick, so typing or Delete replaces it
+    // (typing into "Option 1" searched for "Option 1O"). WebKit places a
+    // focusing pointer's caret after focus, undoing a select() there, so
+    // the focusing click selects, and again a frame later once Mobile
+    // Safari has placed a tap's caret, only over a collapsed caret: a
+    // mouse skips the focus select(), so a drag that focuses the box keeps
+    // what it selected. A tap keeps it: Chromium holds a selection made
+    // later in a tap, and the next tap would not place the caret.
+    let pointerFocus = "";
+    const selectPick = () => {
+      if (document.activeElement === input && showingPick && input.selectionStart === input.selectionEnd) {
+        input.setSelectionRange(0, input.value.length);
+      }
+    };
+    input.addEventListener("pointerdown", (e) => {
+      pointerFocus = document.activeElement === input ? "" : e.pointerType || "mouse";
+    });
     input.addEventListener("focus", () => {
       if (resuming) return;
-      // Select the pick so the first keystroke replaces it; otherwise typing
-      // into "Option 1" searches for "Option 1O".
-      input.select();
+      if (pointerFocus !== "mouse") input.select();
       openList(true);
     });
-    input.addEventListener("click", () => openList(true));
+    input.addEventListener("click", () => {
+      if (pointerFocus) {
+        pointerFocus = "";
+        selectPick();
+        requestAnimationFrame(selectPick);
+      }
+      openList(true);
+    });
     input.addEventListener("input", () => {
       showingPick = false;
       // Once somebody types, the box holds their words, not the pick.
@@ -1070,6 +1092,7 @@
     }, { signal: mine.signal });
     input.addEventListener("input", () => input.setCustomValidity(""));
     input.addEventListener("blur", () => {
+      pointerFocus = "";
       if (gone) return;
       input.setCustomValidity("");
       settleValidity();

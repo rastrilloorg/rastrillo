@@ -110,8 +110,9 @@ func TestTextControlsAreSixteenPixelsOnSmallOrTouchScreens(t *testing.T) {
 // deliberate desktop changes, pinned at their new values: the whole-row
 // target (§1.5), which TestTheWholeRowIsTheTarget holds, and the 32px
 // desktop floor with its 16px icons and 12px carets (2026-10-07), which
-// lifted the small button, the kebab and the row checkbox's label to 32.
-// Desktop targets had ranged from 24 to 36px, sized one control at a
+// lifted the small button, the kebab and the row checkbox's label to 32,
+// and the even button scale (2026-10-09), which draws the small button
+// at 26 with its hit area at the floor. Desktop targets had ranged from 24 to 36px, sized one control at a
 // time; the floor is one number for all of them.
 func TestDesktopDensityIsPinned(t *testing.T) {
 	rig := sizingRig(t, false, map[string]string{"/": sizingDoc("sizing", sizingFixture(t)), "/modal": sizingDoc("modal", Styleguide()["modal"])})
@@ -152,12 +153,15 @@ func TestDesktopDensityIsPinned(t *testing.T) {
 	if err := json.Unmarshal([]byte(raw), &d); err != nil {
 		t.Fatal(err)
 	}
-	// Measured before the touch rules existed: 27.69, 33.88 and 43.97
-	// (the "about 28/34/44" of tokens.css's header), a 26×26 kebab, a
-	// 16px checkbox in a 24×24 label. The floor lifts the small button
-	// to 32 and leaves the two that were already over it alone.
-	if math.Round(d.Sm) != 32 || math.Round(d.Md) != 34 || math.Round(d.Lg) != 44 {
-		t.Errorf("desktop button heights %v/%v/%v, want 32/34/44", d.Sm, d.Md, d.Lg)
+	// Measured before the touch rules existed: 27.69, 33.88 and 43.97, a
+	// 26×26 kebab, a 16px checkbox in a 24×24 label. The floor then
+	// lifted the small button to 32, beside a 34px default, and the
+	// three sizes read as two. They are now an even scale, 26/34/42
+	// (2026-10-09), with sm's hit area at the floor, which
+	// TestEveryTapTargetIsAtLeast44Pixels measures; the drawn heights are
+	// pinned here and on touch in TestTheButtonSizesAreAnEvenScale.
+	if math.Round(d.Sm) != 26 || math.Round(d.Md) != 34 || math.Round(d.Lg) != 42 {
+		t.Errorf("desktop button heights %v/%v/%v, want 26/34/42", d.Sm, d.Md, d.Lg)
 	}
 	if d.Kebab != [2]float64{32, 32} {
 		t.Errorf("desktop kebab %v, want 32×32", d.Kebab)
@@ -313,7 +317,9 @@ type targetReading struct {
 // same instrument. The activation area is the element a tap activates:
 // a checkbox or radio is measured as its label, a stretched link (an
 // absolutely positioned ::after with content) as its positioned
-// ancestor, the row. Each area is scrolled into view (scrollIntoView
+// ancestor, the row, and a control that contains its own such
+// pseudo-element (an sm button, drawn under the floor) as its border box grown by that
+// hit area, with each edge of it hit-tested as well as the centre. Each area is scrolled into view (scrollIntoView
 // scrolls every scrolling ancestor, a rail or a menu panel included)
 // and measured again after the scroll, and the point tested is the
 // centre of the part inside the viewport. elementFromPoint there must
@@ -338,7 +344,9 @@ const measureFn = `function measure(root, skip) {
       const l = el.closest("label") || (el.id && document.querySelector('label[for="' + el.id + '"]'));
       if (l) return l;
     }
-    if (el.tagName === "A") {
+    // A link positioned itself contains its own ::after, so that is a
+    // hit area (an sm link-button's) rather than a stretch to the row.
+    if (el.tagName === "A" && getComputedStyle(el).position === "static") {
       const after = getComputedStyle(el, "::after");
       // pointer-events: none is a tooltip ([rst-tip]::after), which a tap
       // passes through; only an overlay that takes the tap stretches the
@@ -346,6 +354,22 @@ const measureFn = `function measure(root, skip) {
       if (after.content !== "none" && after.position === "absolute" && after.pointerEvents !== "none" && el.offsetParent) return el.offsetParent;
     }
     return el;
+  };
+  // The box a tap reaches: the element's border box, grown by its own
+  // ::before or ::after where that is an absolutely positioned hit area
+  // the element contains (sm's, drawn under the floor). The ::after's insets are
+  // used values from the padding box, so the borders go back in.
+  const reach = el => {
+    const r = el.getBoundingClientRect(), s = getComputedStyle(el), px = v => parseFloat(v) || 0;
+    const u = {left: r.left, top: r.top, right: r.right, bottom: r.bottom};
+    for (const pseudo of ["::before", "::after"]) {
+      const a = getComputedStyle(el, pseudo);
+      if (s.position === "static" || a.content === "none" || a.position !== "absolute" || a.pointerEvents === "none") continue;
+      u.top = Math.min(u.top, r.top + px(s.borderTopWidth) + px(a.top)); u.bottom = Math.max(u.bottom, r.bottom - px(s.borderBottomWidth) - px(a.bottom));
+      u.left = Math.min(u.left, r.left + px(s.borderLeftWidth) + px(a.left)); u.right = Math.max(u.right, r.right - px(s.borderRightWidth) - px(a.right));
+    }
+    u.width = u.right - u.left; u.height = u.bottom - u.top;
+    return {box: u, grown: u.width > r.width + 0.5 || u.height > r.height + 0.5};
   };
   const out = [], seen = new Set();
   root.querySelectorAll(CONTROLS).forEach(el => {
@@ -359,9 +383,18 @@ const measureFn = `function measure(root, skip) {
     el.setAttribute("data-measured", "");
     a.setAttribute("data-measured-area", "");
     a.scrollIntoView({block: "center", inline: "center"});
-    const r = a.getBoundingClientRect();
+    const {box: r, grown} = reach(a);
     const x0 = Math.max(r.left, 0), y0 = Math.max(r.top, 0), x1 = Math.min(r.right, innerWidth), y1 = Math.min(r.bottom, innerHeight);
-    const hit = document.elementFromPoint((x0 + x1) / 2, (y0 + y1) / 2);
+    // A grown area is only as big as the taps it really takes: each
+    // edge's middle, half a pixel in, must reach the control too, or a
+    // neighbour over the hit area (or a clipping ancestor) has it.
+    const points = [[(x0 + x1) / 2, (y0 + y1) / 2]];
+    if (grown) points.push([(x0 + x1) / 2, y0 + 0.5], [(x0 + x1) / 2, y1 - 0.5], [x0 + 0.5, (y0 + y1) / 2], [x1 - 0.5, (y0 + y1) / 2]);
+    let hit = null;
+    for (const [x, y] of points) {
+      hit = document.elementFromPoint(x, y);
+      if (!(hit === el || (hit && el.contains(hit)) || (a !== el && a.tagName === "LABEL" && a.contains(hit)))) break;
+    }
     out.push({Name: describe(el), W: r.width, H: r.height,
       Fits: r.left >= -0.5 && r.top >= -0.5 && r.right <= innerWidth + 0.5 && r.bottom <= innerHeight + 0.5,
       // Ownership is the control, a descendant of it (a summary's icon,

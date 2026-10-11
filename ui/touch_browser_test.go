@@ -15,14 +15,14 @@ import (
 
 // sizingDoc is a page carrying the stylesheet, a theme, the shim and
 // busy.js (light dismiss and the busy spinner, which the row-menu legs
-// drive), and the scripts that enhance controls (select.js and
+// drive), anchor.js (a menu's flip without anchor positioning), and the scripts that enhance controls (select.js and
 // datetime.js change what a field renders, calendar.js draws the grid
 // the calendar legs measure). No CSP: this is a test page.
 func sizingDoc(title, body string) string {
 	return `<!doctype html><html lang="en" dir="ltr"><head><meta charset="utf-8">` +
 		`<meta name="viewport" content="width=device-width"><title>` + title + `</title>` +
 		`<link rel="stylesheet" href="/tokens.css"><link rel="stylesheet" href="/theme.css">` +
-		`<script defer src="/rastrillo.js"></script><script defer src="/busy.js"></script><script defer src="/select.js"></script>` +
+		`<script defer src="/rastrillo.js"></script><script defer src="/busy.js"></script><script defer src="/anchor.js"></script><script defer src="/select.js"></script>` +
 		`<script defer src="/calendar.js"></script><script defer src="/datetime.js"></script>` +
 		`</head><body>` + body + `</body></html>`
 }
@@ -34,7 +34,7 @@ func sizingMux(t *testing.T, pages map[string]string) *http.ServeMux {
 	mux := http.NewServeMux()
 	stylesheets(t, mux)
 	for name, body := range map[string][]byte{
-		"rastrillo.js": ShimJS(), "busy.js": BusyJS(), "select.js": SelectJS(), "datetime.js": DatetimeJS(), "calendar.js": CalendarJS(),
+		"rastrillo.js": ShimJS(), "busy.js": BusyJS(), "anchor.js": AnchorJS(), "select.js": SelectJS(), "datetime.js": DatetimeJS(), "calendar.js": CalendarJS(),
 	} {
 		body := body
 		mux.HandleFunc("GET /"+name, func(w http.ResponseWriter, _ *http.Request) {

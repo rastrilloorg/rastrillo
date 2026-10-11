@@ -6,7 +6,9 @@
        Label     string, required — the visible label
        Value     string, optional — the current content
        Rows      int, optional — the rows attribute; omitted when unset
-                 so the browser default applies
+                 so the browser default applies. It sets the height only
+                 in a browser without field-sizing: elsewhere the box is
+                 as tall as its text, from 5rem to half the viewport
        Required  bool, optional — required attribute + visible *
        Hint      string, optional — muted guidance under the control
        Error     string, optional — validation message; also sets

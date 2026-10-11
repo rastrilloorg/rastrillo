@@ -188,6 +188,9 @@ func runNew(args []string) error {
 	//	               the index and a page on a phone
 	//	rastrillo.js   the fragment shim behind data-poll and menu dismiss
 	//	busy.js        the busy rule: every submit button, data-busy opts out
+	//	anchor.js      a dropdown's menu kept on the screen where CSS anchor
+	//	               positioning is missing; inert where it is not, and
+	//	               deletable once every browser the app supports has it
 	//	shell.js       the same two shells' phone navigation: the slide's
 	//	               direction, a back control that reuses history,
 	//	               focus returned to the section the reader left

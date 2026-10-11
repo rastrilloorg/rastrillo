@@ -10,6 +10,32 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+### Changed: buttons come in an even scale, and Small is drawn smaller than its tap area; re-vendor `tokens.css`
+
+Small is drawn 26px tall on a desktop and 32px on a phone, Default 34px and 44px, Large 42px and 52px. Small keeps the full tap area, 32px or 44px, through a margin above and below it, so a row holding a Small button is as tall as that area. The `--rst-target` floor is the tap area, not the drawn size. The buttons in `form-foot` and `confirm-form` are Large.
+
+### Added: `anchor.js` keeps a dropdown's menu on the screen; copy it in and link it
+
+Browsers without CSS anchor positioning cannot keep a menu on the screen with CSS alone. `anchor.js` does it for them, and does nothing where anchor positioning exists. Every layout links it. Copy `static/anchor.js` into your app and add its `<script>` tag, or leave it out if every browser you support has anchor positioning. `rastrillo doctor` reports it missing.
+
+### Changed: a dropdown opens under its own button; re-vendor `tokens.css`
+
+A dropdown is now as wide as its button, and its menu opens under it. Where neither anchor positioning nor `anchor.js` is available, it keeps the full width of its container, as before.
+
+### Changed: a textarea grows with its text; re-vendor `tokens.css`
+
+In browsers that support `field-sizing`, a textarea grows as you type, up to half the screen, then scrolls. There, `Rows` no longer sets its height. Elsewhere it stays a fixed box you can resize.
+
+### Changed: a switch can be dragged; re-copy `rastrillo.js`
+
+Drag a switch's knob and it follows, then snaps to the nearer end. A tap still toggles it, and a vertical swipe still scrolls the page. In a right-to-left page the switch now mirrors.
+
+### Changed: clicking into a combobox selects its value; re-copy `select.js`
+
+Typing or Delete then replaces the whole value. A second click places the cursor.
+
+### Fixed: a filter chip's remove link fills the chip's end; re-vendor `tokens.css`
+
 ### Changed: a row menu sits at the trailing edge of whatever holds it
 
 `rst-row-menu` now pushes itself to the end of its row, so its panel opens beside the kebab in every browser. Before, a browser that stretched the menu across its container opened the panel at the far edge. If you put a row menu anywhere but last in a toolbar of your own, it now moves to the end; wrap it, or put it last.

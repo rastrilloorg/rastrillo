@@ -1016,7 +1016,7 @@ func TestNoGalleryPageOpensAModalOverTheGallery(t *testing.T) {
 func TestTreeShapeIsComplete(t *testing.T) {
 	files := render(t)
 	want := []string{"index.html"}
-	for _, name := range []string{"tokens.css", "rastrillo.js", "busy.js", "shell.js", "shell.css", "select.js", "datetime.js", "calendar.js", "gallery.js", "gallery.css"} {
+	for _, name := range []string{"tokens.css", "rastrillo.js", "busy.js", "anchor.js", "shell.js", "shell.css", "select.js", "datetime.js", "calendar.js", "gallery.js", "gallery.css"} {
 		want = append(want, hashedNames()[name], name)
 	}
 	for _, theme := range ui.ThemeNames() {

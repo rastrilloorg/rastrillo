@@ -43,7 +43,10 @@
    <details rst-shell-menu> card (whose content is its next sibling, the
    tail) closes on an outside click and on Escape, in EITHER spelling,
    so upgrading this file before running `rastrillo markup` leaves no
-   dead menus. Exclusivity stays native.
+   dead menus. Exclusivity stays native. (anchor.js, beside this file,
+   keeps a dropdown's menu on the screen where CSS anchor positioning
+   is missing.) A switch's knob can be dragged along its track, and
+   snaps to the nearer end.
 
    A polled response may answer 204 with a Rastrillo-Location header
    instead of a fragment; the shim navigates there, but only to a local
@@ -232,6 +235,63 @@
 
   document.addEventListener("click", dismissMenus, true);
   document.addEventListener("keydown", dismissMenus, true);
+
+  // A switch slides. A press on its track that moves 4px drags the knob
+  // (the CSS reads --rst-switch-x off the track) and on release the
+  // knob snaps to the nearer end; if that end is the other state, the
+  // checkbox is clicked, so input and change fire as for a tap. A press
+  // that does not move is the label's, which toggles as it always has;
+  // after a drag the label's own click is cancelled (never the
+  // checkbox's, which Space and the drop above send), so nothing
+  // toggles twice. The checkbox stays the state.
+  var TRACK = "[rst-switch-track],.rst-switch__track", drag = null, after = null;
+  // One drag at a time: a second finger is ignored until the first
+  // lifts, and a drag ends (cleaned up, committed only on pointerup)
+  // however its pointer goes. A press by the same pointer means its
+  // release was missed, so that drag is over.
+  document.addEventListener("pointerdown", function (e) {
+    if (drag && e.pointerId !== drag.id) return;
+    var t = e.target.closest && e.target.closest(TRACK), l = t && t.closest("[rst-switch],.rst-switch"), box = l && l.querySelector("input");
+    if (drag) drop({ type: "lost", pointerId: drag.id });
+    after = null;
+    // :disabled, not .disabled: a disabled fieldset disables the box
+    // without setting its property, and a click on it does nothing.
+    if (!box || box.matches(":disabled") || e.button) return;
+    var r = t.getBoundingClientRect(), max = r.width - r.height;
+    drag = { l: l, t: t, box: box, id: e.pointerId, x: e.clientX, max: max, at: box.checked ? max : 0, pos: -1,
+      dir: getComputedStyle(t).direction === "rtl" ? -1 : 1 };
+  });
+  document.addEventListener("pointermove", function (e) {
+    var g = drag, d;
+    if (!g || e.pointerId !== g.id) return;
+    d = (e.clientX - g.x) * g.dir;
+    if (g.pos < 0) {
+      if (Math.abs(d) < 4) return;
+      g.l.setAttribute("data-rst-drag", "");
+      g.t.setPointerCapture(e.pointerId);
+    }
+    g.pos = Math.min(g.max, Math.max(0, g.at + d));
+    g.t.style.setProperty("--rst-switch-x", g.pos + "px");
+  });
+  function drop(e) {
+    var g = drag;
+    if (!g || e.pointerId !== g.id) return;
+    drag = null;
+    if (g.pos < 0) return;
+    g.l.removeAttribute("data-rst-drag");
+    g.t.style.removeProperty("--rst-switch-x");
+    after = g.l;
+    if (e.type === "pointerup" && !g.box.matches(":disabled") && g.pos > g.max / 2 !== g.box.checked) g.box.click();
+  }
+  document.addEventListener("pointerup", drop);
+  document.addEventListener("pointercancel", drop);
+  document.addEventListener("lostpointercapture", drop);
+  document.addEventListener("click", function (e) {
+    if (after && after.contains(e.target) && e.target.tagName !== "INPUT") {
+      e.preventDefault();
+      after = null;
+    }
+  }, true);
 
   function scan() {
     document.querySelectorAll("[data-poll]").forEach(poll);

@@ -62,8 +62,8 @@
 
    Padding values are load-bearing for SC 2.5.8 Target Size (AA, new in
    WCAG 2.2): pagination chips measure about 30px, row action pills
-   about 27px, and the button sizes about 28px (sm), 34px (default) and
-   44px (lg) on their smaller axis, all clear of the 24px minimum. Do
+   about 27px, and the button sizes about 26px (sm), 34px (default) and
+   42px (lg) on their smaller axis, all clear of the 24px minimum. Do
    not shrink them without re-measuring; the button block shows the
    arithmetic.
 
@@ -338,24 +338,81 @@ body {
    screen is asking you to press. A CTA is not a toolbar button; give it
    `lg`.
 
-   Measured on the smaller axis, against SC 2.5.8's 24px floor — padding
-   both sides, plus the label's line box, plus the 1px border top and
-   bottom (the border is why the default step is 34px and not 32px). The
-   header comment carries these too; keep the two in step:
-     sm       0.3rem  × 2 +  11.5px × 1.4 + 2  =  9.6 + 16.1 + 2  ≈ 28px
-     default  0.45rem × 2 +  12.5px × 1.4 + 2  = 14.4 + 17.5 + 2  ≈ 34px
-     lg       0.7rem  × 2 +  14px   × 1.4 + 2  = 22.4 + 19.6 + 2  ≈ 44px
-   sm is the tightest thing in the file that is still a button. It is
-   for a dense row of them, not for making an ordinary button smaller,
-   and there is deliberately nothing below it. */
+   The steps are even, so the three read as a scale: 26/34/42 on a
+   desktop, 32/44/52 on a small or touch screen. Each is padding both
+   sides, plus the label's line box, plus the 1px border top and bottom
+   (the border is why the default step is 34px and not 32px). The
+   header comment carries the desktop row; keep the two in step:
+     desktop  sm       0.25rem  × 2 + 11.5px × 1.4 + 2  =  8   + 16.1 + 2  ≈ 26px
+              default  0.45rem  × 2 + 12.5px × 1.4 + 2  = 14.4 + 17.5 + 2  ≈ 34px
+              lg       0.65rem  × 2 + 14px   × 1.4 + 2  = 20.8 + 19.6 + 2  ≈ 42px
+     touch    sm       0.375rem × 2 + 13px   × 1.4 + 2  = 12   + 18.2 + 2  ≈ 32px
+              default  the target floor                                    = 44px
+              lg       0.875rem × 2 + 16px   × 1.4 + 2  = 28   + 22.4 + 2  ≈ 52px
+   The default step is the only one the floor sizes. Lifted to the
+   floor, sm was the same 44px as the default on a phone (32 beside 34
+   on a desktop), and the scale read as two sizes.
+
+   sm is drawn under the floor and still meets it: its ::after is an
+   invisible hit area, centred on the button and --rst-target on each
+   axis (or the button, where the button is bigger), so a tap or click
+   in it lands on the button. It is the tightest thing in the file that
+   is still a button: for a dense row of them, not for making an
+   ordinary button smaller, and there is deliberately nothing below it.
+   What the hit area costs is in the comment on it below. */
 .rst-btn--sm, [rst-btn~="sm"] {
+  --rst-btn-sm-pad: 0.25rem;
   font-size: var(--rst-fs-xs);
-  padding: 0.3rem 0.55rem;
+  padding: var(--rst-btn-sm-pad) 0.5rem;
 }
 .rst-btn--lg, [rst-btn~="lg"] {
   font-size: var(--rst-fs-base);
-  padding: 0.7rem 1.15rem;
+  padding: 0.65rem 1rem;
 }
+@media (pointer: coarse), (max-width: 40rem) {
+  .rst-btn--sm, [rst-btn~="sm"] { --rst-btn-sm-pad: 0.375rem; }
+  .rst-btn--lg, [rst-btn~="lg"] { padding-block: 0.875rem; }
+}
+
+/* sm's hit area. The floor block at the end of this file lifts every
+   button to --rst-target, and its .rst-btn rule is last, so the rule
+   that lets sm be drawn under it repeats the button's own name to
+   outweigh it: (0,2,0) here, where the floor is (0,1,0). That is the
+   only reason for the doubled selector. These live here and not in the
+   floor block because the block may set sizes only (ui's
+   TestTheFloorBlockCarriesOnlySizes): a margin and a pseudo-element are
+   layout, and they are how sm keeps the floor rather than being an
+   exception to it.
+
+   sm is drawn shorter than the floor and takes the difference as
+   margin, so its box in the layout is the floor's height and nothing
+   else can sit in the band a tap needs: --rst-btn-sm-reach is half the
+   difference, the floor less sm's own padding, line and border (3px on
+   a desktop, 6px on a phone; the touch query moves the padding and the
+   floor, and this follows). A positioned ::before spans that margin
+   band (::before because ::after is a tooltip's: an sm button with
+   rst-tip lost the hit area to the tip's pointer-events: none, and the
+   tip took the hit area's insets), so a tap in it lands on the button; it never reaches past the
+   margin, so it cannot cover a neighbour's edge, even with no gap
+   between them (two block sm buttons' margins collapse to one band,
+   which both reach into and neither crosses). Across, sm keeps the
+   floor's minimum width, so an icon-only sm is the floor wide and needs
+   no reach that way. The ::before paints nothing, and the focus ring is
+   the button's outline on its drawn border box.
+
+   What it costs, so it is chosen knowingly:
+   - A row or line holding an sm button is the floor tall, as it would
+     be with a default button in it, though the button is drawn smaller.
+   - An ancestor with overflow: hidden or clip cuts the hit area off at
+     its edge, as it cuts off anything it holds; the drawn 26px (32px on
+     a phone) is still over WCAG 2.5.8's 24px.
+   - An app's own position on the button still contains the ::before,
+     whatever it is but static: :where() weighs nothing, as the busy
+     spinner's containing block does. */
+.rst-btn--sm, [rst-btn~="sm"] { --rst-btn-sm-reach: max(0px, (var(--rst-target) - 2 * var(--rst-btn-sm-pad) - 1.4 * var(--rst-fs-xs) - 2px) / 2); }
+.rst-btn.rst-btn--sm, [rst-btn][rst-btn~="sm"] { margin-block: var(--rst-btn-sm-reach); min-block-size: auto; }
+:where(.rst-btn--sm), :where([rst-btn~="sm"]) { position: relative; }
+.rst-btn--sm::before, [rst-btn~="sm"]::before { content: ""; inset-block: calc(-1px - var(--rst-btn-sm-reach)); inset-inline: -1px; position: absolute; }
 
 /* block — a button that fills its container, for the one-action form
    (sign in, sign up, a confirm page) where the submit IS the screen.
@@ -1294,8 +1351,29 @@ a.rst-nm:hover { color: var(--rst-accent); }
 
 /* dropdown — the details/summary menu vocabulary (header overflow,
    list-bar Filter/Sort). Exclusivity between siblings is the native
-   details name attribute — zero JS. */
+   details name attribute — zero JS.
+   The panel hangs from the <details>, so the <details> hugs its
+   summary: fit-content. Left to fill a block or a stretching flex
+   column, it was as wide as its container and the panel opened at the
+   container's far edge: at 1280 the gallery's Filter opened its menu
+   at the other side of the frame. Unlike the row menu it is not then
+   moved to the trailing edge: a dropdown sits where the page puts it,
+   at the leading edge of a block as often as at the end of a bar. So
+   at the leading edge the panel has no room on the side it opens
+   toward, and it hugs only where something can flip it: anchor
+   positioning (the @supports block below), or anchor.js, which marks
+   the root data-rst-flip-menus where the feature is missing. With
+   neither, it keeps the container's width, far from a summary at the
+   leading edge but on the screen. :where(), so the three places that
+   keep the width they are given win: a dropdown inside another menu is
+   one of its rows; a shell's tail lays its menus out as a flex row on a
+   desktop, where auto is already the summary's width, and as
+   full-width rows of the phone card; and the sidebar's profile spans
+   its rail foot, the box its card is as wide as where it cannot be
+   anchored. */
 .rst-dropdown, [rst-dropdown] { position: relative; }
+:where(:root[data-rst-flip-menus] .rst-dropdown), :where(:root[data-rst-flip-menus] [rst-dropdown]) { inline-size: fit-content; }
+.rst-dropdown__menu .rst-dropdown, [rst-dropdown-menu] [rst-dropdown], .rst-shell__tail .rst-dropdown, [rst-shell-tail] [rst-dropdown], .rst-shell__rail-foot .rst-dropdown, [rst-shell-rail-foot] [rst-dropdown] { inline-size: auto; }
 .rst-dropdown > summary, [rst-dropdown] > summary { align-items: center; color: var(--rst-text-muted); cursor: pointer; display: flex; gap: 0.3rem; list-style: none; padding: 0.4rem 0.6rem; white-space: nowrap; }
 .rst-dropdown > summary::-webkit-details-marker, [rst-dropdown] > summary::-webkit-details-marker { display: none; }
 .rst-dropdown > summary:hover, [rst-dropdown] > summary:hover, .rst-dropdown[open] > summary, [rst-dropdown][open] > summary { color: var(--rst-text); }
@@ -1363,7 +1441,11 @@ a.rst-nm:hover { color: var(--rst-accent); }
    Safari gain the behaviour with no release from us. The alternative
    was script, which would put positioning behind JavaScript and make
    the scriptless path worse than the one we already ship. That trade is
-   the wrong way round for this library.
+   the wrong way round for this library. The one script there is, for a
+   dropdown that hugs its summary at the leading edge, is anchor.js: it
+   runs only where this block does not apply and only flips inline (see
+   .is-flip-inline below); without it such a panel would open off the
+   screen.
 
    anchor-scope is load-bearing, not decoration. anchor-name is a
    document-wide name, so without a scope every menu on the page would
@@ -1417,6 +1499,7 @@ a.rst-nm:hover { color: var(--rst-accent); }
     anchor-name: --rst-menu;
     anchor-scope: --rst-menu;
   }
+  :where(.rst-dropdown), :where([rst-dropdown]) { inline-size: fit-content; }
   .rst-dropdown__menu,
   [rst-dropdown-menu],
   .rst-row-menu__panel,
@@ -1430,6 +1513,17 @@ a.rst-nm:hover { color: var(--rst-accent); }
     position-visibility: anchors-visible;
   }
 }
+/* An engine without anchor positioning cannot flip a panel in CSS:
+   where it hangs is the <details>' box, and nothing in a stylesheet
+   knows where that box is on the screen. anchor.js, a file of its own
+   that does nothing where the feature exists and can be deleted once
+   an app's browsers all have it, measures a dropdown's panel as it
+   opens, only where the panel is absolute, and when it
+   would leave the screen on the side it opens toward, and fits from the
+   summary's other edge, marks the <details> .is-flip-inline. Without
+   the script that engine keeps the dropdown as wide as its container
+   (see the dropdown's own rule), so the panel stays on the screen. */
+.rst-dropdown.is-flip-inline > .rst-dropdown__menu, [rst-dropdown].is-flip-inline > [rst-dropdown-menu] { inset-inline-end: auto; inset-inline-start: 0; }
 
 .rst-caret, [rst-caret] { align-items: center; color: var(--rst-text-faint); display: inline-flex; font-size: 0.8em; transition: transform 0.15s; }
 /* 12px, smaller than an icon's 16: the chevron marks a disclosure and
@@ -1444,10 +1538,16 @@ details[open] > summary > .rst-caret, details[open] > summary > [rst-caret] { tr
    17px until the accessibility gate measured it. The 24px here is only
    its size without that block. The chip has no block padding, so the ×
    sets its height rather than adding to it: the chip is the × plus its
-   1px border, 34px on a desktop. */
-.rst-ftok, [rst-ftok] { align-items: center; background: var(--rst-surface); border: 1px solid var(--rst-line-strong); border-radius: 7px; display: inline-flex; font-size: var(--rst-fs-xs); gap: 0.45rem; padding-block: 0; padding-inline: 0.6rem 0.2rem; }
+   1px border, 34px on a desktop.
+   No padding at the trailing end either: the × is the chip's end, and
+   its hover fill runs to the border on three sides, with the chip's
+   7px corners less the 1px border on its trailing two. Inset by a
+   padding, the fill floated inside the chip with a gap after it and
+   read as a second, smaller button. Logical corners, so a
+   right-to-left chip rounds its left end. */
+.rst-ftok, [rst-ftok] { align-items: center; background: var(--rst-surface); border: 1px solid var(--rst-line-strong); border-radius: 7px; display: inline-flex; font-size: var(--rst-fs-xs); gap: 0.45rem; padding-block: 0; padding-inline: 0.6rem 0; }
 .rst-ftok .rst-ftok__k, [rst-ftok] [rst-ftok-k] { color: var(--rst-text-muted); }
-.rst-ftok a, [rst-ftok] a { align-items: center; border-radius: 4px; color: var(--rst-text-faint); display: inline-flex; height: 24px; justify-content: center; text-decoration: none; width: 24px; }
+.rst-ftok a, [rst-ftok] a { align-items: center; border-radius: 0; border-end-end-radius: 6px; border-start-end-radius: 6px; color: var(--rst-text-faint); display: inline-flex; height: 24px; justify-content: center; text-decoration: none; width: 24px; }
 .rst-ftok a:hover, [rst-ftok] a:hover { background: var(--rst-tone-negative-bg); color: var(--rst-tone-negative-fg); }
 
 /* Reduced motion: the caret's rotate transition is the only new
@@ -1518,6 +1618,21 @@ textarea.rst-input, textarea[rst-input] { min-height: 5rem; resize: vertical; }
   .rst-textarea, [rst-textarea] { font-size: max(1rem, 1em); }
 }
 .rst-textarea:focus-visible, [rst-textarea]:focus-visible { outline: 2px solid var(--rst-accent); outline-offset: 2px; }
+/* The textarea grows with its text: field-sizing: content, from the
+   5rem minimum above (which the touch query leaves alone, so a phone
+   keeps it too) to half the viewport, past which it scrolls. Half,
+   because a long paste in a box with no cap pushed the label above it
+   and the button below it off the screen; a fixed number of lines
+   would be most of a phone and a sliver of a desktop. resize: vertical
+   still works, and a box the reader drags stays the size they chose.
+   Its rows attribute no longer sets a height where this applies: the
+   box is its text. An engine without field-sizing keeps the fixed,
+   resizable 5rem box, and the cap is inside the @supports so that box
+   can still be dragged as tall as it could before. Layout, not a size
+   floor, so it is here and not in the floor block. */
+@supports (field-sizing: content) {
+  .rst-textarea, [rst-textarea] { field-sizing: content; max-block-size: 50dvh; }
+}
 /* The three message lines under a control. display:block is load-bearing
    rather than cosmetic: the field partial emits them as <p>, and the
    field-text/date/time/select family as <small>, and an inline <small>
@@ -1530,17 +1645,30 @@ textarea.rst-input, textarea[rst-input] { min-height: 5rem; resize: vertical; }
 small.rst-field__hint, small[rst-field-hint] { display: block; font-size: var(--rst-fs-xs); margin: 0.45rem 0 0; }
 
 /* switch — the one toggle mechanism: real checkbox, visible track. The
-   knob's left: 2px is deliberately physical, not inset-inline-start: it
-   is the origin of a physical translateX, so the pair has to travel the
-   same axis in either writing mode or the knob leaves the track. What
-   that gives up: the knob therefore always travels left-to-right, so a
-   mirrored switch would need a direction-scoped rule of its own. */
+   knob sits at the track's inline start and travels --rst-switch-x
+   toward its end: 0 off, 15px on, and while it is dragged whatever
+   rastrillo.js writes on the track. translateX is physical, so a
+   right-to-left switch negates it (--rst-switch-dir) and the knob
+   starts at the right; the start and the travel mirror together, or the
+   knob leaves the track. The sign comes from the track's own direction,
+   :dir(), which inset-inline-start and the drag read too: an LTR section
+   inside an RTL page took the ancestor's -1 and sent the knob left out
+   of its track. The [dir="rtl"] rule before it is for an engine without
+   :dir(), which drops the two rules after it. The transform's transition is the snap, with
+   scripts or without; a drag turns it off so the knob follows the
+   pointer, and on release it eases to the end. pan-y lets a vertical
+   swipe on the track scroll the page and keeps a horizontal one for the
+   drag. */
 .rst-switch, [rst-switch] { align-items: center; cursor: pointer; display: inline-flex; gap: 0.6rem; position: relative; }
 .rst-switch input, [rst-switch] input { height: 1px; opacity: 0; position: absolute; width: 1px; }
-.rst-switch__track, [rst-switch-track] { background: var(--rst-line-strong); border-radius: 10px; flex: none; height: 19px; position: relative; transition: background 0.15s; width: 34px; }
-.rst-switch__track::after, [rst-switch-track]::after { background: var(--rst-surface); border-radius: 50%; box-shadow: var(--rst-shadow-knob); content: ""; height: 15px; left: 2px; position: absolute; top: 2px; transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1); width: 15px; }
-.rst-switch:has(input:checked) .rst-switch__track, [rst-switch]:has(input:checked) [rst-switch-track] { background: var(--rst-accent); }
-.rst-switch:has(input:checked) .rst-switch__track::after, [rst-switch]:has(input:checked) [rst-switch-track]::after { transform: translateX(15px); }
+.rst-switch__track, [rst-switch-track] { --rst-switch-x: 0px; background: var(--rst-line-strong); border-radius: 10px; flex: none; height: 19px; position: relative; touch-action: pan-y; transition: background 0.15s; width: 34px; }
+[dir="rtl"] .rst-switch__track, [dir="rtl"] [rst-switch-track] { --rst-switch-dir: -1; }
+.rst-switch__track:dir(ltr), [rst-switch-track]:dir(ltr) { --rst-switch-dir: 1; }
+.rst-switch__track:dir(rtl), [rst-switch-track]:dir(rtl) { --rst-switch-dir: -1; }
+.rst-switch__track::after, [rst-switch-track]::after { background: var(--rst-surface); border-radius: 50%; box-shadow: var(--rst-shadow-knob); content: ""; height: 15px; inset-inline-start: 2px; position: absolute; top: 2px; transform: translateX(calc(var(--rst-switch-x) * var(--rst-switch-dir, 1))); transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1); width: 15px; }
+.rst-switch:has(input:checked) .rst-switch__track, [rst-switch]:has(input:checked) [rst-switch-track] { --rst-switch-x: 15px; background: var(--rst-accent); }
+.rst-switch[data-rst-drag], [rst-switch][data-rst-drag] { -webkit-user-select: none; user-select: none; }
+.rst-switch[data-rst-drag] .rst-switch__track::after, [rst-switch][data-rst-drag] [rst-switch-track]::after { transition: none; }
 .rst-switch:has(input:focus-visible) .rst-switch__track, [rst-switch]:has(input:focus-visible) [rst-switch-track] { outline: 2px solid var(--rst-accent); outline-offset: 2px; }
 .rst-switch:has(input:disabled), [rst-switch]:has(input:disabled) { cursor: default; opacity: 0.55; }
 
@@ -1676,8 +1804,7 @@ small.rst-field__hint, small[rst-field-hint] { display: block; font-size: var(--
 .rst-tblock .rst-tblock__title, [rst-tblock] [rst-tblock-title] { display: block; font-size: var(--rst-fs-sm); font-weight: 550; }
 .rst-tblock .rst-tblock__desc, [rst-tblock] [rst-tblock-desc] { color: var(--rst-text-muted); display: block; font-size: var(--rst-fs-xs); }
 .rst-tblock .rst-tblock__head input, [rst-tblock] [rst-tblock-head] input { height: 1px; opacity: 0; position: absolute; width: 1px; }
-.rst-tblock:has(.rst-tblock__head input:checked) .rst-switch__track, [rst-tblock]:has([rst-tblock-head] input:checked) [rst-switch-track] { background: var(--rst-accent); }
-.rst-tblock:has(.rst-tblock__head input:checked) .rst-switch__track::after, [rst-tblock]:has([rst-tblock-head] input:checked) [rst-switch-track]::after { transform: translateX(15px); }
+.rst-tblock:has(.rst-tblock__head input:checked) .rst-switch__track, [rst-tblock]:has([rst-tblock-head] input:checked) [rst-switch-track] { --rst-switch-x: 15px; background: var(--rst-accent); }
 .rst-tblock:has(.rst-tblock__head input:focus-visible) .rst-switch__track, [rst-tblock]:has([rst-tblock-head] input:focus-visible) [rst-switch-track] { outline: 2px solid var(--rst-accent); outline-offset: 2px; }
 .rst-tblock > .rst-tblock__body, [rst-tblock] > [rst-tblock-body] { display: none; }
 .rst-tblock:has(.rst-tblock__head input:checked) > .rst-tblock__body, [rst-tblock]:has([rst-tblock-head] input:checked) > [rst-tblock-body] { background: var(--rst-surface-2); border-radius: 0 0 var(--rst-radius) var(--rst-radius); border-top: 1px solid var(--rst-line); display: block; padding: 0.9rem 1.05rem 1.05rem; }

@@ -13,11 +13,12 @@ package ui
 // vendoredNames lists the vendored files in the order they are worth
 // reading: the structural stylesheet, the theme that colours it and the
 // shells' slide, then the scripts: the shim and the busy rule beside it,
-// the shells' navigation, and calendar.js last because it is the only
+// the menus' fallback for a browser without anchor positioning, the
+// shells' navigation, and calendar.js last because it is the only
 // one that is not an enhancement in its own right: it draws the month
 // grid datetime.js asks it for. TestVendoredNamesMatchVendoredAssets
 // holds this and VendoredAssets to the same set.
-var vendoredNames = []string{"tokens.css", "theme.css", "shell.css", "rastrillo.js", "busy.js", "shell.js", "select.js", "datetime.js", "calendar.js"}
+var vendoredNames = []string{"tokens.css", "theme.css", "shell.css", "rastrillo.js", "busy.js", "anchor.js", "shell.js", "select.js", "datetime.js", "calendar.js"}
 
 // VendoredNames returns the names the vendored files take in an app's
 // static/ directory, in a stable order, for a caller that wants to
@@ -48,6 +49,7 @@ func VendoredAssets(theme string) (map[string][]byte, bool) {
 		"shell.css":    ShellCSS(),
 		"rastrillo.js": ShimJS(),
 		"busy.js":      BusyJS(),
+		"anchor.js":    AnchorJS(),
 		"shell.js":     ShellJS(),
 		"select.js":    SelectJS(),
 		"datetime.js":  DatetimeJS(),

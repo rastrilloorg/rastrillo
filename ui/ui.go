@@ -267,6 +267,9 @@ var shimJS []byte
 //go:embed busy.js
 var busyJS []byte
 
+//go:embed anchor.js
+var anchorJS []byte
+
 //go:embed select.js
 var selectJS []byte
 
@@ -353,6 +356,13 @@ func ShimJS() []byte { return shimJS }
 // by rastrillo new, like ShimJS, and app-owned from then on. Linking it
 // is the whole opt-in; the file's own header comment is its contract.
 func BusyJS() []byte { return busyJS }
+
+// AnchorJS returns anchor.js, which keeps a dropdown's menu on the
+// screen in a browser without CSS anchor positioning and does nothing
+// in one with it. Delivered once by rastrillo new, like ShimJS, and
+// app-owned from then on; an app deletes it, and its tag, once every
+// browser it supports has the feature.
+func AnchorJS() []byte { return anchorJS }
 
 // SelectJS returns select.js — field-select's searchable enhancement,
 // on exactly the same terms as ShimJS: delivered once by rastrillo new,
