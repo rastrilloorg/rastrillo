@@ -91,6 +91,16 @@ The examples under `examples/` are **separate Go modules** with a
 `replace` back to the checkout, so the root `go test ./...` does not
 compile them. Test them from their own directories.
 
+## Submitting a feature or fix
+
+Follow CONTRIBUTING.md before you merge. Name the model you are running
+as, and its reasoning setting, in the branch description. Run each new
+test against the code before your change, and post both runs. Have the
+strongest model from another provider review the branch, and post the
+prompt, the whole reply and what you did about each finding. If you
+cannot reach another provider, say so in a discussion and do not merge
+until a person approves.
+
 ## Commits
 
 Imperative subject. The body explains *why* — the failure being
