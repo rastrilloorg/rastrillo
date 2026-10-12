@@ -10,6 +10,10 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+### Changed: sign-in lands back on the page that asked for it; post `return_to` from your own sign-in page
+
+`RequireSession` and `RequireFreshSession` now send a signed-out visitor to `SigninPath?return_to=<the page>`, and once they sign in they land back on that page. Before, they always landed on `SignedInPath`. The shipped sign-in screen carries the destination for you. If you render your own sign-in page, add a hidden `return_to` field set to `SigninState(r).ReturnTo` to each form, and use `SigninState(r).PasskeyFinish()` as the passkey button's finish URL. Without them, your visitors still land on `SignedInPath`.
+
 ### Changed: buttons come in an even scale, and Small is drawn smaller than its tap area; re-vendor `tokens.css`
 
 Small is drawn 26px tall on a desktop and 32px on a phone, Default 34px and 44px, Large 42px and 52px. Small keeps the full tap area, 32px or 44px, through a margin above and below it, so a row holding a Small button is as tall as that area. The `--rst-target` floor is the tap area, not the drawn size. The buttons in `form-foot` and `confirm-form` are Large.

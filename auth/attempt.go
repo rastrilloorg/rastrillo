@@ -123,9 +123,12 @@ func (a *Auth) openAttempt(r *http.Request) (attempt, cookieState) {
 // difference is a membership oracle (round 2, finding 17).
 func (a *Auth) answerSent(w http.ResponseWriter, r *http.Request, address string) {
 	id := a.noteAttempt(w, attemptLink, address, r.FormValue("expect") == "keymail")
+	// The destination rides along so the Sent page's "Use a different
+	// email" posts it again; without it the next Begin forgets it.
+	to := returnToParam(postedReturnTo(r))
 	if id == "" {
-		a.redirect(w, r, a.cfg.SigninPath+"?sent=1")
+		a.redirect(w, r, a.cfg.SigninPath+"?sent=1"+to)
 		return
 	}
-	a.redirect(w, r, a.cfg.SigninPath+"?sent=1&attempt="+id)
+	a.redirect(w, r, a.cfg.SigninPath+"?sent=1&attempt="+id+to)
 }

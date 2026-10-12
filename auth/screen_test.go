@@ -122,6 +122,17 @@ func cookieShape(w *httptest.ResponseRecorder) []string {
 var attemptParam = regexp.MustCompile(`attempt=[A-Za-z0-9_-]+`)
 
 // redirectShape is the Location with the random attempt id blanked.
+// returnCookieSet is what a response wrote to the return_to cookie, or
+// nil when it left it alone.
+func returnCookieSet(w *httptest.ResponseRecorder) *http.Cookie {
+	for _, c := range w.Result().Cookies() {
+		if strings.HasSuffix(c.Name, "rastrillo_return_to") {
+			return c
+		}
+	}
+	return nil
+}
+
 func redirectShape(w *httptest.ResponseRecorder) string {
 	return attemptParam.ReplaceAllString(w.Header().Get("Location"), "attempt=ID")
 }
@@ -461,7 +472,7 @@ func TestAdmitRemembersTheWayInAndEndsTheAttempt(t *testing.T) {
 		a.RequireSession(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {
 			t.Fatal("a remembered-method cookie reached a guarded handler")
 		})).ServeHTTP(w, only.request(http.MethodGet, "/private", nil))
-		if w.Code != http.StatusSeeOther || w.Header().Get("Location") != "/signin" {
+		if w.Code != http.StatusSeeOther || w.Header().Get("Location") != "/signin?return_to=%2Fprivate" {
 			t.Fatalf("guarded GET with only a remembered cookie: %d → %q", w.Code, w.Header().Get("Location"))
 		}
 	})

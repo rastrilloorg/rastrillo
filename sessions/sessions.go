@@ -477,7 +477,14 @@ func (s *Sessions) Sweep(now time.Time) error {
 // it: "/\t/evil.example" would pass a bare "//" check and still
 // navigate scheme-relative off-site.
 func SafeReturn(r *http.Request, fallback string) string {
-	to := r.FormValue("return_to")
+	return SafeReturnTo(r.FormValue("return_to"), fallback)
+}
+
+// SafeReturnTo is SafeReturn's own check, on a bare string rather than
+// a request's return_to field — for a caller that has one from
+// somewhere else a form can't reach, a cookie that outlived the
+// request that set it, say.
+func SafeReturnTo(to, fallback string) string {
 	if to == "" || !strings.HasPrefix(to, "/") ||
 		strings.HasPrefix(to, "//") || strings.ContainsAny(to, "\\") ||
 		strings.ContainsFunc(to, func(c rune) bool { return c < 0x20 || c == 0x7f }) {

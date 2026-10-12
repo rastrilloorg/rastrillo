@@ -545,7 +545,7 @@ func TestAnAdmissionWrapperIsNoOracle(t *testing.T) {
 				a.Begin(w, r)
 			}
 		}
-		form := url.Values{"address": {"ada@example.com"}, "expect": {"keymail"}}
+		form := url.Values{"address": {"ada@example.com"}, "expect": {"keymail"}, "return_to": {"/t/accounts"}}
 		ab, rb := newBrowser(), newBrowser()
 		admitted := ab.do(wrapper(true), http.MethodPost, "/signin", form)
 		m.forget()
@@ -564,8 +564,8 @@ func TestAnAdmissionWrapperIsNoOracle(t *testing.T) {
 		if screen && sa.SentTo != "ada@example.com" {
 			t.Fatalf("screen on: SentTo %q", sa.SentTo)
 		}
-		if !screen && (sa.SentTo != "" || admitted.Header().Get("Location") != "/signin?sent=1") {
-			t.Fatalf("screen off: %+v %q, want today's plain ?sent=1", sa, admitted.Header().Get("Location"))
+		if !screen && (sa.SentTo != "" || admitted.Header().Get("Location") != "/signin?sent=1&return_to=%2Ft%2Faccounts") {
+			t.Fatalf("screen off: %+v %q, want ?sent=1 with only the destination added", sa, admitted.Header().Get("Location"))
 		}
 	}
 }

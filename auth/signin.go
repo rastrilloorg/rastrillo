@@ -7,6 +7,7 @@ import (
 
 	"amadan.net/rastrillo/rastrillo/lastsignin"
 	"amadan.net/rastrillo/rastrillo/pow"
+	"amadan.net/rastrillo/rastrillo/sessions"
 )
 
 // SigninStep is which screen the sign-in page shows. A string, not an
@@ -84,6 +85,12 @@ type SigninState struct {
 	// because a refusal replaces the keymail problem and the visitor
 	// would otherwise loop back to a provider that just failed them.
 	Force bool
+	// ReturnTo is the page to land on once signed in: the query's
+	// return_to when it is same-site, else "". The partial posts it with
+	// every form and on the passkey finish URL (PasskeyFinish), because
+	// the page is the only place it arrives; Begin forgets a destination
+	// a post does not repeat.
+	ReturnTo string
 	// Proof is the challenge the Begin form carries; nil with
 	// Config.ProofOff. A recovery challenge when the query has rec=1.
 	// Minting writes nothing, so SigninState still touches no database.
@@ -154,6 +161,7 @@ func (a *Auth) SigninState(r *http.Request) SigninState {
 		st.Step, st.Confirm = StepConfirm, &d
 		return st
 	}
+	st.ReturnTo = sessions.SafeReturnTo(q.Get("return_to"), "")
 	if a.cfg.Proof != nil {
 		now := a.now()
 		f := a.cfg.Proof.Form(now, ProofScope)
@@ -277,7 +285,31 @@ func (a *Auth) Forget(w http.ResponseWriter, r *http.Request) {
 	}
 	a.jar.Clear(w)
 	a.jar.EndAttempt(w)
-	a.redirect(w, r, a.cfg.SigninPath)
+	// A different address is still going to the same page.
+	to := a.cfg.SigninPath
+	if dest := postedReturnTo(r); dest != "" {
+		to += "?return_to=" + url.QueryEscape(dest)
+	}
+	a.redirect(w, r, to)
+}
+
+// PasskeyFinish is the passkey door's finish URL, with ReturnTo on its
+// query: the finish request's body is the assertion's JSON, so the
+// query is the one place passkey's sessions.SafeReturn can read it.
+func (s SigninState) PasskeyFinish() string {
+	if s.Passkey == nil {
+		return ""
+	}
+	u, err := url.Parse(s.Passkey.FinishPath)
+	if s.ReturnTo == "" || err != nil {
+		return s.Passkey.FinishPath
+	}
+	// Set, not appended: SafeReturn reads the first return_to, so one
+	// already on FinishPath would win over this page's.
+	q := u.Query()
+	q.Set("return_to", s.ReturnTo)
+	u.RawQuery = q.Encode()
+	return u.String()
 }
 
 // Door is which way in the page offers, derived here rather than in the

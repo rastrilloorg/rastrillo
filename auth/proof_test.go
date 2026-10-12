@@ -194,7 +194,9 @@ func TestAnAdmissionWrapperIsNoOracleWithProof(t *testing.T) {
 	for _, screen := range []bool{false, true} {
 		t.Run("SigninScreen="+strconv.FormatBool(screen), func(t *testing.T) {
 			a, _ := newProofAuth(t, func(c *Config) { c.SigninScreen = screen })
-			base := url.Values{"address": {"ada@example.com"}, "force": {"1"}}
+			// return_to too: a destination cookie only Begin set would
+			// tell the two apart by its presence alone.
+			base := url.Values{"address": {"ada@example.com"}, "force": {"1"}, "return_to": {"/t/accounts"}}
 			solved := func() url.Values { return filled(t, a, "", base) }
 			paths := []struct {
 				name string
@@ -255,6 +257,36 @@ func TestAnAdmissionWrapperIsNoOracleWithProof(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+// A body that does not parse is refused at the front door. Nothing may
+// read a field before the guard does: FormValue swallows the parse
+// error and a later ParseForm does not repeat it.
+func TestAMalformedBodyIsRefusedAtTheFrontDoor(t *testing.T) {
+	a, _ := newProofAuth(t, nil)
+	body := filled(t, a, "", url.Values{"address": {"ada@example.com"}, "force": {"1"}, "return_to": {"/t/accounts"}}).Encode() + "&junk=%ZZ"
+	r := httptest.NewRequest(http.MethodPost, "http://app.test/signin", strings.NewReader(body))
+	r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	r.Header.Set("Sec-Fetch-Site", "same-origin")
+	w := httptest.NewRecorder()
+	a.Begin(w, r)
+	if q := location(t, w); q.Get("err") != "check" {
+		t.Fatalf("a malformed body → %s, want err=check", w.Header().Get("Location"))
+	}
+}
+
+// A refusal keeps the destination on the page it sends the visitor to,
+// and records none: only an admitted post does, for Begin and
+// AnswerAsSent alike.
+func TestAFrontDoorRefusalKeepsTheDestination(t *testing.T) {
+	a, _ := newProofAuth(t, nil)
+	w := newBrowser().do(a.Begin, http.MethodPost, "/signin", url.Values{"address": {"ada@example.com"}, "return_to": {"/t/accounts"}})
+	if q := location(t, w); q.Get("err") != "check" || q.Get("return_to") != "/t/accounts" {
+		t.Fatalf("an unproved post → %s, want err=check with return_to", w.Header().Get("Location"))
+	}
+	if c := returnCookieSet(w); c != nil {
+		t.Fatalf("a refused post recorded a destination: %+v", c)
 	}
 }
 

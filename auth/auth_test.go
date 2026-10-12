@@ -323,8 +323,8 @@ func TestRequireFreshSessionStepUp(t *testing.T) {
 	if admitted {
 		t.Fatal("hour-old session admitted past a 5m gate")
 	}
-	if rec.Code != http.StatusSeeOther || rec.Header().Get("Location") != "/signin?reauth=1" {
-		t.Fatalf("stale GET: %d → %q, want 303 → /signin?reauth=1", rec.Code, rec.Header().Get("Location"))
+	if rec.Code != http.StatusSeeOther || rec.Header().Get("Location") != "/signin?return_to=%2Fsettings&reauth=1" {
+		t.Fatalf("stale GET: %d → %q, want 303 → /signin?return_to=%%2Fsettings&reauth=1", rec.Code, rec.Header().Get("Location"))
 	}
 	if rec, _ := drive("POST"); rec.Code != http.StatusForbidden {
 		t.Fatalf("stale POST: %d, want 403", rec.Code)
@@ -339,8 +339,8 @@ func TestRequireSessionWithoutSession(t *testing.T) {
 
 	w := httptest.NewRecorder()
 	protected.ServeHTTP(w, httptest.NewRequest("GET", "http://app.test/private", nil))
-	if w.Code != http.StatusSeeOther || w.Header().Get("Location") != "/signin" {
-		t.Fatalf("GET without session: %d → %q, want 303 → /signin", w.Code, w.Header().Get("Location"))
+	if w.Code != http.StatusSeeOther || w.Header().Get("Location") != "/signin?return_to=%2Fprivate" {
+		t.Fatalf("GET without session: %d → %q, want 303 → /signin?return_to=%%2Fprivate", w.Code, w.Header().Get("Location"))
 	}
 
 	w = httptest.NewRecorder()

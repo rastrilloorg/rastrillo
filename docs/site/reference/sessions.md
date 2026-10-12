@@ -148,6 +148,7 @@ viewer.
 
 ```go
 func SafeReturn(r *http.Request, fallback string) string
+func SafeReturnTo(to, fallback string) string
 ```
 
 Returns `return_to` when it is a same-site absolute path — exactly one
@@ -158,6 +159,8 @@ endpoint.
 Control characters are in that list because browsers strip tab, CR and
 LF from a URL before parsing it, so `/\t/evil.example` passes a bare
 `//` check and still navigates scheme-relative off-site.
+
+`SafeReturnTo` is the same check on a string you already have, such as a destination you kept in a cookie.
 
 ## Tokens
 

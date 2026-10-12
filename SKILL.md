@@ -260,8 +260,8 @@ verifies a credential and calls `SignIn` — the whole contract.
 - Signed-in routes: chi `Group` with `s.Require` — signed-out GET/HEAD
   redirects to `SigninPath` with a same-site `return_to`; the rest 403.
   `s.Middleware` only resolves, blocks nothing.
-- `s.RequireFresh(maxAge)` step-up: past maxAge, GET/HEAD goes to
-  `SigninPath?reauth=1`; re-signing-in, a `passkey` assertion or a
+- `s.RequireFresh(maxAge)` step-up: past maxAge, GET/HEAD adds
+  `reauth=1`; re-signing-in, a `passkey` assertion or a
   `totp` code rotates fresh. 2FA: `secondfactor.New` is the gate;
   `Config.SecondFactor` = `g.Hold`; `g.Add(pk, tp)`; a factor completes
   `g.Pending(r)` via `g.Complete`. Merge `secondfactor.Schema` AFTER
@@ -292,14 +292,15 @@ to the keymail ceremony where the address has one): `auth.New` with
 `Begin`/`Callback`/`Verify`/`Signout` and `RequireSession`, same
 `sessions` core, `Proof`/`ProofOff` as for `password`. `Begin` checks
 the proof before the limiter, refuses to `?err=check&rec=1`, and
-`SigninState(r).Proof` is the challenge to render. **Mount `Verify` on
+`SigninState(r)` carries `.Proof` (render it) and `.ReturnTo` (post it
+as `return_to`). **Mount `Verify` on
 GET *and* POST:** GET draws a Sign in button and spends nothing, POST
-redeems, so a mail scanner's fetch can't spend the link; GET alone
+redeems, so a mail scanner can't spend the link; GET alone
 405s. **Under `auth`, never
 `sessions.UserID`:** the Subject is the verified email, so it returns
 `(0, false)` and the §3 seam would scope every query to `user_id = 0`.
 Use `auth.From(r)` or `sessions.Current(r)` and map the address to your
-user row's id before scoping.
+user's id first.
 
 **Sign-in screen:** set `auth.Config.SigninScreen: true` and render
 `{{template "signin" (dict "State" .Signin "Brand" .Brand)}}` (title:

@@ -532,6 +532,12 @@ func (a *Auth) SessionCookie() string { return a.sessions.CookieName() }
 
 func (a *Auth) pendingCookie() string { return a.cookieName("rastrillo_pending") }
 
+// returnCookie holds a sign-in's destination across the mail or
+// keymail round trip (keepReturnTo says why). It lives as long as
+// LinkTTL, the longer of the two ceremonies: past that, the link it
+// waits for is spent anyway.
+func (a *Auth) returnCookie() string { return a.cookieName("rastrillo_return_to") }
+
 func (a *Auth) setCookie(w http.ResponseWriter, name, value string, maxAge int) {
 	http.SetCookie(w, &http.Cookie{
 		Name: name, Value: value, Path: "/",

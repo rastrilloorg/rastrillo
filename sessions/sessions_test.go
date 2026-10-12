@@ -527,5 +527,11 @@ func TestSafeReturnRejectsAbsoluteSchemelessAndControlChars(t *testing.T) {
 		if got := sessions.SafeReturn(r, fallback); got != c.want {
 			t.Errorf("SafeReturn(return_to=%q) = %q, want %q", c.returnTo, got, c.want)
 		}
+		// SafeReturnTo is the same check on the bare string — SafeReturn
+		// is just this plus the FormValue read — so it must agree on
+		// every case above, not only its own.
+		if got := sessions.SafeReturnTo(c.returnTo, fallback); got != c.want {
+			t.Errorf("SafeReturnTo(%q) = %q, want %q", c.returnTo, got, c.want)
+		}
 	}
 }

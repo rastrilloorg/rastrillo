@@ -55,6 +55,7 @@ func (a *Auth) Begin(w http.ResponseWriter, r *http.Request) {
 	}
 	force := r.FormValue("force") != ""
 	address := r.FormValue("address")
+	to := postedReturnTo(r)
 	var method signin.Method
 	if force {
 		method = signin.MethodMagicLink
@@ -64,16 +65,16 @@ func (a *Auth) Begin(w http.ResponseWriter, r *http.Request) {
 	switch {
 	case errors.Is(err, signin.ErrRateLimited):
 		a.noteAttempt(w, attemptProblem, address, false)
-		a.redirect(w, r, a.problemURL("rate", recovered, force))
+		a.redirect(w, r, a.problemURL("rate", recovered, force, to))
 		return
 	case errors.Is(err, signin.ErrBadAddress):
 		a.noteAttempt(w, attemptProblem, address, false)
-		a.redirect(w, r, a.problemURL("address", recovered, force))
+		a.redirect(w, r, a.problemURL("address", recovered, force, to))
 		return
 	case err != nil:
 		a.cfg.Logger.Error("rastrillo/auth: begin sign-in", "err", err)
 		a.noteAttempt(w, attemptProblem, address, false)
-		a.redirect(w, r, a.problemURL("1", recovered, force))
+		a.redirect(w, r, a.problemURL("1", recovered, force, to))
 		return
 	}
 
@@ -100,10 +101,14 @@ func (a *Auth) Begin(w http.ResponseWriter, r *http.Request) {
 // stranger, telling anyone who is a member without a single solve. It
 // also spends the token on both paths, or a stranger's one solved token
 // could be replayed for ever where a member's works once. ok false
-// means the refusal has been written. With Proof unset it admits
-// everything and writes nothing.
+// means the refusal has been written.
+//
+// An admitted post also records its return_to (keepReturnTo) here, for
+// the same reason: a destination cookie only Begin set would tell a
+// member from a stranger by its presence alone.
 func (a *Auth) frontDoor(w http.ResponseWriter, r *http.Request) (recovered, ok bool) {
 	if a.cfg.Proof == nil {
+		a.keepReturnTo(w, r)
 		return false, true
 	}
 	// First, before any FormValue: FormValue swallows a parse error and
@@ -116,10 +121,65 @@ func (a *Auth) frontDoor(w http.ResponseWriter, r *http.Request) (recovered, ok 
 	if !adm.OK {
 		a.cfg.Logger.Debug("rastrillo/auth: sign-in refused at the front door", "reason", adm.Reason, "also", adm.Also)
 		a.noteAttempt(w, attemptProblem, r.FormValue("address"), false)
-		a.redirect(w, r, a.problemURL("check", true, r.PostFormValue("force") != ""))
+		a.redirect(w, r, a.problemURL("check", true, r.PostFormValue("force") != "", postedReturnTo(r)))
 		return false, false
 	}
+	a.keepReturnTo(w, r)
 	return adm.Recovered(), true
+}
+
+// postedReturnTo is the same-site return_to a sign-in form posted, or
+// "". PostFormValue rather than FormValue so a Begin URL's own query
+// cannot choose it; the sign-in page puts it in the form.
+func postedReturnTo(r *http.Request) string {
+	return sessions.SafeReturnTo(r.PostFormValue("return_to"), "")
+}
+
+// keepReturnTo carries a posted return_to across the mail or keymail
+// round trip, where no form survives: the link is opened minutes later,
+// often as a request that carries nothing of the sign-in page. admit
+// reads it back. A post without one forgets an older destination, or a
+// sign-in abandoned at /accounts would send the next plain sign-in
+// there. Escaped because Go drops ';' and '"' from a raw cookie value,
+// and "/reports;v=2" would come back as "/reportsv=2".
+func (a *Auth) keepReturnTo(w http.ResponseWriter, r *http.Request) {
+	if to := postedReturnTo(r); to != "" {
+		a.setCookie(w, a.returnCookie(), url.QueryEscape(to), int(LinkTTL.Seconds()))
+		return
+	}
+	if _, err := r.Cookie(a.returnCookie()); err == nil {
+		a.clearCookie(w, a.returnCookie())
+	}
+}
+
+// keptReturnTo is the destination keepReturnTo recorded, checked again
+// on the way out because a cookie is the browser's to edit.
+func (a *Auth) keptReturnTo(r *http.Request) string {
+	c, err := r.Cookie(a.returnCookie())
+	if err != nil {
+		return ""
+	}
+	to, err := url.QueryUnescape(c.Value)
+	if err != nil {
+		return ""
+	}
+	return sessions.SafeReturnTo(to, "")
+}
+
+// signinAgain is a failed completion's way back to the sign-in page
+// (query is the problem, "?err=expired"), with the kept destination, so
+// the page's next form posts it again rather than forgetting it.
+func (a *Auth) signinAgain(r *http.Request, query string) string {
+	return a.cfg.SigninPath + query + returnToParam(a.keptReturnTo(r))
+}
+
+// returnToParam is "&return_to=<to>", escaped, for a sign-in page URL
+// that already has a query; "" when there is no destination.
+func returnToParam(to string) string {
+	if to == "" {
+		return ""
+	}
+	return "&return_to=" + url.QueryEscape(to)
 }
 
 // problemURL is the sign-in page for a problem. rec keeps recovery
@@ -129,14 +189,18 @@ func (a *Auth) frontDoor(w http.ResponseWriter, r *http.Request) (recovered, ok 
 // failed keymail exchange offered: without it, a refusal would drop it
 // and Begin would classify the address back to the failing provider.
 // Both are attacker-controllable and select nothing a script can use:
-// a recovery form costs the same proof.
-func (a *Auth) problemURL(problem string, rec, force bool) string {
+// a recovery form costs the same proof. to keeps the destination, or
+// the corrected form would post none and keepReturnTo would forget it.
+func (a *Auth) problemURL(problem string, rec, force bool, to string) string {
 	q := url.Values{"err": {problem}}
 	if rec {
 		q.Set("rec", "1")
 	}
 	if force {
 		q.Set("force", "1")
+	}
+	if to != "" {
+		q.Set("return_to", to)
 	}
 	return a.cfg.SigninPath + "?" + q.Encode()
 }
@@ -156,19 +220,19 @@ func (a *Auth) continueKeymail(w http.ResponseWriter, r *http.Request, address s
 		// A correct library never builds one. If one appears it is not
 		// turned into a link, and nothing is left half-set.
 		a.cfg.Logger.Error("rastrillo/auth: the keymail authorize URL failed the predicate; not continuing")
-		a.redirect(w, r, a.problemURL("1", recovered, false))
+		a.redirect(w, r, a.problemURL("1", recovered, false, postedReturnTo(r)))
 		return
 	}
 	id, value, err := a.sealContinuation(next.Redirect, next.Pending)
 	if err != nil {
 		a.cfg.Logger.Error("rastrillo/auth: seal continuation", "err", err)
-		a.redirect(w, r, a.problemURL("1", recovered, false))
+		a.redirect(w, r, a.problemURL("1", recovered, false, postedReturnTo(r)))
 		return
 	}
 	a.setCookie(w, a.pendingCookie(), next.Pending, int(pendingTTL.Seconds()))
 	a.setCookie(w, a.continueCookie(), value, int(continuationTTL.Seconds()))
 	a.noteAttempt(w, attemptKeymail, address, false)
-	a.redirect(w, r, a.cfg.SigninPath+"?continue="+id)
+	a.redirect(w, r, a.cfg.SigninPath+"?continue="+id+returnToParam(postedReturnTo(r)))
 }
 
 // AnswerAsSent is Begin's magic-link answer without the magic link, for
@@ -178,7 +242,8 @@ func (a *Auth) continueKeymail(w http.ResponseWriter, r *http.Request, address s
 // an admitted one got both: a membership oracle on the first try. This
 // answers exactly as Begin does for a sent link, down to the cookie,
 // and sends nothing. With SigninScreen off that is today's plain
-// ?sent=1 and no cookie.
+// ?sent=1 and no attempt cookie. A posted return_to is kept the same
+// way on both (frontDoor), so it tells nobody anything either.
 //
 // With Config.Proof set it checks and spends the challenge first, as
 // Begin does, and refuses a post that fails with Begin's own ?err=check
@@ -209,7 +274,7 @@ func (a *Auth) AnswerAsSent(w http.ResponseWriter, r *http.Request) {
 func (a *Auth) Callback(w http.ResponseWriter, r *http.Request) {
 	c, err := r.Cookie(a.pendingCookie())
 	if err != nil {
-		a.redirect(w, r, a.cfg.SigninPath+"?err=expired")
+		a.redirect(w, r, a.signinAgain(r, "?err=expired"))
 		return
 	}
 	if a.cfg.SigninScreen {
@@ -225,7 +290,7 @@ func (a *Auth) Callback(w http.ResponseWriter, r *http.Request) {
 		// an earlier attempt or a screen-off Begin — is today's path.
 		if p, st := a.openContinuation(r); st == cookieValid && p.PH == digest(c.Value) &&
 			p.ST != digest(r.URL.Query().Get("state")) {
-			a.redirect(w, r, a.cfg.SigninPath+"?err=expired")
+			a.redirect(w, r, a.signinAgain(r, "?err=expired"))
 			return
 		}
 		a.clearCookie(w, a.continueCookie())
@@ -237,7 +302,7 @@ func (a *Auth) Callback(w http.ResponseWriter, r *http.Request) {
 	switch {
 	case errors.Is(err, signin.ErrPendingInvalid):
 		// Expired, tampered with, or a state mismatch — all "start again".
-		a.redirect(w, r, a.cfg.SigninPath+"?err=expired")
+		a.redirect(w, r, a.signinAgain(r, "?err=expired"))
 		return
 	case errors.Is(err, signin.ErrAddressMismatch):
 		// Keymail's identity service is deliberately anonymous: the
@@ -248,7 +313,7 @@ func (a *Auth) Callback(w http.ResponseWriter, r *http.Request) {
 		return
 	case err != nil:
 		a.cfg.Logger.Error("rastrillo/auth: keymail callback", "err", err)
-		a.redirect(w, r, a.cfg.SigninPath+"?force=1&err=keymail")
+		a.redirect(w, r, a.signinAgain(r, "?force=1&err=keymail"))
 		return
 	}
 	a.admit(w, r, id)
@@ -297,7 +362,7 @@ func (a *Auth) redeem(w http.ResponseWriter, r *http.Request) {
 	}
 	id, err := a.flow.CompleteMagicLink(r.Context(), r.FormValue("token"))
 	if err != nil {
-		a.redirect(w, r, a.cfg.SigninPath+"?err=expired")
+		a.redirect(w, r, a.signinAgain(r, "?err=expired"))
 		return
 	}
 	a.admit(w, r, id)
@@ -312,18 +377,38 @@ func (a *Auth) Signout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	a.sessions.SignOut(w, r)
+	// A destination left by an unfinished sign-in is the last person's
+	// page, not the next one's.
+	if _, err := r.Cookie(a.returnCookie()); err == nil {
+		a.clearCookie(w, a.returnCookie())
+	}
 	a.redirect(w, r, a.cfg.SigninPath)
 }
 
 // admit runs the admission gate, offers the session to the
 // SecondFactor hook (which may trade it for a pending half-session
-// and take over the response), and otherwise mints it.
+// and take over the response), and otherwise mints it and lands on
+// return_to — Begin's own cookie if this request carries none itself
+// — falling back to SignedInPath.
 func (a *Auth) admit(w http.ResponseWriter, r *http.Request, id Identity) {
 	// A first factor has verified, so this browser's attempt is over
 	// whether or not the address is admitted. Left behind, it would keep
 	// prefilling the form with an address already proved (round 3,
 	// finding 25).
 	a.jar.EndAttempt(w)
+	// The kept destination goes onto this request's own form, where
+	// sessions.SafeReturn and secondfactor.Hold already look, so the
+	// SecondFactor hook and the redirect at the end agree on it without
+	// either knowing the cookie exists. Spent here, admitted or not: the
+	// attempt it belonged to is over.
+	if _, err := r.Cookie(a.returnCookie()); err == nil {
+		to := a.keptReturnTo(r)
+		a.clearCookie(w, a.returnCookie())
+		_ = r.ParseForm()
+		if to != "" && r.Form.Get("return_to") == "" {
+			r.Form.Set("return_to", to)
+		}
+	}
 	if a.cfg.Authorize != nil && !a.cfg.Authorize(id.Address) {
 		if a.cfg.Refused != nil {
 			a.cfg.Refused(w, r, id)
@@ -373,7 +458,7 @@ func (a *Auth) admit(w http.ResponseWriter, r *http.Request, id Identity) {
 		http.Error(w, "sign-in failed", http.StatusInternalServerError)
 		return
 	}
-	a.redirect(w, r, a.cfg.SignedInPath)
+	a.redirect(w, r, sessions.SafeReturn(r, a.cfg.SignedInPath))
 }
 
 // identityFrom converts a resolved sessions.Session to this plugin's
@@ -412,7 +497,7 @@ func (a *Auth) RequireSession(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		s, ok := a.sessions.From(r)
 		if !ok {
-			a.refuseSession(w, r, "")
+			a.refuseSession(w, r, false)
 			return
 		}
 		r = sessions.WithSession(r, s)
@@ -434,11 +519,11 @@ func (a *Auth) RequireFreshSession(maxAge time.Duration) func(http.Handler) http
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			s, ok := a.sessions.From(r)
 			if !ok {
-				a.refuseSession(w, r, "")
+				a.refuseSession(w, r, false)
 				return
 			}
 			if !sessions.Fresh(s, maxAge, time.Now()) {
-				a.refuseSession(w, r, "?reauth=1")
+				a.refuseSession(w, r, true)
 				return
 			}
 			r = sessions.WithSession(r, s)
@@ -447,15 +532,21 @@ func (a *Auth) RequireFreshSession(maxAge time.Duration) func(http.Handler) http
 	}
 }
 
-// refuseSession sends a page request to the sign-in page (query names
-// why, when step-up rather than plain sign-in is wanted) and answers
-// anything else 403.
-func (a *Auth) refuseSession(w http.ResponseWriter, r *http.Request, query string) {
+// refuseSession sends a page request to the sign-in page with a
+// return_to naming the page that was asked for, plus reauth=1 when a
+// stale session needs step-up, and answers anything else 403. The same
+// shape as sessions.refuse, so a page guarded through auth and one
+// guarded through sessions send a visitor back the same way.
+func (a *Auth) refuseSession(w http.ResponseWriter, r *http.Request, reauth bool) {
 	if r.Method == http.MethodGet || r.Method == http.MethodHead {
-		a.redirect(w, r, a.cfg.SigninPath+query)
+		to := a.cfg.SigninPath + "?return_to=" + url.QueryEscape(r.URL.RequestURI())
+		if reauth {
+			to += "&reauth=1"
+		}
+		a.redirect(w, r, to)
 		return
 	}
-	if query != "" {
+	if reauth {
 		http.Error(w, "re-authentication required", http.StatusForbidden)
 		return
 	}

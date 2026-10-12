@@ -115,7 +115,7 @@ POST /signin/forget  -> Auth.Forget
 
 `Verify` needs both methods mounted. The GET draws a page with a Sign in button and spends nothing; the POST spends the link, runs `Authorize`, and answers a bad or used link with `?err=expired`. Anything else gets a 405. See [Magic links](/docs/magic-links#link-scanners-eat-magic-links).
 
-These handlers report outcomes by redirecting to `SigninPath`: `?sent=1`, `?err=rate|address|expired|1`, `?err=keymail` with `?force=1` after a failed keymail approval, and, with `SigninScreen` on, `?sent=1&attempt=<id>` and `?continue=<id>`. The shipped screen reads them through `SigninState`; a page of your own renders them itself.
+These handlers report outcomes by redirecting to `SigninPath`: `?sent=1`, `?err=rate|address|expired|1`, `?err=keymail` with `?force=1` after a failed keymail approval, and, with `SigninScreen` on, `?sent=1&attempt=<id>` and `?continue=<id>`. The shipped screen reads them through `SigninState`; a page of your own renders them itself. A problem keeps the sign-in's `return_to` on that query, so the corrected form posts it again.
 
 ## The sign-in screen
 
@@ -128,6 +128,8 @@ func (a *Auth) RememberJar() *lastsignin.Jar
 ```
 
 `SigninState` reads the query and this browser's own cookies and returns what the page shows, as plain data. It consults nothing else, so the page cannot reveal whether an address is known. Set `Passkey` on the result if you mounted passkey discovery. `PrepareSigninResponse` writes what goes with it: `Cache-Control: no-store`, `Referrer-Policy: no-referrer` on the page that moves on to Keymail, and deletions for any cookie that could not be trusted. Call it before rendering. With `SigninScreen` off, `SigninState` reads only the query and logs one warning per process. On the request `RenderConfirm` is given, `SigninState` answers `StepConfirm` with `Confirm` set and nothing else from the browser, and the partial draws the Sign in button.
+
+`ReturnTo` is the page to land on after sign-in, taken from the query's `return_to` when it is on this site. The shipped sign-in screen posts it with every form. On a page of your own, put it in a hidden `return_to` field in each form, and use `PasskeyFinish()` as the passkey button's finish URL.
 
 ```go
 type SigninState struct {
@@ -142,11 +144,13 @@ type SigninState struct {
 	BeginPath   string
 	ForgetPath  string
 	Force       bool
+	ReturnTo    string
 	Proof       *pow.Form
 	Passkey     *PasskeyDoor
 }
 func (s SigninState) Door() string
 func (s SigninState) Focus() string
+func (s SigninState) PasskeyFinish() string
 
 type SigninStep string
 
@@ -190,6 +194,8 @@ func (a *Auth) RequireFreshSession(maxAge time.Duration) func(http.Handler) http
 func From(r *http.Request) (Identity, bool)
 func (a *Auth) SessionFrom(r *http.Request) (Identity, bool)
 ```
+
+A signed-out page request goes to `SigninPath?return_to=<the page>`, plus `reauth=1` when `RequireFreshSession` wants a fresh sign-in. After signing in, the visitor lands back on that page. Anything else gets a 403.
 
 `RequireSession` stashes both the `Identity` and the underlying
 `sessions.Session`, so `From` and `sessions.Current` both work
