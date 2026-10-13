@@ -351,6 +351,24 @@ func run(t *testing.T, rig *harness.Rig, actions ...chromedp.Action) {
 	}
 }
 
+// arrive waits for the page a click navigated to: its marker visible,
+// then the document loaded. chromedp.Navigate waits for the load and a
+// click does not, and the marker is parsed and visible before
+// DOMContentLoaded, which waits for the page's deferred scripts. At
+// DOMContentLoaded Chrome drops every DOM node id the driver holds, so
+// a SendKeys or Click that finds its node before then and uses it after
+// fails "Could not find node with given id". On a slow browser the
+// scripts take long enough for that to happen. Until those scripts run,
+// pow has not enabled the submit either, and a click on it posts
+// nothing. The marker comes first because Poll's script dies with the
+// page it runs in, while WaitVisible keeps looking across the navigation.
+func arrive(marker string) chromedp.Action {
+	return chromedp.Tasks{
+		chromedp.WaitVisible(marker, chromedp.ByQuery),
+		chromedp.Poll(`document.readyState === "complete"`, nil, chromedp.WithPollingTimeout(10*time.Second)),
+	}
+}
+
 func eval(t *testing.T, rig *harness.Rig, expr string, out any) {
 	t.Helper()
 	run(t, rig, chromedp.Evaluate(expr, out, func(p *runtime.EvaluateParams) *runtime.EvaluateParams {
@@ -623,7 +641,7 @@ func TestSigninScreenInTheBrowser(t *testing.T) {
 	// "Use a different email" returns to an empty Ask. The field is the
 	// marker: the Returning page being left has none.
 	run(t, rig, chromedp.Navigate(rig.Origin+"/signin"), chromedp.WaitVisible(`form[action="/signin/forget"] button`, chromedp.ByQuery),
-		chromedp.Click(`form[action="/signin/forget"] button`, chromedp.ByQuery), chromedp.WaitVisible("#rst-signin-email", chromedp.ByQuery))
+		chromedp.Click(`form[action="/signin/forget"] button`, chromedp.ByQuery), arrive("#rst-signin-email"))
 	eval(t, rig, `document.getElementById("rst-signin-email").value + "|" + document.querySelectorAll("button[autofocus]").length`, &s)
 	if s != "|0" {
 		t.Fatalf("after Use a different email the field and one-taps are %q, want an empty field and none", s)
@@ -769,7 +787,7 @@ func TestSigninScreenInTheBrowser(t *testing.T) {
 	// "Continue as" on the same line to crowd it. "Use a different email"
 	// first, because the one-tap above has replaced the field.
 	run(t, rig, chromedp.Navigate(rig.Origin+"/signin"), chromedp.WaitVisible(`form[action="/signin/forget"] button`, chromedp.ByQuery),
-		chromedp.Click(`form[action="/signin/forget"] button`, chromedp.ByQuery), chromedp.WaitVisible("#rst-signin-email", chromedp.ByQuery))
+		chromedp.Click(`form[action="/signin/forget"] button`, chromedp.ByQuery), arrive("#rst-signin-email"))
 	atNarrowest(longLocalPart)
 	run(t, rig, chromedp.EmulateViewport(1280, 800))
 }
