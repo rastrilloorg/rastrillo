@@ -460,7 +460,7 @@ func Measured(t *testing.T, tab, raw string, shellOnly bool) map[string][3]int {
 			grace = 0
 		}
 		if need >= 0 && need > box+grace {
-			t.Errorf("%s %s: its document needs %dpx and its frame is %dpx; raise its height (previewHeights for Desktop, previewMobileHeights for Mobile) to at least %d", tab, id, need, box, need+20)
+			t.Errorf("%s %s: its document needs %dpx and its frame is %dpx; raise its height (previewHeights for Desktop, previewMobileHeights or previewMobileLocaleHeights for Mobile) to at least %d", tab, id, need, box, need+20)
 		}
 		if need >= 0 && box > need*4 && box-need > 120 {
 			t.Logf("%s %s: %dpx of frame for %dpx of document; deliberate headroom, or a number to bring down", tab, id, box, need)

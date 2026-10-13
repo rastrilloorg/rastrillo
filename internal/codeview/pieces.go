@@ -114,3 +114,60 @@ func pieces(s string) []piece {
 func isLetter(c byte) bool { return c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' }
 
 func isSpace(c byte) bool { return c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == '\f' }
+
+// attrsOf reads a start tag's attributes: names lower-cased, values
+// unquoted, a bare attribute present with an empty value, and spaces
+// around an = allowed, as HTML allows them.
+func attrsOf(tag string) map[string]string {
+	out := map[string]string{}
+	i := 1
+	for i < len(tag) && !isSpace(tag[i]) && tag[i] != '>' && tag[i] != '/' {
+		i++
+	}
+	for i < len(tag) {
+		for i < len(tag) && (isSpace(tag[i]) || tag[i] == '/') {
+			i++
+		}
+		if i >= len(tag) || tag[i] == '>' {
+			break
+		}
+		start := i
+		for i < len(tag) && !isSpace(tag[i]) && tag[i] != '=' && tag[i] != '>' && tag[i] != '/' {
+			i++
+		}
+		name := strings.ToLower(tag[start:i])
+		value := ""
+		// HTML allows whitespace either side of the =: style = "…" is a
+		// style. Without an = after the space, the name was a bare
+		// attribute and the space starts the next one.
+		j := i
+		for j < len(tag) && isSpace(tag[j]) {
+			j++
+		}
+		if j < len(tag) && tag[j] == '=' {
+			i = j + 1
+			for i < len(tag) && isSpace(tag[i]) {
+				i++
+			}
+			if i < len(tag) && (tag[i] == '"' || tag[i] == '\'') {
+				q := tag[i]
+				end := strings.IndexByte(tag[i+1:], q)
+				if end < 0 {
+					end = len(tag) - i - 1
+				}
+				value = tag[i+1 : i+1+end]
+				i += end + 2
+			} else {
+				start := i
+				for i < len(tag) && !isSpace(tag[i]) && tag[i] != '>' {
+					i++
+				}
+				value = tag[start:i]
+			}
+		}
+		if name != "" {
+			out[name] = value
+		}
+	}
+	return out
+}

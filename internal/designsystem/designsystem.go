@@ -347,6 +347,10 @@ func partialTree(locale string) (*template.Template, error) {
 func galleryFuncs(locale string) template.FuncMap {
 	funcs := ui.Funcs(ui.WithT(translator(locale)), ui.WithLocale(locale))
 	funcs["P"] = func(key string, args ...any) string { return proseIn(locale, key, args...) }
+	// sample is localMarkup for a run of sample markup written into a
+	// page template, where a sentence carries an element P would escape:
+	// the shell demo's count line, with its two numbers in <strong>.
+	funcs["sample"] = func(src string) template.HTML { return template.HTML(localMarkup(locale, src)) }
 	return funcs
 }
 

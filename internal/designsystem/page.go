@@ -1013,7 +1013,7 @@ func shellViews(mount, theme, locale string) []shellView {
 			// chrome idioms above show the markup it produces.
 			Preview: previewView{
 				Group: id + "-0",
-				Style: previewStyle(id, heightOf(id)),
+				Style: previewStyle(locale, id, heightOf(id)),
 				Class: previewClass(id),
 				Src:   href,
 				Title: proseIn(locale, "The {shell} shell, rendered at full page", "shell", name),
@@ -1206,7 +1206,7 @@ func parseRawSamples(tmpl *template.Template) error {
 // hand-written sample, the template parseRawSamples put in the tree.
 func renderSample(tmpl *template.Template, name string, state int, s sample, locale string) (template.HTML, error) {
 	var buf strings.Builder
-	which, data := name, s.Data
+	which, data := name, localData(locale, s.Data)
 	if s.Raw != "" {
 		which = rawName(name, state)
 	}
@@ -1215,6 +1215,12 @@ func renderSample(tmpl *template.Template, name string, state int, s sample, loc
 	}
 	if err := tmpl.ExecuteTemplate(&buf, which, data); err != nil {
 		return "", err
+	}
+	if s.Raw != "" {
+		// A hand-written state is markup, translated the way every other
+		// hand-written sample is: after it runs, so the T calls in it
+		// have already said their part in this language.
+		return template.HTML(localMarkup(locale, buf.String())), nil
 	}
 	return template.HTML(buf.String()), nil
 }
@@ -1321,7 +1327,7 @@ const rowsStyle = "body > ul { display: flex; flex-wrap: wrap; gap: 1rem 1.5rem;
 func groupedPreview(mount, theme, locale, page string, tmpl *template.Template, doc partialDoc, id string) (previewView, previewFile, error) {
 	view := previewView{
 		Group: id + "-0",
-		Style: previewStyle(id, heightOf(id)),
+		Style: previewStyle(locale, id, heightOf(id)),
 		Class: previewClass(id) + " ds-view--rows",
 		Title: previewTitle(locale, doc.Name, ""),
 	}
@@ -1418,12 +1424,79 @@ func previewClass(id string) string {
 // Add an entry here only for an example whose layout genuinely changes
 // axis. An entry is not a place to absorb a desktop height that was
 // measured wrong.
-func previewStyle(id string, h int) template.CSS {
+//
+// A language whose words need more room than the box the table gives
+// gets its own number in previewMobileLocaleHeights, read for that
+// language's pages only. The samples speak the page's language, and a
+// Russian status pill is twice as wide as an English one: sizing every
+// frame for the tallest of twelve languages would put a Russian-sized
+// gap under each English sample.
+func previewStyle(locale, id string, h int) template.CSS {
 	m, ok := previewMobileHeights[id]
 	if !ok {
 		m = h * 5 / 4
 	}
+	if l, ok := previewMobileLocaleHeights[locale][id]; ok && l > m {
+		m = l
+	}
 	return template.CSS(fmt.Sprintf("--ds-h: %dpx; --ds-hm: %dpx", h, m))
+}
+
+// previewMobileLocaleHeights is a language's own Mobile height for a
+// frame whose content wraps taller in that language at the narrowest
+// phone frame (320px) than previewMobileHeights allows. Measured by
+// TestPreviewFrameHeightsFitAtThePhonesNarrowest with RASTRILLO_SWEEP=full,
+// which holds each language's content to the box on its own page and
+// names the number to write here when one is short.
+var previewMobileLocaleHeights = map[string]map[string]int{
+	"ga": {
+		"format-addresses":              319,
+		"idiom-box":                     318,
+		"idiom-button":                  449,
+		"partial-callout":               260,
+		"partial-empty-state":           343,
+		"partial-stat":                  219,
+		"screen-signin-ask":             678,
+		"screen-signin-continue":        589,
+		"screen-signin-problem-keymail": 722,
+		"screen-signin-social":          422,
+	},
+	"es": {
+		"idiom-box":                       307,
+		"idiom-form-layout":               565,
+		"partial-callout":                 260,
+		"partial-empty-state":             343,
+		"screen-signin-ask":               678,
+		"screen-signin-returning-link":    572,
+		"screen-signin-returning-passkey": 749,
+		"screen-signin-social":            407,
+	},
+	"pt": {
+		"idiom-button":                  449,
+		"idiom-form-layout":             565,
+		"partial-callout":               284,
+		"partial-empty-state":           343,
+		"screen-signin-ask":             678,
+		"screen-signin-continue":        589,
+		"screen-signin-problem-keymail": 722,
+		"screen-signin-social":          407,
+	},
+	"ru": {
+		"format-addresses":           343,
+		"idiom-button":               449,
+		"partial-callout":            284,
+		"partial-seg-tabs":           162,
+		"partial-status-pill":        308,
+		"screen-signin-continue":     589,
+		"screen-signin-sent-instead": 725,
+		"screen-signin-sent-unbound": 637,
+	},
+	"ja": {
+		"idiom-form-layout": 523,
+	},
+	"ar": {
+		"screen-signin-social": 399,
+	},
 }
 
 // previewMobileHeights overrides the 1.25× factor for the examples
@@ -1855,7 +1928,7 @@ func newPreview(mount, theme, locale, page, group, title, body, code, id string)
 	file := page + "/" + group + ".html"
 	view := previewView{
 		Group: group,
-		Style: previewStyle(id, heightOf(id)),
+		Style: previewStyle(locale, id, heightOf(id)),
 		Class: previewClass(id),
 		Src:   pageHref(mount, theme, locale, file),
 		Title: title,
@@ -1997,9 +2070,10 @@ func buildIdioms(mount string, tmpl *template.Template, theme, locale string, fi
 			Marker: marker("idiom", name),
 			Blurb:  proseIn(locale, idiomBlurbs[name]),
 		}
+		markup := localMarkup(locale, samples[name])
 		preview, file := newPreview(mount, theme, locale, "primitives", view.ID+"-0",
 			previewTitle(locale, name, "UI primitives"),
-			samples[name], samples[name], view.ID)
+			markup, markup, view.ID)
 		if err := files.add(file); err != nil {
 			return nil, err
 		}
@@ -2058,13 +2132,14 @@ type shellData struct {
 // and the sidebar puts it in its profile menu's card under the person,
 // so one literal serves all three, which is what lets a screen's
 // account block move between them unedited. The person is the profile
-// block, profileMarkup.
+// block, profileMarkup. Its three links are words and are translated
+// with the rest of the sample (localMarkup) when a demo is rendered.
 const accountMarkup template.HTML = `<a href="#">Profile</a><a href="#">Billing</a><hr><a href="#">Sign out</a>`
 
 // profileMarkup is the person the profile menu shows: the avatar that
 // opens it (the sidebar's rail foot, the console's Menu on its phone
-// index) and the name and email heading its card. Sample data, so it
-// stays English in every locale, as a person's name would.
+// index) and the name and email heading its card. Nothing in it is
+// translated: a person's name and address are the same in every locale.
 const profileMarkup template.HTML = `<span rst-person-av aria-hidden="true">G</span>` +
 	`<span rst-person-name>Grace Hopper</span><span rst-person-email>grace@example.com</span>`
 
@@ -2106,10 +2181,10 @@ func renderShell(mount, theme, locale, shell string) (map[string][]byte, error) 
 		Mount:    mount,
 		Index:    indexHref(mount, theme, locale),
 		Locales:  localeLinks(mount, theme, locale, "index.html"),
-		Account:  accountMarkup,
+		Account:  template.HTML(localMarkup(locale, string(accountMarkup))),
 		Profile:  profileMarkup,
 		Signin:   auth.SigninState{Step: auth.StepAsk, BeginPath: "/signin", ForgetPath: "/signin/forget"},
-		Brand:    galleryBrand,
+		Brand:    localData(locale, galleryBrand).(map[string]any),
 		PageHref: "#",
 	}
 	type doc struct {
@@ -2334,7 +2409,7 @@ func renderDemo(mount, theme, locale string) (map[string][]byte, error) {
 func demoView(mount, theme, locale string) previewView {
 	return previewView{
 		Group: "demo-app-0",
-		Style: previewStyle("demo-app", heightOf("demo-app")),
+		Style: previewStyle(locale, "demo-app", heightOf("demo-app")),
 		Class: previewClass("demo-app"),
 		Src:   demoHref(mount, theme, locale),
 		Title: proseIn(locale, "The demo application"),
@@ -2353,16 +2428,14 @@ const demoCSS = `
 // content hole with whichever view this document is (the index shows
 // the dashboard, which is what a desktop sees beside the rail).
 //
-// The line between what is translated and what is not runs through the
-// grid, not around it. A ROW is data — a person's name, a subject, a
-// date, a queue, the app's own brand — and stays English on every copy,
-// the same rule the shell demos follow: translating a person's name
-// would be a stranger thing to do than leaving it. The HEADER over that
-// row is not data; it is the application naming its own columns, so
-// Subject, Status and Updated are prose keys like every screen title,
-// control and status word on the page. They were fixtures for one
-// review round, which put an English table header in the middle of the
-// fully localised frame that is a Japanese reader's first sight of this
+// Everything a person reads is translated, the rows as well as the
+// headers over them: a request's subject, its queue and its dates are
+// what a Japanese app would hold in Japanese. What stays as written is
+// what would be the same in any language: the people's names, their
+// addresses, the app's own brand and a reference like REQ-4471. The rows
+// were English fixtures once, on the argument that a database's content
+// is not the framework's to translate; it put English sentences in the
+// middle of the frame that is a Japanese reader's first sight of this
 // system.
 const demoTemplate = `
 {{define "head"}}<script src="{{asset "gallery.js"}}"></script>
@@ -2390,9 +2463,9 @@ const demoTemplate = `
 <div rst-box-head><h2>{{P "Latest activity"}}</h2><a rst-btn href="{{.Requests}}">{{P "Requests"}}</a></div>
 <div rst-card style="--rst-cols: minmax(0, 1fr) 120px">
 <div rst-lrow="head"><span>{{P "Subject"}}</span><span class="rst-m-hide">{{P "Status"}}</span></div>
-<div rst-lrow><a class="rst-nm" href="{{.Request}}">Invoice #4471 never arrived<small><bdi>Fiona Reid</bdi> · 09:12</small></a><span class="rst-m-hide">{{template "status-pill" dict "Tone" "warning" "Label" (P "Waiting")}}</span></div>
-<div rst-lrow><a class="rst-nm" href="{{.Request}}">Card declined on renewal<small><bdi>Otto Neurath</bdi> · 08:40</small></a><span class="rst-m-hide">{{template "status-pill" dict "Label" (P "Open")}}</span></div>
-<div rst-lrow><a class="rst-nm" href="{{.Request}}">Seat count is wrong on the invoice<small><bdi>Hedy Lamarr</bdi> · 11 August</small></a><span class="rst-m-hide">{{template "status-pill" dict "Tone" "positive" "Label" (P "Resolved")}}</span></div>
+<div rst-lrow><a class="rst-nm" href="{{.Request}}">{{P "Invoice #4471 never arrived"}}<small><bdi>Fiona Reid</bdi> · 09:12</small></a><span class="rst-m-hide">{{template "status-pill" dict "Tone" "warning" "Label" (P "Waiting")}}</span></div>
+<div rst-lrow><a class="rst-nm" href="{{.Request}}">{{P "Card declined on renewal"}}<small><bdi>Otto Neurath</bdi> · 08:40</small></a><span class="rst-m-hide">{{template "status-pill" dict "Label" (P "Open")}}</span></div>
+<div rst-lrow><a class="rst-nm" href="{{.Request}}">{{P "Seat count is wrong on the invoice"}}<small><bdi>Hedy Lamarr</bdi> · {{P "11 August"}}</small></a><span class="rst-m-hide">{{template "status-pill" dict "Tone" "positive" "Label" (P "Resolved")}}</span></div>
 </div>
 </section>
 {{else if eq .View "requests"}}
@@ -2402,10 +2475,10 @@ const demoTemplate = `
 <div rst-card style="--rst-cols: minmax(0, 1fr) 120px 120px var(--rst-col-menu)">
 {{template "list-bar" dict "SearchAction" .Requests "Placeholder" (P "Search requests")}}
 <div rst-lrow="head"><span>{{P "Subject"}}</span><span class="rst-m-hide">{{P "Status"}}</span><span class="rst-m-hide">{{P "Updated"}}</span><span></span></div>
-<div rst-lrow><a class="rst-nm" href="{{.Request}}">Invoice #4471 never arrived<small><bdi>Fiona Reid</bdi> · Billing</small></a><span class="rst-m-hide">{{template "status-pill" dict "Tone" "warning" "Label" (P "Waiting")}}</span><span class="rst-cell-mut rst-m-hide">09:12</span>{{template "row-menu" dict "Name" "Invoice #4471 never arrived" "Items" (list (dict "Label" (P "Reply") "Href" .Request) (dict "Label" (P "Close request…") "Href" .Request "Danger" true))}}</div>
-<div rst-lrow><a class="rst-nm" href="{{.Request}}">Card declined on renewal<small><bdi>Otto Neurath</bdi> · Billing</small></a><span class="rst-m-hide">{{template "status-pill" dict "Label" (P "Open")}}</span><span class="rst-cell-mut rst-m-hide">08:40</span>{{template "row-menu" dict "Name" "Card declined on renewal" "Items" (list (dict "Label" (P "Reply") "Href" .Request) (dict "Label" (P "Close request…") "Href" .Request "Danger" true))}}</div>
-<div rst-lrow><a class="rst-nm" href="{{.Request}}">Export takes twenty minutes<small><bdi>Mary Sherman</bdi> · Data</small></a><span class="rst-m-hide">{{template "status-pill" dict "Label" (P "Open")}}</span><span class="rst-cell-mut rst-m-hide">12 August</span>{{template "row-menu" dict "Name" "Export takes twenty minutes" "Items" (list (dict "Label" (P "Reply") "Href" .Request) (dict "Label" (P "Close request…") "Href" .Request "Danger" true))}}</div>
-<div rst-lrow><a class="rst-nm" href="{{.Request}}">Seat count is wrong on the invoice<small><bdi>Hedy Lamarr</bdi> · Billing</small></a><span class="rst-m-hide">{{template "status-pill" dict "Tone" "positive" "Label" (P "Resolved")}}</span><span class="rst-cell-mut rst-m-hide">11 August</span>{{template "row-menu" dict "Name" "Seat count is wrong on the invoice" "Items" (list (dict "Label" (P "Reply") "Href" .Request) (dict "Label" (P "Close request…") "Href" .Request "Danger" true))}}</div>
+<div rst-lrow><a class="rst-nm" href="{{.Request}}">{{P "Invoice #4471 never arrived"}}<small><bdi>Fiona Reid</bdi> · {{P "Billing"}}</small></a><span class="rst-m-hide">{{template "status-pill" dict "Tone" "warning" "Label" (P "Waiting")}}</span><span class="rst-cell-mut rst-m-hide">09:12</span>{{template "row-menu" dict "Name" (P "Invoice #4471 never arrived") "Items" (list (dict "Label" (P "Reply") "Href" .Request) (dict "Label" (P "Close request…") "Href" .Request "Danger" true))}}</div>
+<div rst-lrow><a class="rst-nm" href="{{.Request}}">{{P "Card declined on renewal"}}<small><bdi>Otto Neurath</bdi> · {{P "Billing"}}</small></a><span class="rst-m-hide">{{template "status-pill" dict "Label" (P "Open")}}</span><span class="rst-cell-mut rst-m-hide">08:40</span>{{template "row-menu" dict "Name" (P "Card declined on renewal") "Items" (list (dict "Label" (P "Reply") "Href" .Request) (dict "Label" (P "Close request…") "Href" .Request "Danger" true))}}</div>
+<div rst-lrow><a class="rst-nm" href="{{.Request}}">{{P "Export takes twenty minutes"}}<small><bdi>Mary Sherman</bdi> · {{P "Data"}}</small></a><span class="rst-m-hide">{{template "status-pill" dict "Label" (P "Open")}}</span><span class="rst-cell-mut rst-m-hide">{{P "12 August"}}</span>{{template "row-menu" dict "Name" (P "Export takes twenty minutes") "Items" (list (dict "Label" (P "Reply") "Href" .Request) (dict "Label" (P "Close request…") "Href" .Request "Danger" true))}}</div>
+<div rst-lrow><a class="rst-nm" href="{{.Request}}">{{P "Seat count is wrong on the invoice"}}<small><bdi>Hedy Lamarr</bdi> · {{P "Billing"}}</small></a><span class="rst-m-hide">{{template "status-pill" dict "Tone" "positive" "Label" (P "Resolved")}}</span><span class="rst-cell-mut rst-m-hide">{{P "11 August"}}</span>{{template "row-menu" dict "Name" (P "Seat count is wrong on the invoice") "Items" (list (dict "Label" (P "Reply") "Href" .Request) (dict "Label" (P "Close request…") "Href" .Request "Danger" true))}}</div>
 </div>
 <p rst-count-line>{{P "{shown} of {total} requests" "shown" "1–4" "total" "24"}}</p>
 {{template "pagination" dict "Items" (list (dict "Label" "1" "Current" true) (dict "Label" "2" "Href" .Requests) (dict "Label" "3" "Href" .Requests))}}
@@ -2413,10 +2486,10 @@ const demoTemplate = `
 {{else}}
 <section class="app-view" id="view-request">
 {{template "back-nav" dict "Href" .Requests "Label" (P "Requests")}}
-{{template "page-header" dict "Title" "Invoice #4471 never arrived" "Sub" (P "Reported by {person}, and still waiting on us." "person" "Fiona Reid")}}
-<p>{{template "status-pill" dict "Tone" "warning" "Label" (P "Waiting")}} {{template "badge" dict "Label" "Billing"}}</p>
+{{template "page-header" dict "Title" (P "Invoice #4471 never arrived") "Sub" (P "Reported by {person}, and still waiting on us." "person" "Fiona Reid")}}
+<p>{{template "status-pill" dict "Tone" "warning" "Label" (P "Waiting")}} {{template "badge" dict "Label" (P "Billing")}}</p>
 <div rst-box-head><h2>{{P "Details"}}</h2></div>
-<section rst-box>{{template "detail-list" dict "Items" (list (dict "Label" (P "Reference") "Value" "REQ-4471" "Mono" true) (dict "Label" (P "Reported by") "Value" "fiona@example.com") (dict "Label" (P "Queue") "Value" "Billing") (dict "Label" (P "Opened") "Value" "14 August, 09:12" "DateTime" "2026-08-14T09:12"))}}</section>
+<section rst-box>{{template "detail-list" dict "Items" (list (dict "Label" (P "Reference") "Value" "REQ-4471" "Mono" true) (dict "Label" (P "Reported by") "Value" "fiona@example.com") (dict "Label" (P "Queue") "Value" (P "Billing")) (dict "Label" (P "Opened") "Value" (P "14 August, 09:12") "DateTime" "2026-08-14T09:12"))}}</section>
 <div rst-box-head><h2>{{P "Reply"}}</h2></div>
 <section rst-box><form rst-form method="post" action="{{.Request}}">
 {{template "field-textarea" dict "Name" "reply" "Label" (P "Your reply") "Rows" 4 "Hint" (P "The person who reported this gets it by email.")}}
@@ -2521,16 +2594,17 @@ func buildIcons(locale string) iconsView {
 // five of those in three days.
 
 // assetView is one shipped file: what it is called, where this tree
-// serves it, what it weighs and what it is for.
+// serves it, what it weighs and what it is for. Weight is the finished
+// line in the page's language; see weight.go for the three figures.
 type assetView struct {
-	ID    string
-	Name  string
-	Href  string
-	Bytes int
-	Blurb string
+	ID     string
+	Name   string
+	Href   string
+	Weight string
+	Blurb  string
 }
 
-// assetsView is the Getting started page's data. AppBytes is what a
+// assetsView is the Getting started page's data. AppRaw is what a
 // scaffolded app is actually handed — tokens.css, ONE theme and the
 // three scripts — which is not the sum of the list, because the list
 // carries every theme and an app receives one.
@@ -2543,10 +2617,14 @@ type assetView struct {
 // whose whole content is that it should not be there.
 // TestTheGettingStartedPageWeighsTheRealAssets holds the absence.
 type assetsView struct {
-	List     []assetView
-	AppBytes int
-	Scaffold string
-	Pin      string
+	List []assetView
+	// AppRaw and AppGzip are the app's total, as written and gzipped a
+	// file at a time, the way a visitor downloads them. AppTotal is the
+	// sentence that says both.
+	AppRaw, AppGzip int
+	AppTotal        string
+	Scaffold        string
+	Pin             string
 	// Links is the two <link> tags a page outside the framework needs,
 	// highlighted: the order is the point, tokens.css then the theme,
 	// because the theme's values fill the references tokens.css makes.
@@ -2572,21 +2650,24 @@ func buildAssets(mount, theme, locale string) assetsView {
 		// anything calls this; an empty row would be a silent lie.
 		panic("designsystem: no theme " + theme)
 	}
-	appBytes := 0
-	for _, body := range vendored {
-		appBytes += len(body)
+	appRaw, appGzip := 0, 0
+	for name, body := range vendored {
+		w := weigh(name, body)
+		appRaw, appGzip = appRaw+w.Raw, appGzip+w.Gzip
 	}
 	add := func(out *assetsView, name string, body []byte, blurb string, args ...any) {
 		out.List = append(out.List, assetView{
-			ID:    anchorID("asset", name),
-			Name:  name,
-			Href:  assetURL(mount, name),
-			Bytes: len(body),
-			Blurb: proseIn(locale, blurb, args...),
+			ID:     anchorID("asset", name),
+			Name:   name,
+			Href:   assetURL(mount, name),
+			Weight: weightIn(locale, weigh(name, body)),
+			Blurb:  proseIn(locale, blurb, args...),
 		})
 	}
 	out := assetsView{
-		AppBytes: appBytes,
+		AppRaw:   appRaw,
+		AppGzip:  appGzip,
+		AppTotal: proseIn(locale, appTotalLine, "raw", kibUnit(locale, appRaw), "gzip", kibUnit(locale, appGzip)),
 		Scaffold: "rastrillo new --theme=" + theme + " myapp",
 		Pin:      `const vendoredTheme = "` + theme + `"`,
 		Links:    codeview.Highlight(`<link rel="stylesheet" href="tokens.css">` + "\n" + `<link rel="stylesheet" href="theme-` + theme + `.css">`),
@@ -2854,11 +2935,11 @@ const gettingStartedBody = `{{define "ds-body-getting-started"}}
 <p class="ds-lead">{{P "rastrillo.js is the progressive-enhancement shim: polling fragments, light dismiss, the switch's drag. busy.js is the busy rule. anchor.js keeps dropdown menus on the screen where CSS cannot. select.js and datetime.js are enhancements, each inert until a control opts in and each deletable on its own."}}</p>
 
 <h2 class="ds-sub">{{P "What each file weighs"}}</h2>
-<p class="ds-note">{{P "Filesizes for the various components."}}</p>
+<p class="ds-note">{{P "Sizes in KiB. Gzipped is what a visitor downloads."}}</p>
 <ul class="ds-files">{{range .Assets.List}}
-<li id="{{.ID}}" data-ds-anchor><a class="rst-mono" href="{{.Href}}" download="{{.Name}}">{{.Name}}</a><span>{{.Blurb}}</span><span class="rst-mono">{{P "{bytes} bytes" "bytes" .Bytes}}</span></li>{{end}}
+<li id="{{.ID}}" data-ds-anchor><a class="rst-mono" href="{{.Href}}" download="{{.Name}}">{{.Name}}</a><span>{{.Blurb}}</span><span class="rst-mono">{{.Weight}}</span></li>{{end}}
 </ul>
-<p class="ds-lead">{{P "A new app gets {bytes} bytes of CSS and JavaScript in total: tokens.css, one theme, and the scripts." "bytes" .Assets.AppBytes}}</p>
+<p class="ds-lead">{{.Assets.AppTotal}}</p>
 
 <h2 class="ds-sub">{{P "In a new rastrillo app"}}</h2>
 <p class="ds-lead">{{P "rastrillo new writes these into the app's static directory and links them from the layout, tokens.css first. They're yours from then on: edit them, or delete what you don't use."}}</p>
@@ -2949,7 +3030,7 @@ const familyBody = `{{define "ds-family"}}{{with .Family}}
 {{end}}`
 
 const primitivesBody = `{{define "ds-body-primitives"}}
-<p class="ds-lead">{{P "The shapes a component cannot be, because they wrap a body only the caller knows: the section card, the data grid, the disclosure menu, the shells' own chrome. tokens.css ships the classes and an app writes the markup. Everything below is the exact sample ui.Styleguide returns, which is the sample ui tests hold against tokens.css."}}</p>
+<p class="ds-lead">{{P "The shapes a component cannot be, because they wrap a body only the caller knows: the section card, the data grid, the disclosure menu, the shells' own chrome. tokens.css ships the classes and an app writes the markup. Everything below is the markup ui.Styleguide returns, with its words in your language, and ui's tests hold that markup against tokens.css."}}</p>
 <p class="ds-lead">{{P "Each example is live, but its links go nowhere."}}</p>
 {{range .Idioms}}
 {{.Marker}}
@@ -3016,22 +3097,22 @@ const shellTemplate = `
 {{define "view"}}{{if eq .View "index"}}index{{else}}page{{end}}{{end}}
 {{define "up"}}{{.Up}}{{end}}
 {{define "brand"}}<a rst-shell-brand href="{{.Index}}">rastrillo</a>{{end}}
-{{define "nav"}}<a id="nav-posts" href="{{.PageHref}}" aria-current="page">Posts</a><a id="nav-comments" href="{{.PageHref}}">Comments</a><a id="nav-settings" href="{{.PageHref}}">Settings</a>{{end}}
+{{define "nav"}}<a id="nav-posts" href="{{.PageHref}}" aria-current="page">{{P "Posts"}}</a><a id="nav-comments" href="{{.PageHref}}">{{P "Comments"}}</a><a id="nav-settings" href="{{.PageHref}}">{{P "Settings"}}</a>{{end}}
 {{define "account"}}{{.Account}}{{end}}
 {{define "profile"}}{{.Profile}}{{end}}
 {{define "locale"}}<details rst-dropdown rst-locale name="rst-menus"><summary>{{T "rastrillo.ui.shell_language"}}<span rst-caret aria-hidden="true">{{icon "chevron-down"}}</span></summary><div rst-dropdown-menu>{{range .Locales}}<a href="{{.Href}}" lang="{{.Code}}" dir="{{.Dir}}"{{if .Current}} aria-current="true"{{end}}>{{.Name}}</a>{{end}}</div></details>{{end}}
 {{define "foot"}}<a style="` + backLinkStyle + `" href="{{.Index}}">{{P "Back to the design system"}}</a>{{end}}
 {{define "content"}}
-{{template "page-header" dict "Title" "Posts" "Sub" (P "A representative screen, so the chrome around it has something to frame.") "ActionHref" "#" "ActionLabel" (P "Write a post") "ActionIcon" "plus"}}
+{{template "page-header" dict "Title" (P "Posts") "Sub" (P "A representative screen, so the chrome around it has something to frame.") "ActionHref" "#" "ActionLabel" (P "Write a post") "ActionIcon" "plus"}}
 <div rst-box-head><h2>{{P "This page"}}</h2><a rst-btn href="{{.Index}}">{{P "Back to the design system"}}</a></div>
 <section rst-box><p>{{P "This is the {shell} shell, one of the shells ui.Layout ships. A screen is a column: a page header, then a section heading and its card, then the next one. Everything you see here is the shell, tokens.css and two partials." "shell" .Name}}</p></section>
-<div rst-box-head><h2>Recent</h2></div>
+<div rst-box-head><h2>{{P "Recent"}}</h2></div>
 <div rst-card style="--rst-cols: 2fr 110px 32px">
-<div rst-lrow="head"><span>Post</span><span class="rst-m-hide">Status</span><span></span></div>
-<div rst-lrow><a class="rst-nm" href="#">Release notes, August<small>Published 2 August</small></a><span class="rst-m-hide">{{template "status-pill" dict "Tone" "positive" "Label" (P "Published")}}</span><span></span></div>
-<div rst-lrow><a class="rst-nm" href="#">Why we moved off the old runner<small>{{P "Draft"}}</small></a><span class="rst-m-hide">{{template "status-pill" dict "Label" (P "Draft")}}</span><span></span></div>
+<div rst-lrow="head"><span>{{P "Post"}}</span><span class="rst-m-hide">{{P "Status"}}</span><span></span></div>
+<div rst-lrow><a class="rst-nm" href="#">{{P "Release notes, August"}}<small>{{P "Published 2 August"}}</small></a><span class="rst-m-hide">{{template "status-pill" dict "Tone" "positive" "Label" (P "Published")}}</span><span></span></div>
+<div rst-lrow><a class="rst-nm" href="#">{{P "Why we moved off the old runner"}}<small>{{P "Draft"}}</small></a><span class="rst-m-hide">{{template "status-pill" dict "Label" (P "Draft")}}</span><span></span></div>
 </div>
-<p rst-count-line>Displaying <strong>1–2</strong> of <strong>412</strong></p>
+{{sample "<p rst-count-line>Displaying <strong>1–2</strong> of <strong>412</strong></p>"}}
 {{end}}
 `
 
@@ -3080,21 +3161,21 @@ const modalTemplate = `{{define "ds-modal"}}<!doctype html>
 <body>
 <div rst-backdrop inert>
 <main rst-page id="main">
-{{template "page-header" dict "Title" "Settings" "Sub" (P "The page the modal opened over. It is marked inert, so nothing in here takes focus or reaches a screen reader while the panel is up.")}}
-<div rst-box-head><h2>Account</h2></div>
+{{template "page-header" dict "Title" (P "Settings") "Sub" (P "The page the modal opened over. It is marked inert, so nothing in here takes focus or reaches a screen reader while the panel is up.")}}
+<div rst-box-head><h2>{{P "Account"}}</h2></div>
 <section rst-box><p>{{P "Modals get their own URL."}}</p></section>
 </main>
 </div>
 <div rst-modal-overlay>
   <dialog rst-modal-panel open aria-labelledby="modal-title">
     <nav>
-      <a href="{{.Self}}" aria-current="page">Profile</a>
-      <a href="{{.Self}}">Billing</a>
-      <a href="{{.Self}}">Notifications</a>
+      <a href="{{.Self}}" aria-current="page">{{P "Profile"}}</a>
+      <a href="{{.Self}}">{{P "Billing"}}</a>
+      <a href="{{.Self}}">{{P "Notifications"}}</a>
     </nav>
     <section>
       <a rst-modal-close href="{{.Index}}" aria-label="{{P "Close settings"}}">✕</a>
-      <h2 id="modal-title">Profile</h2>
+      <h2 id="modal-title">{{P "Profile"}}</h2>
       <p>{{P "Update the name and photo shown across the account."}}</p>
       <p>{{P "Close link designed to work without JS."}}</p>
       <p>{{P "In an application the ✕ would return you to the screen in the backdrop."}}</p>

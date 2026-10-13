@@ -693,11 +693,7 @@ changes the prose as well as the samples.
 `TestNoEnglishProseReachesATranslatedPage` fails on an English string
 that reached a page in another language.
 
-Sample content is the deliberate exception. The names, routes and labels
-inside a component sample are stand-ins, and translating them would
-suggest the framework ships those words, so they stay English on every
-page. The shell and modal demos go the other way: they impersonate a
-real application, so their chrome speaks the language you picked.
+Sample content is translated too, so each language's page shows how its own text fits: Russian and Portuguese run long, Arabic reads right to left, Bengali joins its letters. People's names, email addresses and links stay as they are, because they are stand-ins, not words the framework ships. The shell and modal demos, which impersonate a real application, also speak the language you picked.
 
 Every example is shown four ways behind one control: **Desktop**, **Mobile**, **HTML** and **Template**. The two previews are an `<iframe>` holding a
 document of its own: the sample, the stylesheets, and nothing else.

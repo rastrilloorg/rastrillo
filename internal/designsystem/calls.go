@@ -27,7 +27,7 @@ type call struct {
 // number. An error names the partial, the state and the value's type,
 // and fails the build.
 func callFor(partial string, s sample, locale string) (call, error) {
-	data := s.Data
+	data := localData(locale, s.Data)
 	if s.Build != nil {
 		data = s.Build(locale)
 	}

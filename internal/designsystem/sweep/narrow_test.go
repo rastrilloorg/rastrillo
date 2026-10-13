@@ -32,15 +32,17 @@ var narrowExempt = map[string]string{
 // runs all twelve, which is owed before any release that changes locale
 // strings or preview content.
 //
-// measured 2026-10-06: ru at most 85px taller than en (partial-badge),
-// ga 69px (shell-column and shell-topbar, tied) — the two widest margins
-// of the twelve, and each stresses different previews, so routine CI
-// still exercises both.
+// measured 2026-10-11, since the samples speak the page's language:
+// ru at most 136px taller than en (partial-status-pill: its four pills
+// no longer share a row), es and pt 73px (idiom-form-layout), ga 69px
+// (shell-column), ar 48px (screen-signin-password). Each stresses
+// different previews, so routine CI runs ru, es, ga and ar; pt wraps
+// where es does.
 func narrowLocales() []string {
 	if sweepFull() {
 		return rastrillo.BaseLocales()
 	}
-	return []string{"en", "ar", "ru", "ga"}
+	return []string{"en", "ar", "ru", "ga", "es"}
 }
 
 // The two runs' deadlines, each about four times its own measured time
@@ -95,12 +97,12 @@ func TestPreviewFrameHeightsFitAtThePhonesNarrowest(t *testing.T) {
 		}
 	}
 
-	worst := map[string]int{}               // id → the largest need across the languages run
-	box := map[string]int{}                 // id → its Mobile box
 	shell := map[string]bool{}              // id → frames a sidebar-shell page
-	byLocale := map[string]map[string]int{} // locale → id → need, for the sweep's comparison
+	byLocale := map[string]map[string]int{} // locale → id → need
+	boxIn := map[string]map[string]int{}    // locale → id → its Mobile box on that locale's page
 	for _, locale := range locales {
 		byLocale[locale] = map[string]int{}
+		boxIn[locale] = map[string]int{}
 		for _, row := range heightRows() {
 			if narrowExempt[row.Kind] != "" {
 				continue
@@ -138,30 +140,32 @@ func TestPreviewFrameHeightsFitAtThePhonesNarrowest(t *testing.T) {
 				t.Errorf("%s: %d sections measured, want at least %d: %s", where, len(got), row.Least, row.Owed)
 			}
 			for id, r := range got {
-				byLocale[locale][id] = r[0]
-				box[id], shell[id] = r[1], r[2] == 1
-				if r[0] > worst[id] {
-					worst[id] = r[0]
-				}
+				byLocale[locale][id], boxIn[locale][id] = r[0], r[1]
+				shell[id] = r[2] == 1
 			}
 		}
 	}
-	ids := make([]string, 0, len(worst))
-	for id := range worst {
-		ids = append(ids, id)
-	}
-	sort.Strings(ids)
-	// The only height assertion, made once over every language run. A
+	// The only height assertion, made once every language has been read.
+	// A frame is sized for its own language (previewMobileHeights, then
+	// previewMobileLocaleHeights for a language whose words need more),
+	// so each language's content is held to the box on its own page. A
 	// component preview gets no grace, so nothing in it is reached by
 	// scrolling inside it; a sidebar-shell page keeps the 48px its
 	// 100dvh rail always costs.
-	for _, id := range ids {
-		grace := 0
-		if shell[id] {
-			grace = 48
+	for _, locale := range locales {
+		ids := make([]string, 0, len(byLocale[locale]))
+		for id := range byLocale[locale] {
+			ids = append(ids, id)
 		}
-		if worst[id] > box[id]+grace {
-			t.Errorf("%s: at the narrowest phone frame its document needs %dpx in its tallest language and its Mobile box is %dpx; set previewMobileHeights[%q] to at least %d", id, worst[id], box[id], id, worst[id]+20)
+		sort.Strings(ids)
+		for _, id := range ids {
+			grace := 0
+			if shell[id] {
+				grace = 48
+			}
+			if need, box := byLocale[locale][id], boxIn[locale][id]; need > box+grace {
+				t.Errorf("%s %s: at the narrowest phone frame its document needs %dpx and its Mobile box is %dpx; set previewMobileLocaleHeights[%q][%q] to at least %d", locale, id, need, box, locale, id, need+20)
+			}
 		}
 	}
 	// What the sweep is for: per language, the most any preview's height

@@ -1,6 +1,10 @@
 package designsystem
 
-import "amadan.net/rastrillo/rastrillo"
+import (
+	"strings"
+
+	"amadan.net/rastrillo/rastrillo"
+)
 
 // This file is the page's content: which partial goes in which family,
 // which states of it are worth showing, and the one data value each of
@@ -29,18 +33,17 @@ import "amadan.net/rastrillo/rastrillo"
 // TestEveryProseKeyIsTranslated fails until prose.go carries the eleven
 // translations. That is why the English stays here, in among the data
 // it labels, rather than moving out to a table of slugs — see prose.go
-// for the whole of that argument. Sample DATA is exempt and stays
-// English on every page: a person is called Grace Hopper in Japanese
-// too, and a route is /posts/new in Arabic.
+// for the whole of that argument.
 //
-// One trap in that exemption, and it fails the whole build rather than
-// one page. The leak gate asserts that no prose KEY appears in English
-// on a translated page, and it reads the rendered bytes — so it cannot
-// tell a sample's data from the page's own voice. A stat labelled
-// "Open requests" fails, not because the label is wrong but because the
-// demo application already says that sentence through P and the string
-// is therefore a key. Where the obvious sample wording is one this page
-// says elsewhere, pick another.
+// Sample DATA is translated too, on the same terms: a label, a hint, a
+// row's title or a status word is a key, and its eleven translations
+// are in sampleprose.go. localise.go decides what is a word and what is
+// the machine's (a field's Name, an Href, a Tone) or a stand-in (a
+// person is called Grace Hopper in Japanese too, and a route is
+// /posts/new in Arabic). A new sample is translated by default, so the
+// parity gate asks for its translations the day it lands. A word that is
+// an action here and a noun elsewhere in the samples is written as
+// verb("Archive"), so the two can be translated apart.
 
 // wrapper is the container a sample needs around it, per the rules in
 // docs/site/templates.md: rst-list and rst-card hold rows only, and a
@@ -151,11 +154,13 @@ var searchTerms = map[string]string{
 
 // selectOptions builds an n-option list for field-select. Past ten
 // options the partial arms select.js, so the same builder produces both
-// the plain native select and the enhanced combobox.
+// the plain native select and the enhanced combobox. The value is the
+// label in lower case: it is what the form posts, so it stays the same
+// in every language while the label a reader sees is translated.
 func selectOptions(labels ...string) []any {
 	out := make([]any, 0, len(labels))
 	for i, label := range labels {
-		opt := map[string]any{"Value": label, "Label": label}
+		opt := map[string]any{"Value": strings.ToLower(label), "Label": label}
 		if i == 0 {
 			opt["Selected"] = true
 		}
@@ -257,7 +262,7 @@ func families() []family {
 							"Name": "Grace Hopper",
 							"Items": []any{
 								map[string]any{"Label": "Edit", "Href": "/orders/AB3PX/edit"},
-								map[string]any{"Label": "Archive", "Action": "/orders/AB3PX/archive", "Hidden": [][2]string{{"state", "archived"}}},
+								map[string]any{"Label": verb("Archive"), "Action": "/orders/AB3PX/archive", "Hidden": [][2]string{{"state", "archived"}}},
 								map[string]any{"Label": "Delete order…", "Href": "/orders/AB3PX/delete", "Danger": true},
 							},
 						}, Note: "Put the destructive item last and end its label with …. It opens a page that asks before anything is deleted."},
@@ -307,7 +312,7 @@ func families() []family {
 							"EscalateHref": "/posts?select=all", "EscalateLabel": "Select all 412 matching",
 							"MenuLabel": "Actions",
 							"Actions": []any{
-								map[string]any{"Value": "export", "Label": "Export"},
+								map[string]any{"Value": "export", "Label": verb("Export")},
 								map[string]any{"Value": "unpublish", "Label": "Unpublish"},
 								map[string]any{"Value": "delete", "Label": "Delete…", "Danger": true},
 							},

@@ -95,8 +95,9 @@ func screenPartialViews() []screenPartialView {
 // of these paths, so nothing here needs to exist.
 var galleryPasskey = &auth.PasskeyDoor{BeginPath: "/passkey/discover/begin", FinishPath: "/passkey/discover/finish", ModuleURL: "/static/webauthn.mjs", ScriptURL: "/static/passkey-signin.mjs"}
 
-// galleryBrand is sample data, not the page's voice: it stays English on
-// every page, like every other sample's names. It has all three parts a
+// galleryBrand is sample data, not the page's voice. Its name is a
+// stand-in and stays as written on every page; its pitch is words, and
+// is translated like every other sample's. It has all three parts a
 // brand can have, because a brand column with only a name is half a card
 // of nothing and not what an app would ship. The mark is drawn in
 // currentColor with no colours of its own, so the card's CSS gives it
@@ -255,7 +256,8 @@ func buildScreens(mount, theme, locale string, tmpl *template.Template, files pr
 		}
 		title := previewTitle(locale, doc.Key, "Screens")
 		if doc.Signin == nil {
-			preview, file := newPreview(mount, theme, locale, "screens", id+"-0", title, doc.Markup, doc.Markup, id)
+			markup := localMarkup(locale, doc.Markup)
+			preview, file := newPreview(mount, theme, locale, "screens", id+"-0", title, markup, markup, id)
 			if err := files.add(file); err != nil {
 				return nil, err
 			}
@@ -265,7 +267,7 @@ func buildScreens(mount, theme, locale string, tmpl *template.Template, files pr
 		}
 		var buf strings.Builder
 		err := tmpl.ExecuteTemplate(&buf, "ds-screen-stage", map[string]any{
-			"State": *doc.Signin, "Brand": galleryBrand, "Preview": true, "Art": first,
+			"State": *doc.Signin, "Brand": localData(locale, galleryBrand), "Preview": true, "Art": first,
 		})
 		if err != nil {
 			return nil, fmt.Errorf("screen %s: %w", doc.Key, err)

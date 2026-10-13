@@ -96,7 +96,18 @@ const maxPageBytes = 128 << 10
 // the first attempt — the entry was marked used because a page of that
 // name existed — so it has a gate of its own:
 // TestTheDebtTableCannotOutliveTheDebt.
-var pageBudgetDebt = map[string]int{}
+var pageBudgetDebt = map[string]int{
+	// The Form page in Hindi and Bengali, since the samples speak the
+	// page's language. Every label, hint and error on it is written three
+	// times (the frame's document is a file, but the HTML tab and the
+	// Template tab both carry the words), and Devanagari and Bengali
+	// take three bytes a character where English took one. The page
+	// went from comfortably under to a kilobyte or so over. The fix is
+	// the page's, not the budget's: the Form family is the largest on
+	// the site, and splitting it (the choosers and the date fields have
+	// the weight) is the change that empties this entry.
+	"form.html": 134 << 10,
+}
 
 // pageKinds() is built from two sources since the split — the sections
 // written out in the table, and one row per family read off samples.go —
@@ -1735,70 +1746,22 @@ func TestEveryProseKeyIsTranslated(t *testing.T) {
 // reached the page — for the strings where that proof cannot be had.
 //
 // It cannot be had because a bare English word occurs on a translated
-// page for reasons that are nothing to do with prose. Of the 51 short
-// keys, eleven actually collide today — "Display", "Published", "On",
-// "Draft", "Failed", "Full", "Filter", "Form", "Text", "Tokens",
-// "Demos" — and they are the justification for the floor rather than a
-// list to maintain. "Failed" and "Full" are status-pill labels a
-// fixture chose, "Display" is inside the count line's "Displaying
-// 1–20", and "On" is a substring of half the English in the page's
-// sample data. Gating those would fail on fixtures, which is the
-// opposite of what this gate is for. Twelve characters is the shortest
-// key that is a phrase; below it, matching a bare word proves nothing
-// either way. Count the collisions again too: set the floor to 0 and
-// the sweep names them.
+// page for reasons that are nothing to do with a missing translation.
+// "Display" is inside the count line's "Displaying"; "On" is inside
+// half the words on the page; and a short word is often its own
+// translation, which a sentence never is: Beta in Spanish, Madrid in
+// every language that has it, Total in Spanish and Portuguese, which
+// was a sentence-length key once and had to be reworded to pass.
+// Twelve characters is the shortest key that is a phrase; below it,
+// matching a bare word proves nothing either way. Set the floor to 0
+// and the sweep names the collisions.
 const proseLeakFloor = 12
 
-// proseFixtureCollisions names the prose keys that are ALSO sample data
-// somewhere in the tree, against the page kind whose page or preview
-// files may carry the key in English. The sweep skips such a key on
-// that page kind and keeps checking it everywhere else, so the guard
-// stays where the prose actually is rather than being dropped for the
-// whole tree.
-//
-// ── The boundary this map sits on ────────────────────────────────────
-//
-// Sample content stays English on every page: the names, the routes and
-// the labels in the component samples are stand-ins, and translating
-// them would suggest the framework ships those words. The shell and
-// modal demos are the other way round — they impersonate a real
-// application, so their chrome speaks the language the reader chose.
-// The page says this out loud too, under Partials, in all twelve
-// languages; this comment is the same sentence where a maintainer meets
-// it rather than a reader.
-//
-// So this is not a bug to be tidied away by translating the fixture.
-// The shell demos and the gallery genuinely draw the same words in two
-// different roles, and only the page they are on tells the two apart.
-// Prefer this to widening proseLeakFloor: a floor exempts every short
-// key at once, and this exempts one key on one kind of page, in
-// writing.
-var proseFixtureCollisions = map[string]string{
-	// The shell demos' sample screen says this as its own chrome and
-	// translates it (page.go's shellTemplate). samples.go passes the
-	// same words as page-header's ActionLabel, as fixture, and
-	// page-header is in the list screen family — so on that page an
-	// English "Write a post" is the fixture doing its job, and on a
-	// shell demo it would be a leak.
-	"Write a post": "list-screen",
-	// The modal idiom's sample and this package's own modal demo say
-	// the same two sentences, because the demo was written FROM the
-	// sample. The sample is a fixture — English markup a reader copies
-	// — and it used to be visible only as escaped source, which this
-	// sweep skips. It is now also rendered, inside its preview frame,
-	// so the English reaches the primitives page's bytes, which is
-	// where the modal idiom lives. On modal.html the same words are the
-	// page speaking and must be translated, and the sweep still says so
-	// there.
-	"Close settings": "primitives",
-	"Update the name and photo shown across the account.": "primitives",
-}
-
-// escapedSource strips the <pre class="ds-src"> blocks out of a page.
-// They hold ui.Styleguide's samples verbatim — English markup a reader
-// is meant to copy — so English inside them is the point, not a leak.
-// Two of prose.go's own keys appear in there, because the modal sample
-// and this package's own modal demo say the same sentences.
+// escapedSource strips the <pre class="ds-src"> blocks out of a page:
+// the HTML and Template tabs, whose markup is shown as escaped,
+// highlighted text. A sample's own id="…" is in there as text, split
+// into tokens wherever the highlighter chose, and is not an element of
+// the page.
 func escapedSource(page string) string {
 	for {
 		i := strings.Index(page, `<pre class="ds-src`)
@@ -1830,10 +1793,10 @@ var proseSentinels = []string{
 // sentence the renderer can emit is a sentinel, not just the three
 // named above.
 //
-// Sample data is exempt and deliberately so — the fixtures are English
-// names, English routes and English record titles, and translating
-// "Grace Hopper" would be a different and worse kind of dishonesty. So
-// is the escaped source, which is markup to copy.
+// Sample content is held to it too: its words are prose keys
+// (localise.go), so a sample sentence left in English is caught here
+// like any other. The stand-ins are not keys and are not swept: a
+// person is called Grace Hopper on every page.
 func TestNoEnglishProseReachesATranslatedPage(t *testing.T) {
 	files := render(t)
 	keys := proseKeysRendered(t)
@@ -1898,7 +1861,10 @@ func TestNoEnglishProseReachesATranslatedPage(t *testing.T) {
 	}
 
 	for _, name := range names {
-		page := escapedSource(string(files[name]))
+		// The HTML and Template tabs are swept too: a sample's words are
+		// translated in its source as in its preview, so English in a
+		// copied block is the same leak as English on screen.
+		page := string(files[name])
 		if page == "" {
 			t.Errorf("%s is empty", name)
 			continue
@@ -1909,9 +1875,6 @@ func TestNoEnglishProseReachesATranslatedPage(t *testing.T) {
 			}
 		}
 		for _, key := range sentences {
-			if on, ok := proseFixtureCollisions[key]; ok && pageKindOf(name) == on {
-				continue
-			}
 			if strings.Contains(page, key) {
 				t.Errorf("%s carries the English %q", name, key)
 			}
@@ -3047,9 +3010,16 @@ func TestTheGettingStartedPageWeighsTheRealAssets(t *testing.T) {
 				body []byte
 			}{n, vendored[n]})
 		}
-		app := 0
-		for _, body := range vendored {
-			app += len(body)
+		// The app's total, summed here from the figures each file's own
+		// row is built from: what the scaffold writes, a file at a time,
+		// gzipped one file at a time as a visitor fetches them.
+		appRaw, appGzip := 0, 0
+		for name, body := range vendored {
+			w := weigh(name, body)
+			appRaw, appGzip = appRaw+w.Raw, appGzip+w.Gzip
+		}
+		if appGzip >= appRaw {
+			t.Errorf("%s: the app's gzipped total %d is not below its raw %d", theme, appGzip, appRaw)
 		}
 		for _, locale := range rastrillo.BaseLocales() {
 			name := theme + "/" + locale + "/" + fileOf("getting-started")
@@ -3067,7 +3037,15 @@ func TestTheGettingStartedPageWeighsTheRealAssets(t *testing.T) {
 				if len(served) != len(a.body) {
 					t.Errorf("%s: the tree serves %d bytes of %s and the library holds %d — the download and the number beside it are different files", name, len(served), a.file, len(a.body))
 				}
-				weight := template.HTMLEscapeString(proseIn(locale, "{bytes} bytes", "bytes", len(served)))
+				// The figures are recomputed from the served bytes rather
+				// than written down: compressed sizes move between Go
+				// releases (spec §6-v2.9), so the gate holds the page to
+				// the file and weight_test.go holds the arithmetic.
+				w := weigh(a.file, served)
+				if w.Gzip >= w.Raw || w.Stripped > w.Gzip {
+					t.Errorf("%s: %s weighs %d raw, %d gzipped, %d stripped; gzip must shrink it and stripping must not grow it", name, a.file, w.Raw, w.Gzip, w.Stripped)
+				}
+				weight := template.HTMLEscapeString(weightIn(locale, w))
 				for _, w := range []string{
 					`id="` + anchorID("asset", a.file) + `" data-ds-anchor`,
 					// The hashed address, saved under the plain name: a reader
@@ -3101,9 +3079,12 @@ func TestTheGettingStartedPageWeighsTheRealAssets(t *testing.T) {
 					t.Errorf("%s mentions %s below the head. That file is this gallery's own plumbing: no scaffold writes it and no app receives it, so a page about what an app ships has nothing to say about it", name, own)
 				}
 			}
-			total := proseIn(locale, "A new app gets {bytes} bytes of CSS and JavaScript in total: tokens.css, one theme, and the scripts.", "bytes", app)
+			total := proseIn(locale, appTotalLine, "raw", kibUnit(locale, appRaw), "gzip", kibUnit(locale, appGzip))
 			if !strings.Contains(page, template.HTMLEscapeString(total)) {
 				t.Errorf("%s: the page does not say %q — the app total is not the arithmetic over what rastrillo new writes", name, total)
+			}
+			if strings.Contains(total, "{") || strings.Count(total, " KiB") != 2 {
+				t.Errorf("%s: the app total should carry two KiB figures and no placeholder: %q", name, total)
 			}
 		}
 	}
@@ -3255,18 +3236,20 @@ var (
 	templateLetter     = regexp.MustCompile(`\p{L}`)
 )
 
-// templateFixtures is every run of English the three page templates are
-// allowed to write between their tags: the sample screens' own record
-// data, the product's name, and the type specimen. Seventeen entries,
-// and worth reading as documentation rather than only as an allowlist
-// — with dictFixtures below, it is the inventory of English that stays
-// English on a Japanese page, as far as these three templates go.
+// templateFixtures is every run of English the page templates are
+// allowed to write between their tags: the stand-ins the sample screens
+// keep in every language (a person's name, an email address, the
+// sample app's brand and the product's own name), the type specimen,
+// and the two machine values below. Worth reading as documentation
+// rather than only as an allowlist: it is the inventory of words that
+// stay as written on a Japanese page, as far as these templates go.
 //
-// Adding to it is a decision — this string is data, not the page
-// speaking — and it should be a rare one. "Draft" came OUT of it when
-// the status pill beside it was translated and left the row's meta
-// line saying the same word in English. Everything the page says in
-// its own voice goes through P instead.
+// It used to hold the sample screens' records too: the subjects, the
+// queues, the dates, the shell demo's nav and count line. Those are
+// translated now, like every other sample's words (localise.go), so a
+// record title is {{P …}} here and a new one is a prose key. Adding to
+// this list is a claim that a string is a stand-in, and the bar is the
+// one sampleStandIns sets: a name, an address, a brand.
 var templateFixtures = map[string]bool{
 	// The product's name, in the shell demos' brand slot.
 	"rastrillo": true,
@@ -3278,83 +3261,27 @@ var templateFixtures = map[string]bool{
 	// translating it would break the match.
 	"index": true,
 	"page":  true,
-	// The shell demos' sample screen: its nav, its section headings,
-	// its column headers, its rows, and its count line.
-	"Posts":                           true,
-	"Comments":                        true,
-	"Settings":                        true,
-	"Recent":                          true,
-	"Post":                            true,
-	"Status":                          true,
-	"Release notes, August":           true,
-	"Published 2 August":              true,
-	"Why we moved off the old runner": true,
-	"Displaying":                      true,
-	"of":                              true,
-	// The modal demo's sample screen: the section it is settings for,
-	// and the three tabs in the panel's rail.
-	"Account":       true,
-	"Profile":       true,
-	"Billing":       true,
-	"Notifications": true,
-	// The demo application's records — the rows of its grids and the
-	// facts of its one open request. Everything the APPLICATION says —
-	// its screens, its controls, its statuses, and the HEADERS over
-	// these rows — is a prose key and is translated; what is below is
-	// what its database would hold. A person's name, a request's
-	// subject, a date, a queue name and the app's own brand are
-	// content, and translating them would suggest the framework ships
-	// those words.
-	//
-	// "Status" stays here for the SHELL demos, whose sample screen
-	// writes its column headers literally (shellTemplate, "Post" /
-	// "Status"). The demo application's copy of that word is
-	// {{P "Status"}} and is translated; both can be true, because the
-	// shell demo is a screen framing a shell and the demo application
-	// is an application.
-	"Harbour":                            true,
-	"Ada Lovelace":                       true,
-	"ada@example.com":                    true,
-	"A":                                  true,
-	"Invoice #4471 never arrived":        true,
-	"Card declined on renewal":           true,
-	"Export takes twenty minutes":        true,
-	"Seat count is wrong on the invoice": true,
-	// The four people are registered alone rather than as
-	// "Fiona Reid · 09:12", because each name is now wrapped in <bdi>
-	// and the element splits the run. That is the point of the wrapper
-	// — a person's name is its own bidirectional island — so the
-	// fixtures follow the markup rather than the markup being written
-	// to suit the fixtures.
+	// The demo application's brand, and the person signed in to it.
+	"Harbour":         true,
+	"Ada Lovelace":    true,
+	"ada@example.com": true,
+	"A":               true,
+	// The people the demo application's requests come from. Each name
+	// is wrapped in <bdi>, its own bidirectional island, so the scanner
+	// sees it alone.
 	"Fiona Reid":   true,
 	"Otto Neurath": true,
 	"Hedy Lamarr":  true,
 	"Mary Sherman": true,
-	// The tails the wrapper leaves behind. A run that used to read
-	// "Fiona Reid · Billing" is now the name, then the separator and
-	// the queue; the scanner sees the second half on its own.
-	"· Billing":   true,
-	"· Data":      true,
-	"· 11 August": true,
-	"12 August":   true,
-	"11 August":   true,
 }
 
 // dictFixtures is the literal English a dict argument is allowed to
 // carry, on the same terms as templateFixtures and kept apart from it
-// on purpose. The two positions are not interchangeable: "Draft" is
-// legitimate prose in the row's meta line and would have been a leak
-// as a status-pill Label, and one shared allowlist would have let the
-// second through on the strength of the first. Both entries here are
-// the name of a fictional screen.
-var dictFixtures = map[string]bool{
-	"Posts":    true, // the shell demos' sample screen
-	"Settings": true, // the modal demo's
-	// The demo application's one open record: the subject it is a
-	// request about, and the queue it sits in.
-	"Invoice #4471 never arrived": true,
-	"Billing":                     true,
-}
+// on purpose: the two positions are not interchangeable, and one shared
+// allowlist would let a label through on the strength of a row's text.
+// It is empty since the sample screens' words were translated; a value
+// that belongs here is a stand-in, never a word.
+var dictFixtures = map[string]bool{}
 
 // dictMachineArgs are the argument names whose value is a machine's,
 // never a reader's: a tone identifier, an icon slug, a URL, a form
@@ -3745,16 +3672,16 @@ func TestTheTextOnScreenIsTheTextCopied(t *testing.T) {
 		}
 		sort.Strings(names)
 		for _, name := range names {
-			want["primitives"] = append(want["primitives"], codeview.Format(samples[name]))
+			want["primitives"] = append(want["primitives"], codeview.Format(localMarkup(locale, samples[name])))
 		}
 		for _, doc := range formatDocs() {
-			want["formats"] = append(want["formats"], codeview.Format(doc.Markup))
+			want["formats"] = append(want["formats"], codeview.Format(localMarkup(locale, doc.Markup)))
 		}
 		for _, doc := range screenDocs() {
 			if doc.Signin != nil {
 				want["screens"] = append(want["screens"], signinSource)
 			} else {
-				want["screens"] = append(want["screens"], codeview.Format(doc.Markup))
+				want["screens"] = append(want["screens"], codeview.Format(localMarkup(locale, doc.Markup)))
 			}
 		}
 		for kind, blocks := range want {

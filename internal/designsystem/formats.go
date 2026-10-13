@@ -158,8 +158,7 @@ func formatDocs() []formatDoc {
 			Title: "Short forms like WCAG",
 			Body:  "The <abbr> tag shows the full wording when you hover. That does not work on a phone, and screen readers often skip it. Write the words out in full the first time as well.",
 			Markup: `<section rst-box>
-  <p>Every page here meets the Web Content Accessibility Guidelines
-  (<abbr title="Web Content Accessibility Guidelines">WCAG</abbr>) 2.2 at level AA.</p>
+  <p>Every page here meets the Web Content Accessibility Guidelines (<abbr title="Web Content Accessibility Guidelines">WCAG</abbr>) 2.2 at level AA.</p>
 </section>`,
 		},
 		{
@@ -185,8 +184,9 @@ func buildFormats(mount, theme, locale string, files previewSet) ([]formatView, 
 	out := make([]formatView, 0, len(docs))
 	for _, doc := range docs {
 		id := anchorID("format", doc.Key)
+		markup := localMarkup(locale, doc.Markup)
 		preview, file := newPreview(mount, theme, locale, "formats", id+"-0",
-			previewTitle(locale, doc.Key, "Dates, numbers and names"), doc.Markup, doc.Markup, id)
+			previewTitle(locale, doc.Key, "Dates, numbers and names"), markup, markup, id)
 		if err := files.add(file); err != nil {
 			return nil, err
 		}
