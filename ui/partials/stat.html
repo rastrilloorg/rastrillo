@@ -48,4 +48,4 @@
      something a person needs, the fix is a fuller Value or an
      accessible name — never Exact. And a date or a duration takes
      <time>, not <data>; that is the distinction most often got wrong. */}}
-{{define "stat"}}<div rst-stat{{if .Lead}}="lead"{{end}}><span rst-stat-label>{{.Label}}</span><span rst-stat-num>{{if .Exact}}<data value="{{.Exact}}">{{number .Value}}</data>{{else}}{{number .Value}}{{end}}</span>{{with .Delta}}<span rst-stat-delta rst-tone="{{if $.Tone}}{{$.Tone}}{{else}}neutral{{end}}">{{.}}</span>{{end}}{{with .Note}}<span rst-stat-note>{{.}}</span>{{end}}</div>{{end}}
+{{define "stat"}}{{$L := localizer $}}<div rst-stat{{if .Lead}}="lead"{{end}}><span rst-stat-label>{{.Label}}</span><span rst-stat-num>{{if .Exact}}<data value="{{.Exact}}">{{number $L .Value}}</data>{{else}}{{number $L .Value}}{{end}}</span>{{with .Delta}}<span rst-stat-delta rst-tone="{{if $.Tone}}{{$.Tone}}{{else}}neutral{{end}}">{{.}}</span>{{end}}{{with .Note}}<span rst-stat-note>{{.}}</span>{{end}}</div>{{end}}

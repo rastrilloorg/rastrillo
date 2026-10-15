@@ -55,6 +55,7 @@ current doctor exits 5 and prints the migration. docs/site/cli.md
 resource generates CRUD screens — field kinds text, textarea, money; no
 relations; `scope = "user"` owner-filters by session subject. Inside
 that vocabulary the closing checklist is correct by construction.
+`gen.Router` takes `gen.Boot`'s result: Boot upgrades and checks money.
 docs/site/manifests.md
 
 ## 1. App shape
@@ -98,14 +99,18 @@ chi.NewRouter()`; `r.Use(csrf.Protect(origin))`; `ph`'s handlers at
 GET+POST `/signin`, `/signup` and POST `/signout` (§5); owned-model
 CRUD (§3/§4) inside
 `r.Group(func(r chi.Router) { r.Use(sess.Require); ... })`; return
-`r`. `render.go` parses one
-`*template.Template` per page (layout + page), so two pages can both
-define `"content"`. Past 5,000 lines in `internal/<app>`, split by
-feature: `internal/<app>/<feature>` exposing `Mount(r chi.Router, deps)`,
-called from `Router`; `make budget` enforces it.
+`r`. `render.go` builds `ui.Pages` once at boot, one copy per page, so
+two pages can both define `"content"`. Past 5,000 lines in
+`internal/<app>`, split by feature: `internal/<app>/<feature>` exposing
+`Mount(r chi.Router, deps)`, called from `Router`; `make budget`
+enforces it.
 
-Locales: `Options.Locales`/`DefaultLocale`/`LocaleFS`, flat TOML per
-code; twelve ship translated. **Any locale you add must translate the
+Locales: `locales`/`default_locale` in `manifest/app.toml`; `rastrillo
+generate` writes `gen/locales`, linking their packs: pass its
+`Locales`/`DefaultLocale` to `Resolve`. Boot refuses a locale whose
+pack is unlinked; with `RASTRILLO_CHECK_CONFIG=1`, `Resolve` prints the
+check and exits. Catalogs: `Options.LocaleFS`, flat TOML per code;
+twelve ship translated. **Any locale you add must translate the
 `rastrillo.ui.*` keys or `generate --check` fails.**
 docs/site/localization.md
 
@@ -230,16 +235,21 @@ form.Field{Name: "body", Kind: form.Textarea})` — one declaration per
 field. On `!p.OK()`: `w.WriteHeader(422)`, re-render seeding values
 (`p.String("title")`; `p.Echo()` is the seed-back map for
 map-shaped views). Write the status before rendering; the render helper
-writes none. Money is `int64` cents: `form.Money`, read `p.Cents`,
-parse `form.ParseCents` (no `$`, two decimals max, `""` = zero), seed
-`form.FormatCentsPlain`, display `form.FormatCents`.
+writes none. Money: `form.Field{Kind: form.Money, Currency: code,
+LocaleEcho: true}`, code from the server; read `p.Minor`, store the
+code with it; seed `form.SeedMoney`, draw `field-money`, show
+`{{money $L .Amount .Currency}}`. Input is normalised; `Strict: true`
+keeps the exact format. On edit set `Stored`: an unchanged
+`<Name>.seed` keeps it, so an ambiguous seed saves. No `Currency`:
+legacy USD cents (`p.Cents`, `""` = 0, seed `FormatCentsPlain`, show
+`FormatCents`).
 
 `form.Date`/`Time`/`DateTime` parse fixed layouts only, in
 `Field.Location`; `form.Range(p, "starts", "ends")` checks
 end-before-start. Three traps: empty, unparseable and undeclared names
 all read back as the zero time — ask `p.OK()`, never `IsZero`; their
 error values are `rastrillo.ui.*` **keys**, not sentences, so render
-`"Error" (T (index .Errors "Starts"))`; and `field-daterange`'s two
+`"Error" (T $L (index .Errors "Starts"))`; and `field-daterange`'s two
 halves need distinct `Name`s. docs/site/forms.md
 
 A web address is `form.URL` + `field-url` (scheme optional; errors are
@@ -303,7 +313,7 @@ Use `auth.From(r)` or `sessions.Current(r)` and map the address to your
 user's id first.
 
 **Sign-in screen:** set `auth.Config.SigninScreen: true` and render
-`{{template "signin" (dict "State" .Signin "Brand" .Brand)}}` (title:
+`{{template "signin" (dict "L" $L "State" .Signin "Brand" .Brand)}}` (title:
 `signin-title`) in the `stage` shell, from `st := a.SigninState(r)` —
 set `st.Passkey` if passkey discovery is mounted — then
 `a.PrepareSigninResponse(w, st)` before rendering; make that handler
@@ -405,7 +415,7 @@ Customise with a thin app-owned CSS layer loaded after `tokens.css` and
 overrides for colour, type and shape; use app-specific classes for layout
 or components the system does not cover. Keep base styles intact so
 framework fixes stay easy to adopt. An explicit user design requirement
-wins; reuse the system wherever it fits.
+wins.
 docs/site/templates.md
 
 Shells on a phone: `topbar` and `console` put their narrow chrome in
@@ -417,12 +427,10 @@ with `{{define "up"}}/#nav-x{{end}}` and the nav link gets
 
 **One screen, one job.** A screen shows a thing, or asks for one thing —
 never both. It prevents stacking: a list page that also
-carries a create form, an import panel and a dropzone, so the first
-thing a person meets is four half-started decisions and no obvious one.
+carries a create form, an import panel and a dropzone.
 
-Nearly every interaction is the same short flow, as full pages or as
-modals — a modal here is its own URL, so it is the same four steps and
-the same back button, not a second mode:
+Nearly every interaction is the same four-step flow, as full pages or
+as modals (a modal is its own URL, with the same back button):
 
 1. **A link naming the action**, on the screen you are already on: "New
    sheet", "Import a spreadsheet". A link or button, never the form
@@ -436,9 +444,9 @@ the same back button, not a second mode:
    notice (§4). Re-rendering the form is not a confirmation.
 
 An empty list is step 1, not an exception: `empty-state` says what the
-screen is for and carries the one link — do not pre-empt it with the
-create form. Destructive actions are the same shape, with `confirm-form`
-on its own URL at step 2, never a modal fired from the row.
+screen is for and carries the one link. Destructive actions are the same
+shape, with `confirm-form` on its own URL at step 2, never a modal fired
+from the row.
 
 ## 7a. Tests and budgets
 
@@ -494,14 +502,16 @@ target. docs/site/testing.md
   headline component. Put the sign in `Delta` and pass `Tone` yourself —
   a fall is good news about half the time.
   A name inline with other content needs `<bdi>`, or an RTL name draws
-  the number beside it to its LEFT. Format every displayed quantity with `{{number .Count}}`, including
-  stats, tables, totals and chart labels. Bind `ui.WithLocale(rastrillo.LocaleFrom(r))`
-  with the other `ui.Funcs` options on each request's cloned template;
-  no locale means English. `stat.Value` formats numbers and plain integer
-  strings automatically; `detail-list.Value` formats numeric types. Pass
-  quantities as numbers, identifiers/years/versions as strings; never
-  group IDs, input values, URLs or machine attributes. Keep currency and
-  percent formatting explicit and locale-aware.
+  the number beside it to its LEFT. `ui.Pages` is strict: start each
+  body with `{{$L := localizer $}}` and pass `$L` first to every locale
+  function (`T`, `number`, `money`...) and to partials as `"L" $L`, or
+  the page fails; `render.go` takes `L` from `ui.ForRequest(r)`. Format
+  every displayed quantity with `{{number $L .Count}}`, including stats,
+  tables, totals and chart labels. `stat.Value` formats numbers and
+  plain integer strings automatically; `detail-list.Value` formats
+  numeric types. Pass quantities as numbers, identifiers/years/versions
+  as strings; never group IDs, input values, URLs or machine attributes.
+  Keep percent formatting explicit and locale-aware.
   `detail-list` takes `DateTime` beside `Value` for a moment (`<time>`). Every menu is a
   `<details name="rst-menus">` (opening one closes the rest);
   `rastrillo.js` closes any on outside click or Escape; `MenuGroup`
@@ -518,16 +528,16 @@ target. docs/site/testing.md
   committed); `go generate ./...` renders a local copy into
   `.design-system/`. docs/site/templates.md
 - **Modern CSS is the floor, not a hazard.** `tokens.css` plus a shipped
-  theme already require Chrome 123, Safari 17.5, Firefox 121 — none older
-  than late 2023 — because every theme colour is a `light-dark()`. Anything
-  that shipped at or below that floor is free, `oklch()` and `color-mix()`
-  included, with no hex twin and no `@supports`: an engine too old for
-  `oklch()` dropped the whole `light-dark()` palette several declarations
-  earlier. Self-contained means the CSS fetches nothing — no imports, no
-  remote assets, no webfont, held by `ui_test.go` — never that old engines
-  are supported. Go above the floor with `@supports`, or move the floor and
-  say so. The bar is a year in all three engines; `cssfloor_test.go` fails
-  once the floor has gone nine months unreviewed.
+  theme already require Chrome 123, Safari 17.5, Firefox 121, because
+  every theme colour is a `light-dark()`. Anything that shipped at or
+  below that floor is free, `oklch()` and `color-mix()` included, with
+  no hex twin and no `@supports`: an engine too old for `oklch()`
+  dropped the whole `light-dark()` palette several declarations earlier.
+  Self-contained means the CSS fetches nothing — no imports, no remote
+  assets, no webfont, held by `ui_test.go` — never that old engines are
+  supported. Go above the floor with `@supports`, or move the floor and
+  say so. The bar is a year in all three engines; `cssfloor_test.go`
+  fails once the floor has gone nine months unreviewed.
   docs/site/templates.md
 - **Never hand-roll an error page.** `view.Fail`/`NotFound`/`Forbidden`
   render styled pages inside the shell; a 500 shows a ref matching the

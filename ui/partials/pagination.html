@@ -38,12 +38,12 @@
      rst-pagination-gap="narrow" an ellipsis only a phone shows. The
      chevron is chevron-down turned a quarter, because every icon set
      an app can scaffold has that one. */}}
-{{define "pagination"}}<nav rst-pagination aria-label="{{if .Label}}{{.Label}}{{else}}{{T "rastrillo.ui.pagination"}}{{end}}">
+{{define "pagination"}}{{$L := localizer $}}<nav rst-pagination aria-label="{{if .Label}}{{.Label}}{{else}}{{T $L "rastrillo.ui.pagination"}}{{end}}">
   {{- range paginationItems .}}
   {{- if .Gap}}<span rst-pagination-gap{{if .Narrow}}="narrow"{{end}}{{if .Wide}} rst-pagination-wide{{end}} aria-hidden="true">…</span>
-  {{- else if .Current}}<span aria-current="page">{{number .Label}}</span>
-  {{- else if .Disabled}}<span rst-pagination-disabled{{with .Step}} rst-pagination-step="{{.}}"{{end}}{{if .Wide}} rst-pagination-wide{{end}}>{{if .Step}}{{icon "chevron-down"}}<span rst-pagination-word>{{number .Label}}</span>{{else}}{{number .Label}}{{end}}</span>
-  {{- else}}<a href="{{.Href}}"{{with .Step}} rst-pagination-step="{{.}}"{{end}}{{if .Wide}} rst-pagination-wide{{end}}>{{if .Step}}{{icon "chevron-down"}}<span rst-pagination-word>{{number .Label}}</span>{{else}}{{number .Label}}{{end}}</a>
+  {{- else if .Current}}<span aria-current="page">{{number $L .Label}}</span>
+  {{- else if .Disabled}}<span rst-pagination-disabled{{with .Step}} rst-pagination-step="{{.}}"{{end}}{{if .Wide}} rst-pagination-wide{{end}}>{{if .Step}}{{icon "chevron-down"}}<span rst-pagination-word>{{number $L .Label}}</span>{{else}}{{number $L .Label}}{{end}}</span>
+  {{- else}}<a href="{{.Href}}"{{with .Step}} rst-pagination-step="{{.}}"{{end}}{{if .Wide}} rst-pagination-wide{{end}}>{{if .Step}}{{icon "chevron-down"}}<span rst-pagination-word>{{number $L .Label}}</span>{{else}}{{number $L .Label}}{{end}}</a>
   {{- end}}
   {{- end}}
 </nav>{{end}}

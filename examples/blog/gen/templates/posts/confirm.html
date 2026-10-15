@@ -3,14 +3,15 @@
      this one file then stops.
 
      Data contract (the action emitter reads this):
+       L  *ui.Localizer, required: set by the action from the request; ui.Pages' middleware puts it there
        Title       string, required — the record being deleted (its
                    first text field's value; show.html's Title,
                    restated so the person confirms the right one)
        DeleteHref  string, required — the sibling POST that deletes
        CancelHref  string, required — back to the record's show page */}}
-{{define "content"}}
-{{template "back-nav" dict "Href" .CancelHref "Label" (T "resource.posts.name")}}
-{{template "page-header" dict "Title" (T "resource.posts.delete.title")}}
-<p>{{.Title}} — {{T "resource.posts.delete.confirm"}}</p>
-{{template "confirm-form" dict "Action" .DeleteHref "Label" (T "ui.delete") "Danger" true "CancelHref" .CancelHref}}
+{{define "content"}}{{$L := localizer $}}
+{{template "back-nav" dict "L" $L "Href" .CancelHref "Label" (T $L "resource.posts.name")}}
+{{template "page-header" dict "L" $L "Title" (T $L "resource.posts.delete.title")}}
+<p>{{.Title}} — {{T $L "resource.posts.delete.confirm"}}</p>
+{{template "confirm-form" dict "L" $L "Action" .DeleteHref "Label" (T $L "ui.delete") "Danger" true "CancelHref" .CancelHref}}
 {{end}}

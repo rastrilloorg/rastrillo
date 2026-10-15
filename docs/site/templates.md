@@ -4,67 +4,120 @@ You render with `html/template`. There is no template language of its
 own, and `ui` is a component library — nothing in it generates a screen,
 decides a route, or owns rendering.
 
-## One template per page
+## Pages are built once
+
+Build every page at boot with `ui.Pages`. It parses `ui`'s partials and
+your layout once, then makes one copy per page with that page's own
+file, so every page can define `"content"`. Every language and every
+request runs these same templates. The localizer in each page's data
+decides the language.
+
+This is the `render.go` that `rastrillo new` writes:
 
 ```go
-tmpl := template.Must(template.New("").Funcs(ui.Funcs()).
-	ParseFS(ui.Templates(), "*.html"))
-tmpl = template.Must(tmpl.ParseFS(appTemplateFS, "templates/*.html"))
+func newPages() (*ui.Pages, error) {
+	cfg, err := locales.CheckConfig(genlocales.DefaultLocale, genlocales.Locales)
+	if err != nil {
+		return nil, err
+	}
+	files := map[string]ui.PageFile{}
+	for _, name := range []string{"index", "errors"} {
+		files[name] = ui.PageFile{Path: "templates/" + name + ".html"}
+	}
+	return ui.NewPages(ui.PagesConfig{
+		App:    appFS,
+		Layout: "templates/layout.html",
+		Pages:  files,
+		Locale: cfg,
+		Funcs:  template.FuncMap{"icon": icons.Icon, "iconAssets": icons.Assets, "asset": assets.Path},
+	})
+}
 ```
 
-Parse layout plus one page per template, rather than one tree containing
-everything. Two pages can then both define `"content"`; in one tree the
-second `{{define "content"}}` would win for both.
+Render a page with the request's values added to its data:
 
-`render.go` is also where `flash.Take(w, r)` gets called, once per page,
-so the layout can render a notice. See [Forms](/docs/forms).
+```go
+func render(w http.ResponseWriter, r *http.Request, name string, data map[string]any) {
+	req := ui.ForRequest(r)
+	page := map[string]any{}
+	maps.Copy(page, data)
+	page["L"], page["Locales"], page["Return"] = req.L, req.Locales, req.Return
+	if err := pages.Execute(w, name, page); err != nil {
+		http.Error(w, "something went wrong", http.StatusInternalServerError)
+	}
+}
+```
+
+`ui.ForRequest` gives the request's localizer and the language
+switcher's items and return path. It finds the localizer that
+`pages.Middleware` put on the request, so wrap your routes in it.
+`Execute` renders into a buffer and writes nothing unless the whole page
+rendered, so a template error is a clean 500, not half a page.
+
+Call `flash.Take(w, r)` in `render.go` too, once per page, so the
+layout can show a notice. See [Forms](/docs/forms).
 
 ## Template functions
 
-`ui.Funcs()` registers `dict`, `list`, `menuGroup`, `searchClear`,
-`icon`, `iconAssets`, `T`, `Tf`, `dateWords`, `opt`, `Tbdi`,
-`stageArt`, `displayURL`, `safeHref`, `rowMenuItems` and
-`paginationItems`.
+`ui.Pages` registers `dict`, `list`, `menuGroup`, `searchClear`, `icon`,
+`iconAssets`, `opt`, `stageArt`, `displayURL`, `safeHref`,
+`rowMenuItems`, `paginationItems`, `localizer` and `withL`, and the
+locale functions `T`, `Tf`, `Tbdi`, `number`, `displayValue`,
+`dateWords` and `money`.
 
-Each partial takes exactly one data value, and `dict` is how you build
-it at the call site:
+Start each template body with `{{$L := localizer $}}`. Pass `$L` first
+to every locale function, and to every partial as `"L" $L`:
 
 ```html
-{{template "badge" dict "Label" "Draft" "Tone" "muted"}}
+{{define "content"}}{{$L := localizer $}}
+<h1>{{T $L "rastrillo.ui.edit"}}</h1>
+<p>{{number $L .Count}} · {{money $L .Price .Currency}}</p>
+<form rst-form method="post">
+{{template "field-text" dict "L" $L "Name" "name" "Label" "Name" "Value" .Name "Required" true}}
+{{template "field-daterange" dict "L" $L "Label" "When" "Start" (dict "Name" "s" "Label" "From") "End" (dict "Name" "e" "Label" "To")}}
+{{template "form-foot" dict "L" $L "Submit" "Save" "CancelHref" "/" "CancelLabel" "Cancel"}}
+</form>
+{{template "pagination" dict "L" $L "Prev" "/p/1" "Next" "/p/3"}}
+{{end}}
 ```
 
-If you scaffolded your own icon set, point both icon seams at it:
+Each partial takes exactly one data value, and `dict` builds it at the
+call site. To pass a partial other data, wrap it with `withL`, which
+adds `L` to a map:
 
-```go
-tmpl := template.Must(template.New("").
-	Funcs(ui.Funcs(ui.WithIcons(icons.Icon, icons.Assets))).
-	ParseFS(ui.Templates(), "*.html"))
+```html
+{{template "form-error" (withL (.Error) $L)}}
 ```
 
-`{{iconAssets}}` goes in the layout's `<head>`. It renders empty for the
-vendored-inline default, so you can call it unconditionally and never
-edit the layout when the delivery mode changes — see
-[Icons](/docs/icons).
+A struct cannot gain a field that way. Give it its own `L` by embedding
+`ui.Localized`.
 
-`ui.WithT` and `ui.FuncsWith` rebind `T` to a request-scoped lookup, so
-a partial's built-in strings resolve in the request's locale. See
-[Localization](/docs/localization).
+Pages are strict. A locale function called without `$L`, or reached by
+data that has no `L`, is an error, so the page fails instead of
+rendering in the wrong language. `rastrillo migrate-templates` adds
+`$L` for you; see [Upgrading templates](/docs/migrate-templates).
+
+`PagesConfig.Funcs` takes your own functions, such as your icon set's
+`icon` and `iconAssets`. Pass both. `{{iconAssets}}` goes in the
+layout's `<head>`. It renders empty for the vendored-inline default, so
+you can call it unconditionally and never edit the layout when the
+delivery mode changes. See [Icons](/docs/icons).
 
 ## The partials
 
 They span the list-screen, display, form and route families:
 
 ```text
-back-nav      field            form-error          page-header
-badge         field-check      form-foot           pagination
-bulk-bar      field-date       job-status          person
-callout       field-daterange  list-bar            row-menu
-choice-field  field-datetime   list-bar-search     seg-tabs
-confirm-form  field-select     list-row-action     signin
-detail-list   field-text       list-search-submit  signin-title
-dropdown      field-textarea   locale-menu         stat
-empty-state   field-time       meter               status-pill
-error-page    field-url        notice
+back-nav      field            field-url           notice
+badge         field-check      form-error          page-header
+bulk-bar      field-date       form-foot           pagination
+callout       field-daterange  job-status          person
+choice-field  field-datetime   list-bar            row-menu
+confirm-form  field-money      list-bar-search     seg-tabs
+detail-list   field-select     list-row-action     signin
+dropdown      field-text       list-search-submit  signin-title
+empty-state   field-textarea   locale-menu         stat
+error-page    field-time       meter               status-pill
 ```
 
 `locale-menu` is the language switcher; see
@@ -120,7 +173,7 @@ from a searched result set is usually meaningless once the search is
 gone. `ClearHref` is the hook, on both `list-bar-search` and `list-bar`:
 
 ```html
-{{template "list-bar" dict
+{{template "list-bar" dict "L" $L
     "SearchAction" "/posts" "Query" .Query "Hidden" .Carry
     "ClearHref" "/posts"}}
 ```
@@ -385,13 +438,15 @@ years, versions and port numbers are labels that happen to be made of
 digits. Grouping one changes what it appears to be: order 4471 is not
 order 4,471.
 
-The framework does not do this for you yet. `form.FormatCents` writes
-`$1284.50`, ungrouped, and its signature carries no locale to group by.
-Until that changes, group your own — server-side where you can, since the
-request's locale is in reach there, and with `Intl.NumberFormat` in the
-browser where you cannot. `Intl` is a reasonable fallback here in a way
-it is not for currency: an ungrouped number is harder to read but still
-correct, while a currency guessed from the reader's locale is wrong.
+Use `{{number $L .Count}}` for a quantity and
+`{{money $L .Price .Currency}}` for money. Both write the reader's
+language's digits and marks. `money` takes the amount in the currency's
+smallest unit, or a pointer to it, and the ISO code as a string. A nil
+amount writes nothing.
+
+The currency always comes from your data, never from the reader's
+language: a price in euros is in euros on every page. 128450 EUR is
+`€1,284.50` on an English page and `1.284,50 €` on a German one.
 
 ### Mark a moment with `<time>`
 
@@ -399,7 +454,7 @@ Where a value *is* a moment or a length of time, give `detail-list`'s
 item a `DateTime` alongside its `Value`:
 
 ```html
-{{template "detail-list" dict "Items" (list
+{{template "detail-list" dict "L" $L "Items" (list
   (dict "Label" "Published" "Value" "2 August 2026" "DateTime" "2026-08-02"))}}
 ```
 
@@ -439,8 +494,8 @@ types `https://`. It has `field-text`'s keys, `Name`, `Label`, `Value`,
 `Required`, `Hint` and `Error`, plus `Autocomplete`:
 
 ```html
-{{template "field-url" dict "Name" "Website" "Label" "Website"
-	"Value" .Fields.Website "Error" (T (index .Errors "Website"))}}
+{{template "field-url" dict "L" $L "Name" "Website" "Label" "Website"
+	"Value" .Fields.Website "Error" (T $L (index .Errors "Website"))}}
 ```
 
 It is a text input, not `<input type="url">`, because browsers refuse
@@ -487,9 +542,9 @@ same `aria-describedby` wiring — around a native input:
 | `field-daterange` | two of the above in a `rst-field-row` | both halves |
 
 ```html
-{{template "field-datetime" dict "Name" "Starts" "Label" "Starts"
+{{template "field-datetime" dict "L" $L "Name" "Starts" "Label" "Starts"
 	"Value" .Fields.Starts "Required" true
-	"Error" (T (index .Errors "Starts"))}}
+	"Error" (T $L (index .Errors "Starts"))}}
 ```
 
 The keys are the ones `field-text` takes — `Name`, `Label`, `Value`,
@@ -528,14 +583,13 @@ date input, and the browser's own picker still opens.
 It holds no English vocabulary. Not one word the parser matches on is
 written in the file:
 
-- **The relative words come from the catalog.** `{{dateWords}}`
-  resolves all seventeen — today, tomorrow, next, in, ago, at, noon, am
-  and the rest — through the bound `T` and encodes them as one JSON
-  object on `data-rst-date-words`. One attribute, not seventeen. Because
-  the helper is bound the same way `T` is, an app that rebinds `T` per
-  request gets the request's language in the vocabulary too: a field
-  enhanced in Japanese parses Japanese. A key may list several accepted
-  spellings separated by `|`, and matching is case- and accent-folded.
+- **The relative words come from the catalog.** `{{dateWords $L}}`
+  looks up all seventeen (today, tomorrow, next, in, ago, at, noon, am
+  and the rest) in the localizer's catalog and encodes them as one JSON
+  object on `data-rst-date-words`. One attribute, not seventeen. The
+  words are in the page's language, so a field enhanced in Japanese
+  parses Japanese. A key may list several accepted spellings separated
+  by `|`, and matching is case- and accent-folded.
 - **Weekday and month names come from `Intl`**, in the page's own
   `lang`, along with the locale's digits folded to ASCII. So "3 mars",
   "3月3日" and "٣ مارس" all parse with no catalog entry behind them.
@@ -1004,10 +1058,12 @@ block:
 The blocks are `title`, `lang`, `dir` and `head` in all five shells,
 plus `brand`, `nav`, `account` and `locale` in `topbar`, `sidebar` and
 `console`, `profile`, `view` and `up` in `sidebar` and `console`, `foot`
-in `topbar`, `console` and `stage`, and `backdrop` in `stage`. None of
-them reads a field off the data, so a shell renders whether your handler
-passes a struct, a `dict`-built map or nil. A shell can never break
-because a page's view model changed shape.
+in `topbar`, `console` and `stage`, and `backdrop` in `stage`.
+
+A shell reads three things from the page's data: `L`, the localizer,
+and `Locales` and `Return` for the language switcher. `L` is required.
+The other two are optional, so a shell renders whether your handler
+passes a struct or a `dict`-built map, as long as it carries `L`.
 
 `head` is the odd one out: it is not chrome, it is your slot in
 `<head>`. A favicon, an Open Graph tag, one more stylesheet, a script
@@ -1153,15 +1209,17 @@ use a descendant selector, or target the attribute on its own:
 The block names — `brand`, `nav`, `account`, `locale`, `foot` — did not
 change, and a test holds them. Only the depth did.
 
-The `locale` block is where the language switcher goes, and
-`locale-menu` is the partial that fills it:
+The `locale` block is where the language switcher goes. Every shell
+fills it with `locale-menu`, from the page data's `Locales` and
+`Return`:
 
 ```html
-{{define "locale"}}{{template "locale-menu" dict "Items" .Locales "Return" .Path}}{{end}}
+{{block "locale" .}}{{$L := localizer $}}{{template "locale-menu" dict "L" $L "Items" (opt $ "Locales") "Return" (opt $ "Return")}}{{end}}
 ```
 
-It renders nothing when `Items` is empty, so a one-locale app can wire
-it and forget it. It sits on `rst-dropdown rst-locale`, the ordinary
+`ui.ForRequest` gives both, so you do not wire the switcher yourself.
+It renders nothing for a one-locale app. It sits on
+`rst-dropdown rst-locale`, the ordinary
 dropdown vocabulary rather than a shell-specific name, so it looks and
 behaves the same in every shell, except in `sidebar` and `console`,
 where it opens in place inside the profile menu. See
@@ -1178,7 +1236,7 @@ not stranded on a bare page.
 `rastrillo new` scaffolds it as `templates/errors.html`:
 
 ```html
-{{define "content"}}{{template "error-page" dict "Status" .Status "Ref" .Ref}}{{end}}
+{{define "content"}}{{$L := localizer $}}{{template "error-page" dict "L" $L "Status" .Status "Ref" .Ref}}{{end}}
 ```
 
 and points `Options.ErrorPage` at the `render.go` helper that renders
@@ -1187,13 +1245,20 @@ answers looks identical to the 500 a panic answers:
 
 ```go
 func ErrorPage(w http.ResponseWriter, r *http.Request, status int, ref string) {
+	var buf bytes.Buffer
+	if pagesErr != nil || pages.Execute(&buf, "errors", map[string]any{"L": pages.LocalizerFor(r), "Status": status, "Ref": ref}) != nil {
+		http.Error(w, "something went wrong", http.StatusInternalServerError)
+		return
+	}
 	w.WriteHeader(status)
-	render(w, "errors", map[string]any{"Status": status, "Ref": ref})
+	buf.WriteTo(w)
 }
 ```
 
 The callback owns the status code as well as the body, so it calls
-`WriteHeader` itself.
+`WriteHeader` itself. It finds the reader's language with
+`pages.LocalizerFor(r)`, because a recovered panic reaches it outside
+the middleware.
 
 The partial words five statuses from the framework catalog — 404, 403,
 422, 500 and 503 — in all twelve base languages. Any other status falls

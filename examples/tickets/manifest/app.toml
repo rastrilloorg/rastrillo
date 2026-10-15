@@ -1,0 +1,5 @@
+# The locales this app offers. Add a code to offer another language,
+# then run rastrillo generate; with two or more, URLs gain /xx/
+# prefixes and pages a language switcher.
+locales = ["en"]
+default_locale = "en"

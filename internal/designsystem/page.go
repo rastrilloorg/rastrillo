@@ -1471,7 +1471,7 @@ var previewMobileLocaleHeights = map[string]map[string]int{
 		"screen-signin-returning-passkey": 749,
 		"screen-signin-social":            407,
 	},
-	"pt": {
+	"pt-PT": {
 		"idiom-button":                  449,
 		"idiom-form-layout":             565,
 		"partial-callout":               284,
@@ -1536,7 +1536,7 @@ var previewMobileHeights = map[string]int{
 	"screen-signin-sent":              620,
 	"screen-signin-sent-instead":      696,
 	"screen-signin-sent-unbound":      608,
-	"shell-column":                    1010,
+	"shell-column":                    1054,
 	"shell-topbar":                    1135,
 }
 
@@ -1603,6 +1603,7 @@ var previewHeights = map[string]int{
 	"partial-field-text":      210,
 	"partial-field-textarea":  260,
 	"partial-field-url":       210,
+	"partial-field-money":     210,
 	"partial-field-select":    300,
 	"partial-field-check":     140,
 	"partial-choice-field":    280,
@@ -2517,16 +2518,11 @@ const demoTemplate = `
 const lucideHome = "https://lucide.dev"
 
 // iconWiring is how an app puts its own icon set in front of the
-// framework's. Held here as source rather than written into the
-// template because it is code a reader copies, not prose the page says
-// — the same footing ui.Styleguide's samples are on.
-const iconWiring = `tmpl := template.Must(template.New("").
-	Funcs(ui.Funcs(ui.WithIcons(icons.Icon, icons.Assets))).
-	ParseFS(ui.Templates(), "*.html"))`
-
-// iconRebind is the call the trap is about: BOTH seams, every time.
-// ui.FuncsWith(t) alone is the shape that silently reverts.
-const iconRebind = `ui.Funcs(ui.WithT(t), ui.WithIcons(icons.Icon, icons.Assets))`
+// framework's, copied from the scaffold's render.go. Held here as source
+// rather than written into the template because it is code a reader
+// copies, not prose the page says — the same footing ui.Styleguide's
+// samples are on.
+const iconWiring = `Funcs: template.FuncMap{"icon": icons.Icon, "iconAssets": icons.Assets, "asset": assets.Path},`
 
 // iconView is one slug: the markup Icon answers, the call that renders
 // it, and where the glyph came from.
@@ -2552,7 +2548,6 @@ type iconsView struct {
 	Total      int
 	Renamed    int
 	Wiring     string
-	Rebind     string
 	LucideLine template.HTML
 }
 
@@ -2562,7 +2557,6 @@ func buildIcons(locale string) iconsView {
 		List:   make([]iconView, 0, len(slugs)),
 		Total:  len(slugs),
 		Wiring: iconWiring,
-		Rebind: iconRebind,
 	}
 	for _, slug := range slugs {
 		name := iconsets.LucideName(slug)
@@ -2979,10 +2973,9 @@ const iconsBody = `{{define "ds-body-icons"}}
 <p class="ds-note">{{.Icons.LucideLine}}</p>
 
 <h2 class="ds-sub">{{P "An icon the framework does not ship"}}</h2>
-<p class="ds-lead">{{P "The icons package rastrillo new writes is app-owned source: add the glyph there and call it like any other. ui.WithIcons is the seam that puts your set in front of the framework's own."}}</p>
+<p class="ds-lead">{{P "The icons package rastrillo new writes is app-owned source: add the glyph there and call it like any other. Pass its Icon and Assets to ui.Pages as icon and iconAssets, and your set stands in front of the framework's own."}}</p>
 <pre class="ds-src rst-mono" tabindex="0"><code>{{.Icons.Wiring}}</code></pre>
-<p class="ds-lead">{{P "The trap, and it is a silent one: ui.FuncsWith rebinds icon and iconAssets back to the built-in set. An app that scaffolded its own icons has to pass both seams on every call, or its icons revert to Lucide on every request while still rendering something perfectly plausible."}}</p>
-<pre class="ds-src rst-mono" tabindex="0"><code>{{.Icons.Rebind}}</code></pre>
+<p class="ds-lead">{{P "Pass both, always. With only icon, iconAssets stays on the framework's default, and cdn or js delivery breaks with no error."}}</p>
 {{end}}`
 
 const tokensBody = `{{define "ds-body-tokens"}}

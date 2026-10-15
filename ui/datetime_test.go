@@ -43,6 +43,13 @@ func vocabStdin(t *testing.T, locale string) []byte {
 		}
 		catalogs[code] = words
 	}
+	// An app that still offers a retagged code, plain pt, gets the
+	// shipped pt-PT words (rastrillo.NewLocales) on a page whose lang
+	// is pt, which Intl writes as Brazil. That pairing is one the
+	// parser has to read too, so it goes over beside the shipped ones.
+	for from, to := range rastrillo.Retagged() {
+		catalogs[from] = catalogs[to]
+	}
 	if _, ok := catalogs[locale]; !ok {
 		t.Fatalf("no base catalog for %q", locale)
 	}

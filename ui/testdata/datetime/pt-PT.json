@@ -38,8 +38,8 @@
   {"id": "wire-date", "input": "2026-12-25", "now": "2026-08-28T10:30", "expected": "2026-12-25T09:00"},
   {"id": "numeric-day-first", "input": "25/12/2026", "now": "2026-08-28T10:30", "expected": "2026-12-25T09:00"},
   {"id": "bare-year", "input": "2030", "now": "2026-08-28T10:30", "expected": "2030-08-28T09:00"},
-  {"id": "own-display-reads-back", "input": "sex., 25 de dez. de 2026", "now": "2026-08-28T10:30", "expected": "2026-12-25T09:00"},
-  {"id": "own-datetime-display-reads-back", "input": "sex., 25 de dez. de 2026, 15:30", "now": "2026-08-28T10:30", "expected": "2026-12-25T15:30"},
+  {"id": "own-display-reads-back", "input": "sexta, 25/12/2026", "now": "2026-08-28T10:30", "expected": "2026-12-25T09:00"},
+  {"id": "own-datetime-display-reads-back", "input": "sexta, 25/12/2026, 15:30", "now": "2026-08-28T10:30", "expected": "2026-12-25T15:30"},
 
   {"id": "no-phrase-inside-a-word", "input": "atlas", "now": "2026-08-28T10:30", "expected": null},
   {"id": "spelled-out-quantity", "input": "em duas semanas", "now": "2026-08-28T10:30", "expected": null},

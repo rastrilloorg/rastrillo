@@ -1,18 +1,29 @@
 package main
 
 import (
+	"cmp"
 	"flag"
 	"fmt"
 	"go/token"
 	"html"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"unicode"
 	"unicode/utf8"
 
+	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/internal/generate/packs"
 	"amadan.net/rastrillo/rastrillo/internal/iconsets"
+	"amadan.net/rastrillo/rastrillo/internal/manifest"
 	"amadan.net/rastrillo/rastrillo/ui"
+)
+
+// Appendix C.5 flag.new.locale and C.2 op.new.locale_unsupported, verbatim.
+const (
+	newLocaleFlagMsg        = "the one language the app starts with (default en); one of: %s"
+	newLocaleUnsupportedMsg = "rastrillo new --locale %q: the framework's own strings ship in %s. Start with one of those, then add your language to manifest/app.toml"
 )
 
 // runNew implements `rastrillo new <name>`: the middle-layer app shape
@@ -40,15 +51,17 @@ func runNew(args []string) error {
 	uxProfile := fset.String("ux", "considered", "UX convention profile: "+strings.Join(profileNames(), ", "))
 	theme := fset.String("theme", "day", "colour, type and shape theme: "+strings.Join(ui.ThemeNames(), ", "))
 	shell := fset.String("shell", "column", "layout shell: "+strings.Join(ui.LayoutNames(), ", "))
+	// No default: flag would print (default "en") after the help's own.
+	locale := fset.String("locale", "", fmt.Sprintf(newLocaleFlagMsg, strings.Join(rastrillo.BaseLocales(), ", ")))
 	if err := fset.Parse(args); err != nil {
 		return err
 	}
 	rest := fset.Args()
 	if len(rest) != 1 {
-		return fmt.Errorf("usage: rastrillo new [--icons=%s] [--icon-delivery=%s] [--ux=%s] [--theme=%s] [--shell=%s] <name>",
+		return fmt.Errorf("usage: rastrillo new [--icons=%s] [--icon-delivery=%s] [--ux=%s] [--theme=%s] [--shell=%s] [--locale=%s] <name>",
 			strings.Join(iconsets.Names(), "|"), strings.Join(iconsets.Deliveries(), "|"),
 			strings.Join(profileNames(), "|"), strings.Join(ui.ThemeNames(), "|"),
-			strings.Join(ui.LayoutNames(), "|"))
+			strings.Join(ui.LayoutNames(), "|"), strings.Join(rastrillo.BaseLocales(), "|"))
 	}
 	name := rest[0]
 	if _, err := os.Stat(name); err == nil {
@@ -81,6 +94,15 @@ func runNew(args []string) error {
 	layoutHTML, ok := ui.Layout(*shell)
 	if !ok {
 		return fmt.Errorf("unknown shell %q: known shells are %s", *shell, strings.Join(ui.LayoutNames(), ", "))
+	}
+	// Only a language whose framework strings ship: any other fails
+	// generate --check on its missing catalog before the author writes a line.
+	code := cmp.Or(*locale, "en")
+	if to, ok := rastrillo.RetagOf(code); ok { // a code from before a retag: pt means pt-PT
+		code = to
+	}
+	if !slices.Contains(rastrillo.BaseLocales(), code) {
+		return fmt.Errorf(newLocaleUnsupportedMsg, code, strings.Join(rastrillo.BaseLocales(), ", "))
 	}
 
 	pkg := packageName(name)
@@ -122,7 +144,7 @@ func runNew(args []string) error {
 		filepath.Join(name, "go.mod"): fmt.Sprintf(goModTemplate,
 			name, rastrilloVersion(), chiPinnedVersion, gormPinnedVersion),
 		filepath.Join(name, "cmd", name, "main.go"): fmt.Sprintf(mainTemplate, name, pkg, strings.ToUpper(pkg)),
-		filepath.Join(appDir, "app.go"):             fmt.Sprintf(appTemplate, pkg, routes),
+		filepath.Join(appDir, "app.go"):             fmt.Sprintf(appTemplate, pkg, routes, name),
 		filepath.Join(appDir, "models.go"):          fmt.Sprintf(modelsTemplate, pkg),
 		filepath.Join(appDir, "migrations.go"):      fmt.Sprintf(migrationsTemplate, pkg),
 		filepath.Join(appDir, "handlers.go"):        fmt.Sprintf(handlersTemplate, pkg, handlers),
@@ -165,6 +187,7 @@ func runNew(args []string) error {
 		filepath.Join(name, ".rastrillo", "budgets.txt"):            budgetsTxtTemplate,
 		filepath.Join(name, "README.md"):                            fmt.Sprintf(readmeTemplate, name, pkg),
 		filepath.Join(name, "manifest", "README.md"):                fmt.Sprintf(manifestReadme, name, pkg),
+		filepath.Join(name, "manifest", "app.toml"):                 fmt.Sprintf(appTOMLTemplate, code),
 		filepath.Join(name, "Makefile"):                             fmt.Sprintf(makefileTemplate, name, staticcheckVersion, govulncheckVersion, gitleaksVersion, goToolchain),
 		filepath.Join(name, ".gitignore"):                           fmt.Sprintf(gitignoreTemplate, name),
 		// The app's icon set, on the same terms as tokens.css and
@@ -222,6 +245,11 @@ func runNew(args []string) error {
 		if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
 			return err
 		}
+	}
+	// The packs app.toml above declares, written now so a new app
+	// builds and boots before its first rastrillo generate.
+	if _, err := packs.Emit(filepath.Join(name, "gen"), manifest.App{Locales: []string{code}, DefaultLocale: code}); err != nil {
+		return err
 	}
 
 	// CI scripts must be executable: amadan's runner resolves a
@@ -359,6 +387,7 @@ import (
 	"amadan.net/rastrillo/rastrillo"
 	"amadan.net/rastrillo/rastrillo/db"
 
+	genlocales "%[1]s/gen/locales"
 	%[2]s "%[1]s/internal/%[2]s"
 )
 
@@ -373,7 +402,15 @@ func main() {
 	// bare *sql.DB Options.Router would hand back — so Options.DBPath
 	// must be empty again by the Serve call below, or Serve would open
 	// a second, unused connection to the same file.
-	opts, err := rastrillo.Resolve(rastrillo.Options{DBPath: "%[1]s.db", Logger: logger})
+	opts, err := rastrillo.Resolve(rastrillo.Options{
+		DBPath: "%[1]s.db",
+		Logger: logger,
+		// Locales and DefaultLocale come from manifest/app.toml, through
+		// gen/locales. Boot refuses a configuration whose packs this
+		// binary does not link.
+		Locales:       genlocales.Locales,
+		DefaultLocale: genlocales.DefaultLocale,
+	})
 	if err != nil {
 		logger.Error("resolve activation", "err", err)
 		os.Exit(1)
@@ -414,6 +451,14 @@ func main() {
 }
 `
 
+// appTOMLTemplate's comment is Appendix C.6's scaffold.app_toml.
+const appTOMLTemplate = `# The locales this app offers. Add a code to offer another language,
+# then run rastrillo generate; with two or more, URLs gain /xx/
+# prefixes and pages a language switcher.
+locales = [%[1]q]
+default_locale = %[1]q
+`
+
 const appTemplate = `package %[1]s
 
 import (
@@ -429,6 +474,11 @@ import (
 	"amadan.net/rastrillo/rastrillo/db"
 	"amadan.net/rastrillo/rastrillo/migrate"
 	"amadan.net/rastrillo/rastrillo/perf"
+
+	// Links the formatting packs manifest/app.toml declares. It is
+	// here, not in main, so the app's tests link them too: boot refuses
+	// a configuration whose packs are missing.
+	_ "%[3]s/gen/locales"
 )
 
 // App wires the whole app: schema, router, static files. It returns a
@@ -459,6 +509,12 @@ func App(d *db.DB, origin string, logger *slog.Logger) (*http.ServeMux, error) {
 
 // Router applies the schema and builds the routes.
 func Router(d *db.DB, origin string, logger *slog.Logger) (chi.Router, error) {
+	// pagesErr is render.go's: a template that does not parse, or a
+	// locale configuration boot refuses. Either stops the app here,
+	// before any migration runs, not at the first request.
+	if pagesErr != nil {
+		return nil, pagesErr
+	}
 	// Apply BootSchema, not Schema: BootSchema is everything this
 	// app needs at boot (its own migrations plus any subsystem's),
 	// while Schema (migrations.go) stays just this app's own so the
@@ -494,7 +550,15 @@ func Mux(r http.Handler) *http.ServeMux {
 	// them via {{asset ...}}, which returns a content-hashed URL the
 	// handler serves cacheable-forever.
 	mux.Handle("GET /static/", assets.Handler())
-	mux.Handle("/", r)
+	h := pages.Middleware(r)
+	// Without pages, every request gets ErrorPage's plain 500 instead of
+	// a panic in the middleware. App never builds a Mux like this, since
+	// Router fails first; a caller that builds one directly, such as a
+	// test, does.
+	if pagesErr != nil {
+		h = http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) { ErrorPage(w, req, http.StatusInternalServerError, "") })
+	}
+	mux.Handle("/", h)
 	return mux
 }
 
@@ -625,7 +689,7 @@ type app struct {
 }
 
 func (a *app) index(w http.ResponseWriter, r *http.Request) {
-	render(w, "index", nil)
+	render(w, r, "index", nil)
 }
 %[2]s`
 
@@ -635,11 +699,14 @@ import (
 	"bytes"
 	"embed"
 	"html/template"
+	"maps"
 	"net/http"
 
 	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/locales"
 	"amadan.net/rastrillo/rastrillo/ui"
 
+	genlocales "%[1]s/gen/locales"
 	"%[1]s/internal/%[2]s/icons"
 )
 
@@ -651,44 +718,49 @@ var appFS embed.FS
 // the handler App mounts.
 var assets = rastrillo.NewAssets(appFS)
 
-// pages is one *template.Template per page, each combining layout.html
-// with that page's own file — kept separate so every page can define a
-// template named "content" without colliding with the others.
-var pages = map[string]*template.Template{}
+// pages is every page of this app, built once at boot: ui's partials and
+// layout.html parsed once, then one copy per page with that page's own
+// file. Every language and every request runs these same templates; the
+// localizer in each page's data decides the language.
+var pages, pagesErr = newPages()
 
-func init() {
-	for _, name := range []string{%[3]s} {
-		pages[name] = template.Must(
-			// ui's partials and their helpers first, so every page can
-			// call one without registering anything. WithIcons points
-			// ui's two icon seams at the app's own set
-			// (internal/%[2]s/icons, scaffolded by rastrillo new) —
-			// both of them, always: passing only icon would leave
-			// iconAssets on the framework default and silently break
-			// cdn and js delivery. iconAssets is whatever <head> markup
-			// the chosen delivery needs, empty for the vendored-inline
-			// default, so the layout calls it unconditionally and
-			// switching delivery later needs no template edit.
-			template.Must(template.New("layout").
-				Funcs(ui.Funcs(ui.WithIcons(icons.Icon, icons.Assets))).
-				Funcs(template.FuncMap{"asset": assets.Path}).
-				ParseFS(ui.Templates(), "*.html")).
-				// Then the app's own: the shell and this page's body.
-				ParseFS(appFS, "templates/layout.html", "templates/"+name+".html"))
+func newPages() (*ui.Pages, error) {
+	cfg, err := locales.CheckConfig(genlocales.DefaultLocale, genlocales.Locales)
+	if err != nil {
+		return nil, err
 	}
+	files := map[string]ui.PageFile{}
+	for _, name := range []string{%[3]s} {
+		files[name] = ui.PageFile{Path: "templates/" + name + ".html"}
+	}
+	return ui.NewPages(ui.PagesConfig{
+		App:    appFS,
+		Layout: "templates/layout.html",
+		Pages:  files,
+		Locale: cfg,
+		// icon and iconAssets point ui's two icon seams at the app's own set
+		// (internal/%[2]s/icons, scaffolded by rastrillo new). Pass both, always:
+		// passing only icon would leave iconAssets on the framework default and
+		// silently break cdn and js delivery. iconAssets is whatever <head>
+		// markup the chosen delivery needs, empty for the vendored-inline
+		// default, so the layout calls it unconditionally and switching
+		// delivery later needs no template edit.
+		Funcs: template.FuncMap{"icon": icons.Icon, "iconAssets": icons.Assets, "asset": assets.Path},
+	})
 }
 
-// render executes name's layout into a buffer before anything touches
-// the wire: a template error becomes a clean 500 instead of garbage
-// appended to a half-written page, and headers (flash cookies, say)
-// stay settable until the status line is written.
-func render(w http.ResponseWriter, name string, data any) {
-	var buf bytes.Buffer
-	if err := pages[name].ExecuteTemplate(&buf, "layout", data); err != nil {
+// render adds the request's localizer, the language switcher's items and
+// the current path to data, then executes name into a buffer before
+// anything touches the wire: a template error becomes a clean 500 instead
+// of half a page.
+func render(w http.ResponseWriter, r *http.Request, name string, data map[string]any) {
+	req := ui.ForRequest(r)
+	page := map[string]any{}
+	maps.Copy(page, data)
+	page["L"], page["Locales"], page["Return"] = req.L, req.Locales, req.Return
+	if err := pages.Execute(w, name, page); err != nil {
 		http.Error(w, "something went wrong", http.StatusInternalServerError)
-		return
 	}
-	buf.WriteTo(w)
 }
 
 // ErrorPage renders the "errors" page — templates/errors.html, which
@@ -696,10 +768,19 @@ func render(w http.ResponseWriter, name string, data any) {
 // (rastrillo.NewRef, or empty when there is none to show). It is the
 // rastrillo.ErrorPageFunc cmd/%[1]s/main.go points Options.ErrorPage at,
 // so a panic gets the same page a handled failure would; wire it to
-// Ctx.ErrorPage too as the app grows handlers of its own.
+// Ctx.ErrorPage too as the app grows handlers of its own. It finds the
+// request's language with pages.LocalizerFor rather than the middleware,
+// because a recovered panic reaches it outside the middleware.
 func ErrorPage(w http.ResponseWriter, r *http.Request, status int, ref string) {
+	// Without pages there is nothing to render, so a failed boot still
+	// answers a plain 500 rather than panicking.
+	var buf bytes.Buffer
+	if pagesErr != nil || pages.Execute(&buf, "errors", map[string]any{"L": pages.LocalizerFor(r), "Status": status, "Ref": ref}) != nil {
+		http.Error(w, "something went wrong", http.StatusInternalServerError)
+		return
+	}
 	w.WriteHeader(status)
-	render(w, "errors", map[string]any{"Status": status, "Ref": ref})
+	buf.WriteTo(w)
 }
 `
 
@@ -754,7 +835,7 @@ const overviewTemplate = `{{/* overview.html: a section. up is its way back: the
 // overviewHandler is appended to handlers.go for the two-page shells.
 const overviewHandler = `
 func (a *app) overview(w http.ResponseWriter, r *http.Request) {
-	render(w, "overview", nil)
+	render(w, r, "overview", nil)
 }
 `
 
@@ -785,7 +866,7 @@ const errorsTemplate = `{{/* errors.html — the app's error page: layout.html's
      editing this file, or hand it Title/Body/HomeHref/BackHref to
      override the partial's own catalog defaults; see
      ui/partials/error-page.html for what it accepts. */}}
-{{define "content"}}{{template "error-page" dict "Status" .Status "Ref" .Ref}}{{end}}
+{{define "content"}}{{$L := localizer $}}{{template "error-page" dict "L" $L "Status" .Status "Ref" .Ref}}{{end}}
 `
 
 // harnessTemplate is the scaffolded test harness, delivered once as
@@ -953,12 +1034,16 @@ func TestVendoredAssetsMatchTheLibrary(t *testing.T) {
 const indexTestTemplate = `package %[2]stest
 
 import (
+	"html/template"
 	"net/http"
 	"net/http/httptest"
 	"regexp"
 	"strings"
 	"testing"
 
+	"amadan.net/rastrillo/rastrillo"
+
+	genlocales "%[1]s/gen/locales"
 	%[2]s "%[1]s/internal/%[2]s"
 )
 
@@ -995,6 +1080,10 @@ func TestIndexRenders(t *testing.T) {
 	}
 	if !strings.Contains(rec.Body.String(), "this is a rastrillo app") {
 		t.Errorf("GET /: page is missing its heading. If you have replaced the placeholder index this test is yours to rewrite:\n%%s", rec.Body.String())
+	}
+	skip := template.HTMLEscapeString(rastrillo.BaseCatalogs()[genlocales.DefaultLocale]["rastrillo.ui.shell_skip"])
+	if !strings.Contains(rec.Body.String(), skip) {
+		t.Errorf("GET /: page is missing its skip link in %%s, the default language:\n%%s", genlocales.DefaultLocale, rec.Body.String())
 	}
 }
 
@@ -1039,7 +1128,7 @@ func TestErrorPageRendersFrameworkPartial(t *testing.T) {
 		t.Fatalf("ErrorPage: status %%d, want %%d", rec.Code, http.StatusInternalServerError)
 	}
 	body := rec.Body.String()
-	if !strings.Contains(body, "Something went wrong on our side") {
+	if !strings.Contains(body, template.HTMLEscapeString(rastrillo.BaseCatalogs()[genlocales.DefaultLocale]["rastrillo.ui.error_500_title"])) {
 		t.Errorf("ErrorPage body missing the 500 title:\n%%s", body)
 	}
 	if !strings.Contains(body, "abc123") {
@@ -1117,6 +1206,10 @@ const readmeTemplate = `# %[1]s
 
 A [rastrillo](https://amadan.net/rastrillo/rastrillo) app. ` + "`make ci`" + ` is the gate: vet, gofmt, staticcheck, govulncheck, gitleaks, tests and the migration check, one definition for CI and for you. AGENTS.md carries the working conventions.
 
+## Templates
+
+` + "`internal/%[2]s/render.go`" + ` builds every page once, at boot, with ` + "`ui.Pages`" + `. Every language and every request runs those same templates, and the localizer in each page's data picks the language. Start each template body with ` + "`{{$L := localizer $}}`" + `, pass ` + "`$L`" + ` first to ` + "`T`" + `, ` + "`money`" + ` and the other locale functions, and pass ` + "`\"L\" $L`" + ` to every partial. A call without it fails the page rather than render it in the wrong language.
+
 ## Browser drive
 
 ` + "`internal/%[2]stest/browser_test.go`" + ` walks the app in a real
@@ -1143,8 +1236,9 @@ resource, in one app. One TOML file here declares a whole screen set —
 List → Show → Edit/New plus the confirm-page delete flow — generated
 as real committed code under gen/ by ` + "`rastrillo generate`" + `:
 
-    name  = "ticket_types"
-    route = "/admin/ticket_types"
+    name     = "ticket_types"
+    route    = "/admin/ticket_types"
+    currency = "USD"
 
     [list]
     columns = [{ field = "Name", kind = "text" }, { field = "Price", kind = "money" }]
@@ -1182,83 +1276,36 @@ Adding the first manifest to this app:
    ` + "`rastrillo generate`" + ` only ever clears and rewrites gen/actions/,
    never a file sitting beside gen/, so this survives regeneration.
 
-4. Write the Ctx.Render seam. A generated action cannot call an
-   app-private helper, so it calls Ctx.Render with a page name that is
-   always "<resource>/list", "<resource>/show" or "<resource>/form".
-   This is the whole adapter — internal/%[2]s/genrender.go:
+4. Add the generated screens to the pages render.go builds, and give
+   the generated actions their Ctx.Render seam. A generated action calls
+   Ctx.Render with a page name that is always "<resource>/list",
+   "<resource>/show", "<resource>/form" or "<resource>/confirm". In
+   internal/%[2]s/render.go's newPages, after the hand pages, add:
 
-       package %[2]s
-
-       import (
-           "bytes"
-           "fmt"
-           "html/template"
-           "io/fs"
-           "net/http"
-           "path"
-           "strings"
-
-           %[2]sassets "%[1]s"
-           "%[1]s/gen/locales"
-
-           "amadan.net/rastrillo/rastrillo"
-           "amadan.net/rastrillo/rastrillo/ui"
-       )
-
-       // One template per generated screen, keyed "<resource>/<page>".
-       var genPages = buildGenPages()
-
-       func buildGenPages() map[string]*template.Template {
-           sub, err := fs.Sub(%[2]sassets.GenTemplatesFS, "gen/templates")
-           if err != nil {
-               panic(err) // embedded at compile time
-           }
-           dirs, err := fs.ReadDir(sub, ".")
-           if err != nil {
-               panic(err)
-           }
-           out := map[string]*template.Template{}
-           for _, d := range dirs {
-               if !d.IsDir() {
-                   continue
-               }
-               files, err := fs.Glob(sub, d.Name()+"/*.html")
-               if err != nil {
-                   panic(err)
-               }
-               for _, f := range files {
-                   base := template.Must(template.New("layout").
-                       Funcs(ui.Funcs(ui.WithT(genT))).
-                       Funcs(template.FuncMap{"asset": assets.Path}).
-                       ParseFS(ui.Templates(), "*.html"))
-                   base = template.Must(base.ParseFS(appFS, "templates/layout.html"))
-                   key := d.Name() + "/" + strings.TrimSuffix(path.Base(f), ".html")
-                   out[key] = template.Must(base.ParseFS(sub, f))
-               }
-           }
-           return out
+       gen, err := fs.Sub(%[2]sassets.GenTemplatesFS, "gen/templates")
+       if err != nil {
+           return nil, err
+       }
+       genFiles, err := fs.Glob(gen, "*/*.html")
+       if err != nil {
+           return nil, err
+       }
+       for _, f := range genFiles {
+           files[strings.TrimSuffix(f, ".html")] = ui.PageFile{FS: gen, Path: f}
        }
 
-       // The generated templates call (T "resource.<name>.…"); those keys
-       // live in gen/locales, not in ui's default catalog. A missing key
-       // renders as itself, so a typo shows on the page instead of
-       // blanking a sentence.
-       func genT(key string, args ...any) string {
-           if v, ok := locales.BaseCatalog[key]; ok {
-               return v
-           }
-           return key
-       }
+   and Catalog: genlocales.BaseCatalog to its ui.PagesConfig, so the
+   generated strings are found. Import "io/fs", "strings" and
+   %[2]sassets "%[1]s". Then add the seam:
 
+       // GenRender is the Ctx.Render seam every generated action calls.
        func GenRender(ctx *rastrillo.Ctx, w http.ResponseWriter, name string, status int, data any) {
-           t, ok := genPages[name]
-           if !ok {
-               genFail(ctx, w, "rendering "+name, fmt.Errorf("no such page template"))
-               return
-           }
            var buf bytes.Buffer
-           if err := t.ExecuteTemplate(&buf, "layout", data); err != nil {
-               genFail(ctx, w, "rendering "+name, err)
+           if err := pages.Execute(&buf, name, data); err != nil {
+               if ctx != nil && ctx.Logger != nil {
+                   ctx.Logger.Error("%[2]s: rendering "+name, "err", err)
+               }
+               http.Error(w, "something went wrong", http.StatusInternalServerError)
                return
            }
            w.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -1266,20 +1313,12 @@ Adding the first manifest to this app:
            buf.WriteTo(w)
        }
 
-       func genFail(ctx *rastrillo.Ctx, w http.ResponseWriter, what string, err error) {
-           if ctx != nil && ctx.Logger != nil {
-               ctx.Logger.Error("%[2]s: "+what, "err", err)
-           }
-           http.Error(w, "something went wrong", http.StatusInternalServerError)
-       }
-
-   assets and appFS are render.go's, already in this package. The
-   generated screens go through the same layout.html the hand pages
-   use, because a generated content template defines "content" exactly
-   as a hand one does. When a generated screen needs this request's
-   flash or signed-in state, make GenRender a func(r) returning a
-   rastrillo.RenderFunc closed over r and call it from the ctx factory
-   — RenderFunc carries no *http.Request of its own.
+   A generated view carries the request's localizer, switcher items and
+   return path, so the layout renders it as it renders a hand page.
+   When a generated screen needs this request's flash or signed-in
+   state, make GenRender a func(r) returning a rastrillo.RenderFunc
+   closed over r, and call it from the ctx factory: RenderFunc carries
+   no *http.Request of its own.
 
 5. Apply the generated store's migrations at boot, or the table the
    screens read does not exist. In internal/%[2]s/migrations.go:
@@ -1306,22 +1345,29 @@ Adding the first manifest to this app:
    ` + "`rastrillo migration check`" + ` diffs against Models, and a generated
    table in it reads as one Models forgot.
 
-   The ledger trap, stated because it bites later rather than now: the
-   generated Migrations are rewritten verbatim from the TOML on every
-   ` + "`rastrillo generate`" + `, and migrate.Apply treats applied SQL as
-   immutable. Reshape a manifest after the app has booted once and the
-   next boot refuses rather than silently reapplying it —
-   ` + "`rastrillo migration baseline`" + ` is the recovery.
+   generate never edits a statement in gen/store/<name>/migrations.go
+   once it has been released. Adding a field appends a statement, and
+   genSchemaSet gives it the next ID, so the ledger applies it as a new
+   migration.
 
-6. Mount the generated router beside the chi router in
-   internal/%[2]s/app.go, and wire its Ctx:
+6. Boot the generated code and mount its router inside the chi router.
+   In internal/%[2]s/app.go's Router, after migrate.Apply and the routes,
+   add (and import "%[1]s/gen"):
 
-       gmux := gen.Router(func(*http.Request) *rastrillo.Ctx {
-           writer, _ := d.G.DB()
-           return &rastrillo.Ctx{DB: writer, Logger: logger,
+       booted, err := gen.Boot(context.Background(), d.Writer())
+       if err != nil {
+           return nil, err
+       }
+       gmux := gen.Router(booted, func(*http.Request) *rastrillo.Ctx {
+           return &rastrillo.Ctx{DB: d.Writer(), Logger: logger,
                Actor: rastrillo.Actor{Human: true}, Render: GenRender}
        })
-       mux.Handle("/admin/", gmux)
+       r.Handle("/admin/*", gmux)
+
+   gen.Boot upgrades and checks the generated money columns, and
+   gen.Router will not build without what it returns. Mounted inside
+   the chi router, the generated screens get the same CSRF check and
+   the same localizer as the hand ones.
 
 7. Add ` + "`rastrillo generate --check`" + ` to the Makefile's ci target.
 
@@ -1612,8 +1658,7 @@ mechanically.
   an ` + "`ADD COLUMN`" + `. Never edit a migration that has shipped.
   Renames are hand-written (` + "`rastrillo migration new rename_x`" + `) because
   a rename is indistinguishable from a drop plus an add.
-- Money is integer cents. A float never touches a value a person will
-  be held to.
+- Money is a whole number of the currency's smallest unit, stored with its ISO 4217 code beside it, and shown with ` + "`money`" + `. A float never touches a value a person will be held to.
 - Screens work with JavaScript disabled; destructive actions get their
   own confirm-page URL.
 - The gate is ` + "`make ci`" + ` (vet, gofmt, staticcheck, govulncheck, gitleaks, budgets, tests, the perf lane and the migration check), the same definition CI runs. Run it before every push. ` + "`CGO_ENABLED=0`" + ` throughout: the stack is cgo-free by design. The Makefile names the Go release the gate and ` + "`make release`" + ` use (` + "`GOTOOLCHAIN`" + `); raise it with each Go security release.

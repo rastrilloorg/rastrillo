@@ -30,6 +30,20 @@ does the same argv and `$STATE_DIRECTORY` work without serving.
 an `http.Handler`, for test harnesses. Call the returned cleanup when
 you are done.
 
+```go
+func ProbeConfig(opts Options)
+```
+
+With `RASTRILLO_CHECK_CONFIG=1` set, `ProbeConfig` checks the locale
+setup in `opts`, prints a JSON report and exits, without opening or
+serving anything. It exits 0 for a good setup, 1 for problems, and 2
+for any value but `1`. Unset, it returns. `rastrillo doctor` runs your
+app this way.
+
+`Run` and `Resolve` call it first. If your `main` calls neither, make
+`ProbeConfig` its first line: while the variable is set, `Serve`,
+`Handler`, `OpenDB` and `db.Open` refuse to open the database.
+
 `OpenDB` is the corrected SQLite opener, exported for tests. In a new
 app use [`db.Open`](/docs/reference/db), which returns the two-pool
 handle.
@@ -171,6 +185,28 @@ const LocaleCookie = "rastrillo_locale"
 const LocaleSwitchPath = "/_locale"
 ```
 
+```go
+func FormatLocale(r *http.Request) string
+func (l *Locales) Negotiate(r *http.Request) string
+func RetagOf(code string) (string, bool)
+func Retagged() map[string]string
+```
+
+`FormatLocale` is the CLDR locale a request's amounts are written in.
+Pass it to `currency.Format`, as the generated actions do. It is not
+`LocaleFrom(r)`: an app offering `zh-TW` formats money as `zh-Hant`, and
+a one-language app's requests carry no language and format in its
+default.
+
+`Locales.Negotiate` is the language `Middleware` would pick for a
+request (path prefix, cookie, `Accept-Language`, default) without
+changing it. Use it where the middleware has not run, such as an error
+page after a panic.
+
+`RetagOf` and `Retagged` are the codes the framework moved: today only
+`pt`, now `pt-PT`. They are exported for the framework's own tools; see
+[Localization](/docs/localization#portuguese-is-pt-pt).
+
 `T` and `Tf` are the request-scoped lookups actions call; `Tf`
 interpolates `{name}` placeholders. Lookup falls back through the
 requested locale, the default locale, the framework's catalog for that
@@ -272,6 +308,22 @@ every generated store emits — `id`, `created_at`, `updated_at`, and
 
 `List` holds `Column` values and `Filter` values; `Form` holds `Field`
 values.
+
+```go
+type Resource struct{ /* ..., Currency string, Legacy *Legacy */ }
+type Legacy struct {
+	Currency string
+	Scale    *int
+}
+func (r *Resource) HasMoney() bool
+```
+
+`Resource.Currency` is the default currency for new records, and
+`Legacy` is the `[legacy]` table: what integers stored before money had
+a currency mean. `Scale` is a pointer because 0 is a real scale, whole
+units, and a missing scale must not read as one. `HasMoney` reports
+whether any column or field is money, and so whether the resource needs
+a `Currency`. See [Manifests](/docs/manifests#money).
 
 The enumerations:
 

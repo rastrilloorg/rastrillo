@@ -1,6 +1,7 @@
 name  = "ticket_types"
 route = "/admin/ticket_types"
 store = "exclusive"
+currency = "USD"
 
 [list]
 columns = [{ field = "Name" }, { field = "Price", kind = "money" }, { field = "Status" }]
@@ -13,3 +14,9 @@ values = ["draft", "on_sale", "sold_out"]
 [form]
 basics   = [{ name = "Name", required = true }, { name = "Price", kind = "money", required = true }, { name = "Status" }]
 advanced = [{ name = "MaxPerOrder" }]
+
+# USD at scale 2 is what this resource stored before money had a currency;
+# a database from then is upgraded once at boot.
+[legacy]
+currency = "USD"
+scale    = 2

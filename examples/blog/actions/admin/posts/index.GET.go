@@ -7,6 +7,8 @@ import (
 	"strings"
 
 	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/ui"
+	"amadan.net/rastrillo/rastrillo/view"
 
 	"blog/internal/blog"
 )
@@ -39,7 +41,8 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 		carry = [][2]string{{"status", status}}
 	}
 
-	blog.Render(ctx, w, "posts/list", http.StatusOK, blog.AdminListView{
+	view.Render(ctx, w, "posts/list", http.StatusOK, blog.AdminListView{
+		Localized:   ui.ForRequest(r),
 		Head:        blog.Head{Title: "Posts"},
 		Query:       q,
 		Carry:       carry,

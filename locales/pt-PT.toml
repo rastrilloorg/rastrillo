@@ -1,4 +1,4 @@
-# rastrillo's base strings for pt. Machine-drafted from en.toml; a
+# rastrillo's base strings for pt-PT. Machine-drafted from en.toml; a
 # native speaker's correction is welcome — every key must stay present
 # (basecatalog_test.go checks the set, not the wording).
 rastrillo.ui.pagination = "Paginação"
@@ -72,6 +72,17 @@ rastrillo.ui.date_end_before_start = "O fim vem antes do início."
 rastrillo.ui.field_required = "Este campo é obrigatório."
 rastrillo.ui.money_invalid = "Introduza um valor válido."
 rastrillo.ui.money_precision = "Introduza um valor com um máximo de 2 casas decimais."
+rastrillo.ui.money_precision_0 = "Introduza um valor inteiro, sem casas decimais."
+rastrillo.ui.money_precision_3 = "Introduza um valor com um máximo de 3 casas decimais."
+rastrillo.ui.money_decimal_comma = "Use uma vírgula para as casas decimais, como em 12,50."
+rastrillo.ui.money_decimal_point = "Use um ponto para as casas decimais, como em 12.50."
+rastrillo.ui.money_currency = "Introduza o valor sem o símbolo da moeda."
+rastrillo.ui.money_negative = "Introduza um valor igual ou superior a 0."
+rastrillo.ui.money_reenter = "Introduza o valor novamente."
+rastrillo.ui.money_currency_changed = "A moeda mudou enquanto estava a editar. Verifique o valor e guarde novamente."
+rastrillo.ui.money_wrong_currency = "Introduza o valor em {currency}."
+rastrillo.ui.money_ambiguous = "Isto pode ser {a} ou {b}. Introduza o que pretende."
+rastrillo.ui.money_ambiguous_precision = "Isto pode ser {b}. {a} tem demasiadas casas decimais para {currency}. Introduza o valor que pretende."
 rastrillo.ui.url_invalid = "Introduza um endereço web, como example.com."
 rastrillo.ui.url_credentials = "Retire o nome de utilizador e a palavra-passe deste endereço."
 rastrillo.ui.signin_heading = "Inicie sessão em {name}"

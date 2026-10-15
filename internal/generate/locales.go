@@ -7,6 +7,7 @@ import (
 	"sort"
 	"strings"
 
+	"amadan.net/rastrillo/rastrillo"
 	"amadan.net/rastrillo/rastrillo/internal/catalog"
 )
 
@@ -23,16 +24,29 @@ import (
 //
 // An app with no locales/ directory at all is the common single-locale
 // case and returns no findings.
-func MissingKeys(localesDir, defaultCode string) (map[string][]string, error) {
+//
+// generated is more of the default locale's strings that live outside
+// localesDir (the manifest's gen/locales/en.toml); it joins the default
+// catalog as the reference, and with it a missing default catalog is
+// not an error. nil means the default catalog alone.
+func MissingKeys(localesDir, defaultCode string, generated map[string]string) (map[string][]string, error) {
 	catalogs, err := readCatalogs(localesDir)
 	if err != nil || len(catalogs) == 0 {
 		return nil, err
 	}
+	layerRetagged(catalogs, defaultCode)
 
 	def, ok := catalogs[defaultCode]
-	if !ok {
+	if !ok && len(generated) == 0 {
 		return nil, fmt.Errorf("no %s.toml in %s, but %d other locale catalog(s) are there — the default locale's catalog is what every other one is checked against", defaultCode, localesDir, len(catalogs))
 	}
+	ref := make(map[string]string, len(def)+len(generated))
+	for _, m := range []map[string]string{generated, def} {
+		for k, v := range m {
+			ref[k] = v
+		}
+	}
+	def = ref
 
 	out := map[string][]string{}
 	for code, c := range catalogs {
@@ -51,6 +65,34 @@ func MissingKeys(localesDir, defaultCode string) (map[string][]string, error) {
 		}
 	}
 	return out, nil
+}
+
+// layerRetagged makes catalogs what rastrillo.NewLocales serves: a
+// retagged code's file (pt.toml) read under its target (pt-PT), with
+// the target's own file layered over it. Compared file by file, a
+// Portuguese-default app that kept its pt.toml failed with no
+// pt-PT.toml, and a pt-PT.toml holding only overrides was missing
+// every key pt.toml supplies. The old file stays a language of its own
+// only when nothing else claims it: no target file and a different
+// default. An app offering both pt and pt-PT beside both files then
+// has pt.toml checked as part of pt-PT rather than on its own, which
+// misses only a key pt-PT.toml has and pt.toml lacks.
+func layerRetagged(catalogs map[string]map[string]string, defaultCode string) {
+	for from, to := range rastrillo.Retagged() {
+		src, ok := catalogs[from]
+		dst, hasDst := catalogs[to]
+		if !ok || (!hasDst && to != defaultCode) {
+			continue
+		}
+		merged := make(map[string]string, len(src)+len(dst))
+		for _, m := range []map[string]string{src, dst} {
+			for k, v := range m {
+				merged[k] = v
+			}
+		}
+		catalogs[to] = merged
+		delete(catalogs, from)
+	}
 }
 
 // readCatalogs decodes every <code>.toml in localesDir. nil, nil when
@@ -85,10 +127,13 @@ func readCatalogs(localesDir string) (map[string]map[string]string, error) {
 // MissingFrameworkKeys is spec 2026-08-28 §3.4's rule: a non-default
 // catalog for a locale the framework does NOT ship must translate every
 // rastrillo.ui.* key, or its built-in components render in English and
-// nobody is told. A locale in shipped is exempt — the framework's own
-// catalog covers it. frameworkKeys and shipped come from the caller
-// (rastrillo.BaseKeys, rastrillo.BaseLocales) so this package does not
-// import the root.
+// nobody is told. A locale in shipped is exempt, because the framework's
+// own catalog covers it, and so is a code retagged to one in shipped
+// (rastrillo.RetagOf): pt.toml gets the shipped pt-PT strings under
+// rastrillo.NewLocales, so demanding every key there would fail a
+// catalog that worked the day before the retag. frameworkKeys and
+// shipped come from the caller (rastrillo.BaseKeys,
+// rastrillo.BaseLocales).
 func MissingFrameworkKeys(localesDir, defaultCode string, frameworkKeys, shipped []string) (map[string][]string, error) {
 	catalogs, err := readCatalogs(localesDir)
 	if err != nil || len(catalogs) == 0 {
@@ -100,7 +145,8 @@ func MissingFrameworkKeys(localesDir, defaultCode string, frameworkKeys, shipped
 	}
 	out := map[string][]string{}
 	for code, c := range catalogs {
-		if code == defaultCode || exempt[code] {
+		to, _ := rastrillo.RetagOf(code)
+		if code == defaultCode || exempt[code] || exempt[to] {
 			continue
 		}
 		var missing []string

@@ -11,6 +11,7 @@ import (
 
 	"amadan.net/rastrillo/rastrillo"
 	"amadan.net/rastrillo/rastrillo/sessions"
+	"amadan.net/rastrillo/rastrillo/ui"
 	"amadan.net/rastrillo/rastrillo/view"
 	bookmarksstore "notes/gen/store/bookmarks"
 )
@@ -88,6 +89,7 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 	}
 
 	view.Render(ctx, w, "bookmarks/list", http.StatusOK, listView{
+		Localized:  ui.ForRequest(r),
 		Empty:      total == 0,
 		Query:      search,
 		Carry:      carry,
@@ -111,6 +113,7 @@ func href(search string, carry [][2]string, page int) string {
 }
 
 type listView struct {
+	ui.Localized
 	Empty      bool
 	Query      string
 	Carry      [][2]string

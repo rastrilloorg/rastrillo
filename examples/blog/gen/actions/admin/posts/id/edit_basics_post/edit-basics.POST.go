@@ -11,6 +11,7 @@ import (
 
 	"amadan.net/rastrillo/rastrillo"
 	"amadan.net/rastrillo/rastrillo/form"
+	"amadan.net/rastrillo/rastrillo/ui"
 	"amadan.net/rastrillo/rastrillo/view"
 	postsstore "blog/gen/store/posts"
 )
@@ -52,9 +53,11 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 			fields[k] = v
 		}
 		view.Render(ctx, w, "posts/form", http.StatusBadRequest, formView{
+			Localized:    ui.ForRequest(r),
 			IsNew:        false,
 			Fields:       fields,
 			Errors:       p.Errors(),
+			ErrorArgs:    p.ErrorArgs(),
 			BasicsAction: fmt.Sprintf("/admin/posts/%d/edit-basics", id),
 		})
 		return
@@ -74,9 +77,11 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 }
 
 type formView struct {
+	ui.Localized
 	IsNew          bool
 	Fields         map[string]string
 	Errors         map[string]string
+	ErrorArgs      map[string]map[string]any
 	BasicsAction   string
 	AdvancedAction string
 }

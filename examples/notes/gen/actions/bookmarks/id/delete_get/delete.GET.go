@@ -10,6 +10,7 @@ import (
 
 	"amadan.net/rastrillo/rastrillo"
 	"amadan.net/rastrillo/rastrillo/sessions"
+	"amadan.net/rastrillo/rastrillo/ui"
 	"amadan.net/rastrillo/rastrillo/view"
 	bookmarksstore "notes/gen/store/bookmarks"
 )
@@ -39,6 +40,7 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 	}
 
 	view.Render(ctx, w, "bookmarks/confirm", http.StatusOK, confirmView{
+		Localized:  ui.ForRequest(r),
 		Title:      n.Title,
 		DeleteHref: fmt.Sprintf("/bookmarks/%d/delete", id),
 		CancelHref: fmt.Sprintf("/bookmarks/%d", id),
@@ -46,6 +48,7 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 }
 
 type confirmView struct {
+	ui.Localized
 	Title      string
 	DeleteHref string
 	CancelHref string

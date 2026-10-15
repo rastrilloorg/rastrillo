@@ -37,6 +37,8 @@ func topbarPageWith(t *testing.T, dir, content string) string {
 		"asset":      func(p string) string { return "/" + strings.TrimPrefix(p, "static/") },
 		"iconAssets": func() template.HTML { return "" },
 	}).Parse(string(src)))
+	// ui's partials, as an app parses them: the locale block calls locale-menu.
+	template.Must(tmpl.ParseFS(Templates(), "*.html"))
 	for _, def := range []string{
 		`{{define "dir"}}` + dir + `{{end}}`,
 		`{{define "nav"}}<a id="nav-posts" href="/go/posts" aria-current="page">Posts</a><a id="nav-drafts" href="/go/drafts">Drafts</a><a id="nav-settings" href="/go/settings">Settings</a>{{end}}`,

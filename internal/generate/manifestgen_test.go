@@ -18,6 +18,7 @@ import (
 // helper (sqlcrun_test.go, same package) for the module scaffolding.
 const notesManifestTOML = `name  = "notes"
 route = "/admin/notes"
+currency = "USD"
 
 [list]
 columns = [{ field = "Title" }, { field = "Price", kind = "money" }]
@@ -46,7 +47,7 @@ func TestGenerateManifestsFullPipelineIsIdempotent(t *testing.T) {
 	}
 
 	genDir := filepath.Join(root, "gen")
-	if err := GenerateManifests(root, genDir, false); err != nil {
+	if _, err := GenerateManifests(root, genDir, false); err != nil {
 		t.Fatalf("GenerateManifests: %v", err)
 	}
 
@@ -72,7 +73,7 @@ func TestGenerateManifestsFullPipelineIsIdempotent(t *testing.T) {
 	}
 
 	before := snapshotTree(t, genDir)
-	if err := GenerateManifests(root, genDir, false); err != nil {
+	if _, err := GenerateManifests(root, genDir, false); err != nil {
 		t.Fatalf("second GenerateManifests: %v", err)
 	}
 	after := snapshotTree(t, genDir)
@@ -103,11 +104,11 @@ func TestGenerateManifestsCheckPassesOnAFreshlySeededTree(t *testing.T) {
 	genDir := filepath.Join(root, "gen")
 	// Seed genDir the same way check-only's own temp-dir dry run would
 	// (runSqlc: false), so this test never needs the real sqlc tool.
-	if _, err := emitPipeline(root, genDir, rs, false); err != nil {
+	if _, _, _, err := emitPipeline(root, genDir, rs, nil, false); err != nil {
 		t.Fatalf("seed emitPipeline: %v", err)
 	}
 
-	if err := GenerateManifests(root, genDir, true); err != nil {
+	if _, err := GenerateManifests(root, genDir, true); err != nil {
 		t.Errorf("check-only on a freshly generated tree should pass, got: %v", err)
 	}
 }
@@ -125,7 +126,7 @@ func TestGenerateManifestsCheckFailsOnAHandEditedGeneratedFile(t *testing.T) {
 		t.Fatalf("manifest.Load: %v", err)
 	}
 	genDir := filepath.Join(root, "gen")
-	if _, err := emitPipeline(root, genDir, rs, false); err != nil {
+	if _, _, _, err := emitPipeline(root, genDir, rs, nil, false); err != nil {
 		t.Fatalf("seed emitPipeline: %v", err)
 	}
 
@@ -134,7 +135,7 @@ func TestGenerateManifestsCheckFailsOnAHandEditedGeneratedFile(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = GenerateManifests(root, genDir, true)
+	_, err = GenerateManifests(root, genDir, true)
 	if err == nil {
 		t.Fatal("want an error: a generated file was hand-edited after generation")
 	}
@@ -160,7 +161,7 @@ func TestGenerateManifestsCheckFailsOnAnExtraLocaleFile(t *testing.T) {
 		t.Fatalf("manifest.Load: %v", err)
 	}
 	genDir := filepath.Join(root, "gen")
-	if _, err := emitPipeline(root, genDir, rs, false); err != nil {
+	if _, _, _, err := emitPipeline(root, genDir, rs, nil, false); err != nil {
 		t.Fatalf("seed emitPipeline: %v", err)
 	}
 
@@ -169,7 +170,7 @@ func TestGenerateManifestsCheckFailsOnAnExtraLocaleFile(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = GenerateManifests(root, genDir, true)
+	_, err = GenerateManifests(root, genDir, true)
 	if err == nil {
 		t.Fatal("want an error: gen/locales/ has a file EmitLocales did not produce")
 	}
@@ -190,7 +191,7 @@ func TestGenerateManifestsCheckFailsWhenNeverGenerated(t *testing.T) {
 	// gen/ has never been written at all — --check must fail rather
 	// than silently pass on a tree that was never generated.
 	genDir := filepath.Join(root, "gen")
-	err := GenerateManifests(root, genDir, true)
+	_, err := GenerateManifests(root, genDir, true)
 	if err == nil {
 		t.Fatal("want an error: gen/ does not exist yet")
 	}
@@ -226,7 +227,7 @@ func TestGenerateManifestsFailsOnRouteCollisionWithAHandAction(t *testing.T) {
 	}
 
 	genDir := filepath.Join(root, "gen")
-	err := GenerateManifests(root, genDir, false)
+	_, err := GenerateManifests(root, genDir, false)
 	if err == nil {
 		t.Fatal("want a route collision error")
 	}
@@ -277,11 +278,11 @@ func TestGenerateManifestsAllowsAHandFileAtTheExactGeneratedPath(t *testing.T) {
 	// Seed genDir the check-only way (runSqlc: false) so this test
 	// never needs the real sqlc tool — it's routeCollisions/
 	// ManifestActions this test is exercising, not the emitters.
-	if _, err := emitPipeline(root, genDir, rs, false); err != nil {
+	if _, _, _, err := emitPipeline(root, genDir, rs, nil, false); err != nil {
 		t.Fatalf("seed emitPipeline: %v", err)
 	}
 
-	if err := GenerateManifests(root, genDir, true); err != nil {
+	if _, err := GenerateManifests(root, genDir, true); err != nil {
 		t.Errorf("a hand file at the exact generated path must be an allowed override, not a collision: %v", err)
 	}
 
@@ -316,13 +317,13 @@ func TestGenerateManifestsAllowsAHandFileAtTheExactGeneratedPath(t *testing.T) {
 func TestGenerateManifestsIsANoOpWithoutAnyManifestResources(t *testing.T) {
 	root := newScratchModule(t, false)
 	genDir := filepath.Join(root, "gen")
-	if err := GenerateManifests(root, genDir, false); err != nil {
+	if _, err := GenerateManifests(root, genDir, false); err != nil {
 		t.Fatalf("GenerateManifests with no manifest/ dir at all: %v", err)
 	}
 	if _, err := os.Stat(genDir); !os.IsNotExist(err) {
 		t.Errorf("expected no gen/ directory when the app declares no manifest resources, got: %v", err)
 	}
-	if err := GenerateManifests(root, genDir, true); err != nil {
+	if _, err := GenerateManifests(root, genDir, true); err != nil {
 		t.Fatalf("check-only with no manifest resources should also be a no-op: %v", err)
 	}
 }
@@ -384,7 +385,7 @@ func TestEmitPipelineCatchesTheSanitizeIdentPathCollision(t *testing.T) {
 
 	root := newScratchModule(t, false)
 	genDir := filepath.Join(root, "gen")
-	_, err := emitPipeline(root, genDir, []rastrillo.Resource{r1, r2}, false)
+	_, _, _, err := emitPipeline(root, genDir, []rastrillo.Resource{r1, r2}, nil, false)
 	if err == nil {
 		t.Fatal("want a generated-file collision error: /foo-bar and /foo_bar collapse to the same gen/actions/ path")
 	}
@@ -426,7 +427,7 @@ func TestGenerateManifestsMergeableOnlyNeedsNoSqlcTool(t *testing.T) {
 	}
 
 	genDir := filepath.Join(root, "gen")
-	if err := GenerateManifests(root, genDir, false); err != nil {
+	if _, err := GenerateManifests(root, genDir, false); err != nil {
 		t.Fatalf("GenerateManifests: %v", err)
 	}
 

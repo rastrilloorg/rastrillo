@@ -5,6 +5,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"testing/fstest"
 )
@@ -81,5 +82,53 @@ func TestBaseCatalogLayersUnderAppCatalog(t *testing.T) {
 	want := "My Notes|Save"
 	if got := rec.Body.String(); got != want {
 		t.Errorf("body = %q, want %q (app catalog must win over the base; a base-only key must still surface)", got, want)
+	}
+}
+
+// Spec §12 item 9: boot refuses every CheckConfig failure, and accepts
+// an app with no manifest or with only DefaultLocale. This binary links
+// only the en pack (packs_test.go), so "de" is refused the way it would
+// be in an app that forgot the import.
+func TestHandlerRefusesEveryCheckConfigFailure(t *testing.T) {
+	for name, opts := range map[string]Options{
+		"no pack for the default": {DefaultLocale: "de"},
+		"default not offered":     {DefaultLocale: "es", Locales: []string{"en"}},
+		"non-canonical identity":  {Locales: []string{"en", "pt-pt"}},
+		"duplicate":               {Locales: []string{"en", "en"}},
+		"malformed":               {Locales: []string{"en", "de--CH"}},
+	} {
+		opts.Mux = http.NewServeMux()
+		if _, closeFn, err := Handler(opts); err == nil {
+			closeFn()
+			t.Errorf("%s: Handler accepted %+v", name, opts)
+		} else if !strings.Contains(err.Error(), "refusing to start") {
+			t.Errorf("%s: %v does not say it refused to start", name, err)
+		}
+	}
+	for name, opts := range map[string]Options{
+		"no manifest, nothing set": {},
+		"DefaultLocale only":       {DefaultLocale: "en"},
+	} {
+		opts.Mux = http.NewServeMux()
+		_, closeFn, err := Handler(opts)
+		if err != nil {
+			t.Errorf("%s: %v", name, err)
+			continue
+		}
+		closeFn()
+	}
+}
+
+// The check runs before the database opens: a refused configuration
+// must leave no file behind, or a misconfigured deploy would already
+// have created (and, with migrations, changed) the database it refuses
+// to serve.
+func TestHandlerRefusesBeforeOpeningTheDatabase(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "app.db")
+	if _, _, err := Handler(Options{DefaultLocale: "de", DBPath: path, Mux: http.NewServeMux()}); err == nil {
+		t.Fatal("Handler accepted a default whose pack is not linked")
+	}
+	if _, err := os.Stat(path); !os.IsNotExist(err) {
+		t.Errorf("a refused configuration touched %s: %v", path, err)
 	}
 }

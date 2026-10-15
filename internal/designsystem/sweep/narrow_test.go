@@ -34,9 +34,9 @@ var narrowExempt = map[string]string{
 //
 // measured 2026-10-11, since the samples speak the page's language:
 // ru at most 136px taller than en (partial-status-pill: its four pills
-// no longer share a row), es and pt 73px (idiom-form-layout), ga 69px
+// no longer share a row), es and pt-PT 73px (idiom-form-layout), ga 69px
 // (shell-column), ar 48px (screen-signin-password). Each stresses
-// different previews, so routine CI runs ru, es, ga and ar; pt wraps
+// different previews, so routine CI runs ru, es, ga and ar; pt-PT wraps
 // where es does.
 func narrowLocales() []string {
 	if sweepFull() {

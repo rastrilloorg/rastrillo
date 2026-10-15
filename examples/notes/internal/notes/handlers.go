@@ -19,14 +19,26 @@ import (
 	"amadan.net/rastrillo/rastrillo/jobs"
 	"amadan.net/rastrillo/rastrillo/scope"
 	"amadan.net/rastrillo/rastrillo/sessions"
+	"amadan.net/rastrillo/rastrillo/ui"
 )
 
 // app holds the dependencies every handler below needs. sess.Require
 // (app.go) guarantees a session on every route mounted through it, so
 // UserID's ok is never checked past that group boundary.
+//
+// pages, genPages and fragPages are this app's three ui.Pages (Task
+// 24; render.go and genrender.go's own doc comments explain why there
+// are three rather than one): pages holds the hand screens
+// (templates/layout.html), genPages the manifest-generated bookmarks
+// screens (templates/genlayout.html), and fragPages the one-page,
+// no-layout set renderJobFragment executes "job-status" against
+// directly.
 type app struct {
-	db   *gorm.DB
-	jobs *jobs.Jobs
+	db        *gorm.DB
+	jobs      *jobs.Jobs
+	pages     *ui.Pages
+	genPages  *ui.Pages
+	fragPages *ui.Pages
 }
 
 // owned scopes a.db to the signed-in caller — the single seam every
@@ -57,18 +69,18 @@ func (a *app) listNotes(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "could not load notes", http.StatusInternalServerError)
 		return
 	}
-	renderContent(w, r, "index", indexView{Notes: notes})
+	a.renderContent(w, r, "index", indexView{Notes: notes})
 }
 
 func (a *app) newNote(w http.ResponseWriter, r *http.Request) {
-	renderContent(w, r, "new", formView{})
+	a.renderContent(w, r, "new", formView{})
 }
 
 func (a *app) createNote(w http.ResponseWriter, r *http.Request) {
 	uid, _ := sessions.UserID(r)
 	title, body := r.PostFormValue("title"), r.PostFormValue("body")
 	if title == "" {
-		renderStatus(w, r, http.StatusUnprocessableEntity, "new", formView{
+		a.renderStatus(w, r, http.StatusUnprocessableEntity, "new", formView{
 			Note:   Note{Title: title, Body: body},
 			Errors: form.Errors{"Title": "Title is required"},
 		})
@@ -89,7 +101,7 @@ func (a *app) showNote(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	renderContent(w, r, "show", noteView{Note: n})
+	a.renderContent(w, r, "show", noteView{Note: n})
 }
 
 func (a *app) editNote(w http.ResponseWriter, r *http.Request) {
@@ -98,7 +110,7 @@ func (a *app) editNote(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	renderContent(w, r, "edit", formView{Note: n})
+	a.renderContent(w, r, "edit", formView{Note: n})
 }
 
 func (a *app) updateNote(w http.ResponseWriter, r *http.Request) {
@@ -110,7 +122,7 @@ func (a *app) updateNote(w http.ResponseWriter, r *http.Request) {
 	title, body := r.PostFormValue("title"), r.PostFormValue("body")
 	if title == "" {
 		n.Title, n.Body = title, body
-		renderStatus(w, r, http.StatusUnprocessableEntity, "edit", formView{Note: n, Errors: form.Errors{"Title": "Title is required"}})
+		a.renderStatus(w, r, http.StatusUnprocessableEntity, "edit", formView{Note: n, Errors: form.Errors{"Title": "Title is required"}})
 		return
 	}
 	// Never bind a request onto a GORM model: Title/Body came from

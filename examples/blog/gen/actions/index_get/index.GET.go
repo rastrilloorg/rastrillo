@@ -4,6 +4,8 @@ import (
 	"net/http"
 
 	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/ui"
+	"amadan.net/rastrillo/rastrillo/view"
 
 	"blog/internal/blog"
 )
@@ -24,7 +26,8 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	blog.Render(ctx, w, "index", http.StatusOK, blog.HomeView{
+	view.Render(ctx, w, "index", http.StatusOK, blog.HomeView{
+		Localized:  ui.ForRequest(r),
 		Head:       blog.Head{Title: "The blog"},
 		Rows:       blog.PublicRows(posts),
 		Pagination: blog.BuildPagination("/", "", "", page, total),

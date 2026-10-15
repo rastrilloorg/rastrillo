@@ -65,7 +65,7 @@ func ParseCents(s string) (int64, error) {
 	}
 	whole, frac, hasFrac := strings.Cut(s, ".")
 	if hasFrac && len(frac) > 2 {
-		return 0, &Error{Key: "rastrillo.ui.money_precision", Msg: moneyPrecisionEN}
+		return 0, &Error{Key: moneyPrecisionKey, Msg: moneyPrecisionEN}
 	}
 	for len(frac) < 2 {
 		frac += "0"
@@ -74,11 +74,11 @@ func ParseCents(s string) (int64, error) {
 		whole = "0"
 	}
 	if !isDigits(whole) || !isDigits(frac) {
-		return 0, &Error{Key: "rastrillo.ui.money_invalid", Msg: moneyInvalidEN}
+		return 0, &Error{Key: moneyInvalidKey, Msg: moneyInvalidEN}
 	}
 	value, err := money.ParseDecimal(whole+"."+frac, "usd")
 	if err != nil {
-		return 0, &Error{Key: "rastrillo.ui.money_invalid", Msg: moneyInvalidEN}
+		return 0, &Error{Key: moneyInvalidKey, Msg: moneyInvalidEN}
 	}
 	return value, nil
 }
@@ -120,7 +120,7 @@ func (e *Error) Error() string { return e.Msg }
 // English.
 const (
 	moneyInvalidEN   = "Enter a valid amount."
-	moneyPrecisionEN = "Enter an amount with at most 2 decimal places."
+	moneyPrecisionEN = "Enter an amount with no more than 2 decimal places."
 )
 
 // isDigits reports whether s is non-empty and every byte is an ASCII

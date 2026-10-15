@@ -132,7 +132,7 @@ func TestRouterImportsFrameworkNotAppModule(t *testing.T) {
 		PackageName: "act_index_get",
 		GenDir:      "index_get",
 	}}
-	out, err := Router("helloworld", actions)
+	out, err := Router("helloworld", actions, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -142,6 +142,23 @@ func TestRouterImportsFrameworkNotAppModule(t *testing.T) {
 	}
 	if contains(src, "\"helloworld\"\n") {
 		t.Errorf("router.go wrongly self-imports the app's own module:\n%s", src)
+	}
+}
+
+// An app whose manifest/ holds only app.toml, which is how rastrillo
+// new leaves it, generates a router that compiles. Adding a language and
+// running generate is what the scaffold's app.toml tells its author to
+// do, and a router with no routes used to declare its handle closure
+// and never call it.
+func TestRouterWithNoResourcesBuilds(t *testing.T) {
+	if testing.Short() {
+		t.Skip("builds a scratch app")
+	}
+	app := newScratchModule(t, false)
+	writeFile(t, app, "manifest/app.toml", "locales = [\"en\", \"es\"]\ndefault_locale = \"en\"\n")
+	mustGenerate(t, app)
+	if out, err := goBuild(app); err != nil {
+		t.Fatalf("a generated app with no resources does not build:\n%s", out)
 	}
 }
 

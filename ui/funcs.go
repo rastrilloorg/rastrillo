@@ -46,16 +46,15 @@ func WithIcons(icon func(string) template.HTML, assets func() template.HTML) Opt
 	}
 }
 
-// WithT replaces the T entry — the seam for an app that wants ui's
-// partial defaults resolved in the request's locale instead of the
-// framework's hardcoded English. See FuncsWith for the per-request
-// Clone discipline this requires.
+// WithT replaces T and Tf for a locale call without $L: how an app with
+// its own rendering gets ui's partial defaults in the request's language.
+// It remains until the app moves to ui.Pages, where the localizer in each
+// page's data does this. See FuncsWith.
 //
-// It replaces Tf as well, and with the same function: a translator
-// signature already takes args (rastrillo.Tf's own shape), so an app
-// that rebinds lookup would otherwise get its own wording for every
-// plain default and the framework's English for the one sentence that
-// interpolates a value. One option, both entries, no way to bind half.
+// It replaces Tf as well, with the same function: a translator already
+// takes args (rastrillo.Tf's own shape), so binding only T would give an
+// app its own wording for every plain default and the framework's English
+// for the one sentence that interpolates a value.
 func WithT(t func(key string, args ...any) string) Option {
 	return func(c *config) {
 		if t != nil {
@@ -121,8 +120,18 @@ func WithT(t func(key string, args ...any) string) Option {
 //
 //	{{with safeHref .Site}}<a href="{{.}}" rel="noopener noreferrer">{{displayURL .}}</a>{{end}}
 //
+// T, Tf, Tbdi, number, displayValue, dateWords and money (LocaleFuncs)
+// take an optional leading $L, the request's *Localizer: {{T $L "key"}}
+// uses that localizer's catalog and formatting locale. The form is
+// decided by the first argument's type, so the legacy {{T "key"}} and a
+// $L that is nil (the data carried no L) both answer from these
+// options, exactly as before the localizer existed. money alone has no
+// legacy form: {{money $L .Amount .Currency}}. localizer finds $L in
+// the data ({{$L := localizer $}}), and withL adds it to a map passed
+// to a partial.
+//
 // An app is free to add its own entries on top; it must not drop these
-// eighteen. The shipped partials and shells stop parsing without most
+// twenty-one. The shipped partials and shells stop parsing without most
 // of them, and the docs promise the rest.
 func Funcs(opts ...Option) template.FuncMap {
 	c := config{
@@ -134,48 +143,34 @@ func Funcs(opts ...Option) template.FuncMap {
 	for _, opt := range opts {
 		opt(&c)
 	}
-	return template.FuncMap{
+	m := template.FuncMap{
 		"dict": dict, "list": list, "menuGroup": menuGroup, "searchClear": searchClear,
-		"icon": c.icon, "iconAssets": c.assets, "T": c.t, "Tf": c.tf,
-		"dateWords":    dateWords(c.t),
-		"number":       func(v any) any { return formatNumber(v, c.locale, true) },
-		"displayValue": func(v any) any { return formatNumber(v, c.locale, false) },
-		"opt":          opt, "Tbdi": tbdi(c.t),
+		"icon": c.icon, "iconAssets": c.assets,
+		"opt":        opt,
 		"stageArt":   stageArt,
 		"displayURL": form.DisplayURL, "safeHref": form.SafeHref,
 		"rowMenuItems": rowMenuItems, "paginationItems": paginationItems,
+		"localizer": localizer, "withL": withL,
 	}
+	for name, fn := range localeFuncs(c) {
+		m[name] = fn
+	}
+	return m
 }
 
 // FuncsWith is Funcs(WithT(t)): the T entry replaced, everything else the
 // framework default.
 //
-// TRAP, because it is silent: this rebinds icon and iconAssets back to
-// the framework's own set. An app that scaffolded its own icons and uses
-// the per-request rebind below must pass both seams every time —
-// ui.Funcs(ui.WithT(...), ui.WithIcons(icons.Icon, icons.Assets)) —
-// or its icons quietly revert to the built-in Lucide on every request
-// while still rendering something plausible.
+// It remains for an app that keeps its own rendering until it moves to
+// ui.Pages. Binding T on a per-request Clone of the templates is no
+// longer the recommendation: build the pages once with ui.Pages, and let
+// the localizer in each page's data choose the language. ui.Pages does
+// not take these options.
 //
-// html/template forbids Clone once a tree has executed even once
-// (html/template: cannot Clone <name> after it has executed), so the
-// tree registered with a rebind must stay pristine — parsed once at
-// startup, never itself passed to Execute/ExecuteTemplate — and every
-// request works off a Clone of it instead:
-//
-//	base := template.Must(template.New("").Funcs(ui.Funcs()).
-//	        ParseFS(ui.Templates(), "*.html"))
-//	// base is never executed directly from here on.
-//
-//	// Per request:
-//	perReq, err := base.Clone()
-//	if err != nil {
-//	        return err
-//	}
-//	perReq.Funcs(ui.Funcs(ui.WithT(func(key string, _ ...any) string {
-//	        return rastrillo.T(r, key)
-//	})))
-//	return perReq.ExecuteTemplate(w, "some-page", data)
+// It also binds icon and iconAssets back to the framework's own set. An
+// app with its own icons passes both seams every time,
+// ui.Funcs(ui.WithT(t), ui.WithIcons(icons.Icon, icons.Assets)), or its
+// icons revert to Lucide on every request with no error.
 func FuncsWith(t func(key string, args ...any) string) template.FuncMap {
 	return Funcs(WithT(t))
 }

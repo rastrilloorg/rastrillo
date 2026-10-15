@@ -43,4 +43,19 @@ This prints:
 
 `Decimal(minor int64, currency string) string` formats every signed `int64`, including `math.MinInt64`, without grouping.
 
-Keep locale formatting, price limits, tax, exchange rates and payment-provider scaling in your application. The `form` package keeps its two-decimal input rules.
+This package does not format for a locale. In a rastrillo app,
+[`currency`](/docs/reference/currency) does. Keep price limits, tax,
+exchange rates and payment-provider scaling in your application.
+
+## The storage set
+
+`MinorUnits` answers for any code, guessing two places for one it does
+not know. Rastrillo stores an amount only in a currency whose minor
+units ISO 4217 and this package agree on. That is 174 codes. 153 of
+them can be the currency of a new record; the other 21, such as HRK and
+SLL, stay for records that already use them.
+
+`currency.Normalize` checks a code against the set. A code outside it,
+such as XAU, CLF or a typo like KDW, is refused rather than given a
+guessed scale. The set only grows: removing a code or changing its
+exponent fails the build.

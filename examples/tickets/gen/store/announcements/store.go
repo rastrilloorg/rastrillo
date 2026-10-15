@@ -27,12 +27,13 @@ import (
 	"strconv"
 	"strings"
 
+	"amadan.net/rastrillo/rastrillo/currency/replay"
 	"amadan.net/rastrillo/rastrillo/eventlog"
 )
 
-// streamPrefix namespaces this resource's streams in the shared
+// StreamPrefix namespaces this resource's streams in the shared
 // eventlog table: record <id> lives at "announcements/<id>".
-const streamPrefix = "announcements/"
+const StreamPrefix = "announcements/"
 
 // actor is stamped on every event this store appends — see the
 // package doc's Ctx.Actor caveat.
@@ -58,12 +59,13 @@ func New(db *sql.DB) *Queries {
 
 // open resolves the database's durable writer identity (lazily, per
 // call — a one-row SELECT) and binds an eventlog.Log to it.
-func (q *Queries) open(ctx context.Context) (*eventlog.Log, error) {
+func (q *Queries) open(ctx context.Context) (*eventlog.Log, replay.Rules, error) {
 	writer, err := eventlog.LocalWriter(ctx, q.db)
 	if err != nil {
-		return nil, err
+		return nil, replay.Rules{}, err
 	}
-	return eventlog.Open(q.db, writer)
+	log, err := eventlog.Open(q.db, writer)
+	return log, replay.Rules{}, err
 }
 
 // payload is the JSON shape of every created/updated event: pointer
@@ -71,75 +73,67 @@ func (q *Queries) open(ctx context.Context) (*eventlog.Log, error) {
 // an updated event only its own group's — an absent field leaves the
 // derived value untouched.
 type payload struct {
-	Title     *string `json:"title,omitempty"`
-	Body      *string `json:"body,omitempty"`
-	CreatedAt *string `json:"created_at,omitempty"`
-	UpdatedAt *string `json:"updated_at,omitempty"`
-}
-
-// state is the fold state for one stream: the derived row, whether a
-// tombstone was seen, and the first decode error (which poisons the
-// fold rather than deriving half a record).
-type state struct {
-	row  Announcement
-	dead bool
-	err  error
-}
-
-// reduce is the pure fold eventlog.Derive runs: created/updated apply
-// their payload's present fields ("created" also seeds updated_at from
-// created_at, the same both-timestamps-at-once rule the exclusive
-// INSERT uses); "deleted" is a tombstone, and dead stays dead.
-func reduce(s state, ev eventlog.Event) state {
-	if s.err != nil || s.dead {
-		return s
-	}
-	switch ev.Kind {
-	case "created", "updated":
-		var p payload
-		if err := json.Unmarshal(ev.Payload, &p); err != nil {
-			s.err = fmt.Errorf("announcementsstore: decode %s event on %s: %w", ev.Kind, ev.Stream, err)
-			return s
-		}
-		if p.Title != nil {
-			s.row.Title = *p.Title
-		}
-		if p.Body != nil {
-			s.row.Body = *p.Body
-		}
-		if p.CreatedAt != nil {
-			s.row.CreatedAt = *p.CreatedAt
-			s.row.UpdatedAt = *p.CreatedAt
-		}
-		if p.UpdatedAt != nil {
-			s.row.UpdatedAt = *p.UpdatedAt
-		}
-	case "deleted":
-		s.dead = true
-	}
-	return s
+	EventVersion int     `json:"V"`
+	Title        *string `json:"title,omitempty"`
+	Body         *string `json:"body,omitempty"`
+	CreatedAt    *string `json:"created_at,omitempty"`
+	UpdatedAt    *string `json:"updated_at,omitempty"`
 }
 
 // derive folds one stream's merged history into its live row; ok is
 // false for an empty or tombstoned stream.
-func derive(id int64, events []eventlog.Event) (Announcement, bool, error) {
+func derive(rules replay.Rules, id int64, events []eventlog.Event) (Announcement, map[string]replay.Field, bool, error) {
+	rec := map[string]replay.Field{}
 	if len(events) == 0 {
-		return Announcement{}, false, nil
+		return Announcement{}, rec, false, nil
 	}
-	s := eventlog.Derive(events, reduce)
-	if s.err != nil {
-		return Announcement{}, false, s.err
+	var row Announcement
+	dead := false
+	for i, ev := range events {
+		if err := rules.Apply(rec, i, ev); err != nil {
+			return Announcement{}, nil, false, fmt.Errorf("%s: %w", ev.Stream, err)
+		}
+		if dead {
+			continue
+		}
+		switch ev.Kind {
+		case "created", "updated":
+			var p payload
+			if err := json.Unmarshal(ev.Payload, &p); err != nil {
+				return Announcement{}, nil, false, fmt.Errorf("announcementsstore: decode %s event on %s: %w", ev.Kind, ev.Stream, err)
+			}
+			if p.Title != nil {
+				row.Title = *p.Title
+			}
+			if p.Body != nil {
+				row.Body = *p.Body
+			}
+			if p.CreatedAt != nil {
+				row.CreatedAt = *p.CreatedAt
+				row.UpdatedAt = *p.CreatedAt
+			}
+			if p.UpdatedAt != nil {
+				row.UpdatedAt = *p.UpdatedAt
+			}
+		case "deleted":
+			dead = true
+		}
 	}
-	if s.dead {
-		return Announcement{}, false, nil
+	if dead {
+		return Announcement{}, rec, false, nil
 	}
-	s.row.ID = id
-	return s.row, true, nil
+	row.ID = id
+	return row, rec, true, nil
+}
+
+func CheckReplay(ctx context.Context, db *sql.DB) error {
+	_, err := New(db).live(ctx)
+	return err
 }
 
 // streamID parses the record id out of a stream name.
 func streamID(stream string) (int64, error) {
-	id, err := strconv.ParseInt(strings.TrimPrefix(stream, streamPrefix), 10, 64)
+	id, err := strconv.ParseInt(strings.TrimPrefix(stream, StreamPrefix), 10, 64)
 	if err != nil {
 		return 0, fmt.Errorf("announcementsstore: bad stream %q: %w", stream, err)
 	}
@@ -150,11 +144,11 @@ func streamID(stream string) (int64, error) {
 // orders rows (created_at DESC, id DESC — RFC3339 strings compare
 // correctly as text, exactly as they do in SQLite).
 func (q *Queries) live(ctx context.Context) ([]Announcement, error) {
-	log, err := q.open(ctx)
+	log, rules, err := q.open(ctx)
 	if err != nil {
 		return nil, err
 	}
-	events, err := log.EventsByPrefix(ctx, streamPrefix)
+	events, err := log.EventsByPrefix(ctx, StreamPrefix)
 	if err != nil {
 		return nil, err
 	}
@@ -172,7 +166,7 @@ func (q *Queries) live(ctx context.Context) ([]Announcement, error) {
 	}
 	var rows []Announcement
 	for _, id := range ids {
-		row, ok, err := derive(id, byID[id])
+		row, _, ok, err := derive(rules, id, byID[id])
 		if err != nil {
 			return nil, err
 		}
@@ -252,15 +246,15 @@ func (q *Queries) CountAnnouncements(ctx context.Context, search string) (int64,
 }
 
 func (q *Queries) GetAnnouncement(ctx context.Context, id int64) (Announcement, error) {
-	log, err := q.open(ctx)
+	log, rules, err := q.open(ctx)
 	if err != nil {
 		return Announcement{}, err
 	}
-	events, err := log.Events(ctx, streamPrefix+strconv.FormatInt(id, 10))
+	events, err := log.Events(ctx, StreamPrefix+strconv.FormatInt(id, 10))
 	if err != nil {
 		return Announcement{}, err
 	}
-	row, ok, err := derive(id, events)
+	row, _, ok, err := derive(rules, id, events)
 	if err != nil {
 		return Announcement{}, err
 	}
@@ -277,14 +271,14 @@ type CreateAnnouncementParams struct {
 }
 
 func (q *Queries) CreateAnnouncement(ctx context.Context, arg CreateAnnouncementParams) (int64, error) {
-	log, err := q.open(ctx)
+	log, _, err := q.open(ctx)
 	if err != nil {
 		return 0, err
 	}
 	// Writer-local id allocation (see the package doc's caveat):
 	// max(existing id in this resource's streams)+1, race-free under
 	// the single-writer SQLite pool.
-	events, err := log.EventsByPrefix(ctx, streamPrefix)
+	events, err := log.EventsByPrefix(ctx, StreamPrefix)
 	if err != nil {
 		return 0, err
 	}
@@ -300,11 +294,12 @@ func (q *Queries) CreateAnnouncement(ctx context.Context, arg CreateAnnouncement
 	}
 	id++
 	p := payload{
-		Title:     &arg.Title,
-		Body:      &arg.Body,
-		CreatedAt: &arg.Now,
+		EventVersion: replay.Version,
+		Title:        &arg.Title,
+		Body:         &arg.Body,
+		CreatedAt:    &arg.Now,
 	}
-	if _, err := log.Append(ctx, streamPrefix+strconv.FormatInt(id, 10), "created", actor, p); err != nil {
+	if _, err := log.Append(ctx, StreamPrefix+strconv.FormatInt(id, 10), "created", actor, p); err != nil {
 		return 0, err
 	}
 	return id, nil
@@ -318,16 +313,16 @@ type UpdateAnnouncementBasicsParams struct {
 }
 
 func (q *Queries) UpdateAnnouncementBasics(ctx context.Context, arg UpdateAnnouncementBasicsParams) error {
-	log, err := q.open(ctx)
+	log, rules, err := q.open(ctx)
 	if err != nil {
 		return err
 	}
-	stream := streamPrefix + strconv.FormatInt(arg.ID, 10)
+	stream := StreamPrefix + strconv.FormatInt(arg.ID, 10)
 	events, err := log.Events(ctx, stream)
 	if err != nil {
 		return err
 	}
-	_, ok, err := derive(arg.ID, events)
+	_, _, ok, err := derive(rules, arg.ID, events)
 	if err != nil {
 		return err
 	}
@@ -337,25 +332,26 @@ func (q *Queries) UpdateAnnouncementBasics(ctx context.Context, arg UpdateAnnoun
 		return nil
 	}
 	p := payload{
-		Title:     &arg.Title,
-		Body:      &arg.Body,
-		UpdatedAt: &arg.Now,
+		EventVersion: replay.Version,
+		Title:        &arg.Title,
+		Body:         &arg.Body,
+		UpdatedAt:    &arg.Now,
 	}
 	_, err = log.Append(ctx, stream, "updated", actor, p)
 	return err
 }
 
 func (q *Queries) DeleteAnnouncement(ctx context.Context, id int64) error {
-	log, err := q.open(ctx)
+	log, rules, err := q.open(ctx)
 	if err != nil {
 		return err
 	}
-	stream := streamPrefix + strconv.FormatInt(id, 10)
+	stream := StreamPrefix + strconv.FormatInt(id, 10)
 	events, err := log.Events(ctx, stream)
 	if err != nil {
 		return err
 	}
-	_, ok, err := derive(id, events)
+	_, _, ok, err := derive(rules, id, events)
 	if err != nil {
 		return err
 	}
@@ -364,6 +360,6 @@ func (q *Queries) DeleteAnnouncement(ctx context.Context, id int64) error {
 	}
 	// Delete appends a tombstone event rather than a DELETE; derive
 	// skips dead ids from here on.
-	_, err = log.Append(ctx, stream, "deleted", actor, struct{}{})
+	_, err = log.Append(ctx, stream, "deleted", actor, payload{EventVersion: replay.Version})
 	return err
 }

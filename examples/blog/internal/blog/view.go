@@ -15,8 +15,10 @@ import (
 	"time"
 
 	blogassets "blog"
+	genlocales "blog/gen/locales"
 
 	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/locales"
 	"amadan.net/rastrillo/rastrillo/ui"
 )
 
@@ -27,65 +29,53 @@ var templateFS embed.FS
 // that eleven posts produce a real page strip in a test.
 const PageSize = 10
 
-// pages is one template tree per screen, built once at process start:
-// bare-named ("index", "post") for the app's own hand screens that
-// have nothing to do with a manifest resource, and
-// "<resource>/<page>" (e.g. "posts/list", "posts/show", "posts/form")
-// for every manifest-driven one — internal/generate/actions.go's
-// page-name contract, restated in that package's own doc comment.
-// A resource-keyed entry's *source file* may be hand-ejected
-// (templates/<resource>/<page>.html — task 11's ejection) or still
-// generated (gen/templates/<resource>/<page>.html); resourceSources
-// resolves that per key, so Render itself never has to know or care
-// which.
-var pages = buildPages()
-
 // Assets fingerprints the app's embedded static files. One instance
 // shared by the "asset" template func and main.go's /static/ mount,
 // so the URL a layout renders is always one the handler serves
 // immutable.
 var Assets = rastrillo.NewAssets(blogassets.StaticFS)
 
-// buildPages parses ui's partials and the layout into a base tree,
-// then clones that base once per screen — the clone is what makes the
-// shared layout work: every screen file defines "content", the same
-// name in every file, so parsing them into one shared tree would let
-// the last one clobber the rest (see the package's own template
-// tests, TestEachPageRendersItsOwnContent). A clone per screen gives
-// each one its own "content", so layout.html can call {{template
-// "content" .Data}} with the one constant name html/template requires.
-//
-// T resolves against gen/locales.BaseCatalog (genT, genrender.go) for
-// every screen, not only generated/ejected ones: the app's own bare
-// pages happen to spell every string literally today, but registering
-// T everywhere costs nothing and means a future hand page can start
-// using it without a second base tree appearing.
-func buildPages() map[string]*template.Template {
-	base := template.New("").Funcs(ui.Funcs()).Funcs(template.FuncMap{"T": genT, "asset": Assets.Path})
-	base = template.Must(base.ParseFS(ui.Templates(), "*.html"))
-	base = template.Must(base.ParseFS(templateFS, "templates/layout.html"))
+// App is this app's one template set and its render seam: a single
+// ui.Pages built once at NewApp, in every locale cfg offers (tickets'
+// internal/tickets/render.go pattern, task 23). Unlike the hand-rolled
+// map[string]*template.Template buildPages used to hold, there is one
+// base (ui's partials and this layout) parsed once, not once per
+// language or request, and each page is one clone of it made at
+// NewApp — the clone is what makes the shared layout work: every
+// screen file defines "content", the same name in every file, so
+// parsing them into one shared tree would let the last one clobber the
+// rest (see the package's own template tests,
+// TestEachPageRendersItsOwnContent).
+type App struct {
+	pages *ui.Pages
+}
 
+// pageFiles resolves every page this app serves into one
+// "<key>" -> ui.PageFile map for ui.NewPages: the app's own bare-named
+// hand screens ("index", "post" — nothing to do with a manifest
+// resource) plus every manifest-driven "<resource>/<page>" one —
+// internal/generate/actions.go's page-name contract, restated in that
+// package's own doc comment. A resource-keyed entry's *source file*
+// may be hand-ejected (templates/<resource>/<page>.html — task 11's
+// ejection) or still generated (gen/templates/<resource>/<page>.html);
+// resourceSources resolves that per key, so Render itself never has to
+// know or care which.
+func pageFiles() (map[string]ui.PageFile, error) {
 	names, err := fs.Glob(templateFS, "templates/pages/*.html")
 	if err != nil {
-		panic(err) // the pattern is a constant and the FS is embedded
+		return nil, err // the pattern is a constant and the FS is embedded
 	}
 	if len(names) == 0 {
-		panic("blog: no page templates embedded")
+		return nil, fmt.Errorf("blog: no page templates embedded")
 	}
-	out := make(map[string]*template.Template, len(names))
+	out := make(map[string]ui.PageFile, len(names))
 	for _, n := range names {
-		t := template.Must(base.Clone())
-		t = template.Must(t.ParseFS(templateFS, n))
-		out[strings.TrimSuffix(filepath.Base(n), ".html")] = t
+		out[strings.TrimSuffix(filepath.Base(n), ".html")] = ui.PageFile{FS: templateFS, Path: n}
 	}
-
 	for key, src := range resourceSources() {
-		t := template.Must(base.Clone())
-		t = template.Must(t.ParseFS(src.fsys, src.name))
-		out[key] = t
+		out[key] = ui.PageFile{FS: src.fsys, Path: src.name}
 	}
-
-	return out
+	return out, nil
 }
 
 // templateSource is one resolved "<resource>/<page>" entry: the
@@ -142,44 +132,91 @@ func addResourceDir(out map[string]templateSource, embedded embed.FS, root strin
 	}
 }
 
-// pageData is "layout"'s one data value: Head carries what <head>
-// needs, Data is passed through to "content" untouched. Every hand
-// screen's own view model already declares its own Head field
-// (HomeView.Head, PostView.Head, AdminListView.Head, ...); headFor
-// (genrender.go) reflects it out rather than duplicating it, so a
-// hand screen's content template still sees its own struct exactly,
-// only reached through .Data instead of directly. A truly generated
-// view model (posts/show's showView) carries no Head field at all —
-// the action emitter doesn't know about the app's layout, by design —
-// so headFor falls back to a page-name default for those.
+// NewApp builds the one template set this app serves from, strict in
+// every locale cfg offers (ui.Pages' own doc comment). cfg is
+// locales.CheckConfig's result — main.go gets it from
+// rastrillo.Handler's own validation; this call is only to read the
+// value back.
+func NewApp(cfg locales.Config) (*App, error) {
+	pages, err := pageFiles()
+	if err != nil {
+		return nil, err
+	}
+	p, err := ui.NewPages(ui.PagesConfig{
+		App:     templateFS,
+		Layout:  "templates/layout.html",
+		Pages:   pages,
+		Locale:  cfg,
+		Catalog: genlocales.BaseCatalog,
+		Funcs:   template.FuncMap{"asset": Assets.Path},
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &App{pages: p}, nil
+}
+
+// Middleware puts the request's localizer on the context, for every
+// page this app renders — ui.Pages' own Middleware.
+func (a *App) Middleware(next http.Handler) http.Handler {
+	return a.pages.Middleware(next)
+}
+
+// pageData is "layout"'s one data value. It embeds the ui.Localized
+// copied off the view Render is handed, so the layout finds L (strict
+// dispatch needs it non-nil), Locales and Return under their usual
+// names (Task 14) without this app re-deriving any of them from the
+// request itself. Head carries what <head> needs, and Data is passed
+// through to "content" untouched. Every hand screen's own view model
+// already declares its own Head field (HomeView.Head, PostView.Head,
+// AdminListView.Head, ...); headFor (genrender.go) reflects it out
+// rather than duplicating it, so a hand screen's content template
+// still sees its own struct exactly, only reached through .Data
+// instead of directly. A truly generated view model (posts/show's
+// showView) carries no Head field at all — the action emitter doesn't
+// know about the app's layout, by design — so headFor falls back to a
+// page-name default for those.
 type pageData struct {
+	ui.Localized
 	Head Head
 	Data any
 }
 
-// Render executes one page's "layout" into a buffer and only then
-// writes the status and the bytes, so a template error is a clean 500
-// rather than half a page followed by a stack trace.
+// notAViewMsg is Appendix C.2's op.render.not_a_view, verbatim: data
+// that is not a generated view carries none of the request values
+// (L, Locales, Return) the layout needs, so this fails loudly rather
+// than let a type-assertion panic hide which page was wrong, or let
+// strict rendering turn it into a less specific template error.
+const notAViewMsg = "page %q: the data has no request values, because it is not a generated view; nothing was rendered"
+
+// Render wraps data (a hand view model or a generated formView/
+// showView/confirmView) in the layout's data and executes the one
+// template set NewApp built, writing the status and the bytes only
+// once the whole page has rendered — ui.Pages.Execute's own guarantee,
+// so a template error is a clean 500 rather than half a page followed
+// by whatever came after it failed.
 //
 // This is also the one seam every generated action's ctx.Render call
-// resolves to (main.go wires it: &rastrillo.Ctx{Render: blog.Render}).
+// resolves to (main.go wires it: &rastrillo.Ctx{Render: app.Render}).
 // "posts/form" gets one extra step before Execute: formStripData
 // (genrender.go) enriches the generated formView-shaped data with the
 // Edit screen's Published/status-pill/publish-unpublish-delete-strip
 // fields, none of which a generated new.GET/edit.GET action has any
 // way to know about (posts.toml declares no such field) — see that
 // function's own doc comment.
-func Render(ctx *rastrillo.Ctx, w http.ResponseWriter, page string, status int, data any) {
-	t, ok := pages[page]
+func (a *App) Render(ctx *rastrillo.Ctx, w http.ResponseWriter, page string, status int, data any) {
+	v, ok := data.(interface{ Request() ui.Localized })
 	if !ok {
-		Fail(ctx, w, "rendering "+page, fmt.Errorf("no such page template"))
+		Fail(ctx, w, fmt.Sprintf(notAViewMsg, page), nil)
 		return
 	}
+	loc := v.Request()
 	if page == "posts/form" {
-		data = formStripData(ctx, data)
+		data = formStripData(ctx, data, loc)
 	}
+	pd := pageData{Localized: loc, Head: headFor(page, data), Data: data}
 	var buf bytes.Buffer
-	if err := t.ExecuteTemplate(&buf, "layout", pageData{Head: headFor(page, data), Data: data}); err != nil {
+	if err := a.pages.Execute(&buf, page, pd); err != nil {
 		Fail(ctx, w, "rendering "+page, err)
 		return
 	}
@@ -189,7 +226,11 @@ func Render(ctx *rastrillo.Ctx, w http.ResponseWriter, page string, status int, 
 }
 
 // Fail logs through Ctx.Logger and answers a plain 500. Every store error
-// that is not sql.ErrNoRows goes through it in one line.
+// that is not sql.ErrNoRows goes through it in one line. err is a
+// structured slog attribute, not folded into what: a nil err (Render's
+// own not-a-view failure, which has none) still logs cleanly as
+// err=<nil> rather than losing the field shape every other caller here
+// relies on to grep by.
 func Fail(ctx *rastrillo.Ctx, w http.ResponseWriter, what string, err error) {
 	if ctx != nil && ctx.Logger != nil {
 		ctx.Logger.Error("blog: "+what, "err", err)
@@ -261,23 +302,31 @@ type Pagination struct {
 	Items []PageItem
 }
 
-// HomeView is GET /.
+// HomeView is GET /. It embeds ui.Localized, set from ui.ForRequest(r)
+// by the hand action that builds it, so Render finds L/Locales/Return
+// on it the same way it would on a generated view (Render's own doc
+// comment, interface{ Request() ui.Localized }).
 type HomeView struct {
+	ui.Localized
 	Head       Head
 	Rows       []Row
 	Pagination Pagination
 }
 
-// PostView is GET /posts/{id}.
+// PostView is GET /posts/{id}; see HomeView's doc comment on the
+// embedded ui.Localized.
 type PostView struct {
+	ui.Localized
 	Head       Head
 	Title      string
 	Date       string
 	Paragraphs []string
 }
 
-// AdminListView is GET /admin/posts.
+// AdminListView is GET /admin/posts; see HomeView's doc comment on the
+// embedded ui.Localized.
 type AdminListView struct {
+	ui.Localized
 	Head  Head
 	Query string
 	// Carry is list-bar's Hidden: name/value pairs a search must

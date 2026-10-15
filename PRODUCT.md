@@ -93,7 +93,7 @@ doing the same work:
   `console`), a partial library, and eleven-plus icon slugs vendored as
   inline SVG. Icon slugs are rastrillo's own names, not a vendor's, so
   `{{icon "search"}}` means the same thing whichever set an app chose.
-- **Twelve shipped locales:** en, ga, zh-Hans, es, hi, pt, bn, ru, ja,
+- **Twelve shipped locales:** en, ga, zh-Hans, es, hi, pt-PT, bn, ru, ja,
   yue, vi, ar. Arabic makes right-to-left a shipped requirement, not a
   hypothetical.
 - **Markup grammar, mid-migration.** The vocabulary is moving from

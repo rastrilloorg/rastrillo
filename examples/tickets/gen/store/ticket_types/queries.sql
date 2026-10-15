@@ -16,12 +16,12 @@ WHERE (sqlc.arg(search) = '' OR (name LIKE '%' || sqlc.arg(search) || '%' OR sta
 SELECT * FROM ticket_types WHERE id = sqlc.arg(id);
 
 -- name: CreateTicketType :one
-INSERT INTO ticket_types (name, price, status, max_per_order, created_at, updated_at)
-VALUES (sqlc.arg(name), sqlc.arg(price), sqlc.arg(status), sqlc.arg(max_per_order), sqlc.arg(now), sqlc.arg(now))
+INSERT INTO ticket_types (name, price_minor, price_currency, status, max_per_order, created_at, updated_at)
+VALUES (sqlc.arg(name), sqlc.arg(price_minor), sqlc.arg(price_currency), sqlc.arg(status), sqlc.arg(max_per_order), sqlc.arg(now), sqlc.arg(now))
 RETURNING id;
 
 -- name: UpdateTicketTypeBasics :exec
-UPDATE ticket_types SET name = sqlc.arg(name), price = sqlc.arg(price), status = sqlc.arg(status), updated_at = sqlc.arg(now) WHERE id = sqlc.arg(id);
+UPDATE ticket_types SET name = sqlc.arg(name), price_minor = sqlc.arg(price_minor), price_currency = sqlc.arg(price_currency), status = sqlc.arg(status), updated_at = sqlc.arg(now) WHERE id = sqlc.arg(id);
 
 -- name: UpdateTicketTypeAdvanced :exec
 UPDATE ticket_types SET max_per_order = sqlc.arg(max_per_order), updated_at = sqlc.arg(now) WHERE id = sqlc.arg(id);

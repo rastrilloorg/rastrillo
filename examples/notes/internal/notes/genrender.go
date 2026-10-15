@@ -1,7 +1,10 @@
-// genrender.go is the Ctx.Render seam for this app's generated half:
-// manifest/bookmarks.toml's screens (gen/templates/bookmarks/*.html)
-// render through here, inside the same chrome the hand screens use
-// (templates/genlayout.html — layout.html's generated-screen twin).
+// genrender.go is render.go's generated-adapter half: the pieces
+// GenRender needs specifically because manifest/bookmarks.toml's
+// screens (gen/templates/bookmarks/*.html) render through here, inside
+// the same chrome the hand screens use (templates/genlayout.html —
+// layout.html's generated-screen twin), but a generated view model
+// (listView, formView, ...) carries no Flash/HasFlash/SignedIn of its
+// own — those come from the live request, not the manifest.
 //
 // The one trick worth reading: rastrillo.RenderFunc carries no
 // *http.Request, but the generated router builds a fresh Ctx per
@@ -14,89 +17,103 @@ package notes
 import (
 	"bytes"
 	"fmt"
-	"html/template"
 	"io/fs"
 	"net/http"
 	"path"
 	"strings"
 
 	notesassets "notes"
-	"notes/gen/locales"
+	genlocales "notes/gen/locales"
 
 	"amadan.net/rastrillo/rastrillo"
 	"amadan.net/rastrillo/rastrillo/flash"
+	"amadan.net/rastrillo/rastrillo/locales"
 	"amadan.net/rastrillo/rastrillo/sessions"
 	"amadan.net/rastrillo/rastrillo/ui"
 )
 
-// genPages is one template tree per generated screen, keyed
-// "<resource>/<page>" (internal/generate/actions.go's page-name
-// contract) — built once at process start, tickets'
-// internal/tickets/render.go pattern with this app's own chrome.
-var genPages = buildGenPages()
-
-func buildGenPages() map[string]*template.Template {
-	base := template.New("").Funcs(ui.Funcs()).Funcs(template.FuncMap{"T": genT})
-	base = template.Must(base.ParseFS(ui.Templates(), "*.html"))
-	base = template.Must(base.ParseFS(templatesFS, "templates/genlayout.html"))
-
+// genTemplatesSub is gen/templates, rooted so each page's path reads
+// "<resource>/<page>.html" — internal/generate/actions.go's page-name
+// contract. It is embedded at compile time (genassets.go), so this
+// can only fail if that embed directive and this Sub ever disagree.
+func genTemplatesSub() fs.FS {
 	sub, err := fs.Sub(notesassets.GenTemplatesFS, "gen/templates")
-	if err != nil {
-		panic(err) // gen/templates is embedded at compile time (genassets.go)
-	}
-	resDirs, err := fs.ReadDir(sub, ".")
 	if err != nil {
 		panic(err)
 	}
+	return sub
+}
 
-	out := make(map[string]*template.Template)
+// genPageFiles is one ui.PageFile per generated screen under sub,
+// keyed "<resource>/<page>" (internal/generate/actions.go's page-name
+// contract) — tickets' internal/tickets/render.go pattern (Task 23),
+// restated for notes' second resource.
+func genPageFiles(sub fs.FS) (map[string]ui.PageFile, error) {
+	resDirs, err := fs.ReadDir(sub, ".")
+	if err != nil {
+		return nil, err
+	}
+	out := map[string]ui.PageFile{}
 	for _, rd := range resDirs {
 		if !rd.IsDir() {
 			continue
 		}
 		files, err := fs.Glob(sub, rd.Name()+"/*.html")
 		if err != nil {
-			panic(err)
+			return nil, err
 		}
 		for _, f := range files {
 			key := rd.Name() + "/" + strings.TrimSuffix(path.Base(f), ".html")
-			t := template.Must(base.Clone())
-			t = template.Must(t.ParseFS(sub, f))
-			out[key] = t
+			out[key] = ui.PageFile{FS: sub, Path: f}
 		}
 	}
 	if len(out) == 0 {
-		panic("notes: no generated page templates embedded")
+		return nil, fmt.Errorf("notes: no generated page templates embedded")
 	}
-	return out
+	return out, nil
 }
 
-// genT resolves a manifest catalog key against gen/locales.BaseCatalog
-// directly — a plain map lookup; this app is monolingual, and a
-// missing key renders as itself so a typo shows on the page instead of
-// blanking a sentence (the same reasoning as tickets' genT).
-func genT(key string) string {
-	if v, ok := locales.BaseCatalog[key]; ok {
-		return v
+// newGenPages builds the generated-screen ui.Pages: genlayout.html as
+// the layout, every bookmarks/* screen genPageFiles resolved as a page
+// — see render.go's newPages doc comment for why this is a second
+// ui.Pages rather than sharing the hand screens' one.
+func newGenPages(cfg locales.Config) (*ui.Pages, error) {
+	files, err := genPageFiles(genTemplatesSub())
+	if err != nil {
+		return nil, err
 	}
-	return key
+	return ui.NewPages(ui.PagesConfig{
+		App:     templatesFS,
+		Layout:  "templates/genlayout.html",
+		Pages:   files,
+		Locale:  cfg,
+		Catalog: genlocales.BaseCatalog,
+	})
 }
+
+// notAViewMsg is Appendix C.2's op.render.not_a_view, verbatim: data
+// that is not a generated view carries none of the request values
+// (L, Locales, Return) the layout needs, so this fails loudly rather
+// than let a type-assertion panic hide which page was wrong, or let
+// strict rendering turn it into a less specific template error.
+const notAViewMsg = "page %q: the data has no request values, because it is not a generated view; nothing was rendered"
 
 // GenRender returns the rastrillo.RenderFunc for one request: the
 // closure is what lets a generated screen read this request's flash
 // and signed-in state through a seam that never sees r itself. App's
 // ctx factory calls it per request.
-func GenRender(r *http.Request) rastrillo.RenderFunc {
+func (a *app) GenRender(r *http.Request) rastrillo.RenderFunc {
 	return func(ctx *rastrillo.Ctx, w http.ResponseWriter, name string, status int, data any) {
-		t, ok := genPages[name]
+		v, ok := data.(interface{ Request() ui.Localized })
 		if !ok {
-			genFail(ctx, w, "rendering "+name, fmt.Errorf("no such page template"))
+			genFail(ctx, w, fmt.Sprintf(notAViewMsg, name), nil)
 			return
 		}
 		fl, hasFlash := flash.Take(w, r)
 		_, signedIn := sessions.Current(r)
+		pd := page{Localized: v.Request(), Flash: fl, HasFlash: hasFlash, SignedIn: signedIn, Content: data}
 		var buf bytes.Buffer
-		if err := t.ExecuteTemplate(&buf, "layout", page{Flash: fl, HasFlash: hasFlash, SignedIn: signedIn, Content: data}); err != nil {
+		if err := a.genPages.Execute(&buf, name, pd); err != nil {
 			genFail(ctx, w, "rendering "+name, err)
 			return
 		}
@@ -106,6 +123,11 @@ func GenRender(r *http.Request) rastrillo.RenderFunc {
 	}
 }
 
+// genFail logs through Ctx.Logger and answers a plain 500. err is a
+// structured slog attribute, not folded into what: a nil err (the
+// not-a-view failure, which has none) still logs cleanly as err=<nil>
+// rather than losing the field shape every other caller here relies
+// on to grep by.
 func genFail(ctx *rastrillo.Ctx, w http.ResponseWriter, what string, err error) {
 	if ctx != nil && ctx.Logger != nil {
 		ctx.Logger.Error("notes: "+what, "err", err)

@@ -116,7 +116,7 @@ func TestRunSqlcGeneratesCompilingStore(t *testing.T) {
 	// this run is what keeps the stubs honest.
 	bookmarks := scopedFixtureResource()
 	journals := scopedPlainFixtureResource()
-	if _, err := EmitStore(genDir, []rastrillo.Resource{notes, widgets, articles, bookmarks, journals}); err != nil {
+	if _, _, err := EmitStore(genDir, []rastrillo.Resource{notes, widgets, articles, bookmarks, journals}, nil); err != nil {
 		t.Fatalf("EmitStore: %v", err)
 	}
 

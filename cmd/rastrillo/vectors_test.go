@@ -215,6 +215,7 @@ func TestGenerateCheckRunsTheVectorsGate(t *testing.T) {
 		"cmd/genvectors/main.go": fixtureGenvectorsSrc,
 		"test/vectors.json":      "[]\n",
 	})
+	generateFirst(t, dir)
 	err := runGenerate([]string{"--check", dir})
 	if err == nil {
 		t.Fatal("want the vectors byte-compare failure to surface through generate --check")
@@ -228,6 +229,7 @@ func TestGenerateCheckRunsTheVectorsGate(t *testing.T) {
 // existing app's --check is untouched.
 func TestGenerateCheckIgnoresVectorsWithoutAGenerator(t *testing.T) {
 	dir := scaffold(t, map[string]string{"go.mod": "module demo\n\ngo 1.24\n"})
+	generateFirst(t, dir)
 	if err := runGenerate([]string{"--check", dir}); err != nil {
 		t.Fatalf("an app with no cmd/genvectors must not grow a vectors gate: %v", err)
 	}

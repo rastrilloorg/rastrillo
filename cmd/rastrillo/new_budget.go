@@ -21,6 +21,7 @@ import (
 	"amadan.net/rastrillo/rastrillo/db"
 	"amadan.net/rastrillo/rastrillo/perf/perftest"
 
+	genlocales "%[1]s/gen/locales"
 	%[2]s "%[1]s/internal/%[2]s"
 )
 
@@ -40,7 +41,10 @@ func TestPerfScreens(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	opts := rastrillo.Options{Logger: logger}
+	// Locales and DefaultLocale come from manifest/app.toml, through
+	// gen/locales. Boot refuses a configuration whose packs this binary
+	// does not link.
+	opts := rastrillo.Options{Logger: logger, Locales: genlocales.Locales, DefaultLocale: genlocales.DefaultLocale}
 	%[2]s.Configure(&opts, %[2]s.Mux(r), time.Now())
 	h, closeAll, err := rastrillo.Handler(opts)
 	if err != nil {
@@ -68,7 +72,7 @@ func TestPerfBoot(t *testing.T) {
 				d.Close()
 				return nil, nil, err
 			}
-			opts := rastrillo.Options{Logger: logger}
+			opts := rastrillo.Options{Logger: logger, Locales: genlocales.Locales, DefaultLocale: genlocales.DefaultLocale}
 			%[2]s.Configure(&opts, mux, started)
 			h, closeAll, err := rastrillo.Handler(opts)
 			if err != nil {

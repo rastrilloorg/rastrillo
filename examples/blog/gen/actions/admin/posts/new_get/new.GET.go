@@ -6,13 +6,15 @@ import (
 	"net/http"
 
 	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/ui"
 	"amadan.net/rastrillo/rastrillo/view"
 )
 
 // Handle is GET /admin/posts/new.
 func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 	view.Render(ctx, w, "posts/form", http.StatusOK, formView{
-		IsNew: true,
+		Localized: ui.ForRequest(r),
+		IsNew:     true,
 		Fields: map[string]string{
 			"Title": "",
 			"Body":  "",
@@ -21,9 +23,11 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 }
 
 type formView struct {
+	ui.Localized
 	IsNew          bool
 	Fields         map[string]string
 	Errors         map[string]string
+	ErrorArgs      map[string]map[string]any
 	BasicsAction   string
 	AdvancedAction string
 }

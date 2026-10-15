@@ -314,14 +314,11 @@ Reference codes, order numbers, years, versions and port numbers are
 labels that happen to be made of digits, and grouping one changes what it
 appears to be. Order 4471 is not order 4,471.
 
-This rule is **ruled and not yet met**. `form.FormatCents` writes
-`$1284.50` today. Grouping needs the reader's locale, which the server
-has, and `golang.org/x/text` is already in the module graph — so the gap
-is a decision about `FormatCents`'s signature rather than a missing
-capability. Where a number is grouped in the browser instead,
-`Intl.NumberFormat` is legitimate enhancement here in a way it is not for
-currency: an ungrouped number is harder to read but still correct, while
-a currency guessed from the reader's locale is wrong.
+The rule is met. `{{number $L .Count}}` groups a quantity and `{{money $L .Amount .Currency}}` writes money, both on the server, in the reader's language, from CLDR data. In the browser, `Intl` is at most an enhancement.
+
+Money has two rules of its own. The currency always comes from the data, never from the reader: an amount is stored as a whole number of its currency's smallest unit, with its ISO 4217 code beside it, so a price in euros is in euros on every page. And every digit of that smallest unit is shown: 1.5 dinars is `KWD 1.500`, never `KWD 1.5`.
+
+Each language's formatting data is a pack an app links only when it offers that language, so a language costs nothing until then. Templates are built once, and the localizer in each page's data chooses the language, so one request's language never reaches another's page.
 
 ## Layout
 

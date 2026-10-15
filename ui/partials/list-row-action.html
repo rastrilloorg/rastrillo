@@ -41,18 +41,18 @@
                     second copy of the name to drift. Read through opt,
                     so a struct written before Menu existed still
                     renders. */}}
-{{define "list-row-action"}}<div rst-row>
+{{define "list-row-action"}}{{$L := localizer $}}<div rst-row>
   {{- if .Lead}}
   <span rst-row-lead data-lead="{{.Lead}}" aria-hidden="true">{{if .LeadInitial}}{{.LeadInitial}}{{end}}</span>
   {{- end}}
-  <span rst-row-main><a href="{{.Href}}">{{displayValue .Main}}</a>{{if .Sub}}<small rst-row-sub>{{displayValue .Sub}}</small>{{end}}</span>
+  <span rst-row-main><a href="{{.Href}}">{{displayValue $L .Main}}</a>{{if .Sub}}<small rst-row-sub>{{displayValue $L .Sub}}</small>{{end}}</span>
   {{- if .StatusLabel}}
-  {{template "status-pill" dict "Tone" .StatusTone "Label" .StatusLabel}}
+  {{template "status-pill" dict "L" $L "Tone" .StatusTone "Label" .StatusLabel}}
   {{- end}}
   {{- if .ActionHref}}
   <a rst-row-action href="{{.ActionHref}}"{{if .ActionAria}} aria-label="{{.ActionAria}}"{{end}}>{{.ActionLabel}}</a>
   {{- end}}
   {{- with opt . "Menu"}}
-  {{template "row-menu" dict "Name" (print (displayValue $.Main)) "Items" .}}
+  {{template "row-menu" dict "L" $L "Name" (print (displayValue $L $.Main)) "Items" .}}
   {{- end}}
 </div>{{end}}

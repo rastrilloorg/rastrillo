@@ -1,10 +1,10 @@
-{{define "content"}}
-{{template "page-header" dict "Title" "New note"}}
+{{define "content"}}{{$L := localizer $}}
+{{template "page-header" dict "L" $L "Title" "New note"}}
 {{with .Content}}
 <form rst-form method="post" action="/notes">
-{{template "field-text" dict "Name" "title" "Label" "Title" "Value" .Note.Title "Required" true "Autofocus" true "Error" (index .Errors "Title")}}
-{{template "field-textarea" dict "Name" "body" "Label" "Body" "Value" .Note.Body "Error" (index .Errors "Body")}}
-{{template "form-foot" dict "Submit" "Create" "CancelHref" "/" "CancelLabel" "Cancel"}}
+{{template "field-text" dict "L" $L "Name" "title" "Label" "Title" "Value" .Note.Title "Required" true "Autofocus" true "Error" (index .Errors "Title")}}
+{{template "field-textarea" dict "L" $L "Name" "body" "Label" "Body" "Value" .Note.Body "Error" (index .Errors "Body")}}
+{{template "form-foot" dict "L" $L "Submit" "Create" "CancelHref" "/" "CancelLabel" "Cancel"}}
 </form>
 {{end}}
 {{end}}

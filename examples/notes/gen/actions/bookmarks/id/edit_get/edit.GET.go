@@ -10,6 +10,7 @@ import (
 
 	"amadan.net/rastrillo/rastrillo"
 	"amadan.net/rastrillo/rastrillo/sessions"
+	"amadan.net/rastrillo/rastrillo/ui"
 	"amadan.net/rastrillo/rastrillo/view"
 	bookmarksstore "notes/gen/store/bookmarks"
 )
@@ -38,7 +39,8 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 	}
 
 	view.Render(ctx, w, "bookmarks/form", http.StatusOK, formView{
-		IsNew: false,
+		Localized: ui.ForRequest(r),
+		IsNew:     false,
 		Fields: map[string]string{
 			"Title": n.Title,
 			"Link":  n.Link,
@@ -50,9 +52,11 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 }
 
 type formView struct {
+	ui.Localized
 	IsNew          bool
 	Fields         map[string]string
 	Errors         map[string]string
+	ErrorArgs      map[string]map[string]any
 	BasicsAction   string
 	AdvancedAction string
 }

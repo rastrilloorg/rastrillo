@@ -118,7 +118,7 @@ answers. It catches both `{{icon "x"}}` and the commoner form where the
 slug reaches a partial as data:
 
 ```html
-{{template "list-row-action" dict "ActionIcon" "plus"}}
+{{template "list-row-action" dict "L" $L "ActionIcon" "plus"}}
 ```
 
 A slug computed at run time cannot be checked, as with any static gate.

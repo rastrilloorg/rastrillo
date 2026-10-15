@@ -34,14 +34,46 @@ import (
 	"amadan.net/rastrillo/rastrillo"
 )
 
-// mergeableGoType maps a manifest Kind to the generated model/param
-// field type — the same mapping sqlc derives from kindSQLType's
-// columns (money is INTEGER, so int64; everything else TEXT).
-func mergeableGoType(k rastrillo.Kind) string {
+// replayStream is Appendix C.2's op.replay.stream, naming the stream a
+// fold failed on. %w prints what the approved %v prints, and keeps the
+// replay error matchable with errors.Is.
+const replayStream = "%s: %w"
+
+// mergeableFieldLines is one model or Params field: money is
+// <F>Minor *int64 and <F>Currency *string, the names the shared action
+// emitter reads and writes for every store kind (nil in both is an
+// empty field), and everything else a string.
+func mergeableFieldLines(name string, k rastrillo.Kind) string {
 	if k == rastrillo.Money {
-		return "int64"
+		return name + "Minor *int64\n" + name + "Currency *string\n"
 	}
-	return "string"
+	return name + " string\n"
+}
+
+// mergeableMoney is r's money columns: what its events carry beside an
+// amount, and what its reads fold through replay.
+func mergeableMoney(r rastrillo.Resource) []column {
+	var out []column
+	for _, c := range columns(r) {
+		if c.Kind == rastrillo.Money {
+			out = append(out, c)
+		}
+	}
+	return out
+}
+
+// mergeableAmounts is the money keys an append writes for fields: a
+// map, because an explicit null (a cleared field) is what a struct
+// with omitempty cannot write.
+func mergeableAmounts(fields []column) string {
+	var parts []string
+	for _, c := range fields {
+		parts = append(parts, fmt.Sprintf("%q: arg.%sMinor, %q: arg.%sCurrency", c.SQL, c.Name, c.SQL+"_currency", c.Name))
+	}
+	if len(parts) == 0 {
+		return "nil"
+	}
+	return "map[string]any{" + strings.Join(parts, ", ") + "}"
 }
 
 // mergeableCountBinds counts a resource's Count bind parameters —
@@ -111,6 +143,11 @@ func mergeableStoreGo(r rastrillo.Resource) []byte {
 	fvars := filterVars(r)
 	searchBind := r.List.Search && len(searchColumns(r)) > 0
 	hasClauses := scoped(r) || searchBind || len(fvars) > 0
+	money := mergeableMoney(r)
+	syncImport, currencyImport := "", ""
+	if len(money) > 0 {
+		syncImport, currencyImport = "\t\"sync\"\n", "\t\"amadan.net/rastrillo/rastrillo/currency\"\n"
+	}
 
 	// matchesParams / matchesArgs are the clause bind parameters in
 	// whereClauses order (owner, search, filters); Args is the
@@ -158,19 +195,20 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-
+%[3]s
+%[4]s	"amadan.net/rastrillo/rastrillo/currency/replay"
 	"amadan.net/rastrillo/rastrillo/eventlog"
 )
 
-// streamPrefix namespaces this resource's streams in the shared
+// StreamPrefix namespaces this resource's streams in the shared
 // eventlog table: record <id> lives at "%[1]s/<id>".
-const streamPrefix = "%[1]s/"
+const StreamPrefix = "%[1]s/"
 
 // actor is stamped on every event this store appends — see the
 // package doc's Ctx.Actor caveat.
 const actor = "app"
 
-`, r.Name, pkg)
+`, r.Name, pkg, syncImport, currencyImport)
 
 	// The model struct — the same shape sqlc generates.
 	fmt.Fprintf(&b, "// %s is the derived read model — the same shape sqlc\n// generates for an exclusive resource.\n", model)
@@ -180,7 +218,7 @@ const actor = "app"
 		b.WriteString("Owner string\n")
 	}
 	for _, c := range cols {
-		fmt.Fprintf(&b, "%s %s\n", c.Name, mergeableGoType(c.Kind))
+		b.WriteString(mergeableFieldLines(c.Name, c.Kind))
 	}
 	b.WriteString("CreatedAt string\nUpdatedAt string\n}\n\n")
 
@@ -192,96 +230,195 @@ func New(db *sql.DB) *Queries {
 	return &Queries{db: db}
 }
 
-// open resolves the database's durable writer identity (lazily, per
-// call — a one-row SELECT) and binds an eventlog.Log to it.
-func (q *Queries) open(ctx context.Context) (*eventlog.Log, error) {
+`)
+	// A store without money still folds through replay: its rules are
+	// empty, so only the version is checked, and an event from a newer
+	// writer is refused rather than half read. A store with money also
+	// needs the upgrade boundary, which never changes once the rename
+	// wrote it, so it is read once per database handle and kept, one
+	// small entry per handle, as eventlog keeps its payload column.
+	const openDoc = "// open resolves the database's durable writer identity (lazily, per\n// call — a one-row SELECT) and binds an eventlog.Log to it.\n"
+	if len(money) == 0 {
+		b.WriteString(openDoc + `func (q *Queries) open(ctx context.Context) (*eventlog.Log, replay.Rules, error) {
 	writer, err := eventlog.LocalWriter(ctx, q.db)
 	if err != nil {
-		return nil, err
+		return nil, replay.Rules{}, err
 	}
-	return eventlog.Open(q.db, writer)
+	log, err := eventlog.Open(q.db, writer)
+	return log, replay.Rules{}, err
 }
 
-// payload is the JSON shape of every created/updated event: pointer
+`)
+	} else {
+		b.WriteString("var fields = []replay.Money{\n")
+		for _, c := range money {
+			fmt.Fprintf(&b, "{Field: %q, AmountKey: %q, CurrencyKey: %q},\n", c.Name, c.SQL, c.SQL+"_currency")
+		}
+		b.WriteString("}\n\n")
+		if r.Legacy != nil {
+			fmt.Fprintf(&b, "var legacy = &currency.Legacy{Currency: %q, Scale: %d}\n\n", r.Legacy.Currency, *r.Legacy.Scale)
+		} else {
+			b.WriteString("var legacy *currency.Legacy\n\n")
+		}
+		b.WriteString("var rulesByDB sync.Map\n\n" + openDoc + `func (q *Queries) open(ctx context.Context) (*eventlog.Log, replay.Rules, error) {
+	writer, err := eventlog.LocalWriter(ctx, q.db)
+	if err != nil {
+		return nil, replay.Rules{}, err
+	}
+	log, err := eventlog.Open(q.db, writer)
+	if err != nil {
+		return nil, replay.Rules{}, err
+	}
+	if r, ok := rulesByDB.Load(q.db); ok {
+		return log, r.(replay.Rules), nil
+	}
+	boundary, err := eventlog.UpgradeBoundary(ctx, q.db)
+	if err != nil {
+		return nil, replay.Rules{}, err
+	}
+	r := replay.Rules{Fields: fields, Legacy: legacy, Boundary: boundary, HasBoundary: true}
+	rulesByDB.Store(q.db, r)
+	return log, r, nil
+}
+
+`)
+	}
+	// The version member is EventVersion, not V: a text field V is a
+	// member too, and the two did not compile side by side. The JSON
+	// key stays "V", the key every event already written carries, and
+	// Validate refuses a declared EventVersion.
+	b.WriteString(`// payload is the JSON shape of every created/updated event: pointer
 // fields, omitted when nil, so a created event carries every field and
 // an updated event only its own group's — an absent field leaves the
 // derived value untouched.
 type payload struct {
+EventVersion int ` + "`json:\"V\"`" + `
 `)
 	if scoped(r) {
 		b.WriteString("Owner *string `json:\"owner,omitempty\"`\n")
 	}
+	// Money is not in the struct: its keys are written as a map and read
+	// only by replay, whose exact key match a second, case-insensitive
+	// struct decode could disagree with.
 	for _, c := range cols {
-		fmt.Fprintf(&b, "%s *%s `json:%q`\n", c.Name, mergeableGoType(c.Kind), c.SQL+",omitempty")
+		if c.Kind != rastrillo.Money {
+			fmt.Fprintf(&b, "%s *string `json:%q`\n", c.Name, c.SQL+",omitempty")
+		}
 	}
 	b.WriteString("CreatedAt *string `json:\"created_at,omitempty\"`\nUpdatedAt *string `json:\"updated_at,omitempty\"`\n}\n\n")
 
-	fmt.Fprintf(&b, `// state is the fold state for one stream: the derived row, whether a
-// tombstone was seen, and the first decode error (which poisons the
-// fold rather than deriving half a record).
-type state struct {
-	row  %s
-	dead bool
-	err  error
-}
-
-// reduce is the pure fold eventlog.Derive runs: created/updated apply
-// their payload's present fields ("created" also seeds updated_at from
-// created_at, the same both-timestamps-at-once rule the exclusive
-// INSERT uses); "deleted" is a tombstone, and dead stays dead.
-func reduce(s state, ev eventlog.Event) state {
-	if s.err != nil || s.dead {
-		return s
+	// The fold. Every event goes through rules.Apply first, the version
+	// before the kind and after a tombstone too, so a newer writer's
+	// event is refused wherever it sits. Amounts come only from Apply:
+	// the struct decode below reads the other fields. A failure returns
+	// no record at all, never the part folded so far.
+	fmt.Fprintf(&b, `// derive folds one stream's merged history into its live row; ok is
+// false for an empty or tombstoned stream.
+func derive(rules replay.Rules, id int64, events []eventlog.Event) (%[1]s, map[string]replay.Field, bool, error) {
+	rec := map[string]replay.Field{}
+	if len(events) == 0 {
+		return %[1]s{}, rec, false, nil
 	}
-	switch ev.Kind {
-	case "created", "updated":
-		var p payload
-		if err := json.Unmarshal(ev.Payload, &p); err != nil {
-			s.err = fmt.Errorf("%s: decode %%s event on %%s: %%w", ev.Kind, ev.Stream, err)
-			return s
+	var row %[1]s
+	dead := false
+	for i, ev := range events {
+		if err := rules.Apply(rec, i, ev); err != nil {
+			return %[1]s{}, nil, false, fmt.Errorf(%[3]q, ev.Stream, err)
 		}
-`, model, pkg)
+		if dead {
+			continue
+		}
+		switch ev.Kind {
+		case "created", "updated":
+			var p payload
+			if err := json.Unmarshal(ev.Payload, &p); err != nil {
+				return %[1]s{}, nil, false, fmt.Errorf("%[2]s: decode %%s event on %%s: %%w", ev.Kind, ev.Stream, err)
+			}
+`, model, pkg, replayStream)
 	if scoped(r) {
-		b.WriteString("if p.Owner != nil {\ns.row.Owner = *p.Owner\n}\n")
+		b.WriteString("if p.Owner != nil {\nrow.Owner = *p.Owner\n}\n")
 	}
 	for _, c := range cols {
-		fmt.Fprintf(&b, "if p.%[1]s != nil {\ns.row.%[1]s = *p.%[1]s\n}\n", c.Name)
+		if c.Kind != rastrillo.Money {
+			fmt.Fprintf(&b, "if p.%[1]s != nil {\nrow.%[1]s = *p.%[1]s\n}\n", c.Name)
+		}
 	}
+	// "created" also seeds updated_at from created_at, the same
+	// both-timestamps-at-once rule the exclusive INSERT uses.
 	b.WriteString(`if p.CreatedAt != nil {
-s.row.CreatedAt = *p.CreatedAt
-s.row.UpdatedAt = *p.CreatedAt
+row.CreatedAt = *p.CreatedAt
+row.UpdatedAt = *p.CreatedAt
 }
 if p.UpdatedAt != nil {
-s.row.UpdatedAt = *p.UpdatedAt
+row.UpdatedAt = *p.UpdatedAt
 }
-	case "deleted":
-		s.dead = true
+		case "deleted":
+			dead = true
+		}
 	}
-	return s
+`)
+	fmt.Fprintf(&b, "if dead {\nreturn %s{}, rec, false, nil\n}\nrow.ID = id\n", model)
+	for _, c := range money {
+		fmt.Fprintf(&b, "row.%[1]sMinor, row.%[1]sCurrency = rec[%[1]q].Minor, rec[%[1]q].Currency\n", c.Name)
+	}
+	b.WriteString("return row, rec, true, nil\n}\n\n")
+
+	if len(money) > 0 {
+		// emit folds the event onto the stream's money before appending
+		// it. An event the fold refuses (an amount without its currency,
+		// a changed currency) would otherwise be written for good, and
+		// every later read of the stream, and every boot, would fail on
+		// it. The fold runs inside AppendChecked, on the history as it
+		// is under the write lock: folding a history read earlier let a
+		// racing writer clear the field and refill it in another
+		// currency in between, and the stale event was appended after.
+		fmt.Fprintf(&b, `func emit(ctx context.Context, log *eventlog.Log, rules replay.Rules, stream, kind string, p payload, amounts map[string]any) error {
+	raw, err := json.Marshal(p)
+	if err != nil {
+		return err
+	}
+	if len(amounts) > 0 {
+		var all map[string]json.RawMessage
+		if err := json.Unmarshal(raw, &all); err != nil {
+			return err
+		}
+		for k, v := range amounts {
+			if all[k], err = json.Marshal(v); err != nil {
+				return err
+			}
+		}
+		if raw, err = json.Marshal(all); err != nil {
+			return err
+		}
+	}
+	_, err = log.AppendChecked(ctx, stream, kind, actor, json.RawMessage(raw), func(history []eventlog.Event) error {
+		rec := map[string]replay.Field{}
+		for i, ev := range append(history, eventlog.Event{Stream: stream, Kind: kind, Payload: raw}) {
+			if err := rules.Apply(rec, i, ev); err != nil {
+				return fmt.Errorf(%[1]q, stream, err)
+			}
+		}
+		return nil
+	})
+	return err
+}
+
+`, replayStream)
+	}
+
+	// Every mergeable store, money or not: Boot replays each one so an
+	// event from a newer writer stops the start rather than failing the
+	// first request that reads its stream (spec §7).
+	b.WriteString(`func CheckReplay(ctx context.Context, db *sql.DB) error {
+	_, err := New(db).live(ctx)
+	return err
 }
 
 `)
 
-	fmt.Fprintf(&b, `// derive folds one stream's merged history into its live row; ok is
-// false for an empty or tombstoned stream.
-func derive(id int64, events []eventlog.Event) (%[1]s, bool, error) {
-	if len(events) == 0 {
-		return %[1]s{}, false, nil
-	}
-	s := eventlog.Derive(events, reduce)
-	if s.err != nil {
-		return %[1]s{}, false, s.err
-	}
-	if s.dead {
-		return %[1]s{}, false, nil
-	}
-	s.row.ID = id
-	return s.row, true, nil
-}
-
-// streamID parses the record id out of a stream name.
+	fmt.Fprintf(&b, `// streamID parses the record id out of a stream name.
 func streamID(stream string) (int64, error) {
-	id, err := strconv.ParseInt(strings.TrimPrefix(stream, streamPrefix), 10, 64)
+	id, err := strconv.ParseInt(strings.TrimPrefix(stream, StreamPrefix), 10, 64)
 	if err != nil {
 		return 0, fmt.Errorf("%[2]s: bad stream %%q: %%w", stream, err)
 	}
@@ -292,11 +429,11 @@ func streamID(stream string) (int64, error) {
 // orders rows (created_at DESC, id DESC — RFC3339 strings compare
 // correctly as text, exactly as they do in SQLite).
 func (q *Queries) live(ctx context.Context) ([]%[1]s, error) {
-	log, err := q.open(ctx)
+	log, rules, err := q.open(ctx)
 	if err != nil {
 		return nil, err
 	}
-	events, err := log.EventsByPrefix(ctx, streamPrefix)
+	events, err := log.EventsByPrefix(ctx, StreamPrefix)
 	if err != nil {
 		return nil, err
 	}
@@ -314,7 +451,7 @@ func (q *Queries) live(ctx context.Context) ([]%[1]s, error) {
 	}
 	var rows []%[1]s
 	for _, id := range ids {
-		row, ok, err := derive(id, byID[id])
+		row, _, ok, err := derive(rules, id, byID[id])
 		if err != nil {
 			return nil, err
 		}
@@ -429,15 +566,15 @@ func pageWindow(rows []%[1]s, offset, limit int64) []%[1]s {
 	if scoped(r) {
 		fmt.Fprintf(&b, "type Get%sParams struct {\nID int64\nOwner string\n}\n\n", model)
 		fmt.Fprintf(&b, `func (q *Queries) Get%[1]s(ctx context.Context, arg Get%[1]sParams) (%[1]s, error) {
-	log, err := q.open(ctx)
+	log, rules, err := q.open(ctx)
 	if err != nil {
 		return %[1]s{}, err
 	}
-	events, err := log.Events(ctx, streamPrefix+strconv.FormatInt(arg.ID, 10))
+	events, err := log.Events(ctx, StreamPrefix+strconv.FormatInt(arg.ID, 10))
 	if err != nil {
 		return %[1]s{}, err
 	}
-	row, ok, err := derive(arg.ID, events)
+	row, _, ok, err := derive(rules, arg.ID, events)
 	if err != nil {
 		return %[1]s{}, err
 	}
@@ -452,15 +589,15 @@ func pageWindow(rows []%[1]s, offset, limit int64) []%[1]s {
 `, model)
 	} else {
 		fmt.Fprintf(&b, `func (q *Queries) Get%[1]s(ctx context.Context, id int64) (%[1]s, error) {
-	log, err := q.open(ctx)
+	log, rules, err := q.open(ctx)
 	if err != nil {
 		return %[1]s{}, err
 	}
-	events, err := log.Events(ctx, streamPrefix+strconv.FormatInt(id, 10))
+	events, err := log.Events(ctx, StreamPrefix+strconv.FormatInt(id, 10))
 	if err != nil {
 		return %[1]s{}, err
 	}
-	row, ok, err := derive(id, events)
+	row, _, ok, err := derive(rules, id, events)
 	if err != nil {
 		return %[1]s{}, err
 	}
@@ -479,19 +616,23 @@ func pageWindow(rows []%[1]s, offset, limit int64) []%[1]s {
 		b.WriteString("Owner string\n")
 	}
 	for _, c := range cols {
-		fmt.Fprintf(&b, "%s %s\n", c.Name, mergeableGoType(c.Kind))
+		b.WriteString(mergeableFieldLines(c.Name, c.Kind))
 	}
 	b.WriteString("Now string\n}\n\n")
 
+	rulesVar := "_"
+	if len(money) > 0 {
+		rulesVar = "rules"
+	}
 	fmt.Fprintf(&b, `func (q *Queries) Create%[1]s(ctx context.Context, arg Create%[1]sParams) (int64, error) {
-	log, err := q.open(ctx)
+	log, %[2]s, err := q.open(ctx)
 	if err != nil {
 		return 0, err
 	}
 	// Writer-local id allocation (see the package doc's caveat):
 	// max(existing id in this resource's streams)+1, race-free under
 	// the single-writer SQLite pool.
-	events, err := log.EventsByPrefix(ctx, streamPrefix)
+	events, err := log.EventsByPrefix(ctx, StreamPrefix)
 	if err != nil {
 		return 0, err
 	}
@@ -507,22 +648,41 @@ func pageWindow(rows []%[1]s, offset, limit int64) []%[1]s {
 	}
 	id++
 	p := payload{
-`, model)
+`, model, rulesVar)
 	if scoped(r) {
 		b.WriteString("Owner: &arg.Owner,\n")
 	}
+	b.WriteString("EventVersion: replay.Version,\n")
 	for _, c := range cols {
-		fmt.Fprintf(&b, "%[1]s: &arg.%[1]s,\n", c.Name)
+		if c.Kind != rastrillo.Money {
+			fmt.Fprintf(&b, "%[1]s: &arg.%[1]s,\n", c.Name)
+		}
 	}
-	b.WriteString(`CreatedAt: &arg.Now,
-	}
-	if _, err := log.Append(ctx, streamPrefix+strconv.FormatInt(id, 10), "created", actor, p); err != nil {
+	b.WriteString("CreatedAt: &arg.Now,\n}\n")
+	if len(money) == 0 {
+		b.WriteString(`if _, err := log.Append(ctx, StreamPrefix+strconv.FormatInt(id, 10), "created", actor, p); err != nil {
 		return 0, err
 	}
 	return id, nil
 }
 
 `)
+	} else {
+		// A created record with no amount writes neither key, which
+		// replay reads as "still empty", as it reads history written
+		// before the field existed; a pair of nulls would clear nothing.
+		b.WriteString("amounts := map[string]any{}\n")
+		for _, c := range money {
+			fmt.Fprintf(&b, "if arg.%[1]sMinor != nil || arg.%[1]sCurrency != nil {\namounts[%[2]q], amounts[%[3]q] = arg.%[1]sMinor, arg.%[1]sCurrency\n}\n", c.Name, c.SQL, c.SQL+"_currency")
+		}
+		b.WriteString(`if err := emit(ctx, log, rules, StreamPrefix+strconv.FormatInt(id, 10), "created", p, amounts); err != nil {
+		return 0, err
+	}
+	return id, nil
+}
+
+`)
+	}
 
 	// ── Updates ────────────────────────────────────────────────────────
 	b.WriteString(mergeableUpdateGo(r, model, r.Form.Basics, "Basics"))
@@ -531,56 +691,33 @@ func pageWindow(rows []%[1]s, offset, limit int64) []%[1]s {
 	}
 
 	// ── Delete ─────────────────────────────────────────────────────────
+	sig, idExpr, owned := "id int64", "id", ""
 	if scoped(r) {
 		fmt.Fprintf(&b, "type Delete%sParams struct {\nID int64\nOwner string\n}\n\n", model)
-		fmt.Fprintf(&b, `func (q *Queries) Delete%[1]s(ctx context.Context, arg Delete%[1]sParams) error {
-	log, err := q.open(ctx)
+		sig, idExpr, owned = fmt.Sprintf("arg Delete%sParams", model), "arg.ID", " || row.Owner != arg.Owner"
+	}
+	fmt.Fprintf(&b, `func (q *Queries) Delete%[1]s(ctx context.Context, %[2]s) error {
+	log, rules, err := q.open(ctx)
 	if err != nil {
 		return err
 	}
-	stream := streamPrefix + strconv.FormatInt(arg.ID, 10)
+	stream := StreamPrefix + strconv.FormatInt(%[3]s, 10)
 	events, err := log.Events(ctx, stream)
 	if err != nil {
 		return err
 	}
-	row, ok, err := derive(arg.ID, events)
+	%[4]s, err := derive(rules, %[3]s, events)
 	if err != nil {
 		return err
 	}
-	if !ok || row.Owner != arg.Owner {
+	if !ok%[5]s {
 		return nil
 	}
 	// Delete appends a tombstone event rather than a DELETE; derive
 	// skips dead ids from here on.
-	_, err = log.Append(ctx, stream, "deleted", actor, struct{}{})
-	return err
+	%[6]s
 }
-`, model)
-	} else {
-		fmt.Fprintf(&b, `func (q *Queries) Delete%[1]s(ctx context.Context, id int64) error {
-	log, err := q.open(ctx)
-	if err != nil {
-		return err
-	}
-	stream := streamPrefix + strconv.FormatInt(id, 10)
-	events, err := log.Events(ctx, stream)
-	if err != nil {
-		return err
-	}
-	_, ok, err := derive(id, events)
-	if err != nil {
-		return err
-	}
-	if !ok {
-		return nil
-	}
-	// Delete appends a tombstone event rather than a DELETE; derive
-	// skips dead ids from here on.
-	_, err = log.Append(ctx, stream, "deleted", actor, struct{}{})
-	return err
-}
-`, model)
-	}
+`, model, sig, idExpr, deriveVars(r), owned, mergeableAppend(len(money) > 0, "deleted", "payload{EventVersion: replay.Version}", "nil"))
 
 	return []byte(b.String())
 }
@@ -594,7 +731,7 @@ func mergeableUpdateGo(r rastrillo.Resource, model string, group []rastrillo.Fie
 	var b strings.Builder
 	fmt.Fprintf(&b, "type Update%s%sParams struct {\n", model, groupName)
 	for _, f := range group {
-		fmt.Fprintf(&b, "%s %s\n", f.Name, mergeableGoType(f.Kind))
+		b.WriteString(mergeableFieldLines(f.Name, f.Kind))
 	}
 	b.WriteString("Now string\nID int64\n")
 	if scoped(r) {
@@ -603,51 +740,63 @@ func mergeableUpdateGo(r rastrillo.Resource, model string, group []rastrillo.Fie
 	b.WriteString("}\n\n")
 
 	fmt.Fprintf(&b, `func (q *Queries) Update%[1]s%[2]s(ctx context.Context, arg Update%[1]s%[2]sParams) error {
-	log, err := q.open(ctx)
+	log, rules, err := q.open(ctx)
 	if err != nil {
 		return err
 	}
-	stream := streamPrefix + strconv.FormatInt(arg.ID, 10)
+	stream := StreamPrefix + strconv.FormatInt(arg.ID, 10)
 	events, err := log.Events(ctx, stream)
 	if err != nil {
 		return err
 	}
 `, model, groupName)
+	hasMoney := len(mergeableMoney(r)) > 0
+	owned, why := "", "a missing record is a no-op,\n\t\t// never an appended event on a stream with no live record."
 	if scoped(r) {
-		b.WriteString(`row, ok, err := derive(arg.ID, events)
+		owned, why = " || row.Owner != arg.Owner", "a missing or foreign record is a\n\t\t// no-op, never an appended event on a stream with no live record."
+	}
+	fmt.Fprintf(&b, `%s, err := derive(rules, arg.ID, events)
 	if err != nil {
 		return err
 	}
-	if !ok || row.Owner != arg.Owner {
-		// Mirror the exclusive UPDATE: a missing or foreign record is a
-		// no-op, never an appended event on a stream with no live record.
+	if !ok%s {
+		// Mirror the exclusive UPDATE: %s
 		return nil
 	}
-`)
-	} else {
-		b.WriteString(`_, ok, err := derive(arg.ID, events)
-	if err != nil {
-		return err
-	}
-	if !ok {
-		// Mirror the exclusive UPDATE: a missing record is a no-op,
-		// never an appended event on a stream with no live record.
-		return nil
-	}
-`)
-	}
-	b.WriteString("p := payload{\n")
+`, deriveVars(r), owned, why)
+	b.WriteString("p := payload{\nEventVersion: replay.Version,\n")
+	var groupMoney []column
 	for _, f := range group {
+		if f.Kind == rastrillo.Money {
+			groupMoney = append(groupMoney, column{Name: f.Name, SQL: sqlName(f.Name), Kind: f.Kind})
+			continue
+		}
 		fmt.Fprintf(&b, "%[1]s: &arg.%[1]s,\n", f.Name)
 	}
-	b.WriteString(`UpdatedAt: &arg.Now,
-	}
-	_, err = log.Append(ctx, stream, "updated", actor, p)
-	return err
+	// A group's money field is written on every save: the amount with
+	// its currency, or both null for a blank field, which is how an
+	// optional amount is cleared (an absent key means "unchanged").
+	fmt.Fprintf(&b, "UpdatedAt: &arg.Now,\n}\n%s\n}\n\n", mergeableAppend(hasMoney, "updated", "p", mergeableAmounts(groupMoney)))
+	return b.String()
 }
 
-`)
-	return b.String()
+// deriveVars is the left side of a derive call: the row when a scoped
+// store checks its owner. The money folded so far is not kept: emit
+// folds again under the write lock, on the history the event lands on.
+func deriveVars(r rastrillo.Resource) string {
+	if scoped(r) {
+		return "row, _, ok"
+	}
+	return "_, _, ok"
+}
+
+// mergeableAppend is the statement that appends one event and returns
+// its error: through emit, which folds it first, in a store with money.
+func mergeableAppend(money bool, kind, p, amounts string) string {
+	if money {
+		return fmt.Sprintf("return emit(ctx, log, rules, stream, %q, %s, %s)", kind, p, amounts)
+	}
+	return fmt.Sprintf("_, err = log.Append(ctx, stream, %q, actor, %s)\nreturn err", kind, p)
 }
 
 // mergeableMigrationsGo renders gen/store/<name>/migrations.go for a

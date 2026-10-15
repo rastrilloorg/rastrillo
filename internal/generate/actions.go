@@ -23,6 +23,10 @@
 // before use, answering a logged 500 rather than a nil-pointer panic
 // when an app forgets to wire it.
 //
+// RenderFunc carries no request, so every view type embeds ui.Localized
+// and every render sets it from ui.ForRequest(r) (localizedField): the
+// app's render function could not find the request's localizer itself.
+//
 // # The page-name contract (pinned here; the blog adoption task must
 // match it)
 //
@@ -78,33 +82,28 @@
 //     exactly as before this — it has no enumerable Values to build a
 //     control or a normalizer from. Builds Rows from List.Columns[0]
 //     (Main) and, if declared, List.Columns[1] (Sub) — Money formatted
-//     as a dollar string via form.FormatCents, everything else the raw
-//     column value. Pagination has no gap-collapsing (v1
+//     in the reader's locale by the money helper (moneyactions.go),
+//     everything else the raw column value. Pagination has no gap-collapsing (v1
 //     simplification: every page number renders; see the report for
 //     the tradeoff).
 //   - index.POST (create): parses every Form.Basics + Form.Advanced
-//     field; a Money field's value is parsed as decimal dollars via
-//     form.ParseCents, which rejects more than two decimal places, and any
-//     field (Text, Textarea or Money) the manifest marks Required is
-//     checked for blankness — Text/Textarea trimmed, Money via its
-//     RAW submitted text (so "0"/"0.00" is a valid required value;
-//     only an empty input trips the required check). All of that is
-//     one form.Parse call now — form.Field's kinds carry the rules,
-//     documented on the helper itself. Any failure
-//     re-renders "<name>/form" (IsNew: true) at 400 with the field's
-//     message in Errors and every field's raw submitted text preserved
-//     in Fields — never reformatted, so a typo stays exactly as typed
-//     for correction. A Required Money field that's both blank AND
-//     would otherwise fail to parse (it never does — "" parses to zero,
-//     see form.ParseCents) only ever reports the required message, never
-//     both; a present-but-invalid Money value reports the parse error,
-//     never the required one — see form.Parse's Money rules. Success
-//     stamps both timestamps with the same UTC RFC3339 "now" and
-//     redirects 303 to Show.
+//     field in one form.Parse call — form.Field's kinds carry the rules,
+//     documented on the helper itself. A Money field is read in the
+//     resource's currency, in the locale the form echoes (spec §5), and
+//     any field the manifest marks Required is checked for blankness
+//     ("0" is a valid required amount). Any failure re-renders
+//     "<name>/form" (IsNew: true) at 400 with the field's message in
+//     Errors (its values in ErrorArgs) and every field's raw submitted
+//     text preserved — in Fields, and for money in Money with the
+//     locale it was read in — never reformatted, so a typo stays
+//     exactly as typed for correction. Success stamps both timestamps
+//     with the same UTC RFC3339 "now" and redirects 303 to Show.
 //   - [id]/index.GET (show): Get-or-404, then every declared field
-//     (columns(r) order) into Fields, Money formatted.
+//     (columns(r) order) into Fields, Money formatted in the reader's
+//     locale.
 //   - new.GET / [id]/edit.GET: render "<name>/form" with zero values
-//     (New) or the record's current values (Edit, Get-or-404 first).
+//     (New) or the record's current values (Edit, Get-or-404 first);
+//     money inputs come from form.SeedMoney in the render locale.
 //   - [id]/edit-basics.POST / [id]/edit-advanced.POST: Get-or-404 (to
 //     answer 404 before ever attempting an UPDATE against a missing
 //     row, and — only when this field group has a Money field or a
@@ -113,7 +112,8 @@
 //     A Money parse failure or a Required-blank failure re-renders
 //     "<name>/form" (IsNew: false) at 400 with Fields seeded from the
 //     fetched record and overridden with this group's just-submitted
-//     raw text. A field group with no Money field and no Required
+//     raw text; this group's money inputs echo what was typed, the
+//     other group's are seeded from the record. A field group with no Money field and no Required
 //     field at all has no validation branch to speak of — generation
 //     time already knows no check here can fail, so none is emitted
 //     (the same "bake what the manifest already decided" discipline
@@ -277,50 +277,35 @@ func mainSubColumns(r rastrillo.Resource) (main column, sub column, hasSub bool)
 	return main, sub, hasSub
 }
 
-// fieldExpr renders the Go expression that reads c's current value off
-// a record variable named varName: a Money column reads through
-// moneyFmt — either "form.FormatCents" for a display-only context
-// (show.html's Fields/Title, index.GET's Rows) that wants the "$1.23"
-// string a human reads, or "form.FormatCentsPlain" for a context that
-// seeds a form field a browser might resubmit completely unchanged
-// (edit.GET's Fields, and the OTHER field group's current values on a
-// validation-failure re-render) — that seed must come back out exactly
-// as form.ParseCents itself accepts back in ("1.23", never "$1.23"; see
-// form.ParseCents' own doc for why a leading "$" 400s an untouched
-// edit). Everything else (Text/Textarea) is the raw sqlc-generated
-// field, unaffected by either formatter.
-func fieldExpr(varName string, c column, moneyFmt string) string {
-	if c.Kind == rastrillo.Money {
-		return fmt.Sprintf("%s(%s.%s)", moneyFmt, varName, c.Name)
-	}
-	return varName + "." + c.Name
-}
-
-// fieldsMapLiteral renders a `map[string]string{...}` literal for
-// every column in columns(r), each keyed by its declared name and
-// valued by fieldExpr(varName, c, moneyFmt) — the shape show.html and
-// the Edit half of form.html both read as Fields. Callers pass
-// "form.FormatCents" (show's Fields, a display context) or
-// "form.FormatCentsPlain" (edit's Fields, a re-submittable form seed)
-// — see fieldExpr's doc for why the two contexts need different
-// formatters.
-func fieldsMapLiteral(r rastrillo.Resource, varName, moneyFmt string) string {
+// fieldsMapLiteral renders a map[string]string literal of r's
+// columns off record v, keyed by declared name: show.html's Fields
+// and the Edit half of form.html's. In show, a money column reads the
+// <field>Text local displayStmts formatted; a form shows money through
+// formView.Money instead, so withMoney false leaves it out.
+func fieldsMapLiteral(r rastrillo.Resource, v string, withMoney bool) string {
 	var b strings.Builder
 	b.WriteString("map[string]string{\n")
 	for _, c := range columns(r) {
-		fmt.Fprintf(&b, "%q: %s,\n", c.Name, fieldExpr(varName, c, moneyFmt))
+		switch {
+		case c.Kind != rastrillo.Money:
+			fmt.Fprintf(&b, "%q: %s.%s,\n", c.Name, v, c.Name)
+		case withMoney:
+			fmt.Fprintf(&b, "%q: %sText,\n", c.Name, lowerFirst(c.Name))
+		}
 	}
 	b.WriteString("}")
 	return b.String()
 }
 
 // zeroFieldsMapLiteral renders the New form's Fields: every declared
-// field name mapped to "".
+// non-money field name mapped to "" (money is in formView.Money).
 func zeroFieldsMapLiteral(r rastrillo.Resource) string {
 	var b strings.Builder
 	b.WriteString("map[string]string{\n")
 	for _, c := range columns(r) {
-		fmt.Fprintf(&b, "%q: \"\",\n", c.Name)
+		if c.Kind != rastrillo.Money {
+			fmt.Fprintf(&b, "%q: \"\",\n", c.Name)
+		}
 	}
 	b.WriteString("}")
 	return b.String()
@@ -411,8 +396,11 @@ func failWhat(r rastrillo.Resource, what string) string {
 // scoped action except new.GET, which touches no data and so emits no
 // sessionStmts to use the import). Line order within the block doesn't
 // matter: go/format sorts import specs within a contiguous group
-// alphabetically, same as gofmt.
-func actionImportLines(r rastrillo.Resource, needsForm, needsSession bool) string {
+// alphabetically, same as gofmt. hasView adds ui, for the ui.Localized
+// every view type embeds and the ui.ForRequest(r) every view.Render call
+// sets (localizedField); an action that declares no view must not
+// import it unused.
+func actionImportLines(r rastrillo.Resource, needsForm, needsSession, hasView bool) string {
 	var b strings.Builder
 	b.WriteString("\t\"amadan.net/rastrillo/rastrillo\"\n")
 	if needsForm {
@@ -421,9 +409,20 @@ func actionImportLines(r rastrillo.Resource, needsForm, needsSession bool) strin
 	if scoped(r) && needsSession {
 		b.WriteString("\t\"amadan.net/rastrillo/rastrillo/sessions\"\n")
 	}
+	if hasView {
+		b.WriteString("\t\"amadan.net/rastrillo/rastrillo/ui\"\n")
+	}
 	b.WriteString("\t\"amadan.net/rastrillo/rastrillo/view\"\n")
 	return b.String()
 }
+
+// localizedField opens every view literal a generated action renders.
+// RenderFunc carries no request, so the app's render function cannot
+// find the request's localizer for a generated view; without this the
+// page would render in the default language whatever the reader asked
+// for. ui.ForRequest also carries the switcher's items and the return
+// path the shells read.
+const localizedField = "Localized: ui.ForRequest(r),\n"
 
 // ── owner scoping (scope = "user") plumbing, shared by every action ──
 
@@ -515,6 +514,7 @@ type filterItem struct {
 	}
 	return fmt.Sprintf(`
 type listView struct {
+	ui.Localized
 	Empty      bool
 	Query      string
 	Carry      [][2]string
@@ -546,21 +546,39 @@ type listPageItem struct {
 
 const showViewType = `
 type showView struct {
+	ui.Localized
 	Title    string
 	EditHref string
 	Fields   map[string]string
 }
 `
 
-const formViewType = `
+// formViewType is form.html's data. ErrorArgs carries the values a
+// money error interpolates ({currency}, {a}, {b}); the template passes
+// every field's entry to Tf, and a missing one is a nil map that
+// interpolates nothing. Money, for a resource with money fields, is
+// each one's input across both groups: text, locale, currency and seed.
+func formViewType(r rastrillo.Resource) string {
+	money := ""
+	if r.HasMoney() {
+		money = "\tMoney          map[string]form.MoneyInput\n"
+	}
+	return `
 type formView struct {
+	ui.Localized
 	IsNew          bool
 	Fields         map[string]string
 	Errors         map[string]string
-	BasicsAction   string
+	ErrorArgs      map[string]map[string]any
+` + money + `	BasicsAction   string
 	AdvancedAction string
 }
 `
+}
+
+// currencyImport is the import line an action that formats amounts
+// (displayHelper) adds to actionImportLines'.
+const currencyImport = "\t\"amadan.net/rastrillo/rastrillo/currency\"\n"
 
 // ── index.GET (List) ────────────────────────────────────────────────
 
@@ -592,7 +610,7 @@ func actionIndexGET(r rastrillo.Resource, module string) string {
 		}
 	}
 
-	needsForm := main.Kind == rastrillo.Money || (hasSub && sub.Kind == rastrillo.Money)
+	showsMoney := main.Kind == rastrillo.Money || (hasSub && sub.Kind == rastrillo.Money)
 
 	var b strings.Builder
 	b.WriteString("import (\n")
@@ -601,7 +619,10 @@ func actionIndexGET(r rastrillo.Resource, module string) string {
 	b.WriteString("\t\"net/url\"\n")
 	b.WriteString("\t\"strconv\"\n")
 	b.WriteString("\t\"strings\"\n\n")
-	b.WriteString(actionImportLines(r, needsForm, true))
+	b.WriteString(actionImportLines(r, false, true, true))
+	if showsMoney {
+		b.WriteString(currencyImport)
+	}
 	fmt.Fprintf(&b, "\t%s %q\n", alias, path)
 	b.WriteString(")\n")
 
@@ -707,16 +728,19 @@ offset := (page - 1) * pageSize
 	b.WriteString("})\n")
 	fmt.Fprintf(&b, "if err != nil {\n\tview.Fail(ctx, w, r, %q, err)\n\treturn\n}\n", failWhat(r, "loading "+r.Name))
 
-	fmt.Fprintf(&b, `
-items := make([]listRow, 0, len(rows))
-for _, n := range rows {
-	items = append(items, listRow{
+	b.WriteString("\nitems := make([]listRow, 0, len(rows))\nfor _, n := range rows {\n")
+	mainExpr := displayStmts(&b, "n", main, "n.ID")
+	subExpr := `""`
+	if hasSub {
+		subExpr = displayStmts(&b, "n", sub, "n.ID")
+	}
+	fmt.Fprintf(&b, `items = append(items, listRow{
 		Href: fmt.Sprintf(%q, n.ID),
 		Main: %s,
 		Sub:  %s,
 	})
 }
-`, r.Route+"/%d", fieldExpr("n", main, "form.FormatCents"), subExpr(sub, hasSub))
+`, r.Route+"/%d", mainExpr, subExpr)
 
 	b.WriteString(`
 totalPages := (int(total) + pageSize - 1) / pageSize
@@ -751,14 +775,14 @@ if show {
 
 	fmt.Fprintf(&b, `
 view.Render(ctx, w, %q, http.StatusOK, listView{
-	Empty:      total == 0,
+	%sEmpty:      total == 0,
 	Query:      %s,
 	Carry:      carry,
 	%sRows:       items,
 	Pagination: listPagination{Show: show, Items: pageItems},
 })
 }
-`, r.Name+"/list", searchExpr, filterField)
+`, r.Name+"/list", localizedField, searchExpr, filterField)
 
 	fmt.Fprintf(&b, `
 // href builds one list/pagination link, preserving the current search
@@ -780,6 +804,9 @@ func href(search string, carry [][2]string, page int) string {
 		b.WriteString(filterHelperFuncs(r, declaredVar, declaredValues))
 	}
 
+	if showsMoney {
+		b.WriteString(displayHelper(r))
+	}
 	b.WriteString(listViewTypes(filtersDeclared))
 	return b.String()
 }
@@ -884,15 +911,6 @@ func filter%sHref(search, value string) string {
 	return b.String()
 }
 
-// subExpr renders the Sub row expression: an empty literal when the
-// resource declares no second List column.
-func subExpr(sub column, hasSub bool) string {
-	if !hasSub {
-		return `""`
-	}
-	return fieldExpr("n", sub, "form.FormatCents")
-}
-
 // searchExprForHref is the argument href() is called with at each of
 // its three call sites: the live "search" variable when List.Search
 // declares a search box at all (independent of whether the store ends
@@ -926,14 +944,13 @@ func actionIndexPOST(r rastrillo.Resource, module string) string {
 			continue
 		}
 		// A List-only column with no matching Form field: Create has
-		// no submitted value for it, so it gets the zero value. (A
-		// well-formed manifest gives every List column a Form field
-		// too; this is a fallback, not the expected shape.)
-		zero := `""`
-		if c.Kind == rastrillo.Money {
-			zero = "0"
+		// no submitted value for it, so it gets the zero value — for
+		// money, nil in both columns, an empty field. (A well-formed
+		// manifest gives every List column a Form field too; this is a
+		// fallback, not the expected shape.)
+		if c.Kind != rastrillo.Money {
+			paramLines = append(paramLines, fmt.Sprintf("%s: \"\",\n", c.Name))
 		}
-		paramLines = append(paramLines, fmt.Sprintf("%s: %s,\n", c.Name, zero))
 	}
 
 	canFail := fieldsCanFail(order)
@@ -943,7 +960,7 @@ func actionIndexPOST(r rastrillo.Resource, module string) string {
 	b.WriteString("\t\"fmt\"\n")
 	b.WriteString("\t\"net/http\"\n")
 	b.WriteString("\t\"time\"\n\n")
-	b.WriteString(actionImportLines(r, len(order) > 0, true))
+	b.WriteString(actionImportLines(r, len(order) > 0, true, true))
 	fmt.Fprintf(&b, "\t%s %q\n", alias, path)
 	b.WriteString(")\n")
 
@@ -958,15 +975,21 @@ func actionIndexPOST(r rastrillo.Resource, module string) string {
 `)
 	b.WriteString(sessionStmts(r))
 	if len(order) > 0 {
-		b.WriteString(parseCall(order))
+		b.WriteString(parseCall(r, order, false))
 	}
 
 	if canFail {
 		b.WriteString("if !p.OK() {\n")
+		b.WriteString(echoStmts(order, false))
 		fmt.Fprintf(&b, "view.Render(ctx, w, %q, http.StatusBadRequest, formView{\n", r.Name+"/form")
-		b.WriteString("IsNew: true,\nFields: p.Echo(),\nErrors: p.Errors(),\n})\nreturn\n}\n")
+		b.WriteString(localizedField + "IsNew: true,\nFields: p.Echo(),\nErrors: p.Errors(),\nErrorArgs: p.ErrorArgs(),\n")
+		if r.HasMoney() {
+			b.WriteString("Money: " + moneyMapLiteral(order) + ",\n")
+		}
+		b.WriteString("})\nreturn\n}\n")
 	}
 
+	b.WriteString(writeStmts(order, func(rastrillo.Field) string { return fmt.Sprintf("%q", r.Currency) }))
 	b.WriteString("\nnow := time.Now().UTC().Format(time.RFC3339)\n")
 	fmt.Fprintf(&b, "store := %s.New(ctx.DB)\n", alias)
 	fmt.Fprintf(&b, "id, err := store.Create%s(r.Context(), %s.Create%sParams{\n", singular, alias, singular)
@@ -979,26 +1002,44 @@ func actionIndexPOST(r rastrillo.Resource, module string) string {
 	fmt.Fprintf(&b, "if err != nil {\n\tview.Fail(ctx, w, r, %q, err)\n\treturn\n}\n", failWhat(r, "creating "+r.Name))
 	fmt.Fprintf(&b, "http.Redirect(w, r, fmt.Sprintf(%q, id), http.StatusSeeOther)\n}\n", r.Route+"/%d")
 
-	b.WriteString(formViewType)
+	if len(moneyFields(order)) > 0 {
+		b.WriteString(amountHelper)
+	}
+	b.WriteString(formViewType(r))
 	return b.String()
 }
 
 // ── new.GET ──────────────────────────────────────────────────────────
 
 func actionNewGET(r rastrillo.Resource, module string) string {
+	money := moneyFields(formFields(r))
 	var b strings.Builder
 	b.WriteString("import (\n")
+	if len(money) > 0 {
+		b.WriteString("\t\"fmt\"\n")
+	}
 	b.WriteString("\t\"net/http\"\n\n")
-	b.WriteString(actionImportLines(r, false, false))
+	b.WriteString(actionImportLines(r, r.HasMoney(), false, true))
 	b.WriteString(")\n")
 
 	fmt.Fprintf(&b, "\n// Handle is GET %s/new.\n", r.Route)
 	b.WriteString("func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {\n")
+	// A new record has no row id; 0 names none in a failure, which only
+	// a currency the manifest check let through could cause.
+	b.WriteString(seedStmts(money, "0",
+		func(rastrillo.Field) string { return "nil" },
+		func(rastrillo.Field) string { return fmt.Sprintf("%q", r.Currency) }))
 	fmt.Fprintf(&b, "view.Render(ctx, w, %q, http.StatusOK, formView{\n", r.Name+"/form")
-	b.WriteString("IsNew: true,\nFields: " + zeroFieldsMapLiteral(r) + ",\n")
+	b.WriteString(localizedField + "IsNew: true,\nFields: " + zeroFieldsMapLiteral(r) + ",\n")
+	if r.HasMoney() {
+		b.WriteString("Money: " + moneyMapLiteral(money) + ",\n")
+	}
 	b.WriteString("})\n}\n")
 
-	b.WriteString(formViewType)
+	if len(money) > 0 {
+		b.WriteString(seedHelper(r))
+	}
+	b.WriteString(formViewType(r))
 	return b.String()
 }
 
@@ -1008,7 +1049,7 @@ func actionShowGET(r rastrillo.Resource, module string) string {
 	alias, path := storeImport(r, module)
 	singular := singularPascal(r.Name)
 	main, _, _ := mainSubColumns(r)
-	needsForm := hasMoneyColumn(columns(r))
+	showsMoney := hasMoneyColumn(columns(r))
 
 	var b strings.Builder
 	b.WriteString("import (\n")
@@ -1016,7 +1057,10 @@ func actionShowGET(r rastrillo.Resource, module string) string {
 	b.WriteString("\t\"errors\"\n")
 	b.WriteString("\t\"fmt\"\n")
 	b.WriteString("\t\"net/http\"\n\n")
-	b.WriteString(actionImportLines(r, needsForm, true))
+	b.WriteString(actionImportLines(r, false, true, true))
+	if showsMoney {
+		b.WriteString(currencyImport)
+	}
 	fmt.Fprintf(&b, "\t%s %q\n", alias, path)
 	b.WriteString(")\n")
 
@@ -1038,15 +1082,24 @@ func actionShowGET(r rastrillo.Resource, module string) string {
 `)
 	fmt.Fprintf(&b, "if err != nil {\n\tview.Fail(ctx, w, r, %q, err)\n\treturn\n}\n", failWhat(r, "loading "+r.Name))
 
+	title := "n." + main.Name
+	for _, c := range columns(r) {
+		if e := displayStmts(&b, "n", c, "id"); c.Name == main.Name {
+			title = e
+		}
+	}
 	fmt.Fprintf(&b, `
 view.Render(ctx, w, %q, http.StatusOK, showView{
-	Title:    %s,
+	%sTitle:    %s,
 	EditHref: fmt.Sprintf(%q, id),
 	Fields:   %s,
 })
 }
-`, r.Name+"/show", fieldExpr("n", main, "form.FormatCents"), r.Route+"/%d/edit", fieldsMapLiteral(r, "n", "form.FormatCents"))
+`, r.Name+"/show", localizedField, title, r.Route+"/%d/edit", fieldsMapLiteral(r, "n", true))
 
+	if showsMoney {
+		b.WriteString(displayHelper(r))
+	}
 	b.WriteString(showViewType)
 	return b.String()
 }
@@ -1057,7 +1110,7 @@ func actionEditGET(r rastrillo.Resource, module string) string {
 	alias, path := storeImport(r, module)
 	singular := singularPascal(r.Name)
 	hasAdvanced := len(r.Form.Advanced) > 0
-	needsForm := hasMoneyColumn(columns(r))
+	money := moneyFields(formFields(r))
 
 	var b strings.Builder
 	b.WriteString("import (\n")
@@ -1065,7 +1118,7 @@ func actionEditGET(r rastrillo.Resource, module string) string {
 	b.WriteString("\t\"errors\"\n")
 	b.WriteString("\t\"fmt\"\n")
 	b.WriteString("\t\"net/http\"\n\n")
-	b.WriteString(actionImportLines(r, needsForm, true))
+	b.WriteString(actionImportLines(r, r.HasMoney(), true, true))
 	fmt.Fprintf(&b, "\t%s %q\n", alias, path)
 	b.WriteString(")\n")
 
@@ -1087,18 +1140,27 @@ func actionEditGET(r rastrillo.Resource, module string) string {
 `)
 	fmt.Fprintf(&b, "if err != nil {\n\tview.Fail(ctx, w, r, %q, err)\n\treturn\n}\n", failWhat(r, "loading "+r.Name))
 
+	b.WriteString(seedStmts(money, "id",
+		func(f rastrillo.Field) string { return "n." + f.Name + "Minor" },
+		func(f rastrillo.Field) string { return "currencyOf(n." + f.Name + "Currency)" }))
 	fmt.Fprintf(&b, `
 view.Render(ctx, w, %q, http.StatusOK, formView{
-	IsNew:  false,
+	%sIsNew:  false,
 	Fields: %s,
-	BasicsAction: fmt.Sprintf(%q, id),
-`, r.Name+"/form", fieldsMapLiteral(r, "n", "form.FormatCentsPlain"), r.Route+"/%d/edit-basics")
+`, r.Name+"/form", localizedField, fieldsMapLiteral(r, "n", false))
+	if r.HasMoney() {
+		b.WriteString("Money: " + moneyMapLiteral(money) + ",\n")
+	}
+	fmt.Fprintf(&b, "BasicsAction: fmt.Sprintf(%q, id),\n", r.Route+"/%d/edit-basics")
 	if hasAdvanced {
 		fmt.Fprintf(&b, "AdvancedAction: fmt.Sprintf(%q, id),\n", r.Route+"/%d/edit-advanced")
 	}
 	b.WriteString("})\n}\n")
 
-	b.WriteString(formViewType)
+	if len(money) > 0 {
+		b.WriteString(seedHelper(r) + codeHelper(r))
+	}
+	b.WriteString(formViewType(r))
 	return b.String()
 }
 
@@ -1109,7 +1171,11 @@ view.Render(ctx, w, %q, http.StatusOK, formView{
 // redirect — or, only when this group declares a Money field or a
 // Required field, a validation branch), parameterized on which field
 // group and which sqlc Update query own it.
-func updatePOST(r rastrillo.Resource, module string, group []rastrillo.Field, groupName string) string {
+//
+// other is the other group's fields: a failed POST seeds its money
+// inputs from the record, in the render locale, since this POST did
+// not submit them.
+func updatePOST(r rastrillo.Resource, module string, group, other []rastrillo.Field, groupName string) string {
 	alias, path := storeImport(r, module)
 	singular := singularPascal(r.Name)
 	hasAdvanced := len(r.Form.Advanced) > 0
@@ -1128,7 +1194,13 @@ func updatePOST(r rastrillo.Resource, module string, group []rastrillo.Field, gr
 		paramLines = append(paramLines, storeParamLine(f))
 	}
 
-	needsForm := len(group) > 0 || (groupHasValidation && hasMoneyColumn(columns(r)))
+	needsForm := len(group) > 0 || (groupHasValidation && r.HasMoney())
+	money := moneyFields(group)
+	// The record's other money inputs are drawn only on a failed POST.
+	otherMoney := []rastrillo.Field(nil)
+	if groupHasValidation {
+		otherMoney = moneyFields(other)
+	}
 
 	var b strings.Builder
 	b.WriteString("import (\n")
@@ -1137,13 +1209,34 @@ func updatePOST(r rastrillo.Resource, module string, group []rastrillo.Field, gr
 	b.WriteString("\t\"fmt\"\n")
 	b.WriteString("\t\"net/http\"\n")
 	b.WriteString("\t\"time\"\n\n")
-	b.WriteString(actionImportLines(r, needsForm, true))
+	// A mergeable store refuses an amount whose currency is not the one
+	// its field now holds. This action writes only the currency it read,
+	// so that refusal means the record changed after the read. The
+	// action then runs again: once more to save, which re-reads the
+	// record so the form's currency echo, no longer matching, shows the
+	// person money_currency_changed with their text kept, as a currency
+	// that changed before the POST does, not a 500. A second refusal in
+	// the same request (the currency moved back, then away again) runs
+	// it a last time only to show the form: re-read, never save, and
+	// show the conflict on the group's money fields with the text the
+	// person typed, whatever the re-parse makes of a record that moved.
+	retries := r.Store == rastrillo.Mergeable && len(money) > 0
+	b.WriteString(actionImportLines(r, needsForm, true, groupHasValidation))
+	if retries {
+		b.WriteString("\t\"amadan.net/rastrillo/rastrillo/currency/replay\"\n")
+	}
 	fmt.Fprintf(&b, "\t%s %q\n", alias, path)
 	b.WriteString(")\n")
 
 	fmt.Fprintf(&b, "\n// Handle is POST %s/{id}/edit-%s.\n", r.Route, strings.ToLower(groupName))
-	b.WriteString(`func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
-	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
+	if retries {
+		b.WriteString("func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {\n\thandle(ctx, w, r, 0)\n}\n\n" +
+			wrapComment(handleDoc) +
+			"func handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request, try int) {\n")
+	} else {
+		b.WriteString("func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {\n")
+	}
+	b.WriteString(`	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
 	if err := r.ParseForm(); err != nil {
 		http.Error(w, "Bad request.", http.StatusBadRequest)
 		return
@@ -1169,16 +1262,46 @@ func updatePOST(r rastrillo.Resource, module string, group []rastrillo.Field, gr
 `)
 	fmt.Fprintf(&b, "if err != nil {\n\tview.Fail(ctx, w, r, %q, err)\n\treturn\n}\n\n", failWhat(r, "loading "+r.Name))
 
+	b.WriteString(codeStmts(group))
 	if len(group) > 0 {
-		b.WriteString(parseCall(group))
+		b.WriteString(parseCall(r, group, true))
 	}
 
 	if groupHasValidation {
-		b.WriteString("\nif !p.OK() {\n")
-		b.WriteString("fields := " + fieldsMapLiteral(r, "n", "form.FormatCentsPlain") + "\n")
+		if retries {
+			b.WriteString("\nif !p.OK() || try == 2 {\n")
+		} else {
+			b.WriteString("\nif !p.OK() {\n")
+		}
+		b.WriteString("fields := " + fieldsMapLiteral(r, "n", false) + "\n")
 		b.WriteString("for k, v := range p.Echo() {\nfields[k] = v\n}\n")
+		b.WriteString(echoStmts(group, true))
+		b.WriteString(seedStmts(otherMoney, "id",
+			func(f rastrillo.Field) string { return "n." + f.Name + "Minor" },
+			func(f rastrillo.Field) string { return "currencyOf(n." + f.Name + "Currency)" }))
+		errs := "p.Errors()"
+		if retries {
+			// The last run's own parse cannot be trusted to say what
+			// happened: the record moved twice, so it may refuse the seed
+			// (an amount cleared in between leaves nothing to match) and
+			// reseed the input blank, or refuse nothing at all. What the
+			// person must see is the conflict, with the text they typed,
+			// which the first run already read in its locale, beside the
+			// record's current currency. Nothing below saves.
+			var keys, inputs []string
+			for _, f := range money {
+				l := lowerFirst(f.Name)
+				keys = append(keys, fmt.Sprintf("%q: %q", f.Name, moneyCurrencyChangedKey))
+				inputs = append(inputs, fmt.Sprintf("%sInput = form.MoneyInput{Value: p.Echo()[%q], Locale: r.PostFormValue(%q), Currency: %sCode}\n", l, f.Name, f.Name+".locale", l))
+			}
+			b.WriteString("errs := p.Errors()\nif try == 2 {\nerrs = map[string]string{" + strings.Join(keys, ", ") + "}\n" + strings.Join(inputs, "") + "}\n")
+			errs = "errs"
+		}
 		fmt.Fprintf(&b, "view.Render(ctx, w, %q, http.StatusBadRequest, formView{\n", r.Name+"/form")
-		b.WriteString("IsNew: false,\nFields: fields,\nErrors: p.Errors(),\n")
+		b.WriteString(localizedField + "IsNew: false,\nFields: fields,\nErrors: " + errs + ",\nErrorArgs: p.ErrorArgs(),\n")
+		if r.HasMoney() {
+			b.WriteString("Money: " + moneyMapLiteral(formFields(r)) + ",\n")
+		}
 		fmt.Fprintf(&b, "BasicsAction: fmt.Sprintf(%q, id),\n", r.Route+"/%d/edit-basics")
 		if hasAdvanced {
 			fmt.Fprintf(&b, "AdvancedAction: fmt.Sprintf(%q, id),\n", r.Route+"/%d/edit-advanced")
@@ -1186,6 +1309,7 @@ func updatePOST(r rastrillo.Resource, module string, group []rastrillo.Field, gr
 		b.WriteString("})\nreturn\n}\n")
 	}
 
+	b.WriteString(writeStmts(group, func(f rastrillo.Field) string { return lowerFirst(f.Name) + "Code" }))
 	b.WriteString("\nnow := time.Now().UTC().Format(time.RFC3339)\n")
 	fmt.Fprintf(&b, "if err := store.Update%s%s(r.Context(), %s.Update%s%sParams{\n",
 		singular, groupName, alias, singular, groupName)
@@ -1194,21 +1318,41 @@ func updatePOST(r rastrillo.Resource, module string, group []rastrillo.Field, gr
 	}
 	b.WriteString(ownerParamLine(r) + "Now: now,\nID: id,\n")
 	b.WriteString("}); err != nil {\n")
+	if retries {
+		b.WriteString("if try < 2 && errors.Is(err, replay.ErrCurrencyChange) {\nhandle(ctx, w, r, try+1)\nreturn\n}\n")
+	}
 	fmt.Fprintf(&b, "view.Fail(ctx, w, r, %q, err)\nreturn\n}\n", failWhat(r, "updating "+r.Name))
 	fmt.Fprintf(&b, "http.Redirect(w, r, fmt.Sprintf(%q, id), http.StatusSeeOther)\n}\n", r.Route+"/%d")
 
+	if len(money) > 0 {
+		b.WriteString(amountHelper)
+	}
+	if len(money)+len(otherMoney) > 0 {
+		if groupHasValidation {
+			b.WriteString(seedHelper(r))
+		}
+		b.WriteString(codeHelper(r))
+	}
 	if groupHasValidation {
-		b.WriteString(formViewType)
+		b.WriteString(formViewType(r))
 	}
 	return b.String()
 }
 
+// handleDoc is the doc comment on a mergeable money update's handle,
+// a draft for the copy review (copy-review/final).
+const handleDoc = "handle is Handle's body. When the store refuses the save because the record's currency changed, it runs again: once more to save, and then only to show the form with that message."
+
+// moneyCurrencyChangedKey is form's rastrillo.ui.money_currency_changed,
+// which the last run sets itself on the group's money fields.
+const moneyCurrencyChangedKey = "rastrillo.ui.money_currency_changed"
+
 func actionEditBasicsPOST(r rastrillo.Resource, module string) string {
-	return updatePOST(r, module, r.Form.Basics, "Basics")
+	return updatePOST(r, module, r.Form.Basics, r.Form.Advanced, "Basics")
 }
 
 func actionEditAdvancedPOST(r rastrillo.Resource, module string) string {
-	return updatePOST(r, module, r.Form.Advanced, "Advanced")
+	return updatePOST(r, module, r.Form.Advanced, r.Form.Basics, "Advanced")
 }
 
 // ── field parsing shared by Create and both Update actions ─────────
@@ -1216,17 +1360,20 @@ func actionEditAdvancedPOST(r rastrillo.Resource, module string) string {
 // parseCall emits the one form.Parse call a POST action opens with —
 // the same documented helper a hand-written app uses (form.Field's
 // kinds carry the parse/trim/echo rules that used to be stamped here
-// as per-field statements).
-func parseCall(fields []rastrillo.Field) string {
+// as per-field statements). A money field's is moneyField's: edit says
+// whether it reads the record's currency and amount or the resource
+// default.
+func parseCall(r rastrillo.Resource, fields []rastrillo.Field, edit bool) string {
 	var b strings.Builder
 	b.WriteString("p := form.Parse(r,\n")
 	for _, f := range fields {
+		if f.Kind == rastrillo.Money {
+			b.WriteString(moneyField(f, edit, r) + ",\n")
+			continue
+		}
 		parts := []string{fmt.Sprintf("Name: %q", f.Name)}
-		switch f.Kind {
-		case rastrillo.Textarea:
+		if f.Kind == rastrillo.Textarea {
 			parts = append(parts, "Kind: form.Textarea")
-		case rastrillo.Money:
-			parts = append(parts, "Kind: form.Money")
 		}
 		if f.Required {
 			parts = append(parts, "Required: true")
@@ -1237,10 +1384,12 @@ func parseCall(fields []rastrillo.Field) string {
 	return b.String()
 }
 
-// storeParamLine is one store-Params field fed from the Parse result.
+// storeParamLine is one store-Params field fed from the Parse result;
+// a money field's two are writeStmts' locals.
 func storeParamLine(f rastrillo.Field) string {
 	if f.Kind == rastrillo.Money {
-		return fmt.Sprintf("%s: p.Cents(%q),\n", f.Name, f.Name)
+		l := lowerFirst(f.Name)
+		return fmt.Sprintf("%sMinor: %sMinor,\n%sCurrency: %sCurrency,\n", f.Name, l, f.Name, l)
 	}
 	return fmt.Sprintf("%s: p.String(%q),\n", f.Name, f.Name)
 }
@@ -1268,7 +1417,7 @@ func actionDeleteGET(r rastrillo.Resource, module string) string {
 	alias, path := storeImport(r, module)
 	singular := singularPascal(r.Name)
 	main, _, _ := mainSubColumns(r)
-	needsForm := main.Kind == rastrillo.Money
+	showsMoney := main.Kind == rastrillo.Money
 
 	var b strings.Builder
 	b.WriteString("import (\n")
@@ -1276,7 +1425,10 @@ func actionDeleteGET(r rastrillo.Resource, module string) string {
 	b.WriteString("\t\"errors\"\n")
 	b.WriteString("\t\"fmt\"\n")
 	b.WriteString("\t\"net/http\"\n\n")
-	b.WriteString(actionImportLines(r, needsForm, true))
+	b.WriteString(actionImportLines(r, false, true, true))
+	if showsMoney {
+		b.WriteString(currencyImport)
+	}
 	fmt.Fprintf(&b, "\t%s %q\n", alias, path)
 	b.WriteString(")\n")
 
@@ -1299,21 +1451,26 @@ func actionDeleteGET(r rastrillo.Resource, module string) string {
 `)
 	fmt.Fprintf(&b, "if err != nil {\n\tview.Fail(ctx, w, r, %q, err)\n\treturn\n}\n", failWhat(r, "loading "+r.Name))
 
+	title := displayStmts(&b, "n", main, "id")
 	fmt.Fprintf(&b, `
 view.Render(ctx, w, %q, http.StatusOK, confirmView{
-	Title:      %s,
+	%sTitle:      %s,
 	DeleteHref: fmt.Sprintf(%q, id),
 	CancelHref: fmt.Sprintf(%q, id),
 })
 }
-`, r.Name+"/confirm", fieldExpr("n", main, "form.FormatCents"), r.Route+"/%d/delete", r.Route+"/%d")
+`, r.Name+"/confirm", localizedField, title, r.Route+"/%d/delete", r.Route+"/%d")
 
+	if showsMoney {
+		b.WriteString(displayHelper(r))
+	}
 	b.WriteString(confirmViewType)
 	return b.String()
 }
 
 const confirmViewType = `
 type confirmView struct {
+	ui.Localized
 	Title      string
 	DeleteHref string
 	CancelHref string
@@ -1334,7 +1491,7 @@ func actionDeletePOST(r rastrillo.Resource, module string) string {
 	b.WriteString("\t\"database/sql\"\n")
 	b.WriteString("\t\"errors\"\n")
 	b.WriteString("\t\"net/http\"\n\n")
-	b.WriteString(actionImportLines(r, false, true))
+	b.WriteString(actionImportLines(r, false, true, false))
 	fmt.Fprintf(&b, "\t%s %q\n", alias, path)
 	b.WriteString(")\n")
 

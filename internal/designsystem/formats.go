@@ -1,6 +1,15 @@
 package designsystem
 
-import "html/template"
+import (
+	"fmt"
+	"html/template"
+	"strings"
+	"sync"
+
+	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/currency"
+	"amadan.net/rastrillo/rastrillo/locales"
+)
 
 // The Dates, numbers and names page: which tag carries which kind of
 // value, and the pairs people confuse (spec §6-v2.4).
@@ -29,6 +38,11 @@ type formatDoc struct {
 	// Markup is the sample, complete HTML with no template actions.
 	// Empty means a section with nothing to show, which none has yet.
 	Markup string
+	// MarkupFor replaces Markup when a sample's content depends on the
+	// page's locale rather than being the same HTML on every page. Nil
+	// for every section but money, whose three amounts are written in
+	// the reader's own conventions (spec §9).
+	MarkupFor func(locale string) string
 }
 
 // formatView is one section as the page renders it.
@@ -81,15 +95,10 @@ func formatDocs() []formatDoc {
 </div>`,
 		},
 		{
-			Key:   "money",
-			Title: "Money",
-			Body:  "Rastrillo only knows how to write US dollars. For anything else, format the amount yourself. Either way, store money as a whole number of cents, never as a decimal.",
-			Markup: `<section rst-box>
-  <dl rst-detail>
-    <dt>Payout</dt>
-    <dd>$1,284.50</dd>
-  </dl>
-</section>`,
+			Key:       "money",
+			Title:     "Money",
+			Body:      "Store each amount as a whole number of the currency's smallest unit, such as cents, with its currency code beside it. Show it with `money`, which writes it the way the reader's language does. The currency always comes from your data, never from the reader.",
+			MarkupFor: moneySampleMarkup,
 		},
 		{
 			Key:   "ratios",
@@ -178,13 +187,30 @@ func formatDocs() []formatDoc {
 	}
 }
 
+// formatMarkup resolves one section's sample markup for a locale.
+// MarkupFor overrides Markup, because money's content depends on the
+// locale the page is in and Markup alone cannot say that; every other
+// section leaves MarkupFor nil and gets its one Markup back, its words
+// translated by localMarkup. MarkupFor's output skips localMarkup: it
+// is already written for the locale, and its ISO codes (EUR, KWD) read
+// as words to hasWords, so the parity gate would demand eleven
+// translations of a code that must never change.
+// Shared by buildFormats and TestTheTextOnScreenIsTheTextCopied, so the
+// two cannot read the money sample's code tab differently.
+func formatMarkup(doc formatDoc, locale string) string {
+	if doc.MarkupFor != nil {
+		return doc.MarkupFor(locale)
+	}
+	return localMarkup(locale, doc.Markup)
+}
+
 // buildFormats renders every section for one theme and locale.
 func buildFormats(mount, theme, locale string, files previewSet) ([]formatView, error) {
 	docs := formatDocs()
 	out := make([]formatView, 0, len(docs))
 	for _, doc := range docs {
 		id := anchorID("format", doc.Key)
-		markup := localMarkup(locale, doc.Markup)
+		markup := formatMarkup(doc, locale)
 		preview, file := newPreview(mount, theme, locale, "formats", id+"-0",
 			previewTitle(locale, doc.Key, "Dates, numbers and names"), markup, markup, id)
 		if err := files.add(file); err != nil {
@@ -199,6 +225,67 @@ func buildFormats(mount, theme, locale string, files previewSet) ([]formatView, 
 		})
 	}
 	return out, nil
+}
+
+// moneyAmounts is the sample's three stored amounts: minor units and
+// an ISO 4217 code, the only two fields a stored amount carries
+// (decision 1). Three currencies rather than one, because the body's
+// rule — the currency always comes from the data, never from the
+// reader — has nothing to show against a single currency: the euro
+// must stay a euro on the Japanese page for the rule to be visible at
+// all.
+var moneyAmounts = []struct {
+	minor int64
+	code  string
+}{
+	{128450, "EUR"},
+	{1285, "JPY"},
+	{1284500, "KWD"},
+}
+
+// moneyFormats is the gallery's offered locale codes mapped to the
+// CLDR locale currency.Format writes in, per CheckConfig
+// (locales/config.go). It is computed once rather than per page: the
+// mapping is fixed for the life of the binary, and CheckConfig walks
+// every shipped pack to build it.
+var moneyFormats = sync.OnceValue(func() map[string]string {
+	cfg, err := locales.CheckConfig("en", rastrillo.BaseLocales())
+	if err != nil {
+		// Every base locale's pack is blank-imported in packs.go
+		// specifically so this never happens; a failure here means
+		// that file has drifted from BaseLocales, not that a reader
+		// hit a bad request.
+		panic(fmt.Sprintf("designsystem: gallery locale configuration: %v", err))
+	}
+	return cfg.Formats
+})
+
+// moneySampleMarkup renders the Money sample for one gallery locale:
+// three ISO codes and their amounts, each run through currency.Format
+// in the page's own formatting locale rather than the currency's home
+// locale. That is the whole demonstration — the same three stored
+// amounts come out written three different ways as the locale switcher
+// changes, while the currencies themselves never change, because they
+// are read off the data and the switcher does not touch the data.
+func moneySampleMarkup(locale string) string {
+	fl, ok := moneyFormats()[locale]
+	if !ok {
+		fl = locale
+	}
+	var b strings.Builder
+	b.WriteString("<section rst-box>\n  <dl rst-detail>\n")
+	for _, a := range moneyAmounts {
+		amount, err := currency.Format(fl, a.minor, a.code)
+		if err != nil {
+			// The three currencies above are fixed and real; an error
+			// here means one of them stopped being formattable, which
+			// is a bug in the sample's data, not a request to handle.
+			panic(fmt.Sprintf("designsystem: money sample: %v", err))
+		}
+		fmt.Fprintf(&b, "    <dt>%s</dt>\n    <dd>%s</dd>\n", template.HTMLEscapeString(a.code), template.HTMLEscapeString(amount))
+	}
+	b.WriteString("  </dl>\n</section>")
+	return b.String()
 }
 
 // formatNav is this page's rail entries.

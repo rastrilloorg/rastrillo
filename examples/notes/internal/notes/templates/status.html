@@ -1,6 +1,6 @@
-{{define "content"}}
+{{define "content"}}{{$L := localizer $}}
 {{if .Content.Running}}<noscript><meta http-equiv="refresh" content="{{.Content.PollSeconds}}"></noscript>{{end}}
 <h1>{{if .Content.Running}}Working…{{else}}Export{{end}}</h1>
-{{template "job-status" .Content}}
+{{template "job-status" (withL (.Content) $L)}}
 <p><a href="/">Back to notes</a></p>
 {{end}}

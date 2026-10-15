@@ -52,9 +52,10 @@ func TestEvalGoFindsExportedResources(t *testing.T) {
 import "amadan.net/rastrillo/rastrillo"
 
 var Notes = rastrillo.Resource{
-	Name:  "notes",
-	Route: "/admin/notes",
-	Store: rastrillo.Exclusive,
+	Name:     "notes",
+	Route:    "/admin/notes",
+	Store:    rastrillo.Exclusive,
+	Currency: "USD",
 	List: rastrillo.List{
 		Columns: []rastrillo.Column{
 			{Field: "Title", Kind: rastrillo.Text},
@@ -154,7 +155,9 @@ var Filters = rastrillo.List{
 
 func TestGoAndTOMLSameManifestSameArtifact(t *testing.T) {
 	tomlDir := t.TempDir()
-	writeFile(t, tomlDir, "notes.toml", fixtureTOML)
+	// [legacy] rides along so the Go side's Scale pointer is compared
+	// with TOML's decoded one: both must reach the artifact as 2.
+	writeFile(t, tomlDir, "notes.toml", fixtureTOML+"\n[legacy]\ncurrency = \"USD\"\nscale = 2\n")
 
 	tomlResources, err := Load("", tomlDir)
 	if err != nil {
@@ -170,10 +173,14 @@ func TestGoAndTOMLSameManifestSameArtifact(t *testing.T) {
 
 import "amadan.net/rastrillo/rastrillo"
 
+var two = 2
+
 var Notes = rastrillo.Resource{
-	Name:  "notes",
-	Route: "/admin/notes",
-	Store: rastrillo.Exclusive,
+	Name:     "notes",
+	Route:    "/admin/notes",
+	Store:    rastrillo.Exclusive,
+	Currency: "USD",
+	Legacy:   &rastrillo.Legacy{Currency: "USD", Scale: &two},
 	List: rastrillo.List{
 		Columns: []rastrillo.Column{
 			{Field: "Title", Kind: rastrillo.Text},
@@ -199,6 +206,9 @@ var Notes = rastrillo.Resource{
 		t.Fatalf("Load (Go): %v", err)
 	}
 
+	if l := tomlResources[0].Legacy; l == nil || l.Scale == nil || *l.Scale != 2 {
+		t.Fatalf("TOML [legacy] = %+v, want USD at scale 2", l)
+	}
 	tomlArtifact := Artifact(tomlResources)
 	goArtifact := Artifact(goResources)
 	if string(tomlArtifact) != string(goArtifact) {
@@ -276,7 +286,8 @@ func TestArtifactIsStableAndSorted(t *testing.T) {
           "required": false
         }
       ]
-    }
+    },
+    "currency": "USD"
   }
 ]
 `

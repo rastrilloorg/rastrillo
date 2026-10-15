@@ -7,14 +7,18 @@
 // Two kinds of string live in a generated template, and they are never
 // mixed: strings the RESOURCE SHAPE decides (a screen's title, a field's
 // label, a button's text) are known at generation time and baked in as
-// literal `{{T "resource.<name>...."}}` / `{{T "ui...."}}` calls —
+// literal `{{T $L "resource.<name>...."}}` / `{{T $L "ui...."}}` calls —
 // EmitLocales (a later task) owns emitting the catalog keys these
-// reference. Strings a RECORD decides (a row's Main/Sub, a field's
-// current Value, a validation Error) are runtime data the action
-// (a later task) computes and hands to Execute; the template only
-// names the data key, it never re-derives or formats the value —
-// Money in particular is a formatted dollar string by the time it
-// reaches a template, never math the template does itself.
+// reference. Every body opens with {{$L := localizer $}} and every
+// dict passes "L" $L (see migrated): the action puts the request's
+// localizer in the view (actions.go's localizedField), so one parsed
+// template serves every language. Strings a RECORD decides (a row's
+// Main/Sub, a field's current Value, a validation Error) are runtime
+// data the action (a later task) computes and hands to Execute; the
+// template only names the data key, it never re-derives or formats the
+// value — Money in particular is a formatted string by the time it
+// reaches a template (or, in a form, a form.MoneyInput the action drew),
+// never math the template does itself.
 //
 // list.html's data contract (pinned by the plan's golden, byte-exact):
 // Empty bool; Query string; Carry [][2]string; Rows []struct{Href, Main,
@@ -48,8 +52,11 @@
 //
 //	form.html: IsNew bool; Fields map[string]string (current values,
 //	empty for New); Errors map[string]string, optional (a 400
-//	re-render's per-field message, resolved through T so that a
-//	catalog key localises); BasicsAction/AdvancedAction string,
+//	re-render's per-field message, resolved through Tf so that a
+//	catalog key localises) and ErrorArgs map[string]map[string]any (the
+//	values a message interpolates); Money map[string]form.MoneyInput
+//	(each money field's input), only for a resource with money;
+//	BasicsAction/AdvancedAction string,
 //	meaningful only when !IsNew (Edit's two POST targets — Advanced's
 //	only exists in the template at all when the resource declares
 //	Advanced fields).
@@ -62,7 +69,35 @@ import (
 	"strings"
 
 	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/internal/tmplmigrate"
 )
+
+// contractL is Appendix C.6's gen.template.contract_l, the data-contract
+// line every generated template with a contract carries for $L.
+const contractL = "       L  *ui.Localizer, required: set by the action from the request; ui.Pages' middleware puts it there\n"
+
+// contractMoney is Appendix C.6's gen.template.contract_money_seed, the
+// line form.html carries for formView.Money in a resource with money.
+const contractMoney = "       Money  map[string]form.MoneyInput, required for money fields: the text, the locale it is written in, the currency, and the seed (the text the server rendered, sent back so an unchanged edit is recognised), per field\n"
+
+// migrated is an emitter's text after the template codemod, so the
+// generator and migrate-templates share one implementation of the
+// localizer-first syntax and generated templates cannot drift from
+// what the codemod writes. The emitters build the text, so a refusal
+// here is a generator bug: it panics, like an unknown Kind, rather
+// than write a template that fails in strict mode. A wrapped or
+// data-less {{template}} counts too: generated data is a dict or a
+// struct carrying L, never something withL would have to patch.
+func migrated(name string, src []byte) []byte {
+	out, st, err := tmplmigrate.Rewrite(name, string(src))
+	if err == nil && (len(st.Review) > 0 || len(st.NoData) > 0) {
+		err = fmt.Errorf("sites the codemod cannot finish: %v %v", st.Review, st.NoData)
+	}
+	if err != nil {
+		panic(fmt.Sprintf("generate: %s: %v", name, err))
+	}
+	return []byte(out)
+}
 
 // EmitTemplates writes gen/templates/<name>/{list,show,form}.html for
 // r. A hand-written templates/<name>/<file>.html already present under
@@ -113,16 +148,18 @@ func resourceKey(name, suffix string) string {
 }
 
 // fieldPartial names the ui partial that renders k's field: Textarea
-// gets the multi-line control, everything else (Text, Money — Money
-// is display text the action already formatted, never a numeric
-// input) gets field-text. Every Kind Validate accepts has an entry;
+// gets the multi-line control, Money gets field-money (the currency
+// beside the label and the locale, currency and seed it posts back),
+// Text gets field-text. Every Kind Validate accepts has an entry;
 // an unrecognized Kind means Validate's accepted set and this emitter
 // have drifted, so it panics rather than silently guessing — the same
 // discipline store.go's kindSQLType uses for the same reason.
 func fieldPartial(k rastrillo.Kind) string {
 	switch k {
-	case rastrillo.Text, rastrillo.Money:
+	case rastrillo.Text:
 		return "field-text"
+	case rastrillo.Money:
+		return "field-money"
 	case rastrillo.Textarea:
 		return "field-textarea"
 	default:
@@ -184,12 +221,12 @@ func fieldMono(k rastrillo.Kind) bool {
 //     time, but the item count is a manifest-declared Values length —
 //     unknown until generation. Emitting the equivalent HTML directly
 //     inside a {{range .Filter.Items}} sidesteps that, calling
-//     (T .LabelKey) per item exactly where a real range can reach it.
+//     (T $L .LabelKey) per item exactly where a real range can reach it.
 //     The inlined block mirrors dropdown.html's own template TEXT
 //     byte-for-byte (same attributes, same {{if .Current}} aria-current
 //     and check-icon guards, same {{- range}}/{{- end}} whitespace
 //     trims) with exactly two substitutions — .Label becomes
-//     (T .LabelKey), and .Aria/.Label on the summary become inline
+//     (T $L .LabelKey), and .Aria/.Label on the summary become inline
 //     (T .Filter.AriaField)/(T .Filter.SummaryKey) calls, composing
 //     the "Filter by <field>: <current>" text the brief specifies —
 //     so the rendered bytes match what dropdown.html itself would
@@ -203,7 +240,17 @@ func listHTML(r rastrillo.Resource) []byte {
 	var b strings.Builder
 	fmt.Fprintf(&b, "{{/* Code generated by rastrillo generate; DO NOT EDIT.\n")
 	fmt.Fprintf(&b, "     Eject: copy to templates/%s/list.html and edit — generation of\n", r.Name)
-	b.WriteString("     this one file then stops. */}}\n")
+	b.WriteString("     this one file then stops.\n\n")
+	b.WriteString("     Data contract (the action emitter reads this):\n")
+	b.WriteString(contractL)
+	b.WriteString("       Empty       bool, required: no row to list, so the empty state shows\n")
+	b.WriteString("       Query       string, optional: the search text, when search is on\n")
+	b.WriteString("       Carry       [][2]string, optional: the query pairs the search form carries\n")
+	b.WriteString("       Filter      present only when the resource declares list filters:\n")
+	b.WriteString("                   SummaryKey, AriaField, and Items with Href, LabelKey\n")
+	b.WriteString("                   and Current per value\n")
+	b.WriteString("       Rows        required: Href, Main and Sub per row\n")
+	b.WriteString("       Pagination  required: Show, and Items in ui/partials/pagination.html's shape */}}\n")
 	b.WriteString("{{define \"content\"}}\n")
 	fmt.Fprintf(&b, "{{template \"page-header\" dict \"Title\" (T %q) \"ActionHref\" %q \"ActionLabel\" (T \"ui.new\")}}\n",
 		resourceKey(r.Name, "name"), newHref)
@@ -224,7 +271,7 @@ func listHTML(r rastrillo.Resource) []byte {
 	b.WriteString("{{if .Pagination.Show}}{{template \"pagination\" dict \"Items\" .Pagination.Items}}{{end}}\n")
 	b.WriteString("{{end}}\n")
 	b.WriteString("{{end}}\n")
-	return []byte(b.String())
+	return migrated(r.Name+"/list.html", []byte(b.String()))
 }
 
 // listBarWithDropdownHTML renders the rst-lbar strip for a resource
@@ -239,11 +286,11 @@ func listBarWithDropdownHTML(r rastrillo.Resource) string {
 		fmt.Fprintf(&b, "{{template \"list-bar-search\" dict \"Action\" %q \"Query\" .Query \"Placeholder\" (T \"ui.search\") \"Hidden\" .Carry}}\n", r.Route)
 	}
 	b.WriteString("{{/* dropdown markup inlined, not dispatched via the \"dropdown\" partial:\n")
-	b.WriteString("     per-item (T .LabelKey) resolution inside this range cannot be\n")
+	b.WriteString("     per-item (T $L .LabelKey) resolution inside this range cannot be\n")
 	b.WriteString("     expressed as a single dict/list argument to one {{template}} call\n")
 	b.WriteString("     (see listHTML's doc comment). Keep this block structurally\n")
-	b.WriteString("     identical to ui/partials/dropdown.html — same attributes, same\n")
-	b.WriteString("     aria-current/check-icon guards, same whitespace trims — so the\n")
+	b.WriteString("     identical to ui/partials/dropdown.html: same attributes, same\n")
+	b.WriteString("     aria-current/check-icon guards, same whitespace trims, so the\n")
 	b.WriteString("     existing CSS and a11y contract hold unchanged. name=\"rst-menus\"\n")
 	b.WriteString("     is the library's shared dropdown exclusivity group, written\n")
 	b.WriteString("     literally here because the partial's MenuGroup override has no\n")
@@ -287,22 +334,23 @@ func showHTML(r rastrillo.Resource) []byte {
 	fmt.Fprintf(&b, "     Eject: copy to templates/%s/show.html and edit — generation of\n", r.Name)
 	b.WriteString("     this one file then stops.\n\n")
 	b.WriteString("     Data contract (the action emitter reads this):\n")
+	b.WriteString(contractL)
 	b.WriteString("       Title     string, required — the record shown here (its first\n")
 	b.WriteString("                 text field's value; list.html's Main, restated for the\n")
 	b.WriteString("                 header)\n")
 	b.WriteString("       EditHref  string, required — this record's edit route\n")
-	fmt.Fprintf(&b, "       Fields    map[string]string, required — every declared field's\n")
+	fmt.Fprintf(&b, "       Fields    map[string]string, required: every declared field's\n")
 	fmt.Fprintf(&b, "                 value keyed by its declared name, in this resource's\n")
-	fmt.Fprintf(&b, "                 declaration order: %s. Money is\n", strings.Join(names, ", "))
-	b.WriteString("                 already formatted as a dollar string by the action —\n")
-	b.WriteString("                 templates never do money math. */}}\n")
+	fmt.Fprintf(&b, "                 declaration order: %s. Money is already\n", strings.Join(names, ", "))
+	b.WriteString("                 written by the action, in the reader's language and\n")
+	b.WriteString("                 the record's currency; templates never do money math. */}}\n")
 	b.WriteString("{{define \"content\"}}\n")
 	b.WriteString("{{template \"page-header\" dict \"Title\" .Title \"ActionHref\" .EditHref \"ActionLabel\" (T \"ui.edit\")}}\n")
 	b.WriteString("{{template \"detail-list\" dict \"Items\" (list\n")
 	b.WriteString(items.String())
 	b.WriteString("\n)}}\n")
 	b.WriteString("{{end}}\n")
-	return []byte(b.String())
+	return migrated(r.Name+"/show.html", []byte(b.String()))
 }
 
 // formField renders one field-text/field-textarea call for f, wired to
@@ -331,13 +379,28 @@ func showHTML(r rastrillo.Resource) []byte {
 // yields the map element type's zero value instead, so the no-error
 // case reaches T as the empty string and the partial's {{if .Error}}
 // stays false.
+//
+// The error goes through Tf with the field's ErrorArgs, so a money
+// message with values ("Enter the amount in {currency}.") renders
+// them; a field with no arguments gets a nil map, which interpolates
+// nothing, so its message renders as T would.
+//
+// A money field's input comes from .Money, not .Fields: the action
+// draws it (seeded from the record, or the person's own text echoed
+// with the locale it was read in), and the partial posts the locale,
+// currency and seed back beside it.
 func formField(r rastrillo.Resource, f rastrillo.Field) string {
 	required := ""
 	if f.Required {
 		required = " \"Required\" true"
 	}
-	return fmt.Sprintf("{{template %q dict \"Name\" %q \"Label\" (T %q) \"Value\" .Fields.%s \"Error\" (T (index .Errors %q))%s}}\n",
-		fieldPartial(f.Kind), f.Name, resourceKey(r.Name, "field."+sqlName(f.Name)), f.Name, f.Name, required)
+	value := ".Fields." + f.Name
+	if f.Kind == rastrillo.Money {
+		m := fmt.Sprintf("(index .Money %q)", f.Name)
+		value = m + ".Value \"Locale\" " + m + ".Locale \"Currency\" " + m + ".Currency \"Seed\" " + m + ".Seed"
+	}
+	return fmt.Sprintf("{{template %q dict \"Name\" %q \"Label\" (T %q) \"Value\" %s \"Error\" (Tf (index .Errors %q) (index .ErrorArgs %q))%s}}\n",
+		fieldPartial(f.Kind), f.Name, resourceKey(r.Name, "field."+sqlName(f.Name)), value, f.Name, f.Name, required)
 }
 
 // formFoot renders one form-foot call. Cancel always targets the list
@@ -361,20 +424,26 @@ func formHTML(r rastrillo.Resource) []byte {
 	fmt.Fprintf(&b, "     Eject: copy to templates/%s/form.html and edit — generation of\n", r.Name)
 	b.WriteString("     this one file then stops.\n\n")
 	b.WriteString("     Data contract (the action emitter reads this):\n")
+	b.WriteString(contractL)
 	b.WriteString("       IsNew           bool, required — New renders one form posting\n")
 	b.WriteString("                       every field to the create route; Edit renders\n")
 	b.WriteString("                       Basics (and, when this resource declares\n")
 	b.WriteString("                       Advanced fields, a second Advanced form)\n")
 	b.WriteString("       Fields          map[string]string, required — current values\n")
-	b.WriteString("                       keyed by declared field name; Money already\n")
-	b.WriteString("                       formatted as a dollar string by the action\n")
-	b.WriteString("                       (templates never do money math); empty strings\n")
+	b.WriteString("                       keyed by declared field name; empty strings\n")
 	b.WriteString("                       for New\n")
-	b.WriteString("       Errors          map[string]string, optional — a validation\n")
-	b.WriteString("                       message per field name, set only on a 400\n")
-	b.WriteString("                       re-render; each value is resolved through T,\n")
-	b.WriteString("                       so a catalog key localises and a plain\n")
-	b.WriteString("                       sentence renders as written\n")
+	if r.HasMoney() {
+		b.WriteString(contractMoney)
+	}
+	b.WriteString("       Errors          map[string]string, optional: a validation\n")
+	b.WriteString("                       message or catalog key per field name, set\n")
+	b.WriteString("                       only on a 400 re-render; each is resolved\n")
+	b.WriteString("                       through Tf with that field's ErrorArgs, so a\n")
+	b.WriteString("                       key localises and a plain sentence renders as\n")
+	b.WriteString("                       written\n")
+	b.WriteString("       ErrorArgs       map[string]map[string]any, optional: per field,\n")
+	b.WriteString("                       the values its message takes, such as\n")
+	b.WriteString("                       {currency}, {a} and {b}\n")
 	if hasAdvanced {
 		b.WriteString("       BasicsAction    string, required when !IsNew — the\n")
 		b.WriteString("                       edit-basics POST target\n")
@@ -414,7 +483,7 @@ func formHTML(r rastrillo.Resource) []byte {
 	}
 	b.WriteString("{{end}}\n")
 	b.WriteString("{{end}}\n")
-	return []byte(b.String())
+	return migrated(r.Name+"/form.html", []byte(b.String()))
 }
 
 // confirmHTML renders <name>/confirm.html — the delete flow's confirm
@@ -428,6 +497,7 @@ func confirmHTML(r rastrillo.Resource) []byte {
 	fmt.Fprintf(&b, "     Eject: copy to templates/%s/confirm.html and edit — generation of\n", r.Name)
 	b.WriteString("     this one file then stops.\n\n")
 	b.WriteString("     Data contract (the action emitter reads this):\n")
+	b.WriteString(contractL)
 	b.WriteString("       Title       string, required — the record being deleted (its\n")
 	b.WriteString("                   first text field's value; show.html's Title,\n")
 	b.WriteString("                   restated so the person confirms the right one)\n")
@@ -441,5 +511,5 @@ func confirmHTML(r rastrillo.Resource) []byte {
 	fmt.Fprintf(&b, "<p>{{.Title}} — {{T %q}}</p>\n", resourceKey(r.Name, "delete.confirm"))
 	fmt.Fprintf(&b, "{{template \"confirm-form\" dict \"Action\" .DeleteHref \"Label\" (T \"ui.delete\") \"Danger\" true \"CancelHref\" .CancelHref}}\n")
 	b.WriteString("{{end}}\n")
-	return []byte(b.String())
+	return migrated(r.Name+"/confirm.html", []byte(b.String()))
 }

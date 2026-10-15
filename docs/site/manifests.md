@@ -66,6 +66,11 @@ written.
 Mount the resource behind `sessions.Require` or `auth.RequireSession`.
 The generated queries carry the filter; they do not authenticate.
 
+Adding `scope = "user"` to a resource that already has rows gives every
+existing row an empty owner, and a row with no owner is shown to nobody.
+Assign owners to those rows in a migration of your own, written with
+`rastrillo migration new`.
+
 `examples/notes` runs both halves side by side and proves them with one
 two-user suite.
 
@@ -88,16 +93,114 @@ event's actor is `"app"`; threading a real actor through is not done.
 If neither matters for your resource, it works. If they do, use
 `exclusive` for now.
 
+Before the app serves, `gen.Boot` reads every mergeable store's events
+once and refuses to start on one it cannot read: one written by a newer
+version, or one that breaks the money rules below. A store with no
+money fields checks only each event's version.
+
+Every event's payload must be a JSON object. An event you append by
+hand, of a kind the store does not know, with any other payload, makes
+reads of that stream fail.
+
+## Money
+
+A resource with a money field declares the default currency for its new
+records:
+
+```toml
+name     = "ticket_types"
+route    = "/admin/ticket_types"
+currency = "USD"
+
+[list]
+columns = [{ field = "Name", kind = "text" }, { field = "Price", kind = "money" }]
+search  = true
+
+[form]
+basics = [{ name = "Name", required = true }, { name = "Price", kind = "money" }]
+```
+
+`currency` is an ISO 4217 code. `generate` refuses a money field without
+one. A code that is no longer issued, such as HRK, still generates, with
+a warning to choose a current one.
+
+Each money field `Price` is two columns, `price_minor` and
+`price_currency`: the amount in the currency's smallest unit, and its
+code. Both are empty for a record with no amount, and both are set for
+one with an amount. A new record takes the resource's `currency`. An
+edit never changes a record's currency.
+
+`rastrillo generate` writes `gen/boot.go`. Call `gen.Boot` after your
+schema is applied and before you serve, and pass what it returns to
+`gen.Router`. Boot upgrades the money columns and checks them, and it
+refuses to start on a problem. `gen.Router` panics without it:
+`gen.Router: gen.Boot has not run for this database; call it after the schema is applied and before serving`.
+
+### Money stored before this release
+
+Money columns used to hold integers with no currency. For a resource
+with such rows, say what they meant:
+
+```toml
+[legacy]
+currency = "USD"
+scale = 2
+```
+
+`scale` is how many decimal places the old integers carry: 2 for cents,
+0 for whole units. `currency` can be any code the storage set holds,
+including one no longer issued, such as SLL.
+
+On its first boot, `gen.Boot` replaces each old column `price` with
+`price_minor` and `price_currency`. It adds the two columns, copies each
+amount into the currency's smallest unit, and drops the old column. The
+drop rewrites the table, so the first boot takes longer on a big table.
+It all happens in one transaction. Any failure changes nothing, and the
+app does not start.
+
+An amount the currency cannot hold exactly is a failure: at scale 2,
+`1250` is 12.50, which JPY cannot hold. Nothing is ever rounded. Old
+rows with no `[legacy]` stop the start too, with a message such as
+`ticket_types has 3 rows from before money had a currency. Add [legacy] currency and scale to manifest/ticket_types.toml and run rastrillo generate.`
+
+This is a stop-start upgrade. Take a backup, stop every running copy,
+then start the new version. An old version cannot run against the
+upgraded table, because the column it reads is gone. To go back,
+restore the backup.
+
+### Money in a mergeable store
+
+When a mergeable resource gains a money field, its events carry money,
+and the next boot renames the event log's `payload` column to
+`payload_v2`. `rastrillo generate` says so when it first adds that step
+to `gen/boot.go`:
+
+`announcements keeps money in events, so the next deploy renames the event log's payload column. Take a backup, stop every running copy, then start the new version. Never run old and new versions side by side. To go back, restore the backup.`
+
+A new app with no events yet gets the same notice, and has nothing to
+back up. Apps whose events carry no money keep `payload`. See
+[eventlog](/docs/reference/eventlog#money-in-events).
+
+## The app's languages
+
+`manifest/app.toml` is not a resource. It holds the languages the app
+offers, `locales` and `default_locale`; see
+[Localization](/docs/localization#declaring). Because of it, no resource
+can be named `app`:
+`manifest/app.toml holds the app's locales, so no resource can be named "app"`.
+
 ## Schema evolution
 
-Generated stores emit only the initial `CREATE`. There is no automatic
-diff-and-`ALTER` for a declared resource, so evolving one's schema is
-your own migration — write it with `rastrillo migration new`.
+A generated store's `gen/store/<name>/migrations.go` only grows. When
+you add a field, or make a resource user-scoped, `rastrillo generate`
+appends the statements that bring the table up to date, and says so:
 
-There is a trap in how this meets the migration ledger. A generated
-store's `gen/store/<name>/migrations.go` is a raw `[]string` you wrap
-into a `*migrate.Set` by hand. Reshape a resource after first boot and
-the regenerated SQL no longer matches the ledger's recorded checksum, so
-boot refuses.
-[Migrations](/docs/migrations#recovering-an-old-database) has the
-recovery, and its step order matters.
+`ticket_types: appended ALTER TABLE ticket_types ADD COLUMN status TEXT NOT NULL DEFAULT '' to gen/store/ticket_types/migrations.go; released statements are never edited`
+
+A statement that has run is never edited, so the migration ledger never
+sees a changed checksum. Money columns are not appended: `gen.Boot` adds
+them.
+
+Nothing is removed. A field you delete or rename keeps its old column,
+and its data. To move data or drop a column, write your own migration
+with `rastrillo migration new`.

@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"flag"
 	"fmt"
 	"io"
@@ -11,11 +12,13 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"amadan.net/rastrillo/rastrillo/internal/localecheck"
+	"amadan.net/rastrillo/rastrillo/internal/tmplmigrate"
 	"amadan.net/rastrillo/rastrillo/ui"
 )
 
 // runDoctor implements `rastrillo doctor [--fix] [--force] [--theme
-// <name>] [dir]`: compare an app's vendored static files against the
+// <name>] [--probe] [dir]`: compare an app's vendored static files against the
 // library copies this binary carries, report what differs, and with
 // --fix re-copy it (design doc: 2026-08-28-design-system-design
 // §6-v2.3).
@@ -59,6 +62,7 @@ func runDoctor(args []string) error {
 	fix := fset.Bool("fix", false, "re-copy each drifted file from this binary's library copy")
 	force := fset.Bool("force", false, "with --fix: re-copy across a version mismatch, and over files recorded as deliberate edits")
 	theme := fset.String("theme", "", "the theme static/theme.css should match (default: the app's own pin, else whichever shipped theme it matches)")
+	probe := fset.Bool("probe", false, localecheck.ProbeFlag)
 	// A usage mistake exits 2, which is what this command's own
 	// exit-code table promises and what a CI branching on it will look
 	// for. flag.ContinueOnError has already printed the error and the
@@ -89,13 +93,49 @@ func runDoctor(args []string) error {
 	if *fix {
 		return rep.applyFix(os.Stdout, *force)
 	}
-	return rep.exit()
+	return rep.status(rep.appChecks(context.Background(), os.Stdout, *probe))
+}
+
+// appChecks prints the preflight and locale checks (--fix skips them).
+// The probe's first release is the one whose prep sets the fallback.
+//
+// The probe builds and runs the app's own command only with --probe.
+// The app's code runs before any guard the probe has: an init() or a
+// main that writes files or opens its database does so whatever
+// RASTRILLO_CHECK_CONFIG says, in the app's directory, against its
+// real data. Without --probe, only the static checks feed exit 7.
+func (r *report) appChecks(ctx context.Context, w io.Writer, probe bool) int {
+	fmt.Fprintf(w, "\n%s\n", "Templates:")
+	pending := tmplmigrate.Run([]string{r.dir}, w, w) != 0
+	report, probed := []byte(localecheck.NotProbed+"\n"), []string(nil)
+	if probe {
+		var err error
+		report, probed, err = localecheck.Probe(ctx, r.dir, r.appVersion, rastrilloFallbackVersion)
+		if err != nil {
+			probed = append(probed, err.Error())
+		}
+	}
+	problems := append(localecheck.Static(r.dir), probed...)
+	fmt.Fprintf(w, "\n%s\n%s", "Locales:", report)
+	for _, p := range problems {
+		fmt.Fprintf(w, "  %s\n", p)
+	}
+	if pending {
+		return exitTemplates
+	} else if len(problems) > 0 {
+		return exitLocales
+	}
+	return 0
 }
 
 // The exit codes, which are the CI-facing surface. Each means one
 // thing, so a script can act on it: 0 clean, 1 an error, 2 usage (main
 // already uses it), 3 drift, 4 a version mismatch that makes the
-// comparison inconclusive, 5 an app on the pre-move module path.
+// comparison inconclusive, 5 an app on the pre-move module path, 6
+// templates left to migrate, 7 a failed locale check. Precedence is 5,
+// 4, 3, 6, 7; every section prints regardless. Templates outrank
+// locales: an unmigrated template stops the app rendering, a locale
+// problem stops it starting with a named reason.
 //
 // Skew gets its own code rather than being folded into drift because
 // the two call for opposite actions. Drift means "re-copy these files".
@@ -108,9 +148,11 @@ func runDoctor(args []string) error {
 // fails with a module-path error that names no way out. It needs the
 // migration, so it gets a code a CI can tell apart from both.
 const (
-	exitDrift   = 3
-	exitSkew    = 4
-	exitPreMove = 5
+	exitDrift     = 3
+	exitSkew      = 4
+	exitPreMove   = 5
+	exitTemplates = 6
+	exitLocales   = 7
 )
 
 // exitError carries an exit code out of a subcommand. Its message may
@@ -211,6 +253,14 @@ func (r *report) exit() error {
 		return exitError{code: exitDrift}
 	}
 	return nil
+}
+
+// status is exit with appChecks' code ranked below its three.
+func (r *report) status(checks int) error {
+	if err := r.exit(); err != nil || checks == 0 {
+		return err
+	}
+	return exitError{code: checks}
 }
 
 // doctorLayoutAdvisory is the one line doctor prints for a shell layout

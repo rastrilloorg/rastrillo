@@ -30,8 +30,16 @@ func TestWriteIsTheWholeRender(t *testing.T) {
 	if err != nil {
 		t.Fatalf("write: %v", err)
 	}
-	if n != len(want) {
-		t.Errorf("reported %d files, rendered %d", n, len(want))
+	// Beside the render, one pt/ stub per pt-PT page (see
+	// TestWriteLeavesAPTStubForEveryPTPTPage, which checks their bodies).
+	stubs := 0
+	for name := range want {
+		if _, _, ok := ptPTPage(name); ok {
+			stubs++
+		}
+	}
+	if n != len(want)+stubs {
+		t.Errorf("reported %d files, rendered %d and %d pt/ stubs", n, len(want), stubs)
 	}
 
 	var total int
@@ -45,13 +53,23 @@ func TestWriteIsTheWholeRender(t *testing.T) {
 		}
 		total += len(body)
 	}
+	for name := range want {
+		if theme, rest, ok := ptPTPage(name); ok {
+			stub, err := os.ReadFile(filepath.Join(root, theme, "pt", filepath.FromSlash(rest)))
+			if err != nil {
+				t.Fatalf("pt/ stub for %s: %v", name, err)
+			}
+			total += len(stub)
+		}
+	}
 	if bytes != total {
-		t.Errorf("reported %d bytes, rendered %d", bytes, total)
+		t.Errorf("reported %d bytes, wrote %d", bytes, total)
 	}
 
-	// The stamp is the one file in the directory that is not the render.
-	// Everything else on disk has to be something Render produced, or
-	// dsgen has written something nobody asked for.
+	// The stamp and the pt/ stubs are the only files in the directory
+	// that are not the render. Everything else on disk has to be
+	// something Render produced, or dsgen has written something nobody
+	// asked for.
 	if _, err := os.Stat(filepath.Join(root, stampName)); err != nil {
 		t.Errorf("no %s stamp in the output: dsgen would refuse its own directory on the next run (%v)", stampName, err)
 	}
@@ -67,8 +85,65 @@ func TestWriteIsTheWholeRender(t *testing.T) {
 	}); err != nil {
 		t.Fatalf("walking %s: %v", root, err)
 	}
-	if onDisk != len(want) {
-		t.Errorf("%d files on disk beside the stamp, %d rendered — something was written that nothing renders", onDisk, len(want))
+	if onDisk != len(want)+stubs {
+		t.Errorf("%d files on disk beside the stamp, %d rendered and %d pt/ stubs: something was written that nothing renders", onDisk, len(want), stubs)
+	}
+}
+
+// ptPTPage splits a rendered name that is a page of a pt-PT directory
+// into its theme and its path under that directory.
+func ptPTPage(name string) (theme, rest string, ok bool) {
+	theme, rest, ok = strings.Cut(name, "/pt-PT/")
+	return theme, rest, ok && !strings.Contains(theme, "/") && strings.HasSuffix(rest, ".html")
+}
+
+// The gallery's Portuguese moved from pt/ to pt-PT/ (spec decision 8),
+// and every link to the old pages, in a bookmark, a search result or
+// another site, would otherwise end at a 404. rastrillo.org serves this
+// tree from a static host that cannot answer a 301, so each old address
+// gets a page that sends the reader on at once and names the new one as
+// canonical, which is how a search engine learns that the page moved.
+func TestWriteLeavesAPTStubForEveryPTPTPage(t *testing.T) {
+	const mount = "/ui/gallery"
+	want, err := designsystem.Render(mount)
+	if err != nil {
+		t.Fatalf("Render: %v", err)
+	}
+	root, _, _, err := write(t.TempDir(), mount)
+	if err != nil {
+		t.Fatalf("write: %v", err)
+	}
+	pages := 0
+	for name := range want {
+		theme, rest, ok := ptPTPage(name)
+		if !ok {
+			continue
+		}
+		pages++
+		stub, err := os.ReadFile(filepath.Join(root, theme, "pt", filepath.FromSlash(rest)))
+		if err != nil {
+			t.Errorf("no pt/ stub for %s: %v", name, err)
+			continue
+		}
+		to := designsystem.PageHref(mount, theme, "pt-PT", rest)
+		for _, w := range []string{
+			`<meta http-equiv="refresh" content="0; url=` + to + `">`,
+			`<link rel="canonical" href="` + to + `">`,
+		} {
+			if !strings.Contains(string(stub), w) {
+				t.Errorf("%s/pt/%s lacks %s:\n%s", theme, rest, w, stub)
+			}
+		}
+	}
+	// The overview and a shell demo, named, so a render that stopped
+	// writing pt-PT pages cannot pass by having no pages to check.
+	for _, name := range []string{designsystem.RootTheme() + "/pt-PT/index.html", designsystem.RootTheme() + "/pt-PT/shells/sidebar.html"} {
+		if _, ok := want[name]; !ok {
+			t.Errorf("the render has no %s", name)
+		}
+	}
+	if pages == 0 {
+		t.Fatal("the render has no pt-PT pages to leave stubs for")
 	}
 }
 

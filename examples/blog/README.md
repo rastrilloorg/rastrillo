@@ -90,7 +90,7 @@ the original finding and its resolution.
   manifest one — walking `gen/templates/` first and `templates/`
   (the ejection root) second, so an ejected file wins at the same key.
 - `internal/blog/genrender.go` — the generated/ejected screens' own
-  adapter code: `genT` (locale lookups against
+  adapter code: `catalogT` (locale lookups against
   `gen/locales.BaseCatalog`), `headFor`/`genHead` (a `<head>` title for
   the one screen with no `Head` field of its own, `posts/show`), and
   `formStripData` (builds the Edit screen's status-pill/publish/

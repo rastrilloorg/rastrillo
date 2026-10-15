@@ -21,6 +21,8 @@ const (
 	// Money parses through ParseCents (integer cents; see its doc for
 	// what it refuses). The echo keeps the raw text so a rejected
 	// "12.345" re-renders as typed, and an empty optional Money is 0.
+	// With Field.Currency set it reads that currency's amount instead,
+	// read back with Parsed.Minor (moneyfield.go).
 	Money Kind = "money"
 	// Date parses the wire format "2006-01-02" (time.DateOnly) via
 	// time.ParseInLocation in Field.Location (nil = time.UTC). The
@@ -52,6 +54,40 @@ type Field struct {
 	// Location is the zone Date and DateTime parse their wire value
 	// in; nil means time.UTC. Time is clock-only and ignores it.
 	Location *time.Location
+
+	// Currency turns a Money field into one that knows its currency:
+	// the ISO 4217 code the amount is stored in, always the server's
+	// own (the record's on edit, the resource default on create). It
+	// accepts that currency's decimals and is read with Parsed.Minor.
+	// Empty keeps the cents path, ParseCents, unchanged for callers
+	// written before currencies existed.
+	Currency string
+	// Negative allows an amount below zero. The parser reads signs
+	// either way, so a field that refuses negatives says
+	// money_negative for "(5)" instead of storing 5. It governs what
+	// the person types: an unchanged edit-form seed keeps the record's
+	// own amount, negative or not.
+	Negative bool
+	// Locale is the locale the text is read in when LocaleEcho is off:
+	// a hand-written handler or an API client, which owns consistency
+	// itself.
+	Locale string
+	// LocaleEcho reads the locale from the form instead. The text was
+	// typed into a page rendered in some locale; parsing it in any
+	// other can read 1.500 as fifteen hundred. The echo names that
+	// locale and the displayed currency, and Parse checks both.
+	LocaleEcho bool
+	// Strict reads the text in exactly the locale's own format, with
+	// today's errors, for a field that must take nothing else, such as
+	// an import column. The default reads any text with one plausible
+	// reading and refuses text with two (spec decision 22).
+	Strict bool
+	// Stored is the record's current amount on an edit form, re-read by
+	// the handler before Parse; nil on create and for an empty field.
+	// The unchanged-seed check compares the posted seed with this
+	// record's fresh rendering, so the seed is never trusted as a value:
+	// it can only keep what the record still holds.
+	Stored *int64
 }
 
 // Parsed is Parse's result: the per-field values, the echo map for a
@@ -68,6 +104,15 @@ type Parsed struct {
 	times map[string][2]int // Time results: [hour, minute]
 	echo  map[string]string
 	errs  Errors
+
+	// The currency-aware Money fields' state (moneyfield.go).
+	minor         map[string]int64
+	present       map[string]bool
+	echoLocale    map[string]string
+	reseed        map[string]bool
+	moneyCurrency map[string]string
+	args          map[string]map[string]any
+	verifiedSeed  map[string]string
 }
 
 // Parse reads and validates r's submitted fields in one pass — the
@@ -81,6 +126,12 @@ type Parsed struct {
 //     RAW text — "" is required-blank, while "0" is a present, valid
 //     zero — and a present-but-unparseable value reports the parse
 //     error, never the required message.
+//   - Money with a Currency follows spec §5 instead: the locale and
+//     currency echoes, Required on the cleaned text, the unchanged-seed
+//     check, the reading Strict selects, then the Negative policy on
+//     that reading (a verified seed is the record's own amount). Its
+//     errors are rastrillo.ui.money_* catalog keys, some with
+//     arguments in ErrorArgs.
 //   - Date, Time and DateTime each parse their exact wire format via
 //     time.ParseInLocation (Date/DateTime honour Field.Location, nil
 //     = UTC; Time is a bare clock reading with no location). Required
@@ -111,11 +162,23 @@ func Parse(r *http.Request, fields ...Field) *Parsed {
 		times:   map[string][2]int{},
 		echo:    map[string]string{},
 		errs:    Errors{},
+
+		minor:         map[string]int64{},
+		present:       map[string]bool{},
+		echoLocale:    map[string]string{},
+		reseed:        map[string]bool{},
+		moneyCurrency: map[string]string{},
+		args:          map[string]map[string]any{},
+		verifiedSeed:  map[string]string{},
 	}
 	for _, f := range fields {
 		raw := r.PostFormValue(f.Name)
 		switch f.Kind {
 		case Money:
+			if f.Currency != "" {
+				p.parseMoney(r, f)
+				continue
+			}
 			p.echo[f.Name] = raw
 			cents, err := ParseCents(raw)
 			p.cents[f.Name] = cents

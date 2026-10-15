@@ -9,7 +9,8 @@ import (
 	"net/http"
 
 	"amadan.net/rastrillo/rastrillo"
-	"amadan.net/rastrillo/rastrillo/form"
+	"amadan.net/rastrillo/rastrillo/currency"
+	"amadan.net/rastrillo/rastrillo/ui"
 	"amadan.net/rastrillo/rastrillo/view"
 	ticket_typesstore "tickets/gen/store/ticket_types"
 )
@@ -31,20 +32,42 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 		view.Fail(ctx, w, r, "ticket_types: loading ticket_types", err)
 		return
 	}
+	priceText, ok := money(ctx, w, r, id, "Price", n.PriceMinor, n.PriceCurrency)
+	if !ok {
+		return
+	}
 
 	view.Render(ctx, w, "ticket_types/show", http.StatusOK, showView{
-		Title:    n.Name,
-		EditHref: fmt.Sprintf("/admin/ticket_types/%d/edit", id),
+		Localized: ui.ForRequest(r),
+		Title:     n.Name,
+		EditHref:  fmt.Sprintf("/admin/ticket_types/%d/edit", id),
 		Fields: map[string]string{
 			"Name":        n.Name,
-			"Price":       form.FormatCents(n.Price),
+			"Price":       priceText,
 			"Status":      n.Status,
 			"MaxPerOrder": n.MaxPerOrder,
 		},
 	})
 }
 
+func money(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request, id int64, field string, minor *int64, cur *string) (string, bool) {
+	if minor == nil {
+		return "", true
+	}
+	var code string
+	if cur != nil {
+		code = *cur
+	}
+	s, err := currency.Format(rastrillo.FormatLocale(r), *minor, code)
+	if err != nil {
+		view.Fail(ctx, w, r, fmt.Sprintf("%s %d: %s in %s", "ticket_types", id, field, code), err)
+		return "", false
+	}
+	return s, true
+}
+
 type showView struct {
+	ui.Localized
 	Title    string
 	EditHref string
 	Fields   map[string]string

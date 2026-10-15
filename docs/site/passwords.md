@@ -90,7 +90,7 @@ Your render callbacks get the challenge in `PageData.Proof`. Render it on the fo
 <form rst-form method="post" action="/signin"{{with .Proof}} {{.Attrs}}{{end}}>
 {{with .Proof}}{{.Fields}}{{end}}
 <!-- your fields -->
-{{template "form-foot" dict "Submit" "Sign in" "Proof" .Proof}}
+{{template "form-foot" dict "L" $L "Submit" "Sign in" "Proof" .Proof}}
 </form>
 {{with .Proof}}{{.Script}}{{end}}
 ```

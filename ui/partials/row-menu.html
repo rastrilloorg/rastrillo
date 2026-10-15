@@ -35,8 +35,8 @@
                   rather than being dropped.
        MenuGroup  string, optional: the <details name> group; default
                   rst-menus. */}}
-{{define "row-menu"}}<details rst-row-menu name="{{menuGroup .}}">
-  <summary aria-label="{{Tf "rastrillo.ui.row_menu" "name" .Name}}">{{icon "kebab"}}</summary>
+{{define "row-menu"}}{{$L := localizer $}}<details rst-row-menu name="{{menuGroup .}}">
+  <summary aria-label="{{Tf $L "rastrillo.ui.row_menu" "name" .Name}}">{{icon "kebab"}}</summary>
   <div rst-row-menu-panel>
     {{- range rowMenuItems .}}
     {{- if .Rule}}

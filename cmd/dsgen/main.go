@@ -59,10 +59,13 @@ package main
 import (
 	"flag"
 	"fmt"
+	"html/template"
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 
+	"amadan.net/rastrillo/rastrillo"
 	"amadan.net/rastrillo/rastrillo/internal/designsystem"
 )
 
@@ -103,6 +106,11 @@ func write(out, mount string) (root string, files, bytes int, err error) {
 	if err != nil {
 		return "", 0, 0, err
 	}
+	// Render has already refused a mount CleanMount refuses.
+	clean, _ := designsystem.CleanMount(mount)
+	for name, body := range retagStubs(rendered, clean) {
+		rendered[name] = body
+	}
 
 	root, err = filepath.Abs(out)
 	if err != nil {
@@ -129,6 +137,36 @@ func write(out, mount string) (root string, files, bytes int, err error) {
 		bytes += len(rendered[name])
 	}
 	return root, len(rendered), bytes, nil
+}
+
+// retagStubs is a page at every address the gallery's Portuguese had
+// before it moved from pt/ to pt-PT/ (rastrillo.Retagged), sending the
+// reader to the page's new address. Without them every old link, in a
+// bookmark, a search result or another site, ends at a 404. A static
+// host cannot answer the 301 an app's middleware sends, so the page
+// does it: a refresh for the reader, and a canonical link, which is how
+// a search engine learns that the page moved.
+//
+// It writes no words. Anything a reader could see would be copy, in a
+// language picked for them, on a page that exists to be skipped.
+func retagStubs(rendered map[string][]byte, mount string) map[string][]byte {
+	out := map[string][]byte{}
+	for from, to := range rastrillo.Retagged() {
+		for name := range rendered {
+			theme, rest, ok := strings.Cut(name, "/"+to+"/")
+			if !ok || strings.Contains(theme, "/") || !strings.HasSuffix(rest, ".html") {
+				continue
+			}
+			href := template.HTMLEscapeString(designsystem.PageHref(mount, theme, to, rest))
+			out[theme+"/"+from+"/"+rest] = []byte(`<!doctype html>
+<html lang="` + to + `">
+<meta charset="utf-8">
+<link rel="canonical" href="` + href + `">
+<meta http-equiv="refresh" content="0; url=` + href + `">
+`)
+		}
+	}
+	return out
 }
 
 // stampName is the file dsgen leaves in a directory to say the

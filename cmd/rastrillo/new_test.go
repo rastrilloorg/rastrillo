@@ -273,7 +273,7 @@ func TestMainTemplateWiresErrorPage(t *testing.T) {
 	if strings.Index(src, "started := time.Now()") > strings.Index(src, "rastrillo.Resolve(") {
 		t.Error("started must be taken before anything else, or perf's cold budget misses part of the start")
 	}
-	app := fmt.Sprintf(appTemplate, "blogapp", "")
+	app := fmt.Sprintf(appTemplate, "blogapp", "", "blogapp")
 	for _, want := range []string{
 		"func Configure(opts *rastrillo.Options, mux *http.ServeMux, started time.Time)",
 		"opts.ErrorPage = ErrorPage",
@@ -289,26 +289,29 @@ func TestMainTemplateWiresErrorPage(t *testing.T) {
 }
 
 // render.go exports ErrorPage (the func Options.ErrorPage above points
-// at) and registers "errors" as a page, so render(w, "errors", …)
-// resolves.
+// at) and registers "errors" as a page. ErrorPage finds the request's
+// language with LocalizerFor, because a recovered panic reaches it
+// outside the middleware that puts the localizer on the request.
 func TestRenderTemplateWiresErrorPage(t *testing.T) {
 	src := fmt.Sprintf(renderTemplate, "blogapp", "blogapp", `"index", "errors"`)
 	if !strings.Contains(src, `[]string{"index", "errors"}`) {
-		t.Errorf("render.go's pages init loop does not include \"errors\":\n%s", src)
+		t.Errorf("render.go's pages loop does not include \"errors\":\n%s", src)
 	}
 	if !strings.Contains(src, "func ErrorPage(w http.ResponseWriter, r *http.Request, status int, ref string)") {
 		t.Errorf("render.go does not export ErrorPage with the ErrorPageFunc signature:\n%s", src)
 	}
-	if !strings.Contains(src, `render(w, "errors", map[string]any{"Status": status, "Ref": ref})`) {
-		t.Errorf("render.go's ErrorPage does not render the \"errors\" page:\n%s", src)
+	if !strings.Contains(src, `pages.Execute(&buf, "errors", map[string]any{"L": pages.LocalizerFor(r), "Status": status, "Ref": ref})`) {
+		t.Errorf("render.go's ErrorPage does not render the \"errors\" page in the request's language:\n%s", src)
 	}
 }
 
 // errors.html renders ui's error-page partial inside the layout —
 // nothing more, so the whole styling and wording seam stays inside
-// that partial (and the app's tokens/theme), not duplicated here.
+// that partial (and the app's tokens/theme), not duplicated here. It is
+// in the localizer-first syntax migrate-templates writes, so strict
+// rendering has the localizer the partial needs.
 func TestErrorsTemplateRendersErrorPagePartial(t *testing.T) {
-	if !strings.Contains(errorsTemplate, `{{define "content"}}{{template "error-page" dict "Status" .Status "Ref" .Ref}}{{end}}`) {
+	if !strings.Contains(errorsTemplate, `{{define "content"}}{{$L := localizer $}}{{template "error-page" dict "L" $L "Status" .Status "Ref" .Ref}}{{end}}`) {
 		t.Errorf("errors.html template does not render the error-page partial:\n%s", errorsTemplate)
 	}
 }
@@ -339,23 +342,24 @@ func TestManifestReadmeCarriesTheRecipe(t *testing.T) {
 		// module root — go:embed cannot reach up out of internal/.
 		"//go:embed gen/templates",
 		"var GenTemplatesFS embed.FS",
-		// The Ctx.Render seam itself, inline. A page name and a
-		// template map: without this the generated actions have
-		// nowhere to render to.
+		// The generated screens join the pages render.go builds, and
+		// the Ctx.Render seam executes them: without both the generated
+		// actions have nowhere to render to.
+		"ui.PageFile{FS: gen, Path: f}",
 		"func GenRender(ctx *rastrillo.Ctx, w http.ResponseWriter, name string, status int, data any)",
-		"genPages[name]",
-		// T, because the generated templates call it with keys that
-		// live in gen/locales and not in ui's default catalog.
-		"ui.WithT(genT)",
-		"locales.BaseCatalog",
+		"pages.Execute(&buf, name, data)",
+		// The catalog, because the generated templates call T with keys
+		// that live in gen/locales and not in ui's default catalog.
+		"Catalog: genlocales.BaseCatalog",
 		// The migrations, which is the one whose absence looks like a
 		// framework bug rather than a missing step: everything
 		// compiles and the screen 500s on a table that was never
 		// created.
 		"migrate.Merge(genSchema, Schema)",
 		".Migrations {",
-		// And the mount.
-		"gen.Router(",
+		// And the mount, which will not compile without Boot's result.
+		"gen.Boot(context.Background(), d.Writer())",
+		"gen.Router(booted, ",
 		"Render: GenRender",
 	} {
 		if !strings.Contains(src, want) {
@@ -674,18 +678,18 @@ func TestStandardProfileAddsNoConventions(t *testing.T) {
 }
 
 // The layout must call iconAssets, or a cdn/js choice is inert. Both
-// icon seams reach the template tree through ui.WithIcons now — passing
+// icon seams reach the template tree through ui.Pages' Funcs — passing
 // only one of them is the documented silent trap, so the scaffold
-// passes both in the one call.
+// passes both together.
 func TestScaffoldedLayoutCallsIconAssets(t *testing.T) {
 	if !strings.Contains(defaultLayout(t), "{{iconAssets}}") {
 		t.Error("layout.html never calls iconAssets; cdn and js delivery would render nothing")
 	}
-	if !strings.Contains(renderTemplate, `ui.Funcs(ui.WithIcons(icons.Icon, icons.Assets))`) {
+	if !strings.Contains(renderTemplate, `"icon": icons.Icon, "iconAssets": icons.Assets`) {
 		t.Error("render.go does not point ui's icon seams at the app's own icon package")
 	}
-	if !strings.Contains(renderTemplate, `ParseFS(ui.Templates(), "*.html")`) {
-		t.Error("render.go does not parse ui's partials, so no page can call one")
+	if !strings.Contains(renderTemplate, `ui.NewPages(ui.PagesConfig{`) {
+		t.Error("render.go does not build its pages with ui.NewPages, so no page can call a partial")
 	}
 }
 
@@ -877,6 +881,10 @@ func TestNewScaffoldsBrowserDrive(t *testing.T) {
 		"RASTRILLO_BROWSER_OPTIONAL",
 		"A skip is not a pass",
 		"this app's call",
+		// The template contract: a page that skips $L fails strict
+		// rendering, so the README must say how every body starts.
+		"{{$L := localizer $}}",
+		"`\"L\" $L`",
 	} {
 		if !strings.Contains(readme, want) {
 			t.Errorf("scaffolded README.md missing %q", want)

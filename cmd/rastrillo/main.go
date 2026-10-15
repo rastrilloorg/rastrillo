@@ -9,6 +9,9 @@ import (
 	"errors"
 	"fmt"
 	"os"
+
+	"amadan.net/rastrillo/rastrillo/internal/localecheck"
+	"amadan.net/rastrillo/rastrillo/internal/tmplmigrate"
 )
 
 func main() {
@@ -30,6 +33,10 @@ func main() {
 		err = runVectors(os.Args[2:])
 	case "doctor":
 		err = runDoctor(os.Args[2:])
+	case "migrate-templates":
+		if code := tmplmigrate.Run(os.Args[2:], os.Stdout, os.Stderr); code != 0 {
+			err = exitError{code: code}
+		}
 	case "markup":
 		err = runMarkup(os.Args[2:])
 	case "budget":
@@ -63,9 +70,8 @@ func usage() {
 	fmt.Fprint(os.Stderr, `rastrillo — the CARLOS web framework CLI
 
 Usage:
-  rastrillo new <name>                          scaffold a new app in ./<name>
-  rastrillo generate [flags] [dir]              run the filesystem-routing generator (flags before dir; default dir: .)
-       --check --default-locale <code>          verify only: route collisions, action build tags, i18n catalogs
+  rastrillo new [--locale=<code>] <name>        scaffold a new app in ./<name>, offering one language (default en)
+  rastrillo generate [--check] [DIR]    write gen/ from manifest/; --check verifies without writing
   rastrillo dev [dir] [-- app args]             watch + regenerate + rebuild + restart (default dir: .)
   rastrillo migration <cmd> [dir]                schema changes (generate, new, status, check, baseline)
        generate [--allow-destructive]            diff models against migrations, write the delta
@@ -76,10 +82,14 @@ Usage:
   rastrillo doctor [flags] [dir]                compare the app's vendored static/ files with this binary's (default dir: .)
        --fix [--force]                          re-copy what drifted (--force overrides its two refusals)
        --theme <name>                           which theme static/theme.css should be, for an app with no pin
+       --probe                                  `+localecheck.ProbeFlag+`
                                                 exits 0 clean, 3 drift, 4 the app is on a different rastrillo version,
                                                 5 it imports rastrillo's old module path.
+                                                6  templates still use the old syntax: run rastrillo migrate-templates
+                                                7  the app's locale configuration would stop it starting
                                                 A convenience and an upgrade tool: the vendored_test.go the scaffold
                                                 writes is what catches drift on every commit without being run.
+  rastrillo migrate-templates [-write] PATH...    move templates to the localizer-first syntax; exits 1 while anything is left to do
   rastrillo markup [--fix] [dir]                rewrite the rst- class spelling as the rst- attribute spelling (default dir: .)
        --fix                                    write it; without the flag it reports and exits 3 if there is work
                                                 the codemod for design doc §6-v3. Idempotent. Skips static/'s vendored

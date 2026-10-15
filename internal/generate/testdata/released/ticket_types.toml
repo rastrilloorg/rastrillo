@@ -1,0 +1,15 @@
+name  = "ticket_types"
+route = "/admin/ticket_types"
+store = "exclusive"
+
+[list]
+columns = [{ field = "Name" }, { field = "Price", kind = "money" }, { field = "Status" }]
+search  = true
+
+[[list.filters]]
+field  = "Status"
+values = ["draft", "on_sale", "sold_out"]
+
+[form]
+basics   = [{ name = "Name", required = true }, { name = "Price", kind = "money", required = true }, { name = "Status" }]
+advanced = [{ name = "MaxPerOrder" }]

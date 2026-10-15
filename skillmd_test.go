@@ -146,7 +146,21 @@ import (
 // key when region HA relocates it, which no test of the app's own will
 // catch. The file had 3 bytes of slack; no existing line is redundant
 // enough to pay 147 without losing a fact, so this lands at 30,894.
-const skillBudget = 30_900
+//
+// Raised 30,900 -> 31,365 on 2026-10-14 for the multi-currency release,
+// which changed how every template calls T and how money is read. The
+// old lines (a per-request Clone with ui.WithLocale, money as int64
+// cents) now produce pages that fail in strict mode and forms that
+// store an amount without its currency, so the file must say: ui.Pages
+// with $L first, the money field's Currency/Minor/SeedMoney/Stored
+// contract, manifest/app.toml's locales and the probe, and gen.Boot.
+// Net of the Clone recipe and cents line they replace, the new lines
+// add 718 bytes. Trimming restated prose (the design-system "reuse"
+// line, the four-step flow's preamble, the empty-state echo of step 1,
+// the stacking example's aftermath, the CSS floor's date) paid 249;
+// the file landed at 31,365, 465 over, and the ceiling is raised by
+// exactly that, so there is no slack.
+const skillBudget = 31_365
 
 // TestSkillMDStaysWithinBudget makes the budget mechanical rather than
 // remembered: several release evenings have ended with a wc -c dance
@@ -198,5 +212,27 @@ func TestSkillMDSaysExamplesAreNotInTheModule(t *testing.T) {
 	}
 	if len(nested) == 0 {
 		t.Error("no examples/*/go.mod — the examples are no longer nested modules, so SKILL.md's caveat about the module zip may now be false")
+	}
+}
+
+// SKILL.md is what an agent loads instead of the source. After this
+// release, the per-request Clone recipe and ui.WithLocale binding it
+// taught fail in strict mode, and money is no longer cents only; an
+// agent following the old lines writes code that does not render.
+func TestSkillTeachesTheLocalizerAndCurrencyContract(t *testing.T) {
+	b, err := os.ReadFile("SKILL.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := string(b)
+	for _, gone := range []string{"Bind `ui.WithLocale(rastrillo.LocaleFrom(r))`", "each request's cloned template", "Money is `int64` cents"} {
+		if strings.Contains(s, gone) {
+			t.Errorf("SKILL.md still says %q", gone)
+		}
+	}
+	for _, want := range []string{"ui.Pages", "{{$L := localizer $}}", "{{money $L", "form.SeedMoney", "Strict: true", "manifest/app.toml", "RASTRILLO_CHECK_CONFIG", "gen.Boot"} {
+		if !strings.Contains(s, want) {
+			t.Errorf("SKILL.md does not mention %q", want)
+		}
 	}
 }

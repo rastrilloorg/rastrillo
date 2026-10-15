@@ -7,8 +7,8 @@
      whole page instead. The nav gains a Bookmarks link here and in
      layout.html together; if the two chromes ever drift further
      apart, collapse them the way the blog eventually did. */}}
-{{define "layout"}}<!doctype html>
-<html lang="en">
+{{define "layout"}}{{$L := localizer $}}<!doctype html>
+<html lang="{{$L.Identity}}" dir="{{$L.Dir}}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width">
@@ -27,10 +27,11 @@
 <a href="/signup">Sign up</a>
 {{end}}
 </nav>
+{{template "locale-menu" dict "L" $L "Items" .Locales "Return" .Return}}
 </header>
 {{if .HasFlash}}<p role="status" class="flash flash-{{.Flash.Kind}}">{{.Flash.Message}}</p>{{end}}
 <main rst-page>
-{{template "content" .Content}}
+{{template "content" (withL (.Content) $L)}}
 </main>
 <script defer src="/static/rastrillo.js"></script>
 <script defer src="/static/busy.js"></script>

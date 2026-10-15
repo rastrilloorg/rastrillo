@@ -3,43 +3,47 @@
      this one file then stops.
 
      Data contract (the action emitter reads this):
+       L  *ui.Localizer, required: set by the action from the request; ui.Pages' middleware puts it there
        IsNew           bool, required — New renders one form posting
                        every field to the create route; Edit renders
                        Basics (and, when this resource declares
                        Advanced fields, a second Advanced form)
        Fields          map[string]string, required — current values
-                       keyed by declared field name; Money already
-                       formatted as a dollar string by the action
-                       (templates never do money math); empty strings
+                       keyed by declared field name; empty strings
                        for New
-       Errors          map[string]string, optional — a validation
-                       message per field name, set only on a 400
-                       re-render; each value is resolved through T,
-                       so a catalog key localises and a plain
-                       sentence renders as written
+       Money  map[string]form.MoneyInput, required for money fields: the text, the locale it is written in, the currency, and the seed (the text the server rendered, sent back so an unchanged edit is recognised), per field
+       Errors          map[string]string, optional: a validation
+                       message or catalog key per field name, set
+                       only on a 400 re-render; each is resolved
+                       through Tf with that field's ErrorArgs, so a
+                       key localises and a plain sentence renders as
+                       written
+       ErrorArgs       map[string]map[string]any, optional: per field,
+                       the values its message takes, such as
+                       {currency}, {a} and {b}
        BasicsAction    string, required when !IsNew — the
                        edit-basics POST target
        AdvancedAction  string, required when !IsNew — the
                        edit-advanced POST target */}}
-{{define "content"}}
+{{define "content"}}{{$L := localizer $}}
 {{if .IsNew}}
 <form rst-form method="post" action="/admin/ticket_types">
-{{template "field-text" dict "Name" "Name" "Label" (T "resource.ticket_types.field.name") "Value" .Fields.Name "Error" (T (index .Errors "Name")) "Required" true}}
-{{template "field-text" dict "Name" "Price" "Label" (T "resource.ticket_types.field.price") "Value" .Fields.Price "Error" (T (index .Errors "Price")) "Required" true}}
-{{template "field-text" dict "Name" "Status" "Label" (T "resource.ticket_types.field.status") "Value" .Fields.Status "Error" (T (index .Errors "Status"))}}
-{{template "field-text" dict "Name" "MaxPerOrder" "Label" (T "resource.ticket_types.field.max_per_order") "Value" .Fields.MaxPerOrder "Error" (T (index .Errors "MaxPerOrder"))}}
-{{template "form-foot" dict "Submit" (T "ui.save") "CancelHref" "/admin/ticket_types" "CancelLabel" (T "ui.cancel")}}
+{{template "field-text" dict "L" $L "Name" "Name" "Label" (T $L "resource.ticket_types.field.name") "Value" .Fields.Name "Error" (Tf $L (index .Errors "Name") (index .ErrorArgs "Name")) "Required" true}}
+{{template "field-money" dict "L" $L "Name" "Price" "Label" (T $L "resource.ticket_types.field.price") "Value" (index .Money "Price").Value "Locale" (index .Money "Price").Locale "Currency" (index .Money "Price").Currency "Seed" (index .Money "Price").Seed "Error" (Tf $L (index .Errors "Price") (index .ErrorArgs "Price")) "Required" true}}
+{{template "field-text" dict "L" $L "Name" "Status" "Label" (T $L "resource.ticket_types.field.status") "Value" .Fields.Status "Error" (Tf $L (index .Errors "Status") (index .ErrorArgs "Status"))}}
+{{template "field-text" dict "L" $L "Name" "MaxPerOrder" "Label" (T $L "resource.ticket_types.field.max_per_order") "Value" .Fields.MaxPerOrder "Error" (Tf $L (index .Errors "MaxPerOrder") (index .ErrorArgs "MaxPerOrder"))}}
+{{template "form-foot" dict "L" $L "Submit" (T $L "ui.save") "CancelHref" "/admin/ticket_types" "CancelLabel" (T $L "ui.cancel")}}
 </form>
 {{else}}
 <form rst-form method="post" action="{{.BasicsAction}}">
-{{template "field-text" dict "Name" "Name" "Label" (T "resource.ticket_types.field.name") "Value" .Fields.Name "Error" (T (index .Errors "Name")) "Required" true}}
-{{template "field-text" dict "Name" "Price" "Label" (T "resource.ticket_types.field.price") "Value" .Fields.Price "Error" (T (index .Errors "Price")) "Required" true}}
-{{template "field-text" dict "Name" "Status" "Label" (T "resource.ticket_types.field.status") "Value" .Fields.Status "Error" (T (index .Errors "Status"))}}
-{{template "form-foot" dict "Submit" (T "ui.save") "CancelHref" "/admin/ticket_types" "CancelLabel" (T "ui.cancel")}}
+{{template "field-text" dict "L" $L "Name" "Name" "Label" (T $L "resource.ticket_types.field.name") "Value" .Fields.Name "Error" (Tf $L (index .Errors "Name") (index .ErrorArgs "Name")) "Required" true}}
+{{template "field-money" dict "L" $L "Name" "Price" "Label" (T $L "resource.ticket_types.field.price") "Value" (index .Money "Price").Value "Locale" (index .Money "Price").Locale "Currency" (index .Money "Price").Currency "Seed" (index .Money "Price").Seed "Error" (Tf $L (index .Errors "Price") (index .ErrorArgs "Price")) "Required" true}}
+{{template "field-text" dict "L" $L "Name" "Status" "Label" (T $L "resource.ticket_types.field.status") "Value" .Fields.Status "Error" (Tf $L (index .Errors "Status") (index .ErrorArgs "Status"))}}
+{{template "form-foot" dict "L" $L "Submit" (T $L "ui.save") "CancelHref" "/admin/ticket_types" "CancelLabel" (T $L "ui.cancel")}}
 </form>
 <form rst-form method="post" action="{{.AdvancedAction}}">
-{{template "field-text" dict "Name" "MaxPerOrder" "Label" (T "resource.ticket_types.field.max_per_order") "Value" .Fields.MaxPerOrder "Error" (T (index .Errors "MaxPerOrder"))}}
-{{template "form-foot" dict "Submit" (T "ui.save") "CancelHref" "/admin/ticket_types" "CancelLabel" (T "ui.cancel")}}
+{{template "field-text" dict "L" $L "Name" "MaxPerOrder" "Label" (T $L "resource.ticket_types.field.max_per_order") "Value" .Fields.MaxPerOrder "Error" (Tf $L (index .Errors "MaxPerOrder") (index .ErrorArgs "MaxPerOrder"))}}
+{{template "form-foot" dict "L" $L "Submit" (T $L "ui.save") "CancelHref" "/admin/ticket_types" "CancelLabel" (T $L "ui.cancel")}}
 </form>
 {{end}}
 {{end}}

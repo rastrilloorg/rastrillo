@@ -9,6 +9,7 @@ import (
 
 	"amadan.net/rastrillo/rastrillo"
 	"amadan.net/rastrillo/rastrillo/form"
+	"amadan.net/rastrillo/rastrillo/ui"
 	"amadan.net/rastrillo/rastrillo/view"
 	ticket_typesstore "tickets/gen/store/ticket_types"
 )
@@ -23,27 +24,35 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 
 	p := form.Parse(r,
 		form.Field{Name: "Name", Required: true},
-		form.Field{Name: "Price", Kind: form.Money, Required: true},
+		form.Field{Name: "Price", Kind: form.Money, Currency: "USD", LocaleEcho: true, Required: true},
 		form.Field{Name: "Status"},
 		form.Field{Name: "MaxPerOrder"},
 	)
 	if !p.OK() {
+		priceInput, _ := p.MoneyInput("Price", rastrillo.FormatLocale(r))
 		view.Render(ctx, w, "ticket_types/form", http.StatusBadRequest, formView{
-			IsNew:  true,
-			Fields: p.Echo(),
-			Errors: p.Errors(),
+			Localized: ui.ForRequest(r),
+			IsNew:     true,
+			Fields:    p.Echo(),
+			Errors:    p.Errors(),
+			ErrorArgs: p.ErrorArgs(),
+			Money: map[string]form.MoneyInput{
+				"Price": priceInput,
+			},
 		})
 		return
 	}
+	priceMinor, priceCurrency := amount(p, "Price", "USD")
 
 	now := time.Now().UTC().Format(time.RFC3339)
 	store := ticket_typesstore.New(ctx.DB)
 	id, err := store.CreateTicketType(r.Context(), ticket_typesstore.CreateTicketTypeParams{
-		Name:        p.String("Name"),
-		Price:       p.Cents("Price"),
-		Status:      p.String("Status"),
-		MaxPerOrder: p.String("MaxPerOrder"),
-		Now:         now,
+		Name:          p.String("Name"),
+		PriceMinor:    priceMinor,
+		PriceCurrency: priceCurrency,
+		Status:        p.String("Status"),
+		MaxPerOrder:   p.String("MaxPerOrder"),
+		Now:           now,
 	})
 	if err != nil {
 		view.Fail(ctx, w, r, "ticket_types: creating ticket_types", err)
@@ -52,10 +61,21 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, fmt.Sprintf("/admin/ticket_types/%d", id), http.StatusSeeOther)
 }
 
+func amount(p *form.Parsed, name, code string) (*int64, *string) {
+	minor, ok := p.Minor(name)
+	if !ok {
+		return nil, nil
+	}
+	return &minor, &code
+}
+
 type formView struct {
+	ui.Localized
 	IsNew          bool
 	Fields         map[string]string
 	Errors         map[string]string
+	ErrorArgs      map[string]map[string]any
+	Money          map[string]form.MoneyInput
 	BasicsAction   string
 	AdvancedAction string
 }

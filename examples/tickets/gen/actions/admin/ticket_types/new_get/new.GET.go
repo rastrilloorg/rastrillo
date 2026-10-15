@@ -3,29 +3,51 @@
 package act_admin_ticket_types_new_get
 
 import (
+	"fmt"
 	"net/http"
 
 	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/form"
+	"amadan.net/rastrillo/rastrillo/ui"
 	"amadan.net/rastrillo/rastrillo/view"
 )
 
 // Handle is GET /admin/ticket_types/new.
 func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
+	priceInput, ok := seed(ctx, w, r, 0, "Price", nil, "USD")
+	if !ok {
+		return
+	}
 	view.Render(ctx, w, "ticket_types/form", http.StatusOK, formView{
-		IsNew: true,
+		Localized: ui.ForRequest(r),
+		IsNew:     true,
 		Fields: map[string]string{
 			"Name":        "",
-			"Price":       "",
 			"Status":      "",
 			"MaxPerOrder": "",
+		},
+		Money: map[string]form.MoneyInput{
+			"Price": priceInput,
 		},
 	})
 }
 
+func seed(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request, id int64, field string, minor *int64, code string) (form.MoneyInput, bool) {
+	in, err := form.SeedMoney(rastrillo.FormatLocale(r), minor, code, false)
+	if err != nil {
+		view.Fail(ctx, w, r, fmt.Sprintf("%s %d: %s in %s", "ticket_types", id, field, code), err)
+		return in, false
+	}
+	return in, true
+}
+
 type formView struct {
+	ui.Localized
 	IsNew          bool
 	Fields         map[string]string
 	Errors         map[string]string
+	ErrorArgs      map[string]map[string]any
+	Money          map[string]form.MoneyInput
 	BasicsAction   string
 	AdvancedAction string
 }

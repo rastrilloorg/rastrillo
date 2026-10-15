@@ -3,13 +3,15 @@ package notes
 import (
 	"bytes"
 	"embed"
-	"html/template"
 	"log/slog"
 	"net/http"
+
+	genlocales "notes/gen/locales"
 
 	"amadan.net/rastrillo/rastrillo/flash"
 	"amadan.net/rastrillo/rastrillo/form"
 	"amadan.net/rastrillo/rastrillo/jobs"
+	"amadan.net/rastrillo/rastrillo/locales"
 	"amadan.net/rastrillo/rastrillo/password"
 	"amadan.net/rastrillo/rastrillo/sessions"
 	"amadan.net/rastrillo/rastrillo/ui"
@@ -18,40 +20,72 @@ import (
 //go:embed templates
 var templatesFS embed.FS
 
-// pages is one *template.Template per page, each combining layout.html
-// with that page's own file — kept separate so every page can define
-// a template named "content" without colliding with the others (a
-// single shared tree parsed from all files at once would let the last
-// "content" definition silently win over the rest).
-var pages = map[string]*template.Template{}
-
-// fragmentTmpl is the ui partials alone, no layout and no app pages —
-// what renderJobFragment executes "job-status" against. The fragment's
-// whole point is to be swapped into a page that already has a layout
-// (the shim's data-poll replaces one element, not the document), so
-// parsing layout.html alongside it here would only be dead weight.
-var fragmentTmpl = template.Must(template.New("fragment").Funcs(ui.Funcs()).ParseFS(ui.Templates(), "*.html"))
-
-func init() {
-	// Every page gets ui's partials and their funcs, then its own two
-	// files on top — the shape a scaffolded app's render.go is born
-	// with. It used to be status alone, and the hand-written screens
-	// paid for it: with no field-text or form-foot in the tree they
-	// were written as bare <label><input> pairs and an unstyled
-	// <button>, which is exactly the stacked-label, skinny-button
-	// layout this example then taught everyone who copied it.
+// handPageFiles is one ui.PageFile per hand screen this app serves,
+// each combining layout.html with that page's own file — kept
+// separate so every page can define a template named "content"
+// without colliding with the others: ui.NewPages clones the base once
+// per key, which is what keeps a single shared tree from letting the
+// last "content" definition silently win over the rest.
+func handPageFiles() map[string]ui.PageFile {
+	out := map[string]ui.PageFile{}
 	for _, name := range []string{"signin", "signup", "index", "show", "new", "edit", "status"} {
-		pages[name] = template.Must(
-			template.Must(template.New("layout").Funcs(ui.Funcs()).
-				ParseFS(ui.Templates(), "*.html")).
-				ParseFS(templatesFS, "templates/layout.html", "templates/"+name+".html"))
+		out[name] = ui.PageFile{FS: templatesFS, Path: "templates/" + name + ".html"}
 	}
+	return out
 }
 
-// page is the data every template renders against: layout.html reads
-// Flash/HasFlash/SignedIn for its chrome, and each page's own content
-// block reads Content, cast back to its own view type.
+// fragmentPageFiles backs the one-page ui.Pages renderJobFragment
+// executes directly: "job-status" is already defined by ui.Templates()
+// (every ui.Pages base parses the partials first), so the file named
+// here never itself has to supply it — this map exists only because
+// ui.NewPages' Pages needs at least one file per clone, and
+// templates/status.html is an unused but already-embedded one to
+// point it at, rather than a file invented just to be legal.
+func fragmentPageFiles() map[string]ui.PageFile {
+	return map[string]ui.PageFile{"job-status": {FS: templatesFS, Path: "templates/status.html"}}
+}
+
+// newPages and newFragPages build this app's hand-screen ui.Pages and
+// its job-status fragment one. Both share cfg, genlocales.BaseCatalog
+// and templatesFS; newGenPages (genrender.go) is their generated-screen
+// twin, kept as a separate ui.Pages because it needs its own layout
+// (genlayout.html) — the two cannot share a base, since each defines
+// its own "layout" and a shared base would let the second clobber the
+// first.
+//
+// fragPages needs its own instance for a different reason: it has no
+// layout at all and its Entry is "job-status", not "layout" — one
+// ui.Pages has one Entry for every page it holds (PagesConfig's own
+// doc comment), so a fragment needing a different one gets a second
+// instance rather than widening that API.
+func newPages(cfg locales.Config) (*ui.Pages, error) {
+	return ui.NewPages(ui.PagesConfig{
+		App:     templatesFS,
+		Layout:  "templates/layout.html",
+		Pages:   handPageFiles(),
+		Locale:  cfg,
+		Catalog: genlocales.BaseCatalog,
+	})
+}
+
+func newFragPages(cfg locales.Config) (*ui.Pages, error) {
+	return ui.NewPages(ui.PagesConfig{
+		App:     templatesFS,
+		Pages:   fragmentPageFiles(),
+		Entry:   "job-status",
+		Locale:  cfg,
+		Catalog: genlocales.BaseCatalog,
+	})
+}
+
+// page is the data every hand template renders against: layout.html
+// reads Flash/HasFlash/SignedIn for its chrome and L/Locales/Return
+// (the embedded ui.Localized) for the switcher, and each page's own
+// content block reads Content, cast back to its own view type.
+// renderStatus sets Localized from ui.ForRequest(r) itself — unlike
+// GenRender, there is no generated view to read it off.
 type page struct {
+	ui.Localized
 	Flash    flash.Flash
 	HasFlash bool
 	SignedIn bool
@@ -79,12 +113,12 @@ type (
 // WriteHeader are silently dropped, which is exactly how a 422
 // re-render used to show the same flash twice. status 0 means let the
 // first body write imply 200.
-func renderStatus(w http.ResponseWriter, r *http.Request, status int, name string, content any) {
+func (a *app) renderStatus(w http.ResponseWriter, r *http.Request, status int, name string, content any) {
 	fl, ok := flash.Take(w, r)
 	_, signedIn := sessions.Current(r)
-	data := page{Flash: fl, HasFlash: ok, SignedIn: signedIn, Content: content}
+	data := page{Localized: ui.ForRequest(r), Flash: fl, HasFlash: ok, SignedIn: signedIn, Content: content}
 	var buf bytes.Buffer
-	if err := pages[name].ExecuteTemplate(&buf, "layout", data); err != nil {
+	if err := a.pages.Execute(&buf, name, data); err != nil {
 		slog.Default().Error("notes: render "+name, "err", err)
 		http.Error(w, "something went wrong", http.StatusInternalServerError)
 		return
@@ -95,36 +129,43 @@ func renderStatus(w http.ResponseWriter, r *http.Request, status int, name strin
 	buf.WriteTo(w)
 }
 
-func renderContent(w http.ResponseWriter, r *http.Request, name string, content any) {
-	renderStatus(w, r, 0, name, content)
+func (a *app) renderContent(w http.ResponseWriter, r *http.Request, name string, content any) {
+	a.renderStatus(w, r, 0, name, content)
 }
 
 // renderSignin and renderSignup are password.Config's RenderSignin/
 // RenderSignup: password.go writes the status itself before calling
 // either — 422 for a failed attempt, 403 for a Create refusal, 429
 // when the rate limiter trips — so these never touch the status line.
-func renderSignin(w http.ResponseWriter, r *http.Request, d password.PageData) {
-	renderContent(w, r, "signin", d)
+func (a *app) renderSignin(w http.ResponseWriter, r *http.Request, d password.PageData) {
+	a.renderContent(w, r, "signin", d)
 }
 
-func renderSignup(w http.ResponseWriter, r *http.Request, d password.PageData) {
-	renderContent(w, r, "signup", d)
+func (a *app) renderSignup(w http.ResponseWriter, r *http.Request, d password.PageData) {
+	a.renderContent(w, r, "signup", d)
 }
 
 // renderJobPage and renderJobFragment are jobs.Config's two render
 // seams (app.go wires them into jobs.NewHandlers). renderJobPage goes
 // through the ordinary page path — same layout, same flash/signed-in
 // chrome as every other page. renderJobFragment does not: it executes
-// "job-status" alone, because the fragment is swapped into a page that
+// "job-status" alone, through fragPages (this file's own doc on
+// newFragPages), because the fragment is swapped into a page that
 // already has a layout, and a full page (or even a flash) inside it
 // would be a layout nested inside a layout the next time the shim
 // polls.
 func (a *app) renderJobPage(w http.ResponseWriter, r *http.Request, d jobs.PageData) {
-	renderContent(w, r, "status", statusView(d))
+	a.renderContent(w, r, "status", statusView(d))
 }
 
 func (a *app) renderJobFragment(w http.ResponseWriter, r *http.Request, d jobs.PageData) {
-	if err := fragmentTmpl.ExecuteTemplate(w, "job-status", statusView(d)); err != nil {
+	data := statusView(d)
+	// job-status itself calls no locale function (ui/partials/
+	// job-status.html), but ui.Pages.Execute still requires a
+	// non-nil L: the guarantee is "this data carries a localizer",
+	// not "this template happens to use one".
+	data["L"] = ui.ForRequest(r).L
+	if err := a.fragPages.Execute(w, "job-status", data); err != nil {
 		slog.Default().Error("notes: render job fragment", "err", err)
 	}
 }

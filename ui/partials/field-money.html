@@ -1,0 +1,64 @@
+{{/* field-money: one labelled money input in one currency, with
+     optional hint and error lines wired as field-text wires them. Pair
+     it with a form.Field of Kind form.Money and a Currency on the
+     server, and fill it from form.SeedMoney (a stored amount, or none)
+     or Parsed.MoneyInput (a failed POST's echo): both return the
+     Value, Locale, Currency and Seed this partial takes.
+
+     The currency's ISO code is in the label. The currency always comes
+     from the data, never from the reader, so the person must see which
+     one they are typing in; the server reads a bare shared symbol such
+     as $ as this field's currency, and the code beside the input is
+     what makes that honest. Being inside the label, it is also part of
+     the input's accessible name.
+
+     Three hidden inputs travel with the text (spec §5):
+       <Name>.locale    the locale the text is written in. Parsed in any
+                        other, 1.500 can mean fifteen hundred instead of
+                        one and a half.
+       <Name>.currency  the currency the form displayed. A currency
+                        that changed between showing the form and
+                        saving it (a deploy, an explicit change) is
+                        caught: the POST refuses a mismatch and keeps
+                        the typed text.
+       <Name>.seed      the text the server rendered from the stored
+                        amount, so an unchanged edit saves exactly what
+                        it held even when that text reads two ways. It
+                        is always rendered, empty when Seed is.
+
+     inputmode="decimal" brings up a number keyboard with a decimal
+     mark. It is type="text", not type="number": a number input refuses
+     a currency sign, grouping and the other locale's decimal mark,
+     all of which the server reads.
+
+     The wrapper repeats field-text's rather than composing it, for the
+     reason field-text's own comment gives.
+
+     Keys:
+       Name      string, required: the input's name and id, the prefix
+                 of the hidden inputs' names, and of the hint/error ids
+       Label     string, required: the visible label
+       Value     string, optional: the text to show, SeedMoney's or
+                 MoneyInput's Value
+       Locale    string, required: the locale Value is written in
+       Currency  string, required: the ISO 4217 code, shown in the
+                 label and sent back for the server to compare
+       Seed      string, optional: the server's seed; empty on create
+                 and on a strict field
+       Required  bool, optional: required attribute + visible *
+       Hint      string, optional: muted guidance under the input
+       Error     string, optional: validation message; also sets
+                 aria-invalid */}}
+{{define "field-money"}}<div rst-field>
+  <label rst-field-label for="{{.Name}}">{{.Label}} <span class="rst-mono">{{.Currency}}</span>{{if .Required}} <span rst-field-required aria-hidden="true">*</span>{{end}}</label>
+  <input rst-input id="{{.Name}}" name="{{.Name}}" type="text" inputmode="decimal"{{if .Value}} value="{{.Value}}"{{end}}{{if .Required}} required{{end}}{{if .Error}} aria-invalid="true"{{end}}{{if or .Hint .Error}} aria-describedby="{{if .Hint}}{{.Name}}-hint{{end}}{{if and .Hint .Error}} {{end}}{{if .Error}}{{.Name}}-error{{end}}"{{end}}>
+  <input type="hidden" name="{{.Name}}.locale" value="{{.Locale}}">
+  <input type="hidden" name="{{.Name}}.currency" value="{{.Currency}}">
+  <input type="hidden" name="{{.Name}}.seed" value="{{.Seed}}">
+  {{- if .Hint}}
+  <small rst-field-hint id="{{.Name}}-hint">{{.Hint}}</small>
+  {{- end}}
+  {{- if .Error}}
+  <small rst-field-error id="{{.Name}}-error">{{.Error}}</small>
+  {{- end}}
+</div>{{end}}

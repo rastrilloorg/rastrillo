@@ -62,6 +62,7 @@ var frozenChecksums = map[string]string{
 	"auth/0002_sessions_backfill":     "90798138a17a2f5d3f89ea4591985fdd53e9144c63040ae59d45ad6ca6a01a98",
 	"blobs/0001_init":                 "005e7bef1f2007a3ac88c05944ceba3a3db9c39ba824f73af3d3e7d4140c2427",
 	"eventlog/0001_init":              "e507976d87082ac5ee20e2d9cabca305b2d685c7ab4db2c23e650781aa6f9595",
+	"eventlog_money/0001_payload_v2":  "b636d66b1d1d015057e0bbd39802dddf1e11be160b64313331757dcf0cddcbbd",
 	"passkey/0001_init":               "56d5073a880c3b1b8330654873b13cbd42a72596138499380b5a013e4d43196e",
 	"passkey/0002_credential_details": "55d308094dfdeef241b1401b7f72d4c7219d715591bc8e5c14ada4032e9bd15a",
 	"secondfactor/0001_init":          "de005b11635c6c487a19b929c091df10fa6c097a6cf05d4a1592d6fd8c6a2488",
@@ -74,8 +75,8 @@ var frozenChecksums = map[string]string{
 func TestFrameworkMigrationsAreFrozen(t *testing.T) {
 	seen := map[string]bool{}
 	for _, s := range []*migrate.Set{
-		sessions.Schema, auth.Schema, blobs.Schema, eventlog.Schema, passkey.Schema,
-		secondfactor.Schema, totp.Schema,
+		sessions.Schema, auth.Schema, blobs.Schema, eventlog.Schema, eventlog.MoneySchema,
+		passkey.Schema, secondfactor.Schema, totp.Schema,
 	} {
 		for _, m := range s.All() {
 			seen[m.ID] = true

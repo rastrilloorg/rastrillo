@@ -4,11 +4,30 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
+	"reflect"
 	"strings"
 	"testing"
 
 	"amadan.net/rastrillo/rastrillo"
 )
+
+// call invokes a template function the way a template does, so the
+// tests check behaviour, not the Go signature: the locale entries are
+// variadic dispatchers now, and asserting func(any) any would only
+// pin an implementation detail.
+func call(t *testing.T, m template.FuncMap, name string, args ...any) any {
+	t.Helper()
+	fn := reflect.ValueOf(m[name])
+	in := make([]reflect.Value, len(args))
+	for i, a := range args {
+		in[i] = reflect.ValueOf(a)
+	}
+	out := fn.Call(in)
+	if len(out) == 2 && !out[1].IsNil() {
+		t.Fatalf("%s(%v): %v", name, args, out[1].Interface())
+	}
+	return out[0].Interface()
+}
 
 func TestDictBuildsAMap(t *testing.T) {
 	m, err := dict("Title", "Posts", "Count", 3)
@@ -143,15 +162,15 @@ func TestDropdownRendersForAStructWithoutMenuGroup(t *testing.T) {
 
 func TestFuncsRegistersExactlyTheDocumentedHelpers(t *testing.T) {
 	f := Funcs()
-	for _, name := range []string{"dict", "list", "menuGroup", "searchClear", "icon", "iconAssets", "T", "Tf", "dateWords", "opt", "Tbdi", "stageArt", "displayURL", "safeHref", "number", "displayValue", "rowMenuItems", "paginationItems"} {
+	for _, name := range []string{"dict", "list", "menuGroup", "searchClear", "icon", "iconAssets", "T", "Tf", "dateWords", "opt", "Tbdi", "stageArt", "displayURL", "safeHref", "number", "displayValue", "rowMenuItems", "paginationItems", "localizer", "withL", "money"} {
 		if _, ok := f[name]; !ok {
 			t.Errorf("Funcs() is missing %q", name)
 		}
 	}
 	// Exactly these: an accidental extra is a helper the shipped partials
 	// do not document and an app cannot rely on.
-	if len(f) != 18 {
-		t.Errorf("Funcs() has %d entries, want exactly 18", len(f))
+	if len(f) != 21 {
+		t.Errorf("Funcs() has %d entries, want exactly 21 (the 18 before localizer, withL and money, and those three)", len(f))
 	}
 }
 
@@ -210,19 +229,15 @@ func TestFuncsWithRebindsOnAClonedPristineTree(t *testing.T) {
 // FuncsWith replaces only the T entry — dict/list/icon are unchanged.
 func TestFuncsWithReplacesOnlyTAndTf(t *testing.T) {
 	f := FuncsWith(func(key string, _ ...any) string { return "X-" + key })
-	for _, name := range []string{"dict", "list", "menuGroup", "searchClear", "icon", "iconAssets", "T", "Tf", "dateWords", "opt", "Tbdi", "stageArt", "displayURL", "safeHref", "number", "displayValue", "rowMenuItems", "paginationItems"} {
+	for _, name := range []string{"dict", "list", "menuGroup", "searchClear", "icon", "iconAssets", "T", "Tf", "dateWords", "opt", "Tbdi", "stageArt", "displayURL", "safeHref", "number", "displayValue", "rowMenuItems", "paginationItems", "localizer", "withL", "money"} {
 		if _, ok := f[name]; !ok {
 			t.Errorf("FuncsWith(...) is missing %q", name)
 		}
 	}
-	if len(f) != 18 {
-		t.Errorf("FuncsWith(...) has %d entries, want exactly 18", len(f))
+	if len(f) != 21 {
+		t.Errorf("FuncsWith(...) has %d entries, want exactly 21 (the 18 before localizer, withL and money, and those three)", len(f))
 	}
-	tFunc, ok := f["T"].(func(string, ...any) string)
-	if !ok {
-		t.Fatalf("T entry is %T, want func(string, ...any) string", f["T"])
-	}
-	if got := tFunc("rastrillo.ui.cancel"); got != "X-rastrillo.ui.cancel" {
+	if got := call(t, f, "T", "rastrillo.ui.cancel"); got != "X-rastrillo.ui.cancel" {
 		t.Errorf("rebound T = %q, want %q", got, "X-rastrillo.ui.cancel")
 	}
 }
@@ -319,7 +334,7 @@ func TestOptionsCompose(t *testing.T) {
 	myIcon := func(slug string) template.HTML { return template.HTML("<i></i>") }
 	fm := Funcs(WithT(func(key string, _ ...any) string { return "translated:" + key }),
 		WithIcons(myIcon, nil))
-	if got := fm["T"].(func(string, ...any) string)("k"); got != "translated:k" {
+	if got := call(t, fm, "T", "k"); got != "translated:k" {
 		t.Errorf("T not applied alongside WithIcons: %q", got)
 	}
 	if got := fm["icon"].(func(string) template.HTML)("check"); string(got) != "<i></i>" {
@@ -347,10 +362,7 @@ func TestFuncsWithResetsTheIconSeam(t *testing.T) {
 // semantics, available to a partial that has a value to place inside a
 // sentence (the error page's reference line is the first caller).
 func TestTfInterpolatesTheBaseCatalog(t *testing.T) {
-	fn, ok := Funcs()["Tf"].(func(string, ...any) string)
-	if !ok {
-		t.Fatalf("Funcs has no Tf entry of the T signature: %T", Funcs()["Tf"])
-	}
+	fn := func(args ...any) any { return call(t, Funcs(), "Tf", args...) }
 	if got, want := fn("rastrillo.ui.error_ref", "ref", "k3f9tq"), "Reference: k3f9tq"; got != want {
 		t.Errorf("Tf = %q, want %q", got, want)
 	}
@@ -369,12 +381,10 @@ func TestTfInterpolatesTheBaseCatalog(t *testing.T) {
 // takes args already, so a page rendered per request interpolates
 // through the app's lookup rather than the framework's English.
 func TestWithTRebindsTf(t *testing.T) {
-	fn, ok := FuncsWith(func(key string, args ...any) string {
+	f := FuncsWith(func(key string, args ...any) string {
 		return "app:" + key + ":" + fmt.Sprint(args...)
-	})["Tf"].(func(string, ...any) string)
-	if !ok {
-		t.Fatalf("FuncsWith left Tf unbound")
-	}
+	})
+	fn := func(args ...any) any { return call(t, f, "Tf", args...) }
 	if got, want := fn("k", "ref", "v"), "app:k:refv"; got != want {
 		t.Errorf("Tf = %q, want %q", got, want)
 	}
@@ -384,10 +394,7 @@ func TestWithTRebindsTf(t *testing.T) {
 // than one: seventeen parser words, JSON-encoded into a single attribute
 // so datetime.js gets its vocabulary without seventeen more attributes.
 func TestDateWordsIsJSONOfTheWholeVocabulary(t *testing.T) {
-	fn, ok := Funcs()["dateWords"].(func() string)
-	if !ok {
-		t.Fatalf("dateWords is %T, want func() string", Funcs()["dateWords"])
-	}
+	fn := func() string { return call(t, Funcs(), "dateWords").(string) }
 	var words map[string]string
 	if err := json.Unmarshal([]byte(fn()), &words); err != nil {
 		t.Fatalf("dateWords() is not valid JSON (%v): %s", err, fn())
@@ -414,10 +421,8 @@ func TestDateWordsIsJSONOfTheWholeVocabulary(t *testing.T) {
 // It resolves through the BOUND t, so WithT localises the vocabulary per
 // request exactly the way it localises every other partial default.
 func TestDateWordsFollowsTheBoundT(t *testing.T) {
-	fn, ok := FuncsWith(func(key string, _ ...any) string { return "X-" + key })["dateWords"].(func() string)
-	if !ok {
-		t.Fatal("FuncsWith did not rebind dateWords")
-	}
+	f := FuncsWith(func(key string, _ ...any) string { return "X-" + key })
+	fn := func() string { return call(t, f, "dateWords").(string) }
 	var words map[string]string
 	if err := json.Unmarshal([]byte(fn()), &words); err != nil {
 		t.Fatalf("rebound dateWords() is not valid JSON (%v): %s", err, fn())
@@ -432,7 +437,7 @@ func TestDateWordsFollowsTheBoundT(t *testing.T) {
 // Same input, same bytes: json.Marshal sorts map keys, so a page's markup
 // does not churn between renders (and neither do the docs goldens).
 func TestDateWordsIsDeterministic(t *testing.T) {
-	fn := Funcs()["dateWords"].(func() string)
+	fn := func() string { return call(t, Funcs(), "dateWords").(string) }
 	first := fn()
 	for i := 0; i < 20; i++ {
 		if got := fn(); got != first {
@@ -680,8 +685,8 @@ func TestTbdiEscapesAndSubstitutesOnce(t *testing.T) {
 }
 
 func TestTbdiFollowsARebindOfT(t *testing.T) {
-	fn := FuncsWith(func(key string, _ ...any) string { return "X {address}" })["Tbdi"].(func(string, ...any) template.HTML)
-	if got := string(fn("any", "address", "a@b.c")); got != "X <bdi>a@b.c</bdi>" {
+	f := FuncsWith(func(key string, _ ...any) string { return "X {address}" })
+	if got := string(call(t, f, "Tbdi", "any", "address", "a@b.c").(template.HTML)); got != "X <bdi>a@b.c</bdi>" {
 		t.Fatalf("Tbdi ignored the rebound T: %s", got)
 	}
 }

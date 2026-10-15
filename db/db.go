@@ -27,6 +27,7 @@ import (
 	"gorm.io/plugin/dbresolver"
 
 	"amadan.net/rastrillo/rastrillo/gormlite"
+	"amadan.net/rastrillo/rastrillo/internal/checkconfig"
 )
 
 // slogWriter adapts the app's *slog.Logger to GORM's logger.Writer.
@@ -47,6 +48,7 @@ type DB struct {
 }
 
 func Open(path string, log *slog.Logger) (*DB, error) {
+	checkconfig.Guard("db.Open")
 	if log == nil {
 		log = slog.Default()
 	}

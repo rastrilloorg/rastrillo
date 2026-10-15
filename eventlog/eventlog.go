@@ -69,6 +69,10 @@ type Event struct {
 type Log struct {
 	db     *sql.DB
 	writer string
+	// col is "payload" or "payload_v2", detected by Open. Queries
+	// splice it into their SQL: it is one of two fixed identifiers,
+	// never user input, and a column name cannot be a bound parameter.
+	col string
 
 	// Order, when set, replaces the default merge comparator for Events:
 	// a three-way compare over two events. The default (nil) is the
@@ -82,11 +86,19 @@ type Log struct {
 // is this instance's stream identity — every edge that appends must use
 // a distinct one, or two writers share a seq counter and the
 // single-writer-per-stream premise collapses. It must never be empty.
+//
+// Open finds which payload column the table has, payload or
+// payload_v2 (MoneySchema), so an app keeps working whether or not its
+// events carry money, and refuses a table with both or neither.
 func Open(db *sql.DB, writer string) (*Log, error) {
 	if writer == "" {
 		return nil, errors.New("rastrillo/eventlog: writer identity must not be empty")
 	}
-	return &Log{db: db, writer: writer}, nil
+	col, err := payloadColumn(db)
+	if err != nil {
+		return nil, err
+	}
+	return &Log{db: db, writer: writer, col: col}, nil
 }
 
 // Append records one event on stream and returns it as stored. payload
@@ -107,14 +119,96 @@ func (l *Log) Append(ctx context.Context, stream, kind, actor string, payload an
 		return Event{}, err
 	}
 	defer tx.Rollback()
+	ev, err := l.insert(ctx, tx, stream, kind, actor, raw)
+	if err != nil {
+		return Event{}, err
+	}
+	if err := tx.Commit(); err != nil {
+		return Event{}, err
+	}
+	return ev, nil
+}
 
+// AppendChecked is Append for a writer whose event is only valid on
+// top of the stream's history: check sees that history, in the order
+// Events returns it, and an error from it is returned as it is, with
+// nothing appended.
+//
+// The read, the check and the append share one BEGIN IMMEDIATE
+// transaction on one pinned connection, so nothing can be appended to
+// the stream between the history check judged and the event written.
+// Reading first and appending afterwards lets a racing writer slip in
+// between: an update checked against a stale history (an amount in EUR
+// on a field another request had cleared and refilled in USD) was then
+// written for good, and every later read of the stream failed. A plain
+// BEGIN would take the write lock only at the INSERT, after the read,
+// and under WAL a writer that committed in between fails that INSERT
+// with SQLITE_BUSY rather than letting the check see its event.
+func (l *Log) AppendChecked(ctx context.Context, stream, kind, actor string, payload any, check func(history []Event) error) (Event, error) {
+	if stream == "" || kind == "" {
+		return Event{}, errors.New("rastrillo/eventlog: stream and kind must not be empty")
+	}
+	raw, err := marshalPayload(payload)
+	if err != nil {
+		return Event{}, fmt.Errorf("rastrillo/eventlog: marshal payload: %w", err)
+	}
+	// BEGIN, the work and COMMIT must share a connection, and
+	// database/sql would otherwise hand each statement any idle one.
+	conn, err := l.db.Conn(ctx)
+	if err != nil {
+		return Event{}, err
+	}
+	defer conn.Close()
+	if _, err := conn.ExecContext(ctx, "BEGIN IMMEDIATE"); err != nil {
+		return Event{}, err
+	}
+	committed := false
+	defer func() {
+		if !committed {
+			// WithoutCancel: a cancelled request must still release the
+			// write lock, or every other writer waits out busy_timeout.
+			conn.ExecContext(context.WithoutCancel(ctx), "ROLLBACK")
+		}
+	}()
+	history, err := l.queryEvents(ctx, conn, eventsSQL(l.col), stream)
+	if err != nil {
+		return Event{}, err
+	}
+	if l.Order != nil {
+		slices.SortStableFunc(history, l.Order)
+	}
+	if err := check(history); err != nil {
+		return Event{}, err
+	}
+	ev, err := l.insert(ctx, conn, stream, kind, actor, raw)
+	if err != nil {
+		return Event{}, err
+	}
+	if _, err := conn.ExecContext(ctx, "COMMIT"); err != nil {
+		return Event{}, err
+	}
+	committed = true
+	return ev, nil
+}
+
+// txQuerier is what both a *sql.Tx and a pinned *sql.Conn offer, so
+// Append and AppendChecked stamp and insert an event the same way.
+type txQuerier interface {
+	ExecContext(context.Context, string, ...any) (sql.Result, error)
+	QueryContext(context.Context, string, ...any) (*sql.Rows, error)
+	QueryRowContext(context.Context, string, ...any) *sql.Row
+}
+
+// insert stamps raw with the stream's next lamport and this writer's
+// next seq and writes it, inside the caller's transaction.
+func (l *Log) insert(ctx context.Context, q txQuerier, stream, kind, actor string, raw json.RawMessage) (Event, error) {
 	var maxLamport, maxSeq int64
-	if err := tx.QueryRowContext(ctx,
+	if err := q.QueryRowContext(ctx,
 		`SELECT COALESCE(MAX(lamport), 0) FROM eventlog WHERE stream = ?`, stream).
 		Scan(&maxLamport); err != nil {
 		return Event{}, err
 	}
-	if err := tx.QueryRowContext(ctx,
+	if err := q.QueryRowContext(ctx,
 		`SELECT COALESCE(MAX(seq), 0) FROM eventlog WHERE stream = ? AND writer = ?`,
 		stream, l.writer).Scan(&maxSeq); err != nil {
 		return Event{}, err
@@ -125,26 +219,28 @@ func (l *Log) Append(ctx context.Context, stream, kind, actor string, payload an
 		Seq: maxSeq + 1, Lamport: maxLamport + 1,
 		TS: time.Now().UTC(), Actor: actor, Kind: kind, Payload: raw,
 	}
-	if _, err := tx.ExecContext(ctx,
-		`INSERT INTO eventlog (stream, writer, seq, lamport, ts, actor, kind, payload)
+	if _, err := q.ExecContext(ctx,
+		`INSERT INTO eventlog (stream, writer, seq, lamport, ts, actor, kind, `+l.col+`)
 		 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
 		ev.Stream, ev.Writer, ev.Seq, ev.Lamport, ev.TS.Format(time.RFC3339Nano),
 		ev.Actor, ev.Kind, string(ev.Payload)); err != nil {
 		return Event{}, err
 	}
-	if err := tx.Commit(); err != nil {
-		return Event{}, err
-	}
 	return ev, nil
+}
+
+// eventsSQL is one stream's history in the default merge order, read
+// by Events and, under the write lock, by AppendChecked.
+func eventsSQL(col string) string {
+	return `SELECT stream, writer, seq, lamport, ts, actor, kind, ` + col + `
+		 FROM eventlog WHERE stream = ?
+		 ORDER BY lamport, ts, writer, seq`
 }
 
 // Events returns a stream's full merged history in the deterministic
 // merge order (or Log.Order when set).
 func (l *Log) Events(ctx context.Context, stream string) ([]Event, error) {
-	out, err := l.queryEvents(ctx,
-		`SELECT stream, writer, seq, lamport, ts, actor, kind, payload
-		 FROM eventlog WHERE stream = ?
-		 ORDER BY lamport, ts, writer, seq`, stream)
+	out, err := l.queryEvents(ctx, l.db, eventsSQL(l.col), stream)
 	if err != nil {
 		return nil, err
 	}
@@ -165,8 +261,8 @@ func (l *Log) Events(ctx context.Context, stream string) ([]Event, error) {
 // "axb/…", and "bookmarks/" never matches "bookmarksarchive/…".
 func (l *Log) EventsByPrefix(ctx context.Context, prefix string) ([]Event, error) {
 	escaped := strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`).Replace(prefix)
-	out, err := l.queryEvents(ctx,
-		`SELECT stream, writer, seq, lamport, ts, actor, kind, payload
+	out, err := l.queryEvents(ctx, l.db,
+		`SELECT stream, writer, seq, lamport, ts, actor, kind, `+l.col+`
 		 FROM eventlog WHERE stream LIKE ? ESCAPE '\'
 		 ORDER BY lamport, ts, writer, seq`, escaped+"%")
 	if err != nil {
@@ -197,10 +293,10 @@ func (l *Log) EventsByPrefix(ctx context.Context, prefix string) ([]Event, error
 }
 
 // queryEvents runs one SELECT over the eventlog table and scans the
-// rows into Events — the shared read path under Events and
-// EventsByPrefix.
-func (l *Log) queryEvents(ctx context.Context, query string, args ...any) ([]Event, error) {
-	rows, err := l.db.QueryContext(ctx, query, args...)
+// rows into Events — the shared read path under Events,
+// EventsByPrefix and AppendChecked.
+func (l *Log) queryEvents(ctx context.Context, q querier, query string, args ...any) ([]Event, error) {
+	rows, err := q.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -283,7 +379,7 @@ func (l *Log) Ingest(ctx context.Context, events []Event) error {
 			return fmt.Errorf("rastrillo/eventlog: malformed event %+v", ev)
 		}
 		res, err := tx.ExecContext(ctx,
-			`INSERT OR IGNORE INTO eventlog (stream, writer, seq, lamport, ts, actor, kind, payload)
+			`INSERT OR IGNORE INTO eventlog (stream, writer, seq, lamport, ts, actor, kind, `+l.col+`)
 			 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
 			ev.Stream, ev.Writer, ev.Seq, ev.Lamport, ev.TS.UTC().Format(time.RFC3339Nano),
 			ev.Actor, ev.Kind, string(ev.Payload))
@@ -298,7 +394,7 @@ func (l *Log) Ingest(ctx context.Context, events []Event) error {
 			var lamport int64
 			var ts, kind, payload string
 			if err := tx.QueryRowContext(ctx,
-				`SELECT lamport, ts, kind, payload FROM eventlog
+				`SELECT lamport, ts, kind, `+l.col+` FROM eventlog
 				 WHERE stream = ? AND writer = ? AND seq = ?`,
 				ev.Stream, ev.Writer, ev.Seq).Scan(&lamport, &ts, &kind, &payload); err != nil {
 				return err

@@ -12,94 +12,122 @@ import (
 	"bytes"
 	"embed"
 	"fmt"
-	"html/template"
 	"io/fs"
 	"net/http"
 	"path"
 	"strings"
 
 	ticketsassets "tickets"
-	"tickets/gen/locales"
+	genlocales "tickets/gen/locales"
 
 	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/locales"
 	"amadan.net/rastrillo/rastrillo/ui"
 )
 
 //go:embed templates/layout.html
 var layoutFS embed.FS
 
-// pages is one template tree per generated screen, built once at
-// process start and keyed "<resource>/<page>" — internal/generate/
-// actions.go's page-name contract, restated in that package's own doc
-// comment. Unlike the blog's buildPages (internal/blog/view.go),
-// there is no bare-keyed entry for a hand screen and no second walk
-// over an ejection root: gen/templates is the only template source
-// this app has.
-var pages = buildPages()
+// App is this app's one template set and its render seam: a single
+// ui.Pages built once at NewApp, in every locale cfg offers. Unlike
+// the hand-rolled map[string]*template.Template this replaces, there
+// is one base (ui's partials and this layout) parsed once, not once
+// per language or request — NewPages' own doc comment.
+type App struct {
+	pages *ui.Pages
+}
 
-// buildPages parses ui's partials and the layout into a base tree,
-// then clones that base once per generated screen — the clone is what
-// lets every screen file define "content" under the same name without
-// the last one clobbering the rest (see the blog's buildPages doc for
-// the fuller explanation; the mechanism is identical here). T resolves
-// against gen/locales.BaseCatalog (genT, below) for every screen.
-func buildPages() map[string]*template.Template {
-	base := template.New("").Funcs(ui.Funcs()).Funcs(template.FuncMap{"T": genT})
-	base = template.Must(base.ParseFS(ui.Templates(), "*.html"))
-	base = template.Must(base.ParseFS(layoutFS, "templates/layout.html"))
-
+// genTemplatesSub is gen/templates, rooted so each page's path reads
+// "<resource>/<page>.html" — internal/generate/actions.go's page-name
+// contract. It is embedded at compile time (genassets.go), so this
+// can only fail if that embed directive and this Sub ever disagree.
+func genTemplatesSub() fs.FS {
 	sub, err := fs.Sub(ticketsassets.GenTemplatesFS, "gen/templates")
-	if err != nil {
-		panic(err) // gen/templates is embedded at compile time (genassets.go)
-	}
-	resDirs, err := fs.ReadDir(sub, ".")
 	if err != nil {
 		panic(err)
 	}
+	return sub
+}
 
-	out := make(map[string]*template.Template)
+// pageFiles is one ui.PageFile per generated screen under sub, keyed
+// "<resource>/<page>" so ui.NewPages clones the base once per screen:
+// every screen file defines "content" under the same name, and only a
+// clone per screen keeps the last one parsed from clobbering the rest
+// (ui.NewPages' own doc comment covers the mechanism; this app used to
+// do the walk and the cloning by hand before Task 23).
+func pageFiles(sub fs.FS) (map[string]ui.PageFile, error) {
+	resDirs, err := fs.ReadDir(sub, ".")
+	if err != nil {
+		return nil, err
+	}
+	out := map[string]ui.PageFile{}
 	for _, rd := range resDirs {
 		if !rd.IsDir() {
 			continue
 		}
 		files, err := fs.Glob(sub, rd.Name()+"/*.html")
 		if err != nil {
-			panic(err)
+			return nil, err
 		}
 		for _, f := range files {
 			key := rd.Name() + "/" + strings.TrimSuffix(path.Base(f), ".html")
-			t := template.Must(base.Clone())
-			t = template.Must(t.ParseFS(sub, f))
-			out[key] = t
+			out[key] = ui.PageFile{FS: sub, Path: f}
 		}
 	}
 	if len(out) == 0 {
-		panic("tickets: no generated page templates embedded")
+		return nil, fmt.Errorf("tickets: no generated page templates embedded")
 	}
-	return out
+	return out, nil
 }
 
-// genT resolves a manifest catalog key against gen/locales.BaseCatalog
-// directly — a plain map lookup, not rastrillo.T(r, key)/Locales.
-// Middleware. This app is monolingual today, so wiring Options.Locales
-// would install locale-prefix routing (/en/...) nothing here asked
-// for; genT reads the same map main.go wires as Options.BaseCatalog,
-// so the two can't drift apart (see the blog's genT, genrender.go, the
-// same reasoning). A missing key renders as the key itself, matching
-// (*rastrillo.Locales).T's own fallback.
-func genT(key string) string {
-	if v, ok := locales.BaseCatalog[key]; ok {
-		return v
+// NewApp builds the one template set this app serves from: the
+// generated screens cloned onto this app's layout, strict in every
+// locale cfg offers (ui.Pages' own doc comment). cfg is
+// locales.CheckConfig's result — main.go gets it from
+// rastrillo.Handler's own validation, this call is only to read the
+// value back.
+//
+// This app ships no locales/<code>.toml of its own (genlocales.
+// BaseCatalog is English only), so an offered locale with no app
+// translation falls back to English for app keys while the
+// framework's own chrome (the switcher, money) still renders in that
+// locale — the layered catalogs' contract (ui.Pages' doc comment),
+// not a gap this app has to close.
+func NewApp(cfg locales.Config) (*App, error) {
+	pages, err := pageFiles(genTemplatesSub())
+	if err != nil {
+		return nil, err
 	}
-	return key
+	p, err := ui.NewPages(ui.PagesConfig{
+		App:     layoutFS,
+		Layout:  "templates/layout.html",
+		Pages:   pages,
+		Locale:  cfg,
+		Catalog: genlocales.BaseCatalog,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &App{pages: p}, nil
+}
+
+// Middleware puts the request's localizer on the context, for every
+// page this app renders — ui.Pages' own Middleware.
+func (a *App) Middleware(next http.Handler) http.Handler {
+	return a.pages.Middleware(next)
 }
 
 // Head carries what the layout's <head> needs.
 type Head struct{ Title string }
 
-// pageData is "layout"'s one data value: Head carries what <head>
-// needs, Data is passed through to "content" untouched.
+// pageData is "layout"'s one data value. It embeds the ui.Localized
+// copied off the view Render is handed, so the layout finds L (strict
+// dispatch needs it non-nil), Locales and Return under their usual
+// names (Task 14) without this app re-deriving any of them from the
+// request itself. Head carries what <head> needs, and Data is passed
+// through to "content" untouched.
 type pageData struct {
+	ui.Localized
 	Head Head
 	Data any
 }
@@ -124,25 +152,36 @@ func genHead(page string) Head {
 	}
 }
 
-// Render executes one page's "layout" into a buffer and only then
-// writes the status and the bytes, so a template error is a clean 500
-// rather than half a page followed by a stack trace.
+// notAViewMsg is Appendix C.2's op.render.not_a_view, verbatim: data
+// that is not a generated view carries none of the request values
+// (L, Locales, Return) the layout needs, so this fails loudly rather
+// than let a type-assertion panic hide which page was wrong, or let
+// strict rendering turn it into a less specific template error.
+const notAViewMsg = "page %q: the data has no request values, because it is not a generated view; nothing was rendered"
+
+// Render wraps data (a generated view: formView, listView, showView
+// or confirmView) in the layout's data and executes the one template
+// set NewApp built, writing the status and the bytes only once the
+// whole page has rendered — ui.Pages.Execute's own guarantee, so a
+// template error is a clean 500 rather than half a page followed by
+// whatever came after it failed.
 //
 // This is the one seam every generated action's ctx.Render call
-// resolves to (main.go wires it: &rastrillo.Ctx{Render: tickets.
-// Render}) — the only render adapter this app has, since there is no
-// hand screen and no ejected template needing anything more (contrast
-// the blog's Render, which also special-cases "posts/form" to enrich
-// the generated data with hand-owned fields; this app never does).
-func Render(ctx *rastrillo.Ctx, w http.ResponseWriter, page string, status int, data any) {
-	t, ok := pages[page]
+// resolves to (main.go wires it: &rastrillo.Ctx{Render: app.Render}) —
+// the only render adapter this app has, since there is no hand screen
+// and no ejected template needing anything more (contrast the blog's
+// Render, which also special-cases "posts/form" to enrich the
+// generated data with hand-owned fields; this app never does).
+func (a *App) Render(ctx *rastrillo.Ctx, w http.ResponseWriter, page string, status int, data any) {
+	v, ok := data.(interface{ Request() ui.Localized })
 	if !ok {
-		Fail(ctx, w, "rendering "+page, fmt.Errorf("no such page template"))
+		a.fail(ctx, w, fmt.Sprintf(notAViewMsg, page))
 		return
 	}
+	pd := pageData{Localized: v.Request(), Head: genHead(page), Data: data}
 	var buf bytes.Buffer
-	if err := t.ExecuteTemplate(&buf, "layout", pageData{Head: genHead(page), Data: data}); err != nil {
-		Fail(ctx, w, "rendering "+page, err)
+	if err := a.pages.Execute(&buf, page, pd); err != nil {
+		a.fail(ctx, w, fmt.Sprintf("rendering %s: %v", page, err))
 		return
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -150,14 +189,13 @@ func Render(ctx *rastrillo.Ctx, w http.ResponseWriter, page string, status int, 
 	w.Write(buf.Bytes())
 }
 
-// Fail logs through Ctx.Logger and answers a plain 500. Every store
-// error a generated action doesn't already handle itself lands here
-// only through this package's own Render — the generated actions call
-// their own unexported fail helper directly (internal/generate/
-// actions.go's helperFuncs), never this one.
-func Fail(ctx *rastrillo.Ctx, w http.ResponseWriter, what string, err error) {
+// fail logs through Ctx.Logger and answers a plain 500 — the same
+// shape the generated actions' own unexported fail helper uses
+// (internal/generate/actions.go's helperFuncs), kept here only for
+// this package's one Render seam.
+func (a *App) fail(ctx *rastrillo.Ctx, w http.ResponseWriter, what string) {
 	if ctx != nil && ctx.Logger != nil {
-		ctx.Logger.Error("tickets: "+what, "err", err)
+		ctx.Logger.Error("tickets: " + what)
 	}
 	http.Error(w, "Something went wrong.", http.StatusInternalServerError)
 }

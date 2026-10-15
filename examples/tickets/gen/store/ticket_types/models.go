@@ -5,11 +5,12 @@
 package ticket_typesstore
 
 type TicketType struct {
-	ID          int64
-	Name        string
-	Price       int64
-	Status      string
-	MaxPerOrder string
-	CreatedAt   string
-	UpdatedAt   string
+	ID            int64
+	Name          string
+	PriceMinor    *int64
+	PriceCurrency *string
+	Status        string
+	MaxPerOrder   string
+	CreatedAt     string
+	UpdatedAt     string
 }

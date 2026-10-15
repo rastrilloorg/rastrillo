@@ -19,47 +19,86 @@ import (
 	"strings"
 
 	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/internal/generate/bootgen"
+	"amadan.net/rastrillo/rastrillo/internal/generate/packs"
 	"amadan.net/rastrillo/rastrillo/internal/manifest"
 )
+
+// Generated is what one GenerateManifests run produced, for pruning.
+type Generated struct {
+	// Written is every file the run emitted, changed or not, named
+	// under genDir even in check-only mode, where it wrote elsewhere.
+	Written []string
+	// ExclusiveStores are the store directories sqlc writes into this
+	// run; sqlc output anywhere else is stale.
+	ExclusiveStores []string
+	// Appended is one op.generate.migration_appended line per statement
+	// this run added to a released migrations.go. Empty in check-only
+	// mode, which writes nothing the app keeps.
+	Appended []string
+	// MoneySchemaAdded is one op.generate.money_schema_added line per
+	// resource whose events carry money, when this run added the event
+	// log's rename to gen/boot.go. Empty in check-only mode, whose
+	// boot.go is written to a temp dir and so always looks new.
+	MoneySchemaAdded []string
+}
 
 // GenerateManifests is the one entry cmd/rastrillo calls: load,
 // artifact → gen/manifest.json, all emitters, sqlc, then the checks.
 // check-only mode runs everything into a temp dir and diffs against
 // gen/ (idempotency + collision without touching the tree).
-func GenerateManifests(moduleRoot, genDir string, checkOnly bool) error {
+func GenerateManifests(moduleRoot, genDir string, checkOnly bool) (Generated, error) {
 	rs, err := manifest.Load(moduleRoot, filepath.Join(moduleRoot, "manifest"))
-	if err != nil {
-		return err
+	if err != nil || len(rs) == 0 {
+		return Generated{}, err
 	}
-	if len(rs) == 0 {
-		return nil
+	var out Generated
+	for _, r := range rs {
+		if r.Store != rastrillo.Mergeable {
+			out.ExclusiveStores = append(out.ExclusiveStores, filepath.Join(genDir, "store", r.Name))
+		}
 	}
 
 	collisions, err := routeCollisions(filepath.Join(moduleRoot, "actions"), rs)
 	if err != nil {
-		return err
+		return Generated{}, err
 	}
 	if len(collisions) > 0 {
-		return fmt.Errorf("%s%d route collision(s); build fails loudly on purpose (design doc §4)",
+		return Generated{}, fmt.Errorf("%s%d route collision(s); build fails loudly on purpose (design doc §4)",
 			FormatCollisions(collisions), len(collisions))
 	}
 
+	// Read once, from the real tree, before choosing where to write:
+	// check-only mode writes into an empty temp dir and must emit from
+	// the same released statements generate does.
+	h, err := ReadHistory(genDir, rs)
+	if err != nil {
+		return Generated{}, err
+	}
+
 	if !checkOnly {
-		_, err := emitPipeline(moduleRoot, genDir, rs, true)
-		return err
+		out.Written, out.Appended, out.MoneySchemaAdded, err = emitPipeline(moduleRoot, genDir, rs, h, true)
+		return out, err
 	}
 
 	tmp, err := os.MkdirTemp("", "rastrillo-manifest-check-")
 	if err != nil {
-		return err
+		return Generated{}, err
 	}
 	defer os.RemoveAll(tmp)
 
-	tmpPaths, err := emitPipeline(moduleRoot, tmp, rs, false)
+	tmpPaths, _, _, err := emitPipeline(moduleRoot, tmp, rs, h, false)
 	if err != nil {
-		return err
+		return Generated{}, err
 	}
-	return diffGenerated(tmp, genDir, tmpPaths)
+	for _, p := range tmpPaths {
+		rel, err := filepath.Rel(tmp, p)
+		if err != nil {
+			return Generated{}, err
+		}
+		out.Written = append(out.Written, filepath.Join(genDir, rel))
+	}
+	return out, diffGenerated(tmp, genDir, tmpPaths)
 }
 
 // emitPipeline runs rs through every emitter into genDir: gen/manifest.json,
@@ -78,18 +117,20 @@ func GenerateManifests(moduleRoot, genDir string, checkOnly bool) error {
 // (never a skipped one — a skip means a hand file already owns that
 // path, so there is nothing of the orchestrator's own to compare
 // there) for the idempotency check to diff against a second run.
-func emitPipeline(moduleRoot, genDir string, rs []rastrillo.Resource, runSqlc bool) ([]string, error) {
-	var written []string
-
+//
+// h is the released migration statements, read from the app's real
+// gen/ tree whatever genDir is; appended is EmitStore's, notices
+// bootgen.Emit's.
+func emitPipeline(moduleRoot, genDir string, rs []rastrillo.Resource, h History, runSqlc bool) (written, appended, notices []string, err error) {
 	manifestPath := filepath.Join(genDir, "manifest.json")
 	if err := writeFileIfChanged(manifestPath, manifest.Artifact(rs)); err != nil {
-		return nil, fmt.Errorf("manifest.json: %w", err)
+		return nil, nil, nil, fmt.Errorf("manifest.json: %w", err)
 	}
 	written = append(written, manifestPath)
 
-	storePaths, err := EmitStore(genDir, rs)
+	storePaths, appended, err := EmitStore(genDir, rs, h)
 	if err != nil {
-		return nil, err
+		return nil, nil, nil, err
 	}
 	written = append(written, storePaths...)
 
@@ -98,7 +139,7 @@ func emitPipeline(moduleRoot, genDir string, rs []rastrillo.Resource, runSqlc bo
 	// skips it) and needs no sqlc tool at all.
 	if runSqlc && hasExclusiveStore(rs) {
 		if err := RunSqlc(moduleRoot); err != nil {
-			return nil, err
+			return nil, nil, nil, err
 		}
 	}
 
@@ -116,31 +157,84 @@ func emitPipeline(moduleRoot, genDir string, rs []rastrillo.Resource, runSqlc bo
 	for _, r := range rs {
 		tw, _, err := EmitTemplates(moduleRoot, genDir, r)
 		if err != nil {
-			return nil, err
+			return nil, nil, nil, err
 		}
 		if err := claim(tw, r.Name); err != nil {
-			return nil, err
+			return nil, nil, nil, err
 		}
 		written = append(written, tw...)
 
 		aw, _, err := EmitActions(moduleRoot, genDir, r)
 		if err != nil {
-			return nil, err
+			return nil, nil, nil, err
 		}
 		if err := claim(aw, r.Name); err != nil {
-			return nil, err
+			return nil, nil, nil, err
 		}
 		written = append(written, aw...)
 	}
 
 	if err := EmitLocales(genDir, "en", rs); err != nil {
-		return nil, err
+		return nil, nil, nil, err
 	}
 	written = append(written,
 		filepath.Join(genDir, "locales", "en.toml"),
 		filepath.Join(genDir, "locales", "locales.go"))
 
-	return written, nil
+	events, err := eventStores(moduleRoot, rs)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	boot, notices, err := bootgen.Emit(genDir, rs, sqlMoneyTables(rs), events)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	return append(written, boot...), appended, notices, nil
+}
+
+// eventStores is Boot's replay check: every mergeable store, sorted by
+// name, and which carry money, which decides the event-log upgrade.
+// That a store carries money is declared by its manifest, never found
+// in the data (spec §8).
+func eventStores(moduleRoot string, rs []rastrillo.Resource) ([]bootgen.EventStore, error) {
+	module, err := actionsModulePath(moduleRoot)
+	if err != nil {
+		return nil, err
+	}
+	var out []bootgen.EventStore
+	for _, r := range rs {
+		if r.Store != rastrillo.Mergeable {
+			continue
+		}
+		alias, path := storeImport(r, module)
+		out = append(out, bootgen.EventStore{Name: r.Name, Alias: alias, Path: path, Money: len(mergeableMoney(r)) > 0})
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].Name < out[j].Name })
+	return out, nil
+}
+
+// sqlMoneyTables is Boot's SQL money upgrade: every exclusive store
+// with money, sorted by name so a regeneration writes the same file,
+// its money fields by the column names columns(r) gives the queries.
+func sqlMoneyTables(rs []rastrillo.Resource) []bootgen.Table {
+	sorted := append([]rastrillo.Resource(nil), rs...)
+	sort.Slice(sorted, func(i, j int) bool { return sorted[i].Name < sorted[j].Name })
+	var out []bootgen.Table
+	for _, r := range sorted {
+		if r.Store == rastrillo.Mergeable {
+			continue
+		}
+		var fields []string
+		for _, c := range columns(r) {
+			if c.Kind == rastrillo.Money {
+				fields = append(fields, c.SQL)
+			}
+		}
+		if len(fields) > 0 {
+			out = append(out, bootgen.Table{Name: r.Name, Fields: fields, Legacy: r.Legacy})
+		}
+	}
+	return out
 }
 
 // hasExclusiveStore reports whether any resource uses the exclusive
@@ -388,9 +482,10 @@ func diffGenerated(tmpDir, genDir string, tmpPaths []string) error {
 }
 
 // extraLocaleFiles returns the basenames present in genDir/locales but
-// absent from tmpDir/locales — that directory is fully owned by
-// EmitLocales (nothing else in this pipeline writes there), so a full
-// listing comparison is safe.
+// absent from tmpDir/locales. Within this pipeline only EmitLocales
+// writes there, so a full listing comparison is safe; the packs files
+// beside its output are internal/generate/packs', checked by its own
+// Stale, and counting them here would fail every app's --check.
 func extraLocaleFiles(tmpDir, genDir string) ([]string, error) {
 	want, err := localeFileSet(filepath.Join(tmpDir, "locales"))
 	if err != nil {
@@ -402,7 +497,7 @@ func extraLocaleFiles(tmpDir, genDir string) ([]string, error) {
 	}
 	var extra []string
 	for name := range got {
-		if !want[name] {
+		if !want[name] && !packs.Owns(name) {
 			extra = append(extra, filepath.Join("locales", name))
 		}
 	}

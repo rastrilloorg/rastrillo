@@ -338,11 +338,10 @@ var sourceTmpl = template.Must(template.New("icons.go").Funcs(template.FuncMap{
 // vocabulary, so {{"{{icon \"search\"}}"}} means the same thing in every
 // app and the shipped ui/ partials never have to change.
 //
-// Wire both seams onto your template tree:
+// Pass both seams to ui.Pages with the app's other functions, in
+// render.go:
 //
-//	tmpl := template.Must(template.New("").
-//	        Funcs(ui.Funcs(ui.WithIcons(icons.Icon, icons.Assets))).
-//	        ParseFS(ui.Templates(), "*.html"))
+//	Funcs: template.FuncMap{"icon": icons.Icon, "iconAssets": icons.Assets, "asset": assets.Path},
 //
 // Every icon is aria-hidden: it sits beside its own visible text label,
 // which is the accessible name. A control that uses an icon as its ONLY

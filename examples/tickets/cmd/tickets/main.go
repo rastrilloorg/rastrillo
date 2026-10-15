@@ -11,6 +11,7 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"log/slog"
 	"net/http"
@@ -18,10 +19,11 @@ import (
 	"slices"
 
 	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/locales"
 
 	ticketsassets "tickets"
 	"tickets/gen"
-	"tickets/gen/locales"
+	genlocales "tickets/gen/locales"
 	announcementsstore "tickets/gen/store/announcements"
 	ticket_typesstore "tickets/gen/store/ticket_types"
 	"tickets/internal/tickets"
@@ -43,24 +45,57 @@ func main() {
 	err := rastrillo.Run(rastrillo.Options{
 		DBPath:      "tickets.db",
 		Migrations:  slices.Concat(ticket_typesstore.Migrations, announcementsstore.Migrations),
-		BaseCatalog: locales.BaseCatalog,
+		BaseCatalog: genlocales.BaseCatalog,
 		Logger:      logger,
+		// Locales and DefaultLocale come from manifest/app.toml, through
+		// gen/locales. Boot refuses a configuration whose packs this
+		// binary does not link.
+		Locales:       genlocales.Locales,
+		DefaultLocale: genlocales.DefaultLocale,
 		Router: func(db *sql.DB) (*http.ServeMux, error) {
+			// Boot runs here because Router is called after OpenDB has
+			// applied Migrations, the schema Boot upgrades and checks;
+			// its error stops the start rather than serve that data.
+			booted, err := gen.Boot(context.Background(), db)
+			if err != nil {
+				return nil, err
+			}
+
+			// locales.CheckConfig already ran inside rastrillo.Handler
+			// (Options.Locales/DefaultLocale above); this call is only
+			// to get its result back, for ui.Pages to format and
+			// dispatch by (Task 9, 13).
+			cfg, err := locales.CheckConfig(genlocales.DefaultLocale, genlocales.Locales)
+			if err != nil {
+				return nil, err
+			}
+			app, err := tickets.NewApp(cfg)
+			if err != nil {
+				return nil, err
+			}
+
 			// A fresh Ctx per request. Actor.Human is true and
 			// Actor.Name empty: honest for an app with no auth (see
 			// the blog's F7). Render is the manifest system's seam
 			// (design doc): every one of gen/router.go's seven routes
-			// is a generated action, and tickets.Render is the only
+			// is a generated action, and app.Render is the only
 			// function any of them ever calls into.
-			mux := gen.Router(func(*http.Request) *rastrillo.Ctx {
-				return &rastrillo.Ctx{DB: db, Logger: logger, Actor: rastrillo.Actor{Human: true}, Render: tickets.Render}
+			mux := gen.Router(booted, func(*http.Request) *rastrillo.Ctx {
+				return &rastrillo.Ctx{DB: db, Logger: logger, Actor: rastrillo.Actor{Human: true}, Render: app.Render}
 			})
 
 			// The app serves its own static files — the framework
 			// never does. They are embedded (assets.go), so the
 			// binary is self-contained wherever it starts (F8).
 			mux.Handle("GET /static/", http.FileServerFS(ticketsassets.StaticFS))
-			return mux, nil
+
+			// app.Middleware puts the request's localizer on the
+			// context (ui.Pages.Middleware); Router must return a
+			// *http.ServeMux, so an outer one carries it instead of
+			// wrapping mux in place.
+			outer := http.NewServeMux()
+			outer.Handle("/", app.Middleware(mux))
+			return outer, nil
 		},
 	})
 	if err != nil {

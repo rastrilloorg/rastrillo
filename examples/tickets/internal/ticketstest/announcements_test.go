@@ -142,6 +142,11 @@ func TestAnnouncementsDeleteIsATombstone(t *testing.T) {
 	for _, ev := range events {
 		if ev.Stream == stream {
 			kinds = append(kinds, ev.Kind)
+			// The tombstone too: a later binary reads the version before
+			// the kind, so an unversioned delete would be legacy data.
+			if !strings.Contains(string(ev.Payload), `"V":2`) {
+				t.Errorf("%s event payload %s has no \"V\":2", ev.Kind, ev.Payload)
+			}
 		}
 	}
 	want := []string{"created", "updated", "deleted"}

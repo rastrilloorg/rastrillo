@@ -28,6 +28,9 @@
   {"id": "ja-next-week", "lang": "ja", "input": "来週", "now": "2026-08-28T10:30", "expected": "2026-09-04T09:00"},
   {"id": "vi-multi-word-today", "lang": "vi", "input": "hôm nay", "now": "2026-08-28T10:30", "expected": "2026-08-28T09:00"},
   {"id": "pt-hyphenated-noon", "lang": "pt", "input": "meio-dia", "now": "2026-08-28T10:30", "expected": "2026-08-28T12:00"},
+  {"id": "pt-PT-hyphenated-noon", "lang": "pt-PT", "input": "meio-dia", "now": "2026-08-28T10:30", "expected": "2026-08-28T12:00"},
+  {"id": "pt-own-display-reads-back", "lang": "pt", "input": "sex., 25 de dez. de 2026", "now": "2026-08-28T10:30", "expected": "2026-12-25T09:00"},
+  {"id": "pt-own-datetime-display-reads-back", "lang": "pt", "input": "sex., 25 de dez. de 2026, 15:30", "now": "2026-08-28T10:30", "expected": "2026-12-25T15:30"},
   {"id": "hi-kal-reads-as-tomorrow", "lang": "hi", "input": "कल", "now": "2026-08-28T10:30", "expected": "2026-08-29T09:00"},
   {"id": "bn-kal-reads-as-tomorrow", "lang": "bn", "input": "কাল", "now": "2026-08-28T10:30", "expected": "2026-08-29T09:00"},
   {"id": "ga-accent-folded", "lang": "ga", "input": "amarach", "now": "2026-08-28T10:30", "expected": "2026-08-29T09:00"},
@@ -41,5 +44,11 @@
   {"id": "ja-zero-hour-afternoon-is-noon", "lang": "ja", "input": "午後0時", "now": "2026-08-28T10:30", "expected": "2026-08-28T12:00"},
   {"id": "zh-zero-hour-morning-is-midnight", "lang": "zh-Hans", "input": "上午0点", "now": "2026-08-28T10:30", "expected": "2026-08-28T00:00"},
   {"id": "zh-zero-hour-afternoon-is-noon", "lang": "zh-Hans", "input": "下午0点", "now": "2026-08-28T10:30", "expected": "2026-08-28T12:00"},
-  {"id": "ja-zero-hour-and-minutes", "lang": "ja", "input": "午前0時30分", "now": "2026-08-28T10:30", "expected": "2026-08-28T00:30"}
+  {"id": "ja-zero-hour-and-minutes", "lang": "ja", "input": "午前0時30分", "now": "2026-08-28T10:30", "expected": "2026-08-28T00:30"},
+  {"id": "en-weekday-beside-a-numeric-date-and-clock", "lang": "en", "input": "Fri, 25/12/2026, 15:30", "now": "2026-08-28T10:30", "expected": "2026-12-25T15:30"},
+  {"id": "en-weekday-beside-a-numeric-date", "lang": "en", "input": "Wed 3.3.2027", "now": "2026-08-28T10:30", "expected": "2027-03-03T09:00"},
+  {"id": "en-numeric-date-and-clock", "lang": "en", "input": "25/12/2026 15:30", "now": "2026-08-28T10:30", "expected": "2026-12-25T15:30"},
+  {"id": "en-numeric-date-month-first-when-only-that-reads", "lang": "en", "input": "Fri 12/25/2026", "now": "2026-08-28T10:30", "expected": "2026-12-25T09:00"},
+  {"id": "en-weekday-cannot-arbitrate-day-month", "lang": "en", "input": "Wed 03/04/2026", "now": "2026-08-28T10:30", "expected": "2026-04-03T09:00"},
+  {"id": "en-numeric-date-impossible-day", "lang": "en", "input": "Fri, 31/02/2026", "now": "2026-08-28T10:30", "expected": null}
 ]

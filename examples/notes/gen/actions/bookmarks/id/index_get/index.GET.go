@@ -10,6 +10,7 @@ import (
 
 	"amadan.net/rastrillo/rastrillo"
 	"amadan.net/rastrillo/rastrillo/sessions"
+	"amadan.net/rastrillo/rastrillo/ui"
 	"amadan.net/rastrillo/rastrillo/view"
 	bookmarksstore "notes/gen/store/bookmarks"
 )
@@ -38,8 +39,9 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 	}
 
 	view.Render(ctx, w, "bookmarks/show", http.StatusOK, showView{
-		Title:    n.Title,
-		EditHref: fmt.Sprintf("/bookmarks/%d/edit", id),
+		Localized: ui.ForRequest(r),
+		Title:     n.Title,
+		EditHref:  fmt.Sprintf("/bookmarks/%d/edit", id),
 		Fields: map[string]string{
 			"Title": n.Title,
 			"Link":  n.Link,
@@ -49,6 +51,7 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 }
 
 type showView struct {
+	ui.Localized
 	Title    string
 	EditHref string
 	Fields   map[string]string

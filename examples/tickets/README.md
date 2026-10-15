@@ -73,14 +73,14 @@ even applies — there is no generator input to trip over.
   ticket_types/{list,show,form}.html`, `gen/actions/admin/
   ticket_types/...` (all seven), `gen/locales/`, `gen/router.go`,
   `gen/manifest.json`. Never hand-edited.
-- `internal/tickets/render.go` — the one seam a generated action needs
-  and cannot reach itself (`Ctx.Render`): parses `ui`'s partials plus
-  `gen/templates` into one tree per screen, keyed
-  `"<resource>/<page>"`, and executes the shared layout. No hand view
-  model, no ejection-root walk, no per-screen enrichment — contrast
-  the blog's `internal/blog/genrender.go`, which exists only because
-  that app *does* have hand screens and ejected templates to
-  reconcile.
+- `internal/tickets/render.go`: the one seam a generated action needs
+  and cannot reach itself (`Ctx.Render`). It hands `ui.Pages` one page
+  per generated screen, keyed `"<resource>/<page>"`, with the shared
+  layout; `ui.Pages` parses `ui`'s partials and the layout once and
+  makes one copy per screen. No hand view model, no ejection-root walk,
+  no per-screen enrichment. Contrast the blog's
+  `internal/blog/genrender.go`, which exists only because that app
+  *does* have hand screens and ejected templates to reconcile.
 - `internal/tickets/templates/layout.html` — the one shell every
   screen renders inside.
 - `assets.go` / `genassets.go` — `static/` and `gen/templates` embedded

@@ -3,6 +3,8 @@ package rastrillo
 import (
 	"errors"
 	"reflect"
+	"regexp"
+	"sort"
 	"strings"
 	"testing"
 
@@ -44,7 +46,7 @@ func TestBaseCatalogIsACopy(t *testing.T) {
 // catalog holds exactly the en key set, so a locale can never be
 // silently missing a string that en has.
 func TestBaseCatalogsShareOneKeySet(t *testing.T) {
-	want := []string{"en", "ga", "zh-Hans", "es", "hi", "pt", "bn", "ru", "ja", "yue", "vi", "ar"}
+	want := []string{"en", "ga", "zh-Hans", "es", "hi", "pt-PT", "bn", "ru", "ja", "yue", "vi", "ar"}
 	if got := BaseLocales(); !reflect.DeepEqual(got, want) {
 		t.Fatalf("BaseLocales = %v, want %v", got, want)
 	}
@@ -136,6 +138,33 @@ func TestTheShellAndRowMenuStringsAreInEveryCatalog(t *testing.T) {
 			}
 			if code != "en" && v == en[key] {
 				t.Errorf("%s.toml: %s is still the English %q", code, key, v)
+			}
+		}
+	}
+}
+
+// A money error's placeholders are the amounts and the currency the
+// person has to choose between. A translation that drops {a} or {b}
+// still reads as a sentence, so nobody notices that the choice it
+// offers is gone; one that adds a brace prints it raw.
+func TestMoneyErrorPlaceholdersSurviveTranslation(t *testing.T) {
+	placeholder := regexp.MustCompile(`\{[a-z]+\}`)
+	all := BaseCatalogs()
+	en := all["en"]
+	for key, v := range en {
+		if !strings.HasPrefix(key, "rastrillo.ui.money_") {
+			continue
+		}
+		want := placeholder.FindAllString(v, -1)
+		sort.Strings(want)
+		for code, c := range all {
+			got := placeholder.FindAllString(c[key], -1)
+			sort.Strings(got)
+			if !reflect.DeepEqual(got, want) || strings.Count(c[key], "{") != len(want) {
+				t.Errorf("%s.toml: %s = %q carries %v, want %v", code, key, c[key], got, want)
+			}
+			if strings.Contains(c[key], "—") {
+				t.Errorf("%s.toml: %s = %q contains an em dash", code, key, c[key])
 			}
 		}
 	}

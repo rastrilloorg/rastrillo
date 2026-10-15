@@ -8,3 +8,4 @@ sql:
       go:
         package: "postsstore"
         out: "posts"
+        emit_pointers_for_null_types: true

@@ -453,13 +453,20 @@ func LayoutNames() []string { return append([]string(nil), layoutNames...) }
 // A shell is a page frame with holes in it. It executes
 // {{template "content" .}} for the page's own body, and every piece of
 // chrome around that is a block with a working default a page overrides
-// by redefining it: title, lang, dir and head in all five, plus brand,
-// nav, account and locale in the three chrome shells, and foot in
-// topbar and console. stage has backdrop — the picture behind its
-// card — and foot instead of chrome; its foot is the whole element,
-// not the inside of one. No block reads a field off the data, so a shell
-// renders the same whether a handler passes a struct, a dict-built
-// map, or nil.
+// by redefining it: title, lang, dir and head in all five, locale in
+// all but stage, plus brand, nav and account in the three chrome
+// shells, and foot in topbar and console. stage has backdrop — the
+// picture behind its card — and foot instead of chrome; its foot is
+// the whole element, not the inside of one.
+//
+// lang and dir default to the localizer's identity and direction, and
+// locale to the switcher over the data's Locales and Return, so the
+// shells need ui's partials parsed beside them. No block reads a field
+// off the data with .Field, which is an Execute error on a struct
+// without it: the localizer comes through localizer and the two keys
+// through opt, so a shell renders whether a handler passes a struct, a
+// dict-built map, or nil, and without a localizer it says lang="en"
+// dir="ltr" as it always did.
 //
 // console is the fourth: a bar across the top AND a rail down the
 // side, which is what most admin consoles are and what neither topbar

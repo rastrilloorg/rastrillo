@@ -3,6 +3,7 @@
 package gen
 
 import (
+	"log/slog"
 	"net/http"
 
 	"amadan.net/rastrillo/rastrillo"
@@ -22,41 +23,78 @@ import (
 // on the request context (rastrillo.WithActor — the tools dispatcher's
 // doing) lands on Ctx.Actor after the factory runs, so agent calls are
 // attributed even when the app factory never thinks about actors.
-func Router(ctxFactory func(*http.Request) *rastrillo.Ctx) *http.ServeMux {
+//
+// b is gen.Boot's result for the database the app serves. Router
+// panics if Boot has not run, and a request whose Ctx carries a
+// different database answers 500.
+func Router(b Booted, ctxFactory func(*http.Request) *rastrillo.Ctx) *http.ServeMux {
+	if b.db == nil {
+		panic("gen.Router: gen.Boot has not run for this database; call it after the schema is applied and before serving")
+	}
 	mux := http.NewServeMux()
-	handle := func(r *http.Request) *rastrillo.Ctx {
+	handle := func(w http.ResponseWriter, r *http.Request) *rastrillo.Ctx {
 		c := ctxFactory(r)
 		if a, ok := rastrillo.ActorFromContext(r.Context()); ok {
 			c.Actor = a
 		}
+		if c.DB == nil {
+			c.DB = b.db
+		}
+		if c.DB != b.db {
+			logger := c.Logger
+			if logger == nil {
+				logger = slog.Default()
+			}
+			logger.Error("gen.Router: this request's database is not the one gen.Boot checked; pass the same *sql.DB to gen.Boot and to the router's contexts")
+			http.Error(w, "Something went wrong.", http.StatusInternalServerError)
+			return nil
+		}
 		return c
 	}
 	mux.HandleFunc("GET /bookmarks", func(w http.ResponseWriter, r *http.Request) {
-		act_bookmarks_index_get.Handle(handle(r), w, r)
+		if c := handle(w, r); c != nil {
+			act_bookmarks_index_get.Handle(c, w, r)
+		}
 	})
 	mux.HandleFunc("POST /bookmarks", func(w http.ResponseWriter, r *http.Request) {
-		act_bookmarks_index_post.Handle(handle(r), w, r)
+		if c := handle(w, r); c != nil {
+			act_bookmarks_index_post.Handle(c, w, r)
+		}
 	})
 	mux.HandleFunc("GET /bookmarks/new", func(w http.ResponseWriter, r *http.Request) {
-		act_bookmarks_new_get.Handle(handle(r), w, r)
+		if c := handle(w, r); c != nil {
+			act_bookmarks_new_get.Handle(c, w, r)
+		}
 	})
 	mux.HandleFunc("GET /bookmarks/{id}", func(w http.ResponseWriter, r *http.Request) {
-		act_bookmarks_id_index_get.Handle(handle(r), w, r)
+		if c := handle(w, r); c != nil {
+			act_bookmarks_id_index_get.Handle(c, w, r)
+		}
 	})
 	mux.HandleFunc("GET /bookmarks/{id}/edit", func(w http.ResponseWriter, r *http.Request) {
-		act_bookmarks_id_edit_get.Handle(handle(r), w, r)
+		if c := handle(w, r); c != nil {
+			act_bookmarks_id_edit_get.Handle(c, w, r)
+		}
 	})
 	mux.HandleFunc("POST /bookmarks/{id}/edit-basics", func(w http.ResponseWriter, r *http.Request) {
-		act_bookmarks_id_edit_basics_post.Handle(handle(r), w, r)
+		if c := handle(w, r); c != nil {
+			act_bookmarks_id_edit_basics_post.Handle(c, w, r)
+		}
 	})
 	mux.HandleFunc("GET /bookmarks/{id}/delete", func(w http.ResponseWriter, r *http.Request) {
-		act_bookmarks_id_delete_get.Handle(handle(r), w, r)
+		if c := handle(w, r); c != nil {
+			act_bookmarks_id_delete_get.Handle(c, w, r)
+		}
 	})
 	mux.HandleFunc("POST /bookmarks/{id}/delete", func(w http.ResponseWriter, r *http.Request) {
-		act_bookmarks_id_delete_post.Handle(handle(r), w, r)
+		if c := handle(w, r); c != nil {
+			act_bookmarks_id_delete_post.Handle(c, w, r)
+		}
 	})
 	mux.HandleFunc("POST /bookmarks/{id}/edit-advanced", func(w http.ResponseWriter, r *http.Request) {
-		act_bookmarks_id_edit_advanced_post.Handle(handle(r), w, r)
+		if c := handle(w, r); c != nil {
+			act_bookmarks_id_edit_advanced_post.Handle(c, w, r)
+		}
 	})
 	return mux
 }

@@ -32,7 +32,7 @@
      No role="alert" anywhere: every message present at load is where
      focus starts (State.Focus), and a live alert would race the focus
      announcement. The only live region is the passkey message. */}}
-{{define "signin"}}{{$s := .State}}{{$door := $s.Door}}{{$focus := $s.Focus}}{{$name := .Brand.Name}}{{$preview := opt . "Preview"}}{{$proof := $s.Proof}}{{$gated := and $proof $proof.NeedsScript}}<section rst-signin aria-labelledby="rst-signin-heading">
+{{define "signin"}}{{$L := localizer $}}{{$s := .State}}{{$door := $s.Door}}{{$focus := $s.Focus}}{{$name := .Brand.Name}}{{$preview := opt . "Preview"}}{{$proof := $s.Proof}}{{$gated := and $proof $proof.NeedsScript}}<section rst-signin aria-labelledby="rst-signin-heading">
 <div rst-signin-brand>{{with opt .Brand "Mark"}}<div rst-signin-mark>{{.}}</div>{{end}}<p rst-signin-name>{{$name}}</p>{{with opt .Brand "Pitch"}}<p rst-signin-pitch>{{.}}</p>{{end}}</div>
 <div rst-signin-door>
 {{if eq $door "continue"}}{{/* In the card, not <head>: browsers apply a refresh wherever the element
@@ -41,70 +41,70 @@
      so form-action 'self' never sees it. ContinueURL is written only
      through html/template's attribute escaping, here and in the link:
      as template.URL a quote in it would end the attribute. */}}{{if not $preview}}<meta http-equiv="refresh" content="0;url={{$s.ContinueURL}}">{{end}}
-<h1 id="rst-signin-heading">{{T "rastrillo.ui.signin_continue_heading"}}</h1>
-<p>{{T "rastrillo.ui.signin_continue_body"}}</p>
-<a rst-btn="primary block" href="{{if $preview}}#{{else}}{{$s.ContinueURL}}{{end}}">{{T "rastrillo.ui.signin_to_keymail"}}</a>
+<h1 id="rst-signin-heading">{{T $L "rastrillo.ui.signin_continue_heading"}}</h1>
+<p>{{T $L "rastrillo.ui.signin_continue_body"}}</p>
+<a rst-btn="primary block" href="{{if $preview}}#{{else}}{{$s.ContinueURL}}{{end}}">{{T $L "rastrillo.ui.signin_to_keymail"}}</a>
 {{else if eq $door "confirm"}}{{/* Where the emailed link lands, inside auth's RenderConfirm. Opening
      the link spent nothing; this button spends it, so a mail scanner's
      fetch cannot. No proof: Verify checks none, and the token is the
-     proof of work here. */}}<h1 id="rst-signin-heading">{{Tf "rastrillo.ui.signin_heading" "name" $name}}</h1>
+     proof of work here. */}}<h1 id="rst-signin-heading">{{Tf $L "rastrillo.ui.signin_heading" "name" $name}}</h1>
 <form rst-signin-form method="post" action="{{$s.Confirm.Action}}">
 <input type="hidden" name="token" value="{{$s.Confirm.Token}}">
-<button rst-btn="primary block" type="submit"{{if eq $focus "onetap"}} autofocus{{end}}>{{T "rastrillo.ui.signin_confirm_submit"}}</button>
+<button rst-btn="primary block" type="submit"{{if eq $focus "onetap"}} autofocus{{end}}>{{T $L "rastrillo.ui.signin_confirm_submit"}}</button>
 </form>
-{{else if eq $door "sent"}}<h1 id="rst-signin-heading">{{T "rastrillo.ui.signin_sent_heading"}}</h1>
-{{if $s.SentInstead}}<p>{{T "rastrillo.ui.signin_sent_instead"}}</p>
-{{end}}<p>{{if $s.SentTo}}{{Tbdi "rastrillo.ui.signin_sent_to" "address" $s.SentTo}}{{else}}{{T "rastrillo.ui.signin_sent_inbox"}}{{end}} {{T "rastrillo.ui.signin_sent_once"}}</p>
-{{else}}<h1 id="rst-signin-heading">{{Tf "rastrillo.ui.signin_heading" "name" $name}}</h1>
-{{if and $s.Problem (ne $s.Problem "address")}}{{$tone := "negative"}}{{if eq $s.Problem "reauth"}}{{$tone = "info"}}{{end}}{{template "callout" (dict "ID" "rst-signin-problem" "Tone" $tone "Body" (T (printf "rastrillo.ui.signin_problem_%s" $s.Problem)) "Focus" (eq $focus "callout"))}}
+{{else if eq $door "sent"}}<h1 id="rst-signin-heading">{{T $L "rastrillo.ui.signin_sent_heading"}}</h1>
+{{if $s.SentInstead}}<p>{{T $L "rastrillo.ui.signin_sent_instead"}}</p>
+{{end}}<p>{{if $s.SentTo}}{{Tbdi $L "rastrillo.ui.signin_sent_to" "address" $s.SentTo}}{{else}}{{T $L "rastrillo.ui.signin_sent_inbox"}}{{end}} {{T $L "rastrillo.ui.signin_sent_once"}}</p>
+{{else}}<h1 id="rst-signin-heading">{{Tf $L "rastrillo.ui.signin_heading" "name" $name}}</h1>
+{{if and $s.Problem (ne $s.Problem "address")}}{{$tone := "negative"}}{{if eq $s.Problem "reauth"}}{{$tone = "info"}}{{end}}{{template "callout" (dict "L" $L "ID" "rst-signin-problem" "Tone" $tone "Body" (T $L (printf "rastrillo.ui.signin_problem_%s" $s.Problem)) "Focus" (eq $focus "callout"))}}
 {{end}}{{if eq $door "keymail"}}<form rst-signin-form method="post" action="{{$s.BeginPath}}"{{with $proof}} {{.Attrs}}{{end}}>{{with $proof}}{{.Fields}}{{end}}
 {{with $s.ReturnTo}}<input type="hidden" name="return_to" value="{{.}}">
 {{end}}<input type="hidden" name="address" value="{{$s.Remembered.Address}}">
 <input type="hidden" name="expect" value="keymail">
-<button rst-btn="primary block" type="submit" aria-describedby="rst-signin-remembered"{{if eq $focus "onetap"}} autofocus{{end}}{{if $gated}} disabled data-pow-submit{{end}}>{{T "rastrillo.ui.signin_to_keymail"}}</button>
-{{if $gated}}{{$proof.StatusLine (T "rastrillo.ui.pow_status")}}<noscript><p>{{T "rastrillo.ui.pow_noscript"}}</p></noscript>
-{{end}}<p rst-signin-remembered id="rst-signin-remembered">{{Tbdi "rastrillo.ui.signin_remembered_as" "address" $s.Remembered.Address}}</p>
+<button rst-btn="primary block" type="submit" aria-describedby="rst-signin-remembered"{{if eq $focus "onetap"}} autofocus{{end}}{{if $gated}} disabled data-pow-submit{{end}}>{{T $L "rastrillo.ui.signin_to_keymail"}}</button>
+{{if $gated}}{{$proof.StatusLine (T $L "rastrillo.ui.pow_status")}}<noscript><p>{{T $L "rastrillo.ui.pow_noscript"}}</p></noscript>
+{{end}}<p rst-signin-remembered id="rst-signin-remembered">{{Tbdi $L "rastrillo.ui.signin_remembered_as" "address" $s.Remembered.Address}}</p>
 </form>
 {{else if eq $door "link"}}<form rst-signin-form method="post" action="{{$s.BeginPath}}"{{with $proof}} {{.Attrs}}{{end}}>{{with $proof}}{{.Fields}}{{end}}
 {{with $s.ReturnTo}}<input type="hidden" name="return_to" value="{{.}}">
 {{end}}<input type="hidden" name="address" value="{{$s.Remembered.Address}}">
 {{/* The label is one <span>: [rst-btn] is a flex box with a gap, and
      the sentence's text and its <bdi> as two flex items would show that
-     gap as a double space before the address. */}}<button rst-btn="primary block" type="submit"{{if eq $focus "onetap"}} autofocus{{end}}{{if $gated}} disabled data-pow-submit{{end}}><span>{{Tbdi "rastrillo.ui.signin_continue_as" "address" $s.Remembered.Address}}</span></button>
-{{if $gated}}{{$proof.StatusLine (T "rastrillo.ui.pow_status")}}<noscript><p>{{T "rastrillo.ui.pow_noscript"}}</p></noscript>
+     gap as a double space before the address. */}}<button rst-btn="primary block" type="submit"{{if eq $focus "onetap"}} autofocus{{end}}{{if $gated}} disabled data-pow-submit{{end}}><span>{{Tbdi $L "rastrillo.ui.signin_continue_as" "address" $s.Remembered.Address}}</span></button>
+{{if $gated}}{{$proof.StatusLine (T $L "rastrillo.ui.pow_status")}}<noscript><p>{{T $L "rastrillo.ui.pow_noscript"}}</p></noscript>
 {{end}}</form>
 {{else}}{{/* The ask door, and the passkey door with the email form beside it
      (the email form is always on the screen where a passkey door is:
      a passkey is never the only way in). The passkey button is written
      once, in whichever slot this door puts it: first for a remembered
-     passkey, after the form otherwise. */}}{{$pkSlot := "after"}}{{if eq $door "passkey"}}{{$pkSlot = "before"}}{{end}}{{$fieldErr := ""}}{{if eq $s.Problem "address"}}{{$fieldErr = T "rastrillo.ui.signin_problem_address"}}{{end}}{{range list "before" "form" "after"}}{{if eq . "form"}}<form rst-signin-form method="post" action="{{$s.BeginPath}}"{{with $proof}} {{.Attrs}}{{end}}>{{with $proof}}{{.Fields}}{{end}}
+     passkey, after the form otherwise. */}}{{$pkSlot := "after"}}{{if eq $door "passkey"}}{{$pkSlot = "before"}}{{end}}{{$fieldErr := ""}}{{if eq $s.Problem "address"}}{{$fieldErr = T $L "rastrillo.ui.signin_problem_address"}}{{end}}{{range list "before" "form" "after"}}{{if eq . "form"}}<form rst-signin-form method="post" action="{{$s.BeginPath}}"{{with $proof}} {{.Attrs}}{{end}}>{{with $proof}}{{.Fields}}{{end}}
 {{with $s.ReturnTo}}<input type="hidden" name="return_to" value="{{.}}">
-{{end}}{{template "field" (dict "ID" "rst-signin-email" "Name" "address" "Label" (T "rastrillo.ui.signin_email") "Type" "email" "Autocomplete" "email" "Required" true "Value" $s.Address "Autofocus" (eq $focus "field") "Error" $fieldErr "QuietError" true)}}
+{{end}}{{template "field" (dict "L" $L "ID" "rst-signin-email" "Name" "address" "Label" (T $L "rastrillo.ui.signin_email") "Type" "email" "Autocomplete" "email" "Required" true "Value" $s.Address "Autofocus" (eq $focus "field") "Error" $fieldErr "QuietError" true)}}
 {{if or $s.Force (eq $s.Problem "keymail")}}<input type="hidden" name="force" value="1">
-{{end}}<button rst-btn="primary block" type="submit"{{if $gated}} disabled data-pow-submit{{end}}>{{if eq $s.Problem "keymail"}}{{T "rastrillo.ui.signin_send_link_instead"}}{{else}}{{T "rastrillo.ui.signin_submit"}}{{end}}</button>
-{{if $gated}}{{$proof.StatusLine (T "rastrillo.ui.pow_status")}}<noscript><p>{{T "rastrillo.ui.pow_noscript"}}</p></noscript>
+{{end}}<button rst-btn="primary block" type="submit"{{if $gated}} disabled data-pow-submit{{end}}>{{if eq $s.Problem "keymail"}}{{T $L "rastrillo.ui.signin_send_link_instead"}}{{else}}{{T $L "rastrillo.ui.signin_submit"}}{{end}}</button>
+{{if $gated}}{{$proof.StatusLine (T $L "rastrillo.ui.pow_status")}}<noscript><p>{{T $L "rastrillo.ui.pow_noscript"}}</p></noscript>
 {{end}}</form>
 {{else if and $s.Passkey (eq . $pkSlot)}}{{/* The button and its message are one child of the door, so the
      message, empty until the script writes to it, takes none of the
      door's gaps. The "or" between it and the form is the wrapper's
      immediate neighbour on the form's side, because tokens.css hides it
      with the pair through that adjacency: with the button hidden the
-     page has one way in, and an "or" would point at nothing. */}}{{if eq . "after"}}<p rst-signin-or>{{T "rastrillo.ui.signin_or"}}</p>
-{{end}}<div rst-signin-passkey><button rst-btn="{{if eq $door "passkey"}}primary block{{else}}block{{end}}" type="button"{{if not $preview}} hidden data-rst-passkey data-rst-passkey-begin="{{$s.Passkey.BeginPath}}" data-rst-passkey-finish="{{$s.PasskeyFinish}}" data-rst-passkey-module="{{$s.Passkey.ModuleURL}}"{{with $s.Passkey.LegacyRPID}} data-rst-passkey-legacy-rpid="{{.}}"{{end}} data-rst-passkey-cancelled="{{T "rastrillo.ui.signin_passkey_cancelled"}}" data-rst-passkey-failed="{{T "rastrillo.ui.signin_passkey_failed"}}"{{end}} aria-describedby="rst-signin-passkey-msg">{{if eq $door "passkey"}}{{T "rastrillo.ui.signin_passkey_remembered"}}{{else}}{{T "rastrillo.ui.signin_passkey"}}{{end}}</button>
+     page has one way in, and an "or" would point at nothing. */}}{{if eq . "after"}}<p rst-signin-or>{{T $L "rastrillo.ui.signin_or"}}</p>
+{{end}}<div rst-signin-passkey><button rst-btn="{{if eq $door "passkey"}}primary block{{else}}block{{end}}" type="button"{{if not $preview}} hidden data-rst-passkey data-rst-passkey-begin="{{$s.Passkey.BeginPath}}" data-rst-passkey-finish="{{$s.PasskeyFinish}}" data-rst-passkey-module="{{$s.Passkey.ModuleURL}}"{{with $s.Passkey.LegacyRPID}} data-rst-passkey-legacy-rpid="{{.}}"{{end}} data-rst-passkey-cancelled="{{T $L "rastrillo.ui.signin_passkey_cancelled"}}" data-rst-passkey-failed="{{T $L "rastrillo.ui.signin_passkey_failed"}}"{{end}} aria-describedby="rst-signin-passkey-msg">{{if eq $door "passkey"}}{{T $L "rastrillo.ui.signin_passkey_remembered"}}{{else}}{{T $L "rastrillo.ui.signin_passkey"}}{{end}}</button>
 <p rst-signin-passkey-msg id="rst-signin-passkey-msg" aria-live="polite"></p>
 </div>
-{{if eq . "before"}}<p rst-signin-or>{{T "rastrillo.ui.signin_or"}}</p>
+{{if eq . "before"}}<p rst-signin-or>{{T $L "rastrillo.ui.signin_or"}}</p>
 {{end}}{{if not $preview}}<script type="module" src="{{$s.Passkey.ScriptURL}}"></script>
 {{end}}{{end}}{{end}}{{end}}{{end}}{{/* The way out of a remembered or kept address — the three one-taps
      and Sent — written once, after whichever door this is. Not on Ask,
      where the field already is the different email, not on Continue,
      which has no controls but its link, and not on Confirm, whose link
      may have been sent to anyone. */}}{{if and (ne $door "ask") (ne $door "continue") (ne $door "confirm")}}<form rst-signin-form method="post" action="{{$s.ForgetPath}}">{{with $s.ReturnTo}}<input type="hidden" name="return_to" value="{{.}}">
-{{end}}<button rst-btn="ghost block" type="submit">{{T "rastrillo.ui.signin_different"}}</button></form>
+{{end}}<button rst-btn="ghost block" type="submit">{{T $L "rastrillo.ui.signin_different"}}</button></form>
 {{end}}{{if and $gated (ne $door "sent") (ne $door "continue") (ne $door "confirm") (not $preview)}}{{$proof.Script}}{{end}}</div>
 </section>{{end}}
 {{/* signin-title — the document title for the same state, for the
      page's title block: every state has one heading and a title
      that says the same thing, so a screen-reader user who lands on the
      page hears where they are. Keys: State, Brand (as signin). */}}
-{{define "signin-title"}}{{$s := .State}}{{$n := .Brand.Name}}{{if eq $s.Step "sent"}}{{Tf "rastrillo.ui.signin_sent_title" "name" $n}}{{else if eq $s.Step "continue"}}{{Tf "rastrillo.ui.signin_continue_title" "name" $n}}{{else if and $s.Problem (ne $s.Problem "reauth")}}{{Tf "rastrillo.ui.signin_problem_title" "name" $n}}{{else}}{{Tf "rastrillo.ui.signin_title" "name" $n}}{{end}}{{end}}
+{{define "signin-title"}}{{$L := localizer $}}{{$s := .State}}{{$n := .Brand.Name}}{{if eq $s.Step "sent"}}{{Tf $L "rastrillo.ui.signin_sent_title" "name" $n}}{{else if eq $s.Step "continue"}}{{Tf $L "rastrillo.ui.signin_continue_title" "name" $n}}{{else if and $s.Problem (ne $s.Problem "reauth")}}{{Tf $L "rastrillo.ui.signin_problem_title" "name" $n}}{{else}}{{Tf $L "rastrillo.ui.signin_title" "name" $n}}{{end}}{{end}}

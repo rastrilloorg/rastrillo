@@ -491,6 +491,22 @@ func families() []family {
 					},
 				},
 				{
+					Name:  "field-money",
+					Blurb: "A money amount in one currency. The currency code shows beside the label and is sent with the form, so a currency that changed while someone was typing is caught on save. Pair it with form.Field's Currency on the server.",
+					Wrap:  wrapForm,
+					States: []sample{
+						{State: "Bare", Data: map[string]any{"Name": "fm_bare", "Label": "Ticket price", "Locale": "en", "Currency": "EUR"}},
+						{State: "With a hint", Data: map[string]any{
+							"Name": "fm_hint", "Label": "Ticket price", "Locale": "en", "Currency": "EUR",
+							"Hint": "For example, 12.50 or €12.50.",
+						}},
+						{State: "With an error", Data: map[string]any{
+							"Name": "fm_error", "Label": "Ticket price", "Locale": "en", "Currency": "EUR",
+							"Value": "12,.50", "Error": "Use a point for decimals, like 12.50.",
+						}},
+					},
+				},
+				{
 					Name:  "field-textarea",
 					Blurb: "field-text's wrapper around a textarea.",
 					Wrap:  wrapForm,

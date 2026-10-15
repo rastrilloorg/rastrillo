@@ -34,7 +34,7 @@ func TestNumberLocalesAndPrecision(t *testing.T) {
 		{"en", "001234", "001234"},
 	} {
 		t.Run(tc.locale+"/"+tc.want, func(t *testing.T) {
-			got := Funcs(WithLocale(tc.locale))["number"].(func(any) any)(tc.value)
+			got := call(t, Funcs(WithLocale(tc.locale)), "number", tc.value)
 			if got != tc.want {
 				t.Fatalf("got %q, want %q", got, tc.want)
 			}

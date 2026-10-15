@@ -87,6 +87,11 @@
           "required": false
         }
       ]
+    },
+    "currency": "USD",
+    "legacy": {
+      "currency": "USD",
+      "scale": 2
     }
   }
 ]

@@ -1,0 +1,12 @@
+{{/* index.html: the home page, and on a phone the list of
+     sections: the view block says this page is the index, so below
+     800px the rail is the whole page and this content is hidden; on a
+     desktop the rail sits beside it. Give each section a nav link with
+     an id here, and give its page an up block naming /#<that id>, so a
+     phone comes back to the row it left. */}}
+{{define "view"}}index{{end}}
+{{define "brand"}}<a rst-shell-brand href="/">demo</a>{{end}}
+{{define "nav"}}<a id="nav-overview" href="/overview">Overview</a>{{end}}
+{{define "content"}}
+<h1>Hello, World — this is a rastrillo app.</h1>
+{{end}}

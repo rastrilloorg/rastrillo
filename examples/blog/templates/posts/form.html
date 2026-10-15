@@ -19,18 +19,18 @@
      app's own `published` column (posts.toml declares no such field),
      so genrender.go's formStripData computes them, once, in the one
      seam every "posts/form" render already passes through. */}}
-{{define "content"}}
+{{define "content"}}{{$L := localizer $}}
 {{if .IsNew}}
-{{template "page-header" dict "Title" "New post" "Sub" "It starts as a draft — nothing is public until you publish it."}}
+{{template "page-header" dict "L" $L "Title" "New post" "Sub" "It starts as a draft — nothing is public until you publish it."}}
 <form rst-form method="post" action="/admin/posts">
-{{template "field-text" dict "Name" "Title" "Label" (T "resource.posts.field.title") "Value" .Fields.Title "Error" .Errors.Title}}
-{{template "field-textarea" dict "Name" "Body" "Label" (T "resource.posts.field.body") "Value" .Fields.Body "Error" .Errors.Body}}
-{{template "form-foot" dict "Submit" (T "ui.save") "CancelHref" "/admin/posts" "CancelLabel" (T "ui.cancel")}}
+{{template "field-text" dict "L" $L "Name" "Title" "Label" (T $L "resource.posts.field.title") "Value" .Fields.Title "Error" .Errors.Title}}
+{{template "field-textarea" dict "L" $L "Name" "Body" "Label" (T $L "resource.posts.field.body") "Value" .Fields.Body "Error" .Errors.Body}}
+{{template "form-foot" dict "L" $L "Submit" (T $L "ui.save") "CancelHref" "/admin/posts" "CancelLabel" (T $L "ui.cancel")}}
 </form>
 {{else}}
-{{template "page-header" dict "Title" .Fields.Title "Sub" "Editing"}}
+{{template "page-header" dict "L" $L "Title" .Fields.Title "Sub" "Editing"}}
 <div class="blog-status">
-{{template "status-pill" dict "Tone" .StatusTone "Label" .StatusLabel}}
+{{template "status-pill" dict "L" $L "Tone" .StatusTone "Label" .StatusLabel}}
 {{if .Published}}
 <form method="post" action="{{.UnpublishHref}}"><button rst-btn type="submit">Unpublish</button></form>
 <a rst-btn href="{{.ViewHref}}">View</a>
@@ -40,9 +40,9 @@
 <form method="post" action="{{.DeleteHref}}"><button rst-btn type="submit">Delete</button></form>
 </div>
 <form rst-form method="post" action="{{.BasicsAction}}">
-{{template "field-text" dict "Name" "Title" "Label" (T "resource.posts.field.title") "Value" .Fields.Title "Error" .Errors.Title}}
-{{template "field-textarea" dict "Name" "Body" "Label" (T "resource.posts.field.body") "Value" .Fields.Body "Error" .Errors.Body}}
-{{template "form-foot" dict "Submit" (T "ui.save") "CancelHref" "/admin/posts" "CancelLabel" (T "ui.cancel")}}
+{{template "field-text" dict "L" $L "Name" "Title" "Label" (T $L "resource.posts.field.title") "Value" .Fields.Title "Error" .Errors.Title}}
+{{template "field-textarea" dict "L" $L "Name" "Body" "Label" (T $L "resource.posts.field.body") "Value" .Fields.Body "Error" .Errors.Body}}
+{{template "form-foot" dict "L" $L "Submit" (T $L "ui.save") "CancelHref" "/admin/posts" "CancelLabel" (T $L "ui.cancel")}}
 </form>
 {{end}}
 {{end}}

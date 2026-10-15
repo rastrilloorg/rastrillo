@@ -34,9 +34,11 @@ type Locales struct {
 }
 
 // NewLocales validates the declared set and reads locales/<code>.toml
-// out of fsys for each declared code. fsys may be nil (framework base
-// catalog only). A declared locale with no catalog file is not an error:
-// a single-locale app declares "en" and ships no locales/ directory.
+// out of fsys for each declared code, under the file of any code that
+// was retagged to it (retag.go: pt.toml under pt-PT). fsys may be nil
+// (framework base catalog only). A declared locale with no catalog file
+// is not an error: a single-locale app declares "en" and ships no
+// locales/ directory.
 func NewLocales(codes []string, def string, base Catalog, fsys fs.FS) (*Locales, error) {
 	if def == "" {
 		def = "en"
@@ -69,7 +71,14 @@ func NewLocales(codes []string, def string, base Catalog, fsys fs.FS) (*Locales,
 	}
 	l.fw = map[string]Catalog{}
 	for _, c := range codes {
-		if bc, ok := baseCatalogs[c]; ok {
+		bc, ok := baseCatalogs[c]
+		if to, retag := RetagOf(c); !ok && retag {
+			// An app that offered pt before the framework's Portuguese
+			// became pt-PT keeps the framework's strings, rather than
+			// dropping to English under a code it never changed.
+			bc, ok = baseCatalogs[to]
+		}
+		if ok {
 			l.fw[c] = bc
 		}
 	}
@@ -77,21 +86,48 @@ func NewLocales(codes []string, def string, base Catalog, fsys fs.FS) (*Locales,
 		return l, nil
 	}
 	for _, c := range codes {
-		name := path.Join("locales", c+".toml")
-		data, err := fs.ReadFile(fsys, name)
-		if errors.Is(err, fs.ErrNotExist) {
-			continue
+		// An app that moves its manifest from pt to pt-PT keeps the
+		// locales/pt.toml it already has: that file is read first and
+		// locales/pt-PT.toml, the more specific, overrides it key by key.
+		var app Catalog
+		for _, code := range append(retaggedFrom(c), c) {
+			m, err := readAppCatalog(fsys, code)
+			if err != nil {
+				return nil, err
+			}
+			if m == nil {
+				continue
+			}
+			if app == nil {
+				app = Catalog{}
+			}
+			for k, v := range m {
+				app[k] = v
+			}
 		}
-		if err != nil {
-			return nil, fmt.Errorf("rastrillo: read %s: %w", name, err)
+		if app != nil {
+			l.app[c] = app
 		}
-		m, err := catalog.Decode(data)
-		if err != nil {
-			return nil, fmt.Errorf("rastrillo: %s: %w", name, err)
-		}
-		l.app[c] = Catalog(m)
 	}
 	return l, nil
+}
+
+// readAppCatalog decodes fsys's locales/<code>.toml, or returns nil
+// when there is none.
+func readAppCatalog(fsys fs.FS, code string) (map[string]string, error) {
+	name := path.Join("locales", code+".toml")
+	data, err := fs.ReadFile(fsys, name)
+	if errors.Is(err, fs.ErrNotExist) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("rastrillo: read %s: %w", name, err)
+	}
+	m, err := catalog.Decode(data)
+	if err != nil {
+		return nil, fmt.Errorf("rastrillo: %s: %w", name, err)
+	}
+	return m, nil
 }
 
 // Codes returns the declared locale codes in declaration order.

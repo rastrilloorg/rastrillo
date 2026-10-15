@@ -9,6 +9,7 @@ import (
 	"net/http"
 
 	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/ui"
 	"amadan.net/rastrillo/rastrillo/view"
 	postsstore "blog/gen/store/posts"
 )
@@ -33,6 +34,7 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 	}
 
 	view.Render(ctx, w, "posts/confirm", http.StatusOK, confirmView{
+		Localized:  ui.ForRequest(r),
 		Title:      n.Title,
 		DeleteHref: fmt.Sprintf("/admin/posts/%d/delete", id),
 		CancelHref: fmt.Sprintf("/admin/posts/%d", id),
@@ -40,6 +42,7 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 }
 
 type confirmView struct {
+	ui.Localized
 	Title      string
 	DeleteHref string
 	CancelHref string

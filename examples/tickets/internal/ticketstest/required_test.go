@@ -1,7 +1,7 @@
 // required_test.go exercises manifest/ticket_types.toml's `required =
 // true` on Name and Price — the generated create and edit-basics
-// actions' server-side validation branch (internal/generate/
-// actions.go's parseField/requiredMessage). Status and MaxPerOrder
+// actions' server-side validation branch (form.Parse, called by
+// internal/generate/actions.go's parseCall). Status and MaxPerOrder
 // declare no `required`, so they're never checked here.
 package ticketstest
 
@@ -19,9 +19,11 @@ func TestCreateBlankNameIs400WithTheFieldErrorVisible(t *testing.T) {
 	app, db := newApp(t)
 
 	rec := post(t, app, "/admin/ticket_types", url.Values{
-		"Name":   {"   "},
-		"Price":  {"5.00"},
-		"Status": {"draft"},
+		"Name":           {"   "},
+		"Price":          {"5.00"},
+		"Price.locale":   {"en"},
+		"Price.currency": {"USD"},
+		"Status":         {"draft"},
 	})
 	wantStatus(t, rec, http.StatusBadRequest)
 	body := rec.Body.String()
@@ -44,14 +46,15 @@ func TestCreateBlankPriceIs400WithTheFieldErrorVisible(t *testing.T) {
 	app, db := newApp(t)
 
 	rec := post(t, app, "/admin/ticket_types", url.Values{
-		"Name":   {"General"},
-		"Price":  {""},
-		"Status": {"draft"},
+		"Name":           {"General"},
+		"Price":          {""},
+		"Price.locale":   {"en"},
+		"Price.currency": {"USD"},
+		"Status":         {"draft"},
 	})
 	wantStatus(t, rec, http.StatusBadRequest)
 	body := rec.Body.String()
-	wantContains(t, body, "required")
-	wantContains(t, body, "Price is required")
+	wantContains(t, body, catalogEN("rastrillo.ui.field_required"))
 	wantContains(t, body, `value="General"`)
 
 	n, err := ticket_typesstore.New(db).CountTicketTypes(context.Background(), ticket_typesstore.CountTicketTypesParams{Search: "", FilterStatus: ""})
@@ -63,16 +66,18 @@ func TestCreateBlankPriceIs400WithTheFieldErrorVisible(t *testing.T) {
 	}
 }
 
-// "0" is a valid required Money value: required-ness checks the RAW
-// submitted text, never the parsed cents value, so an explicit zero
+// "0" is a valid required Money value: required-ness checks the
+// cleaned submitted text, never the parsed amount, so an explicit zero
 // price is accepted, only a truly blank input is rejected.
 func TestCreateZeroPriceIsAccepted(t *testing.T) {
 	app, db := newApp(t)
 
 	rec := post(t, app, "/admin/ticket_types", url.Values{
-		"Name":   {"Free entry"},
-		"Price":  {"0"},
-		"Status": {"draft"},
+		"Name":           {"Free entry"},
+		"Price":          {"0"},
+		"Price.locale":   {"en"},
+		"Price.currency": {"USD"},
+		"Status":         {"draft"},
 	})
 	wantStatus(t, rec, http.StatusSeeOther)
 
@@ -82,8 +87,8 @@ func TestCreateZeroPriceIsAccepted(t *testing.T) {
 	if err != nil {
 		t.Fatalf("list: %v", err)
 	}
-	if len(rows) != 1 || rows[0].Price != 0 {
-		t.Fatalf("rows = %+v, want exactly one row with Price 0", rows)
+	if len(rows) != 1 || rows[0].PriceMinor == nil || *rows[0].PriceMinor != 0 || rows[0].PriceCurrency == nil || *rows[0].PriceCurrency != "USD" {
+		t.Fatalf("rows = %+v, want exactly one row with Price 0 USD", rows)
 	}
 }
 
@@ -92,9 +97,11 @@ func TestEditBasicsBlankNameIs400AndLeavesTheRecordUnchanged(t *testing.T) {
 	id := seed(t, db, "General", 1500, "draft", "")
 
 	rec := post(t, app, "/admin/ticket_types/"+strconv.FormatInt(id, 10)+"/edit-basics", url.Values{
-		"Name":   {""},
-		"Price":  {"15.00"},
-		"Status": {"draft"},
+		"Name":           {""},
+		"Price":          {"15.00"},
+		"Price.locale":   {"en"},
+		"Price.currency": {"USD"},
+		"Status":         {"draft"},
 	})
 	wantStatus(t, rec, http.StatusBadRequest)
 	wantContains(t, rec.Body.String(), "Name is required")
@@ -113,18 +120,20 @@ func TestEditBasicsBlankPriceIs400AndLeavesTheRecordUnchanged(t *testing.T) {
 	id := seed(t, db, "General", 1500, "draft", "")
 
 	rec := post(t, app, "/admin/ticket_types/"+strconv.FormatInt(id, 10)+"/edit-basics", url.Values{
-		"Name":   {"General"},
-		"Price":  {""},
-		"Status": {"draft"},
+		"Name":           {"General"},
+		"Price":          {""},
+		"Price.locale":   {"en"},
+		"Price.currency": {"USD"},
+		"Status":         {"draft"},
 	})
 	wantStatus(t, rec, http.StatusBadRequest)
-	wantContains(t, rec.Body.String(), "Price is required")
+	wantContains(t, rec.Body.String(), catalogEN("rastrillo.ui.field_required"))
 
 	row, err := ticket_typesstore.New(db).GetTicketType(context.Background(), id)
 	if err != nil {
 		t.Fatalf("get: %v", err)
 	}
-	if row.Price != 1500 {
-		t.Errorf("Price = %d after a 400, want unchanged 1500", row.Price)
+	if row.PriceMinor == nil || *row.PriceMinor != 1500 || row.PriceCurrency == nil || *row.PriceCurrency != "USD" {
+		t.Errorf("Price = %v %v after a 400, want unchanged 1500 USD", row.PriceMinor, row.PriceCurrency)
 	}
 }

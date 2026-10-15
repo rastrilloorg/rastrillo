@@ -302,6 +302,8 @@ func TestTheSidebarRailPutsThePersonAtItsFootAndTheProfileMenuOpensUpward(t *tes
 		"asset":      func(p string) string { return "/" + strings.TrimPrefix(p, "static/") },
 		"iconAssets": func() template.HTML { return "" },
 	}).Parse(string(src)))
+	// ui's partials, as an app parses them: the locale block calls locale-menu.
+	template.Must(tmpl.ParseFS(Templates(), "*.html"))
 	template.Must(tmpl.Parse(`{{define "content"}}<p>Content.</p>{{end}}`))
 	template.Must(tmpl.Parse(`{{define "nav"}}<a href="#" aria-current="page">Posts</a><a href="#">Drafts</a>{{end}}`))
 	template.Must(tmpl.Parse(`{{define "profile"}}<span rst-person-av aria-hidden="true">G</span><span rst-person-name>Grace Hopper</span><span rst-person-email>grace@example.com</span>{{end}}`))
@@ -602,6 +604,8 @@ func TestTheTopbarCollapsesItsTailBehindOneDisclosure(t *testing.T) {
 		"asset":      func(p string) string { return "/" + strings.TrimPrefix(p, "static/") },
 		"iconAssets": func() template.HTML { return "" },
 	}).Parse(string(src)))
+	// ui's partials, as an app parses them: the locale block calls locale-menu.
+	template.Must(tmpl.ParseFS(Templates(), "*.html"))
 	template.Must(tmpl.Parse(`{{define "content"}}<p>Content.</p>{{end}}`))
 	template.Must(tmpl.Parse(`{{define "nav"}}<a href="#" aria-current="page">Posts</a><a href="#">Drafts</a>{{end}}`))
 	template.Must(tmpl.Parse(`{{define "account"}}<a href="#">Profile</a><a href="#">Sign out</a>{{end}}`))

@@ -22,9 +22,9 @@
 
      To override the submit button's screen-reader text, call
      list-bar-search directly inside your own <div rst-lbar>. */}}
-{{define "list-bar"}}<div rst-lbar>
-  {{template "list-bar-search" dict "Action" .SearchAction "Query" .Query "Placeholder" .Placeholder "Hidden" .Hidden "ClearHref" (searchClear .)}}
+{{define "list-bar"}}{{$L := localizer $}}<div rst-lbar>
+  {{template "list-bar-search" dict "L" $L "Action" .SearchAction "Query" .Query "Placeholder" .Placeholder "Hidden" .Hidden "ClearHref" (searchClear .)}}
   {{- if .Filter}}
-  {{template "dropdown" .Filter}}
+  {{template "dropdown" (withL (.Filter) $L)}}
   {{- end}}
 </div>{{end}}

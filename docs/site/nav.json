@@ -94,6 +94,11 @@
           "blurb": "Locale resolution, catalogs, and the gate that runs under --check only."
         },
         {
+          "slug": "migrate-templates",
+          "label": "Upgrading templates",
+          "blurb": "Add the localizer to every template call with migrate-templates, then work through what it lists."
+        },
+        {
           "slug": "manifests",
           "label": "Manifests",
           "blurb": "The declarative path: two stores, three field kinds, and where it honestly stops."
@@ -184,6 +189,11 @@
           "blurb": "Same-origin enforcement for state-changing requests, with no tokens."
         },
         {
+          "slug": "reference/currency",
+          "label": "currency",
+          "blurb": "Format, seed and parse an amount in any currency, in the reader's language."
+        },
+        {
           "slug": "reference/db",
           "label": "db",
           "blurb": "One SQLite file as two pools, and the pragma order that has to be right."
@@ -206,7 +216,7 @@
         {
           "slug": "reference/form",
           "label": "form",
-          "blurb": "Field parsing, the error map, and money as int64 cents."
+          "blurb": "Field parsing, the error map, and money in any currency."
         },
         {
           "slug": "reference/gormlite",
@@ -232,6 +242,11 @@
           "slug": "reference/lastsignin",
           "label": "lastsignin",
           "blurb": "The sign-in screen's memory of how this browser got in last, and the seam that ends a sign-in attempt."
+        },
+        {
+          "slug": "reference/locales",
+          "label": "locales",
+          "blurb": "One pack of CLDR data per language, the boot check on the languages you offer, and the probe that runs it."
         },
         {
           "slug": "reference/mail",

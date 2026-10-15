@@ -7,13 +7,43 @@ import (
 	"testing"
 	"time"
 
+	"amadan.net/rastrillo/rastrillo/locales"
+	"amadan.net/rastrillo/rastrillo/ui"
+
+	genlocales "blog/gen/locales"
 	"blog/internal/blog"
 )
 
-func renderPage(t *testing.T, page string, data any) string {
+// testApp builds one *blog.App in the manifest's declared locale
+// configuration — a direct unit-test counterpart to newApp(t)'s full
+// HTTP harness, for the tests below that want to call Render itself
+// rather than drive a route.
+func testApp(t *testing.T) *blog.App {
+	t.Helper()
+	cfg, err := locales.CheckConfig(genlocales.DefaultLocale, genlocales.Locales)
+	if err != nil {
+		t.Fatalf("locale config: %v", err)
+	}
+	app, err := blog.NewApp(cfg)
+	if err != nil {
+		t.Fatalf("NewApp: %v", err)
+	}
+	return app
+}
+
+// testLocalized is one ui.Localized for the app's default locale,
+// built without a request (ui.NewLocalizer takes no *http.Request) —
+// these tests render a view model directly rather than through the
+// middleware that would otherwise set L.
+func testLocalized(t *testing.T) ui.Localized {
+	t.Helper()
+	return ui.Localized{L: ui.NewLocalizer(genlocales.DefaultLocale, genlocales.DefaultLocale, func(key string, _ ...any) string { return key })}
+}
+
+func renderPage(t *testing.T, app *blog.App, page string, data any) string {
 	t.Helper()
 	rec := httptest.NewRecorder()
-	blog.Render(nil, rec, page, 200, data)
+	app.Render(nil, rec, page, 200, data)
 	if rec.Code != 200 {
 		t.Fatalf("Render(%q) = %d, want 200:\n%s", page, rec.Code, rec.Body.String())
 	}
@@ -35,16 +65,20 @@ func renderPage(t *testing.T, page string, data any) string {
 // works exactly like the real (also unexported, and per-action-file)
 // formView the generated actions actually pass.
 func TestEachPageRendersItsOwnContent(t *testing.T) {
-	index := renderPage(t, "index", blog.HomeView{Head: blog.Head{Title: "The blog"}})
-	post := renderPage(t, "post", blog.PostView{
-		Head: blog.Head{Title: "Release notes"}, Title: "Release notes",
+	app := testApp(t)
+	loc := testLocalized(t)
+	index := renderPage(t, app, "index", blog.HomeView{Localized: loc, Head: blog.Head{Title: "The blog"}})
+	post := renderPage(t, app, "post", blog.PostView{
+		Localized: loc,
+		Head:      blog.Head{Title: "Release notes"}, Title: "Release notes",
 		Date: "Published 2 August 2026", Paragraphs: []string{"One."},
 	})
-	form := renderPage(t, "posts/form", struct {
+	form := renderPage(t, app, "posts/form", struct {
+		ui.Localized
 		IsNew  bool
 		Fields map[string]string
 		Errors map[string]string
-	}{IsNew: true, Fields: map[string]string{"Title": "", "Body": ""}})
+	}{Localized: loc, IsNew: true, Fields: map[string]string{"Title": "", "Body": ""}})
 
 	wantContains(t, index, "Notes, in the order they were written.")
 	wantContains(t, post, `<article class="blog-article">`)
@@ -54,9 +88,10 @@ func TestEachPageRendersItsOwnContent(t *testing.T) {
 }
 
 func TestLayoutWrapsEveryPage(t *testing.T) {
-	html := renderPage(t, "index", blog.HomeView{Head: blog.Head{Title: "The blog"}})
+	app := testApp(t)
+	html := renderPage(t, app, "index", blog.HomeView{Localized: testLocalized(t), Head: blog.Head{Title: "The blog"}})
 
-	wantContains(t, html, `<html lang="en">`)
+	wantContains(t, html, `<html lang="en" dir="ltr">`)
 	wantContains(t, html, `<title>The blog · The blog</title>`)
 	// Stylesheet hrefs are fingerprinted ({{asset ...}}), so pin the
 	// shape, not a literal hash that changes with every CSS edit.
@@ -76,8 +111,9 @@ func TestLayoutWrapsEveryPage(t *testing.T) {
 // A template error is a clean 500, not half a page followed by garbage:
 // Render executes into a buffer before it writes anything.
 func TestRenderOfAnUnknownPageIs500WithNoPartialOutput(t *testing.T) {
+	app := testApp(t)
 	rec := httptest.NewRecorder()
-	blog.Render(nil, rec, "no-such-page", 200, nil)
+	app.Render(nil, rec, "no-such-page", 200, struct{ ui.Localized }{testLocalized(t)})
 
 	if rec.Code != 500 {
 		t.Errorf("status = %d, want 500", rec.Code)

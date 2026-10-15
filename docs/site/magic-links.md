@@ -80,7 +80,10 @@ signinPage = func(w http.ResponseWriter, r *http.Request) {
 		ScriptURL:  "/passkey/signin.mjs",   // serves passkey.JS()
 	}
 	a.PrepareSigninResponse(w, st)
-	render(w, "signin", map[string]any{"Signin": st, "Brand": map[string]any{"Name": "Harbour"}})
+	data := map[string]any{"L": signinPages.LocalizerFor(r), "Signin": st, "Brand": map[string]any{"Name": "Harbour"}}
+	if err := signinPages.Execute(w, "signin", data); err != nil {
+		http.Error(w, "Something went wrong.", http.StatusInternalServerError)
+	}
 }
 r.Get("/signin", signinPage)
 r.Post("/signin/forget", a.Forget)
@@ -101,18 +104,19 @@ func serveJS(b []byte) http.HandlerFunc {
 `templates/signin.html`, in a page set built on the `stage` shell instead of `layout.html`:
 
 ```html
-{{define "title"}}{{template "signin-title" (dict "State" .Signin "Brand" .Brand)}}{{end}}
-{{define "content"}}{{template "signin" (dict "State" .Signin "Brand" .Brand)}}{{end}}
+{{define "title"}}{{$L := localizer $}}{{template "signin-title" (dict "L" $L "State" .Signin "Brand" .Brand)}}{{end}}
+{{define "content"}}{{$L := localizer $}}{{template "signin" (dict "L" $L "State" .Signin "Brand" .Brand)}}{{end}}
 ```
 
 ```go
-stage, _ := ui.Layout("stage")
-t := template.Must(template.New("layout").
-	Funcs(ui.Funcs(ui.WithIcons(icons.Icon, icons.Assets))).
-	Funcs(template.FuncMap{"asset": assets.Path}).
-	ParseFS(ui.Templates(), "*.html"))
-t = template.Must(t.Parse(string(stage)))
-pages["signin"] = template.Must(t.ParseFS(appFS, "templates/signin.html"))
+// templates/stage.html is ui.Layout("stage"), saved beside layout.html.
+signinPages, err := ui.NewPages(ui.PagesConfig{
+	App:    appFS,
+	Layout: "templates/stage.html",
+	Pages:  map[string]ui.PageFile{"signin": {Path: "templates/signin.html"}},
+	Locale: cfg,
+	Funcs:  template.FuncMap{"icon": icons.Icon, "iconAssets": icons.Assets, "asset": assets.Path},
+})
 ```
 
 `SigninScreen` turns on everything the screen needs from `auth`, together: a short-lived cookie that remembers what was typed, so the page can refill the field after a problem and name the address a link went to; a keymail sign-in that stays on your page instead of leaving the form, so the default CSP's `form-action 'self'` needs no widening; and a cookie that remembers which way this browser got in last. Leave it off and nothing changes: no new cookie, and `Begin` and `Callback` answer exactly as before.

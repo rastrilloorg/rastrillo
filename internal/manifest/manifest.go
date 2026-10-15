@@ -6,12 +6,15 @@
 package manifest
 
 import (
+	"errors"
 	"fmt"
 	"path/filepath"
 	"sort"
 	"strings"
 
 	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/currency"
+	"amadan.net/rastrillo/rastrillo/internal/manifesterr"
 	"github.com/BurntSushi/toml"
 )
 
@@ -32,6 +35,27 @@ func decodeTOML(path string) (rastrillo.Resource, error) {
 		return rastrillo.Resource{}, fmt.Errorf("%s: unknown key(s): %s", path, strings.Join(keys, ", "))
 	}
 	return r, nil
+}
+
+// reservedApp is Appendix C.2's op.generate.reserved_app.
+const reservedApp = `manifest/app.toml holds the app's locales, so no resource can be named "app"`
+
+// ineligible is Appendix C.2's op.generate.ineligible.
+const ineligible = "warning: manifest/%s.toml: %s is still accepted for storage but is no longer issued; choose a current currency for new records"
+
+// IneligibleDefaults returns a warning for each resource whose default
+// currency is stored but no longer issued. It is a warning and not a
+// Validate error so that a currency's withdrawal never stops an
+// unchanged manifest from generating; rs must have passed Load, so each
+// Currency is already canonical.
+func IneligibleDefaults(rs []rastrillo.Resource) []string {
+	var out []string
+	for _, r := range rs {
+		if r.Currency != "" && !currency.EligibleDefault(r.Currency) {
+			out = append(out, fmt.Sprintf(ineligible, r.Name, r.Currency))
+		}
+	}
+	return out
 }
 
 // source pairs a decoded resource with the file it came from, so
@@ -56,6 +80,11 @@ func Load(moduleRoot, dir string) ([]rastrillo.Resource, error) {
 
 	var sources []source
 	for _, path := range paths {
+		// app.toml is the app's locale declaration (LoadApp), not a
+		// resource: decoding it as one fails on its unknown keys.
+		if filepath.Base(path) == "app.toml" {
+			continue
+		}
 		r, err := decodeTOML(path)
 		if err != nil {
 			return nil, err
@@ -74,7 +103,21 @@ func Load(moduleRoot, dir string) ([]rastrillo.Resource, error) {
 	routes := map[string]string{}
 	for _, s := range sources {
 		if err := s.resource.Validate(); err != nil {
+			// ErrNoCurrency reads as one sentence with its file,
+			// matching Appendix C.2's op.generate.no_currency line:
+			// "manifest/foo.toml has a money field...", not
+			// "manifest/foo.toml: has a money field...", whose colon
+			// would read as introducing a clause.
+			if errors.Is(err, manifesterr.ErrNoCurrency) {
+				return nil, fmt.Errorf("%s %w", s.file, err)
+			}
 			return nil, fmt.Errorf("%s: %w", s.file, err)
+		}
+		// Operator messages send an author to manifest/<name>.toml
+		// (op.legacy.undeclared, op.generate.no_currency), so a resource
+		// named app would send them to the locales file instead.
+		if s.resource.Name == "app" {
+			return nil, fmt.Errorf("%s: %s", s.file, reservedApp)
 		}
 		if prev, ok := names[s.resource.Name]; ok {
 			return nil, fmt.Errorf("duplicate resource name %q in %s and %s", s.resource.Name, prev, s.file)

@@ -11,6 +11,7 @@ import (
 	"testing"
 	"unicode/utf8"
 
+	"amadan.net/rastrillo/rastrillo/internal/localecheck"
 	"amadan.net/rastrillo/rastrillo/ui"
 )
 
@@ -1239,6 +1240,104 @@ func TestProfileAdvisoryIgnoresTemplateComments(t *testing.T) {
 	} {
 		if got := profileAdvisory(c.layout, c.pages); got != c.want {
 			t.Errorf("%s: advisory %v, want %v", c.name, got, c.want)
+		}
+	}
+}
+
+// Astra's finding 2: plain doctor never runs the app. The app's code
+// runs before any guard the probe has, so a file its init() writes
+// appears only when doctor is asked to run it, with --probe.
+func TestDoctorRunsTheAppOnlyWithProbe(t *testing.T) {
+	if testing.Short() {
+		t.Skip("scaffolds, type-checks and builds a whole app")
+	}
+	dir := scaffoldApp(t, "initapp")
+	mustWrite(t, filepath.Join(dir, "cmd", "initapp", "ran.go"), "package main\n\nimport \"os\"\n\nfunc init() { os.WriteFile(\"ran\", nil, 0o644) }\n")
+	ran := filepath.Join(dir, "ran")
+	if err := runDoctor([]string{dir}); err != nil {
+		t.Fatalf("doctor: %v", err)
+	}
+	if _, err := os.Stat(ran); err == nil {
+		t.Fatal("plain doctor ran the app")
+	}
+	rep, err := diagnose(dir, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var out bytes.Buffer
+	if code := exitCode(t, rep.status(rep.appChecks(t.Context(), &out, false))); code != 0 || !strings.Contains(out.String(), localecheck.NotProbed) {
+		t.Errorf("plain doctor: exit %d, want 0 and the line saying it did not run the app:\n%s", code, out.String())
+	}
+	if err := runDoctor([]string{"--probe", dir}); err != nil {
+		t.Fatalf("doctor --probe: %v", err)
+	}
+	if _, err := os.Stat(ran); err != nil {
+		t.Fatal("doctor --probe did not run the app")
+	}
+}
+
+// Doctor runs the template preflight on every app, and the locale probe
+// with --probe. A fresh scaffold is clean on both, so doctor exits 0 on
+// day one. One template in the old syntax and one Go file binding a
+// per-request T then make it exit 6 and name both, while the probe
+// still reports the configuration it accepted.
+func TestDoctorRunsThePreflightAndTheProbe(t *testing.T) {
+	if testing.Short() {
+		t.Skip("scaffolds, type-checks and builds a whole app")
+	}
+	dir := scaffoldApp(t, "freshapp")
+	doctor := func() (string, int) {
+		rep, err := diagnose(dir, "")
+		if err != nil {
+			t.Fatal(err)
+		}
+		var out bytes.Buffer
+		code := exitCode(t, rep.status(rep.appChecks(t.Context(), &out, true)))
+		return out.String(), code
+	}
+	out, code := doctor()
+	if code != 0 {
+		t.Errorf("doctor on a fresh scaffold: exit %d, want 0\n%s", code, out)
+	}
+	for _, want := range []string{"Templates:", "Locales:", `"ok":true`} {
+		if !strings.Contains(out, want) {
+			t.Errorf("doctor's report lacks %q:\n%s", want, out)
+		}
+	}
+
+	mustWrite(t, filepath.Join(dir, "internal", "freshapp", "templates", "old.html"), `{{define "old"}}{{T "rastrillo.ui.shell_skip"}}{{end}}`)
+	mustWrite(t, filepath.Join(dir, "internal", "freshapp", "legacy.go"), "package freshapp\n\nimport \"amadan.net/rastrillo/rastrillo/ui\"\n\nvar _ = ui.WithT(nil)\n")
+	out, code = doctor()
+	// "ok":true: exit 6 outranks 7, so without it a probe that broke on
+	// doctor's side would leave this half green.
+	for _, want := range []string{"pending: ", "old.html", "legacy.go:5", "ui.WithT (a per-request T binding)", `"ok":true`} {
+		if !strings.Contains(out, want) {
+			t.Errorf("doctor's report lacks %q:\n%s", want, out)
+		}
+	}
+	if code != exitTemplates {
+		t.Errorf("doctor with an unmigrated template: exit %d, want %d\n%s", code, exitTemplates, out)
+	}
+}
+
+// The new codes rank below the three file and version findings, and
+// templates above locales.
+func TestDoctorExitPrecedence(t *testing.T) {
+	drifted := &report{files: []vendoredFile{{state: fileDiffers}}}
+	clean := &report{}
+	for _, c := range []struct {
+		rep    *report
+		checks int
+		want   int
+	}{
+		{drifted, exitTemplates, exitDrift},
+		{drifted, 0, exitDrift},
+		{clean, exitTemplates, exitTemplates},
+		{clean, exitLocales, exitLocales},
+		{clean, 0, 0},
+	} {
+		if got := exitCode(t, c.rep.status(c.checks)); got != c.want {
+			t.Errorf("status(%d) with drift %v = %d, want %d", c.checks, c.rep.drifted(), got, c.want)
 		}
 	}
 }

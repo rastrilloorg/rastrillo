@@ -1,9 +1,9 @@
 // genrender.go is view.go's generated-adapter half: the pieces Render
 // needs specifically because a generated action (internal/generate's
 // action emitter) and its view model (formView, showView, ...) know
-// nothing about this particular app — the app's layout, its locale
-// catalog, or a column like `published` that no manifest field
-// declares (posts.toml has none; see store.go's Migrations comment).
+// nothing about this particular app — the app's layout, or a column
+// like `published` that no manifest field declares (posts.toml has
+// none; see store.go's Migrations comment).
 //
 // Task 10 gave this file a duplicated "gen-layout" template and a
 // separate genPages tree, because the ejection root
@@ -11,14 +11,14 @@
 // had to render through two different layouts, since a generated view
 // model carries no Head field at all. Task 11 ejected posts/list and
 // posts/form (templates/posts/{list,form}.html), which let view.go
-// collapse both trees and both layouts into one (see its buildPages/
-// Render doc comments) — what remains here is genT (locale resolution
-// generated/ejected templates' (T "...") calls still need),
-// headFor/genHead (the page-name fallback for the one screen family
-// that still has no Head field of its own — posts/show, still fully
-// generated), and formStripData (the Edit screen's status-pill/
-// publish-unpublish-delete strip, which needs data no generated
-// action supplies).
+// collapse both trees and both layouts into one (see its NewApp/Render
+// doc comments). Task 24 moved locale resolution onto ui.Pages (every
+// template calls T/money with the request's own $L now, not a
+// per-app-default binding), so what remains here is headFor/genHead
+// (the page-name fallback for the one screen family that still has no
+// Head field of its own — posts/show, still fully generated), and
+// formStripData (the Edit screen's status-pill/publish-unpublish-
+// delete strip, which needs data no generated action supplies).
 package blog
 
 import (
@@ -27,27 +27,9 @@ import (
 	"strconv"
 	"strings"
 
-	"blog/gen/locales"
-
 	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/ui"
 )
-
-// genT resolves a manifest catalog key against gen/locales.BaseCatalog
-// directly — a plain map lookup, not rastrillo.T(r, key)/
-// Locales.Middleware. The blog is monolingual today, so wiring
-// Options.Locales would install locale-prefix routing (/en/...) that
-// nothing in this app asked for; genT reads the same map main.go wires
-// as Options.BaseCatalog, so the two can't drift apart even though
-// only this function is presently exercised at request time. A
-// missing key renders as the key itself, matching (*rastrillo.Locales)
-// .T's own fallback, so a typo shows up on the page instead of
-// blanking a sentence.
-func genT(key string) string {
-	if v, ok := locales.BaseCatalog[key]; ok {
-		return v
-	}
-	return key
-}
 
 // headFor computes the Head value view.go's "layout" needs for page.
 // Every hand view model (HomeView, PostView, AdminListView, ...) and
@@ -108,6 +90,7 @@ func genHead(page string) Head {
 // cannot be published, unpublished, deleted or even viewed before it
 // is created.
 type postFormView struct {
+	ui.Localized
 	Head Head
 
 	IsNew          bool
@@ -143,9 +126,15 @@ type postFormView struct {
 // — dead code since task 10 deleted the hand admin_edit.html that was
 // its only caller — so this revives it rather than recomputing the
 // same pair a second way.
-func formStripData(ctx *rastrillo.Ctx, data any) any {
+//
+// loc is the ui.Localized Render already pulled off the original data
+// (its own Request() call), carried over here because formStripData's
+// reflection reads IsNew/Fields/... by name and would otherwise lose
+// the embedded field the same way.
+func formStripData(ctx *rastrillo.Ctx, data any, loc ui.Localized) any {
 	v := reflect.ValueOf(data)
 	out := postFormView{
+		Localized:      loc,
 		IsNew:          boolField(v, "IsNew"),
 		Fields:         stringMapField(v, "Fields"),
 		Errors:         stringMapField(v, "Errors"),

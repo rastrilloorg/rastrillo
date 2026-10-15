@@ -61,6 +61,46 @@ func scopedMergeableFixtureResource() rastrillo.Resource {
 	return r
 }
 
+// pricesFixtureResource is a mergeable resource with money and a
+// [legacy] table: the shape whose events carry amounts, so its store
+// folds through replay's rules, writes the currency beside each amount
+// and exports CheckReplay for Boot.
+func pricesFixtureResource() rastrillo.Resource {
+	scale := 2
+	r := rastrillo.Resource{
+		Name:     "prices",
+		Route:    "/prices",
+		Store:    rastrillo.Mergeable,
+		Currency: "EUR",
+		Legacy:   &rastrillo.Legacy{Currency: "USD", Scale: &scale},
+		List: rastrillo.List{
+			Columns: []rastrillo.Column{{Field: "Title"}, {Field: "Amount", Kind: rastrillo.Money}},
+		},
+		Form: rastrillo.Form{
+			Basics: []rastrillo.Field{{Name: "Title", Required: true}, {Name: "Amount", Kind: rastrillo.Money}},
+		},
+	}
+	if err := r.Validate(); err != nil {
+		panic(err) // fixture must stay valid; a break here is a test bug
+	}
+	return r
+}
+
+func TestEmitStoreMergeableMoneyGoldenFile(t *testing.T) {
+	dir := t.TempDir()
+	if _, _, err := EmitStore(dir, []rastrillo.Resource{pricesFixtureResource()}, nil); err != nil {
+		t.Fatalf("EmitStore: %v", err)
+	}
+	path := filepath.Join(dir, "store", "prices", "store.go")
+	got, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read %s: %v", path, err)
+	}
+	if string(got) != readMergeableGolden(t, "prices_store.go.golden") {
+		t.Errorf("%s differs from testdata/mergeable/prices_store.go.golden:\ngot:\n%s", path, got)
+	}
+}
+
 // readMergeableGolden reads one golden from testdata/mergeable/ — the
 // mergeable store's generated files carry backquoted struct tags, so
 // unlike the exclusive goldens they live as files, not raw-string
@@ -78,7 +118,7 @@ func TestEmitStoreMergeableGoldenFiles(t *testing.T) {
 	dir := t.TempDir()
 	r := mergeableFixtureResource()
 
-	paths, err := EmitStore(dir, []rastrillo.Resource{r})
+	paths, _, err := EmitStore(dir, []rastrillo.Resource{r}, nil)
 	if err != nil {
 		t.Fatalf("EmitStore: %v", err)
 	}
@@ -124,7 +164,7 @@ func TestEmitStoreScopedMergeableGoldenFile(t *testing.T) {
 	dir := t.TempDir()
 	r := scopedMergeableFixtureResource()
 
-	if _, err := EmitStore(dir, []rastrillo.Resource{r}); err != nil {
+	if _, _, err := EmitStore(dir, []rastrillo.Resource{r}, nil); err != nil {
 		t.Fatalf("EmitStore: %v", err)
 	}
 
@@ -151,7 +191,7 @@ func TestEmitStoreMergeableFilterBinds(t *testing.T) {
 		t.Fatalf("Validate: %v", err)
 	}
 
-	if _, err := EmitStore(dir, []rastrillo.Resource{r}); err != nil {
+	if _, _, err := EmitStore(dir, []rastrillo.Resource{r}, nil); err != nil {
 		t.Fatalf("EmitStore: %v", err)
 	}
 	got, err := os.ReadFile(filepath.Join(dir, "store", "events", "store.go"))
@@ -178,7 +218,7 @@ func TestEmitStoreMixedStores(t *testing.T) {
 	dir := t.TempDir()
 	rs := []rastrillo.Resource{mergeableFixtureResource(), fixtureResource()}
 
-	if _, err := EmitStore(dir, rs); err != nil {
+	if _, _, err := EmitStore(dir, rs, nil); err != nil {
 		t.Fatalf("EmitStore: %v", err)
 	}
 
@@ -214,13 +254,13 @@ func TestEmitStoreMergeableIsIdempotent(t *testing.T) {
 	dir := t.TempDir()
 	r := mergeableFixtureResource()
 
-	paths, err := EmitStore(dir, []rastrillo.Resource{r})
+	paths, _, err := EmitStore(dir, []rastrillo.Resource{r}, nil)
 	if err != nil {
 		t.Fatalf("EmitStore (1st): %v", err)
 	}
 	first := readAllFiles(t, paths)
 
-	if _, err := EmitStore(dir, []rastrillo.Resource{r}); err != nil {
+	if _, _, err := EmitStore(dir, []rastrillo.Resource{r}, nil); err != nil {
 		t.Fatalf("EmitStore (2nd): %v", err)
 	}
 	second := readAllFiles(t, paths)

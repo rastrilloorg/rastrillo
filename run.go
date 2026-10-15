@@ -3,6 +3,7 @@ package rastrillo
 import (
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 )
@@ -34,10 +35,24 @@ import (
 // from the app: the activator owns the restore/replicate cycle, and
 // Serve's SIGTERM drain (10s) fits inside the activator's 20s budget.
 func Run(opts Options) error {
-	if isSidecarInvocation(os.Args[1:]) {
+	return run(opts, os.Args[1:], os.Getenv, os.Stdout, os.Stderr, os.Exit)
+}
+
+// run is Run with the process injected, so the order of its steps is
+// testable without exiting or listening.
+//
+// The probe is first, before the sidecar dispatch: `sidecar run`
+// reaches Options.Sidecar without passing Resolve or Serve
+// (runSidecar), so any later placement would let an inherited
+// RASTRILLO_CHECK_CONFIG start background work against a live database.
+func run(opts Options, args []string, getenv func(string) string, stdout, stderr io.Writer, exit func(int)) error {
+	if probe(opts, getenv, stdout, stderr, exit) {
+		return nil
+	}
+	if isSidecarInvocation(args) {
 		return runSidecar(opts)
 	}
-	opts, err := Resolve(opts)
+	opts, err := resolveInvocation(opts, args, getenv("STATE_DIRECTORY"))
 	if err != nil {
 		return err
 	}
@@ -55,7 +70,12 @@ func Run(opts Options) error {
 // boot-materialization duty transfers with it: touch the driver (a
 // Ping, or a migration) before Serve, or a hibernate route's activator
 // replicates a file that does not exist.
+//
+// Resolve runs the RASTRILLO_CHECK_CONFIG probe first, as Run does: an
+// app that calls it opens its database afterwards, so this is the last
+// point at which the probe can exit before anything is opened.
 func Resolve(opts Options) (Options, error) {
+	ProbeConfig(opts)
 	return resolveInvocation(opts, os.Args[1:], os.Getenv("STATE_DIRECTORY"))
 }
 

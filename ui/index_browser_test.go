@@ -40,6 +40,8 @@ func shellLayoutPage(t *testing.T, src []byte, dir string, defs ...string) strin
 		"asset":      func(p string) string { return "/" + strings.TrimPrefix(p, "static/") },
 		"iconAssets": func() template.HTML { return "" },
 	}).Parse(string(src)))
+	// ui's partials, as an app parses them: the locale block calls locale-menu.
+	template.Must(tmpl.ParseFS(Templates(), "*.html"))
 	base := []string{
 		`{{define "dir"}}` + dir + `{{end}}`,
 		`{{define "title"}}Harbour{{end}}`,

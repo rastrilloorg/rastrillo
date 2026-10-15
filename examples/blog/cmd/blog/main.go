@@ -7,15 +7,17 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"log/slog"
 	"net/http"
 	"os"
 
 	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/locales"
 
 	"blog/gen"
-	"blog/gen/locales"
+	genlocales "blog/gen/locales"
 	"blog/internal/blog"
 )
 
@@ -32,30 +34,46 @@ func main() {
 		// first; blog.Migrations already carries that plus the app's
 		// own additive published column, in that order (see
 		// internal/blog/store.go).
-		Migrations: blog.Migrations,
-		// BaseCatalog layers under any app catalog the manifest
-		// system's generated templates reference (resource.posts.*,
-		// ui.*) — gen/locales/locales.go's var, emitted from the same
-		// map as the human-readable gen/locales/en.toml. The blog is
-		// monolingual today (no Options.Locales), so this doesn't
-		// drive rastrillo's own request-scoped T; internal/blog's
-		// render adapter (genrender.go) reads locales.BaseCatalog
-		// directly for that. Wiring it here regardless keeps main.go
-		// honest about where the catalog comes from, and is what a
-		// later locale-aware revision would already need in place.
-		BaseCatalog: locales.BaseCatalog,
+		Migrations:  blog.Migrations,
+		BaseCatalog: genlocales.BaseCatalog,
 		Logger:      logger,
+		// Locales and DefaultLocale come from manifest/app.toml, through
+		// gen/locales. Boot refuses a configuration whose packs this
+		// binary does not link.
+		Locales:       genlocales.Locales,
+		DefaultLocale: genlocales.DefaultLocale,
 		Router: func(db *sql.DB) (*http.ServeMux, error) {
+			// Boot runs here because Router is called after OpenDB has
+			// applied Migrations, the schema Boot upgrades and checks;
+			// its error stops the start rather than serve that data.
+			booted, err := gen.Boot(context.Background(), db)
+			if err != nil {
+				return nil, err
+			}
+
+			// locales.CheckConfig already ran inside rastrillo.Handler
+			// (Options.Locales/DefaultLocale above); this call is only
+			// to get its result back, for ui.Pages to format and
+			// dispatch by (Task 9, 13).
+			cfg, err := locales.CheckConfig(genlocales.DefaultLocale, genlocales.Locales)
+			if err != nil {
+				return nil, err
+			}
+			app, err := blog.NewApp(cfg)
+			if err != nil {
+				return nil, err
+			}
+
 			// A fresh Ctx per request. Actor.Human is true and
 			// Actor.Name empty: honest for an app with no auth, and
 			// the one line a real deployment would replace with a
 			// session lookup. Render is the manifest system's seam
 			// (design doc): a generated action calls ctx.Render, and
-			// blog.Render is the one function that now serves both
+			// app.Render is the one function that now serves both
 			// the app's own hand pages and the generated ones (see
 			// its own doc comment and genrender.go).
-			mux := gen.Router(func(*http.Request) *rastrillo.Ctx {
-				return &rastrillo.Ctx{DB: db, Logger: logger, Actor: rastrillo.Actor{Human: true}, Render: blog.Render}
+			mux := gen.Router(booted, func(*http.Request) *rastrillo.Ctx {
+				return &rastrillo.Ctx{DB: db, Logger: logger, Actor: rastrillo.Actor{Human: true}, Render: app.Render}
 			})
 
 			// The app serves its own static files — the framework
@@ -69,7 +87,14 @@ func main() {
 			// the stdlib mux prefers it and no ordering care is
 			// needed.
 			mux.Handle("GET /static/", blog.Assets.Handler())
-			return mux, nil
+
+			// app.Middleware puts the request's localizer on the
+			// context (ui.Pages.Middleware); Router must return a
+			// *http.ServeMux, so an outer one carries it instead of
+			// wrapping mux in place.
+			outer := http.NewServeMux()
+			outer.Handle("/", app.Middleware(mux))
+			return outer, nil
 		},
 	})
 	if err != nil {

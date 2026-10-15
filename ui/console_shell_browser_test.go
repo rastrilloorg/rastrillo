@@ -195,6 +195,8 @@ func consolePageFrom(t *testing.T, src []byte, nav, dir string, defs ...string) 
 		"asset":      func(p string) string { return "/" + strings.TrimPrefix(p, "static/") },
 		"iconAssets": func() template.HTML { return "" },
 	}).Parse(string(src)))
+	// ui's partials, as an app parses them: the locale block calls locale-menu.
+	template.Must(tmpl.ParseFS(Templates(), "*.html"))
 	template.Must(tmpl.Parse(`{{define "content"}}<p>Content.</p>{{end}}`))
 	template.Must(tmpl.Parse(`{{define "dir"}}` + dir + `{{end}}`))
 	template.Must(tmpl.Parse(`{{define "nav"}}` + nav + `{{end}}`))

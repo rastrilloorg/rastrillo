@@ -6,8 +6,8 @@
      a generated formView/showView/listView (internal/generate/
      actions.go), and Head always comes from render.go's genHead
      page-name default. */}}
-{{define "layout"}}<!doctype html>
-<html lang="en">
+{{define "layout"}}{{$L := localizer $}}<!doctype html>
+<html lang="{{$L.Identity}}" dir="{{$L.Dir}}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width">
@@ -17,7 +17,8 @@
 </head>
 <body>
 <div rst-page>
-{{template "content" .Data}}
+{{template "locale-menu" dict "L" $L "Items" .Locales "Return" .Return}}
+{{template "content" (withL (.Data) $L)}}
 </div>
 </body>
 </html>

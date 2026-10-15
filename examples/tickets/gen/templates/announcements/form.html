@@ -3,36 +3,39 @@
      this one file then stops.
 
      Data contract (the action emitter reads this):
+       L  *ui.Localizer, required: set by the action from the request; ui.Pages' middleware puts it there
        IsNew           bool, required — New renders one form posting
                        every field to the create route; Edit renders
                        Basics (and, when this resource declares
                        Advanced fields, a second Advanced form)
        Fields          map[string]string, required — current values
-                       keyed by declared field name; Money already
-                       formatted as a dollar string by the action
-                       (templates never do money math); empty strings
+                       keyed by declared field name; empty strings
                        for New
-       Errors          map[string]string, optional — a validation
-                       message per field name, set only on a 400
-                       re-render; each value is resolved through T,
-                       so a catalog key localises and a plain
-                       sentence renders as written
+       Errors          map[string]string, optional: a validation
+                       message or catalog key per field name, set
+                       only on a 400 re-render; each is resolved
+                       through Tf with that field's ErrorArgs, so a
+                       key localises and a plain sentence renders as
+                       written
+       ErrorArgs       map[string]map[string]any, optional: per field,
+                       the values its message takes, such as
+                       {currency}, {a} and {b}
        BasicsAction    string, required when !IsNew — the
                        edit-basics POST target (this resource has
                        no Advanced fields, so there is no second
                        form) */}}
-{{define "content"}}
+{{define "content"}}{{$L := localizer $}}
 {{if .IsNew}}
 <form rst-form method="post" action="/admin/announcements">
-{{template "field-text" dict "Name" "Title" "Label" (T "resource.announcements.field.title") "Value" .Fields.Title "Error" (T (index .Errors "Title")) "Required" true}}
-{{template "field-textarea" dict "Name" "Body" "Label" (T "resource.announcements.field.body") "Value" .Fields.Body "Error" (T (index .Errors "Body"))}}
-{{template "form-foot" dict "Submit" (T "ui.save") "CancelHref" "/admin/announcements" "CancelLabel" (T "ui.cancel")}}
+{{template "field-text" dict "L" $L "Name" "Title" "Label" (T $L "resource.announcements.field.title") "Value" .Fields.Title "Error" (Tf $L (index .Errors "Title") (index .ErrorArgs "Title")) "Required" true}}
+{{template "field-textarea" dict "L" $L "Name" "Body" "Label" (T $L "resource.announcements.field.body") "Value" .Fields.Body "Error" (Tf $L (index .Errors "Body") (index .ErrorArgs "Body"))}}
+{{template "form-foot" dict "L" $L "Submit" (T $L "ui.save") "CancelHref" "/admin/announcements" "CancelLabel" (T $L "ui.cancel")}}
 </form>
 {{else}}
 <form rst-form method="post" action="{{.BasicsAction}}">
-{{template "field-text" dict "Name" "Title" "Label" (T "resource.announcements.field.title") "Value" .Fields.Title "Error" (T (index .Errors "Title")) "Required" true}}
-{{template "field-textarea" dict "Name" "Body" "Label" (T "resource.announcements.field.body") "Value" .Fields.Body "Error" (T (index .Errors "Body"))}}
-{{template "form-foot" dict "Submit" (T "ui.save") "CancelHref" "/admin/announcements" "CancelLabel" (T "ui.cancel")}}
+{{template "field-text" dict "L" $L "Name" "Title" "Label" (T $L "resource.announcements.field.title") "Value" .Fields.Title "Error" (Tf $L (index .Errors "Title") (index .ErrorArgs "Title")) "Required" true}}
+{{template "field-textarea" dict "L" $L "Name" "Body" "Label" (T $L "resource.announcements.field.body") "Value" .Fields.Body "Error" (Tf $L (index .Errors "Body") (index .ErrorArgs "Body"))}}
+{{template "form-foot" dict "L" $L "Submit" (T $L "ui.save") "CancelHref" "/admin/announcements" "CancelLabel" (T $L "ui.cancel")}}
 </form>
 {{end}}
 {{end}}

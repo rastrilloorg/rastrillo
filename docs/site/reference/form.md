@@ -26,6 +26,14 @@ type Field struct {
 	Kind     Kind
 	Required bool
 	Location *time.Location // Date and DateTime only; nil means time.UTC
+
+	// Money only.
+	Currency   string // the ISO 4217 code the amount is stored in; empty for cents
+	Negative   bool   // allow an amount below zero
+	Locale     string // the language to read the text in, without LocaleEcho
+	LocaleEcho bool   // read the language and currency the form sent
+	Strict     bool   // read only the language's exact format
+	Stored     *int64 // the record's amount, on an edit form
 }
 ```
 
@@ -36,7 +44,8 @@ plain `form.Field{Name: "Title"}` does the common thing.
 |---|---|---|
 | `Text` (the zero `Kind`) | `Parsed.String` | Trimmed; value and echo are both the trimmed text |
 | `Textarea` | `Parsed.String` | Raw, whitespace preserved; only the required check trims |
-| `Money` | `Parsed.Cents` | Parsed by `ParseCents`; echo keeps the raw text |
+| `Money` with a `Currency` | `Parsed.Minor` | That currency's minor units; see [Money](#money) |
+| `Money` without a `Currency` | `Parsed.Cents` | Parsed by `ParseCents`; echo keeps the raw text |
 | `Date` | `Parsed.Date` | `time.ParseInLocation` on `2006-01-02` in `Location` |
 | `Time` | `Parsed.Time` | `time.Parse` on `15:04` — a clock reading, no location |
 | `DateTime` | `Parsed.DateTime` | `time.ParseInLocation` on `2006-01-02T15:04` in `Location` |
@@ -49,12 +58,14 @@ value reports the parse error instead of the required message. For
 required-blank; a date has no such pair, because `"0"` is not a date and
 reports `rastrillo.ui.date_invalid`.
 
-The three date kinds and `URL` report catalog keys rather than English:
-`rastrillo.ui.date_invalid` for an unparseable date,
-`rastrillo.ui.url_invalid` or `rastrillo.ui.url_credentials` for a
-refused address, and `rastrillo.ui.field_required` for a blank required
-one. The renderer resolves them through `T`. See
-[Dates and times](#dates-and-times) and [Web addresses](#web-addresses).
+The three date kinds, `URL` and `Money` with a `Currency` report catalog
+keys rather than English: `rastrillo.ui.date_invalid` for an unparseable
+date, `rastrillo.ui.url_invalid` or `rastrillo.ui.url_credentials` for a
+refused address, a `rastrillo.ui.money_*` key for a refused amount, and
+`rastrillo.ui.field_required` for a blank required one. The renderer
+resolves them through `T`, or through `Tf` with `Parsed.ErrorArgs` for
+the money keys that carry values. See [Dates and times](#dates-and-times),
+[Web addresses](#web-addresses) and [Money](#money).
 
 ## Parsed
 
@@ -69,7 +80,10 @@ type Parsed struct{ /* unexported */ }
 | `Parsed.OK` | true when every field validated |
 | `Parsed.Errors` | the `Errors` map, empty rather than nil when OK |
 | `Parsed.String` | a `Text`, `Textarea` or `URL` field's value |
-| `Parsed.Cents` | a `Money` field's value in integer cents |
+| `Parsed.Cents` | a `Money` field's value in integer cents, for a field with no `Currency` |
+| `Parsed.Minor` | a `Money` field's amount in its currency's minor units, and whether there is one |
+| `Parsed.MoneyInput` | a money field's text to show again after a failed POST |
+| `Parsed.ErrorArgs` | the values each field's error message takes, for `Tf` |
 | `Parsed.Date` | a `Date` field's `time.Time` |
 | `Parsed.DateTime` | a `DateTime` field's `time.Time` |
 | `Parsed.Time` | a `Time` field's `(h, m int, ok bool)` clock reading |
@@ -207,7 +221,49 @@ can match the generated ones.
 
 ## Money
 
-Money is `int64` cents throughout. Never a float.
+A `Money` field with a `Currency` reads an amount in that currency's
+minor units, as an `int64`. Never a float. [Forms](/docs/forms#money)
+explains what it accepts and refuses.
+
+```go
+func (p *Parsed) Minor(name string) (minor int64, present bool)
+```
+
+The amount, and whether there is one. `present` is false for a blank
+field and for one with an error.
+
+```go
+type MoneyInput struct {
+	Value, Locale, Currency, Seed string
+}
+
+func SeedMoney(renderLocale string, minor *int64, code string, strict bool) (MoneyInput, error)
+func (p *Parsed) MoneyInput(name, renderLocale string) (in MoneyInput, reseed bool)
+```
+
+`MoneyInput` is what the `field-money` partial draws: the text, the
+language it is written in, the currency, and the seed. `SeedMoney` fills
+it from a stored amount, or from none (`minor` nil) for a create form or
+an empty field. Pass `strict` as the field's `Strict`: a strict field
+gets no seed.
+
+`Parsed.MoneyInput` is the person's own text again after a failed POST.
+When `reseed` is true the text could not be trusted, so fill the field
+with `SeedMoney` instead.
+
+```go
+func (p *Parsed) ErrorArgs() map[string]map[string]any
+```
+
+Per field, the values its error message takes: `{currency}` for
+`money_wrong_currency`, `{a}` and `{b}` for `money_ambiguous`, and all
+three for `money_ambiguous_precision`. A field whose message takes none
+is absent.
+
+### The cents path
+
+A `Money` field with no `Currency` reads integer cents, as it did before
+currencies existed. It is unchanged.
 
 ### ParseCents
 
@@ -272,8 +328,8 @@ Both write the sign once against the absolute value. Formatting a
 negative directly produces `"$-1.-50"`, because Go's `/` and `%` both
 truncate toward zero.
 
-**`FormatCents` writes a dollar sign and knows no other currency.**
-Nothing in the framework stores a currency, so there is nothing for it
-to read. Format your own money anywhere that is not what you want, and
-store the currency beside the amount when you do — a reader's locale
-decides how a price is written, never which currency it is in.
+**`FormatCents` writes a dollar sign and knows no other currency.** For
+an amount in any currency, store the code beside it and write it with
+[`currency.Format`](/docs/reference/currency), or `{{money $L .Amount .Currency}}`
+in a template. A reader's language decides how a price is written, never
+which currency it is in.

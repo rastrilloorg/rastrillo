@@ -18,6 +18,7 @@ import (
 	"amadan.net/rastrillo/rastrillo/csrf"
 	"amadan.net/rastrillo/rastrillo/db"
 	"amadan.net/rastrillo/rastrillo/jobs"
+	"amadan.net/rastrillo/rastrillo/locales"
 	"amadan.net/rastrillo/rastrillo/migrate"
 	"amadan.net/rastrillo/rastrillo/password"
 	"amadan.net/rastrillo/rastrillo/pow"
@@ -29,10 +30,19 @@ import (
 // password identity plugin, and the chi router. It returns a
 // *http.ServeMux because rastrillo.Options.Mux is typed that way —
 // the chi router mounts inside it rather than being served directly.
+// cfg is locales.CheckConfig's own result, not a value read back from
+// rastrillo.Handler: this app opens its own *gorm.DB (db.Open) and
+// hands Serve a finished Options.Mux (main.go:84-87), so there is no
+// Options.Router callback for Handler to call App from after
+// validating. main.go checks the configuration itself, before this
+// runs, so the three ui.Pages below never build from one Handler
+// would have refused; rastrillo.Serve's own Handler call then
+// re-validates the same configuration, redundantly but harmlessly, as
+// part of serving it (Task 9, 13, 24).
 //
 // models.go and handlers.go are the only files this example asks a
 // reader to actually study; everything here is plumbing to get there.
-func App(d *db.DB, origin, instanceKey string, bg *background.Group, logger *slog.Logger) (*http.ServeMux, error) {
+func App(d *db.DB, origin, instanceKey string, bg *background.Group, logger *slog.Logger, cfg locales.Config) (*http.ServeMux, error) {
 	// BootSchema (migrations.go) is this app's own Schema plus every
 	// framework subsystem's — sessions' shared core and the generated
 	// bookmarks store — merged in apply order. One call replaces what
@@ -46,6 +56,14 @@ func App(d *db.DB, origin, instanceKey string, bg *background.Group, logger *slo
 	// mix of reads and writes, and dbresolver's Get() on the top-level
 	// handle returns the source (writer) pool.
 	writer, err := d.G.DB()
+	if err != nil {
+		return nil, err
+	}
+	// Boot comes straight after migrate.Apply: the generated bookmarks
+	// table must exist for it to upgrade and check, and nothing may
+	// serve before it has. It vouches for writer alone, which is why
+	// the generated router's contexts below carry writer too.
+	booted, err := gen.Boot(context.Background(), writer)
 	if err != nil {
 		return nil, err
 	}
@@ -79,7 +97,24 @@ func App(d *db.DB, origin, instanceKey string, bg *background.Group, logger *slo
 		}
 	})
 
-	a := &app{db: d.G, jobs: jobs.New(logger)}
+	// The three ui.Pages this app renders through (render.go's and
+	// genrender.go's own doc comments on why there are three), built
+	// once here from the validated locale configuration, before any
+	// handler can reach them.
+	pages, err := newPages(cfg)
+	if err != nil {
+		return nil, err
+	}
+	genPages, err := newGenPages(cfg)
+	if err != nil {
+		return nil, err
+	}
+	fragPages, err := newFragPages(cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	a := &app{db: d.G, jobs: jobs.New(logger), pages: pages, genPages: genPages, fragPages: fragPages}
 
 	jh, err := jobs.NewHandlers(jobs.Config{
 		Jobs:           a.jobs,
@@ -95,8 +130,8 @@ func App(d *db.DB, origin, instanceKey string, bg *background.Group, logger *slo
 		Proof:        guard,
 		Lookup:       lookupUser(d.G),
 		Create:       createUser(d.G),
-		RenderSignin: renderSignin,
-		RenderSignup: renderSignup,
+		RenderSignin: a.renderSignin,
+		RenderSignup: a.renderSignup,
 	})
 	if err != nil {
 		return nil, err
@@ -124,8 +159,8 @@ func App(d *db.DB, origin, instanceKey string, bg *background.Group, logger *slo
 	// closure over r (GenRender's doc). chi's Handle (not Mount, which
 	// strips the prefix) passes the full path through to the generated
 	// Go 1.22 mux patterns.
-	gmux := gen.Router(func(r *http.Request) *rastrillo.Ctx {
-		return &rastrillo.Ctx{DB: writer, Logger: logger, Actor: rastrillo.Actor{Human: true}, Render: GenRender(r)}
+	gmux := gen.Router(booted, func(r *http.Request) *rastrillo.Ctx {
+		return &rastrillo.Ctx{DB: writer, Logger: logger, Actor: rastrillo.Actor{Human: true}, Render: a.GenRender(r)}
 	})
 
 	r.Group(func(r chi.Router) {
@@ -194,8 +229,14 @@ func App(d *db.DB, origin, instanceKey string, bg *background.Group, logger *slo
 		w.Write([]byte(notesCSS))
 	})
 
+	// a.pages.Middleware puts the request's localizer on the context
+	// (ui.Pages.Middleware) for every handler on r, hand and generated
+	// alike — any of this app's three ui.Pages would do (they share
+	// cfg's offered locales and formats; render.go's newPages doc
+	// explains why there are three at all), so the hand screens' own
+	// one wraps here.
 	mux := http.NewServeMux()
-	mux.Handle("/", r)
+	mux.Handle("/", a.pages.Middleware(r))
 	return mux, nil
 }
 

@@ -1130,6 +1130,14 @@ func allPartials() []struct {
 			"Name": "website", "Label": "Website", "Value": "brightwater.example/pricing",
 			"Required": true, "Hint": "Where people can read more.", "Error": "Enter a web address, like example.com.",
 		}},
+		{"field-money", map[string]any{
+			// The re-render of a refused POST: "12,.50" is what an en
+			// field really refuses with this error, and text the person
+			// typed is echoed with no seed (spec §5.3). A non-empty seed
+			// is TestFieldMoneyPartial's.
+			"Name": "ticket_price", "Label": "Ticket price", "Value": "12,.50", "Locale": "en", "Currency": "EUR", "Seed": "",
+			"Required": true, "Hint": "For example, 12.50 or €12.50.", "Error": "Use a point for decimals, like 12.50.",
+		}},
 		{"signin", map[string]any{
 			"State": auth.SigninState{Step: auth.StepAsk, BeginPath: "/signin", ForgetPath: "/signin/forget", Address: "grace@example.com"},
 			"Brand": map[string]any{
@@ -1239,15 +1247,15 @@ func TestAllPartialsAreDefined(t *testing.T) {
 		"confirm-form", "back-nav", "notice", "form-error", "form-foot", "bulk-bar", "job-status",
 		"locale-menu", "error-page",
 		"field-date", "field-time", "field-datetime", "field-daterange",
-		"field-url", "signin", "signin-title", "row-menu",
+		"field-url", "signin", "signin-title", "row-menu", "field-money",
 	}
 	for _, name := range want {
 		if tmpl.Lookup(name) == nil {
 			t.Errorf("partial %q is not defined", name)
 		}
 	}
-	if len(want) != 38 {
-		t.Fatalf("the shipped set is 38 partials, this list has %d", len(want))
+	if len(want) != 39 {
+		t.Fatalf("the shipped set is 39 partials, this list has %d", len(want))
 	}
 }
 
@@ -2207,13 +2215,15 @@ func detailsOpenTags(src string) []string {
 // an empty bar rather than an error.
 func TestTheShellsKeepTheirOverridableBlockNames(t *testing.T) {
 	want := map[string][]string{
-		"column": {"lang", "dir", "title", "head", "content"},
-		"topbar": {"lang", "dir", "title", "head", "brand", "nav", "account", "locale", "content", "foot"},
+		// locale-menu is the locale block's default body, the switcher
+		// partial; column has a locale block too, at the top of its page.
+		"column": {"lang", "dir", "title", "head", "locale", "locale-menu", "content"},
+		"topbar": {"lang", "dir", "title", "head", "brand", "nav", "account", "locale", "locale-menu", "content", "foot"},
 		// brand and title appear first as the phone index's <h1>, the
 		// app's name with the page's title as its fallback, reused
 		// rather than redefined; profile twice, as the avatar that opens
 		// the rail's one menu and as the name heading the card.
-		"sidebar": {"lang", "dir", "title", "head", "view", "up", "brand", "title", "brand", "nav", "profile", "profile", "locale", "account", "content"},
+		"sidebar": {"lang", "dir", "title", "head", "view", "up", "brand", "title", "brand", "nav", "profile", "profile", "locale", "locale-menu", "account", "content"},
 		// console offers topbar's SET, plus the phone index's blocks
 		// (view, up, profile), which a topbar screen can define and the
 		// topbar simply never calls. So a screen moves from console to
@@ -2234,7 +2244,7 @@ func TestTheShellsKeepTheirOverridableBlockNames(t *testing.T) {
 		// page's title as its fallback, so brand and title come before
 		// the brand block itself; profile twice, as the avatar the
 		// Menu becomes on the index and the name heading its card.
-		"console": {"lang", "dir", "title", "head", "view", "brand", "title", "brand", "profile", "profile", "locale", "account", "up", "nav", "content", "foot"},
+		"console": {"lang", "dir", "title", "head", "view", "brand", "title", "brand", "profile", "profile", "locale", "locale-menu", "account", "up", "nav", "content", "foot"},
 		// stage has no chrome to override. backdrop is the picture
 		// behind the card, foot an optional line under it.
 		"stage": {"lang", "dir", "title", "head", "backdrop", "content", "foot"},
@@ -2833,7 +2843,7 @@ func TestTheSidebarRailFootIsOneProfileMenu(t *testing.T) {
 	if !strings.HasPrefix(s[foot:], open) {
 		t.Errorf("the rail foot does not open with the profile menu and its avatar summary; it reads %.200q", s[foot:])
 	}
-	card := strings.Index(s, `<div rst-dropdown-menu><div rst-shell-who>{{template "profile" .}}</div>{{block "locale" .}}{{end}}{{block "account" .}}{{end}}</div></details></div>`)
+	card := strings.Index(s, `<div rst-dropdown-menu><div rst-shell-who>{{template "profile" .}}</div>`+localeBlock+`{{block "account" .}}{{end}}</div></details></div>`)
 	if card < foot {
 		t.Error("the profile card does not hold the person, then the language, then the account's links, in that order and inside the rail foot")
 	}
@@ -2863,10 +2873,10 @@ func TestTheConsoleMenuCarriesTheProfileForItsIndex(t *testing.T) {
 	}
 	s := string(src)
 	for _, want := range []string{
-		`<summary><span rst-shell-menu-label>{{icon "menu"}}{{T "rastrillo.ui.shell_menu"}}</span><span rst-shell-avatar>{{block "profile" .}}`,
+		`<summary><span rst-shell-menu-label>{{icon "menu"}}{{T $L "rastrillo.ui.shell_menu"}}</span><span rst-shell-avatar>{{block "profile" .}}`,
 		`<div rst-shell-tail>
 <div rst-shell-who>{{template "profile" .}}</div>
-{{block "locale" .}}{{end}}
+` + localeBlock + `
 <details rst-dropdown rst-shell-account`,
 	} {
 		if !strings.Contains(s, want) {
@@ -2999,10 +3009,12 @@ func TestLayoutsParseAndRender(t *testing.T) {
 			if !ok {
 				t.Fatal("missing")
 			}
-			tmpl := template.Must(template.New("layout").Funcs(Funcs()).Funcs(template.FuncMap{
+			// ui's partials first, as every app parses them: a shell's
+			// locale block calls the locale-menu partial.
+			tmpl := template.Must(template.Must(template.New("layout").Funcs(Funcs()).Funcs(template.FuncMap{
 				"asset":      func(p string) string { return "/" + p },
 				"iconAssets": func() template.HTML { return "" },
-			}).Parse(string(src)))
+			}).ParseFS(Templates(), "*.html")).Parse(string(src)))
 			template.Must(tmpl.Parse(`{{define "content"}}CONTENT-SENTINEL{{end}}`))
 			var b strings.Builder
 			if err := tmpl.ExecuteTemplate(&b, "layout", nil); err != nil {
@@ -3627,10 +3639,12 @@ func renderShellLayout(t *testing.T, name string, defs ...string) string {
 	if !ok {
 		t.Fatalf("no %s layout", name)
 	}
-	tmpl := template.Must(template.New("layout").Funcs(Funcs()).Funcs(template.FuncMap{
+	// ui's partials first, as every app parses them: a shell's locale
+	// block calls the locale-menu partial.
+	tmpl := template.Must(template.Must(template.New("layout").Funcs(Funcs()).Funcs(template.FuncMap{
 		"asset":      func(p string) string { return "/" + p },
 		"iconAssets": func() template.HTML { return "" },
-	}).Parse(string(src)))
+	}).ParseFS(Templates(), "*.html")).Parse(string(src)))
 	template.Must(tmpl.Parse(`{{define "content"}}<h1>Content</h1>{{end}}`))
 	for _, d := range defs {
 		template.Must(tmpl.Parse(d))
@@ -3745,6 +3759,33 @@ func TestFieldURLIsAForgivingTextInput(t *testing.T) {
 	}
 	if strings.Contains(got, "aria-describedby") || strings.Contains(got, "aria-invalid") || strings.Contains(got, " required") {
 		t.Errorf("a bare field-url carries state it was not given:\n%s", got)
+	}
+}
+
+// field-money carries the three hidden inputs spec §5's contract reads
+// (the locale the text is in, the currency the form displayed, the
+// server's seed) and shows the currency code inside the label, where a
+// person sees it and a screen reader says it.
+func TestFieldMoneyPartial(t *testing.T) {
+	got := render(t, "field-money", map[string]any{"Name": "Price", "Label": "Price", "Value": "12.50", "Locale": "en", "Currency": "EUR", "Seed": "12.50", "Required": true, "Error": "Enter a valid amount."})
+	for _, want := range []string{
+		`name="Price.locale" value="en"`, `name="Price.currency" value="EUR"`, `name="Price.seed" value="12.50"`,
+		`inputmode="decimal"`, `<span class="rst-mono">EUR</span>`, `aria-invalid="true"`,
+		`<label rst-field-label for="Price">Price <span class="rst-mono">EUR</span> <span rst-field-required aria-hidden="true">*</span></label>`,
+		`id="Price" name="Price" type="text"`, `value="12.50" required`, `aria-describedby="Price-error"`,
+	} {
+		if !strings.Contains(got, want) {
+			t.Errorf("field-money is missing %q:\n%s", want, got)
+		}
+	}
+	// The seed input is there with no seed too: a create form posts it
+	// empty, which is what the server expects of one.
+	bare := render(t, "field-money", map[string]any{"Name": "Price", "Label": "Price", "Locale": "en", "Currency": "EUR"})
+	if !strings.Contains(bare, `<input type="hidden" name="Price.seed" value="">`) {
+		t.Errorf("a field with no seed dropped the seed input:\n%s", bare)
+	}
+	if strings.Contains(bare, "aria-describedby") || strings.Contains(bare, "aria-invalid") || strings.Contains(bare, " required") || strings.Contains(bare, `name="Price" type="text" inputmode="decimal" value`) {
+		t.Errorf("a bare field-money carries state it was not given:\n%s", bare)
 	}
 }
 

@@ -1,5 +1,5 @@
-{{define "content"}}
-{{template "page-header" dict "Title" .Title "Sub" .Date}}
+{{define "content"}}{{$L := localizer $}}
+{{template "page-header" dict "L" $L "Title" .Title "Sub" .Date}}
 <article class="blog-article">
 {{range .Paragraphs}}<p>{{.}}</p>
 {{end}}</article>

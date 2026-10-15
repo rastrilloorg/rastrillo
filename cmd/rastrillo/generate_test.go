@@ -10,6 +10,8 @@ import (
 	"testing"
 
 	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/internal/generate/packs"
+	"amadan.net/rastrillo/rastrillo/internal/manifest"
 )
 
 // repoRoot returns this repo's absolute root, computed from this
@@ -68,10 +70,20 @@ func TestGenerateCheckWritesNothing(t *testing.T) {
 		"go.mod":               "module demo\n\ngo 1.22\n",
 		"actions/index.GET.go": handleSrc,
 	})
+	if err := runGenerate([]string{"--check", dir}); err == nil || !strings.Contains(err.Error(), "gen/locales/packs.go") {
+		t.Fatalf("a missing packs file must fail --check: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(dir, "gen")); !os.IsNotExist(err) {
+		t.Fatal("--check must not write gen/")
+	}
+	// With the packs in place it passes, and still writes no router.
+	if _, err := packs.Emit(filepath.Join(dir, "gen"), manifest.App{Locales: []string{"en"}, DefaultLocale: "en"}); err != nil {
+		t.Fatal(err)
+	}
 	if err := runGenerate([]string{"--check", dir}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := os.Stat(filepath.Join(dir, "gen")); !os.IsNotExist(err) {
+	if _, err := os.Stat(filepath.Join(dir, "gen", "router.go")); !os.IsNotExist(err) {
 		t.Fatal("--check must not write gen/")
 	}
 }
@@ -102,6 +114,7 @@ func TestGenerateCheckFailsOnAnIncompleteCatalog(t *testing.T) {
 		"locales/en.toml":      "a = \"A\"\nb = \"B\"\n",
 		"locales/fr.toml":      "a = \"A\"\n",
 	})
+	generateFirst(t, dir)
 	err := runGenerate([]string{"--check", dir})
 	if err == nil {
 		t.Fatal("want a failure: fr.toml is missing a key en.toml has (design doc §10)")
@@ -126,20 +139,86 @@ func TestGenerateCheckPassesOnACompleteCatalog(t *testing.T) {
 		"locales/en.toml":      "a = \"A\"\n",
 		"locales/fr.toml":      fr.String(),
 	})
+	generateFirst(t, dir)
 	if err := runGenerate([]string{"--check", dir}); err != nil {
 		t.Fatalf("want a pass, got %v", err)
 	}
 }
 
-func TestGenerateCheckHonoursTheDefaultLocaleFlag(t *testing.T) {
+func TestGenerateCheckTakesTheDefaultFromAppTOML(t *testing.T) {
 	dir := scaffold(t, map[string]string{
 		"go.mod":               "module demo\n\ngo 1.22\n",
 		"actions/index.GET.go": handleSrc,
+		"manifest/app.toml":    "locales = [\"fr\", \"en\"]\ndefault_locale = \"fr\"\n",
 		"locales/fr.toml":      "a = \"A\"\nb = \"B\"\n",
 		"locales/en.toml":      "a = \"A\"\n",
 	})
-	if err := runGenerate([]string{"--check", "--default-locale", "fr", dir}); err == nil {
-		t.Fatal("with fr as the default, en.toml is the incomplete one")
+	generateFirst(t, dir)
+	err := runGenerate([]string{"--check", dir})
+	if err == nil || !strings.Contains(err.Error(), "catalog") {
+		t.Fatalf("with fr as the default, en.toml is the incomplete one: %v", err)
+	}
+}
+
+func TestGenerateRefusesTheRemovedDefaultLocaleFlag(t *testing.T) {
+	dir := scaffold(t, map[string]string{"go.mod": "module demo\n\ngo 1.22\n"})
+	err := runGenerate([]string{"--check", "--default-locale", "fr", dir})
+	want := "--default-locale was removed: the default comes from default_locale in manifest/app.toml"
+	if err == nil || err.Error() != want {
+		t.Fatalf("got %v, want %q", err, want)
+	}
+}
+
+// A language added to app.toml without regenerating leaves the binary
+// without its pack; --check must say so before boot does. Once the
+// packs and the catalog are in place, the same app passes.
+func TestGenerateCheckFailsWhenAppTOMLOutrunsThePacks(t *testing.T) {
+	dir := t.TempDir()
+	src := filepath.Join(repoRoot(t), "examples", "tickets")
+	if out, err := exec.Command("cp", "-R", src+"/.", dir).CombinedOutput(); err != nil {
+		t.Fatalf("copy tickets: %v\n%s", err, out)
+	}
+	if err := runGenerate([]string{"--check", dir}); err != nil {
+		t.Fatalf("the committed example must pass first: %v", err)
+	}
+	app := filepath.Join(dir, "manifest", "app.toml")
+	if err := os.WriteFile(app, []byte("locales = [\"en\", \"es\"]\ndefault_locale = \"en\"\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	err := runGenerate([]string{"--check", dir})
+	if err == nil || !strings.Contains(err.Error(), "gen/locales/packs.go") {
+		t.Fatalf("want a failure naming gen/locales/packs.go, got %v", err)
+	}
+
+	// The rest of adding a language to a manifest app: regenerate, then
+	// the catalog --check asks for, translated from the manifest's
+	// English (a copy stands in for the translation).
+	generateFirst(t, dir)
+	if err := runGenerate([]string{"--check", dir}); err == nil || !strings.Contains(err.Error(), "catalog") {
+		t.Fatalf("want locales/es.toml demanded, got %v", err)
+	}
+	en, err := os.ReadFile(filepath.Join(dir, "gen", "locales", "en.toml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(filepath.Join(dir, "locales"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "locales", "es.toml"), en, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := runGenerate([]string{"--check", dir}); err != nil {
+		t.Fatalf("a manifest app offering es with a complete locales/es.toml must pass: %v", err)
+	}
+}
+
+// generateFirst runs plain generate, as an app does before its first
+// --check: --check fails on a missing gen/locales/packs.go, which is
+// not what the tests calling this are about.
+func generateFirst(t *testing.T, dir string) {
+	t.Helper()
+	if err := runGenerate([]string{dir}); err != nil {
+		t.Fatal(err)
 	}
 }
 
@@ -338,6 +417,7 @@ func TestGenerateCheckSucceedsWithNoActionsDirectory(t *testing.T) {
 	dir := scaffold(t, map[string]string{
 		"go.mod": "module demo\n\ngo 1.22\n",
 	})
+	generateFirst(t, dir)
 	if err := runGenerate([]string{"--check", dir}); err != nil {
 		t.Fatalf("--check with no actions/ directory at all: %v", err)
 	}

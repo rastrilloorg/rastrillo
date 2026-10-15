@@ -5,14 +5,15 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"reflect"
+	"strconv"
 	"strings"
 	"testing"
 	"testing/fstest"
 )
 
-// probe records what the wrapped handler saw, so a test can assert on
+// seen records what the wrapped handler saw, so a test can assert on
 // both the resolved locale and the path the mux would have matched.
-func probe(t *testing.T, l *Locales, req *http.Request) (locale, path, translated string) {
+func seen(t *testing.T, l *Locales, req *http.Request) (locale, path, translated string) {
 	t.Helper()
 	h := l.Middleware(http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
 		locale, path, translated = LocaleFrom(r), r.URL.Path, T(r, "app.title")
@@ -62,7 +63,17 @@ func TestResolutionPrecedence(t *testing.T) {
 			if tt.cookie != "" {
 				req.AddCookie(&http.Cookie{Name: LocaleCookie, Value: tt.cookie})
 			}
-			gotLocale, gotPath, _ := probe(t, l, req)
+			// Negotiate is the same resolution for callers outside the
+			// middleware (an error page rendered by panic recovery), so
+			// it must agree with what the middleware resolves and leave
+			// the request as it found it.
+			if got := l.Negotiate(req); got != tt.wantLocale {
+				t.Errorf("Negotiate = %q, want %q", got, tt.wantLocale)
+			}
+			if LocaleFrom(req) != "" || req.URL.Path != tt.path {
+				t.Errorf("Negotiate changed the request: locale %q, path %q", LocaleFrom(req), req.URL.Path)
+			}
+			gotLocale, gotPath, _ := seen(t, l, req)
 			if gotLocale != tt.wantLocale {
 				t.Errorf("locale = %q, want %q", gotLocale, tt.wantLocale)
 			}
@@ -75,11 +86,11 @@ func TestResolutionPrecedence(t *testing.T) {
 
 func TestMiddlewareBindsTranslation(t *testing.T) {
 	l := mwLocales(t)
-	_, _, fr := probe(t, l, httptest.NewRequest("GET", "/fr/orders", nil))
+	_, _, fr := seen(t, l, httptest.NewRequest("GET", "/fr/orders", nil))
 	if fr != "Commandes" {
 		t.Errorf("T(r, \"app.title\") = %q, want Commandes", fr)
 	}
-	_, _, en := probe(t, l, httptest.NewRequest("GET", "/orders", nil))
+	_, _, en := seen(t, l, httptest.NewRequest("GET", "/orders", nil))
 	if en != "Orders" {
 		t.Errorf("T(r, \"app.title\") = %q, want Orders", en)
 	}
@@ -88,7 +99,7 @@ func TestMiddlewareBindsTranslation(t *testing.T) {
 func TestMiddlewareDoesNotMutateTheIncomingRequest(t *testing.T) {
 	l := mwLocales(t)
 	req := httptest.NewRequest("GET", "/fr/orders", nil)
-	probe(t, l, req)
+	seen(t, l, req)
 	if req.URL.Path != "/fr/orders" {
 		t.Errorf("incoming request was mutated: path = %q", req.URL.Path)
 	}
@@ -113,7 +124,7 @@ func TestMiddlewarePreservesRawPathWhenStrippingPrefix(t *testing.T) {
 	// routes two different ways depending on whether it's localized.
 	// EscapedPath() is what a wildcard route ({rest...}) and anything
 	// re-parsing the raw path actually consult, so it's what has to
-	// agree — a mux registered here (rather than the bare probe()
+	// agree — a mux registered here (rather than the bare seen()
 	// helper used elsewhere in this file) is what exercises that.
 	l := mwLocales(t)
 	mux := http.NewServeMux()
@@ -332,5 +343,82 @@ func TestLocaleItemsAutonymAppCatalogWins(t *testing.T) {
 	}
 	if got := byCode["en"].Name; got != "English" {
 		t.Errorf("en Name = %q, want English (framework branch still works)", got)
+	}
+}
+
+// The framework's Portuguese moved from pt to pt-PT (spec decision 8,
+// §9). Links and cookies written before the move still say pt, and a
+// 404 or a silent fall to the default language would break every one
+// of them. An app that still offers plain pt is a different app: it
+// keeps pt, and nothing is redirected.
+func TestPTRetagKeepsOldURLsAndCookies(t *testing.T) {
+	retagged := func(codes ...string) *Locales {
+		t.Helper()
+		l, err := NewLocales(codes, "en", BaseCatalog(), nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return l
+	}
+	l := retagged("en", "pt-PT")
+	h := l.Middleware(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {
+		t.Error("a /pt/ request reached the app instead of being redirected")
+	}))
+	for _, c := range []struct{ method, target, code, location string }{
+		{"GET", "/pt/notes?x=1", "301", "/pt-PT/notes?x=1"},
+		{"HEAD", "/pt", "301", "/pt-PT"},
+		{"GET", "/pt/files/a%2Fb", "301", "/pt-PT/files/a%2Fb"},
+		// A 301 turns a POST into a GET in every browser, so a form
+		// posted from a cached /pt/ page would lose its body and look
+		// as if it had saved. 308 is the same move with the method kept.
+		{"POST", "/pt/notes", "308", "/pt-PT/notes"},
+	} {
+		rec := httptest.NewRecorder()
+		h.ServeHTTP(rec, httptest.NewRequest(c.method, c.target, nil))
+		if got := strconv.Itoa(rec.Code); got != c.code || rec.Header().Get("Location") != c.location {
+			t.Errorf("%s %s: %s %q, want %s %q", c.method, c.target, got, rec.Header().Get("Location"), c.code, c.location)
+		}
+	}
+
+	r := httptest.NewRequest("GET", "/notes", nil)
+	r.Header.Set("Accept-Language", "en")
+	r.AddCookie(&http.Cookie{Name: LocaleCookie, Value: "pt"})
+	if got, _, _ := seen(t, l, r); got != "pt-PT" {
+		t.Errorf("cookie pt read as %q, want pt-PT", got)
+	}
+
+	// An app that still offers plain pt keeps it: the retag applies
+	// only when pt-PT is offered and pt is not.
+	for _, codes := range [][]string{{"en", "pt"}, {"en", "pt", "pt-PT"}} {
+		l := retagged(codes...)
+		req := httptest.NewRequest("GET", "/pt/notes", nil)
+		rec := httptest.NewRecorder()
+		l.Middleware(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {})).ServeHTTP(rec, req)
+		if rec.Code != http.StatusOK {
+			t.Errorf("%v: /pt/notes answered %d, want the app's own pt page", codes, rec.Code)
+		}
+		if got, path, _ := seen(t, l, httptest.NewRequest("GET", "/pt/notes", nil)); got != "pt" || path != "/notes" {
+			t.Errorf("%v: /pt/notes resolved to %q at %q", codes, got, path)
+		}
+	}
+	// And an app offering neither has no Portuguese to send anyone to.
+	rec := httptest.NewRecorder()
+	retagged("en", "es").Middleware(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {})).ServeHTTP(rec, httptest.NewRequest("GET", "/pt/notes", nil))
+	if rec.Code != http.StatusOK {
+		t.Errorf("an app without Portuguese redirected /pt/notes: %d", rec.Code)
+	}
+
+	// The switcher's locale value is written into the page by the
+	// server too, so a tab open across the deploy still posts pt.
+	rec = httptest.NewRecorder()
+	l.SwitchHandler().ServeHTTP(rec, switchReq("pt", "/notes"))
+	var cookie string
+	for _, k := range rec.Result().Cookies() {
+		if k.Name == LocaleCookie {
+			cookie = k.Value
+		}
+	}
+	if rec.Code != http.StatusSeeOther || rec.Header().Get("Location") != "/pt-PT/notes" || cookie != "pt-PT" {
+		t.Errorf("switch to pt: %d %q, cookie %q; want 303 /pt-PT/notes, cookie pt-PT", rec.Code, rec.Header().Get("Location"), cookie)
 	}
 }

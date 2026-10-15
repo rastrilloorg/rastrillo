@@ -22,35 +22,94 @@ import (
 	"time"
 
 	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/locales"
 
 	"tickets/gen"
+	genlocales "tickets/gen/locales"
 	announcementsstore "tickets/gen/store/announcements"
 	ticket_typesstore "tickets/gen/store/ticket_types"
 	"tickets/internal/tickets"
 )
 
-// newApp builds a whole app per test: a fresh file-backed SQLite
-// database (matching main.go's SetMaxOpenConns(1)+WAL configuration —
-// see rastrillo.OpenDB) and the real generated router, wired exactly
-// as cmd/tickets/main.go wires it. Migrations is the two generated
-// stores' own vars concatenated, unaltered — the exclusive table plus
-// the mergeable resource's eventlog schema; this app has no additive
-// column of its own (contrast the blog's newApp/blog.Open, which
-// layers on `published`).
+// newApp builds a whole app per test in the manifest's declared
+// locale configuration — genlocales.DefaultLocale and genlocales.
+// Locales, exactly as main.go wires it. newAppWith builds one in an
+// arbitrary configuration, for the two-locale suite (locales_test.go).
 func newApp(t *testing.T) (http.Handler, *sql.DB) {
 	t.Helper()
-	db, err := rastrillo.OpenDB(filepath.Join(t.TempDir(), "tickets.db"),
-		slices.Concat(ticket_typesstore.Migrations, announcementsstore.Migrations))
-	if err != nil {
-		t.Fatalf("open database: %v", err)
-	}
-	t.Cleanup(func() { db.Close() })
+	return newAppWith(t, genlocales.DefaultLocale, genlocales.Locales)
+}
 
+// newAppAt is newApp against the database file at path, so a test can
+// prepare that file the way an older binary left it and see this
+// app's own startup upgrade it.
+func newAppAt(t *testing.T, path string) (http.Handler, *sql.DB) {
+	t.Helper()
+	return newAppWithAt(t, path, genlocales.DefaultLocale, genlocales.Locales)
+}
+
+// newAppWith builds a whole app per test: a fresh file-backed SQLite
+// database (matching main.go's SetMaxOpenConns(1)+WAL configuration —
+// see rastrillo.OpenDB) and the real generated router, wired exactly
+// as cmd/tickets/main.go wires it, with def and offered standing in
+// for the manifest's own locale declaration so a test can offer more
+// than tickets' app.toml does (locales_test.go's two-locale suite).
+func newAppWith(t *testing.T, def string, offered []string) (http.Handler, *sql.DB) {
+	t.Helper()
+	return newAppWithAt(t, filepath.Join(t.TempDir(), "tickets.db"), def, offered)
+}
+
+// newAppWithAt is newAppWith against the database file at path, so a
+// test can prepare that file the way an older binary left it and see
+// this app's own startup upgrade it (upgrade_test.go).
+//
+// It goes through rastrillo.Handler, exactly as cmd/tickets/main.go's
+// Router does, rather than calling gen.Boot/gen.Router directly: with
+// two or more offered locales that is what strips the "/es/" prefix
+// and puts the negotiated locale on the request before app.Middleware
+// ever runs, and a harness that skipped it would pass against a mux
+// that never sees the prefix a real deploy serves.
+func newAppWithAt(t *testing.T, path, def string, offered []string) (http.Handler, *sql.DB) {
+	t.Helper()
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
-	mux := gen.Router(func(*http.Request) *rastrillo.Ctx {
-		return &rastrillo.Ctx{DB: db, Logger: logger, Actor: rastrillo.Actor{Human: true}, Render: tickets.Render}
+	var db *sql.DB
+	handler, closeApp, err := rastrillo.Handler(rastrillo.Options{
+		DBPath:        path,
+		Migrations:    slices.Concat(ticket_typesstore.Migrations, announcementsstore.Migrations),
+		BaseCatalog:   genlocales.BaseCatalog,
+		Logger:        logger,
+		Locales:       offered,
+		DefaultLocale: def,
+		Router: func(d *sql.DB) (*http.ServeMux, error) {
+			db = d
+			booted, err := gen.Boot(context.Background(), d)
+			if err != nil {
+				return nil, err
+			}
+			// Already validated by rastrillo.Handler above; this call
+			// is only to get the value back for tickets.NewApp, as
+			// main.go's own Router does.
+			cfg, err := locales.CheckConfig(def, offered)
+			if err != nil {
+				return nil, err
+			}
+			app, err := tickets.NewApp(cfg)
+			if err != nil {
+				return nil, err
+			}
+			mux := gen.Router(booted, func(*http.Request) *rastrillo.Ctx {
+				return &rastrillo.Ctx{DB: d, Logger: logger, Actor: rastrillo.Actor{Human: true}, Render: app.Render}
+			})
+			outer := http.NewServeMux()
+			outer.Handle("/", app.Middleware(mux))
+			return outer, nil
+		},
 	})
-	return mux, db
+	if err != nil {
+		t.Fatalf("handler: %v", err)
+	}
+	t.Cleanup(func() { closeApp() })
+	return handler, db
 }
 
 func get(t *testing.T, h http.Handler, target string) *httptest.ResponseRecorder {
@@ -75,12 +134,14 @@ func post(t *testing.T, h http.Handler, target string, form url.Values) *httptes
 func seed(t *testing.T, db *sql.DB, name string, priceCents int64, status, maxPerOrder string) int64 {
 	t.Helper()
 	now := time.Now().UTC().Format(time.RFC3339)
+	usd := "USD" // the resource default; every amount has its currency
 	id, err := ticket_typesstore.New(db).CreateTicketType(context.Background(), ticket_typesstore.CreateTicketTypeParams{
-		Name:        name,
-		Price:       priceCents,
-		Status:      status,
-		MaxPerOrder: maxPerOrder,
-		Now:         now,
+		Name:          name,
+		PriceMinor:    &priceCents,
+		PriceCurrency: &usd,
+		Status:        status,
+		MaxPerOrder:   maxPerOrder,
+		Now:           now,
 	})
 	if err != nil {
 		t.Fatalf("seed %q: %v", name, err)

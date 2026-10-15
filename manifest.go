@@ -1,10 +1,14 @@
 package rastrillo
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"regexp"
 	"strings"
+
+	"amadan.net/rastrillo/rastrillo/currency"
+	"amadan.net/rastrillo/rastrillo/internal/manifesterr"
 )
 
 // RenderFunc is how a generated action hands a page to the app's own
@@ -79,6 +83,54 @@ type Resource struct {
 	Scope ScopeKind `json:"scope,omitempty" toml:"scope"` // omitempty: an unscoped resource's manifest.json stays byte-identical to pre-Scope artifacts
 	List  List      `json:"list" toml:"list"`
 	Form  Form      `json:"form" toml:"form"`
+
+	// Currency is the default for new records. It decides nothing about
+	// rows already stored, which carry their own code; omitempty keeps a
+	// resource without money byte-identical in gen/manifest.json.
+	Currency string `json:"currency,omitempty" toml:"currency"`
+
+	// Legacy is separate from Currency (decision 10) because rows stored
+	// before money had a currency were written in whatever the app always
+	// meant, which may be neither today's default nor a code still issued.
+	Legacy *Legacy `json:"legacy,omitempty" toml:"legacy"`
+}
+
+// Legacy is a manifest's [legacy] table: what the integers stored before
+// money had a currency mean, so the boot upgrade can rescale them once.
+type Legacy struct {
+	Currency string `json:"currency" toml:"currency"`
+	// Scale is a pointer because 0 is a real answer (the old integers
+	// were whole units) and omission must not be read as it: a table
+	// naming only USD would otherwise turn every stored 1250 cents into
+	// 125000 cents.
+	Scale *int `json:"scale" toml:"scale"`
+}
+
+// maxLegacyScale bounds [legacy] scale: currency.Rescale multiplies or
+// divides by ten once per digit of difference, and 10^18 is the largest
+// power of ten an int64 holds, so a larger scale could only ever be
+// inexact or overflow.
+const maxLegacyScale = 18
+
+// HasMoney reports whether any list column or form field is money, and
+// so whether the resource needs a default currency.
+func (r *Resource) HasMoney() bool {
+	for _, c := range r.List.Columns {
+		if c.Kind == Money {
+			return true
+		}
+	}
+	for _, f := range r.Form.Basics {
+		if f.Kind == Money {
+			return true
+		}
+	}
+	for _, f := range r.Form.Advanced {
+		if f.Kind == Money {
+			return true
+		}
+	}
+	return false
 }
 
 // List describes the table view for a resource.
@@ -109,7 +161,8 @@ type Field struct {
 }
 
 // Validate checks the resource declaration for consistency and validity.
-// It normalizes zero values for Kind and Store in place.
+// It normalizes zero values for Kind and Store, and the default and
+// [legacy] currency codes, in place.
 func (r *Resource) Validate() error {
 	// Zero values normalize: empty Kind → Text, empty Store → Exclusive
 	if r.Store == "" {
@@ -190,13 +243,23 @@ func (r *Resource) Validate() error {
 	}
 
 	columnFields := make(map[string]bool)
+	moneyColumns := make(map[string]bool)
 	for _, col := range r.List.Columns {
 		columnFields[col.Field] = true
+		moneyColumns[col.Field] = col.Kind == Money
 	}
 
+	// A filter is one exact value from the URL, compared with the
+	// column. An amount has no such value now: its minor units mean
+	// nothing without its currency, and the text it shows depends on the
+	// reader's language. Generated, the filter named the column the money
+	// upgrade replaces, and every list query failed.
 	for _, f := range r.List.Filter {
 		if !columnFields[f] {
 			return fmt.Errorf("filter: %q is not a declared column", f)
+		}
+		if moneyColumns[f] {
+			return fmt.Errorf(msgMoneyFilter, f)
 		}
 	}
 
@@ -206,6 +269,9 @@ func (r *Resource) Validate() error {
 	for _, flt := range r.List.Filters {
 		if !columnFields[flt.Field] {
 			return fmt.Errorf("filter: %q is not a declared column", flt.Field)
+		}
+		if moneyColumns[flt.Field] {
+			return fmt.Errorf(msgMoneyFilter, flt.Field)
 		}
 		if len(flt.Values) == 0 {
 			return fmt.Errorf("filter values: must not be empty")
@@ -312,6 +378,130 @@ func (r *Resource) Validate() error {
 		columnFieldsLower[lower] = true
 	}
 
+	if err := r.checkGeneratedNames(); err != nil {
+		return err
+	}
+	return r.validateMoney()
+}
+
+// Drafts for the copy review (copy-review/final): a filter on money,
+// and a declared field whose name the generator already makes for
+// something else.
+const (
+	msgMoneyFilter       = "filter: %q is a money field, and a list cannot filter on money; remove the filter"
+	msgMoneyNameTaken    = "name: %q is also a name the money field %q generates; rename one of them"
+	msgEventVersionTaken = "name: %q is the name generated stores give the event version; rename the field"
+)
+
+// checkGeneratedNames refuses a field whose name the generator already
+// makes for something else, which the duplicate checks above cannot see
+// because they compare only declared names. Two namespaces matter:
+//   - columns, and the Go fields sqlc derives from them: a money field
+//     Price becomes price_minor and price_currency (PriceMinor and
+//     PriceCurrency), a text field Title becomes title;
+//   - a mergeable store's event keys: a money field's amount under its
+//     own key, price, and its currency under price_currency; a text
+//     field under its own key.
+//
+// A field declared as PriceCurrency, text or money, beside a money field
+// Price is emitted twice in one of them, and the generated store does
+// not compile. Both are checked for every store kind, so changing the
+// kind later never invalidates a manifest. Declared names have no
+// underscore, so a collision is always one field's own name against
+// another's suffixed one. EventVersion is a mergeable store's
+// event-version member; it is refused like Owner.
+func (r *Resource) checkGeneratedNames() error {
+	type field struct {
+		name string
+		kind Kind
+	}
+	// First declaration wins, as internal/generate's columns does: a
+	// list column and a form field of the same name are one field.
+	var fields []field
+	seen := map[string]bool{}
+	add := func(name string, kind Kind) {
+		if sql := identSQLName(name); !seen[sql] {
+			seen[sql] = true
+			fields = append(fields, field{name, kind})
+		}
+	}
+	for _, c := range r.List.Columns {
+		add(c.Field, c.Kind)
+	}
+	for _, f := range r.Form.Basics {
+		add(f.Name, f.Kind)
+	}
+	for _, f := range r.Form.Advanced {
+		add(f.Name, f.Kind)
+	}
+	// own: a generated name → the field whose own name it is.
+	// suffixed: a generated name → the money field that adds a suffix.
+	own := map[string]string{}
+	suffixed := map[string]string{}
+	for _, f := range fields {
+		sql := identSQLName(f.name)
+		if f.kind != Money {
+			if sql == "event_version" {
+				return fmt.Errorf(msgEventVersionTaken, f.name)
+			}
+			own["column "+sql], own["key "+sql] = f.name, f.name
+			continue
+		}
+		own["key "+sql] = f.name
+		suffixed["column "+sql+"_minor"] = f.name
+		suffixed["column "+sql+"_currency"] = f.name
+		suffixed["key "+sql+"_currency"] = f.name
+	}
+	// Report in declaration order, so the same manifest always names
+	// the same pair.
+	for _, f := range fields {
+		for _, ns := range []string{"column ", "key "} {
+			name := ns + identSQLName(f.name)
+			if money, ok := suffixed[name]; ok && own[name] == f.name {
+				return fmt.Errorf(msgMoneyNameTaken, f.name, money)
+			}
+		}
+	}
+	return nil
+}
+
+// validateMoney checks the default currency and [legacy], rewriting both
+// codes to canonical form so every emitter reads the same spelling. Its
+// messages are Appendix C.2's without the leading "manifest/%s.toml",
+// because internal/manifest.Load prefixes each Validate error with the
+// file it came from, which for a Go manifest is not a .toml at all.
+// The ineligible-default warning is not here: it must not stop
+// generating, so cmd/rastrillo prints it after loading.
+func (r *Resource) validateMoney() error {
+	if r.Currency != "" {
+		code, err := currency.Normalize(r.Currency)
+		if err != nil {
+			return fmt.Errorf("currency %q: %v", r.Currency, err)
+		}
+		r.Currency = code
+	} else if r.HasMoney() {
+		return manifesterr.ErrNoCurrency
+	}
+
+	if r.Legacy == nil {
+		return nil
+	}
+	if r.Legacy.Currency == "" {
+		return errors.New("[legacy] needs currency, the currency the old integers were in")
+	}
+	// Any stored code is accepted, eligible or not: the old rows were
+	// written in whatever the app meant then, withdrawn currencies too.
+	code, err := currency.Normalize(r.Legacy.Currency)
+	if err != nil {
+		return fmt.Errorf("[legacy] currency %q: %v", r.Legacy.Currency, err)
+	}
+	r.Legacy.Currency = code
+	if r.Legacy.Scale == nil {
+		return errors.New("[legacy] needs scale, the number of decimal places the old integers carry (2 for cents, 0 for whole units)")
+	}
+	if s := *r.Legacy.Scale; s < 0 || s > maxLegacyScale {
+		return fmt.Errorf("[legacy] scale %d must be from 0 to 18", s)
+	}
 	return nil
 }
 

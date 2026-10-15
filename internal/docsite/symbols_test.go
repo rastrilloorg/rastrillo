@@ -5,6 +5,7 @@ import (
 	"go/parser"
 	"go/token"
 	"io/fs"
+	"os"
 	"path"
 	"path/filepath"
 	"regexp"
@@ -64,6 +65,8 @@ var referencePages = map[string]string{
 	"vectors":       "reference/vectors",
 	"harness":       "reference/harness",
 	"lastsignin":    "reference/lastsignin",
+	"currency":      "reference/currency",
+	"locales":       "reference/locales",
 	".":             "reference/rastrillo",
 }
 
@@ -308,11 +311,40 @@ func receiverName(recv *ast.FieldList) string {
 // hold in their head for one idea. The map exists so that decision is
 // recorded and reviewable rather than an omission nobody notices.
 var coveredElsewhere = map[string]string{
-	"webauthn/authtest": "reference/webauthn",
-	"migrate/dump":      "reference/migrate",
-	"migrate/gormfn":    "reference/migrate",
-	"migrate/modeldiff": "reference/migrate",
-	"pow/powtest":       "reference/pow",
+	"webauthn/authtest":             "reference/webauthn",
+	"migrate/dump":                  "reference/migrate",
+	"migrate/gormfn":                "reference/migrate",
+	"migrate/modeldiff":             "reference/migrate",
+	"pow/powtest":                   "reference/pow",
+	"currency/normalizeprop":        "reference/currency",
+	"currency/replay":               "reference/currency",
+	"currency/sqlmoney":             "reference/currency",
+	"locales/localestest/crosspack": "reference/locales",
+	"locales/localestest/gallery":   "reference/locales",
+}
+
+// localePackCoverage maps every generated CLDR locale pack under
+// locales/ (one directory per language, plus locales/modern) to the
+// locales reference page, the same way coveredElsewhere maps a support
+// package to its parent's page. It is computed rather than listed
+// alongside coveredElsewhere because there are over a hundred packs and
+// listing them would just be `ls locales` pasted into Go; reading the
+// directory keeps this in step with cmd/gen's output automatically.
+// locales/localestest is test-only support code for the locales
+// package's own tests, not an importable pack, so it is excluded.
+func localePackCoverage(repo string) (map[string]string, error) {
+	entries, err := os.ReadDir(filepath.Join(repo, "locales"))
+	if err != nil {
+		return nil, err
+	}
+	out := map[string]string{}
+	for _, e := range entries {
+		if !e.IsDir() || e.Name() == "localestest" {
+			continue
+		}
+		out["locales/"+e.Name()] = "reference/locales"
+	}
+	return out, nil
 }
 
 // TestEveryPackageHasAReferencePage is the other half of the
@@ -328,7 +360,12 @@ func TestEveryPackageHasAReferencePage(t *testing.T) {
 	const repo = "../.."
 	skip := map[string]bool{"internal": true, "cmd": true, "examples": true, "hack": true, "docs": true}
 
-	err := filepath.WalkDir(repo, func(p string, d fs.DirEntry, err error) error {
+	packs, err := localePackCoverage(repo)
+	if err != nil {
+		t.Fatalf("locale pack coverage: %v", err)
+	}
+
+	err = filepath.WalkDir(repo, func(p string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
@@ -361,6 +398,12 @@ func TestEveryPackageHasAReferencePage(t *testing.T) {
 			return nil
 		}
 		if page, covered := coveredElsewhere[dir]; covered {
+			if page == "" {
+				t.Errorf("package %s is listed as covered elsewhere but names no page", dir)
+			}
+			return nil
+		}
+		if page, covered := packs[dir]; covered {
 			if page == "" {
 				t.Errorf("package %s is listed as covered elsewhere but names no page", dir)
 			}

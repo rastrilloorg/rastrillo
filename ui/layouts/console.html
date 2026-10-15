@@ -1,5 +1,5 @@
-{{define "layout"}}<!doctype html>
-<html lang="{{block "lang" .}}en{{end}}" dir="{{block "dir" .}}ltr{{end}}">
+{{define "layout"}}{{$L := localizer $}}<!doctype html>
+<html lang="{{block "lang" .}}{{$L := localizer $}}{{if $L}}{{$L.Identity}}{{else}}en{{end}}{{end}}" dir="{{block "dir" .}}{{$L := localizer $}}{{if $L}}{{$L.Dir}}{{else}}ltr{{end}}{{end}}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width">
@@ -52,7 +52,7 @@
      language, which is the thing an `order` or a `grid-row` shuffle
      would have quietly cost. */}}
 <div rst-shell-console="{{block "view" .}}page{{end}}">
-<a rst-skip href="#main">{{T "rastrillo.ui.shell_skip"}}</a>
+<a rst-skip href="#main">{{T $L "rastrillo.ui.shell_skip"}}</a>
 <header rst-shell-bar>
 {{/* The phone index's heading, in the bar because on the index the bar
      is the header row: the app's name at the start, the avatar at the
@@ -62,7 +62,7 @@
      brand would appear twice. Shown only on the phone index, where the
      bar's own brand gives way to it, so no page exposes two h1s. */}}
 <h1 rst-shell-title><span>{{template "brand" .}}</span><span>{{template "title" .}}</span></h1>
-{{block "brand" .}}<a rst-shell-brand href="/">{{T "rastrillo.ui.shell_home"}}</a>{{end}}
+{{block "brand" .}}{{$L := localizer $}}<a rst-shell-brand href="/">{{T $L "rastrillo.ui.shell_home"}}</a>{{end}}
 {{/* name="rst-shell-menu", and NOT rst-menus — the same group the
      topbar's disclosure is in, for the same reason. <details name>
      exclusivity is DOCUMENT-WIDE rather than sibling-scoped: a
@@ -78,7 +78,7 @@
      always in the markup and tokens.css shows one: the label is
      display: contents everywhere else, so a content page and a desktop
      lay out exactly as they did before the avatar existed. */}}
-<details rst-shell-menu name="rst-shell-menu"><summary><span rst-shell-menu-label>{{icon "menu"}}{{T "rastrillo.ui.shell_menu"}}</span><span rst-shell-avatar>{{block "profile" .}}<span rst-person-av="empty placeholder" aria-hidden="true"></span><span rst-person-name>{{T "rastrillo.ui.shell_account"}}</span>{{end}}</span></summary></details>
+<details rst-shell-menu name="rst-shell-menu"><summary><span rst-shell-menu-label>{{icon "menu"}}{{T $L "rastrillo.ui.shell_menu"}}</span><span rst-shell-avatar>{{block "profile" .}}{{$L := localizer $}}<span rst-person-av="empty placeholder" aria-hidden="true"></span><span rst-person-name>{{T $L "rastrillo.ui.shell_account"}}</span>{{end}}</span></summary></details>
 {{/* The tail is a SIBLING of the disclosure, not its content: a closed
      <details> hides its own content and no CSS reliably un-hides it,
      so the wide layout could not be recovered from inside one. Above
@@ -103,14 +103,14 @@
      wide bar's two menus at its inline end. */}}
 <div rst-shell-tail>
 <div rst-shell-who>{{template "profile" .}}</div>
-{{block "locale" .}}{{end}}
+{{block "locale" .}}{{$L := localizer $}}{{template "locale-menu" dict "L" $L "Items" (opt $ "Locales") "Return" (opt $ "Return")}}{{end}}
 <details rst-dropdown rst-shell-account name="rst-menus">
-<summary>{{T "rastrillo.ui.shell_account"}}<span rst-caret aria-hidden="true">{{icon "chevron-down"}}</span></summary>
+<summary>{{T $L "rastrillo.ui.shell_account"}}<span rst-caret aria-hidden="true">{{icon "chevron-down"}}</span></summary>
 <div rst-dropdown-menu>{{block "account" .}}{{end}}</div>
 </details>
 </div>
 </header>
-<div rst-shell-back><a href="{{block "up" .}}/{{end}}" rel="up" aria-label="{{Tf "rastrillo.ui.shell_up" "name" (T "rastrillo.ui.shell_up_label")}}">{{T "rastrillo.ui.shell_up_label"}}</a></div>
+<div rst-shell-back><a href="{{block "up" .}}/{{end}}" rel="up" aria-label="{{Tf $L "rastrillo.ui.shell_up" "name" (T $L "rastrillo.ui.shell_up_label")}}">{{T $L "rastrillo.ui.shell_up_label"}}</a></div>
 {{/* The rail carries navigation and nothing else — the language
      switcher and the person are up on the bar, which is what makes
      this shell a console rather than a sidebar with a strip above it.

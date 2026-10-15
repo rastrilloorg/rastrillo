@@ -36,18 +36,21 @@ type localesCtxKey struct{}
 // handler.
 func (l *Locales) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		code, rest := l.splitPrefix(r.URL.Path)
-		if code == "" {
-			if c, err := r.Cookie(LocaleCookie); err == nil && l.Has(c.Value) {
-				code = c.Value
+		if to, ok := l.retaggedPrefix(r); ok {
+			// 301 is the permanent move the spec names (§9). A 301
+			// turns a POST into a GET in every browser, though, so a
+			// form posted from a cached /pt/ page would lose its body
+			// and land on a page that looks as if it saved; 308 is the
+			// same move with the method and body kept.
+			status := http.StatusMovedPermanently
+			if r.Method != http.MethodGet && r.Method != http.MethodHead {
+				status = http.StatusPermanentRedirect
 			}
+			http.Redirect(w, r, to, status)
+			return
 		}
-		if code == "" {
-			code = l.negotiate(r.Header.Get("Accept-Language"))
-		}
-		if code == "" {
-			code = l.def
-		}
+		code := l.Negotiate(r)
+		_, rest := l.splitPrefix(r.URL.Path)
 
 		ctx := context.WithValue(r.Context(), localeCtxKey{}, code)
 		ctx = context.WithValue(ctx, localesCtxKey{}, l)
@@ -88,6 +91,69 @@ func (l *Locales) Middleware(next http.Handler) http.Handler {
 	})
 }
 
+// Negotiate is the declared locale for r, by Middleware's precedence:
+// URL path prefix, cookie, Accept-Language, then the default. It reads
+// r and changes nothing, for code that runs where Middleware's context
+// is absent: panic recovery wraps the middleware and hands the error
+// page the original request, so without this an error page would fall
+// back to the default language for a reader who asked for another.
+func (l *Locales) Negotiate(r *http.Request) string {
+	code, _ := l.splitPrefix(r.URL.Path)
+	if code == "" {
+		if c, err := r.Cookie(LocaleCookie); err == nil {
+			code = l.declared(c.Value)
+		}
+	}
+	if code == "" {
+		code = l.acceptLanguage(r.Header.Get("Accept-Language"))
+	}
+	if code == "" {
+		code = l.def
+	}
+	return code
+}
+
+// declared is the declared locale a stored code means: the code itself
+// when it is declared, or the code it was retagged to when only that
+// one is (retag.go), so a rastrillo_locale=pt cookie written before the
+// framework's Portuguese became pt-PT still picks Portuguese, as does
+// a switcher form posted from a page rendered before then. "" for
+// anything else.
+func (l *Locales) declared(code string) string {
+	if l.Has(code) {
+		return code
+	}
+	if to, ok := RetagOf(code); ok && l.Has(to) {
+		return to
+	}
+	return ""
+}
+
+// retaggedPrefix is where a request whose first path segment is a
+// retagged code goes instead: /pt/notes?x=1 to /pt-PT/notes?x=1, for an
+// app that offers pt-PT and not pt. An app that offers pt itself serves
+// its own /pt/ pages, so nothing is redirected there. Built from the
+// escaped path so an encoded slash in the rest survives the move.
+func (l *Locales) retaggedPrefix(r *http.Request) (string, bool) {
+	p := r.URL.EscapedPath()
+	if !strings.HasPrefix(p, "/") {
+		return "", false
+	}
+	seg, rest, more := strings.Cut(p[1:], "/")
+	to := l.declared(seg)
+	if to == "" || to == seg {
+		return "", false
+	}
+	loc := "/" + to
+	if more {
+		loc += "/" + rest
+	}
+	if r.URL.RawQuery != "" {
+		loc += "?" + r.URL.RawQuery
+	}
+	return loc, true
+}
+
 // splitPrefix returns the declared locale named by the path's first
 // segment and the path with that segment removed, or ("", "") when the
 // first segment is not a declared locale.
@@ -106,14 +172,14 @@ func (l *Locales) splitPrefix(p string) (code, rest string) {
 	return seg, rest
 }
 
-// negotiate picks the best declared locale for an Accept-Language
+// acceptLanguage picks the best declared locale for an Accept-Language
 // header. Prefs are walked in q order (highest first, declaration order
 // breaking ties); for each pref, exact tag match is tried before
 // primary-subtag match, so an "fr-CA" request lands on a declared "fr"
 // or "fr-informal". The nesting must stay pref-outer, match-kind-inner:
 // the reverse (every pref's exact match before any pref's subtag match)
 // would let a low-q exact match beat a high-q subtag match.
-func (l *Locales) negotiate(header string) string {
+func (l *Locales) acceptLanguage(header string) string {
 	type pref struct {
 		tag string
 		q   float64
@@ -273,8 +339,10 @@ func (l *Locales) SwitchHandler() http.Handler {
 			http.Error(w, "forbidden", http.StatusForbidden)
 			return
 		}
-		code := r.PostFormValue("locale")
-		if !l.Has(code) {
+		// declared, not Has: the value is written into the page by the
+		// server, so a tab opened before a retag still posts pt.
+		code := l.declared(r.PostFormValue("locale"))
+		if code == "" {
 			http.Error(w, "unknown locale", http.StatusBadRequest)
 			return
 		}

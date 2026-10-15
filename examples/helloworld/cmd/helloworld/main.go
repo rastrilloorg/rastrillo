@@ -8,6 +8,7 @@ import (
 	"amadan.net/rastrillo/rastrillo"
 
 	"helloworld/gen"
+	genlocales "helloworld/gen/locales"
 )
 
 func main() {
@@ -26,6 +27,11 @@ func main() {
 	if err := rastrillo.Run(rastrillo.Options{
 		Mux:    mux,
 		Logger: logger,
+		// Locales and DefaultLocale come from manifest/app.toml, through
+		// gen/locales. Boot refuses a configuration whose packs this
+		// binary does not link.
+		Locales:       genlocales.Locales,
+		DefaultLocale: genlocales.DefaultLocale,
 	}); err != nil {
 		logger.Error("serve failed", "err", err)
 		os.Exit(1)

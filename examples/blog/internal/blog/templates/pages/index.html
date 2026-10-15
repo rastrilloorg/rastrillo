@@ -1,12 +1,12 @@
-{{define "content"}}
-{{template "page-header" dict "Title" "The blog" "Sub" "Notes, in the order they were written."}}
+{{define "content"}}{{$L := localizer $}}
+{{template "page-header" dict "L" $L "Title" "The blog" "Sub" "Notes, in the order they were written."}}
 {{if .Rows}}
 <div rst-list>
-{{range .Rows}}{{template "list-row-action" dict "Href" .Href "Main" .Main "Sub" .Sub}}
+{{range .Rows}}{{template "list-row-action" dict "L" $L "Href" .Href "Main" .Main "Sub" .Sub}}
 {{end}}
 </div>
-{{if .Pagination.Show}}{{template "pagination" dict "Items" .Pagination.Items}}{{end}}
+{{if .Pagination.Show}}{{template "pagination" dict "L" $L "Items" .Pagination.Items}}{{end}}
 {{else}}
-{{template "empty-state" dict "Body" "Nothing published yet. Check back soon."}}
+{{template "empty-state" dict "L" $L "Body" "Nothing published yet. Check back soon."}}
 {{end}}
 {{end}}

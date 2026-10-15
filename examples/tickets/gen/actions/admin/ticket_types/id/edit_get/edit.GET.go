@@ -10,6 +10,7 @@ import (
 
 	"amadan.net/rastrillo/rastrillo"
 	"amadan.net/rastrillo/rastrillo/form"
+	"amadan.net/rastrillo/rastrillo/ui"
 	"amadan.net/rastrillo/rastrillo/view"
 	ticket_typesstore "tickets/gen/store/ticket_types"
 )
@@ -31,24 +32,50 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 		view.Fail(ctx, w, r, "ticket_types: loading ticket_types", err)
 		return
 	}
+	priceInput, ok := seed(ctx, w, r, id, "Price", n.PriceMinor, currencyOf(n.PriceCurrency))
+	if !ok {
+		return
+	}
 
 	view.Render(ctx, w, "ticket_types/form", http.StatusOK, formView{
-		IsNew: false,
+		Localized: ui.ForRequest(r),
+		IsNew:     false,
 		Fields: map[string]string{
 			"Name":        n.Name,
-			"Price":       form.FormatCentsPlain(n.Price),
 			"Status":      n.Status,
 			"MaxPerOrder": n.MaxPerOrder,
+		},
+		Money: map[string]form.MoneyInput{
+			"Price": priceInput,
 		},
 		BasicsAction:   fmt.Sprintf("/admin/ticket_types/%d/edit-basics", id),
 		AdvancedAction: fmt.Sprintf("/admin/ticket_types/%d/edit-advanced", id),
 	})
 }
 
+func seed(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request, id int64, field string, minor *int64, code string) (form.MoneyInput, bool) {
+	in, err := form.SeedMoney(rastrillo.FormatLocale(r), minor, code, false)
+	if err != nil {
+		view.Fail(ctx, w, r, fmt.Sprintf("%s %d: %s in %s", "ticket_types", id, field, code), err)
+		return in, false
+	}
+	return in, true
+}
+
+func currencyOf(cur *string) string {
+	if cur != nil {
+		return *cur
+	}
+	return "USD"
+}
+
 type formView struct {
+	ui.Localized
 	IsNew          bool
 	Fields         map[string]string
 	Errors         map[string]string
+	ErrorArgs      map[string]map[string]any
+	Money          map[string]form.MoneyInput
 	BasicsAction   string
 	AdvancedAction string
 }

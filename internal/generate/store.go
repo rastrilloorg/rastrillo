@@ -5,11 +5,14 @@
 // text generation — EmitStore never shells out to sqlc; running sqlc
 // against this output is a later generator step.
 //
-// schema.sql and migrations.go both describe the same table from one
-// internal columns model (columns, below) so the two cannot drift:
-// schema.sql says CREATE TABLE for sqlc's benefit (it wants clean DDL,
-// no IF NOT EXISTS), migrations.go says CREATE TABLE IF NOT EXISTS
-// because the running app reapplies its migration list at boot.
+// schema.sql and a new resource's first migration both describe the
+// same table from one internal columns model (columns, below) so the
+// two cannot drift: schema.sql says CREATE TABLE for sqlc's benefit (it
+// wants clean DDL, no IF NOT EXISTS), migrations.go says CREATE TABLE
+// IF NOT EXISTS because the running app reapplies its migration list at
+// boot. schema.sql is always the final shape; a released migrations.go
+// only ever grows (migrationsgen.go), and Boot finishes the money
+// columns.
 package generate
 
 import (
@@ -19,6 +22,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 
 	"amadan.net/rastrillo/rastrillo"
@@ -33,7 +37,11 @@ import (
 // resources needs no sqlc tool at all. Returns the emitted file paths
 // (for idempotency and skip accounting). Pure text generation —
 // running sqlc is a later step.
-func EmitStore(genDir string, rs []rastrillo.Resource) ([]string, error) {
+//
+// h is the released migration statements (ReadHistory), which each
+// exclusive store's migrations.go keeps as its prefix. appended is one
+// op.generate.migration_appended line per statement added to them.
+func EmitStore(genDir string, rs []rastrillo.Resource, h History) (paths, appended []string, err error) {
 	sorted := append([]rastrillo.Resource(nil), rs...)
 	sort.Slice(sorted, func(i, j int) bool { return sorted[i].Name < sorted[j].Name })
 
@@ -45,12 +53,11 @@ func EmitStore(genDir string, rs []rastrillo.Resource) ([]string, error) {
 	}
 
 	storeDir := filepath.Join(genDir, "store")
-	var paths []string
 
 	if len(exclusive) > 0 {
 		yamlPath := filepath.Join(storeDir, "sqlc.yaml")
 		if err := writeFileIfChanged(yamlPath, sqlcYAML(exclusive)); err != nil {
-			return nil, fmt.Errorf("sqlc.yaml: %w", err)
+			return nil, nil, fmt.Errorf("sqlc.yaml: %w", err)
 		}
 		paths = append(paths, yamlPath)
 	}
@@ -61,21 +68,21 @@ func EmitStore(genDir string, rs []rastrillo.Resource) ([]string, error) {
 		if r.Store == rastrillo.Mergeable {
 			storeSrc, err := format.Source(mergeableStoreGo(r))
 			if err != nil {
-				return nil, fmt.Errorf("%s: store.go: %w", r.Name, err)
+				return nil, nil, fmt.Errorf("%s: store.go: %w", r.Name, err)
 			}
 			storePath := filepath.Join(resDir, "store.go")
 			if err := writeFileIfChanged(storePath, storeSrc); err != nil {
-				return nil, fmt.Errorf("%s: store.go: %w", r.Name, err)
+				return nil, nil, fmt.Errorf("%s: store.go: %w", r.Name, err)
 			}
 			paths = append(paths, storePath)
 
 			migSrc, err := format.Source(mergeableMigrationsGo(r))
 			if err != nil {
-				return nil, fmt.Errorf("%s: migrations.go: %w", r.Name, err)
+				return nil, nil, fmt.Errorf("%s: migrations.go: %w", r.Name, err)
 			}
 			migPath := filepath.Join(resDir, "migrations.go")
 			if err := writeFileIfChanged(migPath, migSrc); err != nil {
-				return nil, fmt.Errorf("%s: migrations.go: %w", r.Name, err)
+				return nil, nil, fmt.Errorf("%s: migrations.go: %w", r.Name, err)
 			}
 			paths = append(paths, migPath)
 			continue
@@ -83,28 +90,33 @@ func EmitStore(genDir string, rs []rastrillo.Resource) ([]string, error) {
 
 		schemaPath := filepath.Join(resDir, "schema.sql")
 		if err := writeFileIfChanged(schemaPath, schemaSQL(r)); err != nil {
-			return nil, fmt.Errorf("%s: schema.sql: %w", r.Name, err)
+			return nil, nil, fmt.Errorf("%s: schema.sql: %w", r.Name, err)
 		}
 		paths = append(paths, schemaPath)
 
 		queriesPath := filepath.Join(resDir, "queries.sql")
 		if err := writeFileIfChanged(queriesPath, queriesSQL(r)); err != nil {
-			return nil, fmt.Errorf("%s: queries.sql: %w", r.Name, err)
+			return nil, nil, fmt.Errorf("%s: queries.sql: %w", r.Name, err)
 		}
 		paths = append(paths, queriesPath)
 
-		migSrc, err := format.Source(migrationsGo(r))
+		stmts, err := appendMigrations(h[r.Name], r)
 		if err != nil {
-			return nil, fmt.Errorf("%s: migrations.go: %w", r.Name, err)
+			return nil, nil, err
+		}
+		appended = append(appended, appendedNotes(r, h[r.Name], stmts)...)
+		migSrc, err := format.Source(migrationsGo(r, stmts))
+		if err != nil {
+			return nil, nil, fmt.Errorf("%s: migrations.go: %w", r.Name, err)
 		}
 		migPath := filepath.Join(resDir, "migrations.go")
 		if err := writeFileIfChanged(migPath, migSrc); err != nil {
-			return nil, fmt.Errorf("%s: migrations.go: %w", r.Name, err)
+			return nil, nil, fmt.Errorf("%s: migrations.go: %w", r.Name, err)
 		}
 		paths = append(paths, migPath)
 	}
 
-	return paths, nil
+	return paths, appended, nil
 }
 
 // writeFileIfChanged writes content to path only when the file is
@@ -160,7 +172,8 @@ func columns(r rastrillo.Resource) []column {
 
 // kindSQLType is the single Kind→SQL map the boundary rule (money
 // stores as an integer, never a float) lives behind: text/textarea
-// collapse to the same TEXT column, money maps to INTEGER. Every Kind
+// collapse to the same TEXT column, money's amount column is INTEGER
+// (columnDefs adds its currency beside it). Every Kind
 // Validate accepts has an entry here; an unrecognized Kind means
 // Validate's own set of accepted kinds and this map have drifted, which
 // Validate guarantees cannot happen for a resource that reached this
@@ -168,7 +181,7 @@ func columns(r rastrillo.Resource) []column {
 var kindSQLType = map[rastrillo.Kind]string{
 	rastrillo.Text:     "TEXT NOT NULL DEFAULT ''",
 	rastrillo.Textarea: "TEXT NOT NULL DEFAULT ''",
-	rastrillo.Money:    "INTEGER NOT NULL DEFAULT 0",
+	rastrillo.Money:    "INTEGER",
 }
 
 func sqlColumnType(k rastrillo.Kind) string {
@@ -240,51 +253,71 @@ func schemaSQL(r rastrillo.Resource) []byte {
 	var b strings.Builder
 	b.WriteString("-- Code generated by rastrillo generate; DO NOT EDIT.\n")
 	fmt.Fprintf(&b, "CREATE TABLE %s (\n", r.Name)
-	b.WriteString("  id INTEGER PRIMARY KEY,\n")
-	if scoped(r) {
-		b.WriteString("  owner TEXT NOT NULL,\n")
-	}
-	for _, c := range columns(r) {
-		fmt.Fprintf(&b, "  %s %s,\n", c.SQL, sqlColumnType(c.Kind))
-	}
-	b.WriteString("  created_at TEXT NOT NULL,\n")
-	b.WriteString("  updated_at TEXT NOT NULL\n")
-	b.WriteString(");\n")
+	b.WriteString(strings.Join(tableBody(r), "\n"))
+	b.WriteString("\n);\n")
 	if scoped(r) {
 		fmt.Fprintf(&b, "CREATE INDEX %s_owner ON %s (owner);\n", r.Name, r.Name)
 	}
 	return []byte(b.String())
 }
 
-// migrationsGo renders the app-facing migration: the same table as
-// schemaSQL, but CREATE TABLE IF NOT EXISTS (Serve reruns migrations at
-// boot) and wrapped as a Go source file exposing Migrations.
-func migrationsGo(r rastrillo.Resource) []byte {
-	var lines []string
-	lines = append(lines, fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (", r.Name))
-	lines = append(lines, "  id INTEGER PRIMARY KEY,")
+// tableBody is the column lines of r's table, shared by schema.sql and
+// a new resource's first migration so the two cannot describe
+// different tables.
+func tableBody(r rastrillo.Resource) []string {
+	lines := []string{"  id INTEGER PRIMARY KEY,"}
 	if scoped(r) {
 		lines = append(lines, "  owner TEXT NOT NULL,")
 	}
 	for _, c := range columns(r) {
-		lines = append(lines, fmt.Sprintf("  %s %s,", c.SQL, sqlColumnType(c.Kind)))
+		for _, d := range columnDefs(c) {
+			lines = append(lines, "  "+d+",")
+		}
 	}
-	lines = append(lines, "  created_at TEXT NOT NULL,")
-	lines = append(lines, "  updated_at TEXT NOT NULL")
-	lines = append(lines, ");")
-	ddl := strings.Join(lines, "\n")
+	return append(lines, "  created_at TEXT NOT NULL,", "  updated_at TEXT NOT NULL")
+}
 
-	stmts := []string{"`" + ddl + "`"}
-	if scoped(r) {
-		stmts = append(stmts, fmt.Sprintf("`CREATE INDEX IF NOT EXISTS %s_owner ON %s (owner);`", r.Name, r.Name))
+// columnDefs is c's column definitions. A money field is two columns,
+// <f>_minor and <f>_currency, both nullable with no default (spec §1):
+// an empty field has neither, and a default of 0 would give every
+// existing row an amount with no currency, which the pairing rule
+// refuses at boot.
+func columnDefs(c column) []string {
+	if c.Kind == rastrillo.Money {
+		return []string{c.SQL + "_minor INTEGER", c.SQL + "_currency TEXT"}
 	}
+	return []string{c.SQL + " " + sqlColumnType(c.Kind)}
+}
 
+// columnNames is c's column names, in columnDefs' order.
+func columnNames(c column) []string {
+	if c.Kind == rastrillo.Money {
+		return []string{c.SQL + "_minor", c.SQL + "_currency"}
+	}
+	return []string{c.SQL}
+}
+
+// migrationsGo renders stmts (appendMigrations: the released statements
+// and anything appended) as the Go source file exposing Migrations.
+// A statement is a raw string literal, as every released file has it,
+// so a released file regenerates byte for byte.
+func migrationsGo(r rastrillo.Resource, stmts []string) []byte {
+	quoted := make([]string, len(stmts))
+	for i, s := range stmts {
+		if strings.Contains(s, "`") {
+			quoted[i] = strconv.Quote(s)
+		} else {
+			quoted[i] = "`" + s + "`"
+		}
+	}
 	var b strings.Builder
 	b.WriteString("// Code generated by rastrillo generate; DO NOT EDIT.\n")
 	fmt.Fprintf(&b, "package %sstore\n\n", r.Name)
-	b.WriteString("// Migrations is the schema for Options.Migrations. Additive changes\n")
-	b.WriteString("// beyond this initial CREATE are the app's own migrations.\n")
-	fmt.Fprintf(&b, "var Migrations = []string{%s}\n", strings.Join(stmts, ", "))
+	b.WriteString("// Migrations is the schema for Options.Migrations. generate appends to\n")
+	b.WriteString("// it when the resource gains a field or a scope, and never edits a\n")
+	b.WriteString("// released statement. Money columns are gen.Boot's. Any other change is\n")
+	b.WriteString("// the app's own migration.\n")
+	fmt.Fprintf(&b, "var Migrations = []string{%s}\n", strings.Join(quoted, ", "))
 	return []byte(b.String())
 }
 
@@ -393,8 +426,9 @@ func buildStatement(firstLine string, clauses []string, tailLines []string) stri
 func updateStatement(r rastrillo.Resource, fields []rastrillo.Field) string {
 	var sets []string
 	for _, f := range fields {
-		sql := sqlName(f.Name)
-		sets = append(sets, fmt.Sprintf("%s = sqlc.arg(%s)", sql, sql))
+		for _, col := range columnNames(column{SQL: sqlName(f.Name), Kind: f.Kind}) {
+			sets = append(sets, fmt.Sprintf("%s = sqlc.arg(%s)", col, col))
+		}
 	}
 	sets = append(sets, "updated_at = sqlc.arg(now)")
 	return fmt.Sprintf("UPDATE %s SET %s WHERE %s;\n", r.Name, strings.Join(sets, ", "), recordKey(r))
@@ -445,8 +479,10 @@ func queriesSQL(r rastrillo.Resource) []byte {
 		vals = append(vals, "sqlc.arg(owner)")
 	}
 	for _, c := range cols {
-		names = append(names, c.SQL)
-		vals = append(vals, fmt.Sprintf("sqlc.arg(%s)", c.SQL))
+		for _, col := range columnNames(c) {
+			names = append(names, col)
+			vals = append(vals, fmt.Sprintf("sqlc.arg(%s)", col))
+		}
 	}
 	names = append(names, "created_at", "updated_at")
 	// Both timestamp columns take the same value at creation time, and
@@ -493,6 +529,9 @@ func sqlcYAML(rs []rastrillo.Resource) []byte {
 		b.WriteString("      go:\n")
 		fmt.Fprintf(&b, "        package: \"%sstore\"\n", r.Name)
 		fmt.Fprintf(&b, "        out: \"%s\"\n", r.Name)
+		// A nullable money column reads as *int64 and *string, so an
+		// empty field is nil rather than a zero amount in no currency.
+		b.WriteString("        emit_pointers_for_null_types: true\n")
 	}
 	return []byte(b.String())
 }

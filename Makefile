@@ -5,7 +5,7 @@
 # runs. None of the four names a real file, so the pattern rule already
 # reruns unconditionally without needing .PHONY's safety here.
 .PHONY: ci suite suite-roles gofmt budget root staticcheck govulncheck gitleaks chromedp-graph gorm-free race generate-check scaffold-smoke browser \
-        browser-sweep mirror mirror-check money
+        browser-sweep mirror mirror-check money money-cldr
 
 # The READMEs' documented sweeps all run with GOFLAGS=-mod=mod: the tests
 # that build scratch modules (replace => this repo) rely on it to resolve
@@ -106,6 +106,31 @@ budget: | $(BIN)/tmp
 money:
 	cd money && go build ./... && go vet ./... && go test ./... -count=1
 
+# money-cldr is the evidence behind the multi-currency money spec
+# (docs/superpowers/specs/2026-10-09-multi-currency-money-design.md). It
+# fetches the pinned cldr-json files and ISO 4217 editions (about 45 MB)
+# and checks their hashes, regenerates locales/ (the core, the language
+# packs and the storage set) and fails if a committed file differs or a
+# generated one is untracked: git diff cannot see a new pack, and the
+# generator deletes the pack of a language CLDR dropped so that git diff
+# sees that. It runs the offline tests, compares the shipped currency
+# package with ICU through Node in every shipped locale, measures each
+# pack's binary cost, and re-measures the rejected golang.org/x/text
+# route. It is not in ci: it needs the network, and Node's CLDR must
+# match the data's. The offline half alone is
+# `cd hack/moneycldr && go test ./...`.
+MONEY_CLDR_DIR ?= $(BIN)/cldr
+money-cldr: | $(BIN)/tmp
+	cd hack/moneycldr && go run ./cmd/fetch -dir $(MONEY_CLDR_DIR)
+	cd hack/moneycldr && go run ./cmd/gen -dir $(MONEY_CLDR_DIR) && git diff --exit-code -- ../../locales testdata && \
+		! git ls-files --others --exclude-standard -- '../../locales/*_gen.go' testdata | grep .
+	cd hack/moneycldr && go vet ./... && go test ./... -count=1
+	cd hack/moneycldr && go run ./cmd/check -emit $(BIN)/tmp/money-grid.tsv && \
+		node oracle/intl.js < $(BIN)/tmp/money-grid.tsv > $(BIN)/tmp/money-intl.tsv && \
+		go run ./cmd/check -compare $(BIN)/tmp/money-intl.tsv && \
+		go run ./cmd/packsize && \
+		go run ./cmd/xtext $(BIN)/tmp/money-intl.tsv
+
 # RASTRILLO_TEST_REQUIRE_NODE turns every nodetest skip into a failure
 # here: on a laptop without Node a skip is honest, but a gate that lost
 # node would otherwise go green having checked none of the JavaScript
@@ -204,7 +229,8 @@ GORM_FREE = ./migrate ./pow ./sessions ./blobs ./jobs ./eventlog ./auth \
             ./password ./passkey ./totp ./secondfactor ./vault ./csrf \
             ./mail ./carlos ./crypto ./flash ./form ./dbtest ./clientip ./nodetest ./background \
             ./xlsx ./table \
-            ./perf ./lastsignin ./budget ./perf/perftest
+            ./perf ./lastsignin ./budget ./perf/perftest ./locales ./currency \
+            ./currency/replay ./currency/sqlmoney
 # go list runs on its own line so its failure fails the target: piped
 # straight into grep, a path that stopped resolving printed nothing and
 # the fence passed without checking anything.
@@ -219,9 +245,12 @@ gorm-free:
 # CGO_ENABLED=0: the static-binary criterion is about what ships, not
 # what a detector build links. Scoped to the packages whose tests
 # are actually concurrent - jobs (Start spawns a goroutine per job while
-# Get reads the same map) sessions and assertion verification.
+# Get reads the same map) sessions and assertion verification; and
+# ui.Pages alone in ui, whose isolation test runs 200 executions in two
+# languages at once.
 race:
 	CGO_ENABLED=1 go test -race -count=1 ./jobs/ ./sessions/ ./assertion/
+	CGO_ENABLED=1 go test -race -count=1 -run '^TestPages' ./ui/
 
 # The examples are separate modules with a replace back to this
 # checkout, so the root sweep does not compile them - each needs its own

@@ -34,6 +34,8 @@ import (
 
 	"amadan.net/rastrillo/rastrillo/background"
 	"amadan.net/rastrillo/rastrillo/carlos"
+	"amadan.net/rastrillo/rastrillo/internal/checkconfig"
+	"amadan.net/rastrillo/rastrillo/locales"
 
 	_ "modernc.org/sqlite"
 )
@@ -77,7 +79,11 @@ type Options struct {
 	// friction log, F4):
 	//
 	//	Router: func(db *sql.DB) (*http.ServeMux, error) {
-	//		return gen.Router(func(*http.Request) *rastrillo.Ctx {
+	//		booted, err := gen.Boot(context.Background(), db)
+	//		if err != nil {
+	//			return nil, err
+	//		}
+	//		return gen.Router(booted, func(*http.Request) *rastrillo.Ctx {
 	//			return &rastrillo.Ctx{DB: db, Logger: logger}
 	//		}), nil
 	//	},
@@ -326,6 +332,7 @@ func newServer(opts Options, handler http.Handler) *http.Server {
 // kill to reap grandchildren still holding it open. This is not
 // hypothetical: it wedged a production app for 158 minutes on 2026-08-19.
 func Serve(opts Options) error {
+	checkconfig.Guard("rastrillo.Serve")
 	logger := opts.Logger
 	if logger == nil {
 		logger = slog.Default()
@@ -372,19 +379,32 @@ func Serve(opts Options) error {
 // returned close func stops Options.Background and then releases the
 // database handle (each a no-op without one).
 //
+// It refuses a locale configuration locales.CheckConfig rejects, before
+// opening anything, and installs the accepted one for request-time
+// formatting.
+//
 // Exported for test harnesses: before this seam, every app's harness
 // hand-duplicated /healthz, /api/version and the DSN pragma ordering
 // because Serve blocks on a real listener (vitogo's vitotest says so in
 // its own comments; seapointish copied the same shape). Now a harness is
 // httptest.NewServer around this.
 func Handler(opts Options) (http.Handler, func() error, error) {
+	checkconfig.Guard("rastrillo.Handler")
 	closeNothing := func() error { return nil }
 	if (opts.Mux == nil) == (opts.Router == nil) {
 		return nil, closeNothing, errors.New("rastrillo: exactly one of Options.Mux and Options.Router must be set")
 	}
 
+	// Checked in the serving binary, because only it knows which packs
+	// are linked; before the database opens, so a misconfigured deploy
+	// changes nothing.
+	cfg, err := locales.CheckConfig(opts.DefaultLocale, opts.Locales)
+	if err != nil {
+		return nil, closeNothing, fmt.Errorf("rastrillo: refusing to start: %v", err)
+	}
+	locales.Install(cfg)
+
 	var db *sql.DB
-	var err error
 	if opts.DBPath != "" {
 		db, err = OpenDB(opts.DBPath, opts.Migrations)
 		if err != nil {
@@ -650,6 +670,7 @@ func listen(socket, addr string) (net.Listener, error) {
 // Exported so tests and non-Serve contexts get the corrected opener
 // instead of reproducing the DSN by hand (the blog's F4).
 func OpenDB(path string, migrations []string) (*sql.DB, error) {
+	checkconfig.Guard("rastrillo.OpenDB")
 	db, err := sql.Open("sqlite", path+"?_pragma=busy_timeout(5000)&_pragma=journal_mode(WAL)")
 	if err != nil {
 		return nil, err

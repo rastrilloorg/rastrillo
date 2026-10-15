@@ -196,3 +196,43 @@ func TestDir(t *testing.T) {
 		}
 	}
 }
+
+// The framework's Portuguese ships as pt-PT now, and an app may have
+// either code in its manifest and either file on disk. Each pairing has
+// to find both the framework's strings and the app's own, or a rename
+// the app never asked for turns its Portuguese pages English.
+func TestPTCatalogsUnderBothCodes(t *testing.T) {
+	fsys := fstest.MapFS{"locales/pt.toml": {Data: []byte("app.hello = \"Olá\"\n")}}
+	l, err := NewLocales([]string{"en", "pt-PT"}, "en", BaseCatalog(), fsys)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := l.T("pt-PT", "app.hello"); got != "Olá" {
+		t.Errorf("an app's pt.toml under pt-PT: %q", got)
+	}
+	if got := l.T("pt-PT", "rastrillo.ui.cancel"); got == "rastrillo.ui.cancel" || got == BaseCatalog()["rastrillo.ui.cancel"] {
+		t.Errorf("framework pt-PT catalog not found: %q", got)
+	}
+	l2, err := NewLocales([]string{"en", "pt"}, "en", BaseCatalog(), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if l2.T("pt", "rastrillo.ui.cancel") != l.T("pt-PT", "rastrillo.ui.cancel") || !l2.FrameworkHas("pt") {
+		t.Error("an app offering pt lost the framework's Portuguese")
+	}
+
+	// Both files: pt-PT.toml is the newer, more specific one and wins
+	// key by key; pt.toml still answers what it alone carries.
+	fsys["locales/pt-PT.toml"] = &fstest.MapFile{Data: []byte("app.hello = \"Viva\"\n")}
+	fsys["locales/pt.toml"] = &fstest.MapFile{Data: []byte("app.hello = \"Olá\"\napp.bye = \"Adeus\"\n")}
+	l3, err := NewLocales([]string{"en", "pt-PT"}, "en", BaseCatalog(), fsys)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := l3.T("pt-PT", "app.hello"); got != "Viva" {
+		t.Errorf("pt-PT.toml should win over pt.toml: %q", got)
+	}
+	if got := l3.T("pt-PT", "app.bye"); got != "Adeus" {
+		t.Errorf("a key only pt.toml has: %q", got)
+	}
+}

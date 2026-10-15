@@ -3,6 +3,8 @@ package main
 import (
 	"bytes"
 	"context"
+	"fmt"
+	"html/template"
 	"io"
 	"net"
 	"net/http"
@@ -10,10 +12,15 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"strings"
 	"testing"
 	"time"
 
+	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/internal/generate/packs"
+	"amadan.net/rastrillo/rastrillo/internal/manifest"
+	"amadan.net/rastrillo/rastrillo/internal/tmplmigrate"
 	"amadan.net/rastrillo/rastrillo/migrate"
 )
 
@@ -97,7 +104,7 @@ func TestNewScaffoldsCIAndManifest(t *testing.T) {
 	// whatever agent someone uses. CLAUDE.md is an @AGENTS.md import and
 	// nothing else: two copies of this would drift, silently.
 	agents, _ := os.ReadFile(filepath.Join("demoapp", "AGENTS.md"))
-	for _, want := range []string{"integer cents", "scope.Owned", "SKILL.md", "CGO_ENABLED=0"} {
+	for _, want := range []string{"ISO 4217", "scope.Owned", "SKILL.md", "CGO_ENABLED=0"} {
 		if !strings.Contains(string(agents), want) {
 			t.Fatalf("AGENTS.md preload missing %q:\n%s", want, agents)
 		}
@@ -679,5 +686,316 @@ func TestScaffoldWholeGatePassesOffline(t *testing.T) {
 	}
 	if strings.Contains(string(out), "required test") {
 		t.Errorf("the perf lane's required tests did not both pass:\n%s", out)
+	}
+}
+
+// A new app declares one locale and already links its pack, so it
+// builds and boots before its first rastrillo generate; and --check
+// agrees the packs file matches app.toml from the start.
+func TestNewDeclaresOneLocaleAndLinksItsPack(t *testing.T) {
+	dir := t.TempDir()
+	cwd, _ := os.Getwd()
+	if err := os.Chdir(dir); err != nil {
+		t.Fatal(err)
+	}
+	defer os.Chdir(cwd)
+	if err := runNew([]string{"demoapp"}); err != nil {
+		t.Fatalf("runNew: %v", err)
+	}
+	app, err := manifest.LoadApp(filepath.Join("demoapp", "manifest"))
+	if err != nil || !slices.Equal(app.Locales, []string{"en"}) || app.DefaultLocale != "en" {
+		t.Errorf("manifest/app.toml: %+v, %v; want en only", app, err)
+	}
+	if stale, err := packs.Stale(filepath.Join("demoapp", "gen"), app); stale != "" || err != nil {
+		t.Errorf("the scaffold's packs file disagrees with its app.toml: %q, %v", stale, err)
+	}
+	src, _ := os.ReadFile(filepath.Join("demoapp", "internal", "demoapp", "app.go"))
+	if !strings.Contains(string(src), "\t_ \"demoapp/gen/locales\"\n") {
+		t.Errorf("app.go must link gen/locales so the app's tests link the packs:\n%s", src)
+	}
+	mainSrc, _ := os.ReadFile(filepath.Join("demoapp", "cmd", "demoapp", "main.go"))
+	for _, want := range []string{"Locales:       genlocales.Locales,", "DefaultLocale: genlocales.DefaultLocale,"} {
+		if !strings.Contains(string(mainSrc), want) {
+			t.Errorf("main.go lacks %q", want)
+		}
+	}
+}
+
+// scaffoldApp scaffolds name with flags in a fresh temp directory,
+// points it at this checkout and tidies it, failing the test on error.
+func scaffoldApp(t *testing.T, name string, flags ...string) string {
+	t.Helper()
+	setSandboxGoEnv(t)
+	t.Chdir(t.TempDir())
+	return scaffoldWithReplace(t, name, flags...)
+}
+
+// runNewInTemp runs rastrillo new in a fresh temp directory and returns
+// that directory with runNew's error, for the refusals.
+func runNewInTemp(t *testing.T, args ...string) (string, error) {
+	t.Helper()
+	dir := t.TempDir()
+	t.Chdir(dir)
+	return dir, runNew(args)
+}
+
+// A new app's templates are already migrated: the preflight finds
+// nothing to do, and doctor is clean on day one. The sidebar shell is
+// the one with a second page, overview.html.
+func TestScaffoldNeedsNoTemplateMigration(t *testing.T) {
+	if testing.Short() {
+		t.Skip("scaffolds, tidies and type-checks whole apps")
+	}
+	for _, flags := range [][]string{nil, {"--shell=sidebar"}} {
+		app := scaffoldApp(t, "notes", flags...)
+		var out strings.Builder
+		if code := tmplmigrate.Run([]string{app}, &out, &out); code != 0 {
+			t.Errorf("migrate-templates dry run on a new app %v: exit %d\n%s", flags, code, out.String())
+		}
+	}
+}
+
+func TestNewWithLocale(t *testing.T) {
+	if testing.Short() {
+		t.Skip("scaffolds and tidies a whole app")
+	}
+	app := scaffoldApp(t, "boutique", "--locale=es")
+	toml, _ := os.ReadFile(filepath.Join(app, "manifest", "app.toml"))
+	if !strings.Contains(string(toml), `locales = ["es"]`) || !strings.Contains(string(toml), `default_locale = "es"`) {
+		t.Errorf("app.toml:\n%s", toml)
+	}
+	packsSrc, _ := os.ReadFile(filepath.Join(app, "gen", "locales", "packs.go"))
+	if !strings.Contains(string(packsSrc), `"amadan.net/rastrillo/rastrillo/locales/es"`) || strings.Contains(string(packsSrc), "locales/en\"") {
+		t.Errorf("packs.go links the wrong packs:\n%s", packsSrc)
+	}
+	// de has CLDR data but no framework strings, so generate --check
+	// would fail it on a missing catalog before the author wrote a line.
+	dir, err := runNewInTemp(t, "--locale=de", "x")
+	want := fmt.Sprintf(newLocaleUnsupportedMsg, "de", strings.Join(rastrillo.BaseLocales(), ", "))
+	if err == nil || err.Error() != want {
+		t.Errorf("rastrillo new --locale=de: %v, want %q", err, want)
+	}
+	if _, err := os.Stat(filepath.Join(dir, "x")); !os.IsNotExist(err) {
+		t.Errorf("a refused --locale left ./x behind: %v", err)
+	}
+	// pt was a shipped code until the framework's Portuguese became
+	// pt-PT, so a script or a habit that still types it gets pt-PT.
+	dir, err = runNewInTemp(t, "--locale=pt", "y")
+	toml, _ = os.ReadFile(filepath.Join(dir, "y", "manifest", "app.toml"))
+	if err != nil || !strings.Contains(string(toml), `default_locale = "pt-PT"`) {
+		t.Errorf("rastrillo new --locale=pt: %v\n%s", err, toml)
+	}
+}
+
+// localeExtraTest is written into a scaffolded app's own test package
+// and run by its go test: the page's language, direction and switcher,
+// and the error page's language, as the app really serves them, through
+// rastrillo.Handler with the Options main.go builds. %[1]s is the app
+// package, %[2]s the module, %[3]s the assertions, %[4]s any imports
+// only those assertions use.
+const localeExtraTest = `package %[1]stest
+
+import (%[4]s
+	"io"
+	"log/slog"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
+	"time"
+
+	"amadan.net/rastrillo/rastrillo"
+
+	genlocales "%[2]s/gen/locales"
+	%[1]s "%[2]s/internal/%[1]s"
+)
+
+func testHandler(t *testing.T) http.Handler {
+	t.Helper()
+	opts := rastrillo.Options{Logger: slog.New(slog.NewTextHandler(io.Discard, nil)),
+		Locales: genlocales.Locales, DefaultLocale: genlocales.DefaultLocale}
+	%[1]s.Configure(&opts, newApp(t).(*http.ServeMux), time.Now())
+	h, closeAll, err := rastrillo.Handler(opts)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { closeAll() })
+	return h
+}
+
+func TestLanguageDirectionSwitcherAndErrorPage(t *testing.T) {
+	h := testHandler(t)
+	get := func(path string, header map[string]string) string {
+		r := httptest.NewRequest("GET", path, nil)
+		for k, v := range header {
+			r.Header.Set(k, v)
+		}
+		rec := httptest.NewRecorder()
+		h.ServeHTTP(rec, r)
+		return rec.Body.String()
+	}
+	%[3]s
+}
+`
+
+// Language, direction, switcher and error page in real scaffolds: one
+// locale has neither prefixes nor a switcher; two have both, and the
+// error page finds the request's language outside the middleware; an
+// Arabic app is right to left from its first page.
+func TestScaffoldServesItsLocales(t *testing.T) {
+	if testing.Short() {
+		t.Skip("scaffolds, tidies and tests whole apps")
+	}
+	es := rastrillo.BaseCatalogs()["es"]
+	en := rastrillo.BaseCatalogs()["en"]
+	for _, c := range []struct {
+		name    string
+		flags   []string
+		locales string // rewrites app.toml and runs generate when set
+		body    string
+		imports string
+	}{
+		{"one locale", nil, "", `
+	if b := get("/", nil); !strings.Contains(b, ` + "`" + `<html lang="en" dir="ltr">` + "`" + `) || strings.Contains(b, "rst-locale") {
+		t.Errorf("/:\n%s", b)
+	}
+	// No prefixes: with one locale /es/ is an ordinary path, not the index.
+	if b := get("/es/", nil); strings.Contains(b, "this is a rastrillo app") {
+		t.Errorf("/es/ served the index in a one-locale app:\n%s", b)
+	}`, ""},
+		{"two locales", nil, `["en", "es"]`, fmt.Sprintf(`
+	b := get("/", nil)
+	for _, want := range []string{"rst-locale", %q, %q} {
+		if !strings.Contains(b, want) {
+			t.Errorf("/ lacks %%q:\n%%s", want, b)
+		}
+	}
+	if b := get("/es/", nil); !strings.Contains(b, `+"`"+`<html lang="es" dir="ltr">`+"`"+`) {
+		t.Errorf("/es/:\n%%s", b)
+	}
+	byHeader := httptest.NewRequest("GET", "/x", nil)
+	byHeader.Header.Set("Accept-Language", "es")
+	for _, r := range []*http.Request{httptest.NewRequest("GET", "/es/x", nil), byHeader} {
+		rec := httptest.NewRecorder()
+		%s.ErrorPage(rec, r, http.StatusInternalServerError, "r1")
+		if !strings.Contains(rec.Body.String(), template.HTMLEscapeString(%q)) {
+			t.Errorf("ErrorPage %%s %%v: not in Spanish:\n%%s", r.URL, r.Header, rec.Body.String())
+		}
+	}`, template.HTMLEscapeString(en["rastrillo.ui.locale_name"]), template.HTMLEscapeString(es["rastrillo.ui.locale_name"]), "notes", es["rastrillo.ui.error_500_title"]), "\n\t\"html/template\""},
+		{"arabic", []string{"--locale=ar"}, "", `
+	if b := get("/", nil); !strings.Contains(b, ` + "`" + `<html lang="ar" dir="rtl">` + "`" + `) || strings.Contains(b, "rst-locale") {
+		t.Errorf("/:\n%s", b)
+	}`, ""},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			app := scaffoldApp(t, "notes", c.flags...)
+			if c.locales != "" {
+				mustWrite(t, filepath.Join(app, "manifest", "app.toml"), "locales = "+c.locales+"\ndefault_locale = \"en\"\n")
+				if err := runGenerate([]string{app}); err != nil {
+					t.Fatalf("rastrillo generate: %v", err)
+				}
+			}
+			mustWrite(t, filepath.Join(app, "internal", "notestest", "locale_extra_test.go"), fmt.Sprintf(localeExtraTest, "notes", "notes", c.body, c.imports))
+			// render's request values go in a copy: a map the caller
+			// reuses would otherwise carry one request's localizer into
+			// the next, and race when two requests share it.
+			mustWrite(t, filepath.Join(app, "internal", "notes", "render_extra_test.go"), `package notes
+
+import (
+	"net/http/httptest"
+	"testing"
+)
+
+func TestRenderLeavesTheCallersMapAlone(t *testing.T) {
+	data := map[string]any{"X": 1}
+	render(httptest.NewRecorder(), httptest.NewRequest("GET", "/", nil), "index", data)
+	if len(data) != 1 {
+		t.Errorf("render wrote into the caller's map: %v", data)
+	}
+}
+`)
+			// The app's whole suite, not only the extra test: the
+			// scaffold's own tests must pass in every locale it can start
+			// in, and so must its perf lane, which builds its Options
+			// apart from main.go. Timing reports rather than fails here,
+			// as in the whole-gate test: a dev box's load says nothing
+			// about speed.
+			t.Setenv("AMADAN_CI", "")
+			t.Setenv("CI", "")
+			if out, err := goTestIn(app, "-tags", "perf", "-p", "1", "./..."); err != nil {
+				t.Fatalf("the scaffolded app's tests fail:\n%s", out)
+			}
+		})
+	}
+}
+
+// A locale configuration boot refuses never panics the app's own entry
+// points: App refuses, and Mux and ErrorPage, reached without App by
+// Options.ErrorPage and the perf lane, answer a plain 500.
+func TestScaffoldWithABadLocaleConfigFailsSafely(t *testing.T) {
+	if testing.Short() {
+		t.Skip("scaffolds, tidies and tests a whole app")
+	}
+	app := scaffoldApp(t, "notes")
+	packsGo := filepath.Join(app, "gen", "locales", "packs.go")
+	src, _ := os.ReadFile(packsGo)
+	bad := strings.Replace(string(src), `const DefaultLocale = "en"`, `const DefaultLocale = "de"`, 1)
+	if bad == string(src) {
+		t.Fatalf("packs.go has no English default to break:\n%s", src)
+	}
+	mustWrite(t, packsGo, bad)
+	mustWrite(t, filepath.Join(app, "internal", "notestest", "badconfig_test.go"), `package notestest
+
+import (
+	"io"
+	"log/slog"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+
+	"amadan.net/rastrillo/rastrillo/db"
+
+	"notes/internal/notes"
+)
+
+func TestBadConfig(t *testing.T) {
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	d, err := db.Open(schema.Path(t), logger)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer d.Close()
+	if _, err := notes.App(d, testOrigin, logger); err == nil {
+		t.Error("App accepted a default locale whose pack is not linked")
+	}
+	rec := httptest.NewRecorder()
+	notes.Mux(http.NotFoundHandler()).ServeHTTP(rec, httptest.NewRequest("GET", "/", nil))
+	if rec.Code != http.StatusInternalServerError {
+		t.Errorf("Mux: %d, want 500", rec.Code)
+	}
+	rec = httptest.NewRecorder()
+	notes.ErrorPage(rec, httptest.NewRequest("GET", "/", nil), http.StatusNotFound, "")
+	if rec.Code != http.StatusInternalServerError {
+		t.Errorf("ErrorPage: %d, want 500", rec.Code)
+	}
+}
+`)
+	if out, err := goTestIn(app, "-run", "^TestBadConfig$", "./internal/notestest/"); err != nil {
+		t.Fatalf("%s", out)
+	}
+}
+
+// The scaffold's AGENTS.md states the money rule as Appendix C.7's
+// scaffold.agents.money, verbatim: integer cents is no longer the
+// whole rule once every amount carries its currency.
+func TestNewAgentsMDStatesTheMoneyRule(t *testing.T) {
+	t.Chdir(t.TempDir())
+	if err := runNew([]string{"demoapp"}); err != nil {
+		t.Fatal(err)
+	}
+	agents, _ := os.ReadFile(filepath.Join("demoapp", "AGENTS.md"))
+	want := "Money is a whole number of the currency's smallest unit, stored with its ISO 4217 code beside it, and shown with `money`. A float never touches a value a person will be held to."
+	if !strings.Contains(string(agents), want) || strings.Contains(string(agents), "integer cents") {
+		t.Errorf("AGENTS.md does not state the money rule as approved:\n%s", agents)
 	}
 }

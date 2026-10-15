@@ -1,17 +1,21 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"os"
 	"path/filepath"
-	"sort"
-	"strings"
 
-	"amadan.net/rastrillo/rastrillo"
 	"amadan.net/rastrillo/rastrillo/internal/generate"
+	"amadan.net/rastrillo/rastrillo/internal/generate/catalogs"
+	"amadan.net/rastrillo/rastrillo/internal/generate/packs"
+	"amadan.net/rastrillo/rastrillo/internal/generate/prune"
 	"amadan.net/rastrillo/rastrillo/internal/manifest"
 )
+
+// defaultLocaleRemoved is Appendix C.2's op.generate.default_locale_removed.
+const defaultLocaleRemoved = "--default-locale was removed: the default comes from default_locale in manifest/app.toml"
 
 // runGenerate implements `rastrillo generate [flags] [dir]`: the
 // one-shot generator rastrillo dev's watch loop and CI both call
@@ -29,9 +33,16 @@ import (
 func runGenerate(args []string) error {
 	fset := flag.NewFlagSet("generate", flag.ContinueOnError)
 	check := fset.Bool("check", false, "verify without writing (route collisions, action build tags, i18n catalog completeness)")
-	defaultLocale := fset.String("default-locale", "en", "locale every other catalog is checked against (design doc §10)")
+	// Kept only to refuse: an undefined flag fails with Go's generic
+	// "flag provided but not defined", which names no way out.
+	fset.String("default-locale", "", defaultLocaleRemoved)
 	if err := fset.Parse(args); err != nil {
 		return err
+	}
+	removed := false
+	fset.Visit(func(f *flag.Flag) { removed = removed || f.Name == "default-locale" })
+	if removed {
+		return errors.New(defaultLocaleRemoved)
 	}
 
 	dir := "."
@@ -44,6 +55,10 @@ func runGenerate(args []string) error {
 	}
 
 	module, err := modulePath(dir)
+	if err != nil {
+		return err
+	}
+	app, err := manifest.LoadApp(filepath.Join(dir, "manifest"))
 	if err != nil {
 		return err
 	}
@@ -109,53 +124,37 @@ func runGenerate(args []string) error {
 			return fmt.Errorf("%d action file(s) missing //go:build %s", len(untagged), generate.BuildTag)
 		}
 
-		missing, err := generate.MissingKeys(filepath.Join(dir, "locales"), *defaultLocale)
+		// Packs first: a stale packs file is fixed by generate itself,
+		// and a catalog the new locale needs is only worth naming after.
+		if stale, err := packs.Stale(genDir, app); err != nil || stale != "" {
+			if err == nil {
+				err = errors.New(stale)
+			}
+			return err
+		}
+		problems, err := catalogs.Check(dir, app)
 		if err != nil {
 			return fmt.Errorf("i18n catalog check: %w", err)
 		}
-		if len(missing) > 0 {
-			codes := make([]string, 0, len(missing))
-			for code := range missing {
-				codes = append(codes, code)
+		if len(problems) > 0 {
+			fmt.Fprintf(os.Stderr, "rastrillo generate: incomplete locale catalogs (default %q) —\n", app.DefaultLocale)
+			for _, p := range problems {
+				fmt.Fprintf(os.Stderr, "  %s\n", p)
 			}
-			sort.Strings(codes)
-			fmt.Fprintf(os.Stderr, "rastrillo generate: incomplete locale catalogs (default %q) —\n", *defaultLocale)
-			for _, code := range codes {
-				fmt.Fprintf(os.Stderr, "  locales/%s.toml is missing:\n", code)
-				for _, key := range missing[code] {
-					fmt.Fprintf(os.Stderr, "    %s\n", key)
-				}
-			}
-			return fmt.Errorf("%d locale catalog(s) incomplete; silent fallback while iterating, loud failure before ship (design doc §10)", len(missing))
-		}
-
-		fw, err := generate.MissingFrameworkKeys(filepath.Join(dir, "locales"), *defaultLocale, rastrillo.BaseKeys(), rastrillo.BaseLocales())
-		if err != nil {
-			return fmt.Errorf("i18n framework-key check: %w", err)
-		}
-		if len(fw) > 0 {
-			codes := make([]string, 0, len(fw))
-			for code := range fw {
-				codes = append(codes, code)
-			}
-			sort.Strings(codes)
-			fmt.Fprintln(os.Stderr, "rastrillo generate: built-in components would render in English —")
-			for _, code := range codes {
-				fmt.Fprintf(os.Stderr, "  locales/%s.toml is missing %d rastrillo.ui.* key(s):\n", code, len(fw[code]))
-				for _, key := range fw[code] {
-					fmt.Fprintf(os.Stderr, "    %s\n", key)
-				}
-			}
-			fmt.Fprintf(os.Stderr, "the framework ships %s; any other locale translates these itself — copy the keys from the rastrillo module's locales/en.toml\n", strings.Join(rastrillo.BaseLocales(), ", "))
-			return fmt.Errorf("%d locale catalog(s) leave built-in strings untranslated", len(fw))
+			return fmt.Errorf("%d locale catalog(s) incomplete; silent fallback while iterating, loud failure before ship (design doc §10)", len(problems))
 		}
 
 		// Manifest resources (design doc §9): idempotency and
 		// hand-vs-generated route collisions, all inside a temp dir —
 		// a --check run never writes into gen/. A complete no-op when
 		// the app declares no manifest resources at all.
-		if err := generate.GenerateManifests(dir, genDir, true); err != nil {
+		gm, err := generate.GenerateManifests(dir, genDir, true)
+		if err != nil {
 			return fmt.Errorf("manifest check: %w", err)
+		}
+		stale, err := prune.Stale(genDir, append(gm.Written, cliWritten(genDir, actions)...), gm.ExclusiveStores)
+		if err := errors.Join(err, prune.StaleError(stale)); err != nil {
+			return err
 		}
 
 		// The agent-gate check (§13's buildable half): a write tool with
@@ -223,8 +222,15 @@ func runGenerate(args []string) error {
 	// written straight into genDir. A complete no-op when the app
 	// declares no manifest resources at all (manifests are optional,
 	// per route).
-	if err := generate.GenerateManifests(dir, genDir, false); err != nil {
+	gm, err := generate.GenerateManifests(dir, genDir, false)
+	if err != nil {
 		return fmt.Errorf("generate manifests: %w", err)
+	}
+	for _, line := range append(gm.Appended, gm.MoneySchemaAdded...) {
+		fmt.Println(line)
+	}
+	if _, err := packs.Emit(genDir, app); err != nil {
+		return err
 	}
 
 	// Manifest resources claim routes too (their own action files, not
@@ -237,10 +243,15 @@ func runGenerate(args []string) error {
 	// at all) skips this second Load entirely rather than paying for
 	// another goEval `go run` on every generate.
 	var manifestActions []generate.Action
+	booted := false // the router takes gen.Booted exactly when gen/boot.go exists
 	if _, err := os.Stat(filepath.Join(dir, "manifest")); err == nil {
 		rs, err := manifest.Load(dir, filepath.Join(dir, "manifest"))
 		if err != nil {
 			return err
+		}
+		booted = len(rs) > 0
+		for _, w := range manifest.IneligibleDefaults(rs) {
+			fmt.Fprintln(os.Stderr, w)
 		}
 		manifestActions, err = generate.ManifestActions(actionsDir, rs)
 		if err != nil {
@@ -251,7 +262,7 @@ func runGenerate(args []string) error {
 	}
 	allActions := append(append([]generate.Action(nil), actions...), manifestActions...)
 
-	router, err := generate.Router(module, allActions)
+	router, err := generate.Router(module, allActions, booted)
 	if err != nil {
 		return fmt.Errorf("render router.go: %w", err)
 	}
@@ -275,6 +286,14 @@ func runGenerate(args []string) error {
 		return err
 	}
 
+	pruned, err := prune.Prune(genDir, append(gm.Written, cliWritten(genDir, actions)...), gm.ExclusiveStores)
+	for _, f := range pruned {
+		fmt.Printf(prune.Pruned+"\n", f)
+	}
+	if err != nil {
+		return err
+	}
+
 	fmt.Printf("rastrillo generate: %d route(s) wired\n", len(allActions))
 	for _, a := range actions {
 		fmt.Printf("  %-24s actions/%s\n", a.Route, a.SourcePath)
@@ -283,4 +302,14 @@ func runGenerate(args []string) error {
 		fmt.Printf("  %-24s %s\n", a.Route, a.SourcePath)
 	}
 	return nil
+}
+
+// cliWritten is what runGenerate writes into genDir beside the manifest
+// pipeline, changed or not, so pruning counts it as this run's.
+func cliWritten(genDir string, actions []generate.Action) []string {
+	out := append(packs.Paths(genDir), filepath.Join(genDir, "router.go"), filepath.Join(genDir, "tools.go"))
+	for _, a := range actions {
+		out = append(out, generate.RewritePath(genDir, a))
+	}
+	return out
 }

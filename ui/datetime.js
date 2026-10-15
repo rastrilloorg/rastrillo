@@ -498,6 +498,14 @@
         pos += m[0].length;
         continue;
       }
+      // A numeric date with its year is one token, or pt-PT, which
+      // writes "sexta, 25/12/2026, 15:30", could not read itself back.
+      m = /^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{4})(?!\d)/.exec(s.slice(pos));
+      if (m) {
+        push({ t: "ndate", d: +m[1], mo: +m[2], y: +m[3] }, pos, pos + m[0].length);
+        pos += m[0].length;
+        continue;
+      }
       hit = matchAt(s, pos, idx);
       if (hit) { push(hit.tok, pos, pos + hit.len); pos += hit.len; continue; }
       m = /^\d+/.exec(s.slice(pos));
@@ -564,13 +572,14 @@
     // Numeric d/m[/y], day first — and swapped where only the other
     // reading can be true, so a pasted 12/25/2027 is understood rather
     // than refused.
+    function dmy(day, mon, year) {
+      if (mon > 12 && day <= 12) { var swap = day; day = mon; mon = swap; }
+      return makeDate(year === undefined ? inferYear(now, mon - 1, day) : year < 100 ? 2000 + year : year,
+        mon - 1, day, clockH, clockM);
+    }
     m = /^(\d{1,2})[\/.\-](\d{1,2})(?:[\/.\-](\d{2}|\d{4}))?$/.exec(raw);
     if (m) {
-      var day = +m[1], mon = +m[2] - 1, swap;
-      if (mon > 11 && day <= 12) { swap = day; day = +m[2]; mon = swap - 1; }
-      var year = m[3] === undefined ? inferYear(now, mon, day)
-        : (+m[3] < 100 ? 2000 + +m[3] : +m[3]);
-      d = makeDate(year, mon, day, clockH, clockM);
+      d = dmy(+m[1], +m[2], m[3] === undefined ? undefined : +m[3]);
       return d ? { date: d, hasDate: true, hasTime: false } : null;
     }
 
@@ -787,7 +796,16 @@
       if (hasTime && (h > 23 || mi > 59)) return null;
     }
 
-    // The calendar.
+    // The calendar. A weekday beside a numeric date is decoration, as
+    // it is beside a month name below.
+    var nd = findKind("ndate");
+    if (!hasDate && nd >= 0) {
+      used[nd] = true;
+      if (findRole("weekday") >= 0) used[findRole("weekday")] = true;
+      date = dmy(toks[nd].d, toks[nd].mo, toks[nd].y);
+      if (!date) return null;
+      hasDate = true;
+    }
     if (!hasDate) {
       var tod = find("today"), tom = find("tomorrow"), yes = find("yesterday");
       if (tom >= 0) { date = shiftDays(now, 1); used[tom] = true; hasDate = true; }

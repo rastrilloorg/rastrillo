@@ -19,7 +19,9 @@ import (
 	"amadan.net/rastrillo/rastrillo/background"
 	"amadan.net/rastrillo/rastrillo/carlos"
 	"amadan.net/rastrillo/rastrillo/db"
+	"amadan.net/rastrillo/rastrillo/locales"
 
+	genlocales "notes/gen/locales"
 	"notes/internal/notes"
 )
 
@@ -58,7 +60,15 @@ func main() {
 	// back — so Options.DBPath must stay empty for the Serve call
 	// below, or Serve would open a second, unused connection to the
 	// same file.
-	opts, err := rastrillo.Resolve(rastrillo.Options{DBPath: "notes.db", Logger: logger})
+	opts, err := rastrillo.Resolve(rastrillo.Options{
+		DBPath: "notes.db",
+		Logger: logger,
+		// Locales and DefaultLocale come from manifest/app.toml, through
+		// gen/locales. Boot refuses a configuration whose packs this
+		// binary does not link.
+		Locales:       genlocales.Locales,
+		DefaultLocale: genlocales.DefaultLocale,
+	})
 	if err != nil {
 		logger.Error("resolve activation", "err", err)
 		os.Exit(1)
@@ -71,8 +81,18 @@ func main() {
 	}
 	defer d.Close()
 
+	// rastrillo.Serve below re-validates this (opts.Locales/
+	// DefaultLocale, through Handler); this call is only to get the
+	// value back, for notes.App's three ui.Pages to format and
+	// dispatch by (Task 9, 13, 24).
+	cfg, err := locales.CheckConfig(genlocales.DefaultLocale, genlocales.Locales)
+	if err != nil {
+		logger.Error("locale configuration", "err", err)
+		os.Exit(1)
+	}
+
 	bg := &background.Group{}
-	mux, err := notes.App(d, origin, instanceKey, bg, logger)
+	mux, err := notes.App(d, origin, instanceKey, bg, logger, cfg)
 	if err != nil {
 		logger.Error("build app", "err", err)
 		os.Exit(1)

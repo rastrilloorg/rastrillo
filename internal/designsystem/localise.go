@@ -44,6 +44,11 @@ import (
 // values are never looked up, whatever they look like; "positive" is a
 // tone and "plus" an icon however English they read.
 //
+// Currency is an ISO 4217 code that field-money posts back beside the
+// amount. Translated, the form would post a code no currency has, and
+// hasWords reads three capitals as a word, so the rule alone would not
+// keep it.
+//
 // Err is here on purpose. It is the error a job's own code raised, quoted
 // as the job reported it, and an app shows the database's English the
 // way the database wrote it.
@@ -55,6 +60,7 @@ var sampleCodeKeys = map[string]bool{
 	"Rel": true, "Kind": true, "Seed": true, "ActionIcon": true, "Lead": true,
 	"LeadInitial": true, "Initial": true, "Email": true, "DateTime": true,
 	"Min": true, "Max": true, "Ref": true, "Exact": true, "Err": true,
+	"Currency": true,
 }
 
 // sampleWordKeys are data keys whose value is words even when it is one

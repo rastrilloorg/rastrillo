@@ -17,18 +17,41 @@ import (
 	"testing"
 	"time"
 
+	"amadan.net/rastrillo/rastrillo"
 	"amadan.net/rastrillo/rastrillo/background"
 	"amadan.net/rastrillo/rastrillo/db"
+	"amadan.net/rastrillo/rastrillo/locales"
 	"amadan.net/rastrillo/rastrillo/pow/powtest"
 
+	genlocales "notes/gen/locales"
 	"notes/internal/notes"
 )
 
-// newApp boots a whole app per test: a fresh file-backed SQLite
-// database and the real notes.App, exactly as cmd/notes/main.go wires
-// it. The server's own URL becomes the app's origin, so a same-origin
-// POST that sets Origin: ts.URL passes csrf.Protect.
+// newApp boots a whole app per test in the manifest's declared locale
+// configuration — genlocales.DefaultLocale and genlocales.Locales,
+// exactly as main.go wires it. newAppWith builds one in an arbitrary
+// configuration, for the two-locale suite (locales_test.go).
 func newApp(t *testing.T) *httptest.Server {
+	t.Helper()
+	return newAppWith(t, genlocales.DefaultLocale, genlocales.Locales)
+}
+
+// newAppWith boots a whole app per test: a fresh file-backed SQLite
+// database and the real notes.App, with def and offered standing in
+// for the manifest's own locale declaration so a test can offer more
+// than notes' app.toml does. The server's own URL becomes the app's
+// origin, so a same-origin POST that sets Origin: ts.URL passes
+// csrf.Protect.
+//
+// It goes through rastrillo.Handler, exactly as cmd/notes/main.go's
+// Serve does (Handler is everything Serve builds short of the
+// listener), rather than calling notes.App and serving its mux
+// directly: with two or more offered locales that is what strips the
+// "/es/" prefix and puts the negotiated locale on the request before
+// notes.App's own middleware ever runs, and a harness that skipped it
+// would pass against a mux that never sees the prefix a real deploy
+// serves.
+func newAppWith(t *testing.T, def string, offered []string) *httptest.Server {
 	t.Helper()
 	d, err := db.Open(filepath.Join(t.TempDir(), "notes.db"), slog.New(slog.NewTextHandler(io.Discard, nil)))
 	if err != nil {
@@ -44,12 +67,29 @@ func newApp(t *testing.T) *httptest.Server {
 	ts := httptest.NewUnstartedServer(nil)
 	origin := "http://" + ts.Listener.Addr().String()
 	bg := &background.Group{}
-	t.Cleanup(bg.Stop)
-	mux, err := notes.App(d, origin, "notes-test-instance-key", bg, slog.New(slog.NewTextHandler(io.Discard, nil)))
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+
+	cfg, err := locales.CheckConfig(def, offered)
+	if err != nil {
+		t.Fatalf("locale config: %v", err)
+	}
+	mux, err := notes.App(d, origin, "notes-test-instance-key", bg, logger, cfg)
 	if err != nil {
 		t.Fatalf("notes.App: %v", err)
 	}
-	ts.Config.Handler = mux
+	handler, closeApp, err := rastrillo.Handler(rastrillo.Options{
+		Mux:           mux,
+		Background:    bg,
+		Locales:       offered,
+		DefaultLocale: def,
+		BaseCatalog:   genlocales.BaseCatalog,
+		Logger:        logger,
+	})
+	if err != nil {
+		t.Fatalf("handler: %v", err)
+	}
+	t.Cleanup(func() { closeApp() })
+	ts.Config.Handler = handler
 	ts.Start()
 	t.Cleanup(ts.Close)
 	return ts

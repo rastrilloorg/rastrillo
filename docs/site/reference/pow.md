@@ -95,7 +95,7 @@ Then render it:
 <form rst-form method="post" action="/contact" {{.Proof.Attrs}}>
   {{.Proof.Fields}}
   <!-- your fields -->
-  {{template "form-foot" dict "Submit" "Send" "Proof" .Proof}}
+  {{template "form-foot" dict "L" $L "Submit" "Send" "Proof" .Proof}}
 </form>
 {{.Proof.Script}}
 ```
@@ -106,8 +106,8 @@ When the form needs a script, `form-foot`'s `Proof` key does the rest: the submi
 
 ```html
 <button type="submit"{{if .Proof.NeedsScript}} disabled data-pow-submit{{end}}>Send</button>
-{{.Proof.StatusLine (T "rastrillo.ui.pow_status")}}
-{{if .Proof.NeedsScript}}<noscript><p>{{T "rastrillo.ui.pow_noscript"}}</p></noscript>{{end}}
+{{.Proof.StatusLine (T $L "rastrillo.ui.pow_status")}}
+{{if .Proof.NeedsScript}}<noscript><p>{{T $L "rastrillo.ui.pow_noscript"}}</p></noscript>{{end}}
 ```
 
 A disabled submit is the only starting point that fails safe. JavaScript can't enable a control from inside `<noscript>`, and a module that's blocked by a CSP, missing, or throws leaves an honest disabled button instead of one that looks live and does nothing. The status line ("If this form doesn't respond, reload the page.") shows from the first paint, and the module hides it once the form is ready, so if the module never runs, the line is still there and still true. If the worker fails, the module shows it again. Render it inside the form. A submit button outside the form, attached with `form="..."`, works as long as it carries `data-pow-submit`.

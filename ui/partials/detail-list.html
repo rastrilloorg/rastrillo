@@ -21,9 +21,9 @@
      identifier, a quantity or a reference number is not a time, however
      numeric it looks; that is what Mono is for. Getting this wrong is
      the mistake this key exists to make easy to avoid. */}}
-{{define "detail-list"}}<dl rst-detail>
+{{define "detail-list"}}{{$L := localizer $}}<dl rst-detail>
   {{- range .Items}}
   <dt>{{.Label}}</dt>
-  <dd{{if .Mono}} class="rst-mono"{{end}}>{{if .DateTime}}<time datetime="{{.DateTime}}">{{.Value}}</time>{{else}}{{displayValue .Value}}{{end}}</dd>
+  <dd{{if .Mono}} class="rst-mono"{{end}}>{{if .DateTime}}<time datetime="{{.DateTime}}">{{.Value}}</time>{{else}}{{displayValue $L .Value}}{{end}}</dd>
   {{- end}}
 </dl>{{end}}

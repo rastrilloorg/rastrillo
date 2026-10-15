@@ -9,6 +9,7 @@ import (
 
 	"amadan.net/rastrillo/rastrillo"
 	"amadan.net/rastrillo/rastrillo/form"
+	"amadan.net/rastrillo/rastrillo/ui"
 	"amadan.net/rastrillo/rastrillo/view"
 	announcementsstore "tickets/gen/store/announcements"
 )
@@ -27,9 +28,11 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 	)
 	if !p.OK() {
 		view.Render(ctx, w, "announcements/form", http.StatusBadRequest, formView{
-			IsNew:  true,
-			Fields: p.Echo(),
-			Errors: p.Errors(),
+			Localized: ui.ForRequest(r),
+			IsNew:     true,
+			Fields:    p.Echo(),
+			Errors:    p.Errors(),
+			ErrorArgs: p.ErrorArgs(),
 		})
 		return
 	}
@@ -49,9 +52,11 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 }
 
 type formView struct {
+	ui.Localized
 	IsNew          bool
 	Fields         map[string]string
 	Errors         map[string]string
+	ErrorArgs      map[string]map[string]any
 	BasicsAction   string
 	AdvancedAction string
 }

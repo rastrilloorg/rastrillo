@@ -395,3 +395,80 @@ func TestMergeVectorsFileUntouched(t *testing.T) {
 		t.Fatalf("merge-vectors.json changed (sha256 %s, want %s); fix implementations, not vectors", got, want)
 	}
 }
+
+// AppendChecked's check sees the stream's whole history, and a refusal
+// appends nothing and comes back unchanged, so a caller can match it.
+func TestAppendCheckedRefusalAppendsNothing(t *testing.T) {
+	l := openLog(t, "edge-a")
+	ctx := context.Background()
+	l.Append(ctx, "s", "created", "human", map[string]int{"n": 1})
+	l.Append(ctx, "s", "bumped", "human", nil)
+	l.Append(ctx, "other", "created", "human", nil)
+
+	refused := errors.New("refused")
+	var seen []string
+	_, err := l.AppendChecked(ctx, "s", "bumped", "human", nil, func(history []Event) error {
+		for _, ev := range history {
+			seen = append(seen, ev.Kind)
+		}
+		return refused
+	})
+	if err != refused {
+		t.Fatalf("AppendChecked = %v, want the check's own error", err)
+	}
+	if fmt.Sprint(seen) != "[created bumped]" {
+		t.Errorf("check saw %v, want the stream's two events", seen)
+	}
+	if evs, _ := l.Events(ctx, "s"); len(evs) != 2 {
+		t.Fatalf("a refused append wrote: %d events, want 2", len(evs))
+	}
+
+	ev, err := l.AppendChecked(ctx, "s", "bumped", "human", nil, func([]Event) error { return nil })
+	if err != nil || ev.Seq != 3 || ev.Lamport != 3 {
+		t.Fatalf("accepted append = %+v, %v; want seq 3, lamport 3", ev, err)
+	}
+}
+
+// The check runs under the write lock: while it runs, a writer on
+// another connection cannot append, so the history it judged is the
+// history the event lands on.
+func TestAppendCheckedHoldsTheWriteLock(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "app.db")
+	d, err := db.Open(path, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { d.Close() })
+	ctx := context.Background()
+	if _, err := migrate.Apply(ctx, d, Schema); err != nil {
+		t.Fatal(err)
+	}
+	l, err := Open(d.Writer(), "edge-a")
+	if err != nil {
+		t.Fatal(err)
+	}
+	// busy_timeout 0: a writer that finds the lock taken fails at once
+	// instead of waiting for the check to finish.
+	other, err := sql.Open("sqlite", path+"?_pragma=busy_timeout(0)&_pragma=journal_mode(WAL)")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { other.Close() })
+	racer, err := Open(other, "edge-b")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var raced error
+	if _, err := l.AppendChecked(ctx, "s", "created", "human", nil, func([]Event) error {
+		_, raced = racer.Append(ctx, "s", "created", "human", nil)
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if raced == nil {
+		t.Fatal("another connection appended while the check ran")
+	}
+	if evs, _ := l.Events(ctx, "s"); len(evs) != 1 || evs[0].Writer != "edge-a" {
+		t.Fatalf("events %+v, want only edge-a's", evs)
+	}
+}

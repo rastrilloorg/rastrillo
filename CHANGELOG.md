@@ -10,6 +10,70 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+**Multi-currency money (breaking upgrade for apps with money).** Money
+is now stored with its currency, and the locale data that formats it
+comes from language packs.
+1. Run `rastrillo doctor`. It lists every template and Go file the new
+   template calls affect, and what to change in each. Run
+   `rastrillo migrate-templates -write` on your templates, make the Go
+   changes it lists, and run `rastrillo doctor` again until it reports
+   nothing. Every app needs this step, whether it stores money or not.
+2. Run the new version with `RASTRILLO_CHECK_CONFIG=1`. It checks the
+   locale setup, prints what it found, and exits without opening the
+   database. If it names a missing pack: generated apps run
+   `rastrillo generate`; other apps add the import it names.
+3. Add `currency = "EUR"`, or another ISO 4217 code, to every money
+   resource's manifest. `rastrillo generate` refuses one without it.
+   For each money resource with existing data, add `[legacy] currency`
+   and `scale` to its manifest and run `rastrillo generate`. The app
+   refuses to start without them.
+4. If the app stores money: take a backup, stop every running copy,
+   then start the new version. Never run old and new versions side by
+   side. To go back, restore the backup. Older versions refuse to run against the upgraded database: each money column is replaced by `<name>_minor` and `<name>_currency`, and in apps that keep money in events the event log's payload column is renamed, so an old version finds a column missing and fails instead of saving wrong amounts.
+5. Apps that store no money need no backup or stop-start beyond the
+   template changes in step 1.
+
+Money fields now accept amounts the way people type them: `US$ 5`,
+`5 USD`, `1.284,50` on an English page. They still refuse another
+currency, an amount that could mean two things, and extra decimals.
+To keep the old, exact format for a field, set `Strict: true`.
+
+- New package `currency` formats, seeds and parses money: an integer count of a currency's smallest unit with its ISO 4217 code, written in the reader's language from CLDR data.
+- New packages `currency/replay` and `currency/sqlmoney` hold the rules generated stores use to replay money events and to upgrade and check SQL money columns.
+- New package `locales` checks an app's languages at boot (`CheckConfig`), resolves a request's language to linked data with fallback (`Resolve`), and runs the configuration probe.
+- New packages `locales/<lang>`, one per base language, link that language's CLDR money data when imported; `rastrillo generate` writes the ones an app needs to `gen/locales/packs.go`.
+- New package `locales/modern` imports every language pack, for a tool that formats in any language.
+- Generated money fields change shape: `Price int64` becomes `PriceMinor *int64` and `PriceCurrency *string`, in the model and in every `Params` struct. Update hand-written actions that read or set them.
+- `form.Field` gains `Currency`, `Negative`, `Locale`, `LocaleEcho` and `Strict` for money fields, and `Stored`, the record's amount on an edit form.
+- New type `form.MoneyInput` is what a money input shows: the text, its language, the currency and the seed.
+- New function `form.SeedMoney` fills a money input from a stored amount, or from none.
+- New method `(*form.Parsed).Minor` reads a money field's amount in its currency's minor units, and whether there is one.
+- New method `(*form.Parsed).MoneyInput` gives back a money field's submitted text after a failed POST, or says to fill it from the record.
+- New method `(*form.Parsed).ErrorArgs` holds the values each field's error message takes, for `Tf`.
+- New type `ui.Pages`, built with `ui.NewPages`, parses an app's templates once at boot and renders every language and request from them, strict by default.
+- New type `ui.Localizer` is one language's catalog and formatting locale: the `$L` every locale function now takes first.
+- New type `ui.Localized` carries a page's localizer, switcher items and return path; embed it in a view struct.
+- New function `ui.ForRequest` returns the `ui.Localized` for a request.
+- New template functions: `money` writes an amount, `localizer` finds the page's `$L`, and `withL` passes it to a partial.
+- New partial `field-money` draws a money input with its currency code in the label and three hidden inputs.
+- New migration set `eventlog.MoneySchema` renames the event log's `payload` column to `payload_v2`, for an app whose events carry money; it takes about half a second per 200,000 events.
+- New function `eventlog.UpgradeForMoney` applies `MoneySchema` with or without a migration ledger; generated apps call it from `gen.Boot`.
+- New method `(*eventlog.Log).AppendChecked` appends an event only if a check on the stream's history passes, with no other write in between.
+- New error `replay.ErrCurrencyChange` matches an event refused because its field already holds another currency.
+- `eventlog.Open` now fails when the event log table does not exist yet: apply `eventlog.Schema` first.
+- Generated apps with manifest resources get `gen.Boot`, which upgrades and checks their money data, and `gen.Router` now takes its result.
+- New function `rastrillo.ProbeConfig` runs the `RASTRILLO_CHECK_CONFIG=1` probe, for a `main` that calls neither `Run` nor `Resolve`.
+- New function `rastrillo.FormatLocale` is the CLDR locale a request's amounts are written in.
+- New method `(*rastrillo.Locales).Negotiate` picks a request's language without the middleware, for an error page.
+- New functions `rastrillo.RetagOf` and `rastrillo.Retagged` list the codes the framework moved: Portuguese is now `pt-PT`, and `pt` addresses, cookies and catalogs keep working.
+- New command `rastrillo migrate-templates` adds `$L` to an app's templates and lists what is left to do by hand.
+- New flag `rastrillo new --locale` picks the one language a new app starts with.
+- `rastrillo doctor` now checks templates and locales too, and exits 6 for templates in the old syntax and 7 for a locale configuration that would stop the app starting. It does not run your app. `rastrillo doctor --probe` also builds the app and runs it with `RASTRILLO_CHECK_CONFIG=1`, which runs your app's own code.
+- Removed: `rastrillo generate --default-locale`. The default now comes from `default_locale` in `manifest/app.toml`.
+- `rastrillo generate` now deletes files in `gen/` that an earlier run generated and this run does not. Keep files you edit by hand outside `gen/`. `rastrillo generate --check` names what a run would delete.
+- `rastrillo generate` refuses a filter on a money field, because an amount means nothing without its currency. Remove the filter.
+- `rastrillo generate` refuses a field named like a money field's generated fields, such as `PriceCurrency` beside a money field `Price`, and a field named `EventVersion`. Rename the field.
+
 ### Changed: sign-in lands back on the page that asked for it; post `return_to` from your own sign-in page
 
 `RequireSession` and `RequireFreshSession` now send a signed-out visitor to `SigninPath?return_to=<the page>`, and once they sign in they land back on that page. Before, they always landed on `SignedInPath`. The shipped sign-in screen carries the destination for you. If you render your own sign-in page, add a hidden `return_to` field set to `SigninState(r).ReturnTo` to each form, and use `SigninState(r).PasskeyFinish()` as the passkey button's finish URL. Without them, your visitors still land on `SignedInPath`.

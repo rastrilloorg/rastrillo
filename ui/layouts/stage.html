@@ -1,5 +1,5 @@
-{{define "layout"}}<!doctype html>
-<html lang="{{block "lang" .}}en{{end}}" dir="{{block "dir" .}}ltr{{end}}">
+{{define "layout"}}{{$L := localizer $}}<!doctype html>
+<html lang="{{block "lang" .}}{{$L := localizer $}}{{if $L}}{{$L.Identity}}{{else}}en{{end}}{{end}}" dir="{{block "dir" .}}{{$L := localizer $}}{{if $L}}{{$L.Dir}}{{else}}ltr{{end}}{{end}}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width">
@@ -18,11 +18,12 @@
 {{block "head" .}}{{end}}
 </head>
 <body rst-stage>
-<a rst-skip href="#main">{{T "rastrillo.ui.shell_skip"}}</a>
-{{/* backdrop is the picture behind the card. The default is generated
-     from a constant seed because no block may read the page's data;
-     redefine it as {{stageArt "your-app"}} for a pattern of your own,
-     or with an image or your own SVG. aria-hidden: it is decoration. */}}
+<a rst-skip href="#main">{{T $L "rastrillo.ui.shell_skip"}}</a>
+{{/* backdrop is the picture behind the card. The default is drawn
+     from a constant seed, because a block reads nothing from the page's
+     data but its localizer. Redefine it as {{stageArt "your-app"}} for a
+     pattern of your own, or with an image or your own SVG. aria-hidden:
+     it is decoration. */}}
 <div rst-stage-scene aria-hidden="true">{{block "backdrop" .}}{{stageArt "rastrillo"}}{{end}}</div>
 <main rst-page id="main">
 {{template "content" .}}

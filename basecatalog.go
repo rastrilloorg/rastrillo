@@ -24,7 +24,10 @@ var baseFS embed.FS
 
 // baseLocales is the shipped set, en first, then spec §3.1's order:
 // Ethnologue's L1 top ten, Irish, and Arabic for right-to-left coverage.
-var baseLocales = []string{"en", "ga", "zh-Hans", "es", "hi", "pt", "bn", "ru", "ja", "yue", "vi", "ar"}
+// Portuguese is pt-PT because the catalog is European Portuguese, and
+// under plain pt, which CLDR reads as Brazil, its pages wrote money the
+// Brazilian way (retag.go keeps the old code working).
+var baseLocales = []string{"en", "ga", "zh-Hans", "es", "hi", "pt-PT", "bn", "ru", "ja", "yue", "vi", "ar"}
 
 var baseCatalogs = func() map[string]Catalog {
 	out := make(map[string]Catalog, len(baseLocales))

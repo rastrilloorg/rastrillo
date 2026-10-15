@@ -20,7 +20,7 @@ func TestDeleteFlow(t *testing.T) {
 	app, db := newApp(t)
 
 	create := post(t, app, "/admin/ticket_types", url.Values{
-		"Name": {"Doomed pass"}, "Price": {"5.00"}, "Status": {"draft"},
+		"Name": {"Doomed pass"}, "Price": {"5.00"}, "Price.locale": {"en"}, "Price.currency": {"USD"}, "Status": {"draft"},
 	})
 	wantStatus(t, create, http.StatusSeeOther)
 	loc := create.Header().Get("Location")

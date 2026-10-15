@@ -44,8 +44,9 @@ const mountPath = DefaultMount
 // components.html DID NOT PASS IT: roughly three times the budget, and
 // several times the next heaviest page. It was the page the ruling was
 // about, and it no longer exists — the ninety-seven preview frames on
-// it are five family pages now, one per family in samples.go, and every
-// one of them is inside the budget with the table below empty.
+// it are five family pages now, one per family in samples.go. Each was
+// inside the budget with the table below empty, until the Form page
+// gained field-money (see its entry).
 //
 // The exact figure is deliberately not written here. It moved 2,759
 // bytes in the two days this comment first carried it, which is the
@@ -97,16 +98,19 @@ const maxPageBytes = 128 << 10
 // name existed — so it has a gate of its own:
 // TestTheDebtTableCannotOutliveTheDebt.
 var pageBudgetDebt = map[string]int{
-	// The Form page in Hindi and Bengali, since the samples speak the
-	// page's language. Every label, hint and error on it is written three
-	// times (the frame's document is a file, but the HTML tab and the
-	// Template tab both carry the words), and Devanagari and Bengali
-	// take three bytes a character where English took one. The page
-	// went from comfortably under to a kilobyte or so over. The fix is
-	// the page's, not the budget's: the Form family is the largest on
-	// the site, and splitting it (the choosers and the date fields have
-	// the weight) is the change that empties this entry.
-	"form.html": 134 << 10,
+	// Two things took the Form page over, and the entry holds both.
+	// field-money's three states took it over in hi, bn and ru, whose
+	// scripts cost two or three bytes a character (signal/hi at 138,517
+	// bytes from that alone). And the samples now speak the page's
+	// language: every label, hint and error on it is written three times
+	// (the frame's document is a file, but the HTML tab and the Template
+	// tab both carry the words), and Devanagari and Bengali take three
+	// bytes a character where English took one. Together they put
+	// signal/hi at 143,511 bytes. The fix is the page's, not the
+	// budget's: the Form family is the largest on the site, and splitting
+	// it across two pages (the choosers and the date fields have the
+	// weight) is the change that empties this entry.
+	"form.html": 141 << 10,
 }
 
 // pageKinds() is built from two sources since the split — the sections
@@ -3675,7 +3679,7 @@ func TestTheTextOnScreenIsTheTextCopied(t *testing.T) {
 			want["primitives"] = append(want["primitives"], codeview.Format(localMarkup(locale, samples[name])))
 		}
 		for _, doc := range formatDocs() {
-			want["formats"] = append(want["formats"], codeview.Format(localMarkup(locale, doc.Markup)))
+			want["formats"] = append(want["formats"], codeview.Format(formatMarkup(doc, locale)))
 		}
 		for _, doc := range screenDocs() {
 			if doc.Signin != nil {

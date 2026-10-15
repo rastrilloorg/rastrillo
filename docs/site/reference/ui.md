@@ -18,13 +18,8 @@ generates a screen, decides a route, or owns rendering.
 func Templates() fs.FS
 ```
 
-The partial set, for `ParseFS`:
-
-```go
-tmpl := template.Must(template.New("").Funcs(ui.Funcs()).
-	ParseFS(ui.Templates(), "*.html"))
-tmpl = template.Must(tmpl.ParseFS(appTemplateFS, "templates/*.html"))
-```
+The partial set. [`ui.Pages`](#pages) parses it for you, before your
+layout, so a page of yours that defines a partial's name wins.
 
 The partials span the list-screen, display, form and route families.
 Each takes exactly one data value, built inline with `dict`, and each
@@ -42,10 +37,14 @@ belong to your page markup: `<div rst-page>`,
 func Funcs(opts ...Option) template.FuncMap
 ```
 
-Registers `dict`, `list`, `menuGroup`, `searchClear`, `icon`,
-`iconAssets`, `T`, `Tf`, `dateWords`, `opt`, `Tbdi`, `stageArt`,
-`displayURL`, `safeHref`, `rowMenuItems` and `paginationItems`. `rowMenuItems` checks
-`row-menu`'s items and stops the render on one it cannot show.
+The function map the partials need, for an app that renders through its
+own template tree instead of [`ui.Pages`](#pages). It holds twenty-one:
+`dict`, `list`, `menuGroup`, `searchClear`, `icon`, `iconAssets`, `opt`,
+`stageArt`, `displayURL`, `safeHref`, `rowMenuItems`, `paginationItems`,
+`localizer`, `withL`, and the locale functions `T`, `Tf`, `Tbdi`,
+`number`, `displayValue`, `dateWords` and `money`. Add your own on top;
+do not drop any. `rowMenuItems` checks `row-menu`'s items and stops the
+render on one it cannot show.
 
 `opt` reads an optional key off a partial's data, whether it is a map or
 a struct, and gives nil when it is missing. `Tbdi` is `Tf` for a
@@ -63,13 +62,147 @@ if it is an http or https URL with no username or password in it, and
 `dict` builds a partial's single data value at the call site:
 
 ```html
-{{template "badge" dict "Label" "Draft" "Tone" "muted"}}
+{{template "badge" dict "L" $L "Label" "Draft" "Tone" "muted"}}
 ```
 
 `searchClear` is where `list-bar-search`'s clear ✕ points: the app's own
 `ClearHref` if it passed one, otherwise the same screen with `q` dropped
 and every other `Hidden` pair kept. See
 [Templates](/docs/templates#clearing-a-search).
+
+## Pages
+
+```go
+func NewPages(cfg PagesConfig) (*Pages, error)
+func (p *Pages) Execute(w io.Writer, page string, data any) error
+func (p *Pages) Middleware(next http.Handler) http.Handler
+func (p *Pages) Localizer(identity string) *Localizer
+func (p *Pages) LocalizerFor(r *http.Request) *Localizer
+
+type PagesConfig struct {
+	App      fs.FS               // the app's templates
+	Layout   string              // the layout file in App, parsed into the base
+	Shared   []string            // other shared files in App, parsed into the base
+	Pages    map[string]PageFile // page name -> the page's own file
+	Entry    string              // the template Execute runs; "layout" when empty
+	Locale   locales.Config      // locales.CheckConfig's result
+	Catalog  rastrillo.Catalog   // Options.BaseCatalog
+	LocaleFS fs.FS               // Options.LocaleFS: locales/<code>.toml
+	Funcs    template.FuncMap    // the app's request-independent functions (icon, iconAssets, asset)
+	Compat   bool
+	Logger   *slog.Logger // nil means slog.Default()
+}
+
+type PageFile struct {
+	FS   fs.FS
+	Path string
+}
+```
+
+`NewPages` builds your pages once, at boot. It parses `ui`'s partials,
+your layout and your `Shared` files once, then makes one copy per page
+with that page's own file. A `PageFile` with a nil `FS` is read from
+`App`. It also makes one localizer per language `Locale` offers. Nothing
+is copied per language or per request, and the function map never
+changes after `NewPages` returns.
+
+`Funcs` adds your own functions, such as your icon set's `icon` and
+`iconAssets` and your `asset`. A function named after a locale function,
+`localizer` or `withL` is refused:
+`ui: app function "T" would replace a framework function`.
+
+`Execute` renders a page. Its data must carry a non-nil localizer as
+`L`. It renders into a buffer and writes nothing unless the whole page
+rendered, so a failure is a clean error, not half a page.
+
+`Middleware` puts the request's localizer on the request, for
+`ForRequest`. Wrap your routes in it. `LocalizerFor` finds the
+localizer for a request the middleware has not seen, such as the one an
+error page gets after a panic. `Localizer` is the localizer for one
+offered language, and the default language's for any other code.
+
+Pages are strict: a locale function called without `$L`, or reached by
+data without `L`, is an error ([`ErrLegacyCall`](#the-localizer) or
+[`ErrNoLocalizer`](#the-localizer)). `Compat` turns that off while you
+migrate: those calls render in your default language instead, and each
+is logged in capitals. Turn it off again when
+`rastrillo migrate-templates` reports nothing.
+
+## The localizer
+
+```go
+type Localizer struct{ /* unexported */ }
+
+func NewLocalizer(identity, format string, t func(key string, args ...any) string) *Localizer
+func (l *Localizer) Identity() string
+func (l *Localizer) Format() string
+func (l *Localizer) Dir() string
+
+func WithLocalizer(r *http.Request, l *Localizer) *http.Request
+func LocalizerFrom(r *http.Request) *Localizer
+
+type Localized struct {
+	L       *Localizer
+	Locales []rastrillo.LocaleItem
+	Return  string
+}
+
+func ForRequest(r *http.Request) Localized
+func (l Localized) Localizer() *Localizer
+func (l Localized) Request() Localized
+
+var LocaleFuncs = []string{"T", "Tf", "Tbdi", "number", "displayValue", "dateWords", "money"}
+var ErrNoLocalizer = errors.New(noLocalizerMsg)
+var ErrLegacyCall = errors.New(legacyCallMsg)
+```
+
+A `Localizer` is one language: its catalog, and the CLDR locale its
+numbers and money are written in. `Identity` is the language code your
+app offers (`zh-TW`), `Format` the locale that formats it (`zh-Hant`),
+and `Dir` the page's `dir`, `rtl` or `ltr`. `Pages` makes one for each
+language you offer; `NewLocalizer` is for a test or your own rendering.
+
+A page's data carries its localizer as `L`. `ForRequest` gives the
+request's localizer, the language switcher's items and the path to come
+back to. Put them in a map as `L`, `Locales` and `Return`, or embed
+`Localized` in a view struct. `Localized.Request` is promoted to every
+struct that embeds it, so a render function can read those values off
+any generated view. `WithLocalizer` and `LocalizerFrom` put a localizer
+on a request and read it back; `Pages.Middleware` uses them.
+
+In a template, `{{$L := localizer $}}` finds `L` in the data, and
+`withL` adds it to a map passed to a partial. `LocaleFuncs` are the
+functions that take `$L` first:
+
+| Call | Arguments | Notes |
+|---|---|---|
+| `{{T $L "key" args…}}` | `*Localizer`, key, optional name and value pairs | |
+| `{{Tf $L "key" "name" v …}}` | the same | |
+| `{{Tbdi $L "key" "name" v …}}` | the same | the values are escaped and wrapped in `<bdi>` |
+| `{{number $L v}}`, `{{displayValue $L v}}` | `*Localizer`, any value | a nil value renders as before |
+| `{{dateWords $L}}` | `*Localizer` | |
+| `{{money $L amount code}}` | `*Localizer`, an integer amount or a pointer to one, an ISO code | a nil amount writes nothing; there is no form without `$L` |
+
+`ErrNoLocalizer` is a locale call whose `$L` is nil, or page data with
+no `L`. `ErrLegacyCall` is a locale call without `$L`. Under `ui.Pages`
+both stop the page, unless `Compat` is on.
+
+## money
+
+```html
+{{money $L .Price .Currency}}
+```
+
+Writes an amount in the reader's language, from CLDR data. The amount is
+an integer count of the currency's smallest unit, or a pointer to one;
+a nil pointer writes nothing. The code is an ISO 4217 code, as a
+`string`. The currency comes from your data, never from the reader:
+128450 EUR is `€1,284.50` in `en`, `1.284,50 €` in `de` and
+`1284,50 €` in `pt-PT`.
+
+A float, a string amount, an unknown code or a missing argument is an
+error, and stops the page. Every digit of the currency's smallest unit is shown: 1.5 dinars,
+stored as 1500 fils, is `KWD 1.500` on an English page.
 
 ## MenuGroupDefault
 
@@ -108,25 +241,21 @@ tmpl := template.Must(template.New("").
 vendored-inline default, so you can call it unconditionally and never
 touch the layout when the delivery mode changes.
 
-`WithT` rebinds the `T` function.
+`WithT` replaces `T` and `Tf` for a call that has no `$L`.
 
 ## WithLocale
 
-`WithLocale(locale string) Option` sets the locale used to format quantities. An empty or invalid locale uses English. Bind it with the other `ui.Funcs` options on each request's cloned template. Use `{{number .Count}}` for quantities in custom templates. It groups numeric Go values without rounding away decimal places. The helper also groups plain integer strings within the `int64` or `uint64` range. It leaves strings with leading zeros, decimal strings, currency or percent text, and abbreviations unchanged.
+`WithLocale(locale string) Option` sets the locale `number` and
+`displayValue` use for a call that has no `$L`. An empty or invalid
+locale uses English.
+
+Use `{{number $L .Count}}` for quantities. It groups numeric Go values
+without rounding away decimal places. It also groups plain integer
+strings within the `int64` or `uint64` range, and leaves strings with
+leading zeros, decimal strings, currency or percent text, and
+abbreviations unchanged.
 
 `stat.Value` and pagination item labels call `number` automatically. Detail lists, badges, list rows and meters call `displayValue`, which formats numeric Go values and preserves strings. Detail-list entries with `DateTime` keep their existing formatting. Keep identifiers, years and versions as strings. Use these helpers for display text, leaving input values, URLs and machine-readable attributes unformatted. Both helpers work without JavaScript.
-
-```go
-page, err := base.Clone()
-if err != nil {
-    return err
-}
-page.Funcs(ui.Funcs(
-    ui.WithT(translate),
-    ui.WithIcons(icons.Icon, icons.Assets),
-    ui.WithLocale(rastrillo.LocaleFrom(r)),
-))
-```
 
 ## FuncsWith
 
@@ -134,15 +263,12 @@ page.Funcs(ui.Funcs(
 func FuncsWith(t func(key string, args ...any) string) template.FuncMap
 ```
 
-`Funcs` with `T` bound to a request-scoped lookup, so a partial's own
-hardcoded-English defaults — `pagination`'s "Pagination",
-`confirm-form`'s "Cancel" — resolve in the request's locale:
-
-```go
-tmpl.Funcs(ui.FuncsWith(func(key string, args ...any) string {
-	return rastrillo.Tf(r, key, args...)
-}))
-```
+`Funcs(WithT(t))`. `WithT`, `WithLocale` and `FuncsWith` remain for an
+app that keeps its own rendering until it moves to `ui.Pages`. Binding
+them on a copy of your templates for each request is no longer the
+recommendation: build your pages once with [`ui.Pages`](#pages), and let
+the localizer in each page's data choose the language. `ui.Pages` does
+not take these options.
 
 A value you supply beats a partial's default, and your catalog entry
 beats the framework base catalog. See
@@ -429,9 +555,11 @@ A shell executes `{{template "content" .}}` for the page body and wraps
 it in chrome made of blocks with working defaults: `title`, `lang`,
 `dir` and `head` in all five, plus `brand`, `nav`, `account` and
 `locale` in the three chrome shells, `profile`, `view` and `up` in
-`sidebar` and `console`, and `foot` in `topbar` and `console`. No block
-reads a field off the data, so a shell renders the
-same whether a handler passes a struct, a `dict`-built map, or nil.
+`sidebar` and `console`, and `foot` in `topbar` and `console`. A shell
+reads `L` from the data, and the chrome shells read `Locales` and
+`Return` for the language switcher if they are there. So a shell renders
+whether a handler passes a struct or a `dict`-built map, as long as it
+carries `L`.
 
 `head` is the one that is not chrome: it is an empty slot at the foot of
 `<head>`, for a favicon, a meta tag, an extra stylesheet or a script

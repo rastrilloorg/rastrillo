@@ -3,19 +3,20 @@
      this one file then stops.
 
      Data contract (the action emitter reads this):
+       L  *ui.Localizer, required: set by the action from the request; ui.Pages' middleware puts it there
        Title     string, required — the record shown here (its first
                  text field's value; list.html's Main, restated for the
                  header)
        EditHref  string, required — this record's edit route
-       Fields    map[string]string, required — every declared field's
+       Fields    map[string]string, required: every declared field's
                  value keyed by its declared name, in this resource's
-                 declaration order: Title, Body. Money is
-                 already formatted as a dollar string by the action —
-                 templates never do money math. */}}
-{{define "content"}}
-{{template "page-header" dict "Title" .Title "ActionHref" .EditHref "ActionLabel" (T "ui.edit")}}
-{{template "detail-list" dict "Items" (list
-  (dict "Label" (T "resource.posts.field.title") "Value" .Fields.Title)
-  (dict "Label" (T "resource.posts.field.body") "Value" .Fields.Body)
+                 declaration order: Title, Body. Money is already
+                 written by the action, in the reader's language and
+                 the record's currency; templates never do money math. */}}
+{{define "content"}}{{$L := localizer $}}
+{{template "page-header" dict "L" $L "Title" .Title "ActionHref" .EditHref "ActionLabel" (T $L "ui.edit")}}
+{{template "detail-list" dict "L" $L "Items" (list
+  (dict "Label" (T $L "resource.posts.field.title") "Value" .Fields.Title)
+  (dict "Label" (T $L "resource.posts.field.body") "Value" .Fields.Body)
 )}}
 {{end}}

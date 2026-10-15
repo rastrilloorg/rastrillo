@@ -12,7 +12,7 @@
               passing its own Label always wins over T.
               list-bar-search hands its whole data value through, so
               setting Label there sets it here. */}}
-{{define "list-search-submit"}}<button class="rst-sr-only" type="submit">{{if .Label}}{{.Label}}{{else}}{{T "rastrillo.ui.search_submit"}}{{end}}</button>{{end}}
+{{define "list-search-submit"}}{{$L := localizer $}}<button class="rst-sr-only" type="submit">{{if .Label}}{{.Label}}{{else}}{{T $L "rastrillo.ui.search_submit"}}{{end}}</button>{{end}}
 
 {{/* list-bar-search — the search form: a magnifying glass, one
      <input type="search">, any hidden pairs the list needs carried
@@ -92,11 +92,11 @@
      them, page number included, and a page number from a searched
      result set is usually meaningless once the search is gone. Pass
      ClearHref to say "and go back to page 1". */}}
-{{define "list-bar-search"}}<search><form rst-search method="get"{{if .Action}} action="{{.Action}}"{{end}}>
+{{define "list-bar-search"}}{{$L := localizer $}}<search><form rst-search method="get"{{if .Action}} action="{{.Action}}"{{end}}>
   {{icon "search"}}
-  <input type="search" name="q"{{if .Query}} value="{{.Query}}"{{end}}{{if .Placeholder}} placeholder="{{.Placeholder}}"{{end}} aria-label="{{if .Placeholder}}{{.Placeholder}}{{else}}{{T "rastrillo.ui.search_submit"}}{{end}}">
+  <input type="search" name="q"{{if .Query}} value="{{.Query}}"{{end}}{{if .Placeholder}} placeholder="{{.Placeholder}}"{{end}} aria-label="{{if .Placeholder}}{{.Placeholder}}{{else}}{{T $L "rastrillo.ui.search_submit"}}{{end}}">
   {{- if .Query}}
-  <a rst-search-clear href="{{searchClear .}}" aria-label="{{T "rastrillo.ui.search_clear"}}">{{icon "x"}}</a>
+  <a rst-search-clear href="{{searchClear .}}" aria-label="{{T $L "rastrillo.ui.search_clear"}}">{{icon "x"}}</a>
   {{- end}}
   {{- if .Hidden}}{{range .Hidden}}
   <input type="hidden" name="{{index . 0}}" value="{{index . 1}}">

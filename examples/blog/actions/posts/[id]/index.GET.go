@@ -8,6 +8,8 @@ import (
 	"net/http"
 
 	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/ui"
+	"amadan.net/rastrillo/rastrillo/view"
 
 	"blog/internal/blog"
 )
@@ -35,7 +37,8 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	blog.Render(ctx, w, "post", http.StatusOK, blog.PostView{
+	view.Render(ctx, w, "post", http.StatusOK, blog.PostView{
+		Localized:  ui.ForRequest(r),
 		Head:       blog.Head{Title: post.Title},
 		Title:      post.Title,
 		Date:       blog.PublishedLine(post.CreatedAt),

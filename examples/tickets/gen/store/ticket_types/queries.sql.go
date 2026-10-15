@@ -28,23 +28,25 @@ func (q *Queries) CountTicketTypes(ctx context.Context, arg CountTicketTypesPara
 }
 
 const createTicketType = `-- name: CreateTicketType :one
-INSERT INTO ticket_types (name, price, status, max_per_order, created_at, updated_at)
-VALUES (?1, ?2, ?3, ?4, ?5, ?5)
+INSERT INTO ticket_types (name, price_minor, price_currency, status, max_per_order, created_at, updated_at)
+VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?6)
 RETURNING id
 `
 
 type CreateTicketTypeParams struct {
-	Name        string
-	Price       int64
-	Status      string
-	MaxPerOrder string
-	Now         string
+	Name          string
+	PriceMinor    *int64
+	PriceCurrency *string
+	Status        string
+	MaxPerOrder   string
+	Now           string
 }
 
 func (q *Queries) CreateTicketType(ctx context.Context, arg CreateTicketTypeParams) (int64, error) {
 	row := q.db.QueryRowContext(ctx, createTicketType,
 		arg.Name,
-		arg.Price,
+		arg.PriceMinor,
+		arg.PriceCurrency,
 		arg.Status,
 		arg.MaxPerOrder,
 		arg.Now,
@@ -64,7 +66,7 @@ func (q *Queries) DeleteTicketType(ctx context.Context, id int64) error {
 }
 
 const getTicketType = `-- name: GetTicketType :one
-SELECT id, name, price, status, max_per_order, created_at, updated_at FROM ticket_types WHERE id = ?1
+SELECT id, name, price_minor, price_currency, status, max_per_order, created_at, updated_at FROM ticket_types WHERE id = ?1
 `
 
 func (q *Queries) GetTicketType(ctx context.Context, id int64) (TicketType, error) {
@@ -73,7 +75,8 @@ func (q *Queries) GetTicketType(ctx context.Context, id int64) (TicketType, erro
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
-		&i.Price,
+		&i.PriceMinor,
+		&i.PriceCurrency,
 		&i.Status,
 		&i.MaxPerOrder,
 		&i.CreatedAt,
@@ -84,7 +87,7 @@ func (q *Queries) GetTicketType(ctx context.Context, id int64) (TicketType, erro
 
 const listTicketTypes = `-- name: ListTicketTypes :many
 
-SELECT id, name, price, status, max_per_order, created_at, updated_at FROM ticket_types
+SELECT id, name, price_minor, price_currency, status, max_per_order, created_at, updated_at FROM ticket_types
 WHERE (?1 = '' OR (name LIKE '%' || ?1 || '%' OR status LIKE '%' || ?1 || '%'))
   AND (?2 = '' OR status = ?2)
 ORDER BY created_at DESC, id DESC
@@ -116,7 +119,8 @@ func (q *Queries) ListTicketTypes(ctx context.Context, arg ListTicketTypesParams
 		if err := rows.Scan(
 			&i.ID,
 			&i.Name,
-			&i.Price,
+			&i.PriceMinor,
+			&i.PriceCurrency,
 			&i.Status,
 			&i.MaxPerOrder,
 			&i.CreatedAt,
@@ -151,21 +155,23 @@ func (q *Queries) UpdateTicketTypeAdvanced(ctx context.Context, arg UpdateTicket
 }
 
 const updateTicketTypeBasics = `-- name: UpdateTicketTypeBasics :exec
-UPDATE ticket_types SET name = ?1, price = ?2, status = ?3, updated_at = ?4 WHERE id = ?5
+UPDATE ticket_types SET name = ?1, price_minor = ?2, price_currency = ?3, status = ?4, updated_at = ?5 WHERE id = ?6
 `
 
 type UpdateTicketTypeBasicsParams struct {
-	Name   string
-	Price  int64
-	Status string
-	Now    string
-	ID     int64
+	Name          string
+	PriceMinor    *int64
+	PriceCurrency *string
+	Status        string
+	Now           string
+	ID            int64
 }
 
 func (q *Queries) UpdateTicketTypeBasics(ctx context.Context, arg UpdateTicketTypeBasicsParams) error {
 	_, err := q.db.ExecContext(ctx, updateTicketTypeBasics,
 		arg.Name,
-		arg.Price,
+		arg.PriceMinor,
+		arg.PriceCurrency,
 		arg.Status,
 		arg.Now,
 		arg.ID,
