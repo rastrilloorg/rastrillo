@@ -108,7 +108,9 @@ const DefaultMount = "/design-system"
 //	<theme>/<locale>/primitives.html      which is the whole of that list.
 //	<theme>/<locale>/shells.html          One of those sections per family
 //	                                      of components, so form.html has
-//	                                      the form fields on it and
+//	                                      the text fields on it,
+//	                                      choices-and-actions.html the
+//	                                      choosers and closing rows, and
 //	                                      display.html the display ones.
 //	<theme>/<locale>/modal.html           36 modal demos, one per gallery
 //	<theme>/<locale>/demo.html            the demo app's index, and

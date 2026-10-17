@@ -357,7 +357,9 @@ func pageKinds() []pageKind {
 
 // componentPages is one page per family in samples.go: the split that
 // took components.html from 98 preview frames to five pages of roughly
-// twenty (16 + 30 + 30 + 14 + 8, counted off the render).
+// twenty (16 + 30 + 30 + 14 + 8, counted off the render), and then the
+// Form page's own split into Form and Choices and actions when its
+// Hindi rendering passed the page budget.
 //
 // Read off families() rather than written out here, which is what makes
 // a family a page and not a page a family. A row added to samples.go is

@@ -517,6 +517,34 @@
     });
   });
 
+  // ── A section that moved pages ──────────────────────────────────────
+  //
+  // A fragment naming nothing here that the rail links on another page:
+  // the section moved (Form split, and field-select went to Choices and
+  // actions), and the old link in a bookmark or a search result is
+  // followed to where it went. The rail is the lookup, so no page keeps
+  // a list and the next move works the same way. Only a fragment with no
+  // element at all is looked up, so a hash that is on the page is left
+  // alone; only a link to another path is followed, so a page can never
+  // send a reader to itself; and the address is replaced, so Back does
+  // not return to a page that would send them on again. Without script
+  // the reader lands at the top of the old page, which the rail there
+  // still links out of. On hashchange as well as at readiness: a reader
+  // already on Form who opens the old link changes only the fragment,
+  // and nothing is loaded.
+  function moved() {
+    var id = fragment(location.hash), nav = id && !document.getElementById(id) && document.getElementById("ds-nav");
+    var links = nav ? nav.querySelectorAll("a[href]") : [];
+    for (var i = 0; i < links.length; i++) {
+      if (fragment(links[i].hash) === id && links[i].pathname !== location.pathname) {
+        location.replace(links[i].href);
+        return;
+      }
+    }
+  }
+  ready(moved);
+  addEventListener("hashchange", moved);
+
   // ── Copy ────────────────────────────────────────────────────────────
   //
   // A button on every source block, drawn only where the clipboard API

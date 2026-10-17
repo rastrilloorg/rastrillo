@@ -499,8 +499,8 @@ func TestTheSidebarFilterDrivesTheWholeJourney(t *testing.T) {
 	if !showing(family, section("en", "form")) {
 		t.Error(`typing "form" hid the Form section's own overview link`)
 	}
-	if !showing(family, on("en", "form", "partial-field-check")) {
-		t.Error(`typing "form" hid field-check, which is in the section that matched`)
+	if !showing(family, on("en", "form", "partial-field-url")) {
+		t.Error(`typing "form" hid field-url, which is in the section that matched`)
 	}
 	// Display is not the section to check here: form-error lives in it,
 	// so "form" legitimately keeps it. List screen has nothing in it

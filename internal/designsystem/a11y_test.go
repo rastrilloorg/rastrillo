@@ -317,18 +317,20 @@ func a11yTargets() []a11yTarget {
 		{"day/en getting started", page("day", "en", "getting-started"), "a page of prose, a list of links out to the assets and two source blocks: the plainest document in the tree, and the one where a heading level or a list semantic has nothing else to hide behind"},
 		{"day/en tokens", page("day", "en", "tokens"), "the swatch grid — every palette token painted at once, in the theme's own colours"},
 		{"day/en icons", page("day", "en", "icons"), "one inline SVG per slug the framework answers, each aria-hidden beside its own name: the one page in the tree where an icon is the content rather than furniture, and where an accessible name accidentally coming off a decorative glyph would show"},
-		// The five component pages. Since the split they are one
+		// The six component pages. Since the split they are one
 		// template with a different family in it, so the furniture this
 		// scan can see — the tab fieldsets, the state headings, the
 		// escaped source under each frame — is the same shape on all
-		// five and what differs is how much of it there is and which
+		// six and what differs is how much of it there is and which
 		// ids it carries. Each is named for the thing it has that its
-		// neighbours do not.
+		// neighbours do not. (Six since Form split: its choosers and
+		// closing rows are a page of their own.)
 		{"day/en list screen", page("day", "en", "list-screen"), "sixteen preview widgets, with the escaped source of a toolbar, a search form and a pagination strip beside them"},
 		{"day/en display", page("day", "en", "display"), "every display partial, the pill, the badge and the meter as one frame of all their states and the rest a widget per state: a great many radio groups and generated ids in one document"},
-		{"day/en form", page("day", "en", "form"), "the field partials, whose source blocks carry the labels, hints and error messages a reader copies out"},
+		{"day/en form", page("day", "en", "form"), "the text fields, whose source blocks carry the labels, hints and error messages a reader copies out"},
+		{"day/en choices and actions", page("day", "en", "choices-and-actions"), "the choosers and closing rows: a select that becomes a combobox with a listbox, a checkbox skinned as a switch, radio and checkbox groups under a legend, and the busy button's aria-busy illustration: the most ARIA of any page, and the one place a role or a name lost in the skinning would show"},
 		{"day/en date and time", page("day", "en", "date-and-time"), "the heaviest page in the tree and the one nearest the byte budget: whatever is added to the gallery next is most likely to be added here"},
-		{"day/en route", page("day", "en", "route"), "the shortest of the five, and the only one whose samples are whole responses rather than pieces of one"},
+		{"day/en route", page("day", "en", "route"), "the shortest of the six, and the only one whose samples are whole responses rather than pieces of one"},
 		{"day/en primitives", page("day", "en", "primitives"), "the markup idioms, the callouts they carry, and the sample whose structure is a dialog"},
 		{"day/en formats", page("day", "en", "formats"), "the eleven data-format samples: the only page carrying <address>, <abbr>, <data> and <output>, four elements no partial emits and none of the other pages can scan"},
 		{"day/en screens", page("day", "en", "screens"), "the sign-in screens: the shipped partial in ten states in stage frames, and the two examples it does not ship — the only page carrying a password field"},
@@ -1034,7 +1036,7 @@ const focusablesJS = `'a[href], button:not([disabled]), input:not([disabled]):no
 //
 // Two things it has to get right that a first attempt does not.
 //
-// Focus inside a frame: the form page holds thirty preview frames
+// Focus inside a frame: the form page holds a preview frame per state
 // (the Overview it split off from carries none), and once focus enters
 // one, the top document's activeElement is the frame and stays the
 // frame for every element inside it. Read naively that looks like focus

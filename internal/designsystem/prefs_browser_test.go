@@ -226,7 +226,10 @@ func TestTheDisplaySettingsKeepYourPlace(t *testing.T) {
 	ctx, cancel := context.WithTimeout(rig.Context(), 120*time.Second)
 	defer cancel()
 	where := "day/en/form.html at 390px"
-	const at = "partial-field-check"
+	// field-money, not field-check: the leg needs a partial well below
+	// the fold of Form, and field-check left for Choices and actions
+	// when the page split.
+	const at = "partial-field-money"
 	if err := chromedp.Run(ctx, chromedp.EmulateViewport(390, 844),
 		chromedp.Navigate(rig.Origin+pageHref(mountPath, "day", "en", fileOf("form"))+"#"+at),
 		chromedp.WaitVisible(".ds-prefs > summary", chromedp.ByQuery)); err != nil {

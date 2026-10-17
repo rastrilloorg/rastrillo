@@ -44,9 +44,10 @@ const mountPath = DefaultMount
 // components.html DID NOT PASS IT: roughly three times the budget, and
 // several times the next heaviest page. It was the page the ruling was
 // about, and it no longer exists — the ninety-seven preview frames on
-// it are five family pages now, one per family in samples.go. Each was
+// it are six family pages now, one per family in samples.go. Each was
 // inside the budget with the table below empty, until the Form page
-// gained field-money (see its entry).
+// gained field-money and its samples began speaking Hindi; it split in
+// two to get back under (see the table's history).
 //
 // The exact figure is deliberately not written here. It moved 2,759
 // bytes in the two days this comment first carried it, which is the
@@ -98,19 +99,18 @@ const maxPageBytes = 128 << 10
 // name existed — so it has a gate of its own:
 // TestTheDebtTableCannotOutliveTheDebt.
 var pageBudgetDebt = map[string]int{
-	// Two things took the Form page over, and the entry holds both.
-	// field-money's three states took it over in hi, bn and ru, whose
-	// scripts cost two or three bytes a character (signal/hi at 138,517
-	// bytes from that alone). And the samples now speak the page's
-	// language: every label, hint and error on it is written three times
-	// (the frame's document is a file, but the HTML tab and the Template
-	// tab both carry the words), and Devanagari and Bengali take three
-	// bytes a character where English took one. Together they put
-	// signal/hi at 143,511 bytes. The fix is the page's, not the
-	// budget's: the Form family is the largest on the site, and splitting
-	// it across two pages (the choosers and the date fields have the
-	// weight) is the change that empties this entry.
-	"form.html": 141 << 10,
+	// (none)
+	//
+	// The last entry was form.html, at 141 KiB. Two things put it there:
+	// field-money's three states, in hi, bn and ru, whose scripts cost
+	// two or three bytes a character; and the samples speaking the
+	// page's language, so every label, hint and error is written three
+	// times (the HTML tab and the Template tab both carry the frame's
+	// words) at three bytes a character in Devanagari and Bengali.
+	// Together they put signal/hi at 143,511 bytes. The fix was the
+	// page's, not the budget's: the Form family split in two, the text
+	// fields staying and the choosers and closing rows moving to
+	// Choices and actions, which left both near 85 KB in Hindi.
 }
 
 // pageKinds() is built from two sources since the split — the sections
@@ -2141,6 +2141,10 @@ func TestGalleryScriptStaysInertAndFirstParty(t *testing.T) {
 	//   frames hidden in every scheme until styled
 	//     (Safari's white about:blank); a framed
 	//     demo's autofocus refused                    +2,361 24,924
+	//   an old link to a section that moved pages
+	//     followed through the rail                   +1,314 26,238
+	//   and again on hashchange, for a reader
+	//     already on the old page                       +201 26,439
 	if n := len(js); n > 27416 {
 		t.Errorf("gallery.js is %d bytes; it is the gallery's own furniture and should stay readable in one sitting", n)
 	}
@@ -3914,7 +3918,21 @@ func TestOnlyAnIllustrationRefusesTheCopyButton(t *testing.T) {
 			}
 		}
 	}
-	if !strings.Contains(galleryPage(t, files, RootTheme(), "en", "form"), "data-ds-nocopy") {
+	// Read form-foot's page off the table: it moved from Form to Choices
+	// and actions once, and a page name written here would have had the
+	// leg checking a page the illustration is not on.
+	var footPage string
+	for _, fam := range families() {
+		for _, doc := range fam.Partials {
+			if doc.Name == "form-foot" {
+				footPage = fam.Key
+			}
+		}
+	}
+	if footPage == "" {
+		t.Fatal("no family holds form-foot")
+	}
+	if !strings.Contains(galleryPage(t, files, RootTheme(), "en", footPage), "data-ds-nocopy") {
 		t.Error("form-foot's Working state is not marked as an illustration")
 	}
 }

@@ -159,15 +159,17 @@ func assertNames(t *testing.T, ctx context.Context, where string) {
 }
 
 // With every widget's HTML tab chosen, and then every Template tab, no
-// source block on the two heaviest pages scrolls sideways at 390px: the
-// soft wrap holds even a 3,800px inline run. Each pass first requires
+// source block on the heaviest pages scrolls sideways at 390px: the
+// soft wrap holds even a 3,800px inline run. Form was one page until it
+// split; both halves stay here, since the select's option list is the
+// longest run among the form controls. Each pass first requires
 // that what it chose is on screen, every widget's panel: a tab that
 // never opened leaves nothing visible to measure, and nothing scrolls.
 func TestNoCodeBlockScrollsSidewaysOnAPhone(t *testing.T) {
 	rig := harness.New(t, func(string) http.Handler { return treeHandler(t) })
 	ctx, cancel := context.WithTimeout(rig.Context(), 120*time.Second)
 	defer cancel()
-	for _, kind := range []string{"form", "date-and-time"} {
+	for _, kind := range []string{"form", "choices-and-actions", "date-and-time"} {
 		for _, tab := range []string{"h", "t"} {
 			where := fmt.Sprintf("%s at 390px, every ds-view__tab--%s chosen", kind, tab)
 			var raw string

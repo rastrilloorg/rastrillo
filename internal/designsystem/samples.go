@@ -105,8 +105,10 @@ type partialDoc struct {
 }
 
 // family groups partials the way ui's own doc comment does: the list
-// screen, the display vocabulary, the form controls, the date and time
-// fields, and the route-level pages.
+// screen, the display vocabulary, the form's text fields, its choosers
+// and closing rows, the date and time fields, and the route-level
+// pages. ui's one form family is two pages here only for weight: see
+// the choices-and-actions row.
 //
 // A family is a PAGE of the gallery now, not a section of one — see
 // pageKinds() in page.go, which reads its component rows straight off
@@ -461,7 +463,7 @@ func families() []family {
 		{
 			Key:   "form",
 			Title: "Form",
-			Blurb: "Every control, in the states a real form puts it in. Each one sits in a padded rst-box, because that is the rule these partials assume.",
+			Blurb: "The fields a person types into, in the states a real form puts them in. Each one sits in a padded rst-box, because that is the rule these partials assume.",
 			Partials: []partialDoc{
 				{
 					Name:   "field",
@@ -524,6 +526,20 @@ func families() []family {
 						}},
 					},
 				},
+			},
+		},
+		{
+			// Split off Form when that page passed the gallery's 128 KiB
+			// page budget in Hindi and Bengali (143.5 KB; see
+			// maxPageBytes in designsystem_test.go). The seam is what a
+			// reader does: Form is what they type into, this page is what
+			// they pick from and how they finish. The split leaves both
+			// pages near 85 KB in the widest script, so the next field
+			// lands on either without reopening the budget.
+			Key:   "choices-and-actions",
+			Title: "Choices and actions",
+			Blurb: "The controls that pick from options, and the rows that end a form. Each one sits in a padded rst-box, because that is the rule these partials assume.",
+			Partials: []partialDoc{
 				{
 					Name:   "field-select",
 					Blurb:  "field's envelope around a native select. Past ten options the select arms the filterable combobox in select.js; the native select is still what the form submits.",

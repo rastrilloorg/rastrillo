@@ -347,5 +347,8 @@ func TestSearchFindsWhatPeopleCallThings(t *testing.T) {
 		chromedp.Evaluate(`document.querySelector('#ds-nav a[href$="#partial-field-check"]').click(); true`, nil)); err != nil {
 		t.Fatalf("%s: following the result: %v", where, err)
 	}
-	until(t, pctx, where+", Form at the partial", `location.pathname.endsWith("/form.html") && location.hash === "#partial-field-check" && (() => { const r = document.getElementById("partial-field-check").getBoundingClientRect(); return r.top >= 0 && r.top < innerHeight; })()`)
+	// field-check sits on Choices and actions since the Form page split:
+	// the page is read off the table so the leg follows the partial if
+	// it moves again, rather than passing on a stale file name.
+	until(t, pctx, where+", Choices and actions at the partial", `location.pathname.endsWith("/`+fileOf("choices-and-actions")+`") && location.hash === "#partial-field-check" && (() => { const r = document.getElementById("partial-field-check").getBoundingClientRect(); return r.top >= 0 && r.top < innerHeight; })()`)
 }

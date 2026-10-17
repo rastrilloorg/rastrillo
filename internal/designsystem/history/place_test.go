@@ -193,25 +193,30 @@ func TestPositionSurvivesASwitch(t *testing.T) {
 	ctx, cancel := context.WithTimeout(rig.Context(), 300*time.Second)
 	defer cancel()
 	p := &place{t: t, ctx: ctx}
-	form := func(theme, locale string) string {
-		return rig.Origin + pageHref(mountPath, theme, locale, fileOf("form"))
+	// Choices and actions, which was the second half of Form until that
+	// page split: the legs below need a page whose last partial is
+	// short enough that the page clamps before it reaches the reading
+	// line, and confirm-form's two states are; Form now ends on
+	// field-textarea's four, which reach it.
+	page := func(theme, locale string) string {
+		return rig.Origin + pageHref(mountPath, theme, locale, fileOf("choices-and-actions"))
 	}
-	// Form's last partial, read off the page: the case where the page
+	// The page's last partial, read off it: the case where the page
 	// clamps before the target reaches the reading line.
 	var last string
-	p.open("finding the last partial", form("day", "en"))
+	p.open("finding the last partial", page("day", "en"))
 	p.run("finding the last partial", chromedp.Evaluate(`[...document.querySelectorAll("article.ds-partial[data-ds-anchor]")].pop().id`, &last))
 
 	// A section on the reading line survives a theme switch and then a
 	// language switch.
-	p.open("scrolled", form("day", "en"))
+	p.open("scrolled", page("day", "en"))
 	p.run("scrolled", chromedp.Evaluate(`document.getElementById("partial-field-select").scrollIntoView({block: "start"}); true`, nil))
 	p.lands("scrolled, then theme", p.switchTheme("scrolled, then theme"), "partial-field-select")
 	p.lands("scrolled, then language", p.switchLanguage("scrolled, then language", "ja"), "partial-field-select")
 
 	// A followed rail fragment, then theme, then language, with no
 	// scrolling in between: the same section every time.
-	p.open("followed", form("day", "en"))
+	p.open("followed", page("day", "en"))
 	p.follow("followed", "partial-field-check")
 	p.lands("followed, then theme", p.switchTheme("followed, then theme"), "partial-field-check")
 	p.lands("followed, then language", p.switchLanguage("followed, then language", "ga"), "partial-field-check")
@@ -219,11 +224,11 @@ func TestPositionSurvivesASwitch(t *testing.T) {
 	// The two cases geometry cannot answer. The last partial: the page
 	// clamps before it reaches the line, so geometry would pick the one
 	// above it.
-	p.open("last", form("day", "en"))
+	p.open("last", page("day", "en"))
 	p.follow("last", last)
 	p.lands("the last partial", p.switchTheme("the last partial"), last)
 	// And rule 1 lets go: a screen's scroll later the id is geometry's.
-	p.open("last, scrolled", form("day", "en"))
+	p.open("last, scrolled", page("day", "en"))
 	p.follow("last, scrolled", last)
 	p.run("last, scrolled", chromedp.Evaluate(`scrollBy(0, -innerHeight); true`, nil))
 	want := p.geometry("last, scrolled")
@@ -241,15 +246,15 @@ func TestPositionSurvivesASwitch(t *testing.T) {
 
 	// The record's start, a fresh load at the last partial: the browser
 	// clamps there too, so only the record written at load can name it.
-	p.open("loaded at the last partial", form("day", "en")+"#"+last)
+	p.open("loaded at the last partial", page("day", "en")+"#"+last)
 	if g := p.geometry("loaded at the last partial"); g == last {
 		t.Fatalf("loaded at the last partial: geometry also picks %s, so this leg cannot tell the load record from rule 2", last)
 	}
 	p.lands("loaded at the last partial, then theme", p.switchTheme("loaded at the last partial, then theme"), last)
-	// Form loaded at the last partial, a screen up, then a reload: a
+	// Loaded at the last partial, a screen up, then a reload: a
 	// restored scroll is not a fragment the reader is on, so geometry
 	// decides.
-	p.open("reloaded", form("day", "en")+"#"+last)
+	p.open("reloaded", page("day", "en")+"#"+last)
 	p.run("reloaded", chromedp.Evaluate(`scrollBy(0, -innerHeight); true`, nil), chromedp.Reload(), chromedp.WaitReady(`.ds-top`, chromedp.ByQuery))
 	until(t, ctx, "reloaded", `document.readyState === "complete"`)
 	p.frames("reloaded")
@@ -258,7 +263,7 @@ func TestPositionSurvivesASwitch(t *testing.T) {
 
 	// The record's renewal: following the same fragment again after a
 	// layout change above it (no hashchange fires) puts it back.
-	p.open("renewed", form("day", "en"))
+	p.open("renewed", page("day", "en"))
 	p.follow("renewed", last)
 	p.run("renewed", chromedp.Evaluate(`document.querySelector(".ds-view__tab--m input").click(); true`, nil))
 	p.follow("renewed", last)
@@ -267,10 +272,10 @@ func TestPositionSurvivesASwitch(t *testing.T) {
 	// History is not a destination: Back restores a scrolled position,
 	// not the target's, so the address naming the last partial again
 	// does not make it the place.
-	p.open("history", form("day", "en"))
+	p.open("history", page("day", "en"))
 	p.follow("history", last)
 	p.run("history", chromedp.Evaluate(`scrollBy(0, -innerHeight); true`, nil))
-	p.follow("history", "partial-field-text")
+	p.follow("history", "partial-choice-field")
 	p.run("history", chromedp.Evaluate(`history.back(); true`, nil))
 	until(t, ctx, "history, back", `location.hash === "#`+last+`"`)
 	p.frames("history, back")
@@ -282,14 +287,14 @@ func TestPositionSurvivesASwitch(t *testing.T) {
 	// And Forward, the same journey on a fresh page: Back to the last
 	// partial with the reader scrolled away, then Forward to the other,
 	// all within one document, then switch.
-	p.open("history, forward", form("day", "en"))
+	p.open("history, forward", page("day", "en"))
 	p.follow("history, forward", last)
 	p.run("history, forward", chromedp.Evaluate(`scrollBy(0, -innerHeight); true`, nil))
-	p.follow("history, forward", "partial-field-text")
+	p.follow("history, forward", "partial-choice-field")
 	p.run("history, forward", chromedp.Evaluate(`scrollBy(0, innerHeight); history.back(); true`, nil))
 	until(t, ctx, "history, forward, back", `location.hash === "#`+last+`"`)
 	p.run("history, forward", chromedp.Evaluate(`history.forward(); true`, nil))
-	until(t, ctx, "history, forward", `location.hash === "#partial-field-text"`)
+	until(t, ctx, "history, forward", `location.hash === "#partial-choice-field"`)
 	p.frames("history, forward")
 	want = p.geometry("history, forward")
 	p.lands("history, forward, then theme", p.switchTheme("history, forward, then theme"), want)
@@ -298,7 +303,7 @@ func TestPositionSurvivesASwitch(t *testing.T) {
 	// Back to the page's top and Forward to the last partial puts the
 	// page at its end again, the target exactly where the record says,
 	// and still the place is geometry's.
-	p.open("history, round trip", form("day", "en"))
+	p.open("history, round trip", page("day", "en"))
 	p.follow("history, round trip", last)
 	p.run("history, round trip", chromedp.Evaluate(`history.back(); true`, nil))
 	until(t, ctx, "history, round trip, back", `location.hash === ""`)
@@ -315,7 +320,7 @@ func TestPositionSurvivesASwitch(t *testing.T) {
 	// nothing here; a click another listener cancels moves nothing either.
 	for _, how := range []string{"ctrl-click", "cancelled"} {
 		where := "only a followed link, " + how
-		p.open(where, form("day", "en"))
+		p.open(where, page("day", "en"))
 		p.follow(where, last)
 		p.run(where, chromedp.Evaluate(`scrollBy(0, -innerHeight); true`, nil))
 		sel := `#ds-nav a[href$="#` + last + `"]`
@@ -334,7 +339,7 @@ func TestPositionSurvivesASwitch(t *testing.T) {
 	// #main, a typo) is never carried, and never decides the place.
 	for _, frag := range []string{"main", "nope"} {
 		where := "loaded at #" + frag
-		p.open(where, form("day", "en")+"#"+frag)
+		p.open(where, page("day", "en")+"#"+frag)
 		want := p.geometry(where)
 		l := p.switchTheme(where + ", then theme")
 		if want == "" && l.Hash != "" || want != "" && l.Hash != "#"+want {
@@ -355,7 +360,7 @@ func TestPositionSurvivesASwitch(t *testing.T) {
 	where := "canonical"
 	theme := `.ds-top__controls [rst-seg-tabs] a:not([aria-current])`
 	other := func(url string) bool {
-		return strings.Contains(url, "/form.html") && !strings.Contains(url, "/day/")
+		return strings.Contains(url, "/"+fileOf("choices-and-actions")) && !strings.Contains(url, "/day/")
 	}
 	tabURL := func(how string, opened <-chan target.ID) string {
 		t.Helper()
@@ -367,13 +372,13 @@ func TestPositionSurvivesASwitch(t *testing.T) {
 			// no "#" either, so the middle-click check would pass on a
 			// page that never loaded. Wait for the destination, then
 			// require it.
-			until(t, tab, where+", the "+how+" tab", `location.href.includes("/form.html") && !location.href.includes("/day/")`)
+			until(t, tab, where+", the "+how+" tab", `location.href.includes("/`+fileOf("choices-and-actions")+`") && !location.href.includes("/day/")`)
 			var url string
 			if err := chromedp.Run(tab, chromedp.Location(&url)); err != nil {
 				t.Fatalf("%s: reading the %s tab: %v", where, how, err)
 			}
 			if !other(url) {
-				t.Fatalf("%s: the %s tab is at %s, not the other theme's Form", where, how, url)
+				t.Fatalf("%s: the %s tab is at %s, not the other theme's page", where, how, url)
 			}
 			return url
 		case <-time.After(10 * time.Second):
@@ -383,7 +388,7 @@ func TestPositionSurvivesASwitch(t *testing.T) {
 	}
 	deep := `document.getElementById("partial-field-select").scrollIntoView({block: "start"}); true`
 	canonical := `![...document.querySelectorAll(".ds-top__controls a")].some(a => a.getAttribute("href").includes("#"))`
-	p.open(where, form("day", "en"))
+	p.open(where, page("day", "en"))
 	p.run(where, chromedp.Evaluate(deep, nil))
 	opened := newTab(ctx, other)
 	p.clickWith(where, theme, chromedp.ButtonModifiers(input.ModifierCtrl))
