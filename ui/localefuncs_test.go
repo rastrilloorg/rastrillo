@@ -3,6 +3,7 @@ package ui
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"html"
 	"html/template"
 	"io"
@@ -71,6 +72,46 @@ func TestLocalizerFormUsesTheLocalizer(t *testing.T) {
 	got = execTmpl(t, Funcs(), `{{$L := localizer $}}{{T $L "app.hello"}}`, struct{ Localized }{Localized{L: es}})
 	if got != "Hola" {
 		t.Errorf("struct path: %q", got)
+	}
+}
+
+// Every locale function, one row each: in the localizer form each one
+// answers from the localizer in the data and not from Funcs' options,
+// so the function map is built with English options and the data
+// carries Spanish. The localizer's t interpolates {name} the way
+// rastrillo.Locales.Tf does, so Tf and Tbdi show their arguments
+// passing through it.
+func TestEveryLocaleFuncUsesTheLocalizer(t *testing.T) {
+	es := NewLocalizer("es", "es", func(k string, args ...any) string {
+		s, ok := map[string]string{"app.hello": "Hola", "app.ref": "Referencia: {ref}", "rastrillo.ui.date_today": "hoy"}[k]
+		if !ok {
+			s = "es:" + k
+		}
+		for i := 0; i+1 < len(args); i += 2 {
+			s = strings.ReplaceAll(s, "{"+fmt.Sprint(args[i])+"}", fmt.Sprint(args[i+1]))
+		}
+		return s
+	})
+	data := map[string]any{"L": es, "N": 1234567, "F": 1234.5, "P": int64(128450), "C": "EUR", "Evil": "<b>x</b>"}
+	for _, c := range []struct{ name, src, want string }{
+		{"T", `{{T $L "app.hello"}}`, "Hola"},
+		{"Tf", `{{Tf $L "app.ref" "ref" .Evil}}`, "Referencia: &lt;b&gt;x&lt;/b&gt;"},
+		{"Tbdi", `{{Tbdi $L "app.ref" "ref" .Evil}}`, "Referencia: <bdi>&lt;b&gt;x&lt;/b&gt;</bdi>"},
+		{"number", `{{number $L .N}}`, "1.234.567"},
+		{"displayValue", `{{displayValue $L .F}}`, "1.234,5"},
+		{"dateWords", `{{dateWords $L}}`, `&#34;today&#34;:&#34;hoy&#34;`},
+		{"money", `{{money $L .P .C}}`, "1284,50\u00a0€"},
+	} {
+		got := execTmpl(t, Funcs(WithLocale("en")), `{{$L := localizer $}}`+c.src, data)
+		if c.name == "dateWords" {
+			if !strings.Contains(got, c.want) || strings.Contains(got, "Today") || !strings.Contains(got, `&#34;pm&#34;:&#34;es:rastrillo.ui.date_pm&#34;`) {
+				t.Errorf("%s: %q, want the localizer's words (%s)", c.name, got, c.want)
+			}
+			continue
+		}
+		if got != c.want {
+			t.Errorf("%s: %q, want %q", c.name, got, c.want)
+		}
 	}
 }
 

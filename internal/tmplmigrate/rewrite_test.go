@@ -75,19 +75,39 @@ func TestRewriteReportsNoData(t *testing.T) {
 	}
 }
 
-// validate catches a rewrite that lost $L or regrouped a pipeline.
+// validate catches a rewrite that lost $L, regrouped a pipeline, or
+// changed anything the codemod may not: it compares the rewritten tree
+// with the original under the permitted insertions.
 func TestValidateRejectsBadRewrites(t *testing.T) {
-	if err := validate("t", `{{T "k"}}`, nil); err == nil {
-		t.Error("a locale call without $L passed validation")
+	for name, c := range map[string]struct{ src, out string }{
+		"a locale call without $L":                     {`{{T "k"}}`, `{{T "k"}}`},
+		"a regrouped pipeline":                         {`{{template "p" makeData .Item}}`, Prelude + `{{template "p" (withL makeData $L)}}`},
+		"a changed argument inside a wrapped pipeline": {`{{template "p" makeData (T "key")}}`, Prelude + `{{template "p" (withL (makeData (T $L "other")) $L)}}`},
+		"a dict without L":                             {`{{template "p" dict "A" 1}}`, `{{template "p" dict "A" 1}}`},
+		// Both pipelines are still present, each on the other call: the
+		// one wrong rewrite that parses and renders, giving a partial
+		// another partial's record. A check that listed the wrapped
+		// pipelines as a set accepted it.
+		"two wrapped pipelines swapped": {`{{template "a" .X}}{{template "b" .Y}}`, Prelude + `{{template "a" (withL (.Y) $L)}}{{template "b" (withL (.X) $L)}}`},
+		"a call moved":                  {`<p>{{T "k"}}</p><q>{{T "j"}}</q>`, Prelude + `<p>{{T $L "j"}}</p><q>{{T $L "k"}}</q>`},
+		"text changed":                  {`<p>{{T "k"}}</p>`, Prelude + `<q>{{T $L "k"}}</q>`},
+		"a template body dropped":       {`{{define "a"}}x{{end}}{{T "k"}}`, Prelude + `{{T $L "k"}}`},
+		"a $L added where the function was not a locale one": {`{{printf "%s" .X}}`, Prelude + `{{printf $L "%s" .X}}`},
+	} {
+		if err := validate("t", c.src, c.out); err == nil {
+			t.Errorf("%s passed validation", name)
+		}
 	}
-	if err := validate("t", Prelude+`{{template "p" (withL makeData $L)}}`, []string{"makeData .Item"}); err == nil {
-		t.Error("a regrouped pipeline passed validation")
-	}
-	if err := validate("t", Prelude+`{{template "p" (withL (makeData (T $L "other")) $L)}}`, []string{`makeData (T "key")`}); err == nil {
-		t.Error("a changed argument inside a wrapped pipeline passed validation")
-	}
-	if err := validate("t", `{{template "p" dict "A" 1}}`, nil); err == nil {
-		t.Error("a dict without L passed validation")
+	// What the rewrite does produce still validates, prelude, dict key
+	// and wrapper included, and so does an untouched file.
+	for _, c := range []struct{ src, out string }{
+		{`{{template "p" makeData (T "key")}}`, Prelude + `{{template "p" (withL (makeData (T $L "key")) $L)}}`},
+		{`{{template "p" dict "A" (T "k")}}`, Prelude + `{{template "p" dict "L" $L "A" (T $L "k")}}`},
+		{`<p>plain</p>`, `<p>plain</p>`},
+	} {
+		if err := validate("t", c.src, c.out); err != nil {
+			t.Errorf("validate(%s, %s) = %v", c.src, c.out, err)
+		}
 	}
 }
 

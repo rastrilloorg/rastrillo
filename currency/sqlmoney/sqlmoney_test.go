@@ -87,10 +87,56 @@ func rows(t *testing.T, db *sql.DB) []string {
 	defer rs.Close()
 	for rs.Next() {
 		var m, c string
-		rs.Scan(&m, &c)
+		if err := rs.Scan(&m, &c); err != nil {
+			t.Fatal(err)
+		}
 		out = append(out, m+" "+c)
 	}
+	if err := rs.Err(); err != nil {
+		t.Fatal(err)
+	}
 	return out
+}
+
+// columns lists the table's columns, so a refusal can be checked for
+// leaving the schema exactly as it found it.
+func columns(t *testing.T, db *sql.DB) []string {
+	t.Helper()
+	rs, err := db.Query(`SELECT name FROM pragma_table_info('ticket_types') ORDER BY cid`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer rs.Close()
+	var out []string
+	for rs.Next() {
+		var n string
+		if err := rs.Scan(&n); err != nil {
+			t.Fatal(err)
+		}
+		out = append(out, n)
+	}
+	if err := rs.Err(); err != nil {
+		t.Fatal(err)
+	}
+	return out
+}
+
+// refusedUntouched asserts what every refusal promises: the error is
+// exactly want, the table has the columns it had before (no half-added
+// pair, no dropped legacy column), and no marker row says the upgrade
+// happened.
+func refusedUntouched(t *testing.T, db *sql.DB, err error, want string, before []string) {
+	t.Helper()
+	if err == nil || err.Error() != want {
+		t.Errorf("refusal = %v\nwant %q", err, want)
+	}
+	if after := columns(t, db); !slices.Equal(after, before) {
+		t.Errorf("a refused upgrade changed the columns: %v, want %v", after, before)
+	}
+	var markers int
+	if err := db.QueryRow(`SELECT COUNT(*) FROM rastrillo_money`).Scan(&markers); err == nil && markers != 0 {
+		t.Errorf("a refused upgrade left %d marker rows", markers)
+	}
 }
 
 // Spec §12 item 1, every case with an exact expected value.
@@ -99,25 +145,24 @@ func TestUpgradeLegacyRows(t *testing.T) {
 		name   string
 		prices []int64
 		cur    string
-		want   []string // "" for a refusal
-		err    string
+		want   []string // nil for a refusal
+		err    string   // the whole message
 	}{
 		{"USD to USD", []int64{1250, 0}, "USD", []string{"1250 USD", "0 USD"}, ""},
 		{"USD scale 2 to JPY", []int64{1200}, "JPY", []string{"12 JPY"}, ""},
 		{"JPY inexact", []int64{1200, 1250}, "JPY", nil, "ticket_types.price: 1 rows cannot be converted, and nothing was changed:\nrow 2: 1250 at scale 2 is 12.50, which JPY cannot hold"},
 		{"to KWD", []int64{1250}, "KWD", []string{"12500 KWD"}, ""},
 		{"SLL", []int64{1250}, "SLL", []string{"1250 SLL"}, ""},
-		{"overflow", []int64{math.MaxInt64 / 5}, "KWD", nil, "row 1: 1844674407370955161 at scale 2 is too large for KWD"},
+		{"overflow", []int64{math.MaxInt64 / 5}, "KWD", nil, "ticket_types.price: 1 rows cannot be converted, and nothing was changed:\nrow 1: 1844674407370955161 at scale 2 is too large for KWD"},
 	} {
 		db := legacyDB(t, c.prices...)
+		before := columns(t, db)
 		err := sqlmoney.Upgrade(context.Background(), db, table(c.cur, 2))
 		if c.err != "" {
-			if err == nil || !strings.Contains(err.Error(), c.err) {
-				t.Errorf("%s: %v, want %q", c.name, err, c.err)
-			}
+			refusedUntouched(t, db, err, c.err, before)
 			var p int64
-			if db.QueryRow(`SELECT price FROM ticket_types ORDER BY id LIMIT 1`).Scan(&p); p != c.prices[0] {
-				t.Errorf("%s: a refused upgrade changed the database (price %d)", c.name, p)
+			if err := db.QueryRow(`SELECT price FROM ticket_types ORDER BY id LIMIT 1`).Scan(&p); err != nil || p != c.prices[0] {
+				t.Errorf("%s: a refused upgrade changed the database (price %d, %v)", c.name, p, err)
 			}
 			continue
 		}
@@ -161,13 +206,9 @@ func TestUpgradeEmptyLegacyColumnNeedsNoLegacy(t *testing.T) {
 
 func TestUpgradeRefusesUndeclaredLegacyRows(t *testing.T) {
 	db := legacyDB(t, 1250, 300)
+	before := columns(t, db)
 	err := sqlmoney.Upgrade(context.Background(), db, []sqlmoney.Table{{Name: "ticket_types", Fields: []string{"price"}}})
-	if err == nil || !strings.Contains(err.Error(), "2 rows") || !strings.Contains(err.Error(), "[legacy]") {
-		t.Errorf("undeclared legacy rows: %v; want a refusal naming the row count and the keys to add", err)
-	}
-	if want := "ticket_types has 2 rows from before money had a currency. Add [legacy] currency and scale to manifest/ticket_types.toml and run rastrillo generate."; err == nil || err.Error() != want {
-		t.Errorf("undeclared legacy rows: %v; want %q", err, want)
-	}
+	refusedUntouched(t, db, err, "ticket_types has 2 rows from before money had a currency. Add [legacy] currency and scale to manifest/ticket_types.toml and run rastrillo generate.", before)
 }
 
 func TestUpgradeIsIdempotentAndFreshGetsMarker(t *testing.T) {
@@ -305,10 +346,9 @@ func TestUpgradeRefusesHalfAPair(t *testing.T) {
 	mustExec(t, db, newSchema)
 	mustExec(t, db, `ALTER TABLE ticket_types ADD COLUMN fee_minor INTEGER`)
 	mustExec(t, db, `INSERT INTO ticket_types (name, fee_minor, created_at, updated_at) VALUES ('a', 5, 'x', 'x')`)
+	before := columns(t, db)
 	err := sqlmoney.Upgrade(context.Background(), db, []sqlmoney.Table{{Name: "ticket_types", Fields: []string{"price", "fee"}}})
-	if want := "ticket_types.fee: 1 rows have"; err == nil || !strings.HasPrefix(err.Error(), want) {
-		t.Errorf("a table with fee_minor but no fee_currency: %v; want %q", err, want)
-	}
+	refusedUntouched(t, db, err, "ticket_types.fee: 1 rows have an amount without a currency or a currency without an amount; fix them before starting", before)
 }
 
 func TestUpgradeRefusesNewerData(t *testing.T) {
@@ -376,8 +416,7 @@ func TestUpgradeRefusesBadNames(t *testing.T) {
 func TestUpgradeRefusesNonIntegerLegacyValues(t *testing.T) {
 	db := legacyDB(t, 100)
 	mustExec(t, db, `INSERT INTO ticket_types (name, price, created_at, updated_at) VALUES ('t', 12.5, 'x', 'x')`)
+	before := columns(t, db)
 	err := sqlmoney.Upgrade(context.Background(), db, table("USD", 2))
-	if want := "row 2: amount is not an integer count of minor units: got float64"; err == nil || !strings.Contains(err.Error(), want) {
-		t.Errorf("a real-valued legacy amount: %v; want %q", err, want)
-	}
+	refusedUntouched(t, db, err, "ticket_types.price: 1 rows cannot be converted, and nothing was changed:\nrow 2: amount is not an integer count of minor units: got float64", before)
 }

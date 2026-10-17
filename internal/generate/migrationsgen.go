@@ -41,9 +41,20 @@ const migrationAppended = "%s: appended %s to gen/store/%s/migrations.go; releas
 // report every upgraded tree as stale.
 type History map[string][]string
 
+// migrationsHandEdited is the refusal for a gen/store/<r>/migrations.go
+// whose Migrations is neither the list of string literals generate
+// wrote nor a mergeable store's. The wording is approved copy
+// (op.generate.migrations_hand_edited); change it only through a copy review.
+const migrationsHandEdited = "%s: Migrations is not a list of string literals, so the released statements cannot be read. Restore the generated file, or write each statement as a string literal, then run rastrillo generate again."
+
 // ReadHistory reads gen/store/<r>/migrations.go for every exclusive
-// resource in rs. A resource with no file yet has no history and gets
-// its final shape in its first statement.
+// resource in rs. A resource with no file yet, or with a mergeable
+// store's file (it has just become exclusive, and released no table of
+// its own), has no history and gets its final shape in its first
+// statement. Any other file whose Migrations is not a list of string
+// literals was edited by hand and is refused: read as no history it
+// would be rewritten as a first release, and the app's ledger would
+// then stop boot on the new statement without naming the edit.
 func ReadHistory(genDir string, rs []rastrillo.Resource) (History, error) {
 	h := History{}
 	for _, r := range rs {
@@ -52,8 +63,11 @@ func ReadHistory(genDir string, rs []rastrillo.Resource) (History, error) {
 		}
 		stmts, err := releasedMigrations(filepath.Join(genDir, "store", r.Name, "migrations.go"))
 		switch {
-		case errors.Is(err, fs.ErrNotExist), errors.Is(err, errNotStatements):
+		case errors.Is(err, fs.ErrNotExist), errors.Is(err, errMergeable):
 			continue
+		case errors.Is(err, errNotStatements):
+			//lint:ignore ST1005 migrationsHandEdited is the operator's line, verbatim
+			return nil, fmt.Errorf(migrationsHandEdited, "gen/store/"+r.Name+"/migrations.go")
 		case err != nil:
 			return nil, err
 		}
@@ -62,11 +76,32 @@ func ReadHistory(genDir string, rs []rastrillo.Resource) (History, error) {
 	return h, nil
 }
 
-// errNotStatements marks a migrations.go whose Migrations is not a list
-// of string literals: a mergeable store's, left by a resource that has
-// just become exclusive. It released no table of its own, so it is no
-// history for this one.
-var errNotStatements = errors.New("not a list of string literals")
+// errNotStatements is a Migrations that is neither a list of string
+// literals nor the mergeable form: a hand edit. errMergeable is the
+// mergeable form, Migrations = mergeableSchemaFunc().
+var (
+	errNotStatements = errors.New("not a list of string literals")
+	errMergeable     = errors.New("a mergeable store's migrations")
+)
+
+// isMergeableMigrations recognises every value the generator has ever
+// written for a mergeable store's Migrations: eventlogSchemaSQL() since
+// the money release, and the re-export eventlog.Migrations that
+// d36b5fcf wrote before it. A resource that was mergeable under that
+// release and becomes exclusive now still has the older file, untouched,
+// so refusing it as a hand edit would stop generate for a file nobody
+// edited. testdata/released holds the older shape as it shipped.
+func isMergeableMigrations(e ast.Expr) bool {
+	switch x := e.(type) {
+	case *ast.CallExpr:
+		id, ok := x.Fun.(*ast.Ident)
+		return ok && id.Name == mergeableSchemaFunc && len(x.Args) == 0
+	case *ast.SelectorExpr:
+		pkg, ok := x.X.(*ast.Ident)
+		return ok && pkg.Name == "eventlog" && x.Sel.Name == "Migrations"
+	}
+	return false
+}
 
 // releasedMigrations is the string literals of a generated
 // migrations.go's Migrations, in order. It parses the file rather than
@@ -86,6 +121,9 @@ func releasedMigrations(path string) ([]string, error) {
 			v := spec.(*ast.ValueSpec)
 			if len(v.Names) != 1 || v.Names[0].Name != "Migrations" || len(v.Values) != 1 {
 				continue
+			}
+			if isMergeableMigrations(v.Values[0]) {
+				return nil, fmt.Errorf("%s: %w", path, errMergeable)
 			}
 			lit, ok := v.Values[0].(*ast.CompositeLit)
 			if !ok {

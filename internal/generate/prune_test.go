@@ -101,3 +101,45 @@ func TestHandActionWithACopiedHeaderSurvivesGenerate(t *testing.T) {
 		t.Errorf("the app does not build with the hand action:\n%s", out)
 	}
 }
+
+// A hand templates/<name>/<file>.html beside gen/ takes over that page:
+// EmitTemplates skips the file and, on purpose, does not count the
+// skipped path as written, so the copy an earlier run left inside gen/
+// is what pruning removes. --check names it first, generate removes
+// it, the hand file is untouched, and the app still builds. A copy
+// inside gen/ without a generated header is the app's and stays.
+func TestHandTemplateBesideGenPrunesTheGeneratedCopy(t *testing.T) {
+	app := scratchApp(t, map[string]string{"manifest/a.toml": resourceTOML("a", "exclusive")})
+	mustGenerate(t, app)
+	gen := filepath.Join(app, "gen", "templates", "a", "list.html")
+	src, err := os.ReadFile(gen)
+	if err != nil {
+		t.Fatal(err)
+	}
+	const mark = "<!-- the app's own list page -->"
+	writeFile(t, app, "templates/a/list.html", string(src)+"\n"+mark+"\n")
+	_, rest, _ := strings.Cut(string(src), "*/}}\n")
+	writeFile(t, app, "gen/templates/a/list.copy.html", "<!-- a copy without the header -->\n"+rest)
+
+	if err := checkGenerate(t, app); err == nil || !strings.Contains(err.Error(), "gen/templates/a/list.html") {
+		t.Errorf("--check with a hand list.html beside gen/: %v; want it to name the generated copy as stale", err)
+	}
+	mustGenerate(t, app)
+	if _, err := os.Stat(gen); !os.IsNotExist(err) {
+		t.Errorf("gen/templates/a/list.html survived generate with a hand file owning the page: %v", err)
+	}
+	for _, kept := range []string{"templates/a/list.html", "gen/templates/a/list.copy.html", "gen/templates/a/show.html"} {
+		if _, err := os.Stat(filepath.Join(app, kept)); err != nil {
+			t.Errorf("%s was removed: %v", kept, err)
+		}
+	}
+	if got, _ := os.ReadFile(filepath.Join(app, "templates", "a", "list.html")); !strings.Contains(string(got), mark) {
+		t.Errorf("the hand file was rewritten:\n%s", got)
+	}
+	if err := checkGenerate(t, app); err != nil {
+		t.Errorf("--check after generate: %v", err)
+	}
+	if out, err := goBuild(app); err != nil {
+		t.Errorf("the app does not build with the hand template:\n%s", out)
+	}
+}

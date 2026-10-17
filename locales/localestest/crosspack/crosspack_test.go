@@ -21,9 +21,18 @@ func TestCrossPackFallback(t *testing.T) {
 		if r.ID != c.id || r.Wanted != c.tag || r.MissingPack != c.missing || r.UsedDefault {
 			t.Errorf("Resolve(%q) = %+v, want ID %q MissingPack %q", c.tag, r, c.id, c.missing)
 		}
-		// The fallback formats exactly as the parent does.
-		got, _ := currency.Format(c.tag, -128450, "EUR")
-		want, _ := currency.Format(c.id, -128450, "EUR")
+		// The fallback formats exactly as the parent does. Both errors
+		// are checked: two failures would otherwise agree on "".
+		got, err := currency.Format(c.tag, -128450, "EUR")
+		if err != nil {
+			t.Errorf("Format(%q) = %v", c.tag, err)
+			continue
+		}
+		want, err := currency.Format(c.id, -128450, "EUR")
+		if err != nil {
+			t.Errorf("Format(%q) = %v", c.id, err)
+			continue
+		}
 		if got != want {
 			t.Errorf("Format(%q) = %q, want %s's %q", c.tag, got, c.id, want)
 		}

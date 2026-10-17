@@ -41,6 +41,42 @@ func TestEveryLinkedLocaleRebuilds(t *testing.T) {
 	}
 }
 
+// The data parent (Locale.Parent) must be in the locale's own pack, and
+// only the fallback parent (Parent) may cross packs. The test above
+// cannot see a data parent in another pack: with modern linked every
+// parent is present, so Data rebuilds whatever the pack boundary is.
+// This asserts the boundary itself, through PackOf, so a generator that
+// wrote hi-Latn's record relative to en-IN fails here instead of
+// formatting wrongly in an app that links hi without en.
+func TestDataParentsStayInsideTheirPack(t *testing.T) {
+	for _, id := range locales.LinkedIDs() {
+		pack, ok := locales.PackOf(id)
+		if !ok {
+			t.Errorf("%s: linked but not in the pack index", id)
+			continue
+		}
+		l, _ := locales.Data(id)
+		if l.Parent != "root" {
+			if parentPack, ok := locales.PackOf(l.Parent); !ok || parentPack != pack {
+				t.Errorf("%s (pack %s): data parent %s is in pack %q, want the same pack or root", id, pack, l.Parent, parentPack)
+			}
+		}
+		if fb := locales.Parent(id); fb != "root" {
+			if _, ok := locales.PackOf(fb); !ok {
+				t.Errorf("%s: fallback parent %s is not a shipped locale", id, fb)
+			}
+		}
+	}
+	// The one cross-pack fallback the resolver's tests rely on, pinned
+	// beside the rule it is the exception to.
+	if p, ok := locales.PackOf("hi-Latn"); !ok || p != "hi" {
+		t.Errorf("PackOf(hi-Latn) = %q, %v, want hi", p, ok)
+	}
+	if got := locales.Parent("hi-Latn"); got != "en-IN" {
+		t.Errorf("Parent(hi-Latn) = %q, want en-IN", got)
+	}
+}
+
 // Data's maps are the caller's own. Root's are the maps every locale
 // inherits through Merge, so handing them out would let any package
 // an app imports rewrite, say, the USD symbol for every locale at init.

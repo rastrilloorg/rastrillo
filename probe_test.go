@@ -4,11 +4,13 @@ import (
 	"context"
 	"io"
 	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
 
 	"amadan.net/rastrillo/rastrillo/internal/checkconfig"
+	"amadan.net/rastrillo/rastrillo/locales"
 )
 
 // exited is what the test exit function panics with, so run stops at
@@ -125,5 +127,36 @@ func TestProbeExitsOrReturns(t *testing.T) {
 	}
 	if probe(Options{}, func(string) string { return "" }, &out, io.Discard, exit) {
 		t.Error("probe ran with the variable unset")
+	}
+}
+
+// FormatLocale is the one seam the generated actions format through,
+// so its three answers are pinned: an offered identity formats in the
+// locale CheckConfig chose for it (zh-TW in zh-Hant, a pack this test
+// binary does not link, so only the installed mapping can answer); a
+// request that never went through Middleware, a monolingual app's,
+// formats in the installed default; and the identity itself is never
+// the answer when it differs from its formatting locale.
+func TestFormatLocale(t *testing.T) {
+	defer locales.SetDefaultForTest("")()
+	// The mapping CheckConfig would produce for en and zh-TW, handed to
+	// Install directly because CheckConfig refuses zh-TW here, where
+	// the zh pack is not linked.
+	locales.Install(locales.Config{Default: "en", DefaultFormat: "en", Offered: []string{"en", "zh-TW"},
+		Formats: map[string]string{"en": "en", "zh-TW": "zh-Hant"}})
+	l, err := NewLocales([]string{"en", "zh-TW"}, "en", Catalog{}, testFS())
+	if err != nil {
+		t.Fatal(err)
+	}
+	var got string
+	h := l.Middleware(http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) { got = FormatLocale(r) }))
+	for path, want := range map[string]string{"/zh-TW/orders": "zh-Hant", "/en/orders": "en"} {
+		h.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest("GET", path, nil))
+		if got != want {
+			t.Errorf("FormatLocale for %s = %q, want %q", path, got, want)
+		}
+	}
+	if got := FormatLocale(httptest.NewRequest("GET", "/orders", nil)); got != "en" {
+		t.Errorf("FormatLocale outside Middleware = %q, want the installed default en", got)
 	}
 }

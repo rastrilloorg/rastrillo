@@ -4,7 +4,7 @@
 # silently no-op with "Nothing to be done" - exit 0, and the sweep never
 # runs. None of the four names a real file, so the pattern rule already
 # reruns unconditionally without needing .PHONY's safety here.
-.PHONY: ci suite suite-roles gofmt budget root staticcheck govulncheck gitleaks chromedp-graph gorm-free race generate-check scaffold-smoke browser \
+.PHONY: ci suite suite-roles gofmt budget root perf staticcheck govulncheck gitleaks chromedp-graph gorm-free race generate-check scaffold-smoke browser \
         browser-sweep mirror mirror-check money money-cldr
 
 # The READMEs' documented sweeps all run with GOFLAGS=-mod=mod: the tests
@@ -249,7 +249,7 @@ gorm-free:
 # ui.Pages alone in ui, whose isolation test runs 200 executions in two
 # languages at once.
 race:
-	CGO_ENABLED=1 go test -race -count=1 ./jobs/ ./sessions/ ./assertion/
+	CGO_ENABLED=1 go test -race -count=1 ./jobs/ ./sessions/ ./assertion/ ./locales/
 	CGO_ENABLED=1 go test -race -count=1 -run '^TestPages' ./ui/
 
 # The examples are separate modules with a replace back to this
@@ -334,6 +334,17 @@ browser.%: | $(BIN)/tmp
 # pinned-bar fit alone took 284 of the package's 385 seconds under load.
 browser-sweep:
 	TMPDIR="$${TMPDIR:-/var/tmp}" RASTRILLO_SWEEP=full go test -tags browser -timeout 20m ./internal/designsystem/sweep/ -count=1
+
+
+# The measurement tests: how long the money upgrade's rename and a
+# mergeable store's boot replay take on a 200,000-event log. Logged,
+# not asserted, so they are evidence for the hibernation and upgrade
+# notes rather than a check, and each inserts 200,000 rows first. They
+# carry the scaffold's perf tag and stay out of make ci: this is where
+# they run. Serial and uncached, as a timing should be.
+perf: | $(BIN)/tmp
+	go test -tags perf -count=1 -p 1 -run 'Cost$$' -v ./eventlog/
+	cd examples/tickets && go test -tags perf -count=1 -p 1 -run 'Cost$$' -v ./internal/ticketstest/
 
 # origin (amadan) is where work lands; the GitHub remote is a mirror and
 # nothing else. Deliberately NOT part of ci: a runner must not push, and a

@@ -93,7 +93,6 @@ func Rewrite(name, src string) (string, Stats, error) {
 	}
 	var st Stats
 	var ins []insert
-	var wrappedPipes []string
 	var conflicts []string
 	for _, n := range sortedNames(trees) {
 		tr := trees[n]
@@ -132,7 +131,6 @@ func Rewrite(name, src string) (string, Stats, error) {
 						return
 					}
 					ins = append(ins, insert{start, "(withL ("}, insert{end, ") $L)"})
-					wrappedPipes = append(wrappedPipes, canonical(x.Pipe))
 					st.Wrapped++
 					st.Review = append(st.Review, fmt.Sprintf("%s: template %q %s", name, x.Name, strings.TrimSpace(src[start:end])))
 				}
@@ -151,7 +149,7 @@ func Rewrite(name, src string) (string, Stats, error) {
 	for _, in := range ins {
 		out = out[:in.at] + in.text + out[in.at:]
 	}
-	if err := validate(name, out, wrappedPipes); err != nil {
+	if err := validate(name, src, out); err != nil {
 		return src, Stats{}, fmt.Errorf("%s: the rewrite did not validate, so nothing was changed: %w", name, err)
 	}
 	return out, st, nil
@@ -212,14 +210,23 @@ func isTrimSpace(c byte) bool { return c == ' ' || c == '\t' || c == '\r' || c =
 // validate parses the rewritten text and checks the rewrite's promises
 // on the new tree: every locale call passes $L, every template call
 // passes it (or passes nothing and was reported), every body using $L
-// starts with the prelude, and each wrapped pipeline is exactly the
-// original one, so no argument was regrouped.
-func validate(name, out string, wrapped []string) error {
+// starts with the prelude, and the rewritten tree is exactly the
+// original under canonical, so nothing was regrouped, moved or swapped.
+//
+// The last check compares whole trees rather than listing the wrapped
+// pipelines: a list compared as a set let two wrapped template calls
+// trade their data (both pipelines still present, each on the wrong
+// call), which is the one rewrite that parses, renders, and gives a
+// partial another partial's record.
+func validate(name, src, out string) error {
 	trees, err := parseAll(name, out)
 	if err != nil {
 		return err
 	}
-	var got []string
+	orig, err := parseAll(name, src)
+	if err != nil {
+		return err
+	}
 	var problems []string
 	for _, n := range sortedNames(trees) {
 		tr := trees[n]
@@ -245,7 +252,6 @@ func validate(name, out string, wrapped []string) error {
 					}
 				case isWithL(x.Pipe):
 					uses = true
-					got = append(got, canonical(withLInner(x.Pipe)))
 				case passesSame(x.Pipe, dotMoved):
 				default:
 					problems = append(problems, x.String()+" passes data without $L")
@@ -255,27 +261,24 @@ func validate(name, out string, wrapped []string) error {
 		if uses && !hasPrelude(tr.Root) {
 			problems = append(problems, "template "+n+" uses $L without the prelude")
 		}
+		before, ok := orig[n]
+		if !ok || before.Root == nil {
+			problems = append(problems, "template "+n+" was not in the original")
+			continue
+		}
+		if got, want := canonical(tr.Root), canonical(before.Root); got != want {
+			problems = append(problems, "template "+n+" is not the original under the rewrite's insertions: "+got)
+		}
 	}
-	// Wrapped pipelines compare as sets of strings in traversal order;
-	// idempotent re-runs wrap nothing, so only this run's appear.
-	for i, w := range wrapped {
-		if i >= len(got) || !contains(got, w) {
-			problems = append(problems, "wrapped pipeline changed: "+w)
+	for _, n := range sortedNames(orig) {
+		if tr, ok := trees[n]; !ok || tr.Root == nil {
+			problems = append(problems, "template "+n+" is missing from the rewrite")
 		}
 	}
 	if len(problems) > 0 {
 		return fmt.Errorf("%s", strings.Join(problems, "; "))
 	}
 	return nil
-}
-
-func contains(xs []string, s string) bool {
-	for _, x := range xs {
-		if x == s {
-			return true
-		}
-	}
-	return false
 }
 
 // withLInner returns the original pipeline inside (withL (P) $L).
@@ -290,44 +293,55 @@ func withLInner(p *parse.PipeNode) *parse.PipeNode {
 	return &parse.PipeNode{NodeType: parse.NodePipe, Cmds: []*parse.CommandNode{{NodeType: parse.NodeCommand, Args: []parse.Node{c.Args[1]}}}}
 }
 
-// canonical renders a pipeline with the codemod's own permitted
-// insertions removed: $L as a locale call's first argument and "L" $L
-// in a dict. A wrapped pipeline must equal the original under this
-// normalisation, so the rewrite may add the localizer inside it (as in
-// makeData (T "key")) but may not regroup or change anything else.
-func canonical(p *parse.PipeNode) string {
-	c := p.Copy().(*parse.PipeNode)
-	strip(c)
+// canonical renders a body with the codemod's own permitted insertions
+// removed: the prelude at its top, $L as a locale call's first
+// argument, "L" $L in a dict, and the withL wrapper around a template
+// call's data. The rewrite may only ever add those, so a rewritten
+// body must equal its original under this normalisation; anything
+// else it changed, however small, shows as a difference.
+func canonical(root *parse.ListNode) string {
+	c := root.CopyList()
+	if a := firstAction(c); a != nil && isPrelude(a.Pipe) {
+		for i, n := range c.Nodes {
+			if n == parse.Node(a) {
+				c.Nodes = append(c.Nodes[:i:i], c.Nodes[i+1:]...)
+				break
+			}
+		}
+	}
+	walk(c, 0, false, func(n parse.Node, _ int, _ bool) {
+		switch x := n.(type) {
+		case *parse.CommandNode:
+			strip(x)
+		case *parse.TemplateNode:
+			// Replaced before walk descends into x.Pipe, so the inner
+			// pipeline's own calls are stripped on the same pass.
+			if x.Pipe != nil && isWithL(x.Pipe) {
+				x.Pipe = withLInner(x.Pipe)
+			}
+		}
+	})
 	return c.String()
 }
 
-func strip(n parse.Node) {
-	switch x := n.(type) {
-	case *parse.PipeNode:
-		if x == nil {
-			return
-		}
-		for _, c := range x.Cmds {
-			strip(c)
-		}
-	case *parse.CommandNode:
-		if id, ok := x.Args[0].(*parse.IdentifierNode); ok {
-			if localeFuncs[id.Ident] && passesL(x) {
-				x.Args = append(x.Args[:1:1], x.Args[2:]...)
-			}
-			if id.Ident == "dict" {
-				for i := 1; i+1 < len(x.Args); i += 2 {
-					if s, ok := x.Args[i].(*parse.StringNode); ok && s.Text == "L" {
-						if v, ok := x.Args[i+1].(*parse.VariableNode); ok && len(v.Ident) == 1 && v.Ident[0] == "$L" {
-							x.Args = append(x.Args[:i:i], x.Args[i+2:]...)
-							break
-						}
-					}
+// strip removes the codemod's insertions from one command: $L after a
+// locale function, and the "L" $L pair in a dict.
+func strip(x *parse.CommandNode) {
+	id, ok := x.Args[0].(*parse.IdentifierNode)
+	if !ok {
+		return
+	}
+	if localeFuncs[id.Ident] && passesL(x) {
+		x.Args = append(x.Args[:1:1], x.Args[2:]...)
+	}
+	if id.Ident == "dict" {
+		for i := 1; i+1 < len(x.Args); i += 2 {
+			if s, ok := x.Args[i].(*parse.StringNode); ok && s.Text == "L" {
+				if v, ok := x.Args[i+1].(*parse.VariableNode); ok && len(v.Ident) == 1 && v.Ident[0] == "$L" {
+					x.Args = append(x.Args[:i:i], x.Args[i+2:]...)
+					break
 				}
 			}
-		}
-		for _, a := range x.Args {
-			strip(a)
 		}
 	}
 }

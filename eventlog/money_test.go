@@ -3,7 +3,6 @@ package eventlog_test
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -289,38 +288,6 @@ func TestEventlogUpgradeRollbackUpgrade(t *testing.T) {
 	if got := strings.Join(ledger(t, w), " "); got != "eventlog/0001_init eventlog_money/0001_payload_v2" {
 		t.Errorf("ledger after second upgrade: %s", got)
 	}
-}
-
-// TestEventlogRenameCost times the rename on a large log. It is
-// logged, not asserted: the number is evidence for the upgrade notes,
-// and a timing bound would fail on a slow runner, not on a regression.
-func TestEventlogRenameCost(t *testing.T) {
-	if testing.Short() {
-		t.Skip("bulk insert")
-	}
-	ctx := context.Background()
-	w := openMem(t)
-	if _, err := migrate.Apply(ctx, migrate.Pool(w), eventlog.Schema); err != nil {
-		t.Fatal(err)
-	}
-	tx, err := w.Begin()
-	if err != nil {
-		t.Fatal(err)
-	}
-	for i := 0; i < 200000; i++ {
-		if _, err := tx.Exec(`INSERT INTO eventlog (stream, writer, seq, lamport, ts, actor, kind, payload) VALUES (?, 'edge-a', 1, 1, '2026-01-01T00:00:00Z', 'human', 'created', '{"Price":1250}')`,
-			fmt.Sprintf("bulk/%d", i)); err != nil {
-			t.Fatal(err)
-		}
-	}
-	if err := tx.Commit(); err != nil {
-		t.Fatal(err)
-	}
-	start := time.Now()
-	if _, err := migrate.Apply(ctx, migrate.Pool(w), withMoney); err != nil {
-		t.Fatal(err)
-	}
-	t.Logf("the money migration (ledger row, RENAME COLUMN and boundary snapshot) on 200,000 events took %v", time.Since(start))
 }
 
 func TestOpenDetectsThePayloadColumn(t *testing.T) {

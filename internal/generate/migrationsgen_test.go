@@ -191,3 +191,43 @@ func TestReadHistory(t *testing.T) {
 		t.Errorf("ReadHistory = %q, want %q", h, want)
 	}
 }
+
+// A migrations.go whose Migrations is not the list of string literals
+// generate wrote is a hand edit. Read as no history, it would be
+// rewritten as a first release, and the app's ledger would then refuse
+// the rewritten first statement at boot with nothing to say about the
+// file that was edited. ReadHistory refuses it and names the file. The
+// one non-list the generator itself writes, a mergeable store's
+// Migrations = eventlogSchemaSQL() left by a resource that has just
+// become exclusive, is still no history.
+func TestReadHistoryRefusesAHandEditedMigrationsFile(t *testing.T) {
+	rs := []rastrillo.Resource{ticketTypes(t, nil)}
+	for name, src := range map[string]string{
+		"a constant in the list": "package ticket_typesstore\n\nconst initSQL = `CREATE TABLE ticket_types (id INTEGER PRIMARY KEY)`\n\nvar Migrations = []string{initSQL}\n",
+		"a call":                 "package ticket_typesstore\n\nfunc released() []string { return nil }\n\nvar Migrations = released()\n",
+		"no Migrations at all":   "package ticket_typesstore\n\nvar Other = []string{\"x\"}\n",
+	} {
+		genDir := filepath.Join(t.TempDir(), "gen")
+		writeFile(t, genDir, "store/ticket_types/migrations.go", src)
+		h, err := ReadHistory(genDir, rs)
+		if err == nil || !strings.Contains(err.Error(), "gen/store/ticket_types/migrations.go") {
+			t.Errorf("%s: ReadHistory = %v, %v; want a refusal naming the file", name, h, err)
+		}
+	}
+	// Both mergeable shapes the generator has written: today's call, and
+	// the re-export of eventlog.Migrations from d36b5fcf (the released
+	// announcements file, as a fixture). A resource that was mergeable
+	// under the older release and becomes exclusive now has that file
+	// untouched, and it is no hand edit.
+	for name, src := range map[string]string{
+		"eventlogSchemaSQL()": string(mergeableMigrationsGo(rastrillo.Resource{Name: "ticket_types"})),
+		"eventlog.Migrations": released(t, "announcements_migrations_mergeable.go.golden"),
+	} {
+		genDir := filepath.Join(t.TempDir(), "gen")
+		writeFile(t, genDir, "store/ticket_types/migrations.go", src)
+		h, err := ReadHistory(genDir, rs)
+		if err != nil || len(h) != 0 {
+			t.Errorf("ReadHistory on a mergeable store's migrations.go (%s) = %v, %v; want no history and no error", name, h, err)
+		}
+	}
+}

@@ -848,6 +848,11 @@ func mergeableAppend(money bool, kind, p, amounts string) string {
 	return fmt.Sprintf("_, err = log.Append(ctx, stream, %q, actor, %s)\nreturn err", kind, p)
 }
 
+// mergeableSchemaFunc is the function a mergeable store's migrations.go
+// reads its statements from. ReadHistory recognises the file by it, so
+// the name lives here, beside the emitter, and a rename changes both.
+const mergeableSchemaFunc = "eventlogSchemaSQL"
+
 // mergeableMigrationsGo renders gen/store/<name>/migrations.go for a
 // mergeable resource: the eventlog schema re-exported — the resource
 // has no table of its own. It reads eventlog.Schema rather than the
@@ -873,8 +878,8 @@ func mergeableMigrationsGo(r rastrillo.Resource) []byte {
 	b.WriteString("// error by skipping the rest of that element, which with a\n")
 	b.WriteString("// multi-statement file means skipping every statement after it and\n")
 	b.WriteString("// still reporting success.\n")
-	b.WriteString("var Migrations = eventlogSchemaSQL()\n\n")
-	b.WriteString("func eventlogSchemaSQL() []string {\n")
+	fmt.Fprintf(&b, "var Migrations = %s()\n\n", mergeableSchemaFunc)
+	fmt.Fprintf(&b, "func %s() []string {\n", mergeableSchemaFunc)
 	b.WriteString("\tvar out []string\n")
 	b.WriteString("\tfor _, m := range eventlog.Schema.All() {\n")
 	b.WriteString("\t\tout = append(out, m.SQL)\n")

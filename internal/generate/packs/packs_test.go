@@ -30,8 +30,13 @@ func TestEmitWritesDerivedPacks(t *testing.T) {
 
 func TestEmitOneLocaleHasNoRouting(t *testing.T) {
 	gen := t.TempDir()
-	Emit(gen, manifest.App{Locales: []string{"en"}, DefaultLocale: "en"})
-	src, _ := os.ReadFile(filepath.Join(gen, "locales", "packs.go"))
+	if _, err := Emit(gen, manifest.App{Locales: []string{"en"}, DefaultLocale: "en"}); err != nil {
+		t.Fatal(err)
+	}
+	src, err := os.ReadFile(filepath.Join(gen, "locales", "packs.go"))
+	if err != nil {
+		t.Fatal(err)
+	}
 	if !strings.Contains(string(src), "var Locales []string\n") {
 		t.Errorf("a one-locale app must leave Locales nil (no prefixes, no switcher):\n%s", src)
 	}

@@ -59,10 +59,18 @@ func TestDefaultPacksOnly(t *testing.T) {
 // and earlier tests in this binary have already consumed it.
 func TestMissingPackWarnsOncePerPack(t *testing.T) {
 	if os.Getenv("WARN_ONCE_CHILD") == "" {
-		cmd := exec.Command(os.Args[0], "-test.run=^TestMissingPackWarnsOncePerPack$", "-test.count=1")
+		// The pattern is the test's own name, and the child's verbose
+		// output must show it passing: a child that matched no test
+		// exits 0 too, so a renamed test would otherwise pass without
+		// ever running its body.
+		cmd := exec.Command(os.Args[0], "-test.run=^"+t.Name()+"$", "-test.count=1", "-test.v")
 		cmd.Env = append(os.Environ(), "WARN_ONCE_CHILD=1")
-		if out, err := cmd.CombinedOutput(); err != nil {
+		out, err := cmd.CombinedOutput()
+		if err != nil {
 			t.Fatalf("child: %v\n%s", err, out)
+		}
+		if !strings.Contains(string(out), "--- PASS: "+t.Name()) {
+			t.Fatalf("the child process did not run %s:\n%s", t.Name(), out)
 		}
 		return
 	}
