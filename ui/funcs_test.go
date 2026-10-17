@@ -162,15 +162,15 @@ func TestDropdownRendersForAStructWithoutMenuGroup(t *testing.T) {
 
 func TestFuncsRegistersExactlyTheDocumentedHelpers(t *testing.T) {
 	f := Funcs()
-	for _, name := range []string{"dict", "list", "menuGroup", "searchClear", "icon", "iconAssets", "T", "Tf", "dateWords", "opt", "Tbdi", "stageArt", "displayURL", "safeHref", "number", "displayValue", "rowMenuItems", "paginationItems", "localizer", "withL", "money"} {
+	for _, name := range []string{"dict", "list", "menuGroup", "searchClear", "icon", "iconAssets", "T", "Tf", "dateWords", "opt", "Tbdi", "stageArt", "displayURL", "safeHref", "number", "displayValue", "rowMenuItems", "paginationItems", "localizer", "withL", "money", "strong"} {
 		if _, ok := f[name]; !ok {
 			t.Errorf("Funcs() is missing %q", name)
 		}
 	}
 	// Exactly these: an accidental extra is a helper the shipped partials
 	// do not document and an app cannot rely on.
-	if len(f) != 21 {
-		t.Errorf("Funcs() has %d entries, want exactly 21 (the 18 before localizer, withL and money, and those three)", len(f))
+	if len(f) != 22 {
+		t.Errorf("Funcs() has %d entries, want exactly 22 (the 18 before localizer, withL and money, those three, and strong)", len(f))
 	}
 }
 
@@ -229,13 +229,13 @@ func TestFuncsWithRebindsOnAClonedPristineTree(t *testing.T) {
 // FuncsWith replaces only the T entry — dict/list/icon are unchanged.
 func TestFuncsWithReplacesOnlyTAndTf(t *testing.T) {
 	f := FuncsWith(func(key string, _ ...any) string { return "X-" + key })
-	for _, name := range []string{"dict", "list", "menuGroup", "searchClear", "icon", "iconAssets", "T", "Tf", "dateWords", "opt", "Tbdi", "stageArt", "displayURL", "safeHref", "number", "displayValue", "rowMenuItems", "paginationItems", "localizer", "withL", "money"} {
+	for _, name := range []string{"dict", "list", "menuGroup", "searchClear", "icon", "iconAssets", "T", "Tf", "dateWords", "opt", "Tbdi", "stageArt", "displayURL", "safeHref", "number", "displayValue", "rowMenuItems", "paginationItems", "localizer", "withL", "money", "strong"} {
 		if _, ok := f[name]; !ok {
 			t.Errorf("FuncsWith(...) is missing %q", name)
 		}
 	}
-	if len(f) != 21 {
-		t.Errorf("FuncsWith(...) has %d entries, want exactly 21 (the 18 before localizer, withL and money, and those three)", len(f))
+	if len(f) != 22 {
+		t.Errorf("FuncsWith(...) has %d entries, want exactly 22 (the 18 before localizer, withL and money, those three, and strong)", len(f))
 	}
 	if got := call(t, f, "T", "rastrillo.ui.cancel"); got != "X-rastrillo.ui.cancel" {
 		t.Errorf("rebound T = %q, want %q", got, "X-rastrillo.ui.cancel")
@@ -374,6 +374,23 @@ func TestTfInterpolatesTheBaseCatalog(t *testing.T) {
 	// An unknown key is its own name, exactly as T's miss behaves.
 	if got := fn("rastrillo.ui.nope", "ref", "x"); got != "rastrillo.ui.nope" {
 		t.Errorf("Tf on a miss = %q, want the key back", got)
+	}
+}
+
+// strong marks one Tbdi value for emphasis. The <strong> sits inside
+// that value's <bdi> and nowhere else, so a sentence that moves the
+// placeholder moves the emphasis with it; the value is still escaped;
+// and outside Tbdi the wrapper prints as plain text, so it cannot be a
+// way to emit markup.
+func TestStrongTravelsWithItsPlaceholder(t *testing.T) {
+	f := Funcs(WithT(func(key string, _ ...any) string { return "{b}, {a}" }))
+	s := call(t, f, "strong", "<x>")
+	got := call(t, f, "Tbdi", "k", "a", s, "b", "plain")
+	if want := template.HTML(`<bdi>plain</bdi>, <bdi><strong>&lt;x&gt;</strong></bdi>`); got != want {
+		t.Errorf("Tbdi = %q, want %q", got, want)
+	}
+	if out := execTmpl(t, f, `{{strong .V}}`, map[string]any{"V": "<x>"}); out != "&lt;x&gt;" {
+		t.Errorf("strong outside Tbdi = %q, want escaped text", out)
 	}
 }
 

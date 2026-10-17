@@ -119,3 +119,9 @@ rastrillo.ui.signin_sent_once = "该链接只能使用一次，并且很快会�
 rastrillo.ui.signin_continue_heading = "正在前往 Keymail"
 rastrillo.ui.signin_continue_title = "正在前往 Keymail 以登录 {name}"
 rastrillo.ui.signin_continue_body = "正在前往 Keymail 确认是你本人。"
+
+rastrillo.ui.job_running = "{name}正在运行…"
+rastrillo.ui.job_running_progress = "{name}正在运行：{progress}…"
+rastrillo.ui.job_failed = "{name}失败"
+rastrillo.ui.job_failed_error = "{name}失败：{error}"
+rastrillo.ui.job_finished = "{name}已完成。"

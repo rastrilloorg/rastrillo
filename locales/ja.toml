@@ -119,3 +119,9 @@ rastrillo.ui.signin_sent_once = "リンクは一度だけ使用でき、まも�
 rastrillo.ui.signin_continue_heading = "Keymail に移動しています"
 rastrillo.ui.signin_continue_title = "{name} にサインインするため、Keymail に移動しています"
 rastrillo.ui.signin_continue_body = "ご本人確認のため、Keymail に移動しています。"
+
+rastrillo.ui.job_running = "{name}を実行中…"
+rastrillo.ui.job_running_progress = "{name}を実行中: {progress}…"
+rastrillo.ui.job_failed = "{name}は失敗しました"
+rastrillo.ui.job_failed_error = "{name}は失敗しました: {error}"
+rastrillo.ui.job_finished = "{name}は完了しました。"

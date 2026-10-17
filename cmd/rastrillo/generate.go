@@ -226,7 +226,7 @@ func runGenerate(args []string) error {
 	if err != nil {
 		return fmt.Errorf("generate manifests: %w", err)
 	}
-	for _, line := range append(gm.Appended, gm.MoneySchemaAdded...) {
+	for _, line := range append(append(gm.Appended, gm.Scoped...), gm.MoneySchemaAdded...) {
 		fmt.Println(line)
 	}
 	if _, err := packs.Emit(genDir, app); err != nil {

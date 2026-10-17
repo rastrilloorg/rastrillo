@@ -119,3 +119,9 @@ rastrillo.ui.signin_sent_once = "A ligação só funciona uma vez e expira em br
 rastrillo.ui.signin_continue_heading = "A redirecionar para o Keymail"
 rastrillo.ui.signin_continue_title = "A redirecionar para o Keymail para iniciar sessão em {name}"
 rastrillo.ui.signin_continue_body = "A redirecionar para o Keymail para confirmar a sua identidade."
+
+rastrillo.ui.job_running = "{name} em curso…"
+rastrillo.ui.job_running_progress = "{name} em curso: {progress}…"
+rastrillo.ui.job_failed = "{name} falhou"
+rastrillo.ui.job_failed_error = "{name} falhou: {error}"
+rastrillo.ui.job_finished = "{name} terminou."

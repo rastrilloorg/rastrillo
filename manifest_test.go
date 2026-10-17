@@ -265,6 +265,31 @@ func TestValidateMoneyCurrency(t *testing.T) {
 	}
 }
 
+// currency and [legacy] on a resource with no money field were accepted
+// and did nothing. An author who wrote them meant something: a field
+// that should have been money, or a resource that lost its money field
+// and kept a table that now lies about it. Either way the manifest
+// should say so instead of generating as if the lines were not there.
+func TestValidateRefusesMoneySettingsWithoutMoney(t *testing.T) {
+	for name, c := range map[string]struct {
+		mutate func(*Resource)
+		err    string
+	}{
+		"currency":     {func(r *Resource) { r.Currency = "EUR" }, msgCurrencyWithoutMoney},
+		"legacy":       {func(r *Resource) { r.Legacy = &Legacy{Currency: "USD", Scale: scale(2)} }, msgLegacyWithoutMoney},
+		"both":         {func(r *Resource) { r.Currency = "EUR"; r.Legacy = &Legacy{Currency: "USD", Scale: scale(2)} }, msgCurrencyWithoutMoney},
+		"neither":      {func(r *Resource) {}, ""},
+		"money column": {func(r *Resource) { r.Currency = "EUR"; r.List.Columns = []Column{{Field: "Price", Kind: Money}} }, ""},
+	} {
+		r := Resource{Name: "tickets", Route: "/t", Form: Form{Basics: []Field{{Name: "Title"}}}}
+		c.mutate(&r)
+		err := r.Validate()
+		if c.err == "" && err != nil || c.err != "" && (err == nil || !strings.Contains(err.Error(), c.err)) {
+			t.Errorf("%s: %v, want %q", name, err, c.err)
+		}
+	}
+}
+
 // TestHasMoney: a money column alone counts, as does a money field in
 // either form section; it decides whether a currency is required.
 func TestHasMoney(t *testing.T) {

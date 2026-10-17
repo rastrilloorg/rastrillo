@@ -119,3 +119,9 @@ rastrillo.ui.signin_sent_once = "El enlace solo funciona una vez y caduca pronto
 rastrillo.ui.signin_continue_heading = "Te llevamos a Keymail"
 rastrillo.ui.signin_continue_title = "Te llevamos a Keymail para iniciar sesión en {name}"
 rastrillo.ui.signin_continue_body = "Te llevamos a Keymail para confirmar que eres tú."
+
+rastrillo.ui.job_running = "{name} en curso…"
+rastrillo.ui.job_running_progress = "{name} en curso: {progress}…"
+rastrillo.ui.job_failed = "{name} ha fallado"
+rastrillo.ui.job_failed_error = "{name} ha fallado: {error}"
+rastrillo.ui.job_finished = "{name} ha terminado."

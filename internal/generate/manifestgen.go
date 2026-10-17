@@ -36,6 +36,10 @@ type Generated struct {
 	// this run added to a released migrations.go. Empty in check-only
 	// mode, which writes nothing the app keeps.
 	Appended []string
+	// Scoped is one line per resource that the previous generation had
+	// unscoped and this one has user-scoped (scopechange.go), whichever
+	// store it keeps. Empty in check-only mode, like Appended.
+	Scoped []string
 	// MoneySchemaAdded is one op.generate.money_schema_added line per
 	// resource whose events carry money, when this run added the event
 	// log's rename to gen/boot.go. Empty in check-only mode, whose
@@ -77,6 +81,14 @@ func GenerateManifests(moduleRoot, genDir string, checkOnly bool) (Generated, er
 	}
 
 	if !checkOnly {
+		// Before the pipeline overwrites gen/manifest.json: the artifact
+		// is what the last run recorded, and the comparison is only a
+		// transition while it is still the old one.
+		previous, err := previousGeneration(genDir)
+		if err != nil {
+			return Generated{}, err
+		}
+		out.Scoped = scopeNotes(previous, rs)
 		out.Written, out.Appended, out.MoneySchemaAdded, err = emitPipeline(moduleRoot, genDir, rs, h, true)
 		return out, err
 	}
@@ -122,12 +134,6 @@ func GenerateManifests(moduleRoot, genDir string, checkOnly bool) (Generated, er
 // gen/ tree whatever genDir is; appended is EmitStore's, notices
 // bootgen.Emit's.
 func emitPipeline(moduleRoot, genDir string, rs []rastrillo.Resource, h History, runSqlc bool) (written, appended, notices []string, err error) {
-	manifestPath := filepath.Join(genDir, "manifest.json")
-	if err := writeFileIfChanged(manifestPath, manifest.Artifact(rs)); err != nil {
-		return nil, nil, nil, fmt.Errorf("manifest.json: %w", err)
-	}
-	written = append(written, manifestPath)
-
 	storePaths, appended, err := EmitStore(genDir, rs, h)
 	if err != nil {
 		return nil, nil, nil, err
@@ -189,7 +195,18 @@ func emitPipeline(moduleRoot, genDir string, rs []rastrillo.Resource, h History,
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	return append(written, boot...), appended, notices, nil
+	written = append(written, boot...)
+
+	// The artifact goes last: it is what the next run reads as the
+	// previous generation (scopechange.go), so a run that fails in
+	// sqlc or a later emitter must leave the old one, or the retry
+	// compares scoped with scoped and the warning is lost for good.
+	// Nothing above reads it; the CLI's prune does, after this returns.
+	manifestPath := filepath.Join(genDir, "manifest.json")
+	if err := writeFileIfChanged(manifestPath, manifest.Artifact(rs)); err != nil {
+		return nil, nil, nil, fmt.Errorf("manifest.json: %w", err)
+	}
+	return append(written, manifestPath), appended, notices, nil
 }
 
 // eventStores is Boot's replay check: every mergeable store, sorted by

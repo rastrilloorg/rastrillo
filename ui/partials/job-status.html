@@ -25,18 +25,29 @@
      Percent of 0 renders no bar, because {{with}} treats it as unset.
      That is the right rendering by luck rather than design — a job that
      has done nothing looks the same as one that cannot say — but it is
-     worth knowing before someone reports it as a bug. */}}
-{{define "job-status"}}
+     worth knowing before someone reports it as a bug.
+
+     Each line is one whole sentence from the catalog (rastrillo.ui.job_*)
+     with the name, progress and error as placeholders, never a bold
+     name followed by a translated fragment: a language that puts the
+     verb before the name, or a suffix after it, cannot be assembled
+     from pieces. Tbdi interpolates them, so each arrives inside <bdi>,
+     and the name is passed through strong so its <bdi> carries the
+     <strong> the old markup had, wherever the translation puts it. The
+     isolation is a by-product of using Tbdi, not a fix for the bidi
+     defect browser_test.go measured, which is in the name cell and not
+     here. */}}
+{{define "job-status"}}{{$L := localizer $}}
 <div rst-job{{if eq .Status "running"}} data-poll="{{.PollURL}}" data-poll-every="{{.PollSeconds}}"{{with .PushURL}} data-poll-push="{{.}}"{{end}}{{end}}>
 {{- if eq .Status "running"}}
-  <span rst-spin aria-hidden="true"></span> <strong>{{.Name}}</strong> is running{{with .Progress}} — {{.}}{{end}}…
+  <span rst-spin aria-hidden="true"></span> {{with .Progress}}{{Tbdi $L "rastrillo.ui.job_running_progress" "name" (strong $.Name) "progress" .}}{{else}}{{Tbdi $L "rastrillo.ui.job_running" "name" (strong .Name)}}{{end}}
   {{- with .Percent}}
   <progress rst-job-bar value="{{.}}" min="0" max="100" aria-hidden="true"></progress>
   {{- end}}
 {{- else if eq .Status "failed"}}
-  <strong>{{.Name}}</strong> failed{{with .Err}}: {{.}}{{end}}
+  {{with .Err}}{{Tbdi $L "rastrillo.ui.job_failed_error" "name" (strong $.Name) "error" .}}{{else}}{{Tbdi $L "rastrillo.ui.job_failed" "name" (strong .Name)}}{{end}}
 {{- else}}
-  <strong>{{.Name}}</strong> finished.
+  {{Tbdi $L "rastrillo.ui.job_finished" "name" (strong .Name)}}
 {{- end}}
 </div>
 {{end}}

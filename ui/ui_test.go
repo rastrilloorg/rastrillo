@@ -1993,6 +1993,101 @@ func TestRoutesFamilyPartialClassesAreStyled(t *testing.T) {
 // own CSS off, never a class tokens.css styles. Recording that here in
 // a comment, the way reducedMotionAllowlist records its exceptions, so
 // a future reader does not "fix" it by inventing a rule for it.
+// job-status said its three sentences in English whatever language the
+// page was in. Every word it says now comes from the catalog, localizer
+// first, with the name, progress and error interpolated through Tbdi so
+// a name written right to left cannot pull the sentence round with it.
+// Two checks: the catalog rebind proves which keys are looked up, and a
+// Spanish localizer in the data proves the localizer wins over the
+// default English.
+func TestJobStatusSpeaksTheCatalogsLanguage(t *testing.T) {
+	tmpl, err := template.New("").
+		Funcs(FuncsWith(func(key string, _ ...any) string { return "xx:" + key })).
+		ParseFS(Templates(), "*.html")
+	if err != nil {
+		t.Fatalf("ParseFS: %v", err)
+	}
+	for key, data := range map[string]map[string]any{
+		"rastrillo.ui.job_running":          {"Name": "Import", "Status": "running", "PollURL": "/j/1", "PollSeconds": 2},
+		"rastrillo.ui.job_running_progress": {"Name": "Import", "Status": "running", "Progress": "128 of 400", "PollURL": "/j/1", "PollSeconds": 2},
+		"rastrillo.ui.job_failed":           {"Name": "Import", "Status": "failed"},
+		"rastrillo.ui.job_failed_error":     {"Name": "Import", "Status": "failed", "Err": "row 91"},
+		"rastrillo.ui.job_finished":         {"Name": "Import", "Status": "done"},
+	} {
+		var buf strings.Builder
+		if err := tmpl.ExecuteTemplate(&buf, "job-status", data); err != nil {
+			t.Fatalf("%s: %v", key, err)
+		}
+		if !strings.Contains(buf.String(), "xx:"+key) {
+			t.Errorf("job-status does not say %s through the catalog:\n%s", key, buf.String())
+		}
+	}
+
+	es := map[string]string{
+		"rastrillo.ui.job_running":          "{name} está en curso…",
+		"rastrillo.ui.job_running_progress": "{name} está en curso: {progress}…",
+		"rastrillo.ui.job_failed":           "{name} falló",
+		"rastrillo.ui.job_failed_error":     "{name} falló: {error}",
+		"rastrillo.ui.job_finished":         "{name} terminó.",
+	}
+	l := NewLocalizer("es", "es", func(k string, _ ...any) string { return es[k] })
+	for _, c := range []struct {
+		data map[string]any
+		want string
+	}{
+		{map[string]any{"L": l, "Name": "Importar", "Status": "running", "Progress": "128 de 400", "PollURL": "/j/1", "PollSeconds": 2},
+			`<bdi><strong>Importar</strong></bdi> está en curso: <bdi>128 de 400</bdi>…`},
+		{map[string]any{"L": l, "Name": "Importar", "Status": "running", "PollURL": "/j/1", "PollSeconds": 2},
+			`<bdi><strong>Importar</strong></bdi> está en curso…`},
+		{map[string]any{"L": l, "Name": "Importar", "Status": "failed", "Err": `fila <91>`},
+			`<bdi><strong>Importar</strong></bdi> falló: <bdi>fila &lt;91&gt;</bdi>`},
+		{map[string]any{"L": l, "Name": "Importar", "Status": "failed"},
+			`<bdi><strong>Importar</strong></bdi> falló`},
+		{map[string]any{"L": l, "Name": "Importar", "Status": "done"},
+			`<bdi><strong>Importar</strong></bdi> terminó.`},
+	} {
+		got := render(t, "job-status", c.data)
+		if !strings.Contains(got, c.want) {
+			t.Errorf("status %v: missing %q in\n%s", c.data["Status"], c.want, got)
+		}
+		if strings.Contains(got, "is running") || strings.Contains(got, "finished.") || strings.Contains(got, "</strong> failed") {
+			t.Errorf("status %v: English survived the Spanish localizer:\n%s", c.data["Status"], got)
+		}
+	}
+}
+
+// The bold is the job's name, wherever a translation puts it. A rule on
+// the first <bdi> bolded whichever value came first, so a language that
+// leads with the progress ("128 of 400: Import is running") emphasised
+// the number. The emphasis has to travel with the placeholder.
+func TestJobStatusEmphasisFollowsTheName(t *testing.T) {
+	nameLast := map[string]string{
+		"rastrillo.ui.job_running_progress": "{progress}: {name} fut…",
+		"rastrillo.ui.job_failed_error":     "{error}: {name} hibás",
+		"rastrillo.ui.job_finished":         "kész: {name}",
+	}
+	l := NewLocalizer("hu", "hu", func(k string, _ ...any) string { return nameLast[k] })
+	for _, c := range []struct {
+		data       map[string]any
+		want, nope string
+	}{
+		{map[string]any{"L": l, "Name": "Import", "Status": "running", "Progress": "128 / 400", "PollURL": "/j/1", "PollSeconds": 2},
+			`<bdi>128 / 400</bdi>: <bdi><strong>Import</strong></bdi> fut…`, `<strong>128`},
+		{map[string]any{"L": l, "Name": "Import", "Status": "failed", "Err": "row 91"},
+			`<bdi>row 91</bdi>: <bdi><strong>Import</strong></bdi> hibás`, `<strong>row`},
+		{map[string]any{"L": l, "Name": "Import", "Status": "done"},
+			`kész: <bdi><strong>Import</strong></bdi>`, ``},
+	} {
+		got := render(t, "job-status", c.data)
+		if !strings.Contains(got, c.want) {
+			t.Errorf("status %v: the name is not the emphasised value; want %q in\n%s", c.data["Status"], c.want, got)
+		}
+		if c.nope != "" && strings.Contains(got, c.nope) {
+			t.Errorf("status %v: a value other than the name is emphasised:\n%s", c.data["Status"], got)
+		}
+	}
+}
+
 func TestJobStatusPartialClassesAreStyled(t *testing.T) {
 	css := string(TokensCSS())
 	for _, name := range []string{"rst-spin"} {

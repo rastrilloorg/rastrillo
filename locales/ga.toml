@@ -119,3 +119,9 @@ rastrillo.ui.signin_sent_once = "Ní oibríonn an nasc ach uair amháin, agus ra
 rastrillo.ui.signin_continue_heading = "Ag dul chuig Keymail"
 rastrillo.ui.signin_continue_title = "Ag dul chuig Keymail chun síniú isteach ar {name}"
 rastrillo.ui.signin_continue_body = "Ag dul chuig Keymail chun a dheimhniú gur tusa atá ann."
+
+rastrillo.ui.job_running = "Tá {name} ar siúl…"
+rastrillo.ui.job_running_progress = "Tá {name} ar siúl: {progress}…"
+rastrillo.ui.job_failed = "Theip ar {name}"
+rastrillo.ui.job_failed_error = "Theip ar {name}: {error}"
+rastrillo.ui.job_finished = "Tá {name} críochnaithe."

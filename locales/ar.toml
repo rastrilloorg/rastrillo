@@ -119,3 +119,9 @@ rastrillo.ui.signin_sent_once = "يعمل الرابط مرة واحدة فقط 
 rastrillo.ui.signin_continue_heading = "جارٍ نقلك إلى Keymail"
 rastrillo.ui.signin_continue_title = "جارٍ نقلك إلى Keymail لتسجيل الدخول إلى {name}"
 rastrillo.ui.signin_continue_body = "جارٍ نقلك إلى Keymail للتأكد من أنك أنت."
+
+rastrillo.ui.job_running = "{name} قيد التشغيل…"
+rastrillo.ui.job_running_progress = "{name} قيد التشغيل: {progress}…"
+rastrillo.ui.job_failed = "فشل {name}"
+rastrillo.ui.job_failed_error = "فشل {name}: {error}"
+rastrillo.ui.job_finished = "انتهى {name}."

@@ -32,6 +32,11 @@ transaction at a time and a killed wake rolls back cleanly and retries.
 And background work does not survive: a [job](/docs/jobs) is a
 goroutine, and hibernation ends it, so keep jobs idempotent.
 
+Boot replays every mergeable stream before it serves, so a wake takes
+longer as the event log grows: about 2 seconds for every 200,000
+events. It has to finish inside the 30 seconds the activator waits for
+a woken app to answer.
+
 ## Work on a clock
 
 Since hibernation ends goroutines, a timer inside your process is not a

@@ -161,7 +161,7 @@ func TestMoneyEscapesInEveryContext(t *testing.T) {
 func TestFuncsKeepsEveryEntry(t *testing.T) {
 	m := Funcs()
 	for _, name := range append(append([]string{}, LocaleFuncs...), "localizer", "withL", "dict", "list", "menuGroup",
-		"searchClear", "icon", "iconAssets", "opt", "stageArt", "displayURL", "safeHref", "rowMenuItems") {
+		"searchClear", "icon", "iconAssets", "opt", "stageArt", "displayURL", "safeHref", "rowMenuItems", "strong") {
 		if m[name] == nil {
 			t.Errorf("Funcs lost %q: shipped partials stop parsing without it", name)
 		}

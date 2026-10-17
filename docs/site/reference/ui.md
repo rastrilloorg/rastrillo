@@ -38,10 +38,10 @@ func Funcs(opts ...Option) template.FuncMap
 ```
 
 The function map the partials need, for an app that renders through its
-own template tree instead of [`ui.Pages`](#pages). It holds twenty-one:
+own template tree instead of [`ui.Pages`](#pages). It holds twenty-two:
 `dict`, `list`, `menuGroup`, `searchClear`, `icon`, `iconAssets`, `opt`,
 `stageArt`, `displayURL`, `safeHref`, `rowMenuItems`, `paginationItems`,
-`localizer`, `withL`, and the locale functions `T`, `Tf`, `Tbdi`,
+`localizer`, `withL`, `strong`, and the locale functions `T`, `Tf`, `Tbdi`,
 `number`, `displayValue`, `dateWords` and `money`. Add your own on top;
 do not drop any. `rowMenuItems` checks `row-menu`'s items and stops the
 render on one it cannot show.

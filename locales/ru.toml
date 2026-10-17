@@ -119,3 +119,9 @@ rastrillo.ui.signin_sent_once = "Ссылка работает один раз �
 rastrillo.ui.signin_continue_heading = "Переходим в Keymail"
 rastrillo.ui.signin_continue_title = "Переходим в Keymail, чтобы войти в {name}"
 rastrillo.ui.signin_continue_body = "Переходим в Keymail, чтобы подтвердить, что это вы."
+
+rastrillo.ui.job_running = "Задача «{name}» выполняется…"
+rastrillo.ui.job_running_progress = "Задача «{name}» выполняется: {progress}…"
+rastrillo.ui.job_failed = "Задача «{name}» завершилась с ошибкой"
+rastrillo.ui.job_failed_error = "Задача «{name}» завершилась с ошибкой: {error}"
+rastrillo.ui.job_finished = "Задача «{name}» завершена."

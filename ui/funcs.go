@@ -131,7 +131,7 @@ func WithT(t func(key string, args ...any) string) Option {
 // to a partial.
 //
 // An app is free to add its own entries on top; it must not drop these
-// twenty-one. The shipped partials and shells stop parsing without most
+// twenty-two. The shipped partials and shells stop parsing without most
 // of them, and the docs promise the rest.
 func Funcs(opts ...Option) template.FuncMap {
 	c := config{
@@ -151,6 +151,7 @@ func Funcs(opts ...Option) template.FuncMap {
 		"displayURL": form.DisplayURL, "safeHref": form.SafeHref,
 		"rowMenuItems": rowMenuItems, "paginationItems": paginationItems,
 		"localizer": localizer, "withL": withL,
+		"strong": strong,
 	}
 	for name, fn := range localeFuncs(c) {
 		m[name] = fn
@@ -520,6 +521,18 @@ func rowMenuHidden(item any) (pairs [][2]string, listOK, pairsOK bool) {
 	return pairs, true, true
 }
 
+// strongArg is what {{strong x}} returns: a Tbdi value that renders as
+// <bdi><strong>…</strong></bdi>. The emphasis travels with the
+// placeholder, so a translation that puts the job's name after its
+// progress still bolds the name; a CSS rule on the first <bdi> bolded
+// whichever value a language led with. It is a string type and not a
+// marker struct so that outside Tbdi, in a plain pipeline, it prints as
+// its text and html/template escapes it like any other string: a stray
+// {{strong}} cannot emit markup.
+type strongArg string
+
+func strong(v any) strongArg { return strongArg(fmt.Sprint(v)) }
+
 // tbdi returns the {{Tbdi}} helper bound to one translator, like T and
 // dateWords. It walks the catalog string once, left to right, so a
 // value that itself contains {name} — an address a visitor typed — is
@@ -529,9 +542,11 @@ func rowMenuHidden(item any) (pairs [][2]string, listOK, pairsOK bool) {
 func tbdi(t func(key string, args ...any) string) func(key string, args ...any) template.HTML {
 	return func(key string, args ...any) template.HTML {
 		vals := map[string]string{}
+		strongs := map[string]bool{}
 		for i := 0; i+1 < len(args); i += 2 {
 			if name, ok := args[i].(string); ok {
 				vals[name] = fmt.Sprint(args[i+1])
+				_, strongs[name] = args[i+1].(strongArg)
 			}
 		}
 		src := t(key)
@@ -549,7 +564,11 @@ func tbdi(t func(key string, args ...any) string) func(key string, args ...any) 
 			}
 			b.WriteString(template.HTMLEscapeString(src[:open]))
 			if v, ok := vals[src[open+1:open+end]]; ok {
-				b.WriteString("<bdi>" + template.HTMLEscapeString(v) + "</bdi>")
+				if strongs[src[open+1:open+end]] {
+					b.WriteString("<bdi><strong>" + template.HTMLEscapeString(v) + "</strong></bdi>")
+				} else {
+					b.WriteString("<bdi>" + template.HTMLEscapeString(v) + "</bdi>")
+				}
 			} else {
 				b.WriteString(template.HTMLEscapeString(src[open : open+end+1]))
 			}

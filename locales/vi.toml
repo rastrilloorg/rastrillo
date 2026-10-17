@@ -119,3 +119,9 @@ rastrillo.ui.signin_sent_once = "Liên kết chỉ dùng được một lần v�
 rastrillo.ui.signin_continue_heading = "Đang chuyển bạn đến Keymail"
 rastrillo.ui.signin_continue_title = "Đang chuyển bạn đến Keymail để đăng nhập vào {name}"
 rastrillo.ui.signin_continue_body = "Đang chuyển bạn đến Keymail để xác nhận đó là bạn."
+
+rastrillo.ui.job_running = "{name} đang chạy…"
+rastrillo.ui.job_running_progress = "{name} đang chạy: {progress}…"
+rastrillo.ui.job_failed = "{name} không thành công"
+rastrillo.ui.job_failed_error = "{name} không thành công: {error}"
+rastrillo.ui.job_finished = "{name} đã hoàn tất."

@@ -106,6 +106,15 @@ type Legacy struct {
 	Scale *int `json:"scale" toml:"scale"`
 }
 
+// msgCurrencyWithoutMoney and msgLegacyWithoutMoney are the messages
+// for money settings on a resource with nothing to apply them to. One
+// constant each so the copy review's approved text lands in one place;
+// internal/manifest.Load prefixes the file.
+const (
+	msgCurrencyWithoutMoney = `currency is set, but no column or field is money; give one kind = "money", or remove currency`
+	msgLegacyWithoutMoney   = `[legacy] is set, but no column or field is money; give one kind = "money", or remove [legacy]`
+)
+
 // maxLegacyScale bounds [legacy] scale: currency.Rescale multiplies or
 // divides by ten once per digit of difference, and 10^18 is the largest
 // power of ten an int64 holds, so a larger scale could only ever be
@@ -480,18 +489,30 @@ func (r *Resource) checkGeneratedNames() error {
 // The ineligible-default warning is not here: it must not stop
 // generating, so cmd/rastrillo prints it after loading.
 func (r *Resource) validateMoney() error {
+	// Either setting without a money field is refused rather than
+	// ignored: silently accepted, a currency on a resource whose Price
+	// was never given kind = "money" generates a text column and nobody
+	// is told, and a [legacy] table outliving its field promises an
+	// upgrade that never runs.
+	hasMoney := r.HasMoney()
 	if r.Currency != "" {
+		if !hasMoney {
+			return errors.New(msgCurrencyWithoutMoney)
+		}
 		code, err := currency.Normalize(r.Currency)
 		if err != nil {
 			return fmt.Errorf("currency %q: %v", r.Currency, err)
 		}
 		r.Currency = code
-	} else if r.HasMoney() {
+	} else if hasMoney {
 		return manifesterr.ErrNoCurrency
 	}
 
 	if r.Legacy == nil {
 		return nil
+	}
+	if !hasMoney {
+		return errors.New(msgLegacyWithoutMoney)
 	}
 	if r.Legacy.Currency == "" {
 		return errors.New("[legacy] needs currency, the currency the old integers were in")

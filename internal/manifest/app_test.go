@@ -25,6 +25,28 @@ func TestLoadApp(t *testing.T) {
 	}
 }
 
+// An app.toml that lists no locales used to load as an app with none,
+// and the failure surfaced later as `default locale "" is not one of
+// the offered locales []`, which names neither the file nor the fix.
+// The three spellings of the mistake all get the one message here.
+func TestLoadAppRefusesNoLocales(t *testing.T) {
+	for name, body := range map[string]string{
+		"empty file":   "",
+		"empty list":   "locales = []\n",
+		"default only": "default_locale = \"en\"\n",
+	} {
+		dir := t.TempDir()
+		os.WriteFile(filepath.Join(dir, "app.toml"), []byte(body), 0o644)
+		_, err := LoadApp(dir)
+		if err == nil || !strings.Contains(err.Error(), noLocales) {
+			t.Errorf("%s: got %v, want %q", name, err, noLocales)
+		}
+		if err != nil && !strings.HasPrefix(err.Error(), filepath.Join(dir, "app.toml")+": ") {
+			t.Errorf("%s: the message does not start with the file: %v", name, err)
+		}
+	}
+}
+
 func TestLoadSkipsAppTOMLAndRefusesResourceApp(t *testing.T) {
 	dir := t.TempDir()
 	os.WriteFile(filepath.Join(dir, "app.toml"), []byte("locales = [\"en\"]\n"), 0o644)

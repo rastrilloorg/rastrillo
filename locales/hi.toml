@@ -119,3 +119,9 @@ rastrillo.ui.signin_sent_once = "यह लिंक सिर्फ़ एक �
 rastrillo.ui.signin_continue_heading = "आपको Keymail पर ले जा रहे हैं"
 rastrillo.ui.signin_continue_title = "{name} में साइन इन करने के लिए आपको Keymail पर ले जा रहे हैं"
 rastrillo.ui.signin_continue_body = "यह पुष्टि करने के लिए कि यह आप ही हैं, आपको Keymail पर ले जा रहे हैं।"
+
+rastrillo.ui.job_running = "{name} चल रहा है…"
+rastrillo.ui.job_running_progress = "{name} चल रहा है: {progress}…"
+rastrillo.ui.job_failed = "{name} विफल हुआ"
+rastrillo.ui.job_failed_error = "{name} विफल हुआ: {error}"
+rastrillo.ui.job_finished = "{name} पूरा हुआ।"

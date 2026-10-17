@@ -4,6 +4,7 @@ import (
 	"errors"
 	"reflect"
 	"regexp"
+	"slices"
 	"sort"
 	"strings"
 	"testing"
@@ -167,6 +168,46 @@ func TestMoneyErrorPlaceholdersSurviveTranslation(t *testing.T) {
 				t.Errorf("%s.toml: %s = %q contains an em dash", code, key, c[key])
 			}
 		}
+	}
+}
+
+// job-status's five sentences each carry the job's name, and two of
+// them its progress or error, as placeholders Tbdi fills. A translation
+// that drops one still reads as a sentence about nothing, and one that
+// adds a brace prints it raw. A catalog that still says the English is
+// caught too, as for the shell strings: a key copied across to satisfy
+// the parity gate and never translated would otherwise pass for good.
+func TestJobStatusPlaceholdersSurviveTranslation(t *testing.T) {
+	placeholder := regexp.MustCompile(`\{[a-z]+\}`)
+	all := BaseCatalogs()
+	en := all["en"]
+	keys := 0
+	for key, v := range en {
+		if !strings.HasPrefix(key, "rastrillo.ui.job_") {
+			continue
+		}
+		keys++
+		want := placeholder.FindAllString(v, -1)
+		sort.Strings(want)
+		if !slices.Contains(want, "{name}") {
+			t.Errorf("en.toml: %s = %q does not name the job", key, v)
+		}
+		for code, c := range all {
+			got := placeholder.FindAllString(c[key], -1)
+			sort.Strings(got)
+			if !reflect.DeepEqual(got, want) || strings.Count(c[key], "{") != len(want) {
+				t.Errorf("%s.toml: %s = %q carries %v, want %v", code, key, c[key], got, want)
+			}
+			if strings.Contains(c[key], "—") {
+				t.Errorf("%s.toml: %s = %q contains an em dash", code, key, c[key])
+			}
+			if code != "en" && c[key] == v {
+				t.Errorf("%s.toml: %s is still the English %q", code, key, v)
+			}
+		}
+	}
+	if keys != 5 {
+		t.Errorf("en.toml has %d rastrillo.ui.job_* keys, want 5: running, running_progress, failed, failed_error, finished", keys)
 	}
 }
 
