@@ -1,11 +1,11 @@
-package blobs
-
-// Minimal AWS Signature Version 4 signer — just enough to talk to S3.
-// Extracted from messenger's home/sigv4.go (the family precedent for
-// hand-rolling this): the store needs a handful of operations, and an
-// AWS SDK would multiply the dependency surface for one HMAC chain.
-// Pinned offline against the official AWS worked examples in
-// sigv4_test.go.
+// Package sigv4 is a minimal AWS Signature Version 4 signer, just
+// enough to talk to S3. It lives here rather than in blobs because
+// objrec needs the same signer, and two copies of an HMAC chain drift
+// apart silently. Extracted from messenger's home/sigv4.go (the family
+// precedent for hand-rolling this: an AWS SDK would multiply the
+// dependency surface for one HMAC chain). Pinned offline against the
+// official AWS worked examples in sigv4_test.go.
+package sigv4
 
 import (
 	"crypto/hmac"
@@ -19,17 +19,17 @@ import (
 	"time"
 )
 
-// emptyPayloadHash is sha256("") — the x-amz-content-sha256 for bodyless
+// EmptyPayloadHash is sha256("") — the x-amz-content-sha256 for bodyless
 // requests (GET/HEAD/DELETE).
-const emptyPayloadHash = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+const EmptyPayloadHash = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
 
-// awsSignV4 computes the SigV4 signature for req and sets its Authorization
+// Sign computes the SigV4 signature for req and sets its Authorization
 // header. The caller must already have set x-amz-date (matching t) and
 // x-amz-content-sha256 (the hex payload hash — signed, so the body can't be
 // swapped in flight). Signed headers are host plus every x-amz-* header plus
 // range/content-type/content-md5 when present; conditional headers (If-Match
 // etc.) ride unsigned, which S3 permits — only x-amz-* headers MUST be signed.
-func awsSignV4(req *http.Request, accessKey, secretKey, region, service string, t time.Time) {
+func Sign(req *http.Request, accessKey, secretKey, region, service string, t time.Time) {
 	amzDate := t.UTC().Format("20060102T150405Z")
 	scope := t.UTC().Format("20060102") + "/" + region + "/" + service + "/aws4_request"
 
@@ -63,29 +63,29 @@ func awsSignV4(req *http.Request, accessKey, secretKey, region, service string, 
 	}
 	canonical := req.Method + "\n" +
 		path + "\n" +
-		canonicalQuery(req.URL.Query()) + "\n" +
+		CanonicalQuery(req.URL.Query()) + "\n" +
 		canonHdrs.String() + "\n" +
 		signedHeaders + "\n" +
 		req.Header.Get("x-amz-content-sha256")
 
-	stringToSign := "AWS4-HMAC-SHA256\n" + amzDate + "\n" + scope + "\n" + hexSHA256([]byte(canonical))
+	stringToSign := "AWS4-HMAC-SHA256\n" + amzDate + "\n" + scope + "\n" + HexSHA256([]byte(canonical))
 
 	// The HMAC chain: secret → date → region → service → "aws4_request".
-	key := hmacSHA256([]byte("AWS4"+secretKey), t.UTC().Format("20060102"))
-	key = hmacSHA256(key, region)
-	key = hmacSHA256(key, service)
-	key = hmacSHA256(key, "aws4_request")
-	sig := hex.EncodeToString(hmacSHA256(key, stringToSign))
+	key := HMACSHA256([]byte("AWS4"+secretKey), t.UTC().Format("20060102"))
+	key = HMACSHA256(key, region)
+	key = HMACSHA256(key, service)
+	key = HMACSHA256(key, "aws4_request")
+	sig := hex.EncodeToString(HMACSHA256(key, stringToSign))
 
 	req.Header.Set("Authorization",
 		"AWS4-HMAC-SHA256 Credential="+accessKey+"/"+scope+
 			",SignedHeaders="+signedHeaders+",Signature="+sig)
 }
 
-// canonicalQuery renders url.Values in SigV4 canonical form: keys sorted,
+// CanonicalQuery renders url.Values in SigV4 canonical form: keys sorted,
 // values sorted within a key, strict RFC 3986 escaping (%20 for space, never
 // '+'), and flag parameters ("?versions") rendered with a trailing '='.
-func canonicalQuery(q url.Values) string {
+func CanonicalQuery(q url.Values) string {
 	keys := make([]string, 0, len(q))
 	for k := range q {
 		keys = append(keys, k)
@@ -96,17 +96,17 @@ func canonicalQuery(q url.Values) string {
 		vs := append([]string(nil), q[k]...)
 		sort.Strings(vs)
 		for _, v := range vs {
-			parts = append(parts, awsURIEncode(k, true)+"="+awsURIEncode(v, true))
+			parts = append(parts, URIEncode(k, true)+"="+URIEncode(v, true))
 		}
 	}
 	return strings.Join(parts, "&")
 }
 
-// awsURIEncode percent-encodes per the SigV4 rules: unreserved characters
+// URIEncode percent-encodes per the SigV4 rules: unreserved characters
 // (A-Za-z0-9, '-', '.', '_', '~') pass through; '/' passes through only in
 // paths (encodeSlash=false); everything else — including '+' and space —
 // becomes %XX with uppercase hex.
-func awsURIEncode(s string, encodeSlash bool) string {
+func URIEncode(s string, encodeSlash bool) string {
 	var b strings.Builder
 	for i := 0; i < len(s); i++ {
 		c := s[i]
@@ -123,12 +123,12 @@ func awsURIEncode(s string, encodeSlash bool) string {
 	return b.String()
 }
 
-func hexSHA256(b []byte) string {
+func HexSHA256(b []byte) string {
 	h := sha256.Sum256(b)
 	return hex.EncodeToString(h[:])
 }
 
-func hmacSHA256(key []byte, msg string) []byte {
+func HMACSHA256(key []byte, msg string) []byte {
 	m := hmac.New(sha256.New, key)
 	m.Write([]byte(msg))
 	return m.Sum(nil)

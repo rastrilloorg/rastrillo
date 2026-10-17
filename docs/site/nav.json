@@ -169,6 +169,11 @@
           "blurb": "Content-addressed bytes over S3, a directory, or a table."
         },
         {
+          "slug": "reference/objrec",
+          "label": "objrec",
+          "blurb": "Small JSON records in the object store, written conditionally."
+        },
+        {
           "slug": "reference/carlos",
           "label": "carlos",
           "blurb": "Receiving a scheduled tick, and asking the platform for a one-shot one."

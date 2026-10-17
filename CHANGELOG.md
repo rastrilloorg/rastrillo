@@ -344,6 +344,17 @@ staticcheck:
 
 A first run on an older app may report findings its gate never looked for. Rastrillo's own `make ci` runs staticcheck too.
 
+### Added: `rastrillo/objrec` keeps records in the object store
+
+A central app can now keep its records in its object store instead of a
+database. `Create` succeeds once per key, `Update` succeeds only against
+the version you read, and `Mutate` re-reads and retries. It reads the same
+`CARLOS_STORE_*` variables as `blobs`, under its own `records/` prefix.
+`objrec.Dir` is the local stand-in for tests and development.
+
+The SigV4 signer `blobs` used moved to `internal/sigv4` so both packages
+share one copy. Nothing changes for an app that uses `blobs`.
+
 ### Fixed: a date button that opens the browser's panel claims no popup
 
 Without calendar.js on the page, `datetime.js`'s date button hands over

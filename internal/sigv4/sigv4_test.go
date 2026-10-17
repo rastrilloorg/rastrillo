@@ -1,4 +1,4 @@
-package blobs
+package sigv4
 
 // Pins the hand-rolled signer against the official worked examples in the
 // AWS docs ("Signature Calculations for the Authorization Header" — the
@@ -33,7 +33,7 @@ func TestSigV4Vectors(t *testing.T) {
 			url:    "https://examplebucket.s3.amazonaws.com/test.txt",
 			headers: map[string]string{
 				"Range":                "bytes=0-9",
-				"x-amz-content-sha256": emptyPayloadHash,
+				"x-amz-content-sha256": EmptyPayloadHash,
 				"x-amz-date":           amzDate,
 			},
 			wantSignedHeaders: "host;range;x-amz-content-sha256;x-amz-date",
@@ -46,7 +46,7 @@ func TestSigV4Vectors(t *testing.T) {
 			method: "GET",
 			url:    "https://examplebucket.s3.amazonaws.com/?lifecycle",
 			headers: map[string]string{
-				"x-amz-content-sha256": emptyPayloadHash,
+				"x-amz-content-sha256": EmptyPayloadHash,
 				"x-amz-date":           amzDate,
 			},
 			wantSignedHeaders: "host;x-amz-content-sha256;x-amz-date",
@@ -58,7 +58,7 @@ func TestSigV4Vectors(t *testing.T) {
 			method: "GET",
 			url:    "https://examplebucket.s3.amazonaws.com/?max-keys=2&prefix=J",
 			headers: map[string]string{
-				"x-amz-content-sha256": emptyPayloadHash,
+				"x-amz-content-sha256": EmptyPayloadHash,
 				"x-amz-date":           amzDate,
 			},
 			wantSignedHeaders: "host;x-amz-content-sha256;x-amz-date",
@@ -75,7 +75,7 @@ func TestSigV4Vectors(t *testing.T) {
 			for k, v := range tc.headers {
 				req.Header.Set(k, v)
 			}
-			awsSignV4(req, accessKey, secretKey, "us-east-1", "s3", ts)
+			Sign(req, accessKey, secretKey, "us-east-1", "s3", ts)
 			auth := req.Header.Get("Authorization")
 			if !strings.Contains(auth, "SignedHeaders="+tc.wantSignedHeaders+",") {
 				t.Errorf("signed headers: want %q in %q", tc.wantSignedHeaders, auth)
@@ -102,8 +102,8 @@ func TestAWSURIEncode(t *testing.T) {
 		{"ok-._~", true, "ok-._~"},
 		{"é", true, "%C3%A9"},
 	} {
-		if got := awsURIEncode(tc.in, tc.encodeSlash); got != tc.want {
-			t.Errorf("awsURIEncode(%q, %v) = %q, want %q", tc.in, tc.encodeSlash, got, tc.want)
+		if got := URIEncode(tc.in, tc.encodeSlash); got != tc.want {
+			t.Errorf("URIEncode(%q, %v) = %q, want %q", tc.in, tc.encodeSlash, got, tc.want)
 		}
 	}
 }

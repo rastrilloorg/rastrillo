@@ -11,6 +11,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"amadan.net/rastrillo/rastrillo/internal/sigv4"
 )
 
 // S3Config configures an S3 store. Bucket and Region are required;
@@ -92,16 +94,16 @@ func (s *S3) newRequest(ctx context.Context, method, hash string, body []byte, c
 	if err != nil {
 		return nil, err
 	}
-	payloadHash := emptyPayloadHash
+	payloadHash := sigv4.EmptyPayloadHash
 	if len(body) > 0 {
-		payloadHash = hexSHA256(body)
+		payloadHash = sigv4.HexSHA256(body)
 	}
 	if contentType != "" {
 		req.Header.Set("Content-Type", contentType)
 	}
 	req.Header.Set("x-amz-content-sha256", payloadHash)
 	req.Header.Set("x-amz-date", time.Now().UTC().Format("20060102T150405Z"))
-	awsSignV4(req, s.cfg.AccessKey, s.cfg.SecretKey, s.cfg.Region, "s3", time.Now())
+	sigv4.Sign(req, s.cfg.AccessKey, s.cfg.SecretKey, s.cfg.Region, "s3", time.Now())
 	return req, nil
 }
 
@@ -229,19 +231,19 @@ func presignURL(method, rawURL, region, accessKey, secretKey string, ttl time.Du
 
 	canonical := method + "\n" +
 		u.EscapedPath() + "\n" +
-		canonicalQuery(q) + "\n" +
+		sigv4.CanonicalQuery(q) + "\n" +
 		"host:" + u.Host + "\n" +
 		"\n" +
 		"host\n" +
 		"UNSIGNED-PAYLOAD"
 
-	stringToSign := "AWS4-HMAC-SHA256\n" + amzDate + "\n" + scope + "\n" + hexSHA256([]byte(canonical))
-	kSig := hmacSHA256([]byte("AWS4"+secretKey), now.UTC().Format("20060102"))
-	kSig = hmacSHA256(kSig, region)
-	kSig = hmacSHA256(kSig, "s3")
-	kSig = hmacSHA256(kSig, "aws4_request")
-	sig := hex.EncodeToString(hmacSHA256(kSig, stringToSign))
+	stringToSign := "AWS4-HMAC-SHA256\n" + amzDate + "\n" + scope + "\n" + sigv4.HexSHA256([]byte(canonical))
+	kSig := sigv4.HMACSHA256([]byte("AWS4"+secretKey), now.UTC().Format("20060102"))
+	kSig = sigv4.HMACSHA256(kSig, region)
+	kSig = sigv4.HMACSHA256(kSig, "s3")
+	kSig = sigv4.HMACSHA256(kSig, "aws4_request")
+	sig := hex.EncodeToString(sigv4.HMACSHA256(kSig, stringToSign))
 
-	u.RawQuery = canonicalQuery(q) + "&X-Amz-Signature=" + sig
+	u.RawQuery = sigv4.CanonicalQuery(q) + "&X-Amz-Signature=" + sig
 	return u.String(), nil
 }

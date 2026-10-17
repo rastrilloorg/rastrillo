@@ -57,6 +57,7 @@ var referencePages = map[string]string{
 	"crypto":        "reference/crypto",
 	"keyring":       "reference/keyring",
 	"blobs":         "reference/blobs",
+	"objrec":        "reference/objrec",
 	"carlos":        "reference/carlos",
 	"eventlog":      "reference/eventlog",
 	"mail":          "reference/mail",

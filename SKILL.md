@@ -33,9 +33,8 @@ rastrillo new notes && cd notes && go mod tidy && go test ./...
 (also `--icons`, `--icon-delivery`, `--ux`) writes the whole §1 shape plus
 `go.mod`, migrations, templates, static assets, app-owned icons, a test
 harness including the browser drive, a `Makefile` whose `ci` target is the
-gate, and `.amadan/ci.d/` steps. It compiles, its tests pass and it
-serves before you write a line — hand-writing any of it redoes the
-scaffold's work. The theme lands as `static/theme.css`, the shell as
+gate, and `.amadan/ci.d/` steps. It compiles, passes its tests and
+serves before you write a line; never hand-write any of it. The theme lands as `static/theme.css`, the shell as
 `templates/layout.html`, both app-owned from then on.
 docs/site/templates.md
 
@@ -140,7 +139,7 @@ transaction-critical: (b). Switching is per package; schema and ledger
 are the same.
 docs/superpowers/specs/2026-09-26-gorm-vs-sql-findings.md
 
-Models are plain GORM structs — no base type, no embedding. Owner
+Models: no base type, no embedding. Owner
 column `UserID int64` tagged `gorm:"index"` is what `scope.Owned`
 filters on.
 
@@ -160,6 +159,10 @@ size, content type), and under 4 KiB may sit inline in SQLite — a rule
 stated everywhere and enforced nowhere. Presigned GET/PUT move bytes
 browser-to-bucket without the app proxying.
 docs/site/reference/blobs.md
+
+A central app with no database (a sign-in home, a hub) keeps records
+in `objrec`: `Create` wins once per key, `Update` refuses a stale
+version, `Mutate` retries. docs/site/reference/objrec.md
 
 Schema changes: edit a model, `rastrillo migration generate`, read the
 SQL before committing. Migrations apply once at boot, ledgered — never
@@ -426,8 +429,8 @@ with `{{define "up"}}/#nav-x{{end}}` and the nav link gets
 `profile` holds who is signed in (avatar, name, email); `account` holds only links.
 
 **One screen, one job.** A screen shows a thing, or asks for one thing —
-never both. It prevents stacking: a list page that also
-carries a create form, an import panel and a dropzone.
+never both: no list page that also carries a create form, an
+import panel and a dropzone.
 
 Nearly every interaction is the same four-step flow, as full pages or
 as modals (a modal is its own URL, with the same back button):
@@ -436,8 +439,7 @@ as modals (a modal is its own URL, with the same back button):
    sheet", "Import a spreadsheet". A link or button, never the form
    itself inlined.
 2. **A page for that action alone** — `GET /sheets/new` — one form, one
-   primary button. Two ways to make a sheet are two pages behind two
-   links, never two panels side by side.
+   primary button.
 3. **An interstitial only when the work outlives the request**: the jobs
    status page of §6. Skip it when the POST answers immediately.
 4. **A confirmation** — 303 to the new thing's show page, with a flash
@@ -498,8 +500,7 @@ target. docs/site/testing.md
   is never colour alone: a `status-pill`'s label and a `meter`'s
   fraction are always visible text; `Alert` (`role="alert"`) is for
   live problems, not ambient notes. A dashboard opens with `rst-stats`
-  holding `stat` cells, one `rst-stat="lead"`; there is no separate
-  headline component. Put the sign in `Delta` and pass `Tone` yourself —
+  holding `stat` cells, one `rst-stat="lead"`. Put the sign in `Delta` and pass `Tone` yourself —
   a fall is good news about half the time.
   A name inline with other content needs `<bdi>`, or an RTL name draws
   the number beside it to its LEFT. `ui.Pages` is strict: start each
