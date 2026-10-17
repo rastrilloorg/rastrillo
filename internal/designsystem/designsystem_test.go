@@ -355,6 +355,31 @@ func TestEveryPartialAppearsAcrossThePages(t *testing.T) {
 	}
 }
 
+// The shell demos and the demo application are static documents: a
+// scheme menu there would post to a /_theme nothing serves. Their
+// scheme block is overridden to render nothing — with a NON-empty
+// template, because text/template ignores an empty redefinition of a
+// block that has a body, so {{define "scheme"}}{{end}} leaves the
+// shipped menu in place. The partial's own sample is on a component
+// page, not here.
+func TestTheStaticDemosCarryNoSchemeMenu(t *testing.T) {
+	files := render(t)
+	var checked int
+	for name, body := range files {
+		base := path.Base(name)
+		if !strings.Contains(name, "/shells/") && !strings.HasPrefix(base, "demo") {
+			continue
+		}
+		checked++
+		if strings.Contains(string(body), "rst-scheme") {
+			t.Errorf("%s renders the scheme menu; the static demo has no /_theme to post to", name)
+		}
+	}
+	if checked == 0 {
+		t.Fatal("no shell demo or demo page found in the rendered tree")
+	}
+}
+
 // Every markup idiom ui.Styleguide ships is rendered somewhere in each
 // gallery, same marker mechanism and the same union.
 func TestEveryStyleguideSampleAppearsAcrossThePages(t *testing.T) {

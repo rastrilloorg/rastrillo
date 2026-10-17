@@ -749,15 +749,17 @@ func newPages() (*ui.Pages, error) {
 	})
 }
 
-// render adds the request's localizer, the language switcher's items and
-// the current path to data, then executes name into a buffer before
-// anything touches the wire: a template error becomes a clean 500 instead
-// of half a page.
+// render adds the request's localizer, the language switcher's items,
+// the current path and the colour scheme the cookie chose to data, then
+// executes name into a buffer before anything touches the wire: a
+// template error becomes a clean 500 instead of half a page. Scheme is
+// what the layout writes as data-theme; without it a chosen Dark would
+// paint System on every reload.
 func render(w http.ResponseWriter, r *http.Request, name string, data map[string]any) {
 	req := ui.ForRequest(r)
 	page := map[string]any{}
 	maps.Copy(page, data)
-	page["L"], page["Locales"], page["Return"] = req.L, req.Locales, req.Return
+	page["L"], page["Locales"], page["Return"], page["Scheme"] = req.L, req.Locales, req.Return, req.Scheme
 	if err := pages.Execute(w, name, page); err != nil {
 		http.Error(w, "something went wrong", http.StatusInternalServerError)
 	}
@@ -775,7 +777,7 @@ func ErrorPage(w http.ResponseWriter, r *http.Request, status int, ref string) {
 	// Without pages there is nothing to render, so a failed boot still
 	// answers a plain 500 rather than panicking.
 	var buf bytes.Buffer
-	if pagesErr != nil || pages.Execute(&buf, "errors", map[string]any{"L": pages.LocalizerFor(r), "Status": status, "Ref": ref}) != nil {
+	if pagesErr != nil || pages.Execute(&buf, "errors", map[string]any{"L": pages.LocalizerFor(r), "Scheme": rastrillo.SchemeFrom(r), "Status": status, "Ref": ref}) != nil {
 		http.Error(w, "something went wrong", http.StatusInternalServerError)
 		return
 	}

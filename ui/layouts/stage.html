@@ -1,5 +1,5 @@
 {{define "layout"}}{{$L := localizer $}}<!doctype html>
-<html lang="{{block "lang" .}}{{$L := localizer $}}{{if $L}}{{$L.Identity}}{{else}}en{{end}}{{end}}" dir="{{block "dir" .}}{{$L := localizer $}}{{if $L}}{{$L.Dir}}{{else}}ltr{{end}}{{end}}">
+<html lang="{{block "lang" .}}{{$L := localizer $}}{{if $L}}{{$L.Identity}}{{else}}en{{end}}{{end}}" dir="{{block "dir" .}}{{$L := localizer $}}{{if $L}}{{$L.Dir}}{{else}}ltr{{end}}{{end}}"{{with opt $ "Scheme"}} data-theme="{{.}}"{{end}}>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width">

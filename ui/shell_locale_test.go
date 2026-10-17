@@ -14,6 +14,10 @@ import (
 // default is the switcher over the page data's Locales and Return.
 const localeBlock = `{{block "locale" .}}{{$L := localizer $}}{{template "locale-menu" dict "L" $L "Items" (opt $ "Locales") "Return" (opt $ "Return")}}{{end}}`
 
+// schemeBlock follows it in the same shells: the colour-scheme switch
+// over the page data's Scheme and Return.
+const schemeBlock = `{{block "scheme" .}}{{$L := localizer $}}{{template "scheme-menu" dict "L" $L "Scheme" (opt $ "Scheme") "Return" (opt $ "Return")}}{{end}}`
+
 // A second locale turns on the /xx/ prefixes, so a shell that still
 // said lang="en" dir="ltr" and rendered no switcher would leave a
 // reader with no way to change language and lay an Arabic page out

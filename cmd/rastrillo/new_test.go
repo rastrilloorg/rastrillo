@@ -300,8 +300,11 @@ func TestRenderTemplateWiresErrorPage(t *testing.T) {
 	if !strings.Contains(src, "func ErrorPage(w http.ResponseWriter, r *http.Request, status int, ref string)") {
 		t.Errorf("render.go does not export ErrorPage with the ErrorPageFunc signature:\n%s", src)
 	}
-	if !strings.Contains(src, `pages.Execute(&buf, "errors", map[string]any{"L": pages.LocalizerFor(r), "Status": status, "Ref": ref})`) {
-		t.Errorf("render.go's ErrorPage does not render the \"errors\" page in the request's language:\n%s", src)
+	// Scheme too: a 500 after a panic reaches ErrorPage outside render,
+	// and without it the error page would paint System for a reader who
+	// chose Dark.
+	if !strings.Contains(src, `pages.Execute(&buf, "errors", map[string]any{"L": pages.LocalizerFor(r), "Scheme": rastrillo.SchemeFrom(r), "Status": status, "Ref": ref})`) {
+		t.Errorf("render.go's ErrorPage does not render the \"errors\" page in the request's language and scheme:\n%s", src)
 	}
 }
 

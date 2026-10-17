@@ -113,6 +113,11 @@ twelve ship translated. **Any locale you add must translate the
 `rastrillo.ui.*` keys or `generate --check` fails.**
 docs/site/localization.md
 
+Colour scheme: every shell offers Light, Dark and System beside the
+language menu (`scheme-menu` posts to `/_theme`; cookie
+`rastrillo_scheme`; `ui.ForRequest` carries `Scheme`; the layout
+writes `data-theme`). Do not hand-roll a toggle. docs/site/reference/ui.md
+
 ## 2. Data
 
 **Pick the data layer before the first model; both are supported.**

@@ -334,10 +334,14 @@ func ThemeNames() []string { return append([]string(nil), themeNames...) }
 // light-dark(<light>, <dark>) under color-scheme: light dark, and the two
 // rules at the bottom — :root[data-theme="light"] and
 // :root[data-theme="dark"], each setting nothing but color-scheme — are
-// the whole explicit toggle: changing color-scheme re-resolves every
-// light-dark() in the file at once, in both directions. Radii and shadows
-// live here too, so a theme can change how an app feels and not only what
-// colour it is.
+// the theme's half of the switch: changing color-scheme re-resolves
+// every light-dark() in the file at once, in both directions. The other
+// half ships with the shells: the scheme-menu partial posts Light, Dark
+// or System to rastrillo.SchemeSwitchPath, the cookie it writes is what
+// every layout renders as data-theme on <html> (Localized.Scheme), and
+// rastrillo.js applies a choice in place when scripts run. No attribute
+// is System, the OS deciding. Radii and shadows live here too, so a
+// theme can change how an app feels and not only what colour it is.
 func ThemeCSS(name string) ([]byte, bool) {
 	b, err := fs.ReadFile(themesFS, "themes/"+name+".css")
 	return b, err == nil

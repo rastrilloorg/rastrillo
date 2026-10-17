@@ -160,7 +160,17 @@ import (
 // the stacking example's aftermath, the CSS floor's date) paid 249;
 // the file landed at 31,365, 465 over, and the ceiling is raised by
 // exactly that, so there is no slack.
-const skillBudget = 31_365
+//
+// Raised 31,365 -> 31,630 on 2026-10-15 for one paragraph: the
+// colour-scheme switch. Four apps hand-rolled a toggle before the
+// framework shipped one, because nothing told an agent the shells
+// offer it; the next agent reading only the source would see the
+// themes' data-theme rules and build a fifth. The paragraph names the
+// partial, the route, the cookie, the field and the attribute, in 265
+// bytes. The file had no slack after the previous raise and no line
+// in the locales section restates another, so the ceiling is raised
+// by exactly the addition.
+const skillBudget = 31_630
 
 // TestSkillMDStaysWithinBudget makes the budget mechanical rather than
 // remembered: several release evenings have ended with a wc -c dance

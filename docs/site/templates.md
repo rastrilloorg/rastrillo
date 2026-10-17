@@ -108,20 +108,23 @@ delivery mode changes. See [Icons](/docs/icons).
 They span the list-screen, display, form and route families:
 
 ```text
-back-nav      field            field-url           notice
-badge         field-check      form-error          page-header
-bulk-bar      field-date       form-foot           pagination
-callout       field-daterange  job-status          person
-choice-field  field-datetime   list-bar            row-menu
-confirm-form  field-money      list-bar-search     seg-tabs
-detail-list   field-select     list-row-action     signin
-dropdown      field-text       list-search-submit  signin-title
-empty-state   field-textarea   locale-menu         stat
-error-page    field-time       meter               status-pill
+back-nav      field-check      form-foot           person
+badge         field-date       job-status          row-menu
+bulk-bar      field-daterange  list-bar            scheme-menu
+callout       field-datetime   list-bar-search     seg-tabs
+choice-field  field-money      list-row-action     signin
+confirm-form  field-select     list-search-submit  signin-title
+detail-list   field-text       locale-menu         stat
+dropdown      field-textarea   meter               status-pill
+empty-state   field-time       notice
+error-page    field-url        page-header
+field         form-error       pagination
 ```
 
 `locale-menu` is the language switcher; see
-[Localization](/docs/localization).
+[Localization](/docs/localization). `scheme-menu` is the colour-scheme
+switch beside it, Light, Dark and System; see
+[Themes](/docs/reference/ui#themes).
 
 Each partial's file carries its data contract in a comment above the
 `{{define}}`, and `ui_test.go`'s `TestAllPartialsAreDefined` is the
@@ -219,11 +222,11 @@ judgement call. It stays a plain div until someone drives it.
 
 ### Menus close each other
 
-Every `dropdown`, row menu and `locale-menu` the library emits carries
-`name="rst-menus"`, so opening one closes whichever was open. That is
-the native `<details name>` group and costs no JavaScript. Pass
-`MenuGroup` to `dropdown`, `locale-menu` or `bulk-bar` to put a menu in
-a group of its own.
+Every `dropdown`, row menu, `locale-menu` and `scheme-menu` the library
+emits carries `name="rst-menus"`, so opening one closes whichever was
+open. That is the native `<details name>` group and costs no
+JavaScript. Pass `MenuGroup` to `dropdown`, `locale-menu`, `scheme-menu`
+or `bulk-bar` to put a menu in a group of its own.
 
 A nested `rst-menu-group` **must** use a different name from the menu
 around it. `<details name>` exclusivity is document-wide, not

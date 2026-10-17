@@ -68,6 +68,16 @@ so there is nothing to wire. A one-locale app has no items, and the
 switcher renders nothing. Each item lands on the same path under the new
 prefix, and the cookie makes the choice stick on unprefixed paths too.
 
+The colour scheme has the same kind of switch beside it. Every shell
+offers Light, Dark and System in a `scheme-menu` that posts to the
+framework's `POST /_theme`; the choice is stored in the
+`rastrillo_scheme` cookie, cleared for System, and `ui.ForRequest`
+reads it as `Scheme` so the layout writes `data-theme` on `<html>`
+before the first paint. With JavaScript on, `rastrillo.js` applies the
+choice in place and writes the same cookie. The switch picks the
+scheme only; the theme (`day`, `plain`, `signal`) stays your choice.
+See [Themes](/docs/reference/ui#themes).
+
 ## Looking strings up
 
 ```go

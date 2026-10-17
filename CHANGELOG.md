@@ -10,6 +10,28 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+**A colour-scheme switch in every shell.** Readers get Light, Dark and
+System beside the language menu, with or without JavaScript. The
+framework mounts `POST /_theme`, which stores the choice in the
+`rastrillo_scheme` cookie and clears it for System; the layouts write
+`data-theme` on `<html>` from it, so the first paint is right; and
+`rastrillo.js` applies a choice in place. The switch picks the scheme
+only; the theme stays the app's choice. An app with its own switch
+keeps it: its own `/_theme` handler wins, and `Options.NoSchemeSwitch`
+covers one the mux cannot see. To offer
+the shipped one, copy the `scheme` block from the shipped layout into
+yours (it sits beside the `locale` block) and take the new
+`rastrillo.js`; an older `rastrillo.js` still posts the form.
+
+- New partial `scheme-menu`, the colour-scheme switch; the `scheme` block in every shell but `stage` renders it.
+- New field `ui.Localized.Scheme`, the scheme the cookie chose; `ui.ForRequest` fills it, and its `Return` now carries the locale prefix the request came in with, so a switch that redirects back lands on the same page.
+- New functions `rastrillo.SchemeFrom` and `rastrillo.SchemeSwitchHandler`, and constants `SchemeCookie` and `SchemeSwitchPath`; `Serve` mounts the route unless the app's mux already handles the path.
+- New option `Options.NoSchemeSwitch`, for an app whose router (chi, say) handles `/_theme` where the mux cannot see it.
+- Both switchers now refuse a return path with a backslash or a control character anywhere, not only at its start; before, `/a/../\evil.example/` and a tab reached `Location` and left the site.
+- New function `rastrillo.LocalePrefix`, the locale segment the middleware stripped from the path.
+- `rastrillo.js` grew a section for the switch and its cap rose from 16KB to 17KB.
+- New catalog keys `rastrillo.ui.shell_scheme`, `scheme_light`, `scheme_dark` and `scheme_system`; a locale you ship yourself must translate them.
+
 **Multi-currency money (breaking upgrade for apps with money).** Money
 is now stored with its currency, and the locale data that formats it
 comes from language packs.

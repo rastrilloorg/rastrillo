@@ -224,7 +224,7 @@ body {
    component that sizes its icon (the 12px caret, .rst-caret) still
    wins. Not the list grid's title: it is the row's name, text that an
    icon should follow, and the row is its target. */
-:where(.rst-btn, .rst-search, .rst-search__clear, .rst-ftok a, .rst-help, .rst-dropdown > summary, .rst-dropdown__menu a, .rst-dropdown__menu button, .rst-dropdown__menu .rst-menu-group > summary, .rst-row-menu__panel a, .rst-row-menu__panel button, .rst-locale button, .rst-combo__option, .rst-dtp__row, .rst-dtp__pick, .rst-cal__nav, .rst-row__action, .rst-row-menu > summary, .rst-pagination > a, .rst-seg-tabs a, .rst-switch, .rst-choice__cards label, .rst-tblock__head, .rst-bulkbar__close, .rst-bulkbar__escalate, .rst-modal-close, .rst-modal-panel > nav a, .rst-back-nav a, .rst-signin__providers > a, .rst-shell__brand, .rst-shell__nav a, .rst-shell__menu > summary, .rst-shell__chrome > summary, .rst-shell__account > summary, .rst-shell__back > a) .icon, :where([rst-btn], [rst-search], [rst-search-clear], [rst-ftok] a, [rst-help], [rst-dropdown] > summary, [rst-dropdown-menu] a, [rst-dropdown-menu] button, [rst-dropdown-menu] [rst-menu-group] > summary, [rst-row-menu-panel] a, [rst-row-menu-panel] button, [rst-locale] button, [rst-combo-option], [rst-dtp-row], [rst-dtp-pick], [rst-cal-nav], [rst-row-action], [rst-row-menu] > summary, [rst-pagination] > a, [rst-seg-tabs] a, [rst-switch], [rst-choice-cards] label, [rst-tblock-head], [rst-bulkbar-close], [rst-bulkbar-escalate], [rst-modal-close], [rst-modal-panel] > nav a, [rst-back-nav] a, [rst-signin-providers] > a, [rst-shell-brand], [rst-shell-nav] a, [rst-shell-menu] > summary, [rst-shell-chrome] > summary, [rst-shell-account] > summary, [rst-shell-back] > a) .icon {
+:where(.rst-btn, .rst-search, .rst-search__clear, .rst-ftok a, .rst-help, .rst-dropdown > summary, .rst-dropdown__menu a, .rst-dropdown__menu button, .rst-dropdown__menu .rst-menu-group > summary, .rst-row-menu__panel a, .rst-row-menu__panel button, .rst-locale button, .rst-scheme button, .rst-combo__option, .rst-dtp__row, .rst-dtp__pick, .rst-cal__nav, .rst-row__action, .rst-row-menu > summary, .rst-pagination > a, .rst-seg-tabs a, .rst-switch, .rst-choice__cards label, .rst-tblock__head, .rst-bulkbar__close, .rst-bulkbar__escalate, .rst-modal-close, .rst-modal-panel > nav a, .rst-back-nav a, .rst-signin__providers > a, .rst-shell__brand, .rst-shell__nav a, .rst-shell__menu > summary, .rst-shell__chrome > summary, .rst-shell__account > summary, .rst-shell__back > a) .icon, :where([rst-btn], [rst-search], [rst-search-clear], [rst-ftok] a, [rst-help], [rst-dropdown] > summary, [rst-dropdown-menu] a, [rst-dropdown-menu] button, [rst-dropdown-menu] [rst-menu-group] > summary, [rst-row-menu-panel] a, [rst-row-menu-panel] button, [rst-locale] button, [rst-scheme] button, [rst-combo-option], [rst-dtp-row], [rst-dtp-pick], [rst-cal-nav], [rst-row-action], [rst-row-menu] > summary, [rst-pagination] > a, [rst-seg-tabs] a, [rst-switch], [rst-choice-cards] label, [rst-tblock-head], [rst-bulkbar-close], [rst-bulkbar-escalate], [rst-modal-close], [rst-modal-panel] > nav a, [rst-back-nav] a, [rst-signin-providers] > a, [rst-shell-brand], [rst-shell-nav] a, [rst-shell-menu] > summary, [rst-shell-chrome] > summary, [rst-shell-account] > summary, [rst-shell-back] > a) .icon {
   block-size: 1rem;
   inline-size: 1rem;
 }
@@ -1336,7 +1336,9 @@ a.rst-nm:hover { color: var(--rst-accent); }
 .rst-dropdown__menu hr,
 [rst-dropdown-menu] hr,
 .rst-locale hr,
-[rst-locale] hr { border: 0; border-top: 1px solid var(--rst-line); margin: 0.25rem 0; }
+.rst-scheme hr,
+[rst-locale] hr,
+[rst-scheme] hr { border: 0; border-top: 1px solid var(--rst-line); margin: 0.25rem 0; }
 .rst-danger { color: var(--rst-tone-negative-fg); }
 .rst-row-menu__panel .rst-danger:hover, [rst-row-menu-panel] .rst-danger:hover { background: var(--rst-tone-negative-bg); }
 /* A POST item is a one-button form: no margin, so it lines up with a
@@ -1383,11 +1385,13 @@ a.rst-nm:hover { color: var(--rst-accent); }
 /* locale-menu — the language switcher is a dropdown whose items are
    one-field POST forms (spec §2.4), so the button inside each form
    takes the menu-link styling. Autonyms keep their own script, so no
-   text-transform here, ever. */
-.rst-locale form, [rst-locale] form { margin: 0; }
-.rst-locale button, [rst-locale] button { background: none; border: 0; border-radius: var(--rst-radius-sm); color: var(--rst-text); cursor: pointer; display: block; font: inherit; font-size: var(--rst-fs-sm); padding: 0.4rem 0.65rem; text-align: start; width: 100%; }
-.rst-locale button:hover, [rst-locale] button:hover { background: var(--rst-accent-soft); }
-.rst-locale button[aria-current], [rst-locale] button[aria-current] { color: var(--rst-accent); font-weight: 600; }
+   text-transform here, ever. scheme-menu is the same shape for the
+   colour scheme, and shares every rule, so the two menus beside each
+   other in a shell cannot drift apart. */
+.rst-locale form, .rst-scheme form, [rst-locale] form, [rst-scheme] form { margin: 0; }
+.rst-locale button, .rst-scheme button, [rst-locale] button, [rst-scheme] button { background: none; border: 0; border-radius: var(--rst-radius-sm); color: var(--rst-text); cursor: pointer; display: block; font: inherit; font-size: var(--rst-fs-sm); padding: 0.4rem 0.65rem; text-align: start; width: 100%; }
+.rst-locale button:hover, .rst-scheme button:hover, [rst-locale] button:hover, [rst-scheme] button:hover { background: var(--rst-accent-soft); }
+.rst-locale button[aria-current], .rst-scheme button[aria-current], [rst-locale] button[aria-current], [rst-scheme] button[aria-current] { color: var(--rst-accent); font-weight: 600; }
 /* Task 2's menu only ever held links; bulk-bar's actions menu (Task 4)
    is real submit buttons on the surrounding form, so the same panel
    needs button styling too — mirrors .rst-row-menu__panel's combined
@@ -1399,7 +1403,7 @@ a.rst-nm:hover { color: var(--rst-accent); }
    the content box and then added its own 0.65rem of side padding, so
    every hover highlight bled ~20.8px past the panel's rounded edge.
    One rule for all three panels, because it is one cause. */
-.rst-row-menu__panel a, [rst-row-menu-panel] a, .rst-row-menu__panel button, [rst-row-menu-panel] button, .rst-locale button, [rst-locale] button, .rst-dropdown__menu button, [rst-dropdown-menu] button { box-sizing: border-box; }
+.rst-row-menu__panel a, [rst-row-menu-panel] a, .rst-row-menu__panel button, [rst-row-menu-panel] button, .rst-locale button, .rst-scheme button, [rst-locale] button, [rst-scheme] button, .rst-dropdown__menu button, [rst-dropdown-menu] button { box-sizing: border-box; }
 .rst-dropdown__menu .rst-danger:hover, [rst-dropdown-menu] .rst-danger:hover { background: var(--rst-tone-negative-bg); }
 .rst-dropdown__menu .rst-menu-group > summary, [rst-dropdown-menu] [rst-menu-group] > summary { color: var(--rst-text-muted); cursor: pointer; font-size: var(--rst-fs-sm); list-style: none; padding: 0.4rem 0.65rem; }
 .rst-dropdown__menu .rst-menu-group > summary::-webkit-details-marker, [rst-dropdown-menu] [rst-menu-group] > summary::-webkit-details-marker { display: none; }
@@ -2833,7 +2837,7 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
      label pulled to the middle). On a phone each control grows well
      past its text, and these centre the text in it. */
   .rst-btn, [rst-btn] { justify-content: center; }
-  .rst-dropdown__menu .rst-menu-group > summary, [rst-dropdown-menu] [rst-menu-group] > summary, .rst-dropdown__menu a, [rst-dropdown-menu] a, .rst-dropdown__menu button, [rst-dropdown-menu] button, .rst-row-menu__panel a, [rst-row-menu-panel] a, .rst-row-menu__panel button, [rst-row-menu-panel] button, .rst-locale button, [rst-locale] button, .rst-combo__option, [rst-combo-option], .rst-dtp__row, [rst-dtp-row], .rst-modal-panel > nav a, [rst-modal-panel] > nav a { align-items: center; display: flex; }
+  .rst-dropdown__menu .rst-menu-group > summary, [rst-dropdown-menu] [rst-menu-group] > summary, .rst-dropdown__menu a, [rst-dropdown-menu] a, .rst-dropdown__menu button, [rst-dropdown-menu] button, .rst-row-menu__panel a, [rst-row-menu-panel] a, .rst-row-menu__panel button, [rst-row-menu-panel] button, .rst-locale button, .rst-scheme button, [rst-locale] button, [rst-scheme] button, .rst-combo__option, [rst-combo-option], .rst-dtp__row, [rst-dtp-row], .rst-modal-panel > nav a, [rst-modal-panel] > nav a { align-items: center; display: flex; }
   .rst-shell-topbar .rst-shell__nav a, [rst-shell-topbar] [rst-shell-nav] a, .rst-shell-sidebar .rst-shell__nav a, [rst-shell-sidebar] [rst-shell-nav] a, .rst-shell-console .rst-shell__nav a, [rst-shell-console] [rst-shell-nav] a { align-items: center; display: flex; }
   .rst-pagination > a, [rst-pagination] > a, .rst-pagination > span, [rst-pagination] > span, .rst-seg-tabs a, [rst-seg-tabs] a { align-items: center; display: inline-flex; justify-content: center; }
   /* A phone's chip is the 44px tap square it has always been, narrower
@@ -2943,7 +2947,7 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
    space back. On a desktop a menu item is still a block, the gap does
    nothing, and its own space stays. :where() weighs nothing, so a
    component that sets its own gap (the index rows) keeps it. */
-:where(.rst-dropdown__menu a, .rst-dropdown__menu button, .rst-row-menu__panel a, .rst-row-menu__panel button, .rst-locale button, .rst-shell__nav a, .rst-modal-panel > nav a, .rst-back-nav a, .rst-shell__brand, .rst-row__action, .rst-signin__providers > a), :where([rst-dropdown-menu] a, [rst-dropdown-menu] button, [rst-row-menu-panel] a, [rst-row-menu-panel] button, [rst-locale] button, [rst-shell-nav] a, [rst-modal-panel] > nav a, [rst-back-nav] a, [rst-shell-brand], [rst-row-action], [rst-signin-providers] > a) { column-gap: 0.3em; }
+:where(.rst-dropdown__menu a, .rst-dropdown__menu button, .rst-row-menu__panel a, .rst-row-menu__panel button, .rst-locale button, .rst-scheme button, .rst-shell__nav a, .rst-modal-panel > nav a, .rst-back-nav a, .rst-shell__brand, .rst-row__action, .rst-signin__providers > a), :where([rst-dropdown-menu] a, [rst-dropdown-menu] button, [rst-row-menu-panel] a, [rst-row-menu-panel] button, [rst-locale] button, [rst-scheme] button, [rst-shell-nav] a, [rst-modal-panel] > nav a, [rst-back-nav] a, [rst-shell-brand], [rst-row-action], [rst-signin-providers] > a) { column-gap: 0.3em; }
 .rst-btn, [rst-btn] { box-sizing: border-box; min-block-size: var(--rst-target); min-inline-size: var(--rst-target); }
 /* min-inline-size for a field in a flex row (a bulk bar), which
    shrinks it past the floor; a stretched field is far wider anyway.
@@ -2970,7 +2974,7 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
    no display of its own, and align-content centres a block's content
    without turning the item into a flex box, which would drop the
    spaces between the inline pieces of its label. */
-.rst-dropdown__menu a, [rst-dropdown-menu] a, .rst-dropdown__menu button, [rst-dropdown-menu] button, .rst-row-menu__panel a, [rst-row-menu-panel] a, .rst-row-menu__panel button, [rst-row-menu-panel] button, .rst-locale button, [rst-locale] button, .rst-combo__option, [rst-combo-option] { align-content: center; box-sizing: border-box; min-block-size: var(--rst-target); }
+.rst-dropdown__menu a, [rst-dropdown-menu] a, .rst-dropdown__menu button, [rst-dropdown-menu] button, .rst-row-menu__panel a, [rst-row-menu-panel] a, .rst-row-menu__panel button, [rst-row-menu-panel] button, .rst-locale button, .rst-scheme button, [rst-locale] button, [rst-scheme] button, .rst-combo__option, [rst-combo-option] { align-content: center; box-sizing: border-box; min-block-size: var(--rst-target); }
 .rst-dtp__row, [rst-dtp-row] { box-sizing: border-box; min-block-size: var(--rst-target); }
 
 /* The date field's pick button and the calendar's controls. */

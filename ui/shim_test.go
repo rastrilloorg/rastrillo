@@ -54,6 +54,12 @@ func TestShimContract(t *testing.T) {
 		// browsers strip tab/CR/LF before parsing, so "/\t/evil"
 		// resolves scheme-relative — mirroring sessions.SafeReturn.
 		"\\u0000-\\u001f\\u007f",
+		// The colour-scheme switch: the menu it answers to in both
+		// spellings, the attribute the themes read, and the cookie
+		// with the attributes scheme.go gives it — the same name and
+		// age, or a reload paints the scheme the reader just left.
+		`"[rst-scheme],.rst-scheme"`, "data-theme",
+		`rastrillo_scheme=`, "Max-Age=31536000", "Max-Age=0", "Path=/; SameSite=Lax", "; Secure",
 	} {
 		if !strings.Contains(js, want) {
 			t.Errorf("shim does not mention %q", want)
@@ -285,8 +291,25 @@ func TestBusyRuleIsTheDefault(t *testing.T) {
 // select.js keeps the 12KB cap it reached separately. The two files
 // sharing a number was a coincidence of history, not a rule: this one
 // now carries three sections, and that one carries one widget.
+//
+// Raised a third time, 16KB → 17KB, by the colour-scheme switch.
+// 15,340 → 16,586 bytes: 1,246 added, of which 746 are CODE — one
+// delegated capture-phase submit listener that sets or removes
+// data-theme, writes the server's cookie with the server's attributes,
+// moves aria-current and closes the menu — and 500 are COMMENT: the
+// section's five lines and one sentence in the header's section list.
+// The cookie line alone is 180 bytes, because the name, Max-Age, Path,
+// SameSite and the Secure switch have to match scheme.go exactly or
+// the next server render paints a different scheme from the one the
+// reader just chose. Trimming to fit under 16KB left the section at
+// its edge with 6 bytes spare, the position the busy rule's round
+// warned about above; splitting was rejected on the ledger's own
+// arithmetic — 746 bytes of behaviour does not earn a seventh
+// scaffolded file and a seventh <script> on every page — and the
+// section belongs beside the menu light dismiss it shares a vocabulary
+// with.
 func TestShimIsSmall(t *testing.T) {
-	if n := len(ShimJS()); n > 16*1024 {
+	if n := len(ShimJS()); n > 17*1024 {
 		t.Fatalf("shim is %d bytes; the point is that an app owner can read it in one sitting — trim it", n)
 	}
 	if bytes.Contains(ShimJS(), []byte("\t")) {

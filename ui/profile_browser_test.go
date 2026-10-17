@@ -333,14 +333,17 @@ func TestTheProfileMenuIsADropUpAtTheRailsFoot(t *testing.T) {
 // signed-in person's avatar, on a desktop at the rail's foot and on the
 // phone index at the top; the card then holds the name and email. Only
 // the shell's placeholder, an app with no profile at all and nothing to
-// choose, leaves the foot out.
+// choose, leaves the foot out — and "nothing to choose" now means the
+// app emptied the scheme block too, since the shipped shell always
+// offers the colour scheme and so always has a card worth opening.
 func TestThePersonNeverVanishesFromTheRail(t *testing.T) {
 	src, _ := Layout("sidebar")
 	noLocale := `{{define "locale"}}{{if false}}x{{end}}{{end}}`
+	noScheme := `{{define "scheme"}}{{if false}}x{{end}}{{end}}`
 	pages := map[string]string{
 		"/person":      shellLayoutPage(t, src, "ltr", profileDefs("Harbour")[0], profileDefs("Harbour")[1], noLocale),
 		"/person-idx":  shellLayoutPage(t, src, "ltr", profileDefs("Harbour")[0], profileDefs("Harbour")[1], noLocale, `{{define "view"}}index{{end}}`),
-		"/placeholder": shellLayoutPage(t, src, "ltr", noLocale),
+		"/placeholder": shellLayoutPage(t, src, "ltr", noLocale, noScheme),
 	}
 	rig := harness.New(t, func(string) http.Handler { return shellAssets(t, pages) })
 	ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)

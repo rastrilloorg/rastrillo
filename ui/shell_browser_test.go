@@ -562,7 +562,7 @@ type barReading struct {
 	MenuOpen     bool // ...and its open attribute is set
 	TailShown    bool // nav/account/locale are on the page at all
 	Rows         int  // distinct block-start positions among the three: 1 = inline, 3 = stacked
-	AccountEndPx int  // gap from the account menu's inline end to the bar's
+	AccountEndPx int  // gap from the end of the account, language and scheme menus to the bar's
 	AccountMenu  bool // the account dropdown's panel is drawn
 	Overflow     int  // how far the document scrolls past its own client width
 	MainTop      int  // main's block-start edge: the page under the bar
@@ -636,12 +636,13 @@ func TestTheTopbarCollapsesItsTailBehindOneDisclosure(t *testing.T) {
 	  const nav = document.querySelector("[rst-shell-nav]");
 	  const account = document.querySelector("[rst-shell-account]");
 	  const locale = document.querySelector("#bar-locale");
+	  const scheme = document.querySelector("[rst-scheme]");
 	  const panel = account.querySelector("[rst-dropdown-menu]");
 	  // Rows by overlap, not by equal tops: the bar is align-items:
 	  // center, so three inline blocks of three different heights sit on
 	  // one row with three different top edges. Two boxes are on the
 	  // same row when their vertical ranges overlap.
-	  const boxes = [nav, account, locale].filter(shown)
+	  const boxes = [nav, account, locale, scheme].filter(shown)
 	    .map(el => el.getBoundingClientRect()).sort((a, b) => a.top - b.top);
 	  let rows = 0, edge = -Infinity;
 	  for (const b of boxes) {
@@ -652,9 +653,12 @@ func TestTheTopbarCollapsesItsTailBehindOneDisclosure(t *testing.T) {
 	  return JSON.stringify({
 	    MenuShown: shown(menu.querySelector("summary")),
 	    MenuOpen: menu.open,
-	    TailShown: shown(nav) || shown(account) || shown(locale),
+	    TailShown: shown(nav) || shown(account) || shown(locale) || shown(scheme),
 	    Rows: rows,
-	    AccountEndPx: Math.round(bar.getBoundingClientRect().right - account.getBoundingClientRect().right),
+	    // The account menu's margin-inline-start: auto pushes it and the
+	    // language and scheme menus after it to the bar's end, so the gap
+	    // is read after the last of the three that is drawn.
+	    AccountEndPx: Math.round(bar.getBoundingClientRect().right - Math.max(...[account, locale, scheme].filter(shown).map(el => el.getBoundingClientRect().right))),
 	    AccountMenu: shown(panel),
 	    Overflow: de.scrollWidth - de.clientWidth,
 	    MainTop: Math.round(document.querySelector("main").getBoundingClientRect().top)
@@ -688,10 +692,10 @@ func TestTheTopbarCollapsesItsTailBehindOneDisclosure(t *testing.T) {
 		t.Fatal("nav, account and locale are not drawn at 1280px at all: the wide layout is gone, not preserved")
 	}
 	if wide.Rows != 1 {
-		t.Errorf("the bar's three tail blocks sit on %d rows at 1280px, want 1 — the wide layout is one row and the collapse must not have changed it", wide.Rows)
+		t.Errorf("the bar's tail blocks sit on %d rows at 1280px, want 1 — the wide layout is one row and the collapse must not have changed it", wide.Rows)
 	}
 	if wide.AccountEndPx > 120 {
-		t.Errorf("the account menu ends %dpx short of the bar's inline end; margin-inline-start: auto is no longer reaching it", wide.AccountEndPx)
+		t.Errorf("the account, language and scheme menus end %dpx short of the bar's inline end; margin-inline-start: auto is no longer reaching the account menu", wide.AccountEndPx)
 	}
 
 	// 1b. And at exactly 800px, which is the breakpoint itself. A
@@ -738,8 +742,8 @@ func TestTheTopbarCollapsesItsTailBehindOneDisclosure(t *testing.T) {
 	if !open.TailShown {
 		t.Fatal("opening the disclosure at 390px revealed nothing")
 	}
-	if open.Rows != 3 {
-		t.Errorf("the opened tail puts its three blocks on %d rows, want 3 — collapsed, they stack; a wrapped row is the state this replaced", open.Rows)
+	if open.Rows != 4 {
+		t.Errorf("the opened tail puts its four blocks (nav, account, language, scheme) on %d rows, want 4 — collapsed, they stack; a wrapped row is the state this replaced", open.Rows)
 	}
 	// The opened tail is a card OVER the page, not a column in the
 	// bar's flow: the page under it does not move.

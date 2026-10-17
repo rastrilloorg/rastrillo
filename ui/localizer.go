@@ -47,6 +47,11 @@ type Localized struct {
 	L       *Localizer
 	Locales []rastrillo.LocaleItem
 	Return  string
+	// Scheme is the colour scheme the reader chose, "light" or "dark",
+	// or "" for System: the shells write it as data-theme on <html>
+	// so the first paint is already in it, and the scheme menu marks
+	// it current.
+	Scheme string
 }
 
 // Localizer is the localizer the data carries.
@@ -59,9 +64,22 @@ func (l Localized) Localizer() *Localizer { return l.L }
 func (l Localized) Request() Localized { return l }
 
 // ForRequest is the Localized for r: the localizer WithLocalizer put
-// there, the switcher's items, and the URL to come back to.
+// there, the switcher's items, the URL to come back to, and the colour
+// scheme the cookie chose.
+//
+// Return is the page's real address, locale prefix included: the
+// locale middleware strips /fr before the app sees the path, and
+// rastrillo.LocalePrefix puts it back. The scheme switch redirects to
+// Return as given, so without the prefix a reader on /fr/orders would
+// come back to /orders; the language switch strips any prefix it is
+// given and re-adds the chosen one, so it lands where it always did.
 func ForRequest(r *http.Request) Localized {
-	return Localized{L: LocalizerFrom(r), Locales: rastrillo.LocaleItems(r), Return: r.URL.RequestURI()}
+	return Localized{
+		L:       LocalizerFrom(r),
+		Locales: rastrillo.LocaleItems(r),
+		Return:  rastrillo.LocalePrefix(r) + r.URL.RequestURI(),
+		Scheme:  rastrillo.SchemeFrom(r),
+	}
 }
 
 // localizerKey is unexported so no other package can store a value

@@ -266,6 +266,11 @@ func TestSwitchHandlerRefusals(t *testing.T) {
 		{"protocol-relative return", switchReq("fr", "//evil.example/"), http.StatusBadRequest},
 		{"absolute return", switchReq("fr", "https://evil.example/"), http.StatusBadRequest},
 		{"backslash return", switchReq("fr", "/\\evil.example/"), http.StatusBadRequest},
+		// The two shapes the shared guard once let through: a backslash
+		// after a dot-dot that http.Redirect's clean brings to the
+		// front, and a tab that browsers strip before parsing.
+		{"backslash after dot-dot", switchReq("fr", "/a/../\\evil.example/"), http.StatusBadRequest},
+		{"tab return", switchReq("fr", "/\t/evil.example/"), http.StatusBadRequest},
 		{"GET", httptest.NewRequest("GET", LocaleSwitchPath, nil), http.StatusMethodNotAllowed},
 	}
 	crossSite := switchReq("fr", "/")
@@ -420,5 +425,29 @@ func TestPTRetagKeepsOldURLsAndCookies(t *testing.T) {
 	}
 	if rec.Code != http.StatusSeeOther || rec.Header().Get("Location") != "/pt-PT/notes" || cookie != "pt-PT" {
 		t.Errorf("switch to pt: %d %q, cookie %q; want 303 /pt-PT/notes, cookie pt-PT", rec.Code, rec.Header().Get("Location"), cookie)
+	}
+}
+
+// LocalePrefix is the prefix the request arrived with, and nothing
+// else: a cookie or Accept-Language picks a locale without putting a
+// prefix on the URL, and a switcher that returned to "/"+locale+path
+// for those would move a reader from /orders to /en/orders for having
+// changed the colour scheme.
+func TestLocalePrefix(t *testing.T) {
+	l := mwLocales(t)
+	var got string
+	h := l.Middleware(http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) { got = LocalePrefix(r) }))
+	h.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest("GET", "/fr/orders", nil))
+	if got != "/fr" {
+		t.Errorf("/fr/orders: LocalePrefix = %q, want /fr", got)
+	}
+	req := httptest.NewRequest("GET", "/orders", nil)
+	req.AddCookie(&http.Cookie{Name: LocaleCookie, Value: "fr"})
+	h.ServeHTTP(httptest.NewRecorder(), req)
+	if got != "" {
+		t.Errorf("cookie-picked locale: LocalePrefix = %q, want empty", got)
+	}
+	if got := LocalePrefix(httptest.NewRequest("GET", "/fr/orders", nil)); got != "" {
+		t.Errorf("without Middleware: LocalePrefix = %q, want empty", got)
 	}
 }

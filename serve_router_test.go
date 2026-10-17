@@ -182,3 +182,117 @@ func TestLocaleSwitchRouteMountedOnlyWithLocales(t *testing.T) {
 		t.Errorf("prefixed: status %d", rec.Code)
 	}
 }
+
+// The scheme switch is mounted with or without locales: a one-language
+// app has colours too. Under a locale prefix the same route answers,
+// and the return path goes back exactly as given, prefix included, so
+// a reader on /ga/x who picks Dark is still reading Irish afterwards.
+func TestSchemeSwitchRouteMountedAlways(t *testing.T) {
+	post := func(h http.Handler, path, body string) *httptest.ResponseRecorder {
+		req := httptest.NewRequest("POST", path, strings.NewReader(body))
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		req.Header.Set("Sec-Fetch-Site", "same-origin")
+		rec := httptest.NewRecorder()
+		h.ServeHTTP(rec, req)
+		return rec
+	}
+	without, err := buildHandler(Options{Mux: http.NewServeMux()})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if rec := post(without, SchemeSwitchPath, "scheme=dark&return=/x"); rec.Code != http.StatusSeeOther || rec.Header().Get("Location") != "/x" {
+		t.Errorf("no locales: status %d Location %q", rec.Code, rec.Header().Get("Location"))
+	}
+	with, err := buildHandler(Options{Mux: http.NewServeMux(), Locales: []string{"en", "ga"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, path := range []string{SchemeSwitchPath, "/ga" + SchemeSwitchPath} {
+		if rec := post(with, path, "scheme=dark&return=/ga/x"); rec.Code != http.StatusSeeOther || rec.Header().Get("Location") != "/ga/x" {
+			t.Errorf("%s: status %d Location %q", path, rec.Code, rec.Header().Get("Location"))
+		}
+	}
+}
+
+// An app's own POST /_theme wins. Four family apps hand-rolled a theme
+// switch on that path before the framework had one, and an upgrade
+// must not take their route over: the framework's is mounted only when
+// the app's mux has nothing at that path. /_locale keeps its own
+// precedence (the framework's wins), which is pinned above.
+func TestAnAppsOwnSchemeRouteWins(t *testing.T) {
+	for _, pattern := range []string{"POST " + SchemeSwitchPath, SchemeSwitchPath} {
+		mux := http.NewServeMux()
+		mux.HandleFunc(pattern, func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusTeapot) })
+		h, err := buildHandler(Options{Mux: mux})
+		if err != nil {
+			t.Fatal(err)
+		}
+		req := httptest.NewRequest("POST", SchemeSwitchPath, strings.NewReader("theme=dark"))
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		req.Header.Set("Sec-Fetch-Site", "same-origin")
+		rec := httptest.NewRecorder()
+		h.ServeHTTP(rec, req)
+		if rec.Code != http.StatusTeapot {
+			t.Errorf("%q: status %d, want the app's 418", pattern, rec.Code)
+		}
+	}
+}
+
+// A host-qualified route is the app's for that host only. Ownership is
+// decided per request, because a probe at startup has no host to ask
+// with: it missed "POST example.com/_theme", so the framework took that
+// host's posts and answered the app's existing forms with 400.
+func TestAnAppsHostQualifiedSchemeRouteWinsForItsHost(t *testing.T) {
+	mux := http.NewServeMux()
+	mux.HandleFunc("POST example.com"+SchemeSwitchPath, func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusTeapot) })
+	h, err := buildHandler(Options{Mux: mux})
+	if err != nil {
+		t.Fatal(err)
+	}
+	post := func(host string) *httptest.ResponseRecorder {
+		req := httptest.NewRequest("POST", "http://"+host+SchemeSwitchPath, strings.NewReader("scheme=dark&return=/x"))
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		req.Header.Set("Sec-Fetch-Site", "same-origin")
+		rec := httptest.NewRecorder()
+		h.ServeHTTP(rec, req)
+		return rec
+	}
+	if rec := post("example.com"); rec.Code != http.StatusTeapot {
+		t.Errorf("example.com: status %d, want the app's 418", rec.Code)
+	}
+	if rec := post("other.example"); rec.Code != http.StatusSeeOther || rec.Header().Get("Location") != "/x" {
+		t.Errorf("other.example: status %d Location %q, want the framework's 303 to /x", rec.Code, rec.Header().Get("Location"))
+	}
+}
+
+// A router mounted under "/" (chi, say) cannot be seen through the mux,
+// so NoSchemeSwitch is the opt-out: with it set, the path reaches the
+// app like any other.
+func TestNoSchemeSwitchLeavesThePathToTheApp(t *testing.T) {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == "POST" && r.URL.Path == SchemeSwitchPath {
+			w.WriteHeader(http.StatusTeapot)
+			return
+		}
+		http.NotFound(w, r)
+	})
+	req := func() *http.Request {
+		r := httptest.NewRequest("POST", SchemeSwitchPath, strings.NewReader("theme=dark"))
+		r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		r.Header.Set("Sec-Fetch-Site", "same-origin")
+		return r
+	}
+	on, _ := buildHandler(Options{Mux: mux})
+	rec := httptest.NewRecorder()
+	on.ServeHTTP(rec, req())
+	if rec.Code != http.StatusBadRequest {
+		t.Errorf("without the opt-out the framework's route answers: status %d, want its 400 for theme=", rec.Code)
+	}
+	off, _ := buildHandler(Options{Mux: mux, NoSchemeSwitch: true})
+	rec = httptest.NewRecorder()
+	off.ServeHTTP(rec, req())
+	if rec.Code != http.StatusTeapot {
+		t.Errorf("with NoSchemeSwitch: status %d, want the app's 418", rec.Code)
+	}
+}

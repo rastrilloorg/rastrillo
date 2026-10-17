@@ -134,6 +134,12 @@ does, or deleting the `Speculation-Rules` header in a handler.
 const SpeculationRulesPath = "/_speculation-rules"
 ```
 
+**`NoSchemeSwitch`**: leaves `POST /_theme` to your app. By default
+`Serve` mounts the colour-scheme switch there unless your mux already
+has a handler at that path, in which case yours wins. A router mounted
+under `/` cannot be seen through the mux, so an app that routes
+`/_theme` itself through chi or the like sets this.
+
 ## Ctx and RenderFunc
 
 ```go
@@ -183,6 +189,14 @@ type LocaleItem struct {
 }
 const LocaleCookie = "rastrillo_locale"
 const LocaleSwitchPath = "/_locale"
+func LocalePrefix(r *http.Request) string
+```
+
+```go
+func SchemeFrom(r *http.Request) string
+func SchemeSwitchHandler() http.Handler
+const SchemeCookie = "rastrillo_scheme"
+const SchemeSwitchPath = "/_theme"
 ```
 
 ```go
@@ -231,7 +245,20 @@ locale, `"rtl"` or `"ltr"`.
 `Locales.Middleware`, which strips the path prefix before the app's mux
 sees it, and `Locales.SwitchHandler`, the `POST /_locale` route that
 writes `LocaleCookie` and redirects — `Serve` mounts it whenever
-`Options.Locales` is set, one locale or twelve.
+`Options.Locales` is set, one locale or twelve. `LocalePrefix` is the
+locale segment `Middleware` stripped from this request's path, `/fr`,
+or `""` when the URL carried none; `ui.ForRequest` puts it back on
+`Return`, so a switch that redirects back lands where the reader was.
+
+`SchemeFrom` is the colour scheme a request's `SchemeCookie` chose:
+`light`, `dark`, or `""` for System and for anything the framework did
+not write. The shells render it as `data-theme` on `<html>`.
+`SchemeSwitchHandler` is the `POST /_theme` route the `scheme-menu`
+partial posts to: it stores `light` or `dark`, clears the cookie for
+`system`, refuses anything else, and redirects to the form's return
+path through the same guard `/_locale` uses. `Serve` mounts it unless
+your app already handles the path; see `Options.NoSchemeSwitch`. The
+cookie is a display preference and nothing else reads it.
 
 [Localization](/docs/localization) has the resolution order and the
 caveats.

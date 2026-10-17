@@ -862,6 +862,37 @@ func TestScaffoldServesItsLocales(t *testing.T) {
 	// No prefixes: with one locale /es/ is an ordinary path, not the index.
 	if b := get("/es/", nil); strings.Contains(b, "this is a rastrillo app") {
 		t.Errorf("/es/ served the index in a one-locale app:\n%s", b)
+	}
+	// The colour scheme, through the scaffold's own renderer with no
+	// script: choose Dark on the real route, then reload with the cookie
+	// the route set; the page and the error page both paint Dark.
+	post := httptest.NewRequest("POST", "/_theme", strings.NewReader("scheme=dark&return=/"))
+	post.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	post.Header.Set("Sec-Fetch-Site", "same-origin")
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, post)
+	var cookie string
+	for _, c := range rec.Result().Cookies() {
+		if c.Name == "rastrillo_scheme" {
+			cookie = c.String()
+		}
+	}
+	if rec.Code != http.StatusSeeOther || cookie == "" {
+		t.Fatalf("POST /_theme: status %d cookie %q", rec.Code, cookie)
+	}
+	const dark = ` + "`" + `value="dark"><input type="hidden" name="return" value="/"><button type="submit" aria-current="true">` + "`" + `
+	if b := get("/", map[string]string{"Cookie": cookie}); !strings.Contains(b, ` + "`" + `data-theme="dark"` + "`" + `) || !strings.Contains(b, dark) {
+		t.Errorf("reload with the scheme cookie does not stay Dark:\n%s", b)
+	}
+	if b := get("/", nil); strings.Contains(b, "data-theme") {
+		t.Errorf("without the cookie the page is not System:\n%s", b)
+	}
+	errReq := httptest.NewRequest("GET", "/x", nil)
+	errReq.Header.Set("Cookie", cookie)
+	errRec := httptest.NewRecorder()
+	notes.ErrorPage(errRec, errReq, http.StatusInternalServerError, "r1")
+	if !strings.Contains(errRec.Body.String(), ` + "`" + `data-theme="dark"` + "`" + `) {
+		t.Errorf("the error page does not paint the chosen scheme:\n%s", errRec.Body.String())
 	}`, ""},
 		{"two locales", nil, `["en", "es"]`, fmt.Sprintf(`
 	b := get("/", nil)

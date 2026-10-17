@@ -2451,6 +2451,7 @@ const demoTemplate = `
 {{define "brand"}}<a rst-shell-brand href="{{.Home}}">Harbour</a>{{end}}
 {{define "nav"}}<a id="nav-dashboard" href="{{.Dashboard}}"{{if or (eq .View "index") (eq .View "dashboard")}} aria-current="page"{{end}}>{{P "Dashboard"}}</a><a id="nav-requests" href="{{.Requests}}"{{if or (eq .View "requests") (eq .View "request")}} aria-current="page"{{end}}>{{P "Requests"}}</a>{{end}}
 {{define "locale"}}<details rst-dropdown rst-locale name="rst-menus"><summary>{{T "rastrillo.ui.shell_language"}}<span rst-caret aria-hidden="true">{{icon "chevron-down"}}</span></summary><div rst-dropdown-menu>{{range .Locales}}<a href="{{.Href}}" lang="{{.Code}}" dir="{{.Dir}}"{{if .Current}} aria-current="true"{{end}}>{{.Name}}</a>{{end}}</div></details>{{end}}
+{{/* The scheme block renders nothing here on purpose: the shipped default posts to /_theme, and this tree is static. The gallery's own toggle in the bar paints every frame instead. The body is an if-false action and not empty because text/template ignores an empty redefinition of a block that has a body. */}}{{define "scheme"}}{{if false}}{{.}}{{end}}{{end}}
 {{define "profile"}}<span rst-person-av aria-hidden="true">A</span><span rst-person-name>Ada Lovelace</span><span rst-person-email>ada@example.com</span>{{end}}
 {{define "content"}}
 {{if or (eq .View "index") (eq .View "dashboard")}}
@@ -3096,6 +3097,7 @@ const shellTemplate = `
 {{define "account"}}{{.Account}}{{end}}
 {{define "profile"}}{{.Profile}}{{end}}
 {{define "locale"}}<details rst-dropdown rst-locale name="rst-menus"><summary>{{T "rastrillo.ui.shell_language"}}<span rst-caret aria-hidden="true">{{icon "chevron-down"}}</span></summary><div rst-dropdown-menu>{{range .Locales}}<a href="{{.Href}}" lang="{{.Code}}" dir="{{.Dir}}"{{if .Current}} aria-current="true"{{end}}>{{.Name}}</a>{{end}}</div></details>{{end}}
+{{/* The scheme block renders nothing here on purpose: the shipped default posts to /_theme, and this tree is static. The gallery's own toggle in the bar paints every frame instead. The body is an if-false action and not empty because text/template ignores an empty redefinition of a block that has a body. */}}{{define "scheme"}}{{if false}}{{.}}{{end}}{{end}}
 {{define "foot"}}<a style="` + backLinkStyle + `" href="{{.Index}}">{{P "Back to the design system"}}</a>{{end}}
 {{define "content"}}
 {{template "page-header" dict "Title" (P "Posts") "Sub" (P "A representative screen, so the chrome around it has something to frame.") "ActionHref" "#" "ActionLabel" (P "Write a post") "ActionIcon" "plus"}}

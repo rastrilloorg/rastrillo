@@ -262,7 +262,8 @@ func TestTheCardSurvivesAResize(t *testing.T) {
 }
 
 // TestTheCardsControlsAreTaps: the Menu summary, the nav rows and the
-// account and language summaries in the open card, at 44px.
+// account, language and colour-scheme summaries in the open card, at
+// 44px.
 func TestTheCardsControlsAreTaps(t *testing.T) {
 	rig, ctx, cancel := cardRig(t, map[string]string{"/": topbarPage(t, "ltr")}, true)
 	defer cancel()
@@ -273,8 +274,8 @@ func TestTheCardsControlsAreTaps(t *testing.T) {
 	// the brand is under the outside-tap layer on purpose, so a tap there
 	// closes the card instead of following it.
 	got := readTargets(t, ctx, `(() => { `+measureFn+`; return JSON.stringify([...measure(document.querySelector("[rst-shell-menu]")), ...measure(document.querySelector("[rst-shell-tail]"))]); })()`)
-	if len(got) != 6 {
-		t.Fatalf("measured %d controls in the open card, want exactly 6: the Menu summary, three nav rows, the account and language summaries", len(got))
+	if len(got) != 7 {
+		t.Fatalf("measured %d controls in the open card, want exactly 7: the Menu summary, three nav rows, the account, language and colour-scheme summaries", len(got))
 	}
 	assertTargets(t, "390 touch, the open card", got)
 }

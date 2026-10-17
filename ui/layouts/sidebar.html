@@ -1,5 +1,5 @@
 {{define "layout"}}{{$L := localizer $}}<!doctype html>
-<html lang="{{block "lang" .}}{{$L := localizer $}}{{if $L}}{{$L.Identity}}{{else}}en{{end}}{{end}}" dir="{{block "dir" .}}{{$L := localizer $}}{{if $L}}{{$L.Dir}}{{else}}ltr{{end}}{{end}}">
+<html lang="{{block "lang" .}}{{$L := localizer $}}{{if $L}}{{$L.Identity}}{{else}}en{{end}}{{end}}" dir="{{block "dir" .}}{{$L := localizer $}}{{if $L}}{{$L.Dir}}{{else}}ltr{{end}}{{end}}"{{with opt $ "Scheme"}} data-theme="{{.}}"{{end}}>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width">
@@ -94,7 +94,7 @@
      whole foot when the card's head is its only child AND the head is
      the placeholder: no profile, no account, no language, so a button
      would open an empty card. A real person is never hidden. */}}
-<div rst-shell-rail-foot><details rst-dropdown rst-shell-profile name="rst-shell-menu"><summary><span rst-shell-avatar>{{block "profile" .}}{{$L := localizer $}}<span rst-person-av="empty placeholder" aria-hidden="true"></span><span rst-person-name>{{T $L "rastrillo.ui.shell_account"}}</span>{{end}}</span></summary><div rst-dropdown-menu><div rst-shell-who>{{template "profile" .}}</div>{{block "locale" .}}{{$L := localizer $}}{{template "locale-menu" dict "L" $L "Items" (opt $ "Locales") "Return" (opt $ "Return")}}{{end}}{{block "account" .}}{{end}}</div></details></div>
+<div rst-shell-rail-foot><details rst-dropdown rst-shell-profile name="rst-shell-menu"><summary><span rst-shell-avatar>{{block "profile" .}}{{$L := localizer $}}<span rst-person-av="empty placeholder" aria-hidden="true"></span><span rst-person-name>{{T $L "rastrillo.ui.shell_account"}}</span>{{end}}</span></summary><div rst-dropdown-menu><div rst-shell-who>{{template "profile" .}}</div>{{block "locale" .}}{{$L := localizer $}}{{template "locale-menu" dict "L" $L "Items" (opt $ "Locales") "Return" (opt $ "Return")}}{{end}}{{block "scheme" .}}{{$L := localizer $}}{{template "scheme-menu" dict "L" $L "Scheme" (opt $ "Scheme") "Return" (opt $ "Return")}}{{end}}{{block "account" .}}{{end}}</div></details></div>
 </aside>
 <main rst-shell-main id="main">
 <div rst-page>

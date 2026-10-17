@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"amadan.net/rastrillo/rastrillo/csrf"
+	"amadan.net/rastrillo/rastrillo/sessions"
 )
 
 // LocaleCookie is the stored-preference cookie the resolution chain
@@ -18,6 +19,7 @@ const LocaleCookie = "rastrillo_locale"
 
 type localeCtxKey struct{}
 type localesCtxKey struct{}
+type localePrefixCtxKey struct{}
 
 // Middleware resolves this request's locale and puts it, and this set,
 // on the request context for LocaleFrom/T/Tf.
@@ -54,6 +56,9 @@ func (l *Locales) Middleware(next http.Handler) http.Handler {
 
 		ctx := context.WithValue(r.Context(), localeCtxKey{}, code)
 		ctx = context.WithValue(ctx, localesCtxKey{}, l)
+		if rest != "" {
+			ctx = context.WithValue(ctx, localePrefixCtxKey{}, code)
+		}
 		// Shallow copy (the http.StripPrefix shape), never mutate: only
 		// the context and sometimes the URL change, so a full r.Clone —
 		// which also deep-copies Header — buys nothing but ~15-20 allocs
@@ -237,6 +242,21 @@ func LocaleFrom(r *http.Request) string {
 	return code
 }
 
+// LocalePrefix is the locale segment Middleware stripped from this
+// request's path, as "/fr", or "" when the request had none — a locale
+// picked by the cookie or Accept-Language puts nothing on the URL. It
+// is what makes ui.ForRequest's Return the page's real address, so a
+// switch that redirects back lands on /fr/orders when that is where
+// the reader was and on /orders when it was; "/"+LocaleFrom(r)+path
+// would move an unprefixed reader to /en/orders for changing a colour.
+func LocalePrefix(r *http.Request) string {
+	code, _ := r.Context().Value(localePrefixCtxKey{}).(string)
+	if code == "" {
+		return ""
+	}
+	return "/" + code
+}
+
 // T translates key in the request's resolved locale — the lookup an
 // action calls. Outside a request that went through Middleware it
 // returns the key verbatim rather than guessing a locale.
@@ -326,17 +346,8 @@ func (l *Locales) autonym(code string) string {
 // none, because the check is "did a page of ours submit this".
 func (l *Locales) SwitchHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPost {
-			w.Header().Set("Allow", http.MethodPost)
-			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-			return
-		}
-		scheme := "http"
-		if r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https" {
-			scheme = "https"
-		}
-		if !csrf.SameOrigin(r, scheme+"://"+r.Host) {
-			http.Error(w, "forbidden", http.StatusForbidden)
+		https, ok := switchPost(w, r)
+		if !ok {
 			return
 		}
 		// declared, not Has: the value is written into the page by the
@@ -346,28 +357,78 @@ func (l *Locales) SwitchHandler() http.Handler {
 			http.Error(w, "unknown locale", http.StatusBadRequest)
 			return
 		}
-		ret := r.PostFormValue("return")
-		if ret == "" {
-			ret = "/"
-		}
-		if !strings.HasPrefix(ret, "/") || strings.HasPrefix(ret, "//") || strings.HasPrefix(ret, "/\\") {
-			http.Error(w, "bad return path", http.StatusBadRequest)
+		ret, ok := returnPath(w, r)
+		if !ok {
 			return
 		}
 		// A return path that already carries a locale prefix loses it,
 		// so switching from /fr/orders lands on /en/orders, not
 		// /en/fr/orders.
-		if _, rest := l.splitPrefix(strings.SplitN(ret, "?", 2)[0]); rest != "" {
-			if i := strings.Index(ret, "?"); i >= 0 {
-				rest += ret[i:]
-			}
-			ret = rest
-		}
+		ret = l.withoutPrefix(ret)
 		http.SetCookie(w, &http.Cookie{
 			Name: LocaleCookie, Value: code, Path: "/",
 			MaxAge: 365 * 24 * 3600, HttpOnly: true,
-			SameSite: http.SameSiteLaxMode, Secure: scheme == "https",
+			SameSite: http.SameSiteLaxMode, Secure: https,
 		})
 		http.Redirect(w, r, "/"+code+ret, http.StatusSeeOther)
 	})
+}
+
+// switchPost is the gate both switcher routes stand behind: POST only,
+// and same-origin the way every mutating route in this framework
+// checks it (csrf.SameOrigin), with the origin taken from the request
+// itself — the handler has no configured origin and needs none,
+// because the check is "did a page of ours submit this". It answers
+// the refusal itself; https reports whether the request arrived over
+// TLS, which decides the cookie's Secure flag.
+func switchPost(w http.ResponseWriter, r *http.Request) (https, ok bool) {
+	if r.Method != http.MethodPost {
+		w.Header().Set("Allow", http.MethodPost)
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return false, false
+	}
+	scheme := "http"
+	if r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https" {
+		scheme = "https"
+	}
+	if !csrf.SameOrigin(r, scheme+"://"+r.Host) {
+		http.Error(w, "forbidden", http.StatusForbidden)
+		return false, false
+	}
+	return scheme == "https", true
+}
+
+// returnPath is the switchers' one open-redirect guard: the form's
+// return field, "/" when it is empty, and a 400 for anything that is
+// not a same-site absolute path. The policy is sessions.SafeReturnTo's,
+// not a copy of it: a scheme, a protocol-relative "//", a backslash
+// ANYWHERE and any control character are refused. The first version
+// of this guard checked only the first two characters, and that let
+// two shapes through: "/a/../\evil.example/", which http.Redirect's
+// path clean turns into "/\evil.example/" and browsers read as
+// "//evil.example/"; and "/\t/evil.example/", because browsers strip
+// tab, CR and LF before parsing a URL. One function so the two routes
+// cannot drift apart in what they refuse.
+func returnPath(w http.ResponseWriter, r *http.Request) (string, bool) {
+	ret := r.PostFormValue("return")
+	if ret == "" {
+		return "/", true
+	}
+	if sessions.SafeReturnTo(ret, "") == "" {
+		http.Error(w, "bad return path", http.StatusBadRequest)
+		return "", false
+	}
+	return ret, true
+}
+
+// withoutPrefix is ret with a leading declared-locale segment removed,
+// query kept.
+func (l *Locales) withoutPrefix(ret string) string {
+	if _, rest := l.splitPrefix(strings.SplitN(ret, "?", 2)[0]); rest != "" {
+		if i := strings.Index(ret, "?"); i >= 0 {
+			rest += ret[i:]
+		}
+		return rest
+	}
+	return ret
 }

@@ -170,6 +170,14 @@ type Options struct {
 	// because a header ruleset is not a script.
 	NoSpeculationRules bool
 
+	// NoSchemeSwitch leaves POST /_theme (SchemeSwitchPath) to the app.
+	// By default Serve mounts the framework's colour-scheme switch
+	// there, unless the app's mux already has a handler at that path,
+	// in which case the app's wins. A router mounted under "/" cannot
+	// be seen through the mux, so an app that routes /_theme itself
+	// through chi or the like sets this instead.
+	NoSchemeSwitch bool
+
 	// Locales declares the app's locale codes (design doc §10) — the
 	// catalogs LocaleFS carries as locales/<code>.toml. Empty means a
 	// monolingual app: no locale middleware is installed and requests
@@ -570,6 +578,17 @@ func buildHandler(opts Options) (http.Handler, error) {
 		}
 	}
 	mux.Handle("/", app)
+	// Before the no-locales return, unlike /_locale: a one-language
+	// app has a colour scheme to choose. And unlike /_locale, the app's
+	// own handler wins: four family apps hand-rolled a theme switch on
+	// this path before the framework had one, and an upgrade must not
+	// take their route over, so the framework's answers only when the
+	// app's mux has nothing at the path for this request and
+	// NoSchemeSwitch is unset. /_locale keeps outranking an app's twin,
+	// as it always has.
+	if !opts.NoSchemeSwitch {
+		mux.Handle("POST "+SchemeSwitchPath, schemeSwitchUnlessApp(opts.Mux, app))
+	}
 
 	if len(opts.Locales) == 0 {
 		return recoverPanics(opts.ErrorPage, opts.Logger, securityHeaders(opts.CSP, !opts.NoSpeculationRules, mux)), nil
@@ -598,6 +617,29 @@ func buildHandler(opts Options) (http.Handler, error) {
 	// ServeMux prefers the more specific pattern whatever the order.
 	mux.Handle("POST "+LocaleSwitchPath, loc.SwitchHandler())
 	return recoverPanics(opts.ErrorPage, opts.Logger, securityHeaders(opts.CSP, !opts.NoSpeculationRules, loc.Middleware(mux))), nil
+}
+
+// schemeSwitchUnlessApp serves the framework's scheme switch unless
+// appMux has a handler at exactly the request's path for this request,
+// in which case the request goes to app (the mux behind Options.Wrap).
+// The check runs per request, not once at startup, because a
+// host-qualified pattern ("POST example.com/_theme") matches only on
+// its host: a startup probe has no real host to ask with, missed it,
+// and took that host's posts from the app. A catch-all "/" or a
+// subtree does not count, since that is every app with a router
+// mounted under it, which is what NoSchemeSwitch is for.
+func schemeSwitchUnlessApp(appMux *http.ServeMux, app http.Handler) http.Handler {
+	ours := SchemeSwitchHandler()
+	if appMux == nil {
+		return ours
+	}
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if _, pattern := appMux.Handler(r); strings.HasSuffix(pattern, SchemeSwitchPath) {
+			app.ServeHTTP(w, r)
+			return
+		}
+		ours.ServeHTTP(w, r)
+	})
 }
 
 // buildMux resolves the Mux/Router choice. Router runs after the

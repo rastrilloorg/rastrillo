@@ -46,7 +46,8 @@
    dead menus. Exclusivity stays native. (anchor.js, beside this file,
    keeps a dropdown's menu on the screen where CSS anchor positioning
    is missing.) A switch's knob can be dragged along its track, and
-   snaps to the nearer end.
+   snaps to the nearer end. The colour-scheme menu's forms apply in
+   place and write the server's cookie, instead of posting.
 
    A polled response may answer 204 with a Rastrillo-Location header
    instead of a fragment; the shim navigates there, but only to a local
@@ -291,6 +292,22 @@
       e.preventDefault();
       after = null;
     }
+  }, true);
+
+  // The colour-scheme switch's forms ([rst-scheme], POST /_theme) apply
+  // here instead of round-tripping: data-theme on <html> is what the
+  // themes read, and the cookie is the server's own (name, path, age,
+  // SameSite), so the next render paints the same scheme first. System
+  // is no attribute and no cookie, as on the server.
+  document.addEventListener("submit", function (e) {
+    var f = e.target, m = f.closest("[rst-scheme],.rst-scheme"), s = m && f.elements.scheme && f.elements.scheme.value, on = s === "light" || s === "dark";
+    if (!s) return;
+    e.preventDefault();
+    if (on) document.documentElement.setAttribute("data-theme", s); else document.documentElement.removeAttribute("data-theme");
+    document.cookie = "rastrillo_scheme=" + (on ? s + "; Max-Age=31536000" : "; Max-Age=0") + "; Path=/; SameSite=Lax" + (location.protocol === "https:" ? "; Secure" : "");
+    // Not toggleAttribute: aria-current="" reads as false.
+    m.querySelectorAll("button").forEach(function (b) { if (b.form === f) b.setAttribute("aria-current", "true"); else b.removeAttribute("aria-current"); });
+    m.open = false;
   }, true);
 
   function scan() {

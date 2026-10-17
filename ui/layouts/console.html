@@ -1,5 +1,5 @@
 {{define "layout"}}{{$L := localizer $}}<!doctype html>
-<html lang="{{block "lang" .}}{{$L := localizer $}}{{if $L}}{{$L.Identity}}{{else}}en{{end}}{{end}}" dir="{{block "dir" .}}{{$L := localizer $}}{{if $L}}{{$L.Dir}}{{else}}ltr{{end}}{{end}}">
+<html lang="{{block "lang" .}}{{$L := localizer $}}{{if $L}}{{$L.Identity}}{{else}}en{{end}}{{end}}" dir="{{block "dir" .}}{{$L := localizer $}}{{if $L}}{{$L.Dir}}{{else}}ltr{{end}}{{end}}"{{with opt $ "Scheme"}} data-theme="{{.}}"{{end}}>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width">
@@ -103,7 +103,7 @@
      wide bar's two menus at its inline end. */}}
 <div rst-shell-tail>
 <div rst-shell-who>{{template "profile" .}}</div>
-{{block "locale" .}}{{$L := localizer $}}{{template "locale-menu" dict "L" $L "Items" (opt $ "Locales") "Return" (opt $ "Return")}}{{end}}
+{{block "locale" .}}{{$L := localizer $}}{{template "locale-menu" dict "L" $L "Items" (opt $ "Locales") "Return" (opt $ "Return")}}{{end}}{{block "scheme" .}}{{$L := localizer $}}{{template "scheme-menu" dict "L" $L "Scheme" (opt $ "Scheme") "Return" (opt $ "Return")}}{{end}}
 <details rst-dropdown rst-shell-account name="rst-menus">
 <summary>{{T $L "rastrillo.ui.shell_account"}}<span rst-caret aria-hidden="true">{{icon "chevron-down"}}</span></summary>
 <div rst-dropdown-menu>{{block "account" .}}{{end}}</div>

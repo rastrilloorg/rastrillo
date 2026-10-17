@@ -61,6 +61,10 @@ var sampleCodeKeys = map[string]bool{
 	"LeadInitial": true, "Initial": true, "Email": true, "DateTime": true,
 	"Min": true, "Max": true, "Ref": true, "Exact": true, "Err": true,
 	"Currency": true,
+	// Scheme is "light" or "dark", the cookie's value the server
+	// writes back as data-theme; translated it would post a scheme the
+	// handler refuses.
+	"Scheme": true,
 }
 
 // sampleWordKeys are data keys whose value is words even when it is one

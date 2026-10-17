@@ -1096,6 +1096,7 @@ func allPartials() []struct {
 				map[string]any{"Value": "refund", "Label": "Refund…", "Danger": true},
 			},
 		}},
+		{"scheme-menu", map[string]any{"Scheme": "dark", "Return": "/orders"}},
 		{"error-page", map[string]any{
 			"Status": 500, "Ref": "k3f9tq", "HomeHref": "/", "BackHref": "/orders",
 		}},
@@ -1245,7 +1246,7 @@ func TestAllPartialsAreDefined(t *testing.T) {
 		"badge", "meter", "person", "callout", "detail-list", "dropdown",
 		"field", "field-select", "field-text", "field-textarea", "field-check", "choice-field", "seg-tabs",
 		"confirm-form", "back-nav", "notice", "form-error", "form-foot", "bulk-bar", "job-status",
-		"locale-menu", "error-page",
+		"locale-menu", "scheme-menu", "error-page",
 		"field-date", "field-time", "field-datetime", "field-daterange",
 		"field-url", "signin", "signin-title", "row-menu", "field-money",
 	}
@@ -1254,8 +1255,8 @@ func TestAllPartialsAreDefined(t *testing.T) {
 			t.Errorf("partial %q is not defined", name)
 		}
 	}
-	if len(want) != 39 {
-		t.Fatalf("the shipped set is 39 partials, this list has %d", len(want))
+	if len(want) != 40 {
+		t.Fatalf("the shipped set is 40 partials, this list has %d", len(want))
 	}
 }
 
@@ -2133,6 +2134,7 @@ func TestEveryMenuDefaultsToTheSharedExclusivityGroup(t *testing.T) {
 		{"dropdown", map[string]any{"Label": "Sort", "Items": []any{
 			map[string]any{"Href": "/x", "Label": "Newest"}}}},
 		{"locale-menu", map[string]any{"Items": []rastrillo.LocaleItem{{Code: "ga", Name: "Gaeilge", Href: "/ga"}}}},
+		{"scheme-menu", map[string]any{"Scheme": "dark"}},
 		{"bulk-bar", map[string]any{
 			"DoneHref": "/x", "Count": "3 selected", "MenuLabel": "Actions",
 			"Actions": []any{map[string]any{"Value": "archive", "Label": "Archive"}}}},
@@ -2312,13 +2314,15 @@ func TestTheShellsKeepTheirOverridableBlockNames(t *testing.T) {
 	want := map[string][]string{
 		// locale-menu is the locale block's default body, the switcher
 		// partial; column has a locale block too, at the top of its page.
-		"column": {"lang", "dir", "title", "head", "locale", "locale-menu", "content"},
-		"topbar": {"lang", "dir", "title", "head", "brand", "nav", "account", "locale", "locale-menu", "content", "foot"},
+		// scheme-menu is the scheme block's default body, beside the
+		// locale block in every shell that has one.
+		"column": {"lang", "dir", "title", "head", "locale", "locale-menu", "scheme", "scheme-menu", "content"},
+		"topbar": {"lang", "dir", "title", "head", "brand", "nav", "account", "locale", "locale-menu", "scheme", "scheme-menu", "content", "foot"},
 		// brand and title appear first as the phone index's <h1>, the
 		// app's name with the page's title as its fallback, reused
 		// rather than redefined; profile twice, as the avatar that opens
 		// the rail's one menu and as the name heading the card.
-		"sidebar": {"lang", "dir", "title", "head", "view", "up", "brand", "title", "brand", "nav", "profile", "profile", "locale", "locale-menu", "account", "content"},
+		"sidebar": {"lang", "dir", "title", "head", "view", "up", "brand", "title", "brand", "nav", "profile", "profile", "locale", "locale-menu", "scheme", "scheme-menu", "account", "content"},
 		// console offers topbar's SET, plus the phone index's blocks
 		// (view, up, profile), which a topbar screen can define and the
 		// topbar simply never calls. So a screen moves from console to
@@ -2339,7 +2343,7 @@ func TestTheShellsKeepTheirOverridableBlockNames(t *testing.T) {
 		// page's title as its fallback, so brand and title come before
 		// the brand block itself; profile twice, as the avatar the
 		// Menu becomes on the index and the name heading its card.
-		"console": {"lang", "dir", "title", "head", "view", "brand", "title", "brand", "profile", "profile", "locale", "locale-menu", "account", "up", "nav", "content", "foot"},
+		"console": {"lang", "dir", "title", "head", "view", "brand", "title", "brand", "profile", "profile", "locale", "locale-menu", "scheme", "scheme-menu", "account", "up", "nav", "content", "foot"},
 		// stage has no chrome to override. backdrop is the picture
 		// behind the card, foot an optional line under it.
 		"stage": {"lang", "dir", "title", "head", "backdrop", "content", "foot"},
@@ -2938,9 +2942,9 @@ func TestTheSidebarRailFootIsOneProfileMenu(t *testing.T) {
 	if !strings.HasPrefix(s[foot:], open) {
 		t.Errorf("the rail foot does not open with the profile menu and its avatar summary; it reads %.200q", s[foot:])
 	}
-	card := strings.Index(s, `<div rst-dropdown-menu><div rst-shell-who>{{template "profile" .}}</div>`+localeBlock+`{{block "account" .}}{{end}}</div></details></div>`)
+	card := strings.Index(s, `<div rst-dropdown-menu><div rst-shell-who>{{template "profile" .}}</div>`+localeBlock+schemeBlock+`{{block "account" .}}{{end}}</div></details></div>`)
 	if card < foot {
-		t.Error("the profile card does not hold the person, then the language, then the account's links, in that order and inside the rail foot")
+		t.Error("the profile card does not hold the person, then the language, then the colour scheme, then the account's links, in that order and inside the rail foot")
 	}
 	// The default avatar, for an app with no profile block: the empty
 	// avatar circle, named with the shell's existing Account string, so
@@ -2971,7 +2975,7 @@ func TestTheConsoleMenuCarriesTheProfileForItsIndex(t *testing.T) {
 		`<summary><span rst-shell-menu-label>{{icon "menu"}}{{T $L "rastrillo.ui.shell_menu"}}</span><span rst-shell-avatar>{{block "profile" .}}`,
 		`<div rst-shell-tail>
 <div rst-shell-who>{{template "profile" .}}</div>
-` + localeBlock + `
+` + localeBlock + schemeBlock + `
 <details rst-dropdown rst-shell-account`,
 	} {
 		if !strings.Contains(s, want) {
