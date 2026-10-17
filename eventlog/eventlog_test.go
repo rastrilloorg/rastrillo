@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -470,5 +471,153 @@ func TestAppendCheckedHoldsTheWriteLock(t *testing.T) {
 	}
 	if evs, _ := l.Events(ctx, "s"); len(evs) != 1 || evs[0].Writer != "edge-a" {
 		t.Fatalf("events %+v, want only edge-a's", evs)
+	}
+}
+
+// AppendUnder's name sees only the streams under the prefix, literally
+// matched; the event lands on the stream it names; a refusal from it,
+// and a name outside the prefix, append nothing.
+func TestAppendUnderNamesTheStream(t *testing.T) {
+	l := openLog(t, "edge-a")
+	ctx := context.Background()
+	l.Append(ctx, "a_b/1", "created", "human", nil)
+	l.Append(ctx, "a_b/1", "bumped", "human", nil)
+	l.Append(ctx, "a_b/2", "created", "human", nil)
+	l.Append(ctx, "axb/9", "created", "human", nil)
+
+	var seen []string
+	ev, err := l.AppendUnder(ctx, "a_b/", "created", "human", map[string]int{"n": 3}, func(streams []string) (string, error) {
+		seen = streams
+		return "a_b/3", nil
+	})
+	if err != nil || ev.Stream != "a_b/3" || ev.Seq != 1 {
+		t.Fatalf("AppendUnder = %+v, %v; want seq 1 on a_b/3", ev, err)
+	}
+	if fmt.Sprint(seen) != "[a_b/1 a_b/2]" {
+		t.Errorf("name saw %v, want each stream under a_b/ once and axb/9 not at all", seen)
+	}
+
+	refused := errors.New("refused")
+	if _, err := l.AppendUnder(ctx, "a_b/", "created", "human", nil, func([]string) (string, error) { return "", refused }); err != refused {
+		t.Fatalf("a refused name: %v, want the refusal as it is", err)
+	}
+	if _, err := l.AppendUnder(ctx, "a_b/", "created", "human", nil, func([]string) (string, error) { return "axb/4", nil }); err == nil {
+		t.Fatal("a stream outside the prefix was appended")
+	}
+	if evs, _ := l.EventsByPrefix(ctx, "a"); len(evs) != 5 {
+		t.Fatalf("%d events after the two refusals, want 5", len(evs))
+	}
+}
+
+// name runs under the write lock, so another connection cannot add a
+// stream under the prefix while it chooses: the streams it saw are the
+// streams the event lands beside.
+func TestAppendUnderHoldsTheWriteLock(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "app.db")
+	d, err := db.Open(path, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { d.Close() })
+	ctx := context.Background()
+	if _, err := migrate.Apply(ctx, d, Schema); err != nil {
+		t.Fatal(err)
+	}
+	l, err := Open(d.Writer(), "edge-a")
+	if err != nil {
+		t.Fatal(err)
+	}
+	other, err := sql.Open("sqlite", path+"?_pragma=busy_timeout(0)&_pragma=journal_mode(WAL)")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { other.Close() })
+	racer, err := Open(other, "edge-b")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var raced error
+	if _, err := l.AppendUnder(ctx, "s/", "created", "human", nil, func([]string) (string, error) {
+		_, raced = racer.Append(ctx, "s/1", "created", "human", nil)
+		return "s/1", nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if raced == nil {
+		t.Fatal("another connection appended while name ran")
+	}
+	if evs, _ := l.Events(ctx, "s/1"); len(evs) != 1 || evs[0].Writer != "edge-a" {
+		t.Fatalf("events %+v, want only edge-a's", evs)
+	}
+}
+
+// Astra's P2: streamsUnder runs under the write lock, so it must reach
+// its prefix through the primary key's binary order rather than scan
+// the whole index. A LIKE prefix cannot use a binary-collated index,
+// and every Create then read the entire log while every other writer
+// waited: about 70 ms per million unrelated events.
+func TestStreamsUnderSearchesTheIndex(t *testing.T) {
+	l := openLog(t, "edge-a")
+	ctx := context.Background()
+	query, args := streamsUnderQuery("prices/")
+	rows, err := l.db.QueryContext(ctx, "EXPLAIN QUERY PLAN "+query, args...)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer rows.Close()
+	var plan []string
+	for rows.Next() {
+		var id, parent, notUsed int
+		var detail string
+		if err := rows.Scan(&id, &parent, &notUsed, &detail); err != nil {
+			t.Fatal(err)
+		}
+		plan = append(plan, detail)
+	}
+	if err := rows.Err(); err != nil {
+		t.Fatal(err)
+	}
+	joined := fmt.Sprint(plan)
+	if !strings.Contains(joined, "SEARCH eventlog USING COVERING INDEX") || strings.Contains(joined, "SCAN") {
+		t.Fatalf("plan %v; want a SEARCH on an index from the prefix, not a SCAN of the log", plan)
+	}
+}
+
+// Astra's round two: the upper bound of a prefix's range carries. A
+// prefix ending in 0xFF after other bytes, "a\xff", still has a bound,
+// "b"; raising only the last byte left it open, and every later stream
+// ("b/1") came through. Only a prefix that is all 0xFF has no bound.
+func TestPrefixBoundCarries(t *testing.T) {
+	for _, c := range []struct {
+		prefix, want string
+		ok           bool
+	}{
+		{"prices/", "prices0", true},
+		{"a\xff", "b", true},
+		{"a\xff\xff", "b", true},
+		{"\xff\xff", "", false},
+		{"", "", false},
+		{"café/", "café0", true},
+		{"caf\xc3\xa9", "caf\xc3\xaa", true},
+	} {
+		got, ok := prefixBound(c.prefix)
+		if got != c.want || ok != c.ok {
+			t.Errorf("prefixBound(%q) = %q, %v; want %q, %v", c.prefix, got, ok, c.want, c.ok)
+		}
+	}
+	// The bound is what keeps a later stream out of the range.
+	l := openLog(t, "edge-a")
+	ctx := context.Background()
+	l.Append(ctx, "a\xff/1", "created", "human", nil)
+	l.Append(ctx, "b/1", "created", "human", nil)
+	var seen []string
+	if _, err := l.AppendUnder(ctx, "a\xff", "created", "human", nil, func(streams []string) (string, error) {
+		seen = streams
+		return "a\xff/2", nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if fmt.Sprintf("%q", seen) != `["a\xff/1"]` {
+		t.Errorf("name saw %q, want only the stream under the prefix", seen)
 	}
 }

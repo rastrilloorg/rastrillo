@@ -301,15 +301,25 @@ func (d hookedDriver) Open(name string) (driver.Conn, error) {
 type hookedConn struct{ driver.Conn }
 
 func (c hookedConn) QueryContext(ctx context.Context, q string, args []driver.NamedValue) (driver.Rows, error) {
-	if !strings.HasPrefix(strings.TrimSpace(q), "SELECT stream, writer, seq") || !strings.Contains(q, "WHERE stream = ?") {
+	var after func()
+	switch {
+	// The read of a resource's streams: the names alone, as AppendUnder
+	// reads them under the lock, or every event under the prefix, as the
+	// store read them before it allocated under the lock, so the step
+	// pauses either Create.
+	case strings.HasPrefix(strings.TrimSpace(q), "SELECT DISTINCT stream"), strings.Contains(q, "WHERE stream LIKE ?"):
+		after = takePrefixStep()
+	case strings.HasPrefix(strings.TrimSpace(q), "SELECT stream, writer, seq") && strings.Contains(q, "WHERE stream = ?"):
+		n := nextRead()
+		after = func() { runStep(n, false) }
+	default:
 		return c.Conn.(driver.QueryerContext).QueryContext(ctx, q, args)
 	}
-	n := nextRead()
 	rows, err := c.Conn.(driver.QueryerContext).QueryContext(ctx, q, args)
 	if err != nil {
 		return rows, err
 	}
-	return hookedRows{rows, n}, nil
+	return hookedRows{rows, after}, nil
 }
 
 func (c hookedConn) ExecContext(ctx context.Context, q string, args []driver.NamedValue) (driver.Result, error) {
@@ -322,15 +332,39 @@ func (c hookedConn) BeginTx(ctx context.Context, opts driver.TxOptions) (driver.
 
 type hookedRows struct {
 	driver.Rows
-	n int
+	after func()
 }
 
 // Close runs the read's after-step once the read has released its
 // statement, so the other writer is not blocked by it.
 func (r hookedRows) Close() error {
 	err := r.Rows.Close()
-	runStep(r.n, false)
+	if r.after != nil {
+		r.after()
+	}
 	return err
+}
+
+// prefixStep runs once, after the next read of the streams under a
+// prefix: the read a Create allocates its id from. It is counted apart
+// from the stream reads so arming it never shifts their numbering.
+var prefixStep struct {
+	sync.Mutex
+	fn func()
+}
+
+func afterPrefixRead(fn func()) {
+	prefixStep.Lock()
+	prefixStep.fn = fn
+	prefixStep.Unlock()
+}
+
+func takePrefixStep() func() {
+	prefixStep.Lock()
+	defer prefixStep.Unlock()
+	fn := prefixStep.fn
+	prefixStep.fn = nil
+	return fn
 }
 
 // A readStep runs fn before or after the nth stream read since onReads
@@ -405,7 +439,20 @@ func openHooked(t *testing.T, path string) *sql.DB {
 // openPlain is a second, unhooked handle on path: the other writer.
 func openPlain(t *testing.T, path string) *sql.DB {
 	t.Helper()
-	db, err := sql.Open("sqlite", path+"?_pragma=busy_timeout(5000)&_pragma=journal_mode(WAL)")
+	return openWithTimeout(t, path, 5000)
+}
+
+// openImpatient is the other writer on a handle that does not wait for
+// the write lock: a write that finds it taken fails at once, which is
+// how a test sees that the paused request holds it.
+func openImpatient(t *testing.T, path string) *sql.DB {
+	t.Helper()
+	return openWithTimeout(t, path, 0)
+}
+
+func openWithTimeout(t *testing.T, path string, busyTimeout int) *sql.DB {
+	t.Helper()
+	db, err := sql.Open("sqlite", fmt.Sprintf("%s?_pragma=busy_timeout(%d)&_pragma=journal_mode(WAL)", path, busyTimeout))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -578,6 +625,59 @@ func TestPricesLegacyAmountTakesTheLegacyCurrency(t *testing.T) {
 		t.Fatalf("GetPrice(1) = %+v, %v; want USD 1250", p, err)
 	}
 	want(t, do(t, h, "GET", "/prices/1", nil), http.StatusOK, "$12.50")
+}
+
+// Astra's round-two note: Create read the highest id, then appended,
+// as two steps, and a second create between them took the same id, so
+// two records became one stream. The id is read under the append's
+// write lock now: a create that arrives while another holds it waits,
+// or on a handle that does not wait is refused, and takes the next id
+// after. The second create runs while the first is paused after its
+// read, on such a handle, so the outcome never depends on timing.
+func TestPricesConcurrentCreatesTakeDistinctIds(t *testing.T) {
+	_, db := newPricesApp(t)
+	path := os.Getenv("DB")
+	ctx := context.Background()
+	if _, err := pricesstore.New(db).CreatePrice(ctx, pricesstore.CreatePriceParams{Title: "Lunch", Now: "a"}); err != nil {
+		t.Fatal(err)
+	}
+	other := pricesstore.New(openImpatient(t, path))
+	dinner := pricesstore.CreatePriceParams{Title: "Dinner", Now: "b"}
+	var otherID int64
+	var otherErr error
+	afterPrefixRead(func() { otherID, otherErr = other.CreatePrice(ctx, dinner) })
+	id, err := pricesstore.New(openHooked(t, path)).CreatePrice(ctx, pricesstore.CreatePriceParams{Title: "Tea", Now: "c"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if otherErr != nil {
+		if !strings.Contains(otherErr.Error(), "locked") {
+			t.Fatalf("the second create: %v; want it to succeed or find the lock taken", otherErr)
+		}
+		if otherID, otherErr = other.CreatePrice(ctx, dinner); otherErr != nil {
+			t.Fatalf("the second create, run again after the first: %v", otherErr)
+		}
+	}
+	if otherID == id {
+		t.Errorf("both creates took id %d", id)
+	}
+	rows, err := db.Query(` + "`" + `SELECT stream, COUNT(*) FROM eventlog WHERE kind = 'created' GROUP BY stream HAVING COUNT(*) > 1` + "`" + `)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var stream string
+		var n int
+		if err := rows.Scan(&stream, &n); err != nil {
+			t.Fatal(err)
+		}
+		t.Errorf("%s holds %d created events, want one record per stream", stream, n)
+	}
+	list, err := pricesstore.New(db).ListPrices(ctx, pricesstore.ListPricesParams{PageLimit: 10})
+	if err != nil || len(list) != 3 {
+		t.Fatalf("ListPrices = %d records, %v; want Lunch, Dinner and Tea", len(list), err)
+	}
 }
 `
 
@@ -874,6 +974,7 @@ func TestWiringPricesEventStore(t *testing.T) {
 		"TestPricesRacingUpdateCannotPoisonTheStream",
 		"TestPricesRacingEditShowsTheCurrencyChanged",
 		"TestPricesTwoRacesInOneEditShowTheForm",
+		"TestPricesConcurrentCreatesTakeDistinctIds",
 	} {
 		if !strings.Contains(out, "--- PASS: "+name+" ") {
 			t.Errorf("%s did not pass:\n%s", name, out)
@@ -919,6 +1020,36 @@ columns = [{ field = "V" }, { field = "Fee", kind = "money" }]
 [form]
 basics = [{ name = "V", required = true }, { name = "Fee", kind = "money" }]
 `})
+	mustGenerate(t, app)
+	if out, err := goBuild(app); err != nil {
+		t.Fatalf("the generated app does not build:\n%s", out)
+	}
+}
+
+// The names the list params carry beside no declared field (Search,
+// PageOffset, PageLimit and a filter's Filter<Field>) are not reserved,
+// and must not be: a field may be called any of them, in both store
+// kinds, because a filter's parameter is prefixed, so a declared
+// FilterTitle never meets the filter on Title. This pins that the
+// prefix stays; dropping it would make these manifests stop building.
+func TestFieldsNamedLikeListParamsBuild(t *testing.T) {
+	const resource = `name = %q
+route = "/%s"
+store = %q
+scope = "user"
+
+[list]
+columns = [{ field = "Title" }, { field = "Search" }, { field = "PageLimit" }]
+search = true
+filters = [{ field = "Title", values = ["a", "b"] }]
+
+[form]
+basics = [{ name = "Title", required = true }, { name = "Search" }, { name = "PageOffset" }, { name = "PageLimit" }, { name = "FilterTitle" }]
+`
+	app := scratchApp(t, map[string]string{
+		"manifest/stamps.toml": fmt.Sprintf(resource, "stamps", "stamps", "exclusive"),
+		"manifest/marks.toml":  fmt.Sprintf(resource, "marks", "marks", "mergeable"),
+	})
 	mustGenerate(t, app)
 	if out, err := goBuild(app); err != nil {
 		t.Fatalf("the generated app does not build:\n%s", out)

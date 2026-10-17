@@ -28,6 +28,7 @@ One table holds every stream. Each row is one immutable event, keyed
 func Open(db *sql.DB, writer string) (*Log, error)
 func (l *Log) Append(ctx context.Context, stream, kind, actor string, payload any) (Event, error)
 func (l *Log) AppendChecked(ctx context.Context, stream, kind, actor string, payload any, check func(history []Event) error) (Event, error)
+func (l *Log) AppendUnder(ctx context.Context, prefix, kind, actor string, payload any, name func(streams []string) (string, error)) (Event, error)
 func (l *Log) Events(ctx context.Context, stream string) ([]Event, error)
 func (l *Log) EventsByPrefix(ctx context.Context, prefix string) ([]Event, error)
 func (l *Log) PayloadColumn() string
@@ -43,6 +44,11 @@ Use `AppendChecked` when an event is only valid on top of the stream as
 it is. `check` gets the stream's events, and nothing is appended if it
 returns an error; no other write can land between the check and the
 append. Generated stores with money append this way.
+
+Use `AppendUnder` when the stream's name depends on which streams exist.
+`name` gets every stream that starts with `prefix` and returns the one
+to append to; no other write can add a stream under `prefix` between
+the two. Generated stores create records this way.
 
 `EventsByPrefix` escapes its `LIKE` pattern, so a stream name containing
 `%` or `_` matches literally rather than as a wildcard.

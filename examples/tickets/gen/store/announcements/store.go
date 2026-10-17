@@ -12,10 +12,11 @@
 //   - Every event's actor is stamped "app"; threading Ctx.Actor into
 //     store mutations is an additive follow-up (today every generated
 //     mutation is consent-gated upstream).
-//   - Record ids are writer-local: Create allocates max(existing)+1,
-//     race-free under the single-writer SQLite pool both db paths
-//     enforce. Cross-writer id namespacing belongs to the platform
-//     transport design; this allocator is the first thing it replaces.
+//   - Record ids are writer-local: Create allocates max(existing)+1
+//     under the eventlog's write lock, so two creates on one database
+//     never share an id. Cross-writer id namespacing belongs to the
+//     platform transport design; this allocator is the first thing it
+//     replaces.
 package announcementsstore
 
 import (
@@ -275,34 +276,45 @@ func (q *Queries) CreateAnnouncement(ctx context.Context, arg CreateAnnouncement
 	if err != nil {
 		return 0, err
 	}
-	// Writer-local id allocation (see the package doc's caveat):
-	// max(existing id in this resource's streams)+1, race-free under
-	// the single-writer SQLite pool.
-	events, err := log.EventsByPrefix(ctx, StreamPrefix)
-	if err != nil {
-		return 0, err
-	}
-	var id int64
-	for _, ev := range events {
-		evID, err := streamID(ev.Stream)
-		if err != nil {
-			return 0, err
-		}
-		if evID > id {
-			id = evID
-		}
-	}
-	id++
 	p := payload{
 		EventVersion: replay.Version,
 		Title:        &arg.Title,
 		Body:         &arg.Body,
 		CreatedAt:    &arg.Now,
 	}
-	if _, err := log.Append(ctx, StreamPrefix+strconv.FormatInt(id, 10), "created", actor, p); err != nil {
-		return 0, err
+	return create(ctx, log, p)
+}
+
+// create appends p as a new record's "created" event and returns the
+// record's id: one more than the highest under StreamPrefix, which the
+// append reads under the same write lock it writes with (see the
+// package doc's caveat on ids).
+func create(ctx context.Context, log *eventlog.Log, p payload) (int64, error) {
+	var id int64
+	_, err := log.AppendUnder(ctx, StreamPrefix, "created", actor, p, func(streams []string) (string, error) {
+		next, err := nextID(streams)
+		if err != nil {
+			return "", err
+		}
+		id = next
+		return StreamPrefix + strconv.FormatInt(id, 10), nil
+	})
+	return id, err
+}
+
+// nextID is one more than the highest record id among streams.
+func nextID(streams []string) (int64, error) {
+	var id int64
+	for _, s := range streams {
+		n, err := streamID(s)
+		if err != nil {
+			return 0, err
+		}
+		if n > id {
+			id = n
+		}
 	}
-	return id, nil
+	return id + 1, nil
 }
 
 type UpdateAnnouncementBasicsParams struct {

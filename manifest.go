@@ -391,6 +391,7 @@ const (
 	msgMoneyFilter       = "filter: %q is a money field, and a list cannot filter on money; remove the filter"
 	msgMoneyNameTaken    = "name: %q is also a name the money field %q generates; rename one of them"
 	msgEventVersionTaken = "name: %q is the name generated stores give the event version; rename the field"
+	msgNowTaken          = "name: %q is the name generated stores give the time of a save; rename the field"
 )
 
 // checkGeneratedNames refuses a field whose name the generator already
@@ -409,7 +410,10 @@ const (
 // kind later never invalidates a manifest. Declared names have no
 // underscore, so a collision is always one field's own name against
 // another's suffixed one. EventVersion is a mergeable store's
-// event-version member; it is refused like Owner.
+// event-version member, and Now is the save's timestamp every Create
+// and Update Params struct ends in; both are refused like Owner, for
+// every store kind, since a field of either name sat beside the
+// generated member and the store did not compile.
 func (r *Resource) checkGeneratedNames() error {
 	type field struct {
 		name string
@@ -443,6 +447,9 @@ func (r *Resource) checkGeneratedNames() error {
 		if f.kind != Money {
 			if sql == "event_version" {
 				return fmt.Errorf(msgEventVersionTaken, f.name)
+			}
+			if sql == "now" {
+				return fmt.Errorf(msgNowTaken, f.name)
 			}
 			own["column "+sql], own["key "+sql] = f.name, f.name
 			continue

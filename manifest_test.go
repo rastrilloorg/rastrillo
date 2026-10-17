@@ -108,6 +108,14 @@ func TestValidateRejections(t *testing.T) {
 			r.Form.Basics = append(r.Form.Basics, Field{Name: "PriceCurrency", Kind: Money})
 		}, `"PriceCurrency" is also a name the money field "Price" generates`},
 		{"field named EventVersion", func(r *Resource) { r.Form.Basics[1].Name = "EventVersion" }, `"EventVersion" is the name generated stores give the event version`},
+		// Astra's round-two note: every Create and Update Params struct
+		// ends in Now, the save's timestamp, after the declared fields. A
+		// text field Now sat beside it and neither store kind built: the
+		// mergeable Params declared Now twice, and sqlc merged the
+		// exclusive store's two now args into one, which the generated
+		// action then set twice.
+		{"field named Now", func(r *Resource) { r.Form.Basics[1].Name = "Now" }, `"Now" is the name generated stores give the time of a save`},
+		{"column named Now", func(r *Resource) { r.List.Columns = append(r.List.Columns, Column{Field: "Now"}) }, `"Now" is the name generated stores give the time of a save`},
 		// Astra's finding 3: a filter compares one value from the URL, and
 		// an amount has no single value without its currency.
 		{"filter on a money column", func(r *Resource) { r.List.Filter = []string{"Price"} }, `filter: "Price" is a money field`},

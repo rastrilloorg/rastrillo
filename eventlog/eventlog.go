@@ -152,8 +152,66 @@ func (l *Log) AppendChecked(ctx context.Context, stream, kind, actor string, pay
 	if err != nil {
 		return Event{}, fmt.Errorf("rastrillo/eventlog: marshal payload: %w", err)
 	}
-	// BEGIN, the work and COMMIT must share a connection, and
-	// database/sql would otherwise hand each statement any idle one.
+	return l.locked(ctx, func(conn *sql.Conn) (Event, error) {
+		history, err := l.queryEvents(ctx, conn, eventsSQL(l.col), stream)
+		if err != nil {
+			return Event{}, err
+		}
+		if l.Order != nil {
+			slices.SortStableFunc(history, l.Order)
+		}
+		if err := check(history); err != nil {
+			return Event{}, err
+		}
+		return l.insert(ctx, conn, stream, kind, actor, raw)
+	})
+}
+
+// AppendUnder is Append for a writer that names its stream only once
+// it has seen which streams exist: name sees every distinct stream
+// that starts with prefix, sorted, and returns the one to append to,
+// which must start with prefix too. An error from it is returned as it
+// is, with nothing appended.
+//
+// The read, name and the append share one BEGIN IMMEDIATE transaction,
+// as AppendChecked's do, so no stream can appear under prefix between
+// the two. A generated mergeable store's Create names its stream after
+// the highest id under its prefix plus one; reading that outside the
+// lock let two creates running at once take the same id, and both
+// wrote "created" to one stream, which read back as one record.
+func (l *Log) AppendUnder(ctx context.Context, prefix, kind, actor string, payload any, name func(streams []string) (string, error)) (Event, error) {
+	if prefix == "" || kind == "" {
+		return Event{}, errors.New("rastrillo/eventlog: prefix and kind must not be empty")
+	}
+	raw, err := marshalPayload(payload)
+	if err != nil {
+		return Event{}, fmt.Errorf("rastrillo/eventlog: marshal payload: %w", err)
+	}
+	return l.locked(ctx, func(conn *sql.Conn) (Event, error) {
+		streams, err := l.streamsUnder(ctx, conn, prefix)
+		if err != nil {
+			return Event{}, err
+		}
+		stream, err := name(streams)
+		if err != nil {
+			return Event{}, err
+		}
+		// A stream outside the prefix was not in what name saw, so the
+		// lock proves nothing about it; refusing keeps the guarantee
+		// honest rather than silently weaker.
+		if !strings.HasPrefix(stream, prefix) {
+			return Event{}, fmt.Errorf("rastrillo/eventlog: stream %q is not under %q", stream, prefix)
+		}
+		return l.insert(ctx, conn, stream, kind, actor, raw)
+	})
+}
+
+// locked runs work inside one BEGIN IMMEDIATE transaction on one
+// pinned connection and commits the event it inserted. BEGIN, the work
+// and COMMIT must share a connection, and database/sql would otherwise
+// hand each statement any idle one. An error from work rolls back and
+// is returned as it is, so a caller can match a refusal it raised.
+func (l *Log) locked(ctx context.Context, work func(conn *sql.Conn) (Event, error)) (Event, error) {
 	conn, err := l.db.Conn(ctx)
 	if err != nil {
 		return Event{}, err
@@ -170,17 +228,7 @@ func (l *Log) AppendChecked(ctx context.Context, stream, kind, actor string, pay
 			conn.ExecContext(context.WithoutCancel(ctx), "ROLLBACK")
 		}
 	}()
-	history, err := l.queryEvents(ctx, conn, eventsSQL(l.col), stream)
-	if err != nil {
-		return Event{}, err
-	}
-	if l.Order != nil {
-		slices.SortStableFunc(history, l.Order)
-	}
-	if err := check(history); err != nil {
-		return Event{}, err
-	}
-	ev, err := l.insert(ctx, conn, stream, kind, actor, raw)
+	ev, err := work(conn)
 	if err != nil {
 		return Event{}, err
 	}
@@ -189,6 +237,69 @@ func (l *Log) AppendChecked(ctx context.Context, stream, kind, actor string, pay
 	}
 	committed = true
 	return ev, nil
+}
+
+// streamsUnder is every distinct stream name that starts with prefix,
+// sorted: what AppendUnder's name sees. It reads names only, not
+// events, because it runs under the write lock and a store's whole
+// history would hold every other writer for the length of the scan.
+func (l *Log) streamsUnder(ctx context.Context, q querier, prefix string) ([]string, error) {
+	query, args := streamsUnderQuery(prefix)
+	rows, err := q.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []string
+	for rows.Next() {
+		var s string
+		if err := rows.Scan(&s); err != nil {
+			return nil, err
+		}
+		out = append(out, s)
+	}
+	return out, rows.Err()
+}
+
+// streamsUnderQuery is the SELECT behind streamsUnder and its bound
+// arguments, so a test can ask SQLite for its plan. The prefix is a
+// binary range on the primary key, not a LIKE: LIKE is
+// case-insensitive, so it cannot use a BINARY index and scans the whole
+// log, and this query runs under the write lock, where that scan
+// (about 70 ms per million unrelated events) stalled every other
+// writer. The range visits only this prefix's own rows. The upper
+// bound (prefixBound) is the first string in byte order that no stream
+// under the prefix can reach: the rightmost byte below 0xFF raised by
+// one, with everything after it dropped, as a carry. Only an empty or
+// all-0xFF prefix has no such string and takes the open range.
+func streamsUnderQuery(prefix string) (string, []any) {
+	upper, ok := prefixBound(prefix)
+	if !ok {
+		return `SELECT DISTINCT stream FROM eventlog WHERE stream >= ? ORDER BY stream`, []any{prefix}
+	}
+	return `SELECT DISTINCT stream FROM eventlog WHERE stream >= ? AND stream < ? ORDER BY stream`, []any{prefix, upper}
+}
+
+// prefixBound is the first string in byte order that no string with
+// prefix can reach: the rightmost byte below 0xFF raised by one, with
+// everything after it dropped, as a carry. Raising only the last byte
+// left "a\xff" with no bound, and every later stream ("b/1") came
+// through the range. Only a prefix that is all 0xFF has no bound, and
+// then ok is false.
+func prefixBound(prefix string) (string, bool) {
+	for i := len(prefix) - 1; i >= 0; i-- {
+		if prefix[i] != 0xFF {
+			return prefix[:i] + string([]byte{prefix[i] + 1}), true
+		}
+	}
+	return "", false
+}
+
+// likePrefix is prefix as a LIKE pattern that matches it literally:
+// LIKE's metacharacters (%, _) are escaped, so "a_b/" never matches
+// "axb/…", and "bookmarks/" never matches "bookmarksarchive/…".
+func likePrefix(prefix string) string {
+	return strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`).Replace(prefix) + "%"
 }
 
 // txQuerier is what both a *sql.Tx and a pinned *sql.Conn offer, so
@@ -256,15 +367,13 @@ func (l *Log) Events(ctx context.Context, stream string) ([]Event, error) {
 // order Events uses ((lamport, ts, writer, seq) across the whole
 // result); a set Log.Order is applied per stream group, matching
 // Events' own per-stream semantics — one stream's events reorder among
-// themselves, never across streams. The prefix matches literally:
-// LIKE's metacharacters (%, _) are escaped, so "a_b/" never matches
-// "axb/…", and "bookmarks/" never matches "bookmarksarchive/…".
+// themselves, never across streams. The prefix matches literally
+// (likePrefix).
 func (l *Log) EventsByPrefix(ctx context.Context, prefix string) ([]Event, error) {
-	escaped := strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`).Replace(prefix)
 	out, err := l.queryEvents(ctx, l.db,
 		`SELECT stream, writer, seq, lamport, ts, actor, kind, `+l.col+`
 		 FROM eventlog WHERE stream LIKE ? ESCAPE '\'
-		 ORDER BY lamport, ts, writer, seq`, escaped+"%")
+		 ORDER BY lamport, ts, writer, seq`, likePrefix(prefix))
 	if err != nil {
 		return nil, err
 	}

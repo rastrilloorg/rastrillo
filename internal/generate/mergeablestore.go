@@ -181,10 +181,11 @@ func mergeableStoreGo(r rastrillo.Resource) []byte {
 //   - Every event's actor is stamped "app"; threading Ctx.Actor into
 //     store mutations is an additive follow-up (today every generated
 //     mutation is consent-gated upstream).
-//   - Record ids are writer-local: Create allocates max(existing)+1,
-//     race-free under the single-writer SQLite pool both db paths
-//     enforce. Cross-writer id namespacing belongs to the platform
-//     transport design; this allocator is the first thing it replaces.
+//   - Record ids are writer-local: Create allocates max(existing)+1
+//     under the eventlog's write lock, so two creates on one database
+//     never share an id. Cross-writer id namespacing belongs to the
+//     platform transport design; this allocator is the first thing it
+//     replaces.
 package %[2]s
 
 import (
@@ -373,34 +374,48 @@ row.UpdatedAt = *p.UpdatedAt
 		// racing writer clear the field and refill it in another
 		// currency in between, and the stale event was appended after.
 		fmt.Fprintf(&b, `func emit(ctx context.Context, log *eventlog.Log, rules replay.Rules, stream, kind string, p payload, amounts map[string]any) error {
-	raw, err := json.Marshal(p)
+	raw, err := encode(p, amounts)
 	if err != nil {
 		return err
 	}
-	if len(amounts) > 0 {
-		var all map[string]json.RawMessage
-		if err := json.Unmarshal(raw, &all); err != nil {
-			return err
-		}
-		for k, v := range amounts {
-			if all[k], err = json.Marshal(v); err != nil {
-				return err
-			}
-		}
-		if raw, err = json.Marshal(all); err != nil {
-			return err
-		}
-	}
-	_, err = log.AppendChecked(ctx, stream, kind, actor, json.RawMessage(raw), func(history []eventlog.Event) error {
-		rec := map[string]replay.Field{}
-		for i, ev := range append(history, eventlog.Event{Stream: stream, Kind: kind, Payload: raw}) {
-			if err := rules.Apply(rec, i, ev); err != nil {
-				return fmt.Errorf(%[1]q, stream, err)
-			}
-		}
-		return nil
+	_, err = log.AppendChecked(ctx, stream, kind, actor, raw, func(history []eventlog.Event) error {
+		return fold(rules, stream, kind, history, raw)
 	})
 	return err
+}
+
+// encode is p as an event payload with each money field's amount and
+// currency spliced in under their own keys.
+func encode(p payload, amounts map[string]any) (json.RawMessage, error) {
+	raw, err := json.Marshal(p)
+	if err != nil {
+		return nil, err
+	}
+	if len(amounts) == 0 {
+		return raw, nil
+	}
+	var all map[string]json.RawMessage
+	if err := json.Unmarshal(raw, &all); err != nil {
+		return nil, err
+	}
+	for k, v := range amounts {
+		if all[k], err = json.Marshal(v); err != nil {
+			return nil, err
+		}
+	}
+	return json.Marshal(all)
+}
+
+// fold replays history and then the event about to land on it, and
+// returns what the rules refuse, named by its stream.
+func fold(rules replay.Rules, stream, kind string, history []eventlog.Event, raw json.RawMessage) error {
+	rec := map[string]replay.Field{}
+	for i, ev := range append(history, eventlog.Event{Stream: stream, Kind: kind, Payload: raw}) {
+		if err := rules.Apply(rec, i, ev); err != nil {
+			return fmt.Errorf(%[1]q, stream, err)
+		}
+	}
+	return nil
 }
 
 `, replayStream)
@@ -629,24 +644,6 @@ func pageWindow(rows []%[1]s, offset, limit int64) []%[1]s {
 	if err != nil {
 		return 0, err
 	}
-	// Writer-local id allocation (see the package doc's caveat):
-	// max(existing id in this resource's streams)+1, race-free under
-	// the single-writer SQLite pool.
-	events, err := log.EventsByPrefix(ctx, StreamPrefix)
-	if err != nil {
-		return 0, err
-	}
-	var id int64
-	for _, ev := range events {
-		evID, err := streamID(ev.Stream)
-		if err != nil {
-			return 0, err
-		}
-		if evID > id {
-			id = evID
-		}
-	}
-	id++
 	p := payload{
 `, model, rulesVar)
 	if scoped(r) {
@@ -660,13 +657,7 @@ func pageWindow(rows []%[1]s, offset, limit int64) []%[1]s {
 	}
 	b.WriteString("CreatedAt: &arg.Now,\n}\n")
 	if len(money) == 0 {
-		b.WriteString(`if _, err := log.Append(ctx, StreamPrefix+strconv.FormatInt(id, 10), "created", actor, p); err != nil {
-		return 0, err
-	}
-	return id, nil
-}
-
-`)
+		b.WriteString("return create(ctx, log, p)\n}\n\n")
 	} else {
 		// A created record with no amount writes neither key, which
 		// replay reads as "still empty", as it reads history written
@@ -675,14 +666,72 @@ func pageWindow(rows []%[1]s, offset, limit int64) []%[1]s {
 		for _, c := range money {
 			fmt.Fprintf(&b, "if arg.%[1]sMinor != nil || arg.%[1]sCurrency != nil {\namounts[%[2]q], amounts[%[3]q] = arg.%[1]sMinor, arg.%[1]sCurrency\n}\n", c.Name, c.SQL, c.SQL+"_currency")
 		}
-		b.WriteString(`if err := emit(ctx, log, rules, StreamPrefix+strconv.FormatInt(id, 10), "created", p, amounts); err != nil {
+		b.WriteString("return create(ctx, log, rules, p, amounts)\n}\n\n")
+	}
+
+	// The id is one more than the highest under StreamPrefix, read by
+	// the append itself under its write lock. Read before the append,
+	// two creates running at once took the same id and both wrote
+	// "created" to one stream, and the two records read back as one.
+	b.WriteString(`// create appends p as a new record's "created" event and returns the
+// record's id: one more than the highest under StreamPrefix, which the
+// append reads under the same write lock it writes with (see the
+// package doc's caveat on ids).
+`)
+	if len(money) == 0 {
+		b.WriteString(`func create(ctx context.Context, log *eventlog.Log, p payload) (int64, error) {
+	var id int64
+	_, err := log.AppendUnder(ctx, StreamPrefix, "created", actor, p, func(streams []string) (string, error) {
+		next, err := nextID(streams)
+		if err != nil {
+			return "", err
+		}
+		id = next
+		return StreamPrefix + strconv.FormatInt(id, 10), nil
+	})
+	return id, err
+}
+
+`)
+	} else {
+		b.WriteString(`func create(ctx context.Context, log *eventlog.Log, rules replay.Rules, p payload, amounts map[string]any) (int64, error) {
+	raw, err := encode(p, amounts)
+	if err != nil {
 		return 0, err
 	}
-	return id, nil
+	var id int64
+	_, err = log.AppendUnder(ctx, StreamPrefix, "created", actor, raw, func(streams []string) (string, error) {
+		next, err := nextID(streams)
+		if err != nil {
+			return "", err
+		}
+		id = next
+		stream := StreamPrefix + strconv.FormatInt(id, 10)
+		// A new id has no history, so the fold judges the created
+		// event alone, as emit's would on an empty stream.
+		return stream, fold(rules, stream, "created", nil, raw)
+	})
+	return id, err
 }
 
 `)
 	}
+	b.WriteString(`// nextID is one more than the highest record id among streams.
+func nextID(streams []string) (int64, error) {
+	var id int64
+	for _, s := range streams {
+		n, err := streamID(s)
+		if err != nil {
+			return 0, err
+		}
+		if n > id {
+			id = n
+		}
+	}
+	return id + 1, nil
+}
+
+`)
 
 	// ── Updates ────────────────────────────────────────────────────────
 	b.WriteString(mergeableUpdateGo(r, model, r.Form.Basics, "Basics"))

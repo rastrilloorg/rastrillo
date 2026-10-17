@@ -59,6 +59,8 @@ To keep the old, exact format for a field, set `Strict: true`.
 - New migration set `eventlog.MoneySchema` renames the event log's `payload` column to `payload_v2`, for an app whose events carry money; it takes about half a second per 200,000 events.
 - New function `eventlog.UpgradeForMoney` applies `MoneySchema` with or without a migration ledger; generated apps call it from `gen.Boot`.
 - New method `(*eventlog.Log).AppendChecked` appends an event only if a check on the stream's history passes, with no other write in between.
+- New method `(*eventlog.Log).AppendUnder` appends an event to a stream named once the streams under a prefix have been read, with no other write in between.
+- Fixed: two records created at the same time in a mergeable store could take the same id and merge into one. The id is now allocated under the same lock as the write.
 - New error `replay.ErrCurrencyChange` matches an event refused because its field already holds another currency.
 - `eventlog.Open` now fails when the event log table does not exist yet: apply `eventlog.Schema` first.
 - Generated apps with manifest resources get `gen.Boot`, which upgrades and checks their money data, and `gen.Router` now takes its result.
@@ -72,7 +74,7 @@ To keep the old, exact format for a field, set `Strict: true`.
 - Removed: `rastrillo generate --default-locale`. The default now comes from `default_locale` in `manifest/app.toml`.
 - `rastrillo generate` now deletes files in `gen/` that an earlier run generated and this run does not. Keep files you edit by hand outside `gen/`. `rastrillo generate --check` names what a run would delete.
 - `rastrillo generate` refuses a filter on a money field, because an amount means nothing without its currency. Remove the filter.
-- `rastrillo generate` refuses a field named like a money field's generated fields, such as `PriceCurrency` beside a money field `Price`, and a field named `EventVersion`. Rename the field.
+- `rastrillo generate` refuses a field named like a money field's generated fields, such as `PriceCurrency` beside a money field `Price`, and a field named `EventVersion` or `Now`. Rename the field.
 
 ### Changed: sign-in lands back on the page that asked for it; post `return_to` from your own sign-in page
 
