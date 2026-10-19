@@ -1096,6 +1096,24 @@ func allPartials() []struct {
 				map[string]any{"Value": "refund", "Label": "Refund…", "Danger": true},
 			},
 		}},
+		{"media-grid", map[string]any{
+			"Items": []any{
+				map[string]any{
+					"Src": "/images/4471.png", "Name": "Checkout, step 2",
+					"Desc": "The payment step, with the card form open.", "Meta": "1280 × 3200 · 412 KB",
+					"Href": "/images/4471", "Width": 1280, "Height": 3200,
+					"Select": "4471", "Selected": true,
+					"Menu": []any{
+						map[string]any{"Label": "Edit", "Href": "/images/4471/edit"},
+						map[string]any{"Label": "Delete image…", "Href": "/images/4471/delete", "Danger": true},
+					},
+				},
+				map[string]any{
+					"Src": "/images/4472.svg", "Name": "Harbour logo", "Alt": "Harbour",
+					"Fit": "contain", "Href": "/images/4472", "Select": "4472",
+				},
+			},
+		}},
 		{"scheme-menu", map[string]any{"Scheme": "dark", "Return": "/orders"}},
 		{"error-page", map[string]any{
 			"Status": 500, "Ref": "k3f9tq", "HomeHref": "/", "BackHref": "/orders",
@@ -1249,14 +1267,15 @@ func TestAllPartialsAreDefined(t *testing.T) {
 		"locale-menu", "scheme-menu", "error-page",
 		"field-date", "field-time", "field-datetime", "field-daterange",
 		"field-url", "signin", "signin-title", "row-menu", "field-money",
+		"media-grid",
 	}
 	for _, name := range want {
 		if tmpl.Lookup(name) == nil {
 			t.Errorf("partial %q is not defined", name)
 		}
 	}
-	if len(want) != 40 {
-		t.Fatalf("the shipped set is 40 partials, this list has %d", len(want))
+	if len(want) != 41 {
+		t.Fatalf("the shipped set is 41 partials, this list has %d", len(want))
 	}
 }
 
@@ -1268,15 +1287,27 @@ func TestRenderedPartialsAreSelfContained(t *testing.T) {
 	for _, p := range allPartials() {
 		got := render(t, p.Name, p.Data)
 		for _, bad := range []string{
-			"http://", "https://", "//cdn", "<script", "<iframe", "<img",
+			"http://", "https://", "//cdn", "<script", "<iframe",
 			"<link ", "url(", "xlink:href", "@import",
 		} {
 			if strings.Contains(got, bad) {
 				t.Errorf("partial %q reaches outside the page (%q):\n%s", p.Name, bad, got)
 			}
 		}
+		// An image is the one fetch a partial legitimately asks for:
+		// media-grid draws the app's own pictures. The address is the
+		// caller's, so the bar is on the attribute rather than the
+		// element: a path on the page's own origin, never a scheme or
+		// a protocol-relative host.
+		for _, m := range srcAttr.FindAllStringSubmatch(got, -1) {
+			if v := m[1]; !strings.HasPrefix(v, "/") || strings.HasPrefix(v, "//") {
+				t.Errorf("partial %q loads %q, which is not a path on the page's origin:\n%s", p.Name, v, got)
+			}
+		}
 	}
 }
+
+var srcAttr = regexp.MustCompile(`\bsrc="([^"]*)"`)
 
 // The one non-partial asset this package ships gets the same bar as the
 // partials and the vendored icons.
@@ -1392,6 +1423,13 @@ func TestEveryControlHasAnAccessibleName(t *testing.T) {
 	if !strings.Contains(menu, `<summary aria-label="`+template.HTMLEscapeString(defaultTf("rastrillo.ui.row_menu", "name", "Grace Hopper"))+`">`) {
 		t.Errorf("the row menu's trigger has no name: %s", menu)
 	}
+	// A tile's checkbox and kebab each say which tile they belong to.
+	grid := render(t, "media-grid", fixtureFor(t, "media-grid"))
+	for _, key := range []string{"rastrillo.ui.media_select", "rastrillo.ui.row_menu"} {
+		if want := `aria-label="` + template.HTMLEscapeString(defaultTf(key, "name", "Checkout, step 2")) + `"`; !strings.Contains(grid, want) {
+			t.Errorf("the media grid's control is not named for its tile (%s): %s", want, grid)
+		}
+	}
 }
 
 // The styleguide equivalent: one pass renders every partial together,
@@ -1417,6 +1455,7 @@ func TestRenderEverythingSmoke(t *testing.T) {
 		"status-pill":        `<span rst-status`,
 		"empty-state":        `<div rst-empty>`,
 		"pagination":         `<nav rst-pagination`,
+		"media-grid":         `<div rst-media>`,
 	}
 	for name, marker := range markers {
 		if !strings.Contains(out, marker) {

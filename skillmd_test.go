@@ -170,7 +170,15 @@ import (
 // bytes. The file had no slack after the previous raise and no line
 // in the locales section restates another, so the ceiling is raised
 // by exactly the addition.
-const skillBudget = 31_630
+//
+// Raised 31,630 -> 31,761 on 2026-10-18 for one sentence: the media
+// grid. Patrix hand-rolled an image grid that stretched its cards
+// because nothing told an agent the framework ships one; the sentence
+// names the partial and its three switches (Fit, Select, Menu) in 131
+// bytes. The file had no slack after the previous raise and the rows
+// paragraph it joins restates nothing, so the ceiling is raised by
+// exactly the addition.
+const skillBudget = 31_761
 
 // TestSkillMDStaysWithinBudget makes the budget mechanical rather than
 // remembered: several release evenings have ended with a wc -c dance

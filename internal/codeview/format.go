@@ -99,7 +99,7 @@ var flexAttrs = map[string]bool{
 	"rst-shell-rail-foot": true, "rst-signin": true, "rst-signin-brand": true, "rst-signin-door": true,
 	"rst-signin-form": true, "rst-signin-passkey": true, "rst-signin-or": true, "rst-signin-providers": true,
 	"rst-stage": true, "rst-error-cta": true, "rst-dtp-pick": true, "rst-dtp-row": true, "rst-cal-head": true,
-	"rst-cal-nav": true,
+	"rst-cal-nav": true, "rst-media": true, "rst-media-name": true,
 }
 
 // inlineFlexAttrs are the attributes that make their element an

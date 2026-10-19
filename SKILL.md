@@ -526,7 +526,9 @@ target. docs/site/testing.md
   is a link across its whole width through its one name link; never
   link only the name. Row actions use `row-menu`, and a destructive one
   is a link to its confirm page. Inside a bulk-selection form, row-menu
-  items are links only. A GET handler never changes anything, and no
+  items are links only. A page of pictures is `media-grid` (4:3 frames;
+  `Fit "contain"` for logos and banners; `Select` for the bulk-bar's
+  form; `Menu` for a kebab). A GET handler never changes anything, and no
   script changes anything while `document.prerendering` is true:
   `Serve` prerenders shell navigation, on a phone before it is tapped
   (turn it off with `Options.NoSpeculationRules`). Full vocabulary:

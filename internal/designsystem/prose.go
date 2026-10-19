@@ -5213,4 +5213,80 @@ var prose = map[string]map[string]string{
 		`vi`:      `Cài đặt hiển thị`,
 		`ar`:      `إعدادات العرض`,
 	},
+	`A grid of image tiles. Every frame is 4:3, so tall screenshots and wide banners sit in one even grid.`: {
+		`ga`:      `Greille de thíleanna íomhá. Tá gach fráma 4:3, mar sin suíonn gabhálacha scáileáin arda agus meirgí leathana i ngreille chothrom amháin.`,
+		`zh-Hans`: `图片图块组成的网格。每个框都是 4:3，所以高的截图和宽的横幅可以整齐地放在同一个网格里。`,
+		`es`:      `Una cuadrícula de mosaicos de imagen. Cada marco es 4:3, así que las capturas altas y los banners anchos caben en una misma cuadrícula uniforme.`,
+		`hi`:      `छवि टाइलों की एक ग्रिड। हर फ़्रेम 4:3 है, इसलिए लंबे स्क्रीनशॉट और चौड़े बैनर एक ही समान ग्रिड में बैठते हैं।`,
+		`pt-PT`:   `Uma grelha de mosaicos de imagem. Cada moldura é 4:3, por isso capturas altas e banners largos cabem numa mesma grelha uniforme.`,
+		`bn`:      `ছবির টাইলের একটি গ্রিড। প্রতিটি ফ্রেম 4:3, তাই লম্বা স্ক্রিনশট আর চওড়া ব্যানার একই সমান গ্রিডে বসে।`,
+		`ru`:      `Сетка плиток с изображениями. Каждая рамка 4:3, поэтому высокие снимки экрана и широкие баннеры помещаются в одну ровную сетку.`,
+		`ja`:      `画像タイルのグリッドです。すべての枠が 4:3 なので、縦長のスクリーンショットも横長のバナーも、ひとつの揃ったグリッドに収まります。`,
+		`yue`:     `圖片方塊組成嘅網格。每個框都係 4:3，所以高嘅截圖同闊嘅橫額都可以整齊咁放喺同一個網格入面。`,
+		`vi`:      `Một lưới các ô hình ảnh. Mỗi khung là 4:3, nên ảnh chụp màn hình cao và biểu ngữ rộng nằm gọn trong cùng một lưới đều.`,
+		`ar`:      `شبكة من بلاطات الصور. كل إطار بنسبة 4:3، فتستقر لقطات الشاشة الطويلة واللافتات العريضة في شبكة واحدة منتظمة.`,
+	},
+	`Screenshots, a logo and a banner`: {
+		`ga`:      `Gabhálacha scáileáin, lógó agus meirge`,
+		`zh-Hans`: `截图、一个标志和一个横幅`,
+		`es`:      `Capturas, un logotipo y un banner`,
+		`hi`:      `स्क्रीनशॉट, एक लोगो और एक बैनर`,
+		`pt-PT`:   `Capturas, um logótipo e um banner`,
+		`bn`:      `স্ক্রিনশট, একটি লোগো আর একটি ব্যানার`,
+		`ru`:      `Снимки экрана, логотип и баннер`,
+		`ja`:      `スクリーンショット、ロゴ、バナー`,
+		`yue`:     `截圖、一個標誌同一個橫額`,
+		`vi`:      `Ảnh chụp màn hình, một logo và một biểu ngữ`,
+		`ar`:      `لقطات شاشة وشعار ولافتة`,
+	},
+	`Set Fit to "contain" for a logo or a banner. A screenshot keeps the default and shows its top. A tile with no Desc says "No description".`: {
+		`ga`:      `Socraigh Fit go "contain" do lógó nó do mheirge. Coinníonn gabháil scáileáin an réamhshocrú agus taispeánann sí a barr. Deir tíl gan Desc "Gan chur síos".`,
+		`zh-Hans`: `对标志或横幅把 Fit 设为 "contain"。截图保持默认，显示它的顶部。没有 Desc 的图块会显示"没有描述"。`,
+		`es`:      `Pon Fit en "contain" para un logotipo o un banner. Una captura mantiene el valor por defecto y muestra su parte superior. Un mosaico sin Desc dice "Sin descripción".`,
+		`hi`:      `लोगो या बैनर के लिए Fit को "contain" पर सेट करें। स्क्रीनशॉट डिफ़ॉल्ट रखता है और अपना ऊपरी हिस्सा दिखाता है। जिस टाइल में Desc नहीं है, वह "कोई विवरण नहीं" कहती है।`,
+		`pt-PT`:   `Defina Fit como "contain" para um logótipo ou um banner. Uma captura mantém a predefinição e mostra o topo. Um mosaico sem Desc diz "Sem descrição".`,
+		`bn`:      `লোগো বা ব্যানারের জন্য Fit-কে "contain" করুন। স্ক্রিনশট ডিফল্ট রাখে আর তার উপরের অংশ দেখায়। যে টাইলে Desc নেই, সেটি বলে "কোনো বিবরণ নেই"।`,
+		`ru`:      `Для логотипа или баннера задайте Fit равным "contain". Для снимка экрана оставьте значение по умолчанию, чтобы показывать его верхнюю часть. На плитке без Desc отображается "Без описания".`,
+		`ja`:      `ロゴやバナーには Fit を "contain" にします。スクリーンショットは既定のままで、上部を表示します。Desc のないタイルには「説明なし」と表示されます。`,
+		`yue`:     `標誌或者橫額就將 Fit 設做 "contain"。截圖保持預設，顯示佢頂部。冇 Desc 嘅方塊會顯示「冇描述」。`,
+		`vi`:      `Đặt Fit là "contain" cho logo hoặc biểu ngữ. Ảnh chụp màn hình giữ mặc định và hiện phần trên của nó. Ô không có Desc hiện "Không có mô tả".`,
+		`ar`:      `اضبط Fit على "contain" للشعار أو اللافتة. تبقى لقطة الشاشة على الإعداد الافتراضي وتعرض جزءها العلوي. البلاطة التي بلا Desc تقول "لا يوجد وصف".`,
+	},
+	`Select mode, one tile selected`: {
+		`ga`:      `Mód roghnúcháin, tíl amháin roghnaithe`,
+		`zh-Hans`: `选择模式，选中了一个图块`,
+		`es`:      `Modo de selección, un mosaico seleccionado`,
+		`hi`:      `चयन मोड, एक टाइल चुनी हुई`,
+		`pt-PT`:   `Modo de seleção, um mosaico selecionado`,
+		`bn`:      `নির্বাচন মোড, একটি টাইল নির্বাচিত`,
+		`ru`:      `Режим выбора, выбрана одна плитка`,
+		`ja`:      `選択モード、タイルをひとつ選択中`,
+		`yue`:     `揀選模式，揀咗一個方塊`,
+		`vi`:      `Chế độ chọn, một ô được chọn`,
+		`ar`:      `وضع التحديد، بلاطة واحدة محدَّدة`,
+	},
+	`Wrap the grid and a bulk-bar in one form. Each checkbox posts its tile's Select value under the name "id"; set SelectName to change it. Inside the form, menu items must be links.`: {
+		`ga`:      `Cuir an ghreille agus bulk-bar in aon fhoirm amháin. Postálann gach ticbhosca luach Select a thíle faoin ainm "id"; socraigh SelectName chun é a athrú. Taobh istigh den fhoirm, caithfidh míreanna an roghchláir a bheith ina naisc.`,
+		`zh-Hans`: `把网格和 bulk-bar 放在同一个表单里。每个复选框以 "id" 为名提交其图块的 Select 值；设置 SelectName 可以改名。在表单内，菜单项必须是链接。`,
+		`es`:      `Envuelve la cuadrícula y un bulk-bar en un mismo formulario. Cada casilla envía el valor Select de su mosaico con el nombre "id"; cambia SelectName para usar otro. Dentro del formulario, los elementos del menú deben ser enlaces.`,
+		`hi`:      `ग्रिड और bulk-bar को एक ही फ़ॉर्म में रखें। हर चेकबॉक्स अपनी टाइल का Select मान "id" नाम से भेजता है; इसे बदलने के लिए SelectName सेट करें। फ़ॉर्म के अंदर मेनू के आइटम लिंक होने चाहिए।`,
+		`pt-PT`:   `Envolva a grelha e um bulk-bar num único formulário. Cada caixa envia o valor Select do seu mosaico com o nome "id"; defina SelectName para o mudar. Dentro do formulário, os itens do menu têm de ser links.`,
+		`bn`:      `গ্রিড আর একটি bulk-bar একই ফর্মে রাখুন। প্রতিটি চেকবক্স "id" নামে তার টাইলের Select মান পাঠায়; বদলাতে SelectName সেট করুন। ফর্মের ভেতরে মেনুর আইটেমগুলো অবশ্যই লিংক হবে।`,
+		`ru`:      `Поместите сетку и bulk-bar в одну форму. Каждый флажок отправляет значение Select своей плитки под именем "id"; задайте SelectName, чтобы его изменить. Внутри формы пункты меню должны быть ссылками.`,
+		`ja`:      `グリッドと bulk-bar をひとつのフォームで囲みます。各チェックボックスは "id" という名前でそのタイルの Select の値を送信します。変えるには SelectName を設定します。フォームの中では、メニュー項目はリンクでなければなりません。`,
+		`yue`:     `將網格同 bulk-bar 放喺同一個表格入面。每個剔選框用 "id" 呢個名提交佢方塊嘅 Select 值；想改就設定 SelectName。喺表格入面，選單項目一定要係連結。`,
+		`vi`:      `Bọc lưới và một bulk-bar trong cùng một biểu mẫu. Mỗi hộp kiểm gửi giá trị Select của ô mình dưới tên "id"; đặt SelectName để đổi tên. Bên trong biểu mẫu, các mục menu phải là liên kết.`,
+		`ar`:      `ضع الشبكة وشريط bulk-bar في نموذج واحد. يرسل كل مربع اختيار قيمة Select الخاصة ببلاطته تحت الاسم "id"؛ اضبط SelectName لتغييره. داخل النموذج، يجب أن تكون عناصر القائمة روابط.`,
+	},
 }
+
+// proseDrafts are the keys whose eleven translations are still the
+// English, because the English is not approved yet and the translations
+// are drafted only after it is (AGENTS.md: review the English first,
+// then draft the eleven). The parity gate forces an entry per locale,
+// so the entries exist as drafts; the leak gate, which sweeps every
+// translated page for the English, would otherwise fail on each of
+// them, so it leaves these out. TestProseDraftsAreStillDrafts holds
+// every entry here to being exactly that, so the day a key is
+// translated its entry has to go: the set cannot outlive the debt.
+var proseDrafts = map[string]bool{}

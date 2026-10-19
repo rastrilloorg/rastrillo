@@ -1527,6 +1527,7 @@ var previewMobileHeights = map[string]int{
 	"partial-error-page":              543,
 	"partial-job-status":              113,
 	"partial-list-row-action":         299,
+	"partial-media-grid":              1560, // one column: four tiles stacked, each a 4:3 frame the column wide
 	"partial-page-header":             216,
 	"partial-pagination":              176,
 	"screen-signin-ask":               649,
@@ -1585,6 +1586,7 @@ var previewHeights = map[string]int{
 	"partial-seg-tabs":           80,
 	"partial-dropdown":           200, // room for the open menu
 	"partial-bulk-bar":           190, // room for the actions menu it opens
+	"partial-media-grid":         720, // four tiles in two rows at the frame's width, each a 4:3 frame over a three-line caption
 	"partial-pagination":         110,
 	"partial-empty-state":        240,
 	// Display.
@@ -1798,6 +1800,7 @@ func previewDoc(mount, theme, locale, title, body string) string {
 
 var (
 	sampleHref = regexp.MustCompile(`href="([^"]*)"`)
+	sampleSrc  = regexp.MustCompile(`src="([^"]*)"`)
 	sampleForm = regexp.MustCompile(`<form\b`)
 	// A start tag, quoted values whole so a ">" or an attribute's name
 	// inside one is not mistaken for the tag's own, and one attribute in
@@ -1855,7 +1858,31 @@ func deaden(mount, html string) string {
 		}
 		return `href="#"`
 	})
+	// A sample's pictures the same way: the route stays in the HTML
+	// tab and the preview loads the gallery's own file for it. A route
+	// no picture is kept for is left alone, and shows as the broken
+	// image it would be, rather than being quietly blanked.
+	out = sampleSrc.ReplaceAllStringFunc(out, func(m string) string {
+		v := m[len(`src="`) : len(m)-1]
+		if asset, ok := sampleImages[v]; ok {
+			return `src="` + assetURL(mount, asset) + `"`
+		}
+		return m
+	})
 	return unfocus(sampleForm.ReplaceAllString(out, `<form target="ds-void"`))
+}
+
+// sampleImages maps the route a sample gives a picture to the gallery
+// asset the preview draws for it. The samples are written to read like
+// a real application (/images/checkout.png), and this site serves none
+// of those; the four pictures under samples/ stand in for them in the
+// frame alone. A route here that no sample uses, or a sample picture no
+// route names, fails TestEverySamplePictureIsUsedOnce.
+var sampleImages = map[string]string{
+	"/images/checkout.png": "sample-checkout.svg",
+	"/images/pricing.png":  "sample-pricing.svg",
+	"/images/logo.svg":     "sample-logo.svg",
+	"/images/banner.png":   "sample-banner.svg",
 }
 
 // copyJoin joins the parts of a copy button's accessible name, the

@@ -108,17 +108,17 @@ delivery mode changes. See [Icons](/docs/icons).
 They span the list-screen, display, form and route families:
 
 ```text
-back-nav      field-check      form-foot           person
-badge         field-date       job-status          row-menu
-bulk-bar      field-daterange  list-bar            scheme-menu
-callout       field-datetime   list-bar-search     seg-tabs
-choice-field  field-money      list-row-action     signin
-confirm-form  field-select     list-search-submit  signin-title
-detail-list   field-text       locale-menu         stat
-dropdown      field-textarea   meter               status-pill
-empty-state   field-time       notice
-error-page    field-url        page-header
-field         form-error       pagination
+back-nav      field-check      form-foot           pagination
+badge         field-date       job-status          person
+bulk-bar      field-daterange  list-bar            row-menu
+callout       field-datetime   list-bar-search     scheme-menu
+choice-field  field-money      list-row-action     seg-tabs
+confirm-form  field-select     list-search-submit  signin
+detail-list   field-text       locale-menu         signin-title
+dropdown      field-textarea   media-grid          stat
+empty-state   field-time       meter               status-pill
+error-page    field-url        notice
+field         form-error       page-header
 ```
 
 `locale-menu` is the language switcher; see
@@ -213,6 +213,13 @@ fields). Put a destructive item last: it links to its confirm page and
 its label ends with …. Inside a bulk-selection form, every item must be
 a link. `list-row-action` takes the same list as `Menu` and puts the
 menu after its action pill.
+
+A page of pictures is `media-grid`: one tile per image, each in an
+even 4:3 frame with the name and description under it. A tall
+screenshot shows its top. Pass `Fit "contain"` for a logo or a banner.
+Give a tile `Href` to make it a link, `Select` for the checkbox a
+`bulk-bar` form collects, and `Menu` for a kebab. Render `empty-state`
+when there are no images.
 
 `job-status`'s `rst-job` is the third, and the reason is behaviour
 rather than structure: the shim replaces that element **wholesale** on

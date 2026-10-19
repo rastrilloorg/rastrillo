@@ -103,19 +103,30 @@ func TestIsBaseKey(t *testing.T) {
 	}
 }
 
-// The three strings the phone shells and the row menu say. They are
-// checked as a set rather than left to TestBaseCatalogsShareOneKeySet
-// because two of them carry {name}, and a translation that drops or
-// doubles the placeholder renders "Back to" with nothing after it on a
-// screen reader, which no visual check catches. New copy carries no em
-// dashes; that is asserted here because a translator reaching for one
-// is the likeliest way it comes back.
+// The strings the phone shells, the row menu and the media grid say.
+// They are checked as a set rather than left to
+// TestBaseCatalogsShareOneKeySet because three of them carry {name},
+// and a translation that drops or doubles the placeholder renders
+// "Back to" with nothing after it on a screen reader, which no visual
+// check catches. New copy carries no em dashes; that is asserted here
+// because a translator reaching for one is the likeliest way it comes
+// back.
 func TestTheShellAndRowMenuStringsAreInEveryCatalog(t *testing.T) {
 	keys := map[string]int{ // key -> how many {name} it must carry
 		"rastrillo.ui.shell_up_label": 0,
 		"rastrillo.ui.shell_up":       1,
 		"rastrillo.ui.row_menu":       1,
+		"rastrillo.ui.media_select":   1,
+		"rastrillo.ui.no_description": 0,
 	}
+	// drafts are keys whose eleven other catalogs still carry the
+	// English, because the English is not yet approved and the
+	// translations are drafted only after it is. The parity gate forces
+	// the keys to exist, so they exist as drafts; the check below that
+	// a translation is not the English is turned round for them, so
+	// the entry has to go the day the key is translated and cannot
+	// outlive the debt it records.
+	drafts := map[string]bool{}
 	all := BaseCatalogs()
 	if len(all) != 12 {
 		t.Fatalf("%d base catalogs, want 12", len(all))
@@ -137,9 +148,19 @@ func TestTheShellAndRowMenuStringsAreInEveryCatalog(t *testing.T) {
 			if strings.Contains(v, "—") {
 				t.Errorf("%s.toml: %s = %q contains an em dash", code, key, v)
 			}
-			if code != "en" && v == en[key] {
+			if code == "en" {
+				continue
+			}
+			if drafts[key] && v != en[key] {
+				t.Errorf("%s.toml: %s is translated (%q); take it out of drafts", code, key, v)
+			} else if !drafts[key] && v == en[key] {
 				t.Errorf("%s.toml: %s is still the English %q", code, key, v)
 			}
+		}
+	}
+	for key := range drafts {
+		if _, ok := keys[key]; !ok {
+			t.Errorf("drafts names %s, which the set above does not check", key)
 		}
 	}
 }

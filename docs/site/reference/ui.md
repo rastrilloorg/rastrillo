@@ -31,6 +31,11 @@ The partials assume three containers they do not emit, because those
 belong to your page markup: `<div rst-page>`,
 `<div rst-list>` and `<form rst-form>`.
 
+`media-grid` is the list family's grid of image tiles, for an Images
+page: an even 4:3 frame per tile, a caption under it, and the same
+checkbox and kebab a list row carries. See
+[Templates](/docs/templates#the-partials).
+
 ## Funcs
 
 ```go

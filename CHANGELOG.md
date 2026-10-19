@@ -10,6 +10,18 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+**An image grid for an app's Images page.** `media-grid` draws one tile
+per picture in an even 4:3 frame, so a tall screenshot and a wide
+banner sit in one grid without stretching their tiles; a tall picture
+shows its top, and `Fit "contain"` letterboxes a logo or a banner. The
+name, a two-line description and a meta line sit under the frame. A
+tile can link, carry the select checkbox a `bulk-bar` form collects,
+and a `row-menu` kebab. One column on a phone; no JavaScript. Take the
+new `tokens.css`.
+
+- New partial `media-grid`; see [Templates](/docs/templates#the-partials).
+- New catalog keys `rastrillo.ui.media_select` and `rastrillo.ui.no_description`; a locale you ship yourself must translate them.
+
 **A colour-scheme switch in every shell.** Readers get Light, Dark and
 System beside the language menu, with or without JavaScript. The
 framework mounts `POST /_theme`, which stores the choice in the

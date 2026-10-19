@@ -171,6 +171,37 @@ func selectOptions(labels ...string) []any {
 	return out
 }
 
+// mediaTile is one media-grid tile with a links-only menu, the shape
+// an Images page renders in and out of select mode. The logo's Alt
+// names the brand; every other picture is named by its caption, so its
+// alt stays empty. Width and height are the picture's own pixels.
+func mediaTile(src, name, desc, meta, href string, width, height int, fit string) map[string]any {
+	t := map[string]any{
+		"Src": src, "Name": name, "Desc": desc, "Meta": meta, "Href": href,
+		"Width": width, "Height": height,
+		"Menu": []any{
+			map[string]any{"Label": "Edit", "Href": href + "/edit"},
+			map[string]any{"Label": "Delete…", "Href": href + "/delete", "Danger": true},
+		},
+	}
+	if fit != "" {
+		t["Fit"] = fit
+	}
+	if name == "Harbour logo" {
+		t["Alt"] = "Harbour"
+	}
+	return t
+}
+
+// mediaSelectable is a tile in select mode: its checkbox posts value.
+func mediaSelectable(t map[string]any, value string, selected bool) map[string]any {
+	t["Select"] = value
+	if selected {
+		t["Selected"] = true
+	}
+	return t
+}
+
 // families is the whole page, in page order.
 func families() []family {
 	return []family{
@@ -319,6 +350,27 @@ func families() []family {
 								map[string]any{"Value": "delete", "Label": "Delete…", "Danger": true},
 							},
 						}, Note: "The destructive item is last: the first entry is the surrounding form's implicit-Enter default."},
+					},
+				},
+				{
+					Name:  "media-grid",
+					Blurb: "A grid of image tiles. Every frame is 4:3, so tall screenshots and wide banners sit in one even grid.",
+					Wrap:  wrapList,
+					States: []sample{
+						{State: "Screenshots, a logo and a banner", Data: map[string]any{
+							"Items": []any{
+								mediaTile("/images/checkout.png", "Checkout, step 2", "The payment step, with the card form open.", "1280 × 3200 · 412 KB", "/images/1", 1280, 3200, ""),
+								mediaTile("/images/pricing.png", "Pricing page", "", "1280 × 2400 · 318 KB", "/images/2", 1280, 2400, ""),
+								mediaTile("/images/logo.svg", "Harbour logo", "The mark on its own, for dark and light backgrounds.", "240 × 240 · 3 KB", "/images/3", 240, 240, "contain"),
+								mediaTile("/images/banner.png", "Spring banner", "The strip at the top of the shop in March.", "1200 × 200 · 64 KB", "/images/4", 1200, 200, "contain"),
+							},
+						}, Note: `Set Fit to "contain" for a logo or a banner. A screenshot keeps the default and shows its top. A tile with no Desc says "No description".`},
+						{State: "Select mode, one tile selected", Data: map[string]any{
+							"Items": []any{
+								mediaSelectable(mediaTile("/images/checkout.png", "Checkout, step 2", "The payment step, with the card form open.", "1280 × 3200 · 412 KB", "/images/1", 1280, 3200, ""), "1", true),
+								mediaSelectable(mediaTile("/images/pricing.png", "Pricing page", "", "1280 × 2400 · 318 KB", "/images/2", 1280, 2400, ""), "2", false),
+							},
+						}, Note: `Wrap the grid and a bulk-bar in one form. Each checkbox posts its tile's Select value under the name "id"; set SelectName to change it. Inside the form, menu items must be links.`},
 					},
 				},
 				{

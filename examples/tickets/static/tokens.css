@@ -1271,7 +1271,9 @@ a.rst-nm:hover { color: var(--rst-accent); }
    :is() with no space, so it filters the controls themselves; with a
    space it is a descendant combinator and lifts things inside them.
    The primary link is excluded, or its ::after would measure against
-   the link instead of the row.
+   the link instead of the row. A media-grid tile is a row of this
+   kind too: its name link covers the tile, and its checkbox and kebab
+   are the controls lifted over it.
 
    The whole selector is inside :where(), so it weighs nothing: its job
    is to give an otherwise static control a position and a z-index, and
@@ -1285,7 +1287,7 @@ a.rst-nm:hover { color: var(--rst-accent); }
    it draws itself (a tooltip's [rst-tip]::after) paints under the next
    row's lifted controls. Do not put such a control in a row without
    raising it. */
-:where(:is(.rst-row, .rst-lrow) :is(a[href], button, summary, label, input, select, textarea):not(.rst-row__main > a, .rst-lrow > a.rst-nm, .rst-lrow > a.rst-person)), :where(:is([rst-row], [rst-lrow]) :is(a[href], button, summary, label, input, select, textarea):not([rst-row-main] > a, [rst-lrow] > a.rst-nm, [rst-lrow] > a[rst-person])) { position: relative; z-index: 1; }
+:where(:is(.rst-row, .rst-lrow, .rst-media__tile) :is(a[href], button, summary, label, input, select, textarea):not(.rst-row__main > a, .rst-lrow > a.rst-nm, .rst-lrow > a.rst-person, .rst-media__name > a)), :where(:is([rst-row], [rst-lrow], [rst-media-tile]) :is(a[href], button, summary, label, input, select, textarea):not([rst-row-main] > a, [rst-lrow] > a.rst-nm, [rst-lrow] > a[rst-person], [rst-media-name] > a)) { position: relative; z-index: 1; }
 @media (max-width: 800px) {
   .rst-m-hide { display: none; }
   .rst-lrow, [rst-lrow], .rst-lrow--head, [rst-lrow~="head"] { grid-template-columns: minmax(0, 1fr) auto var(--rst-col-menu); }
@@ -1880,6 +1882,60 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
 .rst-selbox, [rst-selbox] { align-items: center; display: inline-flex; justify-self: start; margin: 0; padding: 4px; }
 .rst-selbox input, [rst-selbox] input { accent-color: var(--rst-accent); cursor: pointer; height: 16px; margin: 0; width: 16px; }
 .rst-selbox input:focus-visible, [rst-selbox] input:focus-visible { outline: 2px solid var(--rst-accent); outline-offset: 2px; }
+
+/* ── media-grid: image tiles in an even frame ─────────────────────────
+   The columns come from the width: as many 12.5rem tiles as fit, each
+   stretched to share its row, and one column once two do not fit.
+   min(100%, …) keeps a 12.5rem tile from forcing a sideways scroll at
+   320px. Inside a list card the grid pads itself, because a card holds
+   rows and pads nothing. */
+.rst-media, [rst-media] { display: grid; gap: var(--rst-sp-3); grid-template-columns: repeat(auto-fill, minmax(min(100%, 12.5rem), 1fr)); }
+:where(.rst-list) > .rst-media, :where([rst-list]) > [rst-media] { padding: var(--rst-sp-3); }
+/* The tile is positioned for the name link's overlay and for the
+   checkbox in its frame. It does not clip: a kebab's open panel hangs
+   below the caption, over the next row of tiles. */
+.rst-media__tile, [rst-media-tile] { background: var(--rst-surface); border: 1px solid var(--rst-line); border-radius: var(--rst-radius); min-width: 0; position: relative; }
+/* Selected is an outline, not a border swap, so the tile never changes
+   size. :has() reads the checkbox itself, so the checked attribute the
+   server wrote and a tap on the box paint the same way, with no script
+   keeping a class in step. */
+.rst-media__tile:has(.rst-selbox input:checked), [rst-media-tile]:has([rst-selbox] input:checked) { outline: 2px solid var(--rst-accent); outline-offset: 2px; }
+/* An even 4:3 frame whatever the image's shape, so a tall screenshot
+   and a wide banner make tiles of one height and the grid's rows stay
+   rows. The frame clips the image to its corners; the tile does not. */
+.rst-media__frame, [rst-media-frame] { aspect-ratio: 4 / 3; background: var(--rst-surface-2); border-start-end-radius: calc(var(--rst-radius) - 1px); border-start-start-radius: calc(var(--rst-radius) - 1px); overflow: hidden; position: relative; }
+/* Cover, from the top: a page screenshot is identified by its top, and
+   its middle is a block of body text that could be any page. */
+.rst-media__frame img, [rst-media-frame] img { block-size: 100%; display: block; inline-size: 100%; object-fit: cover; object-position: top center; }
+/* Contain is the caller's choice for a logo, a diagram or a banner,
+   with a little padding so its edges do not touch the frame. */
+.rst-media__frame--contain img, [rst-media-frame~="contain"] img { box-sizing: border-box; object-fit: contain; padding: var(--rst-sp-2); }
+/* The checkbox sits in the frame's top start corner, over the image,
+   with a surface halo so a 16px box reads on a dark picture. Its label
+   is positioned here at (0,2,0): the rule that lifts a row's controls
+   over the overlay is weightless, so the label keeps this position
+   and takes only its z-index. */
+.rst-media__frame > .rst-selbox, [rst-media-frame] > [rst-selbox] { inset-block-start: var(--rst-sp-1); inset-inline-start: var(--rst-sp-1); position: absolute; }
+.rst-media__frame > .rst-selbox input, [rst-media-frame] > [rst-selbox] input { border-radius: 2px; box-shadow: 0 0 0 2px var(--rst-surface); }
+.rst-media__caption, [rst-media-caption] { padding: var(--rst-sp-2) var(--rst-sp-3) var(--rst-sp-3); }
+/* The name and the kebab share one line; the name takes the room and
+   ends in an ellipsis rather than wrapping under the kebab. */
+.rst-media__name, [rst-media-name] { align-items: center; display: flex; gap: var(--rst-sp-2); min-width: 0; }
+.rst-media__name > a, [rst-media-name] > a, .rst-media__name > span, [rst-media-name] > span { color: inherit; flex: 1 1 auto; font-weight: 600; min-width: 0; overflow: hidden; text-decoration: none; text-overflow: ellipsis; white-space: nowrap; }
+/* The tile is a link through its one name link, as a row is through
+   its own ([rst-row-main] > a::after above). */
+.rst-media__name > a::after, [rst-media-name] > a::after { content: ""; inset: 0; position: absolute; }
+.rst-media__name > a:hover, [rst-media-name] > a:hover { color: var(--rst-accent); }
+.rst-media__name > a:focus-visible, [rst-media-name] > a:focus-visible { outline: none; text-decoration: underline; }
+.rst-media__name > a:focus-visible::after, [rst-media-name] > a:focus-visible::after { border-radius: var(--rst-radius); outline: 2px solid var(--rst-accent); outline-offset: 2px; }
+/* Two lines, then an ellipsis, so a long description cannot push the
+   meta line out of its tile. "No description" takes the same colour
+   step down again (faint, still 4.5:1), so a tile without one is read
+   as such and not as a description that says so. */
+.rst-media__desc, [rst-media-desc] { -webkit-box-orient: vertical; -webkit-line-clamp: 2; color: var(--rst-text-muted); display: -webkit-box; font-size: var(--rst-fs-sm); line-height: 1.4; margin: var(--rst-sp-1) 0 0; overflow: hidden; }
+.rst-media__desc--none, [rst-media-desc~="none"] { color: var(--rst-text-faint); }
+/* Tabular numbers so a column of sizes lines up. */
+.rst-media__meta, [rst-media-meta] { color: var(--rst-text-faint); font-size: var(--rst-fs-xs); font-variant-numeric: tabular-nums; margin: var(--rst-sp-1) 0 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .rst-back-nav, [rst-back-nav] { margin: 0 0 var(--rst-sp-3); }
 .rst-back-nav a, [rst-back-nav] a { color: var(--rst-text-muted); text-decoration: none; }
