@@ -142,6 +142,13 @@ func runOne(ctx context.Context, c config, bin, export, vdir, tasksDir, task str
 		keepApp = true
 		return fail("copying the final tree to grade (the app is kept)", err)
 	}
+	// final.tar.gz is the whole tree as graded, empty directories and
+	// all; final.patch is the readable view of it, which cannot carry an
+	// empty directory, so the archive is the copy that reproduces a run.
+	if err := runIn(fctx, "", nil, nil, "tar", "-C", final, "-czf", filepath.Join(dir, "final.tar.gz"), "."); err != nil {
+		keepApp = true
+		return fail("archiving the final tree (the app is kept)", err)
+	}
 	patch, err := noIndexDiff(fctx, dir, "--binary")
 	if err == nil {
 		err = os.WriteFile(patchPath, patch, 0o644)
@@ -186,7 +193,7 @@ func runOne(ctx context.Context, c config, bin, export, vdir, tasksDir, task str
 	// only a git root and would otherwise skip and pass.
 	for _, args := range [][]string{
 		{"init", "-q"},
-		{"add", "-A"},
+		{"add", "-A", "-f"}, // every file is scanned, whatever the agent's .gitignore says
 		{"-c", "user.name=skilleval", "-c", "user.email=skilleval@localhost", "commit", "-qm", "final"},
 	} {
 		if _, _, err := isolatedGit(ctx, graded, args...); err != nil {
@@ -306,8 +313,10 @@ func verifyPatch(ctx context.Context, dir, patchPath string) error {
 	return nil
 }
 
-// gateFiles are what the scaffold's gate reads besides the code.
-var gateFiles = []string{"Makefile", "GNUmakefile", "makefile", ".amadan", ".rastrillo"}
+// gateFiles are what the scaffold's gate reads besides the code. The
+// gitleaks policy files are among them: gitleaks loads them from the
+// tree it scans, so one can widen what passes.
+var gateFiles = []string{"Makefile", "GNUmakefile", "makefile", ".amadan", ".rastrillo", ".gitleaks.toml", ".gitleaksignore"}
 
 // gateEdited lists the gate files that differ between the scaffold and
 // the final tree. Anything at those paths that is not a regular file or

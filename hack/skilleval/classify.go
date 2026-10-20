@@ -219,25 +219,39 @@ func (c classifier) bashTouches(cmd string) (bs []bucket, stale bool, end string
 			cmd = regexp.MustCompile(`\$`+m[1]+`\b`).ReplaceAllString(cmd, m[2])
 		}
 	}
-	touch := func(p string) {
-		if rel, ok, st := c.framework(p); ok {
-			found[relBucket(rel)] = true
-			stale = stale || st
+	// A command's reads are held until it ends, because a later word
+	// (rg's --type-list) can turn the whole command into one that reads
+	// nothing.
+	var pending []string
+	touch := func(p string) { pending = append(pending, p) }
+	commit := func() {
+		for _, p := range pending {
+			if rel, ok, st := c.framework(p); ok {
+				found[relBucket(rel)] = true
+				stale = stale || st
+			}
 		}
+		pending = nil
 	}
 	cwd := c.start()
 	var stack []string
 	atStart, afterPipe, cdNext := true, false, false
 	verb, patternPending, skipNext, findExpr := "", false, false, false
-	quiet := false // the rest of this command reads no files
+	endOpts := false // after --, a dash word is an operand
 	// implicit is the directory a search verb reads when the command
 	// names no path of its own; it is settled when the command ends.
 	implicit := ""
+	quiet := false // the rest of this command reads no files
 	settle := func() {
 		if implicit != "" {
 			touch(implicit)
 			implicit = ""
 		}
+		if quiet {
+			pending = nil
+		}
+		commit()
+		quiet = false
 	}
 	for _, tk := range lex(cmd) {
 		w := tk.s
@@ -264,9 +278,6 @@ func (c classifier) bashTouches(cmd string) (bs []bucket, stale bool, end string
 			atStart, afterPipe, verb = true, true, ""
 			continue
 		}
-		if quiet && !atStart {
-			continue
-		}
 		if cdNext {
 			cdNext = false
 			if filepath.IsAbs(w) {
@@ -278,7 +289,7 @@ func (c classifier) bashTouches(cmd string) (bs []bucket, stale bool, end string
 		}
 		if atStart {
 			atStart = false
-			verb, patternPending, skipNext, findExpr, quiet = w, patternFirst[w], false, false, false
+			verb, patternPending, skipNext, findExpr, endOpts = w, patternFirst[w], false, false, false
 			if w == "cd" {
 				cdNext = true
 				continue
@@ -292,7 +303,9 @@ func (c classifier) bashTouches(cmd string) (bs []bucket, stale bool, end string
 			switch {
 			case skipNext:
 				skipNext = false
-			case strings.HasPrefix(w, "-") && w != "-":
+			case w == "--" && !endOpts:
+				endOpts = true
+			case strings.HasPrefix(w, "-") && w != "-" && !endOpts:
 				if verb == "find" {
 					// -H, -L, -P and -O<n> come before find's paths; any
 					// other dash word starts its expression.
@@ -302,7 +315,7 @@ func (c classifier) bashTouches(cmd string) (bs []bucket, stale bool, end string
 				} else if w == "--files" {
 					patternPending = false // rg --files lists paths and takes no pattern
 				} else if w == "--type-list" {
-					implicit, quiet = "", true // prints rg's built-in types; reads nothing
+					quiet = true // prints rg's built-in types; reads nothing, wherever it appears
 				} else if optArg[w] {
 					skipNext = true
 					if w == "-e" || w == "--regexp" || w == "-f" || w == "--file" {
