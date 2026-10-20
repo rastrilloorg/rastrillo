@@ -62,6 +62,18 @@ func TestRunSqlcMissingToolSaysHowToAddIt(t *testing.T) {
 	}
 }
 
+// TestCheckSqlcToolFindsTheDirective holds the check to whatever Go the
+// gate pins. Go 1.27 changed `go tool`'s listing from the bare path to
+// "sqlc (path)", and a check that read that listing told every app with
+// the directive to add it. Only the network-bound integration test
+// covered the passing case before, so the break surfaced as a
+// generate-check failure with a misleading fix.
+func TestCheckSqlcToolFindsTheDirective(t *testing.T) {
+	if err := checkSqlcTool(newScratchModule(t, true)); err != nil {
+		t.Fatalf("checkSqlcTool on a module with the directive: %v", err)
+	}
+}
+
 // TestRunSqlcGeneratesCompilingStore is the slice's heaviest
 // integration test: it fetches the real sqlc binary over the network
 // (via the module's own tool directive), runs the store emitter's

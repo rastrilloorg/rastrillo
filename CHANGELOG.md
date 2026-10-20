@@ -117,6 +117,10 @@ To keep the old, exact format for a field, set `Strict: true`.
 - `rastrillo generate` refuses a filter on a money field, because an amount means nothing without its currency. Remove the filter.
 - `rastrillo generate` refuses a field named like a money field's generated fields, such as `PriceCurrency` beside a money field `Price`, and a field named `EventVersion` or `Now`. Rename the field.
 
+### Fixed: `rastrillo generate` finds the sqlc tool under Go 1.27
+
+Under Go 1.27, `rastrillo generate` said the sqlc tool directive was missing from `go.mod` even when it was there, and stopped. Go 1.27 changed how `go tool` lists tools. Update rastrillo before you build an app with Go 1.27.
+
 ### Changed: sign-in lands back on the page that asked for it; post `return_to` from your own sign-in page
 
 `RequireSession` and `RequireFreshSession` now send a signed-out visitor to `SigninPath?return_to=<the page>`, and once they sign in they land back on that page. Before, they always landed on `SignedInPath`. The shipped sign-in screen carries the destination for you. If you render your own sign-in page, add a hidden `return_to` field set to `SigninState(r).ReturnTo` to each form, and use `SigninState(r).PasskeyFinish()` as the passkey button's finish URL. Without them, your visitors still land on `SignedInPath`.

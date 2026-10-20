@@ -1383,10 +1383,12 @@ path under actions/ — the generator skips that one from then on.
 // staticcheckVersion is the staticcheck release a scaffolded app's gate
 // runs, and the one rastrillo's own Makefile pins;
 // TestStaticcheckPinMatchesRastrillosGate holds the two together.
-// v0.7.0 (2026.1) is the newest release whose own go directive (1.25)
-// the toolchain go.mod asks for can build; v0.8.x needs 1.26 and finds
-// nothing more here.
-const staticcheckVersion = "v0.7.0"
+// v0.8.2 rather than v0.7.0 so a move of goToolchain to Go 1.27 does not
+// also need this: v0.7.0 cannot read 1.27's export data and fails on
+// every package ("export data version 5 is greater than maximum
+// supported version 2"), turning the gate red with nothing wrong in the
+// code. v0.8.2 needs go 1.26 to build, which goToolchain already is.
+const staticcheckVersion = "v0.8.2"
 
 // govulncheckVersion, gitleaksVersion and goToolchain are the scaffold's
 // copies of the other pins in rastrillo's own Makefile, held to them by

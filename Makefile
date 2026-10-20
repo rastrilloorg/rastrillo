@@ -31,6 +31,11 @@ export CGO_ENABLED = 0
 # line if you must: make ci GOTOOLCHAIN=local. Raise it with each Go
 # security release; govulncheck naming a stdlib package "Found in" this
 # version is the signal.
+#
+# Held on 1.26 deliberately. Go 1.27 writes export data that x/tools
+# before v0.50.0 cannot read, which breaks tmplmigrate's type-check, and
+# v0.50.0 needs go 1.26 in go.mod: moving to 1.27 raises the Go floor
+# for every app that imports rastrillo, so it is its own change.
 export GOTOOLCHAIN = go1.26.10
 
 BIN := $(CURDIR)/.build
@@ -156,13 +161,14 @@ test.%: | $(BIN)/tmp
 # module graph. cmd/rastrillo's staticcheckVersion is the scaffold's copy
 # of this pin, and a test fails if the two disagree. Bump it alongside the
 # go directive - a staticcheck older than the Go it reads does not know
-# that release's deprecations, and says nothing.
+# that release's deprecations, and says nothing - and alongside a new
+# minor GOTOOLCHAIN, whose export data an older one cannot decode at all.
 #
 # -tags browser because no file is excluded by it: it is a strict superset
 # of the plain build, and it is the only way the browser drives get read.
 # The examples' rastrillo_actions files stay out - they are generator
 # input, rewritten before they compile.
-STATICCHECK := honnef.co/go/tools/cmd/staticcheck@v0.7.0
+STATICCHECK := honnef.co/go/tools/cmd/staticcheck@v0.8.2
 # staticcheck keeps its cache in the user cache directory, ~/.cache,
 # which a sandboxed CI runner mounts read-only: "failed to initialize
 # build cache ... read-only file system". Where the runner hands the job
