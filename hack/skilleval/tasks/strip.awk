@@ -11,14 +11,16 @@
 NR == 1 {
 	path = $0
 	ext = path; sub(/.*\./, "", ext)
-	nb = 0; lc = ""; quotes = ""
-	if (ext ~ /^(go|js|mjs|ts|css)$/) { bo[++nb] = "/*"; bc[nb] = "*/"; bt[nb] = "" }
+	# Openers are regular expressions, closers plain text.
+	nb = 0; lc = ""; quotes = ""; jsregex = 0
+	if (ext ~ /^(go|js|mjs|ts|css)$/) { bo[++nb] = "/\\*"; bc[nb] = "*/"; bt[nb] = "" }
 	if (ext ~ /^(go|js|mjs|ts)$/) { lc = "//"; quotes = "\"'`" }
+	if (ext ~ /^(js|mjs|ts)$/) jsregex = 1
 	if (ext == "css") quotes = "\"'"
 	if (ext ~ /^(html|tmpl|gohtml)$/) {
-		# Go template comments, with or without whitespace trimming.
-		bo[++nb] = "{{/*"; bc[nb] = "*/"; bt[nb] = "tmpl"
-		bo[++nb] = "{{- /*"; bc[nb] = "*/"; bt[nb] = "tmpl"
+		# Go template comments, with or without a trim marker, which
+		# any whitespace may follow.
+		bo[++nb] = "\\{\\{(-[ \t\r\n]+)?/\\*"; bc[nb] = "*/"; bt[nb] = "tmpl"
 		bo[++nb] = "<!--"; bc[nb] = "-->"; bt[nb] = ""
 	}
 	if (ext ~ /^(toml|sh|yaml|yml|py|mk)$/ || path ~ /(^|\/)Makefile$/) lc = "#"
@@ -32,7 +34,7 @@ NR == 1 {
 }
 
 # strip returns t without its comments.
-function strip(t,    r, i, k, best, which, endc, q, j, c) {
+function strip(t,    r, i, k, best, which, wlen, endc, q, j, c, ch, pre, cls) {
 	r = ""
 	while (length(t) > 0) {
 		if (inraw) { # inside a backtick string, which may span lines
@@ -48,16 +50,24 @@ function strip(t,    r, i, k, best, which, endc, q, j, c) {
 			if (blocktype == "tmpl") sub(/^[ \t]*-?}}/, "", t)
 			continue
 		}
-		best = 0; which = ""
+		best = 0; which = ""; wlen = 0
 		for (k = 1; k <= nb; k++) {
-			i = index(t, bo[k])
-			if (i > 0 && (best == 0 || i < best)) { best = i; which = bo[k]; endc = bc[k]; btype = bt[k] }
+			if (match(t, bo[k]) && (best == 0 || RSTART < best)) { best = RSTART; wlen = RLENGTH; which = "block"; endc = bc[k]; btype = bt[k] }
 		}
 		if (lc != "") {
 			i = index(t, lc)
 			# A # starts a comment only at a word's start.
 			if (i > 0 && lc == "#" && i > 1 && substr(t, i - 1, 1) !~ /[[:space:]]/) i = 0
-			if (i > 0 && (best == 0 || i < best)) { best = i; which = "line" }
+			if (i > 0 && (best == 0 || i <= best)) { best = i; which = "line"; wlen = length(lc) }
+		}
+		# In JavaScript a / where a value may start opens a regex literal,
+		# whose quotes are not strings: const q = /"/ holds no string.
+		if (jsregex) {
+			i = index(t, "/")
+			if (i > 0 && substr(t, i, 2) != "//" && substr(t, i, 2) != "/*" && (best == 0 || i < best)) {
+				pre = r substr(t, 1, i - 1); sub(/[ \t]+$/, "", pre)
+				if (pre == "" || substr(pre, length(pre), 1) ~ /[(,=:[!&|?{};+*%<>~^-]/) { best = i; which = "regex" }
+			}
 		}
 		for (j = 1; j <= length(quotes); j++) {
 			q = substr(quotes, j, 1)
@@ -65,6 +75,18 @@ function strip(t,    r, i, k, best, which, endc, q, j, c) {
 			if (i > 0 && (best == 0 || i < best)) { best = i; which = "quote"; c = q }
 		}
 		if (best == 0) return r t
+		if (which == "regex") {
+			r = r substr(t, 1, best); t = substr(t, best + 1); cls = 0
+			while (length(t) > 0) {
+				ch = substr(t, 1, 1)
+				if (ch == "\\") { r = r substr(t, 1, 2); t = substr(t, 3); continue }
+				r = r ch; t = substr(t, 2)
+				if (ch == "[") cls = 1
+				else if (ch == "]") cls = 0
+				else if (ch == "/" && !cls) break
+			}
+			continue
+		}
 		if (which == "quote") {
 			r = r substr(t, 1, best); t = substr(t, best + 1)
 			if (c == "`") { inraw = 1; continue }
@@ -79,7 +101,7 @@ function strip(t,    r, i, k, best, which, endc, q, j, c) {
 		}
 		r = r substr(t, 1, best - 1)
 		if (which == "line") return r
-		t = substr(t, best + length(which)); inblock = endc; blocktype = btype
+		t = substr(t, best + wlen); inblock = endc; blocktype = btype
 	}
 	return r
 }

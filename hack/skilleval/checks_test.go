@@ -4,7 +4,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strings"
 	"testing"
 )
 
@@ -100,6 +99,22 @@ func TestChecks(t *testing.T) {
 		{"photos named in a trimming template comment", "media-grid", map[string]string{
 			"internal/app/templates/photos.html": "{{- /* template \"media-grid\" .; blobs.Dir(root) */ -}}\n",
 		}, false},
+		// Round 4: a rename is not an addition, a file name git would
+		// quote is still read, a tab may follow a trim marker, and a
+		// JavaScript regex is not a string.
+		{"scheme layout renamed", "scheme", map[string]string{
+			"internal/app/templates/layout.html": "\x00delete",
+			"internal/app/templates/shell.html":  "<html data-theme=\"{{.Scheme}}\">\n{{template \"scheme-menu\" .}}\n</html>\n",
+		}, true},
+		{"scheme toggle in a file named with an accent", "scheme", map[string]string{
+			"internal/app/static/thème.js": "localStorage.setItem('t','dark')\n",
+		}, false},
+		{"photos named in a tab-trimmed template comment", "media-grid", map[string]string{
+			"internal/app/templates/photos.html": "{{-\t/* template \"media-grid\" .; blobs.Dir(root) */ -}}\n",
+		}, false},
+		{"scheme comment after a JS regex holding a quote", "scheme", map[string]string{
+			"internal/app/static/q.js": "const quoted = /\"/; // do not use localStorage\n",
+		}, true},
 		{"scheme data-theme traded for a toggle", "scheme", map[string]string{
 			"internal/app/templates/layout.html": "<html>\n{{template \"scheme-menu\" .}}\n<script>localStorage.setItem('t','dark')</script>\n</html>\n",
 		}, false},
@@ -110,37 +125,30 @@ func TestChecks(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			dir := t.TempDir()
-			git := func(args ...string) string {
-				t.Helper()
-				cmd := exec.Command("git", append([]string{"-c", "user.name=t", "-c", "user.email=t@localhost", "-c", "commit.gpgsign=false", "-c", "core.hooksPath=/dev/null"}, args...)...)
-				cmd.Dir = dir
-				out, err := cmd.CombinedOutput()
-				if err != nil {
-					t.Fatalf("git %v: %v\n%s", args, err, out)
-				}
-				return strings.TrimSpace(string(out))
-			}
-			write := func(files map[string]string) {
+			// The harness hands a check two trees: its own copy of the
+			// scaffold, and the agent's final tree, with no git in either.
+			base, work := t.TempDir(), t.TempDir()
+			write := func(root string, files map[string]string) {
 				for p, body := range files {
-					p = filepath.Join(dir, p)
+					p = filepath.Join(root, p)
 					if err := os.MkdirAll(filepath.Dir(p), 0o755); err != nil {
 						t.Fatal(err)
+					}
+					if body == "\x00delete" {
+						os.Remove(p)
+						continue
 					}
 					if err := os.WriteFile(p, []byte(body), 0o644); err != nil {
 						t.Fatal(err)
 					}
 				}
 			}
-			git("init", "-q")
-			write(checkBase)
-			git("add", "-A")
-			git("commit", "-qm", "scaffold")
-			base := git("rev-parse", "HEAD")
-			write(tc.change)
+			write(base, checkBase)
+			write(work, checkBase)
+			write(work, tc.change)
 			cmd := exec.Command("sh", filepath.Join(tasks, tc.task+".check.sh"))
-			cmd.Dir = dir
-			cmd.Env = append(os.Environ(), "SKILLEVAL_BASE="+base)
+			cmd.Dir = work
+			cmd.Env = append(os.Environ(), "SKILLEVAL_BASE_DIR="+base)
 			out, err := cmd.CombinedOutput()
 			if passed := err == nil; passed != tc.pass {
 				t.Errorf("pass = %v, want %v\n%s", passed, tc.pass, out)
