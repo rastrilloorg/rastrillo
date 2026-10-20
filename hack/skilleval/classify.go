@@ -33,27 +33,59 @@ const (
 var bucketOrder = []bucket{bSource, bExamples, bDocs, bSkill, bGoDoc, bWeb, bFWWrite, bApp, bOther}
 
 type classifier struct {
-	roots []string // framework copies the agent can reach: the replace target and any module-cache versions
-	app   string
+	roots []string // the variant's export: the framework the run is meant to use
+	stale []string // module-cache copies: framework too, but not the variant under test
+	app   string   // the scaffolded app, and every call's starting directory
 }
 
 var writeTools = map[string]bool{"Write": true, "Edit": true, "MultiEdit": true, "NotebookEdit": true}
 
+// classify is the bucket a call's result bytes are charged to: the
+// most expensive one it touched, since one command's output cannot be
+// split between the files it printed.
 func (c classifier) classify(tool string, in map[string]any) bucket {
+	return c.touches(tool, in)[0]
+}
+
+// framework reports p's path inside any framework copy.
+func (c classifier) framework(p string) (string, bool) {
+	for _, set := range [][]string{{fwMark}, c.roots, c.stale} {
+		for _, r := range set {
+			if rel, ok := under(p, r); ok {
+				return rel, true
+			}
+		}
+	}
+	return "", false
+}
+
+// abs resolves p the way the tool would: relative to the app, where
+// every call starts.
+func (c classifier) abs(p string) string {
+	if filepath.IsAbs(p) {
+		return filepath.Clean(p)
+	}
+	return filepath.Join(c.app, p)
+}
+
+// touches is every bucket a call reached, most expensive first, so
+// that a cat of SKILL.md beside a grep of the source still counts as
+// reading the skill.
+func (c classifier) touches(tool string, in map[string]any) []bucket {
 	str := func(k string) string { s, _ := in[k].(string); return s }
 	switch tool {
 	case "Bash":
-		return c.classifyBash(str("command"))
+		return c.bashTouches(str("command"))
 	case "Skill":
 		if strings.Contains(str("skill"), "rastrillo") {
-			return bSkill
+			return []bucket{bSkill}
 		}
-		return bOther
+		return []bucket{bOther}
 	case "WebFetch", "WebSearch":
 		if tool == "WebSearch" || strings.Contains(str("url"), "rastrillo.org") {
-			return bWeb
+			return []bucket{bWeb}
 		}
-		return bOther
+		return []bucket{bOther}
 	}
 	p := str("file_path")
 	if p == "" {
@@ -62,21 +94,26 @@ func (c classifier) classify(tool string, in map[string]any) bucket {
 	if p == "" {
 		p = str("notebook_path")
 	}
-	if p == "" {
-		return bApp // Grep and Glob default to the working directory, which is the app
+	if p == "" && tool == "Glob" && filepath.IsAbs(str("pattern")) {
+		p = str("pattern") // an absolute pattern is its own directory
 	}
-	for _, root := range c.roots {
-		if rel, ok := under(p, root); ok {
-			if writeTools[tool] {
-				return bFWWrite
-			}
-			return relBucket(rel)
+	if p == "" {
+		if tool == "Grep" || tool == "Glob" || tool == "LS" {
+			return []bucket{bApp} // they default to the working directory, which is the app
 		}
+		return []bucket{bOther}
+	}
+	p = c.abs(p)
+	if rel, ok := c.framework(p); ok {
+		if writeTools[tool] {
+			return []bucket{bFWWrite}
+		}
+		return []bucket{relBucket(rel)}
 	}
 	if _, ok := under(p, c.app); ok {
-		return bApp
+		return []bucket{bApp}
 	}
-	return bOther
+	return []bucket{bOther}
 }
 
 // under reports p's path below root, so that a sibling directory
@@ -108,59 +145,103 @@ func relBucket(rel string) bucket {
 }
 
 // goListDir matches the usual way an agent finds the framework from a
-// shell: a command substitution of go list's module directory. What
-// follows the closing paren is the path inside the module.
-var goListDir = regexp.MustCompile(`\$\(\s*go list -m -f\s+['"]?\{\{\.Dir\}\}['"]?\s+amadan\.net/rastrillo/rastrillo\s*\)`)
+// shell: a command substitution of go list's module directory, with
+// the module path sometimes cut short and stderr sometimes redirected.
+var goListDir = regexp.MustCompile(`\$\(\s*go list -m -f\s+['"]?\{\{\.Dir\}\}['"]?\s+amadan\.net/rastrillo(?:/rastrillo)?[^)]*\)`)
 
-func (c classifier) classifyBash(cmd string) bucket {
+// fwMark stands in for a framework directory the command computes
+// rather than names.
+const fwMark = "/\x00rastrillo"
+
+var (
+	assignment = regexp.MustCompile(`(?:^|[;&|(\s])([A-Za-z_][A-Za-z0-9_]*)=["']?([^\s;&|"']+)`)
+	pathExt    = map[string]bool{".md": true, ".go": true, ".html": true, ".css": true, ".js": true, ".toml": true, ".sql": true, ".json": true, ".txt": true}
+)
+
+// bashTouches walks the command's words the way the shell would reach
+// files: go list substitutions and variables holding a framework path
+// are expanded, and relative words resolve against a working directory
+// that starts at the app and follows each cd.
+func (c classifier) bashTouches(cmd string) []bucket {
+	found := map[bucket]bool{}
 	if strings.Contains(cmd, "go doc ") {
-		return bGoDoc
+		found[bGoDoc] = true
 	}
 	if strings.Contains(cmd, "rastrillo.org") {
-		return bWeb
+		found[bWeb] = true
 	}
-	var found []bucket
-	for _, root := range c.roots {
-		for rest := cmd; ; {
-			i := strings.Index(rest, root)
-			if i < 0 {
-				break
-			}
-			rest = rest[i+len(root):]
-			found = append(found, relBucket(strings.TrimPrefix(pathPrefix(rest), "/")))
+	cmd = goListDir.ReplaceAllString(cmd, fwMark)
+	for _, m := range assignment.FindAllStringSubmatch(cmd, -1) {
+		if _, ok := c.framework(m[2]); ok {
+			cmd = strings.ReplaceAll(cmd, "${"+m[1]+"}", m[2])
+			cmd = regexp.MustCompile(`\$`+m[1]+`\b`).ReplaceAllString(cmd, m[2])
 		}
 	}
-	for _, loc := range goListDir.FindAllStringIndex(cmd, -1) {
-		found = append(found, relBucket(strings.TrimPrefix(pathPrefix(cmd[loc[1]:]), "/")))
+	words := strings.FieldsFunc(cmd, func(r rune) bool {
+		return strings.ContainsRune(" \t\n;|&()<>'\"`", r)
+	})
+	cwd := c.app
+	for i := 0; i < len(words); i++ {
+		w := words[i]
+		if w == "cd" && i+1 < len(words) {
+			i++
+			if t := words[i]; filepath.IsAbs(t) {
+				cwd = filepath.Clean(t)
+			} else if !strings.HasPrefix(t, "$") && !strings.HasPrefix(t, "~") {
+				cwd = filepath.Join(cwd, t)
+			}
+			continue
+		}
+		if !strings.HasPrefix(w, "/") && !pathish(w) {
+			continue
+		}
+		p := w
+		if !filepath.IsAbs(p) {
+			p = filepath.Join(cwd, p)
+		}
+		if rel, ok := c.framework(p); ok {
+			found[relBucket(rel)] = true
+		}
 	}
+	var out []bucket
 	for _, b := range bucketOrder {
-		for _, f := range found {
-			if f == b {
-				return b
-			}
+		if found[b] {
+			out = append(out, b)
 		}
+	}
+	if len(out) > 0 {
+		return out
 	}
 	if strings.Contains(cmd, "go list -m") && strings.Contains(cmd, "amadan.net/rastrillo") {
-		// The directory went into a variable, or the module path was
-		// mistyped, so no path inside it is visible; a read verb beside
-		// it means the tree is being searched, which is source.
-		if readVerb.MatchString(cmd) {
-			return bSource
-		}
-		return bOther
+		return []bucket{bOther}
 	}
-	return bApp
+	return []bucket{bApp}
 }
 
-var readVerb = regexp.MustCompile(`(^|[;&|(\s])(grep|rg|cat|sed|head|tail|awk|find|less)\s`)
-
-// pathPrefix is the path that continues at the start of s, ending where
-// the shell word does.
-func pathPrefix(s string) string {
-	if i := strings.IndexAny(s, " \t\n'\"`);|&><"); i >= 0 {
-		return s[:i]
+// pathish is a word that names a file or directory, rather than a flag,
+// a pattern or an assignment.
+func pathish(w string) bool {
+	if strings.HasPrefix(w, "-") || strings.HasPrefix(w, "$") || strings.Contains(w, "=") {
+		return false
 	}
-	return s
+	return w == "." || w == "*" || strings.Contains(w, "/") || pathExt[filepath.Ext(w)]
+}
+
+// mentionsStale reports whether any of the call's arguments names a
+// module-cache copy of the framework.
+func (c classifier) mentionsStale(in map[string]any) bool {
+	for _, v := range in {
+		s, ok := v.(string)
+		if !ok {
+			continue
+		}
+		for _, r := range c.stale {
+			if strings.Contains(s, r) {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 type count struct {
@@ -169,35 +250,48 @@ type count struct {
 }
 
 type tally struct {
-	Buckets      map[bucket]count `json:"buckets"`
-	SourceReads  []string         `json:"source_reads"`
-	Model        string           `json:"model"`
-	Turns        int              `json:"turns"`
-	DurationMS   int              `json:"duration_ms"`
-	CostUSD      float64          `json:"cost_usd"`
-	Tokens       int              `json:"tokens"` // every input token the model processed, cached or not, plus output
-	OutputTokens int              `json:"output_tokens"`
-	Finished     bool             `json:"finished"`
-	Subtype      string           `json:"subtype"`
+	Buckets       map[bucket]count `json:"buckets"` // bytes and calls, each call charged to the most expensive bucket it touched
+	Touched       map[bucket]int   `json:"touched"` // calls that reached each bucket at all
+	StaleCalls    int              `json:"stale_calls"`
+	SourceReads   []string         `json:"source_reads"`
+	Model         string           `json:"model"`
+	ClaudeVersion string           `json:"claude_version"`
+	MemoryPaths   json.RawMessage  `json:"memory_paths,omitempty"` // what instructions the session loaded besides the task
+	Turns         int              `json:"turns"`
+	DurationMS    int              `json:"duration_ms"`
+	CostUSD       float64          `json:"cost_usd"`
+	Tokens        int              `json:"tokens"` // every input token the model processed, cached or not, plus output
+	OutputTokens  int              `json:"output_tokens"`
+	Partial       bool             `json:"partial"` // no result event: tokens are summed from assistant events and cost is unknown
+	Finished      bool             `json:"finished"`
+	Subtype       string           `json:"subtype"`
 }
 
+type usage struct {
+	Input         int `json:"input_tokens"`
+	CacheCreation int `json:"cache_creation_input_tokens"`
+	CacheRead     int `json:"cache_read_input_tokens"`
+	Output        int `json:"output_tokens"`
+}
+
+func (u usage) total() int { return u.Input + u.CacheCreation + u.CacheRead + u.Output }
+
 type streamEvent struct {
-	Type    string `json:"type"`
-	Subtype string `json:"subtype"`
-	Model   string `json:"model"`
-	Message struct {
+	Type          string          `json:"type"`
+	Subtype       string          `json:"subtype"`
+	Model         string          `json:"model"`
+	ClaudeVersion string          `json:"claude_code_version"`
+	MemoryPaths   json.RawMessage `json:"memory_paths"`
+	Message       struct {
+		ID      string          `json:"id"`
 		Content json.RawMessage `json:"content"`
+		Usage   *usage          `json:"usage"`
 	} `json:"message"`
 	IsError    bool    `json:"is_error"`
 	NumTurns   int     `json:"num_turns"`
 	DurationMS int     `json:"duration_ms"`
 	CostUSD    float64 `json:"total_cost_usd"`
-	Usage      struct {
-		Input         int `json:"input_tokens"`
-		CacheCreation int `json:"cache_creation_input_tokens"`
-		CacheRead     int `json:"cache_read_input_tokens"`
-		Output        int `json:"output_tokens"`
-	} `json:"usage"`
+	Usage      usage   `json:"usage"`
 }
 
 type contentBlock struct {
@@ -211,8 +305,11 @@ type contentBlock struct {
 
 // tallyTranscript reads claude -p's stream-json output.
 func tallyTranscript(r io.Reader, c classifier) (tally, error) {
-	t := tally{Buckets: map[bucket]count{}}
+	t := tally{Buckets: map[bucket]count{}, Touched: map[bucket]int{}}
 	pending := map[string]bucket{}
+	perMessage := map[string]usage{} // assistant events repeat a message's usage once per content block
+	var order []string
+	sawResult := false
 	sc := bufio.NewScanner(r)
 	sc.Buffer(make([]byte, 0, 1<<20), 256<<20) // one tool result can be a whole file
 	for sc.Scan() {
@@ -223,9 +320,15 @@ func tallyTranscript(r io.Reader, c classifier) (tally, error) {
 		switch e.Type {
 		case "system":
 			if e.Subtype == "init" {
-				t.Model = e.Model
+				t.Model, t.ClaudeVersion, t.MemoryPaths = e.Model, e.ClaudeVersion, e.MemoryPaths
 			}
 		case "assistant", "user":
+			if e.Type == "assistant" && e.Message.Usage != nil && e.Message.ID != "" {
+				if _, seen := perMessage[e.Message.ID]; !seen {
+					order = append(order, e.Message.ID)
+				}
+				perMessage[e.Message.ID] = *e.Message.Usage
+			}
 			var blocks []contentBlock
 			if json.Unmarshal(e.Message.Content, &blocks) != nil {
 				continue // a plain-string user message
@@ -233,11 +336,18 @@ func tallyTranscript(r io.Reader, c classifier) (tally, error) {
 			for _, b := range blocks {
 				switch b.Type {
 				case "tool_use":
-					bk := c.classify(b.Name, b.Input)
+					bs := c.touches(b.Name, b.Input)
+					bk := bs[0]
 					pending[b.ID] = bk
 					n := t.Buckets[bk]
 					n.Calls++
 					t.Buckets[bk] = n
+					for _, x := range bs {
+						t.Touched[x]++
+					}
+					if c.mentionsStale(b.Input) {
+						t.StaleCalls++
+					}
 					if bk == bSource || bk == bExamples {
 						t.SourceReads = append(t.SourceReads, describe(b.Name, b.Input))
 					}
@@ -252,14 +362,24 @@ func tallyTranscript(r io.Reader, c classifier) (tally, error) {
 				}
 			}
 		case "result":
+			sawResult = true
 			t.Subtype = e.Subtype
 			t.Finished = e.Subtype == "success" && !e.IsError
 			t.Turns = e.NumTurns
 			t.DurationMS = e.DurationMS
 			t.CostUSD = e.CostUSD
 			t.OutputTokens = e.Usage.Output
-			t.Tokens = e.Usage.Input + e.Usage.CacheCreation + e.Usage.CacheRead + e.Usage.Output
+			t.Tokens = e.Usage.total()
 		}
+	}
+	if !sawResult && len(order) > 0 {
+		t.Partial = true
+		for _, id := range order {
+			u := perMessage[id]
+			t.Tokens += u.total()
+			t.OutputTokens += u.Output
+		}
+		t.Turns = len(order)
 	}
 	return t, sc.Err()
 }

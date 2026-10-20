@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 )
@@ -12,7 +13,7 @@ const (
 )
 
 func testClassifier() classifier {
-	return classifier{roots: []string{testFW, testMod}, app: testApp}
+	return classifier{roots: []string{testFW}, stale: []string{testMod}, app: testApp}
 }
 
 func TestClassifyFileTools(t *testing.T) {
@@ -38,6 +39,9 @@ func TestClassifyFileTools(t *testing.T) {
 		{"Write", map[string]any{"file_path": testApp + "/internal/expenses/x.go"}, bApp},
 		{"Skill", map[string]any{"skill": "rastrillo"}, bSkill},
 		{"WebFetch", map[string]any{"url": "https://rastrillo.org/docs/jobs.md"}, bWeb},
+		{"Grep", map[string]any{"pattern": "Start", "path": "../../../rastrillo/jobs"}, bSource},
+		{"Glob", map[string]any{"pattern": testFW + "/ui/partials/*.html"}, bSource},
+		{"TodoWrite", map[string]any{"todos": []any{}}, bOther},
 	}
 	for _, tc := range cases {
 		if got := c.classify(tc.tool, tc.in); got != tc.want {
@@ -79,6 +83,42 @@ func TestClassifyBash(t *testing.T) {
 	}
 }
 
+// The baseline's agents mostly cd into the framework and then name
+// files relative to it, often several in one command. A classifier
+// that only matched absolute paths called every such call source and
+// reported that no agent had read SKILL.md, when most had.
+func TestBashTouches(t *testing.T) {
+	c := testClassifier()
+	cases := []struct {
+		cmd  string
+		want []bucket
+	}{
+		{"cd " + testFW + "; cat SKILL.md; ls examples examples/notes", []bucket{bExamples, bSkill}},
+		{"R=" + testFW + "; cd $R; cat SKILL.md", []bucket{bSkill}},
+		{"cd " + testFW + " && sed -n 1,80p docs/site/jobs.md", []bucket{bDocs}},
+		{"cd " + testFW + "/examples/notes && cat internal/notes/app.go", []bucket{bExamples}},
+		{"cd " + testFW + "/ui/partials; cat field-money.html confirm-form.html", []bucket{bSource}},
+		{"R=" + testFW + "; cd $R; sed -n 60,200p password/handlers.go; cd ui/partials; cat field-money.html", []bucket{bSource}},
+		{"cat " + testFW + "/SKILL.md; grep -rn x " + testFW + "/jobs", []bucket{bSource, bSkill}},
+		{`cat "$(go list -m -f '{{.Dir}}' amadan.net/rastrillo/rastrillo)/SKILL.md"`, []bucket{bSkill}},
+		{"cd " + testFW + "/x && cd " + testApp + " && cat internal/a.go", []bucket{bApp}},
+		{"cd " + testApp + "; go test ./...", []bucket{bApp}},
+		// From the review of f199170a: a relative path out of the app,
+		// go doc or a docs URL beside a source read, and a variable
+		// holding go list's answer all hid what was read.
+		{"cat ../../../rastrillo/jobs/jobs.go", []bucket{bSource}},
+		{"go doc fmt.Println; cat " + testFW + "/jobs/jobs.go", []bucket{bSource, bGoDoc}},
+		{"curl -s https://rastrillo.org/docs/jobs.md; grep -rn x " + testFW + "/jobs", []bucket{bSource, bWeb}},
+		{`d=$(go list -m -f '{{.Dir}}' amadan.net/rastrillo/rastrillo); cat "$d/SKILL.md"`, []bucket{bSkill}},
+	}
+	for _, tc := range cases {
+		got := c.touches("Bash", map[string]any{"command": tc.cmd})
+		if fmt.Sprint(got) != fmt.Sprint(tc.want) {
+			t.Errorf("Bash %q touches %v, want %v", tc.cmd, got, tc.want)
+		}
+	}
+}
+
 // The token signal is what came back into context, not how many calls
 // were made: one grep -r over the framework can cost more than twenty
 // reads of the app. So the tally sums result bytes per bucket, matched
@@ -111,17 +151,50 @@ func TestTallyTranscript(t *testing.T) {
 	if tally.Turns != 4 || tally.CostUSD != 0.5 || tally.Tokens != 1160 || tally.OutputTokens != 50 {
 		t.Errorf("totals = %+v", tally)
 	}
+	if tally.Touched[bSkill] != 1 || tally.Touched[bSource] != 2 {
+		t.Errorf("touched = %v, want skill 1, source 2", tally.Touched)
+	}
 	if !tally.Finished {
 		t.Error("a success result event must mark the run finished")
 	}
 }
 
-func TestTallyWithoutResultIsUnfinished(t *testing.T) {
-	tally, err := tallyTranscript(strings.NewReader(`{"type":"system","subtype":"init"}`), testClassifier())
+// A run killed at its timeout has spent tokens but never wrote a
+// result event. Reporting zero would make the worst runs look the
+// cheapest, so the tally falls back to the assistant events' usage,
+// counted once per message id, and says it is partial.
+func TestTallyWithoutResultIsUnfinishedAndPartial(t *testing.T) {
+	transcript := strings.Join([]string{
+		`{"type":"system","subtype":"init","claude_code_version":"9.9.9"}`,
+		`{"type":"assistant","message":{"id":"m1","content":[{"type":"text","text":"a"}],"usage":{"input_tokens":1,"cache_read_input_tokens":100,"output_tokens":10}}}`,
+		`{"type":"assistant","message":{"id":"m1","content":[{"type":"tool_use","id":"t1","name":"Read","input":{"file_path":"` + testFW + `/SKILL.md"}}],"usage":{"input_tokens":1,"cache_read_input_tokens":100,"output_tokens":10}}}`,
+		`{"type":"assistant","message":{"id":"m2","content":[{"type":"text","text":"b"}],"usage":{"input_tokens":2,"cache_creation_input_tokens":5,"cache_read_input_tokens":200,"output_tokens":20}}}`,
+	}, "\n")
+	tally, err := tallyTranscript(strings.NewReader(transcript), testClassifier())
 	if err != nil {
 		t.Fatal(err)
 	}
 	if tally.Finished {
 		t.Error("a transcript cut off before its result event must not read as finished")
+	}
+	if !tally.Partial || tally.Tokens != 111+227 || tally.OutputTokens != 30 {
+		t.Errorf("partial=%v tokens=%d output=%d, want partial, 338, 30", tally.Partial, tally.Tokens, tally.OutputTokens)
+	}
+	if tally.ClaudeVersion != "9.9.9" {
+		t.Errorf("claude version = %q", tally.ClaudeVersion)
+	}
+}
+
+// A run that read a module-cache copy read a skill other than the
+// variant under test, so the tally flags it rather than crediting the
+// variant.
+func TestTallyCountsStaleCopies(t *testing.T) {
+	transcript := `{"type":"assistant","message":{"content":[{"type":"tool_use","id":"t1","name":"Bash","input":{"command":"cat ` + testMod + `/SKILL.md"}}]}}`
+	tally, err := tallyTranscript(strings.NewReader(transcript), testClassifier())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if tally.StaleCalls != 1 {
+		t.Errorf("stale calls = %d, want 1", tally.StaleCalls)
 	}
 }
