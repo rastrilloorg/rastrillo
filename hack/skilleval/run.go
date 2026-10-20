@@ -130,11 +130,19 @@ func runOne(ctx context.Context, c config, bin, export, vdir, tasksDir, task str
 	fctx, fcancel := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Minute)
 	defer fcancel()
 	patchPath := filepath.Join(dir, "final.patch")
-	err = snapshot(fctx, app, final)
-	var patch []byte
-	if err == nil {
-		patch, err = noIndexDiff(fctx, dir, "--binary")
+	if err := snapshot(fctx, app, final); err != nil {
+		// An incomplete snapshot is neither graded nor allowed to stand
+		// in for the app, which is kept.
+		keepApp = true
+		return fail("snapshotting the app (it is kept)", err)
 	}
+	// The grade's copy is taken before verification, which prunes empty
+	// directories from the snapshot: a test fixture may be one.
+	if err := snapshot(fctx, final, graded); err != nil {
+		keepApp = true
+		return fail("copying the final tree to grade (the app is kept)", err)
+	}
+	patch, err := noIndexDiff(fctx, dir, "--binary")
 	if err == nil {
 		err = os.WriteFile(patchPath, patch, 0o644)
 	}
@@ -153,15 +161,12 @@ func runOne(ctx context.Context, c config, bin, export, vdir, tasksDir, task str
 		return fail("interrupted before grading", ctx.Err())
 	}
 
-	// The grade runs in a fresh copy of the snapshot, with the scaffold's
-	// Makefile created in it exclusively (whatever stood at that path is
-	// removed first, so a symlink is not followed and a FIFO not opened)
-	// and named with -f, so an added GNUmakefile cannot stand in for it.
-	// Only the Makefile is restored: a new package legitimately adds a
-	// budget line, and GateEdited records the rest for a reader to judge.
-	if err := snapshot(ctx, final, graded); err != nil {
-		return fail("copying the final tree to grade", err)
-	}
+	// The grade runs in that copy, with the scaffold's Makefile created
+	// in it exclusively (whatever stood at that path is removed first, so
+	// a symlink is not followed and a FIFO not opened) and named with -f,
+	// so an added GNUmakefile cannot stand in for it. Only the Makefile
+	// is restored: a new package legitimately adds a budget line, and
+	// GateEdited records the rest for a reader to judge.
 	mk := filepath.Join(graded, "Makefile")
 	if err := os.RemoveAll(mk); err != nil {
 		return fail("clearing the Makefile path", err)
@@ -175,6 +180,18 @@ func runOne(ctx context.Context, c config, bin, export, vdir, tasksDir, task str
 	}
 	if err != nil {
 		return fail("restoring the scaffold's Makefile", err)
+	}
+	// The copy gets a repository of its own, made by the harness with no
+	// config of the agent's, because the scaffold's gitleaks target scans
+	// only a git root and would otherwise skip and pass.
+	for _, args := range [][]string{
+		{"init", "-q"},
+		{"add", "-A"},
+		{"-c", "user.name=skilleval", "-c", "user.email=skilleval@localhost", "commit", "-qm", "final"},
+	} {
+		if _, _, err := isolatedGit(ctx, graded, args...); err != nil {
+			return fail("committing the graded copy", err)
+		}
 	}
 
 	r.CI = grade(ctx, dir, graded, filepath.Join(dir, "ci.log"), 25*time.Minute, nil, "make", "-f", "Makefile", "ci")
@@ -193,12 +210,45 @@ func removeChild(dir, name string) {
 
 // snapshot copies src's tree to a new dst, leaving out .git. tar keeps
 // symlinks as symlinks and FIFOs as FIFOs, so nothing the agent planted
-// is followed or opened.
+// is followed or opened. Both ends of the pipe are checked: a file the
+// packing tar cannot read fails the snapshot, where a shell pipeline
+// would report only the unpacking end and pass an incomplete copy.
 func snapshot(ctx context.Context, src, dst string) error {
 	if err := os.Mkdir(dst, 0o755); err != nil {
 		return err
 	}
-	return runIn(ctx, "", nil, nil, "sh", "-c", `tar -C "$1" --exclude=./.git -cf - . | tar -C "$2" -xf -`, "sh", src, dst)
+	ctx, cancel := context.WithTimeout(ctx, setupLimit)
+	defer cancel()
+	pr, pw, err := os.Pipe()
+	if err != nil {
+		return err
+	}
+	pack := exec.CommandContext(ctx, "tar", "-C", src, "--exclude=./.git", "-cf", "-", ".")
+	unpack := exec.CommandContext(ctx, "tar", "-C", dst, "-xf", "-")
+	var packErr, unpackErr strings.Builder
+	pack.Env, pack.Stdout, pack.Stderr = envFor(ctx), pw, &packErr
+	unpack.Env, unpack.Stdin, unpack.Stderr = envFor(ctx), pr, &unpackErr
+	if err := startGroup(unpack); err != nil {
+		pr.Close()
+		pw.Close()
+		return err
+	}
+	if err := startGroup(pack); err != nil {
+		pr.Close()
+		pw.Close()
+		waitGroup(unpack)
+		return err
+	}
+	pr.Close()
+	pw.Close()
+	perr, uerr := waitGroup(pack), waitGroup(unpack)
+	if perr != nil {
+		return fmt.Errorf("reading %s: %v %s", src, perr, strings.TrimSpace(packErr.String()))
+	}
+	if uerr != nil {
+		return fmt.Errorf("writing %s: %v %s", dst, uerr, strings.TrimSpace(unpackErr.String()))
+	}
+	return nil
 }
 
 // isolatedGit is git with no config but what is passed, and no

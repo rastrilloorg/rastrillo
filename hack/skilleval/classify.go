@@ -229,6 +229,7 @@ func (c classifier) bashTouches(cmd string) (bs []bucket, stale bool, end string
 	var stack []string
 	atStart, afterPipe, cdNext := true, false, false
 	verb, patternPending, skipNext, findExpr := "", false, false, false
+	quiet := false // the rest of this command reads no files
 	// implicit is the directory a search verb reads when the command
 	// names no path of its own; it is settled when the command ends.
 	implicit := ""
@@ -263,6 +264,9 @@ func (c classifier) bashTouches(cmd string) (bs []bucket, stale bool, end string
 			atStart, afterPipe, verb = true, true, ""
 			continue
 		}
+		if quiet && !atStart {
+			continue
+		}
 		if cdNext {
 			cdNext = false
 			if filepath.IsAbs(w) {
@@ -274,7 +278,7 @@ func (c classifier) bashTouches(cmd string) (bs []bucket, stale bool, end string
 		}
 		if atStart {
 			atStart = false
-			verb, patternPending, skipNext, findExpr = w, patternFirst[w], false, false
+			verb, patternPending, skipNext, findExpr, quiet = w, patternFirst[w], false, false, false
 			if w == "cd" {
 				cdNext = true
 				continue
@@ -295,8 +299,10 @@ func (c classifier) bashTouches(cmd string) (bs []bucket, stale bool, end string
 					if !(w == "-H" || w == "-L" || w == "-P" || strings.HasPrefix(w, "-O")) {
 						findExpr = true
 					}
-				} else if w == "--files" || w == "--type-list" {
+				} else if w == "--files" {
 					patternPending = false // rg --files lists paths and takes no pattern
+				} else if w == "--type-list" {
+					implicit, quiet = "", true // prints rg's built-in types; reads nothing
 				} else if optArg[w] {
 					skipNext = true
 					if w == "-e" || w == "--regexp" || w == "-f" || w == "--file" {

@@ -309,6 +309,8 @@ func TestBashRound4(t *testing.T) {
 		{"find -L " + testFW + " -name '*.go'", []bucket{bSource}},
 		{"grep -F '(' " + testFW + "/jobs/jobs.go", []bucket{bSource}},
 		{`grep -n "a;b" ` + testFW + "/docs/site/jobs.md", []bucket{bDocs}},
+		// Round 5: --type-list prints rg's built-in types and reads nothing.
+		{"rg --type-list " + testFW + "/skill", []bucket{bApp}},
 	}
 	for _, tc := range cases {
 		got, _ := c.touches("Bash", map[string]any{"command": tc.cmd})

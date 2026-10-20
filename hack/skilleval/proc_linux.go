@@ -36,6 +36,15 @@ func becomeSubreaper() {
 // runGroup runs the command in its own process group and kills the
 // whole group when it ends, timed out or not.
 func runGroup(cmd *exec.Cmd) error {
+	if err := startGroup(cmd); err != nil {
+		return err
+	}
+	return waitGroup(cmd)
+}
+
+// startGroup and waitGroup are runGroup's halves, for commands that must
+// run at once, like the two ends of a pipe.
+func startGroup(cmd *exec.Cmd) error {
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 	cmd.Cancel = func() error { return syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL) }
 	cmd.WaitDelay = 10 * time.Second
@@ -43,6 +52,10 @@ func runGroup(cmd *exec.Cmd) error {
 		return err
 	}
 	started.Store(cmd.Process.Pid, true)
+	return nil
+}
+
+func waitGroup(cmd *exec.Cmd) error {
 	err := cmd.Wait()
 	started.Delete(cmd.Process.Pid)
 	syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL)

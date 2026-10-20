@@ -18,12 +18,20 @@ func reap(string)      {}
 func killDescendants() {}
 
 func runGroup(cmd *exec.Cmd) error {
+	if err := startGroup(cmd); err != nil {
+		return err
+	}
+	return waitGroup(cmd)
+}
+
+func startGroup(cmd *exec.Cmd) error {
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 	cmd.Cancel = func() error { return syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL) }
 	cmd.WaitDelay = 10 * time.Second
-	if err := cmd.Start(); err != nil {
-		return err
-	}
+	return cmd.Start()
+}
+
+func waitGroup(cmd *exec.Cmd) error {
 	err := cmd.Wait()
 	syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL)
 	return err
