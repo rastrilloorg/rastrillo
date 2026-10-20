@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -112,7 +113,7 @@ func TestBashTouches(t *testing.T) {
 		{`d=$(go list -m -f '{{.Dir}}' amadan.net/rastrillo/rastrillo); cat "$d/SKILL.md"`, []bucket{bSkill}},
 	}
 	for _, tc := range cases {
-		got := c.touches("Bash", map[string]any{"command": tc.cmd})
+		got, _ := c.touches("Bash", map[string]any{"command": tc.cmd})
 		if fmt.Sprint(got) != fmt.Sprint(tc.want) {
 			t.Errorf("Bash %q touches %v, want %v", tc.cmd, got, tc.want)
 		}
@@ -196,5 +197,72 @@ func TestTallyCountsStaleCopies(t *testing.T) {
 	}
 	if tally.StaleCalls != 1 {
 		t.Errorf("stale calls = %d, want 1", tally.StaleCalls)
+	}
+}
+
+// Round 2 of the review: searches with no path operand, quoted paths
+// with spaces, subshell scope, and a cwd that Claude Code carries from
+// one Bash call to the next while it stays inside the project.
+func TestBashRound2(t *testing.T) {
+	c := testClassifier()
+	cases := []struct {
+		cmd  string
+		want []bucket
+	}{
+		{"cd " + testFW + "; rg Owned", []bucket{bSource}},
+		{"cd " + testFW + "; ls jobs", []bucket{bSource}},
+		{"cd " + testFW + "; cat SKILL.md; rg Owned", []bucket{bSource, bSkill}},
+		{"cd " + testFW + "; cat SKILL.md | grep -n jobs", []bucket{bSkill}},
+		{"(cd " + testFW + "; cat SKILL.md); cat internal/a.go", []bucket{bSkill}},
+	}
+	for _, tc := range cases {
+		got, _ := c.touches("Bash", map[string]any{"command": tc.cmd})
+		if fmt.Sprint(got) != fmt.Sprint(tc.want) {
+			t.Errorf("Bash %q touches %v, want %v", tc.cmd, got, tc.want)
+		}
+	}
+
+	spaced := classifier{roots: []string{"/work/eval results/head/rastrillo"}, app: "/work/eval results/head/x/1/x"}
+	if got, _ := spaced.touches("Bash", map[string]any{"command": `cat "/work/eval results/head/rastrillo/SKILL.md"`}); fmt.Sprint(got) != "[skill]" {
+		t.Errorf("a quoted path with a space touches %v, want [skill]", got)
+	}
+
+	home := classifier{
+		roots: []string{"/home/u/.cache/skilleval/r/head/rastrillo"},
+		stale: []string{"/home/u/go/pkg/mod/amadan.net/rastrillo/rastrillo@v0.30.0"},
+		app:   "/home/u/.cache/skilleval/r/head/x/1/x",
+	}
+	got, stale := home.touches("Grep", map[string]any{"pattern": "Start", "path": "../../../../../../../go/pkg/mod/amadan.net/rastrillo/rastrillo@v0.30.0/jobs"})
+	if fmt.Sprint(got) != "[source]" || !stale {
+		t.Errorf("a relative path into a cache copy = %v stale=%v, want [source] stale=true", got, stale)
+	}
+}
+
+func TestTallyCarriesCwdInsideTheProject(t *testing.T) {
+	bash := func(id, cmd string) string {
+		return `{"type":"assistant","message":{"content":[{"type":"tool_use","id":"` + id + `","name":"Bash","input":{"command":` + strconv.Quote(cmd) + `}}]}}`
+	}
+	transcript := strings.Join([]string{
+		bash("t1", "cd internal"),
+		bash("t2", "cat ../../../../rastrillo/jobs/jobs.go"), // from app/internal: the framework
+		bash("t3", "cd "+testFW),
+		bash("t4", "cat SKILL.md"), // leaving the project resets to the app, so this is the app's
+	}, "\n")
+	tally, err := tallyTranscript(strings.NewReader(transcript), testClassifier())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if tally.Touched[bSource] != 1 || tally.Touched[bSkill] != 0 {
+		t.Errorf("touched = %v, want one source read and no skill read", tally.Touched)
+	}
+}
+
+func TestTallyWithNoUsageIsStillPartial(t *testing.T) {
+	tally, err := tallyTranscript(strings.NewReader(`{"type":"system","subtype":"init"}`), testClassifier())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !tally.Partial {
+		t.Error("a run that died before any usage was streamed must read as partial, not as free")
 	}
 }

@@ -11,6 +11,8 @@ import (
 // Off Linux there is no subreaper and no /proc to find descendants in:
 // process groups are the only cleanup, and a process that leaves its
 // group can outlive its run.
+const runMark = "SKILLEVAL_RUN="
+
 func becomeSubreaper() {}
 func reap(string)      {}
 func killDescendants() {}

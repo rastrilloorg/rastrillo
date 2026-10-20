@@ -35,7 +35,8 @@ var bucketOrder = []bucket{bSource, bExamples, bDocs, bSkill, bGoDoc, bWeb, bFWW
 type classifier struct {
 	roots []string // the variant's export: the framework the run is meant to use
 	stale []string // module-cache copies: framework too, but not the variant under test
-	app   string   // the scaffolded app, and every call's starting directory
+	app   string   // the scaffolded app: the project, where a session starts
+	cwd   string   // where the next Bash call starts; Claude Code carries it while it stays inside the project
 }
 
 var writeTools = map[string]bool{"Write": true, "Edit": true, "MultiEdit": true, "NotebookEdit": true}
@@ -44,48 +45,66 @@ var writeTools = map[string]bool{"Write": true, "Edit": true, "MultiEdit": true,
 // most expensive one it touched, since one command's output cannot be
 // split between the files it printed.
 func (c classifier) classify(tool string, in map[string]any) bucket {
-	return c.touches(tool, in)[0]
+	b, _ := c.touches(tool, in)
+	return b[0]
 }
 
-// framework reports p's path inside any framework copy.
-func (c classifier) framework(p string) (string, bool) {
-	for _, set := range [][]string{{fwMark}, c.roots, c.stale} {
-		for _, r := range set {
-			if rel, ok := under(p, r); ok {
-				return rel, true
-			}
+// framework reports p's path inside any framework copy, and whether the
+// copy is a stale one rather than the variant under test.
+func (c classifier) framework(p string) (rel string, ok, stale bool) {
+	for _, r := range append([]string{fwMark}, c.roots...) {
+		if rel, ok := under(p, r); ok {
+			return rel, true, false
 		}
 	}
-	return "", false
+	for _, r := range c.stale {
+		if rel, ok := under(p, r); ok {
+			return rel, true, true
+		}
+	}
+	return "", false, false
 }
 
-// abs resolves p the way the tool would: relative to the app, where
-// every call starts.
+func (c classifier) start() string {
+	if c.cwd != "" {
+		return c.cwd
+	}
+	return c.app
+}
+
+// abs resolves p the way the tool would: relative to where the call
+// starts.
 func (c classifier) abs(p string) string {
 	if filepath.IsAbs(p) {
 		return filepath.Clean(p)
 	}
-	return filepath.Join(c.app, p)
+	return filepath.Join(c.start(), p)
 }
 
 // touches is every bucket a call reached, most expensive first, so
 // that a cat of SKILL.md beside a grep of the source still counts as
-// reading the skill.
-func (c classifier) touches(tool string, in map[string]any) []bucket {
+// reading the skill; stale reports a read of a module-cache copy.
+func (c classifier) touches(tool string, in map[string]any) (bs []bucket, stale bool) {
+	if tool == "Bash" {
+		bs, stale, _ = c.bashTouches(in["command"].(string))
+		return bs, stale
+	}
+	return c.fileTouches(tool, in)
+}
+
+func (c classifier) fileTouches(tool string, in map[string]any) ([]bucket, bool) {
 	str := func(k string) string { s, _ := in[k].(string); return s }
 	switch tool {
-	case "Bash":
-		return c.bashTouches(str("command"))
 	case "Skill":
 		if strings.Contains(str("skill"), "rastrillo") {
-			return []bucket{bSkill}
+			return []bucket{bSkill}, false
 		}
-		return []bucket{bOther}
+		return []bucket{bOther}, false
 	case "WebFetch", "WebSearch":
 		if tool == "WebSearch" || strings.Contains(str("url"), "rastrillo.org") {
-			return []bucket{bWeb}
+			return []bucket{bWeb}, false
 		}
-		return []bucket{bOther}
+		return []bucket{bOther}, false
 	}
 	p := str("file_path")
 	if p == "" {
@@ -99,21 +118,22 @@ func (c classifier) touches(tool string, in map[string]any) []bucket {
 	}
 	if p == "" {
 		if tool == "Grep" || tool == "Glob" || tool == "LS" {
-			return []bucket{bApp} // they default to the working directory, which is the app
+			p = "." // they default to the working directory
+		} else {
+			return []bucket{bOther}, false
 		}
-		return []bucket{bOther}
 	}
 	p = c.abs(p)
-	if rel, ok := c.framework(p); ok {
+	if rel, ok, stale := c.framework(p); ok {
 		if writeTools[tool] {
-			return []bucket{bFWWrite}
+			return []bucket{bFWWrite}, stale
 		}
-		return []bucket{relBucket(rel)}
+		return []bucket{relBucket(rel)}, stale
 	}
 	if _, ok := under(p, c.app); ok {
-		return []bucket{bApp}
+		return []bucket{bApp}, false
 	}
-	return []bucket{bOther}
+	return []bucket{bOther}, false
 }
 
 // under reports p's path below root, so that a sibling directory
@@ -158,11 +178,17 @@ var (
 	pathExt    = map[string]bool{".md": true, ".go": true, ".html": true, ".css": true, ".js": true, ".toml": true, ".sql": true, ".json": true, ".txt": true}
 )
 
-// bashTouches walks the command's words the way the shell would reach
-// files: go list substitutions and variables holding a framework path
-// are expanded, and relative words resolve against a working directory
-// that starts at the app and follows each cd.
-func (c classifier) bashTouches(cmd string) []bucket {
+// searchVerbs read the directory they run in when given no path, so
+// inside the framework they read it even with no path-like word.
+var searchVerbs = map[string]bool{"rg": true, "ag": true, "grep": true, "find": true, "ls": true, "tree": true, "fd": true}
+
+// bashTouches walks the command the way the shell would reach files:
+// go list substitutions and variables holding a framework path are
+// expanded, quoted words stay whole, and relative words resolve against
+// a working directory that starts where the call does, follows each cd
+// and is restored when a subshell closes. It also reports where the
+// call leaves the shell, for the next call to start from.
+func (c classifier) bashTouches(cmd string) (bs []bucket, stale bool, end string) {
 	found := map[bucket]bool{}
 	if strings.Contains(cmd, "go doc ") {
 		found[bGoDoc] = true
@@ -172,50 +198,179 @@ func (c classifier) bashTouches(cmd string) []bucket {
 	}
 	cmd = goListDir.ReplaceAllString(cmd, fwMark)
 	for _, m := range assignment.FindAllStringSubmatch(cmd, -1) {
-		if _, ok := c.framework(m[2]); ok {
+		if _, ok, _ := c.framework(m[2]); ok {
 			cmd = strings.ReplaceAll(cmd, "${"+m[1]+"}", m[2])
 			cmd = regexp.MustCompile(`\$`+m[1]+`\b`).ReplaceAllString(cmd, m[2])
 		}
 	}
-	words := strings.FieldsFunc(cmd, func(r rune) bool {
-		return strings.ContainsRune(" \t\n;|&()<>'\"`", r)
-	})
-	cwd := c.app
-	for i := 0; i < len(words); i++ {
-		w := words[i]
-		if w == "cd" && i+1 < len(words) {
-			i++
-			if t := words[i]; filepath.IsAbs(t) {
-				cwd = filepath.Clean(t)
-			} else if !strings.HasPrefix(t, "$") && !strings.HasPrefix(t, "~") {
-				cwd = filepath.Join(cwd, t)
+	touch := func(p string) {
+		if rel, ok, st := c.framework(p); ok {
+			found[relBucket(rel)] = true
+			stale = stale || st
+		}
+	}
+	cwd := c.start()
+	var stack []string
+	atStart, afterPipe, cdNext := true, false, false
+	// implicit is the directory a search verb reads when the command
+	// names no path of its own; it is settled when the command ends.
+	implicit := ""
+	settle := func() {
+		if implicit != "" {
+			touch(implicit)
+			implicit = ""
+		}
+	}
+	for _, w := range lex(cmd) {
+		switch w {
+		case "(":
+			settle()
+			stack = append(stack, cwd)
+			atStart, afterPipe = true, false
+			continue
+		case ")":
+			settle()
+			if n := len(stack); n > 0 {
+				cwd, stack = stack[n-1], stack[:n-1]
+			}
+			atStart, afterPipe = true, false
+			continue
+		case ";":
+			settle()
+			atStart, afterPipe = true, false
+			continue
+		case "|":
+			settle()
+			atStart, afterPipe = true, true
+			continue
+		}
+		if cdNext {
+			cdNext = false
+			if filepath.IsAbs(w) {
+				cwd = filepath.Clean(w)
+			} else if !strings.HasPrefix(w, "$") && !strings.HasPrefix(w, "~") && !strings.HasPrefix(w, "-") {
+				cwd = filepath.Join(cwd, w)
 			}
 			continue
 		}
-		if !strings.HasPrefix(w, "/") && !pathish(w) {
+		if atStart {
+			atStart = false
+			if w == "cd" {
+				cdNext = true
+				continue
+			}
+			if searchVerbs[w] && !afterPipe {
+				implicit = cwd
+			}
 			continue
 		}
-		p := w
-		if !filepath.IsAbs(p) {
-			p = filepath.Join(cwd, p)
-		}
-		if rel, ok := c.framework(p); ok {
-			found[relBucket(rel)] = true
+		if filepath.IsAbs(w) {
+			touch(filepath.Clean(w))
+			implicit = ""
+		} else if pathish(w) {
+			touch(filepath.Join(cwd, w))
+			implicit = ""
 		}
 	}
-	var out []bucket
+	settle()
+	// Claude Code keeps a cd for the next call only while it stays in
+	// the project; leaving it sends the shell back to the project root.
+	end = c.app
+	if _, ok := under(cwd, c.app); ok && len(stack) == 0 {
+		end = cwd
+	}
 	for _, b := range bucketOrder {
 		if found[b] {
-			out = append(out, b)
+			bs = append(bs, b)
 		}
 	}
-	if len(out) > 0 {
-		return out
+	if len(bs) > 0 {
+		return bs, stale, end
 	}
 	if strings.Contains(cmd, "go list -m") && strings.Contains(cmd, "amadan.net/rastrillo") {
-		return []bucket{bOther}
+		return []bucket{bOther}, false, end
 	}
-	return []bucket{bApp}
+	return []bucket{bApp}, false, end
+}
+
+// lex splits a command into words and the operators that change how
+// they are read: ";" ends a command (so do && and ||), "|" ends one and
+// feeds the next, "(" and ")" open and close a subshell ($( included).
+// Quotes keep a word whole; redirections only end a word.
+func lex(cmd string) []string {
+	var out []string
+	var cur strings.Builder
+	inWord := false
+	flush := func() {
+		if inWord {
+			out = append(out, cur.String())
+			cur.Reset()
+			inWord = false
+		}
+	}
+	rs := []rune(cmd)
+	var quote rune
+	for i := 0; i < len(rs); i++ {
+		r := rs[i]
+		if quote != 0 {
+			switch {
+			case r == quote:
+				quote = 0
+			case r == '\\' && quote == '"' && i+1 < len(rs):
+				i++
+				cur.WriteRune(rs[i])
+			default:
+				cur.WriteRune(r)
+			}
+			continue
+		}
+		next := rune(0)
+		if i+1 < len(rs) {
+			next = rs[i+1]
+		}
+		switch {
+		case r == '\'' || r == '"':
+			quote, inWord = r, true
+		case r == '\\' && next != 0:
+			i++
+			cur.WriteRune(next)
+			inWord = true
+		case r == '\n' || r == ';':
+			flush()
+			out = append(out, ";")
+		case r == '&':
+			flush()
+			if i > 0 && (rs[i-1] == '>' || rs[i-1] == '<') {
+				continue // the & of 2>&1 is a redirection, not a separator
+			}
+			if next == '&' {
+				i++
+			}
+			out = append(out, ";")
+		case r == '|':
+			flush()
+			if next == '|' {
+				i++
+				out = append(out, ";")
+			} else {
+				out = append(out, "|")
+			}
+		case r == '$' && next == '(':
+			flush()
+			i++
+			out = append(out, "(")
+		case r == '(' || r == ')':
+			flush()
+			out = append(out, string(r))
+		case r == ' ' || r == '\t' || r == '<' || r == '>' || r == '`':
+			flush()
+		default:
+			cur.WriteRune(r)
+			inWord = true
+		}
+	}
+	flush()
+	return out
 }
 
 // pathish is a word that names a file or directory, rather than a flag,
@@ -225,23 +380,6 @@ func pathish(w string) bool {
 		return false
 	}
 	return w == "." || w == "*" || strings.Contains(w, "/") || pathExt[filepath.Ext(w)]
-}
-
-// mentionsStale reports whether any of the call's arguments names a
-// module-cache copy of the framework.
-func (c classifier) mentionsStale(in map[string]any) bool {
-	for _, v := range in {
-		s, ok := v.(string)
-		if !ok {
-			continue
-		}
-		for _, r := range c.stale {
-			if strings.Contains(s, r) {
-				return true
-			}
-		}
-	}
-	return false
 }
 
 type count struct {
@@ -336,7 +474,13 @@ func tallyTranscript(r io.Reader, c classifier) (tally, error) {
 			for _, b := range blocks {
 				switch b.Type {
 				case "tool_use":
-					bs := c.touches(b.Name, b.Input)
+					var bs []bucket
+					var stale bool
+					if cmd, ok := b.Input["command"].(string); ok && b.Name == "Bash" {
+						bs, stale, c.cwd = c.bashTouches(cmd)
+					} else {
+						bs, stale = c.fileTouches(b.Name, b.Input)
+					}
 					bk := bs[0]
 					pending[b.ID] = bk
 					n := t.Buckets[bk]
@@ -345,7 +489,7 @@ func tallyTranscript(r io.Reader, c classifier) (tally, error) {
 					for _, x := range bs {
 						t.Touched[x]++
 					}
-					if c.mentionsStale(b.Input) {
+					if stale {
 						t.StaleCalls++
 					}
 					if bk == bSource || bk == bExamples {
@@ -372,7 +516,7 @@ func tallyTranscript(r io.Reader, c classifier) (tally, error) {
 			t.Tokens = e.Usage.total()
 		}
 	}
-	if !sawResult && len(order) > 0 {
+	if !sawResult {
 		t.Partial = true
 		for _, id := range order {
 			u := perMessage[id]

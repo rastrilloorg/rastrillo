@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -56,18 +57,29 @@ func readResults(out string) ([]result, error) {
 // retallyDir applies the current classifier to transcripts already on
 // disk, so a classifier fix does not cost a rerun. The paths it needs
 // are the ones the run used, which the directory layout fixes.
-func retallyDir(out string) error {
+func retallyDir(ctx context.Context, out string) error {
+	out, err := filepath.Abs(out)
+	if err != nil {
+		return err
+	}
 	rs, err := readResults(out)
 	if err != nil {
 		return err
 	}
+	stale := moduleCacheCopies(ctx)
 	for i, r := range rs {
 		if r.Dry {
 			continue
 		}
 		dir := filepath.Join(out, r.Variant, r.Task, fmt.Sprint(r.Rep))
-		app := filepath.Join(dir, strings.ReplaceAll(r.Task, "-", ""))
-		t, err := tallyFile(filepath.Join(dir, "transcript.jsonl"), filepath.Join(out, r.Variant, "rastrillo"), app)
+		// The transcript names the paths the run used, so those classify
+		// it, wherever the results directory has since moved; results
+		// from before they were recorded fall back to the layout.
+		export, app := r.Export, r.App
+		if export == "" {
+			export, app = filepath.Join(out, r.Variant, "rastrillo"), filepath.Join(dir, strings.ReplaceAll(r.Task, "-", ""))
+		}
+		t, err := tallyFile(filepath.Join(dir, "transcript.jsonl"), export, app, stale)
 		if err != nil {
 			log.Printf("%s/%s/%d: %v", r.Variant, r.Task, r.Rep, err)
 			continue

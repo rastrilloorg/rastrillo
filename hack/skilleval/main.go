@@ -91,7 +91,7 @@ func main() {
 	var err error
 	switch {
 	case retally != "":
-		err = retallyDir(retally)
+		err = retallyDir(ctx, retally)
 	case summarize != "":
 		err = writeSummary(summarize)
 	default:
@@ -117,7 +117,7 @@ func run(ctx context.Context, c config, tasks string) error {
 	}
 	var err error
 	if c.repo == "" {
-		out, err := exec.Command("git", "rev-parse", "--show-toplevel").Output()
+		out, err := outputOf(ctx, "", "git", "rev-parse", "--show-toplevel")
 		if err != nil {
 			return fmt.Errorf("finding the repository: %w", err)
 		}
@@ -168,7 +168,13 @@ func run(ctx context.Context, c config, tasks string) error {
 		}
 	}()
 
-	bin, err := prepareExport(ctx, c, export, binDir)
+	// The commit is resolved once, so what is exported and what
+	// provenance names cannot differ if the checkout moves meanwhile.
+	commit, err := gitOut(ctx, c.repo, "rev-parse", "HEAD")
+	if err != nil {
+		return fmt.Errorf("resolving HEAD: %w", err)
+	}
+	bin, err := prepareExport(ctx, c, commit, export, binDir)
 	if err != nil {
 		return err
 	}
@@ -193,12 +199,13 @@ func run(ctx context.Context, c config, tasks string) error {
 			return fmt.Errorf("task %s: %w", t, err)
 		}
 	}
-	if err := writeProvenance(ctx, c, vdir, export, tasksDir); err != nil {
+	if err := writeProvenance(ctx, c, commit, vdir, export, tasksDir); err != nil {
 		return err
 	}
 	if err := preflight(ctx, c, bin, export, vdir); err != nil {
 		return fmt.Errorf("the scaffold fails its own gate before any agent ran, so a run could not tell the agent's failures from the scaffold's: %w", err)
 	}
+	stale := moduleCacheCopies(ctx)
 	skillBytes, topicBytes := skillSize(export)
 	log.Printf("variant %s: SKILL.md %d bytes, skill/ %d bytes; results in %s", c.name, skillBytes, topicBytes, c.out)
 
@@ -215,7 +222,7 @@ func run(ctx context.Context, c config, tasks string) error {
 				if ctx.Err() != nil {
 					return
 				}
-				r := runOne(ctx, c, bin, export, vdir, tasksDir, task, rep)
+				r := runOne(ctx, c, bin, export, vdir, tasksDir, task, rep, stale)
 				r.SkillBytes, r.TopicBytes = skillBytes, topicBytes
 				mu.Lock()
 				defer mu.Unlock()
@@ -239,12 +246,12 @@ func run(ctx context.Context, c config, tasks string) error {
 // the agent reads committed files and nothing a working tree happens to
 // hold, then builds the CLI from it and makes the export read-only: an
 // agent that edits the framework to make its task pass has not used it.
-func prepareExport(ctx context.Context, c config, export, binDir string) (string, error) {
+func prepareExport(ctx context.Context, c config, commit, export, binDir string) (string, error) {
 	if err := os.MkdirAll(export, 0o755); err != nil {
 		return "", err
 	}
-	if err := runIn(ctx, "", nil, nil, "sh", "-c", `git -C "$1" archive HEAD | tar -x -C "$2"`, "sh", c.repo, export); err != nil {
-		return "", fmt.Errorf("exporting HEAD: %w", err)
+	if err := runIn(ctx, "", goEnv(), nil, "sh", "-c", `git -C "$1" archive "$2" | tar -x -C "$3"`, "sh", c.repo, commit, export); err != nil {
+		return "", fmt.Errorf("exporting %s: %w", commit, err)
 	}
 	if c.variant != "" {
 		os.Remove(filepath.Join(export, "SKILL.md"))
@@ -288,7 +295,7 @@ func preflight(ctx context.Context, c config, bin, export, vdir string) error {
 		return err
 	}
 	defer reap(dir)
-	if err := runIn(ctx, app, goEnv(), logf, "make", "ci"); err != nil {
+	if err := runIn(ctx, app, append(goEnv(), runMark+dir), logf, "make", "-f", "Makefile", "ci"); err != nil {
 		return fmt.Errorf("make ci (see %s): %w", logf.Name(), err)
 	}
 	return nil

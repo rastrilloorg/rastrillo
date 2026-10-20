@@ -16,6 +16,11 @@ import (
 // their exit status from a concurrent run.
 var started sync.Map
 
+// runMark is set in the environment of everything a run starts. A
+// process that daemonises and leaves the run directory still inherits
+// it, so reap can find it by run as well as by working directory.
+const runMark = "SKILLEVAL_RUN="
+
 // prSetChildSubreaper is PR_SET_CHILD_SUBREAPER from linux/prctl.h.
 const prSetChildSubreaper = 36
 
@@ -45,8 +50,8 @@ func runGroup(cmd *exec.Cmd) error {
 }
 
 type proc struct {
-	cwd  string
-	ppid int
+	cwd, run string
+	ppid     int
 }
 
 // descendants lists the harness's descendant pids with each one's
@@ -81,7 +86,7 @@ func descendants() map[int]proc {
 		for p := parent[pid]; p > 1; p = parent[p] {
 			if p == self {
 				cwd, _ := os.Readlink("/proc/" + strconv.Itoa(pid) + "/cwd")
-				out[pid] = proc{cwd, parent[pid]}
+				out[pid] = proc{cwd: cwd, run: runOf(pid), ppid: parent[pid]}
 				break
 			}
 		}
@@ -89,12 +94,27 @@ func descendants() map[int]proc {
 	return out
 }
 
-// reap kills the harness's descendants working inside dir: what one
-// run left behind, without touching the runs beside it.
+// runOf reads the run a process belongs to from its environment.
+func runOf(pid int) string {
+	env, err := os.ReadFile("/proc/" + strconv.Itoa(pid) + "/environ")
+	if err != nil {
+		return ""
+	}
+	for _, kv := range strings.Split(string(env), "\x00") {
+		if v, ok := strings.CutPrefix(kv, runMark); ok {
+			return v
+		}
+	}
+	return ""
+}
+
+// reap kills the harness's descendants belonging to the run in dir, by
+// its mark or by working there: what one run left behind, without
+// touching the runs beside it.
 func reap(dir string) {
 	var killed []int
 	for pid, p := range descendants() {
-		if _, ok := under(p.cwd, dir); ok {
+		if _, ok := under(p.cwd, dir); ok || p.run == dir {
 			syscall.Kill(pid, syscall.SIGKILL)
 			if p.ppid == os.Getpid() {
 				killed = append(killed, pid)
