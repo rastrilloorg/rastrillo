@@ -63,6 +63,9 @@ func TestClassifyBash(t *testing.T) {
 		{`grep -rn Start $(go list -m -f '{{.Dir}}' amadan.net/rastrillo/rastrillo)/jobs`, bSource},
 		{`cd $(go list -m -f {{.Dir}} amadan.net/rastrillo/rastrillo) && grep -rn media-grid .`, bSource},
 		{"go list -m -f '{{.Dir}}' amadan.net/rastrillo/rastrillo", bOther},
+		// Seen in the first real run: the directory held in a variable,
+		// then grepped, and with the module path mistyped besides.
+		{`d=$(go list -m -f '{{.Dir}}' amadan.net/rastrillo 2>&1); echo $d; grep -rn "scheme-menu" $d --include=*.html -l`, bSource},
 		{"go doc amadan.net/rastrillo/rastrillo/jobs Jobs.Start", bGoDoc},
 		{"curl -s https://rastrillo.org/docs/jobs.md", bWeb},
 		{"go test ./...", bApp},

@@ -141,10 +141,18 @@ func (c classifier) classifyBash(cmd string) bucket {
 		}
 	}
 	if strings.Contains(cmd, "go list -m") && strings.Contains(cmd, "amadan.net/rastrillo") {
+		// The directory went into a variable, or the module path was
+		// mistyped, so no path inside it is visible; a read verb beside
+		// it means the tree is being searched, which is source.
+		if readVerb.MatchString(cmd) {
+			return bSource
+		}
 		return bOther
 	}
 	return bApp
 }
+
+var readVerb = regexp.MustCompile(`(^|[;&|(\s])(grep|rg|cat|sed|head|tail|awk|find|less)\s`)
 
 // pathPrefix is the path that continues at the start of s, ending where
 // the shell word does.
