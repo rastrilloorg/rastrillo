@@ -17,7 +17,7 @@ NR == 1 {
 	if (ext ~ /^(go|js|mjs|ts)$/) { lc = "//"; quotes = "\"'`" }
 	if (ext ~ /^(js|mjs|ts)$/) jsregex = 1
 	if (ext == "css") quotes = "\"'"
-	if (ext ~ /^(html|tmpl|gohtml)$/) {
+	if (ext ~ /^(html|htm|tmpl|gohtml)$/) {
 		istmpl = 1
 		# Go template comments, with or without a trim marker, which
 		# any whitespace may follow.
@@ -80,6 +80,8 @@ function strip(t,    r, i, k, best, which, wlen, endc, q, j, c, ch, pre, cls, of
 				if (substr(t, i, 2) == "//" || substr(t, i, 2) == "/*") break
 				pre = r substr(t, 1, i - 1); sub(/[ \t]+$/, "", pre)
 				if (pre ~ /(\+\+|--)$/) continue
+				# After these keywords a value starts, so / opens a regex.
+				if (pre ~ /(^|[^A-Za-z0-9_$])(return|typeof|case|do|else|in|of|new|delete|void|throw|yield|await)$/) { best = i; which = "regex"; break }
 				if (pre == "" || substr(pre, length(pre), 1) ~ /[(,=:[!&|?{};+*%<>~^-]/) { best = i; which = "regex"; break }
 			}
 		}

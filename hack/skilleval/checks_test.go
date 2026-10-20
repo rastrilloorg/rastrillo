@@ -138,6 +138,21 @@ func TestChecks(t *testing.T) {
 		{"scheme comment after division by a postfix", "scheme", map[string]string{
 			"internal/app/static/q.js": "let n = 4; const half = n++ / 2; // do not use localStorage\n",
 		}, true},
+		// Round 6: a regex after return, a map literal carrying Scheme,
+		// and a template with the .htm extension.
+		{"scheme call after a regex following return", "scheme", map[string]string{
+			"internal/app/static/u.js": "function isURL(s) { return /https?:\\/\\//.test(s); } localStorage.setItem(\"theme\", \"dark\");\n",
+		}, false},
+		{"scheme comment after a regex following return", "scheme", map[string]string{
+			"internal/app/static/u.js": "function q(s) { return /\"/.test(s); } // do not use localStorage\n",
+		}, true},
+		{"scheme passed in a map literal", "scheme", map[string]string{
+			"internal/app/render.go": "package app\n\nfunc render() { page := map[string]any{\"Scheme\": req.Scheme} }\n",
+		}, true},
+		{"photos in a .htm template", "media-grid", map[string]string{
+			"internal/app/templates/photos.htm": "{{template \"media-grid\" .}}\n",
+			"internal/app/handlers.go":          "package app\n\nfunc store() { s := blobs.Dir(root) }\n",
+		}, true},
 		{"scheme data-theme traded for a toggle", "scheme", map[string]string{
 			"internal/app/templates/layout.html": "<html>\n{{template \"scheme-menu\" .}}\n<script>localStorage.setItem('t','dark')</script>\n</html>\n",
 		}, false},

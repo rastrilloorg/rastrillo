@@ -9,5 +9,5 @@ refuse "no hand-rolled scheme toggle" 'prefers-color-scheme' 'localStorage' 'mat
 present "the shell's scheme-menu is still there" 'scheme-menu' internal
 # Without Scheme in the page data the layout cannot write data-theme,
 # and a chosen Dark paints System on every reload.
-present "render still passes Scheme to the layout" 'page\["Scheme"\]|"Scheme"\]? *=|Scheme:' internal
+present "render still passes Scheme to the layout" 'page\["Scheme"\]|"Scheme"\]? *=|"?Scheme"? *:' internal
 exit $status

@@ -27,7 +27,7 @@ treecode() {
 	root=$1; shift
 	for p in "$@"; do
 		[ -e "$root/$p" ] || continue
-		find "$root/$p" -type f ! -path '*/gen/*' \( -name '*.go' -o -name '*.html' -o -name '*.tmpl' -o -name '*.gohtml' \
+		find "$root/$p" -type f ! -path '*/gen/*' \( -name '*.go' -o -name '*.html' -o -name '*.htm' -o -name '*.tmpl' -o -name '*.gohtml' \
 			-o -name '*.css' -o -name '*.js' -o -name '*.mjs' -o -name '*.ts' -o -name '*.toml' -o -name '*.sql' \) |
 			while IFS= read -r f; do
 				case $f in *_test.go) [ "$notests" = 1 ] && continue ;; esac
