@@ -12,12 +12,13 @@ NR == 1 {
 	path = $0
 	ext = path; sub(/.*\./, "", ext)
 	# Openers are regular expressions, closers plain text.
-	nb = 0; lc = ""; quotes = ""; jsregex = 0
+	nb = 0; lc = ""; quotes = ""; jsregex = 0; istmpl = 0
 	if (ext ~ /^(go|js|mjs|ts|css)$/) { bo[++nb] = "/\\*"; bc[nb] = "*/"; bt[nb] = "" }
 	if (ext ~ /^(go|js|mjs|ts)$/) { lc = "//"; quotes = "\"'`" }
 	if (ext ~ /^(js|mjs|ts)$/) jsregex = 1
 	if (ext == "css") quotes = "\"'"
 	if (ext ~ /^(html|tmpl|gohtml)$/) {
+		istmpl = 1
 		# Go template comments, with or without a trim marker, which
 		# any whitespace may follow.
 		bo[++nb] = "\\{\\{(-[ \t\r\n]+)?/\\*"; bc[nb] = "*/"; bt[nb] = "tmpl"
@@ -25,16 +26,22 @@ NR == 1 {
 	}
 	if (ext ~ /^(toml|sh|yaml|yml|py|mk)$/ || path ~ /(^|\/)Makefile$/) lc = "#"
 	if (ext == "sql") lc = "--"
-	inblock = ""; inraw = 0
+	inblock = ""; inraw = 0; trimpend = 0
 	next
 }
 {
-	code = strip($0)
+	t = $0
+	# A template comment may open across lines: {{- at one line's end,
+	# /* at the next one's start.
+	if (trimpend && match(t, /^[ \t\r]*\/\*/)) { t = substr(t, RLENGTH + 1); inblock = "*/"; blocktype = "tmpl" }
+	trimpend = 0
+	code = strip(t)
+	if (istmpl && inblock == "" && code ~ /\{\{-[ \t\r]*$/) trimpend = 1
 	if (code ~ /[^[:space:]]/) print code
 }
 
 # strip returns t without its comments.
-function strip(t,    r, i, k, best, which, wlen, endc, q, j, c, ch, pre, cls) {
+function strip(t,    r, i, k, best, which, wlen, endc, q, j, c, ch, pre, cls, off) {
 	r = ""
 	while (length(t) > 0) {
 		if (inraw) { # inside a backtick string, which may span lines
@@ -63,10 +70,17 @@ function strip(t,    r, i, k, best, which, wlen, endc, q, j, c, ch, pre, cls) {
 		# In JavaScript a / where a value may start opens a regex literal,
 		# whose quotes are not strings: const q = /"/ holds no string.
 		if (jsregex) {
-			i = index(t, "/")
-			if (i > 0 && substr(t, i, 2) != "//" && substr(t, i, 2) != "/*" && (best == 0 || i < best)) {
+			# Each / before the earliest other candidate is tried in turn:
+			# one that follows a value (or a postfix ++ or --) divides, and
+			# a later one on the line may still open a regex.
+			off = 0
+			while ((i = index(substr(t, off + 1), "/")) > 0) {
+				i += off; off = i
+				if (best != 0 && i >= best) break
+				if (substr(t, i, 2) == "//" || substr(t, i, 2) == "/*") break
 				pre = r substr(t, 1, i - 1); sub(/[ \t]+$/, "", pre)
-				if (pre == "" || substr(pre, length(pre), 1) ~ /[(,=:[!&|?{};+*%<>~^-]/) { best = i; which = "regex" }
+				if (pre ~ /(\+\+|--)$/) continue
+				if (pre == "" || substr(pre, length(pre), 1) ~ /[(,=:[!&|?{};+*%<>~^-]/) { best = i; which = "regex"; break }
 			}
 		}
 		for (j = 1; j <= length(quotes); j++) {

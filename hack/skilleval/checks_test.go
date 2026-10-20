@@ -15,6 +15,8 @@ var checkBase = map[string]string{
 	// Long block comments whose openings sit outside a three-line hunk.
 	"internal/app/static/tokens.css": "/*\n tokens\n a\n b\n c\n d\n e\n f\n g\n end\n*/\n:root { --x: 1; }\n",
 	"internal/app/doc.go":            "package app\n\n/*\nNotes.\na\nb\nc\nd\ne\nf\nend\n*/\n",
+	// The real scaffold's manifest README shows the syntax it documents.
+	"manifest/README.md": "Example:\n\n    scope = \"user\"\n    kind = \"money\"\n    kind = \"money\"\n",
 }
 
 // TestChecks runs each task's check against a commit holding only the
@@ -114,6 +116,27 @@ func TestChecks(t *testing.T) {
 		}, false},
 		{"scheme comment after a JS regex holding a quote", "scheme", map[string]string{
 			"internal/app/static/q.js": "const quoted = /\"/; // do not use localStorage\n",
+		}, true},
+		// Round 5: a binary file in the tree, documentation removed, a
+		// test standing in for production code, a template comment
+		// opened across lines, and division after a postfix ++.
+		{"export beside a binary file", "export-job", map[string]string{
+			"internal/app/static/logo.png": "\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00",
+			"internal/app/handlers.go":     "package app\n\nfunc wire() { j := jobs.New(logger); h := jobs.NewHandlers(cfg) }\n",
+		}, true},
+		{"expenses manifest replacing the README", "expenses", map[string]string{
+			"manifest/README.md":     "\x00delete",
+			"manifest/expenses.toml": "scope = \"user\"\n[[fields]]\nkind = \"money\"\n",
+		}, true},
+		{"scheme kept only by a test", "scheme", map[string]string{
+			"internal/app/render.go":      "package app\n\nfunc render() {}\n",
+			"internal/app/render_test.go": "package app\n\nfunc TestX() { page[\"Scheme\"] = \"dark\" }\n",
+		}, false},
+		{"photos named in a template comment opened across lines", "media-grid", map[string]string{
+			"internal/app/templates/photos.html": "{{-\n/* template \"media-grid\" .; blobs.Dir(root) */ -}}\n",
+		}, false},
+		{"scheme comment after division by a postfix", "scheme", map[string]string{
+			"internal/app/static/q.js": "let n = 4; const half = n++ / 2; // do not use localStorage\n",
 		}, true},
 		{"scheme data-theme traded for a toggle", "scheme", map[string]string{
 			"internal/app/templates/layout.html": "<html>\n{{template \"scheme-menu\" .}}\n<script>localStorage.setItem('t','dark')</script>\n</html>\n",

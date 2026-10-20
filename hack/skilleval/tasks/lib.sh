@@ -19,24 +19,28 @@ echo x | awk -f "$here/strip.awk" >/dev/null || { echo "strip.awk does not parse
 notests=0
 # stripfile <path> prints that path's code from stdin, comments out.
 stripfile() { { printf '%s\n' "$1"; cat; } | awk -f "$here/strip.awk"; }
-# treecode <root> <paths...> prints the code of every file under the
-# paths, leaving out gen/ and, while notests=1, Go tests.
+# treecode <root> <paths...> prints the code of every source file under
+# the paths, leaving out gen/ and, while notests=1, Go tests. Only source
+# formats are read: a README documents syntax without using it, and a
+# binary asset would turn grep's output into "binary file matches".
 treecode() {
 	root=$1; shift
 	for p in "$@"; do
 		[ -e "$root/$p" ] || continue
-		find "$root/$p" -type f ! -path '*/gen/*' | while IFS= read -r f; do
-			case $f in *_test.go) [ "$notests" = 1 ] && continue ;; esac
-			stripfile "${f#"$root"/}" <"$f"
-		done
+		find "$root/$p" -type f ! -path '*/gen/*' \( -name '*.go' -o -name '*.html' -o -name '*.tmpl' -o -name '*.gohtml' \
+			-o -name '*.css' -o -name '*.js' -o -name '*.mjs' -o -name '*.ts' -o -name '*.toml' -o -name '*.sql' \) |
+			while IFS= read -r f; do
+				case $f in *_test.go) [ "$notests" = 1 ] && continue ;; esac
+				stripfile "${f#"$root"/}" <"$f"
+			done
 	done
 }
 # gained <regex> <paths...> is how many more times the construct occurs
 # in the final code than in the scaffold's.
 gained() {
 	re=$1; shift
-	n=$(treecode . "$@" | grep -oE -- "$re" | wc -l)
-	o=$(treecode "$base" "$@" | grep -oE -- "$re" | wc -l)
+	n=$(treecode . "$@" | grep -aoE -- "$re" | wc -l)
+	o=$(treecode "$base" "$@" | grep -aoE -- "$re" | wc -l)
 	echo $((n - o))
 }
 need() { # need <what> <regex> <paths...>
@@ -63,6 +67,6 @@ refuse() {
 # code at all.
 present() {
 	what=$1 re=$2; shift 2
-	if treecode . "$@" | grep -qE -- "$re"; then echo "ok: $what"; else echo "FAIL: $what"; status=1; fi
+	if treecode . "$@" | grep -aqE -- "$re"; then echo "ok: $what"; else echo "FAIL: $what"; status=1; fi
 }
 status=0
