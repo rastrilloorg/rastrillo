@@ -6,18 +6,31 @@
 # the harness recorded (SKILLEVAL_BASE), because the scaffold already
 # uses some of these features and an agent may commit or amend.
 # strip.awk takes comments out by each file's language, so naming a
-# feature in a comment neither passes nor fails a check.
+# feature in a comment neither passes nor fails a check. Each changed
+# file is stripped whole, old and new, and only then compared.
 base=${SKILLEVAL_BASE:?the harness sets SKILLEVAL_BASE to the scaffold commit}
 here=$(dirname "$0")
 # A broken strip.awk would empty every pipe below and fail each need
 # quietly, which reads as an agent's miss rather than the check's.
-awk -f "$here/strip.awk" </dev/null || { echo "strip.awk does not parse"; exit 2; }
+echo x | awk -f "$here/strip.awk" >/dev/null || { echo "strip.awk does not parse"; exit 2; }
 git add -A -N
-diffcode() { git diff "$base" -- "$@" ':!gen' | awk -f "$here/strip.awk"; }
+# stripfile <path> prints that path's code from stdin, comments out.
+stripfile() { { printf '%s\n' "$1"; cat; } | awk -f "$here/strip.awk"; }
+# diffcode compares each changed file's code, old and new, stripped as
+# whole files, and prints removed lines as -code and added ones as +code.
+diffcode() {
+	git diff --no-ext-diff --no-textconv --name-only "$base" -- "$@" ':!gen' | while IFS= read -r f; do
+		old=$(mktemp) new=$(mktemp)
+		git show "$base:$f" 2>/dev/null | stripfile "$f" >"$old"
+		if [ -f "$f" ]; then stripfile "$f" <"$f" >"$new"; fi
+		diff "$old" "$new" | sed -n 's/^< /-/p; s/^> /+/p'
+		rm -f "$old" "$new"
+	done
+}
 added() { diffcode "$@" | sed -n 's/^+//p'; }
 removed() { diffcode "$@" | sed -n 's/^-//p'; }
 # filecode prints the current code of the named files, comments out.
-filecode() { for f in "$@"; do printf 'diff --git a/%s b/%s\n' "$f" "$f"; sed 's/^/+/' "$f"; done | awk -f "$here/strip.awk" | sed 's/^+//'; }
+filecode() { for f in "$@"; do stripfile "$f" <"$f"; done; }
 need() { # need <what> <regex> <paths...>
 	what=$1 re=$2; shift 2
 	if added "$@" | grep -qE "$re"; then echo "ok: $what"; else echo "FAIL: $what"; status=1; fi

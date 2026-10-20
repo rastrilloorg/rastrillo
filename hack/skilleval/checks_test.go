@@ -13,6 +13,9 @@ var checkBase = map[string]string{
 	"internal/app/render.go":             "package app\n\nfunc render() { page[\"Scheme\"] = req.Scheme }\n",
 	"internal/app/templates/layout.html": "<html data-theme=\"{{.Scheme}}\">\n{{template \"scheme-menu\" .}}\n</html>\n",
 	"internal/app/handlers.go":           "package app\n",
+	// Long block comments whose openings sit outside a three-line hunk.
+	"internal/app/static/tokens.css": "/*\n tokens\n a\n b\n c\n d\n e\n f\n g\n end\n*/\n:root { --x: 1; }\n",
+	"internal/app/doc.go":            "package app\n\n/*\nNotes.\na\nb\nc\nd\ne\nf\nend\n*/\n",
 }
 
 // TestChecks runs each task's check against a commit holding only the
@@ -78,6 +81,24 @@ func TestChecks(t *testing.T) {
 		}, false},
 		{"scheme toggle on the data-theme line", "scheme", map[string]string{
 			"internal/app/templates/layout.html": "<html data-theme=\"{{.Scheme}}\"><script>localStorage.setItem('t','dark')</script>\n{{template \"scheme-menu\" .}}\n</html>\n",
+		}, false},
+		// Round 3: comments whose opening lies outside the hunk, a URL
+		// before a real comment, a string that looks like a comment, and
+		// template comments that trim whitespace.
+		{"scheme note inside an existing CSS comment", "scheme", map[string]string{
+			"internal/app/static/tokens.css": "/*\n tokens\n a\n b\n c\n d\n e\n f\n Do not add localStorage toggles.\n g\n end\n*/\n:root { --x: 1; }\n",
+		}, true},
+		{"export named inside an existing block comment", "export-job", map[string]string{
+			"internal/app/doc.go": "package app\n\n/*\nNotes.\na\nb\nc\nd\ne\nj := jobs.New(logger)\nh := jobs.NewHandlers(cfg)\nf\nend\n*/\n",
+		}, false},
+		{"export named after a URL", "export-job", map[string]string{
+			"internal/app/handlers.go": "package app\n\nvar endpoint = \"https://example.com\" // TODO jobs.New(logger) jobs.NewHandlers(cfg)\n",
+		}, false},
+		{"export after a string holding /*", "export-job", map[string]string{
+			"internal/app/handlers.go": "package app\n\nfunc wire() { accept := \"image/*\"; j := jobs.New(logger); h := jobs.NewHandlers(cfg) }\n",
+		}, true},
+		{"photos named in a trimming template comment", "media-grid", map[string]string{
+			"internal/app/templates/photos.html": "{{- /* template \"media-grid\" .; blobs.Dir(root) */ -}}\n",
 		}, false},
 		{"scheme data-theme traded for a toggle", "scheme", map[string]string{
 			"internal/app/templates/layout.html": "<html>\n{{template \"scheme-menu\" .}}\n<script>localStorage.setItem('t','dark')</script>\n</html>\n",
