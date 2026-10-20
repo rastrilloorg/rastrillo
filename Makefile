@@ -245,11 +245,12 @@ gorm-free:
 # CGO_ENABLED=0: the static-binary criterion is about what ships, not
 # what a detector build links. Scoped to the packages whose tests
 # are actually concurrent - jobs (Start spawns a goroutine per job while
-# Get reads the same map) sessions and assertion verification; and
+# Get reads the same map) sessions and assertion verification; provision,
+# whose publishers on one hostname must serialize; and
 # ui.Pages alone in ui, whose isolation test runs 200 executions in two
 # languages at once.
 race:
-	CGO_ENABLED=1 go test -race -count=1 ./jobs/ ./sessions/ ./assertion/ ./locales/
+	CGO_ENABLED=1 go test -race -count=1 ./jobs/ ./sessions/ ./assertion/ ./locales/ ./provision/
 	CGO_ENABLED=1 go test -race -count=1 -run '^TestPages' ./ui/
 
 # The examples are separate modules with a replace back to this

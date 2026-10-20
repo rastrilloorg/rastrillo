@@ -22,6 +22,13 @@ new `tokens.css`.
 - New partial `media-grid`; see [Templates](/docs/templates#the-partials).
 - New catalog keys `rastrillo.ui.media_select` and `rastrillo.ui.no_description`; a locale you ship yourself must translate them.
 
+**Create tenant instances from your own app.** The new `provision` package lets a home or a hub create instances through the CARLOS console, tell when each one is serving, publish a hub's path map, and check that each tenant's path reaches it. It keeps no records: your app writes them, following the rules on its reference page. Every tenant it creates must set `Options.NameInstance`.
+
+- New package `provision`: `Console` with `Create`, `Instance` and `PublishPaths`; `NewLabel`; the probes `Ready`, `WaitReady`, `CheckRoute` and `WaitRouted`; and the errors to branch on, among them `ErrHostTaken`, `RetryError` and `ErrEmptyMap`.
+- New package `provision/provisiontest`, a fake console and edge with the platform's own answers, for testing code that uses `provision`.
+- New option `Options.NameInstance` names the instance on `GET /api/version` in the `Rastrillo-Host` header. It is off by default, because anyone can read the header.
+- New function `carlos.Host`, the instance's platform hostname, and constant `carlos.HostHeader`, the header `NameInstance` names it in.
+
 **A colour-scheme switch in every shell.** Readers get Light, Dark and
 System beside the language menu, with or without JavaScript. The
 framework mounts `POST /_theme`, which stores the choice in the

@@ -95,6 +95,15 @@ type Options struct {
 	// that needs a handle outside Serve's lifetime calls OpenDB itself.
 	Router func(db *sql.DB) (*http.ServeMux, error)
 
+	// NameInstance, if set, makes GET /api/version also answer with the
+	// Rastrillo-Host header (carlos.HostHeader) carrying $CARLOS_HOST,
+	// so a hub can tell which instance answered. It is off by default
+	// because the header tells any visitor the platform hostname
+	// behind a product path or a custom domain. Off CARLOS the header
+	// is absent. The body stays BuildVersion either way: the
+	// platform's build probe reads it.
+	NameInstance bool
+
 	// Wrap, if set, wraps the app's mux — the one seam for app
 	// middleware: sessions, CSRF, panic pages, authorization
 	// (gleester's friction, James 2026-08-04; also the friction behind
@@ -559,6 +568,10 @@ func buildHandler(opts Options) (http.Handler, error) {
 		fmt.Fprint(w, "ok")
 	})
 	mux.HandleFunc("GET /api/version", func(w http.ResponseWriter, _ *http.Request) {
+		// Read per request, not at build time, so a test can set it per case.
+		if host := carlos.Host(); opts.NameInstance && host != "" {
+			w.Header().Set(carlos.HostHeader, host)
+		}
 		fmt.Fprint(w, BuildVersion)
 	})
 	if opts.NextDue != nil {

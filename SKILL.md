@@ -169,6 +169,8 @@ A central app with no database (a sign-in home, a hub) keeps records
 in `objrec`: `Create` wins once per key, `Update` refuses a stale
 version, `Mutate` retries. docs/site/reference/objrec.md
 
+A home or hub that creates tenant instances on CARLOS uses `provision`; test it with `provisiontest`. docs/site/reference/provision.md
+
 Schema changes: edit a model, `rastrillo migration generate`, read the
 SQL before committing. Migrations apply once at boot, ledgered — never
 re-run, never reversed. `migrations.go` declares two `*migrate.Set`:

@@ -178,7 +178,18 @@ import (
 // bytes. The file had no slack after the previous raise and the rows
 // paragraph it joins restates nothing, so the ceiling is raised by
 // exactly the addition.
-const skillBudget = 31_761
+//
+// Raised 31,761 -> 31,897 on 2026-10-18 for one paragraph: a home or
+// hub creates tenants with `provision` and tests with `provisiontest`.
+// Without it an agent building a hub reads only the console's API and
+// writes its own client, which misses the record contract (record
+// before POST, Resume on every later call) and orphans an instance the
+// first time a create times out. The file had no slack after the media
+// grid; the paragraphs that might pay were read again (the objrec line
+// it sits under, the §0 and §1 pointers, the §8 page links) and each
+// holds a fact or a page an agent needs, so the ceiling is raised by
+// exactly the 136 bytes the paragraph adds.
+const skillBudget = 31_897
 
 // TestSkillMDStaysWithinBudget makes the budget mechanical rather than
 // remembered: several release evenings have ended with a wc -c dance

@@ -140,6 +140,12 @@ has a handler at that path, in which case yours wins. A router mounted
 under `/` cannot be seen through the mux, so an app that routes
 `/_theme` itself through chi or the like sets this.
 
+**`NameInstance`**: adds the `Rastrillo-Host` header, carrying `$CARLOS_HOST`, to `GET /api/version`, so a hub can tell which instance answered. Set it on every app `provision` creates, and on the hub. Anyone can read the header, so it shows the platform hostname behind your domain.
+
+```go
+NameInstance bool
+```
+
 ## Ctx and RenderFunc
 
 ```go

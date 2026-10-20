@@ -10,6 +10,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"amadan.net/rastrillo/rastrillo/carlos"
 )
 
 func doGet(t *testing.T, h http.Handler, path string, header http.Header) *httptest.ResponseRecorder {
@@ -159,4 +161,35 @@ func TestNextDue(t *testing.T) {
 			t.Fatalf("due = %d, want 0 for a zero time", got["due"])
 		}
 	})
+}
+
+func TestVersionNamesTheInstanceWhenAsked(t *testing.T) {
+	t.Setenv("CARLOS_HOST", "acme-k3x9qa.bdf.oncarlos.com")
+	h, err := buildHandler(Options{Mux: helloMux(&captured{}), NameInstance: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	w := doGet(t, h, "/api/version", nil)
+	if got := w.Header().Get(carlos.HostHeader); got != "acme-k3x9qa.bdf.oncarlos.com" {
+		t.Fatalf("%s = %q: a hub cannot tell which instance answered", carlos.HostHeader, got)
+	}
+	if w.Body.String() != BuildVersion {
+		t.Fatalf("body = %q: the platform's build probe reads the body, which must not change", w.Body.String())
+	}
+}
+
+func TestVersionNamesNothingByDefault(t *testing.T) {
+	t.Setenv("CARLOS_HOST", "acme-k3x9qa.bdf.oncarlos.com")
+	h, _ := buildHandler(Options{Mux: helloMux(&captured{})})
+	if got := doGet(t, h, "/api/version", nil).Header().Get(carlos.HostHeader); got != "" {
+		t.Fatalf("%s = %q without NameInstance: the platform hostname leaked", carlos.HostHeader, got)
+	}
+}
+
+func TestVersionOffCarlosNamesNothing(t *testing.T) {
+	t.Setenv("CARLOS_HOST", "")
+	h, _ := buildHandler(Options{Mux: helloMux(&captured{}), NameInstance: true})
+	if got := doGet(t, h, "/api/version", nil).Header().Get(carlos.HostHeader); got != "" {
+		t.Fatalf("%s = %q off CARLOS, want absent", carlos.HostHeader, got)
+	}
 }

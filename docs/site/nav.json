@@ -174,6 +174,16 @@
           "blurb": "Small JSON records in the object store, written conditionally."
         },
         {
+          "slug": "reference/provision",
+          "label": "provision",
+          "blurb": "Create tenant instances from a home or a hub, and check that each is ready and routed."
+        },
+        {
+          "slug": "reference/provisiontest",
+          "label": "provisiontest",
+          "blurb": "A fake console and edge with the platform's own answers, for testing provision."
+        },
+        {
           "slug": "reference/carlos",
           "label": "carlos",
           "blurb": "Receiving a scheduled tick, and asking the platform for a one-shot one."

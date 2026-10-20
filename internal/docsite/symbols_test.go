@@ -58,6 +58,7 @@ var referencePages = map[string]string{
 	"keyring":       "reference/keyring",
 	"blobs":         "reference/blobs",
 	"objrec":        "reference/objrec",
+	"provision":     "reference/provision",
 	"carlos":        "reference/carlos",
 	"eventlog":      "reference/eventlog",
 	"mail":          "reference/mail",
@@ -69,6 +70,9 @@ var referencePages = map[string]string{
 	"currency":      "reference/currency",
 	"locales":       "reference/locales",
 	".":             "reference/rastrillo",
+
+	// Its own gofmt block: a key this long would realign every line above.
+	"provision/provisiontest": "reference/provisiontest",
 }
 
 // TestExportedSymbolsAreDocumented is the completeness gate.
