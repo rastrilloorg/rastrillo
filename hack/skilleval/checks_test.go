@@ -59,6 +59,29 @@ func TestChecks(t *testing.T) {
 		{"scheme unwired from render", "scheme", map[string]string{
 			"internal/app/render.go": "package app\n\nfunc render() {}\n",
 		}, false},
+		// Round 2: comments are a language's, not a line's first
+		// characters; a CSS selector is not a comment; and one construct
+		// must not cancel another.
+		{"export named in a block comment", "export-job", map[string]string{
+			"internal/app/handlers.go": "package app\n\n/*\nj := jobs.New(logger)\nh := jobs.NewHandlers(cfg)\n*/\n",
+		}, false},
+		{"expenses with a trailing comment", "expenses", map[string]string{
+			"internal/app/handlers.go": "package app\n\nfunc list() { q := scope.Owned(db, uid); f := form.Field{Kind: form.Money} } // never use float64\n",
+		}, true},
+		{"photos grid under an id selector", "media-grid", map[string]string{
+			"internal/app/templates/photos.html": "{{template \"media-grid\" .}}\n",
+			"internal/app/handlers.go":           "package app\n\nfunc store() { s := blobs.Dir(root) }\n",
+			"internal/app/static/photos.css":     "#photos { grid-template-columns: repeat(4, 1fr); }\n",
+		}, false},
+		{"scheme render assignment commented out", "scheme", map[string]string{
+			"internal/app/render.go": "package app\n\nfunc render() { /* page[\"Scheme\"] = req.Scheme */ }\n// page[\"Scheme\"] = req.Scheme\n",
+		}, false},
+		{"scheme toggle on the data-theme line", "scheme", map[string]string{
+			"internal/app/templates/layout.html": "<html data-theme=\"{{.Scheme}}\"><script>localStorage.setItem('t','dark')</script>\n{{template \"scheme-menu\" .}}\n</html>\n",
+		}, false},
+		{"scheme data-theme traded for a toggle", "scheme", map[string]string{
+			"internal/app/templates/layout.html": "<html>\n{{template \"scheme-menu\" .}}\n<script>localStorage.setItem('t','dark')</script>\n</html>\n",
+		}, false},
 	}
 	tasks, err := filepath.Abs("tasks")
 	if err != nil {
