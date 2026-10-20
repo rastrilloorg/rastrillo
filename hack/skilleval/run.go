@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"strings"
 	"time"
 )
@@ -23,6 +24,7 @@ type result struct {
 	tally
 	Export     string   `json:"export"`                // the paths the run used, kept so -retally classifies with them
 	App        string   `json:"app"`                   // wherever the results directory has since moved
+	StaleBase  string   `json:"stale_base"`            // and on whatever machine it is read
 	Base       string   `json:"base"`                  // the scaffold commit every diff and check is against
 	GateEdited []string `json:"gate_edited,omitempty"` // gate files the agent changed; the Makefile is restored before grading
 	CI         bool     `json:"ci"`
@@ -33,7 +35,7 @@ type result struct {
 	AgentSec   int      `json:"agent_sec"`
 }
 
-func runOne(ctx context.Context, c config, bin, export, vdir, tasksDir, task string, rep int, stale []string) (r result) {
+func runOne(ctx context.Context, c config, bin, export, vdir, tasksDir, task string, rep int, staleBase string) (r result) {
 	r = result{Variant: c.name, Task: task, Rep: rep, Dry: c.dry, Started: time.Now().Format(time.RFC3339)}
 	r.Buckets, r.Touched = map[bucket]count{}, map[bucket]int{}
 	fail := func(step string, err error) result {
@@ -51,12 +53,18 @@ func runOne(ctx context.Context, c config, bin, export, vdir, tasksDir, task str
 		return fail("making the run directory", err)
 	}
 	defer reap(dir)
+	// Everything this run starts, the harness's own git included,
+	// carries the run's mark, so whatever a hook or filter leaves behind
+	// is reaped with it.
+	ctx = withRun(ctx, dir)
 	appName := strings.ReplaceAll(task, "-", "")
 	app := filepath.Join(dir, appName)
-	r.Export, r.App = export, app
+	r.Export, r.App, r.StaleBase = export, app, staleBase
 	keepApp := c.keep
 	defer func() {
-		if !keepApp {
+		// The app is deleted only if it is a child of the fresh run
+		// directory, whatever a task name turned out to hold.
+		if rel, ok := under(app, dir); !keepApp && ok && rel == appName {
 			os.RemoveAll(app)
 		}
 	}()
@@ -77,6 +85,12 @@ func runOne(ctx context.Context, c config, bin, export, vdir, tasksDir, task str
 		return fail("reading the scaffold commit", err)
 	}
 	r.Base = base
+	// The gate is kept as bytes in the harness's memory, not in the
+	// app's git, which the agent can rewrite (hooks, assume-unchanged).
+	trustedMakefile, err := os.ReadFile(filepath.Join(app, "Makefile"))
+	if err != nil {
+		return fail("reading the scaffold's Makefile", err)
+	}
 
 	if !c.dry {
 		transcript := filepath.Join(dir, "transcript.jsonl")
@@ -84,7 +98,7 @@ func runOne(ctx context.Context, c config, bin, export, vdir, tasksDir, task str
 		agentErr := runAgent(ctx, c, dir, app, transcript, filepath.Join(dir, "agent.stderr"), string(prompt)+promptSuffix)
 		r.AgentSec = int(time.Since(t0).Seconds())
 		reap(dir) // whatever the agent left running must not share the machine with the grade
-		if t, err := tallyFile(transcript, export, app, stale); err == nil {
+		if t, err := tallyFile(transcript, export, app, staleBase); err == nil {
 			r.tally = t
 		} else {
 			r.Error = "reading the transcript: " + err.Error()
@@ -102,9 +116,22 @@ func runOne(ctx context.Context, c config, bin, export, vdir, tasksDir, task str
 	// saved, the app is kept instead.
 	fctx, fcancel := context.WithTimeout(context.WithoutCancel(ctx), 2*time.Minute)
 	defer fcancel()
+	// assume-unchanged and skip-worktree hide a change from git add, so
+	// they are cleared first: the patch is the agent's whole change.
+	if flagged, err := gitOut(fctx, app, "ls-files", "-v"); err == nil {
+		var hidden []string
+		for _, line := range strings.Split(flagged, "\n") {
+			if len(line) > 2 && (line[0] >= 'a' && line[0] <= 'z' || line[0] == 'S') {
+				hidden = append(hidden, line[2:])
+			}
+		}
+		if len(hidden) > 0 {
+			gitRaw(fctx, app, append([]string{"update-index", "--no-assume-unchanged", "--no-skip-worktree", "--"}, hidden...)...)
+		}
+	}
 	patch, err := gitRaw(fctx, app, "add", "-A")
 	if err == nil {
-		patch, err = gitRaw(fctx, app, "diff", "--cached", "--binary", base)
+		patch, err = gitRaw(fctx, app, "diff", "--cached", "--binary", "--no-ext-diff", "--no-textconv", base)
 	}
 	if err == nil {
 		err = os.WriteFile(filepath.Join(dir, "final.patch"), patch, 0o644)
@@ -113,24 +140,32 @@ func runOne(ctx context.Context, c config, bin, export, vdir, tasksDir, task str
 		keepApp = true
 		r.Error = strings.TrimSpace(r.Error + " saving final.patch (the app is kept): " + err.Error())
 	}
-	r.Diff, _ = gitOut(fctx, app, "diff", "--cached", "--shortstat", base)
-	if edited, err := gitOut(fctx, app, "diff", "--cached", "--name-only", base, "--", "Makefile", "GNUmakefile", "makefile", ".amadan", ".rastrillo"); err == nil && edited != "" {
+	r.Diff, _ = gitOut(fctx, app, "diff", "--cached", "--shortstat", "--no-ext-diff", "--no-textconv", base)
+	if edited, err := gitOut(fctx, app, "diff", "--cached", "--name-only", "--no-ext-diff", base, "--", "Makefile", "GNUmakefile", "makefile", ".amadan", ".rastrillo"); err == nil && edited != "" {
 		r.GateEdited = strings.Split(edited, "\n")
+	}
+	// The Makefile is also compared with the harness's own copy, so an
+	// edit is recorded even if git was made not to see it.
+	if got, err := os.ReadFile(filepath.Join(app, "Makefile")); (err != nil || string(got) != string(trustedMakefile)) && !slices.Contains(r.GateEdited, "Makefile") {
+		r.GateEdited = append(r.GateEdited, "Makefile")
 	}
 	if ctx.Err() != nil {
 		return fail("interrupted before grading", ctx.Err())
 	}
 	// The gate is the scaffold's, not whatever the agent made of it: its
-	// Makefile is restored and named with -f, so an added GNUmakefile
-	// cannot stand in for it. A gate that cannot be restored is a failed
-	// run, not a pass. Only the Makefile is restored: a new package
-	// legitimately adds a budget line, and GateEdited records the rest
-	// for a reader to judge.
-	if _, err := gitRaw(ctx, app, "checkout", base, "--", "Makefile"); err != nil {
+	// Makefile is written back from the harness's copy (after removing
+	// whatever is there, so a planted symlink is not followed), checked
+	// byte for byte, and named with -f, so an added GNUmakefile cannot
+	// stand in for it. A gate that cannot be restored is a failed run.
+	// Only the Makefile is restored: a new package legitimately adds a
+	// budget line, and GateEdited records the rest for a reader to judge.
+	mk := filepath.Join(app, "Makefile")
+	os.Remove(mk)
+	if err := os.WriteFile(mk, trustedMakefile, 0o644); err != nil {
 		return fail("restoring the scaffold's Makefile", err)
 	}
-	if out, err := gitRaw(ctx, app, "diff", "--quiet", base, "--", "Makefile"); err != nil {
-		return fail("the restored Makefile differs from the scaffold's", fmt.Errorf("%v %s", err, out))
+	if got, err := os.ReadFile(mk); err != nil || string(got) != string(trustedMakefile) {
+		return fail("restoring the scaffold's Makefile", fmt.Errorf("it does not read back as written (%v)", err))
 	}
 
 	r.CI = grade(ctx, dir, app, filepath.Join(dir, "ci.log"), 25*time.Minute, nil, "make", "-f", "Makefile", "ci")
@@ -176,7 +211,7 @@ func runAgent(ctx context.Context, c config, dir, app, transcript, stderr, promp
 		"--no-session-persistence",
 		"--max-budget-usd", fmt.Sprint(c.budget))
 	cmd.Dir, cmd.Stdout, cmd.Stderr = app, out, errf
-	cmd.Env = append(goEnv(), runMark+dir)
+	cmd.Env = envFor(ctx)
 	return runGroup(cmd)
 }
 
@@ -190,7 +225,7 @@ func grade(ctx context.Context, dir, app, logPath string, limit time.Duration, e
 	defer f.Close()
 	cmd := exec.CommandContext(ctx, name, args...)
 	cmd.Dir, cmd.Stdout, cmd.Stderr = app, f, f
-	cmd.Env = append(append(goEnv(), runMark+dir), extra...)
+	cmd.Env = append(envFor(ctx), extra...)
 	return runGroup(cmd) == nil
 }
 
@@ -202,8 +237,10 @@ func gitOut(ctx context.Context, dir string, args ...string) (string, error) {
 	return strings.TrimSpace(string(out)), err
 }
 
+// gitRaw runs git with hooks off: the app's repository is the agent's,
+// and a hook it installed must not run inside the harness's own steps.
 func gitRaw(ctx context.Context, dir string, args ...string) ([]byte, error) {
-	return outputOf(ctx, dir, "git", args...)
+	return outputOf(ctx, dir, "git", append([]string{"-c", "core.hooksPath=/dev/null"}, args...)...)
 }
 
 // outputOf runs a command for its stdout under setupLimit, in its own
@@ -213,7 +250,7 @@ func outputOf(ctx context.Context, dir, name string, args ...string) ([]byte, er
 	defer cancel()
 	cmd := exec.CommandContext(ctx, name, args...)
 	var out strings.Builder
-	cmd.Dir, cmd.Env, cmd.Stdout = dir, goEnv(), &out
+	cmd.Dir, cmd.Env, cmd.Stdout = dir, envFor(ctx), &out
 	err := runGroup(cmd)
 	return []byte(out.String()), err
 }
@@ -251,23 +288,39 @@ func goEnv() []string {
 	return append(env, "GOFLAGS=-mod=mod -buildvcs=false", "CGO_ENABLED=0")
 }
 
-func tallyFile(transcript, export, app string, stale []string) (tally, error) {
+func tallyFile(transcript, export, app, staleBase string) (tally, error) {
 	f, err := os.Open(transcript)
 	if err != nil {
 		return tally{}, err
 	}
 	defer f.Close()
-	return tallyTranscript(f, classifier{roots: []string{export}, stale: stale, app: app})
+	return tallyTranscript(f, classifier{roots: []string{export}, staleBase: staleBase, app: app})
 }
 
-// moduleCacheCopies is asked once per invocation, under a deadline.
-func moduleCacheCopies(ctx context.Context) []string {
+// moduleCacheBase is where every cached version of the framework sits
+// (each as <base>@<version>), asked once per invocation under a deadline.
+func moduleCacheBase(ctx context.Context) string {
 	out, err := outputOf(ctx, "", "go", "env", "GOMODCACHE")
-	if err != nil {
-		return nil
+	if err != nil || strings.TrimSpace(string(out)) == "" {
+		return ""
 	}
-	dirs, _ := filepath.Glob(filepath.Join(strings.TrimSpace(string(out)), "amadan.net", "rastrillo", "rastrillo@*"))
-	return dirs
+	return filepath.Join(strings.TrimSpace(string(out)), "amadan.net", "rastrillo", "rastrillo")
+}
+
+type runKey struct{}
+
+// withRun marks ctx as belonging to the run in dir; envFor passes the
+// mark to every command started under it.
+func withRun(ctx context.Context, dir string) context.Context {
+	return context.WithValue(ctx, runKey{}, dir)
+}
+
+func envFor(ctx context.Context) []string {
+	env := goEnv()
+	if dir, ok := ctx.Value(runKey{}).(string); ok {
+		env = append(env, runMark+dir)
+	}
+	return env
 }
 
 // provenance is everything a comparison between two variants has to

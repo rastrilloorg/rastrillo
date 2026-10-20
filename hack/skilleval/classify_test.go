@@ -14,7 +14,7 @@ const (
 )
 
 func testClassifier() classifier {
-	return classifier{roots: []string{testFW}, stale: []string{testMod}, app: testApp}
+	return classifier{roots: []string{testFW}, staleBase: "/home/u/go/pkg/mod/amadan.net/rastrillo/rastrillo", app: testApp}
 }
 
 func TestClassifyFileTools(t *testing.T) {
@@ -228,9 +228,9 @@ func TestBashRound2(t *testing.T) {
 	}
 
 	home := classifier{
-		roots: []string{"/home/u/.cache/skilleval/r/head/rastrillo"},
-		stale: []string{"/home/u/go/pkg/mod/amadan.net/rastrillo/rastrillo@v0.30.0"},
-		app:   "/home/u/.cache/skilleval/r/head/x/1/x",
+		roots:     []string{"/home/u/.cache/skilleval/r/head/rastrillo"},
+		staleBase: "/home/u/go/pkg/mod/amadan.net/rastrillo/rastrillo",
+		app:       "/home/u/.cache/skilleval/r/head/x/1/x",
 	}
 	got, stale := home.touches("Grep", map[string]any{"pattern": "Start", "path": "../../../../../../../go/pkg/mod/amadan.net/rastrillo/rastrillo@v0.30.0/jobs"})
 	if fmt.Sprint(got) != "[source]" || !stale {
@@ -264,5 +264,35 @@ func TestTallyWithNoUsageIsStillPartial(t *testing.T) {
 	}
 	if !tally.Partial {
 		t.Error("a run that died before any usage was streamed must read as partial, not as free")
+	}
+}
+
+// Round 3: a search's pattern is not its operand, a bare directory
+// operand is one, a substitution inside double quotes still runs, and
+// a cache version that did not exist when the run started is still a
+// stale copy.
+func TestBashRound3(t *testing.T) {
+	c := testClassifier()
+	cases := []struct {
+		cmd  string
+		want []bucket
+	}{
+		{"cd " + testFW + "; rg SKILL.md", []bucket{bSource}},
+		{"cd " + testFW + "; ls examples", []bucket{bExamples}},
+		{"cd " + testFW + "; grep -rn -e Owned scope", []bucket{bSource}},
+		{"cd " + testFW + "; rg -g '*.md' Owned docs", []bucket{bDocs}},
+		{"cd " + testFW + "; fd media", []bucket{bSource}},
+		{`printf '%s' "$(cat ` + testFW + `/jobs/jobs.go)"`, []bucket{bSource}},
+		{`echo "in $(cd ` + testFW + ` && cat SKILL.md) out"; cat internal/a.go`, []bucket{bSkill}},
+	}
+	for _, tc := range cases {
+		got, _ := c.touches("Bash", map[string]any{"command": tc.cmd})
+		if fmt.Sprint(got) != fmt.Sprint(tc.want) {
+			t.Errorf("Bash %q touches %v, want %v", tc.cmd, got, tc.want)
+		}
+	}
+	got, stale := c.touches("Read", map[string]any{"file_path": "/home/u/go/pkg/mod/amadan.net/rastrillo/rastrillo@v9.9.9/SKILL.md"})
+	if fmt.Sprint(got) != "[skill]" || !stale {
+		t.Errorf("an unlisted cache version = %v stale=%v, want [skill] stale=true", got, stale)
 	}
 }

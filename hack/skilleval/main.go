@@ -195,6 +195,11 @@ func run(ctx context.Context, c config, tasks string) error {
 		return errors.New("no tasks")
 	}
 	for _, t := range c.tasks {
+		// Names found in the export are checked as strictly as names on
+		// the command line: both become directories that are deleted.
+		if !nameRE.MatchString(t) {
+			return fmt.Errorf("task name %q: use lower-case letters, digits and dashes", t)
+		}
 		if _, err := os.Stat(filepath.Join(tasksDir, t+".md")); err != nil {
 			return fmt.Errorf("task %s: %w", t, err)
 		}
@@ -205,7 +210,7 @@ func run(ctx context.Context, c config, tasks string) error {
 	if err := preflight(ctx, c, bin, export, vdir); err != nil {
 		return fmt.Errorf("the scaffold fails its own gate before any agent ran, so a run could not tell the agent's failures from the scaffold's: %w", err)
 	}
-	stale := moduleCacheCopies(ctx)
+	staleBase := moduleCacheBase(ctx)
 	skillBytes, topicBytes := skillSize(export)
 	log.Printf("variant %s: SKILL.md %d bytes, skill/ %d bytes; results in %s", c.name, skillBytes, topicBytes, c.out)
 
@@ -222,7 +227,7 @@ func run(ctx context.Context, c config, tasks string) error {
 				if ctx.Err() != nil {
 					return
 				}
-				r := runOne(ctx, c, bin, export, vdir, tasksDir, task, rep, stale)
+				r := runOne(ctx, c, bin, export, vdir, tasksDir, task, rep, staleBase)
 				r.SkillBytes, r.TopicBytes = skillBytes, topicBytes
 				mu.Lock()
 				defer mu.Unlock()
@@ -277,6 +282,7 @@ func prepareExport(ctx context.Context, c config, commit, export, binDir string)
 // gate, once per variant, before any token is spent.
 func preflight(ctx context.Context, c config, bin, export, vdir string) error {
 	dir := filepath.Join(vdir, "preflight")
+	ctx = withRun(ctx, dir)
 	if err := os.Mkdir(dir, 0o755); err != nil {
 		return err
 	}
@@ -295,7 +301,7 @@ func preflight(ctx context.Context, c config, bin, export, vdir string) error {
 		return err
 	}
 	defer reap(dir)
-	if err := runIn(ctx, app, append(goEnv(), runMark+dir), logf, "make", "-f", "Makefile", "ci"); err != nil {
+	if err := runIn(ctx, app, nil, logf, "make", "-f", "Makefile", "ci"); err != nil {
 		return fmt.Errorf("make ci (see %s): %w", logf.Name(), err)
 	}
 	return nil
@@ -318,7 +324,7 @@ func scaffold(ctx context.Context, bin, export, dir, appName string, logf *os.Fi
 		{app, "git", "add", "-A"},
 		{app, "git", "-c", "user.name=skilleval", "-c", "user.email=skilleval@localhost", "-c", "core.hooksPath=/dev/null", "-c", "commit.gpgsign=false", "commit", "-qm", "scaffold"},
 	} {
-		if err := runIn(ctx, step[0], goEnv(), logf, step[1], step[2:]...); err != nil {
+		if err := runIn(ctx, step[0], nil, logf, step[1], step[2:]...); err != nil {
 			return "", fmt.Errorf("%s: %w", strings.Join(step[1:], " "), err)
 		}
 	}
@@ -326,11 +332,15 @@ func scaffold(ctx context.Context, bin, export, dir, appName string, logf *os.Fi
 }
 
 // runIn runs one setup step under setupLimit, with its output going to
-// w (or into the error when w is nil).
+// w (or into the error when w is nil), in env or, when env is nil, the
+// allowlisted environment with the run's mark.
 func runIn(ctx context.Context, dir string, env []string, w *os.File, name string, args ...string) error {
 	ctx, cancel := context.WithTimeout(ctx, setupLimit)
 	defer cancel()
 	cmd := exec.CommandContext(ctx, name, args...)
+	if env == nil {
+		env = envFor(ctx) // never the operator's whole environment
+	}
 	cmd.Dir, cmd.Env = dir, env
 	if w != nil {
 		cmd.Stdout, cmd.Stderr = w, w

@@ -33,10 +33,10 @@ const (
 var bucketOrder = []bucket{bSource, bExamples, bDocs, bSkill, bGoDoc, bWeb, bFWWrite, bApp, bOther}
 
 type classifier struct {
-	roots []string // the variant's export: the framework the run is meant to use
-	stale []string // module-cache copies: framework too, but not the variant under test
-	app   string   // the scaffolded app: the project, where a session starts
-	cwd   string   // where the next Bash call starts; Claude Code carries it while it stays inside the project
+	roots     []string // the variant's export: the framework the run is meant to use
+	staleBase string   // <GOMODCACHE>/amadan.net/rastrillo/rastrillo: every version under it is framework too, but not the variant under test
+	app       string   // the scaffolded app: the project, where a session starts
+	cwd       string   // where the next Bash call starts; Claude Code carries it while it stays inside the project
 }
 
 var writeTools = map[string]bool{"Write": true, "Edit": true, "MultiEdit": true, "NotebookEdit": true}
@@ -57,10 +57,15 @@ func (c classifier) framework(p string) (rel string, ok, stale bool) {
 			return rel, true, false
 		}
 	}
-	for _, r := range c.stale {
-		if rel, ok := under(p, r); ok {
-			return rel, true, true
+	// A cache version is matched by its name's shape, not by a listing,
+	// so one the agent downloads mid-run, or one since deleted from the
+	// cache, still counts.
+	if c.staleBase != "" && strings.HasPrefix(p, c.staleBase+"@") {
+		rest := p[len(c.staleBase)+1:]
+		if i := strings.IndexByte(rest, '/'); i >= 0 {
+			return rest[i+1:], true, true
 		}
+		return "", true, true
 	}
 	return "", false, false
 }
@@ -154,11 +159,11 @@ func under(p, root string) (string, bool) {
 
 func relBucket(rel string) bucket {
 	switch {
-	case rel == "SKILL.md" || strings.HasPrefix(rel, "skill/"):
+	case rel == "SKILL.md" || rel == "skill" || strings.HasPrefix(rel, "skill/"):
 		return bSkill
-	case strings.HasPrefix(rel, "docs/"):
+	case rel == "docs" || strings.HasPrefix(rel, "docs/"):
 		return bDocs
-	case strings.HasPrefix(rel, "examples/"):
+	case rel == "examples" || strings.HasPrefix(rel, "examples/"):
 		return bExamples
 	}
 	return bSource // a bare root is a grep or a cd over the whole tree
@@ -179,8 +184,19 @@ var (
 )
 
 // searchVerbs read the directory they run in when given no path, so
-// inside the framework they read it even with no path-like word.
+// inside the framework they read it even with no path-like word. Their
+// words are read by role: rg, grep, ag and fd take a pattern first
+// (which may look like a file name and is not one), and every other
+// non-option word is a path, bare names included.
 var searchVerbs = map[string]bool{"rg": true, "ag": true, "grep": true, "find": true, "ls": true, "tree": true, "fd": true}
+
+var patternFirst = map[string]bool{"rg": true, "ag": true, "grep": true, "fd": true}
+
+// optArg are the options whose value is the next word. -e and -f name
+// the pattern, so the first plain word after them is a path.
+var optArg = map[string]bool{"-e": true, "--regexp": true, "-f": true, "--file": true, "-g": true, "--glob": true,
+	"-t": true, "--type": true, "-T": true, "--type-not": true, "-A": true, "-B": true, "-C": true, "-m": true,
+	"--max-count": true, "-M": true, "-j": true, "-d": true, "-D": true, "-L": true, "--include": true, "--exclude": true}
 
 // bashTouches walks the command the way the shell would reach files:
 // go list substitutions and variables holding a framework path are
@@ -212,6 +228,7 @@ func (c classifier) bashTouches(cmd string) (bs []bucket, stale bool, end string
 	cwd := c.start()
 	var stack []string
 	atStart, afterPipe, cdNext := true, false, false
+	verb, patternPending, skipNext, findExpr := "", false, false, false
 	// implicit is the directory a search verb reads when the command
 	// names no path of its own; it is settled when the command ends.
 	implicit := ""
@@ -226,22 +243,22 @@ func (c classifier) bashTouches(cmd string) (bs []bucket, stale bool, end string
 		case "(":
 			settle()
 			stack = append(stack, cwd)
-			atStart, afterPipe = true, false
+			atStart, afterPipe, verb = true, false, ""
 			continue
 		case ")":
 			settle()
 			if n := len(stack); n > 0 {
 				cwd, stack = stack[n-1], stack[:n-1]
 			}
-			atStart, afterPipe = true, false
+			atStart, afterPipe, verb = true, false, ""
 			continue
 		case ";":
 			settle()
-			atStart, afterPipe = true, false
+			atStart, afterPipe, verb = true, false, ""
 			continue
 		case "|":
 			settle()
-			atStart, afterPipe = true, true
+			atStart, afterPipe, verb = true, true, ""
 			continue
 		}
 		if cdNext {
@@ -255,12 +272,39 @@ func (c classifier) bashTouches(cmd string) (bs []bucket, stale bool, end string
 		}
 		if atStart {
 			atStart = false
+			verb, patternPending, skipNext, findExpr = w, patternFirst[w], false, false
 			if w == "cd" {
 				cdNext = true
 				continue
 			}
 			if searchVerbs[w] && !afterPipe {
 				implicit = cwd
+			}
+			continue
+		}
+		if searchVerbs[verb] {
+			switch {
+			case skipNext:
+				skipNext = false
+			case strings.HasPrefix(w, "-") && w != "-":
+				if verb == "find" {
+					findExpr = true // find's expression follows its paths
+				} else if optArg[w] {
+					skipNext = true
+					if w == "-e" || w == "--regexp" || w == "-f" || w == "--file" {
+						patternPending = false
+					}
+				}
+			case findExpr:
+			case patternPending:
+				patternPending = false
+			default:
+				p := w
+				if !filepath.IsAbs(p) {
+					p = filepath.Join(cwd, p)
+				}
+				touch(filepath.Clean(p))
+				implicit = ""
 			}
 			continue
 		}
@@ -310,11 +354,25 @@ func lex(cmd string) []string {
 	}
 	rs := []rune(cmd)
 	var quote rune
+	// parens records, for each open subshell, whether it opened inside
+	// double quotes, where its close resumes the quoted word.
+	var parens []bool
 	for i := 0; i < len(rs); i++ {
 		r := rs[i]
+		next := rune(0)
+		if i+1 < len(rs) {
+			next = rs[i+1]
+		}
 		if quote != 0 {
 			switch {
 			case r == quote:
+				quote = 0
+			case quote == '"' && r == '$' && next == '(':
+				// A substitution runs even inside double quotes.
+				flush()
+				i++
+				out = append(out, "(")
+				parens = append(parens, true)
 				quote = 0
 			case r == '\\' && quote == '"' && i+1 < len(rs):
 				i++
@@ -323,10 +381,6 @@ func lex(cmd string) []string {
 				cur.WriteRune(r)
 			}
 			continue
-		}
-		next := rune(0)
-		if i+1 < len(rs) {
-			next = rs[i+1]
 		}
 		switch {
 		case r == '\'' || r == '"':
@@ -359,9 +413,20 @@ func lex(cmd string) []string {
 			flush()
 			i++
 			out = append(out, "(")
-		case r == '(' || r == ')':
+			parens = append(parens, false)
+		case r == '(':
 			flush()
-			out = append(out, string(r))
+			out = append(out, "(")
+			parens = append(parens, false)
+		case r == ')':
+			flush()
+			out = append(out, ")")
+			if n := len(parens); n > 0 {
+				if parens[n-1] {
+					quote, inWord = '"', true
+				}
+				parens = parens[:n-1]
+			}
 		case r == ' ' || r == '\t' || r == '<' || r == '>' || r == '`':
 			flush()
 		default:

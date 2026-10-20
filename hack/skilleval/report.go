@@ -66,7 +66,7 @@ func retallyDir(ctx context.Context, out string) error {
 	if err != nil {
 		return err
 	}
-	stale := moduleCacheCopies(ctx)
+	staleBase := moduleCacheBase(ctx)
 	for i, r := range rs {
 		if r.Dry {
 			continue
@@ -79,7 +79,11 @@ func retallyDir(ctx context.Context, out string) error {
 		if export == "" {
 			export, app = filepath.Join(out, r.Variant, "rastrillo"), filepath.Join(dir, strings.ReplaceAll(r.Task, "-", ""))
 		}
-		t, err := tallyFile(filepath.Join(dir, "transcript.jsonl"), export, app, stale)
+		sb := r.StaleBase
+		if sb == "" {
+			sb = staleBase
+		}
+		t, err := tallyFile(filepath.Join(dir, "transcript.jsonl"), export, app, sb)
 		if err != nil {
 			log.Printf("%s/%s/%d: %v", r.Variant, r.Task, r.Rep, err)
 			continue
