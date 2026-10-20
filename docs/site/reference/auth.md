@@ -254,6 +254,27 @@ single use.
 An unknown hash, a wrong purpose and an expired row all come back as the
 same "not ok"; telling them apart would be an oracle. The row is deleted
 even when expired, because a presented token is spent either way.
+## SendLink
+
+```go
+func (a *Auth) SendLink(ctx context.Context, address, ipKey string) error
+var ErrRateLimited, ErrBadAddress error // signin's, re-exported
+```
+
+Mails the same link `Begin` would, from code: for a caller the app
+already trusts to have decided the address should get one, and that
+cannot post the form (a server's POST carries no same-origin evidence
+and no proof). The same single-use row, the same letter through
+`Mailer`, the same budgets: `ipKey` stands where the client address
+would in the per-IP budget, so pass a fixed name for the channel
+(`"relay"`), never an address the caller was told, and that channel
+shares one budget of 20 per window. The address budget is the form's,
+shared with it. No proof is checked, no keymail classification runs,
+no attempt cookie is written. A refusal is `ErrRateLimited` or
+`ErrBadAddress`, for a log line and not an answer: a caller that must
+not be an oracle answers the same either way. See
+[Magic links](/docs/magic-links#sending-a-link-from-code).
+
 ## SpendLinks
 
 ```go

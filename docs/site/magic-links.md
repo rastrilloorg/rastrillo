@@ -329,6 +329,12 @@ Every post to `Begin` that gets past the front door counts against two budgets, 
 
 The IP budget is checked first, so a script hammering the endpoint uses up its own budget before any DNS lookup. The address budget is checked once the address parses, so a typo never spends a real person's allowance. Both are in memory, so they're per process and reset on restart. Behind a proxy, [`TrustedProxyHops`](/docs/reference/clientip) decides which address is the client's.
 
+## Sending a link from code
+
+`a.SendLink(ctx, address, ipKey)` mails the same link `Begin` would, for a caller the app already trusts to have decided the address should get one — a request relayed from another service the app holds a key for, say. A server's POST carries no same-origin evidence and no proof, so it cannot post the form, and should not: the proof is the form's defence, and this is for code that has its own.
+
+The link is the same link: the same single-use row, the same letter through `Mailer`, and the same budgets. `ipKey` stands where the client address would in the per-IP budget, so pass a fixed name for the channel (`"relay"`), never an address the caller was told, and that channel shares one budget of 20 per window — the bound on what the service you trust can make you send. The address budget is the form's own, shared with it. No proof is checked, no keymail classification runs (a link is what was asked for), and no attempt cookie is written. A refusal is `auth.ErrRateLimited` or `auth.ErrBadAddress`: for a log line, not an answer — a caller that must not be an oracle answers the same whatever comes back.
+
 ## Aside: the keymail upgrade
 
 `rastrillo/auth` wraps `github.com/keymaildev/signin`, and if a
