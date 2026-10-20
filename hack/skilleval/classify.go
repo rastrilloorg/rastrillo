@@ -238,25 +238,27 @@ func (c classifier) bashTouches(cmd string) (bs []bucket, stale bool, end string
 			implicit = ""
 		}
 	}
-	for _, w := range lex(cmd) {
-		switch w {
-		case "(":
+	for _, tk := range lex(cmd) {
+		w := tk.s
+		switch {
+		case !tk.op:
+		case w == "(":
 			settle()
 			stack = append(stack, cwd)
 			atStart, afterPipe, verb = true, false, ""
 			continue
-		case ")":
+		case w == ")":
 			settle()
 			if n := len(stack); n > 0 {
 				cwd, stack = stack[n-1], stack[:n-1]
 			}
 			atStart, afterPipe, verb = true, false, ""
 			continue
-		case ";":
+		case w == ";":
 			settle()
 			atStart, afterPipe, verb = true, false, ""
 			continue
-		case "|":
+		case w == "|":
 			settle()
 			atStart, afterPipe, verb = true, true, ""
 			continue
@@ -288,7 +290,13 @@ func (c classifier) bashTouches(cmd string) (bs []bucket, stale bool, end string
 				skipNext = false
 			case strings.HasPrefix(w, "-") && w != "-":
 				if verb == "find" {
-					findExpr = true // find's expression follows its paths
+					// -H, -L, -P and -O<n> come before find's paths; any
+					// other dash word starts its expression.
+					if !(w == "-H" || w == "-L" || w == "-P" || strings.HasPrefix(w, "-O")) {
+						findExpr = true
+					}
+				} else if w == "--files" || w == "--type-list" {
+					patternPending = false // rg --files lists paths and takes no pattern
 				} else if optArg[w] {
 					skipNext = true
 					if w == "-e" || w == "--regexp" || w == "-f" || w == "--file" {
@@ -337,21 +345,29 @@ func (c classifier) bashTouches(cmd string) (bs []bucket, stale bool, end string
 	return []bucket{bApp}, false, end
 }
 
+// token is a word or an operator. They are told apart by type, not by
+// text: a quoted '(' is a word, and a grep for it is not a subshell.
+type token struct {
+	s  string
+	op bool
+}
+
 // lex splits a command into words and the operators that change how
 // they are read: ";" ends a command (so do && and ||), "|" ends one and
 // feeds the next, "(" and ")" open and close a subshell ($( included).
 // Quotes keep a word whole; redirections only end a word.
-func lex(cmd string) []string {
-	var out []string
+func lex(cmd string) []token {
+	var out []token
 	var cur strings.Builder
 	inWord := false
 	flush := func() {
 		if inWord {
-			out = append(out, cur.String())
+			out = append(out, token{s: cur.String()})
 			cur.Reset()
 			inWord = false
 		}
 	}
+	op := func(s string) { out = append(out, token{s: s, op: true}) }
 	rs := []rune(cmd)
 	var quote rune
 	// parens records, for each open subshell, whether it opened inside
@@ -371,7 +387,7 @@ func lex(cmd string) []string {
 				// A substitution runs even inside double quotes.
 				flush()
 				i++
-				out = append(out, "(")
+				op("(")
 				parens = append(parens, true)
 				quote = 0
 			case r == '\\' && quote == '"' && i+1 < len(rs):
@@ -391,7 +407,7 @@ func lex(cmd string) []string {
 			inWord = true
 		case r == '\n' || r == ';':
 			flush()
-			out = append(out, ";")
+			op(";")
 		case r == '&':
 			flush()
 			if i > 0 && (rs[i-1] == '>' || rs[i-1] == '<') {
@@ -400,27 +416,27 @@ func lex(cmd string) []string {
 			if next == '&' {
 				i++
 			}
-			out = append(out, ";")
+			op(";")
 		case r == '|':
 			flush()
 			if next == '|' {
 				i++
-				out = append(out, ";")
+				op(";")
 			} else {
-				out = append(out, "|")
+				op("|")
 			}
 		case r == '$' && next == '(':
 			flush()
 			i++
-			out = append(out, "(")
+			op("(")
 			parens = append(parens, false)
 		case r == '(':
 			flush()
-			out = append(out, "(")
+			op("(")
 			parens = append(parens, false)
 		case r == ')':
 			flush()
-			out = append(out, ")")
+			op(")")
 			if n := len(parens); n > 0 {
 				if parens[n-1] {
 					quote, inWord = '"', true

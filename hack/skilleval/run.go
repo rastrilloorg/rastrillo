@@ -9,7 +9,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"slices"
 	"strings"
 	"time"
 )
@@ -80,14 +79,26 @@ func runOne(ctx context.Context, c config, bin, export, vdir, tasksDir, task str
 	if _, err := scaffold(ctx, bin, export, dir, appName, logf); err != nil {
 		return fail("setup", err)
 	}
-	base, err := gitOut(ctx, app, "rev-parse", "HEAD")
-	if err != nil {
-		return fail("reading the scaffold commit", err)
+	r.Base, _ = gitOut(ctx, app, "rev-parse", "HEAD") // for the record; nothing is compared through the app's git
+	// The harness keeps its own copy of the scaffold, outside the app and
+	// without its .git. Every diff and check compares with it, so nothing
+	// the agent does to its repository (hooks, replace refs, filters,
+	// index flags) can move the baseline, and the gate is this copy's
+	// Makefile, not whatever the app's git can be made to report.
+	scaffoldCopy, final, graded := filepath.Join(dir, "scaffold"), filepath.Join(dir, "final"), filepath.Join(dir, "graded")
+	defer func() {
+		if !c.keep {
+			removeChild(dir, "graded")
+			removeChild(dir, "scaffold")
+			if !keepApp {
+				removeChild(dir, "final")
+			}
+		}
+	}()
+	if err := snapshot(ctx, app, scaffoldCopy); err != nil {
+		return fail("copying the scaffold", err)
 	}
-	r.Base = base
-	// The gate is kept as bytes in the harness's memory, not in the
-	// app's git, which the agent can rewrite (hooks, assume-unchanged).
-	trustedMakefile, err := os.ReadFile(filepath.Join(app, "Makefile"))
+	trustedMakefile, err := os.ReadFile(filepath.Join(scaffoldCopy, "Makefile"))
 	if err != nil {
 		return fail("reading the scaffold's Makefile", err)
 	}
@@ -108,70 +119,166 @@ func runOne(ctx context.Context, c config, bin, export, vdir, tasksDir, task str
 		}
 	}
 
-	// The evidence is saved before grading touches anything: the whole
-	// change against the scaffold commit, whether or not the agent
-	// committed, so it survives the app's deletion. It gets its own
-	// deadline because an interrupt has already cancelled ctx, and that
-	// is exactly when the work is most worth keeping; if it cannot be
-	// saved, the app is kept instead.
-	fctx, fcancel := context.WithTimeout(context.WithoutCancel(ctx), 2*time.Minute)
+	// The evidence is saved before grading touches anything: a snapshot
+	// of the app's tree (tar, so symlinks and FIFOs are copied, never
+	// followed or opened), and the patch from the harness's scaffold copy
+	// to it, made without any repository or git config. The patch must
+	// re-apply to the scaffold and reproduce the snapshot before the app
+	// may be deleted. It gets its own deadline because an interrupt has
+	// already cancelled ctx, and that is exactly when the work is most
+	// worth keeping; if any of it fails, the app is kept instead.
+	fctx, fcancel := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Minute)
 	defer fcancel()
-	// assume-unchanged and skip-worktree hide a change from git add, so
-	// they are cleared first: the patch is the agent's whole change.
-	if flagged, err := gitOut(fctx, app, "ls-files", "-v"); err == nil {
-		var hidden []string
-		for _, line := range strings.Split(flagged, "\n") {
-			if len(line) > 2 && (line[0] >= 'a' && line[0] <= 'z' || line[0] == 'S') {
-				hidden = append(hidden, line[2:])
-			}
-		}
-		if len(hidden) > 0 {
-			gitRaw(fctx, app, append([]string{"update-index", "--no-assume-unchanged", "--no-skip-worktree", "--"}, hidden...)...)
-		}
-	}
-	patch, err := gitRaw(fctx, app, "add", "-A")
+	patchPath := filepath.Join(dir, "final.patch")
+	err = snapshot(fctx, app, final)
+	var patch []byte
 	if err == nil {
-		patch, err = gitRaw(fctx, app, "diff", "--cached", "--binary", "--no-ext-diff", "--no-textconv", base)
+		patch, err = noIndexDiff(fctx, dir, "--binary")
 	}
 	if err == nil {
-		err = os.WriteFile(filepath.Join(dir, "final.patch"), patch, 0o644)
+		err = os.WriteFile(patchPath, patch, 0o644)
+	}
+	if err == nil {
+		err = verifyPatch(fctx, dir, patchPath)
 	}
 	if err != nil {
 		keepApp = true
 		r.Error = strings.TrimSpace(r.Error + " saving final.patch (the app is kept): " + err.Error())
 	}
-	r.Diff, _ = gitOut(fctx, app, "diff", "--cached", "--shortstat", "--no-ext-diff", "--no-textconv", base)
-	if edited, err := gitOut(fctx, app, "diff", "--cached", "--name-only", "--no-ext-diff", base, "--", "Makefile", "GNUmakefile", "makefile", ".amadan", ".rastrillo"); err == nil && edited != "" {
-		r.GateEdited = strings.Split(edited, "\n")
+	if stat, err := noIndexDiff(fctx, dir, "--shortstat"); err == nil {
+		r.Diff = strings.TrimSpace(string(stat))
 	}
-	// The Makefile is also compared with the harness's own copy, so an
-	// edit is recorded even if git was made not to see it.
-	if got, err := os.ReadFile(filepath.Join(app, "Makefile")); (err != nil || string(got) != string(trustedMakefile)) && !slices.Contains(r.GateEdited, "Makefile") {
-		r.GateEdited = append(r.GateEdited, "Makefile")
-	}
+	r.GateEdited = gateEdited(fctx, scaffoldCopy, final)
 	if ctx.Err() != nil {
 		return fail("interrupted before grading", ctx.Err())
 	}
-	// The gate is the scaffold's, not whatever the agent made of it: its
-	// Makefile is written back from the harness's copy (after removing
-	// whatever is there, so a planted symlink is not followed), checked
-	// byte for byte, and named with -f, so an added GNUmakefile cannot
-	// stand in for it. A gate that cannot be restored is a failed run.
+
+	// The grade runs in a fresh copy of the snapshot, with the scaffold's
+	// Makefile created in it exclusively (whatever stood at that path is
+	// removed first, so a symlink is not followed and a FIFO not opened)
+	// and named with -f, so an added GNUmakefile cannot stand in for it.
 	// Only the Makefile is restored: a new package legitimately adds a
 	// budget line, and GateEdited records the rest for a reader to judge.
-	mk := filepath.Join(app, "Makefile")
-	os.Remove(mk)
-	if err := os.WriteFile(mk, trustedMakefile, 0o644); err != nil {
+	if err := snapshot(ctx, final, graded); err != nil {
+		return fail("copying the final tree to grade", err)
+	}
+	mk := filepath.Join(graded, "Makefile")
+	if err := os.RemoveAll(mk); err != nil {
+		return fail("clearing the Makefile path", err)
+	}
+	f, err := os.OpenFile(mk, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o644)
+	if err == nil {
+		_, err = f.Write(trustedMakefile)
+		if cerr := f.Close(); err == nil {
+			err = cerr
+		}
+	}
+	if err != nil {
 		return fail("restoring the scaffold's Makefile", err)
 	}
-	if got, err := os.ReadFile(mk); err != nil || string(got) != string(trustedMakefile) {
-		return fail("restoring the scaffold's Makefile", fmt.Errorf("it does not read back as written (%v)", err))
-	}
 
-	r.CI = grade(ctx, dir, app, filepath.Join(dir, "ci.log"), 25*time.Minute, nil, "make", "-f", "Makefile", "ci")
+	r.CI = grade(ctx, dir, graded, filepath.Join(dir, "ci.log"), 25*time.Minute, nil, "make", "-f", "Makefile", "ci")
 	reap(dir)
-	r.Check = grade(ctx, dir, app, filepath.Join(dir, "check.log"), 5*time.Minute, []string{"SKILLEVAL_BASE=" + base}, "sh", filepath.Join(tasksDir, task+".check.sh"))
+	r.Check = grade(ctx, dir, graded, filepath.Join(dir, "check.log"), 5*time.Minute, []string{"SKILLEVAL_BASE_DIR=" + scaffoldCopy}, "sh", filepath.Join(tasksDir, task+".check.sh"))
 	return r
+}
+
+// removeChild deletes dir/name, and only that.
+func removeChild(dir, name string) {
+	p := filepath.Join(dir, name)
+	if rel, ok := under(p, dir); ok && rel == name {
+		os.RemoveAll(p)
+	}
+}
+
+// snapshot copies src's tree to a new dst, leaving out .git. tar keeps
+// symlinks as symlinks and FIFOs as FIFOs, so nothing the agent planted
+// is followed or opened.
+func snapshot(ctx context.Context, src, dst string) error {
+	if err := os.Mkdir(dst, 0o755); err != nil {
+		return err
+	}
+	return runIn(ctx, "", nil, nil, "sh", "-c", `tar -C "$1" --exclude=./.git -cf - . | tar -C "$2" -xf -`, "sh", src, dst)
+}
+
+// isolatedGit is git with no config but what is passed, and no
+// repository discovered above dir: nothing of the agent's or the
+// operator's can change what a diff prints or how a patch applies.
+func isolatedGit(ctx context.Context, dir string, args ...string) ([]byte, int, error) {
+	ctx, cancel := context.WithTimeout(ctx, setupLimit)
+	defer cancel()
+	cmd := exec.CommandContext(ctx, "git", append([]string{"-c", "core.hooksPath=/dev/null"}, args...)...)
+	var out, errb strings.Builder
+	cmd.Dir, cmd.Stdout, cmd.Stderr = dir, &out, &errb
+	cmd.Env = append(envFor(ctx), "GIT_CONFIG_GLOBAL=/dev/null", "GIT_CONFIG_SYSTEM=/dev/null", "GIT_CONFIG_NOSYSTEM=1",
+		"GIT_CEILING_DIRECTORIES="+filepath.Dir(dir), "GIT_ATTR_NOSYSTEM=1")
+	err := runGroup(cmd)
+	code := 0
+	if ee, ok := err.(*exec.ExitError); ok {
+		code = ee.ExitCode()
+	}
+	if err != nil && code == 0 {
+		return nil, -1, err
+	}
+	if code > 1 {
+		return nil, code, fmt.Errorf("git %s: %s", args[0], strings.TrimSpace(errb.String()))
+	}
+	return []byte(out.String()), code, nil
+}
+
+// noIndexDiff compares dir/scaffold with dir/final. Its paths read
+// a/scaffold/... and b/final/..., so the patch applies with -p2.
+func noIndexDiff(ctx context.Context, dir string, args ...string) ([]byte, error) {
+	a := append([]string{"diff", "--no-index", "--no-color", "--no-ext-diff", "--no-textconv", "--no-renames"}, args...)
+	out, _, err := isolatedGit(ctx, dir, append(a, "--", "scaffold", "final")...)
+	return out, err
+}
+
+// verifyPatch applies the patch to a fresh copy of the scaffold and
+// checks that it reproduces the final snapshot.
+func verifyPatch(ctx context.Context, dir, patchPath string) error {
+	defer removeChild(dir, "verify")
+	verify := filepath.Join(dir, "verify")
+	if err := snapshot(ctx, filepath.Join(dir, "scaffold"), verify); err != nil {
+		return err
+	}
+	if _, _, err := isolatedGit(ctx, verify, "apply", "-p2", "--allow-empty", "--whitespace=nowarn", patchPath); err != nil {
+		return fmt.Errorf("the patch does not apply to the scaffold: %w", err)
+	}
+	// A patch carries no empty directories, so they are left out of the
+	// comparison on both sides.
+	if err := runIn(ctx, "", nil, nil, "find", verify, filepath.Join(dir, "final"), "-depth", "-type", "d", "-empty", "-delete"); err != nil {
+		return err
+	}
+	if err := runIn(ctx, "", nil, nil, "diff", "-r", "--no-dereference", "-q", verify, filepath.Join(dir, "final")); err != nil {
+		return fmt.Errorf("the patch does not reproduce the final tree: %w", err)
+	}
+	return nil
+}
+
+// gateFiles are what the scaffold's gate reads besides the code.
+var gateFiles = []string{"Makefile", "GNUmakefile", "makefile", ".amadan", ".rastrillo"}
+
+// gateEdited lists the gate files that differ between the scaffold and
+// the final tree. Anything at those paths that is not a regular file or
+// a directory counts as edited without being opened.
+func gateEdited(ctx context.Context, scaffold, final string) []string {
+	var edited []string
+	for _, name := range gateFiles {
+		a, aerr := os.Lstat(filepath.Join(scaffold, name))
+		b, berr := os.Lstat(filepath.Join(final, name))
+		switch {
+		case aerr != nil && berr != nil:
+			continue
+		case aerr != nil || berr != nil, a.Mode().Type() != b.Mode().Type(), !a.Mode().IsRegular() && !a.IsDir():
+			edited = append(edited, name)
+		default:
+			if runIn(ctx, "", nil, nil, "diff", "-r", "--no-dereference", "-q", filepath.Join(scaffold, name), filepath.Join(final, name)) != nil {
+				edited = append(edited, name)
+			}
+		}
+	}
+	return edited
 }
 
 // promptSuffix holds what every task needs and none should have to say.

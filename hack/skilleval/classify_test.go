@@ -296,3 +296,24 @@ func TestBashRound3(t *testing.T) {
 		t.Errorf("an unlisted cache version = %v stale=%v, want [skill] stale=true", got, stale)
 	}
 }
+
+// Round 4: rg's patternless modes, find's leading options, and a quoted
+// parenthesis that is a pattern, not a subshell.
+func TestBashRound4(t *testing.T) {
+	c := testClassifier()
+	cases := []struct {
+		cmd  string
+		want []bucket
+	}{
+		{"rg --files " + testFW + "/skill", []bucket{bSkill}},
+		{"find -L " + testFW + " -name '*.go'", []bucket{bSource}},
+		{"grep -F '(' " + testFW + "/jobs/jobs.go", []bucket{bSource}},
+		{`grep -n "a;b" ` + testFW + "/docs/site/jobs.md", []bucket{bDocs}},
+	}
+	for _, tc := range cases {
+		got, _ := c.touches("Bash", map[string]any{"command": tc.cmd})
+		if fmt.Sprint(got) != fmt.Sprint(tc.want) {
+			t.Errorf("Bash %q touches %v, want %v", tc.cmd, got, tc.want)
+		}
+	}
+}
