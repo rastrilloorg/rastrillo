@@ -354,7 +354,7 @@ func (c classifier) bashTouches(cmd string) (bs []bucket, stale bool, end string
 					patternPending = false // rg --files lists paths and takes no pattern
 				} else if w == "--type-list" {
 					quiet = true // prints rg's built-in types; reads nothing, wherever it appears
-				} else if optArg[w] {
+				} else if optArg[w] && !(verb == "grep" && w == "-T") { // grep's -T only aligns tabs
 					skipNext = true
 					if w == "-e" || w == "--regexp" || w == "-f" || w == "--file" {
 						patternPending = false
@@ -405,8 +405,9 @@ func (c classifier) bashTouches(cmd string) (bs []bucket, stale bool, end string
 // token is a word or an operator. They are told apart by type, not by
 // text: a quoted '(' is a word, and a grep for it is not a subshell.
 type token struct {
-	s  string
-	op bool
+	s     string
+	op    bool
+	redir bool // a redirection's target: a path, but not an argument
 }
 
 // lex splits a command into words and the operators that change how
@@ -417,14 +418,15 @@ func lex(cmd string) []token {
 	var out []token
 	var cur strings.Builder
 	inWord := false
-	dropWord := false // the next word is a here-string's data
+	dropWord := false  // the next word is a here-string's data
+	redirNext := false // the next word is a redirection's target
 	flush := func() {
 		if inWord {
 			if !dropWord {
-				out = append(out, token{s: cur.String()})
+				out = append(out, token{s: cur.String(), redir: redirNext})
 			}
 			cur.Reset()
-			inWord, dropWord = false, false
+			inWord, dropWord, redirNext = false, false, false
 		}
 	}
 	op := func(s string) {
@@ -453,15 +455,30 @@ func lex(cmd string) []token {
 		}
 		var ws []string
 		for _, tk := range out[k:] {
-			ws = append(ws, tk.s)
+			if !tk.redir {
+				ws = append(ws, tk.s)
+			}
 		}
+		// Leading assignments, then any wrapper with its options (and
+		// those options' values), until the command itself.
 		for len(ws) > 0 {
 			w := ws[0]
-			if wrappers[filepath.Base(w)] || (strings.Contains(w, "=") && !strings.HasPrefix(w, "-")) || (len(ws) < len(out[k:]) && strings.HasPrefix(w, "-")) {
+			if strings.Contains(w, "=") && !strings.HasPrefix(w, "-") {
 				ws = ws[1:]
 				continue
 			}
-			break
+			wr, ok := wrappers[filepath.Base(w)]
+			if !ok {
+				break
+			}
+			ws = ws[1:]
+			for len(ws) > 0 && (strings.HasPrefix(ws[0], "-") || strings.Contains(ws[0], "=")) {
+				takes := wr[ws[0]]
+				ws = ws[1:]
+				if takes && len(ws) > 0 {
+					ws = ws[1:]
+				}
+			}
 		}
 		return ws
 	}
@@ -511,15 +528,26 @@ func lex(cmd string) []token {
 			flush()
 			h := heredoc{}
 			if ws := words(); len(ws) > 0 {
-				// A shell or interpreter runs its stdin only when no -c
-				// and no script file was given.
-				runsStdin := true
-				for _, a := range ws[1:] {
-					if a == "-c" || a == "-e" || (!strings.HasPrefix(a, "-") && a != "") {
-						runsStdin = false
-					}
-				}
+				// A shell or interpreter runs its stdin unless it was given
+				// code inline (its own flag for that) or a script file (a
+				// first plain argument, except after a shell's -s, which
+				// makes the rest arguments to the stdin script).
 				v := filepath.Base(ws[0])
+				runsStdin, sawS := true, false
+				for _, a := range ws[1:] {
+					if inlineCode[v][a] {
+						runsStdin = false
+						break
+					}
+					if a == "-s" && shells[v] {
+						sawS = true
+					}
+					if a == "-" || strings.HasPrefix(a, "-") {
+						continue
+					}
+					runsStdin = sawS
+					break
+				}
 				h.shell = shells[v] && runsStdin
 				h.script = interpreters[v] && runsStdin
 			}
@@ -579,8 +607,15 @@ func lex(cmd string) []token {
 				text := strings.Join(body, "\n")
 				// The outer shell expands an unquoted body before whoever
 				// receives it reads it, so its substitutions run either way.
+				// What a shell then runs is the body with them already
+				// expanded (rest), so each substitution is lexed once:
+				// twice per level of nesting would be exponential.
+				subs, rest := []string(nil), text
 				if !h.quoted {
-					for _, sub := range substitutions(text) {
+					subs, rest = substitutions(text)
+				}
+				{
+					for _, sub := range subs {
 						op("(")
 						out = append(out, lex(sub)...)
 						op(")")
@@ -591,7 +626,7 @@ func lex(cmd string) []token {
 				case h.shell:
 					// A child shell: its cd is its own.
 					op("(")
-					out = append(out, lex(text)...)
+					out = append(out, lex(rest)...)
 					op(")")
 					op(";")
 				case h.script:
@@ -599,12 +634,12 @@ func lex(cmd string) []token {
 					// words, and its string literals whole (p="/x" is one
 					// shell word but a path to the script).
 					out = append(out, token{s: "skilleval-script"})
-					for _, tk := range lex(text) {
+					for _, tk := range lex(rest) {
 						if !tk.op {
 							out = append(out, tk)
 						}
 					}
-					for _, m := range stringLiteral.FindAllStringSubmatch(text, -1) {
+					for _, m := range stringLiteral.FindAllStringSubmatch(rest, -1) {
 						out = append(out, token{s: m[1] + m[2]})
 					}
 					op(";")
@@ -649,7 +684,19 @@ func lex(cmd string) []token {
 				}
 				parens = parens[:n-1]
 			}
-		case r == ' ' || r == '\t' || r == '<' || r == '>' || r == '`':
+		case r == '<' || r == '>':
+			// A descriptor number before it (2>) is not a word, and the
+			// word after it is the redirection's target.
+			if inWord && strings.Trim(cur.String(), "0123456789") == "" {
+				cur.Reset()
+				inWord = false
+			}
+			flush()
+			if next == '>' || next == '&' {
+				continue
+			}
+			redirNext = true
+		case r == ' ' || r == '\t' || r == '`':
 			flush()
 		default:
 			cur.WriteRune(r)
@@ -668,14 +715,22 @@ var (
 )
 
 // substitutions returns the commands inside each $(...) and `...` in
-// a heredoc body, which the outer shell runs. At that level only a
+// a heredoc body, which the outer shell runs, and the body with each
+// one replaced by a placeholder, as it reads once they have run. At that level only a
 // backslash escapes (quotes in the body are the body's text); inside a
 // substitution the command's own quotes count, so grep -F ')' does not
 // close it. An unclosed substitution yields nothing: the shell would
 // have failed on it.
-func substitutions(text string) []string {
-	var subs []string
+func substitutions(text string) (subs []string, rest string) {
 	rs := []rune(text)
+	var b strings.Builder
+	last := 0
+	cut := func(from, to int, inner string) {
+		subs = append(subs, inner)
+		b.WriteString(string(rs[last:from]))
+		b.WriteString("_")
+		last = to
+	}
 	for i := 0; i < len(rs); i++ {
 		switch {
 		case rs[i] == '\\':
@@ -683,9 +738,10 @@ func substitutions(text string) []string {
 		case rs[i] == '$' && i+1 < len(rs) && rs[i+1] == '(':
 			end := closingParen(rs, i+2)
 			if end < 0 {
-				return subs
+				i = len(rs)
+				break
 			}
-			subs = append(subs, string(rs[i+2:end]))
+			cut(i, end+1, string(rs[i+2:end]))
 			i = end
 		case rs[i] == '`':
 			j := i + 1
@@ -696,13 +752,15 @@ func substitutions(text string) []string {
 				j++
 			}
 			if j >= len(rs) {
-				return subs
+				i = len(rs)
+				break
 			}
-			subs = append(subs, string(rs[i+1:j]))
+			cut(i, j+1, string(rs[i+1:j]))
 			i = j
 		}
 	}
-	return subs
+	b.WriteString(string(rs[min(last, len(rs)):]))
+	return subs, b.String()
 }
 
 // closingParen is the index of the ) that closes a substitution whose
@@ -713,6 +771,13 @@ func closingParen(rs []rune, i int) int {
 	for ; i < len(rs); i++ {
 		c := rs[i]
 		switch {
+		case q == '"' && c == '$' && i+1 < len(rs) && rs[i+1] == '(':
+			// A substitution nested in double quotes has quotes of its own.
+			j := closingParen(rs, i+2)
+			if j < 0 {
+				return -1
+			}
+			i = j
 		case q != 0:
 			if c == q {
 				q = 0
@@ -735,7 +800,19 @@ func closingParen(rs []rune, i int) int {
 }
 
 var (
-	wrappers      = map[string]bool{"env": true, "command": true, "exec": true, "nice": true, "nohup": true, "time": true}
+	// wrappers run the command after them; the value says which of their
+	// options take a value of their own.
+	wrappers = map[string]map[string]bool{
+		"env": {"-u": true, "-C": true, "-S": true}, "nice": {"-n": true}, "time": {"-f": true, "-o": true},
+		"command": nil, "exec": {"-a": true}, "nohup": nil,
+	}
+	// inlineCode are the flags that give a reader its code on the
+	// command line, so its stdin is data.
+	inlineCode = map[string]map[string]bool{
+		"bash": {"-c": true}, "sh": {"-c": true}, "zsh": {"-c": true}, "dash": {"-c": true}, "ksh": {"-c": true},
+		"python": {"-c": true, "-m": true}, "python3": {"-c": true, "-m": true},
+		"node": {"-e": true, "-p": true}, "perl": {"-e": true, "-E": true}, "ruby": {"-e": true},
+	}
 	stringLiteral = regexp.MustCompile(`"([^"\n]*)"|'([^'\n]*)'`)
 )
 

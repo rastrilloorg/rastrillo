@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 )
 
 const (
@@ -405,5 +406,54 @@ func TestBashRound9(t *testing.T) {
 	}
 	if tally.Touched[bSource] != 1 {
 		t.Errorf("touched = %v, want the parent's relative read counted as source", tally.Touched)
+	}
+}
+
+// Round 10: who reads a heredoc is decided per reader (bash -e still
+// runs its stdin; a redirection is not an argument), nested
+// substitutions keep their own quotes, grep's -T takes no value, a
+// wrapper's option value is not the command, and nesting costs linear
+// work. The python3 cases are the shape 98 of the 116 heredocs in the
+// baseline's live transcripts take.
+func TestBashRound10(t *testing.T) {
+	c := testClassifier()
+	read := "\nprint(open(\"" + testFW + "/scheme.go\").read())\nPY"
+	cases := []struct {
+		cmd  string
+		want []bucket
+	}{
+		{"bash -e <<'SH'\ncat " + testFW + "/scheme.go\nSH", []bucket{bSource}},
+		{"bash -s -- arg <<'SH'\ncat " + testFW + "/scheme.go\nSH", []bucket{bSource}},
+		{"bash script.sh <<'SH'\ncat " + testFW + "/scheme.go\nSH", []bucket{bApp}},
+		{"python3 2>/dev/null <<'PY'" + read, []bucket{bSource}},
+		{"python3 - <<'PY'" + read, []bucket{bSource}},
+		{"python3 - <<'PY' 2>&1 | tail -5" + read, []bucket{bSource}},
+		{"python3 -c 'print(1)' <<'PY'" + read, []bucket{bApp}},
+		{"cat <<EOF\n$(printf '%s' \"$(grep -F \")\" " + testFW + "/scheme.go)\")\nEOF", []bucket{bSource}},
+		{"grep -T Scheme " + testFW + "/scheme.go", []bucket{bSource}},
+		{"env -u UNUSED_VAR python3 <<'PY'" + read, []bucket{bSource}},
+		{"nice -n 5 bash <<'SH'\ncat " + testFW + "/scheme.go\nSH", []bucket{bSource}},
+		{"cat < " + testFW + "/scheme.go", []bucket{bSource}},
+	}
+	for _, tc := range cases {
+		got, _ := c.touches("Bash", map[string]any{"command": tc.cmd})
+		if fmt.Sprint(got) != fmt.Sprint(tc.want) {
+			t.Errorf("Bash %q touches %v, want %v", tc.cmd, got, tc.want)
+		}
+	}
+	// Thirty nested shell heredocs: linear work, not 2^30.
+	nested := ":"
+	for i := 0; i < 30; i++ {
+		nested = fmt.Sprintf("sh <<E%d\n$(%s\n)\nE%d", i, nested, i)
+	}
+	done := make(chan struct{})
+	go func() {
+		c.touches("Bash", map[string]any{"command": nested})
+		close(done)
+	}()
+	select {
+	case <-done:
+	case <-time.After(5 * time.Second):
+		t.Fatal("thirty nested heredocs took more than five seconds to classify")
 	}
 }
