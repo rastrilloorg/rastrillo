@@ -185,6 +185,9 @@ func TestChecks(t *testing.T) {
 		{"scheme comment after an unspaced spread and a regex", "scheme", map[string]string{
 			"internal/app/static/s.js": "async function items(s) { return [...await /\"/.exec(s)]; } // do not use localStorage\n",
 		}, true},
+		{"scheme comment after division by a variable named of", "scheme", map[string]string{
+			"internal/app/static/s.js": "const of = 8; const options = {...of / 2}; // do not use localStorage\n",
+		}, true},
 		{"scheme data-theme traded for a toggle", "scheme", map[string]string{
 			"internal/app/templates/layout.html": "<html>\n{{template \"scheme-menu\" .}}\n<script>localStorage.setItem('t','dark')</script>\n</html>\n",
 		}, false},
