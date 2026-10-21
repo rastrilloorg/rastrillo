@@ -52,6 +52,7 @@ type Option func(*config)
 func WithoutPRFAtCreation() Option
 func WithScrollbars() Option
 func WithCoarsePointer() Option
+func WithHover() Option
 ```
 
 `New` takes a variadic list of `Option` values to adjust what it builds.
@@ -83,6 +84,15 @@ it.
 pointer, so `(pointer: coarse)` matches. CDP's touch emulation does not
 do this, and a phone drive that ran on a mouse pointer would pass at
 desktop sizes.
+
+`WithHover` launches Chromium with a mouse that can hover, so
+`(hover: hover)` matches. Headless Chromium's default is `(hover: none)`
+even on a desktop, so a drive that reads a rule inside
+`@media (hover: hover)` on the default rig reads the element at rest
+and passes for the wrong reason. The hover tints and lifts on buttons,
+summaries, menu rows, options, linked rows, tiles and the desktop rail
+items sit inside that query, so a drive that hovers one of them takes
+this option.
 
 The own-property shape matters. Patching
 `PublicKeyCredential.prototype.getClientExtensionResults` would strip

@@ -74,6 +74,19 @@
     el = el || root;
     if (scheme === "light" || scheme === "dark") el.setAttribute("data-theme", scheme);
     else el.removeAttribute("data-theme");
+    land(el.ownerDocument);
+  }
+
+  // A scheme change lands in the frame it happens in, as rastrillo.js
+  // does it for an app's switch and says why: the nav's current item
+  // and a linked tile fade their background between schemes while
+  // their text changes at once. getAnimations() flushes style, which
+  // starts the fade, and cancelling a transition lands it. Told by
+  // transitionProperty, because a frame's transitions are another
+  // realm's class; transitions only, so a spinner keeps turning.
+  function land(doc) {
+    if (!doc.getAnimations) return;
+    doc.getAnimations().forEach(function (a) { if (typeof a.transitionProperty === "string") a.cancel(); });
   }
 
   // Every example on this page is a document of its own inside an
@@ -128,6 +141,18 @@
     pressed(stored());
     frames(stored());
   });
+
+  // The OS flipping under a page on System is the same change with no
+  // click, in the page and in every frame. The change event reaches
+  // script a frame after the style update that started the fade, so
+  // this lands it a frame late rather than 200ms late.
+  var osScheme = window.matchMedia && matchMedia("(prefers-color-scheme: dark)");
+  if (osScheme) osScheme.onchange = function () {
+    if (root.hasAttribute("data-theme")) return;
+    land(document);
+    var f = document.querySelectorAll(".ds-view__frame");
+    for (var i = 0; i < f.length; i++) if (readable(f[i])) land(readable(f[i]));
+  };
 
   // Phase one, at parse time: the remembered scheme and the marker the
   // stylesheet reveals the toggle with.

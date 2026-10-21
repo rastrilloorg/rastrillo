@@ -1,0 +1,51 @@
+/* Natural depth: real light, small contact shadows, no stylisation.
+   Things that act are a touch proud of the page and press in when used. */
+:root{
+  --hl: light-dark(rgba(255,255,255,.8), rgba(255,255,255,.06));
+  --contact: light-dark(rgba(16,24,40,.10), rgba(0,0,0,.5));
+  --ambient: light-dark(rgba(16,24,40,.06), rgba(0,0,0,.35));
+  --border-btn: light-dark(#d0d4dc, #343843);
+  --danger: light-dark(#c62f2f, #cf3a3a);
+}
+[rst-btn]{background:var(--rst-surface)!important;color:var(--rst-text)!important;border:1px solid var(--border-btn)!important;
+  box-shadow:inset 0 1px 0 var(--hl), 0 1px 1px var(--contact), 0 1px 3px var(--ambient)!important;transition:background .1s, border-color .1s, box-shadow .1s}
+[rst-btn]:hover{background:light-dark(#f7f8fa,#1b1d22)!important;border-color:light-dark(#bfc4ce,#41454f)!important}
+[rst-btn]:active{background:light-dark(#eff1f4,#16181c)!important;box-shadow:inset 0 1px 2px var(--contact)!important}
+[rst-btn][rst-btn~="primary"]{background:linear-gradient(to bottom, color-mix(in oklab, var(--rst-primary) 94%, white), var(--rst-primary))!important;color:#fff!important;
+  border-color:color-mix(in oklab, var(--rst-primary) 78%, black)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.22), 0 1px 1px var(--contact), 0 1px 3px var(--ambient)!important}
+[rst-btn][rst-btn~="primary"]:hover{background:linear-gradient(to bottom, var(--rst-primary), color-mix(in oklab, var(--rst-primary) 92%, black))!important;color:#fff!important}
+[rst-btn][rst-btn~="primary"]:active{background:color-mix(in oklab, var(--rst-primary) 88%, black)!important;box-shadow:inset 0 1px 2px rgba(0,0,0,.3)!important}
+[rst-btn][rst-btn~="danger"]{background:linear-gradient(to bottom, color-mix(in oklab, var(--danger) 94%, white), var(--danger))!important;color:#fff!important;border-color:color-mix(in oklab, var(--danger) 78%, black)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.2), 0 1px 1px var(--contact), 0 1px 3px var(--ambient)!important}
+[rst-btn][rst-btn~="danger"]:hover{background:linear-gradient(to bottom, var(--danger), color-mix(in oklab, var(--danger) 92%, black))!important;color:#fff!important}
+[rst-btn][rst-btn~="danger"]:active{background:color-mix(in oklab, var(--danger) 88%, black)!important;box-shadow:inset 0 1px 2px rgba(0,0,0,.3)!important}
+[rst-btn][rst-btn~="ghost"]{background:transparent!important;border-color:transparent!important;box-shadow:none!important;color:var(--rst-text-muted)!important}
+[rst-btn][rst-btn~="ghost"]:hover{background:var(--rst-surface-2)!important;color:var(--rst-text)!important}
+[rst-btn][rst-btn~="ghost"]:active{background:light-dark(#eceef1,#1d1f24)!important}
+/* cards rest on the page */
+[rst-box],[rst-card],[rst-stats]{background:var(--rst-surface)!important;border:1px solid var(--rst-line)!important;
+  box-shadow:0 1px 1px var(--ambient), 0 1px 2px var(--ambient)!important}
+/* the current nav item is a selected thumb, like a segmented control */
+[rst-shell-nav] a[aria-current]{background:var(--rst-surface)!important;color:var(--rst-text)!important;font-weight:600;
+  box-shadow:inset 0 1px 0 var(--hl), 0 0 0 1px var(--border-btn), 0 1px 2px var(--contact)!important}
+[rst-shell-nav] a:not([aria-current]):hover{background:light-dark(rgba(16,24,40,.04),rgba(255,255,255,.04))!important}
+/* menus genuinely float, so they get real elevation, kept tight */
+[rst-dropdown] > summary{background:var(--rst-surface);border:1px solid var(--border-btn);border-radius:var(--rst-radius-sm);box-shadow:inset 0 1px 0 var(--hl),0 1px 1px var(--contact),0 1px 3px var(--ambient)}
+[rst-dropdown] > summary:hover{background:light-dark(#f7f8fa,#1b1d22)}
+[rst-dropdown-menu]{border:1px solid var(--border-btn)!important;box-shadow:0 2px 4px var(--ambient), 0 8px 16px -4px var(--contact)!important}
+[rst-dropdown-menu] a[aria-current]{background:var(--rst-accent-soft)!important;color:var(--rst-accent-strong)!important}
+[rst-dropdown-menu] a:not([aria-current]):hover{background:var(--rst-surface-2)!important}
+/* fields sit into the page */
+[rst-input]{box-shadow:inset 0 1px 1px var(--ambient)!important;border-color:var(--border-btn)!important}
+[rst-input]:hover{border-color:light-dark(#b4bac5,#4a4f5a)!important}
+[rst-input]:focus{border-color:var(--rst-accent)!important;box-shadow:inset 0 1px 1px var(--ambient),0 0 0 3px color-mix(in oklab, var(--rst-accent) 22%, transparent)!important}
+[rst-switch] input:checked + [rst-switch-track]{background:var(--rst-primary)!important}
+[rst-switch-track]{box-shadow:inset 0 1px 2px var(--contact)!important}
+[rst-page-header]{border-bottom:1px solid var(--rst-line)!important}
+/* The switch knob is a lit object in both schemes: near-white with a top
+   highlight and a contact shadow, so in dark it reads as the thing you
+   move rather than a hole in the track. */
+[rst-switch-track]::after{background:linear-gradient(to bottom, #ffffff, light-dark(#f1f3f6, #d9dee8))!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.9), 0 1px 1px rgba(16,24,40,.25), 0 1px 3px rgba(16,24,40,.18)!important}
+[rst-switch] input:not(:checked) + [rst-switch-track]{background:light-dark(#d5d9e0, #3a3f4a)!important}

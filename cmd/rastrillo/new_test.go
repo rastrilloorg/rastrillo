@@ -719,6 +719,30 @@ func TestNewScaffoldsSelectJS(t *testing.T) {
 	}
 }
 
+// light.js is vendored like select.js and linked by every shell: an app
+// that deletes it gets the static design, so the scaffold must deliver
+// it and the layout must load it deferred, or no app would see the light.
+func TestNewScaffoldsLightJS(t *testing.T) {
+	t.Chdir(t.TempDir())
+	if err := runNew([]string{"lightapp"}); err != nil {
+		t.Fatalf("runNew: %v", err)
+	}
+	got, err := os.ReadFile(filepath.Join("lightapp", "internal", "lightapp", "static", "light.js"))
+	if err != nil {
+		t.Fatalf("light.js not scaffolded: %v", err)
+	}
+	if !bytes.Equal(got, ui.LightJS()) {
+		t.Error("scaffolded light.js is not ui.LightJS() verbatim")
+	}
+	layout, err := os.ReadFile(filepath.Join("lightapp", "internal", "lightapp", "templates", "layout.html"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(layout), `<script defer src="{{asset "static/light.js"}}"></script>`) {
+		t.Error("the layout never loads light.js, deferred, so the light can never run")
+	}
+}
+
 // The shipped binary is stripped; the dev loop's is not. Both halves
 // matter: -s -w roughly halves the compressed artifact carlos transfers,
 // and stripping the dev build would take away the debuggability the dev

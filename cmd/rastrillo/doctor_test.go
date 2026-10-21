@@ -203,6 +203,40 @@ func TestDoctorDoesNotCallAnAbsentFileDrift(t *testing.T) {
 	}
 }
 
+// Deleting light.js is the documented way to turn the light off (spec
+// C16): the doctor says the library ships it and does not call the app
+// drifted; --fix, an explicit request, still adds it back.
+func TestDoctorReportsADeletedLightJSAsAbsentNotDrift(t *testing.T) {
+	dir := doctorApp(t, rastrilloVersion(), "day")
+	path := filepath.Join(dir, "internal", "demoapp", "static", "light.js")
+	if err := os.Remove(path); err != nil {
+		t.Fatal(err)
+	}
+	rep, err := diagnose(dir, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if rep.drifted() {
+		t.Fatalf("a deleted light.js was reported as drift:\n%s", printed(rep, false))
+	}
+	if got := exitCode(t, rep.exit()); got != 0 {
+		t.Errorf("exit %d for an absent light.js, want 0", got)
+	}
+	out := printed(rep, false)
+	for _, want := range []string{"absent   light.js", "not drift"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("report does not contain %q:\n%s", want, out)
+		}
+	}
+	var buf bytes.Buffer
+	if err := rep.applyFix(&buf, false); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(path); err != nil {
+		t.Fatalf("--fix did not write the missing file: %v", err)
+	}
+}
+
 // TestDoctorSeparatesSkewFromDrift is the trap the design turns on. An
 // app on a different version has files that are correct for ITS
 // version, and calling that damage is the failure mode that teaches

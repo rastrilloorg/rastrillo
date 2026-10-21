@@ -16,6 +16,7 @@ import (
 	"testing/fstest"
 	"time"
 
+	"github.com/chromedp/cdproto/emulation"
 	"github.com/chromedp/cdproto/runtime"
 	"github.com/chromedp/chromedp"
 
@@ -203,5 +204,181 @@ func TestTheSchemeSwitchPassesAxeInBothSchemes(t *testing.T) {
 			t.Errorf("%s: %s [%s] — %s: %s", scheme, v.ID, v.Impact, v.Help, strings.Join(v.Nodes, "; "))
 		}
 		t.Logf("%s: %d axe rules passed", scheme, out.Passed)
+	}
+}
+
+// schemeFlipBody is the page a scheme flip is read on: a sidebar's
+// current nav item and a linked media tile, the two things whose
+// background fades between schemes (0.2s and 0.25s, for the press
+// and the hover) while their text changes at once, and the switch's
+// own forms as an app renders them.
+const schemeFlipBody = `<div rst-shell-sidebar><nav rst-shell-rail><div rst-shell-nav><a href="#x">Overview</a><a href="#y" aria-current="page" id="nav-cur">Requests</a></div></nav></div>
+<div rst-list><div rst-media><div rst-media-tile id="tile"><div rst-media-frame><img src="/images/a.svg" alt=""></div><div rst-media-caption><div rst-media-name><a href="#t">Picture</a></div></div></div></div></div>
+<details rst-dropdown rst-scheme><summary>Theme</summary><div rst-dropdown-menu>
+<form method="post" action="/_theme"><input type="hidden" name="scheme" value="light"><button>Light</button></form>
+<form method="post" action="/_theme"><input type="hidden" name="scheme" value="dark"><button>Dark</button></form>
+<form method="post" action="/_theme"><input type="hidden" name="scheme" value="system"><button>System</button></form>
+</div></details>`
+
+// schemeFlipState is the two backgrounds and the scheme as read on
+// one frame.
+type schemeFlipState struct {
+	Theme string // data-theme on <html>, "" for none
+	Nav   string // the current nav item's computed background
+	Tile  string // the linked media tile's computed background
+}
+
+// schemeFlipReadJS reads the state on the next animation frame. On
+// the next frame rather than now: a transition's first frame is its
+// start value, which is the same number the test would read without
+// a flip at all.
+const schemeFlipReadJS = `new Promise(r => requestAnimationFrame(() => r(JSON.stringify({
+  Theme: document.documentElement.getAttribute("data-theme") || "",
+  Nav: getComputedStyle(document.getElementById("nav-cur")).backgroundColor,
+  Tile: getComputedStyle(document.getElementById("tile")).backgroundColor
+}))))`
+
+// schemeFlipLandedJS waits out every finite animation, then reads the
+// same state: the value a reader sees once the page has settled.
+const schemeFlipLandedJS = `(async () => {
+  await Promise.all(document.getAnimations().filter(a => a.effect && a.effect.getComputedTiming().endTime !== Infinity).map(a => a.finished.catch(() => null)));
+  return await ` + schemeFlipReadJS + `;
+})()`
+
+// A scheme flip lands in the frame it happens in. The current nav
+// item and a linked tile fade their background for the press and the
+// hover, and a change of data-theme started the same fade while the
+// text snapped: for about a tenth of a second after the click, light
+// text sat on a still-light ground. Read on the very next frame, both
+// backgrounds already equal what they settle to. The same through the
+// OS flipping while the page is on System, where no form is involved.
+func TestASchemeFlipLandsOnTheNextFrame(t *testing.T) {
+	rig := sizingRig(t, false, map[string]string{"/": sizingDoc("scheme flip", schemeFlipBody)})
+	ctx, cancel := context.WithTimeout(rig.Context(), 90*time.Second)
+	defer cancel()
+	awaitPromise := func(p *runtime.EvaluateParams) *runtime.EvaluateParams { return p.WithAwaitPromise(true) }
+	os := func(scheme string) chromedp.Action {
+		return emulation.SetEmulatedMedia().WithFeatures([]*emulation.MediaFeature{{Name: "prefers-color-scheme", Value: scheme}})
+	}
+	mustRun(t, ctx, os("light"), chromedp.EmulateViewport(1280, 900), chromedp.Navigate(rig.Origin+"/"),
+		chromedp.WaitVisible(`[rst-scheme]`, chromedp.ByQuery), chromedp.WaitReady(`body`, chromedp.ByQuery))
+	// choose submits one of the switch's forms the way a click does,
+	// and reads the state on the next frame, in one script so no
+	// round trip sits between the two.
+	choose := func(scheme string) schemeFlipState {
+		t.Helper()
+		var got schemeFlipState
+		at(t, ctx, fmt.Sprintf(`(() => { document.querySelector('[rst-scheme] input[value=%q] ~ button').click(); return %s; })()`, scheme, schemeFlipReadJS), &got, awaitPromise)
+		return got
+	}
+	landed := func(where string) schemeFlipState {
+		t.Helper()
+		var got schemeFlipState
+		at(t, ctx, schemeFlipLandedJS, &got, awaitPromise)
+		t.Logf("%s, landed: %+v", where, got)
+		return got
+	}
+	check := func(where string, got, want schemeFlipState) {
+		t.Helper()
+		if got.Theme != want.Theme {
+			t.Fatalf("%s: data-theme %q, want %q", where, got.Theme, want.Theme)
+		}
+		if got.Nav != want.Nav || got.Tile != want.Tile {
+			t.Errorf("%s: on the next frame the nav item is %s and the tile %s; settled they are %s and %s. The flip faded instead of landing.", where, got.Nav, got.Tile, want.Nav, want.Tile)
+		}
+	}
+
+	// Learn the settled values of each scheme first, so the test holds
+	// the theme's own numbers rather than a copy of them.
+	choose("dark")
+	dark := landed("dark chosen")
+	choose("light")
+	light := landed("light chosen")
+	if dark.Nav == light.Nav || dark.Tile == light.Tile {
+		t.Fatalf("the page does not change with the scheme: dark %+v, light %+v", dark, light)
+	}
+
+	check("Light to Dark by the switch", choose("dark"), dark)
+	landed("after Dark")
+	check("Dark to Light by the switch", choose("light"), light)
+	landed("after Light")
+
+	// System, with the OS flipping underneath: the attribute is gone,
+	// light-dark() repaints on its own, and no form is submitted. Read
+	// on the second frame, not the next: Chromium finds the media
+	// change in the style update that starts the fade, and reports it
+	// to listeners at the start of the frame after, so the shim can
+	// land an OS flip one frame late at best. Without it the second
+	// frame is a tenth of the way into the fade, and still light.
+	got := choose("system")
+	if got.Theme != "" {
+		t.Fatalf("after choosing System data-theme is %q", got.Theme)
+	}
+	landed("system, OS light")
+	mustRun(t, ctx, os("dark"))
+	at(t, ctx, schemeFlipSecondFrameJS, &got, awaitPromise)
+	check("System, OS light to dark", got, schemeFlipState{Nav: dark.Nav, Tile: dark.Tile})
+	landed("system, OS dark")
+	mustRun(t, ctx, os("light"))
+	at(t, ctx, schemeFlipSecondFrameJS, &got, awaitPromise)
+	check("System, OS dark to light", got, schemeFlipState{Nav: light.Nav, Tile: light.Tile})
+}
+
+// schemeFlipSecondFrameJS reads the state one frame later than
+// schemeFlipReadJS, for the OS flip (see the test).
+const schemeFlipSecondFrameJS = `new Promise(r => requestAnimationFrame(() => r(` + schemeFlipReadJS + `)))`
+
+// TestAnAppsOwnSchemeSwitchLandsAtRest is Astra A3: the shipped switch
+// lands a flip by cancelling the running transitions (land(), above),
+// but an app that sets data-theme from its own script, or that took
+// the new stylesheets with an old rastrillo.js, never calls it. The
+// nav items', linked rows' and tiles' background transitions sit on
+// their :hover and :active rules only, not at rest, so at rest a
+// scheme change has no transition to start and lands on the next
+// frame with no script's help. The page is the scheme-flip fixture;
+// the flip is an attribute write from page script, the way an app's
+// switch does it, read on the very next frame against the value the
+// page settles to.
+func TestAnAppsOwnSchemeSwitchLandsAtRest(t *testing.T) {
+	rig := sizingRig(t, false, map[string]string{"/": sizingDoc("app scheme flip", schemeFlipBody)})
+	ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
+	defer cancel()
+	awaitPromise := func(p *runtime.EvaluateParams) *runtime.EvaluateParams { return p.WithAwaitPromise(true) }
+	mustRun(t, ctx, emulation.SetEmulatedMedia().WithFeatures([]*emulation.MediaFeature{{Name: "prefers-color-scheme", Value: "light"}}),
+		chromedp.EmulateViewport(1280, 900), chromedp.Navigate(rig.Origin+"/"), chromedp.WaitVisible(`[rst-scheme]`, chromedp.ByQuery), chromedp.WaitReady(`body`, chromedp.ByQuery))
+	// set writes the attribute the way an app's own switch does and
+	// reads the next frame, in one script so no round trip sits
+	// between the write and the read.
+	set := func(scheme string) schemeFlipState {
+		t.Helper()
+		var got schemeFlipState
+		at(t, ctx, fmt.Sprintf(`(() => { document.documentElement.setAttribute("data-theme", %q); return %s; })()`, scheme, schemeFlipReadJS), &got, awaitPromise)
+		return got
+	}
+	settled := func() schemeFlipState {
+		t.Helper()
+		var got schemeFlipState
+		at(t, ctx, schemeFlipLandedJS, &got, awaitPromise)
+		return got
+	}
+	set("dark")
+	dark := settled()
+	set("light")
+	light := settled()
+	if dark.Nav == light.Nav || dark.Tile == light.Tile {
+		t.Fatalf("the page does not change with the scheme: dark %+v, light %+v", dark, light)
+	}
+	for _, c := range []struct {
+		to   string
+		want schemeFlipState
+	}{{"dark", dark}, {"light", light}} {
+		got := set(c.to)
+		if got.Theme != c.to {
+			t.Fatalf("data-theme is %q after the app set %q", got.Theme, c.to)
+		}
+		if got.Nav != c.want.Nav || got.Tile != c.want.Tile {
+			t.Errorf("app script sets data-theme=%s: on the next frame the nav item is %s and the tile %s; settled they are %s and %s. The flip faded instead of landing, with no shipped switch to cancel it.", c.to, got.Nav, got.Tile, c.want.Nav, c.want.Tile)
+		}
+		settled()
 	}
 }

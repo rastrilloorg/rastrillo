@@ -722,7 +722,9 @@ func TestNoGalleryPageLoadsTheEnhancementScripts(t *testing.T) {
 	for _, theme := range ui.ThemeNames() {
 		for _, locale := range rastrillo.BaseLocales() {
 			for _, name := range galleryFiles(theme, locale) {
-				for _, s := range []string{"select.js", "calendar.js", "datetime.js"} {
+				// light.js is here too: a gallery page's own buttons do
+				// not light, the previews' do.
+				for _, s := range []string{"select.js", "calendar.js", "datetime.js", "light.js"} {
 					if strings.Contains(string(files[name]), `src="`+assetHref(s)+`"`) {
 						t.Errorf("%s loads %s, which nothing on the page uses", name, s)
 					}
@@ -1056,7 +1058,7 @@ func TestNoGalleryPageOpensAModalOverTheGallery(t *testing.T) {
 func TestTreeShapeIsComplete(t *testing.T) {
 	files := render(t)
 	want := []string{"index.html"}
-	for _, name := range []string{"tokens.css", "rastrillo.js", "busy.js", "anchor.js", "shell.js", "shell.css", "select.js", "datetime.js", "calendar.js", "gallery.js", "gallery.css",
+	for _, name := range []string{"tokens.css", "rastrillo.js", "busy.js", "light.js", "anchor.js", "shell.js", "shell.css", "select.js", "datetime.js", "calendar.js", "gallery.js", "gallery.css",
 		"sample-checkout.svg", "sample-pricing.svg", "sample-logo.svg", "sample-banner.svg"} {
 		want = append(want, hashedNames()[name], name)
 	}
@@ -1225,6 +1227,7 @@ func TestEnhancedControlsAreOnTheComponentPages(t *testing.T) {
 		{"data-rst-date", "datetime.js"},
 		{"data-rst-time", "datetime.js"},
 		{"data-rst-range", "datetime.js"},
+		{"rst-btn", "light.js"},
 	} {
 		var found bool
 		for _, doc := range frames {
@@ -2259,7 +2262,7 @@ func TestGalleryScriptStaysInertAndFirstParty(t *testing.T) {
 	if strings.Contains(js, "\t") {
 		t.Error("gallery.js uses two-space indentation, not tabs")
 	}
-	// 27,416 bytes: the script with every feature the gallery gives it
+	// 30,503 bytes: the script with every feature the gallery gives it
 	// (copy buttons, search terms, keeping the reader's place, frames
 	// that show only once painted), weighed when the cap was last
 	// raised, plus 10%. The first ceilings (8 KiB, then 10 KiB,
@@ -2288,7 +2291,10 @@ func TestGalleryScriptStaysInertAndFirstParty(t *testing.T) {
 	//     followed through the rail                   +1,314 26,238
 	//   and again on hashchange, for a reader
 	//     already on the old page                       +201 26,439
-	if n := len(js); n > 27416 {
+	//   a scheme change lands in its own frame, in
+	//     the page and every frame, and a frame
+	//     late when it is the OS that flipped         +1,291 27,730
+	if n := len(js); n > 30503 {
 		t.Errorf("gallery.js is %d bytes; it is the gallery's own furniture and should stay readable in one sitting", n)
 	}
 	// The two halves of the scriptless story: the toggle is hidden

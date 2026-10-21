@@ -1,0 +1,93 @@
+/* Alive: a light source the page can feel. Everything here reads four
+   custom properties that alive.js eases toward; with no script, or with
+   reduced motion, they hold their defaults and the page is the static
+   natural-depth design. */
+:root{
+  --lx:0;        /* light direction, -1 left .. 1 right */
+  --ly:-1;       /* -1 above .. 1 below */
+  --k:1;         /* strength: 1 is the real setting */
+  --sx:calc(var(--lx) * -1.5px * var(--k));          /* shadows fall away from the light */
+  --sy:calc(1px + (var(--ly) + 1) * 0.6px * var(--k));
+  --hx:calc(var(--lx) * 1px * var(--k));          /* the top highlight leans towards it */
+  --sheen:calc(0.14 * var(--k));
+  /* The sheen is set per scheme: white light reads far brighter on a dark
+     surface than on a light one, so dark gets half the light and plain
+     buttons in dark get a whisper. The colours are the strongest the mockup
+     allows (×4); --ss scales them, 0.25 at the real setting. */
+  --ss:calc(var(--k) / 4);
+  --sheen-fill:light-dark(rgb(255 255 255 / .6), rgb(255 255 255 / .28));
+  --sheen-plain:light-dark(color-mix(in oklab, var(--rst-primary) 36%, transparent), rgb(255 255 255 / .16));
+}
+[rst-btn]{--mx:50%;--my:-40%;--on:0}
+[rst-btn]:hover{--on:1}
+[rst-btn]{box-shadow:inset var(--hx) 1px 0 var(--hl), var(--sx) var(--sy) 1px var(--contact), calc(var(--sx)*2) calc(var(--sy)*1.5) 3px var(--ambient)!important}
+[rst-btn][rst-btn~="primary"],[rst-btn][rst-btn~="danger"]{box-shadow:inset var(--hx) 1px 0 rgba(255,255,255,.22), var(--sx) var(--sy) 1px var(--contact), calc(var(--sx)*2) calc(var(--sy)*1.5) 3px var(--ambient)!important}
+[rst-btn][rst-btn~="ghost"]{box-shadow:none!important}
+[rst-btn]:active{box-shadow:inset 0 1px 2px var(--contact)!important}
+/* the sheen: light catching the surface where the pointer is */
+
+:root body [rst-btn]:not([rst-btn~="ghost"]){background-image:radial-gradient(120px circle at var(--mx) var(--my), color-mix(in srgb, var(--sheen-fill) calc(var(--on) * var(--ss) * 100%), transparent), transparent 70%), var(--fill, none)!important}
+:root body [rst-btn]:not([rst-btn~="primary"]):not([rst-btn~="danger"]):not([rst-btn~="ghost"]){background-image:radial-gradient(90px circle at var(--mx) var(--my), color-mix(in srgb, var(--sheen-plain) calc(var(--on) * var(--ss) * 100%), transparent), transparent 70%), var(--fill)!important}
+[rst-btn]:not([rst-btn~="primary"]):not([rst-btn~="danger"]):not([rst-btn~="ghost"]){--fill:linear-gradient(var(--rst-surface),var(--rst-surface))}
+[rst-btn][rst-btn~="primary"]{--fill:linear-gradient(to bottom, color-mix(in oklab, var(--rst-primary) 94%, white), var(--rst-primary))}
+[rst-btn][rst-btn~="primary"]:hover{--fill:linear-gradient(to bottom, var(--rst-primary), color-mix(in oklab, var(--rst-primary) 92%, black))}
+[rst-btn][rst-btn~="danger"]{--fill:linear-gradient(to bottom, color-mix(in oklab, var(--danger) 94%, white), var(--danger))}
+[rst-btn][rst-btn~="danger"]:hover{--fill:linear-gradient(to bottom, var(--danger), color-mix(in oklab, var(--danger) 92%, black))}
+[rst-btn]:not([rst-btn~="primary"]):not([rst-btn~="danger"]):not([rst-btn~="ghost"]):hover{--fill:linear-gradient(light-dark(#f7f8fa,#1b1d22),light-dark(#f7f8fa,#1b1d22))}
+/* cards: no colour follows the pointer. The light catches the card's rim
+   nearest it and, in dark, the faintest lift of the surface. It drifts
+   after the pointer slowly and fades in and out, so it breathes rather
+   than tracks. --cl is how lit the card is, 0 to 1, eased by alive.js. */
+[rst-box],[rst-card],[rst-stats]{--cx:50%;--cy:0%;--cl:0;
+  border:1px solid transparent!important;
+  background:
+    radial-gradient(520px circle at var(--cx) var(--cy), color-mix(in srgb, var(--wash) calc(var(--cl) * 100%), transparent), transparent 75%) padding-box,
+    linear-gradient(var(--rst-surface), var(--rst-surface)) padding-box,
+    radial-gradient(260px circle at var(--cx) var(--cy), color-mix(in oklab, var(--rim) calc(var(--cl) * 100%), var(--rst-line)), var(--rst-line) 80%) border-box!important;
+  box-shadow:var(--sx) var(--sy) 1px var(--ambient), calc(var(--sx)*2) calc(var(--sy)*1.5) 3px var(--ambient)!important}
+:root{--rim:light-dark(#b9c6e4, #5d6a86);--wash:light-dark(transparent, rgb(255 255 255 / .03))}
+[rst-shell-nav] a[aria-current]{box-shadow:inset var(--hx) 1px 0 var(--hl), 0 0 0 1px var(--border-btn), var(--sx) var(--sy) 2px var(--contact)!important}
+/* mockup-only control panel */
+.alive-panel{position:fixed;right:16px;bottom:16px;z-index:50;background:var(--rst-surface);color:var(--rst-text);border:1px solid var(--border-btn);border-radius:8px;padding:10px 12px;font-size:13px;box-shadow:0 2px 4px var(--ambient),0 8px 16px -4px var(--contact);display:grid;gap:6px;min-width:250px}
+.alive-panel b{font-size:12px;color:var(--rst-text-muted);font-weight:600}
+.alive-panel label{display:flex;gap:8px;align-items:center}
+.alive-panel input[type=range]{flex:1}
+.alive-panel summary{cursor:pointer;list-style:none}.alive-panel[open] summary{margin-bottom:4px}
+@media (max-width:700px){.alive-panel{left:12px;right:12px;bottom:12px;min-width:0}}
+.alive-panel label{min-height:32px}
+/* The switch knob is a small dome: its highlight sits on the side the light
+   comes from and brightens when the pointer is on the switch. */
+[rst-switch]{--on:0}
+[rst-switch]:hover{--on:1}
+:root body [rst-switch-track]::after{background:
+    radial-gradient(circle at calc(50% + var(--lx) * 22%) calc(30% + (var(--ly) + 1) * 10%), rgb(255 255 255 / calc(0.55 + var(--on) * 0.45 * var(--k) / 4 * 4)), transparent 60%),
+    linear-gradient(to bottom, #ffffff, light-dark(#eef1f5, #d4dae5))!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.9), var(--sx) calc(var(--sy) * 0.8) 1px rgba(16,24,40,.28), calc(var(--sx) * 1.5) calc(var(--sy) * 1.4) 3px rgba(16,24,40,.18)!important}
+/* the track catches a faint sheen too, where the knob sits */
+:root body [rst-switch] input:checked + [rst-switch-track]{background:
+    radial-gradient(40px circle at 70% 20%, color-mix(in srgb, var(--sheen-fill) calc(var(--on) * var(--ss) * 100%), transparent), transparent 70%),
+    linear-gradient(to bottom, color-mix(in oklab, var(--rst-primary) 92%, white), var(--rst-primary))!important}
+/* List rows and menu items: no moving sheen (lists are for reading, and the
+   sheen means "press this"), but a quiet lift on hover in the same physical
+   language: a faint fill, a highlight along the top edge, a hairline shadow
+   that leans with the light. It eases in like the cards; on touch it shows
+   while the row is pressed. */
+[rst-lrow]:not([rst-lrow="head"]),[rst-dropdown-menu] a{position:relative;transition:background-color .25s ease, box-shadow .25s ease}
+@media (hover:hover){
+  [rst-lrow]:not([rst-lrow="head"]):hover{z-index:1;background-color:light-dark(color-mix(in oklab, var(--rst-primary) 5%, var(--rst-surface)), color-mix(in oklab, var(--rst-primary) 9%, var(--rst-surface)))!important;
+    box-shadow:inset 0 1px 0 var(--hl), var(--sx) var(--sy) 1px var(--contact), calc(var(--sx) * 2) calc(var(--sy) * 2) 6px -2px var(--contact)}
+  [rst-dropdown-menu] a:not([aria-current]):hover{background-color:light-dark(color-mix(in oklab, var(--rst-primary) 7%, var(--rst-surface)), color-mix(in oklab, var(--rst-primary) 14%, var(--rst-surface)))!important;box-shadow:inset 0 1px 0 var(--hl), var(--sx) var(--sy) 1px var(--contact)!important}
+}
+[rst-lrow]:not([rst-lrow="head"]):active{background-color:light-dark(color-mix(in oklab, var(--rst-primary) 9%, var(--rst-surface)), color-mix(in oklab, var(--rst-primary) 14%, var(--rst-surface)))!important;box-shadow:inset 0 1px 2px var(--ambient);transition:none}
+/* Sidebar items: hovering one shows a half-raised preview of the current
+   item's thumb, the same tint as rows with a top highlight and a light-
+   leaning hairline shadow, so moving down the rail feels like the selection
+   is ready to settle there. Pressed, it sinks. */
+[rst-shell-nav] a:not([aria-current]){transition:background-color .2s ease, box-shadow .2s ease}
+@media (hover:hover){
+  :root body [rst-shell-nav] a:not([aria-current]):hover{
+    background-color:light-dark(color-mix(in oklab, var(--rst-primary) 5%, var(--rst-surface)), color-mix(in oklab, var(--rst-primary) 10%, var(--rst-surface)))!important;
+    color:var(--rst-text)!important;
+    box-shadow:inset 0 1px 0 var(--hl), 0 0 0 1px light-dark(rgba(16,24,40,.06), rgba(255,255,255,.05)), var(--sx) var(--sy) 1px var(--ambient)!important}
+}
+:root body [rst-shell-nav] a:not([aria-current]):active{background-color:light-dark(color-mix(in oklab, var(--rst-primary) 9%, var(--rst-surface)), color-mix(in oklab, var(--rst-primary) 14%, var(--rst-surface)))!important;box-shadow:inset 0 1px 2px var(--ambient)!important;transition:none}

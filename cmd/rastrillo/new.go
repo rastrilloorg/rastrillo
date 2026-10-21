@@ -211,6 +211,7 @@ func runNew(args []string) error {
 	//	               the index and a page on a phone
 	//	rastrillo.js   the fragment shim behind data-poll and menu dismiss
 	//	busy.js        the busy rule: every submit button, data-busy opts out
+	//	light.js       the light the depth styles read; delete it for the still design
 	//	anchor.js      a dropdown's menu kept on the screen where CSS anchor
 	//	               positioning is missing; inert where it is not, and
 	//	               deletable once every browser the app supports has it
@@ -986,18 +987,20 @@ import (
 // here when you swap static/theme.css for another of ui.ThemeNames().
 const vendoredTheme = "%[2]s"
 
-// vendoredIsMine names the vendored files this app has edited
-// DELIBERATELY. Add one here when you mean to diverge: this test stops
-// pinning it, and rastrillo doctor leaves it alone too. The file was
-// yours from the moment the scaffold wrote it — this is only where you
-// record that the edit was on purpose, so the next reader (and the next
-// upgrade) can tell it from drift.
+// vendoredIsMine names the vendored files this app has edited or
+// deleted DELIBERATELY. Add one here when you mean to diverge: this
+// test stops pinning it, and rastrillo doctor leaves it alone too. The
+// file was yours from the moment the scaffold wrote it; this is only
+// where you record that the edit, or the deletion, was on purpose, so
+// the next reader (and the next upgrade) can tell it from drift.
 var vendoredIsMine = map[string]bool{
 	// "tokens.css": true,
 	//
-	// Only the sidebar and console shells link shell.js and shell.css.
-	// An app on another shell that deletes them records it here, or this
-	// test fails on the missing files:
+	// A file you deleted goes here too, or this test fails on the
+	// missing file. light.js is deletable on any shell (the still
+	// design); only the sidebar and console shells link shell.js and
+	// shell.css:
+	// "light.js": true,
 	// "shell.js": true, "shell.css": true,
 }
 
@@ -1023,7 +1026,7 @@ func TestVendoredAssetsMatchTheLibrary(t *testing.T) {
 		}
 		vendored, err := os.ReadFile(filepath.Join("..", "%[1]s", "static", name))
 		if err != nil {
-			t.Errorf("read vendored %%s: %%v", name, err)
+			t.Errorf("read vendored %%s: %%v; if you deleted it on purpose, add it to vendoredIsMine", name, err)
 			continue
 		}
 		if !bytes.Equal(vendored, lib) {

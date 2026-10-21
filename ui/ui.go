@@ -267,6 +267,9 @@ var shimJS []byte
 //go:embed busy.js
 var busyJS []byte
 
+//go:embed light.js
+var lightJS []byte
+
 //go:embed anchor.js
 var anchorJS []byte
 
@@ -360,6 +363,14 @@ func ShimJS() []byte { return shimJS }
 // by rastrillo new, like ShimJS, and app-owned from then on. Linking it
 // is the whole opt-in; the file's own header comment is its contract.
 func BusyJS() []byte { return busyJS }
+
+// LightJS returns light.js: the light the depth styles read. The
+// shadows' light comes from the hour; the button under the pointer
+// catches a sheen, and a card's rim brightens near it. Delivered once by
+// rastrillo new, like BusyJS, and app-owned from then on; delete it and
+// its tag, and the page is the static depth design. Its header comment
+// is its contract.
+func LightJS() []byte { return lightJS }
 
 // AnchorJS returns anchor.js, which keeps a dropdown's menu on the
 // screen in a browser without CSS anchor positioning and does nothing

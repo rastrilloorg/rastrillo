@@ -55,6 +55,7 @@ type config struct {
 	withoutPRFAtCreation bool
 	withScrollbars       bool
 	coarsePointer        bool
+	hover                bool
 }
 
 // Option adjusts what New builds.
@@ -85,6 +86,16 @@ func WithScrollbars() Option {
 // pass at desktop sizes, so check the media query before measuring.
 func WithCoarsePointer() Option {
 	return func(c *config) { c.coarsePointer = true }
+}
+
+// WithHover launches Chromium with a mouse that can hover, so
+// (hover: hover) matches. Headless Chromium's default is (hover: none)
+// even on a desktop, measured here: a drive that read a rule inside
+// @media (hover: hover) on the default rig would read nothing and pass
+// for the wrong reason. 4 is Blink's PointerType fine and 2 its
+// HoverType hover; the available* pair has to agree with the primary.
+func WithHover() Option {
+	return func(c *config) { c.hover = true }
 }
 
 // New boots the rig. Order is the point: a passkey app needs its
@@ -125,6 +136,10 @@ func New(t *testing.T, build func(origin string) http.Handler, opts ...Option) *
 		// After the defaults, so it wins: chromedp.Headless set this
 		// true and the flag map keeps the last value written.
 		allocOpts = append(allocOpts, chromedp.Flag("hide-scrollbars", false))
+	}
+	if cfg.hover {
+		allocOpts = append(allocOpts, chromedp.Flag("blink-settings",
+			"primaryPointerType=4,availablePointerTypes=4,primaryHoverType=2,availableHoverTypes=2"))
 	}
 	if cfg.coarsePointer {
 		// 2 is Blink's PointerType coarse and 1 its HoverType none; the

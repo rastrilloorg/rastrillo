@@ -50,6 +50,7 @@ func TestVendoredAssetsCarryTheLibraryBytes(t *testing.T) {
 		"tokens.css":   TokensCSS(),
 		"theme.css":    plain,
 		"rastrillo.js": ShimJS(),
+		"light.js":     LightJS(),
 		"select.js":    SelectJS(),
 		"datetime.js":  DatetimeJS(),
 	} {

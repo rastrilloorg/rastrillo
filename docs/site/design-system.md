@@ -6,7 +6,7 @@ That leaves a question this page answers: when you want something the design sys
 
 ## Customising, cheapest first
 
-**Pick a different theme.** `rastrillo new --theme=signal`, or swap `static/theme.css` later. Three ship: `day`, `plain`, `signal`. This changes colour, type family and shape, and nothing else has to move.
+**Pick a different theme.** `rastrillo new --theme=signal`, or swap `static/theme.css` later. Three ship: `day`, the default, with natural depth, shadows lit by the hour and a sheen under the pointer; `plain` and `signal`, which are flat. Swapping changes colour, type family, shape and depth, and nothing else has to move.
 
 **Override tokens in your own CSS.** The `head` block is your slot, and it comes last, so your stylesheet wins the ties it should win:
 
@@ -18,13 +18,19 @@ That leaves a question this page answers: when you want something the design sys
 :root { --rst-accent: light-dark(#7c3aed, #a78bfa); --rst-radius: 4px; }
 ```
 
-Every component paints itself from these, so one line changes the accent everywhere.
+Every component paints itself from these. In `day` that one line changes the accent everywhere: the fills take its hue at the theme's own lightness, with its chroma scaled and capped, so a grey accent gives a grey button and a white label reads on any hue; the tints, the focus ring and the light's colours are mixed from it. The fills need relative colour (Firefox 128 and later; every Chrome and Safari at the floor), and an older engine keeps day's cobalt fills while following the accent everywhere else. In `plain` and `signal` every new token is an alias of the semantic token it stood in for, so a rebrand that sets `--rst-accent`, `--rst-accent-soft`, `--rst-surface` or `--rst-line` reaches the same controls it always did; the CHANGELOG names them.
 
 **Write your own theme.** Replace `static/theme.css`. The only contract is the token set: declare every name `day` declares and every component already knows what to do with it. A theme of your own reads to `rastrillo doctor` as "custom or drifted" — supported, not damage.
 
 **Edit `tokens.css` itself.** Allowed. It is your file. Name it in `vendoredIsMine` in the generated test so an upgrade does not report your deliberate edit as drift.
 
 The ladder is deliberate. Each rung costs more to carry across upgrades than the one above it.
+
+## The light
+
+`static/light.js` moves the light the depth styles read: the shadows' light comes from the hour, a button catches a sheen under the pointer, and a card's rim brightens near it. It writes custom properties and nothing else, runs one animation frame loop only while something is easing, does not run under reduced motion and does nothing under forced colours. The whole page's light can follow the pointer instead: set `FOLLOW` to `true` at the top of the file. It is off because every write of it restyles the page.
+
+To turn it off, delete `static/light.js` and its `<script>` tag from your layout, and name it in `vendoredIsMine` in `vendored_test.go`. `rastrillo doctor` then lists the file as yours, a recorded edit, and `--fix` leaves it alone. To flatten the design and keep the script, set the depth, sheen, light and press tokens in your theme the way `plain.css` does: `transparent`, `0` and `0px`, and `--rst-light-rim` to your line colour, or each card's hairline gets a hole near the pointer.
 
 ## Components the framework does not ship
 

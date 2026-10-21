@@ -15,6 +15,8 @@ import (
 	cdppage "github.com/chromedp/cdproto/page"
 	"github.com/chromedp/chromedp"
 	"github.com/chromedp/chromedp/kb"
+
+	"amadan.net/rastrillo/rastrillo/harness"
 )
 
 // kebabA is a row menu written by hand in the native details/summary
@@ -396,15 +398,20 @@ func TestControlsInARowKeepTheirOwnBoxes(t *testing.T) {
 
 // TestARowWithNoLinkLooksAndActsInert: no overlay, no hover fill, in
 // both idioms. The linked row of the same idiom is each one's control:
-// its hover DOES fill.
+// its hover DOES fill. The rig declares a mouse that can hover, and
+// the page is frozen first (C14): the row hovers sit in @media
+// (hover: hover) and ease in over 0.25s, so a default rig, which
+// reports no hover, and a read in the first frame of the transition
+// both found the control at rest and failed it.
 func TestARowWithNoLinkLooksAndActsInert(t *testing.T) {
-	rig := sizingRig(t, false, rowsPages(t))
+	rig := sizingRig(t, false, rowsPages(t), harness.WithHover())
 	ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
 	defer cancel()
 	if err := chromedp.Run(ctx, chromedp.EmulateViewport(1280, 900)); err != nil {
 		t.Fatal(err)
 	}
 	home(t, ctx, rig.Origin)
+	still(t, ctx)
 	bg := func(sel string) string {
 		var s string
 		if err := chromedp.Run(ctx, chromedp.Evaluate(fmt.Sprintf(`getComputedStyle(document.querySelector(%q)).backgroundColor`, sel), &s)); err != nil {

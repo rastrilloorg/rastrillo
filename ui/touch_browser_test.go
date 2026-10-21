@@ -35,7 +35,7 @@ func sizingMux(t *testing.T, pages map[string]string) *http.ServeMux {
 	stylesheets(t, mux)
 	fixtureImages(mux)
 	for name, body := range map[string][]byte{
-		"rastrillo.js": ShimJS(), "busy.js": BusyJS(), "anchor.js": AnchorJS(), "select.js": SelectJS(), "datetime.js": DatetimeJS(), "calendar.js": CalendarJS(),
+		"rastrillo.js": ShimJS(), "busy.js": BusyJS(), "light.js": LightJS(), "anchor.js": AnchorJS(), "select.js": SelectJS(), "datetime.js": DatetimeJS(), "calendar.js": CalendarJS(),
 	} {
 		body := body
 		mux.HandleFunc("GET /"+name, func(w http.ResponseWriter, _ *http.Request) {

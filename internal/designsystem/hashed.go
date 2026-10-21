@@ -32,6 +32,7 @@ func galleryAssets() map[string][]byte {
 		"tokens.css":   ui.TokensCSS(),
 		"rastrillo.js": ui.ShimJS(),
 		"busy.js":      ui.BusyJS(),
+		"light.js":     ui.LightJS(),
 		"anchor.js":    ui.AnchorJS(),
 		"shell.js":     ui.ShellJS(),
 		"shell.css":    ui.ShellCSS(),

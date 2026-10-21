@@ -10,6 +10,32 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+**`day` looks different; your app's copy does not change until you
+re-copy it.** The default theme now has a point of view: near-greyscale
+neutrals with hairline borders, cobalt for anything that acts, 6px and
+4px corners, and natural depth lit from above. Buttons are a touch proud
+of the page and press in, then slowly lift; cards rest on the page; the
+switch's knob is lit in both schemes; rows and menu items lift quietly
+on hover. A new vendored script, `light.js`, lights the page from the
+hour, puts a sheen under the pointer, and can be deleted for the still
+design. `plain` and `signal` render as they did. An existing app keeps
+its copies until `rastrillo doctor --fix` re-copies `tokens.css`,
+`theme.css` and `rastrillo.js` and writes `light.js`; a theme of your
+own keeps rendering as it did, because every new token is read through
+a fallback that is today's value.
+
+- New vendored file `light.js`, optional. `rastrillo doctor --fix` writes it; link it after `busy.js` in your layout, as the shipped shells do. To turn it off, delete the file, delete its tag, and name it in `vendoredIsMine` in the scaffold's `vendored_test.go`; `doctor` then lists it as yours, a recorded edit, and `--fix` leaves it alone. See [Templates](/docs/templates#the-light).
+- New theme tokens, declared by every theme: the fills and their edges, the control face and borders, the depth tokens (`--rst-depth-hl`, `-contact`, `-ambient`, `-face`, `--rst-press-drop`), the switch's knob and track, the tints and the focus pair, the light's colours, the press strengths, and the title, heading, label and rail choices. See [Your app's design system](/docs/design-system).
+- `tokens.css` registers `--rst-press` and reads every new token with a fallback to the old behaviour.
+- `rastrillo.js` registers a passive `touchstart` listener so iOS applies `:active` on tap.
+- Hover tints and lifts on buttons, dropdown summaries, menu rows, options, locale and scheme buttons, linked rows, media tiles and the desktop rail items now sit behind `(hover: hover)`, in every theme, so a tap no longer leaves a tint behind on a touch screen. The phone index rows keep their tap tint on purpose.
+- Sidebar and console rail items fade their hover over 0.2s, and linked rows and media tiles over 0.25s, in every theme.
+- In `day`, overriding `--rst-accent` alone recolours everything: the primary button's fill, its hover and edges, the link hover, the soft ground, the hover and press tints, the focus edge and halo, a plain button's sheen and a card's lit rim are all derived from it in `day.css`. The fills take the accent's hue at day's own lightness, with the accent's chroma scaled and capped (`oklch(from var(--rst-accent) L C h)`): a grey accent gives a grey button, and the white label clears 4.5:1 for every hue, measured at twelve hues and three greys in both schemes. The rest are `color-mix()` shares of the accent. With the default accent each derived value lands within two units per channel of the hex it replaced, and the contrast rows that name them are recomputed. Relative colour needs Firefox 128, above the floor, so the fills and the soft ground are declared as day's cobalt and derived inside `@supports (color: oklch(from red l c h))`: an older engine keeps the cobalt button and loses only its following of the accent. `plain` and `signal` work as before: their fills (`--rst-accent-fill` and its `-hover`, `-edge` and `-edge-hover`) read `--rst-accent` and `--rst-accent-strong`, and every other new token reads the semantic token `tokens.css` read in its place before (`--rst-accent-soft` for the tints and the current nav item, `--rst-surface-2` for linked rows, `--rst-line-strong` for control borders, `--rst-tone-negative-fg` for the danger button, and so on), so an app that overrides those on `:root` still reaches what it reached before.
+- A card's hairline is painted as a background layer. An app stylesheet that sets `background` on a card loses the hairline, and one that sets `background-color` paints under the face and shows nothing; set `--rst-surface` on the card instead, which also recolours the surfaces inside it.
+- Dropdowns in a shell's tail, meaning the locale and scheme menus and any app dropdown placed there, wear no button face in `day`.
+- The colour-scheme switch lands in one frame: `rastrillo.js` cancels running CSS transitions on a flip, so text and ground change together.
+- Forced colours and print get their own blocks, in every theme: real borders, no shadows, filled buttons as outlined text.
+
 **An image grid for an app's Images page.** `media-grid` draws one tile
 per picture in an even 4:3 frame, so a tall screenshot and a wide
 banner sit in one grid without stretching their tiles; a tall picture

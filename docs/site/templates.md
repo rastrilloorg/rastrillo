@@ -336,6 +336,17 @@ This is an enhancement and nothing more. See
 [Forms](/docs/forms/#the-busy-button-is-not-a-guarantee) for what it
 does not promise you.
 
+### The light
+
+`light.js` is the same kind of file as `busy.js`: vendored, first-party,
+deletable. It moves the light the depth styles read: the shadows lean
+with the hour, and the sheen on a button and the rim of a card follow
+the pointer. For the still design, delete it and its tag, and name it in
+`vendoredIsMine` in `vendored_test.go`. On a phone a pressed button
+shows its press, not a sheen, and `rastrillo.js`, not `light.js`,
+registers the touch listener iOS needs to show pressed states, so
+deleting `light.js` loses none of them.
+
 ### Three containers the partials assume
 
 They belong to your page markup, so the library does not emit them:
@@ -984,19 +995,19 @@ nearly square and `signal` can be milled while `tokens.css` stays the
 same bytes.
 
 So is the page header's rule. `--rst-header-rule` is one token, derived
-rather than picked:
+from the accent or left as the line:
 
 ```css
-/* day */    --rst-header-rule: color-mix(in oklab, var(--rst-accent) 18%, var(--rst-line));
+/* day */    --rst-header-rule: var(--rst-line);
 /* plain */  --rst-header-rule: var(--rst-line);
 /* signal */ --rst-header-rule: color-mix(in oklab, var(--rst-accent) 45%, var(--rst-line));
 ```
 
 Deriving it means a theme that changes its accent gets a matching rule
 with nothing left behind to keep in step, which a fourth hand-picked
-colour per theme per scheme would not. `plain` draws plain grey, `day` a
-hairline you would call grey until you see it beside `plain`'s, `signal`
-a visibly blue one. Set it to whatever you like; it is a line, and one
+colour per theme per scheme would not. `plain` and `day` draw plain
+grey, `day` keeping its cobalt for things that act; `signal` draws a
+visibly blue one. Set it to whatever you like; it is a line, and one
 custom property is the whole of it.
 
 The rule is decoration. It carries no contrast floor and is not in the

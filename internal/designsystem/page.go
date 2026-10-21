@@ -1703,6 +1703,11 @@ var previewScripts = []struct {
 }{
 	{"rastrillo.js", []string{"data-poll", "rst-dropdown", "rst-row-menu", "rst-switch"}},
 	{"busy.js", []string{"data-busy"}},
+	// light.js is here for the same reason as the shim: a preview whose
+	// buttons never catch a sheen and whose cards never breathe says the
+	// depth design is still, which is the one thing the file exists to
+	// disprove. The hooks are the families it writes on (C16).
+	{"light.js", []string{"rst-btn", "rst-box", "rst-card", "rst-stats", "rst-list", "rst-switch"}},
 	{"anchor.js", []string{"rst-dropdown"}},
 	{"select.js", []string{"data-rst-select"}},
 	// calendar.js comes FIRST, and the order is load-bearing here in a
@@ -2712,6 +2717,8 @@ func buildAssets(mount, theme, locale string) assetsView {
 		"The progressive-enhancement shim: polling fragments, light dismiss and the switch's drag. Every scaffolded app gets it.")
 	add(&out, "busy.js", ui.BusyJS(),
 		"The busy rule: while a form sends, its button shows a spinner for at least 650ms and refuses a second submit, and Back hands it back. Every scaffolded app gets it.")
+	add(&out, "light.js", ui.LightJS(),
+		"The light the depth styles read: shadows lit by the hour, and a sheen on the button under the pointer. Delete it for the still design.")
 	add(&out, "anchor.js", ui.AnchorJS(),
 		"Keeps a dropdown's menu on the screen in browsers without CSS anchor positioning. It does nothing where they have it: delete it once every browser you support does.")
 	add(&out, "shell.js", ui.ShellJS(),
