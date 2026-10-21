@@ -178,6 +178,10 @@ func TestChecks(t *testing.T) {
 		{"scheme comment after division by a spaced property", "scheme", map[string]string{
 			"internal/app/static/s.js": "const half = stats. in / 2; // do not use localStorage\n",
 		}, true},
+		// Round 9: a spread before await is not a property access.
+		{"scheme comment after a spread and a regex", "scheme", map[string]string{
+			"internal/app/static/s.js": "async function items(s) { return [... await /\"/.exec(s)]; } // do not use localStorage\n",
+		}, true},
 		{"scheme data-theme traded for a toggle", "scheme", map[string]string{
 			"internal/app/templates/layout.html": "<html>\n{{template \"scheme-menu\" .}}\n<script>localStorage.setItem('t','dark')</script>\n</html>\n",
 		}, false},

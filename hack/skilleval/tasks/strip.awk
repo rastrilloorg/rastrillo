@@ -83,8 +83,9 @@ function strip(t,    r, i, k, best, which, wlen, endc, q, j, c, ch, pre, cls, of
 				if (substr(t, i, 2) == "//" || substr(t, i, 2) == "/*") break
 				pre = r substr(t, 1, i - 1); sub(/[ \t]+$/, "", pre)
 				if (pre ~ /(\+\+|--)$/) continue
-				# A keyword's name after a dot is a property, and divides.
-				if (pre ~ /\.[ \t]*(return|typeof|case|do|else|in|of|new|delete|void|throw|yield|await)$/) continue
+				# A keyword's name after a dot is a property, and divides;
+				# after a spread (...) it is still the keyword.
+				if (pre ~ /(^|[^.])\.[ \t]*(return|typeof|case|do|else|in|of|new|delete|void|throw|yield|await)$/) continue
 				# After these keywords a value starts, so / opens a regex.
 				if (pre ~ /(^|[^A-Za-z0-9_$.])(return|typeof|case|do|else|in|of|new|delete|void|throw|yield|await)$/) { best = i; which = "regex"; break }
 				if (pre == "" || substr(pre, length(pre), 1) ~ /[(,=:[!&|?{};+*%<>~^-]/) { best = i; which = "regex"; break }
