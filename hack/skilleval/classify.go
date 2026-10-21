@@ -226,7 +226,18 @@ var optArg = map[string]bool{"-e": true, "--regexp": true, "-f": true, "--file":
 // a working directory that starts where the call does, follows each cd
 // and is restored when a subshell closes. It also reports where the
 // call leaves the shell, for the next call to start from.
+// Past these bounds a command is not classified: a megabyte of nested
+// substitutions costs the lexer quadratic memory, and recover cannot
+// catch running out of it. safeTouches records the refusal.
+const (
+	maxCommand  = 256 << 10
+	maxHeredocs = 64
+)
+
 func (c classifier) bashTouches(cmd string) (bs []bucket, stale bool, end string) {
+	if len(cmd) > maxCommand || strings.Count(cmd, "<<") > maxHeredocs {
+		panic(fmt.Sprintf("command too large to classify (%d bytes, %d heredocs)", len(cmd), strings.Count(cmd, "<<")))
+	}
 	found := map[bucket]bool{}
 	if strings.Contains(cmd, "go doc ") {
 		found[bGoDoc] = true
@@ -533,20 +544,28 @@ func lex(cmd string) []token {
 				// first plain argument, except after a shell's -s, which
 				// makes the rest arguments to the stdin script).
 				v := filepath.Base(ws[0])
-				runsStdin, sawS := true, false
+				runsStdin, sawS, skip := true, false, false
 				for _, a := range ws[1:] {
-					if inlineCode[v][a] {
+					switch {
+					case skip:
+						skip = false
+						continue
+					case inlineCode[v][a]:
 						runsStdin = false
+					case a == "-" || (a == "-s" && shells[v]):
+						// stdin is the script; what follows is its argv.
+						sawS = true
+					case readerOptValue[v][a]:
+						skip = true
+						continue
+					case strings.HasPrefix(a, "-"):
+						continue
+					default:
+						runsStdin = sawS
+					}
+					if !runsStdin || sawS {
 						break
 					}
-					if a == "-s" && shells[v] {
-						sawS = true
-					}
-					if a == "-" || strings.HasPrefix(a, "-") {
-						continue
-					}
-					runsStdin = sawS
-					break
 				}
 				h.shell = shells[v] && runsStdin
 				h.script = interpreters[v] && runsStdin
@@ -649,11 +668,15 @@ func lex(cmd string) []token {
 		case r == '\n' || r == ';':
 			flush()
 			op(";")
+		case r == '&' && next == '>':
+			flush() // &> and &>>: both streams to the target
+			i++
+			if i+1 < len(rs) && rs[i+1] == '>' {
+				i++
+			}
+			redirNext = true
 		case r == '&':
 			flush()
-			if i > 0 && (rs[i-1] == '>' || rs[i-1] == '<') {
-				continue // the & of 2>&1 is a redirection, not a separator
-			}
 			if next == '&' {
 				i++
 			}
@@ -692,8 +715,11 @@ func lex(cmd string) []token {
 				inWord = false
 			}
 			flush()
-			if next == '>' || next == '&' {
-				continue
+			if next == '>' {
+				continue // >>: the second > sets the target
+			}
+			if next == '&' {
+				i++ // >&1, 2>&1: the descriptor after & is the target
 			}
 			redirNext = true
 		case r == ' ' || r == '\t' || r == '`':
@@ -813,7 +839,10 @@ var (
 		"python": {"-c": true, "-m": true}, "python3": {"-c": true, "-m": true},
 		"node": {"-e": true, "-p": true}, "perl": {"-e": true, "-E": true}, "ruby": {"-e": true},
 	}
-	stringLiteral = regexp.MustCompile(`"([^"\n]*)"|'([^'\n]*)'`)
+	// readerOptValue are a reader's options whose value is the next word,
+	// which is not a script file.
+	readerOptValue = map[string]map[string]bool{"python": {"-W": true, "-X": true}, "python3": {"-W": true, "-X": true}}
+	stringLiteral  = regexp.MustCompile(`"([^"\n]*)"|'([^'\n]*)'`)
 )
 
 // pathish is a word that names a file or directory, rather than a flag,

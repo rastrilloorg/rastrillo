@@ -457,3 +457,33 @@ func TestBashRound10(t *testing.T) {
 		t.Fatal("thirty nested heredocs took more than five seconds to classify")
 	}
 }
+
+// Round 11: more of the python3 heredoc shape agents use, and a bound
+// on how much work one command may cost.
+func TestBashRound11(t *testing.T) {
+	c := testClassifier()
+	read := "\nprint(open(\"" + testFW + "/scheme.go\").read())\nPY"
+	for _, cmd := range []string{
+		"python3 2>&1 <<'PY'" + read,
+		"python3 &>/dev/null <<'PY'" + read,
+		"python3 - check <<'PY'" + read,
+		"python3 -W ignore <<'PY'" + read,
+	} {
+		if got, _ := c.touches("Bash", map[string]any{"command": cmd}); fmt.Sprint(got) != "[source]" {
+			t.Errorf("Bash %q touches %v, want [source]", cmd, got)
+		}
+	}
+	// Past the bound a command is not classified at all; the tally
+	// records why instead of spending the harness's memory on it.
+	deep := ":"
+	for i := 0; i < 200; i++ {
+		deep = fmt.Sprintf("sh <<E%d\n$(%s\n)\nE%d", i, deep, i)
+	}
+	tally, err := tallyTranscript(strings.NewReader(`{"type":"assistant","message":{"content":[{"type":"tool_use","id":"t1","name":"Bash","input":{"command":`+strconv.Quote(deep)+`}}]}}`), c)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(tally.ClassifyErrors) != 1 || tally.Touched[bOther] != 1 {
+		t.Errorf("errors = %q, touched = %v; want one recorded error and the call counted as other", tally.ClassifyErrors, tally.Touched)
+	}
+}
