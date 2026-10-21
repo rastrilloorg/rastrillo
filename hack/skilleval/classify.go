@@ -307,12 +307,19 @@ func (c classifier) bashTouches(cmd string) (bs []bucket, stale bool, end string
 				endOpts = true
 			case (verb == "grep" || verb == "rg") && !endOpts && (strings.HasPrefix(w, "--regexp=") || strings.HasPrefix(w, "--file=")):
 				patternPending = false // the pattern came attached to its option
-			case (verb == "grep" || verb == "rg") && !endOpts && len(w) > 2 && w[0] == '-' && w[1] != '-' && strings.ContainsAny(w[1:], "ef"):
-				// -eX, or a cluster such as -rne whose last letter takes
-				// the next word as the pattern.
-				patternPending = false
-				if strings.IndexAny(w[1:], "ef") == len(w)-2 {
-					skipNext = true
+			case (verb == "grep" || verb == "rg") && !endOpts && len(w) > 2 && w[0] == '-' && w[1] != '-':
+				// A short-option cluster, read letter by letter: e or f
+				// supplies the pattern, and a letter that takes a value
+				// takes the rest of the word (or the next word) as it.
+				for k := 1; k < len(w); k++ {
+					ch := w[k]
+					if ch == 'e' || ch == 'f' {
+						patternPending = false
+					}
+					if ch == 'e' || ch == 'f' || strings.IndexByte("tTgABCmMjdD", ch) >= 0 {
+						skipNext = k == len(w)-1
+						break
+					}
 				}
 			case strings.HasPrefix(w, "-") && w != "-" && !endOpts:
 				if verb == "find" {
@@ -399,12 +406,30 @@ func lex(cmd string) []token {
 	rs := []rune(cmd)
 	var quote rune
 	// heredocs are the delimiters opened on the current line; their
-	// bodies follow the line's end, and are data the shell never runs.
+	// bodies follow the line's end. A body fed to a shell is commands; a
+	// body fed to another interpreter may name files it opens; otherwise
+	// it is data, except that an unquoted delimiter lets $(...) in it run.
 	type heredoc struct {
-		delim string
-		tabs  bool
+		delim         string
+		tabs, quoted  bool
+		shell, script bool
 	}
 	var heredocs []heredoc
+	// verbOf is the first word of the command being lexed.
+	verbOf := func() string {
+		for k := len(out) - 1; k >= 0; k-- {
+			if out[k].op {
+				if k+1 < len(out) {
+					return filepath.Base(out[k+1].s)
+				}
+				return ""
+			}
+		}
+		if len(out) > 0 {
+			return filepath.Base(out[0].s)
+		}
+		return ""
+	}
 	// parens records, for each open subshell, whether it opened inside
 	// double quotes, where its close resumes the quoted word.
 	var parens []bool
@@ -440,32 +465,56 @@ func lex(cmd string) []token {
 			i++
 			cur.WriteRune(next)
 			inWord = true
-		case r == '<' && next == '<' && (i+2 >= len(rs) || rs[i+2] != '<'):
-			// <<DELIM, <<-DELIM or a quoted delimiter.
+		case r == '<' && next == '<' && i+2 < len(rs) && rs[i+2] == '<':
+			// A here-string's word is data on the same line, not a heredoc.
 			flush()
 			i += 2
-			tabs := i < len(rs) && rs[i] == '-'
-			if tabs {
+		case r == '<' && next == '<':
+			// <<DELIM, <<-DELIM, or a delimiter quoted in whole or part.
+			flush()
+			h := heredoc{}
+			if v := verbOf(); shells[v] {
+				h.shell = true
+			} else if interpreters[v] {
+				h.script = true
+			}
+			i += 2
+			if i < len(rs) && rs[i] == '-' {
+				h.tabs = true
 				i++
 			}
 			for i < len(rs) && (rs[i] == ' ' || rs[i] == '\t') {
 				i++
 			}
 			var d strings.Builder
-			for ; i < len(rs) && !strings.ContainsRune(" \t\n;|&<>()", rs[i]); i++ {
-				if rs[i] != '\'' && rs[i] != '"' && rs[i] != '\\' {
+		delim:
+			for ; i < len(rs); i++ {
+				switch c := rs[i]; {
+				case c == '\'' || c == '"':
+					h.quoted = true
+					for i++; i < len(rs) && rs[i] != c; i++ {
+						d.WriteRune(rs[i])
+					}
+				case c == '\\' && i+1 < len(rs):
+					h.quoted = true
+					i++
 					d.WriteRune(rs[i])
+				case strings.ContainsRune(" \t\n;|&<>()", c):
+					break delim
+				default:
+					d.WriteRune(c)
 				}
 			}
 			i--
-			if d.Len() > 0 {
-				heredocs = append(heredocs, heredoc{d.String(), tabs})
+			h.delim = d.String()
+			if h.delim != "" || h.quoted {
+				heredocs = append(heredocs, h)
 			}
 		case r == '\n' && len(heredocs) > 0:
 			flush()
 			op(";")
-			// Skip each body, up to the line holding only its delimiter.
 			for _, h := range heredocs {
+				var body []string
 				for i < len(rs) {
 					j := i + 1
 					k := j
@@ -479,6 +528,29 @@ func lex(cmd string) []token {
 					i = k
 					if line == h.delim {
 						break
+					}
+					body = append(body, line)
+				}
+				text := strings.Join(body, "\n")
+				switch {
+				case h.shell:
+					out = append(out, lex(text)...)
+					op(";")
+				case h.script:
+					// Read for the paths it names, not run as commands.
+					out = append(out, token{s: "skilleval-script"})
+					for _, tk := range lex(text) {
+						if !tk.op {
+							out = append(out, tk)
+						}
+					}
+					op(";")
+				case !h.quoted:
+					for _, sub := range substitutions(text) {
+						op("(")
+						out = append(out, lex(sub)...)
+						op(")")
+						op(";")
 					}
 				}
 			}
@@ -530,6 +602,43 @@ func lex(cmd string) []token {
 	}
 	flush()
 	return out
+}
+
+// shells run a heredoc's body as commands; interpreters run it as a
+// script, which may open the files it names.
+var (
+	shells       = map[string]bool{"bash": true, "sh": true, "zsh": true, "dash": true, "ksh": true}
+	interpreters = map[string]bool{"python": true, "python3": true, "node": true, "perl": true, "ruby": true}
+)
+
+// substitutions returns the commands inside each $(...) and `...` in
+// text, which the shell runs even in an unquoted heredoc's body.
+func substitutions(text string) []string {
+	var subs []string
+	rs := []rune(text)
+	for i := 0; i < len(rs); i++ {
+		switch {
+		case rs[i] == '$' && i+1 < len(rs) && rs[i+1] == '(':
+			depth, j := 1, i+2
+			for ; j < len(rs) && depth > 0; j++ {
+				if rs[j] == '(' {
+					depth++
+				} else if rs[j] == ')' {
+					depth--
+				}
+			}
+			subs = append(subs, string(rs[i+2:j-1]))
+			i = j - 1
+		case rs[i] == '`':
+			j := i + 1
+			for j < len(rs) && rs[j] != '`' {
+				j++
+			}
+			subs = append(subs, string(rs[i+1:min(j, len(rs))]))
+			i = j
+		}
+	}
+	return subs
 }
 
 // pathish is a word that names a file or directory, rather than a flag,

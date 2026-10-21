@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 )
@@ -163,7 +164,7 @@ func runOne(ctx context.Context, c config, bin, export, vdir, tasksDir, task str
 	if stat, err := noIndexDiff(fctx, dir, "--shortstat"); err == nil {
 		r.Diff = strings.TrimSpace(string(stat))
 	}
-	r.GateEdited = gateEdited(fctx, scaffoldCopy, final)
+	r.GateEdited = append(gateEdited(fctx, scaffoldCopy, final), attributesEdited(scaffoldCopy, final)...)
 	if ctx.Err() != nil {
 		return fail("interrupted before grading", ctx.Err())
 	}
@@ -315,9 +316,46 @@ func verifyPatch(ctx context.Context, dir, patchPath string) error {
 
 // gateFiles are what the scaffold's gate reads besides the code. The
 // gitleaks policy files are among them: gitleaks loads them from the
-// tree it scans, so one can widen what passes; so is .gitattributes,
-// where -diff hides a file's content from the scan.
-var gateFiles = []string{"Makefile", "GNUmakefile", "makefile", ".amadan", ".rastrillo", ".gitleaks.toml", ".gitleaksignore", ".gitattributes"}
+// tree it scans, so one can widen what passes. .gitattributes is too,
+// since -diff there hides a file's content from the scan, but it can
+// sit at any depth, so attributesEdited compares every one.
+var gateFiles = []string{"Makefile", "GNUmakefile", "makefile", ".amadan", ".rastrillo", ".gitleaks.toml", ".gitleaksignore"}
+
+// attributesEdited lists the .gitattributes files, at any depth, that
+// the final tree adds, removes or changes.
+func attributesEdited(scaffold, final string) []string {
+	collect := func(root string) map[string]string {
+		m := map[string]string{}
+		filepath.WalkDir(root, func(p string, d os.DirEntry, err error) error {
+			if err != nil || d.Name() != ".gitattributes" {
+				return nil
+			}
+			rel, _ := filepath.Rel(root, p)
+			if !d.Type().IsRegular() {
+				m[rel] = "\x00not a regular file" // never opened
+				return nil
+			}
+			b, _ := os.ReadFile(p)
+			m[rel] = string(b)
+			return nil
+		})
+		return m
+	}
+	a, b := collect(scaffold), collect(final)
+	var edited []string
+	for rel, v := range b {
+		if a[rel] != v {
+			edited = append(edited, rel)
+		}
+	}
+	for rel := range a {
+		if _, ok := b[rel]; !ok {
+			edited = append(edited, rel)
+		}
+	}
+	sort.Strings(edited)
+	return edited
+}
 
 // gateEdited lists the gate files that differ between the scaffold and
 // the final tree. Anything at those paths that is not a regular file or

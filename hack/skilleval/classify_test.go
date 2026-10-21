@@ -345,3 +345,26 @@ func TestBashRound7(t *testing.T) {
 		}
 	}
 }
+
+// Round 8: regressions in round 7's heredoc and option handling.
+func TestBashRound8(t *testing.T) {
+	c := testClassifier()
+	cases := []struct {
+		cmd  string
+		want []bucket
+	}{
+		{"cat <<< \"hello\"\ncat " + testFW + "/scheme.go", []bucket{bSource}},
+		{"cat <<EOF\n$(cat " + testFW + "/scheme.go)\nEOF", []bucket{bSource}},
+		{"bash <<'SH'\ncat " + testFW + "/scheme.go\nSH", []bucket{bSource}},
+		{"cat <<'SH'\ncat " + testFW + "/scheme.go\nSH", []bucket{bApp}},
+		{"rg -e '^ci:' -tmake " + testFW + "/Makefile", []bucket{bSource}},
+		{"grep -rne Owned " + testFW + "/scope", []bucket{bSource}},
+		{"cat <<'END NOTE'\nhello\nEND NOTE\ncat " + testFW + "/scheme.go", []bucket{bSource}},
+	}
+	for _, tc := range cases {
+		got, _ := c.touches("Bash", map[string]any{"command": tc.cmd})
+		if fmt.Sprint(got) != fmt.Sprint(tc.want) {
+			t.Errorf("Bash %q touches %v, want %v", tc.cmd, got, tc.want)
+		}
+	}
+}
