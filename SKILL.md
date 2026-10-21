@@ -400,6 +400,9 @@ is held; beside the label under reduced motion or forced colours),
 `aria-busy` and a double-submit guard by DEFAULT, cleared on back; `data-busy="false"` (form or button) opts
 out, `data-busy-label` shows words beside the spinner. Manners, not
 idempotency — the server still refuses the second write.
+`static/light.js`: the light the depth styles read (the hour on shadows, a sheen under the pointer);
+to turn it off delete it and its tag and name it in `vendoredIsMine`;
+doctor then lists it as yours and `--fix` leaves it alone.
 
 Hibernation means a `time.Ticker` is not a scheduler. Declare recurring
 work outside the app (`carlos schedule set -name sync -every 6h -path

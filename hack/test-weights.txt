@@ -17,7 +17,9 @@ browser ui TestWashWalkFindsTheSameFillAsAScan 8
 browser ui TestAchievableWeightsHaveWideGaps 6
 browser ui TestTheConsoleBarIsTheSameCard 6
 browser ui TestTheConsoleFoldsItsBarAndIndexesItsRail 6
+browser ui TestTheLightStaysWithinItsFrameBudget 6
 browser ui TestBothSpellingsComputeTheSameStyles 5
+browser ui TestReducedMotionIsTotal 5
 browser ui TestTheCalendarDocksAndItsDaysAreTaps 5
 browser ui TestTheTopbarMenuIsACardOverThePage 5
 browser ui TestSelectFollowsRequiredAndExtras 4

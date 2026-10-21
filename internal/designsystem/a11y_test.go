@@ -283,6 +283,27 @@ const paintJS = `(scheme => {
   return document.documentElement.getAttribute("data-theme") || "system";
 })`
 
+// landedJS waits out every finite animation the flip started, in the
+// page and in each same-origin frame. The nav's current item and a
+// linked media tile fade their background between schemes (0.2s and
+// 0.25s) while their text changes at once, so a scan straight after
+// paint() read dark text on a still-light ground: 1.16:1 on the
+// overview, 1.18:1 on the media grid. getAnimations() flushes style,
+// so the transitions the attribute change starts are already in the
+// list. Finite only, as the shells test's settle(): a spinner never
+// finishes, and waiting on it would hang the scan. Frames are read
+// here rather than settled one by one, because the preview test scans
+// them in sequence and each later frame was read further into the
+// same fade.
+const landedJS = `(async () => {
+  const docs = [document];
+  document.querySelectorAll("iframe").forEach(f => { try { if (f.contentDocument) docs.push(f.contentDocument); } catch (e) {} });
+  await Promise.all(docs.flatMap(d => d.getAnimations())
+    .filter(a => a.effect && a.effect.getComputedTiming().endTime !== Infinity)
+    .map(a => a.finished.catch(() => null)));
+  return true;
+})()`
+
 func paint(t *testing.T, bctx context.Context, scheme string) {
 	t.Helper()
 	var got string
@@ -292,6 +313,10 @@ func paint(t *testing.T, bctx context.Context, scheme string) {
 	}
 	if got != scheme {
 		t.Fatalf("painting %s: page reports %q", scheme, got)
+	}
+	if err := chromedp.Run(bctx, chromedp.Evaluate(landedJS, nil,
+		func(p *runtime.EvaluateParams) *runtime.EvaluateParams { return p.WithAwaitPromise(true) })); err != nil {
+		t.Fatalf("painting %s: waiting for the scheme to land: %v", scheme, err)
 	}
 }
 

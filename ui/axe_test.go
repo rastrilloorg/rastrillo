@@ -69,6 +69,7 @@ func TestVendoredAxeIsNotAShippedAsset(t *testing.T) {
 	shipped := map[string][]byte{
 		"ui.TokensCSS()":  TokensCSS(),
 		"ui.ShimJS()":     ShimJS(),
+		"ui.LightJS()":    LightJS(),
 		"ui.SelectJS()":   SelectJS(),
 		"ui.DatetimeJS()": DatetimeJS(),
 	}

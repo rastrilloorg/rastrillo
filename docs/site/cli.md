@@ -195,9 +195,9 @@ rastrillo doctor [--fix] [--force] [--theme <name>] [--probe] [dir]
 ```
 
 Compares the files `rastrillo new` copied into the app's `static/`
-directory — `tokens.css`, `theme.css`, `rastrillo.js`, `select.js` and
-`datetime.js` — against the copies this binary carries, and says which
-ones differ and how.
+directory (`tokens.css`, `theme.css`, `rastrillo.js`, `select.js`,
+`datetime.js` and `light.js`) against the copies this binary carries,
+and says which ones differ and how.
 
 It is a convenience and an upgrade tool, not the thing standing between
 your app and silent drift. That is the `vendored_test.go` the scaffold
@@ -459,7 +459,8 @@ every run that changes anything.
 ### The vendored files
 
 It never touches `static/tokens.css`, `static/theme.css`,
-`static/rastrillo.js`, `static/select.js` or `static/datetime.js`. Those
+`static/rastrillo.js`, `static/select.js`, `static/datetime.js` or
+`static/light.js`. Those
 are copies of the library's, and `doctor` is what refreshes them;
 rewriting one here would make your copy differ from the library's for
 good.

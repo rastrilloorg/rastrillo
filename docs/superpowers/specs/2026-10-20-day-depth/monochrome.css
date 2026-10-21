@@ -1,0 +1,15 @@
+/* Monochrome: evokes Linear. Near-greyscale, hairlines, accent used sparingly. */
+:root{
+  --rst-bg:light-dark(#fbfbfc,#0c0d0f); --rst-surface:light-dark(#ffffff,#141518); --rst-surface-2:light-dark(#f3f3f5,#18191d);
+  --rst-line:light-dark(#e6e6ea,#26282e); --rst-line-strong:light-dark(#8a8a95,#71737c);
+  --rst-text:light-dark(#18181b,#ededf0); --rst-text-muted:light-dark(#52525c,#a1a1aa); --rst-text-faint:light-dark(#6b6b75,#8c8c96);
+  --rst-accent:light-dark(#4f5cc9,#8e97f2); --rst-accent-strong:light-dark(#3d49b0,#b0b7f7); --rst-accent-soft:light-dark(#eef0fb,#1c1f36); --rst-on-accent:light-dark(#ffffff,#0c0d0f);
+  --rst-radius:6px; --rst-radius-sm:5px;
+}
+[rst-shell-rail]{background:var(--rst-bg)!important;}
+[rst-shell-nav] a[aria-current]{background:var(--rst-surface-2)!important;color:var(--rst-text)!important;font-weight:550;}
+[rst-page-header]{border-bottom:1px solid var(--rst-line)!important;}
+[rst-page-header] h1{font-size:1.25rem;letter-spacing:-0.012em;font-weight:600;}
+[rst-box-head] h2{font-size:.8125rem;font-weight:600;}
+[rst-stat-label]{text-transform:none;letter-spacing:0;font-weight:500;color:var(--rst-text-muted);}
+[rst-box]{box-shadow:none;}

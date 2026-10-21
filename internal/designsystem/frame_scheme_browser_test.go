@@ -588,3 +588,97 @@ func readFrame(t *testing.T, ctx context.Context, where string, r *frameReading)
 }
 
 var firstFrame = regexp.MustCompile(`<iframe class="ds-view__frame"[^>]*\ssrc="([^"]+)"`)
+
+// galleryFlipReadJS reads, on the next animation frame, the scheme and
+// the rail's current item's computed background: the item the gallery
+// paints with the theme's nav thumb, whose background fades between
+// schemes while its text changes at once. A frame later with "later",
+// for the OS flip, which reaches script a frame after the style update
+// that starts the fade (see ui's TestASchemeFlipLandsOnTheNextFrame).
+func galleryFlipReadJS(later bool) string {
+	read := `new Promise(r => requestAnimationFrame(() => r(JSON.stringify({
+	  Theme: document.documentElement.getAttribute("data-theme") || "",
+	  Nav: getComputedStyle(document.querySelector(".ds-nav__page[aria-current]")).backgroundColor
+	}))))`
+	if later {
+		return `new Promise(r => requestAnimationFrame(() => r(` + read + `)))`
+	}
+	return read
+}
+
+// The gallery's own switch lands a scheme flip in the frame it happens
+// in, as an app's does (ui's TestASchemeFlipLandsOnTheNextFrame): the
+// rail's current item read on the very next frame is already at the
+// value it settles to. Through the OS flipping under System, a frame
+// later.
+func TestTheGallerySwitchLandsOnTheNextFrame(t *testing.T) {
+	rig := harness.New(t, func(string) http.Handler { return treeHandler(t) })
+	ctx, cancel := context.WithTimeout(rig.Context(), 90*time.Second)
+	defer cancel()
+	where := "the overview at 1280px"
+	os := func(scheme string) chromedp.Action {
+		return emulation.SetEmulatedMedia().WithFeatures([]*emulation.MediaFeature{{Name: "prefers-color-scheme", Value: scheme}})
+	}
+	if err := chromedp.Run(ctx, os("light"), chromedp.EmulateViewport(1280, 900),
+		chromedp.Navigate(rig.Origin+indexHref(mountPath, RootTheme(), "en")),
+		chromedp.WaitReady(`body`, chromedp.ByQuery)); err != nil {
+		t.Fatalf("%s: loading: %v", where, err)
+	}
+	// The bar's buttons, not the phone menu's copy of them, which is
+	// first in the document and hidden at this width.
+	until(t, ctx, where, `document.readyState === "complete" && !!document.querySelector(".ds-nav__page[aria-current]") && [...document.querySelectorAll('[data-ds-scheme="dark"]')].some(b => b.checkVisibility())`)
+	type state struct{ Theme, Nav string }
+	read := func(leg, js string) state {
+		t.Helper()
+		var raw string
+		if err := chromedp.Run(ctx, chromedp.Evaluate(js, &raw, awaitPromise)); err != nil {
+			t.Fatalf("%s, %s: %v", where, leg, err)
+		}
+		var got state
+		if err := json.Unmarshal([]byte(raw), &got); err != nil {
+			t.Fatalf("%s, %s: decoding %q: %v", where, leg, raw, err)
+		}
+		return got
+	}
+	choose := func(scheme string) state {
+		t.Helper()
+		return read("choosing "+scheme, `(() => { [...document.querySelectorAll('[data-ds-scheme="`+scheme+`"]')].find(b => b.checkVisibility()).click(); return `+galleryFlipReadJS(false)+`; })()`)
+	}
+	landed := func(leg string) state {
+		t.Helper()
+		got := read(leg, `(async () => { await Promise.all(document.getAnimations().filter(a => a.effect && a.effect.getComputedTiming().endTime !== Infinity).map(a => a.finished.catch(() => null))); return await `+galleryFlipReadJS(false)+`; })()`)
+		t.Logf("%s, %s, landed: %+v", where, leg, got)
+		return got
+	}
+	check := func(leg string, got state, theme, nav string) {
+		t.Helper()
+		if got.Theme != theme {
+			t.Fatalf("%s, %s: data-theme %q, want %q", where, leg, got.Theme, theme)
+		}
+		if got.Nav != nav {
+			t.Errorf("%s, %s: the current item is %s on the next frame; settled it is %s. The flip faded instead of landing.", where, leg, got.Nav, nav)
+		}
+	}
+	choose("dark")
+	dark := landed("Dark chosen")
+	choose("light")
+	light := landed("Light chosen")
+	if dark.Nav == light.Nav {
+		t.Fatalf("%s: the current item does not change with the scheme: %s", where, dark.Nav)
+	}
+	check("Light to Dark by the switch", choose("dark"), "dark", dark.Nav)
+	landed("after Dark")
+	check("Dark to Light by the switch", choose("light"), "light", light.Nav)
+	landed("after Light")
+	check("System chosen", choose("system"), "", light.Nav)
+	landed("System, OS light")
+	if err := chromedp.Run(ctx, os("dark")); err != nil {
+		t.Fatalf("%s: flipping the OS: %v", where, err)
+	}
+	check("System, OS light to dark", read("OS dark", galleryFlipReadJS(true)), "", dark.Nav)
+	landed("System, OS dark")
+	if err := chromedp.Run(ctx, os("light")); err != nil {
+		t.Fatalf("%s: flipping the OS back: %v", where, err)
+	}
+	check("System, OS dark to light", read("OS light", galleryFlipReadJS(true)), "", light.Nav)
+}

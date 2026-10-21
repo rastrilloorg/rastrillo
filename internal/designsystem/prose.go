@@ -962,6 +962,19 @@ var prose = map[string]map[string]string{
 		`vi`:      `Bảng màu`,
 		`ar`:      `نظام الألوان`,
 	},
+	`Controls`: {
+		`ga`:      `Controls`,
+		`zh-Hans`: `Controls`,
+		`es`:      `Controls`,
+		`hi`:      `Controls`,
+		`pt-PT`:   `Controls`,
+		`bn`:      `Controls`,
+		`ru`:      `Controls`,
+		`ja`:      `Controls`,
+		`yue`:     `Controls`,
+		`vi`:      `Controls`,
+		`ar`:      `Controls`,
+	},
 	`Commit the start with the end still empty and the browser fills the end in an hour later. Nothing is seeded server-side.`: {
 		`ga`:      `Socraigh an tús agus an deireadh fós folamh, agus líonann an brabhsálaí an deireadh isteach uair an chloig ina dhiaidh. Ní chuirtear aon rud ann ón bhfreastalaí.`,
 		`zh-Hans`: `在结束时间还空着的时候确定开始时间，浏览器会把结束填成一小时之后。服务器端没有预填任何值。`,
@@ -3380,6 +3393,19 @@ var prose = map[string]map[string]string{
 		`vi`:      `Họ chữ`,
 		`ar`:      `عائلة الخط`,
 	},
+	`Type choices`: {
+		`ga`:      `Type choices`,
+		`zh-Hans`: `Type choices`,
+		`es`:      `Type choices`,
+		`hi`:      `Type choices`,
+		`pt-PT`:   `Type choices`,
+		`bn`:      `Type choices`,
+		`ru`:      `Type choices`,
+		`ja`:      `Type choices`,
+		`yue`:     `Type choices`,
+		`vi`:      `Type choices`,
+		`ar`:      `Type choices`,
+	},
 	`Type scale`: {
 		`ga`:      `Scála cló`,
 		`zh-Hans`: `字号级数`,
@@ -4602,6 +4628,23 @@ var prose = map[string]map[string]string{
 		`vi`:      `Quy tắc bận: khi biểu mẫu đang gửi, nút của nó hiện vòng quay ít nhất 650ms và từ chối lần gửi thứ hai; quay lại thì nút trở về như cũ. Mọi ứng dụng được tạo khung đều nhận nó.`,
 		`ar`:      `قاعدة الانشغال: أثناء إرسال النموذج يُظهر زرّه مؤشر تحميل مدةً لا تقل عن 650 ملّي ثانية ويرفض إرسالًا ثانيًا، والرجوع يعيده كما كان. يتسلّمها كل تطبيق مولَّد.`,
 	},
+	// English in every locale until the sentence is approved (day-depth
+	// Task 10; proseDrafts holds the key, and the ledger entry is
+	// gallery.asset.light). Translating a draft would cost eleven
+	// redrafts the day Paul changes a word.
+	`The light the depth styles read: shadows lit by the hour, and a sheen on the button under the pointer. Delete it for the still design.`: {
+		`ga`:      `The light the depth styles read: shadows lit by the hour, and a sheen on the button under the pointer. Delete it for the still design.`,
+		`zh-Hans`: `The light the depth styles read: shadows lit by the hour, and a sheen on the button under the pointer. Delete it for the still design.`,
+		`es`:      `The light the depth styles read: shadows lit by the hour, and a sheen on the button under the pointer. Delete it for the still design.`,
+		`hi`:      `The light the depth styles read: shadows lit by the hour, and a sheen on the button under the pointer. Delete it for the still design.`,
+		`pt-PT`:   `The light the depth styles read: shadows lit by the hour, and a sheen on the button under the pointer. Delete it for the still design.`,
+		`bn`:      `The light the depth styles read: shadows lit by the hour, and a sheen on the button under the pointer. Delete it for the still design.`,
+		`ru`:      `The light the depth styles read: shadows lit by the hour, and a sheen on the button under the pointer. Delete it for the still design.`,
+		`ja`:      `The light the depth styles read: shadows lit by the hour, and a sheen on the button under the pointer. Delete it for the still design.`,
+		`yue`:     `The light the depth styles read: shadows lit by the hour, and a sheen on the button under the pointer. Delete it for the still design.`,
+		`vi`:      `The light the depth styles read: shadows lit by the hour, and a sheen on the button under the pointer. Delete it for the still design.`,
+		`ar`:      `The light the depth styles read: shadows lit by the hour, and a sheen on the button under the pointer. Delete it for the still design.`,
+	},
 	`Phone navigation for the sidebar and console shells: the slide between pages, Back that reuses history, and focus returned to the section you left. Deletable on its own.`: {
 		`ga`:      `Nascleanúint fóin do na blaoscanna sidebar agus console: an sleamhnán idir leathanaigh, Siar a athúsáideann an stair, agus an fócas ar ais ar an rannán a d'fhág tú. Inscriosta leis féin.`,
 		`zh-Hans`: `sidebar 和 console 外壳的手机导航：页面之间的滑动切换、复用浏览历史的“返回”，以及把焦点还给你离开的那个栏目。可以单独删除。`,
@@ -5289,4 +5332,13 @@ var prose = map[string]map[string]string{
 // them, so it leaves these out. TestProseDraftsAreStillDrafts holds
 // every entry here to being exactly that, so the day a key is
 // translated its entry has to go: the set cannot outlive the debt.
-var proseDrafts = map[string]bool{}
+var proseDrafts = map[string]bool{
+	// The depth axis's two token groups on the Tokens page (day-depth
+	// Task 1). English until Paul approves the headings; their ledger
+	// entries are gallery.group.controls and gallery.group.type.
+	`Controls`:     true,
+	`Type choices`: true,
+	// The assets page's blurb for light.js (day-depth Task 10); its
+	// ledger entry is gallery.asset.light.
+	`The light the depth styles read: shadows lit by the hour, and a sheen on the button under the pointer. Delete it for the still design.`: true,
+}

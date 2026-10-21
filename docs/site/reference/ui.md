@@ -532,7 +532,7 @@ which clears the floor by 49%.
 evenly spaced hues clear the floor up to **seventeen** and fail at
 eighteen. **Sixteen is what we would recommend**, though, and the gap
 between those two numbers is the reason: seventeen clears by 1.9% and
-sixteen by 7.3%, and 1.9% is inside the range a new theme surface or a
+sixteen by 7.8%, and 1.9% is inside the range a new theme surface or a
 tweak to the palette could move. Seventeen is the measurement; sixteen is
 the one with room in it. Run `WorstSeparation` against your own canvas
 before relying on either — a dark paper we have never seen is exactly the
@@ -652,7 +652,18 @@ the busy rule: every submit button's label gives way to a spinner for
 at least 650ms, the button disables and the form refuses a second
 submit, and Back hands the form back — by default, with
 `data-busy="false"` as the opt-out and `data-busy-label` as the label
-swap. Linking it is the whole opt-in. `SelectJS` backs the enhanced select: it mirrors a
+swap. Linking it is the whole opt-in.
+
+`LightJS` is `light.js`, the light the depth styles read: it sets
+`--rst-light-x` and `--rst-light-y` from the hour (its `FOLLOW` flag,
+off, eases them toward the pointer instead, at most five times a
+second); writes the pointer's and a press's position on the button under
+it; and lets a card's rim brighten near the pointer. Every property has a
+default the stylesheet carries, so an app can delete the file and its
+tag, naming it in `vendoredIsMine`. It never captures the pointer, reads
+no sensor, and does not run under reduced motion or forced colours.
+
+`SelectJS` backs the enhanced select: it mirrors a
 `<select>` carrying `data-rst-select` as a
 filterable ARIA combobox, renders any `<optgroup>`s as labelled
 `role="group"`s rather than flattening them, and never touches one

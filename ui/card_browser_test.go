@@ -154,8 +154,11 @@ func TestTheTopbarMenuIsACardOverThePage(t *testing.T) {
 				if gap < 0 || gap > 12+1 {
 					t.Errorf("the card's inline-end edge is %.1fpx from the viewport's, want within 0.75rem + 1px", gap)
 				}
-				if soft := resolvedColor(t, ctx, "--rst-accent-soft"); open.CurBg != soft || open.CurShadow != "none" || open.CurStart != "0px" || open.CurEnd != "0px" {
-					t.Errorf("the current item is bg %s shadow %s border-start %s border-end %s; want %s, none, 0, 0", open.CurBg, open.CurShadow, open.CurStart, open.CurEnd, soft)
+				// The current item wears the nav thumb: the theme's current
+				// fill and the thumb's shadow layers (transparent in a flat
+				// theme), never the rail's border marks.
+				if fill := resolvedColor(t, ctx, "--rst-nav-current-bg, var(--rst-accent-soft)"); open.CurBg != fill || open.CurStart != "0px" || open.CurEnd != "0px" {
+					t.Errorf("the current item is bg %s border-start %s border-end %s; want %s, 0, 0", open.CurBg, open.CurStart, open.CurEnd, fill)
 				}
 				// The premise of the no-script leg: rastrillo.js would close
 				// the card on Escape, so a card that survives one proves no

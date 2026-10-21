@@ -294,6 +294,11 @@
     }
   }, true);
 
+  // iOS applies :active on a tap only when a touch listener exists. This
+  // file owns the listener, not light.js, so an app that deletes
+  // light.js keeps its pressed states.
+  document.addEventListener("touchstart", function () {}, { passive: true });
+
   // The colour-scheme switch's forms ([rst-scheme], POST /_theme) apply
   // here instead of round-tripping: data-theme on <html> is what the
   // themes read, and the cookie is the server's own (name, path, age,
@@ -304,11 +309,33 @@
     if (!s) return;
     e.preventDefault();
     if (on) document.documentElement.setAttribute("data-theme", s); else document.documentElement.removeAttribute("data-theme");
+    land();
     document.cookie = "rastrillo_scheme=" + (on ? s + "; Max-Age=31536000" : "; Max-Age=0") + "; Path=/; SameSite=Lax" + (location.protocol === "https:" ? "; Secure" : "");
     // Not toggleAttribute: aria-current="" reads as false.
     m.querySelectorAll("button").forEach(function (b) { if (b.form === f) b.setAttribute("aria-current", "true"); else b.removeAttribute("aria-current"); });
     m.open = false;
   }, true);
+
+  // A scheme change lands in the frame it happens in. At rest nothing
+  // fades its background (the rail items', rows' and tiles' fades sit
+  // on their hover rules, so an app's own switch lands with no help);
+  // a hovered item's fade is running, and a change of scheme retargets
+  // it while the text changes at once: a tenth of a second of new text
+  // on the old scheme's ground after the click. getAnimations() flushes
+  // style, which starts the transitions, and cancelling one lands it
+  // on its end value. Transitions only, told by transitionProperty:
+  // cancelling an animation would stop a spinner for good.
+  function land() {
+    if (!document.getAnimations) return;
+    document.getAnimations().forEach(function (a) { if (typeof a.transitionProperty === "string") a.cancel(); });
+  }
+
+  // The OS flipping under a page on System is the same change with no
+  // click: light-dark() repaints with no script involved. The change
+  // event reaches script a frame after the style update that started
+  // the fade, so this lands it a frame late rather than 200ms late.
+  var osScheme = window.matchMedia && matchMedia("(prefers-color-scheme: dark)");
+  if (osScheme) osScheme.onchange = function () { if (!document.documentElement.hasAttribute("data-theme")) land(); };
 
   function scan() {
     document.querySelectorAll("[data-poll]").forEach(poll);

@@ -166,6 +166,14 @@ func themeTokens(t *testing.T, theme string) map[string]map[string]string {
 	if len(declared) == 0 {
 		t.Fatalf("%s declares no --rst- properties in its :root block", where)
 	}
+	// day redeclares its hue-derived tokens inside an @supports block
+	// for relative colour (derived_test.go). Those are what a current
+	// engine paints, so they win here, as they do in the cascade.
+	if body, _ := accentSupportsBlock(css); body != "" {
+		for name, v := range parseTokens(body) {
+			declared[name] = v
+		}
+	}
 
 	light := make(map[string]string, len(declared))
 	dark := make(map[string]string, len(declared))
@@ -271,11 +279,12 @@ func TestThemeTokenContrastMeetsWCAG(t *testing.T) {
 	// --rst-header-rule is deliberately absent. The page header's rule
 	// is decorative and carries no contrast floor (design doc §6-v2.2):
 	// the heading's size, weight and spacing carry the structure, the
-	// rule does not, so 1.4.11's 3:1 was never its bar. day and signal
-	// tint it with the accent at 18% and 45%, which on a light surface
-	// is under 3:1 by construction. That is not a defect and must not be
-	// "fixed" by adding a row here — the ruling says so in writing
-	// precisely so this argument has already been answered.
+	// rule does not, so 1.4.11's 3:1 was never its bar. signal tints it
+	// with the accent at 45%, which on a light surface is under 3:1 by
+	// construction; day and plain make it the line, which is a hairline
+	// divider and carries no floor either. That is not a defect and
+	// must not be "fixed" by adding a row here — the ruling says so in
+	// writing precisely so this argument has already been answered.
 	pairs := []pair{
 		{"--rst-text", "--rst-surface", 4.5, "body text on a card"},
 		{"--rst-text", "--rst-bg", 4.5, "body text"},
@@ -322,11 +331,39 @@ func TestThemeTokenContrastMeetsWCAG(t *testing.T) {
 		// dedicated --rst-danger-* pair. This is the real pair the danger
 		// button's label renders against, so it belongs in the gate anyway.
 		{"--rst-on-accent", "--rst-tone-negative-fg", 4.5, "danger button label"},
+		// The depth axis's pairs (spec C3, C5, A2). Filled controls read
+		// their own fill now, so the label pairs are these; the old
+		// --rst-on-accent on --rst-accent rows stay for the places still
+		// painted with the accent itself.
+		{"--rst-on-accent-fill", "--rst-accent-fill", 4.5, "primary button label"},
+		{"--rst-on-accent-fill", "--rst-accent-fill-hover", 4.5, "primary button label, hover"},
+		{"--rst-on-danger-fill", "--rst-danger-fill", 4.5, "danger button label"},
+		{"--rst-on-danger-fill-hover", "--rst-danger-fill-hover", 4.5, "danger button label, hover"},
+		{"--rst-text", "--rst-row-tint-hover", 4.5, "a list-row-action's text, hovered"},
+		{"--rst-text", "--rst-row-tint-press", 4.5, "a list-row-action's text, pressed"},
+		{"--rst-control-text-hover", "--rst-control-face-hover", 4.5, "plain button label, hover"},
+		{"--rst-text-muted", "--rst-control-face-hover", 4.5, "a muted label on a hovered plain face"},
+		{"--rst-text", "--rst-tint-hover", 4.5, "row text on the hover tint"},
+		{"--rst-text", "--rst-tint-press", 4.5, "row text on the press tint"},
+		{"--rst-text-muted", "--rst-tint-hover", 4.5, "a row's muted cell on the hover tint"},
+		{"--rst-text-muted", "--rst-tint-press", 4.5, "a row's muted cell on the press tint"},
+		{"--rst-text-faint", "--rst-tint-hover", 4.5, "a row's faint cell on the hover tint"},
+		{"--rst-text-faint", "--rst-tint-press", 4.5, "a row's faint cell on the press tint"},
+		{"--rst-accent", "--rst-tint-hover", 4.5, "a link on a hovered row"},
+		{"--rst-nav-current-fg", "--rst-nav-current-bg", 4.5, "the current nav item"},
+		{"--rst-track-off", "--rst-surface", 3.0, "switch off track (1.4.11 boundary)"},
+		{"--rst-track-off", "--rst-bg", 3.0, "switch off track on the page"},
+		{"--rst-knob-shade", "--rst-track-off", 3.0, "switch knob on the off track"},
+		{"--rst-knob-shade", "--rst-accent-fill", 3.0, "switch knob on the on track"},
 	}
 
 	for _, theme := range ThemeNames() {
 		for _, scheme := range []string{"light", "dark"} {
-			tokens := themeTokens(t, theme)[scheme]
+			// Resolved, not declared: day derives its fills, tints and
+			// soft ground from the accent (derived_test.go), and a pair
+			// that names one of those is gated on what the derivation
+			// lands on, held to Chromium's pixels by the browser suite.
+			tokens := resolvedTokens(t, theme)[scheme]
 			t.Run(theme+"/"+scheme, func(t *testing.T) {
 				for _, p := range pairs {
 					if colorMixSkip[p.fg] || colorMixSkip[p.bg] {
@@ -348,6 +385,12 @@ func TestThemeTokenContrastMeetsWCAG(t *testing.T) {
 						t.Errorf("%s (%s) on %s (%s): %v — add to colorMixSkip if this is a value the parser cannot evaluate", p.fg, fgVal, p.bg, bgVal, err)
 						continue
 					}
+					// Logged in every run, so `go test -v -run
+					// TestThemeTokenContrastMeetsWCAG` prints the whole
+					// table a theme's header comment copies: the rows
+					// there are transcribed from here, never computed
+					// by hand.
+					t.Logf("%s on %s = %.2f", p.fg, p.bg, ratio)
 					if ratio < p.min {
 						t.Errorf("%s (%s) on %s (%s) = %.2f:1, want >= %.1f:1 (%s)", p.fg, fgVal, p.bg, bgVal, ratio, p.min, p.why)
 					}

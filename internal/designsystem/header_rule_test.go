@@ -160,6 +160,12 @@ func TestColourValueRecognisesADerivedColour(t *testing.T) {
 		"var(--rst-line)",
 		"color-mix(in oklab, var(--rst-accent) 18%, var(--rst-line))",
 		"color-mix(in oklab, var(--rst-accent) 45%, var(--rst-line))",
+		// day's accent derivations (Task 11b): a hue taken from the
+		// accent, a mix whose source carries a fallback, and a bare
+		// var() with a light-dark() fallback.
+		"oklch(from var(--rst-accent, #1f56d6) 0.513 0.21 h)",
+		"color-mix(in srgb, var(--rst-accent, #1f56d6) 4.5%, var(--rst-surface))",
+		"var(--rst-accent, light-dark(#1f56d6, #7aa2ff))",
 	} {
 		if !colourValue.MatchString(v) {
 			t.Errorf("colourValue does not match %q, so the Tokens page would draw its row with no swatch", v)
