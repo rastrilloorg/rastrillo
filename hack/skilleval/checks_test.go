@@ -153,6 +153,18 @@ func TestChecks(t *testing.T) {
 			"internal/app/templates/photos.htm": "{{template \"media-grid\" .}}\n",
 			"internal/app/handlers.go":          "package app\n\nfunc store() { s := blobs.Dir(root) }\n",
 		}, true},
+		// Round 7: division by a property named like a keyword, comments
+		// inside a template's style and script, and a raw-string key.
+		{"scheme comment after division by .in", "scheme", map[string]string{
+			"internal/app/static/s.js": "const half = stats.in / 2; // do not use localStorage\n",
+		}, true},
+		{"photos with a note in an inline style", "media-grid", map[string]string{
+			"internal/app/templates/photos.html": "<style>/* Use media-grid; do not add grid-template-columns here. */</style>\n{{template \"media-grid\" .}}\n",
+			"internal/app/handlers.go":           "package app\n\nfunc store() { s := blobs.Dir(root) }\n",
+		}, true},
+		{"scheme passed with a raw-string key", "scheme", map[string]string{
+			"internal/app/render.go": "package app\n\nfunc render() { page := map[string]any{`Scheme`: req.Scheme} }\n",
+		}, true},
 		{"scheme data-theme traded for a toggle", "scheme", map[string]string{
 			"internal/app/templates/layout.html": "<html>\n{{template \"scheme-menu\" .}}\n<script>localStorage.setItem('t','dark')</script>\n</html>\n",
 		}, false},
