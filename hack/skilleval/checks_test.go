@@ -158,12 +158,25 @@ func TestChecks(t *testing.T) {
 		{"scheme comment after division by .in", "scheme", map[string]string{
 			"internal/app/static/s.js": "const half = stats.in / 2; // do not use localStorage\n",
 		}, true},
-		{"photos with a note in an inline style", "media-grid", map[string]string{
-			"internal/app/templates/photos.html": "<style>/* Use media-grid; do not add grid-template-columns here. */</style>\n{{template \"media-grid\" .}}\n",
-			"internal/app/handlers.go":           "package app\n\nfunc store() { s := blobs.Dir(root) }\n",
-		}, true},
 		{"scheme passed with a raw-string key", "scheme", map[string]string{
 			"internal/app/render.go": "package app\n\nfunc render() { page := map[string]any{`Scheme`: req.Scheme} }\n",
+		}, true},
+		// Round 8: an upload field's accept="image/*" is markup, not a
+		// comment; a raw-string key in an assignment; and a space before
+		// a property named like a keyword.
+		{"photos after an image/* upload field", "media-grid", map[string]string{
+			"internal/app/templates/photos.html": "<input type=\"file\" accept=\"image/*\">\n{{template \"media-grid\" .}}\n",
+			"internal/app/handlers.go":           "package app\n\nfunc store() { s := blobs.Dir(root) }\n",
+		}, true},
+		{"photos grid hand-made after an image/* field", "media-grid", map[string]string{
+			"internal/app/templates/photos.html": "{{template \"media-grid\" .}}\n<input type=\"file\" accept=\"image/*\">\n<style>.g { grid-template-columns: repeat(4, 1fr) }</style>\n",
+			"internal/app/handlers.go":           "package app\n\nfunc store() { s := blobs.Dir(root) }\n",
+		}, false},
+		{"scheme assigned with a raw-string key", "scheme", map[string]string{
+			"internal/app/render.go": "package app\n\nfunc render() { page[`Scheme`] = req.Scheme }\n",
+		}, true},
+		{"scheme comment after division by a spaced property", "scheme", map[string]string{
+			"internal/app/static/s.js": "const half = stats. in / 2; // do not use localStorage\n",
 		}, true},
 		{"scheme data-theme traded for a toggle", "scheme", map[string]string{
 			"internal/app/templates/layout.html": "<html>\n{{template \"scheme-menu\" .}}\n<script>localStorage.setItem('t','dark')</script>\n</html>\n",

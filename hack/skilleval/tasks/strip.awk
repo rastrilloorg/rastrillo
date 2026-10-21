@@ -23,8 +23,9 @@ NR == 1 {
 		# any whitespace may follow.
 		bo[++nb] = "\\{\\{(-[ \t\r\n]+)?/\\*"; bc[nb] = "*/"; bt[nb] = "tmpl"
 		bo[++nb] = "<!--"; bc[nb] = "-->"; bt[nb] = ""
-		# Comments in inline <style> and <script>.
-		bo[++nb] = "/\\*"; bc[nb] = "*/"; bt[nb] = ""
+		# /* */ inside an inline <style> or <script> is left in: across
+		# a whole template it also matched accept="image/*" and swallowed
+		# the markup after it.
 	}
 	if (ext ~ /^(toml|sh|yaml|yml|py|mk)$/ || path ~ /(^|\/)Makefile$/) lc = "#"
 	if (ext == "sql") lc = "--"
@@ -82,6 +83,8 @@ function strip(t,    r, i, k, best, which, wlen, endc, q, j, c, ch, pre, cls, of
 				if (substr(t, i, 2) == "//" || substr(t, i, 2) == "/*") break
 				pre = r substr(t, 1, i - 1); sub(/[ \t]+$/, "", pre)
 				if (pre ~ /(\+\+|--)$/) continue
+				# A keyword's name after a dot is a property, and divides.
+				if (pre ~ /\.[ \t]*(return|typeof|case|do|else|in|of|new|delete|void|throw|yield|await)$/) continue
 				# After these keywords a value starts, so / opens a regex.
 				if (pre ~ /(^|[^A-Za-z0-9_$.])(return|typeof|case|do|else|in|of|new|delete|void|throw|yield|await)$/) { best = i; which = "regex"; break }
 				if (pre == "" || substr(pre, length(pre), 1) ~ /[(,=:[!&|?{};+*%<>~^-]/) { best = i; which = "regex"; break }
