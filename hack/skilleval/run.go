@@ -344,7 +344,7 @@ func attributesEdited(scaffold, final string) []string {
 	a, b := collect(scaffold), collect(final)
 	var edited []string
 	for rel, v := range b {
-		if a[rel] != v {
+		if old, ok := a[rel]; !ok || old != v {
 			edited = append(edited, rel)
 		}
 	}

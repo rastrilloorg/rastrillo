@@ -368,3 +368,42 @@ func TestBashRound8(t *testing.T) {
 		}
 	}
 }
+
+// Round 9: no command may panic the classifier, a child shell's cd is
+// its own, wrappers and assignments are not the command, and arities
+// differ between grep and rg.
+func TestBashRound9(t *testing.T) {
+	c := testClassifier()
+	cases := []struct {
+		cmd  string
+		want []bucket
+	}{
+		{"cat <<EOF\n\\$(\nEOF", []bucket{bApp}},
+		{"cat <<EOF\n$(\nEOF", []bucket{bApp}},
+		{"env python3 <<'PY'\nprint(open(\"" + testFW + "/scheme.go\").read())\nPY", []bucket{bSource}},
+		{"LC_ALL=C bash <<'SH'\ncat " + testFW + "/scheme.go\nSH", []bucket{bSource}},
+		{"bash -c cat <<'SH'\ncat " + testFW + "/scheme.go\nSH", []bucket{bApp}},
+		{"sh <<SH\nprintf '%s\\n' '$(head -n 1 " + testFW + "/scheme.go)'\nSH", []bucket{bSource}},
+		{"cat <<EOF\n$(grep -F ')' " + testFW + "/scheme.go)\nEOF", []bucket{bSource}},
+		{"python3 <<'PY'\np=\"" + testFW + "/scheme.go\"\nprint(open(p).read())\nPY", []bucket{bSource}},
+		{"cat <<< \"" + testFW + "/scheme.go\"", []bucket{bApp}},
+		{"grep -nT Scheme " + testFW + "/scheme.go", []bucket{bSource}},
+	}
+	for _, tc := range cases {
+		got, _ := c.touches("Bash", map[string]any{"command": tc.cmd})
+		if fmt.Sprint(got) != fmt.Sprint(tc.want) {
+			t.Errorf("Bash %q touches %v, want %v", tc.cmd, got, tc.want)
+		}
+	}
+	// A child shell's cd does not move its parent.
+	bash := func(id, cmd string) string {
+		return `{"type":"assistant","message":{"content":[{"type":"tool_use","id":"` + id + `","name":"Bash","input":{"command":` + strconv.Quote(cmd) + `}}]}}`
+	}
+	tally, err := tallyTranscript(strings.NewReader(bash("t1", "bash <<'SH'\ncd internal\nSH\ncat ../../../rastrillo/scheme.go")), c)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if tally.Touched[bSource] != 1 {
+		t.Errorf("touched = %v, want the parent's relative read counted as source", tally.Touched)
+	}
+}
