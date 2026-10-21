@@ -315,8 +315,9 @@ func verifyPatch(ctx context.Context, dir, patchPath string) error {
 
 // gateFiles are what the scaffold's gate reads besides the code. The
 // gitleaks policy files are among them: gitleaks loads them from the
-// tree it scans, so one can widen what passes.
-var gateFiles = []string{"Makefile", "GNUmakefile", "makefile", ".amadan", ".rastrillo", ".gitleaks.toml", ".gitleaksignore"}
+// tree it scans, so one can widen what passes; so is .gitattributes,
+// where -diff hides a file's content from the scan.
+var gateFiles = []string{"Makefile", "GNUmakefile", "makefile", ".amadan", ".rastrillo", ".gitleaks.toml", ".gitleaksignore", ".gitattributes"}
 
 // gateEdited lists the gate files that differ between the scaffold and
 // the final tree. Anything at those paths that is not a regular file or

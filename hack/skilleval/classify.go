@@ -305,6 +305,15 @@ func (c classifier) bashTouches(cmd string) (bs []bucket, stale bool, end string
 				skipNext = false
 			case w == "--" && !endOpts:
 				endOpts = true
+			case (verb == "grep" || verb == "rg") && !endOpts && (strings.HasPrefix(w, "--regexp=") || strings.HasPrefix(w, "--file=")):
+				patternPending = false // the pattern came attached to its option
+			case (verb == "grep" || verb == "rg") && !endOpts && len(w) > 2 && w[0] == '-' && w[1] != '-' && strings.ContainsAny(w[1:], "ef"):
+				// -eX, or a cluster such as -rne whose last letter takes
+				// the next word as the pattern.
+				patternPending = false
+				if strings.IndexAny(w[1:], "ef") == len(w)-2 {
+					skipNext = true
+				}
 			case strings.HasPrefix(w, "-") && w != "-" && !endOpts:
 				if verb == "find" {
 					// -H, -L, -P and -O<n> come before find's paths; any
@@ -389,6 +398,13 @@ func lex(cmd string) []token {
 	op := func(s string) { out = append(out, token{s: s, op: true}) }
 	rs := []rune(cmd)
 	var quote rune
+	// heredocs are the delimiters opened on the current line; their
+	// bodies follow the line's end, and are data the shell never runs.
+	type heredoc struct {
+		delim string
+		tabs  bool
+	}
+	var heredocs []heredoc
 	// parens records, for each open subshell, whether it opened inside
 	// double quotes, where its close resumes the quoted word.
 	var parens []bool
@@ -424,6 +440,49 @@ func lex(cmd string) []token {
 			i++
 			cur.WriteRune(next)
 			inWord = true
+		case r == '<' && next == '<' && (i+2 >= len(rs) || rs[i+2] != '<'):
+			// <<DELIM, <<-DELIM or a quoted delimiter.
+			flush()
+			i += 2
+			tabs := i < len(rs) && rs[i] == '-'
+			if tabs {
+				i++
+			}
+			for i < len(rs) && (rs[i] == ' ' || rs[i] == '\t') {
+				i++
+			}
+			var d strings.Builder
+			for ; i < len(rs) && !strings.ContainsRune(" \t\n;|&<>()", rs[i]); i++ {
+				if rs[i] != '\'' && rs[i] != '"' && rs[i] != '\\' {
+					d.WriteRune(rs[i])
+				}
+			}
+			i--
+			if d.Len() > 0 {
+				heredocs = append(heredocs, heredoc{d.String(), tabs})
+			}
+		case r == '\n' && len(heredocs) > 0:
+			flush()
+			op(";")
+			// Skip each body, up to the line holding only its delimiter.
+			for _, h := range heredocs {
+				for i < len(rs) {
+					j := i + 1
+					k := j
+					for k < len(rs) && rs[k] != '\n' {
+						k++
+					}
+					line := string(rs[j:k])
+					if h.tabs {
+						line = strings.TrimLeft(line, "\t")
+					}
+					i = k
+					if line == h.delim {
+						break
+					}
+				}
+			}
+			heredocs = nil
 		case r == '\n' || r == ';':
 			flush()
 			op(";")

@@ -323,3 +323,25 @@ func TestBashRound4(t *testing.T) {
 		}
 	}
 }
+
+// Round 7: a heredoc's body is data, not commands, and an option can
+// carry its value in the same word.
+func TestBashRound7(t *testing.T) {
+	c := testClassifier()
+	cases := []struct {
+		cmd  string
+		want []bucket
+	}{
+		{"cat > NOTES.md <<'EOF'\ncat " + testFW + "/SKILL.md\ncd " + testFW + "\nEOF\ncat internal/a.go", []bucket{bApp}},
+		{"cat > a.go <<EOF && go build ./...\npackage a\nEOF\ngrep -rn x " + testFW + "/jobs", []bucket{bSource}},
+		{"cat <<-END\n\tcat " + testFW + "/SKILL.md\n\tEND\necho done", []bucket{bApp}},
+		{"rg --regexp=Scheme " + testFW + "/scheme.go", []bucket{bSource}},
+		{"grep -eScheme " + testFW + "/scheme.go", []bucket{bSource}},
+	}
+	for _, tc := range cases {
+		got, _ := c.touches("Bash", map[string]any{"command": tc.cmd})
+		if fmt.Sprint(got) != fmt.Sprint(tc.want) {
+			t.Errorf("Bash %q touches %v, want %v", tc.cmd, got, tc.want)
+		}
+	}
+}
