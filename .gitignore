@@ -4,11 +4,9 @@
 # into unrelated commits.
 .superpowers/
 
-# The copy-review gate's scratch (its result and server files), written at
-# the repo root by the skill that serves them. strings.json is tracked: it
-# is the ledger of drafted copy waiting for review.
-copy-review/*
-!copy-review/strings.json
+# The copy-review gate's string index and result, written at the repo
+# root by the skill that serves them.
+copy-review/
 
 # `make` builds the rastrillo binary here for the gate to exercise —
 # scaffold-smoke.sh runs it against a throwaway app. Disposable output.

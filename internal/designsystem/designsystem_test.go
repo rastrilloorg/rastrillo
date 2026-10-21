@@ -4,11 +4,9 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"html"
 	"html/template"
-	"os"
 	"path"
 	"reflect"
 	"regexp"
@@ -4650,31 +4648,5 @@ func TestEverySamplePictureIsUsedOnce(t *testing.T) {
 	}
 	if previews == 0 || pictures == 0 {
 		t.Fatalf("%d previews with %d sample pictures between them; the gate is checking nothing", previews, pictures)
-	}
-}
-
-// TestEveryDraftIsInTheCopyLedger: a key whose translations are still
-// the English is a debt Paul has not reviewed yet, and the ledger is
-// where he reviews it. A draft with no ledger entry is a string the
-// morning review would never see. Deleted with the ledger in Task 13.
-func TestEveryDraftIsInTheCopyLedger(t *testing.T) {
-	b, err := os.ReadFile("../../copy-review/strings.json")
-	if err != nil {
-		t.Fatalf("no copy ledger: %v", err)
-	}
-	var entries []struct {
-		Text string `json:"text"`
-	}
-	if err := json.Unmarshal(b, &entries); err != nil {
-		t.Fatal(err)
-	}
-	have := map[string]bool{}
-	for _, e := range entries {
-		have[e.Text] = true
-	}
-	for key := range proseDrafts {
-		if !have[key] {
-			t.Errorf("proseDrafts holds %q, which copy-review/strings.json does not list", key)
-		}
 	}
 }

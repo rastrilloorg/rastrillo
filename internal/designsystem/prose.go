@@ -963,17 +963,17 @@ var prose = map[string]map[string]string{
 		`ar`:      `نظام الألوان`,
 	},
 	`Controls`: {
-		`ga`:      `Controls`,
-		`zh-Hans`: `Controls`,
-		`es`:      `Controls`,
-		`hi`:      `Controls`,
-		`pt-PT`:   `Controls`,
-		`bn`:      `Controls`,
-		`ru`:      `Controls`,
-		`ja`:      `Controls`,
-		`yue`:     `Controls`,
-		`vi`:      `Controls`,
-		`ar`:      `Controls`,
+		`ga`:      `Rialtáin`,
+		`zh-Hans`: `控件`,
+		`es`:      `Controles`,
+		`hi`:      `नियंत्रण`,
+		`pt-PT`:   `Controlos`,
+		`bn`:      `কন্ট্রোল`,
+		`ru`:      `Элементы управления`,
+		`ja`:      `コントロール`,
+		`yue`:     `控件`,
+		`vi`:      `Điều khiển`,
+		`ar`:      `عناصر التحكم`,
 	},
 	`Commit the start with the end still empty and the browser fills the end in an hour later. Nothing is seeded server-side.`: {
 		`ga`:      `Socraigh an tús agus an deireadh fós folamh, agus líonann an brabhsálaí an deireadh isteach uair an chloig ina dhiaidh. Ní chuirtear aon rud ann ón bhfreastalaí.`,
@@ -3394,17 +3394,17 @@ var prose = map[string]map[string]string{
 		`ar`:      `عائلة الخط`,
 	},
 	`Type choices`: {
-		`ga`:      `Type choices`,
-		`zh-Hans`: `Type choices`,
-		`es`:      `Type choices`,
-		`hi`:      `Type choices`,
-		`pt-PT`:   `Type choices`,
-		`bn`:      `Type choices`,
-		`ru`:      `Type choices`,
-		`ja`:      `Type choices`,
-		`yue`:     `Type choices`,
-		`vi`:      `Type choices`,
-		`ar`:      `Type choices`,
+		`ga`:      `Roghanna cló`,
+		`zh-Hans`: `排版选择`,
+		`es`:      `Decisiones tipográficas`,
+		`hi`:      `टाइप के चुनाव`,
+		`pt-PT`:   `Opções tipográficas`,
+		`bn`:      `টাইপের পছন্দ`,
+		`ru`:      `Типографические решения`,
+		`ja`:      `文字組みの選択`,
+		`yue`:     `排版選擇`,
+		`vi`:      `Lựa chọn kiểu chữ`,
+		`ar`:      `خيارات الخط`,
 	},
 	`Type scale`: {
 		`ga`:      `Scála cló`,
@@ -4628,22 +4628,18 @@ var prose = map[string]map[string]string{
 		`vi`:      `Quy tắc bận: khi biểu mẫu đang gửi, nút của nó hiện vòng quay ít nhất 650ms và từ chối lần gửi thứ hai; quay lại thì nút trở về như cũ. Mọi ứng dụng được tạo khung đều nhận nó.`,
 		`ar`:      `قاعدة الانشغال: أثناء إرسال النموذج يُظهر زرّه مؤشر تحميل مدةً لا تقل عن 650 ملّي ثانية ويرفض إرسالًا ثانيًا، والرجوع يعيده كما كان. يتسلّمها كل تطبيق مولَّد.`,
 	},
-	// English in every locale until the sentence is approved (day-depth
-	// Task 10; proseDrafts holds the key, and the ledger entry is
-	// gallery.asset.light). Translating a draft would cost eleven
-	// redrafts the day Paul changes a word.
 	`The light the depth styles read: shadows lit by the hour, and a sheen on the button under the pointer. Delete it for the still design.`: {
-		`ga`:      `The light the depth styles read: shadows lit by the hour, and a sheen on the button under the pointer. Delete it for the still design.`,
-		`zh-Hans`: `The light the depth styles read: shadows lit by the hour, and a sheen on the button under the pointer. Delete it for the still design.`,
-		`es`:      `The light the depth styles read: shadows lit by the hour, and a sheen on the button under the pointer. Delete it for the still design.`,
-		`hi`:      `The light the depth styles read: shadows lit by the hour, and a sheen on the button under the pointer. Delete it for the still design.`,
-		`pt-PT`:   `The light the depth styles read: shadows lit by the hour, and a sheen on the button under the pointer. Delete it for the still design.`,
-		`bn`:      `The light the depth styles read: shadows lit by the hour, and a sheen on the button under the pointer. Delete it for the still design.`,
-		`ru`:      `The light the depth styles read: shadows lit by the hour, and a sheen on the button under the pointer. Delete it for the still design.`,
-		`ja`:      `The light the depth styles read: shadows lit by the hour, and a sheen on the button under the pointer. Delete it for the still design.`,
-		`yue`:     `The light the depth styles read: shadows lit by the hour, and a sheen on the button under the pointer. Delete it for the still design.`,
-		`vi`:      `The light the depth styles read: shadows lit by the hour, and a sheen on the button under the pointer. Delete it for the still design.`,
-		`ar`:      `The light the depth styles read: shadows lit by the hour, and a sheen on the button under the pointer. Delete it for the still design.`,
+		`ga`:      `An solas a léann na stíleanna doimhneachta: scáthanna lasta de réir na huaire, agus loinnir ar an gcnaipe faoin bpointeoir. Scrios é don dearadh socair.`,
+		`zh-Hans`: `深度样式读取的光：随时刻照出的阴影，以及指针下的按钮上的一层光泽。删除它即可得到静止的设计。`,
+		`es`:      `La luz que leen los estilos de profundidad: sombras iluminadas según la hora, y un brillo en el botón bajo el puntero. Bórralo para el diseño estático.`,
+		`hi`:      `वह रोशनी जिसे गहराई की शैलियाँ पढ़ती हैं: समय के हिसाब से पड़ती छायाएँ, और पॉइंटर के नीचे वाले बटन पर एक चमक। स्थिर डिज़ाइन के लिए इसे हटा दें।`,
+		`pt-PT`:   `A luz que os estilos de profundidade leem: sombras iluminadas conforme a hora, e um brilho no botão sob o ponteiro. Apague-o para o design parado.`,
+		`bn`:      `যে আলো গভীরতার স্টাইলগুলো পড়ে: সময় অনুযায়ী আলোকিত ছায়া, আর পয়েন্টারের নিচের বোতামে একটা দ্যুতি। স্থির ডিজ়াইনের জন্য এটি মুছে ফেলুন।`,
+		`ru`:      `Свет, который читают стили глубины: тени, освещение которых зависит от времени суток, и блик на кнопке под указателем. Удалите его ради неподвижного дизайна.`,
+		`ja`:      `奥行きのスタイルが読む光。時刻に応じて照らされる影と、ポインターの下のボタンに乗る光沢です。静止したデザインにするなら削除してください。`,
+		`yue`:     `層次樣式讀取嘅光：隨時間照出嘅陰影，同埋指針下面嘅按鈕上嘅光澤。想要靜止設計就刪走佢。`,
+		`vi`:      `Ánh sáng mà các kiểu chiều sâu đọc: bóng đổ theo giờ, và một lớp ánh trên nút dưới con trỏ. Xoá nó để có thiết kế tĩnh.`,
+		`ar`:      `الضوء الذي تقرأه أنماط العمق: ظلال مضاءة بحسب الساعة، ولمعة على الزر تحت المؤشر. احذفه لتحصل على التصميم الساكن.`,
 	},
 	`Phone navigation for the sidebar and console shells: the slide between pages, Back that reuses history, and focus returned to the section you left. Deletable on its own.`: {
 		`ga`:      `Nascleanúint fóin do na blaoscanna sidebar agus console: an sleamhnán idir leathanaigh, Siar a athúsáideann an stair, agus an fócas ar ais ar an rannán a d'fhág tú. Inscriosta leis féin.`,
@@ -5332,13 +5328,4 @@ var prose = map[string]map[string]string{
 // them, so it leaves these out. TestProseDraftsAreStillDrafts holds
 // every entry here to being exactly that, so the day a key is
 // translated its entry has to go: the set cannot outlive the debt.
-var proseDrafts = map[string]bool{
-	// The depth axis's two token groups on the Tokens page (day-depth
-	// Task 1). English until Paul approves the headings; their ledger
-	// entries are gallery.group.controls and gallery.group.type.
-	`Controls`:     true,
-	`Type choices`: true,
-	// The assets page's blurb for light.js (day-depth Task 10); its
-	// ledger entry is gallery.asset.light.
-	`The light the depth styles read: shadows lit by the hour, and a sheen on the button under the pointer. Delete it for the still design.`: true,
-}
+var proseDrafts = map[string]bool{}
