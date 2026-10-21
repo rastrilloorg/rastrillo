@@ -87,7 +87,7 @@ function strip(t,    r, i, k, best, which, wlen, endc, q, j, c, ch, pre, cls, of
 				# after a spread (...) it is still the keyword.
 				if (pre ~ /(^|[^.])\.[ \t]*(return|typeof|case|do|else|in|of|new|delete|void|throw|yield|await)$/) continue
 				# After these keywords a value starts, so / opens a regex.
-				if (pre ~ /(^|[^A-Za-z0-9_$.])(return|typeof|case|do|else|in|of|new|delete|void|throw|yield|await)$/) { best = i; which = "regex"; break }
+				if (pre ~ /(^|[^A-Za-z0-9_$.]|\.\.\.)(return|typeof|case|do|else|in|of|new|delete|void|throw|yield|await)$/) { best = i; which = "regex"; break }
 				if (pre == "" || substr(pre, length(pre), 1) ~ /[(,=:[!&|?{};+*%<>~^-]/) { best = i; which = "regex"; break }
 			}
 		}
