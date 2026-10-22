@@ -12,7 +12,7 @@ import (
 // features tokens.css and the three themes actually use, and keep the
 // highest engine version among them. light-dark() sets it everywhere
 // except Firefox, where :has() does. docs/site/templates.md shows that
-// derivation; SKILL.md §7 states the result, because an agent that
+// derivation; skill/design.md states the result, because an agent that
 // cannot find the floor invents one — an agent building on rastrillo
 // refused oklch() as "a 2023-era browser feature" and reached for hex
 // twins, which protect nobody, since an engine too old for oklch()
@@ -46,21 +46,21 @@ const cssFloor = "Chrome 123, Safari 17.5, Firefox 121"
 // Answering the failure means re-deriving, not bumping the date: list
 // the features tokens.css and ui/themes/*.css use, take the highest
 // engine version among them, and if it differs from cssFloor change it
-// here, in SKILL.md §7 and in docs/site/templates.md together. Then set
+// here, in skill/design.md and in docs/site/templates.md together. Then set
 // floorReviewed to the day you did it.
 const (
 	floorReviewed     = "2026-09-01"
 	floorReviewMonths = 9
 )
 
-// TestCSSFloorIsStatedTheSameInBothFiles fails when SKILL.md and the
+// TestCSSFloorIsStatedTheSameInBothFiles fails when the skill and the
 // templates page disagree about the floor. They are written for
 // different readers — the skill is what an agent loads instead of the
 // source, the page is what a person reads when the answer surprised
 // them — and a reader who checks one against the other and finds two
 // numbers trusts neither.
 func TestCSSFloorIsStatedTheSameInBothFiles(t *testing.T) {
-	for _, path := range []string{"SKILL.md", "docs/site/templates.md"} {
+	for _, path := range []string{"skill/design.md", "docs/site/templates.md"} {
 		b, err := os.ReadFile(path)
 		if err != nil {
 			t.Fatalf("%s must exist: %v", path, err)
@@ -68,7 +68,7 @@ func TestCSSFloorIsStatedTheSameInBothFiles(t *testing.T) {
 		if !strings.Contains(strings.Join(strings.Fields(string(b)), " "), cssFloor) {
 			t.Errorf("%s does not state the floor %q.\n"+
 				"Either it drifted, or the floor moved and this file was not brought along — "+
-				"cssFloor, SKILL.md §7 and docs/site/templates.md change together or not at all.",
+				"cssFloor, skill/design.md and docs/site/templates.md change together or not at all.",
 				path, cssFloor)
 		}
 	}
@@ -91,7 +91,7 @@ func TestCSSFloorHasBeenReviewedRecently(t *testing.T) {
 	if time.Now().After(due) {
 		t.Fatalf("the CSS floor was last reviewed %s and was due %s.\n"+
 			"Re-derive it — the features tokens.css and ui/themes/*.css use, highest engine "+
-			"version among them — then update cssFloor, SKILL.md §7 and docs/site/templates.md "+
+			"version among them — then update cssFloor, skill/design.md and docs/site/templates.md "+
 			"if it moved, and set floorReviewed to today. Do not bump the date alone; the date "+
 			"is the record that somebody looked.",
 			floorReviewed, due.Format(time.DateOnly))

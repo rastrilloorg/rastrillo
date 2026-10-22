@@ -27,7 +27,7 @@ const (
 )
 
 // runNew implements `rastrillo new <name>`: the middle-layer app shape
-// (SKILL.md §1) — GORM models, a chi router, embedded templates, and a
+// (SKILL.md's app shape) — GORM models, a chi router, embedded templates, and a
 // main.go wiring Resolve → db.Open → App → Serve — plus a passing test
 // harness, so the first `go test ./...` is green before the developer
 // writes a line.
@@ -1632,11 +1632,16 @@ func amadanStep(target string) string {
 
 const agentsMDTemplate = `# %s
 
-A [rastrillo](https://amadan.net/rastrillo/rastrillo) app. Read the
-framework's own SKILL.md (repo root, or in the module cache) before
-writing app code — it is the whole app story in ~15KB. The conventions
-below are load-bearing; the framework enforces most of them
-mechanically.
+A [rastrillo](https://amadan.net/rastrillo/rastrillo) app. Before
+writing app code, read the framework's skill at the version this app
+builds against:
+
+    cat "$(go list -m -f '{{.Dir}}' amadan.net/rastrillo/rastrillo)/SKILL.md"
+
+then, before each piece of work, the ` + "`skill/`" + ` topic its index names for
+it. Never another copy from the module cache: an older SKILL.md
+describes a framework this app is not built on. The conventions below
+are load-bearing; the framework enforces most of them mechanically.
 
 ## Layout
 

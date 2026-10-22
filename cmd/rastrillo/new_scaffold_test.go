@@ -109,6 +109,18 @@ func TestNewScaffoldsCIAndManifest(t *testing.T) {
 			t.Fatalf("AGENTS.md preload missing %q:\n%s", want, agents)
 		}
 	}
+	// The skill is found by the app's own module version, never by
+	// looking in the module cache: two skilleval baseline runs searched
+	// the cache, found an older copy and followed a SKILL.md that
+	// predated the feature they were building (discussion #97).
+	for _, want := range []string{"go list -m -f '{{.Dir}}' amadan.net/rastrillo/rastrillo", "skill/"} {
+		if !strings.Contains(string(agents), want) {
+			t.Fatalf("AGENTS.md must say where the app's own skill is (%q):\n%s", want, agents)
+		}
+	}
+	if strings.Contains(string(agents), "or in the module cache") {
+		t.Fatalf("AGENTS.md still sends agents to the module cache, where an older SKILL.md waits:\n%s", agents)
+	}
 	claude, _ := os.ReadFile(filepath.Join("demoapp", "CLAUDE.md"))
 	if !strings.Contains(string(claude), "@AGENTS.md") {
 		t.Fatalf("CLAUDE.md must import AGENTS.md:\n%s", claude)

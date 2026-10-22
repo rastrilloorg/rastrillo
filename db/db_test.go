@@ -28,7 +28,7 @@ func TestOpenWALAndPing(t *testing.T) {
 }
 
 // TestSecureDeleteOnTheWriterSticks pins the one actionable half of
-// SKILL.md §2's "deleting a secret from SQLite does not unwrite it".
+// skill/data.md's "deleting a secret from SQLite does not unwrite it".
 //
 // PRAGMA secure_delete is per-connection, so an app that sets it as a
 // statement rather than in the DSN is relying on the writer pool being
@@ -77,7 +77,7 @@ func TestSecureDeleteOnTheWriterSticks(t *testing.T) {
 	if on != 1 {
 		t.Errorf("secure_delete on the writer reads %d after eight writes, want 1 — "+
 			"the writer pool is no longer one connection, so setting this pragma as a "+
-			"statement reaches only whichever connection ran it (SKILL.md §2)", on)
+			"statement reaches only whichever connection ran it (skill/data.md)", on)
 	}
 }
 

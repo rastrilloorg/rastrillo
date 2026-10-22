@@ -238,7 +238,7 @@ func TestNewScaffoldsMiddleLayerShape(t *testing.T) {
 	}
 }
 
-// main.go wires the app the way SKILL.md §1 teaches: Resolve (not Run
+// main.go wires the app the way SKILL.md's app shape teaches: Resolve (not Run
 // — the app owns its DB handle via db.Open), then Serve with DBPath
 // cleared so Serve doesn't double-open the same file.
 func TestMainTemplateWiresResolveOpenServe(t *testing.T) {

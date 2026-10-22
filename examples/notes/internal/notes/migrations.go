@@ -42,7 +42,7 @@ var Schema = migrate.MustFromFS(migrationFS, "notes")
 // manifest (add a field, rename one) after this app has already booted
 // once, and its regenerated SQL no longer matches the checksum the
 // ledger recorded under the same "bookmarks_gen/0001_init" ID — the
-// next boot refuses rather than silently reapplying it. SKILL.md §2's
+// next boot refuses rather than silently reapplying it. skill/data.md's
 // "generated store's ledger trap" note has the recovery (`rastrillo
 // migration baseline`); nothing here papers over it.
 func genSchemaSet() *migrate.Set {

@@ -428,7 +428,7 @@ type rowMenuItem struct {
 //   - no Label;
 //   - both or neither of Href (a link) and Action (a POST);
 //   - Danger without Href. A destructive item is a link to its confirm
-//     page (SKILL.md §7: confirm-form on its own URL, never fired from the
+//     page (skill/screens.md: confirm-form on its own URL, never fired from the
 //     row), so Action alone has nowhere to confirm;
 //   - Danger that is not a bool. "true" as a string would render the
 //     destructive item as a plain one;
