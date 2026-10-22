@@ -96,3 +96,57 @@ func TestProtectGatesMutatingMethodsOnly(t *testing.T) {
 		})
 	}
 }
+
+// exemptPost sends a POST through Protect("https://a.test", Exempt("/hook"))
+// and returns the status. headers is the browser evidence, if any.
+func exemptPost(t *testing.T, path string, headers map[string]string) int {
+	t.Helper()
+	next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+	handler := Protect("https://a.test", Exempt("/hook"))(next)
+	r := httptest.NewRequest("POST", "http://app.test"+path, nil)
+	for k, v := range headers {
+		r.Header.Set(k, v)
+	}
+	w := httptest.NewRecorder()
+	handler.ServeHTTP(w, r)
+	return w.Code
+}
+
+func TestExemptPathPassesWithoutBrowserEvidence(t *testing.T) {
+	if got := exemptPost(t, "/hook", nil); got != http.StatusOK {
+		t.Errorf("POST /hook with no evidence = %d, want 200", got)
+	}
+}
+
+func TestExemptIsExactPath(t *testing.T) {
+	// A prefix or case-folded match would exempt routes nobody named.
+	for _, path := range []string{"/hook/", "/HOOK", "/hook/x", "/hookx"} {
+		if got := exemptPost(t, path, nil); got != http.StatusForbidden {
+			t.Errorf("POST %s with no evidence = %d, want 403", path, got)
+		}
+	}
+}
+
+func TestExemptLeavesOtherPathsProtected(t *testing.T) {
+	if got := exemptPost(t, "/other", nil); got != http.StatusForbidden {
+		t.Errorf("POST /other with no evidence = %d, want 403", got)
+	}
+	if got := exemptPost(t, "/other", map[string]string{"Sec-Fetch-Site": "same-origin"}); got != http.StatusOK {
+		t.Errorf("POST /other same-origin = %d, want 200", got)
+	}
+}
+
+func TestExemptPanicsOnARelativeOrEmptyPath(t *testing.T) {
+	for _, path := range []string{"", "hook"} {
+		func() {
+			defer func() {
+				if recover() == nil {
+					t.Errorf("Exempt(%q) did not panic", path)
+				}
+			}()
+			Exempt(path)
+		}()
+	}
+}
