@@ -58,8 +58,9 @@ r.Use(csrf.Protect(origin, csrf.Exempt("/stripe/webhook", "/jobs/sync")))
 check its own credential first and refuse the request if the check
 fails. Without that check, any site on the internet can post to it.
 
-A webhook checks the provider's signature. This one uses Stripe's
-`webhook` package:
+A webhook checks the provider's signature. Stripe signs `t + "." + body`
+with HMAC-SHA256 and sends the result in the `Stripe-Signature` header.
+Check it before you read anything else from the payload:
 
 ```go
 func stripeWebhook(w http.ResponseWriter, r *http.Request) {
@@ -68,12 +69,53 @@ func stripeWebhook(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "bad request", http.StatusBadRequest)
 		return
 	}
-	event, err := webhook.ConstructEvent(body, r.Header.Get("Stripe-Signature"), endpointSecret)
-	if err != nil {
+	if !validStripeSignature(body, r.Header.Get("Stripe-Signature"), endpointSecret, time.Now()) {
 		http.Error(w, "forbidden", http.StatusForbidden)
 		return
 	}
-	// event is genuine. Act on it.
+	var event struct {
+		ID   string `json:"id"`
+		Type string `json:"type"`
+	}
+	if err := json.Unmarshal(body, &event); err != nil {
+		http.Error(w, "bad request", http.StatusBadRequest)
+		return
+	}
+	log.Printf("stripe event %s (%s)", event.ID, event.Type)
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// validStripeSignature reports whether header is a Stripe-Signature for
+// body made with secret, within five minutes of now.
+func validStripeSignature(body []byte, header, secret string, now time.Time) bool {
+	if secret == "" {
+		return false
+	}
+	var ts string
+	var sigs []string
+	for _, part := range strings.Split(header, ",") {
+		k, v, _ := strings.Cut(strings.TrimSpace(part), "=")
+		switch k {
+		case "t":
+			ts = v
+		case "v1":
+			sigs = append(sigs, v)
+		}
+	}
+	sec, err := strconv.ParseInt(ts, 10, 64)
+	if err != nil || now.Sub(time.Unix(sec, 0)).Abs() > 5*time.Minute {
+		return false
+	}
+	mac := hmac.New(sha256.New, []byte(secret))
+	mac.Write([]byte(ts + "."))
+	mac.Write(body)
+	want := mac.Sum(nil)
+	for _, s := range sigs {
+		if got, err := hex.DecodeString(s); err == nil && hmac.Equal(got, want) {
+			return true
+		}
+	}
+	return false
 }
 ```
 
