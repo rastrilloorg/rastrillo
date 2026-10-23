@@ -3,17 +3,14 @@
 package act_bookmarks_id_edit_advanced_post
 
 import (
-	"database/sql"
-	"errors"
 	"fmt"
 	"net/http"
-	"time"
 
 	"amadan.net/rastrillo/rastrillo"
 	"amadan.net/rastrillo/rastrillo/form"
-	"amadan.net/rastrillo/rastrillo/sessions"
+	"amadan.net/rastrillo/rastrillo/op"
 	"amadan.net/rastrillo/rastrillo/view"
-	bookmarksstore "notes/gen/store/bookmarks"
+	ops_bookmarks "notes/gen/ops/bookmarks"
 )
 
 // Handle is POST /bookmarks/{id}/edit-advanced.
@@ -28,35 +25,23 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 		view.NotFound(ctx, w, r)
 		return
 	}
-	sess, ok := sessions.Current(r)
-	if !ok {
-		view.Forbidden(ctx, w, r)
-		return
-	}
-	store := bookmarksstore.New(ctx.DB)
-	_, err := store.GetBookmark(r.Context(), bookmarksstore.GetBookmarkParams{ID: id, Owner: sess.Subject})
-	if errors.Is(err, sql.ErrNoRows) {
-		view.NotFound(ctx, w, r)
-		return
-	}
-	if err != nil {
-		view.Fail(ctx, w, r, "bookmarks: loading bookmarks", err)
-		return
-	}
 
 	p := form.Parse(r,
 		form.Field{Name: "Notes", Kind: form.Textarea},
 	)
+	in := ops_bookmarks.UpdateInput{
+		Notes: present(r, "Notes", p.String("Notes")),
+	}
 
-	now := time.Now().UTC().Format(time.RFC3339)
-	if err := store.UpdateBookmarkAdvanced(r.Context(), bookmarksstore.UpdateBookmarkAdvancedParams{
-		Notes: p.String("Notes"),
-		Owner: sess.Subject,
-		Now:   now,
-		ID:    id,
-	}); err != nil {
-		view.Fail(ctx, w, r, "bookmarks: updating bookmarks", err)
+	_, err := ops_bookmarks.Update(r.Context(), ctx, id, in)
+	if err != nil {
+		view.Refuse(ctx, w, r, "bookmarks: updating bookmarks", err)
 		return
 	}
 	http.Redirect(w, r, fmt.Sprintf("/bookmarks/%d", id), http.StatusSeeOther)
+}
+
+func present(r *http.Request, name, v string) op.Opt[string] {
+	_, ok := r.PostForm[name]
+	return op.Opt[string]{Value: v, Set: ok}
 }

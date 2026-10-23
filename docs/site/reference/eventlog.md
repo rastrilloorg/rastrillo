@@ -43,7 +43,7 @@ you call `Open`:
 Use `AppendChecked` when an event is only valid on top of the stream as
 it is. `check` gets the stream's events, and nothing is appended if it
 returns an error; no other write can land between the check and the
-append. Generated stores with money append this way.
+append. Generated stores update and delete records this way.
 
 Use `AppendUnder` when the stream's name depends on which streams exist.
 `name` gets every stream that starts with `prefix` and returns the one

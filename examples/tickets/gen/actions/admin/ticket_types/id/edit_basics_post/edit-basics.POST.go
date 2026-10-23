@@ -3,21 +3,27 @@
 package act_admin_ticket_types_id_edit_basics_post
 
 import (
-	"database/sql"
 	"errors"
 	"fmt"
 	"net/http"
-	"time"
 
 	"amadan.net/rastrillo/rastrillo"
 	"amadan.net/rastrillo/rastrillo/form"
+	"amadan.net/rastrillo/rastrillo/op"
 	"amadan.net/rastrillo/rastrillo/ui"
 	"amadan.net/rastrillo/rastrillo/view"
-	ticket_typesstore "tickets/gen/store/ticket_types"
+	ops_ticket_types "tickets/gen/ops/ticket_types"
 )
 
 // Handle is POST /admin/ticket_types/{id}/edit-basics.
 func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
+	handle(ctx, w, r, 0)
+}
+
+// handle is Handle's body. When the operation refuses the save because
+// the record's currency changed, it runs again: once more to save, and
+// then only to show the form with that message.
+func handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request, try int) {
 	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
 	if err := r.ParseForm(); err != nil {
 		http.Error(w, "Bad request.", http.StatusBadRequest)
@@ -28,25 +34,24 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 		view.NotFound(ctx, w, r)
 		return
 	}
-	store := ticket_typesstore.New(ctx.DB)
-	n, err := store.GetTicketType(r.Context(), id)
-	if errors.Is(err, sql.ErrNoRows) {
-		view.NotFound(ctx, w, r)
-		return
-	}
+	n, err := ops_ticket_types.Get(r.Context(), ctx, id)
 	if err != nil {
-		view.Fail(ctx, w, r, "ticket_types: loading ticket_types", err)
+		view.Refuse(ctx, w, r, "ticket_types: loading ticket_types", err)
 		return
 	}
 
-	priceCode := currencyOf(n.PriceCurrency)
+	priceCode := currencyOf(n.Price)
 	p := form.Parse(r,
-		form.Field{Name: "Name", Required: true},
-		form.Field{Name: "Price", Kind: form.Money, Currency: priceCode, LocaleEcho: true, Required: true, Stored: n.PriceMinor},
+		form.Field{Name: "Name"},
+		form.Field{Name: "Price", Kind: form.Money, Currency: priceCode, LocaleEcho: true, Required: true, Stored: minorOf(n.Price)},
 		form.Field{Name: "Status"},
 	)
-
-	if !p.OK() {
+	in := ops_ticket_types.UpdateInput{
+		Name:   present(r, "Name", p.String("Name")),
+		Price:  amount(p, "Price", priceCode),
+		Status: present(r, "Status", p.String("Status")),
+	}
+	reshow := func(errs map[string]string) {
 		fields := map[string]string{
 			"Name":        n.Name,
 			"Status":      n.Status,
@@ -57,15 +62,18 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 		}
 		priceInput, reseed := p.MoneyInput("Price", rastrillo.FormatLocale(r))
 		if reseed {
-			if priceInput, ok = seed(ctx, w, r, id, "Price", n.PriceMinor, priceCode); !ok {
+			if priceInput, ok = seed(ctx, w, r, id, "Price", minorOf(n.Price), priceCode); !ok {
 				return
 			}
+		}
+		if try == 2 {
+			priceInput = form.MoneyInput{Value: p.Echo()["Price"], Locale: r.PostFormValue("Price.locale"), Currency: priceCode}
 		}
 		view.Render(ctx, w, "ticket_types/form", http.StatusBadRequest, formView{
 			Localized: ui.ForRequest(r),
 			IsNew:     false,
 			Fields:    fields,
-			Errors:    p.Errors(),
+			Errors:    errs,
 			ErrorArgs: p.ErrorArgs(),
 			Money: map[string]form.MoneyInput{
 				"Price": priceInput,
@@ -73,31 +81,46 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 			BasicsAction:   fmt.Sprintf("/admin/ticket_types/%d/edit-basics", id),
 			AdvancedAction: fmt.Sprintf("/admin/ticket_types/%d/edit-advanced", id),
 		})
+	}
+	if !p.OK() || try == 2 {
+		errs := ops_ticket_types.ValidateUpdate(in)
+		for k, v := range p.Errors() {
+			errs[k] = v
+		}
+		if try == 2 {
+			errs = map[string]string{"Price": "rastrillo.ui.money_currency_changed"}
+		}
+		reshow(errs)
 		return
 	}
-	priceMinor, priceCurrency := amount(p, "Price", priceCode)
 
-	now := time.Now().UTC().Format(time.RFC3339)
-	if err := store.UpdateTicketTypeBasics(r.Context(), ticket_typesstore.UpdateTicketTypeBasicsParams{
-		Name:          p.String("Name"),
-		PriceMinor:    priceMinor,
-		PriceCurrency: priceCurrency,
-		Status:        p.String("Status"),
-		Now:           now,
-		ID:            id,
-	}); err != nil {
-		view.Fail(ctx, w, r, "ticket_types: updating ticket_types", err)
+	_, err = ops_ticket_types.Update(r.Context(), ctx, id, in)
+	var invalid op.Invalid
+	switch {
+	case errors.As(err, &invalid):
+		reshow(invalid.Fields)
+		return
+	case errors.As(err, new(op.Conflict)):
+		handle(ctx, w, r, try+1)
+		return
+	case err != nil:
+		view.Refuse(ctx, w, r, "ticket_types: updating ticket_types", err)
 		return
 	}
 	http.Redirect(w, r, fmt.Sprintf("/admin/ticket_types/%d", id), http.StatusSeeOther)
 }
 
-func amount(p *form.Parsed, name, code string) (*int64, *string) {
+func present(r *http.Request, name, v string) op.Opt[string] {
+	_, ok := r.PostForm[name]
+	return op.Opt[string]{Value: v, Set: ok}
+}
+
+func amount(p *form.Parsed, name, code string) op.Opt[op.Money] {
 	minor, ok := p.Minor(name)
 	if !ok {
-		return nil, nil
+		return op.Opt[op.Money]{}
 	}
-	return &minor, &code
+	return op.Some(op.Money{Amount: minor, Currency: code})
 }
 
 func seed(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request, id int64, field string, minor *int64, code string) (form.MoneyInput, bool) {
@@ -109,11 +132,18 @@ func seed(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request, id int64, 
 	return in, true
 }
 
-func currencyOf(cur *string) string {
-	if cur != nil {
-		return *cur
+func currencyOf(m *op.Money) string {
+	if m != nil {
+		return m.Currency
 	}
 	return "USD"
+}
+
+func minorOf(m *op.Money) *int64 {
+	if m == nil {
+		return nil
+	}
+	return &m.Amount
 }
 
 type formView struct {

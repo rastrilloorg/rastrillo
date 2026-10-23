@@ -7,6 +7,7 @@ require amadan.net/rastrillo/rastrillo v0.1.0
 require (
 	amadan.net/rastrillo/rastrillo/money v0.1.0 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
+	github.com/go-json-experiment/json v0.0.0-20250725192818-e39067aee2d2 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/ncruces/go-strftime v1.0.0 // indirect

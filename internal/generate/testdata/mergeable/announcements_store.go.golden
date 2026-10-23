@@ -8,22 +8,23 @@
 // state by replaying the merged history — no table of this resource's
 // own, no materialized cache (replay is cheap until proven otherwise).
 //
-// Two recorded caveats, both deliberate:
-//   - Every event's actor is stamped "app"; threading Ctx.Actor into
-//     store mutations is an additive follow-up (today every generated
-//     mutation is consent-gated upstream).
-//   - Record ids are writer-local: Create allocates max(existing)+1
-//     under the eventlog's write lock, so two creates on one database
-//     never share an id. Cross-writer id namespacing belongs to the
-//     platform transport design; this allocator is the first thing it
-//     replaces.
+// Every write takes its actor from the caller, rastrillo.Actor's
+// String(), so each event says who wrote it. One recorded caveat,
+// deliberate: record ids are writer-local. Create takes the next id
+// under the eventlog's write lock and appends the record's first event
+// under the same lock (eventlog.AppendUnder), so two creates on one
+// database never share an id; keeping ids apart across writers belongs
+// to the platform transport design, and this allocator is the first
+// thing it replaces.
 package announcementsstore
 
 import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"math"
 	"sort"
 	"strconv"
 	"strings"
@@ -36,9 +37,10 @@ import (
 // eventlog table: record <id> lives at "announcements/<id>".
 const StreamPrefix = "announcements/"
 
-// actor is stamped on every event this store appends — see the
-// package doc's Ctx.Actor caveat.
-const actor = "app"
+// errGone stops an append to a record that is missing or deleted. It is
+// decided inside the append's transaction, on the history the event
+// would land on, so a delete that commits first is seen.
+var errGone = errors.New("announcementsstore: no such record")
 
 // Announcement is the derived read model — the same shape sqlc
 // generates for an exclusive resource.
@@ -71,8 +73,8 @@ func (q *Queries) open(ctx context.Context) (*eventlog.Log, replay.Rules, error)
 
 // payload is the JSON shape of every created/updated event: pointer
 // fields, omitted when nil, so a created event carries every field and
-// an updated event only its own group's — an absent field leaves the
-// derived value untouched.
+// an updated event only the fields it changes; an absent field leaves
+// the derived value untouched.
 type payload struct {
 	EventVersion int     `json:"V"`
 	Title        *string `json:"title,omitempty"`
@@ -125,6 +127,30 @@ func derive(rules replay.Rules, id int64, events []eventlog.Event) (Announcement
 	}
 	row.ID = id
 	return row, rec, true, nil
+}
+
+// appendLive appends one event to record id's stream and reports 1, or
+// 0 when the record is missing or deleted. Whether it is live is decided
+// inside AppendChecked, on the history the event lands on, so a delete
+// that commits first is seen and nothing is written after it.
+func appendLive(ctx context.Context, log *eventlog.Log, rules replay.Rules, id int64, kind, actor string, p payload) (int64, error) {
+	_, err := log.AppendChecked(ctx, StreamPrefix+strconv.FormatInt(id, 10), kind, actor, p, func(history []eventlog.Event) error {
+		_, _, ok, err := derive(rules, id, history)
+		if err != nil {
+			return err
+		}
+		if !ok {
+			return errGone
+		}
+		return nil
+	})
+	if errors.Is(err, errGone) {
+		return 0, nil
+	}
+	if err != nil {
+		return 0, err
+	}
+	return 1, nil
 }
 
 func CheckReplay(ctx context.Context, db *sql.DB) error {
@@ -232,6 +258,38 @@ func (q *Queries) ListAnnouncements(ctx context.Context, arg ListAnnouncementsPa
 	return pageWindow(out, arg.PageOffset, arg.PageLimit), nil
 }
 
+type ListAnnouncementsAfterParams struct {
+	Search         string
+	AfterCreatedAt string
+	AfterID        int64
+	PageLimit      int64
+}
+
+// ListAnnouncementsAfter is the page after the row (AfterCreatedAt,
+// AfterID) in List's order; an empty AfterCreatedAt starts at the top.
+// The cursor carries that row's own values, so it still works after the
+// row is deleted.
+func (q *Queries) ListAnnouncementsAfter(ctx context.Context, arg ListAnnouncementsAfterParams) ([]Announcement, error) {
+	rows, err := q.live(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var out []Announcement
+	for _, n := range rows {
+		if int64(len(out)) == arg.PageLimit {
+			break
+		}
+		if !matches(n, arg.Search) {
+			continue
+		}
+		if arg.AfterCreatedAt != "" && (n.CreatedAt > arg.AfterCreatedAt || n.CreatedAt == arg.AfterCreatedAt && n.ID >= arg.AfterID) {
+			continue
+		}
+		out = append(out, n)
+	}
+	return out, nil
+}
+
 func (q *Queries) CountAnnouncements(ctx context.Context, search string) (int64, error) {
 	rows, err := q.live(ctx)
 	if err != nil {
@@ -271,7 +329,10 @@ type CreateAnnouncementParams struct {
 	Now   string
 }
 
-func (q *Queries) CreateAnnouncement(ctx context.Context, arg CreateAnnouncementParams) (int64, error) {
+// CreateAnnouncement starts a record. eventlog.AppendUnder picks its id and
+// appends its first event in one transaction, so two creates at once
+// make two records.
+func (q *Queries) CreateAnnouncement(ctx context.Context, actor string, arg CreateAnnouncementParams) (int64, error) {
 	log, _, err := q.open(ctx)
 	if err != nil {
 		return 0, err
@@ -282,14 +343,14 @@ func (q *Queries) CreateAnnouncement(ctx context.Context, arg CreateAnnouncement
 		Body:         &arg.Body,
 		CreatedAt:    &arg.Now,
 	}
-	return create(ctx, log, p)
+	return create(ctx, log, actor, p)
 }
 
 // create appends p as a new record's "created" event and returns the
 // record's id: one more than the highest under StreamPrefix, which the
 // append reads under the same write lock it writes with (see the
 // package doc's caveat on ids).
-func create(ctx context.Context, log *eventlog.Log, p payload) (int64, error) {
+func create(ctx context.Context, log *eventlog.Log, actor string, p payload) (int64, error) {
 	var id int64
 	_, err := log.AppendUnder(ctx, StreamPrefix, "created", actor, p, func(streams []string) (string, error) {
 		next, err := nextID(streams)
@@ -302,7 +363,12 @@ func create(ctx context.Context, log *eventlog.Log, p payload) (int64, error) {
 	return id, err
 }
 
-// nextID is one more than the highest record id among streams.
+// nextID is one more than the highest record id among streams. A
+// stream it cannot number is an error, not skipped: skipping it could
+// hand out an id beside a stream the allocator cannot see. The largest
+// id has no next: plus one wrapped to the smallest, which never beat
+// the largest, so every later create took the same wrapped id and
+// joined one record.
 func nextID(streams []string) (int64, error) {
 	var id int64
 	for _, s := range streams {
@@ -314,64 +380,43 @@ func nextID(streams []string) (int64, error) {
 			id = n
 		}
 	}
+	if id == math.MaxInt64 {
+		return 0, errors.New("announcementsstore: no id is left under announcements/")
+	}
 	return id + 1, nil
 }
 
-type UpdateAnnouncementBasicsParams struct {
-	Title string
-	Body  string
+// UpdateAnnouncementParams is a partial update: a nil field is left as
+// it is, so the event carries only the fields that were sent.
+type UpdateAnnouncementParams struct {
+	Title *string
+	Body  *string
 	Now   string
 	ID    int64
 }
 
-func (q *Queries) UpdateAnnouncementBasics(ctx context.Context, arg UpdateAnnouncementBasicsParams) error {
+// UpdateAnnouncement appends one "updated" event and reports 1, or 0
+// when the record is missing or deleted.
+func (q *Queries) UpdateAnnouncement(ctx context.Context, actor string, arg UpdateAnnouncementParams) (int64, error) {
 	log, rules, err := q.open(ctx)
 	if err != nil {
-		return err
-	}
-	stream := StreamPrefix + strconv.FormatInt(arg.ID, 10)
-	events, err := log.Events(ctx, stream)
-	if err != nil {
-		return err
-	}
-	_, _, ok, err := derive(rules, arg.ID, events)
-	if err != nil {
-		return err
-	}
-	if !ok {
-		// Mirror the exclusive UPDATE: a missing record is a no-op,
-		// never an appended event on a stream with no live record.
-		return nil
+		return 0, err
 	}
 	p := payload{
 		EventVersion: replay.Version,
-		Title:        &arg.Title,
-		Body:         &arg.Body,
+		Title:        arg.Title,
+		Body:         arg.Body,
 		UpdatedAt:    &arg.Now,
 	}
-	_, err = log.Append(ctx, stream, "updated", actor, p)
-	return err
+	return appendLive(ctx, log, rules, arg.ID, "updated", actor, p)
 }
 
-func (q *Queries) DeleteAnnouncement(ctx context.Context, id int64) error {
+// DeleteAnnouncement appends a tombstone and reports 1, or 0 when the
+// record is missing or already deleted; derive skips dead ids.
+func (q *Queries) DeleteAnnouncement(ctx context.Context, actor string, id int64) (int64, error) {
 	log, rules, err := q.open(ctx)
 	if err != nil {
-		return err
+		return 0, err
 	}
-	stream := StreamPrefix + strconv.FormatInt(id, 10)
-	events, err := log.Events(ctx, stream)
-	if err != nil {
-		return err
-	}
-	_, _, ok, err := derive(rules, id, events)
-	if err != nil {
-		return err
-	}
-	if !ok {
-		return nil
-	}
-	// Delete appends a tombstone event rather than a DELETE; derive
-	// skips dead ids from here on.
-	_, err = log.Append(ctx, stream, "deleted", actor, payload{EventVersion: replay.Version})
-	return err
+	return appendLive(ctx, log, rules, id, "deleted", actor, payload{EventVersion: replay.Version})
 }

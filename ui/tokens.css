@@ -1268,6 +1268,36 @@ body {
 .rst-person__email, [rst-person-email] { color: var(--rst-text-muted); display: block; font-size: var(--rst-fs-xs); line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rst-person:hover .rst-person__name, [rst-person]:hover [rst-person-name] { color: var(--rst-accent); }
 .rst-person--lg .rst-person__av, [rst-person~="lg"] [rst-person-av] { font-size: 1.0625rem; height: 46px; width: 46px; }
+/* actor — who did something, as the words the actor function writes,
+   in an element an app can style. Isolated the way <bdi> is: both
+   names are what someone typed, and a right-to-left name beside "for"
+   would otherwise pull the sentence's punctuation across to its side. */
+.rst-actor, [rst-actor] { unicode-bidi: isolate; }
+/* api-tokens — the token page's body: the reveal, the create form, the
+   list and the revoke buttons stacked at the page's rhythm. The list
+   sets its own columns, which a list grid otherwise takes from the app's
+   stylesheet: the identity cell, four fact cells, the state word, and
+   the kebab column. Below the phone width the facts leave the columns
+   and stack under the identity, each spanning the row with its label
+   shown: a person checks a token's access and activity before revoking
+   it, so the facts are not hidden there the way a list's middle cells
+   usually are. The identity, the state and the kebab are pinned to the
+   first grid row, or the stacked facts would push them down. The secret
+   wraps anywhere, because a 60-character token that will not break
+   overflows a phone and the end of it, the part that is secret, is what
+   gets cut. */
+.rst-tokens, [rst-tokens] { display: grid; gap: var(--rst-sp-5); }
+.rst-tokens__list, [rst-tokens-list] { --rst-cols: 2fr 1fr 1fr 1fr 1fr auto var(--rst-col-menu); }
+.rst-tokens__fact, [rst-tokens-fact] { color: var(--rst-text-muted); font-size: var(--rst-fs-xs); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rst-tokens__fact-label, [rst-tokens-fact-label] { display: none; }
+.rst-tokens__state, [rst-tokens-state] { min-width: 0; }
+.rst-tokens__secret, [rst-tokens-secret] { overflow-wrap: anywhere; user-select: all; }
+.rst-tokens__revoke, [rst-tokens-revoke] { display: flex; flex-wrap: wrap; gap: var(--rst-sp-2); }
+@media (max-width: 800px) {
+  .rst-tokens__list .rst-lrow > .rst-tokens__fact, [rst-tokens-list] [rst-lrow] > [rst-tokens-fact] { display: flex; font-size: inherit; gap: var(--rst-sp-3); grid-column: 1 / -1; justify-content: space-between; white-space: normal; }
+  .rst-tokens__fact > .rst-tokens__fact-label, [rst-tokens-fact] > [rst-tokens-fact-label] { color: var(--rst-text); display: inline; }
+  .rst-tokens__list .rst-lrow > :first-child, .rst-tokens__list .rst-lrow > .rst-tokens__state, .rst-tokens__list .rst-lrow > .rst-row-menu, [rst-tokens-list] [rst-lrow] > :first-child, [rst-tokens-list] [rst-lrow] > [rst-tokens-state], [rst-tokens-list] [rst-lrow] > [rst-row-menu] { grid-row: 1; }
+}
 
 /* callout — the one alert vocabulary; icon sized to the first text line. */
 .rst-callout, [rst-callout] { align-items: flex-start; background: var(--rst-surface-2); border: 1px solid var(--rst-line-strong); border-radius: var(--rst-radius); display: flex; gap: 0.6rem; margin: var(--rst-sp-4) 0; padding: 0.85rem 1rem; }

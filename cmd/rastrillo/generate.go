@@ -7,8 +7,12 @@ import (
 	"os"
 	"path/filepath"
 
+	"amadan.net/rastrillo/rastrillo"
 	"amadan.net/rastrillo/rastrillo/internal/generate"
+	"amadan.net/rastrillo/rastrillo/internal/generate/apigen"
 	"amadan.net/rastrillo/rastrillo/internal/generate/catalogs"
+	"amadan.net/rastrillo/rastrillo/internal/generate/contract"
+	"amadan.net/rastrillo/rastrillo/internal/generate/lint"
 	"amadan.net/rastrillo/rastrillo/internal/generate/packs"
 	"amadan.net/rastrillo/rastrillo/internal/generate/prune"
 	"amadan.net/rastrillo/rastrillo/internal/manifest"
@@ -23,16 +27,18 @@ const defaultLocaleRemoved = "--default-locale was removed: the default comes fr
 //
 // --check is the framework's half of `carlos vet` (§11): verify and
 // report, write nothing. It covers route collisions (§4), the action
-// build-tag convention (friction log F9), and i18n catalog completeness
-// (§10) today; the rest of §11's list arrives with the subsystems it
-// checks.
+// build-tag convention (friction log F9), i18n catalog completeness
+// (§10) and the parity lint over hand-written operations and door
+// overrides (JSON API spec §7) today; the rest of §11's list arrives
+// with the subsystems it checks.
 //
 // Flags come before the directory: FlagSet.Parse stops at the first
 // non-flag argument, which is what keeps the older bare `rastrillo
 // generate <dir>` form working unchanged.
 func runGenerate(args []string) error {
 	fset := flag.NewFlagSet("generate", flag.ContinueOnError)
-	check := fset.Bool("check", false, "verify without writing (route collisions, action build tags, i18n catalog completeness)")
+	check := fset.Bool("check", false, "verify without writing (route collisions, action build tags, i18n catalog completeness, hand-written code on its operation)")
+	acceptBreaking := fset.Bool("accept-breaking", false, "rewrite api/v1.json over a change that breaks /api/v1 clients; without it, generate refuses and leaves the file as it was")
 	// Kept only to refuse: an undefined flag fails with Go's generic
 	// "flag provided but not defined", which names no way out.
 	fset.String("default-locale", "", defaultLocaleRemoved)
@@ -81,14 +87,6 @@ func runGenerate(args []string) error {
 	} else if !os.IsNotExist(err) {
 		return err
 	}
-	// The agent-tool registry (design doc §8): hand actions opt in with
-	// a rastrillo.Tool marker; the registry is collected statically here
-	// and emitted as gen/tools.go below.
-	tools, err := generate.CollectTools(actionsDir, actions)
-	if err != nil {
-		return fmt.Errorf("collect tools: %w", err)
-	}
-
 	if len(collisions) > 0 {
 		fmt.Fprintln(os.Stderr, "rastrillo generate: route collisions —")
 		for _, c := range collisions {
@@ -144,6 +142,26 @@ func runGenerate(args []string) error {
 			return fmt.Errorf("%d locale catalog(s) incomplete; silent fallback while iterating, loud failure before ship (design doc §10)", len(problems))
 		}
 
+		// The committed API contract (JSON API spec §6), read-only here
+		// like everything else: missing or stale fails. It runs before
+		// the idempotency check below because after a refused generate
+		// gen/ is always stale too, and "run generate" is advice the
+		// break would refuse; naming the break sends the operator to
+		// the manifest edit instead. Resources are loaded here, as the
+		// write path does, because GenerateManifests keeps its own; the
+		// parity lint further down reads the same load.
+		manifests, rs, err := loadManifests(dir)
+		if err != nil {
+			return err
+		}
+		if bound, err := contractBinds(dir, manifests); err != nil {
+			return err
+		} else if bound {
+			if err := contract.Check(dir, rs); err != nil {
+				return err
+			}
+		}
+
 		// Manifest resources (design doc §9): idempotency and
 		// hand-vs-generated route collisions, all inside a temp dir —
 		// a --check run never writes into gen/. A complete no-op when
@@ -152,22 +170,11 @@ func runGenerate(args []string) error {
 		if err != nil {
 			return fmt.Errorf("manifest check: %w", err)
 		}
+		// cliWritten counts the hand actions' copies as this run's so
+		// prune keeps them; whether each is current is its own question.
 		stale, err := prune.Stale(genDir, append(gm.Written, cliWritten(genDir, actions)...), gm.ExclusiveStores)
-		if err := errors.Join(err, prune.StaleError(stale)); err != nil {
+		if err := errors.Join(err, prune.StaleError(stale), generate.StaleRewrites(actionsDir, genDir, actions)); err != nil {
 			return err
-		}
-
-		// The agent-gate check (§13's buildable half): a write tool with
-		// no Confirm sentence is an action an agent could execute with
-		// no consent sentence to show — refused before it ships, not
-		// discovered after.
-		if unconfirmed := generate.UnconfirmedWriteTools(tools); len(unconfirmed) > 0 {
-			fmt.Fprintln(os.Stderr, "rastrillo generate: write tools missing a Confirm sentence —")
-			for _, id := range unconfirmed {
-				fmt.Fprintf(os.Stderr, "  %s\n", id)
-			}
-			fmt.Fprintln(os.Stderr, "every rastrillo.ToolWrite needs Confirm: the sentence a person sees before the write runs (design doc §8)")
-			return fmt.Errorf("%d write tool(s) without consent sentences", len(unconfirmed))
 		}
 
 		// A template naming an icon nothing answers renders a hole in the
@@ -191,6 +198,25 @@ func runGenerate(args []string) error {
 			return fmt.Errorf("%d unknown icon slug(s)", len(unknownIcons))
 		}
 
+		// Hand-written code on its operation (JSON API spec §7): a hand
+		// operation that skips op.Check is open to every caller, and a
+		// hand action that overrides an exposed door without calling
+		// its operation lets the page and the API drift apart. Neither
+		// fails a build, so this is the only place they are refused.
+		if manifests {
+			findings, err := lint.Parity(dir, rs)
+			if err != nil {
+				return fmt.Errorf("parity check: %w", err)
+			}
+			if len(findings) > 0 {
+				fmt.Fprintln(os.Stderr, "rastrillo generate: hand-written code is off its operation:")
+				for _, f := range findings {
+					fmt.Fprintf(os.Stderr, "  %s\n", f)
+				}
+				return fmt.Errorf("%d parity finding(s); the page and the API must do the same thing (JSON API spec §7)", len(findings))
+			}
+		}
+
 		// Go↔JS parity vectors (vectors design §1.4): when the app has
 		// a cmd/genvectors, the vectors check joins this gate —
 		// regenerate-and-byte-compare plus the JS parity suite — so
@@ -204,12 +230,60 @@ func runGenerate(args []string) error {
 			return err
 		}
 
-		fmt.Printf("rastrillo generate --check: %d route(s), %d tool(s), actions tagged, locale catalogs complete, icon slugs resolve\n", len(actions), len(tools))
+		fmt.Printf("rastrillo generate --check: %d route(s), actions tagged, locale catalogs complete, icon slugs resolve, hand-written code on its operation\n", len(actions))
 		return nil
+	}
+
+	// Manifest resources claim routes too (their own action files, not
+	// discovered via Discover/Rewrite — see actions.go's package doc);
+	// their Route/PackageName/GenDir fold into the same gen/router.go
+	// Router builds for hand actions below, so a resource's generated
+	// actions actually get served. GenerateManifests loads and
+	// validates the manifest set itself; a manifest-less app (the
+	// common case — every pre-manifest app has no manifest/ directory
+	// at all) skips this Load entirely rather than paying for another
+	// goEval `go run` on every generate.
+	//
+	// Loaded before the first write into gen/ because the API contract
+	// is compared here (JSON API spec §6): a breaking change refuses
+	// the whole run, and a run refused before it wrote anything leaves
+	// nothing to revert but the manifest edit.
+	var manifestActions []generate.Action
+	booted := false // the router takes gen.Booted exactly when gen/boot.go exists
+	manifests, rs, err := loadManifests(dir)
+	if err != nil {
+		return err
+	}
+	if bound, err := contractBinds(dir, manifests); err != nil {
+		return err
+	} else if bound {
+		notes, err := contract.Write(dir, rs, *acceptBreaking)
+		if err != nil {
+			return err
+		}
+		for _, n := range notes {
+			fmt.Println(n)
+		}
+	}
+	if manifests {
+		booted = len(rs) > 0
+		for _, w := range manifest.IneligibleDefaults(rs) {
+			fmt.Fprintln(os.Stderr, w)
+		}
+		manifestActions, err = generate.ManifestActions(actionsDir, rs)
+		if err != nil {
+			return err
+		}
 	}
 
 	if err := os.RemoveAll(filepath.Join(genDir, "actions")); err != nil {
 		return fmt.Errorf("clear stale generated actions: %w", err)
+	}
+	// gen/ops holds hand-written copies too (opsgen.Emit), and a copy
+	// without the generated header is invisible to prune: once its
+	// resource is gone it would outlive types.go and break the build.
+	if err := os.RemoveAll(filepath.Join(genDir, "ops")); err != nil {
+		return fmt.Errorf("clear stale generated operations: %w", err)
 	}
 	for _, a := range actions {
 		if err := generate.Rewrite(actionsDir, genDir, a); err != nil {
@@ -233,33 +307,6 @@ func runGenerate(args []string) error {
 		return err
 	}
 
-	// Manifest resources claim routes too (their own action files, not
-	// discovered via Discover/Rewrite — see actions.go's package doc);
-	// fold their Route/PackageName/GenDir into the same gen/router.go
-	// Router builds for hand actions, so a resource's generated actions
-	// actually get served. GenerateManifests already loaded and
-	// validated the manifest set above; a manifest-less app (the
-	// common case — every pre-manifest app has no manifest/ directory
-	// at all) skips this second Load entirely rather than paying for
-	// another goEval `go run` on every generate.
-	var manifestActions []generate.Action
-	booted := false // the router takes gen.Booted exactly when gen/boot.go exists
-	if _, err := os.Stat(filepath.Join(dir, "manifest")); err == nil {
-		rs, err := manifest.Load(dir, filepath.Join(dir, "manifest"))
-		if err != nil {
-			return err
-		}
-		booted = len(rs) > 0
-		for _, w := range manifest.IneligibleDefaults(rs) {
-			fmt.Fprintln(os.Stderr, w)
-		}
-		manifestActions, err = generate.ManifestActions(actionsDir, rs)
-		if err != nil {
-			return err
-		}
-	} else if !os.IsNotExist(err) {
-		return err
-	}
 	allActions := append(append([]generate.Action(nil), actions...), manifestActions...)
 
 	router, err := generate.Router(module, allActions, booted)
@@ -277,12 +324,23 @@ func runGenerate(args []string) error {
 	if err := os.WriteFile(filepath.Join(genDir, "router.go"), router, 0o644); err != nil {
 		return err
 	}
-
-	toolsFile, err := generate.ToolsFile(tools)
+	// Every app, manifests or not: a main.go that mounts
+	// api.New(cfg, gen.APIRoutes()...) must keep compiling when the last
+	// exposed resource is taken off the API, or when the app has no
+	// manifest yet and is adding the API first.
+	apiFile, err := apigen.File(module, rs)
 	if err != nil {
-		return fmt.Errorf("render tools.go: %w", err)
+		return fmt.Errorf("render api.go: %w", err)
 	}
-	if err := os.WriteFile(filepath.Join(genDir, "tools.go"), toolsFile, 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(genDir, "api.go"), apiFile, 0o644); err != nil {
+		return err
+	}
+
+	// The tool registry used to be emitted here. An app upgrading from a
+	// release that did still has gen/tools.go, which names a type the root
+	// package no longer has and would fail its build; gen/ is wholly
+	// generated, so remove it.
+	if err := os.Remove(filepath.Join(genDir, "tools.go")); err != nil && !os.IsNotExist(err) {
 		return err
 	}
 
@@ -304,10 +362,40 @@ func runGenerate(args []string) error {
 	return nil
 }
 
+// loadManifests reports whether the app has a manifest/ directory and,
+// if so, the resources it declares. A manifest-less app skips the load,
+// which is another goEval `go run`, rather than paying for nothing.
+func loadManifests(dir string) (bool, []rastrillo.Resource, error) {
+	if _, err := os.Stat(filepath.Join(dir, "manifest")); os.IsNotExist(err) {
+		return false, nil, nil
+	} else if err != nil {
+		return false, nil, err
+	}
+	rs, err := manifest.Load(dir, filepath.Join(dir, "manifest"))
+	return true, rs, err
+}
+
+// contractBinds is whether api/v1.json is compared: with manifests, and
+// also without them once a contract is committed. Keying on manifest/
+// alone let deleting or renaming it skip the comparison, and the run
+// then pruned every exposed resource's files with no word about the
+// routes it took off /api/v1. No manifests is no resources, so every
+// committed operation was removed: a break, refused like any other.
+func contractBinds(dir string, manifests bool) (bool, error) {
+	_, err := os.Stat(filepath.Join(dir, contract.Path))
+	switch {
+	case manifests || err == nil:
+		return true, nil
+	case os.IsNotExist(err):
+		return false, nil
+	}
+	return false, err
+}
+
 // cliWritten is what runGenerate writes into genDir beside the manifest
 // pipeline, changed or not, so pruning counts it as this run's.
 func cliWritten(genDir string, actions []generate.Action) []string {
-	out := append(packs.Paths(genDir), filepath.Join(genDir, "router.go"), filepath.Join(genDir, "tools.go"))
+	out := append(packs.Paths(genDir), filepath.Join(genDir, "router.go"), filepath.Join(genDir, "api.go"), filepath.Join(genDir, "tools.go"))
 	for _, a := range actions {
 		out = append(out, generate.RewritePath(genDir, a))
 	}

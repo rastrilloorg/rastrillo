@@ -12,6 +12,7 @@
 <a href="/">Notes</a>
 {{if .SignedIn}}
 <a href="/bookmarks">Bookmarks</a>
+<a href="/tokens">{{T $L "rastrillo.ui.api_tokens_title"}}</a>
 <form method="post" action="/signout"><button type="submit">Sign out</button></form>
 {{else}}
 <a href="/signin">Sign in</a>

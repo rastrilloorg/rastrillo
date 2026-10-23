@@ -1,0 +1,173 @@
+{
+  "version": 1,
+  "operations": [
+    {
+      "id": "bookmarks.create",
+      "method": "POST",
+      "path": "/api/v1/bookmarks",
+      "access": "write",
+      "input": {
+        "link": {"kind": "text", "required": false},
+        "notes": {"kind": "textarea", "required": false},
+        "title": {"kind": "text", "required": true}
+      },
+      "result": {
+        "created_at": "time",
+        "id": "integer",
+        "link": "text",
+        "notes": "textarea",
+        "title": "text",
+        "updated_at": "time"
+      }
+    },
+    {
+      "id": "bookmarks.delete",
+      "method": "DELETE",
+      "path": "/api/v1/bookmarks/{id}",
+      "access": "write",
+      "input": {
+        "id": {"kind": "integer", "required": true}
+      },
+      "result": {}
+    },
+    {
+      "id": "bookmarks.get",
+      "method": "GET",
+      "path": "/api/v1/bookmarks/{id}",
+      "access": "read",
+      "input": {
+        "id": {"kind": "integer", "required": true}
+      },
+      "result": {
+        "created_at": "time",
+        "id": "integer",
+        "link": "text",
+        "notes": "textarea",
+        "title": "text",
+        "updated_at": "time"
+      }
+    },
+    {
+      "id": "bookmarks.list",
+      "method": "GET",
+      "path": "/api/v1/bookmarks",
+      "access": "read",
+      "input": {
+        "after": {"kind": "cursor", "required": false},
+        "limit": {"kind": "integer", "required": false},
+        "q": {"kind": "text", "required": false}
+      },
+      "result": {
+        "bookmarks": "array",
+        "next_after": "cursor"
+      }
+    },
+    {
+      "id": "bookmarks.update",
+      "method": "PATCH",
+      "path": "/api/v1/bookmarks/{id}",
+      "access": "write",
+      "input": {
+        "id": {"kind": "integer", "required": true},
+        "link": {"kind": "text", "required": false},
+        "notes": {"kind": "textarea", "required": false},
+        "title": {"kind": "text", "required": false}
+      },
+      "result": {
+        "created_at": "time",
+        "id": "integer",
+        "link": "text",
+        "notes": "textarea",
+        "title": "text",
+        "updated_at": "time"
+      }
+    },
+    {
+      "id": "ticket_types.create",
+      "method": "POST",
+      "path": "/api/v1/ticket_types",
+      "access": "write",
+      "input": {
+        "max_per_order": {"kind": "text", "required": false},
+        "name": {"kind": "text", "required": true},
+        "price": {"kind": "money", "required": true},
+        "status": {"kind": "text", "required": false}
+      },
+      "result": {
+        "created_at": "time",
+        "id": "integer",
+        "max_per_order": "text",
+        "name": "text",
+        "price": "money",
+        "status": "text",
+        "updated_at": "time"
+      }
+    },
+    {
+      "id": "ticket_types.delete",
+      "method": "DELETE",
+      "path": "/api/v1/ticket_types/{id}",
+      "access": "write",
+      "input": {
+        "id": {"kind": "integer", "required": true}
+      },
+      "result": {}
+    },
+    {
+      "id": "ticket_types.get",
+      "method": "GET",
+      "path": "/api/v1/ticket_types/{id}",
+      "access": "read",
+      "input": {
+        "id": {"kind": "integer", "required": true}
+      },
+      "result": {
+        "created_at": "time",
+        "id": "integer",
+        "max_per_order": "text",
+        "name": "text",
+        "price": "money",
+        "status": "text",
+        "updated_at": "time"
+      }
+    },
+    {
+      "id": "ticket_types.list",
+      "method": "GET",
+      "path": "/api/v1/ticket_types",
+      "access": "read",
+      "input": {
+        "after": {"kind": "cursor", "required": false},
+        "limit": {"kind": "integer", "required": false},
+        "q": {"kind": "text", "required": false},
+        "status": {"kind": "text", "required": false}
+      },
+      "result": {
+        "next_after": "cursor",
+        "ticket_types": "array"
+      }
+    },
+    {
+      "id": "ticket_types.update",
+      "method": "PATCH",
+      "path": "/api/v1/ticket_types/{id}",
+      "access": "write",
+      "input": {
+        "id": {"kind": "integer", "required": true},
+        "max_per_order": {"kind": "text", "required": false},
+        "name": {"kind": "text", "required": false},
+        "price": {"kind": "money", "required": false},
+        "status": {"kind": "text", "required": false}
+      },
+      "result": {
+        "created_at": "time",
+        "id": "integer",
+        "max_per_order": "text",
+        "name": "text",
+        "price": "money",
+        "status": "text",
+        "updated_at": "time"
+      }
+    }
+  ]
+}

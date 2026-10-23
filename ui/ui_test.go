@@ -1165,6 +1165,8 @@ func allPartials() []struct {
 			},
 		}},
 		{"scheme-menu", map[string]any{"Scheme": "dark", "Return": "/orders"}},
+		{"actor", map[string]any{"Actor": rastrillo.Actor{Subject: "7", Agent: "Claude"}}},
+		{"api-tokens", tokensData(tokensCreatedPage())},
 		{"error-page", map[string]any{
 			"Status": 500, "Ref": "k3f9tq", "HomeHref": "/", "BackHref": "/orders",
 		}},
@@ -1317,15 +1319,15 @@ func TestAllPartialsAreDefined(t *testing.T) {
 		"locale-menu", "scheme-menu", "error-page",
 		"field-date", "field-time", "field-datetime", "field-daterange",
 		"field-url", "signin", "signin-title", "row-menu", "field-money",
-		"media-grid",
+		"media-grid", "stat", "actor", "api-tokens",
 	}
 	for _, name := range want {
 		if tmpl.Lookup(name) == nil {
 			t.Errorf("partial %q is not defined", name)
 		}
 	}
-	if len(want) != 41 {
-		t.Fatalf("the shipped set is 41 partials, this list has %d", len(want))
+	if len(want) != 44 {
+		t.Fatalf("the shipped set is 44 partials, this list has %d", len(want))
 	}
 }
 

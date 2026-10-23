@@ -3,15 +3,16 @@
 package act_admin_posts_index_post
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
-	"time"
 
 	"amadan.net/rastrillo/rastrillo"
 	"amadan.net/rastrillo/rastrillo/form"
+	"amadan.net/rastrillo/rastrillo/op"
 	"amadan.net/rastrillo/rastrillo/ui"
 	"amadan.net/rastrillo/rastrillo/view"
-	postsstore "blog/gen/store/posts"
+	ops_posts "blog/gen/ops/posts"
 )
 
 // Handle is POST /admin/posts.
@@ -23,32 +24,39 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 	}
 
 	p := form.Parse(r,
-		form.Field{Name: "Title", Required: true},
+		form.Field{Name: "Title"},
 		form.Field{Name: "Body", Kind: form.Textarea},
 	)
-	if !p.OK() {
+	in := ops_posts.CreateInput{
+		Title: present(r, "Title", p.String("Title")),
+		Body:  present(r, "Body", p.String("Body")),
+	}
+	reshow := func(errs map[string]string) {
 		view.Render(ctx, w, "posts/form", http.StatusBadRequest, formView{
 			Localized: ui.ForRequest(r),
 			IsNew:     true,
 			Fields:    p.Echo(),
-			Errors:    p.Errors(),
+			Errors:    errs,
 			ErrorArgs: p.ErrorArgs(),
 		})
-		return
 	}
 
-	now := time.Now().UTC().Format(time.RFC3339)
-	store := postsstore.New(ctx.DB)
-	id, err := store.CreatePost(r.Context(), postsstore.CreatePostParams{
-		Title: p.String("Title"),
-		Body:  p.String("Body"),
-		Now:   now,
-	})
-	if err != nil {
-		view.Fail(ctx, w, r, "posts: creating posts", err)
+	n, err := ops_posts.Create(r.Context(), ctx, in)
+	var invalid op.Invalid
+	if errors.As(err, &invalid) {
+		reshow(invalid.Fields)
 		return
 	}
-	http.Redirect(w, r, fmt.Sprintf("/admin/posts/%d", id), http.StatusSeeOther)
+	if err != nil {
+		view.Refuse(ctx, w, r, "posts: creating posts", err)
+		return
+	}
+	http.Redirect(w, r, fmt.Sprintf("/admin/posts/%d", n.ID), http.StatusSeeOther)
+}
+
+func present(r *http.Request, name, v string) op.Opt[string] {
+	_, ok := r.PostForm[name]
+	return op.Opt[string]{Value: v, Set: ok}
 }
 
 type formView struct {

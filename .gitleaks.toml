@@ -35,3 +35,26 @@ regexes = ['''^[0-9a-f]{64}$''']
 [[allowlists]]
 description = "RFC 6238 test key"
 regexes = ['''^GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ$''']
+
+# The example token public ID the JSON API spec, plan and tests share. A
+# token's public ID is its lookup key and is not a secret, so it is safe
+# to publish; a real token's secret half is a separate value.
+# Allowed by content, not by fingerprint in .gitleaksignore, for the
+# shallow-checkout reason given above. Anchored, so a value that merely
+# contains the ID, such as a whole token built around it, is still
+# found. The second value is the ID with the example prefix, which the
+# api package's redaction tests assign to a variable named secret, so
+# the default generic-api-key rule matches it.
+[[allowlists]]
+description = "example token public ID"
+regexes = ['''^k3Jx9QpL2mWa$''', '''^tickets_k3Jx9QpL2mWa_?$''']
+
+# A rastrillo API token, <prefix>_<public id>_<secret> (apitoken). The
+# default rules do not know the shape. Every scaffolded app's
+# .gitleaks.toml carries the same rule, and TestGitleaksFindsAPITokens
+# holds the two to one regex. Tests build the tokens they need at run
+# time, so none is ever committed for this rule to find.
+[[rules]]
+id = "rastrillo-api-token"
+description = "Rastrillo API token"
+regex = '''\b[a-z][a-z0-9]{0,15}_[0-9A-Za-z]{12}_[0-9A-Za-z]{43}\b'''

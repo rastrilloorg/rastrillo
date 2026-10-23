@@ -1,0 +1,186 @@
+package apitest
+
+import (
+	"context"
+	"database/sql"
+	"net/http"
+	"net/http/httptest"
+	"path/filepath"
+	"strings"
+	"testing"
+
+	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/api"
+	"amadan.net/rastrillo/rastrillo/op"
+
+	"scratch/gen"
+	feesstore "scratch/gen/store/fees"
+	ticket_typesstore "scratch/gen/store/ticket_types"
+)
+
+// verifier names two token callers: alice through an agent, bob
+// directly. Anyone else is the 401 a real store would answer.
+type verifier struct{}
+
+func (verifier) Verify(ctx context.Context, r *http.Request) (rastrillo.Actor, error) {
+	switch r.Header.Get("Authorization") {
+	case "Bearer alice":
+		return rastrillo.Actor{Subject: "alice", Agent: "Claude", Credential: "aaaaaaaaaaaa", Access: rastrillo.Write}, nil
+	case "Bearer bob":
+		return rastrillo.Actor{Subject: "bob", Credential: "bbbbbbbbbbbb", Access: rastrillo.Write}, nil
+	}
+	return rastrillo.Actor{}, api.ErrUnauthorized
+}
+
+func testDB(t *testing.T) *sql.DB {
+	t.Helper()
+	// Both stores: Boot checks every exclusive table's money columns.
+	migrations := append(append([]string(nil), feesstore.Migrations...), ticket_typesstore.Migrations...)
+	db, err := rastrillo.OpenDB(filepath.Join(t.TempDir(), "app.db"), migrations)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { db.Close() })
+	if _, err := gen.Boot(context.Background(), db); err != nil {
+		t.Fatal(err)
+	}
+	return db
+}
+
+// tree mounts the generated routes the way an app's main.go does.
+func tree(t *testing.T, db *sql.DB, authorize func(context.Context, rastrillo.Actor, rastrillo.Operation) error) http.Handler {
+	t.Helper()
+	h, err := api.New(api.Config{
+		Verify:    verifier{},
+		Ctx:       func(*http.Request) *rastrillo.Ctx { return &rastrillo.Ctx{DB: db} },
+		Authorize: authorize,
+	}, gen.APIRoutes()...)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return h
+}
+
+type call struct {
+	token, method, path, body string
+	code                      int
+	has                       string
+}
+
+func run(t *testing.T, h http.Handler, calls []call) {
+	t.Helper()
+	for _, c := range calls {
+		r := httptest.NewRequest(c.method, c.path, strings.NewReader(c.body))
+		r.Header.Set("Authorization", "Bearer "+c.token)
+		if c.body != "" {
+			r.Header.Set("Content-Type", "application/json")
+		}
+		w := httptest.NewRecorder()
+		h.ServeHTTP(w, r)
+		if w.Code != c.code || !strings.Contains(w.Body.String(), c.has) {
+			t.Errorf("%s %s %s = %d %s; want %d containing %s", c.method, c.path, c.body, w.Code, w.Body.String(), c.code, c.has)
+		}
+	}
+}
+
+// TestMoneyOnTheWire is fees, a scoped resource under op.DefaultPolicy:
+// a left-out currency takes the manifest's, a sent one is normalised,
+// an optional amount is null when empty and null clears it, and a
+// stored currency never changes.
+func TestMoneyOnTheWire(t *testing.T) {
+	h := tree(t, testDB(t), op.DefaultPolicy)
+	run(t, h, []call{
+		{"alice", "POST", "/api/v1/fees", `{"title":"Entry","price":{"amount":1490}}`, 201, `"price":{"amount":1490,"currency":"EUR"}`},
+		{"alice", "GET", "/api/v1/fees/1", "", 200, `"deposit":null`},
+		{"alice", "POST", "/api/v1/fees", `{"title":"Entry","price":{"amount":5,"currency":"usd"}}`, 201, `"currency":"USD"`},
+		{"alice", "POST", "/api/v1/fees", `{"title":"x","price":{"amount":1,"currency":"ZZZ"}}`, 422, `"price":"Use a currency code this app supports, like EUR."`},
+		{"alice", "POST", "/api/v1/fees", `{"title":"x","price":null}`, 422, `"price":"Send a value, or leave this field out."`},
+		{"alice", "POST", "/api/v1/fees", `{"title":"x","price":{"currency":"EUR"}}`, 422, `"price":"Send an amount."`},
+		{"alice", "POST", "/api/v1/fees", `{"title":"x"}`, 422, `"price":"Price is required"`},
+		{"alice", "PATCH", "/api/v1/fees/1", `{"deposit":{"amount":500}}`, 200, `"deposit":{"amount":500,"currency":"EUR"}`},
+		{"alice", "PATCH", "/api/v1/fees/1", `{"deposit":null}`, 200, `"deposit":null`},
+		{"alice", "PATCH", "/api/v1/fees/1", `{"price":{"amount":1,"currency":"USD"}}`, 409, `"code":"conflict"`},
+		{"alice", "PATCH", "/api/v1/fees/1", `{}`, 200, `"price":{"amount":1490,"currency":"EUR"}`},
+		{"alice", "GET", "/api/v1/fees?limit=1", "", 200, `"next_after":"`},
+		{"alice", "GET", "/api/v1/fees?limit=abc", "", 422, `"limit":"Use a whole number from 1 to 200."`},
+		{"alice", "GET", "/api/v1/fees?limit=0", "", 200, `"next_after":null`},
+		{"alice", "GET", "/api/v1/fees?after=zzz", "", 422, `"after":"Use the next_after value from the previous page."`},
+		{"bob", "GET", "/api/v1/fees", "", 200, `{"fees":[],"next_after":null}`},
+		{"bob", "GET", "/api/v1/fees/1", "", 404, `"not_found"`},
+		{"alice", "GET", "/api/v1/fees/abc", "", 404, `"not_found"`},
+		{"alice", "GET", "/api/v1/fees/0", "", 404, `"not_found"`},
+		{"alice", "DELETE", "/api/v1/fees/1", `{}`, 422, `"invalid"`},
+		{"alice", "DELETE", "/api/v1/fees/1", "", 204, ""},
+		{"alice", "GET", "/api/v1/fees/1", "", 404, `"not_found"`},
+		{"carol", "GET", "/api/v1/fees", "", 401, `"unauthorized"`},
+	})
+}
+
+// TestCreateAnswersLocation: a 201 names the new row's address.
+func TestCreateAnswersLocation(t *testing.T) {
+	h := tree(t, testDB(t), op.DefaultPolicy)
+	r := httptest.NewRequest("POST", "/api/v1/fees", strings.NewReader(`{"title":"Entry","price":{"amount":1}}`))
+	r.Header.Set("Authorization", "Bearer alice")
+	r.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, r)
+	if w.Code != 201 || w.Header().Get("Location") != "/api/v1/fees/1" {
+		t.Fatalf("POST = %d, Location %q; want 201 at /api/v1/fees/1", w.Code, w.Header().Get("Location"))
+	}
+}
+
+// TestWireFieldNames is ticket_types, exposed by its manifest and
+// allowed to tokens by the app's own policy. A refusal names the field
+// the client sent: an unknown member in the spelling it came in, an
+// operation's manifest name as its wire name, once converted and never
+// twice. The filter is a query parameter under its wire name, a body
+// is refused before the id is read, and the method and path errors are
+// the tree's.
+func TestWireFieldNames(t *testing.T) {
+	allow := func(context.Context, rastrillo.Actor, rastrillo.Operation) error { return nil }
+	db := testDB(t)
+	run(t, tree(t, db, op.DefaultPolicy), []call{
+		{"alice", "GET", "/api/v1/ticket_types", "", 403, `"forbidden"`},
+	})
+	run(t, tree(t, db, allow), []call{
+		{"alice", "POST", "/api/v1/ticket_types", `{"Name":"x"}`, 422, `{"Name":"Unknown field. Check the spelling and case."}`},
+		{"alice", "POST", "/api/v1/ticket_types", `{"price":{"amount":1}}`, 422, `{"name":"Name is required"}`},
+		{"alice", "POST", "/api/v1/ticket_types", `{"name":"Early","price":{"amount":1000},"status":"draft","max_per_order":"2"}`, 201, `"max_per_order":"2"`},
+		{"alice", "PATCH", "/api/v1/ticket_types/1", `{"max_per_order":5}`, 422, `{"max_per_order":"Send a string."}`},
+		{"alice", "PATCH", "/api/v1/ticket_types/1", `{"MaxPerOrder":"3"}`, 422, `{"MaxPerOrder":"Unknown field. Check the spelling and case."}`},
+		{"alice", "PATCH", "/api/v1/ticket_types/999", `{"name":5}`, 422, `{"name":"Send a string."}`},
+		{"alice", "PATCH", "/api/v1/ticket_types/999", `{}`, 404, `"not_found"`},
+		{"alice", "GET", "/api/v1/ticket_types?status=draft", "", 200, `"name":"Early"`},
+		{"alice", "GET", "/api/v1/ticket_types?status=on_sale", "", 200, `{"ticket_types":[],"next_after":null}`},
+		{"alice", "GET", "/api/v1/ticket_types?q=Ear", "", 200, `"name":"Early"`},
+		{"alice", "GET", "/api/v1/ticket_types?q=zzz", "", 200, `{"ticket_types":[],"next_after":null}`},
+		{"alice", "POST", "/api/v1/ticket_types/1", `{}`, 405, `"method_not_allowed"`},
+		{"alice", "GET", "/api/v1/ticket_types/1/extra", "", 404, `"not_found"`},
+		{"alice", "DELETE", "/api/v1/ticket_types/1", "", 204, ""},
+		{"alice", "DELETE", "/api/v1/ticket_types/1", "", 404, `"not_found"`},
+	})
+	r := httptest.NewRequest("POST", "/api/v1/ticket_types", strings.NewReader(`{"name":"x","price":{"amount":1}}`))
+	r.Header.Set("Authorization", "Bearer alice")
+	r.Header.Set("Content-Type", "text/plain")
+	w := httptest.NewRecorder()
+	tree(t, db, allow).ServeHTTP(w, r)
+	if w.Code != 415 {
+		t.Fatalf("POST as text/plain = %d %s; want 415", w.Code, w.Body.String())
+	}
+}
+
+// TestOperationsListsEveryResource: both resources are listed, each
+// saying whether it is on the API, and the routes are only the exposed
+// ones' five each.
+func TestOperationsListsEveryResource(t *testing.T) {
+	exposed := map[string]bool{}
+	for _, d := range gen.Operations() {
+		exposed[d.Resource] = d.Exposed
+	}
+	if len(gen.Operations()) != 10 || !exposed["fees"] || !exposed["ticket_types"] {
+		t.Fatalf("Operations = %d descriptors, exposed %v; want ten, both exposed", len(gen.Operations()), exposed)
+	}
+	if n := len(gen.APIRoutes()); n != 10 {
+		t.Fatalf("APIRoutes = %d routes; want ten", n)
+	}
+}

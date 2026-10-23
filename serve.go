@@ -5,13 +5,12 @@
 //
 // The root package holds the process shape (Run/Serve/Handler, the
 // activation contract, the SQLite opener, migrations), the action
-// vocabulary (Ctx, Actor), the manifest vocabulary (Resource, Tool),
+// vocabulary (Ctx, Actor), the manifest vocabulary (Resource),
 // fingerprinted assets, and localization. The subsystems live beside
 // it: crypto (the family envelope), auth (keymail sign-in with the
 // magic-link fallback), webauthn, eventlog (the Mergeable store),
-// blobs, mail, carlos (the platform's scheduled-work contract), tools
-// (agent dispatch), and ui (the component partials). README.md keeps
-// the honest status list.
+// blobs, mail, carlos (the platform's scheduled-work contract), and ui
+// (the component partials). README.md keeps the honest status list.
 package rastrillo
 
 import (

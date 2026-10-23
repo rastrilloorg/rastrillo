@@ -294,7 +294,10 @@ generate-check: build-cli
 	# trailing /** is load-bearing: a pathspec containing a glob character is matched
 	# with fnmatch, not treated as a directory prefix, so 'examples/*/gen' alone
 	# matches nothing below gen/ - only 'examples/*/gen/**' recurses into it.
-	git diff --exit-code -- 'examples/*/gen/**'
+	# api/v1.json is the one file generate writes outside gen/ (the committed API
+	# contract, JSON API spec section 6); --check above already fails when it is
+	# stale, so this only catches a generator that writes it differently.
+	git diff --exit-code -- 'examples/*/gen/**' 'examples/*/api/v1.json'
 
 # Depends on the binary, NOT on generate-check: sharing that prerequisite
 # would make step 95 re-run step 90's work and fail for step 90's reasons,

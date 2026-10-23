@@ -45,7 +45,11 @@ func TestPerfScreens(t *testing.T) {
 	// gen/locales. Boot refuses a configuration whose packs this binary
 	// does not link.
 	opts := rastrillo.Options{Logger: logger, Locales: genlocales.Locales, DefaultLocale: genlocales.DefaultLocale}
-	%[2]s.Configure(&opts, %[2]s.Mux(r), time.Now())
+	apiTree, err := %[2]s.API(d, logger)
+	if err != nil {
+		t.Fatal(err)
+	}
+	%[2]s.Configure(&opts, %[2]s.Mux(r, apiTree), time.Now())
 	h, closeAll, err := rastrillo.Handler(opts)
 	if err != nil {
 		t.Fatal(err)

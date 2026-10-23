@@ -54,7 +54,7 @@ func (q *Queries) CreateBookmark(ctx context.Context, arg CreateBookmarkParams) 
 	return id, err
 }
 
-const deleteBookmark = `-- name: DeleteBookmark :exec
+const deleteBookmark = `-- name: DeleteBookmark :execrows
 DELETE FROM bookmarks WHERE id = ?1 AND owner = ?2
 `
 
@@ -63,9 +63,12 @@ type DeleteBookmarkParams struct {
 	Owner string
 }
 
-func (q *Queries) DeleteBookmark(ctx context.Context, arg DeleteBookmarkParams) error {
-	_, err := q.db.ExecContext(ctx, deleteBookmark, arg.ID, arg.Owner)
-	return err
+func (q *Queries) DeleteBookmark(ctx context.Context, arg DeleteBookmarkParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, deleteBookmark, arg.ID, arg.Owner)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
 }
 
 const getBookmark = `-- name: GetBookmark :one
@@ -145,46 +148,84 @@ func (q *Queries) ListBookmarks(ctx context.Context, arg ListBookmarksParams) ([
 	return items, nil
 }
 
-const updateBookmarkAdvanced = `-- name: UpdateBookmarkAdvanced :exec
-UPDATE bookmarks SET notes = ?1, updated_at = ?2 WHERE id = ?3 AND owner = ?4
+const listBookmarksAfter = `-- name: ListBookmarksAfter :many
+SELECT id, owner, title, link, notes, created_at, updated_at FROM bookmarks
+WHERE owner = ?1
+  AND (?2 = '' OR (title LIKE '%' || ?2 || '%' OR link LIKE '%' || ?2 || '%'))
+  AND (?3 = '' OR created_at < ?3 OR (created_at = ?3 AND id < ?4))
+ORDER BY created_at DESC, id DESC
+LIMIT ?5
 `
 
-type UpdateBookmarkAdvancedParams struct {
+type ListBookmarksAfterParams struct {
+	Owner          string
+	Search         interface{}
+	AfterCreatedAt interface{}
+	AfterID        int64
+	PageLimit      int64
+}
+
+func (q *Queries) ListBookmarksAfter(ctx context.Context, arg ListBookmarksAfterParams) ([]Bookmark, error) {
+	rows, err := q.db.QueryContext(ctx, listBookmarksAfter,
+		arg.Owner,
+		arg.Search,
+		arg.AfterCreatedAt,
+		arg.AfterID,
+		arg.PageLimit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Bookmark
+	for rows.Next() {
+		var i Bookmark
+		if err := rows.Scan(
+			&i.ID,
+			&i.Owner,
+			&i.Title,
+			&i.Link,
+			&i.Notes,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const updateBookmark = `-- name: UpdateBookmark :execrows
+UPDATE bookmarks SET title = ?1, link = ?2, notes = ?3, updated_at = ?4 WHERE id = ?5 AND owner = ?6
+`
+
+type UpdateBookmarkParams struct {
+	Title string
+	Link  string
 	Notes string
 	Now   string
 	ID    int64
 	Owner string
 }
 
-func (q *Queries) UpdateBookmarkAdvanced(ctx context.Context, arg UpdateBookmarkAdvancedParams) error {
-	_, err := q.db.ExecContext(ctx, updateBookmarkAdvanced,
+func (q *Queries) UpdateBookmark(ctx context.Context, arg UpdateBookmarkParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, updateBookmark,
+		arg.Title,
+		arg.Link,
 		arg.Notes,
 		arg.Now,
 		arg.ID,
 		arg.Owner,
 	)
-	return err
-}
-
-const updateBookmarkBasics = `-- name: UpdateBookmarkBasics :exec
-UPDATE bookmarks SET title = ?1, link = ?2, updated_at = ?3 WHERE id = ?4 AND owner = ?5
-`
-
-type UpdateBookmarkBasicsParams struct {
-	Title string
-	Link  string
-	Now   string
-	ID    int64
-	Owner string
-}
-
-func (q *Queries) UpdateBookmarkBasics(ctx context.Context, arg UpdateBookmarkBasicsParams) error {
-	_, err := q.db.ExecContext(ctx, updateBookmarkBasics,
-		arg.Title,
-		arg.Link,
-		arg.Now,
-		arg.ID,
-		arg.Owner,
-	)
-	return err
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
 }

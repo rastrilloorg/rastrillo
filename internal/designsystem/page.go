@@ -1451,7 +1451,11 @@ func previewStyle(locale, id string, h int) template.CSS {
 // which holds each language's content to the box on its own page and
 // names the number to write here when one is short.
 var previewMobileLocaleHeights = map[string]map[string]int{
+	"vi": {
+		"partial-api-tokens": 2150,
+	},
 	"ga": {
+		"partial-api-tokens":            2287,
 		"format-addresses":              319,
 		"idiom-box":                     318,
 		"idiom-button":                  449,
@@ -1464,6 +1468,7 @@ var previewMobileLocaleHeights = map[string]map[string]int{
 		"screen-signin-social":          422,
 	},
 	"es": {
+		"partial-api-tokens":              2102,
 		"idiom-box":                       307,
 		"idiom-form-layout":               565,
 		"partial-callout":                 260,
@@ -1474,6 +1479,7 @@ var previewMobileLocaleHeights = map[string]map[string]int{
 		"screen-signin-social":            407,
 	},
 	"pt-PT": {
+		"partial-api-tokens":            2126,
 		"idiom-button":                  449,
 		"idiom-form-layout":             565,
 		"partial-callout":               284,
@@ -1484,6 +1490,7 @@ var previewMobileLocaleHeights = map[string]map[string]int{
 		"screen-signin-social":          407,
 	},
 	"ru": {
+		"partial-api-tokens":         2270,
 		"format-addresses":           343,
 		"idiom-button":               449,
 		"partial-callout":            284,
@@ -1494,7 +1501,8 @@ var previewMobileLocaleHeights = map[string]map[string]int{
 		"screen-signin-sent-unbound": 637,
 	},
 	"ja": {
-		"idiom-form-layout": 523,
+		"partial-api-tokens": 2126,
+		"idiom-form-layout":  523,
 	},
 	"ar": {
 		"screen-signin-social": 399,
@@ -1530,6 +1538,7 @@ var previewMobileHeights = map[string]int{
 	"partial-media-grid":              1560, // one column: four tiles stacked, each a 4:3 frame the column wide
 	"partial-page-header":             216,
 	"partial-pagination":              176,
+	"partial-api-tokens":              2080, // the form's choice cards stack, and each list row stacks its four labelled facts under the identity
 	"screen-signin-ask":               649,
 	"screen-signin-continue":          560,
 	"screen-signin-problem-keymail":   693,
@@ -1596,6 +1605,7 @@ var previewHeights = map[string]int{
 	"partial-stat":        150, // a lead cell is label, number, delta and note stacked
 
 	"partial-person":      95,
+	"partial-actor":       70, // one line of words
 	"partial-callout":     160,
 	"partial-detail-list": 230,
 	"partial-notice":      110,
@@ -1620,7 +1630,8 @@ var previewHeights = map[string]int{
 	// Route.
 	"partial-error-page":  390,
 	"partial-back-nav":    80,
-	"partial-locale-menu": 420, // the open menu at its full 20rem cap; twelve languages scroll inside it
+	"partial-locale-menu": 420,  // the open menu at its full 20rem cap; twelve languages scroll inside it
+	"partial-api-tokens":  1000, // the reveal, a four-field form in its box, four list rows and the revoke buttons
 	// The markup idioms.
 	"idiom-button":        240, // four rows: the variants, the sizes and a link, full width, disabled
 	"idiom-box":           220,

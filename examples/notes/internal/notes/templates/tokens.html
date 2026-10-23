@@ -1,0 +1,5 @@
+{{define "content"}}{{$L := localizer $}}
+<h1>{{T $L "rastrillo.ui.api_tokens_title"}}</h1>
+<p>{{T $L "rastrillo.ui.api_tokens_intro"}}</p>
+{{template "api-tokens" dict "L" $L "Page" .Content "Path" "/tokens"}}
+{{end}}

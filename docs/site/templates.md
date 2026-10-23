@@ -63,7 +63,7 @@ layout can show a notice. See [Forms](/docs/forms).
 `iconAssets`, `opt`, `stageArt`, `displayURL`, `safeHref`,
 `rowMenuItems`, `paginationItems`, `localizer` and `withL`, and the
 locale functions `T`, `Tf`, `Tbdi`, `number`, `displayValue`,
-`dateWords` and `money`.
+`dateWords`, `money` and `actor`.
 
 Start each template body with `{{$L := localizer $}}`. Pass `$L` first
 to every locale function, and to every partial as `"L" $L`:
@@ -108,6 +108,8 @@ delivery mode changes. See [Icons](/docs/icons).
 They span the list-screen, display, form and route families:
 
 ```text
+actor         error-page       field-url           notice
+api-tokens    field            form-error          page-header
 back-nav      field-check      form-foot           pagination
 badge         field-date       job-status          person
 bulk-bar      field-daterange  list-bar            row-menu
@@ -117,8 +119,6 @@ confirm-form  field-select     list-search-submit  signin
 detail-list   field-text       locale-menu         signin-title
 dropdown      field-textarea   media-grid          stat
 empty-state   field-time       meter               status-pill
-error-page    field-url        notice
-field         form-error       page-header
 ```
 
 `locale-menu` is the language switcher; see
@@ -220,6 +220,16 @@ screenshot shows its top. Pass `Fit "contain"` for a logo or a banner.
 Give a tile `Href` to make it a link, `Select` for the checkbox a
 `bulk-bar` form collects, and `Menu` for a kebab. Render `empty-state`
 when there are no images.
+
+Who did something is `actor`: a person's name, or `Claude for Paul`
+for an agent acting for them, as plain words. Pass the
+`rastrillo.Actor`. Set `ui.ActorName` once at boot to turn a subject
+into a name.
+
+The API token page is `api-tokens`: the one-time reveal, the create
+form, the list and the revoke buttons, from `apitoken`'s `PageData`.
+Pass it as `Page` and the page's path as `Path`, under your own
+`page-header`. See [apitoken](/docs/reference/apitoken).
 
 `job-status`'s `rst-job` is the third, and the reason is behaviour
 rather than structure: the shim replaces that element **wholesale** on

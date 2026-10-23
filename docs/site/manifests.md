@@ -74,6 +74,19 @@ Assign owners to those rows in a migration of your own, written with
 `examples/notes` runs both halves side by side and proves them with one
 two-user suite.
 
+## The JSON API
+
+When your app mounts the API, a `scope = "user"` resource is also
+served as JSON at `/api/v1/<name>`, to a person's token. A resource with
+no owner is not, unless you add:
+
+```toml
+[api]
+expose = true
+```
+
+Commit `api/v1.json` with `gen/`. See [JSON API](/docs/api).
+
 ## The two stores
 
 `store = "exclusive"` is the default: one SQL table, with `sqlc` query

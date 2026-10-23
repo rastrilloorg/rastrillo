@@ -6,22 +6,31 @@ import (
 	"net/http"
 
 	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/sessions"
 	act_index_get "helloworld/gen/actions/index_get"
 )
 
-// Router builds the app's mux. ctxFactory constructs a fresh
-// *rastrillo.Ctx per request; see cmd/<app>/main.go. An actor stamped
-// on the request context (rastrillo.WithActor — the tools dispatcher's
-// doing) lands on Ctx.Actor after the factory runs, so agent calls are
-// attributed even when the app factory never thinks about actors.
+// Router builds the app's mux. ctxFactory constructs the *rastrillo.Ctx
+// a request runs with; see cmd/<app>/main.go. Each request gets a copy
+// of what the factory returns, so a factory may hand every request the
+// same Ctx. An actor stamped on the request context (rastrillo.WithActor,
+// the API tree's doing) lands on Ctx.Actor after the factory runs.
+// Failing that, a factory that left Actor zero gets the signed-in person
+// (sessions.ActorFrom), so op.Check sees the subject the scoped store
+// filters by and the caller is attributed even when the factory never
+// thinks about actors.
 func Router(ctxFactory func(*http.Request) *rastrillo.Ctx) *http.ServeMux {
 	mux := http.NewServeMux()
 	handle := func(r *http.Request) *rastrillo.Ctx {
-		c := ctxFactory(r)
+		c := *ctxFactory(r)
 		if a, ok := rastrillo.ActorFromContext(r.Context()); ok {
 			c.Actor = a
+		} else if c.Actor == (rastrillo.Actor{}) {
+			if a, ok := sessions.ActorFrom(r); ok {
+				c.Actor = a
+			}
 		}
-		return c
+		return &c
 	}
 	mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
 		act_index_get.Handle(handle(r), w, r)

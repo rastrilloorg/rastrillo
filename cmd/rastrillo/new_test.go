@@ -280,7 +280,7 @@ func TestMainTemplateWiresErrorPage(t *testing.T) {
 		"opts.Mux = mux",
 		"perf.Middleware(",
 		"func Router(d *db.DB, origin string, logger *slog.Logger) (chi.Router, error)",
-		"func Mux(r http.Handler) *http.ServeMux",
+		"func Mux(r, apiTree http.Handler) *http.ServeMux",
 	} {
 		if !strings.Contains(app, want) {
 			t.Errorf("app.go template missing %q:\n%s", want, app)
@@ -358,7 +358,7 @@ func TestManifestReadmeCarriesTheRecipe(t *testing.T) {
 		// framework bug rather than a missing step: everything
 		// compiles and the screen 500s on a table that was never
 		// created.
-		"migrate.Merge(genSchema, Schema)",
+		"migrate.Merge(apitoken.Schema, genSchema, Schema)",
 		".Migrations {",
 		// And the mount, which will not compile without Boot's result.
 		"gen.Boot(context.Background(), d.Writer())",

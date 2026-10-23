@@ -42,7 +42,7 @@ indented lines are the list you work through by hand, below.
 With `-write` it rewrites your templates in place:
 
 1. Every call of `T`, `Tf`, `Tbdi`, `number`, `displayValue`,
-   `dateWords` or `money` gets `$L` as its first argument.
+   `dateWords`, `money` or `actor` gets `$L` as its first argument.
 2. Every `{{template "name" dict ...}}` gets `"L" $L`.
 3. Any other data passed to a partial is wrapped as
    `(withL (DATA) $L)`, and listed for review.

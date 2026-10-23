@@ -3,15 +3,16 @@
 package act_admin_ticket_types_index_post
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
-	"time"
 
 	"amadan.net/rastrillo/rastrillo"
 	"amadan.net/rastrillo/rastrillo/form"
+	"amadan.net/rastrillo/rastrillo/op"
 	"amadan.net/rastrillo/rastrillo/ui"
 	"amadan.net/rastrillo/rastrillo/view"
-	ticket_typesstore "tickets/gen/store/ticket_types"
+	ops_ticket_types "tickets/gen/ops/ticket_types"
 )
 
 // Handle is POST /admin/ticket_types.
@@ -23,50 +24,63 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 	}
 
 	p := form.Parse(r,
-		form.Field{Name: "Name", Required: true},
+		form.Field{Name: "Name"},
 		form.Field{Name: "Price", Kind: form.Money, Currency: "USD", LocaleEcho: true, Required: true},
 		form.Field{Name: "Status"},
 		form.Field{Name: "MaxPerOrder"},
 	)
-	if !p.OK() {
+	in := ops_ticket_types.CreateInput{
+		Name:        present(r, "Name", p.String("Name")),
+		Price:       amount(p, "Price", "USD"),
+		Status:      present(r, "Status", p.String("Status")),
+		MaxPerOrder: present(r, "MaxPerOrder", p.String("MaxPerOrder")),
+	}
+	reshow := func(errs map[string]string) {
 		priceInput, _ := p.MoneyInput("Price", rastrillo.FormatLocale(r))
 		view.Render(ctx, w, "ticket_types/form", http.StatusBadRequest, formView{
 			Localized: ui.ForRequest(r),
 			IsNew:     true,
 			Fields:    p.Echo(),
-			Errors:    p.Errors(),
+			Errors:    errs,
 			ErrorArgs: p.ErrorArgs(),
 			Money: map[string]form.MoneyInput{
 				"Price": priceInput,
 			},
 		})
+	}
+	if !p.OK() {
+		errs := ops_ticket_types.ValidateCreate(in)
+		for k, v := range p.Errors() {
+			errs[k] = v
+		}
+		reshow(errs)
 		return
 	}
-	priceMinor, priceCurrency := amount(p, "Price", "USD")
 
-	now := time.Now().UTC().Format(time.RFC3339)
-	store := ticket_typesstore.New(ctx.DB)
-	id, err := store.CreateTicketType(r.Context(), ticket_typesstore.CreateTicketTypeParams{
-		Name:          p.String("Name"),
-		PriceMinor:    priceMinor,
-		PriceCurrency: priceCurrency,
-		Status:        p.String("Status"),
-		MaxPerOrder:   p.String("MaxPerOrder"),
-		Now:           now,
-	})
-	if err != nil {
-		view.Fail(ctx, w, r, "ticket_types: creating ticket_types", err)
+	n, err := ops_ticket_types.Create(r.Context(), ctx, in)
+	var invalid op.Invalid
+	if errors.As(err, &invalid) {
+		reshow(invalid.Fields)
 		return
 	}
-	http.Redirect(w, r, fmt.Sprintf("/admin/ticket_types/%d", id), http.StatusSeeOther)
+	if err != nil {
+		view.Refuse(ctx, w, r, "ticket_types: creating ticket_types", err)
+		return
+	}
+	http.Redirect(w, r, fmt.Sprintf("/admin/ticket_types/%d", n.ID), http.StatusSeeOther)
 }
 
-func amount(p *form.Parsed, name, code string) (*int64, *string) {
+func present(r *http.Request, name, v string) op.Opt[string] {
+	_, ok := r.PostForm[name]
+	return op.Opt[string]{Value: v, Set: ok}
+}
+
+func amount(p *form.Parsed, name, code string) op.Opt[op.Money] {
 	minor, ok := p.Minor(name)
 	if !ok {
-		return nil, nil
+		return op.Opt[op.Money]{}
 	}
-	return &minor, &code
+	return op.Some(op.Money{Amount: minor, Currency: code})
 }
 
 type formView struct {

@@ -3,17 +3,16 @@
 package act_admin_announcements_id_edit_basics_post
 
 import (
-	"database/sql"
 	"errors"
 	"fmt"
 	"net/http"
-	"time"
 
 	"amadan.net/rastrillo/rastrillo"
 	"amadan.net/rastrillo/rastrillo/form"
+	"amadan.net/rastrillo/rastrillo/op"
 	"amadan.net/rastrillo/rastrillo/ui"
 	"amadan.net/rastrillo/rastrillo/view"
-	announcementsstore "tickets/gen/store/announcements"
+	ops_announcements "tickets/gen/ops/announcements"
 )
 
 // Handle is POST /admin/announcements/{id}/edit-basics.
@@ -28,23 +27,21 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 		view.NotFound(ctx, w, r)
 		return
 	}
-	store := announcementsstore.New(ctx.DB)
-	n, err := store.GetAnnouncement(r.Context(), id)
-	if errors.Is(err, sql.ErrNoRows) {
-		view.NotFound(ctx, w, r)
-		return
-	}
+	n, err := ops_announcements.Get(r.Context(), ctx, id)
 	if err != nil {
-		view.Fail(ctx, w, r, "announcements: loading announcements", err)
+		view.Refuse(ctx, w, r, "announcements: loading announcements", err)
 		return
 	}
 
 	p := form.Parse(r,
-		form.Field{Name: "Title", Required: true},
+		form.Field{Name: "Title"},
 		form.Field{Name: "Body", Kind: form.Textarea},
 	)
-
-	if !p.OK() {
+	in := ops_announcements.UpdateInput{
+		Title: present(r, "Title", p.String("Title")),
+		Body:  present(r, "Body", p.String("Body")),
+	}
+	reshow := func(errs map[string]string) {
 		fields := map[string]string{
 			"Title": n.Title,
 			"Body":  n.Body,
@@ -56,24 +53,28 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 			Localized:    ui.ForRequest(r),
 			IsNew:        false,
 			Fields:       fields,
-			Errors:       p.Errors(),
+			Errors:       errs,
 			ErrorArgs:    p.ErrorArgs(),
 			BasicsAction: fmt.Sprintf("/admin/announcements/%d/edit-basics", id),
 		})
-		return
 	}
 
-	now := time.Now().UTC().Format(time.RFC3339)
-	if err := store.UpdateAnnouncementBasics(r.Context(), announcementsstore.UpdateAnnouncementBasicsParams{
-		Title: p.String("Title"),
-		Body:  p.String("Body"),
-		Now:   now,
-		ID:    id,
-	}); err != nil {
-		view.Fail(ctx, w, r, "announcements: updating announcements", err)
+	_, err = ops_announcements.Update(r.Context(), ctx, id, in)
+	var invalid op.Invalid
+	if errors.As(err, &invalid) {
+		reshow(invalid.Fields)
+		return
+	}
+	if err != nil {
+		view.Refuse(ctx, w, r, "announcements: updating announcements", err)
 		return
 	}
 	http.Redirect(w, r, fmt.Sprintf("/admin/announcements/%d", id), http.StatusSeeOther)
+}
+
+func present(r *http.Request, name, v string) op.Opt[string] {
+	_, ok := r.PostForm[name]
+	return op.Opt[string]{Value: v, Set: ok}
 }
 
 type formView struct {

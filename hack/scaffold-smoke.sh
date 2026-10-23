@@ -41,6 +41,25 @@ git init -q
 git add -A
 git -c user.name=smoke -c user.email=smoke@example.invalid commit -q -m scaffold
 make gitleaks
+# And the scaffold's .gitleaks.toml rule: an API token committed by
+# mistake turns the gate red. The token is made here, at run time, so
+# this file holds none for the repository's own scan to find. A gitleaks
+# that failed to run at all would also exit non-zero, so the finding
+# itself is what is checked.
+id=$(LC_ALL=C tr -dc 'A-Za-z0-9' </dev/urandom | head -c 12)
+secret=$(LC_ALL=C tr -dc 'A-Za-z0-9' </dev/urandom | head -c 43)
+echo "token = \"smokeapp_${id}_${secret}\"" > leak.txt
+git add leak.txt
+git -c user.name=smoke -c user.email=smoke@example.invalid commit -q -m leak
+if out=$(make gitleaks 2>&1); then
+	echo "scaffold-smoke: gitleaks passed a committed API token"
+	exit 1
+fi
+case "$out" in
+*"leaks found: 1"*) ;;
+*) echo "scaffold-smoke: gitleaks failed without finding the token:"; echo "$out"; exit 1 ;;
+esac
+git reset -q --hard HEAD~1
 go build -o smokeapp ./cmd/smokeapp
 
 ./smokeapp -addr 127.0.0.1:8199 &

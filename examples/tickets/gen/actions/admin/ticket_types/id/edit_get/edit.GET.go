@@ -3,16 +3,15 @@
 package act_admin_ticket_types_id_edit_get
 
 import (
-	"database/sql"
-	"errors"
 	"fmt"
 	"net/http"
 
 	"amadan.net/rastrillo/rastrillo"
 	"amadan.net/rastrillo/rastrillo/form"
+	"amadan.net/rastrillo/rastrillo/op"
 	"amadan.net/rastrillo/rastrillo/ui"
 	"amadan.net/rastrillo/rastrillo/view"
-	ticket_typesstore "tickets/gen/store/ticket_types"
+	ops_ticket_types "tickets/gen/ops/ticket_types"
 )
 
 // Handle is GET /admin/ticket_types/{id}/edit.
@@ -22,17 +21,12 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 		view.NotFound(ctx, w, r)
 		return
 	}
-	store := ticket_typesstore.New(ctx.DB)
-	n, err := store.GetTicketType(r.Context(), id)
-	if errors.Is(err, sql.ErrNoRows) {
-		view.NotFound(ctx, w, r)
-		return
-	}
+	n, err := ops_ticket_types.Get(r.Context(), ctx, id)
 	if err != nil {
-		view.Fail(ctx, w, r, "ticket_types: loading ticket_types", err)
+		view.Refuse(ctx, w, r, "ticket_types: loading ticket_types", err)
 		return
 	}
-	priceInput, ok := seed(ctx, w, r, id, "Price", n.PriceMinor, currencyOf(n.PriceCurrency))
+	priceInput, ok := seed(ctx, w, r, id, "Price", minorOf(n.Price), currencyOf(n.Price))
 	if !ok {
 		return
 	}
@@ -62,11 +56,18 @@ func seed(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request, id int64, 
 	return in, true
 }
 
-func currencyOf(cur *string) string {
-	if cur != nil {
-		return *cur
+func currencyOf(m *op.Money) string {
+	if m != nil {
+		return m.Currency
 	}
 	return "USD"
+}
+
+func minorOf(m *op.Money) *int64 {
+	if m == nil {
+		return nil
+	}
+	return &m.Amount
 }
 
 type formView struct {

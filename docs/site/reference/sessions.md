@@ -131,6 +131,7 @@ forever.
 func Current(r *http.Request) (Session, bool)
 func UserID(r *http.Request) (int64, bool)
 func WithSession(r *http.Request, sess Session) *http.Request
+func ActorFrom(r *http.Request) (rastrillo.Actor, bool)
 ```
 
 `Current` gives you the whole session. `UserID` parses `Subject` as an
@@ -143,6 +144,11 @@ assuming otherwise.
 after verifying, and it is also what makes a session visible to code
 called outside the middleware, which is how a generated store sees the
 viewer.
+
+`ActorFrom` is the signed-in person as a `rastrillo.Actor`, with `Write`
+access. The generated router uses it when your ctx factory leaves `Actor`
+empty. `ok` is false with no session, or with a session that has no
+`Subject`.
 
 ## SafeReturn
 

@@ -109,9 +109,14 @@
           "blurb": "Fingerprinted static files, and the three files delivered once and owned by you."
         },
         {
+          "slug": "api",
+          "label": "JSON API",
+          "blurb": "Serve your manifest resources at /api/v1 to tokens, with one set of rules for the pages and the API."
+        },
+        {
           "slug": "agents",
-          "label": "Agents & tools",
-          "blurb": "Actions as agent-callable tools, the consent gate, and the sidecar loop."
+          "label": "Agents",
+          "blurb": "Agents act for a person: who the token names, what the audit trail records, and the sidecar loop."
         },
         {
           "slug": "testing",
@@ -147,6 +152,16 @@
           "slug": "cli",
           "label": "The CLI",
           "blurb": "Every rastrillo command and flag, and when you reach for it."
+        },
+        {
+          "slug": "reference/api",
+          "label": "api",
+          "blurb": "The JSON door: one error shape with a machine code, and how a handler answers."
+        },
+        {
+          "slug": "reference/apitoken",
+          "label": "apitoken",
+          "blurb": "Personal API tokens for agents: make, verify, list and revoke them."
         },
         {
           "slug": "reference/assertion",
@@ -284,6 +299,11 @@
           "blurb": "Run a Node script from a Go test, and fail on CI when node is missing."
         },
         {
+          "slug": "reference/op",
+          "label": "op",
+          "blurb": "The refusals an operation returns, inputs that remember what was sent, and the descriptor for any transport."
+        },
+        {
           "slug": "reference/passkey",
           "label": "passkey",
           "blurb": "Step-up and sign-in WebAuthn, the Gate, and recovery codes."
@@ -337,11 +357,6 @@
           "slug": "reference/table",
           "label": "table",
           "blurb": "One table as a CSV or XLSX download, safe from CSV formula injection."
-        },
-        {
-          "slug": "reference/tools",
-          "label": "tools",
-          "blurb": "Schemas, dispatch through your own mux, and the three refusals."
         },
         {
           "slug": "reference/totp",

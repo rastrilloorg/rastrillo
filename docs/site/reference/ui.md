@@ -43,13 +43,13 @@ func Funcs(opts ...Option) template.FuncMap
 ```
 
 The function map the partials need, for an app that renders through its
-own template tree instead of [`ui.Pages`](#pages). It holds twenty-two:
+own template tree instead of [`ui.Pages`](#pages). It holds twenty-three:
 `dict`, `list`, `menuGroup`, `searchClear`, `icon`, `iconAssets`, `opt`,
 `stageArt`, `displayURL`, `safeHref`, `rowMenuItems`, `paginationItems`,
 `localizer`, `withL`, `strong`, and the locale functions `T`, `Tf`, `Tbdi`,
-`number`, `displayValue`, `dateWords` and `money`. Add your own on top;
-do not drop any. `rowMenuItems` checks `row-menu`'s items and stops the
-render on one it cannot show.
+`number`, `displayValue`, `dateWords`, `money` and `actor`. Add your
+own on top; do not drop any. `rowMenuItems` checks `row-menu`'s items
+and stops the render on one it cannot show.
 
 `opt` reads an optional key off a partial's data, whether it is a map or
 a struct, and gives nil when it is missing. `Tbdi` is `Tf` for a
@@ -157,7 +157,7 @@ func ForRequest(r *http.Request) Localized
 func (l Localized) Localizer() *Localizer
 func (l Localized) Request() Localized
 
-var LocaleFuncs = []string{"T", "Tf", "Tbdi", "number", "displayValue", "dateWords", "money"}
+var LocaleFuncs = []string{"T", "Tf", "Tbdi", "number", "displayValue", "dateWords", "money", "actor"}
 var ErrNoLocalizer = errors.New(noLocalizerMsg)
 var ErrLegacyCall = errors.New(legacyCallMsg)
 ```
@@ -190,6 +190,7 @@ functions that take `$L` first:
 | `{{number $L v}}`, `{{displayValue $L v}}` | `*Localizer`, any value | a nil value renders as before |
 | `{{dateWords $L}}` | `*Localizer` | |
 | `{{money $L amount code}}` | `*Localizer`, an integer amount or a pointer to one, an ISO code | a nil amount writes nothing; there is no form without `$L` |
+| `{{actor $L a}}` | `*Localizer`, a `rastrillo.Actor` | see [actor](#actor) |
 
 `ErrNoLocalizer` is a locale call whose `$L` is nil, or page data with
 no `L`. `ErrLegacyCall` is a locale call without `$L`. Under `ui.Pages`
@@ -211,6 +212,37 @@ a nil pointer writes nothing. The code is an ISO 4217 code, as a
 A float, a string amount, an unknown code or a missing argument is an
 error, and stops the page. Every digit of the currency's smallest unit is shown: 1.5 dinars,
 stored as 1500 fils, is `KWD 1.500` on an English page.
+
+## actor
+
+```html
+{{actor $L .Actor}}
+```
+
+```go
+var ActorName func(ctx context.Context, subject string) string
+```
+
+Writes who did something, in the reader's language: nothing for the
+app, `Paul` for a person, and `Claude for Paul` for an agent acting for
+them. It is plain text, with no badge or icon. Style it yourself.
+
+Set `ActorName` once at startup to turn a subject into a person's name.
+Without it, the page shows the subject. A template has no request, so
+`ActorName` is called with `context.Background()`. If your lookup needs
+the request's context, build the words in Go with
+`rastrillo.ActorPhrase` instead.
+
+The `actor` partial writes the same words in a span, for a list cell
+or a detail row:
+
+```html
+{{template "actor" dict "L" $L "Actor" .Actor}}
+```
+
+The span is `<span rst-actor>`. The app itself, the zero `Actor`,
+renders nothing. Pass `Display` with words you built in Go when your
+lookup needed the request.
 
 ## MenuGroupDefault
 

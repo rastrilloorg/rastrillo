@@ -1,6 +1,7 @@
 package rastrillo
 
 import (
+	"amadan.net/rastrillo/rastrillo/internal/opsnames"
 	"strings"
 	"testing"
 )
@@ -94,6 +95,12 @@ func TestValidateRejections(t *testing.T) {
 		{"text field named a money field's currency", func(r *Resource) {
 			r.Form.Basics = append(r.Form.Basics, Field{Name: "PriceCurrency"})
 		}, `"PriceCurrency" is also a name the money field "Price" generates`},
+		// A mergeable store's partial update gives a money field Price a
+		// presence member PriceSet beside PriceMinor and PriceCurrency,
+		// so a text field PriceSet would be declared twice there.
+		{"text field named a money field's update flag", func(r *Resource) {
+			r.Form.Basics = append(r.Form.Basics, Field{Name: "PriceSet"})
+		}, `"PriceSet" is also a name the money field "Price" generates`},
 		{"column named a money field's amount", func(r *Resource) {
 			r.List.Columns = append(r.List.Columns, Column{Field: "PriceMinor"})
 		}, `"PriceMinor" is also a name the money field "Price" generates`},
@@ -304,6 +311,119 @@ func TestHasMoney(t *testing.T) {
 	} {
 		if got := c.r.HasMoney(); got != c.want {
 			t.Errorf("%s: HasMoney = %v, want %v", name, got, c.want)
+		}
+	}
+}
+
+func TestResourceExposed(t *testing.T) {
+	yes, no := true, false
+	cases := []struct {
+		name string
+		r    Resource
+		want bool
+	}{
+		{"scoped, no [api]", Resource{Scope: UserScoped}, true},
+		{"unscoped, no [api]", Resource{}, false},
+		{"scoped, expose = false", Resource{Scope: UserScoped, API: API{Expose: &no}}, false},
+		{"unscoped, expose = true", Resource{API: API{Expose: &yes}}, true},
+	}
+	for _, c := range cases {
+		if got := c.r.Exposed(); got != c.want {
+			t.Errorf("%s: Exposed() = %v, want %v", c.name, got, c.want)
+		}
+	}
+}
+
+// TestValidateRefusesFiltersNamedLikeListParameters: an API list reads
+// its own q, after and limit from the query string beside one parameter
+// per filter, so a filter on a field whose wire name is one of them
+// would make ?limit= mean two things. Both filter spellings are
+// checked, on an unscoped resource, so turning [api] on later never
+// invalidates a manifest that was valid before.
+func TestValidateRefusesFiltersNamedLikeListParameters(t *testing.T) {
+	withColumn := func(field string) Resource {
+		r := validResource()
+		r.List.Columns = append(r.List.Columns, Column{Field: field})
+		return r
+	}
+	for _, field := range []string{"Q", "After", "Limit"} {
+		wire := strings.ToLower(field)
+		want := `filter: "` + field + `" would be the query parameter "` + wire + `"`
+
+		r := withColumn(field)
+		r.List.Filter = []string{field}
+		if err := r.Validate(); err == nil || !strings.Contains(err.Error(), want) {
+			t.Errorf("filter = [%q]: Validate error %v, want one containing %q", field, err, want)
+		}
+
+		r = withColumn(field)
+		r.List.Filters = []Filter{{Field: field, Values: []string{"a"}}}
+		if err := r.Validate(); err == nil || !strings.Contains(err.Error(), want) {
+			t.Errorf("filters = [{field = %q}]: Validate error %v, want one containing %q", field, err, want)
+		}
+	}
+
+	r := withColumn("Status")
+	r.List.Filter = []string{"Status"}
+	r.List.Filters = []Filter{{Field: "Status", Values: []string{"open"}}}
+	if err := r.Validate(); err != nil {
+		t.Errorf("filter on Status: Validate: %v", err)
+	}
+}
+
+// TestValidateRefusesNamesGeneratedOperationsDeclare pins that a
+// resource whose singular is a name every gen/ops package declares
+// itself (Page, Update, ListInput...) is refused here, naming the
+// clash, rather than generating a package that does not compile.
+func TestValidateRefusesNamesGeneratedOperationsDeclare(t *testing.T) {
+	for name, clash := range map[string]string{"pages": "Page", "updates": "Update", "list_inputs": "ListInput"} {
+		r := validResource()
+		r.Name = name
+		want := `name: "` + name + `" would be the Go name "` + clash + `"`
+		if err := r.Validate(); err == nil || !strings.Contains(err.Error(), want) {
+			t.Errorf("name = %q: Validate error %v, want one containing %q", name, err, want)
+		}
+	}
+	r := validResource()
+	r.Name = "descriptors"
+	if err := r.Validate(); err != nil {
+		t.Errorf("name = descriptors (singular Descriptor, which nothing declares): %v", err)
+	}
+}
+
+// TestValidateRefusesPluralsNamedLikeListResultMembers pins the
+// plural's scope: ListResult holds the page under the resource's plural
+// beside its own NextAfter, so a resource named next_after would give
+// the struct two NextAfter fields.
+func TestValidateRefusesPluralsNamedLikeListResultMembers(t *testing.T) {
+	r := validResource()
+	r.Name = "next_after"
+	want := `name: "next_after" would be the Go name "NextAfter"`
+	if err := r.Validate(); err == nil || !strings.Contains(err.Error(), want) {
+		t.Errorf("name = next_after: Validate error %v, want one containing %q", err, want)
+	}
+}
+
+// TestValidateRefusesColumnsNamedLikeResultMembers pins that the fixed
+// members of a generated result type (ID, CreatedAt, UpdatedAt) cannot
+// be a column or form field: the reserved-column rule
+// (isReservedColumnName, case-insensitive) refuses them already, and
+// this test keeps it that way for every member opsnames lists.
+func TestValidateRefusesColumnsNamedLikeResultMembers(t *testing.T) {
+	members := opsnames.ResultMembers
+	if len(members) == 0 {
+		t.Fatal("opsnames.ResultMembers is empty; nothing to pin")
+	}
+	for _, m := range members {
+		r := validResource()
+		r.List.Columns = append(r.List.Columns, Column{Field: m})
+		if err := r.Validate(); err == nil {
+			t.Errorf("column %q: Validate accepted a name the generated result type declares", m)
+		}
+		r = validResource()
+		r.Form.Basics = append(r.Form.Basics, Field{Name: m})
+		if err := r.Validate(); err == nil {
+			t.Errorf("form field %q: Validate accepted a name the generated result type declares", m)
 		}
 	}
 }

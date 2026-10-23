@@ -23,6 +23,7 @@ import (
 	"strings"
 	"time"
 
+	"amadan.net/rastrillo/rastrillo/internal/returnto"
 	"amadan.net/rastrillo/rastrillo/migrate"
 )
 
@@ -484,11 +485,10 @@ func SafeReturn(r *http.Request, fallback string) string {
 // a request's return_to field — for a caller that has one from
 // somewhere else a form can't reach, a cookie that outlived the
 // request that set it, say.
+//
+// The check itself lives in internal/returnto, so the root package's
+// switchers can run the same one without importing this package (which
+// imports root for rastrillo.Actor).
 func SafeReturnTo(to, fallback string) string {
-	if to == "" || !strings.HasPrefix(to, "/") ||
-		strings.HasPrefix(to, "//") || strings.ContainsAny(to, "\\") ||
-		strings.ContainsFunc(to, func(c rune) bool { return c < 0x20 || c == 0x7f }) {
-		return fallback
-	}
-	return to
+	return returnto.Safe(to, fallback)
 }

@@ -64,7 +64,7 @@ switcher. Add more later; see [Localization](/docs/localization#declaring).
 ## rastrillo generate
 
 ```sh
-rastrillo generate [--check] [dir]
+rastrillo generate [--check] [--accept-breaking] [dir]
 ```
 
 Walks `actions/` and `manifest/` and emits `gen/`: the router on a Go
@@ -91,6 +91,17 @@ before you ship.
 `manifest/app.toml`. The `--default-locale` flag was removed, and
 passing it fails with
 `--default-locale was removed: the default comes from default_locale in manifest/app.toml`.
+
+`generate` also writes `api/v1.json` at the app root: every route
+`/api/v1` serves, with its arguments and result fields. Commit it.
+Before writing, `generate` compares the file it would write with the
+committed one. A change that only adds (a new route, a new optional
+argument, a new result field) is written. A change that breaks a client
+(a route or field removed, an argument newly required, a kind changed)
+fails, names each break, and leaves the file as it was. To rewrite it
+over a break on purpose, run `rastrillo generate --accept-breaking`; the
+diff shows the break in review. `--check` fails if the file is missing
+or stale, and never writes it.
 
 ## rastrillo dev
 

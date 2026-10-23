@@ -74,14 +74,14 @@ func main() {
 				return nil, err
 			}
 
-			// A fresh Ctx per request. Actor.Human is true and
-			// Actor.Name empty: honest for an app with no auth (see
-			// the blog's F7). Render is the manifest system's seam
+			// A fresh Ctx per request. The zero Actor is the app
+			// itself: honest for an app with no auth (see the
+			// blog's F7). Render is the manifest system's seam
 			// (design doc): every one of gen/router.go's seven routes
 			// is a generated action, and app.Render is the only
 			// function any of them ever calls into.
 			mux := gen.Router(booted, func(*http.Request) *rastrillo.Ctx {
-				return &rastrillo.Ctx{DB: db, Logger: logger, Actor: rastrillo.Actor{Human: true}, Render: app.Render}
+				return &rastrillo.Ctx{DB: db, Logger: logger, Actor: rastrillo.Actor{}, Render: app.Render}
 			})
 
 			// The app serves its own static files — the framework

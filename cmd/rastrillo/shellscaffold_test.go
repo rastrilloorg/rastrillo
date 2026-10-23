@@ -205,7 +205,7 @@ func TestNewWritesAnIndexAndASectionForTheShellsThatHaveOne(t *testing.T) {
 			{"overview.html", string(overview), `<a id="nav-overview" href="/overview" aria-current="page">` + scaffoldOverview + `</a>`},
 			{"app.go", app, `r.Get("/overview", a.overview)`},
 			{"handlers.go", handlers, `func (a *app) overview(w http.ResponseWriter, r *http.Request) {`},
-			{"render.go", render, `[]string{"index", "overview", "errors"}`},
+			{"render.go", render, `[]string{"index", "overview", "errors", "tokens"}`},
 		} {
 			if !strings.Contains(c.got, c.want) {
 				t.Errorf("%s: %s lacks %q", shell, c.file, c.want)

@@ -15,6 +15,7 @@ import (
 	"amadan.net/rastrillo/rastrillo"
 	"amadan.net/rastrillo/rastrillo/currency"
 	"amadan.net/rastrillo/rastrillo/internal/manifesterr"
+	"amadan.net/rastrillo/rastrillo/internal/opsnames"
 	"github.com/BurntSushi/toml"
 )
 
@@ -39,6 +40,10 @@ func decodeTOML(path string) (rastrillo.Resource, error) {
 
 // reservedApp is Appendix C.2's op.generate.reserved_app.
 const reservedApp = `manifest/app.toml holds the app's locales, so no resource can be named "app"`
+
+// sameGoName refuses two resources whose names become one Go
+// identifier: the first name and file, the second, and the identifier.
+const sameGoName = "resources %q (%s) and %q (%s) both become %s in generated code; rename one"
 
 // ineligible is Appendix C.2's op.generate.ineligible.
 const ineligible = "warning: manifest/%s.toml: %s is still accepted for storage but is no longer issued; choose a current currency for new records"
@@ -101,6 +106,13 @@ func Load(moduleRoot, dir string) ([]rastrillo.Resource, error) {
 	var resources []rastrillo.Resource
 	names := map[string]string{}
 	routes := map[string]string{}
+	// Keyed by the title-cased name, because that is the identifier the
+	// parity package declares for every resource in one package
+	// (RunReport2s): report2s and report_2s are distinct names on
+	// distinct routes and the same Go name, and the app stops building.
+	// The other per-resource packages (gen/ops, gen/store, gen/api) are
+	// one per literal name, which the names map already keeps apart.
+	titled := map[string]source{}
 	for _, s := range sources {
 		if err := s.resource.Validate(); err != nil {
 			// ErrNoCurrency reads as one sentence with its file,
@@ -127,6 +139,10 @@ func Load(moduleRoot, dir string) ([]rastrillo.Resource, error) {
 			return nil, fmt.Errorf("duplicate route %q in %s and %s", s.resource.Route, prev, s.file)
 		}
 		routes[s.resource.Route] = s.file
+		if prev, ok := titled[opsnames.Pascal(s.resource.Name)]; ok {
+			return nil, fmt.Errorf(sameGoName, prev.resource.Name, prev.file, s.resource.Name, s.file, opsnames.Pascal(s.resource.Name))
+		}
+		titled[opsnames.Pascal(s.resource.Name)] = s
 		resources = append(resources, s.resource)
 	}
 

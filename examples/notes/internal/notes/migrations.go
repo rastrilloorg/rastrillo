@@ -4,6 +4,7 @@ import (
 	"embed"
 	"fmt"
 
+	"amadan.net/rastrillo/rastrillo/apitoken"
 	"amadan.net/rastrillo/rastrillo/migrate"
 	"amadan.net/rastrillo/rastrillo/pow"
 	"amadan.net/rastrillo/rastrillo/sessions"
@@ -61,4 +62,6 @@ var genSchema = genSchemaSet()
 // generated bookmarks store, then this app's own Schema. migrate.Merge's
 // argument order is apply order. pow's spent-nonce table is applied here
 // because pow.New checks it exists and refuses to build without it.
-var BootSchema = migrate.Merge(sessions.Schema, pow.Schema, genSchema, Schema)
+// apitoken's table is here for the same reason: apitoken.New and the
+// token page query it from the first request.
+var BootSchema = migrate.Merge(sessions.Schema, pow.Schema, apitoken.Schema, genSchema, Schema)

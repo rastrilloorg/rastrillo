@@ -1,12 +1,14 @@
 package ui
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"html/template"
 	"reflect"
 	"strings"
 	"testing"
+	"testing/fstest"
 
 	"amadan.net/rastrillo/rastrillo"
 )
@@ -162,15 +164,15 @@ func TestDropdownRendersForAStructWithoutMenuGroup(t *testing.T) {
 
 func TestFuncsRegistersExactlyTheDocumentedHelpers(t *testing.T) {
 	f := Funcs()
-	for _, name := range []string{"dict", "list", "menuGroup", "searchClear", "icon", "iconAssets", "T", "Tf", "dateWords", "opt", "Tbdi", "stageArt", "displayURL", "safeHref", "number", "displayValue", "rowMenuItems", "paginationItems", "localizer", "withL", "money", "strong"} {
+	for _, name := range []string{"dict", "list", "menuGroup", "searchClear", "icon", "iconAssets", "T", "Tf", "dateWords", "opt", "Tbdi", "stageArt", "displayURL", "safeHref", "number", "displayValue", "rowMenuItems", "paginationItems", "localizer", "withL", "money", "actor", "strong"} {
 		if _, ok := f[name]; !ok {
 			t.Errorf("Funcs() is missing %q", name)
 		}
 	}
 	// Exactly these: an accidental extra is a helper the shipped partials
 	// do not document and an app cannot rely on.
-	if len(f) != 22 {
-		t.Errorf("Funcs() has %d entries, want exactly 22 (the 18 before localizer, withL and money, those three, and strong)", len(f))
+	if len(f) != 23 {
+		t.Errorf("Funcs() has %d entries, want exactly 23 (the 18 before localizer, withL, money, actor and strong, and those five)", len(f))
 	}
 }
 
@@ -229,13 +231,13 @@ func TestFuncsWithRebindsOnAClonedPristineTree(t *testing.T) {
 // FuncsWith replaces only the T entry — dict/list/icon are unchanged.
 func TestFuncsWithReplacesOnlyTAndTf(t *testing.T) {
 	f := FuncsWith(func(key string, _ ...any) string { return "X-" + key })
-	for _, name := range []string{"dict", "list", "menuGroup", "searchClear", "icon", "iconAssets", "T", "Tf", "dateWords", "opt", "Tbdi", "stageArt", "displayURL", "safeHref", "number", "displayValue", "rowMenuItems", "paginationItems", "localizer", "withL", "money", "strong"} {
+	for _, name := range []string{"dict", "list", "menuGroup", "searchClear", "icon", "iconAssets", "T", "Tf", "dateWords", "opt", "Tbdi", "stageArt", "displayURL", "safeHref", "number", "displayValue", "rowMenuItems", "paginationItems", "localizer", "withL", "money", "actor", "strong"} {
 		if _, ok := f[name]; !ok {
 			t.Errorf("FuncsWith(...) is missing %q", name)
 		}
 	}
-	if len(f) != 22 {
-		t.Errorf("FuncsWith(...) has %d entries, want exactly 22 (the 18 before localizer, withL and money, those three, and strong)", len(f))
+	if len(f) != 23 {
+		t.Errorf("FuncsWith(...) has %d entries, want exactly 23 (the 18 before localizer, withL, money, actor and strong, and those five)", len(f))
 	}
 	if got := call(t, f, "T", "rastrillo.ui.cancel"); got != "X-rastrillo.ui.cancel" {
 		t.Errorf("rebound T = %q, want %q", got, "X-rastrillo.ui.cancel")
@@ -731,6 +733,106 @@ func TestURLHelpersRenderASafeLink(t *testing.T) {
 	for _, bad := range []string{"javascript:alert(1)", "mailto:ana@example.com"} {
 		if got := render(bad); strings.Contains(got, "<a") {
 			t.Errorf("%q became a link: %s", bad, got)
+		}
+	}
+}
+
+// actor names who did something, in the page's language: nothing for
+// the app, the person's name, or "Claude for Paul". Both forms are
+// checked, because an app still on ui.Funcs reaches the legacy one and
+// ui.Pages reaches the $L one, and they get their wording from
+// different places.
+func TestActorNamesWhoActed(t *testing.T) {
+	prev := ActorName
+	t.Cleanup(func() { ActorName = prev })
+
+	en, err := rastrillo.NewLocales([]string{"en"}, "en", rastrillo.BaseCatalog(), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	enL := NewLocalizer("en", "en", func(k string, a ...any) string { return en.Tf("en", k, a...) })
+	render := func(src string, a rastrillo.Actor) string {
+		t.Helper()
+		var b strings.Builder
+		tmpl := template.Must(template.New("x").Funcs(Funcs()).Parse(src))
+		if err := tmpl.Execute(&b, map[string]any{"L": enL, "A": a}); err != nil {
+			t.Fatal(err)
+		}
+		return b.String()
+	}
+	paul := rastrillo.Actor{Subject: "7", Access: rastrillo.Write}
+	claude := rastrillo.Actor{Subject: "7", Agent: "Claude", Credential: "k3Jx9QpL2mWa", Access: rastrillo.Write}
+	evil := rastrillo.Actor{Subject: "7", Agent: "<script>alert(1)</script>", Credential: "k3Jx9QpL2mWa"}
+
+	for _, src := range []string{`{{actor .A}}`, `{{$L := localizer $}}{{actor $L .A}}`} {
+		ActorName = nil
+		if got := render(src, rastrillo.Actor{}); got != "" {
+			t.Errorf("%s: the app rendered %q, want nothing", src, got)
+		}
+		if got := render(src, paul); got != "7" {
+			t.Errorf("%s: a person with no ActorName rendered %q, want the subject", src, got)
+		}
+		var asked []string
+		ActorName = func(_ context.Context, subject string) string {
+			asked = append(asked, subject)
+			return "Paul"
+		}
+		if got := render(src, paul); got != "Paul" {
+			t.Errorf("%s: a person rendered %q, want %q", src, got, "Paul")
+		}
+		if got := render(src, claude); got != "Claude for Paul" {
+			t.Errorf("%s: an agent rendered %q, want %q", src, got, "Claude for Paul")
+		}
+		if len(asked) != 2 || asked[0] != "7" || asked[1] != "7" {
+			t.Errorf("%s: ActorName was asked about %q, want the subject each time", src, asked)
+		}
+		// The agent name is whatever the person typed when they made the
+		// token, so it is text, never markup.
+		if got, want := render(src, evil), "&lt;script&gt;alert(1)&lt;/script&gt; for Paul"; got != want {
+			t.Errorf("%s: a hostile agent name rendered %q, want %q", src, got, want)
+		}
+	}
+}
+
+// The $L form says it in $L's language, not the framework's English: an
+// agent shown on a Spanish page reads in Spanish.
+func TestActorFollowsTheLocalizer(t *testing.T) {
+	// The wording comes from an app catalog, which wins over the
+	// framework's: the shipped es.toml holds the English until the
+	// translations land, and would make this test say nothing.
+	app := fstest.MapFS{"locales/es.toml": {Data: []byte(`rastrillo.ui.agent_for = "{agent} para {person}"` + "\n")}}
+	es, err := rastrillo.NewLocales([]string{"es"}, "es", rastrillo.BaseCatalog(), app)
+	if err != nil {
+		t.Fatal(err)
+	}
+	esL := NewLocalizer("es", "es", func(k string, a ...any) string { return es.Tf("es", k, a...) })
+	got := call(t, Funcs(), "actor", esL, rastrillo.Actor{Subject: "Paul", Agent: "Claude"})
+	if got != "Claude para Paul" {
+		t.Errorf("actor $L = %q, want %q", got, "Claude para Paul")
+	}
+}
+
+// actor is a locale function, so ui.Pages refuses a call without $L and
+// the template migration adds $L to one. Left off the list, a legacy
+// {{actor .A}} would render the framework's English on every page of a
+// Spanish app with no error anywhere.
+func TestActorIsALocaleFunc(t *testing.T) {
+	found := false
+	for _, name := range LocaleFuncs {
+		found = found || name == "actor"
+	}
+	if !found {
+		t.Errorf("LocaleFuncs = %v, want it to include actor", LocaleFuncs)
+	}
+	for src, want := range map[string]string{
+		`{{actor}}`:                         "actor: 0 arguments, want 1",
+		`{{actor "Claude"}}`:                "actor: argument 1 is string, want rastrillo.Actor",
+		`{{$L := localizer $}}{{actor $L}}`: "actor: 1 arguments, want 2",
+	} {
+		tmpl := template.Must(template.New("x").Funcs(Funcs()).Parse(src))
+		err := tmpl.Execute(&strings.Builder{}, map[string]any{"L": NewLocalizer("en", "en", defaultTf)})
+		if err == nil || !strings.Contains(err.Error(), want) {
+			t.Errorf("%s: err = %v, want it to contain %q", src, err, want)
 		}
 	}
 }

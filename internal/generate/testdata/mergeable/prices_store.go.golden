@@ -8,22 +8,23 @@
 // state by replaying the merged history — no table of this resource's
 // own, no materialized cache (replay is cheap until proven otherwise).
 //
-// Two recorded caveats, both deliberate:
-//   - Every event's actor is stamped "app"; threading Ctx.Actor into
-//     store mutations is an additive follow-up (today every generated
-//     mutation is consent-gated upstream).
-//   - Record ids are writer-local: Create allocates max(existing)+1
-//     under the eventlog's write lock, so two creates on one database
-//     never share an id. Cross-writer id namespacing belongs to the
-//     platform transport design; this allocator is the first thing it
-//     replaces.
+// Every write takes its actor from the caller, rastrillo.Actor's
+// String(), so each event says who wrote it. One recorded caveat,
+// deliberate: record ids are writer-local. Create takes the next id
+// under the eventlog's write lock and appends the record's first event
+// under the same lock (eventlog.AppendUnder), so two creates on one
+// database never share an id; keeping ids apart across writers belongs
+// to the platform transport design, and this allocator is the first
+// thing it replaces.
 package pricesstore
 
 import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"math"
 	"sort"
 	"strconv"
 	"strings"
@@ -38,9 +39,10 @@ import (
 // eventlog table: record <id> lives at "prices/<id>".
 const StreamPrefix = "prices/"
 
-// actor is stamped on every event this store appends — see the
-// package doc's Ctx.Actor caveat.
-const actor = "app"
+// errGone stops an append to a record that is missing or deleted. It is
+// decided inside the append's transaction, on the history the event
+// would land on, so a delete that commits first is seen.
+var errGone = errors.New("pricesstore: no such record")
 
 // Price is the derived read model — the same shape sqlc
 // generates for an exclusive resource.
@@ -94,8 +96,8 @@ func (q *Queries) open(ctx context.Context) (*eventlog.Log, replay.Rules, error)
 
 // payload is the JSON shape of every created/updated event: pointer
 // fields, omitted when nil, so a created event carries every field and
-// an updated event only its own group's — an absent field leaves the
-// derived value untouched.
+// an updated event only the fields it changes; an absent field leaves
+// the derived value untouched.
 type payload struct {
 	EventVersion int     `json:"V"`
 	Title        *string `json:"title,omitempty"`
@@ -147,19 +149,9 @@ func derive(rules replay.Rules, id int64, events []eventlog.Event) (Price, map[s
 	return row, rec, true, nil
 }
 
-func emit(ctx context.Context, log *eventlog.Log, rules replay.Rules, stream, kind string, p payload, amounts map[string]any) error {
-	raw, err := encode(p, amounts)
-	if err != nil {
-		return err
-	}
-	_, err = log.AppendChecked(ctx, stream, kind, actor, raw, func(history []eventlog.Event) error {
-		return fold(rules, stream, kind, history, raw)
-	})
-	return err
-}
-
-// encode is p as an event payload with each money field's amount and
-// currency spliced in under their own keys.
+// encode is p as stored JSON with amounts merged in: a map, because an
+// explicit null (a cleared field) is what a struct with omitempty cannot
+// write.
 func encode(p payload, amounts map[string]any) (json.RawMessage, error) {
 	raw, err := json.Marshal(p)
 	if err != nil {
@@ -180,9 +172,14 @@ func encode(p payload, amounts map[string]any) (json.RawMessage, error) {
 	return json.Marshal(all)
 }
 
-// fold replays history and then the event about to land on it, and
-// returns what the rules refuse, named by its stream.
-func fold(rules replay.Rules, stream, kind string, history []eventlog.Event, raw json.RawMessage) error {
+// fold replays history and then the event about to be appended through
+// the money rules. An event the fold refuses (an amount without its
+// currency, a changed currency) would otherwise be written for good,
+// and every later read of the stream, and every boot, would fail on it.
+// Callers run it inside AppendChecked, on the history as it is under the
+// write lock: a history read earlier let a racing writer clear the field
+// and refill it in another currency in between.
+func fold(rules replay.Rules, stream string, history []eventlog.Event, kind string, raw json.RawMessage) error {
 	rec := map[string]replay.Field{}
 	for i, ev := range append(history, eventlog.Event{Stream: stream, Kind: kind, Payload: raw}) {
 		if err := rules.Apply(rec, i, ev); err != nil {
@@ -190,6 +187,37 @@ func fold(rules replay.Rules, stream, kind string, history []eventlog.Event, raw
 		}
 	}
 	return nil
+}
+
+// appendLive appends one event to record id's stream and reports 1, or
+// 0 when the record is missing or deleted. Whether it is live, and
+// whether the money rules accept the event, are decided inside
+// AppendChecked, on the history the event lands on, so a delete or a
+// currency change that commits first is seen and nothing is written
+// after it.
+func appendLive(ctx context.Context, log *eventlog.Log, rules replay.Rules, id int64, kind, actor string, p payload, amounts map[string]any) (int64, error) {
+	stream := StreamPrefix + strconv.FormatInt(id, 10)
+	raw, err := encode(p, amounts)
+	if err != nil {
+		return 0, err
+	}
+	_, err = log.AppendChecked(ctx, stream, kind, actor, raw, func(history []eventlog.Event) error {
+		_, _, ok, err := derive(rules, id, history)
+		if err != nil {
+			return err
+		}
+		if !ok {
+			return errGone
+		}
+		return fold(rules, stream, history, kind, raw)
+	})
+	if errors.Is(err, errGone) {
+		return 0, nil
+	}
+	if err != nil {
+		return 0, err
+	}
+	return 1, nil
 }
 
 func CheckReplay(ctx context.Context, db *sql.DB) error {
@@ -277,6 +305,34 @@ func (q *Queries) ListPrices(ctx context.Context, arg ListPricesParams) ([]Price
 	return pageWindow(rows, arg.PageOffset, arg.PageLimit), nil
 }
 
+type ListPricesAfterParams struct {
+	AfterCreatedAt string
+	AfterID        int64
+	PageLimit      int64
+}
+
+// ListPricesAfter is the page after the row (AfterCreatedAt, AfterID) in
+// List's order; an empty AfterCreatedAt starts at the top. The cursor
+// carries that row's own values, so it still works after the row is
+// deleted.
+func (q *Queries) ListPricesAfter(ctx context.Context, arg ListPricesAfterParams) ([]Price, error) {
+	rows, err := q.live(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var out []Price
+	for _, n := range rows {
+		if int64(len(out)) == arg.PageLimit {
+			break
+		}
+		if arg.AfterCreatedAt != "" && (n.CreatedAt > arg.AfterCreatedAt || n.CreatedAt == arg.AfterCreatedAt && n.ID >= arg.AfterID) {
+			continue
+		}
+		out = append(out, n)
+	}
+	return out, nil
+}
+
 func (q *Queries) CountPrices(ctx context.Context) (int64, error) {
 	rows, err := q.live(ctx)
 	if err != nil {
@@ -311,7 +367,10 @@ type CreatePriceParams struct {
 	Now            string
 }
 
-func (q *Queries) CreatePrice(ctx context.Context, arg CreatePriceParams) (int64, error) {
+// CreatePrice starts a record. eventlog.AppendUnder picks its id and
+// appends its first event in one transaction, so two creates at once
+// make two records.
+func (q *Queries) CreatePrice(ctx context.Context, actor string, arg CreatePriceParams) (int64, error) {
 	log, rules, err := q.open(ctx)
 	if err != nil {
 		return 0, err
@@ -325,14 +384,14 @@ func (q *Queries) CreatePrice(ctx context.Context, arg CreatePriceParams) (int64
 	if arg.AmountMinor != nil || arg.AmountCurrency != nil {
 		amounts["amount"], amounts["amount_currency"] = arg.AmountMinor, arg.AmountCurrency
 	}
-	return create(ctx, log, rules, p, amounts)
+	return create(ctx, log, rules, actor, p, amounts)
 }
 
 // create appends p as a new record's "created" event and returns the
 // record's id: one more than the highest under StreamPrefix, which the
 // append reads under the same write lock it writes with (see the
 // package doc's caveat on ids).
-func create(ctx context.Context, log *eventlog.Log, rules replay.Rules, p payload, amounts map[string]any) (int64, error) {
+func create(ctx context.Context, log *eventlog.Log, rules replay.Rules, actor string, p payload, amounts map[string]any) (int64, error) {
 	raw, err := encode(p, amounts)
 	if err != nil {
 		return 0, err
@@ -347,12 +406,17 @@ func create(ctx context.Context, log *eventlog.Log, rules replay.Rules, p payloa
 		stream := StreamPrefix + strconv.FormatInt(id, 10)
 		// A new id has no history, so the fold judges the created
 		// event alone, as emit's would on an empty stream.
-		return stream, fold(rules, stream, "created", nil, raw)
+		return stream, fold(rules, stream, nil, "created", raw)
 	})
 	return id, err
 }
 
-// nextID is one more than the highest record id among streams.
+// nextID is one more than the highest record id among streams. A
+// stream it cannot number is an error, not skipped: skipping it could
+// hand out an id beside a stream the allocator cannot see. The largest
+// id has no next: plus one wrapped to the smallest, which never beat
+// the largest, so every later create took the same wrapped id and
+// joined one record.
 func nextID(streams []string) (int64, error) {
 	var id int64
 	for _, s := range streams {
@@ -364,62 +428,51 @@ func nextID(streams []string) (int64, error) {
 			id = n
 		}
 	}
+	if id == math.MaxInt64 {
+		return 0, errors.New("pricesstore: no id is left under prices/")
+	}
 	return id + 1, nil
 }
 
-type UpdatePriceBasicsParams struct {
-	Title          string
+// UpdatePriceParams is a partial update: a nil field is left as it is,
+// so the event carries only the fields that were sent.
+type UpdatePriceParams struct {
+	Title *string
+	// AmountSet says Amount is part of the update: with both pointers
+	// nil it clears the amount, which an absent field cannot say.
+	AmountSet      bool
 	AmountMinor    *int64
 	AmountCurrency *string
 	Now            string
 	ID             int64
 }
 
-func (q *Queries) UpdatePriceBasics(ctx context.Context, arg UpdatePriceBasicsParams) error {
+// UpdatePrice appends one "updated" event and reports 1, or 0 when the
+// record is missing or deleted. An amount in a currency other than the
+// one its field holds is refused with replay.ErrCurrencyChange.
+func (q *Queries) UpdatePrice(ctx context.Context, actor string, arg UpdatePriceParams) (int64, error) {
 	log, rules, err := q.open(ctx)
 	if err != nil {
-		return err
-	}
-	stream := StreamPrefix + strconv.FormatInt(arg.ID, 10)
-	events, err := log.Events(ctx, stream)
-	if err != nil {
-		return err
-	}
-	_, _, ok, err := derive(rules, arg.ID, events)
-	if err != nil {
-		return err
-	}
-	if !ok {
-		// Mirror the exclusive UPDATE: a missing record is a no-op,
-		// never an appended event on a stream with no live record.
-		return nil
+		return 0, err
 	}
 	p := payload{
 		EventVersion: replay.Version,
-		Title:        &arg.Title,
+		Title:        arg.Title,
 		UpdatedAt:    &arg.Now,
 	}
-	return emit(ctx, log, rules, stream, "updated", p, map[string]any{"amount": arg.AmountMinor, "amount_currency": arg.AmountCurrency})
+	amounts := map[string]any{}
+	if arg.AmountSet {
+		amounts["amount"], amounts["amount_currency"] = arg.AmountMinor, arg.AmountCurrency
+	}
+	return appendLive(ctx, log, rules, arg.ID, "updated", actor, p, amounts)
 }
 
-func (q *Queries) DeletePrice(ctx context.Context, id int64) error {
+// DeletePrice appends a tombstone and reports 1, or 0 when the record is
+// missing or already deleted; derive skips dead ids.
+func (q *Queries) DeletePrice(ctx context.Context, actor string, id int64) (int64, error) {
 	log, rules, err := q.open(ctx)
 	if err != nil {
-		return err
+		return 0, err
 	}
-	stream := StreamPrefix + strconv.FormatInt(id, 10)
-	events, err := log.Events(ctx, stream)
-	if err != nil {
-		return err
-	}
-	_, _, ok, err := derive(rules, id, events)
-	if err != nil {
-		return err
-	}
-	if !ok {
-		return nil
-	}
-	// Delete appends a tombstone event rather than a DELETE; derive
-	// skips dead ids from here on.
-	return emit(ctx, log, rules, stream, "deleted", payload{EventVersion: replay.Version}, nil)
+	return appendLive(ctx, log, rules, id, "deleted", actor, payload{EventVersion: replay.Version}, nil)
 }

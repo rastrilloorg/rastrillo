@@ -2,13 +2,15 @@
 // second store shape a manifest resource can declare (store =
 // "mergeable", spec 2026-08-22): gen/store/<name>/store.go +
 // migrations.go, template-rendered Go over the eventlog package — no
-// sqlc involvement at all. The emitted package satisfies the SAME
-// method surface the sqlc-generated exclusive stores expose
-// (List/Count/Get/Create/UpdateBasics/UpdateAdvanced/Delete, the same
-// Params struct spellings, sql.ErrNoRows on a miss), so the generated
-// actions, templates, locales and router ship unchanged. The one
-// behavioral difference is the §9 ruling: Delete appends a tombstone
-// event rather than a DELETE, and derive skips dead ids.
+// sqlc involvement at all. Its reads keep the sqlc-generated exclusive
+// stores' surface (List/Count/Get, the same Params struct spellings,
+// sql.ErrNoRows on a miss), so the generated templates, locales and
+// router ship unchanged. Its writes do not: Create, Update and Delete
+// take the caller's actor, which sqlc's never do, because an event
+// records who wrote it and a row does not; Update and Delete report the
+// records they touched (0 or 1), decided under the write lock. Delete
+// appends a tombstone event rather than a DELETE (the §9 ruling), and
+// derive skips dead ids.
 //
 // Observable semantics deliberately mirrored from the exclusive
 // emitters (store.go's whereClauses/queriesSQL/recordKey):
@@ -32,6 +34,7 @@ import (
 	"strings"
 
 	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/internal/generate/shape"
 )
 
 // replayStream is Appendix C.2's op.replay.stream, naming the stream a
@@ -40,9 +43,9 @@ import (
 const replayStream = "%s: %w"
 
 // mergeableFieldLines is one model or Params field: money is
-// <F>Minor *int64 and <F>Currency *string, the names the shared action
-// emitter reads and writes for every store kind (nil in both is an
-// empty field), and everything else a string.
+// <F>Minor *int64 and <F>Currency *string, the names the operations
+// read and write for every store kind (nil in both is an empty field),
+// and everything else a string.
 func mergeableFieldLines(name string, k rastrillo.Kind) string {
 	if k == rastrillo.Money {
 		return name + "Minor *int64\n" + name + "Currency *string\n"
@@ -62,60 +65,10 @@ func mergeableMoney(r rastrillo.Resource) []column {
 	return out
 }
 
-// mergeableAmounts is the money keys an append writes for fields: a
-// map, because an explicit null (a cleared field) is what a struct
-// with omitempty cannot write.
-func mergeableAmounts(fields []column) string {
-	var parts []string
-	for _, c := range fields {
-		parts = append(parts, fmt.Sprintf("%q: arg.%sMinor, %q: arg.%sCurrency", c.SQL, c.Name, c.SQL+"_currency", c.Name))
-	}
-	if len(parts) == 0 {
-		return "nil"
-	}
-	return "map[string]any{" + strings.Join(parts, ", ") + "}"
-}
+func mergeableCountBinds(r rastrillo.Resource) int { return shape.CountBinds(r) }
 
-// mergeableCountBinds counts a resource's Count bind parameters —
-// exactly actionIndexGET's countBinds arithmetic, so the emitted
-// signature and the generated action's call site cannot drift.
-func mergeableCountBinds(r rastrillo.Resource) int {
-	binds := len(filterVars(r))
-	if r.List.Search && len(searchColumns(r)) > 0 {
-		binds++
-	}
-	if scoped(r) {
-		binds++
-	}
-	return binds
-}
-
-// wrapComment word-wraps text into "// " comment lines at the width
-// the committed goldens pin.
-func wrapComment(text string) string {
-	const width = 70
-	var lines []string
-	line := ""
-	for _, word := range strings.Fields(text) {
-		switch {
-		case line == "":
-			line = word
-		case len([]rune(line))+1+len([]rune(word)) <= width:
-			line += " " + word
-		default:
-			lines = append(lines, line)
-			line = word
-		}
-	}
-	if line != "" {
-		lines = append(lines, line)
-	}
-	var b strings.Builder
-	for _, l := range lines {
-		b.WriteString("// " + l + "\n")
-	}
-	return b.String()
-}
+// wrapComment wraps at the width this package's goldens pin.
+func wrapComment(text string) string { return shape.WrapComment(text, 70) }
 
 // mergeableMatchesDoc builds the matches doc comment from the clauses
 // the resource actually declares, mirroring whereClauses' own order.
@@ -177,22 +130,23 @@ func mergeableStoreGo(r rastrillo.Resource) []byte {
 // state by replaying the merged history — no table of this resource's
 // own, no materialized cache (replay is cheap until proven otherwise).
 //
-// Two recorded caveats, both deliberate:
-//   - Every event's actor is stamped "app"; threading Ctx.Actor into
-//     store mutations is an additive follow-up (today every generated
-//     mutation is consent-gated upstream).
-//   - Record ids are writer-local: Create allocates max(existing)+1
-//     under the eventlog's write lock, so two creates on one database
-//     never share an id. Cross-writer id namespacing belongs to the
-//     platform transport design; this allocator is the first thing it
-//     replaces.
+// Every write takes its actor from the caller, rastrillo.Actor's
+// String(), so each event says who wrote it. One recorded caveat,
+// deliberate: record ids are writer-local. Create takes the next id
+// under the eventlog's write lock and appends the record's first event
+// under the same lock (eventlog.AppendUnder), so two creates on one
+// database never share an id; keeping ids apart across writers belongs
+// to the platform transport design, and this allocator is the first
+// thing it replaces.
 package %[2]s
 
 import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"math"
 	"sort"
 	"strconv"
 	"strings"
@@ -205,11 +159,9 @@ import (
 // eventlog table: record <id> lives at "%[1]s/<id>".
 const StreamPrefix = "%[1]s/"
 
-// actor is stamped on every event this store appends — see the
-// package doc's Ctx.Actor caveat.
-const actor = "app"
-
 `, r.Name, pkg, syncImport, currencyImport)
+	b.WriteString(wrapComment("errGone stops an append to a record that is " + gone(r) + ". It is decided inside the append's transaction, on the history the event would land on, so a delete that commits first is seen."))
+	fmt.Fprintf(&b, "var errGone = errors.New(%q)\n\n", pkg+": no such record")
 
 	// The model struct — the same shape sqlc generates.
 	fmt.Fprintf(&b, "// %s is the derived read model — the same shape sqlc\n// generates for an exclusive resource.\n", model)
@@ -290,8 +242,8 @@ func New(db *sql.DB) *Queries {
 	// Validate refuses a declared EventVersion.
 	b.WriteString(`// payload is the JSON shape of every created/updated event: pointer
 // fields, omitted when nil, so a created event carries every field and
-// an updated event only its own group's — an absent field leaves the
-// derived value untouched.
+// an updated event only the fields it changes; an absent field leaves
+// the derived value untouched.
 type payload struct {
 EventVersion int ` + "`json:\"V\"`" + `
 `)
@@ -365,27 +317,9 @@ row.UpdatedAt = *p.UpdatedAt
 	b.WriteString("return row, rec, true, nil\n}\n\n")
 
 	if len(money) > 0 {
-		// emit folds the event onto the stream's money before appending
-		// it. An event the fold refuses (an amount without its currency,
-		// a changed currency) would otherwise be written for good, and
-		// every later read of the stream, and every boot, would fail on
-		// it. The fold runs inside AppendChecked, on the history as it
-		// is under the write lock: folding a history read earlier let a
-		// racing writer clear the field and refill it in another
-		// currency in between, and the stale event was appended after.
-		fmt.Fprintf(&b, `func emit(ctx context.Context, log *eventlog.Log, rules replay.Rules, stream, kind string, p payload, amounts map[string]any) error {
-	raw, err := encode(p, amounts)
-	if err != nil {
-		return err
-	}
-	_, err = log.AppendChecked(ctx, stream, kind, actor, raw, func(history []eventlog.Event) error {
-		return fold(rules, stream, kind, history, raw)
-	})
-	return err
-}
-
-// encode is p as an event payload with each money field's amount and
-// currency spliced in under their own keys.
+		fmt.Fprintf(&b, `// encode is p as stored JSON with amounts merged in: a map, because an
+// explicit null (a cleared field) is what a struct with omitempty cannot
+// write.
 func encode(p payload, amounts map[string]any) (json.RawMessage, error) {
 	raw, err := json.Marshal(p)
 	if err != nil {
@@ -406,9 +340,14 @@ func encode(p payload, amounts map[string]any) (json.RawMessage, error) {
 	return json.Marshal(all)
 }
 
-// fold replays history and then the event about to land on it, and
-// returns what the rules refuse, named by its stream.
-func fold(rules replay.Rules, stream, kind string, history []eventlog.Event, raw json.RawMessage) error {
+// fold replays history and then the event about to be appended through
+// the money rules. An event the fold refuses (an amount without its
+// currency, a changed currency) would otherwise be written for good,
+// and every later read of the stream, and every boot, would fail on it.
+// Callers run it inside AppendChecked, on the history as it is under the
+// write lock: a history read earlier let a racing writer clear the field
+// and refill it in another currency in between.
+func fold(rules replay.Rules, stream string, history []eventlog.Event, kind string, raw json.RawMessage) error {
 	rec := map[string]replay.Field{}
 	for i, ev := range append(history, eventlog.Event{Stream: stream, Kind: kind, Payload: raw}) {
 		if err := rules.Apply(rec, i, ev); err != nil {
@@ -420,6 +359,7 @@ func fold(rules replay.Rules, stream, kind string, history []eventlog.Event, raw
 
 `, replayStream)
 	}
+	b.WriteString(mergeableAppendLiveGo(r))
 
 	// Every mergeable store, money or not: Boot replays each one so an
 	// event from a newer writer stops the start rather than failing the
@@ -549,6 +489,29 @@ func pageWindow(rows []%[1]s, offset, limit int64) []%[1]s {
 		b.WriteString("return pageWindow(rows, arg.PageOffset, arg.PageLimit), nil\n}\n\n")
 	}
 
+	// ── List after a cursor ────────────────────────────────────────────
+	// A keyset page rather than an offset: an offset shifts when a row
+	// before it is created or deleted between two pages, and the client
+	// then skips or repeats a row.
+	fmt.Fprintf(&b, "type List%sAfterParams struct {\n", plural)
+	if scoped(r) {
+		b.WriteString("Owner string\n")
+	}
+	if searchBind {
+		b.WriteString("Search string\n")
+	}
+	for _, fv := range fvars {
+		fmt.Fprintf(&b, "%s string\n", fv.Param)
+	}
+	b.WriteString("AfterCreatedAt string\nAfterID int64\nPageLimit int64\n}\n\n")
+	b.WriteString(wrapComment(fmt.Sprintf("List%sAfter is the page after the row (AfterCreatedAt, AfterID) in List's order; an empty AfterCreatedAt starts at the top. The cursor carries that row's own values, so it still works after the row is deleted.", plural)))
+	fmt.Fprintf(&b, "func (q *Queries) List%[1]sAfter(ctx context.Context, arg List%[1]sAfterParams) ([]%[2]s, error) {\n", plural, model)
+	fmt.Fprintf(&b, "rows, err := q.live(ctx)\nif err != nil {\nreturn nil, err\n}\nvar out []%s\nfor _, n := range rows {\nif int64(len(out)) == arg.PageLimit {\nbreak\n}\n", model)
+	if hasClauses {
+		fmt.Fprintf(&b, "if !matches(n, %s) {\ncontinue\n}\n", strings.Join(matchesArgs, ", "))
+	}
+	b.WriteString("if arg.AfterCreatedAt != \"\" && (n.CreatedAt > arg.AfterCreatedAt || n.CreatedAt == arg.AfterCreatedAt && n.ID >= arg.AfterID) {\ncontinue\n}\nout = append(out, n)\n}\nreturn out, nil\n}\n\n")
+
 	// ── Count ──────────────────────────────────────────────────────────
 	switch binds := mergeableCountBinds(r); {
 	case binds == 0:
@@ -639,13 +602,22 @@ func pageWindow(rows []%[1]s, offset, limit int64) []%[1]s {
 	if len(money) > 0 {
 		rulesVar = "rules"
 	}
-	fmt.Fprintf(&b, `func (q *Queries) Create%[1]s(ctx context.Context, arg Create%[1]sParams) (int64, error) {
+	ownOwner := ""
+	if scoped(r) {
+		ownOwner = ", each with its own owner"
+	}
+	// The line breaks are fixed rather than wrapped to the name: the
+	// goldens pin this text, and only the first line carries the name.
+	fmt.Fprintf(&b, `// Create%[1]s starts a record. eventlog.AppendUnder picks its id and
+// appends its first event in one transaction, so two creates at once
+// make two records%[3]s.
+func (q *Queries) Create%[1]s(ctx context.Context, actor string, arg Create%[1]sParams) (int64, error) {
 	log, %[2]s, err := q.open(ctx)
 	if err != nil {
 		return 0, err
 	}
 	p := payload{
-`, model, rulesVar)
+`, model, rulesVar, ownOwner)
 	if scoped(r) {
 		b.WriteString("Owner: &arg.Owner,\n")
 	}
@@ -657,7 +629,7 @@ func pageWindow(rows []%[1]s, offset, limit int64) []%[1]s {
 	}
 	b.WriteString("CreatedAt: &arg.Now,\n}\n")
 	if len(money) == 0 {
-		b.WriteString("return create(ctx, log, p)\n}\n\n")
+		b.WriteString("return create(ctx, log, actor, p)\n}\n\n")
 	} else {
 		// A created record with no amount writes neither key, which
 		// replay reads as "still empty", as it reads history written
@@ -666,7 +638,7 @@ func pageWindow(rows []%[1]s, offset, limit int64) []%[1]s {
 		for _, c := range money {
 			fmt.Fprintf(&b, "if arg.%[1]sMinor != nil || arg.%[1]sCurrency != nil {\namounts[%[2]q], amounts[%[3]q] = arg.%[1]sMinor, arg.%[1]sCurrency\n}\n", c.Name, c.SQL, c.SQL+"_currency")
 		}
-		b.WriteString("return create(ctx, log, rules, p, amounts)\n}\n\n")
+		b.WriteString("return create(ctx, log, rules, actor, p, amounts)\n}\n\n")
 	}
 
 	// The id is one more than the highest under StreamPrefix, read by
@@ -679,7 +651,7 @@ func pageWindow(rows []%[1]s, offset, limit int64) []%[1]s {
 // package doc's caveat on ids).
 `)
 	if len(money) == 0 {
-		b.WriteString(`func create(ctx context.Context, log *eventlog.Log, p payload) (int64, error) {
+		b.WriteString(`func create(ctx context.Context, log *eventlog.Log, actor string, p payload) (int64, error) {
 	var id int64
 	_, err := log.AppendUnder(ctx, StreamPrefix, "created", actor, p, func(streams []string) (string, error) {
 		next, err := nextID(streams)
@@ -694,7 +666,7 @@ func pageWindow(rows []%[1]s, offset, limit int64) []%[1]s {
 
 `)
 	} else {
-		b.WriteString(`func create(ctx context.Context, log *eventlog.Log, rules replay.Rules, p payload, amounts map[string]any) (int64, error) {
+		b.WriteString(`func create(ctx context.Context, log *eventlog.Log, rules replay.Rules, actor string, p payload, amounts map[string]any) (int64, error) {
 	raw, err := encode(p, amounts)
 	if err != nil {
 		return 0, err
@@ -709,14 +681,19 @@ func pageWindow(rows []%[1]s, offset, limit int64) []%[1]s {
 		stream := StreamPrefix + strconv.FormatInt(id, 10)
 		// A new id has no history, so the fold judges the created
 		// event alone, as emit's would on an empty stream.
-		return stream, fold(rules, stream, "created", nil, raw)
+		return stream, fold(rules, stream, nil, "created", raw)
 	})
 	return id, err
 }
 
 `)
 	}
-	b.WriteString(`// nextID is one more than the highest record id among streams.
+	fmt.Fprintf(&b, `// nextID is one more than the highest record id among streams. A
+// stream it cannot number is an error, not skipped: skipping it could
+// hand out an id beside a stream the allocator cannot see. The largest
+// id has no next: plus one wrapped to the smallest, which never beat
+// the largest, so every later create took the same wrapped id and
+// joined one record.
 func nextID(streams []string) (int64, error) {
 	var id int64
 	for _, s := range streams {
@@ -728,59 +705,136 @@ func nextID(streams []string) (int64, error) {
 			id = n
 		}
 	}
+	if id == math.MaxInt64 {
+		return 0, errors.New(%[1]q)
+	}
 	return id + 1, nil
 }
 
-`)
+`, pkg+": no id is left under "+r.Name+"/")
 
-	// ── Updates ────────────────────────────────────────────────────────
-	b.WriteString(mergeableUpdateGo(r, model, r.Form.Basics, "Basics"))
-	if len(r.Form.Advanced) > 0 {
-		b.WriteString(mergeableUpdateGo(r, model, r.Form.Advanced, "Advanced"))
-	}
+	// ── Partial update ─────────────────────────────────────────────────
+	b.WriteString(mergeablePartialUpdateGo(r, model, cols, money))
 
 	// ── Delete ─────────────────────────────────────────────────────────
-	sig, idExpr, owned := "id int64", "id", ""
+	sig, idArg := "id int64", "id"
 	if scoped(r) {
 		fmt.Fprintf(&b, "type Delete%sParams struct {\nID int64\nOwner string\n}\n\n", model)
-		sig, idExpr, owned = fmt.Sprintf("arg Delete%sParams", model), "arg.ID", " || row.Owner != arg.Owner"
+		sig, idArg = fmt.Sprintf("arg Delete%sParams", model), "arg.ID, arg.Owner"
+		// Fixed breaks, as the golden pins them.
+		fmt.Fprintf(&b, "// Delete%s appends a tombstone and reports 1, or 0 when the\n// record is missing, already deleted or someone else's; derive skips\n// dead ids.\n", model)
+	} else {
+		b.WriteString(wrapComment(fmt.Sprintf("Delete%s appends a tombstone and reports 1, or 0 when the record is missing or already deleted; derive skips dead ids.", model)))
 	}
-	fmt.Fprintf(&b, `func (q *Queries) Delete%[1]s(ctx context.Context, %[2]s) error {
+	amountsArg := ""
+	if len(money) > 0 {
+		amountsArg = ", nil"
+	}
+	fmt.Fprintf(&b, `func (q *Queries) Delete%[1]s(ctx context.Context, actor string, %[2]s) (int64, error) {
 	log, rules, err := q.open(ctx)
 	if err != nil {
-		return err
+		return 0, err
 	}
-	stream := StreamPrefix + strconv.FormatInt(%[3]s, 10)
-	events, err := log.Events(ctx, stream)
-	if err != nil {
-		return err
-	}
-	%[4]s, err := derive(rules, %[3]s, events)
-	if err != nil {
-		return err
-	}
-	if !ok%[5]s {
-		return nil
-	}
-	// Delete appends a tombstone event rather than a DELETE; derive
-	// skips dead ids from here on.
-	%[6]s
+	return appendLive(ctx, log, rules, %[3]s, "deleted", actor, payload{EventVersion: replay.Version}%[4]s)
 }
-`, model, sig, idExpr, deriveVars(r), owned, mergeableAppend(len(money) > 0, "deleted", "payload{EventVersion: replay.Version}", "nil"))
+`, model, sig, idArg, amountsArg)
 
 	return []byte(b.String())
 }
 
-// mergeableUpdateGo renders one Update<Singular><Group> method: the
-// exclusive UPDATE's shape (only this group's fields plus the
-// updated_at bump, keyed on id — and owner for a scoped resource, so a
-// missing or foreign record is a no-op the same way the SQL UPDATE
-// affects zero rows).
-func mergeableUpdateGo(r rastrillo.Resource, model string, group []rastrillo.Field, groupName string) string {
+// gone is the records a write reports as 0: a scoped store's foreign
+// record answers exactly like a missing one (404-not-403).
+func gone(r rastrillo.Resource) string {
+	if scoped(r) {
+		return "missing, deleted or someone else's"
+	}
+	return "missing or deleted"
+}
+
+// mergeableAppendLiveGo renders appendLive, the append behind Update and
+// Delete. Whether the record is live (and the owner's) is decided by
+// AppendChecked's check, on the history under the write lock: deciding
+// it on a history read first let a delete commit in between, and the
+// update then wrote an event after the tombstone.
+func mergeableAppendLiveGo(r rastrillo.Resource) string {
+	money := len(mergeableMoney(r)) > 0
 	var b strings.Builder
-	fmt.Fprintf(&b, "type Update%s%sParams struct {\n", model, groupName)
-	for _, f := range group {
-		b.WriteString(mergeableFieldLines(f.Name, f.Kind))
+	// The three variants the goldens pin keep their hand-set breaks; a
+	// scoped store with money has no golden and is wrapped.
+	switch {
+	case !scoped(r) && !money:
+		b.WriteString("// appendLive appends one event to record id's stream and reports 1, or\n// 0 when the record is missing or deleted. Whether it is live is decided\n// inside AppendChecked, on the history the event lands on, so a delete\n// that commits first is seen and nothing is written after it.\n")
+	case scoped(r) && !money:
+		b.WriteString("// appendLive appends one event to record id's stream and reports 1, or\n// 0 when the record is missing, deleted or not owner's. Whether it is\n// live is decided inside AppendChecked, on the history the event lands\n// on, so a delete that commits first is seen and nothing is written\n// after it.\n")
+	case !scoped(r) && money:
+		b.WriteString("// appendLive appends one event to record id's stream and reports 1, or\n// 0 when the record is missing or deleted. Whether it is live, and\n// whether the money rules accept the event, are decided inside\n// AppendChecked, on the history the event lands on, so a delete or a\n// currency change that commits first is seen and nothing is written\n// after it.\n")
+	default:
+		b.WriteString(wrapComment("appendLive appends one event to record id's stream and reports 1, or 0 when the record is missing, deleted or not owner's. Whether it is live, and whether the money rules accept the event, are decided inside AppendChecked, on the history the event lands on, so a delete or a currency change that commits first is seen and nothing is written after it."))
+	}
+	ownerParam, owned := "", ""
+	if scoped(r) {
+		ownerParam, owned = "owner, ", " || row.Owner != owner"
+	}
+	if money {
+		fmt.Fprintf(&b, `func appendLive(ctx context.Context, log *eventlog.Log, rules replay.Rules, id int64, %[1]skind, actor string, p payload, amounts map[string]any) (int64, error) {
+	stream := StreamPrefix + strconv.FormatInt(id, 10)
+	raw, err := encode(p, amounts)
+	if err != nil {
+		return 0, err
+	}
+	_, err = log.AppendChecked(ctx, stream, kind, actor, raw, func(history []eventlog.Event) error {
+		%[2]s, err := derive(rules, id, history)
+		if err != nil {
+			return err
+		}
+		if !ok%[3]s {
+			return errGone
+		}
+		return fold(rules, stream, history, kind, raw)
+	})
+`, ownerParam, deriveVars(r), owned)
+	} else {
+		fmt.Fprintf(&b, `func appendLive(ctx context.Context, log *eventlog.Log, rules replay.Rules, id int64, %[1]skind, actor string, p payload) (int64, error) {
+	_, err := log.AppendChecked(ctx, StreamPrefix+strconv.FormatInt(id, 10), kind, actor, p, func(history []eventlog.Event) error {
+		%[2]s, err := derive(rules, id, history)
+		if err != nil {
+			return err
+		}
+		if !ok%[3]s {
+			return errGone
+		}
+		return nil
+	})
+`, ownerParam, deriveVars(r), owned)
+	}
+	b.WriteString(`	if errors.Is(err, errGone) {
+		return 0, nil
+	}
+	if err != nil {
+		return 0, err
+	}
+	return 1, nil
+}
+
+`)
+	return b.String()
+}
+
+// mergeablePartialUpdateGo renders Update<Singular>Params and
+// Update<Singular>: every field optional, so one event carries only
+// what the caller sent. A money field needs a third member, <F>Set,
+// because nil in both pointers already means "clear it" and a partial
+// update must also be able to say "leave it".
+func mergeablePartialUpdateGo(r rastrillo.Resource, model string, cols, money []column) string {
+	var b strings.Builder
+	b.WriteString(wrapComment(fmt.Sprintf("Update%sParams is a partial update: a nil field is left as it is, so the event carries only the fields that were sent.", model)))
+	fmt.Fprintf(&b, "type Update%sParams struct {\n", model)
+	for _, c := range cols {
+		if c.Kind == rastrillo.Money {
+			fmt.Fprintf(&b, "// %[1]sSet says %[1]s is part of the update: with both pointers\n// nil it clears the amount, which an absent field cannot say.\n%[1]sSet bool\n%[1]sMinor *int64\n%[1]sCurrency *string\n", c.Name)
+			continue
+		}
+		fmt.Fprintf(&b, "%s *string\n", c.Name)
 	}
 	b.WriteString("Now string\nID int64\n")
 	if scoped(r) {
@@ -788,64 +842,48 @@ func mergeableUpdateGo(r rastrillo.Resource, model string, group []rastrillo.Fie
 	}
 	b.WriteString("}\n\n")
 
-	fmt.Fprintf(&b, `func (q *Queries) Update%[1]s%[2]s(ctx context.Context, arg Update%[1]s%[2]sParams) error {
+	doc := fmt.Sprintf("Update%s appends one \"updated\" event and reports 1, or 0 when the record is %s.", model, gone(r))
+	if len(money) > 0 {
+		doc += " An amount in a currency other than the one its field holds is refused with replay.ErrCurrencyChange."
+	}
+	b.WriteString(wrapComment(doc))
+	fmt.Fprintf(&b, `func (q *Queries) Update%[1]s(ctx context.Context, actor string, arg Update%[1]sParams) (int64, error) {
 	log, rules, err := q.open(ctx)
 	if err != nil {
-		return err
+		return 0, err
 	}
-	stream := StreamPrefix + strconv.FormatInt(arg.ID, 10)
-	events, err := log.Events(ctx, stream)
-	if err != nil {
-		return err
-	}
-`, model, groupName)
-	hasMoney := len(mergeableMoney(r)) > 0
-	owned, why := "", "a missing record is a no-op,\n\t\t// never an appended event on a stream with no live record."
-	if scoped(r) {
-		owned, why = " || row.Owner != arg.Owner", "a missing or foreign record is a\n\t\t// no-op, never an appended event on a stream with no live record."
-	}
-	fmt.Fprintf(&b, `%s, err := derive(rules, arg.ID, events)
-	if err != nil {
-		return err
-	}
-	if !ok%s {
-		// Mirror the exclusive UPDATE: %s
-		return nil
-	}
-`, deriveVars(r), owned, why)
-	b.WriteString("p := payload{\nEventVersion: replay.Version,\n")
-	var groupMoney []column
-	for _, f := range group {
-		if f.Kind == rastrillo.Money {
-			groupMoney = append(groupMoney, column{Name: f.Name, SQL: sqlName(f.Name), Kind: f.Kind})
-			continue
+	p := payload{
+EventVersion: replay.Version,
+`, model)
+	for _, c := range cols {
+		if c.Kind != rastrillo.Money {
+			fmt.Fprintf(&b, "%[1]s: arg.%[1]s,\n", c.Name)
 		}
-		fmt.Fprintf(&b, "%[1]s: &arg.%[1]s,\n", f.Name)
 	}
-	// A group's money field is written on every save: the amount with
-	// its currency, or both null for a blank field, which is how an
-	// optional amount is cleared (an absent key means "unchanged").
-	fmt.Fprintf(&b, "UpdatedAt: &arg.Now,\n}\n%s\n}\n\n", mergeableAppend(hasMoney, "updated", "p", mergeableAmounts(groupMoney)))
+	b.WriteString("UpdatedAt: &arg.Now,\n}\n")
+	ownerArg, amountsArg := "", ""
+	if scoped(r) {
+		ownerArg = "arg.Owner, "
+	}
+	if len(money) > 0 {
+		b.WriteString("amounts := map[string]any{}\n")
+		for _, c := range money {
+			fmt.Fprintf(&b, "if arg.%[1]sSet {\namounts[%[2]q], amounts[%[3]q] = arg.%[1]sMinor, arg.%[1]sCurrency\n}\n", c.Name, c.SQL, c.SQL+"_currency")
+		}
+		amountsArg = ", amounts"
+	}
+	fmt.Fprintf(&b, "return appendLive(ctx, log, rules, arg.ID, %s\"updated\", actor, p%s)\n}\n\n", ownerArg, amountsArg)
 	return b.String()
 }
 
 // deriveVars is the left side of a derive call: the row when a scoped
-// store checks its owner. The money folded so far is not kept: emit
+// store checks its owner. The money folded so far is not kept: appendLive
 // folds again under the write lock, on the history the event lands on.
 func deriveVars(r rastrillo.Resource) string {
 	if scoped(r) {
 		return "row, _, ok"
 	}
 	return "_, _, ok"
-}
-
-// mergeableAppend is the statement that appends one event and returns
-// its error: through emit, which folds it first, in a store with money.
-func mergeableAppend(money bool, kind, p, amounts string) string {
-	if money {
-		return fmt.Sprintf("return emit(ctx, log, rules, stream, %q, %s, %s)", kind, p, amounts)
-	}
-	return fmt.Sprintf("_, err = log.Append(ctx, stream, %q, actor, %s)\nreturn err", kind, p)
 }
 
 // mergeableSchemaFunc is the function a mergeable store's migrations.go

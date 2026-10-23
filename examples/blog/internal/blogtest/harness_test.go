@@ -74,7 +74,7 @@ func newAppWith(t *testing.T, def string, offered []string) (http.Handler, *sql.
 				return nil, err
 			}
 			mux := gen.Router(booted, func(*http.Request) *rastrillo.Ctx {
-				return &rastrillo.Ctx{DB: d, Logger: logger, Actor: rastrillo.Actor{Human: true}, Render: app.Render}
+				return &rastrillo.Ctx{DB: d, Logger: logger, Actor: rastrillo.Actor{}, Render: app.Render}
 			})
 			// The same fingerprinting mount main.go wires, so asset
 			// tests exercise the real handler behind the layout's

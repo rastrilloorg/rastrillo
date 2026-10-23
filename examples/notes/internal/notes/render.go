@@ -8,6 +8,7 @@ import (
 
 	genlocales "notes/gen/locales"
 
+	"amadan.net/rastrillo/rastrillo/apitoken"
 	"amadan.net/rastrillo/rastrillo/flash"
 	"amadan.net/rastrillo/rastrillo/form"
 	"amadan.net/rastrillo/rastrillo/jobs"
@@ -28,7 +29,7 @@ var templatesFS embed.FS
 // last "content" definition silently win over the rest.
 func handPageFiles() map[string]ui.PageFile {
 	out := map[string]ui.PageFile{}
-	for _, name := range []string{"signin", "signup", "index", "show", "new", "edit", "status"} {
+	for _, name := range []string{"signin", "signup", "index", "show", "new", "edit", "status", "tokens"} {
 		out[name] = ui.PageFile{FS: templatesFS, Path: "templates/" + name + ".html"}
 	}
 	return out
@@ -143,6 +144,14 @@ func (a *app) renderSignin(w http.ResponseWriter, r *http.Request, d password.Pa
 
 func (a *app) renderSignup(w http.ResponseWriter, r *http.Request, d password.PageData) {
 	a.renderContent(w, r, "signup", d)
+}
+
+// renderTokens is apitoken.HandlersConfig.Render. The handlers have
+// already set Cache-Control and any non-200 status, so this goes
+// through the ordinary page path like every other hand screen; the
+// template hands d to ui's api-tokens partial.
+func (a *app) renderTokens(w http.ResponseWriter, r *http.Request, d apitoken.PageData) {
+	a.renderContent(w, r, "tokens", d)
 }
 
 // renderJobPage and renderJobFragment are jobs.Config's two render

@@ -10,19 +10,13 @@ import (
 	"strings"
 
 	"amadan.net/rastrillo/rastrillo"
-	"amadan.net/rastrillo/rastrillo/sessions"
 	"amadan.net/rastrillo/rastrillo/ui"
 	"amadan.net/rastrillo/rastrillo/view"
-	bookmarksstore "notes/gen/store/bookmarks"
+	ops_bookmarks "notes/gen/ops/bookmarks"
 )
 
 // Handle is GET /bookmarks.
 func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
-	sess, ok := sessions.Current(r)
-	if !ok {
-		view.Forbidden(ctx, w, r)
-		return
-	}
 	search := strings.TrimSpace(r.URL.Query().Get("q"))
 
 	page := 1
@@ -32,29 +26,19 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	const pageSize = 10
-	offset := (page - 1) * pageSize
 
 	var carry [][2]string
 
-	store := bookmarksstore.New(ctx.DB)
-	total, err := store.CountBookmarks(r.Context(), bookmarksstore.CountBookmarksParams{
-		Owner:  sess.Subject,
-		Search: search,
-	})
-	if err != nil {
-		view.Fail(ctx, w, r, "bookmarks: counting bookmarks", err)
-		return
-	}
-	rows, err := store.ListBookmarks(r.Context(), bookmarksstore.ListBookmarksParams{
-		Owner:      sess.Subject,
+	res, err := ops_bookmarks.List(r.Context(), ctx, ops_bookmarks.ListInput{
 		Search:     search,
-		PageOffset: int64(offset),
-		PageLimit:  pageSize,
+		PageNumber: page,
+		Limit:      pageSize,
 	})
 	if err != nil {
-		view.Fail(ctx, w, r, "bookmarks: loading bookmarks", err)
+		view.Refuse(ctx, w, r, "bookmarks: loading bookmarks", err)
 		return
 	}
+	total, rows := res.Total, res.Items
 
 	items := make([]listRow, 0, len(rows))
 	for _, n := range rows {

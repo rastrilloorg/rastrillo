@@ -58,6 +58,22 @@ reference: there is nothing to look up afterwards.
 "there is nothing here" are deliberately the same amount of information
 beyond the status itself — see [Scoping](/docs/scoping).
 
+## Refuse
+
+```go
+func Refuse(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request, what string, err error)
+```
+
+Answers an operation's error the way a page must. An `op.NotFound` is
+the 404 page and an `op.Forbidden` the 403 page, so a page says what the
+API door says for the same id and the same caller. Anything else is
+`Fail`'s 500, logged with `what`. A `Forbidden`'s `Reason` is logged at
+Info and never sent.
+
+Generated actions call it after every operation call that has no form
+to show a refusal on. A hand-written handler that calls an operation
+can do the same.
+
 ## ParseID
 
 ```go

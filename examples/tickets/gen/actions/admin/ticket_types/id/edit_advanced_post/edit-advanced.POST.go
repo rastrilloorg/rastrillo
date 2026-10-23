@@ -3,16 +3,14 @@
 package act_admin_ticket_types_id_edit_advanced_post
 
 import (
-	"database/sql"
-	"errors"
 	"fmt"
 	"net/http"
-	"time"
 
 	"amadan.net/rastrillo/rastrillo"
 	"amadan.net/rastrillo/rastrillo/form"
+	"amadan.net/rastrillo/rastrillo/op"
 	"amadan.net/rastrillo/rastrillo/view"
-	ticket_typesstore "tickets/gen/store/ticket_types"
+	ops_ticket_types "tickets/gen/ops/ticket_types"
 )
 
 // Handle is POST /admin/ticket_types/{id}/edit-advanced.
@@ -27,29 +25,23 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 		view.NotFound(ctx, w, r)
 		return
 	}
-	store := ticket_typesstore.New(ctx.DB)
-	_, err := store.GetTicketType(r.Context(), id)
-	if errors.Is(err, sql.ErrNoRows) {
-		view.NotFound(ctx, w, r)
-		return
-	}
-	if err != nil {
-		view.Fail(ctx, w, r, "ticket_types: loading ticket_types", err)
-		return
-	}
 
 	p := form.Parse(r,
 		form.Field{Name: "MaxPerOrder"},
 	)
+	in := ops_ticket_types.UpdateInput{
+		MaxPerOrder: present(r, "MaxPerOrder", p.String("MaxPerOrder")),
+	}
 
-	now := time.Now().UTC().Format(time.RFC3339)
-	if err := store.UpdateTicketTypeAdvanced(r.Context(), ticket_typesstore.UpdateTicketTypeAdvancedParams{
-		MaxPerOrder: p.String("MaxPerOrder"),
-		Now:         now,
-		ID:          id,
-	}); err != nil {
-		view.Fail(ctx, w, r, "ticket_types: updating ticket_types", err)
+	_, err := ops_ticket_types.Update(r.Context(), ctx, id, in)
+	if err != nil {
+		view.Refuse(ctx, w, r, "ticket_types: updating ticket_types", err)
 		return
 	}
 	http.Redirect(w, r, fmt.Sprintf("/admin/ticket_types/%d", id), http.StatusSeeOther)
+}
+
+func present(r *http.Request, name, v string) op.Opt[string] {
+	_, ok := r.PostForm[name]
+	return op.Opt[string]{Value: v, Set: ok}
 }

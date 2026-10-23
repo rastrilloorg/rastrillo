@@ -3,14 +3,11 @@
 package act_bookmarks_id_delete_post
 
 import (
-	"database/sql"
-	"errors"
 	"net/http"
 
 	"amadan.net/rastrillo/rastrillo"
-	"amadan.net/rastrillo/rastrillo/sessions"
 	"amadan.net/rastrillo/rastrillo/view"
-	bookmarksstore "notes/gen/store/bookmarks"
+	ops_bookmarks "notes/gen/ops/bookmarks"
 )
 
 // Handle is POST /bookmarks/{id}/delete.
@@ -20,21 +17,9 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 		view.NotFound(ctx, w, r)
 		return
 	}
-	sess, ok := sessions.Current(r)
-	if !ok {
-		view.Forbidden(ctx, w, r)
-		return
-	}
-	store := bookmarksstore.New(ctx.DB)
-	if _, err := store.GetBookmark(r.Context(), bookmarksstore.GetBookmarkParams{ID: id, Owner: sess.Subject}); errors.Is(err, sql.ErrNoRows) {
-		view.NotFound(ctx, w, r)
-		return
-	} else if err != nil {
-		view.Fail(ctx, w, r, "bookmarks: loading bookmarks", err)
-		return
-	}
-	if err := store.DeleteBookmark(r.Context(), bookmarksstore.DeleteBookmarkParams{ID: id, Owner: sess.Subject}); err != nil {
-		view.Fail(ctx, w, r, "bookmarks: deleting bookmarks", err)
+	err := ops_bookmarks.Delete(r.Context(), ctx, id)
+	if err != nil {
+		view.Refuse(ctx, w, r, "bookmarks: deleting bookmarks", err)
 		return
 	}
 	http.Redirect(w, r, "/bookmarks", http.StatusSeeOther)

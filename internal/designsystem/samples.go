@@ -2,8 +2,10 @@ package designsystem
 
 import (
 	"strings"
+	"time"
 
 	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/apitoken"
 )
 
 // This file is the page's content: which partial goes in which family,
@@ -463,6 +465,24 @@ func families() []family {
 					},
 				},
 				{
+					Name:  "actor",
+					Blurb: "Who did something, as words: a person's name, or the agent and the person it acted for. No badge and no icon.",
+					States: []sample{
+						// The subject stands in for the name because the
+						// gallery sets no ui.ActorName; an app's page shows
+						// the name its lookup finds. Bound, because an
+						// Actor is a struct an app has in hand, never a
+						// value it writes out at the call site.
+						{State: "An agent acting for a person", Data: map[string]any{
+							"Actor": rastrillo.Actor{Subject: "Grace Hopper", Agent: "Claude"},
+						}, Bind: map[string]string{"Actor": "Actor"},
+							Note: "Set ui.ActorName once at boot to turn a subject into a name. The app itself, the zero Actor, renders nothing."},
+						{State: "A person", Data: map[string]any{
+							"Actor": rastrillo.Actor{Subject: "Grace Hopper"},
+						}, Bind: map[string]string{"Actor": "Actor"}},
+					},
+				},
+				{
 					Name:   "callout",
 					Blurb:  "The one alert vocabulary: tinted strip, tone icon, optional bold title, one body paragraph.",
 					States: calloutStates(),
@@ -756,8 +776,74 @@ func families() []family {
 							Note: "This one posts to /_theme, so it needs a server. Its Scheme comes from rastrillo.SchemeFrom(r); ui.ForRequest carries it. The switch in this page's own bar is the gallery's own."},
 					},
 				},
+				{
+					Name:  "api-tokens",
+					Blurb: "The token page from apitoken's PageData: the one-time reveal, the create form, the list and the revoke buttons.",
+					States: []sample{
+						{State: "Four tokens, two of them live", Build: tokensPageData(tokensFull),
+							Bind: map[string]string{"Page": "Page"},
+							Note: "Pass what Handlers hand Render as Page, and the page's own path as Path. The revoke forms post to Path/revoke, Path/revoke-agent and Path/revoke-all; set RevokePath, RevokeAgentPath or RevokeAllPath to change one."},
+						{State: "Just created: the secret, shown once", Build: tokensPageData(tokensCreated),
+							Bind: map[string]string{"Page": "Page"},
+							Note: "Render the create form's response with Created set, and do not redirect it: the secret is in that response and nowhere else."},
+						{State: "No tokens yet", Build: tokensPageData(tokensNone),
+							Bind: map[string]string{"Page": "Page"}},
+					},
+				},
 			},
 		},
+	}
+}
+
+// The token page's three states. Built per locale, because Row.Display
+// is words the handlers make in Go ("Claude for Grace Hopper", through
+// the catalog's agent_for), so the sample makes them the same way for
+// the page's language. The subject stands in for the name, as the
+// actor sample's does. Bound to .Page: a PageData is what the handlers
+// hand an app, never a value it writes out at the call site.
+const (
+	tokensFull = iota
+	tokensCreated
+	tokensNone
+)
+
+func tokensPageData(state int) func(locale string) any {
+	return func(locale string) any {
+		sentence := rastrillo.BaseCatalogs()[locale]["rastrillo.ui.agent_for"]
+		display := func(agent string) string {
+			if agent == "" {
+				return "Grace Hopper"
+			}
+			return strings.NewReplacer("{agent}", agent, "{person}", "Grace Hopper").Replace(sentence)
+		}
+		made := time.Date(2026, 8, 2, 9, 12, 0, 0, time.UTC)
+		used := time.Date(2026, 8, 11, 17, 40, 0, 0, time.UTC)
+		until := time.Date(2026, 10, 31, 9, 12, 0, 0, time.UTC)
+		row := func(id, agent string, access rastrillo.Access) apitoken.Row {
+			return apitoken.Row{
+				Token:   apitoken.Token{ID: id, Subject: "Grace Hopper", Agent: agent, Access: access, CreatedAt: made},
+				Display: display(agent),
+			}
+		}
+		page := apitoken.PageData{
+			Form:   map[string]string{"agent": "", "for_self": "", "access": "write", "expiry": "90"},
+			CSRFOK: true,
+		}
+		if state != tokensNone {
+			claude := row("k3Jx9QpL2mWa", "Claude", rastrillo.Write)
+			claude.LastUsed, claude.ExpiresAt = &used, &until
+			own := row("Qm2vR8sT4xYb", "", rastrillo.Read)
+			gone := row("Zp7wN1cH6kLd", "Codex", rastrillo.Write)
+			gone.RevokedAt, gone.Revoked = &used, true
+			old := row("Vb4tG9yK3nMe", "Nightly import", rastrillo.Read)
+			old.ExpiresAt, old.Expired = &used, true
+			page.Tokens = []apitoken.Row{claude, own, gone, old}
+			page.Agents = []string{"Claude"}
+		}
+		if state == tokensCreated {
+			page.Created = &apitoken.Created{Secret: "harbour_k3Jx9QpL2mWa_6bD2qK9xWz4rT8vN1mP3sL7yF5hJ0cG2aE4uB", Token: page.Tokens[0]}
+		}
+		return map[string]any{"Page": page, "Path": "/tokens"}
 	}
 }
 

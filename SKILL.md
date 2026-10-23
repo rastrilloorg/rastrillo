@@ -33,6 +33,7 @@ Read the topic before you start work it covers, not after the source:
 | choose GORM or SQL, store files, write a migration, add teams or roles | `skill/data.md` |
 | run work in the background, poll for progress, schedule | `skill/background.md` |
 | use the CLI beyond `new`, manifests, doctor, pins, native or PWA | `skill/tooling.md` |
+| serve JSON at `/api/v1`, mint tokens, let an agent act for a person, write `Authorize`, hand-write an operation | `skill/api.md` |
 
 ## Start here
 
@@ -49,12 +50,13 @@ truth for that app's code; this file stays the framework's.
 **Reach for a manifest before hand-writing.** A `manifest/*.toml`
 resource generates CRUD screens (field kinds text, textarea, money;
 `scope = "user"` owner-filters by session subject), correct by
-construction; run `rastrillo generate`, commit `gen/`, and pass
+construction; run `rastrillo generate`, commit `gen/` and `api/v1.json`, and pass
 `gen.Boot`'s result to `gen.Router`. docs/site/manifests.md
 
 **Look before you build.** Most things an app needs already ship: a
 Light/Dark/System switch in every shell, a picture grid (`media-grid`),
-job status pages, money fields, error pages. Check the topic index
+the API token page (`api-tokens`), job status pages, money fields,
+error pages. Check the topic index
 above before writing one.
 
 ## App shape

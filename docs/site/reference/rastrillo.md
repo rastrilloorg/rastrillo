@@ -91,7 +91,7 @@ headers outermost, and your own `Set` or `Del` wins.
 poll. Unset, the route does not exist.
 
 **`Sidecar`** — the app's sidecar pass, run in a loop when the platform
-spawns `<binary> sidecar run`. See [Agents and tools](/docs/agents).
+spawns `<binary> sidecar run`. See [Agents](/docs/agents).
 
 **`Background`** — your app's
 [`background.Group`](/docs/reference/background). `Serve` stops it after
@@ -156,13 +156,19 @@ type Ctx struct {
 	Actor  Actor
 	Render RenderFunc
 
+	Authorize func(ctx context.Context, a Actor, o Operation) error
+
 	ErrorPage ErrorPageFunc
 }
 ```
 
 Passed to every generated action: your own wiring, built once by your
-ctx factory. Per-request state does not live here — identity is
-`sessions.Current(r)`, locale is `LocaleFrom(r)`.
+ctx factory. `Authorize` is the app's one policy for who may do what;
+nil means the default policy. `Actor` is the one per-request value. The
+router copies it from the request context (`WithActor`). If there is
+none and your factory left `Actor` empty, the router uses the signed-in
+person (`sessions.ActorFrom`). The signed-in user is
+`sessions.Current(r)` and locale is `LocaleFrom(r)`.
 
 `Render` is the manifest system's seam. A generated action cannot call
 an app-private helper, so it calls `ctx.Render` — and nil-checks it,
@@ -297,32 +303,56 @@ vendor's — [Icons](/docs/icons) explains why that matters.
 ## Agents
 
 ```go
-type Tool struct{ /* Description, Access, Args, Confirm */ }
-type ToolDef struct{ /* the registry entry generate emits */ }
 type Access int
-const ( ToolRead Access = iota; ToolWrite )
+const ( Read Access = 1; Write Access = 2 )
+func (a Access) String() string
+func (a Access) Valid() bool
+
+type Operation struct {
+	ID, Resource string
+	Scoped       bool
+	Access       Access
+}
 ```
 
-An action opts in with `var Tool = rastrillo.Tool{...}`. `ToolRead`
-observes and never changes state. `ToolWrite` changes state, so it
-requires a confirm sentence and an explicitly confirmed call.
-`Access.String` is `"read"` or `"write"`.
+`Read` observes and never changes state. `Write` changes state. The zero
+`Access` is invalid: set one explicitly. `Access.String` is `"read"`,
+`"write"` or `"invalid"`, and `Access.Valid` is true for `Read` and
+`Write`. An `Operation` is what `Ctx.Authorize` is asked about.
 
 ```go
 type Actor struct {
-	Human bool
-	Name  string
+	Subject, Agent, Credential string
+	Access                     Access
+	Session, Harness           string
 }
+func (a Actor) String() string
+func (a Actor) LogAttrs() []slog.Attr
+func (a Actor) IsToken() bool
 func WithActor(r *http.Request, a Actor) *http.Request
 func ActorFromContext(ctx context.Context) (Actor, bool)
+func ActorPhrase(a Actor, name func(subject string) string, t func(key string, args ...any) string) string
 ```
 
 Every action's caller is attributed, never anonymous, so an audit trail
-can say who did what. `Actor.String` is the audit form, `"human"` or
-`"agent:<name>"`, and it is what `eventlog` stores on every appended
-event — so a stream says who did what without importing this package.
+can say who did what. `Subject` is the person, `Agent` is the agent
+acting for them (empty when they act directly), and `Credential` is the
+token's public ID (empty for a browser session). The zero `Actor` is the
+app itself. `Actor.String` is the audit form: `app`, `user:<subject>`,
+`user:<subject> token:<id>` or `agent:<name> for user:<subject>
+token:<id>`. It is what `eventlog` stores on every appended event, so a
+stream says who did what without importing this package.
+`Actor.LogAttrs` returns the same as `slog` attributes, plus
+`agent_session` and `agent_harness` when the client sent them.
+`Actor.IsToken` is true when `Credential` is set.
 
-[Agents and tools](/docs/agents) is the guide.
+`ActorPhrase` is the words a page shows for an actor: nothing for the
+app, the person's name, or `Claude for Paul` for an agent. `name` turns
+a subject into a name; if it is nil or finds no name, the page shows the
+subject. `t` is the page's translator, such as `Locales.Tf` for the
+reader's language. In a template, use `ui`'s `actor` function instead.
+
+[Agents](/docs/agents) is the guide.
 
 ## Manifest types
 
@@ -357,6 +387,23 @@ a currency mean. `Scale` is a pointer because 0 is a real scale, whole
 units, and a missing scale must not read as one. `HasMoney` reports
 whether any column or field is money, and so whether the resource needs
 a `Currency`. See [Manifests](/docs/manifests#money).
+
+```go
+type Resource struct{ /* ..., API API */ }
+type API struct {
+	Expose *bool
+}
+func (r Resource) Exposed() bool
+```
+
+`Resource.API` is the `[api]` table. `Exposed` reports whether the
+resource is on the JSON API. A `scope = "user"` resource is on it and an
+unscoped one is not, unless `API.Expose` says otherwise. Leave `Expose`
+nil to keep the default for the scope.
+
+`Resource.Validate` also refuses a filter on a field whose wire name is
+`q`, `after` or `limit`. API lists already use those query parameters
+for search and paging.
 
 The enumerations:
 

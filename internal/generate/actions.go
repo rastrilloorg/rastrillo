@@ -65,75 +65,82 @@
 //
 // # Behavior pinned here (encoded in the goldens; see actions_test.go)
 //
+// Every action reads and writes through the resource's operations
+// (gen/ops/<name>, opsgen) and never its store: the page door and the
+// API door share one implementation, so a value one accepts the other
+// accepts too (spec §2). An operation's refusal is answered by
+// view.Refuse (op.NotFound 404, op.Forbidden 403, anything else 500);
+// op.Invalid is the one refusal a door with a form shows on it.
+//
 //   - index.GET: parses q (only when List.Search is set — and only
 //     really used by the store when there is at least one eligible
 //     text/textarea List column; see searchColumns), one query param
 //     per filterFields(r) entry (store.go's dedup of bare List.Filter
 //     and List.Filters[].Field — named by its sqlName, e.g. ?title=),
-//     and page (default 1). A field ALSO declared via List.Filters
-//     (capped at one entry by Validate) gets its raw query value run
-//     through a generated normalize<Field> first — unknown/absent
-//     collapses to "" (all), never a 400 — and the action builds a
-//     filterView (SummaryKey/AriaField/Items, every label a T KEY, never
-//     a resolved string) the render call's listView.Filter carries;
-//     list.html renders it as an inline dropdown (see templates.go).
-//     A bare-only List.Filter field (no List.Filters counterpart) still
-//     gets its query param parsed/carried/bound as a raw passthrough,
-//     exactly as before this — it has no enumerable Values to build a
-//     control or a normalizer from. Builds Rows from List.Columns[0]
-//     (Main) and, if declared, List.Columns[1] (Sub) — Money formatted
-//     in the reader's locale by the money helper (moneyactions.go),
-//     everything else the raw column value. Pagination has no gap-collapsing (v1
-//     simplification: every page number renders; see the report for
-//     the tradeoff).
+//     and page (default 1), and calls List in page-number mode, which
+//     counts for the numbered links. A field ALSO declared via
+//     List.Filters (capped at one entry by Validate) gets its raw query
+//     value run through a generated normalize<Field> first —
+//     unknown/absent collapses to "" (all), never a 400 — and the
+//     action builds a filterView (SummaryKey/AriaField/Items, every
+//     label a T KEY, never a resolved string) the render call's
+//     listView.Filter carries; list.html renders it as an inline
+//     dropdown (see templates.go). A bare-only List.Filter field (no
+//     List.Filters counterpart) still gets its query param
+//     parsed/carried/bound as a raw passthrough — it has no enumerable
+//     Values to build a control or a normalizer from. Builds Rows from
+//     List.Columns[0] (Main) and, if declared, List.Columns[1] (Sub) —
+//     Money formatted in the reader's locale by the money helper
+//     (moneyactions.go), everything else the raw column value.
+//     Pagination has no gap-collapsing (v1 simplification: every page
+//     number renders; see the report).
 //   - index.POST (create): parses every Form.Basics + Form.Advanced
-//     field in one form.Parse call — form.Field's kinds carry the rules,
-//     documented on the helper itself. A Money field is read in the
-//     resource's currency, in the locale the form echoes (spec §5), and
-//     any field the manifest marks Required is checked for blankness
-//     ("0" is a valid required amount). Any failure re-renders
-//     "<name>/form" (IsNew: true) at 400 with the field's message in
-//     Errors (its values in ErrorArgs) and every field's raw submitted
-//     text preserved — in Fields, and for money in Money with the
-//     locale it was read in — never reformatted, so a typo stays
-//     exactly as typed for correction. Success stamps both timestamps
-//     with the same UTC RFC3339 "now" and redirects 303 to Show.
-//   - [id]/index.GET (show): Get-or-404, then every declared field
+//     field in one form.Parse call and builds the operation's
+//     CreateInput from it, each field marked Set when the form sent it
+//     (present). Text fields carry no Required at the door: the
+//     operation refuses a blank, so both doors refuse the same one. A
+//     Money field keeps Required, read in the resource's currency and
+//     the locale the form echoes (spec §5): a blank money input is a
+//     field the form did send, which an op.Opt cannot say. A money
+//     parse failure never reaches the operation: the door merges
+//     ValidateCreate's map with its own parse errors (the parse error
+//     wins on a field, being the more specific) and re-renders
+//     "<name>/form" (IsNew: true) at 400 with every field's raw text
+//     preserved, so every problem shows at once and nothing is
+//     written. Create's op.Invalid re-renders the same way. Success
+//     redirects 303 to Show.
+//   - [id]/index.GET (show): Get, then every declared field
 //     (columns(r) order) into Fields, Money formatted in the reader's
 //     locale.
 //   - new.GET / [id]/edit.GET: render "<name>/form" with zero values
-//     (New) or the record's current values (Edit, Get-or-404 first);
-//     money inputs come from form.SeedMoney in the render locale.
-//   - [id]/edit-basics.POST / [id]/edit-advanced.POST: Get-or-404 (to
-//     answer 404 before ever attempting an UPDATE against a missing
-//     row, and — only when this field group has a Money field or a
-//     Required field — to source the OTHER group's current values for
-//     the 400 re-render), then parse and update only that field group.
-//     A Money parse failure or a Required-blank failure re-renders
-//     "<name>/form" (IsNew: false) at 400 with Fields seeded from the
-//     fetched record and overridden with this group's just-submitted
-//     raw text; this group's money inputs echo what was typed, the
-//     other group's are seeded from the record. A field group with no Money field and no Required
-//     field at all has no validation branch to speak of — generation
-//     time already knows no check here can fail, so none is emitted
-//     (the same "bake what the manifest already decided" discipline
-//     templates.go uses for the Advanced-form and Search gates).
-//   - scope = "user" (rastrillo.UserScoped): every action except
-//     new.GET (which touches no data) opens by resolving the session
-//     (sessions.Current — so scoped routes mount behind
-//     sessions.Require / sessions.Middleware / auth.RequireSession)
-//     and answers 403 signed out; every store call binds
-//     Owner: sess.Subject. List/Count carry the always-on owner
-//     clause, Create stamps the owner, and every per-record query
-//     keys on id AND owner (store.go's recordKey) — so someone else's
-//     id is sql.ErrNoRows and answers the same 404 a missing row
+//     (New) or the record's current values (Edit, Get first); money
+//     inputs come from form.SeedMoney in the render locale.
+//   - [id]/edit-basics.POST / [id]/edit-advanced.POST: Get first —
+//     only when this field group has a Money field or a Required field
+//     — to source the OTHER group's current values for the 400
+//     re-render and the record's currencies, then parse and send only
+//     this field group as an UpdateInput. A money parse failure
+//     re-renders as index.POST does, merged with ValidateUpdate's map;
+//     Update's op.Invalid re-renders too. A group with a money field
+//     runs again when Update refuses the save with op.Conflict (the
+//     record's currency changed under it), whatever the store kind:
+//     see updatePOST. A field group with no Money field and no
+//     Required field has no validation branch and no Get at all — the
+//     operation answers op.NotFound for a missing row and writes
+//     nothing, so the 404 still wins.
+//   - scope = "user" (rastrillo.UserScoped): the operations filter by
+//     Ctx.Actor.Subject, which the generated router sets from the
+//     session (sessions.ActorFrom), and op.Check refuses an empty
+//     subject as op.Forbidden before any query — so scoped routes
+//     still mount behind sessions.Require / auth.RequireSession, and a
+//     signed-out caller answers 403 through view.Refuse. Someone
+//     else's id is op.NotFound and answers the same 404 a missing row
 //     does, the scope package's 404-not-403 discipline. An unscoped
-//     resource's output is byte-identical to before Scope existed
-//     (the fixture goldens pin this).
+//     resource's output differs from a scoped one's only in the ops
+//     package it calls.
 package generate
 
 import (
-	"bufio"
 	"fmt"
 	"go/format"
 	"os"
@@ -141,6 +148,7 @@ import (
 	"strings"
 
 	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/internal/generate/shape"
 )
 
 // actionSpec is one of the (up to) seven files EmitActions considers
@@ -150,6 +158,26 @@ type actionSpec struct {
 	name   string // filename stem: "index", "new", "edit", "edit-basics", "edit-advanced"
 	method string
 	build  func(rastrillo.Resource, string) string // (r, module) -> unformatted Go source
+	op     string                                  // the operation the file calls: List, Get, Create, Update, Delete; "" for new.GET
+}
+
+// Door is one generated page action and the operation it calls, as the
+// parity lint (internal/generate/lint) reads them. It comes off the
+// same actionSpecs table the builders do, so a door the generator
+// starts calling a different operation is a door the lint checks for
+// that operation, with no second table to forget.
+type Door struct {
+	Source string // relative to actions/, e.g. "admin/notes/index.POST.go"
+	Op     string // "" for a door that calls no operation
+}
+
+// Doors lists r's generated page actions and the operation each calls.
+func Doors(r rastrillo.Resource) []Door {
+	var out []Door
+	for _, s := range actionSpecs(r) {
+		out = append(out, Door{Source: s.dir + "/" + s.name + "." + s.method + ".go", Op: s.op})
+	}
+	return out
 }
 
 // EmitActions writes gen/actions/<route path>/... for r: index.GET,
@@ -204,54 +232,25 @@ func actionSpecs(r rastrillo.Resource) []actionSpec {
 	idDir := resDir + "/[id]"
 
 	specs := []actionSpec{
-		{resDir, "index", "GET", actionIndexGET},
-		{resDir, "index", "POST", actionIndexPOST},
-		{resDir, "new", "GET", actionNewGET},
-		{idDir, "index", "GET", actionShowGET},
-		{idDir, "edit", "GET", actionEditGET},
-		{idDir, "edit-basics", "POST", actionEditBasicsPOST},
-		{idDir, "delete", "GET", actionDeleteGET},
-		{idDir, "delete", "POST", actionDeletePOST},
+		{resDir, "index", "GET", actionIndexGET, "List"},
+		{resDir, "index", "POST", actionIndexPOST, "Create"},
+		{resDir, "new", "GET", actionNewGET, ""},
+		{idDir, "index", "GET", actionShowGET, "Get"},
+		{idDir, "edit", "GET", actionEditGET, "Get"},
+		{idDir, "edit-basics", "POST", actionEditBasicsPOST, "Update"},
+		{idDir, "delete", "GET", actionDeleteGET, "Get"},
+		{idDir, "delete", "POST", actionDeletePOST, "Delete"},
 	}
 	if len(r.Form.Advanced) > 0 {
-		specs = append(specs, actionSpec{idDir, "edit-advanced", "POST", actionEditAdvancedPOST})
+		specs = append(specs, actionSpec{idDir, "edit-advanced", "POST", actionEditAdvancedPOST, "Update"})
 	}
 	return specs
 }
 
-// actionsModulePath reads the module directive from appRoot's go.mod.
-// Hand-rolled rather than shared across packages, matching this
-// codebase's own precedent (internal/manifest/goeval.go's
-// readModulePath, cmd/rastrillo/modpath.go's modulePath): the module
-// line is one fixed shape, and each package that needs it keeps its
-// own unexported copy.
-func actionsModulePath(appRoot string) (string, error) {
-	f, err := os.Open(filepath.Join(appRoot, "go.mod"))
-	if err != nil {
-		return "", fmt.Errorf("read go.mod: %w", err)
-	}
-	defer f.Close()
+func actionsModulePath(appRoot string) (string, error) { return shape.ModulePath(appRoot) }
 
-	scanner := bufio.NewScanner(f)
-	for scanner.Scan() {
-		line := strings.TrimSpace(scanner.Text())
-		if strings.HasPrefix(line, "module ") {
-			return strings.TrimSpace(strings.TrimPrefix(line, "module ")), nil
-		}
-	}
-	if err := scanner.Err(); err != nil {
-		return "", err
-	}
-	return "", fmt.Errorf("go.mod: no module directive found")
-}
-
-// storeImport returns the store package's import alias and path for r:
-// alias equals the package name sqlc.yaml told sqlc to generate
-// (<name>store — see store.go's sqlcYAML), written explicitly rather
-// than relying on the compiler inferring it from the package clause,
-// matching Router()'s own explicit-alias style in generate.go.
 func storeImport(r rastrillo.Resource, module string) (alias, path string) {
-	return r.Name + "store", module + "/gen/store/" + r.Name
+	return shape.StoreImport(r, module)
 }
 
 // mainSubColumns returns the columns index.GET's Main/Sub and show's
@@ -311,103 +310,64 @@ func zeroFieldsMapLiteral(r rastrillo.Resource) string {
 	return b.String()
 }
 
-// filterVar is one filterFields(r) entry's generated shape: a
-// query-string key (its sqlName) and a local variable name ("filter" +
-// the declared name, used as-is — not reconstructed through
-// sqlName/pascalCase). Param — "Filter"+Field — has to spell exactly
-// what sqlc names the CountXParams/ListXParams struct field for this
-// filter, and sqlc derives that name as pascalCase(sqlName(f)), NOT f
-// itself. Those two only agree for every identPattern-valid f because
-// rastrillo.Resource.Validate additionally rejects any field/column
-// name where pascalCase(sqlName(name)) != name (see manifest.go) —
-// without that guarantee a name like "title" or "IPAddress" would
-// still pass identPattern but generate a Param field the real sqlc
-// struct doesn't have. This comment used to claim sqlName+pascalCase
-// "round-trips any identPattern-valid identifier", which is false on
-// its own (see manifest.go's isCanonicalIdent doc) and only became true
-// once Validate started enforcing it.
-type filterVar struct {
-	Field string // declared name, e.g. "Title"
-	Query string // sqlName(Field), the URL query key, e.g. "title"
-	Var   string // "filterTitle"
-	Param string // the store Params field name, "Filter"+Field
-}
+// filterVar and the filter helpers live in shape, shared with the
+// operation emitter.
+type filterVar = shape.FilterVar
 
-// filterVars walks filterFields(r) — the deduped union of bare
-// List.Filter and List.Filters[].Field (store.go) — rather than
-// r.List.Filter alone, so a field declared ONLY via List.Filters (with
-// enumerable Values, no bare List.Filter entry) still gets its query
-// param parsed, carried and bound to the store's filter_<col> arg; the
-// same WHERE clause (whereClauses in store.go) already honors it either
-// way, so the action-side param handling has to keep up. A field
-// present in both collections (the filteredFixtureResource shape:
-// declared as both a bare Filter and a Filters[] with Values) appears
-// here exactly once.
-func filterVars(r rastrillo.Resource) []filterVar {
-	var out []filterVar
-	for _, f := range filterFields(r) {
-		out = append(out, filterVar{
-			Field: f,
-			Query: sqlName(f),
-			Var:   "filter" + f,
-			Param: "Filter" + f,
-		})
-	}
-	return out
-}
+func filterVars(r rastrillo.Resource) []filterVar { return shape.FilterVars(r) }
 
-// declaredFilter returns r's single List.Filters entry, if declared:
-// Validate caps List.Filters at exactly one (len(r.List.Filters) > 1 is
-// rejected — manifest.go), so "declared" here always means exactly one
-// or none. Field always matches one of filterVars(r)'s own Field
-// values, since filterFields unions List.Filter and List.Filters[].Field
-// (store.go) — a Filters entry can never be absent from that union.
-// Values is its enumerable dropdown choices, already validated non-empty
-// and deduped by Validate.
 func declaredFilter(r rastrillo.Resource) (field string, values []string, ok bool) {
-	if len(r.List.Filters) != 1 {
-		return "", nil, false
-	}
-	return r.List.Filters[0].Field, r.List.Filters[0].Values, true
+	return shape.DeclaredFilter(r)
 }
 
 // ── form/view call-site plumbing, shared across all seven files for a
 // given resource ────────────────────────────────────────────────────
 
-// failWhat renders the "what" argument a view.Fail call site passes:
-// the shared view.Fail (form/view — Task 6) can't close over the
-// resource name the way the old stamped-per-file fail helper did, so
-// the "<name>: " prefix that used to live in the helper's own log line
-// is folded into this string instead. Net effect on the emitted log
-// line is unchanged: fail(ctx, w, "creating notes", err) under the old
-// stamped helper logged the same line view.Fail(ctx, w, r, "notes:
-// creating notes", err) logs now.
+// failWhat renders the "what" argument a view.Fail or view.Refuse call
+// site passes: the shared helpers (form/view — Task 6) can't close over
+// the resource name the way the old stamped-per-file fail helper did,
+// so the "<name>: " prefix that used to live in the helper's own log
+// line is folded into this string instead. Net effect on the emitted
+// log line is unchanged.
 func failWhat(r rastrillo.Resource, what string) string {
 	return r.Name + ": " + what
 }
 
+// refuseStmts is the error branch after an operation call: the
+// operation's refusal mapped onto the page by view.Refuse.
+func refuseStmts(r rastrillo.Resource, what string) string {
+	return fmt.Sprintf("if err != nil {\n\tview.Refuse(ctx, w, r, %q, err)\n\treturn\n}\n", failWhat(r, what))
+}
+
+// opsImport is the import an action takes its operations from:
+// package ops_<name> at <module>/gen/ops/<name> (opsgen's Emit).
+func opsImport(r rastrillo.Resource, module string) (alias, path string) {
+	return "ops_" + r.Name, module + "/gen/ops/" + r.Name
+}
+
 // actionImportLines renders the module import lines every generated
 // action needs (rastrillo, always; view, always — every one of the
-// eight/nine files calls at least one of view.Fail/view.Render/
+// eight/nine files calls at least one of view.Refuse/view.Render/
 // view.ParseID unconditionally) plus form when needsForm — an action
 // with no Money field anywhere it reads/writes must not import form
-// unused (go vet would reject it) — plus sessions when the resource is
-// scoped AND this action resolves the owner (needsSession: every
-// scoped action except new.GET, which touches no data and so emits no
-// sessionStmts to use the import). Line order within the block doesn't
-// matter: go/format sorts import specs within a contiguous group
-// alphabetically, same as gofmt. hasView adds ui, for the ui.Localized
-// every view type embeds and the ui.ForRequest(r) every view.Render call
-// sets (localizedField); an action that declares no view must not
-// import it unused.
-func actionImportLines(r rastrillo.Resource, needsForm, needsSession, hasView bool) string {
+// unused (go vet would reject it) — plus op when needsOp: an action
+// that builds an operation input (present, amount, clearable), matches
+// a refusal (op.Invalid, op.Conflict) or reads a result's money
+// (*op.Money) uses it, and one that does none of those must not import
+// it unused. Line order within the block doesn't matter: go/format
+// sorts import specs within a contiguous group alphabetically, same as
+// gofmt. hasView adds ui, for the ui.Localized every view type embeds
+// and the ui.ForRequest(r) every view.Render call sets
+// (localizedField); an action that declares no view must not import it
+// unused.
+func actionImportLines(r rastrillo.Resource, needsForm, needsOp, hasView bool) string {
 	var b strings.Builder
 	b.WriteString("\t\"amadan.net/rastrillo/rastrillo\"\n")
 	if needsForm {
 		b.WriteString("\t\"amadan.net/rastrillo/rastrillo/form\"\n")
 	}
-	if scoped(r) && needsSession {
-		b.WriteString("\t\"amadan.net/rastrillo/rastrillo/sessions\"\n")
+	if needsOp {
+		b.WriteString("\t\"amadan.net/rastrillo/rastrillo/op\"\n")
 	}
 	if hasView {
 		b.WriteString("\t\"amadan.net/rastrillo/rastrillo/ui\"\n")
@@ -423,53 +383,6 @@ func actionImportLines(r rastrillo.Resource, needsForm, needsSession, hasView bo
 // for. ui.ForRequest also carries the switcher's items and the return
 // path the shells read.
 const localizedField = "Localized: ui.ForRequest(r),\n"
-
-// ── owner scoping (scope = "user") plumbing, shared by every action ──
-
-// sessionStmts renders the statements a scoped Handle opens with:
-// resolve the session, refuse a signed-out caller. 403 rather than a
-// redirect — the mounting contract (SKILL.md, manifest/README) puts
-// scoped routes behind sessions.Require / auth.RequireSession, which
-// already redirect page requests; this refusal is the defense-in-depth
-// backstop for an app that forgot, matching sessions' own answer for
-// a non-page request. It goes through view.Forbidden, so the app's
-// error page (or a JSON client's JSON) answers it the same way
-// view.NotFound answers a missing record. Empty for an unscoped
-// resource.
-func sessionStmts(r rastrillo.Resource) string {
-	if !scoped(r) {
-		return ""
-	}
-	return `sess, ok := sessions.Current(r)
-	if !ok {
-		view.Forbidden(ctx, w, r)
-		return
-	}
-`
-}
-
-// ownerParamLine is the Owner bind a scoped store call carries; empty
-// for an unscoped resource, so call sites splice it unconditionally.
-func ownerParamLine(r rastrillo.Resource) string {
-	if !scoped(r) {
-		return ""
-	}
-	return "Owner: sess.Subject,\n"
-}
-
-// recordArg renders the argument a per-record query (Get<Singular>,
-// Delete<Singular>) takes: the bare id for an unscoped resource — one
-// bind parameter, passed bare under sqlc's convention (see the
-// countBinds comment in actionIndexGET) — or the two-field Params
-// struct for a scoped one, whose id-AND-owner WHERE (store.go's
-// recordKey) is what turns someone else's row into sql.ErrNoRows and
-// so into the same 404 a missing row answers.
-func recordArg(r rastrillo.Resource, alias, query, singular string) string {
-	if scoped(r) {
-		return fmt.Sprintf("%s.%s%sParams{ID: id, Owner: sess.Subject}", alias, query, singular)
-	}
-	return "id"
-}
 
 // hasMoneyColumn reports whether any of cols is a Money column.
 func hasMoneyColumn(cols []column) bool {
@@ -583,7 +496,7 @@ const currencyImport = "\t\"amadan.net/rastrillo/rastrillo/currency\"\n"
 // ── index.GET (List) ────────────────────────────────────────────────
 
 func actionIndexGET(r rastrillo.Resource, module string) string {
-	alias, path := storeImport(r, module)
+	ops, path := opsImport(r, module)
 	fvars := filterVars(r)
 	searchDeclared := r.List.Search
 	searchParam := r.List.Search && len(searchColumns(r)) > 0
@@ -619,16 +532,15 @@ func actionIndexGET(r rastrillo.Resource, module string) string {
 	b.WriteString("\t\"net/url\"\n")
 	b.WriteString("\t\"strconv\"\n")
 	b.WriteString("\t\"strings\"\n\n")
-	b.WriteString(actionImportLines(r, false, true, true))
+	b.WriteString(actionImportLines(r, false, showsMoney, true))
 	if showsMoney {
 		b.WriteString(currencyImport)
 	}
-	fmt.Fprintf(&b, "\t%s %q\n", alias, path)
+	fmt.Fprintf(&b, "\t%s %q\n", ops, path)
 	b.WriteString(")\n")
 
 	fmt.Fprintf(&b, "\n// Handle is GET %s.\n", r.Route)
 	b.WriteString("func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {\n")
-	b.WriteString(sessionStmts(r))
 
 	searchExpr := `""`
 	if searchDeclared {
@@ -651,7 +563,6 @@ if v := r.URL.Query().Get("page"); v != "" {
 	}
 }
 const pageSize = 10
-offset := (page - 1) * pageSize
 `)
 
 	b.WriteString("\nvar carry [][2]string\n")
@@ -659,74 +570,19 @@ offset := (page - 1) * pageSize
 		fmt.Fprintf(&b, "if %s != \"\" {\n\tcarry = append(carry, [2]string{%q, %s})\n}\n", fv.Var, fv.Query, fv.Var)
 	}
 
-	fmt.Fprintf(&b, "\nstore := %s.New(ctx.DB)\n", alias)
-	plural := pascalCase(r.Name)
-
-	// CountX has no tail clause the way ListX's LIMIT/OFFSET always
-	// gives it one (ListX always binds at least page_limit/page_offset,
-	// so it always gets a real Params struct — sqlc's sqlite codegen
-	// only elides the struct at zero OR exactly one bind parameter,
-	// and List never has fewer than two). CountX has no such floor: its
-	// bind-parameter count is exactly len(fvars) plus one more if
-	// searchParam, and sqlc's own convention (verified against a real
-	// `sqlc generate` run — see the blog's committed
-	// gen/store/posts/queries.sql.go, a search-only resource, whose
-	// CountPosts takes a bare `search interface{}`, no CountPostsParams)
-	// is:
-	//   - zero bind params  -> no argument at all, not an empty struct
-	//   - exactly one       -> that one value passed bare, not wrapped
-	//     in a one-field struct
-	//   - two or more       -> the Params struct, as below
-	// Emitting the Params struct whenever searchParam || len(fvars) > 0
-	// (as an earlier draft did) is wrong for the one-param case and
-	// fails to compile against real sqlc output — a resource with only
-	// Search, or only a single Filter, has no way to also declare a
-	// second Filter that would push it into the struct case.
-	countBinds := len(fvars)
-	if searchParam {
-		countBinds++
-	}
-	if scoped(r) {
-		countBinds++ // the always-on owner clause (store.go's whereClauses)
-	}
-	switch {
-	case countBinds == 0:
-		b.WriteString("total, err := store.Count" + plural + "(r.Context())\n")
-	case countBinds == 1:
-		var arg string
-		switch {
-		case scoped(r):
-			arg = "sess.Subject"
-		case searchParam:
-			arg = searchExpr
-		default:
-			arg = fvars[0].Var
-		}
-		b.WriteString("total, err := store.Count" + plural + "(r.Context(), " + arg + ")\n")
-	default:
-		b.WriteString("total, err := store.Count" + plural + "(r.Context(), " + alias + ".Count" + plural + "Params{\n")
-		b.WriteString(ownerParamLine(r))
-		if searchParam {
-			b.WriteString("Search: " + searchExpr + ",\n")
-		}
-		for _, fv := range fvars {
-			fmt.Fprintf(&b, "%s: %s,\n", fv.Param, fv.Var)
-		}
-		b.WriteString("})\n")
-	}
-	fmt.Fprintf(&b, "if err != nil {\n\tview.Fail(ctx, w, r, %q, err)\n\treturn\n}\n", failWhat(r, "counting "+r.Name))
-
-	b.WriteString("rows, err := store.List" + plural + "(r.Context(), " + alias + ".List" + plural + "Params{\n")
-	b.WriteString(ownerParamLine(r))
+	// The operation counts and lists in page-number mode. Search is
+	// bound only when the store honours it (searchParam): ListInput has
+	// the member only then (opsgen's SearchBind).
+	fmt.Fprintf(&b, "\nres, err := %s.List(r.Context(), ctx, %s.ListInput{\n", ops, ops)
 	if searchParam {
 		b.WriteString("Search: " + searchExpr + ",\n")
 	}
 	for _, fv := range fvars {
 		fmt.Fprintf(&b, "%s: %s,\n", fv.Param, fv.Var)
 	}
-	b.WriteString("PageOffset: int64(offset),\nPageLimit: pageSize,\n")
-	b.WriteString("})\n")
-	fmt.Fprintf(&b, "if err != nil {\n\tview.Fail(ctx, w, r, %q, err)\n\treturn\n}\n", failWhat(r, "loading "+r.Name))
+	b.WriteString("PageNumber: page,\nLimit: pageSize,\n})\n")
+	b.WriteString(refuseStmts(r, "loading "+r.Name))
+	b.WriteString("total, rows := res.Total, res.Items\n")
 
 	b.WriteString("\nitems := make([]listRow, 0, len(rows))\nfor _, n := range rows {\n")
 	mainExpr := displayStmts(&b, "n", main, "n.ID")
@@ -926,42 +782,20 @@ func searchExprForHref(searchDeclared bool) string {
 // ── index.POST (Create) ─────────────────────────────────────────────
 
 func actionIndexPOST(r rastrillo.Resource, module string) string {
-	alias, path := storeImport(r, module)
-	singular := singularPascal(r.Name)
-
-	var order []rastrillo.Field
-	order = append(order, r.Form.Basics...)
-	order = append(order, r.Form.Advanced...)
-	byName := map[string]rastrillo.Field{}
-	for _, f := range order {
-		byName[f.Name] = f
-	}
-
-	var paramLines []string
-	for _, c := range columns(r) {
-		if f, ok := byName[c.Name]; ok {
-			paramLines = append(paramLines, storeParamLine(f))
-			continue
-		}
-		// A List-only column with no matching Form field: Create has
-		// no submitted value for it, so it gets the zero value — for
-		// money, nil in both columns, an empty field. (A well-formed
-		// manifest gives every List column a Form field too; this is a
-		// fallback, not the expected shape.)
-		if c.Kind != rastrillo.Money {
-			paramLines = append(paramLines, fmt.Sprintf("%s: \"\",\n", c.Name))
-		}
-	}
-
+	ops, path := opsImport(r, module)
+	order := formFields(r)
 	canFail := fieldsCanFail(order)
+	money := moneyFields(order)
 
 	var b strings.Builder
 	b.WriteString("import (\n")
+	if canFail {
+		b.WriteString("\t\"errors\"\n")
+	}
 	b.WriteString("\t\"fmt\"\n")
-	b.WriteString("\t\"net/http\"\n")
-	b.WriteString("\t\"time\"\n\n")
-	b.WriteString(actionImportLines(r, len(order) > 0, true, true))
-	fmt.Fprintf(&b, "\t%s %q\n", alias, path)
+	b.WriteString("\t\"net/http\"\n\n")
+	b.WriteString(actionImportLines(r, len(order) > 0, len(order) > 0, true))
+	fmt.Fprintf(&b, "\t%s %q\n", ops, path)
 	b.WriteString(")\n")
 
 	fmt.Fprintf(&b, "\n// Handle is POST %s.\n", r.Route)
@@ -973,41 +807,42 @@ func actionIndexPOST(r rastrillo.Resource, module string) string {
 	}
 
 `)
-	b.WriteString(sessionStmts(r))
 	if len(order) > 0 {
 		b.WriteString(parseCall(r, order, false))
 	}
+	fmt.Fprintf(&b, "in := %s.CreateInput{\n%s}\n", ops, inputLines(order, func(rastrillo.Field) string { return fmt.Sprintf("%q", r.Currency) }))
 
 	if canFail {
-		b.WriteString("if !p.OK() {\n")
+		b.WriteString("reshow := func(errs map[string]string) {\n")
 		b.WriteString(echoStmts(order, false))
 		fmt.Fprintf(&b, "view.Render(ctx, w, %q, http.StatusBadRequest, formView{\n", r.Name+"/form")
-		b.WriteString(localizedField + "IsNew: true,\nFields: p.Echo(),\nErrors: p.Errors(),\nErrorArgs: p.ErrorArgs(),\n")
+		b.WriteString(localizedField + "IsNew: true,\nFields: p.Echo(),\nErrors: errs,\nErrorArgs: p.ErrorArgs(),\n")
 		if r.HasMoney() {
 			b.WriteString("Money: " + moneyMapLiteral(order) + ",\n")
 		}
-		b.WriteString("})\nreturn\n}\n")
+		b.WriteString("})\n}\n")
+	}
+	if len(money) > 0 {
+		fmt.Fprintf(&b, "if !p.OK() {\nerrs := %s.ValidateCreate(in)\n%sreshow(errs)\nreturn\n}\n", ops, mergeParseErrors)
 	}
 
-	b.WriteString(writeStmts(order, func(rastrillo.Field) string { return fmt.Sprintf("%q", r.Currency) }))
-	b.WriteString("\nnow := time.Now().UTC().Format(time.RFC3339)\n")
-	fmt.Fprintf(&b, "store := %s.New(ctx.DB)\n", alias)
-	fmt.Fprintf(&b, "id, err := store.Create%s(r.Context(), %s.Create%sParams{\n", singular, alias, singular)
-	b.WriteString(ownerParamLine(r))
-	for _, l := range paramLines {
-		b.WriteString(l)
+	fmt.Fprintf(&b, "\nn, err := %s.Create(r.Context(), ctx, in)\n", ops)
+	if canFail {
+		b.WriteString("var invalid op.Invalid\nif errors.As(err, &invalid) {\nreshow(invalid.Fields)\nreturn\n}\n")
 	}
-	b.WriteString("Now: now,\n")
-	b.WriteString("})\n")
-	fmt.Fprintf(&b, "if err != nil {\n\tview.Fail(ctx, w, r, %q, err)\n\treturn\n}\n", failWhat(r, "creating "+r.Name))
-	fmt.Fprintf(&b, "http.Redirect(w, r, fmt.Sprintf(%q, id), http.StatusSeeOther)\n}\n", r.Route+"/%d")
+	b.WriteString(refuseStmts(r, "creating "+r.Name))
+	fmt.Fprintf(&b, "http.Redirect(w, r, fmt.Sprintf(%q, n.ID), http.StatusSeeOther)\n}\n", r.Route+"/%d")
 
-	if len(moneyFields(order)) > 0 {
-		b.WriteString(amountHelper)
-	}
+	b.WriteString(inputHelpers(order))
 	b.WriteString(formViewType(r))
 	return b.String()
 }
+
+// mergeParseErrors folds the door's own parse errors over the
+// operation's map. The parse error wins on a field: it names what was
+// typed (not an amount, a stale currency), where the operation can
+// only say the field is missing.
+const mergeParseErrors = "for k, v := range p.Errors() {\nerrs[k] = v\n}\n"
 
 // ── new.GET ──────────────────────────────────────────────────────────
 
@@ -1043,44 +878,42 @@ func actionNewGET(r rastrillo.Resource, module string) string {
 	return b.String()
 }
 
+// ── the Get every per-record page opens with ────────────────────────
+
+// getStmts renders the operation call a per-record page opens with:
+// the id from the path, then Get, whose op.NotFound (a missing row, or
+// someone else's) view.Refuse answers as 404.
+func getStmts(r rastrillo.Resource, ops string) string {
+	return fmt.Sprintf(`id, ok := view.ParseID(r)
+	if !ok {
+		view.NotFound(ctx, w, r)
+		return
+	}
+	n, err := %s.Get(r.Context(), ctx, id)
+%s`, ops, refuseStmts(r, "loading "+r.Name))
+}
+
 // ── [id]/index.GET (Show) ───────────────────────────────────────────
 
 func actionShowGET(r rastrillo.Resource, module string) string {
-	alias, path := storeImport(r, module)
-	singular := singularPascal(r.Name)
+	ops, path := opsImport(r, module)
 	main, _, _ := mainSubColumns(r)
 	showsMoney := hasMoneyColumn(columns(r))
 
 	var b strings.Builder
 	b.WriteString("import (\n")
-	b.WriteString("\t\"database/sql\"\n")
-	b.WriteString("\t\"errors\"\n")
 	b.WriteString("\t\"fmt\"\n")
 	b.WriteString("\t\"net/http\"\n\n")
-	b.WriteString(actionImportLines(r, false, true, true))
+	b.WriteString(actionImportLines(r, false, showsMoney, true))
 	if showsMoney {
 		b.WriteString(currencyImport)
 	}
-	fmt.Fprintf(&b, "\t%s %q\n", alias, path)
+	fmt.Fprintf(&b, "\t%s %q\n", ops, path)
 	b.WriteString(")\n")
 
 	fmt.Fprintf(&b, "\n// Handle is GET %s/{id}.\n", r.Route)
-	b.WriteString(`func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
-	id, ok := view.ParseID(r)
-	if !ok {
-		view.NotFound(ctx, w, r)
-		return
-	}
-`)
-	b.WriteString(sessionStmts(r))
-	fmt.Fprintf(&b, "store := %s.New(ctx.DB)\n", alias)
-	fmt.Fprintf(&b, "n, err := store.Get%s(r.Context(), %s)\n", singular, recordArg(r, alias, "Get", singular))
-	b.WriteString(`if errors.Is(err, sql.ErrNoRows) {
-		view.NotFound(ctx, w, r)
-		return
-	}
-`)
-	fmt.Fprintf(&b, "if err != nil {\n\tview.Fail(ctx, w, r, %q, err)\n\treturn\n}\n", failWhat(r, "loading "+r.Name))
+	b.WriteString("func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {\n")
+	b.WriteString(getStmts(r, ops))
 
 	title := "n." + main.Name
 	for _, c := range columns(r) {
@@ -1107,42 +940,23 @@ view.Render(ctx, w, %q, http.StatusOK, showView{
 // ── [id]/edit.GET ────────────────────────────────────────────────────
 
 func actionEditGET(r rastrillo.Resource, module string) string {
-	alias, path := storeImport(r, module)
-	singular := singularPascal(r.Name)
+	ops, path := opsImport(r, module)
 	hasAdvanced := len(r.Form.Advanced) > 0
 	money := moneyFields(formFields(r))
 
 	var b strings.Builder
 	b.WriteString("import (\n")
-	b.WriteString("\t\"database/sql\"\n")
-	b.WriteString("\t\"errors\"\n")
 	b.WriteString("\t\"fmt\"\n")
 	b.WriteString("\t\"net/http\"\n\n")
-	b.WriteString(actionImportLines(r, r.HasMoney(), true, true))
-	fmt.Fprintf(&b, "\t%s %q\n", alias, path)
+	b.WriteString(actionImportLines(r, r.HasMoney(), len(money) > 0, true))
+	fmt.Fprintf(&b, "\t%s %q\n", ops, path)
 	b.WriteString(")\n")
 
 	fmt.Fprintf(&b, "\n// Handle is GET %s/{id}/edit.\n", r.Route)
-	b.WriteString(`func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
-	id, ok := view.ParseID(r)
-	if !ok {
-		view.NotFound(ctx, w, r)
-		return
-	}
-`)
-	b.WriteString(sessionStmts(r))
-	fmt.Fprintf(&b, "store := %s.New(ctx.DB)\n", alias)
-	fmt.Fprintf(&b, "n, err := store.Get%s(r.Context(), %s)\n", singular, recordArg(r, alias, "Get", singular))
-	b.WriteString(`if errors.Is(err, sql.ErrNoRows) {
-		view.NotFound(ctx, w, r)
-		return
-	}
-`)
-	fmt.Fprintf(&b, "if err != nil {\n\tview.Fail(ctx, w, r, %q, err)\n\treturn\n}\n", failWhat(r, "loading "+r.Name))
+	b.WriteString("func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {\n")
+	b.WriteString(getStmts(r, ops))
 
-	b.WriteString(seedStmts(money, "id",
-		func(f rastrillo.Field) string { return "n." + f.Name + "Minor" },
-		func(f rastrillo.Field) string { return "currencyOf(n." + f.Name + "Currency)" }))
+	b.WriteString(seedStmts(money, "id", recordMinor, recordCode))
 	fmt.Fprintf(&b, `
 view.Render(ctx, w, %q, http.StatusOK, formView{
 	%sIsNew:  false,
@@ -1158,41 +972,39 @@ view.Render(ctx, w, %q, http.StatusOK, formView{
 	b.WriteString("})\n}\n")
 
 	if len(money) > 0 {
-		b.WriteString(seedHelper(r) + codeHelper(r))
+		b.WriteString(seedHelper(r) + codeHelper(r) + minorHelper)
 	}
 	b.WriteString(formViewType(r))
 	return b.String()
 }
 
+// recordMinor and recordCode are a seed's arguments off the fetched
+// record n: the stored amount, or nil, and the field's currency, or
+// the resource default while it is empty.
+func recordMinor(f rastrillo.Field) string { return "minorOf(n." + f.Name + ")" }
+func recordCode(f rastrillo.Field) string  { return "currencyOf(n." + f.Name + ")" }
+
 // ── [id]/edit-basics.POST and [id]/edit-advanced.POST ──────────────
 
 // updatePOST builds edit-basics.POST or edit-advanced.POST: they are
-// the same shape (Get-or-404, parse this group's fields, update,
-// redirect — or, only when this group declares a Money field or a
-// Required field, a validation branch), parameterized on which field
-// group and which sqlc Update query own it.
+// the same shape (parse this group's fields into an UpdateInput, call
+// Update, redirect — or, only when this group declares a Money field or
+// a Required field, Get first and a re-render on a refusal),
+// parameterized on which field group owns it.
 //
 // other is the other group's fields: a failed POST seeds its money
 // inputs from the record, in the render locale, since this POST did
 // not submit them.
 func updatePOST(r rastrillo.Resource, module string, group, other []rastrillo.Field, groupName string) string {
-	alias, path := storeImport(r, module)
-	singular := singularPascal(r.Name)
+	ops, path := opsImport(r, module)
 	hasAdvanced := len(r.Form.Advanced) > 0
 
-	// groupHasValidation is true when ANY field in this group can fail
-	// validation — a Money parse (any Money field) or a Required-blank
-	// check (any Required Text/Textarea/Money field). A group with
-	// neither has no way to fail, so no validation branch and no `n`
-	// (the fetched record) is needed at all — Get-or-404 still runs
-	// (404 must win over a validation failure), its result just
-	// discarded.
+	// groupHasValidation is true when ANY field in this group can be
+	// refused — a Money parse (any Money field) or the operation's
+	// Required check (any Required Text/Textarea/Money field). A group
+	// with neither has no way to fail, so no re-render and no Get: the
+	// operation answers op.NotFound for a missing row itself.
 	groupHasValidation := fieldsCanFail(group)
-
-	var paramLines []string
-	for _, f := range group {
-		paramLines = append(paramLines, storeParamLine(f))
-	}
 
 	needsForm := len(group) > 0 || (groupHasValidation && r.HasMoney())
 	money := moneyFields(group)
@@ -1204,28 +1016,26 @@ func updatePOST(r rastrillo.Resource, module string, group, other []rastrillo.Fi
 
 	var b strings.Builder
 	b.WriteString("import (\n")
-	b.WriteString("\t\"database/sql\"\n")
-	b.WriteString("\t\"errors\"\n")
-	b.WriteString("\t\"fmt\"\n")
-	b.WriteString("\t\"net/http\"\n")
-	b.WriteString("\t\"time\"\n\n")
-	// A mergeable store refuses an amount whose currency is not the one
-	// its field now holds. This action writes only the currency it read,
-	// so that refusal means the record changed after the read. The
-	// action then runs again: once more to save, which re-reads the
-	// record so the form's currency echo, no longer matching, shows the
-	// person money_currency_changed with their text kept, as a currency
-	// that changed before the POST does, not a 500. A second refusal in
-	// the same request (the currency moved back, then away again) runs
-	// it a last time only to show the form: re-read, never save, and
-	// show the conflict on the group's money fields with the text the
-	// person typed, whatever the re-parse makes of a record that moved.
-	retries := r.Store == rastrillo.Mergeable && len(money) > 0
-	b.WriteString(actionImportLines(r, needsForm, true, groupHasValidation))
-	if retries {
-		b.WriteString("\t\"amadan.net/rastrillo/rastrillo/currency/replay\"\n")
+	if groupHasValidation {
+		b.WriteString("\t\"errors\"\n")
 	}
-	fmt.Fprintf(&b, "\t%s %q\n", alias, path)
+	b.WriteString("\t\"fmt\"\n")
+	b.WriteString("\t\"net/http\"\n\n")
+	// The operation refuses an amount whose currency is not the one the
+	// field now holds, for either store kind (opsgen's settle). This
+	// action sends only the currency it read, so that refusal means the
+	// record changed after the read. The action then runs again: once
+	// more to save, which re-reads the record so the form's currency
+	// echo, no longer matching, shows the person money_currency_changed
+	// with their text kept, as a currency that changed before the POST
+	// does, not a 500. A second refusal in the same request (the
+	// currency moved back, then away again) runs it a last time only to
+	// show the form: re-read, never save, and show the conflict on the
+	// group's money fields with the text the person typed, whatever the
+	// re-parse makes of a record that moved.
+	retries := len(money) > 0
+	b.WriteString(actionImportLines(r, needsForm, len(group) > 0 || groupHasValidation, groupHasValidation))
+	fmt.Fprintf(&b, "\t%s %q\n", ops, path)
 	b.WriteString(")\n")
 
 	fmt.Fprintf(&b, "\n// Handle is POST %s/{id}/edit-%s.\n", r.Route, strings.ToLower(groupName))
@@ -1241,45 +1051,25 @@ func updatePOST(r rastrillo.Resource, module string, group, other []rastrillo.Fi
 		http.Error(w, "Bad request.", http.StatusBadRequest)
 		return
 	}
-	id, ok := view.ParseID(r)
-	if !ok {
-		view.NotFound(ctx, w, r)
-		return
-	}
 `)
-	b.WriteString(sessionStmts(r))
-	fmt.Fprintf(&b, "store := %s.New(ctx.DB)\n", alias)
-
 	if groupHasValidation {
-		fmt.Fprintf(&b, "n, err := store.Get%s(r.Context(), %s)\n", singular, recordArg(r, alias, "Get", singular))
+		b.WriteString(getStmts(r, ops) + "\n")
 	} else {
-		fmt.Fprintf(&b, "_, err := store.Get%s(r.Context(), %s)\n", singular, recordArg(r, alias, "Get", singular))
+		b.WriteString("id, ok := view.ParseID(r)\nif !ok {\nview.NotFound(ctx, w, r)\nreturn\n}\n\n")
 	}
-	b.WriteString(`if errors.Is(err, sql.ErrNoRows) {
-		view.NotFound(ctx, w, r)
-		return
-	}
-`)
-	fmt.Fprintf(&b, "if err != nil {\n\tview.Fail(ctx, w, r, %q, err)\n\treturn\n}\n\n", failWhat(r, "loading "+r.Name))
 
 	b.WriteString(codeStmts(group))
 	if len(group) > 0 {
 		b.WriteString(parseCall(r, group, true))
 	}
+	fmt.Fprintf(&b, "in := %s.UpdateInput{\n%s}\n", ops, inputLines(group, func(f rastrillo.Field) string { return lowerFirst(f.Name) + "Code" }))
 
 	if groupHasValidation {
-		if retries {
-			b.WriteString("\nif !p.OK() || try == 2 {\n")
-		} else {
-			b.WriteString("\nif !p.OK() {\n")
-		}
+		b.WriteString("reshow := func(errs map[string]string) {\n")
 		b.WriteString("fields := " + fieldsMapLiteral(r, "n", false) + "\n")
 		b.WriteString("for k, v := range p.Echo() {\nfields[k] = v\n}\n")
 		b.WriteString(echoStmts(group, true))
-		b.WriteString(seedStmts(otherMoney, "id",
-			func(f rastrillo.Field) string { return "n." + f.Name + "Minor" },
-			func(f rastrillo.Field) string { return "currencyOf(n." + f.Name + "Currency)" }))
-		errs := "p.Errors()"
+		b.WriteString(seedStmts(otherMoney, "id", recordMinor, recordCode))
 		if retries {
 			// The last run's own parse cannot be trusted to say what
 			// happened: the record moved twice, so it may refuse the seed
@@ -1287,18 +1077,16 @@ func updatePOST(r rastrillo.Resource, module string, group, other []rastrillo.Fi
 			// reseed the input blank, or refuse nothing at all. What the
 			// person must see is the conflict, with the text they typed,
 			// which the first run already read in its locale, beside the
-			// record's current currency. Nothing below saves.
-			var keys, inputs []string
+			// record's current currency. Nothing in that run saves.
+			b.WriteString("if try == 2 {\n")
 			for _, f := range money {
 				l := lowerFirst(f.Name)
-				keys = append(keys, fmt.Sprintf("%q: %q", f.Name, moneyCurrencyChangedKey))
-				inputs = append(inputs, fmt.Sprintf("%sInput = form.MoneyInput{Value: p.Echo()[%q], Locale: r.PostFormValue(%q), Currency: %sCode}\n", l, f.Name, f.Name+".locale", l))
+				fmt.Fprintf(&b, "%sInput = form.MoneyInput{Value: p.Echo()[%q], Locale: r.PostFormValue(%q), Currency: %sCode}\n", l, f.Name, f.Name+".locale", l)
 			}
-			b.WriteString("errs := p.Errors()\nif try == 2 {\nerrs = map[string]string{" + strings.Join(keys, ", ") + "}\n" + strings.Join(inputs, "") + "}\n")
-			errs = "errs"
+			b.WriteString("}\n")
 		}
 		fmt.Fprintf(&b, "view.Render(ctx, w, %q, http.StatusBadRequest, formView{\n", r.Name+"/form")
-		b.WriteString(localizedField + "IsNew: false,\nFields: fields,\nErrors: " + errs + ",\nErrorArgs: p.ErrorArgs(),\n")
+		b.WriteString(localizedField + "IsNew: false,\nFields: fields,\nErrors: errs,\nErrorArgs: p.ErrorArgs(),\n")
 		if r.HasMoney() {
 			b.WriteString("Money: " + moneyMapLiteral(formFields(r)) + ",\n")
 		}
@@ -1306,32 +1094,37 @@ func updatePOST(r rastrillo.Resource, module string, group, other []rastrillo.Fi
 		if hasAdvanced {
 			fmt.Fprintf(&b, "AdvancedAction: fmt.Sprintf(%q, id),\n", r.Route+"/%d/edit-advanced")
 		}
-		b.WriteString("})\nreturn\n}\n")
+		b.WriteString("})\n}\n")
+	}
+	if retries {
+		var keys []string
+		for _, f := range money {
+			keys = append(keys, fmt.Sprintf("%q: %q", f.Name, moneyCurrencyChangedKey))
+		}
+		fmt.Fprintf(&b, "if !p.OK() || try == 2 {\nerrs := %s.ValidateUpdate(in)\n%sif try == 2 {\nerrs = map[string]string{%s}\n}\nreshow(errs)\nreturn\n}\n", ops, mergeParseErrors, strings.Join(keys, ", "))
 	}
 
-	b.WriteString(writeStmts(group, func(f rastrillo.Field) string { return lowerFirst(f.Name) + "Code" }))
-	b.WriteString("\nnow := time.Now().UTC().Format(time.RFC3339)\n")
-	fmt.Fprintf(&b, "if err := store.Update%s%s(r.Context(), %s.Update%s%sParams{\n",
-		singular, groupName, alias, singular, groupName)
-	for _, l := range paramLines {
-		b.WriteString(l)
+	// err is new in a group with no Get above, and reassigned after one.
+	assign := ":="
+	if groupHasValidation {
+		assign = "="
 	}
-	b.WriteString(ownerParamLine(r) + "Now: now,\nID: id,\n")
-	b.WriteString("}); err != nil {\n")
-	if retries {
-		b.WriteString("if try < 2 && errors.Is(err, replay.ErrCurrencyChange) {\nhandle(ctx, w, r, try+1)\nreturn\n}\n")
+	fmt.Fprintf(&b, "\n_, err %s %s.Update(r.Context(), ctx, id, in)\n", assign, ops)
+	switch {
+	case retries:
+		b.WriteString("var invalid op.Invalid\nswitch {\ncase errors.As(err, &invalid):\nreshow(invalid.Fields)\nreturn\ncase errors.As(err, new(op.Conflict)):\nhandle(ctx, w, r, try+1)\nreturn\ncase err != nil:\n")
+		fmt.Fprintf(&b, "view.Refuse(ctx, w, r, %q, err)\nreturn\n}\n", failWhat(r, "updating "+r.Name))
+	case groupHasValidation:
+		b.WriteString("var invalid op.Invalid\nif errors.As(err, &invalid) {\nreshow(invalid.Fields)\nreturn\n}\n")
+		b.WriteString(refuseStmts(r, "updating "+r.Name))
+	default:
+		b.WriteString(refuseStmts(r, "updating "+r.Name))
 	}
-	fmt.Fprintf(&b, "view.Fail(ctx, w, r, %q, err)\nreturn\n}\n", failWhat(r, "updating "+r.Name))
 	fmt.Fprintf(&b, "http.Redirect(w, r, fmt.Sprintf(%q, id), http.StatusSeeOther)\n}\n", r.Route+"/%d")
 
-	if len(money) > 0 {
-		b.WriteString(amountHelper)
-	}
+	b.WriteString(inputHelpers(group))
 	if len(money)+len(otherMoney) > 0 {
-		if groupHasValidation {
-			b.WriteString(seedHelper(r))
-		}
-		b.WriteString(codeHelper(r))
+		b.WriteString(seedHelper(r) + codeHelper(r) + minorHelper)
 	}
 	if groupHasValidation {
 		b.WriteString(formViewType(r))
@@ -1339,9 +1132,9 @@ func updatePOST(r rastrillo.Resource, module string, group, other []rastrillo.Fi
 	return b.String()
 }
 
-// handleDoc is the doc comment on a mergeable money update's handle,
-// a draft for the copy review (copy-review/final).
-const handleDoc = "handle is Handle's body. When the store refuses the save because the record's currency changed, it runs again: once more to save, and then only to show the form with that message."
+// handleDoc is the doc comment on a money update's handle, a draft for
+// the copy review (docs/superpowers/plans/2026-10-05-json-api-copy.md).
+const handleDoc = "handle is Handle's body. When the operation refuses the save because the record's currency changed, it runs again: once more to save, and then only to show the form with that message."
 
 // moneyCurrencyChangedKey is form's rastrillo.ui.money_currency_changed,
 // which the last run sets itself on the group's money fields.
@@ -1360,9 +1153,10 @@ func actionEditAdvancedPOST(r rastrillo.Resource, module string) string {
 // parseCall emits the one form.Parse call a POST action opens with —
 // the same documented helper a hand-written app uses (form.Field's
 // kinds carry the parse/trim/echo rules that used to be stamped here
-// as per-field statements). A money field's is moneyField's: edit says
-// whether it reads the record's currency and amount or the resource
-// default.
+// as per-field statements). A text field carries no Required: that
+// check is the operation's, so both doors refuse the same blank. A
+// money field's is moneyField's: edit says whether it reads the
+// record's currency and amount or the resource default.
 func parseCall(r rastrillo.Resource, fields []rastrillo.Field, edit bool) string {
 	var b strings.Builder
 	b.WriteString("p := form.Parse(r,\n")
@@ -1375,28 +1169,15 @@ func parseCall(r rastrillo.Resource, fields []rastrillo.Field, edit bool) string
 		if f.Kind == rastrillo.Textarea {
 			parts = append(parts, "Kind: form.Textarea")
 		}
-		if f.Required {
-			parts = append(parts, "Required: true")
-		}
 		b.WriteString("form.Field{" + strings.Join(parts, ", ") + "},\n")
 	}
 	b.WriteString(")\n")
 	return b.String()
 }
 
-// storeParamLine is one store-Params field fed from the Parse result;
-// a money field's two are writeStmts' locals.
-func storeParamLine(f rastrillo.Field) string {
-	if f.Kind == rastrillo.Money {
-		l := lowerFirst(f.Name)
-		return fmt.Sprintf("%sMinor: %sMinor,\n%sCurrency: %sCurrency,\n", f.Name, l, f.Name, l)
-	}
-	return fmt.Sprintf("%s: p.String(%q),\n", f.Name, f.Name)
-}
-
-// fieldsCanFail reports whether any field can fail validation — a
-// Money parse, or a Required-blank check — i.e. whether the action
-// needs the !p.OK() re-render branch at all.
+// fieldsCanFail reports whether any field can be refused — a Money
+// parse, or the operation's Required check — i.e. whether the action
+// needs a re-render at all.
 func fieldsCanFail(fields []rastrillo.Field) bool {
 	for _, f := range fields {
 		if f.Required || f.Kind == rastrillo.Money {
@@ -1411,45 +1192,27 @@ func fieldsCanFail(fields []rastrillo.Field) bool {
 // actionDeleteGET renders the delete confirm page — §9's rule that
 // every destructive action is its own URL first: a GET that never
 // mutates, showing the record, the question, and a form whose POST is
-// the only thing that deletes. It is also the page §8's agent consent
-// gate points a human at before a write tool may run.
+// the only thing that deletes.
 func actionDeleteGET(r rastrillo.Resource, module string) string {
-	alias, path := storeImport(r, module)
-	singular := singularPascal(r.Name)
+	ops, path := opsImport(r, module)
 	main, _, _ := mainSubColumns(r)
 	showsMoney := main.Kind == rastrillo.Money
 
 	var b strings.Builder
 	b.WriteString("import (\n")
-	b.WriteString("\t\"database/sql\"\n")
-	b.WriteString("\t\"errors\"\n")
 	b.WriteString("\t\"fmt\"\n")
 	b.WriteString("\t\"net/http\"\n\n")
-	b.WriteString(actionImportLines(r, false, true, true))
+	b.WriteString(actionImportLines(r, false, showsMoney, true))
 	if showsMoney {
 		b.WriteString(currencyImport)
 	}
-	fmt.Fprintf(&b, "\t%s %q\n", alias, path)
+	fmt.Fprintf(&b, "\t%s %q\n", ops, path)
 	b.WriteString(")\n")
 
 	fmt.Fprintf(&b, "\n// Handle is GET %s/{id}/delete: the confirm page. A GET never\n", r.Route)
 	b.WriteString("// mutates; the delete itself is the sibling POST.\n")
-	b.WriteString(`func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
-	id, ok := view.ParseID(r)
-	if !ok {
-		view.NotFound(ctx, w, r)
-		return
-	}
-`)
-	b.WriteString(sessionStmts(r))
-	fmt.Fprintf(&b, "store := %s.New(ctx.DB)\n", alias)
-	fmt.Fprintf(&b, "n, err := store.Get%s(r.Context(), %s)\n", singular, recordArg(r, alias, "Get", singular))
-	b.WriteString(`if errors.Is(err, sql.ErrNoRows) {
-		view.NotFound(ctx, w, r)
-		return
-	}
-`)
-	fmt.Fprintf(&b, "if err != nil {\n\tview.Fail(ctx, w, r, %q, err)\n\treturn\n}\n", failWhat(r, "loading "+r.Name))
+	b.WriteString("func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {\n")
+	b.WriteString(getStmts(r, ops))
 
 	title := displayStmts(&b, "n", main, "id")
 	fmt.Fprintf(&b, `
@@ -1479,20 +1242,17 @@ type confirmView struct {
 
 // ── [id]/delete.POST ────────────────────────────────────────────────
 
-// actionDeletePOST is the delete itself: Get-or-404 first (a missing
-// row answers 404, never a silent no-op success), then the store's
-// DELETE, then 303 back to the list.
+// actionDeletePOST is the delete itself: the operation's Delete, whose
+// op.NotFound for a missing row answers 404 (never a silent no-op
+// success) and writes nothing, then 303 back to the list.
 func actionDeletePOST(r rastrillo.Resource, module string) string {
-	alias, path := storeImport(r, module)
-	singular := singularPascal(r.Name)
+	ops, path := opsImport(r, module)
 
 	var b strings.Builder
 	b.WriteString("import (\n")
-	b.WriteString("\t\"database/sql\"\n")
-	b.WriteString("\t\"errors\"\n")
 	b.WriteString("\t\"net/http\"\n\n")
-	b.WriteString(actionImportLines(r, false, true, false))
-	fmt.Fprintf(&b, "\t%s %q\n", alias, path)
+	b.WriteString(actionImportLines(r, false, false, false))
+	fmt.Fprintf(&b, "\t%s %q\n", ops, path)
 	b.WriteString(")\n")
 
 	fmt.Fprintf(&b, "\n// Handle is POST %s/{id}/delete.\n", r.Route)
@@ -1503,12 +1263,8 @@ func actionDeletePOST(r rastrillo.Resource, module string) string {
 		return
 	}
 `)
-	b.WriteString(sessionStmts(r))
-	fmt.Fprintf(&b, "store := %s.New(ctx.DB)\n", alias)
-	fmt.Fprintf(&b, "if _, err := store.Get%s(r.Context(), %s); errors.Is(err, sql.ErrNoRows) {\n", singular, recordArg(r, alias, "Get", singular))
-	b.WriteString("\tview.NotFound(ctx, w, r)\n\treturn\n")
-	fmt.Fprintf(&b, "} else if err != nil {\n\tview.Fail(ctx, w, r, %q, err)\n\treturn\n}\n", failWhat(r, "loading "+r.Name))
-	fmt.Fprintf(&b, "if err := store.Delete%s(r.Context(), %s); err != nil {\n\tview.Fail(ctx, w, r, %q, err)\n\treturn\n}\n", singular, recordArg(r, alias, "Delete", singular), failWhat(r, "deleting "+r.Name))
+	fmt.Fprintf(&b, "err := %s.Delete(r.Context(), ctx, id)\n", ops)
+	b.WriteString(refuseStmts(r, "deleting "+r.Name))
 	fmt.Fprintf(&b, "http.Redirect(w, r, %q, http.StatusSeeOther)\n}\n", r.Route)
 
 	return b.String()

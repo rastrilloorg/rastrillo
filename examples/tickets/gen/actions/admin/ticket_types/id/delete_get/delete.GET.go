@@ -3,15 +3,13 @@
 package act_admin_ticket_types_id_delete_get
 
 import (
-	"database/sql"
-	"errors"
 	"fmt"
 	"net/http"
 
 	"amadan.net/rastrillo/rastrillo"
 	"amadan.net/rastrillo/rastrillo/ui"
 	"amadan.net/rastrillo/rastrillo/view"
-	ticket_typesstore "tickets/gen/store/ticket_types"
+	ops_ticket_types "tickets/gen/ops/ticket_types"
 )
 
 // Handle is GET /admin/ticket_types/{id}/delete: the confirm page. A GET never
@@ -22,14 +20,9 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 		view.NotFound(ctx, w, r)
 		return
 	}
-	store := ticket_typesstore.New(ctx.DB)
-	n, err := store.GetTicketType(r.Context(), id)
-	if errors.Is(err, sql.ErrNoRows) {
-		view.NotFound(ctx, w, r)
-		return
-	}
+	n, err := ops_ticket_types.Get(r.Context(), ctx, id)
 	if err != nil {
-		view.Fail(ctx, w, r, "ticket_types: loading ticket_types", err)
+		view.Refuse(ctx, w, r, "ticket_types: loading ticket_types", err)
 		return
 	}
 

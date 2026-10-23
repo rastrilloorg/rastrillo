@@ -7,6 +7,14 @@ WHERE (sqlc.arg(search) = '' OR (name LIKE '%' || sqlc.arg(search) || '%' OR sta
 ORDER BY created_at DESC, id DESC
 LIMIT sqlc.arg(page_limit) OFFSET sqlc.arg(page_offset);
 
+-- name: ListTicketTypesAfter :many
+SELECT * FROM ticket_types
+WHERE (sqlc.arg(search) = '' OR (name LIKE '%' || sqlc.arg(search) || '%' OR status LIKE '%' || sqlc.arg(search) || '%'))
+  AND (sqlc.arg(filter_status) = '' OR status = sqlc.arg(filter_status))
+  AND (sqlc.arg(after_created_at) = '' OR created_at < sqlc.arg(after_created_at) OR (created_at = sqlc.arg(after_created_at) AND id < sqlc.arg(after_id)))
+ORDER BY created_at DESC, id DESC
+LIMIT sqlc.arg(page_limit);
+
 -- name: CountTicketTypes :one
 SELECT COUNT(*) FROM ticket_types
 WHERE (sqlc.arg(search) = '' OR (name LIKE '%' || sqlc.arg(search) || '%' OR status LIKE '%' || sqlc.arg(search) || '%'))
@@ -20,11 +28,8 @@ INSERT INTO ticket_types (name, price_minor, price_currency, status, max_per_ord
 VALUES (sqlc.arg(name), sqlc.arg(price_minor), sqlc.arg(price_currency), sqlc.arg(status), sqlc.arg(max_per_order), sqlc.arg(now), sqlc.arg(now))
 RETURNING id;
 
--- name: UpdateTicketTypeBasics :exec
-UPDATE ticket_types SET name = sqlc.arg(name), price_minor = sqlc.arg(price_minor), price_currency = sqlc.arg(price_currency), status = sqlc.arg(status), updated_at = sqlc.arg(now) WHERE id = sqlc.arg(id);
+-- name: UpdateTicketType :execrows
+UPDATE ticket_types SET name = sqlc.arg(name), price_minor = sqlc.arg(price_minor), price_currency = sqlc.arg(price_currency), status = sqlc.arg(status), max_per_order = sqlc.arg(max_per_order), updated_at = sqlc.arg(now) WHERE id = sqlc.arg(id);
 
--- name: UpdateTicketTypeAdvanced :exec
-UPDATE ticket_types SET max_per_order = sqlc.arg(max_per_order), updated_at = sqlc.arg(now) WHERE id = sqlc.arg(id);
-
--- name: DeleteTicketType :exec
+-- name: DeleteTicketType :execrows
 DELETE FROM ticket_types WHERE id = sqlc.arg(id);

@@ -3,6 +3,7 @@ package migrate_test
 import (
 	"testing"
 
+	"amadan.net/rastrillo/rastrillo/apitoken"
 	"amadan.net/rastrillo/rastrillo/auth"
 	"amadan.net/rastrillo/rastrillo/blobs"
 	"amadan.net/rastrillo/rastrillo/eventlog"
@@ -57,6 +58,7 @@ import (
 // second exception: from the first deploy, a checksum failure here
 // means revert the edit, and adding a table means adding a 0002_.
 var frozenChecksums = map[string]string{
+	"apitoken/0001_init":              "f09c819c69b01989cab02e40920b3bdb35c0ec550a600e32f430adc752fb29be",
 	"sessions/0001_init":              "50bbfc92cfcc708b09b672b71f24da789ae6065f426c9db7af61befa90098bbb",
 	"auth/0001_init":                  "3f6bf7e80d71e5d008fc56284e1342a28eecff1dc1da67cc5353bee4fd41a76a",
 	"auth/0002_sessions_backfill":     "90798138a17a2f5d3f89ea4591985fdd53e9144c63040ae59d45ad6ca6a01a98",
@@ -76,7 +78,7 @@ func TestFrameworkMigrationsAreFrozen(t *testing.T) {
 	seen := map[string]bool{}
 	for _, s := range []*migrate.Set{
 		sessions.Schema, auth.Schema, blobs.Schema, eventlog.Schema, eventlog.MoneySchema,
-		passkey.Schema, secondfactor.Schema, totp.Schema,
+		passkey.Schema, secondfactor.Schema, totp.Schema, apitoken.Schema,
 	} {
 		for _, m := range s.All() {
 			seen[m.ID] = true

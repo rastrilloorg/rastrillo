@@ -3,15 +3,13 @@
 package act_admin_posts_id_delete_get
 
 import (
-	"database/sql"
-	"errors"
 	"fmt"
 	"net/http"
 
 	"amadan.net/rastrillo/rastrillo"
 	"amadan.net/rastrillo/rastrillo/ui"
 	"amadan.net/rastrillo/rastrillo/view"
-	postsstore "blog/gen/store/posts"
+	ops_posts "blog/gen/ops/posts"
 )
 
 // Handle is GET /admin/posts/{id}/delete: the confirm page. A GET never
@@ -22,14 +20,9 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 		view.NotFound(ctx, w, r)
 		return
 	}
-	store := postsstore.New(ctx.DB)
-	n, err := store.GetPost(r.Context(), id)
-	if errors.Is(err, sql.ErrNoRows) {
-		view.NotFound(ctx, w, r)
-		return
-	}
+	n, err := ops_posts.Get(r.Context(), ctx, id)
 	if err != nil {
-		view.Fail(ctx, w, r, "posts: loading posts", err)
+		view.Refuse(ctx, w, r, "posts: loading posts", err)
 		return
 	}
 

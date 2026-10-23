@@ -3,6 +3,8 @@
 Generated from ui/partials by TestSkillPartialsReferenceIsCurrent; do not edit.
 Call one as `{{template "name" dict "L" $L "Key" value ...}}`; `L` is the localizer every page starts with. A key `X[]` is a list whose items carry the keys in brackets. Keys a Go helper reads for the template (row-menu's and pagination's items, say) are not listed; each template's own comment says more.
 
+- **actor**: Who did something, as words: nothing for the app, the person's name, or "Claude for Paul" for an agent acting for them. Keys: `Actor`, `Display`.
+- **api-tokens**: The API token page's body, from apitoken's PageData: the one-time reveal, the create form, the list, and the revoke-all buttons. Keys: `Page`, `Path`, `RevokeAgentPath`, `RevokeAllPath`, `RevokePath`.
 - **back-nav**: The ← return link above a confirm or detail page. Keys: `Href`, `Label`.
 - **badge**: An uppercase bordered chip for small static markers (LIVE, Draft, Sold out): distinct from status-pill, which is record status. Keys: `Label`, `Tone`.
 - **bulk-bar**: Select-mode's header strip, replacing the list-bar: count, escalate/clear link, and the actions menu whose items are real submit buttons on the surrounding form. Keys: `Actions[]` (Danger, Label, Value), `Count`, `DoneHref`, `DoneLabel`, `EscalateHref`, `EscalateLabel`, `MenuLabel`.

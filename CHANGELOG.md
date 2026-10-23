@@ -10,6 +10,64 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+**A JSON API for every app, and agents that act for a person (breaking
+upgrade for generated apps and for code that reads `Actor`).** A
+manifest resource can now be served as JSON at `/api/v1`. A person
+makes a token for an agent on the app's token page, the agent calls the
+API with it, and every call is recorded as "Claude for Paul". The pages
+and the API call the same generated operation for each action, so both
+follow one set of rules. See [JSON API](/docs/api) and
+[Agents](/docs/agents).
+
+To upgrade:
+
+1. Run `rastrillo generate`. Commit `gen/` and the new `api/v1.json`.
+2. If you copied a generated action into `actions/` to change it, copy
+   the new generated file again and make your change again. Generated
+   actions now call operations. `rastrillo generate --check` names an
+   action that skips its operation.
+3. Change code that reads `Actor.Human` or `Actor.Name`. Use `Subject`
+   for the person and `Agent` for the agent acting for them.
+4. Change code that compares an `eventlog` actor with `"human"`. New
+   events say `user:<subject>`.
+5. Add a `generate-check` target that runs
+   `$(RASTRILLO) generate --check` to your Makefile, and add it to the
+   `ci` target. If your app has `.amadan/ci.d/`, copy a new app's
+   `45-generate-check` step into it.
+6. Delete any `var Tool = rastrillo.Tool{...}` from your actions.
+7. To serve the API, mount it as [JSON API](/docs/api#mounting-the-api)
+   shows. To let tokens use a resource with no owner, allow them in
+   your `Authorize`.
+
+What changed:
+
+- Removed: `rastrillo.Tool`, `rastrillo.ToolDef`, the old `rastrillo.Access` with `ToolRead` and `ToolWrite`, the generated `gen.Tools()`, and the `tools` package. No app used them, and a call through `tools.Dispatch` was refused by `csrf.Protect`, because it sent a POST with no `Origin`. `rastrillo generate` removes the old `gen/tools.go`, and `--check` no longer counts tools.
+- `rastrillo.Actor` changes shape. `Human` and `Name` are gone. It now has `Subject`, `Agent`, `Credential`, `Access`, `Session` and `Harness`, and new methods `LogAttrs` and `IsToken`.
+- `Actor.String()` changes, and so does what new `eventlog` rows store: `app`, `user:<subject>`, `user:<subject> token:<id>` or `agent:<name> for user:<subject> token:<id>`. Rows written before keep `human` and `agent:<name>`.
+- `rastrillo.Ctx` gains `Authorize`, the app's one policy for who may do what. Nil means `op.DefaultPolicy`.
+- Generated page actions now pass through `op.Check`, so page saves honour `Ctx.Authorize`. A page of a `scope = "user"` resource refuses a visitor who is not signed in.
+- Generated mergeable store methods take the actor, and every event they append records it. Before, every event said `app`.
+- Generated stores gain a query that writes a whole row back after a partial update, and a list query that pages by cursor.
+- Generated page actions change shape: they read the form, call the operation, and render or redirect.
+- Scaffolded apps' `make ci` runs `rastrillo generate --check`.
+- New `rastrillo.Access` with `Read` and `Write`, and `rastrillo.Operation`. The zero `Access` is invalid, so a route that forgets to say is refused instead of read.
+- New package `op`: the refusals `Invalid`, `NotFound`, `Forbidden` and `Conflict`, `Check` and `DefaultPolicy`, the input types `Opt`, `Nullable` and `Money`, and `Descriptor`.
+- New package `api`: the `/api/v1` handler tree, its error shape, and `Decode`, `Write` and `Refuse` for a handler you write yourself.
+- New package `apitoken`: personal tokens for a named agent, verified by SHA-256, and the token page's handlers. Add `apitoken.Schema` to `BootSchema`.
+- New function `sessions.ActorFrom` gives the signed-in person as an `Actor`.
+- New function `view.Refuse` answers an operation's refusal on a page: 404 or 403.
+- New template function `actor` and variable `ui.ActorName`, and new function `rastrillo.ActorPhrase`, write "Claude for Paul".
+- New partials `actor`, which writes the same words in a span for a list cell or a detail row, and `api-tokens`, the token page's body from `apitoken.PageData`; see [Templates](/docs/templates#the-partials). `apitoken.Row` gains `Revoked` and `Expired`, `PageData` gains `Agents`, and `Token` gains `Actor()`.
+- New catalog keys `rastrillo.ui.agent_for` and `rastrillo.ui.api_tokens_*`; a locale you ship yourself must translate them.
+- New `[api]` table in a manifest: `expose = true` or `false` overrides the default, which puts `scope = "user"` resources on the API and keeps the rest off.
+- `rastrillo generate` writes `gen/ops/<name>/` (one operation per action), `gen/api/<name>/doors.go` (the API handlers), `gen/api.go` (`APIRoutes` and `Operations`) and `gen/paritytest` (a test that runs one scenario through the pages and the API). Implement `paritytest.Fixture` to run it.
+- `rastrillo generate` writes `api/v1.json` in every app with a `manifest/` directory. It refuses a change that would break an API client and leaves the file as it was; `--accept-breaking` rewrites it on purpose.
+- `rastrillo generate` replaces a generated operation with your `ops/<name>/<op>.go`, and `--check` requires each exported function in it to begin with `op.Check`.
+- `rastrillo generate --check` requires a hand-written action of a resource on the API to call its operation, or to say why not with `//rastrillo:page-only <reason>`.
+- `rastrillo generate` refuses a filter whose query parameter would be `q`, `after` or `limit`, a field named like a money field's update flag (`PriceSet` beside a money field `Price`), and a resource whose name would clash with a name the generated operations already use (a resource named `pages`, for one). Rename it.
+- The API logs one line for every request that reaches a handler, with the actor and the agent's session and harness.
+- New apps get `internal/<app>/api.go`, which mounts the API, `tokens.go` and `templates/tokens.html` for the token page, and a `.gitleaks.toml` rule that finds the app's tokens in a commit.
+
 **`csrf.Exempt` lets a machine POST to a named path.** A payment provider's webhook and a `carlos schedule` tick are POSTs with no `Sec-Fetch-Site`, `Origin` or `Referer`, so `csrf.Protect` refused them. `csrf.Protect(origin, csrf.Exempt("/stripe/webhook"))` now lets those exact paths through. The middleware checks nothing on an exempt path, so its handler must check its own credential, such as a webhook signature or `carlos.Tick`. A path matches only when it is exactly `r.URL.Path`, and `Exempt` panics on an empty or relative path. `Protect(origin)` calls compile and behave as before. See [csrf](/docs/reference/csrf#exempt).
 
 **`day` looks different; your app's copy does not change until you

@@ -6,13 +6,14 @@ import (
 	"html/template"
 	"reflect"
 
+	"amadan.net/rastrillo/rastrillo"
 	"amadan.net/rastrillo/rastrillo/currency"
 	"amadan.net/rastrillo/rastrillo/locales"
 )
 
 // LocaleFuncs are the template functions whose output depends on the
 // locale, and so take the request's localizer first.
-var LocaleFuncs = []string{"T", "Tf", "Tbdi", "number", "displayValue", "dateWords", "money"}
+var LocaleFuncs = []string{"T", "Tf", "Tbdi", "number", "displayValue", "dateWords", "money", "actor"}
 
 // Appendix C.2 of the multi-currency money spec, verbatim: op.funcs.arity,
 // op.funcs.arg_type, op.money.first_arg and op.money.arity.
@@ -148,6 +149,23 @@ func localeFuncs(o config) template.FuncMap {
 				return nil, err
 			}
 			return dateWords(t(c))(), nil
+		},
+		"actor": func(args ...any) (any, error) {
+			c := newCall("actor", args)
+			if err := c.arity(1, false); err != nil {
+				return nil, err
+			}
+			a, ok := c.rest[0].(rastrillo.Actor)
+			if !ok {
+				return nil, fmt.Errorf(argTypeMsg, "actor", 1+c.offset, c.rest[0], "rastrillo.Actor")
+			}
+			// Tf's translator, not T's: without WithT the legacy T does
+			// not interpolate, and the sentence has two values in it.
+			tf := o.tf
+			if c.l != nil {
+				tf = c.l.t
+			}
+			return rastrillo.ActorPhrase(a, actorName, tf), nil
 		},
 		"money": func(args ...any) (any, error) {
 			c := newCall("money", args)

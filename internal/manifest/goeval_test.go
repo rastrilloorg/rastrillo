@@ -156,8 +156,9 @@ var Filters = rastrillo.List{
 func TestGoAndTOMLSameManifestSameArtifact(t *testing.T) {
 	tomlDir := t.TempDir()
 	// [legacy] rides along so the Go side's Scale pointer is compared
-	// with TOML's decoded one: both must reach the artifact as 2.
-	writeFile(t, tomlDir, "notes.toml", fixtureTOML+"\n[legacy]\ncurrency = \"USD\"\nscale = 2\n")
+	// with TOML's decoded one: both must reach the artifact as 2. [api]
+	// rides along for the same reason with Expose's *bool.
+	writeFile(t, tomlDir, "notes.toml", fixtureTOML+"\n[legacy]\ncurrency = \"USD\"\nscale = 2\n\n[api]\nexpose = true\n")
 
 	tomlResources, err := Load("", tomlDir)
 	if err != nil {
@@ -174,6 +175,7 @@ func TestGoAndTOMLSameManifestSameArtifact(t *testing.T) {
 import "amadan.net/rastrillo/rastrillo"
 
 var two = 2
+var yes = true
 
 var Notes = rastrillo.Resource{
 	Name:     "notes",
@@ -181,6 +183,7 @@ var Notes = rastrillo.Resource{
 	Store:    rastrillo.Exclusive,
 	Currency: "USD",
 	Legacy:   &rastrillo.Legacy{Currency: "USD", Scale: &two},
+	API:      rastrillo.API{Expose: &yes},
 	List: rastrillo.List{
 		Columns: []rastrillo.Column{
 			{Field: "Title", Kind: rastrillo.Text},
@@ -211,6 +214,9 @@ var Notes = rastrillo.Resource{
 	}
 	tomlArtifact := Artifact(tomlResources)
 	goArtifact := Artifact(goResources)
+	if !goResources[0].Exposed() || !strings.Contains(string(goArtifact), `"expose": true`) {
+		t.Fatalf("Go manifest lost [api] expose: %s", goArtifact)
+	}
 	if string(tomlArtifact) != string(goArtifact) {
 		t.Errorf("Artifact(TOML) = %s\nArtifact(Go) = %s\nwant identical bytes", tomlArtifact, goArtifact)
 	}

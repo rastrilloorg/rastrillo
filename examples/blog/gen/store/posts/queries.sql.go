@@ -40,13 +40,16 @@ func (q *Queries) CreatePost(ctx context.Context, arg CreatePostParams) (int64, 
 	return id, err
 }
 
-const deletePost = `-- name: DeletePost :exec
+const deletePost = `-- name: DeletePost :execrows
 DELETE FROM posts WHERE id = ?1
 `
 
-func (q *Queries) DeletePost(ctx context.Context, id int64) error {
-	_, err := q.db.ExecContext(ctx, deletePost, id)
-	return err
+func (q *Queries) DeletePost(ctx context.Context, id int64) (int64, error) {
+	result, err := q.db.ExecContext(ctx, deletePost, id)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
 }
 
 const getPost = `-- name: GetPost :one
@@ -110,23 +113,75 @@ func (q *Queries) ListPosts(ctx context.Context, arg ListPostsParams) ([]Post, e
 	return items, nil
 }
 
-const updatePostBasics = `-- name: UpdatePostBasics :exec
+const listPostsAfter = `-- name: ListPostsAfter :many
+SELECT id, title, body, created_at, updated_at FROM posts
+WHERE (?1 = '' OR title LIKE '%' || ?1 || '%')
+  AND (?2 = '' OR created_at < ?2 OR (created_at = ?2 AND id < ?3))
+ORDER BY created_at DESC, id DESC
+LIMIT ?4
+`
+
+type ListPostsAfterParams struct {
+	Search         interface{}
+	AfterCreatedAt interface{}
+	AfterID        int64
+	PageLimit      int64
+}
+
+func (q *Queries) ListPostsAfter(ctx context.Context, arg ListPostsAfterParams) ([]Post, error) {
+	rows, err := q.db.QueryContext(ctx, listPostsAfter,
+		arg.Search,
+		arg.AfterCreatedAt,
+		arg.AfterID,
+		arg.PageLimit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Post
+	for rows.Next() {
+		var i Post
+		if err := rows.Scan(
+			&i.ID,
+			&i.Title,
+			&i.Body,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const updatePost = `-- name: UpdatePost :execrows
 UPDATE posts SET title = ?1, body = ?2, updated_at = ?3 WHERE id = ?4
 `
 
-type UpdatePostBasicsParams struct {
+type UpdatePostParams struct {
 	Title string
 	Body  string
 	Now   string
 	ID    int64
 }
 
-func (q *Queries) UpdatePostBasics(ctx context.Context, arg UpdatePostBasicsParams) error {
-	_, err := q.db.ExecContext(ctx, updatePostBasics,
+func (q *Queries) UpdatePost(ctx context.Context, arg UpdatePostParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, updatePost,
 		arg.Title,
 		arg.Body,
 		arg.Now,
 		arg.ID,
 	)
-	return err
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
 }

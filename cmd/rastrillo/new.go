@@ -2,6 +2,7 @@ package main
 
 import (
 	"cmp"
+	"embed"
 	"flag"
 	"fmt"
 	"go/token"
@@ -14,6 +15,9 @@ import (
 	"unicode/utf8"
 
 	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/apitoken"
+	"amadan.net/rastrillo/rastrillo/internal/generate/apigen"
+	"amadan.net/rastrillo/rastrillo/internal/generate/contract"
 	"amadan.net/rastrillo/rastrillo/internal/generate/packs"
 	"amadan.net/rastrillo/rastrillo/internal/iconsets"
 	"amadan.net/rastrillo/rastrillo/internal/manifest"
@@ -25,6 +29,22 @@ const (
 	newLocaleFlagMsg        = "the one language the app starts with (default en); one of: %s"
 	newLocaleUnsupportedMsg = "rastrillo new --locale %q: the framework's own strings ship in %s. Start with one of those, then add your language to manifest/app.toml"
 )
+
+// scaffoldFS is the scaffold's newer files as the files they become, not
+// Go string constants: they read as what the app gets, and they leave
+// the CLI's own code budget to its code. scaffoldFile panics on a
+// missing one, a build bug every scaffold test finds.
+//
+//go:embed scaffold
+var scaffoldFS embed.FS
+
+func scaffoldFile(name string) string {
+	b, err := scaffoldFS.ReadFile("scaffold/" + name)
+	if err != nil {
+		panic(err)
+	}
+	return string(b)
+}
 
 // runNew implements `rastrillo new <name>`: the middle-layer app shape
 // (SKILL.md's app shape) — GORM models, a chi router, embedded templates, and a
@@ -131,12 +151,12 @@ func runNew(args []string) error {
 	// its content hidden there (ui's phone layout), so those two shells
 	// alone get a second page to hold it, plus the route, handler and
 	// test that go with it. Every other shell keeps today's one page.
-	indexHTML, routes, handlers, pages, extraTests := indexTemplate, "", "", `"index", "errors"`, ""
+	indexHTML, routes, handlers, pages, extraTests := indexTemplate, "", "", `"index", "errors", "tokens"`, ""
 	if twoPageShells[*shell] {
 		indexHTML = fmt.Sprintf(sectionsIndexTemplate, scaffoldOverview, html.EscapeString(name))
 		routes = "\n\tr.Get(\"/overview\", a.overview)"
 		handlers = overviewHandler
-		pages = `"index", "overview", "errors"`
+		pages = `"index", "overview", "errors", "tokens"`
 		extraTests = overviewTest
 	}
 
@@ -149,6 +169,13 @@ func runNew(args []string) error {
 		filepath.Join(appDir, "migrations.go"):      fmt.Sprintf(migrationsTemplate, pkg),
 		filepath.Join(appDir, "handlers.go"):        fmt.Sprintf(handlersTemplate, pkg, handlers),
 		filepath.Join(appDir, "render.go"):          fmt.Sprintf(renderTemplate, name, pkg, pages),
+		// The JSON API and its token page (JSON API spec §3, §5). The
+		// prefix is worked out here, once, from the app's name.
+		filepath.Join(appDir, "api.go"):                            fmt.Sprintf(scaffoldFile("api.go.tmpl"), pkg, name, apitoken.DerivePrefix(name)),
+		filepath.Join(appDir, "tokens.go"):                         fmt.Sprintf(scaffoldFile("tokens.go.tmpl"), pkg),
+		filepath.Join(appDir, "templates", "tokens.html"):          scaffoldFile("tokens.html"),
+		filepath.Join(name, "internal", pkg+"test", "api_test.go"): fmt.Sprintf(scaffoldFile("api_test.go.tmpl"), name, pkg, apitoken.DerivePrefix(name)),
+		filepath.Join(name, ".gitleaks.toml"):                      scaffoldFile("gitleaks.toml"),
 		// The page frame, chosen by --shell and delivered verbatim from
 		// ui.Layout: app-owned from here on, exactly like tokens.css.
 		// Its chrome is blocks with working defaults (title, lang, dir,
@@ -248,8 +275,21 @@ func runNew(args []string) error {
 		}
 	}
 	// The packs app.toml above declares, written now so a new app
-	// builds and boots before its first rastrillo generate.
+	// builds and boots before its first rastrillo generate. So are
+	// gen/api.go, which api.go imports, and api/v1.json, without which
+	// generate --check fails: both as generate writes them for an app
+	// with no resources, so the gate is green before the first manifest.
 	if _, err := packs.Emit(filepath.Join(name, "gen"), manifest.App{Locales: []string{code}, DefaultLocale: code}); err != nil {
+		return err
+	}
+	apiFile, err := apigen.File(name, nil)
+	if err != nil {
+		return err
+	}
+	if err := os.WriteFile(filepath.Join(name, "gen", "api.go"), apiFile, 0o644); err != nil {
+		return err
+	}
+	if _, err := contract.Write(name, nil, false); err != nil {
 		return err
 	}
 
@@ -267,6 +307,7 @@ func runNew(args []string) error {
 		filepath.Join(name, ".amadan", "ci.d", "30-test"):            amadanStep("test"),
 		filepath.Join(name, ".amadan", "ci.d", "35-perf"):            amadanStep("perf"),
 		filepath.Join(name, ".amadan", "ci.d", "40-migration-check"): amadanStep("migration-check"),
+		filepath.Join(name, ".amadan", "ci.d", "45-generate-check"):  amadanStep("generate-check"),
 	}
 	for path, content := range ciScripts {
 		if err := os.WriteFile(path, []byte(content), 0o755); err != nil {
@@ -288,7 +329,7 @@ func runNew(args []string) error {
 	fmt.Printf("  internal/%stest/     (harness + example tests, passing out of the box;\n", pkg)
 	fmt.Println("                        browser_test.go = the browser drive, go test -tags browser ./...)")
 	fmt.Println("  manifest/            (the declarative path: drop a <name>.toml here, see its README)")
-	fmt.Println("  Makefile             (make ci = vet + fmt + staticcheck + govulncheck + gitleaks + budget + test + perf + migration check, the one gate definition;")
+	fmt.Println("  Makefile             (make ci = vet + fmt + staticcheck + govulncheck + gitleaks + budget + test + perf + migration check + generate check, the one gate definition;")
 	fmt.Println("                        make release = the stripped binary)")
 	fmt.Println("  .gitignore           (build output and the local database)")
 	fmt.Println("  .amadan/ci, ci.d/    (amadan runner CI, executable, delegating to make)")
@@ -364,8 +405,8 @@ require (
 	gorm.io/gorm %s
 )
 
-// The CLI this app's own gate runs: make migration-check, and
-// rastrillo generate once the app declares manifest resources. It is
+// The CLI this app's own gate runs: make migration-check and make
+// generate-check. It is
 // declared as a tool so that go mod tidy records the CLI's build
 // dependencies in go.sum alongside the app's own. Nothing an app
 // imports reaches, say, the TOML parser behind manifest, so without
@@ -482,11 +523,11 @@ import (
 	_ "%[3]s/gen/locales"
 )
 
-// App wires the whole app: schema, router, static files. It returns a
-// *http.ServeMux because rastrillo.Options.Mux is typed that way — the
-// chi router mounts inside it. Router and Mux are its two halves,
-// separate only so the perf test can walk the chi routes while measuring
-// through the same handler production serves. origin is the app's external origin
+// App wires the whole app: schema, router, JSON API, static files. It
+// returns a *http.ServeMux because rastrillo.Options.Mux is typed that
+// way — the chi router mounts inside it. Router and Mux are its two
+// halves, separate only so the perf test can walk the chi routes while
+// measuring through the same handler production serves. origin is the app's external origin
 // ("https://app.example.com") — the CSRF check's yardstick, and, once
 // the app grows accounts, sessions.Config.Origin too.
 //
@@ -505,7 +546,11 @@ func App(d *db.DB, origin string, logger *slog.Logger) (*http.ServeMux, error) {
 	if err != nil {
 		return nil, err
 	}
-	return Mux(r), nil
+	apiTree, err := API(d, logger)
+	if err != nil {
+		return nil, err
+	}
+	return Mux(r, apiTree), nil
 }
 
 // Router applies the schema and builds the routes.
@@ -543,8 +588,8 @@ func Router(d *db.DB, origin string, logger *slog.Logger) (chi.Router, error) {
 	return r, nil
 }
 
-// Mux mounts the static files beside the router.
-func Mux(r http.Handler) *http.ServeMux {
+// Mux mounts the static files and the JSON API (api.go) beside the router.
+func Mux(r, apiTree http.Handler) *http.ServeMux {
 	mux := http.NewServeMux()
 	// The app serves its own static files — the framework never does.
 	// They are embedded (render.go) and fingerprinted: templates link
@@ -560,6 +605,12 @@ func Mux(r http.Handler) *http.ServeMux {
 		h = http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) { ErrorPage(w, req, http.StatusInternalServerError, "") })
 	}
 	mux.Handle("/", h)
+	// Outside the router on purpose: no CSRF check and no page middleware.
+	// A bearer token is the API's only credential, so a page cannot make
+	// it act with the browser's cookies. Both patterns, so a bare /api/v1
+	// gets the API's JSON 404 rather than the mux's own redirect.
+	mux.Handle("/api/v1", apiTree)
+	mux.Handle("/api/v1/", apiTree)
 	return mux
 }
 
@@ -613,6 +664,7 @@ const migrationsTemplate = `package %[1]s
 import (
 	"embed"
 
+	"amadan.net/rastrillo/rastrillo/apitoken"
 	"amadan.net/rastrillo/rastrillo/migrate"
 )
 
@@ -639,17 +691,17 @@ var Schema = migrate.MustFromFS(migrationFS, %[1]q)
 // the same reason Schema must stay narrow: generate and check would
 // misread a subsystem's tables as ones Models forgot.
 //
-// A fresh scaffold uses no subsystem yet, so today this is just
-// Schema. Adding one (say, sessions) means editing this line, not
-// Schema:
+// A fresh scaffold uses one subsystem, apitoken, whose table the JSON
+// API reads on every request (api.go). Adding another (say, sessions)
+// means editing this line, not Schema:
 //
-//	var BootSchema = migrate.Merge(sessions.Schema, Schema)
+//	var BootSchema = migrate.Merge(sessions.Schema, apitoken.Schema, Schema)
 //
 // Merge's argument order is apply order, so a subsystem whose
 // migrations another one reads (auth after sessions) goes first.
 // Get this line wrong and either boot silently skips a subsystem's
 // tables, or generate/check try to drop them.
-var BootSchema = migrate.Merge(Schema)
+var BootSchema = migrate.Merge(apitoken.Schema, Schema)
 `
 
 // initMigrationTemplate is the scaffold's first migration: static,
@@ -1209,7 +1261,7 @@ func TestBrowserWalk(t *testing.T) {
 // app's own call.
 const readmeTemplate = `# %[1]s
 
-A [rastrillo](https://amadan.net/rastrillo/rastrillo) app. ` + "`make ci`" + ` is the gate: vet, gofmt, staticcheck, govulncheck, gitleaks, tests and the migration check, one definition for CI and for you. AGENTS.md carries the working conventions.
+A [rastrillo](https://amadan.net/rastrillo/rastrillo) app. ` + "`make ci`" + ` is the gate: vet, gofmt, staticcheck, govulncheck, gitleaks, tests, the migration check and the generate check, one definition for CI and for you. AGENTS.md carries the working conventions.
 
 ## Templates
 
@@ -1233,155 +1285,9 @@ visible choice. ` + "`make ci`" + ` runs the plain suite only — whether CI
 also runs the browser drive, and on what runner, is this app's call.
 `
 
-const manifestReadme = `# manifest/ — the declarative path
-
-Manifest-driven and code-driven are equal, optional paths: declare the
-resources that are pure CRUD, hand-write the ones that aren't, per
-resource, in one app. One TOML file here declares a whole screen set —
-List → Show → Edit/New plus the confirm-page delete flow — generated
-as real committed code under gen/ by ` + "`rastrillo generate`" + `:
-
-    name     = "ticket_types"
-    route    = "/admin/ticket_types"
-    currency = "USD"
-
-    [list]
-    columns = [{ field = "Name", kind = "text" }, { field = "Price", kind = "money" }]
-    search  = true
-
-    [form]
-    basics = [{ name = "Name", required = true }, { name = "Price", kind = "money" }]
-
-The vocabulary covers one flat table per resource, three field kinds,
-no relations. Add ` + "`scope = \"user\"`" + ` and every generated query is
-owner-filtered by the session subject — someone else's row answers
-404 — for resources a user owns; mount those routes behind
-` + "`sessions.Require`" + `. Add ` + "`store = \"mergeable\"`" + ` and the resource lives as
-event-log streams (tombstone deletes, derive-on-read) instead of a
-sqlc table — it needs no sqlc tool. Relations or a custom flow:
-hand-write it.
-
-Adding the first manifest to this app:
-
-1. ` + "`go get -tool github.com/sqlc-dev/sqlc/cmd/sqlc`" + ` (once — the
-   generated store is sqlc input).
-2. ` + "`rastrillo generate`" + ` writes gen/ — committed, never hand-edited.
-3. Embed the generated templates. This file goes at the MODULE ROOT,
-   not beside the hand templates: a go:embed pattern cannot contain
-   "..", and gen/templates is not under internal/%[2]s. Call it
-   genassets.go —
-
-       package %[2]sassets
-
-       import "embed"
-
-       //go:embed gen/templates
-       var GenTemplatesFS embed.FS
-
-   ` + "`rastrillo generate`" + ` only ever clears and rewrites gen/actions/,
-   never a file sitting beside gen/, so this survives regeneration.
-
-4. Add the generated screens to the pages render.go builds, and give
-   the generated actions their Ctx.Render seam. A generated action calls
-   Ctx.Render with a page name that is always "<resource>/list",
-   "<resource>/show", "<resource>/form" or "<resource>/confirm". In
-   internal/%[2]s/render.go's newPages, after the hand pages, add:
-
-       gen, err := fs.Sub(%[2]sassets.GenTemplatesFS, "gen/templates")
-       if err != nil {
-           return nil, err
-       }
-       genFiles, err := fs.Glob(gen, "*/*.html")
-       if err != nil {
-           return nil, err
-       }
-       for _, f := range genFiles {
-           files[strings.TrimSuffix(f, ".html")] = ui.PageFile{FS: gen, Path: f}
-       }
-
-   and Catalog: genlocales.BaseCatalog to its ui.PagesConfig, so the
-   generated strings are found. Import "io/fs", "strings" and
-   %[2]sassets "%[1]s". Then add the seam:
-
-       // GenRender is the Ctx.Render seam every generated action calls.
-       func GenRender(ctx *rastrillo.Ctx, w http.ResponseWriter, name string, status int, data any) {
-           var buf bytes.Buffer
-           if err := pages.Execute(&buf, name, data); err != nil {
-               if ctx != nil && ctx.Logger != nil {
-                   ctx.Logger.Error("%[2]s: rendering "+name, "err", err)
-               }
-               http.Error(w, "something went wrong", http.StatusInternalServerError)
-               return
-           }
-           w.Header().Set("Content-Type", "text/html; charset=utf-8")
-           w.WriteHeader(status)
-           buf.WriteTo(w)
-       }
-
-   A generated view carries the request's localizer, switcher items and
-   return path, so the layout renders it as it renders a hand page.
-   When a generated screen needs this request's flash or signed-in
-   state, make GenRender a func(r) returning a rastrillo.RenderFunc
-   closed over r, and call it from the ctx factory: RenderFunc carries
-   no *http.Request of its own.
-
-5. Apply the generated store's migrations at boot, or the table the
-   screens read does not exist. In internal/%[2]s/migrations.go:
-
-       import (
-           "fmt"
-
-           bookmarksstore "%[1]s/gen/store/bookmarks"
-       )
-
-       func genSchemaSet() *migrate.Set {
-           s := new(migrate.Set)
-           for i, stmt := range bookmarksstore.Migrations {
-               s.Add(migrate.Migration{ID: fmt.Sprintf("bookmarks_gen/%%04d_init", i+1), SQL: stmt})
-           }
-           return s
-       }
-
-       var genSchema = genSchemaSet()
-
-       var BootSchema = migrate.Merge(genSchema, Schema)
-
-   genSchema goes in BootSchema and never in Schema: Schema is what
-   ` + "`rastrillo migration check`" + ` diffs against Models, and a generated
-   table in it reads as one Models forgot.
-
-   generate never edits a statement in gen/store/<name>/migrations.go
-   once it has been released. Adding a field appends a statement, and
-   genSchemaSet gives it the next ID, so the ledger applies it as a new
-   migration.
-
-6. Boot the generated code and mount its router inside the chi router.
-   In internal/%[2]s/app.go's Router, after migrate.Apply and the routes,
-   add (and import "%[1]s/gen"):
-
-       booted, err := gen.Boot(context.Background(), d.Writer())
-       if err != nil {
-           return nil, err
-       }
-       gmux := gen.Router(booted, func(*http.Request) *rastrillo.Ctx {
-           return &rastrillo.Ctx{DB: d.Writer(), Logger: logger,
-               Actor: rastrillo.Actor{Human: true}, Render: GenRender}
-       })
-       r.Handle("/admin/*", gmux)
-
-   gen.Boot upgrades and checks the generated money columns, and
-   gen.Router will not build without what it returns. Mounted inside
-   the chi router, the generated screens get the same CSRF check and
-   the same localizer as the hand ones.
-
-7. Add ` + "`rastrillo generate --check`" + ` to the Makefile's ci target.
-
-Drop to a .go manifest in this directory (package manifest, a
-` + "`var X = rastrillo.Resource{...}`" + `) the moment you need a function
-value — a custom Column.Render, say. To take any single generated
-screen over by hand, write your own action file at the same computed
-path under actions/ — the generator skips that one from then on.
-`
+// manifestReadme is manifest/README.md, the recipe for mounting the
+// first manifest resource. %[1]s is the module, %[2]s the app package.
+var manifestReadme = scaffoldFile("manifest-README.md")
 
 // staticcheckVersion is the staticcheck release a scaffolded app's gate
 // runs, and the one rastrillo's own Makefile pins;
@@ -1444,7 +1350,7 @@ VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null)
 # and a suite running beside it would be measured too.
 .NOTPARALLEL:
 
-.PHONY: build release version-check test vet fmt-check staticcheck govulncheck gitleaks budget perf migration-check ci
+.PHONY: build release version-check test vet fmt-check staticcheck govulncheck gitleaks budget perf migration-check generate-check ci
 
 RASTRILLO := go run amadan.net/rastrillo/rastrillo/cmd/rastrillo
 
@@ -1572,6 +1478,7 @@ govulncheck:
 # when this directory is the root of its own repository. Before git init
 # there is nothing committed, and an app scaffolded inside somebody else's
 # checkout must not scan theirs. --redact keeps a finding out of CI logs.
+# .gitleaks.toml adds a rule for this app's API tokens to the defaults.
 GITLEAKS := github.com/zricethezav/gitleaks/v8@%[4]s
 gitleaks:
 	@if [ "$$(git rev-parse --is-inside-work-tree 2>/dev/null)" = true ] && [ -z "$$(git rev-parse --show-prefix)" ]; then \
@@ -1596,14 +1503,19 @@ gitleaks:
 migration-check:
 	go run amadan.net/rastrillo/rastrillo/cmd/rastrillo migration check
 
+# generate-check fails when gen/ or api/v1.json is not what rastrillo
+# generate would write from manifest/, or when a manifest change breaks
+# a client of /api/v1. Run rastrillo generate to bring them up to date.
+generate-check:
+	$(RASTRILLO) generate --check
+
 # ci is the one gate: what a runner executes and what you run before
 # pushing are the same definition. amadan's runner falls back to this
 # target when .amadan/ci is absent; ci.d/ carries the same targets,
 # reported one by one, for a runner with step support. migration-check
 # fails the build the moment models.go and migrations/ disagree,
-# instead of at boot on whatever machine notices next. If the app
-# declares manifest resources, also add: rastrillo generate --check
-ci: vet fmt-check staticcheck govulncheck gitleaks budget test perf migration-check
+# instead of at boot on whatever machine notices next.
+ci: vet fmt-check staticcheck govulncheck gitleaks budget test perf migration-check generate-check
 `
 
 const gitignoreTemplate = `# Build output. make release writes here; nothing in it is source.
@@ -1664,6 +1576,9 @@ are load-bearing; the framework enforces most of them mechanically.
   never 403s.
 - Never bind a request body onto a GORM model: explicit
   ` + "`map[string]any`" + ` + ` + "`.Select`" + ` allowlist.
+- The API cannot see page middleware. When a page gains a rule beyond
+  ownership (admins only, no writes while suspended), add it to
+  ` + "`authorize`" + ` in ` + "`api.go`" + ` too, or a token gets around it.
 - Migrations apply at boot, once each, and are never re-run or reversed.
 - Schema changes: edit models.go, then run ` + "`rastrillo migration generate`" + `
   and read the SQL it writes — it may be a full table rebuild, not just
@@ -1673,7 +1588,7 @@ are load-bearing; the framework enforces most of them mechanically.
 - Money is a whole number of the currency's smallest unit, stored with its ISO 4217 code beside it, and shown with ` + "`money`" + `. A float never touches a value a person will be held to.
 - Screens work with JavaScript disabled; destructive actions get their
   own confirm-page URL.
-- The gate is ` + "`make ci`" + ` (vet, gofmt, staticcheck, govulncheck, gitleaks, budgets, tests, the perf lane and the migration check), the same definition CI runs. Run it before every push. ` + "`CGO_ENABLED=0`" + ` throughout: the stack is cgo-free by design. The Makefile names the Go release the gate and ` + "`make release`" + ` use (` + "`GOTOOLCHAIN`" + `); raise it with each Go security release.
+- The gate is ` + "`make ci`" + ` (vet, gofmt, staticcheck, govulncheck, gitleaks, budgets, tests, the perf lane, the migration check and the generate check), the same definition CI runs. Run it before every push. ` + "`CGO_ENABLED=0`" + ` throughout: the stack is cgo-free by design. The Makefile names the Go release the gate and ` + "`make release`" + ` use (` + "`GOTOOLCHAIN`" + `); raise it with each Go security release.
 - Two of the scaffolded tests are about the **placeholder index page**
   and are yours to rewrite: ` + "`TestIndexRenders`" + ` and
   ` + "`TestIndexLinksFingerprintedStylesheet`" + `. Putting ` + "`/`" + ` behind sign-in

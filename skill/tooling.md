@@ -9,8 +9,9 @@ gate, and `.amadan/ci.d/` steps. It compiles, passes its tests and
 serves before you write a line; never hand-write any of it.
 docs/site/templates.md
 
-`rastrillo generate` writes `gen/` from `manifest/` — commit it, never
-hand-edit; add `generate --check` to `make ci`. `make ci` also runs
+`rastrillo generate` writes `gen/` and `api/v1.json` from `manifest/`:
+commit both, never hand-edit; `make ci` runs `generate --check`
+(an app made before it: add a `generate-check` target to `ci`). `make ci` also runs
 staticcheck, govulncheck and gitleaks, pinned in the Makefile along with
 the Go release (`GOTOOLCHAIN`); raise the tool pins with the go
 directive, and `GOTOOLCHAIN` with each Go security release. `rastrillo
@@ -28,7 +29,8 @@ kinds text, textarea, money; no relations; `scope = "user"`
 owner-filters by session subject. `gen.Router` takes `gen.Boot`'s
 result: Boot upgrades and checks money. A hand-written action file at a
 generated path (carrying `//go:build rastrillo_actions`) takes that one
-screen over. docs/site/manifests.md
+screen over; on a resource the API exposes it must call the screen's
+operation (`skill/api.md`). docs/site/manifests.md
 
 Optional clients: `amadan.net/rastrillo/pwa` adds installation and a
 public offline fallback; `amadan.net/rastrillo/native` ships Swift

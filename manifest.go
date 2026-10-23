@@ -9,6 +9,8 @@ import (
 
 	"amadan.net/rastrillo/rastrillo/currency"
 	"amadan.net/rastrillo/rastrillo/internal/manifesterr"
+	"amadan.net/rastrillo/rastrillo/internal/opsnames"
+	"amadan.net/rastrillo/rastrillo/internal/wirename"
 )
 
 // RenderFunc is how a generated action hands a page to the app's own
@@ -93,6 +95,34 @@ type Resource struct {
 	// before money had a currency were written in whatever the app always
 	// meant, which may be neither today's default nor a code still issued.
 	Legacy *Legacy `json:"legacy,omitempty" toml:"legacy"`
+
+	// API is a value with omitzero, unlike Legacy's pointer with
+	// omitempty: encoding/json never treats a struct as empty, so only
+	// omitzero keeps gen/manifest.json byte-identical for a resource
+	// without [api]. Legacy is a pointer because a present [legacy] must
+	// carry its keys; an empty [api] means nothing, so it decodes to the
+	// zero value and is left out.
+	API API `json:"api,omitzero" toml:"api"`
+}
+
+// API is a manifest's [api] table.
+type API struct {
+	// Expose overrides the default for the resource's scope. nil means
+	// the default: user-scoped resources are on the API, unscoped ones
+	// are not (spec §2, "Which resources are exposed").
+	Expose *bool `json:"expose,omitempty" toml:"expose"`
+}
+
+// Exposed reports whether the resource gets API doors and what its
+// descriptors' Exposed says.
+func (r Resource) Exposed() bool {
+	if r.API.Expose != nil {
+		return *r.API.Expose
+	}
+	// Unscoped tables are admin-style, guarded by whatever middleware
+	// the app mounts their pages behind, which the API cannot see; a
+	// token reaching one by default would bypass it.
+	return r.Scope == UserScoped
 }
 
 // Legacy is a manifest's [legacy] table: what the integers stored before
@@ -199,6 +229,13 @@ func (r *Resource) Validate() error {
 	if !namePattern.MatchString(r.Name) {
 		return fmt.Errorf("name: must be snake_case")
 	}
+	// The resource's type is declared beside gen/ops' own names (Page,
+	// Update, ListInput...), so "pages" would declare Page twice and the
+	// package would not compile. Refused here, where the manifest is
+	// read, rather than left to the compiler to explain.
+	if taken := opsnames.Taken(r.Name); taken != "" {
+		return fmt.Errorf(msgOpsNameTaken, r.Name, taken)
+	}
 
 	if r.Route == "" {
 		return fmt.Errorf("route: must not be empty")
@@ -270,6 +307,9 @@ func (r *Resource) Validate() error {
 		if moneyColumns[f] {
 			return fmt.Errorf(msgMoneyFilter, f)
 		}
+		if err := checkFilterParam(f); err != nil {
+			return err
+		}
 	}
 
 	if len(r.List.Filters) > 1 {
@@ -281,6 +321,9 @@ func (r *Resource) Validate() error {
 		}
 		if moneyColumns[flt.Field] {
 			return fmt.Errorf(msgMoneyFilter, flt.Field)
+		}
+		if err := checkFilterParam(flt.Field); err != nil {
+			return err
 		}
 		if len(flt.Values) == 0 {
 			return fmt.Errorf("filter values: must not be empty")
@@ -401,7 +444,29 @@ const (
 	msgMoneyNameTaken    = "name: %q is also a name the money field %q generates; rename one of them"
 	msgEventVersionTaken = "name: %q is the name generated stores give the event version; rename the field"
 	msgNowTaken          = "name: %q is the name generated stores give the time of a save; rename the field"
+	// Not yet reviewed: drafted for the JSON API's copy review
+	// (docs/superpowers/plans/2026-10-05-json-api-copy.md, Task 11).
+	msgFilterParam = "filter: %q would be the query parameter %q, which API lists use for search and paging; rename the field"
+	// Not yet reviewed: drafted for the JSON API's copy review (Task 14).
+	msgOpsNameTaken = "name: %q would be the Go name %q, which every generated operations package already declares; rename the resource"
 )
+
+// checkFilterParam refuses a filter whose API query parameter would be
+// one of the list's own: a list reads ?q=, ?after= and ?limit= beside one
+// parameter per filter, so a filter on Limit would make ?limit= mean
+// both the page size and a column value. It runs whatever the
+// resource's exposure, as the Owner reservation does, so turning [api]
+// on later never invalidates a manifest that was valid before. The
+// name is wirename's, the rule api.FieldName uses, not identSQLName: the
+// two differ on an uppercase run, and checking the wrong one would test
+// a parameter the API never reads.
+func checkFilterParam(field string) error {
+	switch wire := wirename.Name(field); wire {
+	case "q", "after", "limit":
+		return fmt.Errorf(msgFilterParam, field, wire)
+	}
+	return nil
+}
 
 // checkGeneratedNames refuses a field whose name the generator already
 // makes for something else, which the duplicate checks above cannot see
@@ -411,7 +476,10 @@ const (
 //     PriceCurrency), a text field Title becomes title;
 //   - a mergeable store's event keys: a money field's amount under its
 //     own key, price, and its currency under price_currency; a text
-//     field under its own key.
+//     field under its own key;
+//   - a mergeable store's partial-update Params members, compared as Go
+//     names: a money field Price adds PriceSet, which says whether the
+//     update carries the amount at all, beside a text field's own name.
 //
 // A field declared as PriceCurrency, text or money, beside a money field
 // Price is emitted twice in one of them, and the generated store does
@@ -461,18 +529,19 @@ func (r *Resource) checkGeneratedNames() error {
 				return fmt.Errorf(msgNowTaken, f.name)
 			}
 			own["column "+sql], own["key "+sql] = f.name, f.name
+			own["member "+f.name] = f.name
 			continue
 		}
 		own["key "+sql] = f.name
 		suffixed["column "+sql+"_minor"] = f.name
 		suffixed["column "+sql+"_currency"] = f.name
 		suffixed["key "+sql+"_currency"] = f.name
+		suffixed["member "+f.name+"Set"] = f.name
 	}
 	// Report in declaration order, so the same manifest always names
 	// the same pair.
 	for _, f := range fields {
-		for _, ns := range []string{"column ", "key "} {
-			name := ns + identSQLName(f.name)
+		for _, name := range []string{"column " + identSQLName(f.name), "key " + identSQLName(f.name), "member " + f.name} {
 			if money, ok := suffixed[name]; ok && own[name] == f.name {
 				return fmt.Errorf(msgMoneyNameTaken, f.name, money)
 			}

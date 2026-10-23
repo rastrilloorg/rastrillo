@@ -11,9 +11,10 @@ import (
 
 	"amadan.net/rastrillo/rastrillo"
 	"amadan.net/rastrillo/rastrillo/currency"
+	"amadan.net/rastrillo/rastrillo/op"
 	"amadan.net/rastrillo/rastrillo/ui"
 	"amadan.net/rastrillo/rastrillo/view"
-	ticket_typesstore "tickets/gen/store/ticket_types"
+	ops_ticket_types "tickets/gen/ops/ticket_types"
 )
 
 // Handle is GET /admin/ticket_types.
@@ -28,36 +29,27 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	const pageSize = 10
-	offset := (page - 1) * pageSize
 
 	var carry [][2]string
 	if filterStatus != "" {
 		carry = append(carry, [2]string{"status", filterStatus})
 	}
 
-	store := ticket_typesstore.New(ctx.DB)
-	total, err := store.CountTicketTypes(r.Context(), ticket_typesstore.CountTicketTypesParams{
+	res, err := ops_ticket_types.List(r.Context(), ctx, ops_ticket_types.ListInput{
 		Search:       search,
 		FilterStatus: filterStatus,
+		PageNumber:   page,
+		Limit:        pageSize,
 	})
 	if err != nil {
-		view.Fail(ctx, w, r, "ticket_types: counting ticket_types", err)
+		view.Refuse(ctx, w, r, "ticket_types: loading ticket_types", err)
 		return
 	}
-	rows, err := store.ListTicketTypes(r.Context(), ticket_typesstore.ListTicketTypesParams{
-		Search:       search,
-		FilterStatus: filterStatus,
-		PageOffset:   int64(offset),
-		PageLimit:    pageSize,
-	})
-	if err != nil {
-		view.Fail(ctx, w, r, "ticket_types: loading ticket_types", err)
-		return
-	}
+	total, rows := res.Total, res.Items
 
 	items := make([]listRow, 0, len(rows))
 	for _, n := range rows {
-		priceText, ok := money(ctx, w, r, n.ID, "Price", n.PriceMinor, n.PriceCurrency)
+		priceText, ok := money(ctx, w, r, n.ID, "Price", n.Price)
 		if !ok {
 			return
 		}
@@ -164,17 +156,13 @@ func filterStatusHref(search, value string) string {
 	return "/admin/ticket_types" + "?" + strings.Join(params, "&")
 }
 
-func money(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request, id int64, field string, minor *int64, cur *string) (string, bool) {
-	if minor == nil {
+func money(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request, id int64, field string, m *op.Money) (string, bool) {
+	if m == nil {
 		return "", true
 	}
-	var code string
-	if cur != nil {
-		code = *cur
-	}
-	s, err := currency.Format(rastrillo.FormatLocale(r), *minor, code)
+	s, err := currency.Format(rastrillo.FormatLocale(r), m.Amount, m.Currency)
 	if err != nil {
-		view.Fail(ctx, w, r, fmt.Sprintf("%s %d: %s in %s", "ticket_types", id, field, code), err)
+		view.Fail(ctx, w, r, fmt.Sprintf("%s %d: %s in %s", "ticket_types", id, field, m.Currency), err)
 		return "", false
 	}
 	return s, true
