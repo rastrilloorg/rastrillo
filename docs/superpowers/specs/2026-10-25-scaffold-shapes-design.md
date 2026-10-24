@@ -133,8 +133,10 @@ The perf lane needs `perftest.Screens` to stop requiring `chi.Routes`
 `single` plus what `examples/notes` wires: the sessions core, an
 identity plugin, `scope.Owned` queries, and a chi router so public and
 signed-in routes sit in separate groups behind `sessions.Require`. This
-is where the August known-libraries decision still applies: chi stays
-because route groups are what `Require` needs, and the bake-off's winning
+is where the August known-libraries decision still applies. Chi stays
+for convenience, not necessity: `sessions.Require` wraps any
+`http.Handler` (`sessions/sessions.go:345`), but a chi group puts a whole
+set of signed-in routes behind it in one line, and the bake-off's winning
 arms used it.
 
 Which identity plugin by default (keymail `auth/` or `password/`) is
@@ -178,8 +180,8 @@ menu rather than writing its own.
   `TestScaffoldMigratesAndPassesCheck` and the existing scaffold tests
   do now. The existing icon/theme/shell combinations are tested on one
   shape (`single`), not on all three.
-- The framework gate is sharded (50 suites at shard 31); a new suite
-  needs a SUITE role and a bumped count.
+- The framework gate is sharded (`.amadan/ci.d/50-suite@33`, 33 suite
+  roles in the Makefile); a new suite needs a role and a bumped count.
 - Locally the gate needs `GOFLAGS=-mod=mod` for three scratch-module
   packages.
 - Branch `stateless-signin` (roadmap Plan 2) touches three
