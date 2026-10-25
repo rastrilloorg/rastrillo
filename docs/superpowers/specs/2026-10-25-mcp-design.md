@@ -678,8 +678,9 @@ metadata document. This spec reserves the path
     way the API tree does.
   - A panic in `Authorize`, in `Invoke` and while encoding a result each
     answer an `internal` tool error, and the test process survives.
-  - A result whose JSON encoder panics the second time it is called
-    gives an `internal` tool error, not a crash.
+  - A result whose JSON encoder panics gives an `internal` tool error,
+    not a crash. A result whose encoder would panic the second time it
+    is called is delivered whole, with the encoder called once.
   - Every real HTTP answer carries `Cache-Control: no-store`, the error
     answers included.
   - A GET, a `subscriptions/listen` and a batch are refused. `initialize`
