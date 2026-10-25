@@ -24,7 +24,7 @@ Read the topic before you start work it covers, not after the source:
 
 | Before you... | read |
 |---|---|
-| add sign-in to an app that has none (a fresh scaffold has none) | `skill/add-signin.md` |
+| add password sign-in to an app that has none | `skill/add-signin.md` |
 | use the session, magic links, a sign-in screen, 2FA | `skill/signin.md` |
 | add a page or route, a flow, a test, or meet a perf/budget failure | `skill/screens.md` |
 | call a `ui` partial: its keys, at a glance | `skill/partials.md` |
@@ -41,6 +41,12 @@ Read the topic before you start work it covers, not after the source:
 go install amadan.net/rastrillo/rastrillo/cmd/rastrillo@latest
 rastrillo new notes && cd notes && go mod tidy && go test ./...
 ```
+
+**People sign in? Start with `rastrillo new --auth=magic <name>`.** The
+app then signs people in by emailed link from its first commit, its
+owned rows go through `a.owned(r)`, and its tests sign in for you; its
+`AGENTS.md` says where each piece is. Without `--auth` the scaffold has
+no accounts.
 
 `rastrillo new` writes the whole app shape, its gate (`make ci`) and
 its tests; it compiles, passes and serves before you write a line, so
