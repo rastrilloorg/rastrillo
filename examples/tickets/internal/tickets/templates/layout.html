@@ -12,12 +12,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width">
 <title>{{.Head.Title}} · Tickets</title>
-<link rel="stylesheet" href="/static/tokens.css">
-<link rel="stylesheet" href="/static/theme.css">
+<link rel="stylesheet" href="{{path $ "/static/tokens.css"}}">
+<link rel="stylesheet" href="{{path $ "/static/theme.css"}}">
 </head>
 <body>
 <div rst-page>
-{{template "locale-menu" dict "L" $L "Items" .Locales "Return" .Return}}
+{{template "locale-menu" dict "L" $L "Items" .Locales "Return" .Return "Action" (path $ "/_locale")}}
 {{template "content" (withL (.Data) $L)}}
 </div>
 </body>

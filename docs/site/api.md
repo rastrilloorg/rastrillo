@@ -188,6 +188,14 @@ they were sent. The actor reads like
 `agent:Claude for user:42 token:k3Jx9QpL2mWa`. See
 [Agents](/docs/agents) for what each part means.
 
+An app served under a base path, as a hub's tenant is, has its API
+there too: `https://example.com/acme/api/v1`, and the `Location` a
+create answers with carries the base. Give clients that URL, not the
+instance's own hostname. There, a write gets a 307 to the product URL,
+and clients do not send `Authorization` on to another host, so the
+token is lost; with `basepath.ServeDirect` it gets a 405. See
+[basepath](/docs/reference/basepath).
+
 ## Requests and answers
 
 **Answers.** A single row is a bare JSON object. A list puts the rows

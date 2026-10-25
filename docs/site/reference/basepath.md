@@ -98,4 +98,6 @@ The platform's own calls are never redirected, in either mode, and `PlatformCall
 
 Register a webhook at its product URL, `https://example.com/acme/hook`, and the same for any other path you exempt with `csrf.Exempt`. `csrf.Exempt` matches the path without the base, so the exemption works there. On the direct host, the same request gets a 307, which webhook senders do not follow, or a 405 with `ServeDirect`.
 
+API clients use the product URL too: `https://example.com/acme/api/v1`. A create's `Location` is a header, so it gets the base like a redirect does. A bearer write on the direct host is not exempt: it gets a 307, and clients do not send `Authorization` on to another host, so the token is lost, or a 405 with `ServeDirect`.
+
 Outside `Handler`, `Base` is `""`, `Path` returns `p`, `Original` is the request's own target, and the rest are false or `""`.

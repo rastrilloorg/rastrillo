@@ -179,6 +179,9 @@ func doorsGo(r rastrillo.Resource, module string) string {
 	// The body is decoded before {id} is read, in update as in create,
 	// so a broken body is 422 whether or not the row exists: spec
 	// section 6 puts the body's refusals before the operation's 404.
+	// create's Location is a header, so it stays an app path: under a
+	// base path the middleware prefixes it once, and basepath.Path here
+	// would send the client to /acme/acme/api/v1/….
 	fmt.Fprintf(&b, `func create(ctx context.Context, rc *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 	var in %[1]s.CreateInput
 	if !api.Decode(w, r, &in) {

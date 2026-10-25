@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/basepath"
 	"amadan.net/rastrillo/rastrillo/locales"
 
 	"tickets/gen"
@@ -45,7 +46,7 @@ func newApp(t *testing.T) (http.Handler, *sql.DB) {
 // app's own startup upgrade it.
 func newAppAt(t *testing.T, path string) (http.Handler, *sql.DB) {
 	t.Helper()
-	return newAppWithAt(t, path, genlocales.DefaultLocale, genlocales.Locales)
+	return newAppWithAt(t, path, genlocales.DefaultLocale, genlocales.Locales, basepath.Config{})
 }
 
 // newAppWith builds a whole app per test: a fresh file-backed SQLite
@@ -56,12 +57,14 @@ func newAppAt(t *testing.T, path string) (http.Handler, *sql.DB) {
 // than tickets' app.toml does (locales_test.go's two-locale suite).
 func newAppWith(t *testing.T, def string, offered []string) (http.Handler, *sql.DB) {
 	t.Helper()
-	return newAppWithAt(t, filepath.Join(t.TempDir(), "tickets.db"), def, offered)
+	return newAppWithAt(t, filepath.Join(t.TempDir(), "tickets.db"), def, offered, basepath.Config{})
 }
 
 // newAppWithAt is newAppWith against the database file at path, so a
 // test can prepare that file the way an older binary left it and see
-// this app's own startup upgrade it (upgrade_test.go).
+// this app's own startup upgrade it (upgrade_test.go). base serves it
+// under a base path, as Options.BasePath does (basepath_test.go); the
+// zero Config serves it at the root.
 //
 // It goes through rastrillo.Handler, exactly as cmd/tickets/main.go's
 // Router does, rather than calling gen.Boot/gen.Router directly: with
@@ -69,7 +72,7 @@ func newAppWith(t *testing.T, def string, offered []string) (http.Handler, *sql.
 // and puts the negotiated locale on the request before app.Middleware
 // ever runs, and a harness that skipped it would pass against a mux
 // that never sees the prefix a real deploy serves.
-func newAppWithAt(t *testing.T, path, def string, offered []string) (http.Handler, *sql.DB) {
+func newAppWithAt(t *testing.T, path, def string, offered []string, base basepath.Config) (http.Handler, *sql.DB) {
 	t.Helper()
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 	var db *sql.DB
@@ -80,6 +83,7 @@ func newAppWithAt(t *testing.T, path, def string, offered []string) (http.Handle
 		Logger:        logger,
 		Locales:       offered,
 		DefaultLocale: def,
+		BasePath:      base,
 		Router: func(d *sql.DB) (*http.ServeMux, error) {
 			db = d
 			booted, err := gen.Boot(context.Background(), d)

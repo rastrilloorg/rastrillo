@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/basepath"
 	"amadan.net/rastrillo/rastrillo/ui"
 	"amadan.net/rastrillo/rastrillo/view"
 	ops_bookmarks "notes/gen/ops/bookmarks"
@@ -29,8 +30,8 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 	view.Render(ctx, w, "bookmarks/confirm", http.StatusOK, confirmView{
 		Localized:  ui.ForRequest(r),
 		Title:      n.Title,
-		DeleteHref: fmt.Sprintf("/bookmarks/%d/delete", id),
-		CancelHref: fmt.Sprintf("/bookmarks/%d", id),
+		DeleteHref: basepath.Path(r, fmt.Sprintf("/bookmarks/%d/delete", id)),
+		CancelHref: basepath.Path(r, fmt.Sprintf("/bookmarks/%d", id)),
 	})
 }
 

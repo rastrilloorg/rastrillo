@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/basepath"
 	"amadan.net/rastrillo/rastrillo/ui"
 	"amadan.net/rastrillo/rastrillo/view"
 	ops_announcements "tickets/gen/ops/announcements"
@@ -29,8 +30,8 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 	view.Render(ctx, w, "announcements/confirm", http.StatusOK, confirmView{
 		Localized:  ui.ForRequest(r),
 		Title:      n.Title,
-		DeleteHref: fmt.Sprintf("/admin/announcements/%d/delete", id),
-		CancelHref: fmt.Sprintf("/admin/announcements/%d", id),
+		DeleteHref: basepath.Path(r, fmt.Sprintf("/admin/announcements/%d/delete", id)),
+		CancelHref: basepath.Path(r, fmt.Sprintf("/admin/announcements/%d", id)),
 	})
 }
 

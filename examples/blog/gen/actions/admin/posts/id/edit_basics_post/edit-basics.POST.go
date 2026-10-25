@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/basepath"
 	"amadan.net/rastrillo/rastrillo/form"
 	"amadan.net/rastrillo/rastrillo/op"
 	"amadan.net/rastrillo/rastrillo/ui"
@@ -55,7 +56,7 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 			Fields:       fields,
 			Errors:       errs,
 			ErrorArgs:    p.ErrorArgs(),
-			BasicsAction: fmt.Sprintf("/admin/posts/%d/edit-basics", id),
+			BasicsAction: basepath.Path(r, fmt.Sprintf("/admin/posts/%d/edit-basics", id)),
 		})
 	}
 

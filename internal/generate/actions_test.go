@@ -45,6 +45,7 @@ import (
 	"strings"
 
 	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/basepath"
 	"amadan.net/rastrillo/rastrillo/currency"
 	"amadan.net/rastrillo/rastrillo/op"
 	"amadan.net/rastrillo/rastrillo/ui"
@@ -89,7 +90,7 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		items = append(items, listRow{
-			Href: fmt.Sprintf("/admin/notes/%d", n.ID),
+			Href: basepath.Path(r, fmt.Sprintf("/admin/notes/%d", n.ID)),
 			Main: n.Title,
 			Sub:  priceText,
 		})
@@ -101,19 +102,19 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 	if show {
 		prev := listPageItem{Label: "Previous", Rel: "prev", Disabled: true}
 		if page > 1 {
-			prev = listPageItem{Label: "Previous", Rel: "prev", Href: href(search, carry, page-1)}
+			prev = listPageItem{Label: "Previous", Rel: "prev", Href: basepath.Path(r, href(search, carry, page-1))}
 		}
 		pageItems = append(pageItems, prev)
 		for n := 1; n <= totalPages; n++ {
 			if n == page {
 				pageItems = append(pageItems, listPageItem{Label: strconv.Itoa(n), Current: true})
 			} else {
-				pageItems = append(pageItems, listPageItem{Label: strconv.Itoa(n), Href: href(search, carry, n)})
+				pageItems = append(pageItems, listPageItem{Label: strconv.Itoa(n), Href: basepath.Path(r, href(search, carry, n))})
 			}
 		}
 		next := listPageItem{Label: "Next", Rel: "next", Disabled: true}
 		if page < totalPages {
-			next = listPageItem{Label: "Next", Rel: "next", Href: href(search, carry, page+1)}
+			next = listPageItem{Label: "Next", Rel: "next", Href: basepath.Path(r, href(search, carry, page+1))}
 		}
 		pageItems = append(pageItems, next)
 	}
@@ -258,6 +259,7 @@ import (
 	"net/http"
 
 	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/basepath"
 	"amadan.net/rastrillo/rastrillo/form"
 	"amadan.net/rastrillo/rastrillo/op"
 	"amadan.net/rastrillo/rastrillo/ui"
@@ -292,8 +294,8 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 		Money: map[string]form.MoneyInput{
 			"Price": priceInput,
 		},
-		BasicsAction:   fmt.Sprintf("/admin/notes/%d/edit-basics", id),
-		AdvancedAction: fmt.Sprintf("/admin/notes/%d/edit-advanced", id),
+		BasicsAction:   basepath.Path(r, fmt.Sprintf("/admin/notes/%d/edit-basics", id)),
+		AdvancedAction: basepath.Path(r, fmt.Sprintf("/admin/notes/%d/edit-advanced", id)),
 	})
 }
 
@@ -354,6 +356,7 @@ import (
 	"net/http"
 
 	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/basepath"
 	"amadan.net/rastrillo/rastrillo/form"
 	"amadan.net/rastrillo/rastrillo/op"
 	"amadan.net/rastrillo/rastrillo/ui"
@@ -419,8 +422,8 @@ func handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request, try int)
 			Money: map[string]form.MoneyInput{
 				"Price": priceInput,
 			},
-			BasicsAction:   fmt.Sprintf("/admin/notes/%d/edit-basics", id),
-			AdvancedAction: fmt.Sprintf("/admin/notes/%d/edit-advanced", id),
+			BasicsAction:   basepath.Path(r, fmt.Sprintf("/admin/notes/%d/edit-basics", id)),
+			AdvancedAction: basepath.Path(r, fmt.Sprintf("/admin/notes/%d/edit-advanced", id)),
 		})
 	}
 	if !p.OK() || try == 2 {
@@ -520,6 +523,7 @@ import (
 	"strings"
 
 	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/basepath"
 	"amadan.net/rastrillo/rastrillo/ui"
 	"amadan.net/rastrillo/rastrillo/view"
 	ops_events "scratch/gen/ops/events"
@@ -558,7 +562,7 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 	items := make([]listRow, 0, len(rows))
 	for _, n := range rows {
 		items = append(items, listRow{
-			Href: fmt.Sprintf("/admin/events/%d", n.ID),
+			Href: basepath.Path(r, fmt.Sprintf("/admin/events/%d", n.ID)),
 			Main: n.Title,
 			Sub:  n.Status,
 		})
@@ -570,19 +574,19 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 	if show {
 		prev := listPageItem{Label: "Previous", Rel: "prev", Disabled: true}
 		if page > 1 {
-			prev = listPageItem{Label: "Previous", Rel: "prev", Href: href(search, carry, page-1)}
+			prev = listPageItem{Label: "Previous", Rel: "prev", Href: basepath.Path(r, href(search, carry, page-1))}
 		}
 		pageItems = append(pageItems, prev)
 		for n := 1; n <= totalPages; n++ {
 			if n == page {
 				pageItems = append(pageItems, listPageItem{Label: strconv.Itoa(n), Current: true})
 			} else {
-				pageItems = append(pageItems, listPageItem{Label: strconv.Itoa(n), Href: href(search, carry, n)})
+				pageItems = append(pageItems, listPageItem{Label: strconv.Itoa(n), Href: basepath.Path(r, href(search, carry, n))})
 			}
 		}
 		next := listPageItem{Label: "Next", Rel: "next", Disabled: true}
 		if page < totalPages {
-			next = listPageItem{Label: "Next", Rel: "next", Href: href(search, carry, page+1)}
+			next = listPageItem{Label: "Next", Rel: "next", Href: basepath.Path(r, href(search, carry, page+1))}
 		}
 		pageItems = append(pageItems, next)
 	}
@@ -591,9 +595,9 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 		SummaryKey: filterStatusLabelKey(filterStatus),
 		AriaField:  "resource.events.field.status",
 		Items: []filterItem{
-			{Href: filterStatusHref(search, ""), LabelKey: filterStatusLabelKey(""), Current: filterStatus == ""},
-			{Href: filterStatusHref(search, "draft"), LabelKey: filterStatusLabelKey("draft"), Current: filterStatus == "draft"},
-			{Href: filterStatusHref(search, "live"), LabelKey: filterStatusLabelKey("live"), Current: filterStatus == "live"},
+			{Href: basepath.Path(r, filterStatusHref(search, "")), LabelKey: filterStatusLabelKey(""), Current: filterStatus == ""},
+			{Href: basepath.Path(r, filterStatusHref(search, "draft")), LabelKey: filterStatusLabelKey("draft"), Current: filterStatus == "draft"},
+			{Href: basepath.Path(r, filterStatusHref(search, "live")), LabelKey: filterStatusLabelKey("live"), Current: filterStatus == "live"},
 		},
 	}
 
@@ -854,6 +858,7 @@ import (
 	"net/http"
 
 	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/basepath"
 	"amadan.net/rastrillo/rastrillo/form"
 	"amadan.net/rastrillo/rastrillo/op"
 	"amadan.net/rastrillo/rastrillo/ui"
@@ -901,7 +906,7 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 			Fields:       fields,
 			Errors:       errs,
 			ErrorArgs:    p.ErrorArgs(),
-			BasicsAction: fmt.Sprintf("/admin/events/%d/edit-basics", id),
+			BasicsAction: basepath.Path(r, fmt.Sprintf("/admin/events/%d/edit-basics", id)),
 		})
 	}
 
@@ -981,6 +986,7 @@ import (
 	"strings"
 
 	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/basepath"
 	"amadan.net/rastrillo/rastrillo/ui"
 	"amadan.net/rastrillo/rastrillo/view"
 	ops_bookmarks "scratch/gen/ops/bookmarks"
@@ -1014,7 +1020,7 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 	items := make([]listRow, 0, len(rows))
 	for _, n := range rows {
 		items = append(items, listRow{
-			Href: fmt.Sprintf("/bookmarks/%d", n.ID),
+			Href: basepath.Path(r, fmt.Sprintf("/bookmarks/%d", n.ID)),
 			Main: n.Title,
 			Sub:  n.Link,
 		})
@@ -1026,19 +1032,19 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 	if show {
 		prev := listPageItem{Label: "Previous", Rel: "prev", Disabled: true}
 		if page > 1 {
-			prev = listPageItem{Label: "Previous", Rel: "prev", Href: href(search, carry, page-1)}
+			prev = listPageItem{Label: "Previous", Rel: "prev", Href: basepath.Path(r, href(search, carry, page-1))}
 		}
 		pageItems = append(pageItems, prev)
 		for n := 1; n <= totalPages; n++ {
 			if n == page {
 				pageItems = append(pageItems, listPageItem{Label: strconv.Itoa(n), Current: true})
 			} else {
-				pageItems = append(pageItems, listPageItem{Label: strconv.Itoa(n), Href: href(search, carry, n)})
+				pageItems = append(pageItems, listPageItem{Label: strconv.Itoa(n), Href: basepath.Path(r, href(search, carry, n))})
 			}
 		}
 		next := listPageItem{Label: "Next", Rel: "next", Disabled: true}
 		if page < totalPages {
-			next = listPageItem{Label: "Next", Rel: "next", Href: href(search, carry, page+1)}
+			next = listPageItem{Label: "Next", Rel: "next", Href: basepath.Path(r, href(search, carry, page+1))}
 		}
 		pageItems = append(pageItems, next)
 	}
