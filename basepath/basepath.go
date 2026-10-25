@@ -216,6 +216,8 @@ type state struct {
 	original string
 	direct   bool
 	platform bool
+	// origin and slug are the Config's, for ProductURL.
+	origin, slug string
 }
 
 func from(r *http.Request) (state, bool) {
@@ -270,5 +272,29 @@ func PlatformCall(r *http.Request) bool {
 }
 
 // ProductURL is the absolute URL of r's page on the product origin, or
-// "" when there is none.
-func ProductURL(r *http.Request) string { return "" }
+// "" outside the middleware. It is built from Original, so a handler
+// that strips more of r.URL, such as a locale, still gets the page the
+// browser asked for.
+func ProductURL(r *http.Request) string {
+	s, ok := from(r)
+	if !ok {
+		return ""
+	}
+	if !s.direct {
+		// A product-path request's target already carries the base.
+		return s.origin + s.original
+	}
+	// On the direct host every byte of the target is the app's own path,
+	// so none of it is trimmed: with slug admin, /admin/x is the app's
+	// /admin/x route, at /admin/admin/x.
+	base := "/" + s.slug
+	p := Join(base, s.original)
+	if p == s.original && strings.HasPrefix(p, "/") {
+		// //x or /\x: Join leaves them alone because, as links, they
+		// name another site. As a request target they are this app's
+		// path, and sending them to the origin's //x would land the
+		// visitor on the hub.
+		p = base + p
+	}
+	return s.origin + p
+}

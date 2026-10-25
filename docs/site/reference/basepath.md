@@ -90,4 +90,12 @@ func ProductURL(r *http.Request) string
 
 `OnDirectHost` reports whether a request came in on a host other than the product origin's. `PathRouted` reports whether it is served under a base path or on the direct host. `PlatformCall` reports whether it is the platform's own call, such as a wake check or a health probe. `ProductURL` is the page's full URL on the product origin.
 
+On any host other than the product origin's, `Handler` serves the app at the root, with no base. With `RedirectDirect`, the default, it sends the visitor to the same page on the product path with a 307: `https://acme-x7k2pq.<account>.oncarlos.com/notes?x=1` goes to `https://example.com/acme/notes?x=1`. A 307 keeps the method, and browsers do not cache it, so switching to `ServeDirect` later takes effect at once. With `ServeDirect`, it serves the page there instead.
+
+The platform's own calls are never redirected, in either mode, and `PlatformCall` is true for them. They are anything on `Host: carlos`, which is how the platform reaches the instance's socket; a GET or HEAD of exactly `/healthz` or `/api/version`; and a request with the `CARLOS_ADMIN_TOKEN` bearer, such as a scheduled tick. The platform's wake check follows redirects, so a redirect would fail the wake.
+
+`ProductURL` is built from `Original`, so a handler that has stripped more of the path, such as a locale, still gets the page the browser asked for. On the direct host, nothing is removed from the path: with slug `admin`, `/admin/x` is `https://example.com/admin/admin/x`.
+
+Register a webhook at its product URL, `https://example.com/acme/hook`, and the same for any other path you exempt with `csrf.Exempt`. `csrf.Exempt` matches the path without the base, so the exemption works there. On the direct host, the same request gets a 307, which webhook senders do not follow, or a 405 with `ServeDirect`.
+
 Outside `Handler`, `Base` is `""`, `Path` returns `p`, `Original` is the request's own target, and the rest are false or `""`.

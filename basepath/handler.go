@@ -8,25 +8,78 @@ import (
 	"net/url"
 	"path"
 	"strings"
+
+	"amadan.net/rastrillo/rastrillo/carlos"
 )
 
 // Handler serves next under c's base path. On the product origin it
 // answers only for /<slug> and below: it strips the base from r.URL,
 // records it for Base and Path, and adds it back to the Location and
 // Rastrillo-Location headers next sends.
+//
+// On any other host, the instance's own or Host carlos, it serves the
+// app at the root with ServeDirect, and with RedirectDirect sends the
+// visitor to ProductURL, except for a PlatformCall, which it serves.
 func (c Config) Handler(next http.Handler) http.Handler {
 	base := "/" + c.Slug
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if !sameHost(r.Host, c.Origin) {
-			next.ServeHTTP(w, r)
+			serveDirect(w, r, c, next)
 			return
 		}
-		serveProduct(w, r, base, next)
+		serveProduct(w, r, c, base, next)
 	})
 }
 
+// serveDirect serves a request on any host but the product origin's.
+// There is no base, so next gets r unwrapped: nothing to strip, and no
+// header to rewrite.
+func serveDirect(w http.ResponseWriter, r *http.Request, c Config, next http.Handler) {
+	st := state{original: Original(r), direct: true, platform: platformCall(r), origin: c.Origin, slug: c.Slug}
+	r = r.WithContext(context.WithValue(r.Context(), ctxKey{}, st))
+	if c.DirectHost == ServeDirect || st.platform {
+		next.ServeHTTP(w, r)
+		return
+	}
+	// 307, not 301 or 308: the mode is the app's choice and can change
+	// with a deploy, and browsers cache a permanent redirect
+	// indefinitely, so a visitor would never see the direct host again.
+	// 307 also keeps the method, so a POST is not turned into a GET
+	// that looks as if it saved.
+	http.Redirect(w, r, ProductURL(r), http.StatusTemporaryRedirect)
+}
+
+// platformCall reports whether r is the platform's own call to the
+// instance, which must be answered at the root and never redirected
+// (docs/superpowers/plans/2026-10-17-base-path.md, "What the platform
+// gives the app"). The activator's wake
+// check is GET http://carlos/ with a client that follows redirects: a
+// 307 to the https product URL would send it into a TLS handshake on a
+// plain socket, and the wake would fail. A redirected health probe or
+// readiness poll fails a deploy or a move the same way.
+//
+//   - Host carlos is the platform's placeholder on every socket call
+//     (wake checks, a claim's ready_path, the next-due poll, ticks). The
+//     edge cannot route a visitor's Host carlos anywhere, so serving it
+//     at the root shows no visitor the direct host.
+//   - GET or HEAD of exactly /healthz or /api/version is a probe, or
+//     Plan 4's readiness poll, on the instance's own host. Exactly, so
+//     the exemption does not cover any page of the app.
+//   - A tick, or anything else with the admin bearer, is the platform
+//     or an operator holding its secret.
+func platformCall(r *http.Request) bool {
+	if receivedAuthority(r.Host, "").host == "carlos" {
+		return true
+	}
+	if (r.Method == http.MethodGet || r.Method == http.MethodHead) &&
+		(r.URL.Path == "/healthz" || r.URL.Path == "/api/version") {
+		return true
+	}
+	return carlos.Tick(r)
+}
+
 // serveProduct serves a request on the product origin.
-func serveProduct(w http.ResponseWriter, r *http.Request, base string, next http.Handler) {
+func serveProduct(w http.ResponseWriter, r *http.Request, c Config, base string, next http.Handler) {
 	// Clean the escaped form, so %2F, %3F and %23 stay bytes of a
 	// segment: a canonical redirect that decoded them would turn an
 	// escape into a delimiter, and /files/a%2Fb would route as
@@ -78,7 +131,7 @@ func serveProduct(w http.ResponseWriter, r *http.Request, base string, next http
 	// only the context and the URL change. RequestURI keeps what the
 	// browser sent, base included, so a return path built from it is
 	// public.
-	ctx := context.WithValue(r.Context(), ctxKey{}, state{base: base, original: Original(r)})
+	ctx := context.WithValue(r.Context(), ctxKey{}, state{base: base, original: Original(r), origin: c.Origin, slug: c.Slug})
 	r2 := r.WithContext(ctx)
 	u := *r.URL
 	u.Path = rest
