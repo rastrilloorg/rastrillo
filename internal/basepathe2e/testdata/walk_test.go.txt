@@ -1,0 +1,395 @@
+//go:build browser
+
+// The base-path drive: this app served under /acme on a shared product
+// origin, behind front, a stand-in for the edge, in a real Chromium.
+// Copied in by rastrillo's internal/basepathe2e, which scaffolds the app
+// and runs this file. A root-absolute URL left on a page works when the
+// app is served at the root and, under a base path, asks the hub
+// instead; the rig fails on the hub's 404, and the hub records the path.
+package walkapptest
+
+import (
+	"context"
+	"fmt"
+	"io"
+	"log/slog"
+	"net/http"
+	"net/http/httptest"
+	"net/url"
+	"regexp"
+	"strings"
+	"sync"
+	"testing"
+	"time"
+
+	"github.com/chromedp/chromedp"
+
+	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/basepath"
+	"amadan.net/rastrillo/rastrillo/basepath/basepathtest"
+	"amadan.net/rastrillo/rastrillo/db"
+	"amadan.net/rastrillo/rastrillo/harness"
+
+	genlocales "walkapp/gen/locales"
+	walkapp "walkapp/internal/walkapp"
+)
+
+// tenant is one instance of this app, wired as main.go wires it with
+// the base path set, over its own copy of the migrated database.
+func tenant(t *testing.T, slug string, mode basepath.DirectHost, origin string) http.Handler {
+	t.Helper()
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	d, err := db.Open(schema.Path(t), logger)
+	if err != nil {
+		t.Fatalf("db.Open: %v", err)
+	}
+	t.Cleanup(func() { d.Close() })
+	mux, err := walkapp.App(d, origin, logger)
+	if err != nil {
+		t.Fatalf("App: %v", err)
+	}
+	opts := rastrillo.Options{Logger: logger, Locales: genlocales.Locales, DefaultLocale: genlocales.DefaultLocale,
+		BasePath: basepath.Config{Origin: origin, Slug: slug, DirectHost: mode}}
+	walkapp.Configure(&opts, mux, time.Now())
+	h, closeAll, err := rastrillo.Handler(opts)
+	if err != nil {
+		t.Fatalf("rastrillo.Handler: %v", err)
+	}
+	t.Cleanup(func() { closeAll() })
+	return h
+}
+
+// hub stands in for the app at the product origin's root. It answers
+// every request 404 and records the path, so a tenant's page that asks
+// the root shows up here as well as in the rig.
+type hub struct {
+	mu    sync.Mutex
+	paths []string
+}
+
+func (h *hub) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	h.mu.Lock()
+	h.paths = append(h.paths, r.URL.Path)
+	h.mu.Unlock()
+	w.Header().Set("X-Carlos-Version", "hub")
+	http.NotFound(w, r)
+}
+
+func (h *hub) asked() []string {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	return append([]string(nil), h.paths...)
+}
+
+// edge routes as the platform's edge does: on the product host by the
+// first path segment, falling through to the hub for a segment the map
+// does not list, and any other host to the tenant whose host it is.
+type edge struct {
+	host   string
+	routes map[string]http.Handler
+	direct http.Handler
+	hub    *hub
+}
+
+func (e *edge) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if r.Host != e.host {
+		e.direct.ServeHTTP(w, r)
+		return
+	}
+	seg, _, _ := strings.Cut(strings.TrimPrefix(r.URL.Path, "/"), "/")
+	if h, ok := e.routes[seg]; ok {
+		h.ServeHTTP(w, r)
+		return
+	}
+	e.hub.ServeHTTP(w, r)
+}
+
+// stamped sets X-Carlos-Version as the edge does, naming the release of
+// the route that served the request, so a test can tell which target
+// answered a 404.
+func stamped(version string, h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("X-Carlos-Version", version)
+		h.ServeHTTP(w, r)
+	})
+}
+
+// front is the product origin with acme and bob published under their
+// slugs and the hub at its root. acme is also the tenant behind every
+// other host: its direct host.
+func front(t *testing.T, origin string, mode basepath.DirectHost) *edge {
+	t.Helper()
+	u, err := url.Parse(origin)
+	if err != nil {
+		t.Fatal(err)
+	}
+	acme := stamped("tenant-acme", tenant(t, "acme", mode, origin))
+	bob := stamped("tenant-bob", tenant(t, "bob", mode, origin))
+	h := &hub{}
+	return &edge{host: u.Host, routes: map[string]http.Handler{"acme": acme, "bob": bob},
+		direct: acme, hub: h}
+}
+
+// newRig serves front to a browser and returns the front too, so the
+// drive can read the hub's record afterwards. The viewport is a
+// desktop's: below 800px the sidebar shell shows a content page without
+// its rail, and the language menu is in the rail.
+func newRig(t *testing.T, mode basepath.DirectHost) (*harness.Rig, *edge) {
+	var e *edge
+	rig := harness.New(t, func(origin string) http.Handler {
+		e = front(t, origin, mode)
+		return e
+	})
+	act(t, rig, "setting a desktop viewport", chromedp.EmulateViewport(1280, 900))
+	return rig, e
+}
+
+func eval[T any](rig *harness.Rig, expr string) T {
+	var v T
+	rig.Run(chromedp.Evaluate(expr, &v))
+	return v
+}
+
+func html(rig *harness.Rig) []byte {
+	return []byte(eval[string](rig, "document.documentElement.outerHTML"))
+}
+
+func leaks(rig *harness.Rig) []string { return basepathtest.Leaks(html(rig), "/acme") }
+
+// underAcme finds an attribute value that starts with /acme, which a
+// page served at the root or under /bob must never carry. outerHTML
+// writes every attribute value in double quotes.
+var underAcme = regexp.MustCompile(`\s[a-zA-Z-]+="/acme[^"]*"`)
+
+// act runs a step that waits on the page, such as a click, within a
+// bound: the rig's own context has none, so a control the layout hides
+// would otherwise hang until the test binary's timeout.
+func act(t *testing.T, rig *harness.Rig, what string, actions ...chromedp.Action) {
+	t.Helper()
+	ctx, cancel := context.WithTimeout(rig.Context(), 30*time.Second)
+	defer cancel()
+	if err := chromedp.Run(ctx, actions...); err != nil {
+		t.Fatalf("%s: %v\nlocation: %s", what, err, eval[string](rig, "location.href"))
+	}
+}
+
+// landsOn waits for the navigation a click started to reach want. It
+// reads location.pathname afresh each time rather than polling one
+// expression, because the navigation destroys the page's script context
+// mid-poll.
+func landsOn(t *testing.T, rig *harness.Rig, want string) {
+	t.Helper()
+	deadline := time.Now().Add(30 * time.Second)
+	var got string
+	for time.Now().Before(deadline) {
+		ctx, cancel := context.WithTimeout(rig.Context(), 5*time.Second)
+		err := chromedp.Run(ctx, chromedp.Evaluate("document.readyState === 'complete' ? location.pathname : ''", &got))
+		cancel()
+		if err == nil && got == want {
+			return
+		}
+		time.Sleep(50 * time.Millisecond)
+	}
+	t.Fatalf("location.pathname is %q, want %q", got, want)
+}
+
+// chooseSpanish opens the profile menu, then the language menu inside
+// it, and presses Español, as a reader does.
+func chooseSpanish(t *testing.T, rig *harness.Rig) {
+	t.Helper()
+	act(t, rig, "choosing Español in the profile menu",
+		chromedp.Click(`details[rst-shell-profile] > summary`, chromedp.ByQuery),
+		chromedp.Click(`details[rst-locale] > summary`, chromedp.ByQuery),
+		chromedp.Click(`details[rst-locale] button[lang="es"]`, chromedp.ByQuery),
+	)
+}
+
+// noRedirects is a client that reports each answer as it is, so a 307
+// shows as a 307.
+var noRedirects = &http.Client{
+	Timeout:       10 * time.Second,
+	CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse },
+}
+
+type answer struct {
+	status                     int
+	body, version, host, allow string
+}
+
+func (a answer) String() string {
+	return fmt.Sprintf("%d (X-Carlos-Version %q, Rastrillo-Host %q, Allow %q) %q", a.status, a.version, a.host, a.allow, a.body)
+}
+
+func do(t *testing.T, req *http.Request) answer {
+	t.Helper()
+	resp, err := noRedirects.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	b, err := io.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return answer{resp.StatusCode, string(b), resp.Header.Get("X-Carlos-Version"), resp.Header.Get("Rastrillo-Host"), resp.Header.Get("Allow")}
+}
+
+func fetch(t *testing.T, target string) answer {
+	t.Helper()
+	req, err := http.NewRequest(http.MethodGet, target, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return do(t, req)
+}
+
+// submit sends a form with the evidence a browser's form submission
+// carries. csrf.SameOrigin refuses a request with none of
+// Sec-Fetch-Site, Origin and Referer, so without it the framework's
+// switch would answer 403, and a 403 says nothing about the guard.
+func submit(t *testing.T, target string, form url.Values) answer {
+	t.Helper()
+	req, err := http.NewRequest(http.MethodPost, target, strings.NewReader(form.Encode()))
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("Sec-Fetch-Site", "same-origin")
+	return do(t, req)
+}
+
+// The default mode: the product path serves the app, and the instance's
+// own host redirects there.
+func TestBasePathRedirectsTheDirectHost(t *testing.T) {
+	rig, e := newRig(t, basepath.RedirectDirect)
+	direct := strings.Replace(rig.Origin, "localhost", "127.0.0.1", 1)
+
+	// The rig fails on any 4xx or 5xx, so an asset asked for at the root
+	// fails here, at the hub.
+	rig.Run(chromedp.Navigate(rig.Origin + "/acme"))
+	rig.Screen("body", "home under /acme")
+	if l := leaks(rig); len(l) > 0 {
+		t.Errorf("home under /acme links outside it: %q", l)
+	}
+
+	act(t, rig, "following the Overview link", chromedp.Click(`a[href="/acme/overview"]`, chromedp.ByQuery))
+	landsOn(t, rig, "/acme/overview")
+	rig.Screen("body", "overview under /acme")
+
+	chooseSpanish(t, rig)
+	landsOn(t, rig, "/acme/es/overview")
+	if lang := eval[string](rig, "document.documentElement.lang"); lang != "es" {
+		t.Errorf("after choosing Español the page's lang is %q, want es", lang)
+	}
+	rig.Screen("body", "overview in Spanish under /acme")
+	if l := leaks(rig); len(l) > 0 {
+		t.Errorf("the Spanish overview links outside /acme: %q", l)
+	}
+
+	rig.Run(chromedp.Navigate(direct + "/overview"))
+	if href := eval[string](rig, "location.href"); href != rig.Origin+"/acme/overview" {
+		t.Errorf("the direct host's /overview landed on %q, want %q", href, rig.Origin+"/acme/overview")
+	}
+	rig.Screen("body", "overview, from the direct host")
+
+	// The browser asks the root for /favicon.ico on its own; nothing on
+	// a page may.
+	for _, p := range e.hub.asked() {
+		if p != "/favicon.ico" {
+			t.Errorf("the hub was asked for %s", p)
+		}
+	}
+
+	// A platform probe is answered at the root on the direct host, and
+	// the product path reaches the tenant. A prefix the map does not list
+	// falls through to the hub.
+	if a := fetch(t, direct+"/healthz"); a.status != http.StatusOK || a.body != "ok" {
+		t.Errorf("GET /healthz on the direct host: %v, want 200 \"ok\"", a)
+	}
+	if a := fetch(t, direct+"/api/version"); a.status != http.StatusOK {
+		t.Errorf("GET /api/version on the direct host: %v, want 200", a)
+	}
+	if a := fetch(t, rig.Origin+"/acme/api/version"); a.status != http.StatusOK || a.version != "tenant-acme" {
+		t.Errorf("GET /acme/api/version: %v, want 200 from tenant-acme", a)
+	}
+	if a := fetch(t, rig.Origin+"/zzz/api/version"); a.status != http.StatusNotFound || a.version != "hub" {
+		t.Errorf("GET /zzz/api/version: %v, want 404 from the hub", a)
+	}
+
+	// A second tenant of the same app on the same origin keeps to its
+	// own slug.
+	rig.Run(chromedp.Navigate(rig.Origin + "/bob"))
+	rig.Screen("body", "home under /bob")
+	page := html(rig)
+	if l := basepathtest.Leaks(page, "/bob"); len(l) > 0 {
+		t.Errorf("home under /bob links outside it: %q", l)
+	}
+	if m := underAcme.FindAll(page, -1); len(m) > 0 {
+		t.Errorf("home under /bob links into /acme: %q", m)
+	}
+	if a := fetch(t, rig.Origin+"/bob/api/version"); a.status != http.StatusOK || a.version != "tenant-bob" {
+		t.Errorf("GET /bob/api/version: %v, want 200 from tenant-bob", a)
+	}
+
+	// A mispublished path map sends the acme prefix to bob's instance.
+	// Bob answers only for /bob, so it refuses with a 404 rather than
+	// rendering its pages as acme's. basepath's 404 names no instance (no
+	// Rastrillo-Host), so provision.CheckRoute does not report a misroute:
+	// on the edge, where both instances of one app carry the app's one
+	// release, it reads the 404 as NoBasePath (provision/probe.go:273-278).
+	// The two are stamped apart here only so the drive can tell which
+	// answered.
+	mis := front(t, rig.Origin, basepath.RedirectDirect)
+	mis.routes["acme"] = mis.routes["bob"]
+	req := httptest.NewRequest(http.MethodGet, rig.Origin+"/acme/api/version", nil)
+	rec := httptest.NewRecorder()
+	mis.ServeHTTP(rec, req)
+	if rec.Code != http.StatusNotFound || rec.Header().Get("X-Carlos-Version") != "tenant-bob" || rec.Header().Get("Rastrillo-Host") != "" {
+		t.Errorf("GET /acme/api/version with acme published to bob: %d, X-Carlos-Version %q, Rastrillo-Host %q; want 404 from tenant-bob naming no instance",
+			rec.Code, rec.Header().Get("X-Carlos-Version"), rec.Header().Get("Rastrillo-Host"))
+	}
+}
+
+// ServeDirect: the instance's own host serves a read-only public view at
+// the root, and the product path still serves the app under /acme.
+func TestBasePathServesTheDirectHost(t *testing.T) {
+	rig, _ := newRig(t, basepath.ServeDirect)
+	direct := strings.Replace(rig.Origin, "localhost", "127.0.0.1", 1)
+
+	rig.Run(chromedp.Navigate(direct + "/"))
+	rig.Screen("body", "public view at the root")
+	if css := eval[string](rig, `document.querySelector('link[rel="stylesheet"]')?.getAttribute("href") ?? ""`); !strings.HasPrefix(css, "/static/") {
+		t.Errorf("the public view's stylesheet is %q, want one under /static/", css)
+	}
+	if m := underAcme.FindAll(html(rig), -1); len(m) > 0 {
+		t.Errorf("the public view at the root links into /acme: %q", m)
+	}
+
+	rig.Run(chromedp.Navigate(direct + "/overview"))
+	rig.Screen("body", "public overview")
+
+	// The framework's switches stay writable on the public view: the 303
+	// lands on the Spanish overview, and a 405 would fail the rig.
+	chooseSpanish(t, rig)
+	landsOn(t, rig, "/es/overview")
+	if lang := eval[string](rig, "document.documentElement.lang"); lang != "es" {
+		t.Errorf("after choosing Español the public view's lang is %q, want es", lang)
+	}
+	rig.Screen("body", "public overview in Spanish")
+
+	if a := submit(t, direct+"/_theme", url.Values{"scheme": {"dark"}, "return": {"/"}}); a.status != http.StatusSeeOther {
+		t.Errorf("POST /_theme on the direct host: %v, want 303", a)
+	}
+	// The guard's 405, which allows GET and HEAD. The status alone is not
+	// enough: chi answers a POST to its GET-only /overview with a 405 of
+	// its own that allows GET, so with no guard the status still matched.
+	if a := submit(t, direct+"/overview", nil); a.status != http.StatusMethodNotAllowed || a.allow != "GET, HEAD" {
+		t.Errorf("POST /overview on the direct host: %v, want the read-only guard's 405 (Allow \"GET, HEAD\")", a)
+	}
+
+	rig.Run(chromedp.Navigate(rig.Origin + "/acme/overview"))
+	rig.Screen("body", "overview under /acme")
+	if l := leaks(rig); len(l) > 0 {
+		t.Errorf("the overview under /acme links outside it: %q", l)
+	}
+}
