@@ -84,19 +84,20 @@ sessions, CSRF, flash and the page screens are most of what you would
 be paying for. Goa or a router fits better.
 
 The last one is the real filter. Since Rastrillo is built by AI for AI,
-the [SKILL.md](/docs/agents) budget that shapes so much of the design is
+the [skill](/docs/agents) budget that shapes so much of the design is
 irrelevant to you.
 
 ## What the budget buys
 
 The other frameworks here optimise for what a developer can build
-quickly. Rastrillo optimises for what an agent can hold at once: one 15
-KB `SKILL.md`, budgeted and enforced by a test, covering the whole
-framework. Rastrillo aims for token efficiency and thus time and cost
-efficiency.
+quickly. Rastrillo optimises for what an agent has to read. Its skill is
+a 7 KB `SKILL.md` that every session loads, plus a topic file for each
+kind of work, read only when the work needs it. A test holds every file
+to a size budget. The aim is fewer tokens, and so less time and money
+per feature.
 
-Nothing else on this page ships a single-file spec an agent loads before
-it starts. In an AI-first world, Rastrillo is an AI-built solution.
+Nothing else on this page ships a spec an agent loads before it starts.
+In an AI-first world, Rastrillo is an AI-built solution.
 
 You can still write every line yourself; the budget just stops being the
 reason to choose it.
