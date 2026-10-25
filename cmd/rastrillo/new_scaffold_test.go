@@ -1248,23 +1248,39 @@ func TestScaffoldBinaryReadsTheBasePathFromItsEnvironment(t *testing.T) {
 	}
 	defer lf.Close()
 	origin := "http://" + l.Addr().String()
-	start := func(slug string) (*exec.Cmd, *bytes.Buffer, chan error) {
-		cmd := exec.Command(filepath.Join(app, "notes.bin"))
-		cmd.Dir = app
-		cmd.Env = append(os.Environ(), "LISTEN_FDS=1", "STATE_DIRECTORY="+t.TempDir(),
+	// stderr is read only after the child has exited (stop waits for
+	// it), because exec's copying goroutine writes the buffer until then.
+	// Cleanup kills each child even when a check stops the test early.
+	type proc struct {
+		cmd    *exec.Cmd
+		stderr bytes.Buffer
+		done   chan struct{}
+		err    error
+	}
+	stop := func(p *proc) string {
+		_ = p.cmd.Process.Kill()
+		<-p.done
+		return p.stderr.String()
+	}
+	start := func(slug string) *proc {
+		p := &proc{cmd: exec.Command(filepath.Join(app, "notes.bin")), done: make(chan struct{})}
+		p.cmd.Dir = app
+		p.cmd.Env = append(os.Environ(), "LISTEN_FDS=1", "STATE_DIRECTORY="+t.TempDir(),
 			"NOTES_ORIGIN="+origin, "RASTRILLO_SLUG="+slug, "RASTRILLO_SLUG_FROM_HOST=")
-		cmd.ExtraFiles = []*os.File{lf}
-		var stderr bytes.Buffer
-		cmd.Stderr = &stderr
-		if err := cmd.Start(); err != nil {
+		p.cmd.ExtraFiles = []*os.File{lf}
+		p.cmd.Stderr = &p.stderr
+		if err := p.cmd.Start(); err != nil {
 			t.Fatal(err)
 		}
-		done := make(chan error, 1)
-		go func() { done <- cmd.Wait() }()
-		return cmd, &stderr, done
+		go func() { p.err = p.cmd.Wait(); close(p.done) }()
+		t.Cleanup(func() { stop(p) })
+		return p
 	}
+	// Bounded: this process holds the listener too, so once the child
+	// has gone a connection is accepted by the kernel and never answered.
+	client := &http.Client{Timeout: 5 * time.Second}
 	get := func(path string) (int, string, error) {
-		resp, err := http.Get(origin + path)
+		resp, err := client.Get(origin + path)
 		if err != nil {
 			return 0, "", err
 		}
@@ -1273,33 +1289,37 @@ func TestScaffoldBinaryReadsTheBasePathFromItsEnvironment(t *testing.T) {
 		return resp.StatusCode, string(body), nil
 	}
 
-	cmd, stderr, done := start("acme")
+	p := start("acme")
 	for deadline := time.Now().Add(30 * time.Second); ; time.Sleep(50 * time.Millisecond) {
+		select {
+		case <-p.done:
+			t.Fatalf("the app exited before it answered: %v\n%s", p.err, stop(p))
+		default:
+		}
 		if _, _, err := get("/acme/healthz"); err == nil {
 			break
 		} else if time.Now().After(deadline) {
-			t.Fatalf("the app never answered: %v\n%s", err, stderr)
+			t.Fatalf("the app never answered: %v\n%s", err, stop(p))
 		}
 	}
-	if code, body, _ := get("/acme/healthz"); code != http.StatusOK || body != "ok" {
-		t.Errorf("GET /acme/healthz: %d %q, want 200 ok\n%s", code, body, stderr)
+	code, body, err := get("/acme/healthz")
+	rootCode, _, rootErr := get("/healthz")
+	logs := stop(p)
+	if err != nil || code != http.StatusOK || body != "ok" {
+		t.Errorf("GET /acme/healthz: %d %q %v, want 200 ok\n%s", code, body, err, logs)
 	}
-	if code, _, _ := get("/healthz"); code != http.StatusNotFound {
-		t.Errorf("GET /healthz on the product host: %d, want 404 outside the base\n%s", code, stderr)
+	if rootErr != nil || rootCode != http.StatusNotFound {
+		t.Errorf("GET /healthz on the product host: %d %v, want 404 outside the base\n%s", rootCode, rootErr, logs)
 	}
-	_ = cmd.Process.Kill()
-	<-done
 
-	cmd, stderr, done = start("Bad/slug")
+	p = start("Bad/slug")
 	select {
-	case err := <-done:
-		if err == nil || !strings.Contains(stderr.String(), "RASTRILLO_SLUG") {
-			t.Errorf("RASTRILLO_SLUG=Bad/slug: exit %v, want a refusal naming RASTRILLO_SLUG:\n%s", err, stderr)
+	case <-p.done:
+		if logs := stop(p); p.err == nil || !strings.Contains(logs, "RASTRILLO_SLUG") {
+			t.Errorf("RASTRILLO_SLUG=Bad/slug: exit %v, want a refusal naming RASTRILLO_SLUG:\n%s", p.err, logs)
 		}
 	case <-time.After(30 * time.Second):
-		_ = cmd.Process.Kill()
-		<-done
-		t.Errorf("RASTRILLO_SLUG=Bad/slug: still serving after 30s, want a refusal:\n%s", stderr)
+		t.Errorf("RASTRILLO_SLUG=Bad/slug: still serving after 30s, want a refusal:\n%s", stop(p))
 	}
 }
 
