@@ -3,6 +3,7 @@ package basepath_test
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"io"
 	"log/slog"
 	"net"
@@ -11,7 +12,9 @@ import (
 	"net/http/httptrace"
 	"net/textproto"
 	"strings"
+	"sync"
 	"testing"
+	"time"
 
 	"amadan.net/rastrillo/rastrillo/basepath"
 	"amadan.net/rastrillo/rastrillo/perf"
@@ -245,8 +248,11 @@ func TestInformationalResponsesDoNotPrefixTwice(t *testing.T) {
 	}
 
 	// A hijacked connection belongs to the handler: no header it set is
-	// rewritten, then or after it returns.
+	// rewritten, then or after it returns. afterReturn is read after the
+	// 101 has gone out, so the client can finish first: returned says
+	// when both values are there to inspect.
 	var afterHijack, afterReturn string
+	returned := make(chan struct{})
 	upgrade := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Location", "/done")
 		conn, rw, err := w.(http.Hijacker).Hijack()
@@ -261,6 +267,7 @@ func TestInformationalResponsesDoNotPrefixTwice(t *testing.T) {
 	})
 	inner := acme.Handler(upgrade)
 	srv2 := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer close(returned)
 		inner.ServeHTTP(w, r)
 		afterReturn = w.Header().Get("Location")
 	}))
@@ -276,6 +283,11 @@ func TestInformationalResponsesDoNotPrefixTwice(t *testing.T) {
 	up.Body.Close()
 	if up.StatusCode != http.StatusSwitchingProtocols {
 		t.Errorf("upgrade answered %d, want 101", up.StatusCode)
+	}
+	select {
+	case <-returned:
+	case <-time.After(5 * time.Second):
+		t.Fatal("the upgrade handler did not return")
 	}
 	if afterHijack != "/done" || afterReturn != "/done" {
 		t.Errorf("after Hijack Location read %q, after return %q; want /done both times", afterHijack, afterReturn)
@@ -310,7 +322,14 @@ func TestOtherHeadersPassThrough(t *testing.T) {
 func TestRewritingWriterKeepsFlushHijackAndUnwrap(t *testing.T) {
 	var rec perf.Recorder
 	measured := perf.Middleware(&rec, perf.Options{Logger: slog.New(slog.NewTextHandler(io.Discard, nil))})
+	// The flush handler holds its response open until release. If
+	// flushing broke, the client would wait for headers that never come
+	// while the handler waits for release, so the request has a deadline
+	// and cleanup releases the handler whatever happens.
 	release := make(chan struct{})
+	var releaseOnce sync.Once
+	letGo := func() { releaseOnce.Do(func() { close(release) }) }
+	t.Cleanup(letGo)
 	var outer http.ResponseWriter
 	var unwrapped http.ResponseWriter
 
@@ -359,12 +378,24 @@ func TestRewritingWriterKeepsFlushHijackAndUnwrap(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	resp := get(t, srv, "/acme/flush", nil)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	req, err := http.NewRequestWithContext(ctx, "GET", srv.URL+"/acme/flush", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Host = "example.com"
+	resp, err := srv.Client().Do(req)
+	if err != nil {
+		letGo()
+		t.Fatalf("the flushed headers never arrived: %v", err)
+	}
+	defer resp.Body.Close()
 	buf := make([]byte, len("first"))
 	if _, err := io.ReadFull(resp.Body, buf); err != nil || string(buf) != "first" {
 		t.Errorf("before the handler returned the client read %q, %v; want the flushed chunk", buf, err)
 	}
-	close(release)
+	letGo()
 	rest, _ := io.ReadAll(resp.Body)
 	if string(rest) != " second" {
 		t.Errorf("the rest of the body was %q", rest)
