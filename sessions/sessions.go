@@ -99,8 +99,8 @@ var migrationFS embed.FS
 // only their SHA-256 hash is stored.
 var Schema = migrate.MustFromFS(migrationFS, "sessions")
 
-// ErrPathRouted answers SignIn on the row-backed store (Signed nil)
-// under a base path or on its direct host. Every tenant on one origin
+// ErrPathRouted answers SignIn and RevokeOthers on the row-backed store
+// (Signed nil) under a base path or on its direct host. Every tenant on one origin
 // would write the same root-scoped __Host- cookie, so each sign-in
 // would sign the reader out of every other tenant and the hub (spec
 // §6.3: tenants verify, never mint). A path-routed tenant gets its

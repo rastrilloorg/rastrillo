@@ -312,7 +312,7 @@ A cookie signed with a key in `Keys` comes back signed with `Key`. That is how a
 var ErrPathRouted = errors.New("rastrillo/sessions: no row-backed sessions under a base path; sign in at the hub")
 ```
 
-Under a [`basepath`](/docs/reference/basepath), and on the app's direct host, the row-backed store stands aside. Every app on the origin shares one `__Host-` cookie, so signing in to one would sign the reader out of the others. There `SignIn` returns `ErrPathRouted` and `Adopt` returns `(Session{}, false)`, each logging an error and setting no cookie. `From`, `Middleware` and `Require` read no session and never clear the cookie, which may be the hub's. `SignOut` does nothing. Sessions come from the hub: use signed mode.
+Under a [`basepath`](/docs/reference/basepath), and on the app's direct host, the row-backed store stands aside. Every app on the origin shares one `__Host-` cookie, so signing in to one would sign the reader out of the others. There `SignIn` returns `ErrPathRouted` and `Adopt` returns `(Session{}, false)`, each logging an error and setting no cookie. `From`, `Middleware` and `Require` read no session and never clear the cookie, which may be the hub's. `SignOut` does nothing. `Hash` returns `("", false)` and `RevokeOthers` returns `ErrPathRouted`, revoking nothing, because there is no session of this store's own to keep. Sessions come from the hub: use signed mode.
 
 In signed mode an app verifies the hub's cookie under its base path as usual, and reads no cookie on the direct host.
 

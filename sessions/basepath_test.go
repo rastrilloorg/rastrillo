@@ -153,23 +153,84 @@ func TestTheStoreNeverTouchesASharedCookie(t *testing.T) {
 	}
 }
 
-// refusals checks what Require does on the direct host, where no
-// session lives: a page goes to the product path with its slug, a form
-// gets 403, and the platform's own call gets 403 rather than a redirect
-// its client would follow into TLS.
-func refusals(t *testing.T, h http.Handler, c *http.Cookie) {
+// The inventory reads the same cookie, so it stands aside too: Hash of
+// the hub's cookie would be a handle that names nothing here, and
+// RevokeOthers with no handle to keep would end every session the
+// subject holds.
+func TestTheInventoryStandsAsideUnderABasePath(t *testing.T) {
+	s, db, _ := rowStore(t)
+	var tokens []string
+	for range 2 {
+		token, err := s.Mint(sessions.Session{Subject: "42"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		tokens = append(tokens, token)
+	}
+	c := &http.Cookie{Name: s.CookieName(), Value: tokens[0]}
+
+	root := withCookie(httptest.NewRequest("GET", product+"/x", nil), c)
+	if h, found := s.Hash(root); !found || h != sessions.HashToken(tokens[0]) {
+		t.Fatalf("Hash at the root = %q, %v; want the presented token's hash", h, found)
+	}
+	for _, tc := range []struct {
+		name string
+		cfg  basepath.Config
+		url  string
+	}{
+		{"under /acme", underAcme, product + "/acme/x"},
+		{"on the direct host", direct, "http://cv.paulca.com/x"},
+	} {
+		var (
+			hash    string
+			found   bool
+			revoked int
+			err     error
+		)
+		serve(tc.cfg, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			hash, found = s.Hash(r)
+			revoked, err = s.RevokeOthers(r, "42")
+		}), withCookie(httptest.NewRequest("POST", tc.url, nil), c))
+		if found || hash != "" {
+			t.Errorf("%s: Hash = %q, %v; want \"\", false", tc.name, hash, found)
+		}
+		if !errors.Is(err, sessions.ErrPathRouted) || revoked != 0 {
+			t.Errorf("%s: RevokeOthers = %d, %v; want 0, ErrPathRouted", tc.name, revoked, err)
+		}
+		if n := rows(t, db); n != 2 {
+			t.Errorf("%s: %d rows left, want 2", tc.name, n)
+		}
+	}
+}
+
+// refusals checks what Require and RequireFresh do on the direct host,
+// where no session lives: a page goes to the product path with its
+// slug, a form gets 403, and the platform's own call gets 403 rather
+// than a redirect its client would follow into TLS.
+func refusals(t *testing.T, s *sessions.Sessions, c *http.Cookie) {
 	t.Helper()
-	w := serve(direct, h, withCookie(httptest.NewRequest("GET", "http://cv.paulca.com/es/private?x=1", nil), c))
-	if want := product + "/acme/es/private?x=1"; w.Code != http.StatusSeeOther || w.Header().Get("Location") != want {
-		t.Errorf("GET: %d %q, want 303 %q", w.Code, w.Header().Get("Location"), want)
-	}
-	w = serve(direct, h, withCookie(httptest.NewRequest("POST", "http://cv.paulca.com/private", nil), c))
-	if w.Code != http.StatusForbidden {
-		t.Errorf("POST: %d %q, want 403", w.Code, w.Header().Get("Location"))
-	}
-	w = serve(underAcme, h, httptest.NewRequest("GET", "http://carlos/", nil))
-	if w.Code != http.StatusForbidden || w.Header().Get("Location") != "" {
-		t.Errorf("wake check: %d %q, want 403 and no Location", w.Code, w.Header().Get("Location"))
+	page := product + "/acme/es/private?x=1"
+	for name, h := range map[string]http.Handler{"Require": s.Require(ok), "RequireFresh": s.RequireFresh(time.Hour)(ok)} {
+		for _, tc := range []struct {
+			cfg         basepath.Config
+			method, url string
+			code        int
+			location    string
+		}{
+			{direct, "GET", "http://cv.paulca.com/es/private?x=1", http.StatusSeeOther, page},
+			{direct, "HEAD", "http://cv.paulca.com/es/private?x=1", http.StatusSeeOther, page},
+			{direct, "POST", "http://cv.paulca.com/private", http.StatusForbidden, ""},
+			// The wake check, and the platform's other calls, on
+			// RedirectDirect, which serves them at the root.
+			{underAcme, "GET", "http://carlos/", http.StatusForbidden, ""},
+			{underAcme, "HEAD", "http://carlos/", http.StatusForbidden, ""},
+			{underAcme, "HEAD", "http://cv.paulca.com/healthz", http.StatusForbidden, ""},
+		} {
+			w := serve(tc.cfg, h, withCookie(httptest.NewRequest(tc.method, tc.url, nil), c))
+			if w.Code != tc.code || w.Header().Get("Location") != tc.location {
+				t.Errorf("%s, %s %s: %d %q, want %d %q", name, tc.method, tc.url, w.Code, w.Header().Get("Location"), tc.code, tc.location)
+			}
+		}
 	}
 }
 
@@ -188,7 +249,7 @@ func TestADirectHostHasNoSession(t *testing.T) {
 	if found {
 		t.Error("From read a session on the direct host")
 	}
-	refusals(t, s.Require(ok), c)
+	refusals(t, s, c)
 }
 
 // Plan 2 already does this, so it passes before the change: it pins what
@@ -239,7 +300,7 @@ func TestASignedTenantOnADirectHostIsSignedOut(t *testing.T) {
 	if found {
 		t.Error("From verified the hub's session on the direct host, which carries none")
 	}
-	refusals(t, p.tenant.Require(ok), c)
+	refusals(t, p.tenant, c)
 
 	// An expired cookie there is no cookie either: a refresh from the
 	// direct host would carry a next with no slug.
@@ -256,13 +317,37 @@ func TestAnExpiredSignedCookieStillRefreshesThroughTheBase(t *testing.T) {
 	p := newPairOn(t, product)
 	c := p.signIn(t, "u1")
 	p.now = p.now.Add(16 * time.Minute)
-	// Origin-form, as a browser sends it: next is built from RequestURI,
-	// which keeps the slug only in that form.
-	r := httptest.NewRequest("GET", "/acme/orders", nil)
-	r.Host = "example.com"
-	w := serve(underAcme, p.tenant.Require(ok), withCookie(r, c))
-	want := product + "/_carlos/refresh?next=" + url.QueryEscape("/acme/orders")
-	if w.Code != http.StatusSeeOther || w.Header().Get("Location") != want {
-		t.Errorf("%d %q, want 303 %q", w.Code, w.Header().Get("Location"), want)
+	for form, r := range targets("/acme/orders") {
+		w := serve(underAcme, p.tenant.Require(ok), withCookie(r, c))
+		want := product + "/_carlos/refresh?next=" + url.QueryEscape("/acme/orders")
+		if w.Code != http.StatusSeeOther || w.Header().Get("Location") != want {
+			t.Errorf("%s: %d %q, want 303 %q", form, w.Code, w.Header().Get("Location"), want)
+		}
+	}
+}
+
+// The hub's sign-in gets the same path as next does, so return_to
+// keeps the slug in either form too.
+func TestASignedTenantSendsTheHubTheSlug(t *testing.T) {
+	p := newPairOn(t, product)
+	for form, r := range targets("/acme/a%2Fb?x=1") {
+		w := serve(underAcme, p.tenant.Require(ok), r)
+		want := product + "/signin?return_to=" + url.QueryEscape("/acme/a%2Fb?x=1")
+		if w.Code != http.StatusSeeOther || w.Header().Get("Location") != want {
+			t.Errorf("%s: %d %q, want 303 %q", form, w.Code, w.Header().Get("Location"), want)
+		}
+	}
+}
+
+// targets is a GET of target on the product origin in both forms
+// net/http accepts: origin-form, as a browser sends it, and
+// absolute-form, https://example.com/acme/..., as a proxy may.
+// RequestURI keeps either as sent.
+func targets(target string) map[string]*http.Request {
+	origin := httptest.NewRequest("GET", target, nil)
+	origin.Host = "example.com"
+	return map[string]*http.Request{
+		"origin-form":   origin,
+		"absolute-form": httptest.NewRequest("GET", product+target, nil),
 	}
 }

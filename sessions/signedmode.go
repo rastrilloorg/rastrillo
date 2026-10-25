@@ -128,13 +128,29 @@ func signedConfig(cfg Config) (*Signed, map[string][]byte, error) {
 }
 
 // requestPath is the path and query the browser asked for. Behind
-// http.StripPrefix, r.URL.Path has lost the tenant's /<slug> but
-// r.RequestURI keeps it, and next and return_to must keep it to come
+// http.StripPrefix or basepath.Handler, r.URL.Path has lost the
+// tenant's /<slug> but the target as sent (basepath.Original, which is
+// r.RequestURI) keeps it, and next and return_to must keep it to come
 // back to this tenant. It carries the query, so it is never compared
 // with RefreshPath.
 func requestPath(r *http.Request) string {
-	if strings.HasPrefix(r.RequestURI, "/") {
-		return r.RequestURI
+	target := basepath.Original(r)
+	if strings.HasPrefix(target, "/") {
+		return target
+	}
+	// An absolute-form target, https://example.com/acme/x, which
+	// net/http accepts and keeps whole. Its own escaped path and query,
+	// as basepath.ProductURL takes them: r.URL has no slug, and next
+	// would bring the reader back to the hub's root.
+	if u, err := url.ParseRequestURI(target); err == nil && u.IsAbs() && u.Opaque == "" {
+		p := u.EscapedPath()
+		if p == "" {
+			p = "/"
+		}
+		if u.RawQuery != "" {
+			p += "?" + u.RawQuery
+		}
+		return p
 	}
 	return r.URL.RequestURI()
 }
