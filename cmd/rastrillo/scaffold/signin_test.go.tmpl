@@ -29,7 +29,10 @@ func (o *outbox) Send(_ context.Context, _, _, body string) error {
 	return nil
 }
 
-var linkRE = regexp.MustCompile(`/auth/verify\?token=[A-Za-z0-9_-]+`)
+var (
+	linkRE         = regexp.MustCompile(`/auth/verify\?token=[A-Za-z0-9_-]+`)
+	confirmTokenRE = regexp.MustCompile(`name="token" value="([^"]+)"`)
+)
 
 // link is the newest sign-in link the outbox holds.
 func (o *outbox) link(t *testing.T) string {
@@ -55,10 +58,17 @@ func signIn(t *testing.T, h http.Handler, box *outbox, address string) *http.Coo
 	if rec := post(t, h, "/signin", powtest.Fill(t, page.Body.Bytes(), url.Values{"address": {address}, "force": {"1"}})); rec.Code != http.StatusSeeOther {
 		t.Fatalf("POST /signin = %d, want 303:\n%s", rec.Code, rec.Body)
 	}
-	link, _ := url.Parse(box.link(t))
-	rec := post(t, h, link.Path, url.Values{"token": {link.Query().Get("token")}})
+	// Open the emailed link as a person does: its page shows a Sign in
+	// button, and that button's form is what redeems the link.
+	link := box.link(t)
+	confirm := get(t, h, link)
+	m := confirmTokenRE.FindStringSubmatch(confirm.Body.String())
+	if confirm.Code != http.StatusOK || m == nil {
+		t.Fatalf("GET %s = %d, want 200 with a Sign in form:\n%s", link, confirm.Code, confirm.Body)
+	}
+	rec := post(t, h, "/auth/verify", url.Values{"token": {m[1]}})
 	if rec.Code != http.StatusSeeOther {
-		t.Fatalf("POST %s = %d, want 303", link.Path, rec.Code)
+		t.Fatalf("POST /auth/verify = %d, want 303", rec.Code)
 	}
 	for _, c := range rec.Result().Cookies() {
 		if strings.Contains(c.Name, "session") && c.Value != "" {

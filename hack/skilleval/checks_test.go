@@ -15,6 +15,9 @@ var checkBase = map[string]string{
 	// Long block comments whose openings sit outside a three-line hunk.
 	"internal/app/static/tokens.css": "/*\n tokens\n a\n b\n c\n d\n e\n f\n g\n end\n*/\n:root { --x: 1; }\n",
 	"internal/app/doc.go":            "package app\n\n/*\nNotes.\na\nb\nc\nd\ne\nf\nend\n*/\n",
+	// An --auth=magic scaffold's auth.go: the owned seam and an example
+	// page through it.
+	"internal/app/auth.go": "package app\n\nfunc (a *app) owned(r *http.Request) *gorm.DB { return scope.OwnedBy(a.db.G, \"owner\", ownerOf(r)) }\nfunc (a *app) account() { a.owned(r).Count(&n) }\n",
 	// The real scaffold's manifest README shows the syntax it documents.
 	"manifest/README.md": "Example:\n\n    scope = \"user\"\n    kind = \"money\"\n    kind = \"money\"\n",
 }
@@ -193,6 +196,14 @@ func TestChecks(t *testing.T) {
 		{"expenses through the scaffold's owned seam", "expenses", map[string]string{
 			"internal/app/handlers.go": "package app\n\nfunc list() { q := a.owned(r).Find(&es); f := form.Field{Kind: form.Money} }\n",
 		}, true},
+		{"expenses manifest replacing the scaffold's account page", "expenses", map[string]string{
+			"internal/app/auth.go":   "package app\n\nfunc (a *app) owned(r *http.Request) *gorm.DB { return scope.OwnedBy(a.db.G, \"owner\", ownerOf(r)) }\n",
+			"manifest/expenses.toml": "scope = \"user\"\n[[fields]]\nkind = \"money\"\n",
+		}, true},
+		{"expenses only removing the account page", "expenses", map[string]string{
+			"internal/app/auth.go":     "package app\n\nfunc (a *app) owned(r *http.Request) *gorm.DB { return scope.OwnedBy(a.db.G, \"owner\", ownerOf(r)) }\n",
+			"internal/app/handlers.go": "package app\n\nfunc list() { q := db.Find(&es); f := form.Field{Kind: form.Money} }\n",
+		}, false},
 		{"scheme data-theme traded for a toggle", "scheme", map[string]string{
 			"internal/app/templates/layout.html": "<html>\n{{template \"scheme-menu\" .}}\n<script>localStorage.setItem('t','dark')</script>\n</html>\n",
 		}, false},

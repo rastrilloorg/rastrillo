@@ -44,7 +44,8 @@ rastrillo new notes && cd notes && go mod tidy && go test ./...
 
 **People sign in? Start with `rastrillo new --auth=magic <name>`.** The
 app then signs people in by emailed link from its first commit, its
-owned rows go through `a.owned(r)`, and its tests sign in for you; its
+owned rows go through `a.owned(r)` and are created with
+`Owner: ownerOf(r)`, and its tests sign in for you; its
 `AGENTS.md` says where each piece is. Without `--auth` the scaffold has
 no accounts.
 

@@ -89,8 +89,12 @@ func applyMagicAuth(files map[string]string, name, pkg, appDir string) error {
 		return nil, err
 	}
 	bg.Loop(context.Background(), 10*time.Minute, func() {
-		guard.Sweep(time.Now())
-		au.Sweep(time.Now())
+		if err := guard.Sweep(time.Now()); err != nil {
+			logger.Warn("sweep spent sign-in challenges", "err", err)
+		}
+		if err := au.Sweep(time.Now()); err != nil {
+			logger.Warn("sweep expired sign-in links", "err", err)
+		}
 	})
 	a.auth = au
 `)
@@ -126,9 +130,11 @@ func applyMagicAuth(files map[string]string, name, pkg, appDir string) error {
 				}
 			}
 		}
-		if end < 0 {
+		// The stage shell has no header chrome to sit in: an app built on
+		// it reaches the sign-in screen through its own links.
+		if end < 0 && !strings.Contains(s, `{{block "backdrop"`) {
 			errs = append(errs, layout+": no scheme menu block to sit beside")
-		} else {
+		} else if end >= 0 {
 			files[layout] = s[:end] + `{{if opt $ "SignedIn"}}<form method="post" action="/signout"><button rst-btn>Sign out</button></form>{{else}}<a href="/signin" rst-btn>Sign in</a>{{end}}` + s[end:]
 		}
 	}
@@ -185,7 +191,7 @@ func newAppWithMail(t *testing.T) (http.Handler, *outbox) {
 	swap(filepath.Join(name, ".rastrillo", "budgets.txt"), budgetsTxtTemplate, budgetsTxtTemplate+
 		"perf  GET /pow/*          skip  proof-of-work script and worker assets, not a screen\n"+
 		"perf  GET /auth/callback  skip  keymail landing: answers only with a pending sign-in\n"+
-		"perf  GET /auth/verify    skip  an emailed link's landing: answers only with its token\n")
+		"perf  GET /auth/verify    skip  an emailed link's page: needs a fresh token, which signin_test.go opens\n")
 
 	stage, ok := ui.Layout("stage")
 	if !ok {
@@ -195,6 +201,16 @@ func newAppWithMail(t *testing.T) (http.Handler, *outbox) {
 	files[filepath.Join(appDir, "templates", "signin.html")] = scaffoldFile("signin.html")
 	files[filepath.Join(appDir, "templates", "stage.html")] = string(stage)
 	files[filepath.Join(testDir, "signin_test.go")] = fill(scaffoldFile("signin_test.go.tmpl"))
+
+	// The inherited text that says otherwise, fixed where it stands.
+	agents := filepath.Join(name, "AGENTS.md")
+	swap(agents, "- Every query touching user-owned rows goes through `scope.Owned` —\n  reads AND writes, transactions included.",
+		"- Every query touching user-owned rows goes through `a.owned(r)`\n  (auth.go) — reads AND writes, transactions included — and a new row\n  sets `Owner: ownerOf(r)`.")
+	swap(agents, "- Screens work with JavaScript disabled;", "- Screens work with JavaScript disabled, except the sign-in screen,\n  whose proof of work needs it;")
+	swap(filepath.Join(appDir, "models.go"), "touching user-owned rows goes through scope.Owned (SKILL.md) — reads",
+		"touching user-owned rows goes through a.owned(r) (auth.go) — reads")
+	swap(filepath.Join(appDir, "tokens.go"), "which a new app does not have yet. Once it does\n// (examples/notes in the rastrillo repository shows how), add this to\n// Router after csrf.Protect:",
+		"and this app's sign-in (auth.go) keeps its\n// own sessions, not the *sessions.Sessions Tokens takes. examples/notes\n// in the rastrillo repository wires it in an app that has one, after\n// csrf.Protect:")
 
 	// The agent working in the app finds the sign-in it starts with.
 	section := fmt.Sprintf(`## Sign-in

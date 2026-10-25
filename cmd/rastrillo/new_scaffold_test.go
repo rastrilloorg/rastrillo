@@ -22,6 +22,7 @@ import (
 	"amadan.net/rastrillo/rastrillo/internal/manifest"
 	"amadan.net/rastrillo/rastrillo/internal/tmplmigrate"
 	"amadan.net/rastrillo/rastrillo/migrate"
+	"amadan.net/rastrillo/rastrillo/ui"
 )
 
 // TestNewScaffoldsCIAndManifest covers the host-awareness half of the
@@ -729,6 +730,19 @@ func TestScaffoldMagicAuthGatePassesOffline(t *testing.T) {
 	for _, want := range []string{"perf: GET /signin: median", "perf: GET /account: median", "perf: cold boot: median"} {
 		if !strings.Contains(out, want) {
 			t.Errorf("the perf lane did not report %q:\n%s", want, out)
+		}
+	}
+}
+
+// --auth=magic fits every shell: the stage shell has no header for the
+// Sign in control and scaffolds without one.
+func TestScaffoldMagicAuthFitsEveryShell(t *testing.T) {
+	if testing.Short() {
+		t.Skip("scaffolds and tidies a whole app per shell")
+	}
+	for _, shell := range ui.LayoutNames() {
+		if _, err := runNewInTemp(t, "--auth=magic", "--shell="+shell, "authapp"); err != nil {
+			t.Errorf("rastrillo new --auth=magic --shell=%s: %v", shell, err)
 		}
 	}
 }

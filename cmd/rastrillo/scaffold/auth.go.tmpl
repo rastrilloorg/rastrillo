@@ -2,10 +2,13 @@ package __PKG__
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"errors"
 	"html/template"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -41,13 +44,16 @@ func newAuth(d *db.DB, origin string, mailer mail.Sender) (*auth.Auth, *pow.Guar
 	if signinPagesErr != nil {
 		return nil, nil, signinPagesErr
 	}
-	// The instance key seals sign-in challenges and links. On CARLOS it
-	// is the platform's, minted and backed up before the app first ran;
-	// a key made here could be lost with the box, leaving links nobody
-	// can open. Off CARLOS a development-only key keeps local runs going.
+	// The instance key seals sign-in challenges and pending sign-ins. On
+	// CARLOS it is the platform's, minted and backed up before the app
+	// first ran. Off CARLOS it is __ENV___INSTANCE_KEY, or else a fresh
+	// random key for this run: never a fixed one, because a key anyone
+	// can read in this source lets them forge a sign-in as someone else.
+	// A random key only means links and half-finished sign-ins end with
+	// the process; set the variable to keep them across restarts.
 	key, err := carlos.InstanceKey(os.Getenv("__ENV___INSTANCE_KEY"))
 	if errors.Is(err, carlos.ErrNotOnCarlos) {
-		key, err = "__NAME__-development-only-instance-key", nil
+		key, err = randomKey()
 	}
 	if err != nil {
 		return nil, nil, err // ErrNoInstanceKey: on CARLOS with no key; never start
@@ -78,6 +84,11 @@ func newAuth(d *db.DB, origin string, mailer mail.Sender) (*auth.Auth, *pow.Guar
 		Mailer:       mailer,
 		SigninPath:   "/signin",
 		SigninScreen: true,
+		// No keymail federation partners: every address gets a magic
+		// link and no server is ever dialed. Left nil, the classifier
+		// would look up and probe each address's own domain, a request
+		// to wherever an anonymous visitor's domain points.
+		KeymailServers: []string{},
 		// The page an emailed link opens is the sign-in screen with a Sign
 		// in button: a mail scanner that fetches the link spends nothing.
 		RenderConfirm: func(w http.ResponseWriter, r *http.Request, _ auth.ConfirmPageData) { signinPage(au)(w, r) },
@@ -123,7 +134,8 @@ func signinPage(au *auth.Auth) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		st := au.SigninState(r)
 		au.PrepareSigninResponse(w, st)
-		data := map[string]any{"L": signinPages.LocalizerFor(r), "Signin": st, "Brand": map[string]any{"Name": "__NAME__"}}
+		// Scheme keeps the visitor's Light or Dark choice on this page too.
+		data := map[string]any{"L": signinPages.LocalizerFor(r), "Scheme": rastrillo.SchemeFrom(r), "Signin": st, "Brand": map[string]any{"Name": "__NAME__"}}
 		if err := signinPages.Execute(w, "signin", data); err != nil {
 			http.Error(w, "Something went wrong.", http.StatusInternalServerError)
 		}
@@ -144,14 +156,29 @@ func (a *app) signedIn(next http.Handler) http.Handler {
 	})
 }
 
+// ownerOf is the signed-in person as an owned row records them: the
+// verified address, lowercased so Ada@example.com and ada@example.com
+// own the same rows. Set Owner from it when creating a row.
+func ownerOf(r *http.Request) string {
+	id, _ := auth.From(r)
+	return strings.ToLower(id.Address)
+}
+
 // owned is the one seam every read and write of an owned row goes
 // through. Under magic links the session's subject is the verified
 // address, so owned rows carry it in an Owner column. Never
 // sessions.UserID here: it would read (0, false) and scope every query
 // to nobody.
 func (a *app) owned(r *http.Request) *gorm.DB {
-	id, _ := auth.From(r)
-	return scope.OwnedBy(a.db.G, "owner", id.Address)
+	return scope.OwnedBy(a.db.G, "owner", ownerOf(r))
+}
+
+func randomKey() (string, error) {
+	b := make([]byte, 32)
+	if _, err := rand.Read(b); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(b), nil
 }
 
 // account is the example owned page: it counts the visitor's notes
