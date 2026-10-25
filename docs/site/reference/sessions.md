@@ -306,6 +306,18 @@ A cookie that does not verify is treated as signed out and left in place. It may
 
 A cookie signed with a key in `Keys` comes back signed with `Key`. That is how a key rotation moves people onto the new key.
 
+## Under a base path
+
+```go
+var ErrPathRouted = errors.New("rastrillo/sessions: no row-backed sessions under a base path; sign in at the hub")
+```
+
+Under a [`basepath`](/docs/reference/basepath), and on the app's direct host, the row-backed store stands aside. Every app on the origin shares one `__Host-` cookie, so signing in to one would sign the reader out of the others. There `SignIn` returns `ErrPathRouted` and `Adopt` returns `(Session{}, false)`, each logging an error and setting no cookie. `From`, `Middleware` and `Require` read no session and never clear the cookie, which may be the hub's. `SignOut` does nothing. Sessions come from the hub: use signed mode.
+
+In signed mode an app verifies the hub's cookie under its base path as usual, and reads no cookie on the direct host.
+
+On the direct host, `Require` and `RequireFresh` send a signed-out `GET` or `HEAD` to the same page under the product path, `basepath.ProductURL`, in both modes. The platform's own calls get 403 instead.
+
 ## Rotating the signing key
 
 Rotate the signing key in this order. If the hub signs with a key id a tenant does not have, everyone is signed out of that tenant.

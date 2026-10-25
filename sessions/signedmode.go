@@ -11,6 +11,8 @@ import (
 	"regexp"
 	"strings"
 	"time"
+
+	"amadan.net/rastrillo/rastrillo/basepath"
 )
 
 // Signed turns a Sessions into signed mode: the session is a
@@ -138,8 +140,15 @@ func requestPath(r *http.Request) string {
 }
 
 // signedCookie reads and verifies this request's cookie. The Session is
-// set only for cookieValid.
+// set only for cookieValid. On a direct host it reads none: the hub's
+// cookie is host-only on the product origin, so it should never arrive
+// there, and if it did, a refresh from there would carry a next with no
+// slug and the reader would come back to the hub's root (spec §7.3: the
+// direct host carries no hub session).
 func (s *Sessions) signedCookie(r *http.Request) (Session, cookieState) {
+	if basepath.OnDirectHost(r) {
+		return Session{}, cookieNone
+	}
 	c, err := r.Cookie(s.CookieName())
 	if err != nil {
 		return Session{}, cookieNone

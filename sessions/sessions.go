@@ -23,6 +23,7 @@ import (
 	"strings"
 	"time"
 
+	"amadan.net/rastrillo/rastrillo/basepath"
 	"amadan.net/rastrillo/rastrillo/internal/returnto"
 	"amadan.net/rastrillo/rastrillo/migrate"
 )
@@ -97,6 +98,30 @@ var migrationFS embed.FS
 // longer re-executed on every boot. Tokens never touch this table:
 // only their SHA-256 hash is stored.
 var Schema = migrate.MustFromFS(migrationFS, "sessions")
+
+// ErrPathRouted answers SignIn on the row-backed store (Signed nil)
+// under a base path or on its direct host. Every tenant on one origin
+// would write the same root-scoped __Host- cookie, so each sign-in
+// would sign the reader out of every other tenant and the hub (spec
+// §6.3: tenants verify, never mint). A path-routed tenant gets its
+// sessions from the hub instead, through Signed (Plan 2).
+var ErrPathRouted = errors.New("rastrillo/sessions: no row-backed sessions under a base path; sign in at the hub")
+
+// rowsOff reports whether the row-backed store stands aside for r. The
+// cookie it would read there may be the hub's own, or a sibling
+// tenant's, so reading it would be a lookup of someone else's token and
+// clearing it would sign the reader out of the product. Signed mode is
+// not affected: there a tenant verifies the hub's cookie on the product
+// path, which is the point of it.
+func (s *Sessions) rowsOff(r *http.Request) bool {
+	return s.cfg.Signed == nil && basepath.PathRouted(r)
+}
+
+// refusePathRouted logs a refused mint. It names the public path and
+// not the query, which on a sign-in route can carry a credential.
+func (s *Sessions) refusePathRouted(what string, r *http.Request) {
+	s.cfg.Logger.Error("rastrillo/sessions: "+what+" refused under a base path; sessions come from the hub", "path", basepath.Path(r, r.URL.Path))
+}
 
 // New validates cfg and returns a ready *Sessions.
 func New(cfg Config) (*Sessions, error) {
@@ -243,6 +268,10 @@ func (s *Sessions) SignIn(w http.ResponseWriter, r *http.Request, sess Session) 
 	if s.cfg.Signed != nil {
 		return s.signedSignIn(w, r, sess)
 	}
+	if s.rowsOff(r) {
+		s.refusePathRouted("sign in", r)
+		return ErrPathRouted
+	}
 	if c, err := r.Cookie(s.CookieName()); err == nil {
 		if err := s.revoke(HashToken(c.Value)); err != nil {
 			return err
@@ -289,6 +318,10 @@ func (s *Sessions) Adopt(w http.ResponseWriter, r *http.Request, token string) (
 	if s.cfg.Signed != nil {
 		return Session{}, false
 	}
+	if s.rowsOff(r) {
+		s.refusePathRouted("adopt", r)
+		return Session{}, false
+	}
 	sess, ok, err := s.lookup(HashToken(token), s.now())
 	if err != nil {
 		s.cfg.Logger.Error("rastrillo/sessions: adopt lookup", "err", err)
@@ -312,6 +345,11 @@ func (s *Sessions) SignOut(w http.ResponseWriter, r *http.Request) {
 		// No row to revoke: a copy of this cookie stays refreshable
 		// until the subject's epoch moves or the session life ends.
 		s.clearCookie(w)
+		return
+	}
+	if s.rowsOff(r) {
+		// Nothing here was minted by this store, so there is nothing of
+		// its own to revoke or clear (see rowsOff).
 		return
 	}
 	if c, err := r.Cookie(s.CookieName()); err == nil {
@@ -355,6 +393,11 @@ func (s *Sessions) resolveContext(ctx context.Context, r *http.Request) (sess Se
 		// origin.
 		sess, state := s.signedCookie(r)
 		return sess, state == cookieValid, false
+	}
+	if s.rowsOff(r) {
+		// Not stale either, so Middleware and Require never clear it:
+		// see rowsOff.
+		return Session{}, false, false
 	}
 	c, err := r.Cookie(s.CookieName())
 	if err != nil {
@@ -474,9 +517,28 @@ func (s *Sessions) admitting(w http.ResponseWriter, r *http.Request) (Session, b
 
 // refuse sends a page request (GET/HEAD) to SigninPath — with
 // reauth=1 when a valid-but-stale session needs step-up rather than a
-// plain sign-in — and answers anything else 403.
+// plain sign-in — and answers anything else 403. On a direct host it
+// sends the page to its product URL instead.
 func (s *Sessions) refuse(w http.ResponseWriter, r *http.Request, reauth bool) {
-	if r.Method == http.MethodGet || r.Method == http.MethodHead {
+	page := r.Method == http.MethodGet || r.Method == http.MethodHead
+	if page && basepath.OnDirectHost(r) {
+		// The direct host carries no session (spec §7.3), so the reader
+		// is sent to the product path, where the hub's session lives.
+		// Neither SigninPath nor the hub's sign-in would do: the first
+		// is this tenant's own sign-in, which mints nothing here
+		// (ErrPathRouted), and the second's return_to would be
+		// requestPath, which has no slug here and would land the reader
+		// on the hub's root. So this runs before the signed branch.
+		if basepath.PlatformCall(r) {
+			// The wake check's client follows redirects, and an https
+			// product URL on a plain socket fails the wake.
+			http.Error(w, "signed out", http.StatusForbidden)
+			return
+		}
+		http.Redirect(w, r, basepath.ProductURL(r), http.StatusSeeOther)
+		return
+	}
+	if page {
 		to := s.cfg.SigninPath + "?return_to=" + url.QueryEscape(r.URL.RequestURI())
 		if s.cfg.Signed != nil {
 			// Absolute, so a base-path rewrite cannot move the hub's
