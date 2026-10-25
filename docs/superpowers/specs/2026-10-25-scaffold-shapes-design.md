@@ -99,8 +99,11 @@ CLAUDE.md, the manifest directory. `go test ./...` is the whole gate.
 default true. `--design-system=false` writes no templates, static files,
 icons or renderer, and the handler writes plain HTML or JSON. With it
 false, passing `--icons`, `--icon-delivery`, `--theme` or `--shell` is an
-error, not a silent no-op. The flag applies to every shape, not only
-`bare`.
+error, not a silent no-op. The flag applies to `bare` only (amended
+while planning, 2026-10-25): `single` and `accounts` render their API
+token page, sign-in pages and error page with the design system, so
+without it they would need a second, plain copy of each. Passing
+`--design-system=false` with them is an error that names `bare`.
 
 Whatever `bare` needs to boot and deploy on Carloku must stay, and only
 that. If boot needs `manifest/app.toml` for locales, the builder either
