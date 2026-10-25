@@ -12,7 +12,8 @@ Every command except `session-key` takes an optional directory as its last argum
 
 ```sh
 rastrillo new [--icons=<set>] [--icon-delivery=<mode>] [--ux=<profile>]
-              [--theme=<name>] [--shell=<name>] [--locale=<code>] <name>
+              [--theme=<name>] [--shell=<name>] [--locale=<code>]
+              [--auth=<kind>] <name>
 ```
 
 Scaffolds a complete app in `./<name>` — one that compiles, passes its
@@ -26,6 +27,7 @@ own tests, and serves, before you have written anything. It runs
 | `--ux` | `considered`, `standard` | `considered` |
 | `--theme` | `day`, `plain`, `signal` | `day` |
 | `--shell` | `column`, `topbar`, `sidebar`, `console` | `column` |
+| `--auth` | `none`, `magic` | `none` |
 | `--locale` | `en`, `ga`, `zh-Hans`, `es`, `hi`, `pt-PT`, `bn`, `ru`, `ja`, `yue`, `vi`, `ar` | `en` |
 
 All six set × delivery combinations scaffold, compile and pass
