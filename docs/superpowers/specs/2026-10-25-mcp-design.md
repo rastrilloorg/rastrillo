@@ -172,6 +172,8 @@ func New(cfg Config, ops ...op.Descriptor) (http.Handler, error)
   exactly `{"type":"null"}`, or a nil `Invoke`;
 - a read descriptor marked `Destructive`, or a write that fails the fence
   in section 4;
+- a `Guard` when `Gate.Verify` isn't a `Rechecker`. A guard that never
+  runs would look like protection and give none;
 - two descriptors whose tool names (section 5) are equal.
 
 It serves exactly the descriptors it is given. For a generated app that
@@ -254,6 +256,12 @@ func (g Gate) Admit(a rastrillo.Actor, o rastrillo.Operation) error
   `tools/list` middleware. That covers `Admit`, `op.Check`, `Authorize`,
   `Invoke` and encoding the result. A panic answers an `internal` tool
   error with a ref, logged redacted, and the process stays up.
+- **The result is encoded once, inside that recovery.** The SDK marshals
+  the response again after the handler returns, outside any recovery
+  (go-sdk v1.8.0 `internal/jsonrpc2/messages.go:118`,
+  `mcp/protocol.go:372`). So the handler hands the SDK only the encoded
+  bytes, as a `json.RawMessage` for `structuredContent` and a string for
+  the text block, never the operation's Go value.
 - **A test pins the same answers from both handlers** for an unknown
   token, a malformed agent header, a write with no session, a read-only
   agent's write with no session, and a panic.
@@ -299,8 +307,16 @@ type ResponseGuard func(ctx context.Context, a rastrillo.Actor, d *Descriptor, i
 1. The handler's answer is buffered, up to `MaxResult` for MCP, and up to
    the same cap, 2 MiB by default, for the tree. An answer over the cap
    is refused as too large, as section 6 describes.
-2. Before the headers are sent, and again before each 64 KiB of body:
-   - `Recheck` runs, with a 5-second deadline.
+   - The tree rechecks the credential and reruns `Admit` and `Authorize`
+     for the route's operation. It has no `Guard`: its routes write HTTP
+     and don't hand the gate an input and result to check. A guard for
+     the tree needs routes to register what they disclose, and that
+     waits for spec 3. Until then, an app whose answers need an
+     item-level guard serves agents through MCP.
+2. Before the headers are sent, and again before each 64 KiB of body,
+   one check runs. Each check and the write after it share one 5-second
+   deadline, shortened to the request's own if that is sooner:
+   - `Recheck` runs.
    - The fresh actor's `Subject`, `Agent`, `Credential` and `Grant` (ID,
      issuers and audience) must equal the original's.
    - `Admit` and `op.Check` pass again, with the fresh actor, for the
@@ -313,8 +329,14 @@ type ResponseGuard func(ctx context.Context, a rastrillo.Actor, d *Descriptor, i
      slow check against another service before the app's own revision
      and link checks, so the last thing checked is the closest to the
      bytes going out.
-3. Each chunk gets a write deadline. A transport that can't set one gets
-   `unavailable` before any data is sent.
+   - After each callback returns, the deadline is checked again. A
+     callback that returns nil after the deadline has passed fails the
+     check, so a slow guard can't make the credential check stale.
+3. The chunk is written with the rest of that deadline as its write
+   deadline, then flushed. A failed write or flush aborts the connection
+   before the next chunk. A transport that can't set a write deadline
+   gets `unavailable` before any data is sent. This is the loop in
+   `O/http_guarded.go:107-163`.
 4. **If a check fails before the headers:** the answer becomes the
    refusal. That is 401 `unauthorized` when the identity changed or the
    token is gone, 403 `forbidden` when access narrowed, in the API's error
@@ -345,7 +367,10 @@ Idempotent  bool // calling it twice with the same input leaves the same state a
 - **Read-only** is not a new field. It is `Access == rastrillo.Read`.
 - **What the generator sets:**
   - `Create` adds, so it is neither destructive nor idempotent.
-  - `Update` overwrites fields, so it is destructive and idempotent.
+  - `Update` overwrites fields, so it is destructive. It is not
+    idempotent: a repeat moves `updated_at` again, and a mergeable
+    resource appends another `updated` event
+    (`examples/tickets/gen/store/announcements/store.go:400-411`).
   - `Delete` is destructive and idempotent.
   - `List` and `Get` are read-only.
 - **A replaced operation body gets the safe flags.** An app may replace a
@@ -432,9 +457,11 @@ Idempotent  bool // calling it twice with the same input leaves the same state a
 4. `Admit` runs.
 5. **The raw arguments go to `Invoke` unchanged.** There is no separate
    check against the input schema. **(my call)** Two reasons:
-   - The API door has none either. It hands the body to `Invoke`, which
-     decodes with `op.DecodeInput` and refuses what doesn't fit. Doing the
-     same keeps both doors giving the same answer by construction.
+   - The API door has none either. Its generated handlers decode with
+     `api.Decode`, which calls `op.DecodeInput` (`api/decode.go:93`), into
+     the same typed input, and call the same typed operation that
+     `Invoke` calls. Doing the same keeps both doors giving the same
+     answer by construction.
      A schema check would refuse `limit: 0` and `limit: 201`, which the API
      door accepts (the operation defaults the first and clamps the
      second, `examples/notes/gen/ops/bookmarks/list.go:22`).
@@ -445,17 +472,28 @@ Idempotent  bool // calling it twice with the same input leaves the same state a
      every integer fails "type: integer", the bug Tito Go fixed in
      `T` 37471b2a9.
 
-   A hand-written descriptor validates inside its `Invoke`, as it must for
-   the API door already. Memoria's registry does this with exact numbers
-   (#116).
-6. `Invoke` calls the operation, whose first statement is `op.Check`.
-7. **A refusal is a tool error, not a protocol error**, so the model can
+   A hand-written descriptor validates inside its `Invoke`. Oficina's
+   validation runs in `Registry.Call`, outside its operations' `Invoke`
+   (`O/operation.go:142-169`): unique JSON, team and scope, the input
+   schema with exact numbers, then the output. So Oficina's descriptors
+   for `mcp.New` wrap `Registry.Call` (or the same checks), not the bare
+   operation, and nothing they accept or refuse changes.
+6. **A check that depends on the input runs inside `Invoke`, before the
+   operation does anything.** `Authorize` sees the operation, not its
+   input, so it can check a grant's scope but not which team the input
+   names. Memoria checks the team before calling its domain code
+   (`memoria` `70aa5b8`, `internal/memoria/agent_access.go:93-106`), and
+   `Registry.Call` does too (`O/operation.go:149`). `Guard` repeats the
+   check as the answer goes out (section 3). It is never the first
+   check, because by then a write has happened.
+7. `Invoke` calls the operation, whose first statement is `op.Check`.
+8. **A refusal is a tool error, not a protocol error**, so the model can
    read it and fix the call (`T/internal/mcpapi/mcpapi.go:285-296`). The
    text is the same code and message the API's error envelope uses:
    `invalid` with its fields, `forbidden`, `not_found`, `conflict`, or
    `internal` with a `ref`. An `internal` error is logged, redacted, with
    the ref. An unknown tool stays a protocol error, as the SDK answers it.
-8. **The result:**
+9. **The result:**
    - `structuredContent` is the operation's result.
    - The text block is the same value as JSON.
    - An operation whose `Result` is `{"type":"null"}`, such as every
@@ -467,10 +505,10 @@ Idempotent  bool // calling it twice with the same input leaves the same state a
      requires an object, and clients built to it may reject anything else.
    - Numbers survive intact: the result is encoded with json v2 and never
      goes through float64.
-9. **The size cap.** A result over `MaxResult` (default 2 MiB) is replaced
+10. **The size cap.** A result over `MaxResult` (default 2 MiB) is replaced
    with a tool error: "Ask for less: pass a smaller limit or a narrower
    query." Tito Go returns the same (`T/internal/mcpapi/mcpapi.go:285-296`).
-10. The answer goes out through section 3.
+11. The answer goes out through section 3.
 
 Each call logs one line with the actor's `LogAttrs` and the tool name, the
 same as an API request.
@@ -523,7 +561,9 @@ Grant *Grant // nil for a browser session and a personal token
   A connection-service verifier, such as Oficina's `RemoteVerifier`
   (`O/remote.go`), fills it from introspection.
 - **The app's policy reads it.** `Authorize` checks the scope for each
-  operation, and the app's `Guard` checks a team named in the input. The
+  operation. `Invoke` checks a team named in the input before the
+  operation runs, and the app's `Guard` checks it again as the answer
+  goes out (section 6). The
   framework doesn't interpret `Teams` or `Scopes`, because their meaning
   is the app's: Oficina's `notes:write` means nothing to Rastrillo.
 - **`op.Check` keeps its order.** The read-only check runs first, then
@@ -565,9 +605,15 @@ metadata document. This spec reserves the path
   switches to an event stream for `subscriptions/listen` whatever the
   setting (go-sdk v1.8.0 `mcp/streamable.go:1678-1683`).
   - The handler refuses a GET with 405.
-  - It refuses a POST whose JSON-RPC message, or any message in a batch,
-    is `subscriptions/listen`, before the SDK sees it. It answers that
-    with a JSON-RPC "method not found" error.
+  - It refuses a POST whose JSON-RPC message is `subscriptions/listen`,
+    before the SDK sees it. It answers that with a JSON-RPC "method not
+    found" error.
+  - It refuses every batch, a body that is a JSON array, the same way.
+    Protocol revision 2025-03-26 allows batches, and the SDK assumes it
+    for a request with no version header (go-sdk v1.8.0
+    `mcp/streamable.go:1445-1452`). A batch would put several disclosures
+    in one answer, and section 3 checks the one call that ran. Later
+    revisions dropped batches, and no client in section 9 sends them.
   - The body has already been capped, so reading the method is cheap.
 - **Request body cap:** `Gate.MaxBody`, default 1 MiB, the API's.
 - **Dependencies:** the SDK, which brings `google/jsonschema-go` with it.
@@ -609,9 +655,11 @@ metadata document. This spec reserves the path
     way the API tree does.
   - A panic in `Authorize`, in `Invoke` and while encoding a result each
     answer an `internal` tool error, and the test process survives.
+  - A result whose JSON encoder panics the second time it is called
+    gives an `internal` tool error, not a crash.
   - Every real HTTP answer carries `Cache-Control: no-store`, the error
     answers included.
-  - A GET and a `subscriptions/listen` are refused. `initialize`
+  - A GET, a `subscriptions/listen` and a batch are refused. `initialize`
     advertises no list changes.
 - **Rechecks:**
   - A token revoked before the headers go out turns the answer into 401.
@@ -619,9 +667,13 @@ metadata document. This spec reserves the path
   - A grant narrowed between building the list and sending it refuses the
     list.
   - The guard runs once per check, and `Invoke` runs once per call.
+  - A guard that takes longer than the deadline and then returns nil
+    fails the check.
   - Rechecks leave `apitoken`'s `last_used` alone.
-- **Flags:** a replaced generated update is listed destructive and not
-  idempotent, and the fence refuses an unmarked `notes.purge`.
+  - `New` refuses a `Guard` with a verifier that can't recheck.
+- **Flags:** generated updates are listed destructive and not
+  idempotent, a replaced create is listed destructive, and the fence
+  refuses an unmarked `notes.purge`.
 - **Grant facts:** a fake verifier sets `Grant`, and an `Authorize` that
   checks a scope hides the tool from the list and refuses the call.
 - **The Oficina interop fixture.**
@@ -630,8 +682,14 @@ metadata document. This spec reserves the path
     `origin/feat/agent-access` `70aa5b8`
     (`internal/memoria/agent_access.go:118-124`), as hand-written
     descriptors in a test. Their `Invoke` is a fake store.
+  - Their `Invoke` validates the way `Registry.Call` does: unique JSON,
+    the team before anything else, the schema with exact numbers, and
+    the output.
   - They run through `mcp.New` with a fake connection-service verifier and
     rechecker, and a guard that checks the input's team.
+  - A write to a team the grant doesn't name reaches no store. An extra
+    field, an out-of-range number and a bad output are refused, and an
+    invalid input never reaches the store.
   - This proves Oficina can move its Memoria integration onto `mcp.New`
     without changing its operations (#116).
 - **Fail-first** as `CONTRIBUTING.md` requires.
@@ -667,7 +725,8 @@ All new user-facing copy goes through Paul's copy review.
 2. **Checking again on the API door too.** Section 3 buffers and rechecks
    the API tree's answers as well as MCP's, so both doors keep the same
    rules. That caps a tree answer at 2 MiB. Generated lists stay well
-   under that, at 200 rows a page.
+   under that, at 200 rows a page. The tree's item-level guard waits for
+   spec 3.
 3. **The package name `mcp`.** It shares a name with the SDK's own
    package, which an app would only notice if it imports both.
 4. **The endpoint path `/api/v1/mcp`.** Tito Go uses `/<account>/api/mcp`.
