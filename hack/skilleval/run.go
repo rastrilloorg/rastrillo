@@ -77,7 +77,7 @@ func runOne(ctx context.Context, c config, bin, export, vdir, tasksDir, task str
 		return fail("opening setup.log", err)
 	}
 	defer logf.Close()
-	if _, err := scaffold(ctx, bin, export, dir, appName, logf); err != nil {
+	if _, err := scaffold(ctx, bin, export, dir, appName, c.newArgs, logf); err != nil {
 		return fail("setup", err)
 	}
 	r.Base, _ = gitOut(ctx, app, "rev-parse", "HEAD") // for the record; nothing is compared through the app's git
@@ -537,6 +537,7 @@ type provenance struct {
 	Skill      map[string]string `json:"skill"` // sha256 of SKILL.md and each skill/ file as exported
 	Tasks      map[string]string `json:"tasks"` // sha256 of each task and check
 	Model      string            `json:"model"`
+	NewArgs    []string          `json:"new_args,omitempty"` // what rastrillo new was given before the name
 	BudgetUSD  float64           `json:"budget_usd"`
 	Timeout    string            `json:"timeout"`
 	Dry        bool              `json:"dry"`
@@ -546,7 +547,7 @@ type provenance struct {
 }
 
 func writeProvenance(ctx context.Context, c config, commit, vdir, export, tasksDir string) error {
-	p := provenance{Variant: c.name, VariantDir: c.variant, Model: c.model, BudgetUSD: c.budget,
+	p := provenance{Variant: c.name, VariantDir: c.variant, Model: c.model, NewArgs: c.newArgs, BudgetUSD: c.budget,
 		Timeout: c.timeout.String(), Dry: c.dry, Started: time.Now().Format(time.RFC3339)}
 	p.Commit = commit
 	p.Skill, p.Tasks = hashTree(export, "SKILL.md", "skill"), hashTree(tasksDir, ".")

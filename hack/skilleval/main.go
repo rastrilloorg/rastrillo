@@ -49,6 +49,7 @@ import (
 type config struct {
 	repo, variant, name, out, model string
 	tasks                           []string
+	newArgs                         []string // extra arguments to rastrillo new, before the app's name
 	reps, jobs                      int
 	budget                          float64
 	timeout                         time.Duration
@@ -73,6 +74,8 @@ func main() {
 	flag.IntVar(&c.reps, "reps", 1, "runs per task")
 	flag.IntVar(&c.jobs, "j", 2, "runs at once")
 	flag.StringVar(&c.model, "model", "sonnet", "claude -p --model")
+	var newArgs string
+	flag.StringVar(&newArgs, "new", "", "extra arguments to rastrillo new, space-separated (e.g. --auth=magic): the app every run starts from")
 	flag.Float64Var(&c.budget, "budget", 6, "claude -p --max-budget-usd, per run")
 	flag.DurationVar(&c.timeout, "timeout", 45*time.Minute, "wall-clock limit per agent run")
 	flag.StringVar(&c.out, "out", "", "results directory (default ~/.cache/skilleval/<time>); reuse it to compare variants")
@@ -81,6 +84,7 @@ func main() {
 	flag.StringVar(&summarize, "summarize", "", "print the summary of an existing results directory and exit")
 	flag.StringVar(&retally, "retally", "", "re-read an existing results directory's transcripts with the current classifier, then summarize")
 	flag.Parse()
+	c.newArgs = strings.Fields(newArgs)
 	log.SetFlags(log.Ltime)
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
@@ -296,7 +300,7 @@ func preflight(ctx context.Context, c config, bin, export, vdir string) error {
 		return err
 	}
 	defer logf.Close()
-	app, err := scaffold(ctx, bin, export, dir, "preflight", logf)
+	app, err := scaffold(ctx, bin, export, dir, "preflight", c.newArgs, logf)
 	if err != nil {
 		return err
 	}
@@ -313,10 +317,10 @@ func preflight(ctx context.Context, c config, bin, export, vdir string) error {
 // a module-cache copy: a baseline agent read go.mod, opened that older
 // copy, and followed a SKILL.md that predated the feature it was asked
 // to build.
-func scaffold(ctx context.Context, bin, export, dir, appName string, logf *os.File) (string, error) {
+func scaffold(ctx context.Context, bin, export, dir, appName string, newArgs []string, logf *os.File) (string, error) {
 	app := filepath.Join(dir, appName)
 	for _, step := range [][]string{
-		{dir, bin, "new", appName},
+		append(append([]string{dir, bin, "new"}, newArgs...), appName),
 		{app, "go", "mod", "edit", "-replace", "amadan.net/rastrillo/rastrillo=" + export,
 			"-require", "amadan.net/rastrillo/rastrillo@v0.0.0-00010101000000-000000000000"},
 		{app, "go", "mod", "tidy"},

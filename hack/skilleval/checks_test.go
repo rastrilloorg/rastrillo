@@ -188,6 +188,11 @@ func TestChecks(t *testing.T) {
 		{"scheme comment after division by a variable named of", "scheme", map[string]string{
 			"internal/app/static/s.js": "const of = 8; const options = {...of / 2}; // do not use localStorage\n",
 		}, true},
+		// An app made with --auth=magic already has the owned seam; an
+		// agent scopes through it rather than calling scope itself.
+		{"expenses through the scaffold's owned seam", "expenses", map[string]string{
+			"internal/app/handlers.go": "package app\n\nfunc list() { q := a.owned(r).Find(&es); f := form.Field{Kind: form.Money} }\n",
+		}, true},
 		{"scheme data-theme traded for a toggle", "scheme", map[string]string{
 			"internal/app/templates/layout.html": "<html>\n{{template \"scheme-menu\" .}}\n<script>localStorage.setItem('t','dark')</script>\n</html>\n",
 		}, false},
