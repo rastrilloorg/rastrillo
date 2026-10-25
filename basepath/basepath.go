@@ -280,16 +280,17 @@ func ProductURL(r *http.Request) string {
 	if !ok {
 		return ""
 	}
+	target := originForm(s.original)
 	if !s.direct {
 		// A product-path request's target already carries the base.
-		return s.origin + s.original
+		return s.origin + target
 	}
 	// On the direct host every byte of the target is the app's own path,
 	// so none of it is trimmed: with slug admin, /admin/x is the app's
 	// /admin/x route, at /admin/admin/x.
 	base := "/" + s.slug
-	p := Join(base, s.original)
-	if p == s.original && strings.HasPrefix(p, "/") {
+	p := Join(base, target)
+	if p == target {
 		// //x or /\x: Join leaves them alone because, as links, they
 		// name another site. As a request target they are this app's
 		// path, and sending them to the origin's //x would land the
@@ -297,4 +298,19 @@ func ProductURL(r *http.Request) string {
 		p = base + p
 	}
 	return s.origin + p
+}
+
+// originForm is a request target as a path and query. net/http accepts
+// an absolute-form target, http://host/x, and keeps it in r.RequestURI;
+// glued to the origin whole it would make
+// https://example.comhttp://host/x, a redirect to nowhere. Anything
+// with no path of its own, such as OPTIONS's *, is the root.
+func originForm(target string) string {
+	if strings.HasPrefix(target, "/") {
+		return target
+	}
+	if u, err := url.ParseRequestURI(target); err == nil && u.IsAbs() && u.Opaque == "" {
+		return u.RequestURI()
+	}
+	return "/"
 }

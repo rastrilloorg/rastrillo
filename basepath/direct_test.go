@@ -19,6 +19,12 @@ func TestDirectHostRedirectsToTheProductPath(t *testing.T) {
 		// app's page when it is a request target: sending //x to the
 		// product origin's //x would land the visitor on the hub.
 		{"GET", "cv.paulca.com", "//x", "https://example.com/acme//x"},
+		// net/http accepts an absolute-form target, and keeps it as
+		// r.RequestURI: the redirect is built from its path and query,
+		// not glued to the origin whole.
+		{"GET", "cv.paulca.com", "http://cv.paulca.com/about?x=1", "https://example.com/acme/about?x=1"},
+		{"GET", "cv.paulca.com", "http://cv.paulca.com//x", "https://example.com/acme//x"},
+		{"OPTIONS", "cv.paulca.com", "*", "https://example.com/acme"},
 	} {
 		called := false
 		rec := serve(acme, c.method, c.host, c.target, func(http.ResponseWriter, *http.Request) { called = true })
@@ -161,6 +167,26 @@ func TestProductURL(t *testing.T) {
 	})
 	if want := "https://example.com/acme/notes?x=1"; got != want {
 		t.Errorf("product path: ProductURL = %q, want %q", got, want)
+	}
+
+	// An absolute-form target on the product host: ProductURL takes its
+	// path and query, and Original still reports it as sent.
+	const absolute = "https://example.com/acme/notes?x=1"
+	got = ""
+	var original string
+	serve(acme, "GET", "example.com", absolute, func(_ http.ResponseWriter, r *http.Request) {
+		got, original = basepath.ProductURL(r), basepath.Original(r)
+	})
+	if want := "https://example.com/acme/notes?x=1"; got != want || original != absolute {
+		t.Errorf("product path, absolute-form: ProductURL = %q, Original %q; want %q, %q", got, original, want, absolute)
+	}
+
+	got = ""
+	serve(serveDirect, "GET", "cv.paulca.com", "http://cv.paulca.com/es/notes?x=1", func(_ http.ResponseWriter, r *http.Request) {
+		got = basepath.ProductURL(r)
+	})
+	if want := "https://example.com/acme/es/notes?x=1"; got != want {
+		t.Errorf("direct host, absolute-form: ProductURL = %q, want %q", got, want)
 	}
 
 	// The app's own /admin/x route, not a base to remove.
