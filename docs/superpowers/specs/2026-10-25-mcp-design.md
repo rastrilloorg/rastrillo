@@ -698,11 +698,13 @@ metadata document. This spec reserves the path
 - **Grant facts:** a fake verifier sets `Grant`, and an `Authorize` that
   checks a scope hides the tool from the list and refuses the call.
 - **The Oficina interop fixture.**
-  - Memoria's `notes_create` and `notes_search`, copied with their names,
-    descriptions, scopes, flags and schemas from `memoria`
-    `origin/feat/agent-access` `70aa5b8`
-    (`internal/memoria/agent_access.go:118-124`), as hand-written
-    descriptors in a test. Their `Invoke` is a fake store.
+  - Memoria's `notes_create` and `notes_search`, as Memoria exports them:
+    the JSON from `cmd/memoria-contract`, at a pinned commit (`c4b8be0`
+    on `origin/feat/agent-access` when this was written), committed as
+    test data. The test builds hand-written descriptors from it, with
+    the names, descriptions, scopes, flags and schemas unchanged. Their
+    `Invoke` is a fake store. Re-exporting at a newer pin is how the
+    fixture follows Memoria.
   - Their `Invoke` validates the way `Registry.Call` does: unique JSON,
     the team before anything else, the schema with exact numbers, and
     the output.
