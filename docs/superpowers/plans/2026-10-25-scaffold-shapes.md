@@ -24,6 +24,8 @@
 - SKILL.md stays under `skillCoreBudget` (8,000 bytes; 7,153 now); topics under 9,000.
 - Comments say why, naming the failure prevented. Commits: imperative subject, body says why.
 - Do not touch `examples/` (manifest retirement is a separate project) or the GORM advice (branch `gorm-measured-cost` owns it).
+- `cmd/rastrillo` has no source-size headroom: `.rastrillo/budgets.txt` holds it at 5,667, its exact count, and the counter includes Go template constants (`internal/budgetsize/size.go:27`). New scaffold templates go in `cmd/rastrillo/scaffold/` as files, never as Go constants. Any task whose Go code still raises the count moves existing constants out to files in the same commit, or raises the ceiling there with the reason appended to that line, as every previous raise did.
+- Every task's commit leaves `go test ./cmd/rastrillo/ ./perf/...` green: an existing assertion a task invalidates is rewritten in that task, not later.
 
 ## Review Focus
 
@@ -118,7 +120,7 @@ func TestUsageListsTheScaffoldFlag(t *testing.T) // runNew([]) error contains "-
 Run: `go test ./cmd/rastrillo/ -run 'TestNewRefuses(Reserved|Unknown)Shape|TestDefaultShapeIsSingle|TestUsageListsTheScaffoldFlag' -count=1`
 Expected: FAIL.
 
-- [ ] **Step 3: Implement.** runNew parses flags, fills `newOpts`, resolves the shape, runs every check that can fail (icons, theme, shell, locale, the shape's own refusals) before creating the directory, then calls `Write`. Move the body into `writeSingle` without changing what it writes.
+- [ ] **Step 3: Implement.** runNew parses flags, fills `newOpts`, resolves the shape, runs every check that can fail (icons, theme, shell, locale, the shape's own refusals) before creating the directory, then calls `Write`. Move the body into `writeSingle` without changing what it writes. This task adds Go lines to a package at its size ceiling: in this commit, move `readmeTemplate` and `agentsMDTemplate` out of `new.go` into `scaffold/README.md.tmpl` and `scaffold/AGENTS.md.tmpl` (read with `scaffoldFile`), and check `rastrillo budget size cmd/rastrillo` is at or under 5,667.
 
 - [ ] **Step 4: Run the whole command package**
 
@@ -130,7 +132,7 @@ Expected: PASS. Every existing scaffold test passes unchanged, which is the proo
 ### Task 3: Tests beside the code
 
 **Files:**
-- Modify: `cmd/rastrillo/new.go` (harness, vendored, index, browser templates; `dirs`; the files map; printed summary), `cmd/rastrillo/new_budget.go` (perf template), `cmd/rastrillo/scaffold/api_test.go.tmpl`, `cmd/rastrillo/vectorsinit.go:29-32`
+- Modify: `cmd/rastrillo/new.go` (harness, vendored, index, browser templates; `dirs`; the files map; printed summary), `cmd/rastrillo/new_budget.go` (perf template), `cmd/rastrillo/scaffold/api_test.go.tmpl`, `cmd/rastrillo/vectorsinit.go:29-32`, `cmd/rastrillo/scaffold/AGENTS.md.tmpl` (its `go test -short ./internal/<app>/... ./internal/<app>test/` line, `new.go:1604` before Task 2 moved it, becomes `go test -short ./...`), `cmd/rastrillo/scaffold/README.md.tmpl` (the browser test's location, `new.go:1272` before the move)
 - Modify: every `cmd/rastrillo/*_test.go` that reads `internal/<pkg>test/...`
 - Modify: `docs/site/testing.md`, `skill/add-signin.md` (step 3's path), `skill/screens.md`
 
@@ -166,7 +168,8 @@ Expected: PASS, including `TestScaffoldedAppTestsPass`.
 - Modify: `cmd/rastrillo/new.go`: `goModTemplate` (chi require only for accounts: take the require block as an argument), `appTemplate`, `handlersTemplate`, `overviewHandler`, `makefileTemplate` (drop `migration-check` from the target list and `ci`), the `ciScripts` map (drop `40-migration-check`), `agentsMDTemplate` (the app.go line and the `Mount(r chi.Router, deps)` advice become `Mount(mux *http.ServeMux, deps)`), the printed summary's Makefile line
 - Modify: `cmd/rastrillo/new_budget.go` (perf template uses `Patterns`)
 - Create: `cmd/rastrillo/scaffold/migrations_test.go.tmpl`
-- Modify: `cmd/rastrillo/new_scaffold_test.go` (`TestNewScaffoldsMakefileMigrationCheck` becomes `TestNewScaffoldsMigrationCheckTest`; `TestScaffoldWholeGatePassesOffline` loses the step)
+- Modify: `cmd/rastrillo/scaffold/tokens.go.tmpl` and `api_test.go.tmpl`, which import chi today (`tokens.go.tmpl:28` returns `func(chi.Router)`; `api_test.go.tmpl:80` builds a chi router), so `go mod tidy` would put chi straight back: `single`'s copies use the stdlib mux (below); `accounts` keeps today's chi versions in Task 7
+- Modify, so the package stays green in this commit: `new_test.go:185` (`TestNewPinsCLIsOwnVersions` expects a direct chi require), `new_test.go:282` (expects the `chi.Router` signature), `new_scaffold_test.go:63` (the CI step list), `new_scaffold_test.go:388` (`TestScaffoldMigratesAndPassesCheck` runs `make migration-check`; it runs `go test -run TestModelsMatchMigrations ./internal/<pkg>/` instead), `TestNewScaffoldsMakefileMigrationCheck` (becomes `TestNewScaffoldsMigrationCheckTest`), `TestScaffoldWholeGatePassesOffline` (loses the step)
 
 **Interfaces:**
 - Consumes: `perftest.ScreenConfig.Patterns` (Task 1); `newOpts`, `writeSingle` (Task 2).
@@ -176,12 +179,13 @@ Expected: PASS, including `TestScaffoldedAppTestsPass`.
   - `func Router(d *db.DB, origin string, logger *slog.Logger) (http.Handler, error)`: migrates as now, registers `routes()` on a new ServeMux, returns `csrf.Protect(origin)(mux)`.
   - `func GETPatterns() []string`: the GET entries of `(&app{}).routes()` with `"GET "` cut, for the perf test.
   - `App`, `Mux`, `Configure` keep their signatures.
+- Produces, in the scaffolded `internal/<pkg>/tokens.go` (single): `func Tokens(d *db.DB, sess *sessions.Sessions) (func(mux *http.ServeMux), error)`, registering `GET /tokens` behind `sess.Require`, `POST /tokens` behind `sess.RequireFresh(10*time.Minute)` (which includes Require, `sessions/sessions.go:417`), and `POST /tokens/revoke` behind `sess.Require`, the same guards as today. Its doc comment's wiring example becomes `tokens(mux)` before the CSRF wrap. `api_test.go`'s router becomes a ServeMux.
 - Produces, `internal/<pkg>/migrations_test.go`: `TestModelsMatchMigrations` calls `modeldiff.Generate(context.Background(), <pkg>.Schema.All(), <pkg>.Models)` and fails on any change with exactly `models and migrations disagree:\n  <sql per change>\n\nrun: rastrillo migration generate`, the CLI's text (`cmd/rastrillo/migration.go`).
 
 - [ ] **Step 1: Write the failing tests**
 
 ```go
-func TestSingleUsesTheStdlibMux(t *testing.T)          // app.go has no "go-chi"; go.mod has no direct chi require; app.go contains `"GET /{$}"`
+func TestSingleUsesTheStdlibMux(t *testing.T)          // no scaffolded .go file imports go-chi; after go mod tidy, go.mod has no direct chi require; app.go contains `"GET /{$}"`
 func TestSingleAnswers404ForUnknownPaths(t *testing.T) // scaffoldWithReplace; a generated test file asserting GET /nope is 404 passes (add it to index_test template: TestUnknownPathIs404)
 func TestNewScaffoldsMigrationCheckTest(t *testing.T)   // Makefile has no migration-check; .amadan/ci.d has no 40-migration-check; migrations_test.go exists
 func TestMigrationCheckTestCatchesDrift(t *testing.T)   // scaffold, add a field to Note in models.go, go test ./internal/<pkg>/ -run TestModelsMatchMigrations fails with "models and migrations disagree"; run rastrillo migration generate (the CLI's runMigration in-process), passes
@@ -204,15 +208,16 @@ Expected: PASS.
 ### Task 5: The `bare` shape
 
 **Files:**
-- Create: `cmd/rastrillo/scaffold/bare/{main.go,app.go,render.go,app_test.go,README.md,gitignore}.tmpl`, `cmd/rastrillo/newbare.go`, `cmd/rastrillo/newbare_test.go`
-- Modify: `cmd/rastrillo/shapes.go` (bare's `Write`)
+- Create: `cmd/rastrillo/scaffold/bare/{main.go,app.go,locale.go,render.go,app_test.go,README.md,gitignore}.tmpl`, `cmd/rastrillo/newbare.go`, `cmd/rastrillo/newbare_test.go`
+- Modify: `cmd/rastrillo/shapes.go` (bare's `Write`), `cmd/rastrillo/dev.go:226` (rebuild calls `runGenerate` unconditionally, which would write `gen/` into a bare app: run it only when the app has a `manifest/` directory)
 
 **Interfaces:**
 - Consumes: `newOpts`, the existing vendored-asset, layout, icon-set and errors-template code paths `writeSingle` uses (extract shared helpers rather than copy them).
 - Produces: `func writeBare(o newOpts) error`. The files:
   - `go.mod`: `amadan.net/rastrillo/rastrillo` only, no `tool` line (bare has no gate that runs the CLI).
-  - `cmd/<name>/main.go`: `rastrillo.Run(rastrillo.Options{Mux: <pkg>.Mux(), Logger: logger, ErrorPage: <pkg>.ErrorPage, DefaultLocale: <pkg>.Locale})` plus `_ "amadan.net/rastrillo/rastrillo/locales/<code>"`, which `locales.CheckConfig` needs at boot (`locales/config.go:111`). No `gen/`, no `manifest/`.
-  - `internal/<pkg>/app.go`: `const Locale = "<code>"`; the `route` table as in Task 4 with `"GET /{$}"`; `func Mux() *http.ServeMux` registering the routes and `GET /static/`.
+  - `cmd/<name>/main.go`: `rastrillo.Run(rastrillo.Options{Mux: <pkg>.Mux(), Logger: logger, ErrorPage: <pkg>.ErrorPage, DefaultLocale: <pkg>.Locale})`. No `gen/`, no `manifest/`.
+  - `internal/<pkg>/locale.go`: `const Locale = "<code>"` and a blank import of each pack `locales.PacksFor([]string{code})` names (`locales/config.go:16`; `pt-PT` needs `pt`, `zh-Hans` needs `zh`). It lives in the app package, not `main`, because `newPages` runs `CheckConfig` when the package loads, so the app's own tests need the pack linked too.
+  - `internal/<pkg>/app.go`: the `route` table as in Task 4 with `"GET /{$}"`; `func Mux() *http.ServeMux` registering `GET /static/` and, at `/`, the routes' own ServeMux wrapped in `pages.Middleware`, which puts the localizer `render` reads into the request (`ui/pages.go:245` refuses a nil one). When `pagesErr` is set, `/` answers `ErrorPage`'s plain 500, as `single`'s `Mux` does (`new.go:599-606`).
   - `internal/<pkg>/render.go`: today's `renderTemplate`, with `locales.CheckConfig(Locale, nil)` in place of `genlocales`.
   - templates (`layout.html`, `index.html`, `errors.html`), `static/`, `icons/`: as `single` writes them.
   - `internal/<pkg>/app_test.go`, `package <pkg>_test`: `TestIndexRenders` (200, links the fingerprinted stylesheet) and `TestUnknownPathIs404`.
@@ -224,8 +229,9 @@ Expected: PASS.
 func TestBareWritesOnlyItsFiles(t *testing.T)  // exact relative file set for the default flags (list it in the test); nothing under migrations/, manifest/, gen/, .amadan/, .rastrillo/; no Makefile, AGENTS.md, CLAUDE.md
 func TestBareGoModRequiresOnlyRastrillo(t *testing.T) // after go mod tidy: no go-chi, no gorm.io in go.mod
 func TestBarePassesItsOwnTests(t *testing.T)   // scaffoldWithReplace(t, "dash", "--scaffold", "bare"); go test ./... and go vet ./... pass
-func TestBareWithLocale(t *testing.T)          // --locale es: main.go imports locales/es, Locale is "es", its tests pass
+func TestBareWithLocale(t *testing.T)          // table: es, pt-PT, zh-Hans: locale.go imports the pack PacksFor names, Locale is the code, the app's tests pass
 func TestBareRefusesUX(t *testing.T)           // --ux standard: Task 0's text; no dir
+func TestDevLeavesABareAppBare(t *testing.T)   // one rebuild of dev's loop in a bare app writes no gen/; in a single app it still runs generate
 ```
 
 - [ ] **Step 2: Run them to see them fail**
@@ -259,10 +265,11 @@ Expected: PASS.
 
 **Files:**
 - Create: `cmd/rastrillo/scaffold/bare/app_plain.go.tmpl`, `app_plain_test.go.tmpl`
-- Modify: `cmd/rastrillo/newbare.go`, `cmd/rastrillo/shapes.go` (the refusals), `cmd/rastrillo/newbare_test.go`
+- Modify: `cmd/rastrillo/newbare.go`, `cmd/rastrillo/shapes.go` (the refusals), `cmd/rastrillo/newbare_test.go`, `cmd/rastrillo/doctor.go:380` (`findStaticDir` fails when nothing is vendored, `:488`, which aborts even `doctor --probe`)
 
 **Interfaces:**
 - Produces: with the design system off, bare writes no `render.go`, templates, `static/`, `icons/` or attribution. `app.go`'s index handler writes a short HTML page (`<!doctype html>`, `<html lang="<code>">`, a title, an `<h1>`) with `Content-Type: text/html; charset=utf-8`. `main.go` sets no `ErrorPage`.
+- Produces: doctor treats an app with no vendored static files and no `templates/layout.html` under `internal/*/` as one without a design system: it skips the vendored comparison, says so in one line, and runs every other check. An app with templates but no static files is still the error it is today.
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -271,6 +278,7 @@ func TestBarePlainWritesNoDesignSystem(t *testing.T)    // --design-system=false
 func TestBarePlainPassesItsOwnTests(t *testing.T)       // go test ./... passes: index 200 with the h1, unknown path 404
 func TestDesignFlagsRefusedWithoutDesignSystem(t *testing.T) // each of --icons, --icon-delivery, --theme, --shell with --design-system=false: Task 0's text naming the flag; no dir
 func TestDesignSystemOffRefusedForSingleAndAccounts(t *testing.T) // Task 0's text; no dir
+func TestDoctorChecksAPlainBareApp(t *testing.T)  // doctor and doctor --probe on a plain bare app succeed and say the design system is absent
 ```
 
 - [ ] **Step 2: Run them to see them fail**
@@ -295,12 +303,14 @@ Expected: FAIL.
 - Produces: `func writeAccounts(o newOpts) error`: runs `writeSingle`, then overwrites and adds files so the result is a fresh `single` with add-signin applied:
   - `go.mod` with the chi require.
   - `app.go`: `Router(d *db.DB, origin string, bg *background.Group, logger *slog.Logger) (chi.Router, error)` as add-signin step 4; `App` takes `bg` in the same place.
-  - `models.go`: `User` beside `Note`; `0001_init.sql` and `schema.sql` produced by running `rastrillo migration generate` once on a scaffold and pasting the result, as `initMigrationTemplate` was.
+  - `models.go`: `User` beside `Note`, and `Note` gains `UserID int64 \`gorm:"index"\`` as in `examples/notes/internal/notes/models.go:23`; `0001_init.sql` and `schema.sql` produced by running `rastrillo migration generate` once on a scaffold and pasting the result, as `initMigrationTemplate` was.
+  - Owned routes in the signed-in group, every query through `scope.Owned(g, uid)` (`scope/scope.go:19`), the uid from the session: `GET /notes` lists the viewer's notes, `POST /notes` creates one owned by the viewer, `GET /notes/{id}` shows one or answers 404 when it is not the viewer's. These replace add-signin's placeholder `/account`, with a `templates/notes.html` page.
+  - `tokens.go`: today's chi version, wired in `Router` inside the signed-in group (its doc comment's recipe, `tokens.go.tmpl:15-27`), since this shape has the session it needs.
   - `migrations.go`: `BootSchema = migrate.Merge(sessions.Schema, pow.Schema, apitoken.Schema, Schema)`.
   - `auth.go` (add-signin step 5), `templates/signin.html` and `signup.html` (step 6), the layout's sign-out form, `render.go`'s `SignedIn`.
   - `main.go`: `bg := &background.Group{}`, `opts.Background = bg`; `<APP>_INSTANCE_KEY` read as step 4 shows.
-  - `.rastrillo/budgets.txt` with step 7's line. The perf test uses `Routes: r` (chi) and step 8's `Signin`.
-  - `signin_test.go`: `TestSignupThenAccount` (step 8's flow; then GET /account is 200) and `TestAccountNeedsSignin` (signed out, GET /account is 303 with a `Location` starting `/signin`).
+  - `.rastrillo/budgets.txt` with step 7's line. The perf test uses `Routes: r` (chi), step 8's `Signin`, and a `Paths` entry for `/notes/{id}` whose note it seeds.
+  - `signin_test.go`: `TestSignupThenNotes` (step 8's flow; then GET /notes is 200), `TestNotesNeedSignin` (signed out, GET /notes is 303 with a `Location` starting `/signin`), and `TestNotesAreOwned` (two people sign up; A creates a note; B's `GET /notes` does not list it and B's `GET /notes/<A's id>` is 404).
 
 - [ ] **Step 1: Write the failing tests** in `newaccounts_test.go`:
 
@@ -314,7 +324,7 @@ func TestAccountsMigratesAndPassesCheck(t *testing.T) // via the parametrized Te
 
 - [ ] **Step 3: Implement.** Where add-signin and this shape disagree, the shape's tests decide and Task 8 fixes the recipe.
 
-- [ ] **Step 4: Run the package and the perf lane of a scaffold.** Run: `go test ./cmd/rastrillo/ -count=1`, then in a `scaffoldWithReplace` accounts app, `go test -tags perf ./...`. Expected: PASS, `/account` measured.
+- [ ] **Step 4: Run the package and the perf lane of a scaffold.** Run: `go test ./cmd/rastrillo/ -count=1`, then in a `scaffoldWithReplace` accounts app, `go test -tags perf ./...`. Expected: PASS, `/notes` and `/notes/{id}` measured.
 
 - [ ] **Step 5: Commit** `new: an accounts shape, single with email and password sign-in`.
 
