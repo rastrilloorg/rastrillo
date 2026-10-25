@@ -156,6 +156,7 @@ type Config struct {
     Ctx          func(*http.Request) *rastrillo.Ctx
     Authorize    func(ctx context.Context, a rastrillo.Actor, o rastrillo.Operation) error // required, as for api.New
     Guard        op.ResponseGuard // optional: the app's check of what an answer discloses (section 3)
+    Guarded      bool             // require both Recheck and Guard; a connection service's apps set it
     Name         string           // the server's name in the MCP handshake, e.g. "tickets"
     Version      string           // e.g. rastrillo.BuildVersion
     Instructions string           // the app's own part; the framework's part comes first (section 7)
@@ -174,6 +175,10 @@ func New(cfg Config, ops ...op.Descriptor) (http.Handler, error)
   in section 4;
 - a `Guard` when `Gate.Verify` isn't a `Rechecker`. A guard that never
   runs would look like protection and give none;
+- with `Guarded` set, a `Gate.Verify` that isn't a `Rechecker`, or a nil
+  `Guard`. That is Oficina's rule for `HTTPGuarded`
+  (`O/http_guarded.go:21-24`): an app whose answers need an item-level
+  check can't start without one by mistake;
 - two descriptors whose tool names (section 5) are equal.
 
 It serves exactly the descriptors it is given. For a generated app that
@@ -319,6 +324,11 @@ type ResponseGuard func(ctx context.Context, a rastrillo.Actor, d *Descriptor, i
    - `Recheck` runs.
    - The fresh actor's `Subject`, `Agent`, `Credential` and `Grant` (ID,
      issuers and audience) must equal the original's.
+   - The gate copies the original's `Session` and `Harness` onto the fresh
+     actor before anything else reads it. Those come from the request's
+     headers, never from a verifier (`api/tree.go:306-311`), so a
+     `Recheck` returns them empty, and without the copy an agent's write
+     that passed `RequireAgentSession` would fail it on the way out.
    - `Admit` and `op.Check` pass again, with the fresh actor, for the
      operation that ran.
    - For the tool list, they pass again for every tool that was listed.
@@ -504,7 +514,10 @@ Idempotent  bool // calling it twice with the same input leaves the same state a
      output schema (`mcp/server.go:299`), but protocol revision 2025-06-18
      requires an object, and clients built to it may reject anything else.
    - Numbers survive intact: the result is encoded with json v2 and never
-     goes through float64.
+     goes through float64. The encoder writes `encoding/json`'s
+     `json.Number` as a number. json v2 would otherwise quote it, since it
+     is a named string, and Oficina's `Registry.Call` returns its results
+     decoded with `json.Number` (`O/operation.go:164`, `O/json.go:18`).
 10. **The size cap.** A result over `MaxResult` (default 2 MiB) is replaced
    with a tool error: "Ask for less: pass a smaller limit or a narrower
    query." Tito Go returns the same (`T/internal/mcpapi/mcpapi.go:285-296`).
@@ -670,7 +683,10 @@ metadata document. This spec reserves the path
   - A guard that takes longer than the deadline and then returns nil
     fails the check.
   - Rechecks leave `apitoken`'s `last_used` alone.
-  - `New` refuses a `Guard` with a verifier that can't recheck.
+  - An agent's write with `RequireAgentSession` set, and a session, goes
+    out whole with rechecking on.
+  - `New` refuses a `Guard` with a verifier that can't recheck, and with
+    `Guarded` set, a missing guard or rechecker.
 - **Flags:** generated updates are listed destructive and not
   idempotent, a replaced create is listed destructive, and the fence
   refuses an unmarked `notes.purge`.
@@ -687,6 +703,8 @@ metadata document. This spec reserves the path
     the output.
   - They run through `mcp.New` with a fake connection-service verifier and
     rechecker, and a guard that checks the input's team.
+  - A result holding `json.Number` 9007199254740993 comes out as that
+    number, unquoted, in both `structuredContent` and the text block.
   - A write to a team the grant doesn't name reaches no store. An extra
     field, an out-of-range number and a bad output are refused, and an
     invalid input never reaches the store.
