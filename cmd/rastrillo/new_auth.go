@@ -120,6 +120,7 @@ func applyMagicAuth(files map[string]string, name, pkg, appDir string) error {
 		"page[\"L\"], page[\"Locales\"], page[\"Return\"], page[\"Scheme\"] = req.L, req.Locales, req.Return, req.Scheme\n",
 		"page[\"L\"], page[\"Locales\"], page[\"Return\"], page[\"Scheme\"] = req.L, req.Locales, req.Return, req.Scheme\n\tpage[\"SignedIn\"], _ = r.Context().Value(signedInKey{}).(bool)\n")
 	layout := filepath.Join(appDir, "templates", "layout.html")
+	stageShell := false
 	if s, ok := files[layout]; ok {
 		at := strings.Index(s, `{{block "scheme" .}}`)
 		end := -1
@@ -134,7 +135,9 @@ func applyMagicAuth(files map[string]string, name, pkg, appDir string) error {
 		// it reaches the sign-in screen through its own links.
 		if end < 0 && !strings.Contains(s, `{{block "backdrop"`) {
 			errs = append(errs, layout+": no scheme menu block to sit beside")
-		} else if end >= 0 {
+		} else if end < 0 {
+			stageShell = true
+		} else {
 			files[layout] = s[:end] + `{{if opt $ "SignedIn"}}<form method="post" action="/signout"><button rst-btn>Sign out</button></form>{{else}}<a href="/signin" rst-btn>Sign in</a>{{end}}` + s[end:]
 		}
 	}
@@ -201,12 +204,18 @@ func newAppWithMail(t *testing.T) (http.Handler, *outbox) {
 	files[filepath.Join(appDir, "templates", "signin.html")] = scaffoldFile("signin.html")
 	files[filepath.Join(appDir, "templates", "stage.html")] = string(stage)
 	files[filepath.Join(testDir, "signin_test.go")] = fill(scaffoldFile("signin_test.go.tmpl"))
+	if stageShell {
+		swap(filepath.Join(testDir, "signin_test.go"),
+			"if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `action=\"/signout\"`) {\n\t\tt.Fatalf(\"signed-in /account = %d, want 200 with a sign-out form:\\n%s\", rec.Code, rec.Body)",
+			"// The stage shell has no header, so no sign-out form to look for.\n\tif rec.Code != http.StatusOK {\n\t\tt.Fatalf(\"signed-in /account = %d, want 200:\\n%s\", rec.Code, rec.Body)")
+	}
 
 	// The inherited text that says otherwise, fixed where it stands.
 	agents := filepath.Join(name, "AGENTS.md")
 	swap(agents, "- Every query touching user-owned rows goes through `scope.Owned` —\n  reads AND writes, transactions included.",
-		"- Every query touching user-owned rows goes through `a.owned(r)`\n  (auth.go) — reads AND writes, transactions included — and a new row\n  sets `Owner: ownerOf(r)`.")
+		"- Every query touching user-owned rows goes through `a.owned(r)`\n  (auth.go) — reads AND writes — and a new row sets\n  `Owner: ownerOf(r)`. Inside a transaction scope the callback's `tx`\n  instead, `scope.OwnedBy(tx, \"owner\", ownerOf(r))`: `a.owned(r)`\n  there waits on the writer connection the transaction holds.")
 	swap(agents, "- Screens work with JavaScript disabled;", "- Screens work with JavaScript disabled, except the sign-in screen,\n  whose proof of work needs it;")
+	swap(agents, "never dependent on JavaScript to be usable.", "never dependent on JavaScript to be usable,\nexcept to sign in.")
 	swap(filepath.Join(appDir, "models.go"), "touching user-owned rows goes through scope.Owned (SKILL.md) — reads",
 		"touching user-owned rows goes through a.owned(r) (auth.go) — reads")
 	swap(filepath.Join(appDir, "tokens.go"), "which a new app does not have yet. Once it does\n// (examples/notes in the rastrillo repository shows how), add this to\n// Router after csrf.Protect:",

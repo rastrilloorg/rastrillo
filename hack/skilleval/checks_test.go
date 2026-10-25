@@ -200,6 +200,9 @@ func TestChecks(t *testing.T) {
 			"internal/app/auth.go":   "package app\n\nfunc (a *app) owned(r *http.Request) *gorm.DB { return scope.OwnedBy(a.db.G, \"owner\", ownerOf(r)) }\n",
 			"manifest/expenses.toml": "scope = \"user\"\n[[fields]]\nkind = \"money\"\n",
 		}, true},
+		{"expenses handler added beside the seam in auth.go", "expenses", map[string]string{
+			"internal/app/auth.go": "package app\n\nfunc (a *app) owned(r *http.Request) *gorm.DB { return scope.OwnedBy(a.db.G, \"owner\", ownerOf(r)) }\nfunc (a *app) account() { a.owned(r).Count(&n) }\nfunc (a *app) expenses() { a.owned(r).Find(&es); f := form.Field{Kind: form.Money} }\n",
+		}, true},
 		{"expenses only removing the account page", "expenses", map[string]string{
 			"internal/app/auth.go":     "package app\n\nfunc (a *app) owned(r *http.Request) *gorm.DB { return scope.OwnedBy(a.db.G, \"owner\", ownerOf(r)) }\n",
 			"internal/app/handlers.go": "package app\n\nfunc list() { q := db.Find(&es); f := form.Field{Kind: form.Money} }\n",

@@ -8,7 +8,6 @@ import (
 	"html/template"
 	"net/http"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -157,18 +156,22 @@ func (a *app) signedIn(next http.Handler) http.Handler {
 }
 
 // ownerOf is the signed-in person as an owned row records them: the
-// verified address, lowercased so Ada@example.com and ada@example.com
-// own the same rows. Set Owner from it when creating a row.
+// verified address exactly as auth gives it. Never lowercase it here:
+// the part before @ can be case-sensitive, and folding it would hand
+// Ada@example.com's rows to a different mailbox, ada@example.com. Set
+// Owner from it when creating a row.
 func ownerOf(r *http.Request) string {
 	id, _ := auth.From(r)
-	return strings.ToLower(id.Address)
+	return id.Address
 }
 
 // owned is the one seam every read and write of an owned row goes
 // through. Under magic links the session's subject is the verified
 // address, so owned rows carry it in an Owner column. Never
 // sessions.UserID here: it would read (0, false) and scope every query
-// to nobody.
+// to nobody. Inside a transaction, scope the callback's tx instead,
+// scope.OwnedBy(tx, "owner", ownerOf(r)): a.db.G there waits on the
+// writer connection the transaction holds.
 func (a *app) owned(r *http.Request) *gorm.DB {
 	return scope.OwnedBy(a.db.G, "owner", ownerOf(r))
 }

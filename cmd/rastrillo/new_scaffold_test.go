@@ -745,6 +745,9 @@ func TestScaffoldMagicAuthFitsEveryShell(t *testing.T) {
 			t.Errorf("rastrillo new --auth=magic --shell=%s: %v", shell, err)
 		}
 	}
+	// Stage is the shell whose layout gets no control, so its own tests
+	// differ: run its whole gate.
+	scaffoldGate(t, "--auth=magic", "--shell=stage", "authapp")
 }
 
 // A new app declares one locale and already links its pack, so it

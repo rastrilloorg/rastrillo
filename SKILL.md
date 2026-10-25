@@ -94,6 +94,8 @@ builds `ui.Pages` once at boot; a new page goes in its list
 One seam, every read and write (`a.db` is the scaffold's `*db.DB`;
 `.G` is its `*gorm.DB`): `func (a *app) owned(r *http.Request) *gorm.DB
 { uid, _ := sessions.UserID(r); return scope.Owned(a.db.G, uid) }`.
+An `--auth=magic` app has it already (`auth.go`), over an `Owner`
+address column: create rows with `Owner: ownerOf(r)`, never `UserID`.
 `scope.Owned(g, owner)` adds `WHERE user_id = ?`; `scope.OwnedBy(g,
 column, owner)` takes another owner column, panicking unless plain
 `lower_snake` (it is interpolated into SQL). Never

@@ -2,6 +2,7 @@ package __PKG__test
 
 import (
 	"context"
+	"html"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -32,6 +33,7 @@ func (o *outbox) Send(_ context.Context, _, _, body string) error {
 var (
 	linkRE         = regexp.MustCompile(`/auth/verify\?token=[A-Za-z0-9_-]+`)
 	confirmTokenRE = regexp.MustCompile(`name="token" value="([^"]+)"`)
+	confirmFormRE  = regexp.MustCompile(`<form[^>]*method="post"[^>]*action="([^"]+)"|<form[^>]*action="([^"]+)"[^>]*method="post"`)
 )
 
 // link is the newest sign-in link the outbox holds.
@@ -63,12 +65,14 @@ func signIn(t *testing.T, h http.Handler, box *outbox, address string) *http.Coo
 	link := box.link(t)
 	confirm := get(t, h, link)
 	m := confirmTokenRE.FindStringSubmatch(confirm.Body.String())
-	if confirm.Code != http.StatusOK || m == nil {
+	f := confirmFormRE.FindStringSubmatch(confirm.Body.String())
+	if confirm.Code != http.StatusOK || m == nil || f == nil {
 		t.Fatalf("GET %s = %d, want 200 with a Sign in form:\n%s", link, confirm.Code, confirm.Body)
 	}
-	rec := post(t, h, "/auth/verify", url.Values{"token": {m[1]}})
+	action := html.UnescapeString(f[1] + f[2])
+	rec := post(t, h, action, url.Values{"token": {html.UnescapeString(m[1])}})
 	if rec.Code != http.StatusSeeOther {
-		t.Fatalf("POST /auth/verify = %d, want 303", rec.Code)
+		t.Fatalf("POST %s = %d, want 303", action, rec.Code)
 	}
 	for _, c := range rec.Result().Cookies() {
 		if strings.Contains(c.Name, "session") && c.Value != "" {
