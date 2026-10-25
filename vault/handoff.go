@@ -4,8 +4,10 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
+	"log/slog"
 	"net/http"
 
+	"amadan.net/rastrillo/rastrillo/basepath"
 	"amadan.net/rastrillo/rastrillo/crypto"
 	"amadan.net/rastrillo/rastrillo/sessions"
 )
@@ -106,11 +108,30 @@ type Handoff struct {
 	SigninPath string
 }
 
+// pathRouted answers 404 under a base path or on its direct host, and
+// logs it, to the default logger because Handoff has none. Every tenant
+// on a shared origin would set the same root __Host- session cookie, so
+// a restore here would sign the reader out of the hub and every other
+// tenant, and an enrolled token would name the bare origin they all
+// share (spec §6.3: tenants verify, never mint; see
+// sessions.ErrPathRouted). A tenant signs people in through its hub.
+func pathRouted(w http.ResponseWriter, r *http.Request) bool {
+	if !basepath.PathRouted(r) {
+		return false
+	}
+	slog.Error("rastrillo/vault: sign-in refused under a base path; sign in at the hub", "path", basepath.Path(r, r.URL.Path))
+	http.NotFound(w, r)
+	return true
+}
+
 // Enrol answers the payload a signed-in browser carries to the home's
 // enrol page: a fresh Method:"vault" session token for this instance
 // — never the browser's own cookie — plus the origin the entry names.
 // POST only; mount behind sessions.Require.
 func (h Handoff) Enrol(w http.ResponseWriter, r *http.Request) {
+	if pathRouted(w, r) {
+		return
+	}
 	if r.Method != http.MethodPost {
 		http.Error(w, "POST required", http.StatusMethodNotAllowed)
 		return
@@ -152,6 +173,9 @@ func (h Handoff) Enrol(w http.ResponseWriter, r *http.Request) {
 // the signin page with no cookie — restore failure is a signin
 // prompt, never an error page. POST only, signed-out.
 func (h Handoff) Restore(w http.ResponseWriter, r *http.Request) {
+	if pathRouted(w, r) {
+		return
+	}
 	if r.Method != http.MethodPost {
 		http.Error(w, "POST required", http.StatusMethodNotAllowed)
 		return

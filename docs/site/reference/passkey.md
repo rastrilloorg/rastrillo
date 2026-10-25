@@ -62,6 +62,8 @@ present. A finished registration rotates the session the same way: the
 ceremony proved the new passkey as surely as an assertion would. The Gate
 flow suffixes the same two words onto the first factor.
 
+Under a [`basepath`](/docs/reference/basepath), and on the app's direct host, every endpoint answers 404 and logs an error, because a tenant there signs people in through its hub.
+
 ## Discover: the passkey as the front door
 
 A passkey asserted with user verification has already proved possession

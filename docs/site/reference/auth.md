@@ -160,6 +160,7 @@ type SigninState struct {
 	ReturnTo    string
 	Proof       *pow.Form
 	Passkey     *PasskeyDoor
+	Unavailable bool
 }
 func (s SigninState) Door() string
 func (s SigninState) Focus() string
@@ -222,6 +223,10 @@ viewer with `From` and map the address to your user row's id first.
 
 `Identity` is an alias for `signin.Identity`, the same value the
 upstream ceremony produces, so it cannot drift from it.
+
+## Under a base path
+
+Under a [`basepath`](/docs/reference/basepath), and on the app's direct host, a tenant has no sign-in of its own: the hub signs people in. Every handler above answers 404 there, and logs an error, before it reads a cookie, writes a row or sends a link. `SendLink` takes no request, so it is not refused. `SigninState` returns a state with `Unavailable` set and nothing else, and the `signin` partial renders nothing for it; a page of your own should draw no form. On the direct host, `RequireSession` and `RequireFreshSession` send a signed-out `GET` or `HEAD` to the same page under the product path, `basepath.ProductURL`, and answer the platform's own calls 403. Under the base path they still send it to `SigninPath`, which answers 404 there, as does the sign-in page a row-store tenant's `sessions.Require` sends readers to: such a tenant has no sign-in under a base path, by design.
 
 ## Odds and ends
 

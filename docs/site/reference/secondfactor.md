@@ -86,6 +86,8 @@ Only a factor whose proof can be guessed needs `Strike`. A signature
 over a fresh challenge cannot be, so passkey never calls it; totp calls
 it on every wrong code.
 
+Under a [`basepath`](/docs/reference/basepath), and on the app's direct host, `Hold` and `Complete` return `sessions.ErrPathRouted` and `SignInRecovery` answers 404, so nothing is held or minted: a tenant there signs people in through its hub.
+
 ## Recovery codes
 
 ```go

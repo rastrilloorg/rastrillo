@@ -45,6 +45,7 @@ import (
 	"strings"
 	"time"
 
+	"amadan.net/rastrillo/rastrillo/basepath"
 	"amadan.net/rastrillo/rastrillo/migrate"
 	"amadan.net/rastrillo/rastrillo/sessions"
 )
@@ -224,6 +225,14 @@ func (g *Gate) setCookie(w http.ResponseWriter, value string, maxAge int) {
 // a remembered browser — and the same rule applies: nothing is minted
 // unless a factor completes it.
 func (g *Gate) Hold(w http.ResponseWriter, r *http.Request, sess sessions.Session) (bool, error) {
+	if basepath.PathRouted(r) {
+		// Every tenant on a shared origin would set the same root
+		// __Host- cookie, so a half-session held here would replace the
+		// hub's or a sibling's (spec §6.3: tenants verify, never mint;
+		// see sessions.ErrPathRouted). A tenant signs people in through
+		// its hub, so nothing is held, completed or recovered here.
+		return false, sessions.ErrPathRouted
+	}
 	enrolled, err := g.Enrolled(sess.Subject)
 	if err != nil {
 		return false, err
@@ -245,6 +254,16 @@ func (g *Gate) Hold(w http.ResponseWriter, r *http.Request, sess sessions.Sessio
 	g.setCookie(w, token, int(pendingTTL.Seconds()))
 	http.Redirect(w, r, g.cfg.ConfirmPath, http.StatusSeeOther)
 	return true, nil
+}
+
+// pathRouted is Hold's refusal for an HTTP entry point: 404, logged.
+func (g *Gate) pathRouted(w http.ResponseWriter, r *http.Request) bool {
+	if !basepath.PathRouted(r) {
+		return false
+	}
+	g.cfg.Logger.Error("rastrillo/secondfactor: sign-in refused under a base path; sign in at the hub", "path", basepath.Path(r, r.URL.Path))
+	http.NotFound(w, r)
+	return true
 }
 
 // Pending is one live half-session: who is waiting, how their first
@@ -288,6 +307,9 @@ func (g *Gate) Pending(r *http.Request) (Pending, bool) {
 // which is exactly what sessions.RequireFresh checks. The caller has
 // verified the proof; this is the part it must not get wrong.
 func (g *Gate) Complete(w http.ResponseWriter, r *http.Request, p Pending, factor string) error {
+	if basepath.PathRouted(r) {
+		return sessions.ErrPathRouted
+	}
 	var consumed string
 	if err := g.cfg.DB.QueryRow(
 		`DELETE FROM secondfactor_pending WHERE token_hash = ? RETURNING subject`,

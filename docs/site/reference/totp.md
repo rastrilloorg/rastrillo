@@ -92,6 +92,8 @@ which is the point — and rotates the session fresh with `Method`
 `return_to`, else `/`; a miss to `Config.StepUpFailedPath` with
 `return_to` carried along.
 
+Under a [`basepath`](/docs/reference/basepath), and on the app's direct host, both answer 404 and log an error, because a tenant there signs people in through its hub.
+
 ## Guessing
 
 Six digits is a million-code space, and a code stays valid for the

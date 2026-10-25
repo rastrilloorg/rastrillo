@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"amadan.net/rastrillo/rastrillo/basepath"
 	"amadan.net/rastrillo/rastrillo/crypto"
 	"amadan.net/rastrillo/rastrillo/migrate"
 	"amadan.net/rastrillo/rastrillo/secondfactor"
@@ -236,6 +237,21 @@ func (h *Handlers) verify(subject, submitted string, confirmed bool) (int64, err
 	return step, nil
 }
 
+// pathRouted answers 404 under a base path or on its direct host, and
+// logs it. Every tenant on a shared origin would set the same root
+// __Host- session cookie, so a code accepted here would sign the reader
+// out of the hub and every other tenant (spec §6.3: tenants verify,
+// never mint; see sessions.ErrPathRouted). A tenant signs people in
+// through its hub. It runs before any code is checked or spent.
+func (h *Handlers) pathRouted(w http.ResponseWriter, r *http.Request) bool {
+	if !basepath.PathRouted(r) {
+		return false
+	}
+	h.cfg.Logger.Error("rastrillo/totp: sign-in refused under a base path; sign in at the hub", "path", basepath.Path(r, r.URL.Path))
+	http.NotFound(w, r)
+	return true
+}
+
 // SignIn is POST /totp/signin: verify the form's "code" against the
 // pending half-session's subject and complete it through the Gate —
 // the real session is the first factor's method plus "+totp". A miss
@@ -244,6 +260,9 @@ func (h *Handlers) verify(subject, submitted string, confirmed bool) (int64, err
 // Gate's confirm page with ?totp=failed, or ?totp=exhausted once the
 // budget is spent; which digits were wrong is never said.
 func (h *Handlers) SignIn(w http.ResponseWriter, r *http.Request) {
+	if h.pathRouted(w, r) {
+		return
+	}
 	if r.Method != http.MethodPost {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
@@ -289,6 +308,9 @@ func (h *Handlers) SignIn(w http.ResponseWriter, r *http.Request) {
 // form's same-site return_to (else "/"); a miss to StepUpFailedPath
 // with return_to carried along, after the per-subject budget.
 func (h *Handlers) StepUp(w http.ResponseWriter, r *http.Request) {
+	if h.pathRouted(w, r) {
+		return
+	}
 	if r.Method != http.MethodPost {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
