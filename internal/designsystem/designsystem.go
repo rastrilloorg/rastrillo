@@ -406,7 +406,7 @@ var declPattern = regexp.MustCompile(`(--rst-[a-z0-9-]+)\s*:\s*([^;]+);`)
 // for a hex. Without these, a derived colour rendered as a row of text
 // with a hole where its swatch should be. Both allow nested parens,
 // which a color-mix() over two var()s always has.
-var colourValue = regexp.MustCompile(`^(#[0-9a-fA-F]{3}|#[0-9a-fA-F]{6}|rgba?\([^()]*\)|hsla?\([^()]*\)|color-mix\(.*\)|var\(--rst-[a-z0-9-]+\))$`)
+var colourValue = regexp.MustCompile(`^(#[0-9a-fA-F]{3}|#[0-9a-fA-F]{6}|rgba?\([^()]*\)|hsla?\([^()]*\)|color-mix\(.*\)|oklch\(from .*\)|var\(--rst-[a-z0-9-]+(, .*)?\))$`)
 
 // blockBody returns the brace-matched contents following header (which
 // must end in "{"). Theme files nest at most one level and no value in
@@ -517,7 +517,7 @@ func newGroup(title, kind string) tokenGroup {
 	return tokenGroup{Title: title, Kind: kind, ID: anchorID("tokens", title)}
 }
 
-// colourGroups splits a theme's light-block tokens into the five groups
+// colourGroups splits a theme's light-block tokens into the seven groups
 // the palette is actually authored in, with anything unrecognised
 // landing in "Other" rather than disappearing — a new token shows up on
 // the page the day it is added, in the wrong group at worst.
@@ -526,11 +526,19 @@ func colourGroups(rows []tokenRow) []tokenGroup {
 		Title    string
 		Prefixes []string
 	}{
-		{"Surfaces and lines", []string{"--rst-bg", "--rst-surface", "--rst-line", "--rst-header-rule"}},
+		{"Surfaces and lines", []string{"--rst-bg", "--rst-surface", "--rst-line", "--rst-header-rule", "--rst-rail-bg"}},
 		{"Text", []string{"--rst-text"}},
 		{"Accent", []string{"--rst-accent", "--rst-on-accent"}},
 		{"Status tones", []string{"--rst-tone-"}},
-		{"Depth", []string{"--rst-shadow", "--rst-overlay"}},
+		// The depth axis: the light, the sheen, the press strengths and
+		// the shadows. A number row draws no chip, by tokenRow's rule.
+		{"Depth", []string{"--rst-shadow", "--rst-overlay", "--rst-depth-", "--rst-light-", "--rst-sheen-", "--rst-press-"}},
+		// --rst-row-tint- is listed as well as --rst-tint-: the prefix
+		// match is anchored at the start, so without it the two row
+		// tints fall through to "Other", a heading with no translation,
+		// and the parity gate goes red.
+		{"Controls", []string{"--rst-danger-", "--rst-on-danger-", "--rst-control-", "--rst-ghost-", "--rst-summary-", "--rst-knob", "--rst-track-", "--rst-tint-", "--rst-row-tint-", "--rst-focus-", "--rst-nav-current-"}},
+		{"Type choices", []string{"--rst-title-", "--rst-heading-", "--rst-label-"}},
 	}
 	out := make([]tokenGroup, 0, len(groups)+1)
 	claimed := map[string]bool{}

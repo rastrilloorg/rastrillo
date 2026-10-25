@@ -722,7 +722,9 @@ func TestNoGalleryPageLoadsTheEnhancementScripts(t *testing.T) {
 	for _, theme := range ui.ThemeNames() {
 		for _, locale := range rastrillo.BaseLocales() {
 			for _, name := range galleryFiles(theme, locale) {
-				for _, s := range []string{"select.js", "calendar.js", "datetime.js"} {
+				// light.js is here too: a gallery page's own buttons do
+				// not light, the previews' do.
+				for _, s := range []string{"select.js", "calendar.js", "datetime.js", "light.js"} {
 					if strings.Contains(string(files[name]), `src="`+assetHref(s)+`"`) {
 						t.Errorf("%s loads %s, which nothing on the page uses", name, s)
 					}
@@ -1056,7 +1058,8 @@ func TestNoGalleryPageOpensAModalOverTheGallery(t *testing.T) {
 func TestTreeShapeIsComplete(t *testing.T) {
 	files := render(t)
 	want := []string{"index.html"}
-	for _, name := range []string{"tokens.css", "rastrillo.js", "busy.js", "anchor.js", "shell.js", "shell.css", "select.js", "datetime.js", "calendar.js", "gallery.js", "gallery.css"} {
+	for _, name := range []string{"tokens.css", "rastrillo.js", "busy.js", "light.js", "anchor.js", "shell.js", "shell.css", "select.js", "datetime.js", "calendar.js", "gallery.js", "gallery.css",
+		"sample-checkout.svg", "sample-pricing.svg", "sample-logo.svg", "sample-banner.svg"} {
 		want = append(want, hashedNames()[name], name)
 	}
 	for _, theme := range ui.ThemeNames() {
@@ -1119,7 +1122,7 @@ func TestTreeShapeIsComplete(t *testing.T) {
 // tokens.css and theme-<theme>.css by name.
 func TestEveryAssetIsWrittenHashedAndPlainAndPagesLinkTheHash(t *testing.T) {
 	files := render(t)
-	hashed := regexp.MustCompile(`^([a-z-]+)\.([0-9a-f]{16})\.(css|js)$`)
+	hashed := regexp.MustCompile(`^([a-z-]+)\.([0-9a-f]{16})\.(css|js|svg)$`)
 	hashes, plains := 0, 0
 	for name, body := range files {
 		if strings.Contains(name, "/") || name == "index.html" {
@@ -1149,8 +1152,8 @@ func TestEveryAssetIsWrittenHashedAndPlainAndPagesLinkTheHash(t *testing.T) {
 		t.Errorf("%d hashed and %d plain assets at the tree root, the tree ships %d of each", hashes, plains, want)
 	}
 	// The pages link the hashed names, never a plain one: every href or
-	// src under the mount that ends .css or .js.
-	ref := regexp.MustCompile(`(?:href|src)="` + regexp.QuoteMeta(mountPrefix) + `([^"/]+\.(?:css|js))"`)
+	// src under the mount that ends .css, .js or .svg.
+	ref := regexp.MustCompile(`(?:href|src)="` + regexp.QuoteMeta(mountPrefix) + `([^"/]+\.(?:css|js|svg))"`)
 	links := 0
 	for name, body := range files {
 		if !strings.HasSuffix(name, ".html") {
@@ -1224,6 +1227,7 @@ func TestEnhancedControlsAreOnTheComponentPages(t *testing.T) {
 		{"data-rst-date", "datetime.js"},
 		{"data-rst-time", "datetime.js"},
 		{"data-rst-range", "datetime.js"},
+		{"rst-btn", "light.js"},
 	} {
 		var found bool
 		for _, doc := range frames {
@@ -1884,7 +1888,9 @@ func TestNoEnglishProseReachesATranslatedPage(t *testing.T) {
 
 	sentences := make([]string, 0, len(keys))
 	for _, key := range keys {
-		if len([]rune(key)) >= proseLeakFloor {
+		// A draft's translations are the English, on purpose and for
+		// now; TestProseDraftsAreStillDrafts holds that to being true.
+		if len([]rune(key)) >= proseLeakFloor && !proseDrafts[key] {
 			sentences = append(sentences, key)
 		}
 	}
@@ -1898,15 +1904,130 @@ func TestNoEnglishProseReachesATranslatedPage(t *testing.T) {
 			t.Errorf("%s is empty", name)
 			continue
 		}
-		for _, s := range proseSentinels {
-			if strings.Contains(page, s) {
-				t.Errorf("%s still says %q", name, s)
+		for _, s := range englishLeaks(page, proseSentinels) {
+			t.Errorf("%s still says %q", name, s)
+		}
+		for _, key := range englishLeaks(page, sentences) {
+			t.Errorf("%s carries the English %q", name, key)
+		}
+	}
+}
+
+// englishLeaks reports which of keys page carries: as written, or as
+// html/template writes it into a page. A key with a quote or an
+// apostrophe in it reaches the page as &#34; and &#39;, so a sweep
+// for the raw key alone read an English value left in such a
+// translation as absent, and parity asks only that the value is not
+// empty (Astra, round two). The escaped form comes from html/template
+// itself, not from a hand-kept list of characters: HTMLEscapeString
+// leaves a plus sign alone and the engine writes &#43;, so the key
+// with "section-header + card" in it slipped past the list (round
+// three), and the next character the engine escapes and the list does
+// not would slip past it the same way.
+func englishLeaks(page string, keys []string) []string {
+	var out []string
+	for _, key := range keys {
+		if strings.Contains(page, key) || strings.Contains(page, asRendered(key)) {
+			out = append(out, key)
+		}
+	}
+	return out
+}
+
+// asRendered is s as html/template writes it as the text of an
+// element, which is how every prose key reaches a page.
+func asRendered(s string) string {
+	var b strings.Builder
+	if err := renderedText.Execute(&b, s); err != nil {
+		panic(err)
+	}
+	return b.String()
+}
+
+var renderedText = template.Must(template.New("").Parse("{{.}}"))
+
+// leakRegressionKeys are the keys the raw sweep, and then the
+// hand-listed escaping, could not see: the two media-grid notes with
+// their quotes and apostrophe, and the screens-are-columns rule with
+// its plus signs.
+func leakRegressionKeys(t *testing.T) []string {
+	t.Helper()
+	keys := mediaGridNotes(t)
+	const plus = "section-header + card"
+	for key := range prose {
+		if strings.Contains(key, plus) {
+			keys = append(keys, key)
+		}
+	}
+	if len(keys) != 3 {
+		t.Fatalf("found %d keys for the regression, want the two notes and the one carrying %q", len(keys), plus)
+	}
+	return keys
+}
+
+// mediaGridNotes are the two notes beside the media-grid sample, both
+// of which carry a quote or an apostrophe: the keys the sweep could
+// not see when it read the raw page.
+func mediaGridNotes(t *testing.T) []string {
+	t.Helper()
+	var notes []string
+	for _, fam := range families() {
+		for _, doc := range fam.Partials {
+			if doc.Name != "media-grid" {
+				continue
+			}
+			for _, st := range doc.States {
+				if st.Note != "" {
+					notes = append(notes, st.Note)
+				}
 			}
 		}
-		for _, key := range sentences {
-			if strings.Contains(page, key) {
-				t.Errorf("%s carries the English %q", name, key)
-			}
+	}
+	if len(notes) != 2 {
+		t.Fatalf("media-grid has %d notes, want the two this regression is about", len(notes))
+	}
+	for _, n := range notes {
+		if !strings.ContainsAny(n, `"'`) {
+			t.Fatalf("the note %q carries no quote or apostrophe, so it is not the case this regression covers", n)
+		}
+	}
+	return notes
+}
+
+// TestTheLeakSweepSeesEscapedPunctuation is the regression for the
+// hole above: each key, with its Irish translation put back to the
+// English, must be reported on every Irish page of the root theme,
+// where it is written with &#34;, &#39; or &#43; and neither the raw
+// key nor its HTMLEscapeString form appears.
+func TestTheLeakSweepSeesEscapedPunctuation(t *testing.T) {
+	for _, key := range leakRegressionKeys(t) {
+		if got := englishLeaks("<p>"+asRendered(key)+"</p>", []string{key}); len(got) != 1 {
+			t.Errorf("the rendered form of %q is not reported as a leak", key)
+		}
+		if got := englishLeaks("<p>"+key+"</p>", []string{key}); len(got) != 1 {
+			t.Errorf("the raw form of %q is not reported as a leak", key)
+		}
+		row := prose[key]
+		orig := row["ga"]
+		row["ga"] = key
+		files, err := Render(mountPath)
+		row["ga"] = orig
+		if err != nil {
+			t.Fatalf("Render with %q reverted to English: %v", key, err)
+		}
+		var ga strings.Builder
+		for _, name := range galleryFiles(RootTheme(), "ga") {
+			ga.Write(files[name])
+		}
+		page := ga.String()
+		if strings.Contains(page, key) {
+			t.Errorf("the raw English of %q is on the Irish pages, so this case does not reach the rendered form", key)
+		}
+		if strings.Contains(key, "+") && strings.Contains(page, template.HTMLEscapeString(key)) {
+			t.Errorf("HTMLEscapeString's form of %q is on the Irish pages, so this case does not prove the plus sign", key)
+		}
+		if got := englishLeaks(page, []string{key}); len(got) != 1 {
+			t.Errorf("with its Irish translation reverted to English, %q is not reported on the Irish pages", key)
 		}
 	}
 }
@@ -2141,7 +2262,7 @@ func TestGalleryScriptStaysInertAndFirstParty(t *testing.T) {
 	if strings.Contains(js, "\t") {
 		t.Error("gallery.js uses two-space indentation, not tabs")
 	}
-	// 27,416 bytes: the script with every feature the gallery gives it
+	// 30,503 bytes: the script with every feature the gallery gives it
 	// (copy buttons, search terms, keeping the reader's place, frames
 	// that show only once painted), weighed when the cap was last
 	// raised, plus 10%. The first ceilings (8 KiB, then 10 KiB,
@@ -2170,7 +2291,10 @@ func TestGalleryScriptStaysInertAndFirstParty(t *testing.T) {
 	//     followed through the rail                   +1,314 26,238
 	//   and again on hashchange, for a reader
 	//     already on the old page                       +201 26,439
-	if n := len(js); n > 27416 {
+	//   a scheme change lands in its own frame, in
+	//     the page and every frame, and a frame
+	//     late when it is the OS that flipped         +1,291 27,730
+	if n := len(js); n > 30503 {
 		t.Errorf("gallery.js is %d bytes; it is the gallery's own furniture and should stay readable in one sitting", n)
 	}
 	// The two halves of the scriptless story: the toggle is hidden
@@ -4440,5 +4564,89 @@ func TestNoTwoStatesOfAPartialRenderAlike(t *testing.T) {
 				seen[string(html)] = s.State
 			}
 		}
+	}
+}
+
+// TestProseDraftsAreStillDrafts is the gate on proseDrafts: an entry is
+// a key the page renders, with every one of its eleven translations
+// still the English, and nothing else. A key translated in one
+// language has left the drafts and must leave the set, or the leak
+// gate above goes on not checking a translation that exists. An entry
+// nothing renders is a draft of nothing.
+func TestProseDraftsAreStillDrafts(t *testing.T) {
+	rendered := map[string]bool{}
+	for _, k := range proseKeysRendered(t) {
+		rendered[k] = true
+	}
+	for key := range proseDrafts {
+		row, ok := prose[key]
+		if !ok {
+			t.Errorf("proseDrafts names %q, which prose.go does not carry", key)
+			continue
+		}
+		if !rendered[key] {
+			t.Errorf("proseDrafts names %q, which nothing on the page renders", key)
+		}
+		for _, locale := range nonEnglish() {
+			if row[locale] != key {
+				t.Errorf("proseDrafts names %q, and its %s translation is %q, not the English: take it out of the set", key, locale, row[locale])
+			}
+		}
+	}
+}
+
+// TestEverySamplePictureIsUsedOnce holds sampleImages to the tree: every
+// route it maps is a picture some sample shows, every picture under
+// samples/ is mapped by exactly one route, and every preview that shows
+// one loads the hashed asset rather than the route.
+func TestEverySamplePictureIsUsedOnce(t *testing.T) {
+	files := render(t)
+	assets := galleryAssets()
+	byAsset := map[string]int{}
+	for route, asset := range sampleImages {
+		byAsset[asset]++
+		if _, ok := assets[asset]; !ok {
+			t.Errorf("sampleImages maps %s to %s, which is not a shipped asset", route, asset)
+		}
+	}
+	for name := range assets {
+		if strings.HasSuffix(name, ".svg") && byAsset[name] != 1 {
+			t.Errorf("the sample picture %s is mapped by %d routes, want one", name, byAsset[name])
+		}
+	}
+	// The HTML tab keeps the route: that is what a reader copies.
+	var shown strings.Builder
+	for _, pk := range componentPages() {
+		for _, text := range sourceTexts(galleryPage(t, files, RootTheme(), "en", pk.Kind)) {
+			shown.WriteString(text)
+		}
+	}
+	for route := range sampleImages {
+		if !strings.Contains(shown.String(), `src="`+route+`"`) {
+			t.Errorf("no sample source on a component page shows %s; delete it from sampleImages", route)
+		}
+	}
+	var previews, pictures int
+	for _, name := range galleryFiles(RootTheme(), "en") {
+		for _, fd := range frameDocs(t, files, string(files[name])) {
+			if !isPreviewDoc(fd.Doc) {
+				continue
+			}
+			previews++
+			for route := range sampleImages {
+				if strings.Contains(fd.Doc, `src="`+route+`"`) {
+					t.Errorf("preview %s still loads %s, which this site does not serve", fd.Name, route)
+				}
+			}
+			for _, m := range regexp.MustCompile(`src="([^"]*\.svg)"`).FindAllStringSubmatch(fd.Doc, -1) {
+				pictures++
+				if _, ok := files[strings.TrimPrefix(m[1], mountPrefix)]; !ok {
+					t.Errorf("preview %s loads %s, which is not in the tree", fd.Name, m[1])
+				}
+			}
+		}
+	}
+	if previews == 0 || pictures == 0 {
+		t.Fatalf("%d previews with %d sample pictures between them; the gate is checking nothing", previews, pictures)
 	}
 }

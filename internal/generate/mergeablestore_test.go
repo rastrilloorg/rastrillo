@@ -271,3 +271,244 @@ func TestEmitStoreMergeableIsIdempotent(t *testing.T) {
 		}
 	}
 }
+
+// scopedMergeableBookmarksTOML is examples/notes' bookmarks on the
+// mergeable store: the shape whose concurrent creates used to share an
+// id and fold into one record with the later owner.
+const scopedMergeableBookmarksTOML = `name  = "bookmarks"
+route = "/bookmarks"
+store = "mergeable"
+scope = "user"
+
+[list]
+columns = [{ field = "Title" }, { field = "Link" }]
+search  = true
+
+[form]
+basics   = [{ name = "Title", required = true }, { name = "Link" }]
+advanced = [{ name = "Notes", kind = "textarea" }]
+`
+
+// TestMergeableStoreWritesRuntime runs the generated store's new writes
+// in a scratch app: concurrent creates by two owners, a partial update
+// carrying only its fields and its actor, missing and foreign records,
+// and keyset pages across a deleted cursor row.
+func TestMergeableStoreWritesRuntime(t *testing.T) {
+	app := scratchApp(t, map[string]string{"manifest/bookmarks.toml": scopedMergeableBookmarksTOML})
+	mustGenerate(t, app)
+	writeFile(t, app, "gen/store/bookmarks/writes_test.go", mergeableWritesTest)
+	if out, err := goTest(app, "./gen/store/bookmarks"); err != nil {
+		t.Fatalf("the generated store's writes:\n%s", out)
+	}
+}
+
+const mergeableWritesTest = `package bookmarksstore
+
+import (
+	"context"
+	"database/sql"
+	"encoding/json"
+	"fmt"
+	"path/filepath"
+	"sync"
+	"testing"
+
+	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/eventlog"
+)
+
+func testDB(t *testing.T) *sql.DB {
+	t.Helper()
+	var migrations []string
+	for _, m := range eventlog.Schema.All() {
+		migrations = append(migrations, m.SQL)
+	}
+	db, err := rastrillo.OpenDB(filepath.Join(t.TempDir(), "app.db"), migrations)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { db.Close() })
+	return db
+}
+
+func TestConcurrentCreatesKeepTheirOwners(t *testing.T) {
+	q := New(testDB(t))
+	ctx := context.Background()
+	owners := []string{"a", "b"}
+	ids := make([]int64, len(owners))
+	errs := make([]error, len(owners))
+	var wg sync.WaitGroup
+	for i, owner := range owners {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			ids[i], errs[i] = q.CreateBookmark(ctx, "user:"+owner, CreateBookmarkParams{Owner: owner, Title: "t-" + owner, Now: "2026-10-05T18:00:00Z"})
+		}()
+	}
+	wg.Wait()
+	for _, err := range errs {
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	if ids[0] == ids[1] {
+		t.Fatalf("both creates got id %d", ids[0])
+	}
+	for i, owner := range owners {
+		row, err := q.GetBookmark(ctx, GetBookmarkParams{ID: ids[i], Owner: owner})
+		if err != nil || row.Owner != owner || row.Title != "t-"+owner {
+			t.Fatalf("record %d = %+v, %v; want %s's", ids[i], row, err, owner)
+		}
+	}
+}
+
+// The largest id has no next: plus one wrapped to the smallest, which
+// never beat the largest, so every later create took the same wrapped
+// id and joined one record. Create refuses instead, and appends
+// nothing. (Carried from the branch's eventlog.AppendNew when main's
+// AppendUnder replaced it; the check lives in the generated nextID.)
+func TestCreateRefusesAnExhaustedID(t *testing.T) {
+	db := testDB(t)
+	ctx := context.Background()
+	log, err := eventlog.Open(db, "test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := log.Append(ctx, StreamPrefix+"9223372036854775807", "created", "app", nil); err != nil {
+		t.Fatal(err)
+	}
+	q := New(db)
+	for i := 0; i < 3; i++ {
+		if id, err := q.CreateBookmark(ctx, "user:a", CreateBookmarkParams{Owner: "a", Title: "t", Now: "2026-10-05T18:00:00Z"}); err == nil {
+			t.Errorf("attempt %d: CreateBookmark = %d; want an error, no id is left", i, id)
+		}
+	}
+	events, err := log.EventsByPrefix(ctx, StreamPrefix)
+	if err != nil || len(events) != 1 {
+		t.Fatalf("events under %s = %d, %v; want only the existing one", StreamPrefix, len(events), err)
+	}
+}
+
+func TestUpdateCarriesOnlyTheSentFieldsAndTheActor(t *testing.T) {
+	q := New(testDB(t))
+	ctx := context.Background()
+	id, err := q.CreateBookmark(ctx, "user:a", CreateBookmarkParams{Owner: "a", Title: "Old", Link: "https://x.test", Notes: "n", Now: "2026-10-05T18:00:00Z"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	title := "New"
+	agent := "agent:Claude for user:a token:k3Jx9QpL2mWa"
+	n, err := q.UpdateBookmark(ctx, agent, UpdateBookmarkParams{Title: &title, Now: "2026-10-05T19:00:00Z", ID: id, Owner: "a"})
+	if err != nil || n != 1 {
+		t.Fatalf("UpdateBookmark = %d, %v; want 1", n, err)
+	}
+	row, err := q.GetBookmark(ctx, GetBookmarkParams{ID: id, Owner: "a"})
+	if err != nil || row.Title != "New" || row.Link != "https://x.test" || row.Notes != "n" || row.UpdatedAt != "2026-10-05T19:00:00Z" {
+		t.Fatalf("after a title-only update: %+v, %v", row, err)
+	}
+	log, _, err := q.open(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	events, err := log.Events(ctx, StreamPrefix+fmt.Sprint(id))
+	if err != nil || len(events) != 2 {
+		t.Fatalf("events = %d, %v; want 2", len(events), err)
+	}
+	var keys map[string]json.RawMessage
+	if err := json.Unmarshal(events[1].Payload, &keys); err != nil {
+		t.Fatal(err)
+	}
+	for k := range keys {
+		if k != "V" && k != "title" && k != "updated_at" {
+			t.Errorf("the update event carries %q; want only V, title and updated_at", k)
+		}
+	}
+	if events[0].Actor != "user:a" || events[1].Actor != agent {
+		t.Errorf("actors = %q, %q", events[0].Actor, events[1].Actor)
+	}
+}
+
+func TestMissingForeignAndDeletedRecordsAreZero(t *testing.T) {
+	q := New(testDB(t))
+	ctx := context.Background()
+	id, err := q.CreateBookmark(ctx, "user:a", CreateBookmarkParams{Owner: "a", Title: "Mine", Now: "2026-10-05T18:00:00Z"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	title := "Theirs now"
+	for _, c := range []struct {
+		name  string
+		id    int64
+		owner string
+	}{{"missing", 999, "a"}, {"foreign", id, "b"}} {
+		if n, err := q.UpdateBookmark(ctx, "user:"+c.owner, UpdateBookmarkParams{Title: &title, Now: "x", ID: c.id, Owner: c.owner}); err != nil || n != 0 {
+			t.Errorf("%s update = %d, %v; want 0", c.name, n, err)
+		}
+		if n, err := q.DeleteBookmark(ctx, "user:"+c.owner, DeleteBookmarkParams{ID: c.id, Owner: c.owner}); err != nil || n != 0 {
+			t.Errorf("%s delete = %d, %v; want 0", c.name, n, err)
+		}
+	}
+	if n, err := q.DeleteBookmark(ctx, "user:a", DeleteBookmarkParams{ID: id, Owner: "a"}); err != nil || n != 1 {
+		t.Fatalf("delete = %d, %v; want 1", n, err)
+	}
+	if n, err := q.UpdateBookmark(ctx, "user:a", UpdateBookmarkParams{Title: &title, Now: "x", ID: id, Owner: "a"}); err != nil || n != 0 {
+		t.Errorf("update after delete = %d, %v; want 0", n, err)
+	}
+	log, _, err := q.open(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	events, err := log.Events(ctx, StreamPrefix+fmt.Sprint(id))
+	if err != nil || len(events) != 2 {
+		t.Errorf("stream has %d events, %v; want created and deleted only", len(events), err)
+	}
+}
+
+func TestListAfterPagesWithoutGapsOrRepeats(t *testing.T) {
+	q := New(testDB(t))
+	ctx := context.Background()
+	// Two rows share a created_at, so the id has to break the tie.
+	for i, at := range []string{"2026-10-01T00:00:00Z", "2026-10-02T00:00:00Z", "2026-10-02T00:00:00Z", "2026-10-03T00:00:00Z", "2026-10-04T00:00:00Z"} {
+		if _, err := q.CreateBookmark(ctx, "user:a", CreateBookmarkParams{Owner: "a", Title: fmt.Sprint("t", i), Now: at}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, err := q.CreateBookmark(ctx, "user:b", CreateBookmarkParams{Owner: "b", Title: "b's", Now: "2026-10-05T00:00:00Z"}); err != nil {
+		t.Fatal(err)
+	}
+	all, err := q.ListBookmarks(ctx, ListBookmarksParams{Owner: "a", PageLimit: 100})
+	if err != nil || len(all) != 5 {
+		t.Fatalf("ListBookmarks = %d rows, %v", len(all), err)
+	}
+	var got []int64
+	after, afterID := "", int64(0)
+	for {
+		page, err := q.ListBookmarksAfter(ctx, ListBookmarksAfterParams{Owner: "a", AfterCreatedAt: after, AfterID: afterID, PageLimit: 2})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(page) == 0 {
+			break
+		}
+		for _, r := range page {
+			got = append(got, r.ID)
+		}
+		last := page[len(page)-1]
+		after, afterID = last.CreatedAt, last.ID
+		if len(got) == 2 {
+			// The cursor row goes between pages: the cursor carries its
+			// own values, so the next page still starts after it.
+			if n, err := q.DeleteBookmark(ctx, "user:a", DeleteBookmarkParams{ID: last.ID, Owner: "a"}); err != nil || n != 1 {
+				t.Fatalf("delete the cursor row = %d, %v", n, err)
+			}
+		}
+	}
+	var want []int64
+	for _, r := range all {
+		want = append(want, r.ID)
+	}
+	if fmt.Sprint(got) != fmt.Sprint(want) {
+		t.Fatalf("paged ids = %v; want List's order %v", got, want)
+	}
+}
+`

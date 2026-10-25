@@ -177,6 +177,18 @@ It returns the first of these that applies:
 3. On CARLOS, `ErrNoInstanceKey`. Don't start.
 4. Off CARLOS, `ErrNotOnCarlos`. Load or make a key the way you did before.
 
+## Host
+
+```go
+const HostHeader = "Rastrillo-Host"
+
+func Host() string
+```
+
+`Host` returns `$CARLOS_HOST`, the platform hostname this instance answers on. Off CARLOS it returns `""`.
+
+`HostHeader` is the header that names the instance on `GET /api/version` when the app sets `rastrillo.Options.NameInstance`. `provision` reads it to tell which instance answered.
+
 ## The errors
 
 ```go

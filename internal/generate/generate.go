@@ -27,27 +27,24 @@ package generate
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
-	"go/ast"
-	"go/build"
 	"go/format"
-	"go/parser"
-	"go/token"
-	"io"
 	"os"
 	"path/filepath"
 	"regexp"
 	"sort"
 	"strings"
+
+	"amadan.net/rastrillo/rastrillo/internal/generate/handfile"
 )
 
 var actionFileRe = regexp.MustCompile(`^(.+)\.(GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)\.go$`)
 
 // BuildTag is the build constraint every action file carries
-// (`//go:build rastrillo_actions`). It is never satisfied by a normal
-// build, so `go build ./...`, `go vet ./...` and `go test ./...` skip
-// actions/ instead of failing on generator input.
-const BuildTag = "rastrillo_actions"
+// (handfile.BuildTag): a normal build never satisfies it, so the go
+// tool skips actions/ instead of failing on generator input.
+const BuildTag = handfile.BuildTag
 
 // Action is one discovered actions/ file.
 type Action struct {
@@ -192,47 +189,24 @@ func sanitizeIdent(s string) string {
 	return strings.ToLower(s)
 }
 
-// Rewrite parses the action file at actionsDir/a.SourcePath, rewrites
-// only its package clause to a.PackageName, and writes the result to
-// genDir/actions/a.GenDir/<basename>. The rest of the file — imports,
-// the Handle function, any helpers — travels unmodified, with one
-// exception: any build-constraint comment (the BuildTag convention, or
-// a legacy `// +build` line) is stripped, because the copy is the form
-// that must compile and a surviving constraint would exclude it too.
+// Rewrite copies the action file at actionsDir/a.SourcePath to
+// genDir/actions/a.GenDir/<basename> with its package clause rewritten
+// to a.PackageName and its build constraint stripped (handfile.Rewrite
+// says why); the rest of the file travels unmodified.
 func Rewrite(actionsDir, genDir string, a Action) error {
-	src := filepath.Join(actionsDir, filepath.FromSlash(a.SourcePath))
-	fset := token.NewFileSet()
-	file, err := parser.ParseFile(fset, src, nil, parser.ParseComments)
+	src, err := os.ReadFile(filepath.Join(actionsDir, filepath.FromSlash(a.SourcePath)))
 	if err != nil {
-		return fmt.Errorf("parse %s: %w", a.SourcePath, err)
+		return err
 	}
-	if file.Name == nil {
-		return fmt.Errorf("%s: missing package clause", a.SourcePath)
+	out, err := handfile.Rewrite(src, a.SourcePath, a.PackageName)
+	if err != nil {
+		return err
 	}
-	file.Name = ast.NewIdent(a.PackageName)
-
-	if file.Doc != nil && isConstraintGroup(file.Doc) {
-		file.Doc = nil
-	}
-	var kept []*ast.CommentGroup
-	for _, g := range file.Comments {
-		if g.End() < file.Package && isConstraintGroup(g) {
-			continue
-		}
-		kept = append(kept, g)
-	}
-	file.Comments = kept
-
-	var buf bytes.Buffer
-	if err := format.Node(&buf, fset, file); err != nil {
-		return fmt.Errorf("format %s: %w", a.SourcePath, err)
-	}
-
 	outPath := RewritePath(genDir, a)
 	if err := os.MkdirAll(filepath.Dir(outPath), 0o755); err != nil {
 		return err
 	}
-	return os.WriteFile(outPath, buf.Bytes(), 0o644)
+	return os.WriteFile(outPath, out, 0o644)
 }
 
 // RewritePath is where Rewrite writes a's copy. Pruning needs it: an
@@ -242,17 +216,51 @@ func RewritePath(genDir string, a Action) string {
 	return filepath.Join(genDir, "actions", filepath.FromSlash(a.GenDir), filepath.Base(filepath.FromSlash(a.SourcePath)))
 }
 
-// isConstraintGroup reports whether any line of g is a build-constraint
-// comment: `//go:build ...`, or the legacy `// +build ...` spelling that
-// gofmt keeps alongside it in pre-1.17 files.
-func isConstraintGroup(g *ast.CommentGroup) bool {
-	for _, c := range g.List {
-		text := strings.TrimSpace(c.Text)
-		if strings.HasPrefix(text, "//go:build ") || strings.HasPrefix(text, "// +build ") {
-			return true
+// StaleRewriteMsg is --check's line for a hand action whose copy under
+// gen/ is not what Rewrite writes from today's source.
+const StaleRewriteMsg = "%s is an older copy of actions/%s; run rastrillo generate"
+
+// StaleRewrites is --check's half of Rewrite: each hand action's copy
+// under gen/actions must be the one Rewrite would write now. The copy
+// is what the router serves, while the parity lint reads the source
+// under actions/, so a copy left stale after the edit that added the
+// operation call passed the lint and ran the old handler without
+// op.Check. A copy that is not there is left to the build, which fails
+// on the router's import of it: --check does not ask gen/ to be whole
+// (no router.go or api.go passes too), only that what it holds is
+// current. The error names each copy from the app's root, as
+// prune.Stale's does.
+func StaleRewrites(actionsDir, genDir string, actions []Action) error {
+	var lines []string
+	for _, a := range actions {
+		src, err := os.ReadFile(filepath.Join(actionsDir, filepath.FromSlash(a.SourcePath)))
+		if err != nil {
+			return err
+		}
+		want, err := handfile.Rewrite(src, a.SourcePath, a.PackageName)
+		if err != nil {
+			return err
+		}
+		copyPath := RewritePath(genDir, a)
+		rel, err := filepath.Rel(filepath.Dir(genDir), copyPath)
+		if err != nil {
+			return err
+		}
+		got, err := os.ReadFile(copyPath)
+		if os.IsNotExist(err) {
+			continue
+		}
+		if err != nil {
+			return err
+		}
+		if !bytes.Equal(want, got) {
+			lines = append(lines, fmt.Sprintf(StaleRewriteMsg, filepath.ToSlash(rel), a.SourcePath))
 		}
 	}
-	return false
+	if len(lines) == 0 {
+		return nil
+	}
+	return errors.New(strings.Join(lines, "\n"))
 }
 
 // UntaggedActions returns the SourcePaths of the given actions whose
@@ -273,27 +281,9 @@ func UntaggedActions(actionsDir string, actions []Action) ([]string, error) {
 	return out, nil
 }
 
-// SkippedByDefaultBuild reports whether a default build skips src —
-// which is exactly what lets `go build ./...` pass over generator
-// input. The scaffolded spelling is `//go:build rastrillo_actions`
-// (BuildTag), but the check evaluates the file with the go tool's own
-// rules (go/build's MatchFile: constraints, GOOS/GOARCH and release
-// tags included) rather than grepping for the tag — a file with
-// `//go:build !rastrillo_actions` names the tag yet compiles in every
-// default build, and any other never-satisfied constraint earns the
-// same skip the scaffolded one does.
-func SkippedByDefaultBuild(src []byte) bool {
-	ctxt := build.Default
-	ctxt.OpenFile = func(string) (io.ReadCloser, error) {
-		return io.NopCloser(bytes.NewReader(src)), nil
-	}
-	match, err := ctxt.MatchFile(".", "action.go")
-	if err != nil {
-		// Unparseable header: let the compiler complain, not --check.
-		return false
-	}
-	return !match
-}
+// SkippedByDefaultBuild is handfile.SkippedByDefaultBuild: whether a
+// default build skips src, by the go tool's own rules.
+func SkippedByDefaultBuild(src []byte) bool { return handfile.SkippedByDefaultBuild(src) }
 
 // Router renders gen/router.go: one import per action package, one
 // mux.HandleFunc per route, each dispatching into a *rastrillo.Ctx built
@@ -315,16 +305,25 @@ func Router(module string, actions []Action, booted bool) ([]byte, error) {
 	}
 	b.WriteString("\t\"net/http\"\n\n")
 	b.WriteString("\t\"amadan.net/rastrillo/rastrillo\"\n")
+	// Only a router with a handle closure reads the session; a new
+	// scaffold's has none, and an unused import would not compile.
+	if booted || len(actions) > 0 {
+		b.WriteString("\t\"amadan.net/rastrillo/rastrillo/sessions\"\n")
+	}
 	for _, a := range actions {
 		b.WriteString(fmt.Sprintf("\t%s \"%s/gen/actions/%s\"\n", a.PackageName, module, a.GenDir))
 	}
 	b.WriteString(")\n\n")
 
-	b.WriteString("// Router builds the app's mux. ctxFactory constructs a fresh\n")
-	b.WriteString("// *rastrillo.Ctx per request; see cmd/<app>/main.go. An actor stamped\n")
-	b.WriteString("// on the request context (rastrillo.WithActor — the tools dispatcher's\n")
-	b.WriteString("// doing) lands on Ctx.Actor after the factory runs, so agent calls are\n")
-	b.WriteString("// attributed even when the app factory never thinks about actors.\n")
+	b.WriteString("// Router builds the app's mux. ctxFactory constructs the *rastrillo.Ctx\n")
+	b.WriteString("// a request runs with; see cmd/<app>/main.go. Each request gets a copy\n")
+	b.WriteString("// of what the factory returns, so a factory may hand every request the\n")
+	b.WriteString("// same Ctx. An actor stamped on the request context (rastrillo.WithActor,\n")
+	b.WriteString("// the API tree's doing) lands on Ctx.Actor after the factory runs.\n")
+	b.WriteString("// Failing that, a factory that left Actor zero gets the signed-in person\n")
+	b.WriteString("// (sessions.ActorFrom), so op.Check sees the subject the scoped store\n")
+	b.WriteString("// filters by and the caller is attributed even when the factory never\n")
+	b.WriteString("// thinks about actors.\n")
 	if booted {
 		b.WriteString("//\n")
 		b.WriteString("// b is gen.Boot's result for the database the app serves. Router\n")
@@ -361,12 +360,31 @@ const routerOpen = `func Router(ctxFactory func(*http.Request) *rastrillo.Ctx) *
 `
 
 const routerHandle = `	handle := func(r *http.Request) *rastrillo.Ctx {
-		c := ctxFactory(r)
-		if a, ok := rastrillo.ActorFromContext(r.Context()); ok {
-			c.Actor = a
-		}
-		return c
+` + routerCopy + routerActor + `		return &c
 	}
+`
+
+// routerCopy is both routers' first line: the request's Ctx is a copy
+// of the factory's, as api/tree.go's handle takes one, because an
+// app's factory may return the same Ctx every time. Writing the actor
+// into a shared one would stamp the first person on every later
+// request and race two requests on the field.
+const routerCopy = `		c := *ctxFactory(r)
+`
+
+// routerActor is how both routers pick the action's actor. A stamped
+// actor wins: the API tree verified it. A factory's own actor comes
+// next, because an app that sets one knows something the router does
+// not. Only then the session: a page request's actor is the signed-in
+// person, and without it op.Check would refuse a scoped operation to
+// its own owner for having no subject.
+const routerActor = `		if a, ok := rastrillo.ActorFromContext(r.Context()); ok {
+			c.Actor = a
+		} else if c.Actor == (rastrillo.Actor{}) {
+			if a, ok := sessions.ActorFrom(r); ok {
+				c.Actor = a
+			}
+		}
 `
 
 // bootedRouterHead's 500 is the text recoverPanics already sends, so a
@@ -378,11 +396,7 @@ const bootedRouterHead = `func Router(b Booted, ctxFactory func(*http.Request) *
 	}
 	mux := http.NewServeMux()
 	handle := func(w http.ResponseWriter, r *http.Request) *rastrillo.Ctx {
-		c := ctxFactory(r)
-		if a, ok := rastrillo.ActorFromContext(r.Context()); ok {
-			c.Actor = a
-		}
-		if c.DB == nil {
+` + routerCopy + routerActor + `		if c.DB == nil {
 			c.DB = b.db
 		}
 		if c.DB != b.db {
@@ -394,7 +408,7 @@ const bootedRouterHead = `func Router(b Booted, ctxFactory func(*http.Request) *
 			http.Error(w, "Something went wrong.", http.StatusInternalServerError)
 			return nil
 		}
-		return c
+		return &c
 	}
 `
 

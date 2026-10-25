@@ -6,6 +6,13 @@ WHERE (sqlc.arg(search) = '' OR title LIKE '%' || sqlc.arg(search) || '%')
 ORDER BY created_at DESC, id DESC
 LIMIT sqlc.arg(page_limit) OFFSET sqlc.arg(page_offset);
 
+-- name: ListPostsAfter :many
+SELECT * FROM posts
+WHERE (sqlc.arg(search) = '' OR title LIKE '%' || sqlc.arg(search) || '%')
+  AND (sqlc.arg(after_created_at) = '' OR created_at < sqlc.arg(after_created_at) OR (created_at = sqlc.arg(after_created_at) AND id < sqlc.arg(after_id)))
+ORDER BY created_at DESC, id DESC
+LIMIT sqlc.arg(page_limit);
+
 -- name: CountPosts :one
 SELECT COUNT(*) FROM posts
 WHERE (sqlc.arg(search) = '' OR title LIKE '%' || sqlc.arg(search) || '%');
@@ -18,8 +25,8 @@ INSERT INTO posts (title, body, created_at, updated_at)
 VALUES (sqlc.arg(title), sqlc.arg(body), sqlc.arg(now), sqlc.arg(now))
 RETURNING id;
 
--- name: UpdatePostBasics :exec
+-- name: UpdatePost :execrows
 UPDATE posts SET title = sqlc.arg(title), body = sqlc.arg(body), updated_at = sqlc.arg(now) WHERE id = sqlc.arg(id);
 
--- name: DeletePost :exec
+-- name: DeletePost :execrows
 DELETE FROM posts WHERE id = sqlc.arg(id);

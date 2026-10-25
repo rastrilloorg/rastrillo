@@ -283,6 +283,27 @@ const paintJS = `(scheme => {
   return document.documentElement.getAttribute("data-theme") || "system";
 })`
 
+// landedJS waits out every finite animation the flip started, in the
+// page and in each same-origin frame. The nav's current item and a
+// linked media tile fade their background between schemes (0.2s and
+// 0.25s) while their text changes at once, so a scan straight after
+// paint() read dark text on a still-light ground: 1.16:1 on the
+// overview, 1.18:1 on the media grid. getAnimations() flushes style,
+// so the transitions the attribute change starts are already in the
+// list. Finite only, as the shells test's settle(): a spinner never
+// finishes, and waiting on it would hang the scan. Frames are read
+// here rather than settled one by one, because the preview test scans
+// them in sequence and each later frame was read further into the
+// same fade.
+const landedJS = `(async () => {
+  const docs = [document];
+  document.querySelectorAll("iframe").forEach(f => { try { if (f.contentDocument) docs.push(f.contentDocument); } catch (e) {} });
+  await Promise.all(docs.flatMap(d => d.getAnimations())
+    .filter(a => a.effect && a.effect.getComputedTiming().endTime !== Infinity)
+    .map(a => a.finished.catch(() => null)));
+  return true;
+})()`
+
 func paint(t *testing.T, bctx context.Context, scheme string) {
 	t.Helper()
 	var got string
@@ -292,6 +313,10 @@ func paint(t *testing.T, bctx context.Context, scheme string) {
 	}
 	if got != scheme {
 		t.Fatalf("painting %s: page reports %q", scheme, got)
+	}
+	if err := chromedp.Run(bctx, chromedp.Evaluate(landedJS, nil,
+		func(p *runtime.EvaluateParams) *runtime.EvaluateParams { return p.WithAwaitPromise(true) })); err != nil {
+		t.Fatalf("painting %s: waiting for the scheme to land: %v", scheme, err)
 	}
 }
 
@@ -686,9 +711,25 @@ func TestA11yScansTheShellsCollapsed(t *testing.T) {
 	}
 }
 
-// previewFrame is one preview widget picked for scanning, and the
-// section it belongs to.
-type previewFrame struct{ Sel, Of string }
+// previewFrame is one preview widget picked for scanning: its
+// selector, the section it belongs to, and which of that section's
+// states it shows.
+type previewFrame struct {
+	Sel, Of string
+	State   int
+}
+
+// everyState names the partials whose every state is scanned, not only
+// the first, each with the reason. media-grid's first state has no
+// checkbox: select mode, with a checkbox over a picture, a selected
+// tile's outline, a link and a kebab in one tile, is its second state,
+// and a scan of the first alone would report the advertised control
+// clean having never seen it. Scanning every state of every component
+// is not the fix: it is several times the frames in six theme-scheme
+// combinations, for samples whose later states differ in a word.
+var everyState = map[string]string{
+	anchorID("partial", "media-grid"): "select mode, a checkbox over a picture beside a link and a kebab, is the second state",
+}
 
 // pickPreviewFrames chooses the frames to scan on the page the browser
 // is on, and says what it chose.
@@ -715,10 +756,10 @@ func pickPreviewFrames(t *testing.T, bctx context.Context, kind string) []previe
 	  const out = [];
 	  const articles = document.querySelectorAll("article.ds-partial");
 	  articles.forEach(a => {
-	    const f = a.querySelector("iframe.ds-view__frame");
-	    if (!f) return;
-	    f.id = f.id || ("a11y-" + a.id);
-	    out.push({Sel: "#" + f.id, Of: a.id});
+	    a.querySelectorAll("iframe.ds-view__frame").forEach((f, i) => {
+	      f.id = f.id || ("a11y-" + a.id + "-" + i);
+	      out.push({Sel: "#" + f.id, Of: a.id, State: i});
+	    });
 	  });
 	  return JSON.stringify({frames: out, articles: articles.length});
 	})()`
@@ -746,26 +787,36 @@ func pickPreviewFrames(t *testing.T, bctx context.Context, kind string) []previe
 		return got.Frames
 	}
 	if kind == "primitives" {
-		if len(got.Frames) < 4 {
-			t.Fatalf("expected four idiom previews, picked %d of %d idiom articles", len(got.Frames), got.Articles)
+		var first []previewFrame
+		for _, f := range got.Frames {
+			if f.State == 0 {
+				first = append(first, f)
+			}
 		}
-		return got.Frames[:4]
+		if len(first) < 4 {
+			t.Fatalf("expected four idiom previews, picked %d of %d idiom articles", len(first), got.Articles)
+		}
+		return first[:4]
 	}
 	// A component page. Every partial on it gave up a frame, and the
 	// first of them is the one that gets scanned.
 	if got.Articles == 0 {
 		t.Fatalf("no partial sections at all on the %s page", kind)
 	}
-	if len(got.Frames) != got.Articles {
-		t.Fatalf("%d partial sections on the %s page but only %d gave up a preview frame", got.Articles, kind, len(got.Frames))
+	gaveUp := map[string]bool{}
+	for _, f := range got.Frames {
+		gaveUp[f.Of] = true
 	}
-	// The first frame, and the row menu's wherever it is: axe runs on that
-	// sample in every theme and scheme because it is a shipped control
-	// with a name built from a catalog pattern, and it is not first on its
-	// page, so the first-frame rule alone would never scan it.
+	if len(gaveUp) != got.Articles {
+		t.Fatalf("%d partial sections on the %s page but only %d gave up a preview frame", got.Articles, kind, len(gaveUp))
+	}
+	// The first frame; the row menu's wherever it is, because it is a
+	// shipped control with a name built from a catalog pattern and not
+	// first on its page, so the first-frame rule alone would never scan
+	// it; and every state of the partials everyState names.
 	picked := got.Frames[:1]
 	for _, f := range got.Frames[1:] {
-		if f.Of == anchorID("partial", "row-menu") {
+		if (f.Of == anchorID("partial", "row-menu") && f.State == 0) || everyState[f.Of] != "" {
 			picked = append(picked, f)
 		}
 	}
@@ -824,6 +875,9 @@ func TestA11yScansThePreviewDocuments(t *testing.T) {
 				t.Fatalf("loading %s/%s %s: %v", pg.theme, pg.locale, kind, err)
 			}
 			frames := pickPreviewFrames(t, ctx, kind)
+			// The select-mode state of each everyState partial, found
+			// among this page's picked frames by its checkboxes.
+			selectScanned := map[string]bool{}
 
 			// Every picked frame is taken off lazy loading in one mutation,
 			// before any of them is waited for. Setting loading="eager" on
@@ -871,6 +925,20 @@ func TestA11yScansThePreviewDocuments(t *testing.T) {
 					t.Fatalf("%s: preview frame %s %s", f.Of, f.Sel, state)
 				}
 				titles[i] = state[3:]
+				// What the second state exists to put under axe. Read off
+				// the settled document, so a picker that quietly went back
+				// to first frames fails here by name instead of scanning a
+				// grid with no checkbox in it and calling select mode clean.
+				if everyState[f.Of] != "" {
+					var boxes int
+					if err := chromedp.Run(ctx, chromedp.Evaluate(fmt.Sprintf(
+						`document.querySelector(%q).contentDocument.querySelectorAll("[rst-media-tile] [rst-selbox] input[type=checkbox]").length`, f.Sel), &boxes)); err != nil {
+						t.Fatalf("%s: counting checkboxes: %v", f.Of, err)
+					}
+					if boxes > 0 {
+						selectScanned[f.Of] = true
+					}
+				}
 
 				// The engine goes in here, into the document that just
 				// settled, rather than as a boot script the browser replays
@@ -898,6 +966,16 @@ func TestA11yScansThePreviewDocuments(t *testing.T) {
 				}
 				if loaded != "object" {
 					t.Fatalf("%s: axe did not load in the frame (typeof axe = %s)", f.Of, loaded)
+				}
+			}
+
+			for id, why := range everyState {
+				onPage := false
+				for _, f := range frames {
+					onPage = onPage || f.Of == id
+				}
+				if onPage && !selectScanned[id] {
+					t.Errorf("%s/%s %s: no picked frame of %s carries a checkbox in a tile; %s, and it was not scanned", pg.theme, pg.locale, kind, id, why)
 				}
 			}
 

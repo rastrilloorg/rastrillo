@@ -14,6 +14,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -93,17 +94,14 @@ var migratable = map[string]bool{
 }
 
 // vendored names a file the app does not own: it is this library's,
-// copied into static/ at scaffold time and refreshed by doctor.
+// copied into static/ at scaffold time and refreshed by doctor. The
+// names are ui.VendoredNames, the one list the scaffold, the pin and
+// the doctor read: a hand copy here fell four files behind it, and
+// every fresh sidebar scaffold was told to rewrite shell.css's
+// selectors in the library's own file.
 func vendored(rel string) bool {
 	dir, base := filepath.Split(filepath.ToSlash(rel))
-	if !strings.HasSuffix(dir, "static/") {
-		return false
-	}
-	switch base {
-	case "tokens.css", "theme.css", "rastrillo.js", "busy.js", "anchor.js", "select.js", "datetime.js":
-		return true
-	}
-	return false
+	return strings.HasSuffix(dir, "static/") && slices.Contains(ui.VendoredNames(), base)
 }
 
 var appOwnClassSelector = regexp.MustCompile(`\.(rst-[A-Za-z0-9_-]+)`)

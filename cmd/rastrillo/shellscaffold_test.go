@@ -108,6 +108,69 @@ func TestAnAppMissingTheShellFilesIsToldAndFixed(t *testing.T) {
 	}
 }
 
+// TestDeletingLightJSIsRecordedWhereTheFailureSays: every scaffolded
+// layout says "Delete it and its tag for the still design", and an app
+// that did exactly that failed its own pin test with a message that
+// named no way out (Task 10 review, I1). The failure has to say where
+// the deletion is recorded, the map's comment has to say the same, and
+// an app that records it there passes its whole suite with the file and
+// its tag gone.
+func TestDeletingLightJSIsRecordedWhereTheFailureSays(t *testing.T) {
+	if testing.Short() {
+		t.Skip("scaffolds, tidies and tests a whole app")
+	}
+	setSandboxGoEnv(t)
+	t.Chdir(t.TempDir())
+	dir := scaffoldWithReplace(t, "stillapp")
+	pin := filepath.Join(dir, "internal", "stillapptest", "vendored_test.go")
+	layout := filepath.Join(dir, "internal", "stillapp", "templates", "layout.html")
+
+	src, err := os.ReadFile(pin)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(src), `// "light.js": true,`) {
+		t.Errorf("the pin's vendoredIsMine comment never shows light.js as a file an app deletes:\n%s", src)
+	}
+
+	// The opt-out as the layout comment gives it: the file and its tag.
+	if err := os.Remove(filepath.Join(dir, "internal", "stillapp", "static", "light.js")); err != nil {
+		t.Fatal(err)
+	}
+	const tag = `<script defer src="{{asset "static/light.js"}}"></script>` + "\n"
+	page, err := os.ReadFile(layout)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(page), tag) {
+		t.Fatalf("the scaffolded layout has no light.js tag to delete:\n%s", page)
+	}
+	if err := os.WriteFile(layout, []byte(strings.Replace(string(page), tag, "", 1)), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	out, err := goTestIn(dir, "./internal/stillapptest/", "-run", "TestVendoredAssetsMatchTheLibrary")
+	if err == nil {
+		t.Fatalf("an app missing light.js passed its pin test without recording the deletion:\n%s", out)
+	}
+	for _, want := range []string{"read vendored light.js", "vendoredIsMine"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("the failure does not say %q, so the person has no way out:\n%s", want, out)
+		}
+	}
+
+	claimed := strings.Replace(string(src), "var vendoredIsMine = map[string]bool{", "var vendoredIsMine = map[string]bool{\n\t\"light.js\": true,", 1)
+	if claimed == string(src) {
+		t.Fatal("could not find vendoredIsMine in the scaffolded pin")
+	}
+	if err := os.WriteFile(pin, []byte(claimed), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if out, err := goTestIn(dir, "./..."); err != nil {
+		t.Fatalf("with light.js and its tag deleted and the deletion recorded in vendoredIsMine, the app's suite fails:\n%s", out)
+	}
+}
+
 // A sidebar or console app opens on a phone to its index, whose content
 // is hidden there, so the scaffold writes an index with one section in
 // its nav and the section page it opens, with its way back. The other
@@ -142,7 +205,7 @@ func TestNewWritesAnIndexAndASectionForTheShellsThatHaveOne(t *testing.T) {
 			{"overview.html", string(overview), `<a id="nav-overview" href="/overview" aria-current="page">` + scaffoldOverview + `</a>`},
 			{"app.go", app, `r.Get("/overview", a.overview)`},
 			{"handlers.go", handlers, `func (a *app) overview(w http.ResponseWriter, r *http.Request) {`},
-			{"render.go", render, `[]string{"index", "overview", "errors"}`},
+			{"render.go", render, `[]string{"index", "overview", "errors", "tokens"}`},
 		} {
 			if !strings.Contains(c.got, c.want) {
 				t.Errorf("%s: %s lacks %q", shell, c.file, c.want)

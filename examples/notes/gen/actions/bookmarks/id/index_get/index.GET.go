@@ -3,16 +3,13 @@
 package act_bookmarks_id_index_get
 
 import (
-	"database/sql"
-	"errors"
 	"fmt"
 	"net/http"
 
 	"amadan.net/rastrillo/rastrillo"
-	"amadan.net/rastrillo/rastrillo/sessions"
 	"amadan.net/rastrillo/rastrillo/ui"
 	"amadan.net/rastrillo/rastrillo/view"
-	bookmarksstore "notes/gen/store/bookmarks"
+	ops_bookmarks "notes/gen/ops/bookmarks"
 )
 
 // Handle is GET /bookmarks/{id}.
@@ -22,19 +19,9 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 		view.NotFound(ctx, w, r)
 		return
 	}
-	sess, ok := sessions.Current(r)
-	if !ok {
-		view.Forbidden(ctx, w, r)
-		return
-	}
-	store := bookmarksstore.New(ctx.DB)
-	n, err := store.GetBookmark(r.Context(), bookmarksstore.GetBookmarkParams{ID: id, Owner: sess.Subject})
-	if errors.Is(err, sql.ErrNoRows) {
-		view.NotFound(ctx, w, r)
-		return
-	}
+	n, err := ops_bookmarks.Get(r.Context(), ctx, id)
 	if err != nil {
-		view.Fail(ctx, w, r, "bookmarks: loading bookmarks", err)
+		view.Refuse(ctx, w, r, "bookmarks: loading bookmarks", err)
 		return
 	}
 

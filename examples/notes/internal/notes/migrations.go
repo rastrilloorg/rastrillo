@@ -4,6 +4,7 @@ import (
 	"embed"
 	"fmt"
 
+	"amadan.net/rastrillo/rastrillo/apitoken"
 	"amadan.net/rastrillo/rastrillo/migrate"
 	"amadan.net/rastrillo/rastrillo/pow"
 	"amadan.net/rastrillo/rastrillo/sessions"
@@ -42,7 +43,7 @@ var Schema = migrate.MustFromFS(migrationFS, "notes")
 // manifest (add a field, rename one) after this app has already booted
 // once, and its regenerated SQL no longer matches the checksum the
 // ledger recorded under the same "bookmarks_gen/0001_init" ID — the
-// next boot refuses rather than silently reapplying it. SKILL.md §2's
+// next boot refuses rather than silently reapplying it. skill/data.md's
 // "generated store's ledger trap" note has the recovery (`rastrillo
 // migration baseline`); nothing here papers over it.
 func genSchemaSet() *migrate.Set {
@@ -61,4 +62,6 @@ var genSchema = genSchemaSet()
 // generated bookmarks store, then this app's own Schema. migrate.Merge's
 // argument order is apply order. pow's spent-nonce table is applied here
 // because pow.New checks it exists and refuses to build without it.
-var BootSchema = migrate.Merge(sessions.Schema, pow.Schema, genSchema, Schema)
+// apitoken's table is here for the same reason: apitoken.New and the
+// token page query it from the first request.
+var BootSchema = migrate.Merge(sessions.Schema, pow.Schema, apitoken.Schema, genSchema, Schema)

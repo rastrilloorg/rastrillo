@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/sessions"
 	act_admin_announcements_id_delete_get "tickets/gen/actions/admin/announcements/id/delete_get"
 	act_admin_announcements_id_delete_post "tickets/gen/actions/admin/announcements/id/delete_post"
 	act_admin_announcements_id_edit_basics_post "tickets/gen/actions/admin/announcements/id/edit_basics_post"
@@ -26,11 +27,15 @@ import (
 	act_admin_ticket_types_new_get "tickets/gen/actions/admin/ticket_types/new_get"
 )
 
-// Router builds the app's mux. ctxFactory constructs a fresh
-// *rastrillo.Ctx per request; see cmd/<app>/main.go. An actor stamped
-// on the request context (rastrillo.WithActor — the tools dispatcher's
-// doing) lands on Ctx.Actor after the factory runs, so agent calls are
-// attributed even when the app factory never thinks about actors.
+// Router builds the app's mux. ctxFactory constructs the *rastrillo.Ctx
+// a request runs with; see cmd/<app>/main.go. Each request gets a copy
+// of what the factory returns, so a factory may hand every request the
+// same Ctx. An actor stamped on the request context (rastrillo.WithActor,
+// the API tree's doing) lands on Ctx.Actor after the factory runs.
+// Failing that, a factory that left Actor zero gets the signed-in person
+// (sessions.ActorFrom), so op.Check sees the subject the scoped store
+// filters by and the caller is attributed even when the factory never
+// thinks about actors.
 //
 // b is gen.Boot's result for the database the app serves. Router
 // panics if Boot has not run, and a request whose Ctx carries a
@@ -41,9 +46,13 @@ func Router(b Booted, ctxFactory func(*http.Request) *rastrillo.Ctx) *http.Serve
 	}
 	mux := http.NewServeMux()
 	handle := func(w http.ResponseWriter, r *http.Request) *rastrillo.Ctx {
-		c := ctxFactory(r)
+		c := *ctxFactory(r)
 		if a, ok := rastrillo.ActorFromContext(r.Context()); ok {
 			c.Actor = a
+		} else if c.Actor == (rastrillo.Actor{}) {
+			if a, ok := sessions.ActorFrom(r); ok {
+				c.Actor = a
+			}
 		}
 		if c.DB == nil {
 			c.DB = b.db
@@ -57,7 +66,7 @@ func Router(b Booted, ctxFactory func(*http.Request) *rastrillo.Ctx) *http.Serve
 			http.Error(w, "Something went wrong.", http.StatusInternalServerError)
 			return nil
 		}
-		return c
+		return &c
 	}
 	mux.HandleFunc("GET /admin/announcements", func(w http.ResponseWriter, r *http.Request) {
 		if c := handle(w, r); c != nil {

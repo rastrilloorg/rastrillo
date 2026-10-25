@@ -612,6 +612,7 @@ func spellingPage(t *testing.T, spellings map[string]string) http.Handler {
 		w.Header().Set("Content-Type", "text/css")
 		w.Write(css)
 	})
+	fixtureImages(mux)
 	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
 		body, ok := spellings[r.URL.Query().Get("spelling")]
 		if !ok {

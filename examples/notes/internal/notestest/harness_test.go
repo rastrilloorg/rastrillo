@@ -6,6 +6,7 @@
 package notestest
 
 import (
+	"database/sql"
 	"io"
 	"log/slog"
 	"net/http"
@@ -53,21 +54,44 @@ func newApp(t *testing.T) *httptest.Server {
 // serves.
 func newAppWith(t *testing.T, def string, offered []string) *httptest.Server {
 	t.Helper()
-	d, err := db.Open(filepath.Join(t.TempDir(), "notes.db"), slog.New(slog.NewTextHandler(io.Discard, nil)))
-	if err != nil {
-		t.Fatalf("db.Open: %v", err)
-	}
-	t.Cleanup(func() { d.Close() })
+	return newAppLogging(t, def, offered, io.Discard)
+}
 
+// newAppLogging is newAppWith with the app's log going to logs, for a
+// test that reads what the app wrote about a request (api_test.go's
+// attribution check). The writer must be safe for concurrent use: the
+// server's goroutines write it while the test reads it.
+func newAppLogging(t *testing.T, def string, offered []string, logs io.Writer) *httptest.Server {
+	t.Helper()
 	// The server's origin has to be known before notes.App can build
 	// its csrf.Protect/sessions wiring, and the app's mux has to exist
 	// before the server can serve it — so resolve the URL from the
 	// still-unstarted listener (identical to what Start() computes)
 	// and only assign Config.Handler before Start() runs, never after.
 	ts := httptest.NewUnstartedServer(nil)
-	origin := "http://" + ts.Listener.Addr().String()
+	ts.Config.Handler, _ = newHandler(t, "http://"+ts.Listener.Addr().String(), def, offered, logs)
+	ts.Start()
+	t.Cleanup(ts.Close)
+	return ts
+}
+
+// newHandler is the handler newAppLogging serves, and the writer
+// *sql.DB it runs on, for a test that serves it in process at an
+// origin of its own (fixture_test.go's parity fixture).
+func newHandler(t *testing.T, origin, def string, offered []string, logs io.Writer) (http.Handler, *sql.DB) {
+	t.Helper()
+	d, err := db.Open(filepath.Join(t.TempDir(), "notes.db"), slog.New(slog.NewTextHandler(io.Discard, nil)))
+	if err != nil {
+		t.Fatalf("db.Open: %v", err)
+	}
+	t.Cleanup(func() { d.Close() })
+	writer, err := d.G.DB()
+	if err != nil {
+		t.Fatalf("writer: %v", err)
+	}
+
 	bg := &background.Group{}
-	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	logger := slog.New(slog.NewTextHandler(logs, nil))
 
 	cfg, err := locales.CheckConfig(def, offered)
 	if err != nil {
@@ -89,10 +113,7 @@ func newAppWith(t *testing.T, def string, offered []string) *httptest.Server {
 		t.Fatalf("handler: %v", err)
 	}
 	t.Cleanup(func() { closeApp() })
-	ts.Config.Handler = handler
-	ts.Start()
-	t.Cleanup(ts.Close)
-	return ts
+	return handler, writer
 }
 
 // client is one visitor's HTTP session: a cookie jar (so signed-in
@@ -100,7 +121,7 @@ func newAppWith(t *testing.T, def string, offered []string) *httptest.Server {
 // the origin every POST must carry to pass csrf.Protect.
 type client struct {
 	t      *testing.T
-	ts     *httptest.Server
+	base   string // the app's URL, which requests are sent to
 	c      *http.Client
 	origin string
 }
@@ -112,7 +133,7 @@ func newClient(t *testing.T, ts *httptest.Server) *client {
 		t.Fatalf("cookiejar.New: %v", err)
 	}
 	return &client{
-		t: t, ts: ts,
+		t: t, base: ts.URL,
 		c:      &http.Client{Jar: jar, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }},
 		origin: ts.URL,
 	}
@@ -124,7 +145,7 @@ func newClient(t *testing.T, ts *httptest.Server) *client {
 func (cl *client) get(path string) *http.Response {
 	cl.t.Helper()
 	c := &http.Client{Jar: cl.c.Jar}
-	resp, err := c.Get(cl.ts.URL + path)
+	resp, err := c.Get(cl.base + path)
 	if err != nil {
 		cl.t.Fatalf("GET %s: %v", path, err)
 	}
@@ -137,7 +158,7 @@ func (cl *client) get(path string) *http.Response {
 // status) before choosing whether to follow it.
 func (cl *client) postForm(path string, vals url.Values) *http.Response {
 	cl.t.Helper()
-	req, err := http.NewRequest(http.MethodPost, cl.ts.URL+path, strings.NewReader(vals.Encode()))
+	req, err := http.NewRequest(http.MethodPost, cl.base+path, strings.NewReader(vals.Encode()))
 	if err != nil {
 		cl.t.Fatalf("NewRequest POST %s: %v", path, err)
 	}
@@ -155,7 +176,7 @@ func (cl *client) postForm(path string, vals url.Values) *http.Response {
 // minimum age first; a person always has.
 func (cl *client) filled(path string, form url.Values) url.Values {
 	cl.t.Helper()
-	resp, err := cl.c.Get(cl.ts.URL + path)
+	resp, err := cl.c.Get(cl.base + path)
 	if err != nil {
 		cl.t.Fatalf("GET %s: %v", path, err)
 	}

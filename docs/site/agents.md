@@ -1,53 +1,79 @@
-# 🤖 Agents and tools
+# 🤖 Agents
 
-An action can opt in as an agent-callable tool. The generator collects
-the registry, and the `tools` package renders schemas and dispatches
-model-proposed calls back through the same mux, so a tool call and an
-HTTP POST reach the identical `Handle` function.
+An agent in a Rastrillo app always acts for a person. Paul makes a
+token for Claude, Claude calls the app's [JSON API](/docs/api) with it,
+and the app records each call as "Claude for Paul". An agent cannot act
+for anyone else, and it cannot act as itself.
 
-## Marking an action
+## Tokens are made for a named agent
 
-Declared in the action file, next to `Handle`:
+A person makes a token on the app's token page and names the agent it
+is for: "Claude", "Codex", "Nightly import". The name is 1 to 40
+letters, digits, spaces, hyphens and dots, and it is shown as typed.
 
-```go
-var Tool = rastrillo.Tool{
-	Description: "Cancel one order and release its tickets.",
-	Access:      rastrillo.ToolWrite,
-	Args:        map[string]string{"id": "the order id"},
-}
-```
+The name is a label. The token's public ID is what tells two tokens
+apart, so two tokens both named "Claude" are still two tokens.
 
-`rastrillo generate` emits the registry as `gen.Tools()`.
+A token for a script with no AI in it is a deliberate choice: the person
+ticks "This token is for me, not an agent". Calls with that token act as
+the person, with no agent named.
 
-## Read and write are treated differently
+See [Tokens](/docs/api#tokens) for the page itself.
 
-`rastrillo.ToolRead` observes and never changes state.
+## Actor says who is calling
 
-`rastrillo.ToolWrite` changes state, so it requires a `Confirm` sentence
-and an explicitly confirmed call — the same consent a confirm page asks
-a human for. `tools.ConfirmSentence(def, args)` renders that sentence
-with the call's actual arguments in it, so what gets approved is what
-will happen.
+Every operation gets a `rastrillo.Actor` on `Ctx.Actor`:
 
-## Dispatching
+| Field | Holds |
+|---|---|
+| `Subject` | the person: the session's subject, or the token owner's |
+| `Agent` | the agent's name, or empty when the person acts directly |
+| `Credential` | the token's public ID, or empty for a browser |
+| `Access` | `Read` or `Write`: what the token allows, and `Write` for a browser |
+| `Session` | the agent's `Agent-Session` header, when it sent one |
+| `Harness` | the agent's `Agent-Harness` header, when it sent one |
 
-```go
-schemas := tools.Schemas(gen.Tools())
-payload, err := tools.SchemasJSON(gen.Tools())
+`Subject`, `Agent`, `Credential` and `Access` come from the verified
+token, never from the request. `Session` and `Harness` are what the
+agent says about itself. They are recorded as its claims, and only for a
+token made for an agent.
 
-result, err := tools.Dispatch(handler, gen.Tools(), call)
-```
+The zero `Actor` is the app itself: a job, a sidecar, a migration.
 
-`Dispatch` validates the call against the registry, applies the consent
-gate, attributes the actor, and routes it through your ordinary
-`http.Handler`.
+## What the audit trail records
 
-Because it goes through that handler, a tool cannot reach a route that
-is not a registered tool, and it cannot skip the middleware your routes
-sit behind — [CSRF](/docs/sessions) and the session guards included.
+`Actor.String()` is the short form. `eventlog` stores it on every event
+it appends:
 
-There is no LLM client. Choosing a provider is your business; Rastrillo
-supplies the registry, the schemas and the dispatch.
+| Who | `String()` |
+|---|---|
+| the app | `app` |
+| a person in a browser | `user:42` |
+| a person's own token | `user:42 token:k3Jx9QpL2mWa` |
+| an agent | `agent:Claude for user:42 token:k3Jx9QpL2mWa` |
+
+Events written before this release say `human` or `agent:<name>`. If
+your code compares an actor string with `"human"`, change it.
+
+`Actor.LogAttrs()` gives the same as `slog` attributes, plus
+`agent_session` and `agent_harness` when they were sent. The API logs
+them on every request.
+
+## Showing it on a page
+
+In a template, `{{actor $L .Actor}}` writes "Paul" for a person, "Claude
+for Paul" for an agent, and nothing for the app. It is plain text: style
+it yourself.
+
+Set `ui.ActorName` once at startup to turn a subject into a name.
+Without it, the page shows the subject. In Go, `rastrillo.ActorPhrase`
+builds the same words. See [ui](/docs/reference/ui#actor).
+
+## Coming later
+
+Three later pieces build on the API: an MCP endpoint, sign-in for
+agents with OAuth, and a generated skill that describes the app to an
+agent.
 
 ## The sidecar
 
@@ -64,7 +90,7 @@ sidecar contract, and `Options.NextDue` answers the activator's
 `GET /api/next-due` scheduled-wake poll.
 
 A pass returning a zero next-due time means no scheduled work, and the
-loop sleeps for a minute — the family's polling floor.
+loop sleeps for a minute, the family's polling floor.
 
 A sidecar never dies on a pass error. The platform would only respawn it
 into the same failure, so it backs off and retries, capped at five

@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"amadan.net/rastrillo/rastrillo/apitoken"
 	"amadan.net/rastrillo/rastrillo/auth"
 	"amadan.net/rastrillo/rastrillo/blobs"
 	"amadan.net/rastrillo/rastrillo/db"
@@ -220,6 +221,7 @@ func TestPackagesApplyToEmptyDatabase(t *testing.T) {
 		"passkey":      passkey.Schema,
 		"secondfactor": secondfactor.Schema,
 		"totp":         totp.Schema,
+		"apitoken":     apitoken.Schema,
 	} {
 		t.Run(name, func(t *testing.T) {
 			d, err := db.Open(filepath.Join(t.TempDir(), name+".db"), nil)

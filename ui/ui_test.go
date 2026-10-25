@@ -110,16 +110,18 @@ func TestThemeCSSIsEmbedded(t *testing.T) {
 				t.Errorf("themes/%s.css is missing %q", name, want)
 			}
 		}
-		// The v2 format is one :root block plus exactly two toggle rules,
-		// and the toggle rules carry nothing but color-scheme. A theme
-		// that grew a second palette block (a prefers-color-scheme media
-		// query, say, or colours restated under [data-theme]) has a copy
-		// of itself to keep in sync again, which is the failure
-		// light-dark() was adopted to make impossible.
-		if strings.Contains(string(css), "prefers-color-scheme") {
-			t.Errorf("themes/%s.css declares a prefers-color-scheme block; the scheme split is light-dark()'s job now", name)
-		}
-		if got := strings.Count(string(css), ":root {"); got != 1 {
+		// A theme restates nothing per scheme but numbers (A4):
+		// light-dark() cannot wrap a number, so the press strengths are
+		// written once in :root for light and again in two blocks for
+		// dark, and those blocks hold --rst-* numbers, the same numbers
+		// in both, each also declared in :root. Anything else in the
+		// file beyond :root and the two toggle rules is the second
+		// palette block light-dark() was adopted to make impossible.
+		schemeNumberBlocks(t, name, string(css))
+		// day's relative-colour block (derived_test.go) nests a :root of
+		// its own; outside it the palette is one block.
+		_, outside := accentSupportsBlock(string(css))
+		if got := strings.Count(outside, ":root {"); got != 1 {
 			t.Errorf("themes/%s.css opens %d bare :root blocks, want exactly 1", name, got)
 		}
 		for _, prop := range []string{"--rst-bg:", "--rst-text:", "--rst-accent:", "--rst-radius:"} {
@@ -157,16 +159,40 @@ func TestBothSchemesAreAuthoredInEveryTheme(t *testing.T) {
 		"--rst-tone-warning-fg", "--rst-tone-warning-bg",
 		"--rst-tone-negative-fg", "--rst-tone-negative-bg",
 		"--rst-overlay",
+		"--rst-accent-fill", "--rst-accent-fill-hover", "--rst-accent-fill-edge", "--rst-accent-fill-edge-hover",
+		"--rst-danger-fill", "--rst-danger-fill-hover", "--rst-danger-fill-edge", "--rst-danger-fill-edge-hover",
+		"--rst-control-face", "--rst-control-face-hover", "--rst-control-border", "--rst-control-border-hover", "--rst-control-text-hover",
+		"--rst-knob-shade", "--rst-track-off", "--rst-tint-hover", "--rst-tint-press", "--rst-row-tint-hover", "--rst-row-tint-press",
+		"--rst-nav-current-bg", "--rst-nav-current-fg",
 	}
 	// --rst-header-rule is declared once but is NOT in needsLightDark:
 	// it is derived from tokens the two schemes already split, so one
 	// color-mix() (or, in plain, one var()) covers both. Wrapping a
 	// derived value in light-dark() would reintroduce exactly the second
 	// hand-authored colour per scheme the derivation exists to avoid.
+	//
+	// The depth axis's one-value tokens are here too: the numbers, the
+	// transparent faces and edges (--rst-control-face-press, the ghost
+	// and summary faces are transparent in two themes, so a light-dark()
+	// requirement would force a colour where none is painted), and the
+	// type choices. The press strengths are in neither list: they are
+	// declared in :root and restated in the two dark-number blocks, and
+	// schemeNumberBlocks holds those.
 	declaredOnce := append([]string{
 		"--rst-font", "--rst-radius", "--rst-radius-sm", "--rst-radius-pill",
 		"--rst-shadow-pop", "--rst-shadow-knob", "--rst-shadow-lift",
 		"--rst-header-rule",
+		"--rst-on-accent-fill", "--rst-on-danger-fill", "--rst-on-danger-fill-hover", "--rst-danger-hover-filter", "--rst-knob", "--rst-control-face-press",
+		"--rst-ghost-edge", "--rst-ghost-face-hover", "--rst-ghost-edge-hover", "--rst-summary-face", "--rst-summary-face-hover", "--rst-summary-edge", "--rst-summary-edge-hover", "--rst-summary-radius", "--rst-tint-tap", "--rst-tint-card-hover",
+		// The tile and group tints are the surface or transparent in
+		// the flat themes (a tile had no hover, so its hover is its
+		// surface), so they are declared once, not per scheme.
+		"--rst-tint-tile-hover", "--rst-tint-tile-press", "--rst-tint-group-hover",
+		"--rst-depth-hl", "--rst-depth-contact", "--rst-depth-ambient", "--rst-depth-face", "--rst-press-drop",
+		"--rst-focus-edge", "--rst-focus-halo",
+		"--rst-sheen-fill", "--rst-sheen-plain", "--rst-light-rim", "--rst-light-wash",
+		"--rst-title-size", "--rst-title-weight", "--rst-title-track", "--rst-heading-size",
+		"--rst-label-case", "--rst-label-track", "--rst-rail-bg",
 	}, needsLightDark...)
 
 	for _, name := range ThemeNames() {
@@ -174,7 +200,10 @@ func TestBothSchemesAreAuthoredInEveryTheme(t *testing.T) {
 		if !ok {
 			t.Fatalf("ThemeCSS(%q) missing", name)
 		}
-		css := string(raw)
+		// The relative-colour block redeclares a handful of day's tokens
+		// (derived_test.go); the once-only count reads the file without
+		// it, and the block may restate a name at most once.
+		supports, css := accentSupportsBlock(string(raw))
 		decl := regexp.MustCompile(`(--rst-[a-z0-9-]+)\s*:\s*([^;]+);`)
 		values := map[string]string{}
 		for _, m := range decl.FindAllStringSubmatch(css, -1) {
@@ -186,8 +215,29 @@ func TestBothSchemesAreAuthoredInEveryTheme(t *testing.T) {
 			if got := strings.Count(css, prop+":"); got != 1 {
 				t.Errorf("themes/%s.css declares %s %d times, want exactly 1", name, prop, got)
 			}
+			if got := strings.Count(supports, prop+":"); got > 1 {
+				t.Errorf("themes/%s.css redeclares %s %d times in its relative-colour block, want at most 1", name, prop, got)
+			}
 		}
 		for _, prop := range needsLightDark {
+			// A derived value is exempt the way --rst-header-rule is: a
+			// bare var() of a token declared in this theme, or a
+			// color-mix(), reads tokens the schemes already split, and
+			// wrapping it in light-dark() would be the second
+			// hand-authored colour per scheme the derivation exists to
+			// avoid. What passes here: day's tint aliases, focus edge and
+			// halo, and plain's and signal's fills, which read their
+			// accent. day's fills and soft ground are light-dark() pairs
+			// (of relative colours, in the @supports block) and are
+			// split like any other.
+			if v := values[prop]; strings.HasPrefix(v, "color-mix(") {
+				continue
+			} else if name, _, ok := splitVar(v); ok {
+				if _, declared := values[name]; !declared {
+					t.Errorf("themes/%s.css: %s reads %s, which this theme does not declare", name, prop, name)
+				}
+				continue
+			}
 			light, dark, ok := splitLightDark(values[prop])
 			if !ok {
 				t.Errorf("themes/%s.css: %s is %q, want a whole-value light-dark(<light>, <dark>)", name, prop, values[prop])
@@ -1096,7 +1146,27 @@ func allPartials() []struct {
 				map[string]any{"Value": "refund", "Label": "Refund…", "Danger": true},
 			},
 		}},
+		{"media-grid", map[string]any{
+			"Items": []any{
+				map[string]any{
+					"Src": "/images/4471.png", "Name": "Checkout, step 2",
+					"Desc": "The payment step, with the card form open.", "Meta": "1280 × 3200 · 412 KB",
+					"Href": "/images/4471", "Width": 1280, "Height": 3200,
+					"Select": "4471", "Selected": true,
+					"Menu": []any{
+						map[string]any{"Label": "Edit", "Href": "/images/4471/edit"},
+						map[string]any{"Label": "Delete image…", "Href": "/images/4471/delete", "Danger": true},
+					},
+				},
+				map[string]any{
+					"Src": "/images/4472.svg", "Name": "Harbour logo", "Alt": "Harbour",
+					"Fit": "contain", "Href": "/images/4472", "Select": "4472",
+				},
+			},
+		}},
 		{"scheme-menu", map[string]any{"Scheme": "dark", "Return": "/orders"}},
+		{"actor", map[string]any{"Actor": rastrillo.Actor{Subject: "7", Agent: "Claude"}}},
+		{"api-tokens", tokensData(tokensCreatedPage())},
 		{"error-page", map[string]any{
 			"Status": 500, "Ref": "k3f9tq", "HomeHref": "/", "BackHref": "/orders",
 		}},
@@ -1249,14 +1319,15 @@ func TestAllPartialsAreDefined(t *testing.T) {
 		"locale-menu", "scheme-menu", "error-page",
 		"field-date", "field-time", "field-datetime", "field-daterange",
 		"field-url", "signin", "signin-title", "row-menu", "field-money",
+		"media-grid", "stat", "actor", "api-tokens",
 	}
 	for _, name := range want {
 		if tmpl.Lookup(name) == nil {
 			t.Errorf("partial %q is not defined", name)
 		}
 	}
-	if len(want) != 40 {
-		t.Fatalf("the shipped set is 40 partials, this list has %d", len(want))
+	if len(want) != 44 {
+		t.Fatalf("the shipped set is 44 partials, this list has %d", len(want))
 	}
 }
 
@@ -1268,15 +1339,27 @@ func TestRenderedPartialsAreSelfContained(t *testing.T) {
 	for _, p := range allPartials() {
 		got := render(t, p.Name, p.Data)
 		for _, bad := range []string{
-			"http://", "https://", "//cdn", "<script", "<iframe", "<img",
+			"http://", "https://", "//cdn", "<script", "<iframe",
 			"<link ", "url(", "xlink:href", "@import",
 		} {
 			if strings.Contains(got, bad) {
 				t.Errorf("partial %q reaches outside the page (%q):\n%s", p.Name, bad, got)
 			}
 		}
+		// An image is the one fetch a partial legitimately asks for:
+		// media-grid draws the app's own pictures. The address is the
+		// caller's, so the bar is on the attribute rather than the
+		// element: a path on the page's own origin, never a scheme or
+		// a protocol-relative host.
+		for _, m := range srcAttr.FindAllStringSubmatch(got, -1) {
+			if v := m[1]; !strings.HasPrefix(v, "/") || strings.HasPrefix(v, "//") {
+				t.Errorf("partial %q loads %q, which is not a path on the page's origin:\n%s", p.Name, v, got)
+			}
+		}
 	}
 }
+
+var srcAttr = regexp.MustCompile(`\bsrc="([^"]*)"`)
 
 // The one non-partial asset this package ships gets the same bar as the
 // partials and the vendored icons.
@@ -1392,6 +1475,13 @@ func TestEveryControlHasAnAccessibleName(t *testing.T) {
 	if !strings.Contains(menu, `<summary aria-label="`+template.HTMLEscapeString(defaultTf("rastrillo.ui.row_menu", "name", "Grace Hopper"))+`">`) {
 		t.Errorf("the row menu's trigger has no name: %s", menu)
 	}
+	// A tile's checkbox and kebab each say which tile they belong to.
+	grid := render(t, "media-grid", fixtureFor(t, "media-grid"))
+	for _, key := range []string{"rastrillo.ui.media_select", "rastrillo.ui.row_menu"} {
+		if want := `aria-label="` + template.HTMLEscapeString(defaultTf(key, "name", "Checkout, step 2")) + `"`; !strings.Contains(grid, want) {
+			t.Errorf("the media grid's control is not named for its tile (%s): %s", want, grid)
+		}
+	}
 }
 
 // The styleguide equivalent: one pass renders every partial together,
@@ -1417,6 +1507,7 @@ func TestRenderEverythingSmoke(t *testing.T) {
 		"status-pill":        `<span rst-status`,
 		"empty-state":        `<div rst-empty>`,
 		"pagination":         `<nav rst-pagination`,
+		"media-grid":         `<div rst-media>`,
 	}
 	for name, marker := range markers {
 		if !strings.Contains(out, marker) {
@@ -3043,6 +3134,22 @@ func TestThemesDeclareIdenticalTokenSets(t *testing.T) {
 	for _, shape := range []string{
 		"--rst-radius", "--rst-radius-sm", "--rst-radius-pill",
 		"--rst-shadow-pop", "--rst-shadow-knob", "--rst-shadow-lift", "--rst-overlay",
+		// The depth axis (spec C2, as amended by A6 and A15). day turns
+		// it on; plain and signal declare the same names at today's
+		// values. A name missing from day here is a token tokens.css
+		// would read through its fallback forever.
+		"--rst-accent-fill", "--rst-accent-fill-hover", "--rst-accent-fill-edge", "--rst-accent-fill-edge-hover", "--rst-on-accent-fill",
+		"--rst-danger-fill", "--rst-danger-fill-hover", "--rst-danger-fill-edge", "--rst-danger-fill-edge-hover", "--rst-on-danger-fill", "--rst-on-danger-fill-hover", "--rst-danger-hover-filter",
+		"--rst-control-face", "--rst-control-face-hover", "--rst-control-face-press", "--rst-control-border", "--rst-control-border-hover", "--rst-control-text-hover",
+		"--rst-ghost-edge", "--rst-ghost-face-hover", "--rst-ghost-edge-hover", "--rst-summary-face", "--rst-summary-face-hover", "--rst-summary-edge", "--rst-summary-edge-hover", "--rst-summary-radius",
+		"--rst-depth-hl", "--rst-depth-contact", "--rst-depth-ambient", "--rst-depth-face", "--rst-press-drop",
+		"--rst-knob", "--rst-knob-shade", "--rst-track-off",
+		"--rst-tint-hover", "--rst-tint-press", "--rst-tint-tap", "--rst-tint-card-hover", "--rst-tint-tile-hover", "--rst-tint-tile-press", "--rst-tint-group-hover", "--rst-row-tint-hover", "--rst-row-tint-press", "--rst-focus-edge", "--rst-focus-halo",
+		"--rst-sheen-fill", "--rst-sheen-plain", "--rst-light-rim", "--rst-light-wash",
+		"--rst-press-wash", "--rst-press-spot", "--rst-press-wash-plain", "--rst-press-spot-plain",
+		"--rst-title-size", "--rst-title-weight", "--rst-title-track", "--rst-heading-size",
+		"--rst-label-case", "--rst-label-track", "--rst-rail-bg",
+		"--rst-nav-current-bg", "--rst-nav-current-fg",
 	} {
 		if !want[shape] {
 			t.Errorf("day does not declare %s; the shape axis is the theme's since v2", shape)
@@ -3077,6 +3184,157 @@ func themePropSet(t *testing.T, name string) map[string]bool {
 	return out
 }
 
+// schemeNumberBlocks returns the bodies of a theme's two dark-number
+// blocks, or nil when it has none, and fails the test for every problem
+// schemeNumberProblems reports.
+func schemeNumberBlocks(t *testing.T, name, css string) []string {
+	t.Helper()
+	blocks, problems := schemeNumberProblems(name, css)
+	for _, p := range problems {
+		t.Error(p)
+	}
+	return blocks
+}
+
+// schemeNumberProblems reads a theme file against the shape A4 allows:
+// one `:root {` block; the two toggle rules
+// `:root[data-theme="light"] { color-scheme: light; }` and
+// `:root[data-theme="dark"] { color-scheme: dark; }`; and, together or
+// not at all, `:root[data-theme="dark"] { numbers }` and
+// `@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { numbers } }`.
+// Every declaration in a number block must be a --rst-* name with a
+// bare number (an optional px, em or rem unit), nothing else may be in
+// the block, the two blocks must carry identical declarations, and
+// every name restated must be declared in :root as a number too. Both
+// blocks, because a reader who chose Dark has data-theme and a reader on
+// System on a dark OS has only the media query; one block alone hands
+// the other reader the light numbers. Nothing beyond those five pieces
+// may be in the file: anything else is the second palette block
+// light-dark() was adopted to make impossible.
+func schemeNumberProblems(name, css string) (blocks []string, problems []string) {
+	where := "themes/" + name + ".css"
+	bad := func(format string, args ...any) { problems = append(problems, where+": "+fmt.Sprintf(format, args...)) }
+	stripped := regexp.MustCompile(`(?s)/\*.*?\*/`).ReplaceAllString(css, "")
+	const (
+		toggleLight = `:root[data-theme="light"] { color-scheme: light; }`
+		toggleDark  = `:root[data-theme="dark"] { color-scheme: dark; }`
+	)
+	if strings.Count(stripped, toggleLight) != 1 || strings.Count(stripped, toggleDark) != 1 {
+		bad("does not carry the two toggle rules exactly once")
+	}
+	rest := strings.Replace(strings.Replace(stripped, toggleLight, "", 1), toggleDark, "", 1)
+	// One more block is allowed: a relative-colour redeclaration of
+	// names :root already declares (day's hue-derived fills), so that an
+	// engine below the floor keeps the :root value instead of a fill
+	// that resolves to nothing (derived_test.go). Nothing else may be in
+	// it, and it may not introduce a name.
+	supports, rest := accentSupportsBlock(rest)
+	rootRe := regexp.MustCompile(`(?s):root \{(.*?)\n\}`)
+	rootM := rootRe.FindStringSubmatch(rest)
+	if rootM == nil {
+		bad("has no :root block")
+		return nil, problems
+	}
+	root := rootM[1]
+	rest = strings.Replace(rest, rootM[0], "", 1)
+	if supports != "" {
+		declaredInRoot := parseTokens(root)
+		for name := range parseTokens(supports) {
+			if _, ok := declaredInRoot[name]; !ok {
+				bad("redeclares %s in its relative-colour block but never declares it in :root, so an engine without relative colour has no value for it", name)
+			}
+		}
+		if strings.TrimSpace(regexp.MustCompile(`--rst-[a-z0-9-]+\s*:[^;]+;`).ReplaceAllString(supports, "")) != "" {
+			bad("carries something other than --rst-* declarations in its relative-colour block")
+		}
+	}
+	attr := regexp.MustCompile(`:root\[data-theme="dark"\] \{([^{}]*)\}`).FindAllStringSubmatch(rest, -1)
+	media := regexp.MustCompile(`@media \(prefers-color-scheme: dark\) \{\s*:root:not\(\[data-theme="light"\]\) \{([^{}]*)\}\s*\}`).FindAllStringSubmatch(rest, -1)
+	for _, m := range attr {
+		rest = strings.Replace(rest, m[0], "", 1)
+	}
+	for _, m := range media {
+		rest = strings.Replace(rest, m[0], "", 1)
+	}
+	if strings.TrimSpace(rest) != "" {
+		bad("carries rules beyond :root, the toggles and the two dark-number blocks:\n%s", strings.TrimSpace(rest))
+	}
+	if len(attr) == 0 && len(media) == 0 {
+		return nil, problems
+	}
+	if len(attr) != 1 || len(media) != 1 {
+		bad("has %d attribute and %d media dark-number blocks, want one of each or none", len(attr), len(media))
+		return nil, problems
+	}
+	decl := regexp.MustCompile(`^(--rst-[a-z0-9-]+)\s*:\s*(.+)$`)
+	num := regexp.MustCompile(`^-?[0-9]*\.?[0-9]+(px|em|rem)?$`)
+	inRoot := parseTokens(root)
+	read := func(body string) map[string]string {
+		out := map[string]string{}
+		// Every declaration is consumed by the numeric grammar, or the
+		// block is rejected: a stray `color: red;` must not pass because
+		// the reader only looked for --rst- names.
+		for _, d := range strings.Split(body, ";") {
+			d = strings.TrimSpace(d)
+			if d == "" {
+				continue
+			}
+			m := decl.FindStringSubmatch(d)
+			if m == nil {
+				bad("has %q in a scheme block; only --rst-* numbers may be restated per scheme", d)
+				continue
+			}
+			v := strings.TrimSpace(m[2])
+			if !num.MatchString(v) {
+				bad("restates %s as %q in a scheme block; only numbers may be restated per scheme", m[1], v)
+			}
+			if rv, ok := inRoot[m[1]]; !ok {
+				bad("restates %s for dark but never declares it in :root", m[1])
+			} else if !num.MatchString(rv) {
+				bad("declares %s as %q in :root; a number restated per scheme must be a number there too", m[1], rv)
+			}
+			out[m[1]] = v
+		}
+		return out
+	}
+	a, m := read(attr[0][1]), read(media[0][1])
+	if !reflect.DeepEqual(a, m) {
+		bad("two dark-number blocks differ: attribute %v, media %v", a, m)
+	}
+	return []string{attr[0][1], media[0][1]}, problems
+}
+
+// TestSchemeNumberGateRejectsWhatItMustReject feeds the gate the shapes
+// it exists to refuse, since a gate that only ever sees the shipped
+// themes is not known to refuse anything.
+func TestSchemeNumberGateRejectsWhatItMustReject(t *testing.T) {
+	const good = ":root {\n  --rst-bg: light-dark(#fff, #000);\n  --rst-press-wash: 0.08;\n}\n:root[data-theme=\"light\"] { color-scheme: light; }\n:root[data-theme=\"dark\"] { color-scheme: dark; }\n:root[data-theme=\"dark\"] { --rst-press-wash: 0.18; }\n@media (prefers-color-scheme: dark) { :root:not([data-theme=\"light\"]) { --rst-press-wash: 0.18; } }\n"
+	if blocks, problems := schemeNumberProblems("good", good); len(problems) != 0 || len(blocks) != 2 {
+		t.Fatalf("the well-formed theme was refused: %v (%d blocks)", problems, len(blocks))
+	}
+	withSupports := good + "@supports (color: oklch(from red l c h)) {\n  :root {\n    --rst-bg: light-dark(oklch(from #fff 0.5 c h), #000);\n  }\n}\n"
+	if _, problems := schemeNumberProblems("good", withSupports); len(problems) != 0 {
+		t.Fatalf("a relative-colour block restating a :root name was refused: %v", problems)
+	}
+	for name, css := range map[string]string{
+		"a colour in a block":                  strings.ReplaceAll(good, "--rst-press-wash: 0.18;", "--rst-press-wash: 0.18; color: red;"),
+		"a colour restated":                    strings.ReplaceAll(good, "--rst-press-wash: 0.18;", "--rst-bg: #111;"),
+		"only one block":                       strings.Replace(good, "@media (prefers-color-scheme: dark) { :root:not([data-theme=\"light\"]) { --rst-press-wash: 0.18; } }\n", "", 1),
+		"blocks that differ":                   strings.Replace(good, ":root[data-theme=\"dark\"] { --rst-press-wash: 0.18; }", ":root[data-theme=\"dark\"] { --rst-press-wash: 0.30; }", 1),
+		"a number not in root":                 strings.ReplaceAll(good, "--rst-press-wash: 0.18;", "--rst-press-spot: 0.3;"),
+		"a root default not a number":          strings.Replace(good, "--rst-press-wash: 0.08;", "--rst-press-wash: calc(1 - 0.92);", 1),
+		"an extra rule":                        good + ".rst-btn { color: red; }\n",
+		"color-scheme in a block":              strings.ReplaceAll(good, "--rst-press-wash: 0.18;", "--rst-press-wash: 0.18; color-scheme: dark;"),
+		"a supports block with a new name":     good + "@supports (color: oklch(from red l c h)) {\n  :root {\n    --rst-new: #fff;\n  }\n}\n",
+		"a supports block with a rule":         good + "@supports (color: oklch(from red l c h)) {\n  :root {\n    --rst-bg: #fff; color: red;\n  }\n}\n",
+		"a supports block for another feature": good + "@supports (color: oklch(0.5 0.1 20)) {\n  :root {\n    --rst-bg: #fff;\n  }\n}\n",
+	} {
+		if _, problems := schemeNumberProblems("bad", css); len(problems) == 0 {
+			t.Errorf("%s was accepted", name)
+		}
+	}
+}
+
 func TestTokensCSSHasNoColourLiterals(t *testing.T) {
 	// After the split, structural tokens.css may reference colours only
 	// via var(); bare hex in a *declaration value* means a colour leaked
@@ -3087,8 +3345,14 @@ func TestTokensCSSHasNoColourLiterals(t *testing.T) {
 	// so this gate also matches rgba()/rgb()/hsl() function values, not
 	// just bare hex, to keep that claim enforced instead of just stated.
 	decl := regexp.MustCompile(`:\s*[^;]*(#[0-9a-fA-F]{3,6}|rgba?\(|hsl\()`)
+	// Ink and light (A5): tokens.css may paint pure black or pure white
+	// at an alpha, where the strength is a number token or a fixed
+	// fraction. Those two spellings are the only literals allowed; a
+	// line that mixes one with any other colour function still fails.
+	achromatic := regexp.MustCompile(`rgb\((0 0 0|255 255 255) / `)
 	for i, line := range strings.Split(string(TokensCSS()), "\n") {
-		if (strings.Contains(line, "#") || strings.Contains(line, "rgb") || strings.Contains(line, "hsl")) && decl.MatchString(line) {
+		stripped := achromatic.ReplaceAllString(line, "ink(")
+		if (strings.Contains(stripped, "#") || strings.Contains(stripped, "rgb") || strings.Contains(stripped, "hsl")) && decl.MatchString(stripped) {
 			t.Errorf("tokens.css line %d declares a colour literal: %s", i+1, strings.TrimSpace(line))
 		}
 	}
@@ -3917,5 +4181,65 @@ func TestFormFootRendersTheProofSubmit(t *testing.T) {
 	}
 	if plain := render(t, "form-foot", map[string]any{"Submit": "Save"}); strings.Contains(plain, "disabled") {
 		t.Error("form-foot without Proof renders a disabled submit")
+	}
+}
+
+// The depth axis is a theme decision: day turns it on, and plain and
+// signal prove a theme can switch it off (spec §3, A13). Flat means the
+// highlight, the shadows, the sheen and the wash are transparent, the
+// face does not shade, the press has no strength and no drop, and the
+// rim is the line: declared as var(--rst-line), so an app's override of
+// the line reaches it (Astra A2), or as the line's own value. Pinned by
+// value for day because its numbers were measured (A7); pinned flat
+// for the others because "renders as today" is a promise a later theme
+// edit could quietly break.
+func TestDayTurnsDepthOnAndTheOthersStayFlat(t *testing.T) {
+	for _, name := range ThemeNames() {
+		for _, scheme := range []string{"light", "dark"} {
+			tok := themeTokens(t, name)[scheme]
+			rimIsLine := tok["--rst-light-rim"] == "var(--rst-line)" || tok["--rst-light-rim"] == tok["--rst-line"]
+			flat := tok["--rst-depth-hl"] == "transparent" && tok["--rst-depth-contact"] == "transparent" &&
+				tok["--rst-depth-ambient"] == "transparent" && tok["--rst-depth-face"] == "0" && tok["--rst-press-drop"] == "0px" &&
+				tok["--rst-sheen-fill"] == "transparent" && tok["--rst-sheen-plain"] == "transparent" &&
+				tok["--rst-light-wash"] == "transparent" && rimIsLine &&
+				tok["--rst-press-wash"] == "0" && tok["--rst-press-spot"] == "0"
+			if name == "day" {
+				if flat {
+					t.Errorf("day/%s is flat; the depth axis is day's to turn on", scheme)
+				}
+				if tok["--rst-depth-face"] != "0.04" || tok["--rst-press-drop"] != "1px" {
+					t.Errorf("day/%s shades a filled face by %q and drops a press by %q, want 0.04 and 1px (A7, A2)", scheme, tok["--rst-depth-face"], tok["--rst-press-drop"])
+				}
+				continue
+			}
+			if !flat {
+				t.Errorf("%s/%s is not flat (A13: plain and signal render as today)", name, scheme)
+			}
+		}
+	}
+	day := themeTokens(t, "day")
+	for scheme, want := range map[string]map[string]string{
+		"light": {"--rst-accent": "#1f56d6", "--rst-danger-fill": "#c62f2f", "--rst-track-off": "#8a8a95", "--rst-radius": "6px", "--rst-radius-sm": "4px", "--rst-header-rule": "var(--rst-line)"},
+		"dark":  {"--rst-accent": "#7aa2ff", "--rst-danger-fill": "#c43232", "--rst-track-off": "#71737c", "--rst-radius": "6px", "--rst-radius-sm": "4px", "--rst-header-rule": "var(--rst-line)"},
+	} {
+		for tokName, v := range want {
+			if day[scheme][tokName] != v {
+				t.Errorf("day/%s %s = %q, want %q (spec §1, §2, C15, A7)", scheme, tokName, day[scheme][tokName], v)
+			}
+		}
+	}
+	// The fill is derived from the accent (Task 11b), so it is pinned
+	// resolved: the accent's hue at day's fill lightness, within two
+	// units of the #2257df and #2f61e8 the design was measured with.
+	resolved := resolvedTokens(t, "day")
+	for scheme, want := range map[string]string{"light": "#2059dd", "dark": "#3160ea"} {
+		if got := resolved[scheme]["--rst-accent-fill"]; got != want {
+			t.Errorf("day/%s --rst-accent-fill resolves to %q, want %q (A7, derived)", scheme, got, want)
+		}
+	}
+	css, _ := ThemeCSS("day")
+	blocks := schemeNumberBlocks(t, "day", string(css))
+	if len(blocks) != 2 || !strings.Contains(blocks[0], "--rst-press-wash: 0.18;") {
+		t.Errorf("day restates no dark press strengths; want --rst-press-wash: 0.18 in both scheme blocks (A2)")
 	}
 }

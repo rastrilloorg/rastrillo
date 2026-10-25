@@ -1,14 +1,12 @@
 # 🤖 The CLI
 
-One binary, nine commands. Install it with:
+One binary, ten commands. Install it with:
 
 ```sh
 go install amadan.net/rastrillo/rastrillo/cmd/rastrillo@latest
 ```
 
-Every command takes an optional directory as its last argument and
-defaults to `.`. Flags come before the directory. `rastrillo help`, `-h`
-and `--help` all print usage.
+Every command except `session-key` takes an optional directory as its last argument and defaults to `.`. `session-key` takes a key id instead. Flags come before the directory. `rastrillo help`, `-h` and `--help` all print usage.
 
 ## rastrillo new
 
@@ -64,7 +62,7 @@ switcher. Add more later; see [Localization](/docs/localization#declaring).
 ## rastrillo generate
 
 ```sh
-rastrillo generate [--check] [dir]
+rastrillo generate [--check] [--accept-breaking] [dir]
 ```
 
 Walks `actions/` and `manifest/` and emits `gen/`: the router on a Go
@@ -91,6 +89,17 @@ before you ship.
 `manifest/app.toml`. The `--default-locale` flag was removed, and
 passing it fails with
 `--default-locale was removed: the default comes from default_locale in manifest/app.toml`.
+
+`generate` also writes `api/v1.json` at the app root: every route
+`/api/v1` serves, with its arguments and result fields. Commit it.
+Before writing, `generate` compares the file it would write with the
+committed one. A change that only adds (a new route, a new optional
+argument, a new result field) is written. A change that breaks a client
+(a route or field removed, an argument newly required, a kind changed)
+fails, names each break, and leaves the file as it was. To rewrite it
+over a break on purpose, run `rastrillo generate --accept-breaking`; the
+diff shows the break in review. `--check` fails if the file is missing
+or stale, and never writes it.
 
 ## rastrillo dev
 
@@ -195,9 +204,9 @@ rastrillo doctor [--fix] [--force] [--theme <name>] [--probe] [dir]
 ```
 
 Compares the files `rastrillo new` copied into the app's `static/`
-directory — `tokens.css`, `theme.css`, `rastrillo.js`, `select.js` and
-`datetime.js` — against the copies this binary carries, and says which
-ones differ and how.
+directory (`tokens.css`, `theme.css`, `rastrillo.js`, `select.js`,
+`datetime.js` and `light.js`) against the copies this binary carries,
+and says which ones differ and how.
 
 It is a convenience and an upgrade tool, not the thing standing between
 your app and silent drift. That is the `vendored_test.go` the scaffold
@@ -459,7 +468,8 @@ every run that changes anything.
 ### The vendored files
 
 It never touches `static/tokens.css`, `static/theme.css`,
-`static/rastrillo.js`, `static/select.js` or `static/datetime.js`. Those
+`static/rastrillo.js`, `static/select.js`, `static/datetime.js` or
+`static/light.js`. Those
 are copies of the library's, and `doctor` is what refreshes them;
 rewriting one here would make your copy differ from the library's for
 good.
@@ -556,3 +566,24 @@ in the run, so a lane cannot go green having run nothing.
 
 The scaffold's `make budget`, `make test` and `make perf` call these.
 [Testing](/docs/testing) explains the budgets.
+
+## rastrillo session-key
+
+```sh
+rastrillo session-key <kid>
+```
+
+Makes a new signing key for signed sessions and prints it as two lines:
+
+```
+secret <kid>.<private key>
+public <kid>.<public key>
+```
+
+Store the value after `secret` on the hub, with `carlos secrets set`. The hub signs session cookies with it. Set the value after `public` on every tenant, with `carlos env set`. Tenants check cookies with it.
+
+The `kid` is 1 to 32 characters from `a-z`, `0-9`, `_` and `-`.
+
+To rotate, make a key with a new `kid` and follow [the rotation order](/docs/reference/sessions#rotating-the-signing-key).
+
+Exits 2 when the `kid` is missing or not valid, and prints nothing on standard output.

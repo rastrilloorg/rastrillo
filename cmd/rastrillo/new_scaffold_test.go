@@ -60,7 +60,7 @@ func TestNewScaffoldsCIAndManifest(t *testing.T) {
 	}
 
 	mk, _ := os.ReadFile(filepath.Join("demoapp", "Makefile"))
-	if !strings.Contains(string(mk), "ci: vet fmt-check staticcheck govulncheck gitleaks budget test perf migration-check") {
+	if !strings.Contains(string(mk), "ci: vet fmt-check staticcheck govulncheck gitleaks budget test perf migration-check generate-check") {
 		t.Fatalf("Makefile must define the one ci gate:\n%s", mk)
 	}
 	for _, want := range []string{
@@ -109,6 +109,18 @@ func TestNewScaffoldsCIAndManifest(t *testing.T) {
 			t.Fatalf("AGENTS.md preload missing %q:\n%s", want, agents)
 		}
 	}
+	// The skill is found by the app's own module version, never by
+	// looking in the module cache: two skilleval baseline runs searched
+	// the cache, found an older copy and followed a SKILL.md that
+	// predated the feature they were building (discussion #97).
+	for _, want := range []string{"go list -m -f '{{.Dir}}' amadan.net/rastrillo/rastrillo", "skill/"} {
+		if !strings.Contains(string(agents), want) {
+			t.Fatalf("AGENTS.md must say where the app's own skill is (%q):\n%s", want, agents)
+		}
+	}
+	if strings.Contains(string(agents), "or in the module cache") {
+		t.Fatalf("AGENTS.md still sends agents to the module cache, where an older SKILL.md waits:\n%s", agents)
+	}
 	claude, _ := os.ReadFile(filepath.Join("demoapp", "CLAUDE.md"))
 	if !strings.Contains(string(claude), "@AGENTS.md") {
 		t.Fatalf("CLAUDE.md must import AGENTS.md:\n%s", claude)
@@ -136,7 +148,7 @@ func TestNewScaffoldsTwoMigrationSets(t *testing.T) {
 	s := string(src)
 	for _, want := range []string{
 		"var Schema = migrate.MustFromFS(migrationFS,",
-		"var BootSchema = migrate.Merge(Schema)",
+		"var BootSchema = migrate.Merge(apitoken.Schema, Schema)",
 	} {
 		if !strings.Contains(s, want) {
 			t.Errorf("migrations.go missing %q:\n%s", want, s)
@@ -687,6 +699,12 @@ func TestScaffoldWholeGatePassesOffline(t *testing.T) {
 	if strings.Contains(string(out), "required test") {
 		t.Errorf("the perf lane's required tests did not both pass:\n%s", out)
 	}
+	// generate --check passing on a scaffold with no manifest resources
+	// is what proves the scaffold writes gen/api.go and api/v1.json the
+	// way generate would: a missing contract fails it.
+	if !strings.Contains(string(out), "rastrillo generate --check:") {
+		t.Errorf("make ci did not run generate --check:\n%s", out)
+	}
 }
 
 // A new app declares one locale and already links its pack, so it
@@ -1000,7 +1018,7 @@ func TestBadConfig(t *testing.T) {
 		t.Error("App accepted a default locale whose pack is not linked")
 	}
 	rec := httptest.NewRecorder()
-	notes.Mux(http.NotFoundHandler()).ServeHTTP(rec, httptest.NewRequest("GET", "/", nil))
+	notes.Mux(http.NotFoundHandler(), http.NotFoundHandler()).ServeHTTP(rec, httptest.NewRequest("GET", "/", nil))
 	if rec.Code != http.StatusInternalServerError {
 		t.Errorf("Mux: %d, want 500", rec.Code)
 	}

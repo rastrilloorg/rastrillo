@@ -16,16 +16,15 @@
 package generate
 
 import (
-	"bytes"
 	"fmt"
 	"go/format"
-	"os"
 	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
 
 	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/internal/generate/shape"
 )
 
 // EmitStore writes per resource either the sqlc inputs (exclusive:
@@ -119,56 +118,14 @@ func EmitStore(genDir string, rs []rastrillo.Resource, h History) (paths, append
 	return paths, appended, nil
 }
 
-// writeFileIfChanged writes content to path only when the file is
-// missing or its current content differs — later emitters reuse this
-// to keep re-generation idempotent (no spurious mtime churn, no
-// rewriting bytes that are already correct).
-func writeFileIfChanged(path string, content []byte) error {
-	if existing, err := os.ReadFile(path); err == nil && bytes.Equal(existing, content) {
-		return nil
-	}
-	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
-		return err
-	}
-	return os.WriteFile(path, content, 0o644)
-}
+func writeFileIfChanged(path string, content []byte) error { return shape.WriteFile(path, content) }
 
-// column is the emitter's single shared model of a resource's data
-// columns; schema.sql, queries.sql and migrations.go are all rendered
-// from it so they cannot describe different tables.
-type column struct {
-	Name string // declared name, e.g. "MaxPerOrder"
-	SQL  string // sqlName(Name), e.g. "max_per_order"
-	Kind rastrillo.Kind
-}
+// column, columns and the name helpers below live in shape, shared with
+// the action and operation emitters; the names here keep this package's
+// call sites and goldens as they were.
+type column = shape.Column
 
-// columns returns r's data columns (excluding id/created_at/updated_at,
-// which every table has unconditionally) as the union of its List
-// columns and Form fields, in first-declaration order: List columns
-// first, then Form basics, then Form advanced, skipping any name
-// (compared via sqlName, so case-insensitively) already present.
-func columns(r rastrillo.Resource) []column {
-	var cols []column
-	seen := map[string]bool{}
-	add := func(name string, kind rastrillo.Kind) {
-		sql := sqlName(name)
-		if seen[sql] {
-			return
-		}
-		seen[sql] = true
-		cols = append(cols, column{Name: name, SQL: sql, Kind: kind})
-	}
-	for _, c := range r.List.Columns {
-		add(c.Field, c.Kind)
-	}
-	for _, f := range r.Form.Basics {
-		add(f.Name, f.Kind)
-	}
-	for _, f := range r.Form.Advanced {
-		add(f.Name, f.Kind)
-	}
-	return cols
-}
+func columns(r rastrillo.Resource) []column { return shape.Columns(r) }
 
 // kindSQLType is the single Kind→SQL map the boundary rule (money
 // stores as an integer, never a float) lives behind: text/textarea
@@ -192,56 +149,13 @@ func sqlColumnType(k rastrillo.Kind) string {
 	return t
 }
 
-// sqlName converts a declared identifier (PascalCase or camelCase, per
-// Validate's identPattern) to a snake_case SQL column name: an
-// underscore is inserted before each interior uppercase run (a run
-// starting at index 0 gets none, since the name is already lowercase
-// there once the whole thing is lowercased), then the whole string is
-// lowercased. "MaxPerOrder" -> "max_per_order".
-func sqlName(s string) string {
-	var b strings.Builder
-	for i := 0; i < len(s); i++ {
-		c := s[i]
-		isUpper := c >= 'A' && c <= 'Z'
-		prevUpper := i > 0 && s[i-1] >= 'A' && s[i-1] <= 'Z'
-		if isUpper && i > 0 && !prevUpper {
-			b.WriteByte('_')
-		}
-		if isUpper {
-			c += 'a' - 'A'
-		}
-		b.WriteByte(c)
-	}
-	return b.String()
-}
+func sqlName(s string) string { return shape.SQLName(s) }
 
-// pascalCase title-cases a snake_case name for use in a Go/sqlc
-// identifier: "ticket_types" -> "TicketTypes".
-func pascalCase(s string) string {
-	parts := strings.Split(s, "_")
-	for i, p := range parts {
-		if p == "" {
-			continue
-		}
-		parts[i] = strings.ToUpper(p[:1]) + p[1:]
-	}
-	return strings.Join(parts, "")
-}
+func pascalCase(s string) string { return shape.PascalCase(s) }
 
-// singularPascal is pascalCase after stripping one trailing "s" from s,
-// if present — the plan's singularization rule for per-record query
-// names: "notes" -> "Note".
-func singularPascal(s string) string {
-	s = strings.TrimSuffix(s, "s")
-	return pascalCase(s)
-}
+func singularPascal(s string) string { return shape.SingularPascal(s) }
 
-// scoped reports whether r declares per-user scoping — the one flag
-// this emitter and the action emitter both branch on. Validate already
-// rejected any Scope other than "" and UserScoped.
-func scoped(r rastrillo.Resource) bool {
-	return r.Scope == rastrillo.UserScoped
-}
+func scoped(r rastrillo.Resource) bool { return shape.Scoped(r) }
 
 // schemaSQL renders the sqlc-facing DDL: a plain CREATE TABLE with an
 // id primary key, the owner column when the resource is user-scoped,
@@ -321,39 +235,9 @@ func migrationsGo(r rastrillo.Resource, stmts []string) []byte {
 	return []byte(b.String())
 }
 
-// searchColumns returns r's List columns eligible for the search LIKE
-// clause: text/textarea kinds only (a money column has nothing to
-// substring-match).
-func searchColumns(r rastrillo.Resource) []column {
-	var cols []column
-	for _, c := range r.List.Columns {
-		if c.Kind == rastrillo.Text || c.Kind == rastrillo.Textarea {
-			cols = append(cols, column{Name: c.Field, SQL: sqlName(c.Field), Kind: c.Kind})
-		}
-	}
-	return cols
-}
+func searchColumns(r rastrillo.Resource) []column { return shape.SearchColumns(r) }
 
-// filterFields returns r's filter field names as an ordered union of bare
-// Filter and Filters[].Field, in first-mention order with no duplicates.
-func filterFields(r rastrillo.Resource) []string {
-	var fields []string
-	seen := map[string]bool{}
-	add := func(name string) {
-		if seen[name] {
-			return
-		}
-		seen[name] = true
-		fields = append(fields, name)
-	}
-	for _, f := range r.List.Filter {
-		add(f)
-	}
-	for _, flt := range r.List.Filters {
-		add(flt.Field)
-	}
-	return fields
-}
+func filterFields(r rastrillo.Resource) []string { return shape.FilterFields(r) }
 
 // whereClauses builds the optional-filter WHERE conditions shared by
 // ListNotes and CountNotes: one clause for the search box (if List.Search
@@ -418,15 +302,23 @@ func buildStatement(firstLine string, clauses []string, tailLines []string) stri
 	return strings.Join(lines, "\n") + "\n"
 }
 
-// updateStatement renders an UPDATE ... SET statement for one field
-// group (Form.Basics or Form.Advanced): one "col = sqlc.arg(col)" per
-// field plus the always-present updated_at bump, keyed on id — AND
-// owner for a scoped resource, so an UPDATE against someone else's row
-// is a no-op the same way a Get against it is a no-row.
-func updateStatement(r rastrillo.Resource, fields []rastrillo.Field) string {
+// afterClause is the keyset condition a List<Plural>After page starts
+// from: rows strictly after (after_created_at, after_id) in the list's
+// created_at DESC, id DESC order. It is spelt out rather than written as
+// the row value (created_at, id) < (?, ?): sqlc v1.31.1 types after_id
+// in the row value as the text column it is compared beside, and the
+// cursor's id would not be an int64.
+const afterClause = "(sqlc.arg(after_created_at) = '' OR created_at < sqlc.arg(after_created_at) OR (created_at = sqlc.arg(after_created_at) AND id < sqlc.arg(after_id)))"
+
+// fullUpdateStatement is the one UPDATE a store has, the one an
+// operation's partial update ends with: every data column plus the
+// updated_at bump, keyed on recordKey, so the row it read, merged with
+// what was sent, goes back whole. A COALESCE per column could not clear
+// an optional amount, whose two columns are nullable (spec §2).
+func fullUpdateStatement(r rastrillo.Resource) string {
 	var sets []string
-	for _, f := range fields {
-		for _, col := range columnNames(column{SQL: sqlName(f.Name), Kind: f.Kind}) {
+	for _, c := range columns(r) {
+		for _, col := range columnNames(c) {
 			sets = append(sets, fmt.Sprintf("%s = sqlc.arg(%s)", col, col))
 		}
 	}
@@ -436,7 +328,7 @@ func updateStatement(r rastrillo.Resource, fields []rastrillo.Field) string {
 
 // recordKey is the WHERE condition that identifies ONE record a caller
 // may touch: id alone for an unscoped resource, id AND owner for a
-// scoped one — the single spelling Get, both Updates and Delete share,
+// scoped one — the single spelling Get, every Update and Delete share,
 // so no per-record query can ever forget the owner filter the others
 // enforce.
 func recordKey(r rastrillo.Resource) string {
@@ -447,9 +339,13 @@ func recordKey(r rastrillo.Resource) string {
 }
 
 // queriesSQL renders the sqlc named-query file for r: List/Count (with
-// the optional search+filter WHERE), Get, Create, and one Update per
-// form field group (Advanced only when non-empty). Query names
-// singularize r.Name for per-record queries (Task 5 brief:
+// the optional search+filter WHERE), ListAfter (the same WHERE plus the
+// keyset afterClause, for an API page that must hold still while rows
+// are inserted or deleted ahead of it, where an OFFSET would skip or
+// repeat), Get, Create, the full-row Update an operation's partial
+// update writes through, and Delete. Update and Delete are :execrows so
+// a caller can tell a missing or foreign row (0) from a write (1).
+// Query names singularize r.Name for per-record queries (Task 5 brief:
 // "notes" -> "Note") and title-case it as-is for per-collection ones.
 func queriesSQL(r rastrillo.Resource) []byte {
 	plural := pascalCase(r.Name)
@@ -463,6 +359,14 @@ func queriesSQL(r rastrillo.Resource) []byte {
 			[]string{
 				"ORDER BY created_at DESC, id DESC",
 				"LIMIT sqlc.arg(page_limit) OFFSET sqlc.arg(page_offset)",
+			})))
+
+	blocks = append(blocks, fmt.Sprintf("-- name: List%sAfter :many\n%s", plural,
+		buildStatement(fmt.Sprintf("SELECT * FROM %s", r.Name),
+			append(append([]string(nil), wc...), afterClause),
+			[]string{
+				"ORDER BY created_at DESC, id DESC",
+				"LIMIT sqlc.arg(page_limit)",
 			})))
 
 	blocks = append(blocks, fmt.Sprintf("-- name: Count%s :one\n%s", plural,
@@ -496,15 +400,10 @@ func queriesSQL(r rastrillo.Resource) []byte {
 			nil,
 			[]string{fmt.Sprintf("VALUES (%s)", strings.Join(vals, ", ")), "RETURNING id"})))
 
-	blocks = append(blocks, fmt.Sprintf("-- name: Update%sBasics :exec\n%s",
-		singular, updateStatement(r, r.Form.Basics)))
+	blocks = append(blocks, fmt.Sprintf("-- name: Update%s :execrows\n%s",
+		singular, fullUpdateStatement(r)))
 
-	if len(r.Form.Advanced) > 0 {
-		blocks = append(blocks, fmt.Sprintf("-- name: Update%sAdvanced :exec\n%s",
-			singular, updateStatement(r, r.Form.Advanced)))
-	}
-
-	blocks = append(blocks, fmt.Sprintf("-- name: Delete%s :exec\nDELETE FROM %s WHERE %s;\n",
+	blocks = append(blocks, fmt.Sprintf("-- name: Delete%s :execrows\nDELETE FROM %s WHERE %s;\n",
 		singular, r.Name, recordKey(r)))
 
 	var b strings.Builder

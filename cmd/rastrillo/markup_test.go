@@ -182,6 +182,33 @@ func TestMarkupSweepCountsOnlyFilesWithMarkup(t *testing.T) {
 	}
 }
 
+// The sweep's list of files it leaves alone was a hand copy of the
+// vendored set, and it had fallen behind: every fresh sidebar or
+// console scaffold was told to turn shell.css's .rst-shell__bar into an
+// attribute selector, in the library's own file, and an app that did
+// was called drifted by the doctor's next run (Task 10 review). The
+// list is ui.VendoredNames now, so whichever file joins the vendored
+// set next is skipped here without this tool changing.
+func TestMarkupSweepLeavesEveryVendoredFileAlone(t *testing.T) {
+	t.Chdir(t.TempDir())
+	if err := runNew([]string{"--shell=sidebar", "railapp"}); err != nil {
+		t.Fatalf("runNew: %v", err)
+	}
+	var out bytes.Buffer
+	_ = markupSweep(&out, "railapp", false)
+	if strings.Contains(out.String(), "your own stylesheet") || strings.Contains(out.String(), "shell.css") {
+		t.Errorf("the sweep calls a vendored file the app's own:\n%s", out.String())
+	}
+	for _, name := range ui.VendoredNames() {
+		if !vendored("internal/railapp/static/" + name) {
+			t.Errorf("vendored(%q) is false, so the sweep would rewrite the library's file", name)
+		}
+	}
+	if vendored("internal/railapp/static/app.css") || vendored("static/light.js/notes.html") {
+		t.Error("vendored() claims a file the scaffold never wrote")
+	}
+}
+
 // The app's own stylesheet is the trap: a rule written against
 // .rst-lrow stops matching the moment the markup says rst-lrow, and
 // nothing in the app fails.

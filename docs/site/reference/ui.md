@@ -31,6 +31,11 @@ The partials assume three containers they do not emit, because those
 belong to your page markup: `<div rst-page>`,
 `<div rst-list>` and `<form rst-form>`.
 
+`media-grid` is the list family's grid of image tiles, for an Images
+page: an even 4:3 frame per tile, a caption under it, and the same
+checkbox and kebab a list row carries. See
+[Templates](/docs/templates#the-partials).
+
 ## Funcs
 
 ```go
@@ -38,13 +43,13 @@ func Funcs(opts ...Option) template.FuncMap
 ```
 
 The function map the partials need, for an app that renders through its
-own template tree instead of [`ui.Pages`](#pages). It holds twenty-two:
+own template tree instead of [`ui.Pages`](#pages). It holds twenty-three:
 `dict`, `list`, `menuGroup`, `searchClear`, `icon`, `iconAssets`, `opt`,
 `stageArt`, `displayURL`, `safeHref`, `rowMenuItems`, `paginationItems`,
 `localizer`, `withL`, `strong`, and the locale functions `T`, `Tf`, `Tbdi`,
-`number`, `displayValue`, `dateWords` and `money`. Add your own on top;
-do not drop any. `rowMenuItems` checks `row-menu`'s items and stops the
-render on one it cannot show.
+`number`, `displayValue`, `dateWords`, `money` and `actor`. Add your
+own on top; do not drop any. `rowMenuItems` checks `row-menu`'s items
+and stops the render on one it cannot show.
 
 `opt` reads an optional key off a partial's data, whether it is a map or
 a struct, and gives nil when it is missing. `Tbdi` is `Tf` for a
@@ -152,7 +157,7 @@ func ForRequest(r *http.Request) Localized
 func (l Localized) Localizer() *Localizer
 func (l Localized) Request() Localized
 
-var LocaleFuncs = []string{"T", "Tf", "Tbdi", "number", "displayValue", "dateWords", "money"}
+var LocaleFuncs = []string{"T", "Tf", "Tbdi", "number", "displayValue", "dateWords", "money", "actor"}
 var ErrNoLocalizer = errors.New(noLocalizerMsg)
 var ErrLegacyCall = errors.New(legacyCallMsg)
 ```
@@ -185,6 +190,7 @@ functions that take `$L` first:
 | `{{number $L v}}`, `{{displayValue $L v}}` | `*Localizer`, any value | a nil value renders as before |
 | `{{dateWords $L}}` | `*Localizer` | |
 | `{{money $L amount code}}` | `*Localizer`, an integer amount or a pointer to one, an ISO code | a nil amount writes nothing; there is no form without `$L` |
+| `{{actor $L a}}` | `*Localizer`, a `rastrillo.Actor` | see [actor](#actor) |
 
 `ErrNoLocalizer` is a locale call whose `$L` is nil, or page data with
 no `L`. `ErrLegacyCall` is a locale call without `$L`. Under `ui.Pages`
@@ -206,6 +212,37 @@ a nil pointer writes nothing. The code is an ISO 4217 code, as a
 A float, a string amount, an unknown code or a missing argument is an
 error, and stops the page. Every digit of the currency's smallest unit is shown: 1.5 dinars,
 stored as 1500 fils, is `KWD 1.500` on an English page.
+
+## actor
+
+```html
+{{actor $L .Actor}}
+```
+
+```go
+var ActorName func(ctx context.Context, subject string) string
+```
+
+Writes who did something, in the reader's language: nothing for the
+app, `Paul` for a person, and `Claude for Paul` for an agent acting for
+them. It is plain text, with no badge or icon. Style it yourself.
+
+Set `ActorName` once at startup to turn a subject into a person's name.
+Without it, the page shows the subject. A template has no request, so
+`ActorName` is called with `context.Background()`. If your lookup needs
+the request's context, build the words in Go with
+`rastrillo.ActorPhrase` instead.
+
+The `actor` partial writes the same words in a span, for a list cell
+or a detail row:
+
+```html
+{{template "actor" dict "L" $L "Actor" .Actor}}
+```
+
+The span is `<span rst-actor>`. The app itself, the zero `Actor`,
+renders nothing. Pass `Display` with words you built in Go when your
+lookup needed the request.
 
 ## MenuGroupDefault
 
@@ -527,7 +564,7 @@ which clears the floor by 49%.
 evenly spaced hues clear the floor up to **seventeen** and fail at
 eighteen. **Sixteen is what we would recommend**, though, and the gap
 between those two numbers is the reason: seventeen clears by 1.9% and
-sixteen by 7.3%, and 1.9% is inside the range a new theme surface or a
+sixteen by 7.8%, and 1.9% is inside the range a new theme surface or a
 tweak to the palette could move. Seventeen is the measurement; sixteen is
 the one with room in it. Run `WorstSeparation` against your own canvas
 before relying on either — a dark paper we have never seen is exactly the
@@ -647,7 +684,18 @@ the busy rule: every submit button's label gives way to a spinner for
 at least 650ms, the button disables and the form refuses a second
 submit, and Back hands the form back — by default, with
 `data-busy="false"` as the opt-out and `data-busy-label` as the label
-swap. Linking it is the whole opt-in. `SelectJS` backs the enhanced select: it mirrors a
+swap. Linking it is the whole opt-in.
+
+`LightJS` is `light.js`, the light the depth styles read: it sets
+`--rst-light-x` and `--rst-light-y` from the hour (its `FOLLOW` flag,
+off, eases them toward the pointer instead, at most five times a
+second); writes the pointer's and a press's position on the button under
+it; and lets a card's rim brighten near the pointer. Every property has a
+default the stylesheet carries, so an app can delete the file and its
+tag, naming it in `vendoredIsMine`. It never captures the pointer, reads
+no sensor, and does not run under reduced motion or forced colours.
+
+`SelectJS` backs the enhanced select: it mirrors a
 `<select>` carrying `data-rst-select` as a
 filterable ARIA combobox, renders any `<optgroup>`s as labelled
 `role="group"`s rather than flattening them, and never touches one

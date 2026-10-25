@@ -1,0 +1,86 @@
+{{/* api-tokens — the API token page's body, from apitoken's PageData:
+     the one-time reveal, the create form, the list, and the revoke-all
+     buttons. The title and the intro are the app's, above it: a
+     page-header with rastrillo.ui.api_tokens_title and
+     api_tokens_intro, inside the app's <div rst-page>.
+
+     The list is a list grid whose identity cell is the actor partial
+     (the handlers' Display, so the name their lookup found is the one
+     shown) over the public ID, which is what identifies a token. The
+     four facts (access, created, last used, expires) are cells under
+     the head row's headings on a desktop; on a phone they stack under
+     the identity, each with its heading as a label, because a person
+     checks a token's access and activity before revoking it and a
+     list that hid them there would have them revoke blind. A live
+     token's revoke is the one item of its kebab, a POST, so on a
+     phone it keeps the menu column a row already has; a revoked or
+     expired token shows the word instead and has no kebab. Each date
+     is the ISO day in a <time>, the one form every language reads:
+     the handlers have no locale formatter, and the day is what a
+     person checks a token's age by.
+
+     The reveal is a callout focus lands on: the person has one chance
+     to copy the secret, and the callout is where the page starts. The
+     secret is text in a <code>, never an attribute, a link or a form
+     value, which is how it would reach a URL.
+
+     The forms carry no CSRF field: csrf.Protect checks the origin, as
+     row-menu's POST items rely on. Mount the handlers behind it.
+
+     Keys:
+       Page       apitoken.PageData, required — what Handlers hand
+                  Render: Tokens, Agents, Created, Errors and Form
+       Path       string, required — the page's own path, which the
+                  create form posts to
+       RevokePath, RevokeAgentPath, RevokeAllPath  strings, optional —
+                  where the revoke forms post; default Path/revoke,
+                  Path/revoke-agent and Path/revoke-all, the routes a
+                  new app's tokens.go mounts */}}
+{{define "api-tokens"}}{{$L := localizer $}}{{$p := .Page}}{{$path := .Path}}{{$revoke := or (opt . "RevokePath") (print $path "/revoke")}}{{$revokeAgent := or (opt . "RevokeAgentPath") (print $path "/revoke-agent")}}{{$revokeAll := or (opt . "RevokeAllPath") (print $path "/revoke-all")}}<div rst-tokens>
+  {{- with $p.Created}}
+  <div rst-callout rst-tone="positive" tabindex="-1" autofocus><span rst-callout-ic aria-hidden="true">{{icon "check-circle"}}</span><div rst-callout-body><strong>{{T $L "rastrillo.ui.api_tokens_reveal"}}</strong><p><code rst-tokens-secret>{{.Secret}}</code></p></div></div>
+  {{- end}}
+  <section rst-box><form rst-form method="post" action="{{$path}}">
+    {{template "field" dict "L" $L "ID" "agent" "Name" "agent" "Label" (T $L "rastrillo.ui.api_tokens_agent") "Value" (index $p.Form "agent") "Maxlength" "40" "Error" (index $p.Errors "agent")}}
+    {{template "field-check" dict "L" $L "Name" "for_self" "Value" "on" "Label" (T $L "rastrillo.ui.api_tokens_for_self") "Checked" (ne (index $p.Form "for_self") "")}}
+    {{template "choice-field" dict "L" $L "Legend" (T $L "rastrillo.ui.api_tokens_access") "Name" "access" "Options" (list
+      (dict "Value" "write" "Title" (T $L "rastrillo.ui.api_tokens_access_write") "Checked" (eq (index $p.Form "access") "write"))
+      (dict "Value" "read" "Title" (T $L "rastrillo.ui.api_tokens_access_read") "Checked" (eq (index $p.Form "access") "read")))}}
+    {{template "field-select" dict "L" $L "ID" "expiry" "Name" "expiry" "Label" (T $L "rastrillo.ui.api_tokens_expires") "Short" true "Options" (list
+      (dict "Value" "30" "Label" (T $L "rastrillo.ui.api_tokens_expiry_30") "Selected" (eq (index $p.Form "expiry") "30"))
+      (dict "Value" "90" "Label" (T $L "rastrillo.ui.api_tokens_expiry_90") "Selected" (eq (index $p.Form "expiry") "90"))
+      (dict "Value" "365" "Label" (T $L "rastrillo.ui.api_tokens_expiry_365") "Selected" (eq (index $p.Form "expiry") "365"))
+      (dict "Value" "never" "Label" (T $L "rastrillo.ui.api_tokens_expiry_never") "Selected" (eq (index $p.Form "expiry") "never")))}}
+    {{template "form-foot" dict "L" $L "Submit" (T $L "rastrillo.ui.api_tokens_create")}}
+  </form></section>
+  {{- if $p.Tokens}}
+  <div rst-card rst-tokens-list>
+    <div rst-lrow="head"><span>{{T $L "rastrillo.ui.api_tokens_col_token"}}</span><span class="rst-m-hide">{{T $L "rastrillo.ui.api_tokens_access"}}</span><span class="rst-m-hide">{{T $L "rastrillo.ui.api_tokens_col_created"}}</span><span class="rst-m-hide">{{T $L "rastrillo.ui.api_tokens_col_last_used"}}</span><span class="rst-m-hide">{{T $L "rastrillo.ui.api_tokens_expires"}}</span><span></span><span></span></div>
+    {{- range $p.Tokens}}
+    <div rst-lrow>
+      <span class="rst-nm">{{template "actor" dict "L" $L "Actor" .Actor "Display" .Display}}<small><code>{{.ID}}</code></small></span>
+      <span rst-tokens-fact><span rst-tokens-fact-label>{{T $L "rastrillo.ui.api_tokens_access"}}</span>{{if eq .Access.String "write"}}{{T $L "rastrillo.ui.api_tokens_access_write"}}{{else}}{{T $L "rastrillo.ui.api_tokens_access_read"}}{{end}}</span>
+      <span rst-tokens-fact><span rst-tokens-fact-label>{{T $L "rastrillo.ui.api_tokens_col_created"}}</span><time datetime="{{.CreatedAt.Format "2006-01-02"}}">{{.CreatedAt.Format "2006-01-02"}}</time></span>
+      <span rst-tokens-fact><span rst-tokens-fact-label>{{T $L "rastrillo.ui.api_tokens_col_last_used"}}</span>{{with .LastUsed}}<time datetime="{{.Format "2006-01-02"}}">{{.Format "2006-01-02"}}</time>{{end}}</span>
+      <span rst-tokens-fact><span rst-tokens-fact-label>{{T $L "rastrillo.ui.api_tokens_expires"}}</span>{{with .ExpiresAt}}<time datetime="{{.Format "2006-01-02"}}">{{.Format "2006-01-02"}}</time>{{else}}{{T $L "rastrillo.ui.api_tokens_expiry_never"}}{{end}}</span>
+      {{- if .Revoked}}
+      <span rst-tokens-state>{{template "status-pill" dict "L" $L "Label" (T $L "rastrillo.ui.api_tokens_revoked")}}</span>
+      {{- else if .Expired}}
+      <span rst-tokens-state>{{template "status-pill" dict "L" $L "Tone" "warning" "Label" (T $L "rastrillo.ui.api_tokens_expired")}}</span>
+      {{- else}}
+      <span rst-tokens-state></span>
+      {{template "row-menu" dict "L" $L "Name" .Display "Items" (list (dict "Label" (T $L "rastrillo.ui.api_tokens_revoke") "Action" $revoke "Hidden" (list (list "id" .ID))))}}
+      {{- end}}
+    </div>
+    {{- end}}
+  </div>
+  <div rst-tokens-revoke>
+    {{- range $p.Agents}}
+    <form method="post" action="{{$revokeAgent}}"><input type="hidden" name="agent" value="{{.}}"><button rst-btn type="submit">{{T $L "rastrillo.ui.api_tokens_revoke_agent"}}: {{.}}</button></form>
+    {{- end}}
+    <form method="post" action="{{$revokeAll}}"><button rst-btn="danger" type="submit">{{T $L "rastrillo.ui.api_tokens_revoke_all"}}</button></form>
+  </div>
+  {{- else}}
+  {{template "empty-state" dict "L" $L "Body" (T $L "rastrillo.ui.api_tokens_empty")}}
+  {{- end}}
+</div>{{end}}

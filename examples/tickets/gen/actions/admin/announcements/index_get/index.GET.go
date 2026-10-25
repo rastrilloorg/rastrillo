@@ -12,7 +12,7 @@ import (
 	"amadan.net/rastrillo/rastrillo"
 	"amadan.net/rastrillo/rastrillo/ui"
 	"amadan.net/rastrillo/rastrillo/view"
-	announcementsstore "tickets/gen/store/announcements"
+	ops_announcements "tickets/gen/ops/announcements"
 )
 
 // Handle is GET /admin/announcements.
@@ -26,25 +26,19 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	const pageSize = 10
-	offset := (page - 1) * pageSize
 
 	var carry [][2]string
 
-	store := announcementsstore.New(ctx.DB)
-	total, err := store.CountAnnouncements(r.Context(), search)
-	if err != nil {
-		view.Fail(ctx, w, r, "announcements: counting announcements", err)
-		return
-	}
-	rows, err := store.ListAnnouncements(r.Context(), announcementsstore.ListAnnouncementsParams{
+	res, err := ops_announcements.List(r.Context(), ctx, ops_announcements.ListInput{
 		Search:     search,
-		PageOffset: int64(offset),
-		PageLimit:  pageSize,
+		PageNumber: page,
+		Limit:      pageSize,
 	})
 	if err != nil {
-		view.Fail(ctx, w, r, "announcements: loading announcements", err)
+		view.Refuse(ctx, w, r, "announcements: loading announcements", err)
 		return
 	}
+	total, rows := res.Total, res.Items
 
 	items := make([]listRow, 0, len(rows))
 	for _, n := range rows {

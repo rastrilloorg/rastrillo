@@ -15,7 +15,7 @@ import (
 // silently landing on the export past it.
 func (cl *client) getNoRedirect(path string) *http.Response {
 	cl.t.Helper()
-	req, err := http.NewRequest(http.MethodGet, cl.ts.URL+path, nil)
+	req, err := http.NewRequest(http.MethodGet, cl.base+path, nil)
 	if err != nil {
 		cl.t.Fatalf("NewRequest GET %s: %v", path, err)
 	}

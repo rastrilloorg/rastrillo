@@ -63,7 +63,7 @@ layout can show a notice. See [Forms](/docs/forms).
 `iconAssets`, `opt`, `stageArt`, `displayURL`, `safeHref`,
 `rowMenuItems`, `paginationItems`, `localizer` and `withL`, and the
 locale functions `T`, `Tf`, `Tbdi`, `number`, `displayValue`,
-`dateWords` and `money`.
+`dateWords`, `money` and `actor`.
 
 Start each template body with `{{$L := localizer $}}`. Pass `$L` first
 to every locale function, and to every partial as `"L" $L`:
@@ -108,17 +108,17 @@ delivery mode changes. See [Icons](/docs/icons).
 They span the list-screen, display, form and route families:
 
 ```text
-back-nav      field-check      form-foot           person
-badge         field-date       job-status          row-menu
-bulk-bar      field-daterange  list-bar            scheme-menu
-callout       field-datetime   list-bar-search     seg-tabs
-choice-field  field-money      list-row-action     signin
-confirm-form  field-select     list-search-submit  signin-title
-detail-list   field-text       locale-menu         stat
-dropdown      field-textarea   meter               status-pill
-empty-state   field-time       notice
-error-page    field-url        page-header
-field         form-error       pagination
+actor         error-page       field-url           notice
+api-tokens    field            form-error          page-header
+back-nav      field-check      form-foot           pagination
+badge         field-date       job-status          person
+bulk-bar      field-daterange  list-bar            row-menu
+callout       field-datetime   list-bar-search     scheme-menu
+choice-field  field-money      list-row-action     seg-tabs
+confirm-form  field-select     list-search-submit  signin
+detail-list   field-text       locale-menu         signin-title
+dropdown      field-textarea   media-grid          stat
+empty-state   field-time       meter               status-pill
 ```
 
 `locale-menu` is the language switcher; see
@@ -213,6 +213,23 @@ fields). Put a destructive item last: it links to its confirm page and
 its label ends with …. Inside a bulk-selection form, every item must be
 a link. `list-row-action` takes the same list as `Menu` and puts the
 menu after its action pill.
+
+A page of pictures is `media-grid`: one tile per image, each in an
+even 4:3 frame with the name and description under it. A tall
+screenshot shows its top. Pass `Fit "contain"` for a logo or a banner.
+Give a tile `Href` to make it a link, `Select` for the checkbox a
+`bulk-bar` form collects, and `Menu` for a kebab. Render `empty-state`
+when there are no images.
+
+Who did something is `actor`: a person's name, or `Claude for Paul`
+for an agent acting for them, as plain words. Pass the
+`rastrillo.Actor`. Set `ui.ActorName` once at boot to turn a subject
+into a name.
+
+The API token page is `api-tokens`: the one-time reveal, the create
+form, the list and the revoke buttons, from `apitoken`'s `PageData`.
+Pass it as `Page` and the page's path as `Path`, under your own
+`page-header`. See [apitoken](/docs/reference/apitoken).
 
 `job-status`'s `rst-job` is the third, and the reason is behaviour
 rather than structure: the shim replaces that element **wholesale** on
@@ -328,6 +345,17 @@ spinner: it is a void element with nowhere to put one. Prefer
 This is an enhancement and nothing more. See
 [Forms](/docs/forms/#the-busy-button-is-not-a-guarantee) for what it
 does not promise you.
+
+### The light
+
+`light.js` is the same kind of file as `busy.js`: vendored, first-party,
+deletable. It moves the light the depth styles read: the shadows lean
+with the hour, and the sheen on a button and the rim of a card follow
+the pointer. For the still design, delete it and its tag, and name it in
+`vendoredIsMine` in `vendored_test.go`. On a phone a pressed button
+shows its press, not a sheen, and `rastrillo.js`, not `light.js`,
+registers the touch listener iOS needs to show pressed states, so
+deleting `light.js` loses none of them.
 
 ### Three containers the partials assume
 
@@ -977,19 +1005,19 @@ nearly square and `signal` can be milled while `tokens.css` stays the
 same bytes.
 
 So is the page header's rule. `--rst-header-rule` is one token, derived
-rather than picked:
+from the accent or left as the line:
 
 ```css
-/* day */    --rst-header-rule: color-mix(in oklab, var(--rst-accent) 18%, var(--rst-line));
+/* day */    --rst-header-rule: var(--rst-line);
 /* plain */  --rst-header-rule: var(--rst-line);
 /* signal */ --rst-header-rule: color-mix(in oklab, var(--rst-accent) 45%, var(--rst-line));
 ```
 
 Deriving it means a theme that changes its accent gets a matching rule
 with nothing left behind to keep in step, which a fourth hand-picked
-colour per theme per scheme would not. `plain` draws plain grey, `day` a
-hairline you would call grey until you see it beside `plain`'s, `signal`
-a visibly blue one. Set it to whatever you like; it is a line, and one
+colour per theme per scheme would not. `plain` and `day` draw plain
+grey, `day` keeping its cobalt for things that act; `signal` draws a
+visibly blue one. Set it to whatever you like; it is a line, and one
 custom property is the whole of it.
 
 The rule is decoration. It carries no contrast floor and is not in the

@@ -1,0 +1,1037 @@
+package main
+
+import (
+	"bufio"
+	"encoding/json"
+	"fmt"
+	"io"
+	"path/filepath"
+	"regexp"
+	"strings"
+)
+
+// bucket is where a tool call's result came from, from the eval's
+// point of view: the skill and the docs are what an agent is meant to
+// read; source and examples are what the skill failed to spare it.
+type bucket string
+
+const (
+	bSkill    bucket = "skill"
+	bDocs     bucket = "docs"
+	bExamples bucket = "examples"
+	bSource   bucket = "source"
+	bGoDoc    bucket = "godoc"
+	bWeb      bucket = "web"
+	bApp      bucket = "app"
+	bFWWrite  bucket = "fwwrite"
+	bOther    bucket = "other"
+)
+
+// bucketOrder is the report's column order, and also the precedence
+// when one shell command touches several: a cat of SKILL.md and a
+// source file still read source.
+var bucketOrder = []bucket{bSource, bExamples, bDocs, bSkill, bGoDoc, bWeb, bFWWrite, bApp, bOther}
+
+type classifier struct {
+	roots     []string // the variant's export: the framework the run is meant to use
+	staleBase string   // <GOMODCACHE>/amadan.net/rastrillo/rastrillo: every version under it is framework too, but not the variant under test
+	app       string   // the scaffolded app: the project, where a session starts
+	cwd       string   // where the next Bash call starts; Claude Code carries it while it stays inside the project
+}
+
+var writeTools = map[string]bool{"Write": true, "Edit": true, "MultiEdit": true, "NotebookEdit": true}
+
+// classify is the bucket a call's result bytes are charged to: the
+// most expensive one it touched, since one command's output cannot be
+// split between the files it printed.
+func (c classifier) classify(tool string, in map[string]any) bucket {
+	b, _ := c.touches(tool, in)
+	return b[0]
+}
+
+// framework reports p's path inside any framework copy, and whether the
+// copy is a stale one rather than the variant under test.
+func (c classifier) framework(p string) (rel string, ok, stale bool) {
+	for _, r := range append([]string{fwMark}, c.roots...) {
+		if rel, ok := under(p, r); ok {
+			return rel, true, false
+		}
+	}
+	// A cache version is matched by its name's shape, not by a listing,
+	// so one the agent downloads mid-run, or one since deleted from the
+	// cache, still counts.
+	if c.staleBase != "" && strings.HasPrefix(p, c.staleBase+"@") {
+		rest := p[len(c.staleBase)+1:]
+		if i := strings.IndexByte(rest, '/'); i >= 0 {
+			return rest[i+1:], true, true
+		}
+		return "", true, true
+	}
+	return "", false, false
+}
+
+func (c classifier) start() string {
+	if c.cwd != "" {
+		return c.cwd
+	}
+	return c.app
+}
+
+// abs resolves p the way the tool would: relative to where the call
+// starts.
+func (c classifier) abs(p string) string {
+	if filepath.IsAbs(p) {
+		return filepath.Clean(p)
+	}
+	return filepath.Join(c.start(), p)
+}
+
+// touches is every bucket a call reached, most expensive first, so
+// that a cat of SKILL.md beside a grep of the source still counts as
+// reading the skill; stale reports a read of a module-cache copy.
+func (c classifier) touches(tool string, in map[string]any) (bs []bucket, stale bool) {
+	if tool == "Bash" {
+		bs, stale, _ = c.bashTouches(in["command"].(string))
+		return bs, stale
+	}
+	return c.fileTouches(tool, in)
+}
+
+// safeTouches classifies one call for the tally, carrying a Bash
+// call's final directory into c. A classifier bug on some command must
+// never take the harness down with a run in flight: a panic counts the
+// call as other and is recorded.
+func (c *classifier) safeTouches(tool string, in map[string]any, t *tally) (bs []bucket, stale bool) {
+	defer func() {
+		if p := recover(); p != nil {
+			bs, stale = []bucket{bOther}, false
+			t.ClassifyErrors = append(t.ClassifyErrors, fmt.Sprintf("%s: %v", tool, p))
+		}
+	}()
+	if cmd, ok := in["command"].(string); ok && tool == "Bash" {
+		bs, stale, c.cwd = c.bashTouches(cmd)
+		return bs, stale
+	}
+	return c.fileTouches(tool, in)
+}
+
+func (c classifier) fileTouches(tool string, in map[string]any) ([]bucket, bool) {
+	str := func(k string) string { s, _ := in[k].(string); return s }
+	switch tool {
+	case "Skill":
+		if strings.Contains(str("skill"), "rastrillo") {
+			return []bucket{bSkill}, false
+		}
+		return []bucket{bOther}, false
+	case "WebFetch", "WebSearch":
+		if tool == "WebSearch" || strings.Contains(str("url"), "rastrillo.org") {
+			return []bucket{bWeb}, false
+		}
+		return []bucket{bOther}, false
+	}
+	p := str("file_path")
+	if p == "" {
+		p = str("path")
+	}
+	if p == "" {
+		p = str("notebook_path")
+	}
+	if p == "" && tool == "Glob" && filepath.IsAbs(str("pattern")) {
+		p = str("pattern") // an absolute pattern is its own directory
+	}
+	if p == "" {
+		if tool == "Grep" || tool == "Glob" || tool == "LS" {
+			p = "." // they default to the working directory
+		} else {
+			return []bucket{bOther}, false
+		}
+	}
+	p = c.abs(p)
+	if rel, ok, stale := c.framework(p); ok {
+		if writeTools[tool] {
+			return []bucket{bFWWrite}, stale
+		}
+		return []bucket{relBucket(rel)}, stale
+	}
+	if _, ok := under(p, c.app); ok {
+		return []bucket{bApp}, false
+	}
+	return []bucket{bOther}, false
+}
+
+// under reports p's path below root, so that a sibling directory
+// sharing root's name as a prefix (rastrillo-old) is not mistaken for it.
+func under(p, root string) (string, bool) {
+	if root == "" {
+		return "", false
+	}
+	p = filepath.Clean(p)
+	if p == root {
+		return "", true
+	}
+	if strings.HasPrefix(p, root+"/") {
+		return p[len(root)+1:], true
+	}
+	return "", false
+}
+
+func relBucket(rel string) bucket {
+	switch {
+	case rel == "SKILL.md" || rel == "skill" || strings.HasPrefix(rel, "skill/"):
+		return bSkill
+	case rel == "docs" || strings.HasPrefix(rel, "docs/"):
+		return bDocs
+	case rel == "examples" || strings.HasPrefix(rel, "examples/"):
+		return bExamples
+	}
+	return bSource // a bare root is a grep or a cd over the whole tree
+}
+
+// goListDir matches the usual way an agent finds the framework from a
+// shell: a command substitution of go list's module directory, with
+// the module path sometimes cut short and stderr sometimes redirected.
+var goListDir = regexp.MustCompile(`\$\(\s*go list -m -f\s+['"]?\{\{\.Dir\}\}['"]?\s+amadan\.net/rastrillo(?:/rastrillo)?[^)]*\)`)
+
+// fwMark stands in for a framework directory the command computes
+// rather than names.
+const fwMark = "/\x00rastrillo"
+
+var (
+	assignment = regexp.MustCompile(`(?:^|[;&|(\s])([A-Za-z_][A-Za-z0-9_]*)=["']?([^\s;&|"']+)`)
+	pathExt    = map[string]bool{".md": true, ".go": true, ".html": true, ".css": true, ".js": true, ".toml": true, ".sql": true, ".json": true, ".txt": true}
+)
+
+// searchVerbs read the directory they run in when given no path, so
+// inside the framework they read it even with no path-like word. Their
+// words are read by role: rg, grep, ag and fd take a pattern first
+// (which may look like a file name and is not one), and every other
+// non-option word is a path, bare names included.
+var searchVerbs = map[string]bool{"rg": true, "ag": true, "grep": true, "find": true, "ls": true, "tree": true, "fd": true}
+
+// valueLetters are the short options that take a value, per command:
+// grep's -T only aligns tabs, where rg's names a type to skip.
+var valueLetters = map[string]string{"grep": "ABCmdD", "rg": "tTgABCmMj"}
+
+var patternFirst = map[string]bool{"rg": true, "ag": true, "grep": true, "fd": true}
+
+// optArg are the options whose value is the next word. -e and -f name
+// the pattern, so the first plain word after them is a path.
+var optArg = map[string]bool{"-e": true, "--regexp": true, "-f": true, "--file": true, "-g": true, "--glob": true,
+	"-t": true, "--type": true, "-T": true, "--type-not": true, "-A": true, "-B": true, "-C": true, "-m": true,
+	"--max-count": true, "-M": true, "-j": true, "-d": true, "-D": true, "-L": true, "--include": true, "--exclude": true}
+
+// bashTouches walks the command the way the shell would reach files:
+// go list substitutions and variables holding a framework path are
+// expanded, quoted words stay whole, and relative words resolve against
+// a working directory that starts where the call does, follows each cd
+// and is restored when a subshell closes. It also reports where the
+// call leaves the shell, for the next call to start from.
+// Past these bounds a command is not classified: a megabyte of nested
+// substitutions costs the lexer quadratic memory, and recover cannot
+// catch running out of it. safeTouches records the refusal.
+const (
+	maxCommand  = 256 << 10
+	maxHeredocs = 64
+)
+
+func (c classifier) bashTouches(cmd string) (bs []bucket, stale bool, end string) {
+	if len(cmd) > maxCommand || strings.Count(cmd, "<<") > maxHeredocs {
+		panic(fmt.Sprintf("command too large to classify (%d bytes, %d heredocs)", len(cmd), strings.Count(cmd, "<<")))
+	}
+	found := map[bucket]bool{}
+	if strings.Contains(cmd, "go doc ") {
+		found[bGoDoc] = true
+	}
+	if strings.Contains(cmd, "rastrillo.org") {
+		found[bWeb] = true
+	}
+	cmd = goListDir.ReplaceAllString(cmd, fwMark)
+	for _, m := range assignment.FindAllStringSubmatch(cmd, -1) {
+		if _, ok, _ := c.framework(m[2]); ok {
+			cmd = strings.ReplaceAll(cmd, "${"+m[1]+"}", m[2])
+			cmd = regexp.MustCompile(`\$`+m[1]+`\b`).ReplaceAllString(cmd, m[2])
+		}
+	}
+	// A command's reads are held until it ends, because a later word
+	// (rg's --type-list) can turn the whole command into one that reads
+	// nothing.
+	var pending []string
+	touch := func(p string) { pending = append(pending, p) }
+	commit := func() {
+		for _, p := range pending {
+			if rel, ok, st := c.framework(p); ok {
+				found[relBucket(rel)] = true
+				stale = stale || st
+			}
+		}
+		pending = nil
+	}
+	cwd := c.start()
+	var stack []string
+	atStart, afterPipe, cdNext := true, false, false
+	verb, patternPending, skipNext, findExpr := "", false, false, false
+	endOpts := false // after --, a dash word is an operand
+	// implicit is the directory a search verb reads when the command
+	// names no path of its own; it is settled when the command ends.
+	implicit := ""
+	quiet := false // the rest of this command reads no files
+	settle := func() {
+		if implicit != "" {
+			touch(implicit)
+			implicit = ""
+		}
+		if quiet {
+			pending = nil
+		}
+		commit()
+		quiet = false
+	}
+	for _, tk := range lex(cmd) {
+		w := tk.s
+		switch {
+		case !tk.op:
+		case w == "(":
+			settle()
+			stack = append(stack, cwd)
+			atStart, afterPipe, verb = true, false, ""
+			continue
+		case w == ")":
+			settle()
+			if n := len(stack); n > 0 {
+				cwd, stack = stack[n-1], stack[:n-1]
+			}
+			atStart, afterPipe, verb = true, false, ""
+			continue
+		case w == ";":
+			settle()
+			atStart, afterPipe, verb = true, false, ""
+			continue
+		case w == "|":
+			settle()
+			atStart, afterPipe, verb = true, true, ""
+			continue
+		}
+		if cdNext {
+			cdNext = false
+			if filepath.IsAbs(w) {
+				cwd = filepath.Clean(w)
+			} else if !strings.HasPrefix(w, "$") && !strings.HasPrefix(w, "~") && !strings.HasPrefix(w, "-") {
+				cwd = filepath.Join(cwd, w)
+			}
+			continue
+		}
+		if atStart {
+			atStart = false
+			verb, patternPending, skipNext, findExpr, endOpts = w, patternFirst[w], false, false, false
+			if w == "cd" {
+				cdNext = true
+				continue
+			}
+			if searchVerbs[w] && !afterPipe {
+				implicit = cwd
+			}
+			continue
+		}
+		if searchVerbs[verb] {
+			switch {
+			case skipNext:
+				skipNext = false
+			case w == "--" && !endOpts:
+				endOpts = true
+			case (verb == "grep" || verb == "rg") && !endOpts && (strings.HasPrefix(w, "--regexp=") || strings.HasPrefix(w, "--file=")):
+				patternPending = false // the pattern came attached to its option
+			case (verb == "grep" || verb == "rg") && !endOpts && len(w) > 2 && w[0] == '-' && w[1] != '-':
+				// A short-option cluster, read letter by letter: e or f
+				// supplies the pattern, and a letter that takes a value
+				// takes the rest of the word (or the next word) as it.
+				for k := 1; k < len(w); k++ {
+					ch := w[k]
+					if ch == 'e' || ch == 'f' {
+						patternPending = false
+					}
+					if ch == 'e' || ch == 'f' || strings.IndexByte(valueLetters[verb], ch) >= 0 {
+						skipNext = k == len(w)-1
+						break
+					}
+				}
+			case strings.HasPrefix(w, "-") && w != "-" && !endOpts:
+				if verb == "find" {
+					// -H, -L, -P and -O<n> come before find's paths; any
+					// other dash word starts its expression.
+					if !(w == "-H" || w == "-L" || w == "-P" || strings.HasPrefix(w, "-O")) {
+						findExpr = true
+					}
+				} else if w == "--files" {
+					patternPending = false // rg --files lists paths and takes no pattern
+				} else if w == "--type-list" {
+					quiet = true // prints rg's built-in types; reads nothing, wherever it appears
+				} else if optArg[w] && !(verb == "grep" && w == "-T") { // grep's -T only aligns tabs
+					skipNext = true
+					if w == "-e" || w == "--regexp" || w == "-f" || w == "--file" {
+						patternPending = false
+					}
+				}
+			case findExpr:
+			case patternPending:
+				patternPending = false
+			default:
+				p := w
+				if !filepath.IsAbs(p) {
+					p = filepath.Join(cwd, p)
+				}
+				touch(filepath.Clean(p))
+				implicit = ""
+			}
+			continue
+		}
+		if filepath.IsAbs(w) {
+			touch(filepath.Clean(w))
+			implicit = ""
+		} else if pathish(w) {
+			touch(filepath.Join(cwd, w))
+			implicit = ""
+		}
+	}
+	settle()
+	// Claude Code keeps a cd for the next call only while it stays in
+	// the project; leaving it sends the shell back to the project root.
+	end = c.app
+	if _, ok := under(cwd, c.app); ok && len(stack) == 0 {
+		end = cwd
+	}
+	for _, b := range bucketOrder {
+		if found[b] {
+			bs = append(bs, b)
+		}
+	}
+	if len(bs) > 0 {
+		return bs, stale, end
+	}
+	if strings.Contains(cmd, "go list -m") && strings.Contains(cmd, "amadan.net/rastrillo") {
+		return []bucket{bOther}, false, end
+	}
+	return []bucket{bApp}, false, end
+}
+
+// token is a word or an operator. They are told apart by type, not by
+// text: a quoted '(' is a word, and a grep for it is not a subshell.
+type token struct {
+	s     string
+	op    bool
+	redir bool // a redirection's target: a path, but not an argument
+}
+
+// lex splits a command into words and the operators that change how
+// they are read: ";" ends a command (so do && and ||), "|" ends one and
+// feeds the next, "(" and ")" open and close a subshell ($( included).
+// Quotes keep a word whole; redirections only end a word.
+func lex(cmd string) []token {
+	var out []token
+	var cur strings.Builder
+	inWord := false
+	dropWord := false  // the next word is a here-string's data
+	redirNext := false // the next word is a redirection's target
+	flush := func() {
+		if inWord {
+			if !dropWord {
+				out = append(out, token{s: cur.String(), redir: redirNext})
+			}
+			cur.Reset()
+			inWord, dropWord, redirNext = false, false, false
+		}
+	}
+	op := func(s string) {
+		dropWord = false // a substitution inside a here-string still runs
+		out = append(out, token{s: s, op: true})
+	}
+	rs := []rune(cmd)
+	var quote rune
+	// heredocs are the delimiters opened on the current line; their
+	// bodies follow the line's end. A body fed to a shell is commands; a
+	// body fed to another interpreter may name files it opens; otherwise
+	// it is data, except that an unquoted delimiter lets $(...) in it run.
+	type heredoc struct {
+		delim         string
+		tabs, quoted  bool
+		shell, script bool
+	}
+	var heredocs []heredoc
+	// words is the command being lexed so far, past any assignments and
+	// wrappers (env, command, exec, nice, nohup, time): what actually
+	// receives a heredoc on its stdin.
+	words := func() []string {
+		k := len(out)
+		for k > 0 && !out[k-1].op {
+			k--
+		}
+		var ws []string
+		for _, tk := range out[k:] {
+			if !tk.redir {
+				ws = append(ws, tk.s)
+			}
+		}
+		// Leading assignments, then any wrapper with its options (and
+		// those options' values), until the command itself.
+		for len(ws) > 0 {
+			w := ws[0]
+			if strings.Contains(w, "=") && !strings.HasPrefix(w, "-") {
+				ws = ws[1:]
+				continue
+			}
+			wr, ok := wrappers[filepath.Base(w)]
+			if !ok {
+				break
+			}
+			ws = ws[1:]
+			for len(ws) > 0 && (strings.HasPrefix(ws[0], "-") || strings.Contains(ws[0], "=")) {
+				takes := wr[ws[0]]
+				ws = ws[1:]
+				if takes && len(ws) > 0 {
+					ws = ws[1:]
+				}
+			}
+		}
+		return ws
+	}
+	// parens records, for each open subshell, whether it opened inside
+	// double quotes, where its close resumes the quoted word.
+	var parens []bool
+	for i := 0; i < len(rs); i++ {
+		r := rs[i]
+		next := rune(0)
+		if i+1 < len(rs) {
+			next = rs[i+1]
+		}
+		if quote != 0 {
+			switch {
+			case r == quote:
+				quote = 0
+			case quote == '"' && r == '$' && next == '(':
+				// A substitution runs even inside double quotes.
+				flush()
+				i++
+				op("(")
+				parens = append(parens, true)
+				quote = 0
+			case r == '\\' && quote == '"' && i+1 < len(rs):
+				i++
+				cur.WriteRune(rs[i])
+			default:
+				cur.WriteRune(r)
+			}
+			continue
+		}
+		switch {
+		case r == '\'' || r == '"':
+			quote, inWord = r, true
+		case r == '\\' && next != 0:
+			i++
+			cur.WriteRune(next)
+			inWord = true
+		case r == '<' && next == '<' && i+2 < len(rs) && rs[i+2] == '<':
+			// A here-string's word is data on the same line, not a heredoc,
+			// and not a file the command opens.
+			flush()
+			i += 2
+			dropWord = true
+		case r == '<' && next == '<':
+			// <<DELIM, <<-DELIM, or a delimiter quoted in whole or part.
+			flush()
+			h := heredoc{}
+			if ws := words(); len(ws) > 0 {
+				// A shell or interpreter runs its stdin unless it was given
+				// code inline (its own flag for that) or a script file (a
+				// first plain argument, except after a shell's -s, which
+				// makes the rest arguments to the stdin script).
+				v := filepath.Base(ws[0])
+				runsStdin, sawS, skip := true, false, false
+				for _, a := range ws[1:] {
+					switch {
+					case skip:
+						skip = false
+						continue
+					case inlineCode[v][a]:
+						runsStdin = false
+					case a == "-" || (a == "-s" && shells[v]):
+						// stdin is the script; what follows is its argv.
+						sawS = true
+					case readerOptValue[v][a]:
+						skip = true
+						continue
+					case strings.HasPrefix(a, "-"):
+						continue
+					default:
+						runsStdin = sawS
+					}
+					if !runsStdin || sawS {
+						break
+					}
+				}
+				h.shell = shells[v] && runsStdin
+				h.script = interpreters[v] && runsStdin
+			}
+			i += 2
+			if i < len(rs) && rs[i] == '-' {
+				h.tabs = true
+				i++
+			}
+			for i < len(rs) && (rs[i] == ' ' || rs[i] == '\t') {
+				i++
+			}
+			var d strings.Builder
+		delim:
+			for ; i < len(rs); i++ {
+				switch c := rs[i]; {
+				case c == '\'' || c == '"':
+					h.quoted = true
+					for i++; i < len(rs) && rs[i] != c; i++ {
+						d.WriteRune(rs[i])
+					}
+				case c == '\\' && i+1 < len(rs):
+					h.quoted = true
+					i++
+					d.WriteRune(rs[i])
+				case strings.ContainsRune(" \t\n;|&<>()", c):
+					break delim
+				default:
+					d.WriteRune(c)
+				}
+			}
+			i--
+			h.delim = d.String()
+			if h.delim != "" || h.quoted {
+				heredocs = append(heredocs, h)
+			}
+		case r == '\n' && len(heredocs) > 0:
+			flush()
+			op(";")
+			for _, h := range heredocs {
+				var body []string
+				for i < len(rs) {
+					j := i + 1
+					k := j
+					for k < len(rs) && rs[k] != '\n' {
+						k++
+					}
+					line := string(rs[j:k])
+					if h.tabs {
+						line = strings.TrimLeft(line, "\t")
+					}
+					i = k
+					if line == h.delim {
+						break
+					}
+					body = append(body, line)
+				}
+				text := strings.Join(body, "\n")
+				// The outer shell expands an unquoted body before whoever
+				// receives it reads it, so its substitutions run either way.
+				// What a shell then runs is the body with them already
+				// expanded (rest), so each substitution is lexed once:
+				// twice per level of nesting would be exponential.
+				subs, rest := []string(nil), text
+				if !h.quoted {
+					subs, rest = substitutions(text)
+				}
+				{
+					for _, sub := range subs {
+						op("(")
+						out = append(out, lex(sub)...)
+						op(")")
+						op(";")
+					}
+				}
+				switch {
+				case h.shell:
+					// A child shell: its cd is its own.
+					op("(")
+					out = append(out, lex(rest)...)
+					op(")")
+					op(";")
+				case h.script:
+					// Read for the paths it names, not run as commands: its
+					// words, and its string literals whole (p="/x" is one
+					// shell word but a path to the script).
+					out = append(out, token{s: "skilleval-script"})
+					for _, tk := range lex(rest) {
+						if !tk.op {
+							out = append(out, tk)
+						}
+					}
+					for _, m := range stringLiteral.FindAllStringSubmatch(rest, -1) {
+						out = append(out, token{s: m[1] + m[2]})
+					}
+					op(";")
+				}
+			}
+			heredocs = nil
+		case r == '\n' || r == ';':
+			flush()
+			op(";")
+		case r == '&' && next == '>':
+			flush() // &> and &>>: both streams to the target
+			i++
+			if i+1 < len(rs) && rs[i+1] == '>' {
+				i++
+			}
+			redirNext = true
+		case r == '&':
+			flush()
+			if next == '&' {
+				i++
+			}
+			op(";")
+		case r == '|':
+			flush()
+			if next == '|' {
+				i++
+				op(";")
+			} else {
+				op("|")
+			}
+		case r == '$' && next == '(':
+			flush()
+			i++
+			op("(")
+			parens = append(parens, false)
+		case r == '(':
+			flush()
+			op("(")
+			parens = append(parens, false)
+		case r == ')':
+			flush()
+			op(")")
+			if n := len(parens); n > 0 {
+				if parens[n-1] {
+					quote, inWord = '"', true
+				}
+				parens = parens[:n-1]
+			}
+		case r == '<' || r == '>':
+			// A descriptor number before it (2>) is not a word, and the
+			// word after it is the redirection's target.
+			if inWord && strings.Trim(cur.String(), "0123456789") == "" {
+				cur.Reset()
+				inWord = false
+			}
+			flush()
+			if next == '>' {
+				continue // >>: the second > sets the target
+			}
+			if next == '&' {
+				i++ // >&1, 2>&1: the descriptor after & is the target
+			}
+			redirNext = true
+		case r == ' ' || r == '\t' || r == '`':
+			flush()
+		default:
+			cur.WriteRune(r)
+			inWord = true
+		}
+	}
+	flush()
+	return out
+}
+
+// shells run a heredoc's body as commands; interpreters run it as a
+// script, which may open the files it names.
+var (
+	shells       = map[string]bool{"bash": true, "sh": true, "zsh": true, "dash": true, "ksh": true}
+	interpreters = map[string]bool{"python": true, "python3": true, "node": true, "perl": true, "ruby": true}
+)
+
+// substitutions returns the commands inside each $(...) and `...` in
+// a heredoc body, which the outer shell runs, and the body with each
+// one replaced by a placeholder, as it reads once they have run. At that level only a
+// backslash escapes (quotes in the body are the body's text); inside a
+// substitution the command's own quotes count, so grep -F ')' does not
+// close it. An unclosed substitution yields nothing: the shell would
+// have failed on it.
+func substitutions(text string) (subs []string, rest string) {
+	rs := []rune(text)
+	var b strings.Builder
+	last := 0
+	cut := func(from, to int, inner string) {
+		subs = append(subs, inner)
+		b.WriteString(string(rs[last:from]))
+		b.WriteString("_")
+		last = to
+	}
+	for i := 0; i < len(rs); i++ {
+		switch {
+		case rs[i] == '\\':
+			i++
+		case rs[i] == '$' && i+1 < len(rs) && rs[i+1] == '(':
+			end := closingParen(rs, i+2)
+			if end < 0 {
+				i = len(rs)
+				break
+			}
+			cut(i, end+1, string(rs[i+2:end]))
+			i = end
+		case rs[i] == '`':
+			j := i + 1
+			for j < len(rs) && rs[j] != '`' {
+				if rs[j] == '\\' {
+					j++
+				}
+				j++
+			}
+			if j >= len(rs) {
+				i = len(rs)
+				break
+			}
+			cut(i, j+1, string(rs[i+1:j]))
+			i = j
+		}
+	}
+	b.WriteString(string(rs[min(last, len(rs)):]))
+	return subs, b.String()
+}
+
+// closingParen is the index of the ) that closes a substitution whose
+// command starts at i, or -1.
+func closingParen(rs []rune, i int) int {
+	depth := 1
+	var q rune
+	for ; i < len(rs); i++ {
+		c := rs[i]
+		switch {
+		case q == '"' && c == '$' && i+1 < len(rs) && rs[i+1] == '(':
+			// A substitution nested in double quotes has quotes of its own.
+			j := closingParen(rs, i+2)
+			if j < 0 {
+				return -1
+			}
+			i = j
+		case q != 0:
+			if c == q {
+				q = 0
+			} else if c == '\\' && q == '"' {
+				i++
+			}
+		case c == '\\':
+			i++
+		case c == '\'' || c == '"':
+			q = c
+		case c == '(':
+			depth++
+		case c == ')':
+			if depth--; depth == 0 {
+				return i
+			}
+		}
+	}
+	return -1
+}
+
+var (
+	// wrappers run the command after them; the value says which of their
+	// options take a value of their own.
+	wrappers = map[string]map[string]bool{
+		"env": {"-u": true, "-C": true, "-S": true}, "nice": {"-n": true}, "time": {"-f": true, "-o": true},
+		"command": nil, "exec": {"-a": true}, "nohup": nil,
+	}
+	// inlineCode are the flags that give a reader its code on the
+	// command line, so its stdin is data.
+	inlineCode = map[string]map[string]bool{
+		"bash": {"-c": true}, "sh": {"-c": true}, "zsh": {"-c": true}, "dash": {"-c": true}, "ksh": {"-c": true},
+		"python": {"-c": true, "-m": true}, "python3": {"-c": true, "-m": true},
+		"node": {"-e": true, "-p": true}, "perl": {"-e": true, "-E": true}, "ruby": {"-e": true},
+	}
+	// readerOptValue are a reader's options whose value is the next word,
+	// which is not a script file.
+	readerOptValue = map[string]map[string]bool{"python": {"-W": true, "-X": true}, "python3": {"-W": true, "-X": true}}
+	stringLiteral  = regexp.MustCompile(`"([^"\n]*)"|'([^'\n]*)'`)
+)
+
+// pathish is a word that names a file or directory, rather than a flag,
+// a pattern or an assignment.
+func pathish(w string) bool {
+	if strings.HasPrefix(w, "-") || strings.HasPrefix(w, "$") || strings.Contains(w, "=") {
+		return false
+	}
+	return w == "." || w == "*" || strings.Contains(w, "/") || pathExt[filepath.Ext(w)]
+}
+
+type count struct {
+	Calls int `json:"calls"`
+	Bytes int `json:"bytes"`
+}
+
+type tally struct {
+	Buckets        map[bucket]count `json:"buckets"` // bytes and calls, each call charged to the most expensive bucket it touched
+	Touched        map[bucket]int   `json:"touched"` // calls that reached each bucket at all
+	StaleCalls     int              `json:"stale_calls"`
+	ClassifyErrors []string         `json:"classify_errors,omitempty"` // calls the classifier could not read, counted as other
+	SourceReads    []string         `json:"source_reads"`
+	Model          string           `json:"model"`
+	ClaudeVersion  string           `json:"claude_version"`
+	MemoryPaths    json.RawMessage  `json:"memory_paths,omitempty"` // what instructions the session loaded besides the task
+	Turns          int              `json:"turns"`
+	DurationMS     int              `json:"duration_ms"`
+	CostUSD        float64          `json:"cost_usd"`
+	Tokens         int              `json:"tokens"` // every input token the model processed, cached or not, plus output
+	OutputTokens   int              `json:"output_tokens"`
+	Partial        bool             `json:"partial"` // no result event: tokens are summed from assistant events and cost is unknown
+	Finished       bool             `json:"finished"`
+	Subtype        string           `json:"subtype"`
+}
+
+type usage struct {
+	Input         int `json:"input_tokens"`
+	CacheCreation int `json:"cache_creation_input_tokens"`
+	CacheRead     int `json:"cache_read_input_tokens"`
+	Output        int `json:"output_tokens"`
+}
+
+func (u usage) total() int { return u.Input + u.CacheCreation + u.CacheRead + u.Output }
+
+type streamEvent struct {
+	Type          string          `json:"type"`
+	Subtype       string          `json:"subtype"`
+	Model         string          `json:"model"`
+	ClaudeVersion string          `json:"claude_code_version"`
+	MemoryPaths   json.RawMessage `json:"memory_paths"`
+	Message       struct {
+		ID      string          `json:"id"`
+		Content json.RawMessage `json:"content"`
+		Usage   *usage          `json:"usage"`
+	} `json:"message"`
+	IsError    bool    `json:"is_error"`
+	NumTurns   int     `json:"num_turns"`
+	DurationMS int     `json:"duration_ms"`
+	CostUSD    float64 `json:"total_cost_usd"`
+	Usage      usage   `json:"usage"`
+}
+
+type contentBlock struct {
+	Type      string          `json:"type"`
+	ID        string          `json:"id"`
+	Name      string          `json:"name"`
+	Input     map[string]any  `json:"input"`
+	ToolUseID string          `json:"tool_use_id"`
+	Content   json.RawMessage `json:"content"`
+}
+
+// tallyTranscript reads claude -p's stream-json output.
+func tallyTranscript(r io.Reader, cl classifier) (tally, error) {
+	c := &cl
+	t := tally{Buckets: map[bucket]count{}, Touched: map[bucket]int{}}
+	pending := map[string]bucket{}
+	perMessage := map[string]usage{} // assistant events repeat a message's usage once per content block
+	var order []string
+	sawResult := false
+	sc := bufio.NewScanner(r)
+	sc.Buffer(make([]byte, 0, 1<<20), 256<<20) // one tool result can be a whole file
+	for sc.Scan() {
+		var e streamEvent
+		if err := json.Unmarshal(sc.Bytes(), &e); err != nil {
+			continue // stderr noise or a truncated last line
+		}
+		switch e.Type {
+		case "system":
+			if e.Subtype == "init" {
+				t.Model, t.ClaudeVersion, t.MemoryPaths = e.Model, e.ClaudeVersion, e.MemoryPaths
+			}
+		case "assistant", "user":
+			if e.Type == "assistant" && e.Message.Usage != nil && e.Message.ID != "" {
+				if _, seen := perMessage[e.Message.ID]; !seen {
+					order = append(order, e.Message.ID)
+				}
+				perMessage[e.Message.ID] = *e.Message.Usage
+			}
+			var blocks []contentBlock
+			if json.Unmarshal(e.Message.Content, &blocks) != nil {
+				continue // a plain-string user message
+			}
+			for _, b := range blocks {
+				switch b.Type {
+				case "tool_use":
+					bs, stale := c.safeTouches(b.Name, b.Input, &t)
+					bk := bs[0]
+					pending[b.ID] = bk
+					n := t.Buckets[bk]
+					n.Calls++
+					t.Buckets[bk] = n
+					for _, x := range bs {
+						t.Touched[x]++
+					}
+					if stale {
+						t.StaleCalls++
+					}
+					if bk == bSource || bk == bExamples {
+						t.SourceReads = append(t.SourceReads, describe(b.Name, b.Input))
+					}
+				case "tool_result":
+					bk, ok := pending[b.ToolUseID]
+					if !ok {
+						continue
+					}
+					n := t.Buckets[bk]
+					n.Bytes += resultBytes(b.Content)
+					t.Buckets[bk] = n
+				}
+			}
+		case "result":
+			sawResult = true
+			t.Subtype = e.Subtype
+			t.Finished = e.Subtype == "success" && !e.IsError
+			t.Turns = e.NumTurns
+			t.DurationMS = e.DurationMS
+			t.CostUSD = e.CostUSD
+			t.OutputTokens = e.Usage.Output
+			t.Tokens = e.Usage.total()
+		}
+	}
+	if !sawResult {
+		t.Partial = true
+		for _, id := range order {
+			u := perMessage[id]
+			t.Tokens += u.total()
+			t.OutputTokens += u.Output
+		}
+		t.Turns = len(order)
+	}
+	return t, sc.Err()
+}
+
+// resultBytes counts the text a tool result put into context. Content
+// is a string or a list of blocks; images are not text and the eval's
+// tasks do not produce them.
+func resultBytes(raw json.RawMessage) int {
+	var s string
+	if json.Unmarshal(raw, &s) == nil {
+		return len(s)
+	}
+	var blocks []struct {
+		Text string `json:"text"`
+	}
+	if json.Unmarshal(raw, &blocks) == nil {
+		n := 0
+		for _, b := range blocks {
+			n += len(b.Text)
+		}
+		return n
+	}
+	return len(raw)
+}
+
+func describe(tool string, in map[string]any) string {
+	var arg string
+	for _, k := range []string{"command", "file_path", "path", "pattern"} {
+		if s, ok := in[k].(string); ok && s != "" {
+			arg = s
+			break
+		}
+	}
+	if tool == "Grep" || tool == "Glob" {
+		p, _ := in["pattern"].(string)
+		d, _ := in["path"].(string)
+		arg = strings.TrimSpace(p + " " + d)
+	}
+	if len(arg) > 200 {
+		arg = arg[:200] + "…"
+	}
+	return fmt.Sprintf("%s %s", tool, arg)
+}

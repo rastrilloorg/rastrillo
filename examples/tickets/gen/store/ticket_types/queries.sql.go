@@ -56,13 +56,16 @@ func (q *Queries) CreateTicketType(ctx context.Context, arg CreateTicketTypePara
 	return id, err
 }
 
-const deleteTicketType = `-- name: DeleteTicketType :exec
+const deleteTicketType = `-- name: DeleteTicketType :execrows
 DELETE FROM ticket_types WHERE id = ?1
 `
 
-func (q *Queries) DeleteTicketType(ctx context.Context, id int64) error {
-	_, err := q.db.ExecContext(ctx, deleteTicketType, id)
-	return err
+func (q *Queries) DeleteTicketType(ctx context.Context, id int64) (int64, error) {
+	result, err := q.db.ExecContext(ctx, deleteTicketType, id)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
 }
 
 const getTicketType = `-- name: GetTicketType :one
@@ -139,42 +142,87 @@ func (q *Queries) ListTicketTypes(ctx context.Context, arg ListTicketTypesParams
 	return items, nil
 }
 
-const updateTicketTypeAdvanced = `-- name: UpdateTicketTypeAdvanced :exec
-UPDATE ticket_types SET max_per_order = ?1, updated_at = ?2 WHERE id = ?3
+const listTicketTypesAfter = `-- name: ListTicketTypesAfter :many
+SELECT id, name, price_minor, price_currency, status, max_per_order, created_at, updated_at FROM ticket_types
+WHERE (?1 = '' OR (name LIKE '%' || ?1 || '%' OR status LIKE '%' || ?1 || '%'))
+  AND (?2 = '' OR status = ?2)
+  AND (?3 = '' OR created_at < ?3 OR (created_at = ?3 AND id < ?4))
+ORDER BY created_at DESC, id DESC
+LIMIT ?5
 `
 
-type UpdateTicketTypeAdvancedParams struct {
-	MaxPerOrder string
-	Now         string
-	ID          int64
+type ListTicketTypesAfterParams struct {
+	Search         interface{}
+	FilterStatus   interface{}
+	AfterCreatedAt interface{}
+	AfterID        int64
+	PageLimit      int64
 }
 
-func (q *Queries) UpdateTicketTypeAdvanced(ctx context.Context, arg UpdateTicketTypeAdvancedParams) error {
-	_, err := q.db.ExecContext(ctx, updateTicketTypeAdvanced, arg.MaxPerOrder, arg.Now, arg.ID)
-	return err
+func (q *Queries) ListTicketTypesAfter(ctx context.Context, arg ListTicketTypesAfterParams) ([]TicketType, error) {
+	rows, err := q.db.QueryContext(ctx, listTicketTypesAfter,
+		arg.Search,
+		arg.FilterStatus,
+		arg.AfterCreatedAt,
+		arg.AfterID,
+		arg.PageLimit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []TicketType
+	for rows.Next() {
+		var i TicketType
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.PriceMinor,
+			&i.PriceCurrency,
+			&i.Status,
+			&i.MaxPerOrder,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
-const updateTicketTypeBasics = `-- name: UpdateTicketTypeBasics :exec
-UPDATE ticket_types SET name = ?1, price_minor = ?2, price_currency = ?3, status = ?4, updated_at = ?5 WHERE id = ?6
+const updateTicketType = `-- name: UpdateTicketType :execrows
+UPDATE ticket_types SET name = ?1, price_minor = ?2, price_currency = ?3, status = ?4, max_per_order = ?5, updated_at = ?6 WHERE id = ?7
 `
 
-type UpdateTicketTypeBasicsParams struct {
+type UpdateTicketTypeParams struct {
 	Name          string
 	PriceMinor    *int64
 	PriceCurrency *string
 	Status        string
+	MaxPerOrder   string
 	Now           string
 	ID            int64
 }
 
-func (q *Queries) UpdateTicketTypeBasics(ctx context.Context, arg UpdateTicketTypeBasicsParams) error {
-	_, err := q.db.ExecContext(ctx, updateTicketTypeBasics,
+func (q *Queries) UpdateTicketType(ctx context.Context, arg UpdateTicketTypeParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, updateTicketType,
 		arg.Name,
 		arg.PriceMinor,
 		arg.PriceCurrency,
 		arg.Status,
+		arg.MaxPerOrder,
 		arg.Now,
 		arg.ID,
 	)
-	return err
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
 }

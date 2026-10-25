@@ -174,3 +174,162 @@ func TestBootUpgradesTheMoneyStores(t *testing.T) {
 		})
 	}
 }
+
+// routerActorTest is the same four requests against either router: who
+// the action sees, as "<actor> <access>". A page request with a session
+// must reach op.Check as that person, or a scoped operation behind a
+// signed-in page would refuse its own owner for having no subject.
+// Then one Ctx for every request, which an app's factory may well
+// return: the second person must not be served as the first, and two
+// at once must not race on the actor (final review, finding 1).
+const routerActorTest = `package gen
+
+import (
+	"net/http"
+	"net/http/httptest"
+	"sync"
+	"testing"
+
+	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/sessions"
+)
+
+func TestActor(t *testing.T) {
+	as := func(subject string) *http.Request {
+		return sessions.WithSession(httptest.NewRequest("GET", ROUTE, nil), sessions.Session{Subject: subject})
+	}
+	signedIn := func() *http.Request { return as("42") }
+	cases := []struct {
+		name    string
+		r       *http.Request
+		factory rastrillo.Actor
+		want    string
+	}{
+		{"a session, factory left Actor zero", signedIn(), rastrillo.Actor{}, "user:42 write"},
+		{"a stamped actor beats the session", rastrillo.WithActor(signedIn(), rastrillo.Actor{Subject: "7", Credential: "x", Access: rastrillo.Read}), rastrillo.Actor{}, "user:7 token:x read"},
+		{"the factory's actor beats the session", signedIn(), rastrillo.Actor{Subject: "f", Access: rastrillo.Write}, "user:f write"},
+		{"no session, no actor", httptest.NewRequest("GET", ROUTE, nil), rastrillo.Actor{}, "app invalid"},
+	}
+	for _, c := range cases {
+		rec := httptest.NewRecorder()
+		router(t, c.factory).ServeHTTP(rec, c.r)
+		if got := rec.Body.String(); got != c.want {
+			t.Errorf("%s: the action saw %q, want %q", c.name, got, c.want)
+		}
+	}
+
+	saw := func(shared http.Handler, subject string) {
+		rec := httptest.NewRecorder()
+		shared.ServeHTTP(rec, as(subject))
+		if got, want := rec.Body.String(), "user:"+subject+" write"; got != want {
+			t.Errorf("one Ctx for every request: session %s saw %q, want %q", subject, got, want)
+		}
+	}
+	shared := router(t, rastrillo.Actor{})
+	saw(shared, "42")
+	saw(shared, "43")
+	// A fresh one for the race: the first request's write and the
+	// others' reads, which the sequential pair above has already settled.
+	shared = router(t, rastrillo.Actor{})
+	var wg sync.WaitGroup
+	for i := 0; i < 8; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			saw(shared, "42")
+			saw(shared, "43")
+		}()
+	}
+	wg.Wait()
+}
+`
+
+func TestRouterTakesAPageActorFromTheSession(t *testing.T) {
+	t.Run("no resources", func(t *testing.T) {
+		if testing.Short() {
+			t.Skip("builds a scratch app")
+		}
+		app := newScratchModule(t, false)
+		writeFile(t, app, "manifest/app.toml", "locales = [\"en\"]\ndefault_locale = \"en\"\n")
+		writeFile(t, app, "actions/index.GET.go", `//go:build `+BuildTag+`
+
+package actions
+
+import (
+	"fmt"
+	"net/http"
+
+	"amadan.net/rastrillo/rastrillo"
+)
+
+func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
+	fmt.Fprint(w, ctx.Actor, " ", ctx.Actor.Access)
+}
+`)
+		mustGenerate(t, app)
+		writeFile(t, app, "gen/actor_test.go", strings.ReplaceAll(routerActorTest, "ROUTE", `"/"`))
+		writeFile(t, app, "gen/router_test.go", `package gen
+
+import (
+	"net/http"
+	"testing"
+
+	"amadan.net/rastrillo/rastrillo"
+)
+
+// One Ctx per router, handed to every request, as an app's factory may.
+func router(t *testing.T, a rastrillo.Actor) http.Handler {
+	c := &rastrillo.Ctx{Actor: a}
+	return Router(func(*http.Request) *rastrillo.Ctx { return c })
+}
+`)
+		if out, err := goTest(app, "./gen/"); err != nil {
+			t.Fatalf("%s", out)
+		}
+	})
+	t.Run("booted", func(t *testing.T) {
+		app := scratchApp(t, map[string]string{"manifest/a.toml": resourceTOML("a", "exclusive")})
+		mustGenerate(t, app)
+		writeFile(t, app, "gen/actor_test.go", strings.ReplaceAll(routerActorTest, "ROUTE", `"/a"`))
+		writeFile(t, app, "gen/router_test.go", `package gen
+
+import (
+	"context"
+	"fmt"
+	"net/http"
+	"path/filepath"
+	"testing"
+
+	"amadan.net/rastrillo/rastrillo"
+	astore "scratch/gen/store/a"
+)
+
+// The list action answers through Render, so Render is where the
+// booted router's action shows who it saw. The action calls its
+// operation first, whose default policy refuses a token on an
+// unscoped resource; allowing everything here keeps the question
+// about the actor the router hands over, not about the policy. One
+// Ctx per router, handed to every request, as an app's factory may.
+func router(t *testing.T, a rastrillo.Actor) http.Handler {
+	db, err := rastrillo.OpenDB(filepath.Join(t.TempDir(), "a.db"), astore.Migrations)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { db.Close() })
+	b, err := Boot(context.Background(), db)
+	if err != nil {
+		t.Fatal(err)
+	}
+	show := func(c *rastrillo.Ctx, w http.ResponseWriter, _ string, _ int, _ any) {
+		fmt.Fprint(w, c.Actor, " ", c.Actor.Access)
+	}
+	allow := func(context.Context, rastrillo.Actor, rastrillo.Operation) error { return nil }
+	c := &rastrillo.Ctx{Actor: a, Render: show, Authorize: allow}
+	return Router(b, func(*http.Request) *rastrillo.Ctx { return c })
+}
+`)
+		if out, err := goTest(app, "./gen/"); err != nil {
+			t.Fatalf("%s", out)
+		}
+	})
+}

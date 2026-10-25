@@ -3,15 +3,13 @@
 package act_admin_announcements_id_index_get
 
 import (
-	"database/sql"
-	"errors"
 	"fmt"
 	"net/http"
 
 	"amadan.net/rastrillo/rastrillo"
 	"amadan.net/rastrillo/rastrillo/ui"
 	"amadan.net/rastrillo/rastrillo/view"
-	announcementsstore "tickets/gen/store/announcements"
+	ops_announcements "tickets/gen/ops/announcements"
 )
 
 // Handle is GET /admin/announcements/{id}.
@@ -21,14 +19,9 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 		view.NotFound(ctx, w, r)
 		return
 	}
-	store := announcementsstore.New(ctx.DB)
-	n, err := store.GetAnnouncement(r.Context(), id)
-	if errors.Is(err, sql.ErrNoRows) {
-		view.NotFound(ctx, w, r)
-		return
-	}
+	n, err := ops_announcements.Get(r.Context(), ctx, id)
 	if err != nil {
-		view.Fail(ctx, w, r, "announcements: loading announcements", err)
+		view.Refuse(ctx, w, r, "announcements: loading announcements", err)
 		return
 	}
 

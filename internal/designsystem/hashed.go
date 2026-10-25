@@ -1,7 +1,9 @@
 package designsystem
 
 import (
+	"embed"
 	"fmt"
+	"io/fs"
 	"strings"
 	"sync"
 	"testing/fstest"
@@ -10,14 +12,27 @@ import (
 	"amadan.net/rastrillo/rastrillo/ui"
 )
 
-// galleryAssets is every stylesheet and script the tree ships, by its
-// plain name: the framework's, one stylesheet per theme, and the
-// gallery's own two. Render writes each once, under its hashed name.
+// samplesFS is the pictures the media-grid sample shows: four small
+// SVGs drawn by hand, because a component that holds images cannot be
+// shown holding none, and a photograph would weigh more than the rest
+// of the tree's furniture put together. They are assets like the
+// stylesheets, written once under a hashed name, and a sample names
+// them through sampleImages rather than by path, so the HTML tab shows
+// an app's own route and only the preview loads the gallery's file.
+//
+//go:embed samples/*.svg
+var samplesFS embed.FS
+
+// galleryAssets is every stylesheet, script and sample picture the
+// tree ships, by its plain name: the framework's, one stylesheet per
+// theme, the gallery's own two, and the media-grid sample's four
+// pictures. Render writes each once, under its hashed name.
 func galleryAssets() map[string][]byte {
 	out := map[string][]byte{
 		"tokens.css":   ui.TokensCSS(),
 		"rastrillo.js": ui.ShimJS(),
 		"busy.js":      ui.BusyJS(),
+		"light.js":     ui.LightJS(),
 		"anchor.js":    ui.AnchorJS(),
 		"shell.js":     ui.ShellJS(),
 		"shell.css":    ui.ShellCSS(),
@@ -31,6 +46,17 @@ func galleryAssets() map[string][]byte {
 		if css, ok := ui.ThemeCSS(theme); ok {
 			out["theme-"+theme+".css"] = css
 		}
+	}
+	pictures, err := fs.ReadDir(samplesFS, "samples")
+	if err != nil {
+		panic("designsystem: listing the sample pictures: " + err.Error())
+	}
+	for _, p := range pictures {
+		body, err := fs.ReadFile(samplesFS, "samples/"+p.Name())
+		if err != nil {
+			panic("designsystem: reading " + p.Name() + ": " + err.Error())
+		}
+		out[p.Name()] = body
 	}
 	return out
 }

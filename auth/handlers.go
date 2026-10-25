@@ -72,7 +72,7 @@ func (a *Auth) Begin(w http.ResponseWriter, r *http.Request) {
 		a.redirect(w, r, a.problemURL("address", recovered, force, to))
 		return
 	case err != nil:
-		a.cfg.Logger.Error("rastrillo/auth: begin sign-in", "err", err)
+		a.logError("rastrillo/auth: begin sign-in", err)
 		a.noteAttempt(w, attemptProblem, address, false)
 		a.redirect(w, r, a.problemURL("1", recovered, force, to))
 		return
@@ -83,7 +83,13 @@ func (a *Auth) Begin(w http.ResponseWriter, r *http.Request) {
 			a.continueKeymail(w, r, address, next, recovered)
 			return
 		}
-		a.setCookie(w, a.pendingCookie(), next.Pending, int(pendingTTL.Seconds()))
+		pending, err := a.pendingCookieValue(next.Pending)
+		if err != nil {
+			a.cfg.Logger.Error("rastrillo/auth: seal pending", "err", err)
+			a.redirect(w, r, a.problemURL("1", recovered, force, to))
+			return
+		}
+		a.setCookie(w, a.pendingCookie(), pending, int(pendingTTL.Seconds()))
 		// next.Redirect points at a host the submitted address chose
 		// (via its DNS delegation) — untrusted output, sent as a
 		// redirect the browser follows, never echoed into a page.
@@ -229,7 +235,13 @@ func (a *Auth) continueKeymail(w http.ResponseWriter, r *http.Request, address s
 		a.redirect(w, r, a.problemURL("1", recovered, false, postedReturnTo(r)))
 		return
 	}
-	a.setCookie(w, a.pendingCookie(), next.Pending, int(pendingTTL.Seconds()))
+	pending, err := a.pendingCookieValue(next.Pending)
+	if err != nil {
+		a.cfg.Logger.Error("rastrillo/auth: seal pending", "err", err)
+		a.redirect(w, r, a.problemURL("1", recovered, false, postedReturnTo(r)))
+		return
+	}
+	a.setCookie(w, a.pendingCookie(), pending, int(pendingTTL.Seconds()))
 	a.setCookie(w, a.continueCookie(), value, int(continuationTTL.Seconds()))
 	a.noteAttempt(w, attemptKeymail, address, false)
 	a.redirect(w, r, a.cfg.SigninPath+"?continue="+id+returnToParam(postedReturnTo(r)))
@@ -272,8 +284,8 @@ func (a *Auth) AnswerAsSent(w http.ResponseWriter, r *http.Request) {
 // browser's continuation describes answers Expired without clearing
 // anything (see the comment inside).
 func (a *Auth) Callback(w http.ResponseWriter, r *http.Request) {
-	c, err := r.Cookie(a.pendingCookie())
-	if err != nil {
+	pending, ok := a.pendingValue(r)
+	if !ok {
 		a.redirect(w, r, a.signinAgain(r, "?err=expired"))
 		return
 	}
@@ -288,7 +300,7 @@ func (a *Auth) Callback(w http.ResponseWriter, r *http.Request) {
 		// blob's own authenticated expiry still bounds it; nothing is
 		// refreshed. Any other case — no continuation, or one left from
 		// an earlier attempt or a screen-off Begin — is today's path.
-		if p, st := a.openContinuation(r); st == cookieValid && p.PH == digest(c.Value) &&
+		if p, st := a.openContinuation(r); st == cookieValid && p.PH == digest(pending) &&
 			p.ST != digest(r.URL.Query().Get("state")) {
 			a.redirect(w, r, a.signinAgain(r, "?err=expired"))
 			return
@@ -297,7 +309,7 @@ func (a *Auth) Callback(w http.ResponseWriter, r *http.Request) {
 	}
 	a.clearCookie(w, a.pendingCookie())
 
-	id, err := a.flow.CompleteKeymail(r.Context(), c.Value,
+	id, err := a.flow.CompleteKeymail(r.Context(), pending,
 		r.URL.Query().Get("code"), r.URL.Query().Get("state"))
 	switch {
 	case errors.Is(err, signin.ErrPendingInvalid):
@@ -312,7 +324,7 @@ func (a *Auth) Callback(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Keymail returned a different address from the one you entered.", http.StatusForbidden)
 		return
 	case err != nil:
-		a.cfg.Logger.Error("rastrillo/auth: keymail callback", "err", err)
+		a.logError("rastrillo/auth: keymail callback", err)
 		a.redirect(w, r, a.signinAgain(r, "?force=1&err=keymail"))
 		return
 	}
@@ -385,6 +397,60 @@ func (a *Auth) Signout(w http.ResponseWriter, r *http.Request) {
 	a.redirect(w, r, a.cfg.SigninPath)
 }
 
+// SignoutEverywhere is POST /signout-everywhere, records mode only: it
+// ends every session of the signed-in user, on every device, within
+// one cookie lifetime (15 minutes), by moving the user's epoch. Signout
+// ends only this browser's. Same-origin checked like Signout. With a
+// database it answers 404; there, sessions.RevokeAll does this.
+//
+// An expired cookie is refreshed first (a 307 to the refresh route,
+// which repeats the POST), so a page left open past 15 minutes is not
+// answered as if nobody were signed in. With no valid session it goes
+// to SigninPath and ends nothing. A store error is a 503 with the
+// cookie kept: answering success for a revocation that did not happen
+// would leave a stolen copy working while the person believes it dead.
+func (a *Auth) SignoutEverywhere(w http.ResponseWriter, r *http.Request) {
+	if a.users == nil {
+		http.NotFound(w, r)
+		return
+	}
+	if r.Method != http.MethodPost {
+		w.Header().Set("Allow", http.MethodPost)
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	if !a.sameOrigin(r) {
+		http.Error(w, "cross-origin form submission refused", http.StatusForbidden)
+		return
+	}
+	if a.sessions.RefreshIfExpired(w, r) {
+		return
+	}
+	s, ok := a.sessions.From(r)
+	if !ok {
+		a.redirect(w, r, a.cfg.SigninPath)
+		return
+	}
+	// ErrNoUser: the user is gone, so there is nothing left to end, and
+	// the refresh route already signs out every copy.
+	if err := a.EndSessions(r.Context(), s.Subject); err != nil && !errors.Is(err, sessions.ErrNoUser) {
+		a.logError("rastrillo/auth: sign out everywhere", err)
+		http.Error(w, "Could not sign out everywhere. Try again.", http.StatusServiceUnavailable)
+		return
+	}
+	a.sessions.SignOut(w, r)
+	if _, err := r.Cookie(a.returnCookie()); err == nil {
+		a.clearCookie(w, a.returnCookie())
+	}
+	a.redirect(w, r, a.cfg.SigninPath)
+}
+
+// Refresh is the centre's refresh route, sessions.Refresh: mount it for
+// every method at Signed.RefreshPath (default /_carlos/refresh). An
+// expired cookie, here or on a tenant, is sent there to be reissued.
+// With a database it answers 404.
+func (a *Auth) Refresh(w http.ResponseWriter, r *http.Request) { a.sessions.Refresh(w, r) }
+
 // admit runs the admission gate, offers the session to the
 // SecondFactor hook (which may trade it for a pending half-session
 // and take over the response), and otherwise mints it and lands on
@@ -418,7 +484,16 @@ func (a *Auth) admit(w http.ResponseWriter, r *http.Request, id Identity) {
 		return
 	}
 	subject := id.Address
-	if a.cfg.SubjectFor != nil {
+	if a.users != nil {
+		// After Authorize, so an address that is refused writes no user.
+		u, err := a.users.ensure(r.Context(), id.Address)
+		if err != nil {
+			a.logError("rastrillo/auth: user for address", err)
+			http.Error(w, "sign-in failed", http.StatusInternalServerError)
+			return
+		}
+		subject = u.ID
+	} else if a.cfg.SubjectFor != nil {
 		s, err := a.cfg.SubjectFor(id.Address)
 		if err != nil {
 			// No fallback to the address: an app sets this hook
@@ -454,7 +529,7 @@ func (a *Auth) admit(w http.ResponseWriter, r *http.Request, id Identity) {
 		}
 	}
 	if err := a.sessions.SignIn(w, r, sess); err != nil {
-		a.cfg.Logger.Error("rastrillo/auth: store session", "err", err)
+		a.logError("rastrillo/auth: store session", err)
 		http.Error(w, "sign-in failed", http.StatusInternalServerError)
 		return
 	}
@@ -497,6 +572,11 @@ func (a *Auth) RequireSession(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		s, ok := a.sessions.From(r)
 		if !ok {
+			// An expired signed cookie on the centre refreshes as one on a
+			// tenant does; in row mode this does nothing.
+			if a.sessions.RefreshIfExpired(w, r) {
+				return
+			}
 			a.refuseSession(w, r, false)
 			return
 		}
@@ -519,10 +599,19 @@ func (a *Auth) RequireFreshSession(maxAge time.Duration) func(http.Handler) http
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			s, ok := a.sessions.From(r)
 			if !ok {
+				if a.sessions.RefreshIfExpired(w, r) {
+					return
+				}
 				a.refuseSession(w, r, false)
 				return
 			}
-			if !sessions.Fresh(s, maxAge, time.Now()) {
+			// Records mode judges on the clock the cookie was minted and
+			// verified on; row mode keeps the wall clock it always had.
+			now := time.Now()
+			if a.users != nil {
+				now = a.now()
+			}
+			if !sessions.Fresh(s, maxAge, now) {
 				a.refuseSession(w, r, true)
 				return
 			}

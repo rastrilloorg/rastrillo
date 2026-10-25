@@ -5,13 +5,12 @@
 //
 // The root package holds the process shape (Run/Serve/Handler, the
 // activation contract, the SQLite opener, migrations), the action
-// vocabulary (Ctx, Actor), the manifest vocabulary (Resource, Tool),
+// vocabulary (Ctx, Actor), the manifest vocabulary (Resource),
 // fingerprinted assets, and localization. The subsystems live beside
 // it: crypto (the family envelope), auth (keymail sign-in with the
 // magic-link fallback), webauthn, eventlog (the Mergeable store),
-// blobs, mail, carlos (the platform's scheduled-work contract), tools
-// (agent dispatch), and ui (the component partials). README.md keeps
-// the honest status list.
+// blobs, mail, carlos (the platform's scheduled-work contract), and ui
+// (the component partials). README.md keeps the honest status list.
 package rastrillo
 
 import (
@@ -94,6 +93,15 @@ type Options struct {
 	// closes it when Serve returns; do not retain it past that. An app
 	// that needs a handle outside Serve's lifetime calls OpenDB itself.
 	Router func(db *sql.DB) (*http.ServeMux, error)
+
+	// NameInstance, if set, makes GET /api/version also answer with the
+	// Rastrillo-Host header (carlos.HostHeader) carrying $CARLOS_HOST,
+	// so a hub can tell which instance answered. It is off by default
+	// because the header tells any visitor the platform hostname
+	// behind a product path or a custom domain. Off CARLOS the header
+	// is absent. The body stays BuildVersion either way: the
+	// platform's build probe reads it.
+	NameInstance bool
 
 	// Wrap, if set, wraps the app's mux — the one seam for app
 	// middleware: sessions, CSRF, panic pages, authorization
@@ -559,6 +567,10 @@ func buildHandler(opts Options) (http.Handler, error) {
 		fmt.Fprint(w, "ok")
 	})
 	mux.HandleFunc("GET /api/version", func(w http.ResponseWriter, _ *http.Request) {
+		// Read per request, not at build time, so a test can set it per case.
+		if host := carlos.Host(); opts.NameInstance && host != "" {
+			w.Header().Set(carlos.HostHeader, host)
+		}
 		fmt.Fprint(w, BuildVersion)
 	})
 	if opts.NextDue != nil {

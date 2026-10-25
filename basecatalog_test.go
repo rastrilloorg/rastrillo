@@ -103,19 +103,30 @@ func TestIsBaseKey(t *testing.T) {
 	}
 }
 
-// The three strings the phone shells and the row menu say. They are
-// checked as a set rather than left to TestBaseCatalogsShareOneKeySet
-// because two of them carry {name}, and a translation that drops or
-// doubles the placeholder renders "Back to" with nothing after it on a
-// screen reader, which no visual check catches. New copy carries no em
-// dashes; that is asserted here because a translator reaching for one
-// is the likeliest way it comes back.
+// The strings the phone shells, the row menu and the media grid say.
+// They are checked as a set rather than left to
+// TestBaseCatalogsShareOneKeySet because three of them carry {name},
+// and a translation that drops or doubles the placeholder renders
+// "Back to" with nothing after it on a screen reader, which no visual
+// check catches. New copy carries no em dashes; that is asserted here
+// because a translator reaching for one is the likeliest way it comes
+// back.
 func TestTheShellAndRowMenuStringsAreInEveryCatalog(t *testing.T) {
 	keys := map[string]int{ // key -> how many {name} it must carry
 		"rastrillo.ui.shell_up_label": 0,
 		"rastrillo.ui.shell_up":       1,
 		"rastrillo.ui.row_menu":       1,
+		"rastrillo.ui.media_select":   1,
+		"rastrillo.ui.no_description": 0,
 	}
+	// drafts are keys whose eleven other catalogs still carry the
+	// English, because the English is not yet approved and the
+	// translations are drafted only after it is. The parity gate forces
+	// the keys to exist, so they exist as drafts; the check below that
+	// a translation is not the English is turned round for them, so
+	// the entry has to go the day the key is translated and cannot
+	// outlive the debt it records.
+	drafts := map[string]bool{}
 	all := BaseCatalogs()
 	if len(all) != 12 {
 		t.Fatalf("%d base catalogs, want 12", len(all))
@@ -137,9 +148,19 @@ func TestTheShellAndRowMenuStringsAreInEveryCatalog(t *testing.T) {
 			if strings.Contains(v, "—") {
 				t.Errorf("%s.toml: %s = %q contains an em dash", code, key, v)
 			}
-			if code != "en" && v == en[key] {
+			if code == "en" {
+				continue
+			}
+			if drafts[key] && v != en[key] {
+				t.Errorf("%s.toml: %s is translated (%q); take it out of drafts", code, key, v)
+			} else if !drafts[key] && v == en[key] {
 				t.Errorf("%s.toml: %s is still the English %q", code, key, v)
 			}
+		}
+	}
+	for key := range drafts {
+		if _, ok := keys[key]; !ok {
+			t.Errorf("drafts names %s, which the set above does not check", key)
 		}
 	}
 }
@@ -230,6 +251,59 @@ func TestFormErrorsMatchTheEnglishCatalog(t *testing.T) {
 		}
 		if got, ok := en[fe.Key]; !ok || got != fe.Msg {
 			t.Errorf("en.toml has %s = %q, but form says %q", fe.Key, got, fe.Msg)
+		}
+	}
+}
+
+// The JSON API's strings: the "Claude for Paul" sentence and the token
+// page. agent_for carries two placeholders, {agent} and {person}, and
+// a translation that drops one reads as a sentence about nobody; the
+// token page's keys are checked as a set because they shipped as
+// English placeholders until the English was approved, and the parity
+// gate alone would never notice them staying that way. A loanword the
+// language spells as English does ("Token" in Spanish) is listed with
+// its reason rather than left to pass by accident.
+func TestTheAgentAndTokenStringsAreInEveryCatalog(t *testing.T) {
+	sameAsEnglish := map[string]string{
+		"es:rastrillo.ui.api_tokens_col_token":    "token is the Spanish word too",
+		"pt-PT:rastrillo.ui.api_tokens_col_token": "token is the Portuguese word too",
+	}
+	all := BaseCatalogs()
+	en := all["en"]
+	var keys []string
+	for key := range en {
+		if key == "rastrillo.ui.agent_for" || strings.HasPrefix(key, "rastrillo.ui.api_tokens_") {
+			keys = append(keys, key)
+		}
+	}
+	if len(keys) != 25 {
+		t.Fatalf("%d agent and token keys in en.toml, want 25", len(keys))
+	}
+	for code, c := range all {
+		for _, key := range keys {
+			v, ok := c[key]
+			if !ok || strings.TrimSpace(v) == "" {
+				t.Errorf("%s.toml: missing or empty %s", code, key)
+				continue
+			}
+			if key == "rastrillo.ui.agent_for" {
+				for _, ph := range []string{"{agent}", "{person}"} {
+					if strings.Count(v, ph) != 1 {
+						t.Errorf("%s.toml: %s = %q must carry %s exactly once", code, key, v, ph)
+					}
+				}
+			} else if strings.ContainsAny(v, "{}") {
+				t.Errorf("%s.toml: %s = %q has a placeholder brace in a string that takes no value", code, key, v)
+			}
+			if strings.Contains(v, "—") {
+				t.Errorf("%s.toml: %s = %q contains an em dash", code, key, v)
+			}
+			if code == "en" || sameAsEnglish[code+":"+key] != "" {
+				continue
+			}
+			if v == en[key] {
+				t.Errorf("%s.toml: %s is still the English %q", code, key, v)
+			}
 		}
 	}
 }

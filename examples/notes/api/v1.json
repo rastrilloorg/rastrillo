@@ -1,0 +1,86 @@
+{
+  "version": 1,
+  "operations": [
+    {
+      "id": "bookmarks.create",
+      "method": "POST",
+      "path": "/api/v1/bookmarks",
+      "access": "write",
+      "input": {
+        "link": {"kind": "text", "required": false},
+        "notes": {"kind": "textarea", "required": false},
+        "title": {"kind": "text", "required": true}
+      },
+      "result": {
+        "created_at": "time",
+        "id": "integer",
+        "link": "text",
+        "notes": "textarea",
+        "title": "text",
+        "updated_at": "time"
+      }
+    },
+    {
+      "id": "bookmarks.delete",
+      "method": "DELETE",
+      "path": "/api/v1/bookmarks/{id}",
+      "access": "write",
+      "input": {
+        "id": {"kind": "integer", "required": true}
+      },
+      "result": {}
+    },
+    {
+      "id": "bookmarks.get",
+      "method": "GET",
+      "path": "/api/v1/bookmarks/{id}",
+      "access": "read",
+      "input": {
+        "id": {"kind": "integer", "required": true}
+      },
+      "result": {
+        "created_at": "time",
+        "id": "integer",
+        "link": "text",
+        "notes": "textarea",
+        "title": "text",
+        "updated_at": "time"
+      }
+    },
+    {
+      "id": "bookmarks.list",
+      "method": "GET",
+      "path": "/api/v1/bookmarks",
+      "access": "read",
+      "input": {
+        "after": {"kind": "cursor", "required": false},
+        "limit": {"kind": "integer", "required": false},
+        "q": {"kind": "text", "required": false}
+      },
+      "result": {
+        "bookmarks": "array",
+        "next_after": "cursor"
+      }
+    },
+    {
+      "id": "bookmarks.update",
+      "method": "PATCH",
+      "path": "/api/v1/bookmarks/{id}",
+      "access": "write",
+      "input": {
+        "id": {"kind": "integer", "required": true},
+        "link": {"kind": "text", "required": false},
+        "notes": {"kind": "textarea", "required": false},
+        "title": {"kind": "text", "required": false}
+      },
+      "result": {
+        "created_at": "time",
+        "id": "integer",
+        "link": "text",
+        "notes": "textarea",
+        "title": "text",
+        "updated_at": "time"
+      }
+    }
+  ]
+}

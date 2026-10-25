@@ -363,6 +363,7 @@ var tapInventory = []tapEntry{
 // control that does not fit the floor gets a rule in the floor block.
 var tapExempt = map[string]string{
 	"[rst-row-main] > a":         "the stretched primary link: the tap target is the whole row (spec §2)",
+	"[rst-media-name] > a":       "a media-grid tile's stretched name link: the tap target is the whole tile, frame and caption",
 	"a.rst-nm":                   "the list grid's stretched identity link: the tap target is the whole row (spec §2)",
 	"[rst-lrow] > a[rst-person]": "the list grid's stretched person link: the tap target is the whole row (spec §2)",
 	".rst-lrow > a.rst-person":   "the class spelling of the same stretched person link",

@@ -1,0 +1,117 @@
+package %[2]stest
+
+import (
+	"context"
+	"encoding/json"
+	"html/template"
+	"io"
+	"log/slog"
+	"net/http"
+	"net/http/httptest"
+	"net/url"
+	"regexp"
+	"strings"
+	"testing"
+
+	"github.com/go-chi/chi/v5"
+
+	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/csrf"
+	"amadan.net/rastrillo/rastrillo/db"
+	"amadan.net/rastrillo/rastrillo/migrate"
+	"amadan.net/rastrillo/rastrillo/sessions"
+
+	genlocales "%[1]s/gen/locales"
+	%[2]s "%[1]s/internal/%[2]s"
+)
+
+// The API answers at /api/v1 itself, not only below it, and in JSON: a
+// bare /api/v1 that the outer mux answered with its own redirect would
+// send an agent's request somewhere the tree never sees. A new app
+// exposes nothing, so the answer is the tree's 404.
+func TestAPIAnswersInJSON(t *testing.T) {
+	t.Parallel()
+	h := newApp(t)
+	for _, path := range []string{"/api/v1", "/api/v1/notes"} {
+		rec := get(t, h, path)
+		if rec.Code != http.StatusNotFound {
+			t.Errorf("GET %%s: status %%d, want 404", path, rec.Code)
+		}
+		var e struct{ Error struct{ Code string } }
+		if err := json.Unmarshal(rec.Body.Bytes(), &e); err != nil || e.Error.Code != "not_found" {
+			t.Errorf("GET %%s: not the API's JSON 404 (%%v):\n%%s", path, err, rec.Body.String())
+		}
+		if got := rec.Header().Get("Cache-Control"); got != "no-store" {
+			t.Errorf("GET %%s: Cache-Control = %%q, want no-store", path, got)
+		}
+	}
+}
+
+// tokenRE is a whole token with this app's prefix.
+var tokenRE = regexp.MustCompile(`\b%[3]s_([0-9A-Za-z]{12})_[0-9A-Za-z]{43}\b`)
+
+// The token page, mounted the way tokens.go says to once the app has
+// sign-in: the person makes a token and sees it once, and the page
+// lists it afterwards by its public ID alone. A new app has no sign-in,
+// so this test brings the sessions table and a session of its own.
+func TestTokenPageShowsANewTokenOnce(t *testing.T) {
+	t.Parallel()
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	d, err := db.Open(schema.Path(t), logger)
+	if err != nil {
+		t.Fatalf("db.Open: %%v", err)
+	}
+	t.Cleanup(func() { d.Close() })
+	if _, err := migrate.Apply(context.Background(), d, sessions.Schema); err != nil {
+		t.Fatal(err)
+	}
+	sess, err := sessions.New(sessions.Config{DB: d.Writer(), Origin: testOrigin, Logger: logger})
+	if err != nil {
+		t.Fatal(err)
+	}
+	cookie, err := sess.Mint(sessions.Session{Subject: "1"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	tokens, err := %[2]s.Tokens(d, sess)
+	if err != nil {
+		t.Fatal(err)
+	}
+	r := chi.NewRouter()
+	r.Use(csrf.Protect(testOrigin))
+	r.Group(tokens)
+	apiTree, err := %[2]s.API(d, logger)
+	if err != nil {
+		t.Fatal(err)
+	}
+	h := %[2]s.Mux(r, apiTree)
+	send := func(method string, form url.Values) *httptest.ResponseRecorder {
+		req := httptest.NewRequest(method, "/tokens", strings.NewReader(form.Encode()))
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		req.Header.Set("Origin", testOrigin)
+		req.AddCookie(&http.Cookie{Name: sess.CookieName(), Value: cookie})
+		rec := httptest.NewRecorder()
+		h.ServeHTTP(rec, req)
+		return rec
+	}
+
+	title := template.HTMLEscapeString(rastrillo.BaseCatalogs()[genlocales.DefaultLocale]["rastrillo.ui.api_tokens_title"])
+	rec := send(http.MethodGet, nil)
+	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), title) {
+		t.Fatalf("GET /tokens: status %%d, want 200 and the page title:\n%%s", rec.Code, rec.Body.String())
+	}
+
+	rec = send(http.MethodPost, url.Values{"agent": {"Claude"}, "access": {"write"}, "expiry": {"90"}})
+	m := tokenRE.FindStringSubmatch(rec.Body.String())
+	if rec.Code != http.StatusOK || m == nil {
+		t.Fatalf("POST /tokens: status %%d, want 200 and the new token:\n%%s", rec.Code, rec.Body.String())
+	}
+	if got := rec.Header().Get("Cache-Control"); got != "no-store" {
+		t.Errorf("POST /tokens: Cache-Control = %%q, want no-store: the reveal must not be cached", got)
+	}
+
+	rec = send(http.MethodGet, nil)
+	if body := rec.Body.String(); strings.Contains(body, m[0]) || !strings.Contains(body, m[1]) {
+		t.Errorf("GET /tokens after making one: want the public ID %%s listed and the secret gone:\n%%s", m[1], body)
+	}
+}

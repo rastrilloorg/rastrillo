@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"amadan.net/rastrillo/rastrillo/csrf"
-	"amadan.net/rastrillo/rastrillo/sessions"
+	"amadan.net/rastrillo/rastrillo/internal/returnto"
 )
 
 // LocaleCookie is the stored-preference cookie the resolution chain
@@ -400,9 +400,10 @@ func switchPost(w http.ResponseWriter, r *http.Request) (https, ok bool) {
 
 // returnPath is the switchers' one open-redirect guard: the form's
 // return field, "/" when it is empty, and a 400 for anything that is
-// not a same-site absolute path. The policy is sessions.SafeReturnTo's,
-// not a copy of it: a scheme, a protocol-relative "//", a backslash
-// ANYWHERE and any control character are refused. The first version
+// not a same-site absolute path. The policy is sessions.SafeReturnTo's
+// (internal/returnto, which both call), not a copy of it: a scheme, a
+// protocol-relative "//", a backslash ANYWHERE and any control
+// character are refused. The first version
 // of this guard checked only the first two characters, and that let
 // two shapes through: "/a/../\evil.example/", which http.Redirect's
 // path clean turns into "/\evil.example/" and browsers read as
@@ -414,7 +415,7 @@ func returnPath(w http.ResponseWriter, r *http.Request) (string, bool) {
 	if ret == "" {
 		return "/", true
 	}
-	if sessions.SafeReturnTo(ret, "") == "" {
+	if returnto.Safe(ret, "") == "" {
 		http.Error(w, "bad return path", http.StatusBadRequest)
 		return "", false
 	}

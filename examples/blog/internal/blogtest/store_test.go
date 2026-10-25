@@ -189,10 +189,11 @@ func TestUpdateAndSetPublishedAndDelete(t *testing.T) {
 	db := newDB(t)
 	id := seed(t, db, "Before", "Old body.", false)
 
-	// The generated store's UpdatePostBasics is what the edit-basics
-	// action now calls too (see gen/actions/admin/posts/id/edit_basics_post).
+	// The generated store's full-row UpdatePost is what the edit-basics
+	// action's operation writes through (see gen/ops/posts/update.go);
+	// basics is every field of posts, so this is the same write.
 	now := time.Now().UTC().Format(time.RFC3339)
-	if err := postsstore.New(db).UpdatePostBasics(context.Background(), postsstore.UpdatePostBasicsParams{
+	if _, err := postsstore.New(db).UpdatePost(context.Background(), postsstore.UpdatePostParams{
 		Title: "After", Body: "New body.", Now: now, ID: id,
 	}); err != nil {
 		t.Fatalf("update: %v", err)

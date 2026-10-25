@@ -98,7 +98,7 @@ func newAppWithAt(t *testing.T, path, def string, offered []string) (http.Handle
 				return nil, err
 			}
 			mux := gen.Router(booted, func(*http.Request) *rastrillo.Ctx {
-				return &rastrillo.Ctx{DB: d, Logger: logger, Actor: rastrillo.Actor{Human: true}, Render: app.Render}
+				return &rastrillo.Ctx{DB: d, Logger: logger, Actor: rastrillo.Actor{}, Render: app.Render}
 			})
 			outer := http.NewServeMux()
 			outer.Handle("/", app.Middleware(mux))

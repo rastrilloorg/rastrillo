@@ -6,6 +6,7 @@ package generate
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"os/exec"
 	"path/filepath"
@@ -42,11 +43,13 @@ func RunSqlc(moduleRoot string) error {
 }
 
 // checkSqlcTool reports whether moduleRoot's go.mod carries the sqlc
-// tool directive. `go tool` (no arguments) lists every tool directive
-// by its full import path regardless of whether the module has been
-// downloaded yet, so this needs no go.mod parsing of its own.
+// tool directive. It reads `go mod edit -json`, not the listing `go
+// tool` prints: that listing is for people, and Go 1.27 changed it from
+// the bare import path to "sqlc (path)", which made every app with the
+// directive fail here with advice to add it. The JSON is go.mod's own
+// structure, needs nothing downloaded, and lets go do the parsing.
 func checkSqlcTool(moduleRoot string) error {
-	cmd := exec.Command("go", "tool")
+	cmd := exec.Command("go", "mod", "edit", "-json")
 	cmd.Dir = moduleRoot
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
@@ -56,10 +59,16 @@ func checkSqlcTool(moduleRoot string) error {
 		if msg == "" {
 			msg = err.Error()
 		}
-		return fmt.Errorf("go tool: %s", msg)
+		return fmt.Errorf("go mod edit: %s", msg)
 	}
-	for _, line := range strings.Split(stdout.String(), "\n") {
-		if strings.TrimSpace(line) == sqlcToolPath {
+	var mod struct {
+		Tool []struct{ Path string }
+	}
+	if err := json.Unmarshal(stdout.Bytes(), &mod); err != nil {
+		return fmt.Errorf("go mod edit -json: %w", err)
+	}
+	for _, tool := range mod.Tool {
+		if tool.Path == sqlcToolPath {
 			return nil
 		}
 	}

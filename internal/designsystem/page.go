@@ -1451,7 +1451,11 @@ func previewStyle(locale, id string, h int) template.CSS {
 // which holds each language's content to the box on its own page and
 // names the number to write here when one is short.
 var previewMobileLocaleHeights = map[string]map[string]int{
+	"vi": {
+		"partial-api-tokens": 2150,
+	},
 	"ga": {
+		"partial-api-tokens":            2287,
 		"format-addresses":              319,
 		"idiom-box":                     318,
 		"idiom-button":                  449,
@@ -1464,6 +1468,7 @@ var previewMobileLocaleHeights = map[string]map[string]int{
 		"screen-signin-social":          422,
 	},
 	"es": {
+		"partial-api-tokens":              2102,
 		"idiom-box":                       307,
 		"idiom-form-layout":               565,
 		"partial-callout":                 260,
@@ -1474,6 +1479,7 @@ var previewMobileLocaleHeights = map[string]map[string]int{
 		"screen-signin-social":            407,
 	},
 	"pt-PT": {
+		"partial-api-tokens":            2126,
 		"idiom-button":                  449,
 		"idiom-form-layout":             565,
 		"partial-callout":               284,
@@ -1484,6 +1490,7 @@ var previewMobileLocaleHeights = map[string]map[string]int{
 		"screen-signin-social":          407,
 	},
 	"ru": {
+		"partial-api-tokens":         2270,
 		"format-addresses":           343,
 		"idiom-button":               449,
 		"partial-callout":            284,
@@ -1494,7 +1501,8 @@ var previewMobileLocaleHeights = map[string]map[string]int{
 		"screen-signin-sent-unbound": 637,
 	},
 	"ja": {
-		"idiom-form-layout": 523,
+		"partial-api-tokens": 2126,
+		"idiom-form-layout":  523,
 	},
 	"ar": {
 		"screen-signin-social": 399,
@@ -1527,8 +1535,10 @@ var previewMobileHeights = map[string]int{
 	"partial-error-page":              543,
 	"partial-job-status":              113,
 	"partial-list-row-action":         299,
+	"partial-media-grid":              1560, // one column: four tiles stacked, each a 4:3 frame the column wide
 	"partial-page-header":             216,
 	"partial-pagination":              176,
+	"partial-api-tokens":              2080, // the form's choice cards stack, and each list row stacks its four labelled facts under the identity
 	"screen-signin-ask":               649,
 	"screen-signin-continue":          560,
 	"screen-signin-problem-keymail":   693,
@@ -1585,6 +1595,7 @@ var previewHeights = map[string]int{
 	"partial-seg-tabs":           80,
 	"partial-dropdown":           200, // room for the open menu
 	"partial-bulk-bar":           190, // room for the actions menu it opens
+	"partial-media-grid":         720, // four tiles in two rows at the frame's width, each a 4:3 frame over a three-line caption
 	"partial-pagination":         110,
 	"partial-empty-state":        240,
 	// Display.
@@ -1594,6 +1605,7 @@ var previewHeights = map[string]int{
 	"partial-stat":        150, // a lead cell is label, number, delta and note stacked
 
 	"partial-person":      95,
+	"partial-actor":       70, // one line of words
 	"partial-callout":     160,
 	"partial-detail-list": 230,
 	"partial-notice":      110,
@@ -1618,7 +1630,8 @@ var previewHeights = map[string]int{
 	// Route.
 	"partial-error-page":  390,
 	"partial-back-nav":    80,
-	"partial-locale-menu": 420, // the open menu at its full 20rem cap; twelve languages scroll inside it
+	"partial-locale-menu": 420,  // the open menu at its full 20rem cap; twelve languages scroll inside it
+	"partial-api-tokens":  1000, // the reveal, a four-field form in its box, four list rows and the revoke buttons
 	// The markup idioms.
 	"idiom-button":        240, // four rows: the variants, the sizes and a link, full width, disabled
 	"idiom-box":           220,
@@ -1701,6 +1714,11 @@ var previewScripts = []struct {
 }{
 	{"rastrillo.js", []string{"data-poll", "rst-dropdown", "rst-row-menu", "rst-switch"}},
 	{"busy.js", []string{"data-busy"}},
+	// light.js is here for the same reason as the shim: a preview whose
+	// buttons never catch a sheen and whose cards never breathe says the
+	// depth design is still, which is the one thing the file exists to
+	// disprove. The hooks are the families it writes on (C16).
+	{"light.js", []string{"rst-btn", "rst-box", "rst-card", "rst-stats", "rst-list", "rst-switch"}},
 	{"anchor.js", []string{"rst-dropdown"}},
 	{"select.js", []string{"data-rst-select"}},
 	// calendar.js comes FIRST, and the order is load-bearing here in a
@@ -1798,6 +1816,7 @@ func previewDoc(mount, theme, locale, title, body string) string {
 
 var (
 	sampleHref = regexp.MustCompile(`href="([^"]*)"`)
+	sampleSrc  = regexp.MustCompile(`src="([^"]*)"`)
 	sampleForm = regexp.MustCompile(`<form\b`)
 	// A start tag, quoted values whole so a ">" or an attribute's name
 	// inside one is not mistaken for the tag's own, and one attribute in
@@ -1855,7 +1874,31 @@ func deaden(mount, html string) string {
 		}
 		return `href="#"`
 	})
+	// A sample's pictures the same way: the route stays in the HTML
+	// tab and the preview loads the gallery's own file for it. A route
+	// no picture is kept for is left alone, and shows as the broken
+	// image it would be, rather than being quietly blanked.
+	out = sampleSrc.ReplaceAllStringFunc(out, func(m string) string {
+		v := m[len(`src="`) : len(m)-1]
+		if asset, ok := sampleImages[v]; ok {
+			return `src="` + assetURL(mount, asset) + `"`
+		}
+		return m
+	})
 	return unfocus(sampleForm.ReplaceAllString(out, `<form target="ds-void"`))
+}
+
+// sampleImages maps the route a sample gives a picture to the gallery
+// asset the preview draws for it. The samples are written to read like
+// a real application (/images/checkout.png), and this site serves none
+// of those; the four pictures under samples/ stand in for them in the
+// frame alone. A route here that no sample uses, or a sample picture no
+// route names, fails TestEverySamplePictureIsUsedOnce.
+var sampleImages = map[string]string{
+	"/images/checkout.png": "sample-checkout.svg",
+	"/images/pricing.png":  "sample-pricing.svg",
+	"/images/logo.svg":     "sample-logo.svg",
+	"/images/banner.png":   "sample-banner.svg",
 }
 
 // copyJoin joins the parts of a copy button's accessible name, the
@@ -2685,6 +2728,8 @@ func buildAssets(mount, theme, locale string) assetsView {
 		"The progressive-enhancement shim: polling fragments, light dismiss and the switch's drag. Every scaffolded app gets it.")
 	add(&out, "busy.js", ui.BusyJS(),
 		"The busy rule: while a form sends, its button shows a spinner for at least 650ms and refuses a second submit, and Back hands it back. Every scaffolded app gets it.")
+	add(&out, "light.js", ui.LightJS(),
+		"The light the depth styles read: shadows lit by the hour, and a sheen on the button under the pointer. Delete it for the still design.")
 	add(&out, "anchor.js", ui.AnchorJS(),
 		"Keeps a dropdown's menu on the screen in browsers without CSS anchor positioning. It does nothing where they have it: delete it once every browser you support does.")
 	add(&out, "shell.js", ui.ShellJS(),

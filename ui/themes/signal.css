@@ -69,6 +69,26 @@
      pill warning  fg on its own tint          6.21      4.5:1  text
      pill negative fg on its own tint          6.00      4.5:1  text
      --rst-on-accent   on negative fg (fill)   7.58      4.5:1  danger button label
+     --rst-on-accent-fill       on --rst-accent-fill          5.50      4.5:1  primary button label
+     --rst-on-accent-fill       on --rst-accent-fill-hover    7.77      4.5:1  primary button label, hover
+     --rst-on-danger-fill       on --rst-danger-fill          7.58      4.5:1  danger button label
+     --rst-on-danger-fill-hover on --rst-danger-fill-hover    7.58      4.5:1  danger button label, hover
+     --rst-text                 on --rst-row-tint-hover      16.93      4.5:1  list-row-action text, hovered
+     --rst-text                 on --rst-row-tint-press      16.93      4.5:1  list-row-action text, pressed
+     --rst-control-text-hover   on --rst-control-face-hover   5.50      4.5:1  plain button label, hover
+     --rst-text-muted           on --rst-control-face-hover   8.76      4.5:1  muted label on a hovered plain face
+     --rst-text                 on --rst-tint-hover          16.68      4.5:1  row text on the hover tint
+     --rst-text                 on --rst-tint-press          16.68      4.5:1  row text on the press tint
+     --rst-text-muted           on --rst-tint-hover           7.57      4.5:1  muted cell on the hover tint
+     --rst-text-muted           on --rst-tint-press           7.57      4.5:1  muted cell on the press tint
+     --rst-text-faint           on --rst-tint-hover           5.29      4.5:1  faint cell on the hover tint
+     --rst-text-faint           on --rst-tint-press           5.29      4.5:1  faint cell on the press tint
+     --rst-accent               on --rst-tint-hover           4.75      4.5:1  a link on a hovered row
+     --rst-nav-current-fg       on --rst-nav-current-bg       4.75      4.5:1  the current nav item
+     --rst-track-off            on --rst-surface              4.70      3:1    switch off track (1.4.11 boundary)
+     --rst-track-off            on --rst-bg                   4.31      3:1    switch off track on the page
+     --rst-knob-shade           on --rst-track-off            4.70      3:1    switch knob on the off track
+     --rst-knob-shade           on --rst-accent-fill          5.50      3:1    switch knob on the on track
 
    DARK                                      ratio      requirement
      --rst-text        on --rst-surface       15.05      4.5:1  text
@@ -97,6 +117,26 @@
      pill warning  fg on its own tint         10.00      4.5:1  text
      pill negative fg on its own tint          7.84      4.5:1  text
      --rst-on-accent   on negative fg (fill)   9.25      4.5:1  danger button label
+     --rst-on-accent-fill       on --rst-accent-fill          6.79      4.5:1  primary button label
+     --rst-on-accent-fill       on --rst-accent-fill-hover    9.77      4.5:1  primary button label, hover
+     --rst-on-danger-fill       on --rst-danger-fill          9.25      4.5:1  danger button label
+     --rst-on-danger-fill-hover on --rst-danger-fill-hover    9.25      4.5:1  danger button label, hover
+     --rst-text                 on --rst-row-tint-hover      15.59      4.5:1  list-row-action text, hovered
+     --rst-text                 on --rst-row-tint-press      15.59      4.5:1  list-row-action text, pressed
+     --rst-control-text-hover   on --rst-control-face-hover   6.06      4.5:1  plain button label, hover
+     --rst-text-muted           on --rst-control-face-hover   7.85      4.5:1  muted label on a hovered plain face
+     --rst-text                 on --rst-tint-hover          14.47      4.5:1  row text on the hover tint
+     --rst-text                 on --rst-tint-press          14.47      4.5:1  row text on the press tint
+     --rst-text-muted           on --rst-tint-hover           7.55      4.5:1  muted cell on the hover tint
+     --rst-text-muted           on --rst-tint-press           7.55      4.5:1  muted cell on the press tint
+     --rst-text-faint           on --rst-tint-hover           6.33      4.5:1  faint cell on the hover tint
+     --rst-text-faint           on --rst-tint-press           6.33      4.5:1  faint cell on the press tint
+     --rst-accent               on --rst-tint-hover           5.82      4.5:1  a link on a hovered row
+     --rst-nav-current-fg       on --rst-nav-current-bg       5.82      4.5:1  the current nav item
+     --rst-track-off            on --rst-surface              4.65      3:1    switch off track (1.4.11 boundary)
+     --rst-track-off            on --rst-bg                   5.03      3:1    switch off track on the page
+     --rst-knob-shade           on --rst-track-off            4.65      3:1    switch knob on the off track
+     --rst-knob-shade           on --rst-accent-fill          6.06      3:1    switch knob on the on track
 
    The tightest pair in the set is --rst-accent on --rst-accent-soft in
    light, at 4.75:1 against a 4.5:1 floor — the cobalt is as bright as it
@@ -176,6 +216,80 @@
   --rst-shadow-knob: 0 1px 2px light-dark(rgba(12, 14, 18, 0.45), rgba(0, 0, 0, 0.6));
   --rst-shadow-lift: 0 1px 2px light-dark(rgba(12, 14, 18, 0.2), rgba(0, 0, 0, 0.5));
   --rst-overlay: light-dark(rgba(9, 11, 16, 0.55), rgba(3, 4, 7, 0.72));
+
+  /* The depth axis, declared as the semantic tokens tokens.css read in
+     each place before the axis existed: the fills are the accent, the
+     faces the surface, the tints the soft accent, the linked rows the
+     second surface, the borders, the off track and the focused edge
+     the strong line, the rim the line, the danger fill the negative
+     tone; the highlights, shadows, sheen and press are transparent and
+     0. tokens.css reads every one of these, so a theme cannot leave
+     them out; it can only turn them off or point them back, which is
+     what this does, so this theme renders as it did, and an app's
+     override of --rst-accent, --rst-surface or --rst-line on :root
+     still reaches the controls it reached before (Astra A2). */
+  --rst-accent-fill: var(--rst-accent);
+  --rst-accent-fill-hover: var(--rst-accent-strong);
+  --rst-accent-fill-edge: var(--rst-accent);
+  --rst-accent-fill-edge-hover: var(--rst-accent-strong);
+  --rst-on-accent-fill: var(--rst-on-accent);
+  --rst-danger-fill: var(--rst-tone-negative-fg);
+  --rst-danger-fill-hover: var(--rst-tone-negative-fg);
+  --rst-danger-fill-edge: var(--rst-tone-negative-fg);
+  --rst-danger-fill-edge-hover: var(--rst-tone-negative-fg);
+  --rst-on-danger-fill: var(--rst-on-accent);
+  --rst-on-danger-fill-hover: var(--rst-on-accent);
+  --rst-danger-hover-filter: brightness(0.9);
+  --rst-control-face: var(--rst-surface);
+  --rst-control-face-hover: var(--rst-surface);
+  --rst-control-face-press: transparent;
+  --rst-control-border: var(--rst-line-strong);
+  --rst-control-border-hover: var(--rst-accent);
+  --rst-control-text-hover: var(--rst-accent);
+  --rst-ghost-edge: var(--rst-line-strong);
+  --rst-ghost-face-hover: transparent;
+  --rst-ghost-edge-hover: var(--rst-line-strong);
+  --rst-summary-face: transparent;
+  --rst-summary-face-hover: transparent;
+  --rst-summary-edge: transparent;
+  --rst-summary-edge-hover: transparent;
+  --rst-summary-radius: 0;
+  --rst-depth-hl: transparent;
+  --rst-depth-contact: transparent;
+  --rst-depth-ambient: transparent;
+  --rst-depth-face: 0;
+  --rst-press-drop: 0px;
+  --rst-knob: var(--rst-surface);
+  --rst-knob-shade: var(--rst-surface);
+  --rst-track-off: var(--rst-line-strong);
+  --rst-tint-hover: var(--rst-accent-soft);
+  --rst-tint-press: var(--rst-accent-soft);
+  --rst-tint-tap: transparent;
+  --rst-tint-card-hover: transparent;
+  --rst-tint-tile-hover: var(--rst-surface);
+  --rst-tint-tile-press: var(--rst-surface);
+  --rst-tint-group-hover: transparent;
+  --rst-row-tint-hover: var(--rst-surface-2);
+  --rst-row-tint-press: var(--rst-surface-2);
+  --rst-focus-edge: var(--rst-line-strong);
+  --rst-focus-halo: transparent;
+  --rst-sheen-fill: transparent;
+  --rst-sheen-plain: transparent;
+  --rst-light-rim: var(--rst-line);
+  --rst-light-wash: transparent;
+  --rst-press-wash: 0;
+  --rst-press-spot: 0;
+  --rst-press-wash-plain: 0;
+  --rst-press-spot-plain: 0;
+  --rst-title-size: 1.375rem;
+  --rst-title-weight: 600;
+  --rst-title-track: -0.015em;
+  --rst-heading-size: var(--rst-fs-base);
+  --rst-label-case: uppercase;
+  --rst-label-track: 0.06em;
+  --rst-rail-bg: var(--rst-surface);
+  --rst-nav-current-bg: var(--rst-accent-soft);
+  --rst-nav-current-fg: var(--rst-accent);
 }
 
 /* The whole toggle. Setting color-scheme re-resolves every light-dark()

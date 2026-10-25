@@ -3,16 +3,15 @@
 package act_admin_ticket_types_id_index_get
 
 import (
-	"database/sql"
-	"errors"
 	"fmt"
 	"net/http"
 
 	"amadan.net/rastrillo/rastrillo"
 	"amadan.net/rastrillo/rastrillo/currency"
+	"amadan.net/rastrillo/rastrillo/op"
 	"amadan.net/rastrillo/rastrillo/ui"
 	"amadan.net/rastrillo/rastrillo/view"
-	ticket_typesstore "tickets/gen/store/ticket_types"
+	ops_ticket_types "tickets/gen/ops/ticket_types"
 )
 
 // Handle is GET /admin/ticket_types/{id}.
@@ -22,17 +21,12 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 		view.NotFound(ctx, w, r)
 		return
 	}
-	store := ticket_typesstore.New(ctx.DB)
-	n, err := store.GetTicketType(r.Context(), id)
-	if errors.Is(err, sql.ErrNoRows) {
-		view.NotFound(ctx, w, r)
-		return
-	}
+	n, err := ops_ticket_types.Get(r.Context(), ctx, id)
 	if err != nil {
-		view.Fail(ctx, w, r, "ticket_types: loading ticket_types", err)
+		view.Refuse(ctx, w, r, "ticket_types: loading ticket_types", err)
 		return
 	}
-	priceText, ok := money(ctx, w, r, id, "Price", n.PriceMinor, n.PriceCurrency)
+	priceText, ok := money(ctx, w, r, id, "Price", n.Price)
 	if !ok {
 		return
 	}
@@ -50,17 +44,13 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func money(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request, id int64, field string, minor *int64, cur *string) (string, bool) {
-	if minor == nil {
+func money(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request, id int64, field string, m *op.Money) (string, bool) {
+	if m == nil {
 		return "", true
 	}
-	var code string
-	if cur != nil {
-		code = *cur
-	}
-	s, err := currency.Format(rastrillo.FormatLocale(r), *minor, code)
+	s, err := currency.Format(rastrillo.FormatLocale(r), m.Amount, m.Currency)
 	if err != nil {
-		view.Fail(ctx, w, r, fmt.Sprintf("%s %d: %s in %s", "ticket_types", id, field, code), err)
+		view.Fail(ctx, w, r, fmt.Sprintf("%s %d: %s in %s", "ticket_types", id, field, m.Currency), err)
 		return "", false
 	}
 	return s, true

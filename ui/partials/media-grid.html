@@ -1,0 +1,82 @@
+{{/* media-grid — a grid of image tiles, for an app's Images page: an
+     even 4:3 frame on every tile, the name under it on one line, the
+     description under that on two, and one line of facts the caller
+     formats. The frame is even so a tall page screenshot and a wide
+     banner sit in one grid without stretching their tiles; a tall
+     image is cropped from its top, which is the part that identifies a
+     page.
+
+     The columns come from the width (repeat(auto-fill, minmax(min(100%,
+     12.5rem), 1fr)) in tokens.css): a phone shows one column, and
+     nothing here chooses a count. Works with JavaScript off. Put it in
+     <div rst-list> under a list-bar or a bulk-bar and over a
+     pagination, where the card pads it, or straight on the page.
+
+     A tile with Href is a link across its whole face through its one
+     name link, the way a list row is (see list-row-action): the name
+     link's ::after covers the tile, and the checkbox and the kebab sit
+     above it. The image is never a link of its own: a second anchor
+     to the same place is a second tab stop for nothing.
+
+     An empty Items renders an empty grid. Render empty-state instead
+     when there is nothing to show, as every list does.
+
+     Keys:
+       Items       list, required — one per tile, in order:
+         Src       string, required — the image's address
+         Name      string, required — one line, ending in an ellipsis
+         Alt       string, optional — the image's alt text. Leave it
+                   empty when the caption already names the image: the
+                   picture is then decoration beside its name, and a
+                   screen reader hears the name once.
+         Desc      string, optional — clamped to two lines. Empty
+                   renders "No description" from the catalog
+                   (rastrillo.ui.no_description), muted.
+         Meta      string, optional — one line the caller has already
+                   worded, such as "1280 × 3200 · 412 KB". Nothing
+                   here formats bytes or dimensions: how an app words
+                   a size is the app's.
+         Href      string, optional — the tile links here
+         Width, Height  int, optional — the image's pixel size, written
+                   as attributes when both are given so the layout does
+                   not shift as images load. One without the other is
+                   dropped: alone it would set a wrong ratio.
+         Fit       string, optional — "contain" letterboxes the image
+                   in the frame with a little padding, for a logo, a
+                   diagram or a very wide banner. Anything else is the
+                   default: cover, cropped from the top centre. The
+                   caller chooses; nothing here guesses from the ratio.
+         Select    string, optional — renders a select checkbox in the
+                   frame's top start corner with this as its value, for
+                   the bulk-bar's form around the grid. Its name is
+                   SelectName, and its accessible name "Select {name}"
+                   (rastrillo.ui.media_select).
+         Selected  bool, optional — the checkbox is checked and the
+                   tile shows the accent outline
+         Menu      list, optional — row-menu's Items, a kebab beside
+                   the name, named for Name ("Actions for {name}").
+                   Inside a bulk-selection form every item must be a
+                   link; see row-menu.
+       SelectName  string, optional — the checkboxes' name; default "id"
+       MenuGroup   string, optional — the kebabs' <details name> group;
+                   default rst-menus */}}
+{{define "media-grid"}}{{$L := localizer $}}{{$name := .SelectName}}{{if not $name}}{{$name = "id"}}{{end}}<div rst-media>
+  {{- range .Items}}{{$item := .}}
+  <div rst-media-tile>
+    <div rst-media-frame{{if eq .Fit "contain"}}="contain"{{end}}>
+      <img src="{{.Src}}" alt="{{with .Alt}}{{.}}{{end}}" loading="lazy" decoding="async"{{if and .Width .Height}} width="{{.Width}}" height="{{.Height}}"{{end}}>
+      {{- if .Select}}
+      <label rst-selbox><input type="checkbox" name="{{$name}}" value="{{.Select}}"{{if .Selected}} checked{{end}} aria-label="{{Tf $L "rastrillo.ui.media_select" "name" (print (displayValue $L .Name))}}"></label>
+      {{- end}}
+    </div>
+    <div rst-media-caption>
+      <div rst-media-name>{{if .Href}}<a href="{{.Href}}">{{displayValue $L .Name}}</a>{{else}}<span>{{displayValue $L .Name}}</span>{{end}}
+        {{- with .Menu}}{{template "row-menu" dict "L" $L "Name" (print (displayValue $L $item.Name)) "Items" . "MenuGroup" (menuGroup $)}}{{end}}</div>
+      <p rst-media-desc{{if not .Desc}}="none"{{end}}>{{if .Desc}}{{displayValue $L .Desc}}{{else}}{{T $L "rastrillo.ui.no_description"}}{{end}}</p>
+      {{- with .Meta}}
+      <p rst-media-meta>{{displayValue $L .}}</p>
+      {{- end}}
+    </div>
+  </div>
+  {{- end}}
+</div>{{end}}

@@ -7,7 +7,7 @@
       "bg": {
         "role": "neutral",
         "displayName": "Page",
-        "canonical": "light-dark(#ffffff, #111418)",
+        "canonical": "light-dark(#fbfbfc, #0c0d0f)",
         "tonalRamp": [
           "#0b0d10",
           "#111418",
@@ -22,7 +22,7 @@
       "surface": {
         "role": "neutral",
         "displayName": "Surface",
-        "canonical": "light-dark(#ffffff, #1a1f26)",
+        "canonical": "light-dark(#ffffff, #141518)",
         "tonalRamp": [
           "#0e1116",
           "#141820",
@@ -37,7 +37,7 @@
       "surface-2": {
         "role": "neutral",
         "displayName": "Surface Sunken",
-        "canonical": "light-dark(#f6f7f8, #15191f)",
+        "canonical": "light-dark(#f3f3f5, #18191d)",
         "tonalRamp": [
           "#0b0e12",
           "#15191f",
@@ -52,7 +52,7 @@
       "line": {
         "role": "neutral",
         "displayName": "Hairline",
-        "canonical": "light-dark(#e5e7eb, #2a3038)",
+        "canonical": "light-dark(#e6e6ea, #26282e)",
         "tonalRamp": [
           "#14171c",
           "#2a3038",
@@ -67,7 +67,7 @@
       "line-strong": {
         "role": "neutral",
         "displayName": "Control Edge",
-        "canonical": "light-dark(#7f8792, #79828e)",
+        "canonical": "light-dark(#868691, #71737c)",
         "tonalRamp": [
           "#181b20",
           "#2b3038",
@@ -82,7 +82,7 @@
       "text": {
         "role": "neutral",
         "displayName": "Ink",
-        "canonical": "light-dark(#1a1d21, #e8eaed)",
+        "canonical": "light-dark(#18181b, #ededf0)",
         "tonalRamp": [
           "#0a0c0e",
           "#1a1d21",
@@ -97,7 +97,7 @@
       "text-muted": {
         "role": "neutral",
         "displayName": "Ink Muted",
-        "canonical": "light-dark(#4b5563, #a8b0ba)",
+        "canonical": "light-dark(#52525c, #a1a1aa)",
         "tonalRamp": [
           "#12161b",
           "#232a33",
@@ -112,7 +112,7 @@
       "text-faint": {
         "role": "neutral",
         "displayName": "Ink Faint",
-        "canonical": "light-dark(#656c78, #98a1ac)",
+        "canonical": "light-dark(#6b6b75, #8c8c96)",
         "tonalRamp": [
           "#151920",
           "#262c34",
@@ -127,7 +127,7 @@
       "accent": {
         "role": "primary",
         "displayName": "Interface Blue",
-        "canonical": "light-dark(#2464e0, #7ba7ff)",
+        "canonical": "light-dark(#1f56d6, #7aa2ff)",
         "tonalRamp": [
           "#0a1b3f",
           "#102a63",
@@ -142,7 +142,7 @@
       "accent-strong": {
         "role": "primary",
         "displayName": "Interface Blue Deep",
-        "canonical": "light-dark(#1a4fc0, #a3c0ff)",
+        "canonical": "light-dark(#1844ac, #a3c0ff)",
         "tonalRamp": [
           "#08152f",
           "#0e2354",
@@ -157,7 +157,7 @@
       "accent-soft": {
         "role": "primary",
         "displayName": "Interface Blue Wash",
-        "canonical": "light-dark(#eef3fe, #17233a)",
+        "canonical": "light-dark(#ecf1ff, #16234a)",
         "tonalRamp": [
           "#0c1526",
           "#17233a",
@@ -172,7 +172,7 @@
       "on-accent": {
         "role": "primary",
         "displayName": "On Accent",
-        "canonical": "light-dark(#ffffff, #0b1220)",
+        "canonical": "light-dark(#ffffff, #0c0d0f)",
         "tonalRamp": [
           "#0b1220",
           "#16203a",
@@ -183,6 +183,26 @@
           "#d3dae5",
           "#ffffff"
         ]
+      },
+      "accent-fill": {
+        "role": "primary",
+        "displayName": "Accent Fill",
+        "canonical": "light-dark(#2257df, #2f61e8)"
+      },
+      "on-accent-fill": {
+        "role": "primary",
+        "displayName": "On Accent Fill",
+        "canonical": "#ffffff"
+      },
+      "danger-fill": {
+        "role": "primary",
+        "displayName": "Danger Fill",
+        "canonical": "light-dark(#c62f2f, #c43232)"
+      },
+      "control-border": {
+        "role": "neutral",
+        "displayName": "Control Border",
+        "canonical": "light-dark(#d0d4dc, #343843)"
       },
       "tone-neutral-fg": {
         "role": "tertiary",
@@ -312,7 +332,7 @@
       },
       "headline": {
         "displayName": "Headline",
-        "purpose": "A screen's h1 in the page header. Drops to 1.25rem under 34rem."
+        "purpose": "A screen's h1 in the page header. 1.25rem in day, 1.375rem in plain and signal; capped at 1.25rem under 34rem."
       },
       "field": {
         "displayName": "Field",
@@ -328,7 +348,7 @@
       },
       "label": {
         "displayName": "Label",
-        "purpose": "The uppercase eyebrow over a value: stat labels, column heads, rail section names."
+        "purpose": "The eyebrow over a value: stat labels, column heads, rail section names. Sentence case in day, uppercase in plain and signal."
       },
       "stat": {
         "displayName": "Stat",
@@ -344,10 +364,10 @@
         "name": "day",
         "role": "default",
         "font": "system UI stack",
-        "radius": "8px / 6px",
-        "accent": "light-dark(#2464e0, #7ba7ff)",
-        "headerRule": "color-mix(in oklab, var(--rst-accent) 18%, var(--rst-line))",
-        "character": "Soft: wide low-alpha shadows, the roundest corners."
+        "radius": "6px / 4px",
+        "accent": "light-dark(#1f56d6, #7aa2ff)",
+        "headerRule": "var(--rst-line)",
+        "character": "Crisp and lit from above: near-greyscale neutrals, cobalt for anything that acts, natural depth, shadows lit by the hour and a sheen under the pointer."
       },
       {
         "name": "plain",
@@ -371,17 +391,17 @@
     "shadows": [
       {
         "name": "pop",
-        "value": "0 8px 24px light-dark(rgba(0, 0, 0, 0.12), rgba(0, 0, 0, 0.5))",
-        "purpose": "Surfaces that float over the page: an open menu, a dropdown panel, a modal. Theme-owned; signal uses 0 4px 10px and plain 0 1px 3px."
+        "value": "0 2px 4px light-dark(rgba(16, 24, 40, 0.06), rgba(0, 0, 0, 0.35)), 0 8px 16px -4px light-dark(rgba(16, 24, 40, 0.1), rgba(0, 0, 0, 0.5))",
+        "purpose": "Surfaces that float over the page: an open menu, a dropdown panel, a modal. Real elevation, kept tight. Theme-owned; signal uses 0 4px 10px and plain 0 1px 3px."
       },
       {
         "name": "knob",
-        "value": "0 1px 2px rgba(0, 0, 0, 0.3)",
+        "value": "0 1px 2px light-dark(rgba(16, 24, 40, 0.18), rgba(0, 0, 0, 0.4))",
         "purpose": "The moving part of a control, such as a switch's knob."
       },
       {
         "name": "lift",
-        "value": "0 1px 2px rgba(0, 0, 0, 0.08)",
+        "value": "0 1px 2px light-dark(rgba(16, 24, 40, 0.08), rgba(0, 0, 0, 0.3))",
         "purpose": "Barely-there separation on a raised strip."
       },
       {
@@ -475,8 +495,8 @@
     }
   ],
   "narrative": {
-    "northStar": "The Remixable Default",
-    "overview": "This is the interface an application has before anyone has styled it — done properly, and built to be taken over. It aims to be correct and unobjectionable everywhere rather than memorable anywhere, so an app that never touches it still looks deliberate, and an app that wants its own character can get there by setting variables rather than by fighting the stylesheet.\n\nRemixability is the thesis, not a feature. Every colour, radius, shadow and type family resolves through a custom property, and the three shipped themes are proof that the axes work rather than a menu of three answers. day is soft (8px/6px corners, wide low-alpha shadows), plain is nearly square with a near-black accent (4px/3px, one hairline layer) and signal is milled (4px/2px, short dense shadows, an electric blue). An app that wants a fourth writes one :root block. Files are delivered once and app-owned from that moment: edit them, or delete what you do not use.\n\nThe system is deliberately under-designed at the component level so an app's own character can land on top without a fight. It is explicitly not the SaaS gradient template — no purple-to-blue washes, glassmorphism, oversized rounded cards or decorative blobs — and explicitly not a vendor-branded admin kit that stamps someone else's identity on an app and resists removal. Both hand you an identity you did not choose, which is the one thing this system exists not to do.",
+    "northStar": "A Default With a Point of View",
+    "overview": "This is the interface an application has before anyone has styled it, and it should look like someone chose it. day is near-greyscale with hairline borders, one cobalt for anything that acts, crisp corners, and natural depth: light comes from above, cards rest on the page, controls press in and slowly lift. It aims to read as professional, in the family of the tools people already trust, and to be recognisably this system's.\n\nRemixability is still the thesis. Every colour, radius, shadow, highlight and strength resolves through a custom property, and the three shipped themes prove the axes work rather than offering a menu of three answers: day turns depth on, plain and signal turn it off and render as they always did. An app that wants a fourth writes one :root block. Files are delivered once and app-owned from that moment: edit them, or delete what you do not use.\n\nThe system is deliberately under-designed at the component level so an app's own character can land on top without a fight. It is explicitly not the SaaS gradient template — no purple-to-blue washes, glassmorphism, oversized rounded cards or decorative blobs — and explicitly not a vendor-branded admin kit that stamps someone else's identity on an app and resists removal. Both hand you an identity you did not choose, which is the one thing this system exists not to do.",
     "keyCharacteristics": [
       "Small, dense type: a 14px base with 12.5px and 11.5px steps below it.",
       "Near-flat surfaces separated by 1px hairlines; depth is a theme axis.",
@@ -512,7 +532,7 @@
       },
       {
         "name": "The Derived Rule Rule",
-        "body": "The page header's underline is not authored per theme — it is color-mix(in oklab, var(--rst-accent) N%, var(--rst-line)), mixed at 18% in day, 45% in signal, and left as the plain hairline in plain. A theme that changes its accent gets a matching rule with no second value to keep in step. It is decorative and carries no contrast floor.",
+        "body": "The page header's underline is not authored per theme: it is color-mix(in oklab, var(--rst-accent) N%, var(--rst-line)), mixed at 45% in signal, and left as the plain hairline in plain and in day, which keeps its cobalt for things that act. A theme that changes its accent gets a matching rule with no second value to keep in step. It is decorative and carries no contrast floor.",
         "section": "shapes"
       },
       {
@@ -535,7 +555,7 @@
       "Don't reach for the SaaS gradient template — purple-to-blue washes, glassmorphism, oversized rounded cards, decorative blobs.",
       "Don't stamp a vendor kit's identity onto an app. This system is under-designed on purpose so the app's own character can land on top.",
       "Don't use the accent as decoration or mood. It marks what you can act on and where you are; status has its own four tones.",
-      "Don't put a shadow on a resting surface. Shadow means something has left the page plane.",
+      "Don't float a resting surface. A card rests on the page with the theme's ambient light; a pop shadow means something has left the page plane.",
       "Don't make a section feel important by making it bigger. Weight and colour carry hierarchy before size; a card's h2 is body-sized.",
       "Don't shrink control padding without re-measuring against WCAG 2.2's 24px target-size minimum.",
       "Don't compose a heading, a paragraph and a button side by side in a flex row. Screens stack vertically; horizontal arrangement is reserved for the idioms that ship it."

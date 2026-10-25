@@ -65,6 +65,92 @@ func TestGenerateWritesTheRouter(t *testing.T) {
 	}
 }
 
+// TestGenerateWritesAPIFileWithoutManifests: gen/api.go is written for
+// every app, so a main.go that mounts gen.APIRoutes() compiles before
+// the first manifest exists; with no resources it lists nothing. The
+// golden is apigen's own, read from there so the two cannot drift.
+func TestGenerateWritesAPIFileWithoutManifests(t *testing.T) {
+	dir := scaffold(t, map[string]string{
+		"go.mod":               "module demo\n\ngo 1.22\n",
+		"actions/index.GET.go": handleSrc,
+	})
+	if err := runGenerate([]string{dir}); err != nil {
+		t.Fatal(err)
+	}
+	got, err := os.ReadFile(filepath.Join(dir, "gen", "api.go"))
+	if err != nil {
+		t.Fatalf("expected gen/api.go: %v", err)
+	}
+	want, err := os.ReadFile(filepath.Join(repoRoot(t), "internal", "generate", "apigen", "testdata", "api", "api_none.go.golden"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(got) != string(want) {
+		t.Fatalf("gen/api.go differs from api_none.go.golden:\n%s", got)
+	}
+	// A second run must keep it: prune removes any generated file the
+	// run did not claim, and a kept api.go is the claim's proof.
+	if err := runGenerate([]string{dir}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(filepath.Join(dir, "gen", "api.go")); err != nil {
+		t.Fatalf("gen/api.go after a second run: %v", err)
+	}
+}
+
+// TestGenerateWritesNoToolsFile: the agent tool registry is gone, and
+// operations replace it. A gen/tools.go would reference a type the root
+// package no longer has and break the app's build, so generate must not
+// write one, and must remove the one an older release left behind.
+func TestGenerateWritesNoToolsFile(t *testing.T) {
+	dir := scaffold(t, map[string]string{
+		"go.mod":               "module demo\n\ngo 1.22\n",
+		"actions/index.GET.go": handleSrc,
+		"gen/tools.go":         "package gen\n",
+	})
+	if err := runGenerate([]string{dir}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(filepath.Join(dir, "gen", "tools.go")); !os.IsNotExist(err) {
+		t.Fatalf("gen/tools.go must not be written (stat err: %v)", err)
+	}
+}
+
+// A hand action's copy under gen/actions is what the router serves,
+// and the parity lint reads the source under actions/. While --check
+// passed with the copy stale, an author could add the operation call
+// to the source, skip generate, and ship a router running the old
+// handler without op.Check (final review, finding 2).
+func TestGenerateCheckRefusesAStaleHandActionCopy(t *testing.T) {
+	dir := scaffold(t, map[string]string{
+		"go.mod":               "module demo\n\ngo 1.22\n",
+		"actions/index.GET.go": handleSrc,
+	})
+	if err := runGenerate([]string{dir}); err != nil {
+		t.Fatal(err)
+	}
+	if err := runGenerate([]string{"--check", dir}); err != nil {
+		t.Fatalf("--check must pass with a fresh copy: %v", err)
+	}
+	edited := strings.Replace(handleSrc, "{}", "{ w.WriteHeader(http.StatusTeapot) }", 1)
+	if err := os.WriteFile(filepath.Join(dir, "actions", "index.GET.go"), []byte(edited), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	err := runGenerate([]string{"--check", dir})
+	if err == nil {
+		t.Fatal("--check passed while gen/actions held a stale copy of actions/index.GET.go")
+	}
+	if !strings.Contains(err.Error(), "gen/actions/index_get/index.GET.go") {
+		t.Errorf("--check's error must name the stale copy, got:\n%v", err)
+	}
+	if err := runGenerate([]string{dir}); err != nil {
+		t.Fatal(err)
+	}
+	if err := runGenerate([]string{"--check", dir}); err != nil {
+		t.Errorf("after a regenerate --check must pass again: %v", err)
+	}
+}
+
 func TestGenerateCheckWritesNothing(t *testing.T) {
 	dir := scaffold(t, map[string]string{
 		"go.mod":               "module demo\n\ngo 1.22\n",

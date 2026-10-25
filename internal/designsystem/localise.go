@@ -65,6 +65,10 @@ var sampleCodeKeys = map[string]bool{
 	// writes back as data-theme; translated it would post a scheme the
 	// handler refuses.
 	"Scheme": true,
+	// media-grid: a picture's address, the word that picks its fit
+	// ("contain"), a checkbox's value and the checkboxes' name, all of
+	// them what the form posts or the stylesheet reads.
+	"Src": true, "Fit": true, "Select": true, "SelectName": true,
 }
 
 // sampleWordKeys are data keys whose value is words even when it is one

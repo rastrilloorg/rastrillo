@@ -24,6 +24,7 @@ import (
 	"strings"
 
 	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/internal/generate/shape"
 )
 
 // formatFailed is Appendix C.2's op.generate.format_failed: the
@@ -31,29 +32,11 @@ import (
 // not be shown in.
 const formatFailed = "%s %d: %s in %s"
 
-// lowerFirst is a declared field name as a local's prefix: "Price" ->
-// "price". Locals add a suffix (Text, Input, Code, Minor, Currency), so
-// a field named Store or Page cannot shadow a local of the same name.
-func lowerFirst(s string) string {
-	return strings.ToLower(s[:1]) + s[1:]
-}
+func lowerFirst(s string) string { return shape.LowerFirst(s) }
 
-// moneyFields is fields' money fields.
-func moneyFields(fields []rastrillo.Field) []rastrillo.Field {
-	var out []rastrillo.Field
-	for _, f := range fields {
-		if f.Kind == rastrillo.Money {
-			out = append(out, f)
-		}
-	}
-	return out
-}
+func moneyFields(fields []rastrillo.Field) []rastrillo.Field { return shape.MoneyFields(fields) }
 
-// formFields is r's form fields, Basics then Advanced: the fields a
-// create form posts and an edit form shows across its two groups.
-func formFields(r rastrillo.Resource) []rastrillo.Field {
-	return append(append([]rastrillo.Field(nil), r.Form.Basics...), r.Form.Advanced...)
-}
+func formFields(r rastrillo.Resource) []rastrillo.Field { return shape.FormFields(r) }
 
 // displayHelper is the money function an action that shows amounts
 // emits once: "" for an empty field, else the amount in the reader's
@@ -65,17 +48,13 @@ func formFields(r rastrillo.Resource) []rastrillo.Field {
 // written into an app is copy, and these have none approved.
 func displayHelper(r rastrillo.Resource) string {
 	return fmt.Sprintf(`
-func money(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request, id int64, field string, minor *int64, cur *string) (string, bool) {
-	if minor == nil {
+func money(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request, id int64, field string, m *op.Money) (string, bool) {
+	if m == nil {
 		return "", true
 	}
-	var code string
-	if cur != nil {
-		code = *cur
-	}
-	s, err := currency.Format(rastrillo.FormatLocale(r), *minor, code)
+	s, err := currency.Format(rastrillo.FormatLocale(r), m.Amount, m.Currency)
 	if err != nil {
-		view.Fail(ctx, w, r, fmt.Sprintf(%q, %q, id, field, code), err)
+		view.Fail(ctx, w, r, fmt.Sprintf(%q, %q, id, field, m.Currency), err)
 		return "", false
 	}
 	return s, true
@@ -108,26 +87,60 @@ func seed(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request, id int64, 
 // operation of its own (spec §7).
 func codeHelper(r rastrillo.Resource) string {
 	return fmt.Sprintf(`
-func currencyOf(cur *string) string {
-	if cur != nil {
-		return *cur
+func currencyOf(m *op.Money) string {
+	if m != nil {
+		return m.Currency
 	}
 	return %q
 }
 `, r.Currency)
 }
 
-// amountHelper is the function a POST action emits once for what a
-// money field writes: NULL in both columns for a blank field, which is
-// how an optional amount is cleared, else the amount with the server's
-// currency, never the form's.
+// minorHelper is the function an edit action emits beside codeHelper:
+// the stored amount a seed and a Stored check take, or nil for an
+// empty field.
+const minorHelper = `
+func minorOf(m *op.Money) *int64 {
+	if m == nil {
+		return nil
+	}
+	return &m.Amount
+}
+`
+
+// presentHelper is the function a POST action emits once for a text
+// field's input: its value, marked Set only when the form sent the
+// field, so an edit group's POST changes only its own fields.
+const presentHelper = `
+func present(r *http.Request, name, v string) op.Opt[string] {
+	_, ok := r.PostForm[name]
+	return op.Opt[string]{Value: v, Set: ok}
+}
+`
+
+// amountHelper is the function a POST action emits once for a required
+// money field's input: unset for a blank field, which the door's own
+// Required check has already refused, else the amount with the
+// server's currency, never the form's.
 const amountHelper = `
-func amount(p *form.Parsed, name, code string) (*int64, *string) {
+func amount(p *form.Parsed, name, code string) op.Opt[op.Money] {
 	minor, ok := p.Minor(name)
 	if !ok {
-		return nil, nil
+		return op.Opt[op.Money]{}
 	}
-	return &minor, &code
+	return op.Some(op.Money{Amount: minor, Currency: code})
+}
+`
+
+// clearableHelper is amountHelper's optional twin: a blank field the
+// form sent is a null, which is how an optional amount is cleared.
+const clearableHelper = `
+func clearable(p *form.Parsed, name, code string) op.Nullable[op.Money] {
+	minor, ok := p.Minor(name)
+	if !ok {
+		return op.Nullable[op.Money]{Set: true, Null: true}
+	}
+	return op.Nullable[op.Money]{Value: op.Money{Amount: minor, Currency: code}, Set: true}
 }
 `
 
@@ -139,14 +152,16 @@ func displayStmts(b *strings.Builder, v string, c column, idExpr string) string 
 		return v + "." + c.Name
 	}
 	text := lowerFirst(c.Name) + "Text"
-	fmt.Fprintf(b, "%s, ok := money(ctx, w, r, %s, %q, %s.%sMinor, %s.%sCurrency)\nif !ok {\n\treturn\n}\n",
-		text, idExpr, c.Name, v, c.Name, v, c.Name)
+	fmt.Fprintf(b, "%s, ok := money(ctx, w, r, %s, %q, %s.%s)\nif !ok {\n\treturn\n}\n",
+		text, idExpr, c.Name, v, c.Name)
 	return text
 }
 
 // moneyField is f's form.Field for a create (code a literal, the
 // resource default) or an edit (code the local currencyOf set, and
-// Stored the record's amount, re-read by this request).
+// Stored the record's amount, re-read by this request). Required stays
+// at the door for money alone: a blank money input is a field the form
+// did send, which an op.Opt cannot say on an update.
 func moneyField(f rastrillo.Field, edit bool, r rastrillo.Resource) string {
 	parts := []string{fmt.Sprintf("Name: %q", f.Name), "Kind: form.Money"}
 	if edit {
@@ -159,7 +174,7 @@ func moneyField(f rastrillo.Field, edit bool, r rastrillo.Resource) string {
 		parts = append(parts, "Required: true")
 	}
 	if edit {
-		parts = append(parts, "Stored: n."+f.Name+"Minor")
+		parts = append(parts, "Stored: minorOf(n."+f.Name+")")
 	}
 	return "form.Field{" + strings.Join(parts, ", ") + "}"
 }
@@ -169,19 +184,53 @@ func moneyField(f rastrillo.Field, edit bool, r rastrillo.Resource) string {
 func codeStmts(fields []rastrillo.Field) string {
 	var b strings.Builder
 	for _, f := range moneyFields(fields) {
-		fmt.Fprintf(&b, "%sCode := currencyOf(n.%sCurrency)\n", lowerFirst(f.Name), f.Name)
+		fmt.Fprintf(&b, "%sCode := currencyOf(n.%s)\n", lowerFirst(f.Name), f.Name)
 	}
 	return b.String()
 }
 
-// writeStmts sets <field>Minor and <field>Currency for each money field
-// in fields, from the parsed form. code is the currency expression for
-// a field: the resource default on create, <field>Code on edit.
-func writeStmts(fields []rastrillo.Field, code func(rastrillo.Field) string) string {
+// inputLines is the operation input's members fed from the parsed
+// form: present for a text field, amount or clearable for money. code
+// is the currency expression for a money field: the resource default
+// on create, <field>Code on edit.
+func inputLines(fields []rastrillo.Field, code func(rastrillo.Field) string) string {
 	var b strings.Builder
-	for _, f := range moneyFields(fields) {
-		l := lowerFirst(f.Name)
-		fmt.Fprintf(&b, "%sMinor, %sCurrency := amount(p, %q, %s)\n", l, l, f.Name, code(f))
+	for _, f := range fields {
+		switch {
+		case f.Kind != rastrillo.Money:
+			fmt.Fprintf(&b, "%s: present(r, %q, p.String(%q)),\n", f.Name, f.Name, f.Name)
+		case f.Required:
+			fmt.Fprintf(&b, "%s: amount(p, %q, %s),\n", f.Name, f.Name, code(f))
+		default:
+			fmt.Fprintf(&b, "%s: clearable(p, %q, %s),\n", f.Name, f.Name, code(f))
+		}
+	}
+	return b.String()
+}
+
+// inputHelpers is the helpers inputLines' members call, each emitted
+// only when a field uses it.
+func inputHelpers(fields []rastrillo.Field) string {
+	var text, required, optional bool
+	for _, f := range fields {
+		switch {
+		case f.Kind != rastrillo.Money:
+			text = true
+		case f.Required:
+			required = true
+		default:
+			optional = true
+		}
+	}
+	var b strings.Builder
+	if text {
+		b.WriteString(presentHelper)
+	}
+	if required {
+		b.WriteString(amountHelper)
+	}
+	if optional {
+		b.WriteString(clearableHelper)
 	}
 	return b.String()
 }
@@ -224,7 +273,7 @@ func echoStmts(fields []rastrillo.Field, edit bool) string {
 			continue
 		}
 		fmt.Fprintf(&b, "%sInput, reseed := p.MoneyInput(%q, rastrillo.FormatLocale(r))\n", l, f.Name)
-		fmt.Fprintf(&b, "if reseed {\nif %sInput, ok = seed(ctx, w, r, id, %q, n.%sMinor, %sCode); !ok {\nreturn\n}\n}\n", l, f.Name, f.Name, l)
+		fmt.Fprintf(&b, "if reseed {\nif %sInput, ok = seed(ctx, w, r, id, %q, minorOf(n.%s), %sCode); !ok {\nreturn\n}\n}\n", l, f.Name, f.Name, l)
 	}
 	return b.String()
 }

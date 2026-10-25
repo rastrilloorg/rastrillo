@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"html/template"
@@ -120,15 +121,17 @@ func WithT(t func(key string, args ...any) string) Option {
 //
 //	{{with safeHref .Site}}<a href="{{.}}" rel="noopener noreferrer">{{displayURL .}}</a>{{end}}
 //
-// T, Tf, Tbdi, number, displayValue, dateWords and money (LocaleFuncs)
-// take an optional leading $L, the request's *Localizer: {{T $L "key"}}
-// uses that localizer's catalog and formatting locale. The form is
-// decided by the first argument's type, so the legacy {{T "key"}} and a
-// $L that is nil (the data carried no L) both answer from these
-// options, exactly as before the localizer existed. money alone has no
-// legacy form: {{money $L .Amount .Currency}}. localizer finds $L in
-// the data ({{$L := localizer $}}), and withL adds it to a map passed
-// to a partial.
+// T, Tf, Tbdi, number, displayValue, dateWords, money and actor
+// (LocaleFuncs) take an optional leading $L, the request's *Localizer:
+// {{T $L "key"}} uses that localizer's catalog and formatting locale.
+// The form is decided by the first argument's type, so the legacy
+// {{T "key"}} and a $L that is nil (the data carried no L) both answer
+// from these options, exactly as before the localizer existed. money
+// alone has no legacy form: {{money $L .Amount .Currency}}. localizer
+// finds $L in the data ({{$L := localizer $}}), and withL adds it to a
+// map passed to a partial. actor is rastrillo.ActorPhrase in the
+// page's language, naming people through ActorName:
+// {{actor $L .Actor}} is "Claude for Paul".
 //
 // An app is free to add its own entries on top; it must not drop these
 // twenty-two. The shipped partials and shells stop parsing without most
@@ -174,6 +177,27 @@ func Funcs(opts ...Option) template.FuncMap {
 // icons revert to Lucide on every request with no error.
 func FuncsWith(t func(key string, args ...any) string) template.FuncMap {
 	return Funcs(WithT(t))
+}
+
+// ActorName turns a subject into the name the actor function shows, so
+// a page says "Claude for Paul" rather than "Claude for 7". The
+// framework cannot know how an app names its users, so the app sets
+// this once at boot, before serving; nil, or an empty answer, shows the
+// subject.
+//
+// A template has no request, so the actor function calls it with
+// context.Background(): a lookup that needs the request's context (its
+// transaction, its deadline) belongs in Go instead, through
+// rastrillo.ActorPhrase with a name function that closes over it.
+var ActorName func(ctx context.Context, subject string) string
+
+// actorName reads ActorName at render time, not when Funcs is built,
+// so an app that sets it after building its templates is still heard.
+func actorName(subject string) string {
+	if ActorName == nil {
+		return ""
+	}
+	return ActorName(context.Background(), subject)
 }
 
 func defaultT(key string, _ ...any) string {
@@ -428,7 +452,7 @@ type rowMenuItem struct {
 //   - no Label;
 //   - both or neither of Href (a link) and Action (a POST);
 //   - Danger without Href. A destructive item is a link to its confirm
-//     page (SKILL.md §7: confirm-form on its own URL, never fired from the
+//     page (skill/screens.md: confirm-form on its own URL, never fired from the
 //     row), so Action alone has nowhere to confirm;
 //   - Danger that is not a bool. "true" as a string would render the
 //     destructive item as a plain one;

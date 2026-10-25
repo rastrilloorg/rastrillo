@@ -1,8 +1,10 @@
 package csrf
 
 import (
+	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
 )
 
 // SameOrigin reports whether a state-changing request came from this
@@ -44,6 +46,44 @@ func SameOrigin(r *http.Request, origin string) bool {
 	return false
 }
 
+// Option configures Protect.
+type Option func(*options)
+
+type options struct {
+	exempt map[string]bool
+}
+
+// Exempt names paths that Protect lets through without browser
+// evidence. It is for a path a machine reaches, such as a payment
+// provider's webhook or a carlos schedule tick: those POSTs come from a
+// server, which sends no Sec-Fetch-Site, Origin or Referer, so Protect
+// would refuse every one.
+//
+// An exempt path is not checked by this middleware at all.
+// Its handler must check its own credential (a webhook
+// signature, carlos.Tick) before it does anything, and refuse the
+// request when the check fails. A handler that skips the check is open
+// to any site on the internet.
+//
+// A path matches only when it equals r.URL.Path exactly: "/hook" does
+// not exempt "/hook/", "/HOOK" or "/hook/x". Exempting by prefix would
+// quietly cover routes added later under it. Exempt panics on a path
+// that is empty or does not start with "/", because such a path can
+// never match and the mistake should stop the app at boot, not leave
+// the webhook answering 403 in production.
+func Exempt(paths ...string) Option {
+	for _, p := range paths {
+		if !strings.HasPrefix(p, "/") {
+			panic(fmt.Sprintf("csrf.Exempt: path %q must start with \"/\"", p))
+		}
+	}
+	return func(o *options) {
+		for _, p := range paths {
+			o.exempt[p] = true
+		}
+	}
+}
+
 // Protect refuses state-changing cross-origin requests: POST, PUT,
 // PATCH and DELETE must carry browser evidence of same-origin
 // submission (see SameOrigin); GET/HEAD/OPTIONS pass untouched. This
@@ -51,12 +91,20 @@ func SameOrigin(r *http.Request, origin string) bool {
 // current browser sends Sec-Fetch-Site or Origin on form POSTs, there
 // is no token to mint, store, or forget to check, and it covers
 // generated and hand-written handlers alike when mounted app-wide.
-func Protect(origin string) func(http.Handler) http.Handler {
+//
+// Options name paths to leave unchecked; see Exempt.
+func Protect(origin string, opts ...Option) func(http.Handler) http.Handler {
+	// Built once here, not per request, so a bad option fails at boot
+	// and the request path does one map lookup.
+	o := options{exempt: map[string]bool{}}
+	for _, opt := range opts {
+		opt(&o)
+	}
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			switch r.Method {
 			case http.MethodPost, http.MethodPut, http.MethodPatch, http.MethodDelete:
-				if !SameOrigin(r, origin) {
+				if !o.exempt[r.URL.Path] && !SameOrigin(r, origin) {
 					http.Error(w, "cross-origin form submission refused", http.StatusForbidden)
 					return
 				}

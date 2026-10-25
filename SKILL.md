@@ -6,213 +6,87 @@ description: "Build a multi-user CARLOS app: GORM models or plain SQL, chi route
 # Rastrillo
 
 CARLOS middle layer, not full-stack: you write GORM models (or plain
-SQL, §2), `net/http` handlers on a chi router and `html/template`
+SQL), `net/http` handlers on a chi router and `html/template`
 pages; it supplies the database opener, session store, identity
 plugins, CSRF, owner scoping, form helpers. Module `amadan.net/rastrillo/rastrillo`; worked
 reference `examples/notes` — in the repository, **not** in the
 published module (Go excludes nested modules from a zip), so read it
-there, never in your checkout. Rare traps get one sentence plus a page:
+there, never in your checkout. The topics below hold what it shows,
+sign-in and tests included, in a page each: read the topic first, and
+the example only for what no topic covers. Rare traps get one sentence plus a page:
 `docs/site/<page>.md`, or `curl -s https://rastrillo.org/docs/<page>.md`.
 
-Optional clients: `amadan.net/rastrillo/pwa` adds installation and a public
-offline fallback; `amadan.net/rastrillo/native` ships Swift components and
-an Apple companion scaffold, with optional Go Mobile guidance. Prefer native
-UI with platform conventions; use a native shell around selected webviews
-when complexity warrants it. Load the chosen kit's own `SKILL.md`. Neither
-supplies offline data synchronisation.
-Discovery and installation: docs/site/addons.md
+## Load a topic before its work
 
-## 0. Start here
+This file is what every task needs. The rest is in `skill/`, beside
+this file (`$(go list -m -f '{{.Dir}}' amadan.net/rastrillo/rastrillo)/skill/`).
+Read the topic before you start work it covers, not after the source:
+
+| Before you... | read |
+|---|---|
+| add sign-in to an app that has none (a fresh scaffold has none) | `skill/add-signin.md` |
+| use the session, magic links, a sign-in screen, 2FA | `skill/signin.md` |
+| add a page or route, a flow, a test, or meet a perf/budget failure | `skill/screens.md` |
+| call a `ui` partial: its keys, at a glance | `skill/partials.md` |
+| style a page, format numbers, add a locale, a menu, a picture grid | `skill/design.md` |
+| take money, dates, URLs or uploads in a form, or protect a public form | `skill/forms.md` |
+| choose GORM or SQL, store files, write a migration, add teams or roles | `skill/data.md` |
+| run work in the background, poll for progress, schedule | `skill/background.md` |
+| use the CLI beyond `new`, manifests, doctor, pins, native or PWA | `skill/tooling.md` |
+| serve JSON at `/api/v1`, mint tokens, let an agent act for a person, write `Authorize`, hand-write an operation | `skill/api.md` |
+
+## Start here
 
 ```sh
 go install amadan.net/rastrillo/rastrillo/cmd/rastrillo@latest
 rastrillo new notes && cd notes && go mod tidy && go test ./...
 ```
 
-`rastrillo new --theme=day|plain|signal --shell=column|topbar|sidebar|console|stage <name>`
-(also `--icons`, `--icon-delivery`, `--ux`) writes the whole §1 shape plus
-`go.mod`, migrations, templates, static assets, app-owned icons, a test
-harness including the browser drive, a `Makefile` whose `ci` target is the
-gate, and `.amadan/ci.d/` steps. It compiles, passes its tests and
-serves before you write a line; never hand-write any of it. The theme lands as `static/theme.css`, the shell as
-`templates/layout.html`, both app-owned from then on.
-docs/site/templates.md
-
-The scaffolded `AGENTS.md` is the source of truth for that app's code;
-this file stays the framework's. `rastrillo generate` writes `gen/`
-from `manifest/` — commit it, never hand-edit; add `generate --check`
-to `make ci`. `make ci` also runs staticcheck, govulncheck and gitleaks, pinned in the Makefile along with the Go release (`GOTOOLCHAIN`); raise the tool pins with the go directive, and `GOTOOLCHAIN` with each Go security release. `rastrillo dev` watches, regenerates, rebuilds and
-restarts. docs/site/getting-started.md
-
-`rastrillo doctor [--fix]` compares `static/`'s vendored files with the
-CLI's own copies. The scaffolded pin test, not doctor, is the standing
-gate. An app importing `github.com/carlosframework/rastrillo` (the
-pre-move path) is frozen at v0.23.0 and its pin test cannot see it: a
-current doctor exits 5 and prints the migration. docs/site/cli.md
+`rastrillo new` writes the whole app shape, its gate (`make ci`) and
+its tests; it compiles, passes and serves before you write a line, so
+never hand-write any of it. The scaffolded `AGENTS.md` is the source of
+truth for that app's code; this file stays the framework's.
 
 **Reach for a manifest before hand-writing.** A `manifest/*.toml`
-resource generates CRUD screens — field kinds text, textarea, money; no
-relations; `scope = "user"` owner-filters by session subject. Inside
-that vocabulary the closing checklist is correct by construction.
-`gen.Router` takes `gen.Boot`'s result: Boot upgrades and checks money.
-docs/site/manifests.md
+resource generates CRUD screens (field kinds text, textarea, money;
+`scope = "user"` owner-filters by session subject), correct by
+construction; run `rastrillo generate`, commit `gen/` and `api/v1.json`, and pass
+`gen.Boot`'s result to `gen.Router`. docs/site/manifests.md
 
-## 1. App shape
+**Look before you build.** Most things an app needs already ship: a
+Light/Dark/System switch in every shell, a picture grid (`media-grid`),
+the API token page (`api-tokens`), job status pages, money fields,
+error pages. Check the topic index
+above before writing one.
 
-Five files plus `migrations.go` beside `models.go` (§2):
-`internal/<app>/models.go` (plain GORM structs), `app.go` (wiring:
-migrate.Apply, sessions, identity plugin, router), `handlers.go`
-(owner-scoped CRUD), `render.go` (embedded templates,
-flash/session-aware page data), `cmd/<app>/main.go` (Resolve ->
-db.Open -> App -> Serve).
+## App shape
 
-Imports: `amadan.net/rastrillo/rastrillo` and subpackages `db`,
-`migrate`, `scope`, `sessions`, `password`, `csrf`, `flash`, `form`,
-`jobs`; `github.com/go-chi/chi/v5`; `gorm.io/gorm`.
+Five files plus `migrations.go`: `internal/<app>/models.go` (plain
+GORM structs), `app.go` (wiring), `handlers.go` (owned CRUD),
+`render.go` (embedded templates, page data), `cmd/<app>/main.go`.
 
-`cmd/<app>/main.go`, in order: `started := time.Now()`;
-`opts, err := rastrillo.Resolve(rastrillo.Options{DBPath: "notes.db",
-Logger: logger})`; `d, err := db.Open(opts.DBPath, logger)` (`*db.DB`,
-§2); `defer d.Close()`; `mux, err := notes.App(d, origin, logger)`;
-`notes.Configure(&opts, mux, started)` (sets `Mux`, `ErrorPage`, and
-`perf.Middleware` as `Wrap`); `opts.DBPath = ""`; `rastrillo.Serve(opts)`.
-On any err: `logger.Error`, `os.Exit(1)`.
+`main.go`, in order: `opts, err := rastrillo.Resolve(rastrillo.Options{DBPath:
+"notes.db", Logger: logger})`; `d, err := db.Open(opts.DBPath, logger)`;
+`defer d.Close()`; `mux, err := notes.App(d, origin, logger)`;
+`notes.Configure(&opts, mux, started)`; `opts.DBPath = ""`;
+`rastrillo.Serve(opts)`. **Use `Resolve` + `Serve`, never `Run`, when
+the app opens its own database:** `Run` re-parses argv and repopulates
+`Options.DBPath`, so `Serve` opens a second connection to the file
+`db.Open` owns. Resolve/Serve supply the platform contract (activation,
+/healthz, SIGTERM drain, security headers); never hand-roll it.
 
-**Use `Resolve` + `Serve`, never `Run`, when the app opens its own
-database:** `Run` re-parses argv and repopulates `Options.DBPath`, so
-`Serve` opens a second connection to the file `db.Open` owns.
+`app.go`'s `Router`, in order: `migrate.Apply(ctx, d, BootSchema)`;
+`r := chi.NewRouter()`; `r.Use(csrf.Protect(origin))` app-wide; public
+routes; owned routes inside `r.Group(func(r chi.Router) {
+r.Use(sess.Require); ... })` (sessions: `skill/signin.md`). `render.go`
+builds `ui.Pages` once at boot; a new page goes in its list
+(`skill/screens.md`).
 
-Resolve/Serve supply the platform contract — activation argv,
-LISTEN_FDS, $STATE_DIRECTORY, /healthz, /api/version, SIGTERM drain,
-baseline security headers (your own Set wins). Never hand-roll any of it.
+## Owner scoping
 
-`App(d *db.DB, origin string, logger *slog.Logger) (*http.ServeMux,
-error)` in `app.go` is `Router` (returns the `chi.Router`) then `Mux`
-(adds `/static/`), split so the perf test walks the routes. `Router`, in order:
-`migrate.Apply(context.Background(), d, BootSchema)`; writer `*sql.DB`
-via `d.G.DB()` (sessions wants it);
-`sessions.New(sessions.Config{DB: writer, Origin: origin, Logger:
-logger})`; one handler struct holding `d.G`;
-`ph, err := password.New(password.Config{...})` (§5); `r :=
-chi.NewRouter()`; `r.Use(csrf.Protect(origin))`; `ph`'s handlers at
-GET+POST `/signin`, `/signup` and POST `/signout` (§5); owned-model
-CRUD (§3/§4) inside
-`r.Group(func(r chi.Router) { r.Use(sess.Require); ... })`; return
-`r`. `render.go` builds `ui.Pages` once at boot, one copy per page, so
-two pages can both define `"content"`. Past 5,000 lines in
-`internal/<app>`, split by feature: `internal/<app>/<feature>` exposing
-`Mount(r chi.Router, deps)`, called from `Router`; `make budget`
-enforces it.
-
-Locales: `locales`/`default_locale` in `manifest/app.toml`; `rastrillo
-generate` writes `gen/locales`, linking their packs: pass its
-`Locales`/`DefaultLocale` to `Resolve`. Boot refuses a locale whose
-pack is unlinked; with `RASTRILLO_CHECK_CONFIG=1`, `Resolve` prints the
-check and exits. Catalogs: `Options.LocaleFS`, flat TOML per code;
-twelve ship translated. **Any locale you add must translate the
-`rastrillo.ui.*` keys or `generate --check` fails.**
-docs/site/localization.md
-
-Colour scheme: every shell offers Light, Dark and System beside the
-language menu (`scheme-menu` posts to `/_theme`; cookie
-`rastrillo_scheme`; `ui.ForRequest` carries `Scheme`; the layout
-writes `data-theme`). Do not hand-roll a toggle. docs/site/reference/ui.md
-
-## 2. Data
-
-**Pick the data layer before the first model; both are supported.**
-(a) **GORM**, the scaffold's default: `db.Open`, models,
-`rastrillo migration generate`, `migrate/gormfn` Go migrations, `scope`
-(§3). About 12–16% less CRUD code. Costs ~2× read time (1.7–1.9× the
-allocations), +4.8 MB of binary, a hidden `BEGIN`/`COMMIT` around every
-standalone write, and silent traps: `Updates(struct)` skips zero fields
-(always `Select`, §4); int64 `CreatedAt`/`UpdatedAt` get the wall clock;
-`Session` shares its parent's statement; a `d.G` statement inside a
-transaction deadlocks (§3); `Model(&T{ID: 0})` refuses the update.
-Upserts, `RETURNING` and locking writes need escape hatches.
-(b) **Plain `database/sql`**, as Tito Go does: open your own
-one-connection writer (db.Open's DSN) and readers;
-`migrate.Apply(ctx, migrate.Pool(writer), set)`; Go migrations take
-`migrate.Tx`; tests copy `dbtest.FromSet(set)`; besides the root
-package, import only `make gorm-free` ones — no `db`, `scope`,
-`gormlite`. Explicit transactions and plans, smaller and faster. You
-write the scans, every migration (generate and `check` need GORM
-`Models`: drop `migration-check` from `make ci` and
-`.amadan/ci.d/40-migration-check`) and every owned query's
-`WHERE user_id = ?`. CRUD-heavy, small team: (a). Money, fulfilment,
-transaction-critical: (b). Switching is per package; schema and ledger
-are the same.
-docs/superpowers/specs/2026-09-26-gorm-vs-sql-findings.md
-
-Models: no base type, no embedding. Owner
-column `UserID int64` tagged `gorm:"index"` is what `scope.Owned`
-filters on.
-
-`db.Open(path, logger)` returns `*db.DB`: `.G` is the `*gorm.DB`,
-SQLite-wired (one file, WAL, one writer connection, several readers,
-routed per statement). `d.Close()` closes both pools; `d.G.DB()` returns
-the writer `*sql.DB` for database/sql packages.
-
-**Bytes go in the object store, never on disk or in a column.** The
-instance's filesystem is ephemeral and it hibernates, so a saved upload
-is gone by the next request — silently, never at build time. The
-platform delivers a bucket as `CARLOS_STORE_*`; `blobs.S3FromEnv()`
-binds it and answers `(nil, nil)` — not an error — when there is none,
-so checking `err` alone panics later; dev falls back to
-`blobs.Dir(root)`. The row keeps a `blobs.Ref` (hex SHA-256 address,
-size, content type), and under 4 KiB may sit inline in SQLite — a rule
-stated everywhere and enforced nowhere. Presigned GET/PUT move bytes
-browser-to-bucket without the app proxying.
-docs/site/reference/blobs.md
-
-A central app with no database (a sign-in home, a hub) keeps records
-in `objrec`: `Create` wins once per key, `Update` refuses a stale
-version, `Mutate` retries. docs/site/reference/objrec.md
-
-Schema changes: edit a model, `rastrillo migration generate`, read the
-SQL before committing. Migrations apply once at boot, ledgered — never
-re-run, never reversed. `migrations.go` declares two `*migrate.Set`:
-`Schema` (the app's own; `generate`/`check` diff it against `Models`)
-and `BootSchema = migrate.Merge(sessions.Schema, Schema)` (argument
-order = apply order) — everything `App()` applies. Subsystems go in
-`BootSchema`, never `Schema`, or `check` proposes dropping their
-tables. Never edit a shipped migration; add a new one. Renames are
-hand-written (`rastrillo migration new rename_x`); destructive changes
-need `--allow-destructive`.
-
-**Old database.** Boot refuses on a structural diff. Run
-`migration baseline --db <path> --through <id>` FIRST, then the missing
-migration by hand — bare `baseline` silently strands a pending data
-migration. docs/site/migrations.md
-
-**The first deploy of a version with migrations must be
-schema-neutral.** Generate `0001_init` from the models as already
-deployed, ship it alone, change a model only in a later release — else
-boot refuses on the new column, and `baseline` there strands it for
-good.
-
-**Deleting a secret from SQLite does not unwrite it.** A value is in
-`app.db-wal` from the insert — *before* it reaches `app.db` — and
-survives `DELETE`: the WAL keeps the page as it was. So a gate
-grepping only `app.db` passes while the plaintext sits in the WAL, and
-Litestream has shipped it. `secure_delete = ON` cleans `app.db` at the
-next checkpoint, never the WAL: set it on the writer (one connection,
-so it sticks) and treat it as damage control. For a value that must
-not be at rest the only answer is not to write it — seal, hash, or key
-by digest.
-
-## 3. Scoping
-
-Scoping separates users, never tenants: a CARLOS app serves one team; a
-multi-team product runs an instance per team (idle instances hibernate
-free). Roles/membership are the
-`amadan.net/rastrillo/idear` addon (Owner/Admin/Member, invitations, a
-membership gate that mints no session) — never core, never a subpath of
-this repository. docs/site/addons.md
-
-One seam, every read and write:
-`func (a *app) owned(r *http.Request) *gorm.DB { uid, _ :=
-sessions.UserID(r); return scope.Owned(a.db, uid) }`.
+One seam, every read and write (`a.db` is the scaffold's `*db.DB`;
+`.G` is its `*gorm.DB`): `func (a *app) owned(r *http.Request) *gorm.DB
+{ uid, _ := sessions.UserID(r); return scope.Owned(a.db.G, uid) }`.
 `scope.Owned(g, owner)` adds `WHERE user_id = ?`; `scope.OwnedBy(g,
 column, owner)` takes another owner column, panicking unless plain
 `lower_snake` (it is interpolated into SQL). Never
@@ -220,340 +94,39 @@ First/Find/Update/Delete an owned model without the filter — in
 `d.G.Transaction` too: scope the callback's `tx`, never `d.G` (a `d.G`
 statement there hangs on the writer connection the transaction holds).
 
-Scope the write, not just the read that loaded the row — the SQL must
-carry `WHERE user_id = ? AND id = ?`: after
+Scope the write, not just the read that loaded the row: after
 `a.owned(r).First(&n, id)` (404 on err),
 `a.owned(r).Model(&n).Select("Title", "Body", "UpdatedAt").Updates(...)`.
-
 A row that isn't yours doesn't exist: 404, never 403 — malformed `{id}`
-too (`strconv.ParseInt` failure returns `gorm.ErrRecordNotFound`). A
-join table is scoped through BOTH sides, checked explicitly; the
-stricter reading wins. Creating takes the owner from the session, never
-the form: `Note{UserID: uid, ...}`, `uid` from `sessions.UserID(r)`.
+too. A join table is scoped through BOTH sides. Creating takes the
+owner from the session, never the form: `Note{UserID: uid, ...}`.
 
-## 4. Forms and mass assignment
+Never bind a request body onto a model: read each permitted field by
+name and write through `.Select(...)`, the allowlist keeping unexpected
+fields out of columns. Validate with `form.Parse` (`skill/forms.md`).
 
-Never bind a request body onto a GORM model. Read each permitted field
-by name (`r.PostFormValue("Title")`), write through
-`.Select("Title", "Body").Updates(...)` — `Select`'s strings are GORM
-field names, the allowlist keeping unexpected fields out of columns.
+## Sessions in one paragraph
 
-Validate with `form.Parse(r, form.Field{Name: "title", Required: true},
-form.Field{Name: "body", Kind: form.Textarea})` — one declaration per
-field. On `!p.OK()`: `w.WriteHeader(422)`, re-render seeding values
-(`p.String("title")`; `p.Echo()` is the seed-back map for
-map-shaped views). Write the status before rendering; the render helper
-writes none. Money: `form.Field{Kind: form.Money, Currency: code,
-LocaleEcho: true}`, code from the server; read `p.Minor`, store the
-code with it; seed `form.SeedMoney`, draw `field-money`, show
-`{{money $L .Amount .Currency}}`. Input is normalised; `Strict: true`
-keeps the exact format. On edit set `Stored`: an unchanged
-`<Name>.seed` keeps it, so an ambiguous seed saves. No `Currency`:
-legacy USD cents (`p.Cents`, `""` = 0, seed `FormatCentsPlain`, show
-`FormatCents`).
+`sessions` owns signed-in state: SQLite rows, cookies (`__Host-`
+prefixed on https), 30-day TTL; an identity plugin verifies a credential and calls
+`SignIn`. `csrf.Protect(origin)` refuses cross-origin writes with no
+tokens. Signed-in routes sit in a `Group` with `sess.Require`. **Under
+magic links (`auth`), never `sessions.UserID`:** the subject is an
+email, so the seam above would scope to `user_id = 0`. Everything else:
+`skill/signin.md`.
 
-`form.Date`/`Time`/`DateTime` parse fixed layouts only, in
-`Field.Location`; `form.Range(p, "starts", "ends")` checks
-end-before-start. Three traps: empty, unparseable and undeclared names
-all read back as the zero time — ask `p.OK()`, never `IsZero`; their
-error values are `rastrillo.ui.*` **keys**, not sentences, so render
-`"Error" (T $L (index .Errors "Starts"))`; and `field-daterange`'s two
-halves need distinct `Name`s. docs/site/forms.md
+## Never
 
-A web address is `form.URL` + `field-url` (scheme optional; errors are
-keys too). Link a stored one only through `{{with safeHref .Site}}`,
-show it with `displayURL`; never `<input type="url">`.
-
-After a mutation: `flash.Set(w, "notice", "...")`, then 303; the render
-helper calls `flash.Take(w, r)` once per page and the layout renders it.
-
-## 5. Sessions and identity
-
-`sessions` owns signed-in state: SQLite rows (sign-out/revocation are
-real), `__Host-` cookies on https, 30-day TTL. An identity plugin
-verifies a credential and calls `SignIn` — the whole contract.
-
-- `csrf.Protect(origin)` mounts app-wide (`r.Use`): refuses cross-origin
-  POST/PUT/PATCH/DELETE via `Sec-Fetch-Site`/`Origin`, no tokens.
-- Signed-in routes: chi `Group` with `s.Require` — signed-out GET/HEAD
-  redirects to `SigninPath` with a same-site `return_to`; the rest 403.
-  `s.Middleware` only resolves, blocks nothing.
-- `s.RequireFresh(maxAge)` step-up: past maxAge, GET/HEAD adds
-  `reauth=1`; re-signing-in, a `passkey` assertion or a
-  `totp` code rotates fresh. 2FA: `secondfactor.New` is the gate;
-  `Config.SecondFactor` = `g.Hold`; `g.Add(pk, tp)`; a factor completes
-  `g.Pending(r)` via `g.Complete`. Merge `secondfactor.Schema` AFTER
-  `passkey.Schema` (it adopts passkey's old tables). Lost factor: a
-  recovery code redeems at POST `/signin/recovery` (`g.SignInRecovery`),
-  minted by `g.RegenerateRecoveryCodes` behind `RequireFresh`.
-  docs/site/second-factors.md
-- Viewer: `sessions.UserID(r)` (int64, ok) or `sessions.Current(r)`
-  (Subject, Method, AuthTime, At). Past `Require`, `ok` holds only when
-  the plugin's Subject is a numeric user id — see the `auth` warning.
-  docs/site/magic-links.md
-- Sign-in redirects go through `sessions.SafeReturn(r, "/")`, never a
-  raw `return_to`. `s.Sweep(time.Now())` deletes expired rows.
-
-**Password plugin.** `password.New` needs `Sessions`, `Lookup`,
-`RenderSignin`; nil `Create` disables signup, and `RenderSignup` is
-required whenever `Create` is set. Two traps: any `Create` error reads
-as a duplicate email unless it wraps `password.ErrRefused` (via
-`password.Refuse(msg)`); and the plugin writes the status (422/403/429),
-so a render callback must not. Signin and Signup share a per-email
-failure budget answering 429 (IP throttling belongs to deployment).
-`New` needs `Proof` (an unbound `*pow.Guard`, else `ErrProofMode`) or
-`ProofOff`, else `ErrProofUnset`; render `PageData.Proof` on both forms.
-docs/site/passwords.md
-
-**Magic links** (`rastrillo/auth`: sign-in by emailed link, upgrading
-to the keymail ceremony where the address has one): `auth.New` with
-`Begin`/`Callback`/`Verify`/`Signout` and `RequireSession`, same
-`sessions` core, `Proof`/`ProofOff` as for `password`. `Begin` checks
-the proof before the limiter, refuses to `?err=check&rec=1`, and
-`SigninState(r)` carries `.Proof` (render it) and `.ReturnTo` (post it
-as `return_to`). **Mount `Verify` on
-GET *and* POST:** GET draws a Sign in button and spends nothing, POST
-redeems, so a mail scanner can't spend the link; GET alone
-405s. **Under `auth`, never
-`sessions.UserID`:** the Subject is the verified email, so it returns
-`(0, false)` and the §3 seam would scope every query to `user_id = 0`.
-Use `auth.From(r)` or `sessions.Current(r)` and map the address to your
-user's id first.
-
-**Sign-in screen:** set `auth.Config.SigninScreen: true` and render
-`{{template "signin" (dict "L" $L "State" .Signin "Brand" .Brand)}}` (title:
-`signin-title`) in the `stage` shell, from `st := a.SigninState(r)` —
-set `st.Passkey` if passkey discovery is mounted — then
-`a.PrepareSigninResponse(w, st)` before rendering; make that handler
-`RenderConfirm` too. Mount
-`POST /signin/forget` → `a.Forget`; with passkeys, serve `passkey.JS()`
-beside `webauthn.JS()`, set both URLs (`ScriptURL`, `ModuleURL`) on
-`st.Passkey`, and wire `passkey.Config.Remember: a.RememberJar()`. An admission check in front
-of `Begin` answers refusals with `a.AnswerAsSent(w, r)`, never its own
-`?sent=1`.
-
-**CSP:** `form-action 'self'` covers a form's whole redirect chain, so
-`Begin`'s 303 to a keymail server is refused. With `SigninScreen` on,
-keymail continues on your own page and `form-action` stays `'self'`.
-Only a hand-built sign-in page with the screen off restates
-`Options.CSP` (it replaces the policy wholesale) with the keymail
-origin appended: `default-src 'self'; style-src 'self' 'unsafe-hashes'
-'sha256-yJxAE4rjdcckohdlnvecSporPcqS9xOaA4hJxi87LMc='; img-src 'self'
-data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
-https://keymail.dev`. `auth.Config.KeymailServers` limits which keymail
-servers are trusted; other addresses get a link.
-
-**Public forms** (`rastrillo/pow`: sealed single-use challenge,
-honeypot, proof of work). Apply `pow.Schema` BEFORE `pow.New` (else
-`ErrNoSchema`): `pow.New(Config{InstanceKey, Nonces:
-pow.SQLNonces(writer), ScriptURL, WorkerURL})`, the URLs where you
-mount `rastrillo.NewAssets(pow.Assets())` (e.g. at `/pow/`): serve the
-JS from the module, never vendor it (a copy drifting from the Go
-verifier fails silently). The app owns one Guard for every form, `auth`
-and `password` included, and sweeps it with `guard.Sweep(now)` from a
-`background.Group` loop. Sign-in: `Difficulty: 16` (p95 under
-1s at 6x CPU throttle; default 18), `MinAge: 500ms`. Render `f :=
-g.Form(now, scope)`: `.Attrs` on the `<form>`, `.Fields` inside,
-`.Script` once per page, `"Proof"` to `form-foot` (disabled
-`data-pow-submit` button, status line, `<noscript>`). Namespace the
-scope (`myapp/contact`); it is sealed and compared. **Never cache a page
-carrying a challenge** (`no-store`): every visitor gets one token.
-`NoProof` (token + honeypot) needs no JavaScript; proof of work does.
-In a transaction: `adm := g.Admit(r, pow.Want{Scope: s})` BEFORE
-`BeginTx` (one writer connection), validate, `adm.Commit(ctx, tx)`
-inside (GORM: `tx.Statement.ConnPool`); `ErrSpent` is a refusal, never
-a 500. Redirect-after-POST, or without a transaction: `g.Check(r,
-want)`, never inside an open tx. After a refusal render `g.Recovery(now, scope)` (trapless; sticky via
-`adm.Recovered()`): it recovers the challenge, not the visitor's answers
-(refilling those is the app's risk and needs an idempotent write).
-docs/site/reference/pow.md
-
-## 6. Background work
-
-`jobs` runs observable in-memory goroutines: a restart kills them, fn's
-ctx expires at 15 min (job turns Failed) — keep jobs idempotent, honor
-ctx. `j := jobs.New(logger)` once; `j.Start(owner, name, location, fn)`
-runs `fn(ctx, progress func(string)) error`, returns `(Job, error)`;
-`ErrOwnerBusy` past 4 Running per owner (flash your own copy). 303 the
-caller to `/jobs/`+job.ID. Owner is the session **Subject**, not
-`sessions.UserID` — key job rows the same way. fn's error text reaches
-the owner. `j.Get(id, owner)` 404s a foreign or unknown id.
-
-`jobs.NewHandlers(jobs.Config{Jobs, Render, RenderFragment})` returns
-`StatusPage`/`Fragment`/`Events` (SSE); mount all three in the
-`sess.Require` group under `/jobs/{id}`. Two traps: `Render` draws the
-whole page and `RenderFragment` the partial alone, or the layout nests
-on the next poll; and it must work with scripts off — a `<noscript>`
-meta refresh only while Running, or a failed page refreshes forever.
-docs/site/jobs.md
-
-The JavaScript is app-owned `static/rastrillo.js`, inert until
-markup opts in, and `static/busy.js`, on by default. `data-poll="URL"` + `data-poll-every="2"` swap the
-element for the fetched fragment, repeating while the fragment still
-carries `data-poll` (ui's `job-status` partial drops it once done); the
-partial's `PushURL` (= `EventsPath`) emits `data-poll-push` and the
-shim rides SSE, falling back to polling. `static/busy.js`: every
-submit button's label gives way to a spinner for ≥650ms (the submit
-is held; beside the label under reduced motion or forced colours),
-`aria-busy` and a double-submit guard by DEFAULT, cleared on back; `data-busy="false"` (form or button) opts
-out, `data-busy-label` shows words beside the spinner. Manners, not
-idempotency — the server still refuses the second write.
-
-Hibernation means a `time.Ticker` is not a scheduler. Declare recurring
-work outside the app (`carlos schedule set -name sync -every 6h -path
-/jobs/sync`); the platform wakes the instance and POSTs there. Guard
-with `carlos.Tick(r)` (bearer == `$CARLOS_ADMIN_TOKEN`, constant-time,
-false with no token) and work inside the request — 202-plus-goroutine
-hibernates mid-job; 2xx done, 5xx retry, 4xx don't. At-least-once
-delivery: dedupe on `carlos.TickOccurrence(r)` (stable across retries),
-never the clock. One-offs: `carlos.ScheduleAt(ctx,
-name, at, path)` (upsert by name; `ErrNotOnCarlos` off-platform,
-`ErrDeclaredSchedule`, `ErrTooManyTimers`) and `carlos.ScheduleCancel`.
-Seal with `carlos.InstanceKey(own)`: the app's own key, else the
-platform's; mint one only on `ErrNotOnCarlos`, never start on
-`ErrNoInstanceKey`.
-
-## 7. Screens and flows
-
-**Use Rastrillo's design system by default.** Start with its shells,
-`ui` partials, `rst-` attributes, tokens and a shipped theme. Check the
-design-system vocabulary (§8) before building a custom component.
-Customise with a thin app-owned CSS layer loaded after `tokens.css` and
-`theme.css` through the shell's `head` block. Prefer `--rst-*` token
-overrides for colour, type and shape; use app-specific classes for layout
-or components the system does not cover. Keep base styles intact so
-framework fixes stay easy to adopt. An explicit user design requirement
-wins.
-docs/site/templates.md
-
-Shells on a phone: `topbar` and `console` put their narrow chrome in
-the Menu card. `sidebar` and `console` rails become an index page: mark
-it `{{define "view"}}index{{end}}`; every other page names its way back
-with `{{define "up"}}/#nav-x{{end}}` and the nav link gets
-`id="nav-x"`. Never build a hamburger drawer.
-`profile` holds who is signed in (avatar, name, email); `account` holds only links.
-
-**One screen, one job.** A screen shows a thing, or asks for one thing —
-never both: no list page that also carries a create form, an
-import panel and a dropzone.
-
-Nearly every interaction is the same four-step flow, as full pages or
-as modals (a modal is its own URL, with the same back button):
-
-1. **A link naming the action**, on the screen you are already on: "New
-   sheet", "Import a spreadsheet". A link or button, never the form
-   itself inlined.
-2. **A page for that action alone** — `GET /sheets/new` — one form, one
-   primary button.
-3. **An interstitial only when the work outlives the request**: the jobs
-   status page of §6. Skip it when the POST answers immediately.
-4. **A confirmation** — 303 to the new thing's show page, with a flash
-   notice (§4). Re-rendering the form is not a confirmation.
-
-An empty list is step 1, not an exception: `empty-state` says what the
-screen is for and carries the one link. Destructive actions are the same
-shape, with `confirm-form` on its own URL at step 2, never a modal fired
-from the row.
-
-## 7a. Tests and budgets
-
-`make ci` holds each directory to 5,000 source and 8,000 test lines,
-each test package to 10s, each GET screen to 150ms to first byte and a
-cold boot to 500ms; exceptions go in `.rastrillo/budgets.txt`, each with
-a reason. Timing fails only on CI (`AMADAN_CI`/`CI` set). Every test
-package's `TestMain` calls `os.Exit(budget.Main(m))`: it prints the time
-`rastrillo budget test` judges, cached runs included. Tests start with
-`t.Parallel()` (perf tests never) and open a copy of a `dbtest` template
-instead of migrating. Screens are gated by `perf/perftest` in `make
-perf`; a new GET route fails there until measured or recorded. While
-editing, test the package you touch plus `internal/<app>test`; `make ci`
-before pushing. A test whose inputs Go cannot see (execs `go build`,
-reads outside its package, uses the network) gets its own `-count=1`
-target. docs/site/testing.md
-
-## 8. What NOT to do
-
-- **Never import `github.com/glebarez/*` or `gorm.io/driver/sqlite`:**
-  glebarez re-registers modernc's `sqlite` driver name, so the binary
-  panics at init; the gorm.io one is cgo. `db.Open` already wires
-  `gormlite` over modernc.
-- **Your app's components stay in your app.** `ui` is rastrillo's
-  vocabulary, not yours. The day one app copies
-  another's, extract it to a shared module that week and delete
-  the copy. A copy is the trigger — "a second consumer appears" never
-  fires.
-- **UI: the vocabulary is attributes, not classes.** `<div rst-box>`,
-  `<a rst-btn="primary">`, `<div rst-callout-body>`; `class` carries
-  only `rst-sr-only`, `rst-mono`, `rst-m-hide`, `rst-grow`, `rst-nm`,
-  `rst-danger`, `rst-cell-mut`. `rastrillo markup --fix` converts an app
-  written the old way. `rst-list`/`rst-card` hold rows only (unpadded
-  by design).
-  No `style` attributes and no `<style>` blocks: the baseline CSP blocks
-  them, and the browser drops them without an error. For a grid card,
-  give `rst-card` a class and set `--rst-cols` in your stylesheet.
-  Forms, prose, links go in `rst-box` with a sibling `rst-box-head`.
-  **A labelled control is never hand-rolled**: `field-text`,
-  `field-textarea`, `field-select` (and the date kinds) inside `<form
-  rst-form>`, closed by `form-foot`. A hand-written `<label>Email
-  <input></label>` validates fine and renders as ragged inline labels
-  over an unstyled button — nothing fails, so nothing tells you.
-  Button sizes `sm`/default/`lg` compose with the variant: a submit is
-  `rst-btn="primary lg"` (form-foot writes it), never the toolbar-sized
-  default stretched across the column. docs/site/forms.md
-  Screens stack vertically — never heading, paragraph and button in one
-  flex row; a notice with a CTA is a `callout` ending in a link. State
-  is never colour alone: a `status-pill`'s label and a `meter`'s
-  fraction are always visible text; `Alert` (`role="alert"`) is for
-  live problems, not ambient notes. A dashboard opens with `rst-stats`
-  holding `stat` cells, one `rst-stat="lead"`. Put the sign in `Delta` and pass `Tone` yourself —
-  a fall is good news about half the time.
-  A name inline with other content needs `<bdi>`, or an RTL name draws
-  the number beside it to its LEFT. `ui.Pages` is strict: start each
-  body with `{{$L := localizer $}}` and pass `$L` first to every locale
-  function (`T`, `number`, `money`...) and to partials as `"L" $L`, or
-  the page fails; `render.go` takes `L` from `ui.ForRequest(r)`. Format
-  every displayed quantity with `{{number $L .Count}}`, including stats,
-  tables, totals and chart labels. `stat.Value` formats numbers and
-  plain integer strings automatically; `detail-list.Value` formats
-  numeric types. Pass quantities as numbers, identifiers/years/versions
-  as strings; never group IDs, input values, URLs or machine attributes.
-  Keep percent formatting explicit and locale-aware.
-  `detail-list` takes `DateTime` beside `Value` for a moment (`<time>`). Every menu is a
-  `<details name="rst-menus">` (opening one closes the rest);
-  `rastrillo.js` closes any on outside click or Escape; `MenuGroup`
-  names another group, and a nested `rst-menu-group` MUST name a
-  different one or it closes its parent. A row that stands for an item
-  is a link across its whole width through its one name link; never
-  link only the name. Row actions use `row-menu`, and a destructive one
-  is a link to its confirm page. Inside a bulk-selection form, row-menu
-  items are links only. A GET handler never changes anything, and no
-  script changes anything while `document.prerendering` is true:
-  `Serve` prerenders shell navigation, on a phone before it is tapped
-  (turn it off with `Options.NoSpeculationRules`). Full vocabulary:
-  rastrillo.org/design-system (built from `ui` by `cmd/dsgen`, not
-  committed); `go generate ./...` renders a local copy into
-  `.design-system/`. docs/site/templates.md
-- **Modern CSS is the floor, not a hazard.** `tokens.css` plus a shipped
-  theme already require Chrome 123, Safari 17.5, Firefox 121, because
-  every theme colour is a `light-dark()`. Anything that shipped at or
-  below that floor is free, `oklch()` and `color-mix()` included, with
-  no hex twin and no `@supports`: an engine too old for `oklch()`
-  dropped the whole `light-dark()` palette several declarations earlier.
-  Self-contained means the CSS fetches nothing — no imports, no remote
-  assets, no webfont, held by `ui_test.go` — never that old engines are
-  supported. Go above the floor with `@supports`, or move the floor and
-  say so. The bar is a year in all three engines; `cssfloor_test.go`
-  fails once the floor has gone nine months unreviewed.
-  docs/site/templates.md
-- **Never hand-roll an error page.** `view.Fail`/`NotFound`/`Forbidden`
-  render styled pages inside the shell; a 500 shows a ref matching the
-  log line's `ref`. Wire `opts.ErrorPage` (and `Ctx.ErrorPage`) to a
-  `rastrillo.ErrorPageFunc` — `rastrillo new` scaffolds it as
-  `render.go`'s `ErrorPage` over `templates/errors.html`; panics recover
-  there. Unwired, errors are bare text.
-  docs/site/templates.md
-- **Never `git merge` to main**, even locally: every change lands
-  through your forge's review flow, on its own branch.
+- Never import `github.com/glebarez/*` or `gorm.io/driver/sqlite`: the
+  binary panics at init or needs cgo.
+- Never write `style` attributes or `<style>` blocks (the CSP drops
+  them silently), hand-roll a labelled control (use `field-*` partials
+  in `<form rst-form>` closed by `form-foot`), an error page, a colour
+  toggle or an image grid: they ship (`skill/design.md`).
+- Never save bytes to disk or a column: the filesystem is ephemeral
+  (`skill/data.md`).
+- Never `git merge` to main, even locally: every change lands through
+  your forge's review flow, on its own branch.
 
 ## Checklist before you call an app done
 

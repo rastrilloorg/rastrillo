@@ -143,6 +143,36 @@ columns = [{ field = "Title" }]
 	}
 }
 
+// report2s and report_2s are two valid names on two routes, and both
+// become Report2s once title-cased, so the parity package declared
+// RunReport2s twice and the app no longer built (final review,
+// finding 3). Load is where every other duplicate is refused.
+func TestLoadRejectsNamesThatCollideWhenTitleCased(t *testing.T) {
+	dir := t.TempDir()
+	writeFile(t, dir, "a.toml", `name  = "report2s"
+route = "/admin/report2s"
+
+[list]
+columns = [{ field = "Title" }]
+`)
+	writeFile(t, dir, "b.toml", `name  = "report_2s"
+route = "/admin/report-2s"
+
+[list]
+columns = [{ field = "Title" }]
+`)
+
+	_, err := Load("", dir)
+	if err == nil {
+		t.Fatal("Load accepted report2s and report_2s, which both become Report2s in generated code")
+	}
+	for _, want := range []string{"a.toml", "b.toml", "Report2s", "rename"} {
+		if !strings.Contains(err.Error(), want) {
+			t.Errorf("error %q missing %q", err, want)
+		}
+	}
+}
+
 func TestLoadValidates(t *testing.T) {
 	dir := t.TempDir()
 	writeFile(t, dir, "notes.toml", `name  = "notes"
@@ -291,5 +321,51 @@ func TestLoadNoManifestDirIsEmpty(t *testing.T) {
 	}
 	if got != nil {
 		t.Errorf("Load = %#v, want nil", got)
+	}
+}
+
+// TestLoadAPIExpose decodes [api] end to end on a scoped resource, so
+// absent and true agree and false is visibly an override.
+func TestLoadAPIExpose(t *testing.T) {
+	for name, c := range map[string]struct {
+		extra string
+		want  bool
+		err   string
+	}{
+		"absent":      {"", true, ""},
+		"true":        {"\n[api]\nexpose = true\n", true, ""},
+		"false":       {"\n[api]\nexpose = false\n", false, ""},
+		"unknown key": {"\n[api]\nnope = 1\n", false, "api.nope"},
+		"not a bool":  {"\n[api]\nexpose = \"yes\"\n", false, "expose"},
+	} {
+		dir := t.TempDir()
+		writeFile(t, dir, "notes.toml", fixtureHeader+"scope = \"user\"\n"+fixtureBody+c.extra)
+		rs, err := Load("", dir)
+		if c.err != "" {
+			if err == nil || !strings.Contains(err.Error(), c.err) {
+				t.Errorf("%s: Load error %v, want one naming %q", name, err, c.err)
+			}
+			continue
+		}
+		if err != nil {
+			t.Fatalf("%s: Load: %v", name, err)
+		}
+		if got := rs[0].Exposed(); got != c.want {
+			t.Errorf("%s: Exposed() = %v, want %v", name, got, c.want)
+		}
+	}
+}
+
+// An artifact for a resource without [api] must not change: every app
+// that regenerates would otherwise see gen/manifest.json move.
+func TestArtifactCarriesAPIOnlyWhenSet(t *testing.T) {
+	r := fixtureResource()
+	if art := string(Artifact([]rastrillo.Resource{r})); strings.Contains(art, `"api"`) {
+		t.Fatalf("artifact without [api] mentions it:\n%s", art)
+	}
+	yes := true
+	r.API.Expose = &yes
+	if art := string(Artifact([]rastrillo.Resource{r})); !strings.Contains(art, `"expose": true`) {
+		t.Fatalf("artifact with [api] expose = true omits it:\n%s", art)
 	}
 }

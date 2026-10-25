@@ -1,0 +1,13 @@
+# gitleaks' default rules, plus one for this app's API tokens. make
+# gitleaks reads this file because it sits at the repository root.
+[extend]
+useDefault = true
+
+# An API token reads <prefix>_<public id>_<secret>. The default rules do
+# not know the shape, so without this one a token pasted into a test or
+# a config file would be committed unnoticed. If one is found, revoke it
+# on the app's token page: it stays in every clone of the history.
+[[rules]]
+id = "rastrillo-api-token"
+description = "Rastrillo API token"
+regex = '''\b[a-z][a-z0-9]{0,15}_[0-9A-Za-z]{12}_[0-9A-Za-z]{43}\b'''

@@ -1,0 +1,62 @@
+package %[1]s
+
+import (
+	"context"
+	"log/slog"
+	"net/http"
+
+	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/api"
+	"amadan.net/rastrillo/rastrillo/apitoken"
+	"amadan.net/rastrillo/rastrillo/db"
+	"amadan.net/rastrillo/rastrillo/op"
+
+	"%[2]s/gen"
+)
+
+// tokenPrefix starts every API token this app makes, so a secret
+// scanner can tell a leaked one is this app's (.gitleaks.toml has the
+// rule). rastrillo new made it from the app's name. It is written out
+// rather than worked out at boot because changing it makes every token
+// already given out stop working, and renaming the module should not.
+const tokenPrefix = %[3]q
+
+// API is the JSON API Mux mounts at /api/v1: every operation a manifest
+// resource exposes (gen.APIRoutes), called with a bearer token instead
+// of a session. A new app exposes none, so it answers 404 until a
+// manifest declares a resource (manifest/README.md).
+func API(d *db.DB, logger *slog.Logger) (http.Handler, error) {
+	tokens, err := newTokens(d)
+	if err != nil {
+		return nil, err
+	}
+	return api.New(api.Config{
+		Verify: tokens,
+		// Actor stays zero: the tree fills it from the token.
+		Ctx: func(*http.Request) *rastrillo.Ctx {
+			return &rastrillo.Ctx{DB: d.Writer(), Logger: logger, Authorize: authorize}
+		},
+		Authorize: authorize,
+		Logger:    logger,
+		// Redact keeps a token quoted in an error message out of the log.
+		Redact: tokens.Redact,
+	}, gen.APIRoutes()...)
+}
+
+// authorize is this app's policy: op.Check asks it before every
+// operation, on the API and on generated pages alike. It is
+// op.DefaultPolicy on purpose. A token may do what its owner can do
+// with their own rows, and nothing on a resource with no owner.
+//
+// The API cannot see page middleware. If your pages add a rule, such
+// as only admins may change prices or a suspended account may not
+// write, add it here before the return, refusing with op.Forbidden.
+func authorize(ctx context.Context, a rastrillo.Actor, o rastrillo.Operation) error {
+	return op.DefaultPolicy(ctx, a, o)
+}
+
+// newTokens is the token store, for the API and the token page alike:
+// both must use one prefix, or the page makes tokens the API refuses.
+func newTokens(d *db.DB) (*apitoken.Store, error) {
+	return apitoken.New(apitoken.Config{DB: d.Writer(), Prefix: tokenPrefix})
+}

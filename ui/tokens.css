@@ -143,6 +143,17 @@
      engine ignores the declaration and lands on the behaviour it has
      today. */
   --rst-scrollbar-gutter: stable;
+
+  /* The light. light.js sets these from the hour (its FOLLOW flag,
+     off, would ease them toward the pointer); without it they hold
+     straight-above, which is the static design.
+     Shadows fall away from the light by up to 1.5px across and 1.2px
+     down; the top highlight leans toward it by up to 1px. */
+  --rst-light-x: 0;
+  --rst-light-y: -1;
+  --rst-shadow-x: calc(var(--rst-light-x) * -1.5px);
+  --rst-shadow-y: calc(1px + (var(--rst-light-y) + 1) * 0.6px);
+  --rst-hl-x: calc(var(--rst-light-x) * 1px);
 }
 
 /* ── Small or touch screens: the type scale moves up one step ───────
@@ -238,16 +249,57 @@ body {
 }
 
 
+/* A press is a number so a release can fade it: a gradient cannot
+   transition, a registered number inside one can. */
+@property --rst-press { syntax: "<number>"; inherits: false; initial-value: 0; }
+
+/* A card's light is registered so it does not inherit: unregistered, a
+   write of --rst-card-x on a card of 500 rows restyled all 1,500
+   descendants, 16ms a frame while the pointer moved, and nothing below
+   a card reads these. */
+@property --rst-card-x { syntax: "<length-percentage>"; inherits: false; initial-value: 50%; }
+@property --rst-card-y { syntax: "<length-percentage>"; inherits: false; initial-value: 0%; }
+@property --rst-card-lit { syntax: "<number>"; inherits: false; initial-value: 0; }
+
 /* ── Buttons: page-header's primary action, empty-state's CTA. ────── */
-/* border-box because rst-btn goes on <a> as often as on <button>, and
+/* Every variant composes its own rest, hover, press, focus, disabled
+   and busy from named tokens, in this order, at one specificity, so
+   the cascade never decides a state. The press rules come last. Every
+   token is read through a fallback that is today's value, so a theme
+   written before the axis renders as it did. A filled button's hover
+   reads its own hover fill: a filter on the fill scaled the label too,
+   and an earlier hover rule once won the label back to the accent on
+   the red fill at 1.05:1, at the moment a reader committed to a
+   delete. The face is four background layers: the sheen, the press
+   spot, the press wash, the face shade. The press is instant and the
+   release fades over 0.7s through --rst-press; the strengths are
+   per-scheme number tokens composed as rgb(0 0 0 / calc(press *
+   strength)), because a color-mix() whose percentage carried
+   calc(var()) blanked every button in Safari. The sheen is on while
+   hovered and not pressed, and only where a pointer can hover.
+
+   border-box because rst-btn goes on <a> as often as on <button>, and
    only <button> is border-box by the browser's own stylesheet: a block
    link-button's width: 100% came out its padding and border wider than
    its column, and poked past the sign-in card on a phone. */
 .rst-btn, [rst-btn] {
+  --rst-mx: 50%;
+  --rst-my: -40%;
+  --rst-px: 50%;
+  --rst-py: 50%;
+  --rst-btn-sheen: none;
+  --rst-btn-face: none;
+  --rst-btn-wash: var(--rst-press-wash-plain, 0);
+  --rst-btn-spot: var(--rst-press-spot-plain, 0);
   align-items: center;
-  background: var(--rst-surface);
-  border: 1px solid var(--rst-line-strong);
+  background-color: var(--rst-control-face, var(--rst-surface));
+  /* --rst-press is read with a 0 fallback: an engine without @property
+     has no initial value for it, and an unset var() inside a gradient
+     invalidates the whole background-image, face shade included. */
+  background-image: var(--rst-btn-sheen), radial-gradient(70px circle at var(--rst-px) var(--rst-py), rgb(0 0 0 / calc(var(--rst-press, 0) * var(--rst-btn-spot))), transparent 75%), linear-gradient(rgb(0 0 0 / calc(var(--rst-press, 0) * var(--rst-btn-wash))) 0 0), var(--rst-btn-face);
+  border: 1px solid var(--rst-control-border, var(--rst-line-strong));
   border-radius: var(--rst-radius-sm);
+  box-shadow: inset var(--rst-hl-x) 1px 0 var(--rst-depth-hl, transparent), var(--rst-shadow-x) var(--rst-shadow-y) 1px var(--rst-depth-contact, transparent), calc(var(--rst-shadow-x) * 2) calc(var(--rst-shadow-y) * 1.5) 3px var(--rst-depth-ambient, transparent);
   box-sizing: border-box;
   color: var(--rst-text);
   cursor: pointer;
@@ -259,70 +311,108 @@ body {
   line-height: 1.4;
   padding: 0.45rem 0.75rem;
   text-decoration: none;
-}
-.rst-btn:hover, [rst-btn]:hover {
-  border-color: var(--rst-accent);
-  color: var(--rst-accent);
+  /* The shadow is not in the transition list: a root light write moves
+     every button's shadow, and a box-shadow transition on 500 buttons
+     was 500 main-thread animations a write, four fifths of the frame.
+     A press needs no shadow transition: the press list is inset and the
+     rest list is not, so the two never interpolated. */
+  transition: --rst-press 0.7s cubic-bezier(0.2, 0.6, 0.3, 1), translate 0.3s ease-out;
+  -webkit-tap-highlight-color: transparent;
 }
 .rst-btn--primary, [rst-btn~="primary"] {
-  background: var(--rst-accent);
-  border-color: var(--rst-accent);
-  color: var(--rst-on-accent);
+  --rst-btn-face: linear-gradient(rgb(255 255 255 / var(--rst-depth-face, 0)), rgb(0 0 0 / var(--rst-depth-face, 0)));
+  --rst-btn-wash: var(--rst-press-wash, 0);
+  --rst-btn-spot: var(--rst-press-spot, 0);
+  background-color: var(--rst-accent-fill, var(--rst-accent));
+  border-color: var(--rst-accent-fill-edge, var(--rst-accent));
+  box-shadow: inset var(--rst-hl-x) 1px 0 color-mix(in srgb, var(--rst-depth-hl, transparent) 28%, transparent), var(--rst-shadow-x) var(--rst-shadow-y) 1px var(--rst-depth-contact, transparent), calc(var(--rst-shadow-x) * 2) calc(var(--rst-shadow-y) * 1.5) 3px var(--rst-depth-ambient, transparent);
+  color: var(--rst-on-accent-fill, var(--rst-on-accent));
 }
-.rst-btn--primary:hover, [rst-btn~="primary"]:hover {
-  background: var(--rst-accent-strong);
-  border-color: var(--rst-accent-strong);
-  color: var(--rst-on-accent);
+.rst-btn--danger, [rst-btn~="danger"] {
+  --rst-btn-face: linear-gradient(rgb(255 255 255 / var(--rst-depth-face, 0)), rgb(0 0 0 / var(--rst-depth-face, 0)));
+  --rst-btn-wash: var(--rst-press-wash, 0);
+  --rst-btn-spot: var(--rst-press-spot, 0);
+  background-color: var(--rst-danger-fill, var(--rst-tone-negative-fg));
+  border-color: var(--rst-danger-fill-edge, var(--rst-tone-negative-fg));
+  box-shadow: inset var(--rst-hl-x) 1px 0 color-mix(in srgb, var(--rst-depth-hl, transparent) 28%, transparent), var(--rst-shadow-x) var(--rst-shadow-y) 1px var(--rst-depth-contact, transparent), calc(var(--rst-shadow-x) * 2) calc(var(--rst-shadow-y) * 1.5) 3px var(--rst-depth-ambient, transparent);
+  color: var(--rst-on-danger-fill, var(--rst-on-accent));
 }
-
 /* ghost — a quiet Cancel beside a primary/danger action: no fill, a
    muted label, and it darkens toward the ordinary text colour on hover
    rather than picking up the accent (the accent means "this navigates
    somewhere new"; a ghost Cancel does not). */
 .rst-btn--ghost, [rst-btn~="ghost"] {
-  background: transparent;
+  --rst-btn-wash: 0;
+  --rst-btn-spot: 0;
+  background-color: transparent;
+  border-color: var(--rst-ghost-edge, var(--rst-line-strong));
+  /* The ghost's press shadow rides --rst-press, which fades over 0.7s
+     on release: at 0 it is a zero-sized inset and paints nothing. Its
+     release used to ease on the box-shadow transition, which is gone. */
+  box-shadow: inset 0 calc(var(--rst-press, 0) * 1px) calc(var(--rst-press, 0) * 3px) var(--rst-depth-contact, transparent);
   color: var(--rst-text-muted);
 }
-.rst-btn--ghost:hover, [rst-btn~="ghost"]:hover {
-  border-color: var(--rst-line-strong);
-  color: var(--rst-text);
+@media (hover: hover) {
+  .rst-btn:hover, [rst-btn]:hover {
+    background-color: var(--rst-control-face-hover, var(--rst-surface));
+    border-color: var(--rst-control-border-hover, var(--rst-accent));
+    color: var(--rst-control-text-hover, var(--rst-accent));
+  }
+  .rst-btn:hover:not(:active), [rst-btn]:hover:not(:active) {
+    --rst-btn-sheen: radial-gradient(90px circle at var(--rst-mx) var(--rst-my), var(--rst-sheen-plain, transparent), transparent 70%);
+  }
+  .rst-btn--primary:hover, [rst-btn~="primary"]:hover {
+    background-color: var(--rst-accent-fill-hover, var(--rst-accent-strong));
+    border-color: var(--rst-accent-fill-edge-hover, var(--rst-accent-strong));
+    color: var(--rst-on-accent-fill, var(--rst-on-accent));
+  }
+  /* The filter is a token because it is the only exact way to keep an
+     old theme's hover: the filter darkens the rasterised button, label,
+     corners and edges included, and no colour mix repaints those
+     corners pixel for pixel. day sets it to none and reads its own
+     hover fill. Background, border and label are restated here on
+     purpose: the plain hover above sits at the same specificity, and a
+     danger hover that declared only the filter once let the label
+     cascade back to the accent on the red fill. */
+  .rst-btn--danger:hover, [rst-btn~="danger"]:hover {
+    background-color: var(--rst-danger-fill-hover, var(--rst-tone-negative-fg));
+    border-color: var(--rst-danger-fill-edge-hover, var(--rst-tone-negative-fg));
+    color: var(--rst-on-danger-fill-hover, var(--rst-on-accent));
+    filter: var(--rst-danger-hover-filter, brightness(0.9));
+  }
+  .rst-btn--primary:hover:not(:active), [rst-btn~="primary"]:hover:not(:active),
+  .rst-btn--danger:hover:not(:active), [rst-btn~="danger"]:hover:not(:active) {
+    --rst-btn-sheen: radial-gradient(120px circle at var(--rst-mx) var(--rst-my), var(--rst-sheen-fill, transparent), transparent 70%);
+  }
+  .rst-btn--ghost:hover, [rst-btn~="ghost"]:hover {
+    background-color: var(--rst-ghost-face-hover, transparent);
+    border-color: var(--rst-ghost-edge-hover, var(--rst-line-strong));
+    color: var(--rst-text);
+  }
+  /* A ghost has no sheen: a sheen means "press this" and a ghost is
+     the quiet one. At :hover:not(:active) like the plain sheen rule,
+     because a plain :hover rule at (0,2,0) lost to it and a hovered
+     ghost painted the accent. */
+  .rst-btn--ghost:hover:not(:active), [rst-btn~="ghost"]:hover:not(:active) {
+    --rst-btn-sheen: none;
+  }
 }
-
-/* danger — a solid fill for a destructive submit (confirm-form,
-   bulk-bar's actions menu). --rst-tone-negative-fg already clears
-   4.5:1 as a filled background against --rst-on-accent's label colour
-   in both themes, so no new custom properties are needed — computed
-   with the same WCAG relative-luminance formula as each theme file's
-   own contrast table (day's values, shown; every theme's own pair is
-   gated the same way, in both schemes):
-     light  --rst-on-accent (#ffffff) on --rst-tone-negative-fg (#b91c1c)   6.47:1
-     dark   --rst-on-accent (#0b1220) on --rst-tone-negative-fg (#f79aa0)   8.99:1
-   Hover darkens via filter rather than a themed "negative-strong"
-   token: brightness() scales every channel of the already-themed fill
-   (and, being a post-paint filter, the label too), so one rule works
-   in both themes without a new pair of colours to maintain. Re-checked
-   with the label included in the scaled result, both still clear
-   4.5:1 by a wide margin (day's values again; a post-paint filter
-   result, so these two rows are illustrative rather than gated):
-     light  0.9× fill (#a61919) vs 0.9× label (#e6e6e6)   6.06:1
-     dark   0.9× fill (#de8a90) vs 0.9× label (#0a101c)   7.38:1
-   background/border-color/color are restated on :hover, matching
-   .rst-btn--primary:hover's pattern exactly — .rst-btn:hover (same
-   0,2,0 specificity, an earlier rule) sets border-color/color to the
-   accent, and a filter-only :hover rule wins nothing for properties it
-   never declares, so without this restatement the label silently
-   cascades to accent-on-red (~1.05:1) at the exact moment a user
-   commits to a destructive action. */
-.rst-btn--danger, [rst-btn~="danger"] {
-  background: var(--rst-tone-negative-fg);
-  border-color: var(--rst-tone-negative-fg);
-  color: var(--rst-on-accent);
+/* The press rules set no border and no label colour: a pressed button
+   keeps the hover's where there is a hover and the rest's where there
+   is none (a touch), which is what every theme does today. Disabled and
+   busy are excluded by selector, not by order: a browser never makes a
+   disabled button :active, so this changes no pixel today, and a busy
+   button pressed mid-submit must not sink. */
+.rst-btn:active:not(:disabled):not([aria-busy="true"]), [rst-btn]:active:not(:disabled):not([aria-busy="true"]) {
+  --rst-press: 1;
+  --rst-btn-sheen: none;
+  box-shadow: inset 0 2px 4px var(--rst-depth-contact, transparent), inset 0 1px 1px var(--rst-depth-contact, transparent), inset 0 1px 2px var(--rst-depth-contact, transparent);
+  transition: none;
+  translate: 0 var(--rst-press-drop, 0px);
 }
-.rst-btn--danger:hover, [rst-btn~="danger"]:hover {
-  background: var(--rst-tone-negative-fg);
-  border-color: var(--rst-tone-negative-fg);
-  color: var(--rst-on-accent);
-  filter: brightness(0.9);
+.rst-btn--ghost:active:not(:disabled):not([aria-busy="true"]), [rst-btn~="ghost"]:active:not(:disabled):not([aria-busy="true"]) {
+  background-color: var(--rst-control-face-press, transparent);
+  box-shadow: inset 0 1px 3px var(--rst-depth-contact, transparent);
 }
 
 /* ── Button sizes ─────────────────────────────────────────────────────
@@ -558,11 +648,14 @@ body {
   flex: 1 1 auto;
   min-inline-size: 0;
 }
+/* The title's size, weight and tracking are the theme's (C15), read
+   through today's values so a theme written before the tokens keeps
+   the title it has. */
 .rst-page-header h1, [rst-page-header] h1 {
   color: var(--rst-text);
-  font-size: 1.375rem;
-  font-weight: 600;
-  letter-spacing: -0.015em;
+  font-size: var(--rst-title-size, 1.375rem);
+  font-weight: var(--rst-title-weight, 600);
+  letter-spacing: var(--rst-title-track, -0.015em);
   line-height: 1.25;
   margin: 0;
 }
@@ -577,11 +670,19 @@ body {
 /* No padding here, on purpose: a list card holds rows, and each row pads
    itself. A form, prose or a strip of links does NOT go in here — it
    goes in .rst-box, the padded section card. Text touching the border
-   is the sign that content landed in the wrong card. */
+   is the sign that content landed in the wrong card.
+   The face, rim and shadows are the card stack described above .rst-box. */
 .rst-list, [rst-list] {
-  background: var(--rst-surface);
-  border: 1px solid var(--rst-line);
+  --rst-card-x: 50%;
+  --rst-card-y: 0%;
+  --rst-card-lit: 0;
+  background:
+    radial-gradient(calc(var(--rst-card-lit) * 520px) circle at var(--rst-card-x) var(--rst-card-y), var(--rst-light-wash, transparent), transparent 75%) padding-box,
+    linear-gradient(var(--rst-surface) 0 0) padding-box,
+    radial-gradient(calc(var(--rst-card-lit) * 260px) circle at var(--rst-card-x) var(--rst-card-y), var(--rst-light-rim, var(--rst-line)), var(--rst-line) 80%) border-box;
+  border: 1px solid transparent;
   border-radius: var(--rst-radius);
+  box-shadow: var(--rst-shadow-x) var(--rst-shadow-y) 1px var(--rst-depth-ambient, transparent), calc(var(--rst-shadow-x) * 2) calc(var(--rst-shadow-y) * 1.5) 3px var(--rst-depth-ambient, transparent);
 }
 
 /* Why there is no `overflow: hidden` here, since the obvious way to
@@ -677,6 +778,7 @@ body {
   background: var(--rst-surface);
   border: 1px solid var(--rst-line-strong);
   border-radius: var(--rst-radius-sm);
+  box-shadow: inset 0 1px 1px var(--rst-depth-ambient, transparent);
   display: flex;
   gap: var(--rst-sp-2);
   margin: 0;
@@ -718,8 +820,15 @@ body {
 .rst-search input[type="search"]:focus-visible, [rst-search] input[type="search"]:focus-visible {
   outline: none;
 }
+/* Sunk and focused like the other fields (see .rst-input's focus rule).
+   The edge stays --rst-accent, not --rst-focus-edge: plain and signal
+   set the focus edge to their line-strong grey, and this box has turned
+   accent on focus in every theme since before the edge was a token. The
+   1px offset is the box's own, kept so a flat theme's ring does not
+   move. */
 .rst-search:focus-within, [rst-search]:focus-within {
   border-color: var(--rst-accent);
+  box-shadow: inset 0 1px 1px var(--rst-depth-ambient, transparent), 0 0 0 3px var(--rst-focus-halo, transparent);
   outline: 2px solid var(--rst-accent);
   outline-offset: 1px;
 }
@@ -773,10 +882,9 @@ body {
   border-top: 0;
 }
 /* Only a row that is a link looks like one: the fill follows the
-   primary link, so a hand-written row with nothing to open stays flat. */
-.rst-row:has(> .rst-row__main > a):hover, [rst-row]:has(> [rst-row-main] > a):hover {
-  background: var(--rst-surface-2);
-}
+   primary link, so a hand-written row with nothing to open stays flat.
+   The hover and the press are below, after the rule that lifts a row's
+   controls: one lift for every row idiom. */
 .rst-row__lead, [rst-row-lead] {
   align-items: center;
   background: var(--rst-tone-neutral-bg);
@@ -960,15 +1068,26 @@ body {
   text-align: center;
   text-decoration: none;
 }
+/* The hover is the tint rows and nav items hover to, through today's
+   accent-soft; there is no press rule, because a pressed chip has no
+   fill of its own today in any theme (A15) and it navigates at once. */
 .rst-pagination > a:hover, [rst-pagination] > a:hover {
-  background: var(--rst-accent-soft);
+  background: var(--rst-tint-hover, var(--rst-accent-soft));
   border-color: var(--rst-accent);
   color: var(--rst-text);
 }
+/* The current chip is the filled control's token pair, through the
+   fallback that is today's accent, so a theme whose fill is not its
+   accent (day's cobalt) keeps the chip and the primary button the
+   same colour. The tap highlight is off on the links: iOS paints its
+   own grey flash on a tapped chip, which is not the theme's. */
+.rst-pagination > a, [rst-pagination] > a {
+  -webkit-tap-highlight-color: transparent;
+}
 .rst-pagination [aria-current="page"], [rst-pagination] [aria-current="page"] {
-  background: var(--rst-accent);
-  border-color: var(--rst-accent);
-  color: var(--rst-on-accent);
+  background: var(--rst-accent-fill, var(--rst-accent));
+  border-color: var(--rst-accent-fill, var(--rst-accent));
+  color: var(--rst-on-accent-fill, var(--rst-on-accent));
   font-weight: 600;
 }
 .rst-pagination .rst-pagination__disabled, [rst-pagination] [rst-pagination-disabled] {
@@ -1063,10 +1182,18 @@ body {
    hairline against the card's edge. It is a hairline, and the
    alternative — :nth-child arithmetic against a column count nobody
    declared — is the grid this deliberately is not. */
+/* The face, rim and shadows are the card stack described above .rst-box. */
 .rst-stats, [rst-stats] {
-  background: var(--rst-surface);
-  border: 1px solid var(--rst-line);
+  --rst-card-x: 50%;
+  --rst-card-y: 0%;
+  --rst-card-lit: 0;
+  background:
+    radial-gradient(calc(var(--rst-card-lit) * 520px) circle at var(--rst-card-x) var(--rst-card-y), var(--rst-light-wash, transparent), transparent 75%) padding-box,
+    linear-gradient(var(--rst-surface) 0 0) padding-box,
+    radial-gradient(calc(var(--rst-card-lit) * 260px) circle at var(--rst-card-x) var(--rst-card-y), var(--rst-light-rim, var(--rst-line)), var(--rst-line) 80%) border-box;
+  border: 1px solid transparent;
   border-radius: var(--rst-radius);
+  box-shadow: var(--rst-shadow-x) var(--rst-shadow-y) 1px var(--rst-depth-ambient, transparent), calc(var(--rst-shadow-x) * 2) calc(var(--rst-shadow-y) * 1.5) 3px var(--rst-depth-ambient, transparent);
   display: flex;
   flex-wrap: wrap;
 }
@@ -1085,15 +1212,16 @@ body {
 .rst-stat--lead, [rst-stat~="lead"] {
   flex-basis: 14rem;
 }
-/* The eyebrow. Uppercase and tracked, the same grammar every label in
-   this system uses above a value, so a band of cells reads as one row
-   of labels rather than as four headings. */
+/* The eyebrow. Uppercase and tracked unless the theme says otherwise
+   (C15: day sets sentence case with no tracking), the same grammar
+   every label in this system uses above a value, so a band of cells
+   reads as one row of labels rather than as four headings. */
 .rst-stat__label, [rst-stat-label] {
   color: var(--rst-text-muted);
   font-size: var(--rst-fs-xs);
   font-weight: 650;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  letter-spacing: var(--rst-label-track, 0.06em);
+  text-transform: var(--rst-label-case, uppercase);
 }
 /* tabular-nums so a column of readings lines up on its digits, and so
    a number that changes on a poll does not jitter its neighbours. */
@@ -1140,6 +1268,36 @@ body {
 .rst-person__email, [rst-person-email] { color: var(--rst-text-muted); display: block; font-size: var(--rst-fs-xs); line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rst-person:hover .rst-person__name, [rst-person]:hover [rst-person-name] { color: var(--rst-accent); }
 .rst-person--lg .rst-person__av, [rst-person~="lg"] [rst-person-av] { font-size: 1.0625rem; height: 46px; width: 46px; }
+/* actor — who did something, as the words the actor function writes,
+   in an element an app can style. Isolated the way <bdi> is: both
+   names are what someone typed, and a right-to-left name beside "for"
+   would otherwise pull the sentence's punctuation across to its side. */
+.rst-actor, [rst-actor] { unicode-bidi: isolate; }
+/* api-tokens — the token page's body: the reveal, the create form, the
+   list and the revoke buttons stacked at the page's rhythm. The list
+   sets its own columns, which a list grid otherwise takes from the app's
+   stylesheet: the identity cell, four fact cells, the state word, and
+   the kebab column. Below the phone width the facts leave the columns
+   and stack under the identity, each spanning the row with its label
+   shown: a person checks a token's access and activity before revoking
+   it, so the facts are not hidden there the way a list's middle cells
+   usually are. The identity, the state and the kebab are pinned to the
+   first grid row, or the stacked facts would push them down. The secret
+   wraps anywhere, because a 60-character token that will not break
+   overflows a phone and the end of it, the part that is secret, is what
+   gets cut. */
+.rst-tokens, [rst-tokens] { display: grid; gap: var(--rst-sp-5); }
+.rst-tokens__list, [rst-tokens-list] { --rst-cols: 2fr 1fr 1fr 1fr 1fr auto var(--rst-col-menu); }
+.rst-tokens__fact, [rst-tokens-fact] { color: var(--rst-text-muted); font-size: var(--rst-fs-xs); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rst-tokens__fact-label, [rst-tokens-fact-label] { display: none; }
+.rst-tokens__state, [rst-tokens-state] { min-width: 0; }
+.rst-tokens__secret, [rst-tokens-secret] { overflow-wrap: anywhere; user-select: all; }
+.rst-tokens__revoke, [rst-tokens-revoke] { display: flex; flex-wrap: wrap; gap: var(--rst-sp-2); }
+@media (max-width: 800px) {
+  .rst-tokens__list .rst-lrow > .rst-tokens__fact, [rst-tokens-list] [rst-lrow] > [rst-tokens-fact] { display: flex; font-size: inherit; gap: var(--rst-sp-3); grid-column: 1 / -1; justify-content: space-between; white-space: normal; }
+  .rst-tokens__fact > .rst-tokens__fact-label, [rst-tokens-fact] > [rst-tokens-fact-label] { color: var(--rst-text); display: inline; }
+  .rst-tokens__list .rst-lrow > :first-child, .rst-tokens__list .rst-lrow > .rst-tokens__state, .rst-tokens__list .rst-lrow > .rst-row-menu, [rst-tokens-list] [rst-lrow] > :first-child, [rst-tokens-list] [rst-lrow] > [rst-tokens-state], [rst-tokens-list] [rst-lrow] > [rst-row-menu] { grid-row: 1; }
+}
 
 /* callout — the one alert vocabulary; icon sized to the first text line. */
 .rst-callout, [rst-callout] { align-items: flex-start; background: var(--rst-surface-2); border: 1px solid var(--rst-line-strong); border-radius: var(--rst-radius); display: flex; gap: 0.6rem; margin: var(--rst-sp-4) 0; padding: 0.85rem 1rem; }
@@ -1214,8 +1372,10 @@ body {
     justify-self: start;
     padding-block: 0.05rem;
   }
+  /* min(), not a second token: a theme that already chose a title at or
+     under the narrow size keeps it, and one above it steps down. */
   .rst-page-header h1, [rst-page-header] h1 {
-    font-size: 1.25rem;
+    font-size: min(var(--rst-title-size, 1.375rem), 1.25rem);
   }
 }
 
@@ -1225,13 +1385,33 @@ body {
    before the box, never inside it: a screen is a stack of
    section-header + card. A box-head action is a compact real button,
    never a pill. */
-.rst-box, [rst-box] { background: var(--rst-surface); border: 1px solid var(--rst-line); border-radius: var(--rst-radius); margin: var(--rst-sp-4) 0; padding: 1.1rem 1.25rem; }
+/* Cards rest on the page: a hairline, and two layers of ambient light
+   that lean with the light. The border is transparent and the hairline
+   is the outer stop of a border-box gradient, so the light can catch
+   the rim nearest the pointer; its lit radius scales with
+   --rst-card-lit instead of its alpha, because a colour whose alpha is
+   a calc(var()) is what Safari refused. At 0 the radius is 0px and the
+   card shows its hairline. */
+.rst-box, [rst-box] {
+  --rst-card-x: 50%;
+  --rst-card-y: 0%;
+  --rst-card-lit: 0;
+  background:
+    radial-gradient(calc(var(--rst-card-lit) * 520px) circle at var(--rst-card-x) var(--rst-card-y), var(--rst-light-wash, transparent), transparent 75%) padding-box,
+    linear-gradient(var(--rst-surface) 0 0) padding-box,
+    radial-gradient(calc(var(--rst-card-lit) * 260px) circle at var(--rst-card-x) var(--rst-card-y), var(--rst-light-rim, var(--rst-line)), var(--rst-line) 80%) border-box;
+  border: 1px solid transparent;
+  border-radius: var(--rst-radius);
+  box-shadow: var(--rst-shadow-x) var(--rst-shadow-y) 1px var(--rst-depth-ambient, transparent), calc(var(--rst-shadow-x) * 2) calc(var(--rst-shadow-y) * 1.5) 3px var(--rst-depth-ambient, transparent);
+  margin: var(--rst-sp-4) 0;
+  padding: 1.1rem 1.25rem;
+}
 .rst-box > :first-child, [rst-box] > :first-child { margin-top: 0; }
 .rst-box > :last-child, [rst-box] > :last-child { margin-bottom: 0; }
 .rst-box-head, [rst-box-head] { align-items: baseline; display: flex; gap: var(--rst-sp-4); justify-content: space-between; margin: 1.5rem 0 0.5rem; }
 .rst-box-head:first-child, [rst-box-head]:first-child { margin-top: 0; }
 .rst-box-head + .rst-box, [rst-box-head] + [rst-box] { margin-top: 0; }
-.rst-box-head h2, [rst-box-head] h2 { font-size: var(--rst-fs-base); margin: 0; }
+.rst-box-head h2, [rst-box-head] h2 { font-size: var(--rst-heading-size, var(--rst-fs-base)); margin: 0; }
 .rst-box-foot, [rst-box-foot] { border-top: 1px solid var(--rst-line); color: var(--rst-text-muted); margin-top: var(--rst-sp-4); padding-top: 0.75rem; }
 .rst-box > .rst-detail, [rst-box] > [rst-detail] { margin: 0; }
 
@@ -1242,12 +1422,23 @@ body {
    fill only on rows that contain the identity link — a display-only
    row must never look clickable.
    Like .rst-list, .rst-card has no padding: rows only. Anything that
-   is not a row belongs in .rst-box. */
-.rst-card, [rst-card] { background: var(--rst-surface); border: 1px solid var(--rst-line); border-radius: var(--rst-radius); }
+   is not a row belongs in .rst-box.
+   The face, rim and shadows are the card stack described above .rst-box. */
+.rst-card, [rst-card] {
+  --rst-card-x: 50%;
+  --rst-card-y: 0%;
+  --rst-card-lit: 0;
+  background:
+    radial-gradient(calc(var(--rst-card-lit) * 520px) circle at var(--rst-card-x) var(--rst-card-y), var(--rst-light-wash, transparent), transparent 75%) padding-box,
+    linear-gradient(var(--rst-surface) 0 0) padding-box,
+    radial-gradient(calc(var(--rst-card-lit) * 260px) circle at var(--rst-card-x) var(--rst-card-y), var(--rst-light-rim, var(--rst-line)), var(--rst-line) 80%) border-box;
+  border: 1px solid transparent;
+  border-radius: var(--rst-radius);
+  box-shadow: var(--rst-shadow-x) var(--rst-shadow-y) 1px var(--rst-depth-ambient, transparent), calc(var(--rst-shadow-x) * 2) calc(var(--rst-shadow-y) * 1.5) 3px var(--rst-depth-ambient, transparent);
+}
 .rst-lrow, [rst-lrow] { align-items: center; border-bottom: 1px solid var(--rst-line); display: grid; gap: 0.85rem; grid-template-columns: var(--rst-cols, 1fr); padding: 0.68rem 1rem; position: relative; }
 .rst-lrow:last-child, [rst-lrow]:last-child { border-bottom: 0; }
 .rst-lrow--head, [rst-lrow~="head"] { color: var(--rst-text-faint); font-size: var(--rst-fs-xs); font-weight: 550; letter-spacing: 0.05em; padding: 0.55rem 1rem; text-transform: uppercase; }
-.rst-lrow:not(.rst-lrow--head):has(> a.rst-nm, > a.rst-person):hover, [rst-lrow]:not([rst-lrow~="head"]):has(> a.rst-nm, > a[rst-person]):hover { background: var(--rst-accent-soft); }
 /* The list grid's primary link is its identity cell: the rst-nm link,
    or a person link when a person is who the row is. Its ::after covers
    the row, as list-row-action's does. One identity cell per row: with
@@ -1271,7 +1462,9 @@ a.rst-nm:hover { color: var(--rst-accent); }
    :is() with no space, so it filters the controls themselves; with a
    space it is a descendant combinator and lifts things inside them.
    The primary link is excluded, or its ::after would measure against
-   the link instead of the row.
+   the link instead of the row. A media-grid tile is a row of this
+   kind too: its name link covers the tile, and its checkbox and kebab
+   are the controls lifted over it.
 
    The whole selector is inside :where(), so it weighs nothing: its job
    is to give an otherwise static control a position and a z-index, and
@@ -1285,7 +1478,44 @@ a.rst-nm:hover { color: var(--rst-accent); }
    it draws itself (a tooltip's [rst-tip]::after) paints under the next
    row's lifted controls. Do not put such a control in a row without
    raising it. */
-:where(:is(.rst-row, .rst-lrow) :is(a[href], button, summary, label, input, select, textarea):not(.rst-row__main > a, .rst-lrow > a.rst-nm, .rst-lrow > a.rst-person)), :where(:is([rst-row], [rst-lrow]) :is(a[href], button, summary, label, input, select, textarea):not([rst-row-main] > a, [rst-lrow] > a.rst-nm, [rst-lrow] > a[rst-person])) { position: relative; z-index: 1; }
+:where(:is(.rst-row, .rst-lrow, .rst-media__tile) :is(a[href], button, summary, label, input, select, textarea):not(.rst-row__main > a, .rst-lrow > a.rst-nm, .rst-lrow > a.rst-person, .rst-media__name > a)), :where(:is([rst-row], [rst-lrow], [rst-media-tile]) :is(a[href], button, summary, label, input, select, textarea):not([rst-row-main] > a, [rst-lrow] > a.rst-nm, [rst-lrow] > a[rst-person], [rst-media-name] > a)) { position: relative; z-index: 1; }
+/* A quiet lift, no sheen: lists are for reading, and a sheen means
+   "press this". The lift is a tint, a highlight along the top edge and
+   a shade along the bottom, all inside the row: never a position, a
+   z-index or an outer shadow, because the :where() rule above keeps a
+   row menu's panel above the rows below it, and a stacking context
+   here would trap the panel. Pressed, or with its overlay link active,
+   the whole row takes the press tint, so a tap on the link and a tap
+   on the row look the same.
+
+   Three row idioms, one lift: the list grid's row, the list-row-action
+   row and the media tile, each through the filter that already says
+   which rows are links. Two press rules per family: hovered with the
+   link active, inside the hover query, reads the press tint (a mouse
+   pressing a hovered row); the link active alone, outside it, reads
+   the tap tint (a finger, which hovers nothing; transparent in every
+   theme today). The list-row-action row keeps its own pair of tokens
+   because it hovers to --rst-surface-2 today, not to the accent tint;
+   the tile keeps its own pair because it had no hover at all, so a
+   flat theme reads its surface in every state and a tap never shows
+   the page through it.
+
+   The 0.25s fade is declared on the hover rules, not at rest: a
+   transition at rest also ran on a scheme change, and an app's own
+   switch, which never calls rastrillo.js's land(), showed the new
+   text on the old ground for a quarter of a second (Astra A3).
+   Hover-in fades; hover-out, a press and a scheme change land at
+   once. */
+.rst-lrow:not(.rst-lrow--head):has(> a.rst-nm:active, > a.rst-person:active), [rst-lrow]:not([rst-lrow~="head"]):has(> a.rst-nm:active, > a[rst-person]:active), .rst-row:has(> .rst-row__main > a:active), [rst-row]:has(> [rst-row-main] > a:active) { background-color: var(--rst-tint-tap, transparent); box-shadow: inset 0 1px 2px var(--rst-depth-ambient, transparent); transition: none; }
+.rst-media__tile:has(.rst-media__name > a:active), [rst-media-tile]:has([rst-media-name] > a:active) { background-color: var(--rst-tint-tile-press, var(--rst-surface)); box-shadow: inset 0 1px 2px var(--rst-depth-ambient, transparent); transition: none; }
+@media (hover: hover) {
+  .rst-lrow:not(.rst-lrow--head):has(> a.rst-nm, > a.rst-person):hover, [rst-lrow]:not([rst-lrow~="head"]):has(> a.rst-nm, > a[rst-person]):hover { background-color: var(--rst-tint-hover, var(--rst-accent-soft)); box-shadow: inset 0 1px 0 var(--rst-depth-hl, transparent), inset 0 -1px 0 var(--rst-depth-contact, transparent); transition: background-color 0.25s ease, box-shadow 0.25s ease; }
+  .rst-row:has(> .rst-row__main > a):hover, [rst-row]:has(> [rst-row-main] > a):hover { background-color: var(--rst-row-tint-hover, var(--rst-surface-2)); box-shadow: inset 0 1px 0 var(--rst-depth-hl, transparent), inset 0 -1px 0 var(--rst-depth-contact, transparent); transition: background-color 0.25s ease, box-shadow 0.25s ease; }
+  .rst-media__tile:has(.rst-media__name > a):hover, [rst-media-tile]:has([rst-media-name] > a):hover { background-color: var(--rst-tint-tile-hover, var(--rst-surface)); box-shadow: inset 0 1px 0 var(--rst-depth-hl, transparent), inset 0 -1px 0 var(--rst-depth-contact, transparent); transition: background-color 0.25s ease, box-shadow 0.25s ease; }
+  .rst-lrow:not(.rst-lrow--head):hover:has(> a.rst-nm:active, > a.rst-person:active), [rst-lrow]:not([rst-lrow~="head"]):hover:has(> a.rst-nm:active, > a[rst-person]:active) { background-color: var(--rst-tint-press, var(--rst-accent-soft)); box-shadow: inset 0 1px 2px var(--rst-depth-ambient, transparent); transition: none; }
+  .rst-row:hover:has(> .rst-row__main > a:active), [rst-row]:hover:has(> [rst-row-main] > a:active) { background-color: var(--rst-row-tint-press, var(--rst-surface-2)); box-shadow: inset 0 1px 2px var(--rst-depth-ambient, transparent); transition: none; }
+  .rst-media__tile:hover:has(.rst-media__name > a:active), [rst-media-tile]:hover:has([rst-media-name] > a:active) { background-color: var(--rst-tint-tile-press, var(--rst-surface)); box-shadow: inset 0 1px 2px var(--rst-depth-ambient, transparent); transition: none; }
+}
 @media (max-width: 800px) {
   .rst-m-hide { display: none; }
   .rst-lrow, [rst-lrow], .rst-lrow--head, [rst-lrow~="head"] { grid-template-columns: minmax(0, 1fr) auto var(--rst-col-menu); }
@@ -1320,10 +1550,21 @@ a.rst-nm:hover { color: var(--rst-accent); }
 .rst-row-menu, [rst-row-menu] { inline-size: fit-content; justify-self: end; margin-inline-start: auto; position: relative; }
 .rst-row-menu > summary, [rst-row-menu] > summary { align-items: center; border-radius: var(--rst-radius-sm); color: var(--rst-text-faint); cursor: pointer; display: flex; height: 26px; justify-content: center; list-style: none; width: 26px; }
 .rst-row-menu > summary::-webkit-details-marker, [rst-row-menu] > summary::-webkit-details-marker { display: none; }
-.rst-row-menu > summary:hover, [rst-row-menu] > summary:hover, .rst-row-menu[open] > summary, [rst-row-menu][open] > summary { background: var(--rst-accent-soft); color: var(--rst-text); }
+.rst-row-menu > summary:hover, [rst-row-menu] > summary:hover, .rst-row-menu[open] > summary, [rst-row-menu][open] > summary { background: var(--rst-tint-hover, var(--rst-accent-soft)); color: var(--rst-text); }
 .rst-row-menu__panel, [rst-row-menu-panel] { background: var(--rst-surface); border: 1px solid var(--rst-line); border-radius: 9px; box-shadow: var(--rst-shadow-pop); inset-inline-end: 0; min-width: 176px; padding: 0.25rem; position: absolute; top: calc(100% + 4px); z-index: 40; }
 .rst-row-menu__panel a, [rst-row-menu-panel] a, .rst-row-menu__panel button, [rst-row-menu-panel] button { background: none; border: 0; border-radius: var(--rst-radius-sm); color: var(--rst-text); cursor: pointer; display: block; font: inherit; font-size: var(--rst-fs-sm); font-weight: 450; margin: 0; padding: 0.4rem 0.65rem; text-align: start; text-decoration: none; width: 100%; }
-.rst-row-menu__panel a:hover, [rst-row-menu-panel] a:hover, .rst-row-menu__panel button:hover, [rst-row-menu-panel] button:hover { background: var(--rst-accent-soft); }
+/* A menu row's three states, the same shape in every menu panel: the
+   hover tint with a highlight along its top edge, the press tint while
+   a hovered row is held, and the tap tint (transparent wherever a
+   theme never set it) for a finger, which hovers nothing. The danger
+   item is excluded from all three: its hover is the negative tone
+   below, and a press rule at a higher weight once turned a held Delete
+   blue. */
+.rst-row-menu__panel a:not(.rst-danger):active, [rst-row-menu-panel] a:not(.rst-danger):active, .rst-row-menu__panel button:not(.rst-danger):active, [rst-row-menu-panel] button:not(.rst-danger):active { background: var(--rst-tint-tap, transparent); }
+@media (hover: hover) {
+  .rst-row-menu__panel a:not(.rst-danger):hover, [rst-row-menu-panel] a:not(.rst-danger):hover, .rst-row-menu__panel button:not(.rst-danger):hover, [rst-row-menu-panel] button:not(.rst-danger):hover { background: var(--rst-tint-hover, var(--rst-accent-soft)); box-shadow: inset 0 1px 0 var(--rst-depth-hl, transparent); }
+  .rst-row-menu__panel a:not(.rst-danger):hover:active, [rst-row-menu-panel] a:not(.rst-danger):hover:active, .rst-row-menu__panel button:not(.rst-danger):hover:active, [rst-row-menu-panel] button:not(.rst-danger):hover:active { background: var(--rst-tint-press, var(--rst-accent-soft)); }
+}
 /* The separator every menu surface draws. Scoped to the row menu alone
    until the live page showed the topbar account menu wearing the UA's
    thick inset 3D <hr> instead: that panel is a .rst-dropdown__menu, and
@@ -1376,12 +1617,41 @@ a.rst-nm:hover { color: var(--rst-accent); }
 .rst-dropdown, [rst-dropdown] { position: relative; }
 :where(:root[data-rst-flip-menus] .rst-dropdown), :where(:root[data-rst-flip-menus] [rst-dropdown]) { inline-size: fit-content; }
 .rst-dropdown__menu .rst-dropdown, [rst-dropdown-menu] [rst-dropdown], .rst-shell__tail .rst-dropdown, [rst-shell-tail] [rst-dropdown], .rst-shell__rail-foot .rst-dropdown, [rst-shell-rail-foot] [rst-dropdown] { inline-size: auto; }
-.rst-dropdown > summary, [rst-dropdown] > summary { align-items: center; color: var(--rst-text-muted); cursor: pointer; display: flex; gap: 0.3rem; list-style: none; padding: 0.4rem 0.6rem; white-space: nowrap; }
+.rst-dropdown > summary, [rst-dropdown] > summary { align-items: center; color: var(--rst-text-muted); cursor: pointer; display: flex; gap: 0.3rem; list-style: none; padding: 0.4rem 0.6rem; white-space: nowrap; -webkit-tap-highlight-color: transparent; }
 .rst-dropdown > summary::-webkit-details-marker, [rst-dropdown] > summary::-webkit-details-marker { display: none; }
+/* A dropdown's summary wears a plain button's face (A12): a face, and
+   its edge as a 1px ring in the shadow, never a border, because a
+   border, even transparent, is 1px of layout a summary does not have
+   today. The radius is a token whose fallback is today's square
+   corner, because the focus outline follows border-radius: a radius
+   set here for every theme rounded the focus ring of a flat or old
+   theme that paints no face (A15). Not every summary: the topbar and
+   console account menus and the sidebar profile are their own
+   controls, the menus in a shell's tail are flat beside the nav they
+   sit with (in the bar and as rows of the phone card), a dropdown
+   nested in a menu is one of that menu's rows, the bulk bar's summary
+   draws its own small face, and a summary written as a button (the
+   dropdown partial's) already has the whole button language, press
+   and sheen included, which a second face at a higher weight would
+   overpaint. The exclusions are in every state's selector, so an
+   excluded summary never regains a face on hover or press. */
+.rst-dropdown:not(.rst-shell__account, .rst-shell__profile, .rst-shell__tail .rst-dropdown, .rst-bulkbar .rst-dropdown, .rst-dropdown__menu .rst-dropdown) > summary:not(.rst-btn), [rst-dropdown]:not([rst-shell-account], [rst-shell-profile], [rst-shell-tail] [rst-dropdown], [rst-bulkbar] [rst-dropdown], [rst-dropdown-menu] [rst-dropdown]) > summary:not([rst-btn]) { background: var(--rst-summary-face, transparent); border-radius: var(--rst-summary-radius, 0); box-shadow: 0 0 0 1px var(--rst-summary-edge, transparent), inset var(--rst-hl-x) 1px 0 var(--rst-depth-hl, transparent), var(--rst-shadow-x) var(--rst-shadow-y) 1px var(--rst-depth-contact, transparent), calc(var(--rst-shadow-x) * 2) calc(var(--rst-shadow-y) * 1.5) 3px var(--rst-depth-ambient, transparent); }
+.rst-dropdown:not(.rst-shell__account, .rst-shell__profile, .rst-shell__tail .rst-dropdown, .rst-bulkbar .rst-dropdown, .rst-dropdown__menu .rst-dropdown) > summary:not(.rst-btn):active, [rst-dropdown]:not([rst-shell-account], [rst-shell-profile], [rst-shell-tail] [rst-dropdown], [rst-bulkbar] [rst-dropdown], [rst-dropdown-menu] [rst-dropdown]) > summary:not([rst-btn]):active { box-shadow: 0 0 0 1px var(--rst-summary-edge, transparent), inset 0 1px 2px var(--rst-depth-contact, transparent); }
+@media (hover: hover) {
+  .rst-dropdown:not(.rst-shell__account, .rst-shell__profile, .rst-shell__tail .rst-dropdown, .rst-bulkbar .rst-dropdown, .rst-dropdown__menu .rst-dropdown) > summary:not(.rst-btn):hover, [rst-dropdown]:not([rst-shell-account], [rst-shell-profile], [rst-shell-tail] [rst-dropdown], [rst-bulkbar] [rst-dropdown], [rst-dropdown-menu] [rst-dropdown]) > summary:not([rst-btn]):hover { background: var(--rst-summary-face-hover, transparent); box-shadow: 0 0 0 1px var(--rst-summary-edge-hover, transparent), inset var(--rst-hl-x) 1px 0 var(--rst-depth-hl, transparent), var(--rst-shadow-x) var(--rst-shadow-y) 1px var(--rst-depth-contact, transparent), calc(var(--rst-shadow-x) * 2) calc(var(--rst-shadow-y) * 1.5) 3px var(--rst-depth-ambient, transparent); }
+  .rst-dropdown:not(.rst-shell__account, .rst-shell__profile, .rst-shell__tail .rst-dropdown, .rst-bulkbar .rst-dropdown, .rst-dropdown__menu .rst-dropdown) > summary:not(.rst-btn):hover:active, [rst-dropdown]:not([rst-shell-account], [rst-shell-profile], [rst-shell-tail] [rst-dropdown], [rst-bulkbar] [rst-dropdown], [rst-dropdown-menu] [rst-dropdown]) > summary:not([rst-btn]):hover:active { box-shadow: 0 0 0 1px var(--rst-summary-edge-hover, transparent), inset 0 1px 2px var(--rst-depth-contact, transparent); }
+}
 .rst-dropdown > summary:hover, [rst-dropdown] > summary:hover, .rst-dropdown[open] > summary, [rst-dropdown][open] > summary { color: var(--rst-text); }
 .rst-dropdown__menu, [rst-dropdown-menu] { background: var(--rst-surface); border: 1px solid var(--rst-line); border-radius: 9px; box-shadow: var(--rst-shadow-pop); inset-inline-end: 0; margin-top: 4px; min-width: 176px; padding: 0.25rem; position: absolute; top: 100%; z-index: 30; }
 .rst-dropdown__menu a, [rst-dropdown-menu] a { border-radius: var(--rst-radius-sm); color: inherit; display: block; font-size: var(--rst-fs-sm); padding: 0.4rem 0.65rem; text-decoration: none; }
-.rst-dropdown__menu a:hover, [rst-dropdown-menu] a:hover, .rst-dropdown__menu a[aria-current], [rst-dropdown-menu] a[aria-current] { background: var(--rst-accent-soft); }
+.rst-dropdown__menu a[aria-current], [rst-dropdown-menu] a[aria-current] { background: var(--rst-accent-soft); }
+/* The menu row's three states (the comment at the row menu's panel):
+   the current item keeps its tint and the danger item its tone. */
+.rst-dropdown__menu a:not([aria-current], .rst-danger):active, [rst-dropdown-menu] a:not([aria-current], .rst-danger):active { background: var(--rst-tint-tap, transparent); }
+@media (hover: hover) {
+  .rst-dropdown__menu a:not([aria-current], .rst-danger):hover, [rst-dropdown-menu] a:not([aria-current], .rst-danger):hover { background: var(--rst-tint-hover, var(--rst-accent-soft)); box-shadow: inset 0 1px 0 var(--rst-depth-hl, transparent); }
+  .rst-dropdown__menu a:not([aria-current], .rst-danger):hover:active, [rst-dropdown-menu] a:not([aria-current], .rst-danger):hover:active { background: var(--rst-tint-press, var(--rst-accent-soft)); }
+}
 /* locale-menu — the language switcher is a dropdown whose items are
    one-field POST forms (spec §2.4), so the button inside each form
    takes the menu-link styling. Autonyms keep their own script, so no
@@ -1390,14 +1660,25 @@ a.rst-nm:hover { color: var(--rst-accent); }
    other in a shell cannot drift apart. */
 .rst-locale form, .rst-scheme form, [rst-locale] form, [rst-scheme] form { margin: 0; }
 .rst-locale button, .rst-scheme button, [rst-locale] button, [rst-scheme] button { background: none; border: 0; border-radius: var(--rst-radius-sm); color: var(--rst-text); cursor: pointer; display: block; font: inherit; font-size: var(--rst-fs-sm); padding: 0.4rem 0.65rem; text-align: start; width: 100%; }
-.rst-locale button:hover, .rst-scheme button:hover, [rst-locale] button:hover, [rst-scheme] button:hover { background: var(--rst-accent-soft); }
+/* The menu row's three states. The current item is not excluded here:
+   it has no tint of its own (the accent label and weight mark it), and
+   it hovered like its neighbours before, so it still does. */
+.rst-locale button:active, .rst-scheme button:active, [rst-locale] button:active, [rst-scheme] button:active { background: var(--rst-tint-tap, transparent); }
+@media (hover: hover) {
+  .rst-locale button:hover, .rst-scheme button:hover, [rst-locale] button:hover, [rst-scheme] button:hover { background: var(--rst-tint-hover, var(--rst-accent-soft)); box-shadow: inset 0 1px 0 var(--rst-depth-hl, transparent); }
+  .rst-locale button:hover:active, .rst-scheme button:hover:active, [rst-locale] button:hover:active, [rst-scheme] button:hover:active { background: var(--rst-tint-press, var(--rst-accent-soft)); }
+}
 .rst-locale button[aria-current], .rst-scheme button[aria-current], [rst-locale] button[aria-current], [rst-scheme] button[aria-current] { color: var(--rst-accent); font-weight: 600; }
 /* Task 2's menu only ever held links; bulk-bar's actions menu (Task 4)
    is real submit buttons on the surrounding form, so the same panel
    needs button styling too — mirrors .rst-row-menu__panel's combined
    a/button rule above. */
 .rst-dropdown__menu button, [rst-dropdown-menu] button { background: none; border: 0; border-radius: var(--rst-radius-sm); color: inherit; cursor: pointer; display: block; font: inherit; font-size: var(--rst-fs-sm); margin: 0; padding: 0.4rem 0.65rem; text-align: start; width: 100%; }
-.rst-dropdown__menu button:hover, [rst-dropdown-menu] button:hover { background: var(--rst-accent-soft); }
+.rst-dropdown__menu button:not(.rst-danger):active, [rst-dropdown-menu] button:not(.rst-danger):active { background: var(--rst-tint-tap, transparent); }
+@media (hover: hover) {
+  .rst-dropdown__menu button:not(.rst-danger):hover, [rst-dropdown-menu] button:not(.rst-danger):hover { background: var(--rst-tint-hover, var(--rst-accent-soft)); box-shadow: inset 0 1px 0 var(--rst-depth-hl, transparent); }
+  .rst-dropdown__menu button:not(.rst-danger):hover:active, [rst-dropdown-menu] button:not(.rst-danger):hover:active { background: var(--rst-tint-press, var(--rst-accent-soft)); }
+}
 /* The same content-box bug the inputs had, in the three menu panels:
    a full-width button inside a 0.25rem-padded panel measured 100% of
    the content box and then added its own 0.65rem of side padding, so
@@ -1407,6 +1688,16 @@ a.rst-nm:hover { color: var(--rst-accent); }
 .rst-dropdown__menu .rst-danger:hover, [rst-dropdown-menu] .rst-danger:hover { background: var(--rst-tone-negative-bg); }
 .rst-dropdown__menu .rst-menu-group > summary, [rst-dropdown-menu] [rst-menu-group] > summary { color: var(--rst-text-muted); cursor: pointer; font-size: var(--rst-fs-sm); list-style: none; padding: 0.4rem 0.65rem; }
 .rst-dropdown__menu .rst-menu-group > summary::-webkit-details-marker, [rst-dropdown-menu] [rst-menu-group] > summary::-webkit-details-marker { display: none; }
+/* A group's summary is a row of the menu and lifts like one, through a
+   hover token of its own: it had no hover before, so a flat theme
+   keeps none (A15). Held, it reads the tap tint in both press rules,
+   which is the press colour in a theme that has one and nothing in a
+   theme that does not. */
+.rst-dropdown__menu .rst-menu-group > summary:active, [rst-dropdown-menu] [rst-menu-group] > summary:active { background: var(--rst-tint-tap, transparent); }
+@media (hover: hover) {
+  .rst-dropdown__menu .rst-menu-group > summary:hover, [rst-dropdown-menu] [rst-menu-group] > summary:hover { background: var(--rst-tint-group-hover, transparent); box-shadow: inset 0 1px 0 var(--rst-depth-hl, transparent); }
+  .rst-dropdown__menu .rst-menu-group > summary:hover:active, [rst-dropdown-menu] [rst-menu-group] > summary:hover:active { background: var(--rst-tint-tap, transparent); }
+}
 .rst-dropdown__menu .rst-menu-group > div, [rst-dropdown-menu] [rst-menu-group] > div { padding-inline-start: 0.6rem; }
 /* Menus that fit the viewport (design spec §6-v2.1b, 1 and 2). Two
    bugs, one surface — and one rule for all four panels, because
@@ -1560,6 +1851,15 @@ details[open] > summary > .rst-caret, details[open] > summary > [rst-caret] { tr
    need a rule here too. */
 @media (prefers-reduced-motion: reduce) {
   .rst-caret, [rst-caret] { transition: none; }
+  /* A press neither fades nor drops: the fade is the transition, and
+     the drop is a token, so the override needs no state selector.
+     html:root outranks the theme's :root, which is the only reason for
+     the doubled selector. */
+  .rst-btn, [rst-btn] { transition: none; }
+  html:root { --rst-press-drop: 0px; }
+  /* A row's lift lands at once rather than easing in (A8). The fade
+     sits on the hover rules (Astra A3), so these are the hover rules. */
+  .rst-lrow:not(.rst-lrow--head):has(> a.rst-nm, > a.rst-person):hover, [rst-lrow]:not([rst-lrow~="head"]):has(> a.rst-nm, > a[rst-person]):hover, .rst-row:has(> .rst-row__main > a):hover, [rst-row]:has(> [rst-row-main] > a):hover, .rst-media__tile:has(.rst-media__name > a):hover, [rst-media-tile]:has([rst-media-name] > a):hover { transition: none; }
 }
 
 /* ── The form family: field, switch, choice cards, seg-tabs, layout ── */
@@ -1578,7 +1878,7 @@ details[open] > summary > .rst-caret, details[open] > summary > [rst-caret] { tr
    an input running under the field beside it in a row, an input running
    out of its card, and a picker button anchored to the wrapper landing
    47px short of the input's visible end. */
-.rst-input, [rst-input] { background: var(--rst-surface); border: 1px solid var(--rst-line-strong); border-radius: var(--rst-radius-sm); box-sizing: border-box; color: inherit; font: inherit; padding: 0.45rem 0.6rem; width: 100%; }
+.rst-input, [rst-input] { background: var(--rst-surface); border: 1px solid var(--rst-line-strong); border-radius: var(--rst-radius-sm); box-shadow: inset 0 1px 1px var(--rst-depth-ambient, transparent); box-sizing: border-box; color: inherit; font: inherit; padding: 0.45rem 0.6rem; width: 100%; }
 /* The zoom floor for the input, and why it is HERE. `font: inherit` in
    the rule above resets font-size, so a floor placed before it would be
    reset with it; the primary rule below sizes the field on purpose, so
@@ -1592,7 +1892,11 @@ details[open] > summary > .rst-caret, details[open] > summary > [rst-caret] { tr
 @media (pointer: coarse), (max-width: 40rem) {
   .rst-input, [rst-input] { font-size: max(1rem, 1em); }
 }
-.rst-input:focus-visible, [rst-input]:focus-visible { outline: 2px solid var(--rst-accent); outline-offset: 2px; }
+/* A field sits slightly into the page: a 1px inset ambient shadow, and
+   the control border, which stays --rst-line-strong at 3:1. Focus adds
+   the focus edge and a 3px halo; the solid 2px outline stays, because
+   the halo is extra and never the indicator. */
+.rst-input:focus-visible, [rst-input]:focus-visible { border-color: var(--rst-focus-edge, var(--rst-line-strong)); box-shadow: inset 0 1px 1px var(--rst-depth-ambient, transparent), 0 0 0 3px var(--rst-focus-halo, transparent); outline: 2px solid var(--rst-accent); outline-offset: 2px; }
 /* short is compact, not tiny: 8rem is a border-box width, so it renders
    within a pixel or two of the old 6.5rem content box plus its padding,
    and it is wide enough for the postcodes and codes it is for. The
@@ -1614,14 +1918,15 @@ textarea.rst-input, textarea[rst-input] { min-height: 5rem; resize: vertical; }
    emits) mark a required label with * and put the textarea on its own
    class; styled here so both field families render finished. */
 .rst-field__required, [rst-field-required] { color: var(--rst-tone-negative-fg); }
-.rst-textarea, [rst-textarea] { background: var(--rst-surface); border: 1px solid var(--rst-line-strong); border-radius: var(--rst-radius-sm); box-sizing: border-box; color: inherit; font: inherit; line-height: 1.6; min-height: 5rem; padding: 0.45rem 0.6rem; resize: vertical; width: 100%; }
+.rst-textarea, [rst-textarea] { background: var(--rst-surface); border: 1px solid var(--rst-line-strong); border-radius: var(--rst-radius-sm); box-shadow: inset 0 1px 1px var(--rst-depth-ambient, transparent); box-sizing: border-box; color: inherit; font: inherit; line-height: 1.6; min-height: 5rem; padding: 0.45rem 0.6rem; resize: vertical; width: 100%; }
 /* The textarea's zoom floor, directly after the rule whose `font:
    inherit` would reset it: a floor above that line is dead, undone by
    the reset. Reasoning as for the input floor above. */
 @media (pointer: coarse), (max-width: 40rem) {
   .rst-textarea, [rst-textarea] { font-size: max(1rem, 1em); }
 }
-.rst-textarea:focus-visible, [rst-textarea]:focus-visible { outline: 2px solid var(--rst-accent); outline-offset: 2px; }
+/* Sunk and focused as .rst-input is, for the reason given there. */
+.rst-textarea:focus-visible, [rst-textarea]:focus-visible { border-color: var(--rst-focus-edge, var(--rst-line-strong)); box-shadow: inset 0 1px 1px var(--rst-depth-ambient, transparent), 0 0 0 3px var(--rst-focus-halo, transparent); outline: 2px solid var(--rst-accent); outline-offset: 2px; }
 /* The textarea grows with its text: field-sizing: content, from the
    5rem minimum above (which the touch query leaves alone, so a phone
    keeps it too) to half the viewport, past which it scrolls. Half,
@@ -1665,14 +1970,34 @@ small.rst-field__hint, small[rst-field-hint] { display: block; font-size: var(--
    drag. */
 .rst-switch, [rst-switch] { align-items: center; cursor: pointer; display: inline-flex; gap: 0.6rem; position: relative; }
 .rst-switch input, [rst-switch] input { height: 1px; opacity: 0; position: absolute; width: 1px; }
-.rst-switch__track, [rst-switch-track] { --rst-switch-x: 0px; background: var(--rst-line-strong); border-radius: 10px; flex: none; height: 19px; position: relative; touch-action: pan-y; transition: background 0.15s; width: 34px; }
+/* The knob is a lit dome in both schemes: near-white, a highlight on the
+   side the light comes from, a contact shadow. In dark it had been the
+   surface colour and read as a hole in the track. The off track is a
+   grey dark enough to clear 3:1 against the surface and light enough
+   for the knob to clear 3:1 on it; the on track is the accent fill, and
+   its sheen sits over the knob through --rst-switch-x and
+   --rst-switch-dir, on hover and while the knob is dragged, so a
+   right-to-left switch and a mid-drag knob keep it.
+   Every new token falls back to what the switch painted before (the
+   surface knob, the line-strong track, the accent), so a theme written
+   before them draws the switch it drew. The knob sets its
+   background-color under the gradient, so a mode that drops background
+   images still draws one. A disabled switch takes no hover. */
+.rst-switch__track, [rst-switch-track] { --rst-switch-x: 0px; background-color: var(--rst-track-off, var(--rst-line-strong)); border-radius: 10px; box-shadow: inset 0 1px 2px var(--rst-depth-contact, transparent); flex: none; height: 19px; position: relative; touch-action: pan-y; transition: background-color 0.15s; width: 34px; }
 [dir="rtl"] .rst-switch__track, [dir="rtl"] [rst-switch-track] { --rst-switch-dir: -1; }
 .rst-switch__track:dir(ltr), [rst-switch-track]:dir(ltr) { --rst-switch-dir: 1; }
 .rst-switch__track:dir(rtl), [rst-switch-track]:dir(rtl) { --rst-switch-dir: -1; }
-.rst-switch__track::after, [rst-switch-track]::after { background: var(--rst-surface); border-radius: 50%; box-shadow: var(--rst-shadow-knob); content: ""; height: 15px; inset-inline-start: 2px; position: absolute; top: 2px; transform: translateX(calc(var(--rst-switch-x) * var(--rst-switch-dir, 1))); transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1); width: 15px; }
-.rst-switch:has(input:checked) .rst-switch__track, [rst-switch]:has(input:checked) [rst-switch-track] { --rst-switch-x: 15px; background: var(--rst-accent); }
+.rst-switch__track::after, [rst-switch-track]::after { background-color: var(--rst-knob-shade, var(--rst-surface)); background-image: radial-gradient(circle at calc(50% + var(--rst-light-x) * 22%) calc(30% + (var(--rst-light-y) + 1) * 10%), color-mix(in srgb, var(--rst-depth-hl, transparent) 70%, transparent), transparent 60%), linear-gradient(to bottom, var(--rst-knob, var(--rst-surface)), var(--rst-knob-shade, var(--rst-surface))); border-radius: 50%; box-shadow: inset 0 1px 0 var(--rst-depth-hl, transparent), var(--rst-shadow-x) calc(var(--rst-shadow-y) * 0.8) 1px var(--rst-depth-contact, transparent), var(--rst-shadow-knob); content: ""; height: 15px; inset-inline-start: 2px; position: absolute; top: 2px; transform: translateX(calc(var(--rst-switch-x) * var(--rst-switch-dir, 1))); transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1); width: 15px; }
+.rst-switch:has(input:checked) .rst-switch__track, [rst-switch]:has(input:checked) [rst-switch-track] { --rst-switch-x: 15px; background-color: var(--rst-accent-fill, var(--rst-accent)); }
 .rst-switch[data-rst-drag], [rst-switch][data-rst-drag] { -webkit-user-select: none; user-select: none; }
 .rst-switch[data-rst-drag] .rst-switch__track::after, [rst-switch][data-rst-drag] [rst-switch-track]::after { transition: none; }
+@media (hover: hover) {
+  .rst-switch:hover:not([data-rst-drag]):has(input:enabled) .rst-switch__track::after, [rst-switch]:hover:not([data-rst-drag]):has(input:enabled) [rst-switch-track]::after, .rst-tblock__head:hover:has(input:enabled) .rst-switch__track::after, [rst-tblock-head]:hover:has(input:enabled) [rst-switch-track]::after { background-image: radial-gradient(circle at calc(50% + var(--rst-light-x) * 22%) calc(30% + (var(--rst-light-y) + 1) * 10%), var(--rst-depth-hl, transparent), transparent 60%), linear-gradient(to bottom, var(--rst-knob, var(--rst-surface)), var(--rst-knob-shade, var(--rst-surface))); }
+  .rst-switch:hover:has(input:checked:enabled) .rst-switch__track, [rst-switch]:hover:has(input:checked:enabled) [rst-switch-track], .rst-tblock__head:hover:has(input:checked:enabled) .rst-switch__track, [rst-tblock-head]:hover:has(input:checked:enabled) [rst-switch-track] { background-image: radial-gradient(40px circle at calc(50% + var(--rst-switch-dir, 1) * (var(--rst-switch-x) - 7.5px)) 20%, var(--rst-sheen-fill, transparent), transparent 70%); }
+}
+/* Outside the hover query: a knob being dragged is being looked at,
+   which is what the hover meant, and a finger has no hover. */
+.rst-switch[data-rst-drag]:has(input:checked) .rst-switch__track, [rst-switch][data-rst-drag]:has(input:checked) [rst-switch-track] { background-image: radial-gradient(40px circle at calc(50% + var(--rst-switch-dir, 1) * (var(--rst-switch-x) - 7.5px)) 20%, var(--rst-sheen-fill, transparent), transparent 70%); }
 .rst-switch:has(input:focus-visible) .rst-switch__track, [rst-switch]:has(input:focus-visible) [rst-switch-track] { outline: 2px solid var(--rst-accent); outline-offset: 2px; }
 .rst-switch:has(input:disabled), [rst-switch]:has(input:disabled) { cursor: default; opacity: 0.55; }
 
@@ -1698,9 +2023,11 @@ small.rst-field__hint, small[rst-field-hint] { display: block; font-size: var(--
    or grid parent that lays the tabs out in a row of controls spaces its
    own items and should zero it. */
 .rst-seg-tabs, [rst-seg-tabs] { background: var(--rst-accent-soft); border-radius: 8px; display: flex; flex-wrap: wrap; gap: 2px; margin-block: 0 var(--rst-sp-4); max-inline-size: 100%; padding: 2px; width: max-content; }
-.rst-seg-tabs a, [rst-seg-tabs] a { border-radius: var(--rst-radius-sm); color: var(--rst-text-muted); font-size: var(--rst-fs-sm); font-weight: 550; padding: 5px 16px; text-decoration: none; }
+.rst-seg-tabs a, [rst-seg-tabs] a { border-radius: var(--rst-radius-sm); color: var(--rst-text-muted); font-size: var(--rst-fs-sm); font-weight: 550; padding: 5px 16px; text-decoration: none; -webkit-tap-highlight-color: transparent; }
 .rst-seg-tabs a:hover, [rst-seg-tabs] a:hover { color: var(--rst-text); }
-.rst-seg-tabs a[aria-current], [rst-seg-tabs] a[aria-current] { background: var(--rst-surface); box-shadow: var(--rst-shadow-lift); color: var(--rst-text); font-weight: 600; }
+/* The current tab is a thumb: a top highlight first, then the lift.
+   No press rule, because a pressed tab has no fill today (A15). */
+.rst-seg-tabs a[aria-current], [rst-seg-tabs] a[aria-current] { background: var(--rst-surface); box-shadow: inset var(--rst-hl-x) 1px 0 var(--rst-depth-hl, transparent), var(--rst-shadow-lift); color: var(--rst-text); font-weight: 600; }
 
 /* form layout — the interview rhythm and the save bar. */
 .rst-form-flow > .rst-field + .rst-field, [rst-form-flow] > [rst-field] + [rst-field] { margin-top: var(--rst-sp-5); }
@@ -1804,11 +2131,15 @@ small.rst-field__hint, small[rst-field-hint] { display: block; font-size: var(--
    treats off as off, whatever the revealed (still-POSTed) fields say. */
 .rst-tblock, [rst-tblock] { background: var(--rst-surface); border: 1px solid var(--rst-line); border-radius: var(--rst-radius); margin: 0.7rem 0; overflow: hidden; }
 .rst-tblock > .rst-tblock__head, [rst-tblock] > [rst-tblock-head] { align-items: flex-start; cursor: pointer; display: flex; gap: 0.85rem; margin: 0; padding: 0.9rem 1.05rem; }
-.rst-tblock > .rst-tblock__head:hover, [rst-tblock] > [rst-tblock-head]:hover { background: var(--rst-accent-soft); }
+/* Behind the hover query: a tap leaves the head :hover on touch, and
+   the tint stuck on it after the switch had already answered. */
+@media (hover: hover) {
+  .rst-tblock > .rst-tblock__head:hover, [rst-tblock] > [rst-tblock-head]:hover { background: var(--rst-accent-soft); }
+}
 .rst-tblock .rst-tblock__title, [rst-tblock] [rst-tblock-title] { display: block; font-size: var(--rst-fs-sm); font-weight: 550; }
 .rst-tblock .rst-tblock__desc, [rst-tblock] [rst-tblock-desc] { color: var(--rst-text-muted); display: block; font-size: var(--rst-fs-xs); }
 .rst-tblock .rst-tblock__head input, [rst-tblock] [rst-tblock-head] input { height: 1px; opacity: 0; position: absolute; width: 1px; }
-.rst-tblock:has(.rst-tblock__head input:checked) .rst-switch__track, [rst-tblock]:has([rst-tblock-head] input:checked) [rst-switch-track] { --rst-switch-x: 15px; background: var(--rst-accent); }
+.rst-tblock:has(.rst-tblock__head input:checked) .rst-switch__track, [rst-tblock]:has([rst-tblock-head] input:checked) [rst-switch-track] { --rst-switch-x: 15px; background-color: var(--rst-accent-fill, var(--rst-accent)); }
 .rst-tblock:has(.rst-tblock__head input:focus-visible) .rst-switch__track, [rst-tblock]:has([rst-tblock-head] input:focus-visible) [rst-switch-track] { outline: 2px solid var(--rst-accent); outline-offset: 2px; }
 .rst-tblock > .rst-tblock__body, [rst-tblock] > [rst-tblock-body] { display: none; }
 .rst-tblock:has(.rst-tblock__head input:checked) > .rst-tblock__body, [rst-tblock]:has([rst-tblock-head] input:checked) > [rst-tblock-body] { background: var(--rst-surface-2); border-radius: 0 0 var(--rst-radius) var(--rst-radius); border-top: 1px solid var(--rst-line); display: block; padding: 0.9rem 1.05rem 1.05rem; }
@@ -1881,6 +2212,60 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
 .rst-selbox input, [rst-selbox] input { accent-color: var(--rst-accent); cursor: pointer; height: 16px; margin: 0; width: 16px; }
 .rst-selbox input:focus-visible, [rst-selbox] input:focus-visible { outline: 2px solid var(--rst-accent); outline-offset: 2px; }
 
+/* ── media-grid: image tiles in an even frame ─────────────────────────
+   The columns come from the width: as many 12.5rem tiles as fit, each
+   stretched to share its row, and one column once two do not fit.
+   min(100%, …) keeps a 12.5rem tile from forcing a sideways scroll at
+   320px. Inside a list card the grid pads itself, because a card holds
+   rows and pads nothing. */
+.rst-media, [rst-media] { display: grid; gap: var(--rst-sp-3); grid-template-columns: repeat(auto-fill, minmax(min(100%, 12.5rem), 1fr)); }
+:where(.rst-list) > .rst-media, :where([rst-list]) > [rst-media] { padding: var(--rst-sp-3); }
+/* The tile is positioned for the name link's overlay and for the
+   checkbox in its frame. It does not clip: a kebab's open panel hangs
+   below the caption, over the next row of tiles. */
+.rst-media__tile, [rst-media-tile] { background: var(--rst-surface); border: 1px solid var(--rst-line); border-radius: var(--rst-radius); min-width: 0; position: relative; }
+/* Selected is an outline, not a border swap, so the tile never changes
+   size. :has() reads the checkbox itself, so the checked attribute the
+   server wrote and a tap on the box paint the same way, with no script
+   keeping a class in step. */
+.rst-media__tile:has(.rst-selbox input:checked), [rst-media-tile]:has([rst-selbox] input:checked) { outline: 2px solid var(--rst-accent); outline-offset: 2px; }
+/* An even 4:3 frame whatever the image's shape, so a tall screenshot
+   and a wide banner make tiles of one height and the grid's rows stay
+   rows. The frame clips the image to its corners; the tile does not. */
+.rst-media__frame, [rst-media-frame] { aspect-ratio: 4 / 3; background: var(--rst-surface-2); border-start-end-radius: calc(var(--rst-radius) - 1px); border-start-start-radius: calc(var(--rst-radius) - 1px); overflow: hidden; position: relative; }
+/* Cover, from the top: a page screenshot is identified by its top, and
+   its middle is a block of body text that could be any page. */
+.rst-media__frame img, [rst-media-frame] img { block-size: 100%; display: block; inline-size: 100%; object-fit: cover; object-position: top center; }
+/* Contain is the caller's choice for a logo, a diagram or a banner,
+   with a little padding so its edges do not touch the frame. */
+.rst-media__frame--contain img, [rst-media-frame~="contain"] img { box-sizing: border-box; object-fit: contain; padding: var(--rst-sp-2); }
+/* The checkbox sits in the frame's top start corner, over the image,
+   with a surface halo so a 16px box reads on a dark picture. Its label
+   is positioned here at (0,2,0): the rule that lifts a row's controls
+   over the overlay is weightless, so the label keeps this position
+   and takes only its z-index. */
+.rst-media__frame > .rst-selbox, [rst-media-frame] > [rst-selbox] { inset-block-start: var(--rst-sp-1); inset-inline-start: var(--rst-sp-1); position: absolute; }
+.rst-media__frame > .rst-selbox input, [rst-media-frame] > [rst-selbox] input { border-radius: 2px; box-shadow: 0 0 0 2px var(--rst-surface); }
+.rst-media__caption, [rst-media-caption] { padding: var(--rst-sp-2) var(--rst-sp-3) var(--rst-sp-3); }
+/* The name and the kebab share one line; the name takes the room and
+   ends in an ellipsis rather than wrapping under the kebab. */
+.rst-media__name, [rst-media-name] { align-items: center; display: flex; gap: var(--rst-sp-2); min-width: 0; }
+.rst-media__name > a, [rst-media-name] > a, .rst-media__name > span, [rst-media-name] > span { color: inherit; flex: 1 1 auto; font-weight: 600; min-width: 0; overflow: hidden; text-decoration: none; text-overflow: ellipsis; white-space: nowrap; }
+/* The tile is a link through its one name link, as a row is through
+   its own ([rst-row-main] > a::after above). */
+.rst-media__name > a::after, [rst-media-name] > a::after { content: ""; inset: 0; position: absolute; }
+.rst-media__name > a:hover, [rst-media-name] > a:hover { color: var(--rst-accent); }
+.rst-media__name > a:focus-visible, [rst-media-name] > a:focus-visible { outline: none; text-decoration: underline; }
+.rst-media__name > a:focus-visible::after, [rst-media-name] > a:focus-visible::after { border-radius: var(--rst-radius); outline: 2px solid var(--rst-accent); outline-offset: 2px; }
+/* Two lines, then an ellipsis, so a long description cannot push the
+   meta line out of its tile. "No description" takes the same colour
+   step down again (faint, still 4.5:1), so a tile without one is read
+   as such and not as a description that says so. */
+.rst-media__desc, [rst-media-desc] { -webkit-box-orient: vertical; -webkit-line-clamp: 2; color: var(--rst-text-muted); display: -webkit-box; font-size: var(--rst-fs-sm); line-height: 1.4; margin: var(--rst-sp-1) 0 0; overflow: hidden; }
+.rst-media__desc--none, [rst-media-desc~="none"] { color: var(--rst-text-faint); }
+/* Tabular numbers so a column of sizes lines up. */
+.rst-media__meta, [rst-media-meta] { color: var(--rst-text-faint); font-size: var(--rst-fs-xs); font-variant-numeric: tabular-nums; margin: var(--rst-sp-1) 0 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
 .rst-back-nav, [rst-back-nav] { margin: 0 0 var(--rst-sp-3); }
 .rst-back-nav a, [rst-back-nav] a { color: var(--rst-text-muted); text-decoration: none; }
 .rst-back-nav a:hover, [rst-back-nav] a:hover { color: var(--rst-accent); }
@@ -1931,7 +2316,18 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
 .rst-combo, [rst-combo] { position: relative; }
 .rst-combo__list, [rst-combo-list] { background: var(--rst-surface); border: 1px solid var(--rst-line); border-radius: 9px; box-shadow: var(--rst-shadow-pop); inset-inline: 0; list-style: none; margin-top: 4px; max-block-size: 15rem; overflow-y: auto; padding: 0.25rem; position: absolute; top: 100%; z-index: 30; }
 .rst-combo__option, [rst-combo-option] { border-radius: var(--rst-radius-sm); color: inherit; cursor: pointer; font-size: var(--rst-fs-sm); padding: 0.4rem 0.65rem; }
-.rst-combo__option:hover, [rst-combo-option]:hover, .rst-combo__option.is-active, [rst-combo-option].is-active { background: var(--rst-accent-soft); }
+/* The menu row's three states, plus the keyboard's: .is-active is the
+   row select.js walks to, hovered by no pointer, so it reads the hover
+   tint outside the hover query. It comes after the tap rule at the
+   same weight on purpose: a finger on the walked-to row keeps the
+   hover tint, as it did when hover was sticky on touch, rather than
+   clearing to the tap tint under the press. */
+.rst-combo__option:active, [rst-combo-option]:active { background: var(--rst-tint-tap, transparent); }
+.rst-combo__option.is-active, [rst-combo-option].is-active { background: var(--rst-tint-hover, var(--rst-accent-soft)); box-shadow: inset 0 1px 0 var(--rst-depth-hl, transparent); }
+@media (hover: hover) {
+  .rst-combo__option:hover, [rst-combo-option]:hover { background: var(--rst-tint-hover, var(--rst-accent-soft)); box-shadow: inset 0 1px 0 var(--rst-depth-hl, transparent); }
+  .rst-combo__option:hover:active, [rst-combo-option]:hover:active { background: var(--rst-tint-press, var(--rst-accent-soft)); }
+}
 /* The committed option is marked in the accessibility tree by
    aria-selected; this is the matching visual, never the only signal. */
 .rst-combo__option[aria-selected="true"], [rst-combo-option][aria-selected="true"] { font-weight: 600; }
@@ -1988,7 +2384,14 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
 .rst-dtp__pick svg, [rst-dtp-pick] svg { block-size: 1rem; inline-size: 1rem; }
 .rst-dtp__list, [rst-dtp-list] { background: var(--rst-surface); border: 1px solid var(--rst-line); border-radius: 9px; box-shadow: var(--rst-shadow-pop); inset-inline: 0; list-style: none; margin-block-start: 4px; max-block-size: 17rem; overflow-y: auto; padding: 0.25rem; position: absolute; top: 100%; z-index: 40; }
 .rst-dtp__row, [rst-dtp-row] { align-items: baseline; border-radius: var(--rst-radius-sm); color: inherit; cursor: pointer; display: flex; font-size: var(--rst-fs-sm); gap: 0.5rem; justify-content: space-between; padding: 0.4rem 0.65rem; }
-.rst-dtp__row:hover, [rst-dtp-row]:hover, .rst-dtp__row.is-active, [rst-dtp-row].is-active { background: var(--rst-accent-soft); }
+/* The menu row's three states and the keyboard's, as the combo's
+   option has them, in the same order for the same reason. */
+.rst-dtp__row:active, [rst-dtp-row]:active { background: var(--rst-tint-tap, transparent); }
+.rst-dtp__row.is-active, [rst-dtp-row].is-active { background: var(--rst-tint-hover, var(--rst-accent-soft)); box-shadow: inset 0 1px 0 var(--rst-depth-hl, transparent); }
+@media (hover: hover) {
+  .rst-dtp__row:hover, [rst-dtp-row]:hover { background: var(--rst-tint-hover, var(--rst-accent-soft)); box-shadow: inset 0 1px 0 var(--rst-depth-hl, transparent); }
+  .rst-dtp__row:hover:active, [rst-dtp-row]:hover:active { background: var(--rst-tint-press, var(--rst-accent-soft)); }
+}
 .rst-dtp__row--set .rst-dtp__label, [rst-dtp-row~="set"] [rst-dtp-label] { font-weight: 600; }
 .rst-dtp__quick .rst-dtp__set, [rst-dtp-quick] [rst-dtp-set] { color: var(--rst-text-muted); }
 /* The committed value is marked in the accessibility tree by
@@ -2081,7 +2484,7 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
 .rst-shell-topbar .rst-shell__bar, [rst-shell-topbar] [rst-shell-bar] { align-items: center; background: var(--rst-surface); border-block-end: 1px solid var(--rst-line); display: flex; flex-wrap: wrap; gap: var(--rst-sp-4); padding-block: 0.5rem; padding-inline: var(--rst-sp-4); }
 .rst-shell__brand, [rst-shell-brand] { color: inherit; font-weight: 650; text-decoration: none; }
 .rst-shell__nav, [rst-shell-nav] { display: flex; gap: var(--rst-sp-4); }
-.rst-shell__nav a, [rst-shell-nav] a { border-block-end: 2px solid transparent; color: var(--rst-text-muted); font-size: var(--rst-fs-sm); padding-block: 0.3rem; text-decoration: none; }
+.rst-shell__nav a, [rst-shell-nav] a { border-block-end: 2px solid transparent; color: var(--rst-text-muted); font-size: var(--rst-fs-sm); padding-block: 0.3rem; text-decoration: none; -webkit-tap-highlight-color: transparent; }
 .rst-shell__nav a:hover, [rst-shell-nav] a:hover { color: var(--rst-text); }
 .rst-shell__nav a[aria-current], [rst-shell-nav] a[aria-current] { border-block-end-color: var(--rst-accent); color: var(--rst-text); font-weight: 550; }
 .rst-shell__account, [rst-shell-account] { margin-inline-start: auto; }
@@ -2177,7 +2580,7 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
    not help, because the content fitted the content box and no scrollbar
    was ever owed. Anything sized against the viewport has to be measured
    the way the viewport measures it. */
-.rst-shell-sidebar > .rst-shell__rail, [rst-shell-sidebar] > [rst-shell-rail] { background: var(--rst-surface); border-block-end: 1px solid var(--rst-line); box-sizing: border-box; display: none; flex-direction: column; gap: var(--rst-sp-3); padding: var(--rst-sp-4); }
+.rst-shell-sidebar > .rst-shell__rail, [rst-shell-sidebar] > [rst-shell-rail] { background: var(--rst-rail-bg, var(--rst-surface)); border-block-end: 1px solid var(--rst-line); box-sizing: border-box; display: none; flex-direction: column; gap: var(--rst-sp-3); padding: var(--rst-sp-4); }
 /* LEGACY: the old drawer, see above. */
 .rst-shell-sidebar > .rst-shell__chrome > summary, [rst-shell-sidebar] > [rst-shell-chrome] > summary { align-items: center; border-block-end: 1px solid var(--rst-line); cursor: pointer; display: flex; font-size: var(--rst-fs-sm); font-weight: 550; gap: 0.3rem; list-style: none; padding-block: 0.55rem; padding-inline: var(--rst-sp-4); }
 /* LEGACY: the old drawer, see above. */
@@ -2186,9 +2589,34 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
 .rst-shell-sidebar > .rst-shell__chrome[open] + .rst-shell__rail, [rst-shell-sidebar] > [rst-shell-chrome][open] + [rst-shell-rail] { display: flex; }
 .rst-shell__group, [rst-shell-group] { color: var(--rst-text-faint); font-size: var(--rst-fs-xs); font-weight: 550; letter-spacing: 0.05em; margin-block: var(--rst-sp-3) 0.2rem; text-transform: uppercase; }
 .rst-shell-sidebar .rst-shell__nav, [rst-shell-sidebar] [rst-shell-nav] { flex-direction: column; gap: 2px; }
-.rst-shell-sidebar .rst-shell__nav a, [rst-shell-sidebar] [rst-shell-nav] a { border-block-end: 0; border-radius: var(--rst-radius-sm); display: block; padding-block: 0.35rem; padding-inline: 0.55rem; }
-.rst-shell-sidebar .rst-shell__nav a:hover, [rst-shell-sidebar] [rst-shell-nav] a:hover { background: var(--rst-accent-soft); color: var(--rst-text); }
-.rst-shell-sidebar .rst-shell__nav a[aria-current], [rst-shell-sidebar] [rst-shell-nav] a[aria-current] { background: var(--rst-accent-soft); color: var(--rst-accent); font-weight: 600; }
+/* The current item is a selected thumb, like a segmented control: its
+   fill and text are a token pair, so a theme can keep the tinted item
+   it has today, and its highlight, ring and contact shadow are depth
+   tokens, so a flat theme draws none. Hovering another item is a
+   half-raised preview of the thumb; pressed, it sinks.
+
+   The press is two rules (A15): :hover:active inside the hover query
+   is a mouse pressing a hovered item and reads the press tint; :active
+   outside it is a finger, which hovers nothing, and reads the tap
+   tint, transparent wherever a theme never set it, because a touch
+   press painted nothing before. The hover excludes the current item so
+   the thumb never takes the preview's tint over its own fill. The
+   phone's index rows match these rules too; the index block further
+   down outweighs them and keeps its rows tint only. The console's
+   items below repeat these rules word for word.
+
+   The 0.2s fade is declared on the hover rule, not at rest: a
+   transition at rest also ran on a scheme change, and an app's own
+   switch, which never calls rastrillo.js's land(), showed the new
+   text on the old ground for a fifth of a second (Astra A3). Hover-in
+   fades; hover-out, a press and a scheme change land at once. */
+.rst-shell-sidebar .rst-shell__nav a, [rst-shell-sidebar] [rst-shell-nav] a { border-block-end: 0; border-radius: var(--rst-radius-sm); display: block; padding-block: 0.35rem; padding-inline: 0.55rem; -webkit-tap-highlight-color: transparent; }
+.rst-shell-sidebar .rst-shell__nav a:not([aria-current]):active, [rst-shell-sidebar] [rst-shell-nav] a:not([aria-current]):active { background-color: var(--rst-tint-tap, transparent); box-shadow: inset 0 1px 2px var(--rst-depth-ambient, transparent); transition: none; }
+@media (hover: hover) {
+  .rst-shell-sidebar .rst-shell__nav a:not([aria-current]):hover, [rst-shell-sidebar] [rst-shell-nav] a:not([aria-current]):hover { background-color: var(--rst-tint-hover, var(--rst-accent-soft)); box-shadow: inset var(--rst-hl-x) 1px 0 var(--rst-depth-hl, transparent), 0 0 0 1px color-mix(in srgb, var(--rst-depth-contact, transparent) 60%, transparent), var(--rst-shadow-x) var(--rst-shadow-y) 1px var(--rst-depth-ambient, transparent); color: var(--rst-text); transition: background-color 0.2s ease, box-shadow 0.2s ease; }
+  .rst-shell-sidebar .rst-shell__nav a:not([aria-current]):hover:active, [rst-shell-sidebar] [rst-shell-nav] a:not([aria-current]):hover:active { background-color: var(--rst-tint-press, var(--rst-accent-soft)); box-shadow: inset 0 1px 2px var(--rst-depth-ambient, transparent); transition: none; }
+}
+.rst-shell-sidebar .rst-shell__nav a[aria-current], [rst-shell-sidebar] [rst-shell-nav] a[aria-current] { background-color: var(--rst-nav-current-bg, var(--rst-accent-soft)); box-shadow: inset var(--rst-hl-x) 1px 0 var(--rst-depth-hl, transparent), 0 0 0 1px var(--rst-depth-contact, transparent), var(--rst-shadow-x) var(--rst-shadow-y) 2px var(--rst-depth-contact, transparent); color: var(--rst-nav-current-fg, var(--rst-accent)); font-weight: 600; }
 /* The rail's foot — the language switcher and the person, in the corner
    an app puts them in everywhere else. margin-block-start: auto is the
    whole mechanism: the rail is a column flex box, so the auto margin
@@ -2340,11 +2768,17 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
    pinned to a bottom edge. box-sizing all the same, because the wide
    query below sizes something in this subtree against the viewport and
    a viewport promise has to be kept by the border box. */
-.rst-shell-console > .rst-shell__rail, [rst-shell-console] > [rst-shell-rail] { background: var(--rst-surface); border-block-end: 1px solid var(--rst-line); box-sizing: border-box; display: flex; flex-direction: column; gap: var(--rst-sp-3); padding: var(--rst-sp-4); }
+.rst-shell-console > .rst-shell__rail, [rst-shell-console] > [rst-shell-rail] { background: var(--rst-rail-bg, var(--rst-surface)); border-block-end: 1px solid var(--rst-line); box-sizing: border-box; display: flex; flex-direction: column; gap: var(--rst-sp-3); padding: var(--rst-sp-4); }
 .rst-shell-console .rst-shell__nav, [rst-shell-console] [rst-shell-nav] { flex-direction: column; gap: 2px; }
-.rst-shell-console .rst-shell__nav a, [rst-shell-console] [rst-shell-nav] a { border-block-end: 0; border-radius: var(--rst-radius-sm); display: block; padding-block: 0.35rem; padding-inline: 0.55rem; }
-.rst-shell-console .rst-shell__nav a:hover, [rst-shell-console] [rst-shell-nav] a:hover { background: var(--rst-accent-soft); color: var(--rst-text); }
-.rst-shell-console .rst-shell__nav a[aria-current], [rst-shell-console] [rst-shell-nav] a[aria-current] { background: var(--rst-accent-soft); color: var(--rst-accent); font-weight: 600; }
+/* The items are the sidebar's (the thumb comment above its nav rules),
+   spelled for the console. */
+.rst-shell-console .rst-shell__nav a, [rst-shell-console] [rst-shell-nav] a { border-block-end: 0; border-radius: var(--rst-radius-sm); display: block; padding-block: 0.35rem; padding-inline: 0.55rem; -webkit-tap-highlight-color: transparent; }
+.rst-shell-console .rst-shell__nav a:not([aria-current]):active, [rst-shell-console] [rst-shell-nav] a:not([aria-current]):active { background-color: var(--rst-tint-tap, transparent); box-shadow: inset 0 1px 2px var(--rst-depth-ambient, transparent); transition: none; }
+@media (hover: hover) {
+  .rst-shell-console .rst-shell__nav a:not([aria-current]):hover, [rst-shell-console] [rst-shell-nav] a:not([aria-current]):hover { background-color: var(--rst-tint-hover, var(--rst-accent-soft)); box-shadow: inset var(--rst-hl-x) 1px 0 var(--rst-depth-hl, transparent), 0 0 0 1px color-mix(in srgb, var(--rst-depth-contact, transparent) 60%, transparent), var(--rst-shadow-x) var(--rst-shadow-y) 1px var(--rst-depth-ambient, transparent); color: var(--rst-text); transition: background-color 0.2s ease, box-shadow 0.2s ease; }
+  .rst-shell-console .rst-shell__nav a:not([aria-current]):hover:active, [rst-shell-console] [rst-shell-nav] a:not([aria-current]):hover:active { background-color: var(--rst-tint-press, var(--rst-accent-soft)); box-shadow: inset 0 1px 2px var(--rst-depth-ambient, transparent); transition: none; }
+}
+.rst-shell-console .rst-shell__nav a[aria-current], [rst-shell-console] [rst-shell-nav] a[aria-current] { background-color: var(--rst-nav-current-bg, var(--rst-accent-soft)); box-shadow: inset var(--rst-hl-x) 1px 0 var(--rst-depth-hl, transparent), 0 0 0 1px var(--rst-depth-contact, transparent), var(--rst-shadow-x) var(--rst-shadow-y) 2px var(--rst-depth-contact, transparent); color: var(--rst-nav-current-fg, var(--rst-accent)); font-weight: 600; }
 .rst-shell-console .rst-shell__menu:not([open]) + .rst-shell__tail, [rst-shell-console] [rst-shell-menu]:not([open]) + [rst-shell-tail] { display: none; }
 /* LEGACY: the rail gated on the Menu's [open], for console layouts
    written before the phone index. A root with a view is new markup,
@@ -2471,16 +2905,32 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
   .rst-shell-topbar .rst-shell__menu[open] + .rst-shell__tail, [rst-shell-topbar] [rst-shell-menu][open] + [rst-shell-tail], .rst-shell-console--page .rst-shell__menu[open] + .rst-shell__tail, .rst-shell-console--index .rst-shell__menu[open] + .rst-shell__tail, [rst-shell-console~="page"] [rst-shell-menu][open] + [rst-shell-tail], [rst-shell-console~="index"] [rst-shell-menu][open] + [rst-shell-tail] { animation: rst-shell-drop 0.14s ease-out; background: var(--rst-surface); border: 1px solid var(--rst-line); border-radius: 9px; box-shadow: var(--rst-shadow-pop); box-sizing: border-box; flex-basis: auto; gap: 0; inline-size: min(20rem, calc(100% - 1.5rem)); inset-block-start: calc(100% + 6px); inset-inline-end: 0.75rem; max-block-size: calc(100dvh - 5rem); overflow-y: auto; overscroll-behavior: contain; padding: 0.35rem; position: absolute; z-index: 2; }
   .rst-shell-topbar .rst-shell__tail > .rst-shell__nav, [rst-shell-topbar] [rst-shell-tail] > [rst-shell-nav] { align-items: stretch; gap: 0; }
   .rst-shell-topbar .rst-shell__tail > .rst-shell__nav a, [rst-shell-topbar] [rst-shell-tail] > [rst-shell-nav] a { border-block-end: 0; border-radius: var(--rst-radius-sm); color: var(--rst-text); padding-block: 0.55rem; padding-inline: 0.75rem; }
-  .rst-shell-topbar .rst-shell__tail > .rst-shell__nav a[aria-current], [rst-shell-topbar] [rst-shell-tail] > [rst-shell-nav] a[aria-current] { background: var(--rst-accent-soft); box-shadow: none; color: var(--rst-accent); font-weight: 600; }
+  /* The card's links tint with no depth. The hover is a token of its
+     own, transparent unless a theme sets it, because the card had no
+     hover before and a flat theme must keep none (A15); the mouse press
+     and the tap read the tap tint, transparent likewise. The hover and
+     the press sit in the hover query after this block. The current item
+     is the rail's token pair with the thumb's three shadow layers,
+     transparent in a flat theme, so in day it reads as a thumb on the
+     card rather than white on white. */
+  .rst-shell-topbar .rst-shell__tail > .rst-shell__nav a:not([aria-current]):active, [rst-shell-topbar] [rst-shell-tail] > [rst-shell-nav] a:not([aria-current]):active { background-color: var(--rst-tint-tap, transparent); }
+  .rst-shell-topbar .rst-shell__tail > .rst-shell__nav a[aria-current], [rst-shell-topbar] [rst-shell-tail] > [rst-shell-nav] a[aria-current] { background: var(--rst-nav-current-bg, var(--rst-accent-soft)); box-shadow: inset var(--rst-hl-x) 1px 0 var(--rst-depth-hl, transparent), 0 0 0 1px var(--rst-depth-contact, transparent), var(--rst-shadow-x) var(--rst-shadow-y) 2px var(--rst-depth-contact, transparent); color: var(--rst-nav-current-fg, var(--rst-accent)); font-weight: 600; }
   /* Topbar only: the rule separates the account from the nav above it,
      and in the console's card the account is first, under nothing. */
   .rst-shell-topbar .rst-shell__tail > .rst-shell__account, [rst-shell-topbar] [rst-shell-tail] > [rst-shell-account] { border-block-start: 1px solid var(--rst-line); margin-block-start: 0.35rem; padding-block-start: 0.35rem; }
   .rst-shell-topbar .rst-shell__tail > .rst-shell__account > summary, [rst-shell-topbar] [rst-shell-tail] > [rst-shell-account] > summary, .rst-shell-console--page .rst-shell__tail > .rst-shell__account > summary, .rst-shell-console--index .rst-shell__tail > .rst-shell__account > summary, [rst-shell-console~="page"] [rst-shell-tail] > [rst-shell-account] > summary, [rst-shell-console~="index"] [rst-shell-tail] > [rst-shell-account] > summary { justify-content: space-between; padding-inline: 0.75rem; }
   .rst-shell-topbar .rst-shell__tail .rst-dropdown__menu, [rst-shell-topbar] [rst-shell-tail] [rst-dropdown-menu], .rst-shell-console--page .rst-shell__tail .rst-dropdown__menu, .rst-shell-console--index .rst-shell__tail .rst-dropdown__menu, [rst-shell-console~="page"] [rst-shell-tail] [rst-dropdown-menu], [rst-shell-console~="index"] [rst-shell-tail] [rst-dropdown-menu] { border: 0; box-shadow: none; inset: auto; margin: 0; max-block-size: none; min-width: 0; padding-block: 0; padding-inline: 0.5rem 0; position: static; }
 }
+/* One query, not a hover query nested in the width query: the motion
+   gate's parser counts one level of nesting. */
+@media (max-width: 799.98px) and (hover: hover) {
+  .rst-shell-topbar .rst-shell__tail > .rst-shell__nav a:not([aria-current]):hover, [rst-shell-topbar] [rst-shell-tail] > [rst-shell-nav] a:not([aria-current]):hover { background-color: var(--rst-tint-card-hover, transparent); }
+  .rst-shell-topbar .rst-shell__tail > .rst-shell__nav a:not([aria-current]):hover:active, [rst-shell-topbar] [rst-shell-tail] > [rst-shell-nav] a:not([aria-current]):hover:active { background-color: var(--rst-tint-tap, transparent); }
+}
 @keyframes rst-shell-drop { from { opacity: 0; transform: translateY(-4px); } }
 @media (prefers-reduced-motion: reduce) {
   .rst-shell-topbar .rst-shell__menu[open] + .rst-shell__tail, [rst-shell-topbar] [rst-shell-menu][open] + [rst-shell-tail], .rst-shell-console--page .rst-shell__menu[open] + .rst-shell__tail, .rst-shell-console--index .rst-shell__menu[open] + .rst-shell__tail, [rst-shell-console~="page"] [rst-shell-menu][open] + [rst-shell-tail], [rst-shell-console~="index"] [rst-shell-menu][open] + [rst-shell-tail] { animation: none; }
+  .rst-shell-sidebar .rst-shell__nav a:not([aria-current]):hover, [rst-shell-sidebar] [rst-shell-nav] a:not([aria-current]):hover, .rst-shell-console .rst-shell__nav a:not([aria-current]):hover, [rst-shell-console] [rst-shell-nav] a:not([aria-current]):hover { transition: none; }
 }
 
 /* ── Sidebar and console on a phone: the index and the back control ──
@@ -2587,13 +3037,24 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
      marked here: the index is its own page, where "current" is not
      true. */
   .rst-shell-sidebar--index .rst-shell__nav, [rst-shell-sidebar~="index"] [rst-shell-nav], .rst-shell-console--index .rst-shell__nav, [rst-shell-console~="index"] [rst-shell-nav] { gap: 0; }
-  .rst-shell-sidebar--index .rst-shell__nav > a, [rst-shell-sidebar~="index"] [rst-shell-nav] > a, .rst-shell-sidebar--index .rst-shell__nav > a[aria-current], [rst-shell-sidebar~="index"] [rst-shell-nav] > a[aria-current], .rst-shell-console--index .rst-shell__nav > a, [rst-shell-console~="index"] [rst-shell-nav] > a, .rst-shell-console--index .rst-shell__nav > a[aria-current], [rst-shell-console~="index"] [rst-shell-nav] > a[aria-current] { align-items: center; background: var(--rst-surface); border: 1px solid var(--rst-line); border-block-start-width: 0; border-radius: 0; box-sizing: border-box; color: var(--rst-text); display: flex; font-size: 1rem; font-weight: 450; gap: var(--rst-sp-3); min-block-size: 3rem; padding-block: 0; padding-inline: 1rem 0.75rem; }
+  .rst-shell-sidebar--index .rst-shell__nav > a, [rst-shell-sidebar~="index"] [rst-shell-nav] > a, .rst-shell-sidebar--index .rst-shell__nav > a[aria-current], [rst-shell-sidebar~="index"] [rst-shell-nav] > a[aria-current], .rst-shell-console--index .rst-shell__nav > a, [rst-shell-console~="index"] [rst-shell-nav] > a, .rst-shell-console--index .rst-shell__nav > a[aria-current], [rst-shell-console~="index"] [rst-shell-nav] > a[aria-current] { align-items: center; background: var(--rst-surface); border: 1px solid var(--rst-line); border-block-start-width: 0; border-radius: 0; box-shadow: none; box-sizing: border-box; color: var(--rst-text); display: flex; font-size: 1rem; font-weight: 450; gap: var(--rst-sp-3); min-block-size: 3rem; padding-block: 0; padding-inline: 1rem 0.75rem; transition: none; }
   .rst-shell-sidebar--index .rst-shell__nav > a:first-child, [rst-shell-sidebar~="index"] [rst-shell-nav] > a:first-child, .rst-shell-sidebar--index .rst-shell__nav > .rst-shell__group + a, [rst-shell-sidebar~="index"] [rst-shell-nav] > [rst-shell-group] + a, .rst-shell-console--index .rst-shell__nav > a:first-child, [rst-shell-console~="index"] [rst-shell-nav] > a:first-child, .rst-shell-console--index .rst-shell__nav > .rst-shell__group + a, [rst-shell-console~="index"] [rst-shell-nav] > [rst-shell-group] + a { border-block-start-width: 1px; border-start-end-radius: var(--rst-radius); border-start-start-radius: var(--rst-radius); }
   .rst-shell-sidebar--index .rst-shell__nav > a:last-child, [rst-shell-sidebar~="index"] [rst-shell-nav] > a:last-child, .rst-shell-console--index .rst-shell__nav > a:last-child, [rst-shell-console~="index"] [rst-shell-nav] > a:last-child { border-end-end-radius: var(--rst-radius); border-end-start-radius: var(--rst-radius); }
   .rst-shell-sidebar--index .rst-shell__nav > a:has(+ .rst-shell__group), [rst-shell-sidebar~="index"] [rst-shell-nav] > a:has(+ [rst-shell-group]), .rst-shell-console--index .rst-shell__nav > a:has(+ .rst-shell__group), [rst-shell-console~="index"] [rst-shell-nav] > a:has(+ [rst-shell-group]) { border-end-end-radius: var(--rst-radius); border-end-start-radius: var(--rst-radius); }
   .rst-shell-sidebar--index .rst-shell__nav > a::after, [rst-shell-sidebar~="index"] [rst-shell-nav] > a::after, .rst-shell-console--index .rst-shell__nav > a::after, [rst-shell-console~="index"] [rst-shell-nav] > a::after { block-size: 0.5rem; border-right: 2px solid var(--rst-text-faint); border-top: 2px solid var(--rst-text-faint); content: ""; flex: none; inline-size: 0.5rem; margin-inline-start: auto; transform: rotate(45deg); }
   [dir="rtl"] .rst-shell-sidebar--index .rst-shell__nav > a::after, [dir="rtl"] [rst-shell-sidebar~="index"] [rst-shell-nav] > a::after, [dir="rtl"] .rst-shell-console--index .rst-shell__nav > a::after, [dir="rtl"] [rst-shell-console~="index"] [rst-shell-nav] > a::after { transform: rotate(-135deg); }
-  .rst-shell-sidebar--index .rst-shell__nav > a:hover, [rst-shell-sidebar~="index"] [rst-shell-nav] > a:hover, .rst-shell-sidebar--index .rst-shell__nav > a:active, [rst-shell-sidebar~="index"] [rst-shell-nav] > a:active, .rst-shell-console--index .rst-shell__nav > a:hover, [rst-shell-console~="index"] [rst-shell-nav] > a:hover, .rst-shell-console--index .rst-shell__nav > a:active, [rst-shell-console~="index"] [rst-shell-nav] > a:active { background: var(--rst-accent-soft); }
+  /* A row tints and nothing else. The rail items' state rules above
+     match these links too and outweigh a plain index selector, so each
+     state here repeats the root's own name to outweigh them (the sm
+     button's trick) and sets the shadow off: the thumb's ring doubled a
+     row's border. Both rules stay outside the hover query, where
+     today's one rule was, and the press reads the press tint, not the
+     tap tint: a tapped row painted accent-soft before (a tap hovers
+     too), and the tap tint is transparent in every theme but day, which
+     would have blanked the tap in plain and signal. The active rule
+     follows the hover so the press wins while both hold. */
+  .rst-shell-sidebar.rst-shell-sidebar--index .rst-shell__nav > a:hover, [rst-shell-sidebar][rst-shell-sidebar~="index"] [rst-shell-nav] > a:hover, .rst-shell-console.rst-shell-console--index .rst-shell__nav > a:hover, [rst-shell-console][rst-shell-console~="index"] [rst-shell-nav] > a:hover { background: var(--rst-tint-hover, var(--rst-accent-soft)); box-shadow: none; }
+  .rst-shell-sidebar.rst-shell-sidebar--index .rst-shell__nav > a:active, [rst-shell-sidebar][rst-shell-sidebar~="index"] [rst-shell-nav] > a:active, .rst-shell-console.rst-shell-console--index .rst-shell__nav > a:active, [rst-shell-console][rst-shell-console~="index"] [rst-shell-nav] > a:active, .rst-shell-sidebar.rst-shell-sidebar--index .rst-shell__nav > a:hover:active, [rst-shell-sidebar][rst-shell-sidebar~="index"] [rst-shell-nav] > a:hover:active, .rst-shell-console.rst-shell-console--index .rst-shell__nav > a:hover:active, [rst-shell-console][rst-shell-console~="index"] [rst-shell-nav] > a:hover:active { background: var(--rst-tint-press, var(--rst-accent-soft)); box-shadow: none; }
   .rst-shell-sidebar--index .rst-shell__nav > a:focus-visible, [rst-shell-sidebar~="index"] [rst-shell-nav] > a:focus-visible, .rst-shell-console--index .rst-shell__nav > a:focus-visible, [rst-shell-console~="index"] [rst-shell-nav] > a:focus-visible { outline: 2px solid var(--rst-accent); outline-offset: -2px; }
   /* "You came from here": the back link points at #nav-<section>, and
      that row flashes once as the index comes back. */
@@ -2911,6 +3372,91 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
   :is(.rst-cal, .rst-dtp .rst-cal, .rst-dtp.is-above .rst-cal), :is([rst-cal], [rst-dtp] [rst-cal], [rst-dtp].is-above [rst-cal]) { box-sizing: border-box; inline-size: fit-content; inset-block-end: var(--rst-sp-2); inset-block-start: auto; inset-inline: 0; margin: 0 auto; max-block-size: calc(100dvh - 2 * var(--rst-sp-2)); max-inline-size: calc(100vw - 2 * var(--rst-sp-2)); overflow-y: auto; overscroll-behavior: contain; position: fixed; scrollbar-gutter: stable; top: auto; }
   :is(.rst-cal, .rst-dtp .rst-cal) .rst-cal__grid, :is([rst-cal], [rst-dtp] [rst-cal]) [rst-cal-grid] { inline-size: calc(7 * var(--rst-tap)); max-inline-size: 100%; }
 }
+
+/* Forced colours strip backgrounds and shadows but keep borders. The
+   depth language reads tokens, so this block sets them flat on
+   html:root, which outranks the theme's :root, and every rule in every
+   state paints flat; what a token cannot say is said here: a real
+   border on everything that was drawn by a shadow, the knob in
+   ButtonText, the highlight pair on the current item. light.js checks
+   the same query and does no work.
+
+   The summary's edge is a ring in its shadow, drawn by rules at (0,4,1)
+   and up, so it is flattened as a token rather than fought at a
+   selector. The current items set no forced-color-adjust: the mode
+   keeps a system colour on its own (measured), and switching its
+   repainting off would have let a focus ring in the theme's accent, a
+   hovered chip's white face and any later rule on those items escape
+   the reader's palette. The box-shadow: none is insurance for the
+   tab's lift, a theme shadow the axis never flattened. The phone
+   index's current link is named again in its hover and press: the
+   index ladder sits at (0,4,1) and up and paints its surface over the
+   highlight while the text stays HighlightText, white on white.
+   Chromium drops every gradient layer and every shadow of its own (a
+   hovered knob computes "none, none"), which is why the rest of the
+   block is borders and system colours only. The checked knob is
+   HighlightText on its Highlight track: the pair a palette guarantees
+   contrasts. It was ButtonText, which need not (a white ButtonText on
+   a cyan Highlight is about 1.25:1), and the drive holds the checked
+   switch and the toggle block's head to the pair (Astra A4). */
+@media (forced-colors: active) {
+  html:root { --rst-depth-hl: transparent; --rst-depth-contact: transparent; --rst-depth-ambient: transparent; --rst-depth-face: 0; --rst-press-drop: 0px; --rst-sheen-fill: transparent; --rst-sheen-plain: transparent; --rst-light-wash: transparent; --rst-light-rim: var(--rst-line); --rst-press-wash: 0; --rst-press-spot: 0; --rst-press-wash-plain: 0; --rst-press-spot-plain: 0; --rst-tint-hover: var(--rst-surface); --rst-tint-press: var(--rst-surface); --rst-tint-tap: transparent; --rst-row-tint-hover: var(--rst-surface); --rst-row-tint-press: var(--rst-surface); --rst-tint-tile-hover: var(--rst-surface); --rst-tint-tile-press: var(--rst-surface); --rst-tint-card-hover: transparent; --rst-tint-group-hover: transparent; --rst-focus-halo: transparent; --rst-summary-edge: transparent; --rst-summary-edge-hover: transparent; }
+  .rst-btn, [rst-btn], .rst-input, [rst-input], .rst-textarea, [rst-textarea], .rst-search, [rst-search], .rst-dropdown > summary, [rst-dropdown] > summary { border: 1px solid ButtonBorder; }
+  .rst-box, [rst-box], .rst-card, [rst-card], .rst-stats, [rst-stats], .rst-list, [rst-list] { border: 1px solid CanvasText; }
+  .rst-switch__track, [rst-switch-track] { background: Canvas; border: 1px solid ButtonText; }
+  .rst-switch__track::after, [rst-switch-track]::after { background: ButtonText; }
+  .rst-switch:has(input:checked) .rst-switch__track, [rst-switch]:has(input:checked) [rst-switch-track], .rst-tblock:has(.rst-tblock__head input:checked) .rst-switch__track, [rst-tblock]:has([rst-tblock-head] input:checked) [rst-switch-track] { background: Highlight; }
+  .rst-switch:has(input:checked) .rst-switch__track::after, [rst-switch]:has(input:checked) [rst-switch-track]::after, .rst-tblock:has(.rst-tblock__head input:checked) .rst-switch__track::after, [rst-tblock]:has([rst-tblock-head] input:checked) [rst-switch-track]::after { background: HighlightText; }
+  .rst-shell-sidebar .rst-shell__nav a[aria-current], [rst-shell-sidebar] [rst-shell-nav] a[aria-current], .rst-shell-console .rst-shell__nav a[aria-current], [rst-shell-console] [rst-shell-nav] a[aria-current], .rst-shell-topbar .rst-shell__tail > .rst-shell__nav a[aria-current], [rst-shell-topbar] [rst-shell-tail] > [rst-shell-nav] a[aria-current], .rst-dropdown__menu a[aria-current], [rst-dropdown-menu] a[aria-current], .rst-pagination [aria-current="page"], [rst-pagination] [aria-current="page"], .rst-seg-tabs a[aria-current], [rst-seg-tabs] a[aria-current] { background: Highlight; box-shadow: none; color: HighlightText; }
+  .rst-shell-sidebar.rst-shell-sidebar--index .rst-shell__nav > a[aria-current]:hover, .rst-shell-sidebar.rst-shell-sidebar--index .rst-shell__nav > a[aria-current]:active, [rst-shell-sidebar][rst-shell-sidebar~="index"] [rst-shell-nav] > a[aria-current]:hover, [rst-shell-sidebar][rst-shell-sidebar~="index"] [rst-shell-nav] > a[aria-current]:active, .rst-shell-console.rst-shell-console--index .rst-shell__nav > a[aria-current]:hover, .rst-shell-console.rst-shell-console--index .rst-shell__nav > a[aria-current]:active, [rst-shell-console][rst-shell-console~="index"] [rst-shell-nav] > a[aria-current]:hover, [rst-shell-console][rst-shell-console~="index"] [rst-shell-nav] > a[aria-current]:active { background: Highlight; color: HighlightText; }
+}
+/* Print drops every shadow, gradient, sheen and tint the same way,
+   flattening the tokens at html:root. Cards, fields and controls get a
+   --rst-line-strong border, the knob a printable fill, and a filled
+   button prints as outlined text: a solid block of colour on paper is
+   a block, not a button.
+
+   The fills, faces, edges and labels are tokens too, so a hovered or
+   pressed button is outlined text by the same rules that fill it on
+   screen; the press numbers day restates for dark sit in :root blocks
+   above html:root, which does not matter, because the layers they
+   feed are the buttons' background-image, reset here at the base rule
+   no state rule sets. The summary's border is its printable edge; the
+   ring is flattened as a token, as above. The knob's ring is an
+   outline, not a border: a border would add 2px to a 15px knob. No
+   shadow token is set to none: inside a composed shadow list none is
+   not a layer, and the whole list would be invalid, so the menus, tabs
+   and knob get box-shadow: none at their own selectors. The checked
+   track keeps a fill, the strong line: with both tracks empty rings a
+   lone switch on paper gave no reference for which end means on. */
+@media print {
+  html:root { --rst-depth-hl: transparent; --rst-depth-contact: transparent; --rst-depth-ambient: transparent; --rst-depth-face: 0; --rst-press-drop: 0px; --rst-sheen-fill: transparent; --rst-sheen-plain: transparent; --rst-light-wash: transparent; --rst-light-rim: var(--rst-line); --rst-press-wash: 0; --rst-press-spot: 0; --rst-press-wash-plain: 0; --rst-press-spot-plain: 0; --rst-tint-hover: var(--rst-surface); --rst-tint-press: var(--rst-surface); --rst-tint-tap: transparent; --rst-row-tint-hover: var(--rst-surface); --rst-row-tint-press: var(--rst-surface); --rst-tint-tile-hover: var(--rst-surface); --rst-tint-tile-press: var(--rst-surface); --rst-tint-card-hover: transparent; --rst-tint-group-hover: transparent; --rst-focus-halo: transparent; --rst-summary-edge: transparent; --rst-summary-edge-hover: transparent;
+    --rst-accent-fill: transparent; --rst-accent-fill-hover: transparent; --rst-accent-fill-edge: var(--rst-line-strong); --rst-accent-fill-edge-hover: var(--rst-line-strong); --rst-on-accent-fill: var(--rst-text);
+    --rst-danger-fill: transparent; --rst-danger-fill-hover: transparent; --rst-danger-fill-edge: var(--rst-line-strong); --rst-danger-fill-edge-hover: var(--rst-line-strong); --rst-on-danger-fill: var(--rst-text); --rst-on-danger-fill-hover: var(--rst-text); --rst-danger-hover-filter: none;
+    --rst-control-face: transparent; --rst-control-face-hover: transparent; --rst-control-face-press: transparent; --rst-control-border: var(--rst-line-strong); --rst-control-border-hover: var(--rst-line-strong); --rst-control-text-hover: var(--rst-text);
+    --rst-ghost-edge: var(--rst-line-strong); --rst-ghost-face-hover: transparent; --rst-ghost-edge-hover: var(--rst-line-strong);
+    --rst-summary-face: transparent; --rst-summary-face-hover: transparent;
+    --rst-knob: var(--rst-text); --rst-knob-shade: var(--rst-text); --rst-track-off: transparent; --rst-nav-current-bg: transparent; --rst-nav-current-fg: var(--rst-text); --rst-focus-edge: var(--rst-line-strong); }
+  .rst-btn, [rst-btn], .rst-input, [rst-input], .rst-textarea, [rst-textarea], .rst-search, [rst-search], .rst-dropdown > summary, [rst-dropdown] > summary { background-image: none; border: 1px solid var(--rst-line-strong); box-shadow: none; }
+  .rst-box, [rst-box], .rst-card, [rst-card], .rst-stats, [rst-stats], .rst-list, [rst-list] { background: transparent; border: 1px solid var(--rst-line-strong); box-shadow: none; }
+  .rst-dropdown__menu, [rst-dropdown-menu], .rst-row-menu__panel, [rst-row-menu-panel] { border-color: var(--rst-line-strong); box-shadow: none; }
+  .rst-switch__track, [rst-switch-track] { border: 1px solid var(--rst-line-strong); box-shadow: none; }
+  .rst-switch:has(input:checked) .rst-switch__track, [rst-switch]:has(input:checked) [rst-switch-track], .rst-tblock:has(.rst-tblock__head input:checked) .rst-switch__track, [rst-tblock]:has([rst-tblock-head] input:checked) [rst-switch-track] { background-color: var(--rst-line-strong); }
+  .rst-switch__track::after, [rst-switch-track]::after { background-image: none; box-shadow: none; outline: 1px solid var(--rst-line-strong); outline-offset: -1px; }
+  .rst-shell-sidebar .rst-shell__nav a[aria-current], [rst-shell-sidebar] [rst-shell-nav] a[aria-current], .rst-shell-console .rst-shell__nav a[aria-current], [rst-shell-console] [rst-shell-nav] a[aria-current], .rst-shell-topbar .rst-shell__tail > .rst-shell__nav a[aria-current], [rst-shell-topbar] [rst-shell-tail] > [rst-shell-nav] a[aria-current], .rst-seg-tabs a[aria-current], [rst-seg-tabs] a[aria-current], .rst-pagination [aria-current="page"], [rst-pagination] [aria-current="page"] { box-shadow: none; }
+  /* The current chip's edge was its fill, transparent above, and the
+     other chips keep their line: without this the current page is the
+     one chip with no outline on paper. */
+  .rst-pagination [aria-current="page"], [rst-pagination] [aria-current="page"] { border-color: var(--rst-line-strong); }
+}
+
+/* The browser's own tap flash is a different grey from the press tint,
+   and iOS paints it on the link alone, so a tapped row lit in two
+   colours. Everything with its own press state turns it off. (Buttons
+   and nav items do it in their own base rules; this is the rest.) Here
+   and not after the floor block, which may carry only sizes, and not
+   after the utilities, which must stay last. */
+.rst-row a, [rst-row] a, .rst-lrow a, [rst-lrow] a, .rst-media__tile a, [rst-media-tile] a, .rst-dropdown__menu a, [rst-dropdown-menu] a, .rst-dropdown__menu button, [rst-dropdown-menu] button, .rst-dropdown__menu .rst-menu-group > summary, [rst-dropdown-menu] [rst-menu-group] > summary, .rst-row-menu__panel a, [rst-row-menu-panel] a, .rst-row-menu__panel button, [rst-row-menu-panel] button, .rst-row-menu > summary, [rst-row-menu] > summary, .rst-locale button, [rst-locale] button, .rst-scheme button, [rst-scheme] button, .rst-combo__option, [rst-combo-option], .rst-dtp__row, [rst-dtp-row], .rst-switch, [rst-switch], .rst-tblock__head, [rst-tblock-head] { -webkit-tap-highlight-color: transparent; }
 
 /* ── Target floors, at every width ──────────────────────────────────
    Every interactive idiom is at least --rst-target on both axes: 32px

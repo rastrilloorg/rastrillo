@@ -272,12 +272,12 @@ func TestPricesRefusesAnEventItCouldNotReplay(t *testing.T) {
 	h, db := newPricesApp(t)
 	want(t, do(t, h, "POST", "/prices", url.Values{"Title": {"Lunch"}, "Amount": {"12.50"}, "Amount.locale": {"en"}, "Amount.currency": {"EUR"}}), http.StatusSeeOther)
 	store := pricesstore.New(db)
-	minor, usd := int64(1300), "USD"
-	err := store.UpdatePriceBasics(context.Background(), pricesstore.UpdatePriceBasicsParams{ID: 1, Title: "Lunch", AmountMinor: &minor, AmountCurrency: &usd, Now: "x"})
+	minor, usd, title := int64(1300), "USD", "Lunch"
+	_, err := store.UpdatePrice(context.Background(), "app", pricesstore.UpdatePriceParams{ID: 1, Title: &title, AmountSet: true, AmountMinor: &minor, AmountCurrency: &usd, Now: "x"})
 	if err == nil || err.Error() != "prices/1: event 1: Amount changes currency EUR to USD: a currency change needs its own event" {
 		t.Errorf("a currency change: %v", err)
 	}
-	err = store.UpdatePriceBasics(context.Background(), pricesstore.UpdatePriceBasicsParams{ID: 1, Title: "Lunch", AmountMinor: &minor, Now: "x"})
+	_, err = store.UpdatePrice(context.Background(), "app", pricesstore.UpdatePriceParams{ID: 1, Title: &title, AmountSet: true, AmountMinor: &minor, Now: "x"})
 	if err == nil || err.Error() != "prices/1: event 1: Amount clears the amount or the currency but not both" {
 		t.Errorf("an amount without its currency: %v", err)
 	}
@@ -467,11 +467,13 @@ func clearThenUSD(t *testing.T, path string, id int64) func() {
 	return clearThenFill(t, path, id, "USD", 1000)
 }
 
-// clearAmount is another writer clearing the amount.
+// clearAmount is another writer clearing the amount. AmountSet with
+// both pointers nil is the clear the group update always wrote.
 func clearAmount(t *testing.T, path string, id int64) func() {
 	return func() {
 		other := pricesstore.New(openPlain(t, path))
-		if err := other.UpdatePriceBasics(context.Background(), pricesstore.UpdatePriceBasicsParams{ID: id, Title: "Lunch", Now: "d"}); err != nil {
+		title := "Lunch"
+		if _, err := other.UpdatePrice(context.Background(), "app", pricesstore.UpdatePriceParams{ID: id, Title: &title, AmountSet: true, Now: "d"}); err != nil {
 			t.Errorf("the racing clear: %v", err)
 		}
 	}
@@ -483,33 +485,38 @@ func clearThenFill(t *testing.T, path string, id int64, code string, minor int64
 	return func() {
 		other := pricesstore.New(openPlain(t, path))
 		ctx := context.Background()
-		if err := other.UpdatePriceBasics(ctx, pricesstore.UpdatePriceBasicsParams{ID: id, Title: "Lunch", Now: "b"}); err != nil {
+		title := "Lunch"
+		if _, err := other.UpdatePrice(ctx, "app", pricesstore.UpdatePriceParams{ID: id, Title: &title, AmountSet: true, Now: "b"}); err != nil {
 			t.Errorf("the racing clear: %v", err)
 		}
-		if err := other.UpdatePriceBasics(ctx, pricesstore.UpdatePriceBasicsParams{ID: id, Title: "Lunch", AmountMinor: &minor, AmountCurrency: &code, Now: "c"}); err != nil {
+		if _, err := other.UpdatePrice(ctx, "app", pricesstore.UpdatePriceParams{ID: id, Title: &title, AmountSet: true, AmountMinor: &minor, AmountCurrency: &code, Now: "c"}); err != nil {
 			t.Errorf("the racing fill to %s: %v", code, err)
 		}
 	}
 }
 
 // Astra's finding 1: an update checked against history that changed
-// after the store read it is refused, and the stream stays readable.
-// Before the fix the store checked its EUR update against the EUR it
-// had read and appended it after the USD fill, and every later read of
-// the stream, and every boot, failed.
+// after it was read is refused, and the stream stays readable. Before
+// the fix the store checked its EUR update against the EUR it had read
+// and appended it after the USD fill, and every later read of the
+// stream, and every boot, failed. The store has no read outside its
+// lock now, so the window is the operation's: read 1 is its load.
 func TestPricesRacingUpdateCannotPoisonTheStream(t *testing.T) {
 	_, db := newPricesApp(t)
 	path := os.Getenv("DB")
 	ctx := context.Background()
 	eur, lunch, later := "EUR", int64(1250), int64(1300)
-	id, err := pricesstore.New(db).CreatePrice(ctx, pricesstore.CreatePriceParams{Title: "Lunch", AmountMinor: &lunch, AmountCurrency: &eur, Now: "a"})
+	id, err := pricesstore.New(db).CreatePrice(ctx, "app", pricesstore.CreatePriceParams{Title: "Lunch", AmountMinor: &lunch, AmountCurrency: &eur, Now: "a"})
 	if err != nil {
 		t.Fatal(err)
 	}
 	afterRead(1, clearThenUSD(t, path, id))
-	err = pricesstore.New(openHooked(t, path)).UpdatePriceBasics(ctx, pricesstore.UpdatePriceBasicsParams{ID: id, Title: "Lunch", AmountMinor: &later, AmountCurrency: &eur, Now: "d"})
-	if err == nil || err.Error() != "prices/1: event 3: Amount changes currency USD to EUR: a currency change needs its own event" {
-		t.Errorf("the stale update: %v; want it refused as a currency change", err)
+	_, err = ops_prices.Update(ctx, &rastrillo.Ctx{DB: openHooked(t, path)}, id, ops_prices.UpdateInput{
+		Title:  op.Some("Lunch"),
+		Amount: op.Nullable[op.Money]{Value: op.Money{Amount: later, Currency: eur}, Set: true},
+	})
+	if !errors.As(err, new(op.Conflict)) {
+		t.Errorf("the stale update: %v; want op.Conflict, refused on the history under the lock", err)
 	}
 	p, err := pricesstore.New(db).GetPrice(ctx, id)
 	if err != nil || p.AmountMinor == nil || *p.AmountMinor != 1000 || *p.AmountCurrency != "USD" {
@@ -638,15 +645,15 @@ func TestPricesConcurrentCreatesTakeDistinctIds(t *testing.T) {
 	_, db := newPricesApp(t)
 	path := os.Getenv("DB")
 	ctx := context.Background()
-	if _, err := pricesstore.New(db).CreatePrice(ctx, pricesstore.CreatePriceParams{Title: "Lunch", Now: "a"}); err != nil {
+	if _, err := pricesstore.New(db).CreatePrice(ctx, "app", pricesstore.CreatePriceParams{Title: "Lunch", Now: "a"}); err != nil {
 		t.Fatal(err)
 	}
 	other := pricesstore.New(openImpatient(t, path))
 	dinner := pricesstore.CreatePriceParams{Title: "Dinner", Now: "b"}
 	var otherID int64
 	var otherErr error
-	afterPrefixRead(func() { otherID, otherErr = other.CreatePrice(ctx, dinner) })
-	id, err := pricesstore.New(openHooked(t, path)).CreatePrice(ctx, pricesstore.CreatePriceParams{Title: "Tea", Now: "c"})
+	afterPrefixRead(func() { otherID, otherErr = other.CreatePrice(ctx, "app", dinner) })
+	id, err := pricesstore.New(openHooked(t, path)).CreatePrice(ctx, "app", pricesstore.CreatePriceParams{Title: "Tea", Now: "c"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -654,7 +661,7 @@ func TestPricesConcurrentCreatesTakeDistinctIds(t *testing.T) {
 		if !strings.Contains(otherErr.Error(), "locked") {
 			t.Fatalf("the second create: %v; want it to succeed or find the lock taken", otherErr)
 		}
-		if otherID, otherErr = other.CreatePrice(ctx, dinner); otherErr != nil {
+		if otherID, otherErr = other.CreatePrice(ctx, "app", dinner); otherErr != nil {
 			t.Fatalf("the second create, run again after the first: %v", otherErr)
 		}
 	}
@@ -700,7 +707,7 @@ var wiringMixes = []wiringMix{
 	},
 	{
 		name: "mergeable money", prices: true, ledger: true,
-		imports: "\t\"database/sql/driver\"\n\t\"encoding/json\"\n\t\"fmt\"\n\t\"sync\"\n\t\"time\"\n\n\t\"amadan.net/rastrillo/rastrillo/eventlog\"\n\t\"amadan.net/rastrillo/rastrillo/migrate\"\n\tpricesstore \"scratch/gen/store/prices\"\n",
+		imports: "\t\"database/sql/driver\"\n\t\"encoding/json\"\n\t\"errors\"\n\t\"fmt\"\n\t\"sync\"\n\t\"time\"\n\n\t\"amadan.net/rastrillo/rastrillo/eventlog\"\n\t\"amadan.net/rastrillo/rastrillo/migrate\"\n\t\"amadan.net/rastrillo/rastrillo/op\"\n\tops_prices \"scratch/gen/ops/prices\"\n\tpricesstore \"scratch/gen/store/prices\"\n",
 		code: `func schema(ledger bool) ([]string, func(*sql.DB) error) {
 	if ledger {
 		return nil, apply(migrate.Merge(eventlog.Schema))

@@ -38,12 +38,22 @@ Encore needs its own CLI and compiler. Everything else here builds with
 `go build`. Velocity is pre-1.0 and moving fast enough that it has
 already retracted a `v1.0.0` published by mistake.
 
+## A JSON API
+
+Every Rastrillo app can serve its manifest resources as JSON at
+`/api/v1`, beside its pages. A person makes a token for their agent, and
+the app records each call as the agent acting for that person. The pages
+and the API call the same operations, so they follow the same rules.
+See [JSON API](/docs/api).
+
+There are no OpenAPI files, generated clients, OAuth sign-in, CORS or
+file uploads yet, and only one API version is served at a time.
+
 ## Where the others win
 
-Reach for a router — chi, echo, gin, fiber — when you are building a
-JSON API and want to pick your own database, auth and deployment. A
-router plus four libraries you chose is a legitimate architecture, and
-the most common one in Go.
+Reach for a router (chi, echo, gin, fiber) when you want to pick your
+own database, auth and deployment. A router plus four libraries you
+chose is a legitimate architecture, and the most common one in Go.
 
 Reach for Encore when you want infrastructure to follow from the code,
 across Postgres, Pub/Sub and cron, provisioned into your own cloud
@@ -67,9 +77,11 @@ or Vue frontend there is no Inertia adapter and no asset pipeline.
 fingerprinting.
 
 Velocity has more JS tooling. Rastrillo assumes SQLite, so Postgres and
-MySQL have to be own-rolled — [Data](/docs/data) has the detail. And for
-a pure JSON API, sessions, CSRF, flash and owner-scoped 404s are most of
-what you would be paying for.
+MySQL have to be own-rolled. [Data](/docs/data) has the detail.
+
+If your app is only an API, with no pages and no people signing in,
+sessions, CSRF, flash and the page screens are most of what you would
+be paying for. Goa or a router fits better.
 
 The last one is the real filter. Since Rastrillo is built by AI for AI,
 the [SKILL.md](/docs/agents) budget that shapes so much of the design is

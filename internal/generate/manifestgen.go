@@ -19,8 +19,11 @@ import (
 	"strings"
 
 	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/internal/generate/apigen"
 	"amadan.net/rastrillo/rastrillo/internal/generate/bootgen"
+	"amadan.net/rastrillo/rastrillo/internal/generate/opsgen"
 	"amadan.net/rastrillo/rastrillo/internal/generate/packs"
+	"amadan.net/rastrillo/rastrillo/internal/generate/paritygen"
 	"amadan.net/rastrillo/rastrillo/internal/manifest"
 )
 
@@ -53,8 +56,23 @@ type Generated struct {
 // gen/ (idempotency + collision without touching the tree).
 func GenerateManifests(moduleRoot, genDir string, checkOnly bool) (Generated, error) {
 	rs, err := manifest.Load(moduleRoot, filepath.Join(moduleRoot, "manifest"))
-	if err != nil || len(rs) == 0 {
+	if err != nil {
 		return Generated{}, err
+	}
+	// Before the no-resource return: an ops/<name>/ with no resource is
+	// refused whether the app has other resources or none, and only
+	// --check nags about a missing build tag, as it does for actions.
+	hand, err := opsgen.HandFiles(moduleRoot, rs)
+	if err != nil {
+		return Generated{}, err
+	}
+	if checkOnly {
+		if err := opsgen.CheckTagged(moduleRoot, hand); err != nil {
+			return Generated{}, err
+		}
+	}
+	if len(rs) == 0 {
+		return Generated{}, nil
 	}
 	var out Generated
 	for _, r := range rs {
@@ -115,7 +133,7 @@ func GenerateManifests(moduleRoot, genDir string, checkOnly bool) (Generated, er
 
 // emitPipeline runs rs through every emitter into genDir: gen/manifest.json,
 // EmitStore, (optionally) sqlc, then per-resource EmitTemplates/
-// EmitActions — detecting a computed-path collision between two
+// opsgen.Emit/EmitActions — detecting a computed-path collision between two
 // DIFFERENT resources as it goes (Name/Route uniqueness is already
 // enforced by manifest.Load, but genDirFor's sanitizeIdent can still
 // collapse two distinct valid routes, e.g. "/foo-bar" and "/foo_bar",
@@ -128,7 +146,12 @@ func GenerateManifests(moduleRoot, genDir string, checkOnly bool) (Generated, er
 // network/tool access on every --check. Returns every WRITTEN path
 // (never a skipped one — a skip means a hand file already owns that
 // path, so there is nothing of the orchestrator's own to compare
-// there) for the idempotency check to diff against a second run.
+// there) for the idempotency check to diff against a second run. A
+// hand operation's copy under gen/ops (opsgen.Emit's skipped) is
+// written all the same: the orchestrator wrote it, it may carry the
+// generated header and so must count as this run's or prune removes
+// it, and the diff is what catches a hand file edited since the last
+// generate, when the app would otherwise run the old copy.
 //
 // h is the released migration statements, read from the app's real
 // gen/ tree whatever genDir is; appended is EmitStore's, notices
@@ -170,6 +193,25 @@ func emitPipeline(moduleRoot, genDir string, rs []rastrillo.Resource, h History,
 		}
 		written = append(written, tw...)
 
+		ow, hand, err := opsgen.Emit(moduleRoot, genDir, r)
+		if err != nil {
+			return nil, nil, nil, err
+		}
+		if err := claim(append(ow, hand...), r.Name); err != nil {
+			return nil, nil, nil, err
+		}
+		written = append(written, ow...)
+		written = append(written, hand...)
+
+		dw, err := apigen.Emit(moduleRoot, genDir, r)
+		if err != nil {
+			return nil, nil, nil, err
+		}
+		if err := claim(dw, r.Name); err != nil {
+			return nil, nil, nil, err
+		}
+		written = append(written, dw...)
+
 		aw, _, err := EmitActions(moduleRoot, genDir, r)
 		if err != nil {
 			return nil, nil, nil, err
@@ -179,6 +221,18 @@ func emitPipeline(moduleRoot, genDir string, rs []rastrillo.Resource, h History,
 		}
 		written = append(written, aw...)
 	}
+
+	// After every resource's doors: the parity test calls both, and an
+	// app with nothing exposed gets no package, so prune removes the
+	// one an earlier run wrote.
+	pw, err := paritygen.Emit(genDir, rs)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	if err := claim(pw, "paritytest"); err != nil {
+		return nil, nil, nil, err
+	}
+	written = append(written, pw...)
 
 	if err := EmitLocales(genDir, "en", rs); err != nil {
 		return nil, nil, nil, err

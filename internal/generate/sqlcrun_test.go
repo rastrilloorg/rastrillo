@@ -1,53 +1,19 @@
 package generate
 
 import (
-	"os"
 	"os/exec"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"testing"
 
 	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/internal/generate/opsgen"
+	"amadan.net/rastrillo/rastrillo/internal/generate/scratch"
 )
 
-// repoRoot returns this repo's absolute root, computed from this
-// file's own location rather than the test's working directory, so
-// it's stable regardless of how `go test` is invoked. (Same pattern as
-// internal/manifest/goeval_test.go's helper of the same name — each
-// package needs its own since it's unexported.)
-func repoRoot(t *testing.T) string {
-	t.Helper()
-	_, file, _, ok := runtime.Caller(0)
-	if !ok {
-		t.Fatal("runtime.Caller failed")
-	}
-	root, err := filepath.Abs(filepath.Join(filepath.Dir(file), "..", ".."))
-	if err != nil {
-		t.Fatal(err)
-	}
-	return root
-}
+func repoRoot(t *testing.T) string { return scratch.RepoRoot(t) }
 
-// newScratchModule builds a standalone module in t.TempDir() that
-// requires and replaces amadan.net/rastrillo/rastrillo with this
-// repo, so RunSqlc and the compiled store it produces have a real
-// module to work in. withTool controls whether the go.mod carries the
-// sqlc tool directive from the start.
-func newScratchModule(t *testing.T, withTool bool) string {
-	t.Helper()
-	root := t.TempDir()
-	goMod := "module scratch\n\ngo 1.25.0\n\n"
-	if withTool {
-		goMod += "tool github.com/sqlc-dev/sqlc/cmd/sqlc\n\n"
-	}
-	goMod += "require amadan.net/rastrillo/rastrillo v0.0.0\n\n" +
-		"replace amadan.net/rastrillo/rastrillo => " + repoRoot(t) + "\n"
-	if err := os.WriteFile(filepath.Join(root, "go.mod"), []byte(goMod), 0o644); err != nil {
-		t.Fatal(err)
-	}
-	return root
-}
+func newScratchModule(t *testing.T, withTool bool) string { return scratch.Module(t, withTool) }
 
 func TestRunSqlcMissingToolSaysHowToAddIt(t *testing.T) {
 	root := newScratchModule(t, false)
@@ -59,6 +25,18 @@ func TestRunSqlcMissingToolSaysHowToAddIt(t *testing.T) {
 	want := "go get -tool github.com/sqlc-dev/sqlc/cmd/sqlc"
 	if !strings.Contains(err.Error(), want) {
 		t.Errorf("error = %q, want it to contain %q", err, want)
+	}
+}
+
+// TestCheckSqlcToolFindsTheDirective holds the check to whatever Go the
+// gate pins. Go 1.27 changed `go tool`'s listing from the bare path to
+// "sqlc (path)", and a check that read that listing told every app with
+// the directive to add it. Only the network-bound integration test
+// covered the passing case before, so the break surfaced as a
+// generate-check failure with a misleading fix.
+func TestCheckSqlcToolFindsTheDirective(t *testing.T) {
+	if err := checkSqlcTool(newScratchModule(t, true)); err != nil {
+		t.Fatalf("checkSqlcTool on a module with the directive: %v", err)
 	}
 }
 
@@ -124,20 +102,15 @@ func TestRunSqlcGeneratesCompilingStore(t *testing.T) {
 		t.Fatalf("RunSqlc: %v", err)
 	}
 
-	if _, _, err := EmitActions(root, genDir, notes); err != nil {
-		t.Fatalf("EmitActions(notes): %v", err)
-	}
-	if _, _, err := EmitActions(root, genDir, widgets); err != nil {
-		t.Fatalf("EmitActions(widgets): %v", err)
-	}
-	if _, _, err := EmitActions(root, genDir, articles); err != nil {
-		t.Fatalf("EmitActions(articles): %v", err)
-	}
-	if _, _, err := EmitActions(root, genDir, bookmarks); err != nil {
-		t.Fatalf("EmitActions(bookmarks): %v", err)
-	}
-	if _, _, err := EmitActions(root, genDir, journals); err != nil {
-		t.Fatalf("EmitActions(journals): %v", err)
+	// The actions call their operations, which call the store, so both
+	// emitters run against the real sqlc output.
+	for _, r := range []rastrillo.Resource{notes, widgets, articles, bookmarks, journals} {
+		if _, _, err := opsgen.Emit(root, genDir, r); err != nil {
+			t.Fatalf("opsgen.Emit(%s): %v", r.Name, err)
+		}
+		if _, _, err := EmitActions(root, genDir, r); err != nil {
+			t.Fatalf("EmitActions(%s): %v", r.Name, err)
+		}
 	}
 
 	// The point of this test over EmitStore/EmitActions' own golden

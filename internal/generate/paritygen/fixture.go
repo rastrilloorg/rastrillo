@@ -1,0 +1,252 @@
+package paritygen
+
+// The text of gen/paritytest/fixture.go, cut where fixtureGo leaves a
+// helper out. Kept as Go source rather than built line by line because
+// nothing in it varies with the app: what varies is which parts appear.
+
+// fixtureDoc is the package doc and clause.
+const fixtureDoc = `// Package paritytest runs one scenario through a resource's page door
+// and through its API door, each against a fresh app of its own, and
+// fails when the two end differently. The app's tests supply a Fixture
+// and call one Run function per exposed resource.
+package paritytest
+
+`
+
+// fixtureBody is the Fixture interface and every helper each Run file calls.
+const fixtureBody = `// Fixture is the app's half of the parity test. A subject is the test's
+// name for a person, "a" or "b"; the fixture maps it to someone it signs
+// in, the same person across SignIn, Token and Prepare.
+type Fixture interface {
+	// New is a fresh app on its own database, mounted as production
+	// mounts it: the pages and the API tree on one handler.
+	New(t *testing.T) (http.Handler, *sql.DB)
+	// SignIn returns a client carrying subject's browser session. Every
+	// request it sends must reach h, whatever the host; the test sends
+	// them to http://app.test, without a locale prefix.
+	SignIn(t *testing.T, h http.Handler, db *sql.DB, subject string) *http.Client
+	// Token mints a read and write API token for subject.
+	Token(t *testing.T, db *sql.DB, subject string) string
+	// Prepare seeds what a hand-written operation needs. It may do
+	// nothing.
+	Prepare(t *testing.T, db *sql.DB, subject string)
+	// ValidCreate is a valid create's form values, keyed by manifest
+	// field name, or nil for the generated ones. A money field's value
+	// is the amount as typed in English, such as "12.50", in the
+	// resource's currency.
+	ValidCreate(resource string) map[string]string
+}
+
+const base = "http://app.test"
+
+// step is how one step of the scenario ended: its kind ("ok",
+// "invalid" or "not_found") and, for a read, the row as the API answers
+// it without id and timestamps, which differ between the two apps.
+type step struct {
+	Name, Kind, Row string
+}
+
+// compare fails on each step the two doors ended differently.
+func compare(t *testing.T, pages, api []step) {
+	t.Helper()
+	if len(pages) != len(api) {
+		t.Fatalf("the page door ran %d steps and the API door %d", len(pages), len(api))
+	}
+	for i := range pages {
+		if pages[i] != api[i] {
+			t.Errorf("%s: page door %+v, API door %+v", pages[i].Name, pages[i], api[i])
+		}
+	}
+}
+
+// page sends one request through the signed-in client without following
+// redirects, so a 303 is seen as the page door's success. Sec-Fetch-Site
+// is what a browser sends with its own form, which csrf.Protect
+// accepts.
+func page(t *testing.T, c *http.Client, method, p string, f url.Values) string {
+	t.Helper()
+	cc := *c
+	cc.CheckRedirect = func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }
+	var body io.Reader
+	if f != nil {
+		body = strings.NewReader(f.Encode())
+	}
+	req, err := http.NewRequest(method, base+p, body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if f != nil {
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	}
+	req.Header.Set("Sec-Fetch-Site", "same-origin")
+	res, err := cc.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer res.Body.Close()
+	switch res.StatusCode {
+	case http.StatusOK:
+		return "ok"
+	case http.StatusSeeOther:
+		return "ok " + res.Header.Get("Location")
+	case http.StatusBadRequest:
+		return "invalid"
+	case http.StatusNotFound:
+		return "not_found"
+	}
+	b, _ := io.ReadAll(res.Body)
+	t.Fatalf("%s %s: the page door answered %d: %s", method, p, res.StatusCode, b)
+	return ""
+}
+
+// kind is a page outcome without the redirect's target.
+func kind(outcome string) string {
+	k, _, _ := strings.Cut(outcome, " ")
+	return k
+}
+
+// lastID is the id at the end of a create's redirect, /<route>/<id>.
+func lastID(t *testing.T, outcome string) string {
+	t.Helper()
+	_, loc, ok := strings.Cut(outcome, " ")
+	if !ok {
+		t.Fatalf("the create did not redirect: %s", outcome)
+	}
+	return path.Base(loc)
+}
+
+// call sends one API request with token and answers its kind and its
+// decoded body.
+func call(t *testing.T, h http.Handler, token, method, p string, body any) (string, map[string]any) {
+	t.Helper()
+	var r io.Reader
+	if body != nil {
+		b, err := json.Marshal(body)
+		if err != nil {
+			t.Fatal(err)
+		}
+		r = bytes.NewReader(b)
+	}
+	req := httptest.NewRequest(method, base+p, r)
+	req.Header.Set("Authorization", "Bearer "+token)
+	if body != nil {
+		req.Header.Set("Content-Type", "application/json")
+	}
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+	var out map[string]any
+	if rec.Body.Len() > 0 {
+		// Numbers stay as written: as float64, two amounts past 2^53
+		// would compare equal, and an edit would post the rounded one.
+		d := json.NewDecoder(bytes.NewReader(rec.Body.Bytes()))
+		d.UseNumber()
+		if err := d.Decode(&out); err != nil {
+			t.Fatalf("%s %s: %v: %s", method, p, err, rec.Body)
+		}
+	}
+	switch rec.Code {
+	case http.StatusOK, http.StatusCreated, http.StatusNoContent:
+		return "ok", out
+	case http.StatusUnprocessableEntity:
+		return "invalid", out
+	case http.StatusNotFound:
+		return "not_found", out
+	}
+	t.Fatalf("%s %s: the API door answered %d: %s", method, p, rec.Code, rec.Body)
+	return "", nil
+}
+
+// record is one row as the API answers it.
+func record(t *testing.T, h http.Handler, token, p string) map[string]any {
+	t.Helper()
+	k, row := call(t, h, token, "GET", p, nil)
+	if k != "ok" {
+		t.Fatalf("GET %s: %s", p, k)
+	}
+	return row
+}
+
+// row is record without what differs between two apps by design.
+func row(t *testing.T, h http.Handler, token, p string) string {
+	t.Helper()
+	r := record(t, h, token, p)
+	delete(r, "id")
+	delete(r, "created_at")
+	delete(r, "updated_at")
+	b, err := json.Marshal(r)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return string(b)
+}
+
+`
+
+// fixtureRefused is for a resource with a required field.
+const fixtureRefused = `// refused fails unless the API's 422 named exactly want.
+func refused(t *testing.T, body map[string]any, want ...string) {
+	t.Helper()
+	e, _ := body["error"].(map[string]any)
+	fields, _ := e["fields"].(map[string]any)
+	var got []string
+	for k := range fields {
+		got = append(got, k)
+	}
+	sort.Strings(got)
+	if fmt.Sprint(got) != fmt.Sprint(want) {
+		t.Errorf("the API refused %v; want %v, the fields the page door refuses", got, want)
+	}
+}
+
+`
+
+// fixtureHidden is for a scoped resource.
+const fixtureHidden = `// hidden fails unless another person's row was not found through
+// door. compare alone would pass two doors that both showed it.
+func hidden(t *testing.T, door, kind string) {
+	t.Helper()
+	if kind != "not_found" {
+		t.Errorf("the %s door answered %s for another person's row; want not_found", door, kind)
+	}
+}
+
+`
+
+// fixtureMoney is for a create with a money field.
+const fixtureMoney = `// money is an amount typed in English as the API takes it.
+func money(t *testing.T, typed, code string) map[string]any {
+	t.Helper()
+	minor, err := currency.ParseNormalized("en", typed, code)
+	if err != nil {
+		t.Fatalf("%q is not an amount in %s: %v", typed, code, err)
+	}
+	return map[string]any{"amount": minor, "currency": code}
+}
+
+`
+
+// fixtureMoneyForm is for an edit form holding a money field.
+const fixtureMoneyForm = `// moneyForm sets name's four form values as a money input sends them:
+// the text, the locale it is written in, the currency and, on an edit,
+// the seed, so an unchanged amount saves as it is.
+func moneyForm(t *testing.T, f url.Values, name string, stored any) {
+	t.Helper()
+	m, _ := stored.(map[string]any)
+	if m == nil {
+		return
+	}
+	amount, _ := m["amount"].(json.Number)
+	minor, err := amount.Int64()
+	if err != nil {
+		t.Fatalf("%s: the API answered amount %v: %v", name, m["amount"], err)
+	}
+	in, err := form.SeedMoney("en", &minor, m["currency"].(string), false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	f.Set(name, in.Value)
+	f.Set(name+".seed", in.Seed)
+	f.Set(name+".locale", in.Locale)
+	f.Set(name+".currency", in.Currency)
+}
+`

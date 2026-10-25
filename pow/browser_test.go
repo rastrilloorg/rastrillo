@@ -29,6 +29,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -589,6 +590,59 @@ func TestBrowserPagehideStillEndsAHoldAfterDocumentWrite(t *testing.T) {
 	}
 }
 
+// goBack presses the browser's Back button and returns once the page
+// behind it has committed.
+//
+// Asking the page to go back, Evaluate("history.back()"), leaves that
+// Runtime.evaluate waiting on the document being left. The page behind
+// comes from the HTTP cache or the back-forward cache, with no network
+// to wait for, so it can commit before the reply reaches the browser,
+// and Chrome then fails the command: "Inspected target navigated or
+// closed (-32000)". Page.navigateToHistoryEntry is answered by the
+// browser process, where a real Back button starts too, so no reply is
+// in flight across the swap. chromedp.NavigateBack sends the same
+// command, then waits for a load event that a back-forward cache restore
+// never fires.
+//
+// The wait is the main frame's frameNavigated, sent at commit for a
+// reload and a restore alike. Page.getNavigationHistory cannot stand in
+// for it: its current index moves to the pending entry as soon as the
+// traversal starts, so an Evaluate sent then can still meet the swap.
+func goBack() chromedp.Action {
+	return chromedp.ActionFunc(func(ctx context.Context) error {
+		cur, entries, err := page.GetNavigationHistory().Do(ctx)
+		if err != nil {
+			return err
+		}
+		if cur < 1 || cur >= int64(len(entries)) {
+			return fmt.Errorf("goBack: no history entry behind entry %d of %d", cur, len(entries))
+		}
+		want := entries[cur-1]
+		// Listening starts before the command: the commit can be reported
+		// before the command's own reply arrives.
+		lctx, stop := context.WithCancel(ctx)
+		defer stop()
+		committed := make(chan struct{})
+		var once sync.Once
+		chromedp.ListenTarget(lctx, func(ev any) {
+			if e, ok := ev.(*page.EventFrameNavigated); ok && e.Frame.ParentID == "" && e.Frame.URL == want.URL {
+				once.Do(func() { close(committed) })
+			}
+		})
+		if err := page.NavigateToHistoryEntry(want.ID).Do(ctx); err != nil {
+			return err
+		}
+		select {
+		case <-committed:
+			return nil
+		case <-time.After(10 * time.Second):
+			return fmt.Errorf("goBack: %s did not commit within 10s", want.URL)
+		case <-ctx.Done():
+			return ctx.Err()
+		}
+	})
+}
+
 func TestBrowserRealBackNavigationLeavesAUsableForm(t *testing.T) {
 	// The synthetic-event test above pins the handlers; this one leaves
 	// for real while a submit is held and comes back. The hold is the
@@ -601,14 +655,12 @@ func TestBrowserRealBackNavigationLeavesAUsableForm(t *testing.T) {
 		page: powPage(false, false, `<a id=away href=/elsewhere>away</a><script>addEventListener("pageshow", e => { window.restored = e.persisted })</script>`),
 	})
 	fr.waitReady(t)
-	// Past this point chromedp's own waits cannot be trusted. NavigateBack
-	// blocks on a load lifecycle event that a back-forward cache restore
-	// never fires, and WaitReady, Poll and Click all work from node ids
-	// and helpers that the restored document does not honour. Plain
-	// Evaluate talks to the live page, so the return trip is driven with it.
+	// Past this point chromedp's own waits cannot be trusted. WaitReady,
+	// Poll and Click all work from node ids and helpers that a restored
+	// document does not honour. goBack waits for the commit, and after it
+	// plain Evaluate talks to the live page, so the return trip uses that.
 	fr.Run(chromedp.Click(`#go`, chromedp.ByQuery), chromedp.Click(`#away`, chromedp.ByQuery),
-		chromedp.WaitVisible(`#elsewhere`, chromedp.ByQuery),
-		chromedp.Evaluate(`history.back()`, nil))
+		chromedp.WaitVisible(`#elsewhere`, chromedp.ByQuery), goBack())
 	deadline := time.Now().Add(10 * time.Second)
 	for {
 		var back bool
@@ -617,7 +669,7 @@ func TestBrowserRealBackNavigationLeavesAUsableForm(t *testing.T) {
 			break
 		}
 		if time.Now().After(deadline) {
-			t.Fatal("the form never came back after history.back()")
+			t.Fatal("the form never came back after going back")
 		}
 		time.Sleep(50 * time.Millisecond)
 	}

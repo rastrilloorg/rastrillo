@@ -238,7 +238,7 @@ func TestNewScaffoldsMiddleLayerShape(t *testing.T) {
 	}
 }
 
-// main.go wires the app the way SKILL.md §1 teaches: Resolve (not Run
+// main.go wires the app the way SKILL.md's app shape teaches: Resolve (not Run
 // — the app owns its DB handle via db.Open), then Serve with DBPath
 // cleared so Serve doesn't double-open the same file.
 func TestMainTemplateWiresResolveOpenServe(t *testing.T) {
@@ -280,7 +280,7 @@ func TestMainTemplateWiresErrorPage(t *testing.T) {
 		"opts.Mux = mux",
 		"perf.Middleware(",
 		"func Router(d *db.DB, origin string, logger *slog.Logger) (chi.Router, error)",
-		"func Mux(r http.Handler) *http.ServeMux",
+		"func Mux(r, apiTree http.Handler) *http.ServeMux",
 	} {
 		if !strings.Contains(app, want) {
 			t.Errorf("app.go template missing %q:\n%s", want, app)
@@ -358,7 +358,7 @@ func TestManifestReadmeCarriesTheRecipe(t *testing.T) {
 		// framework bug rather than a missing step: everything
 		// compiles and the screen 500s on a table that was never
 		// created.
-		"migrate.Merge(genSchema, Schema)",
+		"migrate.Merge(apitoken.Schema, genSchema, Schema)",
 		".Migrations {",
 		// And the mount, which will not compile without Boot's result.
 		"gen.Boot(context.Background(), d.Writer())",
@@ -716,6 +716,30 @@ func TestNewScaffoldsSelectJS(t *testing.T) {
 	}
 	if !strings.Contains(string(layout), `static/select.js`) {
 		t.Error("the layout never loads select.js, so the enhancement can never run")
+	}
+}
+
+// light.js is vendored like select.js and linked by every shell: an app
+// that deletes it gets the static design, so the scaffold must deliver
+// it and the layout must load it deferred, or no app would see the light.
+func TestNewScaffoldsLightJS(t *testing.T) {
+	t.Chdir(t.TempDir())
+	if err := runNew([]string{"lightapp"}); err != nil {
+		t.Fatalf("runNew: %v", err)
+	}
+	got, err := os.ReadFile(filepath.Join("lightapp", "internal", "lightapp", "static", "light.js"))
+	if err != nil {
+		t.Fatalf("light.js not scaffolded: %v", err)
+	}
+	if !bytes.Equal(got, ui.LightJS()) {
+		t.Error("scaffolded light.js is not ui.LightJS() verbatim")
+	}
+	layout, err := os.ReadFile(filepath.Join("lightapp", "internal", "lightapp", "templates", "layout.html"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(layout), `<script defer src="{{asset "static/light.js"}}"></script>`) {
+		t.Error("the layout never loads light.js, deferred, so the light can never run")
 	}
 }
 

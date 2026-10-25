@@ -681,7 +681,7 @@ func shippedBackgrounds(t *testing.T) []string {
 	seen := map[string]bool{"#ffffff": true}
 	out := []string{"#ffffff"}
 	for _, theme := range ThemeNames() {
-		tokens := themeTokens(t, theme)
+		tokens := resolvedTokens(t, theme)
 		for _, scheme := range []string{"light", "dark"} {
 			for _, name := range surfaces {
 				v, ok := tokens[scheme][name]
@@ -1040,7 +1040,7 @@ func BenchmarkColourAllocate(b *testing.B) {
 // gate that makes it a measurement.
 //
 // The margins are asserted too, not just the pass/fail: "seventeen
-// clears by 1.9% and sixteen by 7.3%" is the whole argument for
+// clears by 1.9% and sixteen by 7.8%" is the whole argument for
 // recommending the smaller number, and an argument with a stale number in
 // it is worse than none.
 func TestPublishedCapacityCeiling(t *testing.T) {
@@ -1070,7 +1070,7 @@ func TestPublishedCapacityCeiling(t *testing.T) {
 	for _, tt := range []struct {
 		n    int
 		want float64
-	}{{16, 7.3}, {17, 1.9}} {
+	}{{16, 7.8}, {17, 1.9}} {
 		if got := margin(tt.n); math.Abs(got-tt.want) > 0.15 {
 			t.Errorf("%d hues clear the floor by %.1f%%, but reference/ui.md publishes %.1f%%", tt.n, got, tt.want)
 		}
@@ -1403,7 +1403,7 @@ func washCanvases(t *testing.T) []Canvas {
 		{Background: "#1a1a1a", Inks: []string{"#ffffff", "#000000"}},
 	}
 	for _, theme := range ThemeNames() {
-		tokens := themeTokens(t, theme)
+		tokens := resolvedTokens(t, theme)
 		for _, scheme := range []string{"light", "dark"} {
 			ink, ok := tokens[scheme]["--rst-text"]
 			if !ok {
@@ -1445,7 +1445,7 @@ func TestOfferedSetServesEveryWashCanvas(t *testing.T) {
 	// carry two each (a document canvas has no theme ink of its own) and
 	// the 24 theme ones carry three. 2×2 + 24×3 = 76 background/ink
 	// pairs, × 12 intents = 912. Some backgrounds repeat across themes,
-	// so those 26 canvases hold 21 distinct backgrounds and 64 distinct
+	// so those 26 canvases hold 22 distinct backgrounds and 67 distinct
 	// background/ink pairs — nothing is under-covered, but the honest
 	// count of independent cells is the smaller one.
 	cells, pairs := 0, 0
@@ -1472,7 +1472,7 @@ func TestOfferedSetServesEveryWashCanvas(t *testing.T) {
 		{"canvases", len(canvases), 26},
 		{"background/ink pairs", pairs, 76},
 		{"cells", cells, 912},
-		{"distinct background/ink pairs", len(distinctPairs), 64},
+		{"distinct background/ink pairs", len(distinctPairs), 67},
 	} {
 		if tt.got != tt.want {
 			t.Errorf("the matrix has %d %s, but reference/ui.md publishes %d — update the page in the same commit as the set", tt.got, tt.name, tt.want)

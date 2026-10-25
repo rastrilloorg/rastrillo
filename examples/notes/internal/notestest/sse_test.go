@@ -16,7 +16,7 @@ import (
 // hanging the run.
 func (cl *client) getStream(ctx context.Context, path string) *http.Response {
 	cl.t.Helper()
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, cl.ts.URL+path, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, cl.base+path, nil)
 	if err != nil {
 		cl.t.Fatalf("NewRequest GET %s: %v", path, err)
 	}

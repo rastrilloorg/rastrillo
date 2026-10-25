@@ -1,0 +1,22 @@
+{{/* actor — who did something, as words: nothing for the app, the
+     person's name, or "Claude for Paul" for an agent acting for them.
+     The same words as the actor function, in a span an app can style.
+     No badge, no icon and no marker for the agent case: the words are
+     the whole of it, as the spec rules. Use the function inside an
+     attribute or a sentence, and this partial for a cell or a detail
+     row, beside person, which is the identity cell for a record that
+     is a person.
+
+     The names come from ui.ActorName, which runs with no request.
+     Display is for a caller that built the words in Go with
+     rastrillo.ActorPhrase because its lookup needed the request's
+     context (apitoken's Row.Display is one): the words are shown as
+     given, and the Actor still decides whether anything renders.
+
+     Keys:
+       Actor    rastrillo.Actor, required — who acted. The zero Actor
+                is the app, and renders nothing at all: not an empty
+                span, which would be a cell with an invisible value.
+       Display  string, optional — the words, when the caller made
+                them in Go; default is the actor function's */}}
+{{define "actor"}}{{$L := localizer $}}{{$a := .Actor}}{{if or $a.Subject $a.Agent}}<span rst-actor>{{with opt . "Display"}}{{.}}{{else}}{{actor $L $a}}{{end}}</span>{{end}}{{end}}

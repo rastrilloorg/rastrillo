@@ -9,12 +9,12 @@
 // none of them can be proved by reading CSS:
 //
 //  1. the ::after draws nothing, in every theme and in both schemes;
-//  2. the rule resolves to what the theme's token says — which for day
-//     and signal means an oklab mix a stylesheet cannot be asked to
+//  2. the rule resolves to what the theme's token says — which for
+//     signal means an oklab mix a stylesheet cannot be asked to
 //     evaluate for us;
-//  3. the three themes are actually distinguishable: plain grey, day
-//     barely tinted, signal visibly tinted, all from one structural
-//     rule in tokens.css.
+//  3. each theme's rule is the one it ruled: plain and day the line
+//     itself (day's is neutral since the depth design, C15), signal
+//     visibly tinted, all from one structural rule in tokens.css.
 //
 // Claim 2 is why this file computes oklab in Go. Reading the rule and
 // comparing it to a probe painted with var(--rst-header-rule) would
@@ -86,7 +86,7 @@ import (
 // out of the CSS on purpose: a parser would read whatever the file
 // says and agree with it, which is not a check.
 var headerRuleMix = map[string]float64{
-	"day":    0.18,
+	"day":    0.00, // day: neutral since the depth design (C15); its rule is the line itself.
 	"plain":  0.00,
 	"signal": 0.45,
 }
@@ -320,10 +320,10 @@ func rgbString(c []int) string {
 //     on screen (and still reads as a progress bar at 12%);
 //   - the border still names --rst-line, so all three themes draw the
 //     same grey and the theme axis gained a token nothing uses;
-//   - a theme's percentage drifts from the ruling — 18% typed as 1.8%,
-//     45% as 4.5% — which is invisible against a grey line and exactly
-//     the kind of thing a source-reading test would confirm rather than
-//     catch;
+//   - a theme's percentage drifts from the ruling — 45% typed as 4.5%,
+//     or a tint creeping back into day's neutral rule — which is
+//     invisible against a grey line and exactly the kind of thing a
+//     source-reading test would confirm rather than catch;
 //   - a theme declares the token but derives it from the wrong pair, so
 //     changing the accent leaves the rule behind, which is the drift
 //     the derivation exists to prevent;
@@ -407,20 +407,19 @@ func TestTheHeaderRuleIsTheThemesTintedHairline(t *testing.T) {
 		}
 	}
 
-	// Three distinguishable results from one structural rule. Ordering
-	// rather than absolute numbers: the claim is "plain grey, day barely
-	// tinted, signal visibly tinted", and a claim about ordering does not
-	// go stale when a palette is retuned.
+	// Three results from one structural rule. plain and day are the
+	// line exactly: plain has no hue to fold in and day chose a neutral
+	// rule (C15); signal folds in 45% and must read as tinted.
 	for _, scheme := range []string{"light", "dark"} {
 		plain, day, signal := tint["plain"][scheme], tint["day"][scheme], tint["signal"][scheme]
 		if plain != 0 {
 			t.Errorf("%s: plain's rule sits %.1f from its own line; plain has no accent hue to fold in, so it should be the line exactly", scheme, plain)
 		}
-		if day <= 0 {
-			t.Errorf("%s: day's rule is its line exactly; the 18%% tint did not survive to the pixel", scheme)
+		if day != 0 {
+			t.Errorf("%s: day's rule sits %.1f from its line; day's rule is neutral (C15)", scheme, day)
 		}
-		if signal <= day {
-			t.Errorf("%s: signal's rule is %.1f from grey and day's is %.1f; signal folds in 45%% to day's 18%% and must read as the more tinted of the two", scheme, signal, day)
+		if signal <= 0 {
+			t.Errorf("%s: signal's rule is its line exactly; the 45%% tint did not survive to the pixel", scheme)
 		}
 	}
 }

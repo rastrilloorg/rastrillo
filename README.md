@@ -371,11 +371,7 @@ the meantime. This list is their union. **Built:**
   `TickOccurrence(r)` hands back the at-least-once dedupe key, and
   `ScheduleAt`/`ScheduleCancel` register one-shot timers over the
   instance's control socket. Degrades to `ErrNotOnCarlos` off-platform.
-- **Agents** (design doc §8) — actions opt in as tools (`var Tool =
-  rastrillo.Tool{...}`), the generator emits the registry
-  (`gen.Tools()`), the `tools` package renders schemas and dispatches
-  registry-validated, consent-gated, actor-attributed calls through the
-  same mux; `Options.Sidecar` + the `sidecar run` argv speak the
+- **Agents** — `Options.Sidecar` + the `sidecar run` argv speak the
   platform's sidecar contract, and `Options.NextDue` answers the
   activator's `GET /api/next-due` scheduled-wake poll.
 - **Serve seams** — `Options.Wrap` (the one middleware seam), exported
