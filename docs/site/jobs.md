@@ -29,7 +29,7 @@ job, err := j.Start(owner, "Export notes", "/notes", func(ctx context.Context, p
 	return nil
 })
 if errors.Is(err, jobs.ErrOwnerBusy) {
-	flash.Set(w, "error", "You already have several exports running.")
+	flash.Set(w, r, "error", "You already have several exports running.")
 	http.Redirect(w, r, "/notes", http.StatusSeeOther)
 	return
 }

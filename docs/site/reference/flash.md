@@ -23,14 +23,16 @@ decides how each renders.
 ## Set
 
 ```go
-func Set(w http.ResponseWriter, kind, message string)
+func Set(w http.ResponseWriter, r *http.Request, kind, message string)
 ```
 
-Writes the cookie. Call it immediately before the redirect that will
-show it:
+Writes the cookie. It takes the request because a flash belongs to the
+app that set it: at the root the cookie is `rastrillo_flash` at `Path=/`,
+and under a base path it is `rastrillo_flash_<slug>` at `Path=/<slug>`.
+Call it immediately before the redirect that will show it:
 
 ```go
-flash.Set(w, "notice", "Note created.")
+flash.Set(w, r, "notice", "Note created.")
 http.Redirect(w, r, "/notes/"+id, http.StatusSeeOther)
 ```
 
@@ -40,7 +42,9 @@ http.Redirect(w, r, "/notes/"+id, http.StatusSeeOther)
 func Take(w http.ResponseWriter, r *http.Request) (Flash, bool)
 ```
 
-Reads and clears in one call, which is the one-shot part. Call it once
+Reads and clears in one call, which is the one-shot part. It reads only
+the cookie for the request's own base path, so one app never shows or
+clears another's notice on the same origin. Call it once
 per page from your render helper and let the layout render what it
 returns; call it twice in one request and the second caller gets
 nothing.

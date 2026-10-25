@@ -596,7 +596,7 @@ constraint is the correctness.
 ## After a successful write
 
 ```go
-flash.Set(w, "notice", "Note created.")
+flash.Set(w, r, "notice", "Note created.")
 http.Redirect(w, r, "/notes/"+id, http.StatusSeeOther)
 ```
 

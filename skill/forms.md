@@ -35,7 +35,7 @@ halves need distinct `Name`s. docs/site/forms.md
 keys too). Link a stored one only through `{{with safeHref .Site}}`,
 show it with `displayURL`; never `<input type="url">`.
 
-**After a mutation:** `flash.Set(w, "notice", "...")`, then 303. The
+**After a mutation:** `flash.Set(w, r, "notice", "...")`, then 303. The
 scaffold does not show flashes until you wire it: in `render.go`'s
 `render`, `if f, ok := flash.Take(w, r); ok { page["Flash"] =
 f.Message }`, and in `layout.html`, just before `{{template "content"
