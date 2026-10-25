@@ -42,16 +42,19 @@ type Session struct {
 	At       time.Time
 }
 
-// Config configures New. DB and Origin are required; everything else
-// has a serviceable default.
+// Config configures New. Origin is required, and DB is too unless
+// Signed is set; everything else has a serviceable default.
 type Config struct {
 	// DB is the app's database. Migrations must be applied (e.g. via
 	// the app's own migration runner) before any method runs.
 	DB *sql.DB
 
 	// Origin is the app's external origin, scheme included —
-	// "https://app.example.com". It decides the Secure/__Host- cookie
-	// attributes and nothing else: sessions does not redirect off of it.
+	// "https://app.example.com". In row mode it decides the
+	// Secure/__Host- cookie attributes and nothing else: sessions does
+	// not redirect off of it. Signed mode also redirects to Origin plus
+	// RefreshPath or SigninPath, absolute so a tenant's base path cannot
+	// be put in front of them.
 	Origin string
 
 	// TTL is how long a minted session lives from the moment it is
@@ -65,12 +68,24 @@ type Config struct {
 	SigninPath string
 
 	Logger *slog.Logger
+
+	// Signed, when set, is signed mode: no rows, DB nil, and a
+	// short-lived signed cookie a hub mints and its tenants verify.
+	Signed *Signed
+
+	// Now is the clock. Default time.Now. It exists so a caller with
+	// its own clock (auth, in tests) moves the cookie's with it.
+	Now func() time.Time
 }
 
 // Sessions is the session store plus cookie policy for one origin.
 // Build exactly one per process (New) and share it.
 type Sessions struct {
 	cfg Config
+
+	// keys is the signed-mode verification set: Signed.Keys plus Key's
+	// own public half, copied in New.
+	keys map[string][]byte
 }
 
 //go:embed migrations/*.sql
@@ -85,7 +100,13 @@ var Schema = migrate.MustFromFS(migrationFS, "sessions")
 
 // New validates cfg and returns a ready *Sessions.
 func New(cfg Config) (*Sessions, error) {
-	if cfg.DB == nil {
+	var keys map[string][]byte
+	if cfg.Signed != nil {
+		var err error
+		if cfg.Signed, keys, err = signedConfig(cfg); err != nil {
+			return nil, err
+		}
+	} else if cfg.DB == nil {
 		return nil, errors.New("rastrillo/sessions: Config.DB is required")
 	}
 	if cfg.Origin == "" || (!strings.HasPrefix(cfg.Origin, "https://") && !strings.HasPrefix(cfg.Origin, "http://")) {
@@ -100,8 +121,13 @@ func New(cfg Config) (*Sessions, error) {
 	if cfg.Logger == nil {
 		cfg.Logger = slog.Default()
 	}
-	return &Sessions{cfg: cfg}, nil
+	if cfg.Now == nil {
+		cfg.Now = time.Now
+	}
+	return &Sessions{cfg: cfg, keys: keys}, nil
 }
+
+func (s *Sessions) now() time.Time { return s.cfg.Now() }
 
 // secure reports whether the app's origin is https — which decides
 // both the Secure cookie attribute and the __Host- name prefix (the
@@ -114,6 +140,12 @@ func (s *Sessions) secure() bool { return strings.HasPrefix(s.cfg.Origin, "https
 // http (the __Host- prefix is meaningless, and rejected by some
 // clients, without Secure).
 func (s *Sessions) CookieName() string {
+	if s.cfg.Signed != nil {
+		if s.secure() {
+			return "__Host-" + s.cfg.Signed.Name
+		}
+		return s.cfg.Signed.Name
+	}
 	if s.secure() {
 		return "__Host-rastrillo_session"
 	}
@@ -208,6 +240,9 @@ func (s *Sessions) revoke(hash string) error {
 // password reset survivor kicking out the old token), and rotation
 // means the old token can never be replayed after a fresh SignIn.
 func (s *Sessions) SignIn(w http.ResponseWriter, r *http.Request, sess Session) error {
+	if s.cfg.Signed != nil {
+		return s.signedSignIn(w, r, sess)
+	}
 	if c, err := r.Cookie(s.CookieName()); err == nil {
 		if err := s.revoke(HashToken(c.Value)); err != nil {
 			return err
@@ -217,7 +252,7 @@ func (s *Sessions) SignIn(w http.ResponseWriter, r *http.Request, sess Session) 
 	if err != nil {
 		return err
 	}
-	if err := s.create(hash, sess, time.Now()); err != nil {
+	if err := s.create(hash, sess, s.now()); err != nil {
 		return err
 	}
 	s.setCookie(w, token, int(s.cfg.TTL.Seconds()))
@@ -231,11 +266,14 @@ func (s *Sessions) SignIn(w http.ResponseWriter, r *http.Request, sess Session) 
 // differs. The token is the credential: hand it only to something the
 // subject controls.
 func (s *Sessions) Mint(sess Session) (string, error) {
+	if s.cfg.Signed != nil {
+		return "", ErrSigned
+	}
 	token, hash, err := NewToken()
 	if err != nil {
 		return "", err
 	}
-	if err := s.create(hash, sess, time.Now()); err != nil {
+	if err := s.create(hash, sess, s.now()); err != nil {
 		return "", err
 	}
 	return token, nil
@@ -248,7 +286,10 @@ func (s *Sessions) Mint(sess Session) (string, error) {
 // unknown token refuses without touching any cookie, so a failed
 // restore falls through to the app's ordinary sign-in.
 func (s *Sessions) Adopt(w http.ResponseWriter, r *http.Request, token string) (Session, bool) {
-	sess, ok, err := s.lookup(HashToken(token), time.Now())
+	if s.cfg.Signed != nil {
+		return Session{}, false
+	}
+	sess, ok, err := s.lookup(HashToken(token), s.now())
 	if err != nil {
 		s.cfg.Logger.Error("rastrillo/sessions: adopt lookup", "err", err)
 		return Session{}, false
@@ -267,6 +308,12 @@ func (s *Sessions) Adopt(w http.ResponseWriter, r *http.Request, token string) (
 // deleted right now (the expiry check in From still keeps it usable
 // only until it lapses).
 func (s *Sessions) SignOut(w http.ResponseWriter, r *http.Request) {
+	if s.cfg.Signed != nil {
+		// No row to revoke: a copy of this cookie stays refreshable
+		// until the subject's epoch moves or the session life ends.
+		s.clearCookie(w)
+		return
+	}
 	if c, err := r.Cookie(s.CookieName()); err == nil {
 		if err := s.revoke(HashToken(c.Value)); err != nil {
 			s.cfg.Logger.Error("rastrillo/sessions: sign out", "err", err)
@@ -301,11 +348,19 @@ func (s *Sessions) resolve(r *http.Request) (sess Session, ok, stale bool) {
 }
 
 func (s *Sessions) resolveContext(ctx context.Context, r *http.Request) (sess Session, ok, stale bool) {
+	if s.cfg.Signed != nil {
+		// Never stale: a cookie this app cannot verify may be one the
+		// hub signed under a key this app does not hold yet, and
+		// clearing it would sign the person out of every app on the
+		// origin.
+		sess, state := s.signedCookie(r)
+		return sess, state == cookieValid, false
+	}
 	c, err := r.Cookie(s.CookieName())
 	if err != nil {
 		return Session{}, false, false
 	}
-	sess, ok, err = s.lookupContext(ctx, HashToken(c.Value), time.Now())
+	sess, ok, err = s.lookupContext(ctx, HashToken(c.Value), s.now())
 	if err != nil {
 		if ctx.Err() == nil || !errors.Is(err, ctx.Err()) {
 			s.cfg.Logger.Error("rastrillo/sessions: session lookup", "err", err)
@@ -324,6 +379,9 @@ type ctxKey struct{}
 // definitively resolves to nothing (revoked or expired row) is cleared
 // on the way through, so a dead cookie stops riding every request.
 func (s *Sessions) Middleware(next http.Handler) http.Handler {
+	if s.cfg.Signed != nil {
+		return s.signedMiddleware(next)
+	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		sess, ok, stale := s.resolve(r)
 		if stale {
@@ -343,6 +401,9 @@ func (s *Sessions) Middleware(next http.Handler) http.Handler {
 // as-is — stacking Require inside Middleware costs one lookup, not
 // two — and, like Middleware, a definitively-stale cookie is cleared.
 func (s *Sessions) Require(next http.Handler) http.Handler {
+	if s.cfg.Signed != nil {
+		return s.signedGate(next, nil)
+	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		sess, ok := s.admitting(w, r)
 		if !ok {
@@ -367,13 +428,16 @@ func (s *Sessions) Require(next http.Handler) http.Handler {
 // AuthTime/At and satisfies the gate. Anything else answers 403.
 func (s *Sessions) RequireFresh(maxAge time.Duration) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
+		if s.cfg.Signed != nil {
+			return s.signedGate(next, func(sess Session) bool { return Fresh(sess, maxAge, s.now()) })
+		}
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			sess, ok := s.admitting(w, r)
 			if !ok {
 				s.refuse(w, r, false)
 				return
 			}
-			if !Fresh(sess, maxAge, time.Now()) {
+			if !Fresh(sess, maxAge, s.now()) {
 				s.refuse(w, r, true)
 				return
 			}
@@ -414,6 +478,12 @@ func (s *Sessions) admitting(w http.ResponseWriter, r *http.Request) (Session, b
 func (s *Sessions) refuse(w http.ResponseWriter, r *http.Request, reauth bool) {
 	if r.Method == http.MethodGet || r.Method == http.MethodHead {
 		to := s.cfg.SigninPath + "?return_to=" + url.QueryEscape(r.URL.RequestURI())
+		if s.cfg.Signed != nil {
+			// Absolute, so a base-path rewrite cannot move the hub's
+			// sign-in under a tenant's slug, and from requestPath, so
+			// return_to keeps the slug http.StripPrefix removed.
+			to = s.cfg.Origin + s.cfg.SigninPath + "?return_to=" + url.QueryEscape(requestPath(r))
+		}
 		if reauth {
 			to += "&reauth=1"
 		}
@@ -466,6 +536,9 @@ func UserID(r *http.Request) (int64, bool) {
 // abandoned sessions from accumulating for the life of the instance.
 // Call it from boot, a sidecar pass, or not at all.
 func (s *Sessions) Sweep(now time.Time) error {
+	if s.cfg.Signed != nil {
+		return nil
+	}
 	_, err := s.cfg.DB.Exec(`DELETE FROM sessions WHERE expires_at < ?`, now.UTC().Format(time.RFC3339))
 	return err
 }

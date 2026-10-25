@@ -62,6 +62,35 @@ func (a *Auth) sealContinuation(authorizeURL, pending string) (id, value string,
 	return id, value, err
 }
 
+// pendingCookieValue is what the pending cookie holds for signin's
+// blob: the blob itself with a database, sealed in records mode.
+func (a *Auth) pendingCookieValue(blob string) (string, error) {
+	if a.pendingKey == nil {
+		return blob, nil
+	}
+	return sealedcookie.Seal(a.pendingKey, blob)
+}
+
+// pendingValue is the pending blob as signin reads it: the cookie's
+// value with a database, the opened envelope in records mode. false
+// when the cookie is absent or does not open, which callers treat
+// alike. Callback and continuationFor both compare through this, so
+// both hash the same bytes sealContinuation did.
+func (a *Auth) pendingValue(r *http.Request) (string, bool) {
+	c, err := r.Cookie(a.pendingCookie())
+	if err != nil {
+		return "", false
+	}
+	if a.pendingKey == nil {
+		return c.Value, true
+	}
+	var blob string
+	if sealedcookie.Open(a.pendingKey, c.Value, &blob) != nil {
+		return "", false
+	}
+	return blob, true
+}
+
 func (a *Auth) openContinuation(r *http.Request) (continuation, cookieState) {
 	c, err := r.Cookie(a.continueCookie())
 	if err != nil {
@@ -87,8 +116,10 @@ func (a *Auth) continuationFor(r *http.Request, id string) (string, bool) {
 	if st != cookieValid || id == "" || p.ID != id {
 		return "", false
 	}
-	pending, err := r.Cookie(a.pendingCookie())
-	if err != nil || digest(pending.Value) != p.PH {
+	// The opened blob, the bytes sealContinuation hashed: hashing the
+	// sealed cookie would never match in records mode.
+	pending, ok := a.pendingValue(r)
+	if !ok || digest(pending) != p.PH {
 		return "", false
 	}
 	if !a.validAuthorizeURL(p.U) {

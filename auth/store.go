@@ -115,7 +115,22 @@ func (l *linkStore) TakeLink(ctx context.Context, hash, purpose string) (string,
 // sessions from accumulating for the life of the instance. Call it from
 // boot, a sidecar pass, or not at all. Session rows are the sessions
 // core's own table now, so sweeping them is delegated there.
+//
+// In records mode it sweeps the link records instead; signed sessions
+// keep no rows. In blind mode it also removes any address a user
+// record still holds from before Blind was turned on.
 func (a *Auth) Sweep(now time.Time) error {
+	if a.links != nil {
+		if err := a.links.sweep(context.Background(), now); err != nil {
+			return err
+		}
+		if a.users.blind {
+			if err := a.users.stripAll(context.Background()); err != nil {
+				return err
+			}
+		}
+		return a.sessions.Sweep(now)
+	}
 	cutoff := now.UTC().Format(time.RFC3339)
 	if _, err := a.cfg.DB.Exec(`DELETE FROM auth_links WHERE expires_at < ?`, cutoff); err != nil {
 		return err
@@ -129,7 +144,14 @@ func (a *Auth) Sweep(now time.Time) error {
 // the ones still in their inbox are a credential nobody needs, and the
 // app calls this so a stolen inbox cannot cash them later. It returns
 // how many it spent.
+//
+// In records mode it returns ErrRecords: links are stored under their
+// token's hash, and its callers are password and passkey sign-ins,
+// which a centre with no database does not have.
 func (a *Auth) SpendLinks(ctx context.Context, address string) (int, error) {
+	if a.links != nil {
+		return 0, ErrRecords
+	}
 	res, err := a.cfg.DB.ExecContext(ctx, `DELETE FROM auth_links WHERE address = ?`, strings.ToLower(address))
 	if err != nil {
 		return 0, err
