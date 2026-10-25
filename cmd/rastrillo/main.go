@@ -41,6 +41,8 @@ func main() {
 		err = runMarkup(os.Args[2:])
 	case "budget":
 		err = runBudget(os.Args[2:])
+	case "session-key":
+		err = runSessionKey(os.Args[2:], os.Stdout)
 	case "-h", "--help", "help":
 		usage()
 		return
@@ -102,5 +104,6 @@ Usage:
                                                 exits 1 over budget, 2 for a malformed .rastrillo/budgets.txt
   rastrillo budget test [-no-time] [-require T,...] [go test args]
                                                 run go test -json, judge each package's time, print a receipt
+  rastrillo session-key <kid>                   print a new signing key for signed sessions, and its public key
 `)
 }

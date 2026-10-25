@@ -1,14 +1,12 @@
 # 🤖 The CLI
 
-One binary, nine commands. Install it with:
+One binary, ten commands. Install it with:
 
 ```sh
 go install amadan.net/rastrillo/rastrillo/cmd/rastrillo@latest
 ```
 
-Every command takes an optional directory as its last argument and
-defaults to `.`. Flags come before the directory. `rastrillo help`, `-h`
-and `--help` all print usage.
+Every command except `session-key` takes an optional directory as its last argument and defaults to `.`. `session-key` takes a key id instead. Flags come before the directory. `rastrillo help`, `-h` and `--help` all print usage.
 
 ## rastrillo new
 
@@ -568,3 +566,24 @@ in the run, so a lane cannot go green having run nothing.
 
 The scaffold's `make budget`, `make test` and `make perf` call these.
 [Testing](/docs/testing) explains the budgets.
+
+## rastrillo session-key
+
+```sh
+rastrillo session-key <kid>
+```
+
+Makes a new signing key for signed sessions and prints it as two lines:
+
+```
+secret <kid>.<private key>
+public <kid>.<public key>
+```
+
+Store the value after `secret` on the hub, with `carlos secrets set`. The hub signs session cookies with it. Set the value after `public` on every tenant, with `carlos env set`. Tenants check cookies with it.
+
+The `kid` is 1 to 32 characters from `a-z`, `0-9`, `_` and `-`.
+
+To rotate, make a key with a new `kid` and follow [the rotation order](/docs/reference/sessions#rotating-the-signing-key).
+
+Exits 2 when the `kid` is missing or not valid, and prints nothing on standard output.

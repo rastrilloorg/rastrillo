@@ -59,9 +59,11 @@
 package auth
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"database/sql"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -75,6 +77,7 @@ import (
 	"amadan.net/rastrillo/rastrillo/crypto"
 	"amadan.net/rastrillo/rastrillo/lastsignin"
 	"amadan.net/rastrillo/rastrillo/mail"
+	"amadan.net/rastrillo/rastrillo/objrec"
 	"amadan.net/rastrillo/rastrillo/pow"
 	"amadan.net/rastrillo/rastrillo/sessions"
 )
@@ -301,6 +304,32 @@ type Config struct {
 	KeymailServers []string
 
 	Logger *slog.Logger
+
+	// Records is records mode: a centre with no database. Users, email
+	// claims and waiting links are objrec records, and the session is a
+	// signed cookie this Auth mints. DB must be nil, Signed must hold a
+	// Key, and Pepper is required. Nil is database mode, exactly as
+	// before.
+	Records objrec.Store
+
+	// Signed is the signed session cookie, records mode only. It must
+	// hold a Key, since the centre mints, and leave Epoch nil: auth
+	// reads the epoch from users/. New copies it and never writes the
+	// caller's struct.
+	Signed *sessions.Signed
+
+	// Pepper keys the email hash that names emails/<eh>.json, at least
+	// 32 bytes, records mode only. Never rotate it: every claim's key is
+	// computed from it, so a new pepper makes every person a new user.
+	Pepper []byte
+
+	// Blind keeps the address out of users/: the store holds only its
+	// hash. The centre can then email someone only in reply to an
+	// address they just typed, and logs carry no error text, which can
+	// hold the recipient. Records mode only, and it needs a Mailer that
+	// delivers: mail.Logged and the nil fallback log the recipient and
+	// the live link.
+	Blind bool
 }
 
 // Auth is the wired flow plus session storage. Build exactly one per
@@ -334,6 +363,15 @@ type Auth struct {
 	// exchangeHTTP is the token-exchange client: nil — the library's own
 	// default — unless KeymailServers asked for a guard.
 	exchangeHTTP *http.Client
+	// users and links are records mode's stores; both nil with a
+	// database.
+	users *users
+	links *recordLinks
+	// pendingKey seals the pending cookie in records mode, nil with a
+	// database. signin's pending blob is readable base64 holding the
+	// address, and on a shared origin every cookie the centre sets
+	// reaches every tenant.
+	pendingKey []byte
 }
 
 // DefaultBody is the magic-link email when Config.Body is nil. It
@@ -374,8 +412,20 @@ func New(cfg Config) (*Auth, error) {
 	if cfg.InstanceKey == "" {
 		return nil, ErrEmptyInstanceKey
 	}
-	if cfg.DB == nil {
-		return nil, errors.New("rastrillo/auth: Config.DB is required")
+	if cfg.Records != nil {
+		if err := recordsConfig(cfg); err != nil {
+			return nil, err
+		}
+		cfg.Pepper = bytes.Clone(cfg.Pepper)
+	} else {
+		// Half a mode would start: a pepper nothing uses, or a blind flag
+		// over a database that stores the address anyway.
+		if cfg.Pepper != nil || cfg.Blind || cfg.Signed != nil {
+			return nil, errors.New("rastrillo/auth: Config.Pepper, Blind and Signed are records mode and need Config.Records")
+		}
+		if cfg.DB == nil {
+			return nil, errors.New("rastrillo/auth: Config.DB is required")
+		}
 	}
 	switch {
 	case cfg.Proof == nil && !cfg.ProofOff:
@@ -414,23 +464,44 @@ func New(cfg Config) (*Auth, error) {
 		cfg.ForgetPath = "/signin/forget"
 	}
 
-	sess, err := sessions.New(sessions.Config{
+	a := &Auth{
+		cfg: cfg, hops: trustedHops(cfg.TrustedProxyHops, carlos.Running()),
+		now:         time.Now,
+		attemptKey:  crypto.Derive([]byte(cfg.InstanceKey), "rastrillo/auth/attempt/v1"),
+		continueKey: crypto.Derive([]byte(cfg.InstanceKey), "rastrillo/auth/continue/v1"),
+	}
+	// Every records-mode clock is this closure, not the value of a.now:
+	// a test that moves a.now after New must move links, flow and
+	// cookie together, or a link would be judged expired on one clock
+	// while the cookie was minted on another.
+	authNow := func() time.Time { return a.now() }
+	sessCfg := sessions.Config{
 		DB:         cfg.DB,
 		Origin:     cfg.Origin,
 		TTL:        cfg.SessionTTL,
 		SigninPath: cfg.SigninPath,
 		Logger:     cfg.Logger,
-	})
+	}
+	var links signin.LinkStore = &linkStore{db: cfg.DB}
+	if cfg.Records != nil {
+		a.users = &users{store: cfg.Records, pepper: cfg.Pepper, blind: cfg.Blind, now: authNow}
+		a.links = &recordLinks{
+			store: cfg.Records, pepper: cfg.Pepper, now: authNow, log: cfg.Logger,
+			seal: crypto.Derive([]byte(cfg.InstanceKey), "rastrillo/auth/link-address/v1"),
+		}
+		links = a.links
+		a.pendingKey = crypto.Derive([]byte(cfg.InstanceKey), "rastrillo/auth/pending-cookie/v1")
+		// A copy, so the caller's struct is never written.
+		sg := *cfg.Signed
+		sg.Epoch = a.users.epoch
+		sessCfg.Signed = &sg
+		sessCfg.Now = authNow
+	}
+	sess, err := sessions.New(sessCfg)
 	if err != nil {
 		return nil, err
 	}
-
-	a := &Auth{
-		cfg: cfg, sessions: sess, hops: trustedHops(cfg.TrustedProxyHops, carlos.Running()),
-		now:         time.Now,
-		attemptKey:  crypto.Derive([]byte(cfg.InstanceKey), "rastrillo/auth/attempt/v1"),
-		continueKey: crypto.Derive([]byte(cfg.InstanceKey), "rastrillo/auth/continue/v1"),
-	}
+	a.sessions = sess
 	jar, err := lastsignin.New(lastsignin.Config{
 		Origin: cfg.Origin, InstanceKey: cfg.InstanceKey,
 		AttemptCookie: a.attemptCookie(), Mode: rememberMode(cfg),
@@ -476,7 +547,7 @@ func New(cfg Config) (*Auth, error) {
 				RedirectPath: callbackPath, HTTP: a.exchangeHTTP,
 			}
 		},
-		Links:    &linkStore{db: cfg.DB},
+		Links:    links,
 		Mailer:   cfg.Mailer,
 		Limiter:  signin.NewMemoryLimiter(15 * time.Minute),
 		Key:      sha256.Sum256([]byte("rastrillo/auth/pending\x00" + cfg.InstanceKey)),
@@ -486,7 +557,47 @@ func New(cfg Config) (*Auth, error) {
 		Body:     cfg.Body,
 		LinkTTL:  LinkTTL,
 	}
+	if cfg.Records != nil {
+		// Row mode leaves Now nil, so the library keeps time.Now as it
+		// always has.
+		a.flow.Now = authNow
+	}
 	return a, nil
+}
+
+// recordsConfig refuses a records-mode Config that could not work as
+// a centre.
+func recordsConfig(cfg Config) error {
+	switch {
+	case cfg.DB != nil:
+		return errors.New("rastrillo/auth: Config.Records and Config.DB are two modes; set one")
+	case cfg.Signed == nil || cfg.Signed.Key == nil:
+		return errors.New("rastrillo/auth: Config.Records needs Config.Signed with a Key: the centre mints the session cookie")
+	case cfg.Signed.Epoch != nil:
+		return errors.New("rastrillo/auth: leave Config.Signed.Epoch nil with Records: auth reads the epoch from users/")
+	case len(cfg.Pepper) < 32:
+		return errors.New("rastrillo/auth: Config.Pepper must be at least 32 bytes")
+	case cfg.SubjectFor != nil:
+		return errors.New("rastrillo/auth: Config.SubjectFor does not apply with Records: the subject is the user id")
+	case cfg.Blind && (cfg.Mailer == nil || !mail.IsConfigured(cfg.Mailer)):
+		// The nil fallback and mail.Logged (what mail.FromEnv returns
+		// with no relay) both write the recipient and the live link to
+		// the log, which is what blind mode keeps the address out of.
+		return errors.New("rastrillo/auth: Config.Blind needs a Mailer that delivers; mail.Logged writes the address to the log. For local development, pass a Sender of your own")
+	}
+	return nil
+}
+
+// logError logs a failure that may carry an error from the flow, the
+// mailer or the keymail exchange. In blind mode it logs only the
+// error's type: an SMTP error names its recipient, and the log is the
+// one place blind mode would otherwise write the address.
+func (a *Auth) logError(msg string, err error) {
+	if a.cfg.Blind {
+		a.cfg.Logger.Error(msg, "err_type", fmt.Sprintf("%T", err))
+		return
+	}
+	a.cfg.Logger.Error(msg, "err", err)
 }
 
 // rememberMode is the jar's mode, from the one switch: nothing at all

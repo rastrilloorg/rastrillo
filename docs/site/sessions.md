@@ -11,10 +11,12 @@ here.
 
 ## What a session is
 
-A row in SQLite, not a signed cookie. Sign-out and administrative
+By default, a row in SQLite, not a signed cookie.
+Sign-out and administrative
 revocation are therefore real: a deleted row is dead even if the cookie
 lives on. Only the SHA-256 hash of a token is stored; the token itself
 exists in the cookie and nowhere else.
+A hub with no database can use [signed sessions](#signed-sessions-for-a-hub) instead.
 
 ```go
 writer, err := d.G.DB()
@@ -29,9 +31,9 @@ sess, err := sessions.New(sessions.Config{
 ```
 
 `Origin` is your external origin with the scheme —
-`https://app.example.com`. It decides the `Secure` and `__Host-` cookie
-attributes and nothing else; `sessions` never redirects off it. `TTL`
-defaults to 30 days and `SigninPath` to `/signin`.
+`https://app.example.com`.
+It decides the `Secure` and `__Host-` cookie attributes. With session rows that is all it does: `sessions` never redirects through it.
+`TTL` defaults to 30 days and `SigninPath` to `/signin`.
 
 Build one `*Sessions` per process and share it. Its migrations go into
 `BootSchema` — see [Migrations](/docs/migrations).
@@ -141,3 +143,56 @@ sess.Sweep(time.Now())
 Deletes expired rows. Expired sessions are already refused on read, so
 this is hygiene rather than enforcement — call it from a periodic job or
 at boot.
+
+## Signed sessions for a hub
+
+Use signed sessions when one hub signs people in for several apps on one origin, each at its own path. The hub keeps no database. It signs a cookie that lasts 15 minutes, and renews it until the 30-day session ends. Each app under it, a tenant, checks the cookie with the hub's public key.
+
+Give the hub the signing key, and each tenant the public keys:
+
+```go
+// The hub
+key, err := sessions.ParseSigningKey(os.Getenv("SESSION_KEY")) // carlos secrets set --app hub
+if err != nil {
+	logger.Error("session key", "err", err)
+	os.Exit(1)
+}
+a, err := auth.New(auth.Config{
+	Origin: "https://ppl.example", InstanceKey: instanceKey, Proof: guard, Mailer: mailer,
+	Records: store, Pepper: pepper, Blind: true,
+	Signed:  &sessions.Signed{Name: "ppl", Key: key},
+})
+if err != nil {
+	logger.Error("auth", "err", err)
+	os.Exit(1)
+}
+r.Handle("/_carlos/refresh", http.HandlerFunc(a.Refresh))
+r.Post("/signout-everywhere", a.SignoutEverywhere)
+
+// Each tenant
+keys, err := sessions.ParsePublicKeys(os.Getenv("SESSION_KEYS")) // carlos env set --app tenant
+if err != nil {
+	logger.Error("session keys", "err", err)
+	os.Exit(1)
+}
+s, err := sessions.New(sessions.Config{Origin: "https://ppl.example", Signed: &sessions.Signed{Name: "ppl", Keys: keys}})
+if err != nil {
+	logger.Error("sessions", "err", err)
+	os.Exit(1)
+}
+r.Use(s.Middleware)
+```
+
+Mount `a.Refresh` on the hub at `/_carlos/refresh`, for every method. `auth` does not mount it for you. A tenant sends an expired cookie there, and the hub sends the browser back with a new one.
+
+Sign-out ends the session in this browser only. A copy of the cookie can still be refreshed until "sign out everywhere" or the end of the 30-day session. To end every copy, post to `a.SignoutEverywhere`. Every copy stops working within 15 minutes.
+
+Signed sessions have no second factors. Leave `SecondFactor` unset on the hub.
+
+### Rotating the signing key
+
+Rotate the signing key in this order. If the hub signs with a key id a tenant does not have, everyone is signed out of that tenant.
+
+1. Run `rastrillo session-key k2`. Set both public keys on every tenant with `carlos env set`.
+2. On the hub, make `k2` the signing key, and keep `k1`'s public key in `Keys`.
+3. Remove `k1` everywhere after the 30-day session life. After a compromise, remove it at once: every cookie signed with it stops working within 15 minutes, and the people holding one sign in again.

@@ -115,6 +115,15 @@ new `tokens.css`.
 - New option `Options.NameInstance` names the instance on `GET /api/version` in the `Rastrillo-Host` header. It is off by default, because anyone can read the header.
 - New function `carlos.Host`, the instance's platform hostname, and constant `carlos.HostHeader`, the header `NameInstance` names it in.
 
+**Sign-in without a database.** Set `auth.Config.Records` to keep users and sign-in links in an `objrec` store instead of SQLite. The session becomes a signed cookie that lasts 15 minutes, renewed at `/_carlos/refresh` until the 30-day session ends. Apps on the same origin check it with the hub's public key and keep no sessions. Set `Blind` to store only a hash of each address. This mode has no second factors. Nothing changes for an app that does not set it.
+
+- New in `sessions`: `Config.Signed` and `Config.Now`; the `Signed` and `SigningKey` types; `NewSigningKey`, `ParseSigningKey` and `ParsePublicKeys`; `Sessions.Refresh` and `RefreshIfExpired`; `SignedLifetime` and `DefaultRefreshPath`; and `ErrSigned`, `ErrVerifyOnly` and `ErrNoUser`.
+- New in `auth`: `Config.Records`, `Signed`, `Pepper` and `Blind`; the `User` type; `Auth.User`, `EndSessions`, `SignoutEverywhere` and `Refresh`; and `ErrRecords`.
+
+**A nonce store with no database.** `pow.RecordNonces` keeps spent nonces in an `objrec` store, for a hub with no database. Pass the same store on every instance. Nothing changes for an app that does not set it.
+
+**`rastrillo session-key`.** `rastrillo session-key <kid>` prints a new signing key for signed sessions: a `secret` line for the hub and a `public` line for its tenants. Nothing changes for an app that does not use it.
+
 **A colour-scheme switch in every shell.** Readers get Light, Dark and
 System beside the language menu, with or without JavaScript. The
 framework mounts `POST /_theme`, which stores the choice in the

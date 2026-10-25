@@ -32,6 +32,11 @@ var ErrNotYours = errors.New("rastrillo/sessions: no such session for this subje
 // not that token resolves to a live row. It is how a handler finds its
 // own row in List, and the one RevokeOthers keeps.
 func (s *Sessions) Hash(r *http.Request) (string, bool) {
+	if s.cfg.Signed != nil {
+		// There is no row to find, and hashing a signed cookie would
+		// hand out a handle that names nothing.
+		return "", false
+	}
 	c, err := r.Cookie(s.CookieName())
 	if err != nil || c.Value == "" {
 		return "", false
@@ -41,7 +46,10 @@ func (s *Sessions) Hash(r *http.Request) (string, bool) {
 
 // List is every live session subject holds, newest first.
 func (s *Sessions) List(subject string) ([]Info, error) {
-	now := time.Now()
+	if s.cfg.Signed != nil {
+		return nil, ErrSigned
+	}
+	now := s.now()
 	rows, err := s.cfg.DB.Query(`SELECT token_hash, method, auth_time, created_at, expires_at
 		FROM sessions WHERE subject = ? AND expires_at > ? ORDER BY created_at DESC, token_hash`,
 		subject, now.UTC().Format(time.RFC3339))
@@ -77,6 +85,9 @@ func (s *Sessions) List(subject string) ([]Info, error) {
 // is part of the key on purpose: a handle from List is only ever
 // redeemed against the person who listed it.
 func (s *Sessions) Revoke(subject, hash string) error {
+	if s.cfg.Signed != nil {
+		return ErrSigned
+	}
 	res, err := s.cfg.DB.Exec(`DELETE FROM sessions WHERE token_hash = ? AND subject = ?`, hash, subject)
 	if err != nil {
 		return err
@@ -92,6 +103,9 @@ func (s *Sessions) Revoke(subject, hash string) error {
 // not outlive the password it was stolen alongside — and returns how
 // many it ended. With no cookie on r, every session goes.
 func (s *Sessions) RevokeOthers(r *http.Request, subject string) (int, error) {
+	if s.cfg.Signed != nil {
+		return 0, ErrSigned
+	}
 	keep, _ := s.Hash(r)
 	return s.revokeWhere(`subject = ? AND token_hash <> ?`, subject, keep)
 }
@@ -99,6 +113,9 @@ func (s *Sessions) RevokeOthers(r *http.Request, subject string) (int, error) {
 // RevokeAll ends every session subject holds, the presented one
 // included: "sign out everywhere". The caller clears its own cookie.
 func (s *Sessions) RevokeAll(subject string) (int, error) {
+	if s.cfg.Signed != nil {
+		return 0, ErrSigned
+	}
 	return s.revokeWhere(`subject = ?`, subject)
 }
 
