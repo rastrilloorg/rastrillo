@@ -304,8 +304,8 @@ func TestRenderTemplateWiresErrorPage(t *testing.T) {
 	// Scheme too: a 500 after a panic reaches ErrorPage outside render,
 	// and without it the error page would paint System for a reader who
 	// chose Dark.
-	if !strings.Contains(src, `pages.Execute(&buf, "errors", map[string]any{"L": pages.LocalizerFor(r), "Scheme": rastrillo.SchemeFrom(r), "Status": status, "Ref": ref})`) {
-		t.Errorf("render.go's ErrorPage does not render the \"errors\" page in the request's language and scheme:\n%s", src)
+	if !strings.Contains(src, `pages.Execute(&buf, "errors", map[string]any{"L": pages.LocalizerFor(r), "Scheme": rastrillo.SchemeFrom(r), "Base": basepath.Base(r), "Status": status, "Ref": ref})`) {
+		t.Errorf("render.go's ErrorPage does not render the \"errors\" page in the request's language, scheme and base path:\n%s", src)
 	}
 }
 
@@ -315,7 +315,7 @@ func TestRenderTemplateWiresErrorPage(t *testing.T) {
 // in the localizer-first syntax migrate-templates writes, so strict
 // rendering has the localizer the partial needs.
 func TestErrorsTemplateRendersErrorPagePartial(t *testing.T) {
-	if !strings.Contains(errorsTemplate, `{{define "content"}}{{$L := localizer $}}{{template "error-page" dict "L" $L "Status" .Status "Ref" .Ref}}{{end}}`) {
+	if !strings.Contains(errorsTemplate, `{{define "content"}}{{$L := localizer $}}{{template "error-page" dict "L" $L "Status" .Status "Ref" .Ref "HomeHref" (path $ "/")}}{{end}}`) {
 		t.Errorf("errors.html template does not render the error-page partial:\n%s", errorsTemplate)
 	}
 }

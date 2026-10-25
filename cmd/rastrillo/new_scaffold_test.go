@@ -1034,6 +1034,275 @@ func TestBadConfig(t *testing.T) {
 	}
 }
 
+// basepathExtraTest is written into a scaffolded two-locale sidebar app
+// as package notestest, and serves the app as main.go does with a base
+// path set. A root-absolute link left in one of the scaffold's own pages
+// would take a tenant's reader to the hub's page of the same name.
+const basepathExtraTest = `package notestest
+
+import (
+	"context"
+	"io"
+	"log/slog"
+	"net/http"
+	"net/http/httptest"
+	"net/url"
+	"regexp"
+	"strings"
+	"testing"
+	"time"
+
+	"github.com/go-chi/chi/v5"
+
+	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/basepath"
+	"amadan.net/rastrillo/rastrillo/basepath/basepathtest"
+	"amadan.net/rastrillo/rastrillo/csrf"
+	"amadan.net/rastrillo/rastrillo/db"
+	"amadan.net/rastrillo/rastrillo/sessions"
+
+	genlocales "notes/gen/locales"
+	"notes/internal/notes"
+)
+
+var acme = basepath.Config{Origin: "http://localhost:8080", Slug: "acme"}
+
+func underAcme(t *testing.T, mux *http.ServeMux) http.Handler {
+	t.Helper()
+	opts := rastrillo.Options{Logger: slog.New(slog.NewTextHandler(io.Discard, nil)),
+		Locales: genlocales.Locales, DefaultLocale: genlocales.DefaultLocale, BasePath: acme}
+	notes.Configure(&opts, mux, time.Now())
+	h, closeAll, err := rastrillo.Handler(opts)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { closeAll() })
+	return h
+}
+
+func send(h http.Handler, method, host, target string, form url.Values, cookies ...*http.Cookie) *httptest.ResponseRecorder {
+	r := httptest.NewRequest(method, target, strings.NewReader(form.Encode()))
+	r.Host = host
+	if form != nil {
+		r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		r.Header.Set("Sec-Fetch-Site", "same-origin")
+	}
+	for _, c := range cookies {
+		r.AddCookie(c)
+	}
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, r)
+	return rec
+}
+
+func leaks(t *testing.T, what string, rec *httptest.ResponseRecorder) {
+	t.Helper()
+	if l := basepathtest.Leaks(rec.Body.Bytes(), "/acme"); len(l) > 0 {
+		t.Errorf("%s links outside /acme: %q\n%s", what, l, rec.Body.String())
+	}
+}
+
+var stylesheet = regexp.MustCompile("<link rel=\"stylesheet\" href=\"([^\"]+)\"")
+
+const product, direct = "localhost:8080", "127.0.0.1:8080"
+
+func TestUnderABasePath(t *testing.T) {
+	h := underAcme(t, newApp(t).(*http.ServeMux))
+	for _, p := range []string{"/acme", "/acme/overview", "/acme/es/overview"} {
+		rec := send(h, "GET", product, p, nil)
+		if rec.Code != http.StatusOK {
+			t.Errorf("GET %s: %d, want 200:\n%s", p, rec.Code, rec.Body.String())
+			continue
+		}
+		leaks(t, "GET "+p, rec)
+		m := stylesheet.FindStringSubmatch(rec.Body.String())
+		if m == nil {
+			t.Errorf("GET %s links no stylesheet:\n%s", p, rec.Body.String())
+		} else if css := send(h, "GET", product, m[1], nil); css.Code != http.StatusOK {
+			t.Errorf("GET %s's stylesheet %s: %d, want 200", p, m[1], css.Code)
+		}
+	}
+	if rec := send(h, "GET", product, "/static/tokens.css", nil); rec.Code != http.StatusNotFound {
+		t.Errorf("GET /static/tokens.css outside the base: %d, want 404", rec.Code)
+	}
+
+	for _, c := range []struct{ target, field, value, want string }{
+		{"/acme/_theme", "scheme", "dark", "/acme/overview"},
+		{"/acme/_locale", "locale", "es", "/acme/es/overview"},
+	} {
+		rec := send(h, "POST", product, c.target, url.Values{c.field: {c.value}, "return": {"/overview"}})
+		if rec.Code != http.StatusSeeOther || rec.Header().Get("Location") != c.want {
+			t.Errorf("POST %s: %d to %q, want 303 to %q", c.target, rec.Code, rec.Header().Get("Location"), c.want)
+		}
+	}
+
+	// Through the middleware, but outside rastrillo.Handler: a recovered
+	// panic reaches ErrorPage the same way.
+	errPage := acme.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		notes.ErrorPage(w, r, http.StatusInternalServerError, "r1")
+	}))
+	rec := send(errPage, "GET", product, "/acme/x", nil)
+	if !strings.Contains(rec.Body.String(), "href=\"/acme\"") {
+		t.Errorf("the error page's home link is not /acme:\n%s", rec.Body.String())
+	}
+	leaks(t, "the error page", rec)
+
+	rec = tokenPage(t)
+	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), "<form rst-form method=\"post\" action=\"/acme/tokens\">") {
+		t.Errorf("GET /acme/tokens: %d, want 200 and a form that posts to /acme/tokens:\n%s", rec.Code, rec.Body.String())
+	}
+	leaks(t, "the token page", rec)
+
+	rec = send(h, "GET", direct, "/overview", nil)
+	if rec.Code != http.StatusTemporaryRedirect || rec.Header().Get("Location") != "http://localhost:8080/acme/overview" {
+		t.Errorf("GET /overview on the direct host: %d to %q, want 307 to the product path", rec.Code, rec.Header().Get("Location"))
+	}
+	if rec := send(h, "GET", direct, "/healthz", nil); rec.Code != http.StatusOK {
+		t.Errorf("GET /healthz on the direct host: %d, want 200", rec.Code)
+	}
+}
+
+// tokenPage is GET /acme/tokens, mounted as tokens.go says. The row
+// store is inert under a base path (a tenant verifies the hub's session
+// and never mints one), so this signs in the way a path-routed tenant
+// is signed in: a signed session, minted here at the root as the hub
+// would.
+func tokenPage(t *testing.T) *httptest.ResponseRecorder {
+	t.Helper()
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	key, err := sessions.NewSigningKey("k1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	sess, err := sessions.New(sessions.Config{Origin: acme.Origin, Logger: logger, Signed: &sessions.Signed{Name: "notes", Key: key,
+		Epoch: func(context.Context, string) (int64, error) { return 1, nil }}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	signin := httptest.NewRecorder()
+	if err := sess.SignIn(signin, httptest.NewRequest("POST", "/signin", nil), sessions.Session{Subject: "1", Method: "test"}); err != nil {
+		t.Fatal(err)
+	}
+	d, err := db.Open(schema.Path(t), logger)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { d.Close() })
+	tokens, err := notes.Tokens(d, sess)
+	if err != nil {
+		t.Fatal(err)
+	}
+	r := chi.NewRouter()
+	r.Use(csrf.Protect(testOrigin))
+	r.Group(tokens)
+	apiTree, err := notes.API(d, logger)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return send(underAcme(t, notes.Mux(r, apiTree)), "GET", product, "/acme/tokens", nil, signin.Result().Cookies()...)
+}
+`
+
+// A scaffolded app serves its own pages, the framework's switches, its
+// token page and its error page under a base path with no link outside
+// it, and its direct host sends a reader to the product path.
+func TestScaffoldServesUnderABasePath(t *testing.T) {
+	if testing.Short() {
+		t.Skip("scaffolds, tidies and tests a whole app")
+	}
+	app := scaffoldApp(t, "notes", "--shell=sidebar")
+	mustWrite(t, filepath.Join(app, "manifest", "app.toml"), "locales = [\"en\", \"es\"]\ndefault_locale = \"en\"\n")
+	if err := runGenerate([]string{app}); err != nil {
+		t.Fatalf("rastrillo generate: %v", err)
+	}
+	mustWrite(t, filepath.Join(app, "internal", "notestest", "basepath_extra_test.go"), basepathExtraTest)
+	if out, err := goTestIn(app, "-v", "-run", "TestUnderABasePath", "./internal/notestest/"); err != nil || !strings.Contains(out, "--- PASS: TestUnderABasePath") {
+		t.Fatalf("the scaffolded app under /acme:\n%s", out)
+	}
+}
+
+// The scaffold's main.go reads the base path from the environment the
+// platform gives a path-routed tenant, and refuses a slug it cannot
+// serve rather than serving at the root.
+func TestScaffoldBinaryReadsTheBasePathFromItsEnvironment(t *testing.T) {
+	if testing.Short() {
+		t.Skip("scaffolds and builds a whole app")
+	}
+	app := scaffoldApp(t, "notes")
+	build := exec.Command("go", "build", "-buildvcs=false", "-o", "notes.bin", "./cmd/notes")
+	build.Dir = app
+	if out, err := build.CombinedOutput(); err != nil {
+		t.Fatalf("go build:\n%s", out)
+	}
+	// A listener handed over as fd 3, as apiVersion does, rather than a
+	// port picked and then bound by the app, which another process can
+	// take in between.
+	l, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer l.Close()
+	lf, err := l.(*net.TCPListener).File()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer lf.Close()
+	origin := "http://" + l.Addr().String()
+	start := func(slug string) (*exec.Cmd, *bytes.Buffer, chan error) {
+		cmd := exec.Command(filepath.Join(app, "notes.bin"))
+		cmd.Dir = app
+		cmd.Env = append(os.Environ(), "LISTEN_FDS=1", "STATE_DIRECTORY="+t.TempDir(),
+			"NOTES_ORIGIN="+origin, "RASTRILLO_SLUG="+slug, "RASTRILLO_SLUG_FROM_HOST=")
+		cmd.ExtraFiles = []*os.File{lf}
+		var stderr bytes.Buffer
+		cmd.Stderr = &stderr
+		if err := cmd.Start(); err != nil {
+			t.Fatal(err)
+		}
+		done := make(chan error, 1)
+		go func() { done <- cmd.Wait() }()
+		return cmd, &stderr, done
+	}
+	get := func(path string) (int, string, error) {
+		resp, err := http.Get(origin + path)
+		if err != nil {
+			return 0, "", err
+		}
+		defer resp.Body.Close()
+		body, _ := io.ReadAll(resp.Body)
+		return resp.StatusCode, string(body), nil
+	}
+
+	cmd, stderr, done := start("acme")
+	for deadline := time.Now().Add(30 * time.Second); ; time.Sleep(50 * time.Millisecond) {
+		if _, _, err := get("/acme/healthz"); err == nil {
+			break
+		} else if time.Now().After(deadline) {
+			t.Fatalf("the app never answered: %v\n%s", err, stderr)
+		}
+	}
+	if code, body, _ := get("/acme/healthz"); code != http.StatusOK || body != "ok" {
+		t.Errorf("GET /acme/healthz: %d %q, want 200 ok\n%s", code, body, stderr)
+	}
+	if code, _, _ := get("/healthz"); code != http.StatusNotFound {
+		t.Errorf("GET /healthz on the product host: %d, want 404 outside the base\n%s", code, stderr)
+	}
+	_ = cmd.Process.Kill()
+	<-done
+
+	cmd, stderr, done = start("Bad/slug")
+	select {
+	case err := <-done:
+		if err == nil || !strings.Contains(stderr.String(), "RASTRILLO_SLUG") {
+			t.Errorf("RASTRILLO_SLUG=Bad/slug: exit %v, want a refusal naming RASTRILLO_SLUG:\n%s", err, stderr)
+		}
+	case <-time.After(30 * time.Second):
+		_ = cmd.Process.Kill()
+		<-done
+		t.Errorf("RASTRILLO_SLUG=Bad/slug: still serving after 30s, want a refusal:\n%s", stderr)
+	}
+}
+
 // The scaffold's AGENTS.md states the money rule as Appendix C.7's
 // scaffold.agents.money, verbatim: integer cents is no longer the
 // whole rule once every amount carries its currency.

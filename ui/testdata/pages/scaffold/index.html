@@ -5,8 +5,8 @@
      an id here, and give its page an up block naming /#<that id>, so a
      phone comes back to the row it left. */}}
 {{define "view"}}index{{end}}
-{{define "brand"}}<a rst-shell-brand href="/">demo</a>{{end}}
-{{define "nav"}}<a id="nav-overview" href="/overview">Overview</a>{{end}}
+{{define "brand"}}<a rst-shell-brand href="{{path $ "/"}}">demo</a>{{end}}
+{{define "nav"}}<a id="nav-overview" href="{{path $ "/overview"}}">Overview</a>{{end}}
 {{define "content"}}
 <h1>Hello, World — this is a rastrillo app.</h1>
 {{end}}
