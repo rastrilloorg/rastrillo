@@ -1,0 +1,121 @@
+package __PKG__test
+
+import (
+	"context"
+	"io"
+	"net/http"
+	"net/http/httptest"
+	"net/url"
+	"regexp"
+	"strings"
+	"sync"
+	"testing"
+	"time"
+
+	"amadan.net/rastrillo/rastrillo/pow/powtest"
+)
+
+// outbox is the mail.Sender the tests hand the app: it keeps each
+// message so a test can open the link it carries.
+type outbox struct {
+	mu     sync.Mutex
+	bodies []string
+}
+
+func (o *outbox) Send(_ context.Context, _, _, body string) error {
+	o.mu.Lock()
+	defer o.mu.Unlock()
+	o.bodies = append(o.bodies, body)
+	return nil
+}
+
+var linkRE = regexp.MustCompile(`/auth/verify\?token=[A-Za-z0-9_-]+`)
+
+// link is the newest sign-in link the outbox holds.
+func (o *outbox) link(t *testing.T) string {
+	t.Helper()
+	o.mu.Lock()
+	defer o.mu.Unlock()
+	for i := len(o.bodies) - 1; i >= 0; i-- {
+		if l := linkRE.FindString(o.bodies[i]); l != "" {
+			return l
+		}
+	}
+	t.Fatal("no sign-in link was emailed")
+	return ""
+}
+
+// signIn signs address in through the real screen and the emailed
+// link, and returns the session cookie.
+func signIn(t *testing.T, h http.Handler, box *outbox, address string) *http.Cookie {
+	t.Helper()
+	page := get(t, h, "/signin")
+	time.Sleep(600 * time.Millisecond) // past the guard's MinAge
+	// force=1 sends a link even where the address could use keymail.
+	if rec := post(t, h, "/signin", powtest.Fill(t, page.Body.Bytes(), url.Values{"address": {address}, "force": {"1"}})); rec.Code != http.StatusSeeOther {
+		t.Fatalf("POST /signin = %d, want 303:\n%s", rec.Code, rec.Body)
+	}
+	link, _ := url.Parse(box.link(t))
+	rec := post(t, h, link.Path, url.Values{"token": {link.Query().Get("token")}})
+	if rec.Code != http.StatusSeeOther {
+		t.Fatalf("POST %s = %d, want 303", link.Path, rec.Code)
+	}
+	for _, c := range rec.Result().Cookies() {
+		if strings.Contains(c.Name, "session") && c.Value != "" {
+			return c
+		}
+	}
+	t.Fatal("redeeming the link set no session cookie")
+	return nil
+}
+
+// signInOver is signIn over HTTP, for the perf test's Signin. Every
+// POST carries Origin: testOrigin, the origin the app was built with,
+// not base: csrf.Protect compares with the app's origin.
+func signInOver(t *testing.T, c *http.Client, base string, box *outbox, address string) {
+	t.Helper()
+	resp, err := c.Get(base + "/signin")
+	if err != nil {
+		t.Fatal(err)
+	}
+	page, _ := io.ReadAll(resp.Body)
+	resp.Body.Close()
+	time.Sleep(600 * time.Millisecond)
+	postOver(t, c, base+"/signin", powtest.Fill(t, page, url.Values{"address": {address}, "force": {"1"}}))
+	link, _ := url.Parse(box.link(t))
+	postOver(t, c, base+link.Path, url.Values{"token": {link.Query().Get("token")}})
+}
+
+func postOver(t *testing.T, c *http.Client, target string, form url.Values) {
+	t.Helper()
+	req, _ := http.NewRequest(http.MethodPost, target, strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("Origin", testOrigin)
+	resp, err := c.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp.Body.Close()
+}
+
+func getAs(t *testing.T, h http.Handler, target string, c *http.Cookie) *httptest.ResponseRecorder {
+	t.Helper()
+	req := httptest.NewRequest(http.MethodGet, target, nil)
+	req.AddCookie(c)
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+	return rec
+}
+
+func TestSignInByEmailedLink(t *testing.T) {
+	t.Parallel()
+	h, box := newAppWithMail(t)
+	if rec := get(t, h, "/account"); rec.Code != http.StatusSeeOther {
+		t.Fatalf("signed-out /account = %d, want 303 to the sign-in screen", rec.Code)
+	}
+	c := signIn(t, h, box, "ada@example.com")
+	rec := getAs(t, h, "/account", c)
+	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `action="/signout"`) {
+		t.Fatalf("signed-in /account = %d, want 200 with a sign-out form:\n%s", rec.Code, rec.Body)
+	}
+}

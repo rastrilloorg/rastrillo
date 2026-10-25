@@ -616,24 +616,25 @@ func TestGatePinsMatchRastrillosGate(t *testing.T) {
 // No network, not GOPROXY=off: a versioned go run asks its proxy for
 // the module's latest version, so the proxy here is the local module
 // cache, and every variable that would route around it is cleared.
-func TestScaffoldWholeGatePassesOffline(t *testing.T) {
-	if testing.Short() {
-		t.Skip("runs a scaffolded app's whole gate")
-	}
+// scaffoldGate scaffolds an app with args (its name last) and runs its
+// whole gate offline, returning the gate's output.
+func scaffoldGate(t *testing.T, args ...string) string {
+	t.Helper()
 	setSandboxGoEnv(t)
 	root := repoRoot(t)
 	t.Chdir(t.TempDir())
-	if err := runNew([]string{"gateapp"}); err != nil {
+	if err := runNew(args); err != nil {
 		t.Fatal(err)
 	}
-	f, err := os.OpenFile(filepath.Join("gateapp", "go.mod"), os.O_APPEND|os.O_WRONLY, 0o644)
+	app := args[len(args)-1]
+	f, err := os.OpenFile(filepath.Join(app, "go.mod"), os.O_APPEND|os.O_WRONLY, 0o644)
 	if err != nil {
 		t.Fatal(err)
 	}
 	f.WriteString("\nreplace amadan.net/rastrillo/rastrillo => " + root + "\n")
 	f.Close()
 	tidy := exec.Command("go", "mod", "tidy")
-	tidy.Dir = "gateapp"
+	tidy.Dir = app
 	if out, err := tidy.CombinedOutput(); err != nil {
 		t.Fatalf("go mod tidy: %v\n%s", err, out)
 	}
@@ -648,7 +649,7 @@ func TestScaffoldWholeGatePassesOffline(t *testing.T) {
 	// Every target on the scaffold's own ci: line, read from its Makefile
 	// so the two cannot drift, except govulncheck: it reads the live
 	// vulnerability database, which is the network by design.
-	mkfile, err := os.ReadFile(filepath.Join("gateapp", "Makefile"))
+	mkfile, err := os.ReadFile(filepath.Join(app, "Makefile"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -666,7 +667,7 @@ func TestScaffoldWholeGatePassesOffline(t *testing.T) {
 		t.Fatalf("read only %v from the scaffold's ci: line", targets)
 	}
 	mk := exec.Command("make", targets...)
-	mk.Dir = "gateapp"
+	mk.Dir = app
 	mk.Env = append(os.Environ(),
 		"PATH="+filepath.Dir(goBin)+":/usr/bin:/bin",
 		// -buildvcs=false: the scaffold sits in a temp directory with no
@@ -683,6 +684,14 @@ func TestScaffoldWholeGatePassesOffline(t *testing.T) {
 	if err != nil {
 		t.Fatalf("make ci on a fresh scaffold:\n%s", out)
 	}
+	return string(out)
+}
+
+func TestScaffoldWholeGatePassesOffline(t *testing.T) {
+	if testing.Short() {
+		t.Skip("runs a scaffolded app's whole gate")
+	}
+	out := []byte(scaffoldGate(t, "gateapp"))
 	if !strings.Contains(string(out), "budget size:") {
 		t.Errorf("make ci did not run budget size:\n%s", out)
 	}
@@ -704,6 +713,23 @@ func TestScaffoldWholeGatePassesOffline(t *testing.T) {
 	// way generate would: a missing contract fails it.
 	if !strings.Contains(string(out), "rastrillo generate --check:") {
 		t.Errorf("make ci did not run generate --check:\n%s", out)
+	}
+}
+
+// TestScaffoldMagicAuthGatePassesOffline: an app made with --auth=magic
+// passes its own whole gate, signing in by emailed link in its tests.
+// /account is measured only if the perf test's Signin got through the
+// screen, the proof of work and the link, so its line is the proof
+// that the generated sign-in works, not merely compiles.
+func TestScaffoldMagicAuthGatePassesOffline(t *testing.T) {
+	if testing.Short() {
+		t.Skip("runs a scaffolded app's whole gate")
+	}
+	out := scaffoldGate(t, "--auth=magic", "authapp")
+	for _, want := range []string{"perf: GET /signin: median", "perf: GET /account: median", "perf: cold boot: median"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("the perf lane did not report %q:\n%s", want, out)
+		}
 	}
 }
 
