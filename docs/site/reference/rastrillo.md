@@ -146,6 +146,12 @@ under `/` cannot be seen through the mux, so an app that routes
 NameInstance bool
 ```
 
+**`BasePath`**: serves your whole app under `/<slug>` on a shared product origin, such as `https://example.com/acme`. The framework's own routes, `/healthz` and `/api/version` among them, answer under it too. The zero value is off and costs nothing. Fill it with `basepath.FromEnv`, and set `DirectHost` in code: it is your app's choice. With `ServeDirect`, the instance's own hostname is read-only. `Handler` refuses a value `basepath` cannot serve. See [`basepath`](/docs/reference/basepath).
+
+```go
+BasePath basepath.Config
+```
+
 ## Ctx and RenderFunc
 
 ```go
