@@ -179,7 +179,7 @@ Expected: PASS, including `TestScaffoldedAppTestsPass`.
   - `func Router(d *db.DB, origin string, logger *slog.Logger) (http.Handler, error)`: migrates as now, registers `routes()` on a new ServeMux, returns `csrf.Protect(origin)(mux)`.
   - `func GETPatterns() []string`: the GET entries of `(&app{}).routes()` with `"GET "` cut, for the perf test.
   - `App`, `Mux`, `Configure` keep their signatures.
-- Produces, in the scaffolded `internal/<pkg>/tokens.go` (single): `func Tokens(d *db.DB, sess *sessions.Sessions) (func(mux *http.ServeMux), error)`, registering `GET /tokens` behind `sess.Require`, `POST /tokens` behind `sess.RequireFresh(10*time.Minute)` (which includes Require, `sessions/sessions.go:417`), and `POST /tokens/revoke` behind `sess.Require`, the same guards as today. Its doc comment's wiring example becomes `tokens(mux)` before the CSRF wrap. `api_test.go`'s router becomes a ServeMux.
+- Produces, in the scaffolded `internal/<pkg>/tokens.go` (single): `func Tokens(d *db.DB, sess *sessions.Sessions) (func(mux *http.ServeMux), error)`, registering every route today's chi version does (`tokens.go.tmpl:39-47`) with the same guards: `GET /tokens`, `POST /tokens/revoke`, `POST /tokens/revoke-agent` and `POST /tokens/revoke-all` behind `sess.Require`, and `POST /tokens` behind `sess.RequireFresh(10*time.Minute)` (which includes Require, `sessions/sessions.go:417`). The `api-tokens` partial posts to all four (`ui/partials/api-tokens.html:39`), so a missing one is a 404 button; `api_test.go` asserts each answers something other than 404 when signed out. Its doc comment's wiring example becomes `tokens(mux)` before the CSRF wrap. `api_test.go`'s router becomes a ServeMux.
 - Produces, `internal/<pkg>/migrations_test.go`: `TestModelsMatchMigrations` calls `modeldiff.Generate(context.Background(), <pkg>.Schema.All(), <pkg>.Models)` and fails on any change with exactly `models and migrations disagree:\n  <sql per change>\n\nrun: rastrillo migration generate`, the CLI's text (`cmd/rastrillo/migration.go`).
 
 - [ ] **Step 1: Write the failing tests**
@@ -209,7 +209,7 @@ Expected: PASS.
 
 **Files:**
 - Create: `cmd/rastrillo/scaffold/bare/{main.go,app.go,locale.go,render.go,app_test.go,README.md,gitignore}.tmpl`, `cmd/rastrillo/newbare.go`, `cmd/rastrillo/newbare_test.go`
-- Modify: `cmd/rastrillo/shapes.go` (bare's `Write`), `cmd/rastrillo/dev.go:226` (rebuild calls `runGenerate` unconditionally, which would write `gen/` into a bare app: run it only when the app has a `manifest/` directory)
+- Modify: `cmd/rastrillo/shapes.go` (bare's `Write`), `cmd/rastrillo/dev.go:226` (rebuild calls `runGenerate` unconditionally, which would write `gen/` into a bare app: run it when the app has any generation input or output, that is `manifest/`, `actions/` or `gen/`, and skip it only when it has none; `generate_test.go:55-65` supports `actions/` without manifests, `generate.go:288-290` copies them)
 
 **Interfaces:**
 - Consumes: `newOpts`, the existing vendored-asset, layout, icon-set and errors-template code paths `writeSingle` uses (extract shared helpers rather than copy them).
@@ -231,7 +231,7 @@ func TestBareGoModRequiresOnlyRastrillo(t *testing.T) // after go mod tidy: no g
 func TestBarePassesItsOwnTests(t *testing.T)   // scaffoldWithReplace(t, "dash", "--scaffold", "bare"); go test ./... and go vet ./... pass
 func TestBareWithLocale(t *testing.T)          // table: es, pt-PT, zh-Hans: locale.go imports the pack PacksFor names, Locale is the code, the app's tests pass
 func TestBareRefusesUX(t *testing.T)           // --ux standard: Task 0's text; no dir
-func TestDevLeavesABareAppBare(t *testing.T)   // one rebuild of dev's loop in a bare app writes no gen/; in a single app it still runs generate
+func TestDevLeavesABareAppBare(t *testing.T)   // one rebuild of dev's loop in a bare app writes no gen/; in a single app, and in an app with actions/ and no manifest/, it still runs generate
 ```
 
 - [ ] **Step 2: Run them to see them fail**
@@ -303,7 +303,7 @@ Expected: FAIL.
 - Produces: `func writeAccounts(o newOpts) error`: runs `writeSingle`, then overwrites and adds files so the result is a fresh `single` with add-signin applied:
   - `go.mod` with the chi require.
   - `app.go`: `Router(d *db.DB, origin string, bg *background.Group, logger *slog.Logger) (chi.Router, error)` as add-signin step 4; `App` takes `bg` in the same place.
-  - `models.go`: `User` beside `Note`, and `Note` gains `UserID int64 \`gorm:"index"\`` as in `examples/notes/internal/notes/models.go:23`; `0001_init.sql` and `schema.sql` produced by running `rastrillo migration generate` once on a scaffold and pasting the result, as `initMigrationTemplate` was.
+  - `models.go`: `User` beside `Note`, and `Note` gains `UserID int64 \`gorm:"index"\`` as in `examples/notes/internal/notes/models.go:23`; `0001_init.sql` and `schema.sql` are the complete baseline: produced by running `rastrillo migration generate` once on an accounts scaffold whose `migrations/` holds no `.sql` files yet, so the generator writes every table from nothing (run against a `single` scaffold it would write only the delta after `single`'s `0001`, `migration.go:239-248`), then pasted in as `initMigrationTemplate` was.
   - Owned routes in the signed-in group, every query through `scope.Owned(g, uid)` (`scope/scope.go:19`), the uid from the session: `GET /notes` lists the viewer's notes, `POST /notes` creates one owned by the viewer, `GET /notes/{id}` shows one or answers 404 when it is not the viewer's. These replace add-signin's placeholder `/account`, with a `templates/notes.html` page.
   - `tokens.go`: today's chi version, wired in `Router` inside the signed-in group (its doc comment's recipe, `tokens.go.tmpl:15-27`), since this shape has the session it needs.
   - `migrations.go`: `BootSchema = migrate.Merge(sessions.Schema, pow.Schema, apitoken.Schema, Schema)`.
