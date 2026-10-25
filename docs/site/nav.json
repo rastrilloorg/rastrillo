@@ -179,6 +179,16 @@
           "blurb": "Keep track of work nobody waits for, and stop it before the database closes."
         },
         {
+          "slug": "reference/basepath",
+          "label": "basepath",
+          "blurb": "Serve your app under a path on another app's domain."
+        },
+        {
+          "slug": "reference/basepathtest",
+          "label": "basepathtest",
+          "blurb": "Find links that would break under a base path."
+        },
+        {
           "slug": "reference/blobs",
           "label": "blobs",
           "blurb": "Content-addressed bytes over S3, a directory, or a table."
