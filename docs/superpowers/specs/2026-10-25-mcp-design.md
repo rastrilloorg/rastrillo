@@ -1,9 +1,13 @@
 # MCP for every app: the operations an app already has, as tools an agent can call
 
-Status: draft for Paul's review. Written from the conversation of
-2026-10-23 to 2026-10-25 and from the Oficina integration agent's
-requirements in amadan discussion #116. Calls I made where nobody decided
-are marked **(my call)**. Nothing is implemented.
+Status: approved by Paul on 2026-10-25, with the recommended answer to
+each question under "Open for Paul": both deployment shapes, rechecks on
+the API door too, the package name `mcp`, and the path `/api/v1/mcp`.
+The instructions text in section 7 still needs his copy review.
+
+Written from the conversation of 2026-10-23 to 2026-10-25 and from the
+Oficina integration agent's requirements in amadan discussion #116. Calls
+I made where nobody decided are marked **(my call)**.
 
 Citations: `T/` is Tito Go (`amadan.net/tito/titogo`, `amadan/main`
 `5190203b0`). `O/` is Oficina's agent-access module
@@ -396,10 +400,11 @@ Idempotent  bool // calling it twice with the same input leaves the same state a
   replaced write is marked destructive and not idempotent. An app that
   knows better passes its own descriptor to `mcp.New` instead of the
   generated one.
-- **Can't be undone is a different question, and `Confirm` answers it.**
-  An operation with a `Confirm` sentence is one to ask the person about
-  first (section 5). `Destructive` alone doesn't mean that: renaming a
-  bookmark is destructive in MCP's sense.
+- **Whether to ask the person first is `Confirm`'s question.** An
+  operation with a `Confirm` sentence is one to ask about first
+  (section 5). Generated updates and deletes carry one (spec 1:
+  "Change a bookmark {id}?", "Delete a bookmark {id}?"). `Destructive`
+  alone doesn't mean that.
 - **A hand-written descriptor says what's true of it.**
 - **The framework never adds an idempotency argument.** An operation that
   honours a retry key has the key in its own `Input` and sets
@@ -548,8 +553,8 @@ what is true of every Rastrillo app:
 > - Read before you write: get a thing, then change only the fields you
 >   mean to.
 > - Lists are paged: pass next_after back as after until it is null.
-> - When a tool's description asks you to confirm with the person, it
->   can't be undone. Ask them first, using the sentence it gives.
+> - When a tool's description asks you to confirm with the person, ask
+>   them first, using the sentence it gives.
 > - Don't retry a write blindly. If a call timed out or was cut short,
 >   read the thing back before trying again.
 
