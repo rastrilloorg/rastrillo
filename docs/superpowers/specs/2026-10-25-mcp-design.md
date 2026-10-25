@@ -75,6 +75,11 @@ relayed from Paul by the Oficina agent (#116).
   in model context" (`T/internal/mcpapi/mcpapi.go:92`). Same here.
 - **Framework idempotency keys.** Still deferred from spec 1. An
   operation can still take its own retry key as an input (section 4).
+- **Bounded creation results.** Weighed for #116 and left alone. A
+  generated create answers with the whole row, as it does at the API door,
+  and the result cap (section 6) bounds that. An operation that wants a
+  small receipt says so in its own `Result`, as Memoria's `notes_create`
+  does with `{id, indexed}`.
 - **A stdio transport.** Remote MCP over HTTP only. Oficina's CLI provides
   a local stdio adapter over its own API (`O/README.md`).
 
