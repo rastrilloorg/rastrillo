@@ -3,7 +3,6 @@ package auth
 import (
 	"bytes"
 	"context"
-	"database/sql"
 	"io"
 	"log/slog"
 	"net/http"
@@ -15,6 +14,7 @@ import (
 	"time"
 
 	"amadan.net/rastrillo/rastrillo/basepath"
+	"amadan.net/rastrillo/rastrillo/internal/tablerows"
 	"amadan.net/rastrillo/rastrillo/sessions"
 )
 
@@ -79,33 +79,6 @@ func checkRefused(t *testing.T, e entry, w *httptest.ResponseRecorder, logs *byt
 	}
 }
 
-// tableRows is the row count of every table in d.
-func tableRows(t *testing.T, d *sql.DB) int {
-	t.Helper()
-	rows, err := d.Query(`SELECT name FROM sqlite_master WHERE type = 'table'`)
-	if err != nil {
-		t.Fatal(err)
-	}
-	var names []string
-	for rows.Next() {
-		var n string
-		if err := rows.Scan(&n); err != nil {
-			t.Fatal(err)
-		}
-		names = append(names, n)
-	}
-	rows.Close()
-	total := 0
-	for _, n := range names {
-		var c int
-		if err := d.QueryRow(`SELECT COUNT(*) FROM "` + n + `"`).Scan(&c); err != nil {
-			t.Fatal(err)
-		}
-		total += c
-	}
-	return total
-}
-
 var tokenRE = regexp.MustCompile(`/auth/verify\?token=([A-Za-z0-9_-]+)`)
 
 // linkAt mails a link at the root and returns its token.
@@ -148,12 +121,10 @@ func TestSignInRefusesUnderABasePath(t *testing.T) {
 			} {
 				logs.Reset()
 				m.forget()
-				before := tableRows(t, a.cfg.DB)
+				before := tablerows.Count(t, a.cfg.DB)
 				w := serveAt(at.cfg, e.h, e.request(at.prefix))
 				checkRefused(t, e, w, &logs, at.base)
-				if n := tableRows(t, a.cfg.DB); n != before {
-					t.Errorf("%s: %d rows, want %d", e.name, n, before)
-				}
+				tablerows.Unchanged(t, a.cfg.DB, e.name, before)
 				if to := m.sentTo(); to != "" {
 					t.Errorf("%s mailed %s", e.name, to)
 				}

@@ -8,10 +8,14 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"path/filepath"
 	"strings"
 	"testing"
 
 	"amadan.net/rastrillo/rastrillo/basepath"
+	"amadan.net/rastrillo/rastrillo/db"
+	"amadan.net/rastrillo/rastrillo/internal/tablerows"
+	"amadan.net/rastrillo/rastrillo/migrate"
 	"amadan.net/rastrillo/rastrillo/password"
 	"amadan.net/rastrillo/rastrillo/sessions"
 )
@@ -19,7 +23,25 @@ import (
 func TestSignInRefusesUnderABasePath(t *testing.T) {
 	const product = "https://example.com"
 	var logs bytes.Buffer
-	env := newTestEnv(t, func(c *password.Config) { c.Logger = slog.New(slog.NewTextHandler(&logs, nil)) })
+	// Sessions over a database the test can read, to show no session
+	// row is written.
+	d, err := db.Open(filepath.Join(t.TempDir(), "s.db"), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { d.Close() })
+	if _, err := migrate.Apply(context.Background(), d, sessions.Schema); err != nil {
+		t.Fatal(err)
+	}
+	sess, err := sessions.New(sessions.Config{DB: d.Writer(), Origin: "http://app.test"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	env := newTestEnv(t, func(c *password.Config) {
+		c.Sessions = sess
+		c.Logger = slog.New(slog.NewTextHandler(&logs, nil))
+	})
+	env.sess = sess
 	hash, err := password.Hash("s3cretpw")
 	if err != nil {
 		t.Fatal(err)
@@ -62,6 +84,7 @@ func TestSignInRefusesUnderABasePath(t *testing.T) {
 				r.AddCookie(session)
 				logs.Reset()
 				creates, pages := env.store.createCallCount(), env.signin.count()+env.signup.count()
+				before := tablerows.Count(t, d.Writer())
 				w := httptest.NewRecorder()
 				at.cfg.Handler(e.h).ServeHTTP(w, r)
 				if w.Code != http.StatusNotFound {
@@ -70,6 +93,7 @@ func TestSignInRefusesUnderABasePath(t *testing.T) {
 				if cs := w.Result().Cookies(); len(cs) != 0 {
 					t.Errorf("%s set %v: on a shared origin that cookie is every tenant's", e.name, cs)
 				}
+				tablerows.Unchanged(t, d.Writer(), e.name, before)
 				if n := env.store.createCallCount(); n != creates {
 					t.Errorf("%s created %d users", e.name, n-creates)
 				}

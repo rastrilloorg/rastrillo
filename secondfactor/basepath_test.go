@@ -2,7 +2,6 @@ package secondfactor_test
 
 import (
 	"bytes"
-	"database/sql"
 	"errors"
 	"log/slog"
 	"net/http"
@@ -12,36 +11,10 @@ import (
 	"testing"
 
 	"amadan.net/rastrillo/rastrillo/basepath"
+	"amadan.net/rastrillo/rastrillo/internal/tablerows"
 	"amadan.net/rastrillo/rastrillo/secondfactor"
 	"amadan.net/rastrillo/rastrillo/sessions"
 )
-
-// tableRows is the row count of every table in d.
-func tableRows(t *testing.T, d *sql.DB) int {
-	t.Helper()
-	rows, err := d.Query(`SELECT name FROM sqlite_master WHERE type = 'table'`)
-	if err != nil {
-		t.Fatal(err)
-	}
-	var names []string
-	for rows.Next() {
-		var n string
-		if err := rows.Scan(&n); err != nil {
-			t.Fatal(err)
-		}
-		names = append(names, n)
-	}
-	rows.Close()
-	total := 0
-	for _, n := range names {
-		var c int
-		if err := d.QueryRow(`SELECT COUNT(*) FROM "` + n + `"`).Scan(&c); err != nil {
-			t.Fatal(err)
-		}
-		total += c
-	}
-	return total
-}
 
 func TestSignInRefusesUnderABasePath(t *testing.T) {
 	const product = "https://example.com"
@@ -78,15 +51,13 @@ func TestSignInRefusesUnderABasePath(t *testing.T) {
 				r := httptest.NewRequest("POST", at.prefix+path, strings.NewReader(form.Encode()))
 				r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 				r.AddCookie(pendingCookie)
-				before := tableRows(t, e.db)
+				before := tablerows.Count(t, e.db)
 				w := httptest.NewRecorder()
 				at.cfg.Handler(h).ServeHTTP(w, r)
 				if cs := w.Result().Cookies(); len(cs) != 0 {
 					t.Errorf("%s set %v: on a shared origin that cookie is every tenant's", name, cs)
 				}
-				if n := tableRows(t, e.db); n != before {
-					t.Errorf("%s: %d rows, want %d", name, n, before)
-				}
+				tablerows.Unchanged(t, e.db, name, before)
 				return w
 			}
 

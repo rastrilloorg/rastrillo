@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"amadan.net/rastrillo/rastrillo/basepath"
+	"amadan.net/rastrillo/rastrillo/internal/tablerows"
 	"amadan.net/rastrillo/rastrillo/sessions"
 	"amadan.net/rastrillo/rastrillo/vault"
 )
@@ -32,13 +33,6 @@ func TestSignInRefusesUnderABasePath(t *testing.T) {
 	enrol := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		h.Enrol(w, sessions.WithSession(r, sessions.Session{Subject: "7", Method: "password"}))
 	})
-	rows := func() int {
-		var n int
-		if err := d.QueryRow(`SELECT COUNT(*) FROM sessions`).Scan(&n); err != nil {
-			t.Fatal(err)
-		}
-		return n
-	}
 
 	for _, at := range []struct {
 		name         string
@@ -59,7 +53,7 @@ func TestSignInRefusesUnderABasePath(t *testing.T) {
 			r := httptest.NewRequest("POST", at.prefix+c.path, strings.NewReader(c.form.Encode()))
 			r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 			logs.Reset()
-			before := rows()
+			before := tablerows.Count(t, d)
 			w := httptest.NewRecorder()
 			at.cfg.Handler(c.h).ServeHTTP(w, r)
 			if w.Code != http.StatusNotFound {
@@ -68,9 +62,7 @@ func TestSignInRefusesUnderABasePath(t *testing.T) {
 			if cs := w.Result().Cookies(); len(cs) != 0 {
 				t.Errorf("%s, %s set %v: on a shared origin that cookie is every tenant's", at.name, c.name, cs)
 			}
-			if n := rows(); n != before {
-				t.Errorf("%s, %s: %d session rows, want %d", at.name, c.name, n, before)
-			}
+			tablerows.Unchanged(t, d, at.name+", "+c.name, before)
 			if n := strings.Count(logs.String(), "level=ERROR"); n != 1 || !strings.Contains(logs.String(), "rastrillo/vault") || !strings.Contains(logs.String(), at.base+c.path) {
 				t.Errorf("%s, %s logged %q, want one error naming rastrillo/vault and %s", at.name, c.name, logs.String(), at.base+c.path)
 			}
