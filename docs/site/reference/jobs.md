@@ -114,6 +114,9 @@ while the job is running, or a failed page refreshes forever.
 `EventsPath` is opt-in. Put it in `data-poll-push` and a supporting
 browser upgrades to server push; ignore it and you get plain polling.
 
+Under a base path, `FragmentPath`, `EventsPath` and the `done` event's
+data carry the base, so use them as given.
+
 ## The stream
 
 `Events` sends `update`, `done` and `gone` events with `: ping`

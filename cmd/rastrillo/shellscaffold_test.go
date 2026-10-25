@@ -137,7 +137,7 @@ func TestDeletingLightJSIsRecordedWhereTheFailureSays(t *testing.T) {
 	if err := os.Remove(filepath.Join(dir, "internal", "stillapp", "static", "light.js")); err != nil {
 		t.Fatal(err)
 	}
-	const tag = `<script defer src="{{asset "static/light.js"}}"></script>` + "\n"
+	const tag = `<script defer src="{{path $ (asset "static/light.js")}}"></script>` + "\n"
 	page, err := os.ReadFile(layout)
 	if err != nil {
 		t.Fatal(err)

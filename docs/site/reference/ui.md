@@ -43,11 +43,12 @@ func Funcs(opts ...Option) template.FuncMap
 ```
 
 The function map the partials need, for an app that renders through its
-own template tree instead of [`ui.Pages`](#pages). It holds twenty-three:
+own template tree instead of [`ui.Pages`](#pages). It holds twenty-four:
 `dict`, `list`, `menuGroup`, `searchClear`, `icon`, `iconAssets`, `opt`,
 `stageArt`, `displayURL`, `safeHref`, `rowMenuItems`, `paginationItems`,
-`localizer`, `withL`, `strong`, and the locale functions `T`, `Tf`, `Tbdi`,
-`number`, `displayValue`, `dateWords`, `money` and `actor`. Add your
+`localizer`, `withL`, `strong`, `path`, and the locale functions `T`,
+`Tf`, `Tbdi`, `number`, `displayValue`, `dateWords`, `money` and
+`actor`. Add your
 own on top; do not drop any. `rowMenuItems` checks `row-menu`'s items
 and stops the render on one it cannot show.
 
@@ -56,6 +57,12 @@ a struct, and gives nil when it is missing. `Tbdi` is `Tf` for a
 sentence that shows back something a visitor typed: each value is
 escaped and wrapped in `<bdi>`. `stageArt` draws the stage shell's
 backdrop from a word; the same word always draws the same picture.
+
+`path` puts the page's base path in front of a root-absolute URL, as
+`basepath.Join` does: `{{path $ (asset "static/tokens.css")}}`,
+`{{path $ "/"}}`. It reads the base from the data's `Base`, which
+`Localized` carries, and returns the URL unchanged when there is none.
+The shells send every URL they write through it.
 
 `displayURL` and `safeHref` are `form.DisplayURL` and `form.SafeHref`,
 for showing an address that `field-url` collected. `displayURL` is the
@@ -151,6 +158,7 @@ type Localized struct {
 	Locales []rastrillo.LocaleItem
 	Return  string
 	Scheme  string
+	Base    string
 }
 
 func ForRequest(r *http.Request) Localized
@@ -177,6 +185,10 @@ struct. `Localized.Request` is promoted to every
 struct that embeds it, so a render function can read those values off
 any generated view. `WithLocalizer` and `LocalizerFrom` put a localizer
 on a request and read it back; `Pages.Middleware` uses them.
+
+`Base` is the base path the request was served under, such as `/acme`,
+or `""` at the root, from `basepath.Base`. The `path` function reads it.
+`Return` stays the app's path, without the base.
 
 In a template, `{{$L := localizer $}}` finds `L` in the data, and
 `withL` adds it to a map passed to a partial. `LocaleFuncs` are the

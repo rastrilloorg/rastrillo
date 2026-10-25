@@ -125,10 +125,11 @@ func defaultLayout(t *testing.T) string {
 }
 
 // The scaffolded layout links the theme beside the tokens: structure
-// then colour, both through the fingerprinting {{asset ...}} helper.
+// then colour, both through the fingerprinting {{asset ...}} helper
+// and the base path.
 func TestLayoutTemplateLinksThemeCSS(t *testing.T) {
 	layout := defaultLayout(t)
-	if !strings.Contains(layout, `<link rel="stylesheet" href="{{asset "static/theme.css"}}">`) {
+	if !strings.Contains(layout, `<link rel="stylesheet" href="{{path $ (asset "static/theme.css")}}">`) {
 		t.Errorf("layout template does not link static/theme.css:\n%s", layout)
 	}
 	if strings.Index(layout, "static/tokens.css") > strings.Index(layout, "static/theme.css") {
@@ -154,11 +155,11 @@ func TestNewScaffoldsRastrilloJS(t *testing.T) {
 }
 
 // The scaffolded layout must load the shim the same way it links
-// tokens.css: through the fingerprinting {{asset ...}} helper, deferred
-// so it never blocks first paint.
+// tokens.css: through the fingerprinting {{asset ...}} helper and the
+// base path, deferred so it never blocks first paint.
 func TestLayoutTemplateLoadsRastrilloJS(t *testing.T) {
 	layout := defaultLayout(t)
-	if !strings.Contains(layout, `<script defer src="{{asset "static/rastrillo.js"}}"></script>`) {
+	if !strings.Contains(layout, `<script defer src="{{path $ (asset "static/rastrillo.js")}}"></script>`) {
 		t.Errorf("layout template does not load rastrillo.js via a deferred, fingerprinted <script> tag:\n%s", layout)
 	}
 }
@@ -738,7 +739,7 @@ func TestNewScaffoldsLightJS(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(string(layout), `<script defer src="{{asset "static/light.js"}}"></script>`) {
+	if !strings.Contains(string(layout), `<script defer src="{{path $ (asset "static/light.js")}}"></script>`) {
 		t.Error("the layout never loads light.js, deferred, so the light can never run")
 	}
 }
