@@ -2,9 +2,7 @@
 
 `amadan.net/rastrillo/rastrillo/sessions`
 
-The signed-in-state core: SQLite-backed session rows, `__Host-` cookies
-on https origins, and the request-context surface every identity plugin
-signs into.
+The signed-in-state core: session rows in SQLite or signed cookies, `__Host-` cookies on https origins, and the request-context surface every identity plugin signs into.
 
 It does not know how a session is earned. A plugin verifies a credential
 and calls `SignIn`, and that call is the whole plugin contract.
@@ -26,14 +24,14 @@ type Config struct {
 	TTL        time.Duration
 	SigninPath string
 	Logger     *slog.Logger
+	Signed     *Signed
+	Now        func() time.Time
 }
 ```
 
-`DB` is your database, and `Schema`'s migrations must already have been
-applied. `Origin` is your external origin with scheme; it decides the
-`Secure` and `__Host-` cookie attributes and nothing else, since
-`sessions` never redirects off it. `TTL` defaults to 30 days,
-`SigninPath` to `/signin`.
+`DB` is your database, and `Schema`'s migrations must already have been applied. Leave `DB` nil in signed mode. `Origin` is your external origin with scheme. It decides the `Secure` and `__Host-` cookie attributes. With session rows that is all it does, and `sessions` never redirects through it. In signed mode, `sessions` also redirects to `Origin` plus a path. `TTL` defaults to 30 days, `SigninPath` to `/signin`.
+
+`Signed` turns on signed mode, described below. Leave it nil for session rows. `Now` is the clock and defaults to `time.Now`. Set it when another part of your app has its own clock, so both move together.
 
 ## Schema
 
@@ -41,9 +39,7 @@ applied. `Origin` is your external origin with scheme; it decides the
 var Schema = migrate.MustFromFS(migrationFS, "sessions")
 ```
 
-The package's migration set. Merge it into your boot set —
-[migrate](/docs/reference/migrate) — before anything here runs. Tokens
-never touch the table: only their SHA-256 hash is stored.
+The package's migration set, for session rows. Merge it into your boot set ([migrate](/docs/reference/migrate)) before anything here runs. Signed mode keeps no table and needs no migrations. Tokens never touch the table: only their SHA-256 hash is stored.
 
 ## Session
 
@@ -214,3 +210,106 @@ func (s *Sessions) Sweep(now time.Time) error
 
 Deletes expired rows. Expired sessions are already refused on read, so
 this is hygiene rather than enforcement.
+
+## Signing keys
+
+```go
+const SignedLifetime = 15 * time.Minute
+
+type SigningKey struct{ /* unexported */ }
+
+func NewSigningKey(kid string) (*SigningKey, error)
+func ParseSigningKey(s string) (*SigningKey, error)
+func (k *SigningKey) KeyID() string
+func (k *SigningKey) Secret() string
+func (k *SigningKey) Public() string
+func ParsePublicKeys(s string) (map[string][]byte, error)
+```
+
+A hub signs session cookies with a P-256 `SigningKey`. Its apps verify them with the public half. A signed cookie lasts `SignedLifetime`.
+
+`NewSigningKey` makes a new key. The key id `kid` is 1 to 32 characters of `a-z`, `0-9`, `_` and `-`.
+
+`Secret` returns `<kid>.<base64url of the 32-byte private scalar>`. `ParseSigningKey` reads it back. Keep it secret: only the hub holds it.
+
+`Public` returns `<kid>.<base64url of the 65-byte uncompressed point>`. `ParsePublicKeys` reads one or two of these, separated by a comma. Use two while you rotate keys. Each needs its own key id.
+
+`rastrillo session-key <kid>` prints a new key in both forms. See [the CLI](/docs/cli#rastrillo-session-key).
+
+## Signed mode
+
+```go
+type Signed struct {
+	Name        string
+	Key         *SigningKey
+	Keys        map[string][]byte
+	Epoch       func(ctx context.Context, subject string) (int64, error)
+	RefreshPath string
+}
+
+const DefaultRefreshPath = "/_carlos/refresh"
+
+var ErrSigned = errors.New("rastrillo/sessions: signed sessions keep no rows")
+var ErrVerifyOnly = errors.New("rastrillo/sessions: this app verifies sessions and cannot mint them")
+var ErrNoUser = errors.New("rastrillo/sessions: no such subject")
+
+func (s *Sessions) RefreshIfExpired(w http.ResponseWriter, r *http.Request) bool
+func (s *Sessions) Refresh(w http.ResponseWriter, r *http.Request)
+```
+
+In signed mode there are no session rows. The session is a cookie signed with P-256 that lasts 15 minutes, and the hub reissues it at `RefreshPath`. A hub and the apps under it on the same origin share the one cookie. The hub sets `Key` and signs. Each app under it sets only `Keys` and verifies.
+
+Rules `New` checks:
+
+- `DB` is nil.
+- `Origin` is a scheme and host only, with no path or trailing `/`. Signed mode redirects to `Origin` plus a path.
+- `Name` is 1 to 32 of `a-z`, `0-9`, `_` and `-`, starting with a letter or digit. The cookie is `__Host-` plus `Name` on https, and `Name` on http.
+- `Keys` and `Key` together hold one or two key ids. Use two while you rotate keys. If `Keys` holds `Key`'s key id, it must hold `Key`'s public key. `ParsePublicKeys` builds `Keys`.
+- `Key` needs `Epoch`.
+- `RefreshPath` is a clean path that starts with `/`: no `?`, `#` or `%`, no `.`, `..` or empty segment, and no trailing `/`. It defaults to `DefaultRefreshPath`.
+
+`New` keeps its own copy of `Signed`, so changing your map afterwards changes nothing.
+
+`Epoch` returns the subject's current epoch, or `ErrNoUser` when the subject no longer exists. Each cookie carries the epoch it was signed with. Change the epoch to end every session the subject holds at its next refresh.
+
+A cookie expires 15 minutes after it was signed, or at the end of the session's `TTL` if that comes first.
+
+| Call | Hub (`Key` set) | App (`Keys` only) |
+|---|---|---|
+| `SignIn` | reads `Epoch`, then sets a new cookie with `Max-Age` = `TTL` | `ErrVerifyOnly` |
+| `SignOut` | clears this browser's cookie. A copy of it can still be refreshed until the epoch changes or the session ends | same |
+| `From`, `FromContext` | valid cookies only | same |
+| `Middleware` | valid: stash it. Expired: `RefreshIfExpired`. Otherwise pass through. Never clears the cookie | same |
+| `Require`, `RequireFresh` | as `Middleware`, then send a page request to `Origin + SigninPath + "?return_to="` and the full request path | same |
+| `Mint`, `List`, `Revoke`, `RevokeOthers`, `RevokeAll` | `ErrSigned` | `ErrSigned` |
+| `Adopt` | `(Session{}, false)` | same |
+| `Hash` | `("", false)` | same |
+| `Sweep` | `nil` | `nil` |
+
+`SignIn` refuses a `Method` that is not 1 to 32 of `a-z`, `0-9`, `_` and `-`. A second factor's method, such as `magiclink+totp`, is refused, so signed mode has no second factors.
+
+A cookie that does not verify is treated as signed out and left in place. It may be signed with a new key this app does not have yet, and clearing it would sign the person out of every app on the origin.
+
+`RefreshIfExpired` sends a request with an expired cookie to `Origin + RefreshPath + "?next="` and the full request path, and reports whether it did. `GET` and `HEAD` get 303. Other methods get 307, so the browser sends a form again with its body. A request to `RefreshPath` itself is never sent. In row mode it does nothing and returns false.
+
+`Refresh` is the hub's refresh route. Mount it at `RefreshPath` for every method. It never reads the body. "Go back" below means a redirect to `next`: 303 for `GET` and `HEAD`, 307 for anything else, so the browser sends a form again with its body. "Sign out" means clear the cookie and 303 to `SigninPath + "?return_to="` and `next`. It checks, in this order:
+
+1. In row mode or on an app with `Keys` only: 404.
+2. A method other than `GET` and `HEAD` must pass `csrf.SameOrigin`, or it gets 403 and no cookie changes.
+3. `next` must pass `SafeReturnTo` and must not be `RefreshPath`. Otherwise it is `/`.
+4. No cookie: 303 to sign in, and no cookie is set.
+5. A cookie that does not verify: sign out.
+6. A cookie that has not expired: go back. Another tab refreshed first. Each of these visits is counted in a cookie named the session cookie plus `_rf`. The tenth within 10 seconds answers 500 and logs an error, because the hub and an app disagree on the time.
+7. The session's `TTL` has passed: sign out.
+8. `Epoch` returns `ErrNoUser` or a different epoch: sign out. Any other error answers 503 and keeps the cookie.
+9. Otherwise it signs a new cookie under `Key` for the same session, with `Max-Age` set to what is left of the `TTL`, and goes back.
+
+A cookie signed with a key in `Keys` comes back signed with `Key`. That is how a key rotation moves people onto the new key.
+
+## Rotating the signing key
+
+Rotate the signing key in this order. If the hub signs with a key id a tenant does not have, everyone is signed out of that tenant.
+
+1. Run `rastrillo session-key k2`. Set both public keys on every tenant with `carlos env set`.
+2. On the hub, make `k2` the signing key, and keep `k1`'s public key in `Keys`.
+3. Remove `k1` everywhere after the 30-day session life. After a compromise, remove it at once: every cookie signed with it stops working within 15 minutes, and the people holding one sign in again.

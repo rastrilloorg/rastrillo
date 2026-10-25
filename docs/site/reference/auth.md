@@ -43,6 +43,10 @@ type Config struct {
 	Remember         *bool
 	RenderConfirm    func(w http.ResponseWriter, r *http.Request, d ConfirmPageData)
 	KeymailServers   []string
+	Records          objrec.Store
+	Signed           *sessions.Signed
+	Pepper           []byte
+	Blind            bool
 }
 ```
 
@@ -91,6 +95,8 @@ anywhere else, where the limit counts the connection's address. A value
 you set always wins, 0 included. See
 [clientip](/docs/reference/clientip).
 
+`Records`, `Signed`, `Pepper` and `Blind` are records mode, for a centre with no database. See [Records mode](#records-mode).
+
 `KeymailServers` limits keymail to the servers you list, both when an address is checked and when a sign-in finishes; an unlisted server's addresses get a link. See [Magic links](/docs/magic-links#aside-the-keymail-upgrade).
 
 ## Schema
@@ -111,6 +117,13 @@ POST /auth/verify    -> Auth.Verify     (confirming that landing)
 GET  /auth/callback  -> Auth.Callback   (the keymail OAuth return)
 POST /signout        -> Auth.Signout
 POST /signin/forget  -> Auth.Forget
+```
+
+In records mode, also mount these two:
+
+```text
+POST /signout-everywhere -> Auth.SignoutEverywhere
+*    /_carlos/refresh    -> Auth.Refresh   (every method, at Signed.RefreshPath)
 ```
 
 `Verify` needs both methods mounted. The GET draws a page with a Sign in button and spends nothing; the POST spends the link, runs `Authorize`, and answers a bad or used link with `?err=expired`. Anything else gets a 405. See [Magic links](/docs/magic-links#link-scanners-eat-magic-links).
@@ -254,6 +267,7 @@ single use.
 An unknown hash, a wrong purpose and an expired row all come back as the
 same "not ok"; telling them apart would be an oracle. The row is deleted
 even when expired, because a presented token is spent either way.
+
 ## SendLink
 
 ```go
@@ -275,6 +289,83 @@ no attempt cookie is written. A refusal is `ErrRateLimited` or
 not be an oracle answers the same either way. See
 [Magic links](/docs/magic-links#sending-a-link-from-code).
 
+## Records mode
+
+Set `Records` to keep users and sign-in links in an [objrec](/docs/reference/objrec) store instead of a database. The session is then a signed cookie this app mints and its tenants verify. See [sessions](/docs/reference/sessions).
+
+```go
+a, err := auth.New(auth.Config{
+	Origin:      "https://ppl.example.com",
+	InstanceKey: instanceKey,
+	Proof:       guard,
+	Mailer:      mailer,
+	Records:     store,
+	Pepper:      pepper, // 32 bytes or more
+	Signed:      &sessions.Signed{Name: "ppl", Key: key},
+})
+```
+
+`New` refuses a records-mode config when:
+
+- `DB` is set.
+- `Signed` is nil or has no `Key`. The centre mints the cookie.
+- `Signed.Epoch` is set. `auth` reads the epoch from `users/`.
+- `Pepper` is shorter than 32 bytes.
+- `SubjectFor` is set. The subject is the user id.
+- `Blind` is set and `Mailer` is nil or `mail.Logged`. Both write the recipient and the live link to the log. For local development, pass a `Sender` of your own.
+
+It also refuses `Pepper`, `Blind` or `Signed` without `Records`. `New` copies `Signed` and never writes yours.
+
+Records mode has no second factors. `New` accepts `SecondFactor`, but a sign-in that finishes a second factor fails. Leave `SecondFactor` nil.
+
+The records:
+
+| Key | Body |
+|---|---|
+| `users/<uid>.json` | `User`. `email` is absent in blind mode |
+| `emails/<eh>.json` | `{"uid": "<uid>"}` |
+| `links/<yyyy-mm-dd>/<hash>.json` | `{"eh": "<eh>", "addr": "<the address, sealed>", "purpose": "signin", "exp": <unix>}` |
+| `links-used/<yyyy-mm-dd>/<hash>` | `{}` |
+
+`<uid>` is 128 random bits in lowercase base32. `<eh>` is the lowercase hex HMAC-SHA256 of the lowercased address under `Pepper`.
+
+```go
+type User struct {
+	ID      string    `json:"uid"`
+	Email   string    `json:"email,omitempty"`
+	EH      string    `json:"eh"`
+	Created time.Time `json:"created"`
+	Epoch   int64     `json:"epoch"`
+}
+
+func (a *Auth) User(ctx context.Context, uid string) (User, error)
+func (a *Auth) EndSessions(ctx context.Context, uid string) error
+func (a *Auth) SignoutEverywhere(w http.ResponseWriter, r *http.Request)
+func (a *Auth) Refresh(w http.ResponseWriter, r *http.Request)
+
+var ErrRecords error
+```
+
+The first sign-in creates the user. After that, `Identity.Address` (from `From` and `SessionFrom`) is the user id, not the address. Read the address with `User`, whose `Email` is empty in blind mode. `User` returns an error wrapping `objrec.ErrNotFound` for an unknown id.
+
+`EndSessions` ends every session of a user: it adds one to the user's epoch, and the refresh route signs out any cookie that carries the old one. It returns `sessions.ErrNoUser` for a user with no record, and writes nothing.
+
+`SignoutEverywhere` is POST only and same-origin only. It calls `EndSessions` for the signed-in user, clears the cookie and redirects to `SigninPath`. An expired cookie is sent to refresh first. With no session it redirects to `SigninPath` and ends nothing. If the store fails it answers 503 and keeps the cookie.
+
+`Refresh` is `sessions.Refresh`. `auth` mounts nothing: mount `Refresh` yourself, for every method, at `Signed.RefreshPath`. With a database, `SignoutEverywhere` and `Refresh` answer 404.
+
+`RequireSession` and `RequireFreshSession` send an expired cookie to refresh before they refuse. `Sweep` sweeps the link records. `SpendLinks` returns `ErrRecords`.
+
+What each mode keeps:
+
+- Default: the store holds each person's address, their user id and their epoch.
+- Blind: the store holds only the HMAC. The centre can email someone only in reply to an address they just typed: no notices, and no "your sign-in address changed" mail. Logs carry no address, and a `Mailer` is required.
+  If you turn on `Blind` for a store that already holds addresses, run `Sweep` once after the restart. It removes every address the store still holds. Until then, each one is removed the next time that person signs in or their session is refreshed.
+- Both: a waiting link holds the address sealed under the instance key until it is redeemed or swept. No cookie carries a readable address.
+- Sign-out ends this browser's session. A copy of its cookie can still be refreshed until "sign out everywhere" or the end of the 30-day session life. "Sign out everywhere" ends every copy within 15 minutes.
+- Never rotate the pepper. Every `emails/` key is computed from it.
+- The page a person returns to after sign-in is kept in this browser, as with SQLite `auth`. A link opened on another device lands on `SignedInPath`, and a newer sign-in attempt in the same browser replaces the destination.
+
 ## SpendLinks
 
 ```go
@@ -287,4 +378,5 @@ person is in by any door — this one, a password, a passkey on a
 remembered browser — the ones still in their inbox are a credential
 nobody needs, and an app calls this at every sign-in so a stolen inbox
 cannot cash one later.
+In records mode it returns `ErrRecords`.
 

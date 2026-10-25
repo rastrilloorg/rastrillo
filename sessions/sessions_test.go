@@ -15,9 +15,9 @@ import (
 	"amadan.net/rastrillo/rastrillo/sessions"
 )
 
-// newTestSessions is the shared helper: temp DB, Schema applied,
-// New(Config{DB: db, Origin: origin}). Origin defaults "http://app.test".
-func newTestSessions(t *testing.T, mut func(*sessions.Config)) (*sessions.Sessions, *sql.DB) {
+// newDB is a temp database with Schema applied, closed when the test
+// ends.
+func newDB(t *testing.T) *sql.DB {
 	t.Helper()
 	d, err := db.Open(filepath.Join(t.TempDir(), "s.db"), nil)
 	if err != nil {
@@ -27,7 +27,15 @@ func newTestSessions(t *testing.T, mut func(*sessions.Config)) (*sessions.Sessio
 	if _, err := migrate.Apply(context.Background(), d, sessions.Schema); err != nil {
 		t.Fatalf("migrate.Apply: %v", err)
 	}
-	cfg := sessions.Config{DB: d.Writer(), Origin: "http://app.test"}
+	return d.Writer()
+}
+
+// newTestSessions is the shared helper: newDB, then
+// New(Config{DB: db, Origin: origin}). Origin defaults "http://app.test".
+func newTestSessions(t *testing.T, mut func(*sessions.Config)) (*sessions.Sessions, *sql.DB) {
+	t.Helper()
+	w := newDB(t)
+	cfg := sessions.Config{DB: w, Origin: "http://app.test"}
 	if mut != nil {
 		mut(&cfg)
 	}
@@ -35,7 +43,7 @@ func newTestSessions(t *testing.T, mut func(*sessions.Config)) (*sessions.Sessio
 	if err != nil {
 		t.Fatalf("New: %v", err)
 	}
-	return s, d.Writer()
+	return s, w
 }
 
 // cookieFrom extracts the named cookie from a recorder's response, or

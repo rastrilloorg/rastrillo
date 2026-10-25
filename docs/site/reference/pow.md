@@ -47,6 +47,8 @@ Serve the scripts from `pow.Assets()`; don't vendor them. A vendored copy can be
 
 `Nonces` has no default, because the only possible default is no replay protection. Use `SQLNonces` on your writer. `MemoryNonces` is for tests: it forgets on restart, and it ignores the caller's transaction, so a spend inside a transaction that rolls back stays spent.
 
+`RecordNonces` is for an app with no database, such as a stateless `auth` hub. It keeps one `objrec` record per spent nonce and needs no migration. It ignores the caller's transaction, so a spend inside a transaction that rolls back stays spent. Pass the same store on every instance, or a nonce can be spent once on each.
+
 The rest of `Config`:
 
 | Field | Default | |
@@ -372,6 +374,7 @@ type NonceStore interface {
 }
 func SQLNonces(db *sql.DB) NonceStore
 func MemoryNonces() NonceStore
+func RecordNonces(store objrec.Store) NonceStore
 
 func Trapped(r *http.Request) bool
 func Verify(nonce, binding, counter string, difficulty int) bool

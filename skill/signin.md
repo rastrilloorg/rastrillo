@@ -48,6 +48,8 @@ spend the link; GET alone 405s. **Under `auth`, never
 0`. Use `auth.From(r)` or `sessions.Current(r)` and map the address to
 your user's id first. docs/site/magic-links.md
 
+**No database (a home or hub):** `auth.Config{Records, Pepper, Signed: &sessions.Signed{Name, Key}}` keeps users and links in `objrec` and signs 15-minute cookies; mount `a.Refresh` at `/_carlos/refresh`. A path-routed tenant only verifies: `sessions.Config{Signed: &sessions.Signed{Name, Keys}}`. `Blind` stores only the email's HMAC. No `SecondFactor`. docs/site/sessions.md
+
 **Sign-in screen:** set `auth.Config.SigninScreen: true` and render
 `{{template "signin" (dict "L" $L "State" .Signin "Brand" .Brand)}}`
 (title: `signin-title`) in the `stage` shell, from `st :=
