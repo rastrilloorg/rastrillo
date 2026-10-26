@@ -16,8 +16,12 @@ import (
 // sitting, nothing a CSP would reject, nothing fetched from elsewhere.
 func TestLiveIsSmallAndSelfContained(t *testing.T) {
 	js := string(LiveJS())
-	if n := len(js); n > 16*1024 {
-		t.Errorf("live.js is %d bytes, over 16 KiB; an app owner should be able to read it in one sitting", n)
+	// 24 KiB: the stream and region half is about 16.6 KB, and the forms
+	// section that shares its seam (submit interception, the busy.js
+	// handover, unknown outcomes, focus on the first error) is expected
+	// to add 5-7 KB.
+	if n := len(js); n > 24*1024 {
+		t.Errorf("live.js is %d bytes, over 24 KiB; an app owner should be able to read it in one sitting", n)
 	}
 	if !strings.HasPrefix(js, "/*") {
 		t.Error("live.js should open with its contract comment")
@@ -147,15 +151,16 @@ func TestLiveOwnsReconnects(t *testing.T) {
 // requests. Then the page says live updates have paused.
 func TestLiveRetriesAFailedFetchThenPauses(t *testing.T) {
 	var got struct {
-		Fetches         []int
-		Headers         map[string]string
-		Delays          []int
-		PendingAfter    []int
-		Notice          string
-		NoticeAfterOpen string
+		Fetches            []int
+		Headers            map[string]string
+		Delays             []int
+		PendingAfter       []int
+		Notice             string
+		NoticeAfterOpen    string
+		NoticeAfterSuccess string
 	}
 	liveNode(t, "retry", &got)
-	if got.Headers["Rastrillo-Fragment"] != "list" {
+	if got.Headers["rastrillo-fragment"] != "list" {
 		t.Errorf("the region fetch sent headers %v, want Rastrillo-Fragment: list", got.Headers)
 	}
 	if want := []int{1, 2, 3, 4}; !reflect.DeepEqual(got.Fetches, want) {
@@ -170,8 +175,46 @@ func TestLiveRetriesAFailedFetchThenPauses(t *testing.T) {
 	if got.Notice != "Paused" {
 		t.Errorf("after the retries ran out the notice reads %q, want the meta's data-paused text", got.Notice)
 	}
-	if got.NoticeAfterOpen != "" {
-		t.Errorf("the stream opening again left the notice reading %q, want it cleared", got.NoticeAfterOpen)
+	// The stream was never the trouble, so its opening is no news: the
+	// region is still behind until a fetch for it lands.
+	if got.NoticeAfterOpen != "Paused" {
+		t.Errorf("the stream reopening with a region's fetches still failing left the notice reading %q, want the paused note kept", got.NoticeAfterOpen)
+	}
+	if got.NoticeAfterSuccess != "" {
+		t.Errorf("the failed region's next fetch landed and the notice still reads %q, want it cleared", got.NoticeAfterSuccess)
+	}
+}
+
+// The fetch-and-apply seam Task 6's forms call. A Headers instance
+// whose Rastrillo-Fragment silently went missing would make the server
+// answer with a whole page; a caller's init written into would carry
+// one request's signal into the next; a throw when stopped would skip
+// the caller's own failure path.
+func TestLiveSendCopiesItsInit(t *testing.T) {
+	var got struct {
+		Method, Cache string
+		Headers       map[string]string
+		PlainHeaders  map[string]string
+		CallerHeaders map[string]string
+		CallerKeys    []string
+		Stopped       string
+	}
+	liveNode(t, "seam", &got)
+	if got.Method != "POST" || got.Cache != "no-store" {
+		t.Errorf("sent method %q cache %q, want the caller's POST and no-store", got.Method, got.Cache)
+	}
+	want := map[string]string{"rastrillo-page": "/notes", "rastrillo-fragment": "list notice"}
+	if !reflect.DeepEqual(got.Headers, want) {
+		t.Errorf("with Headers in init, sent %v, want %v", got.Headers, want)
+	}
+	if want := map[string]string{"rastrillo-page": "/notes", "rastrillo-fragment": "list"}; !reflect.DeepEqual(got.PlainHeaders, want) {
+		t.Errorf("with a plain object in init, sent %v, want %v", got.PlainHeaders, want)
+	}
+	if !reflect.DeepEqual(got.CallerHeaders, map[string]string{"rastrillo-page": "/notes"}) || !slices.Equal(got.CallerKeys, []string{"method", "headers", "headers", "Rastrillo-Page"}) {
+		t.Errorf("send wrote into the caller's init: headers %v, keys %v", got.CallerHeaders, got.CallerKeys)
+	}
+	if got.Stopped != "rejected" {
+		t.Errorf("send on a stopped page %s, want a rejected promise", got.Stopped)
 	}
 }
 

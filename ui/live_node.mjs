@@ -51,6 +51,8 @@ function page({ regions = [], meta = { content: "/live", "data-paused": "Paused"
     querySelectorAll: (sel) => (sel === "[data-live]" ? els : []),
     getElementById: (id) => (id === "notice" ? notice : els.find((e) => e.id === id) || null),
     addEventListener: (type, fn) => { (on[type] = on[type] || []).push(fn); },
+    // Answers here carry no elements, so a parsed template is empty.
+    createElement: () => ({ innerHTML: "", content: { children: [] } }),
   };
   class EventSource {
     constructor(url) {
@@ -63,15 +65,22 @@ function page({ regions = [], meta = { content: "/live", "data-paused": "Paused"
     close() { this.closed = true; }
     fire(type, ev = {}) { for (const fn of this.on[type] || []) fn.call(this, ev); }
   }
+  const module = { exports: {} };
   const win = {
     document,
     EventSource,
     AbortController,
+    Headers,
+    module,
     location: { pathname: "/", search: "", assign: () => {} },
     addEventListener: (type, fn) => { (won[type] = won[type] || []).push(fn); },
+    // Rejects, as a network failure does, until the scenario sets
+    // n.answer; then it answers 200 with Rastrillo-Regions and no body.
     fetch: (url, init) => {
-      n.fetches.push({ url, headers: init && init.headers });
-      return Promise.reject(new TypeError("Failed to fetch"));
+      n.fetches.push({ url, init, headers: Object.fromEntries(init.headers) });
+      if (!n.answer) return Promise.reject(new TypeError("Failed to fetch"));
+      const h = { "rastrillo-regions": n.answer };
+      return Promise.resolve({ status: 200, headers: { get: (k) => h[k.toLowerCase()] ?? null }, text: () => Promise.resolve("") });
     },
     setTimeout: (fn, ms) => { n.timers.push({ fn, ms, done: false }); return n.timers.length; },
     clearTimeout: (id) => { if (n.timers[id - 1]) n.timers[id - 1].done = true; },
@@ -80,7 +89,7 @@ function page({ regions = [], meta = { content: "/live", "data-paused": "Paused"
   vm.runInNewContext(src, win);
   const settle = () => new Promise((r) => setImmediate(r));
   return {
-    n, notice, document,
+    n, notice, document, send: module.exports.send,
     latest: () => n.sources[n.sources.length - 1],
     fireDoc: (type) => { for (const fn of on[type] || []) fn({}); },
     // pending lists the delays of the timers not yet run or cleared.
@@ -139,8 +148,9 @@ const scenarios = {
     return out;
   },
   // A change whose fetch keeps failing is retried after 1s, 2s and 4s,
-  // then the page shows the paused note, which the stream opening
-  // again clears.
+  // then the page shows the paused note. The stream reopening does not
+  // clear it, since that region is still behind; its next fetch landing
+  // does.
   async retry() {
     const p = page({ regions: [region("list", "a@1")] });
     p.latest().fire("open");
@@ -159,7 +169,39 @@ const scenarios = {
     await p.run(1000);
     p.latest().fire("open");
     out.noticeAfterOpen = p.notice.textContent;
+    p.n.answer = "list";
+    p.latest().fire("change", { data: "a@3", lastEventId: "b00t a@3" });
+    await p.settle();
+    out.noticeAfterSuccess = p.notice.textContent;
     return out;
+  },
+  // The seam a forms section calls: it copies the caller's init rather
+  // than writing into it, takes Headers as well as a plain object, and
+  // answers with a promise even when the page is stopped.
+  async seam() {
+    const p = page({ regions: [region("list", "a@1")] });
+    p.n.answer = "list";
+    const init = { method: "POST", headers: new Headers({ "Rastrillo-Page": "/notes" }) };
+    await p.send("/notes", ["list", "notice"], init, false);
+    const sent = p.n.fetches[0];
+    const plain = { headers: { "Rastrillo-Page": "/notes" } };
+    await p.send("/notes", ["list"], plain, false);
+    const inert = page({ regions: [region("list", "a@1")], meta: null });
+    let stopped;
+    try {
+      stopped = await inert.send("/notes", ["list"], {}, false).then(() => "resolved", () => "rejected");
+    } catch (e) {
+      stopped = "threw " + e;
+    }
+    return {
+      method: sent.init.method,
+      cache: sent.init.cache,
+      headers: sent.headers,
+      plainHeaders: p.n.fetches[1].headers,
+      callerHeaders: Object.fromEntries(init.headers),
+      callerKeys: Object.keys(init).concat(Object.keys(plain), Object.keys(plain.headers)),
+      stopped,
+    };
   },
   // A change for a version the region already shows fetches nothing.
   async current() {

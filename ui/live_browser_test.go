@@ -36,6 +36,7 @@ type liveApp struct {
 	order     []string          // region names, in page order
 	inner     map[string]string // each region's inner HTML, as rendered now
 	topNotice bool              // render <div id="notice"> before the regions
+	head      string            // more markup for <head>, before live.js
 	hold      int               // hold this many of the next fragment requests
 	release   chan struct{}     // closing it lets the held requests answer
 	inflight  int
@@ -69,6 +70,23 @@ func newLiveApp(t *testing.T, topNotice bool, regions ...string) *liveApp {
 func (a *liveApp) change(name, inner string) {
 	a.mu.Lock()
 	a.inner[name] = inner
+	a.mu.Unlock()
+	a.hub.Notify("a")
+}
+
+// set rewrites a region without announcing it: a form's own write,
+// whose answer the page fetches itself.
+func (a *liveApp) set(name, inner string) {
+	a.mu.Lock()
+	a.inner[name] = inner
+	a.mu.Unlock()
+}
+
+// remove takes a region off the server's page and announces it, so a
+// fetch for it is answered by navigating.
+func (a *liveApp) remove(name string) {
+	a.mu.Lock()
+	delete(a.inner, name)
 	a.mu.Unlock()
 	a.hub.Notify("a")
 }
@@ -127,15 +145,18 @@ func (a *liveApp) handler(t *testing.T) http.Handler {
 			body.WriteString(`<div id="notice" role="status"></div>`)
 		}
 		for _, n := range a.order {
-			body.WriteString(a.region(r, n))
+			if _, ok := a.inner[n]; ok {
+				body.WriteString(a.region(r, n))
+			}
 		}
+		head := a.head
 		a.mu.Unlock()
 		// No Cache-Control: no-store here, unlike a real live page, or
 		// Chromium would keep the page out of the back/forward cache
 		// and the restore drive would test a reload instead.
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		fmt.Fprint(w, `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>live</title>`+
-			string(a.hub.View(r).Head(livePaused, "Could not confirm."))+
+			string(a.hub.View(r).Head(livePaused, "Could not confirm."))+head+
 			`<script defer src="/live.js"></script></head><body>`+body.String()+
 			`<a id="away" href="/away">Away</a></body></html>`)
 	})))
@@ -328,11 +349,15 @@ func TestAStaleResponseNeverOverwritesANewerOne(t *testing.T) {
 	rig.Screen("#list", "a region after an abandoned fetch")
 }
 
+// liveForm is a region's inner HTML: a one-field form and a version
+// line the drives read.
+func liveForm(v string) string {
+	return `<form action="/" method="post"><input id="field" name="q"></form><p class="v">` + v + `</p>`
+}
+
 // Someone typing in a region must not have it pulled from under them.
 func TestARegionBeingEditedIsNotSwapped(t *testing.T) {
-	form := func(v string) string {
-		return `<form action="/" method="post"><input id="field" name="q"></form><p class="v">` + v + `</p>`
-	}
+	form := liveForm
 	a := newLiveApp(t, true, "list", form("one"))
 	rig := liveRig(t, a)
 	a.open(t, rig)
@@ -507,4 +532,94 @@ func TestBackForwardRestoreCatchesUp(t *testing.T) {
 	// flushes are the whole drive's.
 	rig.Run(chromedp.Navigate(rig.Origin + "/"))
 	rig.Screen("#list", "a live page restored from the back/forward cache")
+}
+
+// liveSeam is a <head> script that makes live.js export its send seam,
+// through the same module guard select.js uses for Node. Task 6's forms
+// call it from inside the file; this is how a drive calls it before
+// they exist.
+const liveSeam = `<script>var module = { exports: {} };</script>`
+
+// A form's own answer swaps the form it was sent from. That form holds
+// what was just typed, and Enter leaves its field focused, so the
+// stream's edit check would discard every form answer as stale.
+func TestAFormsOwnAnswerSwapsDespiteUnsentInput(t *testing.T) {
+	a := newLiveApp(t, true, "list", liveForm("one"))
+	a.head = liveSeam
+	rig := liveRig(t, a)
+	a.open(t, rig)
+	liveEval(t, rig, `{ const f = document.getElementById("field"); f.value = "draft"; f.focus() }`, nil)
+	a.set("list", liveForm("two"))
+	liveEval(t, rig, `module.exports.send("/", ["list"], {}, false); true`, nil)
+	liveUntil(t, rig, "the form's answer swapped", `document.querySelector("#list .v").textContent === "two"`, 10*time.Second)
+	var got struct {
+		Stale bool
+		Focus string
+		Value string
+	}
+	liveEval(t, rig, `({ Stale: document.getElementById("list").hasAttribute("data-live-stale"),
+	  Focus: document.activeElement.id, Value: document.getElementById("field").value })`, &got)
+	if got.Stale || got.Focus != "field" || got.Value != "" {
+		t.Errorf("after a form's answer: %+v, want the region swapped (not stale), focus on the new field, its value the answer's", got)
+	}
+
+	// The same answer through the stream's path is held back: the flag
+	// is the whole difference.
+	liveEval(t, rig, `document.getElementById("field").value = "draft"`, nil)
+	a.set("list", liveForm("three"))
+	liveEval(t, rig, `module.exports.send("/", ["list"], {}, true); true`, nil)
+	liveUntil(t, rig, "the stream's answer held back", `document.getElementById("list").hasAttribute("data-live-stale")`, 10*time.Second)
+	if v := liveText(t, rig, "#list .v"); v != "two" {
+		t.Errorf("a stream answer swapped a region holding unsent input: it reads %q, want two", v)
+	}
+	rig.Screen("#list", "a form's answer and a stream's")
+}
+
+// A stream fetch answered "navigate" (the page no longer has that
+// region) must not throw away what someone is typing elsewhere on the
+// page. It waits, as a stale region does, until the editing ends.
+func TestANavigationWaitsWhileThePageIsEdited(t *testing.T) {
+	a := newLiveApp(t, true, "list", `<p class="v">one</p>`, "edit", liveForm("e"))
+	rig := liveRig(t, a)
+	a.open(t, rig)
+	liveEval(t, rig, `window.__here = 1; document.getElementById("field").value = "draft"`, nil)
+	a.remove("list")
+	liveUntil(t, rig, "the navigating region held back", `document.getElementById("list").hasAttribute("data-live-stale")`, 10*time.Second)
+	time.Sleep(300 * time.Millisecond)
+	var here bool
+	var draft string
+	liveEval(t, rig, `window.__here === 1`, &here)
+	liveEval(t, rig, `document.getElementById("field").value`, &draft)
+	if !here || draft != "draft" {
+		t.Fatalf("a background navigation went ahead over unsent input (still here: %v, field %q)", here, draft)
+	}
+	if !a.read(func(a *liveApp) bool { return slices.Contains(a.fragments, "list") }) {
+		t.Fatal("the list region was never fetched, so the drive did not reach the navigation")
+	}
+
+	// Leaving some other control with the draft still unsent is not the
+	// end of the editing: the held-back region waits on the whole page,
+	// not on itself, so it costs no fetch.
+	count := func() int {
+		n := 0
+		a.read(func(a *liveApp) bool {
+			for _, f := range a.fragments {
+				if f == "list" {
+					n++
+				}
+			}
+			return true
+		})
+		return n
+	}
+	before := count()
+	liveEval(t, rig, `{ const away = document.getElementById("away"); away.focus(); away.blur() }`, nil)
+	time.Sleep(300 * time.Millisecond)
+	if n := count(); n != before {
+		t.Errorf("a focusout with the draft still unsent fetched the held-back region again (%d fetches, was %d)", n, before)
+	}
+
+	liveEval(t, rig, `{ const f = document.getElementById("field"); f.value = ""; f.focus(); f.blur() }`, nil)
+	liveUntil(t, rig, "navigated once the editing ended", `window.__here === undefined && document.readyState === "complete" && !document.getElementById("list") && !!document.getElementById("edit")`, 10*time.Second)
+	rig.Screen("#edit", "the page navigated to after the editing ended")
 }

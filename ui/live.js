@@ -25,7 +25,8 @@
    and replaced by the answer's element (listed in Rastrillo-Regions).
    A 204 with Rastrillo-Location navigates there, if it is local.
 
-   The rules:
+   The rules (the edit checks are for stream fetches; a form's own answer
+   swaps the form it was sent from):
    - This file owns reconnecting: an error closes the EventSource, so
      the browser's own retry never runs beside this one, and it reopens
      after 1s, doubling to a minute.
@@ -34,12 +35,12 @@
      last.
    - Just before a swap, the region must be on the page and not being
      edited (holding the focused field, or a field changed from its
-     default).
+     default). A navigation waits while anything on the page is.
    - Focus moves to the focused element's replacement, else to the
      region itself (tabindex="-1"); never to <body>.
    - A failed fetch is retried after 1s, 2s, 4s; then, as when the
-     stream has been down 10s, the notice shows the paused note. The
-     stream opening clears it.
+     stream has been down 10s, the notice shows the paused note. It
+     clears once the stream is open and no region's fetches are failing.
    - Hidden a minute, the stream closes until shown. pagehide closes it
      and abandons fetches; a back/forward restore reopens it from the
      regions' versions. A prerendered page starts once shown. */
@@ -49,7 +50,8 @@
   var NOTICE = "notice";
   var SKIP = /^(button|submit|reset|image|hidden)$/;
   var meta = null;
-  var src = null; // the open EventSource
+  var src = null; // the EventSource
+  var up = false; // src is open
   var following = ""; // the topics src follows
   var wait = 1000; // the next reconnect's delay
   var reconnect = 0, down = 0, hidden = 0; // timers
@@ -125,6 +127,7 @@
     following = sub.topics;
     es.addEventListener("open", function () {
       if (src !== es) return;
+      up = true;
       wait = 1000;
       clearTimeout(down);
       down = 0;
@@ -144,6 +147,7 @@
 
   function close() {
     if (src) { src.close(); src = null; }
+    up = false;
   }
 
   function changed(e) {
@@ -167,10 +171,11 @@
     if (editing(el)) { stale(el); return; }
     clearTimeout(st.retry);
     st.busy = true;
-    send(location.pathname + location.search, [name], {}).then(function () {
+    send(location.pathname + location.search, [name], {}, true).then(function () {
       if (run !== ctl) return; // abandoned on pagehide
       st.busy = st.failed = false;
       st.tries = 0;
+      unpause();
       if (st.queued) { st.queued = false; refresh(name); }
     }, function () {
       if (run !== ctl) return;
@@ -184,22 +189,34 @@
 
   // send fetches regions and applies the answer: the one way anything
   // reaches the page, so a form section beside this one gets ordering,
-  // the edit check, focus and the notice rule by calling it with its
-  // own URL and init. Every region named counts this fetch as the last
-  // it started, so whatever it had in flight is superseded.
-  function send(url, names, init) {
-    var id = ++seq, run = ctl;
+  // focus and the notice rule by calling it with its own URL and init
+  // (headers a plain object or Headers; init is not changed). Every
+  // region named counts this fetch as the last it started, so whatever
+  // it had in flight is superseded. stream turns on the edit checks: a
+  // form's answer must swap its own form, which holds unsent input and
+  // often the focus.
+  function send(url, names, init, stream) {
+    var id = ++seq, run = ctl, opts = {}, k;
+    if (!run) return Promise.reject(new Error("live.js is stopped"));
     names.forEach(function (n) { state(n).last = id; });
-    init.headers = init.headers || {};
-    init.headers["Rastrillo-Fragment"] = names.join(" ");
-    init.signal = run.signal;
+    for (k in init) opts[k] = init[k];
+    opts.headers = new Headers(opts.headers || {});
+    opts.headers.set("Rastrillo-Fragment", names.join(" "));
+    opts.signal = run.signal;
     // Past the HTTP cache: its lock makes a GET wait for any other GET
     // of the same URL still out, so no fetch could overtake a slow one.
-    init.cache = "no-store";
-    return fetch(url, init).then(function (res) {
+    opts.cache = "no-store";
+    return fetch(url, opts).then(function (res) {
       var to = res.headers.get("Rastrillo-Location");
       if (res.status === 204 && to) {
-        if (localPath(to)) location.assign(to);
+        // Leaving discards whatever is typed anywhere on the page, and a
+        // background change can wait until it is sent.
+        if (stream && editing(document.body)) {
+          names.forEach(function (n) {
+            var el = document.getElementById(n);
+            if (el) { state(n).leave = true; stale(el); }
+          });
+        } else if (localPath(to)) location.assign(to);
         return res;
       }
       // Only an answer that names its regions is one. A signed-out
@@ -209,13 +226,13 @@
       if (held === null) throw new Error("not a region answer: " + res.status);
       held = held.split(" ");
       return res.text().then(function (html) {
-        if (run === ctl) apply(html, names.filter(function (n) { return held.indexOf(n) >= 0; }), id);
+        if (run === ctl) apply(html, names.filter(function (n) { return held.indexOf(n) >= 0; }), id, stream);
         return res;
       });
     });
   }
 
-  function apply(html, names, id) {
+  function apply(html, names, id, stream) {
     var tpl = document.createElement("template");
     tpl.innerHTML = html;
     Array.prototype.slice.call(tpl.content.children).forEach(function (next) {
@@ -228,7 +245,7 @@
         paused = false;
         return;
       }
-      if (editing(old)) { stale(old); return; }
+      if (stream && editing(old)) { stale(old); return; }
       swap(old, next);
     });
     // A swap can change what the page follows (a keyed topic for a new
@@ -290,10 +307,11 @@
   }
 
   // Read once focus has landed: during focusout it is still on its way.
+  // A region held back from navigating waits on the whole page.
   function edited() {
     for (var name in regions) {
-      var el = regions[name].stale && document.getElementById(name);
-      if (el && !editing(el)) { regions[name].stale = false; refresh(name); }
+      var st = regions[name], el = st.stale && document.getElementById(name);
+      if (el && !editing(st.leave ? document.body : el)) { st.stale = st.leave = false; refresh(name); }
     }
   }
 
@@ -304,10 +322,14 @@
     paused = true;
   }
 
+  // The note is true until the stream is open and no region's fetches
+  // are failing; either alone can still mean updates are not arriving.
   // Only our own words are cleared: a flash that arrived since stays.
   function unpause() {
     var n = document.getElementById(NOTICE);
-    if (paused && n && n.textContent === meta.getAttribute("data-paused")) n.textContent = "";
+    if (!paused || !up) return;
+    for (var name in regions) if (regions[name].failed) return;
+    if (n && n.textContent === meta.getAttribute("data-paused")) n.textContent = "";
     paused = false;
   }
 
@@ -371,6 +393,10 @@
     if (document.prerendering) document.addEventListener("prerenderingchange", start, { once: true });
     else start();
   }
+
+  // The seam, for Node and for test pages that define module (as
+  // select.js exports its pure half). A browser page has no module.
+  if (typeof module !== "undefined" && module && module.exports) module.exports.send = send;
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", begin);
   else begin();
