@@ -138,7 +138,7 @@ func applyMagicAuth(files map[string]string, name, pkg, appDir string) error {
 		} else if end < 0 {
 			stageShell = true
 		} else {
-			files[layout] = s[:end] + `{{if opt $ "SignedIn"}}<form method="post" action="/signout"><button rst-btn>Sign out</button></form>{{else}}<a href="/signin" rst-btn>Sign in</a>{{end}}` + s[end:]
+			files[layout] = s[:end] + `{{$authL := localizer $}}{{if opt $ "SignedIn"}}<form method="post" action="/signout"><button rst-btn>{{T $authL "rastrillo.ui.account_signout"}}</button></form>{{else}}<a href="/signin" rst-btn>{{T $authL "rastrillo.ui.account_signin"}}</a>{{end}}` + s[end:]
 		}
 	}
 

@@ -50,6 +50,8 @@ typo fails with your working directory still clean.
 requires, because that obligation is the app's and has to travel with
 the code.
 
+`--auth=magic` starts the app with sign-in by emailed link: the [magic links](/docs/magic-links) plugin with its sign-in screen, a Sign in and Sign out control in the header, and an example page only a signed-in person can open. Rows belong to the signed-in address, read and written through the `owned` seam in `auth.go`. Until you set `<APP>_SMTP_HOST` and `<APP>_SMTP_FROM`, each link is written to the log instead of sent. The app's own tests sign in through the emailed link, so `make ci` passes from the first commit.
+
 `--locale` picks the one language the app starts with, written to
 `manifest/app.toml`. It must be one the framework's own strings ship in,
 and `pt` means `pt-PT`. Anything else fails before a file is written:
