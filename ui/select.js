@@ -193,23 +193,38 @@
     told = d && isFinite(d.top) && isFinite(d.bottom) ? { top: +d.top, bottom: +d.bottom } : null;
   });
 
-  // Does a box hold fixed descendants, and so absolute ones too?
-  const holdsFixed = (cs) =>
-    [cs.transform, cs.translate, cs.rotate, cs.scale, cs.perspective, cs.filter, cs.backdropFilter].some((v) => v && v !== "none") ||
-    /layout|paint|strict|content/.test(cs.contain) || /transform|perspective|filter/.test(cs.willChange) || /size/.test(cs.containerType || "");
+  // What a box is to the boxes in it, by CSS: the containing block of
+  // fixed ones (f), of absolute ones (a), and a clip even with overflow
+  // visible (p, paint containment). will-change counts as the property it
+  // names (css-will-change); container-type is none of these, since size
+  // queries no longer contain layout (css-conditional-5).
+  const holds = (cs) => {
+    const w = (cs.willChange || "").split(/,\s*/), cv = cs.contentVisibility;
+    const p = /paint|strict|content/.test(cs.contain) || cv === "auto" || cv === "hidden";
+    const f = p || /layout/.test(cs.contain) ||
+      [cs.transform, cs.translate, cs.rotate, cs.scale, cs.perspective, cs.filter, cs.backdropFilter].some((v) => v && v !== "none") ||
+      ["transform", "translate", "rotate", "scale", "perspective", "filter", "backdrop-filter", "contain", "content-visibility"].some((v) => w.includes(v));
+    return { f, a: f || cs.position !== "static" || w.includes("position"), p };
+  };
+  // A box in the top layer (a modal dialog, an open popover) is out of
+  // every ancestor's reach.
+  const onTop = (a) => [":modal", ":popover-open"].some((q) => { try { return a.matches(q); } catch (e) { return false; } });
 
   // The ancestors that clip a list: only its chain of containing blocks
-  // can. Taking every ancestor that scrolls held a list fixed or anchored
-  // out of a sideways-scrolling bar (its overflow-y computes to auto) to
-  // the 4px of bar under its box: 0px tall, in Docs' phone toolbar.
+  // can, walked through slots as it is drawn. Taking every ancestor that
+  // scrolls held a list fixed or anchored out of a sideways-scrolling bar
+  // (its overflow-y computes to auto) to the 4px of bar under its box:
+  // 0px tall, in Docs' phone toolbar.
   const clippers = (list, pos) => {
     const out = [];
-    for (let a = list.parentElement; a && a !== document.body; a = a.parentElement) {
-      const cs = getComputedStyle(a);
+    for (let a = list; (a = a.assignedSlot || a.parentElement || (a.parentNode && a.parentNode.host)) && a !== document.body; ) {
+      const cs = getComputedStyle(a), h = holds(cs);
       // Fixed skips to a holder; absolute, to a holder or a positioned box.
-      if (pos === "fixed" ? !holdsFixed(cs) : pos === "absolute" && cs.position === "static" && !holdsFixed(cs)) continue;
-      if (/auto|scroll|hidden|clip/.test(cs.overflowY)) out.push(a);
-      pos = cs.position;
+      if (pos === "fixed" ? h.f : pos !== "absolute" || h.a) {
+        if (h.p || /auto|scroll|hidden|clip/.test(cs.overflowY)) out.push(a);
+        pos = cs.position;
+      }
+      if (onTop(a)) break;
     }
     return out;
   };

@@ -1644,23 +1644,31 @@ func TestSelectPlacement(t *testing.T) {
 	}
 }
 
-// The room is cut only by an ancestor that can clip the list. A bar that
-// scrolls sideways (overflow-x: auto, so its overflow-y computes to auto
-// as well) clips a list positioned inside it, but not one that is fixed
-// to the viewport or anchored there: Docs' phone toolbar is that bar, and
-// its lists opened 0px tall because the bar's 4px under the box was taken
-// for the room. An ancestor that is the fixed list's containing block (a
-// transform) does clip it, and so does a scroller around the box that a
-// list absolutely positioned further out escapes, not.
+// The room is cut only by the ancestors that really clip the list, by
+// CSS's rules, row by row. A bar that scrolls sideways (overflow-x: auto,
+// so its overflow-y computes to auto too) clips a list it is the
+// containing block of, and not one fixed or anchored out of it: Docs'
+// phone toolbar is such a bar, and its lists opened 0px tall. "clip" rows
+// are a box that holds the list, so the list must end inside it; "escape"
+// rows are one that does not, so the list keeps its own height. Either
+// way the list is scrolled to its end and its last row must be the thing
+// at its centre: a list taller than what really shows it fails there,
+// which is how the review on #136 found content-visibility and the
+// will-change triggers missed.
 func TestSelectRoomIsCutOnlyByWhatClipsTheList(t *testing.T) {
 	t.Parallel()
+	type row struct {
+		Name      string  `json:"name"`
+		Want      string  `json:"want"`
+		Height    float64 `json:"height"`
+		Bottom    float64 `json:"bottom"`
+		BarBottom float64 `json:"barBottom"`
+		Last      bool    `json:"last"`
+		Err       string  `json:"err"`
+	}
 	var got struct {
-		Fixed       float64 `json:"fixed"`
-		Absolute    float64 `json:"absolute"`
-		Transformed float64 `json:"transformed"`
-		BarEnd      float64 `json:"barEnd"`
-		Escaped     float64 `json:"escaped"`
-		Preferred   float64 `json:"preferred"`
+		Preferred float64 `json:"preferred"`
+		Rows      []row   `json:"rows"`
 	}
 	drive(t, `
 		const frame = () => `+afterFrame+`;
@@ -1671,84 +1679,126 @@ func TestSelectRoomIsCutOnlyByWhatClipsTheList(t *testing.T) {
 		const home = wrap.parentNode, next = native.nextSibling;
 		const open = async () => { input.blur(); input.focus(); input.click(); await frame(); await frame(); };
 		const close = () => input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
-		const height = () => list.getBoundingClientRect().height;
-		const out = {};
 		await open();
-		out.preferred = height();
+		const preferred = list.getBoundingClientRect().height;
 		close();
 
-		// A one-row bar near the top that scrolls sideways, as a phone
-		// toolbar does.
-		const bar = document.createElement('div');
-		bar.style.cssText = 'position:absolute;left:0;top:100px;width:300px;overflow-x:auto;white-space:nowrap;padding:2px';
-		document.body.append(bar);
-		// The select goes with its box, or the box would be rebuilt beside it.
-		bar.append(wrap, native);
-		wrap.style.cssText = 'display:inline-block;width:200px';
-		const fix = () => {
-			const r = wrap.getBoundingClientRect();
-			list.style.cssText = 'position:fixed;inset:auto;left:' + r.left + 'px;top:' + r.bottom + 'px;width:200px';
-		};
-
-		// Fixed: the bar is not its containing block, so it is not room.
-		fix();
-		await open();
-		out.fixed = height();
-		close();
-
-		// Absolute inside the bar: the bar clips it, and the room is the
-		// bar's.
-		list.removeAttribute('style');
-		const end = () => list.getBoundingClientRect().bottom;
-		await open();
-		out.absolute = end();
-		out.barEnd = bar.getBoundingClientRect().bottom;
-		close();
-
-		// Fixed, but the bar is transformed: now it is the containing
-		// block, and it clips. Placed in the bar's coordinates, under the
-		// box, as an anchor would place it.
-		bar.style.transform = 'translateX(0)';
-		list.style.cssText = 'position:fixed;inset:auto;left:2px;top:' + (wrap.offsetTop + wrap.offsetHeight) + 'px;width:200px';
-		await open();
-		out.transformed = end();
-		close();
-		bar.style.transform = '';
-
-		// Absolute, with the box static and the positioned ancestor
-		// outside the bar: the list escapes the bar.
-		const outer = document.createElement('div');
-		outer.style.cssText = 'position:absolute;left:0;top:100px;width:300px;height:600px';
-		document.body.append(outer);
-		outer.append(bar);
-		bar.style.position = 'static';
-		wrap.style.position = 'static';
-		list.style.cssText = 'top:auto;left:0;width:200px';
-		await open();
-		out.escaped = height();
-		close();
-
-		list.removeAttribute('style');
-		wrap.removeAttribute('style');
-		home.insertBefore(wrap, next);
-		home.insertBefore(native, next);
-		outer.remove();
-		return out;
+		// Each row: the bar's own style, the list's position, and how the
+		// bar is built. The list is anchored under its box, as Docs anchors
+		// it, so it sits there whichever box holds it.
+		const bar = 'width:300px;height:200px;overflow-x:auto;';
+		const rows = [
+			['fixed, plain bar', 'escape', 'fixed', bar],
+			['fixed, transform', 'clip', 'fixed', bar + 'transform:translateX(0)'],
+			['fixed, translate', 'clip', 'fixed', bar + 'translate:0px'],
+			['fixed, rotate', 'clip', 'fixed', bar + 'rotate:0deg'],
+			['fixed, scale', 'clip', 'fixed', bar + 'scale:1'],
+			['fixed, perspective', 'clip', 'fixed', bar + 'perspective:100px'],
+			['fixed, filter', 'clip', 'fixed', bar + 'filter:blur(0)'],
+			['fixed, backdrop-filter', 'clip', 'fixed', bar + 'backdrop-filter:blur(0)'],
+			['fixed, contain: layout', 'clip', 'fixed', bar + 'contain:layout'],
+			['fixed, contain: paint', 'clip', 'fixed', bar + 'contain:paint'],
+			['fixed, contain: strict', 'clip', 'fixed', bar + 'contain:strict'],
+			['fixed, contain: content', 'clip', 'fixed', bar + 'contain:content'],
+			['fixed, content-visibility: auto', 'clip', 'fixed', bar + 'content-visibility:auto'],
+			['fixed, will-change: transform', 'clip', 'fixed', bar + 'will-change:transform'],
+			['fixed, will-change: translate', 'clip', 'fixed', bar + 'will-change:translate'],
+			['fixed, will-change: rotate', 'clip', 'fixed', bar + 'will-change:rotate'],
+			['fixed, will-change: scale', 'clip', 'fixed', bar + 'will-change:scale'],
+			['fixed, will-change: perspective', 'clip', 'fixed', bar + 'will-change:perspective'],
+			['fixed, will-change: filter', 'clip', 'fixed', bar + 'will-change:filter'],
+			['fixed, will-change: backdrop-filter', 'clip', 'fixed', bar + 'will-change:backdrop-filter'],
+			['fixed, will-change: contain', 'clip', 'fixed', bar + 'will-change:contain'],
+			['fixed, will-change: position', 'escape', 'fixed', bar + 'will-change:position'],
+			['fixed, will-change: scroll-position', 'escape', 'fixed', bar + 'will-change:scroll-position'],
+			['fixed, container-type: inline-size', 'escape', 'fixed', bar + 'container-type:inline-size'],
+			['fixed, container-type: size', 'escape', 'fixed', bar + 'container-type:size'],
+			['fixed, contain: paint, overflow visible', 'clip', 'fixed', 'width:300px;height:200px;contain:paint'],
+			['fixed, content-visibility: auto, overflow visible', 'clip', 'fixed', 'width:300px;height:200px;content-visibility:auto'],
+			['absolute, held by its own box', 'clip', 'absolute', bar],
+			['absolute, held outside the bar', 'escape', 'absolute static', bar],
+			['absolute, bar positioned', 'clip', 'absolute static', bar + 'position:relative'],
+			['absolute, will-change: position', 'clip', 'absolute static', bar + 'will-change:position'],
+			['fixed, in a modal dialog in a transformed clip', 'escape', 'fixed', 'dialog'],
+			['fixed, in a popover in a transformed clip', 'escape', 'fixed', 'popover'],
+			['absolute, slotted into a shadow scroller', 'clip', 'absolute', 'shadow'],
+		];
+		const out = [];
+		for (const [name, want, position, style] of rows) {
+			const r = { name, want };
+			try {
+				// Positioned and outside every bar: what an absolute list with a
+				// static box is held by when the bar does not hold it.
+				const outer = document.createElement('div');
+				outer.style.cssText = 'position:absolute;left:0;top:100px;width:320px;height:600px';
+				document.body.append(outer);
+				let held, closeTop = () => {};
+				if (style === 'dialog' || style === 'popover') {
+					const clipper = document.createElement('div');
+					clipper.style.cssText = 'transform:translateX(0);overflow:hidden;width:300px;height:60px';
+					held = document.createElement(style === 'dialog' ? 'dialog' : 'div');
+					held.style.cssText = 'margin:0;padding:0;border:0;inset:auto;left:0;top:100px;width:300px;height:200px;overflow:auto';
+					clipper.append(held);
+					outer.append(clipper);
+					held.append(wrap, native);
+					if (style === 'dialog') { held.showModal(); closeTop = () => held.close(); }
+					else { held.setAttribute('popover', 'manual'); held.showPopover(); closeTop = () => held.hidePopover(); }
+				} else if (style === 'shadow') {
+					const host = document.createElement('div');
+					outer.append(host);
+					host.attachShadow({ mode: 'open' }).innerHTML = '<div style="width:300px;height:200px;overflow:auto"><slot></slot></div>';
+					host.append(wrap, native);
+					held = host.shadowRoot.firstChild;
+				} else {
+					held = document.createElement('div');
+					held.style.cssText = style;
+					outer.append(held);
+					held.append(wrap, native);
+				}
+				wrap.style.cssText = 'display:block;width:200px;anchor-name:--rst-room' + (position.endsWith('static') ? ';position:static' : '');
+				list.style.cssText = 'position:' + position.split(' ')[0] + ';inset:auto;position-anchor:--rst-room;top:anchor(bottom);left:anchor(left);width:200px';
+				await open();
+				const lr = list.getBoundingClientRect();
+				r.height = lr.height;
+				r.bottom = lr.bottom;
+				r.barBottom = held.getBoundingClientRect().bottom;
+				list.scrollTop = list.scrollHeight;
+				await frame();
+				const lis = [...list.querySelectorAll('[rst-combo-option]')].filter((li) => !li.hidden);
+				const last = lis[lis.length - 1].getBoundingClientRect();
+				const hit = document.elementFromPoint(last.left + last.width / 2, last.top + last.height / 2);
+				r.last = !!hit && lis[lis.length - 1].contains(hit);
+				close();
+				closeTop();
+				outer.remove();
+			} catch (e) {
+				r.err = String(e);
+			}
+			list.removeAttribute('style');
+			wrap.removeAttribute('style');
+			home.insertBefore(wrap, next);
+			home.insertBefore(native, next);
+			out.push(r);
+		}
+		return { preferred, rows: out };
 	`, &got)
 	if got.Preferred < 100 {
 		t.Fatalf("the list opened %.0fpx tall on its own, too short to tell anything apart", got.Preferred)
 	}
-	if got.Fixed < got.Preferred-1 {
-		t.Errorf("a fixed list in a bar that scrolls sideways opened %.0fpx tall, want its own %.0fpx: the bar cannot clip it", got.Fixed, got.Preferred)
+	for _, r := range got.Rows {
+		switch {
+		case r.Err != "":
+			t.Errorf("%s: %s", r.Name, r.Err)
+		case r.Want == "escape" && r.Height < got.Preferred-1:
+			t.Errorf("%s: the list opened %.0fpx tall, want its own %.0fpx: nothing here clips it", r.Name, r.Height, got.Preferred)
+		case r.Want == "clip" && r.Bottom > r.BarBottom+1:
+			t.Errorf("%s: the list ends at %.0f, past the end of the box that clips it at %.0f", r.Name, r.Bottom, r.BarBottom)
+		case !r.Last:
+			t.Errorf("%s: scrolled to its end, the list's last row is not what shows at its place: the list is taller than what shows it", r.Name)
+		}
 	}
-	if got.Absolute > got.BarEnd+1 {
-		t.Errorf("a list positioned inside a bar that scrolls sideways ended at %.0f, past the bar's end at %.0f: the bar clips it, so it is the room", got.Absolute, got.BarEnd)
-	}
-	if got.Transformed > got.BarEnd+1 {
-		t.Errorf("a fixed list in a transformed bar ended at %.0f, past the bar's end at %.0f: the transform makes the bar its containing block, so the bar clips it", got.Transformed, got.BarEnd)
-	}
-	if got.Escaped < got.Preferred-1 {
-		t.Errorf("a list positioned outside a bar it sits in opened %.0fpx tall, want its own %.0fpx: the bar is not in its containing block chain", got.Escaped, got.Preferred)
+	if len(got.Rows) != 34 {
+		t.Errorf("ran %d rows, want 34", len(got.Rows))
 	}
 }
 
