@@ -301,7 +301,7 @@ func TestMainTemplateWiresErrorPage(t *testing.T) {
 // language with LocalizerFor, because a recovered panic reaches it
 // outside the middleware that puts the localizer on the request.
 func TestRenderTemplateWiresErrorPage(t *testing.T) {
-	src := fmt.Sprintf(renderTemplate, "blogapp", "blogapp", `"index", "errors"`)
+	src := renderSource("blogapp", "blogapp", `"index", "errors"`, true)
 	if !strings.Contains(src, `[]string{"index", "errors"}`) {
 		t.Errorf("render.go's pages loop does not include \"errors\":\n%s", src)
 	}
@@ -696,10 +696,10 @@ func TestScaffoldedLayoutCallsIconAssets(t *testing.T) {
 	if !strings.Contains(defaultLayout(t), "{{iconAssets}}") {
 		t.Error("layout.html never calls iconAssets; cdn and js delivery would render nothing")
 	}
-	if !strings.Contains(renderTemplate, `"icon": icons.Icon, "iconAssets": icons.Assets`) {
+	if !strings.Contains(scaffoldFile("render.go.tmpl"), `"icon": icons.Icon, "iconAssets": icons.Assets`) {
 		t.Error("render.go does not point ui's icon seams at the app's own icon package")
 	}
-	if !strings.Contains(renderTemplate, `ui.NewPages(ui.PagesConfig{`) {
+	if !strings.Contains(scaffoldFile("render.go.tmpl"), `ui.NewPages(ui.PagesConfig{`) {
 		t.Error("render.go does not build its pages with ui.NewPages, so no page can call a partial")
 	}
 }

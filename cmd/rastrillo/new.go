@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"go/token"
 	"html"
+	"maps"
 	"os"
 	"path/filepath"
 	"slices"
@@ -172,117 +173,43 @@ func resolveChoices(o newOpts) (newChoices, error) {
 	return newChoices{rendered, conventions, vendored, layoutHTML, code}, nil
 }
 
-// writeSingle is the single shape: one app, its SQLite data, and the
-// design system. It is what `rastrillo new` has always written.
-func writeSingle(o newOpts) error {
-	name, pkg := o.Name, o.Pkg
+// designPages is what the design system gives an app: the files that
+// make its pages (frame, index, error page, static files, icons and an
+// icon licence's attribution), and the pages' names. The sidebar and
+// console shells open on a phone to the index, with its content hidden
+// there (ui's phone layout), so those two alone get a second page to
+// hold it, plus the route, handler and test that go with it. Every other
+// shell keeps today's one page.
+type designPages struct {
+	files                   map[string]string
+	pages                   []string
+	routes, handlers, tests string
+}
 
-	c, err := resolveChoices(o)
-	if err != nil {
-		return err
-	}
-	rendered, conventions, vendored, layoutHTML, code := c.rendered, c.conventions, c.vendored, c.layout, c.code
-
-	dirs := []string{
-		name,
-		filepath.Join(name, "cmd", name),
-		filepath.Join(name, "manifest"),
-		filepath.Join(name, "internal", pkg),
-		filepath.Join(name, "internal", pkg, "static"),
-		filepath.Join(name, "internal", pkg, "templates"),
-		filepath.Join(name, "internal", pkg, "migrations"),
-		filepath.Join(name, "internal", pkg, "icons"),
-		filepath.Join(name, ".amadan", "ci.d"),
-		filepath.Join(name, ".rastrillo"),
-	}
-	for _, d := range dirs {
-		if err := os.MkdirAll(d, 0o755); err != nil {
-			return err
-		}
-	}
-
-	appDir := filepath.Join(name, "internal", pkg)
-
-	// The sidebar and console shells open on a phone to the index, with
-	// its content hidden there (ui's phone layout), so those two shells
-	// alone get a second page to hold it, plus the route, handler and
-	// test that go with it. Every other shell keeps today's one page.
-	indexHTML, routes, handlers, pages, extraTests := indexTemplate, "", "", `"index", "errors", "tokens"`, ""
-	if twoPageShells[o.Shell] {
-		indexHTML = fmt.Sprintf(sectionsIndexTemplate, scaffoldOverview, html.EscapeString(name))
-		routes = "\n\t\t{\"GET /overview\", a.overview},"
-		handlers = overviewHandler
-		pages = `"index", "overview", "errors", "tokens"`
-		extraTests = overviewTest
-	}
-
-	files := map[string]string{
-		filepath.Join(name, "go.mod"): fmt.Sprintf(goModTemplate,
-			name, rastrilloVersion(), gormPinnedVersion),
-		filepath.Join(name, "cmd", name, "main.go"): fmt.Sprintf(mainTemplate, name, pkg, strings.ToUpper(pkg)),
-		filepath.Join(appDir, "app.go"):             fmt.Sprintf(appTemplate, pkg, routes, name),
-		filepath.Join(appDir, "models.go"):          fmt.Sprintf(modelsTemplate, pkg),
-		filepath.Join(appDir, "migrations.go"):      fmt.Sprintf(migrationsTemplate, pkg),
-		filepath.Join(appDir, "handlers.go"):        fmt.Sprintf(handlersTemplate, pkg, handlers),
-		filepath.Join(appDir, "render.go"):          fmt.Sprintf(renderTemplate, name, pkg, pages),
-		// The JSON API and its token page (JSON API spec §3, §5). The
-		// prefix is worked out here, once, from the app's name.
-		filepath.Join(appDir, "api.go"):                   fmt.Sprintf(scaffoldFile("api.go.tmpl"), pkg, name, apitoken.DerivePrefix(name)),
-		filepath.Join(appDir, "tokens.go"):                fmt.Sprintf(scaffoldFile("tokens.go.tmpl"), pkg),
-		filepath.Join(appDir, "templates", "tokens.html"): scaffoldFile("tokens.html"),
-		filepath.Join(appDir, "api_test.go"):              fmt.Sprintf(scaffoldFile("api_test.go.tmpl"), name, pkg, apitoken.DerivePrefix(name)),
-		filepath.Join(name, ".gitleaks.toml"):             scaffoldFile("gitleaks.toml"),
+func designSystem(o newOpts, c newChoices, appDir string) designPages {
+	d := designPages{pages: []string{"index"}, files: map[string]string{
 		// The page frame, chosen by --shell and delivered verbatim from
 		// ui.Layout: app-owned from here on, exactly like tokens.css.
 		// Its chrome is blocks with working defaults (title, lang, dir,
 		// and in the chrome shells brand/nav/account/locale/foot), so a
 		// page overrides only what it cares about.
-		filepath.Join(appDir, "templates", "layout.html"): string(layoutHTML),
-		filepath.Join(appDir, "templates", "index.html"):  indexHTML,
+		filepath.Join(appDir, "templates", "layout.html"): string(c.layout),
+		filepath.Join(appDir, "templates", "index.html"):  indexTemplate,
 		filepath.Join(appDir, "templates", "errors.html"): errorsTemplate,
-		// The initial migration and the schema.sql snapshot it adds up
-		// to, both static: the scaffold's Note model is fixed and
-		// known at the time this template is written, so unlike a real
-		// app's later migrations, generating this one at `new` time
-		// would buy nothing but a network fetch and a full compile —
-		// exactly what `new` promises not to need. Produced once by
-		// hand (scaffold an app, run `rastrillo migration generate`
-		// against it, paste the result here); TestScaffoldMigratesAndPassesCheck
-		// is what keeps it from drifting off of modelsTemplate's Note.
-		filepath.Join(appDir, "migrations", "0001_init.sql"): initMigrationTemplate,
-		filepath.Join(appDir, "migrations", "schema.sql"):    schemaSQLTemplate,
-		// The test harness, delivered once like tokens.css: app-owned
-		// from here on — edit it, grow it, or delete it. The example
-		// tests pass on a fresh scaffold and pin the out-of-the-box
-		// asset-fingerprinting behavior.
-		filepath.Join(appDir, "harness_test.go"): fmt.Sprintf(harnessTemplate, name, pkg),
-		// The pin that makes the vendored bytes above verifiable: a
-		// reviewer runs the suite and knows static/'s ~56KB is the
-		// library's, not app diff to read line by line.
-		filepath.Join(appDir, "vendored_test.go"): fmt.Sprintf(vendoredTestTemplate, pkg, o.Theme),
-		filepath.Join(appDir, "index_test.go"):    fmt.Sprintf(indexTestTemplate, name, pkg, extraTests),
-		// The migration check, as a test go test ./... runs (make test).
-		filepath.Join(appDir, "migrations_test.go"): fmt.Sprintf(scaffoldFile("migrations_test.go.tmpl"), name, pkg),
-		// The browser drive, on the same delivered-once terms as the
-		// harness. browser_test.go, never harness_test.go: that name
-		// (and word) already belongs to the httptest HTTP harness.
-		filepath.Join(appDir, "browser_test.go"): fmt.Sprintf(browserTestTemplate, name, pkg, strings.ToUpper(pkg)),
-		// The perf lane and the exemptions file every budget reads.
-		filepath.Join(appDir, "perf_test.go"):            fmt.Sprintf(perfTestTemplate, name, pkg),
-		filepath.Join(name, ".rastrillo", "budgets.txt"): budgetsTxtTemplate,
-		filepath.Join(name, "README.md"):                 fmt.Sprintf(scaffoldFile("README.md.tmpl"), name, pkg),
-		filepath.Join(name, "manifest", "README.md"):     fmt.Sprintf(manifestReadme, name, pkg),
-		filepath.Join(name, "manifest", "app.toml"):      fmt.Sprintf(appTOMLTemplate, code),
-		filepath.Join(name, "Makefile"):                  fmt.Sprintf(makefileTemplate, name, staticcheckVersion, govulncheckVersion, gitleaksVersion, goToolchain),
-		filepath.Join(name, ".gitignore"):                fmt.Sprintf(gitignoreTemplate, name),
 		// The app's icon set, on the same terms as tokens.css and
 		// rastrillo.js: delivered once, app-owned from here on.
-		filepath.Join(appDir, "icons", "icons.go"): string(rendered.Source),
-		// AGENTS.md carries the instructions — it is the cross-agent
-		// file, so they reach whatever agent someone uses. CLAUDE.md is
-		// an @AGENTS.md import and nothing else.
-		filepath.Join(name, "AGENTS.md"): fmt.Sprintf(scaffoldFile("AGENTS.md.tmpl"), name) + string(conventions),
-		filepath.Join(name, "CLAUDE.md"): claudeMDPointer,
+		filepath.Join(appDir, "icons", "icons.go"): string(c.rendered.Source),
+	}}
+	if twoPageShells[o.Shell] {
+		d.files[filepath.Join(appDir, "templates", "index.html")] = fmt.Sprintf(sectionsIndexTemplate, scaffoldOverview, html.EscapeString(o.Name))
+		d.files[filepath.Join(appDir, "templates", "overview.html")] = fmt.Sprintf(overviewTemplate, scaffoldOverview, html.EscapeString(o.Name))
+		d.pages = append(d.pages, "overview")
+		d.routes, d.handlers, d.tests = "\n\t\t{\"GET /overview\", a.overview},", overviewHandler, overviewTest
+	}
+	// Some licences oblige the app, not the framework. Writing the file
+	// is the only way that obligation travels with the code.
+	if c.rendered.AttribName != "" {
+		d.files[filepath.Join(o.Name, c.rendered.AttribName)] = string(c.rendered.Attribution)
 	}
 	// The vendored static files, written from the one list. Each is
 	// delivered once and app-owned from here on: rastrillo.Serve never
@@ -319,13 +246,122 @@ func writeSingle(o newOpts) error {
 	// already ship to apps that never link them), and are deletable where
 	// the shell does not link them; the app's vendoring test then needs
 	// them in vendoredIsMine, or it fails on the missing files.
-	if twoPageShells[o.Shell] {
-		files[filepath.Join(appDir, "templates", "overview.html")] = fmt.Sprintf(overviewTemplate, scaffoldOverview, html.EscapeString(name))
+	for name, content := range c.vendored {
+		d.files[filepath.Join(appDir, "static", name)] = string(content)
+	}
+	return d
+}
+
+// pageList is the page names as the Go list render.go loops over.
+func pageList(names ...string) string {
+	return `"` + strings.Join(names, `", "`) + `"`
+}
+
+// printIconNotice states the icon delivery's consent notice once. A
+// supported choice that nags on every build is not really supported.
+func printIconNotice(o newOpts, rendered iconsets.Rendered) {
+	if rendered.Notice == "" {
+		return
+	}
+	fmt.Printf("\nnote: --icon-delivery=%s\n", o.IconDelivery)
+	for _, line := range strings.Split(strings.TrimRight(rendered.Notice, "\n"), "\n") {
+		fmt.Println("  " + line)
+	}
+}
+
+// writeSingle is the single shape: one app, its SQLite data, and the
+// design system. It is what `rastrillo new` has always written.
+func writeSingle(o newOpts) error {
+	name, pkg := o.Name, o.Pkg
+
+	c, err := resolveChoices(o)
+	if err != nil {
+		return err
+	}
+	conventions, code := c.conventions, c.code
+
+	dirs := []string{
+		name,
+		filepath.Join(name, "cmd", name),
+		filepath.Join(name, "manifest"),
+		filepath.Join(name, "internal", pkg),
+		filepath.Join(name, "internal", pkg, "static"),
+		filepath.Join(name, "internal", pkg, "templates"),
+		filepath.Join(name, "internal", pkg, "migrations"),
+		filepath.Join(name, "internal", pkg, "icons"),
+		filepath.Join(name, ".amadan", "ci.d"),
+		filepath.Join(name, ".rastrillo"),
+	}
+	for _, d := range dirs {
+		if err := os.MkdirAll(d, 0o755); err != nil {
+			return err
+		}
 	}
 
-	for name, content := range vendored {
-		files[filepath.Join(appDir, "static", name)] = string(content)
+	appDir := filepath.Join(name, "internal", pkg)
+
+	d := designSystem(o, c, appDir)
+	pages := pageList(append(d.pages, "errors", "tokens")...)
+	routes, handlers, extraTests := d.routes, d.handlers, d.tests
+
+	files := map[string]string{
+		filepath.Join(name, "go.mod"): fmt.Sprintf(goModTemplate,
+			name, rastrilloVersion(), gormPinnedVersion),
+		filepath.Join(name, "cmd", name, "main.go"): fmt.Sprintf(mainTemplate, name, pkg, strings.ToUpper(pkg)),
+		filepath.Join(appDir, "app.go"):             fmt.Sprintf(appTemplate, pkg, routes, name),
+		filepath.Join(appDir, "models.go"):          fmt.Sprintf(modelsTemplate, pkg),
+		filepath.Join(appDir, "migrations.go"):      fmt.Sprintf(migrationsTemplate, pkg),
+		filepath.Join(appDir, "handlers.go"):        fmt.Sprintf(handlersTemplate, pkg, handlers),
+		filepath.Join(appDir, "render.go"):          renderSource(name, pkg, pages, true),
+		// The JSON API and its token page (JSON API spec §3, §5). The
+		// prefix is worked out here, once, from the app's name.
+		filepath.Join(appDir, "api.go"):                   fmt.Sprintf(scaffoldFile("api.go.tmpl"), pkg, name, apitoken.DerivePrefix(name)),
+		filepath.Join(appDir, "tokens.go"):                fmt.Sprintf(scaffoldFile("tokens.go.tmpl"), pkg),
+		filepath.Join(appDir, "templates", "tokens.html"): scaffoldFile("tokens.html"),
+		filepath.Join(appDir, "api_test.go"):              fmt.Sprintf(scaffoldFile("api_test.go.tmpl"), name, pkg, apitoken.DerivePrefix(name)),
+		filepath.Join(name, ".gitleaks.toml"):             scaffoldFile("gitleaks.toml"),
+		// The initial migration and the schema.sql snapshot it adds up
+		// to, both static: the scaffold's Note model is fixed and
+		// known at the time this template is written, so unlike a real
+		// app's later migrations, generating this one at `new` time
+		// would buy nothing but a network fetch and a full compile —
+		// exactly what `new` promises not to need. Produced once by
+		// hand (scaffold an app, run `rastrillo migration generate`
+		// against it, paste the result here); TestScaffoldMigratesAndPassesCheck
+		// is what keeps it from drifting off of modelsTemplate's Note.
+		filepath.Join(appDir, "migrations", "0001_init.sql"): initMigrationTemplate,
+		filepath.Join(appDir, "migrations", "schema.sql"):    schemaSQLTemplate,
+		// The test harness, delivered once like tokens.css: app-owned
+		// from here on — edit it, grow it, or delete it. The example
+		// tests pass on a fresh scaffold and pin the out-of-the-box
+		// asset-fingerprinting behavior.
+		filepath.Join(appDir, "harness_test.go"): fmt.Sprintf(harnessTemplate, name, pkg),
+		// The pin that makes the vendored bytes above verifiable: a
+		// reviewer runs the suite and knows static/'s ~56KB is the
+		// library's, not app diff to read line by line.
+		filepath.Join(appDir, "vendored_test.go"): fmt.Sprintf(vendoredTestTemplate, pkg, o.Theme),
+		filepath.Join(appDir, "index_test.go"):    fmt.Sprintf(indexTestTemplate, name, pkg, extraTests),
+		// The migration check, as a test go test ./... runs (make test).
+		filepath.Join(appDir, "migrations_test.go"): fmt.Sprintf(scaffoldFile("migrations_test.go.tmpl"), name, pkg),
+		// The browser drive, on the same delivered-once terms as the
+		// harness. browser_test.go, never harness_test.go: that name
+		// (and word) already belongs to the httptest HTTP harness.
+		filepath.Join(appDir, "browser_test.go"): fmt.Sprintf(browserTestTemplate, name, pkg, strings.ToUpper(pkg)),
+		// The perf lane and the exemptions file every budget reads.
+		filepath.Join(appDir, "perf_test.go"):            fmt.Sprintf(perfTestTemplate, name, pkg),
+		filepath.Join(name, ".rastrillo", "budgets.txt"): budgetsTxtTemplate,
+		filepath.Join(name, "README.md"):                 fmt.Sprintf(scaffoldFile("README.md.tmpl"), name, pkg),
+		filepath.Join(name, "manifest", "README.md"):     fmt.Sprintf(manifestReadme, name, pkg),
+		filepath.Join(name, "manifest", "app.toml"):      fmt.Sprintf(appTOMLTemplate, code),
+		filepath.Join(name, "Makefile"):                  fmt.Sprintf(makefileTemplate, name, staticcheckVersion, govulncheckVersion, gitleaksVersion, goToolchain),
+		filepath.Join(name, ".gitignore"):                fmt.Sprintf(gitignoreTemplate, name),
+		// AGENTS.md carries the instructions — it is the cross-agent
+		// file, so they reach whatever agent someone uses. CLAUDE.md is
+		// an @AGENTS.md import and nothing else.
+		filepath.Join(name, "AGENTS.md"): fmt.Sprintf(scaffoldFile("AGENTS.md.tmpl"), name) + string(conventions),
+		filepath.Join(name, "CLAUDE.md"): claudeMDPointer,
 	}
+	maps.Copy(files, d.files)
 
 	if o.Auth == "magic" {
 		if err := applyMagicAuth(files, name, pkg, appDir); err != nil {
@@ -378,14 +414,6 @@ func writeSingle(o newOpts) error {
 		}
 	}
 
-	// Some licences oblige the app, not the framework. Writing the file
-	// is the only way that obligation travels with the code.
-	if rendered.AttribName != "" {
-		if err := os.WriteFile(filepath.Join(name, rendered.AttribName), rendered.Attribution, 0o644); err != nil {
-			return err
-		}
-	}
-
 	fmt.Printf("rastrillo new: scaffolded %s/\n", name)
 	fmt.Printf("  cmd/%s/main.go       (Resolve -> db.Open -> App -> Serve)\n", name)
 	fmt.Printf("  internal/%s/         (models, migrations, app, handlers, render, templates, static)\n", pkg)
@@ -404,18 +432,11 @@ func writeSingle(o newOpts) error {
 	fmt.Println("  AGENTS.md            (instructions + UX conventions, the source of truth)")
 	fmt.Println("  CLAUDE.md            (an @AGENTS.md import, nothing more)")
 	fmt.Println("  README.md            (what this app is, and how the browser drive runs)")
-	if rendered.AttribName != "" {
-		fmt.Printf("  %s   (%s requires attribution — keep it)\n", rendered.AttribName, o.IconSet)
+	if c.rendered.AttribName != "" {
+		fmt.Printf("  %s   (%s requires attribution — keep it)\n", c.rendered.AttribName, o.IconSet)
 	}
 
-	// Informed consent, stated once. A supported choice that nags on
-	// every build is not really supported.
-	if rendered.Notice != "" {
-		fmt.Printf("\nnote: --icon-delivery=%s\n", o.IconDelivery)
-		for _, line := range strings.Split(strings.TrimRight(rendered.Notice, "\n"), "\n") {
-			fmt.Println("  " + line)
-		}
-	}
+	printIconNotice(o, c.rendered)
 
 	// The scaffold ships with passing tests (the harness above), so the
 	// first suggested command is running them: the TDD loop starts from
@@ -868,98 +889,18 @@ func (a *app) index(w http.ResponseWriter, r *http.Request) {
 }
 %[2]s`
 
-const renderTemplate = `package %[2]s
-
-import (
-	"bytes"
-	"embed"
-	"html/template"
-	"maps"
-	"net/http"
-
-	"amadan.net/rastrillo/rastrillo"
-	"amadan.net/rastrillo/rastrillo/locales"
-	"amadan.net/rastrillo/rastrillo/ui"
-
-	genlocales "%[1]s/gen/locales"
-	"%[1]s/internal/%[2]s/icons"
-)
-
-//go:embed templates static
-var appFS embed.FS
-
-// assets fingerprints static/: {{asset "static/tokens.css"}} in a
-// template returns a content-hashed URL, served immutable-cacheable by
-// the handler App mounts.
-var assets = rastrillo.NewAssets(appFS)
-
-// pages is every page of this app, built once at boot: ui's partials and
-// layout.html parsed once, then one copy per page with that page's own
-// file. Every language and every request runs these same templates; the
-// localizer in each page's data decides the language.
-var pages, pagesErr = newPages()
-
-func newPages() (*ui.Pages, error) {
-	cfg, err := locales.CheckConfig(genlocales.DefaultLocale, genlocales.Locales)
-	if err != nil {
-		return nil, err
+// renderSource is render.go. name, pkg and pages fill the module path,
+// the package and the page list; generated says where the locales come
+// from: single's gen/locales (manifest/app.toml), or bare's Locale
+// constant, which has no manifest to read.
+func renderSource(name, pkg, pages string, generated bool) string {
+	imp, cfg := "", "Locale, nil"
+	if generated {
+		imp, cfg = "\tgenlocales \""+name+"/gen/locales\"\n", "genlocales.DefaultLocale, genlocales.Locales"
 	}
-	files := map[string]ui.PageFile{}
-	for _, name := range []string{%[3]s} {
-		files[name] = ui.PageFile{Path: "templates/" + name + ".html"}
-	}
-	return ui.NewPages(ui.PagesConfig{
-		App:    appFS,
-		Layout: "templates/layout.html",
-		Pages:  files,
-		Locale: cfg,
-		// icon and iconAssets point ui's two icon seams at the app's own set
-		// (internal/%[2]s/icons, scaffolded by rastrillo new). Pass both, always:
-		// passing only icon would leave iconAssets on the framework default and
-		// silently break cdn and js delivery. iconAssets is whatever <head>
-		// markup the chosen delivery needs, empty for the vendored-inline
-		// default, so the layout calls it unconditionally and switching
-		// delivery later needs no template edit.
-		Funcs: template.FuncMap{"icon": icons.Icon, "iconAssets": icons.Assets, "asset": assets.Path},
-	})
+	return strings.NewReplacer("__GENLOCALES__\n", imp, "__LOCALE_CONFIG__", cfg,
+		"__NAME__", name, "__PKG__", pkg, "__PAGES__", pages).Replace(scaffoldFile("render.go.tmpl"))
 }
-
-// render adds the request's localizer, the language switcher's items,
-// the current path and the colour scheme the cookie chose to data, then
-// executes name into a buffer before anything touches the wire: a
-// template error becomes a clean 500 instead of half a page. Scheme is
-// what the layout writes as data-theme; without it a chosen Dark would
-// paint System on every reload.
-func render(w http.ResponseWriter, r *http.Request, name string, data map[string]any) {
-	req := ui.ForRequest(r)
-	page := map[string]any{}
-	maps.Copy(page, data)
-	page["L"], page["Locales"], page["Return"], page["Scheme"] = req.L, req.Locales, req.Return, req.Scheme
-	if err := pages.Execute(w, name, page); err != nil {
-		http.Error(w, "something went wrong", http.StatusInternalServerError)
-	}
-}
-
-// ErrorPage renders the "errors" page — templates/errors.html, which
-// wraps ui's error-page partial in the layout — for status inside ref
-// (rastrillo.NewRef, or empty when there is none to show). It is the
-// rastrillo.ErrorPageFunc cmd/%[1]s/main.go points Options.ErrorPage at,
-// so a panic gets the same page a handled failure would; wire it to
-// Ctx.ErrorPage too as the app grows handlers of its own. It finds the
-// request's language with pages.LocalizerFor rather than the middleware,
-// because a recovered panic reaches it outside the middleware.
-func ErrorPage(w http.ResponseWriter, r *http.Request, status int, ref string) {
-	// Without pages there is nothing to render, so a failed boot still
-	// answers a plain 500 rather than panicking.
-	var buf bytes.Buffer
-	if pagesErr != nil || pages.Execute(&buf, "errors", map[string]any{"L": pages.LocalizerFor(r), "Scheme": rastrillo.SchemeFrom(r), "Status": status, "Ref": ref}) != nil {
-		http.Error(w, "something went wrong", http.StatusInternalServerError)
-		return
-	}
-	w.WriteHeader(status)
-	buf.WriteTo(w)
-}
-`
 
 const indexTemplate = `{{define "content"}}
 <h1>Hello, World — this is a rastrillo app.</h1>

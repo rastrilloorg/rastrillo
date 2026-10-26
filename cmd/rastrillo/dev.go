@@ -193,6 +193,20 @@ func (d *driftChecker) close() {
 	}
 }
 
+// rebuildApp is one turn of dev's loop: generate, then build appPkg into bin.
+func rebuildApp(dir, appPkg, bin string) error {
+	if err := runGenerate([]string{dir}); err != nil {
+		return err
+	}
+	cmd := exec.Command("go", "build", "-o", bin, appPkg)
+	cmd.Dir = dir
+	cmd.Stdout, cmd.Stderr = os.Stdout, os.Stderr
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("go build: %w", err)
+	}
+	return nil
+}
+
 // runDev implements `rastrillo dev [dir] [-- app args...]` (design doc
 // §11): watch, and on any change regenerate → rebuild → restart. It
 // calls the same runGenerate that CI calls — one code path, not two.
@@ -223,18 +237,7 @@ func runDev(args []string) error {
 	defer os.RemoveAll(binDir)
 	bin := filepath.Join(binDir, appName)
 
-	rebuild := func() error {
-		if err := runGenerate([]string{dir}); err != nil {
-			return err
-		}
-		cmd := exec.Command("go", "build", "-o", bin, appPkg)
-		cmd.Dir = dir
-		cmd.Stdout, cmd.Stderr = os.Stdout, os.Stderr
-		if err := cmd.Run(); err != nil {
-			return fmt.Errorf("go build: %w", err)
-		}
-		return nil
-	}
+	rebuild := func() error { return rebuildApp(dir, appPkg, bin) }
 
 	// child and exitCh are only ever touched from the main loop's
 	// goroutine (the exit-watcher goroutine below only writes to its own
