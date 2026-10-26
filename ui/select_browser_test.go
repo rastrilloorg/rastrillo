@@ -1531,6 +1531,11 @@ func TestSelectPlacement(t *testing.T) {
 		ClampTop      float64 `json:"clampTop"`
 		BandTop       float64 `json:"bandTop"`
 		TieUp         bool    `json:"tieUp"`
+		CeilingUp     bool    `json:"ceilingUp"`
+		CeilingTop    float64 `json:"ceilingTop"`
+		CeilingEnd    float64 `json:"ceilingEnd"`
+		NoCeilingUp   bool    `json:"noCeilingUp"`
+		BelowCeilUp   bool    `json:"belowCeilUp"`
 	}
 	drive(t, `
 		const frame = () => `+afterFrame+`;
@@ -1620,6 +1625,31 @@ func TestSelectPlacement(t *testing.T) {
 		await open();
 		out.tieUp = wrap.hasAttribute('rst-combo-up');
 		close();
+
+		// A header pinned above the box (data-rst-select-ceiling) is not
+		// room either: with 70px below and the header over all but 6px
+		// above, the list opens down. Without the header it opens up, and
+		// one marked below the box is ignored.
+		at(150);
+		document.dispatchEvent(new CustomEvent('rst:select-viewport', { detail: { top: 0, bottom: 150 + h + 70 } }));
+		await open();
+		out.noCeilingUp = wrap.hasAttribute('rst-combo-up');
+		close();
+		const header = document.createElement('div');
+		header.setAttribute('data-rst-select-ceiling', '');
+		header.style.cssText = 'position:fixed;left:0;right:0;top:0;height:140px';
+		document.body.append(header);
+		await open();
+		out.ceilingUp = wrap.hasAttribute('rst-combo-up');
+		out.ceilingTop = list.getBoundingClientRect().top;
+		out.ceilingEnd = header.getBoundingClientRect().bottom;
+		close();
+		header.style.top = (150 + h + 10) + 'px';
+		header.style.height = '5px';
+		await open();
+		out.belowCeilUp = wrap.hasAttribute('rst-combo-up');
+		close();
+		header.remove();
 		document.dispatchEvent(new CustomEvent('rst:select-viewport', { detail: null }));
 		wrap.removeAttribute('style');
 		return out;
@@ -1641,6 +1671,9 @@ func TestSelectPlacement(t *testing.T) {
 	}
 	if got.TieUp {
 		t.Error("equal room above and below opened upward: a tie goes down")
+	}
+	if !got.NoCeilingUp || got.CeilingUp || got.CeilingTop < got.CeilingEnd || !got.BelowCeilUp {
+		t.Errorf("70px below the box and 146px above it: up %v with no header; under a header ending at %.0f, up %v starting at %.0f; with the header marked below the box, up %v. Want up, then down below the header, then up: a ceiling is not room, and one below the box is ignored", got.NoCeilingUp, got.CeilingEnd, got.CeilingUp, got.CeilingTop, got.BelowCeilUp)
 	}
 }
 

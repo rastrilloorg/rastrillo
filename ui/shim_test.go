@@ -498,10 +498,11 @@ func TestSelectContract(t *testing.T) {
 	// list fixed or anchored out of a bar that scrolls sideways opened 0px
 	// tall in Docs' phone toolbar. The comments are the two that say why.
 	//
-	// Then to 54KB (measured 55,008 bytes) when the review on #136 held
-	// that chain to the CSS rules: paint containment and content-visibility
+	// Then to 54KB (measured 55,248 bytes) when the review on #136 held
+	// that chain to the CSS rules (paint containment and content-visibility
 	// clipping, will-change's triggers, will-change: position for absolute
-	// lists, size containers dropped, the top layer and slots.
+	// lists, size containers dropped, the top layer and slots), and added
+	// data-rst-select-ceiling, floor's twin for a sticky header.
 	if n := len(SelectJS()); n > 54*1024 {
 		t.Fatalf("select.js is %d bytes; it is split out of the shim precisely to stay readable — trim it", n)
 	}

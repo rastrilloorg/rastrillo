@@ -569,11 +569,14 @@
         bottom = Math.min(bottom, r.bottom);
       }
       const box = wrap.getBoundingClientRect();
-      // A bar pinned below the box (data-rst-select-floor) is not room;
-      // the highest wins, one above the box is ignored.
+      // A bar pinned below the box (data-rst-select-floor) or above it
+      // (data-rst-select-ceiling, a sticky header) is not room; the nearest
+      // wins, one on the wrong side is ignored.
       for (const f of floors) {
         const r = f.getBoundingClientRect();
-        if (r.height && r.top >= box.bottom - 1) bottom = Math.min(bottom, r.top);
+        if (!r.height) continue;
+        if (!f.hasAttribute("data-rst-select-ceiling")) { if (r.top >= box.bottom - 1) bottom = Math.min(bottom, r.top); }
+        else if (r.bottom <= box.top + 1) top = Math.max(top, r.bottom);
       }
       const below = bottom - box.bottom - gap;
       const above = box.top - top - gap;
@@ -739,7 +742,7 @@
       open = true;
       list.hidden = false;
       input.setAttribute("aria-expanded", "true");
-      floors = [...document.querySelectorAll("[data-rst-select-floor]")];
+      floors = [...document.querySelectorAll("[data-rst-select-floor],[data-rst-select-ceiling]")];
       preferred = 0;
       replace();
       window.addEventListener("resize", replace);

@@ -725,6 +725,9 @@ it outside that box.
 Mark a bar that stays pinned below your form, such as a sticky save bar,
 with `data-rst-select-floor`. The list then treats the top of the bar as
 the bottom of the screen, so it never opens over the bar's buttons.
+Mark a header that stays pinned above it with `data-rst-select-ceiling`.
+The list then treats the bottom of the header as the top of the screen,
+so it never opens up behind the header.
 
 Inside an iframe, `select.js` sees only its own frame, so it cannot tell
 when the page around it hides part of the frame, for example behind a
