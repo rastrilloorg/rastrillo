@@ -29,7 +29,7 @@ var authKinds = []string{"none", "magic"}
 // text it expects, and a scaffold whose templates moved fails here
 // loudly instead of writing an app that does not build.
 func applyMagicAuth(files map[string]string, name, pkg, appDir string) error {
-	testDir := filepath.Join(name, "internal", pkg+"test")
+	testDir := appDir
 	env := strings.ToUpper(pkg)
 	var errs []string
 	swap := func(path, old, new string) {

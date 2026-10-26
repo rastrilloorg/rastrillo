@@ -64,7 +64,7 @@ func TestAnAppMissingTheShellFilesIsToldAndFixed(t *testing.T) {
 	t.Chdir(t.TempDir())
 	dir := scaffoldWithReplace(t, "upapp", "--shell=topbar")
 	static := filepath.Join(dir, "internal", "upapp", "static")
-	pin := filepath.Join(dir, "internal", "upapptest", "vendored_test.go")
+	pin := filepath.Join(dir, "internal", "upapp", "vendored_test.go")
 	remove := func() {
 		for _, n := range []string{"shell.js", "shell.css"} {
 			if err := os.Remove(filepath.Join(static, n)); err != nil {
@@ -73,7 +73,7 @@ func TestAnAppMissingTheShellFilesIsToldAndFixed(t *testing.T) {
 		}
 	}
 	run := func() (string, error) {
-		return goTestIn(dir, "./internal/upapptest/", "-run", "TestVendoredAssetsMatchTheLibrary")
+		return goTestIn(dir, "./internal/upapp/", "-run", "TestVendoredAssetsMatchTheLibrary")
 	}
 
 	if out, err := run(); err != nil {
@@ -122,7 +122,7 @@ func TestDeletingLightJSIsRecordedWhereTheFailureSays(t *testing.T) {
 	setSandboxGoEnv(t)
 	t.Chdir(t.TempDir())
 	dir := scaffoldWithReplace(t, "stillapp")
-	pin := filepath.Join(dir, "internal", "stillapptest", "vendored_test.go")
+	pin := filepath.Join(dir, "internal", "stillapp", "vendored_test.go")
 	layout := filepath.Join(dir, "internal", "stillapp", "templates", "layout.html")
 
 	src, err := os.ReadFile(pin)
@@ -149,7 +149,7 @@ func TestDeletingLightJSIsRecordedWhereTheFailureSays(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	out, err := goTestIn(dir, "./internal/stillapptest/", "-run", "TestVendoredAssetsMatchTheLibrary")
+	out, err := goTestIn(dir, "./internal/stillapp/", "-run", "TestVendoredAssetsMatchTheLibrary")
 	if err == nil {
 		t.Fatalf("an app missing light.js passed its pin test without recording the deletion:\n%s", out)
 	}

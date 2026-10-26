@@ -5,11 +5,10 @@ anything, and a `make ci` that defines the gate once.
 
 ## Running tests while you work
 
-While you edit, test the package you are changing and the harness
-package that drives it:
+While you edit, run the short tests:
 
 ```sh
-go test -short ./internal/notes/... ./internal/notestest/
+go test -short ./...
 ```
 
 Before you push, run `make ci`. It is the same gate CI runs, and the
@@ -19,8 +18,9 @@ already failed, and that is the thing to fix.
 
 ## The harness
 
-The scaffold writes `internal/<app>test/` — a harness plus example
-tests. It builds your app the way `main.go` does and drives it over
+The scaffold writes a harness plus example tests in
+`internal/<app>/*_test.go`, beside the code, as package `<app>_test`. It
+builds your app the way `main.go` does and drives it over
 HTTP, so what a test exercises is what a request exercises: the router,
 the middleware, the session store, CSRF.
 
@@ -163,7 +163,7 @@ target of its own with `-count=1`, which turns the cache off for it.
 
 ## The perf lane
 
-`make perf` runs the tests in `internal/notestest/perf_test.go`, which the
+`make perf` runs the tests in `internal/notes/perf_test.go`, which the
 scaffold writes for you. It walks your router and requests every GET route
 over real HTTP, through the same handler production serves, and holds each
 one to 150ms to first byte. It also starts the app in a fresh process

@@ -192,7 +192,6 @@ func writeSingle(o newOpts) error {
 		filepath.Join(name, "internal", pkg, "templates"),
 		filepath.Join(name, "internal", pkg, "migrations"),
 		filepath.Join(name, "internal", pkg, "icons"),
-		filepath.Join(name, "internal", pkg+"test"),
 		filepath.Join(name, ".amadan", "ci.d"),
 		filepath.Join(name, ".rastrillo"),
 	}
@@ -228,11 +227,11 @@ func writeSingle(o newOpts) error {
 		filepath.Join(appDir, "render.go"):          fmt.Sprintf(renderTemplate, name, pkg, pages),
 		// The JSON API and its token page (JSON API spec §3, §5). The
 		// prefix is worked out here, once, from the app's name.
-		filepath.Join(appDir, "api.go"):                            fmt.Sprintf(scaffoldFile("api.go.tmpl"), pkg, name, apitoken.DerivePrefix(name)),
-		filepath.Join(appDir, "tokens.go"):                         fmt.Sprintf(scaffoldFile("tokens.go.tmpl"), pkg),
-		filepath.Join(appDir, "templates", "tokens.html"):          scaffoldFile("tokens.html"),
-		filepath.Join(name, "internal", pkg+"test", "api_test.go"): fmt.Sprintf(scaffoldFile("api_test.go.tmpl"), name, pkg, apitoken.DerivePrefix(name)),
-		filepath.Join(name, ".gitleaks.toml"):                      scaffoldFile("gitleaks.toml"),
+		filepath.Join(appDir, "api.go"):                   fmt.Sprintf(scaffoldFile("api.go.tmpl"), pkg, name, apitoken.DerivePrefix(name)),
+		filepath.Join(appDir, "tokens.go"):                fmt.Sprintf(scaffoldFile("tokens.go.tmpl"), pkg),
+		filepath.Join(appDir, "templates", "tokens.html"): scaffoldFile("tokens.html"),
+		filepath.Join(appDir, "api_test.go"):              fmt.Sprintf(scaffoldFile("api_test.go.tmpl"), name, pkg, apitoken.DerivePrefix(name)),
+		filepath.Join(name, ".gitleaks.toml"):             scaffoldFile("gitleaks.toml"),
 		// The page frame, chosen by --shell and delivered verbatim from
 		// ui.Layout: app-owned from here on, exactly like tokens.css.
 		// Its chrome is blocks with working defaults (title, lang, dir,
@@ -256,24 +255,24 @@ func writeSingle(o newOpts) error {
 		// from here on — edit it, grow it, or delete it. The example
 		// tests pass on a fresh scaffold and pin the out-of-the-box
 		// asset-fingerprinting behavior.
-		filepath.Join(name, "internal", pkg+"test", "harness_test.go"): fmt.Sprintf(harnessTemplate, name, pkg),
+		filepath.Join(appDir, "harness_test.go"): fmt.Sprintf(harnessTemplate, name, pkg),
 		// The pin that makes the vendored bytes above verifiable: a
 		// reviewer runs the suite and knows static/'s ~56KB is the
 		// library's, not app diff to read line by line.
-		filepath.Join(name, "internal", pkg+"test", "vendored_test.go"): fmt.Sprintf(vendoredTestTemplate, pkg, o.Theme),
-		filepath.Join(name, "internal", pkg+"test", "index_test.go"):    fmt.Sprintf(indexTestTemplate, name, pkg, extraTests),
+		filepath.Join(appDir, "vendored_test.go"): fmt.Sprintf(vendoredTestTemplate, pkg, o.Theme),
+		filepath.Join(appDir, "index_test.go"):    fmt.Sprintf(indexTestTemplate, name, pkg, extraTests),
 		// The browser drive, on the same delivered-once terms as the
 		// harness. browser_test.go, never harness_test.go: that name
 		// (and word) already belongs to the httptest HTTP harness.
-		filepath.Join(name, "internal", pkg+"test", "browser_test.go"): fmt.Sprintf(browserTestTemplate, name, pkg, strings.ToUpper(pkg)),
+		filepath.Join(appDir, "browser_test.go"): fmt.Sprintf(browserTestTemplate, name, pkg, strings.ToUpper(pkg)),
 		// The perf lane and the exemptions file every budget reads.
-		filepath.Join(name, "internal", pkg+"test", "perf_test.go"): fmt.Sprintf(perfTestTemplate, name, pkg),
-		filepath.Join(name, ".rastrillo", "budgets.txt"):            budgetsTxtTemplate,
-		filepath.Join(name, "README.md"):                            fmt.Sprintf(scaffoldFile("README.md.tmpl"), name, pkg),
-		filepath.Join(name, "manifest", "README.md"):                fmt.Sprintf(manifestReadme, name, pkg),
-		filepath.Join(name, "manifest", "app.toml"):                 fmt.Sprintf(appTOMLTemplate, code),
-		filepath.Join(name, "Makefile"):                             fmt.Sprintf(makefileTemplate, name, staticcheckVersion, govulncheckVersion, gitleaksVersion, goToolchain),
-		filepath.Join(name, ".gitignore"):                           fmt.Sprintf(gitignoreTemplate, name),
+		filepath.Join(appDir, "perf_test.go"):            fmt.Sprintf(perfTestTemplate, name, pkg),
+		filepath.Join(name, ".rastrillo", "budgets.txt"): budgetsTxtTemplate,
+		filepath.Join(name, "README.md"):                 fmt.Sprintf(scaffoldFile("README.md.tmpl"), name, pkg),
+		filepath.Join(name, "manifest", "README.md"):     fmt.Sprintf(manifestReadme, name, pkg),
+		filepath.Join(name, "manifest", "app.toml"):      fmt.Sprintf(appTOMLTemplate, code),
+		filepath.Join(name, "Makefile"):                  fmt.Sprintf(makefileTemplate, name, staticcheckVersion, govulncheckVersion, gitleaksVersion, goToolchain),
+		filepath.Join(name, ".gitignore"):                fmt.Sprintf(gitignoreTemplate, name),
 		// The app's icon set, on the same terms as tokens.css and
 		// rastrillo.js: delivered once, app-owned from here on.
 		filepath.Join(appDir, "icons", "icons.go"): string(rendered.Source),
@@ -389,7 +388,7 @@ func writeSingle(o newOpts) error {
 	fmt.Printf("rastrillo new: scaffolded %s/\n", name)
 	fmt.Printf("  cmd/%s/main.go       (Resolve -> db.Open -> App -> Serve)\n", name)
 	fmt.Printf("  internal/%s/         (models, migrations, app, handlers, render, templates, static)\n", pkg)
-	fmt.Printf("  internal/%stest/     (harness + example tests, passing out of the box;\n", pkg)
+	fmt.Printf("  internal/%s/*_test.go (harness + example tests beside the code, passing out of the box;\n", pkg)
 	fmt.Println("                        browser_test.go = the browser drive, go test -tags browser ./...)")
 	fmt.Println("  manifest/            (the declarative path: drop a <name>.toml here, see its README)")
 	fmt.Println("  Makefile             (make ci = vet + fmt + staticcheck + govulncheck + gitleaks + budget + test + perf + migration check + generate check, the one gate definition;")
@@ -993,13 +992,13 @@ const errorsTemplate = `{{/* errors.html — the app's error page: layout.html's
 // (the split-pool configuration under test, never :memory:), the real
 // router, the real asset handler — so a test exercises the app, not a
 // parallel universe.
-const harnessTemplate = `// Package %[2]stest tests the app from the outside: real HTTP
+const harnessTemplate = `// Package %[2]s_test tests the app from the outside: real HTTP
 // requests against the real router, wired exactly as
 // cmd/%[1]s/main.go wires it.
 //
 // The TDD loop: write a failing test here, make it pass in
 // internal/%[2]s, repeat.
-package %[2]stest
+package %[2]s_test
 
 import (
 	"io"
@@ -1087,7 +1086,7 @@ func post(t *testing.T, h http.Handler, target string, form url.Values) *httptes
 // known failure (tickets' stylesheet drifted for months), and without
 // the pin a reviewer meets ~56KB of static assets as unverifiable app
 // diff.
-const vendoredTestTemplate = `package %[1]stest
+const vendoredTestTemplate = `package %[1]s_test
 
 import (
 	"bytes"
@@ -1139,7 +1138,7 @@ func TestVendoredAssetsMatchTheLibrary(t *testing.T) {
 		if vendoredIsMine[name] {
 			continue
 		}
-		vendored, err := os.ReadFile(filepath.Join("..", "%[1]s", "static", name))
+		vendored, err := os.ReadFile(filepath.Join("static", name))
 		if err != nil {
 			t.Errorf("read vendored %%s: %%v; if you deleted it on purpose, add it to vendoredIsMine", name, err)
 			continue
@@ -1151,7 +1150,7 @@ func TestVendoredAssetsMatchTheLibrary(t *testing.T) {
 }
 `
 
-const indexTestTemplate = `package %[2]stest
+const indexTestTemplate = `package %[2]s_test
 
 import (
 	"html/template"
@@ -1276,7 +1275,7 @@ const browserTestTemplate = `//go:build browser
 // Playwright cache. A skip is not a pass — with no browser this fails,
 // unless RASTRILLO_BROWSER_OPTIONAL is set, which makes the skip a
 // deliberate visible choice rather than an accident.
-package %[2]stest
+package %[2]s_test
 
 import (
 	"io"

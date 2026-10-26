@@ -18,7 +18,7 @@
    needs `ScreenConfig.Signin` (skill/add-signin.md step 8); one that
    answers other than 200 needs `Expect`. A new GET route fails there
    until measured or recorded in `.rastrillo/budgets.txt`.
-5. **Test** it in `internal/<app>test` through the real handler.
+5. **Test** it in `internal/<app>/*_test.go` through the real handler.
 
 ## One screen, one job
 
@@ -58,8 +58,8 @@ a reason. Timing fails only on CI (`AMADAN_CI`/`CI` set). Every test
 package's `TestMain` calls `os.Exit(budget.Main(m))`: it prints the time
 `rastrillo budget test` judges, cached runs included. Tests start with
 `t.Parallel()` (perf tests never) and open a copy of a `dbtest` template
-instead of migrating. While editing, test the package you touch plus
-`internal/<app>test`; `make ci` before pushing. A test whose inputs Go
+instead of migrating. While editing, run `go test -short ./...`;
+`make ci` before pushing. A test whose inputs Go
 cannot see (execs `go build`, reads outside its package, uses the
 network) gets its own `-count=1` target. Past 5,000 lines in
 `internal/<app>`, split by feature: `internal/<app>/<feature>` exposing

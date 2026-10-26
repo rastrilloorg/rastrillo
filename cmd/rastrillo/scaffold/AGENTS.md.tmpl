@@ -16,7 +16,8 @@ are load-bearing; the framework enforces most of them mechanically.
 - `internal/<app>/` — the app: `models.go` (plain GORM structs
   + Models), `migrations.go` + `migrations/` (Schema, BootSchema),
   `app.go` (migrate.Apply + chi router), `handlers.go`,
-  `render.go` + `templates/`. This is SKILL.md's five-file shape.
+  `render.go` + `templates/`. This is SKILL.md's five-file shape. Its
+  tests sit beside it as `package <app>_test`.
 - `manifest/` — the declarative path, optional and equal: TOML or .go
   Resource manifests, each generating a full screen set under `gen/`
   (see manifest/README.md for the mounting recipe). A hand-written
@@ -57,7 +58,7 @@ are load-bearing; the framework enforces most of them mechanically.
 
 ## Testing and budgets
 
-- While editing: `go test -short ./internal/<app>/... ./internal/<app>test/`.
+- While editing: `go test -short ./...`.
   Before pushing: `make ci`. If it is too slow to run before every
   push, a budget has already failed: fix that, never skip the gate.
 - Budgets: 5,000 source and 8,000 test lines per directory (`make budget`),

@@ -6,7 +6,7 @@ Fails the build when a screen or a cold start is slower than
 [`perf`](/docs/reference/perf)'s budgets: 150ms to first byte for a
 screen, 500ms for a cold start. `perf` reports these numbers in
 production; `perftest` checks them in CI. The scaffold's
-`internal/<app>test/perf_test.go` calls both functions, and `make perf`
+`internal/<app>/perf_test.go` calls both functions, and `make perf`
 runs it.
 
 ## Screens

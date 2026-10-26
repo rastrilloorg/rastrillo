@@ -4,11 +4,11 @@ package main
 // exemptions file. Kept beside new.go's other templates, delivered once
 // and app-owned from then on.
 
-// perfTestTemplate is internal/<pkg>test/perf_test.go. %[1]s is the
+// perfTestTemplate is internal/<pkg>/perf_test.go. %[1]s is the
 // module name, %[2]s the app package.
 const perfTestTemplate = `//go:build perf
 
-package %[2]stest
+package %[2]s_test
 
 import (
 	"io"

@@ -23,8 +23,8 @@ serves before you have written anything:
 
 ```text
 cmd/notes/main.go       Resolve -> db.Open -> App -> Serve
-internal/notes/         models, migrations, app, handlers, render, templates, static
-internal/notestest/     harness + example tests, passing out of the box
+internal/notes/         models, migrations, app, handlers, render, templates, static,
+                        and harness + example tests, passing out of the box
 manifest/               the declarative path: drop a <name>.toml here
 Makefile                make ci = vet + fmt + staticcheck + govulncheck + gitleaks + test + migration check
 .amadan/ci, ci.d/       amadan runner CI, delegating to make

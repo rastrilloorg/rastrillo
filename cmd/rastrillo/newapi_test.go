@@ -247,7 +247,7 @@ basics = [{ name = "Title", required = true }]
 	}
 	mustWrite(t, path, src)
 
-	mustWrite(t, filepath.Join(dir, "internal", "recipeapptest", "recipe_test.go"), `package recipeapptest
+	mustWrite(t, filepath.Join(dir, "internal", "recipeapp", "recipe_test.go"), `package recipeapp_test
 
 import (
 	"testing"
@@ -271,7 +271,7 @@ func TestBootSchemaHasTheTokenTable(t *testing.T) {
 	}
 }
 `)
-	if out, err := goTestIn(dir, "-run", "^TestBootSchemaHasTheTokenTable$", "./internal/recipeapptest/"); err != nil {
+	if out, err := goTestIn(dir, "-run", "^TestBootSchemaHasTheTokenTable$", "./internal/recipeapp/"); err != nil {
 		t.Fatalf("the app after the recipe's step 5:\n%s", out)
 	}
 }

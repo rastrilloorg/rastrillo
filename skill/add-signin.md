@@ -18,7 +18,7 @@ migrate.Merge(sessions.Schema, pow.Schema, Schema)`.
 take `bg *background.Group` after `origin`. Five callers change:
 `cmd/<app>/main.go` (`bg := &background.Group{}`, and after
 `Configure`, `opts.Background = bg`, which shutdown stops); in
-`internal/<app>test`, `newApp` and the browser test (`bg :=
+`internal/<app>`'s tests, `newApp` and the browser test (`bg :=
 &background.Group{}; t.Cleanup(bg.Stop)` after the `d.Close` cleanup,
 so it runs first) and both perf tests (`opts.Background = bg` after
 `Configure`; `closeAll` stops it).
