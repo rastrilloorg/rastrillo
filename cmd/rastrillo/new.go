@@ -360,8 +360,10 @@ func writeSingle(o newOpts) error {
 		filepath.Join(appDir, "harness_test.go"): fmt.Sprintf(harnessTemplate, name, pkg),
 		// The pin that makes the vendored bytes above verifiable: a
 		// reviewer runs the suite and knows static/'s ~56KB is the
-		// library's, not app diff to read line by line.
-		filepath.Join(appDir, "vendored_test.go"): fmt.Sprintf(vendoredTestTemplate, pkg, o.Theme),
+		// library's, not app diff to read line by line. Vendored-then-
+		// forgotten is the failure it prevents: tickets' stylesheet
+		// drifted for months.
+		filepath.Join(appDir, "vendored_test.go"): fmt.Sprintf(scaffoldFile("vendored_test.go.tmpl"), pkg, o.Theme),
 		filepath.Join(appDir, "index_test.go"):    fmt.Sprintf(indexTestTemplate, name, pkg, extraTests),
 		// The migration check, as a test go test ./... runs (make test).
 		filepath.Join(appDir, "migrations_test.go"): fmt.Sprintf(scaffoldFile("migrations_test.go.tmpl"), name, pkg),
@@ -1100,76 +1102,6 @@ func post(t *testing.T, h http.Handler, target string, form url.Values) *httptes
 // first `go test`, and pinning the out-of-the-box asset story — the
 // index page links a fingerprinted stylesheet, that URL is immutable,
 // the bare name stays fresh.
-// vendoredTestTemplate pins the scaffold-delivered static files
-// byte-identical to the library copies they came from — the same pin
-// examples/blog carries for tokens.css. Vendored-then-forgotten is the
-// known failure (tickets' stylesheet drifted for months), and without
-// the pin a reviewer meets ~56KB of static assets as unverifiable app
-// diff.
-const vendoredTestTemplate = `package %[1]s_test
-
-import (
-	"bytes"
-	"os"
-	"path/filepath"
-	"testing"
-
-	"amadan.net/rastrillo/rastrillo/ui"
-)
-
-// vendoredTheme is the theme this app was scaffolded with. Change it
-// here when you swap static/theme.css for another of ui.ThemeNames().
-const vendoredTheme = "%[2]s"
-
-// vendoredIsMine names the vendored files this app has edited or
-// deleted DELIBERATELY. Add one here when you mean to diverge: this
-// test stops pinning it, and rastrillo doctor leaves it alone too. The
-// file was yours from the moment the scaffold wrote it; this is only
-// where you record that the edit, or the deletion, was on purpose, so
-// the next reader (and the next upgrade) can tell it from drift.
-var vendoredIsMine = map[string]bool{
-	// "tokens.css": true,
-	//
-	// A file you deleted goes here too, or this test fails on the
-	// missing file. light.js is deletable on any shell (the still
-	// design); only the sidebar and console shells link shell.js and
-	// shell.css:
-	// "light.js": true,
-	// "shell.js": true, "shell.css": true,
-}
-
-// The scaffold delivered these files once; they are app-owned from
-// then on. This test pins each vendored copy byte-identical to the
-// library it came from: a reviewer runs the suite instead of reading
-// ~56KB of assets as app diff, and a framework upgrade that forgets
-// to re-copy is caught instead of drifting silently.
-//
-// The list is ui.VendoredAssets — the same function rastrillo new
-// wrote these files from and rastrillo doctor compares them against —
-// so a file added to the library's vendored set is pinned here without
-// this file changing.
-func TestVendoredAssetsMatchTheLibrary(t *testing.T) {
-	t.Parallel()
-	assets, ok := ui.VendoredAssets(vendoredTheme)
-	if !ok {
-		t.Fatalf("unknown theme %%q", vendoredTheme)
-	}
-	for name, lib := range assets {
-		if vendoredIsMine[name] {
-			continue
-		}
-		vendored, err := os.ReadFile(filepath.Join("static", name))
-		if err != nil {
-			t.Errorf("read vendored %%s: %%v; if you deleted it on purpose, add it to vendoredIsMine", name, err)
-			continue
-		}
-		if !bytes.Equal(vendored, lib) {
-			t.Errorf("static/%%s differs from the library copy; re-copy it with rastrillo doctor --fix (or add it to vendoredIsMine if the edit was deliberate)", name)
-		}
-	}
-}
-`
-
 const indexTestTemplate = `package %[2]s_test
 
 import (
