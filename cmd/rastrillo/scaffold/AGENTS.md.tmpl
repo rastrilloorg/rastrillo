@@ -68,9 +68,12 @@ are load-bearing; the framework enforces most of them mechanically.
 - Past 5,000 lines, split `internal/<app>` by feature:
   `internal/<app>/<feature>` with `Mount(r chi.Router, deps)`, called
   from `Router`.
-- Every test package has `func TestMain(m *testing.M) { os.Exit(budget.Main(m)) }`
-  (or calls `budget.Main` inside its own), every test starts with
-  `t.Parallel()` (perf tests excepted), and tests copy the
+- Every test binary has one `TestMain` that calls `budget.Main`. In
+  `internal/<app>/` it is in `harness_test.go`, shared by the
+  `package <app>` and `package <app>_test` files, so new test files there
+  add none. A new package under `internal/` needs its own:
+  `func TestMain(m *testing.M) { os.Exit(budget.Main(m)) }`. Every test
+  starts with `t.Parallel()` (perf tests excepted), and tests copy the
   `dbtest` template rather than migrating.
 - A test whose inputs Go cannot see (it execs `go build`, reads files
   outside its package, or uses the network) gets its own make target

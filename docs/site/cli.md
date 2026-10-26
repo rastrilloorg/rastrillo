@@ -11,7 +11,7 @@ Every command except `session-key` takes an optional directory as its last argum
 ## rastrillo new
 
 ```sh
-rastrillo new [--icons=<set>] [--icon-delivery=<mode>] [--ux=<profile>]
+rastrillo new [--scaffold=<shape>] [--icons=<set>] [--icon-delivery=<mode>] [--ux=<profile>]
               [--theme=<name>] [--shell=<name>] [--locale=<code>]
               [--auth=<kind>] <name>
 ```
@@ -22,6 +22,7 @@ own tests, and serves, before you have written anything. It runs
 
 | Flag | Values | Default |
 |---|---|---|
+| `--scaffold` | `bare`, `single`, `accounts` | `single` |
 | `--icons` | `lucide`, `font-awesome` | `lucide` |
 | `--icon-delivery` | `inline`, `cdn`, `js` | `inline` |
 | `--ux` | `considered`, `standard` | `considered` |
@@ -29,6 +30,10 @@ own tests, and serves, before you have written anything. It runs
 | `--shell` | `column`, `topbar`, `sidebar`, `console` | `column` |
 | `--auth` | `none`, `magic` | `none` |
 | `--locale` | `en`, `ga`, `zh-Hans`, `es`, `hi`, `pt-PT`, `bn`, `ru`, `ja`, `yue`, `vi`, `ar` | `en` |
+
+`--scaffold` picks what to scaffold. `bare` is a page with no database,
+`single` is one app and its SQLite data, and `accounts` is `single` with
+sign-in by emailed link. `home` and `hub` are planned and not built yet.
 
 All six set × delivery combinations scaffold, compile and pass
 `generate --check`. The icon set becomes an ordinary app-owned package
