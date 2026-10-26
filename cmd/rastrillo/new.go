@@ -75,7 +75,7 @@ func runNew(args []string) error {
 	shell := fset.String("shell", "column", "layout shell: "+strings.Join(ui.LayoutNames(), ", "))
 	// No default: flag would print (default "en") after the help's own.
 	locale := fset.String("locale", "", fmt.Sprintf(newLocaleFlagMsg, strings.Join(rastrillo.BaseLocales(), ", ")))
-	authKind := fset.String("auth", "none", "sign-in the app starts with: "+strings.Join(authKinds, ", "))
+	authKind := fset.String("auth", "none", "sign-in the app starts with: "+strings.Join(authKinds, ", ")+"; accounts starts with magic")
 	// No default, like --locale: the help's own wording carries it.
 	scaffold := fset.String("scaffold", "", newScaffoldFlagMsg)
 	designOn := fset.Bool("design-system", true, newDesignSystemFlagMsg)

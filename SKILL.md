@@ -1,14 +1,14 @@
 ---
 name: rastrillo
-description: "Build a multi-user CARLOS app: GORM models or plain SQL, chi routes, sessions, owner-scoped queries."
+description: "Build a CARLOS app: pick a shape (bare, single, accounts), then GORM models or plain SQL, sessions, owner-scoped queries."
 ---
 
 # Rastrillo
 
 CARLOS middle layer, not full-stack: you write GORM models (or plain
-SQL), `net/http` handlers on a chi router and `html/template`
-pages; it supplies the database opener, session store, identity
-plugins, CSRF, owner scoping, form helpers. Module `amadan.net/rastrillo/rastrillo`; worked
+SQL), `net/http` handlers on an `http.ServeMux` (chi in `accounts`)
+and `html/template` pages; it supplies the database opener, session
+store, identity plugins, CSRF, owner scoping, form helpers. Module `amadan.net/rastrillo/rastrillo`; worked
 reference `examples/notes` — in the repository, **not** in the
 published module (Go excludes nested modules from a zip), so read it
 there, never in your checkout. The topics below hold what it shows,
@@ -24,7 +24,7 @@ Read the topic before you start work it covers, not after the source:
 
 | Before you... | read |
 |---|---|
-| add password sign-in to an app that has none | `skill/add-signin.md` |
+| add password sign-in to a `single` app | `skill/add-signin.md` |
 | use the session, magic links, a sign-in screen, 2FA | `skill/signin.md` |
 | add a page or route, a flow, a test, or meet a perf/budget failure | `skill/screens.md` |
 | call a `ui` partial: its keys, at a glance | `skill/partials.md` |
@@ -35,22 +35,26 @@ Read the topic before you start work it covers, not after the source:
 | use the CLI beyond `new`, manifests, doctor, pins, native or PWA | `skill/tooling.md` |
 | serve JSON at `/api/v1`, mint tokens, let an agent act for a person, write `Authorize`, hand-write an operation | `skill/api.md` |
 
-## Start here
+## Pick a shape
+
+Choose by who the users are and where they live:
+
+| Shape | For | Command |
+|---|---|---|
+| bare | a page or a dashboard: no data of its own, no sign-in | `rastrillo new --scaffold bare <name>` |
+| single (default) | one instance and its data in SQLite; add sign-in later (skill/add-signin.md) | `rastrillo new <name>` |
+| accounts | people sign in by emailed link; each sees only their own rows | `rastrillo new --scaffold accounts <name>` |
+
+home and hub (a home that provisions an instance per team) are not built yet.
 
 ```sh
 go install amadan.net/rastrillo/rastrillo/cmd/rastrillo@latest
 rastrillo new notes && cd notes && go mod tidy && go test ./...
 ```
 
-**People sign in? Start with `rastrillo new --auth=magic <name>`.** The
-app then signs people in by emailed link from its first commit, its
-owned rows go through `a.owned(r)` and are created with
-`Owner: ownerOf(r)`, and its tests sign in for you; its
-`AGENTS.md` says where each piece is. Without `--auth` the scaffold has
-no accounts.
-
-`rastrillo new` writes the whole app shape, its gate (`make ci`) and
-its tests; it compiles, passes and serves before you write a line, so
+`rastrillo new` writes the whole app shape, its gate (`make ci`; in
+`bare`, `go test ./...`) and its tests, which sign in for you in
+`accounts`; it compiles, passes and serves before you write a line, so
 never hand-write any of it. The scaffolded `AGENTS.md` is the source of
 truth for that app's code; this file stays the framework's.
 
@@ -63,8 +67,7 @@ construction; run `rastrillo generate`, commit `gen/` and `api/v1.json`, and pas
 **Look before you build.** Most things an app needs already ship: a
 Light/Dark/System switch in every shell, a picture grid (`media-grid`),
 the API token page (`api-tokens`), job status pages, money fields,
-error pages. Check the topic index
-above before writing one.
+error pages. Check the index above first.
 
 ## App shape
 
@@ -83,9 +86,11 @@ the app opens its own database:** `Run` re-parses argv and repopulates
 /healthz, SIGTERM drain, security headers); never hand-roll it.
 
 `app.go`'s `Router`, in order: `migrate.Apply(ctx, d, BootSchema)`;
-`r := chi.NewRouter()`; `r.Use(csrf.Protect(origin))` app-wide; public
-routes; owned routes inside `r.Group(func(r chi.Router) {
-r.Use(sess.Require); ... })` (sessions: `skill/signin.md`). `render.go`
+`csrf.Protect(origin)` app-wide; the `routes()` table
+(`{"GET /notes/{id}", a.show}`), on single's `*Routes`, which records
+GET routes for the perf lane: register only through it. On chi
+(`accounts`), owned routes go in `r.Group(func(r chi.Router) {
+r.Use(au.RequireSession); ... })` (`skill/signin.md`). `render.go`
 builds `ui.Pages` once at boot; a new page goes in its list
 (`skill/screens.md`).
 
@@ -94,7 +99,7 @@ builds `ui.Pages` once at boot; a new page goes in its list
 One seam, every read and write (`a.db` is the scaffold's `*db.DB`;
 `.G` is its `*gorm.DB`): `func (a *app) owned(r *http.Request) *gorm.DB
 { uid, _ := sessions.UserID(r); return scope.Owned(a.db.G, uid) }`.
-An `--auth=magic` app has it already (`auth.go`), over an `Owner`
+An `accounts` app has it already (`auth.go`), over an `Owner`
 address column: create rows with `Owner: ownerOf(r)`, never `UserID`.
 `scope.Owned(g, owner)` adds `WHERE user_id = ?`; `scope.OwnedBy(g,
 column, owner)` takes another owner column, panicking unless plain

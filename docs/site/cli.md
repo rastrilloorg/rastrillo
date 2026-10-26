@@ -28,8 +28,8 @@ own tests, and serves, before you have written anything. It runs
 | `--icon-delivery` | `inline`, `cdn`, `js` | `inline` |
 | `--ux` | `considered`, `standard` | `considered` |
 | `--theme` | `day`, `plain`, `signal` | `day` |
-| `--shell` | `column`, `topbar`, `sidebar`, `console` | `column` |
-| `--auth` | `none`, `magic` | `none` (`magic` with `accounts`) |
+| `--shell` | `column`, `topbar`, `sidebar`, `console`, `stage` | `column` |
+| `--auth` | `none`, `magic` | `none`; `accounts` starts with `magic` |
 | `--locale` | `en`, `ga`, `zh-Hans`, `es`, `hi`, `pt-PT`, `bn`, `ru`, `ja`, `yue`, `vi`, `ar` | `en` |
 
 `--scaffold` picks what to scaffold. `bare` is a page with no database,
@@ -63,13 +63,13 @@ icons do not render at all without JavaScript.
 that moment — the theme like `tokens.css`, the layout like every other
 template. Every value is checked before a single file is created, so a
 typo fails with your working directory still clean.
-[Templates](/docs/templates) describes the three of each.
+[Templates](/docs/templates) describes each one.
 
 `--icons=font-awesome` also writes the CC BY 4.0 attribution the licence
 requires, because that obligation is the app's and has to travel with
 the code.
 
-`--auth=magic` starts the app with sign-in by emailed link: the [magic links](/docs/magic-links) plugin with its sign-in screen, a Sign in and Sign out control in the header, and an example page only a signed-in person can open. Rows belong to the signed-in address, read and written through the `owned` seam in `auth.go`. Until you set `<APP>_SMTP_HOST` and `<APP>_SMTP_FROM`, each link is written to the log instead of sent. The app's own tests sign in through the emailed link, so `make ci` passes from the first commit.
+`--scaffold accounts`, which is `single --auth=magic`, starts the app with sign-in by emailed link: the [magic links](/docs/magic-links) plugin with its sign-in screen, a Sign in and Sign out control in the header, and an example page only a signed-in person can open. Rows belong to the signed-in address, read and written through the `owned` seam in `auth.go`. Until you set `<APP>_SMTP_HOST` and `<APP>_SMTP_FROM`, each link is written to the log instead of sent. The app's own tests sign in through the emailed link, so `make ci` passes from the first commit.
 
 `--locale` picks the one language the app starts with, written to
 `manifest/app.toml`. It must be one the framework's own strings ship in,
@@ -175,9 +175,11 @@ from a drop plus an add to any tool — write those by hand with
 rastrillo migration check [dir]
 ```
 
-The CI gate: exits non-zero when models and migrations disagree, listing
-the SQL that would close the gap. Touches no database, so it runs
-anywhere. `make ci` in a scaffolded app runs it for you.
+Exits non-zero when models and migrations disagree, listing the SQL
+that would close the gap. It replays the migrations into an in-memory
+database, never one of yours, so it runs anywhere. A scaffolded app
+runs the same check as a test, `TestModelsMatchMigrations`, so
+`go test ./...` and `make ci` run it without this command.
 
 ### migration new
 

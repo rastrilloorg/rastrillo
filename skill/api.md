@@ -11,7 +11,7 @@ and the policy, never in a door. docs/site/api.md
 `tokens, err := apitoken.New(apitoken.Config{DB: d.Writer(), Prefix: tokenPrefix})`;
 `api.New(api.Config{Verify: tokens, Ctx: ctxFactory, Authorize: authorize, Logger: logger, Redact: tokens.Redact}, gen.APIRoutes()...)`;
 `mux.Handle("/api/v1", t)` and `mux.Handle("/api/v1/", t)` on the
-outer `*http.ServeMux`, beside the chi router, never inside it:
+outer `*http.ServeMux`, beside the app's router, never inside it:
 `csrf.Protect` refuses a write with no browser headers, and
 `csrf.Exempt` matches exact paths only and still runs sessions. Add
 `apitoken.Schema` to `BootSchema`. `api.New` errors at boot without

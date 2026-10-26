@@ -16,10 +16,14 @@ fingerprinted assets and the scaffolded harness on main; the other
 subsystem packages against what the family's apps had hand-rolled in
 the meantime. This list is their union. **Built:**
 
-- **`rastrillo new [flags] <name>`** — scaffolds a Go app: `go.mod`, one
-  starter action, a `main.go` wiring `rastrillo.Run`. Runs generate once
-  so `go build` works immediately. Takes `--icons`, `--icon-delivery` and
-  `--ux` — see **Icons and UX conventions** below.
+- **`rastrillo new [flags] <name>`** — scaffolds an app that compiles,
+  passes its tests and serves. `--scaffold` picks the shape: `bare` (a
+  page and a route, no database), `single` (the default: one app and its
+  SQLite data) or `accounts` (`single` with sign-in by emailed link).
+  Except in `bare`, it runs generate once so `go build` works
+  immediately. `docs/site/cli.md` lists every flag; `--icons`,
+  `--icon-delivery` and `--ux` are in **Icons and UX conventions**
+  below.
 
 - **Icons and UX conventions** — `--icons` (`lucide`, the default, or
   `font-awesome`), `--icon-delivery` (`inline`, the default, or `cdn` or

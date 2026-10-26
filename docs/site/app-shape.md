@@ -13,7 +13,11 @@ internal/<app>/render.go       embedded templates, flash/session-aware page data
 cmd/<app>/main.go              Resolve -> db.Open -> App -> Serve
 ```
 
-`examples/notes` in the framework repo is the worked reference.
+`examples/notes` in the framework repo is the worked reference, and
+this page walks through it: password sign-in on a chi router.
+`rastrillo new` writes the same files without sign-in, on an
+`http.ServeMux`. `--scaffold accounts` adds sign-in by emailed link on
+chi, and `--scaffold bare` writes a page and a route with no database.
 
 ## main.go
 

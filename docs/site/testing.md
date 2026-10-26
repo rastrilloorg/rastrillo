@@ -205,7 +205,7 @@ func Mount(r Router, d Deps) {
 
 `Router` in `app.go` calls each feature's `Mount`. Register through it,
 never on a ServeMux of your own: the perf lane cannot see one. In an app
-on chi (`--auth=magic`), `Mount` takes a `chi.Router` and registers with
+on chi (`accounts`), `Mount` takes a `chi.Router` and registers with
 `r.Get` and `r.Post`. An edit to one feature
 then rebuilds and retests only that feature, Go's cache skips the rest,
 and the packages compile and test in parallel.

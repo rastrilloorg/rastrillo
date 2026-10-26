@@ -27,7 +27,7 @@ operations.
 
 ## Mounting the API
 
-A new app from `rastrillo new` already has this in
+A `single` or `accounts` app from `rastrillo new` already has this in
 `internal/<app>/api.go`, and its `Mux` mounts it. To add it to an
 existing app:
 
@@ -55,12 +55,12 @@ mux.Handle("/api/v1/", apiTree)
 1. Add `apitoken.Schema` to `BootSchema` in `migrations.go`.
 2. Write the token prefix out as text. `apitoken.DerivePrefix` makes one
    from your app's name.
-3. Mount the tree on the outer `http.ServeMux`, beside your chi router.
+3. Mount the tree on the outer `http.ServeMux`, beside your router.
    Mount it at both `/api/v1` and `/api/v1/`.
 4. Pass the same `authorize` function to your page ctx factory as
    `Ctx.Authorize`, so the pages and the API share one policy.
 
-Do not mount the API inside the chi router. `csrf.Protect` refuses a
+Do not mount the API inside your router. `csrf.Protect` refuses a
 write that has no browser headers, and an API client has none. Do not
 use `csrf.Exempt` for it either. `Exempt` matches exact paths, not
 everything under `/api/v1/`, and the router's session middleware would

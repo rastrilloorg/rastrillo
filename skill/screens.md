@@ -2,8 +2,10 @@
 
 ## Add a screen
 
-1. **Route** in `Router` (`app.go`): `r.Get("/sheets/new", a.newSheet)`;
-   an owned screen goes inside the `sess.Require` group.
+1. **Route** in `routes()` (`app.go`): `{"GET /sheets/new", a.newSheet}`.
+   On chi an owned screen goes in `Router`'s `RequireSession` (or
+   `sess.Require`) group instead, `r.Get("/sheets/new", a.newSheet)`;
+   after skill/add-signin.md every route is in `Router`.
 2. **Handler** in `handlers.go`: load through the `owned(r)` seam, 404
    on a miss, then `render(w, r, "sheet-new", map[string]any{...})`.
    On a failed POST write `422` before rendering; after a mutation
@@ -63,8 +65,12 @@ instead of migrating. While editing, run `go test -short ./...`;
 cannot see (execs `go build`, reads outside its package, uses the
 network) gets its own `-count=1` target. Past 5,000 lines in
 `internal/<app>`, split by feature: `internal/<app>/<feature>` exposing
-`Mount(r chi.Router, deps)`, called from `Router`; `make budget`
-enforces it. docs/site/testing.md
+`Mount(r, deps)`, called from `Router` with its `*Routes`, registering
+through `r.Handle` and never a ServeMux of its own, which the perf lane
+cannot see. The feature package takes `r` as
+`interface{ Handle(string, http.Handler) }`: it cannot import the app
+package that calls it. On chi, `Mount(r chi.Router, deps)`. `make budget`
+enforces the split. docs/site/testing.md
 
 ## Error pages
 

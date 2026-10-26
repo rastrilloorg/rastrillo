@@ -25,9 +25,10 @@ type ScreenConfig struct {
 }
 ```
 
-`Screens` walks `Routes`, your chi router, and requests every GET route
-through `Handler`, which should be the handler production serves:
-`rastrillo.Handler` over your app's options. Each route gets ten requests.
+`Screens` walks `Routes`, a chi router such as an `accounts` app's, and
+requests every GET route through `Handler`, which should be the handler
+production serves: `rastrillo.Handler` over your app's options. Each
+route gets ten requests.
 The first two are discarded, the median of the rest must be within
 budget, and no single one may take more than three times the budget.
 
@@ -67,12 +68,12 @@ type OpaqueScreen struct {
 }
 ```
 
-chi cannot list the routes inside a handler that is not a chi router,
-such as a generated `http.ServeMux` mounted at `/bookmarks/*`. Such a
-mount fails until you either list its screens in an `Opaque` group, or
-record `perf GET /bookmarks/* skip` with a reason. In `Patterns`, a
-subtree pattern such as `"/admin/"` is the same kind of mount and fails
-the same way; `"/"` and `"/admin/{$}"` are single pages:
+Under `Routes`, chi cannot list the routes inside a handler that is not
+a chi router, such as a generated `http.ServeMux` mounted at
+`/bookmarks/*`. Such a mount fails until you either list its screens in
+an `Opaque` group, or record `perf GET /bookmarks/* skip` with a reason.
+In `Patterns`, a subtree pattern such as `"/admin/"` is the same kind of
+mount and fails the same way; `"/"` and `"/admin/{$}"` are single pages:
 
 ```go
 var cfg = perftest.ScreenConfig{

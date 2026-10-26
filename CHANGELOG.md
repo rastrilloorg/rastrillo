@@ -68,6 +68,27 @@ What changed:
 - The API logs one line for every request that reaches a handler, with the actor and the agent's session and harness.
 - New apps get `internal/<app>/api.go`, which mounts the API, `tokens.go` and `templates/tokens.html` for the token page, and a `.gitleaks.toml` rule that finds the app's tokens in a commit.
 
+**`rastrillo new --scaffold` picks the app's shape.** `bare` is a page
+and a route with no database, no sign-in and no `Makefile`: its gate is
+`go test ./...`, and `--design-system=false` leaves out its templates
+and static files. `single`, the default, is the app `rastrillo new`
+wrote before, with the changes below. `accounts` is `single` with
+sign-in by emailed link, the app `--auth=magic` writes. `home` and
+`hub` are planned and refused for now. Apps you already have change
+nothing.
+
+- `single` serves its routes from an `http.ServeMux` instead of chi,
+  through `*Routes`, which records every GET route for the perf lane.
+  Register routes only through it. An `accounts` app is still on chi.
+- Tests sit beside the code in `internal/<app>/`, as package
+  `<app>_test`, instead of in `internal/<app>test/`.
+- The migration check is a test, `TestModelsMatchMigrations`, so
+  `go test ./...` runs it. `make ci` has no `migration-check` step.
+- `rastrillo dev` skips `generate` in an app with no `manifest/`,
+  `actions/` or `gen/`, and only rebuilds.
+- `rastrillo doctor` on an app with no design system says there is
+  nothing to compare and runs its other checks.
+
 **`perftest.Screens` takes a list of routes.** Set `ScreenConfig.Patterns`
 to your `http.ServeMux` routes instead of `Routes`, which needs a chi
 router. A trailing `{$}` is dropped, so `"/{$}"` is the screen `GET /`.

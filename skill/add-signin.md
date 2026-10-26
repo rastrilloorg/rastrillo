@@ -1,10 +1,25 @@
-# Add email-and-password sign-in to a fresh scaffold
+# Add email-and-password sign-in to a single app
 
-For a new app, `rastrillo new --auth=magic` already signs people in by
-emailed link. This page is for password sign-in, or for an app made
-without `--auth`: `rastrillo new` alone scaffolds no accounts. These
-steps, applied to one, pass its `make ci` (`<app>` is the app's name; `/account` stands for
-your owned routes). Sessions, traps and other plugins: skill/signin.md.
+A new app with sign-in starts from `rastrillo new --scaffold accounts`,
+which signs people in by emailed link. These steps add password sign-in
+to an existing `single` app (`rastrillo new` alone, which has no
+accounts); applied to a fresh one, they pass its `make ci` (`<app>` is
+the app's name; `/account` stands for your owned routes). Sessions,
+traps and other plugins: skill/signin.md.
+
+**0. Move to chi.** The sign-in routes need groups, which a ServeMux
+does not have. Run `go get github.com/go-chi/chi/v5@v5.3.2`. In
+`app.go`, `Router` returns `(chi.Router, error)`, and step 4's router
+replaces the `Routes` type, the `route` type, `routes()` and the loop
+that registers it. In `tokens.go`, `Tokens` returns `func(chi.Router)`:
+`r.Use(sess.Require)`, `r.Get("/tokens", th.Page)`,
+`r.With(sess.RequireFresh(10*time.Minute)).Post("/tokens", th.Create)`,
+and `r.Post` for `/tokens/revoke`, `/tokens/revoke-agent` and
+`/tokens/revoke-all`; its comment's `tokens(r)` becomes
+`r.Group(tokens)`. In `api_test.go`'s `tokenApp`, the `<app>.Router`
+call and `tokens(r)` become `r := chi.NewRouter();
+r.Use(csrf.Protect(testOrigin)); r.Group(tokens)`. In `perf_test.go`,
+`Patterns: r.GETPatterns()` becomes `Routes: r`.
 
 **1. Model.** In `models.go`, add `&User{}` to `Models` and
 `type User struct { ID int64; Email string \`gorm:"uniqueIndex"\`;
@@ -12,7 +27,7 @@ PasswordHash string; CreatedAt time.Time }`; run `rastrillo migration
 generate`.
 
 **2. Schemas.** In `migrations.go`: `var BootSchema =
-migrate.Merge(sessions.Schema, pow.Schema, Schema)`.
+migrate.Merge(sessions.Schema, pow.Schema, apitoken.Schema, Schema)`.
 
 **3. A background group, through every caller.** `App` and `Router`
 take `bg *background.Group` after `origin`. Five callers change:
@@ -23,7 +38,8 @@ take `bg *background.Group` after `origin`. Five callers change:
 so it runs first) and both perf tests (`opts.Background = bg` after
 `Configure`; `closeAll` stops it).
 
-**4. Router**, after `migrate.Apply`:
+**4. Router**, after `a := &app{...}` (then `go mod tidy`, for
+`password`'s dependencies):
 
 ```go
 key, err := carlos.InstanceKey(os.Getenv("<APP>_INSTANCE_KEY"))
