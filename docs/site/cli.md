@@ -12,7 +12,8 @@ Every command except `session-key` takes an optional directory as its last argum
 
 ```sh
 rastrillo new [--icons=<set>] [--icon-delivery=<mode>] [--ux=<profile>]
-              [--theme=<name>] [--shell=<name>] [--locale=<code>] <name>
+              [--theme=<name>] [--shell=<name>] [--locale=<code>]
+              [--auth=<kind>] <name>
 ```
 
 Scaffolds a complete app in `./<name>` — one that compiles, passes its
@@ -26,6 +27,7 @@ own tests, and serves, before you have written anything. It runs
 | `--ux` | `considered`, `standard` | `considered` |
 | `--theme` | `day`, `plain`, `signal` | `day` |
 | `--shell` | `column`, `topbar`, `sidebar`, `console` | `column` |
+| `--auth` | `none`, `magic` | `none` |
 | `--locale` | `en`, `ga`, `zh-Hans`, `es`, `hi`, `pt-PT`, `bn`, `ru`, `ja`, `yue`, `vi`, `ar` | `en` |
 
 All six set × delivery combinations scaffold, compile and pass
@@ -47,6 +49,8 @@ typo fails with your working directory still clean.
 `--icons=font-awesome` also writes the CC BY 4.0 attribution the licence
 requires, because that obligation is the app's and has to travel with
 the code.
+
+`--auth=magic` starts the app with sign-in by emailed link: the [magic links](/docs/magic-links) plugin with its sign-in screen, a Sign in and Sign out control in the header, and an example page only a signed-in person can open. Rows belong to the signed-in address, read and written through the `owned` seam in `auth.go`. Until you set `<APP>_SMTP_HOST` and `<APP>_SMTP_FROM`, each link is written to the log instead of sent. The app's own tests sign in through the emailed link, so `make ci` passes from the first commit.
 
 `--locale` picks the one language the app starts with, written to
 `manifest/app.toml`. It must be one the framework's own strings ship in,
@@ -219,7 +223,7 @@ that it does, and running from outside the app — which is what asking
 | Flag | Purpose |
 |---|---|
 | `--fix` | Re-copy each drifted file from this binary's library copy |
-| `--force` | With `--fix`: re-copy across a version mismatch, and over files recorded as deliberate edits |
+| `--force` | With `--fix`: re-copy across a version mismatch, and over files recorded as deliberate edits or removals |
 | `--theme` | Which theme `static/theme.css` should be, for an app with no pin to read it from |
 | `--probe` | Also build the app and run it to check its language setup. This runs your app's own code |
 

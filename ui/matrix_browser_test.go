@@ -326,12 +326,18 @@ func matrixShots(t *testing.T, ctx context.Context, origin, dir, scheme string) 
 // end, which breaks compatibility on purpose and must be caught.
 func TestEveryThemeRendersAsItDidExceptDay(t *testing.T) {
 	oldTokens := legacyFile(t, "tokens-v028.css")
-	for _, c := range []struct{ name, oldTheme, newTheme string }{
-		{"old day theme", "day-v028.css", ""},
-		{"old plain theme", "plain-v028.css", ""},
-		{"old signal theme", "signal-v028.css", ""},
-		{"plain", "plain-v028.css", "plain"},
-		{"signal", "signal-v028.css", "signal"},
+	// head is an app stylesheet after the theme on both pages: the
+	// square-pill case is an old custom theme that sets --rst-radius-pill
+	// to 0 (its chips and tabs square), which must not square its
+	// switch, whose 10px radius never read that token (A15; switch
+	// review fix 2).
+	for _, c := range []struct{ name, oldTheme, newTheme, head string }{
+		{"old day theme", "day-v028.css", "", ""},
+		{"old day theme, square pill", "day-v028.css", "", "<style>:root { --rst-radius-pill: 0; }</style>"},
+		{"old plain theme", "plain-v028.css", "", ""},
+		{"old signal theme", "signal-v028.css", "", ""},
+		{"plain", "plain-v028.css", "plain", ""},
+		{"signal", "signal-v028.css", "signal", ""},
 	} {
 		t.Run(c.name, func(t *testing.T) {
 			oldTheme := legacyFile(t, c.oldTheme)
@@ -339,7 +345,11 @@ func TestEveryThemeRendersAsItDidExceptDay(t *testing.T) {
 			if c.newTheme != "" {
 				newTheme, _ = ThemeCSS(c.newTheme)
 			}
-			rig := legacyRig(t, oldTokens, oldTheme, TokensCSS(), newTheme, false)
+			var head []string
+			if c.head != "" {
+				head = []string{c.head}
+			}
+			rig := legacyRig(t, oldTokens, oldTheme, TokensCSS(), newTheme, false, head...)
 			ctx, cancel := context.WithTimeout(rig.Context(), 300*time.Second)
 			defer cancel()
 			for _, scheme := range []string{"light", "dark"} {

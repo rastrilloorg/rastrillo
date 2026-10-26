@@ -238,21 +238,39 @@
   document.addEventListener("keydown", dismissMenus, true);
 
   // A switch slides. A press on its track that moves 4px drags the knob
-  // (the CSS reads --rst-switch-x off the track) and on release the
-  // knob snaps to the nearer end; if that end is the other state, the
-  // checkbox is clicked, so input and change fire as for a tap. A press
-  // that does not move is the label's, which toggles as it always has;
-  // after a drag the label's own click is cancelled (never the
+  // (the CSS reads its share of the travel, --rst-switch-p, and the on
+  // colour's share, --rst-switch-on, off the track) and on release the
+  // knob goes to the nearer end (half way is on) with the firm release
+  // curve, which the CSS keys off data-rst-settle on the label for the
+  // 0.18s it takes and a little slack; if that end is the other state,
+  // the checkbox is clicked, so input and change fire as for a tap. A
+  // press that does not move is the label's, which toggles as it always
+  // has; after a drag the label's own click is cancelled (never the
   // checkbox's, which Space and the drop above send), so nothing
   // toggles twice. The checkbox stays the state.
-  var TRACK = "[rst-switch-track],.rst-switch__track", drag = null, after = null;
+  var TRACK = "[rst-switch-track],.rst-switch__track", drag = null, after = null, settling = null, settleT = 0, releasing = false;
+  function unsettle() {
+    if (settling) settling.removeAttribute("data-rst-settle");
+    settling = null;
+    clearTimeout(settleT);
+  }
+  function settle(l) {
+    unsettle();
+    settling = l;
+    l.setAttribute("data-rst-settle", "");
+    settleT = setTimeout(unsettle, 300);
+  }
+  // A toggle while a switch settles takes a toggle's own curve: the
+  // mark goes on change, bar the release's own click.
+  document.addEventListener("change", function (e) { if (settling && !releasing && settling.contains(e.target)) unsettle(); }, true);
   // One drag at a time: a second finger is ignored until the first
   // lifts, and a drag ends (cleaned up, committed only on pointerup)
   // however its pointer goes. A press by the same pointer means its
   // release was missed, so that drag is over.
   document.addEventListener("pointerdown", function (e) {
     if (drag && e.pointerId !== drag.id) return;
-    var t = e.target.closest && e.target.closest(TRACK), l = t && t.closest("[rst-switch],.rst-switch"), box = l && l.querySelector("input");
+    // A toggle block's head is a switch too; its own input is first.
+    var t = e.target.closest && e.target.closest(TRACK), l = t && t.closest("[rst-switch],.rst-switch,[rst-tblock-head],.rst-tblock__head"), box = l && l.querySelector("input");
     if (drag) drop({ type: "lost", pointerId: drag.id });
     after = null;
     // :disabled, not .disabled: a disabled fieldset disables the box
@@ -268,11 +286,15 @@
     d = (e.clientX - g.x) * g.dir;
     if (g.pos < 0) {
       if (Math.abs(d) < 4) return;
+      // A drag on a settling switch takes over: no mark.
+      if (settling === g.l) unsettle();
       g.l.setAttribute("data-rst-drag", "");
       g.t.setPointerCapture(e.pointerId);
     }
     g.pos = Math.min(g.max, Math.max(0, g.at + d));
-    g.t.style.setProperty("--rst-switch-x", g.pos + "px");
+    d = g.pos / g.max;
+    g.t.style.setProperty("--rst-switch-p", d);
+    g.t.style.setProperty("--rst-switch-on", d * 100 + "%");
   });
   function drop(e) {
     var g = drag;
@@ -280,9 +302,13 @@
     drag = null;
     if (g.pos < 0) return;
     g.l.removeAttribute("data-rst-drag");
-    g.t.style.removeProperty("--rst-switch-x");
+    settle(g.l);
+    g.t.style.removeProperty("--rst-switch-p");
+    g.t.style.removeProperty("--rst-switch-on");
     after = g.l;
-    if (e.type === "pointerup" && !g.box.matches(":disabled") && g.pos > g.max / 2 !== g.box.checked) g.box.click();
+    releasing = true;
+    if (e.type === "pointerup" && !g.box.matches(":disabled") && g.pos >= g.max / 2 !== g.box.checked) g.box.click();
+    releasing = false;
   }
   document.addEventListener("pointerup", drop);
   document.addEventListener("pointercancel", drop);
@@ -316,15 +342,17 @@
     m.open = false;
   }, true);
 
-  // A scheme change lands in the frame it happens in. At rest nothing
-  // fades its background (the rail items', rows' and tiles' fades sit
-  // on their hover rules, so an app's own switch lands with no help);
-  // a hovered item's fade is running, and a change of scheme retargets
-  // it while the text changes at once: a tenth of a second of new text
-  // on the old scheme's ground after the click. getAnimations() flushes
-  // style, which starts the transitions, and cancelling one lands it
-  // on its end value. Transitions only, told by transitionProperty:
-  // cancelling an animation would stop a spinner for good.
+  // A scheme change lands in the frame it happens in. The shipped
+  // tints need no help: at rest nothing fades its background, and a
+  // hovered row's, tile's or rail item's tint rides a registered
+  // percentage, so a change of scheme re-resolves its colour at once.
+  // What this lands is everything else still running: an app's own
+  // colour transitions, or a switch track mid-toggle, which a change
+  // of scheme would otherwise retarget while the text changes at
+  // once. getAnimations() flushes style, which starts the transitions,
+  // and cancelling one lands it on its end value. Transitions only,
+  // told by transitionProperty: cancelling an animation would stop a
+  // spinner for good.
   function land() {
     if (!document.getAnimations) return;
     document.getAnimations().forEach(function (a) { if (typeof a.transitionProperty === "string") a.cancel(); });

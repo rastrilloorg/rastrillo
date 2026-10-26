@@ -73,15 +73,20 @@ func runNew(args []string) error {
 	shell := fset.String("shell", "column", "layout shell: "+strings.Join(ui.LayoutNames(), ", "))
 	// No default: flag would print (default "en") after the help's own.
 	locale := fset.String("locale", "", fmt.Sprintf(newLocaleFlagMsg, strings.Join(rastrillo.BaseLocales(), ", ")))
+	authKind := fset.String("auth", "none", "sign-in the app starts with: "+strings.Join(authKinds, ", "))
 	if err := fset.Parse(args); err != nil {
 		return err
 	}
 	rest := fset.Args()
 	if len(rest) != 1 {
-		return fmt.Errorf("usage: rastrillo new [--icons=%s] [--icon-delivery=%s] [--ux=%s] [--theme=%s] [--shell=%s] [--locale=%s] <name>",
+		return fmt.Errorf("usage: rastrillo new [--icons=%s] [--icon-delivery=%s] [--ux=%s] [--theme=%s] [--shell=%s] [--locale=%s] [--auth=%s] <name>",
 			strings.Join(iconsets.Names(), "|"), strings.Join(iconsets.Deliveries(), "|"),
 			strings.Join(profileNames(), "|"), strings.Join(ui.ThemeNames(), "|"),
-			strings.Join(ui.LayoutNames(), "|"), strings.Join(rastrillo.BaseLocales(), "|"))
+			strings.Join(ui.LayoutNames(), "|"), strings.Join(rastrillo.BaseLocales(), "|"),
+			strings.Join(authKinds, "|"))
+	}
+	if !slices.Contains(authKinds, *authKind) {
+		return fmt.Errorf("unknown --auth %q: known kinds are %s", *authKind, strings.Join(authKinds, ", "))
 	}
 	name := rest[0]
 	if _, err := os.Stat(name); err == nil {
@@ -267,6 +272,12 @@ func runNew(args []string) error {
 
 	for name, content := range vendored {
 		files[filepath.Join(appDir, "static", name)] = string(content)
+	}
+
+	if *authKind == "magic" {
+		if err := applyMagicAuth(files, name, pkg, appDir); err != nil {
+			return err
+		}
 	}
 
 	for path, content := range files {

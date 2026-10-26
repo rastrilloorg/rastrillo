@@ -80,14 +80,94 @@ func TestTokensCSSIsEmbedded(t *testing.T) {
 	// in v2: a "--rst-radius:" or "--rst-shadow-pop:" *declaration* here
 	// would silently outrank nothing and confuse everything, since every
 	// theme declares its own.
+	leaks, err := shapeLeaks(string(css))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, gone := range leaks {
+		t.Errorf("tokens.css declares %q; colour and shape belong in themes/", gone)
+	}
+}
+
+// shapeLeaks returns every colour-block or shape-token declaration
+// tokens.css must not carry. The one allowance is print's flatten of
+// the knob's two shadow tokens (their hover lift outranks the knob's
+// print reset), at html:root inside @media print and nowhere else; an
+// error when that flatten is missing, doubled or elsewhere. Everything
+// else is searched everywhere, the print and forced-colours blocks
+// included: a radius there would override a theme's geometry.
+func shapeLeaks(css string) ([]string, error) {
+	const flatten = "--rst-shadow-knob: 0 0 0 transparent; --rst-shadow-knob-hover: 0 0 0 transparent;"
+	if n := strings.Count(css, flatten); n != 1 {
+		return nil, fmt.Errorf("tokens.css carries print's knob-shadow flatten %d times, want once, at html:root inside @media print", n)
+	}
+	// Every print block (the stage art has a small one of its own before
+	// the big one): the flatten must sit in an html:root rule of one.
+	const header = "@media print {"
+	atRoot := false
+	for idx := 0; ; {
+		i := strings.Index(css[idx:], header)
+		if i < 0 {
+			break
+		}
+		start := idx + i + len(header)
+		end := braceMatchEnd(css, start)
+		for _, r := range leafRules(css[start:end]) {
+			if r.selector == "html:root" && strings.Contains(r.body, flatten) {
+				atRoot = true
+			}
+		}
+		idx = end + 1
+	}
+	if !atRoot {
+		return nil, fmt.Errorf("print's knob-shadow flatten is not at html:root inside @media print, the one place it is allowed")
+	}
+	structural := strings.Replace(css, flatten, "", 1)
+	var out []string
 	for _, gone := range []string{
 		"prefers-color-scheme: dark", `:root[data-theme="dark"]`, `:root[data-theme="light"]`,
 		"--rst-radius:", "--rst-radius-sm:", "--rst-radius-pill:",
 		"--rst-shadow-pop:", "--rst-shadow-knob:", "--rst-shadow-lift:", "--rst-overlay:",
 	} {
-		if strings.Contains(string(css), gone) {
-			t.Errorf("tokens.css declares %q; colour and shape belong in themes/", gone)
+		if strings.Contains(structural, gone) {
+			out = append(out, gone)
 		}
+	}
+	return out, nil
+}
+
+// TestTheShapeGateSeesInsideThePrintAndForcedBlocks (switch review 6):
+// the allowance is the knob flatten at its place, not the blocks. Radii
+// at html:root inside print and inside forced colours are leaks like
+// any other, and the flatten under another selector in print is an
+// error. The shipped tokens.css is the control.
+func TestTheShapeGateSeesInsideThePrintAndForcedBlocks(t *testing.T) {
+	css := string(TokensCSS())
+	if leaks, err := shapeLeaks(css); err != nil || len(leaks) != 0 {
+		t.Fatalf("the shipped tokens.css: leaks %v, err %v; want none", leaks, err)
+	}
+	const radii = "\n  html:root { --rst-radius: 0; --rst-radius-pill: 0; }"
+	for _, m := range []struct{ name, header string }{{"print", "@media print {"}, {"forced colours", "@media (forced-colors: active) {"}} {
+		mutant := strings.Replace(css, m.header, m.header+radii, 1)
+		if mutant == css {
+			t.Fatalf("%s: the block is not where this test expects it", m.name)
+		}
+		leaks, err := shapeLeaks(mutant)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if strings.Join(leaks, " ") != "--rst-radius: --rst-radius-pill:" {
+			t.Errorf("%s block with radii at html:root: the gate reports %v; want --rst-radius: and --rst-radius-pill:", m.name, leaks)
+		}
+	}
+	const flatten = "--rst-shadow-knob: 0 0 0 transparent; --rst-shadow-knob-hover: 0 0 0 transparent;"
+	moved := strings.Replace(css, flatten, "", 1)
+	moved = strings.Replace(moved, "@media print {", "@media print {\n  .rst-switch__track::after { "+flatten+" }", 1)
+	if moved == css || !strings.Contains(moved, flatten) {
+		t.Fatal("the knob flatten is not where this test expects it")
+	}
+	if _, err := shapeLeaks(moved); err == nil {
+		t.Error("the knob flatten moved off html:root in print passed the gate")
 	}
 }
 
@@ -180,7 +260,7 @@ func TestBothSchemesAreAuthoredInEveryTheme(t *testing.T) {
 	// schemeNumberBlocks holds those.
 	declaredOnce := append([]string{
 		"--rst-font", "--rst-radius", "--rst-radius-sm", "--rst-radius-pill",
-		"--rst-shadow-pop", "--rst-shadow-knob", "--rst-shadow-lift",
+		"--rst-shadow-pop", "--rst-shadow-knob", "--rst-shadow-knob-hover", "--rst-shadow-lift",
 		"--rst-header-rule",
 		"--rst-on-accent-fill", "--rst-on-danger-fill", "--rst-on-danger-fill-hover", "--rst-danger-hover-filter", "--rst-knob", "--rst-control-face-press",
 		"--rst-ghost-edge", "--rst-ghost-face-hover", "--rst-ghost-edge-hover", "--rst-summary-face", "--rst-summary-face-hover", "--rst-summary-edge", "--rst-summary-edge-hover", "--rst-summary-radius", "--rst-tint-tap", "--rst-tint-card-hover",
@@ -193,6 +273,8 @@ func TestBothSchemesAreAuthoredInEveryTheme(t *testing.T) {
 		"--rst-sheen-fill", "--rst-sheen-plain", "--rst-light-rim", "--rst-light-wash",
 		"--rst-title-size", "--rst-title-weight", "--rst-title-track", "--rst-heading-size",
 		"--rst-label-case", "--rst-label-track", "--rst-rail-bg",
+		// The switch's two size sets: lengths, the same in both schemes.
+		"--rst-switch-w", "--rst-switch-h", "--rst-switch-knob", "--rst-switch-touch-w", "--rst-switch-touch-h", "--rst-switch-touch-knob",
 	}, needsLightDark...)
 
 	for _, name := range ThemeNames() {
@@ -3133,7 +3215,7 @@ func TestThemesDeclareIdenticalTokenSets(t *testing.T) {
 	}
 	for _, shape := range []string{
 		"--rst-radius", "--rst-radius-sm", "--rst-radius-pill",
-		"--rst-shadow-pop", "--rst-shadow-knob", "--rst-shadow-lift", "--rst-overlay",
+		"--rst-shadow-pop", "--rst-shadow-knob", "--rst-shadow-knob-hover", "--rst-shadow-lift", "--rst-overlay",
 		// The depth axis (spec C2, as amended by A6 and A15). day turns
 		// it on; plain and signal declare the same names at today's
 		// values. A name missing from day here is a token tokens.css
@@ -3144,6 +3226,7 @@ func TestThemesDeclareIdenticalTokenSets(t *testing.T) {
 		"--rst-ghost-edge", "--rst-ghost-face-hover", "--rst-ghost-edge-hover", "--rst-summary-face", "--rst-summary-face-hover", "--rst-summary-edge", "--rst-summary-edge-hover", "--rst-summary-radius",
 		"--rst-depth-hl", "--rst-depth-contact", "--rst-depth-ambient", "--rst-depth-face", "--rst-press-drop",
 		"--rst-knob", "--rst-knob-shade", "--rst-track-off",
+		"--rst-switch-w", "--rst-switch-h", "--rst-switch-knob", "--rst-switch-touch-w", "--rst-switch-touch-h", "--rst-switch-touch-knob",
 		"--rst-tint-hover", "--rst-tint-press", "--rst-tint-tap", "--rst-tint-card-hover", "--rst-tint-tile-hover", "--rst-tint-tile-press", "--rst-tint-group-hover", "--rst-row-tint-hover", "--rst-row-tint-press", "--rst-focus-edge", "--rst-focus-halo",
 		"--rst-sheen-fill", "--rst-sheen-plain", "--rst-light-rim", "--rst-light-wash",
 		"--rst-press-wash", "--rst-press-spot", "--rst-press-wash-plain", "--rst-press-spot-plain",

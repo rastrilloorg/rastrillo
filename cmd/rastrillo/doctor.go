@@ -60,7 +60,7 @@ import (
 func runDoctor(args []string) error {
 	fset := flag.NewFlagSet("doctor", flag.ContinueOnError)
 	fix := fset.Bool("fix", false, "re-copy each drifted file from this binary's library copy")
-	force := fset.Bool("force", false, "with --fix: re-copy across a version mismatch, and over files recorded as deliberate edits")
+	force := fset.Bool("force", false, "with --fix: re-copy across a version mismatch, and over files recorded as deliberate edits or removals")
 	theme := fset.String("theme", "", "the theme static/theme.css should match (default: the app's own pin, else whichever shipped theme it matches)")
 	probe := fset.Bool("probe", false, localecheck.ProbeFlag)
 	// A usage mistake exits 2, which is what this command's own
@@ -173,6 +173,7 @@ const (
 	fileDiffers                  // present, and different
 	fileAbsent                   // the library ships it; this app has no copy
 	fileMine                     // the app recorded this edit as deliberate
+	fileRemoved                  // the app recorded it as mine, and has no copy: removed on purpose
 	fileUnknownTheme
 	fileUnreadable
 )
@@ -427,7 +428,13 @@ func diagnose(dir, themeFlag string) (*report, error) {
 		f := vendoredFile{name: name, path: filepath.Join(staticDir, name), lib: assets[name]}
 		switch {
 		case pin.mine[name]:
+			// A recorded name with no file behind it is a removal, and
+			// the report says so: "a deliberate edit" sent the reader
+			// to look for an edit that is not there (#104).
 			f.state = fileMine
+			if _, err := os.Stat(f.path); err != nil && os.IsNotExist(err) {
+				f.state = fileRemoved
+			}
 		case name == "theme.css" && r.theme == "":
 			f.state = fileUnknownTheme
 		default:
@@ -684,6 +691,8 @@ func (r *report) print(w io.Writer, fixing bool) {
 			fmt.Fprintf(w, "  ok       %s\n", f.name)
 		case fileMine:
 			fmt.Fprintf(w, "  yours    %s (recorded as a deliberate edit in %s)\n", f.name, r.pinFile)
+		case fileRemoved:
+			fmt.Fprintf(w, "  yours    %s (removed on purpose, recorded in %s)\n", f.name, r.pinFile)
 		case fileUnknownTheme:
 			fmt.Fprintf(w, "  yours    %s (%s — a theme of your own is supported, so nothing is compared)\n", f.name, r.themeFrom)
 		case fileAbsent:
@@ -906,6 +915,12 @@ func (r *report) applyFix(w io.Writer, force bool) error {
 				skipped++
 				continue
 			}
+		case fileRemoved:
+			if !force {
+				fmt.Fprintf(w, "  left alone  %s (removed on purpose; --force overrides)\n", f.name)
+				skipped++
+				continue
+			}
 		case fileUnknownTheme:
 			// Never guess a theme. Re-copying here would replace an
 			// app's own design with a shipped one on no evidence at all.
@@ -928,6 +943,8 @@ func (r *report) applyFix(w io.Writer, force bool) error {
 		switch {
 		case f.state == fileAbsent:
 			fmt.Fprintf(w, "  wrote       %s (%s, was missing)\n", rel(r.dir, f.path), size(len(f.lib)))
+		case f.state == fileRemoved:
+			fmt.Fprintf(w, "  wrote       %s (%s, was removed)\n", rel(r.dir, f.path), size(len(f.lib)))
 		default:
 			fmt.Fprintf(w, "  re-copied   %s (%s -> %s)\n", rel(r.dir, f.path), size(len(f.app)), size(len(f.lib)))
 		}

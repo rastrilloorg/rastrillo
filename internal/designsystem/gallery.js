@@ -78,12 +78,15 @@
   }
 
   // A scheme change lands in the frame it happens in, as rastrillo.js
-  // does it for an app's switch and says why: the nav's current item
-  // and a linked tile fade their background between schemes while
-  // their text changes at once. getAnimations() flushes style, which
-  // starts the fade, and cancelling a transition lands it. Told by
-  // transitionProperty, because a frame's transitions are another
-  // realm's class; transitions only, so a spinner keeps turning.
+  // does it for an app's switch and says why. The framework's own
+  // tints land on their own now (a hovered item's rides a registered
+  // percentage, not a colour); this lands whatever else is running,
+  // such as a page rule's transition on a rail item's colour, which a
+  // change of scheme would retarget while the text changes at once.
+  // getAnimations() flushes style, which starts the fade, and
+  // cancelling a transition lands it. Told by transitionProperty,
+  // because a frame's transitions are another realm's class;
+  // transitions only, so a spinner keeps turning.
   function land(doc) {
     if (!doc.getAnimations) return;
     doc.getAnimations().forEach(function (a) { if (typeof a.transitionProperty === "string") a.cancel(); });

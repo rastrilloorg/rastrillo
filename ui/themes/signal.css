@@ -214,6 +214,7 @@
   /* Depth: short throw, tight blur, high alpha. Seated, not floating. */
   --rst-shadow-pop: 0 4px 10px light-dark(rgba(12, 14, 18, 0.22), rgba(0, 0, 0, 0.62));
   --rst-shadow-knob: 0 1px 2px light-dark(rgba(12, 14, 18, 0.45), rgba(0, 0, 0, 0.6));
+  --rst-shadow-knob-hover: var(--rst-shadow-knob);
   --rst-shadow-lift: 0 1px 2px light-dark(rgba(12, 14, 18, 0.2), rgba(0, 0, 0, 0.5));
   --rst-overlay: light-dark(rgba(9, 11, 16, 0.55), rgba(3, 4, 7, 0.72));
 
@@ -262,6 +263,13 @@
   --rst-knob: var(--rst-surface);
   --rst-knob-shade: var(--rst-surface);
   --rst-track-off: var(--rst-line-strong);
+  /* The switch's one size, under a mouse and a finger alike: today's. */
+  --rst-switch-w: 34px;
+  --rst-switch-h: 19px;
+  --rst-switch-knob: 15px;
+  --rst-switch-touch-w: 34px;
+  --rst-switch-touch-h: 19px;
+  --rst-switch-touch-knob: 15px;
   --rst-tint-hover: var(--rst-accent-soft);
   --rst-tint-press: var(--rst-accent-soft);
   --rst-tint-tap: transparent;

@@ -537,7 +537,9 @@ func colourGroups(rows []tokenRow) []tokenGroup {
 		// match is anchored at the start, so without it the two row
 		// tints fall through to "Other", a heading with no translation,
 		// and the parity gate goes red.
-		{"Controls", []string{"--rst-danger-", "--rst-on-danger-", "--rst-control-", "--rst-ghost-", "--rst-summary-", "--rst-knob", "--rst-track-", "--rst-tint-", "--rst-row-tint-", "--rst-focus-", "--rst-nav-current-"}},
+		// --rst-switch- is the switch's two size sets, lengths beside
+		// its knob and track colours.
+		{"Controls", []string{"--rst-danger-", "--rst-on-danger-", "--rst-control-", "--rst-ghost-", "--rst-summary-", "--rst-knob", "--rst-track-", "--rst-switch-", "--rst-tint-", "--rst-row-tint-", "--rst-focus-", "--rst-nav-current-"}},
 		{"Type choices", []string{"--rst-title-", "--rst-heading-", "--rst-label-"}},
 	}
 	out := make([]tokenGroup, 0, len(groups)+1)

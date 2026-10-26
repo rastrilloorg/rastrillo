@@ -17,6 +17,10 @@ here=$(cd "$(dirname "$0")" && pwd)
 # quietly, which reads as an agent's miss rather than the check's.
 echo x | awk -f "$here/strip.awk" >/dev/null || { echo "strip.awk does not parse"; exit 2; }
 notests=0
+# skip names files treecode leaves out by basename, a glob such as
+# 'auth.go'; only, when set, keeps nothing else. Together they let a
+# check count one scaffold file apart from the rest of the tree.
+skip= only=
 # stripfile <path> prints that path's code from stdin, comments out.
 stripfile() { { printf '%s\n' "$1"; cat; } | awk -f "$here/strip.awk"; }
 # treecode <root> <paths...> prints the code of every source file under
@@ -31,6 +35,8 @@ treecode() {
 			-o -name '*.css' -o -name '*.js' -o -name '*.mjs' -o -name '*.ts' -o -name '*.toml' -o -name '*.sql' \) |
 			while IFS= read -r f; do
 				case $f in *_test.go) [ "$notests" = 1 ] && continue ;; esac
+				if [ -n "$skip" ]; then case ${f##*/} in $skip) continue ;; esac; fi
+				if [ -n "$only" ]; then case ${f##*/} in $only) ;; *) continue ;; esac; fi
 				stripfile "${f#"$root"/}" <"$f"
 			done
 	done

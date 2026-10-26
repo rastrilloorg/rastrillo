@@ -237,6 +237,55 @@ func TestDoctorReportsADeletedLightJSAsAbsentNotDrift(t *testing.T) {
 	}
 }
 
+// A deleted light.js that the app has named in vendoredIsMine is a
+// removal, and doctor says so (#104 item 3). Calling it "a deliberate
+// edit" told the reader to go and look at an edit that is not there;
+// the pin leaves it alone either way, and only --force writes it back.
+func TestDoctorSaysARecordedDeletionWasRemovedOnPurpose(t *testing.T) {
+	dir := doctorApp(t, rastrilloVersion(), "day")
+	pin := filepath.Join(dir, "internal", "demoapptest", "vendored_test.go")
+	src, _ := os.ReadFile(pin)
+	mustWrite(t, pin, strings.Replace(string(src), `// "tokens.css": true,`, `"light.js": true,`, 1))
+	path := filepath.Join(dir, "internal", "demoapp", "static", "light.js")
+	if err := os.Remove(path); err != nil {
+		t.Fatal(err)
+	}
+	rep, err := diagnose(dir, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if rep.drifted() {
+		t.Fatalf("a recorded removal was reported as drift:\n%s", printed(rep, false))
+	}
+	out := printed(rep, false)
+	if !strings.Contains(out, "yours    light.js (removed on purpose, recorded in internal/demoapptest/vendored_test.go)") {
+		t.Errorf("the report does not say light.js was removed on purpose:\n%s", out)
+	}
+	if strings.Contains(out, "deliberate edit") {
+		t.Errorf("a removal is called an edit:\n%s", out)
+	}
+	var buf bytes.Buffer
+	if err := rep.applyFix(&buf, false); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(path); err == nil {
+		t.Fatal("--fix wrote back a file the app recorded as removed")
+	}
+	if !strings.Contains(buf.String(), "left alone  light.js (removed on purpose; --force overrides)") {
+		t.Errorf("--fix did not say the file was removed on purpose:\n%s", buf.String())
+	}
+	buf.Reset()
+	if err := rep.applyFix(&buf, true); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(path); err != nil {
+		t.Fatalf("--fix --force did not write the removed file: %v", err)
+	}
+	if !strings.Contains(buf.String(), "wrote       internal/demoapp/static/light.js (") || !strings.Contains(buf.String(), "was removed)") {
+		t.Errorf("--force did not say it wrote the removed file back:\n%s", buf.String())
+	}
+}
+
 // TestDoctorSeparatesSkewFromDrift is the trap the design turns on. An
 // app on a different version has files that are correct for ITS
 // version, and calling that damage is the failure mode that teaches

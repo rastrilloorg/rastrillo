@@ -209,6 +209,7 @@
   /* Depth: one hairline layer. Real values, minimal effect. */
   --rst-shadow-pop: 0 1px 3px light-dark(rgba(0, 0, 0, 0.14), rgba(0, 0, 0, 0.5));
   --rst-shadow-knob: 0 1px 1px light-dark(rgba(0, 0, 0, 0.22), rgba(0, 0, 0, 0.4));
+  --rst-shadow-knob-hover: var(--rst-shadow-knob);
   --rst-shadow-lift: 0 1px 1px light-dark(rgba(0, 0, 0, 0.07), rgba(0, 0, 0, 0.3));
   --rst-overlay: light-dark(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.6));
 
@@ -257,6 +258,13 @@
   --rst-knob: var(--rst-surface);
   --rst-knob-shade: var(--rst-surface);
   --rst-track-off: var(--rst-line-strong);
+  /* The switch's one size, under a mouse and a finger alike: today's. */
+  --rst-switch-w: 34px;
+  --rst-switch-h: 19px;
+  --rst-switch-knob: 15px;
+  --rst-switch-touch-w: 34px;
+  --rst-switch-touch-h: 19px;
+  --rst-switch-touch-knob: 15px;
   --rst-tint-hover: var(--rst-accent-soft);
   --rst-tint-press: var(--rst-accent-soft);
   --rst-tint-tap: transparent;
