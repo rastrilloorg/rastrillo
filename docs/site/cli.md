@@ -11,9 +11,9 @@ Every command except `session-key` takes an optional directory as its last argum
 ## rastrillo new
 
 ```sh
-rastrillo new [--scaffold=<shape>] [--icons=<set>] [--icon-delivery=<mode>] [--ux=<profile>]
-              [--theme=<name>] [--shell=<name>] [--locale=<code>]
-              [--auth=<kind>] <name>
+rastrillo new [--scaffold=<shape>] [--design-system=false] [--icons=<set>]
+              [--icon-delivery=<mode>] [--ux=<profile>] [--theme=<name>]
+              [--shell=<name>] [--locale=<code>] [--auth=<kind>] <name>
 ```
 
 Scaffolds a complete app in `./<name>` — one that compiles, passes its
@@ -23,6 +23,7 @@ own tests, and serves, before you have written anything. It runs
 | Flag | Values | Default |
 |---|---|---|
 | `--scaffold` | `bare`, `single`, `accounts` | `single` |
+| `--design-system` | `true`, `false` | `true` |
 | `--icons` | `lucide`, `font-awesome` | `lucide` |
 | `--icon-delivery` | `inline`, `cdn`, `js` | `inline` |
 | `--ux` | `considered`, `standard` | `considered` |
@@ -37,6 +38,13 @@ sign-in by emailed link. `home` and `hub` are planned and not built yet.
 `bare` writes no `manifest/`, `gen/`, `Makefile` or `AGENTS.md` and runs
 no `generate`: its gate is `go test ./...`. It refuses `--ux`, which
 only chooses what goes in `AGENTS.md`.
+
+`--design-system=false` leaves out the templates, static files, icons
+and `render.go`, for a `bare` app that writes its own HTML or JSON. Its
+page is a short HTML string in `app.go`. Only `bare` accepts it, and it
+refuses `--icons`, `--icon-delivery`, `--theme` and `--shell`, which
+choose files it does not write. `rastrillo doctor` on such an app says
+there is nothing to compare and runs its other checks.
 
 All six set × delivery combinations scaffold, compile and pass
 `generate --check`. The icon set becomes an ordinary app-owned package

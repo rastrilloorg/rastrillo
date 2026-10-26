@@ -13,7 +13,34 @@ const (
 	newReservedShapeMsg = "--scaffold %s is not built yet: it is %s. Use bare, single or accounts for now"
 	newReservedHomeMsg  = "Plan 6 of the user-models roadmap"
 	newReservedHubMsg   = "Plan 7 of the user-models roadmap"
+
+	newDesignSystemFlagMsg  = "write the design system: templates, styles, scripts and icons (only bare can turn it off)"
+	newDesignSystemShapeMsg = "--design-system=false works with --scaffold bare only: single and accounts build their pages from the design system"
+	newDesignFlagOffMsg     = "--%s does nothing with --design-system=false: leave it out"
 )
+
+// designFlags only choose design-system files, so with it off each one
+// typed would be silently ignored.
+var designFlags = []string{"icons", "icon-delivery", "theme", "shell"}
+
+// checkDesignSystem refuses --design-system=false where it cannot hold:
+// single and accounts render their token, sign-in and error pages
+// through it. o.Set, not the values: --theme=day typed out is a choice
+// the app would never get.
+func checkDesignSystem(shapeName string, o newOpts) error {
+	if o.DesignSystem {
+		return nil
+	}
+	if shapeName != "bare" {
+		return errors.New(newDesignSystemShapeMsg)
+	}
+	for _, f := range designFlags {
+		if o.Set[f] {
+			return fmt.Errorf(newDesignFlagOffMsg, f)
+		}
+	}
+	return nil
+}
 
 const defaultShape = "single"
 

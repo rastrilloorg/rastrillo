@@ -209,6 +209,7 @@ type report struct {
 	files         []vendoredFile
 	layoutAdvice  string // relative path of an old shell layout, if the app has one
 	profileAdvice string // relative path of a layout whose app keeps the person in account
+	noDesign      bool   // no vendored files and no layout: nothing to compare
 }
 
 // skewed reports whether the CLI and the app are on different rastrillo
@@ -248,6 +249,8 @@ func (r *report) exit() error {
 	switch {
 	case r.preMove != "":
 		return exitError{code: exitPreMove}
+	case r.noDesign: // skew and drift are findings about vendored files
+		return nil
 	case r.skewed():
 		return exitError{code: exitSkew}
 	case r.drifted():
@@ -270,6 +273,10 @@ func (r *report) status(checks int) error {
 // "Upgrading" is the section of docs/site/templates.md that gives the
 // edit.
 const doctorLayoutAdvisory = `This layout still has the old mobile menu. See "Upgrading" in the templates guide.`
+
+// doctorNoDesignMsg is the line doctor prints for an app with no
+// design system, such as a bare app scaffolded without it.
+const doctorNoDesignMsg = "No design system here (no static files or templates), so there is nothing to compare."
 
 // templateCommentRE matches a Go template comment action, including its
 // trim forms ({{- /* ... */ -}}), so oldShellLayout can strip one before
@@ -381,6 +388,15 @@ func diagnose(dir, themeFlag string) (*report, error) {
 	pkg := packageName(filepath.Base(module))
 	staticDir, err := findStaticDir(dir, pkg)
 	if err != nil {
+		// No static files and no layout is an app without a design
+		// system (bare's --design-system=false), not a broken one, and
+		// failing here stopped even --probe's locale check. A layout
+		// with nothing vendored is still the error: its pages link
+		// files that are gone.
+		if layouts, _ := filepath.Glob(filepath.Join(dir, "internal", "*", "templates", "layout.html")); layouts == nil {
+			r.noDesign = true
+			return r, nil
+		}
 		return nil, err
 	}
 	r.staticDir = rel(dir, staticDir)
@@ -660,6 +676,10 @@ func (r *report) print(w io.Writer, fixing bool) {
 		r.printPreMove(w)
 		return
 	}
+	if r.noDesign {
+		fmt.Fprintf(w, "rastrillo doctor: %s\n  %s\n", r.module, doctorNoDesignMsg)
+		return
+	}
 	fmt.Fprintf(w, "rastrillo doctor: %s (%s)\n", r.module, r.staticDir)
 
 	switch {
@@ -895,6 +915,9 @@ func (r *report) applyFix(w io.Writer, force bool) error {
 		fmt.Fprintf(w, "Refusing to --fix: this app builds its ui from %s %s.\n", preMoveModule, r.preMove)
 		fmt.Fprintf(w, "Copying %s files into it would put new CSS against old markup. Move it first, as above.\n", r.cliVersion)
 		return exitError{code: exitPreMove}
+	}
+	if r.noDesign { // nothing to re-copy, and skew's refusal would say there was
+		return nil
 	}
 	if r.skewed() && !force {
 		fmt.Fprintln(w)

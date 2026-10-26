@@ -78,12 +78,13 @@ func runNew(args []string) error {
 	authKind := fset.String("auth", "none", "sign-in the app starts with: "+strings.Join(authKinds, ", "))
 	// No default, like --locale: the help's own wording carries it.
 	scaffold := fset.String("scaffold", "", newScaffoldFlagMsg)
+	designOn := fset.Bool("design-system", true, newDesignSystemFlagMsg)
 	if err := fset.Parse(args); err != nil {
 		return err
 	}
 	rest := fset.Args()
 	if len(rest) != 1 {
-		return fmt.Errorf("usage: rastrillo new [--scaffold=%s] [--icons=%s] [--icon-delivery=%s] [--ux=%s] [--theme=%s] [--shell=%s] [--locale=%s] [--auth=%s] <name>",
+		return fmt.Errorf("usage: rastrillo new [--scaffold=%s] [--design-system=false] [--icons=%s] [--icon-delivery=%s] [--ux=%s] [--theme=%s] [--shell=%s] [--locale=%s] [--auth=%s] <name>",
 			strings.Join(shapeNames(), "|"),
 			strings.Join(iconsets.Names(), "|"), strings.Join(iconsets.Deliveries(), "|"),
 			strings.Join(profileNames(), "|"), strings.Join(ui.ThemeNames(), "|"),
@@ -110,7 +111,10 @@ func runNew(args []string) error {
 		Name: name, Pkg: packageName(name), Locale: *locale,
 		IconSet: *iconSet, IconDelivery: *iconDelivery, UX: *uxProfile,
 		Theme: *theme, Shell: *shell, Auth: *authKind,
-		DesignSystem: true, Set: set,
+		DesignSystem: *designOn, Set: set,
+	}
+	if err := checkDesignSystem(chosen.Name, o); err != nil {
+		return err
 	}
 	if err := checkChoices(o); err != nil {
 		return err

@@ -1,0 +1,53 @@
+package __PKG__
+
+import (
+	"fmt"
+	"net/http"
+)
+
+// route is one entry in the route table: a full ServeMux pattern,
+// method included, and its handler.
+type route struct {
+	Pattern string
+	Handler http.HandlerFunc
+}
+
+// routes is the app's route table. Add a page here: its pattern, and a
+// handler that writes the response, HTML or JSON.
+//
+// The index is "GET /{$}", not "GET /": a bare "/" matches every path,
+// so an unknown URL would get the home page instead of a 404.
+func routes() []route {
+	return []route{
+		{"GET /{$}", index},
+	}
+}
+
+// Mux is the whole app: the route table on a ServeMux.
+func Mux() *http.ServeMux {
+	mux := http.NewServeMux()
+	for _, rt := range routes() {
+		mux.HandleFunc(rt.Pattern, rt.Handler)
+	}
+	return mux
+}
+
+// indexPage is the home page. Its lang is Locale, so a screen reader
+// reads it in the app's language.
+const indexPage = `<!doctype html>
+<html lang="%s">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>__NAME__</title>
+</head>
+<body>
+<h1>__NAME__</h1>
+</body>
+</html>
+`
+
+func index(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	fmt.Fprintf(w, indexPage, Locale)
+}

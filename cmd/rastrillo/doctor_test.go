@@ -715,6 +715,13 @@ func TestDoctorSaysWhatIsTrueOfAnAppWithNothingVendored(t *testing.T) {
 		t.Fatal("diagnose accepted a directory with no go.mod")
 	}
 	mustWrite(t, filepath.Join(dir, "go.mod"), "module bare\n\ngo 1.24\n")
+	// No templates either is an app without a design system, which is
+	// not an error (TestDoctorChecksAPlainBareApp). Templates with
+	// nothing vendored are pages linking files that are not there.
+	if rep, err := diagnose(dir, ""); err != nil || !rep.noDesign {
+		t.Fatalf("diagnose on a module with no design system: %v, %+v", err, rep)
+	}
+	mustWrite(t, filepath.Join(dir, "internal", "bare", "templates", "layout.html"), "<!doctype html>")
 	_, err := diagnose(dir, "")
 	if err == nil {
 		t.Fatal("diagnose accepted a module with nothing vendored in it")

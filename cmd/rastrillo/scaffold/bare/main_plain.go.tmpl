@@ -1,0 +1,28 @@
+// Command __NAME__ serves the app. rastrillo.Run reads how to listen
+// from its flags (-addr 127.0.0.1:8080, or the platform's -socket) and
+// serves Mux until it is stopped.
+package main
+
+import (
+	"log/slog"
+	"os"
+
+	"amadan.net/rastrillo/rastrillo"
+
+	__PKG__ "__NAME__/internal/__PKG__"
+)
+
+func main() {
+	logger := slog.New(slog.NewTextHandler(os.Stderr, nil))
+	// Boot refuses DefaultLocale when its pack is not linked, which
+	// locale.go does.
+	err := rastrillo.Run(rastrillo.Options{
+		Mux:           __PKG__.Mux(),
+		Logger:        logger,
+		DefaultLocale: __PKG__.Locale,
+	})
+	if err != nil {
+		logger.Error("serve failed", "err", err)
+		os.Exit(1)
+	}
+}

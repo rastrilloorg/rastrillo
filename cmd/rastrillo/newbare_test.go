@@ -202,16 +202,23 @@ func TestBareWithLocale(t *testing.T) {
 func TestBareRefusesUX(t *testing.T) {
 	for _, args := range [][]string{{"--ux", "standard"}, {"--ux=considered"}} {
 		t.Run(strings.Join(args, " "), func(t *testing.T) {
-			t.Chdir(t.TempDir())
-			err := runNew(append([]string{"--scaffold", "bare"}, append(args, "x")...))
-			want := "--ux does nothing with --scaffold bare, which writes no AGENTS.md: leave it out"
-			if err == nil || err.Error() != want {
-				t.Fatalf("error = %v, want %q", err, want)
-			}
-			if _, statErr := os.Stat("x"); statErr == nil {
-				t.Fatal("x exists after a refused flag")
-			}
+			refusedBeforeWriting(t, "--ux does nothing with --scaffold bare, which writes no AGENTS.md: leave it out",
+				append([]string{"--scaffold", "bare"}, args...)...)
 		})
+	}
+}
+
+// refusedBeforeWriting runs rastrillo new x in a fresh directory and
+// checks it refused with want before x existed: a half-made x makes
+// the next, corrected, run fail with "already exists".
+func refusedBeforeWriting(t *testing.T, want string, args ...string) {
+	t.Helper()
+	t.Chdir(t.TempDir())
+	if err := runNew(append(args, "x")); err == nil || err.Error() != want {
+		t.Fatalf("error = %v, want %q", err, want)
+	}
+	if _, err := os.Stat("x"); err == nil {
+		t.Fatal("x exists after a refused flag")
 	}
 }
 
@@ -283,5 +290,132 @@ func TestDevLeavesABareAppBare(t *testing.T) {
 	build(single, "full")
 	if !exists(single, "gen", "api.go") {
 		t.Error("a rebuild of a single app did not run generate")
+	}
+}
+
+// --design-system=false is bare for an app that writes its own HTML or
+// JSON: no templates, static files, icons, render.go or attribution.
+// Any of them left behind is a design system the app did not ask for
+// and has to find and delete by hand.
+func TestBarePlainWritesNoDesignSystem(t *testing.T) {
+	t.Chdir(t.TempDir())
+	if err := runNew([]string{"--scaffold", "bare", "--design-system=false", "dash"}); err != nil {
+		t.Fatal(err)
+	}
+	want := []string{
+		".gitignore",
+		"README.md",
+		"cmd/dash/main.go",
+		"go.mod",
+		"internal/dash/app.go",
+		"internal/dash/app_test.go",
+		"internal/dash/locale.go",
+	}
+	if got := walkFiles(t, "dash"); !slices.Equal(got, want) {
+		t.Errorf("plain bare wrote\n%s\nwant\n%s", strings.Join(got, "\n"), strings.Join(want, "\n"))
+	}
+	for _, rel := range []string{"cmd/dash/main.go", "internal/dash/app.go", "internal/dash/app_test.go", "internal/dash/locale.go"} {
+		src := readScaffold(t, "dash", rel)
+		if out, err := format.Source([]byte(src)); err != nil || string(out) != src {
+			t.Errorf("%s is not gofmt-clean (err %v)", rel, err)
+		}
+		// Each of these names something only the design system defines:
+		// the app would not compile.
+		for _, gone := range []string{"ErrorPage", "pages.", "render(", "assets.", "templates/"} {
+			if strings.Contains(src, gone) {
+				t.Errorf("%s mentions %q, which a plain app does not have:\n%s", rel, gone, src)
+			}
+		}
+	}
+	if readme := readScaffold(t, "dash", "README.md"); strings.Contains(readme, "templates/") {
+		t.Errorf("README.md points at a templates/ the app does not have:\n%s", readme)
+	}
+}
+
+// The plain app's own tests are green, ran, and check the page is HTML
+// in the app's language; vet passes with the browser and perf tags too,
+// so a tagged file nobody builds by default cannot hide a break.
+func TestBarePlainPassesItsOwnTests(t *testing.T) {
+	if testing.Short() {
+		t.Skip("scaffolds, tidies and tests a whole app")
+	}
+	setSandboxGoEnv(t)
+	t.Chdir(t.TempDir())
+	dir := scaffoldWithReplace(t, "dash", "--scaffold", "bare", "--design-system=false", "--locale=es")
+	out, err := goTestIn(dir, "-v", "./...")
+	if err != nil {
+		t.Fatalf("go test ./...:\n%s", out)
+	}
+	for _, name := range []string{"TestIndexRenders", "TestUnknownPathIs404"} {
+		if !strings.Contains(out, "--- PASS: "+name) {
+			t.Errorf("%s did not run and pass:\n%s", name, out)
+		}
+	}
+	if vet, err := goIn(dir, "vet", "-tags", "browser,perf", "./..."); err != nil {
+		t.Fatalf("go vet -tags browser,perf ./...:\n%s", vet)
+	}
+}
+
+// The four flags that only choose design-system files do nothing with
+// it off, so each is refused by name, even typed at its default value,
+// and before the app's directory exists.
+func TestDesignFlagsRefusedWithoutDesignSystem(t *testing.T) {
+	for _, flag := range []string{"icons=lucide", "icon-delivery=inline", "theme=day", "shell=column"} {
+		name, _, _ := strings.Cut(flag, "=")
+		t.Run(name, func(t *testing.T) {
+			refusedBeforeWriting(t, "--"+name+" does nothing with --design-system=false: leave it out",
+				"--scaffold", "bare", "--design-system=false", "--"+flag)
+		})
+	}
+}
+
+// single and accounts build their pages from the design system, so
+// only bare may leave it out. Typed --design-system=true is fine.
+func TestDesignSystemOffRefusedForSingleAndAccounts(t *testing.T) {
+	for _, args := range [][]string{{"--scaffold", "single"}, {"--scaffold", "accounts"}, nil} {
+		t.Run(strings.Join(args, " "), func(t *testing.T) {
+			refusedBeforeWriting(t, "--design-system=false works with --scaffold bare only: single and accounts build their pages from the design system",
+				append(args, "--design-system=false")...)
+		})
+	}
+	t.Chdir(t.TempDir())
+	if err := runNew([]string{"--scaffold", "bare", "--design-system=true", "--theme=plain", "x"}); err != nil {
+		t.Errorf("bare with the design system typed on: %v", err)
+	}
+}
+
+// doctor on a plain bare app has no vendored files to compare, and that
+// is not an error: it says so in one line and still runs the template
+// and locale checks, --probe's build-and-run included. Failing there
+// left a plain app no way to check its locale setup.
+func TestDoctorChecksAPlainBareApp(t *testing.T) {
+	if testing.Short() {
+		t.Skip("scaffolds, tidies and builds a whole app")
+	}
+	dir := scaffoldApp(t, "dash", "--scaffold", "bare", "--design-system=false")
+	for _, args := range [][]string{{dir}, {"--probe", dir}, {"--fix", dir}} {
+		var err error
+		out := captureStdout(t, func() { err = runDoctor(args) })
+		if err != nil {
+			t.Fatalf("doctor %v: %v\n%s", args, err, out)
+		}
+		if !strings.Contains(out, doctorNoDesignMsg) {
+			t.Errorf("doctor %v does not say the design system is absent:\n%s", args, out)
+		}
+		if args[0] == "--fix" {
+			continue
+		}
+		for _, want := range []string{"Templates:", "Locales:"} {
+			if !strings.Contains(out, want) {
+				t.Errorf("doctor %v skipped %q:\n%s", args, want, out)
+			}
+		}
+		if args[0] == "--probe" && !strings.Contains(out, `"ok":true`) {
+			t.Errorf("doctor --probe did not run the app's locale check:\n%s", out)
+		}
+	}
+	// No comparison, so no version to be skewed against.
+	if err := (&report{noDesign: true, appVersion: "v0.1.0", cliVersion: "v9.9.9"}).exit(); err != nil {
+		t.Errorf("a plain app on another version: exit %v, want none", err)
 	}
 }

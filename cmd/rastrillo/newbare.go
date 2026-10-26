@@ -20,7 +20,10 @@ const (
 // writeBare is the bare shape: one page and its route on a ServeMux,
 // the design system single writes, and go test ./... as the whole gate.
 // No database, no sign-in, no manifest and no gen/: it is for someone
-// building a small dashboard who found single too much.
+// building a small dashboard who found single too much. With
+// --design-system=false it drops the design system too, for an app that
+// writes its own HTML or JSON: the *_plain templates, which call no
+// render, pages or ErrorPage, as the app has none to compile against.
 func writeBare(o newOpts) error {
 	c, err := resolveChoices(o)
 	if err != nil {
@@ -49,18 +52,24 @@ func writeBare(o newOpts) error {
 		"__VERSION__", rastrilloVersion(), "__PACKS__\n", imports.String(), "__STRINGS__", testImports,
 		"__ROUTES__", d.routes, "__HANDLERS__\n", d.handlers, "__TESTS__\n", d.tests)
 	bare := func(file string) string { return r.Replace(scaffoldFile("bare/" + file + ".tmpl")) }
+	app, test, cmd, locale, readme := "app.go", "app_test.go", "main.go", "locale.go", "README.md"
+	if !o.DesignSystem {
+		app, test, cmd, locale, readme = "app_plain.go", "app_plain_test.go", "main_plain.go", "locale_plain.go", "README_plain.md"
+	}
 
 	files := map[string]string{
 		filepath.Join(name, "go.mod"):               bare("go.mod"),
-		filepath.Join(name, "README.md"):            bare("README.md"),
+		filepath.Join(name, "README.md"):            bare(readme),
 		filepath.Join(name, ".gitignore"):           bare("gitignore"),
-		filepath.Join(name, "cmd", name, "main.go"): bare("main.go"),
-		filepath.Join(appDir, "app.go"):             bare("app.go"),
-		filepath.Join(appDir, "app_test.go"):        bare("app_test.go"),
-		filepath.Join(appDir, "locale.go"):          bare("locale.go"),
-		filepath.Join(appDir, "render.go"):          renderSource(name, pkg, pageList(append(d.pages, "errors")...), false),
+		filepath.Join(name, "cmd", name, "main.go"): bare(cmd),
+		filepath.Join(appDir, "app.go"):             bare(app),
+		filepath.Join(appDir, "app_test.go"):        bare(test),
+		filepath.Join(appDir, "locale.go"):          bare(locale),
 	}
-	maps.Copy(files, d.files)
+	if o.DesignSystem {
+		files[filepath.Join(appDir, "render.go")] = renderSource(name, pkg, pageList(append(d.pages, "errors")...), false)
+		maps.Copy(files, d.files)
+	}
 	for path, content := range files {
 		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 			return err
@@ -71,7 +80,9 @@ func writeBare(o newOpts) error {
 	}
 
 	fmt.Printf(newBareSummaryMsg+"\n", name)
-	printIconNotice(o, c.rendered)
+	if o.DesignSystem {
+		printIconNotice(o, c.rendered)
+	}
 	fmt.Printf("\ncd %s && go mod tidy && go test ./...\n", name)
 	return nil
 }
