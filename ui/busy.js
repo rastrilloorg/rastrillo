@@ -25,6 +25,9 @@
                            included — changes nothing
      data-busy-label="…"   on the form or on the button: replacement
                            button text while it works
+     data-live-form        on a <form>: live.js's to send, and to show
+                           busy, whenever it sends it; this file arms it
+                           only when live.js lets it go natively
 
    A script that handles a submit itself (a fetch, say) cancels it in a
    listener on the form or the document, as it would anyway: those run
@@ -88,9 +91,17 @@
     });
   }
 
-  function busySubmit(e) {
+  function busySubmit(e, late) {
     var form = e.target;
     if (!form || form.tagName !== "FORM") return;
+    // A swapping form is live.js's whenever live.js sends it: arming it
+    // here too would hand it back a tick after live.js cancels the
+    // submit, clearing live.js's busy state mid-request. Whether this
+    // capture listener runs before live.js's is down to script order, so
+    // it is armed late, from the window listener, and only if nobody
+    // cancelled it; one live.js leaves to the browser (a GET, another
+    // origin, a page live.js is not running on) keeps the rule.
+    if (form.hasAttribute("data-live-form") && !late) return;
     // pow.js owns every submit of a form it protects: it cancels it,
     // shows its own busy state (this file's vocabulary) while it waits,
     // and re-sends it marked data-pow-released. Arming here before that
@@ -184,6 +195,10 @@
     var form = e.target;
     if (!form || form.tagName !== "FORM") return;
     if (form === releasing) { releasing = null; return; }
+    if (form.hasAttribute("data-live-form")) {
+      if (e.defaultPrevented) return;
+      busySubmit(e, true);
+    }
     // Never hold a pow form: pow has already held it while it solved,
     // and a second hold is a second wait for nothing. Worse, holding it
     // here and re-sending later would send it back through pow, which

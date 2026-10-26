@@ -9,8 +9,10 @@
    regions again, from its own URL, as its own viewer.
 
    Vocabulary:
-     <meta name="rastrillo-live" content="PATH" data-paused="TEXT">
-                         the stream, and the note shown when it stops
+     <meta name="rastrillo-live" content="PATH" data-paused="TEXT"
+       data-unconfirmed="TEXT">
+                         the stream, the note shown when it stops, and
+                         the note for a form whose outcome is unknown
      data-live="T@V …"   on a region with an id: its topics, each at the
                          version it was rendered from
      data-live-boot="B"  the server process that rendered it
@@ -18,6 +20,9 @@
                          edited; it is fetched when the editing ends
      id="notice"         the role="status" notice: its contents change
                          in place, the element is never replaced
+     data-live-form="R …" on a <form>: sent with fetch, asking for its
+                         own region (its closest data-live), regions R
+                         and the notice, and swapping in the answer
 
    One EventSource per page, GET PATH?boot=B&t=T@V&t=T@V, each topic at
    the lowest version a region holds. On a change event, each region
@@ -43,7 +48,19 @@
      clears once the stream is open and no region's fetches are failing.
    - Hidden a minute, the stream closes until shown. pagehide closes it
      and abandons fetches; a back/forward restore reopens it from the
-     regions' versions. A prerendered page starts once shown. */
+     regions' versions. A prerendered page starts once shown.
+
+   A swapping form is sent as the browser would send it (the submitter
+   and its form* overrides too), plus Rastrillo-Page; one with a target,
+   a GET, another origin or text/plain is left to the browser. Its
+   submitter shows busy.js's busy state (busy.js leaves these forms
+   here) for at least 650ms, a second submit is refused, and its
+   regions' stream fetches wait. A 204 navigates; regions swap in (on
+   400 or 422 focus goes to the first [aria-invalid="true"]); a whole
+   page replaces this one. No answer, a 5xx or no regions is an unknown
+   outcome: the input stays, the notice says data-unconfirmed, the
+   regions are fetched again, and nothing is resent. A form with its
+   own submit handler should not be one: this file sends it first. */
 (function () {
   "use strict";
 
@@ -72,7 +89,7 @@
 
   function state(name) {
     return regions[name] || (regions[name] = {
-      last: 0, busy: false, queued: false, stale: false, tries: 0, retry: 0, failed: false
+      last: 0, busy: false, queued: false, stale: false, tries: 0, retry: 0, failed: false, forms: 0
     });
   }
 
@@ -167,7 +184,9 @@
   function refresh(name) {
     var st = state(name), el = document.getElementById(name), run = ctl;
     if (!run || !el) return;
-    if (st.busy) { st.queued = true; return; }
+    // Behind a form's fetch too: started later, this one would drop the
+    // form's answer.
+    if (st.busy || st.forms) { st.queued = true; return; }
     if (editing(el)) { stale(el); return; }
     clearTimeout(st.retry);
     st.busy = true;
@@ -188,14 +207,14 @@
   }
 
   // send fetches regions and applies the answer: the one way anything
-  // reaches the page, so a form section beside this one gets ordering,
-  // focus and the notice rule by calling it with its own URL and init
-  // (headers a plain object or Headers; init is not changed). Every
-  // region named counts this fetch as the last it started, so whatever
-  // it had in flight is superseded. stream turns on the edit checks: a
-  // form's answer must swap its own form, which holds unsent input and
-  // often the focus.
-  function send(url, names, init, stream) {
+  // reaches the page, so the forms below get ordering, focus and the
+  // notice rule from it (init's headers a plain object or Headers; init
+  // is not changed). Every region named counts this fetch as the last it
+  // started, so whatever it had in flight is superseded. stream turns on
+  // the edit checks: a form's answer must swap its own form, which holds
+  // unsent input and often the focus. The swap waits for hold, a form's
+  // minimum busy time. A non-answer rejects with the Response as res.
+  function send(url, names, init, stream, hold) {
     var id = ++seq, run = ctl, opts = {}, k;
     if (!run) return Promise.reject(new Error("live.js is stopped"));
     names.forEach(function (n) { state(n).last = id; });
@@ -223,10 +242,14 @@
       // redirect ends on a whole sign-in page, whose notice would
       // otherwise be swapped into this one.
       var held = res.headers.get("Rastrillo-Regions");
-      if (held === null) throw new Error("not a region answer: " + res.status);
+      if (held === null) {
+        var err = new Error("not a region answer: " + res.status);
+        err.res = res;
+        throw err;
+      }
       held = held.split(" ");
-      return res.text().then(function (html) {
-        if (run === ctl) apply(html, names.filter(function (n) { return held.indexOf(n) >= 0; }), id, stream);
+      return Promise.all([res.text(), hold]).then(function (r) {
+        if (run === ctl) apply(r[0], names.filter(function (n) { return held.indexOf(n) >= 0; }), id, stream);
         return res;
       });
     });
@@ -262,12 +285,15 @@
     if (slot) slot.replaceWith(notice);
     old.replaceWith(next);
     state(next.id).stale = false;
-    if (!inside) return;
-    var to = focused !== old && focused.id ? find(next, focused.id) : null;
+    if (inside) land(next, focused !== old && focused.id);
+  }
+
+  function land(region, id) {
+    var to = id ? find(region, id) : null;
     if (to) to.focus({ preventScroll: true });
     if (!to || document.activeElement !== to) {
-      next.setAttribute("tabindex", "-1");
-      next.focus({ preventScroll: true });
+      region.setAttribute("tabindex", "-1");
+      region.focus({ preventScroll: true });
     }
   }
 
@@ -361,6 +387,145 @@
     }
   }
 
+  // Forms that swap.
+
+  var HOLD_MS = 650; // busy.js's: a quick answer reads as a beat
+  var out = []; // [form, submitter] of each form showing busy
+
+  function submitted(e) {
+    var form = e.target, btn = e.submitter || null, run = ctl;
+    if (!run || e.defaultPrevented || !window.fetch || !form || form.tagName !== "FORM" ||
+      !form.hasAttribute("data-live-form")) return;
+    // pow.js holds its form's submit while it solves; only its re-send
+    // (marked released) is ready to go.
+    if (form.hasAttribute("data-pow-form") && !form.hasAttribute("data-pow-released")) return;
+    // getAttribute: a control named "action" or "method" shadows the
+    // form's own properties.
+    function attr(n) {
+      return btn && btn.hasAttribute("form" + n) ? btn.getAttribute("form" + n) : form.getAttribute(n);
+    }
+    var to = attr("target"), type = (attr("enctype") || "").toLowerCase(), url, body, data;
+    try { url = new URL(attr("action") || location.href, document.baseURI); } catch (x) { return; }
+    if (to && to !== "_self" || !/^post$/i.test(attr("method") || "") ||
+      url.origin !== location.origin || type === "text/plain") return;
+    if (form.getAttribute("aria-busy") === "true") { e.preventDefault(); return; }
+    // Before anything is cancelled or disabled: if this throws the
+    // browser still sends the form.
+    body = data = new FormData(form, btn || undefined);
+    if (type !== "multipart/form-data") {
+      body = new URLSearchParams();
+      // A file goes as its name, as the browser sends it urlencoded.
+      data.forEach(function (v, k) { body.append(k, typeof v === "string" ? v : v.name); });
+    }
+    e.preventDefault();
+
+    var own = form.closest("[data-live]"), names = [], entry = [form, btn], settled = false;
+    var had = own && own.contains(document.activeElement) ? document.activeElement : null;
+    ((own ? own.id : "") + " " + form.getAttribute("data-live-form") + " " + NOTICE).split(/\s+/).forEach(function (n) {
+      if (n && names.indexOf(n) < 0) names.push(n);
+    });
+    var hold = new Promise(function (r) { setTimeout(r, HOLD_MS); });
+    busy(form, btn);
+    out.push(entry);
+    names.forEach(function (n) { state(n).forms++; });
+
+    // Lets the regions' queued stream fetches go. keep leaves the busy
+    // state up for a navigation, as a native submit's stays up until
+    // the next page.
+    function settle(keep) {
+      if (settled) return;
+      settled = true;
+      if (!keep) release(entry);
+      names.forEach(function (n) {
+        var st = state(n);
+        if (--st.forms || !st.queued) return;
+        st.queued = false;
+        refresh(n);
+      });
+    }
+
+    // Not a failure: the POST may have committed and only the redirected
+    // GET failed. Resending could write twice.
+    function unknown() {
+      var n = document.getElementById(NOTICE), text = meta.getAttribute("data-unconfirmed");
+      names.forEach(function (x) { if (x !== NOTICE) state(x).queued = true; });
+      settle();
+      if (run === ctl && n && text) n.textContent = text;
+    }
+
+    send(url.href, names, { method: "POST", body: body, headers: { "Rastrillo-Page": location.pathname } }, false, hold).then(function (res) {
+      // This 204 has a Location: send navigated, if it is local.
+      if (res.status === 204) return settle(localPath(res.headers.get("Rastrillo-Location")));
+      if (run !== ctl) return settle();
+      if (!res.headers.get("Rastrillo-Regions")) return unknown();
+      settle();
+      var now = own && own.id && document.getElementById(own.id), a = document.activeElement, bad;
+      // Disabling the focused submitter dropped focus to <body>, so the
+      // swap had none to carry over.
+      if (had && now && now !== own && (!a || a === document.body)) land(now, had.id);
+      if (res.status === 400 || res.status === 422) {
+        bad = (now || form).querySelector('[aria-invalid="true"]');
+        if (bad) bad.focus();
+      }
+      // A removed focused element fires no focusout, so a region waiting
+      // for the editing to end would wait for the next one.
+      edited();
+    }, function (err) {
+      var res = err && err.res;
+      if (run !== ctl || res && res.status === 204) return settle(); // a 204 stays put
+      if (!res || res.status >= 500) return hold.then(unknown);
+      return Promise.all([res.text(), hold]).then(function (r) {
+        whole(r[0], res);
+        settle();
+      }, unknown);
+    });
+  }
+
+  // As the browser would have shown it. The stream and fetches stop
+  // first: the document is replaced, but this closure lives on.
+  function whole(html, res) {
+    stop();
+    if (res.redirected) history.replaceState(null, "", res.url);
+    document.open();
+    document.write(html);
+    document.close();
+  }
+
+  // busy.js's look. disabled waits a tick, as busy.js's does, so other
+  // submit listeners in this dispatch see the submitter as clicked.
+  function busy(form, btn) {
+    form.setAttribute("aria-busy", "true");
+    if (!btn || btn.getAttribute("data-busy") === "false" || form.getAttribute("data-busy") === "false") return;
+    var label = btn.getAttribute("data-busy-label") || form.getAttribute("data-busy-label");
+    var k = btn.tagName === "INPUT" ? "value" : "textContent", spin = document.createElement("span");
+    btn.setAttribute("aria-busy", "true");
+    if (label) {
+      btn.setAttribute("data-idle-label", btn[k]);
+      btn[k] = label;
+    }
+    if (k !== "value") {
+      spin.setAttribute("rst-spin", "");
+      spin.setAttribute("aria-hidden", "true");
+      btn.insertBefore(spin, btn.firstChild);
+    }
+    setTimeout(function () { if (btn.getAttribute("aria-busy") === "true") btn.disabled = true; }, 0);
+  }
+
+  function release(entry) {
+    var i = out.indexOf(entry), form = entry[0], btn = entry[1], spin, idle;
+    if (i < 0) return;
+    out.splice(i, 1);
+    form.removeAttribute("aria-busy");
+    if (!btn || btn.getAttribute("aria-busy") !== "true") return;
+    spin = btn.querySelector("[rst-spin]");
+    idle = btn.getAttribute("data-idle-label");
+    btn.disabled = false;
+    btn.removeAttribute("aria-busy");
+    if (spin) spin.remove();
+    if (idle !== null) btn[btn.tagName === "INPUT" ? "value" : "textContent"] = idle;
+    btn.removeAttribute("data-idle-label");
+  }
+
   function run() {
     ctl = new AbortController();
     wait = 1000;
@@ -382,8 +547,14 @@
         if (regions[name].failed) { regions[name].failed = false; regions[name].tries = 0; refresh(name); }
       }
     });
+    document.addEventListener("submit", submitted, true);
     addEventListener("pagehide", stop);
-    addEventListener("pageshow", function (e) { if (e.persisted && !ctl) run(); });
+    addEventListener("pageshow", function (e) {
+      if (!e.persisted) return;
+      // Restored as it was left: a form that navigated still looks busy.
+      out.slice().forEach(release);
+      if (!ctl) run();
+    });
     run();
   }
 

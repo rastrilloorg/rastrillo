@@ -44,6 +44,9 @@ func TestLiveContract(t *testing.T) {
 		`meta[name="rastrillo-live"]`, "data-paused", "data-live", "data-live-boot", "data-live-stale",
 		`"change"`, "lastEventId", "boot=", "&t=",
 		"Rastrillo-Fragment", "Rastrillo-Regions", "Rastrillo-Location",
+		// Swapping forms: the opt-in, the header that names the page
+		// the form is on, and the note for an unknown outcome.
+		"data-live-form", "Rastrillo-Page", "data-unconfirmed", `[aria-invalid="true"]`,
 		"prerenderingchange", "visibilitychange", "pagehide", "pageshow", "persisted", "focusout",
 		// The same local-path guard rastrillo.js applies to the header
 		// that navigates.
