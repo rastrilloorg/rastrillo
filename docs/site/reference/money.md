@@ -7,10 +7,10 @@ Parse decimal amounts into signed `int64` minor units with `money`. The package 
 Install it with:
 
 ```sh
-go get amadan.net/rastrillo/rastrillo/money@v0.1.0
+go get amadan.net/rastrillo/rastrillo/money@v0.2.0
 ```
 
-The package is an independent nested module in the Rastrillo repository. Its release tags use the `money/` prefix, such as `money/v0.1.0`.
+The package is an independent nested module in the Rastrillo repository. Its release tags use the `money/` prefix, such as `money/v0.2.0`.
 
 ```go
 package main
@@ -46,6 +46,62 @@ This prints:
 This package does not format for a locale. In a rastrillo app,
 [`currency`](/docs/reference/currency) does. Keep price limits, tax,
 exchange rates and payment-provider scaling in your application.
+
+## Amount
+
+`Amount` holds an `int64` minor-unit count and a currency string. There
+is no constructor that takes a float: an `Amount` either came from an
+integer, or from another `Amount`.
+
+```go
+a := money.New(1000, "GBP") // £10.00
+z := money.Zero("GBP")
+a.Minor()    // 1000
+a.Currency() // "GBP"
+a.IsZero()   // false
+a.Negative() // false
+a.String()   // "GBP 1000" — a debug form, not for a reader
+```
+
+`Add(b Amount) (Amount, error)` and `Sub(b Amount) (Amount, error)`
+return `ErrCurrencyMismatch` for two different currencies and
+`ErrOverflow` for a result outside `int64` — never a panic and never a
+silent wrap. The two currency strings are compared with `==`; neither
+side is folded to a common case first, so an `Amount` built from
+`"GBP"` and one built from `"gbp"` mismatch. Normalise with
+[`currency.Normalize`](/docs/reference/currency) before constructing an
+`Amount` if that matters to you — `MinorUnits`'s own case-insensitivity
+above is a different kind of lookup (a decimal-places guess that must
+never fail) and is not a precedent for `Amount` equality.
+
+`Neg() Amount` negates; its one unreachable edge is `math.MinInt64`
+minor units, which cannot be negated in `int64` and is accepted as a
+value no real caller's arithmetic produces. `MulInt(n int64) (Amount,
+error)` multiplies by an integer, overflow-checked. `Cmp(b Amount)
+(int, error)` compares, returning `-1`, `0` or `1`, and the same
+`ErrCurrencyMismatch` as `Add` and `Sub` for two different currencies.
+
+## AllocateProRata
+
+`AllocateProRata(total Amount, weights []int64) ([]Amount, error)`
+splits `total` across `len(weights)` parts in proportion to `weights`,
+with no minor unit lost and none invented: the parts always sum to
+exactly `total`, including when `total` is negative.
+
+```go
+parts, err := money.AllocateProRata(money.New(100, "GBP"), []int64{1, 1, 1})
+// parts = [34, 33, 33] pence — 100/3 floors to 33 each, and the one
+// leftover penny goes to the part whose floored split lost the most
+// in rounding (the largest-remainder method), ties broken by the
+// lowest index.
+```
+
+A negative weight is `ErrNegativeWeight` — a smaller share and a
+negative one are different operations, and this is only the first. No
+weights at all is `ErrNoWeights`. Weights that are all zero are only
+valid when `total` is also zero (every part is then `Zero`); a
+non-zero `total` with nothing to divide it by is `ErrZeroWeightSum`,
+because there is no basis for the split.
 
 ## The storage set
 
