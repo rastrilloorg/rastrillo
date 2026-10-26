@@ -153,10 +153,15 @@ Rules:
 - **Only marked regions render.** The server renders a name only if
   this page marked it as a region. It never executes a template by an
   arbitrary name.
-- **Wrong page, no render.** A request naming no region this page has
-  answers 204 with `Rastrillo-Location` set to its own path, which the
-  shim already reads as "navigate there". It decides this before taking
-  the flash, so the page it navigates to still shows the notice.
+- **Wrong page, no render.** A form's fetch also sends the path of the
+  page it came from (`Rastrillo-Page`). If the page answering is not
+  that page (the form's redirect went elsewhere), it answers 204 with
+  `Rastrillo-Location` set to its own path, which the shim already
+  reads as "navigate there". It decides this from the page's identity,
+  not from which region names happen to match (every layout has a
+  notice), and before taking the flash, so the page it navigates to
+  still shows the notice. A request naming only regions this page
+  doesn't have answers the same way.
 - **The flash is taken only by a render that shows it.** A fragment
   request that does not ask for the notice region must not take the
   flash. A stream-triggered fetch never asks for it; a form's fetch
@@ -165,7 +170,9 @@ Rules:
 - **Stable containers.** Every region's element is always present, even
   when empty: a list with nothing in it renders its empty container.
   That includes the notice, which every layout renders as a persistent,
-  empty `role="status"` element. A region in the response with no
+  empty `role="status"` element. The shim updates the notice's contents
+  in place and never replaces the element, because a status element
+  only announces what is added to it after it exists. A region in the response with no
   element on the page is ignored. A requested region missing from the
   response is left as it is. Regions do not nest.
 - **Not cached.** Fragment and full responses for a page that has
@@ -194,25 +201,37 @@ an in-memory hub.
   again, and tell them someone wrote. An undeclared name or a refused
   check fails the stream, so a client can neither grow the hub's maps
   nor listen in.
-- **Versions, so a reconnect costs nothing when nothing changed.** The
-  hub counts every `Notify` with one sequence number, and remembers,
-  per topic, the number of its last change. Together with a boot ID
-  that is new each time the process starts, that gives a version
-  (`<boot>.<seq>`).
-  - Every page that has regions renders the version current when it
-    was rendered.
-  - The client opens the stream with the version it has. The server
-    first sends an event for every subscribed topic changed since then,
-    then streams live ones. Each event carries the new version.
-  - A different boot ID means the process restarted, so every topic
+- **Versions, so a reconnect costs nothing when nothing changed.**
+  Every topic (name and key) has its own counter, raised by each
+  `Notify` that names it. There is no shared counter: a viewer only
+  ever sees the versions of topics they may follow, so versions reveal
+  nothing about anyone else's writes. A boot ID, new each time the
+  process starts, prefixes them all.
+  - **Captured before the data is read.** The versions a page or region
+    is rendered with are read at the start of the request, before the
+    handler queries anything (middleware or the render helper's
+    request-scoped snapshot). A write that lands between the read and
+    the render then shows up as newer, so the worst case is one extra
+    fetch, never a missed change.
+  - **Kept on the region.** Each region carries the versions of its
+    topics as of its own render, in the HTML. The truth about what a
+    page has seen lives in the DOM, not in a cursor the shim advances.
+    A fetch that was abandoned (`pagehide`, an error) leaves the region
+    with its old versions, so nothing is acknowledged that never landed.
+  - **Catching up.** The client opens the stream with, for each topic,
+    the lowest version any region on the page holds for it. The server
+    subscribes first, then sends an event for every requested topic
+    newer than that, then streams live events, so nothing falls in the
+    gap between catch-up and live. Each event carries one topic and its
+    new version.
+  - **A different boot ID** means the process restarted, so every topic
     counts as changed.
 
-  This closes the gap between rendering the page and subscribing, and
-  it means a reconnect, a return from a hidden tab or a back/forward
-  restore fetches only what actually changed. A reconnect with nothing
-  changed makes **no** fragment request. That matters for sleep:
-  automatic refetches would otherwise be ordinary requests that keep an
-  instance awake.
+  This means a reconnect, a return from a hidden tab or a back/forward
+  restore fetches only what actually changed, and a reconnect with
+  nothing changed makes **no** fragment request. That matters for
+  sleep: automatic refetches would otherwise be ordinary requests that
+  keep an instance awake.
 - **One stream per page**, served by a handler the app mounts behind
   its own auth. Each event's data is a topic and a version, nothing
   else. Auth and the topic checks run when the stream opens; a revoked
@@ -255,9 +274,11 @@ topics its regions name, never one per region.
   with unsent input) is not swapped by a stream event; it is marked
   stale and fetched when the editing ends.
 - **Failed fetches are retried, then reported.** A fetch that fails
-  while the stream is healthy is kept and retried with bounded backoff.
-  If it is still failing after the paused grace, the page shows the
-  same paused note as a dead stream (section 5).
+  while the stream is healthy is kept and retried a bounded number of
+  times with backoff. Then the page shows the same paused note as a
+  dead stream (section 5) and stops retrying until the tab becomes
+  visible again or the page is refreshed. Retries are ordinary requests,
+  so they must not run forever.
 - **Focus.** After a swap, if the focused element's `id` is in the new
   region, focus moves to its replacement. If it is gone (the row was
   approved away), focus moves to the region itself, which takes
@@ -266,8 +287,8 @@ topics its regions name, never one per region.
   hidden for a while, the stream closes, and it reopens when the tab is
   visible again. On `pagehide` the stream closes and in-flight fetches
   are abandoned at once. On `pageshow` from the back/forward cache, the
-  stream reopens with the page's version, which fetches only what
-  changed. An interrupted form submit is never replayed.
+  stream reopens from the versions the regions hold, which fetches only
+  what changed. An interrupted form submit is never replayed.
 - **Prerender.** The stream opens on `prerenderingchange`, as polling
   does.
 
@@ -281,7 +302,8 @@ script it is an ordinary form. With it:
    encoding, the submitter's name and value, and the submitter's
    `formaction`/`formmethod`/`formenctype` overrides. It adds
    `Rastrillo-Fragment` naming the form's own region, any regions the
-   form names as targets, and the notice region. A form the shim cannot
+   form names as targets, and the notice region, and `Rastrillo-Page`
+   with the current page's path. A form the shim cannot
    send faithfully (a `target`, a cross-origin action, a GET form)
    submits natively, as today.
 2. **Success that comes back here swaps.** The handler does what it
@@ -291,9 +313,9 @@ script it is an ordinary form. With it:
    handler change when the handler already redirects back to the page
    the form is on.
 3. **Success that goes elsewhere navigates.** If the redirect lands on
-   another page, that page has none of the regions, so it answers 204
-   and `Rastrillo-Location` without taking the flash (section 1), and
-   the shim navigates there. The write happened; a full GET of the
+   another page, it sees that `Rastrillo-Page` names a different page,
+   answers 204 and `Rastrillo-Location` without taking the flash
+   (section 1), and the shim navigates there. The write happened; a full GET of the
    target is correct and shows the notice. A redirect to another origin
    fails the fetch; the shim treats it as an unknown outcome (step 5).
 4. **Errors in place.** A validation failure re-renders the form as
@@ -329,42 +351,53 @@ uses the same status region.
 
 Today an open stream keeps a CARLOS instance awake: the activator only
 sleeps an instance with nothing in flight
-(`carlos/platform internal/activator/activator.go:519`). A dashboard
-left open would keep Patrix running all night.
+(`carlos/platform internal/activator/activator.go:523-527`). A
+dashboard left open would keep Patrix running all night.
 
-What Paul decided: the stream dying when the instance sleeps is fine,
-and a refresh, a real request, is what wakes it.
+What Paul decided: the stream must let the instance sleep, and resume
+when the instance wakes for any other reason. He chose to have the
+CARLOS edge hold the stream, over having the browser retry, and the
+request is filed:
+[carlos/platform#432](https://amadan.net/carlos/platform/-/discussion/432).
 
-CARLOS already has exactly that behaviour for sidecars: a request
-marked `X-Carlos-Sidecar` earns no activity credit, gets a 503 while the
-instance sleeps, and never wakes it (`activator.go:83-90`, checked
-before the wake path at `:2808`). We do not borrow a sidecar's header
-from a browser. **This design depends on a request to CARLOS** to offer
-the same rule for live streams.
+**With the edge holding the stream** (once #432 ships):
 
-- **The marker must be on the request.** The activator decides whether
-  to wake as the request arrives, before any response exists, and
-  EventSource cannot send custom headers. So the marker is in the URL
-  (a path prefix or a query parameter). The stream's URL shape becomes
-  a contract between Rastrillo and the platform, agreed in the CARLOS
-  request before the handler and the shim are written.
-- **Only the stream needs it.** Thanks to versions (section 2), the
-  page makes fragment requests only when something actually changed,
-  and a change is itself activity. Reconnects with nothing new make no
-  ordinary requests.
-- **Asleep looks like a failed stream.** While the instance sleeps, the
-  stream request gets a 503 and never wakes it. The shim keeps retrying
-  with backoff. When someone else's request wakes the instance, the
-  next retry succeeds; the new boot ID makes every region fetch once,
-  and the page is live again. A refresh wakes it straight away.
+- The edge keeps the browser's connection open while the instance
+  sleeps, sends its own heartbeats, and gives the stream no activity
+  credit, so the instance sleeps after its normal idle window.
+- When anything else wakes the instance, the edge reopens the upstream
+  with `Last-Event-ID` and relays events again. The browser sees one
+  unbroken stream and resumes at once.
+- So Rastrillo's stream must be resumable from `Last-Event-ID`: every
+  event carries an `id:` that encodes the versions the client has (the
+  builder picks the encoding), and a connect with `Last-Event-ID`
+  catches up exactly like a connect with versions in the URL.
+- Where the stream lives, and how a route opts in, is the platform's
+  call in #432. Rastrillo puts its stream wherever that says.
+
+**Until #432 ships:** live streams stay off on hibernating routes.
+Pages there are static, as today; live updates work on always-on
+routes. How Rastrillo knows which kind of route it is on is part of the
+#432 contract; until the platform supplies a signal, the app turns live
+streams on explicitly, and Patrix does not.
+
+**The browser's own reconnect** still matters off CARLOS, and when the
+edge gives up on a held stream:
+
+- The shim retries with backoff (section 3) from the regions' versions.
 - **The paused note.** If the stream has been down longer than a short
-  grace (so a deploy's restart doesn't flash it), the page says live
-  updates have paused and a refresh resumes them. The wording goes
-  through copy review, and it is a translated string.
-- **Proven end to end.** Adoption waits on an integration test against
-  the activator: a page with an open stream and no other traffic lets
-  the instance sleep after the idle window, and the stream's retries do
-  not wake it.
+  grace (so a restart doesn't flash it), or region fetches keep failing,
+  the page says live updates have paused and a refresh resumes them.
+  The wording goes through copy review, and it is a translated string.
+- **Only changes cost requests.** Thanks to versions, a reconnect with
+  nothing new makes no ordinary request, and a change is itself
+  activity.
+
+**Proven end to end.** Turning live streams on for a hibernating route
+waits on an integration test against the activator and edge: a page
+with an open stream and no other traffic lets the instance sleep after
+the idle window; another request wakes it; the page catches up without
+a reload.
 
 ## Proving it
 
@@ -386,8 +419,12 @@ the same rule for live streams.
   a field being edited; focus never falls to `<body>`; an unknown
   outcome keeps typed input and does not resubmit; `busy.js` and the
   shim in both listener orders; a prerendered page opens no stream;
-  back/forward restore catches up; with scripts off the example's flows
-  still pass.
+  back/forward restore catches up; a viewer's versions never move for
+  topics they cannot follow; a write between the version read and the
+  render is caught up; an abandoned fetch leaves its region's versions
+  unchanged; a form whose redirect lands elsewhere navigates and shows
+  the notice; resuming from `Last-Event-ID` matches resuming from the
+  URL; with scripts off the example's flows still pass.
 - The gates already in place hold: axe, translation parity (the paused
   note is new copy), the shim's size and inertness tests, `-race` on
   the new package.
@@ -398,8 +435,9 @@ the same rule for live streams.
 - Not LiveView, not a Next.js-style runtime. Extend what jobs do.
 - Both pieces: the change stream and forms that swap.
 - Patrix's dashboard is the target, Tito Go only an example.
-- Sleep: the stream dying when the instance sleeps is fine; a refresh
-  wakes it.
+- Sleep: the stream must let the instance sleep. The CARLOS edge holds
+  it and resumes it on wake (option 2, filed as carlos/platform#432);
+  live streams stay off on hibernating routes until that ships.
 
 ## My calls (check these)
 
@@ -408,8 +446,10 @@ the same rule for live streams.
 - A request for regions the page doesn't have answers 204 and
   `Rastrillo-Location`, before the flash is taken.
 - Topics can carry a key, and every topic is checked per viewer.
-- Versions (a boot ID and a sequence number) instead of fetching every
-  region on every reconnect.
+- Per-topic versions, read before the data and kept on each region,
+  instead of fetching every region on every reconnect.
+- A form sends the page it came from, so navigation is decided by page
+  identity, not by region names.
 - Swapping forms rely on the redirect being followed, so the success
   path needs no handler change when the handler already redirects back.
 - An unknown outcome refetches and asks the person, never resubmits.
@@ -419,6 +459,16 @@ the same rule for live streams.
   as today.
 - The paused note is shown, not silent.
 - Not migrating jobs onto the new stream in this branch.
+
+## Known limitations, accepted
+
+- The flash is one cookie per browser, so two forms submitted at the
+  same moment in two tabs can swap notices. Full-page post-redirect-get
+  has the same behaviour today.
+- Served over HTTP/1.1 (off CARLOS), a browser's six connections per
+  origin are shared by every open tab's stream. Hidden tabs closing
+  their streams bounds this; serving over HTTP/2 removes it, and CARLOS
+  does.
 
 ## Left to the builder
 
