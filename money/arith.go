@@ -34,14 +34,19 @@ func (a Amount) Sub(b Amount) (Amount, error) {
 
 // Neg returns -a. The one value it cannot correctly negate is a minor
 // unit count of exactly math.MinInt64, whose negation does not fit in
-// an int64 and would silently wrap back to itself; Neg's contract has
-// no error return, and math.MinInt64 minor units (tens of quadrillions
-// of a two-decimal currency's major unit) is not a value a real
-// caller's arithmetic produces, so this is accepted as an unreachable
-// edge rather than plumbed through with an error the signature does
-// not have. Sub and MulInt do not depend on Neg, so they are not
-// exposed to this case.
+// an int64 and would silently wrap back to itself — a wrong sign
+// returned with no error, which is worse than Neg having no error
+// return at all. math.MinInt64 minor units (tens of quadrillions of a
+// two-decimal currency's major unit) is not a value a real caller's
+// arithmetic produces, so Neg's contract still has no error return for
+// it; instead it panics, trading a silent wrong answer for a loud one,
+// consistent with every other operation in this file never answering
+// an overflow quietly. Sub and MulInt do not depend on Neg, so they
+// are not exposed to this case.
 func (a Amount) Neg() Amount {
+	if a.minor == math.MinInt64 {
+		panic("money: Neg of math.MinInt64 minor units has no representable result")
+	}
 	return Amount{minor: -a.minor, currency: a.currency}
 }
 

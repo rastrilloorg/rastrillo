@@ -83,6 +83,21 @@ func TestMulIntMinInt64TimesMinusOne(t *testing.T) {
 	}
 }
 
+func TestNegMinInt64Panics(t *testing.T) {
+	// Found by cross-provider review on this branch (gpt-6-luna, max
+	// reasoning): math.MinInt64 is reachable through the public API
+	// (New, or MulInt producing it) despite the old doc comment calling
+	// it unreachable, and a naive -a.minor silently returns a.minor
+	// unchanged — the wrong sign, with no error. Neg must fail loudly
+	// instead.
+	defer func() {
+		if recover() == nil {
+			t.Fatal("Neg(MinInt64) did not panic; want a panic rather than a silently wrong sign")
+		}
+	}()
+	New(math.MinInt64, "GBP").Neg()
+}
+
 func TestNegAndZeroAndIsZero(t *testing.T) {
 	z := Zero("GBP")
 	if !z.IsZero() {

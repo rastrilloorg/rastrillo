@@ -89,9 +89,10 @@ case-insensitivity above is a different kind of lookup (a
 decimal-places guess that must never fail) and is not a precedent for
 `Amount` equality.
 
-`Neg` negates; its one unreachable edge is `math.MinInt64` minor
-units, which cannot be negated in `int64` and is accepted as a value
-no real caller's arithmetic produces. `MulInt` multiplies by an
+`Neg` negates; it panics for `math.MinInt64` minor units, which cannot
+be negated in `int64` and is not a value a real caller's arithmetic
+produces — a loud failure rather than the wrong sign returned silently.
+`MulInt` multiplies by an
 integer, overflow-checked. `Cmp` compares, returning `-1`, `0` or `1`,
 and the same `ErrCurrencyMismatch` as `Add` and `Sub` for two
 different currencies.
