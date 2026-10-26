@@ -280,6 +280,6 @@ count as a loss and is not reported: a non-breaking space and its
 narrower relatives as a plain space, a soft hyphen as nothing, a
 non-breaking hyphen or minus sign as a plain hyphen, and the prime
 marks as plain quotes. A tab, line feed or carriage return is drawn as
-a space, and any other control character is dropped. A caller
-comparing drawn text back against its own source has to know these do
-not round-trip.
+a space, and any other control character below U+0020 is dropped. A
+caller comparing drawn text back against its own source has to know
+these do not round-trip.
