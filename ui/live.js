@@ -59,8 +59,12 @@
    400 or 422 focus goes to the first [aria-invalid="true"]); a whole
    page replaces this one. No answer, a 5xx or no regions is an unknown
    outcome: the input stays, the notice says data-unconfirmed, the
-   regions are fetched again, and nothing is resent. A form with its
-   own submit handler should not be one: this file sends it first. */
+   regions are fetched again, and nothing is resent. It is sent from
+   the window, after every other submit handler, so one that cancels
+   the submit (a confirm, its own fetch) wins and nothing is sent.
+   Unlike a native submit, a whole page from a redirect replaces the
+   form page's history entry (Back skips it), and one answered directly
+   (a 4xx, say) keeps the form page's URL. */
 (function () {
   "use strict";
 
@@ -392,23 +396,43 @@
   var HOLD_MS = 650; // busy.js's: a quick answer reads as a beat
   var out = []; // [form, submitter] of each form showing busy
 
-  function submitted(e) {
-    var form = e.target, btn = e.submitter || null, run = ctl;
-    if (!run || e.defaultPrevented || !window.fetch || !form || form.tagName !== "FORM" ||
-      !form.hasAttribute("data-live-form")) return;
-    // pow.js holds its form's submit while it solves; only its re-send
-    // (marked released) is ready to go.
-    if (form.hasAttribute("data-pow-form") && !form.hasAttribute("data-pow-released")) return;
+  // Whether this file sends e's form: read at both ends of the dispatch,
+  // since a handler in between may change the form.
+  function plan(e) {
+    var form = e.target, btn = e.submitter || null, to, type, url;
+    if (!ctl || !window.fetch || !form || form.tagName !== "FORM" || !form.hasAttribute("data-live-form")) return null;
     // getAttribute: a control named "action" or "method" shadows the
     // form's own properties.
     function attr(n) {
       return btn && btn.hasAttribute("form" + n) ? btn.getAttribute("form" + n) : form.getAttribute(n);
     }
-    var to = attr("target"), type = (attr("enctype") || "").toLowerCase(), url, body, data;
-    try { url = new URL(attr("action") || location.href, document.baseURI); } catch (x) { return; }
+    to = attr("target");
+    type = (attr("enctype") || "").toLowerCase();
+    try { url = new URL(attr("action") || location.href, document.baseURI); } catch (x) { return null; }
     if (to && to !== "_self" || !/^post$/i.test(attr("method") || "") ||
-      url.origin !== location.origin || type === "text/plain") return;
-    if (form.getAttribute("aria-busy") === "true") { e.preventDefault(); return; }
+      url.origin !== location.origin || type === "text/plain") return null;
+    return { form: form, btn: btn, url: url, type: type };
+  }
+
+  // Capture: claim the submit (or refuse a second), but send nothing.
+  // Every other handler runs after this one, and one that cancels (a
+  // confirm, its own fetch, pow.js holding its form) must win: the
+  // browser sends nothing for a cancelled submit. e.liveForm tells
+  // busy.js's window listener, in either order, that the form is ours.
+  function claim(e) {
+    if (e.defaultPrevented || !plan(e)) return;
+    if (e.target.getAttribute("aria-busy") === "true") e.preventDefault();
+    else e.liveForm = true;
+  }
+
+  // Window, bubble: the last listener the submit reaches.
+  function submitted(e) {
+    var p = !e.defaultPrevented && e.liveForm && plan(e), run = ctl, form, btn, type, url, body, data;
+    if (!p) return;
+    form = p.form;
+    btn = p.btn;
+    type = p.type;
+    url = p.url;
     // Before anything is cancelled or disabled: if this throws the
     // browser still sends the form.
     body = data = new FormData(form, btn || undefined);
@@ -547,7 +571,8 @@
         if (regions[name].failed) { regions[name].failed = false; regions[name].tries = 0; refresh(name); }
       }
     });
-    document.addEventListener("submit", submitted, true);
+    document.addEventListener("submit", claim, true);
+    addEventListener("submit", submitted);
     addEventListener("pagehide", stop);
     addEventListener("pageshow", function (e) {
       if (!e.persisted) return;

@@ -505,6 +505,9 @@ func TestBusyContract(t *testing.T) {
 		`btn.getAttribute("aria-busy") !== "true") return;`,
 		// The handover: a swapping form is live.js's when live.js sends it.
 		`form.hasAttribute("data-live-form") && !late`,
+		// ...and the late arm leaves one live.js claimed (e.liveForm),
+		// in either script order.
+		`e.defaultPrevented || e.liveForm) return;`,
 	} {
 		if !strings.Contains(js, want) {
 			t.Errorf("busy.js does not mention %q", want)

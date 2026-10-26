@@ -552,3 +552,61 @@ func TestAFormSwapReleasesARegionWaitingOnEditing(t *testing.T) {
 		`window.__here === undefined && document.readyState === "complete" && !document.getElementById("gone") && !!document.getElementById("list")`, 10*time.Second)
 	rig.Screen("#list", "the page after a form's swap released a held navigation")
 }
+
+// A handler on the form runs after live.js's capture listener, and the
+// browser sends nothing for a submit it cancels: a Cancel on a confirm
+// must not delete the row, and a handler doing its own fetch must not
+// post twice. Driven in both script orders, since busy.js reads the
+// same submit.
+func TestASwappingFormDefersToAHandlerThatCancels(t *testing.T) {
+	f := newFormApp(t, "list", swapForm("one"))
+	f.answer = func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusNoContent) }
+	rig := formRig(t, f)
+	for _, order := range []struct{ name, head string }{
+		{"no busy.js", `<script>window.__busy = 1</script>`},
+		{"busy.js before live.js", `<script src="/busy.js"></script><script>window.__busy = 1</script>`},
+		{"busy.js after live.js", `<script>document.addEventListener("DOMContentLoaded", () => {
+		  const s = document.createElement("script"); s.src = "/busy.js"; s.onload = () => { window.__busy = 1; }; document.head.append(s); });</script>`},
+	} {
+		for _, leg := range []struct {
+			name, handler string
+			posts         int
+		}{
+			{"a confirm answered Cancel", `e.preventDefault()`, 0},
+			{"a handler doing its own fetch", `e.preventDefault(); fetch("/own", { method: "POST", body: new FormData(f) })`, 1},
+		} {
+			name := order.name + ", " + leg.name
+			f.mu.Lock()
+			f.head, f.posts, f.streams = order.head, nil, nil
+			f.mu.Unlock()
+			f.open(t, rig)
+			liveUntil(t, rig, name+": scripts loaded", `window.__busy === 1`, 10*time.Second)
+			liveEval(t, rig, `{ const f = document.getElementById("f"); f.addEventListener("submit", e => { `+leg.handler+` }); } true`, nil)
+			rig.Run(chromedp.Click("#go", chromedp.ByID))
+			// Past live.js's hold and busy.js's, so a send or a hand-back
+			// either would make has happened.
+			time.Sleep(1200 * time.Millisecond)
+			var got struct {
+				Busy, Form string
+				Disabled   bool
+				Spinners   int
+			}
+			liveEval(t, rig, `(() => { const b = document.getElementById("go");
+			  return { Busy: b.getAttribute("aria-busy") || "", Form: document.getElementById("f").getAttribute("aria-busy") || "",
+			    Disabled: b.disabled, Spinners: b.querySelectorAll("[rst-spin]").length }; })()`, &got)
+			posts := f.sent()
+			if len(posts) != leg.posts {
+				t.Errorf("%s: the server saw %d requests %+v, want %d", name, len(posts), posts, leg.posts)
+			}
+			for _, p := range posts {
+				if p.Path != "/own" || p.Fragment != "" {
+					t.Errorf("%s: the server saw %+v; only the handler's own request should go", name, p)
+				}
+			}
+			if got.Busy != "" || got.Form != "" || got.Disabled || got.Spinners != 0 {
+				t.Errorf("%s: after a cancelled submit the button reads %+v; want no busy state left", name, got)
+			}
+		}
+	}
+	rig.Screen("#list", "a swapping form whose submit a handler cancelled")
+}
