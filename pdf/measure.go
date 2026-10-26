@@ -42,10 +42,9 @@ const (
 // hyphen or minus sign as a plain hyphen, and the prime marks as plain
 // quotes. A tab, line feed or carriage return is drawn as a space, and
 // any other control character below U+0020 is dropped, since none has
-// a glyph. A
-// caller comparing drawn text back against its own source has to know
-// these do not round-trip; everything else either draws unchanged or
-// is reported.
+// a glyph. A caller comparing drawn text back against its own source
+// has to know these do not round-trip; everything else either draws
+// unchanged or is reported.
 func Encode(s string) ([]byte, []rune) { return encode(s) }
 
 // Measure is the width of s in points, drawn in f at size.
