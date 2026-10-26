@@ -142,9 +142,13 @@ for convenience, not necessity: `sessions.Require` wraps any
 set of signed-in routes behind it in one line, and the bake-off's winning
 arms used it.
 
-Which identity plugin by default (keymail `auth/` or `password/`) is
-left to the builder, following what `examples/notes` and
-`skill/add-signin.md` already recommend.
+**Amended 2026-10-26:** after this spec was approved, main landed
+`rastrillo new --auth=magic` (a0c892b7): emailed-link sign-in with
+keymail's `auth/`, owner-scoped rows, a pow guard and sign-in tests.
+`--scaffold accounts` is that scaffold under the menu's name, so it
+writes exactly what `--scaffold single --auth=magic` writes; `--auth`
+defaults to `magic` for `accounts` and `none` is refused there. The
+password plugin stays a recipe in `skill/add-signin.md`.
 
 ### 4.4 `home` and `hub` (reserved)
 
