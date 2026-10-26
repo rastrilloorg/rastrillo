@@ -8,6 +8,18 @@ This file starts at v0.23.0. Earlier releases are in the git history and their
 tags; nothing has been reconstructed for them, because a changelog written
 backwards from commits is a guess wearing a date.
 
+## Unreleased
+
+### Added: `rastrillo/pdf`, a dependency-free PDF writer
+
+Flow headings, paragraphs, field lists, tables and callouts onto a page and get deterministic bytes back. No sidecar, no headless browser, no system font: CARLOS ships an app as one binary, and there is nowhere on the platform to run any of those.
+
+Tables paginate on their own and repeat their column headings on each page. `KeepTogether` keeps a heading on the same page as what follows it. `Produced` draws a closing line into the last page's footer, so it never ends up alone on a page of its own. An optional stamp overlays an approval mark on every page.
+
+`Options.Size` sets the page size: `A4` (the default), `A3`, `A5`, `Letter`, `Legal`, `Tabloid`, or your own dimensions. `Options.Landscape` turns the page on its side, for a wide table. `Measure`, `Wrap` and `Encode` are exported for drawing onto something this package does not lay out, such as a blank form.
+
+See [pdf](/docs/reference/pdf).
+
 ## v0.29.0
 
 A JSON API with agents that act for a person, money in any currency, a colour-scheme switch, a new look for `day`, and sign-in without a database. The first seven sections change what an existing app does without a compile error: the JSON API, the colour-scheme switch, money, sign-in's return to the page, pagination, hand-edited migrations and `job-status`. Read them before you upgrade.
