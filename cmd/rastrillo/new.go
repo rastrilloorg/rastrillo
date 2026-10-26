@@ -47,7 +47,7 @@ func scaffoldFile(name string) string {
 }
 
 // runNew implements `rastrillo new <name>`: the middle-layer app shape
-// (SKILL.md's app shape) — GORM models, a chi router, embedded templates, and a
+// (SKILL.md's app shape) — GORM models, a route table on a ServeMux, embedded templates, and a
 // main.go wiring Resolve → db.Open → App → Serve — plus a passing test
 // harness, so the first `go test ./...` is green before the developer
 // writes a line.
@@ -210,7 +210,7 @@ func writeSingle(o newOpts) error {
 	indexHTML, routes, handlers, pages, extraTests := indexTemplate, "", "", `"index", "errors", "tokens"`, ""
 	if twoPageShells[o.Shell] {
 		indexHTML = fmt.Sprintf(sectionsIndexTemplate, scaffoldOverview, html.EscapeString(name))
-		routes = "\n\tr.Get(\"/overview\", a.overview)"
+		routes = "\n\t\t{\"GET /overview\", a.overview},"
 		handlers = overviewHandler
 		pages = `"index", "overview", "errors", "tokens"`
 		extraTests = overviewTest
@@ -218,7 +218,7 @@ func writeSingle(o newOpts) error {
 
 	files := map[string]string{
 		filepath.Join(name, "go.mod"): fmt.Sprintf(goModTemplate,
-			name, rastrilloVersion(), chiPinnedVersion, gormPinnedVersion),
+			name, rastrilloVersion(), gormPinnedVersion),
 		filepath.Join(name, "cmd", name, "main.go"): fmt.Sprintf(mainTemplate, name, pkg, strings.ToUpper(pkg)),
 		filepath.Join(appDir, "app.go"):             fmt.Sprintf(appTemplate, pkg, routes, name),
 		filepath.Join(appDir, "models.go"):          fmt.Sprintf(modelsTemplate, pkg),
@@ -261,6 +261,8 @@ func writeSingle(o newOpts) error {
 		// library's, not app diff to read line by line.
 		filepath.Join(appDir, "vendored_test.go"): fmt.Sprintf(vendoredTestTemplate, pkg, o.Theme),
 		filepath.Join(appDir, "index_test.go"):    fmt.Sprintf(indexTestTemplate, name, pkg, extraTests),
+		// The migration check, as a test go test ./... runs (make test).
+		filepath.Join(appDir, "migrations_test.go"): fmt.Sprintf(scaffoldFile("migrations_test.go.tmpl"), name, pkg),
 		// The browser drive, on the same delivered-once terms as the
 		// harness. browser_test.go, never harness_test.go: that name
 		// (and word) already belongs to the httptest HTTP harness.
@@ -359,17 +361,16 @@ func writeSingle(o newOpts) error {
 	// non-executable job "skipped" with only a hint — the known silent
 	// failure mode, closed at scaffold time.
 	ciScripts := map[string]string{
-		filepath.Join(name, ".amadan", "ci"):                         amadanCI,
-		filepath.Join(name, ".amadan", "ci.d", "10-vet"):             amadanStep("vet"),
-		filepath.Join(name, ".amadan", "ci.d", "15-budget"):          amadanStep("budget"),
-		filepath.Join(name, ".amadan", "ci.d", "20-fmt"):             amadanStep("fmt-check"),
-		filepath.Join(name, ".amadan", "ci.d", "25-staticcheck"):     amadanStep("staticcheck"),
-		filepath.Join(name, ".amadan", "ci.d", "26-govulncheck"):     amadanStep("govulncheck"),
-		filepath.Join(name, ".amadan", "ci.d", "27-gitleaks"):        amadanStep("gitleaks"),
-		filepath.Join(name, ".amadan", "ci.d", "30-test"):            amadanStep("test"),
-		filepath.Join(name, ".amadan", "ci.d", "35-perf"):            amadanStep("perf"),
-		filepath.Join(name, ".amadan", "ci.d", "40-migration-check"): amadanStep("migration-check"),
-		filepath.Join(name, ".amadan", "ci.d", "45-generate-check"):  amadanStep("generate-check"),
+		filepath.Join(name, ".amadan", "ci"):                        amadanCI,
+		filepath.Join(name, ".amadan", "ci.d", "10-vet"):            amadanStep("vet"),
+		filepath.Join(name, ".amadan", "ci.d", "15-budget"):         amadanStep("budget"),
+		filepath.Join(name, ".amadan", "ci.d", "20-fmt"):            amadanStep("fmt-check"),
+		filepath.Join(name, ".amadan", "ci.d", "25-staticcheck"):    amadanStep("staticcheck"),
+		filepath.Join(name, ".amadan", "ci.d", "26-govulncheck"):    amadanStep("govulncheck"),
+		filepath.Join(name, ".amadan", "ci.d", "27-gitleaks"):       amadanStep("gitleaks"),
+		filepath.Join(name, ".amadan", "ci.d", "30-test"):           amadanStep("test"),
+		filepath.Join(name, ".amadan", "ci.d", "35-perf"):           amadanStep("perf"),
+		filepath.Join(name, ".amadan", "ci.d", "45-generate-check"): amadanStep("generate-check"),
 	}
 	for path, content := range ciScripts {
 		if err := os.WriteFile(path, []byte(content), 0o755); err != nil {
@@ -391,7 +392,7 @@ func writeSingle(o newOpts) error {
 	fmt.Printf("  internal/%s/*_test.go (harness + example tests beside the code, passing out of the box;\n", pkg)
 	fmt.Println("                        browser_test.go = the browser drive, go test -tags browser ./...)")
 	fmt.Println("  manifest/            (the declarative path: drop a <name>.toml here, see its README)")
-	fmt.Println("  Makefile             (make ci = vet + fmt + staticcheck + govulncheck + gitleaks + budget + test + perf + migration check + generate check, the one gate definition;")
+	fmt.Println("  Makefile             (make ci = vet + fmt + staticcheck + govulncheck + gitleaks + budget + test + perf + generate check, the one gate definition;")
 	fmt.Println("                        make release = the stripped binary)")
 	fmt.Println("  .gitignore           (build output and the local database)")
 	fmt.Println("  .amadan/ci, ci.d/    (amadan runner CI, executable, delegating to make)")
@@ -446,7 +447,8 @@ func packageName(name string) string {
 	return out
 }
 
-// The scaffold's chi and gorm pins. The CLI's own build info can't
+// The scaffold's chi and gorm pins; chi only for --auth=magic, whose
+// sign-in groups are chi's. The CLI's own build info can't
 // supply these (cmd/rastrillo imports neither), so they are constants
 // — kept honest by a test that compares them against the rastrillo
 // module's own go.mod, the versions the framework's suite actually ran
@@ -463,11 +465,10 @@ go 1.24
 
 require (
 	amadan.net/rastrillo/rastrillo %s
-	github.com/go-chi/chi/v5 %s
 	gorm.io/gorm %s
 )
 
-// The CLI this app's own gate runs: make migration-check and make
+// The CLI this app's own gate runs: make budget, test, perf and
 // generate-check. It is
 // declared as a tool so that go mod tidy records the CLI's build
 // dependencies in go.sum alongside the app's own. Nothing an app
@@ -569,9 +570,8 @@ import (
 	"context"
 	"log/slog"
 	"net/http"
+	"strings"
 	"time"
-
-	"github.com/go-chi/chi/v5"
 
 	"amadan.net/rastrillo/rastrillo"
 	"amadan.net/rastrillo/rastrillo/csrf"
@@ -587,8 +587,8 @@ import (
 
 // App wires the whole app: schema, router, JSON API, static files. It
 // returns a *http.ServeMux because rastrillo.Options.Mux is typed that
-// way — the chi router mounts inside it. Router and Mux are its two
-// halves, separate only so the perf test can walk the chi routes while
+// way — the router mounts inside it. Router and Mux are its two
+// halves, separate only so the perf test can list the routes while
 // measuring through the same handler production serves. origin is the app's external origin
 // ("https://app.example.com") — the CSRF check's yardstick, and, once
 // the app grows accounts, sessions.Config.Origin too.
@@ -601,7 +601,7 @@ import (
 // read it there rather than looking for the directory). Adding a subsystem
 // also means adding its Schema to migrations.go's BootSchema — see
 // the comment there. Past 5,000 lines here, split by feature: a package
-// per feature under internal/%[1]s/, each with Mount(r chi.Router, deps)
+// per feature under internal/%[1]s/, each with Mount(mux *http.ServeMux, deps)
 // called from Router (docs/site/testing.md).
 func App(d *db.DB, origin string, logger *slog.Logger) (*http.ServeMux, error) {
 	r, err := Router(d, origin, logger)
@@ -615,8 +615,8 @@ func App(d *db.DB, origin string, logger *slog.Logger) (*http.ServeMux, error) {
 	return Mux(r, apiTree), nil
 }
 
-// Router applies the schema and builds the routes.
-func Router(d *db.DB, origin string, logger *slog.Logger) (chi.Router, error) {
+// Router applies the schema and builds the routes from the route table.
+func Router(d *db.DB, origin string, logger *slog.Logger) (http.Handler, error) {
 	// pagesErr is render.go's: a template that does not parse, or a
 	// locale configuration boot refuses. Either stops the app here,
 	// before any migration runs, not at the first request.
@@ -640,16 +640,20 @@ func Router(d *db.DB, origin string, logger *slog.Logger) (chi.Router, error) {
 		"skipped", migrated.Skipped, "adopted", migrated.Adopted)
 
 	a := &app{db: d, logger: logger}
-
-	r := chi.NewRouter()
-	// App-wide, from day one: every state-changing route added below
-	// is born covered. Origin-checking, not tokens — nothing to mint
-	// or forget in a form.
-	r.Use(csrf.Protect(origin))
-	r.Get("/", a.index)%[2]s
-	return r, nil
+` + stdlibRouterTail + `
+// route is one entry in the route table: a full ServeMux pattern,
+// method included, and its handler.
+type route struct {
+	Pattern string
+	Handler http.HandlerFunc
 }
 
+` + stdlibRoutesDoc + `func (a *app) routes() []route {
+	return []route{
+		{"GET /{$}", a.index},%[2]s
+	}
+}
+` + getPatternsFunc + `
 // Mux mounts the static files and the JSON API (api.go) beside the router.
 func Mux(r, apiTree http.Handler) *http.ServeMux {
 	mux := http.NewServeMux()
@@ -689,6 +693,44 @@ func Configure(opts *rastrillo.Options, mux *http.ServeMux, started time.Time) {
 	opts.ErrorPage = ErrorPage
 	var rec perf.Recorder
 	opts.Wrap = perf.Middleware(&rec, perf.Options{Started: started, Logger: opts.Logger})
+}
+`
+
+// stdlibRouterTail, stdlibRoutesDoc and getPatternsFunc are the parts
+// of appTemplate that are a ServeMux's: applyMagicAuth swaps exactly
+// these for chi's, so they are named once.
+const stdlibRouterTail = `
+	mux := http.NewServeMux()
+	for _, rt := range a.routes() {
+		mux.HandleFunc(rt.Pattern, rt.Handler)
+	}
+	// App-wide, from day one: every state-changing route on the mux
+	// is born covered. Origin-checking, not tokens — nothing to mint
+	// or forget in a form.
+	return csrf.Protect(origin)(mux), nil
+}
+`
+
+const stdlibRoutesDoc = `// routes is the app's one route table: add a route here, not on the
+// mux. A ServeMux cannot list what it serves, so the perf lane reads
+// this table through GETPatterns, and a route registered anywhere else
+// would be served but never measured.
+//
+// The index is "GET /{$}", not "GET /": a bare "/" matches every path,
+// so an unknown URL would get the home page instead of a 404.
+`
+
+const getPatternsFunc = `
+// GETPatterns is the table's GET routes without the method, the form
+// perftest.ScreenConfig.Patterns takes.
+func GETPatterns() []string {
+	var out []string
+	for _, rt := range (&app{}).routes() {
+		if p, ok := strings.CutPrefix(rt.Pattern, "GET "); ok {
+			out = append(out, p)
+		}
+	}
+	return out
 }
 `
 
@@ -1252,6 +1294,15 @@ func TestErrorPageRendersFrameworkPartial(t *testing.T) {
 	}
 	if !strings.Contains(body, "abc123") {
 		t.Errorf("ErrorPage body missing the ref:\n%%s", body)
+	}
+}
+
+// The index is served at "GET /{$}" because a bare "GET /" matches
+// every path: an unknown URL would get the home page, not a 404.
+func TestUnknownPathIs404(t *testing.T) {
+	t.Parallel()
+	if rec := get(t, newApp(t), "/nope"); rec.Code != http.StatusNotFound {
+		t.Errorf("GET /nope: status %%d, want 404", rec.Code)
 	}
 }
 %[3]s`

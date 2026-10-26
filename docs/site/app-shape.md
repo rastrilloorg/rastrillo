@@ -196,8 +196,8 @@ answers looks the same as the 500 a panic answers.
 2. Every update names its columns in `.Select(...)`.
 3. `csrf.Protect(origin)` is mounted app-wide, above the route groups.
 4. Signed-in routes, jobs' included, are in a group with `sess.Require`.
-5. One `migrate.Apply` runs at boot, and `make ci` runs
-   `rastrillo migration check`.
+5. One `migrate.Apply` runs at boot, and the migration check
+   (`TestModelsMatchMigrations`) passes.
 6. `opts.DBPath` is blanked before `Serve` when your app opened its own
    handle.
 7. Not-found and not-yours both answer 404.

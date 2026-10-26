@@ -15,7 +15,7 @@ are load-bearing; the framework enforces most of them mechanically.
 
 - `internal/<app>/` — the app: `models.go` (plain GORM structs
   + Models), `migrations.go` + `migrations/` (Schema, BootSchema),
-  `app.go` (migrate.Apply + chi router), `handlers.go`,
+  `app.go` (migrate.Apply + the route table on a ServeMux), `handlers.go`,
   `render.go` + `templates/`. This is SKILL.md's five-file shape. Its
   tests sit beside it as `package <app>_test`.
 - `manifest/` — the declarative path, optional and equal: TOML or .go
@@ -45,7 +45,7 @@ are load-bearing; the framework enforces most of them mechanically.
 - Money is a whole number of the currency's smallest unit, stored with its ISO 4217 code beside it, and shown with `money`. A float never touches a value a person will be held to.
 - Screens work with JavaScript disabled; destructive actions get their
   own confirm-page URL.
-- The gate is `make ci` (vet, gofmt, staticcheck, govulncheck, gitleaks, budgets, tests, the perf lane, the migration check and the generate check), the same definition CI runs. Run it before every push. `CGO_ENABLED=0` throughout: the stack is cgo-free by design. The Makefile names the Go release the gate and `make release` use (`GOTOOLCHAIN`); raise it with each Go security release.
+- The gate is `make ci` (vet, gofmt, staticcheck, govulncheck, gitleaks, budgets, tests (the migration check is one), the perf lane and the generate check), the same definition CI runs. Run it before every push. `CGO_ENABLED=0` throughout: the stack is cgo-free by design. The Makefile names the Go release the gate and `make release` use (`GOTOOLCHAIN`); raise it with each Go security release.
 - Two of the scaffolded tests are about the **placeholder index page**
   and are yours to rewrite: `TestIndexRenders` and
   `TestIndexLinksFingerprintedStylesheet`. Putting `/` behind sign-in
@@ -66,7 +66,7 @@ are load-bearing; the framework enforces most of them mechanically.
   screen and 500ms cold boot (`make perf`). Timing fails only on CI.
   Exceptions go in `.rastrillo/budgets.txt`, each with a reason.
 - Past 5,000 lines, split `internal/<app>` by feature:
-  `internal/<app>/<feature>` with `Mount(r chi.Router, deps)`, called
+  `internal/<app>/<feature>` with `Mount(mux *http.ServeMux, deps)`, called
   from `Router`.
 - Every test binary has one `TestMain` that calls `budget.Main`. In
   `internal/<app>/` it is in `harness_test.go`, shared by the

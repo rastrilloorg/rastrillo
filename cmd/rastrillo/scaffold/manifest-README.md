@@ -124,7 +124,7 @@ Adding the first manifest to this app:
    genSchemaSet gives it the next ID, so the ledger applies it as a new
    migration.
 
-6. Boot the generated code and mount its router inside the chi router.
+6. Boot the generated code and mount its router inside the app's router.
    In internal/%[2]s/app.go's Router, after migrate.Apply and the routes,
    add (and import "%[1]s/gen"):
 
@@ -137,11 +137,11 @@ Adding the first manifest to this app:
                Actor: rastrillo.Actor{}, Authorize: authorize,
                Render: GenRender}
        })
-       r.Handle("/admin/*", gmux)
+       mux.Handle("/admin/", gmux)
 
    gen.Boot upgrades and checks the generated money columns, and
    gen.Router will not build without what it returns. Mounted inside
-   the chi router, the generated screens get the same CSRF check and
+   the app's router, the generated screens get the same CSRF check and
    the same localizer as the hand ones. Authorize is api.go's
    authorize, so the pages and the API follow the same rules.
 

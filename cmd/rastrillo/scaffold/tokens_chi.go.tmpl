@@ -1,0 +1,56 @@
+package %[1]s
+
+import (
+	"net/http"
+	"time"
+
+	"github.com/go-chi/chi/v5"
+
+	"amadan.net/rastrillo/rastrillo/apitoken"
+	"amadan.net/rastrillo/rastrillo/db"
+	"amadan.net/rastrillo/rastrillo/sessions"
+)
+
+// Tokens returns the API token page's routes, for Router to mount with
+// r.Group: a person makes a token for an agent or a script at /tokens,
+// sees it once, and revokes it there.
+//
+// Every door takes the token's owner from the signed-in session, so the
+// page needs sign-in, which a new app does not have yet. Once it does
+// (examples/notes in the rastrillo repository shows how), add this to
+// Router after csrf.Protect:
+//
+//	tokens, err := Tokens(d, sess)
+//	if err != nil {
+//		return nil, err
+//	}
+//	r.Group(tokens)
+func Tokens(d *db.DB, sess *sessions.Sessions) (func(chi.Router), error) {
+	store, err := newTokens(d)
+	if err != nil {
+		return nil, err
+	}
+	th, err := apitoken.NewHandlers(apitoken.HandlersConfig{Store: store, Path: "/tokens", Render: renderTokens})
+	if err != nil {
+		return nil, err
+	}
+	return func(r chi.Router) {
+		r.Use(sess.Require)
+		r.Get("/tokens", th.Page)
+		// Making a token needs a sign-in within ten minutes: a token
+		// outlives the session that made it, so this is the moment to
+		// be sure who is at the keyboard. Revoking does not, so that
+		// stopping a token stays easy.
+		r.With(sess.RequireFresh(10*time.Minute)).Post("/tokens", th.Create)
+		r.Post("/tokens/revoke", th.Revoke)
+		r.Post("/tokens/revoke-agent", th.RevokeAgent)
+		r.Post("/tokens/revoke-all", th.RevokeAll)
+	}, nil
+}
+
+// renderTokens is apitoken.HandlersConfig.Render: tokens.html hands
+// the page to ui's api-tokens partial, which draws the reveal, the
+// form, the list and the revoke buttons.
+func renderTokens(w http.ResponseWriter, r *http.Request, d apitoken.PageData) {
+	render(w, r, "tokens", map[string]any{"Page": d})
+}

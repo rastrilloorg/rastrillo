@@ -38,8 +38,15 @@ VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null)
 # and a suite running beside it would be measured too.
 .NOTPARALLEL:
 
-.PHONY: build release version-check test vet fmt-check staticcheck govulncheck gitleaks budget perf migration-check generate-check ci
+.PHONY: build release version-check test vet fmt-check staticcheck govulncheck gitleaks budget perf generate-check ci
 
+# go run, not a bare "rastrillo": go.mod already requires rastrillo, so
+# the gate needs nothing on PATH but the Go toolchain, and works offline
+# after go mod download. A bare "rastrillo" failed a fresh clone's very
+# first CI run with "make: rastrillo: Command not found", and nothing in
+# the scaffold said what to install. What makes the go run resolve is
+# the tool directive at the foot of go.mod; see the comment there
+# before removing it.
 RASTRILLO := go run amadan.net/rastrillo/rastrillo/cmd/rastrillo
 
 # build is the compile check: with more than one package matched, go
@@ -105,7 +112,8 @@ budget:
 # budget test runs go test itself, so its exit status survives, and holds
 # each package to 10s using the time budget.Main prints in the package's
 # TestMain, cached runs included. Timing fails only on CI (AMADAN_CI or
-# CI set); here it reports.
+# CI set); here it reports. The migration check is one of the tests:
+# TestModelsMatchMigrations, in migrations_test.go beside models.go.
 test:
 	$(RASTRILLO) budget test ./...
 
@@ -175,22 +183,6 @@ gitleaks:
 		echo "gitleaks: this directory is not the root of a git repository, so there is nothing committed to scan"; \
 	fi
 
-# A step of its own, not folded into another target's recipe: ci.d/
-# steps each exec one make target, so migration-check needs its own
-# name to get its own reported step on a runner with step support.
-#
-# go run, not a bare "rastrillo": go.mod already requires rastrillo, so
-# this needs nothing on PATH but the Go toolchain, and works offline
-# after go mod download. A bare "rastrillo migration check" failed a
-# fresh clone's very first CI run with "make: rastrillo: Command not
-# found", and nothing in the scaffold said what to install.
-#
-# What makes the go run resolve is the tool directive at the foot of
-# go.mod — it is what keeps the CLI's own dependencies in go.sum. See
-# the comment there before removing it.
-migration-check:
-	go run amadan.net/rastrillo/rastrillo/cmd/rastrillo migration check
-
 # generate-check fails when gen/ or api/v1.json is not what rastrillo
 # generate would write from manifest/, or when a manifest change breaks
 # a client of /api/v1. Run rastrillo generate to bring them up to date.
@@ -200,7 +192,7 @@ generate-check:
 # ci is the one gate: what a runner executes and what you run before
 # pushing are the same definition. amadan's runner falls back to this
 # target when .amadan/ci is absent; ci.d/ carries the same targets,
-# reported one by one, for a runner with step support. migration-check
-# fails the build the moment models.go and migrations/ disagree,
-# instead of at boot on whatever machine notices next.
-ci: vet fmt-check staticcheck govulncheck gitleaks budget test perf migration-check generate-check
+# reported one by one, for a runner with step support. test fails the
+# build the moment models.go and migrations/ disagree, instead of at
+# boot on whatever machine notices next.
+ci: vet fmt-check staticcheck govulncheck gitleaks budget test perf generate-check

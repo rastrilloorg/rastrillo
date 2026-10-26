@@ -166,28 +166,34 @@ func TestLayoutTemplateLoadsRastrilloJS(t *testing.T) {
 // The scaffolded go.mod must pin the versions this CLI was actually
 // built against — rastrillo via its build-info version (see
 // version.go), chi and gorm via the CLI's own dependency list — not
-// hardcoded constants that go stale every release.
+// hardcoded constants that go stale every release. chi only where the
+// app imports it, --auth=magic's sign-in groups: single is a ServeMux.
 func TestNewPinsCLIsOwnVersions(t *testing.T) {
 	t.Chdir(t.TempDir())
 	if err := runNew([]string{"blogapp"}); err != nil {
 		t.Fatalf("runNew: %v", err)
 	}
-	got, err := os.ReadFile(filepath.Join("blogapp", "go.mod"))
-	if err != nil {
-		t.Fatalf("expected a scaffolded go.mod: %v", err)
+	if err := runNew([]string{"--auth=magic", "authapp"}); err != nil {
+		t.Fatalf("runNew --auth=magic: %v", err)
 	}
+	got := readScaffold(t, "blogapp", "go.mod")
 	// go test binaries report "(devel)" from runtime/debug.ReadBuildInfo
 	// (a local checkout, not a `go install ...@vX.Y.Z`), so
 	// rastrilloVersion falls back to rastrilloFallbackVersion here —
 	// see version_test.go for the fallback logic itself.
 	for _, want := range []string{
 		"amadan.net/rastrillo/rastrillo " + rastrilloFallbackVersion,
-		"github.com/go-chi/chi/v5 " + chiPinnedVersion,
 		"gorm.io/gorm " + gormPinnedVersion,
 	} {
-		if !strings.Contains(string(got), want) {
+		if !strings.Contains(got, want) {
 			t.Errorf("go.mod missing %q:\n%s", want, got)
 		}
+	}
+	if strings.Contains(got, "go-chi") {
+		t.Errorf("single's go.mod requires chi, which it does not import:\n%s", got)
+	}
+	if auth := readScaffold(t, "authapp", "go.mod"); !strings.Contains(auth, "github.com/go-chi/chi/v5 "+chiPinnedVersion) {
+		t.Errorf("--auth=magic's go.mod does not pin chi %s:\n%s", chiPinnedVersion, auth)
 	}
 }
 
@@ -279,7 +285,9 @@ func TestMainTemplateWiresErrorPage(t *testing.T) {
 		"opts.ErrorPage = ErrorPage",
 		"opts.Mux = mux",
 		"perf.Middleware(",
-		"func Router(d *db.DB, origin string, logger *slog.Logger) (chi.Router, error)",
+		"func Router(d *db.DB, origin string, logger *slog.Logger) (http.Handler, error)",
+		`{"GET /{$}", a.index},`,
+		"func GETPatterns() []string",
 		"func Mux(r, apiTree http.Handler) *http.ServeMux",
 	} {
 		if !strings.Contains(app, want) {
@@ -835,7 +843,7 @@ func TestNewWiresCSRFProtection(t *testing.T) {
 	appGo := readScaffold(t, "blogapp", "internal", "blogapp", "app.go")
 	for _, want := range []string{
 		"amadan.net/rastrillo/rastrillo/csrf",
-		"r.Use(csrf.Protect(origin))",
+		"return csrf.Protect(origin)(mux), nil",
 		"origin string",
 	} {
 		if !strings.Contains(appGo, want) {

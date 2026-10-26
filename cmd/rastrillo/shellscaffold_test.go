@@ -203,7 +203,7 @@ func TestNewWritesAnIndexAndASectionForTheShellsThatHaveOne(t *testing.T) {
 			{"index.html", index, `<a id="nav-overview" href="/overview">` + scaffoldOverview + `</a>`},
 			{"overview.html", string(overview), `{{define "up"}}/#nav-overview{{end}}`},
 			{"overview.html", string(overview), `<a id="nav-overview" href="/overview" aria-current="page">` + scaffoldOverview + `</a>`},
-			{"app.go", app, `r.Get("/overview", a.overview)`},
+			{"app.go", app, `{"GET /overview", a.overview},`},
 			{"handlers.go", handlers, `func (a *app) overview(w http.ResponseWriter, r *http.Request) {`},
 			{"render.go", render, `[]string{"index", "overview", "errors", "tokens"}`},
 		} {

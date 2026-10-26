@@ -57,7 +57,7 @@ func TestPerfScreens(t *testing.T) {
 	defer closeAll()
 	// Screens behind sign-in need Signin; a {param} route needs a Paths
 	// entry whose row this test seeds first.
-	perftest.Screens(t, perftest.ScreenConfig{Routes: r, Handler: h})
+	perftest.Screens(t, perftest.ScreenConfig{Patterns: %[2]s.GETPatterns(), Handler: h})
 }
 
 // A cold start, from exec to the first byte of "/", held to 500ms.

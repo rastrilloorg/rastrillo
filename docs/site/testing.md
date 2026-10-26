@@ -66,8 +66,8 @@ Tito Go a fresh database took 207ms and a copy took 2.5ms, and a package of
 make ci
 ```
 
-runs vet, gofmt, staticcheck, govulncheck, gitleaks, `budget`, `test`, `perf` and `rastrillo
-migration check`, in that order and one at a time. It is the one gate
+runs vet, gofmt, staticcheck, govulncheck, gitleaks, `budget`, `test`, `perf` and
+`rastrillo generate --check`, in that order and one at a time. It is the one gate
 definition: `.amadan/ci` and `.amadan/ci.d/` are executable steps that
 call the same Makefile targets, so the CI runner and your terminal cannot
 disagree about what passing means.
@@ -81,9 +81,10 @@ govulncheck reports only the vulnerabilities your code can reach, and it reads a
 
 gitleaks scans every commit for keys and tokens, because a secret you deleted is still in every clone. Until the app is the root of its own git repository there is nothing committed, and it says so instead of failing.
 
-Keeping [`migration check`](/docs/migrations) in the gate is what stops
-models and migrations drifting apart between deploys. It touches no
-database, so it runs anywhere.
+The [migration check](/docs/migrations) is one of the app's tests,
+`TestModelsMatchMigrations`, so `make test` runs it and so does a plain
+`go test ./...`. It is what stops models and migrations drifting apart
+between deploys. It touches no database, so it runs anywhere.
 
 ## The budgets
 

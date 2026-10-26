@@ -38,7 +38,7 @@ func TestNewMountsTheAPIForANewApp(t *testing.T) {
 			t.Errorf("app.go missing %q:\n%s", want, app)
 		}
 	}
-	// The mount is on the outer mux, not the chi router: inside it the
+	// The mount is on the outer mux, not the router: inside it the
 	// API would sit behind csrf.Protect, which refuses a POST with no
 	// Origin, and an agent's request has none.
 	if strings.Contains(app, `r.Handle("/api/v1`) || strings.Contains(app, `r.Mount("/api/v1`) {
@@ -67,12 +67,11 @@ func TestNewMountsTheAPIForANewApp(t *testing.T) {
 
 	tokens := readScaffold(t, "123-app", "internal", "app123app", "tokens.go")
 	for _, want := range []string{
-		"r.Use(sess.Require)",
-		`r.Get("/tokens", th.Page)`,
-		`r.With(sess.RequireFresh(10*time.Minute)).Post("/tokens", th.Create)`,
-		`r.Post("/tokens/revoke", th.Revoke)`,
-		`r.Post("/tokens/revoke-agent", th.RevokeAgent)`,
-		`r.Post("/tokens/revoke-all", th.RevokeAll)`,
+		`mux.Handle("GET /tokens", sess.Require(http.HandlerFunc(th.Page)))`,
+		`mux.Handle("POST /tokens", sess.RequireFresh(10*time.Minute)(http.HandlerFunc(th.Create)))`,
+		`mux.Handle("POST /tokens/revoke", sess.Require(http.HandlerFunc(th.Revoke)))`,
+		`mux.Handle("POST /tokens/revoke-agent", sess.Require(http.HandlerFunc(th.RevokeAgent)))`,
+		`mux.Handle("POST /tokens/revoke-all", sess.Require(http.HandlerFunc(th.RevokeAll)))`,
 	} {
 		if !strings.Contains(tokens, want) {
 			t.Errorf("tokens.go missing %q:\n%s", want, tokens)
