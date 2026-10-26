@@ -514,8 +514,10 @@ func TestLifetimeEndsTheStream(t *testing.T) {
 func TestANilHubIgnoresNotifyAndHasNoBoot(t *testing.T) {
 	// An app whose hub is optional calls Notify after every write; with
 	// the hub off that must not panic the request that just committed.
+	// Close is the same: shutdown must not panic for an app without live.
 	var h *Hub
 	h.Notify("a")
+	h.Close()
 	if b := h.Boot(); b != "" {
 		t.Fatalf("Boot() = %q, want empty", b)
 	}

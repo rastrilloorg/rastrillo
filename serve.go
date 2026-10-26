@@ -34,6 +34,7 @@ import (
 	"amadan.net/rastrillo/rastrillo/background"
 	"amadan.net/rastrillo/rastrillo/carlos"
 	"amadan.net/rastrillo/rastrillo/internal/checkconfig"
+	"amadan.net/rastrillo/rastrillo/live"
 	"amadan.net/rastrillo/rastrillo/locales"
 
 	_ "modernc.org/sqlite"
@@ -226,6 +227,16 @@ type Options struct {
 	// Nil means the app tracks nothing.
 	Background *background.Group
 
+	// Live is the app's live-update hub, if it has one. Serve ends its
+	// streams the moment shutdown starts: net/http's Shutdown waits for
+	// in-flight requests without cancelling their contexts, so an open
+	// stream would otherwise hold the 10-second drain until it ran out.
+	// Handler's close func also closes it, but that runs after the
+	// drain, so a host that embeds Handler under its own server must
+	// call Live.Close() before its own Shutdown. Nil means no live
+	// streams.
+	Live *live.Hub
+
 	// Logger defaults to slog.Default() if nil.
 	Logger *slog.Logger
 
@@ -306,13 +317,22 @@ func newServer(opts Options, handler http.Handler) *http.Server {
 	if idle == 0 {
 		idle = defaultIdleTimeout
 	}
-	return &http.Server{
+	srv := &http.Server{
 		Handler:           handler,
 		ReadHeaderTimeout: readHeader,
 		IdleTimeout:       idle,
 		ReadTimeout:       opts.ReadTimeout,
 		WriteTimeout:      opts.WriteTimeout,
 	}
+	// Registered here, with the server it belongs to, so Serve and the
+	// tests that drive its shutdown cannot differ. Shutdown runs this
+	// before it starts waiting, which is what keeps open streams from
+	// eating the drain. Skipped without a hub: an app without live
+	// pays nothing.
+	if opts.Live != nil {
+		srv.RegisterOnShutdown(opts.Live.Close)
+	}
+	return srv
 }
 
 // Serve opens the database (if configured), applies migrations, resolves
@@ -392,7 +412,7 @@ func Serve(opts Options) error {
 // signal handling: it opens the database (if configured), applies
 // migrations, resolves the Mux/Router choice, and assembles the full
 // serving handler — framework endpoints, Wrap, locales and all. The
-// returned close func stops Options.Background and then releases the
+// returned close func closes Options.Live, stops Options.Background and then releases the
 // database handle (each a no-op without one).
 //
 // It refuses a locale configuration locales.CheckConfig rejects, before
@@ -431,6 +451,12 @@ func Handler(opts Options) (http.Handler, func() error, error) {
 	// may already have started background work on db by the time
 	// buildHandler fails.
 	closeDB := func() error {
+		// Before Background.Stop, so a test harness that tears down with
+		// this func alone ends its streams first; Serve has already
+		// closed the hub when shutdown began, and Close is idempotent.
+		if opts.Live != nil {
+			opts.Live.Close()
+		}
 		if opts.Background != nil {
 			opts.Background.Stop()
 		}

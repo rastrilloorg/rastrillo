@@ -256,8 +256,13 @@ func (h *Hub) admit() *subscriber {
 // client ends when that write's deadline passes, within WriteDeadline.
 // It is safe to call more than once. Call it when shutdown starts,
 // before the server waits for in-flight requests: open streams would
-// otherwise hold that wait until their lifetime ran out.
+// otherwise hold that wait until their lifetime ran out. On a nil hub
+// it does nothing, so shutdown code need not know whether the app uses
+// live.
 func (h *Hub) Close() {
+	if h == nil {
+		return
+	}
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	if !h.closed {
