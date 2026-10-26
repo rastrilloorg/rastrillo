@@ -138,7 +138,10 @@ func applyMagicAuth(files map[string]string, name, pkg, appDir string) error {
 		} else if end < 0 {
 			stageShell = true
 		} else {
-			files[layout] = s[:end] + `{{$authL := localizer $}}{{if opt $ "SignedIn"}}<form method="post" action="/signout"><button rst-btn>{{T $authL "rastrillo.ui.account_signout"}}</button></form>{{else}}<a href="/signin" rst-btn>{{T $authL "rastrillo.ui.account_signin"}}</a>{{end}}` + s[end:]
+			// Under a base path the hub signs people in and the sign-in plugins
+			// answer 404 here: a root-relative /signin would leave the tenant for
+			// the product's own sign-in screen.
+			files[layout] = s[:end] + `{{if not (opt $ "Base")}}{{$authL := localizer $}}{{if opt $ "SignedIn"}}<form method="post" action="/signout"><button rst-btn>{{T $authL "rastrillo.ui.account_signout"}}</button></form>{{else}}<a href="/signin" rst-btn>{{T $authL "rastrillo.ui.account_signin"}}</a>{{end}}{{end}}` + s[end:]
 		}
 	}
 

@@ -1267,6 +1267,72 @@ func TestScaffoldServesUnderABasePath(t *testing.T) {
 	}
 }
 
+// magicBasePathTest is written into a --auth=magic scaffold as package
+// notestest. A tenant under a base path has no sign-in of its own (the
+// hub signs people in), so its pages must not offer one: a /signin link
+// there leaves the tenant for the product's own /signin.
+const magicBasePathTest = `package notestest
+
+import (
+	"io"
+	"log/slog"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
+	"time"
+
+	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/basepath"
+	"amadan.net/rastrillo/rastrillo/basepath/basepathtest"
+
+	genlocales "notes/gen/locales"
+	"notes/internal/notes"
+)
+
+func TestMagicAuthSigninLinkFollowsTheBasePath(t *testing.T) {
+	if rec := get(t, newApp(t), "/"); rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), "href=\"/signin\"") {
+		t.Errorf("GET / with no base path: %d, want 200 with a /signin link:\n%s", rec.Code, rec.Body)
+	}
+
+	opts := rastrillo.Options{Logger: slog.New(slog.NewTextHandler(io.Discard, nil)),
+		Locales: genlocales.Locales, DefaultLocale: genlocales.DefaultLocale,
+		BasePath: basepath.Config{Origin: "http://localhost:8080", Slug: "acme"}}
+	notes.Configure(&opts, newApp(t).(*http.ServeMux), time.Now())
+	h, closeAll, err := rastrillo.Handler(opts)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { closeAll() })
+	req := httptest.NewRequest("GET", "/acme/", nil)
+	req.Host = "localhost:8080"
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("GET /acme/: %d, want 200:\n%s", rec.Code, rec.Body)
+	}
+	if strings.Contains(rec.Body.String(), "/signin") || strings.Contains(rec.Body.String(), "/signout") {
+		t.Errorf("GET /acme/ offers sign-in or sign-out, which the hub does:\n%s", rec.Body)
+	}
+	if l := basepathtest.Leaks(rec.Body.Bytes(), "/acme"); len(l) > 0 {
+		t.Errorf("GET /acme/ links outside /acme: %q\n%s", l, rec.Body)
+	}
+}
+`
+
+// A --auth=magic scaffold shows Sign in at the root and none under a
+// base path, where the hub signs people in.
+func TestScaffoldMagicAuthOffersNoSigninUnderABasePath(t *testing.T) {
+	if testing.Short() {
+		t.Skip("scaffolds, tidies and tests a whole app")
+	}
+	app := scaffoldApp(t, "notes", "--auth=magic")
+	mustWrite(t, filepath.Join(app, "internal", "notestest", "basepath_magic_test.go"), magicBasePathTest)
+	if out, err := goTestIn(app, "-v", "-run", "TestMagicAuthSigninLinkFollowsTheBasePath", "./internal/notestest/"); err != nil || !strings.Contains(out, "--- PASS: TestMagicAuthSigninLinkFollowsTheBasePath") {
+		t.Fatalf("the magic-auth scaffold under /acme:\n%s", out)
+	}
+}
+
 // The scaffold's main.go reads the base path from the environment the
 // platform gives a path-routed tenant, and refuses a slug it cannot
 // serve rather than serving at the root.
