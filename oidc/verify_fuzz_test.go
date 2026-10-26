@@ -34,15 +34,13 @@ func FuzzTokenShape(f *testing.F) {
 
 	f.Fuzz(func(t *testing.T, token string) {
 		// The only property under test: this never panics, on any input
-		// whatsoever. A network fetch is never reached because no key
-		// id in a random token will ever be cached, and the HTTP client
-		// is nil-default here deliberately slow/absent — bounded by the
-		// signature check failing (no cached key) long before any
-		// network call, since Engine.HTTP is never dialled for an empty
-		// cache miss against an unreachable host within this test's
-		// timeout. To keep this fast and offline, skip any input that
-		// would reach the network: Verify only dials out on a cache
-		// miss, which needs a syntactically valid header+kid first.
+		// whatsoever. A syntactically-plausible RS256 header DOES reach
+		// a real network dial to issuer.example on a cache miss — this
+		// is not offline, and does not claim to be; the 10ms context
+		// below is what keeps that bounded and fast rather than
+		// avoiding it (found inaccurate in code review: the comment
+		// this replaces claimed the network was never reached, which is
+		// not true of every input in this corpus).
 		defer func() {
 			if r := recover(); r != nil {
 				t.Fatalf("Verify panicked on %q: %v", token, r)

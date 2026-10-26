@@ -116,30 +116,46 @@ func (e *Error) Error() string {
 // still.
 type Engine struct {
 	// HTTP is the client used for discovery, the JWKS fetch, and the code
-	// exchange. Nil gets this package's own default: a 15-second timeout,
-	// and redirects disabled (CheckRedirect refuses every hop). A
-	// provider's own published endpoints have no reason to redirect, and
-	// a client that follows one blindly turns a provider misconfiguration
-	// — or a compromised endpoint — into this instance being told where
-	// to send a client secret. A caller supplying its own HTTP client
-	// (standing up a fake provider for a test, say) takes on deciding
-	// that policy itself.
+	// exchange. Nil gets this package's own default: a 15-second
+	// timeout, redirects disabled. A caller-supplied client has BOTH
+	// enforced on a copy of it regardless (httpClient) — its Transport,
+	// proxy and TLS config are kept, but CheckRedirect is always
+	// overridden and Timeout is clamped to 15 seconds if unset or
+	// longer, because a client that follows a redirect blindly turns a
+	// provider misconfiguration into this instance being told where to
+	// send a client secret, and that property must not depend on every
+	// caller remembering to set it (code review).
 	HTTP *http.Client
 	Now  func() time.Time
 
 	cache cache
 }
 
+// noRedirect refuses every redirect, on every call this package makes —
+// discovery, the JWKS fetch, and the code exchange. A provider's own
+// published endpoints have no reason to redirect, and a 307/308 can
+// replay a POST — the token exchange, carrying this connection's client
+// secret in its Authorization header — to wherever it points.
+func noRedirect(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }
+
+// httpClient returns a client that always refuses redirects and never
+// blocks indefinitely, REGARDLESS of what Config.HTTP supplied: a
+// caller-provided client is copied (its Transport, proxy and TLS config
+// kept, so a real deployment's networking policy still applies) rather
+// than trusted as-is. Found missing in code review — a supplied client
+// with CheckRedirect left nil, Go's own default, followed redirects
+// silently, and one with Timeout left at zero could hang a sign-in
+// forever on a stalled provider.
 func (e *Engine) httpClient() *http.Client {
+	c := http.Client{Timeout: 15 * time.Second}
 	if e.HTTP != nil {
-		return e.HTTP
+		c = *e.HTTP
+		if c.Timeout <= 0 || c.Timeout > 15*time.Second {
+			c.Timeout = 15 * time.Second
+		}
 	}
-	return &http.Client{
-		Timeout: 15 * time.Second,
-		CheckRedirect: func(*http.Request, []*http.Request) error {
-			return http.ErrUseLastResponse
-		},
-	}
+	c.CheckRedirect = noRedirect
+	return &c
 }
 
 func (e *Engine) now() time.Time {

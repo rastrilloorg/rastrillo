@@ -5,12 +5,20 @@ Built with Claude Sonnet 5 (`claude-sonnet-5[1m]`, "high" effort in Claude
 Code) — not the strongest model this account can reach; see "Model" under
 Review log for why.
 
-**Revision 2.** Revision 1 was adversarially reviewed (Review log, below) and
-found unsafe to build from: three blockers, all in the hub/second-factor
-wiring this revision exists to fix. Every section below reflects that
-review's disposition, not the original reasoning — read Review log first if
-you read revision 1 already, because D3 and D5 in particular now say the
-opposite of what they said.
+**Revision 3.** Revision 2 was built (`oidc/`, commit 890e163) and that code
+was reviewed twice more — once by Claude Opus 5.5 (interim, same-provider),
+once by the real cross-provider review this account could not initially
+reach (`gpt-6-luna`, found working after Tony pointed out the earlier
+"unreachable" conclusion was wrong — see Review log). Both found more real
+bugs in the CODE, several of them independently confirming each other. This
+revision updates the spec's own prose to match the code as it now stands
+after those fixes; the code commit that applies them lands alongside this
+one. Read Review log for the full account, including the correction about
+cross-provider access.
+
+**Revision 2** was built from a prior adversarial review of revision 1
+(three blockers, all in the hub/second-factor wiring) — see Review log for
+that round too; D3 and D5 changed meaning between revisions 1 and 2.
 
 ## Why
 
@@ -26,9 +34,11 @@ immediately. Nothing after sign-in re-checks the provider — no refresh
 token is kept, by design (D2) — so a session lives for its ordinary
 `sessions` TTL after the provider revokes the person, same as ips's own
 shipped feature. Revocation at the provider stops their NEXT sign-in; an app
-that needs faster enforcement sets a short `SessionTTL` on the
-`*sessions.Sessions` it hands this package, which is a knob that already
-exists and needed no new code.
+that needs faster enforcement sets a short `TTL` on the `sessions.Config` it
+builds its `*sessions.Sessions` from (`sessions.Config.TTL`, not a field on
+this package's own `Config` — real cross-provider review, revision 2 named
+the wrong struct), which is a knob that already exists and needed no new
+code.
 
 ips built the verification core this ports from (`internal/oidc`,
 `docs/design/88-single-sign-on.md`, shipped 2026-09-07, two providers in
@@ -63,18 +73,48 @@ near-verbatim":
   two fields, `alg` and `kid` (ips `verify.go:91-94`), so a header claiming
   to carry its own key is inert by omission rather than by a check that
   could be gotten wrong.
-- **A JWKS key's modulus must be at least 2048 bits and its exponent
-  sane** (ips already does this, `verify.go:437-461`) — stated here as a
-  rule because it is a security property this port must not silently
-  drop, not merely inherit.
-- **Every HTTP call this package makes — discovery, JWKS, token exchange
-  — disables redirect-following.** ips's `Client` uses a plain
-  `http.Client` with default redirect behaviour; this spec changes that.
-  A provider's own published endpoints have no reason to redirect, and a
-  client that follows one blindly turns a provider misconfiguration (or a
-  compromised endpoint) into this instance being told where to send a
-  client secret. `http.Client{CheckRedirect: func(..., via) error { return
-  http.ErrUseLastResponse }}` on all three calls.
+- **A JWKS key's modulus must be between 2048 and 8192 bits, checked by its
+  real VALUE, not by the byte length of its encoding.** ips's own check
+  (`verify.go:437-461`) tests `len(n) < 256` against the decoded bytes,
+  which both real cross-provider reviews caught as a distinct gap: a
+  modulus padded with leading zero bytes passes a byte-length check at any
+  size, while `big.Int.SetBytes` — which ignores leading zeros, per its own
+  documentation — still builds the small, factorable integer those zeros
+  were padding around. The check is on `new(big.Int).SetBytes(n).BitLen()`,
+  never on `len(n)`. The upper bound is new too, and deliberate: `readBody`
+  bounds a whole JWKS response to 1MB, which bounds a key loosely; this
+  package spends real CPU verifying against a cached key, so that CPU cost
+  gets an explicit ceiling rather than "whatever fits in a megabyte".
+- **Every HTTP call this package makes — discovery, JWKS, token
+  exchange — disables redirect-following and bounds its timeout,
+  REGARDLESS of whether the app supplies its own `*http.Client`.** The
+  first cut (and ips before it) only applied this to the package's OWN
+  default client; a real cross-provider review found that an app-supplied
+  client — for a custom proxy or transport, a perfectly ordinary reason to
+  set one — got neither property, silently. Go's own `http.Client` follows
+  redirects when `CheckRedirect` is nil, and a 307/308 preserves a POST
+  body, which is exactly the shape of the token-exchange request carrying
+  this connection's client secret in its `Authorization` header. The fix
+  copies a supplied client (keeping its Transport, proxy and TLS config)
+  and overrides `CheckRedirect` unconditionally, clamping `Timeout` to 15
+  seconds only when it is unset or longer.
+- **ID-token claim checks, made exhaustive rather than described loosely**
+  (a real cross-provider review's blocker: the spec said "checks iss/aud/
+  nonce/exp" without saying precisely how, which both real reviews
+  independently found two gaps in): `iss` is compared to the discovery
+  document's issuer EXACTLY — not with trailing slashes trimmed off the
+  TOKEN's side, which revision 2 did and which is a leniency beyond the
+  specification's own exact-match rule, found harmless in practice here
+  only because `issuerMatchesKind` (D3, below) independently constrains
+  what `conn.Issuer`/`m.Issuer` can be, but stated precisely rather than
+  relied on in combination. `iat` is REQUIRED, the same way `exp` already
+  is in this port — a token with no `iat` at all is refused, where the
+  prior version let it through unchecked (silently treating a REQUIRED
+  claim as optional, the same way `nbf` genuinely is). `azp` is validated
+  whenever it is PRESENT, matching OpenID Connect Core's own "a client
+  SHOULD verify azp whenever the claim appears" — not only in the
+  multi-audience case the specification makes it REQUIRED in, which is
+  all the prior version checked.
 - **Request and response bodies stay bounded** — ips's 1MB `readBody`
   cap, ported unchanged, stated as a rule because it is the actual
   defence against a provider answering with something enormous, not an
@@ -151,7 +191,52 @@ checked before the app's own admission hook ever runs (see D5's `Admit`):
 - The address itself is read `email` first, then `preferred_username`,
   then `upn`, each accepted only with exactly one `@` (ips
   `verify.go:210-242`) — ported unchanged, and now stated here as this
-  package's own rule rather than left implicit in a port.
+  package's own rule rather than left implicit in a port. **Caveat added
+  after both real cross-provider reviews raised it independently:**
+  Microsoft's own documentation describes `preferred_username`/`upn` as
+  mutable and not intended for authorisation decisions, and a B2B guest's
+  token carries an address their HOME directory supplied, not the firm's.
+  `Admit` implementations that treat `Identity.Address` as a stable,
+  firm-controlled identifier should not — `(Identity.Issuer,
+  Identity.Subject)` is the stable pair where that matters more than the
+  convenience of matching on an address. Stated on `Identity.Address`'s
+  own doc comment, not only here.
+
+**A `Connection`'s `Issuer` must have the exact shape its declared `Kind`
+would build, checked on every use — a gap BOTH real cross-provider
+reviews found independently, and the most serious finding either one
+raised against the implemented code.** `Provider.NeedsHostedDomain` is
+decided by `Kind`: a `Connection` labelled `microsoft` whose `Issuer` was
+actually some OTHER provider's value — through a bug, a copy-paste in
+whatever builds `Connections`, or (the sharper framing) a hub's own
+connection store being wrong for one tenant — would never be asked for
+`AllowedDomains` and never have `hd` checked, admitting whoever that
+OTHER issuer signs for. `issuerMatchesKind(Provider, issuer) error`
+refuses a Microsoft-kind connection whose issuer is not exactly
+`https://login.microsoftonline.com/<guid>/v2.0` (and not the GUID below)
+and a Google-kind connection whose issuer is not exactly
+`https://accounts.google.com`, called in both `Begin` and `Return` before
+`Discover`. A package-level test seam (`skipIssuerShapeCheck`, default
+false) lets this package's own suite stand a fake provider up on a
+loopback address — which cannot be disguised as either real host — while
+`TestIssuerMustMatchKind` is the one test that turns the seam back off,
+so the check itself is proved rather than merely assumed exercised; see
+`docs/rules/testing.md`-style reasoning against `testing.Testing()`,
+which would have made this exact check untestable by this package's own
+suite (every test binary has it true).
+
+**The consumer tenant GUID, `9188040d-6c67-4c5b-b112-36a304b66dad`, is
+refused by name, twice — at the directory field (save time) and inside
+`issuerMatchesKind` (use time).** It is Microsoft's own fixed, concrete
+tenant ID behind the `/consumers` shared endpoint — "every personal
+Microsoft account" — spelled as a GUID rather than a word, so it passes
+`refuseMicrosoftDirectory`'s GUID-shape check at any size AND Discover's
+placeholder check (its discovery document names this GUID as a CONCRETE
+issuer, never a `{tenantid}` placeholder), which is exactly the two
+refusals this design already relies on to keep Microsoft's shared
+endpoints out. Found by the same-provider review, not written down by
+ips. The same "refuse it twice" pattern this design already uses for
+`common`/`organizations`/`consumers` by name.
 
 **`Connection` gains a tenant key and loses nothing**:
 
@@ -220,6 +305,11 @@ pattern rather than inventing one:**
 - `__Host-` prefix when the app's origin is https, unprefixed when it is
   not — the exact `secure()`/`cookieName()` pattern `auth.Auth` already
   implements (`auth/auth.go:624-638`), copied rather than re-derived.
+  `Path=/` always, and no `Domain` set — a real cross-provider review
+  named this explicitly: `__Host-` is meaningless, and some browsers
+  refuse the cookie outright, without `Path=/` and an absent `Domain`,
+  so this is restated here as a requirement rather than left to be
+  inferred from "the `__Host-` prefix".
 - `HttpOnly`, `SameSite=Lax` (ips's reasoning: the return leg is a
   top-level GET from the provider's own origin, which `Strict` would
   drop), `Secure` matching the origin.
@@ -230,6 +320,20 @@ pattern rather than inventing one:**
 - Cleared on every outcome of Return — success, refusal, a cookie that
   fails to open, or the provider's own `?error=`. A cookie that outlives
   its one use is a replay surface for no benefit.
+
+**What "single-use" actually rests on, stated rather than implied — a
+real cross-provider review's major finding.** Clearing the cookie stops
+the BROWSER presenting it again; it does not stop two Return requests
+that already carry the same cookie value from both opening it before
+either response is processed; there is no server-side atomic consume,
+because D88.5's whole argument against a table is that an anonymous
+caller pressing the button writes nothing to this instance's disk — adding
+one back here to close this would be reopening that decision for a
+narrow race. What actually closes it is the PROVIDER's own authorization
+code, which every OIDC/OAuth2 provider this design targets treats as
+single-use: a second `Exchange` call with the same `code` is refused at
+the provider, not locally. This design relies on that provider guarantee
+explicitly, rather than asserting a local atomicity it does not have.
 
 **`InstanceKey` is a `string`, matching `auth.Config.InstanceKey`** (finding
 16: revision 1 wrote `[]byte`, inconsistent with the sibling package it
@@ -319,10 +423,28 @@ named rather than glossed over:**
   here as an explicit limitation: **OIDC plus a second factor does not
   work in Signed (hub) mode today.** `New` with both `Config.SecondFactor`
   set AND a `*sessions.Sessions` built in Signed mode is refused rather
-  than silently shipping a combination nobody has made work. Raised as a
-  question for core in Open questions, below — it belongs to `sessions`/
-  `secondfactor`, not to this branch, and fixing it here would be
-  reaching past what this branch owns.
+  than silently shipping a combination nobody has made work. This now
+  genuinely happens AT `New`: `sessions.Sessions` gained an exported
+  `Signed() bool` — the review's first pass correctly noted this check
+  could not be written at all without one, since `Config.Signed` was
+  private and nothing exposed the mode. Added to `sessions` itself (same
+  branch, a one-line accessor, not a speculative feature — justified
+  because `oidc`'s own correctness claim depends on it existing) rather
+  than left as a limitation this package could only document and hope an
+  app noticed. Raised as a question for core in Open questions, below,
+  because the real fix — widening Signed mode's alphabet, or giving
+  `secondfactor` its own — is still `sessions`/`secondfactor`'s to make;
+  `Signed()` only lets `oidc.New` refuse the combination cleanly, it does
+  not make the combination work.
+- **`Admit` returning `("", nil)` — no error, no subject — is a real gap
+  a real cross-provider review found and the same-provider review missed
+  in its own first pass over `Admit`'s contract:** an empty `(err, subject)
+  == (nil, "")` is the ordinary shape of "not found" from a Go lookup, and
+  row-mode `sessions.SignIn` stores an empty subject without validating it
+  at all — a session with no app identity, minted and signed, passing
+  `Require`. `Return` now treats this as a server error (the caller's
+  contract violation, not success) rather than reading `err == nil` as
+  "proceed."
 
 **What D5 now actually claims, stated plainly so it cannot be
 over-read again:** `oidc` itself contains no branch on DB-mode vs.
@@ -359,6 +481,27 @@ minute before treating the sign-in as satisfying step-up — not merely
 present, since a provider that ignores `max_age` (several do, for an
 already-interactive session) could otherwise hand back a stale
 `auth_time` that looks fresh enough.
+
+**Two bugs in that check, both found by code review and both fixed —
+one by the same-provider pass, the second independently confirmed by
+both real cross-provider reviews:**
+
+- **A FUTURE `auth_time` satisfied the freshness check**, because the
+  comparison was only `now.Sub(auth_time) > freshWindow` — for an
+  `auth_time` an hour in the future, that subtraction is NEGATIVE, which
+  is never greater than one minute, so it read as fresh. The check is
+  now bounded both ways: `auth_time` must be no more than `skew` (the
+  2-minute clock tolerance this package already applies to token
+  verification) ahead of now, as well as no more than `freshWindow`
+  behind it.
+- **The step-up check ran BEFORE `Admitted` and `Admit`**, which both
+  real cross-provider reviews flagged as contradicting `Refused`'s own
+  stated guarantee (D3: only an identity that has already cleared
+  admission reaches it) — a Gmail account with no `hd`, or an address
+  the provider marked unverified, would reach `Refused` carrying a
+  reason about FRESHNESS rather than about why it was never going to be
+  admitted at all. The order in `Return` is now `Admitted` → `Admit` →
+  the step-up check → `SecondFactor` → `SignIn`, unconditionally.
 
 ### D7 — The start is a link; `response_mode=query`'s real reason corrected
 
@@ -398,7 +541,7 @@ oidc/
   keys.go         // KeySet/MetaCache, now keyed by issuer/jwks_uri across all connections (D3, finding 5)
   verify_fuzz_test.go   // FuzzTokenShape, FuzzClaims (D2)
   ceremony.go     // ceremony struct, seal/open via crypto.SealSym, PKCE (D4)
-  providers.go    // Kind, Provider, Microsoft, Google, Providers(), ProviderFor — fixed set (D2)
+  providers.go    // Kind, Provider, Microsoft, Google, Providers(), ProviderFor — fixed set (D2); issuerMatchesKind, ErrIssuerKindMismatch (D3)
   identity.go     // Identity (ported from ips oidc.go, unchanged)
   handlers.go     // Config, Handlers, New, Begin, Return — new
 ```
@@ -527,16 +670,33 @@ the change and passing after.
    against live Entra and Google tenants before merge, outcome posted to
    a discussion. The one piece of evidence this spec cannot manufacture
    itself.
+8. **Every gap the second review round found, each with its own
+   regression test rather than taken on faith:** `issuerMatchesKind`
+   refusing a Google issuer under a Microsoft-kind connection and the
+   consumer tenant GUID's issuer shape (`TestIssuerMustMatchKind`, run
+   with the package's test-wide bypass explicitly turned back off); the
+   RSA modulus check refusing a zero-padded small modulus by its real
+   bit length; a supplied `*http.Client` with `CheckRedirect` left nil
+   still refusing a redirect; an exact (not trailing-slash-tolerant)
+   issuer match; a missing `iat` refused; a mismatched `azp` refused on
+   a single-audience token; a future `auth_time` refused by step-up
+   rather than accepted; `Admitted`'s core refusal reached before
+   `Admit` even when `Admit` itself would have admitted; `return_to`
+   surviving into `SecondFactor`'s own request; the ceremony cookie
+   cleared on a failed `Return`, not only a successful one; `New`
+   actually refusing `SecondFactor` with a Signed-mode `Sessions`; an
+   empty subject from `Admit` refused rather than minted.
 
 ## Open questions
 
 1. **For core, not for this branch: `secondfactor`'s `Method` suffix
    composition is incompatible with Signed mode's key-id alphabet**
    (D5, finding 2's third bullet). Any first factor built after Signed
-   mode landed inherits this; `oidc` works around it by refusing the
-   combination rather than shipping something broken, but the actual fix
-   — widening Signed mode's alphabet, or giving `secondfactor` its own
-   narrower one that both sides agree on — belongs to `sessions`/
+   mode landed inherits this; `oidc` now refuses the combination AT BOOT
+   (`sessions.Sessions.Signed()`, added this branch, used in `New`)
+   rather than merely documenting that it fails late — but the actual
+   fix, widening Signed mode's alphabet or giving `secondfactor` its own
+   narrower one both sides agree on, still belongs to `sessions`/
    `secondfactor`, and is worth its own discussion regardless of whether
    this branch merges.
 2. **Who runs the real-tenant interop checklist, and when.** Unchanged
@@ -559,19 +719,25 @@ a repair of findings surfaced by review rather than a from-scratch design.
 The actual CODE for this branch, and the review of it, should run at this
 account's strongest tier — unchanged commitment from revision 1.
 
-**Cross-provider review attempted, found unreachable.** `codex` is
-installed; `codex login status` reports "Logged in using ChatGPT". Every
-model tried — `gpt-6-astra` (the pattern from #129/#122/#113), `gpt-6.1-sol`,
-`gpt-5.6-sol` (this account's own `~/.codex/config.toml` default), and
-plain `gpt-5` — was refused identically: `"The '<model>' model is not
-supported when using Codex with a ChatGPT account."` This looks like a
-subscription-tier gap on this account rather than a wrong model name.
-Written up in [discussion #139](https://amadan.net/rastrillo/rastrillo/-/branch/oidc-signin)
-with the exact commands and errors. Per CONTRIBUTING rule 2's own fallback
-— "If you cannot reach another provider, say why in the discussion and
-stop. A person must approve a same-provider review on the branch before it
-merges" — this is said there, and this branch should not merge on the
-review below alone without that approval.
+**Cross-provider review: first believed unreachable, then found working —
+a mistake, corrected on [discussion #139](https://amadan.net/rastrillo/rastrillo/-/branch/oidc-signin).**
+`codex` is installed; `codex login status` reports "Logged in using
+ChatGPT". Four guessed model names — `gpt-6-astra` (the pattern from
+#129/#122/#113), `gpt-6.1-sol`, `gpt-5.6-sol` (this account's own
+`~/.codex/config.toml` default), and plain `gpt-5` — were all refused
+identically: `"The '<model>' model is not supported when using Codex with
+a ChatGPT account."` That was read as "this account cannot reach any
+model", and was wrong: `~/.codex/models_cache.json` lists what this
+account actually has (`gpt-6-astra` is not among them at all — it looks
+like a different account's own alias, Paul's, going by the earlier
+Astra-review discussions here), and `gpt-6-luna`
+(`supported_in_api: true, visibility: "list"`, the new major version over
+two 5.6 options) answers. Tony caught this and said so before four
+guessed names were accepted as a real "unreachable" finding. The real
+cross-provider review ran once that was fixed — see below — and this
+branch is no longer blocked on the same-provider fallback CONTRIBUTING
+rule 2 describes; the same-provider reviews below stand as a genuine
+second opinion, not as the required review.
 
 **Same-provider review (interim, pending the approval above).** A fresh
 Claude Opus 5.5 session, no shared context with the session that wrote
@@ -608,8 +774,52 @@ load-bearing claims: `sessions/signed.go`'s `identifier(c.Sub,128)` and
 contract) — this document does not ask a reader to trust a sub-review's
 transcript any further than this spec's own author did.
 
-**Still pending before this spec is ready for code:** Tony's approval to
-proceed on a same-provider review per the fallback rule above, and a
-decision on Open question 1 (whether the Signed-mode/`secondfactor`
-incompatibility this branch surfaces is worth raising as its own core
-discussion before or alongside this one).
+**Round 2 — the implementation, reviewed three times after code existed
+to review.** Code was built from revision 2 (commit 890e163). Three
+reviews followed, all of the CODE rather than the spec's prose:
+
+- **Same-provider (interim), Claude Opus 5.5**, the code analogue of the
+  revision-1→2 round above: fresh session, scratch-copy probe tests.
+  Thirteen findings, four of them severe — a step-up bypass via a future
+  `auth_time`, the `Kind`/`Issuer` binding gap, an empty-subject session,
+  and the headline fixes having no tests of their own. Full prompt, reply
+  and disposition: [discussion #145](https://amadan.net/rastrillo/rastrillo/-/branch/oidc-signin).
+- **Real cross-provider (GPT-6-Luna) of the spec's prose**, run once
+  access was fixed (above). Seventeen findings, two blockers — the claim
+  checks described too loosely, and the no-redirect rule not enforced on
+  a caller-supplied `*http.Client` — several independently matching what
+  the same-provider CODE review had already found and fixed, which is
+  itself evidence the two reviews were not just agreeing with each other
+  by accident. Full prompt, reply and disposition: [discussion #146](https://amadan.net/rastrillo/rastrillo/-/branch/oidc-signin).
+- **Real cross-provider (GPT-6-Luna) of the implementation.** Ten
+  findings, one blocker (the consumer tenant GUID). Independently
+  confirmed four of the same-provider review's findings (`Kind`/`Issuer`
+  binding, the step-up future-time bug and its ordering, the empty
+  subject, `return_to` lost through `SecondFactor`) and found three
+  genuinely new ones no other review caught: the RSA modulus check
+  measuring encoded byte length rather than the value's real bit length
+  (a zero-padded small modulus would have passed), three claim-check
+  gaps (issuer trimmed rather than exact, `iat` treated as optional,
+  `azp` only checked in the multi-audience case), and the no-redirect
+  policy not applying to a caller-supplied HTTP client. Full prompt,
+  reply and disposition: [discussion #147](https://amadan.net/rastrillo/rastrillo/-/branch/oidc-signin).
+
+Every finding across all three is fixed or explicitly documented as an
+accepted, bounded limitation — see each discussion's own disposition and
+this revision's D2–D6 for where. The two reviews that converged on the
+same bugs by two different routes (one reading the diff adversarially,
+one re-deriving the OIDC specification's own requirements and checking
+the code against THAT) is the strongest evidence in this document that
+what remains is not merely "two models agreeing with each other" — they
+were given different prompts emphasising different things and still
+met at the `Kind`/`Issuer` gap, the step-up bugs, and the empty subject.
+
+**What is left, stated plainly:** `oidc/INTEROP.md`'s live-tenant
+checklist has not been run against a real Entra or Google tenant by
+anyone (Open question 2, unchanged) — this document's own house rule is
+that a number nobody can cite must not be asserted, and "this works
+against real Microsoft and Google infrastructure" is exactly such a
+number until that checklist comes back filled in. `make ci` and the full
+test suite (`go build`/`vet`/`staticcheck`/`race` tests) are green on
+this branch as of the commit alongside this revision. Open questions 1
+and 3 are unchanged and still want a person's read.

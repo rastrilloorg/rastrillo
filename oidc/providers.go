@@ -170,6 +170,17 @@ var (
 // gate. The tenant is not a setting, it is the boundary.
 var sharedTenants = []string{"common", "organizations", "consumers"}
 
+// consumersTenantID is the well-known, fixed tenant GUID Microsoft's own
+// `/consumers` endpoint resolves to — "every personal Microsoft account",
+// the same shared-tenant risk as the three names above, but spelled as a
+// GUID rather than a word. Typed directly rather than through the word
+// "consumers", it passes the GUID-shape check below AND Discover's
+// placeholder check (its discovery document names this GUID as a
+// concrete issuer, not a `{tenantid}` placeholder), so without this it is
+// the one shared endpoint neither refusal catches. Found in code review,
+// not written down by ips.
+const consumersTenantID = "9188040d-6c67-4c5b-b112-36a304b66dad"
+
 func refuseMicrosoftDirectory(directory string) string {
 	directory = strings.TrimSpace(directory)
 	for _, shared := range sharedTenants {
@@ -178,6 +189,11 @@ func refuseMicrosoftDirectory(directory string) string {
 				"would let an account from any organisation reach this sign-in. Use the " +
 				"directory (tenant) ID from your own Entra admin centre."
 		}
+	}
+	if strings.EqualFold(directory, consumersTenantID) {
+		return "That is the fixed tenant ID behind Microsoft's shared consumer endpoint, and it " +
+			"would let any personal Microsoft account reach this sign-in. Use the directory " +
+			"(tenant) ID from your own Entra admin centre."
 	}
 	if guid.MatchString(directory) {
 		return ""
@@ -197,4 +213,61 @@ func refuseMicrosoftDirectory(directory string) string {
 	}
 	return "This should be the directory ID — eight characters, then three groups of four, " +
 		"then twelve, separated by hyphens."
+}
+
+// microsoftIssuer matches exactly what Provider.Issuer builds for
+// Microsoft from a directory that Refusal has already accepted — never
+// the consumer tenant GUID, which has its own refusal above.
+var microsoftIssuer = regexp.MustCompile(
+	`^https://login\.microsoftonline\.com/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/v2\.0$`)
+
+// ErrIssuerKindMismatch means a Connection's Issuer does not have the
+// shape Provider.Issuer would have built for its own Kind.
+var ErrIssuerKindMismatch = fmt.Errorf("%w: that is not an issuer this provider would build", ErrNotConfigured)
+
+// skipIssuerShapeCheck turns issuerMatchesKind off. Default false —
+// strict by default, like every other check in this package — and this
+// package's own TestMain (testutil_test.go) sets it true for the whole
+// suite, because the suite stands a fake provider up on a loopback
+// address that cannot be disguised as login.microsoftonline.com or
+// accounts.google.com. TestIssuerMustMatchKind (providers_test.go)
+// flips it back for the one test that exists to prove the check itself
+// still fires — deliberately NOT testing.Testing(), which would make
+// this exact check untestable by this package's own suite (every test
+// binary has it true), the same "guard nothing can point at the defect"
+// shape this repository's own rules warn against elsewhere. An app
+// embedding this package has no way to reach this var either way.
+var skipIssuerShapeCheck = false
+
+// issuerMatchesKind is the review's finding-2 fix: Admitted's
+// hosted-domain requirement is decided by Provider.NeedsHostedDomain,
+// which is a property of KIND — so a Connection whose Kind says
+// "microsoft" but whose Issuer was actually set (by a bug, or by
+// whatever builds Connections) to some shared-issuer provider's value
+// would never be asked for AllowedDomains and would never have hd
+// checked, admitting anyone that OTHER issuer would sign for. This
+// closes it by requiring the issuer to have the EXACT shape this
+// provider's own Issuer function builds, checked on every use, not only
+// at configuration time.
+func issuerMatchesKind(p Provider, issuer string) error {
+	if skipIssuerShapeCheck {
+		return nil
+	}
+	switch p.Kind {
+	case Microsoft:
+		// The shape check alone would accept the consumer tenant GUID's
+		// own issuer — refuseMicrosoftDirectory already refuses typing
+		// that GUID into a connection, and this is the same refusal
+		// made again at use time, the same "refuse it twice" pattern
+		// this file already uses for "common"/"organizations"/
+		// "consumers" by name.
+		if !microsoftIssuer.MatchString(issuer) || strings.Contains(strings.ToLower(issuer), consumersTenantID) {
+			return ErrIssuerKindMismatch
+		}
+	case Google:
+		if issuer != "https://accounts.google.com" {
+			return ErrIssuerKindMismatch
+		}
+	}
+	return nil
 }

@@ -4,7 +4,11 @@ import (
 	"context"
 	"crypto/rand"
 	"crypto/rsa"
+	"encoding/base64"
 	"errors"
+	"math/big"
+	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
@@ -363,4 +367,88 @@ func mustGenerateKey(t *testing.T) *rsa.PrivateKey {
 		t.Fatalf("generate key: %v", err)
 	}
 	return k
+}
+
+// ── code review round 2: claim checks found incomplete ─────────────────
+
+func TestVerifyRequiresExactIssuerMatch(t *testing.T) {
+	f := newFakeIdP(t)
+	now := time.Now()
+	e := testEngine(f, now)
+	m := discoverOrFatal(t, e, f.issuer)
+	cl := baseClaims(f.issuer, testClientID, "nonce-1", now)
+	cl["iss"] = f.issuer + "/" // a trailing-slash variant, not the exact string
+	tok := f.mint(t, cl)
+
+	if _, err := e.Verify(context.Background(), m, Connection{ClientID: testClientID}, tok, "nonce-1"); !errors.Is(err, ErrToken) {
+		t.Fatalf("expected a trailing-slash issuer variant to be refused (exact match only), got %v", err)
+	}
+}
+
+func TestVerifyRequiresAnIssuedAtClaim(t *testing.T) {
+	f := newFakeIdP(t)
+	now := time.Now()
+	e := testEngine(f, now)
+	m := discoverOrFatal(t, e, f.issuer)
+	cl := baseClaims(f.issuer, testClientID, "nonce-1", now)
+	delete(cl, "iat")
+	tok := f.mint(t, cl)
+
+	if _, err := e.Verify(context.Background(), m, Connection{ClientID: testClientID}, tok, "nonce-1"); !errors.Is(err, ErrToken) {
+		t.Fatalf("expected a token with no iat to be refused (iat is required, not optional like nbf), got %v", err)
+	}
+}
+
+func TestVerifyValidatesAzpWheneverPresent(t *testing.T) {
+	f := newFakeIdP(t)
+	now := time.Now()
+	e := testEngine(f, now)
+	m := discoverOrFatal(t, e, f.issuer)
+
+	// Single audience, but azp names somebody else: refused even though
+	// azp is only REQUIRED in the multi-audience case.
+	cl := baseClaims(f.issuer, testClientID, "nonce-1", now)
+	cl["azp"] = "not-this-client"
+	tok := f.mint(t, cl)
+	if _, err := e.Verify(context.Background(), m, Connection{ClientID: testClientID}, tok, "nonce-1"); !errors.Is(err, ErrToken) {
+		t.Fatalf("expected a mismatched azp to be refused even on a single-audience token, got %v", err)
+	}
+}
+
+func TestRsaKeyRejectsAModulusPaddedToFakeItsByteLength(t *testing.T) {
+	// A small, easily-factorable modulus (well under 2048 bits) padded
+	// with leading zero bytes to 256 bytes long. big.Int.SetBytes
+	// ignores leading zeros, per its own doc, so a byte-length check
+	// alone would accept this as "2048 bits" while the actual value
+	// verified against is tiny.
+	small := big.NewInt(65537 * 65537) // a trivially small "modulus"
+	padded := make([]byte, 256)
+	small.FillBytes(padded)
+	n := base64.RawURLEncoding.EncodeToString(padded)
+	e := base64.RawURLEncoding.EncodeToString([]byte{0x01, 0x00, 0x01}) // 65537
+
+	if _, err := rsaKey(n, e); err == nil {
+		t.Fatal("expected a zero-padded small modulus to be refused by its real bit length, not accepted by its byte length")
+	}
+}
+
+func TestHTTPClientAlwaysRefusesRedirectsEvenWhenACustomClientIsSupplied(t *testing.T) {
+	redirectTarget := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		t.Error("the redirect target must never be reached: CheckRedirect should have stopped it first")
+	}))
+	defer redirectTarget.Close()
+	redirector := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, redirectTarget.URL, http.StatusFound)
+	}))
+	defer redirector.Close()
+
+	// A plain client with CheckRedirect left nil — Go's own default,
+	// which FOLLOWS redirects — standing in for whatever an app might
+	// reasonably pass in for its own networking policy (a proxy, a
+	// custom Transport). It must not be trusted as-is.
+	e := &Engine{HTTP: redirector.Client()}
+	_, _, err := e.fetch(context.Background(), "test", redirector.URL)
+	if err == nil {
+		t.Fatal("expected the fetch to stop at the redirect rather than follow it to the target")
+	}
 }

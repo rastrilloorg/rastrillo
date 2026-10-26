@@ -10,10 +10,22 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"sync"
 	"testing"
 	"time"
 )
+
+// TestMain turns skipIssuerShapeCheck (providers.go) on for the whole
+// suite: almost every test here drives a connection against a fake
+// provider on a loopback address, which cannot be disguised as
+// login.microsoftonline.com or accounts.google.com.
+// TestIssuerMustMatchKind (providers_test.go) is the one test that turns
+// it back off, to prove the check it stands in for still fires.
+func TestMain(m *testing.M) {
+	skipIssuerShapeCheck = true
+	os.Exit(m.Run())
+}
 
 // fakeIdP stands up a real TLS loopback server speaking just enough of
 // discovery, JWKS and the token endpoint to drive this package's flow —

@@ -31,6 +31,16 @@ type Identity struct {
 	// provider is not obliged to release one, and a caller must treat
 	// that as a refusal rather than as an empty match. See address() in
 	// verify.go for exactly which claim this comes from and why.
+	//
+	// For Entra specifically: when `email` is absent this falls back to
+	// `preferred_username`/`upn`, which Microsoft's own documentation
+	// describes as mutable and not intended for authorisation decisions
+	// — an account's UPN can be changed, and a B2B guest's token carries
+	// an address their HOME directory supplied, not the firm's own. An
+	// Admit implementation that treats this field as a stable,
+	// firm-controlled identifier should know it is not one (code
+	// review); matching on `(Issuer, Subject)` is the stable pair where
+	// that matters more than convenience.
 	Address string
 
 	// AddressVerified records what the provider SAID about the address,

@@ -26,6 +26,17 @@ import (
 // SAME issuer or the same jwks_uri queue behind one fetch, which is the
 // single-flight property the review asked for (no N simultaneous fetches
 // for one cold cache entry).
+//
+// What this does NOT do: share a FAILED fetch. A hung or erroring
+// provider is not cached, so N sign-ins against one cold, broken issuer
+// each wait out their own fetch in turn rather than failing together —
+// bounded by the HTTP client's own 15-second timeout per waiter, not
+// unbounded, but still N times the latency a true single-flight-with-
+// shared-result would give (code review). Accepted here: caching a
+// failure risks caching a TRANSIENT one past the moment the provider
+// recovers, and that trade was not worth taking for what is, in
+// practice, a rare path — a provider outage during the brief window
+// several sign-ins happen to overlap one cold cache entry.
 type cache struct {
 	mu    sync.Mutex
 	metas map[string]*metaSlot

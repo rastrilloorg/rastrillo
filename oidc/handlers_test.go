@@ -63,6 +63,14 @@ func newSignedModeSessions(t *testing.T, now *time.Time) *sessions.Sessions {
 	return s
 }
 
+// TestBeforeTheFix_... demonstrates the SESSIONS constraint that drove
+// D5's fix, directly against sessions.Sessions rather than against
+// anything in this package — there is no earlier version of oidc itself
+// to run this against, since it is new code. Read it as the "before"
+// half of the pair with TestAfterTheFix_..., below, which IS evidence
+// against this package's own Return (code review: the distinction
+// matters, so it is stated rather than left for the names alone to
+// imply).
 func TestBeforeTheFix_NaiveMethodAndAuthTimeFailSignedModeSignIn(t *testing.T) {
 	now := time.Now()
 	sess := newSignedModeSessions(t, &now)
@@ -179,7 +187,7 @@ func TestAdmitRefusalMeansSecondFactorIsNeverCalled(t *testing.T) {
 	now := time.Now()
 	sess := newDBModeSessions(t, &now)
 
-	secondFactorCalled := false
+	admitCalled, secondFactorCalled := false, false
 	h, err := New(Config{
 		Sessions:    sess,
 		InstanceKey: strings.Repeat("k", 32),
@@ -189,6 +197,7 @@ func TestAdmitRefusalMeansSecondFactorIsNeverCalled(t *testing.T) {
 			return Connection{Issuer: f.issuer, ClientID: testClientID, ClientSecret: "secret", RedirectURI: testOrigin + "/signin/oidc/microsoft/return"}, true, nil
 		},
 		Admit: func(ctx context.Context, conn Connection, id Identity) (string, error) {
+			admitCalled = true
 			return "", ErrNotAdmitted
 		},
 		SecondFactor: func(w http.ResponseWriter, r *http.Request, s sessions.Session) (bool, error) {
@@ -217,8 +226,14 @@ func TestAdmitRefusalMeansSecondFactorIsNeverCalled(t *testing.T) {
 	returnW := httptest.NewRecorder()
 	r.ServeHTTP(returnW, returnReq)
 
-	if returnW.Code == http.StatusSeeOther {
-		t.Fatalf("expected the refusal to answer something other than a sign-in redirect, got %d", returnW.Code)
+	// A specific status, not merely "not a redirect" (code review: a
+	// weaker assertion here would pass vacuously against an earlier
+	// unrelated failure too).
+	if returnW.Code != http.StatusForbidden {
+		t.Fatalf("expected 403 from the refusal, got %d: %s", returnW.Code, returnW.Body)
+	}
+	if !admitCalled {
+		t.Fatal("Admit was never reached — this test proves nothing about the ordering it claims to")
 	}
 	if secondFactorCalled {
 		t.Fatal("SecondFactor was called after Admit refused — the exact route to an unauthorised session finding 6 found")
@@ -348,5 +363,250 @@ func TestCeremonyTamperedSealFailsToOpen(t *testing.T) {
 	tampered := sealed[:len(sealed)-4] + "AAAA"
 	if _, err := openCeremony(instanceKey, Microsoft, tampered, now); err == nil {
 		t.Fatal("a tampered ceremony seal opened")
+	}
+}
+
+// ── code review: coverage the mutation-testing pass found missing ──────
+
+// beginRig is the shared setup the tests below need: a fake IdP, a
+// DB-mode Sessions, a router, and a Begin already driven so a test can
+// go straight to building its own Return request.
+type beginRig struct {
+	f      *fakeIdP
+	now    time.Time
+	sess   *sessions.Sessions
+	router chi.Router
+	cookie *http.Cookie
+	state  string
+	nonce  string
+}
+
+func newBeginRig(t *testing.T, extra func(*Config)) *beginRig {
+	t.Helper()
+	f := newFakeIdP(t)
+	now := time.Now()
+	sess := newDBModeSessions(t, &now)
+	cfg := Config{
+		Sessions:    sess,
+		InstanceKey: strings.Repeat("k", 32),
+		Now:         func() time.Time { return now },
+		HTTP:        f.client(),
+		Connections: func(ctx context.Context, kind Kind, key ConnectionKey) (Connection, bool, error) {
+			return Connection{Issuer: f.issuer, ClientID: testClientID, ClientSecret: "secret", RedirectURI: testOrigin + "/signin/oidc/microsoft/return"}, true, nil
+		},
+		Admit: func(ctx context.Context, conn Connection, id Identity) (string, error) { return "subj", nil },
+	}
+	if extra != nil {
+		extra(&cfg)
+	}
+	h, err := New(cfg)
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	r := chi.NewRouter()
+	r.Get("/signin/oidc/{provider}", h.Begin)
+	r.Get("/signin/oidc/{provider}/return", h.Return)
+
+	beginW := httptest.NewRecorder()
+	r.ServeHTTP(beginW, httptest.NewRequest("GET", testOrigin+"/signin/oidc/microsoft", nil))
+	if beginW.Code != http.StatusSeeOther {
+		t.Fatalf("Begin: %d %s", beginW.Code, beginW.Body)
+	}
+	loc, err := url.Parse(beginW.Result().Header.Get("Location"))
+	if err != nil {
+		t.Fatalf("Begin redirected to an unparseable URL: %v", err)
+	}
+	cookies := beginW.Result().Cookies()
+	if len(cookies) != 1 {
+		t.Fatalf("expected exactly one ceremony cookie, got %d", len(cookies))
+	}
+	return &beginRig{
+		f: f, now: now, sess: sess, router: r, cookie: cookies[0],
+		state: loc.Query().Get("state"), nonce: loc.Query().Get("nonce"),
+	}
+}
+
+func (rig *beginRig) returnRequest(extraQuery string) *http.Request {
+	req := httptest.NewRequest("GET", testOrigin+"/signin/oidc/microsoft/return?code=abc&state="+rig.state+extraQuery, nil)
+	req.AddCookie(rig.cookie)
+	return req
+}
+
+func TestAdmittedCoreRefusalRunsBeforeAdmit(t *testing.T) {
+	admitCalled := false
+	rig := newBeginRig(t, func(cfg *Config) {
+		cfg.Admit = func(ctx context.Context, conn Connection, id Identity) (string, error) {
+			admitCalled = true
+			return "subj", nil // would admit, if it ever ran
+		}
+	})
+	cl := baseClaims(rig.f.issuer, testClientID, rig.nonce, rig.now)
+	cl["email_verified"] = false // Admitted's own refusal: Denied
+	rig.f.setToken(rig.f.mint(t, cl))
+
+	w := httptest.NewRecorder()
+	rig.router.ServeHTTP(w, rig.returnRequest(""))
+	if w.Code != http.StatusForbidden {
+		t.Fatalf("expected 403, got %d: %s", w.Code, w.Body)
+	}
+	if admitCalled {
+		t.Fatal("Admit ran even though Admitted's own core refusal (denied-verified) should have stopped it first")
+	}
+}
+
+func TestReturnToSurvivesASecondFactor(t *testing.T) {
+	var sawReturnTo string
+	rig := newBeginRig(t, func(cfg *Config) {
+		cfg.SecondFactor = func(w http.ResponseWriter, r *http.Request, sess sessions.Session) (bool, error) {
+			// The real shape of secondfactor.Gate.Hold's own contract:
+			// it reads return_to off whatever request it is handed.
+			sawReturnTo = sessions.SafeReturn(r, "/fallback")
+			return false, nil // let Return go on to mint ordinarily
+		}
+	})
+	// SafeReturn only trusts a same-site absolute path; Begin reads it
+	// from the FormValue on the Begin request itself.
+	beginW := httptest.NewRecorder()
+	rig.router.ServeHTTP(beginW, httptest.NewRequest("GET", testOrigin+"/signin/oidc/microsoft?return_to=/deep/link", nil))
+	loc, _ := url.Parse(beginW.Result().Header.Get("Location"))
+	cookies := beginW.Result().Cookies()
+
+	rig.f.setToken(rig.f.mint(t, baseClaims(rig.f.issuer, testClientID, loc.Query().Get("nonce"), rig.now)))
+	req := httptest.NewRequest("GET", testOrigin+"/signin/oidc/microsoft/return?code=abc&state="+loc.Query().Get("state"), nil)
+	req.AddCookie(cookies[0])
+	w := httptest.NewRecorder()
+	rig.router.ServeHTTP(w, req)
+
+	if sawReturnTo != "/deep/link" {
+		t.Fatalf("SecondFactor's own request saw return_to=%q, want /deep/link (review finding 7)", sawReturnTo)
+	}
+}
+
+func TestCeremonyCookieClearedOnAFailedReturn(t *testing.T) {
+	rig := newBeginRig(t, nil)
+	w := httptest.NewRecorder()
+	// A wrong state is the cheapest way to fail: the cookie must still
+	// be cleared even though nothing else about this attempt succeeds.
+	req := httptest.NewRequest("GET", testOrigin+"/signin/oidc/microsoft/return?code=abc&state=wrong-state", nil)
+	req.AddCookie(rig.cookie)
+	rig.router.ServeHTTP(w, req)
+
+	cleared := false
+	for _, c := range w.Result().Cookies() {
+		if c.Name == rig.cookie.Name && c.MaxAge < 0 {
+			cleared = true
+		}
+	}
+	if !cleared {
+		t.Fatalf("expected the ceremony cookie to be cleared on a failed Return, cookies were: %+v", w.Result().Cookies())
+	}
+}
+
+func TestNewRefusesSecondFactorWithSignedModeSessions(t *testing.T) {
+	now := time.Now()
+	sess := newSignedModeSessions(t, &now)
+	_, err := New(Config{
+		Sessions:    sess,
+		InstanceKey: strings.Repeat("k", 32),
+		Connections: func(ctx context.Context, kind Kind, key ConnectionKey) (Connection, bool, error) {
+			return Connection{}, false, nil
+		},
+		Admit:        func(ctx context.Context, conn Connection, id Identity) (string, error) { return "s", nil },
+		SecondFactor: func(w http.ResponseWriter, r *http.Request, sess sessions.Session) (bool, error) { return false, nil },
+	})
+	if err == nil {
+		t.Fatal("expected New to refuse SecondFactor combined with a Signed-mode Sessions")
+	}
+}
+
+func TestStepUpRejectsStaleAndAcceptsFreshAuthTime(t *testing.T) {
+	f := newFakeIdP(t)
+	now := time.Now()
+	sess := newDBModeSessions(t, &now)
+	h, err := New(Config{
+		Sessions:    sess,
+		InstanceKey: strings.Repeat("k", 32),
+		Now:         func() time.Time { return now },
+		HTTP:        f.client(),
+		Connections: func(ctx context.Context, kind Kind, key ConnectionKey) (Connection, bool, error) {
+			return Connection{Issuer: f.issuer, ClientID: testClientID, ClientSecret: "secret", RedirectURI: testOrigin + "/signin/oidc/microsoft/return"}, true, nil
+		},
+		Admit: func(ctx context.Context, conn Connection, id Identity) (string, error) { return "subj", nil },
+	})
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	r := chi.NewRouter()
+	r.Get("/signin/oidc/{provider}", h.Begin)
+	r.Get("/signin/oidc/{provider}/return", h.Return)
+
+	begin := func() (state, nonce string, cookie *http.Cookie) {
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, httptest.NewRequest("GET", testOrigin+"/signin/oidc/microsoft?reauth=1", nil))
+		loc, _ := url.Parse(w.Result().Header.Get("Location"))
+		if got := loc.Query().Get("prompt"); got != "login" {
+			t.Fatalf("expected prompt=login on a reauth Begin, got %q", got)
+		}
+		if !strings.Contains(w.Result().Header.Get("Location"), "max_age=0") {
+			t.Fatal("expected max_age=0 on a reauth Begin's authorization URL")
+		}
+		cs := w.Result().Cookies()
+		return loc.Query().Get("state"), loc.Query().Get("nonce"), cs[0]
+	}
+
+	t.Run("future auth_time is refused, not accepted as fresh", func(t *testing.T) {
+		state, nonce, cookie := begin()
+		cl := baseClaims(f.issuer, testClientID, nonce, now)
+		cl["auth_time"] = now.Add(time.Hour).Unix()
+		f.setToken(f.mint(t, cl))
+		req := httptest.NewRequest("GET", testOrigin+"/signin/oidc/microsoft/return?code=abc&state="+state, nil)
+		req.AddCookie(cookie)
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+		if w.Code != http.StatusForbidden {
+			t.Fatalf("expected a future auth_time to be refused (not treated as fresh), got %d", w.Code)
+		}
+	})
+
+	t.Run("stale auth_time is refused", func(t *testing.T) {
+		state, nonce, cookie := begin()
+		cl := baseClaims(f.issuer, testClientID, nonce, now)
+		cl["auth_time"] = now.Add(-time.Hour).Unix()
+		f.setToken(f.mint(t, cl))
+		req := httptest.NewRequest("GET", testOrigin+"/signin/oidc/microsoft/return?code=abc&state="+state, nil)
+		req.AddCookie(cookie)
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+		if w.Code != http.StatusForbidden {
+			t.Fatalf("expected a stale auth_time to be refused, got %d", w.Code)
+		}
+	})
+
+	t.Run("fresh auth_time is accepted", func(t *testing.T) {
+		state, nonce, cookie := begin()
+		cl := baseClaims(f.issuer, testClientID, nonce, now)
+		cl["auth_time"] = now.Add(-10 * time.Second).Unix()
+		f.setToken(f.mint(t, cl))
+		req := httptest.NewRequest("GET", testOrigin+"/signin/oidc/microsoft/return?code=abc&state="+state, nil)
+		req.AddCookie(cookie)
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+		if w.Code != http.StatusSeeOther {
+			t.Fatalf("expected a fresh auth_time to satisfy the step-up, got %d: %s", w.Code, w.Body)
+		}
+	})
+}
+
+func TestEmptySubjectFromAdmitIsRefusedNotMinted(t *testing.T) {
+	rig := newBeginRig(t, func(cfg *Config) {
+		cfg.Admit = func(ctx context.Context, conn Connection, id Identity) (string, error) {
+			return "", nil // the contract violation: no error, no subject
+		}
+	})
+	rig.f.setToken(rig.f.mint(t, baseClaims(rig.f.issuer, testClientID, rig.nonce, rig.now)))
+	w := httptest.NewRecorder()
+	rig.router.ServeHTTP(w, rig.returnRequest(""))
+	if w.Code != http.StatusInternalServerError {
+		t.Fatalf("expected an empty subject with no error to be treated as a server error, got %d: %s", w.Code, w.Body)
 	}
 }

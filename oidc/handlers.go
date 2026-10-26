@@ -27,10 +27,10 @@ type ConnectionKey string
 type Config struct {
 	// Sessions is the shared session core this app already built.
 	// Begin/Return mint into it exactly as password and auth do
-	// (Sessions.SignIn) — this package contains no branch on whether it
-	// was built in ordinary (DB) mode or Signed (hub) mode; see Admit's
-	// doc comment and SecondFactor's for the two places that distinction
-	// still shows through.
+	// (Sessions.SignIn) — Begin and Return themselves contain no branch
+	// on whether it was built in ordinary (DB) mode or Signed (hub)
+	// mode; see Admit's doc comment and SecondFactor's for the two
+	// places that distinction still shows through, one of them at New.
 	Sessions *sessions.Sessions
 
 	// InstanceKey seals the ceremony cookie (crypto.Derive, crypto.SealSym).
@@ -90,27 +90,23 @@ type Config struct {
 	// and password.Config already use (wire
 	// passkeyHandlers.Gate.Hold). Nil means no second factor.
 	//
-	// This package cannot detect, from here, whether Config.Sessions was
-	// built in Signed (hub) mode — sessions exposes no accessor for it —
-	// so it cannot refuse the combination at New the way this design
-	// would prefer to. What is true today: secondfactor's own "+factor"
-	// Method suffix does not fit Signed mode's key-id alphabet, so
-	// running SecondFactor against a Signed-mode Sessions fails CLOSED
-	// at sign-in time (Sessions.SignIn returns an error, logged, no
-	// session minted) rather than silently shipping a broken
-	// combination — but it fails late, not at boot. Raised as a question
-	// for sessions/secondfactor in the design's Open questions; do not
-	// wire both together until that lands.
+	// Set together with a Signed-mode (hub) Config.Sessions, New refuses:
+	// secondfactor's own "+factor" Method suffix does not fit Signed
+	// mode's key-id alphabet, so the combination cannot work today —
+	// raised as a question for sessions/secondfactor in the design's
+	// Open questions, and sessions.Sessions.Signed exists so this check
+	// can be made at boot rather than discovered from a failed SignIn
+	// after somebody has already completed a second factor.
 	SecondFactor func(w http.ResponseWriter, r *http.Request, sess sessions.Session) (done bool, err error)
 
-	// Refused answers an identity that verified but was not admitted —
-	// Admitted's own core refusals (no address, denied-verified, wrong
-	// organisation), Admit's refusal, or a step-up that the provider did
-	// not actually satisfy freshly (D6). Nil gets a bare-text 403 naming
-	// nothing beyond "not admitted here". Only someone who has just
-	// proved they hold the address reaches this, so naming the reason is
-	// no oracle for anybody else — see the design's error-path table for
-	// every OTHER failure, none of which reaches here.
+	// Refused answers a verified identity Return is not minting a
+	// session for — Admitted's own core refusals (no address,
+	// denied-verified, wrong organisation), Admit's refusal, or a
+	// step-up that the provider did not actually satisfy freshly (D6).
+	// Nil gets a generic bare-text 403. Only someone who has just proved
+	// they hold the address reaches this, so naming the specific reason
+	// is no oracle for anybody else — see the design's error-path table
+	// for every OTHER failure, none of which reaches here.
 	Refused func(w http.ResponseWriter, r *http.Request, id Identity, reason error)
 
 	// SignedInPath is where a fresh session lands absent a same-site
@@ -123,7 +119,9 @@ type Config struct {
 	Now func() time.Time
 
 	// HTTP is passed through to this package's Engine. Nil: the
-	// Engine's own default (15s timeout, redirects disabled).
+	// Engine's own default (15s timeout, redirects disabled) — a
+	// non-nil value keeps its own Transport but still has both of
+	// those enforced on top, never trusted as-is (see Engine.HTTP).
 	HTTP *http.Client
 }
 
@@ -156,6 +154,16 @@ func New(cfg Config) (*Handlers, error) {
 	}
 	if cfg.Admit == nil {
 		return nil, errors.New("oidc: Config.Admit is required")
+	}
+	if cfg.SecondFactor != nil && cfg.Sessions.Signed() {
+		// secondfactor's own "+passkey"/"+totp" Method suffix does not
+		// fit Signed mode's key-id alphabet (review finding 2's third
+		// bullet) — refused here, at boot, rather than failing closed
+		// late at sign-in time with a person already through a second
+		// factor. sessions.Sessions.Signed exists because of exactly
+		// this gap; see its own doc comment.
+		return nil, errors.New("oidc: Config.SecondFactor and a Signed-mode Config.Sessions cannot be combined " +
+			"today — secondfactor's Method suffix does not fit Signed mode's key-id alphabet")
 	}
 	if cfg.SignedInPath == "" {
 		cfg.SignedInPath = "/"
@@ -258,6 +266,16 @@ func (h *Handlers) Begin(w http.ResponseWriter, r *http.Request) {
 		h.serverError(w, "connection", fmt.Errorf("connection for %s has no AllowedDomains, required by this provider", kind))
 		return
 	}
+	if err := issuerMatchesKind(p, conn.Issuer); err != nil {
+		// A connection whose Kind says "microsoft" but whose Issuer is
+		// actually some OTHER provider's would never be asked for
+		// AllowedDomains and never have hd checked — admitting whoever
+		// that other issuer signs for (review finding 2). Refused here
+		// rather than trusted, same as every other property this
+		// package checks rather than assumes about its own input.
+		h.serverError(w, "connection", err)
+		return
+	}
 
 	meta, err := h.engine.Discover(r.Context(), conn.Issuer)
 	if err != nil {
@@ -353,6 +371,11 @@ func (h *Handlers) Return(w http.ResponseWriter, r *http.Request) {
 		h.ceremonyFailedPage(w, r)
 		return
 	}
+	if err := issuerMatchesKind(p, conn.Issuer); err != nil {
+		h.cfg.Logger.Error("oidc: connection", "provider", kind, "err", err)
+		h.ceremonyFailedPage(w, r)
+		return
+	}
 
 	meta, err := h.engine.Discover(r.Context(), conn.Issuer)
 	if err != nil {
@@ -369,13 +392,15 @@ func (h *Handlers) Return(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if cer.Reauth {
-		if identity.AuthTime.IsZero() || h.now().Sub(identity.AuthTime) > freshWindow {
-			h.refuse(w, r, identity, ErrStepUpNotFresh)
-			return
-		}
-	}
-
+	// Admitted, then Admit, then the step-up check, then SecondFactor,
+	// then SignIn — in that order, always (design D5/D6, review finding
+	// 6 and finding 9). Admitted and Admit run FIRST because Refused's
+	// own contract (ips's D88.8) is that only an ADMITTED identity gets
+	// a specific reason back; running the step-up check first would
+	// hand Refused — and so an app's own page — an identity that has
+	// not cleared admission yet (a Gmail account with no hd, or an
+	// unverified address), which is exactly the ordering problem D5
+	// already explains for SecondFactor.
 	if err := Admitted(p, conn, identity); err != nil {
 		h.refuse(w, r, identity, err)
 		return
@@ -390,6 +415,31 @@ func (h *Handlers) Return(w http.ResponseWriter, r *http.Request) {
 		h.serverError(w, "admit", err)
 		return
 	}
+	if subject == "" {
+		// (err == nil, subject == "") is the ordinary shape of "not
+		// found" from a Go lookup — Admit's doc comment says an error
+		// or ErrNotAdmitted is how a refusal is spelled, so a caller
+		// returning this instead is a contract violation this package
+		// must not read as success. Minting a session with an empty
+		// Subject would pass Require in ordinary (DB) mode outright.
+		h.serverError(w, "admit", errors.New("Config.Admit returned no error and no subject"))
+		return
+	}
+
+	now := h.now()
+	if cer.Reauth {
+		// identity.AuthTime in the future is refused here too, not only
+		// bounded: without this, now.Sub(identity.AuthTime) is NEGATIVE
+		// for a future auth_time, which is never greater than
+		// freshWindow, so an implausible future auth_time would satisfy
+		// a step-up request (review finding 1's second half).
+		if identity.AuthTime.IsZero() ||
+			identity.AuthTime.After(now.Add(skew)) ||
+			now.Sub(identity.AuthTime) > freshWindow {
+			h.refuse(w, r, identity, ErrStepUpNotFresh)
+			return
+		}
+	}
 
 	// AuthTime is clamped to this server's own clock (never taken on
 	// faith from the provider) for two reasons: Signed (hub) mode
@@ -398,7 +448,6 @@ func (h *Handlers) Return(w http.ResponseWriter, r *http.Request) {
 	// even slightly ahead should not be allowed to assert a sign-in that
 	// — from this server's own point of view — has not happened yet.
 	authTime := identity.AuthTime
-	now := h.now()
 	if !authTime.IsZero() && authTime.After(now) {
 		authTime = now
 	}
@@ -412,13 +461,19 @@ func (h *Handlers) Return(w http.ResponseWriter, r *http.Request) {
 		AuthTime: authTime,
 	}
 
-	// Admit runs BEFORE SecondFactor, always (design D5, review finding
-	// 6): calling SecondFactor first would let an identity Admit would
-	// have refused reach a pending half-session that secondfactor.Gate
-	// later promotes to a real one with no further admission check. By
-	// the time execution reaches here, Admitted and Admit have both
-	// already run and succeeded.
 	if h.cfg.SecondFactor != nil {
+		// cer.ReturnTo is injected into the REQUEST's own return_to
+		// before handing off, because secondfactor.Gate.Hold reads
+		// sessions.SafeReturn(r, "/") off whatever request it is given
+		// — the provider's callback, which carries none of its own
+		// (review finding 7). Without this, a deep link survives only
+		// when no second factor is wired, which is the opposite of
+		// when it matters most.
+		if cer.ReturnTo != "" {
+			q := r.URL.Query()
+			q.Set("return_to", cer.ReturnTo)
+			r.URL.RawQuery = q.Encode()
+		}
 		done, err := h.cfg.SecondFactor(w, r, sess)
 		if err != nil {
 			h.serverError(w, "second factor", err)
@@ -443,14 +498,19 @@ func (h *Handlers) Return(w http.ResponseWriter, r *http.Request) {
 
 // refuse answers an identity that verified but was not admitted — the
 // one case ips's D88.8 says is safe to be specific with, because only
-// someone who has just proved the address is theirs reaches it.
+// someone who has just proved the address is theirs reaches it. The
+// default text is deliberately generic rather than naming "not
+// admitted" specifically: this is also what a step-up that the provider
+// did not actually satisfy freshly answers with (ErrStepUpNotFresh),
+// and "verified but not admitted" would be a false statement about
+// somebody who both verified AND is admitted, just not freshly enough.
 func (h *Handlers) refuse(w http.ResponseWriter, r *http.Request, id Identity, reason error) {
 	h.cfg.Logger.Info("oidc: sign-in refused", "subject", id.Subject, "reason", reason)
 	if h.cfg.Refused != nil {
 		h.cfg.Refused(w, r, id, reason)
 		return
 	}
-	http.Error(w, "This address is verified but not admitted here.", http.StatusForbidden)
+	http.Error(w, "That sign-in could not be completed.", http.StatusForbidden)
 }
 
 // ceremonyFailedPage is every row of the error-path table whose caller is

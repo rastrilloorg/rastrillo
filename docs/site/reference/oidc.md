@@ -112,6 +112,16 @@ one provider kind cannot have one tenant's signing keys verify another
 tenant's tokens. A fresh `Engine` per request means a cold cache every
 time; `Handlers` (below) holds one for exactly this reason.
 
+`Begin` and `Return` (below) both refuse a `Connection` whose `Issuer`
+does not have the exact shape `Provider.Issuer` builds for its own
+`Kind` — `ErrIssuerKindMismatch`. This closes a gap found in code
+review: `Provider.NeedsHostedDomain` is decided by `Kind`, so a
+connection labelled `microsoft` whose `Issuer` was actually some other,
+shared-issuer provider's value would never be asked for
+`AllowedDomains` and never have `hd` checked, admitting whoever that
+OTHER issuer signs for. Checked on every use, not only when a
+`Connection` is saved.
+
 `Discover` refuses two shapes of discovery document: one whose own
 `issuer` disagrees with the issuer it was fetched from, and one whose
 issuer contains `{` or `}` — Microsoft's multi-tenant endpoints

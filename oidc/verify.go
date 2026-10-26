@@ -136,14 +136,32 @@ func (e *Engine) Verify(ctx context.Context, m Metadata, conn Connection, raw, n
 		return Identity{}, fmt.Errorf("%w: its claims are not JSON", ErrToken)
 	}
 
-	if strings.TrimRight(cl.Issuer, "/") != strings.TrimRight(m.Issuer, "/") {
+	// Exact match, not trimmed: m.Issuer is already canonical (Discover
+	// trims it once, at the only place it is ever set), and the
+	// specification's own comparison is exact. Trimming the TOKEN's
+	// side as well was a leniency beyond that, found in code review —
+	// harmless in practice against this package's own closed provider
+	// list, but a token is untrusted input and this check should say
+	// exactly what it means.
+	if cl.Issuer != m.Issuer {
 		return Identity{}, fmt.Errorf("%w: it was issued by %q and this connection expects %q",
 			ErrToken, cl.Issuer, m.Issuer)
 	}
 	if !cl.Audience.has(conn.ClientID) {
 		return Identity{}, fmt.Errorf("%w: it was issued for a different application", ErrToken)
 	}
-	if len(cl.Audience) > 1 && cl.AuthorizedParty != conn.ClientID {
+	// azp is checked whenever it is PRESENT, not only when aud carries
+	// more than one value: OpenID Connect Core says a client SHOULD
+	// verify azp against its own client_id whenever the claim appears,
+	// and a single-audience token carrying an azp naming somebody else
+	// is a malformed or tampered token either way (found in code
+	// review — the prior version only checked azp in the multi-audience
+	// case the specification makes it REQUIRED in, and silently ignored
+	// it otherwise).
+	if cl.AuthorizedParty != "" && cl.AuthorizedParty != conn.ClientID {
+		return Identity{}, fmt.Errorf("%w: it names an authorized party other than this application", ErrToken)
+	}
+	if len(cl.Audience) > 1 && cl.AuthorizedParty == "" {
 		return Identity{}, fmt.Errorf("%w: it names several audiences and does not name this "+
 			"application as the authorized party", ErrToken)
 	}
@@ -161,7 +179,14 @@ func (e *Engine) Verify(ctx context.Context, m Metadata, conn Connection, raw, n
 	if cl.NotBefore != 0 && now.Add(skew).Before(time.Unix(cl.NotBefore, 0)) {
 		return Identity{}, fmt.Errorf("%w: it is not valid yet", ErrToken)
 	}
-	if cl.IssuedAt != 0 && now.Add(skew).Before(time.Unix(cl.IssuedAt, 0)) {
+	// iat is REQUIRED by the specification, unlike nbf — treated that
+	// way here now rather than as optional like nbf is (found in code
+	// review: the prior version let a token with no iat at all skip
+	// this check entirely, the same gap exp does not have).
+	if cl.IssuedAt == 0 {
+		return Identity{}, fmt.Errorf("%w: it names no issued-at time", ErrToken)
+	}
+	if now.Add(skew).Before(time.Unix(cl.IssuedAt, 0)) {
 		return Identity{}, fmt.Errorf("%w: it claims to have been issued in the future", ErrToken)
 	}
 	if cl.Subject == "" {
@@ -170,7 +195,7 @@ func (e *Engine) Verify(ctx context.Context, m Metadata, conn Connection, raw, n
 
 	id := Identity{
 		Subject:         cl.Subject,
-		Issuer:          strings.TrimRight(cl.Issuer, "/"),
+		Issuer:          cl.Issuer, // == m.Issuer, exactly, by the check above
 		Address:         address(cl),
 		AddressVerified: cl.EmailVerified.tristate(),
 		Name:            strings.TrimSpace(cl.Name),
@@ -416,7 +441,12 @@ func (e *Engine) fetchKeysLocked(ctx context.Context, slot *keySlot, uri, kid st
 			Message: "the provider published no RSA signing keys this can verify with"}
 	}
 
-	slot.keys, slot.fetched = parsed, time.Now()
+	// e.now(), not time.Now(): the TTL check in key() compares this
+	// against e.now() too, and a test holding the clock still with a
+	// fake Now would otherwise compare a fake timestamp against a real
+	// wall-clock one — found in code review, the kind of bug a test
+	// using today's real time as its fake clock cannot expose.
+	slot.keys, slot.fetched = parsed, e.now()
 	got := pickKey(slot.keys, kid)
 	if got == nil {
 		return nil, fmt.Errorf("%w: it names a signing key the provider does not publish", ErrToken)
@@ -431,13 +461,23 @@ func rsaKey(nRaw, eRaw string) (*rsa.PublicKey, error) {
 	if err != nil || len(n) == 0 {
 		return nil, errors.New("oidc: unreadable key modulus")
 	}
-	// 2048 bits, which is the floor for every provider in this list and
-	// the floor Go's own crypto/rsa applies to signing. Nothing today
-	// can supply a smaller one — the set arrives over TLS from an issuer
-	// in a closed list — so this is depth rather than a hole being
-	// closed.
-	if len(n) < 256 {
-		return nil, errors.New("oidc: the key modulus is too small to be a signing key")
+	modulus := new(big.Int).SetBytes(n)
+	// BitLen, not len(n): checking the DECODED BYTE LENGTH is checking
+	// the encoding, not the value — a modulus padded with leading zero
+	// bytes passes a byte-length check at any size while SetBytes
+	// (which ignores leading zeros, per its own doc) still produces the
+	// small, easily-factorable integer those zeros were padding around
+	// (found in code review). 2048 bits is the floor for every provider
+	// in this list and the floor Go's own crypto/rsa applies to
+	// signing; nothing today can supply a smaller one legitimately — so
+	// this is depth rather than a hole being closed, but it is depth
+	// against the actual VALUE this builds, not against how it happened
+	// to be spelled. 8192 bits bounds the top: readBody's 1MB response
+	// cap already bounds it loosely, but a key this package will spend
+	// real CPU verifying against should have an explicit, deliberate
+	// ceiling rather than "whatever fits in a megabyte".
+	if bits := modulus.BitLen(); bits < 2048 || bits > 8192 {
+		return nil, errors.New("oidc: the key modulus is not a plausible signing key size")
 	}
 	e, err := base64.RawURLEncoding.DecodeString(eRaw)
 	if err != nil || len(e) == 0 || len(e) > 8 {
@@ -452,5 +492,5 @@ func rsaKey(nRaw, eRaw string) (*rsa.PublicKey, error) {
 	if exp < 3 || exp > 1<<31 {
 		return nil, errors.New("oidc: implausible key exponent")
 	}
-	return &rsa.PublicKey{N: new(big.Int).SetBytes(n), E: int(exp)}, nil
+	return &rsa.PublicKey{N: modulus, E: int(exp)}, nil
 }
