@@ -110,14 +110,26 @@ func TestWrapAtExactlyZeroWidthStillCoversEveryRune(t *testing.T) {
 // unicode.IsSpace says yes to it like any other space, so without an
 // exception wrap split there anyway — the glyph survived (it draws as
 // an ordinary space) but the one reason anyone typed it did not.
+// A width wide enough to hold the whole string, as an earlier version
+// of this test used, cannot tell "the space is non-breaking" apart
+// from "the space is breakable but there was room for both words
+// anyway" -- word-wrap packs as many words onto a line as fit either
+// way. max=60 is chosen so "Total" (21.1pt) and the amount (47.5pt)
+// each fit a line of their own, but the two together (71.3pt) do not:
+// an ordinary breakable space must split there, giving a clean two
+// lines starting with "Total" alone. A non-breaking space keeps both
+// as one token, which still does not fit and so is hard-broken by
+// width instead -- a cut that has no reason to land exactly at the
+// old word boundary, and in practice does not (its first line carries
+// the space itself and part of the next word).
 func TestWrapDoesNotBreakAtANonBreakingSpace(t *testing.T) {
-	s := "Total £1,000,000"
-	// Wide enough to hold the whole string on one line (it measures
-	// well under 100pt at this size): if the non-breaking space were
-	// still a break point, two ordinary words that both fit alone
-	// would still end up on separate lines.
-	lines := wrap(s, faceRegular, sizeBody, 150)
-	if len(lines) != 1 {
-		t.Errorf("want the non-breaking space to keep both halves on one line, got %q", lines)
+	const max = 60
+	space := wrap("Total £1,000,000", faceRegular, sizeBody, max)
+	if len(space) < 2 || space[0] != "Total" {
+		t.Fatalf("sanity check: an ordinary space should split cleanly at this width, got %q", space)
+	}
+	nbsp := wrap("Total £1,000,000", faceRegular, sizeBody, max)
+	if len(nbsp) > 0 && nbsp[0] == "Total" {
+		t.Errorf("non-breaking space produced the same split as an ordinary one, as if it were breakable: %q", nbsp)
 	}
 }

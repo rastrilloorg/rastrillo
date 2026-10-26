@@ -78,7 +78,11 @@ type Field struct {
 
 A `Column`'s `Width` is its share of the table relative to the other
 columns' — a zero takes an equal share of what the rest leave, so a
-table with no widths at all still renders sensibly. `Field.Source`,
+table with no widths at all still renders sensibly. A negative,
+infinite or absurdly large `Width` is treated the same as a zero,
+rather than reaching the page: there is no sensible share for a
+weight like that to claim, and letting one through would put a
+figure outside PDF's own numeric range into the file. `Field.Source`,
 left non-empty, prints a small "Recorded by …" line under the value —
 for a value that is somebody's own assertion rather than the caller's.
 
@@ -88,6 +92,10 @@ to the margin. A table's own rules (under its header, and under and
 double-under its total) stop at the right edge of the last column that
 does have a title, rather than running on into that padding; a table
 where every column is titled rules to the margin exactly as before.
+A `Title` that wraps to more than a few lines is cut short with an
+ellipsis: a table's header has to appear whole, above its data, on
+every page it repeats on, so there is no "paginate it normally" answer
+once one wraps to more lines than a page can hold above even one row.
 
 ## Keeping a heading with what follows it
 
@@ -107,11 +115,11 @@ Without this, a heading only ever reserves room for its own height, so
 one can land as the last line on a page with its table orphaned onto
 the next. `KeepTogether` lays out `fn`'s calls — a heading and what
 always follows it, say — so that if they would not fit in the room
-left on the current page, a page break happens FIRST, before any of
-`fn`'s own output is drawn.
+left on the current page, a page break happens before any of `fn`'s
+own output is drawn.
 
 `fn` runs exactly once, against a throwaway `Builder` starting at the
-top of a blank page, never the real one directly. That run IS the
+top of a blank page, never the real one directly. That run is the
 answer: if it fit on its one fresh page, its output is copied onto the
 real page wherever that currently is; if it did not — either because
 the real page has less room left than the fresh one did, or because
@@ -136,12 +144,12 @@ func (b *Builder) Produced(by, at, note string)
 ```
 
 ```go
-b.Produced("A Practitioner", "24 August 2026", "Draft — not issued")
+b.Produced("Alex Morgan", "24 August 2026", "Draft — not issued")
 ```
 
 `Produced` records who produced the document and when, as a short line
-— "Produced by A Practitioner on 24 August 2026." — with `note` (left
-empty for none) printed beneath it in bold. It draws into the LAST
+— "Produced by Alex Morgan on 24 August 2026." — with `note` (left
+empty for none) printed beneath it in bold. It draws into the last
 page's existing footer area at `Render` time, rather than flowing as an
 ordinary block, so it can never end up alone at the top of a trailing
 page holding nothing else: the same failure `KeepTogether` exists to
@@ -193,8 +201,11 @@ Helvetica-Bold, Helvetica-Oblique — encoded as Windows-1252, so nothing
 is embedded and the file stays small. A character outside that
 encoding cannot be drawn: `Render`'s second return is every rune this
 was asked to draw and could not, across the whole document, deduplicated
-and sorted. An empty slice means every character drew; a caller that
-ships the bytes without checking it is shipping a silent substitution.
+and sorted. An empty slice means every such character was either drawn
+or, for a handful of close lookalikes documented under `Encode` below,
+deliberately drawn as something else; a caller that ships the bytes
+without checking it is shipping a character the reader cannot see
+drawn as a question mark instead.
 
 ## Measuring without drawing
 
@@ -218,8 +229,18 @@ and `Wrap` use the same base-14 metrics `Builder` draws with, so a
 value that fits in one place fits in the other: there is exactly one
 right answer to "how wide is this word", and this package carries it
 once. `Wrap` cuts a single token too long for a line of its own where
-it stops fitting, by rune, so every line it returns really does fit.
+it stops fitting, by rune — except a single rune wider than `max`
+itself, which still gets a line of its own even though that line does
+not fit either, since there is no narrower way to draw it.
+
 `Encode` is the same Windows-1252 conversion `Render` uses internally,
 exposed for the same reason `Render` returns its dropped runes: a
 caller that measures a string has to measure the bytes it will
 actually draw, and has to be able to tell when one of them cannot be.
+A handful of characters with no base-14 glyph of their own are drawn as
+something else instead, close enough in appearance that this does not
+count as a loss and is not reported: a non-breaking space and its
+narrower relatives as a plain space, a soft hyphen as nothing, a
+non-breaking hyphen or minus sign as a plain hyphen, and the prime
+marks as plain quotes. A caller comparing drawn text back against its
+own source has to know these do not round-trip.

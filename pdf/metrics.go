@@ -13,10 +13,10 @@ package pdf
 // They were transcribed from the core font definitions shipped with
 // github.com/go-pdf/fpdf v0.9.0 (MIT), which carries Adobe's AFM
 // metrics as JSON. That library is not a dependency of this one and
-// never was: it was read once, for this table, and the reason is in
-// docs/design/46-reporting.md, Decision 3 — its own dependency set
-// includes a PDF *parser*, and a renderer whose argument for existing
-// is that it parses nothing untrusted must not carry one.
+// never was: it was read once, for this table, because its own
+// dependency set includes a PDF *parser*, and a renderer whose
+// argument for existing is that it parses nothing untrusted must not
+// carry one (see the package doc).
 //
 // A width of 0 means the code point is not in the face's encoding. The
 // encoder replaces such a rune before it ever reaches the measurer, so

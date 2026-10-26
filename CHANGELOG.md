@@ -217,34 +217,23 @@ To keep the old, exact format for a field, set `Strict: true`.
 
 ### Added: `rastrillo/pdf`, a dependency-free PDF writer
 
-Flow headings, paragraphs, field lists, tables and callouts onto A4 (or
-landscape, via `Options.Landscape`) pages and get deterministic bytes
-back — no sidecar, no headless browser, no system font, because CARLOS
-ships an app as one binary and there is nowhere on the platform to run
-any of those. Tables and oversized rows paginate on their own,
-repeating the column headings on each page, and stop their own rules at
-the last titled column rather than running them into a blank padding
-one; `KeepTogether` measures a group of calls (a heading and what
-always follows it, say) and forces a page break before any of it is
-drawn if the group would not otherwise fit, so a heading can no longer
-land as the last line on a page with its table orphaned onto the next.
-`Produced` draws a closing "Produced by … on …" line into the last
-page's existing footer rather than flowing it as a block, for the same
-reason — it can no longer end up alone at the top of a trailing page.
-An optional stamp overlays an approval mark on every page. `Measure`,
-`Wrap` and `Encode` are exported on their own for drawing onto
-something this package does not lay out itself, such as a blank form.
-See [pdf](/docs/reference/pdf).
+Flow headings, paragraphs, field lists, tables and callouts onto a
+page and get deterministic bytes back. No sidecar, no headless
+browser, no system font: CARLOS ships an app as one binary, and there
+is nowhere on the platform to run any of those.
 
-Ported from an app's own report renderer, generalised off that app's
-report-specific block tree (its citation and verification model stayed
-behind) and with no app- or jurisdiction-specific layer — a
-cheque-printing mode built on the same engine — carried over either.
-`KeepTogether`, the dynamic field-label width and the table-rule fix
-replace or generalise fixes the same engine had already picked up
-independently, twice over, in two of its other forks; `Landscape` is a
-third thing both of those forks had independently added for the same
-reason (a table with too many columns for a portrait page).
+Tables paginate on their own and repeat their column headings on each
+page. `KeepTogether` keeps a heading together with what follows it,
+breaking the page first rather than letting the heading end up alone
+at the foot of one. `Produced` draws a closing line into the last
+page's own footer, so it can't end up alone on a trailing page
+instead. An optional stamp overlays an approval mark on every page,
+and `Options.Landscape` turns the page on its side for a wide table.
+`Measure`, `Wrap` and `Encode` are exported on their own, for drawing
+onto something this package does not lay out itself, such as a blank
+form.
+
+See [pdf](/docs/reference/pdf).
 
 ### Fixed: `rastrillo generate` finds the sqlc tool under Go 1.27
 

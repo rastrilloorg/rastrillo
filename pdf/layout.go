@@ -37,9 +37,11 @@ func layoutHeading(f *flow, level int, text string) {
 	}
 	f.need(lead + 24)
 	f.y += 12
-	f.y += size
-	f.text(f.marginL, faceBold, size, text, 0)
-	f.y += lead - size
+	// Wrapped, not drawn as one line regardless of width: a heading is
+	// a caller's own words, with no length this package can assume,
+	// and a long one drawn as a single text operation ran straight off
+	// the right edge of the page rather than onto a line of its own.
+	f.para(f.marginL, f.contentW, faceBold, size, lead, text, 0)
 }
 
 func layoutParagraph(f *flow, text string) {
@@ -49,10 +51,10 @@ func layoutParagraph(f *flow, text string) {
 
 func layoutList(f *flow, title string, items []string) {
 	if title != "" {
-		f.need(30)
-		f.y += 10 + sizeH2
-		f.text(f.marginL, faceBold, sizeH2, title, 0)
-		f.y += 6
+		f.need(14 + 16)
+		f.y += 10
+		f.para(f.marginL, f.contentW, faceBold, sizeH2, 14.0, title, 0)
+		f.y += 2
 	}
 	for _, item := range items {
 		f.need(leadBody)
@@ -72,27 +74,21 @@ func layoutCallout(f *flow, title, text string, strong bool) {
 	if strong {
 		face = faceItalic
 	}
-	// The whole block is measured before anything is drawn, and all of
-	// it is asked for at once: the bar it draws afterwards runs from
-	// its own start to wherever the text ended up, and a body that
-	// broke across a page would leave that start on a page the bar's
-	// end is no longer on — a rectangle with a negative height running
-	// into whatever follows, drawn on the wrong page, with no bar at
-	// all on the one the callout actually started. Reserving the real
-	// height up front keeps the callout on one page for as long as one
-	// page can hold it, which a flat guess cannot promise once a body
-	// genuinely needs more room than that guess assumed.
+	// The whole block is measured before anything is drawn, so this
+	// reserves the real height a wrapped title and body need rather
+	// than a flat guess: a guess too small let the body run past where
+	// it was reserved to stop, and a guess that assumed a title was
+	// always one line undercounted a long one.
 	need := 8.0 + float64(len(wrap(text, face, sizeBody, f.contentW-20)))*leadBody + 8.0 + 10.0
 	if title != "" {
-		need += sizeH2 + 5
+		need += 14.0 * float64(len(wrap(title, faceBold, sizeH2, f.contentW-20)))
 	}
 	f.need(need)
+	startPage := len(f.pages)
 	start := f.y
 	f.y += 8
 	if title != "" {
-		f.y += sizeH2
-		f.text(f.marginL+10, faceBold, sizeH2, title, 0)
-		f.y += 5
+		f.para(f.marginL+10, f.contentW-20, faceBold, sizeH2, 14.0, title, 0)
 	}
 	f.para(f.marginL+10, f.contentW-20, face, sizeBody, leadBody, text, 0)
 	f.y += 8
@@ -103,16 +99,43 @@ func layoutCallout(f *flow, title, text string, strong bool) {
 	if strong {
 		weight = 3.0
 	}
-	f.rect(f.marginL, start, weight, f.y-start, 0.2)
+	drawCalloutBar(f, startPage, start, weight)
 	f.y += 10
+}
+
+// drawCalloutBar draws the callout's left bar. Reserving the real
+// height up front (above) keeps a callout on one page for as long as
+// one page can hold it at all, but a body still longer than that has
+// nowhere else to go, so one rectangle spanning "where it started" to
+// "where it ended" is not a shape any single page can draw once those
+// two points are on different pages — the bar's own height, measured
+// across the break, used to come out negative and run into whatever
+// followed, on the wrong page, with no bar at all on the one the
+// callout actually started on. One segment per occupied page: the
+// first from its own start down to the bottom of the body area, any
+// page fully inside the callout top to bottom, and the last from the
+// top margin down to wherever the body actually ended.
+func drawCalloutBar(f *flow, startPage int, start, weight float64) {
+	endPage := len(f.pages)
+	if startPage == endPage {
+		f.rect(f.marginL, start, weight, f.y-start, 0.2)
+		return
+	}
+	f.pages[startPage] = append(f.pages[startPage],
+		op{kind: 'r', x: f.marginL, y: start, x2: f.marginL + weight, y2: f.pageH - f.marginB, gray: 0.2})
+	for i := startPage + 1; i < endPage; i++ {
+		f.pages[i] = append(f.pages[i],
+			op{kind: 'r', x: f.marginL, y: f.marginT, x2: f.marginL + weight, y2: f.pageH - f.marginB, gray: 0.2})
+	}
+	f.rect(f.marginL, f.marginT, weight, f.y-f.marginT, 0.2)
 }
 
 func layoutFields(f *flow, title string, fields []Field) {
 	if title != "" {
-		f.need(34)
-		f.y += 12 + sizeH2
-		f.text(f.marginL, faceBold, sizeH2, title, 0)
-		f.y += 8
+		f.need(14 + 24)
+		f.y += 12
+		f.para(f.marginL, f.contentW, faceBold, sizeH2, 14.0, title, 0)
+		f.y += 2
 	}
 	// The value sits just past the widest label actually in this
 	// block, not a fixed guessed-at column: a short label such as
@@ -136,19 +159,30 @@ func layoutFields(f *flow, title string, fields []Field) {
 	}
 	for _, fl := range fields {
 		labelLines := wrap(fl.Label, faceRegular, sizeBody, labelW-gap)
-		valueLines := wrap(fl.Value, faceRegular, sizeBody, f.contentW-labelW)
-		h := float64(max(len(labelLines), len(valueLines))) * leadBody
-		f.need(h)
-		top := f.y
-		for i, l := range labelLines {
-			f.y = top + float64(i)*leadBody + sizeBody
-			f.text(f.marginL, faceRegular, sizeBody, l, 0.35)
+		// Measured and wrapped in the SAME face it is drawn in: wrapping
+		// in regular and drawing in bold let a value that just fit in
+		// the narrower regular measurement run past the margin once
+		// actually drawn, since bold is wider.
+		valueLines := wrap(fl.Value, faceBold, sizeBody, f.contentW-labelW)
+		// Drawn band by band, with a room check before each one — a
+		// label and a value can wrap to far more lines than fit on any
+		// one page (a long note, say), and a single f.need() for the
+		// whole field either let the rest draw straight past the
+		// bottom margin or, on a short page, moved the entire field
+		// rather than letting it continue, the way a table's own rows
+		// already do.
+		n := max(len(labelLines), len(valueLines))
+		for i := 0; i < n; i++ {
+			f.need(leadBody)
+			f.y += sizeBody
+			if i < len(labelLines) {
+				f.text(f.marginL, faceRegular, sizeBody, labelLines[i], 0.35)
+			}
+			if i < len(valueLines) {
+				f.text(f.marginL+labelW, faceBold, sizeBody, valueLines[i], 0)
+			}
+			f.y += leadBody - sizeBody
 		}
-		for i, l := range valueLines {
-			f.y = top + float64(i)*leadBody + sizeBody
-			f.text(f.marginL+labelW, faceBold, sizeBody, l, 0)
-		}
-		f.y = top + h
 		if fl.Source != "" {
 			f.para(f.marginL+labelW, f.contentW-labelW, faceItalic, sizeSmall, leadSmall,
 				"Recorded by "+fl.Source, 0.3)
@@ -162,6 +196,26 @@ func layoutFields(f *flow, title string, fields []Field) {
 // with no width stated takes an equal share of what the stated ones
 // leave, which is what makes a table of three prose columns render
 // sensibly with nothing declared at all.
+// maxColumnWidth bounds a single column's own stated Width. It is not
+// a realistic weight — no caller states anything near this — it is a
+// ceiling against a pathological one: contentW times a Width near the
+// top of float64's range overflowed to +Inf, which this package wrote
+// into the content stream unchanged, and +Inf is not a legal PDF
+// number (ISO 32000-2, clause 7.3.3) — a reader has to decide what an
+// illegal file means. Anything above the ceiling is treated as
+// unstated instead, the same answer a zero or negative Width already
+// gets.
+const maxColumnWidth = 1e6
+
+// validColumnWidth reports whether a Width can safely take part in the
+// arithmetic below: positive, finite, and not large enough for that
+// arithmetic to overflow on its own. NaN fails every ordinary
+// comparison, including this one — deliberately, since there is no
+// comparison that would make a NaN Width valid.
+func validColumnWidth(w float64) bool {
+	return w > 0 && w <= maxColumnWidth
+}
+
 func columnWidths(cols []Column, contentW float64) []float64 {
 	if len(cols) == 0 {
 		return nil
@@ -169,7 +223,7 @@ func columnWidths(cols []Column, contentW float64) []float64 {
 	var stated float64
 	var unstated int
 	for _, c := range cols {
-		if c.Width > 0 {
+		if validColumnWidth(c.Width) {
 			stated += c.Width
 		} else {
 			unstated++
@@ -188,7 +242,7 @@ func columnWidths(cols []Column, contentW float64) []float64 {
 	total := stated + mean*float64(unstated)
 	for i, c := range cols {
 		w := c.Width
-		if w == 0 {
+		if !validColumnWidth(w) {
 			w = mean
 		}
 		out[i] = contentW * w / total
@@ -218,6 +272,31 @@ func tableRuleRight(f *flow, cols []Column, widths []float64) float64 {
 	return right
 }
 
+// maxHeaderLines bounds how many lines one column's title may wrap to.
+// A table's header row — unlike a heading or a paragraph — cannot
+// simply run onto a further page: it has to appear whole, above its
+// data, on every page it is repeated on, so there is no "paginate it
+// normally" answer once a title wraps to more lines than a page can
+// hold above even one row. A column title needing more than a
+// handful of lines is not a real table header; bounding it here keeps
+// a pathological one from pushing both itself and the data below it
+// off every page it is drawn on.
+const maxHeaderLines = 4
+
+// headerTitleLines wraps one column's title, bounded to maxHeaderLines:
+// the lines that fit are kept as they wrapped, and the last allowed
+// line carries everything past that point, trimmed with an ellipsis
+// the same way a long footer already is.
+func headerTitleLines(title string, width float64) []string {
+	lines := wrap(title, faceBold, sizeSmall, width)
+	if len(lines) <= maxHeaderLines {
+		return lines
+	}
+	out := append([]string{}, lines[:maxHeaderLines-1]...)
+	rest := strings.Join(lines[maxHeaderLines-1:], " ")
+	return append(out, trim(rest, faceBold, sizeSmall, width))
+}
+
 // headerMaxLines is the tallest a table's column titles wrap to, which
 // is also what the header band's own height depends on: shared by the
 // band-height reservation before the first header() and header()'s own
@@ -225,7 +304,7 @@ func tableRuleRight(f *flow, cols []Column, widths []float64) float64 {
 func headerMaxLines(columns []Column, widths []float64) int {
 	var maxLines int
 	for i, c := range columns {
-		maxLines = max(maxLines, len(wrap(c.Title, faceBold, sizeSmall, widths[i]-8)))
+		maxLines = max(maxLines, len(headerTitleLines(c.Title, widths[i]-8)))
 	}
 	return maxLines
 }
@@ -239,10 +318,10 @@ func headerBandHeight(maxLines int) float64 {
 
 func layoutTable(f *flow, title string, columns []Column, rows [][]Cell, total []Cell) {
 	if title != "" {
-		f.need(40)
-		f.y += 12 + sizeH2
-		f.text(f.marginL, faceBold, sizeH2, title, 0)
-		f.y += 8
+		f.need(14 + 20)
+		f.y += 12
+		f.para(f.marginL, f.contentW, faceBold, sizeH2, 14.0, title, 0)
+		f.y += 4
 	}
 	if len(columns) == 0 {
 		return
@@ -257,7 +336,7 @@ func layoutTable(f *flow, title string, columns []Column, rows [][]Cell, total [
 		f.y += 4
 		top := f.y
 		for i, c := range columns {
-			for j, line := range wrap(c.Title, faceBold, sizeSmall, widths[i]-8) {
+			for j, line := range headerTitleLines(c.Title, widths[i]-8) {
 				f.y = top + float64(j)*leadSmall + sizeSmall
 				drawCell(f, widths, i, line, faceBold, sizeSmall, c.Align, 0)
 			}
@@ -273,11 +352,25 @@ func layoutTable(f *flow, title string, columns []Column, rows [][]Cell, total [
 	// header land alone at the foot of a page, with its first row
 	// pushed onto the next — where the header is then drawn a second
 	// time, so the reader sees it twice in a row. Reserving room for
-	// the header AND at least one row before that first call pushes
-	// the whole opening onto a fresh page instead, the same shape as
+	// the header AND the first row before that first call pushes the
+	// whole opening onto a fresh page instead, the same shape as
 	// Builder.KeepTogether's own reasoning applied to one table's own
 	// head.
-	f.need(headerBandHeight(headerMaxLines(columns, widths)) + leadBody)
+	//
+	// The first row's REAL height, not one line assumed: a row whose
+	// first cell wraps to several lines needs several, and asking for
+	// only one left exactly enough room for the header plus a single
+	// line to pass this check, while the row itself still did not fit
+	// and triggered its own break — moving the header a second time
+	// regardless.
+	firstRowHeight := leadBody
+	switch {
+	case len(rows) > 0:
+		firstRowHeight = leadBody * float64(rowLines(rows[0], columns, widths, faceRegular))
+	case len(total) > 0:
+		firstRowHeight = leadBody*float64(rowLines(total, columns, widths, faceBold)) + 10
+	}
+	f.need(headerBandHeight(headerMaxLines(columns, widths)) + firstRowHeight)
 	header()
 	for _, row := range rows {
 		height := leadBody * float64(rowLines(row, columns, widths, faceRegular))

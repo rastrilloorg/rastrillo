@@ -176,15 +176,36 @@ func TestTableHeaderDoesNotLandAloneWithItsFirstRowOrphaned(t *testing.T) {
 // kind of mismatch that invites exactly the orphan above for a
 // two-line title even where the one-line budget looked generous.
 func TestTableHeaderBandAccountsForWrappedTitles(t *testing.T) {
-	b := New(opts())
-	b.Table("", []Column{{Title: "A column heading long enough to wrap onto two lines", Width: 1}},
-		[][]Cell{{{Text: "x"}}}, nil)
-	bs, _, err := b.Render()
-	if err != nil {
-		t.Fatal(err)
+	const title = "A column heading long enough to wrap onto two lines"
+	f := newFlow(newGeom(false))
+	// Three equal columns, not one spanning the whole table: a title
+	// that measures 206pt does not wrap in a single column's full
+	// ~475pt of room (the earlier version of this test's actual
+	// mistake, per Astra's finding), but does at a third of that.
+	columns := []Column{{Title: title, Width: 1}, {Width: 1}, {Width: 1}}
+	widths := columnWidths(columns, f.contentW)
+
+	// An earlier version of this test asserted only that at least 3
+	// text operations existed anywhere on the page — true whether or
+	// not the title actually wrapped (the footer alone draws 2). This
+	// checks the thing the test's name claims: the title really does
+	// wrap here, and every line it wraps to is actually drawn.
+	wantLines := headerTitleLines(title, widths[0]-8)
+	if len(wantLines) < 2 {
+		t.Fatalf("want the title to wrap to 2+ lines at this width, got %d: %q", len(wantLines), wantLines)
 	}
-	if n := bytes.Count(bs, []byte(" Tj")); n < 3 {
-		t.Fatalf("want the wrapped title (2+ lines) and the body cell drawn, got %d text ops", n)
+
+	layoutTable(f, "", columns, [][]Cell{{{Text: "x"}, {Text: "y"}, {Text: "z"}}}, nil)
+	drawn := map[string]int{}
+	for _, o := range f.cur {
+		if o.kind == 't' {
+			drawn[o.text]++
+		}
+	}
+	for _, line := range wantLines {
+		if drawn[line] != 1 {
+			t.Errorf("wrapped title line %q drawn %d times, want 1", line, drawn[line])
+		}
 	}
 }
 
@@ -197,19 +218,39 @@ func TestTableHeaderBandAccountsForWrappedTitles(t *testing.T) {
 // what keeps the callout on one page for as long as one page can hold
 // it at all.
 func TestCalloutBarIsNotNegativeHeightWhenBodyWouldHaveBrokenAPage(t *testing.T) {
-	b := New(opts())
-	b.Paragraph(strings.Repeat("Filler to approach the bottom of the page. ", 34))
-	b.Callout("Note", strings.Repeat("A callout body long enough that a flat height guess would have let it break across a page. ", 6), false)
-	bs, _, err := b.Render()
-	if err != nil {
-		t.Fatal(err)
+	f := newFlow(newGeom(false))
+	layoutCallout(f, "Note", strings.Repeat("word ", 3000), true)
+	f.pages = append(f.pages, f.cur)
+	if len(f.pages) < 3 {
+		t.Fatalf("want the callout to span several pages, got %d", len(f.pages))
 	}
-	re := regexp.MustCompile(`([\d.]+) [\d.]+ ([\d.]+) [\d.]+ re f`)
-	for _, m := range re.FindAllSubmatch(bs, -1) {
-		w, _ := strconv.ParseFloat(string(m[1]), 64)
-		h, _ := strconv.ParseFloat(string(m[2]), 64)
-		if w < 10 && (h < 0 || h > b.f.pageH) {
-			t.Errorf("callout bar rectangle has an implausible height %.2f (width %.2f)", h, w)
+	// Exactly one 'r' (filled-rectangle) op per page the callout
+	// occupies, of a bar's own width (1.5pt or 3pt — nothing else this
+	// package fills is anywhere near that narrow), with a sane,
+	// non-negative height. An earlier version of this test parsed the
+	// emitted content stream with a regex that captured position
+	// (x, y) as if it were size (width, height), so it never looked at
+	// height at all, and its own "is this narrow" condition tested x
+	// (always the same left margin) rather than width, and so was
+	// never true.
+	for i, page := range f.pages {
+		var found bool
+		for _, o := range page {
+			if o.kind != 'r' {
+				continue
+			}
+			width := o.x2 - o.x
+			if width > 10 {
+				continue // not the bar
+			}
+			found = true
+			height := o.y2 - o.y
+			if height < 0 || height > f.pageH {
+				t.Errorf("page %d: callout bar has an implausible height %.2f (width %.2f)", i+1, height, width)
+			}
+		}
+		if !found {
+			t.Errorf("page %d: no callout bar found", i+1)
 		}
 	}
 }

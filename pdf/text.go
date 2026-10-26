@@ -47,10 +47,17 @@ var cp1252High = map[rune]byte{
 	'œ': 0x9C, 'ž': 0x9E, 'Ÿ': 0x9F,
 }
 
-// fallbacks are characters worth spelling differently rather than
-// losing. A non-breaking space is a space; a soft hyphen is nothing;
-// the various spaces are spaces. Everything else outside the encoding
-// becomes a question mark and is reported.
+// fallbacks are characters drawn as a different, but visually close,
+// character rather than reported as undrawable: a non-breaking space
+// or a soft hyphen has no base-14 glyph of its own, but a plain space
+// or an empty string respectively is a closer rendering of it than a
+// question mark would be. This is a deliberate, silent substitution —
+// unlike an unsupported character, which is drawn as "?" and returned
+// by [encode]'s second value, nothing here is ever reported, because
+// the whole point is that the reader cannot tell the difference. Treat
+// this list as fixed policy, not a place to add a new substitution
+// without the same care: a caller measuring or comparing drawn text
+// against its own source has to know these runes do not round-trip.
 var fallbacks = map[rune]string{
 	' ': " ", ' ': " ", ' ': " ", ' ': " ",
 	'­': "", '‑': "-", '−': "-",
@@ -61,9 +68,13 @@ var fallbacks = map[rune]string{
 // object can show, and reports every rune it could not represent.
 //
 // The dropped runes are returned rather than swallowed because a
-// document that quietly replaced a character is the plausible-wrong-answer
-// failure this product exists to avoid: a reader cannot see what is not
-// there. The caller states it; this function only knows the facts.
+// document that quietly replaced a character with a question mark is
+// the plausible-wrong-answer failure this package exists to avoid: a
+// reader cannot see what is not there. The caller states it; this
+// function only knows the facts. [fallbacks] is the deliberate
+// exception: a substitution close enough in appearance that the
+// reader is not expected to be told, and is documented there rather
+// than reported here.
 func encode(s string) ([]byte, []rune) {
 	var out []byte
 	var dropped []rune
@@ -146,7 +157,11 @@ func measure(s string, face int, size float64) float64 {
 // It breaks at spaces, and hard-breaks a single token too long to fit
 // on a line of its own — a case that arises in practice from a long
 // reference or a URL, and whose alternative is a line running off the
-// page, which is the one outcome a reader cannot recover from.
+// page, which is the one outcome a reader cannot recover from. A
+// single rune wider than max (an oversized glyph at a very small max)
+// still gets a line of its own even though that line does not fit
+// either: there is no narrower way to draw it, and dropping it would
+// be the plausible-wrong-answer failure this package exists to avoid.
 //
 // A non-breaking space (U+00A0), figure space (U+2007) or narrow
 // no-break space (U+202F) is NOT a break point, even though
@@ -186,26 +201,37 @@ func wrap(s string, face int, size, max float64) []string {
 		// the fragment then ranges as U+FFFD, which encode draws as a
 		// question mark on the page.
 		//
-		// The loop condition is len(rs) > 0, not "still too wide": a
-		// non-positive max (a column requested narrower than its own
-		// padding, say) makes every non-empty string "too wide" by
-		// definition, including a single rune, and measuring the EMPTY
-		// string against it is no narrower — "" is never too wide for
-		// anything, so a width-only condition never terminates. Cutting
-		// at least one rune every pass (cut is floored at 1 below)
-		// guarantees len(rs) shrinks, so this always ends: a column too
+		// This is one forward pass, measuring each rune's own width
+		// once and summing: a token t runes long produces as many
+		// lines as it needs, but costs O(t) regardless of how many. An
+		// earlier version re-measured the WHOLE remaining prefix on
+		// every step of deciding whether to keep cutting, and within
+		// that search re-measured every shorter candidate prefix from
+		// scratch — quadratic work for one token, and because that
+		// search ran again for every line the token produced, cubic
+		// overall: a 10,000-character token (a pasted base64 blob or a
+		// long reference, reachable from an ordinary Paragraph call)
+		// took upwards of twenty seconds. Summing precomputed widths
+		// once cannot loop at all, whatever max is — a column too
 		// narrow to hold anything degrades to one rune per line rather
-		// than hanging the render.
+		// than hanging the render, with no separate case needed for a
+		// non-positive max.
 		rs := []rune(f)
-		for len(rs) > 0 && measure(string(rs), face, size) > max {
-			cut := len(rs)
-			for cut > 1 && measure(string(rs[:cut]), face, size) > max {
-				cut--
-			}
-			lines = append(lines, string(rs[:cut]))
-			rs = rs[cut:]
+		rw := make([]float64, len(rs))
+		for i, r := range rs {
+			rw[i] = measure(string(r), face, size)
 		}
-		cur = string(rs)
+		lineStart := 0
+		var w float64
+		for i := range rs {
+			if i > lineStart && w+rw[i] > max {
+				lines = append(lines, string(rs[lineStart:i]))
+				lineStart = i
+				w = 0
+			}
+			w += rw[i]
+		}
+		cur = string(rs[lineStart:])
 	}
 	if cur != "" {
 		lines = append(lines, cur)

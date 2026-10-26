@@ -71,7 +71,7 @@ func (b *Builder) PageBreak() { b.f.newPage() }
 //
 // fn runs exactly once, against a throwaway Builder starting at the
 // top of a blank page — never against the real one directly. That
-// probe IS the answer, not a rehearsal for a second run: if it fit on
+// probe is the answer, not a rehearsal for a second run: if it fit on
 // its one fresh page, its ops are copied onto the real page, shifted
 // down to wherever that currently is; if it did not — either because
 // the real page does not have as much room left as the probe's fresh
@@ -133,9 +133,9 @@ func (b *Builder) KeepTogether(fn func(b *Builder)) {
 type producedLine struct{ by, at, note string }
 
 // Produced records who produced this document and when — "Produced by
-// A Practitioner on 24 August 2026.", with note (left empty for none)
+// Alex Morgan on 24 August 2026.", with note (left empty for none)
 // drawn beneath it in bold, such as "Draft — not issued". It is drawn
-// into the LAST page's existing footer area at [Render] time, rather
+// into the last page's existing footer area at [Render] time, rather
 // than flowed as an ordinary block, so it can never end up alone at
 // the top of a trailing page that holds nothing else — the same
 // failure KeepTogether exists to stop a heading from having, reached

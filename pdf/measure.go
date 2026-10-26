@@ -30,9 +30,19 @@ const (
 
 // Encode turns a string into the Windows-1252 bytes a base-14 face can
 // draw, and returns the runes it could not. A caller that ships the
-// bytes without reading the second return is shipping a silent
-// substitution, which is why the two come back together — the same
-// contract [Builder.Render] already has.
+// bytes without reading the second return is shipping a character the
+// reader cannot see drawn as a question mark instead, which is why the
+// two come back together — the same contract [Builder.Render] already
+// has.
+//
+// A handful of characters with no base-14 glyph of their own are drawn
+// as something else instead, close enough in appearance that this is
+// not reported as a loss: a non-breaking space and its narrower
+// relatives as a plain space, a soft hyphen as nothing, a non-breaking
+// hyphen or minus sign as a plain hyphen, and the prime marks as plain
+// quotes. A caller comparing drawn text back against its own source
+// has to know these do not round-trip; everything else either draws
+// unchanged or is reported.
 func Encode(s string) ([]byte, []rune) { return encode(s) }
 
 // Measure is the width of s in points, drawn in f at size.
@@ -42,9 +52,12 @@ func Measure(s string, f Face, size float64) float64 {
 
 // Wrap breaks s into lines no wider than max points, drawn in f at size.
 // A single token too long for a line of its own is cut where it stops
-// fitting, by rune — so every line it returns really does fit, and a
-// caller deciding whether a value fits a printed box counts the lines
-// rather than measuring them again.
+// fitting, by rune, so a caller deciding whether a value fits a printed
+// box can usually count the lines rather than measuring them again —
+// usually, because a single rune wider than max (an oversized glyph at
+// a very small max) still gets a line of its own even though that one
+// line does not fit either: there is no narrower way to draw it, and
+// dropping it would be worse than drawing it too wide.
 func Wrap(s string, f Face, size, max float64) []string {
 	return wrap(s, int(f), size, max)
 }
