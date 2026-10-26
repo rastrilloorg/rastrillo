@@ -1108,7 +1108,10 @@ const product, direct = "localhost:8080", "127.0.0.1:8080"
 
 func TestUnderABasePath(t *testing.T) {
 	h := underAcme(t, newApp(t).(*http.ServeMux))
-	for _, p := range []string{"/acme", "/acme/overview", "/acme/es/overview"} {
+	if rec := send(h, "GET", product, "/acme?x=1", nil); rec.Code != http.StatusPermanentRedirect || rec.Header().Get("Location") != "/acme/?x=1" {
+		t.Errorf("GET /acme: %d to %q, want 308 to /acme/?x=1, the tenant's root", rec.Code, rec.Header().Get("Location"))
+	}
+	for _, p := range []string{"/acme/", "/acme/overview", "/acme/es/overview"} {
 		rec := send(h, "GET", product, p, nil)
 		if rec.Code != http.StatusOK {
 			t.Errorf("GET %s: %d, want 200:\n%s", p, rec.Code, rec.Body.String())
@@ -1142,8 +1145,8 @@ func TestUnderABasePath(t *testing.T) {
 		notes.ErrorPage(w, r, http.StatusInternalServerError, "r1")
 	}))
 	rec := send(errPage, "GET", product, "/acme/x", nil)
-	if !strings.Contains(rec.Body.String(), "href=\"/acme\"") {
-		t.Errorf("the error page's home link is not /acme:\n%s", rec.Body.String())
+	if !strings.Contains(rec.Body.String(), "href=\"/acme/\"") {
+		t.Errorf("the error page's home link is not /acme/:\n%s", rec.Body.String())
 	}
 	leaks(t, "the error page", rec)
 

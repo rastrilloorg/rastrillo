@@ -65,7 +65,6 @@ func get(t *testing.T, srv *httptest.Server, path string, trace *httptrace.Clien
 func TestProductPathIsStripped(t *testing.T) {
 	for target, want := range map[string]struct{ path, escaped, query string }{
 		"/acme/notes?x=1":   {"/notes", "/notes", "x=1"},
-		"/acme":             {"/", "/", ""},
 		"/acme/":            {"/", "/", ""},
 		"/acme/files/a%2Fb": {"/files/a/b", "/files/a%2Fb", ""},
 		"/acme/q%3Fx":       {"/q?x", "/q%3Fx", ""},
@@ -95,6 +94,80 @@ func TestProductPathIsStripped(t *testing.T) {
 		if base != "/acme" || direct || !routed {
 			t.Errorf("%s: Base %q, OnDirectHost %v, PathRouted %v; want /acme, false, true", target, base, direct, routed)
 		}
+	}
+}
+
+// A Config that is off serves every request as next would: no
+// redirect, no strip, no context. Wrapped, the zero Config's empty
+// origin matches no Host, so /outside.example/collect on an ordinary
+// host was sent to //outside.example/collect, another site.
+func TestADisabledConfigPassesRequestsThrough(t *testing.T) {
+	fromEnv, err := basepath.FromEnv("https://example.com", func(string) string { return "" })
+	if err != nil {
+		t.Fatal(err)
+	}
+	for name, c := range map[string]basepath.Config{"Config{}": {}, "FromEnv with nothing set": fromEnv} {
+		for _, tc := range []struct{ method, host, target string }{
+			{"GET", "app.example", "/outside.example/collect"},
+			{"GET", "app.example", "/"},
+			{"POST", "example.com", "/acme/x?q=1"},
+			{"GET", "carlos", "/healthz"},
+		} {
+			var path, requestURI, base string
+			var direct, routed, platform, called bool
+			rec := serve(c, tc.method, tc.host, tc.target, func(w http.ResponseWriter, r *http.Request) {
+				called = true
+				path, requestURI = r.URL.RequestURI(), r.RequestURI
+				base, direct, routed, platform = basepath.Base(r), basepath.OnDirectHost(r), basepath.PathRouted(r), basepath.PlatformCall(r)
+				w.Header().Set("Location", "/done")
+				w.WriteHeader(http.StatusTeapot)
+			})
+			where := name + ": " + tc.method + " " + tc.host + tc.target
+			if !called {
+				t.Errorf("%s: next was not called; got %d, Location %q", where, rec.Code, rec.Header().Get("Location"))
+				continue
+			}
+			if path != tc.target || requestURI != tc.target {
+				t.Errorf("%s: next saw %q (RequestURI %q), want the target unchanged", where, path, requestURI)
+			}
+			if base != "" || direct || routed || platform {
+				t.Errorf("%s: Base %q, OnDirectHost %v, PathRouted %v, PlatformCall %v; want none set", where, base, direct, routed, platform)
+			}
+			if rec.Code != http.StatusTeapot || rec.Header().Get("Location") != "/done" {
+				t.Errorf("%s: %d, Location %q; want next's 418 and /done untouched", where, rec.Code, rec.Header().Get("Location"))
+			}
+		}
+	}
+}
+
+// The tenant's root is /acme/. At /acme a page's document-relative
+// href="overview" or action="save" resolves against the origin's root
+// and reaches the hub; so a bare /acme is sent to /acme/, query kept,
+// with a 308 so a form posted there keeps its method and body.
+func TestTheBareBaseIsSentToItsRoot(t *testing.T) {
+	for _, c := range []struct{ method, target, location string }{
+		{"GET", "/acme", "/acme/"},
+		{"HEAD", "/acme", "/acme/"},
+		{"GET", "/acme?q=1&r=2", "/acme/?q=1&r=2"},
+		{"POST", "/acme?x", "/acme/?x"},
+		{"GET", "/acme/x/..", "/acme/"},
+	} {
+		called := false
+		rec := serve(acme, c.method, "example.com", c.target, func(http.ResponseWriter, *http.Request) { called = true })
+		if called {
+			t.Errorf("%s %s: next was called", c.method, c.target)
+		}
+		if rec.Code != http.StatusPermanentRedirect || rec.Header().Get("Location") != c.location {
+			t.Errorf("%s %s: %d, Location %q; want 308, %q", c.method, c.target, rec.Code, rec.Header().Get("Location"), c.location)
+		}
+	}
+	var path string
+	rec := serve(acme, "GET", "example.com", "/acme/", func(w http.ResponseWriter, r *http.Request) {
+		path = r.URL.Path
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+	})
+	if path != "/" || rec.Header().Get("Location") != "/acme/" {
+		t.Errorf("GET /acme/: next saw %q and redirecting to / sent %q; want / and /acme/", path, rec.Header().Get("Location"))
 	}
 }
 
@@ -149,9 +222,9 @@ func TestASlugThatIsAlsoARouteIsHandledOnce(t *testing.T) {
 func TestHeadersAreRewrittenOnce(t *testing.T) {
 	for set, want := range map[string]string{
 		"/done":                               "/acme/done",
-		"/":                                   "/acme",
-		"/?q=1":                               "/acme?q=1",
-		"/#top":                               "/acme#top",
+		"/":                                   "/acme/",
+		"/?q=1":                               "/acme/?q=1",
+		"/#top":                               "/acme/#top",
 		"next":                                "next",
 		"https://example.com/_carlos/refresh": "https://example.com/_carlos/refresh",
 		"//evil.example/":                     "//evil.example/",
@@ -457,9 +530,9 @@ func TestOutsideTheMiddlewareNothingChanges(t *testing.T) {
 // base /acme: only a path that starts with exactly one / is the app's.
 var pathCases = map[string]string{
 	"/x":          "/acme/x",
-	"/":           "/acme",
-	"/?q":         "/acme?q",
-	"/#a":         "/acme#a",
+	"/":           "/acme/",
+	"/?q":         "/acme/?q",
+	"/#a":         "/acme/#a",
 	"x":           "x",
 	"":            "",
 	"https://h/x": "https://h/x",

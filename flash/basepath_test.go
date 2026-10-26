@@ -15,11 +15,11 @@ import (
 
 func TestAFlashBelongsToTheAppThatSetIt(t *testing.T) {
 	// One httptest.Server: a front that sends /acme/... and /bob/... through two basepath handlers
-	// (slugs acme and bob) and everything else to a root handler. A cookiejar client:
-	// POST /acme/save does flash.Set(w, r, "notice", "Saved."), 303 to /acme/.
+	// (slugs acme and bob) and everything else to the same app at the root. A cookiejar client:
+	// POST /acme/save?msg=Saved. does flash.Set(w, r, "notice", "Saved."), 303 to /acme/.
 	// GET / and GET /bob/ call flash.Take: neither sees a flash.
 	// GET /acme/ calls flash.Take: "Saved."; a second GET /acme/ sees none (the clear matched the path).
-	// POST /hub-save at the root sets "Hub." and 303s to /; before GET / takes it, GET /acme/ sees
+	// POST /save?msg=Hub. at the root sets "Hub." and 303s to /; before GET / takes it, GET /acme/ sees
 	// no flash and leaves the hub's cookie alone, and GET / then shows "Hub." once.
 	// With both pending at once, each app shows its own notice once.
 	// At the root, Set and Take behave as before (rastrillo_flash, Path "/").
@@ -82,10 +82,7 @@ func TestAFlashBelongsToTheAppThatSetIt(t *testing.T) {
 		if resp.StatusCode != http.StatusSeeOther {
 			t.Fatalf("POST %s/save = %d, want 303", base, resp.StatusCode)
 		}
-		want := base
-		if want == "" {
-			want = "/"
-		}
+		want := base + "/"
 		if loc := resp.Header.Get("Location"); loc != want {
 			t.Errorf("POST %s/save redirects to %q, want %q", base, loc, want)
 		}

@@ -13,14 +13,24 @@ import (
 )
 
 // Handler serves next under c's base path. On the product origin it
-// answers only for /<slug> and below: it strips the base from r.URL,
+// answers only for /<slug>/ and below: it strips the base from r.URL,
 // records it for Base and Path, and adds it back to the Location and
-// Rastrillo-Location headers next sends.
+// Rastrillo-Location headers next sends. A bare /<slug> is sent to
+// /<slug>/.
 //
 // On any other host, the instance's own or Host carlos, it serves the
 // app at the root with ServeDirect, and with RedirectDirect sends the
 // visitor to ProductURL, except for a PlatformCall, which it serves.
+//
+// A Config that is not Enabled returns next itself.
 func (c Config) Handler(next http.Handler) http.Handler {
+	if !c.Enabled() {
+		// Off means unchanged. Wrapped, the zero Config's empty origin
+		// matches no Host, so every request would take the direct-host
+		// redirect to ProductURL, and /outside.example/x would go to
+		// the scheme-relative //outside.example/x: another site.
+		return next
+	}
 	base := "/" + c.Slug
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if !sameHost(r.Host, c.Origin) {
@@ -95,6 +105,16 @@ func serveProduct(w http.ResponseWriter, r *http.Request, c Config, base string,
 		return
 	}
 
+	// The tenant's root is /<slug>/, never /<slug>. A page at /acme
+	// resolves a document-relative href="overview", src="static/x" or
+	// action="save" against the origin's root, so it would link and
+	// post to the hub's /overview; at /acme/ they stay in the tenant.
+	// 308 for every method, so a form posted to /acme keeps its body.
+	root := clean == base
+	if root {
+		clean = base + "/"
+	}
+
 	if clean != esc {
 		// 301 is the permanent move. It turns a POST into a GET in
 		// every browser, though, so a form posted to an unclean path
@@ -103,7 +123,7 @@ func serveProduct(w http.ResponseWriter, r *http.Request, c Config, base string,
 		// directly: it is already public, and must not get the base
 		// twice.
 		status := http.StatusMovedPermanently
-		if r.Method != http.MethodGet && r.Method != http.MethodHead {
+		if root || (r.Method != http.MethodGet && r.Method != http.MethodHead) {
 			status = http.StatusPermanentRedirect
 		}
 		to := clean
@@ -116,9 +136,6 @@ func serveProduct(w http.ResponseWriter, r *http.Request, c Config, base string,
 	}
 
 	restEsc := strings.TrimPrefix(clean, base)
-	if restEsc == "" {
-		restEsc = "/"
-	}
 	rest, err := url.PathUnescape(restEsc)
 	if err != nil {
 		// EscapedPath only returns valid escapes, so this is a request

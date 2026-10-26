@@ -142,15 +142,11 @@ func requestPath(r *http.Request) string {
 	// net/http accepts and keeps whole. Its own escaped path and query,
 	// as basepath.ProductURL takes them: r.URL has no slug, and next
 	// would bring the reader back to the hub's root.
+	// RequestURI, not the path and RawQuery by hand: it keeps an
+	// explicitly empty query, /x?, which the reader asked for and the
+	// origin-form branch above keeps too.
 	if u, err := url.ParseRequestURI(target); err == nil && u.IsAbs() && u.Opaque == "" {
-		p := u.EscapedPath()
-		if p == "" {
-			p = "/"
-		}
-		if u.RawQuery != "" {
-			p += "?" + u.RawQuery
-		}
-		return p
+		return u.RequestURI()
 	}
 	return r.URL.RequestURI()
 }

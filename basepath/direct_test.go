@@ -11,7 +11,7 @@ import (
 func TestDirectHostRedirectsToTheProductPath(t *testing.T) {
 	for _, c := range []struct{ method, host, target, want string }{
 		{"GET", "acme-abc234.bdf.oncarlos.com", "/notes?x=1", "https://example.com/acme/notes?x=1"},
-		{"GET", "acme-abc234.bdf.oncarlos.com", "/", "https://example.com/acme"},
+		{"GET", "acme-abc234.bdf.oncarlos.com", "/", "https://example.com/acme/"},
 		{"GET", "acme-abc234.bdf.oncarlos.com", "/es/private?x=1", "https://example.com/acme/es/private?x=1"},
 		{"HEAD", "cv.paulca.com", "/about", "https://example.com/acme/about"},
 		{"POST", "acme-abc234.bdf.oncarlos.com", "/notes", "https://example.com/acme/notes"},
@@ -24,7 +24,7 @@ func TestDirectHostRedirectsToTheProductPath(t *testing.T) {
 		// not glued to the origin whole.
 		{"GET", "cv.paulca.com", "http://cv.paulca.com/about?x=1", "https://example.com/acme/about?x=1"},
 		{"GET", "cv.paulca.com", "http://cv.paulca.com//x", "https://example.com/acme//x"},
-		{"OPTIONS", "cv.paulca.com", "*", "https://example.com/acme"},
+		{"OPTIONS", "cv.paulca.com", "*", "https://example.com/acme/"},
 	} {
 		called := false
 		rec := serve(acme, c.method, c.host, c.target, func(http.ResponseWriter, *http.Request) { called = true })

@@ -50,10 +50,11 @@ func TestAScaffoldedAppWorksUnderABasePath(t *testing.T) {
 	cmd := exec.Command("go", "test", "-count=1", "-v", "-tags", "browser", "-run", "^TestBasePath", "./internal/walkapptest/")
 	cmd.Dir = app
 	out, err := cmd.CombinedOutput()
-	// Both names, so a -run that matched nothing, or a drive renamed,
+	// Every name, so a -run that matched nothing, or a drive renamed,
 	// fails here instead of passing with no tests run.
 	if err != nil || !strings.Contains(string(out), "--- PASS: TestBasePathRedirectsTheDirectHost") ||
-		!strings.Contains(string(out), "--- PASS: TestBasePathServesTheDirectHost") {
+		!strings.Contains(string(out), "--- PASS: TestBasePathServesTheDirectHost") ||
+		!strings.Contains(string(out), "--- PASS: TestBasePathKeepsRelativeURLsInTheTenant") {
 		t.Fatalf("the drive under /acme (%v):\n%s", err, out)
 	}
 }

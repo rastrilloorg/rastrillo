@@ -146,8 +146,10 @@ func SlugFromHost(host string) (string, error) {
 // Join puts base in front of p when p is a root-absolute path: one that
 // starts with exactly one /. Anything else (a relative path, an absolute
 // or scheme-relative URL, or /\, which browsers read as //) is returned
-// unchanged, and so is every p when base is empty. "/" gives base itself,
-// and "/?q" or "/#f" give base followed by the query or fragment.
+// unchanged, and so is every p when base is empty. "/" gives base/, the
+// tenant's root, and "/?q" or "/#f" give base/?q and base/#f: at a
+// slashless base a page's relative links would resolve against the
+// origin's root, and leave the tenant.
 //
 // This is the one copy of the prefix rule: Path, the header rewrite and
 // the templates' path func all call it. A second copy would drift, and
@@ -159,9 +161,6 @@ func Join(base, p string) string {
 	}
 	if len(p) > 1 && (p[1] == '/' || p[1] == '\\') {
 		return p
-	}
-	if p == "/" || p[1] == '?' || p[1] == '#' {
-		return base + p[1:]
 	}
 	return base + p
 }

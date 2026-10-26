@@ -11,6 +11,7 @@ package walkapptest
 import (
 	"context"
 	"fmt"
+	htmlpkg "html"
 	"io"
 	"log/slog"
 	"net/http"
@@ -51,12 +52,38 @@ func tenant(t *testing.T, slug string, mode basepath.DirectHost, origin string) 
 	opts := rastrillo.Options{Logger: logger, Locales: genlocales.Locales, DefaultLocale: genlocales.DefaultLocale,
 		BasePath: basepath.Config{Origin: origin, Slug: slug, DirectHost: mode}}
 	walkapp.Configure(&opts, mux, time.Now())
+	perf := opts.Wrap
+	opts.Wrap = func(next http.Handler) http.Handler { return relativePage(perf(next)) }
 	h, closeAll, err := rastrillo.Handler(opts)
 	if err != nil {
 		t.Fatalf("rastrillo.Handler: %v", err)
 	}
 	t.Cleanup(func() { closeAll() })
 	return h
+}
+
+// relativePage answers the app's root, when it is asked with ?asset=,
+// with a page that writes its URLs the way an app ported from the root
+// often does: document-relative, a link to overview, an image from
+// static/ and a form posting to _theme. Each resolves against the
+// page's own URL, so they stay in the tenant only if its root is
+// /acme/: at /acme they would ask the hub for /overview.
+func relativePage(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		asset := r.URL.Query().Get("asset")
+		if r.URL.Path != "/" || asset == "" {
+			next.ServeHTTP(w, r)
+			return
+		}
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		fmt.Fprintf(w, `<!doctype html><html lang="en"><title>Relative</title>
+<a id="rel-link" href="overview">Overview</a>
+<img id="rel-img" alt="" src="%s">
+<form id="rel-form" method="post" action="_theme">
+<input type="hidden" name="scheme" value="dark"><input type="hidden" name="return" value="/overview">
+<button id="rel-submit">Dark</button>
+</form>`, htmlpkg.EscapeString(asset))
+	})
 }
 
 // hub stands in for the app at the product origin's root. It answers
@@ -347,6 +374,68 @@ func TestBasePathRedirectsTheDirectHost(t *testing.T) {
 	if rec.Code != http.StatusNotFound || rec.Header().Get("X-Carlos-Version") != "tenant-bob" || rec.Header().Get("Rastrillo-Host") != "" {
 		t.Errorf("GET /acme/api/version with acme published to bob: %d, X-Carlos-Version %q, Rastrillo-Host %q; want 404 from tenant-bob naming no instance",
 			rec.Code, rec.Header().Get("X-Carlos-Version"), rec.Header().Get("Rastrillo-Host"))
+	}
+}
+
+// The tenant's root is /acme/. A typed bare /acme is sent there with its
+// query, and a page at the root that writes document-relative URLs
+// links, loads and posts within the tenant: at /acme the browser would
+// resolve all three against the origin's root, the hub's.
+func TestBasePathKeepsRelativeURLsInTheTenant(t *testing.T) {
+	rig, e := newRig(t, basepath.RedirectDirect)
+
+	// A real asset, so the image loads from the tenant's own static
+	// handler: the home page's stylesheet, made document-relative.
+	home := fetch(t, rig.Origin+"/acme/")
+	m := regexp.MustCompile(`<link rel="stylesheet" href="/acme/(static/[^"]+)"`).FindStringSubmatch(home.body)
+	if home.status != http.StatusOK || m == nil {
+		t.Fatalf("GET /acme/: %v, want 200 and a stylesheet under /acme/static/", home)
+	}
+	asset := m[1]
+
+	if a := fetch(t, rig.Origin+"/acme?asset="+url.QueryEscape(asset)); a.status != http.StatusPermanentRedirect {
+		t.Errorf("GET /acme: %v, want 308 to /acme/", a)
+	}
+	rig.Run(chromedp.Navigate(rig.Origin + "/acme?asset=" + url.QueryEscape(asset)))
+	rig.Screen("body", "a page of relative URLs at the tenant's root")
+	if got := eval[string](rig, "location.pathname + location.search"); got != "/acme/?asset="+url.QueryEscape(asset) {
+		t.Errorf("the bare root landed on %q, want /acme/ with the query kept", got)
+	}
+	for sel, want := range map[string]string{
+		"#rel-link": rig.Origin + "/acme/overview",
+		"#rel-img":  rig.Origin + "/acme/" + asset,
+		"#rel-form": rig.Origin + "/acme/_theme",
+	} {
+		prop := "href"
+		switch sel {
+		case "#rel-img":
+			prop = "src"
+		case "#rel-form":
+			prop = "action"
+		}
+		if got := eval[string](rig, fmt.Sprintf("document.querySelector(%q).%s", sel, prop)); got != want {
+			t.Errorf("%s's %s resolves to %q, want %q", sel, prop, got, want)
+		}
+	}
+	loaded := fmt.Sprintf("performance.getEntriesByType('resource').some(e => e.name === %q && e.responseStatus === 200)", rig.Origin+"/acme/"+asset)
+	if !eval[bool](rig, loaded) {
+		t.Errorf("the relative image did not load from /acme/%s", asset)
+	}
+
+	act(t, rig, "following the relative link", chromedp.Click(`#rel-link`, chromedp.ByQuery))
+	landsOn(t, rig, "/acme/overview")
+
+	rig.Run(chromedp.Navigate(rig.Origin + "/acme/?asset=" + url.QueryEscape(asset)))
+	act(t, rig, "submitting the relative form", chromedp.Click(`#rel-submit`, chromedp.ByQuery))
+	landsOn(t, rig, "/acme/overview")
+	if scheme := eval[string](rig, "document.documentElement.dataset.theme ?? ''"); scheme != "dark" {
+		t.Errorf("after the relative form the page's data-theme is %q, want dark: the post did not reach the tenant's switch", scheme)
+	}
+
+	for _, p := range e.hub.asked() {
+		if p != "/favicon.ico" {
+			t.Errorf("the hub was asked for %s", p)
+		}
 	}
 }
 

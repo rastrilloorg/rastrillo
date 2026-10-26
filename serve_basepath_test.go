@@ -115,7 +115,7 @@ func TestFrameworkRoutesAnswerUnderTheBase(t *testing.T) {
 	if ct := w.Header().Get("Content-Type"); w.Code != 200 || ct != "application/speculationrules+json" {
 		t.Errorf("GET /acme/_speculation-rules = %d %q, want 200 application/speculationrules+json", w.Code, ct)
 	}
-	if got := bpDo(h, "GET", "example.com", "/acme", nil, nil).Header().Get("Speculation-Rules"); got != `"/acme/_speculation-rules"` {
+	if got := bpDo(h, "GET", "example.com", "/acme/", nil, nil).Header().Get("Speculation-Rules"); got != `"/acme/_speculation-rules"` {
 		t.Errorf("Speculation-Rules = %s, want \"/acme/_speculation-rules\": the browser would fetch the hub's path", got)
 	}
 	for _, p := range []string{"/healthz", "/api/version"} {
@@ -276,6 +276,30 @@ func TestAnInvalidBasePathRefusesToStart(t *testing.T) {
 	_, _, err := Handler(Options{Mux: http.NewServeMux(), BasePath: basepath.Config{Slug: "acme"}})
 	if err == nil || !strings.HasPrefix(err.Error(), "rastrillo: refusing to start: rastrillo/basepath:") {
 		t.Fatalf("Handler with a slug and no origin: err = %v, want rastrillo: refusing to start: rastrillo/basepath: ...", err)
+	}
+}
+
+// The public Handler, not buildHandler, with Locales unset: the
+// assembly every other test here reaches through buildHandler, so a
+// branch of Handler that left the base path out would pass them all.
+func TestHandlerServesUnderTheBaseWithoutLocales(t *testing.T) {
+	c := &bpCalls{}
+	opts := bpOptions(bpMux(c), c, basepath.RedirectDirect)
+	opts.Locales = nil
+	h, closeAll, err := Handler(opts)
+	if err != nil {
+		t.Fatalf("Handler: %v", err)
+	}
+	t.Cleanup(func() { closeAll() })
+
+	if w := bpDo(h, "GET", "example.com", "/acme/healthz", nil, nil); w.Code != 200 || w.Body.String() != "ok" {
+		t.Errorf("GET /acme/healthz = %d %q, want 200 ok", w.Code, w.Body.String())
+	}
+	if w := bpDo(h, "GET", "example.com", "/acme/go", nil, nil); w.Code != http.StatusSeeOther || w.Header().Get("Location") != "/acme/done" {
+		t.Errorf("GET /acme/go = %d %q, want 303 /acme/done: the app's redirect would land on the hub", w.Code, w.Header().Get("Location"))
+	}
+	if w := bpDo(h, "GET", "example.com", "/healthz", nil, nil); w.Code != http.StatusNotFound {
+		t.Errorf("GET /healthz on the product host = %d, want 404: that path is the hub's", w.Code)
 	}
 }
 

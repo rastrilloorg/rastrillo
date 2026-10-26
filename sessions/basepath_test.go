@@ -339,6 +339,21 @@ func TestASignedTenantSendsTheHubTheSlug(t *testing.T) {
 	}
 }
 
+// An explicitly empty query is part of what the reader asked for, and
+// both forms keep it: the origin-form target is kept as sent, and the
+// absolute-form one lost the ? when its path and query were rebuilt by
+// hand.
+func TestASignedTenantKeepsAnExplicitlyEmptyQuery(t *testing.T) {
+	p := newPairOn(t, product)
+	for form, r := range targets("/acme/orders?") {
+		w := serve(underAcme, p.tenant.Require(ok), r)
+		want := product + "/signin?return_to=" + url.QueryEscape("/acme/orders?")
+		if w.Code != http.StatusSeeOther || w.Header().Get("Location") != want {
+			t.Errorf("%s: %d %q, want 303 %q", form, w.Code, w.Header().Get("Location"), want)
+		}
+	}
+}
+
 // targets is a GET of target on the product origin in both forms
 // net/http accepts: origin-form, as a browser sends it, and
 // absolute-form, https://example.com/acme/..., as a proxy may.

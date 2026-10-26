@@ -32,8 +32,8 @@ func TestPathFunc(t *testing.T) {
 		want string
 	}{
 		{"a path", under, "/x", "/acme/x"},
-		{"the root", under, "/", "/acme"},
-		{"a fragment", under, "/#nav", "/acme#nav"},
+		{"the root", under, "/", "/acme/"},
+		{"a fragment", under, "/#nav", "/acme/#nav"},
 		{"a map's Base", map[string]any{"Base": "/acme"}, "/x", "/acme/x"},
 		{"a map without one", map[string]any{}, "/x", "/x"},
 		{"no data", nil, "/x", "/x"},
@@ -115,7 +115,7 @@ func TestShellsUnderABasePathLeakNothing(t *testing.T) {
 			t.Errorf("%s under /acme leaks %q", shell, leaks)
 		}
 		if shell == "topbar" || shell == "sidebar" || shell == "console" {
-			for _, want := range []string{`href="/acme"`, `action="/acme/_theme"`} {
+			for _, want := range []string{`href="/acme/"`, `action="/acme/_theme"`} {
 				if !strings.Contains(body, want) {
 					t.Errorf("%s under /acme has no %s", shell, want)
 				}
