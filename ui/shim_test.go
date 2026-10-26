@@ -503,7 +503,12 @@ func TestSelectContract(t *testing.T) {
 	// clipping, will-change's triggers, will-change: position for absolute
 	// lists, size containers dropped, the top layer and slots), and added
 	// data-rst-select-ceiling, floor's twin for a sticky header.
-	if n := len(SelectJS()); n > 54*1024 {
+	//
+	// Then to 55KB (measured 55,848 bytes) for the re-review: no
+	// containment, transform or overflow on a box that is not there
+	// (display: contents) or is a plain inline, preserve-3d, and
+	// will-change matched without case and through -webkit- aliases.
+	if n := len(SelectJS()); n > 55*1024 {
 		t.Fatalf("select.js is %d bytes; it is split out of the shim precisely to stay readable — trim it", n)
 	}
 	if bytes.Contains(SelectJS(), []byte("\t")) {

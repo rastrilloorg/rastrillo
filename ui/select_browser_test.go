@@ -1687,7 +1687,9 @@ func TestSelectPlacement(t *testing.T) {
 // way the list is scrolled to its end and its last row must be the thing
 // at its centre: a list taller than what really shows it fails there,
 // which is how the review on #136 found content-visibility and the
-// will-change triggers missed.
+// will-change triggers missed, and its re-review containment on a box
+// that is not there (display: contents, a plain inline), preserve-3d,
+// and will-change written in capitals or with -webkit-.
 func TestSelectRoomIsCutOnlyByWhatClipsTheList(t *testing.T) {
 	t.Parallel()
 	type row struct {
@@ -1752,6 +1754,18 @@ func TestSelectRoomIsCutOnlyByWhatClipsTheList(t *testing.T) {
 			['absolute, held outside the bar', 'escape', 'absolute static', bar],
 			['absolute, bar positioned', 'clip', 'absolute static', bar + 'position:relative'],
 			['absolute, will-change: position', 'clip', 'absolute static', bar + 'will-change:position'],
+			['fixed, display: contents with contain: paint', 'escape', 'fixed', 'display:contents;contain:paint'],
+			['fixed, display: contents with content-visibility: auto', 'escape', 'fixed', 'display:contents;content-visibility:auto'],
+			['absolute, held by its own box, in display: contents with contain: paint', 'escape', 'absolute', 'display:contents;contain:paint'],
+			['fixed, display: inline with contain: paint', 'escape', 'fixed', 'display:inline;contain:paint'],
+			['fixed, transform-style: preserve-3d', 'clip', 'fixed', bar + 'transform-style:preserve-3d'],
+			['fixed, transform-style: preserve-3d, overflow: clip', 'clip', 'fixed', 'width:300px;height:200px;overflow:clip;transform-style:preserve-3d'],
+			['fixed, will-change: transform-style', 'clip', 'fixed', bar + 'will-change:transform-style'],
+			['fixed, will-change: TrAnSfOrM', 'clip', 'fixed', bar + 'will-change:TrAnSfOrM'],
+			['fixed, will-change: -webkit-transform', 'clip', 'fixed', bar + 'will-change:-webkit-transform'],
+			['fixed, will-change: -webkit-perspective', 'clip', 'fixed', bar + 'will-change:-webkit-perspective'],
+			['fixed, will-change: -webkit-filter', 'clip', 'fixed', bar + 'will-change:-webkit-filter'],
+			['fixed, will-change: -webkit-backdrop-filter', 'clip', 'fixed', bar + 'will-change:-webkit-backdrop-filter'],
 			['fixed, in a modal dialog in a transformed clip', 'escape', 'fixed', 'dialog'],
 			['fixed, in a popover in a transformed clip', 'escape', 'fixed', 'popover'],
 			['absolute, slotted into a shadow scroller', 'clip', 'absolute', 'shadow'],
@@ -1830,8 +1844,8 @@ func TestSelectRoomIsCutOnlyByWhatClipsTheList(t *testing.T) {
 			t.Errorf("%s: scrolled to its end, the list's last row is not what shows at its place: the list is taller than what shows it", r.Name)
 		}
 	}
-	if len(got.Rows) != 34 {
-		t.Errorf("ran %d rows, want 34", len(got.Rows))
+	if len(got.Rows) != 46 {
+		t.Errorf("ran %d rows, want 46", len(got.Rows))
 	}
 }
 

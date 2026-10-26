@@ -194,17 +194,22 @@
   });
 
   // What a box is to the boxes in it, by CSS: the containing block of
-  // fixed ones (f), of absolute ones (a), and a clip even with overflow
-  // visible (p, paint containment). will-change counts as the property it
-  // names (css-will-change); container-type is none of these, since size
-  // queries no longer contain layout (css-conditional-5).
+  // fixed ones (f), of absolute ones (a), a clip even with overflow
+  // visible (p, paint containment), and whether its overflow clips at all
+  // (o). display: contents makes no box, so none of it applies; nor do
+  // containment, transforms or overflow to a plain inline. will-change
+  // counts as the property it names (css-will-change), matched without
+  // case and through -webkit- aliases; container-type is none of these,
+  // since size queries no longer contain layout (css-conditional-5).
+  const CB = ["transform", "translate", "rotate", "scale", "perspective", "transform-style", "filter", "backdrop-filter", "contain", "content-visibility"];
   const holds = (cs) => {
-    const w = (cs.willChange || "").split(/,\s*/), cv = cs.contentVisibility;
-    const p = /paint|strict|content/.test(cs.contain) || cv === "auto" || cv === "hidden";
-    const f = p || /layout/.test(cs.contain) ||
-      [cs.transform, cs.translate, cs.rotate, cs.scale, cs.perspective, cs.filter, cs.backdropFilter].some((v) => v && v !== "none") ||
-      ["transform", "translate", "rotate", "scale", "perspective", "filter", "backdrop-filter", "contain", "content-visibility"].some((v) => w.includes(v));
-    return { f, a: f || cs.position !== "static" || w.includes("position"), p };
+    const box = cs.display !== "contents", o = box && cs.display !== "inline", cv = cs.contentVisibility;
+    const w = (cs.willChange || "").toLowerCase().split(/,\s*/).map((v) => (/^-webkit-(transform|perspective|filter|backdrop-filter|transform-style)$/.test(v) ? v.slice(8) : v));
+    const n = (v) => v && v !== "none";
+    const p = o && (/paint|strict|content/.test(cs.contain) || cv === "auto" || cv === "hidden");
+    const f = p || (o && (/layout/.test(cs.contain) || cs.transformStyle === "preserve-3d" || [cs.transform, cs.translate, cs.rotate, cs.scale, cs.perspective].some(n) || CB.some((v) => w.includes(v)))) ||
+      (box && [cs.filter, cs.backdropFilter, cs.webkitBackdropFilter].some(n));
+    return { f, a: f || (box && (cs.position !== "static" || w.includes("position"))), p, o };
   };
   // A box in the top layer (a modal dialog, an open popover) is out of
   // every ancestor's reach.
@@ -221,7 +226,7 @@
       const cs = getComputedStyle(a), h = holds(cs);
       // Fixed skips to a holder; absolute, to a holder or a positioned box.
       if (pos === "fixed" ? h.f : pos !== "absolute" || h.a) {
-        if (h.p || /auto|scroll|hidden|clip/.test(cs.overflowY)) out.push(a);
+        if (h.p || (h.o && /auto|scroll|hidden|clip/.test(cs.overflowY))) out.push(a);
         pos = cs.position;
       }
       if (onTop(a)) break;
