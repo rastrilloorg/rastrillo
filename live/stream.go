@@ -66,9 +66,16 @@ func (h *Hub) serveStream(w http.ResponseWriter, r *http.Request) {
 	defer h.unregister(sub)
 
 	rc := http.NewResponseController(w)
+	// net/http writes the closing chunk after the handler returns. A
+	// fresh deadline for it keeps the last write's deadline, long past
+	// after a quiet spell, from failing that write and turning a clean
+	// end into a truncated stream. A closure, because a plain defer
+	// would read time.Now() here rather than at the return.
+	defer func() { rc.SetWriteDeadline(time.Now().Add(h.writeDeadline)) }()
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-store")
 	w.WriteHeader(http.StatusOK)
+	rc.SetWriteDeadline(time.Now().Add(h.writeDeadline))
 	fl.Flush()
 
 	// write is every byte's one exit. The deadline, re-armed per write,
@@ -77,7 +84,18 @@ func (h *Hub) serveStream(w http.ResponseWriter, r *http.Request) {
 	// hold shutdown's drain open (serve.go # Timeouts). The deadline's
 	// own error is ignored so a writer without deadlines still streams;
 	// a write or flush error ends the stream.
+	//
+	// done is checked before every write because select picks at random
+	// among ready cases: a pending wake or heartbeat can win over a
+	// closed done, and to a slow client that keeps reading, each write
+	// after Close could take up to WriteDeadline, again and again, past
+	// the shutdown drain.
 	write := func(text string) bool {
+		select {
+		case <-h.done:
+			return false
+		default:
+		}
 		rc.SetWriteDeadline(time.Now().Add(h.writeDeadline))
 		if _, err := io.WriteString(w, text); err != nil {
 			return false
@@ -172,7 +190,7 @@ func (h *Hub) counters(watches []watch) []uint64 {
 // lower version: the client opens with the lowest any region holds,
 // and the lower one is the one still owed a fetch.
 func parseWatches(raw []string, stale bool) ([]watch, bool) {
-	if len(raw) == 0 {
+	if len(raw) == 0 || len(raw) > maxTopics {
 		return nil, false
 	}
 	watches := make([]watch, 0, len(raw))
@@ -247,6 +265,12 @@ func (h *Hub) Close() {
 		close(h.done)
 	}
 }
+
+// maxTopics bounds one stream's topics, so one request cannot make
+// thousands of Allow calls, or make every wake re-read thousands of
+// counters. A page names each topic once, with the lowest version its
+// regions hold, so 64 is far more than a page shows.
+const maxTopics = 64
 
 func token(topic string, v uint64) string {
 	return topic + "@" + strconv.FormatUint(v, 10)

@@ -520,3 +520,81 @@ func TestANilHubIgnoresNotifyAndHasNoBoot(t *testing.T) {
 		t.Fatalf("Boot() = %q, want empty", b)
 	}
 }
+
+func TestNoWriteAfterClose(t *testing.T) {
+	// Close and a pending change made ready together: select picks
+	// among ready cases at random, so without a check before each write
+	// a stream would write again after Close about half the time, and
+	// to a slow client each such write can take up to WriteDeadline.
+	// Holding the hub's lock while both are set makes every write the
+	// handler then attempts a write after Close.
+	for i := 0; i < 30; i++ {
+		h := fastHub(t, "a")
+		h.heartbeat = time.Hour
+		ts, returned := streamServer(t, h)
+		ch := openStream(t, testCtx(t), ts.URL+"/live?boot="+h.Boot()+"&t=a@0", nil)
+
+		h.mu.Lock()
+		h.closed = true
+		close(h.done)
+		h.seq++
+		h.topics["a"] = &topicState{counter: 1, changedAt: h.seq}
+		for s := range h.subs {
+			select {
+			case s.wake <- struct{}{}:
+			default:
+			}
+		}
+		h.mu.Unlock()
+
+		waitReturns(t, returned, 1, h.writeDeadline)
+		for u := range ch {
+			if u.name == "change" {
+				t.Fatalf("run %d: got %+v after Close, want no write", i, u)
+			}
+		}
+	}
+}
+
+func TestAStreamEndsCleanlyAfterAQuietSpell(t *testing.T) {
+	// The last write's deadline must not still be in force when the
+	// handler returns, or net/http's closing chunk fails and the client
+	// sees a truncated stream instead of a clean end.
+	for _, end := range []string{"lifetime", "close"} {
+		h := fastHub(t, "a")
+		h.Notify("a")
+		h.heartbeat = time.Hour
+		h.writeDeadline = 50 * time.Millisecond
+		if end == "lifetime" {
+			h.lifetime = 200 * time.Millisecond
+		}
+		ts, _ := streamServer(t, h)
+		resp := get(t, testCtx(t), ts.URL+"/live?boot="+h.Boot()+"&t=a@0", nil)
+		if end == "close" {
+			time.AfterFunc(200*time.Millisecond, h.Close)
+		}
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			t.Fatalf("%s: reading to the end: %v", end, err)
+		}
+		if !strings.Contains(string(body), "data: a@1") {
+			t.Fatalf("%s: body %q lacks the catch-up event", end, body)
+		}
+	}
+}
+
+func TestStreamCapsTopics(t *testing.T) {
+	h := fastHub(t, "a")
+	ts, _ := streamServer(t, h)
+	query := func(n int) string {
+		var q []string
+		for i := 0; i < n; i++ {
+			q = append(q, fmt.Sprintf("t=a/k%d@0", i))
+		}
+		return ts.URL + "/live?boot=" + h.Boot() + "&" + strings.Join(q, "&")
+	}
+	openStream(t, testCtx(t), query(maxTopics), nil)
+	if resp := get(t, testCtx(t), query(maxTopics+1), nil); resp.StatusCode != http.StatusBadRequest {
+		t.Fatalf("%d topics: status %d, want 400", maxTopics+1, resp.StatusCode)
+	}
+}
