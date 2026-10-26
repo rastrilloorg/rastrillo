@@ -22,6 +22,8 @@ func (b *Builder) Table(title string, columns []Column, rows [][]Cell, total []C
 func (b *Builder) List(title string, items []string)
 func (b *Builder) Callout(title, text string, strong bool)
 func (b *Builder) PageBreak()
+func (b *Builder) KeepTogether(fn func(b *Builder))
+func (b *Builder) Produced(by, at, note string)
 func (b *Builder) Render() ([]byte, []rune, error)
 ```
 
@@ -80,6 +82,63 @@ table with no widths at all still renders sensibly. `Field.Source`,
 left non-empty, prints a small "Recorded by …" line under the value —
 for a value that is somebody's own assertion rather than the caller's.
 
+A `Column` with an empty `Title` is blank padding, not a real column —
+useful to keep a narrow right-aligned figure from being stretched out
+to the margin. A table's own rules (under its header, and under and
+double-under its total) stop at the right edge of the last column that
+does have a title, rather than running on into that padding; a table
+where every column is titled rules to the margin exactly as before.
+
+## Keeping a heading with what follows it
+
+```go
+func (b *Builder) KeepTogether(fn func(b *Builder))
+```
+
+```go
+b.KeepTogether(func(b *pdf.Builder) {
+	b.Heading(1, "Balance Sheet")
+	b.Paragraph("As at 5 April 2026.")
+	b.Table("", columns, rows, total)
+})
+```
+
+Without this, a heading only ever reserves room for its own height, so
+one can land as the last line on a page with its table orphaned onto
+the next. `KeepTogether` lays out `fn`'s calls — a heading and what
+always follows it, say — so that if they would not fit in the room
+left on the current page, a page break happens FIRST, before any of
+`fn`'s own output is drawn.
+
+How much room they need is measured, not guessed: `fn` runs once
+already, against a throwaway page, to find out — which is also why
+`fn` must be a pure function of the `Builder` it is handed (no state
+outside that parameter, no side effect that should not happen twice).
+A group longer than one page costs exactly one page's worth, which is
+the only question left once there is no page it would entirely fit on;
+its own pagination — a long table's repeating header, say — carries on
+exactly as it would with no `KeepTogether` at all.
+
+## Keeping a line with the end of the document
+
+```go
+func (b *Builder) Produced(by, at, note string)
+```
+
+```go
+b.Produced("A Practitioner", "24 August 2026", "Draft — not issued")
+```
+
+`Produced` records who produced the document and when, as a short line
+— "Produced by A Practitioner on 24 August 2026." — with `note` (left
+empty for none) printed beneath it in bold. It draws into the LAST
+page's existing footer area at `Render` time, rather than flowing as an
+ordinary block, so it can never end up alone at the top of a trailing
+page holding nothing else: the same failure `KeepTogether` exists to
+stop a heading having, reached from the tail of the document instead
+of partway through it. Call it at most once; a later call replaces the
+line rather than adding a second one.
+
 ## Determinism and the page footer
 
 ```go
@@ -90,6 +149,7 @@ type Options struct {
 	Author         string
 	Stamp          *Stamp
 	NoRunningTitle bool
+	Landscape      bool
 }
 
 type Stamp struct {
@@ -107,7 +167,10 @@ holding a loose sheet can tell what it belongs to and whether one is
 missing; `NoRunningTitle` leaves that label off while the page numbers
 stay. `Stamp`, left nil, draws nothing; set, it lays `Head` (large, red)
 and `Line` (small, beneath it) over every page — an approval mark, in
-words, with no signature.
+words, with no signature. `Landscape` turns the page on its side —
+margins and type stay the same, only the page's own width and height
+swap — for a table with more columns than a portrait page can hold at
+a readable size.
 
 ## What can't be drawn
 

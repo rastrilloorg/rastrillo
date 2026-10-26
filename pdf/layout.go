@@ -38,12 +38,12 @@ func layoutHeading(f *flow, level int, text string) {
 	f.need(lead + 24)
 	f.y += 12
 	f.y += size
-	f.text(marginL, faceBold, size, text, 0)
+	f.text(f.marginL, faceBold, size, text, 0)
 	f.y += lead - size
 }
 
 func layoutParagraph(f *flow, text string) {
-	f.para(marginL, contentW, faceRegular, sizeBody, leadBody, text, 0)
+	f.para(f.marginL, f.contentW, faceRegular, sizeBody, leadBody, text, 0)
 	f.y += 5
 }
 
@@ -51,36 +51,36 @@ func layoutList(f *flow, title string, items []string) {
 	if title != "" {
 		f.need(30)
 		f.y += 10 + sizeH2
-		f.text(marginL, faceBold, sizeH2, title, 0)
+		f.text(f.marginL, faceBold, sizeH2, title, 0)
 		f.y += 6
 	}
 	for _, item := range items {
 		f.need(leadBody)
 		f.y += sizeBody
-		f.text(marginL+4, faceRegular, sizeBody, "•", 0)
+		f.text(f.marginL+4, faceRegular, sizeBody, "•", 0)
 		f.y -= sizeBody
-		f.para(marginL+16, contentW-16, faceRegular, sizeBody, leadBody, item, 0)
+		f.para(f.marginL+16, f.contentW-16, faceRegular, sizeBody, leadBody, item, 0)
 	}
 	f.y += 5
 }
 
 // layoutCallout draws a boxed statement a reader must not miss. strong
-// gets a heavier left bar and an italic body, for whichever of the two
-// levels of emphasis a caller's own vocabulary needs.
+// gets a heavier left bar and an italic body, for whichever of a
+// caller's own two levels of emphasis this is.
 func layoutCallout(f *flow, title, text string, strong bool) {
 	f.need(46)
 	start := f.y
 	f.y += 8
 	if title != "" {
 		f.y += sizeH2
-		f.text(marginL+10, faceBold, sizeH2, title, 0)
+		f.text(f.marginL+10, faceBold, sizeH2, title, 0)
 		f.y += 5
 	}
 	face := faceRegular
 	if strong {
 		face = faceItalic
 	}
-	f.para(marginL+10, contentW-20, face, sizeBody, leadBody, text, 0)
+	f.para(f.marginL+10, f.contentW-20, face, sizeBody, leadBody, text, 0)
 	f.y += 8
 	// A left bar rather than a filled box: emphasis told by a colour
 	// alone is emphasis a monochrome printer loses, and these documents
@@ -89,7 +89,7 @@ func layoutCallout(f *flow, title, text string, strong bool) {
 	if strong {
 		weight = 3.0
 	}
-	f.rect(marginL, start, weight, f.y-start, 0.2)
+	f.rect(f.marginL, start, weight, f.y-start, 0.2)
 	f.y += 10
 }
 
@@ -97,27 +97,38 @@ func layoutFields(f *flow, title string, fields []Field) {
 	if title != "" {
 		f.need(34)
 		f.y += 12 + sizeH2
-		f.text(marginL, faceBold, sizeH2, title, 0)
+		f.text(f.marginL, faceBold, sizeH2, title, 0)
 		f.y += 8
 	}
-	const labelW = 170.0
+	// The value sits just past the widest label actually in this
+	// block, not a fixed guessed-at column: a short label such as
+	// "Per member" on its own otherwise leaves the figure stranded out
+	// past a gap sized for a label several times longer.
+	const gap = 16.0
+	labelW := 0.0
 	for _, fl := range fields {
-		labelLines := wrap(fl.Label, faceRegular, sizeBody, labelW-10)
-		valueLines := wrap(fl.Value, faceRegular, sizeBody, contentW-labelW)
+		if w := measure(fl.Label, faceRegular, sizeBody); w > labelW {
+			labelW = w
+		}
+	}
+	labelW += gap
+	for _, fl := range fields {
+		labelLines := wrap(fl.Label, faceRegular, sizeBody, labelW-gap)
+		valueLines := wrap(fl.Value, faceRegular, sizeBody, f.contentW-labelW)
 		h := float64(max(len(labelLines), len(valueLines))) * leadBody
 		f.need(h)
 		top := f.y
 		for i, l := range labelLines {
 			f.y = top + float64(i)*leadBody + sizeBody
-			f.text(marginL, faceRegular, sizeBody, l, 0.35)
+			f.text(f.marginL, faceRegular, sizeBody, l, 0.35)
 		}
 		for i, l := range valueLines {
 			f.y = top + float64(i)*leadBody + sizeBody
-			f.text(marginL+labelW, faceBold, sizeBody, l, 0)
+			f.text(f.marginL+labelW, faceBold, sizeBody, l, 0)
 		}
 		f.y = top + h
 		if fl.Source != "" {
-			f.para(marginL+labelW, contentW-labelW, faceItalic, sizeSmall, leadSmall,
+			f.para(f.marginL+labelW, f.contentW-labelW, faceItalic, sizeSmall, leadSmall,
 				"Recorded by "+fl.Source, 0.3)
 		}
 		f.y += 2
@@ -129,7 +140,7 @@ func layoutFields(f *flow, title string, fields []Field) {
 // with no width stated takes an equal share of what the stated ones
 // leave, which is what makes a table of three prose columns render
 // sensibly with nothing declared at all.
-func columnWidths(cols []Column) []float64 {
+func columnWidths(cols []Column, contentW float64) []float64 {
 	if len(cols) == 0 {
 		return nil
 	}
@@ -163,15 +174,38 @@ func columnWidths(cols []Column) []float64 {
 	return out
 }
 
+// tableRuleRight is the x a table's own rules — under the header, and
+// under and double-under its total — should reach: the right edge of
+// its last column with a real title, not the page margin. A table that
+// pads unused width with a blank trailing column, so a narrow right-
+// aligned column is not stretched out to the margin, should not have
+// its rules run past the figures and into that blank space; a table
+// with no such column, where every column has a title, reaches the
+// margin exactly as before.
+func tableRuleRight(f *flow, cols []Column, widths []float64) float64 {
+	x, right, titled := f.marginL, f.marginL, false
+	for i, c := range cols {
+		x += widths[i]
+		if c.Title != "" {
+			right, titled = x, true
+		}
+	}
+	if !titled {
+		return f.pageW - f.marginR
+	}
+	return right
+}
+
 func layoutTable(f *flow, title string, columns []Column, rows [][]Cell, total []Cell) {
 	if len(columns) == 0 {
 		return
 	}
-	widths := columnWidths(columns)
+	widths := columnWidths(columns, f.contentW)
+	ruleRight := tableRuleRight(f, columns, widths)
 	if title != "" {
 		f.need(40)
 		f.y += 12 + sizeH2
-		f.text(marginL, faceBold, sizeH2, title, 0)
+		f.text(f.marginL, faceBold, sizeH2, title, 0)
 		f.y += 8
 	}
 	var headerHeight float64
@@ -191,14 +225,14 @@ func layoutTable(f *flow, title string, columns []Column, rows [][]Cell, total [
 			}
 		}
 		f.y = top + float64(maxLines)*leadSmall + 4
-		f.rule(marginL, pageW-marginR, f.y, 0.4)
+		f.rule(f.marginL, ruleRight, f.y, 0.4)
 		f.y += 6
 		headerHeight = f.y - start
 	}
 	header()
 	for _, row := range rows {
 		height := leadBody * float64(rowLines(row, columns, widths))
-		if !f.room(height) && height <= pageH-marginB-marginT-headerHeight {
+		if !f.room(height) && height <= f.pageH-f.marginB-f.marginT-headerHeight {
 			f.newPage()
 			header()
 		}
@@ -209,19 +243,19 @@ func layoutTable(f *flow, title string, columns []Column, rows [][]Cell, total [
 	}
 	if len(total) > 0 {
 		height := leadBody*float64(rowLines(total, columns, widths)) + 10
-		if !f.room(height) && height <= pageH-marginB-marginT-headerHeight {
+		if !f.room(height) && height <= f.pageH-f.marginB-f.marginT-headerHeight {
 			f.newPage()
 			header()
 		}
 		f.y += 2
-		f.rule(marginL, pageW-marginR, f.y, 0.4)
+		f.rule(f.marginL, ruleRight, f.y, 0.4)
 		f.y += 6
 		drawRow(f, columns, widths, total, faceBold, func() {
 			f.newPage()
 			header()
 		})
 		f.y += 2
-		f.rule(marginL, pageW-marginR, f.y, 0.6)
+		f.rule(f.marginL, ruleRight, f.y, 0.6)
 	}
 	f.y += 12
 }
@@ -274,7 +308,7 @@ func drawRow(f *flow, cols []Column, widths []float64, row []Cell, base int, nex
 // figures whose decimal points do not line up is a column a reader
 // cannot add up by eye.
 func drawCell(f *flow, widths []float64, i int, line string, face int, size float64, align string, gray float64) {
-	x := marginL
+	x := f.marginL
 	for j := 0; j < i; j++ {
 		x += widths[j]
 	}

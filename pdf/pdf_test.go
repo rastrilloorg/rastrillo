@@ -243,6 +243,7 @@ func TestTypographicCharactersSurvive(t *testing.T) {
 // point of a figures table.
 func TestRightAlignedCellsShareARightEdge(t *testing.T) {
 	b := render(t, sample(6))
+	g := newGeom(false)
 	re := regexp.MustCompile(`BT /F\d [\d.]+ Tf ([\d.]+) [\d.]+ Td \((\d,\d{3}\.00)\) Tj`)
 	ms := re.FindAllSubmatch(b, -1)
 	if len(ms) < 3 {
@@ -251,7 +252,7 @@ func TestRightAlignedCellsShareARightEdge(t *testing.T) {
 	for _, m := range ms {
 		x, _ := strconv.ParseFloat(string(m[1]), 64)
 		right := x + measure(string(m[2]), faceRegular, sizeBody)
-		if want := pageW - marginR - 4; right < want-0.5 || right > want+0.5 {
+		if want := g.pageW - g.marginR - 4; right < want-0.5 || right > want+0.5 {
 			t.Errorf("%q ends at %.2f, not at the column's right edge %.2f", m[2], right, want)
 		}
 	}

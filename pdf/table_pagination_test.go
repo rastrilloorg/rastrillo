@@ -26,7 +26,7 @@ func TestOversizedTableRowsContinueWithinPagesAndRepeatHeaders(t *testing.T) {
 				rows = [][]Cell{row}
 			}
 
-			f := newFlow()
+			f := newFlow(newGeom(false))
 			layoutTable(f, "", columns, rows, totalRow)
 			pages := append(f.pages, f.cur)
 			if len(pages) < 3 {
@@ -40,7 +40,7 @@ func TestOversizedTableRowsContinueWithinPagesAndRepeatHeaders(t *testing.T) {
 					if op.kind != 't' {
 						continue
 					}
-					if op.y < marginT || op.y > pageH-marginB {
+					if op.y < f.marginT || op.y > f.pageH-f.marginB {
 						t.Errorf("page %d text outside printable body at %.2f: %q", n, op.y, op.text)
 					}
 					if op.text == "Narrative" {

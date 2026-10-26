@@ -1,26 +1,40 @@
 package pdf
 
-// The page, in points. A4 only: the one caller inside ips that wanted a
-// different sheet (a cheque printed on its own stock) stayed behind
-// with the cheque layout, and nothing here needs a second size. Reach
-// for a different page-size design if that stops being true, rather
-// than widening this constant into a setting.
-const (
-	pageW = 595.28
-	pageH = 841.89
+// geom is the page geometry one render uses: A4, portrait by default or
+// turned on its side when a document — a wide table with more columns
+// than a portrait page's content width can hold at a readable size —
+// needs it. It is carried on flow and passed into emit rather than held
+// in package-level variables, because a package-level "current page
+// size" would be shared mutable state across two renders running at
+// once, which is exactly the kind of bug the package doc's determinism
+// section warns against, just reached from a different direction.
+type geom struct {
+	pageW, pageH                       float64
+	marginL, marginR, marginT, marginB float64
+	contentW                           float64
+	footerY                            float64
+}
 
-	marginL = 56.0
-	marginR = 56.0
-	marginT = 64.0
-	// marginB leaves room for the running footer, which is drawn below
-	// the flow rather than inside it.
-	marginB = 76.0
-
-	contentW = pageW - marginL - marginR
-	footerY  = pageH - 44.0
-)
+// newGeom computes a geom for A4, portrait unless landscape is true.
+// marginB leaves room for the running footer, which is drawn below the
+// flow rather than inside it; footerY sits 44pt above the bottom edge.
+func newGeom(landscape bool) geom {
+	w, h := 595.28, 841.89
+	if landscape {
+		w, h = h, w
+	}
+	const marginL, marginR, marginT, marginB = 56.0, 56.0, 64.0, 76.0
+	return geom{
+		pageW: w, pageH: h,
+		marginL: marginL, marginR: marginR, marginT: marginT, marginB: marginB,
+		contentW: w - marginL - marginR,
+		footerY:  h - 44.0,
+	}
+}
 
 // Type sizes and leadings, in one place so a document has one voice.
+// These do not vary with geom: a landscape page is wider, not read in a
+// different voice.
 const (
 	sizeH1    = 13.0
 	sizeH2    = 10.5
@@ -51,6 +65,7 @@ type op struct {
 // how a reader thinks about a document; emit converts to PDF's
 // bottom-left origin at the last moment.
 type flow struct {
+	geom
 	pages [][]op
 	cur   []op
 	y     float64
@@ -61,8 +76,8 @@ type flow struct {
 	dropped map[rune]bool
 }
 
-func newFlow() *flow {
-	f := &flow{dropped: map[rune]bool{}}
+func newFlow(g geom) *flow {
+	f := &flow{geom: g, dropped: map[rune]bool{}}
 	f.newPage()
 	return f
 }
@@ -77,18 +92,18 @@ func (f *flow) newPage() {
 	// covers need() asking for more room than a whole page holds, where
 	// turning over cannot help either.
 	if f.cur != nil && len(f.cur) == 0 {
-		f.y = marginT
+		f.y = f.marginT
 		return
 	}
 	if f.cur != nil {
 		f.pages = append(f.pages, f.cur)
 	}
 	f.cur = []op{}
-	f.y = marginT
+	f.y = f.marginT
 }
 
 // room reports whether h points remain on this page.
-func (f *flow) room(h float64) bool { return f.y+h <= pageH-marginB }
+func (f *flow) room(h float64) bool { return f.y+h <= f.pageH-f.marginB }
 
 // need starts a new page unless h points remain.
 func (f *flow) need(h float64) {

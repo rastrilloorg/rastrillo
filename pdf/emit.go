@@ -38,6 +38,10 @@ type Options struct {
 	// NoRunningTitle leaves the title and reference off the foot of
 	// every page; "Page n of N" is drawn regardless.
 	NoRunningTitle bool
+	// Landscape turns the page on its side. A table with more columns
+	// than a portrait page's content width can hold at a readable size
+	// is the reason to set it; most documents leave it false.
+	Landscape bool
 }
 
 // Stamp is the two lines of an approval stamp: Head in large red
@@ -56,7 +60,7 @@ type Stamp struct {
 // deliberately dull: no compression, no object streams, no encryption.
 // A file a person can open in a text editor and read is worth more to a
 // long-lived record than one that is smaller.
-func emit(pages [][]op, opt Options) ([]byte, error) {
+func emit(pages [][]op, opt Options, g geom) ([]byte, error) {
 	if len(pages) == 0 {
 		return nil, fmt.Errorf("pdf: nothing to render")
 	}
@@ -119,9 +123,9 @@ func emit(pages [][]op, opt Options) ([]byte, error) {
 			"<< /Type /Page /Parent %d 0 R /MediaBox [0 0 %.2f %.2f] "+
 				"/Resources << /Font << /F1 %d 0 R /F2 %d 0 R /F3 %d 0 R >> >> "+
 				"/Contents %d 0 R >>",
-			objPages, pageW, pageH, objFontR, objFontB, objFontI, contentObj))
+			objPages, g.pageW, g.pageH, objFontR, objFontB, objFontI, contentObj))
 
-		stream := content(ops, pageH)
+		stream := content(ops, g.pageH)
 		object(contentObj, fmt.Sprintf("<< /Length %d >>\nstream\n%s\nendstream", len(stream), stream))
 	}
 
