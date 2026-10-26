@@ -10,6 +10,26 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+**Serve an app under a path on a hub's domain (breaking for code that calls `flash.Set`).** Set `Options.BasePath` and the whole app answers under `/<slug>` on another app's origin, such as `https://example.com/acme`. Redirects get the base added for you. Links in a page go through the new `path` template function, or `basepath.Path` in Go. The instance's own hostname sends visitors to the product path, or shows a read-only view with `basepath.ServeDirect`. Sign-in does not run under a base path: the hub signs people in. An app that does not set `BasePath` works as before. See [basepath](/docs/reference/basepath).
+
+To upgrade:
+
+1. Change every `flash.Set(w, kind, message)` to `flash.Set(w, r, kind, message)`.
+2. To serve an existing app under a base path, copy the `basepath.FromEnv` lines from a new app's `cmd/<app>/main.go` into yours, add `Base` to the page data in `render.go`'s `render` and to your error page's data, run `rastrillo generate`, and write each root-absolute URL in your own templates and layouts through `path`. Check the pages with `basepathtest.Leaks`. Copied layouts keep working at the root without this.
+
+What changed:
+
+- New package `basepath`: `Config` with `Handler`, `Enabled` and `Validate`; `FromEnv` and `SlugFromHost`; `Join`, `Path`, `Base` and `Original`; `OnDirectHost`, `PathRouted`, `PlatformCall` and `ProductURL`; and `RedirectDirect` and `ServeDirect`.
+- New package `basepath/basepathtest`: `Leaks` finds links in a page that would break under a base path.
+- New option `Options.BasePath`. `Handler` refuses to start with a value `basepath` cannot serve. The framework's own routes, `/healthz` and `/api/version` among them, answer under the base.
+- New template function `path`, in `ui.Funcs` and `ui.Pages`, and new field `ui.Localized.Base`, which `ui.ForRequest` fills.
+- New method `pow.Form.At` gives a form whose script and worker URLs carry the request's base.
+- New error `sessions.ErrPathRouted`. Under a base path, and on the direct host, the row-backed store signs nobody in and never clears the cookie.
+- `flash.Set` takes the request. Under a base path the cookie is `rastrillo_flash_<slug>` at `Path=/<slug>`; at the root it is still `rastrillo_flash` at `Path=/`.
+- The shells, generated screens, job pages, pow forms and the language and scheme switchers link through `path`.
+- `auth`, `password`, `passkey`, `secondfactor`, `totp` and `vault` answer 404 under a base path and on the direct host, and log an error. `auth.SigninState` gains `Unavailable`, and the `signin` partial renders nothing for it.
+- New apps read `RASTRILLO_SLUG` or `RASTRILLO_SLUG_FROM_HOST` at boot, and their README says how to deploy one as a tenant.
+
 **A JSON API for every app, and agents that act for a person (breaking
 upgrade for generated apps and for code that reads `Actor`).** A
 manifest resource can now be served as JSON at `/api/v1`. A person
