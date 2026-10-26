@@ -68,6 +68,11 @@ What changed:
 - The API logs one line for every request that reaches a handler, with the actor and the agent's session and harness.
 - New apps get `internal/<app>/api.go`, which mounts the API, `tokens.go` and `templates/tokens.html` for the token page, and a `.gitleaks.toml` rule that finds the app's tokens in a commit.
 
+**`perftest.Screens` takes a list of routes.** Set `ScreenConfig.Patterns`
+to your `http.ServeMux` routes instead of `Routes`, which needs a chi
+router. A trailing `{$}` is dropped, so `"/{$}"` is the screen `GET /`.
+Apps that set `Routes` change nothing.
+
 **`csrf.Exempt` lets a machine POST to a named path.** A payment provider's webhook and a `carlos schedule` tick are POSTs with no `Sec-Fetch-Site`, `Origin` or `Referer`, so `csrf.Protect` refused them. `csrf.Protect(origin, csrf.Exempt("/stripe/webhook"))` now lets those exact paths through. The middleware checks nothing on an exempt path, so its handler must check its own credential, such as a webhook signature or `carlos.Tick`. A path matches only when it is exactly `r.URL.Path`, and `Exempt` panics on an empty or relative path. `Protect(origin)` calls compile and behave as before. See [csrf](/docs/reference/csrf#exempt).
 
 **`day` looks different; your app's copy does not change until you

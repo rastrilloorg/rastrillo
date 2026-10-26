@@ -15,12 +15,13 @@ runs it.
 func Screens(t testing.TB, cfg ScreenConfig)
 
 type ScreenConfig struct {
-	Routes  chi.Routes
-	Handler http.Handler
-	Paths   map[string]string
-	Expect  map[string]int
-	Signin  func(c *http.Client, base string)
-	Opaque  []Opaque
+	Routes   chi.Routes
+	Patterns []string
+	Handler  http.Handler
+	Paths    map[string]string
+	Expect   map[string]int
+	Signin   func(c *http.Client, base string)
+	Opaque   []Opaque
 }
 ```
 
@@ -40,6 +41,12 @@ A redirect to sign-in or a 404 fails rather than being timed, so set
 `Signin` to sign the test's client in, and give each route with a
 parameter a real path in `Paths` (`"/notes/{id}": "/notes/1"`), whose row
 your test creates first. A route with a parameter and no path fails.
+
+An app on a standard `http.ServeMux` sets `Patterns` instead, because a
+mux cannot list its routes. Give it the GET routes without the method:
+`[]string{"/{$}", "/notes/{id}"}`. A trailing `{$}` is dropped, so `"/{$}"`
+is the screen `GET /` and is requested at `/`. Set `Routes` or
+`Patterns`, not both and not neither.
 
 A route given `skip` in `budgets.txt` is not requested. A `perf` record
 that names no route fails, since `Screens` sees every route there is. Call

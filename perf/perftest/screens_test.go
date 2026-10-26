@@ -325,3 +325,50 @@ func TestStreamIgnoringCancellationStopsTheSweep(t *testing.T) {
 		t.Fatalf("measured %d request(s) beside a stream still running", n)
 	}
 }
+
+func TestScreensMeasuresStdlibPatterns(t *testing.T) {
+	t.Parallel()
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /{$}", ok)
+	mux.HandleFunc("GET /about", ok)
+	// A record on each key proves the names: a stale-record problem
+	// would fail the run if either screen were named differently.
+	c := ScreenConfig{Patterns: []string{"/{$}", "/about"}, Handler: mux}
+	ft := run(c, "perf GET / 300ms the root\nperf GET /about 300ms about\n", true)
+	if ft.failed {
+		t.Fatalf("stdlib patterns: %v", errs(ft))
+	}
+}
+
+func TestScreensRefusesBothRoutesAndPatterns(t *testing.T) {
+	t.Parallel()
+	c := cfg(router(map[string]http.HandlerFunc{"/": ok}))
+	c.Patterns = []string{"/{$}"}
+	ft := run(c, "", true)
+	if !ft.failed || !strings.Contains(errs(ft), "set Routes or Patterns, not both") {
+		t.Fatalf("both set: %v", errs(ft))
+	}
+}
+
+func TestScreensRefusesNeitherRoutesNorPatterns(t *testing.T) {
+	t.Parallel()
+	ft := run(ScreenConfig{Handler: http.NewServeMux()}, "", true)
+	if !ft.failed || !strings.Contains(errs(ft), "set Routes (a chi router) or Patterns (a stdlib mux's GET routes)") {
+		t.Fatalf("neither set: %v", errs(ft))
+	}
+}
+
+func TestScreensPatternParamNeedsPaths(t *testing.T) {
+	t.Parallel()
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /notes/{id}", ok)
+	c := ScreenConfig{Patterns: []string{"/notes/{id}"}, Handler: mux}
+	ft := run(c, "", true)
+	if !ft.failed || !strings.Contains(errs(ft), "has a parameter and no Paths entry") {
+		t.Fatalf("param without a path: %v", errs(ft))
+	}
+	c.Paths = map[string]string{"/notes/{id}": "/notes/1"}
+	if ft := run(c, "", true); ft.failed {
+		t.Fatalf("param with a path: %v", errs(ft))
+	}
+}

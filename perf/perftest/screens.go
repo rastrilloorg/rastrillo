@@ -25,8 +25,17 @@ import (
 
 // ScreenConfig is what Screens measures and how to reach it.
 type ScreenConfig struct {
-	// Routes is the app's chi router, walked for the inventory.
+	// Routes is the app's chi router, walked for the inventory. Set it or
+	// Patterns, not both.
 	Routes chi.Routes
+	// Patterns is the app's GET routes as http.ServeMux patterns without
+	// the method: "/{$}", "/notes/{id}". A ServeMux cannot list what it
+	// serves, so an app on one keeps a single table of its routes, builds
+	// the mux from it, and hands the same table here; the inventory then
+	// cannot drift from the router. A trailing {$} is dropped from the
+	// screen name and the requested path, so "/{$}" is screen "GET /", the
+	// name a chi app's root has.
+	Patterns []string
 	// Handler is what requests go through: rastrillo.Handler over the
 	// app's options, so the measurement includes production's chrome.
 	Handler http.Handler
@@ -174,16 +183,38 @@ func inventory(cfg ScreenConfig, f *budgetfile.File) ([]target, []string) {
 		}
 	}
 
+	if (cfg.Routes == nil) == (cfg.Patterns == nil) {
+		// Without exactly one source of routes every record below would also
+		// be reported stale, burying the one problem that matters.
+		msg := "ScreenConfig: set Routes or Patterns, not both"
+		if cfg.Routes == nil {
+			msg = "ScreenConfig: set Routes (a chi router) or Patterns (a stdlib mux's GET routes)"
+		}
+		problems = append(problems, msg)
+		sort.Strings(problems)
+		return nil, problems
+	}
+
 	walked := map[string]bool{}
 	var routes []string
-	err := chi.Walk(cfg.Routes, func(method, route string, _ http.Handler, _ ...func(http.Handler) http.Handler) error {
-		if method == http.MethodGet && !walked[route] {
+	add := func(route string) {
+		if !walked[route] {
 			walked[route] = true
 			routes = append(routes, route)
 		}
+	}
+	if cfg.Patterns != nil {
+		for _, p := range cfg.Patterns {
+			// "/{$}" matches only the root, but requested literally it is a
+			// 404 (the wildcard is not a path), so the screen is "/".
+			add(strings.TrimSuffix(p, "{$}"))
+		}
+	} else if err := chi.Walk(cfg.Routes, func(method, route string, _ http.Handler, _ ...func(http.Handler) http.Handler) error {
+		if method == http.MethodGet {
+			add(route)
+		}
 		return nil
-	})
-	if err != nil {
+	}); err != nil {
 		problems = append(problems, "chi.Walk: "+err.Error())
 	}
 	sort.Strings(routes)
