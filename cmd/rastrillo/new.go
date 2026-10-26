@@ -882,8 +882,8 @@ const sectionsIndexTemplate = `{{/* index.html: the home page, and on a phone th
      sections: the view block says this page is the index, so below
      800px the rail is the whole page and this content is hidden; on a
      desktop the rail sits beside it. Give each section a nav link with
-     an id here, and give its page an up block naming /#<that id>, so a
-     phone comes back to the row it left. */}}
+     an id here, and give its page an up block naming
+     {{path $ "/#<that id>"}}, so a phone comes back to the row it left. */}}
 {{define "view"}}index{{end}}
 {{define "brand"}}<a rst-shell-brand href="{{path $ "/"}}">%[2]s</a>{{end}}
 {{define "nav"}}<a id="nav-overview" href="{{path $ "/overview"}}">%[1]s</a>{{end}}

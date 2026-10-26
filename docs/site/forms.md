@@ -432,10 +432,10 @@ every field kind, and each draws the label above the control, wires
 {{define "content"}}{{$L := localizer $}}
 {{template "page-header" dict "L" $L "Title" "New note"}}
 {{with .Content}}
-<form rst-form method="post" action="/notes">
+<form rst-form method="post" action="{{path $ "/notes"}}">
 {{template "field-text" dict "L" $L "Name" "title" "Label" "Title" "Value" .Note.Title "Required" true "Autofocus" true "Error" (index .Errors "Title")}}
 {{template "field-textarea" dict "L" $L "Name" "body" "Label" "Body" "Value" .Note.Body "Error" (index .Errors "Body")}}
-{{template "form-foot" dict "L" $L "Submit" "Create" "CancelHref" "/" "CancelLabel" "Cancel"}}
+{{template "form-foot" dict "L" $L "Submit" "Create" "CancelHref" (path $ "/") "CancelLabel" "Cancel"}}
 </form>
 {{end}}
 {{end}}

@@ -69,6 +69,7 @@ func (s *Sessions) SignOut(w http.ResponseWriter, r *http.Request)
 `SignIn` mints a row and sets the cookie, rotating the token, which is
 also what makes it satisfy `RequireFresh`. `SignOut` deletes the row, so
 revocation is real: the cookie is dead even if it survives.
+Under a base path, neither touches a row or a cookie; see [Under a base path](#under-a-base-path).
 
 `Sessions.CookieName` reports the cookie's name, which varies with the
 origin's scheme because of the `__Host-` prefix.
@@ -86,6 +87,7 @@ return leg: verify the presented token and, if its row is alive, set
 the cookie to it — minting nothing, revoking nothing. A dead token
 refuses without touching any cookie, so a failed restore falls through
 to ordinary sign-in.
+Under a base path, `Adopt` refuses every token and sets no cookie.
 
 ## Middleware
 
@@ -100,6 +102,7 @@ redirects to `SigninPath` with a same-site `return_to`, anything else
 403s. `Middleware` resolves a session when there is one and blocks
 nothing. `RequireFresh` is `Require` plus step-up — past `maxAge` a
 `GET`/`HEAD` goes to `SigninPath?reauth=1`, anything else 403s.
+On a tenant's direct host, both send that `GET`/`HEAD` to the same page on the product path instead, and the platform's own calls get 403.
 
 `Sessions.From` resolves the session from a request directly, for code
 outside the middleware chain.
@@ -280,7 +283,7 @@ A cookie expires 15 minutes after it was signed, or at the end of the session's 
 | `SignOut` | clears this browser's cookie. A copy of it can still be refreshed until the epoch changes or the session ends | same |
 | `From`, `FromContext` | valid cookies only | same |
 | `Middleware` | valid: stash it. Expired: `RefreshIfExpired`. Otherwise pass through. Never clears the cookie | same |
-| `Require`, `RequireFresh` | as `Middleware`, then send a page request to `Origin + SigninPath + "?return_to="` and the full request path | same |
+| `Require`, `RequireFresh` | as `Middleware`, then send a page request to `Origin + SigninPath + "?return_to="` and the full request path; on the direct host, to `basepath.ProductURL` | same |
 | `Mint`, `List`, `Revoke`, `RevokeOthers`, `RevokeAll` | `ErrSigned` | `ErrSigned` |
 | `Adopt` | `(Session{}, false)` | same |
 | `Hash` | `("", false)` | same |

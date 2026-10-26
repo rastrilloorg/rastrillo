@@ -209,7 +209,7 @@ func From(r *http.Request) (Identity, bool)
 func (a *Auth) SessionFrom(r *http.Request) (Identity, bool)
 ```
 
-A signed-out page request goes to `SigninPath?return_to=<the page>`, plus `reauth=1` when `RequireFreshSession` wants a fresh sign-in. After signing in, the visitor lands back on that page. Anything else gets a 403.
+A signed-out page request goes to `SigninPath?return_to=<the page>`, plus `reauth=1` when `RequireFreshSession` wants a fresh sign-in. After signing in, the visitor lands back on that page. Anything else gets a 403. On a tenant's direct host, a page request goes to the same page on the product path instead; see [Under a base path](#under-a-base-path).
 
 `RequireSession` stashes both the `Identity` and the underlying
 `sessions.Session`, so `From` and `sessions.Current` both work

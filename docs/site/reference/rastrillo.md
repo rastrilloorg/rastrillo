@@ -98,13 +98,7 @@ spawns `<binary> sidecar run`. See [Agents](/docs/agents).
 the last request finishes and before the database closes, so work still
 running does not lose its database.
 
-**`ErrorPage`** — your own error page, for a failure your app never saw.
-The framework recovers a panicking handler outermost of all — outside
-the security headers, so outside your middleware too — logs the stack
-with a reference, and calls this to render the body at 500. Unset, the
-response is a plain "Something went wrong.". `http.ErrAbortHandler`
-goes straight back up, and a panic *after* the first byte still leaves a
-broken page: the status is long gone by then, exactly as in `net/http`.
+**`ErrorPage`**: your own error page, for a failure your app never saw. The framework recovers a panicking handler outside the security headers, so outside your middleware too. Only `BasePath` sits further out, so the error page still gets the request's base. It logs the stack with a reference and calls this to render the body at 500. Unset, the response is a plain "Something went wrong.". `http.ErrAbortHandler` goes straight back up, and a panic *after* the first byte still leaves a broken page: the status is long gone by then, exactly as in `net/http`.
 
 ```go
 type ErrorPageFunc func(w http.ResponseWriter, r *http.Request, status int, ref string)
@@ -124,11 +118,7 @@ the user saw to what you grep for. The alphabet has no `0`, `1`, `8` or
 `l` or a `B`. `view.Fail` mints one too; `NewRef` is exported for a
 hand-written handler doing the same job.
 
-**`NoSpeculationRules`**: turns off prerendering. By default every
-response names `SpeculationRulesPath`, where `Serve` answers with rules
-that prerender the navigation in this release's sidebar and console
-layouts. A content-security policy does not turn it off; this field
-does, or deleting the `Speculation-Rules` header in a handler.
+**`NoSpeculationRules`**: turns off prerendering. By default every response names `SpeculationRulesPath`, under the base path when there is one, where `Serve` answers with rules that prerender the navigation in this release's sidebar and console layouts. A content-security policy does not turn it off; this field does, or deleting the `Speculation-Rules` header in a handler.
 
 ```go
 const SpeculationRulesPath = "/_speculation-rules"

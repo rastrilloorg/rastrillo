@@ -42,15 +42,7 @@ checkbox and kebab a list row carries. See
 func Funcs(opts ...Option) template.FuncMap
 ```
 
-The function map the partials need, for an app that renders through its
-own template tree instead of [`ui.Pages`](#pages). It holds twenty-four:
-`dict`, `list`, `menuGroup`, `searchClear`, `icon`, `iconAssets`, `opt`,
-`stageArt`, `displayURL`, `safeHref`, `rowMenuItems`, `paginationItems`,
-`localizer`, `withL`, `strong`, `path`, and the locale functions `T`,
-`Tf`, `Tbdi`, `number`, `displayValue`, `dateWords`, `money` and
-`actor`. Add your
-own on top; do not drop any. `rowMenuItems` checks `row-menu`'s items
-and stops the render on one it cannot show.
+The function map the partials need, for an app that renders through its own template tree instead of [`ui.Pages`](#pages). It holds twenty-four: `dict`, `list`, `menuGroup`, `searchClear`, `icon`, `iconAssets`, `opt`, `stageArt`, `displayURL`, `safeHref`, `rowMenuItems`, `paginationItems`, `localizer`, `withL`, `strong`, `path`, and the locale functions `T`, `Tf`, `Tbdi`, `number`, `displayValue`, `dateWords`, `money` and `actor`. Add your own on top; do not drop any. `rowMenuItems` checks `row-menu`'s items and stops the render on one it cannot show.
 
 `opt` reads an optional key off a partial's data, whether it is a map or
 a struct, and gives nil when it is missing. `Tbdi` is `Tf` for a
@@ -58,11 +50,7 @@ sentence that shows back something a visitor typed: each value is
 escaped and wrapped in `<bdi>`. `stageArt` draws the stage shell's
 backdrop from a word; the same word always draws the same picture.
 
-`path` puts the page's base path in front of a root-absolute URL, as
-`basepath.Join` does: `{{path $ (asset "static/tokens.css")}}`,
-`{{path $ "/"}}`. It reads the base from the data's `Base`, which
-`Localized` carries, and returns the URL unchanged when there is none.
-The shells send every URL they write through it.
+`path` puts the page's base path in front of a root-absolute URL, as `basepath.Join` does: `{{path $ (asset "static/tokens.css")}}`, `{{path $ "/"}}`. It reads the base from the data's `Base`, which `Localized` carries, and returns the URL unchanged when there is none. The shells send every URL they write through it.
 
 `displayURL` and `safeHref` are `form.DisplayURL` and `form.SafeHref`,
 for showing an address that `field-url` collected. `displayURL` is the
@@ -176,19 +164,9 @@ app offers (`zh-TW`), `Format` the locale that formats it (`zh-Hant`),
 and `Dir` the page's `dir`, `rtl` or `ltr`. `Pages` makes one for each
 language you offer; `NewLocalizer` is for a test or your own rendering.
 
-A page's data carries its localizer as `L`. `ForRequest` gives the
-request's localizer, the language switcher's items, the path to come
-back to (locale prefix included) and the colour scheme the cookie
-chose, `light`, `dark` or `""` for System. Put them in a map as `L`,
-`Locales`, `Return` and `Scheme`, or embed `Localized` in a view
-struct. `Localized.Request` is promoted to every
-struct that embeds it, so a render function can read those values off
-any generated view. `WithLocalizer` and `LocalizerFrom` put a localizer
-on a request and read it back; `Pages.Middleware` uses them.
+A page's data carries its localizer as `L`. `ForRequest` gives the request's localizer, the language switcher's items, the path to come back to (locale prefix included), the colour scheme the cookie chose (`light`, `dark` or `""` for System) and the base path. Put them in a map as `L`, `Locales`, `Return`, `Scheme` and `Base`, or embed `Localized` in a view struct. `Localized.Request` is promoted to every struct that embeds it, so a render function can read those values off any generated view. `WithLocalizer` and `LocalizerFrom` put a localizer on a request and read it back; `Pages.Middleware` uses them.
 
-`Base` is the base path the request was served under, such as `/acme`,
-or `""` at the root, from `basepath.Base`. The `path` function reads it.
-`Return` stays the app's path, without the base.
+`Base` is the base path the request was served under, such as `/acme`, or `""` at the root, from `basepath.Base`. The `path` function reads it. `Return` stays the app's path, without the base.
 
 In a template, `{{$L := localizer $}}` finds `L` in the data, and
 `withL` adds it to a map passed to a partial. `LocaleFuncs` are the

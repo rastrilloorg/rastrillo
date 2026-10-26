@@ -66,7 +66,7 @@ than a full re-sign-in, and for what the confirm page should offer.
 
 | Call | What it does |
 |---|---|
-| `Gate.Hold` | The identity plugins' `SecondFactor` hook. No factor enrolled → `(false, nil)` and the plugin signs in exactly as before. Enrolled → store the half-session, remember a same-site `return_to`, redirect to the confirm page, `(true, nil)`. |
+| `Gate.Hold` | The identity plugins' `SecondFactor` hook. No factor enrolled → `(false, nil)` and the plugin signs in exactly as before. Enrolled → store the half-session, remember a same-site `return_to`, redirect to the confirm page, `(true, nil)`. Under a base path → `(false, sessions.ErrPathRouted)`, and nothing is held. |
 | `Gate.Pending` | Resolves the request's cookie to its live half-session — expiry-checked, **not** consumed. The confirm page and every factor's sign-in endpoint start here. |
 | `Gate.Complete` | Consumes the half-session (`DELETE ... RETURNING`, so a raced second finish loses with `ErrConsumed`), clears the cookie, and mints the real session. |
 | `Gate.Strike` | Records a failed guess. The last strike of the budget deletes the row and returns `ErrExhausted`. |

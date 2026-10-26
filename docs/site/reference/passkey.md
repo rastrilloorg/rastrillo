@@ -44,7 +44,6 @@ Mount them behind `csrf.Protect` like every other mutating route:
 | `POST /passkey/stepup/finish` | `Handlers.StepUpFinish` |
 | `POST /passkey/signin/begin` | `Handlers.SignInBegin` |
 | `POST /passkey/signin/finish` | `Handlers.SignInFinish` |
-| `POST /passkey/signin/recovery` | `Handlers.SignInRecovery` |
 | `POST /passkey/discover/begin` | `Handlers.DiscoverBegin` |
 | `POST /passkey/discover/finish` | `Handlers.DiscoverFinish` |
 
@@ -145,8 +144,8 @@ func (h *Handlers) RecoveryCodesRemaining(subject string) (int, error)
 existing set. Show them once, from a page you mount behind
 `sessions.RequireFresh`.
 
-`SignInRecovery` redeems one against the pending half-session where an
-assertion would have gone. It is a plain form POST reading the field `code`, with no JavaScript,
+`secondfactor`'s `Gate.SignInRecovery`, at `POST /signin/recovery`, redeems one against the pending half-session where an assertion would have gone.
+It is a plain form POST reading the field `code`, with no JavaScript,
 deliberately: recovery is exactly the moment WebAuthn is not working.
 
 A wrong code does not consume the half-session; it redirects to
