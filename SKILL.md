@@ -24,7 +24,7 @@ Read the topic before you start work it covers, not after the source:
 
 | Before you... | read |
 |---|---|
-| add sign-in to an app that has none (a fresh scaffold has none) | `skill/add-signin.md` |
+| add password sign-in to an app that has none | `skill/add-signin.md` |
 | use the session, magic links, a sign-in screen, 2FA | `skill/signin.md` |
 | add a page or route, a flow, a test, or meet a perf/budget failure | `skill/screens.md` |
 | call a `ui` partial: its keys, at a glance | `skill/partials.md` |
@@ -41,6 +41,13 @@ Read the topic before you start work it covers, not after the source:
 go install amadan.net/rastrillo/rastrillo/cmd/rastrillo@latest
 rastrillo new notes && cd notes && go mod tidy && go test ./...
 ```
+
+**People sign in? Start with `rastrillo new --auth=magic <name>`.** The
+app then signs people in by emailed link from its first commit, its
+owned rows go through `a.owned(r)` and are created with
+`Owner: ownerOf(r)`, and its tests sign in for you; its
+`AGENTS.md` says where each piece is. Without `--auth` the scaffold has
+no accounts.
 
 `rastrillo new` writes the whole app shape, its gate (`make ci`) and
 its tests; it compiles, passes and serves before you write a line, so
@@ -87,6 +94,8 @@ builds `ui.Pages` once at boot; a new page goes in its list
 One seam, every read and write (`a.db` is the scaffold's `*db.DB`;
 `.G` is its `*gorm.DB`): `func (a *app) owned(r *http.Request) *gorm.DB
 { uid, _ := sessions.UserID(r); return scope.Owned(a.db.G, uid) }`.
+An `--auth=magic` app has it already (`auth.go`), over an `Owner`
+address column: create rows with `Owner: ownerOf(r)`, never `UserID`.
 `scope.Owned(g, owner)` adds `WHERE user_id = ?`; `scope.OwnedBy(g,
 column, owner)` takes another owner column, panicking unless plain
 `lower_snake` (it is interpolated into SQL). Never

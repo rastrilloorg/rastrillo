@@ -310,6 +310,8 @@ On CARLOS, the platform will make an instance key before your app first starts a
 
 `carlos.InstanceKey(own)` returns your app's own key if it has one, then `$CARLOS_INSTANCE_KEY`. On CARLOS with neither, it returns `ErrNoInstanceKey`: don't start. Off CARLOS it returns `ErrNotOnCarlos`: load or make a key as before. Nothing changes until you call it.
 
+**The skill is now a short core and topic files.** `SKILL.md` is 7 KB, down from 32 KB. It covers what every task needs and names the file in `skill/` to read before each kind of work: sign-in, screens, partials, design, forms, data, background work and the CLI. `skill/partials.md` lists every partial and the keys its template reads; keys a Go helper reads for it are in the template's own comment. A new app's `AGENTS.md` gives the exact command for its own copy of the skill. An app made earlier still points at the module cache, where an older copy can wait: replace everything above `## Layout` in its `AGENTS.md` with what `rastrillo new` writes now.
+
 ## v0.28.0
 
 A sign-in screen with proof of work in front of it, a phone layout for every shell, and new packages for timing, spreadsheet exports, background work, tests and authenticator apps. The first three sections change what an existing app does without a compile error: read them before you upgrade.

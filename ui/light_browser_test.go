@@ -336,9 +336,14 @@ func TestATouchPressShowsNoSheen(t *testing.T) {
 
 // lightFrameBudgetMS is C9's budget: style recalculation, layout,
 // pre-paint and paint per frame while the pointer moves over a 500-row
-// list, summed from the browser's own trace events. The spec's ceiling
-// is 4ms on the CI runner; the measured figures are recorded below.
-const lightFrameBudgetMS = 4.0
+// list, summed as thread time from the browser's own trace events. The
+// spec set 4ms on the CI runner and left the exact figure to the first
+// measurement; 4ms was a wall-time figure, and thread time reads about
+// 15% under wall time on an idle machine, so 4ms of thread time let
+// FOLLOW = true pass (3.6 to 4.4ms idle on docs-t1). 3.25 sits between
+// the shipped light's worst window anywhere, 2.5, and FOLLOW's
+// cheapest, 3.59 (the figures below).
+const lightFrameBudgetMS = 3.25
 
 // traceCategories are the ones that carry the rendering events this
 // drive sums (measured in this Chromium): UpdateLayoutTree is in
@@ -350,15 +355,25 @@ var traceCategories = []string{"devtools.timeline", "blink", "disabled-by-defaul
 
 // TestTheLightStaysWithinItsFrameBudget (C9): two seconds of pointer
 // movement over 500 rows, a move every 16ms. The trace's
-// UpdateLayoutTree (style), Layout, PrePaint and Paint durations inside
-// the marked window are summed and divided by the frames the page
+// UpdateLayoutTree (style), Layout, PrePaint and Paint thread time
+// inside the marked window is summed and divided by the frames the page
 // counted; the trace must carry style and paint events or the figure
 // proves nothing. The trace ends two frames and 150ms after the window
 // does, so every slice begun inside it has closed. Also: <html>'s style
-// is written at most twice a frame (two properties, one update), and
-// no long task occurs.
+// is written at most twice a frame (two properties, one update), and no
+// task on the page's main thread does 50ms of work (traceTotals says
+// why thread time, not wall time; #118).
 //
-// Measured, this page and this drive, on a hover rig:
+// Measured in thread time on docs-t1, this page and this drive, every
+// window of two runs each: shipped, 2.19 to 2.50 idle and 1.91 to 2.49
+// with the browser held to two CPUs beside four or six busy loops,
+// where wall time read 4.7 to 12.1 over 32 to 66 frames and the
+// browser's own long-task count reached 20, every one of them 2 to
+// 11ms of work. FOLLOW = true with a root write every 200ms: 3.59 to
+// 4.37 idle and 4.83 to 10.74 loaded; every 100ms, 5.4 to 7.3; every
+// frame, 20 to 34. The budget fails all of them.
+//
+// Measured in wall time before that, on a hover rig:
 //
 //	FOLLOW = false (shipped)   2.07 ms a frame on docs-t1 (the controller's
 //	    probe at HEAD); 1.74, 1.55, 1.59 before the hover rig.
@@ -393,7 +408,7 @@ func TestTheLightStaysWithinItsFrameBudget(t *testing.T) {
 	ctx, cancel := context.WithTimeout(rig.Context(), 90*time.Second)
 	defer cancel()
 	mustRun(t, ctx, chromedp.EmulateViewport(1280, 800), chromedp.Navigate(rig.Origin+"/"), chromedp.WaitVisible("#big", chromedp.ByQuery),
-		chromedp.Evaluate(`window.__frames = 0; window.__long = 0; (function f() { window.__frames++; requestAnimationFrame(f); })(); new PerformanceObserver(l => window.__long += l.getEntries().length).observe({type: "longtask"}); window.__rootWrites = 0; new MutationObserver(m => window.__rootWrites += m.length).observe(document.documentElement, {attributes: true, attributeFilter: ["style"]}); true`, nil))
+		chromedp.Evaluate(`window.__frames = 0; (function f() { window.__frames++; requestAnimationFrame(f); })(); window.__rootWrites = 0; new MutationObserver(m => window.__rootWrites += m.length).observe(document.documentElement, {attributes: true, attributeFilter: ["style"]}); true`, nil))
 	var (
 		mu     sync.Mutex
 		events []json.RawMessage
@@ -419,13 +434,13 @@ func TestTheLightStaysWithinItsFrameBudget(t *testing.T) {
 	// restyles inside the window that the pointer did not cause.
 	mustRun(t, ctx, chromedp.Evaluate(`new Promise(r => { let q; const arm = () => { clearTimeout(q); q = setTimeout(() => document.getAnimations().length ? arm() : r(), 300); }; new MutationObserver(arm).observe(document.documentElement, {attributes: true, attributeFilter: ["style"]}); arm(); })`, nil, awaitPromise))
 	// One window: two seconds of pointer movement under a trace.
-	measure := func() (perFrame float64, frames, writes, long int, counts map[string]int, sums map[string]float64) {
+	measure := func() (perFrame, wallPerFrame float64, frames, writes int, w traceWindow) {
 		finished := make(chan struct{})
 		mu.Lock()
 		events, done = nil, finished
 		mu.Unlock()
-		var frames0, writes0, long0 int
-		mustRun(t, ctx, chromedp.Evaluate(`window.__frames`, &frames0), chromedp.Evaluate(`window.__rootWrites`, &writes0), chromedp.Evaluate(`window.__long`, &long0),
+		var frames0, writes0 int
+		mustRun(t, ctx, chromedp.Evaluate(`window.__frames`, &frames0), chromedp.Evaluate(`window.__rootWrites`, &writes0),
 			chromedp.ActionFunc(func(c context.Context) error {
 				return tracing.Start().WithTransferMode(tracing.TransferModeReportEvents).WithTraceConfig(&tracing.TraceConfig{IncludedCategories: traceCategories}).Do(c)
 			}), chromedp.Evaluate(`console.timeStamp("rst-budget-start"), true`, nil))
@@ -433,8 +448,8 @@ func TestTheLightStaysWithinItsFrameBudget(t *testing.T) {
 		for i := 0; time.Since(start) < 2*time.Second; i++ {
 			mustRun(t, ctx, chromedp.MouseEvent(input.MouseMoved, 200+float64(i%60)*15, 100+float64(i%40)*16), chromedp.Sleep(16*time.Millisecond))
 		}
-		var frames1, long1, writes1 int
-		mustRun(t, ctx, chromedp.Evaluate(`console.timeStamp("rst-budget-end"), window.__frames`, &frames1), chromedp.Evaluate(`window.__long`, &long1), chromedp.Evaluate(`window.__rootWrites`, &writes1),
+		var frames1, writes1 int
+		mustRun(t, ctx, chromedp.Evaluate(`console.timeStamp("rst-budget-end"), window.__frames`, &frames1), chromedp.Evaluate(`window.__rootWrites`, &writes1),
 			chromedp.Evaluate(`new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(r, 150))))`, nil, awaitPromise),
 			chromedp.ActionFunc(func(c context.Context) error { return tracing.End().Do(c) }))
 		select {
@@ -442,24 +457,33 @@ func TestTheLightStaysWithinItsFrameBudget(t *testing.T) {
 		case <-time.After(20 * time.Second):
 			t.Fatal("the trace never completed")
 		}
-		frames, writes, long = frames1-frames0, writes1-writes0, long1-long0
-		if frames < 60 {
+		frames, writes = frames1-frames0, writes1-writes0
+		// A page that is not animating (a hidden or throttled tab) counts
+		// a frame or two in 2s. A loaded runner lowers the rate without
+		// stopping it: 45 frames on the fleet, 32 to 66 on docs-t1 with
+		// two CPUs and busy loops, and the thread-time figure held. So
+		// the floor is 20, not the 60 an idle machine clears.
+		if frames < 20 {
 			t.Fatalf("only %d frames in 2s; the page is not animating, the figure would prove nothing", frames)
 		}
 		mu.Lock()
 		evs := events
 		mu.Unlock()
-		total, c, sm, err := traceTotals(evs, "rst-budget-start", "rst-budget-end", "UpdateLayoutTree", "Layout", "PrePaint", "Paint")
+		w, err := traceTotals(evs, "rst-budget-start", "rst-budget-end", "UpdateLayoutTree", "Layout", "PrePaint", "Paint")
 		if err != nil {
 			t.Fatalf("the trace's accounting does not close, so the figure would undercount: %v", err)
 		}
-		return total / 1000 / float64(frames), frames, writes, long, c, sm
+		if w.Tasks == 0 {
+			t.Fatalf("the trace carried no tasks on the page's main thread, so a long task would go unseen")
+		}
+		return w.Thread / 1000 / float64(frames), w.Wall / 1000 / float64(frames), frames, writes, w
 	}
 	// The budget is the script's cost, and a busy machine only adds to a
-	// window, never takes away: CI runs this beside thirty other shards
-	// and read 4.11 ms where an idle run reads about 2. So up to three
-	// windows are taken and the cheapest is held to the budget, the way
-	// a benchmark reports its best run. Only the frame cost takes the
+	// window, never takes away. Thread time leaves out the waits, but not
+	// all of the load: a CPU shared with thirty other shards still runs
+	// colder caches, and docs-t1 read 2.2 to 3.4 ms under load against
+	// 2.27 idle. So up to three windows are taken and the cheapest is
+	// held to the budget, the way a benchmark reports its best run. Only the frame cost takes the
 	// cheapest window: the coalescing and long-task rules are held on
 	// every window, here in the loop. Keeping the cheapest window's
 	// long-task count let a first window with a long task pass behind
@@ -471,16 +495,16 @@ func TestTheLightStaysWithinItsFrameBudget(t *testing.T) {
 		counts   map[string]int
 	)
 	for try := 1; try <= 3; try++ {
-		pf, f, w, l, c, sm := measure()
-		t.Logf("C9 window %d: %.2f ms of style+layout+paint per frame over %d frames (%d root writes, %d long tasks, events %v, ms %v)", try, pf, f, w, l, c, sm)
-		if w > 2*f {
-			t.Errorf("window %d: <html> style written %d times in %d frames; moves must be coalesced to one update (two properties) a frame", try, w, f)
+		pf, wpf, f, writes, w := measure()
+		t.Logf("C9 window %d: %.2f ms of style+layout+paint thread time per frame (%.2f wall) over %d frames (%d root writes, %d of %d tasks over 50ms of thread time, events %v, ms %v)", try, pf, wpf, f, writes, w.Long, w.Tasks, w.Counts, w.Sums)
+		if writes > 2*f {
+			t.Errorf("window %d: <html> style written %d times in %d frames; moves must be coalesced to one update (two properties) a frame", try, writes, f)
 		}
-		if l > 0 {
-			t.Errorf("window %d: %d long tasks during 2s of pointer movement", try, l)
+		if w.Long > 0 {
+			t.Errorf("window %d: %d tasks did over 50ms of work during 2s of pointer movement", try, w.Long)
 		}
 		if try == 1 || pf < perFrame {
-			perFrame, frames, counts = pf, f, c
+			perFrame, frames, counts = pf, f, w.Counts
 		}
 		if pf <= lightFrameBudgetMS {
 			break
