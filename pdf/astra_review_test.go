@@ -146,3 +146,35 @@ func TestWrapOfALongTokenStaysFast(t *testing.T) {
 		t.Fatal("wrapping a 20,000-character token did not finish within 2s")
 	}
 }
+
+// trim used to cut one rune at a time from the end and measure the
+// whole remainder again each time, so a long column title, cut down to
+// its four-line limit, took seconds: 8,000 characters took 2.2s. It is
+// one pass now; 40,000 characters would have taken about a minute.
+func TestALongColumnTitleIsCutInLinearTime(t *testing.T) {
+	title := strings.Repeat("é", 40000)
+	start := time.Now()
+	f := newFlow(newGeom(A4, false))
+	layoutTable(f, "", []Column{{Title: title}}, [][]Cell{{{Text: "x"}}}, nil)
+	if d := time.Since(start); d > time.Second {
+		t.Errorf("a 40,000-character title took %v to lay out", d)
+	}
+}
+
+// A column too narrow for even one character beside the ellipsis lost
+// the rest of its title with no mark at all; it now ends in the
+// ellipsis alone, as the reference page promises.
+func TestANarrowColumnTitleStillEndsInAnEllipsis(t *testing.T) {
+	f := newFlow(newGeom(A4, false))
+	widths := columnWidths([]Column{{Title: "ééééé", Width: 16}, {Title: "B", Width: 467.28}}, f.contentW)
+	lines := headerTitleLines("ééééé", widths[0]-8)
+	if len(lines) != maxHeaderLines || lines[len(lines)-1] != "…" {
+		t.Errorf("want %d lines ending in a lone ellipsis, got %q", maxHeaderLines, lines)
+	}
+	for _, max := range []float64{3, 8, 9, 20} {
+		got := trim("ééééééééé", faceBold, sizeSmall, max)
+		if w := measure(got, faceBold, sizeSmall); w > max && len([]rune(got)) > 1 {
+			t.Errorf("trim at %.0f gave %q, %.2fpt wide", max, got, w)
+		}
+	}
+}

@@ -220,10 +220,12 @@ size.
 Nothing about this package requires one of the named sizes: a `Size`
 is just a rectangle, so a caller can supply their own dimensions for
 anything else a document needs to be printed on, such as a pre-printed
-form. A `Size` too small, negative or non-finite to leave any content
-area once the fixed margins are subtracted — the zero value included —
-falls back to `A4` rather than reaching layout with a negative or NaN
-content width.
+form. A `Size` that cannot hold a page falls back to `A4`, turned the
+same way if `Landscape` is set. That covers the zero value, a negative
+or non-finite side, a side longer than 14,400pt (200in, the most a PDF
+reader accepts), and a page too short to hold a four-line table header
+and one row once the margins are taken off. The check runs after
+`Landscape` turns the page.
 
 ## What can't be drawn
 
@@ -277,5 +279,7 @@ something else instead, close enough in appearance that this does not
 count as a loss and is not reported: a non-breaking space and its
 narrower relatives as a plain space, a soft hyphen as nothing, a
 non-breaking hyphen or minus sign as a plain hyphen, and the prime
-marks as plain quotes. A caller comparing drawn text back against its
-own source has to know these do not round-trip.
+marks as plain quotes. A tab, line feed or carriage return is drawn as
+a space, and any other control character is dropped. A caller
+comparing drawn text back against its own source has to know these do
+not round-trip.

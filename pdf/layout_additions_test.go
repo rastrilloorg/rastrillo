@@ -207,6 +207,28 @@ func TestTableHeaderBandAccountsForWrappedTitles(t *testing.T) {
 			t.Errorf("wrapped title line %q drawn %d times, want 1", line, drawn[line])
 		}
 	}
+
+	// Drawn is not enough: a band that reserved one line whatever the
+	// title wrapped to still drew every line, with the rule under the
+	// header crossing the second one. The rule has to sit below the
+	// last title line, and the first row below the rule.
+	var lastTitleY, ruleY, rowY float64
+	for _, o := range f.cur {
+		switch {
+		case o.kind == 't' && o.text == wantLines[len(wantLines)-1]:
+			lastTitleY = o.y
+		case o.kind == 'l' && ruleY == 0:
+			ruleY = o.y
+		case o.kind == 't' && o.text == "x":
+			rowY = o.y
+		}
+	}
+	if ruleY <= lastTitleY {
+		t.Errorf("header rule at y=%.2f, not below the last title line at y=%.2f", ruleY, lastTitleY)
+	}
+	if rowY-sizeBody <= ruleY {
+		t.Errorf("first row's top at y=%.2f, not below the header rule at y=%.2f", rowY-sizeBody, ruleY)
+	}
 }
 
 // A callout's left bar spans from where it started to where its body

@@ -8,6 +8,12 @@ package pdf
 // side. marginB leaves room for the running footer, which is drawn
 // below the flow rather than inside it.
 const (
+	// maxPageSide is the largest page side PDF readers accept, 200in
+	// (ISO 32000-1, Annex C). It also keeps the column arithmetic in
+	// layout finite: a Size near the top of float64's range overflowed
+	// it to +Inf, which is not a PDF number.
+	maxPageSide = 14400.0
+
 	marginL = 56.0
 	marginR = 56.0
 	marginT = 64.0
@@ -28,20 +34,25 @@ type geom struct {
 }
 
 // newGeom computes a geom for size, portrait unless landscape is true.
-// A size too small or non-finite to leave any content area once the
-// margins are subtracted — the zero value included — falls back to
-// A4, rather than reaching layout with a negative or NaN content
-// width: there is no sensible document to lay out on a page smaller
-// than its own margins, and silently drawing nothing would be a worse
-// answer than drawing on the size this package knows is sane.
+// A size that cannot hold a page falls back to A4, turned the same
+// way, rather than reaching layout with a negative, NaN or overflowing
+// content width. The check runs after landscape turns the page,
+// because the top and bottom margins are larger than the side ones. A
+// page's body must hold a table header at its maxHeaderLines limit
+// with one row under it, the one block that cannot continue onto the
+// next page; and no side may pass maxPageSide.
 // footerY sits 44pt above the bottom edge.
 func newGeom(size Size, landscape bool) geom {
-	if !size.finite() || size.W <= marginL+marginR || size.H <= marginT+marginB {
-		size = A4
-	}
 	w, h := size.W, size.H
 	if landscape {
 		w, h = h, w
+	}
+	minH := marginT + marginB + headerBandHeight(maxHeaderLines) + leadBody
+	if !size.finite() || w <= marginL+marginR || h < minH || w > maxPageSide || h > maxPageSide {
+		w, h = A4.W, A4.H
+		if landscape {
+			w, h = h, w
+		}
 	}
 	return geom{
 		pageW: w, pageH: h,

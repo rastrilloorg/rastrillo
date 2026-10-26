@@ -277,13 +277,28 @@ func trim(s string, face int, size, max float64) string {
 	}
 	// By rune, not by byte: the footer's left text is the title, an em
 	// dash and the reference, so a byte cut can land in the middle of
-	// the dash and draw a question mark on every page.
+	// the dash and draw a question mark on every page. One forward pass,
+	// summing each rune's own width: cutting from the end and measuring
+	// what was left each time was quadratic, and a long column title
+	// cut down to its line limit took seconds.
+	ell := measure("…", face, size)
 	rs := []rune(s)
-	for len(rs) > 1 {
-		rs = rs[:len(rs)-1]
-		if measure(string(rs)+"…", face, size) <= max {
-			return strings.TrimSpace(string(rs)) + "…"
+	var w float64
+	cut := 0
+	for i, r := range rs {
+		w += measure(string(r), face, size)
+		if w+ell > max {
+			break
 		}
+		cut = i + 1
 	}
-	return string(rs)
+	switch {
+	case cut > 0:
+		return strings.TrimSpace(string(rs[:cut])) + "…"
+	case ell <= max:
+		// Not one character fits beside the ellipsis, but the ellipsis
+		// does: it still says something was cut.
+		return "…"
+	}
+	return string(rs[:1])
 }

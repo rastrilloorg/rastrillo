@@ -70,3 +70,54 @@ func TestATooSmallSizeFallsBackToA4(t *testing.T) {
 		}
 	}
 }
+
+// A Size is checked after Landscape turns it, not before: the top and
+// bottom margins are larger than the left and right ones, so a size
+// that leaves room in portrait can leave a negative body height once
+// it is on its side. Such a size falls back to A4, still landscape.
+func TestASizeIsCheckedAfterLandscapeTurnsIt(t *testing.T) {
+	got := newGeom(Size{W: 120, H: 300}, true)
+	want := newGeom(A4, true)
+	if got != want {
+		t.Errorf("Size{120,300} landscape gave %+v, want the A4 landscape fallback %+v", got, want)
+	}
+}
+
+// A page has to hold the one thing that cannot continue onto the next
+// one: a table header at its four-line limit with one row under it. A
+// body shorter than that drew the header into the footer, and falls
+// back to A4 instead.
+func TestASizeTooShortForATableHeaderFallsBackToA4(t *testing.T) {
+	for _, c := range []Size{{W: 300, H: 141}, {W: 300, H: 175}} {
+		if got, want := newGeom(c, false), newGeom(A4, false); got != want {
+			t.Errorf("Size %+v gave %.2fx%.2f, want the A4 fallback", c, got.pageW, got.pageH)
+		}
+	}
+	g := newGeom(Size{W: 300, H: 175}, false)
+	if room := g.pageH - g.marginB - g.marginT; room < headerBandHeight(maxHeaderLines)+leadBody {
+		t.Errorf("body height %.2f cannot hold a full header and a row", room)
+	}
+}
+
+// A finite but enormous Size overflowed the column arithmetic to +Inf,
+// which is not a PDF number. PDF readers also stop at 14,400pt (200in)
+// a side (ISO 32000-1, Annex C), so anything larger falls back to A4.
+func TestAHugeSizeFallsBackRatherThanWritingInf(t *testing.T) {
+	for _, c := range []Size{{W: 1e308, H: 800}, {W: 20000, H: 20000}} {
+		if got, want := newGeom(c, false), newGeom(A4, false); got != want {
+			t.Errorf("Size %+v gave %.2fx%.2f, want the A4 fallback", c, got.pageW, got.pageH)
+		}
+		b := New(Options{Size: c})
+		b.Table("", []Column{{Title: "a", Width: 2}, {Title: "b", Width: 1}}, [][]Cell{{{Text: "x"}, {Text: "y"}}}, nil)
+		bs, _, err := b.Render()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if regexp.MustCompile(`Inf|NaN`).Match(regexp.MustCompile(`/Info`).ReplaceAll(bs, nil)) {
+			t.Errorf("Size %+v wrote a non-finite number into the PDF", c)
+		}
+	}
+	if got := newGeom(Size{W: 14400, H: 14400}, false); got.pageW != 14400 {
+		t.Errorf("want 14400pt, the largest page a reader accepts, honoured; got %.2f", got.pageW)
+	}
+}
