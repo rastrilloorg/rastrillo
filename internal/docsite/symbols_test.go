@@ -68,6 +68,7 @@ var referencePages = map[string]string{
 	"harness":       "reference/harness",
 	"lastsignin":    "reference/lastsignin",
 	"op":            "reference/op",
+	"pdf":           "reference/pdf",
 	"api":           "reference/api",
 	"apitoken":      "reference/apitoken",
 	"currency":      "reference/currency",

@@ -223,7 +223,7 @@ that it does, and running from outside the app — which is what asking
 | Flag | Purpose |
 |---|---|
 | `--fix` | Re-copy each drifted file from this binary's library copy |
-| `--force` | With `--fix`: re-copy across a version mismatch, and over files recorded as deliberate edits |
+| `--force` | With `--fix`: re-copy across a version mismatch, and over files recorded as deliberate edits or removals |
 | `--theme` | Which theme `static/theme.css` should be, for an app with no pin to read it from |
 | `--probe` | Also build the app and run it to check its language setup. This runs your app's own code |
 

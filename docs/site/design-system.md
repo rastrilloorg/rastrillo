@@ -30,7 +30,7 @@ The ladder is deliberate. Each rung costs more to carry across upgrades than the
 
 `static/light.js` moves the light the depth styles read: the shadows' light comes from the hour, a button catches a sheen under the pointer, and a card's rim brightens near it. It writes custom properties and nothing else, runs one animation frame loop only while something is easing, does not run under reduced motion and does nothing under forced colours. The whole page's light can follow the pointer instead: set `FOLLOW` to `true` at the top of the file. It is off because every write of it restyles the page.
 
-To turn it off, delete `static/light.js` and its `<script>` tag from your layout, and name it in `vendoredIsMine` in `vendored_test.go`. `rastrillo doctor` then lists the file as yours, a recorded edit, and `--fix` leaves it alone. To flatten the design and keep the script, set the depth, sheen, light and press tokens in your theme the way `plain.css` does: `transparent`, `0` and `0px`, and `--rst-light-rim` to your line colour, or each card's hairline gets a hole near the pointer.
+To turn it off, delete `static/light.js` and its `<script>` tag from your layout, and name it in `vendoredIsMine` in `vendored_test.go`. `rastrillo doctor` then lists the file as yours, removed on purpose, and `--fix` leaves it alone. To flatten the design and keep the script, set the depth, sheen, light and press tokens in your theme the way `plain.css` does: `transparent`, `0` and `0px`, and `--rst-light-rim` to your line colour, or each card's hairline gets a hole near the pointer.
 
 ## Components the framework does not ship
 

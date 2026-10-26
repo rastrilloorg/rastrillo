@@ -411,8 +411,8 @@ page.
 It does not run under reduced motion, does nothing under forced colours,
 reads no sensor, and never captures the pointer. For the still design,
 delete the file and its script tag, and name it in `vendoredIsMine` in
-the app's pin test; `rastrillo doctor` then lists it as yours, a
-recorded edit, and `--fix` leaves it alone.
+the app's pin test; `rastrillo doctor` then lists it as yours, removed
+on purpose, and `--fix` leaves it alone.
 
 ## Shapes
 
