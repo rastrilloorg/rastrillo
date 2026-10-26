@@ -14,7 +14,7 @@ In templates, write links with `path`: `<a href="{{path $ "/orders"}}">`. In Go,
 
 The instance's own hostname sends every visitor to `https://example.com/acme/…`. To show a public page there instead, with nobody signed in and no forms that change anything, set `opts.BasePath.DirectHost = basepath.ServeDirect`.
 
-To try it locally, run `RASTRILLO_SLUG=acme rastrillo dev` and open `http://localhost:8080/acme`. `http://127.0.0.1:8080` is then your direct host.
+To try it locally, run `RASTRILLO_SLUG=acme rastrillo dev` and open `http://localhost:8080/acme/`. `http://127.0.0.1:8080` is then your direct host.
 
 Sign-in does not run under a base path. The hub signs people in.
 
@@ -58,7 +58,7 @@ func SlugFromHost(host string) (string, error)
 func (c Config) Handler(next http.Handler) http.Handler
 ```
 
-On the product origin, `Handler` answers only for `/<slug>` and below. Anything else there is a 404. An unclean path, such as `/acme//x` or `//acme/x`, gets a 301 to the clean one, or a 308 for a method other than GET and HEAD.
+On the product origin, `Handler` answers only for `/<slug>/` and below. Anything else there is a 404. The app's home page is `/acme/`, with the slash, so a relative link on it stays in the app. A bare `/acme` gets a 308 there, query kept. An unclean path, such as `/acme//x` or `//acme/x`, gets a 301 to the clean one, or a 308 for a method other than GET and HEAD.
 
 `next` sees the path without the base: `/acme/notes` arrives as `/notes`. `r.RequestURI` still reads `/acme/notes`.
 
@@ -73,7 +73,7 @@ func Base(r *http.Request) string
 func Original(r *http.Request) string
 ```
 
-`Join` holds the prefix rule, and is the only place it is written. It adds `base` to `p` only when `p` starts with exactly one `/`. `//host/x` and `/\host` are links to another site, so they are left alone, along with full URLs, relative paths and an empty `p`. `/` gives the base itself, and `/?q` gives the base and the query.
+`Join` holds the prefix rule, and is the only place it is written. It adds `base` to `p` only when `p` starts with exactly one `/`. `//host/x` and `/\host` are links to another site, so they are left alone, along with full URLs, relative paths and an empty `p`. `/` gives the app's home page, `/acme/`, and `/?q` gives `/acme/?q`.
 
 `Path` is `Join(Base(r), p)`. Use it for every root-absolute URL in a body. Never pass its result to `http.Redirect`: the base would appear twice.
 
