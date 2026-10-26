@@ -170,6 +170,19 @@ func pageCount(b []byte) int {
 	return n
 }
 
+// pageContents returns each page's own content stream bytes, in page
+// order, for a test that needs to say WHICH page something is on
+// rather than only whether it appears anywhere in the file.
+func pageContents(t *testing.T, b []byte) [][]byte {
+	t.Helper()
+	re := regexp.MustCompile(`(?s)stream\n(.*?)\nendstream`)
+	var out [][]byte
+	for _, m := range re.FindAllSubmatch(b, -1) {
+		out = append(out, m[1])
+	}
+	return out
+}
+
 // A table longer than a page has to break, and the header has to come
 // back at the top of each part. A continued table with no header is a
 // column of numbers a reader cannot name.

@@ -69,33 +69,64 @@ func (b *Builder) PageBreak() { b.f.newPage() }
 // heading never lands as the last line on a page with its table
 // orphaned onto the next.
 //
-// How much room "would not fit" means is measured, not guessed: fn
-// runs once, first, against a throwaway Builder that starts at the top
-// of a blank page, and the height that costs is the room this call
-// then asks the real page for. A fn whose content is longer than one
-// page costs exactly one page's worth — there is no page anywhere it
-// would entirely fit, so the only useful question left is whether the
-// current page has a full page's worth of room, same as if it did not
-// fit. Either way, fn's own pagination is untouched: a long table
-// inside it still breaks across further pages with its header
-// repeated, exactly as it would outside KeepTogether.
+// fn runs exactly once, against a throwaway Builder starting at the
+// top of a blank page — never against the real one directly. That
+// probe IS the answer, not a rehearsal for a second run: if it fit on
+// its one fresh page, its ops are copied onto the real page, shifted
+// down to wherever that currently is; if it did not — either because
+// the real page does not have as much room left as the probe's fresh
+// one did, or because fn is longer than any single page — the real
+// page is turned over and the probe's pages (plural, if it overflowed
+// even starting fresh) are adopted wholesale, because turning the real
+// page over puts it in exactly the state the probe started from.
 //
-// fn is called twice — once to measure, once for real — so it must be
-// a pure function of the Builder it is handed: no state outside that
-// parameter, and no side effect that should not happen twice.
+// Measuring by actually running fn, rather than estimating its height
+// and asking need() to re-decide, is what keeps this exact: there is
+// no second calculation of "does it fit" to get out of step with the
+// first, and every block's own internal slop (asking need() for a
+// little more room than it goes on to use, for visual breathing room)
+// is accounted for because the probe already paid it, rather than
+// re-derived from a height alone.
+//
+// fn must draw only on the Builder it is handed, never on the one
+// KeepTogether was called on or any other captured outside it: this is
+// checked (a page or a line appearing on the real Builder while fn is
+// only meant to be touching the probe is always a mistake, never a
+// program that meant to do that) and panics naming the parameter,
+// which is a cheaper and more exact test for the mistake than a
+// sentence asking fn to be "pure" and hoping that lands.
 func (b *Builder) KeepTogether(fn func(b *Builder)) {
+	y0, cur0, pages0 := b.f.y, len(b.f.cur), len(b.f.pages)
 	probe := &Builder{f: newFlow(b.f.geom), opt: b.opt}
 	fn(probe)
-	need := probe.f.y - probe.f.marginT
-	if len(probe.f.pages) > 0 {
-		// fn overflowed onto a further page even starting fresh: there
-		// is no page it fits on, so the only thing left to ask for is a
-		// full page's worth of room, which is what "does not fit here
-		// either" comes down to.
-		need = probe.f.pageH - probe.f.marginT - probe.f.marginB
+	if b.f.y != y0 || len(b.f.cur) != cur0 || len(b.f.pages) != pages0 {
+		panic("pdf: KeepTogether's fn drew on the Builder it was called on, not the one it was handed")
 	}
-	b.f.need(need)
-	fn(b)
+
+	if len(probe.f.pages) == 0 && b.f.room(probe.f.y-probe.f.marginT) {
+		dy := b.f.y - probe.f.marginT
+		for _, o := range probe.f.cur {
+			o.y += dy
+			if o.kind == 'r' {
+				o.y2 += dy
+			}
+			b.f.cur = append(b.f.cur, o)
+		}
+		b.f.y += probe.f.y - probe.f.marginT
+	} else {
+		// Either fn needs more room than is left here, or more than
+		// any one page holds outright. Either way the real page has to
+		// turn over for it, which puts it in exactly the state the
+		// probe started from — so the probe's output, page by page,
+		// needs no shift at all; it already is the answer.
+		b.f.newPage()
+		b.f.pages = append(b.f.pages, probe.f.pages...)
+		b.f.cur = append([]op{}, probe.f.cur...)
+		b.f.y = probe.f.y
+	}
+	for r := range probe.f.dropped {
+		b.f.dropped[r] = true
+	}
 }
 
 // produced holds what [Builder.Produced] was given.
@@ -123,7 +154,15 @@ func (b *Builder) Produced(by, at, note string) {
 //
 // Call it once, after every block has been added.
 func (b *Builder) Render() ([]byte, []rune, error) {
-	b.f.pages = append(b.f.pages, b.f.cur)
+	// A PageBreak called last leaves cur as an empty, drawn-on-nothing
+	// page: appending it unconditionally would emit a blank sheet
+	// holding only the running footer — and, with Produced set, the
+	// one line that exists to never be alone on a trailing page like
+	// this. The empty-page guard inside newPage already refuses this
+	// for every OTHER page; appending cur as the last one bypassed it.
+	if len(b.f.cur) > 0 || len(b.f.pages) == 0 {
+		b.f.pages = append(b.f.pages, b.f.cur)
+	}
 	b.f.cur = nil
 
 	footers(b.f, b.opt, b.produced)
@@ -185,18 +224,22 @@ func footers(f *flow, opt Options, p *producedLine) {
 
 // producedOps is the "Produced by" line, and its optional note, drawn
 // below the running footer line itself: there is room for both within
-// the page's existing bottom margin without widening it.
+// the page's existing bottom margin without widening it. Both are
+// trimmed to the content width first, the same guard the footer's own
+// left text gets, so a long name or note runs off into an ellipsis
+// rather than off the edge of the page.
 func producedOps(f *flow, p producedLine) []op {
 	y := f.footerY + leadSmall
-	line := fmt.Sprintf("Produced by %s on %s.", p.by, p.at)
+	line := trim(fmt.Sprintf("Produced by %s on %s.", p.by, p.at), faceRegular, sizeSmall, f.contentW)
 	_, dropped := encode(line)
 	f.note(dropped)
 	ops := []op{{kind: 't', x: f.marginL, y: y, face: faceRegular, size: sizeSmall, text: line, gray: 0.4}}
 	if p.note != "" {
-		_, dropped := encode(p.note)
+		note := trim(p.note, faceBold, sizeSmall, f.contentW)
+		_, dropped := encode(note)
 		f.note(dropped)
 		ops = append(ops, op{kind: 't', x: f.marginL, y: y + leadSmall, face: faceBold, size: sizeSmall,
-			text: p.note, gray: 0})
+			text: note, gray: 0})
 	}
 	return ops
 }

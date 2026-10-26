@@ -10,37 +10,6 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
-### Added: `rastrillo/pdf`, a dependency-free PDF writer
-
-Flow headings, paragraphs, field lists, tables and callouts onto A4 (or
-landscape, via `Options.Landscape`) pages and get deterministic bytes
-back — no sidecar, no headless browser, no system font, because CARLOS
-ships an app as one binary and there is nowhere on the platform to run
-any of those. Tables and oversized rows paginate on their own,
-repeating the column headings on each page, and stop their own rules at
-the last titled column rather than running them into a blank padding
-one; `KeepTogether` measures a group of calls (a heading and what
-always follows it, say) and forces a page break before any of it is
-drawn if the group would not otherwise fit, so a heading can no longer
-land as the last line on a page with its table orphaned onto the next.
-`Produced` draws a closing "Produced by … on …" line into the last
-page's existing footer rather than flowing it as a block, for the same
-reason — it can no longer end up alone at the top of a trailing page.
-An optional stamp overlays an approval mark on every page. `Measure`,
-`Wrap` and `Encode` are exported on their own for drawing onto
-something this package does not lay out itself, such as a blank form.
-See [pdf](/docs/reference/pdf).
-
-Ported from an app's own report renderer, generalised off that app's
-report-specific block tree (its citation and verification model stayed
-behind) and with no app- or jurisdiction-specific layer — a
-cheque-printing mode built on the same engine — carried over either.
-`KeepTogether`, the dynamic field-label width and the table-rule fix
-replace or generalise fixes the same engine had already picked up
-independently, twice over, in two of its other forks; `Landscape` is a
-third thing both of those forks had independently added for the same
-reason (a table with too many columns for a portrait page).
-
 **A JSON API for every app, and agents that act for a person (breaking
 upgrade for generated apps and for code that reads `Actor`).** A
 manifest resource can now be served as JSON at `/api/v1`. A person
@@ -245,6 +214,37 @@ To keep the old, exact format for a field, set `Strict: true`.
 - `rastrillo generate` now deletes files in `gen/` that an earlier run generated and this run does not. Keep files you edit by hand outside `gen/`. `rastrillo generate --check` names what a run would delete.
 - `rastrillo generate` refuses a filter on a money field, because an amount means nothing without its currency. Remove the filter.
 - `rastrillo generate` refuses a field named like a money field's generated fields, such as `PriceCurrency` beside a money field `Price`, and a field named `EventVersion` or `Now`. Rename the field.
+
+### Added: `rastrillo/pdf`, a dependency-free PDF writer
+
+Flow headings, paragraphs, field lists, tables and callouts onto A4 (or
+landscape, via `Options.Landscape`) pages and get deterministic bytes
+back — no sidecar, no headless browser, no system font, because CARLOS
+ships an app as one binary and there is nowhere on the platform to run
+any of those. Tables and oversized rows paginate on their own,
+repeating the column headings on each page, and stop their own rules at
+the last titled column rather than running them into a blank padding
+one; `KeepTogether` measures a group of calls (a heading and what
+always follows it, say) and forces a page break before any of it is
+drawn if the group would not otherwise fit, so a heading can no longer
+land as the last line on a page with its table orphaned onto the next.
+`Produced` draws a closing "Produced by … on …" line into the last
+page's existing footer rather than flowing it as a block, for the same
+reason — it can no longer end up alone at the top of a trailing page.
+An optional stamp overlays an approval mark on every page. `Measure`,
+`Wrap` and `Encode` are exported on their own for drawing onto
+something this package does not lay out itself, such as a blank form.
+See [pdf](/docs/reference/pdf).
+
+Ported from an app's own report renderer, generalised off that app's
+report-specific block tree (its citation and verification model stayed
+behind) and with no app- or jurisdiction-specific layer — a
+cheque-printing mode built on the same engine — carried over either.
+`KeepTogether`, the dynamic field-label width and the table-rule fix
+replace or generalise fixes the same engine had already picked up
+independently, twice over, in two of its other forks; `Landscape` is a
+third thing both of those forks had independently added for the same
+reason (a table with too many columns for a portrait page).
 
 ### Fixed: `rastrillo generate` finds the sqlc tool under Go 1.27
 

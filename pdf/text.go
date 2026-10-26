@@ -147,8 +147,18 @@ func measure(s string, face int, size float64) float64 {
 // on a line of its own — a case that arises in practice from a long
 // reference or a URL, and whose alternative is a line running off the
 // page, which is the one outcome a reader cannot recover from.
+//
+// A non-breaking space (U+00A0), figure space (U+2007) or narrow
+// no-break space (U+202F) is NOT a break point, even though
+// unicode.IsSpace says yes: the only reason anyone types one is to
+// keep two words together, and splitting there defeats it. encode
+// still draws each as an ordinary space.
 func wrap(s string, face int, size, max float64) []string {
 	fields := strings.FieldsFunc(s, func(r rune) bool {
+		switch r {
+		case ' ', ' ', ' ':
+			return false
+		}
 		return unicode.IsSpace(r)
 	})
 	if len(fields) == 0 {
@@ -175,8 +185,19 @@ func wrap(s string, face int, size, max float64) []string {
 		// matter (an em dash in a reference, an accent in a name), and
 		// the fragment then ranges as U+FFFD, which encode draws as a
 		// question mark on the page.
+		//
+		// The loop condition is len(rs) > 0, not "still too wide": a
+		// non-positive max (a column requested narrower than its own
+		// padding, say) makes every non-empty string "too wide" by
+		// definition, including a single rune, and measuring the EMPTY
+		// string against it is no narrower — "" is never too wide for
+		// anything, so a width-only condition never terminates. Cutting
+		// at least one rune every pass (cut is floored at 1 below)
+		// guarantees len(rs) shrinks, so this always ends: a column too
+		// narrow to hold anything degrades to one rune per line rather
+		// than hanging the render.
 		rs := []rune(f)
-		for measure(string(rs), face, size) > max {
+		for len(rs) > 0 && measure(string(rs), face, size) > max {
 			cut := len(rs)
 			for cut > 1 && measure(string(rs[:cut]), face, size) > max {
 				cut--

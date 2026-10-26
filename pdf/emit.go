@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strconv"
 	"time"
+	"unicode/utf16"
 )
 
 // Options are the facts about the act that produced the file, as
@@ -156,11 +157,31 @@ func info(opt Options) string {
 	t := opt.Produced.UTC()
 	stamp := fmt.Sprintf("D:%04d%02d%02d%02d%02d%02dZ",
 		t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), t.Second())
-	b, _ := encode(opt.Title)
-	a, _ := encode(opt.Author)
 	return fmt.Sprintf(
 		"<< /Title (%s) /Author (%s) /Producer (rastrillo/pdf) /CreationDate (%s) /ModDate (%s) >>",
-		escape(b), escape(a), stamp, stamp)
+		escape(pdfDocBytes(opt.Title)), escape(pdfDocBytes(opt.Author)), stamp, stamp)
+}
+
+// pdfDocBytes encodes a string for an Info dictionary text string —
+// /Title, /Author — as UTF-16BE with the leading byte-order mark the
+// PDF spec uses to tell a UTF-16 text string apart from one in
+// PDFDocEncoding (ISO 32000-1 §7.9.2.2). Those two strings are not
+// drawn on a page, so none of the reasons the page content stays in
+// Windows-1252 — matching the fonts' declared /Encoding, staying
+// seven-bit so escape() need only octal-escape it — apply to them, and
+// Windows-1252 is the wrong encoding for them regardless: a reader
+// decodes an Info string with no BOM as PDFDocEncoding, whose 0x80-0x9F
+// range disagrees with Windows-1252's (confirmed against a real reader:
+// an em dash and an ellipsis in a Title came back as "Š" and "–").
+// UTF-16 also has no undrawable character for Render to report, unlike
+// the page content: it can represent anything these two fields are
+// likely to hold.
+func pdfDocBytes(s string) []byte {
+	out := []byte{0xFE, 0xFF}
+	for _, u := range utf16.Encode([]rune(s)) {
+		out = append(out, byte(u>>8), byte(u))
+	}
+	return out
 }
 
 // content turns one page's draw operations into a content stream. pageH

@@ -3,6 +3,7 @@ package pdf
 import (
 	"strings"
 	"testing"
+	"time"
 	"unicode/utf8"
 )
 
@@ -64,5 +65,59 @@ func TestAnUndrawableCharacterInTheFooterIsReported(t *testing.T) {
 	}
 	if !found {
 		t.Errorf("Δ in the reference is drawn as ? on every page and was not reported: %q", string(undrawable))
+	}
+}
+
+// wrap's hard-break loop used to run forever once a token's remaining
+// runes measured zero width against a non-positive max: "" is never
+// wider than anything, including a negative number, so a width-only
+// loop condition could never see it as narrow enough to stop. A column
+// requested narrower than its own 8pt padding, or a label wider than
+// the space left for it, reach exactly this with ordinary caller data
+// (see TestLayoutFieldsOfAPathologicallyLongLabelTerminates and
+// TestLayoutTableOfPathologicallyNarrowColumnsTerminates), not just a
+// contrived call to Wrap directly.
+func TestWrapTerminatesForNonPositiveWidth(t *testing.T) {
+	done := make(chan []string, 1)
+	go func() { done <- wrap("hello world", faceRegular, sizeBody, -5) }()
+	select {
+	case lines := <-done:
+		if strings.Join(lines, "") != "helloworld" {
+			t.Errorf("want every rune preserved, got %q", lines)
+		}
+		for _, l := range lines {
+			if len([]rune(l)) > 1 {
+				t.Errorf("a negative width should give one rune per line, got %q", l)
+			}
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("wrap did not return within 2s for a negative max — it is looping")
+	}
+}
+
+// Exactly 0 is the boundary the fix's condition (len(rs) > 0) has to
+// get right in the other direction: it must still wrap normally, one
+// rune per line, rather than stopping early and dropping the rest of
+// the token.
+func TestWrapAtExactlyZeroWidthStillCoversEveryRune(t *testing.T) {
+	lines := wrap("abc", faceRegular, sizeBody, 0)
+	if strings.Join(lines, "") != "abc" {
+		t.Errorf("want every rune preserved, got %q", lines)
+	}
+}
+
+// A non-breaking space exists so two words stay on one line together.
+// unicode.IsSpace says yes to it like any other space, so without an
+// exception wrap split there anyway — the glyph survived (it draws as
+// an ordinary space) but the one reason anyone typed it did not.
+func TestWrapDoesNotBreakAtANonBreakingSpace(t *testing.T) {
+	s := "Total £1,000,000"
+	// Wide enough to hold the whole string on one line (it measures
+	// well under 100pt at this size): if the non-breaking space were
+	// still a break point, two ordinary words that both fit alone
+	// would still end up on separate lines.
+	lines := wrap(s, faceRegular, sizeBody, 150)
+	if len(lines) != 1 {
+		t.Errorf("want the non-breaking space to keep both halves on one line, got %q", lines)
 	}
 }

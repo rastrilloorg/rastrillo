@@ -68,17 +68,31 @@ func layoutList(f *flow, title string, items []string) {
 // gets a heavier left bar and an italic body, for whichever of a
 // caller's own two levels of emphasis this is.
 func layoutCallout(f *flow, title, text string, strong bool) {
-	f.need(46)
+	face := faceRegular
+	if strong {
+		face = faceItalic
+	}
+	// The whole block is measured before anything is drawn, and all of
+	// it is asked for at once: the bar it draws afterwards runs from
+	// its own start to wherever the text ended up, and a body that
+	// broke across a page would leave that start on a page the bar's
+	// end is no longer on — a rectangle with a negative height running
+	// into whatever follows, drawn on the wrong page, with no bar at
+	// all on the one the callout actually started. Reserving the real
+	// height up front keeps the callout on one page for as long as one
+	// page can hold it, which a flat guess cannot promise once a body
+	// genuinely needs more room than that guess assumed.
+	need := 8.0 + float64(len(wrap(text, face, sizeBody, f.contentW-20)))*leadBody + 8.0 + 10.0
+	if title != "" {
+		need += sizeH2 + 5
+	}
+	f.need(need)
 	start := f.y
 	f.y += 8
 	if title != "" {
 		f.y += sizeH2
 		f.text(f.marginL+10, faceBold, sizeH2, title, 0)
 		f.y += 5
-	}
-	face := faceRegular
-	if strong {
-		face = faceItalic
 	}
 	f.para(f.marginL+10, f.contentW-20, face, sizeBody, leadBody, text, 0)
 	f.y += 8
@@ -112,6 +126,14 @@ func layoutFields(f *flow, title string, fields []Field) {
 		}
 	}
 	labelW += gap
+	// Capped at half the content width: a single pathological label
+	// (far longer than anyone would actually write one) would otherwise
+	// claim the whole row for itself and leave every value with no room
+	// at all. A label this long already wraps onto its own further
+	// lines below; it does not need the column widened to avoid that.
+	if half := f.contentW / 2; labelW > half {
+		labelW = half
+	}
 	for _, fl := range fields {
 		labelLines := wrap(fl.Label, faceRegular, sizeBody, labelW-gap)
 		valueLines := wrap(fl.Value, faceRegular, sizeBody, f.contentW-labelW)
@@ -196,28 +218,44 @@ func tableRuleRight(f *flow, cols []Column, widths []float64) float64 {
 	return right
 }
 
-func layoutTable(f *flow, title string, columns []Column, rows [][]Cell, total []Cell) {
-	if len(columns) == 0 {
-		return
+// headerMaxLines is the tallest a table's column titles wrap to, which
+// is also what the header band's own height depends on: shared by the
+// band-height reservation before the first header() and header()'s own
+// drawing, so the two cannot drift apart.
+func headerMaxLines(columns []Column, widths []float64) int {
+	var maxLines int
+	for i, c := range columns {
+		maxLines = max(maxLines, len(wrap(c.Title, faceBold, sizeSmall, widths[i]-8)))
 	}
-	widths := columnWidths(columns, f.contentW)
-	ruleRight := tableRuleRight(f, columns, widths)
+	return maxLines
+}
+
+// headerBandHeight is the header band's own height for a given number
+// of wrapped title lines — the arithmetic header() below actually does,
+// pulled out so a caller can ask for it before header() runs.
+func headerBandHeight(maxLines int) float64 {
+	return 14 + float64(maxLines)*leadSmall
+}
+
+func layoutTable(f *flow, title string, columns []Column, rows [][]Cell, total []Cell) {
 	if title != "" {
 		f.need(40)
 		f.y += 12 + sizeH2
 		f.text(f.marginL, faceBold, sizeH2, title, 0)
 		f.y += 8
 	}
+	if len(columns) == 0 {
+		return
+	}
+	widths := columnWidths(columns, f.contentW)
+	ruleRight := tableRuleRight(f, columns, widths)
 	var headerHeight float64
 	header := func() {
-		f.need(26)
+		maxLines := headerMaxLines(columns, widths)
+		f.need(headerBandHeight(maxLines))
 		start := f.y
 		f.y += 4
 		top := f.y
-		var maxLines int
-		for i, c := range columns {
-			maxLines = max(maxLines, len(wrap(c.Title, faceBold, sizeSmall, widths[i]-8)))
-		}
 		for i, c := range columns {
 			for j, line := range wrap(c.Title, faceBold, sizeSmall, widths[i]-8) {
 				f.y = top + float64(j)*leadSmall + sizeSmall
@@ -229,9 +267,20 @@ func layoutTable(f *flow, title string, columns []Column, rows [][]Cell, total [
 		f.y += 6
 		headerHeight = f.y - start
 	}
+	// The header asks only for its OWN height, which is right once the
+	// table is already under way: fresh off a break there is a whole
+	// page behind it. But asking for only that the FIRST time let the
+	// header land alone at the foot of a page, with its first row
+	// pushed onto the next — where the header is then drawn a second
+	// time, so the reader sees it twice in a row. Reserving room for
+	// the header AND at least one row before that first call pushes
+	// the whole opening onto a fresh page instead, the same shape as
+	// Builder.KeepTogether's own reasoning applied to one table's own
+	// head.
+	f.need(headerBandHeight(headerMaxLines(columns, widths)) + leadBody)
 	header()
 	for _, row := range rows {
-		height := leadBody * float64(rowLines(row, columns, widths))
+		height := leadBody * float64(rowLines(row, columns, widths, faceRegular))
 		if !f.room(height) && height <= f.pageH-f.marginB-f.marginT-headerHeight {
 			f.newPage()
 			header()
@@ -242,7 +291,7 @@ func layoutTable(f *flow, title string, columns []Column, rows [][]Cell, total [
 		})
 	}
 	if len(total) > 0 {
-		height := leadBody*float64(rowLines(total, columns, widths)) + 10
+		height := leadBody*float64(rowLines(total, columns, widths, faceBold)) + 10
 		if !f.room(height) && height <= f.pageH-f.marginB-f.marginT-headerHeight {
 			f.newPage()
 			header()
@@ -260,13 +309,23 @@ func layoutTable(f *flow, title string, columns []Column, rows [][]Cell, total [
 	f.y += 12
 }
 
-func rowLines(row []Cell, cols []Column, widths []float64) int {
+// rowLines measures a row the same way drawRow will actually draw it —
+// base for an ordinary cell, bold for one row.Bold marks or for the
+// whole row when base itself is bold (the total row) — because a
+// pre-check measured in the wrong face under-estimates a bold row's
+// true height (bold is wider) and can let drawRow's own per-line
+// pagination split a row the pre-check thought would move whole.
+func rowLines(row []Cell, cols []Column, widths []float64, base int) int {
 	n := 1
 	for i, c := range row {
 		if i >= len(cols) {
 			break
 		}
-		n = max(n, len(wrap(c.Text, faceRegular, sizeBody, widths[i]-8)))
+		face := base
+		if c.Bold {
+			face = faceBold
+		}
+		n = max(n, len(wrap(c.Text, face, sizeBody, widths[i]-8)))
 	}
 	return n
 }

@@ -110,14 +110,24 @@ always follows it, say — so that if they would not fit in the room
 left on the current page, a page break happens FIRST, before any of
 `fn`'s own output is drawn.
 
-How much room they need is measured, not guessed: `fn` runs once
-already, against a throwaway page, to find out — which is also why
-`fn` must be a pure function of the `Builder` it is handed (no state
-outside that parameter, no side effect that should not happen twice).
-A group longer than one page costs exactly one page's worth, which is
-the only question left once there is no page it would entirely fit on;
-its own pagination — a long table's repeating header, say — carries on
-exactly as it would with no `KeepTogether` at all.
+`fn` runs exactly once, against a throwaway `Builder` starting at the
+top of a blank page, never the real one directly. That run IS the
+answer: if it fit on its one fresh page, its output is copied onto the
+real page wherever that currently is; if it did not — either because
+the real page has less room left than the fresh one did, or because
+`fn` is longer than any single page holds — the real page turns over
+and adopts that run's output outright, because turning over puts it in
+exactly the state the throwaway one started from. Either way `fn`'s
+own pagination is untouched: a long table inside it still breaks
+across further pages with its header repeated, exactly as it would
+with no `KeepTogether` at all.
+
+`fn` must draw only on the `Builder` it is handed, never the one
+`KeepTogether` was called on — easy to get backwards, since the
+natural-looking mistake is a closure that closes over the outer one
+instead of using its own parameter. That mistake is checked for and
+panics naming the parameter, rather than silently measuring nothing
+while the real page is drawn on with no room check at all.
 
 ## Keeping a line with the end of the document
 
