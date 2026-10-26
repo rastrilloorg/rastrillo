@@ -96,7 +96,6 @@ kind of work, read only when the work needs it. A test holds every file
 to a size budget. The aim is fewer tokens, and so less time and money
 per feature.
 
-Nothing else on this page ships a spec an agent loads before it starts.
 In an AI-first world, Rastrillo is an AI-built solution.
 
 You can still write every line yourself; the budget just stops being the
