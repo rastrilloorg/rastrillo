@@ -75,6 +75,15 @@ type Hub struct {
 	seq    uint64
 	topics map[string]*topicState
 	subs   map[*subscriber]struct{}
+	// closed refuses new streams once Close runs; done tells open ones
+	// to end.
+	closed bool
+	done   chan struct{}
+
+	// Copied from cfg so tests can shrink them, as in jobs.Handlers.
+	lifetime      time.Duration
+	heartbeat     time.Duration
+	writeDeadline time.Duration
 }
 
 type topicState struct {
@@ -126,21 +135,36 @@ func New(cfg Config) (*Hub, error) {
 		return nil, fmt.Errorf("live: boot id: %w", err)
 	}
 	return &Hub{
-		cfg:    cfg,
-		boot:   hex.EncodeToString(b[:]),
-		topics: map[string]*topicState{},
-		subs:   map[*subscriber]struct{}{},
+		cfg:           cfg,
+		boot:          hex.EncodeToString(b[:]),
+		topics:        map[string]*topicState{},
+		subs:          map[*subscriber]struct{}{},
+		done:          make(chan struct{}),
+		lifetime:      cfg.Lifetime,
+		heartbeat:     cfg.Heartbeat,
+		writeDeadline: cfg.WriteDeadline,
 	}, nil
 }
 
-// Boot returns the ID that is new each time New runs.
-func (h *Hub) Boot() string { return h.boot }
+// Boot returns the ID that is new each time New runs, or "" for a nil
+// hub.
+func (h *Hub) Boot() string {
+	if h == nil {
+		return ""
+	}
+	return h.boot
+}
 
 // Notify raises the named topics' versions and wakes every open
 // stream. Call it after the write commits. It never blocks. An
 // undeclared or malformed topic is logged and skipped: a typo in one
-// call must not take down the request that made the write.
+// call must not take down the request that made the write. On a nil
+// hub it does nothing, so an app whose hub is optional can call it
+// after every commit without a panic in the request that just wrote.
 func (h *Hub) Notify(topics ...string) {
+	if h == nil {
+		return
+	}
 	valid := make([]string, 0, len(topics))
 	seen := make(map[string]bool, len(topics))
 	for _, t := range topics {
