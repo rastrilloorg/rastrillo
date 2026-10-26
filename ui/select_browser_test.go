@@ -1644,6 +1644,114 @@ func TestSelectPlacement(t *testing.T) {
 	}
 }
 
+// The room is cut only by an ancestor that can clip the list. A bar that
+// scrolls sideways (overflow-x: auto, so its overflow-y computes to auto
+// as well) clips a list positioned inside it, but not one that is fixed
+// to the viewport or anchored there: Docs' phone toolbar is that bar, and
+// its lists opened 0px tall because the bar's 4px under the box was taken
+// for the room. An ancestor that is the fixed list's containing block (a
+// transform) does clip it, and so does a scroller around the box that a
+// list absolutely positioned further out escapes, not.
+func TestSelectRoomIsCutOnlyByWhatClipsTheList(t *testing.T) {
+	t.Parallel()
+	var got struct {
+		Fixed       float64 `json:"fixed"`
+		Absolute    float64 `json:"absolute"`
+		Transformed float64 `json:"transformed"`
+		BarEnd      float64 `json:"barEnd"`
+		Escaped     float64 `json:"escaped"`
+		Preferred   float64 `json:"preferred"`
+	}
+	drive(t, `
+		const frame = () => `+afterFrame+`;
+		const input = document.querySelector('#tz-combo');
+		const wrap = input.closest('[rst-combo]');
+		const list = document.querySelector('#tz-listbox');
+		const native = document.querySelector('#tz');
+		const home = wrap.parentNode, next = native.nextSibling;
+		const open = async () => { input.blur(); input.focus(); input.click(); await frame(); await frame(); };
+		const close = () => input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+		const height = () => list.getBoundingClientRect().height;
+		const out = {};
+		await open();
+		out.preferred = height();
+		close();
+
+		// A one-row bar near the top that scrolls sideways, as a phone
+		// toolbar does.
+		const bar = document.createElement('div');
+		bar.style.cssText = 'position:absolute;left:0;top:100px;width:300px;overflow-x:auto;white-space:nowrap;padding:2px';
+		document.body.append(bar);
+		// The select goes with its box, or the box would be rebuilt beside it.
+		bar.append(wrap, native);
+		wrap.style.cssText = 'display:inline-block;width:200px';
+		const fix = () => {
+			const r = wrap.getBoundingClientRect();
+			list.style.cssText = 'position:fixed;inset:auto;left:' + r.left + 'px;top:' + r.bottom + 'px;width:200px';
+		};
+
+		// Fixed: the bar is not its containing block, so it is not room.
+		fix();
+		await open();
+		out.fixed = height();
+		close();
+
+		// Absolute inside the bar: the bar clips it, and the room is the
+		// bar's.
+		list.removeAttribute('style');
+		const end = () => list.getBoundingClientRect().bottom;
+		await open();
+		out.absolute = end();
+		out.barEnd = bar.getBoundingClientRect().bottom;
+		close();
+
+		// Fixed, but the bar is transformed: now it is the containing
+		// block, and it clips. Placed in the bar's coordinates, under the
+		// box, as an anchor would place it.
+		bar.style.transform = 'translateX(0)';
+		list.style.cssText = 'position:fixed;inset:auto;left:2px;top:' + (wrap.offsetTop + wrap.offsetHeight) + 'px;width:200px';
+		await open();
+		out.transformed = end();
+		close();
+		bar.style.transform = '';
+
+		// Absolute, with the box static and the positioned ancestor
+		// outside the bar: the list escapes the bar.
+		const outer = document.createElement('div');
+		outer.style.cssText = 'position:absolute;left:0;top:100px;width:300px;height:600px';
+		document.body.append(outer);
+		outer.append(bar);
+		bar.style.position = 'static';
+		wrap.style.position = 'static';
+		list.style.cssText = 'top:auto;left:0;width:200px';
+		await open();
+		out.escaped = height();
+		close();
+
+		list.removeAttribute('style');
+		wrap.removeAttribute('style');
+		home.insertBefore(wrap, next);
+		home.insertBefore(native, next);
+		outer.remove();
+		return out;
+	`, &got)
+	if got.Preferred < 100 {
+		t.Fatalf("the list opened %.0fpx tall on its own, too short to tell anything apart", got.Preferred)
+	}
+	if got.Fixed < got.Preferred-1 {
+		t.Errorf("a fixed list in a bar that scrolls sideways opened %.0fpx tall, want its own %.0fpx: the bar cannot clip it", got.Fixed, got.Preferred)
+	}
+	if got.Absolute > got.BarEnd+1 {
+		t.Errorf("a list positioned inside a bar that scrolls sideways ended at %.0f, past the bar's end at %.0f: the bar clips it, so it is the room", got.Absolute, got.BarEnd)
+	}
+	if got.Transformed > got.BarEnd+1 {
+		t.Errorf("a fixed list in a transformed bar ended at %.0f, past the bar's end at %.0f: the transform makes the bar its containing block, so the bar clips it", got.Transformed, got.BarEnd)
+	}
+	if got.Escaped < got.Preferred-1 {
+		t.Errorf("a list positioned outside a bar it sits in opened %.0fpx tall, want its own %.0fpx: the bar is not in its containing block chain", got.Escaped, got.Preferred)
+	}
+}
+
 // data-rst-class: a row wears its option's classes, the closed box wears
 // the pick's while it shows the pick, takes them off once somebody types
 // (their words are a search, not the pick), and wears the new pick's

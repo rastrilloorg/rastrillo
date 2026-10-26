@@ -718,7 +718,9 @@ there it has not enhanced already.
 The list opens downward unless there is not room for it below and there
 is more room above. It never goes past the edge of what the reader can
 see: if neither side has room for the whole list, it takes the bigger
-side and fits itself to it.
+side and fits itself to it. A box that scrolls, around the field, is an
+edge too, unless your stylesheet fixes the list to the screen or anchors
+it outside that box.
 
 Mark a bar that stays pinned below your form, such as a sticky save bar,
 with `data-rst-select-floor`. The list then treats the top of the bar as

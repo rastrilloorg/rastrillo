@@ -492,7 +492,12 @@ func TestSelectContract(t *testing.T) {
 	// focusing click as well as on focus: WebKit put the caret where a
 	// click landed after focus, so clearing "Dublin" took a double-click.
 	// The comment is the one that says why each pointer selects when.
-	if n := len(SelectJS()); n > 52*1024 {
+	//
+	// Then to 53KB (measured 54,094 bytes) by cutting the room only to the
+	// ancestors that can clip the list, its chain of containing blocks: a
+	// list fixed or anchored out of a bar that scrolls sideways opened 0px
+	// tall in Docs' phone toolbar. The comments are the two that say why.
+	if n := len(SelectJS()); n > 53*1024 {
 		t.Fatalf("select.js is %d bytes; it is split out of the shim precisely to stay readable — trim it", n)
 	}
 	if bytes.Contains(SelectJS(), []byte("\t")) {

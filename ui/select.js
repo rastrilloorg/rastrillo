@@ -193,6 +193,27 @@
     told = d && isFinite(d.top) && isFinite(d.bottom) ? { top: +d.top, bottom: +d.bottom } : null;
   });
 
+  // Does a box hold fixed descendants, and so absolute ones too?
+  const holdsFixed = (cs) =>
+    [cs.transform, cs.translate, cs.rotate, cs.scale, cs.perspective, cs.filter, cs.backdropFilter].some((v) => v && v !== "none") ||
+    /layout|paint|strict|content/.test(cs.contain) || /transform|perspective|filter/.test(cs.willChange) || /size/.test(cs.containerType || "");
+
+  // The ancestors that clip a list: only its chain of containing blocks
+  // can. Taking every ancestor that scrolls held a list fixed or anchored
+  // out of a sideways-scrolling bar (its overflow-y computes to auto) to
+  // the 4px of bar under its box: 0px tall, in Docs' phone toolbar.
+  const clippers = (list, pos) => {
+    const out = [];
+    for (let a = list.parentElement; a && a !== document.body; a = a.parentElement) {
+      const cs = getComputedStyle(a);
+      // Fixed skips to a holder; absolute, to a holder or a positioned box.
+      if (pos === "fixed" ? !holdsFixed(cs) : pos === "absolute" && cs.position === "static" && !holdsFixed(cs)) continue;
+      if (/auto|scroll|hidden|clip/.test(cs.overflowY)) out.push(a);
+      pos = cs.position;
+    }
+    return out;
+  };
+
   const ACTS = new Set(["ArrowDown", "ArrowUp", "Home", "End", "Enter", "Tab"]);
 
   const el = (tag, attr) => {
@@ -495,7 +516,7 @@
     // stylesheet max-height) and there is more room above; then up, so a box
     // at the foot of a sheet does not open under a phone's keyboard. Held to
     // the room on its side. Room is the visual viewport, cut to every
-    // ancestor that scrolls. Only placement flips, never keyboard order or
+    // ancestor that clips the list. Only placement flips, never keyboard order or
     // ARIA. The same rule as Tito Go's searchselect. Worked out when the list opens and when the room
     // changes — never on a keystroke: the room is the same whatever is
     // typed, and a keystroke's one layout read is the highlight's.
@@ -514,6 +535,8 @@
         if (wrap.hasAttribute("rst-combo-up")) wrap.removeAttribute("rst-combo-up");
         list.style.maxBlockSize = "";
         const cs = getComputedStyle(list);
+        // Again after a resize: a media query can make the list fixed.
+        scrollers = clippers(list, cs.position);
         preferred = parseFloat(cs.maxBlockSize) || 240;
         gap = parseFloat(cs.marginTop) || 0;
         chrome = cs.boxSizing === "border-box" ? 0 : ["paddingTop", "paddingBottom", "borderTopWidth", "borderBottomWidth"].reduce((n, k) => n + (parseFloat(cs[k]) || 0), 0);
@@ -701,12 +724,6 @@
       open = true;
       list.hidden = false;
       input.setAttribute("aria-expanded", "true");
-      // The ancestors that scroll, read once a list opens: which they are
-      // does not change while it is open.
-      scrollers = [];
-      for (let a = wrap.parentElement; a && a !== document.body; a = a.parentElement) {
-        if (/auto|scroll|hidden|clip/.test(getComputedStyle(a).overflowY)) scrollers.push(a);
-      }
       floors = [...document.querySelectorAll("[data-rst-select-floor]")];
       preferred = 0;
       replace();

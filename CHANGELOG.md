@@ -8,6 +8,12 @@ This file starts at v0.23.0. Earlier releases are in the git history and their
 tags; nothing has been reconstructed for them, because a changelog written
 backwards from commits is a guess wearing a date.
 
+## Unreleased
+
+### Fixed: a select list fixed or anchored out of a scrolling bar opens full height; re-vendor `select.js`
+
+A searchable select in a toolbar that scrolls sideways opened to a list 10px tall when your stylesheet fixed the list to the screen or anchored it to its box. `select.js` took the toolbar for the edge of the room, although the toolbar does not cut such a list off. It now counts only the boxes that really cut the list off. A list positioned inside a scrolling box, as `tokens.css` places it, is still held to that box.
+
 ## v0.29.0
 
 A JSON API with agents that act for a person, money in any currency, a colour-scheme switch, a new look for `day`, and sign-in without a database. The first seven sections change what an existing app does without a compile error: the JSON API, the colour-scheme switch, money, sign-in's return to the page, pagination, hand-edited migrations and `job-status`. Read them before you upgrade.
