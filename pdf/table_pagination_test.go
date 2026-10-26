@@ -26,7 +26,7 @@ func TestOversizedTableRowsContinueWithinPagesAndRepeatHeaders(t *testing.T) {
 				rows = [][]Cell{row}
 			}
 
-			f := newFlow(newGeom(false))
+			f := newFlow(newGeom(A4, false))
 			layoutTable(f, "", columns, rows, totalRow)
 			pages := append(f.pages, f.cur)
 			if len(pages) < 3 {

@@ -168,6 +168,7 @@ type Options struct {
 	Stamp          *Stamp
 	NoRunningTitle bool
 	Landscape      bool
+	Size           Size
 }
 
 type Stamp struct {
@@ -189,6 +190,40 @@ words, with no signature. `Landscape` turns the page on its side —
 margins and type stay the same, only the page's own width and height
 swap — for a table with more columns than a portrait page can hold at
 a readable size.
+
+## Page size
+
+```go
+type Size struct{ W, H float64 }
+
+var (
+	A4      = Size{595.28, 841.89}
+	A3      = Size{841.89, 1190.55}
+	A5      = Size{419.53, 595.28}
+	Letter  = Size{612, 792}
+	Legal   = Size{612, 1008}
+	Tabloid = Size{792, 1224}
+)
+```
+
+```go
+b := pdf.New(pdf.Options{Size: pdf.Letter})
+```
+
+`Options.Size` is the page size, in points, portrait orientation; the
+zero value is `A4`, so a caller that never sets it gets A4 without
+naming it. `Landscape` swaps `W` and `H` of whichever `Size` was
+chosen, so a landscape Letter page is `Options{Size: pdf.Letter,
+Landscape: true}` — there is no separate landscape constant for each
+size.
+
+Nothing about this package requires one of the named sizes: a `Size`
+is just a rectangle, so a caller can supply their own dimensions for
+anything else a document needs to be printed on, such as a pre-printed
+form. A `Size` too small, negative or non-finite to leave any content
+area once the fixed margins are subtracted — the zero value included —
+falls back to `A4` rather than reaching layout with a negative or NaN
+content width.
 
 ## What can't be drawn
 

@@ -14,7 +14,7 @@ import (
 // column sat at a fixed offset rather than one measured from the
 // label actually on the page.
 func TestLayoutFieldsPlacesValueCloseToItsLabel(t *testing.T) {
-	f := newFlow(newGeom(false))
+	f := newFlow(newGeom(A4, false))
 	layoutFields(f, "", []Field{{Label: "Per member", Value: "£5,161.87"}})
 
 	var labelX, valueX float64
@@ -77,7 +77,7 @@ func TestTableRulesStopAtTheLastTitledColumn(t *testing.T) {
 		return x2s
 	}
 
-	f := newFlow(newGeom(false))
+	f := newFlow(newGeom(A4, false))
 	cols := []Column{{Title: "Line", Width: 200}, {Title: "Amount", Align: "right", Width: 90}, {Width: 200}}
 	widths := columnWidths(cols, f.contentW)
 	wantRight := f.marginL + widths[0] + widths[1]
@@ -91,7 +91,7 @@ func TestTableRulesStopAtTheLastTitledColumn(t *testing.T) {
 		}
 	}
 
-	f2 := newFlow(newGeom(false))
+	f2 := newFlow(newGeom(A4, false))
 	layoutTable(f2, "", []Column{{Title: "Line", Width: 200}, {Title: "Amount", Align: "right", Width: 90}}, rows, total)
 	wantFullWidth := f2.pageW - f2.marginR
 	for _, x2 := range rules(f2) {
@@ -105,8 +105,8 @@ func TestTableRulesStopAtTheLastTitledColumn(t *testing.T) {
 // laid out landscape has a wider page (and so fewer pages, for a table
 // of many columns) but the same margins and type.
 func TestLandscapeSwapsPageDimensions(t *testing.T) {
-	portrait := newGeom(false)
-	landscape := newGeom(true)
+	portrait := newGeom(A4, false)
+	landscape := newGeom(A4, true)
 	if landscape.pageW != portrait.pageH || landscape.pageH != portrait.pageW {
 		t.Fatalf("want width and height swapped, got portrait %gx%g landscape %gx%g",
 			portrait.pageW, portrait.pageH, landscape.pageW, landscape.pageH)
@@ -177,7 +177,7 @@ func TestTableHeaderDoesNotLandAloneWithItsFirstRowOrphaned(t *testing.T) {
 // two-line title even where the one-line budget looked generous.
 func TestTableHeaderBandAccountsForWrappedTitles(t *testing.T) {
 	const title = "A column heading long enough to wrap onto two lines"
-	f := newFlow(newGeom(false))
+	f := newFlow(newGeom(A4, false))
 	// Three equal columns, not one spanning the whole table: a title
 	// that measures 206pt does not wrap in a single column's full
 	// ~475pt of room (the earlier version of this test's actual
@@ -218,7 +218,7 @@ func TestTableHeaderBandAccountsForWrappedTitles(t *testing.T) {
 // what keeps the callout on one page for as long as one page can hold
 // it at all.
 func TestCalloutBarIsNotNegativeHeightWhenBodyWouldHaveBrokenAPage(t *testing.T) {
-	f := newFlow(newGeom(false))
+	f := newFlow(newGeom(A4, false))
 	layoutCallout(f, "Note", strings.Repeat("word ", 3000), true)
 	f.pages = append(f.pages, f.cur)
 	if len(f.pages) < 3 {
@@ -260,7 +260,7 @@ func TestCalloutBarIsNotNegativeHeightWhenBodyWouldHaveBrokenAPage(t *testing.T)
 // along with the (legitimately empty) body would look like a caller
 // mistake rather than the documented "nothing to show" case.
 func TestLayoutTableStillDrawsItsTitleWithNoColumns(t *testing.T) {
-	f := newFlow(newGeom(false))
+	f := newFlow(newGeom(A4, false))
 	layoutTable(f, "Receipts", nil, nil, nil)
 	var found bool
 	for _, o := range f.cur {

@@ -227,11 +227,13 @@ page. `KeepTogether` keeps a heading together with what follows it,
 breaking the page first rather than letting the heading end up alone
 at the foot of one. `Produced` draws a closing line into the last
 page's own footer, so it can't end up alone on a trailing page
-instead. An optional stamp overlays an approval mark on every page,
-and `Options.Landscape` turns the page on its side for a wide table.
-`Measure`, `Wrap` and `Encode` are exported on their own, for drawing
-onto something this package does not lay out itself, such as a blank
-form.
+instead. An optional stamp overlays an approval mark on every page.
+`Options.Size` is the page size — `A4` (the default), `A3`, `A5`,
+`Letter`, `Legal`, `Tabloid`, or a caller's own dimensions — and
+`Options.Landscape` turns whichever one is chosen on its side, for a
+wide table. `Measure`, `Wrap` and `Encode` are exported on their own,
+for drawing onto something this package does not lay out itself, such
+as a blank form.
 
 See [pdf](/docs/reference/pdf).
 

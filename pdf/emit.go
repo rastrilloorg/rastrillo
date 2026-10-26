@@ -43,6 +43,10 @@ type Options struct {
 	// than a portrait page's content width can hold at a readable size
 	// is the reason to set it; most documents leave it false.
 	Landscape bool
+	// Size is the page size. The zero value is [A4]; set it to one of
+	// the other named sizes, or a caller's own, for anything else.
+	// Landscape applies to whichever Size this names.
+	Size Size
 }
 
 // Stamp is the two lines of an approval stamp: Head in large red

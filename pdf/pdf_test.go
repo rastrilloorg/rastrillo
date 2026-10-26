@@ -256,7 +256,7 @@ func TestTypographicCharactersSurvive(t *testing.T) {
 // point of a figures table.
 func TestRightAlignedCellsShareARightEdge(t *testing.T) {
 	b := render(t, sample(6))
-	g := newGeom(false)
+	g := newGeom(A4, false)
 	re := regexp.MustCompile(`BT /F\d [\d.]+ Tf ([\d.]+) [\d.]+ Td \((\d,\d{3}\.00)\) Tj`)
 	ms := re.FindAllSubmatch(b, -1)
 	if len(ms) < 3 {

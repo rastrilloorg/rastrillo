@@ -15,10 +15,11 @@ type Builder struct {
 	produced *producedLine
 }
 
-// New starts a document. opt's clock, title and page orientation apply
-// to the whole document; nothing drawn by a later call can change them.
+// New starts a document. opt's clock, title, page size and orientation
+// apply to the whole document; nothing drawn by a later call can
+// change them.
 func New(opt Options) *Builder {
-	return &Builder{f: newFlow(newGeom(opt.Landscape)), opt: opt}
+	return &Builder{f: newFlow(newGeom(opt.Size, opt.Landscape)), opt: opt}
 }
 
 // Heading starts a section. level is 1 or 2; nothing here needs a third

@@ -1,13 +1,25 @@
 package pdf
 
-// geom is the page geometry one render uses: A4, portrait by default or
-// turned on its side when a document — a wide table with more columns
-// than a portrait page's content width can hold at a readable size —
-// needs it. It is carried on flow and passed into emit rather than held
-// in package-level variables, because a package-level "current page
-// size" would be shared mutable state across two renders running at
-// once, which is exactly the kind of bug the package doc's determinism
-// section warns against, just reached from a different direction.
+// The fixed margins every page uses, whatever its Size: a bigger sheet
+// (A3, Tabloid) gets more content area at the same margin, not a
+// bigger margin, and a smaller one (A5) gets less — the same choice
+// Landscape already made for width and height, just extended to a
+// size a caller picked rather than one this package turned on its
+// side. marginB leaves room for the running footer, which is drawn
+// below the flow rather than inside it.
+const (
+	marginL = 56.0
+	marginR = 56.0
+	marginT = 64.0
+	marginB = 76.0
+)
+
+// geom is the page geometry one render uses. It is carried on flow and
+// passed into emit rather than held in package-level variables,
+// because a package-level "current page size" would be shared mutable
+// state across two renders running at once, which is exactly the kind
+// of bug the package doc's determinism section warns against, just
+// reached from a different direction.
 type geom struct {
 	pageW, pageH                       float64
 	marginL, marginR, marginT, marginB float64
@@ -15,15 +27,22 @@ type geom struct {
 	footerY                            float64
 }
 
-// newGeom computes a geom for A4, portrait unless landscape is true.
-// marginB leaves room for the running footer, which is drawn below the
-// flow rather than inside it; footerY sits 44pt above the bottom edge.
-func newGeom(landscape bool) geom {
-	w, h := 595.28, 841.89
+// newGeom computes a geom for size, portrait unless landscape is true.
+// A size too small or non-finite to leave any content area once the
+// margins are subtracted — the zero value included — falls back to
+// A4, rather than reaching layout with a negative or NaN content
+// width: there is no sensible document to lay out on a page smaller
+// than its own margins, and silently drawing nothing would be a worse
+// answer than drawing on the size this package knows is sane.
+// footerY sits 44pt above the bottom edge.
+func newGeom(size Size, landscape bool) geom {
+	if !size.finite() || size.W <= marginL+marginR || size.H <= marginT+marginB {
+		size = A4
+	}
+	w, h := size.W, size.H
 	if landscape {
 		w, h = h, w
 	}
-	const marginL, marginR, marginT, marginB = 56.0, 56.0, 64.0, 76.0
 	return geom{
 		pageW: w, pageH: h,
 		marginL: marginL, marginR: marginR, marginT: marginT, marginB: marginB,

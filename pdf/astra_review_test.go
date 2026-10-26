@@ -11,7 +11,7 @@ import (
 // in regular — bold is wider, so a value that just fit the narrower
 // measurement ran past the margin once actually drawn.
 func TestFieldsValueIsMeasuredInTheFaceItIsDrawnIn(t *testing.T) {
-	f := newFlow(newGeom(false))
+	f := newFlow(newGeom(A4, false))
 	layoutFields(f, "", []Field{{Label: "Name", Value: strings.Repeat("i", 200)}})
 	for _, o := range f.cur {
 		if o.kind != 't' {
@@ -43,7 +43,7 @@ func TestFieldsPaginatesAnOversizedValue(t *testing.T) {
 // one text operation regardless of width, so a long one ran off the
 // right edge of the page instead of wrapping onto a line of its own.
 func TestHeadingWraps(t *testing.T) {
-	f := newFlow(newGeom(false))
+	f := newFlow(newGeom(A4, false))
 	layoutHeading(f, 1, strings.Repeat("W", 100))
 	for _, o := range f.cur {
 		if o.kind != 't' {
@@ -62,7 +62,7 @@ func TestHeadingWraps(t *testing.T) {
 // this; the title is truncated with an ellipsis rather than growing
 // the band without limit.
 func TestTallColumnHeaderDoesNotPushDataOffThePage(t *testing.T) {
-	f := newFlow(newGeom(false))
+	f := newFlow(newGeom(A4, false))
 	layoutTable(f, "", []Column{
 		{Title: strings.Repeat("H", 100), Width: 1},
 		{Title: "B", Width: 99},
