@@ -1,0 +1,54 @@
+package main
+
+import (
+	"strings"
+	"testing"
+)
+
+// accounts is single with --auth=magic under the menu's name, not a
+// second sign-in scaffold: anything one writes and the other does not
+// is a fork someone has to keep in step by hand.
+func TestAccountsIsSingleWithMagicAuth(t *testing.T) {
+	t.Chdir(t.TempDir())
+	if err := runNew([]string{"--scaffold", "accounts", "plumbus"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := runNew([]string{"--scaffold", "single", "--auth=magic", "frobnitz"}); err != nil {
+		t.Fatal(err)
+	}
+	sameScaffold(t, "plumbus", "frobnitz")
+}
+
+// The first go test signs someone in by the emailed link, and the
+// browser and perf files, which only build under their tags, vet clean.
+func TestAccountsPassesItsOwnTests(t *testing.T) {
+	if testing.Short() {
+		t.Skip("scaffolds, tidies and tests a whole app")
+	}
+	setSandboxGoEnv(t)
+	t.Chdir(t.TempDir())
+	dir := scaffoldWithReplace(t, "club", "--scaffold", "accounts")
+	out, err := goTestIn(dir, "-v", "./...")
+	if err != nil {
+		t.Fatalf("go test ./...:\n%s", out)
+	}
+	if !strings.Contains(out, "--- PASS: TestSignInByEmailedLink") {
+		t.Errorf("TestSignInByEmailedLink did not run and pass:\n%s", out)
+	}
+	if vet, err := goIn(dir, "vet", "-tags", "browser,perf", "./..."); err != nil {
+		t.Fatalf("go vet -tags browser,perf ./...:\n%s", vet)
+	}
+}
+
+// Typed out, --auth=none asks accounts for the app it is not; left out,
+// --auth means magic there (TestAccountsIsSingleWithMagicAuth).
+func TestAccountsRefusesAuthNone(t *testing.T) {
+	refusedBeforeWriting(t, "--auth=none does nothing with --scaffold accounts, which is the app with sign-in: use --scaffold single for an app without it",
+		"--scaffold", "accounts", "--auth=none")
+}
+
+// Sign-in keeps its sessions and links in the database bare does not have.
+func TestBareRefusesAuth(t *testing.T) {
+	refusedBeforeWriting(t, "--auth=magic needs a database: use --scaffold single or accounts",
+		"--scaffold", "bare", "--auth=magic")
+}

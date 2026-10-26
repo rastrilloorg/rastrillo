@@ -17,7 +17,34 @@ const (
 	newDesignSystemFlagMsg  = "write the design system: templates, styles, scripts and icons (only bare can turn it off)"
 	newDesignSystemShapeMsg = "--design-system=false works with --scaffold bare only: single and accounts build their pages from the design system"
 	newDesignFlagOffMsg     = "--%s does nothing with --design-system=false: leave it out"
+
+	newAccountsAuthNoneMsg = "--auth=none does nothing with --scaffold accounts, which is the app with sign-in: use --scaffold single for an app without it"
+	newBareAuthMsg         = "--auth=%s needs a database: use --scaffold single or accounts"
 )
+
+// checkAuth refuses an --auth the shape cannot honour. bare has no
+// database for sessions and links, so its sign-in could not run.
+// accounts is the app with sign-in, so a typed --auth=none would be
+// silently overridden; o.Set tells it from --auth left at the flag's
+// default, which stays none for single.
+func checkAuth(shapeName string, o newOpts) error {
+	switch {
+	case shapeName == "bare" && o.Auth != "none":
+		return fmt.Errorf(newBareAuthMsg, o.Auth)
+	case shapeName == "accounts" && o.Set["auth"] && o.Auth == "none":
+		return errors.New(newAccountsAuthNoneMsg)
+	}
+	return nil
+}
+
+// writeAccounts is single with sign-in under the menu's name, so the two
+// cannot drift into separate sign-in scaffolds kept in step by hand.
+func writeAccounts(o newOpts) error {
+	if !o.Set["auth"] {
+		o.Auth = "magic"
+	}
+	return writeSingle(o)
+}
 
 // designFlags only choose design-system files, so with it off each one
 // typed would be silently ignored.
@@ -64,14 +91,12 @@ type shape struct {
 	Write                   func(newOpts) error
 }
 
-var errShapeNotBuilt = errors.New("not built yet")
-
 // shapes is the menu in the order the help names it. Reserved names
 // stay on it so lookupShape can tell "planned" from "mistyped".
 var shapes = []shape{
 	{Name: "bare", Summary: "a page, no database", Write: writeBare},
 	{Name: defaultShape, Summary: "one app and its SQLite data", Write: writeSingle},
-	{Name: "accounts", Summary: "single with sign-in by emailed link", Write: func(newOpts) error { return errShapeNotBuilt }},
+	{Name: "accounts", Summary: "single with sign-in by emailed link", Write: writeAccounts},
 	{Name: "home", Reserved: newReservedHomeMsg},
 	{Name: "hub", Reserved: newReservedHubMsg},
 }

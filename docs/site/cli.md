@@ -29,15 +29,18 @@ own tests, and serves, before you have written anything. It runs
 | `--ux` | `considered`, `standard` | `considered` |
 | `--theme` | `day`, `plain`, `signal` | `day` |
 | `--shell` | `column`, `topbar`, `sidebar`, `console` | `column` |
-| `--auth` | `none`, `magic` | `none` |
+| `--auth` | `none`, `magic` | `none` (`magic` with `accounts`) |
 | `--locale` | `en`, `ga`, `zh-Hans`, `es`, `hi`, `pt-PT`, `bn`, `ru`, `ja`, `yue`, `vi`, `ar` | `en` |
 
 `--scaffold` picks what to scaffold. `bare` is a page with no database,
 `single` is one app and its SQLite data, and `accounts` is `single` with
-sign-in by emailed link. `home` and `hub` are planned and not built yet.
+sign-in by emailed link: it writes what `single --auth=magic` writes, so
+`--auth` means `magic` there and `--auth=none` is refused.
+`home` and `hub` are planned and not built yet.
 `bare` writes no `manifest/`, `gen/`, `Makefile` or `AGENTS.md` and runs
 no `generate`: its gate is `go test ./...`. It refuses `--ux`, which
-only chooses what goes in `AGENTS.md`.
+only chooses what goes in `AGENTS.md`, and `--auth=magic`, whose sign-in
+keeps its sessions and links in a database `bare` does not have.
 
 `--design-system=false` leaves out the templates, static files, icons
 and `render.go`, for a `bare` app that writes its own HTML or JSON. Its

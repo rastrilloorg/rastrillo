@@ -116,6 +116,9 @@ func runNew(args []string) error {
 	if err := checkDesignSystem(chosen.Name, o); err != nil {
 		return err
 	}
+	if err := checkAuth(chosen.Name, o); err != nil {
+		return err
+	}
 	if err := checkChoices(o); err != nil {
 		return err
 	}

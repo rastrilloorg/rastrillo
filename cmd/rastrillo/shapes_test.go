@@ -53,6 +53,13 @@ func TestDefaultShapeIsSingle(t *testing.T) {
 	if err := runNew([]string{"--scaffold", "single", "frobnitz"}); err != nil {
 		t.Fatal(err)
 	}
+	sameScaffold(t, "plumbus", "frobnitz")
+}
+
+// sameScaffold fails unless apps a and b hold the same files with the
+// same contents once each one's name is substituted out.
+func sameScaffold(t *testing.T, a, b string) {
+	t.Helper()
 	read := func(app string) map[string]string {
 		got := map[string]string{}
 		err := filepath.WalkDir(app, func(p string, d fs.DirEntry, err error) error {
@@ -69,17 +76,17 @@ func TestDefaultShapeIsSingle(t *testing.T) {
 		}
 		return got
 	}
-	def, single := read("plumbus"), read("frobnitz")
-	if len(def) != len(single) {
-		t.Errorf("default wrote %d files, --scaffold single %d", len(def), len(single))
+	first, second := read(a), read(b)
+	if len(first) != len(second) {
+		t.Errorf("%s has %d files, %s %d", a, len(first), b, len(second))
 	}
-	for path, content := range def {
-		other, ok := single[path]
+	for path, content := range first {
+		other, ok := second[path]
 		switch {
 		case !ok:
-			t.Errorf("%s: written by default, not by --scaffold single", path)
+			t.Errorf("%s: in %s, not in %s", path, a, b)
 		case other != content:
-			t.Errorf("%s: differs between the default and --scaffold single", path)
+			t.Errorf("%s: differs between %s and %s", path, a, b)
 		}
 	}
 }
@@ -91,10 +98,8 @@ func TestUsageListsTheScaffoldFlag(t *testing.T) {
 	}
 }
 
-// A bad choice is refused by runNew, not by each shape's Write: accounts
-// does not write anything yet, so reaching its "not built yet" error,
-// or finding bare's directory, would mean the check was left to the
-// shape.
+// A bad choice is refused by runNew, not by each shape's Write: finding
+// x after the refusal would mean a shape made its directory first.
 func TestNewChecksChoicesBeforeAnyShapeWrites(t *testing.T) {
 	for _, shape := range []string{"bare", "single", "accounts"} {
 		t.Run(shape, func(t *testing.T) {
