@@ -28,7 +28,7 @@ func TestLightContract(t *testing.T) {
 			t.Errorf("light.js does not mention %q", want)
 		}
 	}
-	for _, bad := range []string{"setPointerCapture", "AmbientLightSensor", "deviceorientation", "touchstart", "rst-switch-track", "rst-switch-x"} {
+	for _, bad := range []string{"setPointerCapture", "AmbientLightSensor", "deviceorientation", "touchstart", "rst-switch-track", "rst-switch-p", "rst-switch-on"} {
 		if strings.Contains(js, bad) {
 			t.Errorf("light.js mentions %q, which it must never do", bad)
 		}
@@ -267,5 +267,63 @@ func TestTraceTotalsAccounting(t *testing.T) {
 		if _, err := traceTotals(ev(bad...), "a", "b", "Paint", "Layout"); err == nil {
 			t.Errorf("%s: no error; the figure would undercount", name)
 		}
+	}
+}
+
+// budgetWindow is one measured window of TestTheLightStaysWithinItsFrameBudget:
+// a page, its style+layout+paint per frame, and the trace's counts.
+type budgetWindow struct {
+	path     string
+	perFrame float64
+	frames   int
+	counts   map[string]int
+}
+
+// cheapestWindows measures the bare page and the lit page in turn,
+// tries times each, and returns each side's cheapest window, the way a
+// benchmark reports its best run. Every window is taken before the two
+// minima are compared: the absolute drive stopped at the first window
+// within budget, and for a difference that is unsafe, because load
+// that inflates a bare window makes the subtraction pass more easily
+// (Astra, day-followups review 2).
+func cheapestWindows(measure func(path string) budgetWindow, tries int) (with, without budgetWindow) {
+	sides := map[string]*budgetWindow{}
+	for try := 1; try <= tries; try++ {
+		for _, path := range []string{"/bare", "/"} {
+			w := measure(path)
+			if b := sides[path]; b == nil || w.perFrame < b.perFrame {
+				sides[path] = &w
+			}
+		}
+	}
+	return *sides["/"], *sides["/bare"]
+}
+
+// TestCheapestWindowsTakeEveryWindow (Astra, day-followups review 2):
+// load that inflates a bare window makes a subtraction pass more
+// easily, so a selection that stops at the first pair within budget
+// accepts 3.2 minus an inflated 2.0 where the cheapest windows say 3.2
+// minus 0.8. Every window of both sides is measured before the minima
+// are compared.
+func TestCheapestWindowsTakeEveryWindow(t *testing.T) {
+	seq := []budgetWindow{{path: "/bare", perFrame: 2.0}, {path: "/", perFrame: 3.2}, {path: "/bare", perFrame: 0.8}, {path: "/", perFrame: 3.3}, {path: "/bare", perFrame: 0.85}, {path: "/", perFrame: 3.25}}
+	i := 0
+	measure := func(path string) budgetWindow {
+		if i >= len(seq) {
+			t.Fatalf("a %dth window was asked for; the sequence has %d", i+1, len(seq))
+		}
+		w := seq[i]
+		if w.path != path {
+			t.Fatalf("window %d is for %s, want %s: the sides are not interleaved bare, lit", i+1, path, w.path)
+		}
+		i++
+		return w
+	}
+	with, without := cheapestWindows(measure, 3)
+	if i != len(seq) {
+		t.Errorf("%d of %d windows were measured; a selection that stops early accepts an inflated baseline", i, len(seq))
+	}
+	if delta := with.perFrame - without.perFrame; with.perFrame != 3.2 || without.perFrame != 0.8 || math.Abs(delta-2.4) > 1e-9 {
+		t.Errorf("cheapest windows %.2f with and %.2f without, a difference of %.2f; want 3.20 and 0.80, 2.40", with.perFrame, without.perFrame, delta)
 	}
 }
