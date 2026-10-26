@@ -54,6 +54,21 @@ is no constructor that takes a float: an `Amount` either came from an
 integer, or from another `Amount`.
 
 ```go
+func New(minor int64, currency string) Amount
+func Zero(currency string) Amount
+func (a Amount) Minor() int64
+func (a Amount) Currency() string
+func (a Amount) IsZero() bool
+func (a Amount) Negative() bool
+func (a Amount) String() string
+func (a Amount) Add(b Amount) (Amount, error)
+func (a Amount) Sub(b Amount) (Amount, error)
+func (a Amount) Neg() Amount
+func (a Amount) MulInt(n int64) (Amount, error)
+func (a Amount) Cmp(b Amount) (int, error)
+```
+
+```go
 a := money.New(1000, "GBP") // £10.00
 z := money.Zero("GBP")
 a.Minor()    // 1000
@@ -63,23 +78,23 @@ a.Negative() // false
 a.String()   // "GBP 1000" — a debug form, not for a reader
 ```
 
-`Add(b Amount) (Amount, error)` and `Sub(b Amount) (Amount, error)`
-return `ErrCurrencyMismatch` for two different currencies and
-`ErrOverflow` for a result outside `int64` — never a panic and never a
-silent wrap. The two currency strings are compared with `==`; neither
-side is folded to a common case first, so an `Amount` built from
-`"GBP"` and one built from `"gbp"` mismatch. Normalise with
-[`currency.Normalize`](/docs/reference/currency) before constructing an
-`Amount` if that matters to you — `MinorUnits`'s own case-insensitivity
-above is a different kind of lookup (a decimal-places guess that must
-never fail) and is not a precedent for `Amount` equality.
+`Add` and `Sub` return `ErrCurrencyMismatch` for two different
+currencies and `ErrOverflow` for a result outside `int64` — never a
+panic and never a silent wrap. The two currency strings are compared
+with `==`; neither side is folded to a common case first, so an
+`Amount` built from `"GBP"` and one built from `"gbp"` mismatch.
+Normalise with [`currency.Normalize`](/docs/reference/currency) before
+constructing an `Amount` if that matters to you — `MinorUnits`'s own
+case-insensitivity above is a different kind of lookup (a
+decimal-places guess that must never fail) and is not a precedent for
+`Amount` equality.
 
-`Neg() Amount` negates; its one unreachable edge is `math.MinInt64`
-minor units, which cannot be negated in `int64` and is accepted as a
-value no real caller's arithmetic produces. `MulInt(n int64) (Amount,
-error)` multiplies by an integer, overflow-checked. `Cmp(b Amount)
-(int, error)` compares, returning `-1`, `0` or `1`, and the same
-`ErrCurrencyMismatch` as `Add` and `Sub` for two different currencies.
+`Neg` negates; its one unreachable edge is `math.MinInt64` minor
+units, which cannot be negated in `int64` and is accepted as a value
+no real caller's arithmetic produces. `MulInt` multiplies by an
+integer, overflow-checked. `Cmp` compares, returning `-1`, `0` or `1`,
+and the same `ErrCurrencyMismatch` as `Add` and `Sub` for two
+different currencies.
 
 ## AllocateProRata
 
