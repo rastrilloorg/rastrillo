@@ -13,6 +13,7 @@ import (
 	"sync"
 
 	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/live"
 	"amadan.net/rastrillo/rastrillo/locales"
 )
 
@@ -262,6 +263,30 @@ func (p *Pages) Execute(w io.Writer, page string, data any) error {
 	}
 	_, err := b.WriteTo(w)
 	return err
+}
+
+// ExecuteRegions renders the named regions of page: each name for which
+// the page defines a region:<name> template, in order, skipping the
+// rest (live.ExecuteRegions). The localizer check and page lookup are
+// Execute's, and like Execute it writes nothing unless every region
+// succeeded. The result names what was rendered, for live.Answer.
+func (p *Pages) ExecuteRegions(w io.Writer, page string, names []string, data any) ([]string, error) {
+	if localizer(data) == nil {
+		return nil, fmt.Errorf("%w "+pageDataMsg, ErrNoLocalizer, page)
+	}
+	t, ok := p.pages[page]
+	if !ok {
+		return nil, fmt.Errorf(noPageMsg, page)
+	}
+	return live.ExecuteRegions(w, t, names, data)
+}
+
+// HasRegions reports whether page defines a region for any of names.
+// Ask it before taking the flash (see live.Has); a page that does not
+// exist has none.
+func (p *Pages) HasRegions(page string, names []string) bool {
+	t, ok := p.pages[page]
+	return ok && live.Has(t, names)
 }
 
 // resolve applies the strict or compat policy to one locale call and

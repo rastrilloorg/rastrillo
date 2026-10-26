@@ -23,6 +23,15 @@
 // last change against the start of a request; it never leaves the
 // process.
 //
+// Fragment requests (fragment.go) let one URL answer with a page's
+// regions alone. A renderer calls, in this order: Elsewhere (a form's
+// redirect went to another page: navigate, before anything is taken);
+// NoStore; Wanted; then, if Has says the page defines the regions
+// asked for, TakesFlash to decide whether to take the flash, and
+// ExecuteRegions then Answer, or the full page when Wanted was not ok.
+// The flash is looked up after Has so a request that ends in a
+// navigation leaves it for the page navigated to.
+//
 // The package imports only the standard library: ui and the root
 // package import live, never the reverse.
 package live

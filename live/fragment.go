@@ -1,0 +1,177 @@
+package live
+
+import (
+	"bytes"
+	"html/template"
+	"io"
+	"net/http"
+	"strings"
+)
+
+// Notice is the reserved region name for the page's flash message. A
+// render takes the flash only when it shows this region (TakesFlash).
+const Notice = "notice"
+
+const (
+	headerFragment = "Rastrillo-Fragment"
+	headerPage     = "Rastrillo-Page"
+	headerRegions  = "Rastrillo-Regions"
+	headerLocation = "Rastrillo-Location"
+)
+
+// Wanted reports the regions a request asks for in Rastrillo-Fragment
+// (space-separated, each listed once). ok is false when the header is
+// absent or when any name is not a region name, so the jobs poll's
+// legacy value "1" stays the jobs poll's and a bad request is answered
+// as a full page rather than as a guess.
+func Wanted(r *http.Request) (regions []string, ok bool) {
+	var names []string
+	for _, v := range r.Header.Values(headerFragment) {
+		names = append(names, strings.Fields(v)...)
+	}
+	if len(names) == 0 {
+		return nil, false
+	}
+	for _, n := range names {
+		if !validRegion(n) {
+			return nil, false
+		}
+		// A header of one name repeated thousands of times would render
+		// that region thousands of times from one small request.
+		if !contains(regions, n) {
+			regions = append(regions, n)
+		}
+	}
+	return regions, true
+}
+
+// Elsewhere answers a GET or HEAD that was meant for another page: the
+// form's redirect went somewhere other than the page it was sent from,
+// so it writes 204 and Rastrillo-Location (which the shim reads as
+// "navigate there") and returns true; the caller returns. Call it
+// first, before the flash is taken, so the page navigated to still
+// shows the notice. Other methods never match: a POST is not a redirect
+// target, and answering one with a 204 would hide a write's result.
+func Elsewhere(w http.ResponseWriter, r *http.Request) bool {
+	if !navigable(r) {
+		return false
+	}
+	from := r.Header.Get(headerPage)
+	if from == "" || from == r.URL.Path {
+		return false
+	}
+	navigate(w, r)
+	return true
+}
+
+// NoStore marks the response uncacheable and adds Rastrillo-Fragment to
+// Vary, keeping what is already there. The same URL answers with a
+// region or a whole page by header; a cache that did not know would
+// serve one for the other, or an old region for a refetch.
+func NoStore(w http.ResponseWriter) {
+	h := w.Header()
+	h.Set("Cache-Control", "no-store")
+	for _, v := range h.Values("Vary") {
+		for _, f := range strings.Split(v, ",") {
+			f = strings.TrimSpace(f)
+			if f == "*" || strings.EqualFold(f, headerFragment) {
+				return
+			}
+		}
+	}
+	h.Add("Vary", headerFragment)
+}
+
+// TakesFlash reports whether this render shows the notice region, and
+// so may take the flash: a full page always does, a fragment request
+// only when it names Notice. A stream-triggered refresh never asks for
+// it; if it took the flash it would eat a message it never displays.
+func TakesFlash(r *http.Request) bool {
+	regions, ok := Wanted(r)
+	return !ok || contains(regions, Notice)
+}
+
+// Has reports whether the template defines a region:<name> for any of
+// names. Ask it before taking the flash: a request naming only regions
+// this page lacks is answered by navigating (Answer), and the page
+// navigated to must still find the flash.
+func Has(t *template.Template, names []string) bool {
+	for _, n := range names {
+		if t.Lookup("region:"+n) != nil {
+			return true
+		}
+	}
+	return false
+}
+
+// ExecuteRegions renders, in order, each of names that the template
+// defines as region:<name>, and skips the rest. The prefix is the
+// whole safety rule: a name from a request reaches only templates the
+// page marked as regions, never "layout" or a partial. It buffers
+// everything and writes nothing on error, because html/template writes
+// as it executes and a failure halfway would leave a torn fragment
+// under a 200. It is for apps with their own template map; ui.Pages
+// has a method that checks the localizer first.
+func ExecuteRegions(w io.Writer, t *template.Template, names []string, data any) (rendered []string, err error) {
+	var b bytes.Buffer
+	for _, n := range names {
+		region := t.Lookup("region:" + n)
+		if region == nil {
+			continue
+		}
+		if err := region.Execute(&b, data); err != nil {
+			return nil, err
+		}
+		rendered = append(rendered, n)
+	}
+	if _, err := b.WriteTo(w); err != nil {
+		return nil, err
+	}
+	return rendered, nil
+}
+
+// Answer sets Rastrillo-Regions to what was rendered. When nothing was
+// (a GET that named only regions this page lacks) it answers 204 and
+// Rastrillo-Location, as Elsewhere does, and the caller writes no
+// body. Call it after a region render; use Elsewhere before anything.
+// A POST that renders nothing falls through with the empty header,
+// because navigating would hide that the write happened.
+func Answer(w http.ResponseWriter, r *http.Request, rendered []string) {
+	w.Header().Set(headerRegions, strings.Join(rendered, " "))
+	if len(rendered) == 0 && navigable(r) {
+		navigate(w, r)
+	}
+}
+
+func navigable(r *http.Request) bool {
+	return r.Method == http.MethodGet || r.Method == http.MethodHead
+}
+
+func navigate(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set(headerLocation, r.URL.RequestURI())
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func contains(list []string, s string) bool {
+	for _, x := range list {
+		if x == s {
+			return true
+		}
+	}
+	return false
+}
+
+// validRegion is ^[a-z][a-z0-9-]{0,63}$. The first character is a
+// letter, so the jobs shim's legacy value "1" is never a region.
+func validRegion(s string) bool {
+	if len(s) == 0 || len(s) > 64 || s[0] < 'a' || s[0] > 'z' {
+		return false
+	}
+	for i := 1; i < len(s); i++ {
+		c := s[i]
+		if !(c >= 'a' && c <= 'z' || c >= '0' && c <= '9' || c == '-') {
+			return false
+		}
+	}
+	return true
+}
