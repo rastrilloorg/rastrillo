@@ -74,7 +74,8 @@ func runNew(args []string) error {
 	// No default: flag would print (default "en") after the help's own.
 	locale := fset.String("locale", "", fmt.Sprintf(newLocaleFlagMsg, strings.Join(rastrillo.BaseLocales(), ", ")))
 	authKind := fset.String("auth", "none", "sign-in the app starts with: "+strings.Join(authKinds, ", "))
-	scaffold := fset.String("scaffold", defaultShape, newScaffoldFlagMsg)
+	// No default, like --locale: the help's own wording carries it.
+	scaffold := fset.String("scaffold", "", newScaffoldFlagMsg)
 	if err := fset.Parse(args); err != nil {
 		return err
 	}
@@ -87,10 +88,10 @@ func runNew(args []string) error {
 			strings.Join(ui.LayoutNames(), "|"), strings.Join(rastrillo.BaseLocales(), "|"),
 			strings.Join(authKinds, "|"))
 	}
-	// Before the directory exists, like every refusal below: a shape that
-	// is unknown or not built must not leave a half-made app that makes
-	// the next, correct, attempt fail with "already exists".
-	chosen, err := lookupShape(*scaffold)
+	// Every refusal comes before the directory exists: a refused run must
+	// not leave a half-made app that makes the next, correct, attempt
+	// fail with "already exists".
+	chosen, err := lookupShape(cmp.Or(*scaffold, defaultShape))
 	if err != nil {
 		return err
 	}
@@ -103,31 +104,47 @@ func runNew(args []string) error {
 	}
 	set := map[string]bool{}
 	fset.Visit(func(f *flag.Flag) { set[f.Name] = true })
-	return chosen.Write(newOpts{
+	o := newOpts{
 		Name: name, Pkg: packageName(name), Locale: *locale,
 		IconSet: *iconSet, IconDelivery: *iconDelivery, UX: *uxProfile,
 		Theme: *theme, Shell: *shell, Auth: *authKind,
 		DesignSystem: true, Set: set,
-	})
+	}
+	if err := checkChoices(o); err != nil {
+		return err
+	}
+	return chosen.Write(o)
 }
 
-// writeSingle is the single shape: one app, its SQLite data, and the
-// design system. It is what `rastrillo new` has always written.
-func writeSingle(o newOpts) error {
-	name, pkg := o.Name, o.Pkg
+// newChoices are the icon, UX, theme, shell and locale flags resolved
+// to what a scaffold writes.
+type newChoices struct {
+	rendered    iconsets.Rendered
+	conventions []byte
+	vendored    map[string][]byte
+	layout      []byte
+	code        string
+}
 
-	// Resolve every choice before creating anything: an unknown set,
-	// delivery or profile must fail while the working directory is still
-	// clean, never halfway through a scaffold.
+// checkChoices refuses a bad icon, delivery, profile, theme, shell or
+// locale. runNew calls it for every shape before the shape's Write: an
+// unknown choice must fail while the working directory is still clean,
+// never halfway through a scaffold, and no shape may forget to.
+func checkChoices(o newOpts) error {
+	_, err := resolveChoices(o)
+	return err
+}
+
+func resolveChoices(o newOpts) (newChoices, error) {
 	rendered, err := iconsets.Render(o.IconSet, iconsets.Delivery(o.IconDelivery))
 	if err != nil {
-		return err
+		return newChoices{}, err
 	}
 	// The conventions record the RESOLVED choices, not the profile's
 	// defaults: the flag wins, and the file says what actually happened.
 	conventions, err := conventionsSection(o.UX, o.IconSet, o.IconDelivery)
 	if err != nil {
-		return err
+		return newChoices{}, err
 	}
 	// The vendored set — tokens.css, the chosen theme, and the three
 	// scripts — comes from ui.VendoredAssets, which is the one place
@@ -137,11 +154,11 @@ func writeSingle(o newOpts) error {
 	// pin and the doctor together rather than one at a time.
 	vendored, ok := ui.VendoredAssets(o.Theme)
 	if !ok {
-		return fmt.Errorf("unknown theme %q: known themes are %s", o.Theme, strings.Join(ui.ThemeNames(), ", "))
+		return newChoices{}, fmt.Errorf("unknown theme %q: known themes are %s", o.Theme, strings.Join(ui.ThemeNames(), ", "))
 	}
 	layoutHTML, ok := ui.Layout(o.Shell)
 	if !ok {
-		return fmt.Errorf("unknown shell %q: known shells are %s", o.Shell, strings.Join(ui.LayoutNames(), ", "))
+		return newChoices{}, fmt.Errorf("unknown shell %q: known shells are %s", o.Shell, strings.Join(ui.LayoutNames(), ", "))
 	}
 	// Only a language whose framework strings ship: any other fails
 	// generate --check on its missing catalog before the author writes a line.
@@ -150,8 +167,21 @@ func writeSingle(o newOpts) error {
 		code = to
 	}
 	if !slices.Contains(rastrillo.BaseLocales(), code) {
-		return fmt.Errorf(newLocaleUnsupportedMsg, code, strings.Join(rastrillo.BaseLocales(), ", "))
+		return newChoices{}, fmt.Errorf(newLocaleUnsupportedMsg, code, strings.Join(rastrillo.BaseLocales(), ", "))
 	}
+	return newChoices{rendered, conventions, vendored, layoutHTML, code}, nil
+}
+
+// writeSingle is the single shape: one app, its SQLite data, and the
+// design system. It is what `rastrillo new` has always written.
+func writeSingle(o newOpts) error {
+	name, pkg := o.Name, o.Pkg
+
+	c, err := resolveChoices(o)
+	if err != nil {
+		return err
+	}
+	rendered, conventions, vendored, layoutHTML, code := c.rendered, c.conventions, c.vendored, c.layout, c.code
 
 	dirs := []string{
 		name,

@@ -42,8 +42,9 @@ func TestNewRefusesUnknownShape(t *testing.T) {
 	}
 }
 
-// No --scaffold must keep writing what `rastrillo new` always wrote, so
-// the menu changes nothing for anyone who never opens it.
+// No --scaffold means single. Both runs go through writeSingle, so this
+// proves only that the default is single; the existing scaffold tests are
+// what pin single's output as unchanged.
 func TestDefaultShapeIsSingle(t *testing.T) {
 	t.Chdir(t.TempDir())
 	if err := runNew([]string{"plumbus"}); err != nil {
@@ -87,5 +88,23 @@ func TestUsageListsTheScaffoldFlag(t *testing.T) {
 	err := runNew(nil)
 	if err == nil || !strings.Contains(err.Error(), "--scaffold=bare|single|accounts") {
 		t.Fatalf("usage = %v, want it to list --scaffold=bare|single|accounts", err)
+	}
+}
+
+// A bad choice is refused by runNew, not by each shape's Write: bare and
+// accounts do not write anything yet, so reaching their "not built yet"
+// error would mean the check was left to the shape.
+func TestNewChecksChoicesBeforeAnyShapeWrites(t *testing.T) {
+	for _, shape := range []string{"bare", "single", "accounts"} {
+		t.Run(shape, func(t *testing.T) {
+			t.Chdir(t.TempDir())
+			err := runNew([]string{"--scaffold", shape, "--theme=nope", "x"})
+			if err == nil || !strings.Contains(err.Error(), `unknown theme "nope"`) {
+				t.Fatalf("error = %v, want the unknown theme refusal", err)
+			}
+			if _, statErr := os.Stat("x"); statErr == nil {
+				t.Fatal("x exists after a refused choice")
+			}
+		})
 	}
 }
