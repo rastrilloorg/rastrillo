@@ -130,10 +130,44 @@ func ExecuteRegions(w io.Writer, t *template.Template, names []string, data any)
 	return rendered, nil
 }
 
+// WriteRegions is what an app with its own template map calls to answer
+// a fragment request: it renders the regions (ExecuteRegions), sets
+// Rastrillo-Regions, and only then writes the body. The order matters.
+// Passing the ResponseWriter straight to ExecuteRegions would commit
+// the headers with the first byte, and Answer's Rastrillo-Regions
+// would be dropped silently. Nothing is sent on error, so the caller
+// can write its 500. When no region was rendered, a GET or HEAD gets
+// Answer's 204 and Rastrillo-Location, and no body.
+func WriteRegions(w http.ResponseWriter, r *http.Request, t *template.Template, names []string, data any) error {
+	var b bytes.Buffer
+	rendered, err := ExecuteRegions(&b, t, names, data)
+	if err != nil {
+		return err
+	}
+	return Respond(w, r, rendered, b.Bytes())
+}
+
+// Respond is WriteRegions' second half, for callers that rendered the
+// regions themselves (ui.Pages): headers first through Answer, then the
+// body, if any region was rendered.
+func Respond(w http.ResponseWriter, r *http.Request, rendered []string, body []byte) error {
+	Answer(w, r, rendered)
+	if len(rendered) == 0 {
+		return nil
+	}
+	if w.Header().Get("Content-Type") == "" {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	}
+	_, err := w.Write(body)
+	return err
+}
+
 // Answer sets Rastrillo-Regions to what was rendered. When nothing was
 // (a GET that named only regions this page lacks) it answers 204 and
 // Rastrillo-Location, as Elsewhere does, and the caller writes no
-// body. Call it after a region render; use Elsewhere before anything.
+// body. WriteRegions calls it for you; call it yourself only when you
+// write the body some other way, and then before the first byte, since
+// headers set after it are lost. Use Elsewhere before anything.
 // A POST that renders nothing falls through with the empty header,
 // because navigating would hide that the write happened.
 func Answer(w http.ResponseWriter, r *http.Request, rendered []string) {

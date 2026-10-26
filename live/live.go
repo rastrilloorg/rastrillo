@@ -28,9 +28,12 @@
 // redirect went to another page: navigate, before anything is taken);
 // NoStore; Wanted; then, if Has says the page defines the regions
 // asked for, TakesFlash to decide whether to take the flash, and
-// ExecuteRegions then Answer, or the full page when Wanted was not ok.
-// The flash is looked up after Has so a request that ends in a
-// navigation leaves it for the page navigated to.
+// WriteRegions (or ui.Pages.WriteRegions) to answer, or the full page
+// when Wanted was not ok. WriteRegions renders into a buffer and sets
+// Rastrillo-Regions before the first body byte; writing regions
+// straight to the ResponseWriter would lose that header. The flash is
+// looked up after Has so a request that ends in a navigation leaves it
+// for the page navigated to.
 //
 // The package imports only the standard library: ui and the root
 // package import live, never the reverse.

@@ -176,3 +176,52 @@ func TestAnswerNavigatesWhenNothingRendered(t *testing.T) {
 		t.Errorf("rendered: got %d, Regions %q", w.Code, w.Header().Get("Rastrillo-Regions"))
 	}
 }
+
+func TestWriteRegionsSetsTheHeaderBeforeTheBody(t *testing.T) {
+	tpl := regionSet(t, `{{define "region:list"}}<ul id="list"></ul>{{end}}{{define "region:notice"}}<div id="notice"></div>{{end}}`)
+	w := httptest.NewRecorder()
+	if err := WriteRegions(w, fragReq("GET", "/notes"), tpl, []string{"list", "gone", "notice"}, nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := w.Result().Header.Get("Rastrillo-Regions"); got != "list notice" {
+		t.Errorf("Rastrillo-Regions %q; want it on the committed response", got)
+	}
+	if w.Code != 200 || w.Body.String() != `<ul id="list"></ul><div id="notice"></div>` {
+		t.Errorf("got %d %q", w.Code, w.Body.String())
+	}
+}
+
+func TestWriteRegionsNavigatesAnEmptyGet(t *testing.T) {
+	tpl := regionSet(t, `{{define "region:list"}}x{{end}}`)
+	w := httptest.NewRecorder()
+	if err := WriteRegions(w, fragReq("GET", "/notes?q=1"), tpl, []string{"other"}, nil); err != nil {
+		t.Fatal(err)
+	}
+	if w.Code != 204 || w.Header().Get("Rastrillo-Location") != "/notes?q=1" || w.Body.Len() != 0 {
+		t.Errorf("got %d, %q, body %q; want 204, /notes?q=1, no body", w.Code, w.Header().Get("Rastrillo-Location"), w.Body.String())
+	}
+}
+
+func TestWriteRegionsDoesNotNavigateAnEmptyPost(t *testing.T) {
+	tpl := regionSet(t, `{{define "region:list"}}x{{end}}`)
+	w := httptest.NewRecorder()
+	if err := WriteRegions(w, fragReq("POST", "/notes"), tpl, []string{"other"}, nil); err != nil {
+		t.Fatal(err)
+	}
+	if w.Code != 200 || w.Header().Get("Rastrillo-Location") != "" {
+		t.Errorf("got %d, Location %q; want no 204", w.Code, w.Header().Get("Rastrillo-Location"))
+	}
+}
+
+func TestWriteRegionsSendsNothingOnError(t *testing.T) {
+	tpl := template.Must(template.New("page").Funcs(template.FuncMap{
+		"boom": func() (string, error) { return "", errors.New("boom") },
+	}).Parse(`{{define "region:a"}}A{{end}}{{define "region:b"}}{{boom}}{{end}}`))
+	w := httptest.NewRecorder()
+	if err := WriteRegions(w, fragReq("GET", "/"), tpl, []string{"a", "b"}, nil); err == nil {
+		t.Fatal("want the error")
+	}
+	if w.Body.Len() != 0 || w.Header().Get("Rastrillo-Regions") != "" || w.Code != 200 || w.Flushed {
+		t.Errorf("wrote %q, header %q; want nothing so the caller can send a 500", w.Body.String(), w.Header().Get("Rastrillo-Regions"))
+	}
+}

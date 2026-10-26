@@ -281,6 +281,21 @@ func (p *Pages) ExecuteRegions(w io.Writer, page string, names []string, data an
 	return live.ExecuteRegions(w, t, names, data)
 }
 
+// WriteRegions answers a fragment request with page's regions: it
+// renders them (ExecuteRegions), sets Rastrillo-Regions, and then writes
+// the body, or answers 204 and Rastrillo-Location for a GET or HEAD
+// that rendered nothing (live.Respond). Pass it the ResponseWriter, not
+// ExecuteRegions: writing the body first would commit the headers and
+// lose Rastrillo-Regions. Nothing is sent on error.
+func (p *Pages) WriteRegions(w http.ResponseWriter, r *http.Request, page string, names []string, data any) error {
+	var b bytes.Buffer
+	rendered, err := p.ExecuteRegions(&b, page, names, data)
+	if err != nil {
+		return err
+	}
+	return live.Respond(w, r, rendered, b.Bytes())
+}
+
 // HasRegions reports whether page defines a region for any of names.
 // Ask it before taking the flash (see live.Has); a page that does not
 // exist has none.

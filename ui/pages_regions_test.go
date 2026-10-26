@@ -2,6 +2,7 @@ package ui
 
 import (
 	"errors"
+	"net/http/httptest"
 	"slices"
 	"strings"
 	"testing"
@@ -69,5 +70,40 @@ func TestPagesHasRegions(t *testing.T) {
 		if got := p.HasRegions(c.page, c.names); got != c.want {
 			t.Errorf("%s %v: got %v, want %v", c.page, c.names, got, c.want)
 		}
+	}
+}
+
+func TestPagesWriteRegions(t *testing.T) {
+	p := regionPages(t)
+	data := regionData{Localized{L: p.Localizer("en")}, "hi"}
+
+	w := httptest.NewRecorder()
+	if err := p.WriteRegions(w, httptest.NewRequest("GET", "/notes", nil), "index", []string{"list", "private"}, data); err != nil {
+		t.Fatal(err)
+	}
+	if got := w.Result().Header.Get("Rastrillo-Regions"); got != "list" || w.Body.String() != `<ul id="list">hi</ul>` {
+		t.Errorf("Rastrillo-Regions %q, body %q; want list on the committed response", got, w.Body.String())
+	}
+
+	w = httptest.NewRecorder()
+	if err := p.WriteRegions(w, httptest.NewRequest("GET", "/notes/1?x=2", nil), "show", []string{"list"}, data); err != nil {
+		t.Fatal(err)
+	}
+	if w.Code != 204 || w.Header().Get("Rastrillo-Location") != "/notes/1?x=2" || w.Body.Len() != 0 {
+		t.Errorf("empty GET: got %d, %q, body %q", w.Code, w.Header().Get("Rastrillo-Location"), w.Body.String())
+	}
+
+	w = httptest.NewRecorder()
+	if err := p.WriteRegions(w, httptest.NewRequest("POST", "/notes", nil), "show", []string{"list"}, data); err != nil {
+		t.Fatal(err)
+	}
+	if w.Code != 200 || w.Header().Get("Rastrillo-Location") != "" {
+		t.Errorf("empty POST: got %d, Location %q; want no 204", w.Code, w.Header().Get("Rastrillo-Location"))
+	}
+
+	w = httptest.NewRecorder()
+	err := p.WriteRegions(w, httptest.NewRequest("GET", "/notes", nil), "index", []string{"list"}, struct{ Name string }{"x"})
+	if !errors.Is(err, ErrNoLocalizer) || w.Body.Len() != 0 || w.Header().Get("Rastrillo-Regions") != "" {
+		t.Errorf("no localizer: err %v, wrote %q", err, w.Body.String())
 	}
 }
