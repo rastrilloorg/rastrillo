@@ -24,7 +24,7 @@
 - SKILL.md stays under `skillCoreBudget` (8,000 bytes; 7,153 now); topics under 9,000.
 - Comments say why, naming the failure prevented. Commits: imperative subject, body says why.
 - Do not touch `examples/` (manifest retirement is a separate project) or the GORM advice (branch `gorm-measured-cost` owns it).
-- `cmd/rastrillo` has no source-size headroom: `.rastrillo/budgets.txt` holds it at 5,667, its exact count, and the counter includes Go template constants (`internal/budgetsize/size.go:27`). New scaffold templates go in `cmd/rastrillo/scaffold/` as files, never as Go constants. Any task whose Go code still raises the count moves existing constants out to files in the same commit, or raises the ceiling there with the reason appended to that line, as every previous raise did.
+- `cmd/rastrillo` has no source-size headroom: `.rastrillo/budgets.txt` holds it at its ceiling (5,958 after main's --auth=magic; read the line, not this note), and the counter includes Go template constants (`internal/budgetsize/size.go:27`). New scaffold templates go in `cmd/rastrillo/scaffold/` as files, never as Go constants. Any task whose Go code still raises the count moves existing constants out to files in the same commit, or raises the ceiling there with the reason appended to that line, as every previous raise did.
 - Every task's commit leaves `go test ./cmd/rastrillo/ ./perf/...` green: an existing assertion a task invalidates is rewritten in that task, not later.
 
 ## Review Focus
@@ -44,7 +44,7 @@
 - [ ] **Step 1: Run the copy-review skill on these drafts**
 
 ```
-flag help --scaffold: what to scaffold: bare (a page, no database), single (the default: one app and its SQLite data) or accounts (people sign up and sign in)
+flag help --scaffold: what to scaffold: bare (a page, no database), single (the default: one app and its SQLite data) or accounts (single with sign-in by emailed link)
 flag help --design-system: write the design system: templates, styles, scripts and icons (bare only can turn it off)
 unknown shape: unknown --scaffold %q: choose bare, single or accounts
 reserved shape: --scaffold %s is not built yet: it is %s. Use bare, single or accounts for now
@@ -54,6 +54,8 @@ design flag with it off: --%s does nothing with --design-system=false: leave it 
 --ux with bare: --ux does nothing with --scaffold bare, which writes no AGENTS.md: leave it out
 bare's printed summary, first line: rastrillo new: scaffolded %s/ (bare: a page and a route)
 bare README: see Task 5 Step 3
+--auth=none with accounts: --auth=none does nothing with --scaffold accounts, which is the app with sign-in: use --scaffold single for an app without it
+--auth with bare: --auth=%s needs a database: use --scaffold single or accounts
 ```
 
 - [ ] **Step 2: Record the approved strings in the branch discussion** (`amadan discuss new rastrillo/rastrillo -branch scaffold-shapes -title "Approved CLI copy" -body -`), so later tasks copy them from one place.
@@ -120,7 +122,7 @@ func TestUsageListsTheScaffoldFlag(t *testing.T) // runNew([]) error contains "-
 Run: `go test ./cmd/rastrillo/ -run 'TestNewRefuses(Reserved|Unknown)Shape|TestDefaultShapeIsSingle|TestUsageListsTheScaffoldFlag' -count=1`
 Expected: FAIL.
 
-- [ ] **Step 3: Implement.** runNew parses flags, fills `newOpts`, resolves the shape, runs every check that can fail (icons, theme, shell, locale, the shape's own refusals) before creating the directory, then calls `Write`. Move the body into `writeSingle` without changing what it writes. This task adds Go lines to a package at its size ceiling: in this commit, move `readmeTemplate` and `agentsMDTemplate` out of `new.go` into `scaffold/README.md.tmpl` and `scaffold/AGENTS.md.tmpl` (read with `scaffoldFile`), and check `rastrillo budget size cmd/rastrillo` is at or under 5,667.
+- [ ] **Step 3: Implement.** runNew parses flags, fills `newOpts`, resolves the shape, runs every check that can fail (icons, theme, shell, locale, the shape's own refusals) before creating the directory, then calls `Write`. Move the body into `writeSingle` without changing what it writes. This task adds Go lines to a package at its size ceiling: in this commit, move `readmeTemplate` and `agentsMDTemplate` out of `new.go` into `scaffold/README.md.tmpl` and `scaffold/AGENTS.md.tmpl` (read with `scaffoldFile`), and check `rastrillo budget size cmd/rastrillo` is at or under the ceiling in `.rastrillo/budgets.txt`.
 
 - [ ] **Step 4: Run the whole command package**
 
@@ -135,6 +137,7 @@ Expected: PASS. Every existing scaffold test passes unchanged, which is the proo
 - Modify: `cmd/rastrillo/new.go` (harness, vendored, index, browser templates; `dirs`; the files map; printed summary), `cmd/rastrillo/new_budget.go` (perf template), `cmd/rastrillo/scaffold/api_test.go.tmpl`, `cmd/rastrillo/vectorsinit.go:29-32`, `cmd/rastrillo/scaffold/AGENTS.md.tmpl` (its `go test -short ./internal/<app>/... ./internal/<app>test/` line, `new.go:1604` before Task 2 moved it, becomes `go test -short ./...`), `cmd/rastrillo/scaffold/README.md.tmpl` (the browser test's location, `new.go:1272` before the move)
 - Modify: every `cmd/rastrillo/*_test.go` that reads `internal/<pkg>test/...`
 - Modify: `docs/site/testing.md`, `skill/add-signin.md` (step 3's path), `skill/screens.md`
+- Modify: `cmd/rastrillo/new_auth.go` (`applyMagicAuth`'s `testDir`, `new_auth.go:33`, and the harness, browser and perf swaps that name the moved files), so `--auth=magic` scaffolds still pass their own tests in this commit
 
 **Interfaces:**
 - Produces: test files at `internal/<pkg>/{harness,vendored,index,browser,perf,api}_test.go`, `package <pkg>_test`, importing the app as `<pkg> "<module>/internal/<pkg>"`. Helper names (`newApp`, `get`, `post`, `schema`, `testOrigin`) are unchanged.
@@ -167,6 +170,7 @@ Expected: PASS, including `TestScaffoldedAppTestsPass`.
 **Files:**
 - Modify: `cmd/rastrillo/new.go`: `goModTemplate` (chi require only for accounts: take the require block as an argument), `appTemplate`, `handlersTemplate`, `overviewHandler`, `makefileTemplate` (drop `migration-check` from the target list and `ci`), the `ciScripts` map (drop `40-migration-check`), `agentsMDTemplate` (the app.go line and the `Mount(r chi.Router, deps)` advice become `Mount(mux *http.ServeMux, deps)`), the printed summary's Makefile line
 - Modify: `cmd/rastrillo/new_budget.go` (perf template uses `Patterns`)
+- Modify: `cmd/rastrillo/new_auth.go` and `cmd/rastrillo/scaffold/auth.go.tmpl`: `applyMagicAuth` swaps text in today's chi `Router` (`new_auth.go:81-110`) and the perf test's `Routes: r` (`:178-182`). After this task `single` is a stdlib app, so `--auth=magic` turns it into the chi app the spec gives `accounts` (§4.3): its swaps replace `single`'s route-table `Router` with a chi `Router` whose public routes are the same table's, its owned routes in an `r.Group` behind the sign-in check, and its perf test back on `Routes: r`. Keep main's `--auth=magic` tests green in this commit
 - Create: `cmd/rastrillo/scaffold/migrations_test.go.tmpl`
 - Modify: `cmd/rastrillo/scaffold/tokens.go.tmpl` and `api_test.go.tmpl`, which import chi today (`tokens.go.tmpl:28` returns `func(chi.Router)`; `api_test.go.tmpl:80` builds a chi router), so `go mod tidy` would put chi straight back: `single`'s copies use the stdlib mux (below); `accounts` keeps today's chi versions in Task 7
 - Modify, so the package stays green in this commit: `new_test.go:185` (`TestNewPinsCLIsOwnVersions` expects a direct chi require), `new_test.go:282` (expects the `chi.Router` signature), `new_scaffold_test.go:63` (the CI step list), `new_scaffold_test.go:388` (`TestScaffoldMigratesAndPassesCheck` runs `make migration-check`; it runs `go test -run TestModelsMatchMigrations ./internal/<pkg>/` instead), `TestNewScaffoldsMakefileMigrationCheck` (becomes `TestNewScaffoldsMigrationCheckTest`), `TestScaffoldWholeGatePassesOffline` (loses the step)
@@ -292,41 +296,35 @@ Expected: FAIL.
 
 - [ ] **Step 5: Commit** `new: bare can leave the design system out`.
 
-### Task 7: The `accounts` shape
+### Task 7: The `accounts` shape is `single` with `--auth=magic`
+
+> Ruling (2026-10-26, controller): main landed `rastrillo new --auth=magic` (a0c892b7) after this plan was written: emailed-link sign-in, owner-scoped rows through `a.owned(r)`, a pow guard, sign-in tests and a perf sign-in, reviewed over two rounds (discussion 125). A second, password-based sign-in scaffold would duplicate it, so `accounts` is that scaffold under the menu's name. The password plugin stays a recipe (`skill/add-signin.md`). Tasks 3 and 4 keep `--auth=magic` working through their template changes.
 
 **Files:**
-- Create: `cmd/rastrillo/newaccounts.go`, `cmd/rastrillo/newaccounts_test.go`, `cmd/rastrillo/scaffold/accounts/{app.go,auth.go,models.go,signin.html,signup.html,signin_test.go,0001_init.sql,schema.sql}.tmpl`
-- Modify: `cmd/rastrillo/shapes.go`, `cmd/rastrillo/new_scaffold_test.go` (`TestScaffoldMigratesAndPassesCheck` runs for single and accounts)
+- Modify: `cmd/rastrillo/shapes.go` (accounts' `Write`), `cmd/rastrillo/new.go` (`--auth`'s handling per shape)
+- Create: `cmd/rastrillo/newaccounts_test.go`
 
 **Interfaces:**
-- Consumes: `writeSingle` (Task 2) and Task 4's templates; `skill/add-signin.md` steps 1 to 8, which are the specification of this shape's code.
-- Produces: `func writeAccounts(o newOpts) error`: runs `writeSingle`, then overwrites and adds files so the result is a fresh `single` with add-signin applied:
-  - `go.mod` with the chi require.
-  - `app.go`: `Router(d *db.DB, origin string, bg *background.Group, logger *slog.Logger) (chi.Router, error)` as add-signin step 4; `App` takes `bg` in the same place.
-  - `models.go`: `User` beside `Note`, and `Note` gains `UserID int64 \`gorm:"index"\`` as in `examples/notes/internal/notes/models.go:23`; `0001_init.sql` and `schema.sql` are the complete baseline: produced by running `rastrillo migration generate` once on an accounts scaffold whose `migrations/` holds no `.sql` files yet, so the generator writes every table from nothing (run against a `single` scaffold it would write only the delta after `single`'s `0001`, `migration.go:239-248`), then pasted in as `initMigrationTemplate` was.
-  - Owned routes in the signed-in group, every query through `scope.Owned(g, uid)` (`scope/scope.go:19`), the uid from the session: `GET /notes` lists the viewer's notes, `POST /notes` creates one owned by the viewer, `GET /notes/{id}` shows one or answers 404 when it is not the viewer's. These replace add-signin's placeholder `/account`, with a `templates/notes.html` page.
-  - `tokens.go`: today's chi version, wired in `Router` inside the signed-in group (its doc comment's recipe, `tokens.go.tmpl:15-27`), since this shape has the session it needs.
-  - `migrations.go`: `BootSchema = migrate.Merge(sessions.Schema, pow.Schema, apitoken.Schema, Schema)`.
-  - `auth.go` (add-signin step 5), `templates/signin.html` and `signup.html` (step 6), the layout's sign-out form, `render.go`'s `SignedIn`.
-  - `main.go`: `bg := &background.Group{}`, `opts.Background = bg`; `<APP>_INSTANCE_KEY` read as step 4 shows.
-  - `.rastrillo/budgets.txt` with step 7's line. The perf test uses `Routes: r` (chi), step 8's `Signin`, and a `Paths` entry for `/notes/{id}` whose note it seeds.
-  - `signin_test.go`: `TestSignupThenNotes` (step 8's flow; then GET /notes is 200), `TestNotesNeedSignin` (signed out, GET /notes is 303 with a `Location` starting `/signin`), and `TestNotesAreOwned` (two people sign up; A creates a note; B's `GET /notes` does not list it and B's `GET /notes/<A's id>` is 404).
+- Consumes: `writeSingle` (Task 2), `applyMagicAuth(files, name, pkg, appDir)` (`cmd/rastrillo/new_auth.go`), `authKinds`.
+- Produces: `--scaffold accounts` writes exactly what `--scaffold single --auth=magic` writes. With `accounts`, `--auth` defaults to `magic`; `--auth=none` is refused. With `bare`, any `--auth` other than `none` is refused (bare has no database for sessions). `single --auth=magic` keeps working as it does on main.
+- Copy (Task 0 adds them): `--auth=none does nothing with --scaffold accounts, which is the app with sign-in: use --scaffold single for an app without it`; `--auth=%s needs a database: use --scaffold single or accounts`.
 
 - [ ] **Step 1: Write the failing tests** in `newaccounts_test.go`:
 
 ```go
-func TestAccountsPassesItsOwnTests(t *testing.T) // scaffoldWithReplace(t, "club", "--scaffold", "accounts"); go test ./... and go vet -tags browser,perf ./... pass
-func TestAccountsRequiresChi(t *testing.T)       // go.mod has the chi require at chiPinnedVersion
-func TestAccountsMigratesAndPassesCheck(t *testing.T) // via the parametrized TestScaffoldMigratesAndPassesCheck
+func TestAccountsIsSingleWithMagicAuth(t *testing.T) // runNew --scaffold accounts "a" and --scaffold single --auth=magic "b": same relative files, same contents with the name substituted
+func TestAccountsPassesItsOwnTests(t *testing.T)     // scaffoldWithReplace(t, "club", "--scaffold", "accounts"); go test ./... and go vet -tags browser,perf ./... pass
+func TestAccountsRefusesAuthNone(t *testing.T)       // Task 0's text; no dir
+func TestBareRefusesAuth(t *testing.T)               // --scaffold bare --auth=magic: Task 0's text; no dir
 ```
 
-- [ ] **Step 2: Run them to see them fail.** Run: `go test ./cmd/rastrillo/ -run 'TestAccounts|TestScaffoldMigratesAndPassesCheck' -count=1`. Expected: FAIL.
+- [ ] **Step 2: Run them to see them fail.** Run: `go test ./cmd/rastrillo/ -run 'TestAccounts|TestBareRefusesAuth' -count=1`. Expected: FAIL.
 
-- [ ] **Step 3: Implement.** Where add-signin and this shape disagree, the shape's tests decide and Task 8 fixes the recipe.
+- [ ] **Step 3: Implement** in `shapes.go` and runNew's checks.
 
-- [ ] **Step 4: Run the package and the perf lane of a scaffold.** Run: `go test ./cmd/rastrillo/ -count=1`, then in a `scaffoldWithReplace` accounts app, `go test -tags perf ./...`. Expected: PASS, `/notes` and `/notes/{id}` measured.
+- [ ] **Step 4: Run the package.** Run: `go test ./cmd/rastrillo/ -count=1`. Expected: PASS, including main's `--auth=magic` tests.
 
-- [ ] **Step 5: Commit** `new: an accounts shape, single with email and password sign-in`.
+- [ ] **Step 5: Commit** `new: accounts is the scaffold with sign-in`.
 
 ### Task 8: The skill and the docs
 
@@ -345,7 +343,7 @@ Choose by who the users are and where they live:
 |---|---|---|
 | bare | a page or a dashboard: no data of its own, no sign-in | `rastrillo new --scaffold bare <name>` |
 | single (default) | one instance and its data in SQLite; add sign-in later (skill/add-signin.md) | `rastrillo new <name>` |
-| accounts | people sign up and sign in; each sees their own rows | `rastrillo new --scaffold accounts <name>` |
+| accounts | people sign in by emailed link; each sees only their own rows | `rastrillo new --scaffold accounts <name>` |
 
 home and hub (a home that provisions an instance per team) are not built yet.
 ```
