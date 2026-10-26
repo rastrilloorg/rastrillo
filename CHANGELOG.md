@@ -8,11 +8,13 @@ This file starts at v0.23.0. Earlier releases are in the git history and their
 tags; nothing has been reconstructed for them, because a changelog written
 backwards from commits is a guess wearing a date.
 
-## Unreleased
+## v0.29.0
 
-**A JSON API for every app, and agents that act for a person (breaking
-upgrade for generated apps and for code that reads `Actor`).** A
-manifest resource can now be served as JSON at `/api/v1`. A person
+A JSON API with agents that act for a person, money in any currency, a colour-scheme switch, a new look for `day`, and sign-in without a database. The first seven sections change what an existing app does without a compile error: the JSON API, the colour-scheme switch, money, sign-in's return to the page, pagination, hand-edited migrations and `job-status`. Read them before you upgrade.
+
+### Changed: a JSON API for every app, and agents that act for a person; run `rastrillo generate` and change code that reads `Actor`
+
+A manifest resource can now be served as JSON at `/api/v1`. A person
 makes a token for an agent on the app's token page, the agent calls the
 API with it, and every call is recorded as "Claude for Paul". The pages
 and the API call the same generated operation for each action, so both
@@ -55,7 +57,7 @@ What changed:
 - New package `api`: the `/api/v1` handler tree, its error shape, and `Decode`, `Write` and `Refuse` for a handler you write yourself.
 - New package `apitoken`: personal tokens for a named agent, verified by SHA-256, and the token page's handlers. Add `apitoken.Schema` to `BootSchema`.
 - New function `sessions.ActorFrom` gives the signed-in person as an `Actor`.
-- New function `view.Refuse` answers an operation's refusal on a page: 404 or 403.
+- New function `view.Refuse` answers an operation's refusal on a page: 404 for `op.NotFound` and 403 for `op.Forbidden`. Anything else is a 500, `op.Invalid` and `op.Conflict` included, so handle those before you call it.
 - New template function `actor` and variable `ui.ActorName`, and new function `rastrillo.ActorPhrase`, write "Claude for Paul".
 - New partials `actor`, which writes the same words in a span for a list cell or a detail row, and `api-tokens`, the token page's body from `apitoken.PageData`; see [Templates](/docs/templates#the-partials). `apitoken.Row` gains `Revoked` and `Expired`, `PageData` gains `Agents`, and `Token` gains `Actor()`.
 - New catalog keys `rastrillo.ui.agent_for` and `rastrillo.ui.api_tokens_*`; a locale you ship yourself must translate them.
@@ -68,66 +70,9 @@ What changed:
 - The API logs one line for every request that reaches a handler, with the actor and the agent's session and harness.
 - New apps get `internal/<app>/api.go`, which mounts the API, `tokens.go` and `templates/tokens.html` for the token page, and a `.gitleaks.toml` rule that finds the app's tokens in a commit.
 
-**`csrf.Exempt` lets a machine POST to a named path.** A payment provider's webhook and a `carlos schedule` tick are POSTs with no `Sec-Fetch-Site`, `Origin` or `Referer`, so `csrf.Protect` refused them. `csrf.Protect(origin, csrf.Exempt("/stripe/webhook"))` now lets those exact paths through. The middleware checks nothing on an exempt path, so its handler must check its own credential, such as a webhook signature or `carlos.Tick`. A path matches only when it is exactly `r.URL.Path`, and `Exempt` panics on an empty or relative path. `Protect(origin)` calls compile and behave as before. See [csrf](/docs/reference/csrf#exempt).
+### Changed: a colour-scheme switch in every shell, at `POST /_theme`; copy the `scheme` block into your layout to show it
 
-**`day` looks different; your app's copy does not change until you
-re-copy it.** The default theme now has a point of view: near-greyscale
-neutrals with hairline borders, cobalt for anything that acts, 6px and
-4px corners, and natural depth lit from above. Buttons are a touch proud
-of the page and press in, then slowly lift; cards rest on the page; the
-switch's knob is lit in both schemes; rows and menu items lift quietly
-on hover. A new vendored script, `light.js`, lights the page from the
-hour, puts a sheen under the pointer, and can be deleted for the still
-design. `plain` and `signal` render as they did. An existing app keeps
-its copies until `rastrillo doctor --fix` re-copies `tokens.css`,
-`theme.css` and `rastrillo.js` and writes `light.js`; a theme of your
-own keeps rendering as it did, because every new token is read through
-a fallback that is today's value.
-
-- New vendored file `light.js`, optional. `rastrillo doctor --fix` writes it; link it after `busy.js` in your layout, as the shipped shells do. To turn it off, delete the file, delete its tag, and name it in `vendoredIsMine` in the scaffold's `vendored_test.go`; `doctor` then lists it as yours, removed on purpose, and `--fix` leaves it alone. See [Templates](/docs/templates#the-light).
-- New theme tokens, declared by every theme: the fills and their edges, the control face and borders, the depth tokens (`--rst-depth-hl`, `-contact`, `-ambient`, `-face`, `--rst-press-drop`), the switch's knob and track, the tints and the focus pair, the light's colours, the press strengths, and the title, heading, label and rail choices. See [Your app's design system](/docs/design-system).
-- `tokens.css` registers `--rst-press` and reads every new token with a fallback to the old behaviour.
-- `rastrillo.js` registers a passive `touchstart` listener so iOS applies `:active` on tap.
-- In `day` the switch is larger: a 40×23 track with a 19px knob under a mouse, 51×31 with a 27px knob on a touch screen or in a narrow window, as six theme tokens (`--rst-switch-w`, `-h`, `-knob` and their `-touch-` set). The track sits in, the knob stands on a deeper dome that lifts on hover (`--rst-shadow-knob-hover`), and the on colour follows the knob, dragged or clicked. A released knob settles at the nearer end, on from half way. `plain` and `signal` keep their switch; a theme of your own keeps today's size and depth until it declares the tokens. `tokens.css` registers `--rst-switch-p` and `--rst-switch-on`, and `rastrillo.js` writes those instead of `--rst-switch-x`.
-- A switch inside a toggle block's body now draws its own state, and a toggle block nested inside another no longer switches the outer one on or opens its body. Only pages with a switch or a block inside a block's body look different.
-- A hovered row, media tile or rail item takes a scheme change on the next frame, as everything at rest already did. The hover tint rides two registered percentages, `--rst-hover` and `--rst-pressed`, instead of a background-colour transition; a theme of your own needs nothing.
-- Hover tints and lifts on buttons, dropdown summaries, menu rows, options, locale and scheme buttons, linked rows, media tiles and the desktop rail items now sit behind `(hover: hover)`, in every theme, so a tap no longer leaves a tint behind on a touch screen. The phone index rows keep their tap tint on purpose.
-- Sidebar and console rail items fade their hover over 0.2s, and linked rows and media tiles over 0.25s, in every theme.
-- In `day`, overriding `--rst-accent` alone recolours everything: the primary button's fill, its hover and edges, the link hover, the soft ground, the hover and press tints, the focus edge and halo, a plain button's sheen and a card's lit rim are all derived from it in `day.css`. The fills take the accent's hue at day's own lightness, with the accent's chroma scaled and capped (`oklch(from var(--rst-accent) L C h)`): a grey accent gives a grey button, and the white label clears 4.5:1 for every hue, measured at twelve hues and three greys in both schemes. The rest are `color-mix()` shares of the accent. With the default accent each derived value lands within two units per channel of the hex it replaced, and the contrast rows that name them are recomputed. Relative colour needs Firefox 128, above the floor, so the fills and the soft ground are declared as day's cobalt and derived inside `@supports (color: oklch(from red l c h))`: an older engine keeps the cobalt button and loses only its following of the accent. `plain` and `signal` work as before: their fills (`--rst-accent-fill` and its `-hover`, `-edge` and `-edge-hover`) read `--rst-accent` and `--rst-accent-strong`, and every other new token reads the semantic token `tokens.css` read in its place before (`--rst-accent-soft` for the tints and the current nav item, `--rst-surface-2` for linked rows, `--rst-line-strong` for control borders, `--rst-tone-negative-fg` for the danger button, and so on), so an app that overrides those on `:root` still reaches what it reached before.
-- A card's hairline is painted as a background layer. An app stylesheet that sets `background` on a card loses the hairline, and one that sets `background-color` paints under the face and shows nothing; set `--rst-surface` on the card instead, which also recolours the surfaces inside it.
-- Dropdowns in a shell's tail, meaning the locale and scheme menus and any app dropdown placed there, wear no button face in `day`.
-- The colour-scheme switch lands in one frame: `rastrillo.js` cancels running CSS transitions on a flip, so text and ground change together.
-- Forced colours and print get their own blocks, in every theme: real borders, no shadows, filled buttons as outlined text.
-
-**An image grid for an app's Images page.** `media-grid` draws one tile
-per picture in an even 4:3 frame, so a tall screenshot and a wide
-banner sit in one grid without stretching their tiles; a tall picture
-shows its top, and `Fit "contain"` letterboxes a logo or a banner. The
-name, a two-line description and a meta line sit under the frame. A
-tile can link, carry the select checkbox a `bulk-bar` form collects,
-and a `row-menu` kebab. One column on a phone; no JavaScript. Take the
-new `tokens.css`.
-
-- New partial `media-grid`; see [Templates](/docs/templates#the-partials).
-- New catalog keys `rastrillo.ui.media_select` and `rastrillo.ui.no_description`; a locale you ship yourself must translate them.
-
-**Create tenant instances from your own app.** The new `provision` package lets a home or a hub create instances through the CARLOS console, tell when each one is serving, publish a hub's path map, and check that each tenant's path reaches it. It keeps no records: your app writes them, following the rules on its reference page. Every tenant it creates must set `Options.NameInstance`.
-
-- New package `provision`: `Console` with `Create`, `Instance` and `PublishPaths`; `NewLabel`; the probes `Ready`, `WaitReady`, `CheckRoute` and `WaitRouted`; and the errors to branch on, among them `ErrHostTaken`, `RetryError` and `ErrEmptyMap`.
-- New package `provision/provisiontest`, a fake console and edge with the platform's own answers, for testing code that uses `provision`.
-- New option `Options.NameInstance` names the instance on `GET /api/version` in the `Rastrillo-Host` header. It is off by default, because anyone can read the header.
-- New function `carlos.Host`, the instance's platform hostname, and constant `carlos.HostHeader`, the header `NameInstance` names it in.
-
-**Sign-in without a database.** Set `auth.Config.Records` to keep users and sign-in links in an `objrec` store instead of SQLite. The session becomes a signed cookie that lasts 15 minutes, renewed at `/_carlos/refresh` until the 30-day session ends. Apps on the same origin check it with the hub's public key and keep no sessions. Set `Blind` to store only a hash of each address. This mode has no second factors. Nothing changes for an app that does not set it.
-
-- New in `sessions`: `Config.Signed` and `Config.Now`; the `Signed` and `SigningKey` types; `NewSigningKey`, `ParseSigningKey` and `ParsePublicKeys`; `Sessions.Refresh` and `RefreshIfExpired`; `SignedLifetime` and `DefaultRefreshPath`; and `ErrSigned`, `ErrVerifyOnly` and `ErrNoUser`.
-- New in `auth`: `Config.Records`, `Signed`, `Pepper` and `Blind`; the `User` type; `Auth.User`, `EndSessions`, `SignoutEverywhere` and `Refresh`; and `ErrRecords`.
-
-**A nonce store with no database.** `pow.RecordNonces` keeps spent nonces in an `objrec` store, for a hub with no database. Pass the same store on every instance. Nothing changes for an app that does not set it.
-
-**`rastrillo session-key`.** `rastrillo session-key <kid>` prints a new signing key for signed sessions: a `secret` line for the hub and a `public` line for its tenants. Nothing changes for an app that does not use it.
-
-**A colour-scheme switch in every shell.** Readers get Light, Dark and
+Readers get Light, Dark and
 System beside the language menu, with or without JavaScript. The
 framework mounts `POST /_theme`, which stores the choice in the
 `rastrillo_scheme` cookie and clears it for System; the layouts write
@@ -146,11 +91,12 @@ yours (it sits beside the `locale` block) and take the new
 - New option `Options.NoSchemeSwitch`, for an app whose router (chi, say) handles `/_theme` where the mux cannot see it.
 - Both switchers now refuse a return path with a backslash or a control character anywhere, not only at its start; before, `/a/../\evil.example/` and a tab reached `Location` and left the site.
 - New function `rastrillo.LocalePrefix`, the locale segment the middleware stripped from the path.
-- `rastrillo.js` grew a section for the switch and its cap rose from 16KB to 17KB.
+- `rastrillo.js` grew a section for the switch. With the rest of this release, its size cap rose from 16 KiB to 19 KiB.
 - New catalog keys `rastrillo.ui.shell_scheme`, `scheme_light`, `scheme_dark` and `scheme_system`; a locale you ship yourself must translate them.
 
-**Multi-currency money (breaking upgrade for apps with money).** Money
-is now stored with its currency, and the locale data that formats it
+### Changed: money in any currency; run `rastrillo doctor`, and take a backup first if your app stores money
+
+Money is now stored with its currency, and the locale data that formats it
 comes from language packs.
 1. Run `rastrillo doctor`. It lists every template and Go file the new
    template calls affect, and what to change in each. Run
@@ -208,20 +154,143 @@ To keep the old, exact format for a field, set `Strict: true`.
 - New method `(*rastrillo.Locales).Negotiate` picks a request's language without the middleware, for an error page.
 - New functions `rastrillo.RetagOf` and `rastrillo.Retagged` list the codes the framework moved: Portuguese is now `pt-PT`, and `pt` addresses, cookies and catalogs keep working.
 - New command `rastrillo migrate-templates` adds `$L` to an app's templates and lists what is left to do by hand.
+- `rastrillo migrate-templates -write` changes a template only when the result is the original with the localizer added. If a rewrite would move or swap anything, such as two partial calls trading their data, it leaves the file as it was and says so.
 - New flag `rastrillo new --locale` picks the one language a new app starts with.
 - `rastrillo doctor` now checks templates and locales too, and exits 6 for templates in the old syntax and 7 for a locale configuration that would stop the app starting. It does not run your app. `rastrillo doctor --probe` also builds the app and runs it with `RASTRILLO_CHECK_CONFIG=1`, which runs your app's own code.
 - Removed: `rastrillo generate --default-locale`. The default now comes from `default_locale` in `manifest/app.toml`.
 - `rastrillo generate` now deletes files in `gen/` that an earlier run generated and this run does not. Keep files you edit by hand outside `gen/`. `rastrillo generate --check` names what a run would delete.
 - `rastrillo generate` refuses a filter on a money field, because an amount means nothing without its currency. Remove the filter.
 - `rastrillo generate` refuses a field named like a money field's generated fields, such as `PriceCurrency` beside a money field `Price`, and a field named `EventVersion` or `Now`. Rename the field.
-
-### Fixed: `rastrillo generate` finds the sqlc tool under Go 1.27
-
-Under Go 1.27, `rastrillo generate` said the sqlc tool directive was missing from `go.mod` even when it was there, and stopped. Go 1.27 changed how `go tool` lists tools. Update rastrillo before you build an app with Go 1.27.
+- `rastrillo generate` refuses `currency` or `[legacy]` on a resource with no money field. Give a field `kind = "money"`, or remove the setting.
+- `manifest/app.toml` must list the app's languages. `rastrillo generate` and `rastrillo doctor` refuse a file with no `locales` and say what to add. For an English-only app, delete the file instead.
 
 ### Changed: sign-in lands back on the page that asked for it; post `return_to` from your own sign-in page
 
 `RequireSession` and `RequireFreshSession` now send a signed-out visitor to `SigninPath?return_to=<the page>`, and once they sign in they land back on that page. Before, they always landed on `SignedInPath`. The shipped sign-in screen carries the destination for you. If you render your own sign-in page, add a hidden `return_to` field set to `SigninState(r).ReturnTo` to each form, and use `SigninState(r).PasskeyFinish()` as the passkey button's finish URL. Without them, your visitors still land on `SignedInPath`.
+
+### Changed: pagination fits one line on a phone; mark Previous and Next with `Rel`, and add `paginationItems` if you build your own FuncMap
+
+Give the Previous item `"Rel" "prev"` and the Next item `"Rel" "next"`. On a phone or touch screen, those two become chevron buttons that still say Previous and Next to a screen reader, and the strip shows only the first page, the current page and the last, spread across one line: ‹ 1 … 4 … 9 ›. A strip without `Rel` renders as it did before. Apps made with `rastrillo new` get `Rel` when they regenerate their list pages.
+
+The partial now calls a new template function, `paginationItems`. `ui.Funcs` includes it. If you build your own FuncMap without `ui.Funcs`, add it, or the partial fails to parse.
+
+Chip styles in `tokens.css` now apply only to the strip's direct children. If your own markup nests a link deeper, move it up a level. Re-vendor `tokens.css`.
+
+### Changed: `rastrillo generate` refuses a hand-edited `gen/store/<name>/migrations.go`; restore it, or write each statement as a string literal
+
+`rastrillo generate` reads the statements a store has already released from its `gen/store/<name>/migrations.go`. If `Migrations` there is not a list of string literals, it cannot read them, so it stops and names the file. Restore the generated file, or write each statement as a string literal, then run `rastrillo generate` again. A mergeable store's file is read as before.
+
+### Changed: `job-status` speaks the page's language; add `strong` if you build your own FuncMap
+
+The partial's five sentences now come from the catalog, in the page's language. The job's name is still bold. In English, the progress after a running job's name now follows a colon instead of a dash.
+
+The partial calls a new template function, `strong`. `ui.Funcs` includes it. If you build your own FuncMap without `ui.Funcs`, add it, or the partial fails to parse.
+
+- New catalog keys `rastrillo.ui.job_running`, `job_running_progress`, `job_failed`, `job_failed_error` and `job_finished`; a locale you ship yourself must translate them.
+
+### Added: `csrf.Exempt` lets a machine POST to a named path
+
+A payment provider's webhook and a `carlos schedule` tick are POSTs with no `Sec-Fetch-Site`, `Origin` or `Referer`, so `csrf.Protect` refused them. `csrf.Protect(origin, csrf.Exempt("/stripe/webhook"))` now lets those exact paths through. The middleware checks nothing on an exempt path, so its handler must check its own credential, such as a webhook signature or `carlos.Tick`. A path matches only when it is exactly `r.URL.Path`, and `Exempt` panics on an empty or relative path. `Protect(origin)` calls compile and behave as before. See [csrf](/docs/reference/csrf#exempt).
+
+### Changed: `day` looks different; run `rastrillo doctor --fix` to take the new look
+
+The default theme now has a point of view: near-greyscale
+neutrals with hairline borders, cobalt for anything that acts, 6px and
+4px corners, and natural depth lit from above. Buttons are a touch proud
+of the page and press in, then slowly lift; cards rest on the page; the
+switch's knob is lit in both schemes; rows and menu items lift quietly
+on hover. A new vendored script, `light.js`, lights the page from the
+hour, puts a sheen under the pointer, and can be deleted for the still
+design. `plain` and `signal` render as they did. An existing app keeps
+its copies until `rastrillo doctor --fix` re-copies `tokens.css`,
+`theme.css` and `rastrillo.js` and writes `light.js`; a theme of your
+own keeps rendering as it did, because every new token is read through
+a fallback that is today's value.
+
+- New vendored file `light.js`, optional. `rastrillo doctor --fix` writes it; link it after `busy.js` in your layout, as the shipped shells do. To turn it off, delete the file, delete its tag, and name it in `vendoredIsMine` in the scaffold's `vendored_test.go`; `doctor` then lists it as yours, removed on purpose, and `--fix` leaves it alone. See [Templates](/docs/templates#the-light).
+- New theme tokens, declared by every theme: the fills and their edges, the control face and borders, the depth tokens (`--rst-depth-hl`, `-contact`, `-ambient`, `-face`, `--rst-press-drop`), the switch's knob and track, the tints and the focus pair, the light's colours, the press strengths, and the title, heading, label and rail choices. See [Your app's design system](/docs/design-system).
+- `tokens.css` registers `--rst-press` and reads every new token with a fallback to the old behaviour.
+- `rastrillo.js` registers a passive `touchstart` listener so iOS applies `:active` on tap.
+- A switch inside a toggle block's body now draws its own state, and a toggle block nested inside another no longer switches the outer one on or opens its body. Only pages with a switch or a block inside a block's body look different.
+- A hovered row, media tile or rail item takes a scheme change on the next frame, as everything at rest already did. The hover tint rides two registered percentages, `--rst-hover` and `--rst-pressed`, instead of a background-colour transition; a theme of your own needs nothing.
+- Hover tints and lifts on buttons, dropdown summaries, menu rows, options, locale and scheme buttons, linked rows, media tiles and the desktop rail items now sit behind `(hover: hover)`, in every theme, so a tap no longer leaves a tint behind on a touch screen. The phone index rows keep their tap tint on purpose.
+- Sidebar and console rail items fade their hover over 0.2s, and linked rows and media tiles over 0.25s, in every theme.
+- In `day`, overriding `--rst-accent` alone recolours everything: the primary button's fill, its hover and edges, the link hover, the soft ground, the hover and press tints, the focus edge and halo, a plain button's sheen and a card's lit rim are all derived from it in `day.css`. The fills take the accent's hue at day's own lightness, with the accent's chroma scaled and capped (`oklch(from var(--rst-accent) L C h)`): a grey accent gives a grey button, and the white label clears 4.5:1 for every hue, measured at twelve hues and three greys in both schemes. The rest are `color-mix()` shares of the accent. With the default accent each derived value lands within two units per channel of the hex it replaced, and the contrast rows that name them are recomputed. Relative colour needs Firefox 128, above the floor, so the fills and the soft ground are declared as day's cobalt and derived inside `@supports (color: oklch(from red l c h))`: an older engine keeps the cobalt button and loses only its following of the accent. `plain` and `signal` work as before: their fills (`--rst-accent-fill` and its `-hover`, `-edge` and `-edge-hover`) read `--rst-accent` and `--rst-accent-strong`, and every other new token reads the semantic token `tokens.css` read in its place before (`--rst-accent-soft` for the tints and the current nav item, `--rst-surface-2` for linked rows, `--rst-line-strong` for control borders, `--rst-tone-negative-fg` for the danger button, and so on), so an app that overrides those on `:root` still reaches what it reached before.
+- A card's hairline is painted as a background layer. An app stylesheet that sets `background` on a card loses the hairline, and one that sets `background-color` paints under the face and shows nothing; set `--rst-surface` on the card instead, which also recolours the surfaces inside it.
+- Dropdowns in a shell's tail, meaning the locale and scheme menus and any app dropdown placed there, wear no button face in `day`.
+- The colour-scheme switch lands in one frame: `rastrillo.js` cancels running CSS transitions on a flip, so text and ground change together.
+- Forced colours and print get their own blocks, in every theme: real borders, no shadows, filled buttons as outlined text.
+
+### Added: `media-grid`, an image grid for an app's Images page; re-vendor `tokens.css`
+
+`media-grid` draws one tile
+per picture in an even 4:3 frame, so a tall screenshot and a wide
+banner sit in one grid without stretching their tiles; a tall picture
+shows its top, and `Fit "contain"` letterboxes a logo or a banner. The
+name, a two-line description and a meta line sit under the frame. A
+tile can link, carry the select checkbox a `bulk-bar` form collects,
+and a `row-menu` kebab. One column on a phone; no JavaScript. Take the
+new `tokens.css`.
+
+- New partial `media-grid`; see [Templates](/docs/templates#the-partials).
+- New catalog keys `rastrillo.ui.media_select` and `rastrillo.ui.no_description`; a locale you ship yourself must translate them.
+
+### Added: `provision` creates tenant instances from your own app
+
+The new `provision` package lets a home or a hub create instances through the CARLOS console, tell when each one is serving, publish a hub's path map, and check that each tenant's path reaches it. It keeps no records: your app writes them, following the rules on its reference page. Every tenant it creates must set `Options.NameInstance`.
+
+- New package `provision`: `Console` with `Create`, `Instance` and `PublishPaths`; `NewLabel`; the probes `Ready`, `WaitReady`, `CheckRoute` and `WaitRouted`; and the errors to branch on, among them `ErrHostTaken`, `RetryError` and `ErrEmptyMap`.
+- New package `provision/provisiontest`, a fake console and edge with the platform's own answers, for testing code that uses `provision`.
+- New option `Options.NameInstance` names the instance on `GET /api/version` in the `Rastrillo-Host` header. It is off by default, because anyone can read the header.
+- New function `carlos.Host`, the instance's platform hostname, and constant `carlos.HostHeader`, the header `NameInstance` names it in.
+
+### Added: `rastrillo/objrec` keeps records in the object store
+
+A central app can now keep its records in its object store instead of a
+database. `Create` succeeds once per key, `Update` succeeds only against
+the version you read, and `Mutate` re-reads and retries. It reads the same
+`CARLOS_STORE_*` variables as `blobs`, under its own `records/` prefix.
+`objrec.Dir` is the local stand-in for tests and development.
+
+The SigV4 signer `blobs` used moved to `internal/sigv4` so both packages
+share one copy. Nothing changes for an app that uses `blobs`.
+
+### Added: sign-in without a database, with `auth.Config.Records`
+
+Set `auth.Config.Records` to keep users and sign-in links in an `objrec` store instead of SQLite. The session becomes a signed cookie that lasts 15 minutes, renewed at `/_carlos/refresh` until the 30-day session ends. Apps on the same origin check it with the hub's public key and keep no sessions. Set `Blind` to store only a hash of each address in user records. A pending sign-in link still stores its address, encrypted with a key made from the instance key. This mode has no second factors. Nothing changes for an app that does not set it.
+
+- New in `sessions`: `Config.Signed` and `Config.Now`; the `Signed` and `SigningKey` types; `NewSigningKey`, `ParseSigningKey` and `ParsePublicKeys`; `Sessions.Refresh` and `RefreshIfExpired`; `SignedLifetime` and `DefaultRefreshPath`; and `ErrSigned`, `ErrVerifyOnly` and `ErrNoUser`.
+- New in `auth`: `Config.Records`, `Signed`, `Pepper` and `Blind`; the `User` type; `Auth.User`, `EndSessions`, `SignoutEverywhere` and `Refresh`; and `ErrRecords`.
+
+### Added: `pow.RecordNonces`, a nonce store with no database
+
+`pow.RecordNonces` keeps spent nonces in an `objrec` store, for a hub with no database. Pass the same store on every instance. Nothing changes for an app that does not set it.
+
+### Added: `rastrillo session-key` prints a key for signed sessions
+
+`rastrillo session-key <kid>` prints a new signing key for signed sessions: a `secret` line for the hub and a `public` line for its tenants. Nothing changes for an app that does not use it.
+
+### Added: `auth.SendLink` sends a sign-in link from your code
+
+`Begin` sends a sign-in link only from its form, and refuses a POST from a server. `SendLink(ctx, address, ipKey)` sends the same link from code, for a caller your app already trusts, such as another service passing on a sign-in request. It uses the same link, the same email and the same limits as the form. It checks no proof of work. Pass a fixed name for the channel as `ipKey`, such as `"relay"`, never an IP address the caller reports. The whole channel then shares one limit of 20 links per 15 minutes. A refusal comes back as `auth.ErrRateLimited` or `auth.ErrBadAddress`. Log it, and give the caller the same answer either way, so the answer says nothing about the address. See [Magic links](/docs/magic-links#sending-a-link-from-code).
+
+### Added: `rastrillo new --auth=magic` starts an app with sign-in by email
+
+`rastrillo new --auth=magic <name>` makes an app that signs people in with a link sent by email. You get the magic links plugin and its sign-in screen, with proof of work in front of it, a Sign in and Sign out control in the header, and an example page only a signed-in person can open. Rows belong to the signed-in address, through the `owned` seam in `auth.go`. Until you set `<APP>_SMTP_HOST` and `<APP>_SMTP_FROM`, each link is written to the log instead of sent. The app's own tests sign in through the emailed link, so `make ci` passes from the first commit. Without `--auth`, `rastrillo new` makes the same app as before. See [CLI](/docs/cli).
+
+- New catalog keys `rastrillo.ui.account_signin` and `rastrillo.ui.account_signout`; a locale you ship yourself must translate them.
+
+### Fixed: `rastrillo generate` finds the sqlc tool under Go 1.27
+
+Under Go 1.27, `rastrillo generate` said the sqlc tool directive was missing from `go.mod` even when it was there, and stopped. Go 1.27 changed how `go tool` lists tools. Update rastrillo before you build an app with Go 1.27. Staticcheck v0.7.0 cannot read Go 1.27's packages and fails on every one, so a new app's Makefile now pins v0.8.2. In an app made earlier, change the `STATICCHECK` line in its Makefile to `honnef.co/go/tools/cmd/staticcheck@v0.8.2` before you move it to Go 1.27.
+
+### Added: `rastrillo generate` warns when a resource becomes `scope = "user"`
+
+Rows and records saved before the change have no owner, so once the app runs they are shown to nobody. `rastrillo generate` now says so, once, on the run that first sees the change. For a SQL store, give the rows owners in a migration of your own, made with `rastrillo migration new`. For a mergeable store, append an updated event that carries `owner` to each record's stream.
+
+### Changed: a new app's `make ci` runs on Go 1.26.10; move your app's pin to match
+
+`rastrillo new` now writes `export GOTOOLCHAIN = go1.26.10` in the Makefile, up from `go1.26.6`. Go 1.26.9 fixes advisories in `net/http`, `crypto/tls`, `html/template` and `net/textproto`, which govulncheck reports under `go1.26.6`. Go 1.26.10 stops trusting eight eMudhra intermediate certificates whose private keys were compromised. In an app made earlier, change the `GOTOOLCHAIN` line in its Makefile to `go1.26.10`.
 
 ### Changed: buttons come in an even scale, and Small is drawn smaller than its tap area; re-vendor `tokens.css`
 
@@ -239,15 +308,21 @@ A dropdown is now as wide as its button, and its menu opens under it. Where neit
 
 In browsers that support `field-sizing`, a textarea grows as you type, up to half the screen, then scrolls. There, `Rows` no longer sets its height. Elsewhere it stays a fixed box you can resize.
 
-### Changed: a switch can be dragged; re-copy `rastrillo.js`
+### Changed: a switch can be dragged, and `day` draws it larger; re-copy `rastrillo.js` and re-vendor `tokens.css`
 
-Drag a switch's knob and it follows, then snaps to the nearer end. A tap still toggles it, and a vertical swipe still scrolls the page. In a right-to-left page the switch now mirrors.
+Drag a switch's knob and it follows. Let go and it settles at the nearer end; from half way, it is on. A tap still toggles it, and a vertical swipe still scrolls the page. A toggle block's head drags the same way. In a right-to-left page the switch now mirrors. A disabled switch does not move, nor does one in a disabled fieldset.
+
+In `day` the switch is larger: a 40×23 track with a 19px knob under a mouse, and 51×31 with a 27px knob on a touch screen or in a narrow window. The track sits in, the knob stands on a deeper dome that lifts on hover, and the on colour follows the knob as it moves. Six theme tokens set the sizes: `--rst-switch-w`, `-h`, `-knob` and their `-touch-` set. `--rst-shadow-knob-hover` sets the lift. `plain` and `signal` keep their switch, and a theme of your own keeps today's size and depth until it declares the tokens.
+
+`tokens.css` registers `--rst-switch-p` and `--rst-switch-on`, which `rastrillo.js` writes as the knob moves. `rastrillo doctor --fix` re-copies both files, and `theme.css` with them.
 
 ### Changed: clicking into a combobox selects its value; re-copy `select.js`
 
 Typing or Delete then replaces the whole value. A second click places the cursor.
 
 ### Fixed: a filter chip's remove link fills the chip's end; re-vendor `tokens.css`
+
+The × now runs to the chip's edge, so its hover colour fills the end of the chip. Before, a gap after it made it look like a second, smaller button.
 
 ### Changed: a row menu sits at the trailing edge of whatever holds it
 
@@ -264,14 +339,6 @@ On a phone, the back strip, the index page's header and the topbar and console b
 ### Changed: put "Use your email instead" inside `rst-signin-providers`
 
 Make the link back to the email form the last child of `rst-signin-providers`. There it is as easy to tap as the provider buttons. An app that keeps the link after the list looks as it did before, with a link 19px tall.
-
-### Changed: pagination fits one line on a phone; mark Previous and Next with `Rel`, and add `paginationItems` if you build your own FuncMap
-
-Give the Previous item `"Rel" "prev"` and the Next item `"Rel" "next"`. On a phone or touch screen, those two become chevron buttons that still say Previous and Next to a screen reader, and the strip shows only the first page, the current page and the last, spread across one line: ‹ 1 … 4 … 9 ›. A strip without `Rel` renders as it did before. Apps made with `rastrillo new` get `Rel` when they regenerate their list pages.
-
-The partial now calls a new template function, `paginationItems`. `ui.Funcs` includes it. If you build your own FuncMap without `ui.Funcs`, add it, or the partial fails to parse.
-
-Chip styles in `tokens.css` now apply only to the strip's direct children. If your own markup nests a link deeper, move it up a level. Re-vendor `tokens.css`.
 
 ### Fixed: the bulk bar's text stays on one line on a phone; re-vendor `tokens.css`
 
@@ -293,7 +360,13 @@ On CARLOS, the platform will make an instance key before your app first starts a
 
 `carlos.InstanceKey(own)` returns your app's own key if it has one, then `$CARLOS_INSTANCE_KEY`. On CARLOS with neither, it returns `ErrNoInstanceKey`: don't start. Off CARLOS it returns `ErrNotOnCarlos`: load or make a key as before. Nothing changes until you call it.
 
-**The skill is now a short core and topic files.** `SKILL.md` is 7 KB, down from 32 KB. It covers what every task needs and names the file in `skill/` to read before each kind of work: sign-in, screens, partials, design, forms, data, background work and the CLI. `skill/partials.md` lists every partial and the keys its template reads; keys a Go helper reads for it are in the template's own comment. A new app's `AGENTS.md` gives the exact command for its own copy of the skill. An app made earlier still points at the module cache, where an older copy can wait: replace everything above `## Layout` in its `AGENTS.md` with what `rastrillo new` writes now.
+### Added: a guide to writing an addon
+
+[Writing an addon](/docs/writing-addons) helps you decide whether shared code belongs in rastrillo or in an addon. It says what an addon costs to keep, how to ask for a hook in rastrillo first, and what an addon's repository, gate, `SKILL.md`, module path and releases need. Read it before you start one. The old advice to serve an addon's `SKILL.md` at a URL is gone.
+
+### Changed: the skill is a short core and topic files; update `AGENTS.md` in an app made earlier
+
+`SKILL.md` is 7 KB, down from 32 KB. It covers what every task needs and names the file in `skill/` to read before each kind of work: sign-in, screens, partials, design, forms, data, background work and the CLI. `skill/partials.md` lists every partial and the keys its template reads; keys a Go helper reads for it are in the template's own comment. A new app's `AGENTS.md` gives the exact command for its own copy of the skill. An app made earlier still points at the module cache, where an older copy can wait: replace everything above `## Layout` in its `AGENTS.md` with what `rastrillo new` writes now.
 
 ## v0.28.0
 
@@ -490,17 +563,6 @@ staticcheck:
 ```
 
 A first run on an older app may report findings its gate never looked for. Rastrillo's own `make ci` runs staticcheck too.
-
-### Added: `rastrillo/objrec` keeps records in the object store
-
-A central app can now keep its records in its object store instead of a
-database. `Create` succeeds once per key, `Update` succeeds only against
-the version you read, and `Mutate` re-reads and retries. It reads the same
-`CARLOS_STORE_*` variables as `blobs`, under its own `records/` prefix.
-`objrec.Dir` is the local stand-in for tests and development.
-
-The SigV4 signer `blobs` used moved to `internal/sigv4` so both packages
-share one copy. Nothing changes for an app that uses `blobs`.
 
 ### Fixed: a date button that opens the browser's panel claims no popup
 
