@@ -1,7 +1,9 @@
 # Add email-and-password sign-in to a fresh scaffold
 
-`rastrillo new` scaffolds no accounts. These steps, applied to one,
-pass its `make ci` (`<app>` is the app's name; `/account` stands for
+For a new app, `rastrillo new --auth=magic` already signs people in by
+emailed link. This page is for password sign-in, or for an app made
+without `--auth`: `rastrillo new` alone scaffolds no accounts. These
+steps, applied to one, pass its `make ci` (`<app>` is the app's name; `/account` stands for
 your owned routes). Sessions, traps and other plugins: skill/signin.md.
 
 **1. Model.** In `models.go`, add `&User{}` to `Models` and

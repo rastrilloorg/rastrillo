@@ -7,6 +7,8 @@ It is the framework's turnkey option. You get the whole flow (link
 minting, single-use redemption, rate limiting, sessions and CSRF) and a
 sign-in screen to use as it is or replace with your own.
 
+Starting a new app? `rastrillo new --auth=magic <name>` sets all of this up. This page is for adding it to an app you already have, and for how it works.
+
 If you read nothing else on this page, read
 [the trap](#the-trap-do-not-use-sessions-userid-here). It costs people
 a working app.

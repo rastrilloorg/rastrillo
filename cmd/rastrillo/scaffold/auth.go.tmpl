@@ -1,0 +1,197 @@
+package __PKG__
+
+import (
+	"context"
+	"crypto/rand"
+	"encoding/hex"
+	"errors"
+	"html/template"
+	"net/http"
+	"os"
+	"time"
+
+	"github.com/go-chi/chi/v5"
+	"gorm.io/gorm"
+
+	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/auth"
+	"amadan.net/rastrillo/rastrillo/carlos"
+	"amadan.net/rastrillo/rastrillo/db"
+	"amadan.net/rastrillo/rastrillo/locales"
+	"amadan.net/rastrillo/rastrillo/mail"
+	"amadan.net/rastrillo/rastrillo/pow"
+	"amadan.net/rastrillo/rastrillo/scope"
+	"amadan.net/rastrillo/rastrillo/ui"
+
+	genlocales "__NAME__/gen/locales"
+	"__NAME__/internal/__PKG__/icons"
+)
+
+// Sign-in by emailed link (rastrillo/auth), with ui's shipped sign-in
+// screen. A visitor types an address; the app emails a link; opening it
+// shows a Sign in button whose POST signs them in. Nobody chooses or
+// stores a password. docs/site/magic-links.md has the whole story.
+
+// powAssets serves pow's scripts from the module, never a vendored copy:
+// a copy drifting from the Go verifier fails silently.
+var powAssets = rastrillo.NewAssets(pow.Assets())
+
+// newAuth builds the sign-in plugin and the proof-of-work guard in front
+// of it. The guard makes a scripted flood of sign-in requests cost work,
+// so the mailer is not an open relay for anyone's address.
+func newAuth(d *db.DB, origin string, mailer mail.Sender) (*auth.Auth, *pow.Guard, error) {
+	if signinPagesErr != nil {
+		return nil, nil, signinPagesErr
+	}
+	// The instance key seals sign-in challenges and pending sign-ins. On
+	// CARLOS it is the platform's, minted and backed up before the app
+	// first ran. Off CARLOS it is __ENV___INSTANCE_KEY, or else a fresh
+	// random key for this run: never a fixed one, because a key anyone
+	// can read in this source lets them forge a sign-in as someone else.
+	// A random key only means links and half-finished sign-ins end with
+	// the process; set the variable to keep them across restarts.
+	key, err := carlos.InstanceKey(os.Getenv("__ENV___INSTANCE_KEY"))
+	if errors.Is(err, carlos.ErrNotOnCarlos) {
+		key, err = randomKey()
+	}
+	if err != nil {
+		return nil, nil, err // ErrNoInstanceKey: on CARLOS with no key; never start
+	}
+	writer, err := d.G.DB()
+	if err != nil {
+		return nil, nil, err
+	}
+	guard, err := pow.New(pow.Config{
+		InstanceKey: key,
+		Nonces:      pow.SQLNonces(writer),
+		// 16 bits keeps the p95 solve under a second on a slow phone,
+		// which a one-tap visitor waits through in full.
+		Difficulty: 16,
+		MinAge:     500 * time.Millisecond,
+		ScriptURL:  "/pow" + powAssets.Path("pow.js"),
+		WorkerURL:  "/pow" + powAssets.Path("pow-worker.js"),
+	})
+	if err != nil {
+		return nil, nil, err
+	}
+	var au *auth.Auth
+	au, err = auth.New(auth.Config{
+		DB:           writer,
+		Origin:       origin,
+		InstanceKey:  key,
+		Proof:        guard,
+		Mailer:       mailer,
+		SigninPath:   "/signin",
+		SigninScreen: true,
+		// No keymail federation partners: every address gets a magic
+		// link and no server is ever dialed. Left nil, the classifier
+		// would look up and probe each address's own domain, a request
+		// to wherever an anonymous visitor's domain points.
+		KeymailServers: []string{},
+		// The page an emailed link opens is the sign-in screen with a Sign
+		// in button: a mail scanner that fetches the link spends nothing.
+		RenderConfirm: func(w http.ResponseWriter, r *http.Request, _ auth.ConfirmPageData) { signinPage(au)(w, r) },
+	})
+	if err != nil {
+		return nil, nil, err
+	}
+	return au, guard, nil
+}
+
+// mountAuth mounts the sign-in routes. Verify is on GET and POST: GET
+// draws the button and spends nothing, POST redeems the link.
+func mountAuth(r chi.Router, au *auth.Auth) {
+	r.Get("/signin", signinPage(au))
+	r.Post("/signin", au.Begin)
+	r.Post("/signin/forget", au.Forget)
+	r.Get("/auth/callback", au.Callback)
+	r.Get("/auth/verify", au.Verify)
+	r.Post("/auth/verify", au.Verify)
+	r.Post("/signout", au.Signout)
+	r.Handle("/pow/*", http.StripPrefix("/pow/", powAssets.Handler()))
+}
+
+// signinPages renders the sign-in screen on the stage shell, a set of
+// its own because the rest of the app uses layout.html.
+var signinPages, signinPagesErr = newSigninPages()
+
+func newSigninPages() (*ui.Pages, error) {
+	cfg, err := locales.CheckConfig(genlocales.DefaultLocale, genlocales.Locales)
+	if err != nil {
+		return nil, err
+	}
+	return ui.NewPages(ui.PagesConfig{
+		App:    appFS,
+		Layout: "templates/stage.html",
+		Pages:  map[string]ui.PageFile{"signin": {Path: "templates/signin.html"}},
+		Locale: cfg,
+		Funcs:  template.FuncMap{"icon": icons.Icon, "iconAssets": icons.Assets, "asset": assets.Path},
+	})
+}
+
+func signinPage(au *auth.Auth) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		st := au.SigninState(r)
+		au.PrepareSigninResponse(w, st)
+		// Scheme keeps the visitor's Light or Dark choice on this page too.
+		data := map[string]any{"L": signinPages.LocalizerFor(r), "Scheme": rastrillo.SchemeFrom(r), "Signin": st, "Brand": map[string]any{"Name": "__NAME__"}}
+		if err := signinPages.Execute(w, "signin", data); err != nil {
+			http.Error(w, "Something went wrong.", http.StatusInternalServerError)
+		}
+	}
+}
+
+type signedInKey struct{}
+
+// signedIn marks a request whose visitor is signed in, so the layout on
+// every page, public ones included, can offer Sign out instead of Sign
+// in. It blocks nothing: owned routes sit behind au.RequireSession.
+func (a *app) signedIn(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if _, ok := a.auth.SessionFrom(r); ok {
+			r = r.WithContext(context.WithValue(r.Context(), signedInKey{}, true))
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
+// ownerOf is the signed-in person as an owned row records them: the
+// verified address exactly as auth gives it. Never lowercase it here:
+// the part before @ can be case-sensitive, and folding it would hand
+// Ada@example.com's rows to a different mailbox, ada@example.com. Set
+// Owner from it when creating a row.
+func ownerOf(r *http.Request) string {
+	id, _ := auth.From(r)
+	return id.Address
+}
+
+// owned is the one seam every read and write of an owned row goes
+// through. Under magic links the session's subject is the verified
+// address, so owned rows carry it in an Owner column. Never
+// sessions.UserID here: it would read (0, false) and scope every query
+// to nobody. Inside a transaction, scope the callback's tx instead,
+// scope.OwnedBy(tx, "owner", ownerOf(r)): a.db.G there waits on the
+// writer connection the transaction holds.
+func (a *app) owned(r *http.Request) *gorm.DB {
+	return scope.OwnedBy(a.db.G, "owner", ownerOf(r))
+}
+
+func randomKey() (string, error) {
+	b := make([]byte, 32)
+	if _, err := rand.Read(b); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(b), nil
+}
+
+// account is the example owned page: it counts the visitor's notes
+// through the owned seam. Replace it with the app's own.
+func (a *app) account(w http.ResponseWriter, r *http.Request) {
+	id, _ := auth.From(r)
+	var notes int64
+	if err := a.owned(r).Model(&Note{}).Count(&notes).Error; err != nil {
+		ErrorPage(w, r, http.StatusInternalServerError, "")
+		return
+	}
+	render(w, r, "index", map[string]any{"Address": id.Address, "Notes": notes})
+}
