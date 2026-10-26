@@ -1,11 +1,11 @@
 # Live pages: a change stream and forms that swap in place — design
 
 **Date:** 2026-10-26
-**Status:** Draft, for Paul's review
+**Status:** Ready for Paul's review
 **Branch:** `live-fragments`
 **Written by:** Claude Opus 5.5 (claude-opus-5-5), default reasoning.
-Reviewed by a builder check and by GPT-6 Astra (high reasoning); this
-revision answers both.
+Reviewed by a builder check and by three rounds of GPT-6 Astra (high
+reasoning); the record is on rastrillo discussion 129.
 
 ## Why
 
@@ -372,6 +372,21 @@ request is filed:
   event carries an `id:` that encodes the versions the client has (the
   builder picks the encoding), and a connect with `Last-Event-ID`
   catches up exactly like a connect with versions in the URL.
+- **Never activity, in any outcome.** Every opted-in stream request is
+  non-waking and earns no activity credit, whether the edge holds it,
+  relays it or refuses it. In particular, over the edge's cap the
+  stream is refused, never served as a plain proxied stream, which
+  would keep the instance awake.
+- **Upstream ends while awake.** Rastrillo bounds each stream's
+  lifetime, so the upstream can end while the instance is busy with
+  other traffic. The edge reopens it at once with `Last-Event-ID`,
+  re-checking auth, or closes the browser's stream so the shim's own
+  recovery runs. A held stream with no upstream while the instance is
+  awake would go quiet with nothing to say so.
+- **Delivery is not application.** `Last-Event-ID` at the edge records
+  that events were delivered, not that their fetches landed. Fetches
+  still owed stay in the browser (section 3), and the regions' versions
+  stay old until they land.
 - Where the stream lives, and how a route opts in, is the platform's
   call in #432. Rastrillo puts its stream wherever that says.
 
@@ -397,7 +412,8 @@ edge gives up on a held stream:
 waits on an integration test against the activator and edge: a page
 with an open stream and no other traffic lets the instance sleep after
 the idle window; another request wakes it; the page catches up without
-a reload.
+a reload. The same holds with the edge's stream cap exhausted, and when
+a stream's lifetime runs out while the instance stays awake.
 
 ## Proving it
 
