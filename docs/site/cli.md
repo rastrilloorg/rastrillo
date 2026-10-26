@@ -34,6 +34,9 @@ own tests, and serves, before you have written anything. It runs
 `--scaffold` picks what to scaffold. `bare` is a page with no database,
 `single` is one app and its SQLite data, and `accounts` is `single` with
 sign-in by emailed link. `home` and `hub` are planned and not built yet.
+`bare` writes no `manifest/`, `gen/`, `Makefile` or `AGENTS.md` and runs
+no `generate`: its gate is `go test ./...`. It refuses `--ux`, which
+only chooses what goes in `AGENTS.md`.
 
 All six set × delivery combinations scaffold, compile and pass
 `generate --check`. The icon set becomes an ordinary app-owned package
@@ -120,6 +123,8 @@ The watch loop: polls `app/`, `actions/`, `manifest/`, `cmd/`,
 `locales/` and `templates/`, and on any change reruns `generate`,
 rebuilds `./cmd/<name>` to a temporary binary, and restarts the process
 with a graceful SIGTERM. Anything after `--` is passed to your app.
+An app with no `manifest/`, `actions/` or `gen/`, such as a `bare` one,
+has nothing to generate, so `dev` skips `generate` and only rebuilds.
 
 A failed generate or rebuild keeps the previous build serving, and a
 failed restart keeps the loop watching — either way the next save

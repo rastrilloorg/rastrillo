@@ -3,6 +3,7 @@ package main
 import (
 	"cmp"
 	"embed"
+	"errors"
 	"flag"
 	"fmt"
 	"go/token"
@@ -114,6 +115,11 @@ func runNew(args []string) error {
 	if err := checkChoices(o); err != nil {
 		return err
 	}
+	// Set, not the value: --ux=considered typed out is still a flag that
+	// would silently do nothing.
+	if chosen.Name == "bare" && set["ux"] {
+		return errors.New(newUXBareMsg)
+	}
 	return chosen.Write(o)
 }
 
@@ -186,7 +192,10 @@ type designPages struct {
 	routes, handlers, tests string
 }
 
-func designSystem(o newOpts, c newChoices, appDir string) designPages {
+// designSystem is the design system's files for an app in appDir.
+// methods says how that app writes a handler: single's are methods on
+// its app struct, bare's plain funcs.
+func designSystem(o newOpts, c newChoices, appDir string, methods bool) designPages {
 	d := designPages{pages: []string{"index"}, files: map[string]string{
 		// The page frame, chosen by --shell and delivered verbatim from
 		// ui.Layout: app-owned from here on, exactly like tokens.css.
@@ -204,7 +213,11 @@ func designSystem(o newOpts, c newChoices, appDir string) designPages {
 		d.files[filepath.Join(appDir, "templates", "index.html")] = fmt.Sprintf(sectionsIndexTemplate, scaffoldOverview, html.EscapeString(o.Name))
 		d.files[filepath.Join(appDir, "templates", "overview.html")] = fmt.Sprintf(overviewTemplate, scaffoldOverview, html.EscapeString(o.Name))
 		d.pages = append(d.pages, "overview")
-		d.routes, d.handlers, d.tests = "\n\t\t{\"GET /overview\", a.overview},", overviewHandler, overviewTest
+		recv, call := "", ""
+		if methods {
+			recv, call = "(a *app) ", "a."
+		}
+		d.routes, d.handlers, d.tests = "\n\t\t{\"GET /overview\", "+call+"overview},", fmt.Sprintf(overviewHandler, recv), overviewTest
 	}
 	// Some licences oblige the app, not the framework. Writing the file
 	// is the only way that obligation travels with the code.
@@ -257,9 +270,14 @@ func pageList(names ...string) string {
 	return `"` + strings.Join(names, `", "`) + `"`
 }
 
-// printIconNotice states the icon delivery's consent notice once. A
-// supported choice that nags on every build is not really supported.
+// printIconNotice names the icon set's attribution file, which the
+// licence obliges the app to keep, and states the delivery's consent
+// notice once. A supported choice that nags on every build is not
+// really supported.
 func printIconNotice(o newOpts, rendered iconsets.Rendered) {
+	if rendered.AttribName != "" {
+		fmt.Printf("  %s   (%s requires attribution — keep it)\n", rendered.AttribName, o.IconSet)
+	}
 	if rendered.Notice == "" {
 		return
 	}
@@ -300,7 +318,7 @@ func writeSingle(o newOpts) error {
 
 	appDir := filepath.Join(name, "internal", pkg)
 
-	d := designSystem(o, c, appDir)
+	d := designSystem(o, c, appDir, true)
 	pages := pageList(append(d.pages, "errors", "tokens")...)
 	routes, handlers, extraTests := d.routes, d.handlers, d.tests
 
@@ -432,10 +450,6 @@ func writeSingle(o newOpts) error {
 	fmt.Println("  AGENTS.md            (instructions + UX conventions, the source of truth)")
 	fmt.Println("  CLAUDE.md            (an @AGENTS.md import, nothing more)")
 	fmt.Println("  README.md            (what this app is, and how the browser drive runs)")
-	if c.rendered.AttribName != "" {
-		fmt.Printf("  %s   (%s requires attribution — keep it)\n", c.rendered.AttribName, o.IconSet)
-	}
-
 	printIconNotice(o, c.rendered)
 
 	// The scaffold ships with passing tests (the harness above), so the
@@ -950,9 +964,10 @@ const overviewTemplate = `{{/* overview.html: a section. up is its way back: the
 {{end}}
 `
 
-// overviewHandler is appended to handlers.go for the two-page shells.
+// overviewHandler is appended to the handlers for the two-page shells,
+// %s its receiver, if any.
 const overviewHandler = `
-func (a *app) overview(w http.ResponseWriter, r *http.Request) {
+func %soverview(w http.ResponseWriter, r *http.Request) {
 	render(w, r, "overview", nil)
 }
 `

@@ -1,0 +1,51 @@
+package __PKG__
+
+import "net/http"
+
+// route is one entry in the route table: a full ServeMux pattern,
+// method included, and its handler.
+type route struct {
+	Pattern string
+	Handler http.HandlerFunc
+}
+
+// routes is the app's route table. Add a page here: its pattern, and a
+// handler that renders its template from templates/.
+//
+// The index is "GET /{$}", not "GET /": a bare "/" matches every path,
+// so an unknown URL would get the home page instead of a 404.
+func routes() []route {
+	return []route{
+		{"GET /{$}", index},__ROUTES__
+	}
+}
+
+// Mux is the whole app: the static files, and the route table behind
+// the page middleware, which puts the request's language where render
+// reads it.
+func Mux() *http.ServeMux {
+	pageMux := http.NewServeMux()
+	for _, rt := range routes() {
+		pageMux.HandleFunc(rt.Pattern, rt.Handler)
+	}
+	mux := http.NewServeMux()
+	// The app serves its own static files; the framework never does.
+	// They are embedded (render.go) and fingerprinted: templates link
+	// them via {{asset ...}}, which returns a content-hashed URL the
+	// handler serves cacheable-forever.
+	mux.Handle("GET /static/", assets.Handler())
+	h := pages.Middleware(pageMux)
+	// pagesErr is render.go's: a template that does not parse, or a
+	// locale boot refuses. Without pages, every request gets
+	// ErrorPage's plain 500 instead of a panic in the middleware.
+	if pagesErr != nil {
+		h = http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) { ErrorPage(w, req, http.StatusInternalServerError, "") })
+	}
+	mux.Handle("/", h)
+	return mux
+}
+
+func index(w http.ResponseWriter, r *http.Request) {
+	render(w, r, "index", nil)
+}
+__HANDLERS__

@@ -91,9 +91,10 @@ func TestUsageListsTheScaffoldFlag(t *testing.T) {
 	}
 }
 
-// A bad choice is refused by runNew, not by each shape's Write: bare and
-// accounts do not write anything yet, so reaching their "not built yet"
-// error would mean the check was left to the shape.
+// A bad choice is refused by runNew, not by each shape's Write: accounts
+// does not write anything yet, so reaching its "not built yet" error,
+// or finding bare's directory, would mean the check was left to the
+// shape.
 func TestNewChecksChoicesBeforeAnyShapeWrites(t *testing.T) {
 	for _, shape := range []string{"bare", "single", "accounts"} {
 		t.Run(shape, func(t *testing.T) {

@@ -42,7 +42,7 @@ var errShapeNotBuilt = errors.New("not built yet")
 // shapes is the menu in the order the help names it. Reserved names
 // stay on it so lookupShape can tell "planned" from "mistyped".
 var shapes = []shape{
-	{Name: "bare", Summary: "a page, no database", Write: func(newOpts) error { return errShapeNotBuilt }},
+	{Name: "bare", Summary: "a page, no database", Write: writeBare},
 	{Name: defaultShape, Summary: "one app and its SQLite data", Write: writeSingle},
 	{Name: "accounts", Summary: "single with sign-in by emailed link", Write: func(newOpts) error { return errShapeNotBuilt }},
 	{Name: "home", Reserved: newReservedHomeMsg},

@@ -193,10 +193,13 @@ func (d *driftChecker) close() {
 	}
 }
 
-// rebuildApp is one turn of dev's loop: generate, then build appPkg into bin.
+// rebuildApp is one turn of dev's loop: generate when the app has
+// anything to generate, then build appPkg into bin.
 func rebuildApp(dir, appPkg, bin string) error {
-	if err := runGenerate([]string{dir}); err != nil {
-		return err
+	if generates(dir) {
+		if err := runGenerate([]string{dir}); err != nil {
+			return err
+		}
 	}
 	cmd := exec.Command("go", "build", "-o", bin, appPkg)
 	cmd.Dir = dir
@@ -205,6 +208,19 @@ func rebuildApp(dir, appPkg, bin string) error {
 		return fmt.Errorf("go build: %w", err)
 	}
 	return nil
+}
+
+// generates reports whether dir has generation input (manifest/,
+// actions/) or output (gen/). A bare app has none, and generating
+// anyway would write it a gen/ it never imports; an app with any of
+// them must generate, or it builds against stale generated code.
+func generates(dir string) bool {
+	for _, d := range []string{"manifest", "actions", "gen"} {
+		if _, err := os.Stat(filepath.Join(dir, d)); err == nil {
+			return true
+		}
+	}
+	return false
 }
 
 // runDev implements `rastrillo dev [dir] [-- app args...]` (design doc
