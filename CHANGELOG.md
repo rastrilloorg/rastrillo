@@ -10,6 +10,23 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+### Added: `rastrillo/pdf`, a dependency-free PDF writer
+
+Flow headings, paragraphs, field lists, tables and callouts onto A4
+pages and get deterministic bytes back — no sidecar, no headless
+browser, no system font, because CARLOS ships an app as one binary and
+there is nowhere on the platform to run any of those. Tables and
+oversized rows paginate on their own, repeating the column headings on
+each page; an optional stamp overlays an approval mark on every page.
+`Measure`, `Wrap` and `Encode` are exported on their own for drawing
+onto something this package does not lay out itself, such as a blank
+form. See [pdf](/docs/reference/pdf).
+
+Ported from an app's own report renderer, generalised off that app's
+report-specific block tree (its citation and verification model stayed
+behind) and with no app- or jurisdiction-specific layer — a
+cheque-printing mode built on the same engine — carried over either.
+
 **A JSON API for every app, and agents that act for a person (breaking
 upgrade for generated apps and for code that reads `Actor`).** A
 manifest resource can now be served as JSON at `/api/v1`. A person
