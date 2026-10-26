@@ -309,6 +309,11 @@
           "blurb": "Step-up and sign-in WebAuthn, the Gate, and recovery codes."
         },
         {
+          "slug": "reference/oidc",
+          "label": "oidc",
+          "blurb": "Sign in with Microsoft Entra ID or Google Workspace: the verification core and the HTTP flow."
+        },
+        {
           "slug": "reference/password",
           "label": "password",
           "blurb": "The email-and-password plugin: config, handlers, hashing, rate limit."
