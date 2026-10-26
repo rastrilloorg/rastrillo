@@ -1,7 +1,7 @@
 # Live pages: a change stream and forms that swap in place — design
 
 **Date:** 2026-10-26
-**Status:** Ready for Paul's review
+**Status:** Approved (Paul, in conversation: "Let's go. This seems very good, and manageable!")
 **Branch:** `live-fragments`
 **Written by:** Claude Opus 5.5 (claude-opus-5-5), default reasoning.
 Reviewed by a builder check and by three rounds of GPT-6 Astra (high
