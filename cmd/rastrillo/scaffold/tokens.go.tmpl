@@ -10,23 +10,22 @@ import (
 )
 
 // Tokens returns the API token page's routes, for Router to register on
-// its ServeMux: a person makes a token for an agent or a script at
+// its Routes: a person makes a token for an agent or a script at
 // /tokens, sees it once, and revokes it there.
 //
 // Every door takes the token's owner from the signed-in session, so the
 // page needs sign-in, which a new app does not have yet. Once it does
 // (examples/notes in the rastrillo repository shows how), add this to
-// Router before the CSRF wrap:
+// Router after the route table's loop:
 //
 //	tokens, err := Tokens(d, sess)
 //	if err != nil {
 //		return nil, err
 //	}
-//	tokens(mux)
+//	tokens(r)
 //
-// GET /tokens is then outside the route table, so add "/tokens" to the
-// perf test's Patterns, with a Signin, or the perf lane never measures it.
-func Tokens(d *db.DB, sess *sessions.Sessions) (func(mux *http.ServeMux), error) {
+// The perf lane then measures GET /tokens, so its test needs a Signin.
+func Tokens(d *db.DB, sess *sessions.Sessions) (func(r *Routes), error) {
 	store, err := newTokens(d)
 	if err != nil {
 		return nil, err
@@ -35,16 +34,16 @@ func Tokens(d *db.DB, sess *sessions.Sessions) (func(mux *http.ServeMux), error)
 	if err != nil {
 		return nil, err
 	}
-	return func(mux *http.ServeMux) {
-		mux.Handle("GET /tokens", sess.Require(http.HandlerFunc(th.Page)))
+	return func(r *Routes) {
+		r.Handle("GET /tokens", sess.Require(http.HandlerFunc(th.Page)))
 		// Making a token needs a sign-in within ten minutes: a token
 		// outlives the session that made it, so this is the moment to
 		// be sure who is at the keyboard. Revoking does not, so that
 		// stopping a token stays easy. RequireFresh includes Require.
-		mux.Handle("POST /tokens", sess.RequireFresh(10*time.Minute)(http.HandlerFunc(th.Create)))
-		mux.Handle("POST /tokens/revoke", sess.Require(http.HandlerFunc(th.Revoke)))
-		mux.Handle("POST /tokens/revoke-agent", sess.Require(http.HandlerFunc(th.RevokeAgent)))
-		mux.Handle("POST /tokens/revoke-all", sess.Require(http.HandlerFunc(th.RevokeAll)))
+		r.Handle("POST /tokens", sess.RequireFresh(10*time.Minute)(http.HandlerFunc(th.Create)))
+		r.Handle("POST /tokens/revoke", sess.Require(http.HandlerFunc(th.Revoke)))
+		r.Handle("POST /tokens/revoke-agent", sess.Require(http.HandlerFunc(th.RevokeAgent)))
+		r.Handle("POST /tokens/revoke-all", sess.Require(http.HandlerFunc(th.RevokeAll)))
 	}, nil
 }
 

@@ -71,6 +71,8 @@ What changed:
 **`perftest.Screens` takes a list of routes.** Set `ScreenConfig.Patterns`
 to your `http.ServeMux` routes instead of `Routes`, which needs a chi
 router. A trailing `{$}` is dropped, so `"/{$}"` is the screen `GET /`.
+A subtree pattern such as `"/admin/"` is a mount and fails, like chi's
+`/*`, until an `Opaque` group lists its screens or a record skips it.
 Apps that set `Routes` change nothing.
 
 **`csrf.Exempt` lets a machine POST to a named path.** A payment provider's webhook and a `carlos schedule` tick are POSTs with no `Sec-Fetch-Site`, `Origin` or `Referer`, so `csrf.Protect` refused them. `csrf.Protect(origin, csrf.Exempt("/stripe/webhook"))` now lets those exact paths through. The middleware checks nothing on an exempt path, so its handler must check its own credential, such as a webhook signature or `carlos.Tick`. A path matches only when it is exactly `r.URL.Path`, and `Exempt` panics on an empty or relative path. `Protect(origin)` calls compile and behave as before. See [csrf](/docs/reference/csrf#exempt).

@@ -137,13 +137,16 @@ Adding the first manifest to this app:
                Actor: rastrillo.Actor{}, Authorize: authorize,
                Render: GenRender}
        })
-       mux.Handle("/admin/", gmux)
+       r.Handle("/admin/", gmux)
 
    gen.Boot upgrades and checks the generated money columns, and
    gen.Router will not build without what it returns. Mounted inside
    the app's router, the generated screens get the same CSRF check and
    the same localizer as the hand ones. Authorize is api.go's
-   authorize, so the pages and the API follow the same rules.
+   authorize, so the pages and the API follow the same rules. The perf
+   lane cannot see inside the mount and says so until perf_test.go
+   lists its screens in an Opaque group, or .rastrillo/budgets.txt
+   records a skip for it (docs/site/reference/perftest.md).
 
 7. Commit api/v1.json with gen/. A resource with scope = "user" is on
    the JSON API at /api/v1/<name> after its first generate. A resource

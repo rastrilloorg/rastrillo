@@ -84,7 +84,8 @@ gitleaks scans every commit for keys and tokens, because a secret you deleted is
 The [migration check](/docs/migrations) is one of the app's tests,
 `TestModelsMatchMigrations`, so `make test` runs it and so does a plain
 `go test ./...`. It is what stops models and migrations drifting apart
-between deploys. It touches no database, so it runs anywhere.
+between deploys. It replays the migrations into an in-memory database,
+never one of yours, so it runs anywhere.
 
 ## The budgets
 
@@ -191,13 +192,21 @@ tests, and mounts its routes:
 
 ```go
 // internal/notes/sharing/sharing.go
-func Mount(r chi.Router, d Deps) {
-	r.Get("/notes/{id}/share", d.share)
-	r.Post("/notes/{id}/share", d.createShare)
+
+// Router is the app's *notes.Routes, which records each GET route for
+// the perf lane. This package cannot import notes, which imports it.
+type Router interface{ Handle(pattern string, h http.Handler) }
+
+func Mount(r Router, d Deps) {
+	r.Handle("GET /notes/{id}/share", http.HandlerFunc(d.share))
+	r.Handle("POST /notes/{id}/share", http.HandlerFunc(d.createShare))
 }
 ```
 
-`Router` in `app.go` calls each feature's `Mount`. An edit to one feature
+`Router` in `app.go` calls each feature's `Mount`. Register through it,
+never on a ServeMux of your own: the perf lane cannot see one. In an app
+on chi (`--auth=magic`), `Mount` takes a `chi.Router` and registers with
+`r.Get` and `r.Post`. An edit to one feature
 then rebuilds and retests only that feature, Go's cache skips the rest,
 and the packages compile and test in parallel.
 

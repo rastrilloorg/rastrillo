@@ -99,3 +99,56 @@ func TestMigrationCheckTestCatchesDrift(t *testing.T) {
 		t.Fatalf("TestModelsMatchMigrations still fails after generate:\n%s", out)
 	}
 }
+
+// A ServeMux cannot list what it serves, so single's Router records what
+// is registered on it: a route added outside the table, the token page
+// or a feature's Mount, is measured by the perf lane, not silently
+// missed. A pattern with no method serves GET too; a POST is no screen.
+func TestSingleRouterRecordsEveryGETItServes(t *testing.T) {
+	if testing.Short() {
+		t.Skip("scaffolds, tidies and tests a whole app")
+	}
+	setSandboxGoEnv(t)
+	t.Chdir(t.TempDir())
+	dir := scaffoldWithReplace(t, "plain")
+	mustWrite(t, filepath.Join(dir, "internal", "plain", "routes_test.go"), `package plain_test
+
+import (
+	"io"
+	"log/slog"
+	"net/http"
+	"slices"
+	"testing"
+
+	"amadan.net/rastrillo/rastrillo/db"
+
+	"plain/internal/plain"
+)
+
+func TestRoutesRecordsItsGETs(t *testing.T) {
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	d, err := db.Open(schema.Path(t), logger)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer d.Close()
+	r, err := plain.Router(d, testOrigin, logger)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ok := func(w http.ResponseWriter, _ *http.Request) {}
+	r.HandleFunc("GET /later", ok)
+	r.Handle("/any", http.HandlerFunc(ok))
+	r.HandleFunc("POST /form", ok)
+	if got, want := r.GETPatterns(), []string{"/{$}", "/later", "/any"}; !slices.Equal(got, want) {
+		t.Errorf("GETPatterns() = %q, want %q", got, want)
+	}
+	if rec := get(t, r, "/later"); rec.Code != http.StatusOK {
+		t.Errorf("GET /later: %d, want 200: Handle must register on the mux it serves", rec.Code)
+	}
+}
+`)
+	if out, err := goTestIn(dir, "-run", "^TestRoutesRecordsItsGETs$", "./internal/plain/"); err != nil {
+		t.Fatalf("single's Router does not record what it serves:\n%s", out)
+	}
+}

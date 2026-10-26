@@ -601,8 +601,8 @@ import (
 // read it there rather than looking for the directory). Adding a subsystem
 // also means adding its Schema to migrations.go's BootSchema — see
 // the comment there. Past 5,000 lines here, split by feature: a package
-// per feature under internal/%[1]s/, each with Mount(mux *http.ServeMux, deps)
-// called from Router (docs/site/testing.md).
+// per feature under internal/%[1]s/, each with Mount(r, deps) called from
+// Router, registering through r.Handle (docs/site/testing.md).
 func App(d *db.DB, origin string, logger *slog.Logger) (*http.ServeMux, error) {
 	r, err := Router(d, origin, logger)
 	if err != nil {
@@ -616,7 +616,7 @@ func App(d *db.DB, origin string, logger *slog.Logger) (*http.ServeMux, error) {
 }
 
 // Router applies the schema and builds the routes from the route table.
-func Router(d *db.DB, origin string, logger *slog.Logger) (http.Handler, error) {
+func Router(d *db.DB, origin string, logger *slog.Logger) (*Routes, error) {
 	// pagesErr is render.go's: a template that does not parse, or a
 	// locale configuration boot refuses. Either stops the app here,
 	// before any migration runs, not at the first request.
@@ -640,7 +640,7 @@ func Router(d *db.DB, origin string, logger *slog.Logger) (http.Handler, error) 
 		"skipped", migrated.Skipped, "adopted", migrated.Adopted)
 
 	a := &app{db: d, logger: logger}
-` + stdlibRouterTail + `
+` + stdlibRouterTail + routesType + `
 // route is one entry in the route table: a full ServeMux pattern,
 // method included, and its handler.
 type route struct {
@@ -653,7 +653,7 @@ type route struct {
 		{"GET /{$}", a.index},%[2]s
 	}
 }
-` + getPatternsFunc + `
+
 // Mux mounts the static files and the JSON API (api.go) beside the router.
 func Mux(r, apiTree http.Handler) *http.ServeMux {
 	mux := http.NewServeMux()
@@ -696,42 +696,60 @@ func Configure(opts *rastrillo.Options, mux *http.ServeMux, started time.Time) {
 }
 `
 
-// stdlibRouterTail, stdlibRoutesDoc and getPatternsFunc are the parts
-// of appTemplate that are a ServeMux's: applyMagicAuth swaps exactly
-// these for chi's, so they are named once.
+// stdlibRouterTail, routesType and stdlibRoutesDoc are the parts of
+// appTemplate that are a ServeMux's: applyMagicAuth swaps exactly these
+// for chi's, so they are named once.
 const stdlibRouterTail = `
-	mux := http.NewServeMux()
+	// App-wide, from day one: every state-changing route on r is born
+	// covered. Origin-checking, not tokens — nothing to mint or forget
+	// in a form.
+	r := &Routes{mux: http.NewServeMux()}
+	r.h = csrf.Protect(origin)(r.mux)
 	for _, rt := range a.routes() {
-		mux.HandleFunc(rt.Pattern, rt.Handler)
+		r.HandleFunc(rt.Pattern, rt.Handler)
 	}
-	// App-wide, from day one: every state-changing route on the mux
-	// is born covered. Origin-checking, not tokens — nothing to mint
-	// or forget in a form.
-	return csrf.Protect(origin)(mux), nil
+	return r, nil
 }
 `
 
-const stdlibRoutesDoc = `// routes is the app's one route table: add a route here, not on the
-// mux. A ServeMux cannot list what it serves, so the perf lane reads
-// this table through GETPatterns, and a route registered anywhere else
-// would be served but never measured.
+const routesType = `
+// Routes is the app's router: a ServeMux that records the GET routes
+// registered on it. A ServeMux cannot list what it serves, so every
+// route goes through Handle, from the table below, tokens.go or a
+// feature's Mount, and the perf lane measures what GETPatterns says.
+// A route put on a ServeMux of its own would be served and never
+// measured.
+type Routes struct {
+	mux  *http.ServeMux
+	h    http.Handler // mux behind the CSRF check
+	gets []string
+}
+
+// Handle registers h, and records pattern's path when it serves GET:
+// "GET /x", or "/x" with no method, which serves every method.
+func (r *Routes) Handle(pattern string, h http.Handler) {
+	r.mux.Handle(pattern, h)
+	method, path, ok := strings.Cut(pattern, " ")
+	if !ok {
+		r.gets = append(r.gets, method)
+	} else if method == http.MethodGet {
+		r.gets = append(r.gets, strings.TrimSpace(path))
+	}
+}
+
+func (r *Routes) HandleFunc(pattern string, h http.HandlerFunc) { r.Handle(pattern, h) }
+
+func (r *Routes) ServeHTTP(w http.ResponseWriter, req *http.Request) { r.h.ServeHTTP(w, req) }
+
+// GETPatterns is every GET route registered so far, without the method:
+// the form perftest.ScreenConfig.Patterns takes.
+func (r *Routes) GETPatterns() []string { return append([]string(nil), r.gets...) }
+`
+
+const stdlibRoutesDoc = `// routes is the app's own route table, registered by Router.
 //
 // The index is "GET /{$}", not "GET /": a bare "/" matches every path,
 // so an unknown URL would get the home page instead of a 404.
-`
-
-const getPatternsFunc = `
-// GETPatterns is the table's GET routes without the method, the form
-// perftest.ScreenConfig.Patterns takes.
-func GETPatterns() []string {
-	var out []string
-	for _, rt := range (&app{}).routes() {
-		if p, ok := strings.CutPrefix(rt.Pattern, "GET "); ok {
-			out = append(out, p)
-		}
-	}
-	return out
-}
 `
 
 const modelsTemplate = `package %[1]s
@@ -741,7 +759,7 @@ import "time"
 // Models is every model the schema generator manages. Keep it in step
 // with the structs below: ` + "`rastrillo migration generate`" + ` reads
 // it to work out what the database should look like, and
-// ` + "`rastrillo migration check`" + ` fails CI when it and the
+// TestModelsMatchMigrations (migrations_test.go) fails when it and the
 // migrations disagree.
 var Models = []any{
 	&Note{},

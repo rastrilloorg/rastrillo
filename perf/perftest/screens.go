@@ -34,7 +34,8 @@ type ScreenConfig struct {
 	// the mux from it, and hands the same table here; the inventory then
 	// cannot drift from the router. A trailing {$} is dropped from the
 	// screen name and the requested path, so "/{$}" is screen "GET /", the
-	// name a chi app's root has.
+	// name a chi app's root has. A subtree pattern ("/admin/") is a mount,
+	// like chi's "/*": it needs an Opaque group or a skip record.
 	Patterns []string
 	// Handler is what requests go through: rastrillo.Handler over the
 	// app's options, so the measurement includes production's chrome.
@@ -196,6 +197,7 @@ func inventory(cfg ScreenConfig, f *budgetfile.File) ([]target, []string) {
 	}
 
 	walked := map[string]bool{}
+	mounts := map[string]bool{}
 	var routes []string
 	add := func(route string) {
 		if !walked[route] {
@@ -205,6 +207,12 @@ func inventory(cfg ScreenConfig, f *budgetfile.File) ([]target, []string) {
 	}
 	if cfg.Patterns != nil {
 		for _, p := range cfg.Patterns {
+			// A subtree pattern ("/admin/") is the stdlib's mount, chi's
+			// "/*": whatever serves it has screens no table lists. "/" is
+			// the root page here, and "/admin/{$}" one page, not a subtree.
+			if p != "/" && strings.HasSuffix(p, "/") {
+				mounts[p] = true
+			}
 			// "/{$}" matches only the root, but requested literally it is a
 			// 404 (the wildcard is not a path), so the screen is "/".
 			add(strings.TrimSuffix(p, "{$}"))
@@ -235,9 +243,13 @@ func inventory(cfg ScreenConfig, f *budgetfile.File) ([]target, []string) {
 		if skip {
 			continue
 		}
-		if strings.HasSuffix(route, "/*") || grouped {
+		if strings.HasSuffix(route, "/*") || mounts[route] || grouped {
 			if !grouped {
-				problems = append(problems, fmt.Sprintf("%s is a mounted handler chi cannot see inside: list its screens in an Opaque group, or record `perf %s skip <reason>`", screen, screen))
+				who := "chi"
+				if mounts[route] {
+					who = "the route table"
+				}
+				problems = append(problems, fmt.Sprintf("%s is a mounted handler %s cannot see inside: list its screens in an Opaque group, or record `perf %s skip <reason>`", screen, who, screen))
 			}
 			continue
 		}

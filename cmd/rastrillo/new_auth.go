@@ -80,9 +80,10 @@ func applyMagicAuth(files map[string]string, name, pkg, appDir string) error {
 	swap(filepath.Join(name, "go.mod"), "\tgorm.io/gorm ", "\tgithub.com/go-chi/chi/v5 "+chiPinnedVersion+"\n\tgorm.io/gorm ")
 	files[filepath.Join(appDir, "tokens.go")] = fmt.Sprintf(scaffoldFile("tokens_chi.go.tmpl"), pkg)
 	apiTest := filepath.Join(testDir, "api_test.go")
-	swap(apiTest, "\tmux := http.NewServeMux()\n\ttokens(mux)\n\tr := csrf.Protect(testOrigin)(mux)\n",
+	swap(apiTest, fmt.Sprintf("\tr, err := %s.Router(d, testOrigin, logger)\n\tif err != nil {\n\t\tt.Fatal(err)\n\t}\n\ttokens(r)\n", pkg),
 		"\tr := chi.NewRouter()\n\tr.Use(csrf.Protect(testOrigin))\n\tr.Group(tokens)\n")
 	swap(apiTest, "\t\"testing\"\n\n", "\t\"testing\"\n\n\t\"github.com/go-chi/chi/v5\"\n\n")
+	importAfter(apiTest, `"amadan.net/rastrillo/rastrillo"`, "amadan.net/rastrillo/rastrillo/csrf")
 
 	// App and Router take the background group (the guard's and the
 	// plugin's sweeps run on it, and shutdown stops it) and the mailer
@@ -91,7 +92,7 @@ func applyMagicAuth(files map[string]string, name, pkg, appDir string) error {
 	swap(app, "func App(d *db.DB, origin string, logger *slog.Logger) (*http.ServeMux, error) {",
 		"func App(d *db.DB, origin string, bg *background.Group, mailer mail.Sender, logger *slog.Logger) (*http.ServeMux, error) {")
 	swap(app, "r, err := Router(d, origin, logger)", "r, err := Router(d, origin, bg, mailer, logger)")
-	swap(app, "func Router(d *db.DB, origin string, logger *slog.Logger) (http.Handler, error) {",
+	swap(app, "func Router(d *db.DB, origin string, logger *slog.Logger) (*Routes, error) {",
 		"func Router(d *db.DB, origin string, bg *background.Group, mailer mail.Sender, logger *slog.Logger) (chi.Router, error) {")
 	swap(app, "\ta := &app{db: d, logger: logger}\n", `	a := &app{db: d, logger: logger}
 	au, guard, err := newAuth(d, origin, mailer)
@@ -116,8 +117,9 @@ func applyMagicAuth(files map[string]string, name, pkg, appDir string) error {
 	r.Use(csrf.Protect(origin))
 	r.Use(a.signedIn)
 	mountAuth(r, au)
-	// The public routes are the route table's. chi's "/" is the index
-	// alone already, so it takes the patterns without {$}.
+	// The public routes are the route table's. Its patterns are a method,
+	// a space and a path whose only stdlib-only form is a trailing {$};
+	// chi's "/" is the index alone already, so that is dropped.
 	for _, rt := range a.routes() {
 		method, path, _ := strings.Cut(rt.Pattern, " ")
 		r.Method(method, strings.TrimSuffix(path, "{$}"), rt.Handler)
@@ -132,11 +134,11 @@ func applyMagicAuth(files map[string]string, name, pkg, appDir string) error {
 }
 `)
 	// chi lists its own routes, so the perf lane walks the router and
-	// the table needs no GETPatterns.
+	// the app needs no Routes of its own.
 	swap(app, stdlibRoutesDoc, "// routes is the app's public route table. A route only a signed-in\n// visitor may reach goes in Router's RequireSession group instead.\n")
-	swap(app, getPatternsFunc, "")
+	swap(app, routesType, "")
 	swap(app, "\t\"time\"\n\n", "\t\"time\"\n\n\t\"github.com/go-chi/chi/v5\"\n\n")
-	swap(app, "Mount(mux *http.ServeMux, deps)", "Mount(r chi.Router, deps)")
+	swap(app, "Mount(r, deps) called from\n// Router, registering through r.Handle", "Mount(r chi.Router, deps)\n// called from Router")
 	importAfter(app, `"amadan.net/rastrillo/rastrillo/csrf"`,
 		"amadan.net/rastrillo/rastrillo/background", "amadan.net/rastrillo/rastrillo/mail")
 
@@ -209,7 +211,7 @@ func newAppWithMail(t *testing.T) (http.Handler, *outbox) {
 		fmt.Sprintf("\tbg := &background.Group{}\n\tbox := &outbox{}\n\tr, err := %s.Router(d, testOrigin, bg, box, logger)\n", pkg))
 	swap(perf, fmt.Sprintf("\t%s.Configure(&opts, %s.Mux(r, apiTree), time.Now())\n", pkg, pkg),
 		fmt.Sprintf("\t%s.Configure(&opts, %s.Mux(r, apiTree), time.Now())\n\topts.Background = bg // closeAll stops it\n", pkg, pkg))
-	swap(perf, fmt.Sprintf("\tperftest.Screens(t, perftest.ScreenConfig{Patterns: %s.GETPatterns(), Handler: h})", pkg), `	perftest.Screens(t, perftest.ScreenConfig{Routes: r, Handler: h, Signin: func(c *http.Client, base string) {
+	swap(perf, "\tperftest.Screens(t, perftest.ScreenConfig{Patterns: r.GETPatterns(), Handler: h})", `	perftest.Screens(t, perftest.ScreenConfig{Routes: r, Handler: h, Signin: func(c *http.Client, base string) {
 		signInOver(t, c, base, box, "perf@example.com")
 	}})`)
 	swap(perf, fmt.Sprintf("\t\t\tmux, err := %s.App(d, testOrigin, logger)\n\t\t\tif err != nil {\n\t\t\t\td.Close()\n", pkg),
@@ -243,8 +245,9 @@ func newAppWithMail(t *testing.T) (http.Handler, *outbox) {
 	// The inherited text that says otherwise, fixed where it stands.
 	agents := filepath.Join(name, "AGENTS.md")
 	swap(agents, "(migrate.Apply + the route table on a ServeMux)", "(migrate.Apply + chi router)")
-	swap(agents, "`Mount(mux *http.ServeMux, deps)`", "`Mount(r chi.Router, deps)`")
-	swap(filepath.Join(name, "manifest", "README.md"), `mux.Handle("/admin/", gmux)`, `r.Handle("/admin/*", gmux)`)
+	swap(agents, "`Mount(r, deps)`, called from `Router`\n  with its `*Routes`, registering through `r.Handle` and never a ServeMux\n  of its own, which the perf lane cannot see. The feature package takes\n  `r` as `interface{ Handle(string, http.Handler) }`: it cannot import\n  the app package that calls it.",
+		"`Mount(r chi.Router, deps)`, called\n  from `Router`.")
+	swap(filepath.Join(name, "manifest", "README.md"), `r.Handle("/admin/", gmux)`, `r.Handle("/admin/*", gmux)`)
 	swap(agents, "- Every query touching user-owned rows goes through `scope.Owned` —\n  reads AND writes, transactions included.",
 		"- Every query touching user-owned rows goes through `a.owned(r)`\n  (auth.go) — reads AND writes — and a new row sets\n  `Owner: ownerOf(r)`. Inside a transaction scope the callback's `tx`\n  instead, `scope.OwnedBy(tx, \"owner\", ownerOf(r))`: `a.owned(r)`\n  there waits on the writer connection the transaction holds.")
 	swap(agents, "- Screens work with JavaScript disabled;", "- Screens work with JavaScript disabled, except the sign-in screen,\n  whose proof of work needs it;")

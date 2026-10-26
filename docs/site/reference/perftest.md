@@ -70,7 +70,9 @@ type OpaqueScreen struct {
 chi cannot list the routes inside a handler that is not a chi router,
 such as a generated `http.ServeMux` mounted at `/bookmarks/*`. Such a
 mount fails until you either list its screens in an `Opaque` group, or
-record `perf GET /bookmarks/* skip` with a reason:
+record `perf GET /bookmarks/* skip` with a reason. In `Patterns`, a
+subtree pattern such as `"/admin/"` is the same kind of mount and fails
+the same way; `"/"` and `"/admin/{$}"` are single pages:
 
 ```go
 var cfg = perftest.ScreenConfig{

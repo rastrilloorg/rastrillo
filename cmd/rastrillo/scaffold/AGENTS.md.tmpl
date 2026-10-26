@@ -66,8 +66,11 @@ are load-bearing; the framework enforces most of them mechanically.
   screen and 500ms cold boot (`make perf`). Timing fails only on CI.
   Exceptions go in `.rastrillo/budgets.txt`, each with a reason.
 - Past 5,000 lines, split `internal/<app>` by feature:
-  `internal/<app>/<feature>` with `Mount(mux *http.ServeMux, deps)`, called
-  from `Router`.
+  `internal/<app>/<feature>` with `Mount(r, deps)`, called from `Router`
+  with its `*Routes`, registering through `r.Handle` and never a ServeMux
+  of its own, which the perf lane cannot see. The feature package takes
+  `r` as `interface{ Handle(string, http.Handler) }`: it cannot import
+  the app package that calls it.
 - Every test binary has one `TestMain` that calls `budget.Main`. In
   `internal/<app>/` it is in `harness_test.go`, shared by the
   `package <app>` and `package <app>_test` files, so new test files there

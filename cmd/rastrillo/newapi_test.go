@@ -67,11 +67,11 @@ func TestNewMountsTheAPIForANewApp(t *testing.T) {
 
 	tokens := readScaffold(t, "123-app", "internal", "app123app", "tokens.go")
 	for _, want := range []string{
-		`mux.Handle("GET /tokens", sess.Require(http.HandlerFunc(th.Page)))`,
-		`mux.Handle("POST /tokens", sess.RequireFresh(10*time.Minute)(http.HandlerFunc(th.Create)))`,
-		`mux.Handle("POST /tokens/revoke", sess.Require(http.HandlerFunc(th.Revoke)))`,
-		`mux.Handle("POST /tokens/revoke-agent", sess.Require(http.HandlerFunc(th.RevokeAgent)))`,
-		`mux.Handle("POST /tokens/revoke-all", sess.Require(http.HandlerFunc(th.RevokeAll)))`,
+		`r.Handle("GET /tokens", sess.Require(http.HandlerFunc(th.Page)))`,
+		`r.Handle("POST /tokens", sess.RequireFresh(10*time.Minute)(http.HandlerFunc(th.Create)))`,
+		`r.Handle("POST /tokens/revoke", sess.Require(http.HandlerFunc(th.Revoke)))`,
+		`r.Handle("POST /tokens/revoke-agent", sess.Require(http.HandlerFunc(th.RevokeAgent)))`,
+		`r.Handle("POST /tokens/revoke-all", sess.Require(http.HandlerFunc(th.RevokeAll)))`,
 	} {
 		if !strings.Contains(tokens, want) {
 			t.Errorf("tokens.go missing %q:\n%s", want, tokens)

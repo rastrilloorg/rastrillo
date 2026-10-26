@@ -14,7 +14,6 @@ import (
 	"testing"
 
 	"amadan.net/rastrillo/rastrillo"
-	"amadan.net/rastrillo/rastrillo/csrf"
 	"amadan.net/rastrillo/rastrillo/db"
 	"amadan.net/rastrillo/rastrillo/migrate"
 	"amadan.net/rastrillo/rastrillo/sessions"
@@ -75,9 +74,11 @@ func tokenApp(t *testing.T) (send func(method, path string, form url.Values, sig
 	if err != nil {
 		t.Fatal(err)
 	}
-	mux := http.NewServeMux()
-	tokens(mux)
-	r := csrf.Protect(testOrigin)(mux)
+	r, err := %[2]s.Router(d, testOrigin, logger)
+	if err != nil {
+		t.Fatal(err)
+	}
+	tokens(r)
 	apiTree, err := %[2]s.API(d, logger)
 	if err != nil {
 		t.Fatal(err)
@@ -126,21 +127,20 @@ func TestTokenPageShowsANewTokenOnce(t *testing.T) {
 	}
 }
 
-// Every route the token page's buttons use is registered: the api-tokens
-// partial posts to all four, so a missing one is a button that answers
-// 404. Signed out, each answers the sign-in guard instead.
+// Every route the token page's buttons use is registered with its
+// guard: the api-tokens partial posts to all four, so a missing one is a
+// button that fails. Signed out, a page is sent to sign in and a form
+// post is refused; a route registered for the other method only would
+// answer 405 instead, and one not registered at all 404.
 func TestTokenRoutesAreAllRegistered(t *testing.T) {
 	t.Parallel()
 	send := tokenApp(t)
-	for _, rt := range []struct{ method, path string }{
-		{http.MethodGet, "/tokens"},
-		{http.MethodPost, "/tokens"},
-		{http.MethodPost, "/tokens/revoke"},
-		{http.MethodPost, "/tokens/revoke-agent"},
-		{http.MethodPost, "/tokens/revoke-all"},
-	} {
-		if rec := send(rt.method, rt.path, nil, false); rec.Code == http.StatusNotFound {
-			t.Errorf("%%s %%s signed out: 404, so the route is not registered", rt.method, rt.path)
+	if rec := send(http.MethodGet, "/tokens", nil, false); rec.Code != http.StatusSeeOther || rec.Header().Get("Location") != "/signin?return_to=%%2Ftokens" {
+		t.Errorf("GET /tokens signed out: %%d to %%q, want 303 to sign-in", rec.Code, rec.Header().Get("Location"))
+	}
+	for _, path := range []string{"/tokens", "/tokens/revoke", "/tokens/revoke-agent", "/tokens/revoke-all"} {
+		if rec := send(http.MethodPost, path, nil, false); rec.Code != http.StatusForbidden || !strings.Contains(rec.Body.String(), "signed out") {
+			t.Errorf("POST %%s signed out: %%d %%q, want the sign-in guard's 403", path, rec.Code, rec.Body.String())
 		}
 	}
 }

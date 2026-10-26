@@ -372,3 +372,31 @@ func TestScreensPatternParamNeedsPaths(t *testing.T) {
 		t.Fatalf("param with a path: %v", errs(ft))
 	}
 }
+
+// A subtree pattern ("/admin/") is a stdlib mux's mount, chi's "/*": the
+// handler behind it serves screens the table cannot list, so it fails as
+// loudly as a chi mount until a group names it or a record skips it.
+// "/admin/{$}" is one page, not a subtree, and is measured.
+func TestScreensPatternMountMustBeGroupedOrSkipped(t *testing.T) {
+	t.Parallel()
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /{$}", ok)
+	mux.HandleFunc("GET /admin/", ok)
+	mux.HandleFunc("GET /admin/{$}", ok)
+	c := ScreenConfig{Patterns: []string{"/{$}", "/admin/"}, Handler: mux}
+	if ft := run(c, "", true); !ft.failed || !strings.Contains(errs(ft), "GET /admin/ is a mounted handler") {
+		t.Fatalf("an ungrouped subtree pattern: %v", errs(ft))
+	}
+	g := c
+	g.Opaque = []Opaque{{Patterns: []string{"/admin/"}, Screens: []OpaqueScreen{{Key: "GET /admin/notes", Path: "/admin/notes"}}}}
+	if ft := run(g, "", true); ft.failed {
+		t.Fatalf("grouped subtree pattern: %v", errs(ft))
+	}
+	if ft := run(c, "perf GET /admin/ skip generated, measured elsewhere\n", true); ft.failed {
+		t.Fatalf("skipped subtree pattern: %v", errs(ft))
+	}
+	page := ScreenConfig{Patterns: []string{"/{$}", "/admin/{$}"}, Handler: mux}
+	if ft := run(page, "", true); ft.failed {
+		t.Fatalf("/admin/{$} is one page: %v", errs(ft))
+	}
+}

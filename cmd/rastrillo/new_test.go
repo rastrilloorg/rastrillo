@@ -285,9 +285,9 @@ func TestMainTemplateWiresErrorPage(t *testing.T) {
 		"opts.ErrorPage = ErrorPage",
 		"opts.Mux = mux",
 		"perf.Middleware(",
-		"func Router(d *db.DB, origin string, logger *slog.Logger) (http.Handler, error)",
+		"func Router(d *db.DB, origin string, logger *slog.Logger) (*Routes, error)",
 		`{"GET /{$}", a.index},`,
-		"func GETPatterns() []string",
+		"func (r *Routes) GETPatterns() []string",
 		"func Mux(r, apiTree http.Handler) *http.ServeMux",
 	} {
 		if !strings.Contains(app, want) {
@@ -843,7 +843,7 @@ func TestNewWiresCSRFProtection(t *testing.T) {
 	appGo := readScaffold(t, "blogapp", "internal", "blogapp", "app.go")
 	for _, want := range []string{
 		"amadan.net/rastrillo/rastrillo/csrf",
-		"return csrf.Protect(origin)(mux), nil",
+		"r.h = csrf.Protect(origin)(r.mux)",
 		"origin string",
 	} {
 		if !strings.Contains(appGo, want) {
