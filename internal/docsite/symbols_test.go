@@ -53,6 +53,7 @@ var referencePages = map[string]string{
 	"pow":           "reference/pow",
 	"webauthn":      "reference/webauthn",
 	"jobs":          "reference/jobs",
+	"live":          "reference/live",
 	"ui":            "reference/ui",
 	"crypto":        "reference/crypto",
 	"keyring":       "reference/keyring",

@@ -30,6 +30,10 @@ What changed:
 - `auth`, `password`, `passkey`, `secondfactor`, `totp` and `vault` answer 404 under a base path and on the direct host, and log an error. `auth.SigninState` gains `Unavailable`, and the `signin` partial renders nothing for it.
 - New apps read `RASTRILLO_SLUG` or `RASTRILLO_SLUG_FROM_HOST` at boot, and their README says how to deploy one as a tenant.
 
+### Added: live pages; vendor `live.js` and re-copy `busy.js`
+
+Run `rastrillo doctor --fix` to vendor `live.js` and re-copy `busy.js`. Every layout now links `live.js` after `busy.js`; add the tag to yours. It does nothing until a page opts in.
+
 ### Added: `rastrillo/pdf`, a dependency-free PDF writer
 
 Flow headings, paragraphs, field lists, tables and callouts onto a page and get deterministic bytes back. No sidecar, no headless browser, no system font: CARLOS ships an app as one binary, and there is nowhere on the platform to run any of those.

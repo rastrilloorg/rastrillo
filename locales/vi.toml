@@ -158,3 +158,6 @@ rastrillo.ui.job_running_progress = "{name} đang chạy: {progress}…"
 rastrillo.ui.job_failed = "{name} không thành công"
 rastrillo.ui.job_failed_error = "{name} không thành công: {error}"
 rastrillo.ui.job_finished = "{name} đã hoàn tất."
+
+rastrillo.ui.live.paused = "Cập nhật trực tiếp đã tạm dừng. Hãy tải lại trang để bắt đầu lại."
+rastrillo.ui.live.unconfirmed = "Chúng tôi không thể xác nhận thay đổi đó. Hãy kiểm tra trang trước khi thử lại."

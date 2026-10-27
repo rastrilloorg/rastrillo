@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width">
 <link rel="stylesheet" href="/static/app.css">
 <title>Notes</title>
+{{.Live.Head (T $L "rastrillo.ui.live.paused") (T $L "rastrillo.ui.live.unconfirmed")}}
 </head>
 <body>
 <header>
@@ -21,12 +22,17 @@
 </nav>
 {{template "locale-menu" dict "L" $L "Items" .Locales "Return" .Return}}
 </header>
-{{if .HasFlash}}<p role="status" class="flash flash-{{.Flash.Kind}}">{{.Flash.Message}}</p>{{end}}
+{{template "region:notice" .}}
 <main rst-page>
 {{template "content" .}}
 </main>
 <script defer src="/static/rastrillo.js"></script>
 <script defer src="/static/busy.js"></script>
+<script defer src="/static/live.js"></script>
 </body>
 </html>
 {{end}}
+{{/* The notice is always on the page, empty when there is no flash, so
+a swap has an element to put a new message in, and a screen reader
+hears it announced from a status region that was already there. */}}
+{{define "region:notice"}}<div id="notice" role="status" class="flash{{if .HasFlash}} flash-{{.Flash.Kind}}{{end}}">{{if .HasFlash}}{{.Flash.Message}}{{end}}</div>{{end}}

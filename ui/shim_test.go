@@ -167,10 +167,16 @@ func TestBusyRuleIsTheDefault(t *testing.T) {
 	if !strings.Contains(js, `document.addEventListener("submit", busySubmit, true)`) {
 		t.Error("the busy rule is not one delegated capture-phase submit listener on the document")
 	}
-	// Two mentions and no more: the definition and the one listener. A
-	// third would mean someone started binding it per form again.
-	if n := strings.Count(js, "busySubmit"); n != 2 {
-		t.Errorf("busySubmit appears %d times, want 2 (one definition, one document listener)", n)
+	// Three mentions and no more: the definition, the one listener, and
+	// the window listener's late call for a swapping form live.js left
+	// to the browser (armed there because only then is it known whether
+	// live.js took it). A fourth would mean someone started binding it
+	// per form again.
+	if n := strings.Count(js, "busySubmit"); n != 3 {
+		t.Errorf("busySubmit appears %d times, want 3 (one definition, one document listener, one late call for a data-live-form)", n)
+	}
+	if !strings.Contains(js, "busySubmit(e, true)") {
+		t.Error("busy.js no longer arms a swapping form live.js left to the browser")
 	}
 	// The opt-in scan is gone. Any querySelectorAll over a data-busy
 	// selector is the old shape coming back.
@@ -576,6 +582,11 @@ func TestBusyContract(t *testing.T) {
 		"btn.disabled = wasDisabled", "btn.form !== form", `getAttribute("formtarget")`,
 		// Only a submit with a spinner showing is held.
 		`btn.getAttribute("aria-busy") !== "true") return;`,
+		// The handover: a swapping form is live.js's when live.js sends it.
+		`form.hasAttribute("data-live-form") && !late`,
+		// ...and the late arm leaves one live.js claimed (e.liveForm),
+		// in either script order.
+		`e.defaultPrevented || e.liveForm) return;`,
 	} {
 		if !strings.Contains(js, want) {
 			t.Errorf("busy.js does not mention %q", want)

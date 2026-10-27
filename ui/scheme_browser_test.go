@@ -55,13 +55,7 @@ func schemeApp(t *testing.T) http.Handler {
 	}
 	mux := http.NewServeMux()
 	stylesheets(t, mux)
-	for name, body := range map[string][]byte{"rastrillo.js": ShimJS(), "busy.js": BusyJS(), "anchor.js": AnchorJS(), "select.js": SelectJS(), "datetime.js": DatetimeJS(), "calendar.js": CalendarJS()} {
-		body := body
-		mux.HandleFunc("GET /"+name, func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("Content-Type", "text/javascript")
-			w.Write(body)
-		})
-	}
+	vendoredScripts(t, mux)
 	mux.Handle("POST "+rastrillo.SchemeSwitchPath, rastrillo.SchemeSwitchHandler())
 	mux.Handle("GET /", p.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")

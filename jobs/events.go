@@ -42,8 +42,10 @@ const streamWriteDeadline = 30 * time.Second
 // close. Quiet stretches
 // carry a ": ping" comment heartbeat. The stream ends on its own
 // after streamTTL, and immediately when the request context does
-// (client gone, server draining) — which is what keeps a graceful
-// shutdown's drain budget safe with streams open.
+// (client gone). A draining server does not end it: net/http's
+// Shutdown waits for in-flight requests and does not cancel their
+// contexts, so a jobs stream open at shutdown relies on its own
+// streamTTL to end, and can hold the drain until then.
 func (h *Handlers) Events(w http.ResponseWriter, r *http.Request) {
 	job, ok := h.lookup(w, r)
 	if !ok {
