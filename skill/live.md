@@ -85,38 +85,23 @@ or set `onsubmit` on the form.
 
 ## The render order
 
-A handler that can answer a fragment follows live.go's package doc, in
-this order (notes `renderStatus` is the model):
+Answer a page through **`pages.Render(w, r, status, page, data)`**
+(`live.Render(w, r, status, t, "layout", data)` for your own template
+map); notes `renderStatus` is the model. `status` 0 is 200; a fragment
+answer keeps it. `data(takeFlash bool) (any, error)` builds the page
+data (with `Live: hub.View(r)`) and calls `flash.Take` only when
+`takeFlash` is true: a stream refetch that took it would eat a message
+it never shows. Render calls `data` once, and not at all when the
+answer is a navigation, so the flash waits for the page navigated to.
+Any error comes back with nothing written: write your 500.
 
-1. `live.Elsewhere(w, r)`: a GET/HEAD carrying `Rastrillo-Page` that
-   differs from `r.URL.Path` is a form's redirect to another page.
-   Answers 204 + `Rastrillo-Location`; return. **Before the flash is
-   taken**, so the page navigated to still shows it.
-2. `live.NoStore(w)`: `Cache-Control: no-store` and `Vary:
-   Rastrillo-Fragment` on full pages and fragments both, one URL
-   answering two shapes.
-3. `names, frag := live.Wanted(r)`. `frag` false (no header, more than
-   32 names, or any name not a region name, e.g. the jobs poll's `1`)
-   means render the full page.
-4. If `frag` and `!pages.HasRegions(page, names)` (`live.Has` for your
-   own template set), which **ignore `notice`** (every layout has it).
-   A GET/HEAD: `live.Respond(w, r, nil, nil)`, the navigate answer;
-   return. Any other method is a form whose error render is another
-   page (create's 422 renders `new`): set `frag = false` and render the
-   whole page with its status. Still before the flash.
-5. `live.TakesFlash(r)`: true for a full page or when `names` has
-   `notice`. Call `flash.Take` only then (`!frag || live.TakesFlash(r)`
-   after step 4); a stream refetch that took it would eat a message it
-   never shows.
-6. Build page data (with `Live: hub.View(r)`), then `pages.WriteRegions(w,
-   r, page, names, data)` for a fragment, `pages.Execute` otherwise.
-   Never hand the ResponseWriter to `ExecuteRegions`: the first body
-   byte commits the headers and `Rastrillo-Regions` is lost. Call
-   `WriteRegions` with it instead: it renders to a buffer, sets the
-   header, then writes. Nothing is sent on error (write your 500). For
-   a status such as 422, wrap the writer so the status goes with the
-   first byte (notes `statusWriter`). With your own template map use
-   `live.WriteRegions`, or `live.ExecuteRegions` + `live.Respond`.
+The order, for the building blocks: `Elsewhere` (a form's redirect to
+another page: 204, before the flash), `NoStore`, `Wanted`, then
+`Has`/`HasRegions`, which **ignore `notice`** (lacking, a GET/HEAD
+navigates and any other method gets the whole page with its status),
+the flash only if `!frag || TakesFlash`, then `WriteRegions` with the
+status sent with the first byte, or the buffered whole page. Never
+hand the ResponseWriter to `ExecuteRegions`: `Rastrillo-Regions` is lost.
 
 A fragment request reaches the same handler, so the handler loads
 whatever the region shows even when the region is all that is rendered.
@@ -135,6 +120,11 @@ whatever the region shows even when the region is all that is rendered.
   blocks; undeclared or malformed topics are logged and skipped; a nil
   hub does nothing. Memory grows with the distinct keyed topics notified
   since boot: none is evicted.
+- **`hub.NotifyAt(at, "posts/7")`** for a change no write makes (a
+  post going live at its time): call it at boot for each stored future
+  time and when a schedule changes. A past time notifies at once. No
+  cancel: a stale time costs one fetch; a restart's new boot ID
+  refetches every page anyway. At most 10,000 pending.
 - **`r.Handle(path, hub.Handler())` after `sess.Middleware` or
   `sess.Require`**: `Allow` sees the session whichever of them stored
   in the context, so mount the handler after one (notes uses
