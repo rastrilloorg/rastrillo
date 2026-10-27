@@ -147,12 +147,15 @@ func (a *app) renderStatus(w http.ResponseWriter, r *http.Request, status int, n
 	live.NoStore(w)
 	names, frag := live.Wanted(r)
 	if frag && !a.pages.HasRegions(name, names) {
-		live.Respond(w, r, nil, nil)
-		return
+		if r.Method == http.MethodGet || r.Method == http.MethodHead {
+			live.Respond(w, r, nil, nil)
+			return
+		}
+		frag = false // a form whose errors are another page: send that page whole
 	}
 	var fl flash.Flash
 	var hasFlash bool
-	if live.TakesFlash(r) {
+	if !frag || live.TakesFlash(r) {
 		fl, hasFlash = flash.Take(w, r)
 	}
 	data := page{ /* ... */ Live: a.live.View(r), Flash: fl, HasFlash: hasFlash, Content: content}
@@ -173,9 +176,12 @@ In words:
    with a region, depending on the header.
 3. `Wanted` reads the regions asked for. If the header is missing or
    odd, you render the whole page.
-4. If the page has none of the regions asked for, answer "go there"
-   too.
-5. `TakesFlash` says whether this render shows the notice. A refresh
+4. If the page has none of the regions asked for (the notice doesn't
+   count, since every page has one), answer "go there" too. If the
+   request is a form's POST, render the whole page instead: the form's
+   errors are on another page.
+5. `TakesFlash` says whether this render shows the notice. A whole page
+   always does. A refresh
    caused by the stream does not, so it must not take the flash.
 6. Render with `WriteRegions`. Pass it the `ResponseWriter` itself.
    It renders first, sets `Rastrillo-Regions`, then writes. If you
@@ -214,7 +220,8 @@ and updates when editing ends. Focus moves to the replacement, never
 to `<body>`.
 
 It reconnects on its own, with growing pauses. If updates stay down for
-about ten seconds, or fetches keep failing, it shows the paused note.
+about ten seconds, or fetches keep failing, it shows the paused note,
+unless the notice is already showing a message.
 
 ## On CARLOS
 

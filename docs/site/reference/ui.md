@@ -119,10 +119,10 @@ changes after `NewPages` returns.
 rendered, so a failure is a clean error, not half a page.
 
 `HasRegions` reports whether a page defines a `region:<name>` template
-for any of `names`. A page that does not exist has none. Ask it before
-you take the flash: a request that names only regions this page lacks is
-answered by navigating, and the page navigated to must still find the
-flash.
+for any of `names` other than `notice`, which every layout has. A page
+that does not exist has none. Ask it before you take the flash: a GET
+that names only regions this page lacks is answered by navigating, and
+the page navigated to must still find the flash.
 
 `ExecuteRegions` renders those regions into `w`, in the order you name
 them. A name the page has no region for is skipped. The result lists

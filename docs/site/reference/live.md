@@ -187,8 +187,9 @@ id: 3f9a0c51d2e8 notes/42@7 tags@2
 ```
 
 `data` is the topic's new token. `id` is the boot ID and every followed
-topic's version as this stream now knows it. When the browser
-reconnects it sends that back as `Last-Event-ID`, and the stream picks
+topic's version as this stream now knows it. After a restart, a topic is
+left out until its first event from this process has been sent. When the
+browser reconnects it sends that back as `Last-Event-ID`, and the stream picks
 up from there, but only when the boot ID matches this process and only
 for topics named in the URL. A malformed `Last-Event-ID` is ignored.
 
@@ -230,8 +231,8 @@ It renders `data-live="notes/7@4" data-live-boot="3f9a0c51d2e8"`: each
 topic at the version this page was built from, and the boot ID. Never
 type them by hand.
 
-A topic that is undeclared or malformed is logged and left out. If none
-are left, `Attrs` renders nothing. `Attrs` checks the name, not the
+A topic that is undeclared or malformed is left out, and logged the
+first time the hub sees its name. If none are left, `Attrs` renders nothing. `Attrs` checks the name, not the
 key. `Allow` runs when the stream opens, not here.
 
 `Head` writes the `<meta name="rastrillo-live">` tag, which holds the
@@ -279,11 +280,12 @@ being lost:
 1. `Elsewhere`, before anything is taken.
 2. `NoStore`.
 3. `Wanted`.
-4. `Has` (or `ui.Pages.HasRegions`). If it says no, answer with
-   `Respond` and nothing rendered.
+4. `Has` (or `ui.Pages.HasRegions`), which ignores the notice. If it
+   says no, answer a GET or HEAD with `Respond` and nothing rendered;
+   any other method gets the whole page, with its status.
 5. `TakesFlash`, to decide whether to take the flash.
 6. `WriteRegions` (or `ui.Pages.WriteRegions`), or the whole page when
-   `Wanted` said no.
+   `Wanted` or `Has` said no.
 
 The guide has [the full render function](/docs/live).
 
@@ -304,7 +306,8 @@ func Wanted(r *http.Request) (regions []string, ok bool)
 ```
 
 Reads `Rastrillo-Fragment`: the names, in order, each once. `ok` is
-false when the header is missing, or when any name is not a region name.
+false when the header is missing, when it lists more than 32 names, or
+when any name is not a region name.
 That keeps the jobs poll's older value, `1`, the jobs poll's, and
 answers a bad request with the whole page rather than a guess.
 
@@ -353,9 +356,10 @@ func Has(t *template.Template, names []string) bool
 ```
 
 Reports whether the template defines `region:<name>` for any of the
-names. Ask before taking the flash. A request that names only regions
-this page lacks is answered by navigating, and the page navigated to
-must still find the flash.
+names other than `notice`, which every layout defines. Ask before
+taking the flash. A GET that names only regions this page lacks is
+answered by navigating, and the page navigated to must still find the
+flash. Any other method is answered with the whole page.
 
 ### ExecuteRegions
 
