@@ -19,26 +19,38 @@ const (
 	headerLocation = "Rastrillo-Location"
 )
 
+// maxRegions bounds the names one request may list, repeats included.
+// A page has a handful of regions; without a bound, a header near
+// net/http's 1 MB limit holds tens of thousands of names, and every
+// route that calls Wanted would spend seconds on each such request.
+const maxRegions = 32
+
 // Wanted reports the regions a request asks for in Rastrillo-Fragment
 // (space-separated, each listed once). ok is false when the header is
-// absent or when any name is not a region name, so the jobs poll's
-// legacy value "1" stays the jobs poll's and a bad request is answered
-// as a full page rather than as a guess.
+// absent, when it lists more than 32 names, or when any name is not a
+// region name, so the jobs poll's legacy value "1" stays the jobs
+// poll's and a bad request is answered as a full page rather than as a
+// guess.
 func Wanted(r *http.Request) (regions []string, ok bool) {
 	var names []string
 	for _, v := range r.Header.Values(headerFragment) {
 		names = append(names, strings.Fields(v)...)
+		if len(names) > maxRegions {
+			return nil, false
+		}
 	}
 	if len(names) == 0 {
 		return nil, false
 	}
+	seen := make(map[string]bool, len(names))
 	for _, n := range names {
 		if !validRegion(n) {
 			return nil, false
 		}
-		// A header of one name repeated thousands of times would render
-		// that region thousands of times from one small request.
-		if !contains(regions, n) {
+		// A header of one name repeated would otherwise render that
+		// region once per repeat.
+		if !seen[n] {
+			seen[n] = true
 			regions = append(regions, n)
 		}
 	}

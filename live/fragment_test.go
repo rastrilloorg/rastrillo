@@ -2,12 +2,14 @@ package live
 
 import (
 	"errors"
+	"fmt"
 	"html/template"
 	"net/http"
 	"net/http/httptest"
 	"slices"
 	"strings"
 	"testing"
+	"time"
 )
 
 func fragReq(method, target string, hdr ...string) *http.Request {
@@ -39,12 +41,40 @@ func TestWantedRefusesBadNames(t *testing.T) {
 	}
 }
 
-// A header of one name repeated tens of thousands of times would
-// otherwise render that region that many times from one small request.
+// A header naming one region more than once would otherwise render it
+// once per repeat.
 func TestWantedListsEachNameOnce(t *testing.T) {
 	got, ok := Wanted(fragReq("GET", "/", "Rastrillo-Fragment", "a b a notice b"))
 	if !ok || !slices.Equal(got, []string{"a", "b", "notice"}) {
 		t.Errorf("got %v, %v; want [a b notice], true", got, ok)
+	}
+}
+
+// A page has a handful of regions. A header near net/http's 1 MB limit
+// holds tens of thousands of names, and listing them once each must not
+// cost the server seconds per request on every route that asks.
+func TestWantedCapsRegions(t *testing.T) {
+	names := func(n int) string {
+		var s []string
+		for i := 0; i < n; i++ {
+			s = append(s, fmt.Sprintf("r%d", i))
+		}
+		return strings.Join(s, " ")
+	}
+	if got, ok := Wanted(fragReq("GET", "/", "Rastrillo-Fragment", names(maxRegions))); !ok || len(got) != maxRegions {
+		t.Errorf("%d names gave %d, %v; want all of them, true", maxRegions, len(got), ok)
+	}
+	if got, ok := Wanted(fragReq("GET", "/", "Rastrillo-Fragment", names(maxRegions+1))); ok {
+		t.Errorf("%d names gave %d, true; want false", maxRegions+1, len(got))
+	}
+	// Repeats count against the cap too: dedup is not a way past it.
+	if _, ok := Wanted(fragReq("GET", "/", "Rastrillo-Fragment", strings.Repeat("a ", 50000))); ok {
+		t.Error("one name repeated 50,000 times gave true; want false")
+	}
+	start := time.Now()
+	Wanted(fragReq("GET", "/", "Rastrillo-Fragment", names(46656)))
+	if took := time.Since(start); took > 100*time.Millisecond {
+		t.Errorf("46,656 names took %s; want them refused at once", took)
 	}
 }
 
