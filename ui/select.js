@@ -207,7 +207,7 @@
   // Size queries no longer contain layout (css-conditional-5).
   const holds = (cs) => {
     const d = cs.display, b = d !== "contents", cv = cs.contentVisibility;
-    const o = b && !/^(inline|ruby|run-in)\b(?!-)|^(table-col|ruby-)/.test(d), c = o && !/^table-(row|head|foot)/.test(d);
+    const o = b && !/^(inline|run-in)( list-item)?$|^(ruby$|table-col|ruby-)/.test(d), c = o && !/^table-(row|head|foot)/.test(d);
     const w = (cs.willChange || "").toLowerCase().split(/,\s*/).filter((v) => CSS.supports(v, "initial")).map((v) => v.replace(/^-webkit-/, ""));
     // Named in will-change, or (v) set to other than none.
     const X = (s, v) => s.split(" ").some((k) => w.includes(k) || (v && !/^(none|)$/.test(cs.getPropertyValue(k))));

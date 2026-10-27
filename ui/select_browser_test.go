@@ -1761,6 +1761,13 @@ func TestSelectRoomIsCutOnlyByWhatClipsTheList(t *testing.T) {
 			['fixed, display: contents with content-visibility: auto', 'escape', 'fixed', 'display:contents;content-visibility:auto'],
 			['absolute, held by its own box, in display: contents with contain: paint', 'escape', 'absolute', 'display:contents;contain:paint'],
 			['fixed, display: inline with contain: paint', 'escape', 'fixed', 'display:inline;contain:paint'],
+			// inline flow-root list-item is an inline-block with a marker:
+			// atomic, so all of it applies; inline list-item is not (Astra
+			// on #136, round 4). WebKit has neither and draws a block.
+			['fixed, display: inline list-item with contain: paint', 'escape', 'fixed', 'display:inline list-item;contain:paint'],
+			['fixed, display: inline flow-root list-item with contain: paint', 'clip', 'fixed', 'width:300px;height:200px;display:inline flow-root list-item;contain:paint'],
+			['fixed, display: inline flow-root list-item with transform', 'clip', 'fixed', bar + 'display:inline flow-root list-item;transform:translateX(0)'],
+			['absolute, held by its own box, in display: inline flow-root list-item', 'clip', 'absolute', bar + 'display:inline flow-root list-item'],
 			['fixed, transform-style: preserve-3d', 'clip', 'fixed', bar + 'transform-style:preserve-3d'],
 			['fixed, transform-style: preserve-3d, overflow: clip', 'clip', 'fixed', 'width:300px;height:200px;overflow:clip;transform-style:preserve-3d'],
 			['fixed, will-change: transform-style', 'clip', 'fixed', bar + 'will-change:transform-style'],
@@ -1874,8 +1881,8 @@ func TestSelectRoomIsCutOnlyByWhatClipsTheList(t *testing.T) {
 			t.Errorf("%s: scrolled to its end, the list's last row is not what shows at its place: the list is taller than what shows it", r.Name)
 		}
 	}
-	if len(got.Rows) != 60 {
-		t.Errorf("ran %d rows, want 60", len(got.Rows))
+	if len(got.Rows) != 64 {
+		t.Errorf("ran %d rows, want 64", len(got.Rows))
 	}
 }
 
