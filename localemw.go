@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"amadan.net/rastrillo/rastrillo/basepath"
 	"amadan.net/rastrillo/rastrillo/csrf"
 	"amadan.net/rastrillo/rastrillo/internal/returnto"
 )
@@ -308,11 +309,14 @@ func LocaleItems(r *http.Request) []LocaleItem {
 		rest += "?" + r.URL.RawQuery
 	}
 	items := make([]LocaleItem, 0, len(l.codes))
+	// Href is a body link, so it carries the base. LocalePrefix and the
+	// switchers' return paths do not: they become a Location, which the
+	// base-path middleware prefixes itself, and a second base would 404.
 	for _, c := range l.codes {
 		items = append(items, LocaleItem{
 			Code:    c,
 			Name:    l.autonym(c),
-			Href:    "/" + c + rest,
+			Href:    basepath.Path(r, "/"+c+rest),
 			Current: c == cur,
 		})
 	}

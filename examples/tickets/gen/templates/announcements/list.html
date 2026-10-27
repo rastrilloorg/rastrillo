@@ -13,12 +13,12 @@
        Rows        required: Href, Main and Sub per row
        Pagination  required: Show, and Items in ui/partials/pagination.html's shape */}}
 {{define "content"}}{{$L := localizer $}}
-{{template "page-header" dict "L" $L "Title" (T $L "resource.announcements.name") "ActionHref" "/admin/announcements/new" "ActionLabel" (T $L "ui.new")}}
+{{template "page-header" dict "L" $L "Title" (T $L "resource.announcements.name") "ActionHref" (path $ "/admin/announcements/new") "ActionLabel" (T $L "ui.new")}}
 {{if .Empty}}
-{{template "empty-state" dict "L" $L "Title" (T $L "resource.announcements.empty.title") "Body" (T $L "resource.announcements.empty.body") "ActionHref" "/admin/announcements/new" "ActionLabel" (T $L "ui.new")}}
+{{template "empty-state" dict "L" $L "Title" (T $L "resource.announcements.empty.title") "Body" (T $L "resource.announcements.empty.body") "ActionHref" (path $ "/admin/announcements/new") "ActionLabel" (T $L "ui.new")}}
 {{else}}
 <div rst-list>
-{{template "list-bar" dict "L" $L "SearchAction" "/admin/announcements" "Query" .Query "Placeholder" (T $L "ui.search") "Hidden" .Carry}}
+{{template "list-bar" dict "L" $L "SearchAction" (path $ "/admin/announcements") "Query" .Query "Placeholder" (T $L "ui.search") "Hidden" .Carry}}
 {{range .Rows}}{{template "list-row-action" dict "L" $L "Href" .Href "Main" .Main "Sub" .Sub}}
 {{end}}
 </div>

@@ -4,14 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width">
 <title>{{block "title" .}}Hello{{end}}</title>
-<link rel="stylesheet" href="{{asset "static/tokens.css"}}">
-<link rel="stylesheet" href="{{asset "static/theme.css"}}">
-<script defer src="{{asset "static/rastrillo.js"}}"></script>
-<script defer src="{{asset "static/busy.js"}}"></script>
+<link rel="stylesheet" href="{{path $ (asset "static/tokens.css")}}">
+<link rel="stylesheet" href="{{path $ (asset "static/theme.css")}}">
+<script defer src="{{path $ (asset "static/rastrillo.js")}}"></script>
+<script defer src="{{path $ (asset "static/busy.js")}}"></script>
 {{/* light.js moves the light the depth styles read. Delete it and its
      tag for the still design. */}}
-<script defer src="{{asset "static/light.js"}}"></script>
-<script defer src="{{asset "static/anchor.js"}}"></script>
+<script defer src="{{path $ (asset "static/light.js")}}"></script>
+<script defer src="{{path $ (asset "static/anchor.js")}}"></script>
 {{iconAssets}}
 {{/* stage — one card centred on a full-page backdrop, for a screen that
      stands alone: the sign-in page above all. No select.js, calendar.js

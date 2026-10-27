@@ -11,12 +11,13 @@ import (
 )
 
 // localeBlock is the locale block every shell but stage declares: its
-// default is the switcher over the page data's Locales and Return.
-const localeBlock = `{{block "locale" .}}{{$L := localizer $}}{{template "locale-menu" dict "L" $L "Items" (opt $ "Locales") "Return" (opt $ "Return")}}{{end}}`
+// default is the switcher over the page data's Locales and Return,
+// posting under the base path.
+const localeBlock = `{{block "locale" .}}{{$L := localizer $}}{{template "locale-menu" dict "L" $L "Items" (opt $ "Locales") "Return" (opt $ "Return") "Action" (path $ "/_locale")}}{{end}}`
 
 // schemeBlock follows it in the same shells: the colour-scheme switch
-// over the page data's Scheme and Return.
-const schemeBlock = `{{block "scheme" .}}{{$L := localizer $}}{{template "scheme-menu" dict "L" $L "Scheme" (opt $ "Scheme") "Return" (opt $ "Return")}}{{end}}`
+// over the page data's Scheme and Return, posting under the base path.
+const schemeBlock = `{{block "scheme" .}}{{$L := localizer $}}{{template "scheme-menu" dict "L" $L "Scheme" (opt $ "Scheme") "Return" (opt $ "Return") "Action" (path $ "/_theme")}}{{end}}`
 
 // A second locale turns on the /xx/ prefixes, so a shell that still
 // said lang="en" dir="ltr" and rendered no switcher would leave a

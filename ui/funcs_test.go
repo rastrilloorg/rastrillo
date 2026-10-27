@@ -164,15 +164,15 @@ func TestDropdownRendersForAStructWithoutMenuGroup(t *testing.T) {
 
 func TestFuncsRegistersExactlyTheDocumentedHelpers(t *testing.T) {
 	f := Funcs()
-	for _, name := range []string{"dict", "list", "menuGroup", "searchClear", "icon", "iconAssets", "T", "Tf", "dateWords", "opt", "Tbdi", "stageArt", "displayURL", "safeHref", "number", "displayValue", "rowMenuItems", "paginationItems", "localizer", "withL", "money", "actor", "strong"} {
+	for _, name := range []string{"dict", "list", "menuGroup", "searchClear", "icon", "iconAssets", "T", "Tf", "dateWords", "opt", "Tbdi", "stageArt", "displayURL", "safeHref", "number", "displayValue", "rowMenuItems", "paginationItems", "localizer", "withL", "money", "actor", "strong", "path"} {
 		if _, ok := f[name]; !ok {
 			t.Errorf("Funcs() is missing %q", name)
 		}
 	}
 	// Exactly these: an accidental extra is a helper the shipped partials
 	// do not document and an app cannot rely on.
-	if len(f) != 23 {
-		t.Errorf("Funcs() has %d entries, want exactly 23 (the 18 before localizer, withL, money, actor and strong, and those five)", len(f))
+	if len(f) != 24 {
+		t.Errorf("Funcs() has %d entries, want exactly 24 (the 18 before localizer, withL, money, actor, strong and path, and those six)", len(f))
 	}
 }
 
@@ -231,13 +231,13 @@ func TestFuncsWithRebindsOnAClonedPristineTree(t *testing.T) {
 // FuncsWith replaces only the T entry — dict/list/icon are unchanged.
 func TestFuncsWithReplacesOnlyTAndTf(t *testing.T) {
 	f := FuncsWith(func(key string, _ ...any) string { return "X-" + key })
-	for _, name := range []string{"dict", "list", "menuGroup", "searchClear", "icon", "iconAssets", "T", "Tf", "dateWords", "opt", "Tbdi", "stageArt", "displayURL", "safeHref", "number", "displayValue", "rowMenuItems", "paginationItems", "localizer", "withL", "money", "actor", "strong"} {
+	for _, name := range []string{"dict", "list", "menuGroup", "searchClear", "icon", "iconAssets", "T", "Tf", "dateWords", "opt", "Tbdi", "stageArt", "displayURL", "safeHref", "number", "displayValue", "rowMenuItems", "paginationItems", "localizer", "withL", "money", "actor", "strong", "path"} {
 		if _, ok := f[name]; !ok {
 			t.Errorf("FuncsWith(...) is missing %q", name)
 		}
 	}
-	if len(f) != 23 {
-		t.Errorf("FuncsWith(...) has %d entries, want exactly 23 (the 18 before localizer, withL, money, actor and strong, and those five)", len(f))
+	if len(f) != 24 {
+		t.Errorf("FuncsWith(...) has %d entries, want exactly 24 (the 18 before localizer, withL, money, actor, strong and path, and those six)", len(f))
 	}
 	if got := call(t, f, "T", "rastrillo.ui.cancel"); got != "X-rastrillo.ui.cancel" {
 		t.Errorf("rebound T = %q, want %q", got, "X-rastrillo.ui.cancel")

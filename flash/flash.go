@@ -10,6 +10,8 @@ import (
 	"encoding/base64"
 	"net/http"
 	"strings"
+
+	"amadan.net/rastrillo/rastrillo/basepath"
 )
 
 const (
@@ -23,15 +25,37 @@ type Flash struct {
 	Message string
 }
 
-// Set writes a flash cookie to the response.
-func Set(w http.ResponseWriter, kind, message string) {
+// cookieFor is the cookie's name and path for r's app: rastrillo_flash at
+// Path=/ at the root, rastrillo_flash_<slug> at Path=/<slug> under a base
+// path.
+//
+// Both the name and the path carry the slug. The path alone keeps a
+// tenant's notice from the hub and from its siblings, but the browser
+// still sends the hub's root cookie to every tenant path: a tenant that
+// read the same name would show the hub's notice on every page, and could
+// not clear it, because a clearing cookie at /<slug> is a different
+// cookie from one at /. A name of its own makes each app read and clear
+// only its own.
+func cookieFor(r *http.Request) (name, path string) {
+	base := basepath.Base(r)
+	if base == "" {
+		return cookieName, "/"
+	}
+	return cookieName + "_" + strings.TrimPrefix(base, "/"), base
+}
+
+// Set writes a flash cookie to the response. It takes the request to know
+// which app the flash belongs to: a notice set under /acme is shown by
+// /acme and by no other app on the same origin.
+func Set(w http.ResponseWriter, r *http.Request, kind, message string) {
 	data := kind + sep + message
 	encoded := base64.RawURLEncoding.EncodeToString([]byte(data))
 
+	name, path := cookieFor(r)
 	cookie := &http.Cookie{
-		Name:     cookieName,
+		Name:     name,
 		Value:    encoded,
-		Path:     "/",
+		Path:     path,
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
 		MaxAge:   60,
@@ -40,12 +64,14 @@ func Set(w http.ResponseWriter, kind, message string) {
 	http.SetCookie(w, cookie)
 }
 
-// clear writes a clearing cookie (MaxAge=-1) to the response.
-func clear(w http.ResponseWriter) {
+// clear writes a clearing cookie (MaxAge=-1) to the response, for the
+// cookie of r's own app.
+func clear(w http.ResponseWriter, r *http.Request) {
+	name, path := cookieFor(r)
 	cookie := &http.Cookie{
-		Name:     cookieName,
+		Name:     name,
 		Value:    "",
-		Path:     "/",
+		Path:     path,
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
 		MaxAge:   -1,
@@ -53,12 +79,15 @@ func clear(w http.ResponseWriter) {
 	http.SetCookie(w, cookie)
 }
 
-// Take reads a flash cookie from the request, clears it, and returns it.
+// Take reads r's own app's flash cookie, clears it, and returns it. It
+// never reads or clears another app's: under /acme it ignores the hub's
+// root cookie.
 // If no flash cookie is present, it returns (Flash{}, false) and writes
 // no Set-Cookie header. If the cookie is present but malformed, it still
 // clears the cookie and returns (Flash{}, false).
 func Take(w http.ResponseWriter, r *http.Request) (Flash, bool) {
-	cookie, err := r.Cookie(cookieName)
+	name, _ := cookieFor(r)
+	cookie, err := r.Cookie(name)
 	if err == http.ErrNoCookie {
 		// No cookie, nothing to do
 		return Flash{}, false
@@ -68,7 +97,7 @@ func Take(w http.ResponseWriter, r *http.Request) (Flash, bool) {
 	data, err := base64.RawURLEncoding.DecodeString(cookie.Value)
 	if err != nil {
 		// Malformed cookie, clear it and return false
-		clear(w)
+		clear(w, r)
 		return Flash{}, false
 	}
 
@@ -76,12 +105,12 @@ func Take(w http.ResponseWriter, r *http.Request) (Flash, bool) {
 	parts := strings.SplitN(string(data), sep, 2)
 	if len(parts) != 2 {
 		// Malformed data, clear it and return false
-		clear(w)
+		clear(w, r)
 		return Flash{}, false
 	}
 
 	// Clear the cookie
-	clear(w)
+	clear(w, r)
 
 	// Return the flash
 	return Flash{
