@@ -1689,7 +1689,10 @@ func TestSelectPlacement(t *testing.T) {
 // which is how the review on #136 found content-visibility and the
 // will-change triggers missed, and its re-review containment on a box
 // that is not there (display: contents, a plain inline), preserve-3d,
-// and will-change written in capitals or with -webkit-.
+// and will-change written in capitals or with -webkit-; and its third,
+// containment on table rows and ruby, a boxless ancestor's position,
+// will-change: filter on an inline, motion paths, and an alias the
+// engine lacks.
 func TestSelectRoomIsCutOnlyByWhatClipsTheList(t *testing.T) {
 	t.Parallel()
 	type row struct {
@@ -1765,10 +1768,33 @@ func TestSelectRoomIsCutOnlyByWhatClipsTheList(t *testing.T) {
 			['fixed, will-change: -webkit-transform', 'clip', 'fixed', bar + 'will-change:-webkit-transform'],
 			['fixed, will-change: -webkit-perspective', 'clip', 'fixed', bar + 'will-change:-webkit-perspective'],
 			['fixed, will-change: -webkit-filter', 'clip', 'fixed', bar + 'will-change:-webkit-filter'],
-			['fixed, will-change: -webkit-backdrop-filter', 'clip', 'fixed', bar + 'will-change:-webkit-backdrop-filter'],
+			// Only an alias the engine has: Chromium has no -webkit-backdrop-filter.
+			['fixed, will-change: -webkit-backdrop-filter', CSS.supports('-webkit-backdrop-filter', 'initial') ? 'clip' : 'escape', 'fixed', bar + 'will-change:-webkit-backdrop-filter'],
 			['fixed, in a modal dialog in a transformed clip', 'escape', 'fixed', 'dialog'],
 			['fixed, in a popover in a transformed clip', 'escape', 'fixed', 'popover'],
 			['absolute, slotted into a shadow scroller', 'clip', 'absolute', 'shadow'],
+			// Markup rows: the box goes in [data-in]; [data-held], or else the
+			// first element, is what must hold a "clip" list.
+			// Containment skips table rows, row groups and non-atomic ruby;
+			// a cell keeps it.
+			['fixed, table row with contain: paint', 'escape', 'fixed', '<table><tbody><tr style="contain:paint"><td data-in></td></tr></tbody></table>'],
+			['absolute, held by its own box, in a table row with contain: paint', 'escape', 'absolute', '<table><tbody><tr style="contain:paint"><td data-in></td></tr></tbody></table>'],
+			['fixed, row group with content-visibility: auto', 'escape', 'fixed', '<table><tbody style="content-visibility:auto"><tr><td data-in></td></tr></tbody></table>'],
+			['fixed, table row with contain: layout, in a scroller', 'escape', 'fixed', '<div style="' + bar + '"><table><tbody><tr style="contain:layout"><td data-in></td></tr></tbody></table></div>'],
+			['fixed, table cell with contain: paint', 'clip', 'fixed', '<table><tbody><tr><td data-in data-held style="contain:paint;height:200px;vertical-align:top"></td></tr></tbody></table>'],
+			['fixed, display: ruby with contain: paint', 'escape', 'fixed', '<div style="display:ruby;contain:paint" data-in></div>'],
+			['fixed, display: ruby-text with contain: paint', 'escape', 'fixed', '<div style="display:ruby-text;contain:paint" data-in></div>'],
+			// A boxless ancestor's position is not the chain's.
+			['absolute, held by its own box, in display: contents with position: fixed, in a scroller', 'clip', 'absolute', '<div style="' + bar + 'overflow:hidden"><div style="display:contents;position:fixed" data-in></div></div>'],
+			['absolute, held by its own box, in display: contents with position: absolute, in a scroller', 'clip', 'absolute', '<div style="' + bar + 'overflow:hidden"><div style="display:contents;position:absolute" data-in></div></div>'],
+			// will-change: filter applies where filter does, inlines too.
+			['fixed, inline with will-change: filter, in a scroller', 'clip', 'fixed', '<div style="' + bar + 'overflow:hidden"><span style="will-change:filter" data-in></span></div>'],
+			['fixed, inline with will-change: backdrop-filter, in a scroller', 'clip', 'fixed', '<div style="' + bar + 'overflow:hidden"><span style="will-change:backdrop-filter" data-in></span></div>'],
+			// A motion path transforms, and its will-change names, the
+			// offset shorthand among them, hold.
+			['fixed, offset-path', 'clip', 'fixed', bar + 'offset-path:path("M 0 0 L 100 0");offset-position:auto;offset-anchor:0 0'],
+			['fixed, will-change: offset-path', 'clip', 'fixed', bar + 'will-change:offset-path'],
+			['fixed, will-change: offset', 'clip', 'fixed', bar + 'will-change:offset'],
 		];
 		const out = [];
 		for (const [name, want, position, style] of rows) {
@@ -1796,6 +1822,10 @@ func TestSelectRoomIsCutOnlyByWhatClipsTheList(t *testing.T) {
 					host.attachShadow({ mode: 'open' }).innerHTML = '<div style="width:300px;height:200px;overflow:auto"><slot></slot></div>';
 					host.append(wrap, native);
 					held = host.shadowRoot.firstChild;
+				} else if (style[0] === '<') {
+					outer.insertAdjacentHTML('beforeend', style);
+					held = outer.querySelector('[data-held]') || outer.firstElementChild;
+					outer.querySelector('[data-in]').append(wrap, native);
 				} else {
 					held = document.createElement('div');
 					held.style.cssText = style;
@@ -1844,8 +1874,8 @@ func TestSelectRoomIsCutOnlyByWhatClipsTheList(t *testing.T) {
 			t.Errorf("%s: scrolled to its end, the list's last row is not what shows at its place: the list is taller than what shows it", r.Name)
 		}
 	}
-	if len(got.Rows) != 46 {
-		t.Errorf("ran %d rows, want 46", len(got.Rows))
+	if len(got.Rows) != 60 {
+		t.Errorf("ran %d rows, want 60", len(got.Rows))
 	}
 }
 

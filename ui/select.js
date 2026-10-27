@@ -194,22 +194,28 @@
   });
 
   // What a box is to the boxes in it, by CSS: the containing block of
-  // fixed ones (f), of absolute ones (a), a clip even with overflow
-  // visible (p, paint containment), and whether its overflow clips at all
-  // (o). display: contents makes no box, so none of it applies; nor do
-  // containment, transforms or overflow to a plain inline. will-change
-  // counts as the property it names (css-will-change), matched without
-  // case and through -webkit- aliases; container-type is none of these,
-  // since size queries no longer contain layout (css-conditional-5).
-  const CB = ["transform", "translate", "rotate", "scale", "perspective", "transform-style", "filter", "backdrop-filter", "contain", "content-visibility"];
+  // fixed (f) and absolute (a) ones, a clip with overflow visible (p,
+  // paint containment), whether its overflow clips (o), whether it is a
+  // box (b). Each property counts only where it applies: transforms,
+  // motion paths and overflow skip non-atomic inlines, table columns and
+  // ruby's parts; containment, table rows and groups too (css-contain-2
+  // §3); filters skip none. A will-change name counts by its property's
+  // rule, without case, offset as offset-path's shorthand, a -webkit-
+  // alias only where the engine has it (Chromium has none for
+  // backdrop-filter). Chromium takes a set offset-position (a digit in
+  // it) as a motion path; WebKit does not, and gets a shorter list.
+  // Size queries no longer contain layout (css-conditional-5).
   const holds = (cs) => {
-    const box = cs.display !== "contents", o = box && cs.display !== "inline", cv = cs.contentVisibility;
-    const w = (cs.willChange || "").toLowerCase().split(/,\s*/).map((v) => (/^-webkit-(transform|perspective|filter|backdrop-filter|transform-style)$/.test(v) ? v.slice(8) : v));
-    const n = (v) => v && v !== "none";
-    const p = o && (/paint|strict|content/.test(cs.contain) || cv === "auto" || cv === "hidden");
-    const f = p || (o && (/layout/.test(cs.contain) || cs.transformStyle === "preserve-3d" || [cs.transform, cs.translate, cs.rotate, cs.scale, cs.perspective].some(n) || CB.some((v) => w.includes(v)))) ||
-      (box && [cs.filter, cs.backdropFilter, cs.webkitBackdropFilter].some(n));
-    return { f, a: f || (box && (cs.position !== "static" || w.includes("position"))), p, o };
+    const d = cs.display, b = d !== "contents", cv = cs.contentVisibility;
+    const o = b && !/^(inline|ruby|run-in)\b(?!-)|^(table-col|ruby-)/.test(d), c = o && !/^table-(row|head|foot)/.test(d);
+    const w = (cs.willChange || "").toLowerCase().split(/,\s*/).filter((v) => CSS.supports(v, "initial")).map((v) => v.replace(/^-webkit-/, ""));
+    // Named in will-change, or (v) set to other than none.
+    const X = (s, v) => s.split(" ").some((k) => w.includes(k) || (v && !/^(none|)$/.test(cs.getPropertyValue(k))));
+    const p = c && (/paint|strict|content/.test(cs.contain) || cv === "auto" || cv === "hidden");
+    const f = p || (c && (/layout/.test(cs.contain) || X("contain content-visibility"))) ||
+      (o && (cs.transformStyle === "preserve-3d" || /\d/.test(cs.offsetPosition) || X("transform translate rotate scale perspective offset-path", 1) || X("transform-style offset offset-position"))) ||
+      (b && X("filter backdrop-filter -webkit-backdrop-filter", 1));
+    return { f, a: f || (b && (cs.position !== "static" || X("position"))), p, o, b };
   };
   // A box in the top layer (a modal dialog, an open popover) is out of
   // every ancestor's reach.
@@ -225,7 +231,8 @@
     for (let a = list; (a = a.assignedSlot || a.parentElement || (a.parentNode && a.parentNode.host)) && a !== document.body; ) {
       const cs = getComputedStyle(a), h = holds(cs);
       // Fixed skips to a holder; absolute, to a holder or a positioned box.
-      if (pos === "fixed" ? h.f : pos !== "absolute" || h.a) {
+      // A boxless ancestor is passed over: its position is no one's.
+      if (h.b && (pos === "fixed" ? h.f : pos !== "absolute" || h.a)) {
         if (h.p || (h.o && /auto|scroll|hidden|clip/.test(cs.overflowY))) out.push(a);
         pos = cs.position;
       }

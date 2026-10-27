@@ -513,7 +513,12 @@ func TestSelectContract(t *testing.T) {
 	// Then to 55KB (measured 55,848 bytes) for the re-review: no
 	// containment, transform or overflow on a box that is not there
 	// (display: contents) or is a plain inline, preserve-3d, and
-	// will-change matched without case and through -webkit- aliases.
+	// will-change matched without case and through -webkit- aliases. The
+	// third review's fixes (containment skips table rows and ruby, a
+	// boxless ancestor's position is not the chain's, each will-change
+	// name by its own property's rule, motion paths, only aliases the
+	// engine has) fit under it at 56,306 bytes, folding the computed
+	// values and the will-change names into one check.
 	if n := len(SelectJS()); n > 55*1024 {
 		t.Fatalf("select.js is %d bytes; it is split out of the shim precisely to stay readable — trim it", n)
 	}
