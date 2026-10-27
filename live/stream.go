@@ -149,7 +149,11 @@ func (h *Hub) serveStream(w http.ResponseWriter, r *http.Request) {
 // changes advances watches to the hub's current versions and returns
 // one change event per topic that moved. Each event's ID is built after
 // only its own topic advanced, so an ID never claims a version whose
-// event the client may not have received.
+// event the client may not have received. A topic still stale is left
+// out of the ID: its number is another boot's, and beside this boot's
+// ID a resume would read it as this boot's and skip the topic's
+// catch-up. Left out, the resume falls back to the URL, which still
+// counts it as changed.
 func (h *Hub) changes(watches []watch) string {
 	cur := h.counters(watches)
 	var b strings.Builder
@@ -164,6 +168,9 @@ func (h *Hub) changes(watches []watch) string {
 		b.WriteString("\nid: ")
 		b.WriteString(h.boot)
 		for _, o := range watches {
+			if o.stale {
+				continue
+			}
 			b.WriteByte(' ')
 			b.WriteString(token(o.topic, o.known))
 		}

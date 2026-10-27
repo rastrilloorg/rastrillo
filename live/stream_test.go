@@ -335,6 +335,29 @@ func TestCatchUpIDsNameOnlyWhatWasSent(t *testing.T) {
 	}
 }
 
+// After a restart every topic is owed an event. The first event's ID
+// must not carry another topic's old-boot version beside this boot's
+// ID: an edge that resumes with it after a drop would read b@100 as
+// this boot's, and b would miss its catch-up and its next 100 changes.
+func TestARestartIDOmitsTopicsNotYetSent(t *testing.T) {
+	h := fastHub(t, "a", "b")
+	ts, _ := streamServer(t, h)
+	url := ts.URL + "/live?boot=000000000000&t=a@100&t=b@100"
+
+	ctx, cancel := context.WithCancel(testCtx(t))
+	first := nextEvent(t, openStream(t, ctx, url, nil))
+	cancel() // the upstream drops before the second event
+	if first.data != "a@0" || first.id != h.Boot()+" a@0" {
+		t.Fatalf("first event = %+v, want data a@0 id %q", first, h.Boot()+" a@0")
+	}
+
+	ch := openStream(t, testCtx(t), url, http.Header{"Last-Event-Id": {first.id}})
+	if u := nextEvent(t, ch); u.data != "b@0" || u.id != h.Boot()+" a@0 b@0" {
+		t.Fatalf("resumed with %q: event %+v, want b@0's catch-up", first.id, u)
+	}
+	quiet(t, ch, 60*time.Millisecond)
+}
+
 func TestStreamRefusesAForeignKey(t *testing.T) {
 	var keys []string
 	h, err := New(Config{Path: "/live", Topics: map[string]Allow{
