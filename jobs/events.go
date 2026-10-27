@@ -4,6 +4,8 @@ import (
 	"io"
 	"net/http"
 	"time"
+
+	"amadan.net/rastrillo/rastrillo/basepath"
 )
 
 // streamTick is how often an events stream re-reads its job. One
@@ -35,12 +37,15 @@ const streamWriteDeadline = 30 * time.Second
 // The handler observes Jobs.Get snapshots on an internal tick; a
 // changed snapshot becomes "event: update" (data: the advisory
 // Status), a job that left Running becomes "event: done" (data: its
-// Location, "" if none) and a close, and a job that vanished — swept
-// or expired — becomes "event: gone" and a close. Quiet stretches
+// Location under the base path, "" if none) and a close, and a job
+// that vanished — swept or expired — becomes "event: gone" and a
+// close. Quiet stretches
 // carry a ": ping" comment heartbeat. The stream ends on its own
 // after streamTTL, and immediately when the request context does
-// (client gone, server draining) — which is what keeps a graceful
-// shutdown's drain budget safe with streams open.
+// (client gone). A draining server does not end it: net/http's
+// Shutdown waits for in-flight requests and does not cancel their
+// contexts, so a jobs stream open at shutdown relies on its own
+// streamTTL to end, and can hold the drain until then.
 func (h *Handlers) Events(w http.ResponseWriter, r *http.Request) {
 	job, ok := h.lookup(w, r)
 	if !ok {
@@ -91,7 +96,9 @@ func (h *Handlers) Events(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if cur.Status != Running {
-			event("done", cur.Location)
+			// The shim navigates to this from script, as a body
+			// value, so no middleware adds the base to it.
+			event("done", basepath.Path(r, cur.Location))
 			return
 		}
 		if cur.Status != last.Status || cur.Progress != last.Progress || cur.Err != last.Err {

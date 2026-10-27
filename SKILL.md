@@ -30,8 +30,9 @@ Read the topic before you start work it covers, not after the source:
 | call a `ui` partial: its keys, at a glance | `skill/partials.md` |
 | style a page, format numbers, add a locale, a menu, a picture grid | `skill/design.md` |
 | take money, dates, URLs or uploads in a form, or protect a public form | `skill/forms.md` |
-| choose GORM or SQL, store files, write a migration, add teams or roles | `skill/data.md` |
+| choose GORM or SQL, store files, write a migration, add teams or roles, serve a tenant under `/<slug>` | `skill/data.md` |
 | run work in the background, poll for progress, schedule | `skill/background.md` |
+| update parts of a page when data changes: live regions, forms that swap in place | `skill/live.md` |
 | use the CLI beyond `new`, manifests, doctor, pins, native or PWA | `skill/tooling.md` |
 | serve JSON at `/api/v1`, mint tokens, let an agent act for a person, write `Authorize`, hand-write an operation | `skill/api.md` |
 

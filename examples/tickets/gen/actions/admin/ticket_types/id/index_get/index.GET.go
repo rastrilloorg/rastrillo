@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/basepath"
 	"amadan.net/rastrillo/rastrillo/currency"
 	"amadan.net/rastrillo/rastrillo/op"
 	"amadan.net/rastrillo/rastrillo/ui"
@@ -34,7 +35,7 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 	view.Render(ctx, w, "ticket_types/show", http.StatusOK, showView{
 		Localized: ui.ForRequest(r),
 		Title:     n.Name,
-		EditHref:  fmt.Sprintf("/admin/ticket_types/%d/edit", id),
+		EditHref:  basepath.Path(r, fmt.Sprintf("/admin/ticket_types/%d/edit", id)),
 		Fields: map[string]string{
 			"Name":        n.Name,
 			"Price":       priceText,

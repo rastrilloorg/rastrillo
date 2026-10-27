@@ -13,13 +13,13 @@
        Rows        required: Href, Main and Sub per row
        Pagination  required: Show, and Items in ui/partials/pagination.html's shape */}}
 {{define "content"}}{{$L := localizer $}}
-{{template "page-header" dict "L" $L "Title" (T $L "resource.ticket_types.name") "ActionHref" "/admin/ticket_types/new" "ActionLabel" (T $L "ui.new")}}
+{{template "page-header" dict "L" $L "Title" (T $L "resource.ticket_types.name") "ActionHref" (path $ "/admin/ticket_types/new") "ActionLabel" (T $L "ui.new")}}
 {{if .Empty}}
-{{template "empty-state" dict "L" $L "Title" (T $L "resource.ticket_types.empty.title") "Body" (T $L "resource.ticket_types.empty.body") "ActionHref" "/admin/ticket_types/new" "ActionLabel" (T $L "ui.new")}}
+{{template "empty-state" dict "L" $L "Title" (T $L "resource.ticket_types.empty.title") "Body" (T $L "resource.ticket_types.empty.body") "ActionHref" (path $ "/admin/ticket_types/new") "ActionLabel" (T $L "ui.new")}}
 {{else}}
 <div rst-list>
 <div rst-lbar>
-{{template "list-bar-search" dict "L" $L "Action" "/admin/ticket_types" "Query" .Query "Placeholder" (T $L "ui.search") "Hidden" .Carry}}
+{{template "list-bar-search" dict "L" $L "Action" (path $ "/admin/ticket_types") "Query" .Query "Placeholder" (T $L "ui.search") "Hidden" .Carry}}
 {{/* dropdown markup inlined, not dispatched via the "dropdown" partial:
      per-item (T $L .LabelKey) resolution inside this range cannot be
      expressed as a single dict/list argument to one {{template}} call

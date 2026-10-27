@@ -89,6 +89,8 @@ Mint a `Form` when you render the page, under a scope that names the form:
 f := guard.Form(time.Now(), "myapp/contact")
 ```
 
+Under a base path, call `f.At(r)` before rendering it: `At` returns a copy whose script and worker URLs carry the request's base, so the browser fetches them from the app and not the hub.
+
 The scope is sealed into the token and compared when it comes back, so a token minted for one form is refused by another. Namespace it the way `auth` (`rastrillo/auth/begin`) and `password` (`rastrillo/password/signin` and `.../signup`) do. If the form exists once per event or per account, put that in the scope too.
 
 Then render it:
@@ -348,6 +350,7 @@ type Parent struct {
 }
 
 type Form struct{ Challenge }
+func (f Form) At(r *http.Request) Form
 func (f Form) Attrs() template.HTMLAttr
 func (f Form) Script() template.HTML
 func (f Form) StatusLine(text string) template.HTML

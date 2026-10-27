@@ -451,3 +451,60 @@ func TestLocalePrefix(t *testing.T) {
 		t.Errorf("without Middleware: LocalePrefix = %q, want empty", got)
 	}
 }
+
+// pageSeen runs one request through the middleware and returns the path
+// and Rastrillo-Page the app below it sees, plus the header the caller's
+// own request still carries afterwards.
+func pageSeen(t *testing.T, target, page string) (path, gotPage, callerPage string) {
+	t.Helper()
+	req := httptest.NewRequest("GET", target, nil)
+	req.Header.Set("Rastrillo-Page", page)
+	path, gotPage = "", ""
+	mwLocales(t).Middleware(http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
+		path, gotPage = r.URL.Path, r.Header.Get("Rastrillo-Page")
+	})).ServeHTTP(httptest.NewRecorder(), req)
+	return path, gotPage, req.Header.Get("Rastrillo-Page")
+}
+
+func TestLocaleMiddlewareStripsThePrefixFromRastrilloPage(t *testing.T) {
+	// live.js sends location.pathname, prefix and all. If the app saw
+	// "/fr/notes" against a stripped "/notes", live.Elsewhere would call
+	// every swapping form's followed GET "another page" and navigate.
+	path, page, caller := pageSeen(t, "/fr/notes", "/fr/notes")
+	if path != "/notes" || page != "/notes" {
+		t.Errorf("handler saw Path %q, Rastrillo-Page %q; want /notes and /notes", path, page)
+	}
+	if caller != "/fr/notes" {
+		t.Errorf("the caller's own request header was changed to %q", caller)
+	}
+	if _, page, _ := pageSeen(t, "/fr", "/fr"); page != "/" {
+		t.Errorf("bare prefix: Rastrillo-Page = %q, want /", page)
+	}
+}
+
+func TestLocaleMiddlewareLeavesAnotherLocalesPageAlone(t *testing.T) {
+	// A different locale prefix really is a different page.
+	if _, page, _ := pageSeen(t, "/fr/notes", "/de-informal/notes"); page != "/de-informal/notes" {
+		t.Errorf("Rastrillo-Page = %q, want it unchanged", page)
+	}
+	// An unprefixed page against a prefixed request is also another page.
+	if _, page, _ := pageSeen(t, "/fr/notes", "/notes"); page != "/notes" {
+		t.Errorf("Rastrillo-Page = %q, want it unchanged", page)
+	}
+	// A prefix lookalike is not the prefix.
+	if _, page, _ := pageSeen(t, "/fr/notes", "/frx/notes"); page != "/frx/notes" {
+		t.Errorf("Rastrillo-Page = %q, want it unchanged", page)
+	}
+}
+
+func TestLocaleMiddlewareLeavesRastrilloPageAloneWithoutAPrefix(t *testing.T) {
+	path, page, _ := pageSeen(t, "/notes", "/notes")
+	if path != "/notes" || page != "/notes" {
+		t.Errorf("handler saw Path %q, Rastrillo-Page %q; want both /notes", path, page)
+	}
+	// Unprefixed request, prefixed page: nothing was stripped, so
+	// nothing is stripped from the header either.
+	if _, page, _ := pageSeen(t, "/notes", "/fr/notes"); page != "/fr/notes" {
+		t.Errorf("Rastrillo-Page = %q, want it unchanged", page)
+	}
+}

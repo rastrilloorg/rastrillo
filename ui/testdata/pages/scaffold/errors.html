@@ -6,4 +6,4 @@
      editing this file, or hand it Title/Body/HomeHref/BackHref to
      override the partial's own catalog defaults; see
      ui/partials/error-page.html for what it accepts. */}}
-{{define "content"}}{{$L := localizer $}}{{template "error-page" dict "L" $L "Status" .Status "Ref" .Ref}}{{end}}
+{{define "content"}}{{$L := localizer $}}{{template "error-page" dict "L" $L "Status" .Status "Ref" .Ref "HomeHref" (path $ "/")}}{{end}}

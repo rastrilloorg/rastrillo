@@ -60,14 +60,11 @@ func shellLayoutPage(t *testing.T, src []byte, dir string, defs ...string) strin
 	return b.String()
 }
 
-// shellAssets adds shell.js and shell.css to the sizing mux. A
+// shellAssets adds shell.css to the sizing mux (which serves every
+// vendored script, shell.js among them). A
 // *http.ServeMux, so a drive can hand it to rastrillo.Handler.
 func shellAssets(t *testing.T, pages map[string]string) *http.ServeMux {
 	mux := sizingMux(t, pages)
-	mux.HandleFunc("GET /shell.js", func(w http.ResponseWriter, _ *http.Request) {
-		w.Header().Set("Content-Type", "text/javascript")
-		w.Write(ShellJS())
-	})
 	mux.HandleFunc("GET /shell.css", func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "text/css")
 		w.Write(ShellCSS())

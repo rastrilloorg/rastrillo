@@ -8,6 +8,50 @@ This file starts at v0.23.0. Earlier releases are in the git history and their
 tags; nothing has been reconstructed for them, because a changelog written
 backwards from commits is a guess wearing a date.
 
+## Unreleased
+
+**Serve an app under a path on a hub's domain (breaking for code that calls `flash.Set`).** Set `Options.BasePath` and the whole app answers under `/<slug>` on another app's origin, such as `https://example.com/acme`. Redirects get the base added for you. Links in a page go through the new `path` template function, or `basepath.Path` in Go. The instance's own hostname sends visitors to the product path, or shows a read-only view with `basepath.ServeDirect`. Sign-in does not run under a base path: the hub signs people in. An app that does not set `BasePath` works as before. See [basepath](/docs/reference/basepath).
+
+To upgrade:
+
+1. Change every `flash.Set(w, kind, message)` to `flash.Set(w, r, kind, message)`.
+2. To serve an existing app under a base path, copy the `basepath.FromEnv` lines from a new app's `cmd/<app>/main.go` into yours, add `Base` to the page data in `render.go`'s `render` and to your error page's data, run `rastrillo generate`, and write each root-absolute URL in your own templates and layouts through `path`. Check the pages with `basepathtest.Leaks`. Copied layouts keep working at the root without this.
+
+What changed:
+
+- New package `basepath`: `Config` with `Handler`, `Enabled` and `Validate`; `FromEnv` and `SlugFromHost`; `Join`, `Path`, `Base` and `Original`; `OnDirectHost`, `PathRouted`, `PlatformCall` and `ProductURL`; and `RedirectDirect` and `ServeDirect`.
+- New package `basepath/basepathtest`: `Leaks` finds links in a page that would break under a base path.
+- New option `Options.BasePath`. `Handler` refuses to start with a value `basepath` cannot serve. The framework's own routes, `/healthz` and `/api/version` among them, answer under the base.
+- New template function `path`, in `ui.Funcs` and `ui.Pages`, and new field `ui.Localized.Base`, which `ui.ForRequest` fills.
+- New method `pow.Form.At` gives a form whose script and worker URLs carry the request's base.
+- New error `sessions.ErrPathRouted`. Under a base path, and on the direct host, the row-backed store signs nobody in and never clears the cookie.
+- `flash.Set` takes the request. Under a base path the cookie is `rastrillo_flash_<slug>` at `Path=/<slug>`; at the root it is still `rastrillo_flash` at `Path=/`.
+- The shells, generated screens, job pages, pow forms and the language and scheme switchers link through `path`.
+- `auth`, `password`, `passkey`, `secondfactor`, `totp` and `vault` answer 404 under a base path and on the direct host, and log an error. `auth.SigninState` gains `Unavailable`, and the `signin` partial renders nothing for it.
+- New apps read `RASTRILLO_SLUG` or `RASTRILLO_SLUG_FROM_HOST` at boot, and their README says how to deploy one as a tenant.
+
+### Added: live pages; vendor `live.js` and re-copy `busy.js`
+
+Run `rastrillo doctor --fix` to vendor `live.js` and re-copy `busy.js`. Every layout now links `live.js` after `busy.js`; add the tag to yours. It does nothing until a page opts in.
+
+### Added: `rastrillo/pdf`, a dependency-free PDF writer
+
+Flow headings, paragraphs, field lists, tables and callouts onto a page and get deterministic bytes back. No sidecar, no headless browser, no system font: CARLOS ships an app as one binary, and there is nowhere on the platform to run any of those.
+
+Tables paginate on their own and repeat their column headings on each page. `KeepTogether` keeps a heading on the same page as what follows it. `Produced` draws a closing line into the last page's footer, so it never ends up alone on a page of its own. An optional stamp overlays an approval mark on every page.
+
+`Options.Size` sets the page size: `A4` (the default), `A3`, `A5`, `Letter`, `Legal`, `Tabloid`, or your own dimensions. `Options.Landscape` turns the page on its side, for a wide table. `Measure`, `Wrap` and `Encode` are exported for drawing onto something this package does not lay out, such as a blank form.
+
+See [pdf](/docs/reference/pdf).
+
+### Fixed: a select list fixed or anchored out of a scrolling bar opens full height; re-vendor `select.js`
+
+A searchable select in a toolbar that scrolls sideways opened to a list 10px tall when your stylesheet fixed the list to the screen or anchored it to its box. `select.js` took the toolbar for the edge of the room, although the toolbar does not cut such a list off. It now counts only the boxes that really cut the list off. A list positioned inside a scrolling box, as `tokens.css` places it, is still held to that box.
+
+### Added: `data-rst-select-ceiling` keeps a select list out from under a sticky header; re-vendor `select.js`
+
+Mark a header that stays pinned above your form with `data-rst-select-ceiling`, as you mark a bar below it with `data-rst-select-floor`. A list then never opens upward behind the header: when the header leaves less room above the field than there is below, the list opens down.
+
 ## v0.29.0
 
 A JSON API with agents that act for a person, money in any currency, a colour-scheme switch, a new look for `day`, and sign-in without a database. The first seven sections change what an existing app does without a compile error: the JSON API, the colour-scheme switch, money, sign-in's return to the page, pagination, hand-edited migrations and `job-status`. Read them before you upgrade.

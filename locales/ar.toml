@@ -158,3 +158,6 @@ rastrillo.ui.job_running_progress = "{name} قيد التشغيل: {progress}…
 rastrillo.ui.job_failed = "فشل {name}"
 rastrillo.ui.job_failed_error = "فشل {name}: {error}"
 rastrillo.ui.job_finished = "انتهى {name}."
+
+rastrillo.ui.live.paused = "توقفت التحديثات المباشرة. أعد تحميل الصفحة لبدئها من جديد."
+rastrillo.ui.live.unconfirmed = "تعذّر علينا تأكيد هذا التغيير. تحقق من الصفحة قبل أن تحاول مرة أخرى."

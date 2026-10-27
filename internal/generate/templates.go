@@ -252,10 +252,10 @@ func listHTML(r rastrillo.Resource) []byte {
 	b.WriteString("       Rows        required: Href, Main and Sub per row\n")
 	b.WriteString("       Pagination  required: Show, and Items in ui/partials/pagination.html's shape */}}\n")
 	b.WriteString("{{define \"content\"}}\n")
-	fmt.Fprintf(&b, "{{template \"page-header\" dict \"Title\" (T %q) \"ActionHref\" %q \"ActionLabel\" (T \"ui.new\")}}\n",
+	fmt.Fprintf(&b, "{{template \"page-header\" dict \"Title\" (T %q) \"ActionHref\" (path $ %q) \"ActionLabel\" (T \"ui.new\")}}\n",
 		resourceKey(r.Name, "name"), newHref)
 	b.WriteString("{{if .Empty}}\n")
-	fmt.Fprintf(&b, "{{template \"empty-state\" dict \"Title\" (T %q) \"Body\" (T %q) \"ActionHref\" %q \"ActionLabel\" (T \"ui.new\")}}\n",
+	fmt.Fprintf(&b, "{{template \"empty-state\" dict \"Title\" (T %q) \"Body\" (T %q) \"ActionHref\" (path $ %q) \"ActionLabel\" (T \"ui.new\")}}\n",
 		resourceKey(r.Name, "empty.title"), resourceKey(r.Name, "empty.body"), newHref)
 	b.WriteString("{{else}}\n")
 	b.WriteString("<div rst-list>\n")
@@ -263,7 +263,7 @@ func listHTML(r rastrillo.Resource) []byte {
 	case filtersDeclared:
 		b.WriteString(listBarWithDropdownHTML(r))
 	case r.List.Search:
-		fmt.Fprintf(&b, "{{template \"list-bar\" dict \"SearchAction\" %q \"Query\" .Query \"Placeholder\" (T \"ui.search\") \"Hidden\" .Carry}}\n", r.Route)
+		fmt.Fprintf(&b, "{{template \"list-bar\" dict \"SearchAction\" (path $ %q) \"Query\" .Query \"Placeholder\" (T \"ui.search\") \"Hidden\" .Carry}}\n", r.Route)
 	}
 	b.WriteString("{{range .Rows}}{{template \"list-row-action\" dict \"Href\" .Href \"Main\" .Main \"Sub\" .Sub}}\n")
 	b.WriteString("{{end}}\n")
@@ -283,7 +283,7 @@ func listBarWithDropdownHTML(r rastrillo.Resource) string {
 	var b strings.Builder
 	b.WriteString("<div rst-lbar>\n")
 	if r.List.Search {
-		fmt.Fprintf(&b, "{{template \"list-bar-search\" dict \"Action\" %q \"Query\" .Query \"Placeholder\" (T \"ui.search\") \"Hidden\" .Carry}}\n", r.Route)
+		fmt.Fprintf(&b, "{{template \"list-bar-search\" dict \"Action\" (path $ %q) \"Query\" .Query \"Placeholder\" (T \"ui.search\") \"Hidden\" .Carry}}\n", r.Route)
 	}
 	b.WriteString("{{/* dropdown markup inlined, not dispatched via the \"dropdown\" partial:\n")
 	b.WriteString("     per-item (T $L .LabelKey) resolution inside this range cannot be\n")
@@ -406,7 +406,7 @@ func formField(r rastrillo.Resource, f rastrillo.Field) string {
 // formFoot renders one form-foot call. Cancel always targets the list
 // (r.Route) — the plan's contract for both New and Edit forms.
 func formFoot(r rastrillo.Resource) string {
-	return fmt.Sprintf("{{template \"form-foot\" dict \"Submit\" (T \"ui.save\") \"CancelHref\" %q \"CancelLabel\" (T \"ui.cancel\")}}\n", r.Route)
+	return fmt.Sprintf("{{template \"form-foot\" dict \"Submit\" (T \"ui.save\") \"CancelHref\" (path $ %q) \"CancelLabel\" (T \"ui.cancel\")}}\n", r.Route)
 }
 
 // formHTML renders the New/Edit screen. New is one form posting every
@@ -457,7 +457,7 @@ func formHTML(r rastrillo.Resource) []byte {
 	}
 	b.WriteString("{{define \"content\"}}\n")
 	b.WriteString("{{if .IsNew}}\n")
-	fmt.Fprintf(&b, "<form rst-form method=\"post\" action=%q>\n", r.Route)
+	fmt.Fprintf(&b, "<form rst-form method=\"post\" action=\"{{path $ %q}}\">\n", r.Route)
 	for _, f := range r.Form.Basics {
 		b.WriteString(formField(r, f))
 	}

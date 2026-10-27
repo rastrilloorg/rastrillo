@@ -69,7 +69,7 @@ ci: gofmt chromedp-graph gorm-free generate-check suite
 # by hack/gotest.sh. In a role's name a / in the path is a . so
 # internal/designsystem@6 becomes browser.internal.designsystem~1of6
 # to ~6of6.
-BROWSER_PKGS := harness webauthn ui@2 pow internal/designsystem@6 internal/designsystem/sweep internal/designsystem/history auth
+BROWSER_PKGS := harness webauthn ui@2 pow internal/designsystem@6 internal/designsystem/sweep internal/designsystem/history auth internal/basepathe2e
 ROOT_SPLIT := internal/designsystem@4 cmd/rastrillo@2 cmd/dsgen
 go-roles = $(foreach p,$(2),$(if $(findstring @,$(p)),$(call go-slices,$(1),$(subst /,.,$(word 1,$(subst @, ,$(p)))),$(word 2,$(subst @, ,$(p)))),$(1).$(subst /,.,$(p))))
 go-slices = $(foreach k,$(shell seq 1 $(3)),$(1).$(2)~$(k)of$(3))
@@ -256,7 +256,7 @@ gorm-free:
 # ui.Pages alone in ui, whose isolation test runs 200 executions in two
 # languages at once.
 race:
-	CGO_ENABLED=1 go test -race -count=1 ./jobs/ ./sessions/ ./assertion/ ./locales/ ./provision/
+	CGO_ENABLED=1 go test -race -count=1 ./jobs/ ./live/ ./sessions/ ./assertion/ ./locales/ ./provision/
 	CGO_ENABLED=1 go test -race -count=1 -run '^TestPages' ./ui/
 
 # The examples are separate modules with a replace back to this
