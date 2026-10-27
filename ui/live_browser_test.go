@@ -116,10 +116,6 @@ func (a *liveApp) region(r *http.Request, name string) string {
 
 func (a *liveApp) handler(t *testing.T) http.Handler {
 	mux := sizingMux(t, nil)
-	mux.HandleFunc("GET /live.js", func(w http.ResponseWriter, _ *http.Request) {
-		w.Header().Set("Content-Type", "text/javascript")
-		w.Write(LiveJS())
-	})
 	stream := a.hub.Handler()
 	mux.HandleFunc("GET /live", func(w http.ResponseWriter, r *http.Request) {
 		if a.down.Load() {

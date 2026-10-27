@@ -61,6 +61,29 @@ func stylesheets(t *testing.T, mux *http.ServeMux) {
 	})
 }
 
+// vendoredScripts serves every script the vendored set ships, under the
+// name each layout links it by. It reads ui.VendoredAssets rather than a
+// list of its own, so a script added to the set and linked by the shells
+// (live.js was) cannot 404 in a fixture and fail the CSP harness's
+// no-problems check on every shell page.
+func vendoredScripts(t *testing.T, mux *http.ServeMux) {
+	t.Helper()
+	assets, ok := VendoredAssets(ThemeNames()[0])
+	if !ok {
+		t.Fatal("no theme to read the vendored set for")
+	}
+	for name, body := range assets {
+		if !strings.HasSuffix(name, ".js") {
+			continue
+		}
+		body := body
+		mux.HandleFunc("GET /"+name, func(w http.ResponseWriter, _ *http.Request) {
+			w.Header().Set("Content-Type", "text/javascript")
+			w.Write(body)
+		})
+	}
+}
+
 // clipReading is what the clipping drive measures. Overhang and
 // HitIsInMenu are the two halves of one claim: the menu really does
 // hang below the card (or the hit test proves nothing), and the part

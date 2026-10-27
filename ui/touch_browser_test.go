@@ -34,15 +34,7 @@ func sizingMux(t *testing.T, pages map[string]string) *http.ServeMux {
 	mux := http.NewServeMux()
 	stylesheets(t, mux)
 	fixtureImages(mux)
-	for name, body := range map[string][]byte{
-		"rastrillo.js": ShimJS(), "busy.js": BusyJS(), "light.js": LightJS(), "anchor.js": AnchorJS(), "select.js": SelectJS(), "datetime.js": DatetimeJS(), "calendar.js": CalendarJS(),
-	} {
-		body := body
-		mux.HandleFunc("GET /"+name, func(w http.ResponseWriter, _ *http.Request) {
-			w.Header().Set("Content-Type", "text/javascript")
-			w.Write(body)
-		})
-	}
+	vendoredScripts(t, mux)
 	for path, html := range pages {
 		html, pattern := html, "GET "+path
 		if path == "/" {
