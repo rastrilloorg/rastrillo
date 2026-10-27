@@ -14,9 +14,9 @@ import "errors"
 // for Amount equality.
 var ErrCurrencyMismatch = errors.New("money: currency mismatch")
 
-// ErrOverflow is returned instead of wrapping when an arithmetic
-// operation on an Amount would exceed what an int64 minor-unit count
-// can hold. A ledger that wraps a large enough figure into a small or
+// ErrOverflow is returned instead of wrapping when Add, Sub or MulInt
+// would exceed what an int64 minor-unit count can hold. Neg has no
+// error return and panics on its one unrepresentable input instead. A ledger that wraps a large enough figure into a small or
 // negative one is a bug, not an edge case, so overflow is always an
 // error and never silent.
 var ErrOverflow = errors.New("money: overflow")

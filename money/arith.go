@@ -37,9 +37,9 @@ func (a Amount) Sub(b Amount) (Amount, error) {
 // an int64 and would silently wrap back to itself — a wrong sign
 // returned with no error, which is worse than Neg having no error
 // return at all. math.MinInt64 minor units (tens of quadrillions of a
-// two-decimal currency's major unit) is not a value a real caller's
-// arithmetic produces, so Neg's contract still has no error return for
-// it; instead it panics, trading a silent wrong answer for a loud one,
+// two-decimal currency's major unit) is reachable — MulInt(2) of
+// -1<<62 returns it without overflowing — but rare enough that Neg's
+// contract still has no error return for it; instead it panics, trading a silent wrong answer for a loud one,
 // consistent with every other operation in this file never answering
 // an overflow quietly. Sub and MulInt do not depend on Neg, so they
 // are not exposed to this case.
