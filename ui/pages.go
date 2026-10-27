@@ -296,6 +296,34 @@ func (p *Pages) WriteRegions(w http.ResponseWriter, r *http.Request, page string
 	return live.Respond(w, r, rendered, b.Bytes())
 }
 
+// Render answers a request for page, whole or as the regions a
+// fragment request names, in live's render order (live.Render), and is
+// the call a handler should make. status 0 means 200; a fragment
+// answer keeps it. data builds the page data, called once with whether
+// this render may take the flash, and not at all when the answer is a
+// navigation. The data must carry L, as for Execute. Any error, from
+// data, the localizer check or a template, comes back with nothing
+// written, so the caller can send its 500.
+func (p *Pages) Render(w http.ResponseWriter, r *http.Request, status int, page string, data func(takeFlash bool) (any, error)) error {
+	t, ok := p.pages[page]
+	if !ok {
+		return fmt.Errorf(noPageMsg, page)
+	}
+	// The order is live's, with the page's own set and entry, so the two
+	// cannot drift; only Execute's localizer check is added, after data
+	// has built what it checks.
+	return live.Render(w, r, status, t, p.entry, func(takeFlash bool) (any, error) {
+		d, err := data(takeFlash)
+		if err != nil {
+			return nil, err
+		}
+		if localizer(d) == nil {
+			return nil, fmt.Errorf("%w "+pageDataMsg, ErrNoLocalizer, page)
+		}
+		return d, nil
+	})
+}
+
 // HasRegions reports whether page defines a region for any of names
 // other than the notice, which every layout has (see live.Has). Ask it
 // before taking the flash; a page that does not exist has none.
