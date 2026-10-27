@@ -40,9 +40,9 @@ Region element, attributes from `View.Attrs` (never hand-written):
 ```
 
 renders `data-live="notes/7@3" data-live-boot="<12 hex>"`. A topic
-undeclared or malformed is logged and left out; none left, no
-attributes. Head, once, in the layout (the two strings are the
-translated `rastrillo.ui.live.paused` and `.unconfirmed`):
+undeclared or malformed is left out, and logged once per name per hub;
+none left, no attributes. Head, once, in the layout (the two strings
+are the translated `rastrillo.ui.live.paused` and `.unconfirmed`):
 
 ```html
 {{.Live.Head (T $L "rastrillo.ui.live.paused") (T $L "rastrillo.ui.live.unconfirmed")}}
@@ -69,10 +69,15 @@ browser navigates to the URL the 204 came from, which keeps a locale
 prefix; the header is only a fallback. That 204 is live's own answer,
 not a way for an app to choose a destination: to send people
 somewhere, redirect as before. A 400 or 422 swaps and focuses the first
-`[aria-invalid="true"]`. A 5xx, no answer, or a 2xx without
+`[aria-invalid="true"]`. A 5xx, no answer, or a 2xx with an **empty**
 `Rastrillo-Regions` is an unknown outcome: the notice says
 "unconfirmed", the regions refetch, and **nothing is resent**, so a
-non-idempotent handler is still yours to make safe.
+non-idempotent handler is still yours to make safe. No header at all
+(any status) replaces the page: `text/html` as a document, anything
+else (`http.Error`) as plain text, never markup. A bare 204 stays put.
+Only the form's own region swaps over unsent input; a draft in another
+target waits. It sends a tick after the submit, so any handler that
+calls `preventDefault`, a later `window` listener too, cancels it.
 
 ## The render order
 
@@ -86,17 +91,19 @@ this order (notes `renderStatus` is the model):
 2. `live.NoStore(w)`: `Cache-Control: no-store` and `Vary:
    Rastrillo-Fragment` on full pages and fragments both, one URL
    answering two shapes.
-3. `names, frag := live.Wanted(r)`. `frag` false (no header, or any name
-   not a region name, e.g. the jobs poll's `1`) means render the full
-   page.
+3. `names, frag := live.Wanted(r)`. `frag` false (no header, more than
+   32 names, or any name not a region name, e.g. the jobs poll's `1`)
+   means render the full page.
 4. If `frag` and `!pages.HasRegions(page, names)` (`live.Has` for your
-   own template set): `live.Respond(w, r, nil, nil)`; return. For a
-   GET/HEAD that is the navigate answer (204 + `Rastrillo-Location`); a
-   POST gets an empty answer instead, so a write's result is not hidden.
-   Still before the flash.
+   own template set), which **ignore `notice`** (every layout has it).
+   A GET/HEAD: `live.Respond(w, r, nil, nil)`, the navigate answer;
+   return. Any other method is a form whose error render is another
+   page (create's 422 renders `new`): set `frag = false` and render the
+   whole page with its status. Still before the flash.
 5. `live.TakesFlash(r)`: true for a full page or when `names` has
-   `notice`. Call `flash.Take` only then; a stream refetch that took it
-   would eat a message it never shows.
+   `notice`. Call `flash.Take` only then (`!frag || live.TakesFlash(r)`
+   after step 4); a stream refetch that took it would eat a message it
+   never shows.
 6. Build page data (with `Live: hub.View(r)`), then `pages.WriteRegions(w,
    r, page, names, data)` for a fragment, `pages.Execute` otherwise.
    Never hand the ResponseWriter to `ExecuteRegions`: the first body
@@ -122,7 +129,8 @@ whatever the region shows even when the region is all that is rendered.
 - **`hub.Notify("notes/7", ...)` after the write commits**: notified
   before, a refetch can read the old rows and settle on them. Never
   blocks; undeclared or malformed topics are logged and skipped; a nil
-  hub does nothing.
+  hub does nothing. Memory grows with the distinct keyed topics notified
+  since boot: none is evicted.
 - **`r.Handle(path, hub.Handler())` after `sess.Middleware` or
   `sess.Require`**: `Allow` sees the session whichever of them stored
   in the context, so mount the handler after one (notes uses
@@ -138,8 +146,8 @@ It owns reconnecting (backoff to a minute), one fetch per region at a
 time, and a region being edited (focused field, or a field changed from
 its default) is **not swapped**: it is marked `data-live-stale` and
 fetched when editing ends. Focus survives a swap. After failed fetches
-or ten seconds of a down stream the notice shows the paused note. Hidden
-for a minute, the stream closes. It does not move data, run templates,
+or ten seconds of a down stream an empty notice shows the paused note.
+Hidden for a minute, the stream closes. It does not move data, run templates,
 or touch `rastrillo.js`.
 
 ## CARLOS: hibernating routes
