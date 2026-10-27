@@ -73,8 +73,9 @@ somewhere, redirect as before. A 400 or 422 swaps and focuses the first
 `Rastrillo-Regions` is an unknown outcome: the notice says
 "unconfirmed", the regions refetch, and **nothing is resent**, so a
 non-idempotent handler is still yours to make safe. No header at all
-(any status) replaces the page: `text/html` as a document, anything
-else (`http.Error`) as plain text, never markup. A bare 204 stays put.
+(any status below 500) replaces the page: `text/html` as a document,
+anything else (`http.Error`) as plain text, never markup. A bare 204
+stays put.
 Only the form's own region swaps over unsent input; a draft in another
 target waits. It sends a tick after the submit, so any handler that
 calls `preventDefault`, a later `window` listener too, cancels it.
