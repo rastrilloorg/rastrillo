@@ -106,6 +106,15 @@ type Hub struct {
 	// template warns once rather than on every render (warnOnce).
 	warned map[string]bool
 
+	// pending is NotifyAt's scheduled (time, topic) pairs, a min-heap
+	// by time, with scheduled as its set for dedup; timer waits for the
+	// earliest (schedule.go).
+	pending    pendingHeap
+	scheduled  map[pendingKey]bool
+	timer      *time.Timer
+	warnedFull bool
+	maxPending int
+
 	// Copied from cfg so tests can shrink them, as in jobs.Handlers.
 	lifetime      time.Duration
 	heartbeat     time.Duration
@@ -166,6 +175,8 @@ func New(cfg Config) (*Hub, error) {
 		topics:        map[string]*topicState{},
 		subs:          map[*subscriber]struct{}{},
 		warned:        map[string]bool{},
+		scheduled:     map[pendingKey]bool{},
+		maxPending:    maxPending,
 		done:          make(chan struct{}),
 		lifetime:      cfg.Lifetime,
 		heartbeat:     cfg.Heartbeat,
@@ -192,16 +203,29 @@ func (h *Hub) Notify(topics ...string) {
 	if h == nil {
 		return
 	}
+	valid := h.validTopics("Notify", topics)
+	if len(valid) == 0 {
+		return
+	}
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.raiseLocked(valid)
+}
+
+// validTopics is topics without the malformed or undeclared ones,
+// each logged and skipped, and with each repeat once. caller names the
+// method in the log.
+func (h *Hub) validTopics(caller string, topics []string) []string {
 	valid := make([]string, 0, len(topics))
 	seen := make(map[string]bool, len(topics))
 	for _, t := range topics {
 		name, _, ok := parseTopic(t)
 		if !ok {
-			slog.Warn("live: Notify skipped a malformed topic", "topic", t)
+			slog.Warn("live: "+caller+" skipped a malformed topic", "topic", t)
 			continue
 		}
 		if _, declared := h.cfg.Topics[name]; !declared {
-			slog.Warn("live: Notify skipped an undeclared topic", "topic", t)
+			slog.Warn("live: "+caller+" skipped an undeclared topic", "topic", t)
 			continue
 		}
 		if !seen[t] {
@@ -209,11 +233,12 @@ func (h *Hub) Notify(topics ...string) {
 			valid = append(valid, t)
 		}
 	}
-	if len(valid) == 0 {
-		return
-	}
-	h.mu.Lock()
-	defer h.mu.Unlock()
+	return valid
+}
+
+// raiseLocked is one change to valid topics, all at one sequence
+// number, and a wake for every open stream. h.mu is held.
+func (h *Hub) raiseLocked(valid []string) {
 	h.seq++
 	for _, t := range valid {
 		st := h.topics[t]

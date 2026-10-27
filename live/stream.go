@@ -261,6 +261,7 @@ func (h *Hub) admit() *subscriber {
 // Close refuses new streams and tells every open one to end. A stream
 // waiting for changes ends at once; one blocked writing to a slow
 // client ends when that write's deadline passes, within WriteDeadline.
+// It also stops NotifyAt's timer and drops every pending time.
 // It is safe to call more than once. Call it when shutdown starts,
 // before the server waits for in-flight requests: open streams would
 // otherwise hold that wait until their lifetime ran out. On a nil hub
@@ -275,6 +276,7 @@ func (h *Hub) Close() {
 	if !h.closed {
 		h.closed = true
 		close(h.done)
+		h.stopScheduleLocked()
 	}
 }
 
