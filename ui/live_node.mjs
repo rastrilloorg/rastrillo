@@ -32,7 +32,7 @@ function element(attrs, extra) {
 // page builds one stub page. regions are attribute maps; meta is the
 // rastrillo-live meta's attributes, or null for a page without one.
 function page({ regions = [], meta = { content: "/live", "data-paused": "Paused" }, prerendering = false } = {}) {
-  const n = { sources: [], fetches: [], timers: [] };
+  const n = { sources: [], fetches: [], timers: [], assigned: [] };
   const on = {};
   const won = {};
   const els = regions.map((a) => element(a));
@@ -71,13 +71,20 @@ function page({ regions = [], meta = { content: "/live", "data-paused": "Paused"
     EventSource,
     AbortController,
     Headers,
+    URL,
     module,
-    location: { pathname: "/", search: "", assign: () => {} },
+    location: { pathname: "/", search: "", origin: "http://app.test", assign: (to) => { n.assigned.push(to); } },
     addEventListener: (type, fn) => { (won[type] = won[type] || []).push(fn); },
     // Rejects, as a network failure does, until the scenario sets
     // n.answer; then it answers 200 with Rastrillo-Regions and no body.
     fetch: (url, init) => {
       n.fetches.push({ url, init, headers: Object.fromEntries(init.headers) });
+      // A 204 that says "navigate": n.nav is { to, url }, and url is
+      // the Response's, which a browser always fills but a stub may not.
+      if (n.nav) {
+        const h = { "rastrillo-location": n.nav.to };
+        return Promise.resolve({ status: 204, url: n.nav.url, headers: { get: (k) => h[k.toLowerCase()] ?? null } });
+      }
       if (!n.answer) return Promise.reject(new TypeError("Failed to fetch"));
       const h = { "rastrillo-regions": n.answer };
       return Promise.resolve({ status: 200, headers: { get: (k) => h[k.toLowerCase()] ?? null }, text: () => Promise.resolve("") });
@@ -202,6 +209,24 @@ const scenarios = {
       callerKeys: Object.keys(init).concat(Object.keys(plain), Object.keys(plain.headers)),
       stopped,
     };
+  },
+  // Where a 204 sends the page: the URL it came from, or the header's
+  // local path when the Response reports none, or nowhere.
+  async navigate() {
+    const out = {};
+    const legs = {
+      prefixed: { to: "/item", url: "http://app.test/fr/item" },
+      fallback: { to: "/item", url: "" },
+      fallbackNotLocal: { to: "//evil.test/x", url: "" },
+      otherOrigin: { to: "/item", url: "http://evil.test/fr/item" },
+    };
+    for (const [name, nav] of Object.entries(legs)) {
+      const p = page({ regions: [region("list", "a@1")] });
+      p.n.nav = nav;
+      await p.send("/fr/list", ["list"], {}, false);
+      out[name] = p.n.assigned;
+    }
+    return out;
   },
   // A change for a version the region already shows fetches nothing.
   async current() {

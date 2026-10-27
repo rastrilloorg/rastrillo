@@ -20,7 +20,8 @@ func TestLiveIsSmallAndSelfContained(t *testing.T) {
 	// The forms section brought the file to 24,470 bytes, against a 24
 	// KiB cap. Sending a swapping form from the window, after any
 	// handler that cancels it, instead of from the capture listener,
-	// added about 970 bytes, for 25,438. That leaves about 3.2 KB of
+	// added about 970 bytes, for 25,438. Navigating to the answer's own
+	// URL, so a locale prefix survives, made it 26,144: about 2.5 KB of
 	// headroom.
 	if n := len(js); n > 28*1024 {
 		t.Errorf("live.js is %d bytes, over 28 KiB; an app owner should be able to read it in one sitting", n)
@@ -223,6 +224,26 @@ func TestLiveSendCopiesItsInit(t *testing.T) {
 	}
 	if got.Stopped != "rejected" {
 		t.Errorf("send on a stopped page %s, want a rejected promise", got.Stopped)
+	}
+}
+
+// A live 204 names the page it answered for in Rastrillo-Location, as
+// the server sees it: under a locale prefix, without the prefix. The
+// browser knows the URL the answer came from, prefix and all, so that is
+// where the page goes; the header's path is only for a Response that
+// reports no URL.
+func TestALiveNavigationFallsBackToRastrilloLocation(t *testing.T) {
+	var got map[string][]string
+	liveNode(t, "navigate", &got)
+	for name, want := range map[string][]string{
+		"prefixed":         {"http://app.test/fr/item"},
+		"fallback":         {"/item"},
+		"fallbackNotLocal": nil,
+		"otherOrigin":      nil,
+	} {
+		if !slices.Equal(got[name], want) {
+			t.Errorf("%s: navigated to %v, want %v", name, got[name], want)
+		}
 	}
 }
 

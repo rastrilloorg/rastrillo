@@ -28,7 +28,9 @@
    the lowest version a region holds. On a change event, each region
    showing an older version is fetched with Rastrillo-Fragment: <id>,
    and replaced by the answer's element (listed in Rastrillo-Regions).
-   A 204 with Rastrillo-Location navigates there, if it is local.
+   A 204 with Rastrillo-Location navigates to the URL the answer came
+   from, which keeps a locale prefix the header's path has lost; the
+   header's path is used only when the browser reports no URL.
 
    The rules (the edit checks are for stream fetches; a form's own answer
    swaps the form it was sent from):
@@ -89,6 +91,17 @@
   function localPath(to) {
     return to.charAt(0) === "/" && to.charAt(1) !== "/" &&
       to.indexOf("\\") === -1 && !/[\u0000-\u001f\u007f]/.test(to);
+  }
+
+  // leaveFor is where a live 204 sends the page: the URL the answer came
+  // from (after any redirect), or "" to stay. The header names that same
+  // page, but under a locale prefix the server has stripped it, and
+  // following it would drop the reader's language. Only a browser that
+  // reports no URL falls back to the header, which must be local.
+  function leaveFor(res) {
+    var to = res.headers.get("Rastrillo-Location"), u = res.url;
+    if (!u) return to && localPath(to) ? to : "";
+    try { return new URL(u).origin === location.origin ? u : ""; } catch (x) { return ""; }
   }
 
   function state(name) {
@@ -239,7 +252,7 @@
             var el = document.getElementById(n);
             if (el) { state(n).leave = true; stale(el); }
           });
-        } else if (localPath(to)) location.assign(to);
+        } else if (leaveFor(res)) location.assign(leaveFor(res));
         return res;
       }
       // Only an answer that names its regions is one. A signed-out
@@ -478,8 +491,8 @@
     }
 
     send(url.href, names, { method: "POST", body: body, headers: { "Rastrillo-Page": location.pathname } }, false, hold).then(function (res) {
-      // This 204 has a Location: send navigated, if it is local.
-      if (res.status === 204) return settle(localPath(res.headers.get("Rastrillo-Location")));
+      // This 204 has a Location: send navigated, if it could.
+      if (res.status === 204) return settle(!!leaveFor(res));
       if (run !== ctl) return settle();
       if (!res.headers.get("Rastrillo-Regions")) return unknown();
       settle();

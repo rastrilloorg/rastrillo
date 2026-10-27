@@ -610,3 +610,49 @@ func TestASwappingFormDefersToAHandlerThatCancels(t *testing.T) {
 	}
 	rig.Screen("#list", "a swapping form whose submit a handler cancelled")
 }
+
+// Under the locale middleware live's navigate answer names the
+// request's path without its /fr prefix, so a form on /fr/list whose
+// redirect lands on /fr/item is told "/item". The browser knows where
+// the answer came from, prefix included, and must end there.
+func TestALiveNavigationKeepsTheLocalePrefix(t *testing.T) {
+	f := newFormApp(t, "list", swapForm("one"))
+	rig := harness.New(t, func(string) http.Handler {
+		mux := http.NewServeMux()
+		mux.Handle("/", f.handler(t))
+		mux.HandleFunc("GET /fr/list", func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			fmt.Fprint(w, `<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>liste</title>`+
+				string(f.hub.View(r).Head(livePaused, "Could not confirm."))+
+				`<script defer src="/live.js"></script></head><body><div id="notice" role="status"></div>`+
+				`<div id="list" `+string(f.hub.View(r).Attrs("a"))+`><form id="f" method="post" action="/fr/save" data-live-form>`+
+				`<button id="go" name="do" value="a">Go</button></form></div></body></html>`)
+		})
+		mux.HandleFunc("POST /fr/save", func(w http.ResponseWriter, r *http.Request) {
+			http.Redirect(w, r, "/fr/item", http.StatusSeeOther)
+		})
+		// As live answers a fragment request for a page that is not
+		// this one, under the middleware's stripped path; a plain
+		// navigation gets the page.
+		mux.HandleFunc("GET /fr/item", func(w http.ResponseWriter, r *http.Request) {
+			if r.Header.Get("Rastrillo-Fragment") != "" {
+				live.NoStore(w)
+				w.Header().Set("Rastrillo-Location", "/item")
+				w.WriteHeader(http.StatusNoContent)
+				return
+			}
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			fmt.Fprint(w, `<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>item</title></head><body><p id="item">Objet</p></body></html>`)
+		})
+		return mux
+	})
+	rig.Run(chromedp.Navigate(rig.Origin + "/fr/list"))
+	liveServerUntil(t, f.liveApp, "the page opened its stream", 10*time.Second, func(a *liveApp) bool { return len(a.streams) > 0 })
+	rig.Run(chromedp.Click("#go", chromedp.ByID))
+	liveUntil(t, rig, "the browser left for the prefixed URL", `!!document.getElementById("item")`, 10*time.Second)
+	var path string
+	liveEval(t, rig, `location.pathname`, &path)
+	if path != "/fr/item" {
+		t.Errorf("the form's redirect landed on /fr/item and the browser ended on %q, want /fr/item", path)
+	}
+}
