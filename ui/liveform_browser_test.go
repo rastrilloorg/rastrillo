@@ -537,6 +537,34 @@ func TestAFormAnswerWithoutItsRegionsIsShownAsTheBrowserWould(t *testing.T) {
 	rig.Screen("#list", "the page after answers without regions")
 }
 
+// A form's answer swaps its own region over whatever is typed there:
+// that is what was just sent. Another region it targets holds someone
+// else's draft, which was not sent, and is left alone until the
+// editing ends, as a stream fetch would leave it.
+func TestAFormAnswerLeavesADraftInAnotherTarget(t *testing.T) {
+	f := newFormApp(t, "list", swapForm("one"), "other", `<input id="draft" name="d"><p class="o">one</p>`)
+	rig := formRig(t, f)
+	f.open(t, rig)
+	liveEval(t, rig, `document.getElementById("draft").value = "keep"; document.getElementById("field").value = "two"; true`, nil)
+	rig.Run(chromedp.Click("#go", chromedp.ByID))
+	liveUntil(t, rig, "the form's own region swapped", `document.querySelector("#list .v").textContent === "two" &&
+	  document.getElementById("notice").textContent === "Saved."`, 10*time.Second)
+	time.Sleep(200 * time.Millisecond)
+	var got struct {
+		Draft, Other string
+		Stale        bool
+	}
+	liveEval(t, rig, `({ Draft: (document.getElementById("draft") || {}).value || "", Other: document.querySelector("#other .o").textContent,
+	  Stale: document.getElementById("other").hasAttribute("data-live-stale") })`, &got)
+	if got.Draft != "keep" || got.Other != "one" || !got.Stale {
+		t.Fatalf("after the form's answer the other region reads %+v; want its draft kept, its text one, marked stale", got)
+	}
+	liveEval(t, rig, `{ const d = document.getElementById("draft"); d.value = ""; d.focus(); d.blur(); } true`, nil)
+	liveUntil(t, rig, "the other region caught up once the editing ended", `document.querySelector("#other .o").textContent === "two" &&
+	  !document.getElementById("other").hasAttribute("data-live-stale")`, 10*time.Second)
+	rig.Screen("#other", "a target region after its draft was left alone")
+}
+
 // http.Error answers text/plain with nosniff, and its text is often
 // the request's own (a name that failed a check). The browser would
 // show it as text; written into the document as HTML, it would run as

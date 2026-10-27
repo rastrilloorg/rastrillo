@@ -556,7 +556,7 @@ func TestAFormsOwnAnswerSwapsDespiteUnsentInput(t *testing.T) {
 	a.open(t, rig)
 	liveEval(t, rig, `{ const f = document.getElementById("field"); f.value = "draft"; f.focus() }`, nil)
 	a.set("list", liveForm("two"))
-	liveEval(t, rig, `module.exports.send("/", ["list"], {}, false); true`, nil)
+	liveEval(t, rig, `module.exports.send("/", ["list"], {}, "list"); true`, nil)
 	liveUntil(t, rig, "the form's answer swapped", `document.querySelector("#list .v").textContent === "two"`, 10*time.Second)
 	var got struct {
 		Stale bool
@@ -569,11 +569,11 @@ func TestAFormsOwnAnswerSwapsDespiteUnsentInput(t *testing.T) {
 		t.Errorf("after a form's answer: %+v, want the region swapped (not stale), focus on the new field, its value the answer's", got)
 	}
 
-	// The same answer through the stream's path is held back: the flag
-	// is the whole difference.
+	// The same answer through the stream's path is held back: naming the
+	// form's region is the whole difference.
 	liveEval(t, rig, `document.getElementById("field").value = "draft"`, nil)
 	a.set("list", liveForm("three"))
-	liveEval(t, rig, `module.exports.send("/", ["list"], {}, true); true`, nil)
+	liveEval(t, rig, `module.exports.send("/", ["list"], {}, null); true`, nil)
 	liveUntil(t, rig, "the stream's answer held back", `document.getElementById("list").hasAttribute("data-live-stale")`, 10*time.Second)
 	if v := liveText(t, rig, "#list .v"); v != "two" {
 		t.Errorf("a stream answer swapped a region holding unsent input: it reads %q, want two", v)

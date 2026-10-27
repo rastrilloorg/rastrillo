@@ -32,8 +32,8 @@
    from, which keeps a locale prefix the header's path has lost; the
    header's path is used only when the browser reports no URL.
 
-   The rules (the edit checks are for stream fetches; a form's own answer
-   swaps the form it was sent from):
+   The rules (a form's answer skips the edit check for the form's own
+   region only, since that holds what was just sent):
    - This file owns reconnecting: an error closes the EventSource, so
      the browser's own retry never runs beside this one, and it reopens
      after 1s, doubling to a minute.
@@ -209,7 +209,7 @@
     if (editing(el)) { stale(el); return; }
     clearTimeout(st.retry);
     st.busy = true;
-    send(location.pathname + location.search, [name], {}, true).then(function () {
+    send(location.pathname + location.search, [name], {}, null).then(function () {
       if (run !== ctl) return; // abandoned on pagehide
       st.busy = st.failed = false;
       st.tries = 0;
@@ -229,12 +229,15 @@
   // reaches the page, so the forms below get ordering, focus and the
   // notice rule from it (init's headers a plain object or Headers; init
   // is not changed). Every region named counts this fetch as the last it
-  // started, so whatever it had in flight is superseded. stream turns on
-  // the edit checks: a form's answer must swap its own form, which holds
-  // unsent input and often the focus. The swap waits for hold, a form's
-  // minimum busy time. A non-answer rejects with the Response as res.
-  function send(url, names, init, stream, hold) {
-    var id = ++seq, run = ctl, opts = {}, k;
+  // started, so whatever it had in flight is superseded. mine is the
+  // submitted form's own region ("" for none), or null for a stream
+  // fetch: only mine skips the edit check, since a form's answer must
+  // swap the form, which holds what was just sent and often the focus.
+  // Another target's draft was not sent, and is left as a stream would
+  // leave it. The swap waits for hold, a form's minimum busy time. A
+  // non-answer rejects with the Response as res.
+  function send(url, names, init, mine, hold) {
+    var id = ++seq, run = ctl, opts = {}, k, stream = mine === null;
     if (!run) return Promise.reject(new Error("live.js is stopped"));
     names.forEach(function (n) { state(n).last = id; });
     for (k in init) opts[k] = init[k];
@@ -268,13 +271,13 @@
       }
       held = held.split(" ");
       return Promise.all([res.text(), hold]).then(function (r) {
-        if (run === ctl) apply(r[0], names.filter(function (n) { return held.indexOf(n) >= 0; }), id, stream);
+        if (run === ctl) apply(r[0], names.filter(function (n) { return held.indexOf(n) >= 0; }), id, mine);
         return res;
       });
     });
   }
 
-  function apply(html, names, id, stream) {
+  function apply(html, names, id, mine) {
     var tpl = document.createElement("template");
     tpl.innerHTML = html;
     Array.prototype.slice.call(tpl.content.children).forEach(function (next) {
@@ -287,7 +290,7 @@
         paused = false;
         return;
       }
-      if (stream && editing(old)) { stale(old); return; }
+      if (name !== mine && editing(old)) { stale(old); return; }
       swap(old, next);
     });
     // A swap can change what the page follows (a keyed topic for a new
@@ -504,7 +507,7 @@
 
     function go() {
       names.forEach(function (n) { state(n).forms++; });
-      send(url.href, names, { method: "POST", body: body, headers: { "Rastrillo-Page": location.pathname } }, false, hold).then(function (res) {
+      send(url.href, names, { method: "POST", body: body, headers: { "Rastrillo-Page": location.pathname } }, own ? own.id : "", hold).then(function (res) {
         // This 204 has a Location: send navigated, if it could.
         if (res.status === 204) return settle(!!leaveFor(res));
         if (run !== ctl) return settle();
