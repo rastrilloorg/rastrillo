@@ -91,6 +91,17 @@ func (l *Locales) Middleware(next http.Handler) http.Handler {
 				u.RawPath = strings.TrimPrefix(r.URL.RawPath, "/"+code)
 			}
 			r2.URL = &u
+			// live.js sends Rastrillo-Page as location.pathname, prefix
+			// included, while the app now sees the stripped path. Left
+			// alone, live.Elsewhere would find the two different and turn
+			// every swapping form's followed GET into a navigation. Only
+			// the same locale's prefix is stripped: another prefix really
+			// is another page. Header is cloned first because r2 shares
+			// the caller's map.
+			if pcode, prest := l.splitPrefix(r.Header.Get("Rastrillo-Page")); pcode == code {
+				r2.Header = r.Header.Clone()
+				r2.Header.Set("Rastrillo-Page", prest)
+			}
 		}
 		next.ServeHTTP(w, r2)
 	})

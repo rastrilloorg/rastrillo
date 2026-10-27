@@ -181,7 +181,11 @@ func navigable(r *http.Request) bool {
 	return r.Method == http.MethodGet || r.Method == http.MethodHead
 }
 
+// navigate is uncacheable because a 204 is heuristically cacheable
+// (RFC 9110 §15.1): a shared cache could replay "navigate there" to a
+// plain navigation of the same URL, which would then show nothing.
 func navigate(w http.ResponseWriter, r *http.Request) {
+	NoStore(w)
 	w.Header().Set(headerLocation, r.URL.RequestURI())
 	w.WriteHeader(http.StatusNoContent)
 }

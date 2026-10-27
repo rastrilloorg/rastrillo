@@ -225,3 +225,27 @@ func TestWriteRegionsSendsNothingOnError(t *testing.T) {
 		t.Errorf("wrote %q, header %q; want nothing so the caller can send a 500", w.Body.String(), w.Header().Get("Rastrillo-Regions"))
 	}
 }
+
+func TestNavigateIsNeverCached(t *testing.T) {
+	// A 204 is heuristically cacheable (RFC 9110 §15.1); a shared cache
+	// could replay "navigate there" to a plain navigation of the same URL.
+	check := func(name string, w *httptest.ResponseRecorder) {
+		t.Helper()
+		if w.Code != 204 || w.Header().Get("Rastrillo-Location") == "" {
+			t.Fatalf("%s: code %d, location %q; want a navigate answer", name, w.Code, w.Header().Get("Rastrillo-Location"))
+		}
+		if got := w.Header().Get("Cache-Control"); got != "no-store" {
+			t.Errorf("%s: Cache-Control = %q, want no-store", name, got)
+		}
+		if !strings.Contains(strings.Join(w.Header().Values("Vary"), ","), "Rastrillo-Fragment") {
+			t.Errorf("%s: Vary = %q, want Rastrillo-Fragment", name, w.Header().Values("Vary"))
+		}
+	}
+	w := httptest.NewRecorder()
+	Elsewhere(w, fragReq("GET", "/notes/1", "Rastrillo-Page", "/"))
+	check("Elsewhere", w)
+
+	w = httptest.NewRecorder()
+	Answer(w, fragReq("GET", "/notes/1", "Rastrillo-Fragment", "nope"), nil)
+	check("Answer", w)
+}
