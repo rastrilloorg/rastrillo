@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"unicode"
 )
 
 // Notice is the reserved region name for the page's flash message. A
@@ -32,27 +33,41 @@ const maxRegions = 32
 // poll's and a bad request is answered as a full page rather than as a
 // guess.
 func Wanted(r *http.Request) (regions []string, ok bool) {
-	var names []string
+	var seen map[string]bool
+	count := 0
 	for _, v := range r.Header.Values(headerFragment) {
-		names = append(names, strings.Fields(v)...)
-		if len(names) > maxRegions {
-			return nil, false
+		// Scan one name at a time and stop at the 33rd. Splitting the
+		// whole value first (strings.Fields) would build a slice of
+		// every name in a header near net/http's 1 MB limit before
+		// refusing it, which is the work the cap exists to avoid.
+		for {
+			v = strings.TrimLeftFunc(v, unicode.IsSpace)
+			if v == "" {
+				break
+			}
+			end := strings.IndexFunc(v, unicode.IsSpace)
+			if end < 0 {
+				end = len(v)
+			}
+			n := v[:end]
+			v = v[end:]
+			count++
+			if count > maxRegions || !validRegion(n) {
+				return nil, false
+			}
+			if seen == nil {
+				seen = make(map[string]bool, 8)
+			}
+			// A header of one name repeated would otherwise render that
+			// region once per repeat.
+			if !seen[n] {
+				seen[n] = true
+				regions = append(regions, n)
+			}
 		}
 	}
-	if len(names) == 0 {
+	if count == 0 {
 		return nil, false
-	}
-	seen := make(map[string]bool, len(names))
-	for _, n := range names {
-		if !validRegion(n) {
-			return nil, false
-		}
-		// A header of one name repeated would otherwise render that
-		// region once per repeat.
-		if !seen[n] {
-			seen[n] = true
-			regions = append(regions, n)
-		}
 	}
 	return regions, true
 }

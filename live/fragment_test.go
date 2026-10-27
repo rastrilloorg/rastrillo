@@ -6,10 +6,10 @@ import (
 	"html/template"
 	"net/http"
 	"net/http/httptest"
+	"runtime"
 	"slices"
 	"strings"
 	"testing"
-	"time"
 )
 
 func fragReq(method, target string, hdr ...string) *http.Request {
@@ -71,10 +71,38 @@ func TestWantedCapsRegions(t *testing.T) {
 	if _, ok := Wanted(fragReq("GET", "/", "Rastrillo-Fragment", strings.Repeat("a ", 50000))); ok {
 		t.Error("one name repeated 50,000 times gave true; want false")
 	}
-	start := time.Now()
-	Wanted(fragReq("GET", "/", "Rastrillo-Fragment", names(46656)))
-	if took := time.Since(start); took > 100*time.Millisecond {
-		t.Errorf("46,656 names took %s; want them refused at once", took)
+	// Bound the work by allocation, not by wall-clock time: a time limit
+	// flakes under -race on a shared runner. Wanted stops scanning at the
+	// 33rd name, so a huge header must allocate no more than one with
+	// exactly 33 names, however many more follow. Both the count and the
+	// bytes are checked: splitting the whole header first costs one big
+	// slice, which AllocsPerRun alone would barely see.
+	const runs = 20
+	cost := func(header string) (allocs float64, bytes uint64) {
+		r := fragReq("GET", "/", "Rastrillo-Fragment", header)
+		allocs = testing.AllocsPerRun(runs, func() { Wanted(r) })
+		var before, after runtime.MemStats
+		runtime.ReadMemStats(&before)
+		for i := 0; i < runs; i++ {
+			Wanted(r)
+		}
+		runtime.ReadMemStats(&after)
+		return allocs, (after.TotalAlloc - before.TotalAlloc) / runs
+	}
+	baseAllocs, baseBytes := cost(names(maxRegions + 1))
+	for name, header := range map[string]string{
+		"46,656 names":     names(46656),
+		"1 MB of one name": strings.Repeat("a ", 512*1024),
+	} {
+		allocs, bytes := cost(header)
+		if allocs > baseAllocs {
+			t.Errorf("%s allocated %v times per call; want no more than %v, as for %d names", name, allocs, baseAllocs, maxRegions+1)
+		}
+		// Slack for the runtime's own background allocation between the
+		// two ReadMemStats calls; a split of the header is 1000 times this.
+		if bytes > baseBytes+1024 {
+			t.Errorf("%s allocated %d bytes per call; want no more than %d, as for %d names", name, bytes, baseBytes+1024, maxRegions+1)
+		}
 	}
 }
 
