@@ -158,3 +158,6 @@ rastrillo.ui.job_running_progress = "{name} em curso: {progress}…"
 rastrillo.ui.job_failed = "{name} falhou"
 rastrillo.ui.job_failed_error = "{name} falhou: {error}"
 rastrillo.ui.job_finished = "{name} terminou."
+
+rastrillo.ui.live.paused = "As atualizações em direto foram suspensas. Atualize a página para as retomar."
+rastrillo.ui.live.unconfirmed = "Não foi possível confirmar essa alteração. Verifique a página antes de tentar novamente."
