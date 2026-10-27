@@ -44,6 +44,14 @@ Tables paginate on their own and repeat their column headings on each page. `Kee
 
 See [pdf](/docs/reference/pdf).
 
+### Fixed: a select list fixed or anchored out of a scrolling bar opens full height; re-vendor `select.js`
+
+A searchable select in a toolbar that scrolls sideways opened to a list 10px tall when your stylesheet fixed the list to the screen or anchored it to its box. `select.js` took the toolbar for the edge of the room, although the toolbar does not cut such a list off. It now counts only the boxes that really cut the list off. A list positioned inside a scrolling box, as `tokens.css` places it, is still held to that box.
+
+### Added: `data-rst-select-ceiling` keeps a select list out from under a sticky header; re-vendor `select.js`
+
+Mark a header that stays pinned above your form with `data-rst-select-ceiling`, as you mark a bar below it with `data-rst-select-floor`. A list then never opens upward behind the header: when the header leaves less room above the field than there is below, the list opens down.
+
 ## v0.29.0
 
 A JSON API with agents that act for a person, money in any currency, a colour-scheme switch, a new look for `day`, and sign-in without a database. The first seven sections change what an existing app does without a compile error: the JSON API, the colour-scheme switch, money, sign-in's return to the page, pagination, hand-edited migrations and `job-status`. Read them before you upgrade.

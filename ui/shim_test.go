@@ -498,7 +498,28 @@ func TestSelectContract(t *testing.T) {
 	// focusing click as well as on focus: WebKit put the caret where a
 	// click landed after focus, so clearing "Dublin" took a double-click.
 	// The comment is the one that says why each pointer selects when.
-	if n := len(SelectJS()); n > 52*1024 {
+	//
+	// Then to 53KB (measured 54,094 bytes) by cutting the room only to the
+	// ancestors that can clip the list, its chain of containing blocks: a
+	// list fixed or anchored out of a bar that scrolls sideways opened 0px
+	// tall in Docs' phone toolbar. The comments are the two that say why.
+	//
+	// Then to 54KB (measured 55,248 bytes) when the review on #136 held
+	// that chain to the CSS rules (paint containment and content-visibility
+	// clipping, will-change's triggers, will-change: position for absolute
+	// lists, size containers dropped, the top layer and slots), and added
+	// data-rst-select-ceiling, floor's twin for a sticky header.
+	//
+	// Then to 55KB (measured 55,848 bytes) for the re-review: no
+	// containment, transform or overflow on a box that is not there
+	// (display: contents) or is a plain inline, preserve-3d, and
+	// will-change matched without case and through -webkit- aliases. The
+	// third review's fixes (containment skips table rows and ruby, a
+	// boxless ancestor's position is not the chain's, each will-change
+	// name by its own property's rule, motion paths, only aliases the
+	// engine has) fit under it at 56,306 bytes, folding the computed
+	// values and the will-change names into one check.
+	if n := len(SelectJS()); n > 55*1024 {
 		t.Fatalf("select.js is %d bytes; it is split out of the shim precisely to stay readable — trim it", n)
 	}
 	if bytes.Contains(SelectJS(), []byte("\t")) {
