@@ -142,6 +142,12 @@ var ErrStepUpNotFresh = errors.New("oidc: the provider did not confirm a fresh s
 // produced by the prompt=login this request just sent.
 const freshWindow = time.Minute
 
+// unknownAuthTime is the AuthTime recorded when the provider's token
+// gave none. It is a real instant (one second into 1970) rather than the
+// zero time, which sessions reads as "use the session's own start", and
+// Signed mode carries it as auth_time 1.
+var unknownAuthTime = time.Unix(1, 0).UTC()
+
 // New validates cfg and returns a ready *Handlers.
 func New(cfg Config) (*Handlers, error) {
 	if cfg.Sessions == nil {
@@ -472,6 +478,15 @@ func (h *Handlers) Return(w http.ResponseWriter, r *http.Request) {
 	authTime := identity.AuthTime
 	if !authTime.IsZero() && authTime.After(now) {
 		authTime = now
+	}
+	// A token with no auth_time says nothing about when the person last
+	// proved who they are: a sign-in Begin did not force (no ?reauth=1)
+	// can be answered silently from a provider session days old, and a
+	// zero AuthTime would make sessions.Fresh fall back to this session's
+	// own creation time. unknownAuthTime is never fresh, so RequireFresh
+	// sends the person back through ?reauth=1 instead.
+	if authTime.IsZero() {
+		authTime = unknownAuthTime
 	}
 
 	sess := sessions.Session{

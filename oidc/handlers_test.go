@@ -610,3 +610,48 @@ func TestEmptySubjectFromAdmitIsRefusedNotMinted(t *testing.T) {
 		t.Fatalf("expected an empty subject with no error to be treated as a server error, got %d: %s", w.Code, w.Body)
 	}
 }
+
+// A sign-in that did not ask for a fresh login (no ?reauth=1) may have
+// been answered silently from the provider's own SSO session, days old.
+// When the token carries no auth_time, which is Google's ordinary
+// answer, the minted session must not read as freshly verified:
+// otherwise dropping ?reauth=1 from Begin satisfies RequireFresh.
+func TestSignInWithoutAuthTimeIsNotFresh(t *testing.T) {
+	for _, mode := range []string{"db", "signed"} {
+		t.Run(mode, func(t *testing.T) {
+			var sess *sessions.Sessions
+			rig := newBeginRig(t, func(c *Config) {
+				if mode == "signed" {
+					now := time.Now()
+					c.Sessions = newSignedModeSessions(t, &now)
+				}
+				sess = c.Sessions
+			})
+			rig.f.setToken(rig.f.mint(t, baseClaims(rig.f.issuer, testClientID, rig.nonce, rig.now)))
+			w := httptest.NewRecorder()
+			rig.router.ServeHTTP(w, rig.returnRequest(""))
+			if w.Code != http.StatusSeeOther {
+				t.Fatalf("Return: %d %s", w.Code, w.Body)
+			}
+
+			ok := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(http.StatusOK) })
+			req := httptest.NewRequest("GET", testOrigin+"/settings", nil)
+			for _, c := range w.Result().Cookies() {
+				if c.MaxAge >= 0 && c.Value != "" {
+					req.AddCookie(c)
+				}
+			}
+			// Signed in at all: the stand-in auth time must not break the session.
+			gw := httptest.NewRecorder()
+			sess.Require(ok).ServeHTTP(gw, req)
+			if gw.Code != http.StatusOK {
+				t.Fatalf("Require: %d, want the new session to be signed in", gw.Code)
+			}
+			gw = httptest.NewRecorder()
+			sess.RequireFresh(5*time.Minute)(ok).ServeHTTP(gw, req)
+			if gw.Code == http.StatusOK {
+				t.Fatal("a sign-in whose token had no auth_time passed RequireFresh; nothing showed the person authenticated recently")
+			}
+		})
+	}
+}
