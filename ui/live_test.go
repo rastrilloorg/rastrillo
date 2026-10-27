@@ -21,8 +21,11 @@ func TestLiveIsSmallAndSelfContained(t *testing.T) {
 	// KiB cap. Sending a swapping form from the window, after any
 	// handler that cancels it, instead of from the capture listener,
 	// added about 970 bytes, for 25,438. Navigating to the answer's own
-	// URL, so a locale prefix survives, made it 26,144: about 2.5 KB of
-	// headroom.
+	// URL, so a locale prefix survives, made it 26,144. The final
+	// review's fixes (non-HTML answers as text, the send a tick after
+	// the submit, the edit check for other targets, the checks on a 204,
+	// the paused note kept off a flash, the revive on restore) added
+	// about 2.3 KB, for 28,411: 261 bytes of headroom.
 	if n := len(js); n > 28*1024 {
 		t.Errorf("live.js is %d bytes, over 28 KiB; an app owner should be able to read it in one sitting", n)
 	}
@@ -244,6 +247,23 @@ func TestALiveNavigationFallsBackToRastrilloLocation(t *testing.T) {
 		if !slices.Equal(got[name], want) {
 			t.Errorf("%s: navigated to %v, want %v", name, got[name], want)
 		}
+	}
+}
+
+// Back from the back/forward cache, a region whose fetches gave up is
+// fetched again. Chromium can fire visibilitychange before pageshow,
+// while the page is still stopped, so the retry belongs to the restart.
+func TestLiveRetriesAFailedRegionAfterARestore(t *testing.T) {
+	var got struct {
+		Before, After int
+		Notice        string
+	}
+	liveNode(t, "restoreFailed", &got)
+	if got.Before != 4 || got.Notice != "Paused" {
+		t.Fatalf("before leaving: %d fetches, notice %q; want 4 and the paused note", got.Before, got.Notice)
+	}
+	if got.After != got.Before+1 {
+		t.Errorf("after the restore the failed region was fetched %d more times, want 1", got.After-got.Before)
 	}
 }
 

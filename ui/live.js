@@ -594,10 +594,21 @@
     btn.removeAttribute("data-idle-label");
   }
 
+  // Regions whose fetches gave up get a fresh start when shown again.
+  function revive() {
+    for (var name in regions) {
+      if (regions[name].failed) { regions[name].failed = false; regions[name].tries = 0; refresh(name); }
+    }
+  }
+
+  // Revives too: a back/forward restore can fire visibilitychange
+  // before pageshow, while ctl is still null and that listener does
+  // nothing.
   function run() {
     ctl = new AbortController();
     wait = 1000;
     open();
+    revive();
     if (document.visibilityState === "hidden") hide();
   }
 
@@ -611,9 +622,7 @@
       clearTimeout(hidden);
       hidden = 0;
       if (!src && !reconnect) open();
-      for (var name in regions) {
-        if (regions[name].failed) { regions[name].failed = false; regions[name].tries = 0; refresh(name); }
-      }
+      revive();
     });
     document.addEventListener("submit", claim, true);
     addEventListener("submit", submitted);

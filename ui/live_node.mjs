@@ -258,6 +258,22 @@ const scenarios = {
     await q.settle();
     return { superseded, abandoned: q.n.assigned };
   },
+  // A region whose fetches gave up is tried again when the page comes
+  // back from the back/forward cache, whichever of visibilitychange and
+  // pageshow fires first.
+  async restoreFailed() {
+    const p = page({ regions: [region("list", "a@1")] });
+    p.latest().fire("open");
+    p.latest().fire("change", { data: "a@2", lastEventId: "b00t a@2" });
+    await p.settle();
+    for (let i = 0; i < 3; i++) await p.run(p.pending()[0]);
+    const before = p.n.fetches.length;
+    p.fireWin("pagehide");
+    p.fireDoc("visibilitychange");
+    p.fireWin("pageshow", { persisted: true });
+    await p.settle();
+    return { before, after: p.n.fetches.length, notice: p.notice.textContent };
+  },
   // The stream down ten seconds shows the paused note, but not over a
   // flash someone is reading.
   async pauseFlash() {
