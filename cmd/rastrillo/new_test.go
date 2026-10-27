@@ -743,6 +743,56 @@ func TestNewScaffoldsLightJS(t *testing.T) {
 	}
 }
 
+// live.js is vendored into every app and linked by every shell, though
+// it does nothing until a page carries <meta name="rastrillo-live">. An
+// app that opts in later would otherwise find no script to opt into, and
+// a missing tag is silent: the page just never goes live.
+func TestNewScaffoldsLiveJS(t *testing.T) {
+	t.Chdir(t.TempDir())
+	if err := runNew([]string{"liveapp"}); err != nil {
+		t.Fatalf("runNew: %v", err)
+	}
+	got, err := os.ReadFile(filepath.Join("liveapp", "internal", "liveapp", "static", "live.js"))
+	if err != nil {
+		t.Fatalf("live.js not scaffolded: %v", err)
+	}
+	if !bytes.Equal(got, ui.LiveJS()) {
+		t.Error("scaffolded live.js is not ui.LiveJS() verbatim")
+	}
+	layout, err := os.ReadFile(filepath.Join("liveapp", "internal", "liveapp", "templates", "layout.html"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertLiveTagAfterBusy(t, "scaffolded layout", string(layout))
+}
+
+// Every shell carries the tag, not only the default: an app that picks
+// --shell=sidebar must not be the one whose pages cannot go live.
+func TestEveryShellLoadsLiveJSAfterBusyJS(t *testing.T) {
+	for _, name := range ui.LayoutNames() {
+		src, ok := ui.Layout(name)
+		if !ok {
+			t.Fatalf("ui.Layout(%q) is missing", name)
+		}
+		assertLiveTagAfterBusy(t, "layout "+name, string(src))
+	}
+}
+
+// busy.js hands a live form back to live.js, so it must already be
+// listed when live.js is; the tag is deferred so it never blocks paint.
+func assertLiveTagAfterBusy(t *testing.T, what, layout string) {
+	t.Helper()
+	const busy = `<script defer src="{{asset "static/busy.js"}}"></script>`
+	const live = `<script defer src="{{asset "static/live.js"}}"></script>`
+	b, l := strings.Index(layout, busy), strings.Index(layout, live)
+	switch {
+	case l < 0:
+		t.Errorf("%s never loads live.js, deferred and fingerprinted", what)
+	case b < 0 || l < b:
+		t.Errorf("%s loads live.js before busy.js; the order must be busy.js then live.js", what)
+	}
+}
+
 // The shipped binary is stripped; the dev loop's is not. Both halves
 // matter: -s -w roughly halves the compressed artifact carlos transfers,
 // and stripping the dev build would take away the debuggability the dev

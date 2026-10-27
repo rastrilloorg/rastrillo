@@ -212,6 +212,10 @@ To keep the old, exact format for a field, set `Strict: true`.
 - `rastrillo generate` refuses a filter on a money field, because an amount means nothing without its currency. Remove the filter.
 - `rastrillo generate` refuses a field named like a money field's generated fields, such as `PriceCurrency` beside a money field `Price`, and a field named `EventVersion` or `Now`. Rename the field.
 
+### Added: live pages; vendor `live.js` and re-copy `busy.js`
+
+Run `rastrillo doctor --fix` to vendor `live.js` and re-copy `busy.js`. Every layout now links `live.js` after `busy.js`; add the tag to yours. It does nothing until a page opts in.
+
 ### Fixed: `rastrillo generate` finds the sqlc tool under Go 1.27
 
 Under Go 1.27, `rastrillo generate` said the sqlc tool directive was missing from `go.mod` even when it was there, and stopped. Go 1.27 changed how `go tool` lists tools. Update rastrillo before you build an app with Go 1.27.

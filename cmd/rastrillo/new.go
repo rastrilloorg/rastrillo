@@ -243,6 +243,7 @@ func runNew(args []string) error {
 	//	               the index and a page on a phone
 	//	rastrillo.js   the fragment shim behind data-poll and menu dismiss
 	//	busy.js        the busy rule: every submit button, data-busy opts out
+	//	live.js        live pages: inert until a page carries the rastrillo-live meta
 	//	light.js       the light the depth styles read; delete it for the still design
 	//	anchor.js      a dropdown's menu kept on the screen where CSS anchor
 	//	               positioning is missing; inert where it is not, and
