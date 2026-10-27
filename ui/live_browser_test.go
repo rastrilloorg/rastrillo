@@ -18,11 +18,12 @@ import (
 	"github.com/chromedp/cdproto/emulation"
 	"github.com/chromedp/chromedp"
 
+	"amadan.net/rastrillo/rastrillo"
 	"amadan.net/rastrillo/rastrillo/harness"
 	"amadan.net/rastrillo/rastrillo/live"
 )
 
-const livePaused = "Live updates have paused. Refresh the page to resume them."
+const livePaused = "Live updates have paused. Refresh the page to start them again."
 
 // liveApp is a page with live regions, served by a real live.Hub: the
 // stream, its catch-up from the URL's versions and the fragment
@@ -479,6 +480,11 @@ func TestTheNoticeElementSurvivesASwap(t *testing.T) {
 func TestThePausedNoteShowsWhenTheStreamStaysDown(t *testing.T) {
 	a := newLiveApp(t, true, "list", `<p class="v">one</p>`)
 	a.down.Store(true)
+	// The drives render the note an app's layout would: the English
+	// catalog's, so a reworded note cannot leave them checking old text.
+	if want := rastrillo.BaseCatalogs()["en"]["rastrillo.ui.live.paused"]; livePaused != want {
+		t.Errorf("livePaused is %q, want the en catalog's %q", livePaused, want)
+	}
 	rig := liveRig(t, a)
 	rig.Allow(http.MethodGet, "/live", http.StatusServiceUnavailable)
 	start := time.Now()
