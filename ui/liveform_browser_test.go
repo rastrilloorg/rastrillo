@@ -702,6 +702,7 @@ func TestASwappingFormDefersToAHandlerThatCancels(t *testing.T) {
 			{"a handler doing its own fetch", "f", `e.preventDefault(); fetch("/own", { method: "POST", body: new FormData(f) })`, 1},
 			{"a window confirm answered Cancel", "window", `e.preventDefault()`, 0},
 			{"a window confirm that checks defaultPrevented", "window", `if (!e.defaultPrevented) e.preventDefault()`, 0},
+			{"a window handler that sets returnValue", "window", `e.returnValue = false`, 0},
 			{"a window handler doing its own fetch", "window", `e.preventDefault(); fetch("/own", { method: "POST", body: new FormData(f) })`, 1},
 		} {
 			name := order.name + ", " + leg.name

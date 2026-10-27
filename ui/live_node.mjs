@@ -44,6 +44,7 @@ function page({ regions = [], meta = { content: "/live", "data-paused": "Paused"
     visibilityState: "visible",
     activeElement: null,
     body: element({}),
+    baseURI: "http://app.test/",
     querySelector: (sel) => {
       if (sel.includes("rastrillo-live")) return metaEl;
       if (sel === "[data-live]") return els[0] || null;
@@ -73,6 +74,9 @@ function page({ regions = [], meta = { content: "/live", "data-paused": "Paused"
     AbortController,
     Headers,
     URL,
+    URLSearchParams,
+    // Enough for a form with no fields.
+    FormData: class { forEach() {} },
     module,
     location: { pathname: "/", search: "", origin: "http://app.test", assign: (to) => { n.assigned.push(to); } },
     addEventListener: (type, fn) => { (won[type] = won[type] || []).push(fn); },
@@ -111,6 +115,18 @@ function page({ regions = [], meta = { content: "/live", "data-paused": "Paused"
     latest: () => n.sources[n.sources.length - 1],
     fireDoc: (type) => { for (const fn of on[type] || []) fn({}); },
     fireWin: (type, ev = {}) => { for (const fn of won[type] || []) fn(ev); },
+    // submit dispatches a submit of a swapping form as the browser would
+    // reach live.js's listeners: document capture, then window. later
+    // is a window listener added after live.js's, run last.
+    submit: (later) => {
+      let canceled = false;
+      const form = element({ "data-live-form": "", method: "post", action: "/save" }, { tagName: "FORM", closest: () => null });
+      const e = { target: form, submitter: null, preventDefault() { canceled = true; } };
+      Object.defineProperty(e, "defaultPrevented", { get: () => canceled, configurable: true });
+      for (const fn of on.submit || []) fn(e);
+      for (const fn of won.submit || []) fn(e);
+      later(e);
+    },
     // pending lists the delays of the timers not yet run or cleared.
     pending: () => n.timers.filter((t) => !t.done).map((t) => t.ms),
     // run runs every pending timer with this delay, once.
@@ -257,6 +273,31 @@ const scenarios = {
     q.n.held[0]("/old");
     await q.settle();
     return { superseded, abandoned: q.n.assigned };
+  },
+  // A window listener added after live.js's cancels the submit, by
+  // preventDefault or by returnValue = false, while a stream fetch for a
+  // removed region answers "navigate". The navigation waited for the
+  // form; once the form is cancelled it goes, and no POST is sent.
+  async cancelHeld() {
+    const out = {};
+    for (const [name, cancel] of Object.entries({
+      preventDefault: (e) => e.preventDefault(),
+      returnValue: (e) => { e.returnValue = false; },
+    })) {
+      const p = page({ regions: [region("gone", "a@1")] });
+      p.latest().fire("open");
+      p.n.hold = true;
+      p.latest().fire("change", { data: "a@2", lastEventId: "b00t a@2" });
+      p.submit(cancel);
+      p.n.held[0]("/");
+      await p.settle();
+      p.n.hold = false;
+      p.n.nav = { to: "/", url: "http://app.test/" };
+      await p.run(0);
+      await p.settle();
+      out[name] = { posts: p.n.fetches.filter((f) => f.init.method === "POST").length, assigned: p.n.assigned };
+    }
+    return out;
   },
   // A region whose fetches gave up is tried again when the page comes
   // back from the back/forward cache, whichever of visibilitychange and

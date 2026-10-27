@@ -454,8 +454,10 @@
   // Window, bubble: the last listener the submit reaches, but for window
   // listeners added after this file's. One of those (a confirm) may still
   // cancel, so the native submit is stopped here and the send waits a
-  // tick: their preventDefault is recorded, and defaultPrevented reads as
-  // if this one had not cancelled, until then.
+  // tick: their preventDefault or returnValue = false is recorded, and
+  // both read as if this one had not cancelled, until then. A
+  // window.onsubmit set later that returns false is not seen: the browser
+  // records that itself, and the submit is already cancelled.
   function submitted(e) {
     var p = !e.defaultPrevented && e.liveForm && plan(e), run = ctl, form, btn, type, url, body, data, later = false, cancel = e.preventDefault;
     if (!p) return;
@@ -473,7 +475,10 @@
     }
     cancel.call(e);
     e.preventDefault = function () { later = true; cancel.call(e); };
-    Object.defineProperty(e, "defaultPrevented", { get: function () { return later; } });
+    Object.defineProperties(e, {
+      defaultPrevented: { get: function () { return later; } },
+      returnValue: { get: function () { return !later; }, set: function (v) { if (!v) e.preventDefault(); } }
+    });
 
     var own = form.closest("[data-live]"), names = [], entry = [form, btn], settled = false;
     var had = own && own.contains(document.activeElement) ? document.activeElement : null;
@@ -484,9 +489,12 @@
     // Busy at once: it is what refuses a second submit in this task.
     busy(form, btn);
     out.push(entry);
+    // A cancel hands the form back, and lets go a stream navigation
+    // held while it was out: nothing else would resume it.
     setTimeout(function () {
-      if (later) release(entry);
-      else go();
+      if (!later) return go();
+      release(entry);
+      edited();
     }, 0);
 
     // Lets the regions' queued stream fetches go. keep leaves the busy
