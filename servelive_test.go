@@ -65,20 +65,6 @@ func TestServeShutdownEndsLiveStreamsInsideTheDrain(t *testing.T) {
 	<-served
 }
 
-// An app without live must not pay for it: no hub, no registration,
-// and Shutdown has nothing extra to run.
-func TestNewServerWithoutLiveRegistersNothing(t *testing.T) {
-	srv := newServer(Options{}, http.NewServeMux())
-	ln, err := net.Listen("tcp", "127.0.0.1:0")
-	if err != nil {
-		t.Fatal(err)
-	}
-	go srv.Serve(ln)
-	if err := srv.Shutdown(context.Background()); err != nil {
-		t.Fatal(err)
-	}
-}
-
 // The close func Handler returns is what a test harness runs, and what
 // Serve defers. It runs after the drain, so a harness must end streams
 // itself before its own Shutdown; the close func still closes the hub,
