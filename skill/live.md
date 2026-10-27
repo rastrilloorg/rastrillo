@@ -78,7 +78,10 @@ anything else (`http.Error`) as plain text, never markup. A bare 204
 stays put.
 Only the form's own region swaps over unsent input; a draft in another
 target waits. It sends a tick after the submit, so any handler that
-calls `preventDefault`, a later `window` listener too, cancels it.
+calls `preventDefault` or sets `returnValue = false`, a later `window`
+listener too, cancels it. **Not** a `window.onsubmit` set after live.js
+loads that returns false (no script can see it): use `addEventListener`,
+or set `onsubmit` on the form.
 
 ## The render order
 
