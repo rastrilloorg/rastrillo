@@ -537,6 +537,31 @@ func TestAFormAnswerWithoutItsRegionsIsShownAsTheBrowserWould(t *testing.T) {
 	rig.Screen("#list", "the page after answers without regions")
 }
 
+// http.Error answers text/plain with nosniff, and its text is often
+// the request's own (a name that failed a check). The browser would
+// show it as text; written into the document as HTML, it would run as
+// markup on the app's origin.
+func TestAFormAnswerInPlainTextIsShownAsText(t *testing.T) {
+	const bad = `<p id="injected">x</p><img src="/nope" onerror="window.__ran = 1">`
+	f := newFormApp(t, "list", swapForm("one"))
+	f.answer = func(w http.ResponseWriter, _ *http.Request) { http.Error(w, bad, http.StatusUnprocessableEntity) }
+	rig := formRig(t, f)
+	rig.Allow(http.MethodPost, "/save", http.StatusUnprocessableEntity)
+	f.open(t, rig)
+	rig.Run(chromedp.Click("#go", chromedp.ByID))
+	liveUntil(t, rig, "the answer replaced the page", `!document.getElementById("list")`, 10*time.Second)
+	time.Sleep(300 * time.Millisecond)
+	var got struct {
+		Injected, Ran bool
+		Text          string
+	}
+	liveEval(t, rig, `({ Injected: !!document.getElementById("injected"), Ran: window.__ran === 1,
+	  Text: document.body ? document.body.textContent : "" })`, &got)
+	if got.Injected || got.Ran || !strings.Contains(got.Text, bad) {
+		t.Errorf("a text/plain answer: element made %v, handler ran %v, page text %q; want the text shown as text, nothing parsed", got.Injected, got.Ran, got.Text)
+	}
+}
+
 // A region held back while the page is edited waits for a focusout.
 // A form's swap can end the editing by replacing the focused element,
 // which then never fires one, so the swap must re-check.

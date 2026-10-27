@@ -59,9 +59,10 @@
    here) for at least 650ms, a second submit is refused, and its
    regions' stream fetches wait. A 204 navigates; regions swap in (on
    400 or 422 focus goes to the first [aria-invalid="true"]); a whole
-   page replaces this one. No answer, a 5xx or no regions is an unknown
-   outcome: the input stays, the notice says data-unconfirmed, the
-   regions are fetched again, and nothing is resent. It is sent from
+   page replaces this one, shown as text unless it is text/html. No
+   answer, a 5xx or an empty Rastrillo-Regions is an unknown outcome:
+   the input stays, the notice says data-unconfirmed, the regions are
+   fetched again, and nothing is resent. It is sent from
    the window, after every other submit handler, so one that cancels
    the submit (a confirm, its own fetch) wins and nothing is sent.
    Unlike a native submit, a whole page from a redirect replaces the
@@ -519,13 +520,17 @@
   }
 
   // As the browser would have shown it. The stream and fetches stop
-  // first: the document is replaced, but this closure lives on.
-  function whole(html, res) {
+  // first: the document is replaced, but this closure lives on. Only
+  // text/html is written as markup: an http.Error is text/plain, often
+  // holding the request's own words, and parsed it would run as HTML.
+  function whole(body, res) {
+    var html = /^text\/html\s*(;|$)/i.test(res.headers.get("Content-Type") || "");
     stop();
     if (res.redirected) history.replaceState(null, "", res.url);
     document.open();
-    document.write(html);
+    document.write(html ? body : "<pre>");
     document.close();
+    if (!html) document.querySelector("pre").textContent = body;
   }
 
   // busy.js's look. disabled waits a tick, as busy.js's does, so other
