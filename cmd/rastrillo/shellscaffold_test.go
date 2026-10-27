@@ -137,7 +137,7 @@ func TestDeletingLightJSIsRecordedWhereTheFailureSays(t *testing.T) {
 	if err := os.Remove(filepath.Join(dir, "internal", "stillapp", "static", "light.js")); err != nil {
 		t.Fatal(err)
 	}
-	const tag = `<script defer src="{{asset "static/light.js"}}"></script>` + "\n"
+	const tag = `<script defer src="{{path $ (asset "static/light.js")}}"></script>` + "\n"
 	page, err := os.ReadFile(layout)
 	if err != nil {
 		t.Fatal(err)
@@ -198,11 +198,11 @@ func TestNewWritesAnIndexAndASectionForTheShellsThatHaveOne(t *testing.T) {
 			{"index.html", index, `{{define "view"}}index{{end}}`},
 			// The phone index's heading is the brand, so a new app's
 			// index shows the app's own name, not the layout's Home.
-			{"index.html", index, `{{define "brand"}}<a rst-shell-brand href="/">` + name + `</a>{{end}}`},
-			{"overview.html", string(overview), `{{define "brand"}}<a rst-shell-brand href="/">` + name + `</a>{{end}}`},
-			{"index.html", index, `<a id="nav-overview" href="/overview">` + scaffoldOverview + `</a>`},
-			{"overview.html", string(overview), `{{define "up"}}/#nav-overview{{end}}`},
-			{"overview.html", string(overview), `<a id="nav-overview" href="/overview" aria-current="page">` + scaffoldOverview + `</a>`},
+			{"index.html", index, `{{define "brand"}}<a rst-shell-brand href="{{path $ "/"}}">` + name + `</a>{{end}}`},
+			{"overview.html", string(overview), `{{define "brand"}}<a rst-shell-brand href="{{path $ "/"}}">` + name + `</a>{{end}}`},
+			{"index.html", index, `<a id="nav-overview" href="{{path $ "/overview"}}">` + scaffoldOverview + `</a>`},
+			{"overview.html", string(overview), `{{define "up"}}{{path $ "/#nav-overview"}}{{end}}`},
+			{"overview.html", string(overview), `<a id="nav-overview" href="{{path $ "/overview"}}" aria-current="page">` + scaffoldOverview + `</a>`},
 			{"app.go", app, `r.Get("/overview", a.overview)`},
 			{"handlers.go", handlers, `func (a *app) overview(w http.ResponseWriter, r *http.Request) {`},
 			{"render.go", render, `[]string{"index", "overview", "errors", "tokens"}`},

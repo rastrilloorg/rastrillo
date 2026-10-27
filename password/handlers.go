@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"amadan.net/rastrillo/rastrillo/basepath"
 	"amadan.net/rastrillo/rastrillo/pow"
 	"amadan.net/rastrillo/rastrillo/sessions"
 )
@@ -230,14 +231,35 @@ func (h *Handlers) gate(w http.ResponseWriter, r *http.Request, render func(http
 	return adm.Recovered(), true
 }
 
+// pathRouted answers 404 under a base path or on its direct host, and
+// logs it. Every tenant on a shared origin would set the same root
+// __Host- session cookie, so a sign-in here would sign the reader out
+// of the hub and every other tenant (spec §6.3: tenants verify, never
+// mint; see sessions.ErrPathRouted). A tenant signs people in through
+// its hub. It runs before any page, row or cookie.
+func (h *Handlers) pathRouted(w http.ResponseWriter, r *http.Request) bool {
+	if !basepath.PathRouted(r) {
+		return false
+	}
+	h.cfg.Logger.Error("rastrillo/password: sign-in refused under a base path; sign in at the hub", "path", basepath.Path(r, r.URL.Path))
+	http.NotFound(w, r)
+	return true
+}
+
 // SigninPage renders the sign-in form: GET, no state change.
 func (h *Handlers) SigninPage(w http.ResponseWriter, r *http.Request) {
+	if h.pathRouted(w, r) {
+		return
+	}
 	h.show(w, r, h.cfg.RenderSignin, ScopeSignin, 0, false, PageData{ReturnTo: r.URL.Query().Get("return_to")})
 }
 
 // SignupPage renders the signup form, or 404 when signup is disabled
 // (Config.Create nil).
 func (h *Handlers) SignupPage(w http.ResponseWriter, r *http.Request) {
+	if h.pathRouted(w, r) {
+		return
+	}
 	if h.cfg.Create == nil {
 		http.NotFound(w, r)
 		return
@@ -259,6 +281,9 @@ func (h *Handlers) SignupPage(w http.ResponseWriter, r *http.Request) {
 // POST only: a GET-mounted Signin would put the plaintext password
 // into the URL, browser history, referrers, and access logs.
 func (h *Handlers) Signin(w http.ResponseWriter, r *http.Request) {
+	if h.pathRouted(w, r) {
+		return
+	}
 	if r.Method != http.MethodPost {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
@@ -353,6 +378,9 @@ func (h *Handlers) rerenderSignin(w http.ResponseWriter, r *http.Request, email 
 //
 // POST only: same plaintext-password-in-URL reasoning as Signin.
 func (h *Handlers) Signup(w http.ResponseWriter, r *http.Request) {
+	if h.pathRouted(w, r) {
+		return
+	}
 	if r.Method != http.MethodPost {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
@@ -506,6 +534,9 @@ func (h *Handlers) signInAndRedirect(w http.ResponseWriter, r *http.Request, id 
 // would escape it entirely; POST only, enforced here rather than by
 // mount-pattern convention.
 func (h *Handlers) Signout(w http.ResponseWriter, r *http.Request) {
+	if h.pathRouted(w, r) {
+		return
+	}
 	if r.Method != http.MethodPost {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return

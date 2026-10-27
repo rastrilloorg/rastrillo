@@ -32,6 +32,7 @@ import (
 	"time"
 
 	"amadan.net/rastrillo/rastrillo/background"
+	"amadan.net/rastrillo/rastrillo/basepath"
 	"amadan.net/rastrillo/rastrillo/carlos"
 	"amadan.net/rastrillo/rastrillo/internal/checkconfig"
 	"amadan.net/rastrillo/rastrillo/locales"
@@ -102,6 +103,20 @@ type Options struct {
 	// is absent. The body stays BuildVersion either way: the
 	// platform's build probe reads it.
 	NameInstance bool
+
+	// BasePath serves the whole app under /<slug> on another app's
+	// origin, such as https://example.com/acme, the way a hub product
+	// puts each tenant instance under its own path. Everything the
+	// framework answers itself (/healthz, /api/version, the switches,
+	// the speculation rules) answers under the base too, so a hub's poll
+	// of /<slug>/api/version reaches this instance's own handler. The
+	// zero value is off: no middleware is installed and requests pay
+	// nothing. Apps fill Origin and Slug with basepath.FromEnv. DirectHost
+	// is set in code, because whether the instance's own hostname
+	// redirects to the product path or serves a read-only view is the
+	// app's choice, not the deploy's. Handler refuses a Config that
+	// basepath's Validate refuses.
+	BasePath basepath.Config
 
 	// Wrap, if set, wraps the app's mux — the one seam for app
 	// middleware: sessions, CSRF, panic pages, authorization
@@ -395,9 +410,9 @@ func Serve(opts Options) error {
 // returned close func stops Options.Background and then releases the
 // database handle (each a no-op without one).
 //
-// It refuses a locale configuration locales.CheckConfig rejects, before
-// opening anything, and installs the accepted one for request-time
-// formatting.
+// It refuses a locale configuration locales.CheckConfig rejects, and a
+// BasePath basepath's Validate rejects, before opening anything, and
+// installs the accepted locales for request-time formatting.
 //
 // Exported for test harnesses: before this seam, every app's harness
 // hand-duplicated /healthz, /api/version and the DSN pragma ordering
@@ -416,6 +431,12 @@ func Handler(opts Options) (http.Handler, func() error, error) {
 	// changes nothing.
 	cfg, err := locales.CheckConfig(opts.DefaultLocale, opts.Locales)
 	if err != nil {
+		return nil, closeNothing, fmt.Errorf("rastrillo: refusing to start: %v", err)
+	}
+	// Beside the locale check, and before its Install, for the same
+	// reason: a deploy with a bad slug or origin changes nothing, rather
+	// than serving at the wrong path or answering every request with 404.
+	if err := opts.BasePath.Validate(); err != nil {
 		return nil, closeNothing, fmt.Errorf("rastrillo: refusing to start: %v", err)
 	}
 	locales.Install(cfg)
@@ -502,15 +523,17 @@ func securityHeaders(csp string, speculate bool, next http.Handler) http.Handler
 		// on it for documents and ignore it elsewhere. A structured-field
 		// list of one string, which is the header's form.
 		if speculate {
-			h.Set("Speculation-Rules", `"`+SpeculationRulesPath+`"`)
+			// Through Path, so under a base the browser fetches this
+			// tenant's ruleset, not a path on the hub.
+			h.Set("Speculation-Rules", `"`+basepath.Path(r, SpeculationRulesPath)+`"`)
 		}
 		next.ServeHTTP(w, r)
 	})
 }
 
 // recoverPanics turns a panicking handler into a logged 500. It is the
-// OUTERMOST wrapper — outside securityHeaders, and so outside the locale
-// middleware and Options.Wrap too — because a panic in a middleware is
+// outermost wrapper but Options.BasePath's: outside securityHeaders,
+// and so outside the locale middleware and Options.Wrap too, because a panic in a middleware is
 // exactly as fatal to the connection as a panic in a handler, and the
 // only wrapper that can catch one is the one above it. Headers that the
 // inner wrappers already set on the ResponseWriter are still there when
@@ -559,8 +582,9 @@ func recoverPanics(errorPage ErrorPageFunc, logger *slog.Logger, next http.Handl
 // — when Options.Locales is set — the locale middleware wrapped around
 // the whole thing, so a locale prefix strips before routing and the
 // translator rides the request context (§10). The security-header
-// wrapper goes around all of it, and panic recovery around that. Split
-// from Handler so the assembly is testable without a database.
+// wrapper goes around all of it, panic recovery around that, and
+// Options.BasePath, when set, around everything. Split from Handler so
+// the assembly is testable without a database.
 func buildHandler(opts Options) (http.Handler, error) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
@@ -589,6 +613,13 @@ func buildHandler(opts Options) (http.Handler, error) {
 			return nil, errors.New("rastrillo: Options.Wrap returned a nil handler")
 		}
 	}
+	if opts.BasePath.Enabled() && opts.BasePath.DirectHost == basepath.ServeDirect {
+		// The app, not the mux: the framework's own switches stay
+		// writable, so a reader can still choose a language and colours,
+		// while every app route (an app's own /_theme included) is
+		// read-only on the direct host.
+		app = readOnlyDirect(app)
+	}
 	mux.Handle("/", app)
 	// Before the no-locales return, unlike /_locale: a one-language
 	// app has a colour scheme to choose. And unlike /_locale, the app's
@@ -602,8 +633,21 @@ func buildHandler(opts Options) (http.Handler, error) {
 		mux.Handle("POST "+SchemeSwitchPath, schemeSwitchUnlessApp(opts.Mux, app))
 	}
 
+	// outer is the chrome around the routed handler. The base path goes
+	// outside panic recovery: its own 404, 301/308 and 307 carry no page
+	// worth hardening; inside it, the panic page and the
+	// Speculation-Rules header see the base, so a panic page links into
+	// the tenant and the browser fetches the tenant's ruleset; and a
+	// panic in its few lines still reaches net/http's own recovery.
+	outer := func(h http.Handler) http.Handler {
+		h = recoverPanics(opts.ErrorPage, opts.Logger, securityHeaders(opts.CSP, !opts.NoSpeculationRules, h))
+		if opts.BasePath.Enabled() {
+			h = opts.BasePath.Handler(h)
+		}
+		return h
+	}
 	if len(opts.Locales) == 0 {
-		return recoverPanics(opts.ErrorPage, opts.Logger, securityHeaders(opts.CSP, !opts.NoSpeculationRules, mux)), nil
+		return outer(mux), nil
 	}
 	def := opts.DefaultLocale
 	if def == "" {
@@ -628,7 +672,37 @@ func buildHandler(opts Options) (http.Handler, error) {
 	// Registered after mux.Handle("/", app) only for readability:
 	// ServeMux prefers the more specific pattern whatever the order.
 	mux.Handle("POST "+LocaleSwitchPath, loc.SwitchHandler())
-	return recoverPanics(opts.ErrorPage, opts.Logger, securityHeaders(opts.CSP, !opts.NoSpeculationRules, loc.Middleware(mux))), nil
+	return outer(loc.Middleware(mux)), nil
+}
+
+// readOnlyDirect refuses writes on a served direct host
+// (basepath.ServeDirect): a method other than GET, HEAD or OPTIONS
+// answers 405, unless it is a basepath.PlatformCall, such as a
+// scheduled tick or a socket call on Host carlos.
+//
+// Having no session there is not enough to make the view read-only. An
+// unscoped generated action writes with no session at all
+// (op.DefaultPolicy allows an unscoped op for any caller without a
+// credential, op/check.go:41-44), and csrf passes a same-origin POST
+// from the direct host, so a visitor to the instance's own hostname
+// could write. It wraps the app rather than matching paths because an
+// app may own /_theme itself (schemeSwitchUnlessApp), and that handler
+// must be refused too. The scaffold mounts /api/v1 inside the app mux,
+// so an API client's bearer write gets the same 405: the served view
+// is read-only for everyone, and its writes belong on the product path.
+func readOnlyDirect(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodGet, http.MethodHead, http.MethodOptions:
+		default:
+			if basepath.OnDirectHost(r) && !basepath.PlatformCall(r) {
+				w.Header().Set("Allow", "GET, HEAD")
+				http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+				return
+			}
+		}
+		next.ServeHTTP(w, r)
+	})
 }
 
 // schemeSwitchUnlessApp serves the framework's scheme switch unless

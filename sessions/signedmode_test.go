@@ -31,6 +31,13 @@ type pair struct {
 
 func newPair(t *testing.T) *pair {
 	t.Helper()
+	return newPairOn(t, origin)
+}
+
+// newPairOn is newPair on another origin, for a test whose redirects
+// must name the product origin a base path is served on.
+func newPairOn(t *testing.T, origin string) *pair {
+	t.Helper()
 	p := &pair{now: time.Date(2026, 10, 17, 12, 0, 0, 0, time.UTC), epoch: 1}
 	k, _ := sessions.NewSigningKey("k1")
 	p.hubKey = k

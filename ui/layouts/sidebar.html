@@ -4,26 +4,26 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width">
 <title>{{block "title" .}}Hello{{end}}</title>
-<link rel="stylesheet" href="{{asset "static/tokens.css"}}">
-<link rel="stylesheet" href="{{asset "static/theme.css"}}">
+<link rel="stylesheet" href="{{path $ (asset "static/tokens.css")}}">
+<link rel="stylesheet" href="{{path $ (asset "static/theme.css")}}">
 {{/* shell.css is the slide between the index and a page on a phone;
      only the two shells that have an index link it, because the opt-in
      it holds cannot be scoped from tokens.css. */}}
-<link rel="stylesheet" href="{{asset "static/shell.css"}}">
-<script defer src="{{asset "static/rastrillo.js"}}"></script>
-<script defer src="{{asset "static/busy.js"}}"></script>
+<link rel="stylesheet" href="{{path $ (asset "static/shell.css")}}">
+<script defer src="{{path $ (asset "static/rastrillo.js")}}"></script>
+<script defer src="{{path $ (asset "static/busy.js")}}"></script>
 {{/* light.js moves the light the depth styles read. Delete it and its
      tag for the still design. */}}
-<script defer src="{{asset "static/light.js"}}"></script>
-<script defer src="{{asset "static/anchor.js"}}"></script>
+<script defer src="{{path $ (asset "static/light.js")}}"></script>
+<script defer src="{{path $ (asset "static/anchor.js")}}"></script>
 {{/* blocking="render": shell.js types the slide in pagereveal, at the
      first render, and a plain deferred script can run after it. An
      engine that ignores the attribute gets an untyped cross-fade. */}}
-<script defer blocking="render" src="{{asset "static/shell.js"}}"></script>
+<script defer blocking="render" src="{{path $ (asset "static/shell.js")}}"></script>
 {{iconAssets}}
-<script defer src="{{asset "static/select.js"}}"></script>
-<script defer src="{{asset "static/calendar.js"}}"></script>
-<script defer src="{{asset "static/datetime.js"}}"></script>
+<script defer src="{{path $ (asset "static/select.js")}}"></script>
+<script defer src="{{path $ (asset "static/calendar.js")}}"></script>
+<script defer src="{{path $ (asset "static/datetime.js")}}"></script>
 {{/* head is the app's own slot in <head>: a favicon, a meta tag, one
      more stylesheet. Empty by default, last in the head so an app's
      own CSS wins over the framework's, and the only block in the
@@ -55,7 +55,7 @@
      accessible name (WCAG 2.5.3); rel="up" for tools that read it. An
      app that wants its name on it ("‹ Ledger") edits this line, which is
      the app's own from the moment it is scaffolded. */}}
-<div rst-shell-back><a href="{{block "up" .}}/{{end}}" rel="up" aria-label="{{Tf $L "rastrillo.ui.shell_up" "name" (T $L "rastrillo.ui.shell_up_label")}}">{{T $L "rastrillo.ui.shell_up_label"}}</a></div>
+<div rst-shell-back><a href="{{block "up" .}}{{path $ "/"}}{{end}}" rel="up" aria-label="{{Tf $L "rastrillo.ui.shell_up" "name" (T $L "rastrillo.ui.shell_up_label")}}">{{T $L "rastrillo.ui.shell_up_label"}}</a></div>
 <aside rst-shell-rail>
 {{/* The index's heading is the app's name: the brand, in a span of its
      own, then the page's title for an app whose brand renders nothing
@@ -66,7 +66,7 @@
      inside the brand would appear twice. tokens.css shows the heading
      only on the phone index, so no page ever exposes two h1s. */}}
 <h1 rst-shell-title><span>{{template "brand" .}}</span><span>{{template "title" .}}</span></h1>
-{{block "brand" .}}{{$L := localizer $}}<a rst-shell-brand href="/">{{T $L "rastrillo.ui.shell_home"}}</a>{{end}}
+{{block "brand" .}}{{$L := localizer $}}<a rst-shell-brand href="{{path $ "/"}}">{{T $L "rastrillo.ui.shell_home"}}</a>{{end}}
 <nav rst-shell-nav>{{block "nav" .}}{{end}}</nav>
 {{/* The rail's foot: one profile menu, an avatar that opens a card with
      the person's name, the language switcher and the account's links.
@@ -97,7 +97,7 @@
      whole foot when the card's head is its only child AND the head is
      the placeholder: no profile, no account, no language, so a button
      would open an empty card. A real person is never hidden. */}}
-<div rst-shell-rail-foot><details rst-dropdown rst-shell-profile name="rst-shell-menu"><summary><span rst-shell-avatar>{{block "profile" .}}{{$L := localizer $}}<span rst-person-av="empty placeholder" aria-hidden="true"></span><span rst-person-name>{{T $L "rastrillo.ui.shell_account"}}</span>{{end}}</span></summary><div rst-dropdown-menu><div rst-shell-who>{{template "profile" .}}</div>{{block "locale" .}}{{$L := localizer $}}{{template "locale-menu" dict "L" $L "Items" (opt $ "Locales") "Return" (opt $ "Return")}}{{end}}{{block "scheme" .}}{{$L := localizer $}}{{template "scheme-menu" dict "L" $L "Scheme" (opt $ "Scheme") "Return" (opt $ "Return")}}{{end}}{{block "account" .}}{{end}}</div></details></div>
+<div rst-shell-rail-foot><details rst-dropdown rst-shell-profile name="rst-shell-menu"><summary><span rst-shell-avatar>{{block "profile" .}}{{$L := localizer $}}<span rst-person-av="empty placeholder" aria-hidden="true"></span><span rst-person-name>{{T $L "rastrillo.ui.shell_account"}}</span>{{end}}</span></summary><div rst-dropdown-menu><div rst-shell-who>{{template "profile" .}}</div>{{block "locale" .}}{{$L := localizer $}}{{template "locale-menu" dict "L" $L "Items" (opt $ "Locales") "Return" (opt $ "Return") "Action" (path $ "/_locale")}}{{end}}{{block "scheme" .}}{{$L := localizer $}}{{template "scheme-menu" dict "L" $L "Scheme" (opt $ "Scheme") "Return" (opt $ "Return") "Action" (path $ "/_theme")}}{{end}}{{block "account" .}}{{end}}</div></details></div>
 </aside>
 <main rst-shell-main id="main">
 <div rst-page>

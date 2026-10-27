@@ -150,6 +150,7 @@ import (
 	"amadan.net/rastrillo/rastrillo"
 	"amadan.net/rastrillo/rastrillo/api"
 	"amadan.net/rastrillo/rastrillo/apitoken"
+	"amadan.net/rastrillo/rastrillo/basepath"
 	"amadan.net/rastrillo/rastrillo/migrate"
 	"amadan.net/rastrillo/rastrillo/op"
 
@@ -190,7 +191,7 @@ func TestExposedUnscopedNeedsAPolicy(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	create := func(authorize func(context.Context, rastrillo.Actor, rastrillo.Operation) error) *httptest.ResponseRecorder {
+	handler := func(authorize func(context.Context, rastrillo.Actor, rastrillo.Operation) error) http.Handler {
 		h, err := api.New(api.Config{
 			Verify:    tokens,
 			Ctx:       func(*http.Request) *rastrillo.Ctx { return &rastrillo.Ctx{DB: d} },
@@ -199,7 +200,10 @@ func TestExposedUnscopedNeedsAPolicy(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		req := httptest.NewRequest(http.MethodPost, "/api/v1/ticket_types", strings.NewReader(` + "`" + `{"name": "General", "price": {"amount": 2500, "currency": "USD"}}` + "`" + `))
+		return h
+	}
+	create := func(h http.Handler, target string) *httptest.ResponseRecorder {
+		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(` + "`" + `{"name": "General", "price": {"amount": 2500, "currency": "USD"}}` + "`" + `))
 		req.Header.Set("Content-Type", "application/json")
 		req.Header.Set("Authorization", "Bearer "+token)
 		rec := httptest.NewRecorder()
@@ -209,12 +213,21 @@ func TestExposedUnscopedNeedsAPolicy(t *testing.T) {
 
 	// api.New refuses a nil Authorize, so the default is named: it is
 	// what an app that says nothing more gets.
-	if rec := create(op.DefaultPolicy); rec.Code != http.StatusForbidden {
+	if rec := create(handler(op.DefaultPolicy), "/api/v1/ticket_types"); rec.Code != http.StatusForbidden {
 		t.Errorf("POST /api/v1/ticket_types under op.DefaultPolicy: %d, want 403\n%s", rec.Code, rec.Body)
 	}
-	allow := func(context.Context, rastrillo.Actor, rastrillo.Operation) error { return nil }
-	if rec := create(allow); rec.Code != http.StatusCreated {
+	allow := handler(func(context.Context, rastrillo.Actor, rastrillo.Operation) error { return nil })
+	if rec := create(allow, "/api/v1/ticket_types"); rec.Code != http.StatusCreated {
 		t.Errorf("POST /api/v1/ticket_types under an Authorize that allows it: %d, want 201\n%s", rec.Code, rec.Body)
+	}
+
+	// Under a base path the create's Location is a header, which the
+	// middleware prefixes once: the client finds the record at /acme,
+	// not at the hub's /api/v1, and not at /acme/acme.
+	acme := basepath.Config{Origin: "https://example.com", Slug: "acme"}.Handler(allow)
+	rec := create(acme, "/acme/api/v1/ticket_types")
+	if loc := rec.Header().Get("Location"); rec.Code != http.StatusCreated || loc != "/acme/api/v1/ticket_types/2" {
+		t.Errorf("POST /acme/api/v1/ticket_types: %d, Location %q; want 201, /acme/api/v1/ticket_types/2\n%s", rec.Code, loc, rec.Body)
 	}
 }
 `

@@ -27,23 +27,23 @@
                        edit-advanced POST target */}}
 {{define "content"}}{{$L := localizer $}}
 {{if .IsNew}}
-<form rst-form method="post" action="/admin/ticket_types">
+<form rst-form method="post" action="{{path $ "/admin/ticket_types"}}">
 {{template "field-text" dict "L" $L "Name" "Name" "Label" (T $L "resource.ticket_types.field.name") "Value" .Fields.Name "Error" (Tf $L (index .Errors "Name") (index .ErrorArgs "Name")) "Required" true}}
 {{template "field-money" dict "L" $L "Name" "Price" "Label" (T $L "resource.ticket_types.field.price") "Value" (index .Money "Price").Value "Locale" (index .Money "Price").Locale "Currency" (index .Money "Price").Currency "Seed" (index .Money "Price").Seed "Error" (Tf $L (index .Errors "Price") (index .ErrorArgs "Price")) "Required" true}}
 {{template "field-text" dict "L" $L "Name" "Status" "Label" (T $L "resource.ticket_types.field.status") "Value" .Fields.Status "Error" (Tf $L (index .Errors "Status") (index .ErrorArgs "Status"))}}
 {{template "field-text" dict "L" $L "Name" "MaxPerOrder" "Label" (T $L "resource.ticket_types.field.max_per_order") "Value" .Fields.MaxPerOrder "Error" (Tf $L (index .Errors "MaxPerOrder") (index .ErrorArgs "MaxPerOrder"))}}
-{{template "form-foot" dict "L" $L "Submit" (T $L "ui.save") "CancelHref" "/admin/ticket_types" "CancelLabel" (T $L "ui.cancel")}}
+{{template "form-foot" dict "L" $L "Submit" (T $L "ui.save") "CancelHref" (path $ "/admin/ticket_types") "CancelLabel" (T $L "ui.cancel")}}
 </form>
 {{else}}
 <form rst-form method="post" action="{{.BasicsAction}}">
 {{template "field-text" dict "L" $L "Name" "Name" "Label" (T $L "resource.ticket_types.field.name") "Value" .Fields.Name "Error" (Tf $L (index .Errors "Name") (index .ErrorArgs "Name")) "Required" true}}
 {{template "field-money" dict "L" $L "Name" "Price" "Label" (T $L "resource.ticket_types.field.price") "Value" (index .Money "Price").Value "Locale" (index .Money "Price").Locale "Currency" (index .Money "Price").Currency "Seed" (index .Money "Price").Seed "Error" (Tf $L (index .Errors "Price") (index .ErrorArgs "Price")) "Required" true}}
 {{template "field-text" dict "L" $L "Name" "Status" "Label" (T $L "resource.ticket_types.field.status") "Value" .Fields.Status "Error" (Tf $L (index .Errors "Status") (index .ErrorArgs "Status"))}}
-{{template "form-foot" dict "L" $L "Submit" (T $L "ui.save") "CancelHref" "/admin/ticket_types" "CancelLabel" (T $L "ui.cancel")}}
+{{template "form-foot" dict "L" $L "Submit" (T $L "ui.save") "CancelHref" (path $ "/admin/ticket_types") "CancelLabel" (T $L "ui.cancel")}}
 </form>
 <form rst-form method="post" action="{{.AdvancedAction}}">
 {{template "field-text" dict "L" $L "Name" "MaxPerOrder" "Label" (T $L "resource.ticket_types.field.max_per_order") "Value" .Fields.MaxPerOrder "Error" (Tf $L (index .Errors "MaxPerOrder") (index .ErrorArgs "MaxPerOrder"))}}
-{{template "form-foot" dict "L" $L "Submit" (T $L "ui.save") "CancelHref" "/admin/ticket_types" "CancelLabel" (T $L "ui.cancel")}}
+{{template "form-foot" dict "L" $L "Submit" (T $L "ui.save") "CancelHref" (path $ "/admin/ticket_types") "CancelLabel" (T $L "ui.cancel")}}
 </form>
 {{end}}
 {{end}}

@@ -4,18 +4,18 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width">
 <title>{{block "title" .}}Hello{{end}}</title>
-<link rel="stylesheet" href="{{asset "static/tokens.css"}}">
-<link rel="stylesheet" href="{{asset "static/theme.css"}}">
-<script defer src="{{asset "static/rastrillo.js"}}"></script>
-<script defer src="{{asset "static/busy.js"}}"></script>
+<link rel="stylesheet" href="{{path $ (asset "static/tokens.css")}}">
+<link rel="stylesheet" href="{{path $ (asset "static/theme.css")}}">
+<script defer src="{{path $ (asset "static/rastrillo.js")}}"></script>
+<script defer src="{{path $ (asset "static/busy.js")}}"></script>
 {{/* light.js moves the light the depth styles read. Delete it and its
      tag for the still design. */}}
-<script defer src="{{asset "static/light.js"}}"></script>
-<script defer src="{{asset "static/anchor.js"}}"></script>
+<script defer src="{{path $ (asset "static/light.js")}}"></script>
+<script defer src="{{path $ (asset "static/anchor.js")}}"></script>
 {{iconAssets}}
-<script defer src="{{asset "static/select.js"}}"></script>
-<script defer src="{{asset "static/calendar.js"}}"></script>
-<script defer src="{{asset "static/datetime.js"}}"></script>
+<script defer src="{{path $ (asset "static/select.js")}}"></script>
+<script defer src="{{path $ (asset "static/calendar.js")}}"></script>
+<script defer src="{{path $ (asset "static/datetime.js")}}"></script>
 {{/* head is the app's own slot in <head>: a favicon, a meta tag, one
      more stylesheet. Empty by default, last in the head so an app's
      own CSS wins over the framework's, and the only block in the
@@ -26,7 +26,7 @@
 <div rst-shell-topbar>
 <a rst-skip href="#main">{{T $L "rastrillo.ui.shell_skip"}}</a>
 <header rst-shell-bar>
-{{block "brand" .}}{{$L := localizer $}}<a rst-shell-brand href="/">{{T $L "rastrillo.ui.shell_home"}}</a>{{end}}
+{{block "brand" .}}{{$L := localizer $}}<a rst-shell-brand href="{{path $ "/"}}">{{T $L "rastrillo.ui.shell_home"}}</a>{{end}}
 {{/* The narrow layout. Below 800px the bar's tail — nav, account,
      locale — hides behind this disclosure; above it, tokens.css hides
      the summary and gives [rst-shell-tail] display: contents, so the
@@ -75,7 +75,7 @@
      between the two shells needs an edit. */}}
 <div rst-dropdown-menu>{{block "account" .}}{{end}}</div>
 </details>
-{{block "locale" .}}{{$L := localizer $}}{{template "locale-menu" dict "L" $L "Items" (opt $ "Locales") "Return" (opt $ "Return")}}{{end}}{{block "scheme" .}}{{$L := localizer $}}{{template "scheme-menu" dict "L" $L "Scheme" (opt $ "Scheme") "Return" (opt $ "Return")}}{{end}}
+{{block "locale" .}}{{$L := localizer $}}{{template "locale-menu" dict "L" $L "Items" (opt $ "Locales") "Return" (opt $ "Return") "Action" (path $ "/_locale")}}{{end}}{{block "scheme" .}}{{$L := localizer $}}{{template "scheme-menu" dict "L" $L "Scheme" (opt $ "Scheme") "Return" (opt $ "Return") "Action" (path $ "/_theme")}}{{end}}
 </div>
 </header>
 <main rst-page id="main">
