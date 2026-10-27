@@ -296,9 +296,9 @@ func (p *Pages) WriteRegions(w http.ResponseWriter, r *http.Request, page string
 	return live.Respond(w, r, rendered, b.Bytes())
 }
 
-// HasRegions reports whether page defines a region for any of names.
-// Ask it before taking the flash (see live.Has); a page that does not
-// exist has none.
+// HasRegions reports whether page defines a region for any of names
+// other than the notice, which every layout has (see live.Has). Ask it
+// before taking the flash; a page that does not exist has none.
 func (p *Pages) HasRegions(page string, names []string) bool {
 	t, ok := p.pages[page]
 	return ok && live.Has(t, names)

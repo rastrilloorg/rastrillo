@@ -104,12 +104,17 @@ func TakesFlash(r *http.Request) bool {
 }
 
 // Has reports whether the template defines a region:<name> for any of
-// names. Ask it before taking the flash: a request naming only regions
-// this page lacks is answered by navigating (Answer), and the page
-// navigated to must still find the flash.
+// names other than Notice. Every layout defines the notice, so a match
+// on it alone says nothing about whether this is the page that was
+// asked: a form whose 422 renders another page would be answered with
+// an empty notice, and the person would see nothing happen. Ask it
+// before taking the flash. When it says no, a GET or HEAD is answered
+// by navigating (Respond with nothing), and the page navigated to must
+// still find the flash; any other method gets the whole page, with its
+// status, as the browser would show it.
 func Has(t *template.Template, names []string) bool {
 	for _, n := range names {
-		if t.Lookup("region:"+n) != nil {
+		if n != Notice && t.Lookup("region:"+n) != nil {
 			return true
 		}
 	}

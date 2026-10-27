@@ -26,10 +26,16 @@
 // Fragment requests (fragment.go) let one URL answer with a page's
 // regions alone. A renderer calls, in this order: Elsewhere (a form's
 // redirect went to another page: navigate, before anything is taken);
-// NoStore; Wanted; then, if Has says the page defines the regions
-// asked for, TakesFlash to decide whether to take the flash, and
-// WriteRegions (or ui.Pages.WriteRegions) to answer, or the full page
-// when Wanted was not ok. WriteRegions renders into a buffer and sets
+// NoStore; Wanted; then Has, which asks whether the page defines any
+// region asked for besides the notice (every layout has that one).
+// When it says no, a GET or HEAD is answered by navigating (Respond
+// with nothing rendered) and the renderer returns; any other method, a
+// form whose error render is another page, falls through to the whole
+// page with its status and no Rastrillo-Regions, which live.js shows
+// as the browser would. Then TakesFlash decides whether to take the
+// flash (always, for a whole page), and WriteRegions (or
+// ui.Pages.WriteRegions) answers, or the whole page when Wanted was not
+// ok or Has said no. WriteRegions renders into a buffer and sets
 // Rastrillo-Regions before the first body byte; writing regions
 // straight to the ResponseWriter would lose that header. The flash is
 // looked up after Has so a request that ends in a navigation leaves it

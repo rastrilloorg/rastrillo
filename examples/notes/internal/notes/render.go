@@ -120,11 +120,18 @@ type (
 //   - live.Elsewhere first: a swapping form whose redirect left the
 //     page it was sent from is told to navigate, and the flash waits
 //     for the page it lands on.
-//   - A fragment request naming only regions this page lacks is
-//     answered the same way, also before the flash is looked at.
+//   - A fragment request naming only regions this page lacks (the
+//     layout's notice does not count: every page has it) is answered
+//     the same way when it is a GET, also before the flash is looked
+//     at. A POST is a form whose error render is another page (create's
+//     422 renders "new" for a form on the list): it gets the whole page
+//     with its status, which live.js shows as the browser would. An
+//     empty notice in its place would leave the person looking at a
+//     page where nothing happened.
 //   - The flash is taken only when the render shows the notice region
-//     (live.TakesFlash). The stream's refetch asks for the list alone;
-//     taking the flash there would clear a message nobody saw.
+//     (live.TakesFlash, or a whole page). The stream's refetch asks for
+//     the list alone; taking the flash there would clear a message
+//     nobody saw.
 //
 // Everything is rendered into a buffer before anything touches the
 // wire. A template error then becomes a clean 500 instead of garbage
@@ -143,14 +150,17 @@ func (a *app) renderStatus(w http.ResponseWriter, r *http.Request, status int, n
 	live.NoStore(w)
 	names, frag := live.Wanted(r)
 	if frag && !a.pages.HasRegions(name, names) {
-		if err := live.Respond(w, r, nil, nil); err != nil {
-			slog.Default().Error("notes: answer "+name, "err", err)
+		if r.Method == http.MethodGet || r.Method == http.MethodHead {
+			if err := live.Respond(w, r, nil, nil); err != nil {
+				slog.Default().Error("notes: answer "+name, "err", err)
+			}
+			return
 		}
-		return
+		frag = false
 	}
 	var fl flash.Flash
 	var hasFlash bool
-	if live.TakesFlash(r) {
+	if !frag || live.TakesFlash(r) {
 		fl, hasFlash = flash.Take(w, r)
 	}
 	_, signedIn := sessions.Current(r)

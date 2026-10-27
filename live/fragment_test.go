@@ -175,11 +175,16 @@ func TestRegionsReportAWriteError(t *testing.T) {
 }
 
 func TestHasFindsOnlyRegionTemplates(t *testing.T) {
-	tpl := regionSet(t, `{{define "region:list"}}x{{end}}{{define "secret"}}y{{end}}`)
+	tpl := regionSet(t, `{{define "region:list"}}x{{end}}{{define "secret"}}y{{end}}{{define "region:notice"}}n{{end}}`)
 	for _, c := range []struct {
 		names []string
 		want  bool
-	}{{[]string{"list"}, true}, {[]string{"secret"}, false}, {[]string{"secret", "list"}, true}, {nil, false}, {[]string{"page"}, false}} {
+	}{
+		{[]string{"list"}, true}, {[]string{"secret"}, false}, {[]string{"secret", "list"}, true}, {nil, false}, {[]string{"page"}, false},
+		// Every layout defines the notice, so a match on it alone is no
+		// sign this is the page that was asked.
+		{[]string{"page", "notice"}, false}, {[]string{"notice"}, false}, {[]string{"list", "notice"}, true},
+	} {
 		if got := Has(tpl, c.names); got != c.want {
 			t.Errorf("%v: got %v, want %v", c.names, got, c.want)
 		}

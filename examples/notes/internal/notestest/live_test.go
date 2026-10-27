@@ -273,27 +273,33 @@ func TestANoteAddedElsewhereReachesTheStream(t *testing.T) {
 	t.Fatalf("stream ended without a change event: %v", sc.Err())
 }
 
-// TestARefusedFormKeepsItsStatusWhenSwapped: a 422 answered as regions
-// still says 422, and still names what it rendered. Writing the status
-// before the regions would have committed the headers without
-// Rastrillo-Regions.
-func TestARefusedFormKeepsItsStatusWhenSwapped(t *testing.T) {
+// TestARefusedFormWhoseErrorsAreAnotherPageGetsAWholePage: a swapping
+// form on the list posts to create, whose 422 renders the new-note
+// page. That page has none of the form's regions but the layout's
+// notice, and answering with the notice alone would leave the person
+// looking at a list that says nothing. The 422 comes back as the whole
+// page, with its status and without Rastrillo-Regions, which live.js
+// shows as the browser would.
+func TestARefusedFormWhoseErrorsAreAnotherPageGetsAWholePage(t *testing.T) {
 	ts := newApp(t)
 	cl := newClient(t, ts)
 	cl.signup("quinn@example.com", "hunter2222").Body.Close()
 
 	resp := cl.send(http.MethodPost, "/notes", url.Values{"title": {""}, "body": {"b"}}, map[string]string{
-		"Rastrillo-Fragment": "notice",
-		"Rastrillo-Page":     "/notes/new",
+		"Rastrillo-Fragment": "notes-list notice",
+		"Rastrillo-Page":     "/",
 	}, false)
 	b := body(t, resp)
 	if resp.StatusCode != http.StatusUnprocessableEntity {
 		t.Fatalf("status = %d, want 422; body=%s", resp.StatusCode, b)
 	}
-	if got := resp.Header.Get("Rastrillo-Regions"); got != "notice" {
-		t.Fatalf("Rastrillo-Regions = %q, want notice", got)
+	if got := resp.Header.Values("Rastrillo-Regions"); len(got) != 0 {
+		t.Fatalf("Rastrillo-Regions = %q, want none: this is a whole page", got)
 	}
-	if !strings.HasPrefix(b, `<div id="notice"`) {
-		t.Fatalf("body is not the notice region; body=%s", b)
+	if !strings.Contains(b, "<html") || !strings.Contains(b, "Title is required") {
+		t.Fatalf("body is not the whole new-note page with its error; body=%s", b)
+	}
+	if got := resp.Header.Get("Cache-Control"); got != "no-store" {
+		t.Fatalf("Cache-Control = %q, want no-store", got)
 	}
 }

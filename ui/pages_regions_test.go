@@ -18,7 +18,7 @@ func regionPages(t testing.TB) *Pages {
 		t.Fatal(err)
 	}
 	p, err := NewPages(PagesConfig{App: fstest.MapFS{
-		"layout.html": {Data: []byte(`{{define "layout"}}<main>{{template "body" .}}</main>{{end}}`)},
+		"layout.html": {Data: []byte(`{{define "layout"}}<main>{{template "region:notice" .}}{{template "body" .}}</main>{{end}}{{define "region:notice"}}<div id="notice" role="status"></div>{{end}}`)},
 		"index.html":  {Data: []byte(`{{define "body"}}{{template "region:list" .}}{{end}}{{define "region:list"}}<ul id="list">{{.Name}}</ul>{{end}}{{define "private"}}SECRET{{end}}`)},
 		"show.html":   {Data: []byte(`{{define "body"}}one{{end}}`)},
 	}, Layout: "layout.html", Pages: map[string]PageFile{"index": {Path: "index.html"}, "show": {Path: "show.html"}}, Locale: cfg})
@@ -66,7 +66,12 @@ func TestPagesHasRegions(t *testing.T) {
 		page  string
 		names []string
 		want  bool
-	}{{"index", []string{"list"}, true}, {"index", []string{"private"}, false}, {"show", []string{"list"}, false}, {"nope", []string{"list"}, false}} {
+	}{
+		{"index", []string{"list"}, true}, {"index", []string{"private"}, false}, {"show", []string{"list"}, false}, {"nope", []string{"list"}, false},
+		// Every page has the layout's notice, so it says nothing about
+		// whether this is the page a form asked for.
+		{"show", []string{"list", "notice"}, false}, {"show", []string{"notice"}, false}, {"index", []string{"list", "notice"}, true},
+	} {
 		if got := p.HasRegions(c.page, c.names); got != c.want {
 			t.Errorf("%s %v: got %v, want %v", c.page, c.names, got, c.want)
 		}
