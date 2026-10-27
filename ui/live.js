@@ -62,9 +62,10 @@
    page replaces this one, shown as text unless it is text/html. No
    answer, a 5xx or an empty Rastrillo-Regions is an unknown outcome:
    the input stays, the notice says data-unconfirmed, the regions are
-   fetched again, and nothing is resent. It is sent from
-   the window, after every other submit handler, so one that cancels
-   the submit (a confirm, its own fetch) wins and nothing is sent.
+   fetched again, and nothing is resent. It is sent a tick after the
+   submit, once every handler has run (a window one added after this
+   file's too), so one that cancels it (a confirm, its own fetch) wins
+   and nothing is sent.
    Unlike a native submit, a whole page from a redirect replaces the
    form page's history entry (Back skips it), and one answered directly
    (a 4xx, say) keeps the form page's URL. */
@@ -439,9 +440,13 @@
     else e.liveForm = true;
   }
 
-  // Window, bubble: the last listener the submit reaches.
+  // Window, bubble: the last listener the submit reaches, but for window
+  // listeners added after this file's. One of those (a confirm) may still
+  // cancel, so the native submit is stopped here and the send waits a
+  // tick: their preventDefault is recorded, and defaultPrevented reads as
+  // if this one had not cancelled, until then.
   function submitted(e) {
-    var p = !e.defaultPrevented && e.liveForm && plan(e), run = ctl, form, btn, type, url, body, data;
+    var p = !e.defaultPrevented && e.liveForm && plan(e), run = ctl, form, btn, type, url, body, data, later = false, cancel = e.preventDefault;
     if (!p) return;
     form = p.form;
     btn = p.btn;
@@ -455,7 +460,9 @@
       // A file goes as its name, as the browser sends it urlencoded.
       data.forEach(function (v, k) { body.append(k, typeof v === "string" ? v : v.name); });
     }
-    e.preventDefault();
+    cancel.call(e);
+    e.preventDefault = function () { later = true; cancel.call(e); };
+    Object.defineProperty(e, "defaultPrevented", { get: function () { return later; } });
 
     var own = form.closest("[data-live]"), names = [], entry = [form, btn], settled = false;
     var had = own && own.contains(document.activeElement) ? document.activeElement : null;
@@ -463,9 +470,13 @@
       if (n && names.indexOf(n) < 0) names.push(n);
     });
     var hold = new Promise(function (r) { setTimeout(r, HOLD_MS); });
+    // Busy at once: it is what refuses a second submit in this task.
     busy(form, btn);
     out.push(entry);
-    names.forEach(function (n) { state(n).forms++; });
+    setTimeout(function () {
+      if (later) release(entry);
+      else go();
+    }, 0);
 
     // Lets the regions' queued stream fetches go. keep leaves the busy
     // state up for a navigation, as a native submit's stays up until
@@ -491,32 +502,35 @@
       if (run === ctl && n && text) n.textContent = text;
     }
 
-    send(url.href, names, { method: "POST", body: body, headers: { "Rastrillo-Page": location.pathname } }, false, hold).then(function (res) {
-      // This 204 has a Location: send navigated, if it could.
-      if (res.status === 204) return settle(!!leaveFor(res));
-      if (run !== ctl) return settle();
-      if (!res.headers.get("Rastrillo-Regions")) return unknown();
-      settle();
-      var now = own && own.id && document.getElementById(own.id), a = document.activeElement, bad;
-      // Disabling the focused submitter dropped focus to <body>, so the
-      // swap had none to carry over.
-      if (had && now && now !== own && (!a || a === document.body)) land(now, had.id);
-      if (res.status === 400 || res.status === 422) {
-        bad = (now || form).querySelector('[aria-invalid="true"]');
-        if (bad) bad.focus();
-      }
-      // A removed focused element fires no focusout, so a region waiting
-      // for the editing to end would wait for the next one.
-      edited();
-    }, function (err) {
-      var res = err && err.res;
-      if (run !== ctl || res && res.status === 204) return settle(); // a 204 stays put
-      if (!res || res.status >= 500) return hold.then(unknown);
-      return Promise.all([res.text(), hold]).then(function (r) {
-        whole(r[0], res);
+    function go() {
+      names.forEach(function (n) { state(n).forms++; });
+      send(url.href, names, { method: "POST", body: body, headers: { "Rastrillo-Page": location.pathname } }, false, hold).then(function (res) {
+        // This 204 has a Location: send navigated, if it could.
+        if (res.status === 204) return settle(!!leaveFor(res));
+        if (run !== ctl) return settle();
+        if (!res.headers.get("Rastrillo-Regions")) return unknown();
         settle();
-      }, unknown);
-    });
+        var now = own && own.id && document.getElementById(own.id), a = document.activeElement, bad;
+        // Disabling the focused submitter dropped focus to <body>, so the
+        // swap had none to carry over.
+        if (had && now && now !== own && (!a || a === document.body)) land(now, had.id);
+        if (res.status === 400 || res.status === 422) {
+          bad = (now || form).querySelector('[aria-invalid="true"]');
+          if (bad) bad.focus();
+        }
+        // A removed focused element fires no focusout, so a region waiting
+        // for the editing to end would wait for the next one.
+        edited();
+      }, function (err) {
+        var res = err && err.res;
+        if (run !== ctl || res && res.status === 204) return settle(); // a 204 stays put
+        if (!res || res.status >= 500) return hold.then(unknown);
+        return Promise.all([res.text(), hold]).then(function (r) {
+          whole(r[0], res);
+          settle();
+        }, unknown);
+      });
+    }
   }
 
   // As the browser would have shown it. The stream and fetches stop

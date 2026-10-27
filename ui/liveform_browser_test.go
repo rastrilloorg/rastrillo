@@ -582,7 +582,10 @@ func TestAFormSwapReleasesARegionWaitingOnEditing(t *testing.T) {
 // browser sends nothing for a submit it cancels: a Cancel on a confirm
 // must not delete the row, and a handler doing its own fetch must not
 // post twice. Driven in both script orders, since busy.js reads the
-// same submit.
+// same submit, and from the window as well as the form: a window
+// listener added after live.js loads runs after live.js's own, which
+// has already cancelled the native submit, so one that checks
+// defaultPrevented first must still see the submit as its to cancel.
 func TestASwappingFormDefersToAHandlerThatCancels(t *testing.T) {
 	f := newFormApp(t, "list", swapForm("one"))
 	f.answer = func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusNoContent) }
@@ -594,11 +597,14 @@ func TestASwappingFormDefersToAHandlerThatCancels(t *testing.T) {
 		  const s = document.createElement("script"); s.src = "/busy.js"; s.onload = () => { window.__busy = 1; }; document.head.append(s); });</script>`},
 	} {
 		for _, leg := range []struct {
-			name, handler string
-			posts         int
+			name, on, handler string
+			posts             int
 		}{
-			{"a confirm answered Cancel", `e.preventDefault()`, 0},
-			{"a handler doing its own fetch", `e.preventDefault(); fetch("/own", { method: "POST", body: new FormData(f) })`, 1},
+			{"a confirm answered Cancel", "f", `e.preventDefault()`, 0},
+			{"a handler doing its own fetch", "f", `e.preventDefault(); fetch("/own", { method: "POST", body: new FormData(f) })`, 1},
+			{"a window confirm answered Cancel", "window", `e.preventDefault()`, 0},
+			{"a window confirm that checks defaultPrevented", "window", `if (!e.defaultPrevented) e.preventDefault()`, 0},
+			{"a window handler doing its own fetch", "window", `e.preventDefault(); fetch("/own", { method: "POST", body: new FormData(f) })`, 1},
 		} {
 			name := order.name + ", " + leg.name
 			f.mu.Lock()
@@ -606,7 +612,7 @@ func TestASwappingFormDefersToAHandlerThatCancels(t *testing.T) {
 			f.mu.Unlock()
 			f.open(t, rig)
 			liveUntil(t, rig, name+": scripts loaded", `window.__busy === 1`, 10*time.Second)
-			liveEval(t, rig, `{ const f = document.getElementById("f"); f.addEventListener("submit", e => { `+leg.handler+` }); } true`, nil)
+			liveEval(t, rig, `{ const f = document.getElementById("f"); `+leg.on+`.addEventListener("submit", e => { if (e.target === f) { `+leg.handler+` } }); } true`, nil)
 			rig.Run(chromedp.Click("#go", chromedp.ByID))
 			// Past live.js's hold and busy.js's, so a send or a hand-back
 			// either would make has happened.
