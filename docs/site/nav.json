@@ -74,6 +74,11 @@
           "blurb": "Observable goroutines, their two bounds, and a status page that works with scripts off."
         },
         {
+          "slug": "live",
+          "label": "Live pages",
+          "blurb": "Pages that update themselves when their data changes, and forms that save in place."
+        },
+        {
           "slug": "templates",
           "label": "Templates & UI",
           "blurb": "One template per page, twenty-four partials, and the tokens stylesheet you own."

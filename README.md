@@ -313,6 +313,7 @@ the meantime. This list is their union. **Built:**
   `data-poll-push` upgrades to an EventSource that falls back to plain
   polling on its own. htmx remains a choice, not a dependency —
   `examples/notes` demonstrates the whole loop with an Export flow.
+- **`rastrillo/live`**: pages that update themselves, and still work with scripts off. The app declares topics (`notes/7`, checked per viewer), calls `Notify` after a write commits, and marks regions of a page with `View.Attrs`. An open page holds one Server-Sent Events stream that says which topics moved, never what changed, and fetches only the regions that did, from its own URL and as its own viewer, through the same handler and permission checks as the full page. A form with `data-live-form` swaps in place and, with scripts off, posts and redirects as before. `live.js` leaves a region alone while someone is editing in it. Live streams stay off on CARLOS routes that hibernate until the platform can hold the stream (carlos/platform#432). `examples/notes` shows a live list with delete in place.
 - **`rastrillo/password`** — an email+password identity plugin on the
   sessions core, the same one-call `SignIn` contract auth's keymail
   flow honors, leaving storage, rendering, and CSRF to the app.
