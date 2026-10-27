@@ -780,11 +780,12 @@ func TestEveryShellLoadsLiveJSAfterBusyJS(t *testing.T) {
 }
 
 // busy.js hands a live form back to live.js, so it must already be
-// listed when live.js is; the tag is deferred so it never blocks paint.
+// listed when live.js is; the tag is deferred so it never blocks paint,
+// and written through path so it does not 404 under a base path.
 func assertLiveTagAfterBusy(t *testing.T, what, layout string) {
 	t.Helper()
-	const busy = `<script defer src="{{asset "static/busy.js"}}"></script>`
-	const live = `<script defer src="{{asset "static/live.js"}}"></script>`
+	const busy = `<script defer src="{{path $ (asset "static/busy.js")}}"></script>`
+	const live = `<script defer src="{{path $ (asset "static/live.js")}}"></script>`
 	b, l := strings.Index(layout, busy), strings.Index(layout, live)
 	switch {
 	case l < 0:
