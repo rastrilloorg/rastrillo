@@ -158,3 +158,6 @@ rastrillo.ui.job_running_progress = "Tá {name} ar siúl: {progress}…"
 rastrillo.ui.job_failed = "Theip ar {name}"
 rastrillo.ui.job_failed_error = "Theip ar {name}: {error}"
 rastrillo.ui.job_finished = "Tá {name} críochnaithe."
+
+rastrillo.ui.live.paused = "Tá na nuashonruithe beo curtha ar sos. Athnuaigh an leathanach chun iad a thosú arís."
+rastrillo.ui.live.unconfirmed = "Níorbh fhéidir linn an t-athrú sin a dhearbhú. Seiceáil an leathanach sula ndéanann tú iarracht eile."

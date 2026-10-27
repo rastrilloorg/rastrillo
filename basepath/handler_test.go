@@ -579,3 +579,68 @@ func TestJoinIsThePrefixRule(t *testing.T) {
 		t.Error("next was not called for /acme/x")
 	}
 }
+
+// pageSeen runs one GET through acme's Handler with Rastrillo-Page set,
+// and returns the path and Rastrillo-Page the app below it sees, plus
+// the header the caller's own request still carries afterwards.
+func pageSeen(t *testing.T, host, target, page string) (path, gotPage, callerPage string) {
+	t.Helper()
+	req := httptest.NewRequest("GET", target, nil)
+	req.Host = host
+	req.Header.Set("Rastrillo-Page", page)
+	acme.Handler(http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
+		path, gotPage = r.URL.Path, r.Header.Get("Rastrillo-Page")
+	})).ServeHTTP(httptest.NewRecorder(), req)
+	return path, gotPage, req.Header.Get("Rastrillo-Page")
+}
+
+func TestHandlerStripsTheBaseFromRastrilloPage(t *testing.T) {
+	// live.js sends location.pathname, base and all. If the app saw
+	// "/acme/notes" against a stripped "/notes", live.Elsewhere would
+	// call every swapping form's followed GET "another page" and
+	// navigate instead of swapping.
+	path, page, caller := pageSeen(t, "example.com", "/acme/notes", "/acme/notes")
+	if path != "/notes" || page != "/notes" {
+		t.Errorf("handler saw Path %q, Rastrillo-Page %q; want /notes and /notes", path, page)
+	}
+	if caller != "/acme/notes" {
+		t.Errorf("the caller's own request header was changed to %q", caller)
+	}
+	if _, page, _ := pageSeen(t, "example.com", "/acme/", "/acme/"); page != "/" {
+		t.Errorf("tenant root: Rastrillo-Page = %q, want /", page)
+	}
+	if _, page, _ := pageSeen(t, "example.com", "/acme/", "/acme"); page != "/" {
+		t.Errorf("bare base: Rastrillo-Page = %q, want /", page)
+	}
+}
+
+func TestHandlerLeavesARastrilloPageWithoutTheBaseAlone(t *testing.T) {
+	// Another tenant's page, or the hub's, really is another page.
+	if _, page, _ := pageSeen(t, "example.com", "/acme/notes", "/globex/notes"); page != "/globex/notes" {
+		t.Errorf("Rastrillo-Page = %q, want it unchanged", page)
+	}
+	if _, page, _ := pageSeen(t, "example.com", "/acme/notes", "/notes"); page != "/notes" {
+		t.Errorf("Rastrillo-Page = %q, want it unchanged", page)
+	}
+	// A slug lookalike is not the base.
+	if _, page, _ := pageSeen(t, "example.com", "/acme/notes", "/acmex/notes"); page != "/acmex/notes" {
+		t.Errorf("Rastrillo-Page = %q, want it unchanged", page)
+	}
+}
+
+func TestHandlerLeavesRastrilloPageAloneOnTheDirectHost(t *testing.T) {
+	// The direct host serves at the root: nothing was stripped from the
+	// path, so nothing is stripped from the header either.
+	direct := acme
+	direct.DirectHost = basepath.ServeDirect
+	req := httptest.NewRequest("GET", "/acme/notes", nil)
+	req.Host = "acme-abcdef.apps.example"
+	req.Header.Set("Rastrillo-Page", "/acme/notes")
+	var path, page string
+	direct.Handler(http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
+		path, page = r.URL.Path, r.Header.Get("Rastrillo-Page")
+	})).ServeHTTP(httptest.NewRecorder(), req)
+	if path != "/acme/notes" || page != "/acme/notes" {
+		t.Errorf("handler saw Path %q, Rastrillo-Page %q; want both /acme/notes", path, page)
+	}
+}

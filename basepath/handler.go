@@ -13,8 +13,9 @@ import (
 )
 
 // Handler serves next under c's base path. On the product origin it
-// answers only for /<slug>/ and below: it strips the base from r.URL,
-// records it for Base and Path, and adds it back to the Location and
+// answers only for /<slug>/ and below: it strips the base from r.URL
+// and from a Rastrillo-Page header that carries it, records it for Base
+// and Path, and adds it back to the Location and
 // Rastrillo-Location headers next sends. A bare /<slug> is sent to
 // /<slug>/.
 //
@@ -156,6 +157,20 @@ func serveProduct(w http.ResponseWriter, r *http.Request, c Config, base string,
 	// recomputes it otherwise, so an escaped slash survives the strip.
 	u.RawPath = restEsc
 	r2.URL = &u
+	// live.js sends Rastrillo-Page as location.pathname, base included,
+	// while the app now sees the stripped path. Left alone, live.Elsewhere
+	// would find the two different and turn every swapping form's
+	// followed GET into a navigation. Only this base is stripped: a page
+	// under another slug, or the hub's, really is another page. Header is
+	// cloned first because r2 shares the caller's map.
+	if p := r.Header.Get("Rastrillo-Page"); p == base || strings.HasPrefix(p, base+"/") {
+		page := strings.TrimPrefix(p, base)
+		if page == "" {
+			page = "/"
+		}
+		r2.Header = r.Header.Clone()
+		r2.Header.Set("Rastrillo-Page", page)
+	}
 
 	rw := &rewriter{ResponseWriter: w, base: base}
 	next.ServeHTTP(rw, r2)

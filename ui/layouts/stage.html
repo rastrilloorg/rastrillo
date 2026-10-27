@@ -8,6 +8,9 @@
 <link rel="stylesheet" href="{{path $ (asset "static/theme.css")}}">
 <script defer src="{{path $ (asset "static/rastrillo.js")}}"></script>
 <script defer src="{{path $ (asset "static/busy.js")}}"></script>
+{{/* live.js does nothing until a page carries the rastrillo-live meta;
+     busy.js hands it a live form, so keep it after busy.js. */}}
+<script defer src="{{path $ (asset "static/live.js")}}"></script>
 {{/* light.js moves the light the depth styles read. Delete it and its
      tag for the still design. */}}
 <script defer src="{{path $ (asset "static/light.js")}}"></script>

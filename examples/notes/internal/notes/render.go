@@ -12,6 +12,7 @@ import (
 	"amadan.net/rastrillo/rastrillo/flash"
 	"amadan.net/rastrillo/rastrillo/form"
 	"amadan.net/rastrillo/rastrillo/jobs"
+	"amadan.net/rastrillo/rastrillo/live"
 	"amadan.net/rastrillo/rastrillo/locales"
 	"amadan.net/rastrillo/rastrillo/password"
 	"amadan.net/rastrillo/rastrillo/sessions"
@@ -80,9 +81,10 @@ func newFragPages(cfg locales.Config) (*ui.Pages, error) {
 }
 
 // page is the data every hand template renders against: layout.html
-// reads Flash/HasFlash/SignedIn for its chrome and L/Locales/Return
-// (the embedded ui.Localized) for the switcher, and each page's own
-// content block reads Content, cast back to its own view type.
+// reads Flash/HasFlash/SignedIn for its chrome, L/Locales/Return
+// (the embedded ui.Localized) for the switcher and Live for the stream
+// meta tag, and each page's own content block reads Content, cast back
+// to its own view type.
 // renderStatus sets Localized from ui.ForRequest(r) itself — unlike
 // GenRender, there is no generated view to read it off.
 type page struct {
@@ -90,6 +92,7 @@ type page struct {
 	Flash    flash.Flash
 	HasFlash bool
 	SignedIn bool
+	Live     live.View
 	Content  any
 }
 
@@ -97,27 +100,81 @@ type page struct {
 // formView serves both new (a blank Note, no Errors) and edit/the
 // 422 re-render (a Note carrying the submitted values, Errors set).
 type (
-	indexView struct{ Notes []Note }
-	noteView  struct{ Note Note }
-	formView  struct {
+	// Topic is the caller's notes topic, which the list region renders
+	// its version of.
+	indexView struct {
+		Notes []Note
+		Topic string
+	}
+	noteView struct{ Note Note }
+	formView struct {
 		Note   Note
 		Errors form.Errors
 	}
 )
 
-// renderStatus takes the flash exactly once, resolves whether a
-// session is current (for layout's nav), and executes name's layout
-// into a buffer before anything touches the wire. The buffer matters
-// twice: a template error becomes a clean 500 instead of garbage
+// renderStatus answers a hand page, whole or, for live.js, as some of
+// its regions. The order is what keeps the flash for the render that
+// shows it:
+//
+//   - live.Elsewhere first: a swapping form whose redirect left the
+//     page it was sent from is told to navigate, and the flash waits
+//     for the page it lands on.
+//   - A fragment request naming only regions this page lacks (the
+//     layout's notice does not count: every page has it) is answered
+//     the same way when it is a GET, also before the flash is looked
+//     at. A POST is a form whose error render is another page (create's
+//     422 renders "new" for a form on the list): it gets the whole page
+//     with its status, which live.js shows as the browser would. An
+//     empty notice in its place would leave the person looking at a
+//     page where nothing happened.
+//   - The flash is taken only when the render shows the notice region
+//     (live.TakesFlash, or a whole page). The stream's refetch asks for
+//     the list alone; taking the flash there would clear a message
+//     nobody saw.
+//
+// Everything is rendered into a buffer before anything touches the
+// wire. A template error then becomes a clean 500 instead of garbage
 // appended to a half-written page, and flash.Take's clearing
-// Set-Cookie lands before the status line — headers added after
-// WriteHeader are silently dropped, which is exactly how a 422
-// re-render used to show the same flash twice. status 0 means let the
-// first body write imply 200.
+// Set-Cookie and Rastrillo-Regions land before the status line —
+// headers added after WriteHeader are silently dropped, which is
+// exactly how a 422 re-render used to show the same flash twice.
+// status 0 means let the first body write imply 200.
 func (a *app) renderStatus(w http.ResponseWriter, r *http.Request, status int, name string, content any) {
-	fl, ok := flash.Take(w, r)
+	if live.Elsewhere(w, r) {
+		return
+	}
+	// Every hand page carries the notice region, so any of them may
+	// answer as a fragment, and a cache must never hand one out for
+	// the other.
+	live.NoStore(w)
+	names, frag := live.Wanted(r)
+	if frag && !a.pages.HasRegions(name, names) {
+		if r.Method == http.MethodGet || r.Method == http.MethodHead {
+			if err := live.Respond(w, r, nil, nil); err != nil {
+				slog.Default().Error("notes: answer "+name, "err", err)
+			}
+			return
+		}
+		frag = false
+	}
+	var fl flash.Flash
+	var hasFlash bool
+	if !frag || live.TakesFlash(r) {
+		fl, hasFlash = flash.Take(w, r)
+	}
 	_, signedIn := sessions.Current(r)
-	data := page{Localized: ui.ForRequest(r), Flash: fl, HasFlash: ok, SignedIn: signedIn, Content: content}
+	data := page{Localized: ui.ForRequest(r), Flash: fl, HasFlash: hasFlash, SignedIn: signedIn, Live: a.live.View(r), Content: content}
+	if frag {
+		// The status goes on with the first body byte, after
+		// WriteRegions has set Rastrillo-Regions: written here it would
+		// commit the headers without it.
+		if err := a.pages.WriteRegions(&statusWriter{ResponseWriter: w, status: status}, r, name, names, data); err != nil {
+			slog.Default().Error("notes: render regions of "+name, "err", err)
+			http.Error(w, "something went wrong", http.StatusInternalServerError)
+		}
+		return
+	}
 	var buf bytes.Buffer
 	if err := a.pages.Execute(&buf, name, data); err != nil {
 		slog.Default().Error("notes: render "+name, "err", err)
@@ -128,6 +185,27 @@ func (a *app) renderStatus(w http.ResponseWriter, r *http.Request, status int, n
 		w.WriteHeader(status)
 	}
 	buf.WriteTo(w)
+}
+
+// statusWriter writes status, when it is not 0, just before the first
+// body byte, unless something wrote a status first (a 204 to navigate).
+type statusWriter struct {
+	http.ResponseWriter
+	status int
+	wrote  bool
+}
+
+func (s *statusWriter) WriteHeader(code int) {
+	s.wrote = true
+	s.ResponseWriter.WriteHeader(code)
+}
+
+func (s *statusWriter) Write(b []byte) (int, error) {
+	if !s.wrote && s.status != 0 {
+		s.WriteHeader(s.status)
+	}
+	s.wrote = true
+	return s.ResponseWriter.Write(b)
 }
 
 func (a *app) renderContent(w http.ResponseWriter, r *http.Request, name string, content any) {

@@ -165,6 +165,42 @@ func TestTheShellAndRowMenuStringsAreInEveryCatalog(t *testing.T) {
 	}
 }
 
+// The two notices a live page shows when its stream gives up or a
+// change cannot be confirmed. They are read by the page head and sent
+// to the browser as attributes, so a catalog missing one would leave a
+// person on a stalled page with an empty banner and no hint to refresh.
+// Neither takes a value, so a brace in a translation is a stray
+// placeholder that would print raw.
+func TestTheLiveStringsAreInEveryCatalog(t *testing.T) {
+	keys := []string{
+		"rastrillo.ui.live.paused",
+		"rastrillo.ui.live.unconfirmed",
+	}
+	all := BaseCatalogs()
+	if len(all) != 12 {
+		t.Fatalf("%d base catalogs, want 12", len(all))
+	}
+	en := all["en"]
+	for code, c := range all {
+		for _, key := range keys {
+			v, ok := c[key]
+			if !ok || strings.TrimSpace(v) == "" {
+				t.Errorf("%s.toml: missing or empty %s", code, key)
+				continue
+			}
+			if strings.ContainsAny(v, "{}") {
+				t.Errorf("%s.toml: %s = %q has a placeholder brace in a string that takes no value", code, key, v)
+			}
+			if strings.Contains(v, "—") {
+				t.Errorf("%s.toml: %s = %q contains an em dash", code, key, v)
+			}
+			if code != "en" && v == en[key] {
+				t.Errorf("%s.toml: %s is still the English %q", code, key, v)
+			}
+		}
+	}
+}
+
 // A money error's placeholders are the amounts and the currency the
 // person has to choose between. A translation that drops {a} or {b}
 // still reads as a sentence, so nobody notices that the choice it
