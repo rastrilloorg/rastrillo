@@ -247,6 +247,20 @@ func TestALiveNavigationFallsBackToRastrilloLocation(t *testing.T) {
 	}
 }
 
+// A stream fetch answered "navigate" after a form's fetch superseded it,
+// or after the page was hidden, is an old answer: following it would
+// leave the page under a write still on its way.
+func TestALiveNavigationFromAnObsoleteFetchIsDropped(t *testing.T) {
+	var got struct{ Superseded, Abandoned []string }
+	liveNode(t, "obsolete", &got)
+	if len(got.Superseded) != 0 {
+		t.Errorf("a superseded fetch's 204 navigated to %v, want nowhere", got.Superseded)
+	}
+	if len(got.Abandoned) != 0 {
+		t.Errorf("a 204 that landed after pagehide navigated to %v, want nowhere", got.Abandoned)
+	}
+}
+
 // A change event for a version the region already shows (the page's
 // own form fetch got there first) costs no request, but the same
 // version from a restarted server is a different counter and must.

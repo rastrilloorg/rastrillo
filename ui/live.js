@@ -38,11 +38,12 @@
      the browser's own retry never runs beside this one, and it reopens
      after 1s, doubling to a minute.
    - One fetch in flight per region, one change queued behind it, and
-     an answer applies only if it is from the fetch the region started
-     last.
+     an answer, a 204 too, applies only if it is from the fetch the
+     region started last, before any pagehide.
    - Just before a swap, the region must be on the page and not being
      edited (holding the focused field, or a field changed from its
-     default). A navigation waits while anything on the page is.
+     default). A stream's navigation waits while anything on the page
+     is, or a form's request is out.
    - Focus moves to the focused element's replacement, else to the
      region itself (tabindex="-1"); never to <body>.
    - A failed fetch is retried after 1s, 2s, 4s; then, as when the
@@ -250,9 +251,13 @@
     return fetch(url, opts).then(function (res) {
       var to = res.headers.get("Rastrillo-Location");
       if (res.status === 204 && to) {
-        // Leaving discards whatever is typed anywhere on the page, and a
-        // background change can wait until it is sent.
-        if (stream && editing(document.body)) {
+        // An old answer, as for a swap: a newer fetch for these regions
+        // decides, and a page hidden since has moved on.
+        if (run !== ctl || names.some(function (n) { return state(n).last !== id; })) return res;
+        // Leaving discards whatever is typed anywhere on the page, or a
+        // form's request still out, and a background change can wait
+        // until that is sent and answered.
+        if (stream && (out.length || editing(document.body))) {
           names.forEach(function (n) {
             var el = document.getElementById(n);
             if (el) { state(n).leave = true; stale(el); }
@@ -494,6 +499,10 @@
         st.queued = false;
         refresh(n);
       });
+      // A region held back while this was out goes now. A removed
+      // focused element fires no focusout, so one waiting for the
+      // editing to end would wait for the next one.
+      if (!keep) edited();
     }
 
     // Not a failure: the POST may have committed and only the redirected
@@ -521,9 +530,6 @@
           bad = (now || form).querySelector('[aria-invalid="true"]');
           if (bad) bad.focus();
         }
-        // A removed focused element fires no focusout, so a region waiting
-        // for the editing to end would wait for the next one.
-        edited();
       }, function (err) {
         var res = err && err.res;
         if (run !== ctl || res && res.status === 204) return settle(); // a 204 stays put

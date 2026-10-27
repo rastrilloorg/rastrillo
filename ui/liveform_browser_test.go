@@ -537,6 +537,31 @@ func TestAFormAnswerWithoutItsRegionsIsShownAsTheBrowserWould(t *testing.T) {
 	rig.Screen("#list", "the page after answers without regions")
 }
 
+// A stream fetch answered "navigate" while a form's request is out
+// would leave the page before the write is confirmed, with nothing to
+// show whether it happened. It waits for the form, then goes.
+func TestAFormOutHoldsABackgroundNavigation(t *testing.T) {
+	f := newFormApp(t, "gone", `<p class="g">g</p>`, "list", swapForm("one"))
+	rig := formRig(t, f)
+	f.open(t, rig)
+	liveEval(t, rig, `window.__here = 1; true`, nil)
+	f.holdNext(1)
+	rig.Run(chromedp.Click("#go", chromedp.ByID))
+	liveServerUntil(t, f.liveApp, "the form's answer is held", 10*time.Second, func(a *liveApp) bool { return a.inflight == 1 })
+	f.remove("gone")
+	liveServerUntil(t, f.liveApp, "the stream fetched the removed region", 10*time.Second, func(a *liveApp) bool { return slices.Contains(a.fragments, "gone") })
+	time.Sleep(500 * time.Millisecond)
+	var here bool
+	liveEval(t, rig, `window.__here === 1`, &here)
+	if !here {
+		t.Fatal("a background navigation went ahead while the form's request was out")
+	}
+	f.letGo()
+	liveUntil(t, rig, "navigated once the form's answer landed",
+		`window.__here === undefined && document.readyState === "complete" && !document.getElementById("gone") && !!document.getElementById("list")`, 10*time.Second)
+	rig.Screen("#list", "the page after a navigation that waited for a form")
+}
+
 // A form's answer swaps its own region over whatever is typed there:
 // that is what was just sent. Another region it targets holds someone
 // else's draft, which was not sent, and is left alone until the

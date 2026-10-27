@@ -32,7 +32,7 @@ function element(attrs, extra) {
 // page builds one stub page. regions are attribute maps; meta is the
 // rastrillo-live meta's attributes, or null for a page without one.
 function page({ regions = [], meta = { content: "/live", "data-paused": "Paused" }, prerendering = false } = {}) {
-  const n = { sources: [], fetches: [], timers: [], assigned: [] };
+  const n = { sources: [], fetches: [], timers: [], assigned: [], held: [] };
   const on = {};
   const won = {};
   const els = regions.map((a) => element(a));
@@ -43,6 +43,7 @@ function page({ regions = [], meta = { content: "/live", "data-paused": "Paused"
     prerendering,
     visibilityState: "visible",
     activeElement: null,
+    body: element({}),
     querySelector: (sel) => {
       if (sel.includes("rastrillo-live")) return metaEl;
       if (sel === "[data-live]") return els[0] || null;
@@ -79,6 +80,16 @@ function page({ regions = [], meta = { content: "/live", "data-paused": "Paused"
     // n.answer; then it answers 200 with Rastrillo-Regions and no body.
     fetch: (url, init) => {
       n.fetches.push({ url, init, headers: Object.fromEntries(init.headers) });
+      // Held until the scenario answers it: n.held gets one function per
+      // fetch, which answers it 204 "navigate to to".
+      if (n.hold) {
+        return new Promise((resolve) => {
+          n.held.push((to) => {
+            const h = { "rastrillo-location": to };
+            resolve({ status: 204, url: "http://app.test" + to, headers: { get: (k) => h[k.toLowerCase()] ?? null } });
+          });
+        });
+      }
       // A 204 that says "navigate": n.nav is { to, url }, and url is
       // the Response's, which a browser always fills but a stub may not.
       if (n.nav) {
@@ -99,6 +110,7 @@ function page({ regions = [], meta = { content: "/live", "data-paused": "Paused"
     n, notice, document, send: module.exports.send,
     latest: () => n.sources[n.sources.length - 1],
     fireDoc: (type) => { for (const fn of on[type] || []) fn({}); },
+    fireWin: (type, ev = {}) => { for (const fn of won[type] || []) fn(ev); },
     // pending lists the delays of the timers not yet run or cleared.
     pending: () => n.timers.filter((t) => !t.done).map((t) => t.ms),
     // run runs every pending timer with this delay, once.
@@ -227,6 +239,24 @@ const scenarios = {
       out[name] = p.n.assigned;
     }
     return out;
+  },
+  // A 204 is an answer like any other: one from a fetch a newer one has
+  // superseded, or from before a pagehide, must not navigate.
+  async obsolete() {
+    const p = page({ regions: [region("list", "a@1")] });
+    p.n.hold = true;
+    p.send("/", ["list"], {}, null); // the stream's fetch
+    p.send("/", ["list"], {}, "list"); // a form's, started later
+    p.n.held[0]("/old");
+    await p.settle();
+    const superseded = p.n.assigned.slice();
+    const q = page({ regions: [region("list", "a@1")] });
+    q.n.hold = true;
+    q.send("/", ["list"], {}, null);
+    q.fireWin("pagehide");
+    q.n.held[0]("/old");
+    await q.settle();
+    return { superseded, abandoned: q.n.assigned };
   },
   // A change for a version the region already shows fetches nothing.
   async current() {
