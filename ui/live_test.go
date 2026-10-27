@@ -25,7 +25,8 @@ func TestLiveIsSmallAndSelfContained(t *testing.T) {
 	// review's fixes (non-HTML answers as text, the send a tick after
 	// the submit, the edit check for other targets, the checks on a 204,
 	// the paused note kept off a flash, the revive on restore) added
-	// about 2.3 KB, for 28,411: 261 bytes of headroom.
+	// about 2.3 KB, for 28,411. Handing back a form whose 204 a later
+	// form superseded made it 28,563: 109 bytes of headroom.
 	if n := len(js); n > 28*1024 {
 		t.Errorf("live.js is %d bytes, over 28 KiB; an app owner should be able to read it in one sitting", n)
 	}

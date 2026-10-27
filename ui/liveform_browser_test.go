@@ -562,6 +562,51 @@ func TestAFormOutHoldsABackgroundNavigation(t *testing.T) {
 	rig.Screen("#list", "the page after a navigation that waited for a form")
 }
 
+// Every swapping form asks for the notice, so a second form sent while
+// the first is out supersedes it, and the first's "navigate" answer is
+// dropped. The first form must still be handed back: left busy, it
+// would count as out forever and hold every later navigation.
+func TestAFormWhoseNavigationIsSupersededIsHandedBack(t *testing.T) {
+	f := newFormApp(t, "gone", `<p class="g">g</p>`, "list", swapForm("one"),
+		"other", `<form id="fb" method="post" action="/save-b" data-live-form><button id="gob">B</button></form>`)
+	gate := make(chan struct{})
+	f.answer = func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/save" {
+			select {
+			case <-gate:
+			case <-r.Context().Done():
+				return
+			}
+			http.Redirect(w, r, "/there", http.StatusSeeOther)
+			return
+		}
+		f.save(w, r)
+	}
+	rig := formRig(t, f)
+	f.open(t, rig)
+	liveEval(t, rig, `window.__here = 1; true`, nil)
+	rig.Run(chromedp.Click("#go", chromedp.ByID))
+	liveServerUntil(t, f.liveApp, "form A's POST is held", 10*time.Second, func(*liveApp) bool { return len(f.posts) == 1 })
+	rig.Run(chromedp.Click("#gob", chromedp.ByID))
+	liveUntil(t, rig, "form B's answer swapped", `document.getElementById("notice").textContent === "Saved."`, 10*time.Second)
+	close(gate)
+	liveServerUntil(t, f.liveApp, "form A's redirect was answered", 10*time.Second, func(*liveApp) bool { return len(f.posts) == 2 })
+	time.Sleep(time.Second)
+	var got struct {
+		Here, Disabled bool
+		Busy, Form     string
+	}
+	liveEval(t, rig, `({ Here: window.__here === 1, Disabled: document.getElementById("go").disabled,
+	  Busy: document.getElementById("go").getAttribute("aria-busy") || "", Form: document.getElementById("f").getAttribute("aria-busy") || "" })`, &got)
+	if !got.Here || got.Disabled || got.Busy != "" || got.Form != "" {
+		t.Fatalf("after form A's superseded 204 the page reads %+v; want it still here, form A handed back", got)
+	}
+	f.remove("gone")
+	liveUntil(t, rig, "a later stream navigation went ahead",
+		`window.__here === undefined && document.readyState === "complete" && !document.getElementById("gone") && !!document.getElementById("list")`, 10*time.Second)
+	rig.Screen("#list", "the page after a superseded form's navigation")
+}
+
 // A form's answer swaps its own region over whatever is typed there:
 // that is what was just sent. Another region it targets holds someone
 // else's draft, which was not sent, and is left alone until the

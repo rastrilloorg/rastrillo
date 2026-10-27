@@ -263,7 +263,7 @@
             var el = document.getElementById(n);
             if (el) { state(n).leave = true; stale(el); }
           });
-        } else if (leaveFor(res)) location.assign(leaveFor(res));
+        } else if (leaveFor(res)) location.assign(res.left = leaveFor(res));
         return res;
       }
       // Only an answer that names its regions is one. A signed-out
@@ -520,8 +520,10 @@
     function go() {
       names.forEach(function (n) { state(n).forms++; });
       send(url.href, names, { method: "POST", body: body, headers: { "Rastrillo-Page": location.pathname } }, own ? own.id : "", hold).then(function (res) {
-        // This 204 has a Location: send navigated, if it could.
-        if (res.status === 204) return settle(!!leaveFor(res));
+        // res.left says send navigated. It may not have: a later form,
+        // which asks for the notice too, superseded this one. Then the
+        // form is handed back, or it would count as out for good.
+        if (res.status === 204) return settle(!!res.left);
         if (run !== ctl) return settle();
         if (!res.headers.get("Rastrillo-Regions")) return unknown();
         settle();
