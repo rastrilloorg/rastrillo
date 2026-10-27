@@ -64,8 +64,9 @@ func (h *Hub) View(r *http.Request) View {
 
 // Attrs renders the data-live and data-live-boot attributes for a
 // region that shows these topics. A topic that is undeclared or
-// malformed is logged and left out, since the client could only have
-// the stream refuse it. If none remain, Attrs renders nothing.
+// malformed is left out, since the client could only have the stream
+// refuse it, and logged the first time this hub sees its name. If none
+// remain, Attrs renders nothing.
 func (v View) Attrs(topics ...string) template.HTMLAttr {
 	if v.hub == nil {
 		return ""
@@ -74,7 +75,7 @@ func (v View) Attrs(topics ...string) template.HTMLAttr {
 	for _, t := range topics {
 		name, _, ok := parseTopic(t)
 		if _, declared := v.hub.cfg.Topics[name]; !ok || !declared {
-			slog.Warn("live: Attrs skipped an undeclared or malformed topic", "topic", t)
+			v.hub.warnOnce(t)
 			continue
 		}
 		tokens = append(tokens, t+"@"+strconv.FormatUint(v.hub.version(t, v.start), 10))
@@ -114,4 +115,27 @@ func withBase(base, p string) string {
 		return p
 	}
 	return base + p
+}
+
+// maxWarned bounds the names warnOnce remembers. A name built from data
+// (a template that passes a record's field as a topic) could otherwise
+// grow the set with every new value; past the bound, nothing more is
+// logged.
+const maxWarned = 64
+
+// warnOnce logs a topic Attrs skipped, once per topic name (the part
+// before any "/"), per hub. Attrs runs on every render of a region, so
+// logging each time would write one line per page view for as long as
+// the app runs.
+func (h *Hub) warnOnce(topic string) {
+	name, _, _ := strings.Cut(topic, "/")
+	h.mu.Lock()
+	seen := h.warned[name] || len(h.warned) >= maxWarned
+	if !seen {
+		h.warned[name] = true
+	}
+	h.mu.Unlock()
+	if !seen {
+		slog.Warn("live: Attrs skipped an undeclared or malformed topic", "topic", topic)
+	}
 }

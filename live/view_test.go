@@ -1,6 +1,8 @@
 package live_test
 
 import (
+	"bytes"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -94,6 +96,35 @@ func TestAttrsSkipsUndeclaredAndMalformedTopics(t *testing.T) {
 	}
 	if got := h.View(r).Attrs(); got != "" {
 		t.Fatalf("no topics: got %q", got)
+	}
+}
+
+// Attrs runs on every render of a region, so a typo in a template
+// would otherwise write one warning per page view, for as long as the
+// app runs.
+func TestAttrsWarnsOncePerUndeclaredTopic(t *testing.T) {
+	var buf bytes.Buffer
+	old := slog.Default()
+	slog.SetDefault(slog.New(slog.NewTextHandler(&buf, nil)))
+	t.Cleanup(func() { slog.SetDefault(old) })
+
+	h := newHub(t)
+	r := httptest.NewRequest("GET", "/", nil)
+	for i := 0; i < 3; i++ {
+		h.View(r).Attrs("nope", "nope/1", "nope/2", "a")
+	}
+	if n := strings.Count(buf.String(), "topic=nope"); n != 1 {
+		t.Errorf("three renders of an undeclared topic logged %d warnings, want 1:\n%s", n, buf.String())
+	}
+	h.View(r).Attrs("other")
+	if !strings.Contains(buf.String(), "topic=other") {
+		t.Errorf("a second undeclared topic was not logged:\n%s", buf.String())
+	}
+	// Per hub: another hub has not warned about it.
+	buf.Reset()
+	newHub(t).View(r).Attrs("nope")
+	if !strings.Contains(buf.String(), "topic=nope") {
+		t.Errorf("a new hub did not log the undeclared topic:\n%s", buf.String())
 	}
 }
 

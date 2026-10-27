@@ -91,6 +91,9 @@ type Hub struct {
 	// to end.
 	closed bool
 	done   chan struct{}
+	// warned is the topic names Attrs has logged, so a typo in a
+	// template warns once rather than on every render (warnOnce).
+	warned map[string]bool
 
 	// Copied from cfg so tests can shrink them, as in jobs.Handlers.
 	lifetime      time.Duration
@@ -151,6 +154,7 @@ func New(cfg Config) (*Hub, error) {
 		boot:          hex.EncodeToString(b[:]),
 		topics:        map[string]*topicState{},
 		subs:          map[*subscriber]struct{}{},
+		warned:        map[string]bool{},
 		done:          make(chan struct{}),
 		lifetime:      cfg.Lifetime,
 		heartbeat:     cfg.Heartbeat,
