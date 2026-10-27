@@ -133,8 +133,14 @@ fi
 # runner's HOME is read-only, so there it gets a scratch one.
 # Which browser a role drove is the first question a red browser role
 # raises, and nothing else in the log answers it.
+# The fallback is built first: macOS's bash 3.2 reads an apostrophe inside a
+# quoted ${var:-word} as the start of a quote, and then cannot parse the file.
 if [ "$mode" = browser ]; then
-	echo "gotest: on $(uname -n), driving ${RASTRILLO_CHROME:-the harness's own choice ($(command -v chromium 2>/dev/null || echo none on PATH))}"
+	driving=${RASTRILLO_CHROME:-}
+	if [ -z "$driving" ]; then
+		driving="the harness's own choice ($(command -v chromium 2>/dev/null || echo none on PATH))"
+	fi
+	echo "gotest: on $(uname -n), driving $driving"
 fi
 
 scratch=
