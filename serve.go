@@ -668,7 +668,7 @@ func buildHandler(opts Options) (http.Handler, error) {
 	outer := func(h http.Handler) http.Handler {
 		h = recoverPanics(opts.ErrorPage, opts.Logger, securityHeaders(opts.CSP, !opts.NoSpeculationRules, h))
 		if opts.BasePath.Enabled() {
-			h = opts.BasePath.Handler(h)
+			h = opts.BasePath.Handler(liveBase(h))
 		}
 		return h
 	}
@@ -699,6 +699,17 @@ func buildHandler(opts Options) (http.Handler, error) {
 	// ServeMux prefers the more specific pattern whatever the order.
 	mux.Handle("POST "+LocaleSwitchPath, loc.SwitchHandler())
 	return outer(loc.Middleware(mux)), nil
+}
+
+// liveBase hands the base the request was served under to live, so a
+// live page's meta points EventSource at /acme/live rather than /live,
+// the hub's path or another tenant's. live imports only the standard
+// library and cannot ask basepath itself. On the direct host there is
+// no base, and the request passes unchanged.
+func liveBase(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		next.ServeHTTP(w, live.WithBase(r, basepath.Base(r)))
+	})
 }
 
 // readOnlyDirect refuses writes on a served direct host

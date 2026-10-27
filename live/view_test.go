@@ -141,3 +141,47 @@ func TestHeadEscapesItsText(t *testing.T) {
 		t.Fatalf("not escaped as expected: %s", got)
 	}
 }
+
+func TestHeadPointsAtTheStreamUnderTheBase(t *testing.T) {
+	// Under /acme the app mounts the stream at /events, but the browser
+	// must ask for /acme/events: a bare /events is the hub's path, or
+	// another tenant's, and the page would never go live.
+	h := newHub(t)
+	r := live.WithBase(httptest.NewRequest("GET", "/notes", nil), "/acme")
+	got := string(h.View(r).Head("Paused", "Not saved"))
+	want := `<meta name="rastrillo-live" content="/acme/events" data-paused="Paused" data-unconfirmed="Not saved">`
+	if got != want {
+		t.Fatalf("got  %s\nwant %s", got, want)
+	}
+	// Attrs carry no path, so a base changes nothing in them.
+	if got, want := string(h.View(r).Attrs("a")), string(h.View(httptest.NewRequest("GET", "/", nil)).Attrs("a")); got != want {
+		t.Errorf("Attrs under a base = %s, want %s", got, want)
+	}
+}
+
+func TestWithAnEmptyBaseHeadIsUnchanged(t *testing.T) {
+	h := newHub(t)
+	r := httptest.NewRequest("GET", "/notes", nil)
+	if got := live.WithBase(r, ""); got != r {
+		t.Error("WithBase with no base returned a new request")
+	}
+	if got := string(h.View(live.WithBase(r, "")).Head("p", "u")); !strings.Contains(got, `content="/events"`) {
+		t.Errorf("Head = %s, want content=\"/events\"", got)
+	}
+}
+
+func TestHeadLeavesAStreamOffTheAppAlone(t *testing.T) {
+	// A Path that is not one of the app's own root-absolute paths, such
+	// as another origin's stream, would be broken by a prefix.
+	for _, path := range []string{"https://events.example/s", "//events.example/s", `/\events.example/s`} {
+		h, err := live.New(live.Config{Path: path, Topics: map[string]live.Allow{"a": allow}})
+		if err != nil {
+			t.Fatal(err)
+		}
+		r := live.WithBase(httptest.NewRequest("GET", "/", nil), "/acme")
+		got := string(h.View(r).Head("p", "u"))
+		if want := `content="` + path + `"`; !strings.Contains(got, want) {
+			t.Errorf("Path %q: Head = %s, want %s", path, got, want)
+		}
+	}
+}
