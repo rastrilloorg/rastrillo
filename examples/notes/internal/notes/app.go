@@ -266,9 +266,10 @@ func App(d *db.DB, origin, instanceKey string, bg *background.Group, logger *slo
 		r.Get("/jobs/{id}", jh.StatusPage)
 		r.Get("/jobs/{id}/fragment", jh.Fragment)
 		r.Get("/jobs/{id}/events", jh.Events)
-		// The change stream, behind Require: the notes topic's Allow
-		// reads the session's user, so outside it every stream would
-		// be refused.
+		// The change stream, after the session middleware (here Require,
+		// which also stores the session): the notes topic's Allow reads
+		// the session's user from the request context, so a stream
+		// mounted before any session middleware would be refused.
 		r.Handle("/live", hub.Handler())
 	})
 

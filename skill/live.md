@@ -8,8 +8,9 @@ data**: a page that hears "notes/7 moved" fetches its own region again,
 from its own URL, as its own viewer, through the same handler and
 checks as the full page. Worked reference: `examples/notes`, in the
 repository, **not** in the
-published module (`app.go`, `render.go` `renderStatus`,
-`templates/index.html`, `layout.html`).
+published module; its files are in `examples/notes/internal/notes/`
+(`app.go`, `render.go` `renderStatus`, `templates/index.html`,
+`layout.html`).
 
 ## Vocabulary
 
@@ -48,23 +49,30 @@ translated `rastrillo.ui.live.paused` and `.unconfirmed`):
 ```
 
 That meta, `rastrillo-live`, names the stream path; **no meta, no
-stream**. The page data carries `Live live.View` = `hub.View(r)`. Load
-the script with `<script defer src="/static/live.js">` and serve
-`ui.LiveJS()` there (notes `app.go`). The layout holds
-`{{template "region:notice" .}}` above the content; notes defines it in
-`layout.html`.
+stream**. The page data carries `Live live.View` = `hub.View(r)`. A
+scaffolded app already has `static/live.js` and links it in every
+layout after `busy.js`; an older app runs `rastrillo doctor --fix` and
+adds `<script defer src="/static/live.js">` itself. Serving `ui.LiveJS()`
+by hand at that path is for an app without the scaffold, as notes does
+in `app.go`. The layout holds `{{template "region:notice" .}}` above
+the content; notes defines it in `layout.html`.
 
 A form swaps in place with `data-live-form` (value: extra region names,
 may be empty). It sends the form as the browser would, plus
 `Rastrillo-Page`, and swaps its closest `[data-live]` region, the listed
-ones and the notice. Its handler needs no change: it writes, calls
-Notify, flashes, redirects 303 as today, and the redirected GET is
-answered as a fragment. A redirect to another page answers 204 plus
-`Rastrillo-Location`, and the browser navigates. A 400 or 422 swaps and
-focuses the first `[aria-invalid="true"]`. A 5xx or no answer is an
-unknown outcome: the notice says "unconfirmed", the regions refetch,
-and **nothing is resent**, so a non-idempotent handler is still yours to
-make safe.
+ones and the notice. A GET form, one with a `target`, a cross-origin
+action or `enctype="text/plain"` is left to the browser. Its handler
+needs no change: it writes, calls Notify, flashes, redirects 303 as
+today, and the redirected GET is answered as a fragment. A redirect to
+another page is answered 204 (plus `Rastrillo-Location`), and the
+browser navigates to the URL the 204 came from, which keeps a locale
+prefix; the header is only a fallback. That 204 is live's own answer,
+not a way for an app to choose a destination: to send people
+somewhere, redirect as before. A 400 or 422 swaps and focuses the first
+`[aria-invalid="true"]`. A 5xx, no answer, or a 2xx without
+`Rastrillo-Regions` is an unknown outcome: the notice says
+"unconfirmed", the regions refetch, and **nothing is resent**, so a
+non-idempotent handler is still yours to make safe.
 
 ## The render order
 
@@ -82,20 +90,22 @@ this order (notes `renderStatus` is the model):
    not a region name, e.g. the jobs poll's `1`) means render the full
    page.
 4. If `frag` and `!pages.HasRegions(page, names)` (`live.Has` for your
-   own template set): `live.Respond(w, r, nil, nil)`, a navigate answer;
-   return. Still before the flash.
+   own template set): `live.Respond(w, r, nil, nil)`; return. For a
+   GET/HEAD that is the navigate answer (204 + `Rastrillo-Location`); a
+   POST gets an empty answer instead, so a write's result is not hidden.
+   Still before the flash.
 5. `live.TakesFlash(r)`: true for a full page or when `names` has
    `notice`. Call `flash.Take` only then; a stream refetch that took it
    would eat a message it never shows.
 6. Build page data (with `Live: hub.View(r)`), then `pages.WriteRegions(w,
    r, page, names, data)` for a fragment, `pages.Execute` otherwise.
-   Give `WriteRegions` the ResponseWriter, not the output of
-   `ExecuteRegions`: it renders to a buffer, sets `Rastrillo-Regions`
-   and only then writes, since headers sent with the first body byte
-   would lose it. Nothing is sent on error (write your 500). For a
-   status such as 422, wrap the writer so the status goes with the
-   first byte (notes `statusWriter`). Own template map: `live.WriteRegions`, or
-   `live.ExecuteRegions` + `live.Respond`.
+   Never hand the ResponseWriter to `ExecuteRegions`: the first body
+   byte commits the headers and `Rastrillo-Regions` is lost. Call
+   `WriteRegions` with it instead: it renders to a buffer, sets the
+   header, then writes. Nothing is sent on error (write your 500). For
+   a status such as 422, wrap the writer so the status goes with the
+   first byte (notes `statusWriter`). With your own template map use
+   `live.WriteRegions`, or `live.ExecuteRegions` + `live.Respond`.
 
 A fragment request reaches the same handler, so the handler loads
 whatever the region shows even when the region is all that is rendered.
@@ -113,9 +123,11 @@ whatever the region shows even when the region is all that is rendered.
   before, a refetch can read the old rows and settle on them. Never
   blocks; undeclared or malformed topics are logged and skipped; a nil
   hub does nothing.
-- **`r.Handle(path, hub.Handler())` inside `sess.Require`**: `Allow`
-  reads the session, so outside it every stream is refused. GET only;
-  one bad topic refuses the whole stream (403, 400 for a malformed one).
+- **`r.Handle(path, hub.Handler())` after `sess.Middleware` or
+  `sess.Require`**: `Allow` sees the session whichever of them stored
+  in the context, so mount the handler after one (notes uses
+  `Require`). GET only; one bad topic refuses the whole stream (403, 400
+  for a malformed one).
 - **`opts.Live = hub`** before `rastrillo.Serve`, or open streams hold
   the 10-second drain to its end. A host embedding `Handler` under its
   own server calls `hub.Close()` before its own `Shutdown`.
@@ -137,8 +149,9 @@ streams stay off on routes that hibernate** until carlos/platform#432
 ships (the edge holds the stream and lets the instance sleep). Nothing
 detects the route's kind yet: the app turns streams on explicitly, and
 only on an always-on route. For a hibernating one build no hub: a nil
-`*live.Hub` is safe everywhere (`View` is the zero View, `Head` and
-`Attrs` render nothing, `Notify` and `Middleware` do nothing), so the
+`*live.Hub` is safe everywhere but `Handler` (`View` is the zero View,
+`Head` and `Attrs` render nothing, `Notify` and `Middleware` do
+nothing; a served `Handler` panics), so the
 templates need no `if` and the pages are static as before. Do not
 mount `Handler`, and leave `Options.Live` nil.
 
