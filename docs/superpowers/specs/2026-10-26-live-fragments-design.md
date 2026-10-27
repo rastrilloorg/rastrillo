@@ -71,6 +71,7 @@ What success looks like:
   the server is the truth.
 - Making a non-idempotent handler safe to resubmit. That stays the
   app's job, as it is under `busy.js` today.
+- Declarative partial updates (`<template for>`, `streamHTMLUnsafe`): not yet across browsers; the fragment response is one element per region, so moving to them later changes only the response format.
 
 ## Anti-goals
 

@@ -32,6 +32,7 @@ Read the topic before you start work it covers, not after the source:
 | take money, dates, URLs or uploads in a form, or protect a public form | `skill/forms.md` |
 | choose GORM or SQL, store files, write a migration, add teams or roles | `skill/data.md` |
 | run work in the background, poll for progress, schedule | `skill/background.md` |
+| update parts of a page when data changes: live regions, forms that swap in place | `skill/live.md` |
 | use the CLI beyond `new`, manifests, doctor, pins, native or PWA | `skill/tooling.md` |
 | serve JSON at `/api/v1`, mint tokens, let an agent act for a person, write `Authorize`, hand-write an operation | `skill/api.md` |
 
