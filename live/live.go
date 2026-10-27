@@ -114,6 +114,9 @@ type Hub struct {
 	timer      *time.Timer
 	warnedFull bool
 	maxPending int
+	// now is NotifyAt's clock, time.Now outside tests, which set it
+	// before any timer exists and drive fire themselves.
+	now func() time.Time
 
 	// Copied from cfg so tests can shrink them, as in jobs.Handlers.
 	lifetime      time.Duration
@@ -177,6 +180,7 @@ func New(cfg Config) (*Hub, error) {
 		warned:        map[string]bool{},
 		scheduled:     map[pendingKey]bool{},
 		maxPending:    maxPending,
+		now:           time.Now,
 		done:          make(chan struct{}),
 		lifetime:      cfg.Lifetime,
 		heartbeat:     cfg.Heartbeat,

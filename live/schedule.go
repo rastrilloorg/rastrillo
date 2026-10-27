@@ -12,7 +12,7 @@ import (
 // scheduling the same thing under new keys.
 const maxPending = 10_000
 
-// NotifyAt notifies topics at the time at, for a change no write
+// NotifyAt notifies topics at the wall-clock time at, for a change no write
 // makes: a post that goes live at its time, an offer that ends. Call it
 // at boot for every stored future time, and whenever a schedule
 // changes. A restart forgets every pending time, but it also gives the
@@ -41,6 +41,13 @@ func (h *Hub) NotifyAt(at time.Time, topics ...string) {
 	if h == nil {
 		return
 	}
+	// Wall clock only. A time from time.Now().Add keeps a monotonic
+	// reading, and Go compares two such times by it: after the wall
+	// clock steps back, the elapsed time would call a publication due
+	// while it is still ahead on the wall, pages would fetch data not yet
+	// published, and nothing would announce the real moment. Stripped,
+	// the due check, the heap's order and the dedup key all read the wall.
+	at = at.Round(0)
 	valid := h.validTopics("NotifyAt", topics)
 	if len(valid) == 0 {
 		return
@@ -50,7 +57,7 @@ func (h *Hub) NotifyAt(at time.Time, topics ...string) {
 		h.mu.Unlock()
 		return
 	}
-	if !at.After(time.Now()) {
+	if !at.After(h.now()) {
 		h.raiseLocked(valid)
 		h.mu.Unlock()
 		return
@@ -127,7 +134,7 @@ func (h *Hub) armLocked() {
 		}
 		return
 	}
-	d := time.Until(h.pending[0].at)
+	d := h.pending[0].at.Sub(h.now())
 	if h.timer == nil {
 		h.timer = time.AfterFunc(d, h.fire)
 		return
@@ -144,7 +151,7 @@ func (h *Hub) fire() {
 	if h.closed {
 		return
 	}
-	now := time.Now()
+	now := h.now()
 	for len(h.pending) > 0 && !h.pending[0].at.After(now) {
 		at := h.pending[0].at
 		var due []string

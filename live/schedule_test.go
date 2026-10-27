@@ -4,9 +4,41 @@ import (
 	"bytes"
 	"log/slog"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 )
+
+// testClock is the hub's clock in tests that drive fire directly, so
+// none of them races a real timer: times are an hour or more ahead,
+// the real timer never fires within the test, and the test moves the
+// clock and calls fire itself.
+type testClock struct {
+	mu sync.Mutex
+	t  time.Time
+}
+
+func (c *testClock) now() time.Time {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.t
+}
+
+func (c *testClock) advance(d time.Duration) {
+	c.mu.Lock()
+	c.t = c.t.Add(d)
+	c.mu.Unlock()
+}
+
+// withClock gives h a test clock, before any timer exists, and closes
+// the hub at the end so no real timer outlives the test.
+func withClock(t *testing.T, h *Hub) *testClock {
+	t.Helper()
+	c := &testClock{t: time.Now().Round(0)}
+	h.now = c.now
+	t.Cleanup(h.Close)
+	return c
+}
 
 // pendingLen and pendingTimes read the scheduled set under the hub's lock.
 func pendingLen(h *Hub) int {
@@ -47,14 +79,14 @@ func waitFor(t *testing.T, what string, cond func() bool) {
 	}
 }
 
+// The one test on the real timer: a time 30ms away fires. The deadline
+// is generous because it bounds a hang, not promptness.
 func TestNotifyAtFiresAtTheTime(t *testing.T) {
 	h := newHub(t, "a")
+	t.Cleanup(h.Close)
 	s := h.register()
 	defer h.unregister(s)
 	h.NotifyAt(time.Now().Add(30*time.Millisecond), "a")
-	if v := h.version("a", 1<<20); v != 0 {
-		t.Fatalf("version %d before the time; want 0", v)
-	}
 	select {
 	case <-s.wake:
 	case <-time.After(5 * time.Second):
@@ -65,6 +97,62 @@ func TestNotifyAtFiresAtTheTime(t *testing.T) {
 	}
 	if n := pendingLen(h); n != 0 {
 		t.Errorf("%d still pending after firing; want 0", n)
+	}
+}
+
+func TestNotifyAtWaitsForTheTime(t *testing.T) {
+	h := newHub(t, "a")
+	c := withClock(t, h)
+	h.NotifyAt(c.now().Add(time.Hour), "a")
+	c.advance(59 * time.Minute)
+	h.fire()
+	if v, n := h.version("a", 1<<20), pendingLen(h); v != 0 || n != 1 {
+		t.Fatalf("a minute early: version %d, %d pending; want 0 and 1", v, n)
+	}
+	c.advance(time.Minute)
+	h.fire()
+	if v, n := h.version("a", 1<<20), pendingLen(h); v != 1 || n != 0 {
+		t.Errorf("at the time: version %d, %d pending; want 1 and 0", v, n)
+	}
+}
+
+// A deadline built with time.Now().Add keeps a monotonic reading, and
+// Go compares two such times by it. Were it kept, a wall clock stepped
+// back would leave the timer's elapsed time saying "due" while the
+// publication time on the wall is still ahead: pages would refetch
+// data not yet published, and nothing would announce the real moment.
+// Go offers no way to build a time whose wall and monotonic readings
+// disagree, so this holds the cause: every stored time is wall-only,
+// which makes the due check, the heap order and the dedup key all
+// wall-clock. The order holds when the caller mixes both kinds.
+func TestNotifyAtKeepsWallClockTimesOnly(t *testing.T) {
+	h := newHub(t, "a", "b", "c")
+	c := withClock(t, h)
+	base := time.Now()
+	h.NotifyAt(base.Add(3*time.Hour), "c")
+	h.NotifyAt(base.Add(time.Hour).Round(0), "a")
+	h.NotifyAt(base.Add(2*time.Hour), "b")
+	h.mu.Lock()
+	for _, p := range h.pending {
+		if p.at != p.at.Round(0) {
+			t.Errorf("%s is stored with a monotonic reading", p.topic)
+		}
+	}
+	h.mu.Unlock()
+	// Each step lands half an hour past one more time.
+	c.advance(30 * time.Minute)
+	for i := range 3 {
+		c.advance(time.Hour)
+		h.fire()
+		for j, x := range []string{"a", "b", "c"} {
+			want := uint64(0)
+			if j <= i {
+				want = 1
+			}
+			if v := h.version(x, 1<<20); v != want {
+				t.Errorf("step %d: %s = %d; want %d", i+1, x, v, want)
+			}
+		}
 	}
 }
 
@@ -87,33 +175,33 @@ func TestNotifyAtPastTimeNotifiesAtOnce(t *testing.T) {
 
 func TestNotifyAtFiresInOrderOnceEach(t *testing.T) {
 	h := newHub(t, "a", "b")
-	now := time.Now()
+	c := withClock(t, h)
+	now := c.now()
 	// Scheduled out of order: the heap, not the call order, decides.
-	h.NotifyAt(now.Add(60*time.Millisecond), "b")
-	h.NotifyAt(now.Add(30*time.Millisecond), "a")
-	waitFor(t, "both times to fire", func() bool {
-		a, _ := changedAt(h, "a")
-		b, _ := changedAt(h, "b")
-		return a == 1 && b == 1
-	})
-	// Even if a slow runner finds both due in one firing, each time is
-	// its own change, earlier first.
-	_, seqA := changedAt(h, "a")
-	_, seqB := changedAt(h, "b")
+	h.NotifyAt(now.Add(2*time.Hour), "b")
+	h.NotifyAt(now.Add(time.Hour), "a")
+	// Both due in one firing: each time is still its own change,
+	// earlier first.
+	c.advance(3 * time.Hour)
+	h.fire()
+	a, seqA := changedAt(h, "a")
+	b, seqB := changedAt(h, "b")
+	if a != 1 || b != 1 {
+		t.Fatalf("versions a=%d b=%d; want 1 each", a, b)
+	}
 	if seqA >= seqB {
 		t.Errorf("a changed at %d, b at %d; want a first", seqA, seqB)
 	}
-	time.Sleep(50 * time.Millisecond)
-	a, _ := changedAt(h, "a")
-	b, _ := changedAt(h, "b")
-	if a != 1 || b != 1 {
-		t.Errorf("versions a=%d b=%d after both fired; want 1 each", a, b)
+	h.fire()
+	if a, _ := changedAt(h, "a"); a != 1 {
+		t.Errorf("a = %d after firing again; want 1", a)
 	}
 }
 
 func TestNotifyAtStoresATimeAndTopicOnce(t *testing.T) {
 	h := newHub(t, "a", "b")
-	at := time.Now().Add(30 * time.Millisecond)
+	c := withClock(t, h)
+	at := time.Now().Add(time.Hour)
 	h.NotifyAt(at, "a")
 	h.NotifyAt(at, "a", "a")
 	// The same instant without its monotonic reading is the same time.
@@ -125,7 +213,8 @@ func TestNotifyAtStoresATimeAndTopicOnce(t *testing.T) {
 	if n := pendingLen(h); n != 2 {
 		t.Fatalf("%d pending after another topic at the same time; want 2", n)
 	}
-	waitFor(t, "the time to fire", func() bool { return pendingLen(h) == 0 })
+	c.advance(2 * time.Hour)
+	h.fire()
 	if v := h.version("a", 1<<20); v != 1 {
 		t.Errorf("a = %d; want 1", v)
 	}
@@ -136,17 +225,19 @@ func TestNotifyAtStoresATimeAndTopicOnce(t *testing.T) {
 
 func TestCloseStopsNotifyAt(t *testing.T) {
 	h := newHub(t, "a")
-	h.NotifyAt(time.Now().Add(30*time.Millisecond), "a")
+	c := withClock(t, h)
+	h.NotifyAt(c.now().Add(time.Hour), "a")
 	h.Close()
 	if n := pendingLen(h); n != 0 {
 		t.Errorf("%d pending after Close; want 0", n)
 	}
-	time.Sleep(100 * time.Millisecond)
+	c.advance(2 * time.Hour)
+	h.fire()
 	if v := h.version("a", 1<<20); v != 0 {
-		t.Errorf("version %d: the timer fired after Close", v)
+		t.Errorf("version %d: a firing after Close notified", v)
 	}
-	h.NotifyAt(time.Now().Add(-time.Hour), "a")
-	h.NotifyAt(time.Now().Add(time.Hour), "a")
+	h.NotifyAt(c.now().Add(-time.Hour), "a")
+	h.NotifyAt(c.now().Add(time.Hour), "a")
 	if v, n := h.version("a", 1<<20), pendingLen(h); v != 0 || n != 0 {
 		t.Errorf("after Close, NotifyAt gave version %d and %d pending; want nothing", v, n)
 	}
@@ -185,6 +276,7 @@ func TestNotifyAtIsBounded(t *testing.T) {
 	t.Cleanup(func() { slog.SetDefault(old) })
 
 	h := newHub(t, "a")
+	withClock(t, h)
 	h.maxPending = 3
 	now := time.Now()
 	for _, d := range []time.Duration{time.Hour, 3 * time.Hour, 2 * time.Hour} {
@@ -209,5 +301,4 @@ func TestNotifyAtIsBounded(t *testing.T) {
 	if first != 30*time.Minute {
 		t.Errorf("earliest pending is %v away; want 30m", first)
 	}
-	h.Close()
 }
