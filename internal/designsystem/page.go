@@ -1482,6 +1482,7 @@ var previewMobileLocaleHeights = map[string]map[string]int{
 		"partial-api-tokens":            2126,
 		"idiom-button":                  449,
 		"idiom-form-layout":             565,
+		"idiom-tblock":                  358,
 		"partial-callout":               284,
 		"partial-empty-state":           343,
 		"screen-signin-ask":             678,

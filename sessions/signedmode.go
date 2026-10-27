@@ -11,6 +11,8 @@ import (
 	"regexp"
 	"strings"
 	"time"
+
+	"amadan.net/rastrillo/rastrillo/basepath"
 )
 
 // Signed turns a Sessions into signed mode: the session is a
@@ -126,20 +128,39 @@ func signedConfig(cfg Config) (*Signed, map[string][]byte, error) {
 }
 
 // requestPath is the path and query the browser asked for. Behind
-// http.StripPrefix, r.URL.Path has lost the tenant's /<slug> but
-// r.RequestURI keeps it, and next and return_to must keep it to come
+// http.StripPrefix or basepath.Handler, r.URL.Path has lost the
+// tenant's /<slug> but the target as sent (basepath.Original, which is
+// r.RequestURI) keeps it, and next and return_to must keep it to come
 // back to this tenant. It carries the query, so it is never compared
 // with RefreshPath.
 func requestPath(r *http.Request) string {
-	if strings.HasPrefix(r.RequestURI, "/") {
-		return r.RequestURI
+	target := basepath.Original(r)
+	if strings.HasPrefix(target, "/") {
+		return target
+	}
+	// An absolute-form target, https://example.com/acme/x, which
+	// net/http accepts and keeps whole. Its own escaped path and query,
+	// as basepath.ProductURL takes them: r.URL has no slug, and next
+	// would bring the reader back to the hub's root.
+	// RequestURI, not the path and RawQuery by hand: it keeps an
+	// explicitly empty query, /x?, which the reader asked for and the
+	// origin-form branch above keeps too.
+	if u, err := url.ParseRequestURI(target); err == nil && u.IsAbs() && u.Opaque == "" {
+		return u.RequestURI()
 	}
 	return r.URL.RequestURI()
 }
 
 // signedCookie reads and verifies this request's cookie. The Session is
-// set only for cookieValid.
+// set only for cookieValid. On a direct host it reads none: the hub's
+// cookie is host-only on the product origin, so it should never arrive
+// there, and if it did, a refresh from there would carry a next with no
+// slug and the reader would come back to the hub's root (spec §7.3: the
+// direct host carries no hub session).
 func (s *Sessions) signedCookie(r *http.Request) (Session, cookieState) {
+	if basepath.OnDirectHost(r) {
+		return Session{}, cookieNone
+	}
 	c, err := r.Cookie(s.CookieName())
 	if err != nil {
 		return Session{}, cookieNone

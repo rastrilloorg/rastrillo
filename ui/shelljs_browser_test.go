@@ -145,13 +145,26 @@ func visit(t *testing.T, ctx context.Context, url string) {
 
 // follow clicks sel from a timer, so the evaluation returns before the
 // document it runs in is replaced, then waits until the destination's
-// own marker holds.
+// own marker holds and the destination has loaded.
 func follow(t *testing.T, ctx context.Context, sel, until string) {
 	t.Helper()
 	if err := chromedp.Run(ctx, chromedp.Evaluate(fmt.Sprintf(`setTimeout(() => document.querySelector(%q).click(), 0), true`, sel), nil)); err != nil {
 		t.Fatal(err)
 	}
-	settleUntil(t, ctx, until)
+	settleUntil(t, ctx, loaded(until))
+}
+
+// loaded adds "and the document has loaded" to a leg's marker. A path
+// holds the moment the new document commits, before its deferred
+// shell.js has run; blocking="render" holds back paint, not a click
+// from the drive. A click in that gap reaches a page with no listener
+// and takes the scriptless path, which is correct for a reader and
+// wrong for a leg that means to drive the script: on a loaded fleet
+// runner the back control then followed its link and history grew by
+// one (#127). Deferred scripts run before readyState is "complete",
+// and a page restored from the back/forward cache is already complete.
+func loaded(until string) string {
+	return "(" + until + `) && document.readyState === "complete"`
 }
 
 // revealed waits until the page has loaded and painted twice more, by
@@ -392,7 +405,7 @@ func back(t *testing.T, ctx context.Context, until string) {
 	if err := chromedp.Run(ctx, chromedp.Evaluate(`document.activeElement && document.activeElement.blur(), setTimeout(() => history.back(), 0), true`, nil)); err != nil {
 		t.Fatal(err)
 	}
-	settleUntil(t, ctx, until)
+	settleUntil(t, ctx, loaded(until))
 }
 
 // recordReveal logs every pagereveal's transition types into

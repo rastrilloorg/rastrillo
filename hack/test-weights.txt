@@ -6,22 +6,37 @@
 # exactly one slice. Measured 2026-10-05 on a busy 16-thread box, so
 # the ratios matter, not the seconds. Refresh from a `go test -v` run:
 #   grep '^--- ' log | sed -E 's/^--- [A-Z]+: ([^ ]+) \(([0-9.]+)s\)/\1 \2/'
+# The day-depth drives (ui, and the gallery's OS listener) were measured
+# 2026-10-21 on docs-t1 at load 2 to 4, one full ui run (#104 item 4).
+# The switch rework's drives were measured 2026-10-24 on docs-t1, at load
+# 2 to 4, from their own runs.
+browser ui TestEveryThemeRendersAsItDidExceptDay 41
 browser ui TestBusyButtonDrive 24
+browser ui TestTheLightStaysWithinItsFrameBudget 18
+browser ui TestFlatThemesFollowAnAppsOverrides 13
 browser ui TestShellNavigationIsPrerendered 13
+browser ui TestAnyAccentKeepsTheFillLabelReadable 12
 browser ui TestThePhoneIndexWorksWithScripts 10
 browser ui TestThePhoneIndexWorksWithNoScript 9
 browser ui TestAPostItemsSpinnerNeverMovesTheMenu 8
+browser ui TestASwitchSlidesAndSnaps 9
 browser ui TestEveryTapTargetIsAtLeast44Pixels 8
 browser ui TestTheWholeRowIsTheTarget 8
 browser ui TestWashWalkFindsTheSameFillAsAScan 8
+browser ui TestAReleasedKnobSettlesWithAFirmCurve 7
+browser ui TestKeysAndTouchLeavePointerMode 7
+browser ui TestAPreferenceToggleForgetsSettledCards 6
 browser ui TestAchievableWeightsHaveWideGaps 6
 browser ui TestTheConsoleBarIsTheSameCard 6
 browser ui TestTheConsoleFoldsItsBarAndIndexesItsRail 6
-browser ui TestTheLightStaysWithinItsFrameBudget 6
+browser ui TestACardBreathes 5
 browser ui TestBothSpellingsComputeTheSameStyles 5
+browser ui TestLightJSOnAnOldThemeWritesOntoNothingItPaints 5
 browser ui TestReducedMotionIsTotal 5
 browser ui TestTheCalendarDocksAndItsDaysAreTaps 5
+browser ui TestTheSheenFollowsADraggedKnob 5
 browser ui TestTheTopbarMenuIsACardOverThePage 5
+browser ui TestALeaveAfterAQueuedMoveNeverRelightsACard 4
 browser ui TestSelectFollowsRequiredAndExtras 4
 browser ui TestSelectKeepsItsDividerAndPrompt 4
 browser ui TestSelectKeepsPaceWithTyping 4
@@ -45,9 +60,11 @@ browser ui TestEnterCommitsWithoutSubmittingTheForm 3
 browser ui TestEscapeClosesTheWholeCard 3
 browser ui TestTextControlsAreSixteenPixelsOnSmallOrTouchScreens 3
 browser ui TestTheConsoleRailFitsTheViewport 3
+browser ui TestTheLightFollowsThePointerAndSettles 3
 browser ui TestDatetimeParserFixtures 2
 browser ui TestTheCardFitsTheSmallestPhone 2
 browser ui TestTheConsoleDegradesTheWayItSaysItDoesWithoutHas 2
+browser ui TestTheTrackColourFollowsTheKnob 2
 browser internal/designsystem TestPreviewFrameHeightsFitTheirContent 134
 browser internal/designsystem TestA11yScansThePreviewDocuments 130
 browser internal/designsystem TestThePreviewWidgetIsUsableOnAPhone 53
@@ -81,6 +98,7 @@ browser internal/designsystem TestEveryOutboundLinkIsAllowedAndUsed 5
 browser internal/designsystem TestEveryPageStaysUnderItsBudget 5
 browser internal/designsystem TestSampleLinksAndFormsAreDeadInThePreviews 5
 browser internal/designsystem TestTheChromeCarriesTheThreeSwitchers 5
+browser internal/designsystem TestTheGalleryLandsAnOSFlipWithItsOwnListener 5
 browser internal/designsystem TestTheIconsPageIsAReadingOfIconSlugs 5
 browser internal/designsystem TestEveryProseKeyIsTranslated 4
 browser internal/designsystem TestTheGettingStartedPageWeighsTheRealAssets 4

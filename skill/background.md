@@ -31,8 +31,8 @@ opts out, `data-busy-label` shows words beside the spinner. Manners, not
 idempotency — the server still refuses the second write.
 `static/light.js`: the light the depth styles read (the hour on
 shadows, a sheen under the pointer); to turn it off delete it and its
-tag and name it in `vendoredIsMine`; doctor then lists it as yours and
-`--fix` leaves it alone.
+tag and name it in `vendoredIsMine`; doctor then lists it as yours,
+removed on purpose, and `--fix` leaves it alone.
 
 ## Scheduled work
 

@@ -111,7 +111,7 @@ func (a *app) createNote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	a.notifyNotes(r)
-	flash.Set(w, "notice", "Note created.")
+	flash.Set(w, r, "notice", "Note created.")
 	http.Redirect(w, r, fmt.Sprintf("/notes/%d", n.ID), http.StatusSeeOther)
 }
 
@@ -158,7 +158,7 @@ func (a *app) updateNote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	a.notifyNotes(r)
-	flash.Set(w, "notice", "Note updated.")
+	flash.Set(w, r, "notice", "Note updated.")
 	http.Redirect(w, r, fmt.Sprintf("/notes/%d", n.ID), http.StatusSeeOther)
 }
 
@@ -176,7 +176,7 @@ func (a *app) deleteNote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	a.notifyNotes(r)
-	flash.Set(w, "notice", "Note deleted.")
+	flash.Set(w, r, "notice", "Note deleted.")
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
@@ -224,7 +224,7 @@ func (a *app) startExport(w http.ResponseWriter, r *http.Request) {
 	// ErrOwnerBusy in our own words, not err.Error(): the refusal is
 	// per owner (four running jobs), so waiting genuinely clears it.
 	if err != nil {
-		flash.Set(w, "error", "You already have exports running — wait for one to finish.")
+		flash.Set(w, r, "error", "You already have exports running — wait for one to finish.")
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}

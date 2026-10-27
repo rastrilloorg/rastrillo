@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/chromedp/cdproto/emulation"
+	"github.com/chromedp/cdproto/input"
 	"github.com/chromedp/cdproto/runtime"
 	"github.com/chromedp/chromedp"
 
@@ -322,6 +323,66 @@ func TestASchemeFlipLandsOnTheNextFrame(t *testing.T) {
 	mustRun(t, ctx, os("light"))
 	at(t, ctx, schemeFlipSecondFrameJS, &got, awaitPromise)
 	check("System, OS dark to light", got, schemeFlipState{Nav: light.Nav, Tile: light.Tile})
+}
+
+// TestASchemeFlipLandsWhileHovered is Astra A3's residual (#104 item
+// 2): a tile and a rail item under the pointer, with their hover tint
+// settled, when an app's own script flips data-theme the way an app's
+// switch does (no shipped switch, so nothing cancels a transition).
+// The hover tint used to be a background-color transition, and a flip
+// retargeted it: the one item under the pointer faded for 0.2 to
+// 0.25s while its text changed at once. The tint now rides a
+// registered percentage and is re-resolved from the scheme every
+// frame, so the very next frame's background is the value the item
+// settles to. Light to dark on the tile, dark to light on the rail
+// item, each with the mouse really over it.
+func TestASchemeFlipLandsWhileHovered(t *testing.T) {
+	body := strings.Replace(schemeFlipBody, `<a href="#x">`, `<a href="#x" id="nav-x">`, 1)
+	rig := sizingRig(t, false, map[string]string{"/": sizingDoc("hovered scheme flip", body)}, harness.WithHover())
+	ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
+	defer cancel()
+	mustRun(t, ctx, emulation.SetEmulatedMedia().WithFeatures([]*emulation.MediaFeature{{Name: "prefers-color-scheme", Value: "light"}}),
+		chromedp.EmulateViewport(1280, 900), chromedp.Navigate(rig.Origin+"/"), chromedp.WaitVisible(`[rst-scheme]`, chromedp.ByQuery), chromedp.WaitReady(`body`, chromedp.ByQuery))
+	bg := func(id string) string {
+		t.Helper()
+		var got string
+		mustRun(t, ctx, chromedp.Evaluate(`getComputedStyle(document.getElementById(`+jsStr(id)+`)).backgroundColor`, &got))
+		return got
+	}
+	settled := func(id string) string {
+		t.Helper()
+		var got string
+		mustRun(t, ctx, chromedp.Evaluate(`(async () => { await Promise.all(document.getAnimations().filter(a => a.effect && a.effect.getComputedTiming().endTime !== Infinity).map(a => a.finished.catch(() => null))); return getComputedStyle(document.getElementById(`+jsStr(id)+`)).backgroundColor; })()`, &got, awaitPromise))
+		return got
+	}
+	for _, c := range []struct{ id, from, to string }{{"tile", "light", "dark"}, {"nav-x", "dark", "light"}} {
+		mustRun(t, ctx, chromedp.Evaluate(`document.documentElement.setAttribute("data-theme", `+jsStr(c.from)+`), true`, nil))
+		settled(c.id)
+		rest := bg(c.id)
+		// The shell fills the viewport and the tile sits below it.
+		mustRun(t, ctx, chromedp.Evaluate(`document.getElementById(`+jsStr(c.id)+`).scrollIntoView({block: "center"}), true`, nil))
+		x, y, w, h := rect(t, ctx, "#"+c.id)
+		// Two frames after the move, so the hover's transition exists
+		// before settled waits on it.
+		mustRun(t, ctx, chromedp.MouseEvent(input.MouseMoved, x+w/2, y+h/2), chromedp.Evaluate(`new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))`, nil, awaitPromise))
+		hovered := settled(c.id)
+		if hovered == rest {
+			t.Fatalf("#%s in %s: hovered it is %s, as at rest; the hover did not take, so the drive would prove nothing", c.id, c.from, rest)
+		}
+		// The app's flip and the next frame's read in one script, so no
+		// round trip sits between the write and the read.
+		var next string
+		mustRun(t, ctx, chromedp.Evaluate(`(() => { document.documentElement.setAttribute("data-theme", `+jsStr(c.to)+`); return new Promise(r => requestAnimationFrame(() => r(getComputedStyle(document.getElementById(`+jsStr(c.id)+`)).backgroundColor))); })()`, &next, awaitPromise))
+		want := settled(c.id)
+		t.Logf("#%s hovered: %s in %s, %s a frame after the app set %s, settled %s", c.id, hovered, c.from, next, c.to, want)
+		if want == hovered {
+			t.Fatalf("#%s: the hover tint is %s in %s and in %s alike; the drive would prove nothing", c.id, hovered, c.from, c.to)
+		}
+		if next != want {
+			t.Errorf("#%s hovered, app script sets data-theme=%s: on the next frame it is %s; settled it is %s. The flip faded instead of landing.", c.id, c.to, next, want)
+		}
+		mustRun(t, ctx, chromedp.MouseEvent(input.MouseMoved, 5, 5), chromedp.Sleep(300*time.Millisecond))
+	}
 }
 
 // schemeFlipSecondFrameJS reads the state one frame later than

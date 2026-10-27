@@ -125,10 +125,11 @@ func defaultLayout(t *testing.T) string {
 }
 
 // The scaffolded layout links the theme beside the tokens: structure
-// then colour, both through the fingerprinting {{asset ...}} helper.
+// then colour, both through the fingerprinting {{asset ...}} helper
+// and the base path.
 func TestLayoutTemplateLinksThemeCSS(t *testing.T) {
 	layout := defaultLayout(t)
-	if !strings.Contains(layout, `<link rel="stylesheet" href="{{asset "static/theme.css"}}">`) {
+	if !strings.Contains(layout, `<link rel="stylesheet" href="{{path $ (asset "static/theme.css")}}">`) {
 		t.Errorf("layout template does not link static/theme.css:\n%s", layout)
 	}
 	if strings.Index(layout, "static/tokens.css") > strings.Index(layout, "static/theme.css") {
@@ -154,11 +155,11 @@ func TestNewScaffoldsRastrilloJS(t *testing.T) {
 }
 
 // The scaffolded layout must load the shim the same way it links
-// tokens.css: through the fingerprinting {{asset ...}} helper, deferred
-// so it never blocks first paint.
+// tokens.css: through the fingerprinting {{asset ...}} helper and the
+// base path, deferred so it never blocks first paint.
 func TestLayoutTemplateLoadsRastrilloJS(t *testing.T) {
 	layout := defaultLayout(t)
-	if !strings.Contains(layout, `<script defer src="{{asset "static/rastrillo.js"}}"></script>`) {
+	if !strings.Contains(layout, `<script defer src="{{path $ (asset "static/rastrillo.js")}}"></script>`) {
 		t.Errorf("layout template does not load rastrillo.js via a deferred, fingerprinted <script> tag:\n%s", layout)
 	}
 }
@@ -303,8 +304,8 @@ func TestRenderTemplateWiresErrorPage(t *testing.T) {
 	// Scheme too: a 500 after a panic reaches ErrorPage outside render,
 	// and without it the error page would paint System for a reader who
 	// chose Dark.
-	if !strings.Contains(src, `pages.Execute(&buf, "errors", map[string]any{"L": pages.LocalizerFor(r), "Scheme": rastrillo.SchemeFrom(r), "Status": status, "Ref": ref})`) {
-		t.Errorf("render.go's ErrorPage does not render the \"errors\" page in the request's language and scheme:\n%s", src)
+	if !strings.Contains(src, `pages.Execute(&buf, "errors", map[string]any{"L": pages.LocalizerFor(r), "Scheme": rastrillo.SchemeFrom(r), "Base": basepath.Base(r), "Status": status, "Ref": ref})`) {
+		t.Errorf("render.go's ErrorPage does not render the \"errors\" page in the request's language, scheme and base path:\n%s", src)
 	}
 }
 
@@ -314,7 +315,7 @@ func TestRenderTemplateWiresErrorPage(t *testing.T) {
 // in the localizer-first syntax migrate-templates writes, so strict
 // rendering has the localizer the partial needs.
 func TestErrorsTemplateRendersErrorPagePartial(t *testing.T) {
-	if !strings.Contains(errorsTemplate, `{{define "content"}}{{$L := localizer $}}{{template "error-page" dict "L" $L "Status" .Status "Ref" .Ref}}{{end}}`) {
+	if !strings.Contains(errorsTemplate, `{{define "content"}}{{$L := localizer $}}{{template "error-page" dict "L" $L "Status" .Status "Ref" .Ref "HomeHref" (path $ "/")}}{{end}}`) {
 		t.Errorf("errors.html template does not render the error-page partial:\n%s", errorsTemplate)
 	}
 }
@@ -738,7 +739,7 @@ func TestNewScaffoldsLightJS(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(string(layout), `<script defer src="{{asset "static/light.js"}}"></script>`) {
+	if !strings.Contains(string(layout), `<script defer src="{{path $ (asset "static/light.js")}}"></script>`) {
 		t.Error("the layout never loads light.js, deferred, so the light can never run")
 	}
 }

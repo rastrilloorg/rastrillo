@@ -7,6 +7,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
+	"net/http"
+	"regexp"
 	"strconv"
 	"strings"
 	"testing"
@@ -445,6 +447,191 @@ func TestAPressInsideTheFadeSnapsBackToOne(t *testing.T) {
 		t.Errorf("pressed again mid-fade: --rst-press is %q, want 1 at once", got)
 	}
 	mustRun(t, ctx, chromedp.MouseEvent(input.MouseReleased, cx, cy, chromedp.ButtonLeft, chromedp.ClickCount(1)))
+}
+
+// TestAGhostsReleaseShadowEases (#104 item 6): the ghost's press shadow
+// rides --rst-press, so on release it eases over the same 0.7s curve
+// as the face. Held, the ghost's own :active shadow is a 1px-down, 3px
+// inset of the contact colour; 250ms into the release, --rst-press is
+// about 0.223 and the shadow is that fraction of it, still inset, one
+// layer. A base-rule shadow in its place (the rest list, not inset) is
+// what the guarded line prevents, and a snap to nothing is what the
+// transition prevents. Scrubbed, not sampled, as the press drive is.
+func TestAGhostsReleaseShadowEases(t *testing.T) {
+	rig := sizingRig(t, false, depthDoc(t), harness.WithHover())
+	ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
+	defer cancel()
+	open(t, ctx, rig, "/", false)
+	x, y, w, h := rect(t, ctx, "#b-ghost")
+	cx, cy := x+w/2, y+h/2
+	mustRun(t, ctx, chromedp.MouseEvent(input.MousePressed, cx, cy, chromedp.ButtonLeft, chromedp.ClickCount(1)))
+	held := computed(t, ctx, "#b-ghost", "box-shadow")
+	if !strings.HasSuffix(held, " 0px 1px 3px 0px inset") || strings.Contains(held, "inset, ") {
+		t.Fatalf("held: the ghost's shadow is %q, want one inset layer 0px 1px 3px", held)
+	}
+	mustRun(t, ctx, chromedp.MouseEvent(input.MouseReleased, cx, cy, chromedp.ButtonLeft, chromedp.ClickCount(1)))
+	var fade struct {
+		Found  bool
+		Press  string
+		Shadow string
+	}
+	at(t, ctx, `(() => { const b = document.querySelector("#b-ghost"); const a = b.getAnimations().find(x => x.transitionProperty === "--rst-press"); if (!a) return JSON.stringify({Found: false}); a.pause(); a.currentTime = 250; const cs = getComputedStyle(b); return JSON.stringify({Found: true, Press: cs.getPropertyValue("--rst-press"), Shadow: cs.boxShadow}); })()`, &fade)
+	if !fade.Found {
+		t.Fatal("released: no transition is running on --rst-press; the ghost's shadow snapped instead of easing")
+	}
+	var press, sy, blur float64
+	fmt.Sscanf(fade.Press, "%f", &press)
+	m := regexp.MustCompile(`\) 0px ([\d.]+)px ([\d.]+)px 0px inset$`).FindStringSubmatch(fade.Shadow)
+	if m == nil || strings.Contains(fade.Shadow, "inset, ") {
+		t.Fatalf("250ms into the release the ghost's shadow is %q (--rst-press %s); want one inset layer riding the press", fade.Shadow, fade.Press)
+	}
+	fmt.Sscanf(m[1], "%f", &sy)
+	fmt.Sscanf(m[2], "%f", &blur)
+	if math.Abs(sy-press) > 0.02 || math.Abs(blur-3*press) > 0.05 {
+		t.Errorf("250ms into the release the ghost's shadow is 0 %vpx %vpx with --rst-press %v; want the press's 1px and 3px scaled by it", sy, blur, press)
+	}
+	if press < 0.1 || press > 0.4 {
+		t.Errorf("250ms into the release --rst-press is %v, want about 0.223; the shadow was read off the wrong point of the curve", press)
+	}
+}
+
+// pressFallbackRig serves the depth fixture with tokens.css altered by
+// edit, over the sizing mux's copy.
+func pressFallbackRig(t *testing.T, edit func(string) string, opts ...harness.Option) *harness.Rig {
+	t.Helper()
+	tokens := []byte(edit(string(TokensCSS())))
+	return harness.New(t, func(string) http.Handler {
+		mux := sizingMux(t, depthDoc(t))
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path == "/tokens.css" {
+				w.Header().Set("Content-Type", "text/css")
+				w.Write(tokens)
+				return
+			}
+			mux.ServeHTTP(w, r)
+		})
+	}, opts...)
+}
+
+// TestTheFaceStillPaintsWithoutARegisteredPress (#104 item 6): the
+// button's face and the ghost's shadow read --rst-press through a 0
+// fallback, because an engine without @property has no initial value
+// for it, and an unset var() inside a gradient or a calc() invalidates
+// the whole declaration: four layers of face gone, shadow gone. The
+// drive unregisters the property by serving tokens.css without its
+// @property block, then checks every variant still paints its face at
+// rest and pressed, and the ghost its shadow while pressed. Reverting
+// a fallback on either guarded line turns that declaration to none.
+func TestTheFaceStillPaintsWithoutARegisteredPress(t *testing.T) {
+	const registration = `@property --rst-press { syntax: "<number>"; inherits: false; initial-value: 0; }`
+	rig := pressFallbackRig(t, func(css string) string {
+		if strings.Count(css, registration) != 1 {
+			t.Fatalf("tokens.css no longer registers --rst-press as this test knows it:\n%s", registration)
+		}
+		return strings.Replace(css, registration, "/* --rst-press unregistered by the test */", 1)
+	}, harness.WithHover())
+	ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
+	defer cancel()
+	open(t, ctx, rig, "/", false)
+	// The control: unregistered, the property has no computed value at
+	// rest. Registered, it reads 0.
+	if got := computed(t, ctx, "#b-plain", "--rst-press"); got != "" {
+		t.Fatalf("--rst-press computes to %q at rest; the property is still registered, so the drive would prove nothing", got)
+	}
+	for _, id := range []string{"#b-plain", "#b-primary", "#b-danger", "#b-ghost", "#b-link"} {
+		if got := computed(t, ctx, id, "background-image"); got == "none" || len(layers(got)) != 4 {
+			t.Errorf("%s at rest: background-image is %q, want four layers; the face is gone without the registered press", id, got)
+		}
+	}
+	x, y, w, h := rect(t, ctx, "#b-ghost")
+	cx, cy := x+w/2, y+h/2
+	mustRun(t, ctx, chromedp.MouseEvent(input.MousePressed, cx, cy, chromedp.ButtonLeft, chromedp.ClickCount(1)))
+	if got := computed(t, ctx, "#b-ghost", "box-shadow"); got == "none" || !strings.HasSuffix(got, " 0px 1px 3px 0px inset") {
+		t.Errorf("the ghost pressed: box-shadow is %q, want its 0px 1px 3px inset; the shadow is gone without the registered press", got)
+	}
+	if got := computed(t, ctx, "#b-ghost", "background-image"); got == "none" || len(layers(got)) != 4 {
+		t.Errorf("the ghost pressed: background-image is %q, want four layers", got)
+	}
+	mustRun(t, ctx, chromedp.MouseEvent(input.MouseReleased, cx, cy, chromedp.ButtonLeft, chromedp.ClickCount(1)))
+	// Released with no registered property there is no transition to
+	// ease; the shadow goes to its zero-sized rest, and must not go to
+	// none.
+	if got := computed(t, ctx, "#b-ghost", "box-shadow"); got == "none" || !strings.HasSuffix(got, " 0px 0px 0px 0px inset") {
+		t.Errorf("the ghost released: box-shadow is %q, want its zero inset; the shadow is gone without the registered press", got)
+	}
+}
+
+// TestHoverTintsPaintWithoutRegisteredNumbers (Astra, day-followups
+// review 1): the row, tile and rail hover tints read --rst-hover and
+// --rst-pressed, and in an engine without @property (Firefox before
+// 128) an unset var() invalidates the whole declaration at computed
+// value time: the hover rule sets --rst-hover itself, but --rst-pressed
+// was set only while pressed, so a plain hover lost its background
+// (rows and rails their tint, the tile its surface) and a release lost
+// it again. Both registrations are cut from the served tokens.css; the
+// hover rule must then set every number it reads, and rest, hover,
+// press and release must each paint the registered design's settled
+// values. Frozen, so a settled value is what is read.
+func TestHoverTintsPaintWithoutRegisteredNumbers(t *testing.T) {
+	registrations := []string{
+		`@property --rst-hover { syntax: "<percentage>"; inherits: false; initial-value: 0%; }`,
+		`@property --rst-pressed { syntax: "<percentage>"; inherits: false; initial-value: 0%; }`,
+	}
+	rig := pressFallbackRig(t, func(css string) string {
+		for _, r := range registrations {
+			if strings.Count(css, r) != 1 {
+				t.Fatalf("tokens.css no longer registers the hover numbers as this test knows them:\n%s", r)
+			}
+			css = strings.Replace(css, r, "/* unregistered by the test */", 1)
+		}
+		return css
+	}, harness.WithHover())
+	ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
+	defer cancel()
+	open(t, ctx, rig, "/", false)
+	still(t, ctx)
+	// The control: unregistered, the numbers have no computed value at
+	// rest. Registered, they read 0%.
+	if h, p := computed(t, ctx, "#row-a", "--rst-hover"), computed(t, ctx, "#row-a", "--rst-pressed"); h != "" || p != "" {
+		t.Fatalf("--rst-hover is %q and --rst-pressed %q at rest; the properties are still registered, so the drive would prove nothing", h, p)
+	}
+	const hoverTint, pressTint = "rgb(245, 247, 253)", "rgb(236, 241, 252)"
+	for _, c := range []struct{ sel, press, rest string }{
+		{"#row-a", "#link-a", "rgba(0, 0, 0, 0)"},
+		{"#tile", "#tile-link", "rgb(255, 255, 255)"},
+		{"#nav-x", "#nav-x", "rgba(0, 0, 0, 0)"},
+	} {
+		read := func() (string, string) {
+			return computed(t, ctx, c.sel, "background-color"), computed(t, ctx, c.sel, "box-shadow")
+		}
+		if bg, _ := read(); bg != c.rest {
+			t.Errorf("%s at rest is %s, want %s", c.sel, bg, c.rest)
+		}
+		forceState(t, ctx, c.sel, "hover")
+		if bg, sh := read(); bg != hoverTint || !strings.Contains(sh, "inset") {
+			t.Errorf("%s hovered is %s with box-shadow %q; want the hover tint %s with its inset lift. Without @property an unset number blanks the declaration", c.sel, bg, sh, hoverTint)
+		}
+		if c.press == c.sel {
+			forceState(t, ctx, c.sel, "hover", "active")
+		} else {
+			forceState(t, ctx, c.press, "active")
+		}
+		if bg, sh := read(); bg != pressTint || sh == "none" {
+			t.Errorf("%s pressed is %s with box-shadow %q; want the press tint %s with a shadow", c.sel, bg, sh, pressTint)
+		}
+		if c.press == c.sel {
+			forceState(t, ctx, c.sel, "hover")
+		} else {
+			forceState(t, ctx, c.press)
+		}
+		if bg, sh := read(); bg != hoverTint || !strings.Contains(sh, "inset") {
+			t.Errorf("%s released, still hovered, is %s with box-shadow %q; want the hover tint %s again", c.sel, bg, sh, hoverTint)
+		}
+		forceState(t, ctx, c.sel)
+		if bg, _ := read(); bg != c.rest {
+			t.Errorf("%s back at rest is %s, want %s", c.sel, bg, c.rest)
+		}
+	}
 }
 
 // TestFocusOutlinesSurviveLiftAndPress (C14, review focus 4): the solid
