@@ -21,6 +21,7 @@ import (
 	"amadan.net/rastrillo/rastrillo/csrf"
 	"amadan.net/rastrillo/rastrillo/db"
 	"amadan.net/rastrillo/rastrillo/jobs"
+	"amadan.net/rastrillo/rastrillo/live"
 	"amadan.net/rastrillo/rastrillo/locales"
 	"amadan.net/rastrillo/rastrillo/migrate"
 	"amadan.net/rastrillo/rastrillo/op"
@@ -31,9 +32,11 @@ import (
 )
 
 // App wires the example: schema, the shared session core, the
-// password identity plugin, and the chi router. It returns a
-// *http.ServeMux because rastrillo.Options.Mux is typed that way —
-// the chi router mounts inside it rather than being served directly.
+// password identity plugin, the live hub, and the chi router. It
+// returns a *http.ServeMux because rastrillo.Options.Mux is typed that
+// way — the chi router mounts inside it rather than being served
+// directly — and the hub for rastrillo.Options.Live, so shutdown ends
+// the open streams instead of waiting out the drain for them.
 // cfg is locales.CheckConfig's own result, not a value read back from
 // rastrillo.Handler: this app opens its own *gorm.DB (db.Open) and
 // hands Serve a finished Options.Mux (main.go:84-87), so there is no
@@ -46,14 +49,14 @@ import (
 //
 // models.go and handlers.go are the only files this example asks a
 // reader to actually study; everything here is plumbing to get there.
-func App(d *db.DB, origin, instanceKey string, bg *background.Group, logger *slog.Logger, cfg locales.Config) (*http.ServeMux, error) {
+func App(d *db.DB, origin, instanceKey string, bg *background.Group, logger *slog.Logger, cfg locales.Config) (*http.ServeMux, *live.Hub, error) {
 	// BootSchema (migrations.go) is this app's own Schema plus every
 	// framework subsystem's — sessions' shared core and the generated
 	// bookmarks store — merged in apply order. One call replaces what
 	// used to be AutoMigrate for the GORM models here plus a separate
 	// d.G.Exec loop for sessions' and the generated store's raw SQL.
 	if _, err := migrate.Apply(context.Background(), d, BootSchema); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	// sessions wants the writer *sql.DB directly: its statements are a
@@ -61,7 +64,7 @@ func App(d *db.DB, origin, instanceKey string, bg *background.Group, logger *slo
 	// handle returns the source (writer) pool.
 	writer, err := d.G.DB()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	// Boot comes straight after migrate.Apply: the generated bookmarks
 	// table must exist for it to upgrade and check, and nothing may
@@ -69,11 +72,11 @@ func App(d *db.DB, origin, instanceKey string, bg *background.Group, logger *slo
 	// the generated router's contexts below carry writer too.
 	booted, err := gen.Boot(context.Background(), writer)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	sess, err := sessions.New(sessions.Config{DB: writer, Origin: origin, Logger: logger})
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	// The front door for sign-in and sign-up. The Guard is built after
@@ -93,7 +96,7 @@ func App(d *db.DB, origin, instanceKey string, bg *background.Group, logger *slo
 		WorkerURL:  "/pow" + powAssets.Path("pow-worker.js"),
 	})
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	bg.Loop(context.Background(), 10*time.Minute, func() {
 		if err := guard.Sweep(time.Now()); err != nil {
@@ -107,18 +110,35 @@ func App(d *db.DB, origin, instanceKey string, bg *background.Group, logger *slo
 	// handler can reach them.
 	pages, err := newPages(cfg)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	genPages, err := newGenPages(cfg)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	fragPages, err := newFragPages(cfg)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	a := &app{db: d.G, jobs: jobs.New(logger), pages: pages, genPages: genPages, fragPages: fragPages}
+	// One topic, keyed by owner: a write to Alice's notes moves only
+	// notes/<alice>, and only Alice may follow it. An unkeyed "notes"
+	// would make every signed-in page refetch on anyone's write, and so
+	// tell Bob when Alice writes.
+	hub, err := live.New(live.Config{
+		Path: "/live",
+		Topics: map[string]live.Allow{
+			"notes": func(r *http.Request, key string) bool {
+				uid, ok := sessions.UserID(r)
+				return ok && strconv.FormatInt(uid, 10) == key
+			},
+		},
+	})
+	if err != nil {
+		return nil, nil, err
+	}
+
+	a := &app{db: d.G, jobs: jobs.New(logger), live: hub, pages: pages, genPages: genPages, fragPages: fragPages}
 
 	jh, err := jobs.NewHandlers(jobs.Config{
 		Jobs:           a.jobs,
@@ -126,7 +146,7 @@ func App(d *db.DB, origin, instanceKey string, bg *background.Group, logger *slo
 		RenderFragment: a.renderJobFragment,
 	})
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	ph, err := password.New(password.Config{
@@ -138,7 +158,7 @@ func App(d *db.DB, origin, instanceKey string, bg *background.Group, logger *slo
 		RenderSignup: a.renderSignup,
 	})
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	// Personal tokens: the store verifies API requests and the page
@@ -146,7 +166,7 @@ func App(d *db.DB, origin, instanceKey string, bg *background.Group, logger *slo
 	// leaked token reads "notes_..." and a secret scanner can match it.
 	tokens, err := apitoken.New(apitoken.Config{DB: writer, Prefix: apitoken.DerivePrefix("notes")})
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	th, err := apitoken.NewHandlers(apitoken.HandlersConfig{
 		Store:  tokens,
@@ -158,7 +178,7 @@ func App(d *db.DB, origin, instanceKey string, bg *background.Group, logger *slo
 		Name: nameUser(d.G),
 	})
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	// One ctx factory for both doors, the generated pages and the API
@@ -187,10 +207,14 @@ func App(d *db.DB, origin, instanceKey string, bg *background.Group, logger *slo
 		Redact:    tokens.Redact,
 	}, gen.APIRoutes()...)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	r := chi.NewRouter()
+	// First, so the request's start is recorded before any handler
+	// queries notes: a write landing after that reads as newer, and
+	// the page fetches once more rather than missing it.
+	r.Use(hub.Middleware)
 	r.Use(csrf.Protect(origin))
 	// App-wide, not just the Require group: the signin/signup pages
 	// render the shared layout too, and its nav reads sessions.Current
@@ -242,6 +266,10 @@ func App(d *db.DB, origin, instanceKey string, bg *background.Group, logger *slo
 		r.Get("/jobs/{id}", jh.StatusPage)
 		r.Get("/jobs/{id}/fragment", jh.Fragment)
 		r.Get("/jobs/{id}/events", jh.Events)
+		// The change stream, behind Require: the notes topic's Allow
+		// reads the session's user, so outside it every stream would
+		// be refused.
+		r.Handle("/live", hub.Handler())
 	})
 
 	// pow's script and worker, outside Require for the same reason: a
@@ -262,6 +290,12 @@ func App(d *db.DB, origin, instanceKey string, bg *background.Group, logger *slo
 	r.Get("/static/busy.js", func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "text/javascript; charset=utf-8")
 		w.Write(ui.BusyJS())
+	})
+	// The live script, likewise: it opens the stream the layout's meta
+	// tag names and swaps the regions and forms that ask for it.
+	r.Get("/static/live.js", func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "text/javascript; charset=utf-8")
+		w.Write(ui.LiveJS())
 	})
 
 	// The stylesheet, served the same way and for the same reason. It
@@ -303,7 +337,7 @@ func App(d *db.DB, origin, instanceKey string, bg *background.Group, logger *slo
 	// redirect of its own instead of the tree's JSON 404.
 	mux.Handle("/api/v1", apiTree)
 	mux.Handle("/api/v1/", apiTree)
-	return mux, nil
+	return mux, hub, nil
 }
 
 // notesCSS is the app's own stylesheet, served last so it wins ties with
@@ -313,6 +347,7 @@ func App(d *db.DB, origin, instanceKey string, bg *background.Group, logger *slo
 // own line.
 const notesCSS = `
 nav form { display: inline; }
+#notes-list form { display: inline; }
 `
 
 // lookupUser is password.Config.Lookup: scope-free by design — a
