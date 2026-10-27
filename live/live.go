@@ -24,7 +24,12 @@
 // process.
 //
 // Fragment requests (fragment.go) let one URL answer with a page's
-// regions alone. A renderer calls, in this order: Elsewhere (a form's
+// regions alone. Render (or ui.Pages.Render) answers a page, whole or
+// as regions, in the order below, and is the one call an app should
+// make: the order is easy to get wrong in ways no error reports, a
+// notice lost or a form's errors never shown. The building blocks stay
+// exported for a renderer that cannot use it, which calls, in this
+// order: Elsewhere (a form's
 // redirect went to another page: navigate, before anything is taken);
 // NoStore; Wanted; then Has, which asks whether the page defines any
 // region asked for besides the notice (every layout has that one).
