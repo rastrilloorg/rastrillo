@@ -289,6 +289,11 @@
           "blurb": "The sign-in screen's memory of how this browser got in last, and the seam that ends a sign-in attempt."
         },
         {
+          "slug": "reference/live",
+          "label": "live",
+          "blurb": "Topics and versions, the change stream, and the helpers that answer a request for one region of a page."
+        },
+        {
           "slug": "reference/locales",
           "label": "locales",
           "blurb": "One pack of CLDR data per language, the boot check on the languages you offer, and the probe that runs it."

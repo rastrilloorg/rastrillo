@@ -75,6 +75,9 @@ and every other `Hidden` pair kept. See
 ```go
 func NewPages(cfg PagesConfig) (*Pages, error)
 func (p *Pages) Execute(w io.Writer, page string, data any) error
+func (p *Pages) ExecuteRegions(w io.Writer, page string, names []string, data any) ([]string, error)
+func (p *Pages) WriteRegions(w http.ResponseWriter, r *http.Request, page string, names []string, data any) error
+func (p *Pages) HasRegions(page string, names []string) bool
 func (p *Pages) Middleware(next http.Handler) http.Handler
 func (p *Pages) Localizer(identity string) *Localizer
 func (p *Pages) LocalizerFor(r *http.Request) *Localizer
@@ -114,6 +117,29 @@ changes after `NewPages` returns.
 `Execute` renders a page. Its data must carry a non-nil localizer as
 `L`. It renders into a buffer and writes nothing unless the whole page
 rendered, so a failure is a clean error, not half a page.
+
+`HasRegions` reports whether a page defines a `region:<name>` template
+for any of `names`. A page that does not exist has none. Ask it before
+you take the flash: a request that names only regions this page lacks is
+answered by navigating, and the page navigated to must still find the
+flash.
+
+`ExecuteRegions` renders those regions into `w`, in the order you name
+them. A name the page has no region for is skipped. The result lists
+what was rendered, for `live.Answer`. It has `Execute`'s localizer
+check, and like `Execute` it writes nothing unless every region
+rendered. The `region:` prefix is the whole safety rule: a name from a
+request reaches only templates the page marked as regions, never its
+layout or a partial.
+
+`WriteRegions` answers a fragment request. It renders with
+`ExecuteRegions`, sets `Rastrillo-Regions`, then writes the body. When
+nothing rendered, a `GET` or `HEAD` gets a `204` with
+`Rastrillo-Location` and no body. Pass it the `ResponseWriter`. Do not
+write what `ExecuteRegions` gave you yourself: the body would commit the
+headers first and `Rastrillo-Regions` would be lost. On error nothing is
+sent, so you can write your own 500. See [Live pages](/docs/live) and
+[`live`](/docs/reference/live).
 
 `Middleware` puts the request's localizer on the request, for
 `ForRequest`. Wrap your routes in it. `LocalizerFor` finds the
@@ -644,6 +670,7 @@ undemonstrated. The returned map is a copy, safe to mutate.
 func TokensCSS() []byte
 func ShimJS() []byte
 func BusyJS() []byte
+func LiveJS() []byte
 func SelectJS() []byte
 func DatetimeJS() []byte
 func CalendarJS() []byte
@@ -675,6 +702,16 @@ at least 650ms, the button disables and the form refuses a second
 submit, and Back hands the form back — by default, with
 `data-busy="false"` as the opt-out and `data-busy-label` as the label
 swap. Linking it is the whole opt-in.
+
+`LiveJS` is `live.js`, the live pages script. It opens one change stream
+per page and fetches a region again when a topic it shows has moved,
+keeping to the order the fetches began in. It leaves a region alone
+while someone is editing in it, and it never lets focus fall to
+`<body>`. It also sends a form marked `data-live-form` with `fetch` and
+swaps in the answer. It does nothing on a page without the
+`rastrillo-live` meta tag or a `data-live` region, so linking it on a
+static page is harmless. See [Live pages](/docs/live) and
+[`live`](/docs/reference/live).
 
 `LightJS` is `light.js`, the light the depth styles read: it sets
 `--rst-light-x` and `--rst-light-y` from the hour (its `FOLLOW` flag,
