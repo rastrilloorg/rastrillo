@@ -258,6 +258,18 @@ const scenarios = {
     await q.settle();
     return { superseded, abandoned: q.n.assigned };
   },
+  // The stream down ten seconds shows the paused note, but not over a
+  // flash someone is reading.
+  async pauseFlash() {
+    const p = page({ regions: [region("list", "a@1")] });
+    p.notice.textContent = "Saved.";
+    p.latest().fire("error");
+    await p.run(10000);
+    const q = page({ regions: [region("list", "a@1")] });
+    q.latest().fire("error");
+    await q.run(10000);
+    return { flash: p.notice.textContent, empty: q.notice.textContent };
+  },
   // A change for a version the region already shows fetches nothing.
   async current() {
     const p = page({ regions: [region("list", "a@5")] });

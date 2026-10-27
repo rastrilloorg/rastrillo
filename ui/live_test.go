@@ -247,6 +247,20 @@ func TestALiveNavigationFallsBackToRastrilloLocation(t *testing.T) {
 	}
 }
 
+// The paused note shares the notice with the flash. Written over a
+// "Saved." it would wipe the message someone is reading, and unpause
+// clears only its own words, so the flash would be gone for good.
+func TestLivePausedNoteLeavesAFlash(t *testing.T) {
+	var got struct{ Flash, Empty string }
+	liveNode(t, "pauseFlash", &got)
+	if got.Flash != "Saved." {
+		t.Errorf("the stream went down under a flash and the notice reads %q, want Saved. kept", got.Flash)
+	}
+	if got.Empty != "Paused" {
+		t.Errorf("the stream went down under an empty notice and it reads %q, want the paused note", got.Empty)
+	}
+}
+
 // A stream fetch answered "navigate" after a form's fetch superseded it,
 // or after the page was hidden, is an old answer: following it would
 // leave the page under a write still on its way.

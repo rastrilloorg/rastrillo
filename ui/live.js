@@ -47,8 +47,9 @@
    - Focus moves to the focused element's replacement, else to the
      region itself (tabindex="-1"); never to <body>.
    - A failed fetch is retried after 1s, 2s, 4s; then, as when the
-     stream has been down 10s, the notice shows the paused note. It
-     clears once the stream is open and no region's fetches are failing.
+     stream has been down 10s, an empty notice shows the paused note.
+     It clears once the stream is open and no region's fetches are
+     failing.
    - Hidden a minute, the stream closes until shown. pagehide closes it
      and abandons fetches; a back/forward restore reopens it from the
      regions' versions. A prerendered page starts once shown.
@@ -368,9 +369,11 @@
     }
   }
 
+  // Not over a flash: it is what someone is reading, and unpause clears
+  // only the paused note, so the flash would be lost for good.
   function pause() {
     var n = document.getElementById(NOTICE), text = meta.getAttribute("data-paused");
-    if (!n || !text) return;
+    if (!n || !text || n.textContent.trim() && n.textContent !== text) return;
     n.textContent = text;
     paused = true;
   }
