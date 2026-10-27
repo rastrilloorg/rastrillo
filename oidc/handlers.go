@@ -11,6 +11,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
+	"amadan.net/rastrillo/rastrillo/basepath"
 	"amadan.net/rastrillo/rastrillo/sessions"
 )
 
@@ -235,10 +236,28 @@ func (h *Handlers) clearCeremonyCookie(w http.ResponseWriter, kind Kind) {
 	})
 }
 
+// pathRouted answers 404 under a base path or on its direct host, and
+// logs it. Every tenant on a shared origin would set the same root
+// __Host- ceremony and session cookies, so a sign-in here would sign the
+// reader out of the hub and every other tenant (spec §6.3: tenants
+// verify, never mint; see sessions.ErrPathRouted). A tenant signs people
+// in through its hub. It runs before any cookie or provider call.
+func (h *Handlers) pathRouted(w http.ResponseWriter, r *http.Request) bool {
+	if !basepath.PathRouted(r) {
+		return false
+	}
+	h.cfg.Logger.Error("rastrillo/oidc: sign-in refused under a base path; sign in at the hub", "path", basepath.Path(r, r.URL.Path))
+	http.NotFound(w, r)
+	return true
+}
+
 // Begin is GET /signin/oidc/{provider} (the app mounts the path; the
 // {provider} URL parameter name is this package's own, read via
 // chi.URLParam).
 func (h *Handlers) Begin(w http.ResponseWriter, r *http.Request) {
+	if h.pathRouted(w, r) {
+		return
+	}
 	kind := Kind(chi.URLParam(r, "provider"))
 	p, ok := ProviderFor(kind)
 	if !ok {
@@ -324,6 +343,9 @@ func (h *Handlers) Begin(w http.ResponseWriter, r *http.Request) {
 
 // Return is GET /signin/oidc/{provider}/return.
 func (h *Handlers) Return(w http.ResponseWriter, r *http.Request) {
+	if h.pathRouted(w, r) {
+		return
+	}
 	kind := Kind(chi.URLParam(r, "provider"))
 	p, ok := ProviderFor(kind)
 	if !ok {
