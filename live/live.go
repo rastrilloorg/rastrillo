@@ -27,24 +27,25 @@
 // regions alone. Render (or ui.Pages.Render) answers a page, whole or
 // as regions, in the order below, and is the one call an app should
 // make: the order is easy to get wrong in ways no error reports, a
-// notice lost or a form's errors never shown. The building blocks stay
-// exported for a renderer that cannot use it, which calls, in this
-// order: Elsewhere (a form's
-// redirect went to another page: navigate, before anything is taken);
-// NoStore; Wanted; then Has, which asks whether the page defines any
-// region asked for besides the notice (every layout has that one).
-// When it says no, a GET or HEAD is answered by navigating (Respond
-// with nothing rendered) and the renderer returns; any other method, a
-// form whose error render is another page, falls through to the whole
-// page with its status and no Rastrillo-Regions, which live.js shows
-// as the browser would. Then TakesFlash decides whether to take the
-// flash (always, for a whole page), and WriteRegions (or
-// ui.Pages.WriteRegions) answers, or the whole page when Wanted was not
-// ok or Has said no. WriteRegions renders into a buffer and sets
-// Rastrillo-Regions before the first body byte; writing regions
-// straight to the ResponseWriter would lose that header. The flash is
-// looked up after Has so a request that ends in a navigation leaves it
-// for the page navigated to.
+// notice lost or a form's errors never shown.
+//
+// The building blocks stay exported for a renderer that cannot use
+// Render, which calls them in this order. Elsewhere first: a form's
+// redirect went to another page, so navigate, before anything is
+// taken. Then NoStore, then Wanted, then Has, which asks whether the
+// page defines any region asked for besides the notice (every layout
+// has that one). When it says no, a GET or HEAD is answered by
+// navigating (Respond with nothing rendered) and the renderer returns;
+// any other method, a form whose error render is another page, falls
+// through to the whole page with its status and no Rastrillo-Regions,
+// which live.js shows as the browser would. Then TakesFlash decides
+// whether to take the flash (always, for a whole page), and
+// WriteRegions (or ui.Pages.WriteRegions) answers, or the whole page
+// when Wanted was not ok or Has said no. WriteRegions renders into a
+// buffer and sets Rastrillo-Regions before the first body byte;
+// writing regions straight to the ResponseWriter would lose that
+// header. The flash is looked up after Has so a request that ends in a
+// navigation leaves it for the page navigated to.
 //
 // The package imports only the standard library: ui and the root
 // package import live, never the reverse.

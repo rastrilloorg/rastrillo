@@ -20,8 +20,9 @@ import (
 //
 // Everything is rendered into a buffer first. An error from data or
 // from a template is returned with nothing written, so the caller can
-// send its 500. ui.Pages.Render is the same for an app built on
-// ui.Pages.
+// send its 500. An error writing the buffer to w can come after the
+// status and headers are committed, when a 500 is too late.
+// ui.Pages.Render is the same for an app built on ui.Pages.
 func Render(w http.ResponseWriter, r *http.Request, status int, t *template.Template, entry string, data func(takeFlash bool) (any, error)) error {
 	if Elsewhere(w, r) {
 		return nil
