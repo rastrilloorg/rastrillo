@@ -34,6 +34,18 @@ What changed:
 
 Run `rastrillo doctor --fix` to vendor `live.js` and re-copy `busy.js`. Every layout now links `live.js` after `busy.js`; add the tag to yours. It does nothing until a page opts in.
 
+### Added: one call to render a live page, and updates at a time
+
+`ui.Pages.Render` answers a page whole or as the regions a live page
+asks for, in the order that keeps a flash message from being lost.
+Your function builds the page data and is told whether to take the
+flash. `live.Render` does the same for an app with its own template
+map. The functions it is built from stay as they are.
+
+`Hub.NotifyAt` updates open pages at a time rather than after a write,
+for a post that goes live at its time. Call it at boot for each stored
+future time and whenever a schedule changes.
+
 ### Added: `rastrillo/pdf`, a dependency-free PDF writer
 
 Flow headings, paragraphs, field lists, tables and callouts onto a page and get deterministic bytes back. No sidecar, no headless browser, no system font: CARLOS ships an app as one binary, and there is nowhere on the platform to run any of those.

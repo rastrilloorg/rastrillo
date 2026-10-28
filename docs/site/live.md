@@ -90,6 +90,16 @@ page can fetch at once, read the old rows, and stay on them.
 `Notify` never blocks. A topic you did not declare is logged and
 skipped. On a nil hub it does nothing.
 
+A change that happens at a time, such as a post going live at 9:00,
+has no write to follow. Tell the hub when it is due:
+
+```go
+a.live.NotifyAt(p.PublishAt, "posts")
+```
+
+Call it at boot for each future time you have stored, and whenever a
+schedule changes. See [`NotifyAt`](/docs/reference/live#notifyat).
+
 ## Mark a region
 
 A region is an element with an `id`, and a template named after it.
@@ -136,58 +146,41 @@ Your page data needs a `Live live.View` field, set to `hub.View(r)`.
 ## Answer fragment requests
 
 When a page asks for a region, the request carries a
-`Rastrillo-Fragment` header. Your render function handles it in a
-fixed order. The order is what keeps flash messages from being lost.
+`Rastrillo-Fragment` header. Answer it with `Pages.Render`. It handles the header in the one order
+that keeps flash messages from being lost:
 
 ```go
 func (a *app) renderStatus(w http.ResponseWriter, r *http.Request, status int, name string, content any) {
-	if live.Elsewhere(w, r) {
-		return
-	}
-	live.NoStore(w)
-	names, frag := live.Wanted(r)
-	if frag && !a.pages.HasRegions(name, names) {
-		if r.Method == http.MethodGet || r.Method == http.MethodHead {
-			live.Respond(w, r, nil, nil)
-			return
+	err := a.pages.Render(w, r, status, name, func(takeFlash bool) (any, error) {
+		var fl flash.Flash
+		var hasFlash bool
+		if takeFlash {
+			fl, hasFlash = flash.Take(w, r)
 		}
-		frag = false // a form whose errors are another page: send that page whole
+		return page{ /* ... */ Live: a.live.View(r), Flash: fl, HasFlash: hasFlash, Content: content}, nil
+	})
+	if err != nil {
+		http.Error(w, "something went wrong", http.StatusInternalServerError)
 	}
-	var fl flash.Flash
-	var hasFlash bool
-	if !frag || live.TakesFlash(r) {
-		fl, hasFlash = flash.Take(w, r)
-	}
-	data := page{ /* ... */ Live: a.live.View(r), Flash: fl, HasFlash: hasFlash, Content: content}
-	if frag {
-		a.pages.WriteRegions(w, r, name, names, data)
-		return
-	}
-	a.pages.Execute(w, name, data)
 }
 ```
 
-In words:
+Your function builds the page data, and takes the flash only when
+`takeFlash` is true. A refresh caused by the stream does not show the
+notice, so it must not take the flash. When the answer is "go
+somewhere else" (a form whose redirect went to another page, or a
+request for regions this page does not have), your function is not
+called at all, and the flash waits for the page you land on.
 
-1. `Elsewhere` handles a form whose redirect went to another page. It
-   answers "go there" and stops. It runs first so the flash waits for
-   the page you land on.
-2. `NoStore` stops caches. One URL now answers with a whole page or
-   with a region, depending on the header.
-3. `Wanted` reads the regions asked for. If the header is missing or
-   odd, you render the whole page.
-4. If the page has none of the regions asked for (the notice doesn't
-   count, since every page has one), answer "go there" too. If the
-   request is a form's POST, render the whole page instead: the form's
-   errors are on another page.
-5. `TakesFlash` says whether this render shows the notice. A whole page
-   always does. A refresh
-   caused by the stream does not, so it must not take the flash.
-6. Render with `WriteRegions`. Pass it the `ResponseWriter` itself.
-   It renders first, sets `Rastrillo-Regions`, then writes. If you
-   wrote the body yourself, the header would be lost. See
-   `examples/notes/internal/notes/render.go` for the full version,
-   with error handling and a status code.
+`status` is your response's status, such as `422` for a form with
+errors; `0` means `200`. If your function, the localizer check or a
+template fails, nothing has been written, and you send your own error.
+An error while writing the response can come after it has started.
+
+With your own template map instead of `ui.Pages`, call
+[`live.Render`](/docs/reference/live#render) with the page's
+templates. See `examples/notes/internal/notes/render.go` for the full
+version.
 
 ## Forms that swap in place
 

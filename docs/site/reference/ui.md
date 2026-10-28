@@ -75,6 +75,7 @@ and every other `Hidden` pair kept. See
 ```go
 func NewPages(cfg PagesConfig) (*Pages, error)
 func (p *Pages) Execute(w io.Writer, page string, data any) error
+func (p *Pages) Render(w http.ResponseWriter, r *http.Request, status int, page string, data func(takeFlash bool) (any, error)) error
 func (p *Pages) ExecuteRegions(w io.Writer, page string, names []string, data any) ([]string, error)
 func (p *Pages) WriteRegions(w http.ResponseWriter, r *http.Request, page string, names []string, data any) error
 func (p *Pages) HasRegions(page string, names []string) bool
@@ -117,6 +118,17 @@ changes after `NewPages` returns.
 `Execute` renders a page. Its data must carry a non-nil localizer as
 `L`. It renders into a buffer and writes nothing unless the whole page
 rendered, so a failure is a clean error, not half a page.
+
+`Render` is the call to make from a handler. It answers a request for
+a page, whole or as the regions a live page asks for, in the order
+[`live.Render`](/docs/reference/live#render) gives, and with that
+page's own templates. `status` `0` means `200`, and a fragment keeps
+the status. `data` builds the page data: it is told whether this
+render may take the flash, and is not called when the answer is a
+navigation. Like `Execute`, the data must carry a localizer as `L`.
+An error from `data`, the localizer check or a template comes back
+with nothing written. An error while writing the response can come
+after it has started. An unknown page is an error.
 
 `HasRegions` reports whether a page defines a `region:<name>` template
 for any of `names` other than `notice`, which every layout has. A page
