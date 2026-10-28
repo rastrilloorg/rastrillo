@@ -93,15 +93,22 @@ data (with `Live: hub.View(r)`) and calls `flash.Take` only when
 `takeFlash` is true: a stream refetch that took it would eat a message
 it never shows. Render calls `data` once, and not at all when the
 answer is a navigation, so the flash waits for the page navigated to.
-Any error comes back with nothing written: write your 500.
+An error from `data`, the localizer check or a template comes back
+with nothing written: write your 500. A write error can follow a
+committed response.
 
-The order, for the building blocks: `Elsewhere` (a form's redirect to
-another page: 204, before the flash), `NoStore`, `Wanted`, then
+The order, for the building blocks: `Elsewhere` (a GET/HEAD whose
+`Rastrillo-Page` differs from `r.URL.Path`, a form's redirect to
+another page: 204, before the flash); `NoStore` (`no-store` and `Vary:
+Rastrillo-Fragment`); `Wanted`, false (whole page) for no header, more
+than 32 names or a non-region name such as the jobs poll's `1`; then
 `Has`/`HasRegions`, which **ignore `notice`** (lacking, a GET/HEAD
-navigates and any other method gets the whole page with its status),
-the flash only if `!frag || TakesFlash`, then `WriteRegions` with the
+navigates and any other method gets the whole page with its status);
+the flash only if `!frag || TakesFlash`; then `WriteRegions` with the
 status sent with the first byte, or the buffered whole page. Never
-hand the ResponseWriter to `ExecuteRegions`: `Rastrillo-Regions` is lost.
+hand the ResponseWriter to `ExecuteRegions`: `Rastrillo-Regions` is
+lost. With your own template map: `live.WriteRegions`, or
+`live.ExecuteRegions` + `live.Respond`.
 
 A fragment request reaches the same handler, so the handler loads
 whatever the region shows even when the region is all that is rendered.
@@ -124,7 +131,8 @@ whatever the region shows even when the region is all that is rendered.
   post going live at its time): call it at boot for each stored future
   time and when a schedule changes. A past time notifies at once. No
   cancel: a stale time costs one fetch; a restart's new boot ID
-  refetches every page anyway. At most 10,000 pending.
+  refetches every page anyway. At most 10,000 (time, topic) pairs wait;
+  past that the latest-due pair is dropped; the first drop is logged.
 - **`r.Handle(path, hub.Handler())` after `sess.Middleware` or
   `sess.Require`**: `Allow` sees the session whichever of them stored
   in the context, so mount the handler after one (notes uses
