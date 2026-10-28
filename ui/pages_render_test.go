@@ -31,7 +31,7 @@ func TestPagesRenderFollowsTheRenderOrder(t *testing.T) {
 		{name: "the notice alone counts as lacking", method: "GET", page: "index", hdr: []string{"Rastrillo-Fragment", "notice"}, code: 204, regions: "", take: notCalled},
 		{name: "POST for regions the page lacks", method: "POST", page: "show", status: 422, hdr: []string{"Rastrillo-Fragment", "list notice"}, code: 422, regions: "-", body: "<main>", take: "true"},
 		{name: "stream refetch", method: "GET", page: "index", hdr: []string{"Rastrillo-Fragment", "list"}, code: 200, regions: "list", body: `<ul id="list">hi</ul>`, take: "false"},
-		{name: "form fetch", method: "POST", page: "index", hdr: []string{"Rastrillo-Fragment", "list notice"}, code: 200, regions: "list notice", take: "true"},
+		{name: "form fetch", method: "POST", page: "index", hdr: []string{"Rastrillo-Fragment", "list notice"}, code: 200, regions: "list notice", body: `<ul id="list">hi</ul><div id="notice" role="status"></div>`, take: "true"},
 		{name: "a redirect to another page", method: "GET", page: "index", hdr: []string{"Rastrillo-Page", "/other"}, code: 204, regions: "-", take: notCalled},
 	} {
 		t.Run(c.name, func(t *testing.T) {
@@ -69,6 +69,23 @@ func TestPagesRenderFollowsTheRenderOrder(t *testing.T) {
 	}
 }
 
+// tracked records whether anything reached the wire, which a recorder
+// alone cannot say: its Code is 200 whether or not WriteHeader ran.
+type tracked struct {
+	*httptest.ResponseRecorder
+	wrote bool
+}
+
+func (t *tracked) WriteHeader(code int) {
+	t.wrote = true
+	t.ResponseRecorder.WriteHeader(code)
+}
+
+func (t *tracked) Write(b []byte) (int, error) {
+	t.wrote = true
+	return t.ResponseRecorder.Write(b)
+}
+
 func TestPagesRenderErrorsWriteNothing(t *testing.T) {
 	p := regionPages(t)
 	boom := errors.New("no data")
@@ -82,6 +99,9 @@ func TestPagesRenderErrorsWriteNothing(t *testing.T) {
 		{name: "missing localizer, whole page", page: "index", data: func(bool) (any, error) { return struct{ Name string }{"x"}, nil }, want: ErrNoLocalizer},
 		{name: "missing localizer, regions", page: "index", hdr: []string{"Rastrillo-Fragment", "list"}, data: func(bool) (any, error) { return struct{ Name string }{"x"}, nil }, want: ErrNoLocalizer},
 		{name: "data error", page: "index", data: func(bool) (any, error) { return nil, boom }, want: boom},
+		// The page's list region reads .Name, which this data lacks.
+		{name: "template error, whole page", page: "index", data: func(bool) (any, error) { return struct{ Localized }{Localized{L: p.Localizer("en")}}, nil }},
+		{name: "template error, regions", page: "index", hdr: []string{"Rastrillo-Fragment", "list notice"}, data: func(bool) (any, error) { return struct{ Localized }{Localized{L: p.Localizer("en")}}, nil }},
 		{name: "unknown page", page: "nope", data: func(bool) (any, error) { return regionData{Localized{L: p.Localizer("en")}, "x"}, nil }},
 	} {
 		t.Run(c.name, func(t *testing.T) {
@@ -89,12 +109,12 @@ func TestPagesRenderErrorsWriteNothing(t *testing.T) {
 			for i := 0; i+1 < len(c.hdr); i += 2 {
 				r.Header.Add(c.hdr[i], c.hdr[i+1])
 			}
-			w := httptest.NewRecorder()
-			err := p.Render(w, r, 0, c.page, c.data)
+			w := &tracked{ResponseRecorder: httptest.NewRecorder()}
+			err := p.Render(w, r, 422, c.page, c.data)
 			if err == nil || c.want != nil && !errors.Is(err, c.want) {
 				t.Errorf("err %v, want %v", err, c.want)
 			}
-			if w.Body.Len() != 0 {
+			if w.wrote || w.Body.Len() != 0 {
 				t.Errorf("wrote %q; want nothing", w.Body.String())
 			}
 		})
