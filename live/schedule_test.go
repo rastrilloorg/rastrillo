@@ -66,19 +66,6 @@ func changedAt(h *Hub, topic string) (counter, seq uint64) {
 	return 0, 0
 }
 
-// waitFor polls until cond holds. The deadline is generous: it bounds
-// a hang under -race on a loaded runner, not how promptly a timer fires.
-func waitFor(t *testing.T, what string, cond func() bool) {
-	t.Helper()
-	deadline := time.Now().Add(5 * time.Second)
-	for !cond() {
-		if time.Now().After(deadline) {
-			t.Fatalf("timed out waiting for %s", what)
-		}
-		time.Sleep(time.Millisecond)
-	}
-}
-
 // The one test on the real timer: a time 30ms away fires. The deadline
 // is generous because it bounds a hang, not promptness.
 func TestNotifyAtFiresAtTheTime(t *testing.T) {
