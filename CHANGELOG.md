@@ -56,6 +56,10 @@ Tables paginate on their own and repeat their column headings on each page. `Kee
 
 See [pdf](/docs/reference/pdf).
 
+### Added: `money.Amount`, currency-checked arithmetic and `AllocateProRata`, in `money/v0.2.0`
+
+`Amount` is a count of minor units in one currency. `Add`, `Sub`, `MulInt` and `Cmp` refuse to mix currencies (`ErrCurrencyMismatch`) and return `ErrOverflow` instead of wrapping. `AllocateProRata` splits an amount by integer weights, such as share counts, into parts that always add up to the total: each part is rounded down, and the minor units left over go to the parts that lost most to rounding. See [money](/docs/reference/money).
+
 ### Fixed: a select list fixed or anchored out of a scrolling bar opens full height; re-vendor `select.js`
 
 A searchable select in a toolbar that scrolls sideways opened to a list 10px tall when your stylesheet fixed the list to the screen or anchored it to its box. `select.js` took the toolbar for the edge of the room, although the toolbar does not cut such a list off. It now counts only the boxes that really cut the list off. A list positioned inside a scrolling box, as `tokens.css` places it, is still held to that box.
