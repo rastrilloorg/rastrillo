@@ -158,3 +158,6 @@ rastrillo.ui.job_running_progress = "Задача «{name}» выполняет�
 rastrillo.ui.job_failed = "Задача «{name}» завершилась с ошибкой"
 rastrillo.ui.job_failed_error = "Задача «{name}» завершилась с ошибкой: {error}"
 rastrillo.ui.job_finished = "Задача «{name}» завершена."
+
+rastrillo.ui.live.paused = "Обновления в реальном времени приостановлены. Обновите страницу, чтобы возобновить их."
+rastrillo.ui.live.unconfirmed = "Нам не удалось подтвердить это изменение. Проверьте страницу, прежде чем повторить попытку."

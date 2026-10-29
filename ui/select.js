@@ -193,6 +193,54 @@
     told = d && isFinite(d.top) && isFinite(d.bottom) ? { top: +d.top, bottom: +d.bottom } : null;
   });
 
+  // What a box is to the boxes in it, by CSS: the containing block of
+  // fixed (f) and absolute (a) ones, a clip with overflow visible (p,
+  // paint containment), whether its overflow clips (o), whether it is a
+  // box (b). Each property counts only where it applies: transforms,
+  // motion paths and overflow skip non-atomic inlines, table columns and
+  // ruby's parts; containment, table rows and groups too (css-contain-2
+  // §3); filters skip none. A will-change name counts by its property's
+  // rule, without case, offset as offset-path's shorthand, a -webkit-
+  // alias only where the engine has it (Chromium has none for
+  // backdrop-filter). Chromium takes a set offset-position (a digit in
+  // it) as a motion path; WebKit does not, and gets a shorter list.
+  // Size queries no longer contain layout (css-conditional-5).
+  const holds = (cs) => {
+    const d = cs.display, b = d !== "contents", cv = cs.contentVisibility;
+    const o = b && !/^(inline|run-in)( list-item)?$|^(ruby$|table-col|ruby-)/.test(d), c = o && !/^table-(row|head|foot)/.test(d);
+    const w = (cs.willChange || "").toLowerCase().split(/,\s*/).filter((v) => CSS.supports(v, "initial")).map((v) => v.replace(/^-webkit-/, ""));
+    // Named in will-change, or (v) set to other than none.
+    const X = (s, v) => s.split(" ").some((k) => w.includes(k) || (v && !/^(none|)$/.test(cs.getPropertyValue(k))));
+    const p = c && (/paint|strict|content/.test(cs.contain) || cv === "auto" || cv === "hidden");
+    const f = p || (c && (/layout/.test(cs.contain) || X("contain content-visibility"))) ||
+      (o && (cs.transformStyle === "preserve-3d" || /\d/.test(cs.offsetPosition) || X("transform translate rotate scale perspective offset-path", 1) || X("transform-style offset offset-position"))) ||
+      (b && X("filter backdrop-filter -webkit-backdrop-filter", 1));
+    return { f, a: f || (b && (cs.position !== "static" || X("position"))), p, o, b };
+  };
+  // A box in the top layer (a modal dialog, an open popover) is out of
+  // every ancestor's reach.
+  const onTop = (a) => [":modal", ":popover-open"].some((q) => { try { return a.matches(q); } catch (e) { return false; } });
+
+  // The ancestors that clip a list: only its chain of containing blocks
+  // can, walked through slots as it is drawn. Taking every ancestor that
+  // scrolls held a list fixed or anchored out of a sideways-scrolling bar
+  // (its overflow-y computes to auto) to the 4px of bar under its box:
+  // 0px tall, in Docs' phone toolbar.
+  const clippers = (list, pos) => {
+    const out = [];
+    for (let a = list; (a = a.assignedSlot || a.parentElement || (a.parentNode && a.parentNode.host)) && a !== document.body; ) {
+      const cs = getComputedStyle(a), h = holds(cs);
+      // Fixed skips to a holder; absolute, to a holder or a positioned box.
+      // A boxless ancestor is passed over: its position is no one's.
+      if (h.b && (pos === "fixed" ? h.f : pos !== "absolute" || h.a)) {
+        if (h.p || (h.o && /auto|scroll|hidden|clip/.test(cs.overflowY))) out.push(a);
+        pos = cs.position;
+      }
+      if (onTop(a)) break;
+    }
+    return out;
+  };
+
   const ACTS = new Set(["ArrowDown", "ArrowUp", "Home", "End", "Enter", "Tab"]);
 
   const el = (tag, attr) => {
@@ -495,7 +543,7 @@
     // stylesheet max-height) and there is more room above; then up, so a box
     // at the foot of a sheet does not open under a phone's keyboard. Held to
     // the room on its side. Room is the visual viewport, cut to every
-    // ancestor that scrolls. Only placement flips, never keyboard order or
+    // ancestor that clips the list. Only placement flips, never keyboard order or
     // ARIA. The same rule as Tito Go's searchselect. Worked out when the list opens and when the room
     // changes — never on a keystroke: the room is the same whatever is
     // typed, and a keystroke's one layout read is the highlight's.
@@ -514,6 +562,8 @@
         if (wrap.hasAttribute("rst-combo-up")) wrap.removeAttribute("rst-combo-up");
         list.style.maxBlockSize = "";
         const cs = getComputedStyle(list);
+        // Again after a resize: a media query can make the list fixed.
+        scrollers = clippers(list, cs.position);
         preferred = parseFloat(cs.maxBlockSize) || 240;
         gap = parseFloat(cs.marginTop) || 0;
         chrome = cs.boxSizing === "border-box" ? 0 : ["paddingTop", "paddingBottom", "borderTopWidth", "borderBottomWidth"].reduce((n, k) => n + (parseFloat(cs[k]) || 0), 0);
@@ -531,11 +581,14 @@
         bottom = Math.min(bottom, r.bottom);
       }
       const box = wrap.getBoundingClientRect();
-      // A bar pinned below the box (data-rst-select-floor) is not room;
-      // the highest wins, one above the box is ignored.
+      // A bar pinned below the box (data-rst-select-floor) or above it
+      // (data-rst-select-ceiling, a sticky header) is not room; the nearest
+      // wins, one on the wrong side is ignored.
       for (const f of floors) {
         const r = f.getBoundingClientRect();
-        if (r.height && r.top >= box.bottom - 1) bottom = Math.min(bottom, r.top);
+        if (!r.height) continue;
+        if (!f.hasAttribute("data-rst-select-ceiling")) { if (r.top >= box.bottom - 1) bottom = Math.min(bottom, r.top); }
+        else if (r.bottom <= box.top + 1) top = Math.max(top, r.bottom);
       }
       const below = bottom - box.bottom - gap;
       const above = box.top - top - gap;
@@ -701,13 +754,7 @@
       open = true;
       list.hidden = false;
       input.setAttribute("aria-expanded", "true");
-      // The ancestors that scroll, read once a list opens: which they are
-      // does not change while it is open.
-      scrollers = [];
-      for (let a = wrap.parentElement; a && a !== document.body; a = a.parentElement) {
-        if (/auto|scroll|hidden|clip/.test(getComputedStyle(a).overflowY)) scrollers.push(a);
-      }
-      floors = [...document.querySelectorAll("[data-rst-select-floor]")];
+      floors = [...document.querySelectorAll("[data-rst-select-floor],[data-rst-select-ceiling]")];
       preferred = 0;
       replace();
       window.addEventListener("resize", replace);

@@ -1,9 +1,9 @@
 {{/* overview.html: a section. up is its way back: the index, with
      this section's nav link as the fragment, which is where focus
      returns on a phone even with scripts off. */}}
-{{define "up"}}/#nav-overview{{end}}
-{{define "brand"}}<a rst-shell-brand href="/">demo</a>{{end}}
-{{define "nav"}}<a id="nav-overview" href="/overview" aria-current="page">Overview</a>{{end}}
+{{define "up"}}{{path $ "/#nav-overview"}}{{end}}
+{{define "brand"}}<a rst-shell-brand href="{{path $ "/"}}">demo</a>{{end}}
+{{define "nav"}}<a id="nav-overview" href="{{path $ "/overview"}}" aria-current="page">Overview</a>{{end}}
 {{define "content"}}
 <h1>Hello, World — this is a rastrillo app.</h1>
 {{end}}

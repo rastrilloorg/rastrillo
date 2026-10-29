@@ -217,7 +217,7 @@ func runNew(args []string) error {
 		// The perf lane and the exemptions file every budget reads.
 		filepath.Join(name, "internal", pkg+"test", "perf_test.go"): fmt.Sprintf(perfTestTemplate, name, pkg),
 		filepath.Join(name, ".rastrillo", "budgets.txt"):            budgetsTxtTemplate,
-		filepath.Join(name, "README.md"):                            fmt.Sprintf(readmeTemplate, name, pkg),
+		filepath.Join(name, "README.md"):                            fmt.Sprintf(readmeTemplate, name, pkg, strings.ToUpper(pkg)),
 		filepath.Join(name, "manifest", "README.md"):                fmt.Sprintf(manifestReadme, name, pkg),
 		filepath.Join(name, "manifest", "app.toml"):                 fmt.Sprintf(appTOMLTemplate, code),
 		filepath.Join(name, "Makefile"):                             fmt.Sprintf(makefileTemplate, name, staticcheckVersion, govulncheckVersion, gitleaksVersion, goToolchain),
@@ -243,6 +243,7 @@ func runNew(args []string) error {
 	//	               the index and a page on a phone
 	//	rastrillo.js   the fragment shim behind data-poll and menu dismiss
 	//	busy.js        the busy rule: every submit button, data-busy opts out
+	//	live.js        live pages: inert until a page carries the rastrillo-live meta
 	//	light.js       the light the depth styles read; delete it for the still design
 	//	anchor.js      a dropdown's menu kept on the screen where CSS anchor
 	//	               positioning is missing; inert where it is not, and
@@ -438,6 +439,7 @@ import (
 	"time"
 
 	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/basepath"
 	"amadan.net/rastrillo/rastrillo/db"
 
 	genlocales "%[1]s/gen/locales"
@@ -484,6 +486,22 @@ func main() {
 	if origin == "" {
 		origin = "http://localhost:8080"
 		logger.Warn("%[3]s_ORIGIN not set; defaulting", "origin", origin)
+	}
+
+	// A path-routed tenant serves under /<slug> on the origin above:
+	// RASTRILLO_SLUG names the slug, or RASTRILLO_SLUG_FROM_HOST=1 reads
+	// it from CARLOS_HOST, the instance's hostname. Neither serves at the
+	// root. A slug it cannot serve stops the app here: at the root it
+	// would answer the hub's own paths. The instance's hostname redirects
+	// to the product path; set opts.BasePath.DirectHost =
+	// basepath.ServeDirect to serve a public view there instead.
+	opts.BasePath, err = basepath.FromEnv(origin, os.Getenv)
+	if err != nil {
+		logger.Error("base path", "err", err)
+		os.Exit(1)
+	}
+	if opts.BasePath.Enabled() {
+		logger.Info("base path", "path", "/"+opts.BasePath.Slug)
 	}
 
 	mux, err := %[2]s.App(d, origin, logger)
@@ -767,6 +785,7 @@ import (
 	"net/http"
 
 	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/basepath"
 	"amadan.net/rastrillo/rastrillo/locales"
 	"amadan.net/rastrillo/rastrillo/ui"
 
@@ -814,16 +833,17 @@ func newPages() (*ui.Pages, error) {
 }
 
 // render adds the request's localizer, the language switcher's items,
-// the current path and the colour scheme the cookie chose to data, then
-// executes name into a buffer before anything touches the wire: a
-// template error becomes a clean 500 instead of half a page. Scheme is
-// what the layout writes as data-theme; without it a chosen Dark would
-// paint System on every reload.
+// the current path, the colour scheme the cookie chose and the base path
+// to data, then executes name into a buffer before anything touches the
+// wire: a template error becomes a clean 500 instead of half a page.
+// Scheme is what the layout writes as data-theme; without it a chosen
+// Dark would paint System on every reload. Base is what path puts in
+// front of a link; without it a tenant's links lead to the hub.
 func render(w http.ResponseWriter, r *http.Request, name string, data map[string]any) {
 	req := ui.ForRequest(r)
 	page := map[string]any{}
 	maps.Copy(page, data)
-	page["L"], page["Locales"], page["Return"], page["Scheme"] = req.L, req.Locales, req.Return, req.Scheme
+	page["L"], page["Locales"], page["Return"], page["Scheme"], page["Base"] = req.L, req.Locales, req.Return, req.Scheme, req.Base
 	if err := pages.Execute(w, name, page); err != nil {
 		http.Error(w, "something went wrong", http.StatusInternalServerError)
 	}
@@ -841,7 +861,7 @@ func ErrorPage(w http.ResponseWriter, r *http.Request, status int, ref string) {
 	// Without pages there is nothing to render, so a failed boot still
 	// answers a plain 500 rather than panicking.
 	var buf bytes.Buffer
-	if pagesErr != nil || pages.Execute(&buf, "errors", map[string]any{"L": pages.LocalizerFor(r), "Scheme": rastrillo.SchemeFrom(r), "Status": status, "Ref": ref}) != nil {
+	if pagesErr != nil || pages.Execute(&buf, "errors", map[string]any{"L": pages.LocalizerFor(r), "Scheme": rastrillo.SchemeFrom(r), "Base": basepath.Base(r), "Status": status, "Ref": ref}) != nil {
 		http.Error(w, "something went wrong", http.StatusInternalServerError)
 		return
 	}
@@ -874,11 +894,11 @@ const sectionsIndexTemplate = `{{/* index.html: the home page, and on a phone th
      sections: the view block says this page is the index, so below
      800px the rail is the whole page and this content is hidden; on a
      desktop the rail sits beside it. Give each section a nav link with
-     an id here, and give its page an up block naming /#<that id>, so a
-     phone comes back to the row it left. */}}
+     an id here, and give its page an up block naming
+     {{path $ "/#<that id>"}}, so a phone comes back to the row it left. */}}
 {{define "view"}}index{{end}}
-{{define "brand"}}<a rst-shell-brand href="/">%[2]s</a>{{end}}
-{{define "nav"}}<a id="nav-overview" href="/overview">%[1]s</a>{{end}}
+{{define "brand"}}<a rst-shell-brand href="{{path $ "/"}}">%[2]s</a>{{end}}
+{{define "nav"}}<a id="nav-overview" href="{{path $ "/overview"}}">%[1]s</a>{{end}}
 {{define "content"}}
 <h1>Hello, World — this is a rastrillo app.</h1>
 {{end}}
@@ -890,9 +910,9 @@ const sectionsIndexTemplate = `{{/* index.html: the home page, and on a phone th
 const overviewTemplate = `{{/* overview.html: a section. up is its way back: the index, with
      this section's nav link as the fragment, which is where focus
      returns on a phone even with scripts off. */}}
-{{define "up"}}/#nav-overview{{end}}
-{{define "brand"}}<a rst-shell-brand href="/">%[2]s</a>{{end}}
-{{define "nav"}}<a id="nav-overview" href="/overview" aria-current="page">%[1]s</a>{{end}}
+{{define "up"}}{{path $ "/#nav-overview"}}{{end}}
+{{define "brand"}}<a rst-shell-brand href="{{path $ "/"}}">%[2]s</a>{{end}}
+{{define "nav"}}<a id="nav-overview" href="{{path $ "/overview"}}" aria-current="page">%[1]s</a>{{end}}
 {{define "content"}}
 <h1>Hello, World — this is a rastrillo app.</h1>
 {{end}}
@@ -932,7 +952,7 @@ const errorsTemplate = `{{/* errors.html — the app's error page: layout.html's
      editing this file, or hand it Title/Body/HomeHref/BackHref to
      override the partial's own catalog defaults; see
      ui/partials/error-page.html for what it accepts. */}}
-{{define "content"}}{{$L := localizer $}}{{template "error-page" dict "L" $L "Status" .Status "Ref" .Ref}}{{end}}
+{{define "content"}}{{$L := localizer $}}{{template "error-page" dict "L" $L "Status" .Status "Ref" .Ref "HomeHref" (path $ "/")}}{{end}}
 `
 
 // harnessTemplate is the scaffolded test harness, delivered once as
@@ -1294,6 +1314,20 @@ Playwright cache. **A skip is not a pass:** with no browser it fails,
 unless ` + "`RASTRILLO_BROWSER_OPTIONAL=1`" + ` makes the skip a deliberate,
 visible choice. ` + "`make ci`" + ` runs the plain suite only — whether CI
 also runs the browser drive, and on what runner, is this app's call.
+
+## Deploy
+
+A hub can serve this app as a tenant, each instance under its own
+` + "`/<slug>`" + ` on the hub's origin. Set the tenant app's config once,
+before its first instance:
+
+` + "```sh" + `
+carlos env set --app %[1]s %[3]s_ORIGIN=https://<product> RASTRILLO_SLUG_FROM_HOST=1
+` + "```" + `
+
+Each instance reads its slug from its hostname, so a path-routed hub
+keeps its slugs at most ` + "`provision.MaxSlug`" + ` (25) characters, or else
+sets ` + "`RASTRILLO_SLUG`" + `.
 `
 
 // manifestReadme is manifest/README.md, the recipe for mounting the

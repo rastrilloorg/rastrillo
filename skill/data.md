@@ -52,6 +52,8 @@ version, `Mutate` retries. docs/site/reference/objrec.md
 A home or hub that creates tenant instances on CARLOS uses `provision`;
 test it with `provisiontest`. docs/site/reference/provision.md
 
+A tenant served under `/<slug>` on a hub's origin sets `Options.BasePath` from `basepath.FromEnv`. Links in a body go through `{{path $ "/x"}}` or `basepath.Path`; redirect plain paths. No sign-in runs there. docs/site/reference/basepath.md
+
 ## Migrations
 
 Schema changes: edit a model, `rastrillo migration generate`, read the

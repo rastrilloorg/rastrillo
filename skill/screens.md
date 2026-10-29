@@ -7,7 +7,7 @@
 2. **Handler** in `handlers.go`: load through the `owned(r)` seam, 404
    on a miss, then `render(w, r, "sheet-new", map[string]any{...})`.
    On a failed POST write `422` before rendering; after a mutation
-   `flash.Set(w, "notice", "...")` and 303 (showing it: skill/forms.md).
+   `flash.Set(w, r, "notice", "...")` and 303 (showing it: skill/forms.md).
 3. **Template** `templates/sheet-new.html` defining `"content"`, its
    body starting `{{$L := localizer $}}`, built from `ui` partials
    (skill/partials.md). **Add its name to the page list in

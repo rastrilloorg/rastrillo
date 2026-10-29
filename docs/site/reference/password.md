@@ -111,6 +111,8 @@ The verbs are enforced:
 Sign-out being POST-only is deliberate: a GET sign-out can be triggered
 by any image tag on any page.
 
+Under a [`basepath`](/docs/reference/basepath), and on the app's direct host, every handler answers 404 and logs an error, because a tenant there signs people in through its hub.
+
 ## PageData
 
 ```go

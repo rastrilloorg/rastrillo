@@ -43,6 +43,7 @@ var referencePages = map[string]string{
 	"auth":          "reference/auth",
 	"clientip":      "reference/clientip",
 	"background":    "reference/background",
+	"basepath":      "reference/basepath",
 	"passkey":       "reference/passkey",
 	"secondfactor":  "reference/secondfactor",
 	"totp":          "reference/totp",
@@ -52,6 +53,7 @@ var referencePages = map[string]string{
 	"pow":           "reference/pow",
 	"webauthn":      "reference/webauthn",
 	"jobs":          "reference/jobs",
+	"live":          "reference/live",
 	"ui":            "reference/ui",
 	"crypto":        "reference/crypto",
 	"keyring":       "reference/keyring",
@@ -67,6 +69,7 @@ var referencePages = map[string]string{
 	"harness":       "reference/harness",
 	"lastsignin":    "reference/lastsignin",
 	"op":            "reference/op",
+	"pdf":           "reference/pdf",
 	"api":           "reference/api",
 	"apitoken":      "reference/apitoken",
 	"currency":      "reference/currency",
@@ -75,6 +78,7 @@ var referencePages = map[string]string{
 
 	// Its own gofmt block: a key this long would realign every line above.
 	"provision/provisiontest": "reference/provisiontest",
+	"basepath/basepathtest":   "reference/basepathtest",
 }
 
 // TestExportedSymbolsAreDocumented is the completeness gate.

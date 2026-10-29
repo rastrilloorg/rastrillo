@@ -158,3 +158,6 @@ rastrillo.ui.job_running_progress = "{name} चल रहा है: {progress}�
 rastrillo.ui.job_failed = "{name} विफल हुआ"
 rastrillo.ui.job_failed_error = "{name} विफल हुआ: {error}"
 rastrillo.ui.job_finished = "{name} पूरा हुआ।"
+
+rastrillo.ui.live.paused = "लाइव अपडेट रुक गए हैं। उन्हें फिर से शुरू करने के लिए पेज को रीफ़्रेश करें।"
+rastrillo.ui.live.unconfirmed = "हम उस बदलाव की पुष्टि नहीं कर सके। दोबारा कोशिश करने से पहले पेज देख लें।"

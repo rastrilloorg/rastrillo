@@ -13,6 +13,7 @@ import (
 	"sync"
 
 	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/live"
 	"amadan.net/rastrillo/rastrillo/locales"
 )
 
@@ -242,8 +243,8 @@ const maxPooledBuffer = 1 << 20
 // failure halfway down would otherwise leave half a page on the wire
 // under a 200, with no way for the caller to send its 500.
 func (p *Pages) Execute(w io.Writer, page string, data any) error {
-	if localizer(data) == nil {
-		return fmt.Errorf("%w "+pageDataMsg, ErrNoLocalizer, page)
+	if err := checkData(page, data); err != nil {
+		return err
 	}
 	t, ok := p.pages[page]
 	if !ok {
@@ -262,6 +263,85 @@ func (p *Pages) Execute(w io.Writer, page string, data any) error {
 	}
 	_, err := b.WriteTo(w)
 	return err
+}
+
+// ExecuteRegions renders the named regions of page: each name for which
+// the page defines a region:<name> template, in order, skipping the
+// rest (live.ExecuteRegions). The localizer check and page lookup are
+// Execute's, and like Execute it writes nothing unless every region
+// succeeded. The result names what was rendered, for live.Answer.
+func (p *Pages) ExecuteRegions(w io.Writer, page string, names []string, data any) ([]string, error) {
+	if err := checkData(page, data); err != nil {
+		return nil, err
+	}
+	t, ok := p.pages[page]
+	if !ok {
+		return nil, fmt.Errorf(noPageMsg, page)
+	}
+	return live.ExecuteRegions(w, t, names, data)
+}
+
+// WriteRegions answers a fragment request with page's regions: it
+// renders them (ExecuteRegions), sets Rastrillo-Regions, and then writes
+// the body, or answers 204 and Rastrillo-Location for a GET or HEAD
+// that rendered nothing (live.Respond). Pass it the ResponseWriter, not
+// ExecuteRegions: writing the body first would commit the headers and
+// lose Rastrillo-Regions. Nothing is sent on error.
+func (p *Pages) WriteRegions(w http.ResponseWriter, r *http.Request, page string, names []string, data any) error {
+	var b bytes.Buffer
+	rendered, err := p.ExecuteRegions(&b, page, names, data)
+	if err != nil {
+		return err
+	}
+	return live.Respond(w, r, rendered, b.Bytes())
+}
+
+// Render answers a request for page, whole or as the regions a
+// fragment request names, in live's render order (live.Render), and is
+// the call a handler should make. status 0 means 200; a fragment
+// answer keeps it. data builds the page data, called once with whether
+// this render may take the flash, and not at all when the answer is a
+// navigation. The data must carry L, as for Execute. An error from
+// data, the localizer check or a template comes back with nothing
+// written, so the caller can send its 500. An error writing the
+// response can come after it is committed, when a 500 is too late.
+func (p *Pages) Render(w http.ResponseWriter, r *http.Request, status int, page string, data func(takeFlash bool) (any, error)) error {
+	t, ok := p.pages[page]
+	if !ok {
+		return fmt.Errorf(noPageMsg, page)
+	}
+	// The render order is live.Render's, run on the page's own set and
+	// entry, so the two cannot drift. The data checks are checkData,
+	// which Execute and ExecuteRegions run too, so a check added there
+	// reaches Render; it runs on what data built, inside the callback,
+	// since the data does not exist before live.Render asks for it.
+	return live.Render(w, r, status, t, p.entry, func(takeFlash bool) (any, error) {
+		d, err := data(takeFlash)
+		if err != nil {
+			return nil, err
+		}
+		if err := checkData(page, d); err != nil {
+			return nil, err
+		}
+		return d, nil
+	})
+}
+
+// checkData is every Pages render's check on the page data: it must
+// carry a non-nil localizer as L.
+func checkData(page string, data any) error {
+	if localizer(data) == nil {
+		return fmt.Errorf("%w "+pageDataMsg, ErrNoLocalizer, page)
+	}
+	return nil
+}
+
+// HasRegions reports whether page defines a region for any of names
+// other than the notice, which every layout has (see live.Has). Ask it
+// before taking the flash; a page that does not exist has none.
+func (p *Pages) HasRegions(page string, names []string) bool {
+	t, ok := p.pages[page]
+	return ok && live.Has(t, names)
 }
 
 // resolve applies the strict or compat policy to one locale call and

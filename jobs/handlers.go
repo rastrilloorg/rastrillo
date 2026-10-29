@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	"amadan.net/rastrillo/rastrillo/basepath"
 	"amadan.net/rastrillo/rastrillo/sessions"
 )
 
@@ -24,9 +25,10 @@ type Config struct {
 }
 
 // PageData is what both renderers receive. FragmentPath is the polled
-// endpoint for this job; templates put it in data-poll. PollSeconds
-// feeds data-poll-every and the noscript meta — emit that meta only
-// while Job.Status is Running, or a failed page refreshes forever.
+// endpoint for this job, base path included; templates put it in
+// data-poll. PollSeconds feeds data-poll-every and the noscript meta —
+// emit that meta only while Job.Status is Running, or a failed page
+// refreshes forever.
 // EventsPath is the SSE endpoint (Events); a template that puts it in
 // data-poll-push upgrades a supporting browser from timer polling to
 // server push, and apps that ignore it get today's polling exactly.
@@ -91,7 +93,7 @@ func (h *Handlers) StatusPage(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, job.Location, http.StatusSeeOther)
 		return
 	}
-	h.cfg.Render(w, r, pageData(job))
+	h.cfg.Render(w, r, pageData(r, job))
 }
 
 // Fragment is GET /jobs/{id}/fragment: what the shim polls. Done with
@@ -108,14 +110,18 @@ func (h *Handlers) Fragment(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNoContent)
 		return
 	}
-	h.cfg.RenderFragment(w, r, pageData(job))
+	h.cfg.RenderFragment(w, r, pageData(r, job))
 }
 
-func pageData(job Job) PageData {
+// pageData's paths go into the page, where the browser fetches them,
+// so they carry the base path; under /acme a bare /jobs/... would poll
+// the hub. The redirects above are headers, which the base-path
+// middleware prefixes itself.
+func pageData(r *http.Request, job Job) PageData {
 	return PageData{
 		Job:          job,
-		FragmentPath: "/jobs/" + job.ID + "/fragment",
-		EventsPath:   "/jobs/" + job.ID + "/events",
+		FragmentPath: basepath.Path(r, "/jobs/"+job.ID+"/fragment"),
+		EventsPath:   basepath.Path(r, "/jobs/"+job.ID+"/events"),
 		PollSeconds:  pollSeconds,
 	}
 }

@@ -92,7 +92,7 @@ func main() {
 	}
 
 	bg := &background.Group{}
-	mux, err := notes.App(d, origin, instanceKey, bg, logger, cfg)
+	mux, hub, err := notes.App(d, origin, instanceKey, bg, logger, cfg)
 	if err != nil {
 		logger.Error("build app", "err", err)
 		os.Exit(1)
@@ -103,6 +103,9 @@ func main() {
 	// Serve stops the group after draining requests and before the
 	// deferred d.Close(), so a sweep never runs against a closed database.
 	opts.Background = bg
+	// Serve ends the live streams when shutdown starts; left to the
+	// drain, an open stream would hold it for the full 10 seconds.
+	opts.Live = hub
 	if err := rastrillo.Serve(opts); err != nil {
 		logger.Error("serve failed", "err", err)
 		os.Exit(1)

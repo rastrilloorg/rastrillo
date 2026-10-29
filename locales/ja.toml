@@ -158,3 +158,6 @@ rastrillo.ui.job_running_progress = "{name}を実行中: {progress}…"
 rastrillo.ui.job_failed = "{name}は失敗しました"
 rastrillo.ui.job_failed_error = "{name}は失敗しました: {error}"
 rastrillo.ui.job_finished = "{name}は完了しました。"
+
+rastrillo.ui.live.paused = "ライブ更新が一時停止しました。ページを再読み込みすると再開します。"
+rastrillo.ui.live.unconfirmed = "その変更を確認できませんでした。もう一度試す前に、ページを確認してください。"

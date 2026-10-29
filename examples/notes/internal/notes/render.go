@@ -1,7 +1,6 @@
 package notes
 
 import (
-	"bytes"
 	"embed"
 	"log/slog"
 	"net/http"
@@ -12,6 +11,7 @@ import (
 	"amadan.net/rastrillo/rastrillo/flash"
 	"amadan.net/rastrillo/rastrillo/form"
 	"amadan.net/rastrillo/rastrillo/jobs"
+	"amadan.net/rastrillo/rastrillo/live"
 	"amadan.net/rastrillo/rastrillo/locales"
 	"amadan.net/rastrillo/rastrillo/password"
 	"amadan.net/rastrillo/rastrillo/sessions"
@@ -80,9 +80,10 @@ func newFragPages(cfg locales.Config) (*ui.Pages, error) {
 }
 
 // page is the data every hand template renders against: layout.html
-// reads Flash/HasFlash/SignedIn for its chrome and L/Locales/Return
-// (the embedded ui.Localized) for the switcher, and each page's own
-// content block reads Content, cast back to its own view type.
+// reads Flash/HasFlash/SignedIn for its chrome, L/Locales/Return
+// (the embedded ui.Localized) for the switcher and Live for the stream
+// meta tag, and each page's own content block reads Content, cast back
+// to its own view type.
 // renderStatus sets Localized from ui.ForRequest(r) itself — unlike
 // GenRender, there is no generated view to read it off.
 type page struct {
@@ -90,6 +91,7 @@ type page struct {
 	Flash    flash.Flash
 	HasFlash bool
 	SignedIn bool
+	Live     live.View
 	Content  any
 }
 
@@ -97,37 +99,38 @@ type page struct {
 // formView serves both new (a blank Note, no Errors) and edit/the
 // 422 re-render (a Note carrying the submitted values, Errors set).
 type (
-	indexView struct{ Notes []Note }
-	noteView  struct{ Note Note }
-	formView  struct {
+	// Topic is the caller's notes topic, which the list region renders
+	// its version of.
+	indexView struct {
+		Notes []Note
+		Topic string
+	}
+	noteView struct{ Note Note }
+	formView struct {
 		Note   Note
 		Errors form.Errors
 	}
 )
 
-// renderStatus takes the flash exactly once, resolves whether a
-// session is current (for layout's nav), and executes name's layout
-// into a buffer before anything touches the wire. The buffer matters
-// twice: a template error becomes a clean 500 instead of garbage
-// appended to a half-written page, and flash.Take's clearing
-// Set-Cookie lands before the status line — headers added after
-// WriteHeader are silently dropped, which is exactly how a 422
-// re-render used to show the same flash twice. status 0 means let the
-// first body write imply 200.
+// renderStatus answers a hand page, whole or, for live.js, as some of
+// its regions, through ui.Pages.Render, which keeps live's render
+// order: the flash is taken only by a render that shows the notice,
+// and never by one that ends in a navigation, so a message waits for
+// the page that displays it. status 0 means 200.
 func (a *app) renderStatus(w http.ResponseWriter, r *http.Request, status int, name string, content any) {
-	fl, ok := flash.Take(w, r)
-	_, signedIn := sessions.Current(r)
-	data := page{Localized: ui.ForRequest(r), Flash: fl, HasFlash: ok, SignedIn: signedIn, Content: content}
-	var buf bytes.Buffer
-	if err := a.pages.Execute(&buf, name, data); err != nil {
+	err := a.pages.Render(w, r, status, name, func(takeFlash bool) (any, error) {
+		var fl flash.Flash
+		var hasFlash bool
+		if takeFlash {
+			fl, hasFlash = flash.Take(w, r)
+		}
+		_, signedIn := sessions.Current(r)
+		return page{Localized: ui.ForRequest(r), Flash: fl, HasFlash: hasFlash, SignedIn: signedIn, Live: a.live.View(r), Content: content}, nil
+	})
+	if err != nil {
 		slog.Default().Error("notes: render "+name, "err", err)
 		http.Error(w, "something went wrong", http.StatusInternalServerError)
-		return
 	}
-	if status != 0 {
-		w.WriteHeader(status)
-	}
-	buf.WriteTo(w)
 }
 
 func (a *app) renderContent(w http.ResponseWriter, r *http.Request, name string, content any) {
