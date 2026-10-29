@@ -72,7 +72,12 @@ revocation is real: the cookie is dead even if it survives.
 Under a base path, neither touches a row or a cookie; see [Under a base path](#under-a-base-path).
 
 `Sessions.CookieName` reports the cookie's name, which varies with the
-origin's scheme because of the `__Host-` prefix.
+origin's scheme because of the `__Host-` prefix. `Sessions.Signed`
+reports whether this value was built in Signed (hub) mode — a plugin
+composing its own `Method` suffix (secondfactor's `+passkey`/`+totp`) or
+minting any other shape a plugin alone cannot validate needs to know
+this before it does, rather than finding out from a `SignIn` error after
+the fact.
 
 ```go
 func (s *Sessions) Mint(sess Session) (token string, err error)

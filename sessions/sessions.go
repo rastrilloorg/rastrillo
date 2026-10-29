@@ -154,6 +154,17 @@ func New(cfg Config) (*Sessions, error) {
 
 func (s *Sessions) now() time.Time { return s.cfg.Now() }
 
+// Signed reports whether this Sessions was built in Signed (hub) mode —
+// Config.Signed was set — rather than ordinary row mode. A plugin
+// composing a Method string with a suffix (secondfactor's own
+// "+passkey"/"+totp") or minting any other shape a plugin alone cannot
+// validate needs this: Signed mode's own key-id alphabet
+// ([a-z0-9_-]{1,32}) is not guaranteed by any contract a plugin can see
+// otherwise, and finding that out from a SignIn error after a person has
+// already completed a second factor is late. See the oidc package for
+// the motivating case.
+func (s *Sessions) Signed() bool { return s.cfg.Signed != nil }
+
 // secure reports whether the app's origin is https — which decides
 // both the Secure cookie attribute and the __Host- name prefix (the
 // prefix requires Secure, so a plain-http dev origin gets the
