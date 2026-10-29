@@ -30,6 +30,12 @@ What changed:
 - `auth`, `password`, `passkey`, `secondfactor`, `totp` and `vault` answer 404 under a base path and on the direct host, and log an error. `auth.SigninState` gains `Unavailable`, and the `signin` partial renders nothing for it.
 - New apps read `RASTRILLO_SLUG` or `RASTRILLO_SLUG_FROM_HOST` at boot, and their README says how to deploy one as a tenant.
 
+### Added: sign in with Microsoft Entra ID or Google Workspace
+
+New package `oidc` signs people in through OpenID Connect into the same `sessions` as `password` and `auth`. The app lists the tenants and Workspace domains it accepts, and maps each verified identity to one of its own users with `Config.Admit`, which has no default. ID tokens are checked with the standard library alone: RS256 only, https only, and no refresh token is kept. It has not yet been tried against real Entra and Google tenants; `oidc/INTEROP.md` is the checklist for doing that. Under a base path it answers 404, like the other sign-in packages. See [oidc](/docs/reference/oidc).
+
+- New method `sessions.Sessions.Signed` reports whether sessions run in Signed (hub) mode.
+
 ### Added: live pages; vendor `live.js` and re-copy `busy.js`
 
 Run `rastrillo doctor --fix` to vendor `live.js` and re-copy `busy.js`. Every layout now links `live.js` after `busy.js`; add the tag to yours. It does nothing until a page opts in.

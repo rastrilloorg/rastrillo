@@ -308,6 +308,12 @@ session with a stale `auth_time` regardless of `max_age`, and this is
 refused rather than minted as a session that would only loop at the next
 freshness check.
 
+A sign-in without `?reauth=1` may be answered from the provider's own session, which can be days old. When the token carries no `auth_time`, as Google's usually don't, the session records an authentication time of 1970, so it never counts as fresh: `RequireFresh` sends the person back through `?reauth=1`, and that sign-in must show an `auth_time` from the last minute.
+
+## Under a base path
+
+Under a [`basepath`](/docs/reference/basepath), and on the app's direct host, `Begin` and `Return` answer 404 and log an error before they set a cookie or call the provider, because a tenant there signs people in through its hub.
+
 ## What this does not do
 
 No account provisioning — an address must already be one `Admit` accepts.
@@ -318,11 +324,4 @@ stops their NEXT sign-in, not a session already open — set a short
 policy: a provider's claim about its own second factor is recorded on
 `Identity.Methods` and decides nothing, for the same reason a firm's own
 "our tenant enforces MFA" checkbox is not a fact this package can stand
-behind. No second factor in Signed (hub) mode today — `secondfactor`'s
-own `Method` suffix does not fit Signed mode's key-id alphabet, a gap
-between those two core packages rather than anything specific to this
-one; running `SecondFactor` against a Signed-mode `Sessions` fails closed
-(an error from `Sessions.SignIn`, no session minted) rather than shipping
-a silently broken combination, but only at sign-in time, since this
-package cannot detect Signed mode from the outside to refuse the
-combination at `New`.
+behind. No second factor in Signed (hub) mode today. `secondfactor`'s own `Method` suffix does not fit Signed mode's key-id alphabet, a gap between those two core packages rather than anything specific to this one, so `New` refuses a `SecondFactor` with a Signed-mode `Sessions`.
