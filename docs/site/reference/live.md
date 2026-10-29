@@ -135,6 +135,40 @@ take down the request that made the write. A topic listed twice counts
 once. `notes` and `notes/7` are different topics with different
 versions. Notify the one the region shows.
 
+### NotifyAt
+
+```go
+func (h *Hub) NotifyAt(at time.Time, topics ...string)
+```
+
+Some changes happen at a time, not on a write: a post that goes live at
+9:00, an offer that ends at midnight. Nothing calls `Notify` for them,
+so tell the hub when they are due:
+
+```go
+a.live.NotifyAt(p.PublishAt, "posts")
+```
+
+Call it at boot for every future time you have stored, and again
+whenever a schedule changes. The hub forgets pending times when the
+process restarts, but a restart also gives it a new boot ID, so every
+open page fetches its regions once anyway. Your boot calls then cover
+the times still ahead.
+
+A time that has already passed notifies at once, before `NotifyAt`
+returns. The same topic at the same time is kept once. Topics are
+checked as `Notify` checks them.
+
+There is no cancel. If you move a post's time, its old time still
+fires, and the pages that show it fetch once and find nothing new.
+
+At most 10,000 (time, topic) pairs wait. Past that, the pair due last
+is dropped, whether it is the new one or one already waiting, and the
+first drop is logged. A dropped pair only loses its live update: pages
+still show the change the next time they load. `Close` stops the
+timer and drops every pending time, and `NotifyAt` does nothing after
+it. On a nil hub it does nothing.
+
 ### Middleware
 
 `Middleware` records where the hub stood when the request began. Mount
@@ -203,7 +237,7 @@ client goes, when `Lifetime` runs out, or when the hub closes.
 `Close` refuses new streams and ends every open one. A stream waiting
 for a change ends at once. A stream stuck writing to a slow client ends
 when that write's deadline passes, so within `WriteDeadline`. It is
-safe to call twice.
+safe to call twice. It also stops `NotifyAt`'s timer and drops the times still waiting.
 
 If you set `Options.Live`, [`Serve`](/docs/reference/rastrillo) calls
 `Close` the moment shutdown starts, and you need not. Call it yourself
@@ -274,8 +308,12 @@ named `region:<name>`. The prefix is the whole safety rule: a name from
 a request can only reach a template you marked as a region, never your
 layout or a partial.
 
-Call these in this order. The order is what keeps a flash message from
-being lost:
+Answer pages with `Render` (or `ui.Pages.Render`). It calls the
+functions below in the one order that keeps a flash message from being
+lost, and a mistake in that order fails without an error: a notice
+disappears, or a form's errors never show.
+
+If you call the building blocks yourself, the order is:
 
 1. `Elsewhere`, before anything is taken.
 2. `NoStore`.
@@ -285,9 +323,47 @@ being lost:
    any other method gets the whole page, with its status.
 5. `TakesFlash`, to decide whether to take the flash.
 6. `WriteRegions` (or `ui.Pages.WriteRegions`), or the whole page when
-   `Wanted` or `Has` said no.
+   `Wanted` or `Has` said no. To keep a status such as `422` on a
+   fragment, send it with the first body byte, after `WriteRegions`
+   has set its header.
 
-The guide has [the full render function](/docs/live).
+### Render
+
+```go
+func Render(w http.ResponseWriter, r *http.Request, status int, t *template.Template, entry string,
+	data func(takeFlash bool) (any, error)) error
+```
+
+Answers a request for a page, whole or as the regions it asks for. `t`
+is the page's templates and `entry` the one to run for a whole page,
+usually `"layout"`. `status` is the response's status; `0` means `200`.
+A fragment answer keeps it, so a form's `422` still arrives as a `422`.
+
+`data` builds your page data. `Render` calls it once, and tells it
+whether this render shows the notice. Take the flash only when
+`takeFlash` is true:
+
+```go
+err := live.Render(w, r, status, a.tmpl["show"], "layout", func(takeFlash bool) (any, error) {
+	var fl flash.Flash
+	if takeFlash {
+		fl, _ = flash.Take(w, r)
+	}
+	return page{Flash: fl, Live: a.live.View(r), Content: content}, nil
+})
+if err != nil {
+	http.Error(w, "something went wrong", http.StatusInternalServerError)
+}
+```
+
+When the answer is a navigation (a form's redirect to another page, or
+a GET for regions this page lacks), `data` is not called at all, so the
+flash waits for the page you land on.
+
+Everything renders into a buffer first. An error from `data` or from a
+template comes back with nothing written, so you can send your own 500.
+An error while writing the response can come after the status and
+headers have gone out, when it is too late for a 500.
 
 ### Notice
 

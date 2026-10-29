@@ -24,22 +24,28 @@
 // process.
 //
 // Fragment requests (fragment.go) let one URL answer with a page's
-// regions alone. A renderer calls, in this order: Elsewhere (a form's
-// redirect went to another page: navigate, before anything is taken);
-// NoStore; Wanted; then Has, which asks whether the page defines any
-// region asked for besides the notice (every layout has that one).
-// When it says no, a GET or HEAD is answered by navigating (Respond
-// with nothing rendered) and the renderer returns; any other method, a
-// form whose error render is another page, falls through to the whole
-// page with its status and no Rastrillo-Regions, which live.js shows
-// as the browser would. Then TakesFlash decides whether to take the
-// flash (always, for a whole page), and WriteRegions (or
-// ui.Pages.WriteRegions) answers, or the whole page when Wanted was not
-// ok or Has said no. WriteRegions renders into a buffer and sets
-// Rastrillo-Regions before the first body byte; writing regions
-// straight to the ResponseWriter would lose that header. The flash is
-// looked up after Has so a request that ends in a navigation leaves it
-// for the page navigated to.
+// regions alone. Render (or ui.Pages.Render) answers a page, whole or
+// as regions, in the order below, and is the one call an app should
+// make: the order is easy to get wrong in ways no error reports, a
+// notice lost or a form's errors never shown.
+//
+// The building blocks stay exported for a renderer that cannot use
+// Render, which calls them in this order. Elsewhere first: a form's
+// redirect went to another page, so navigate, before anything is
+// taken. Then NoStore, then Wanted, then Has, which asks whether the
+// page defines any region asked for besides the notice (every layout
+// has that one). When it says no, a GET or HEAD is answered by
+// navigating (Respond with nothing rendered) and the renderer returns;
+// any other method, a form whose error render is another page, falls
+// through to the whole page with its status and no Rastrillo-Regions,
+// which live.js shows as the browser would. Then TakesFlash decides
+// whether to take the flash (always, for a whole page), and
+// WriteRegions (or ui.Pages.WriteRegions) answers, or the whole page
+// when Wanted was not ok or Has said no. WriteRegions renders into a
+// buffer and sets Rastrillo-Regions before the first body byte;
+// writing regions straight to the ResponseWriter would lose that
+// header. The flash is looked up after Has so a request that ends in a
+// navigation leaves it for the page navigated to.
 //
 // The package imports only the standard library: ui and the root
 // package import live, never the reverse.
@@ -101,6 +107,18 @@ type Hub struct {
 	// template warns once rather than on every render (warnOnce).
 	warned map[string]bool
 
+	// pending is NotifyAt's scheduled (time, topic) pairs, a min-heap
+	// by time, with scheduled as its set for dedup; timer waits for the
+	// earliest (schedule.go).
+	pending    pendingHeap
+	scheduled  map[pendingKey]bool
+	timer      *time.Timer
+	warnedFull bool
+	maxPending int
+	// now is NotifyAt's clock, time.Now outside tests, which set it
+	// before any timer exists and drive fire themselves.
+	now func() time.Time
+
 	// Copied from cfg so tests can shrink them, as in jobs.Handlers.
 	lifetime      time.Duration
 	heartbeat     time.Duration
@@ -161,6 +179,9 @@ func New(cfg Config) (*Hub, error) {
 		topics:        map[string]*topicState{},
 		subs:          map[*subscriber]struct{}{},
 		warned:        map[string]bool{},
+		scheduled:     map[pendingKey]bool{},
+		maxPending:    maxPending,
+		now:           time.Now,
 		done:          make(chan struct{}),
 		lifetime:      cfg.Lifetime,
 		heartbeat:     cfg.Heartbeat,
@@ -187,16 +208,29 @@ func (h *Hub) Notify(topics ...string) {
 	if h == nil {
 		return
 	}
+	valid := h.validTopics("Notify", topics)
+	if len(valid) == 0 {
+		return
+	}
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.raiseLocked(valid)
+}
+
+// validTopics is topics without the malformed or undeclared ones,
+// each logged and skipped, and with each repeat once. caller names the
+// method in the log.
+func (h *Hub) validTopics(caller string, topics []string) []string {
 	valid := make([]string, 0, len(topics))
 	seen := make(map[string]bool, len(topics))
 	for _, t := range topics {
 		name, _, ok := parseTopic(t)
 		if !ok {
-			slog.Warn("live: Notify skipped a malformed topic", "topic", t)
+			slog.Warn("live: "+caller+" skipped a malformed topic", "topic", t)
 			continue
 		}
 		if _, declared := h.cfg.Topics[name]; !declared {
-			slog.Warn("live: Notify skipped an undeclared topic", "topic", t)
+			slog.Warn("live: "+caller+" skipped an undeclared topic", "topic", t)
 			continue
 		}
 		if !seen[t] {
@@ -204,11 +238,12 @@ func (h *Hub) Notify(topics ...string) {
 			valid = append(valid, t)
 		}
 	}
-	if len(valid) == 0 {
-		return
-	}
-	h.mu.Lock()
-	defer h.mu.Unlock()
+	return valid
+}
+
+// raiseLocked is one change to valid topics, all at one sequence
+// number, and a wake for every open stream. h.mu is held.
+func (h *Hub) raiseLocked(valid []string) {
 	h.seq++
 	for _, t := range valid {
 		st := h.topics[t]
