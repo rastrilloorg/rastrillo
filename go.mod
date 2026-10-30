@@ -5,10 +5,10 @@ go 1.25.0
 require (
 	amadan.net/rastrillo/rastrillo/money v0.1.0
 	github.com/BurntSushi/toml v1.6.0
-	github.com/chromedp/cdproto v0.0.0-20250724212937-08a3db8b4327
-	github.com/chromedp/chromedp v0.14.2
+	github.com/chromedp/cdproto v0.158.6
+	github.com/chromedp/chromedp v0.21.0
 	github.com/go-chi/chi/v5 v5.3.2
-	github.com/go-json-experiment/json v0.0.0-20250725192818-e39067aee2d2
+	github.com/go-json-experiment/json v0.0.0-20260213210345-44df1a37e875
 	github.com/keymaildev/signin v0.1.1
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
 	golang.org/x/crypto v0.53.0
@@ -21,11 +21,7 @@ require (
 )
 
 require (
-	github.com/chromedp/sysutil v1.1.0 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
-	github.com/gobwas/httphead v0.1.0 // indirect
-	github.com/gobwas/pool v0.2.1 // indirect
-	github.com/gobwas/ws v1.4.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect

@@ -36,10 +36,13 @@ func TestMoneySamplesWithNoScript(t *testing.T) {
 	off := noScripts(t, ctx)
 
 	moneyID := anchorID("format", "money")
-	var formats string
-	if err := chromedp.Run(off,
-		chromedp.Navigate(rig.Origin+pageHref(mountPath, "day", "es", "formats/"+moneyID+"-0.html")),
-		chromedp.Text("dl", &formats, chromedp.ByQuery)); err != nil {
+	if err := chromedp.Do(off,
+		chromedp.Navigate(rig.Origin+pageHref(mountPath, "day", "es",
+			"formats/"+moneyID+"-0.html"))); err != nil {
+		t.Fatalf("es money sample, scripts off: %v", err)
+	}
+	formats, err := chromedp.Run(off, chromedp.Text(chromedp.CSS("dl")))
+	if err != nil {
 		t.Fatalf("es money sample, scripts off: %v", err)
 	}
 	requireScriptsOff(t, off, "es money sample, scripts off")
@@ -48,10 +51,14 @@ func TestMoneySamplesWithNoScript(t *testing.T) {
 	}
 
 	fieldMoneyID := anchorID("partial", "field-money")
-	var form string
-	if err := chromedp.Run(off,
-		chromedp.Navigate(rig.Origin+pageHref(mountPath, "day", "es", "form/"+fieldMoneyID+"-0.html")),
-		chromedp.OuterHTML("[name='fm_bare']", &form, chromedp.ByQuery)); err != nil {
+	if err := chromedp.Do(off,
+		chromedp.Navigate(rig.Origin+pageHref(mountPath, "day", "es",
+			"form/"+fieldMoneyID+"-0.html"))); err != nil {
+		t.Fatalf("es field-money bare sample, scripts off: %v", err)
+	}
+	form, err := chromedp.Run(off,
+		chromedp.OuterHTML(chromedp.CSS("[name='fm_bare']")))
+	if err != nil {
 		t.Fatalf("es field-money bare sample, scripts off: %v", err)
 	}
 	requireScriptsOff(t, off, "es field-money bare sample, scripts off")

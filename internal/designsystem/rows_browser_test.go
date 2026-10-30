@@ -42,11 +42,11 @@ func TestTheDemoRequestsRowsAreClickableEdgeToEdge(t *testing.T) {
 			ctx, cancel := context.WithTimeout(rig.Context(), 120*time.Second)
 			defer cancel()
 			url := rig.Origin + demoPageHref(mountPath, RootTheme(), "en", "requests")
-			if err := chromedp.Run(ctx, chromedp.EmulateViewport(leg.w, leg.h), chromedp.Navigate(url)); err != nil {
+			if err := chromedp.Do(ctx, chromedp.EmulateViewport(leg.w, leg.h), chromedp.Navigate(url)); err != nil {
 				t.Fatal(err)
 			}
-			var coarse bool
-			if err := chromedp.Run(ctx, chromedp.Evaluate(`matchMedia("(pointer: coarse)").matches`, &coarse)); err != nil {
+			coarse, err := chromedp.Run(ctx, chromedp.Evaluate[bool](`matchMedia("(pointer: coarse)").matches`))
+			if err != nil {
 				t.Fatal(err)
 			}
 			if coarse != leg.coarse {
@@ -70,7 +70,7 @@ func TestTheDemoRequestsRowsAreClickableEdgeToEdge(t *testing.T) {
 				// Back to the list, a page of its own, settled: a click sent
 				// during the narrow slide between pages lands on the
 				// transition's snapshot and does nothing.
-				if err := chromedp.Run(ctx, chromedp.Navigate(url)); err != nil {
+				if err := chromedp.Do(ctx, chromedp.Navigate(url)); err != nil {
 					t.Fatal(err)
 				}
 				demoUntil(t, ctx, `!!document.getElementById("view-requests") && document.readyState === "complete" && !document.activeViewTransition`)
@@ -78,10 +78,14 @@ func TestTheDemoRequestsRowsAreClickableEdgeToEdge(t *testing.T) {
 					X, Y float64
 					Hit  string
 				}
-				var raw string
-				if err := chromedp.Run(ctx, chromedp.Evaluate(fmt.Sprintf(`(() => { const el = document.querySelector(%q); el.scrollIntoView({block: "center"}); const r = el.getBoundingClientRect();
+				raw, err := chromedp.Run(ctx, chromedp.Evaluate[string](
+					fmt.Sprintf(`(() => {
+				  const el = document.querySelector(%q);
+				  el.scrollIntoView({block: "center"});
+				  const r = el.getBoundingClientRect();
 				  const x = r.left + r.width * %v + %v, y = r.top + r.height / 2, h = document.elementFromPoint(x, y), link = document.querySelector(%q);
-				  return JSON.stringify({X: x, Y: y, Hit: h === link ? "the row's link" : h ? h.tagName + " " + h.className : "nothing"}); })()`, c.sel, c.fx, c.dx, row+` > a.rst-nm`), &raw)); err != nil {
+				  return JSON.stringify({X: x, Y: y, Hit: h === link ? "the row's link" : h ? h.tagName + " " + h.className : "nothing"}); })()`, c.sel, c.fx, c.dx, row+` > a.rst-nm`)))
+				if err != nil {
 					t.Fatal(err)
 				}
 				if err := json.Unmarshal([]byte(raw), &p); err != nil {
@@ -90,7 +94,7 @@ func TestTheDemoRequestsRowsAreClickableEdgeToEdge(t *testing.T) {
 				if p.Hit != "the row's link" {
 					t.Errorf("%s: at %s the element under the pointer is %s, want the row's link", leg.name, c.where, p.Hit)
 				}
-				if err := chromedp.Run(ctx, chromedp.MouseClickXY(p.X, p.Y)); err != nil {
+				if err := chromedp.Do(ctx, chromedp.MouseClickXY(p.X, p.Y)); err != nil {
 					t.Fatal(err)
 				}
 				if !demoPoll(ctx, `location.pathname.endsWith("/demo-request.html") && !!document.getElementById("view-request")`) {
@@ -113,8 +117,8 @@ func demoUntil(t *testing.T, ctx context.Context, expr string) {
 func demoPoll(ctx context.Context, expr string) bool {
 	deadline := time.Now().Add(10 * time.Second)
 	for time.Now().Before(deadline) {
-		var yes bool
-		if err := chromedp.Run(ctx, chromedp.Evaluate(expr, &yes)); err == nil && yes {
+		yes, err := chromedp.Run(ctx, chromedp.Evaluate[bool](expr))
+		if err == nil && yes {
 			return true
 		}
 		time.Sleep(100 * time.Millisecond)

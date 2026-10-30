@@ -29,14 +29,13 @@ import (
 	"io"
 	"net/http"
 	"strings"
-	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
 
+	"github.com/chromedp/cdproto/cdp"
 	"github.com/chromedp/cdproto/emulation"
 	"github.com/chromedp/cdproto/page"
-	"github.com/chromedp/cdproto/runtime"
 	"github.com/chromedp/chromedp"
 	"github.com/chromedp/chromedp/kb"
 
@@ -45,14 +44,6 @@ import (
 	"amadan.net/rastrillo/rastrillo/pow"
 	"amadan.net/rastrillo/rastrillo/ui"
 )
-
-// awaitPromise makes Evaluate wait for the expression's promise instead
-// of handing back a pending object. Every script here uses dynamic
-// import, which is asynchronous by nature. chromedp exports no such
-// option of its own.
-func awaitPromise(p *runtime.EvaluateParams) *runtime.EvaluateParams {
-	return p.WithAwaitPromise(true)
-}
 
 // powRig serves the package's own browser assets and one blank page to
 // run them from — nothing else, because nothing else is under test.
@@ -92,10 +83,9 @@ func TestBrowserSolutionSatisfiesGoVerifier(t *testing.T) {
 	// exactly where the two sides disagree if they are going to.
 	const binding = "  Alice@Example.COM "
 
-	var counter string
-	rig.Run(chromedp.Evaluate(
+	counter := harness.Evaluate[string](rig,
 		fmt.Sprintf(browserSolve, testNonce, binding, browserDifficulty),
-		&counter, awaitPromise))
+		chromedp.EvalAwaitPromise)
 
 	if counter == "" {
 		t.Fatal("the browser returned no counter")
@@ -113,10 +103,9 @@ func TestBrowserSolutionDoesNotTransfer(t *testing.T) {
 	rig := powRig(t)
 	rig.Run(chromedp.Navigate(rig.Origin + "/"))
 
-	var counter string
-	rig.Run(chromedp.Evaluate(
+	counter := harness.Evaluate[string](rig,
 		fmt.Sprintf(browserSolve, testNonce, "alice@example.com", browserDifficulty),
-		&counter, awaitPromise))
+		chromedp.EvalAwaitPromise)
 
 	if pow.Verify(testNonce, "bob@example.com", counter, browserDifficulty) {
 		t.Fatal("a solution the browser found for one address verified for another")
@@ -150,8 +139,8 @@ func TestBrowserSHA256MatchesGo(t *testing.T) {
 	})()`
 
 	for _, in := range inputs {
-		var got string
-		rig.Run(chromedp.Evaluate(fmt.Sprintf(digestJS, in), &got, awaitPromise))
+		got := harness.Evaluate[string](rig, fmt.Sprintf(digestJS, in),
+			chromedp.EvalAwaitPromise)
 
 		sum := sha256.Sum256([]byte(in))
 		if want := hex.EncodeToString(sum[:]); got != want {
@@ -176,8 +165,8 @@ func TestBrowserNormaliserMatchesGo(t *testing.T) {
 	// Each of these folds differently under a Unicode-aware lowercase,
 	// which is why neither side is allowed to use one.
 	for _, in := range []string{"İSTANBUL", "ǅ", "STRASSE", "Alice@Example.COM", "ΣΊΣΥΦΟΣ"} {
-		var got string
-		rig.Run(chromedp.Evaluate(fmt.Sprintf(lowerJS, in), &got, awaitPromise))
+		got := harness.Evaluate[string](rig, fmt.Sprintf(lowerJS, in),
+			chromedp.EvalAwaitPromise)
 
 		// The Go side, spelled out here rather than imported, so this
 		// test fails if either implementation drifts from the rule.
@@ -227,8 +216,7 @@ func TestBrowserHoneypotStaysOffScreenUnderTheDefaultCSP(t *testing.T) {
 	// empty" box on every public form — and some will fill it in.
 	rig := honeypotRig(t, "")
 	rig.Run(chromedp.Navigate(rig.Origin + "/"))
-	var got string
-	rig.Run(chromedp.Evaluate(honeypotPosition, &got))
+	got := harness.Evaluate[string](rig, honeypotPosition)
 	if got != "absolute" {
 		t.Fatalf("honeypot wrapper position = %q under the default CSP, want absolute", got)
 	}
@@ -239,8 +227,7 @@ func TestBrowserHoneypotStyleIsBlockedWithoutItsHash(t *testing.T) {
 	// against a browser that ignored style-src for attributes entirely.
 	rig := honeypotRig(t, "default-src 'self'; style-src 'self'")
 	rig.Run(chromedp.Navigate(rig.Origin + "/"))
-	var got string
-	rig.Run(chromedp.Evaluate(honeypotPosition, &got))
+	got := harness.Evaluate[string](rig, honeypotPosition)
 	if got != "static" {
 		t.Fatalf("honeypot wrapper position = %q under style-src 'self', want static (blocked)", got)
 	}
@@ -352,14 +339,13 @@ func powPage(bound, outside bool, extra string) func(*formRig) string {
 
 func (fr *formRig) waitReady(t *testing.T) {
 	t.Helper()
-	fr.Run(chromedp.Navigate(fr.Origin+"/"), chromedp.WaitReady(`form[data-pow-ready]`, chromedp.ByQuery))
+	fr.Run(chromedp.Navigate(fr.Origin+"/"), chromedp.WaitReady(chromedp.CSS(`form[data-pow-ready]`)))
 }
 
 func (fr *formRig) result(t *testing.T) string {
 	t.Helper()
-	var res string
-	fr.Run(chromedp.WaitVisible(`#result`, chromedp.ByQuery), chromedp.Text(`#result`, &res, chromedp.ByQuery))
-	return res
+	fr.Run(chromedp.WaitVisible(chromedp.CSS(`#result`)))
+	return harness.Read(fr.Rig, chromedp.Text(chromedp.CSS(`#result`)))
 }
 
 const whenSolvedJS = `(async () => {
@@ -371,12 +357,12 @@ const whenSolvedJS = `(async () => {
 func TestBrowserUnboundSolvesBeforeSubmit(t *testing.T) {
 	fr := newFormRig(t, rigOpts{page: powPage(false, false, "")})
 	fr.waitReady(t)
-	var got string
-	fr.Run(chromedp.Evaluate(fmt.Sprintf(whenSolvedJS, fr.scriptURL, "{}"), &got, awaitPromise))
+	got := harness.Evaluate[string](fr.Rig,
+		fmt.Sprintf(whenSolvedJS, fr.scriptURL, "{}"), chromedp.EvalAwaitPromise)
 	if !strings.Contains(got, `"pow_counter":"`) || strings.Contains(got, `"pow_counter":""`) {
 		t.Fatalf("whenSolved before any click = %s, want a counter", got)
 	}
-	fr.Run(chromedp.Click(`#go`, chromedp.ByQuery))
+	fr.Run(chromedp.Click(chromedp.CSS(`#go`)))
 	if res := fr.result(t); res != "ok" {
 		t.Fatalf("submission = %s", res)
 	}
@@ -388,7 +374,7 @@ func TestBrowserFastClickIsHeldNotRefused(t *testing.T) {
 		page: powPage(false, false, ""),
 	})
 	fr.waitReady(t)
-	fr.Run(chromedp.Click(`#go`, chromedp.ByQuery))
+	fr.Run(chromedp.Click(chromedp.CSS(`#go`)))
 	if res := fr.result(t); res != "ok" {
 		t.Fatalf("a click before the minimum age = %s, want held and then ok", res)
 	}
@@ -400,8 +386,9 @@ func TestBrowserBoundFormResolvesAfterTheBindingChanges(t *testing.T) {
 		page: powPage(true, false, ""),
 	})
 	fr.waitReady(t)
-	fr.Run(chromedp.Click(`#go`, chromedp.ByQuery),
-		chromedp.Evaluate(`document.getElementById("email").value = "b@example.com"`, nil))
+	fr.Run(chromedp.Click(chromedp.CSS(`#go`)),
+		chromedp.Evaluate[chromedp.Void](
+			`document.getElementById("email").value = "b@example.com"`))
 	if res := fr.result(t); res != "ok" {
 		t.Fatalf("binding changed during the hold = %s, want re-solved and ok (a stale proof is pow_short)", res)
 	}
@@ -416,11 +403,13 @@ func TestBrowserAnEmptyBindingSaysSo(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) {
 			fr := newFormRig(t, rigOpts{cfg: func(c *pow.Config) { c.Bind = true }, page: powPage(true, false, "")})
 			fr.waitReady(t)
-			fr.Run(chromedp.Evaluate(fmt.Sprintf(`document.getElementById("email").value = %q`, c.value), nil),
-				chromedp.Click(`#go`, chromedp.ByQuery))
+			fillEmail := fmt.Sprintf(
+				`document.getElementById("email").value = %q`, c.value)
+			fr.Run(chromedp.Evaluate[chromedp.Void](fillEmail),
+				chromedp.Click(chromedp.CSS(`#go`)))
 			time.Sleep(500 * time.Millisecond)
-			var msg string
-			fr.Run(chromedp.Evaluate(`document.getElementById("email").validationMessage`, &msg))
+			const validationJS = `document.getElementById("email").validationMessage`
+			msg := harness.Evaluate[string](fr.Rig, validationJS)
 			if msg == "" {
 				t.Fatal("submitting with an empty binding reported no error on the binding input")
 			}
@@ -428,12 +417,12 @@ func TestBrowserAnEmptyBindingSaysSo(t *testing.T) {
 				t.Fatalf("%d POSTs with an empty binding, want 0", n)
 			}
 			// Typing clears the error pow set, and the corrected form goes.
-			fr.Run(chromedp.SendKeys(`#email`, "b@example.com", chromedp.ByQuery))
-			fr.Run(chromedp.Evaluate(`document.getElementById("email").validationMessage`, &msg))
+			fr.Run(chromedp.SendKeys(chromedp.CSS(`#email`), "b@example.com"))
+			msg = harness.Evaluate[string](fr.Rig, validationJS)
 			if msg != "" {
 				t.Fatalf("after typing, the binding still reports %q", msg)
 			}
-			fr.Run(chromedp.Click(`#go`, chromedp.ByQuery))
+			fr.Run(chromedp.Click(chromedp.CSS(`#go`)))
 			if res := fr.result(t); res != "ok" {
 				t.Fatalf("the corrected form = %s, want ok", res)
 			}
@@ -447,7 +436,7 @@ func TestBrowserLeavingDuringAHoldNeverSubmits(t *testing.T) {
 		page: powPage(false, false, `<a id=slow href=/slow>elsewhere</a>`),
 	})
 	fr.waitReady(t)
-	fr.Run(chromedp.Click(`#go`, chromedp.ByQuery), chromedp.Click(`#slow`, chromedp.ByQuery))
+	fr.Run(chromedp.Click(chromedp.CSS(`#go`)), chromedp.Click(chromedp.CSS(`#slow`)))
 	time.Sleep(3500 * time.Millisecond)
 	if n := fr.posts.Load(); n != 0 {
 		t.Fatalf("%d POSTs after the visitor navigated away during the hold, want 0", n)
@@ -460,21 +449,23 @@ func TestBrowserBackForwardRestoresTheForm(t *testing.T) {
 		page: powPage(false, false, ""),
 	})
 	fr.waitReady(t)
-	fr.Run(chromedp.Click(`#go`, chromedp.ByQuery),
-		chromedp.Evaluate(`dispatchEvent(new PageTransitionEvent("pagehide", {persisted: true}))`, nil))
+	fr.Run(chromedp.Click(chromedp.CSS(`#go`)),
+		chromedp.Evaluate[chromedp.Void](
+			`dispatchEvent(new PageTransitionEvent("pagehide",
+				{persisted: true}))`))
 	time.Sleep(2500 * time.Millisecond)
 	if n := fr.posts.Load(); n != 0 {
 		t.Fatalf("a held submit fired after pagehide: %d POSTs", n)
 	}
 	// pagehide ended the hold, so the restored page shows a submit that
 	// is neither busy nor disabled, and it works.
-	var usable bool
-	fr.Run(chromedp.Evaluate(`dispatchEvent(new PageTransitionEvent("pageshow", {persisted: true}));
-		(b => !b.disabled && !b.hasAttribute("aria-busy"))(document.getElementById("go"))`, &usable))
+	usable := harness.Evaluate[bool](fr.Rig,
+		`dispatchEvent(new PageTransitionEvent("pageshow", {persisted: true}));
+		(b => !b.disabled && !b.hasAttribute("aria-busy"))(document.getElementById("go"))`)
 	if !usable {
 		t.Fatal("pageshow from the back-forward cache left the held submit disabled or busy")
 	}
-	fr.Run(chromedp.Click(`#go`, chromedp.ByQuery))
+	fr.Run(chromedp.Click(chromedp.CSS(`#go`)))
 	if res := fr.result(t); res != "ok" {
 		t.Fatalf("after restore = %s", res)
 	}
@@ -487,11 +478,11 @@ func TestBrowserBackForwardRestoresTheForm(t *testing.T) {
 func TestBrowserPageshowLeavesAnAppDisabledSubmitAlone(t *testing.T) {
 	fr := newFormRig(t, rigOpts{page: powPage(false, false, "")})
 	fr.waitReady(t)
-	var disabled bool
-	fr.Run(chromedp.Evaluate(`document.getElementById("go").disabled = true;
+	disabled := harness.Evaluate[bool](fr.Rig,
+		`document.getElementById("go").disabled = true;
 		dispatchEvent(new PageTransitionEvent("pagehide", {persisted: true}));
 		dispatchEvent(new PageTransitionEvent("pageshow", {persisted: true}));
-		document.getElementById("go").disabled`, &disabled))
+		document.getElementById("go").disabled`)
 	if !disabled {
 		t.Fatal("pageshow from the back-forward cache enabled a submit the app had disabled")
 	}
@@ -506,19 +497,20 @@ func TestBrowserPageshowRestartsUnfinishedWork(t *testing.T) {
 	// constructions observes the restart without waiting for a result.
 	fr := newFormRig(t, rigOpts{cfg: func(c *pow.Config) { c.Difficulty = 40 }, page: powPage(false, false, "")})
 	fr.waitReady(t)
-	var started int
-	fr.Run(chromedp.Evaluate(`(() => {
+	started := harness.Evaluate[int](fr.Rig, `(() => {
 		window.workersStarted = 0;
 		const W = window.Worker;
 		window.Worker = class extends W { constructor(...a) { super(...a); window.workersStarted++; } };
 		dispatchEvent(new PageTransitionEvent("pagehide", {persisted: true}));
 		dispatchEvent(new PageTransitionEvent("pageshow", {persisted: false}));
 		return window.workersStarted;
-	})()`, &started))
+	})()`)
 	if started != 0 {
 		t.Fatalf("a pageshow that was not a cache restore started %d workers, want 0", started)
 	}
-	fr.Run(chromedp.Evaluate(`dispatchEvent(new PageTransitionEvent("pageshow", {persisted: true})); window.workersStarted`, &started))
+	started = harness.Evaluate[int](fr.Rig, `dispatchEvent(
+		new PageTransitionEvent("pageshow", {persisted: true}));
+		window.workersStarted`)
 	if started != 1 {
 		t.Fatalf("pageshow from the back-forward cache started %d workers, want 1: unfinished unbound work must restart", started)
 	}
@@ -527,18 +519,17 @@ func TestBrowserPageshowRestartsUnfinishedWork(t *testing.T) {
 func TestBrowserInitAfterDocumentWrite(t *testing.T) {
 	fr := newFormRig(t, rigOpts{page: powPage(false, false, "")})
 	fr.waitReady(t)
-	var ready bool
-	fr.Run(chromedp.Evaluate(fmt.Sprintf(`(async () => {
+	ready := harness.Evaluate[bool](fr.Rig, fmt.Sprintf(`(async () => {
 		const html = await (await fetch("/again")).text();
 		document.open(); document.write(html); document.close();
 		const m = await import(%q);
 		m.init(document);
 		return document.querySelector("form").hasAttribute("data-pow-ready");
-	})()`, fr.scriptURL), &ready, awaitPromise))
+	})()`, fr.scriptURL), chromedp.EvalAwaitPromise)
 	if !ready {
 		t.Fatal("init(document) after document.write did not wire the new form")
 	}
-	fr.Run(chromedp.Click(`#go`, chromedp.ByQuery))
+	fr.Run(chromedp.Click(chromedp.CSS(`#go`)))
 	if res := fr.result(t); res != "ok" {
 		t.Fatalf("after document.write = %s", res)
 	}
@@ -553,13 +544,13 @@ func TestBrowserNavigationIsStillCancelledAfterDocumentWrite(t *testing.T) {
 		page: powPage(false, false, `<a id=slow href=/slow>elsewhere</a>`),
 	})
 	fr.waitReady(t)
-	fr.Run(chromedp.Evaluate(fmt.Sprintf(`(async () => {
+	fr.Run(chromedp.Evaluate[chromedp.Void](fmt.Sprintf(`(async () => {
 		const html = await (await fetch("/again")).text();
 		document.open(); document.write(html); document.close();
 		(await import(%q)).init(document);
-	})()`, fr.scriptURL), nil, awaitPromise))
-	fr.Run(chromedp.WaitReady(`form[data-pow-ready]`, chromedp.ByQuery),
-		chromedp.Click(`#go`, chromedp.ByQuery), chromedp.Click(`#slow`, chromedp.ByQuery))
+	})()`, fr.scriptURL), chromedp.EvalAwaitPromise))
+	fr.Run(chromedp.WaitReady(chromedp.CSS(`form[data-pow-ready]`)),
+		chromedp.Click(chromedp.CSS(`#go`)), chromedp.Click(chromedp.CSS(`#slow`)))
 	time.Sleep(3500 * time.Millisecond)
 	if n := fr.posts.Load(); n != 0 {
 		t.Fatalf("%d POSTs after navigating away from a replaced document, want 0", n)
@@ -576,14 +567,16 @@ func TestBrowserPagehideStillEndsAHoldAfterDocumentWrite(t *testing.T) {
 		page: powPage(false, false, ""),
 	})
 	fr.waitReady(t)
-	fr.Run(chromedp.Evaluate(fmt.Sprintf(`(async () => {
+	fr.Run(chromedp.Evaluate[chromedp.Void](fmt.Sprintf(`(async () => {
 		const html = await (await fetch("/again")).text();
 		document.open(); document.write(html); document.close();
 		(await import(%q)).init(document);
-	})()`, fr.scriptURL), nil, awaitPromise))
-	fr.Run(chromedp.WaitReady(`form[data-pow-ready]`, chromedp.ByQuery),
-		chromedp.Click(`#go`, chromedp.ByQuery),
-		chromedp.Evaluate(`dispatchEvent(new PageTransitionEvent("pagehide", {persisted: true}))`, nil))
+	})()`, fr.scriptURL), chromedp.EvalAwaitPromise))
+	fr.Run(chromedp.WaitReady(chromedp.CSS(`form[data-pow-ready]`)),
+		chromedp.Click(chromedp.CSS(`#go`)),
+		chromedp.Evaluate[chromedp.Void](
+			`dispatchEvent(new PageTransitionEvent("pagehide",
+				{persisted: true}))`))
 	time.Sleep(2500 * time.Millisecond)
 	if n := fr.posts.Load(); n != 0 {
 		t.Fatalf("%d POSTs: a hold survived pagehide on a replaced document", n)
@@ -608,12 +601,16 @@ func TestBrowserPagehideStillEndsAHoldAfterDocumentWrite(t *testing.T) {
 // reload and a restore alike. Page.getNavigationHistory cannot stand in
 // for it: its current index moves to the pending entry as soon as the
 // traversal starts, so an Evaluate sent then can still meet the swap.
-func goBack() chromedp.Action {
-	return chromedp.ActionFunc(func(ctx context.Context) error {
-		cur, entries, err := page.GetNavigationHistory().Do(ctx)
+func goBack() chromedp.Action[chromedp.Void] {
+	return chromedp.Func(func(
+		ctx context.Context, target *chromedp.Target,
+	) error {
+		history, err := cdp.Call(ctx, target,
+			page.GetNavigationHistory, cdp.Empty{})
 		if err != nil {
 			return err
 		}
+		cur, entries := history.CurrentIndex, history.Entries
 		if cur < 1 || cur >= int64(len(entries)) {
 			return fmt.Errorf("goBack: no history entry behind entry %d of %d", cur, len(entries))
 		}
@@ -623,13 +620,21 @@ func goBack() chromedp.Action {
 		lctx, stop := context.WithCancel(ctx)
 		defer stop()
 		committed := make(chan struct{})
-		var once sync.Once
-		chromedp.ListenTarget(lctx, func(ev any) {
-			if e, ok := ev.(*page.EventFrameNavigated); ok && e.Frame.ParentID == "" && e.Frame.URL == want.URL {
-				once.Do(func() { close(committed) })
+		navigations := chromedp.Events(lctx, page.FrameNavigated)
+		go func() {
+			for e, err := range navigations {
+				if err != nil {
+					return
+				}
+				if e.Frame.ParentID == "" && e.Frame.URL == want.URL {
+					close(committed)
+					return
+				}
 			}
-		})
-		if err := page.NavigateToHistoryEntry(want.ID).Do(ctx); err != nil {
+		}()
+		_, err = cdp.Call(ctx, target, page.NavigateToHistoryEntry,
+			page.NavigateToHistoryEntryParams{EntryID: want.ID})
+		if err != nil {
 			return err
 		}
 		select {
@@ -659,12 +664,12 @@ func TestBrowserRealBackNavigationLeavesAUsableForm(t *testing.T) {
 	// Poll and Click all work from node ids and helpers that a restored
 	// document does not honour. goBack waits for the commit, and after it
 	// plain Evaluate talks to the live page, so the return trip uses that.
-	fr.Run(chromedp.Click(`#go`, chromedp.ByQuery), chromedp.Click(`#away`, chromedp.ByQuery),
-		chromedp.WaitVisible(`#elsewhere`, chromedp.ByQuery), goBack())
+	fr.Run(chromedp.Click(chromedp.CSS(`#go`)), chromedp.Click(chromedp.CSS(`#away`)),
+		chromedp.WaitVisible(chromedp.CSS(`#elsewhere`)), goBack())
 	deadline := time.Now().Add(10 * time.Second)
 	for {
-		var back bool
-		fr.Run(chromedp.Evaluate(`!!document.querySelector("form[data-pow-ready]")`, &back))
+		back := harness.Evaluate[bool](fr.Rig,
+			`!!document.querySelector("form[data-pow-ready]")`)
 		if back {
 			break
 		}
@@ -673,8 +678,7 @@ func TestBrowserRealBackNavigationLeavesAUsableForm(t *testing.T) {
 		}
 		time.Sleep(50 * time.Millisecond)
 	}
-	var restored bool
-	fr.Run(chromedp.Evaluate(`window.restored === true`, &restored))
+	restored := harness.Evaluate[bool](fr.Rig, `window.restored === true`)
 	t.Logf("restored from the back-forward cache: %v", restored)
 	if n := fr.posts.Load(); n != 0 {
 		t.Fatalf("%d POSTs: the submit held when the visitor left fired anyway", n)
@@ -685,7 +689,8 @@ func TestBrowserRealBackNavigationLeavesAUsableForm(t *testing.T) {
 	if n := fr.posts.Load(); n != 0 {
 		t.Fatalf("%d POSTs after the minimum age: the submit held when the visitor left resumed on return", n)
 	}
-	fr.Run(chromedp.Evaluate(`document.getElementById("go").click()`, nil))
+	fr.Run(chromedp.Evaluate[chromedp.Void](
+		`document.getElementById("go").click()`))
 	if res := fr.result(t); res != "ok" {
 		t.Fatalf("after coming back = %s", res)
 	}
@@ -699,8 +704,9 @@ func TestBrowserARemovedSubmitterCancelsTheHold(t *testing.T) {
 		page: powPage(false, false, ""),
 	})
 	fr.waitReady(t)
-	fr.Run(chromedp.Click(`#go`, chromedp.ByQuery),
-		chromedp.Evaluate(`document.getElementById("go").remove()`, nil))
+	fr.Run(chromedp.Click(chromedp.CSS(`#go`)),
+		chromedp.Evaluate[chromedp.Void](
+			`document.getElementById("go").remove()`))
 	time.Sleep(2500 * time.Millisecond)
 	if n := fr.posts.Load(); n != 0 {
 		t.Fatalf("%d POSTs after the submitter was removed during the hold, want 0", n)
@@ -710,7 +716,7 @@ func TestBrowserARemovedSubmitterCancelsTheHold(t *testing.T) {
 func TestBrowserSubmitOutsideTheForm(t *testing.T) {
 	fr := newFormRig(t, rigOpts{page: powPage(false, true, "")})
 	fr.waitReady(t)
-	fr.Run(chromedp.Click(`#go`, chromedp.ByQuery))
+	fr.Run(chromedp.Click(chromedp.CSS(`#go`)))
 	if res := fr.result(t); res != "ok" {
 		t.Fatalf("form= submit = %s", res)
 	}
@@ -726,11 +732,11 @@ func TestBrowserFailureLeavesTheStatusLineShowing(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			o.page = powPage(false, false, "")
 			fr := newFormRig(t, o)
-			fr.Run(chromedp.Navigate(fr.Origin+"/"), chromedp.WaitVisible(`[data-pow-status]`, chromedp.ByQuery))
-			fr.Run(chromedp.Click(`#go`, chromedp.ByQuery))
+			fr.Run(chromedp.Navigate(fr.Origin+"/"), chromedp.WaitVisible(chromedp.CSS(`[data-pow-status]`)))
+			fr.Run(chromedp.Click(chromedp.CSS(`#go`)))
 			time.Sleep(500 * time.Millisecond)
-			var visible bool
-			fr.Run(chromedp.Evaluate(`!document.querySelector("[data-pow-status]").hidden`, &visible))
+			visible := harness.Evaluate[bool](fr.Rig,
+				`!document.querySelector("[data-pow-status]").hidden`)
 			if !visible {
 				t.Fatal("the status line is hidden although the form cannot work")
 			}
@@ -745,8 +751,9 @@ func TestBrowserWhenSolvedContract(t *testing.T) {
 	t.Run("NoProof resolves at once", func(t *testing.T) {
 		fr := newFormRig(t, rigOpts{cfg: func(c *pow.Config) { c.Difficulty = pow.NoProof }, page: powPage(false, false, "")})
 		fr.Run(chromedp.Navigate(fr.Origin + "/"))
-		var got string
-		fr.Run(chromedp.Evaluate(fmt.Sprintf(whenSolvedJS, fr.scriptURL, "{}"), &got, awaitPromise))
+		got := harness.Evaluate[string](fr.Rig,
+			fmt.Sprintf(whenSolvedJS, fr.scriptURL, "{}"),
+			chromedp.EvalAwaitPromise)
 		if !strings.Contains(got, `"pow_seal"`) {
 			t.Fatalf("whenSolved on a NoProof form = %s, want its fields", got)
 		}
@@ -754,8 +761,9 @@ func TestBrowserWhenSolvedContract(t *testing.T) {
 	t.Run("bound rejects", func(t *testing.T) {
 		fr := newFormRig(t, rigOpts{cfg: func(c *pow.Config) { c.Bind = true }, page: powPage(true, false, "")})
 		fr.waitReady(t)
-		var got string
-		fr.Run(chromedp.Evaluate(fmt.Sprintf(whenSolvedJS, fr.scriptURL, "{}"), &got, awaitPromise))
+		got := harness.Evaluate[string](fr.Rig,
+			fmt.Sprintf(whenSolvedJS, fr.scriptURL, "{}"),
+			chromedp.EvalAwaitPromise)
 		if !strings.HasPrefix(got, "rejected:") {
 			t.Fatalf("whenSolved on a bound form = %s, want rejected", got)
 		}
@@ -763,8 +771,9 @@ func TestBrowserWhenSolvedContract(t *testing.T) {
 	t.Run("worker failure rejects", func(t *testing.T) {
 		fr := newFormRig(t, rigOpts{cfg: func(c *pow.Config) { c.WorkerURL = "/bad-worker.js" }, page: powPage(false, false, "")})
 		fr.waitReady(t)
-		var got string
-		fr.Run(chromedp.Evaluate(fmt.Sprintf(whenSolvedJS, fr.scriptURL, "{timeout: 60000}"), &got, awaitPromise))
+		got := harness.Evaluate[string](fr.Rig,
+			fmt.Sprintf(whenSolvedJS, fr.scriptURL, "{timeout: 60000}"),
+			chromedp.EvalAwaitPromise)
 		if !strings.Contains(got, "worker failed") {
 			t.Fatalf("whenSolved with a failing worker = %s, want rejected because the worker failed (not a timeout)", got)
 		}
@@ -772,13 +781,12 @@ func TestBrowserWhenSolvedContract(t *testing.T) {
 	t.Run("leaving the page rejects", func(t *testing.T) {
 		fr := newFormRig(t, rigOpts{cfg: func(c *pow.Config) { c.Difficulty = 40 }, page: powPage(false, false, "")})
 		fr.waitReady(t)
-		var got string
-		fr.Run(chromedp.Evaluate(fmt.Sprintf(`(async () => {
+		got := harness.Evaluate[string](fr.Rig, fmt.Sprintf(`(async () => {
 			const m = await import(%q);
 			const p = m.whenSolved(document.getElementById("f"));
 			dispatchEvent(new PageTransitionEvent("pagehide", {persisted: true}));
 			try { await p; return "resolved"; } catch (e) { return "rejected: " + e.message; }
-		})()`, fr.scriptURL), &got, awaitPromise))
+		})()`, fr.scriptURL), chromedp.EvalAwaitPromise)
 		if !strings.Contains(got, "page was left") {
 			t.Fatalf("whenSolved across pagehide = %s, want rejected because the page was left", got)
 		}
@@ -786,11 +794,23 @@ func TestBrowserWhenSolvedContract(t *testing.T) {
 	t.Run("timeout rejects", func(t *testing.T) {
 		fr := newFormRig(t, rigOpts{cfg: func(c *pow.Config) { c.Difficulty = 40 }, page: powPage(false, false, "")})
 		fr.waitReady(t)
-		var got string
-		fr.Run(chromedp.Evaluate(fmt.Sprintf(whenSolvedJS, fr.scriptURL, "{timeout: 200}"), &got, awaitPromise))
+		got := harness.Evaluate[string](fr.Rig,
+			fmt.Sprintf(whenSolvedJS, fr.scriptURL, "{timeout: 200}"),
+			chromedp.EvalAwaitPromise)
 		if !strings.Contains(got, "timed out") {
 			t.Fatalf("whenSolved past its timeout = %s, want rejected as timed out", got)
 		}
+	})
+}
+
+// disableJavaScript turns off script execution in the page.
+func disableJavaScript() chromedp.Action[chromedp.Void] {
+	return chromedp.Func(func(
+		ctx context.Context, target *chromedp.Target,
+	) error {
+		_, err := cdp.Call(ctx, target, emulation.SetScriptExecutionDisabled,
+			emulation.SetScriptExecutionDisabledParams{Value: true})
+		return err
 	})
 }
 
@@ -803,7 +823,8 @@ func TestBrowserNoProofWorksWithoutJavaScript(t *testing.T) {
 				`<button id=go type=submit>Send</button></form>`
 		},
 	})
-	fr.Run(emulation.SetScriptExecutionDisabled(true), chromedp.Navigate(fr.Origin+"/"), chromedp.Click(`#go`, chromedp.ByQuery))
+	fr.Run(disableJavaScript(), chromedp.Navigate(fr.Origin+"/"),
+		chromedp.Click(chromedp.CSS(`#go`)))
 	if res := fr.result(t); res != "ok" {
 		t.Fatalf("NoProof follow-on form without JavaScript = %s, want ok", res)
 	}
@@ -811,8 +832,8 @@ func TestBrowserNoProofWorksWithoutJavaScript(t *testing.T) {
 
 func TestBrowserProofFormWithoutJavaScriptCannotSubmit(t *testing.T) {
 	fr := newFormRig(t, rigOpts{page: powPage(false, false, "")})
-	fr.Run(emulation.SetScriptExecutionDisabled(true), chromedp.Navigate(fr.Origin+"/"),
-		chromedp.WaitVisible(`#ns`, chromedp.ByQuery), chromedp.Click(`#go`, chromedp.ByQuery))
+	fr.Run(disableJavaScript(), chromedp.Navigate(fr.Origin+"/"),
+		chromedp.WaitVisible(chromedp.CSS(`#ns`)), chromedp.Click(chromedp.CSS(`#go`)))
 	time.Sleep(500 * time.Millisecond)
 	if n := fr.posts.Load(); n != 0 {
 		t.Fatalf("%d POSTs from a disabled proof form with JavaScript off", n)
@@ -823,16 +844,19 @@ func TestBrowserEnterBeforeReadyPostsNothing(t *testing.T) {
 	// Review focus 4: implicit submission with the default button
 	// disabled must do nothing, and the visitor sees why.
 	fr := newFormRig(t, rigOpts{page: powPage(false, false, ""), delayModule: 2 * time.Second})
-	fr.Run(chromedp.ActionFunc(func(ctx context.Context) error {
-		_, _, _, _, err := page.Navigate(fr.Origin + "/").Do(ctx)
+	fr.Run(chromedp.Func(func(
+		ctx context.Context, target *chromedp.Target,
+	) error {
+		_, err := cdp.Call(ctx, target,
+			page.Navigate, page.NavigateParams{URL: fr.Origin + "/"})
 		return err
-	}), chromedp.WaitVisible(`#email`, chromedp.ByQuery), chromedp.SendKeys(`#email`, kb.Enter, chromedp.ByQuery))
+	}), chromedp.WaitVisible(chromedp.CSS(`#email`)), chromedp.SendKeys(chromedp.CSS(`#email`), kb.Enter))
 	time.Sleep(500 * time.Millisecond)
 	if n := fr.posts.Load(); n != 0 {
 		t.Fatalf("%d POSTs from Enter before the module loaded", n)
 	}
-	var visible bool
-	fr.Run(chromedp.Evaluate(`!document.querySelector("[data-pow-status]").hidden`, &visible))
+	visible := harness.Evaluate[bool](fr.Rig,
+		`!document.querySelector("[data-pow-status]").hidden`)
 	if !visible {
 		t.Fatal("the status line is not showing while the form is not ready")
 	}
@@ -847,7 +871,7 @@ func TestBrowserBusyDoesNotHoldAPowRelease(t *testing.T) {
 	})
 	fr.waitReady(t)
 	clicked := time.Now()
-	fr.Run(chromedp.Click(`#go`, chromedp.ByQuery))
+	fr.Run(chromedp.Click(chromedp.CSS(`#go`)))
 	if res := fr.result(t); res != "ok" {
 		t.Fatalf("with busy.js loaded = %s", res)
 	}
@@ -869,14 +893,15 @@ func TestBrowserBusyAndPowShareTheButton(t *testing.T) {
 		page: powPage(true, false, `<script defer src="/busy.js"></script>`),
 	})
 	fr.waitReady(t)
-	fr.Run(chromedp.Click(`#go`, chromedp.ByQuery))
+	fr.Run(chromedp.Click(chromedp.CSS(`#go`)))
 	time.Sleep(500 * time.Millisecond)
-	var busy string
-	fr.Run(chromedp.Evaluate(`document.getElementById("go").getAttribute("aria-busy") || ""`, &busy))
+	busy := harness.Evaluate[string](fr.Rig,
+		`document.getElementById("go").getAttribute("aria-busy") || ""`)
 	if busy != "true" {
 		t.Fatalf("aria-busy during pow's hold = %q, want true", busy)
 	}
-	fr.Run(chromedp.Evaluate(`document.getElementById("email").value = "b@example.com"`, nil))
+	fr.Run(chromedp.Evaluate[chromedp.Void](
+		`document.getElementById("email").value = "b@example.com"`))
 	if res := fr.result(t); res != "ok" {
 		t.Fatalf("binding changed during the hold, with busy.js loaded = %s", res)
 	}
@@ -890,7 +915,7 @@ func TestBrowserBusyHoldIsCancelledByNavigation(t *testing.T) {
 			`<button id=go type=submit>Send</button></form><a id=slow href=/slow>elsewhere</a>` +
 			`<script defer src="/busy.js"></script>`
 	}})
-	fr.Run(chromedp.Navigate(fr.Origin+"/"), chromedp.Click(`#go`, chromedp.ByQuery), chromedp.Click(`#slow`, chromedp.ByQuery))
+	fr.Run(chromedp.Navigate(fr.Origin+"/"), chromedp.Click(chromedp.CSS(`#go`)), chromedp.Click(chromedp.CSS(`#slow`)))
 	time.Sleep(3500 * time.Millisecond)
 	if n := fr.posts.Load(); n != 0 {
 		t.Fatalf("%d POSTs after navigating away during busy.js's hold, want 0", n)

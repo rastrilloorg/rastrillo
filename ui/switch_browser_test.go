@@ -52,11 +52,20 @@ func thumbAt(s switchReading, sign float64) float64 {
 	return s.R - 2 - s.K/2
 }
 
+// touchEvent sends one touch event with these points, as a step.
+func touchEvent(
+	kind input.DispatchTouchEventType, points []*input.TouchPoint,
+) chromedp.Action[chromedp.Void] {
+	return send(input.DispatchTouchEvent,
+		input.DispatchTouchEventParams{Type: kind, TouchPoints: points})
+}
+
 // read runs switchJS on the switch with this id.
 func read(t *testing.T, ctx context.Context, id string) switchReading {
 	t.Helper()
 	var raw string
-	mustRun(t, ctx, chromedp.Evaluate(switchJS+`("`+id+`")`, &raw))
+	mustRun(t, ctx, harness.Into(&raw,
+		chromedp.Evaluate[string](switchJS+`("`+id+`")`)))
 	var s switchReading
 	if err := json.Unmarshal([]byte(raw), &s); err != nil {
 		t.Fatal(err)
@@ -91,10 +100,17 @@ func TestASwitchSlidesAndSnaps(t *testing.T) {
 			ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
 			defer cancel()
 			if leg.reduce {
-				mustRun(t, ctx, emulation.SetEmulatedMedia().WithFeatures([]*emulation.MediaFeature{{Name: "prefers-reduced-motion", Value: "reduce"}}))
+				features := []*emulation.MediaFeature{
+					{Name: "prefers-reduced-motion", Value: "reduce"},
+				}
+				mustRun(t, ctx, send(emulation.SetEmulatedMedia,
+					emulation.SetEmulatedMediaParams{Features: features}))
 			}
-			mustRun(t, ctx, chromedp.EmulateViewport(800, 700), chromedp.Navigate(rig.Origin+leg.path), chromedp.WaitReady("#touch", chromedp.ByQuery),
-				chromedp.Evaluate(`new Promise(r => addEventListener("load", r, {once: true}) || document.readyState === "complete" && r())`, nil, awaitPromise))
+			mustRun(t, ctx, chromedp.EmulateViewport(800, 700), chromedp.Navigate(rig.Origin+leg.path), chromedp.WaitReady(chromedp.CSS("#touch")),
+				chromedp.Evaluate[chromedp.Void](`new Promise(r =>
+					addEventListener("load", r, {once: true})
+					|| document.readyState === "complete" && r())`,
+					awaitPromise))
 			// sign turns "toward on" into screen pixels; the thumb starts
 			// at the track's inline start, 2px in, a knob across. Offsets
 			// are shares of the knob's travel (Run), read from the page,
@@ -104,20 +120,26 @@ func TestASwitchSlidesAndSnaps(t *testing.T) {
 				sign = -1
 			}
 			thumb := func(s switchReading) float64 { return thumbAt(s, sign) }
-			mouse := func(typ input.MouseType, x, y float64) chromedp.Action {
-				return input.DispatchMouseEvent(typ, x, y).WithButton(input.Left).WithClickCount(1)
+			mouse := func(
+				typ input.DispatchMouseEventType, x, y float64,
+			) chromedp.Action[chromedp.Void] {
+				return chromedp.MouseEvent(typ, x, y, chromedp.ButtonLeft, chromedp.ClickCount(1))
 			}
 			// drag presses on the thumb, moves through each offset (toward
 			// on, as a share of the travel) and releases at the last.
 			drag := func(id string, shares ...float64) (mid switchReading) {
 				s := read(t, ctx, id)
 				x := thumb(s)
-				mustRun(t, ctx, mouse(input.MousePressed, x, s.Y))
+				mustRun(t, ctx, mouse(chromedp.MousePressed, x, s.Y))
 				for _, o := range shares {
-					mustRun(t, ctx, mouse(input.MouseMoved, x+sign*o*s.Run, s.Y))
+					mustRun(t, ctx,
+						mouse(chromedp.MouseMoved, x+sign*o*s.Run, s.Y))
 				}
 				mid = read(t, ctx, id)
-				mustRun(t, ctx, mouse(input.MouseReleased, x+sign*shares[len(shares)-1]*s.Run, s.Y), chromedp.Sleep(350*time.Millisecond))
+				last := shares[len(shares)-1]
+				mustRun(t, ctx,
+					mouse(chromedp.MouseReleased, x+sign*last*s.Run, s.Y),
+					chromedp.Sleep(350*time.Millisecond))
 				return mid
 			}
 			run := read(t, ctx, "drag").Run
@@ -143,7 +165,10 @@ func TestASwitchSlidesAndSnaps(t *testing.T) {
 			}
 
 			s := read(t, ctx, "tap")
-			mustRun(t, ctx, mouse(input.MousePressed, thumb(s), s.Y), mouse(input.MouseReleased, thumb(s), s.Y), chromedp.Sleep(350*time.Millisecond))
+			mustRun(t, ctx,
+				mouse(chromedp.MousePressed, thumb(s), s.Y),
+				mouse(chromedp.MouseReleased, thumb(s), s.Y),
+				chromedp.Sleep(350*time.Millisecond))
 			if s := read(t, ctx, "tap"); !s.Checked || s.Changes != 1 {
 				t.Errorf("a tap: checked %v, %d change events; want on, once", s.Checked, s.Changes)
 			}
@@ -160,20 +185,24 @@ func TestASwitchSlidesAndSnaps(t *testing.T) {
 
 			// Touch: the same drag with a finger. Read after touch is on:
 			// a coarse pointer grows the rows, and the switch moves.
-			mustRun(t, ctx, emulation.SetTouchEmulationEnabled(true))
+			mustRun(t, ctx, send(emulation.SetTouchEmulationEnabled,
+				emulation.SetTouchEmulationEnabledParams{Enabled: true}))
 			s = read(t, ctx, "touch")
 			x := thumb(s)
-			mustRun(t, ctx, chromedp.ActionFunc(func(ctx context.Context) error {
-				if err := input.DispatchTouchEvent(input.TouchStart, []*input.TouchPoint{{X: x, Y: s.Y}}).Do(ctx); err != nil {
-					return err
-				}
-				for _, o := range []float64{0.2, 0.4, 0.6, 0.8, 0.93} {
-					if err := input.DispatchTouchEvent(input.TouchMove, []*input.TouchPoint{{X: x + sign*o*s.Run, Y: s.Y}}).Do(ctx); err != nil {
-						return err
-					}
-				}
-				return input.DispatchTouchEvent(input.TouchEnd, []*input.TouchPoint{}).Do(ctx)
-			}), chromedp.Sleep(350*time.Millisecond))
+			steps := []chromedp.Action[chromedp.Void]{
+				touchEvent(input.DispatchTouchEventTypeTouchStart,
+					[]*input.TouchPoint{{X: x, Y: s.Y}}),
+			}
+			for _, o := range []float64{0.2, 0.4, 0.6, 0.8, 0.93} {
+				steps = append(steps, touchEvent(
+					input.DispatchTouchEventTypeTouchMove,
+					[]*input.TouchPoint{{X: x + sign*o*s.Run, Y: s.Y}}))
+			}
+			steps = append(steps,
+				touchEvent(input.DispatchTouchEventTypeTouchEnd,
+					[]*input.TouchPoint{}),
+				chromedp.Sleep(350*time.Millisecond))
+			mustRun(t, ctx, steps...)
 			if s := read(t, ctx, "touch"); !s.Checked || s.Changes != 1 {
 				t.Errorf("a finger dragged past the middle: checked %v, %d change events; want on, once", s.Checked, s.Changes)
 			}
@@ -202,21 +231,27 @@ func TestASwitchFollowsItsOwnDirection(t *testing.T) {
 	ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
 	defer cancel()
 	for path, sign := range map[string]float64{"/ltr-in-rtl": 1, "/rtl-in-ltr": -1} {
-		mustRun(t, ctx, chromedp.EmulateViewport(800, 700), chromedp.Navigate(rig.Origin+path), chromedp.WaitReady("#drag", chromedp.ByQuery),
-			chromedp.Evaluate(`new Promise(r => document.readyState === "complete" ? r() : addEventListener("load", r, {once: true}))`, nil, awaitPromise))
+		mustRun(t, ctx, chromedp.EmulateViewport(800, 700), chromedp.Navigate(rig.Origin+path), chromedp.WaitReady(chromedp.CSS("#drag")),
+			chromedp.Evaluate[chromedp.Void](`new Promise(r =>
+				document.readyState === "complete" ? r()
+					: addEventListener("load", r, {once: true}))`,
+				awaitPromise))
 		if s := read(t, ctx, "on"); math.Abs(s.X-sign*s.Run) > 0.5 {
 			t.Errorf("%s: the checked knob is moved %.1fpx; want %.1f, toward the switch's own inline end", path, s.X, sign*s.Run)
 		}
 		s := read(t, ctx, "drag")
 		x := thumbAt(s, sign)
-		mouse := func(typ input.MouseType, x float64) chromedp.Action {
-			return input.DispatchMouseEvent(typ, x, s.Y).WithButton(input.Left).WithClickCount(1)
+		mouse := func(
+			typ input.DispatchMouseEventType, x float64,
+		) chromedp.Action[chromedp.Void] {
+			return chromedp.MouseEvent(typ, x, s.Y, chromedp.ButtonLeft, chromedp.ClickCount(1))
 		}
-		mustRun(t, ctx, mouse(input.MousePressed, x))
+		mustRun(t, ctx, mouse(chromedp.MousePressed, x))
 		for _, o := range []float64{0.2, 0.4, 0.6, 0.8} {
-			mustRun(t, ctx, mouse(input.MouseMoved, x+sign*o*s.Run))
+			mustRun(t, ctx, mouse(chromedp.MouseMoved, x+sign*o*s.Run))
 		}
-		mustRun(t, ctx, mouse(input.MouseReleased, x+sign*0.8*s.Run), chromedp.Sleep(350*time.Millisecond))
+		mustRun(t, ctx, mouse(chromedp.MouseReleased, x+sign*0.8*s.Run),
+			chromedp.Sleep(350*time.Millisecond))
 		if s := read(t, ctx, "drag"); !s.Checked || s.Changes != 1 || math.Abs(s.X-sign*s.Run) > 0.5 {
 			t.Errorf("%s: dragged toward its inline end: checked %v, %d change events, knob at %.1f; want on, once, at %.1f", path, s.Checked, s.Changes, s.X, sign*s.Run)
 		}
@@ -236,20 +271,34 @@ func TestASwitchTakesOneDragAtATime(t *testing.T) {
 	rig := sizingRig(t, true, map[string]string{"/": sizingDoc("switch", body)})
 	ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
 	defer cancel()
-	mustRun(t, ctx, chromedp.EmulateViewport(390, 700), chromedp.Navigate(rig.Origin+"/"), chromedp.WaitReady("#b", chromedp.ByQuery),
-		chromedp.Evaluate(`new Promise(r => document.readyState === "complete" ? r() : addEventListener("load", r, {once: true}))`, nil, awaitPromise))
+	mustRun(t, ctx, chromedp.EmulateViewport(390, 700), chromedp.Navigate(rig.Origin+"/"), chromedp.WaitReady(chromedp.CSS("#b")),
+		chromedp.Evaluate[chromedp.Void](`new Promise(r =>
+			document.readyState === "complete" ? r()
+				: addEventListener("load", r, {once: true}))`,
+			awaitPromise))
 	a, b := read(t, ctx, "a"), read(t, ctx, "b")
 	ax, bx := thumbAt(a, 1), thumbAt(b, 1)
-	touch := func(typ input.TouchType, pts ...*input.TouchPoint) chromedp.Action {
-		return input.DispatchTouchEvent(typ, pts)
+	touch := func(
+		typ input.DispatchTouchEventType, pts ...*input.TouchPoint,
+	) chromedp.Action[chromedp.Void] {
+		return touchEvent(typ, pts)
 	}
 	// Offsets are shares of the knob's travel.
-	pa := func(o float64) *input.TouchPoint { return &input.TouchPoint{X: ax + o*a.Run, Y: a.Y, ID: 1} }
-	pb := func(o float64) *input.TouchPoint { return &input.TouchPoint{X: bx + o*b.Run, Y: b.Y, ID: 2} }
+	pa := func(o float64) *input.TouchPoint {
+		return &input.TouchPoint{X: ax + o*a.Run, Y: a.Y, ID: ptr(1.0)}
+	}
+	pb := func(o float64) *input.TouchPoint {
+		return &input.TouchPoint{X: bx + o*b.Run, Y: b.Y, ID: ptr(2.0)}
+	}
 	mustRun(t, ctx,
-		touch(input.TouchStart, pa(0)), touch(input.TouchMove, pa(0.4)), touch(input.TouchMove, pa(0.8)),
-		touch(input.TouchStart, pa(0.8), pb(0)), touch(input.TouchMove, pa(0.85), pb(0.4)), touch(input.TouchMove, pa(0.9), pb(0.8)),
-		touch(input.TouchEnd), chromedp.Sleep(350*time.Millisecond))
+		touch(input.DispatchTouchEventTypeTouchStart, pa(0)),
+		touch(input.DispatchTouchEventTypeTouchMove, pa(0.4)),
+		touch(input.DispatchTouchEventTypeTouchMove, pa(0.8)),
+		touch(input.DispatchTouchEventTypeTouchStart, pa(0.8), pb(0)),
+		touch(input.DispatchTouchEventTypeTouchMove, pa(0.85), pb(0.4)),
+		touch(input.DispatchTouchEventTypeTouchMove, pa(0.9), pb(0.8)),
+		touch(input.DispatchTouchEventTypeTouchEnd),
+		chromedp.Sleep(350*time.Millisecond))
 	if s := read(t, ctx, "a"); !s.Checked || s.Changes != 1 || s.Dragging || math.Abs(s.X-a.Run) > 0.5 {
 		t.Errorf("the first switch: checked %v, %d change events, still dragging %v, knob at %.1f; want on, once, settled at %.1f", s.Checked, s.Changes, s.Dragging, s.X, a.Run)
 	}
@@ -266,7 +315,9 @@ func TestASwitchTakesOneDragAtATime(t *testing.T) {
 func switchSheen(t *testing.T, ctx context.Context, sel string) (present bool, offset float64) {
 	t.Helper()
 	var img string
-	mustRun(t, ctx, chromedp.Evaluate(`getComputedStyle(document.querySelector(`+jsStr(sel)+` + " [rst-switch-track]")).backgroundImage`, &img))
+	track := jsStr(sel) + ` + " [rst-switch-track]"`
+	mustRun(t, ctx, harness.Into(&img, chromedp.Evaluate[string](
+		`getComputedStyle(document.querySelector(`+track+`)).backgroundImage`)))
 	m := regexp.MustCompile(`radial-gradient\(40px at calc\(50% ([+-]) ([0-9.]+)px\)`).FindStringSubmatch(img)
 	if m == nil {
 		return false, 0
@@ -299,17 +350,30 @@ func TestTheKnobIsLitAndTheTrackSheenFollowsIt(t *testing.T) {
 			rig := sizingRig(t, false, pages, harness.WithHover())
 			ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
 			defer cancel()
-			mustRun(t, ctx, chromedp.EmulateViewport(800, 600), chromedp.Navigate(rig.Origin+leg.path), chromedp.WaitVisible("#tb", chromedp.ByQuery),
-				chromedp.Evaluate(`document.documentElement.setAttribute("data-theme", "`+leg.scheme+`"), true`, nil))
+			mustRun(t, ctx, chromedp.EmulateViewport(800, 600), chromedp.Navigate(rig.Origin+leg.path), chromedp.WaitVisible(chromedp.CSS("#tb")),
+				chromedp.Evaluate[chromedp.Void](
+					`document.documentElement.setAttribute(
+						"data-theme", "`+leg.scheme+`"), true`))
 			still(t, ctx)
 			wantOff, wantOn := "rgb(138, 138, 149)", "rgb(32, 89, 221)"
 			if leg.scheme == "dark" {
 				wantOff, wantOn = "rgb(113, 115, 124)", "rgb(49, 96, 234)"
 			}
 			var knob, offTrack, onTrack string
-			mustRun(t, ctx, chromedp.Evaluate(`getComputedStyle(document.querySelector("#off [rst-switch-track]"), "::after").backgroundImage`, &knob),
-				chromedp.Evaluate(`getComputedStyle(document.querySelector("#off [rst-switch-track]")).backgroundColor`, &offTrack),
-				chromedp.Evaluate(`getComputedStyle(document.querySelector("#s [rst-switch-track]")).backgroundColor`, &onTrack))
+			mustRun(t, ctx,
+				harness.Into(&knob, chromedp.Evaluate[string](
+					`getComputedStyle(
+						document.querySelector("#off [rst-switch-track]"),
+						"::after"
+					).backgroundImage`)),
+				harness.Into(&offTrack, chromedp.Evaluate[string](
+					`getComputedStyle(
+						document.querySelector("#off [rst-switch-track]")
+					).backgroundColor`)),
+				harness.Into(&onTrack, chromedp.Evaluate[string](
+					`getComputedStyle(
+						document.querySelector("#s [rst-switch-track]")
+					).backgroundColor`)))
 			// The on track is day's derived fill, which serialises as
 			// oklch(); the literal above is its eight-bit triple.
 			offTrack, onTrack = canonColours(offTrack), canonColours(onTrack)
@@ -323,7 +387,11 @@ func TestTheKnobIsLitAndTheTrackSheenFollowsIt(t *testing.T) {
 				t.Error("the on track has a sheen at rest; the sheen is a hover")
 			}
 			var knobShadow string
-			mustRun(t, ctx, chromedp.Evaluate(`getComputedStyle(document.querySelector("#off [rst-switch-track]"), "::after").boxShadow`, &knobShadow))
+			mustRun(t, ctx, harness.Into(&knobShadow, chromedp.Evaluate[string](
+				`getComputedStyle(
+					document.querySelector("#off [rst-switch-track]"),
+					"::after"
+				).boxShadow`)))
 			if n := len(layers(knobShadow)); n < 3 || !strings.HasSuffix(layers(knobShadow)[0], "inset") {
 				t.Errorf("knob box-shadow %q: want the inset highlight first, then its contact shadow and the theme's knob shadow", knobShadow)
 			}
@@ -332,10 +400,12 @@ func TestTheKnobIsLitAndTheTrackSheenFollowsIt(t *testing.T) {
 			}
 			var restKnob, hoverKnob string
 			knobOf := `getComputedStyle(document.querySelector("#dis [rst-switch-track]"), "::after").backgroundImage`
-			mustRun(t, ctx, chromedp.Evaluate(knobOf, &restKnob))
+			mustRun(t, ctx, harness.Into(&restKnob,
+				chromedp.Evaluate[string](knobOf)))
 			forceState(t, ctx, "#dis", "hover")
 			present, _ := switchSheen(t, ctx, "#dis")
-			mustRun(t, ctx, chromedp.Evaluate(knobOf, &hoverKnob))
+			mustRun(t, ctx, harness.Into(&hoverKnob,
+				chromedp.Evaluate[string](knobOf)))
 			forceState(t, ctx, "#dis")
 			if present || hoverKnob != restKnob {
 				t.Errorf("a disabled switch hovered: sheen %v, knob changed %v; want neither", present, hoverKnob != restKnob)
@@ -388,11 +458,23 @@ func TestTheSheenFollowsADraggedKnob(t *testing.T) {
 			rig := sizingRig(t, false, pages)
 			ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
 			defer cancel()
-			mustRun(t, ctx, chromedp.EmulateViewport(390, 700), chromedp.Navigate(rig.Origin+path), chromedp.WaitVisible("#s", chromedp.ByQuery),
-				chromedp.Evaluate(`new Promise(r => addEventListener("load", r, {once: true}) || document.readyState === "complete" && r())`, nil, awaitPromise),
-				emulation.SetTouchEmulationEnabled(true))
+			mustRun(t, ctx, chromedp.EmulateViewport(390, 700), chromedp.Navigate(rig.Origin+path), chromedp.WaitVisible(chromedp.CSS("#s")),
+				chromedp.Evaluate[chromedp.Void](`new Promise(r =>
+					addEventListener("load", r, {once: true})
+					|| document.readyState === "complete" && r())`,
+					awaitPromise),
+				send(emulation.SetTouchEmulationEnabled,
+					emulation.SetTouchEmulationEnabledParams{Enabled: true}))
 			if path == "/light" {
-				mustRun(t, ctx, chromedp.Evaluate(`window.__sw = []; new MutationObserver(m => m.forEach(r => window.__sw.push(r.target.getAttribute("style") || ""))).observe(document.getElementById("s"), {attributes: true, subtree: true, attributeFilter: ["style"], attributeOldValue: true}); true`, nil))
+				mustRun(t, ctx, chromedp.Evaluate[chromedp.Void](
+					`window.__sw = [];
+					new MutationObserver(m => m.forEach(r =>
+						window.__sw.push(r.target.getAttribute("style") || "")
+					)).observe(document.getElementById("s"), {
+						attributes: true, subtree: true,
+						attributeFilter: ["style"], attributeOldValue: true
+					});
+					true`))
 			}
 			s := read(t, ctx, "s")
 			sign := 1.0
@@ -407,10 +489,15 @@ func TestTheSheenFollowsADraggedKnob(t *testing.T) {
 			startX := thumbAt(s, sign) + sign*s.Run
 			knobX, sheenAt := sign*(s.Run-9), sign*(s.Run/2-9)
 			drag := func() {
-				mustRun(t, ctx, input.DispatchTouchEvent(input.TouchStart, []*input.TouchPoint{{X: startX, Y: s.Y}}),
-					input.DispatchTouchEvent(input.TouchMove, []*input.TouchPoint{{X: startX - 3*sign, Y: s.Y}}),
-					input.DispatchTouchEvent(input.TouchMove, []*input.TouchPoint{{X: startX - 6*sign, Y: s.Y}}),
-					input.DispatchTouchEvent(input.TouchMove, []*input.TouchPoint{{X: startX - 9*sign, Y: s.Y}}),
+				mustRun(t, ctx,
+					touchEvent(input.DispatchTouchEventTypeTouchStart,
+						[]*input.TouchPoint{{X: startX, Y: s.Y}}),
+					touchEvent(input.DispatchTouchEventTypeTouchMove,
+						[]*input.TouchPoint{{X: startX - 3*sign, Y: s.Y}}),
+					touchEvent(input.DispatchTouchEventTypeTouchMove,
+						[]*input.TouchPoint{{X: startX - 6*sign, Y: s.Y}}),
+					touchEvent(input.DispatchTouchEventTypeTouchMove,
+						[]*input.TouchPoint{{X: startX - 9*sign, Y: s.Y}}),
 					chromedp.Sleep(100*time.Millisecond))
 			}
 			drag()
@@ -420,7 +507,9 @@ func TestTheSheenFollowsADraggedKnob(t *testing.T) {
 			if present, off := switchSheen(t, ctx, "#s"); !present || math.Abs(off-sheenAt) > 0.6 {
 				t.Errorf("mid-drag sheen offset %v (present %v), want %v: the sheen follows the knob", off, present, sheenAt)
 			}
-			mustRun(t, ctx, input.DispatchTouchEvent(input.TouchCancel, nil), chromedp.Sleep(350*time.Millisecond))
+			mustRun(t, ctx,
+				touchEvent(input.DispatchTouchEventTypeTouchCancel, nil),
+				chromedp.Sleep(350*time.Millisecond))
 			if after := read(t, ctx, "s"); after.Dragging || math.Abs(after.X-s.Run*sign) > 0.5 || !after.Checked {
 				t.Errorf("after a cancelled drag: dragging %v, knob at %v, checked %v; want the knob back at %v, still on", after.Dragging, after.X, after.Checked, s.Run*sign)
 			}
@@ -431,13 +520,18 @@ func TestTheSheenFollowsADraggedKnob(t *testing.T) {
 			if !read(t, ctx, "s").Dragging {
 				t.Fatal("the second drag did not take")
 			}
-			mustRun(t, ctx, chromedp.Evaluate(`document.querySelector("#s [rst-switch-track]").dispatchEvent(new PointerEvent("lostpointercapture", {pointerId: window.__pid, bubbles: true})), true`, nil), chromedp.Sleep(350*time.Millisecond))
+			mustRun(t, ctx, chromedp.Evaluate[chromedp.Void](
+				`document.querySelector("#s [rst-switch-track]").dispatchEvent(
+					new PointerEvent("lostpointercapture",
+						{pointerId: window.__pid, bubbles: true})), true`),
+				chromedp.Sleep(350*time.Millisecond))
 			if after := read(t, ctx, "s"); after.Dragging || math.Abs(after.X-s.Run*sign) > 0.5 {
 				t.Errorf("after lostpointercapture: dragging %v, knob at %v; want the drag dropped and the knob back at %v", after.Dragging, after.X, s.Run*sign)
 			}
 			if path == "/light" {
 				var seen []string
-				mustRun(t, ctx, chromedp.Evaluate(`window.__sw`, &seen))
+				mustRun(t, ctx, harness.Into(&seen,
+					chromedp.Evaluate[[]string](`window.__sw`)))
 				if len(seen) == 0 {
 					t.Error("the observer saw no style write on the switch during two drags; the shim writes --rst-switch-p and --rst-switch-on there, so the leg proves nothing")
 				}
@@ -448,7 +542,8 @@ func TestTheSheenFollowsADraggedKnob(t *testing.T) {
 					}
 				}
 			}
-			mustRun(t, ctx, input.DispatchTouchEvent(input.TouchEnd, nil))
+			mustRun(t, ctx,
+				touchEvent(input.DispatchTouchEventTypeTouchEnd, nil))
 		})
 	}
 }

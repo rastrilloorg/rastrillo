@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/chromedp/cdproto/runtime"
 	"github.com/chromedp/chromedp"
 	"github.com/chromedp/chromedp/kb"
 
@@ -41,49 +40,57 @@ func TestEveryLanguageIsReachableFromThePhoneIndex(t *testing.T) {
 			for _, locale := range []string{"en", "ar"} {
 				for _, anchored := range []bool{true, false} {
 					where := fmt.Sprintf("day/%s index at %dpx, scripts %v, anchor positioning %v", locale, w, scripts, anchored)
-					if err := chromedp.Run(tab, chromedp.EmulateViewport(w, 700),
+					if err := chromedp.Do(tab, chromedp.EmulateViewport(w, 700),
 						chromedp.Navigate(rig.Origin+indexHref(mountPath, "day", locale)),
-						chromedp.WaitVisible(`#ds-prefs`, chromedp.ByQuery)); err != nil {
+						chromedp.WaitVisible(chromedp.CSS(`#ds-prefs`))); err != nil {
 						t.Fatalf("%s: loading: %v", where, err)
 					}
 					if !scripts {
 						requireScriptsOff(t, tab, where)
 					}
 					if !anchored {
-						if err := chromedp.Run(tab, chromedp.Evaluate(withoutAnchorPositioning, nil,
-							func(p *runtime.EvaluateParams) *runtime.EvaluateParams { return p.WithAwaitPromise(true) })); err != nil {
+						if err := chromedp.Do(tab,
+							chromedp.Evaluate[chromedp.Void](
+								withoutAnchorPositioning,
+								chromedp.EvalAwaitPromise)); err != nil {
 							t.Fatalf("%s: switching anchor positioning off: %v", where, err)
 						}
 					}
 					requireAnchorPositioning(t, tab, where, "#ds-prefs > [rst-dropdown-menu]", anchored)
 					requireCoarse(t, tab)
 					requireDrawnScrollbar(t, tab, where)
-					if err := chromedp.Run(tab, chromedp.Evaluate(`document.getElementById("ds-prefs").open = true;
-					  const d = document.querySelector("#ds-prefs [rst-locale]"); d.open = true; d.querySelector("summary").focus(); true`, nil)); err != nil {
+					if err := chromedp.Do(tab, chromedp.Evaluate[chromedp.Void](
+						`document.getElementById("ds-prefs").open = true;
+					  const d = document.querySelector("#ds-prefs [rst-locale]"); d.open = true; d.querySelector("summary").focus(); true`)); err != nil {
 						t.Fatalf("%s: opening the menu: %v", where, err)
 					}
 					for i, code := range rastrillo.BaseLocales() {
 						if scripts {
-							var at string
 							// 0.5px slack: layout at a fractional rem size lands a few
 							// hundredths of a pixel past the edge, which no eye and no
 							// finger can tell from on screen.
-							if err := chromedp.Run(tab, chromedp.KeyEvent(kb.Tab), chromedp.Evaluate(`(() => { const a = document.activeElement, r = a.getBoundingClientRect();
+							if err := chromedp.Do(tab,
+								chromedp.KeyEvent(kb.Tab)); err != nil {
+								t.Fatalf("%s: tab %d: %v", where, i+1, err)
+							}
+							at, err := chromedp.Run(tab, chromedp.Evaluate[string](`(() => { const a = document.activeElement, r = a.getBoundingClientRect();
 							  const de = document.documentElement;
-							  return r.top >= -0.5 && r.bottom <= de.clientHeight + 0.5 && r.left >= -0.5 && r.right <= de.clientWidth + 0.5 ? a.lang : "off screen: " + a.outerHTML.slice(0, 60); })()`, &at)); err != nil {
+							  return r.top >= -0.5 && r.bottom <= de.clientHeight + 0.5 && r.left >= -0.5 && r.right <= de.clientWidth + 0.5 ? a.lang : "off screen: " + a.outerHTML.slice(0, 60); })()`))
+							if err != nil {
 								t.Fatalf("%s: tab %d: %v", where, i+1, err)
 							}
 							if at != code {
 								t.Errorf("%s: tab %d is %s, want the %s link on screen", where, i+1, at, code)
 							}
 						}
-						var hit bool
-						if err := chromedp.Run(tab, chromedp.Evaluate(fmt.Sprintf(`(() => {
+						hit, err := chromedp.Run(tab, chromedp.Evaluate[bool](
+							fmt.Sprintf(`(() => {
 						  const a = document.querySelector('#ds-prefs [rst-dropdown-menu] a[lang=%q]');
 						  a.scrollIntoView({block: "nearest", inline: "nearest"});
 						  const r = a.getBoundingClientRect();
 						  return document.elementFromPoint((r.left + r.right) / 2, (r.top + r.bottom) / 2) === a;
-						})()`, code), &hit)); err != nil {
+						})()`, code)))
+						if err != nil {
 							t.Fatalf("%s: scrolling to %s: %v", where, code, err)
 						}
 						if !hit {
@@ -107,14 +114,21 @@ func TestEveryLanguageIsReachableFromThePhoneIndex(t *testing.T) {
 		// The viewport is set on every pass: the matrix above leaves this
 		// target at whichever width it drove last, and the leg must be
 		// the 390px combination it names whatever order that loop runs in.
-		if err := chromedp.Run(ctx, chromedp.EmulateViewport(390, 700),
+		if err := chromedp.Do(ctx, chromedp.EmulateViewport(390, 700),
 			chromedp.Navigate(rig.Origin+indexHref(mountPath, "day", "en")),
-			chromedp.WaitVisible(`#ds-prefs`, chromedp.ByQuery),
-			chromedp.Evaluate(`document.getElementById("ds-prefs").open = true; document.querySelector("#ds-prefs [rst-locale]").open = true; true`, nil)); err != nil {
+			chromedp.WaitVisible(chromedp.CSS(`#ds-prefs`)),
+			chromedp.Evaluate[chromedp.Void](
+				`document.getElementById("ds-prefs").open = true;
+				document.querySelector("#ds-prefs [rst-locale]").open = true;
+				true`)); err != nil {
 			t.Fatalf("%s: returning to day/en to activate %s: %v", where, code, err)
 		}
 		want := indexHref(mountPath, "day", code)
-		if err := chromedp.Run(ctx, chromedp.Evaluate(fmt.Sprintf(`document.querySelector('#ds-prefs [rst-dropdown-menu] a[lang=%q]').click(); true`, code), nil)); err != nil {
+		click := fmt.Sprintf(
+			`document.querySelector('#ds-prefs [rst-dropdown-menu] a[lang=%q]')
+			  .click(); true`, code)
+		if err := chromedp.Do(ctx,
+			chromedp.Evaluate[chromedp.Void](click)); err != nil {
 			t.Fatalf("%s: activating %s: %v", where, code, err)
 		}
 		until(t, ctx, where+", landed on "+code, fmt.Sprintf(`document.documentElement.lang === %q && location.pathname === %q`, code, want))
@@ -125,16 +139,22 @@ func TestEveryLanguageIsReachableFromThePhoneIndex(t *testing.T) {
 	// element sits where a tap or a Tab would land.
 	offWhere := "day/en index at 390px, scripts off"
 	off := noScripts(t, ctx)
-	if err := chromedp.Run(off, chromedp.EmulateViewport(390, 700),
+	if err := chromedp.Do(off, chromedp.EmulateViewport(390, 700),
 		chromedp.Navigate(rig.Origin+indexHref(mountPath, "day", "en")),
-		chromedp.WaitVisible(`#ds-prefs`, chromedp.ByQuery)); err != nil {
+		chromedp.WaitVisible(chromedp.CSS(`#ds-prefs`))); err != nil {
 		t.Fatalf("%s: loading: %v", offWhere, err)
 	}
 	requireScriptsOff(t, off, offWhere)
 	wantAr := indexHref(mountPath, "day", "ar")
-	if err := chromedp.Run(off,
-		chromedp.Evaluate(`document.getElementById("ds-prefs").open = true; document.querySelector("#ds-prefs [rst-locale]").open = true; true`, nil),
-		chromedp.Evaluate(`document.querySelector('#ds-prefs [rst-dropdown-menu] a[lang="ar"]').click(); true`, nil)); err != nil {
+	if err := chromedp.Do(off,
+		chromedp.Evaluate[chromedp.Void](
+			`document.getElementById("ds-prefs").open = true;
+			document.querySelector("#ds-prefs [rst-locale]").open = true;
+			true`),
+		chromedp.Evaluate[chromedp.Void](
+			`document.querySelector(
+			  '#ds-prefs [rst-dropdown-menu] a[lang="ar"]').click();
+			true`)); err != nil {
 		t.Fatalf("%s: activating ar: %v", offWhere, err)
 	}
 	until(t, off, offWhere+", landed on ar", fmt.Sprintf(`document.documentElement.lang === "ar" && location.pathname === %q`, wantAr))

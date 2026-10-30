@@ -13,7 +13,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/chromedp/cdproto/emulation"
 	"github.com/chromedp/chromedp"
 	"github.com/chromedp/chromedp/kb"
 
@@ -153,7 +152,7 @@ func TestThePhoneIndexWorksWithNoScript(t *testing.T) {
 				rig := harness.New(t, func(string) http.Handler { return shellAssets(t, pages) }, harness.WithCoarsePointer())
 				ctx, cancel := context.WithTimeout(rig.Context(), 90*time.Second)
 				defer cancel()
-				mustRun(t, ctx, emulation.SetScriptExecutionDisabled(true), chromedp.EmulateViewport(390, 844),
+				mustRun(t, ctx, scriptsOff(), chromedp.EmulateViewport(390, 844),
 					chromedp.Navigate(rig.Origin+"/"), chromedp.WaitReady("body"))
 				requirePointer(t, ctx, true)
 				var idx, pg, back viewReading
@@ -163,7 +162,7 @@ func TestThePhoneIndexWorksWithNoScript(t *testing.T) {
 				}
 				// main is hidden on the index, so it being visible is a
 				// marker only the content page has.
-				mustRun(t, ctx, chromedp.Click("#nav-invoices", chromedp.ByQuery), chromedp.WaitVisible("[rst-shell-main]", chromedp.ByQuery))
+				mustRun(t, ctx, chromedp.Click(chromedp.CSS("#nav-invoices")), chromedp.WaitVisible(chromedp.CSS("[rst-shell-main]")))
 				settled(t, ctx)
 				at(t, ctx, viewJS, &pg)
 				if pg.Rail || !pg.Main || !pg.Back || pg.BackStart > 8 || pg.H1s != 1 {
@@ -175,13 +174,18 @@ func TestThePhoneIndexWorksWithNoScript(t *testing.T) {
 					t.Errorf("the sidebar's back control is %dpx from the top; want it centred in the strip at the top of the screen, 6px down", pg.BackTop)
 				}
 				// And the rail's nav is shown only on the index.
-				mustRun(t, ctx, chromedp.Click("[rst-shell-back] a", chromedp.ByQuery), chromedp.WaitVisible("[rst-shell-rail] [rst-shell-nav]", chromedp.ByQuery))
+				mustRun(t, ctx, chromedp.Click(chromedp.CSS("[rst-shell-back] a")), chromedp.WaitVisible(chromedp.CSS("[rst-shell-rail] [rst-shell-nav]")))
 				settled(t, ctx)
 				at(t, ctx, viewJS, &back)
 				var target bool
 				var next string
-				mustRun(t, ctx, chromedp.Evaluate(`document.getElementById("nav-invoices").matches(":target")`, &target),
-					chromedp.KeyEvent(kb.Tab), chromedp.Evaluate(`document.activeElement.id`, &next))
+				mustRun(t, ctx,
+					harness.Into(&target, chromedp.Evaluate[bool](
+						`document.getElementById("nav-invoices")
+							.matches(":target")`)),
+					chromedp.KeyEvent(kb.Tab),
+					harness.Into(&next, chromedp.Evaluate[string](
+						`document.activeElement.id`)))
 				if !target || next != "nav-orders" {
 					t.Errorf("back on the index: #nav-invoices is the target %v and the next Tab went to %q; want true and nav-orders", target, next)
 				}
@@ -225,7 +229,7 @@ func TestThePhoneIndexWorksWithScripts(t *testing.T) {
 				if after := state(t, ctx); after.Len != before.Len {
 					t.Errorf("the back control grew history %d -> %d; with scripts it reuses the entry behind it", before.Len, after.Len)
 				}
-				errs, skipped := scriptErrors(t, *thrown)
+				errs, skipped := scriptErrors(t, thrown())
 				if len(errs) > 0 {
 					t.Errorf("uncaught: %v", errs)
 				}
@@ -242,7 +246,7 @@ func TestThePhoneIndexWorksWithScripts(t *testing.T) {
 				if after := state(t, deep); after.Len != before.Len+1 {
 					t.Errorf("a deep link's back control: history %d -> %d, want the link followed (+1)", before.Len, after.Len)
 				}
-				deepErrs, deepSkipped := scriptErrors(t, *deepThrown)
+				deepErrs, deepSkipped := scriptErrors(t, deepThrown())
 				if len(deepErrs) > 0 {
 					t.Errorf("uncaught in the deep-link tab: %v", deepErrs)
 				}
@@ -260,9 +264,10 @@ func TestThePhoneIndexWorksWithScripts(t *testing.T) {
 					defer doneIdx()
 					visit(t, idx, rig.Origin+"/")
 					settled(t, idx)
-					mustRun(t, idx, chromedp.Click("[rst-shell-menu] > summary", chromedp.ByQuery),
-						chromedp.WaitVisible("[rst-shell-tail] #rail-locale > summary", chromedp.ByQuery))
-					clickAndStay(t, idx, probe(t, idx, "[rst-shell-rail]", 0.5, 0.8, 0, 0), "",
+					mustRun(t, idx, chromedp.Click(chromedp.CSS("[rst-shell-menu] > summary")),
+						chromedp.WaitVisible(chromedp.CSS("[rst-shell-tail] #rail-locale > summary")))
+					rail := probe(t, idx, "[rst-shell-rail]", 0.5, 0.8, 0, 0)
+					clickAndStay(t, rig, idx, rail, "",
 						`!document.querySelector("[rst-shell-menu]").open && document.querySelector("#nav-team").checkVisibility()`)
 				}
 			})
@@ -339,9 +344,9 @@ func TestAnOldSidebarLayoutKeepsItsDrawer(t *testing.T) {
 	ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
 	defer cancel()
 	var before, after viewReading
-	mustRun(t, ctx, chromedp.EmulateViewport(390, 844), chromedp.Navigate(rig.Origin+"/"), chromedp.WaitVisible("[rst-shell-chrome] > summary", chromedp.ByQuery))
+	mustRun(t, ctx, chromedp.EmulateViewport(390, 844), chromedp.Navigate(rig.Origin+"/"), chromedp.WaitVisible(chromedp.CSS("[rst-shell-chrome] > summary")))
 	at(t, ctx, viewJS, &before)
-	mustRun(t, ctx, chromedp.Click("[rst-shell-chrome] > summary", chromedp.ByQuery), chromedp.WaitVisible("[rst-shell-rail] [rst-shell-nav] a", chromedp.ByQuery))
+	mustRun(t, ctx, chromedp.Click(chromedp.CSS("[rst-shell-chrome] > summary")), chromedp.WaitVisible(chromedp.CSS("[rst-shell-rail] [rst-shell-nav] a")))
 	at(t, ctx, viewJS, &after)
 	if before.Rail || !after.Rail || !after.Main {
 		t.Errorf("the old layout's drawer: rail before %v, after opening %v, main %v; want closed, then open with the page still there", before.Rail, after.Rail, after.Main)
@@ -526,10 +531,10 @@ func TestAnOldConsoleLayoutKeepsItsRailOpen(t *testing.T) {
 		// The rail's padding under its last link: rail, and nothing else.
 		{"the rail's empty space", 0.5, 1, "[rst-shell-rail]"},
 	} {
-		mustRun(t, ctx, chromedp.EmulateViewport(390, 844), chromedp.Navigate(rig.Origin+"/"), chromedp.WaitVisible("[rst-shell-menu] > summary", chromedp.ByQuery))
+		mustRun(t, ctx, chromedp.EmulateViewport(390, 844), chromedp.Navigate(rig.Origin+"/"), chromedp.WaitVisible(chromedp.CSS("[rst-shell-menu] > summary")))
 		requirePointer(t, ctx, true)
-		mustRun(t, ctx, chromedp.Click("[rst-shell-menu] > summary", chromedp.ByQuery), chromedp.WaitVisible("#nav-invoices", chromedp.ByQuery),
-			chromedp.Click("#page-menu > summary", chromedp.ByQuery), chromedp.WaitVisible("#page-menu [rst-dropdown-menu]", chromedp.ByQuery))
+		mustRun(t, ctx, chromedp.Click(chromedp.CSS("[rst-shell-menu] > summary")), chromedp.WaitVisible(chromedp.CSS("#nav-invoices")),
+			chromedp.Click(chromedp.CSS("#page-menu > summary")), chromedp.WaitVisible(chromedp.CSS("#page-menu [rst-dropdown-menu]")))
 		dy := 0.0
 		if c.fy == 1 {
 			dy = -6
@@ -586,7 +591,7 @@ func TestAFragmentLinkLandsBelowTheBackStrip(t *testing.T) {
 			rig := harness.New(t, func(string) http.Handler { return shellAssets(t, pages) }, harness.WithCoarsePointer())
 			ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
 			defer cancel()
-			mustRun(t, ctx, chromedp.EmulateViewport(390, 844), chromedp.Navigate(rig.Origin+"/page#target"), chromedp.WaitVisible("#target", chromedp.ByQuery))
+			mustRun(t, ctx, chromedp.EmulateViewport(390, 844), chromedp.Navigate(rig.Origin+"/page#target"), chromedp.WaitVisible(chromedp.CSS("#target")))
 			requirePointer(t, ctx, true)
 			settled(t, ctx)
 			var got backStripReading

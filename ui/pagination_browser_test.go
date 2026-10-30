@@ -167,7 +167,7 @@ func TestPaginationIsOneBalancedLineOnAPhone(t *testing.T) {
 			rig := sizingRig(t, true, map[string]string{"/": paginationPage(t, dir)})
 			ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
 			defer cancel()
-			mustRun(t, ctx, chromedp.EmulateViewport(leg.w, 844), chromedp.Navigate(rig.Origin+"/"), chromedp.WaitVisible("#pg-only", chromedp.ByQuery))
+			mustRun(t, ctx, chromedp.EmulateViewport(leg.w, 844), chromedp.Navigate(rig.Origin+"/"), chromedp.WaitVisible(chromedp.CSS("#pg-only")))
 			requirePointer(t, ctx, true)
 			strips := readStrips(t, ctx)
 			for _, c := range paginationCases {
@@ -251,7 +251,7 @@ func TestPaginationIsUnchangedOnADesktop(t *testing.T) {
 	rig := sizingRig(t, false, map[string]string{"/": paginationPage(t, "ltr")})
 	ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
 	defer cancel()
-	mustRun(t, ctx, chromedp.EmulateViewport(1280, 844), chromedp.Navigate(rig.Origin+"/"), chromedp.WaitVisible("#pg-only", chromedp.ByQuery))
+	mustRun(t, ctx, chromedp.EmulateViewport(1280, 844), chromedp.Navigate(rig.Origin+"/"), chromedp.WaitVisible(chromedp.CSS("#pg-only")))
 	requirePointer(t, ctx, false)
 	s := readStrips(t, ctx)["mid"]
 	type pinned struct {

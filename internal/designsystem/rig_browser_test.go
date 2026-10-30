@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/chromedp/cdproto/cdp"
+	"github.com/chromedp/cdproto/emulation"
 	"github.com/chromedp/chromedp"
 
 	"amadan.net/rastrillo/rastrillo/harness"
@@ -36,7 +38,9 @@ func mobileSettle(t *testing.T, ctx context.Context, where string) {
 	galleryrig.MobileSettle(t, ctx, where)
 }
 
-func addInit(js string) chromedp.Action { return galleryrig.AddInit(js) }
+func addInit(js string) chromedp.Action[chromedp.Void] {
+	return galleryrig.AddInit(js)
+}
 
 func until(t *testing.T, ctx context.Context, where, expr string) {
 	t.Helper()
@@ -74,3 +78,31 @@ func requireScriptsOff(t *testing.T, ctx context.Context, where string) {
 }
 
 func heightRows() []galleryrig.HeightRow { return galleryrig.HeightRows(PageKinds(), ExampleCounts()) }
+
+// disableJavaScript is a step that switches the tab's page scripts off
+// at the engine.
+func disableJavaScript() chromedp.Action[chromedp.Void] {
+	return chromedp.Func(func(ctx context.Context, tab *chromedp.Target) error {
+		_, err := cdp.Call(ctx, tab, emulation.SetScriptExecutionDisabled,
+			emulation.SetScriptExecutionDisabledParams{Value: true})
+		return err
+	})
+}
+
+// prefersColorScheme is a step that has the tab report scheme, "light"
+// or "dark", as the OS's colour scheme.
+func prefersColorScheme(scheme string) chromedp.Action[chromedp.Void] {
+	return chromedp.Func(func(ctx context.Context, tab *chromedp.Target) error {
+		_, err := cdp.Call(ctx, tab, emulation.SetEmulatedMedia,
+			emulation.SetEmulatedMediaParams{
+				Features: []*emulation.MediaFeature{
+					{Name: "prefers-color-scheme", Value: scheme},
+				},
+			})
+		return err
+	})
+}
+
+// ptr points at a copy of value, for cdproto's optional fields. Go
+// 1.26's new(value) does the same, and the module still builds on Go 1.25.
+func ptr[T any](value T) *T { return &value }

@@ -10,6 +10,22 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+**Browser tests move to chromedp v0.21 (breaking for code built with `-tags browser`).** chromedp rewrote its API around generics between v0.15 and v0.21, and `harness` follows it. An app's ordinary build and tests are unaffected; only its browser tests change.
+
+To upgrade:
+
+1. Update rastrillo. It requires chromedp v0.21.0 and cdproto v0.158.6, so `go mod tidy` moves your app to them too.
+2. Port your browser tests with chromedp's [migration guide](https://github.com/chromedp/chromedp/blob/v0.21.0/docs/MIGRATION.md). Most changes take one of two shapes. A selector names its kind, so `chromedp.WaitVisible("#save", chromedp.ByQuery)` becomes `chromedp.WaitVisible(chromedp.CSS("#save"))`. An action returns its value, so `chromedp.Evaluate(script, &count)` becomes `count := harness.Evaluate[int](rig, script)`, or `harness.Into(&count, chromedp.Evaluate[int](script))` inside a longer `rig.Run`.
+3. A new app's browser test needs no change: `rig.Run(chromedp.Navigate(rig.Origin + "/"))` still compiles.
+
+What changed:
+
+- `harness.Rig.Run` takes `chromedp.Action[chromedp.Void]` steps.
+- New functions `harness.Read`, `harness.Evaluate` and `harness.Into` read values from the page. `Read` and `Evaluate` fail the test the way `Run` does.
+- New function `harness.Listen` hands a tab's events over in the order the browser sent them, before the next command returns. chromedp's own `chromedp.Events` hands them over on another goroutine, often later, so use `Listen` to check that something did not happen.
+- `chromedp.Evaluate` fails when a script returns `null` where Go expects a string, number, boolean or struct. It used to give the zero value. Return a fallback from the script, or ask for a pointer.
+- chromedp starts Chromium over a pipe instead of a websocket, and needs only the standard library and cdproto, so `gobwas/ws`, `gobwas/httphead`, `gobwas/pool` and `chromedp/sysutil` leave your module. rastrillo still needs Go 1.25.
+
 **Serve an app under a path on a hub's domain (breaking for code that calls `flash.Set`).** Set `Options.BasePath` and the whole app answers under `/<slug>` on another app's origin, such as `https://example.com/acme`. Redirects get the base added for you. Links in a page go through the new `path` template function, or `basepath.Path` in Go. The instance's own hostname sends visitors to the product path, or shows a read-only view with `basepath.ServeDirect`. Sign-in does not run under a base path: the hub signs people in. An app that does not set `BasePath` works as before. See [basepath](/docs/reference/basepath).
 
 To upgrade:

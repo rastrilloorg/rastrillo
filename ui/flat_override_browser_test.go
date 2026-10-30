@@ -93,7 +93,7 @@ func TestFlatThemesFollowAnAppsOverrides(t *testing.T) {
 			}
 			// Keep the page open for the fatal above: a rig closes with
 			// the test, and a navigation after it is the next scheme's.
-			mustRun(t, ctx, chromedp.Evaluate(`true`, nil))
+			mustRun(t, ctx, chromedp.Evaluate[chromedp.Void](`true`))
 		})
 	}
 }

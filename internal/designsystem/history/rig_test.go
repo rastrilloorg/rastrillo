@@ -50,7 +50,9 @@ func treeHandler(t *testing.T) http.Handler {
 	return galleryrig.Tree(t, files, mountPrefix)
 }
 
-func addInit(js string) chromedp.Action { return galleryrig.AddInit(js) }
+func addInit(js string) chromedp.Action[chromedp.Void] {
+	return galleryrig.AddInit(js)
+}
 
 func phoneRig(t *testing.T) *harness.Rig {
 	t.Helper()

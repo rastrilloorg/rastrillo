@@ -10,7 +10,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/chromedp/cdproto/input"
 	"github.com/chromedp/chromedp"
 	"github.com/chromedp/chromedp/kb"
 
@@ -46,8 +45,8 @@ type focusReading struct {
 
 func readFocus(t *testing.T, ctx context.Context, where, target string) focusReading {
 	t.Helper()
-	var raw string
-	if err := chromedp.Run(ctx, chromedp.Evaluate(focusTopJS+"("+target+")", &raw)); err != nil {
+	raw, err := chromedp.Run(ctx, chromedp.Evaluate[string](focusTopJS+"("+target+")"))
+	if err != nil {
 		t.Fatalf("%s: reading focus: %v", where, err)
 	}
 	var r focusReading
@@ -70,7 +69,7 @@ func TestFocusIsNeverUnderThePinnedBar(t *testing.T) {
 		for _, w := range []int64{1440, 800} {
 			where := fmt.Sprintf("day/%s form at %dpx", locale, w)
 			url := rig.Origin + pageHref(mountPath, "day", locale, fileOf("form"))
-			if err := chromedp.Run(ctx, chromedp.EmulateViewport(w, 900), chromedp.Navigate(url), chromedp.WaitReady(`main`, chromedp.ByQuery)); err != nil {
+			if err := chromedp.Do(ctx, chromedp.EmulateViewport(w, 900), chromedp.Navigate(url), chromedp.WaitReady(chromedp.CSS(`main`))); err != nil {
 				t.Fatalf("%s: loading: %v", where, err)
 			}
 			eagerly(t, ctx, where)
@@ -79,36 +78,48 @@ func TestFocusIsNeverUnderThePinnedBar(t *testing.T) {
 					t.Errorf("%s: %s puts %s at %.1fpx, under the bar ending at %.1fpx", where, how, r.What, r.Top, r.Bar)
 				}
 			}
-			if err := chromedp.Run(ctx, chromedp.Evaluate(`document.querySelector("main [rst-page]").querySelector("a[href], button, summary, input:not([type=hidden])").focus(); true`, nil)); err != nil {
+			if err := chromedp.Do(ctx, chromedp.Evaluate[chromedp.Void](
+				`document.querySelector("main [rst-page]").querySelector(
+				  "a[href], button, summary, input:not([type=hidden])").focus();
+				true`)); err != nil {
 				t.Fatalf("%s: focusing main's first control: %v", where, err)
 			}
 			for i := 0; i < 40; i++ {
-				if err := chromedp.Run(ctx, chromedp.KeyEvent(kb.Tab)); err != nil {
+				if err := chromedp.Do(ctx, chromedp.KeyEvent(kb.Tab)); err != nil {
 					t.Fatalf("%s: tab %d: %v", where, i+1, err)
 				}
 				under(fmt.Sprintf("tab %d", i+1), readFocus(t, ctx, where, ""))
 			}
 			for i := 0; i < 40; i++ {
-				if err := chromedp.Run(ctx, chromedp.KeyEvent(kb.Tab, chromedp.KeyModifiers(input.ModifierShift))); err != nil {
+				shiftTab := chromedp.KeyEvent(kb.Tab,
+					chromedp.KeyModifiers(chromedp.ModifierShift))
+				if err := chromedp.Do(ctx, shiftTab); err != nil {
 					t.Fatalf("%s: shift+tab %d: %v", where, i+1, err)
 				}
 				under(fmt.Sprintf("shift+tab %d", i+1), readFocus(t, ctx, where, ""))
 			}
 			// The skip link's target.
-			if err := chromedp.Run(ctx, chromedp.Evaluate(`scrollTo(0, 2000); document.querySelector("[rst-skip]").click(); true`, nil)); err != nil {
+			if err := chromedp.Do(ctx, chromedp.Evaluate[chromedp.Void](
+				`scrollTo(0, 2000);
+				document.querySelector("[rst-skip]").click();
+				true`)); err != nil {
 				t.Fatalf("%s: following the skip link: %v", where, err)
 			}
 			under("the skip link", readFocus(t, ctx, where, `document.getElementById("main")`))
 			// Every rail fragment of this page.
-			var hrefs []string
-			if err := chromedp.Run(ctx, chromedp.Evaluate(`[...document.querySelectorAll("#ds-nav a[href*='#']")].filter(a => a.pathname === location.pathname).map(a => a.hash.slice(1))`, &hrefs)); err != nil {
+			hrefs, err := chromedp.Run(ctx, chromedp.Evaluate[[]string](`[...document.querySelectorAll("#ds-nav a[href*='#']")].filter(a => a.pathname === location.pathname).map(a => a.hash.slice(1))`))
+			if err != nil {
 				t.Fatalf("%s: listing the rail's fragments: %v", where, err)
 			}
 			if len(hrefs) == 0 {
 				t.Fatalf("%s: the rail links no fragment of this page", where)
 			}
 			for _, id := range hrefs {
-				if err := chromedp.Run(ctx, chromedp.Evaluate(fmt.Sprintf(`document.querySelector('#ds-nav a[href$="#%s"]').click(); true`, id), nil)); err != nil {
+				click := fmt.Sprintf(
+					`document.querySelector('#ds-nav a[href$="#%s"]')
+					  .click(); true`, id)
+				if err := chromedp.Do(ctx,
+					chromedp.Evaluate[chromedp.Void](click)); err != nil {
 					t.Fatalf("%s: following #%s: %v", where, id, err)
 				}
 				r := readFocus(t, ctx, where, fmt.Sprintf(`document.getElementById(%q)`, id))
@@ -176,8 +187,8 @@ type stripPoint struct {
 
 func evalStripPoints(t *testing.T, ctx context.Context, where, js, selector string) []stripPoint {
 	t.Helper()
-	var raw string
-	if err := chromedp.Run(ctx, chromedp.Evaluate(js+"("+fmt.Sprintf("%q", selector)+")", &raw)); err != nil {
+	raw, err := chromedp.Run(ctx, chromedp.Evaluate[string](js+"("+fmt.Sprintf("%q", selector)+")"))
+	if err != nil {
 		t.Fatalf("%s: scanning: %v", where, err)
 	}
 	var pts []stripPoint
@@ -205,9 +216,9 @@ func TestNothingPaintsOverTheBarOrTheBackStrip(t *testing.T) {
 		strip string
 	}{{1440, ".ds-top"}, {390, "[rst-shell-back]"}} {
 		where := fmt.Sprintf("form at %dpx", c.w)
-		if err := chromedp.Run(ctx, chromedp.EmulateViewport(c.w, 844),
+		if err := chromedp.Do(ctx, chromedp.EmulateViewport(c.w, 844),
 			chromedp.Navigate(rig.Origin+pageHref(mountPath, "day", "en", fileOf("form"))),
-			chromedp.WaitVisible(c.strip, chromedp.ByQuery)); err != nil {
+			chromedp.WaitVisible(chromedp.CSS(c.strip))); err != nil {
 			t.Fatalf("%s: loading: %v", where, err)
 		}
 		eagerly(t, ctx, where)
@@ -226,7 +237,10 @@ func TestNothingPaintsOverTheBarOrTheBackStrip(t *testing.T) {
 		if len(h2Points) == 0 {
 			t.Fatalf("%s: no heading passes under %s at any scroll step, so nothing checks the scan can see one", where, c.strip)
 		}
-		if err := chromedp.Run(ctx, chromedp.Evaluate(`document.head.insertAdjacentHTML("beforeend", "<style>main h2{position:relative;z-index:11}</style>"); true`, nil)); err != nil {
+		raise := `document.head.insertAdjacentHTML("beforeend",` +
+			` "<style>main h2{position:relative;z-index:11}</style>"); true`
+		if err := chromedp.Do(ctx,
+			chromedp.Evaluate[chromedp.Void](raise)); err != nil {
 			t.Fatalf("%s: raising every heading over the strip: %v", where, err)
 		}
 		after := evalStripPoints(t, ctx, where, stripBadJS, c.strip)
@@ -257,15 +271,15 @@ func TestTheFrameMirrorsRightToLeft(t *testing.T) {
 	ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
 	defer cancel()
 	var raw string
-	if err := chromedp.Run(ctx, chromedp.EmulateViewport(1280, 900),
+	if err := chromedp.Do(ctx, chromedp.EmulateViewport(1280, 900),
 		chromedp.Navigate(rig.Origin+pageHref(mountPath, "day", "ar", fileOf("form"))),
-		chromedp.WaitVisible(`.ds-top`, chromedp.ByQuery),
-		chromedp.Evaluate(`(() => {
+		chromedp.WaitVisible(chromedp.CSS(`.ds-top`)),
+		harness.Into(&raw, chromedp.Evaluate[string](`(() => {
 		  const b = s => document.querySelector(s).getBoundingClientRect();
 		  const rail = b("[rst-shell-rail]"), bar = b(".ds-top"), main = b("main");
 		  const brand = b(".ds-top__brand"), controls = b(".ds-top__controls");
 		  return JSON.stringify({RailLeft: rail.left, MainRight: main.right, BarBottom: bar.bottom, MainTop: main.top, BarLeft: bar.left, BarRight: bar.right, MainLeft: main.left, BrandLeft: brand.left, ControlsRight: controls.right});
-		})()`, &raw)); err != nil {
+		})()`))); err != nil {
 		t.Fatalf("day/ar form at 1280px: %v", err)
 	}
 	var r struct {

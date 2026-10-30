@@ -687,10 +687,6 @@ Three packages carry the tag:
 same tag — the minimal loud walk, boots the whole app through
 `harness.New` and grows with it.
 
-`chromedp` is pinned to v0.14.2 rather than the latest: newer releases
-require Go 1.26, and a test-only dependency should not raise the module's
-Go floor for everyone who imports rastrillo.
-
 ## Parity vectors
 
 Any derivation over sealed content runs client-side, but the sidecar,

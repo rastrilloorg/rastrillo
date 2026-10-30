@@ -10,7 +10,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/chromedp/cdproto/emulation"
 	"github.com/chromedp/chromedp"
 	"github.com/chromedp/chromedp/kb"
 
@@ -152,18 +151,20 @@ func TestTheProfileMenuOnThePhoneIndex(t *testing.T) {
 					rig := harness.New(t, func(string) http.Handler { return shellAssets(t, pages) }, harness.WithCoarsePointer())
 					ctx, cancel := context.WithTimeout(rig.Context(), 120*time.Second)
 					defer cancel()
-					acts := []chromedp.Action{chromedp.EmulateViewport(390, 844)}
-					if !scripts {
-						acts = append(acts, emulation.SetScriptExecutionDisabled(true))
+					acts := []chromedp.Action[chromedp.Void]{
+						chromedp.EmulateViewport(390, 844),
 					}
-					mustRun(t, ctx, append(acts, chromedp.Navigate(rig.Origin+"/long"), chromedp.WaitVisible(p.trigger, chromedp.ByQuery))...)
+					if !scripts {
+						acts = append(acts, scriptsOff())
+					}
+					mustRun(t, ctx, append(acts, chromedp.Navigate(rig.Origin+"/long"), chromedp.WaitVisible(chromedp.CSS(p.trigger)))...)
 					requirePointer(t, ctx, true)
 					lr := readProfile(t, ctx, p)
 					if lr.Title != long || lr.TitleH > 56 || lr.TitleOverflow > 0 {
 						t.Errorf("a long brand: heading %q, %dpx tall, the page %dpx wider than the screen; want the whole name, on one line, eliding inside the screen", lr.Title, lr.TitleH, lr.TitleOverflow)
 					}
 
-					mustRun(t, ctx, chromedp.Navigate(rig.Origin+"/"), chromedp.WaitVisible(p.trigger, chromedp.ByQuery))
+					mustRun(t, ctx, chromedp.Navigate(rig.Origin+"/"), chromedp.WaitVisible(chromedp.CSS(p.trigger)))
 					settled(t, ctx)
 					closed := readProfile(t, ctx, p)
 					if closed.Title != "Harbour" || closed.TitleH > 56 || closed.TitleSize < 19 || closed.TitleSize > 23 {
@@ -186,7 +187,7 @@ func TestTheProfileMenuOnThePhoneIndex(t *testing.T) {
 					// language closed: the name, the email, the Language menu,
 					// then the account's links, flat, with no Account menu to
 					// open first.
-					mustRun(t, ctx, chromedp.Click(p.trigger, chromedp.ByQuery), chromedp.WaitVisible(p.card+" [rst-shell-who]", chromedp.ByQuery))
+					mustRun(t, ctx, chromedp.Click(chromedp.CSS(p.trigger)), chromedp.WaitVisible(chromedp.CSS(p.card+" [rst-shell-who]")))
 					var order []string
 					at(t, ctx, `JSON.stringify([...document.querySelectorAll("[rst-shell-who] [rst-person-name], [rst-shell-who] [rst-person-email], #rail-locale > summary, #acct-profile, #acct-out")]
 					  .filter(e => e.checkVisibility()).sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top).map(e => e.id || e.getAttribute("rst-person-name") !== null && "name" || e.getAttribute("rst-person-email") !== null && "email" || "language"))`, &order)
@@ -195,10 +196,10 @@ func TestTheProfileMenuOnThePhoneIndex(t *testing.T) {
 					}
 					var items []profileItem
 					if p.account != "" {
-						mustRun(t, ctx, chromedp.Click(p.account, chromedp.ByQuery), chromedp.WaitVisible("#acct-out", chromedp.ByQuery))
+						mustRun(t, ctx, chromedp.Click(chromedp.CSS(p.account)), chromedp.WaitVisible(chromedp.CSS("#acct-out")))
 						items = append(items, readProfile(t, ctx, p).Items...)
 					}
-					mustRun(t, ctx, chromedp.Click("#rail-locale > summary", chromedp.ByQuery), chromedp.WaitVisible("#rail-locale [rst-dropdown-menu] a", chromedp.ByQuery))
+					mustRun(t, ctx, chromedp.Click(chromedp.CSS("#rail-locale > summary")), chromedp.WaitVisible(chromedp.CSS("#rail-locale [rst-dropdown-menu] a")))
 					open := readProfile(t, ctx, p)
 					items = append(items, open.Items...)
 					if !open.Open || !open.CardShown || open.CardTop < open.AvBottom {
@@ -216,23 +217,25 @@ func TestTheProfileMenuOnThePhoneIndex(t *testing.T) {
 					if dir == "rtl" {
 						fx = 0.97
 					}
-					clickAndStay(t, ctx, probeScripted(t, ctx, scripts, "#nav-team", fx, 0.5, 0, 0), "",
+					team := probeScripted(t, ctx, scripts, "#nav-team",
+						fx, 0.5, 0, 0)
+					clickAndStay(t, rig, ctx, team, "",
 						fmt.Sprintf(`!document.querySelector(%q).parentElement.open`, p.trigger))
 
 					if scripts {
-						mustRun(t, ctx, chromedp.Click(p.trigger, chromedp.ByQuery), chromedp.WaitVisible(p.card+" [rst-shell-who]", chromedp.ByQuery))
+						mustRun(t, ctx, chromedp.Click(chromedp.CSS(p.trigger)), chromedp.WaitVisible(chromedp.CSS(p.card+" [rst-shell-who]")))
 						focus := "#acct-profile"
 						if p.account != "" {
-							mustRun(t, ctx, chromedp.Click(p.account, chromedp.ByQuery), chromedp.WaitVisible(focus, chromedp.ByQuery))
+							mustRun(t, ctx, chromedp.Click(chromedp.CSS(p.account)), chromedp.WaitVisible(chromedp.CSS(focus)))
 						}
-						mustRun(t, ctx, chromedp.Focus(focus, chromedp.ByQuery), chromedp.KeyEvent(kb.Escape))
+						mustRun(t, ctx, chromedp.Focus(chromedp.CSS(focus)), chromedp.KeyEvent(kb.Escape))
 						if after := readProfile(t, ctx, p); after.Open || !after.Focus {
 							t.Errorf("Escape from a link in the card: open %v, focus on the avatar %v; want it closed and focus handed back", after.Open, after.Focus)
 						}
 					} else {
 						// Scripts off, the avatar's own toggle is all there is.
-						mustRun(t, ctx, chromedp.Click(p.trigger, chromedp.ByQuery), chromedp.WaitVisible(p.card+" [rst-shell-who]", chromedp.ByQuery),
-							chromedp.Click(p.trigger, chromedp.ByQuery))
+						mustRun(t, ctx, chromedp.Click(chromedp.CSS(p.trigger)), chromedp.WaitVisible(chromedp.CSS(p.card+" [rst-shell-who]")),
+							chromedp.Click(chromedp.CSS(p.trigger)))
 						settleUntil(t, ctx, fmt.Sprintf(`!document.querySelector(%q).parentElement.open`, p.trigger))
 					}
 				})
@@ -269,17 +272,21 @@ func TestTheProfileMenuIsADropUpAtTheRailsFoot(t *testing.T) {
 						rig := harness.New(t, func(string) http.Handler { return shellAssets(t, pages) })
 						ctx, cancel := context.WithTimeout(rig.Context(), 90*time.Second)
 						defer cancel()
-						acts := []chromedp.Action{chromedp.EmulateViewport(vp[0], vp[1])}
-						if !scripts {
-							acts = append(acts, emulation.SetScriptExecutionDisabled(true))
+						acts := []chromedp.Action[chromedp.Void]{
+							chromedp.EmulateViewport(vp[0], vp[1]),
 						}
-						mustRun(t, ctx, append(acts, chromedp.Navigate(rig.Origin+"/"), chromedp.WaitVisible(p.trigger, chromedp.ByQuery))...)
+						if !scripts {
+							acts = append(acts, scriptsOff())
+						}
+						mustRun(t, ctx, append(acts, chromedp.Navigate(rig.Origin+"/"), chromedp.WaitVisible(chromedp.CSS(p.trigger)))...)
 						settled(t, ctx)
 						// Without anchor positioning, the path every engine
 						// without it takes: the card absolute in the rail,
 						// opened upward by the hand-written insets.
 						if !anchored {
-							mustRun(t, ctx, chromedp.Evaluate(galleryrig.WithoutAnchorPositioning, nil, awaitPromise))
+							mustRun(t, ctx, chromedp.Evaluate[chromedp.Void](
+								galleryrig.WithoutAnchorPositioning,
+								awaitPromise))
 						}
 						galleryrig.RequireAnchorPositioning(t, ctx, "the drop-up", "[rst-shell-profile] > [rst-dropdown-menu]", anchored)
 						const geom = `(() => {
@@ -302,8 +309,8 @@ func TestTheProfileMenuIsADropUpAtTheRailsFoot(t *testing.T) {
 						if name := axName(ctx, t, p.trigger); name != "Grace Hopper" {
 							t.Errorf("the avatar's accessible name is %q, want the person's name", name)
 						}
-						mustRun(t, ctx, chromedp.Click(p.trigger, chromedp.ByQuery), chromedp.WaitVisible(p.card+" [rst-shell-who]", chromedp.ByQuery),
-							chromedp.Click("#rail-locale > summary", chromedp.ByQuery), chromedp.WaitVisible("#rail-locale [rst-dropdown-menu] a", chromedp.ByQuery))
+						mustRun(t, ctx, chromedp.Click(chromedp.CSS(p.trigger)), chromedp.WaitVisible(chromedp.CSS(p.card+" [rst-shell-who]")),
+							chromedp.Click(chromedp.CSS("#rail-locale > summary")), chromedp.WaitVisible(chromedp.CSS("#rail-locale [rst-dropdown-menu] a")))
 						at(t, ctx, geom, &g)
 						if !g.Shown || g.CardBottom > g.AvTop || !g.OnScreen {
 							t.Errorf("open: card shown %v, its bottom at %d over an avatar whose top is %d, on screen %v; want a drop-up wholly in the window", g.Shown, g.CardBottom, g.AvTop, g.OnScreen)
@@ -312,11 +319,13 @@ func TestTheProfileMenuIsADropUpAtTheRailsFoot(t *testing.T) {
 							t.Errorf("the card starts %dpx from the rail's inline start and the avatar %dpx; want it anchored at the avatar's inline start", g.CardStart, g.AvStart)
 						}
 						requireCardItems(t, "the drop-up", readProfile(t, ctx, p).Items)
-						clickAndStay(t, ctx, probeScripted(t, ctx, scripts, "#main-link", 0.5, 0.5, 0, 0), "",
+						link := probeScripted(t, ctx, scripts, "#main-link",
+							0.5, 0.5, 0, 0)
+						clickAndStay(t, rig, ctx, link, "",
 							`!document.querySelector("[rst-shell-profile]").open`)
 						if scripts {
-							mustRun(t, ctx, chromedp.Click(p.trigger, chromedp.ByQuery), chromedp.WaitVisible("#acct-profile", chromedp.ByQuery),
-								chromedp.Focus("#acct-profile", chromedp.ByQuery), chromedp.KeyEvent(kb.Escape))
+							mustRun(t, ctx, chromedp.Click(chromedp.CSS(p.trigger)), chromedp.WaitVisible(chromedp.CSS("#acct-profile")),
+								chromedp.Focus(chromedp.CSS("#acct-profile")), chromedp.KeyEvent(kb.Escape))
 							if after := readProfile(t, ctx, p); after.Open || !after.Focus {
 								t.Errorf("Escape from a link in the card: open %v, focus on the avatar %v", after.Open, after.Focus)
 							}

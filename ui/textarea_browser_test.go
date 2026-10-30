@@ -32,7 +32,7 @@ func TestATextareaGrowsWithWhatIsTypedInIt(t *testing.T) {
 			rig := sizingRig(t, leg.coarse, map[string]string{"/": sizingDoc("textarea", body)})
 			ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
 			defer cancel()
-			mustRun(t, ctx, chromedp.EmulateViewport(leg.w, leg.h), chromedp.Navigate(rig.Origin+"/"), chromedp.WaitReady("#class", chromedp.ByQuery))
+			mustRun(t, ctx, chromedp.EmulateViewport(leg.w, leg.h), chromedp.Navigate(rig.Origin+"/"), chromedp.WaitReady(chromedp.CSS("#class")))
 			requirePointer(t, ctx, leg.coarse)
 			for _, id := range []string{"attr", "class"} {
 				var g struct {

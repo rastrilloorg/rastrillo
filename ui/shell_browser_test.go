@@ -33,7 +33,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/chromedp/cdproto/runtime"
 	"github.com/chromedp/chromedp"
 
 	"amadan.net/rastrillo/rastrillo"
@@ -151,15 +150,15 @@ func TestAMenuOpenedInsideAListCardEscapesTheCard(t *testing.T) {
 	defer cancel()
 
 	var raw string
-	if err := chromedp.Run(ctx,
+	if err := chromedp.Do(ctx,
 		chromedp.EmulateViewport(1280, 900),
 		chromedp.Navigate(rig.Origin+"/"),
-		chromedp.WaitVisible(`[rst-list] [rst-bulkbar]`, chromedp.ByQuery),
+		chromedp.WaitVisible(chromedp.CSS(`[rst-list] [rst-bulkbar]`)),
 		// The menu is a native <details>: one real click on the
 		// summary, no script anywhere.
-		chromedp.Click(`[rst-list] [rst-bulkbar] details > summary`, chromedp.ByQuery),
-		chromedp.WaitVisible(`[rst-list] [rst-dropdown-menu]`, chromedp.ByQuery),
-		chromedp.Evaluate(`(() => {
+		chromedp.Click(chromedp.CSS(`[rst-list] [rst-bulkbar] details > summary`)),
+		chromedp.WaitVisible(chromedp.CSS(`[rst-list] [rst-dropdown-menu]`)),
+		harness.Into(&raw, chromedp.Evaluate[string](`(() => {
 		  const card = document.querySelector("[rst-list]");
 		  const menu = document.querySelector("[rst-list] [rst-dropdown-menu]");
 		  const c = card.getBoundingClientRect();
@@ -178,7 +177,7 @@ func TestAMenuOpenedInsideAListCardEscapesTheCard(t *testing.T) {
 		    LastCorner: getComputedStyle(last).borderEndEndRadius,
 		    CardOverflow: getComputedStyle(card).overflowY
 		  });
-		})()`, &raw),
+		})()`)),
 	); err != nil {
 		t.Fatalf("driving the list card: %v", err)
 	}
@@ -389,15 +388,15 @@ func TestTheSidebarRailPutsThePersonAtItsFootAndTheProfileMenuOpensUpward(t *tes
 	defer cancel()
 
 	var raw string
-	if err := chromedp.Run(ctx,
+	if err := chromedp.Do(ctx,
 		chromedp.EmulateViewport(1280, 900),
 		chromedp.Navigate(rig.Origin+"/"),
-		chromedp.WaitVisible(`[rst-shell-profile] > summary`, chromedp.ByQuery),
-		chromedp.Click(`[rst-shell-profile] > summary`, chromedp.ByQuery),
-		chromedp.WaitVisible(`#rail-locale > summary`, chromedp.ByQuery),
-		chromedp.Click(`#rail-locale > summary`, chromedp.ByQuery),
-		chromedp.WaitVisible(`#rail-locale [rst-dropdown-menu]`, chromedp.ByQuery),
-		chromedp.Evaluate(railMeasure, &raw),
+		chromedp.WaitVisible(chromedp.CSS(`[rst-shell-profile] > summary`)),
+		chromedp.Click(chromedp.CSS(`[rst-shell-profile] > summary`)),
+		chromedp.WaitVisible(chromedp.CSS(`#rail-locale > summary`)),
+		chromedp.Click(chromedp.CSS(`#rail-locale > summary`)),
+		chromedp.WaitVisible(chromedp.CSS(`#rail-locale [rst-dropdown-menu]`)),
+		harness.Into(&raw, chromedp.Evaluate[string](railMeasure)),
 	); err != nil {
 		t.Fatalf("driving the sidebar rail: %v", err)
 	}
@@ -463,15 +462,15 @@ func TestTheSidebarRailPutsThePersonAtItsFootAndTheProfileMenuOpensUpward(t *tes
 	// the rail's top is the measurement, and the card, language open,
 	// is asserted to be on screen.
 	var narrow string
-	if err := chromedp.Run(ctx,
+	if err := chromedp.Do(ctx,
 		chromedp.EmulateViewport(390, 780),
 		chromedp.Navigate(rig.Origin+"/index"),
-		chromedp.WaitVisible(`[rst-shell-profile] > summary`, chromedp.ByQuery),
-		chromedp.Click(`[rst-shell-profile] > summary`, chromedp.ByQuery),
-		chromedp.WaitVisible(`#rail-locale > summary`, chromedp.ByQuery),
-		chromedp.Click(`#rail-locale > summary`, chromedp.ByQuery),
-		chromedp.WaitVisible(`#rail-locale [rst-dropdown-menu]`, chromedp.ByQuery),
-		chromedp.Evaluate(railMeasure, &narrow),
+		chromedp.WaitVisible(chromedp.CSS(`[rst-shell-profile] > summary`)),
+		chromedp.Click(chromedp.CSS(`[rst-shell-profile] > summary`)),
+		chromedp.WaitVisible(chromedp.CSS(`#rail-locale > summary`)),
+		chromedp.Click(chromedp.CSS(`#rail-locale > summary`)),
+		chromedp.WaitVisible(chromedp.CSS(`#rail-locale [rst-dropdown-menu]`)),
+		harness.Into(&narrow, chromedp.Evaluate[string](railMeasure)),
 	); err != nil {
 		t.Fatalf("driving the phone index: %v", err)
 	}
@@ -516,15 +515,15 @@ func TestTheSidebarRailPutsThePersonAtItsFootAndTheProfileMenuOpensUpward(t *tes
 	//     asks the engine what it computed, asks the box to scroll to
 	//     its own bottom, and asks whether the person came into view.
 	var shortRaw string
-	if err := chromedp.Run(ctx,
+	if err := chromedp.Do(ctx,
 		chromedp.EmulateViewport(1280, 420),
 		chromedp.Navigate(rig.Origin+"/tall"),
-		chromedp.WaitVisible(`[rst-shell-profile] > summary`, chromedp.ByQuery),
-		chromedp.Click(`[rst-shell-profile] > summary`, chromedp.ByQuery),
-		chromedp.WaitVisible(`#rail-locale > summary`, chromedp.ByQuery),
-		chromedp.Click(`#rail-locale > summary`, chromedp.ByQuery),
-		chromedp.WaitVisible(`#rail-locale [rst-dropdown-menu]`, chromedp.ByQuery),
-		chromedp.Evaluate(railMeasure, &shortRaw),
+		chromedp.WaitVisible(chromedp.CSS(`[rst-shell-profile] > summary`)),
+		chromedp.Click(chromedp.CSS(`[rst-shell-profile] > summary`)),
+		chromedp.WaitVisible(chromedp.CSS(`#rail-locale > summary`)),
+		chromedp.Click(chromedp.CSS(`#rail-locale > summary`)),
+		chromedp.WaitVisible(chromedp.CSS(`#rail-locale [rst-dropdown-menu]`)),
+		harness.Into(&shortRaw, chromedp.Evaluate[string](railMeasure)),
 	); err != nil {
 		t.Fatalf("driving the rail in a short window: %v", err)
 	}
@@ -699,11 +698,11 @@ func TestTheTopbarCollapsesItsTailBehindOneDisclosure(t *testing.T) {
 
 	// 1. Wide: the collapse is not there.
 	var wideRaw string
-	if err := chromedp.Run(ctx,
+	if err := chromedp.Do(ctx,
 		chromedp.EmulateViewport(1280, 900),
 		chromedp.Navigate(rig.Origin+"/"),
-		chromedp.WaitVisible(`[rst-shell-bar]`, chromedp.ByQuery),
-		chromedp.Evaluate(measure, &wideRaw),
+		chromedp.WaitVisible(chromedp.CSS(`[rst-shell-bar]`)),
+		harness.Into(&wideRaw, chromedp.Evaluate[string](measure)),
 	); err != nil {
 		t.Fatalf("driving the wide topbar: %v", err)
 	}
@@ -726,11 +725,11 @@ func TestTheTopbarCollapsesItsTailBehindOneDisclosure(t *testing.T) {
 	// layout and 799 is the narrow one; an off-by-one here is a window
 	// width at which the bar has neither layout.
 	var edgeRaw string
-	if err := chromedp.Run(ctx,
+	if err := chromedp.Do(ctx,
 		chromedp.EmulateViewport(800, 780),
 		chromedp.Navigate(rig.Origin+"/"),
-		chromedp.WaitVisible(`[rst-shell-bar]`, chromedp.ByQuery),
-		chromedp.Evaluate(measure, &edgeRaw),
+		chromedp.WaitVisible(chromedp.CSS(`[rst-shell-bar]`)),
+		harness.Into(&edgeRaw, chromedp.Evaluate[string](measure)),
 	); err != nil {
 		t.Fatalf("driving the topbar at the breakpoint: %v", err)
 	}
@@ -741,14 +740,14 @@ func TestTheTopbarCollapsesItsTailBehindOneDisclosure(t *testing.T) {
 
 	// 2. Narrow: one control, and the tail behind it.
 	var closedRaw, openRaw string
-	if err := chromedp.Run(ctx,
+	if err := chromedp.Do(ctx,
 		chromedp.EmulateViewport(390, 780),
 		chromedp.Navigate(rig.Origin+"/"),
-		chromedp.WaitVisible(`[rst-shell-menu] > summary`, chromedp.ByQuery),
-		chromedp.Evaluate(measure, &closedRaw),
-		chromedp.Click(`[rst-shell-menu] > summary`, chromedp.ByQuery),
-		chromedp.WaitVisible(`[rst-shell-tail] [rst-shell-nav]`, chromedp.ByQuery),
-		chromedp.Evaluate(measure, &openRaw),
+		chromedp.WaitVisible(chromedp.CSS(`[rst-shell-menu] > summary`)),
+		harness.Into(&closedRaw, chromedp.Evaluate[string](measure)),
+		chromedp.Click(chromedp.CSS(`[rst-shell-menu] > summary`)),
+		chromedp.WaitVisible(chromedp.CSS(`[rst-shell-tail] [rst-shell-nav]`)),
+		harness.Into(&openRaw, chromedp.Evaluate[string](measure)),
 	); err != nil {
 		t.Fatalf("driving the collapsed topbar: %v", err)
 	}
@@ -780,15 +779,15 @@ func TestTheTopbarCollapsesItsTailBehindOneDisclosure(t *testing.T) {
 	// 3. The trap: opening the account menu must not close the
 	// navigation it was opened from.
 	var trapRaw string
-	if err := chromedp.Run(ctx,
-		chromedp.Click(`[rst-shell-account] > summary`, chromedp.ByQuery),
+	if err := chromedp.Do(ctx,
+		chromedp.Click(chromedp.CSS(`[rst-shell-account] > summary`)),
 		// Settle rather than WaitVisible: the failure this step exists
 		// for is the account menu never becoming visible, because it
 		// closed the disclosure it lives behind. Waiting for it would
 		// report that as a timeout instead of as the three sentences
 		// below, and a timeout says nothing about <details name>.
 		chromedp.Sleep(250*time.Millisecond),
-		chromedp.Evaluate(measure, &trapRaw),
+		harness.Into(&trapRaw, chromedp.Evaluate[string](measure)),
 	); err != nil {
 		t.Fatalf("opening the account menu inside the collapsed tail: %v", err)
 	}
@@ -806,13 +805,13 @@ func TestTheTopbarCollapsesItsTailBehindOneDisclosure(t *testing.T) {
 	// 4. And the smallest viewport the shells promise, with the tail
 	// open, because a stack that fits at 390px can still spill at 320.
 	var tinyRaw string
-	if err := chromedp.Run(ctx,
+	if err := chromedp.Do(ctx,
 		chromedp.EmulateViewport(320, 640),
 		chromedp.Navigate(rig.Origin+"/"),
-		chromedp.WaitVisible(`[rst-shell-menu] > summary`, chromedp.ByQuery),
-		chromedp.Click(`[rst-shell-menu] > summary`, chromedp.ByQuery),
-		chromedp.WaitVisible(`[rst-shell-tail] [rst-shell-nav]`, chromedp.ByQuery),
-		chromedp.Evaluate(measure, &tinyRaw),
+		chromedp.WaitVisible(chromedp.CSS(`[rst-shell-menu] > summary`)),
+		chromedp.Click(chromedp.CSS(`[rst-shell-menu] > summary`)),
+		chromedp.WaitVisible(chromedp.CSS(`[rst-shell-tail] [rst-shell-nav]`)),
+		harness.Into(&tinyRaw, chromedp.Evaluate[string](measure)),
 	); err != nil {
 		t.Fatalf("driving the collapsed topbar at 320px: %v", err)
 	}
@@ -966,11 +965,11 @@ func TestSelfShapedChildrenKeepTheirCornersInsideACard(t *testing.T) {
 
 	for _, theme := range ThemeNames() {
 		var raw string
-		if err := chromedp.Run(ctx,
+		if err := chromedp.Do(ctx,
 			chromedp.EmulateViewport(1280, 900),
 			chromedp.Navigate(rig.Origin+"/"+theme+"/"),
-			chromedp.WaitVisible(`#in-0`, chromedp.ByQuery),
-			chromedp.Evaluate(measure, &raw),
+			chromedp.WaitVisible(chromedp.CSS(`#in-0`)),
+			harness.Into(&raw, chromedp.Evaluate[string](measure)),
 		); err != nil {
 			t.Fatalf("%s: driving the corner probe: %v", theme, err)
 		}
@@ -1199,14 +1198,14 @@ func TestMenusCapTheirHeightScrollAndFlipToFitTheViewport(t *testing.T) {
 
 	for _, leg := range []struct{ name, path string }{{"ltr", "/"}, {"rtl", "/rtl"}} {
 		var raw string
-		if err := chromedp.Run(ctx,
+		if err := chromedp.Do(ctx,
 			// 620px is short on purpose: it is the window in which a
 			// 388px menu opened from either bottom corner has nowhere
 			// to go, which is the whole subject.
 			chromedp.EmulateViewport(760, 620),
 			chromedp.Navigate(rig.Origin+leg.path),
-			chromedp.WaitVisible(`[data-corner="tl"] details`, chromedp.ByQuery),
-			chromedp.Evaluate(menuMeasure, &raw),
+			chromedp.WaitVisible(chromedp.CSS(`[data-corner="tl"] details`)),
+			harness.Into(&raw, chromedp.Evaluate[string](menuMeasure)),
 		); err != nil {
 			t.Fatalf("%s: driving the menus: %v", leg.name, err)
 		}
@@ -1387,11 +1386,13 @@ func TestTheScrollbarGutterHoldsTheLayoutStill(t *testing.T) {
 	read := func(path string) (width int) {
 		t.Helper()
 		var raw string
-		if err := chromedp.Run(ctx,
+		if err := chromedp.Do(ctx,
 			chromedp.EmulateViewport(900, 600),
 			chromedp.Navigate(rig.Origin+path),
-			chromedp.WaitVisible(`#ruler`, chromedp.ByQuery),
-			chromedp.Evaluate(`JSON.stringify(Math.round(document.getElementById('ruler').getBoundingClientRect().width))`, &raw),
+			chromedp.WaitVisible(chromedp.CSS(`#ruler`)),
+			harness.Into(&raw, chromedp.Evaluate[string](
+				`JSON.stringify(Math.round(document.getElementById('ruler')
+					.getBoundingClientRect().width))`)),
 		); err != nil {
 			t.Fatalf("measuring %s: %v", path, err)
 		}
@@ -1420,11 +1421,11 @@ func TestTheScrollbarGutterHoldsTheLayoutStill(t *testing.T) {
 	// modal's scroll lock removes it, and the page jumps sideways while
 	// the reader is watching.
 	var raw string
-	if err := chromedp.Run(ctx,
+	if err := chromedp.Do(ctx,
 		chromedp.EmulateViewport(900, 600),
 		chromedp.Navigate(rig.Origin+"/tall"),
-		chromedp.WaitVisible(`#ruler`, chromedp.ByQuery),
-		chromedp.Evaluate(measure, &raw),
+		chromedp.WaitVisible(chromedp.CSS(`#ruler`)),
+		harness.Into(&raw, chromedp.Evaluate[string](measure)),
 	); err != nil {
 		t.Fatalf("driving the modal scroll lock: %v", err)
 	}
@@ -1432,10 +1433,10 @@ func TestTheScrollbarGutterHoldsTheLayoutStill(t *testing.T) {
 	if err := json.Unmarshal([]byte(raw), &stable); err != nil {
 		t.Fatalf("reading the modal measurement (%q): %v", raw, err)
 	}
-	if err := chromedp.Run(ctx,
+	if err := chromedp.Do(ctx,
 		chromedp.Navigate(rig.Origin+"/tall-auto"),
-		chromedp.WaitVisible(`#ruler`, chromedp.ByQuery),
-		chromedp.Evaluate(measure, &raw),
+		chromedp.WaitVisible(chromedp.CSS(`#ruler`)),
+		harness.Into(&raw, chromedp.Evaluate[string](measure)),
 	); err != nil {
 		t.Fatalf("driving the modal scroll lock without the gutter: %v", err)
 	}
@@ -1574,20 +1575,22 @@ func TestClearingASearchIsALinkAndTheNativeCrossIsGone(t *testing.T) {
 	// live once the field has focus. Worth recording: a drive that
 	// skips the focus measures a button that is there but inert, and
 	// concludes it is absent.
-	clickTheNativeCross := func(sel string) chromedp.Action {
-		return chromedp.ActionFunc(func(ctx context.Context) error {
-			var at []float64
+	clickTheNativeCross := func(sel string) chromedp.Action[chromedp.Void] {
+		click := func(ctx context.Context, target *chromedp.Target) error {
 			expr := fmt.Sprintf(`(() => {
 			  const el = document.querySelector(%q);
 			  const r = el.getBoundingClientRect();
 			  const rtl = getComputedStyle(el).direction === "rtl";
 			  return [rtl ? r.left + 8 : r.right - 8, r.top + r.height / 2];
 			})()`, sel)
-			if err := chromedp.Evaluate(expr, &at).Do(ctx); err != nil {
+			at, err := chromedp.Evaluate[[]float64](expr)(ctx, target)
+			if err != nil {
 				return err
 			}
-			return chromedp.MouseClickXY(at[0], at[1]).Do(ctx)
-		})
+			_, err = chromedp.MouseClickXY(at[0], at[1])(ctx, target)
+			return err
+		}
+		return chromedp.Func(click)
 	}
 
 	for _, leg := range []struct{ name, path, control string }{
@@ -1599,13 +1602,14 @@ func TestClearingASearchIsALinkAndTheNativeCrossIsGone(t *testing.T) {
 		// does not, Chromium is not drawing the button where this leg
 		// clicks and the leg's own assertion could not have failed.
 		var nativeValue string
-		if err := chromedp.Run(ctx,
+		if err := chromedp.Do(ctx,
 			chromedp.EmulateViewport(900, 600),
 			chromedp.Navigate(rig.Origin+leg.control),
-			chromedp.WaitVisible(`#q`, chromedp.ByQuery),
-			chromedp.Focus(`#q`, chromedp.ByQuery),
+			chromedp.WaitVisible(chromedp.CSS(`#q`)),
+			chromedp.Focus(chromedp.CSS(`#q`)),
 			clickTheNativeCross(`#q`),
-			chromedp.Evaluate(`document.getElementById('q').value`, &nativeValue),
+			harness.Into(&nativeValue, chromedp.Evaluate[string](
+				`document.getElementById('q').value`)),
 		); err != nil {
 			t.Fatalf("%s: driving the control input: %v", leg.name, err)
 		}
@@ -1614,14 +1618,16 @@ func TestClearingASearchIsALinkAndTheNativeCrossIsGone(t *testing.T) {
 		}
 
 		var raw, stillThere string
-		if err := chromedp.Run(ctx,
+		if err := chromedp.Do(ctx,
 			chromedp.EmulateViewport(900, 600),
 			chromedp.Navigate(rig.Origin+leg.path),
-			chromedp.WaitVisible(`[rst-search-clear]`, chromedp.ByQuery),
-			chromedp.Evaluate(clearMeasure, &raw),
-			chromedp.Focus(`[rst-search] input[type=search]`, chromedp.ByQuery),
+			chromedp.WaitVisible(chromedp.CSS(`[rst-search-clear]`)),
+			harness.Into(&raw, chromedp.Evaluate[string](clearMeasure)),
+			chromedp.Focus(chromedp.CSS(`[rst-search] input[type=search]`)),
 			clickTheNativeCross(`[rst-search] input[type=search]`),
-			chromedp.Evaluate(`document.querySelector('[rst-search] input[type=search]').value`, &stillThere),
+			harness.Into(&stillThere, chromedp.Evaluate[string](
+				`document.querySelector('[rst-search] input[type=search]')
+					.value`)),
 		); err != nil {
 			t.Fatalf("%s: driving the search form: %v", leg.name, err)
 		}
@@ -1772,11 +1778,11 @@ func TestAMenuOpenedInsideAShortFrameIsStillUsable(t *testing.T) {
 })()`
 
 	var raw string
-	if err := chromedp.Run(ctx,
+	if err := chromedp.Do(ctx,
 		chromedp.EmulateViewport(900, 1200),
 		chromedp.Navigate(rig.Origin+"/"),
-		chromedp.WaitVisible(`iframe[data-h]`, chromedp.ByQuery),
-		chromedp.Evaluate(measure, &raw),
+		chromedp.WaitVisible(chromedp.CSS(`iframe[data-h]`)),
+		harness.Into(&raw, chromedp.Evaluate[string](measure)),
 	); err != nil {
 		t.Fatalf("driving the framed menus: %v", err)
 	}
@@ -1945,8 +1951,8 @@ func TestAMenuDoesNotOutliveTheAnchorScrolledAwayFromUnderIt(t *testing.T) {
 	}
 	get := func(id string) orphanReading {
 		t.Helper()
-		var raw string
-		if err := chromedp.Run(ctx, chromedp.Evaluate(read(id), &raw)); err != nil {
+		raw, err := chromedp.Run(ctx, chromedp.Evaluate[string](read(id)))
+		if err != nil {
 			t.Fatalf("reading %s: %v", id, err)
 		}
 		var out orphanReading
@@ -1956,13 +1962,13 @@ func TestAMenuDoesNotOutliveTheAnchorScrolledAwayFromUnderIt(t *testing.T) {
 		return out
 	}
 
-	if err := chromedp.Run(ctx,
+	if err := chromedp.Do(ctx,
 		chromedp.EmulateViewport(900, 700),
 		chromedp.Navigate(rig.Origin+"/"),
-		chromedp.WaitVisible(`#subject-menu`, chromedp.ByQuery),
-		chromedp.Click(`#subject-menu > summary`, chromedp.ByQuery),
-		chromedp.Click(`#control-menu > summary`, chromedp.ByQuery),
-		chromedp.WaitVisible(`#subject-menu [rst-dropdown-menu]`, chromedp.ByQuery),
+		chromedp.WaitVisible(chromedp.CSS(`#subject-menu`)),
+		chromedp.Click(chromedp.CSS(`#subject-menu > summary`)),
+		chromedp.Click(chromedp.CSS(`#control-menu > summary`)),
+		chromedp.WaitVisible(chromedp.CSS(`#subject-menu [rst-dropdown-menu]`)),
 	); err != nil {
 		t.Fatalf("opening the menus: %v", err)
 	}
@@ -1990,17 +1996,21 @@ func TestAMenuDoesNotOutliveTheAnchorScrolledAwayFromUnderIt(t *testing.T) {
 	}
 
 	// Take the anchor away.
-	if err := chromedp.Run(ctx, chromedp.Evaluate(
-		`(() => { for (const id of ["subject", "control"]) document.getElementById(id).scrollTop = 150; return "ok"; })()`,
-		new(string))); err != nil {
+	if err := chromedp.Do(ctx, harness.Into(new(string),
+		chromedp.Evaluate[string](`(() => {
+			for (const id of ["subject", "control"])
+				document.getElementById(id).scrollTop = 150;
+			return "ok";
+		})()`))); err != nil {
 		t.Fatalf("scrolling the anchors away: %v", err)
 	}
 	// Anchor positioning — placement and position-visibility both —
 	// settles during paint, not during the scroll, so the reading waits
 	// for two frames rather than racing the compositor.
-	if err := chromedp.Run(ctx, chromedp.Evaluate(
+	settle := harness.Into(new(string), chromedp.Evaluate[string](
 		`new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r("ok"))))`,
-		new(string), func(p *runtime.EvaluateParams) *runtime.EvaluateParams { return p.WithAwaitPromise(true) })); err != nil {
+		chromedp.EvalAwaitPromise))
+	if err := chromedp.Do(ctx, settle); err != nil {
 		t.Fatalf("waiting for the anchored positions to settle: %v", err)
 	}
 

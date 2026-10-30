@@ -62,7 +62,6 @@ import (
 	"github.com/chromedp/cdproto/accessibility"
 	"github.com/chromedp/cdproto/cdp"
 	"github.com/chromedp/cdproto/emulation"
-	"github.com/chromedp/cdproto/runtime"
 	"github.com/chromedp/chromedp"
 	"github.com/chromedp/chromedp/kb"
 
@@ -161,21 +160,28 @@ func TestEnhancedSelectDrivesTheWholeJourney(t *testing.T) {
 	// nothing at all. Record the last step that completed, and report it
 	// with the state gathered so far.
 	reached := "start"
-	at := func(name string) chromedp.Action {
-		return chromedp.ActionFunc(func(context.Context) error { reached = name; return nil })
+	at := func(name string) chromedp.Action[chromedp.Void] {
+		return chromedp.Func(func(context.Context, *chromedp.Target) error {
+			reached = name
+			return nil
+		})
 	}
-	if err := chromedp.Run(ctx,
+	if err := chromedp.Do(ctx,
 		chromedp.Navigate(rig.Origin+"/"), at("navigated"),
-		chromedp.WaitVisible(`input[role="combobox"]`, chromedp.ByQuery),
+		chromedp.WaitVisible(chromedp.CSS(`input[role="combobox"]`)),
 		at("combobox-visible"),
 		// The enhancement happened; the native control survived it.
-		chromedp.Evaluate(`document.querySelectorAll('input[role="combobox"]').length`, &comboCount),
-		chromedp.Evaluate(`document.querySelectorAll('select[name="author"]').length`, &nativeCount),
+		harness.Into(&comboCount, chromedp.Evaluate[int](
+			`document.querySelectorAll('input[role="combobox"]').length`)),
+		harness.Into(&nativeCount, chromedp.Evaluate[int](
+			`document.querySelectorAll('select[name="author"]').length`)),
 		// Hidden, not removed. sr-only leaves a ~1px box; anything wider
 		// means the select is still taking real layout space.
-		chromedp.Evaluate(`(document.querySelector('select[name="author"]')?.getBoundingClientRect().width ?? 999) < 4`, &nativeHidden),
+		harness.Into(&nativeHidden, chromedp.Evaluate[bool](
+			`(document.querySelector('select[name="author"]')?.getBoundingClientRect().width ?? 999) < 4`)),
 		// The label must name the control the user actually types into.
-		chromedp.Evaluate(`document.querySelector('label')?.getAttribute('for') ?? ''`, &labelFor),
+		harness.Into(&labelFor, chromedp.Evaluate[string](
+			`document.querySelector('label')?.getAttribute('for') ?? ''`)),
 
 		// Every probe above is null-safe on purpose: a missing node should
 		// reach the assertions as an empty value, so the failure names the
@@ -183,30 +189,32 @@ func TestEnhancedSelectDrivesTheWholeJourney(t *testing.T) {
 		//
 		// Filter, then pick with the keyboard only: a mouse-only
 		// combobox is a broken one.
-		chromedp.Click(`input[role="combobox"]`, chromedp.ByQuery), at("clicked-combobox"),
-		chromedp.SendKeys(`input[role="combobox"]`, "Option 12", chromedp.ByQuery), at("typed-filter"),
+		chromedp.Click(chromedp.CSS(`input[role="combobox"]`)), at("clicked-combobox"),
+		chromedp.SendKeys(chromedp.CSS(`input[role="combobox"]`), "Option 12"), at("typed-filter"),
 		// A burst of keystrokes inside one frame is searched once more
 		// before that frame is drawn (select.js coalesces), so the count is
 		// read after a frame, as a person would see it.
-		chromedp.Evaluate(`new Promise(function (r) { requestAnimationFrame(function () { setTimeout(r, 0); }); })`, nil, func(p *runtime.EvaluateParams) *runtime.EvaluateParams { return p.WithAwaitPromise(true) }),
-		chromedp.Evaluate(`document.querySelectorAll('[role="option"]:not([style*="none"])').length`, &optionsShown),
-		chromedp.Evaluate(`document.querySelector('input[role="combobox"]')?.value ?? ''`, &filterText),
+		chromedp.Evaluate[chromedp.Void](`new Promise(function (r) { requestAnimationFrame(function () { setTimeout(r, 0); }); })`, chromedp.EvalAwaitPromise),
+		harness.Into(&optionsShown, chromedp.Evaluate[int](
+			`document.querySelectorAll('[role="option"]:not([style*="none"])').length`)),
+		harness.Into(&filterText, chromedp.Evaluate[string](
+			`document.querySelector('input[role="combobox"]')?.value ?? ''`)),
 		// Synchronise on observable state rather than assuming a keystroke
 		// landed: under load the arrow key can arrive before the filtered
 		// list is drawn, and an ArrowDown with nothing to highlight is a
 		// silent no-op the next step would inherit. Waiting for the
 		// highlight turns that into a fast, legible failure at the exact
 		// step that did not happen.
-		chromedp.WaitVisible(`[role="option"]:not([style*="none"])`, chromedp.ByQuery), at("list-drawn"),
+		chromedp.WaitVisible(chromedp.CSS(`[role="option"]:not([style*="none"])`)), at("list-drawn"),
 		// SendKeys, not KeyEvent: KeyEvent trusts ambient focus, while
 		// SendKeys focuses its target first and then delivers the same
 		// CDP key events, so the key lands where the user's would. It
 		// was reached for while chasing issue #86 and kept afterwards —
 		// aiming a keystroke is right whether or not it was ever the
 		// problem, and it was not.
-		chromedp.SendKeys(`input[role="combobox"]`, string(kb.ArrowDown), chromedp.ByQuery), at("arrow-down"),
-		chromedp.WaitVisible(`[role="option"].is-active`, chromedp.ByQuery), at("option-highlighted"),
-		chromedp.SendKeys(`input[role="combobox"]`, string(kb.Enter), chromedp.ByQuery), at("enter"),
+		chromedp.SendKeys(chromedp.CSS(`input[role="combobox"]`), string(kb.ArrowDown)), at("arrow-down"),
+		chromedp.WaitVisible(chromedp.CSS(`[role="option"].is-active`)), at("option-highlighted"),
+		chromedp.SendKeys(chromedp.CSS(`input[role="combobox"]`), string(kb.Enter)), at("enter"),
 
 		// The mirror: what the form will actually submit. Polled rather
 		// than sampled, and bounded at 10s, so a commit that never
@@ -215,11 +223,12 @@ func TestEnhancedSelectDrivesTheWholeJourney(t *testing.T) {
 		// This poll is also what used to hide issue #86: it was racing a
 		// navigation the Enter had already started, and winning often
 		// enough to look green.
-		chromedp.ActionFunc(func(ctx context.Context) error {
+		chromedp.Func(func(ctx context.Context, target *chromedp.Target) error {
 			deadline := time.Now().Add(10 * time.Second)
 			for {
-				var v string
-				if err := chromedp.Evaluate(`document.querySelector('select[name="author"]')?.value ?? ''`, &v).Do(ctx); err != nil {
+				v, err := chromedp.Evaluate[string](
+					`document.querySelector('select[name="author"]')?.value ?? ''`)(ctx, target)
+				if err != nil {
 					return err
 				}
 				if v != "" {
@@ -227,15 +236,14 @@ func TestEnhancedSelectDrivesTheWholeJourney(t *testing.T) {
 					return nil
 				}
 				if time.Now().After(deadline) {
-					var snap string
-					_ = chromedp.Evaluate(`JSON.stringify({
+					snap, _ := chromedp.Evaluate[string](`JSON.stringify({
 						activeEl: (document.activeElement && (document.activeElement.tagName + "/" + (document.activeElement.getAttribute("role") || ""))) || "none",
 						hasFocus: document.hasFocus(),
 						options: document.querySelectorAll('[role="option"]').length,
 						highlighted: document.querySelectorAll('[role="option"].is-active').length,
 						listHidden: (function(l){ return l ? l.hidden : "no-list" })(document.querySelector('[role="listbox"]')),
 						inputValue: (function(i){ return i ? i.value : "no-input" })(document.querySelector('input[role="combobox"]')),
-					})`, &snap).Do(ctx)
+					})`)(ctx, target)
 					return fmt.Errorf("mirror never committed within 10s of Enter; widget state: %s", snap)
 				}
 				select {
@@ -252,8 +260,8 @@ func TestEnhancedSelectDrivesTheWholeJourney(t *testing.T) {
 		// resolved here even with the value already correctly mirrored.
 		// Submitting the form exercises the thing under test without
 		// depending on hit-testing an overlay-adjacent button.
-		chromedp.Submit(`#go`, chromedp.ByQuery), at("submitted-form"),
-		chromedp.WaitVisible(`#done`, chromedp.ByQuery), at("server-responded"),
+		chromedp.Submit(chromedp.CSS(`#go`)), at("submitted-form"),
+		chromedp.WaitVisible(chromedp.CSS(`#done`)), at("server-responded"),
 	); err != nil {
 		t.Fatalf("drive failed after %q: %v\n  filterText=%q optionsShown=%d nativeValue=%q labelFor=%q",
 			reached, err, filterText, optionsShown, nativeValue, labelFor)
@@ -409,14 +417,19 @@ func TestEnhancedDateDrivesTheWholeJourney(t *testing.T) {
 	)
 
 	reached := "start"
-	at := func(name string) chromedp.Action {
-		return chromedp.ActionFunc(func(context.Context) error { reached = name; return nil })
+	at := func(name string) chromedp.Action[chromedp.Void] {
+		return chromedp.Func(func(context.Context, *chromedp.Target) error {
+			reached = name
+			return nil
+		})
 	}
-	if err := chromedp.Run(ctx,
+	if err := chromedp.Do(ctx,
 		chromedp.Navigate(rig.Origin+"/"), at("navigated"),
-		chromedp.WaitVisible(`input[role="combobox"]`, chromedp.ByQuery), at("combobox-visible"),
-		chromedp.Evaluate(`document.querySelectorAll('input[role="combobox"]').length`, &comboCount),
-		chromedp.Evaluate(`document.querySelectorAll('input[name="due"]').length`, &nativeCount),
+		chromedp.WaitVisible(chromedp.CSS(`input[role="combobox"]`)), at("combobox-visible"),
+		harness.Into(&comboCount, chromedp.Evaluate[int](
+			`document.querySelectorAll('input[role="combobox"]').length`)),
+		harness.Into(&nativeCount, chromedp.Evaluate[int](
+			`document.querySelectorAll('input[name="due"]').length`)),
 		// Hidden, not removed — and "hidden" measured the way the
 		// utility actually hides it. A replaced element keeps an
 		// intrinsic minimum size whatever inline-size says (the date
@@ -424,30 +437,33 @@ func TestEnhancedDateDrivesTheWholeJourney(t *testing.T) {
 		// what proves it invisible is the clip and the absolute
 		// position, not a width threshold. A native left in flow fails
 		// all three.
-		chromedp.Evaluate(`(function () {
+		harness.Into(&nativeHidden, chromedp.Evaluate[bool](`(function () {
 			var el = document.querySelector('input[name="due"]');
 			if (!el) return false;
 			var s = getComputedStyle(el);
 			return s.position === "absolute" && s.clipPath !== "none" &&
 				el.getBoundingClientRect().width < 24;
-		})()`, &nativeHidden),
-		chromedp.Evaluate(`document.querySelector('label')?.getAttribute('for') ?? ''`, &labelFor),
+		})()`)),
+		harness.Into(&labelFor, chromedp.Evaluate[string](
+			`document.querySelector('label')?.getAttribute('for') ?? ''`)),
 
-		chromedp.Click(`input[role="combobox"]`, chromedp.ByQuery), at("clicked-combobox"),
-		chromedp.SendKeys(`input[role="combobox"]`, "tomorrow", chromedp.ByQuery), at("typed-phrase"),
-		chromedp.Evaluate(`document.querySelector('input[role="combobox"]')?.value ?? ''`, &typed),
+		chromedp.Click(chromedp.CSS(`input[role="combobox"]`)), at("clicked-combobox"),
+		chromedp.SendKeys(chromedp.CSS(`input[role="combobox"]`), "tomorrow"), at("typed-phrase"),
+		harness.Into(&typed, chromedp.Evaluate[string](
+			`document.querySelector('input[role="combobox"]')?.value ?? ''`)),
 		// Synchronise on the reading being armed rather than assuming
 		// the keystrokes landed: the highlighted row IS the parse, and
 		// waiting for it turns a drifted focus into a fast, legible
 		// failure at this step instead of a deadline three steps later.
-		chromedp.WaitVisible(`[role="option"].is-active`, chromedp.ByQuery), at("reading-armed"),
-		chromedp.SendKeys(`input[role="combobox"]`, string(kb.Enter), chromedp.ByQuery), at("enter"),
+		chromedp.WaitVisible(chromedp.CSS(`[role="option"].is-active`)), at("reading-armed"),
+		chromedp.SendKeys(chromedp.CSS(`input[role="combobox"]`), string(kb.Enter)), at("enter"),
 
-		chromedp.ActionFunc(func(ctx context.Context) error {
+		chromedp.Func(func(ctx context.Context, target *chromedp.Target) error {
 			deadline := time.Now().Add(10 * time.Second)
 			for {
-				var v string
-				if err := chromedp.Evaluate(`document.querySelector('input[name="due"]')?.value ?? ''`, &v).Do(ctx); err != nil {
+				v, err := chromedp.Evaluate[string](
+					`document.querySelector('input[name="due"]')?.value ?? ''`)(ctx, target)
+				if err != nil {
 					return err
 				}
 				if v != "" {
@@ -455,13 +471,12 @@ func TestEnhancedDateDrivesTheWholeJourney(t *testing.T) {
 					return nil
 				}
 				if time.Now().After(deadline) {
-					var snap string
-					_ = chromedp.Evaluate(`JSON.stringify({
+					snap, _ := chromedp.Evaluate[string](`JSON.stringify({
 						activeEl: (document.activeElement && (document.activeElement.tagName + "/" + (document.activeElement.getAttribute("role") || ""))) || "none",
 						options: document.querySelectorAll('[role="option"]').length,
 						highlighted: document.querySelectorAll('[role="option"].is-active').length,
 						inputValue: (function(i){ return i ? i.value : "no-input" })(document.querySelector('input[role="combobox"]')),
-					})`, &snap).Do(ctx)
+					})`)(ctx, target)
 					return fmt.Errorf("the carrier never took a value within 10s of Enter; widget state: %s", snap)
 				}
 				select {
@@ -472,8 +487,8 @@ func TestEnhancedDateDrivesTheWholeJourney(t *testing.T) {
 			}
 		}), at("read-carrier-value"),
 
-		chromedp.Submit(`#go`, chromedp.ByQuery), at("submitted-form"),
-		chromedp.WaitVisible(`#done`, chromedp.ByQuery), at("server-responded"),
+		chromedp.Submit(chromedp.CSS(`#go`)), at("submitted-form"),
+		chromedp.WaitVisible(chromedp.CSS(`#done`)), at("server-responded"),
 	); err != nil {
 		t.Fatalf("drive failed after %q: %v\n  typed=%q nativeValue=%q labelFor=%q",
 			reached, err, typed, nativeValue, labelFor)
@@ -586,18 +601,20 @@ func TestEnterCommitsWithoutSubmittingTheForm(t *testing.T) {
 				submits int
 				value   string
 			)
-			if err := chromedp.Run(ctx,
+			if err := chromedp.Do(ctx,
 				chromedp.Navigate(rig.Origin+"/"),
-				chromedp.WaitVisible(`input[role="combobox"]`, chromedp.ByQuery),
-				chromedp.Evaluate(spy, nil),
-				chromedp.Click(`input[role="combobox"]`, chromedp.ByQuery),
-				chromedp.SendKeys(`input[role="combobox"]`, tc.typed, chromedp.ByQuery),
-				chromedp.WaitVisible(`[role="option"]:not([style*="none"])`, chromedp.ByQuery),
-				chromedp.SendKeys(`input[role="combobox"]`, string(kb.ArrowDown), chromedp.ByQuery),
-				chromedp.WaitVisible(`[role="option"].is-active`, chromedp.ByQuery),
-				chromedp.SendKeys(`input[role="combobox"]`, string(kb.Enter), chromedp.ByQuery),
-				chromedp.Evaluate(`window.__submits`, &submits),
-				chromedp.Evaluate(tc.mirror, &value),
+				chromedp.WaitVisible(chromedp.CSS(`input[role="combobox"]`)),
+				chromedp.Evaluate[chromedp.Void](spy),
+				chromedp.Click(chromedp.CSS(`input[role="combobox"]`)),
+				chromedp.SendKeys(chromedp.CSS(`input[role="combobox"]`), tc.typed),
+				chromedp.WaitVisible(chromedp.CSS(`[role="option"]:not([style*="none"])`)),
+				chromedp.SendKeys(chromedp.CSS(`input[role="combobox"]`), string(kb.ArrowDown)),
+				chromedp.WaitVisible(chromedp.CSS(`[role="option"].is-active`)),
+				chromedp.SendKeys(chromedp.CSS(`input[role="combobox"]`), string(kb.Enter)),
+				harness.Into(&submits, chromedp.Evaluate[int](
+					`window.__submits`)),
+				harness.Into(&value, chromedp.Evaluate[string](
+					tc.mirror)),
 			); err != nil {
 				t.Fatalf("drive failed: %v", err)
 			}
@@ -729,32 +746,36 @@ func TestGroupedSelectRendersItsGroups(t *testing.T) {
 	)
 
 	reached := "start"
-	at := func(name string) chromedp.Action {
-		return chromedp.ActionFunc(func(context.Context) error { reached = name; return nil })
+	at := func(name string) chromedp.Action[chromedp.Void] {
+		return chromedp.Func(func(context.Context, *chromedp.Target) error {
+			reached = name
+			return nil
+		})
 	}
 	// Poll rather than sample: the list is redrawn on every keystroke,
 	// and under load a probe fired straight after SendKeys reads the
 	// list as it was. Waiting on the observable state turns a drifted
 	// keystroke into a fast failure at the step that did not happen.
-	until := func(name, js string) chromedp.Action {
-		return chromedp.ActionFunc(func(ctx context.Context) error {
+	until := func(name, js string) chromedp.Action[chromedp.Void] {
+		return chromedp.Func(func(
+			ctx context.Context, target *chromedp.Target,
+		) error {
 			deadline := time.Now().Add(10 * time.Second)
 			for {
-				var ok bool
-				if err := chromedp.Evaluate(js, &ok).Do(ctx); err != nil {
+				ok, err := chromedp.Evaluate[bool](js)(ctx, target)
+				if err != nil {
 					return err
 				}
 				if ok {
 					return nil
 				}
 				if time.Now().After(deadline) {
-					var snap string
-					_ = chromedp.Evaluate(`JSON.stringify({
+					snap, _ := chromedp.Evaluate[string](`JSON.stringify({
 						options: document.querySelectorAll('[role="option"]').length,
 						groups: document.querySelectorAll('[role="group"]').length,
 						headings: Array.from(document.querySelectorAll('[rst-select-group]')).map(function (h) { return h.textContent }),
 						inputValue: (function (i) { return i ? i.value : "no-input" })(document.querySelector('input[role="combobox"]')),
-					})`, &snap).Do(ctx)
+					})`)(ctx, target)
 					return fmt.Errorf("%s never became true within 10s; widget state: %s", name, snap)
 				}
 				select {
@@ -766,78 +787,93 @@ func TestGroupedSelectRendersItsGroups(t *testing.T) {
 		})
 	}
 
-	if err := chromedp.Run(ctx,
+	if err := chromedp.Do(ctx,
 		chromedp.Navigate(rig.Origin+"/"), at("navigated"),
-		chromedp.WaitVisible(`input[role="combobox"]`, chromedp.ByQuery), at("combobox-visible"),
+		chromedp.WaitVisible(chromedp.CSS(`input[role="combobox"]`)), at("combobox-visible"),
 
 		// Exactly one enhancement on a page holding two selects, both of
 		// which carry the attribute.
-		chromedp.Evaluate(`document.querySelectorAll('input[role="combobox"]').length`, &comboCount),
-		chromedp.Evaluate(`document.querySelectorAll('select[name="team"][data-rst-enhanced]').length`, &optOutEnhanced),
+		harness.Into(&comboCount, chromedp.Evaluate[int](
+			`document.querySelectorAll('input[role="combobox"]').length`)),
+		harness.Into(&optOutEnhanced, chromedp.Evaluate[int](
+			`document.querySelectorAll('select[name="team"][data-rst-enhanced]').length`)),
 		// Untouched means untouched: still a real, visible native select.
-		chromedp.Evaluate(`(document.querySelector('select[name="team"]')?.getBoundingClientRect().width ?? 0) > 40`, &optOutVisible),
+		harness.Into(&optOutVisible, chromedp.Evaluate[bool](
+			`(document.querySelector('select[name="team"]')?.getBoundingClientRect().width ?? 0) > 40`)),
 		// The grouped native survives as the carrier, groups and all.
-		chromedp.Evaluate(`(function () {
+		harness.Into(&carrierShape, chromedp.Evaluate[string](`(function () {
 			var s = document.querySelector('select[name="city"]');
 			if (!s) return "no-select";
 			return s.querySelectorAll('optgroup').length + "/" + s.options.length;
-		})()`, &carrierShape),
+		})()`)),
 
 		// Open it: focus draws the unfiltered list. The select is required,
 		// so its blank ("Choose a city") is a prompt and never a row.
-		chromedp.Click(`input[role="combobox"]`, chromedp.ByQuery), at("clicked-combobox"),
+		chromedp.Click(chromedp.CSS(`input[role="combobox"]`)), at("clicked-combobox"),
 		until("the grouped list is drawn", `document.querySelectorAll('[role="option"]:not([style*="none"])').length === 5`),
 		at("list-drawn"),
-		chromedp.Evaluate(`document.querySelectorAll('[role="group"]:not([style*="none"])').length`, &openGroups),
-		chromedp.Evaluate(`document.querySelectorAll('[role="option"]:not([style*="none"])').length`, &openOptions),
-		chromedp.Evaluate(`Array.from(document.querySelectorAll('[role="group"]')).map(function (g) { return g.getAttribute('aria-label') }).join(',')`, &groupLabels),
-		chromedp.Evaluate(`Array.from(document.querySelectorAll('[role="group"]:not([style*="none"]) [rst-select-group]')).map(function (h) { return h.textContent }).join(',')`, &headings),
+		harness.Into(&openGroups, chromedp.Evaluate[int](
+			`document.querySelectorAll('[role="group"]:not([style*="none"])').length`)),
+		harness.Into(&openOptions, chromedp.Evaluate[int](
+			`document.querySelectorAll('[role="option"]:not([style*="none"])').length`)),
+		harness.Into(&groupLabels, chromedp.Evaluate[string](
+			`Array.from(document.querySelectorAll('[role="group"]')).map(function (g) { return g.getAttribute('aria-label') }).join(',')`)),
+		harness.Into(&headings, chromedp.Evaluate[string](
+			`Array.from(document.querySelectorAll('[role="group"]:not([style*="none"]) [rst-select-group]')).map(function (h) { return h.textContent }).join(',')`)),
 		// A heading is furniture, never a pick.
-		chromedp.Evaluate(`document.querySelectorAll('[rst-select-group][role="option"]').length`, &headingsAreOptions),
+		harness.Into(&headingsAreOptions, chromedp.Evaluate[int](
+			`document.querySelectorAll('[rst-select-group][role="option"]').length`)),
 
 		// Four arrows from nothing highlighted (an unanswered question
 		// opens with nothing): Dublin, Cork, Galway, then Madrid, the first
 		// row of the SECOND group. Were the headings in the keyboard order,
 		// the fourth would land on the "Spain" heading instead.
-		chromedp.SendKeys(`input[role="combobox"]`, strings.Repeat(string(kb.ArrowDown), 4), chromedp.ByQuery), at("arrow-down-4"),
+		chromedp.SendKeys(chromedp.CSS(`input[role="combobox"]`), strings.Repeat(string(kb.ArrowDown), 4)), at("arrow-down-4"),
 		until("a row is highlighted", `document.querySelectorAll('[role="option"].is-active').length === 1`),
 		at("row-highlighted"),
-		chromedp.Evaluate(`document.querySelector('[role="option"].is-active')?.textContent ?? ''`, &activeText),
+		harness.Into(&activeText, chromedp.Evaluate[string](
+			`document.querySelector('[role="option"].is-active')?.textContent ?? ''`)),
 
 		// Filter to "ad": only Madrid matches. A search ranks across groups,
 		// so the headings step aside and the one row stands alone.
-		chromedp.SendKeys(`input[role="combobox"]`, "ad", chromedp.ByQuery), at("typed-ad"),
+		chromedp.SendKeys(chromedp.CSS(`input[role="combobox"]`), "ad"), at("typed-ad"),
 		until("the list narrows to one", `document.querySelectorAll('[role="option"]:not([style*="none"])').length === 1`),
 		at("narrowed-to-one"),
-		chromedp.Evaluate(`document.querySelectorAll('[role="group"]:not([style*="none"])').length`, &narrowedGroups),
-		chromedp.Evaluate(`document.querySelectorAll('[role="option"]:not([style*="none"])').length`, &narrowedOptions),
-		chromedp.Evaluate(`Array.from(document.querySelectorAll('[role="group"]:not([style*="none"]) [rst-select-group]')).map(function (h) { return h.textContent }).join(',')`, &narrowedHeadings),
+		harness.Into(&narrowedGroups, chromedp.Evaluate[int](
+			`document.querySelectorAll('[role="group"]:not([style*="none"])').length`)),
+		harness.Into(&narrowedOptions, chromedp.Evaluate[int](
+			`document.querySelectorAll('[role="option"]:not([style*="none"])').length`)),
+		harness.Into(&narrowedHeadings, chromedp.Evaluate[string](
+			`Array.from(document.querySelectorAll('[role="group"]:not([style*="none"]) [rst-select-group]')).map(function (h) { return h.textContent }).join(',')`)),
 
 		// Clear it: every row is back in its own group, in its own place,
 		// under its own heading.
-		chromedp.Evaluate(`(function () {
+		chromedp.Evaluate[chromedp.Void](`(function () {
 			var input = document.querySelector('input[role="combobox"]');
 			input.value = '';
 			input.dispatchEvent(new Event('input', { bubbles: true }));
 			return true;
-		})()`, nil), at("cleared"),
+		})()`), at("cleared"),
 		until("the list is whole again", `document.querySelectorAll('[role="option"]:not([style*="none"])').length === 5`),
-		chromedp.Evaluate(`Array.from(document.querySelectorAll('[role="group"]:not([style*="none"])')).map(function (g) {
+		harness.Into(&restored, chromedp.Evaluate[string](`Array.from(
+			document.querySelectorAll('[role="group"]:not([style*="none"])')
+		).map(function (g) {
 			return g.getAttribute('aria-label') + ':' + Array.from(g.querySelectorAll('[role="option"]')).map(function (o) { return o.textContent }).join('|');
-		}).join(';')`, &restored),
+		}).join(';')`)),
 
 		// Filter again, to the one row, and take it.
-		chromedp.SendKeys(`input[role="combobox"]`, "ad", chromedp.ByQuery), at("typed-ad-again"),
+		chromedp.SendKeys(chromedp.CSS(`input[role="combobox"]`), "ad"), at("typed-ad-again"),
 		until("the one row is highlighted", `(document.querySelector('[role="option"].is-active')?.textContent ?? '') === 'Madrid'`),
 
 		// The sole match commits on Enter, and mirrors onto the carrier.
-		chromedp.SendKeys(`input[role="combobox"]`, string(kb.Enter), chromedp.ByQuery), at("enter"),
+		chromedp.SendKeys(chromedp.CSS(`input[role="combobox"]`), string(kb.Enter)), at("enter"),
 		until("the mirror commits", `(document.querySelector('select[name="city"]')?.value ?? '') !== ''`),
 		at("read-mirrored-value"),
-		chromedp.Evaluate(`document.querySelector('select[name="city"]')?.value ?? ''`, &nativeValue),
+		harness.Into(&nativeValue, chromedp.Evaluate[string](
+			`document.querySelector('select[name="city"]')?.value ?? ''`)),
 
-		chromedp.Submit(`#go`, chromedp.ByQuery), at("submitted-form"),
-		chromedp.WaitVisible(`#done`, chromedp.ByQuery), at("server-responded"),
+		chromedp.Submit(chromedp.CSS(`#go`)), at("submitted-form"),
+		chromedp.WaitVisible(chromedp.CSS(`#done`)), at("server-responded"),
 	); err != nil {
 		t.Fatalf("drive failed after %q: %v\n  groupLabels=%q headings=%q activeText=%q nativeValue=%q",
 			reached, err, groupLabels, headings, activeText, nativeValue)
@@ -1039,16 +1075,19 @@ func TestLightDismissWorksInBothSpellings(t *testing.T) {
 	const openState = `["account","rowmenu"].` +
 		`filter(function (id) { return document.getElementById(id).open }).join(",")`
 	var opened, afterOutside, afterEsc string
-	if err := chromedp.Run(ctx,
+	if err := chromedp.Do(ctx,
 		chromedp.Navigate(rig.Origin+"/old-spelling"),
-		chromedp.WaitVisible(`#account-summary`, chromedp.ByQuery),
-		chromedp.Click(`#account-summary`, chromedp.ByQuery),
-		chromedp.Evaluate(openState, &opened),
-		chromedp.Click(`#elsewhere`, chromedp.ByQuery),
-		chromedp.Evaluate(openState, &afterOutside),
-		chromedp.Click(`#rowmenu-summary`, chromedp.ByQuery),
+		chromedp.WaitVisible(chromedp.CSS(`#account-summary`)),
+		chromedp.Click(chromedp.CSS(`#account-summary`)),
+		harness.Into(&opened, chromedp.Evaluate[string](
+			openState)),
+		chromedp.Click(chromedp.CSS(`#elsewhere`)),
+		harness.Into(&afterOutside, chromedp.Evaluate[string](
+			openState)),
+		chromedp.Click(chromedp.CSS(`#rowmenu-summary`)),
 		chromedp.KeyEvent(kb.Escape),
-		chromedp.Evaluate(openState, &afterEsc),
+		harness.Into(&afterEsc, chromedp.Evaluate[string](
+			openState)),
 	); err != nil {
 		t.Fatalf("driving the class-spelled menus: %v", err)
 	}
@@ -1099,8 +1138,11 @@ func TestMenuExclusivityAndDropdownDismissDrive(t *testing.T) {
 	// The same last-step breadcrumb the select drive keeps: a bare
 	// deadline names nothing.
 	reached := "start"
-	at := func(name string) chromedp.Action {
-		return chromedp.ActionFunc(func(context.Context) error { reached = name; return nil })
+	at := func(name string) chromedp.Action[chromedp.Void] {
+		return chromedp.Func(func(context.Context, *chromedp.Target) error {
+			reached = name
+			return nil
+		})
 	}
 	var (
 		afterAccount, afterRow, afterSubmenu string
@@ -1112,53 +1154,61 @@ func TestMenuExclusivityAndDropdownDismissDrive(t *testing.T) {
 		tblockOpenAfter                      bool
 	)
 
-	if err := chromedp.Run(ctx,
+	if err := chromedp.Do(ctx,
 		chromedp.Navigate(rig.Origin+"/"), at("navigated"),
-		chromedp.WaitVisible(`#account-summary`, chromedp.ByQuery), at("page-visible"),
+		chromedp.WaitVisible(chromedp.CSS(`#account-summary`)), at("page-visible"),
 
 		// 1. Open the header dropdown.
-		chromedp.Click(`#account-summary`, chromedp.ByQuery), at("opened-account"),
-		chromedp.Evaluate(openStateJS, &afterAccount),
+		chromedp.Click(chromedp.CSS(`#account-summary`)), at("opened-account"),
+		harness.Into(&afterAccount, chromedp.Evaluate[string](
+			openStateJS)),
 
 		// 2. Open a row menu. The header dropdown must close, natively:
 		//    same name, one group, no script involved.
-		chromedp.Click(`#rowmenu-summary`, chromedp.ByQuery), at("opened-rowmenu"),
-		chromedp.Evaluate(openStateJS, &afterRow),
+		chromedp.Click(chromedp.CSS(`#rowmenu-summary`)), at("opened-rowmenu"),
+		harness.Into(&afterRow, chromedp.Evaluate[string](
+			openStateJS)),
 
 		// 3. Open the filter dropdown, then the submenu inside it. The
 		//    parent MUST still be open: <details name> exclusivity is
 		//    document-wide, so a shared name here would have closed it.
-		chromedp.Click(`#filter-summary`, chromedp.ByQuery), at("opened-filter"),
-		chromedp.Click(`#submenu-summary`, chromedp.ByQuery), at("opened-submenu"),
-		chromedp.Evaluate(openStateJS, &afterSubmenu),
+		chromedp.Click(chromedp.CSS(`#filter-summary`)), at("opened-filter"),
+		chromedp.Click(chromedp.CSS(`#submenu-summary`)), at("opened-submenu"),
+		harness.Into(&afterSubmenu, chromedp.Evaluate[string](
+			openStateJS)),
 
 		// 4. Click somewhere that is not a menu. Every menu closes — the
 		//    nested submenu included, which the <details name> group
 		//    cannot do for it and must not: dismissal is not exclusivity.
 		//    The chrome strip is left alone.
-		chromedp.Click(`#elsewhere`, chromedp.ByQuery), at("clicked-outside"),
-		chromedp.Evaluate(openStateJS, &afterOutside),
+		chromedp.Click(chromedp.CSS(`#elsewhere`)), at("clicked-outside"),
+		harness.Into(&afterOutside, chromedp.Evaluate[string](
+			openStateJS)),
 
 		// 4b. Reopen the parent. The submenu must NOT come back open: a
 		//     menu that remembers a state the user cannot see is the bug
 		//     that made submenus join the dismiss selector in the first
 		//     place.
-		chromedp.Click(`#filter-summary`, chromedp.ByQuery), at("reopened-filter"),
-		chromedp.Evaluate(openStateJS, &afterReopen),
-		chromedp.Click(`#elsewhere`, chromedp.ByQuery), at("cleared-again"),
+		chromedp.Click(chromedp.CSS(`#filter-summary`)), at("reopened-filter"),
+		harness.Into(&afterReopen, chromedp.Evaluate[string](
+			openStateJS)),
+		chromedp.Click(chromedp.CSS(`#elsewhere`)), at("cleared-again"),
 
 		// 5. Reopen, then click an item INSIDE the open menu. It must
 		//    survive: a light dismiss that fires on its own menu's items
 		//    makes every one of them unclickable.
-		chromedp.Click(`#account-summary`, chromedp.ByQuery), at("reopened-account"),
-		chromedp.Click(`#account-item`, chromedp.ByQuery), at("clicked-inside"),
-		chromedp.Evaluate(openStateJS, &afterInside),
+		chromedp.Click(chromedp.CSS(`#account-summary`)), at("reopened-account"),
+		chromedp.Click(chromedp.CSS(`#account-item`)), at("clicked-inside"),
+		harness.Into(&afterInside, chromedp.Evaluate[string](
+			openStateJS)),
 
 		// 6. Escape closes it and hands focus back to the summary, rather
 		//    than stranding the keyboard user at the top of the document.
 		chromedp.KeyEvent(kb.Escape), at("pressed-escape"),
-		chromedp.Evaluate(openStateJS, &afterEsc),
-		chromedp.Evaluate(`document.activeElement ? (document.activeElement.id || document.activeElement.tagName) : "none"`, &focusAfterEsc),
+		harness.Into(&afterEsc, chromedp.Evaluate[string](
+			openStateJS)),
+		harness.Into(&focusAfterEsc, chromedp.Evaluate[string](
+			`document.activeElement ? (document.activeElement.id || document.activeElement.tagName) : "none"`)),
 
 		// 7. Escape with focus INSIDE an open submenu. Everything closes,
 		//    and focus must land on the PARENT dropdown's summary — not
@@ -1167,21 +1217,25 @@ func TestMenuExclusivityAndDropdownDismissDrive(t *testing.T) {
 		//    and strand the keyboard user at the top of the document.
 		//    This is the leg that exercises the outermost-menu climb;
 		//    without it that code is only ever proven by reading it.
-		chromedp.Click(`#filter-summary`, chromedp.ByQuery), at("reopened-filter-for-escape"),
-		chromedp.Click(`#submenu-summary`, chromedp.ByQuery), at("reopened-submenu"),
+		chromedp.Click(chromedp.CSS(`#filter-summary`)), at("reopened-filter-for-escape"),
+		chromedp.Click(chromedp.CSS(`#submenu-summary`)), at("reopened-submenu"),
 		// Focus rather than click: what this leg is about is where focus
 		// goes, so it has to start from a focus this test put there on
 		// purpose rather than one a click happened to leave behind.
-		chromedp.Focus(`#submenu-item`, chromedp.ByQuery), at("focused-in-submenu"),
-		chromedp.Evaluate(`document.activeElement ? (document.activeElement.id || document.activeElement.tagName) : "none"`, &focusInSubmenu),
+		chromedp.Focus(chromedp.CSS(`#submenu-item`)), at("focused-in-submenu"),
+		harness.Into(&focusInSubmenu, chromedp.Evaluate[string](
+			`document.activeElement ? (document.activeElement.id || document.activeElement.tagName) : "none"`)),
 		chromedp.KeyEvent(kb.Escape), at("escape-from-submenu"),
-		chromedp.Evaluate(openStateJS, &afterSubEsc),
-		chromedp.Evaluate(`document.activeElement ? (document.activeElement.id || document.activeElement.tagName) : "none"`, &focusAfterSubEsc),
+		harness.Into(&afterSubEsc, chromedp.Evaluate[string](
+			openStateJS)),
+		harness.Into(&focusAfterSubEsc, chromedp.Evaluate[string](
+			`document.activeElement ? (document.activeElement.id || document.activeElement.tagName) : "none"`)),
 
 		// The toggle-block is not a <details> at all, so nothing above can
 		// have touched it — but it is the other thing the brief holds
 		// outside the group, so read it rather than assume it.
-		chromedp.Evaluate(`document.getElementById("tblock-input").checked`, &tblockOpenAfter),
+		harness.Into(&tblockOpenAfter, chromedp.Evaluate[bool](
+			`document.getElementById("tblock-input").checked`)),
 	); err != nil {
 		t.Fatalf("drive failed after %q: %v", reached, err)
 	}
@@ -1232,18 +1286,22 @@ func TestMenuExclusivityAndDropdownDismissDrive(t *testing.T) {
 	// default width tokens.css hides it.
 	var shellOpened, shellAfterOutside, shellAfterEsc bool
 	var shellFocus string
-	if err := chromedp.Run(ctx,
+	if err := chromedp.Do(ctx,
 		chromedp.EmulateViewport(390, 844),
-		chromedp.WaitVisible(`#shellmenu-summary`, chromedp.ByQuery),
-		chromedp.Click(`#shellmenu-summary`, chromedp.ByQuery),
-		chromedp.Evaluate(`document.getElementById("shellmenu").open`, &shellOpened),
-		chromedp.Click(`#elsewhere`, chromedp.ByQuery),
-		chromedp.Evaluate(`document.getElementById("shellmenu").open`, &shellAfterOutside),
-		chromedp.Click(`#shellmenu-summary`, chromedp.ByQuery),
-		chromedp.Focus(`#tail-link`, chromedp.ByQuery),
+		chromedp.WaitVisible(chromedp.CSS(`#shellmenu-summary`)),
+		chromedp.Click(chromedp.CSS(`#shellmenu-summary`)),
+		harness.Into(&shellOpened, chromedp.Evaluate[bool](
+			`document.getElementById("shellmenu").open`)),
+		chromedp.Click(chromedp.CSS(`#elsewhere`)),
+		harness.Into(&shellAfterOutside, chromedp.Evaluate[bool](
+			`document.getElementById("shellmenu").open`)),
+		chromedp.Click(chromedp.CSS(`#shellmenu-summary`)),
+		chromedp.Focus(chromedp.CSS(`#tail-link`)),
 		chromedp.KeyEvent(kb.Escape),
-		chromedp.Evaluate(`document.getElementById("shellmenu").open`, &shellAfterEsc),
-		chromedp.Evaluate(`document.activeElement ? (document.activeElement.id || document.activeElement.tagName) : "none"`, &shellFocus),
+		harness.Into(&shellAfterEsc, chromedp.Evaluate[bool](
+			`document.getElementById("shellmenu").open`)),
+		harness.Into(&shellFocus, chromedp.Evaluate[string](
+			`document.activeElement ? (document.activeElement.id || document.activeElement.tagName) : "none"`)),
 	); err != nil {
 		t.Fatalf("driving the shell menu: %v", err)
 	}
@@ -1314,36 +1372,44 @@ func TestModalDialogPanelDrive(t *testing.T) {
 		backdropInert          bool
 		labelledBy, labelText  string
 	)
-	if err := chromedp.Run(ctx,
+	if err := chromedp.Do(ctx,
 		chromedp.Navigate(rig.Origin+"/"),
-		chromedp.WaitVisible(`[rst-modal-panel]`, chromedp.ByQuery),
-		chromedp.Evaluate(`document.querySelector("[rst-modal-panel]").tagName`, &tag),
-		chromedp.Evaluate(`document.querySelector("[rst-modal-panel]").open === true`, &isOpen),
+		chromedp.WaitVisible(chromedp.CSS(`[rst-modal-panel]`)),
+		harness.Into(&tag, chromedp.Evaluate[string](
+			`document.querySelector("[rst-modal-panel]").tagName`)),
+		harness.Into(&isOpen, chromedp.Evaluate[bool](
+			`document.querySelector("[rst-modal-panel]").open === true`)),
 		// matches(":modal") is true only for a dialog in the top layer,
 		// which is what showModal() does and a rendered-open one never
 		// does. This is the assertion that the zero-JS promise holds.
-		chromedp.Evaluate(`document.querySelector("[rst-modal-panel]").matches(":modal")`, &inTopLayer),
-		chromedp.Evaluate(`getComputedStyle(document.querySelector("[rst-modal-panel]")).position`, &position),
-		chromedp.Evaluate(`getComputedStyle(document.querySelector("[rst-modal-panel]")).paddingTop`, &padding),
-		chromedp.Evaluate(`document.querySelector("[rst-modal-overlay]").contains(document.querySelector("[rst-modal-panel]"))`, &insideOverlay),
+		harness.Into(&inTopLayer, chromedp.Evaluate[bool](
+			`document.querySelector("[rst-modal-panel]").matches(":modal")`)),
+		harness.Into(&position, chromedp.Evaluate[string](
+			`getComputedStyle(document.querySelector("[rst-modal-panel]")).position`)),
+		harness.Into(&padding, chromedp.Evaluate[string](
+			`getComputedStyle(document.querySelector("[rst-modal-panel]")).paddingTop`)),
+		harness.Into(&insideOverlay, chromedp.Evaluate[bool](
+			`document.querySelector("[rst-modal-overlay]").contains(document.querySelector("[rst-modal-panel]"))`)),
 		// Centred inside the overlay's flex box, within a pixel: the UA
 		// block's absolute positioning and auto margins would put it
 		// somewhere else entirely.
-		chromedp.Evaluate(`(function () {
+		harness.Into(&centred, chromedp.Evaluate[bool](`(function () {
 			var o = document.querySelector("[rst-modal-overlay]").getBoundingClientRect();
 			var p = document.querySelector("[rst-modal-panel]").getBoundingClientRect();
 			return Math.abs((o.left + o.right) / 2 - (p.left + p.right) / 2) < 2;
-		})()`, &centred),
-		chromedp.Evaluate(`document.querySelector("[rst-backdrop]").hasAttribute("inert")`, &backdropInert),
+		})()`)),
+		harness.Into(&backdropInert, chromedp.Evaluate[bool](
+			`document.querySelector("[rst-backdrop]").hasAttribute("inert")`)),
 		// The dialog role has to be named. Resolve aria-labelledby the way
 		// an AT would — follow the id to the element and read its text —
 		// rather than trusting the attribute is pointing at anything.
-		chromedp.Evaluate(`document.querySelector("[rst-modal-panel]").getAttribute("aria-labelledby") ?? ""`, &labelledBy),
-		chromedp.Evaluate(`(function () {
+		harness.Into(&labelledBy, chromedp.Evaluate[string](
+			`document.querySelector("[rst-modal-panel]").getAttribute("aria-labelledby") ?? ""`)),
+		harness.Into(&labelText, chromedp.Evaluate[string](`(function () {
 			var id = document.querySelector("[rst-modal-panel]").getAttribute("aria-labelledby");
 			var el = id ? document.getElementById(id) : null;
 			return el ? el.textContent.trim() : "";
-		})()`, &labelText),
+		})()`)),
 	); err != nil {
 		t.Fatalf("modal drive failed: %v", err)
 	}
@@ -1703,10 +1769,11 @@ func TestFieldRowGeometryHoldsUnderAnError(t *testing.T) {
 	for _, dir := range []string{"ltr", "rtl"} {
 		t.Run(dir, func(t *testing.T) {
 			var g rowGeometry
-			if err := chromedp.Run(ctx,
+			if err := chromedp.Do(ctx,
 				chromedp.Navigate(rig.Origin+"/?dir="+dir),
-				chromedp.WaitVisible("[rst-dtp-pick]", chromedp.ByQuery),
-				chromedp.Evaluate(rowGeometryJS, &g),
+				chromedp.WaitVisible(chromedp.CSS("[rst-dtp-pick]")),
+				harness.Into(&g, chromedp.Evaluate[rowGeometry](
+					rowGeometryJS)),
 			); err != nil {
 				t.Fatalf("dir=%s: reading the row's geometry: %v", dir, err)
 			}
@@ -2099,8 +2166,11 @@ func TestBusyButtonDrive(t *testing.T) {
 	defer cancel()
 
 	reached := "start"
-	at := func(name string) chromedp.Action {
-		return chromedp.ActionFunc(func(context.Context) error { reached = name; return nil })
+	at := func(name string) chromedp.Action[chromedp.Void] {
+		return chromedp.Func(func(context.Context, *chromedp.Target) error {
+			reached = name
+			return nil
+		})
 	}
 	fail := func(err error) {
 		if err != nil {
@@ -2114,13 +2184,15 @@ func TestBusyButtonDrive(t *testing.T) {
 	// event at all. Nothing may be busy afterwards, and nothing may have
 	// been sent.
 	var invalidBefore, invalidAfter string
-	fail(chromedp.Run(ctx,
+	fail(chromedp.Do(ctx,
 		chromedp.Navigate(rig.Origin+"/"), at("navigated"),
-		chromedp.WaitVisible(`#save`, chromedp.ByQuery), at("page-visible"),
-		chromedp.Evaluate(invalidStateJS, &invalidBefore),
-		chromedp.Click(`#try`, chromedp.ByQuery), at("clicked-invalid-submit"),
+		chromedp.WaitVisible(chromedp.CSS(`#save`)), at("page-visible"),
+		harness.Into(&invalidBefore, chromedp.Evaluate[string](
+			invalidStateJS)),
+		chromedp.Click(chromedp.CSS(`#try`)), at("clicked-invalid-submit"),
 		chromedp.Sleep(300*time.Millisecond),
-		chromedp.Evaluate(invalidStateJS, &invalidAfter),
+		harness.Into(&invalidAfter, chromedp.Evaluate[string](
+			invalidStateJS)),
 	))
 	const wantInvalid = "form:- btn:- btn-off:false spin:no valid:false"
 	if invalidBefore != wantInvalid {
@@ -2136,10 +2208,11 @@ func TestBusyButtonDrive(t *testing.T) {
 	// data-busy="false" on the form. It still submits — that is the
 	// point, it is opting out of the loading state and nothing else.
 	var optOut string
-	fail(chromedp.Run(ctx,
-		chromedp.Click(`#optout`, chromedp.ByQuery), at("clicked-optout"),
+	fail(chromedp.Do(ctx,
+		chromedp.Click(chromedp.CSS(`#optout`)), at("clicked-optout"),
 		chromedp.Sleep(300*time.Millisecond),
-		chromedp.Evaluate(optOutStateJS, &optOut),
+		harness.Into(&optOut, chromedp.Evaluate[string](
+			optOutStateJS)),
 	))
 	if got := took(t, payloads, "opt-out"); got != "action=optout" {
 		t.Errorf("the opted-out form sent %q, want %q", got, "action=optout")
@@ -2156,10 +2229,11 @@ func TestBusyButtonDrive(t *testing.T) {
 	// was opted out of.
 	var quiet string
 	quietAt := time.Now()
-	fail(chromedp.Run(ctx,
-		chromedp.Click(`#quietbtn`, chromedp.ByQuery), at("clicked-quiet"),
+	fail(chromedp.Do(ctx,
+		chromedp.Click(chromedp.CSS(`#quietbtn`)), at("clicked-quiet"),
 		chromedp.Sleep(300*time.Millisecond),
-		chromedp.Evaluate(quietStateJS, &quiet),
+		harness.Into(&quiet, chromedp.Evaluate[string](
+			quietStateJS)),
 	))
 	if got := took(t, payloads, "button opt-out"); got != "action=quiet" {
 		t.Errorf("the form with the opted-out button sent %q, want %q", got, "action=quiet")
@@ -2180,8 +2254,10 @@ func TestBusyButtonDrive(t *testing.T) {
 	// The guard is not what was opted out of, and the way to prove that
 	// is behaviour rather than a flag: ask the form to submit again and
 	// nothing may reach the server.
-	fail(chromedp.Run(ctx,
-		chromedp.Evaluate(`document.getElementById("quiet").requestSubmit()`, nil), at("re-submitted-quiet"),
+	fail(chromedp.Do(ctx,
+		chromedp.Evaluate[chromedp.Void](
+			`document.getElementById("quiet").requestSubmit()`),
+		at("re-submitted-quiet"),
 	))
 	tookNothing(t, payloads, "button opt-out, second submit")
 
@@ -2193,11 +2269,16 @@ func TestBusyButtonDrive(t *testing.T) {
 	// the attribute bails out here, before it arms the guard, and hands
 	// the visitor back the double submit the rule exists to prevent.
 	var shadow string
-	fail(chromedp.Run(ctx,
-		chromedp.Click(`#shadowgo`, chromedp.ByQuery), at("clicked-shadow"),
-		chromedp.Poll(`document.getElementById("shadowgo").disabled`, nil, chromedp.WithPollingTimeout(10*time.Second)), at("shadow-hardened"),
-		chromedp.Evaluate(shadowStateJS, &shadow),
-		chromedp.Evaluate(`document.getElementById("shadow").requestSubmit()`, nil), at("re-submitted-shadow"),
+	fail(chromedp.Do(ctx,
+		chromedp.Click(chromedp.CSS(`#shadowgo`)), at("clicked-shadow"),
+		chromedp.Poll[chromedp.Void](
+			`document.getElementById("shadowgo").disabled`,
+			chromedp.WithPollingTimeout(10*time.Second)), at("shadow-hardened"),
+		harness.Into(&shadow, chromedp.Evaluate[string](
+			shadowStateJS)),
+		chromedp.Evaluate[chromedp.Void](
+			`document.getElementById("shadow").requestSubmit()`),
+		at("re-submitted-shadow"),
 	))
 	if got := took(t, payloads, "shadowed target"); got != "action=shadow&target=42" {
 		t.Errorf("the shadowing form sent %q, want %q", got, "action=shadow&target=42")
@@ -2223,15 +2304,25 @@ func TestBusyButtonDrive(t *testing.T) {
 	// looks fine, and never closes again.
 	const wantDialog = "open:false form:- btn:- btn-off:false spin:no"
 	var dialogFirst, dialogSecond string
-	fail(chromedp.Run(ctx,
-		chromedp.Evaluate(`document.getElementById("dlg").showModal()`, nil), at("opened-dialog"),
-		chromedp.Evaluate(`document.getElementById("dlgclose").click()`, nil), at("clicked-dialog-close"),
+	fail(chromedp.Do(ctx,
+		chromedp.Evaluate[chromedp.Void](
+			`document.getElementById("dlg").showModal()`),
+		at("opened-dialog"),
+		chromedp.Evaluate[chromedp.Void](
+			`document.getElementById("dlgclose").click()`),
+		at("clicked-dialog-close"),
 		chromedp.Sleep(300*time.Millisecond),
-		chromedp.Evaluate(dialogState("dlg", "dlgform", "dlgclose"), &dialogFirst),
-		chromedp.Evaluate(`document.getElementById("dlg").showModal()`, nil), at("reopened-dialog"),
-		chromedp.Evaluate(`document.getElementById("dlgclose").click()`, nil), at("clicked-dialog-close-again"),
+		harness.Into(&dialogFirst, chromedp.Evaluate[string](
+			dialogState("dlg", "dlgform", "dlgclose"))),
+		chromedp.Evaluate[chromedp.Void](
+			`document.getElementById("dlg").showModal()`),
+		at("reopened-dialog"),
+		chromedp.Evaluate[chromedp.Void](
+			`document.getElementById("dlgclose").click()`),
+		at("clicked-dialog-close-again"),
 		chromedp.Sleep(300*time.Millisecond),
-		chromedp.Evaluate(dialogState("dlg", "dlgform", "dlgclose"), &dialogSecond),
+		harness.Into(&dialogSecond, chromedp.Evaluate[string](
+			dialogState("dlg", "dlgform", "dlgclose"))),
 	))
 	if dialogFirst != wantDialog {
 		t.Errorf("after closing the dialog once the state is\n  %q\nwant\n  %q\n— method=\"dialog\" submits nowhere, so nothing may be left looking busy", dialogFirst, wantDialog)
@@ -2252,15 +2343,25 @@ func TestBusyButtonDrive(t *testing.T) {
 	// Same assertion, and for the same reason: the second close is the
 	// one that catches it.
 	var fmFirst, fmSecond string
-	fail(chromedp.Run(ctx,
-		chromedp.Evaluate(`document.getElementById("fmdlg").showModal()`, nil), at("opened-formmethod-dialog"),
-		chromedp.Evaluate(`document.getElementById("fmclose").click()`, nil), at("clicked-formmethod-close"),
+	fail(chromedp.Do(ctx,
+		chromedp.Evaluate[chromedp.Void](
+			`document.getElementById("fmdlg").showModal()`),
+		at("opened-formmethod-dialog"),
+		chromedp.Evaluate[chromedp.Void](
+			`document.getElementById("fmclose").click()`),
+		at("clicked-formmethod-close"),
 		chromedp.Sleep(300*time.Millisecond),
-		chromedp.Evaluate(dialogState("fmdlg", "fmform", "fmclose"), &fmFirst),
-		chromedp.Evaluate(`document.getElementById("fmdlg").showModal()`, nil), at("reopened-formmethod-dialog"),
-		chromedp.Evaluate(`document.getElementById("fmclose").click()`, nil), at("clicked-formmethod-close-again"),
+		harness.Into(&fmFirst, chromedp.Evaluate[string](
+			dialogState("fmdlg", "fmform", "fmclose"))),
+		chromedp.Evaluate[chromedp.Void](
+			`document.getElementById("fmdlg").showModal()`),
+		at("reopened-formmethod-dialog"),
+		chromedp.Evaluate[chromedp.Void](
+			`document.getElementById("fmclose").click()`),
+		at("clicked-formmethod-close-again"),
 		chromedp.Sleep(300*time.Millisecond),
-		chromedp.Evaluate(dialogState("fmdlg", "fmform", "fmclose"), &fmSecond),
+		harness.Into(&fmSecond, chromedp.Evaluate[string](
+			dialogState("fmdlg", "fmform", "fmclose"))),
 	))
 	if fmFirst != wantDialog {
 		t.Errorf("after closing the dialog once through formmethod=\"dialog\" the state is\n  %q\nwant\n  %q\n— the submitter's formmethod beats the form's method, so this submits nowhere either", fmFirst, wantDialog)
@@ -2275,13 +2376,18 @@ func TestBusyButtonDrive(t *testing.T) {
 	// ── 3. The rule itself, and the payload ───────────────────────────
 	var busy, afterSecond string
 	var clickedAt time.Time
-	fail(chromedp.Run(ctx,
-		chromedp.ActionFunc(func(context.Context) error { clickedAt = time.Now(); return nil }),
-		chromedp.Click(`#save`, chromedp.ByQuery), at("clicked-save"),
+	fail(chromedp.Do(ctx,
+		chromedp.Func(func(context.Context, *chromedp.Target) error {
+			clickedAt = time.Now()
+			return nil
+		}),
+		chromedp.Click(chromedp.CSS(`#save`)), at("clicked-save"),
 		// The hardening to disabled is deferred by a tick, so wait for
 		// it rather than for a guess at how long a tick takes.
-		chromedp.Poll(`document.getElementById("save").disabled`, nil, chromedp.WithPollingTimeout(10*time.Second)), at("save-hardened"),
-		chromedp.Evaluate(busyStateJS, &busy),
+		chromedp.Poll[chromedp.Void](`document.getElementById("save").disabled`,
+			chromedp.WithPollingTimeout(10*time.Second)), at("save-hardened"),
+		harness.Into(&busy, chromedp.Evaluate[string](
+			busyStateJS)),
 	))
 	// The payload check: the trap this whole shape exists to avoid is a
 	// disabled button whose name/value never reaches the server.
@@ -2310,12 +2416,19 @@ func TestBusyButtonDrive(t *testing.T) {
 	// Three ways back in, one guard: a second click on the button that
 	// started it, a click on the OTHER submit button in the same form,
 	// and a programmatic requestSubmit(). None may reach the server.
-	fail(chromedp.Run(ctx,
-		chromedp.Evaluate(`document.getElementById("save").click()`, nil), at("clicked-save-again"),
-		chromedp.Evaluate(`document.getElementById("draft").click()`, nil), at("clicked-draft"),
-		chromedp.Evaluate(`document.getElementById("two").requestSubmit()`, nil), at("requested-submit"),
+	fail(chromedp.Do(ctx,
+		chromedp.Evaluate[chromedp.Void](
+			`document.getElementById("save").click()`),
+		at("clicked-save-again"),
+		chromedp.Evaluate[chromedp.Void](
+			`document.getElementById("draft").click()`),
+		at("clicked-draft"),
+		chromedp.Evaluate[chromedp.Void](
+			`document.getElementById("two").requestSubmit()`),
+		at("requested-submit"),
 		chromedp.Sleep(300*time.Millisecond),
-		chromedp.Evaluate(busyStateJS, &afterSecond),
+		harness.Into(&afterSecond, chromedp.Evaluate[string](
+			busyStateJS)),
 	))
 	tookNothing(t, payloads, "second submit")
 	if afterSecond != wantBusy {
@@ -2333,12 +2446,16 @@ func TestBusyButtonDrive(t *testing.T) {
 	// tree too, so a screen reader announces an unnamed busy button.
 	var idleWidth, busyWidth float64
 	var swap string
-	fail(chromedp.Run(ctx,
-		chromedp.Evaluate(`document.getElementById("swapgo").getBoundingClientRect().width`, &idleWidth), at("measured-swap"),
-		chromedp.Click(`#swapgo`, chromedp.ByQuery), at("clicked-swap"),
-		chromedp.Poll(`document.getElementById("swapgo").disabled`, nil, chromedp.WithPollingTimeout(10*time.Second)), at("swap-hardened"),
-		chromedp.Evaluate(swapStateJS, &swap),
-		chromedp.Evaluate(`document.getElementById("swapgo").getBoundingClientRect().width`, &busyWidth),
+	fail(chromedp.Do(ctx,
+		harness.Into(&idleWidth, chromedp.Evaluate[float64](
+			`document.getElementById("swapgo").getBoundingClientRect().width`)), at("measured-swap"),
+		chromedp.Click(chromedp.CSS(`#swapgo`)), at("clicked-swap"),
+		chromedp.Poll[chromedp.Void](`document.getElementById("swapgo").disabled`,
+			chromedp.WithPollingTimeout(10*time.Second)), at("swap-hardened"),
+		harness.Into(&swap, chromedp.Evaluate[string](
+			swapStateJS)),
+		harness.Into(&busyWidth, chromedp.Evaluate[float64](
+			`document.getElementById("swapgo").getBoundingClientRect().width`)),
 	))
 	if got := took(t, payloads, "swap"); got != "action=swap" {
 		t.Errorf("the swapping form sent %q, want %q", got, "action=swap")
@@ -2357,8 +2474,9 @@ func TestBusyButtonDrive(t *testing.T) {
 		t.Errorf("the busy button's accessible name is %q, want %q — unpainting the label must not take it away from a screen reader", name, "Publish")
 	}
 	var authoredInk string
-	fail(chromedp.Run(ctx,
-		chromedp.Evaluate(`getComputedStyle(document.getElementById("authored")).webkitTextFillColor`, &authoredInk),
+	fail(chromedp.Do(ctx,
+		harness.Into(&authoredInk, chromedp.Evaluate[string](
+			`getComputedStyle(document.getElementById("authored")).webkitTextFillColor`)),
 	))
 	if authoredInk == "rgba(0, 0, 0, 0)" {
 		t.Errorf("a button an app marked aria-busy, with no spinner in it, has transparent label ink — it renders blank")
@@ -2366,8 +2484,9 @@ func TestBusyButtonDrive(t *testing.T) {
 	// And the other side of the same selector: a busy label is words
 	// the author asked to be read, so it stays inked.
 	var saveInk string
-	fail(chromedp.Run(ctx,
-		chromedp.Evaluate(`getComputedStyle(document.getElementById("save")).webkitTextFillColor`, &saveInk),
+	fail(chromedp.Do(ctx,
+		harness.Into(&saveInk, chromedp.Evaluate[string](
+			`getComputedStyle(document.getElementById("save")).webkitTextFillColor`)),
 	))
 	if saveInk == "rgba(0, 0, 0, 0)" {
 		t.Errorf("the button with data-busy-label has transparent label ink — its busy label must stay visible")
@@ -2398,12 +2517,14 @@ func TestBusyButtonDrive(t *testing.T) {
 	// after it are the report. A shim that never clears the busy state
 	// would make this wait ten seconds and then fail on what it reads,
 	// which says what went wrong; failing here would only say "timeout".
-	settle := func(expr string, hard bool) chromedp.Action {
-		return chromedp.ActionFunc(func(c context.Context) error {
+	settle := func(expr string, hard bool) chromedp.Action[chromedp.Void] {
+		return chromedp.Func(func(
+			c context.Context, target *chromedp.Target,
+		) error {
 			deadline := time.Now().Add(10 * time.Second)
 			for time.Now().Before(deadline) {
-				var yes bool
-				if err := chromedp.Evaluate(expr, &yes).Do(c); err == nil && yes {
+				yes, err := chromedp.Evaluate[bool](expr)(c, target)
+				if err == nil && yes {
 					return nil
 				}
 				time.Sleep(100 * time.Millisecond)
@@ -2414,24 +2535,27 @@ func TestBusyButtonDrive(t *testing.T) {
 			return nil
 		})
 	}
-	waitForID := func(id string) chromedp.Action {
+	waitForID := func(id string) chromedp.Action[chromedp.Void] {
 		return settle(`!!document.getElementById("`+id+`")`, true)
 	}
-	fail(chromedp.Run(ctx,
+	fail(chromedp.Do(ctx,
 		chromedp.Navigate(rig.Origin+"/"), at("navigated-for-back"),
-		chromedp.WaitVisible(`#navgo`, chromedp.ByQuery), at("page-visible-for-back"),
-		chromedp.Click(`#navgo`, chromedp.ByQuery), at("clicked-nav"),
-		chromedp.WaitVisible(`#done`, chromedp.ByQuery), at("landed-on-response"),
+		chromedp.WaitVisible(chromedp.CSS(`#navgo`)), at("page-visible-for-back"),
+		chromedp.Click(chromedp.CSS(`#navgo`)), at("clicked-nav"),
+		chromedp.WaitVisible(chromedp.CSS(`#done`)), at("landed-on-response"),
 		// Deferred a tick so the evaluation returns before the
 		// navigation it starts.
-		chromedp.Evaluate(`setTimeout(function () { history.back(); }, 0)`, nil), at("asked-to-go-back"),
+		chromedp.Evaluate[chromedp.Void](
+			`setTimeout(function () { history.back(); }, 0)`),
+		at("asked-to-go-back"),
 		waitForID("navgo"), at("back-on-the-form"),
 		// The element exists the instant the document is swapped in,
 		// which is BEFORE pageshow's listeners run — so reading here
 		// races the very handler the leg is about. Give the reset its
 		// dispatch, then read.
 		settle(`document.getElementById("nav").getAttribute("aria-busy") === null`, false), at("reset-settled"),
-		chromedp.Evaluate(backStateJS, &back),
+		harness.Into(&back, chromedp.Evaluate[string](
+			backStateJS)),
 	))
 	if got := took(t, payloads, "back: first submit"); got != "action=nav" {
 		t.Errorf("the navigating form sent %q, want %q", got, "action=nav")
@@ -2456,8 +2580,10 @@ func TestBusyButtonDrive(t *testing.T) {
 	// still describes the response page and a selector query retries
 	// until the deadline. What this leg is about is the guard, not mouse
 	// input, and element.click() submits the form exactly the same way.
-	fail(chromedp.Run(ctx,
-		chromedp.Evaluate(`document.getElementById("navgo").click()`, nil), at("re-submitted-after-back"),
+	fail(chromedp.Do(ctx,
+		chromedp.Evaluate[chromedp.Void](
+			`document.getElementById("navgo").click()`),
+		at("re-submitted-after-back"),
 		waitForID("done"), at("landed-again"),
 	))
 	if got := took(t, payloads, "back: re-submit"); got != "action=nav" {
@@ -2476,15 +2602,18 @@ func TestBusyButtonDrive(t *testing.T) {
 	// way out short of a reload. That is precisely the state the
 	// back-button requirement forbids.
 	var extBack string
-	fail(chromedp.Run(ctx,
+	fail(chromedp.Do(ctx,
 		chromedp.Navigate(rig.Origin+"/"), at("navigated-for-ext-back"),
-		chromedp.WaitVisible(`#extgo`, chromedp.ByQuery), at("page-visible-for-ext-back"),
-		chromedp.Click(`#extgo`, chromedp.ByQuery), at("clicked-ext"),
-		chromedp.WaitVisible(`#done`, chromedp.ByQuery), at("landed-on-response-ext"),
-		chromedp.Evaluate(`setTimeout(function () { history.back(); }, 0)`, nil), at("asked-to-go-back-ext"),
+		chromedp.WaitVisible(chromedp.CSS(`#extgo`)), at("page-visible-for-ext-back"),
+		chromedp.Click(chromedp.CSS(`#extgo`)), at("clicked-ext"),
+		chromedp.WaitVisible(chromedp.CSS(`#done`)), at("landed-on-response-ext"),
+		chromedp.Evaluate[chromedp.Void](
+			`setTimeout(function () { history.back(); }, 0)`),
+		at("asked-to-go-back-ext"),
 		waitForID("extgo"), at("back-on-the-ext-form"),
 		settle(`document.getElementById("extgo").disabled === false`, false), at("ext-reset-settled"),
-		chromedp.Evaluate(extBackStateJS, &extBack),
+		harness.Into(&extBack, chromedp.Evaluate[string](
+			extBackStateJS)),
 	))
 	if got := took(t, payloads, "external button: first submit"); got != "action=ext" {
 		t.Errorf("the form with an external submit button sent %q, want %q", got, "action=ext")
@@ -2501,8 +2630,10 @@ func TestBusyButtonDrive(t *testing.T) {
 		t.Errorf("after going back the external submit button reads\n  %q\nwant\n  %q\n— a button that went busy must never come back disabled and spinning", extBack, wantExtBack)
 	}
 	// Clean is not the same as usable: the guard has to be gone too.
-	fail(chromedp.Run(ctx,
-		chromedp.Evaluate(`document.getElementById("extgo").click()`, nil), at("re-submitted-ext-after-back"),
+	fail(chromedp.Do(ctx,
+		chromedp.Evaluate[chromedp.Void](
+			`document.getElementById("extgo").click()`),
+		at("re-submitted-ext-after-back"),
 		waitForID("done"), at("landed-again-ext"),
 	))
 	if got := took(t, payloads, "external button: re-submit"); got != "action=ext" {
@@ -2516,17 +2647,23 @@ func TestBusyButtonDrive(t *testing.T) {
 	// the media query is in tokens.css, so a spinner built with an
 	// inline animation would pass every markup check and fail here.
 	var reduced string
-	fail(chromedp.Run(ctx,
-		chromedp.ActionFunc(func(c context.Context) error {
-			return emulation.SetEmulatedMedia().
-				WithFeatures([]*emulation.MediaFeature{{Name: "prefers-reduced-motion", Value: "reduce"}}).
-				Do(c)
+	fail(chromedp.Do(ctx,
+		chromedp.Func(func(c context.Context, target *chromedp.Target) error {
+			_, err := cdp.Call(c, target, emulation.SetEmulatedMedia,
+				emulation.SetEmulatedMediaParams{
+					Features: []*emulation.MediaFeature{
+						{Name: "prefers-reduced-motion", Value: "reduce"},
+					},
+				})
+			return err
 		}), at("emulated-reduced-motion"),
 		chromedp.Navigate(rig.Origin+"/"), at("navigated-reduced"),
-		chromedp.WaitVisible(`#save`, chromedp.ByQuery), at("page-visible-reduced"),
-		chromedp.Click(`#save`, chromedp.ByQuery), at("clicked-save-reduced"),
-		chromedp.Poll(`document.getElementById("save").disabled`, nil, chromedp.WithPollingTimeout(10*time.Second)), at("save-hardened-reduced"),
-		chromedp.Evaluate(busyStateJS, &reduced),
+		chromedp.WaitVisible(chromedp.CSS(`#save`)), at("page-visible-reduced"),
+		chromedp.Click(chromedp.CSS(`#save`)), at("clicked-save-reduced"),
+		chromedp.Poll[chromedp.Void](`document.getElementById("save").disabled`,
+			chromedp.WithPollingTimeout(10*time.Second)), at("save-hardened-reduced"),
+		harness.Into(&reduced, chromedp.Evaluate[string](
+			busyStateJS)),
 	))
 	took(t, payloads, "reduced motion")
 	const wantReduced = "form:true save:true save-off:true save-text:Saving… " +
@@ -2551,18 +2688,28 @@ func TestBusyButtonDrive(t *testing.T) {
 		name, value string
 	}{{"prefers-reduced-motion", "reduce"}, {"forced-colors", "active"}} {
 		var state, pos string
-		fail(chromedp.Run(ctx,
-			chromedp.ActionFunc(func(c context.Context) error {
-				return emulation.SetEmulatedMedia().
-					WithFeatures([]*emulation.MediaFeature{{Name: media.name, Value: media.value}}).
-					Do(c)
+		fail(chromedp.Do(ctx,
+			chromedp.Func(func(
+				c context.Context, target *chromedp.Target,
+			) error {
+				_, err := cdp.Call(c, target, emulation.SetEmulatedMedia,
+					emulation.SetEmulatedMediaParams{
+						Features: []*emulation.MediaFeature{
+							{Name: media.name, Value: media.value},
+						},
+					})
+				return err
 			}), at("emulated-"+media.name),
 			chromedp.Navigate(rig.Origin+"/"), at("navigated-"+media.name),
-			chromedp.WaitVisible(`#swapgo`, chromedp.ByQuery), at("page-visible-"+media.name),
-			chromedp.Click(`#swapgo`, chromedp.ByQuery), at("clicked-swap-"+media.name),
-			chromedp.Poll(`document.getElementById("swapgo").disabled`, nil, chromedp.WithPollingTimeout(10*time.Second)), at("swap-hardened-"+media.name),
-			chromedp.Evaluate(swapStateJS, &state),
-			chromedp.Evaluate(`getComputedStyle(document.querySelector("#swapgo > [rst-spin]")).position`, &pos),
+			chromedp.WaitVisible(chromedp.CSS(`#swapgo`)), at("page-visible-"+media.name),
+			chromedp.Click(chromedp.CSS(`#swapgo`)), at("clicked-swap-"+media.name),
+			chromedp.Poll[chromedp.Void](
+				`document.getElementById("swapgo").disabled`,
+				chromedp.WithPollingTimeout(10*time.Second)), at("swap-hardened-"+media.name),
+			harness.Into(&state, chromedp.Evaluate[string](
+				swapStateJS)),
+			harness.Into(&pos, chromedp.Evaluate[string](
+				`getComputedStyle(document.querySelector("#swapgo > [rst-spin]")).position`)),
 		))
 		took(t, payloads, media.name)
 		const want = "label-ink:shown icon-ink:shown spin-ink:shown spin-centred:false"
@@ -2577,20 +2724,27 @@ func TestBusyButtonDrive(t *testing.T) {
 	// execution off the form submits exactly as it always did, carrying
 	// exactly the same payload, and nothing on the page is marked busy.
 	var scriptless string
-	fail(chromedp.Run(ctx,
-		chromedp.ActionFunc(func(c context.Context) error {
-			if err := emulation.SetEmulatedMedia().Do(c); err != nil {
+	fail(chromedp.Do(ctx,
+		chromedp.Func(func(c context.Context, target *chromedp.Target) error {
+			_, err := cdp.Call(c, target, emulation.SetEmulatedMedia,
+				emulation.SetEmulatedMediaParams{})
+			if err != nil {
 				return err
 			}
-			return emulation.SetScriptExecutionDisabled(true).Do(c)
+			_, err = cdp.Call(c, target, emulation.SetScriptExecutionDisabled,
+				emulation.SetScriptExecutionDisabledParams{Value: true})
+			return err
 		}), at("disabled-scripts"),
 		chromedp.Navigate(rig.Origin+"/"), at("navigated-scriptless"),
-		chromedp.WaitVisible(`#save`, chromedp.ByQuery), at("page-visible-scriptless"),
-		chromedp.Click(`#save`, chromedp.ByQuery), at("clicked-save-scriptless"),
+		chromedp.WaitVisible(chromedp.CSS(`#save`)), at("page-visible-scriptless"),
+		chromedp.Click(chromedp.CSS(`#save`)), at("clicked-save-scriptless"),
 		chromedp.Sleep(500*time.Millisecond),
-		chromedp.Evaluate(busyStateJS, &scriptless),
-		chromedp.ActionFunc(func(c context.Context) error {
-			return emulation.SetScriptExecutionDisabled(false).Do(c)
+		harness.Into(&scriptless, chromedp.Evaluate[string](
+			busyStateJS)),
+		chromedp.Func(func(c context.Context, target *chromedp.Target) error {
+			_, err := cdp.Call(c, target, emulation.SetScriptExecutionDisabled,
+				emulation.SetScriptExecutionDisabledParams{Value: false})
+			return err
 		}),
 	))
 	if got := took(t, payloads, "scriptless"); got != "action=save&note=hello" {
@@ -2612,16 +2766,21 @@ func TestBusyButtonDrive(t *testing.T) {
 	// way leg 5's Back does, and wait out more than the hold: nothing may
 	// reach the server, and the restored form must be clean.
 	var heldBack string
-	fail(chromedp.Run(ctx,
+	fail(chromedp.Do(ctx,
 		chromedp.Navigate(rig.Origin+"/"), at("navigated-for-hold"),
-		chromedp.WaitVisible(`#navgo`, chromedp.ByQuery),
-		chromedp.Click(`#navgo`, chromedp.ByQuery), at("clicked-nav-then-leave"),
-		chromedp.Evaluate(`setTimeout(function () { location.href = "/elsewhere"; }, 150)`, nil), at("leaving-during-hold"),
+		chromedp.WaitVisible(chromedp.CSS(`#navgo`)),
+		chromedp.Click(chromedp.CSS(`#navgo`)), at("clicked-nav-then-leave"),
+		chromedp.Evaluate[chromedp.Void](
+			`setTimeout(function () { location.href = "/elsewhere"; }, 150)`),
+		at("leaving-during-hold"),
 		settle(`location.pathname === "/elsewhere" && document.readyState === "complete"`, true), at("left-during-hold"),
-		chromedp.Evaluate(`setTimeout(function () { history.back(); }, 0)`, nil), at("asked-to-come-back"),
+		chromedp.Evaluate[chromedp.Void](
+			`setTimeout(function () { history.back(); }, 0)`),
+		at("asked-to-come-back"),
 		waitForID("navgo"), at("came-back"),
 		chromedp.Sleep(900*time.Millisecond), // more than the hold
-		chromedp.Evaluate(backStateJS, &heldBack),
+		harness.Into(&heldBack, chromedp.Evaluate[string](
+			backStateJS)),
 	))
 	tookNothing(t, payloads, "left during the hold")
 	if !strings.HasPrefix(heldBack, "persisted:true ") {
@@ -2637,11 +2796,16 @@ func TestBusyButtonDrive(t *testing.T) {
 	// dropped on a page) has no submitter, so nothing shows a spinner and
 	// nothing is held: it goes at once. The form is still guarded.
 	scriptAt := time.Now()
-	fail(chromedp.Run(ctx,
+	fail(chromedp.Do(ctx,
 		chromedp.Navigate(rig.Origin+"/"), at("navigated-for-script-submit"),
-		chromedp.WaitVisible(`#save`, chromedp.ByQuery),
-		chromedp.ActionFunc(func(context.Context) error { scriptAt = time.Now(); return nil }),
-		chromedp.Evaluate(`document.getElementById("two").requestSubmit()`, nil), at("script-submitted"),
+		chromedp.WaitVisible(chromedp.CSS(`#save`)),
+		chromedp.Func(func(context.Context, *chromedp.Target) error {
+			scriptAt = time.Now()
+			return nil
+		}),
+		chromedp.Evaluate[chromedp.Void](
+			`document.getElementById("two").requestSubmit()`),
+		at("script-submitted"),
 	))
 	if got := took(t, payloads, "script submit"); got != "note=hello" {
 		t.Errorf("the script's submit sent %q, want %q", got, "note=hello")
@@ -2649,8 +2813,10 @@ func TestBusyButtonDrive(t *testing.T) {
 	if waited := time.Since(scriptAt); waited > 450*time.Millisecond {
 		t.Errorf("a script's submit with no button took %v to arrive; with no spinner it must not be held", waited)
 	}
-	fail(chromedp.Run(ctx,
-		chromedp.Evaluate(`document.getElementById("two").requestSubmit()`, nil), at("script-resubmitted"),
+	fail(chromedp.Do(ctx,
+		chromedp.Evaluate[chromedp.Void](
+			`document.getElementById("two").requestSubmit()`),
+		at("script-resubmitted"),
 	))
 	tookNothing(t, payloads, "script submit, second")
 }
@@ -2751,11 +2917,12 @@ func TestABidiIsolatedNameKeepsItsRowInOrder(t *testing.T) {
 	defer cancel()
 
 	var raw string
-	if err := chromedp.Run(ctx,
+	if err := chromedp.Do(ctx,
 		chromedp.Navigate(rig.Origin+"/"),
-		chromedp.WaitVisible("#wrapped", chromedp.ByQuery),
+		chromedp.WaitVisible(chromedp.CSS("#wrapped")),
 		chromedp.Sleep(300*time.Millisecond),
-		chromedp.Evaluate(bidiOrderJS, &raw),
+		harness.Into(&raw, chromedp.Evaluate[string](
+			bidiOrderJS)),
 	); err != nil {
 		t.Fatalf("measuring the rows: %v", err)
 	}
@@ -2848,83 +3015,100 @@ func TestCalendarOverlayDrivesTheWholeJourney(t *testing.T) {
 	)
 
 	reached := "start"
-	at := func(name string) chromedp.Action {
-		return chromedp.ActionFunc(func(context.Context) error { reached = name; return nil })
+	at := func(name string) chromedp.Action[chromedp.Void] {
+		return chromedp.Func(func(context.Context, *chromedp.Target) error {
+			reached = name
+			return nil
+		})
 	}
 
-	if err := chromedp.Run(ctx,
+	if err := chromedp.Do(ctx,
 		chromedp.Navigate(rig.Origin+"/"), at("navigated"),
-		chromedp.WaitVisible(`input[role="combobox"]`, chromedp.ByQuery), at("combobox-visible"),
+		chromedp.WaitVisible(chromedp.CSS(`input[role="combobox"]`)), at("combobox-visible"),
 
 		// The button is there, and it is the overlay's button rather
 		// than a fallback to the browser's own panel.
-		chromedp.Evaluate(`!!document.querySelector('[rst-dtp-pick]')`, &hasPanel),
-		chromedp.Evaluate(`document.querySelector('[rst-dtp-pick]')?.getAttribute('aria-haspopup') ?? ''`, &calRole),
+		harness.Into(&hasPanel, chromedp.Evaluate[bool](
+			`!!document.querySelector('[rst-dtp-pick]')`)),
+		harness.Into(&calRole, chromedp.Evaluate[string](
+			`document.querySelector('[rst-dtp-pick]')?.getAttribute('aria-haspopup') ?? ''`)),
 
 		// Type a date first, so the month on screen is one this test
 		// can name. The grid must open on what the words already say,
 		// not on this month.
-		chromedp.Click(`input[role="combobox"]`, chromedp.ByQuery), at("clicked-combobox"),
-		chromedp.SendKeys(`input[role="combobox"]`, "25 dec 2027", chromedp.ByQuery), at("typed-date"),
-		chromedp.WaitVisible(`[role="option"].is-active`, chromedp.ByQuery), at("reading-armed"),
+		chromedp.Click(chromedp.CSS(`input[role="combobox"]`)), at("clicked-combobox"),
+		chromedp.SendKeys(chromedp.CSS(`input[role="combobox"]`), "25 dec 2027"), at("typed-date"),
+		chromedp.WaitVisible(chromedp.CSS(`[role="option"].is-active`)), at("reading-armed"),
 
-		chromedp.Click(`[rst-dtp-pick]`, chromedp.ByQuery), at("pressed-calendar-button"),
-		chromedp.WaitVisible(`[rst-cal] [role="gridcell"]`, chromedp.ByQuery), at("grid-drawn"),
+		chromedp.Click(chromedp.CSS(`[rst-dtp-pick]`)), at("pressed-calendar-button"),
+		chromedp.WaitVisible(chromedp.CSS(`[rst-cal] [role="gridcell"]`)), at("grid-drawn"),
 
-		chromedp.Evaluate(`document.querySelector('[rst-cal]')?.getAttribute('role') ?? ''`, &calLabel),
-		chromedp.Evaluate(`document.querySelector('[rst-dtp-pick]')?.getAttribute('aria-expanded') ?? ''`, &ariaExpanded),
-		chromedp.Evaluate(`document.querySelectorAll('[rst-cal-grid] th[role="columnheader"]').length`, &headCount),
-		chromedp.Evaluate(`document.querySelectorAll('[rst-cal] [role="gridcell"]').length`, &dayCount),
-		chromedp.Evaluate(`document.querySelectorAll('[rst-cal] tbody tr[role="row"]').length`, &rowCount),
-		chromedp.Evaluate(`document.querySelector('[rst-cal-title]')?.textContent ?? ''`, &titleOne),
+		harness.Into(&calLabel, chromedp.Evaluate[string](
+			`document.querySelector('[rst-cal]')?.getAttribute('role') ?? ''`)),
+		harness.Into(&ariaExpanded, chromedp.Evaluate[string](
+			`document.querySelector('[rst-dtp-pick]')?.getAttribute('aria-expanded') ?? ''`)),
+		harness.Into(&headCount, chromedp.Evaluate[int](
+			`document.querySelectorAll('[rst-cal-grid] th[role="columnheader"]').length`)),
+		harness.Into(&dayCount, chromedp.Evaluate[int](
+			`document.querySelectorAll('[rst-cal] [role="gridcell"]').length`)),
+		harness.Into(&rowCount, chromedp.Evaluate[int](
+			`document.querySelectorAll('[rst-cal] tbody tr[role="row"]').length`)),
+		harness.Into(&titleOne, chromedp.Evaluate[string](
+			`document.querySelector('[rst-cal-title]')?.textContent ?? ''`)),
 		// Every heading has a spoken name as well as the two letters
 		// the eye reads: "Mo" alone is not a weekday.
-		chromedp.Evaluate(`Array.from(document.querySelectorAll('[rst-cal-grid] th'))
-			.map(th => (th.querySelector('.rst-sr-only')?.textContent ?? '')).join('|')`, &headings),
+		harness.Into(&headings, chromedp.Evaluate[string](
+			`Array.from(document.querySelectorAll('[rst-cal-grid] th'))
+			.map(th => (th.querySelector('.rst-sr-only')?.textContent ?? '')).join('|')`)),
 		// The headings describe the columns they sit over. This is the
 		// off-by-one that would look completely normal and put every
 		// date on the wrong weekday: the first cell's own weekday,
 		// asked of the browser, against the first column's name.
-		chromedp.Evaluate(`(function () {
+		harness.Into(&firstColumnAgrees, chromedp.Evaluate[bool](`(function () {
 			var td = document.querySelector('[rst-cal] tbody [role="gridcell"]');
 			var th = document.querySelector('[rst-cal-grid] th .rst-sr-only');
 			if (!td || !th) return false;
 			var d = new Date(td.getAttribute('data-rst-day') + 'T00:00');
 			var lang = document.documentElement.getAttribute('lang') || undefined;
 			return new Intl.DateTimeFormat(lang, { weekday: 'long' }).format(d) === th.textContent;
-		})()`, &firstColumnAgrees),
+		})()`)),
 		// Opened on the typed date, and marked as the preview rather
 		// than as a selection: nothing has been committed yet.
-		chromedp.Evaluate(`document.querySelector('[rst-cal-day].is-preview')?.getAttribute('data-rst-day') ?? ''`, &previewDay),
+		harness.Into(&previewDay, chromedp.Evaluate[string](
+			`document.querySelector('[rst-cal-day].is-preview')?.getAttribute('data-rst-day') ?? ''`)),
 
 		// The live half of the brief. The grid is open; changing the
 		// words moves it, with no commit and no focus change.
-		chromedp.ActionFunc(func(ctx context.Context) error {
-			return chromedp.Evaluate(`(function () {
+		chromedp.Func(func(ctx context.Context, target *chromedp.Target) error {
+			_, err := chromedp.Evaluate[bool](`(function () {
 				var i = document.querySelector('input[role="combobox"]');
 				i.value = '3 mar 2028';
 				i.dispatchEvent(new Event('input', { bubbles: true }));
 				return true;
-			})()`, new(bool)).Do(ctx)
+			})()`)(ctx, target)
+			return err
 		}), at("retyped-while-open"),
-		chromedp.Evaluate(`document.querySelector('[rst-cal-title]')?.textContent ?? ''`, &titleTwo),
+		harness.Into(&titleTwo, chromedp.Evaluate[string](
+			`document.querySelector('[rst-cal-title]')?.textContent ?? ''`)),
 
 		// The keyboard. Down out of the box lands on the grid; a week
 		// back from 3 March 2028 is 25 February 2028.
-		chromedp.SendKeys(`input[role="combobox"]`, string(kb.ArrowDown), chromedp.ByQuery), at("arrowed-into-grid"),
+		chromedp.SendKeys(chromedp.CSS(`input[role="combobox"]`), string(kb.ArrowDown)), at("arrowed-into-grid"),
 		// To whatever has focus, deliberately: the claim under test is
 		// that ArrowDown MOVED focus onto the grid, and re-selecting
 		// the cell first would prove it by assuming it.
 		chromedp.KeyEvent(kb.ArrowUp), at("arrowed-a-week-back"),
-		chromedp.Evaluate(`document.activeElement?.getAttribute('data-rst-day') ?? ''`, &afterKeys),
+		harness.Into(&afterKeys, chromedp.Evaluate[string](
+			`document.activeElement?.getAttribute('data-rst-day') ?? ''`)),
 
 		// Enter on the focused day commits it, and the grid closes.
 		chromedp.KeyEvent(kb.Enter), at("entered-on-a-day"),
-		chromedp.ActionFunc(func(ctx context.Context) error {
+		chromedp.Func(func(ctx context.Context, target *chromedp.Target) error {
 			deadline := time.Now().Add(10 * time.Second)
 			for {
-				var v string
-				if err := chromedp.Evaluate(`document.querySelector('input[name="due"]')?.value ?? ''`, &v).Do(ctx); err != nil {
+				v, err := chromedp.Evaluate[string](
+					`document.querySelector('input[name="due"]')?.value ?? ''`)(ctx, target)
+				if err != nil {
 					return err
 				}
 				if v != "" {
@@ -2941,20 +3125,24 @@ func TestCalendarOverlayDrivesTheWholeJourney(t *testing.T) {
 				}
 			}
 		}), at("read-carrier-value"),
-		chromedp.Evaluate(`document.querySelectorAll('[rst-cal]:not([hidden])').length`, &gridClosed),
-		chromedp.Evaluate(`document.querySelector('input[role="combobox"]')?.value ?? ''`, &comboText),
+		harness.Into(&gridClosed, chromedp.Evaluate[int](
+			`document.querySelectorAll('[rst-cal]:not([hidden])').length`)),
+		harness.Into(&comboText, chromedp.Evaluate[string](
+			`document.querySelector('input[role="combobox"]')?.value ?? ''`)),
 
 		// Reopened, the day it now holds is the SELECTED one — the
 		// committed value, said in the accessibility tree and not only
 		// in a class.
-		chromedp.Click(`[rst-dtp-pick]`, chromedp.ByQuery), at("reopened-calendar"),
-		chromedp.WaitVisible(`[rst-cal] [role="gridcell"]`, chromedp.ByQuery), at("grid-redrawn"),
-		chromedp.Evaluate(`document.querySelector('[rst-cal-day][aria-selected="true"]')?.getAttribute('data-rst-day') ?? ''`, &selectedDay),
-		chromedp.Evaluate(`document.querySelectorAll('[rst-cal-day][aria-disabled="true"]').length`, &disabledCount),
+		chromedp.Click(chromedp.CSS(`[rst-dtp-pick]`)), at("reopened-calendar"),
+		chromedp.WaitVisible(chromedp.CSS(`[rst-cal] [role="gridcell"]`)), at("grid-redrawn"),
+		harness.Into(&selectedDay, chromedp.Evaluate[string](
+			`document.querySelector('[rst-cal-day][aria-selected="true"]')?.getAttribute('data-rst-day') ?? ''`)),
+		harness.Into(&disabledCount, chromedp.Evaluate[int](
+			`document.querySelectorAll('[rst-cal-day][aria-disabled="true"]').length`)),
 
 		chromedp.KeyEvent(kb.Escape), at("escaped"),
-		chromedp.Submit(`#go`, chromedp.ByQuery), at("submitted-form"),
-		chromedp.WaitVisible(`#done`, chromedp.ByQuery), at("server-responded"),
+		chromedp.Submit(chromedp.CSS(`#go`)), at("submitted-form"),
+		chromedp.WaitVisible(chromedp.CSS(`#done`)), at("server-responded"),
 	); err != nil {
 		t.Fatalf("drive failed after %q: %v\n  title=%q preview=%q afterKeys=%q nativeValue=%q",
 			reached, err, titleOne, previewDay, afterKeys, nativeValue)
@@ -3049,18 +3237,22 @@ func TestNativePickerButtonClaimsNoPopup(t *testing.T) {
 	})()`
 	var calendars int
 	var before, listOpen, pressed string
-	if err := chromedp.Run(ctx,
+	if err := chromedp.Do(ctx,
 		chromedp.Navigate(rig.Origin+"/?nocal"),
-		chromedp.WaitVisible(`input[role="combobox"]`, chromedp.ByQuery),
-		chromedp.Evaluate(`document.querySelectorAll('[rst-cal]').length`, &calendars),
-		chromedp.Evaluate(attrs, &before),
+		chromedp.WaitVisible(chromedp.CSS(`input[role="combobox"]`)),
+		harness.Into(&calendars, chromedp.Evaluate[int](
+			`document.querySelectorAll('[rst-cal]').length`)),
+		harness.Into(&before, chromedp.Evaluate[string](
+			attrs)),
 		// The suggestions opening is the combobox's popup, not the
 		// button's: it must not hand the button a state either.
-		chromedp.Click(`input[role="combobox"]`, chromedp.ByQuery),
-		chromedp.WaitVisible(`[role="option"]`, chromedp.ByQuery),
-		chromedp.Evaluate(attrs, &listOpen),
-		chromedp.Click(`[rst-dtp-pick]`, chromedp.ByQuery),
-		chromedp.Evaluate(attrs, &pressed),
+		chromedp.Click(chromedp.CSS(`input[role="combobox"]`)),
+		chromedp.WaitVisible(chromedp.CSS(`[role="option"]`)),
+		harness.Into(&listOpen, chromedp.Evaluate[string](
+			attrs)),
+		chromedp.Click(chromedp.CSS(`[rst-dtp-pick]`)),
+		harness.Into(&pressed, chromedp.Evaluate[string](
+			attrs)),
 	); err != nil {
 		t.Fatal(err)
 	}
@@ -3100,37 +3292,47 @@ func TestTimeFieldOpensAClockRatherThanACalendar(t *testing.T) {
 	)
 
 	reached := "start"
-	at := func(name string) chromedp.Action {
-		return chromedp.ActionFunc(func(context.Context) error { reached = name; return nil })
+	at := func(name string) chromedp.Action[chromedp.Void] {
+		return chromedp.Func(func(context.Context, *chromedp.Target) error {
+			reached = name
+			return nil
+		})
 	}
 
-	if err := chromedp.Run(ctx,
+	if err := chromedp.Do(ctx,
 		chromedp.Navigate(rig.Origin+"/"), at("navigated"),
-		chromedp.WaitVisible(`input[role="combobox"]`, chromedp.ByQuery), at("combobox-visible"),
+		chromedp.WaitVisible(chromedp.CSS(`input[role="combobox"]`)), at("combobox-visible"),
 
-		chromedp.Evaluate(`document.querySelector('[rst-dtp-pick]')?.getAttribute('aria-haspopup') ?? ''`, &haspopup),
-		chromedp.Evaluate(`document.querySelector('[rst-dtp-pick]')?.getAttribute('aria-label') ?? ''`, &label),
+		harness.Into(&haspopup, chromedp.Evaluate[string](
+			`document.querySelector('[rst-dtp-pick]')?.getAttribute('aria-haspopup') ?? ''`)),
+		harness.Into(&label, chromedp.Evaluate[string](
+			`document.querySelector('[rst-dtp-pick]')?.getAttribute('aria-label') ?? ''`)),
 
-		chromedp.Click(`[rst-dtp-pick]`, chromedp.ByQuery), at("pressed-the-button"),
-		chromedp.WaitVisible(`[role="option"]`, chromedp.ByQuery), at("slots-drawn"),
+		chromedp.Click(chromedp.CSS(`[rst-dtp-pick]`)), at("pressed-the-button"),
+		chromedp.WaitVisible(chromedp.CSS(`[role="option"]`)), at("slots-drawn"),
 
 		// No calendar was built for it, and the popup is the day's half
 		// hours: twenty-four hours at two slots each.
-		chromedp.Evaluate(`document.querySelectorAll('[rst-cal]').length`, &calendars),
-		chromedp.Evaluate(`document.querySelectorAll('[role="option"]').length`, &slots),
-		chromedp.Evaluate(`document.querySelector('[role="option"] [rst-dtp-label]')?.textContent ?? ''`, &firstSlot),
-		chromedp.Evaluate(`(function () {
+		harness.Into(&calendars, chromedp.Evaluate[int](
+			`document.querySelectorAll('[rst-cal]').length`)),
+		harness.Into(&slots, chromedp.Evaluate[int](
+			`document.querySelectorAll('[role="option"]').length`)),
+		harness.Into(&firstSlot, chromedp.Evaluate[string](
+			`document.querySelector('[role="option"] [rst-dtp-label]')?.textContent ?? ''`)),
+		harness.Into(&last, chromedp.Evaluate[string](`(function () {
 			var all = document.querySelectorAll('[role="option"] [rst-dtp-label]');
 			return all.length ? all[all.length - 1].textContent : '';
-		})()`, &last),
-		chromedp.Evaluate(`document.querySelector('[role="option"].is-active [rst-dtp-label]')?.textContent ?? ''`, &activeText),
+		})()`)),
+		harness.Into(&activeText, chromedp.Evaluate[string](
+			`document.querySelector('[role="option"].is-active [rst-dtp-label]')?.textContent ?? ''`)),
 
-		chromedp.SendKeys(`input[role="combobox"]`, string(kb.Enter), chromedp.ByQuery), at("committed-a-slot"),
-		chromedp.ActionFunc(func(ctx context.Context) error {
+		chromedp.SendKeys(chromedp.CSS(`input[role="combobox"]`), string(kb.Enter)), at("committed-a-slot"),
+		chromedp.Func(func(ctx context.Context, target *chromedp.Target) error {
 			deadline := time.Now().Add(10 * time.Second)
 			for {
-				var v string
-				if err := chromedp.Evaluate(`document.querySelector('input[name="at"]')?.value ?? ''`, &v).Do(ctx); err != nil {
+				v, err := chromedp.Evaluate[string](
+					`document.querySelector('input[name="at"]')?.value ?? ''`)(ctx, target)
+				if err != nil {
 					return err
 				}
 				if v != "" {
@@ -3148,8 +3350,8 @@ func TestTimeFieldOpensAClockRatherThanACalendar(t *testing.T) {
 			}
 		}), at("read-carrier-value"),
 
-		chromedp.Submit(`#go`, chromedp.ByQuery), at("submitted-form"),
-		chromedp.WaitVisible(`#done`, chromedp.ByQuery), at("server-responded"),
+		chromedp.Submit(chromedp.CSS(`#go`)), at("submitted-form"),
+		chromedp.WaitVisible(chromedp.CSS(`#done`)), at("server-responded"),
 	); err != nil {
 		t.Fatalf("drive failed after %q: %v\n  slots=%d first=%q active=%q", reached, err, slots, firstSlot, activeText)
 	}
@@ -3194,26 +3396,28 @@ func TestTimeFieldOpensAClockRatherThanACalendar(t *testing.T) {
 // ignored-reason the vendored cdproto cannot unmarshal.
 func axName(ctx context.Context, t *testing.T, sel string) string {
 	t.Helper()
-	var nodes []*cdp.Node
-	if err := chromedp.Run(ctx, chromedp.Nodes(sel, &nodes, chromedp.ByQuery)); err != nil || len(nodes) == 0 {
+	nodes, err := chromedp.Run(ctx, chromedp.Nodes(chromedp.CSS(sel)))
+	if err != nil || len(nodes) == 0 {
 		t.Fatalf("axName: no node for %s: %v", sel, err)
 	}
-	var name string
-	err := chromedp.Run(ctx, chromedp.ActionFunc(func(c context.Context) error {
-		ax, err := accessibility.GetPartialAXTree().WithBackendNodeID(nodes[0].BackendNodeID).WithFetchRelatives(false).Do(c)
-		if err != nil {
-			return err
-		}
-		if len(ax) > 0 && ax[0].Name != nil {
-			var v string
-			if json.Unmarshal(ax[0].Name.Value, &v) == nil {
-				name = v
-			}
-		}
-		return nil
-	}))
+	tree, err := chromedp.Call(ctx, accessibility.GetPartialAXTree,
+		accessibility.GetPartialAXTreeParams{
+			BackendNodeID:  nodes[0].BackendNodeID,
+			FetchRelatives: ptr(false),
+		})
 	if err != nil {
 		t.Fatalf("axName(%s): %v", sel, err)
 	}
+	var name string
+	if len(tree.Nodes) > 0 && tree.Nodes[0].Name != nil {
+		var v string
+		if json.Unmarshal(tree.Nodes[0].Name.Value, &v) == nil {
+			name = v
+		}
+	}
 	return name
 }
+
+// ptr points at a copy of v, for cdproto's optional fields. Go 1.26's
+// new(v) does the same, and the module still builds on Go 1.25.
+func ptr[T any](value T) *T { return &value }

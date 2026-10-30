@@ -36,14 +36,15 @@ func TestTheCopyButtonCopiesAnnouncesAndFailsSafely(t *testing.T) {
 	defer cancel()
 	form := rig.Origin + pageHref(mountPath, RootTheme(), "en", fileOf("form"))
 
-	if err := chromedp.Run(ctx,
+	if err := chromedp.Do(ctx,
 		addInit(clipboardStub),
 		chromedp.EmulateViewport(1280, 900),
 		chromedp.Navigate(form),
-		chromedp.WaitReady(`.ds-copy`, chromedp.ByQuery),
+		chromedp.WaitReady(chromedp.CSS(`.ds-copy`)),
 		// Show the first widget's template call, so the selection the
 		// failure makes is a selection a reader could see.
-		chromedp.Evaluate(`document.querySelector(".ds-view__tab--t input").click(); true`, nil),
+		chromedp.Evaluate[chromedp.Void](
+			`document.querySelector(".ds-view__tab--t input").click(); true`),
 	); err != nil {
 		t.Fatalf("loading Form with a stubbed clipboard: %v", err)
 	}
@@ -55,7 +56,8 @@ func TestTheCopyButtonCopiesAnnouncesAndFailsSafely(t *testing.T) {
 	// A resolved write: the clipboard gets exactly the block's text, the
 	// region says Copied, and the label says it too.
 	const first = `document.querySelector(".ds-view__code--t .ds-copy")`
-	if err := chromedp.Run(ctx, chromedp.Evaluate(first+`.click(); true`, nil)); err != nil {
+	if err := chromedp.Do(ctx,
+		chromedp.Evaluate[chromedp.Void](first+`.click(); true`)); err != nil {
 		t.Fatalf("clicking Copy: %v", err)
 	}
 	until(t, ctx, "a resolved copy", `document.querySelector("[data-ds-copy-status]").textContent === document.querySelector("[data-ds-copy-status]").dataset.copied`)
@@ -64,10 +66,11 @@ func TestTheCopyButtonCopiesAnnouncesAndFailsSafely(t *testing.T) {
 		Text  string
 		Label string
 	}
-	var raw string
-	if err := chromedp.Run(ctx, chromedp.Evaluate(`JSON.stringify({Calls: window.__clipCalls,
+	raw, err := chromedp.Run(ctx, chromedp.Evaluate[string](
+		`JSON.stringify({Calls: window.__clipCalls,
 	  Text: `+first+`.nextElementSibling.querySelector("code").textContent,
-	  Label: `+first+`.firstChild.nodeValue})`, &raw)); err != nil {
+	  Label: `+first+`.firstChild.nodeValue})`))
+	if err != nil {
 		t.Fatalf("reading the copy: %v", err)
 	}
 	if err := json.Unmarshal([]byte(raw), &got); err != nil {
@@ -86,9 +89,10 @@ func TestTheCopyButtonCopiesAnnouncesAndFailsSafely(t *testing.T) {
 
 	// A rejected write: the failure is announced and the block's text
 	// is selected, so Ctrl or Cmd+C works at once. Nothing throws.
-	if err := chromedp.Run(ctx, chromedp.Evaluate(`window.__clipMode = "reject"; window.__errors = 0;
+	if err := chromedp.Do(ctx, chromedp.Evaluate[chromedp.Void](
+		`window.__clipMode = "reject"; window.__errors = 0;
 	  addEventListener("error", () => window.__errors++); addEventListener("unhandledrejection", () => window.__errors++);
-	  `+first+`.click(); true`, nil)); err != nil {
+	  `+first+`.click(); true`)); err != nil {
 		t.Fatalf("clicking Copy with a refusing clipboard: %v", err)
 	}
 	until(t, ctx, "a refused copy", `document.querySelector("[data-ds-copy-status]").textContent === document.querySelector("[data-ds-copy-status]").dataset.failed`)
@@ -96,9 +100,9 @@ func TestTheCopyButtonCopiesAnnouncesAndFailsSafely(t *testing.T) {
 
 	// Display has the most blocks that share a heading: names must still
 	// be unique there.
-	if err := chromedp.Run(ctx,
+	if err := chromedp.Do(ctx,
 		chromedp.Navigate(rig.Origin+pageHref(mountPath, RootTheme(), "en", fileOf("display"))),
-		chromedp.WaitReady(`.ds-copy`, chromedp.ByQuery),
+		chromedp.WaitReady(chromedp.CSS(`.ds-copy`)),
 	); err != nil {
 		t.Fatalf("loading Display: %v", err)
 	}
@@ -109,12 +113,14 @@ func TestTheCopyButtonCopiesAnnouncesAndFailsSafely(t *testing.T) {
 	tab, closeTab := chromedp.NewContext(rig.Context())
 	defer closeTab()
 	var buttons, blocks int
-	if err := chromedp.Run(tab,
+	if err := chromedp.Do(tab,
 		addInit(noClipboard),
 		chromedp.Navigate(form),
-		chromedp.WaitReady(`[data-ds-copy-status]`, chromedp.ByQuery),
-		chromedp.Evaluate(`document.querySelectorAll(".ds-copy").length`, &buttons),
-		chromedp.Evaluate(`document.querySelectorAll("pre.ds-src").length`, &blocks),
+		chromedp.WaitReady(chromedp.CSS(`[data-ds-copy-status]`)),
+		harness.Into(&buttons, chromedp.Evaluate[int](
+			`document.querySelectorAll(".ds-copy").length`)),
+		harness.Into(&blocks, chromedp.Evaluate[int](
+			`document.querySelectorAll("pre.ds-src").length`)),
 	); err != nil {
 		t.Fatalf("loading Form with no clipboard: %v", err)
 	}
@@ -128,11 +134,11 @@ func TestTheCopyButtonCopiesAnnouncesAndFailsSafely(t *testing.T) {
 // label so a voice user saying "Copy" reaches them (label in name).
 func assertNames(t *testing.T, ctx context.Context, where string) {
 	t.Helper()
-	var raw string
-	if err := chromedp.Run(ctx, chromedp.Evaluate(`JSON.stringify({
+	raw, err := chromedp.Run(ctx, chromedp.Evaluate[string](`JSON.stringify({
 	  Names: [...document.querySelectorAll(".ds-copy")].map(b => b.textContent),
 	  Blocks: document.querySelectorAll("pre.ds-src:not([data-ds-nocopy])").length,
-	  Label: document.querySelector("[data-ds-copy-status]").dataset.copy})`, &raw)); err != nil {
+	  Label: document.querySelector("[data-ds-copy-status]").dataset.copy})`))
+	if err != nil {
 		t.Fatalf("%s: reading the copy buttons: %v", where, err)
 	}
 	var got struct {
@@ -173,11 +179,13 @@ func TestNoCodeBlockScrollsSidewaysOnAPhone(t *testing.T) {
 		for _, tab := range []string{"h", "t"} {
 			where := fmt.Sprintf("%s at 390px, every ds-view__tab--%s chosen", kind, tab)
 			var raw string
-			if err := chromedp.Run(ctx, chromedp.EmulateViewport(390, 844),
+			if err := chromedp.Do(ctx, chromedp.EmulateViewport(390, 844),
 				chromedp.Navigate(rig.Origin+pageHref(mountPath, RootTheme(), "en", fileOf(kind))),
-				chromedp.WaitReady(`.ds-view`, chromedp.ByQuery),
-				chromedp.Evaluate(`document.querySelectorAll(".ds-view__tab--`+tab+` input").forEach(i => i.checked = true); true`, nil),
-				chromedp.Evaluate(`(() => {
+				chromedp.WaitReady(chromedp.CSS(`.ds-view`)),
+				chromedp.Evaluate[chromedp.Void](
+					`document.querySelectorAll(".ds-view__tab--`+tab+` input")
+					  .forEach(i => i.checked = true); true`),
+				harness.Into(&raw, chromedp.Evaluate[string](`(() => {
 				  const shown = p => p.checkVisibility() && p.getBoundingClientRect().height > 0;
 				  const views = [...document.querySelectorAll(".ds-view")].filter(v => v.querySelector(".ds-view__code--`+tab+`"));
 				  const blind = [];
@@ -189,7 +197,7 @@ func TestNoCodeBlockScrollsSidewaysOnAPhone(t *testing.T) {
 				  });
 				  const wide = [...document.querySelectorAll(".ds-src")].filter(p => shown(p) && p.scrollWidth > p.clientWidth).map(p => p.textContent.slice(0, 50));
 				  return JSON.stringify({Views: views.length, Blocks: blocks, Blind: blind, Wide: wide});
-				})()`, &raw)); err != nil {
+				})()`))); err != nil {
 				t.Fatalf("%s: %v", where, err)
 			}
 			var got struct {
@@ -229,11 +237,14 @@ func TestA11yScansTheCodePanels(t *testing.T) {
 			for _, scheme := range a11ySchemes {
 				where := fmt.Sprintf("%s/en %s, ds-view__tab--%s chosen (%s)", theme, c.kind, c.tab, scheme)
 				var shown []string
-				if err := chromedp.Run(ctx, chromedp.EmulateViewport(1280, 900),
+				if err := chromedp.Do(ctx, chromedp.EmulateViewport(1280, 900),
 					chromedp.Navigate(rig.Origin+pageHref(mountPath, theme, "en", fileOf(c.kind))),
-					chromedp.WaitVisible(`.ds-view`, chromedp.ByQuery),
-					chromedp.Evaluate(`document.querySelectorAll(".ds-view__tab--`+c.tab+` input").forEach(i => i.checked = true);
-					  ["ds-t", "ds-a", "ds-v", "ds-x", "ds-s"].filter(n => [...document.querySelectorAll(n)].some(e => e.getBoundingClientRect().width > 0))`, &shown)); err != nil {
+					chromedp.WaitVisible(chromedp.CSS(`.ds-view`)),
+					harness.Into(&shown, chromedp.Evaluate[[]string](
+						`document.querySelectorAll(
+						  ".ds-view__tab--`+c.tab+` input")
+						  .forEach(i => i.checked = true);
+					  ["ds-t", "ds-a", "ds-v", "ds-x", "ds-s"].filter(n => [...document.querySelectorAll(n)].some(e => e.getBoundingClientRect().width > 0))`))); err != nil {
 					t.Fatalf("%s: loading: %v", where, err)
 				}
 				for _, w := range c.want {
@@ -241,7 +252,8 @@ func TestA11yScansTheCodePanels(t *testing.T) {
 						t.Fatalf("%s: no visible %s; this scan would not be checking that colour", where, w)
 					}
 				}
-				if err := chromedp.Run(ctx, chromedp.Evaluate(axeJS, nil)); err != nil {
+				if err := chromedp.Do(ctx,
+					chromedp.Evaluate[chromedp.Void](axeJS)); err != nil {
 					t.Fatalf("%s: loading axe: %v", where, err)
 				}
 				paint(t, ctx, scheme)
@@ -270,10 +282,10 @@ func TestCodeIsLeftToRightOnAnArabicPage(t *testing.T) {
 	for _, pk := range pageKinds() {
 		where := "day/ar " + pk.Kind
 		var raw string
-		if err := chromedp.Run(ctx, chromedp.EmulateViewport(1280, 900),
+		if err := chromedp.Do(ctx, chromedp.EmulateViewport(1280, 900),
 			chromedp.Navigate(rig.Origin+pageHref(mountPath, "day", "ar", pk.File)),
 			chromedp.WaitReady("body"),
-			chromedp.Evaluate(`(() => {
+			harness.Into(&raw, chromedp.Evaluate[string](`(() => {
 			  if (document.documentElement.dir !== "rtl") return JSON.stringify({Page: document.documentElement.dir});
 			  const bad = [];
 			  const read = sel => { const es = [...document.querySelectorAll(sel)]; es.forEach(e => {
@@ -281,7 +293,7 @@ func TestCodeIsLeftToRightOnAnArabicPage(t *testing.T) {
 			    if (s.direction !== "ltr" || !["start", "left"].includes(s.textAlign)) bad.push(sel + " " + s.direction + "/" + s.textAlign + ": " + e.textContent.slice(0, 40));
 			  }); return es.length; };
 			  return JSON.stringify({Page: "rtl", Src: read(".ds-src"), Wrap: read(".ds-wrap code"), Bad: bad.slice(0, 6)});
-			})()`, &raw)); err != nil {
+			})()`))); err != nil {
 			t.Fatalf("%s: %v", where, err)
 		}
 		var got struct {

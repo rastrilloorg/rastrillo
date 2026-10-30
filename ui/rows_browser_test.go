@@ -85,8 +85,8 @@ func rowsPages(t *testing.T) map[string]string {
 // at evaluates a JS expression returning JSON into v.
 func at(t *testing.T, ctx context.Context, js string, v any, opts ...chromedp.EvaluateOption) {
 	t.Helper()
-	var raw string
-	if err := chromedp.Run(ctx, chromedp.Evaluate(js, &raw, opts...)); err != nil {
+	raw, err := chromedp.Run(ctx, chromedp.Evaluate[string](js, opts...))
+	if err != nil {
 		t.Fatalf("evaluating: %v\n%s", err, js)
 	}
 	if err := json.Unmarshal([]byte(raw), v); err != nil {
@@ -138,13 +138,16 @@ func probeScripted(t *testing.T, ctx context.Context, scripts bool, sel string, 
 // which reading location.pathname alone could.
 func clickAndLand(t *testing.T, ctx context.Context, p point, want string) {
 	t.Helper()
-	if err := chromedp.Run(ctx, chromedp.MouseClickXY(p.X, p.Y)); err != nil {
+	if err := chromedp.Do(ctx, chromedp.MouseClickXY(p.X, p.Y)); err != nil {
 		t.Fatal(err)
 	}
 	var last string
 	deadline := time.Now().Add(10 * time.Second)
 	for time.Now().Before(deadline) {
-		if err := chromedp.Run(ctx, chromedp.Evaluate(`location.pathname + (document.getElementById("landed") ? " (landed)" : "")`, &last)); err == nil && last == want+" (landed)" {
+		landed := chromedp.Evaluate[string](`location.pathname +
+			(document.getElementById("landed") ? " (landed)" : "")`)
+		err := chromedp.Do(ctx, harness.Into(&last, landed))
+		if err == nil && last == want+" (landed)" {
 			return
 		}
 		time.Sleep(100 * time.Millisecond)
@@ -157,31 +160,32 @@ func clickAndLand(t *testing.T, ctx context.Context, p point, want string) {
 // and fails if the click asked for any navigation. Navigation requests
 // are read off CDP's Page.frameRequestedNavigation, which the browser
 // sends for every navigation the page asks for, scripts on or off, and
-// in order before the reply to the evaluation that finds done true. So
-// "it did not navigate" is an observed absence, not a timed wait. arm is
-// an optional expression run before the click (to give a click with no
+// in order before the reply to the evaluation that finds done true;
+// harness.Listen handles them before that reply comes back. So "it did
+// not navigate" is an observed absence, not a timed wait. arm is an
+// optional expression run before the click (to give a click with no
 // visible effect something to report).
-func clickAndStay(t *testing.T, ctx context.Context, p point, arm, done string) {
+func clickAndStay(
+	t *testing.T, rig *harness.Rig, ctx context.Context,
+	p point, arm, done string,
+) {
 	t.Helper()
 	var mu sync.Mutex
 	var asked []string
-	active := true
-	chromedp.ListenTarget(ctx, func(ev any) {
-		if e, ok := ev.(*cdppage.EventFrameRequestedNavigation); ok {
+	stop := harness.Listen(rig, ctx, cdppage.FrameRequestedNavigation,
+		func(request *cdppage.EventFrameRequestedNavigation) {
 			mu.Lock()
-			if active {
-				asked = append(asked, e.URL)
-			}
-			mu.Unlock()
-		}
-	})
-	defer func() { mu.Lock(); active = false; mu.Unlock() }()
+			defer mu.Unlock()
+			asked = append(asked, request.URL)
+		})
+	defer stop()
 	if arm != "" {
-		if err := chromedp.Run(ctx, chromedp.Evaluate(arm, nil)); err != nil {
+		err := chromedp.Do(ctx, chromedp.Evaluate[chromedp.Void](arm))
+		if err != nil {
 			t.Fatal(err)
 		}
 	}
-	if err := chromedp.Run(ctx, chromedp.MouseClickXY(p.X, p.Y)); err != nil {
+	if err := chromedp.Do(ctx, chromedp.MouseClickXY(p.X, p.Y)); err != nil {
 		t.Fatal(err)
 	}
 	settleUntil(t, ctx, done)
@@ -194,7 +198,7 @@ func clickAndStay(t *testing.T, ctx context.Context, p point, arm, done string) 
 
 func home(t *testing.T, ctx context.Context, origin string) {
 	t.Helper()
-	if err := chromedp.Run(ctx, chromedp.Navigate(origin+"/"), chromedp.WaitVisible("#grid", chromedp.ByQuery)); err != nil {
+	if err := chromedp.Do(ctx, chromedp.Navigate(origin+"/"), chromedp.WaitVisible(chromedp.CSS("#grid"))); err != nil {
 		t.Fatal(err)
 	}
 	settleUntil(t, ctx, `!!document.querySelector("#combo-in [role=combobox]") && !!document.querySelector("#date-in [rst-dtp-pick]")`)
@@ -215,7 +219,7 @@ func TestTheWholeRowIsTheTarget(t *testing.T) {
 			rig := sizingRig(t, leg.coarse, rowsPages(t))
 			ctx, cancel := context.WithTimeout(rig.Context(), 180*time.Second)
 			defer cancel()
-			if err := chromedp.Run(ctx, chromedp.EmulateViewport(leg.w, leg.h)); err != nil {
+			if err := chromedp.Do(ctx, chromedp.EmulateViewport(leg.w, leg.h)); err != nil {
 				t.Fatal(err)
 			}
 			home(t, ctx, rig.Origin)
@@ -253,14 +257,17 @@ func TestTheWholeRowIsTheTarget(t *testing.T) {
 			home(t, ctx, rig.Origin)
 			clickAndLand(t, ctx, probe(t, ctx, "#lra [rst-row-action]", 0.5, 0.5, 0, 0), "/go/lra-edit")
 			home(t, ctx, rig.Origin)
-			clickAndStay(t, ctx, probe(t, ctx, "#kebab-a", 0.5, 0.5, 0, 0), "", `document.getElementById("menu-a").open`)
+			kebab := probe(t, ctx, "#kebab-a", 0.5, 0.5, 0, 0)
+			clickAndStay(t, rig, ctx, kebab, "",
+				`document.getElementById("menu-a").open`)
 			for _, c := range []struct {
 				where      string
 				fx, fy, dx float64
 			}{{"the checkbox itself", 0.5, 0.5, 0}, {"its label's padding", 0, 0, 2}} {
 				home(t, ctx, rig.Origin)
 				p := probe(t, ctx, "#label-a", c.fx, c.fy, c.dx, c.dx)
-				clickAndStay(t, ctx, p, "", `document.getElementById("check-a").checked`)
+				clickAndStay(t, rig, ctx, p, "",
+					`document.getElementById("check-a").checked`)
 			}
 
 			// Sizes: 44×44 for everything in the rows on a phone; on the
@@ -293,11 +300,13 @@ func TestAnOpenRowMenuStaysAboveTheRowsBelowIt(t *testing.T) {
 			if coarse {
 				w = 390
 			}
-			if err := chromedp.Run(ctx, chromedp.EmulateViewport(w, 844)); err != nil {
+			if err := chromedp.Do(ctx, chromedp.EmulateViewport(w, 844)); err != nil {
 				t.Fatal(err)
 			}
 			home(t, ctx, rig.Origin)
-			if err := chromedp.Run(ctx, chromedp.Evaluate(`document.getElementById("kebab-a").click(), true`, nil)); err != nil {
+			openMenu := chromedp.Evaluate[chromedp.Void](
+				`document.getElementById("kebab-a").click(), true`)
+			if err := chromedp.Do(ctx, openMenu); err != nil {
 				t.Fatal(err)
 			}
 			var got struct {
@@ -345,7 +354,7 @@ func TestControlsInARowKeepTheirOwnBoxes(t *testing.T) {
 			rig := sizingRig(t, leg.coarse, rowsPages(t))
 			ctx, cancel := context.WithTimeout(rig.Context(), 120*time.Second)
 			defer cancel()
-			if err := chromedp.Run(ctx, chromedp.EmulateViewport(leg.w, leg.h)); err != nil {
+			if err := chromedp.Do(ctx, chromedp.EmulateViewport(leg.w, leg.h)); err != nil {
 				t.Fatal(err)
 			}
 			home(t, ctx, rig.Origin)
@@ -383,15 +392,39 @@ func TestControlsInARowKeepTheirOwnBoxes(t *testing.T) {
 
 			// Operated. Each click must do its job and ask for no
 			// navigation (the row's link is under all of them).
-			clickAndStay(t, ctx, probe(t, ctx, "#switch-in [rst-switch-track]", 0.5, 0.5, 0, 0), "", `document.querySelector("#switch-in input").checked`)
-			clickAndStay(t, ctx, probe(t, ctx, "#date-in [rst-dtp-pick]", 0.5, 0.5, 0, 0), "", `!!document.querySelector('[rst-cal] [data-rst-day="2026-08-12"]')`)
-			clickAndStay(t, ctx, probe(t, ctx, `[rst-cal] [data-rst-day="2026-08-12"]`, 0.5, 0.5, 0, 0), "", `document.querySelector('#date-in input[name="due_in"]').value === "2026-08-12"`)
-			clickAndStay(t, ctx, probe(t, ctx, "#combo-in [role=combobox]", 0.5, 0.5, 0, 0), "", `document.querySelectorAll("#combo-in [role=option]").length === 12 && document.querySelector("#combo-in [role=option]").checkVisibility()`)
-			if err := chromedp.Run(ctx, chromedp.Evaluate(`(() => { const o = [...document.querySelectorAll("#combo-in [role=option]")].find(o => o.textContent.trim() === "Option 7"); o.scrollIntoView({block: "center"}); return true; })()`, nil)); err != nil {
+			track := probe(t, ctx, "#switch-in [rst-switch-track]",
+				0.5, 0.5, 0, 0)
+			clickAndStay(t, rig, ctx, track, "",
+				`document.querySelector("#switch-in input").checked`)
+			picker := probe(t, ctx, "#date-in [rst-dtp-pick]", 0.5, 0.5, 0, 0)
+			clickAndStay(t, rig, ctx, picker, "",
+				`!!document.querySelector(
+					'[rst-cal] [data-rst-day="2026-08-12"]')`)
+			day := probe(t, ctx, `[rst-cal] [data-rst-day="2026-08-12"]`,
+				0.5, 0.5, 0, 0)
+			clickAndStay(t, rig, ctx, day, "",
+				`document.querySelector('#date-in input[name="due_in"]')
+					.value === "2026-08-12"`)
+			combo := probe(t, ctx, "#combo-in [role=combobox]", 0.5, 0.5, 0, 0)
+			clickAndStay(t, rig, ctx, combo, "",
+				`document.querySelectorAll("#combo-in [role=option]")
+					.length === 12 &&
+					document.querySelector("#combo-in [role=option]")
+						.checkVisibility()`)
+			if err := chromedp.Do(ctx,
+				chromedp.Evaluate[chromedp.Void](`(() => {
+					const o = [...document.querySelectorAll(
+						"#combo-in [role=option]")]
+						.find(o => o.textContent.trim() === "Option 7");
+					o.scrollIntoView({block: "center"});
+					return true;
+				})()`)); err != nil {
 				t.Fatal(err)
 			}
 			at(t, ctx, `JSON.stringify((() => { const o = [...document.querySelectorAll("#combo-in [role=option]")].find(o => o.textContent.trim() === "Option 7"); o.setAttribute("data-pick", ""); return true; })())`, new(bool))
-			clickAndStay(t, ctx, probe(t, ctx, "#combo-in [data-pick]", 0.5, 0.5, 0, 0), "", `document.getElementById("combo_in").value === "7"`)
+			option := probe(t, ctx, "#combo-in [data-pick]", 0.5, 0.5, 0, 0)
+			clickAndStay(t, rig, ctx, option, "",
+				`document.getElementById("combo_in").value === "7"`)
 		})
 	}
 }
@@ -407,21 +440,21 @@ func TestARowWithNoLinkLooksAndActsInert(t *testing.T) {
 	rig := sizingRig(t, false, rowsPages(t), harness.WithHover())
 	ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
 	defer cancel()
-	if err := chromedp.Run(ctx, chromedp.EmulateViewport(1280, 900)); err != nil {
+	if err := chromedp.Do(ctx, chromedp.EmulateViewport(1280, 900)); err != nil {
 		t.Fatal(err)
 	}
 	home(t, ctx, rig.Origin)
 	still(t, ctx)
 	bg := func(sel string) string {
-		var s string
-		if err := chromedp.Run(ctx, chromedp.Evaluate(fmt.Sprintf(`getComputedStyle(document.querySelector(%q)).backgroundColor`, sel), &s)); err != nil {
+		s, err := chromedp.Run(ctx, chromedp.Evaluate[string](fmt.Sprintf(`getComputedStyle(document.querySelector(%q)).backgroundColor`, sel)))
+		if err != nil {
 			t.Fatal(err)
 		}
 		return s
 	}
 	hover := func(sel string) string {
 		p := probe(t, ctx, sel, 0.5, 0.5, 0, 0)
-		if err := chromedp.Run(ctx, chromedp.MouseEvent("mouseMoved", p.X, p.Y)); err != nil {
+		if err := chromedp.Do(ctx, chromedp.MouseEvent("mouseMoved", p.X, p.Y)); err != nil {
 			t.Fatal(err)
 		}
 		return bg(sel)
@@ -430,14 +463,14 @@ func TestARowWithNoLinkLooksAndActsInert(t *testing.T) {
 		{"list grid", "#row-n", "#row-a"},
 		{"list-row-action", "#lra-n", "#lra [rst-row]"},
 	} {
-		if err := chromedp.Run(ctx, chromedp.MouseEvent("mouseMoved", 1, 1)); err != nil {
+		if err := chromedp.Do(ctx, chromedp.MouseEvent("mouseMoved", 1, 1)); err != nil {
 			t.Fatal(err)
 		}
 		restN, restA := bg(c.inert), bg(c.linked)
 		if hovered := hover(c.linked); hovered == restA {
 			t.Fatalf("%s CONTROL: hovering a linked row does not change its background, so the inert row's unchanged background proves nothing", c.idiom)
 		}
-		if err := chromedp.Run(ctx, chromedp.MouseEvent("mouseMoved", 1, 1)); err != nil {
+		if err := chromedp.Do(ctx, chromedp.MouseEvent("mouseMoved", 1, 1)); err != nil {
 			t.Fatal(err)
 		}
 		if hovered := hover(c.inert); hovered != restN {
@@ -451,7 +484,7 @@ func TestARowWithNoLinkLooksAndActsInert(t *testing.T) {
 		if link != "" {
 			t.Errorf("%s: the centre of a row with no link is under a link: %s", c.idiom, link)
 		}
-		clickAndStay(t, ctx, p,
+		clickAndStay(t, rig, ctx, p,
 			fmt.Sprintf(`window.rowClicked = false, document.querySelector(%q).addEventListener("click", () => { window.rowClicked = true; }), true`, c.inert), `window.rowClicked === true`)
 	}
 }
@@ -474,7 +507,7 @@ func TestMeasureRejectsAHitOnAnotherPartOfTheRow(t *testing.T) {
 	ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
 	defer cancel()
 	read := func(path string) targetReading {
-		if err := chromedp.Run(ctx, chromedp.EmulateViewport(1280, 900), chromedp.Navigate(rig.Origin+path), chromedp.WaitReady("#name", chromedp.ByQuery)); err != nil {
+		if err := chromedp.Do(ctx, chromedp.EmulateViewport(1280, 900), chromedp.Navigate(rig.Origin+path), chromedp.WaitReady(chromedp.CSS("#name"))); err != nil {
 			t.Fatal(err)
 		}
 		for _, g := range readTargets(t, ctx, `(() => { `+measureFn+`; return JSON.stringify(measure(document)); })()`) {
@@ -501,11 +534,11 @@ func TestFocusDrawsTheRingAroundTheWholeRow(t *testing.T) {
 	rig := sizingRig(t, false, rowsPages(t))
 	ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
 	defer cancel()
-	if err := chromedp.Run(ctx, chromedp.EmulateViewport(1280, 900)); err != nil {
+	if err := chromedp.Do(ctx, chromedp.EmulateViewport(1280, 900)); err != nil {
 		t.Fatal(err)
 	}
 	home(t, ctx, rig.Origin)
-	if err := chromedp.Run(ctx, chromedp.Focus("#check-a", chromedp.ByQuery), chromedp.KeyEvent(kb.Tab)); err != nil {
+	if err := chromedp.Do(ctx, chromedp.Focus(chromedp.CSS("#check-a")), chromedp.KeyEvent(kb.Tab)); err != nil {
 		t.Fatal(err)
 	}
 	var g struct {
@@ -585,7 +618,7 @@ func TestANarrowRowGivesItsTitleTheWidth(t *testing.T) {
 			rig := sizingRig(t, leg.coarse, pages)
 			ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
 			defer cancel()
-			mustRun(t, ctx, chromedp.EmulateViewport(leg.w, 844), chromedp.Navigate(rig.Origin+leg.path), chromedp.WaitVisible("#loose", chromedp.ByQuery))
+			mustRun(t, ctx, chromedp.EmulateViewport(leg.w, 844), chromedp.Navigate(rig.Origin+leg.path), chromedp.WaitVisible(chromedp.CSS("#loose")))
 			requirePointer(t, ctx, leg.coarse)
 			var rows []struct {
 				ID                               string
@@ -655,7 +688,7 @@ func TestAListTitleKeepsItsInlineFormatting(t *testing.T) {
 	}{{"a mouse at 1280px", false, 1280, 900}, {"a coarse pointer at 390px", true, 390, 844}} {
 		rig := sizingRig(t, c.coarse, page)
 		ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
-		if err := chromedp.Run(ctx, chromedp.EmulateViewport(c.w, c.h), chromedp.Navigate(rig.Origin+"/"), chromedp.WaitReady("#title", chromedp.ByQuery)); err != nil {
+		if err := chromedp.Do(ctx, chromedp.EmulateViewport(c.w, c.h), chromedp.Navigate(rig.Origin+"/"), chromedp.WaitReady(chromedp.CSS("#title"))); err != nil {
 			cancel()
 			t.Fatal(err)
 		}

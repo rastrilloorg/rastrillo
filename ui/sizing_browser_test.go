@@ -23,13 +23,15 @@ func readType(t *testing.T, ctx context.Context, url string, w, h int64) (typeRe
 	t.Helper()
 	var rawType, rawFonts string
 	var primary float64
-	if err := chromedp.Run(ctx,
+	if err := chromedp.Do(ctx,
 		chromedp.EmulateViewport(w, h),
 		chromedp.Navigate(url),
 		chromedp.WaitReady("body"),
-		chromedp.Evaluate(tokensJS, &rawType),
-		chromedp.Evaluate(fontsJS, &rawFonts),
-		chromedp.Evaluate(`parseFloat(getComputedStyle(document.getElementById("sizing-primary")).fontSize)`, &primary),
+		harness.Into(&rawType, chromedp.Evaluate[string](tokensJS)),
+		harness.Into(&rawFonts, chromedp.Evaluate[string](fontsJS)),
+		harness.Into(&primary, chromedp.Evaluate[float64](
+			`parseFloat(getComputedStyle(
+				document.getElementById("sizing-primary")).fontSize)`)),
 	); err != nil {
 		t.Fatalf("reading type at %dx%d: %v", w, h, err)
 	}
@@ -135,14 +137,14 @@ func TestDesktopDensityIsPinned(t *testing.T) {
 	if !small {
 		t.Error("CONTROL: every text control is ≥16px on a 1280px desktop, so the touch drive's ≥16 reading proves nothing")
 	}
-	var raw string
-	if err := chromedp.Run(ctx, chromedp.Evaluate(`(() => {
+	raw, err := chromedp.Run(ctx, chromedp.Evaluate[string](`(() => {
 	  const box = sel => { const r = document.querySelector(sel).getBoundingClientRect(); return [Math.round(r.width * 100) / 100, Math.round(r.height * 100) / 100]; };
 	  return JSON.stringify({Sm: box("#sizing-btn-sm")[1], Md: box("#sizing-btn")[1], Lg: box("#sizing-btn-lg")[1],
 	    Kebab: box('[data-sample="list-grid"] [rst-row-menu] > summary'), Label: box('[data-sample="selbox"] [rst-selbox]'),
 	    Box: box('[data-sample="selbox"] [rst-selbox] input'),
 	    Chip: box([...document.querySelectorAll("[rst-pagination] a")].filter(a => /^\d$/.test(a.textContent.trim())).map(a => "#" + (a.id || (a.id = "sizing-chip")))[0])});
-	})()`, &raw)); err != nil {
+	})()`))
+	if err != nil {
 		t.Fatal(err)
 	}
 	var d struct {
@@ -182,8 +184,7 @@ func TestDesktopDensityIsPinned(t *testing.T) {
 	// a dropdown summary already 33.8px tall grew to 44.8, the topbar
 	// with it to 61.8, and the bulk bar's Actions to 41. These are exact,
 	// because a floor that only checks "at least 32" cannot see growth.
-	var rawFloor string
-	if err := chromedp.Run(ctx, chromedp.Evaluate(`(() => {
+	rawFloor, err := chromedp.Run(ctx, chromedp.Evaluate[string](`(() => {
 	  const h = sel => Math.round(document.querySelector(sel).getBoundingClientRect().height * 10) / 10;
 	  const group = document.querySelector('[data-sample="dropdown"] [rst-menu-group] > summary');
 	  for (let d = group.closest("details"); d; d = d.parentElement && d.parentElement.closest("details")) d.open = true;
@@ -194,15 +195,18 @@ func TestDesktopDensityIsPinned(t *testing.T) {
 	    BulkSearch: h('#sizing-bulk [rst-search]')};
 	  document.querySelectorAll("details[open]").forEach(d => { d.open = false; });
 	  return JSON.stringify(out);
-	})()`, &rawFloor)); err != nil {
+	})()`))
+	if err != nil {
 		t.Fatal(err)
 	}
 	var f struct{ Summary, Bulk, Group, Help, Bar, ModalNav, Search, SearchInput, BulkSearch float64 }
 	if err := json.Unmarshal([]byte(rawFloor), &f); err != nil {
 		t.Fatal(err)
 	}
-	if err := chromedp.Run(ctx, chromedp.Navigate(rig.Origin+"/modal"), chromedp.WaitReady("body"),
-		chromedp.Evaluate(`Math.round(document.querySelector("[rst-modal-panel] > nav a").getBoundingClientRect().height * 10) / 10`, &f.ModalNav)); err != nil {
+	if err := chromedp.Do(ctx, chromedp.Navigate(rig.Origin+"/modal"), chromedp.WaitReady("body"),
+		harness.Into(&f.ModalNav, chromedp.Evaluate[float64](
+			`Math.round(document.querySelector("[rst-modal-panel] > nav a")
+				.getBoundingClientRect().height * 10) / 10`))); err != nil {
 		t.Fatal(err)
 	}
 	for _, c := range []struct {
@@ -259,14 +263,14 @@ func TestAnIconKeepsItsSpaceBesideItsText(t *testing.T) {
 	}{{"1280x900 mouse", 1280, 900, false}, {"390x844 touch", 390, 844, true}} {
 		rig := sizingRig(t, leg.coarse, map[string]string{"/": sizingDoc("sizing", sizingFixture(t))})
 		ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
-		if err := chromedp.Run(ctx, chromedp.EmulateViewport(leg.w, leg.h), chromedp.Navigate(rig.Origin+"/"), chromedp.WaitReady("body")); err != nil {
+		if err := chromedp.Do(ctx, chromedp.EmulateViewport(leg.w, leg.h), chromedp.Navigate(rig.Origin+"/"), chromedp.WaitReady("body")); err != nil {
 			cancel()
 			t.Fatal(err)
 		}
 		requirePointer(t, ctx, leg.coarse)
 		for _, dir := range []string{"ltr", "rtl"} {
-			var raw string
-			if err := chromedp.Run(ctx, chromedp.Evaluate(fmt.Sprintf(`(() => {
+			raw, err := chromedp.Run(ctx,
+				chromedp.Evaluate[string](fmt.Sprintf(`(() => {
 			  document.documentElement.dir = %q;
 			  document.querySelectorAll('[data-extra="icon-text"] details').forEach(d => { d.open = true; });
 			  const out = {};
@@ -282,7 +286,8 @@ func TestAnIconKeepsItsSpaceBesideItsText(t *testing.T) {
 			  }
 			  document.querySelectorAll('[data-extra="icon-text"] details').forEach(d => { d.open = false; });
 			  return JSON.stringify(out);
-			})()`, dir, "[\""+strings.Join(ids, "\",\"")+"\"]"), &raw)); err != nil {
+			})()`, dir, "[\""+strings.Join(ids, "\",\"")+"\"]")))
+			if err != nil {
 				cancel()
 				t.Fatal(err)
 			}
@@ -450,8 +455,8 @@ const overlayJS = `(async (i) => { ` + measureFn + `;
 
 func readTargets(t *testing.T, ctx context.Context, js string) []targetReading {
 	t.Helper()
-	var raw string
-	if err := chromedp.Run(ctx, chromedp.Evaluate(js, &raw)); err != nil {
+	raw, err := chromedp.Run(ctx, chromedp.Evaluate[string](js))
+	if err != nil {
 		t.Fatalf("measuring targets: %v", err)
 	}
 	var got []targetReading
@@ -497,8 +502,8 @@ func measureEverything(t *testing.T, ctx context.Context, where string, floor fl
 	n := len(got)
 	assertTargetsAt(t, where+", overlays closed", got, floor)
 	for i := 0; ; i++ {
-		var raw string
-		if err := chromedp.Run(ctx, chromedp.Evaluate(fmt.Sprintf("%s(%d)", overlayJS, i), &raw, awaitPromise)); err != nil {
+		raw, err := chromedp.Run(ctx, chromedp.Evaluate[string](fmt.Sprintf("%s(%d)", overlayJS, i), awaitPromise))
+		if err != nil {
 			t.Fatalf("%s: opening overlay %d: %v", where, i, err)
 		}
 		var o struct {
@@ -518,7 +523,8 @@ func measureEverything(t *testing.T, ctx context.Context, where string, floor fl
 		{"the combobox's list", `(() => { const i = document.querySelector("#sizing-combo").closest("[rst-field]").querySelector("[role=combobox]"); i.focus(); i.click(); return true; })()`, "[rst-combo-list]"},
 		{"the date field's list", `(() => { const i = document.querySelector("[rst-dtp] [role=combobox]"); i.focus(); i.value = "t"; i.dispatchEvent(new Event("input", {bubbles: true})); return true; })()`, "[rst-dtp-list]"},
 	} {
-		if err := chromedp.Run(ctx, chromedp.Evaluate(open.js, nil)); err != nil {
+		err := chromedp.Do(ctx, chromedp.Evaluate[chromedp.Void](open.js))
+		if err != nil {
 			t.Fatalf("%s: opening %s: %v", where, open.name, err)
 		}
 		settleUntil(t, ctx, `(() => { const l = document.querySelector("`+open.list+`"); return !!l && l.checkVisibility() && l.querySelectorAll("[role=option]").length > 0; })()`)
@@ -550,8 +556,8 @@ const iconsJS = `JSON.stringify([...document.querySelectorAll(":is(a[href], butt
 // carets would pass with nothing measured.
 func assertIcons(t *testing.T, ctx context.Context, where string) {
 	t.Helper()
-	var raw string
-	if err := chromedp.Run(ctx, chromedp.Evaluate(iconsJS, &raw)); err != nil {
+	raw, err := chromedp.Run(ctx, chromedp.Evaluate[string](iconsJS))
+	if err != nil {
 		t.Fatalf("%s: reading icons: %v", where, err)
 	}
 	var got []struct {
@@ -600,8 +606,11 @@ func TestAnIconOutsideAControlFollowsItsText(t *testing.T) {
 		ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
 		var got map[string]float64
 		var raw string
-		if err := chromedp.Run(ctx, chromedp.EmulateViewport(leg.w, leg.h), chromedp.Navigate(rig.Origin+"/"), chromedp.WaitReady("#button", chromedp.ByQuery),
-			chromedp.Evaluate(`JSON.stringify(Object.fromEntries(["heading", "prose", "prose-link", "button"].map(id => [id, document.querySelector("#" + id + " > svg").getBoundingClientRect().height])))`, &raw)); err != nil {
+		if err := chromedp.Do(ctx, chromedp.EmulateViewport(leg.w, leg.h), chromedp.Navigate(rig.Origin+"/"), chromedp.WaitReady(chromedp.CSS("#button")),
+			harness.Into(&raw, chromedp.Evaluate[string](`JSON.stringify(
+				Object.fromEntries(["heading", "prose", "prose-link", "button"]
+					.map(id => [id, document.querySelector("#" + id + " > svg")
+						.getBoundingClientRect().height])))`))); err != nil {
 			cancel()
 			t.Fatal(err)
 		}
@@ -625,7 +634,8 @@ func settleUntil(t *testing.T, ctx context.Context, expr string) {
 		var yes bool
 		// Errors are tolerated: an evaluation that lands while a document
 		// is being swapped in fails, and the next one reads the new page.
-		if err := chromedp.Run(ctx, chromedp.Evaluate(expr, &yes)); err == nil && yes {
+		read := harness.Into(&yes, chromedp.Evaluate[bool](expr))
+		if err := chromedp.Do(ctx, read); err == nil && yes {
 			return
 		}
 		time.Sleep(100 * time.Millisecond)
@@ -642,11 +652,14 @@ func settleUntil(t *testing.T, ctx context.Context, expr string) {
 // control is also required by id in TestTextControlsAreSixteenPixels.
 func assertCovered(t *testing.T, ctx context.Context, where, page string, wide bool) {
 	t.Helper()
-	var missed []string
-	if err := chromedp.Run(ctx, chromedp.Evaluate(`[...document.querySelectorAll('a[href], button, summary, input:not([type=hidden]), select, textarea')]
+	controls := `'a[href], button, summary, input:not([type=hidden]),` +
+		` select, textarea'`
+	missed, err := chromedp.Run(ctx, chromedp.Evaluate[[]string](
+		`[...document.querySelectorAll(`+controls+`)]
 	  .filter(e => !e.hasAttribute("data-measured") && !e.closest("[data-sizing-not-an-idiom], [inert]") && e.checkVisibility({visibilityProperty: true}) && getComputedStyle(e).clipPath !== "inset(50%)" && e.getBoundingClientRect().width >= 2)
 	  .filter(e => !(e.matches("input[type=checkbox], input[type=radio]") && e.closest("label") && e.closest("label").hasAttribute("data-measured-area")))
-	  .map(e => e.outerHTML.slice(0, 80))`, &missed)); err != nil {
+	  .map(e => e.outerHTML.slice(0, 80))`))
+	if err != nil {
 		t.Fatalf("%s: listing unmeasured controls: %v", where, err)
 	}
 	if len(missed) > 0 {
@@ -668,8 +681,8 @@ func assertCovered(t *testing.T, ctx context.Context, where, page string, wide b
 		if entryPage != page {
 			continue
 		}
-		var n int
-		if err := chromedp.Run(ctx, chromedp.Evaluate(fmt.Sprintf(`[...document.querySelectorAll(%q)].filter(e => e.hasAttribute("data-measured")).length`, sel), &n)); err != nil {
+		n, err := chromedp.Run(ctx, chromedp.Evaluate[int](fmt.Sprintf(`[...document.querySelectorAll(%q)].filter(e => e.hasAttribute("data-measured")).length`, sel)))
+		if err != nil {
 			t.Fatalf("%s: counting %s: %v", where, sel, err)
 		}
 		if n == 0 {
@@ -707,8 +720,8 @@ var fixtureCounts = []struct {
 func assertFixtureCounts(t *testing.T, ctx context.Context, where string) {
 	t.Helper()
 	for _, c := range fixtureCounts {
-		var n int
-		if err := chromedp.Run(ctx, chromedp.Evaluate(fmt.Sprintf(`[...document.querySelectorAll(%q)].filter(e => e.hasAttribute("data-measured")).length`, c.Sel), &n)); err != nil {
+		n, err := chromedp.Run(ctx, chromedp.Evaluate[int](fmt.Sprintf(`[...document.querySelectorAll(%q)].filter(e => e.hasAttribute("data-measured")).length`, c.Sel)))
+		if err != nil {
 			t.Fatalf("%s: counting %s: %v", where, c.Sel, err)
 		}
 		if n != c.N {
@@ -743,7 +756,7 @@ func TestEveryTapTargetIsAtLeast44Pixels(t *testing.T) {
 			rig := sizingRig(t, leg.coarse, pages)
 			ctx, cancel := context.WithTimeout(rig.Context(), 240*time.Second)
 			defer cancel()
-			if err := chromedp.Run(ctx, chromedp.EmulateViewport(leg.w, leg.h), chromedp.Navigate(rig.Origin+"/")); err != nil {
+			if err := chromedp.Do(ctx, chromedp.EmulateViewport(leg.w, leg.h), chromedp.Navigate(rig.Origin+"/")); err != nil {
 				t.Fatal(err)
 			}
 			requirePointer(t, ctx, leg.coarse)
@@ -752,7 +765,7 @@ func TestEveryTapTargetIsAtLeast44Pixels(t *testing.T) {
 			t.Logf("%s: %d controls measured", leg.name, n)
 			assertCovered(t, ctx, leg.name, "", leg.w >= 800)
 			assertFixtureCounts(t, ctx, leg.name)
-			if err := chromedp.Run(ctx, chromedp.Navigate(rig.Origin+"/modal")); err != nil {
+			if err := chromedp.Do(ctx, chromedp.Navigate(rig.Origin+"/modal")); err != nil {
 				t.Fatal(err)
 			}
 			got := readTargets(t, ctx, targetsJS)
@@ -775,9 +788,11 @@ func TestTheKebabOverflowsIntoTheGapOnALiteralColumn(t *testing.T) {
 	ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
 	defer cancel()
 	var raw string
-	if err := chromedp.Run(ctx, chromedp.EmulateViewport(1024, 768), chromedp.Navigate(rig.Origin+"/"),
-		chromedp.Evaluate(`(() => { const c = document.getElementById("cell").getBoundingClientRect(), k = document.getElementById("kebab").getBoundingClientRect();
-		  return JSON.stringify({CellEnd: c.right, KebabStart: k.left, W: k.width}); })()`, &raw)); err != nil {
+	if err := chromedp.Do(ctx, chromedp.EmulateViewport(1024, 768), chromedp.Navigate(rig.Origin+"/"),
+		harness.Into(&raw, chromedp.Evaluate[string](`(() => {
+		  const c = document.getElementById("cell").getBoundingClientRect(),
+		    k = document.getElementById("kebab").getBoundingClientRect();
+		  return JSON.stringify({CellEnd: c.right, KebabStart: k.left, W: k.width}); })()`))); err != nil {
 		t.Fatal(err)
 	}
 	requirePointer(t, ctx, true)
@@ -831,16 +846,18 @@ type calReading struct {
 // reads the panel.
 func openCalendar(t *testing.T, ctx context.Context, url string, w, h int64) calReading {
 	t.Helper()
-	if err := chromedp.Run(ctx, chromedp.EmulateViewport(w, h), chromedp.Navigate(url)); err != nil {
+	if err := chromedp.Do(ctx, chromedp.EmulateViewport(w, h), chromedp.Navigate(url)); err != nil {
 		t.Fatal(err)
 	}
 	settleUntil(t, ctx, `!!document.querySelector("[rst-dtp-pick]")`)
-	if err := chromedp.Run(ctx, chromedp.Evaluate(`document.querySelector("[rst-dtp-pick]").click(), true`, nil)); err != nil {
+	openPicker := chromedp.Evaluate[chromedp.Void](
+		`document.querySelector("[rst-dtp-pick]").click(), true`)
+	if err := chromedp.Do(ctx, openPicker); err != nil {
 		t.Fatal(err)
 	}
 	settleUntil(t, ctx, `document.querySelectorAll("[rst-cal] [rst-cal-day]").length === 42`)
-	var raw string
-	if err := chromedp.Run(ctx, chromedp.Evaluate(calJS, &raw)); err != nil {
+	raw, err := chromedp.Run(ctx, chromedp.Evaluate[string](calJS))
+	if err != nil {
 		t.Fatal(err)
 	}
 	var c calReading
@@ -1052,7 +1069,12 @@ func TestTheFloorChangesNothingButSizeOnADesktop(t *testing.T) {
 	}
 	at := func(path string) map[int]styled {
 		var raw string
-		if err := chromedp.Run(ctx, chromedp.EmulateViewport(1280, 900), chromedp.Navigate(rig.Origin+path), chromedp.WaitReady("#dtp-row", chromedp.ByQuery), chromedp.Evaluate(read, &raw)); err != nil {
+		if err := chromedp.Do(ctx,
+			chromedp.EmulateViewport(1280, 900),
+			chromedp.Navigate(rig.Origin+path),
+			chromedp.WaitReady(chromedp.CSS("#dtp-row")),
+			harness.Into(&raw, chromedp.Evaluate[string](read)),
+		); err != nil {
 			t.Fatalf("%s: %v", path, err)
 		}
 		var got []styled

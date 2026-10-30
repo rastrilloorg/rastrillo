@@ -70,6 +70,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/chromedp/cdproto/cdp"
 	cdppage "github.com/chromedp/cdproto/page"
 	"github.com/chromedp/chromedp"
 
@@ -353,11 +354,12 @@ func TestTheHeaderRuleIsTheThemesTintedHairline(t *testing.T) {
 			for _, dir := range []string{"ltr", "rtl"} {
 				name := theme + "/" + scheme + "/" + dir
 				var raw string
-				if err := chromedp.Run(ctx,
+				if err := chromedp.Do(ctx,
 					chromedp.EmulateViewport(1280, 900),
 					chromedp.Navigate(rig.Origin+"/"+theme+"/"+scheme+"/"+dir+"/"),
-					chromedp.WaitVisible(`#h`, chromedp.ByQuery),
-					chromedp.Evaluate(headerRuleMeasure, &raw),
+					chromedp.WaitVisible(chromedp.CSS(`#h`)),
+					harness.Into(&raw,
+						chromedp.Evaluate[string](headerRuleMeasure)),
 				); err != nil {
 					t.Fatalf("%s: driving the header: %v", name, err)
 				}
@@ -458,16 +460,18 @@ func headerRuleStrip(ctx context.Context, t *testing.T, name string, got headerR
 		Scale:  1,
 	}
 	var buf []byte
-	if err := chromedp.Run(ctx, chromedp.ActionFunc(func(ctx context.Context) error {
-		var err error
-		buf, err = cdppage.CaptureScreenshot().
-			WithFormat(cdppage.CaptureScreenshotFormatPng).
-			WithFromSurface(true).
-			WithCaptureBeyondViewport(true).
-			WithClip(clip).
-			Do(ctx)
+	capture := func(ctx context.Context, target *chromedp.Target) error {
+		shot, err := cdp.Call(ctx, target, cdppage.CaptureScreenshot,
+			cdppage.CaptureScreenshotParams{
+				Format:                cdppage.CaptureScreenshotFormatPng,
+				FromSurface:           ptr(true),
+				CaptureBeyondViewport: ptr(true),
+				Clip:                  clip,
+			})
+		buf = shot.Data
 		return err
-	})); err != nil {
+	}
+	if err := chromedp.Do(ctx, chromedp.Func(capture)); err != nil {
 		t.Errorf("%s: capturing the rule strip: %v", name, err)
 		return
 	}

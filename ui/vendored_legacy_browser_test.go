@@ -24,8 +24,10 @@ func TestLightJSOnAnOldThemeWritesOntoNothingItPaints(t *testing.T) {
 	defer cancel()
 	shots := map[string][2][]byte{}
 	for i, dir := range []string{"/old/", "/new/"} {
-		mustRun(t, ctx, chromedp.EmulateViewport(1280, 1400), chromedp.Navigate(rig.Origin+dir), chromedp.WaitVisible("#field", chromedp.ByQuery),
-			chromedp.Evaluate(`new Promise(r => addEventListener("load", r, {once: true}) || document.readyState === "complete" && r())`, nil, awaitPromise))
+		mustRun(t, ctx, chromedp.EmulateViewport(1280, 1400), chromedp.Navigate(rig.Origin+dir), chromedp.WaitVisible(chromedp.CSS("#field")),
+			chromedp.Evaluate[chromedp.Void](`new Promise(r =>
+				addEventListener("load", r, {once: true}) ||
+				document.readyState === "complete" && r())`, awaitPromise))
 		bx, by, _, _ := rect(t, ctx, "#box")
 		move(t, ctx, 1270, 400)
 		move(t, ctx, bx+40, by+20)
@@ -56,8 +58,10 @@ func TestOldTokensWithANewThemeStillRenders(t *testing.T) {
 	ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
 	defer cancel()
 	for _, scheme := range []string{"light", "dark"} {
-		mustRun(t, ctx, chromedp.EmulateViewport(1280, 1400), chromedp.Navigate(rig.Origin+"/new/"), chromedp.WaitVisible("#field", chromedp.ByQuery),
-			chromedp.Evaluate(`document.documentElement.setAttribute("data-theme", "`+scheme+`"), true`, nil))
+		mustRun(t, ctx, chromedp.EmulateViewport(1280, 1400), chromedp.Navigate(rig.Origin+"/new/"), chromedp.WaitVisible(chromedp.CSS("#field")),
+			chromedp.Evaluate[chromedp.Void](
+				`document.documentElement
+					.setAttribute("data-theme", "`+scheme+`"), true`))
 		still(t, ctx)
 		wantFill, wantFg := "rgb(31, 86, 214)", "rgb(255, 255, 255)"
 		if scheme == "dark" {

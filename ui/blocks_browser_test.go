@@ -41,7 +41,7 @@ func TestSegTabsKeepAGapBelowThem(t *testing.T) {
 			rig := sizingRig(t, leg.coarse, segTabsPage(t))
 			ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
 			defer cancel()
-			mustRun(t, ctx, chromedp.EmulateViewport(leg.w, 844), chromedp.Navigate(rig.Origin+"/"), chromedp.WaitVisible("#box", chromedp.ByQuery))
+			mustRun(t, ctx, chromedp.EmulateViewport(leg.w, 844), chromedp.Navigate(rig.Origin+"/"), chromedp.WaitVisible(chromedp.CSS("#box")))
 			requirePointer(t, ctx, leg.coarse)
 			var g struct{ Want, Card, Box float64 }
 			at(t, ctx, `(() => { const gap = id => document.getElementById(id).getBoundingClientRect().top - document.querySelector("#" + id + "-tabs [rst-seg-tabs]").getBoundingClientRect().bottom;
@@ -81,7 +81,7 @@ func TestADetailListsLabelSitsOnItsValuesFirstLine(t *testing.T) {
 			rig := sizingRig(t, leg.coarse, pages)
 			ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
 			defer cancel()
-			mustRun(t, ctx, chromedp.EmulateViewport(leg.w, 844), chromedp.Navigate(rig.Origin+"/"), chromedp.WaitVisible("#box", chromedp.ByQuery))
+			mustRun(t, ctx, chromedp.EmulateViewport(leg.w, 844), chromedp.Navigate(rig.Origin+"/"), chromedp.WaitVisible(chromedp.CSS("#box")))
 			requirePointer(t, ctx, leg.coarse)
 			// A zero-size inline-block's bottom edge is the baseline of the
 			// line it sits on; put first in the element, it marks the first.

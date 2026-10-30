@@ -23,24 +23,28 @@ const screenBudget = 60 * time.Second
 // accumulated problem fails the test naming the screen it surfaced on.
 // "body" is the whole-page case for rastrillo's server-rendered apps,
 // which have no #app convention to hard-fail on.
-func (r *Rig) Screen(selector, note string) {
-	r.t.Helper()
-	ctx, cancel := context.WithTimeout(r.ctx, screenBudget)
+func (rig *Rig) Screen(selector, note string) {
+	rig.t.Helper()
+	ctx, cancel := context.WithTimeout(rig.ctx, screenBudget)
 	defer cancel()
-	if err := chromedp.Run(ctx, chromedp.WaitVisible(selector, chromedp.ByQuery)); err != nil {
-		r.fail(selector, note, fmt.Sprintf("screen %q never arrived: %v", selector, err))
+	if err := chromedp.Do(ctx, chromedp.WaitVisible(chromedp.CSS(selector))); err != nil {
+		rig.fail(selector, note,
+			fmt.Sprintf("screen %q never arrived: %v", selector, err))
 	}
-	if hits := r.junkHits(selector); len(hits) > 0 {
-		r.fail(selector, note, "a JS value leaked to the screen:\n  "+strings.Join(hits, "\n  "))
+	if hits := rig.junkHits(selector); len(hits) > 0 {
+		rig.fail(selector, note, "a JS value leaked to the screen:\n  "+
+			strings.Join(hits, "\n  "))
 	}
-	if probs := r.take(); len(probs) > 0 {
-		r.fail(selector, note, "the page reported problems:\n  "+strings.Join(probs, "\n  "))
+	if probs := rig.take(); len(probs) > 0 {
+		rig.fail(selector, note, "the page reported problems:\n  "+
+			strings.Join(probs, "\n  "))
 	}
 }
 
 // fail fails the test with what was on screen: a failure report always
 // includes what a person would have seen.
-func (r *Rig) fail(selector, note, msg string) {
-	r.t.Helper()
-	r.t.Fatalf("harness: %s: %s\non screen:\n%s", note, msg, r.onScreen(selector))
+func (rig *Rig) fail(selector, note, msg string) {
+	rig.t.Helper()
+	rig.t.Fatalf("harness: %s: %s\non screen:\n%s",
+		note, msg, rig.onScreen(selector))
 }

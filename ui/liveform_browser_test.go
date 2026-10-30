@@ -139,7 +139,7 @@ func TestASwappingFormSwapsItsRegionAndNotice(t *testing.T) {
 	    if (v && v.textContent === "two" && !window.__swapped) window.__swapped = performance.now(); })
 	    .observe(document.body, { childList: true, subtree: true });
 	  window.__t0 = performance.now(); true`, nil)
-	rig.Run(chromedp.Click("#go", chromedp.ByID))
+	rig.Run(chromedp.Click(chromedp.ID("#go")))
 	liveUntil(t, rig, "the form's regions and the notice swapped", `document.querySelector("#list .v").textContent === "two" &&
 	  document.querySelector("#other .o").textContent === "two" && document.getElementById("notice").textContent === "Saved."`, 10*time.Second)
 
@@ -177,10 +177,10 @@ func TestASwappingFormSendsItsSubmitter(t *testing.T) {
 	f := newFormApp(t, "list", swapForm("one"))
 	rig := formRig(t, f)
 	f.open(t, rig)
-	rig.Run(chromedp.Click("#b", chromedp.ByID))
+	rig.Run(chromedp.Click(chromedp.ID("#b")))
 	liveUntil(t, rig, "the B submit swapped", `document.getElementById("notice").textContent === "Saved."`, 10*time.Second)
 	liveEval(t, rig, `document.getElementById("notice").textContent = ""; document.getElementById("field").value = "see"; true`, nil)
-	rig.Run(chromedp.Click("#c", chromedp.ByID))
+	rig.Run(chromedp.Click(chromedp.ID("#c")))
 	liveUntil(t, rig, "the C submit swapped", `document.querySelector("#list .v").textContent === "see"`, 10*time.Second)
 
 	posts := f.sent()
@@ -217,7 +217,7 @@ func TestValidationErrorsSwapInPlaceAndTakeFocus(t *testing.T) {
 	rig.Allow(http.MethodPost, "/save", http.StatusUnprocessableEntity)
 	f.open(t, rig)
 	liveEval(t, rig, `window.__here = 1`, nil)
-	rig.Run(chromedp.Click("#go", chromedp.ByID))
+	rig.Run(chromedp.Click(chromedp.ID("#go")))
 	liveUntil(t, rig, "the errors swapped in", `document.querySelector("#list .v").textContent === "invalid"`, 10*time.Second)
 	var got struct {
 		Here  float64
@@ -274,7 +274,7 @@ func TestAnUnknownOutcomeKeepsInputAndNeverResubmits(t *testing.T) {
 		http.Error(w, "upstream gone", http.StatusServiceUnavailable)
 	}
 	liveEval(t, rig, `document.getElementById("field").value = "keep me"; true`, nil)
-	rig.Run(chromedp.Click("#go", chromedp.ByID))
+	rig.Run(chromedp.Click(chromedp.ID("#go")))
 	check("a 503 without regions", 1)
 	rig.Screen("#list", "a swapping form whose outcome is unknown")
 
@@ -297,7 +297,7 @@ func TestAnUnknownOutcomeKeepsInputAndNeverResubmits(t *testing.T) {
 	}
 	f.mu.Unlock()
 	liveEval(t, rig, `document.getElementById("notice").textContent = ""; document.getElementById("list").removeAttribute("data-live-stale"); true`, nil)
-	rig.Run(chromedp.Click("#go", chromedp.ByID))
+	rig.Run(chromedp.Click(chromedp.ID("#go")))
 	check("a dropped connection", 2)
 }
 
@@ -343,7 +343,7 @@ func TestBusyLeavesSwappingFormsToLive(t *testing.T) {
 		f.open(t, rig)
 		liveUntil(t, rig, order.name+": busy.js loaded", `window.__busy === 1`, 10*time.Second)
 		f.holdNext(1)
-		rig.Run(chromedp.Click("#go", chromedp.ByID))
+		rig.Run(chromedp.Click(chromedp.ID("#go")))
 		liveServerUntil(t, f.liveApp, order.name+": the answer is held", 10*time.Second, func(a *liveApp) bool { return a.inflight == 1 })
 		// Past busy.js's hand-back tick and its 650ms hold.
 		time.Sleep(900 * time.Millisecond)
@@ -379,7 +379,7 @@ func TestBusyLeavesSwappingFormsToLive(t *testing.T) {
 	liveEval(t, rig, `window.__seen = false; new MutationObserver(() => {
 	  if (document.getElementById("go").getAttribute("aria-busy") === "true") window.__seen = true;
 	}).observe(document.getElementById("go"), { attributes: true }); true`, nil)
-	rig.Run(chromedp.Click("#go", chromedp.ByID))
+	rig.Run(chromedp.Click(chromedp.ID("#go")))
 	liveUntil(t, rig, "the plain form went busy", `window.__seen === true || !!document.getElementById("sent")`, 10*time.Second)
 	var seen bool
 	liveEval(t, rig, `window.__seen === true`, &seen)
@@ -413,7 +413,7 @@ func TestFormsLiveCannotSendSubmitNatively(t *testing.T) {
 		f.inner["list"] = leg.form
 		f.mu.Unlock()
 		f.open(t, rig)
-		rig.Run(chromedp.Click("#go", chromedp.ByID))
+		rig.Run(chromedp.Click(chromedp.ID("#go")))
 		liveServerUntil(t, f.liveApp, leg.name+": the server got the submission", 10*time.Second, func(*liveApp) bool { return len(f.posts) > 0 })
 		time.Sleep(200 * time.Millisecond)
 		posts := f.sent()
@@ -441,7 +441,7 @@ func TestAFormsAnswerOutranksTheStream(t *testing.T) {
 	f.change("list", swapForm("stream"))
 	liveServerUntil(t, f.liveApp, "the stream's fetch is out", 10*time.Second, func(a *liveApp) bool { return a.inflight == 1 })
 	liveEval(t, rig, `document.getElementById("field").value = "form"; true`, nil)
-	rig.Run(chromedp.Click("#go", chromedp.ByID))
+	rig.Run(chromedp.Click(chromedp.ID("#go")))
 	liveUntil(t, rig, "the form's answer applied", `document.querySelector("#list .v").textContent === "form"`, 10*time.Second)
 	f.letGo()
 	time.Sleep(500 * time.Millisecond)
@@ -456,7 +456,7 @@ func TestAFormsAnswerOutranksTheStream(t *testing.T) {
 	f.mu.Unlock()
 	f.holdNext(1)
 	liveEval(t, rig, `seen = ["form"]; document.getElementById("field").value = "form2"; true`, nil)
-	rig.Run(chromedp.Click("#go", chromedp.ByID))
+	rig.Run(chromedp.Click(chromedp.ID("#go")))
 	liveServerUntil(t, f.liveApp, "the form's answer is held", 10*time.Second, func(a *liveApp) bool { return a.inflight == 1 })
 	f.change("list", swapForm("stream2"))
 	time.Sleep(500 * time.Millisecond)
@@ -499,7 +499,7 @@ func TestAFormAnswerWithoutItsRegionsIsShownAsTheBrowserWould(t *testing.T) {
 		f.answer, f.streams = leg.answer, nil
 		f.mu.Unlock()
 		f.open(t, rig)
-		rig.Run(chromedp.Click("#go", chromedp.ByID))
+		rig.Run(chromedp.Click(chromedp.ID("#go")))
 		liveUntil(t, rig, leg.name, leg.check, 10*time.Second)
 	}
 	var navigated bool
@@ -515,7 +515,7 @@ func TestAFormAnswerWithoutItsRegionsIsShownAsTheBrowserWould(t *testing.T) {
 	f.mu.Unlock()
 	f.open(t, rig)
 	liveEval(t, rig, `addEventListener("pageshow", e => { window.__restored = e.persisted; }); true`, nil)
-	rig.Run(chromedp.Click("#go", chromedp.ByID))
+	rig.Run(chromedp.Click(chromedp.ID("#go")))
 	liveUntil(t, rig, "navigated to /there", `location.pathname === "/there" && !!document.getElementById("there")`, 10*time.Second)
 	liveEval(t, rig, `setTimeout(() => history.back(), 0); true`, nil)
 	liveUntil(t, rig, "back on the form's page", `location.pathname === "/" && window.__restored !== undefined`, 10*time.Second)
@@ -546,7 +546,7 @@ func TestAFormOutHoldsABackgroundNavigation(t *testing.T) {
 	f.open(t, rig)
 	liveEval(t, rig, `window.__here = 1; true`, nil)
 	f.holdNext(1)
-	rig.Run(chromedp.Click("#go", chromedp.ByID))
+	rig.Run(chromedp.Click(chromedp.ID("#go")))
 	liveServerUntil(t, f.liveApp, "the form's answer is held", 10*time.Second, func(a *liveApp) bool { return a.inflight == 1 })
 	f.remove("gone")
 	liveServerUntil(t, f.liveApp, "the stream fetched the removed region", 10*time.Second, func(a *liveApp) bool { return slices.Contains(a.fragments, "gone") })
@@ -585,9 +585,9 @@ func TestAFormWhoseNavigationIsSupersededIsHandedBack(t *testing.T) {
 	rig := formRig(t, f)
 	f.open(t, rig)
 	liveEval(t, rig, `window.__here = 1; true`, nil)
-	rig.Run(chromedp.Click("#go", chromedp.ByID))
+	rig.Run(chromedp.Click(chromedp.ID("#go")))
 	liveServerUntil(t, f.liveApp, "form A's POST is held", 10*time.Second, func(*liveApp) bool { return len(f.posts) == 1 })
-	rig.Run(chromedp.Click("#gob", chromedp.ByID))
+	rig.Run(chromedp.Click(chromedp.ID("#gob")))
 	liveUntil(t, rig, "form B's answer swapped", `document.getElementById("notice").textContent === "Saved."`, 10*time.Second)
 	close(gate)
 	liveServerUntil(t, f.liveApp, "form A's redirect was answered", 10*time.Second, func(*liveApp) bool { return len(f.posts) == 2 })
@@ -616,7 +616,7 @@ func TestAFormAnswerLeavesADraftInAnotherTarget(t *testing.T) {
 	rig := formRig(t, f)
 	f.open(t, rig)
 	liveEval(t, rig, `document.getElementById("draft").value = "keep"; document.getElementById("field").value = "two"; true`, nil)
-	rig.Run(chromedp.Click("#go", chromedp.ByID))
+	rig.Run(chromedp.Click(chromedp.ID("#go")))
 	liveUntil(t, rig, "the form's own region swapped", `document.querySelector("#list .v").textContent === "two" &&
 	  document.getElementById("notice").textContent === "Saved."`, 10*time.Second)
 	time.Sleep(200 * time.Millisecond)
@@ -646,7 +646,7 @@ func TestAFormAnswerInPlainTextIsShownAsText(t *testing.T) {
 	rig := formRig(t, f)
 	rig.Allow(http.MethodPost, "/save", http.StatusUnprocessableEntity)
 	f.open(t, rig)
-	rig.Run(chromedp.Click("#go", chromedp.ByID))
+	rig.Run(chromedp.Click(chromedp.ID("#go")))
 	liveUntil(t, rig, "the answer replaced the page", `!document.getElementById("list")`, 10*time.Second)
 	time.Sleep(300 * time.Millisecond)
 	var got struct {
@@ -670,7 +670,7 @@ func TestAFormSwapReleasesARegionWaitingOnEditing(t *testing.T) {
 	liveEval(t, rig, `window.__here = 1; document.getElementById("field").value = "draft"; true`, nil)
 	f.remove("gone")
 	liveUntil(t, rig, "the navigating region held back", `document.getElementById("gone").hasAttribute("data-live-stale")`, 10*time.Second)
-	rig.Run(chromedp.Click("#go", chromedp.ByID))
+	rig.Run(chromedp.Click(chromedp.ID("#go")))
 	liveUntil(t, rig, "navigated once the form's swap ended the editing",
 		`window.__here === undefined && document.readyState === "complete" && !document.getElementById("gone") && !!document.getElementById("list")`, 10*time.Second)
 	rig.Screen("#list", "the page after a form's swap released a held navigation")
@@ -712,7 +712,7 @@ func TestASwappingFormDefersToAHandlerThatCancels(t *testing.T) {
 			f.open(t, rig)
 			liveUntil(t, rig, name+": scripts loaded", `window.__busy === 1`, 10*time.Second)
 			liveEval(t, rig, `{ const f = document.getElementById("f"); `+leg.on+`.addEventListener("submit", e => { if (e.target === f) { `+leg.handler+` } }); } true`, nil)
-			rig.Run(chromedp.Click("#go", chromedp.ByID))
+			rig.Run(chromedp.Click(chromedp.ID("#go")))
 			// Past live.js's hold and busy.js's, so a send or a hand-back
 			// either would make has happened.
 			time.Sleep(1200 * time.Millisecond)
@@ -778,7 +778,7 @@ func TestALiveNavigationKeepsTheLocalePrefix(t *testing.T) {
 	})
 	rig.Run(chromedp.Navigate(rig.Origin + "/fr/list"))
 	liveServerUntil(t, f.liveApp, "the page opened its stream", 10*time.Second, func(a *liveApp) bool { return len(a.streams) > 0 })
-	rig.Run(chromedp.Click("#go", chromedp.ByID))
+	rig.Run(chromedp.Click(chromedp.ID("#go")))
 	liveUntil(t, rig, "the browser left for the prefixed URL", `!!document.getElementById("item")`, 10*time.Second)
 	var path string
 	liveEval(t, rig, `location.pathname`, &path)

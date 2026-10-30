@@ -172,9 +172,7 @@ func newRig(t *testing.T, mode basepath.DirectHost) (*harness.Rig, *edge) {
 }
 
 func eval[T any](rig *harness.Rig, expr string) T {
-	var v T
-	rig.Run(chromedp.Evaluate(expr, &v))
-	return v
+	return harness.Evaluate[T](rig, expr)
 }
 
 func html(rig *harness.Rig) []byte {
@@ -191,11 +189,14 @@ var underAcme = regexp.MustCompile(`\s[a-zA-Z-]+="/acme[^"]*"`)
 // act runs a step that waits on the page, such as a click, within a
 // bound: the rig's own context has none, so a control the layout hides
 // would otherwise hang until the test binary's timeout.
-func act(t *testing.T, rig *harness.Rig, what string, actions ...chromedp.Action) {
+func act(
+	t *testing.T, rig *harness.Rig, what string,
+	actions ...chromedp.Action[chromedp.Void],
+) {
 	t.Helper()
 	ctx, cancel := context.WithTimeout(rig.Context(), 30*time.Second)
 	defer cancel()
-	if err := chromedp.Run(ctx, actions...); err != nil {
+	if err := chromedp.Do(ctx, actions...); err != nil {
 		t.Fatalf("%s: %v\nlocation: %s", what, err, eval[string](rig, "location.href"))
 	}
 }
@@ -210,8 +211,12 @@ func landsOn(t *testing.T, rig *harness.Rig, want string) {
 	var got string
 	for time.Now().Before(deadline) {
 		ctx, cancel := context.WithTimeout(rig.Context(), 5*time.Second)
-		err := chromedp.Run(ctx, chromedp.Evaluate("document.readyState === 'complete' ? location.pathname : ''", &got))
+		pathname, err := chromedp.Run(ctx, chromedp.Evaluate[string](
+			"document.readyState === 'complete' ? location.pathname : ''"))
 		cancel()
+		if err == nil {
+			got = pathname
+		}
 		if err == nil && got == want {
 			return
 		}
@@ -225,9 +230,9 @@ func landsOn(t *testing.T, rig *harness.Rig, want string) {
 func chooseSpanish(t *testing.T, rig *harness.Rig) {
 	t.Helper()
 	act(t, rig, "choosing Español in the profile menu",
-		chromedp.Click(`details[rst-shell-profile] > summary`, chromedp.ByQuery),
-		chromedp.Click(`details[rst-locale] > summary`, chromedp.ByQuery),
-		chromedp.Click(`details[rst-locale] button[lang="es"]`, chromedp.ByQuery),
+		chromedp.Click(chromedp.CSS(`details[rst-shell-profile] > summary`)),
+		chromedp.Click(chromedp.CSS(`details[rst-locale] > summary`)),
+		chromedp.Click(chromedp.CSS(`details[rst-locale] button[lang="es"]`)),
 	)
 }
 
@@ -299,7 +304,7 @@ func TestBasePathRedirectsTheDirectHost(t *testing.T) {
 		t.Errorf("home under /acme links outside it: %q", l)
 	}
 
-	act(t, rig, "following the Overview link", chromedp.Click(`a[href="/acme/overview"]`, chromedp.ByQuery))
+	act(t, rig, "following the Overview link", chromedp.Click(chromedp.CSS(`a[href="/acme/overview"]`)))
 	landsOn(t, rig, "/acme/overview")
 	rig.Screen("body", "overview under /acme")
 
@@ -422,11 +427,11 @@ func TestBasePathKeepsRelativeURLsInTheTenant(t *testing.T) {
 		t.Errorf("the relative image did not load from /acme/%s", asset)
 	}
 
-	act(t, rig, "following the relative link", chromedp.Click(`#rel-link`, chromedp.ByQuery))
+	act(t, rig, "following the relative link", chromedp.Click(chromedp.CSS(`#rel-link`)))
 	landsOn(t, rig, "/acme/overview")
 
 	rig.Run(chromedp.Navigate(rig.Origin + "/acme/?asset=" + url.QueryEscape(asset)))
-	act(t, rig, "submitting the relative form", chromedp.Click(`#rel-submit`, chromedp.ByQuery))
+	act(t, rig, "submitting the relative form", chromedp.Click(chromedp.CSS(`#rel-submit`)))
 	landsOn(t, rig, "/acme/overview")
 	if scheme := eval[string](rig, "document.documentElement.dataset.theme ?? ''"); scheme != "dark" {
 		t.Errorf("after the relative form the page's data-theme is %q, want dark: the post did not reach the tenant's switch", scheme)

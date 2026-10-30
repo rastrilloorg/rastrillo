@@ -9,8 +9,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/chromedp/cdproto/emulation"
-	"github.com/chromedp/cdproto/input"
 	"github.com/chromedp/chromedp"
 
 	"amadan.net/rastrillo/rastrillo/harness"
@@ -73,19 +71,25 @@ func TestTheGalleryLandsAnOSFlipWithItsOwnListener(t *testing.T) {
 	ctx, cancel := context.WithTimeout(rig.Context(), 90*time.Second)
 	defer cancel()
 	where := "the overview at 1280px, shim listener removed"
-	os := func(scheme string) chromedp.Action {
-		return emulation.SetEmulatedMedia().WithFeatures([]*emulation.MediaFeature{{Name: "prefers-color-scheme", Value: scheme}})
+	os := func(scheme string) chromedp.Action[chromedp.Void] {
+		return prefersColorScheme(scheme)
 	}
-	if err := chromedp.Run(ctx, os("light"), chromedp.EmulateViewport(1280, 900),
+	if err := chromedp.Do(ctx, os("light"), chromedp.EmulateViewport(1280, 900),
 		chromedp.Navigate(rig.Origin+indexHref(mountPath, RootTheme(), "en")),
-		chromedp.WaitReady(`body`, chromedp.ByQuery)); err != nil {
+		chromedp.WaitReady(chromedp.CSS(`body`))); err != nil {
 		t.Fatalf("%s: loading: %v", where, err)
 	}
 	until(t, ctx, where, `document.readyState === "complete" && !document.documentElement.hasAttribute("data-theme") && matchMedia("(hover: hover)").matches`)
 	// The control: the page really did lose the shim's listener, or
 	// the drive proves nothing about the gallery's.
-	var shimHasListener bool
-	if err := chromedp.Run(ctx, chromedp.Evaluate(`(async () => { const s = [...document.scripts].find(s => /rastrillo\.[0-9a-f]+\.js$/.test(s.src)); const body = await (await fetch(s.src)).text(); return body.includes("osScheme.onchange"); })()`, &shimHasListener, awaitPromise)); err != nil {
+	shimHasListener, err := chromedp.Run(ctx, chromedp.Evaluate[bool](
+		`(async () => {
+		  const s = [...document.scripts]
+		    .find(s => /rastrillo\.[0-9a-f]+\.js$/.test(s.src));
+		  const body = await (await fetch(s.src)).text();
+		  return body.includes("osScheme.onchange"); })()`,
+		chromedp.EvalAwaitPromise))
+	if err != nil {
 		t.Fatalf("%s: reading the served shim: %v", where, err)
 	}
 	if shimHasListener {
@@ -94,23 +98,41 @@ func TestTheGalleryLandsAnOSFlipWithItsOwnListener(t *testing.T) {
 	// A rail item that is not the current one, hovered by the mouse,
 	// and its colour allowed to settle. The overview shows only its own
 	// link; the rest sit in closed sections, so the first is opened.
-	var r struct{ X, Y float64 }
-	if err := chromedp.Run(ctx, chromedp.Evaluate(`(() => { const s = document.createElement("style"); s.textContent = "[rst-shell-nav] a, [rst-shell-nav] a:hover { transition: color 0.25s ease !important; }"; document.head.append(s); document.querySelector('.ds-nav details').open = true; const a = [...document.querySelectorAll('[rst-shell-nav] a:not([aria-current])')].find(a => a.checkVisibility()); window.__hov = a; const b = a.getBoundingClientRect(); return {X: b.left + b.width / 2, Y: b.top + b.height / 2}; })()`, &r)); err != nil {
+	slowFade := `"[rst-shell-nav] a, [rst-shell-nav] a:hover {` +
+		` transition: color 0.25s ease !important; }"`
+	r, err := chromedp.Run(ctx, chromedp.Evaluate[struct{ X, Y float64 }](
+		`(() => {
+		  const s = document.createElement("style");
+		  s.textContent = `+slowFade+`;
+		  document.head.append(s);
+		  document.querySelector('.ds-nav details').open = true;
+		  const a = [...document.querySelectorAll(
+		    '[rst-shell-nav] a:not([aria-current])')]
+		    .find(a => a.checkVisibility());
+		  window.__hov = a;
+		  const b = a.getBoundingClientRect();
+		  return {X: b.left + b.width / 2, Y: b.top + b.height / 2}; })()`))
+	if err != nil {
 		t.Fatalf("%s: finding a rail item: %v", where, err)
 	}
 	settled := func(leg string) string {
 		t.Helper()
-		var bg string
-		if err := chromedp.Run(ctx, chromedp.Evaluate(`(async () => { await Promise.all(window.__hov.getAnimations().map(a => a.finished.catch(() => null))); return getComputedStyle(window.__hov).color; })()`, &bg, awaitPromise)); err != nil {
+		bg, err := chromedp.Run(ctx, chromedp.Evaluate[string](`(async () => {
+		  await Promise.all(window.__hov.getAnimations()
+		    .map(a => a.finished.catch(() => null)));
+		  return getComputedStyle(window.__hov).color; })()`,
+			chromedp.EvalAwaitPromise))
+		if err != nil {
 			t.Fatalf("%s, %s: %v", where, leg, err)
 		}
 		return bg
 	}
-	var rest string
-	if err := chromedp.Run(ctx, chromedp.Evaluate(`getComputedStyle(window.__hov).color`, &rest)); err != nil {
+	rest, err := chromedp.Run(ctx, chromedp.Evaluate[string](`getComputedStyle(window.__hov).color`))
+	if err != nil {
 		t.Fatal(err)
 	}
-	if err := chromedp.Run(ctx, chromedp.MouseEvent(input.MouseMoved, r.X, r.Y)); err != nil {
+	if err := chromedp.Do(ctx,
+		chromedp.MouseEvent(chromedp.MouseMoved, r.X, r.Y)); err != nil {
 		t.Fatalf("%s: hovering: %v", where, err)
 	}
 	hoverLight := settled("hovered, OS light")
@@ -120,7 +142,12 @@ func TestTheGalleryLandsAnOSFlipWithItsOwnListener(t *testing.T) {
 	// The flip, read a frame later: the change event reaches script a
 	// frame after the style update that starts the fade.
 	var next string
-	if err := chromedp.Run(ctx, os("dark"), chromedp.Evaluate(`new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(getComputedStyle(window.__hov).color))))`, &next, awaitPromise)); err != nil {
+	if err := chromedp.Do(ctx, os("dark"), harness.Into(&next,
+		chromedp.Evaluate[string](
+			`new Promise(r => requestAnimationFrame(() =>
+			  requestAnimationFrame(() =>
+			    r(getComputedStyle(window.__hov).color))))`,
+			chromedp.EvalAwaitPromise))); err != nil {
 		t.Fatalf("%s: flipping the OS: %v", where, err)
 	}
 	hoverDark := settled("hovered, OS dark")

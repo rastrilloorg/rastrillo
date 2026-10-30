@@ -30,8 +30,8 @@ import (
 // after it has run: where a keystroke's deferred search has landed.
 const afterFrame = `new Promise((r) => requestAnimationFrame(() => setTimeout(() => r(0), 0)))`
 
-func awaitPromise(p *runtime.EvaluateParams) *runtime.EvaluateParams {
-	return p.WithAwaitPromise(true)
+func awaitPromise(p *runtime.EvaluateParams) {
+	p.AwaitPromise = ptr(true)
 }
 
 // zones is a time-zone list long enough (over fifty rows) that a
@@ -177,15 +177,20 @@ func drive(t *testing.T, script string, out any) {
 	rig := harness.New(t, func(string) http.Handler { return mux })
 	ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
 	defer cancel()
-	var raw string
-	if err := chromedp.Run(ctx,
+	focus := emulation.SetFocusEmulationEnabledParams{Enabled: true}
+	if err := chromedp.Do(ctx,
 		// A page in a background tab gets no focus events from focus(),
 		// so a handler that reacts to focus could not be observed at all.
-		emulation.SetFocusEmulationEnabled(true),
+		send(emulation.SetFocusEmulationEnabled, focus),
 		chromedp.Navigate(rig.Origin+"/"),
-		chromedp.WaitVisible(`#tz-combo`, chromedp.ByQuery),
-		chromedp.Evaluate(`(async () => JSON.stringify(await (async () => {`+script+`})()))()`, &raw, awaitPromise),
+		chromedp.WaitVisible(chromedp.CSS(`#tz-combo`)),
 	); err != nil {
+		t.Fatalf("drive failed: %v", err)
+	}
+	raw, err := chromedp.Run(ctx, chromedp.Evaluate[string](
+		`(async () => JSON.stringify(await (async () => {`+script+`})()))()`,
+		awaitPromise))
+	if err != nil {
 		t.Fatalf("drive failed: %v", err)
 	}
 	if err := json.Unmarshal([]byte(raw), out); err != nil {

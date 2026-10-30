@@ -33,7 +33,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/chromedp/cdproto/emulation"
 	"github.com/chromedp/chromedp"
 	"github.com/chromedp/chromedp/kb"
 
@@ -83,8 +82,11 @@ func TestSchemeToggleDrivesTheWholeJourney(t *testing.T) {
 	)
 
 	reached := "start"
-	at := func(name string) chromedp.Action {
-		return chromedp.ActionFunc(func(context.Context) error { reached = name; return nil })
+	at := func(name string) chromedp.Action[chromedp.Void] {
+		return chromedp.Func(func(context.Context, *chromedp.Target) error {
+			reached = name
+			return nil
+		})
 	}
 
 	// Every selector is scoped to the bar: on the Overview the controls
@@ -101,52 +103,56 @@ func TestSchemeToggleDrivesTheWholeJourney(t *testing.T) {
 	const stored = `localStorage.getItem("rst-ds-scheme") ?? "(none)"`
 	const themeAttr = `document.documentElement.getAttribute("data-theme") ?? "(none)"`
 
-	if err := chromedp.Run(ctx,
+	if err := chromedp.Do(ctx,
 		// Wide, because the bar is hidden below 800px and the default
 		// headless viewport is 780px: there the Overview is the phone
 		// index and the bar's toggle never becomes visible.
 		chromedp.EmulateViewport(1280, 900),
 		chromedp.Navigate(url), at("navigated"),
-		chromedp.WaitVisible(`.ds-top [data-ds-scheme="dark"]`, chromedp.ByQuery), at("toggle-visible"),
+		chromedp.WaitVisible(chromedp.CSS(`.ds-top [data-ds-scheme="dark"]`)), at("toggle-visible"),
 
 		// A first visit is System: no attribute, nothing stored, and
 		// the toggle is on screen because gallery.js said so.
-		chromedp.Evaluate(`document.documentElement.getAttribute("data-rst-js") ?? "(none)"`, &jsMarker),
-		chromedp.Evaluate(themeAttr, &freshTheme),
-		chromedp.Evaluate(stored, &freshStored),
-		chromedp.Evaluate(`getComputedStyle(document.querySelector(".ds-top .ds-scheme")).display !== "none"`, &toggleShown),
+		harness.Into(&jsMarker, chromedp.Evaluate[string](
+			`document.documentElement.getAttribute("data-rst-js")
+			  ?? "(none)"`)),
+		harness.Into(&freshTheme, chromedp.Evaluate[string](themeAttr)),
+		harness.Into(&freshStored, chromedp.Evaluate[string](stored)),
+		harness.Into(&toggleShown, chromedp.Evaluate[bool](
+			`getComputedStyle(document.querySelector(".ds-top .ds-scheme"))
+			  .display !== "none"`)),
 		// The scriptless half, asked of the real engine rather than of
 		// the stylesheet text: take the marker away and the control
 		// goes with it, which is exactly what a reader with JavaScript
 		// off sees.
-		chromedp.Evaluate(`(() => {
+		harness.Into(&toggleHiddenWithNoJS, chromedp.Evaluate[bool](`(() => {
 		  document.documentElement.removeAttribute("data-rst-js");
 		  const gone = getComputedStyle(document.querySelector(".ds-top .ds-scheme")).display === "none";
 		  document.documentElement.setAttribute("data-rst-js", "on");
 		  return gone;
-		})()`, &toggleHiddenWithNoJS),
+		})()`)),
 		at("first-visit-read"),
 
 		// Choose Dark.
-		chromedp.Click(`.ds-top [data-ds-scheme="dark"]`, chromedp.ByQuery), at("clicked-dark"),
-		chromedp.WaitReady(`html[data-theme="dark"]`, chromedp.ByQuery), at("dark-applied"),
-		chromedp.Evaluate(themeAttr, &darkTheme),
-		chromedp.Evaluate(stored, &darkStored),
+		chromedp.Click(chromedp.CSS(`.ds-top [data-ds-scheme="dark"]`)), at("clicked-dark"),
+		chromedp.WaitReady(chromedp.CSS(`html[data-theme="dark"]`)), at("dark-applied"),
+		harness.Into(&darkTheme, chromedp.Evaluate[string](themeAttr)),
+		harness.Into(&darkStored, chromedp.Evaluate[string](stored)),
 
 		// Reload: the choice has to survive a fresh document, and it
 		// has to be on the element before the first paint — which is
 		// what WaitReady on the attribute selector is asking.
 		chromedp.Navigate(url), at("reloaded"),
-		chromedp.WaitReady(`html[data-theme="dark"]`, chromedp.ByQuery), at("dark-persisted"),
-		chromedp.Evaluate(themeAttr, &afterReloadTheme),
-		chromedp.Evaluate(pressed, &reloadPressed),
+		chromedp.WaitReady(chromedp.CSS(`html[data-theme="dark"]`)), at("dark-persisted"),
+		harness.Into(&afterReloadTheme, chromedp.Evaluate[string](themeAttr)),
+		harness.Into(&reloadPressed, chromedp.Evaluate[string](pressed)),
 
 		// Back to System: the attribute goes, and so does the memory.
-		chromedp.Click(`.ds-top [data-ds-scheme="system"]`, chromedp.ByQuery), at("clicked-system"),
-		chromedp.WaitReady(`html:not([data-theme])`, chromedp.ByQuery), at("system-applied"),
-		chromedp.Evaluate(themeAttr, &systemTheme),
-		chromedp.Evaluate(stored, &afterSystemStored),
-		chromedp.Evaluate(pressed, &systemPressed),
+		chromedp.Click(chromedp.CSS(`.ds-top [data-ds-scheme="system"]`)), at("clicked-system"),
+		chromedp.WaitReady(chromedp.CSS(`html:not([data-theme])`)), at("system-applied"),
+		harness.Into(&systemTheme, chromedp.Evaluate[string](themeAttr)),
+		harness.Into(&afterSystemStored, chromedp.Evaluate[string](stored)),
+		harness.Into(&systemPressed, chromedp.Evaluate[string](pressed)),
 		at("done"),
 	); err != nil {
 		t.Fatalf("drive failed after %q: %v", reached, err)
@@ -325,26 +331,29 @@ func TestTheSidebarFilterDrivesTheWholeJourney(t *testing.T) {
 	)
 
 	reached := "start"
-	at := func(name string) chromedp.Action {
-		return chromedp.ActionFunc(func(context.Context) error { reached = name; return nil })
+	at := func(name string) chromedp.Action[chromedp.Void] {
+		return chromedp.Func(func(context.Context, *chromedp.Target) error {
+			reached = name
+			return nil
+		})
 	}
 
 	// Each step is a query on its own rather than one appended to the
 	// last, so the box is emptied through the same input event a reader
 	// selecting-all and typing over would raise.
-	typing := func(q string) chromedp.Tasks {
-		return chromedp.Tasks{
-			chromedp.Focus(`#ds-filter`, chromedp.ByQuery),
-			chromedp.Evaluate(`(() => {
+	typing := func(q string) chromedp.Action[chromedp.Void] {
+		return chromedp.Steps(
+			chromedp.Focus(chromedp.CSS(`#ds-filter`)),
+			chromedp.Evaluate[chromedp.Void](`(() => {
 			  const box = document.querySelector("[data-ds-filter]");
 			  box.value = "";
 			  box.dispatchEvent(new Event("input", {bubbles: true}));
-			})()`, nil),
-			chromedp.SendKeys(`#ds-filter`, q, chromedp.ByQuery),
-		}
+			})()`),
+			chromedp.SendKeys(chromedp.CSS(`#ds-filter`), q),
+		)
 	}
 
-	if err := chromedp.Run(ctx,
+	if err := chromedp.Do(ctx,
 		// A window wide enough for the rail to be a rail. Below 800px
 		// the sidebar shell folds it behind the <details> chrome strip
 		// and it is display:none until a reader opens it — correct
@@ -353,13 +362,13 @@ func TestTheSidebarFilterDrivesTheWholeJourney(t *testing.T) {
 		// the harness happened to open.
 		chromedp.EmulateViewport(1280, 900),
 		chromedp.Navigate(url), at("navigated"),
-		chromedp.WaitVisible(`#ds-filter`, chromedp.ByQuery), at("filter-visible"),
-		chromedp.Evaluate(railProbe, &fresh),
+		chromedp.WaitVisible(chromedp.CSS(`#ds-filter`)), at("filter-visible"),
+		harness.Into(&fresh, chromedp.Evaluate[railState](railProbe)),
 
 		// The scriptless half, asked of the real engine: take the
 		// marker away and the box goes with it, while every link in the
 		// rail stays exactly where it was.
-		chromedp.Evaluate(`(() => {
+		harness.Into(&scriptless, chromedp.Evaluate[railState](`(() => {
 		  document.documentElement.removeAttribute("data-rst-js");
 		  const seen = el => getComputedStyle(el).display !== "none";
 		  const links = Array.from(document.querySelectorAll("#ds-nav details a"));
@@ -373,14 +382,15 @@ func TestTheSidebarFilterDrivesTheWholeJourney(t *testing.T) {
 		  };
 		  document.documentElement.setAttribute("data-rst-js", "on");
 		  return state;
-		})()`, &scriptless),
-		chromedp.Evaluate(`document.querySelectorAll("#ds-nav details a").length`, &navWithNoJS),
+		})()`)),
+		harness.Into(&navWithNoJS, chromedp.Evaluate[int](
+			`document.querySelectorAll("#ds-nav details a").length`)),
 		at("scriptless-read"),
 
 		// A partial's own name: one entry left in Partials, every other
 		// section folded away.
 		typing("badge"), at("typed-badge"),
-		chromedp.Evaluate(railProbe, &badge),
+		harness.Into(&badge, chromedp.Evaluate[railState](railProbe)),
 
 		// A section's name stands for the run under it, while the rest
 		// of the rail keeps only what matches on its own: "form" is
@@ -388,22 +398,22 @@ func TestTheSidebarFilterDrivesTheWholeJourney(t *testing.T) {
 		// Display. "shells" below cannot show that, because nothing
 		// outside the Shells section matches it.
 		typing("form"), at("typed-form"),
-		chromedp.Evaluate(railProbe, &family),
+		harness.Into(&family, chromedp.Evaluate[railState](railProbe)),
 
 		// A section's own name: the whole section, and nothing from any
 		// other. "shells" is not a substring of any entry's label
 		// anywhere else in the rail, so what is left can only have come
 		// from the summary matching.
 		typing("shells"), at("typed-section-name"),
-		chromedp.Evaluate(railProbe, &titled),
+		harness.Into(&titled, chromedp.Evaluate[railState](railProbe)),
 
 		// Junk: nothing left, and the page's own sentence saying so.
 		typing("zzqqxx"), at("typed-junk"),
-		chromedp.Evaluate(railProbe, &junk),
+		harness.Into(&junk, chromedp.Evaluate[railState](railProbe)),
 
 		// Escape clears it, from inside the box, with focus unmoved.
 		chromedp.KeyEvent(kb.Escape), at("escaped"),
-		chromedp.Evaluate(railProbe, &cleared),
+		harness.Into(&cleared, chromedp.Evaluate[railState](railProbe)),
 
 		// The same key again, this time as an untrusted event. Chromium
 		// clears an <input type="search"> on Escape all by itself, so
@@ -414,17 +424,20 @@ func TestTheSidebarFilterDrivesTheWholeJourney(t *testing.T) {
 		// which has no native Escape on a search field, is the engine
 		// that makes the difference matter.
 		typing("zzqqxx"), at("typed-junk-again"),
-		chromedp.Evaluate(`document.querySelector("[data-ds-filter]").dispatchEvent(
-		  new KeyboardEvent("keydown", {key: "Escape", bubbles: true, cancelable: true}))`, nil),
-		chromedp.Evaluate(railProbe, &handled),
+		chromedp.Evaluate[chromedp.Void](
+			`document.querySelector("[data-ds-filter]").dispatchEvent(
+		  new KeyboardEvent("keydown", {key: "Escape", bubbles: true, cancelable: true}))`),
+		harness.Into(&handled, chromedp.Evaluate[railState](railProbe)),
 
 		// A section the reader collapses by hand is opened by a query
 		// that finds something in it, and folded back when the query
 		// goes.
-		chromedp.Evaluate(fmt.Sprintf(`document.querySelectorAll("#ds-nav details")[%d].open = false`, discloseIndex("display")), nil),
+		chromedp.Evaluate[chromedp.Void](fmt.Sprintf(
+			`document.querySelectorAll("#ds-nav details")[%d].open = false`,
+			discloseIndex("display"))),
 		typing("badge"), at("typed-into-collapsed"),
 		chromedp.KeyEvent(kb.Escape), at("escaped-again"),
-		chromedp.Evaluate(railProbe, &restored),
+		harness.Into(&restored, chromedp.Evaluate[railState](railProbe)),
 
 		// The Spanish page, for the half of the fold a monolingual
 		// journey can never reach. "Presentación" is a section heading
@@ -433,11 +446,11 @@ func TestTheSidebarFilterDrivesTheWholeJourney(t *testing.T) {
 		// with the fold replaced by a plain toLowerCase both queries
 		// find nothing at all.
 		chromedp.Navigate(rig.Origin+pageHref(mountPath, RootTheme(), "es", fileOf("display"))), at("navigated-es"),
-		chromedp.WaitVisible(`#ds-filter`, chromedp.ByQuery), at("es-filter-visible"),
+		chromedp.WaitVisible(chromedp.CSS(`#ds-filter`)), at("es-filter-visible"),
 		typing("presentacion"), at("typed-unaccented-family"),
-		chromedp.Evaluate(railProbe, &accented),
+		harness.Into(&accented, chromedp.Evaluate[railState](railProbe)),
 		typing("lineas"), at("typed-unaccented-group"),
-		chromedp.Evaluate(railProbe, &unaccented),
+		harness.Into(&unaccented, chromedp.Evaluate[railState](railProbe)),
 		at("done"),
 	); err != nil {
 		t.Fatalf("drive failed after %q: %v", reached, err)
@@ -684,36 +697,35 @@ func TestPreviewWidgetDrivesTheWholeJourney(t *testing.T) {
 
 	var desktop, mobile, htmlTab, tplTab, dark, scriptless, resized string
 	var deadLinks int
-	var mechanism bool
 
-	if err := chromedp.Run(ctx,
+	if err := chromedp.Do(ctx,
 		chromedp.EmulateViewport(1280, 900),
 		chromedp.Navigate(url),
-		chromedp.WaitVisible(`#partial-callout .ds-view__frame`, chromedp.ByQuery),
-		chromedp.Evaluate(eager, new(string)),
+		chromedp.WaitVisible(chromedp.CSS(`#partial-callout .ds-view__frame`)),
+		chromedp.Evaluate[chromedp.Void](eager),
 		chromedp.Sleep(2*time.Second),
 
 		// 1. Desktop, the tab the page opens on with nothing clicked.
-		chromedp.Evaluate(read(widget), &desktop),
+		harness.Into(&desktop, chromedp.Evaluate[string](read(widget))),
 
 		// 2. Mobile. Clicking the LABEL, the way a reader does — which
 		// is also the proof that the label/input pairing is right.
-		chromedp.Click(`#partial-callout .ds-view__tab--m`, chromedp.ByQuery),
+		chromedp.Click(chromedp.CSS(`#partial-callout .ds-view__tab--m`)),
 		chromedp.Sleep(400*time.Millisecond),
-		chromedp.Evaluate(read(widget), &mobile),
+		harness.Into(&mobile, chromedp.Evaluate[string](read(widget))),
 
 		// 3. HTML, then Template.
-		chromedp.Click(`#partial-callout .ds-view__tab--h`, chromedp.ByQuery),
+		chromedp.Click(chromedp.CSS(`#partial-callout .ds-view__tab--h`)),
 		chromedp.Sleep(400*time.Millisecond),
-		chromedp.Evaluate(read(widget), &htmlTab),
-		chromedp.Click(`#partial-callout .ds-view__tab--t`, chromedp.ByQuery),
+		harness.Into(&htmlTab, chromedp.Evaluate[string](read(widget))),
+		chromedp.Click(chromedp.CSS(`#partial-callout .ds-view__tab--t`)),
 		chromedp.Sleep(400*time.Millisecond),
-		chromedp.Evaluate(read(widget), &tplTab),
+		harness.Into(&tplTab, chromedp.Evaluate[string](read(widget))),
 
 		// 4. Every link in every framed document goes nowhere. Read
 		// off the documents themselves, not off the page's bytes: this
 		// is the browser's own idea of where an href points.
-		chromedp.Evaluate(`(() => {
+		harness.Into(&deadLinks, chromedp.Evaluate[int](`(() => {
 		  let bad = 0;
 		  for (const f of document.querySelectorAll(".ds-view__frame")) {
 		    const d = f.contentDocument;
@@ -724,13 +736,13 @@ func TestPreviewWidgetDrivesTheWholeJourney(t *testing.T) {
 		    }
 		  }
 		  return bad;
-		})()`, &deadLinks),
+		})()`)),
 
 		// 5. Back to Desktop — the grip is a control on the frame, and
 		// the frame is not on screen while Template is. Which is also a
 		// second reading of the Desktop tab, this time arrived at by
 		// clicking rather than by the checked attribute.
-		chromedp.Click(`#partial-callout .ds-view__tab:first-of-type`, chromedp.ByQuery),
+		chromedp.Click(chromedp.CSS(`#partial-callout .ds-view__tab:first-of-type`)),
 		chromedp.Sleep(400*time.Millisecond),
 
 		// The grip. resize: vertical is a visible control, so it
@@ -739,7 +751,7 @@ func TestPreviewWidgetDrivesTheWholeJourney(t *testing.T) {
 		// document inside really does get taller. It did not, once —
 		// a fixed height on the frame left 300px of empty box under an
 		// unchanged rendering, which is the bug this leg pins.
-		chromedp.Evaluate(`(() => {
+		harness.Into(&resized, chromedp.Evaluate[string](`(() => {
 		  const box = document.querySelector("#partial-callout .ds-view__box");
 		  const f = document.querySelector("#partial-callout .ds-view__frame");
 		  const before = f.contentDocument.documentElement.clientHeight;
@@ -750,13 +762,13 @@ func TestPreviewWidgetDrivesTheWholeJourney(t *testing.T) {
 		    painted: Math.round(f.getBoundingClientRect().height),
 		    box: Math.round(box.getBoundingClientRect().height)
 		  });
-		})()`, &resized),
+		})()`)),
 
 		// 6. The reader chooses Dark, and the previews follow without
 		// a line of script inside them.
-		chromedp.Click(`.ds-top [data-ds-scheme="dark"]`, chromedp.ByQuery),
+		chromedp.Click(chromedp.CSS(`.ds-top [data-ds-scheme="dark"]`)),
 		chromedp.Sleep(400*time.Millisecond),
-		chromedp.Evaluate(read(widget), &dark),
+		harness.Into(&dark, chromedp.Evaluate[string](read(widget))),
 	); err != nil {
 		t.Fatalf("driving the widget: %v", err)
 	}
@@ -767,17 +779,17 @@ func TestPreviewWidgetDrivesTheWholeJourney(t *testing.T) {
 	defer cancelNoJS()
 	noJSCtx, cancelNoJSTimeout := context.WithTimeout(noJS, 120*time.Second)
 	defer cancelNoJSTimeout()
-	if err := chromedp.Run(noJSCtx,
+	if err := chromedp.Do(noJSCtx,
 		chromedp.EmulateViewport(1280, 900),
-		emulation.SetScriptExecutionDisabled(true),
+		disableJavaScript(),
 		chromedp.Navigate(url),
-		chromedp.WaitVisible(`#partial-callout .ds-view__frame`, chromedp.ByQuery),
+		chromedp.WaitVisible(chromedp.CSS(`#partial-callout .ds-view__frame`)),
 		chromedp.Sleep(2*time.Second),
 		// The tabs are radios and labels; the click is the browser's
 		// own, and :has() does the rest.
-		chromedp.Click(`#partial-callout .ds-view__tab--h`, chromedp.ByQuery),
+		chromedp.Click(chromedp.CSS(`#partial-callout .ds-view__tab--h`)),
 		chromedp.Sleep(400*time.Millisecond),
-		chromedp.Evaluate(`(() => {
+		harness.Into(&scriptless, chromedp.Evaluate[string](`(() => {
 		  const v = document.querySelector("#partial-callout .ds-view");
 		  const stage = v.querySelector(".ds-view__stage");
 		  return JSON.stringify({
@@ -786,7 +798,7 @@ func TestPreviewWidgetDrivesTheWholeJourney(t *testing.T) {
 		    TemplateShown: getComputedStyle(v.querySelector(".ds-view__code--t")).display !== "none",
 		    Body: "", Virtual: 0, Painted: 0, Inner: 0, Gutter: 0, Scheme: ""
 		  });
-		})()`, &scriptless),
+		})()`)),
 	); err != nil {
 		t.Fatalf("driving the widget with scripts off: %v", err)
 	}
@@ -794,8 +806,9 @@ func TestPreviewWidgetDrivesTheWholeJourney(t *testing.T) {
 	// taken through the debugger with page scripts disabled — the
 	// click and the CSS are the page's own. Assert that gallery.js
 	// really was inert, or the leg proves nothing.
-	if err := chromedp.Run(noJSCtx, chromedp.Evaluate(
-		`document.documentElement.hasAttribute("data-rst-js")`, &mechanism)); err != nil {
+	mechanism, err := chromedp.Run(noJSCtx, chromedp.Evaluate[bool](
+		`document.documentElement.hasAttribute("data-rst-js")`))
+	if err != nil {
 		t.Fatalf("checking the scriptless page: %v", err)
 	}
 	if mechanism {
@@ -976,22 +989,25 @@ func TestPreviewFrameHeightsFitTheirContent(t *testing.T) {
 	for _, row := range heightRows() {
 		kind := row.Kind
 		where := kind + " at 1500px"
-		var desktop, mobile, clicked string
-		if err := chromedp.Run(ctx,
+		if err := chromedp.Do(ctx,
 			chromedp.EmulateViewport(1500, 1000),
 			chromedp.Navigate(rig.Origin+pageHref(mountPath, RootTheme(), "en", fileOf(kind))),
-			chromedp.WaitVisible(`.ds-view__frame`, chromedp.ByQuery),
+			chromedp.WaitVisible(chromedp.CSS(`.ds-view__frame`)),
 		); err != nil {
 			t.Fatalf("%s: loading: %v", where, err)
 		}
 		eagerly(t, ctx, where)
-		if err := chromedp.Run(ctx, chromedp.Evaluate(galleryrig.MeasureFrames, &desktop)); err != nil {
+		desktop, err := chromedp.Run(ctx,
+			chromedp.Evaluate[string](galleryrig.MeasureFrames))
+		if err != nil {
 			t.Fatalf("%s: measuring Desktop: %v", where, err)
 		}
 		// And the same page on the other tab. The mobile height is one
 		// factor off the desktop one rather than a second table, so this
 		// is where that factor is checked.
-		if err := chromedp.Run(ctx, chromedp.Evaluate(clickedMobile, &clicked)); err != nil {
+		clicked, err := chromedp.Run(ctx,
+			chromedp.Evaluate[string](clickedMobile))
+		if err != nil {
 			t.Fatalf("%s: choosing Mobile: %v", where, err)
 		}
 		var movedMobile struct{ Clicked, Moved int }
@@ -1005,7 +1021,9 @@ func TestPreviewFrameHeightsFitTheirContent(t *testing.T) {
 			t.Fatalf("%s: clicked %d Mobile radios and 0 moved — the Mobile reading below would be the Desktop state again", where, movedMobile.Clicked)
 		}
 		mobileSettle(t, ctx, where)
-		if err := chromedp.Run(ctx, chromedp.Evaluate(galleryrig.MeasureFrames, &mobile)); err != nil {
+		mobile, err := chromedp.Run(ctx,
+			chromedp.Evaluate[string](galleryrig.MeasureFrames))
+		if err != nil {
 			t.Fatalf("%s: measuring Mobile: %v", where, err)
 		}
 		for _, tab := range []struct{ name, raw string }{{"Desktop", desktop}, {"Mobile", mobile}} {
@@ -1037,16 +1055,18 @@ func TestTheDemoApplicationWorksWithNoScript(t *testing.T) {
 	ctx, cancel := context.WithTimeout(rig.Context(), 120*time.Second)
 	defer cancel()
 	const views = `[...document.querySelectorAll(".app-view")].filter(v => getComputedStyle(v).display !== "none").map(v => v.id).join(",")`
-	run := func(what string, acts ...chromedp.Action) {
+	run := func(what string, acts ...chromedp.Action[chromedp.Void]) {
 		t.Helper()
-		if err := chromedp.Run(ctx, acts...); err != nil {
+		if err := chromedp.Do(ctx, acts...); err != nil {
 			t.Fatalf("%s: %v", what, err)
 		}
 	}
 	shown := func(sel string) bool {
 		t.Helper()
 		var b bool
-		run("reading "+sel, chromedp.Evaluate(`(() => { const e = document.querySelector(`+"`"+sel+"`"+`); return !!e && e.getClientRects().length > 0; })()`, &b))
+		run("reading "+sel, harness.Into(&b, chromedp.Evaluate[bool](
+			`(() => { const e = document.querySelector(`+"`"+sel+"`"+`);
+			return !!e && e.getClientRects().length > 0; })()`)))
 		return b
 	}
 	// goTo clicks sel and waits until the URL ends with page AND the
@@ -1057,11 +1077,11 @@ func TestTheDemoApplicationWorksWithNoScript(t *testing.T) {
 	// snapshot and does nothing.
 	goTo := func(sel, page, marker string) {
 		t.Helper()
-		run("clicking "+sel, chromedp.Click(sel, chromedp.ByQuery))
+		run("clicking "+sel, chromedp.Click(chromedp.CSS(sel)))
 		cond := fmt.Sprintf(`location.pathname.endsWith(%q) && !!document.querySelector(%q) && document.readyState === "complete" && !document.activeViewTransition`, "/"+page, marker)
 		for deadline := time.Now().Add(10 * time.Second); time.Now().Before(deadline); time.Sleep(100 * time.Millisecond) {
-			var ok bool
-			if chromedp.Run(ctx, chromedp.Evaluate(cond, &ok)) == nil && ok {
+			ok, err := chromedp.Run(ctx, chromedp.Evaluate[bool](cond))
+			if err == nil && ok {
 				return
 			}
 		}
@@ -1069,24 +1089,29 @@ func TestTheDemoApplicationWorksWithNoScript(t *testing.T) {
 	}
 	var ranScript, landed, list, detail, back string
 	run("loading the demo at 1280",
-		emulation.SetScriptExecutionDisabled(true),
+		disableJavaScript(),
 		chromedp.EmulateViewport(1280, 900),
 		chromedp.Navigate(rig.Origin+demoHref(mountPath, RootTheme(), "en")), chromedp.WaitReady("body"),
 		// gallery.js is a script the page loads, and with execution
 		// disabled it has not run, so nothing below can be a script
 		// doing the work.
-		chromedp.Evaluate(`document.documentElement.getAttribute("data-rst-js") ?? "(none)"`, &ranScript),
-		chromedp.Evaluate(views, &landed),
+		harness.Into(&ranScript, chromedp.Evaluate[string](
+			`document.documentElement.getAttribute("data-rst-js")
+			  ?? "(none)"`)),
+		harness.Into(&landed, chromedp.Evaluate[string](views)),
 	)
 	if ranScript != "(none)" {
 		t.Fatalf("gallery.js ran with script execution disabled (data-rst-js=%q); this drive proves nothing", ranScript)
 	}
 	goTo(`#nav-requests`, "demo-requests.html", "#view-requests")
-	run("reading the list", chromedp.Evaluate(views, &list))
+	run("reading the list",
+		harness.Into(&list, chromedp.Evaluate[string](views)))
 	goTo(`#view-requests [rst-lrow] a.rst-nm`, "demo-request.html", "#view-request")
-	run("reading the request", chromedp.Evaluate(views, &detail))
+	run("reading the request",
+		harness.Into(&detail, chromedp.Evaluate[string](views)))
 	goTo(`#view-request [rst-back-nav] a`, "demo-requests.html", "#view-requests")
-	run("reading the list again", chromedp.Evaluate(views, &back))
+	run("reading the list again",
+		harness.Into(&back, chromedp.Evaluate[string](views)))
 	for _, s := range []struct{ where, got, want string }{
 		{"landing on demo.html", landed, "view-dashboard"}, {"the rail to the list", list, "view-requests"},
 		{"a row into the request", detail, "view-request"}, {"the back link out", back, "view-requests"},
@@ -1106,7 +1131,8 @@ func TestTheDemoApplicationWorksWithNoScript(t *testing.T) {
 	}
 	goTo("[rst-shell-back] a", "demo.html", "#view-dashboard")
 	var target bool
-	run("reading the target", chromedp.Evaluate(`document.getElementById("nav-requests").matches(":target")`, &target))
+	run("reading the target", harness.Into(&target, chromedp.Evaluate[bool](
+		`document.getElementById("nav-requests").matches(":target")`)))
 	if !target {
 		t.Error("back on the index, the Requests row is not the :target; the scriptless focus return has nothing to start from")
 	}
@@ -1195,11 +1221,11 @@ func TestThePrevNextPairSitsAtTheEndsOfItsRow(t *testing.T) {
 			pk := kinds[pos]
 			name := RootTheme() + "/" + locale + "/" + pk.File
 			var raw string
-			if err := chromedp.Run(ctx,
+			if err := chromedp.Do(ctx,
 				chromedp.EmulateViewport(1280, 900),
 				chromedp.Navigate(rig.Origin+pageHref(mountPath, RootTheme(), locale, pk.File)),
-				chromedp.WaitVisible(`.ds-updown`, chromedp.ByQuery),
-				chromedp.Evaluate(measure, &raw),
+				chromedp.WaitVisible(chromedp.CSS(`.ds-updown`)),
+				harness.Into(&raw, chromedp.Evaluate[string](measure)),
 			); err != nil {
 				t.Fatalf("%s: measuring the prev/next strip: %v", name, err)
 			}
@@ -1374,8 +1400,11 @@ var clickedDesktop = galleryrig.ClickEvery("d")
 // not land is a reading of the state before it.
 func clickAll(t *testing.T, ctx context.Context, where, script, what string) {
 	t.Helper()
-	var raw string
-	if err := chromedp.Run(ctx, chromedp.Evaluate(script, &raw), chromedp.Sleep(400*time.Millisecond)); err != nil {
+	raw, err := chromedp.Run(ctx, chromedp.Evaluate[string](script))
+	if err != nil {
+		t.Fatalf("%s: choosing %s: %v", where, what, err)
+	}
+	if err := chromedp.Do(ctx, chromedp.Sleep(400*time.Millisecond)); err != nil {
 		t.Fatalf("%s: choosing %s: %v", where, what, err)
 	}
 	var got struct{ Clicked, Moved int }
@@ -1399,9 +1428,9 @@ func scrolls(overflow string) bool {
 // is a worse bug than the one the panning fixes.
 func noSidewaysPage(t *testing.T, ctx context.Context, where string) {
 	t.Helper()
-	var over float64
-	if err := chromedp.Run(ctx, chromedp.Evaluate(
-		`document.documentElement.scrollWidth - document.documentElement.clientWidth`, &over)); err != nil {
+	over, err := chromedp.Run(ctx, chromedp.Evaluate[float64](
+		`document.documentElement.scrollWidth - document.documentElement.clientWidth`))
+	if err != nil {
 		t.Fatalf("%s: measuring the page's own overflow: %v", where, err)
 	}
 	if over > 1 {
@@ -1411,8 +1440,8 @@ func noSidewaysPage(t *testing.T, ctx context.Context, where string) {
 
 func boxes(t *testing.T, ctx context.Context, where string) []previewBox {
 	t.Helper()
-	var raw string
-	if err := chromedp.Run(ctx, chromedp.Evaluate(readBoxes, &raw)); err != nil {
+	raw, err := chromedp.Run(ctx, chromedp.Evaluate[string](readBoxes))
+	if err != nil {
 		t.Fatalf("%s: reading the preview boxes: %v", where, err)
 	}
 	var got []previewBox
@@ -1646,10 +1675,10 @@ func scaleOf(t *testing.T, where string, r previewBox) float64 {
 func calibrate(t *testing.T, ctx context.Context, origin, kind string) {
 	t.Helper()
 	where := kind + " at 1280px, calibrating"
-	if err := chromedp.Run(ctx,
+	if err := chromedp.Do(ctx,
 		chromedp.EmulateViewport(1280, 900),
 		chromedp.Navigate(origin+pageHref(mountPath, RootTheme(), "en", fileOf(kind))),
-		chromedp.WaitVisible(`.ds-view__box`, chromedp.ByQuery),
+		chromedp.WaitVisible(chromedp.CSS(`.ds-view__box`)),
 	); err != nil {
 		t.Fatalf("%s: loading: %v", where, err)
 	}
@@ -1703,10 +1732,10 @@ func TestThePreviewWidgetIsUsableOnAPhone(t *testing.T) {
 		// tab lit over it, and every box clear of the floor. If any of
 		// that is wrong, the narrow numbers below are measuring
 		// something else.
-		if err := chromedp.Run(ctx,
+		if err := chromedp.Do(ctx,
 			chromedp.EmulateViewport(1280, 900),
 			chromedp.Navigate(url),
-			chromedp.WaitVisible(`.ds-view__box`, chromedp.ByQuery),
+			chromedp.WaitVisible(chromedp.CSS(`.ds-view__box`)),
 		); err != nil {
 			t.Fatalf("%s at 1280px: loading: %v", kind, err)
 		}
@@ -1726,10 +1755,10 @@ func TestThePreviewWidgetIsUsableOnAPhone(t *testing.T) {
 		showsItsSample(t, kind+" at 1280px", wide)
 
 		// The phone, opening on nothing clicked.
-		if err := chromedp.Run(ctx,
+		if err := chromedp.Do(ctx,
 			chromedp.EmulateViewport(390, 844),
 			chromedp.Navigate(url),
-			chromedp.WaitVisible(`.ds-view__box`, chromedp.ByQuery),
+			chromedp.WaitVisible(chromedp.CSS(`.ds-view__box`)),
 		); err != nil {
 			t.Fatalf("%s at 390px: loading: %v", kind, err)
 		}
@@ -1750,7 +1779,7 @@ func TestThePreviewWidgetIsUsableOnAPhone(t *testing.T) {
 		// so under 281px of stage the opening view overflowed its box
 		// by 42px with nowhere to go. No reload, because the frames
 		// are already loaded and the queries re-evaluate on resize.
-		if err := chromedp.Run(ctx,
+		if err := chromedp.Do(ctx,
 			chromedp.EmulateViewport(320, 844),
 			chromedp.Sleep(400*time.Millisecond),
 		); err != nil {
@@ -1761,7 +1790,7 @@ func TestThePreviewWidgetIsUsableOnAPhone(t *testing.T) {
 		agree(t, kind+" at 320px, opened", narrow)
 		showsItsSample(t, kind+" at 320px, opened", narrow)
 		noSidewaysPage(t, ctx, kind+" at 320px, opened")
-		if err := chromedp.Run(ctx,
+		if err := chromedp.Do(ctx,
 			chromedp.EmulateViewport(390, 844),
 			chromedp.Sleep(400*time.Millisecond),
 		); err != nil {
@@ -1810,8 +1839,8 @@ func TestThePreviewWidgetIsUsableOnAPhone(t *testing.T) {
 
 		// CONTROL 2. Mobile, clicked, and checked for having moved.
 		var moved string
-		if err := chromedp.Run(ctx,
-			chromedp.Evaluate(clickedMobile, &moved),
+		if err := chromedp.Do(ctx,
+			harness.Into(&moved, chromedp.Evaluate[string](clickedMobile)),
 			chromedp.Sleep(400*time.Millisecond),
 		); err != nil {
 			t.Fatalf("%s at 390px: choosing Mobile: %v", kind, err)
@@ -1838,11 +1867,11 @@ func TestThePreviewWidgetIsUsableOnAPhone(t *testing.T) {
 	offCtx, cancelOff := context.WithTimeout(noJS, 120*time.Second)
 	defer cancelOff()
 	url := rig.Origin + pageHref(mountPath, RootTheme(), "en", fileOf("display"))
-	if err := chromedp.Run(offCtx,
+	if err := chromedp.Do(offCtx,
 		chromedp.EmulateViewport(390, 844),
-		emulation.SetScriptExecutionDisabled(true),
+		disableJavaScript(),
 		chromedp.Navigate(url),
-		chromedp.WaitVisible(`.ds-view__box`, chromedp.ByQuery),
+		chromedp.WaitVisible(chromedp.CSS(`.ds-view__box`)),
 	); err != nil {
 		t.Fatalf("display at 390px with scripts off: loading: %v", err)
 	}
@@ -1853,9 +1882,9 @@ func TestThePreviewWidgetIsUsableOnAPhone(t *testing.T) {
 	// Evaluate is itself script execution, so the reading below is
 	// taken through the debugger with the PAGE's scripts disabled.
 	// Assert that, or the leg proves nothing.
-	var ran bool
-	if err := chromedp.Run(offCtx, chromedp.Evaluate(
-		`document.documentElement.hasAttribute("data-rst-js")`, &ran)); err != nil {
+	ran, err := chromedp.Run(offCtx, chromedp.Evaluate[bool](
+		`document.documentElement.hasAttribute("data-rst-js")`))
+	if err != nil {
 		t.Fatalf("checking the scriptless page: %v", err)
 	}
 	if ran {
@@ -1868,8 +1897,8 @@ func TestThePreviewWidgetIsUsableOnAPhone(t *testing.T) {
 
 	// And the tabs still switch, with the click the browser makes out
 	// of a label and a radio rather than one a script dispatches.
-	if err := chromedp.Run(offCtx,
-		chromedp.Click(`.ds-view__tab:first-of-type`, chromedp.ByQuery),
+	if err := chromedp.Do(offCtx,
+		chromedp.Click(chromedp.CSS(`.ds-view__tab:first-of-type`)),
 		chromedp.Sleep(400*time.Millisecond),
 	); err != nil {
 		t.Fatalf("display at 390px with scripts off: choosing Desktop: %v", err)
@@ -2001,10 +2030,10 @@ func TestThePreviewDefaultIsMonotoneInStageWidth(t *testing.T) {
 func monotoneSweep(t *testing.T, ctx context.Context, origin, kind string, classes map[float64]string) {
 	t.Helper()
 	url := origin + pageHref(mountPath, RootTheme(), "en", fileOf(kind))
-	if err := chromedp.Run(ctx,
+	if err := chromedp.Do(ctx,
 		chromedp.EmulateViewport(1280, 900),
 		chromedp.Navigate(url),
-		chromedp.WaitVisible(`.ds-view__box`, chromedp.ByQuery),
+		chromedp.WaitVisible(chromedp.CSS(`.ds-view__box`)),
 		chromedp.Sleep(600*time.Millisecond),
 	); err != nil {
 		t.Fatalf("loading the %s page: %v", kind, err)
@@ -2024,7 +2053,7 @@ func monotoneSweep(t *testing.T, ctx context.Context, origin, kind string, class
 	readings := make([]stageReading, 0, len(widths))
 	for _, vw := range widths {
 		where := fmt.Sprintf("%s at %dpx", kind, vw)
-		if err := chromedp.Run(ctx,
+		if err := chromedp.Do(ctx,
 			chromedp.EmulateViewport(int64(vw), 900),
 			chromedp.Sleep(300*time.Millisecond),
 		); err != nil {

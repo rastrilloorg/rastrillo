@@ -205,7 +205,11 @@ func liveRig(t *testing.T, a *liveApp) *harness.Rig {
 // liveEval evaluates expr, failing the test on error.
 func liveEval(t *testing.T, rig *harness.Rig, expr string, out any) {
 	t.Helper()
-	if err := chromedp.Run(rig.Context(), chromedp.Evaluate(expr, out)); err != nil {
+	raw, err := chromedp.Run(rig.Context(), chromedp.Evaluate[[]byte](expr))
+	if err == nil && out != nil {
+		err = json.Unmarshal(raw, out)
+	}
+	if err != nil {
 		t.Fatalf("evaluating %s: %v", expr, err)
 	}
 }
@@ -217,16 +221,15 @@ func liveUntil(t *testing.T, rig *harness.Rig, what, expr string, within time.Du
 	t.Helper()
 	deadline := time.Now().Add(within)
 	for {
-		var yes bool
 		ctx, cancel := context.WithTimeout(rig.Context(), 2*time.Second)
-		err := chromedp.Run(ctx, chromedp.Evaluate(expr, &yes))
+		yes, err := chromedp.Run(ctx, chromedp.Evaluate[bool](expr))
 		cancel()
 		if err == nil && yes {
 			return
 		}
 		if time.Now().After(deadline) {
-			var body string
-			_ = chromedp.Run(rig.Context(), chromedp.Evaluate(`document.body ? document.body.outerHTML : ""`, &body))
+			body, _ := chromedp.Run(rig.Context(), chromedp.Evaluate[string](
+				`document.body ? document.body.outerHTML : ""`))
 			t.Fatalf("%s: not true within %s: %s\npage: %s", what, within, expr, body)
 		}
 		time.Sleep(50 * time.Millisecond)
@@ -261,7 +264,9 @@ func (a *liveApp) open(t *testing.T, rig *harness.Rig) {
 	t.Helper()
 	// A page in a background tab gets no focus events from focus() or
 	// blur(), and leaving a field is what ends editing.
-	rig.Run(emulation.SetFocusEmulationEnabled(true), chromedp.Navigate(rig.Origin+"/"))
+	focus := emulation.SetFocusEmulationEnabledParams{Enabled: true}
+	rig.Run(send(emulation.SetFocusEmulationEnabled, focus),
+		chromedp.Navigate(rig.Origin+"/"))
 	liveServerUntil(t, a, "the page opened its stream", 10*time.Second, func(a *liveApp) bool { return len(a.streams) > 0 })
 }
 

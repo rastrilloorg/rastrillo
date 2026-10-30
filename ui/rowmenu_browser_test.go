@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/chromedp/cdproto/cdp"
 	"github.com/chromedp/cdproto/emulation"
 	"github.com/chromedp/chromedp"
 	"github.com/chromedp/chromedp/kb"
@@ -65,18 +66,55 @@ func rowMenuRig(t *testing.T, coarse bool, opts ...harness.Option) (*harness.Rig
 // mustRun is chromedp.Run that fails the test on a browser error: a
 // swallowed error would leave the leg reading a page that never got
 // where the leg thinks it is, and passing on it.
-func mustRun(t *testing.T, ctx context.Context, actions ...chromedp.Action) {
+func mustRun(
+	t *testing.T, ctx context.Context,
+	actions ...chromedp.Action[chromedp.Void],
+) {
 	t.Helper()
-	if err := chromedp.Run(ctx, actions...); err != nil {
+	if err := chromedp.Do(ctx, actions...); err != nil {
 		t.Fatal(err)
 	}
 }
 
+// mustRead is chromedp.Run for one action that returns a value, failing
+// the test on a browser error the way mustRun does.
+func mustRead[T any](
+	t *testing.T, ctx context.Context, action chromedp.Action[T],
+) T {
+	t.Helper()
+	value, err := chromedp.Run(ctx, action)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return value
+}
+
+// send is an action that sends one protocol command with no result, for
+// the commands chromedp has no action of its own for.
+func send[P any](
+	command cdp.Command[P, cdp.Empty], params P,
+) chromedp.Action[chromedp.Void] {
+	return chromedp.Func(
+		func(ctx context.Context, target *chromedp.Target) error {
+			_, err := cdp.Call(ctx, target, command, params)
+			return err
+		})
+}
+
+// scriptsOff is an action that switches the page's scripts off at the
+// engine.
+func scriptsOff() chromedp.Action[chromedp.Void] {
+	return send(emulation.SetScriptExecutionDisabled,
+		emulation.SetScriptExecutionDisabledParams{Value: true})
+}
+
 func openMenus(t *testing.T, ctx context.Context) string {
 	t.Helper()
-	var s string
-	mustRun(t, ctx, chromedp.Evaluate(`[...document.querySelectorAll("[rst-row-menu]")].filter(d => d.open).map(d => d.closest("[rst-lrow]").id).join(",")`, &s))
-	return s
+	return mustRead(t, ctx, chromedp.Evaluate[string](
+		`[...document.querySelectorAll("[rst-row-menu]")]
+			.filter(d => d.open)
+			.map(d => d.closest("[rst-lrow]").id)
+			.join(",")`))
 }
 
 // TestRowMenusExcludeEachOtherWithNoScript: the native group, with
@@ -87,13 +125,13 @@ func TestRowMenusExcludeEachOtherWithNoScript(t *testing.T) {
 	rig, _ := rowMenuRig(t, false)
 	ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
 	defer cancel()
-	mustRun(t, ctx, emulation.SetScriptExecutionDisabled(true), chromedp.EmulateViewport(1280, 900),
-		chromedp.Navigate(rig.Origin+"/"), chromedp.WaitVisible("#list", chromedp.ByQuery),
-		chromedp.Click("#row-b summary", chromedp.ByQuery))
+	mustRun(t, ctx, scriptsOff(), chromedp.EmulateViewport(1280, 900),
+		chromedp.Navigate(rig.Origin+"/"), chromedp.WaitVisible(chromedp.CSS("#list")),
+		chromedp.Click(chromedp.CSS("#row-b summary")))
 	if got := openMenus(t, ctx); got != "row-b" {
 		t.Fatalf("with no script, open menus are %q after opening B, want row-b; the second click proves nothing", got)
 	}
-	mustRun(t, ctx, chromedp.Click("#row-a summary", chromedp.ByQuery))
+	mustRun(t, ctx, chromedp.Click(chromedp.CSS("#row-a summary")))
 	if got := openMenus(t, ctx); got != "row-a" {
 		t.Errorf("with no script, open menus are %q after opening B then A, want only row-a", got)
 	}
@@ -106,24 +144,25 @@ func TestRowMenuDismissesAndHandsFocusBack(t *testing.T) {
 	rig, _ := rowMenuRig(t, false)
 	ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
 	defer cancel()
-	mustRun(t, ctx, chromedp.EmulateViewport(1280, 900), chromedp.Navigate(rig.Origin+"/"), chromedp.WaitVisible("#list", chromedp.ByQuery))
-	mustRun(t, ctx, chromedp.Click("#row-a summary", chromedp.ByQuery))
+	mustRun(t, ctx, chromedp.EmulateViewport(1280, 900), chromedp.Navigate(rig.Origin+"/"), chromedp.WaitVisible(chromedp.CSS("#list")))
+	mustRun(t, ctx, chromedp.Click(chromedp.CSS("#row-a summary")))
 	if got := openMenus(t, ctx); got != "row-a" {
 		t.Fatalf("clicking row A's kebab left %q open, want row-a; the dismissal legs prove nothing", got)
 	}
-	mustRun(t, ctx, chromedp.Click("#outside", chromedp.ByQuery))
+	mustRun(t, ctx, chromedp.Click(chromedp.CSS("#outside")))
 	if got := openMenus(t, ctx); got != "" {
 		t.Errorf("after an outside click, %q is still open", got)
 	}
-	var focus string
 	mustRun(t, ctx,
-		chromedp.Click("#row-a summary", chromedp.ByQuery), chromedp.Focus("#row-a [rst-row-menu-panel] a", chromedp.ByQuery),
-		chromedp.KeyEvent(kb.Escape),
-		chromedp.Evaluate(`document.activeElement.closest("[rst-lrow]").id + " " + document.activeElement.tagName`, &focus))
+		chromedp.Click(chromedp.CSS("#row-a summary")), chromedp.Focus(chromedp.CSS("#row-a [rst-row-menu-panel] a")),
+		chromedp.KeyEvent(kb.Escape))
+	focus := mustRead(t, ctx, chromedp.Evaluate[string](
+		`document.activeElement.closest("[rst-lrow]").id + " " +
+			document.activeElement.tagName`))
 	if got := openMenus(t, ctx); got != "" || focus != "row-a SUMMARY" {
 		t.Errorf("after Escape: open %q, focus on %q; want none open and focus on row-a's summary", got, focus)
 	}
-	mustRun(t, ctx, chromedp.Click("#row-a summary", chromedp.ByQuery))
+	mustRun(t, ctx, chromedp.Click(chromedp.CSS("#row-a summary")))
 	clickAndLand(t, ctx, probe(t, ctx, "#row-a [rst-row-menu-panel] a", 0.5, 0.5, 0, 0), "/go/view-a")
 }
 
@@ -137,9 +176,11 @@ func TestARowMenuNearTheBottomOpensUpward(t *testing.T) {
 		Open                                          bool
 		PanelTop, PanelBottom, PanelH, SummaryTop, VH float64
 	}
-	mustRun(t, ctx, chromedp.EmulateViewport(1280, 700), chromedp.Navigate(rig.Origin+"/bottom"), chromedp.WaitReady("#list", chromedp.ByQuery),
-		chromedp.Evaluate(`window.scrollTo(0, document.documentElement.scrollHeight), true`, nil),
-		chromedp.Evaluate(`document.querySelector("#row-c summary").click(), true`, nil))
+	mustRun(t, ctx, chromedp.EmulateViewport(1280, 700), chromedp.Navigate(rig.Origin+"/bottom"), chromedp.WaitReady(chromedp.CSS("#list")),
+		chromedp.Evaluate[chromedp.Void](
+			`window.scrollTo(0, document.documentElement.scrollHeight), true`),
+		chromedp.Evaluate[chromedp.Void](
+			`document.querySelector("#row-c summary").click(), true`))
 	at(t, ctx, `(() => { const d = document.querySelector("#row-c [rst-row-menu]"), p = d.querySelector("[rst-row-menu-panel]").getBoundingClientRect(), s = d.querySelector("summary").getBoundingClientRect(); return JSON.stringify({Open: d.open, PanelTop: p.top, PanelBottom: p.bottom, PanelH: p.height, SummaryTop: s.top, VH: innerHeight}); })()`, &g)
 	// The panel keeps a box while its menu is closed (Chromium reports a
 	// non-zero height for it), so the height proves nothing and the Open
@@ -215,11 +256,18 @@ func TestAPostItemsSpinnerNeverMovesTheMenu(t *testing.T) {
 			rig, posted := rowMenuRig(t, leg.coarse)
 			ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
 			defer cancel()
-			acts := []chromedp.Action{chromedp.EmulateViewport(leg.w, 800)}
-			if leg.reduced {
-				acts = append(acts, emulation.SetEmulatedMedia().WithFeatures([]*emulation.MediaFeature{{Name: "prefers-reduced-motion", Value: "reduce"}}))
+			acts := []chromedp.Action[chromedp.Void]{
+				chromedp.EmulateViewport(leg.w, 800),
 			}
-			acts = append(acts, chromedp.Navigate(rig.Origin+"/"), chromedp.WaitVisible("#list", chromedp.ByQuery))
+			if leg.reduced {
+				reduced := emulation.SetEmulatedMediaParams{
+					Features: []*emulation.MediaFeature{
+						{Name: "prefers-reduced-motion", Value: "reduce"},
+					},
+				}
+				acts = append(acts, send(emulation.SetEmulatedMedia, reduced))
+			}
+			acts = append(acts, chromedp.Navigate(rig.Origin+"/"), chromedp.WaitVisible(chromedp.CSS("#list")))
 			mustRun(t, ctx, acts...)
 			// busy.js is deferred: a click before it has wired the submit
 			// handler would post with no spinner and read as a failure of
@@ -268,8 +316,9 @@ func TestRowMenuTargetsAreTapsOnAPhone(t *testing.T) {
 	rig, _ := rowMenuRig(t, true)
 	ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
 	defer cancel()
-	mustRun(t, ctx, chromedp.EmulateViewport(390, 844), chromedp.Navigate(rig.Origin+"/"), chromedp.WaitVisible("#list", chromedp.ByQuery),
-		chromedp.Evaluate(`document.querySelector("#row-a [rst-row-menu]").open = true`, nil))
+	mustRun(t, ctx, chromedp.EmulateViewport(390, 844), chromedp.Navigate(rig.Origin+"/"), chromedp.WaitVisible(chromedp.CSS("#list")),
+		chromedp.Evaluate[chromedp.Void](
+			`document.querySelector("#row-a [rst-row-menu]").open = true`))
 	requirePointer(t, ctx, true)
 	got := readTargets(t, ctx, `(() => { `+measureFn+`; return JSON.stringify(measure(document.querySelector("#row-a [rst-row-menu]"))); })()`)
 	if len(got) != 4 {
@@ -343,10 +392,11 @@ func TestARowMenuOpensBesideItsOwnKebab(t *testing.T) {
 			rig := sizingRig(t, leg.coarse, pages)
 			ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
 			defer cancel()
-			mustRun(t, ctx, chromedp.EmulateViewport(leg.w, 800), chromedp.Navigate(rig.Origin+leg.path), chromedp.WaitVisible("#box", chromedp.ByQuery))
+			mustRun(t, ctx, chromedp.EmulateViewport(leg.w, 800), chromedp.Navigate(rig.Origin+leg.path), chromedp.WaitVisible(chromedp.CSS("#box")))
 			requirePointer(t, ctx, leg.coarse)
 			if !leg.anchor {
-				mustRun(t, ctx, chromedp.Evaluate(galleryrig.WithoutAnchorPositioning, nil, awaitPromise))
+				mustRun(t, ctx, chromedp.Evaluate[chromedp.Void](
+					galleryrig.WithoutAnchorPositioning, awaitPromise))
 			}
 			galleryrig.RequireAnchorPositioning(t, ctx, leg.name, "[rst-row-menu-panel]", leg.anchor)
 			// Edges are read in the inline direction: Start and End are
@@ -417,8 +467,15 @@ func TestARowsKebabSitsAtItsTrailingEdge(t *testing.T) {
 			rig, _ := rowMenuRig(t, leg.coarse)
 			ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
 			defer cancel()
-			mustRun(t, ctx, chromedp.EmulateViewport(leg.w, 844), chromedp.Navigate(rig.Origin+"/"), chromedp.WaitVisible("#list", chromedp.ByQuery),
-				chromedp.Evaluate(`(() => { const v = document.getElementById("row-a").cloneNode(true); v.id = "row-v"; v.querySelector(".rst-m-hide").classList.remove("rst-m-hide"); document.getElementById("list").append(v); return true; })()`, nil))
+			mustRun(t, ctx, chromedp.EmulateViewport(leg.w, 844), chromedp.Navigate(rig.Origin+"/"), chromedp.WaitVisible(chromedp.CSS("#list")),
+				chromedp.Evaluate[chromedp.Void](`(() => {
+					const v = document.getElementById("row-a").cloneNode(true);
+					v.id = "row-v";
+					v.querySelector(".rst-m-hide")
+						.classList.remove("rst-m-hide");
+					document.getElementById("list").append(v);
+					return true;
+				})()`))
 			requirePointer(t, ctx, leg.coarse)
 			var rows []struct {
 				ID                                     string

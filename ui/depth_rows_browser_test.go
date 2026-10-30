@@ -56,7 +56,8 @@ func TestARowLiftsOnHoverAndSinksOnPress(t *testing.T) {
 		t.Errorf("an inert row changed on hover/press: %s -> %s", rest, got)
 	}
 	forceState(t, ctx, rowInert)
-	mustRun(t, ctx, chromedp.Evaluate(`document.getElementById("kebab-a").click(), true`, nil))
+	mustRun(t, ctx, chromedp.Evaluate[chromedp.Void](
+		`document.getElementById("kebab-a").click(), true`))
 	forceState(t, ctx, "#panel-a a", "hover")
 	if got := computed(t, ctx, "#panel-a a", "background-color"); got != "rgb(245, 247, 253)" {
 		t.Errorf("hovered menu item background %s, want the hover tint", got)
@@ -78,7 +79,8 @@ func TestMenusTilesAndOptionsTakeTheTint(t *testing.T) {
 	defer cancel()
 	open(t, ctx, rig, "/", false)
 	still(t, ctx)
-	mustRun(t, ctx, chromedp.Evaluate(`document.getElementById("dd").open = true, true`, nil))
+	mustRun(t, ctx, chromedp.Evaluate[chromedp.Void](
+		`document.getElementById("dd").open = true, true`))
 	for _, c := range []struct{ sel, press string }{{"#menu-a", "#menu-a"}, {"#menu-btn", "#menu-btn"}, {"#tile", "#tile-link"}, {"#row-c", "#link-c"}} {
 		forceState(t, ctx, c.sel, "hover")
 		if got := computed(t, ctx, c.sel, "background-color"); got != "rgb(245, 247, 253)" {
@@ -181,7 +183,8 @@ func TestARowsLiftNeverMovesItsOpenMenu(t *testing.T) {
 	if got := computed(t, ctx, rowA, "background-color"); got != "rgb(245, 247, 253)" {
 		t.Fatalf("row A hovered is %s; the lift this test guards is missing", got)
 	}
-	mustRun(t, ctx, chromedp.Evaluate(`document.getElementById("kebab-a").click(), true`, nil))
+	mustRun(t, ctx, chromedp.Evaluate[chromedp.Void](
+		`document.getElementById("kebab-a").click(), true`))
 	var before, after struct{ X, Y float64 }
 	at(t, ctx, `(() => { const r = document.getElementById("panel-a").getBoundingClientRect(); return JSON.stringify({X: r.left, Y: r.top}); })()`, &before)
 	forceState(t, ctx, rowA)
@@ -224,7 +227,7 @@ func TestTheShellTailsMenusWearNoFace(t *testing.T) {
 	for _, width := range []int64{1280, 390} {
 		rig := sizingRig(t, false, map[string]string{"/": sizingDoc("tail", shellTailBody)}, harness.WithHover())
 		ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
-		mustRun(t, ctx, chromedp.EmulateViewport(width, 844), chromedp.Navigate(rig.Origin+"/"), chromedp.WaitVisible("#page-loc", chromedp.ByQuery))
+		mustRun(t, ctx, chromedp.EmulateViewport(width, 844), chromedp.Navigate(rig.Origin+"/"), chromedp.WaitVisible(chromedp.CSS("#page-loc")))
 		still(t, ctx)
 		var hov bool
 		at(t, ctx, `JSON.stringify(matchMedia("(hover: hover)").matches)`, &hov)
@@ -260,12 +263,20 @@ func TestATBlockHeadTapsWithoutAFlash(t *testing.T) {
 	rig := sizingRig(t, true, map[string]string{"/": sizingDoc("tblock", body)})
 	ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
 	defer cancel()
-	mustRun(t, ctx, chromedp.EmulateViewport(390, 844), chromedp.Navigate(rig.Origin+"/"), chromedp.WaitVisible("#head", chromedp.ByQuery))
+	mustRun(t, ctx, chromedp.EmulateViewport(390, 844), chromedp.Navigate(rig.Origin+"/"), chromedp.WaitVisible(chromedp.CSS("#head")))
 	requirePointer(t, ctx, true)
 	x, y, w, h := rect(t, ctx, "#title")
-	mustRun(t, ctx, input.DispatchTouchEvent(input.TouchStart, []*input.TouchPoint{{X: x + w/2, Y: y + h/2}}), input.DispatchTouchEvent(input.TouchEnd, nil))
-	var checked bool
-	mustRun(t, ctx, chromedp.Evaluate(`document.querySelector("#head input").checked`, &checked))
+	touchStart := input.DispatchTouchEventParams{
+		Type:        input.DispatchTouchEventTypeTouchStart,
+		TouchPoints: []*input.TouchPoint{{X: x + w/2, Y: y + h/2}},
+	}
+	touchEnd := input.DispatchTouchEventParams{
+		Type: input.DispatchTouchEventTypeTouchEnd,
+	}
+	mustRun(t, ctx, send(input.DispatchTouchEvent, touchStart),
+		send(input.DispatchTouchEvent, touchEnd))
+	checked := mustRead(t, ctx, chromedp.Evaluate[bool](
+		`document.querySelector("#head input").checked`))
 	if !checked {
 		t.Fatal("a tap on the title did not toggle the block")
 	}

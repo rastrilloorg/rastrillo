@@ -18,7 +18,6 @@ import (
 	"github.com/chromedp/cdproto/css"
 	"github.com/chromedp/cdproto/dom"
 	"github.com/chromedp/cdproto/emulation"
-	"github.com/chromedp/cdproto/input"
 	"github.com/chromedp/chromedp"
 
 	"amadan.net/rastrillo/rastrillo/harness"
@@ -72,7 +71,16 @@ func depthDoc(t *testing.T) map[string]string {
 func still(t *testing.T, ctx context.Context) {
 	t.Helper()
 	inspect(t, ctx)
-	mustRun(t, ctx, chromedp.Evaluate(`(() => { const s = document.createElement("style"); s.textContent = "*, *::before, *::after { transition: none !important; animation: none !important; }"; document.head.append(s); document.dispatchEvent(new CustomEvent("rst:light", {detail: {x: 0, y: -1, hold: true}})); return true; })()`, nil))
+	noMotion := `"*, *::before, *::after { transition: none !important;` +
+		` animation: none !important; }"`
+	mustRun(t, ctx, chromedp.Evaluate[chromedp.Void](`(() => {
+		const s = document.createElement("style");
+		s.textContent = `+noMotion+`;
+		document.head.append(s);
+		document.dispatchEvent(new CustomEvent("rst:light",
+			{detail: {x: 0, y: -1, hold: true}}));
+		return true;
+	})()`))
 }
 
 // inspect enables the DOM and CSS domains once for the page, which
@@ -83,23 +91,27 @@ func still(t *testing.T, ctx context.Context) {
 // easing away under an open menu), which still() would freeze.
 func inspect(t *testing.T, ctx context.Context) {
 	t.Helper()
-	mustRun(t, ctx, chromedp.ActionFunc(func(c context.Context) error {
-		if err := dom.Enable().Do(c); err != nil {
+	enable := func(ctx context.Context, target *chromedp.Target) error {
+		_, err := cdp.Call(ctx, target, dom.Enable, dom.EnableParams{})
+		if err != nil {
 			return err
 		}
-		if err := css.Enable().Do(c); err != nil {
+		_, err = cdp.Call(ctx, target, css.Enable, cdp.Empty{})
+		if err != nil {
 			return err
 		}
 		// One DOM.getDocument per page: every call invalidates the node
 		// ids handed out before it, and a forced pseudo-state is keyed
 		// by node id, so a second call dropped the first button's hover.
-		root, err := dom.GetDocument().Do(c)
+		document, err := cdp.Call(ctx, target, dom.GetDocument,
+			dom.GetDocumentParams{})
 		if err != nil {
 			return err
 		}
-		forcedRoot = root.NodeID
+		forcedRoot = document.Root.NodeID
 		return nil
-	}))
+	}
+	mustRun(t, ctx, chromedp.Func(enable))
 }
 
 // forcedRoot is the page's document node, set by inspect() for forceState.
@@ -115,19 +127,26 @@ func forceState(t *testing.T, ctx context.Context, selector string, states ...st
 	if states == nil {
 		states = []string{}
 	}
-	if forcedRoot == cdp.EmptyNodeID {
+	if forcedRoot == chromedp.EmptyNodeID {
 		t.Fatal("forceState before still() or inspect(): the document node is not known")
 	}
-	mustRun(t, ctx, chromedp.ActionFunc(func(c context.Context) error {
-		id, err := dom.QuerySelector(forcedRoot, selector).Do(c)
+	force := func(ctx context.Context, target *chromedp.Target) error {
+		found, err := cdp.Call(ctx, target, dom.QuerySelector,
+			dom.QuerySelectorParams{NodeID: forcedRoot, Selector: selector})
 		if err != nil {
 			return err
 		}
-		if id == cdp.EmptyNodeID {
+		if found.NodeID == chromedp.EmptyNodeID {
 			return fmt.Errorf("forceState: no element matches %q", selector)
 		}
-		return css.ForcePseudoState(id, states).Do(c)
-	}))
+		_, err = cdp.Call(ctx, target, css.ForcePseudoState,
+			css.ForcePseudoStateParams{
+				NodeID:              found.NodeID,
+				ForcedPseudoClasses: states,
+			})
+		return err
+	}
+	mustRun(t, ctx, chromedp.Func(force))
 }
 
 // computed reads one computed property of one element, with any
@@ -136,8 +155,9 @@ func forceState(t *testing.T, ctx context.Context, selector string, states ...st
 // eight-bit triple (canonColours, derived_test.go).
 func computed(t *testing.T, ctx context.Context, selector, prop string) string {
 	t.Helper()
-	var out string
-	mustRun(t, ctx, chromedp.Evaluate(`getComputedStyle(document.querySelector(`+jsStr(selector)+`)).getPropertyValue(`+jsStr(prop)+`)`, &out))
+	element := `document.querySelector(` + jsStr(selector) + `)`
+	out := mustRead(t, ctx, chromedp.Evaluate[string](
+		`getComputedStyle(`+element+`).getPropertyValue(`+jsStr(prop)+`)`))
 	return canonColours(strings.TrimSpace(out))
 }
 
@@ -184,9 +204,14 @@ func rect(t *testing.T, ctx context.Context, selector string) (x, y, w, h float6
 func open(t *testing.T, ctx context.Context, rig *harness.Rig, path string, reduce bool) {
 	t.Helper()
 	if reduce {
-		mustRun(t, ctx, emulation.SetEmulatedMedia().WithFeatures([]*emulation.MediaFeature{{Name: "prefers-reduced-motion", Value: "reduce"}}))
+		reduced := emulation.SetEmulatedMediaParams{
+			Features: []*emulation.MediaFeature{
+				{Name: "prefers-reduced-motion", Value: "reduce"},
+			},
+		}
+		mustRun(t, ctx, send(emulation.SetEmulatedMedia, reduced))
 	}
-	mustRun(t, ctx, chromedp.EmulateViewport(1280, 900), chromedp.Navigate(rig.Origin+path), chromedp.WaitVisible("#field", chromedp.ByQuery))
+	mustRun(t, ctx, chromedp.EmulateViewport(1280, 900), chromedp.Navigate(rig.Origin+path), chromedp.WaitVisible(chromedp.CSS("#field")))
 }
 
 // TestEveryButtonVariantHasItsOwnHoverAndPress is the C11 table read back
@@ -312,7 +337,9 @@ func TestEveryButtonPaintsItsWholeStack(t *testing.T) {
 			ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
 			defer cancel()
 			open(t, ctx, rig, "/", false)
-			mustRun(t, ctx, chromedp.Evaluate(`document.documentElement.setAttribute("data-theme", "`+scheme+`"), true`, nil))
+			mustRun(t, ctx, chromedp.Evaluate[chromedp.Void](
+				`document.documentElement
+					.setAttribute("data-theme", "`+scheme+`"), true`))
 			still(t, ctx)
 			tok := resolvedTokens(t, "day")[scheme]
 			wash, spot := pressNumber(t, "day", scheme, "--rst-press-wash"), pressNumber(t, "day", scheme, "--rst-press-spot")
@@ -354,7 +381,13 @@ func TestEveryButtonPaintsItsWholeStack(t *testing.T) {
 			if scheme == "dark" {
 				// The negative control: sever the danger face and a cell the
 				// loop above accepted must now fail.
-				mustRun(t, ctx, chromedp.Evaluate(`(() => { const s = document.createElement("style"); s.textContent = "[rst-btn~=danger] { --rst-btn-face: none; }"; document.head.append(s); return true; })()`, nil))
+				mustRun(t, ctx, chromedp.Evaluate[chromedp.Void](`(() => {
+					const s = document.createElement("style");
+					s.textContent =
+						"[rst-btn~=danger] { --rst-btn-face: none; }";
+					document.head.append(s);
+					return true;
+				})()`))
 				forceState(t, ctx, "#b-danger", "hover")
 				cut := computed(t, ctx, "#b-danger", "background-image")
 				forceState(t, ctx, "#b-danger")
@@ -390,7 +423,8 @@ func TestAPressIsInstantAndSlowToLeave(t *testing.T) {
 			open(t, ctx, rig, "/", reduce)
 			x, y, w, h := rect(t, ctx, "#b-primary")
 			cx, cy := x+w/2, y+h/2
-			mustRun(t, ctx, chromedp.MouseEvent(input.MousePressed, cx, cy, chromedp.ButtonLeft, chromedp.ClickCount(1)))
+			mustRun(t, ctx, chromedp.MouseEvent(chromedp.MousePressed, cx, cy,
+				chromedp.ButtonLeft, chromedp.ClickCount(1)))
 			if got := computed(t, ctx, "#b-primary", "--rst-press"); got != "1" {
 				t.Fatalf("held: --rst-press is %q, want 1", got)
 			}
@@ -400,7 +434,8 @@ func TestAPressIsInstantAndSlowToLeave(t *testing.T) {
 			if _, _, w2, h2 := rect(t, ctx, "#b-primary"); w2 != w || h2 != h {
 				t.Errorf("the pressed button's box changed from %vx%v to %vx%v; a press must cause no layout shift", w, h, w2, h2)
 			}
-			mustRun(t, ctx, chromedp.MouseEvent(input.MouseReleased, cx, cy, chromedp.ButtonLeft, chromedp.ClickCount(1)))
+			mustRun(t, ctx, chromedp.MouseEvent(chromedp.MouseReleased, cx, cy,
+				chromedp.ButtonLeft, chromedp.ClickCount(1)))
 			if reduce {
 				if got := computed(t, ctx, "#b-primary", "--rst-press"); got != "0" {
 					t.Errorf("released under reduced motion: --rst-press is %q, want 0 at once", got)
@@ -439,14 +474,19 @@ func TestAPressInsideTheFadeSnapsBackToOne(t *testing.T) {
 	open(t, ctx, rig, "/", false)
 	x, y, w, h := rect(t, ctx, "#b-plain")
 	cx, cy := x+w/2, y+h/2
-	mustRun(t, ctx, chromedp.MouseEvent(input.MousePressed, cx, cy, chromedp.ButtonLeft, chromedp.ClickCount(1)),
-		chromedp.MouseEvent(input.MouseReleased, cx, cy, chromedp.ButtonLeft, chromedp.ClickCount(1)),
+	mustRun(t, ctx,
+		chromedp.MouseEvent(chromedp.MousePressed, cx, cy,
+			chromedp.ButtonLeft, chromedp.ClickCount(1)),
+		chromedp.MouseEvent(chromedp.MouseReleased, cx, cy,
+			chromedp.ButtonLeft, chromedp.ClickCount(1)),
 		chromedp.Sleep(200*time.Millisecond),
-		chromedp.MouseEvent(input.MousePressed, cx, cy, chromedp.ButtonLeft, chromedp.ClickCount(1)))
+		chromedp.MouseEvent(chromedp.MousePressed, cx, cy,
+			chromedp.ButtonLeft, chromedp.ClickCount(1)))
 	if got := computed(t, ctx, "#b-plain", "--rst-press"); got != "1" {
 		t.Errorf("pressed again mid-fade: --rst-press is %q, want 1 at once", got)
 	}
-	mustRun(t, ctx, chromedp.MouseEvent(input.MouseReleased, cx, cy, chromedp.ButtonLeft, chromedp.ClickCount(1)))
+	mustRun(t, ctx, chromedp.MouseEvent(chromedp.MouseReleased, cx, cy,
+		chromedp.ButtonLeft, chromedp.ClickCount(1)))
 }
 
 // TestAGhostsReleaseShadowEases (#104 item 6): the ghost's press shadow
@@ -464,12 +504,14 @@ func TestAGhostsReleaseShadowEases(t *testing.T) {
 	open(t, ctx, rig, "/", false)
 	x, y, w, h := rect(t, ctx, "#b-ghost")
 	cx, cy := x+w/2, y+h/2
-	mustRun(t, ctx, chromedp.MouseEvent(input.MousePressed, cx, cy, chromedp.ButtonLeft, chromedp.ClickCount(1)))
+	mustRun(t, ctx, chromedp.MouseEvent(chromedp.MousePressed, cx, cy,
+		chromedp.ButtonLeft, chromedp.ClickCount(1)))
 	held := computed(t, ctx, "#b-ghost", "box-shadow")
 	if !strings.HasSuffix(held, " 0px 1px 3px 0px inset") || strings.Contains(held, "inset, ") {
 		t.Fatalf("held: the ghost's shadow is %q, want one inset layer 0px 1px 3px", held)
 	}
-	mustRun(t, ctx, chromedp.MouseEvent(input.MouseReleased, cx, cy, chromedp.ButtonLeft, chromedp.ClickCount(1)))
+	mustRun(t, ctx, chromedp.MouseEvent(chromedp.MouseReleased, cx, cy,
+		chromedp.ButtonLeft, chromedp.ClickCount(1)))
 	var fade struct {
 		Found  bool
 		Press  string
@@ -545,14 +587,16 @@ func TestTheFaceStillPaintsWithoutARegisteredPress(t *testing.T) {
 	}
 	x, y, w, h := rect(t, ctx, "#b-ghost")
 	cx, cy := x+w/2, y+h/2
-	mustRun(t, ctx, chromedp.MouseEvent(input.MousePressed, cx, cy, chromedp.ButtonLeft, chromedp.ClickCount(1)))
+	mustRun(t, ctx, chromedp.MouseEvent(chromedp.MousePressed, cx, cy,
+		chromedp.ButtonLeft, chromedp.ClickCount(1)))
 	if got := computed(t, ctx, "#b-ghost", "box-shadow"); got == "none" || !strings.HasSuffix(got, " 0px 1px 3px 0px inset") {
 		t.Errorf("the ghost pressed: box-shadow is %q, want its 0px 1px 3px inset; the shadow is gone without the registered press", got)
 	}
 	if got := computed(t, ctx, "#b-ghost", "background-image"); got == "none" || len(layers(got)) != 4 {
 		t.Errorf("the ghost pressed: background-image is %q, want four layers", got)
 	}
-	mustRun(t, ctx, chromedp.MouseEvent(input.MouseReleased, cx, cy, chromedp.ButtonLeft, chromedp.ClickCount(1)))
+	mustRun(t, ctx, chromedp.MouseEvent(chromedp.MouseReleased, cx, cy,
+		chromedp.ButtonLeft, chromedp.ClickCount(1)))
 	// Released with no registered property there is no transition to
 	// ease; the shadow goes to its zero-sized rest, and must not go to
 	// none.
@@ -653,8 +697,11 @@ func TestFocusOutlinesSurviveLiftAndPress(t *testing.T) {
 	forceState(t, ctx, "#b-primary")
 	forceState(t, ctx, "#row-a", "hover")
 	forceState(t, ctx, "#link-a", "focus", "focus-visible")
-	var ring string
-	mustRun(t, ctx, chromedp.Evaluate(`(() => { const s = getComputedStyle(document.querySelector("#link-a"), "::after"); return s.outlineStyle + " " + s.outlineWidth; })()`, &ring))
+	ring := mustRead(t, ctx, chromedp.Evaluate[string](`(() => {
+		const s = getComputedStyle(
+			document.querySelector("#link-a"), "::after");
+		return s.outlineStyle + " " + s.outlineWidth;
+	})()`))
 	if ring != "solid 2px" {
 		t.Errorf("a focused link in a hovered row draws %q on its overlay, want solid 2px", ring)
 	}
@@ -773,7 +820,7 @@ func TestEveryNavSurfaceHasItsStates(t *testing.T) {
 	narrow := sizingRig(t, false, depthDoc(t), harness.WithHover())
 	nctx, ncancel := context.WithTimeout(narrow.Context(), 60*time.Second)
 	defer ncancel()
-	mustRun(t, nctx, chromedp.EmulateViewport(390, 844), chromedp.Navigate(narrow.Origin+"/"), chromedp.WaitVisible("#field", chromedp.ByQuery))
+	mustRun(t, nctx, chromedp.EmulateViewport(390, 844), chromedp.Navigate(narrow.Origin+"/"), chromedp.WaitVisible(chromedp.CSS("#field")))
 	still(t, nctx)
 	var hov bool
 	at(t, nctx, `JSON.stringify(matchMedia("(hover: hover)").matches)`, &hov)
@@ -826,7 +873,17 @@ func TestEveryNavSurfaceHasItsStates(t *testing.T) {
 	indexRows("day", "rgb(245, 247, 253)", "rgb(236, 241, 252)")
 	for _, c := range []struct{ theme, cardHover, hoverTint, pressTint string }{{"plain", "rgba(0, 0, 0, 0)", "rgb(237, 237, 237)", "rgb(237, 237, 237)"}, {"signal", "rgba(0, 0, 0, 0)", "rgb(233, 238, 255)", "rgb(233, 238, 255)"}} {
 		css, _ := ThemeCSS(c.theme)
-		mustRun(t, nctx, chromedp.Evaluate(`(() => { const l = document.querySelector('link[href="/theme.css"]'); if (l) l.remove(); for (const s of document.querySelectorAll("style[data-swap]")) s.remove(); const s = document.createElement("style"); s.dataset.swap = "1"; s.textContent = `+jsStr(string(css))+`; document.head.append(s); return true; })()`, nil))
+		mustRun(t, nctx, chromedp.Evaluate[chromedp.Void](`(() => {
+			const l = document.querySelector('link[href="/theme.css"]');
+			if (l) l.remove();
+			for (const s of document.querySelectorAll("style[data-swap]"))
+				s.remove();
+			const s = document.createElement("style");
+			s.dataset.swap = "1";
+			s.textContent = `+jsStr(string(css))+`;
+			document.head.append(s);
+			return true;
+		})()`))
 		if hover, press := cardFace("hover"), cardFace("hover", "active"); hover != c.cardHover || press != c.cardHover {
 			t.Errorf("%s: topbar phone-card link hover %s press %s; want transparent, as before the card had a hover (A15)", c.theme, hover, press)
 		}

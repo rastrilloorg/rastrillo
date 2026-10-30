@@ -79,8 +79,8 @@ type tokensReading struct {
 
 func readTokens(t *testing.T, ctx context.Context) tokensReading {
 	t.Helper()
-	var raw string
-	if err := chromedp.Run(ctx, chromedp.Evaluate(tokensListJS, &raw)); err != nil {
+	raw, err := chromedp.Run(ctx, chromedp.Evaluate[string](tokensListJS))
+	if err != nil {
 		t.Fatalf("reading the token list: %v", err)
 	}
 	var got tokensReading
@@ -118,7 +118,7 @@ func TestAPITokensFactsStayVisibleOnAPhone(t *testing.T) {
 			rig := mediaRig(t, leg.coarse, sizingMux(t, map[string]string{"/": tokensPageDoc(t)}))
 			ctx, cancel := context.WithTimeout(rig.Context(), 120*time.Second)
 			defer cancel()
-			if err := chromedp.Run(ctx, chromedp.EmulateViewport(leg.w, leg.h), chromedp.Navigate(rig.Origin+"/"), chromedp.WaitVisible("[rst-tokens-list]", chromedp.ByQuery)); err != nil {
+			if err := chromedp.Do(ctx, chromedp.EmulateViewport(leg.w, leg.h), chromedp.Navigate(rig.Origin+"/"), chromedp.WaitVisible(chromedp.CSS("[rst-tokens-list]"))); err != nil {
 				t.Fatal(err)
 			}
 			requirePointer(t, ctx, leg.coarse)

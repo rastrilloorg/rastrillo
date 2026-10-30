@@ -118,11 +118,11 @@ func TestTheSigninCardLaysOutAsDesigned(t *testing.T) {
 	defer cancel()
 
 	var got signinLayout
-	if err := chromedp.Run(ctx,
+	if err := chromedp.Do(ctx,
 		chromedp.EmulateViewport(1280, 900),
 		chromedp.Navigate(rig.Origin+"/"),
-		chromedp.WaitVisible(`#case-link [rst-signin]`, chromedp.ByQuery),
-		chromedp.Evaluate(`(function () {
+		chromedp.WaitVisible(chromedp.CSS(`#case-link [rst-signin]`)),
+		harness.Into(&got, chromedp.Evaluate[signinLayout](`(function () {
   const out = { ZeroHeight: {} };
   const btn = document.querySelector("#case-link [rst-signin-form] button");
   const bdi = btn.querySelector("bdi");
@@ -161,7 +161,7 @@ func TestTheSigninCardLaysOutAsDesigned(t *testing.T) {
   document.body.appendChild(probe);
   out.Accent = getComputedStyle(probe).color;
   return out;
-})()`, &got),
+})()`)),
 	); err != nil {
 		t.Fatal(err)
 	}
@@ -246,11 +246,11 @@ func TestSigninControlsStayInsideTheCardOnAPhone(t *testing.T) {
 
 	for _, width := range []int64{320, 390} {
 		var got map[string][]string
-		if err := chromedp.Run(ctx,
+		if err := chromedp.Do(ctx,
 			chromedp.EmulateViewport(width, 900),
 			chromedp.Navigate(rig.Origin+"/"),
-			chromedp.WaitVisible(`#case-0-false [rst-signin]`, chromedp.ByQuery),
-			chromedp.Evaluate(fitJS, &got),
+			chromedp.WaitVisible(chromedp.CSS(`#case-0-false [rst-signin]`)),
+			harness.Into(&got, chromedp.Evaluate[map[string][]string](fitJS)),
 		); err != nil {
 			t.Fatal(err)
 		}
@@ -303,15 +303,17 @@ func TestTheOrDividerShowsOnlyWithThePasskeyButton(t *testing.T) {
   return out;
 })()`
 	var before, after map[string]*orState
-	if err := chromedp.Run(ctx,
+	if err := chromedp.Do(ctx,
 		chromedp.EmulateViewport(1280, 900),
 		chromedp.Navigate(rig.Origin+"/"),
-		chromedp.WaitVisible(`#case-ask-preview [rst-signin]`, chromedp.ByQuery),
-		chromedp.Evaluate(read, &before),
+		chromedp.WaitVisible(chromedp.CSS(`#case-ask-preview [rst-signin]`)),
+		harness.Into(&before, chromedp.Evaluate[map[string]*orState](read)),
 		// What the door's script does once it has found a working
 		// WebAuthn: it unhides the button, and nothing else.
-		chromedp.Evaluate(`document.querySelectorAll("[data-rst-passkey]").forEach(b => { b.hidden = false; }); "ok"`, new(string)),
-		chromedp.Evaluate(read, &after),
+		chromedp.Evaluate[chromedp.Void](
+			`document.querySelectorAll("[data-rst-passkey]")
+				.forEach(b => { b.hidden = false; }); "ok"`),
+		harness.Into(&after, chromedp.Evaluate[map[string]*orState](read)),
 	); err != nil {
 		t.Fatal(err)
 	}
@@ -358,17 +360,17 @@ func TestABlockLinkButtonStaysInsideItsContainer(t *testing.T) {
 	defer cancel()
 
 	var bad []string
-	if err := chromedp.Run(ctx,
+	if err := chromedp.Do(ctx,
 		chromedp.EmulateViewport(390, 900),
 		chromedp.Navigate(rig.Origin+"/"),
-		chromedp.WaitVisible(`#box a`, chromedp.ByQuery),
-		chromedp.Evaluate(`(function () {
+		chromedp.WaitVisible(chromedp.CSS(`#box a`)),
+		harness.Into(&bad, chromedp.Evaluate[[]string](`(function () {
   const box = document.getElementById("box").getBoundingClientRect();
   return [...document.querySelectorAll("#box a")].map(a => [a, a.getBoundingClientRect()])
     .filter(([, r]) => r.left < box.left - 0.5 || r.right > box.right + 0.5)
     .map(([a, r]) => a.getAttribute("rst-btn") + " spans " + r.left.toFixed(1) + ".." + r.right.toFixed(1) +
       " in " + box.left.toFixed(1) + ".." + box.right.toFixed(1));
-})()`, &bad),
+})()`)),
 	); err != nil {
 		t.Fatal(err)
 	}

@@ -30,19 +30,19 @@ func TestTheSocialSignInButtonsStackAndCarryTheirMarks(t *testing.T) {
 	ctx, cancel := context.WithTimeout(rig.Context(), 90*time.Second)
 	defer cancel()
 
-	if err := chromedp.Run(ctx,
+	if err := chromedp.Do(ctx,
 		chromedp.EmulateViewport(1500, 1000),
 		chromedp.Navigate(rig.Origin+pageHref(mountPath, RootTheme(), "en", fileOf("screens"))),
-		chromedp.WaitVisible(`#screen-signin-social .ds-view__frame`, chromedp.ByQuery),
-		chromedp.Evaluate(`(() => {
+		chromedp.WaitVisible(chromedp.CSS(`#screen-signin-social .ds-view__frame`)),
+		chromedp.Evaluate[chromedp.Void](`(() => {
 		  const f = document.querySelector("#screen-signin-social .ds-view__frame");
 		  f.loading = "eager"; f.scrollIntoView();
 		  return "ok";
-		})()`, new(string)),
-		chromedp.Poll(`(() => {
+		})()`),
+		chromedp.Poll[chromedp.Void](`(() => {
 		  const d = document.querySelector("#screen-signin-social .ds-view__frame").contentDocument;
 		  return !!d && d.readyState === "complete" && !!d.querySelector("[rst-btn]");
-		})()`, nil, chromedp.WithPollingTimeout(30*time.Second)),
+		})()`, chromedp.WithPollingTimeout(30*time.Second)),
 	); err != nil {
 		t.Fatalf("loading the social sign-in frame: %v", err)
 	}
@@ -67,8 +67,7 @@ func TestTheSocialSignInButtonsStackAndCarryTheirMarks(t *testing.T) {
 	}
 
 	for _, scheme := range []string{"light", "dark"} {
-		var raw string
-		if err := chromedp.Run(ctx, chromedp.Evaluate(`(() => {
+		raw, err := chromedp.Run(ctx, chromedp.Evaluate[string](`(() => {
 		  const d = document.querySelector("#screen-signin-social .ds-view__frame").contentDocument;
 		  d.documentElement.setAttribute("data-theme", `+"`"+scheme+"`"+`);
 		  const probe = d.createElement("div");
@@ -110,7 +109,8 @@ func TestTheSocialSignInButtonsStackAndCarryTheirMarks(t *testing.T) {
 		    Container: inner,
 		    Marks: marks,
 		  });
-		})()`, &raw)); err != nil {
+		})()`))
+		if err != nil {
 			t.Fatalf("%s: reading the frame: %v", scheme, err)
 		}
 		var got reading

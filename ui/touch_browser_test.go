@@ -63,8 +63,8 @@ func sizingRig(t *testing.T, coarse bool, pages map[string]string, opts ...harne
 // fails first.
 func requirePointer(t *testing.T, ctx context.Context, coarse bool) {
 	t.Helper()
-	var got bool
-	if err := chromedp.Run(ctx, chromedp.Evaluate(`matchMedia("(pointer: coarse)").matches`, &got)); err != nil {
+	got, err := chromedp.Run(ctx, chromedp.Evaluate[bool](`matchMedia("(pointer: coarse)").matches`))
+	if err != nil {
 		t.Fatalf("reading the pointer: %v", err)
 	}
 	if got != coarse {
