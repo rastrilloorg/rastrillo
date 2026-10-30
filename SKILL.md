@@ -11,9 +11,9 @@ pages; it supplies the database opener, session store, identity
 plugins, CSRF, owner scoping, form helpers. Module `amadan.net/rastrillo/rastrillo`; worked
 reference `examples/notes` — in the repository, **not** in the
 published module (Go excludes nested modules from a zip), so read it
-there, never in your checkout. The topics below hold what it shows,
-sign-in and tests included, in a page each: read the topic first, and
-the example only for what no topic covers. Rare traps get one sentence plus a page:
+there, never in your checkout. The topics below cover what it shows,
+sign-in and tests included: read the example only for what they do
+not. Rare traps get one sentence plus a page:
 `docs/site/<page>.md`, or `curl -s https://rastrillo.org/docs/<page>.md`.
 
 ## Load a topic before its work
@@ -24,6 +24,7 @@ Read the topic before you start work it covers, not after the source:
 
 | Before you... | read |
 |---|---|
+| write or change any Go code: names, function and file size, comments, an action's shape | `skill/code.md` |
 | add password sign-in to an app that has none | `skill/add-signin.md` |
 | use the session, magic links, a sign-in screen, 2FA | `skill/signin.md` |
 | add a page or route, a flow, a test, or meet a perf/budget failure | `skill/screens.md` |
@@ -64,8 +65,7 @@ construction; run `rastrillo generate`, commit `gen/` and `api/v1.json`, and pas
 **Look before you build.** Most things an app needs already ship: a
 Light/Dark/System switch in every shell, a picture grid (`media-grid`),
 the API token page (`api-tokens`), job status pages, money fields,
-error pages. Check the topic index
-above before writing one.
+error pages. Check the index first.
 
 ## App shape
 
@@ -120,10 +120,40 @@ fields out of columns. Validate with `form.Parse` (`skill/forms.md`).
 `sessions` owns signed-in state: SQLite rows, cookies (`__Host-`
 prefixed on https), 30-day TTL; an identity plugin verifies a credential and calls
 `SignIn`. `csrf.Protect(origin)` refuses cross-origin writes with no
-tokens. Signed-in routes sit in a `Group` with `sess.Require`. **Under
-magic links (`auth`), never `sessions.UserID`:** the subject is an
-email, so the seam above would scope to `user_id = 0`. Everything else:
-`skill/signin.md`.
+tokens. **Under magic links (`auth`), never `sessions.UserID`:** the
+subject is an email, so the seam above would scope to `user_id = 0`.
+Everything else: `skill/signin.md`.
+
+## Write code that reads like a sentence
+
+Rastrillo's own gate, `rastrillo budget code`, holds Go to four limits.
+An app's `make ci` does not run it yet; meet them anyway:
+
+- lines at most 80 columns, a tab reaching the next stop of 4;
+- non-test files at most 400 lines;
+- non-test functions at most 40 lines; an action,
+  `func(*action.Visit)`, 15;
+- no one-letter names but a capital type parameter and the testing
+  types' `t`, `b`, `f`.
+
+1. Spell names out, except those, `err` and `ctx` (`context` is the
+   package): `request`, not `r`. The scaffold's short names
+   (`a.owned(r)` above) are being renamed; new code spells them out:
+   `app.owned(request)`.
+2. Name things for what the person is doing (`entries.Publish`), not
+   how the code does it (`saveEntry`).
+3. One route, one intent: two buttons that mean two things post to two
+   routes, never to one handler with an `isNew` switch.
+4. An action has four beats: read the input, run one operation, answer
+   a refusal, say what success looks like.
+5. Operations hold the rules and the database work, return `op`
+   refusals and never touch HTTP.
+6. A helper answers refusals; success stays written out in the action.
+7. Comments say why, in one or two full sentences, never what the code
+   does.
+
+The other seven, an action's shape and what each gate message means:
+`skill/code.md`.
 
 ## Never
 

@@ -227,12 +227,26 @@ import (
 // by exactly the addition. The sentence now lives in
 // skill/background.md, 2,921 bytes against the topic ceiling, so no
 // ceiling moves: that is the split doing what it was for.
+//
+// Core raised 8,000 -> 9,100 on 2026-10-30 for "Write code that reads
+// like a sentence" (Design: 2026-10-29-readable-code), the rule the
+// skillCoreBudget comment reserves a raise for: every task writes Go.
+// An agent that never loads skill/code.md still writes `w` and `r` and
+// a 60-line handler, and an app's gate does not run the limits yet, so
+// nothing would tell it. The section is the four limits and rules 1 to
+// 7, a line each; the other seven rules, the action shape and the gate
+// messages went to skill/code.md. Trimming paid 120 bytes (the intro's
+// restated topic pointer, a sess.Require line the App shape and the
+// checklist both carry, the index pointer's preamble); the rest of the
+// core is facts, and the 1,461 bytes added land the file at 9,084.
+// The ceiling is the next hundred above that: slack for a one-line
+// correction from review, not room to fill.
 const (
 	// skillCoreBudget holds SKILL.md near its 2026-10-22 size (6,660
 	// bytes) with room for the index to grow by a few topics. Raising
 	// it means moving something into a topic, which is almost always
 	// the right answer, so raise it only for a rule every task needs.
-	skillCoreBudget = 8_000
+	skillCoreBudget = 9_100
 	// skillTopicBudget is per topic file. A topic that outgrows it
 	// splits in two, each with its own index line.
 	skillTopicBudget = 9_000

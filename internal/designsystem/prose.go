@@ -1,3 +1,5 @@
+//rastrillo:data the gallery's words in each language, a table of strings
+
 package designsystem
 
 import (

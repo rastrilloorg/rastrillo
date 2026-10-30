@@ -74,6 +74,10 @@ A searchable select in a toolbar that scrolls sideways opened to a list 10px tal
 
 Mark a header that stays pinned above your form with `data-rst-select-ceiling`, as you mark a bar below it with `data-rst-select-floor`. A list then never opens upward behind the header: when the header leaves less room above the field than there is below, the list opens down.
 
+### Added: `rastrillo budget code` holds Go code to readable limits
+
+New command `rastrillo budget code` holds a module's Go code to 80 columns, 400-line files, 40-line functions (15 for an action) and no single-letter names. Run it with `--init` once to record the offences the code already has in `.rastrillo/code.txt`. From then on a new offence fails, and records only go down: run it with `--lower` as the code improves. A record you add or raise on a branch needs a reason after its count. Rastrillo's own gate runs it as `make code`. Nothing runs it in an app yet. See [CLI](/docs/cli).
+
 ### Added: write an action as one function, with `action`
 
 New package `action`. An action takes one `*action.Visit` and does four things with it: read the input, run one operation, answer a refusal, say what success looks like. `Visit` has a method for each step: `ReadForm`, `PathID`, `Render`, `Flash`, `Redirect`, and `Refused` or `RefusedShowing` to answer an error. `action.NewRoutes` mounts your actions on a chi router, and `List` returns the routes it mounted, with their guards, so a test can check them without serving a request. Nothing existing changes, and nothing calls `action` yet. See [action](/docs/reference/action).

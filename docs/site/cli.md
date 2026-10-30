@@ -552,6 +552,7 @@ that already runs `generate --check` needs no extra step.
 
 ```sh
 rastrillo budget size [dir]
+rastrillo budget code [--init | --lower] [dir]
 rastrillo budget test [-no-time] [-require TestA,TestB] [go test arguments]
 ```
 
@@ -561,6 +562,26 @@ minus the exceptions in `.rastrillo/budgets.txt`. It stops at a nested
 module, which has its own budget. It exits 1 when something is over and 2
 when `budgets.txt` cannot be read.
 
+`budget code` holds the Go code of the module at `dir` (default `.`) to
+four limits. A line is at most 80 columns, counting a tab as up to 4. A
+file is at most 400 lines, and a function at most 40, or 15 for an action.
+No name is a single letter, except `t`, `b` and `f` with their testing
+types, and a one-capital-letter type parameter. Tests are held to the
+columns and names limits only. Generated files are skipped, and a file
+marked `//rastrillo:data <reason>` above its package clause is a table, so
+it is not held to columns or length.
+
+`.rastrillo/code.txt` records the offences the code already had. A new
+offence fails, and so does a record that is looser than the code: lower
+it, or delete it when the offence is gone. `--init` writes the file with a
+record for every offence, and refuses if the file exists. `--lower` lowers
+and deletes records to match the code, and never adds or raises one. To
+add or raise a record by hand, write a reason after its count. The check
+compares the file with the copy where your branch left `origin/main`, and
+fails a new or higher record with no reason. It exits 1 when something is
+over a limit and 2 when `code.txt` cannot be read or `--init` finds one
+already there.
+
 `budget test` runs `go test -json` with your arguments (`./...` if you give
 none), and exits with `go test`'s own status. It holds each package to its
 time budget using the line `budget.Main` prints, fails a package that ran
@@ -568,7 +589,8 @@ tests without printing it, and ends with a receipt. `-no-time` turns the
 time budget off, for the perf lane. `-require` names tests that must pass
 in the run, so a lane cannot go green having run nothing.
 
-The scaffold's `make budget`, `make test` and `make perf` call these.
+The scaffold's `make budget`, `make test` and `make perf` call `budget size`
+and `budget test`.
 [Testing](/docs/testing) explains the budgets.
 
 ## rastrillo session-key

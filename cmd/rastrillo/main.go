@@ -69,7 +69,13 @@ func main() {
 }
 
 func usage() {
-	fmt.Fprint(os.Stderr, `rastrillo — the CARLOS web framework CLI
+	fmt.Fprint(os.Stderr, usageText)
+}
+
+// usageText is a constant rather than usage's body so that the help can
+// grow a line per command without making usage a function too long to
+// read: it is a table, not code.
+const usageText = `rastrillo — the CARLOS web framework CLI
 
 Usage:
   rastrillo new [--locale=<code>] <name>        scaffold a new app in ./<name>, offering one language (default en)
@@ -84,7 +90,7 @@ Usage:
   rastrillo doctor [flags] [dir]                compare the app's vendored static/ files with this binary's (default dir: .)
        --fix [--force]                          re-copy what drifted (--force overrides its two refusals)
        --theme <name>                           which theme static/theme.css should be, for an app with no pin
-       --probe                                  `+localecheck.ProbeFlag+`
+       --probe                                  ` + localecheck.ProbeFlag + `
                                                 exits 0 clean, 3 drift, 4 the app is on a different rastrillo version,
                                                 5 it imports rastrillo's old module path.
                                                 6  templates still use the old syntax: run rastrillo migrate-templates
@@ -102,8 +108,15 @@ Usage:
        -check                                    pre-ship gate: regenerate + byte-compare, then node --test test/parity.test.mjs
   rastrillo budget size [dir]                   hold each directory to 5,000 source and 8,000 test lines (default dir: .)
                                                 exits 1 over budget, 2 for a malformed .rastrillo/budgets.txt
+  rastrillo budget code [--init | --lower] [dir]
+                                                hold Go code to 80 columns,
+                                                400-line files, 40-line
+                                                functions, no single-letter
+                                                names; exits 1 over a limit, 2
+                                                for a malformed
+                                                .rastrillo/code.txt or when
+                                                --init finds one already there
   rastrillo budget test [-no-time] [-require T,...] [go test args]
                                                 run go test -json, judge each package's time, print a receipt
   rastrillo session-key <kid>                   print a new signing key for signed sessions, and its public key
-`)
-}
+`

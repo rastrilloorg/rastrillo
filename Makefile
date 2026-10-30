@@ -4,7 +4,7 @@
 # silently no-op with "Nothing to be done" - exit 0, and the sweep never
 # runs. None of the four names a real file, so the pattern rule already
 # reruns unconditionally without needing .PHONY's safety here.
-.PHONY: ci suite suite-roles gofmt budget root perf staticcheck govulncheck gitleaks chromedp-graph gorm-free race generate-check scaffold-smoke browser \
+.PHONY: ci suite suite-roles gofmt budget code root perf staticcheck govulncheck gitleaks chromedp-graph gorm-free race generate-check scaffold-smoke browser \
         browser-sweep mirror mirror-check money money-cldr
 
 # The READMEs' documented sweeps all run with GOFLAGS=-mod=mod: the tests
@@ -75,7 +75,7 @@ go-roles = $(foreach p,$(2),$(if $(findstring @,$(p)),$(call go-slices,$(1),$(su
 go-slices = $(foreach k,$(shell seq 1 $(3)),$(1).$(2)~$(k)of$(3))
 BROWSER_ROLES := $(call go-roles,browser,$(BROWSER_PKGS))
 TEST_ROLES := $(call go-roles,test,$(ROOT_SPLIT))
-SUITE := root $(TEST_ROLES) staticcheck govulncheck gitleaks money budget race \
+SUITE := root $(TEST_ROLES) staticcheck govulncheck gitleaks money budget code race \
          $(addprefix example-,$(EXAMPLES)) scaffold-smoke $(BROWSER_ROLES)
 
 suite:
@@ -107,6 +107,15 @@ budget: | $(BIN)/tmp
 	go run ./cmd/rastrillo budget size
 	go run ./cmd/rastrillo budget size money
 	@for e in $(EXAMPLES); do go run ./cmd/rastrillo budget size examples/$$e || exit 1; done
+
+# The readable-code limits: 80 columns, 400-line files, 40-line functions
+# (15 for an action) and no single-letter names. Each module's
+# .rastrillo/code.txt records the offences it had when the gate began,
+# and the records only go down. Measured module by module, as budget is.
+code: | $(BIN)/tmp
+	go run ./cmd/rastrillo budget code
+	go run ./cmd/rastrillo budget code money
+	@for e in $(EXAMPLES); do go run ./cmd/rastrillo budget code examples/$$e || exit 1; done
 
 money:
 	cd money && go build ./... && go vet ./... && go test ./... -count=1

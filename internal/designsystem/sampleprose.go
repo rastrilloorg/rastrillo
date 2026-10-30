@@ -1,3 +1,5 @@
+//rastrillo:data the samples' words in eleven languages, a table of strings
+
 package designsystem
 
 // sampleProse is the samples' words in the eleven other languages: the

@@ -133,11 +133,12 @@ It fails, even if every gate passes, if:
 These go to agents, word for word where possible. Rules 1 to 7 came out
 of the conversation; 8 to 14 are recommendations Paul accepted.
 
-1. **Spell names out, everywhere, except `err` and Go's testing
-   values (`t`, `b`, `f`).** `response`, not `w`;
+1. **Spell names out, everywhere, except `err`, `ctx` and Go's
+   testing values (`t`, `b`, `f`).** `response`, not `w`;
    `request`, not `r`; `app`, not `a`; `submitted`, not `in`; `tag`,
    not `t`. `err` stays because every Go reader knows it, and `error`
-   would hide Go's built-in error type. `t *testing.T` and its siblings
+   would hide Go's built-in error type. `ctx` stays too, because
+   `context` is the package. `t *testing.T` and its siblings
    stay for the same reason as `err`. Type parameters may be one
    capital (`Opt[T]`). Names cost nothing at run time.
 2. **Name things for what the person is doing, not how the code does
@@ -200,7 +201,10 @@ The "today" figures count non-test Go on `origin/main` of both repos on
 2026-10-29, excluding generated code.
 
 Data files are exempt from the file limit (Rastrillo's 5,474-line
-`internal/designsystem/prose.go` is sample text). Tests are held to the
+`internal/designsystem/prose.go` is sample text), and from the columns
+limit, because a table's entries are long strings that wrapping makes
+worse (added while planning step 2). A data file says so with
+`//rastrillo:data <reason>` before its package clause. Tests are held to the
 naming and line rules but not the function limit, since a table-driven
 test is long by nature.
 
