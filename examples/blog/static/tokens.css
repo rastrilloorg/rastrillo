@@ -253,6 +253,22 @@ body {
    transition, a registered number inside one can. */
 @property --rst-press { syntax: "<number>"; inherits: false; initial-value: 0; }
 
+/* The hover tint's own number, and the press's. A row, a tile and a
+   rail item fade their tint in on hover; when that fade was a
+   background-color transition, a scheme change while one was hovered
+   retargeted it, and the one item under the pointer took a quarter of
+   a second to reach the new scheme while its text changed at once
+   (Astra A3). What eases now is a percentage: the tint, the lift's
+   shadows and the press are re-resolved from it every frame, so the
+   colours come from the current scheme and the flip lands on the next
+   frame with no script's help. Two numbers, so a release still eases
+   from the press tint back to the hover tint. Every rule that reads
+   them sets both: without @property (Firefox before 128) an unset
+   var() invalidates the whole declaration, and a hover that set only
+   --rst-hover lost its background until pressed. */
+@property --rst-hover { syntax: "<percentage>"; inherits: false; initial-value: 0%; }
+@property --rst-pressed { syntax: "<percentage>"; inherits: false; initial-value: 0%; }
+
 /* A card's light is registered so it does not inherit: unregistered, a
    write of --rst-card-x on a card of 500 rows restyled all 1,500
    descendants, 16ms a frame while the pointer moved, and nothing below
@@ -1507,14 +1523,14 @@ a.rst-nm:hover { color: var(--rst-accent); }
    Hover-in fades; hover-out, a press and a scheme change land at
    once. */
 .rst-lrow:not(.rst-lrow--head):has(> a.rst-nm:active, > a.rst-person:active), [rst-lrow]:not([rst-lrow~="head"]):has(> a.rst-nm:active, > a[rst-person]:active), .rst-row:has(> .rst-row__main > a:active), [rst-row]:has(> [rst-row-main] > a:active) { background-color: var(--rst-tint-tap, transparent); box-shadow: inset 0 1px 2px var(--rst-depth-ambient, transparent); transition: none; }
-.rst-media__tile:has(.rst-media__name > a:active), [rst-media-tile]:has([rst-media-name] > a:active) { background-color: var(--rst-tint-tile-press, var(--rst-surface)); box-shadow: inset 0 1px 2px var(--rst-depth-ambient, transparent); transition: none; }
+.rst-media__tile:has(.rst-media__name > a:active), [rst-media-tile]:has([rst-media-name] > a:active) { --rst-pressed: 100%; background-color: var(--rst-tint-tile-press, var(--rst-surface)); box-shadow: inset 0 1px 2px var(--rst-depth-ambient, transparent); transition: none; }
 @media (hover: hover) {
-  .rst-lrow:not(.rst-lrow--head):has(> a.rst-nm, > a.rst-person):hover, [rst-lrow]:not([rst-lrow~="head"]):has(> a.rst-nm, > a[rst-person]):hover { background-color: var(--rst-tint-hover, var(--rst-accent-soft)); box-shadow: inset 0 1px 0 var(--rst-depth-hl, transparent), inset 0 -1px 0 var(--rst-depth-contact, transparent); transition: background-color 0.25s ease, box-shadow 0.25s ease; }
-  .rst-row:has(> .rst-row__main > a):hover, [rst-row]:has(> [rst-row-main] > a):hover { background-color: var(--rst-row-tint-hover, var(--rst-surface-2)); box-shadow: inset 0 1px 0 var(--rst-depth-hl, transparent), inset 0 -1px 0 var(--rst-depth-contact, transparent); transition: background-color 0.25s ease, box-shadow 0.25s ease; }
-  .rst-media__tile:has(.rst-media__name > a):hover, [rst-media-tile]:has([rst-media-name] > a):hover { background-color: var(--rst-tint-tile-hover, var(--rst-surface)); box-shadow: inset 0 1px 0 var(--rst-depth-hl, transparent), inset 0 -1px 0 var(--rst-depth-contact, transparent); transition: background-color 0.25s ease, box-shadow 0.25s ease; }
-  .rst-lrow:not(.rst-lrow--head):hover:has(> a.rst-nm:active, > a.rst-person:active), [rst-lrow]:not([rst-lrow~="head"]):hover:has(> a.rst-nm:active, > a[rst-person]:active) { background-color: var(--rst-tint-press, var(--rst-accent-soft)); box-shadow: inset 0 1px 2px var(--rst-depth-ambient, transparent); transition: none; }
-  .rst-row:hover:has(> .rst-row__main > a:active), [rst-row]:hover:has(> [rst-row-main] > a:active) { background-color: var(--rst-row-tint-press, var(--rst-surface-2)); box-shadow: inset 0 1px 2px var(--rst-depth-ambient, transparent); transition: none; }
-  .rst-media__tile:hover:has(.rst-media__name > a:active), [rst-media-tile]:hover:has([rst-media-name] > a:active) { background-color: var(--rst-tint-tile-press, var(--rst-surface)); box-shadow: inset 0 1px 2px var(--rst-depth-ambient, transparent); transition: none; }
+  .rst-lrow:not(.rst-lrow--head):has(> a.rst-nm, > a.rst-person):hover, [rst-lrow]:not([rst-lrow~="head"]):has(> a.rst-nm, > a[rst-person]):hover { --rst-hover: 100%; --rst-pressed: 0%; background-color: color-mix(in srgb, var(--rst-tint-press, var(--rst-accent-soft)) var(--rst-pressed), color-mix(in srgb, var(--rst-tint-hover, var(--rst-accent-soft)) var(--rst-hover), transparent)); box-shadow: inset 0 1px 0 color-mix(in srgb, var(--rst-depth-hl, transparent) var(--rst-hover), transparent), inset 0 -1px 0 color-mix(in srgb, var(--rst-depth-contact, transparent) var(--rst-hover), transparent); transition: --rst-hover 0.25s ease, --rst-pressed 0.25s ease; }
+  .rst-row:has(> .rst-row__main > a):hover, [rst-row]:has(> [rst-row-main] > a):hover { --rst-hover: 100%; --rst-pressed: 0%; background-color: color-mix(in srgb, var(--rst-row-tint-press, var(--rst-surface-2)) var(--rst-pressed), color-mix(in srgb, var(--rst-row-tint-hover, var(--rst-surface-2)) var(--rst-hover), transparent)); box-shadow: inset 0 1px 0 color-mix(in srgb, var(--rst-depth-hl, transparent) var(--rst-hover), transparent), inset 0 -1px 0 color-mix(in srgb, var(--rst-depth-contact, transparent) var(--rst-hover), transparent); transition: --rst-hover 0.25s ease, --rst-pressed 0.25s ease; }
+  .rst-media__tile:has(.rst-media__name > a):hover, [rst-media-tile]:has([rst-media-name] > a):hover { --rst-hover: 100%; --rst-pressed: 0%; background-color: color-mix(in srgb, var(--rst-tint-tile-press, var(--rst-surface)) var(--rst-pressed), color-mix(in srgb, var(--rst-tint-tile-hover, var(--rst-surface)) var(--rst-hover), var(--rst-surface))); box-shadow: inset 0 1px 0 color-mix(in srgb, var(--rst-depth-hl, transparent) var(--rst-hover), transparent), inset 0 -1px 0 color-mix(in srgb, var(--rst-depth-contact, transparent) var(--rst-hover), transparent); transition: --rst-hover 0.25s ease, --rst-pressed 0.25s ease; }
+  .rst-lrow:not(.rst-lrow--head):hover:has(> a.rst-nm:active, > a.rst-person:active), [rst-lrow]:not([rst-lrow~="head"]):hover:has(> a.rst-nm:active, > a[rst-person]:active) { --rst-pressed: 100%; background-color: var(--rst-tint-press, var(--rst-accent-soft)); box-shadow: inset 0 1px 2px var(--rst-depth-ambient, transparent); transition: none; }
+  .rst-row:hover:has(> .rst-row__main > a:active), [rst-row]:hover:has(> [rst-row-main] > a:active) { --rst-pressed: 100%; background-color: var(--rst-row-tint-press, var(--rst-surface-2)); box-shadow: inset 0 1px 2px var(--rst-depth-ambient, transparent); transition: none; }
+  .rst-media__tile:hover:has(.rst-media__name > a:active), [rst-media-tile]:hover:has([rst-media-name] > a:active) { --rst-pressed: 100%; background-color: var(--rst-tint-tile-press, var(--rst-surface)); box-shadow: inset 0 1px 2px var(--rst-depth-ambient, transparent); transition: none; }
 }
 @media (max-width: 800px) {
   .rst-m-hide { display: none; }
@@ -1954,52 +1970,102 @@ textarea.rst-input, textarea[rst-input] { min-height: 5rem; resize: vertical; }
 small.rst-field__hint, small[rst-field-hint] { display: block; font-size: var(--rst-fs-xs); margin: 0.45rem 0 0; }
 
 /* switch — the one toggle mechanism: real checkbox, visible track. The
-   knob sits at the track's inline start and travels --rst-switch-x
-   toward its end: 0 off, 15px on, and while it is dragged whatever
-   rastrillo.js writes on the track. translateX is physical, so a
+   track's width and height and the knob's size are theme tokens, in a
+   fine-pointer set and a touch set (the query after these rules), each
+   read through today's 34x19 and 15px, so a theme written before them
+   draws the switch it drew; the knob is inset 2px, so its travel
+   (--rst-switch-run) is the width less the knob and the insets, which
+   is the width less the height. The track's radius is half its height
+   and a hair, which the browser clamps to half: 10px on today's 19px
+   track, the literal it replaced, and never the pill token, which a
+   theme of its own may set square for its chips and tabs without
+   squaring a switch that never read it (A15). The knob sits at the track's inline
+   start and travels toward its end by --rst-switch-p, its share of the
+   travel: 0 off, 1 on, and while it is dragged whatever rastrillo.js
+   writes on the track. The on colour follows it exactly as far:
+   --rst-switch-on is the on colour's share of the track, a color-mix()
+   of the accent fill into the off colour, 0% off and 100% on, and the
+   two numbers are set side by side by every rule here and by the one
+   script write, and eased by one transition of the same length and
+   curve, so the colour cannot drift from the knob (a scheme change
+   mid-toggle lands through rastrillo.js's land(), as before). Two
+   numbers rather than one and an overlay: an overlay fading in over
+   the track stacks a second antialiased edge on the track's own, which
+   measured 5.8% of a plain switch's pixels at a delta of 29 against
+   the matrix's allowance of 24 on 1%, where color-mix() at 100% is
+   the accent exactly (A15); and a color-mix() share must be a plain
+   percentage, never calc(var()) (A4), so the knob's number cannot
+   drive it. translateX is physical, so a
    right-to-left switch negates it (--rst-switch-dir) and the knob
    starts at the right; the start and the travel mirror together, or the
    knob leaves the track. The sign comes from the track's own direction,
    :dir(), which inset-inline-start and the drag read too: an LTR section
    inside an RTL page took the ancestor's -1 and sent the knob left out
    of its track. The [dir="rtl"] rule before it is for an engine without
-   :dir(), which drops the two rules after it. The transform's transition is the snap, with
-   scripts or without; a drag turns it off so the knob follows the
-   pointer, and on release it eases to the end. pan-y lets a vertical
-   swipe on the track scroll the page and keeps a horizontal one for the
-   drag. */
+   :dir(), which drops the two rules after it. The numbers' transition
+   is a toggle's motion, with scripts or without: 0.24s, firm, no
+   bounce; a drag turns it off so the knob follows the pointer 1:1, and
+   a release takes the firmer 0.18s rule below to the nearer end.
+   Without @property (Firefox before 128) the numbers are still set by
+   every rule that reads them, so the switch paints, and a toggle lands
+   at once. pan-y lets a vertical swipe on the track scroll the page
+   and keeps a horizontal one for the drag. */
+@property --rst-switch-p { syntax: "<number>"; inherits: true; initial-value: 0; }
+@property --rst-switch-on { syntax: "<percentage>"; inherits: false; initial-value: 0%; }
 .rst-switch, [rst-switch] { align-items: center; cursor: pointer; display: inline-flex; gap: 0.6rem; position: relative; }
 .rst-switch input, [rst-switch] input { height: 1px; opacity: 0; position: absolute; width: 1px; }
 /* The knob is a lit dome in both schemes: near-white, a highlight on the
-   side the light comes from, a contact shadow. In dark it had been the
-   surface colour and read as a hole in the track. The off track is a
-   grey dark enough to clear 3:1 against the surface and light enough
-   for the knob to clear 3:1 on it; the on track is the accent fill, and
-   its sheen sits over the knob through --rst-switch-x and
-   --rst-switch-dir, on hover and while the knob is dragged, so a
-   right-to-left switch and a mid-drag knob keep it.
+   side the light comes from, a contact shadow, and the theme's knob
+   shadow under it (day's is a drop and a hairline ring); hovered, it
+   lifts like a button: the contact shadow reaches further and the
+   theme's hover knob shadow replaces the rest one. The track sits in:
+   the contact shadow inset, and the ambient tone as a hairline rim
+   inside its edge. In dark the knob had been the surface colour and
+   read as a hole in the track. The off track is a grey dark enough to
+   clear 3:1 against the surface and light enough for the knob to clear
+   3:1 on it; the on track is the accent fill, and its sheen sits over
+   the knob through --rst-switch-p and --rst-switch-dir, on hover and
+   while the knob is dragged, so a right-to-left switch and a mid-drag
+   knob keep it.
    Every new token falls back to what the switch painted before (the
-   surface knob, the line-strong track, the accent), so a theme written
-   before them draws the switch it drew. The knob sets its
+   surface knob, the line-strong track, the accent, the rest knob shadow
+   for the hover one), so a theme written before them draws the switch
+   it drew; the flat themes' transparent depth tokens make the rim and
+   the lift's contact shadow nothing on screen. The knob sets its
    background-color under the gradient, so a mode that drops background
    images still draws one. A disabled switch takes no hover. */
-.rst-switch__track, [rst-switch-track] { --rst-switch-x: 0px; background-color: var(--rst-track-off, var(--rst-line-strong)); border-radius: 10px; box-shadow: inset 0 1px 2px var(--rst-depth-contact, transparent); flex: none; height: 19px; position: relative; touch-action: pan-y; transition: background-color 0.15s; width: 34px; }
+.rst-switch__track, [rst-switch-track] { --rst-switch-p: 0; --rst-switch-on: 0%; --rst-switch-run: calc(var(--rst-switch-w, 34px) - var(--rst-switch-knob, 15px) - 4px); background-color: color-mix(in srgb, var(--rst-accent-fill, var(--rst-accent)) var(--rst-switch-on), var(--rst-track-off, var(--rst-line-strong))); border-radius: calc(var(--rst-switch-h, 19px) / 2 + 0.5px); box-shadow: inset 0 1px 2px var(--rst-depth-contact, transparent), inset 0 0 0 0.5px var(--rst-depth-ambient, transparent); flex: none; height: var(--rst-switch-h, 19px); position: relative; touch-action: pan-y; transition: --rst-switch-p 0.24s cubic-bezier(0.22, 1, 0.36, 1), --rst-switch-on 0.24s cubic-bezier(0.22, 1, 0.36, 1); width: var(--rst-switch-w, 34px); }
 [dir="rtl"] .rst-switch__track, [dir="rtl"] [rst-switch-track] { --rst-switch-dir: -1; }
 .rst-switch__track:dir(ltr), [rst-switch-track]:dir(ltr) { --rst-switch-dir: 1; }
 .rst-switch__track:dir(rtl), [rst-switch-track]:dir(rtl) { --rst-switch-dir: -1; }
-.rst-switch__track::after, [rst-switch-track]::after { background-color: var(--rst-knob-shade, var(--rst-surface)); background-image: radial-gradient(circle at calc(50% + var(--rst-light-x) * 22%) calc(30% + (var(--rst-light-y) + 1) * 10%), color-mix(in srgb, var(--rst-depth-hl, transparent) 70%, transparent), transparent 60%), linear-gradient(to bottom, var(--rst-knob, var(--rst-surface)), var(--rst-knob-shade, var(--rst-surface))); border-radius: 50%; box-shadow: inset 0 1px 0 var(--rst-depth-hl, transparent), var(--rst-shadow-x) calc(var(--rst-shadow-y) * 0.8) 1px var(--rst-depth-contact, transparent), var(--rst-shadow-knob); content: ""; height: 15px; inset-inline-start: 2px; position: absolute; top: 2px; transform: translateX(calc(var(--rst-switch-x) * var(--rst-switch-dir, 1))); transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1); width: 15px; }
-.rst-switch:has(input:checked) .rst-switch__track, [rst-switch]:has(input:checked) [rst-switch-track] { --rst-switch-x: 15px; background-color: var(--rst-accent-fill, var(--rst-accent)); }
-.rst-switch[data-rst-drag], [rst-switch][data-rst-drag] { -webkit-user-select: none; user-select: none; }
-.rst-switch[data-rst-drag] .rst-switch__track::after, [rst-switch][data-rst-drag] [rst-switch-track]::after { transition: none; }
+.rst-switch__track::after, [rst-switch-track]::after { background-color: var(--rst-knob-shade, var(--rst-surface)); background-image: radial-gradient(circle at calc(50% + var(--rst-light-x) * 22%) calc(30% + (var(--rst-light-y) + 1) * 10%), color-mix(in srgb, var(--rst-depth-hl, transparent) 70%, transparent), transparent 60%), linear-gradient(to bottom, var(--rst-knob, var(--rst-surface)), var(--rst-knob-shade, var(--rst-surface))); border-radius: 50%; box-shadow: inset 0 1px 0 var(--rst-depth-hl, transparent), var(--rst-shadow-x) calc(var(--rst-shadow-y) * 0.8) 1px var(--rst-depth-contact, transparent), var(--rst-shadow-knob); content: ""; height: var(--rst-switch-knob, 15px); inset-inline-start: 2px; position: absolute; top: 2px; transform: translateX(calc(var(--rst-switch-p) * var(--rst-switch-run) * var(--rst-switch-dir, 1))); width: var(--rst-switch-knob, 15px); }
+.rst-switch:has(input:checked) .rst-switch__track, [rst-switch]:has(input:checked) [rst-switch-track] { --rst-switch-p: 1; --rst-switch-on: 100%; }
+/* The toggle block's head drags like a switch, so the drag, sheen and
+   settle rules name it too, by #104 item 1's child combinators. */
+.rst-switch[data-rst-drag], [rst-switch][data-rst-drag], .rst-tblock > .rst-tblock__head[data-rst-drag], [rst-tblock] > [rst-tblock-head][data-rst-drag] { -webkit-user-select: none; user-select: none; }
+.rst-switch[data-rst-drag] .rst-switch__track, [rst-switch][data-rst-drag] [rst-switch-track], .rst-tblock > .rst-tblock__head[data-rst-drag] > .rst-switch__track, [rst-tblock] > [rst-tblock-head][data-rst-drag] > [rst-switch-track] { transition: none; }
+/* A released knob goes to the nearer end with a firmer, shorter curve
+   than a toggle's: the shim marks the label for the 0.18s it takes.
+   After the drag rule, because a release ends a drag. */
+.rst-switch[data-rst-settle] .rst-switch__track, [rst-switch][data-rst-settle] [rst-switch-track], .rst-tblock > .rst-tblock__head[data-rst-settle] > .rst-switch__track, [rst-tblock] > [rst-tblock-head][data-rst-settle] > [rst-switch-track] { transition: --rst-switch-p 0.18s cubic-bezier(0.3, 0.9, 0.4, 1), --rst-switch-on 0.18s cubic-bezier(0.3, 0.9, 0.4, 1); }
 @media (hover: hover) {
-  .rst-switch:hover:not([data-rst-drag]):has(input:enabled) .rst-switch__track::after, [rst-switch]:hover:not([data-rst-drag]):has(input:enabled) [rst-switch-track]::after, .rst-tblock__head:hover:has(input:enabled) .rst-switch__track::after, [rst-tblock-head]:hover:has(input:enabled) [rst-switch-track]::after { background-image: radial-gradient(circle at calc(50% + var(--rst-light-x) * 22%) calc(30% + (var(--rst-light-y) + 1) * 10%), var(--rst-depth-hl, transparent), transparent 60%), linear-gradient(to bottom, var(--rst-knob, var(--rst-surface)), var(--rst-knob-shade, var(--rst-surface))); }
-  .rst-switch:hover:has(input:checked:enabled) .rst-switch__track, [rst-switch]:hover:has(input:checked:enabled) [rst-switch-track], .rst-tblock__head:hover:has(input:checked:enabled) .rst-switch__track, [rst-tblock-head]:hover:has(input:checked:enabled) [rst-switch-track] { background-image: radial-gradient(40px circle at calc(50% + var(--rst-switch-dir, 1) * (var(--rst-switch-x) - 7.5px)) 20%, var(--rst-sheen-fill, transparent), transparent 70%); }
+  .rst-switch:hover:not([data-rst-drag]):has(input:enabled) .rst-switch__track::after, [rst-switch]:hover:not([data-rst-drag]):has(input:enabled) [rst-switch-track]::after, .rst-tblock__head:hover:not([data-rst-drag]):has(input:enabled) .rst-switch__track::after, [rst-tblock-head]:hover:not([data-rst-drag]):has(input:enabled) [rst-switch-track]::after { background-image: radial-gradient(circle at calc(50% + var(--rst-light-x) * 22%) calc(30% + (var(--rst-light-y) + 1) * 10%), var(--rst-depth-hl, transparent), transparent 60%), linear-gradient(to bottom, var(--rst-knob, var(--rst-surface)), var(--rst-knob-shade, var(--rst-surface))); box-shadow: inset 0 1px 0 var(--rst-depth-hl, transparent), var(--rst-shadow-x) calc(var(--rst-shadow-y) * 1.2) 2px var(--rst-depth-contact, transparent), var(--rst-shadow-knob-hover, var(--rst-shadow-knob)); }
+  .rst-switch:hover:has(input:checked:enabled) .rst-switch__track, [rst-switch]:hover:has(input:checked:enabled) [rst-switch-track], .rst-tblock__head:hover:has(input:checked:enabled) .rst-switch__track, [rst-tblock-head]:hover:has(input:checked:enabled) [rst-switch-track] { background-image: radial-gradient(40px circle at calc(50% + var(--rst-switch-dir, 1) * (var(--rst-switch-p) - 0.5) * var(--rst-switch-run)) 20%, var(--rst-sheen-fill, transparent), transparent 70%); }
 }
 /* Outside the hover query: a knob being dragged is being looked at,
    which is what the hover meant, and a finger has no hover. */
-.rst-switch[data-rst-drag]:has(input:checked) .rst-switch__track, [rst-switch][data-rst-drag]:has(input:checked) [rst-switch-track] { background-image: radial-gradient(40px circle at calc(50% + var(--rst-switch-dir, 1) * (var(--rst-switch-x) - 7.5px)) 20%, var(--rst-sheen-fill, transparent), transparent 70%); }
+.rst-switch[data-rst-drag]:has(input:checked) .rst-switch__track, [rst-switch][data-rst-drag]:has(input:checked) [rst-switch-track], .rst-tblock > .rst-tblock__head[data-rst-drag]:has(> input:checked) > .rst-switch__track, [rst-tblock] > [rst-tblock-head][data-rst-drag]:has(> input:checked) > [rst-switch-track] { background-image: radial-gradient(40px circle at calc(50% + var(--rst-switch-dir, 1) * (var(--rst-switch-p) - 0.5) * var(--rst-switch-run)) 20%, var(--rst-sheen-fill, transparent), transparent 70%); }
 .rst-switch:has(input:focus-visible) .rst-switch__track, [rst-switch]:has(input:focus-visible) [rst-switch-track] { outline: 2px solid var(--rst-accent); outline-offset: 2px; }
 .rst-switch:has(input:disabled), [rst-switch]:has(input:disabled) { cursor: default; opacity: 0.55; }
+/* On a touch screen the switch takes the theme's touch set: day's is
+   the phone size, plain's and signal's are their one size. The one
+   touch query of the file (§1.1, and the gate that holds it), so a
+   narrow window and the gallery's Mobile tab show what a phone shows,
+   as the type scale does. The set is read on the track, so the knob
+   and the travel, which read the tokens through inheritance, follow. */
+@media (pointer: coarse), (max-width: 40rem) {
+  .rst-switch__track, [rst-switch-track] { --rst-switch-w: var(--rst-switch-touch-w, 34px); --rst-switch-h: var(--rst-switch-touch-h, 19px); --rst-switch-knob: var(--rst-switch-touch-knob, 15px); }
+}
 
 /* choice cards — whole-card target, native input visible. */
 .rst-choice, [rst-choice] { border: 0; margin: var(--rst-sp-4) 0; padding: 0; }
@@ -2120,7 +2186,7 @@ small.rst-field__hint, small[rst-field-hint] { display: block; font-size: var(--
 .rst-form-foot, [rst-form-foot] { display: flex; gap: var(--rst-sp-3); margin-block-start: var(--rst-sp-3); }
 
 @media (prefers-reduced-motion: reduce) {
-  .rst-switch__track, [rst-switch-track], .rst-switch__track::after, [rst-switch-track]::after { transition: none; }
+  .rst-switch__track, [rst-switch-track], .rst-switch[data-rst-settle] .rst-switch__track, [rst-switch][data-rst-settle] [rst-switch-track], .rst-tblock > .rst-tblock__head[data-rst-settle] > .rst-switch__track, [rst-tblock] > [rst-tblock-head][data-rst-settle] > [rst-switch-track] { transition: none; }
 }
 
 /* ── The routes family: confirm, toggle-block, modal shells, bulk-bar,
@@ -2139,10 +2205,16 @@ small.rst-field__hint, small[rst-field-hint] { display: block; font-size: var(--
 .rst-tblock .rst-tblock__title, [rst-tblock] [rst-tblock-title] { display: block; font-size: var(--rst-fs-sm); font-weight: 550; }
 .rst-tblock .rst-tblock__desc, [rst-tblock] [rst-tblock-desc] { color: var(--rst-text-muted); display: block; font-size: var(--rst-fs-xs); }
 .rst-tblock .rst-tblock__head input, [rst-tblock] [rst-tblock-head] input { height: 1px; opacity: 0; position: absolute; width: 1px; }
-.rst-tblock:has(.rst-tblock__head input:checked) .rst-switch__track, [rst-tblock]:has([rst-tblock-head] input:checked) [rst-switch-track] { --rst-switch-x: 15px; background-color: var(--rst-accent-fill, var(--rst-accent)); }
-.rst-tblock:has(.rst-tblock__head input:focus-visible) .rst-switch__track, [rst-tblock]:has([rst-tblock-head] input:focus-visible) [rst-switch-track] { outline: 2px solid var(--rst-accent); outline-offset: 2px; }
+/* The head's own input and track, by child combinator at each step: a
+   block's body is any markup, so "a checked head input somewhere below,
+   every track below" drew an off switch in the body as on, let a
+   checked block nested in an unchecked one flip the outer head and
+   open its body, and outlined every track below a focused head. The
+   specificity is the same as the descendant form's. */
+.rst-tblock > .rst-tblock__head:has(> input:checked) > .rst-switch__track, [rst-tblock] > [rst-tblock-head]:has(> input:checked) > [rst-switch-track] { --rst-switch-p: 1; --rst-switch-on: 100%; }
+.rst-tblock > .rst-tblock__head:has(> input:focus-visible) > .rst-switch__track, [rst-tblock] > [rst-tblock-head]:has(> input:focus-visible) > [rst-switch-track] { outline: 2px solid var(--rst-accent); outline-offset: 2px; }
 .rst-tblock > .rst-tblock__body, [rst-tblock] > [rst-tblock-body] { display: none; }
-.rst-tblock:has(.rst-tblock__head input:checked) > .rst-tblock__body, [rst-tblock]:has([rst-tblock-head] input:checked) > [rst-tblock-body] { background: var(--rst-surface-2); border-radius: 0 0 var(--rst-radius) var(--rst-radius); border-top: 1px solid var(--rst-line); display: block; padding: 0.9rem 1.05rem 1.05rem; }
+.rst-tblock:has(> .rst-tblock__head > input:checked) > .rst-tblock__body, [rst-tblock]:has(> [rst-tblock-head] > input:checked) > [rst-tblock-body] { background: var(--rst-surface-2); border-radius: 0 0 var(--rst-radius) var(--rst-radius); border-top: 1px solid var(--rst-line); display: block; padding: 0.9rem 1.05rem 1.05rem; }
 
 /* modal route — its own URL: the response renders the page you'll
    return to inside an inert backdrop, then the overlay. Closing is a
@@ -2613,8 +2685,8 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
 .rst-shell-sidebar .rst-shell__nav a, [rst-shell-sidebar] [rst-shell-nav] a { border-block-end: 0; border-radius: var(--rst-radius-sm); display: block; padding-block: 0.35rem; padding-inline: 0.55rem; -webkit-tap-highlight-color: transparent; }
 .rst-shell-sidebar .rst-shell__nav a:not([aria-current]):active, [rst-shell-sidebar] [rst-shell-nav] a:not([aria-current]):active { background-color: var(--rst-tint-tap, transparent); box-shadow: inset 0 1px 2px var(--rst-depth-ambient, transparent); transition: none; }
 @media (hover: hover) {
-  .rst-shell-sidebar .rst-shell__nav a:not([aria-current]):hover, [rst-shell-sidebar] [rst-shell-nav] a:not([aria-current]):hover { background-color: var(--rst-tint-hover, var(--rst-accent-soft)); box-shadow: inset var(--rst-hl-x) 1px 0 var(--rst-depth-hl, transparent), 0 0 0 1px color-mix(in srgb, var(--rst-depth-contact, transparent) 60%, transparent), var(--rst-shadow-x) var(--rst-shadow-y) 1px var(--rst-depth-ambient, transparent); color: var(--rst-text); transition: background-color 0.2s ease, box-shadow 0.2s ease; }
-  .rst-shell-sidebar .rst-shell__nav a:not([aria-current]):hover:active, [rst-shell-sidebar] [rst-shell-nav] a:not([aria-current]):hover:active { background-color: var(--rst-tint-press, var(--rst-accent-soft)); box-shadow: inset 0 1px 2px var(--rst-depth-ambient, transparent); transition: none; }
+  .rst-shell-sidebar .rst-shell__nav a:not([aria-current]):hover, [rst-shell-sidebar] [rst-shell-nav] a:not([aria-current]):hover { --rst-hover: 100%; --rst-pressed: 0%; background-color: color-mix(in srgb, var(--rst-tint-press, var(--rst-accent-soft)) var(--rst-pressed), color-mix(in srgb, var(--rst-tint-hover, var(--rst-accent-soft)) var(--rst-hover), transparent)); box-shadow: inset var(--rst-hl-x) 1px 0 color-mix(in srgb, var(--rst-depth-hl, transparent) var(--rst-hover), transparent), 0 0 0 1px color-mix(in srgb, color-mix(in srgb, var(--rst-depth-contact, transparent) 60%, transparent) var(--rst-hover), transparent), var(--rst-shadow-x) var(--rst-shadow-y) 1px color-mix(in srgb, var(--rst-depth-ambient, transparent) var(--rst-hover), transparent); color: var(--rst-text); transition: --rst-hover 0.2s ease, --rst-pressed 0.2s ease; }
+  .rst-shell-sidebar .rst-shell__nav a:not([aria-current]):hover:active, [rst-shell-sidebar] [rst-shell-nav] a:not([aria-current]):hover:active { --rst-pressed: 100%; background-color: var(--rst-tint-press, var(--rst-accent-soft)); box-shadow: inset 0 1px 2px var(--rst-depth-ambient, transparent); transition: none; }
 }
 .rst-shell-sidebar .rst-shell__nav a[aria-current], [rst-shell-sidebar] [rst-shell-nav] a[aria-current] { background-color: var(--rst-nav-current-bg, var(--rst-accent-soft)); box-shadow: inset var(--rst-hl-x) 1px 0 var(--rst-depth-hl, transparent), 0 0 0 1px var(--rst-depth-contact, transparent), var(--rst-shadow-x) var(--rst-shadow-y) 2px var(--rst-depth-contact, transparent); color: var(--rst-nav-current-fg, var(--rst-accent)); font-weight: 600; }
 /* The rail's foot — the language switcher and the person, in the corner
@@ -2775,8 +2847,8 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
 .rst-shell-console .rst-shell__nav a, [rst-shell-console] [rst-shell-nav] a { border-block-end: 0; border-radius: var(--rst-radius-sm); display: block; padding-block: 0.35rem; padding-inline: 0.55rem; -webkit-tap-highlight-color: transparent; }
 .rst-shell-console .rst-shell__nav a:not([aria-current]):active, [rst-shell-console] [rst-shell-nav] a:not([aria-current]):active { background-color: var(--rst-tint-tap, transparent); box-shadow: inset 0 1px 2px var(--rst-depth-ambient, transparent); transition: none; }
 @media (hover: hover) {
-  .rst-shell-console .rst-shell__nav a:not([aria-current]):hover, [rst-shell-console] [rst-shell-nav] a:not([aria-current]):hover { background-color: var(--rst-tint-hover, var(--rst-accent-soft)); box-shadow: inset var(--rst-hl-x) 1px 0 var(--rst-depth-hl, transparent), 0 0 0 1px color-mix(in srgb, var(--rst-depth-contact, transparent) 60%, transparent), var(--rst-shadow-x) var(--rst-shadow-y) 1px var(--rst-depth-ambient, transparent); color: var(--rst-text); transition: background-color 0.2s ease, box-shadow 0.2s ease; }
-  .rst-shell-console .rst-shell__nav a:not([aria-current]):hover:active, [rst-shell-console] [rst-shell-nav] a:not([aria-current]):hover:active { background-color: var(--rst-tint-press, var(--rst-accent-soft)); box-shadow: inset 0 1px 2px var(--rst-depth-ambient, transparent); transition: none; }
+  .rst-shell-console .rst-shell__nav a:not([aria-current]):hover, [rst-shell-console] [rst-shell-nav] a:not([aria-current]):hover { --rst-hover: 100%; --rst-pressed: 0%; background-color: color-mix(in srgb, var(--rst-tint-press, var(--rst-accent-soft)) var(--rst-pressed), color-mix(in srgb, var(--rst-tint-hover, var(--rst-accent-soft)) var(--rst-hover), transparent)); box-shadow: inset var(--rst-hl-x) 1px 0 color-mix(in srgb, var(--rst-depth-hl, transparent) var(--rst-hover), transparent), 0 0 0 1px color-mix(in srgb, color-mix(in srgb, var(--rst-depth-contact, transparent) 60%, transparent) var(--rst-hover), transparent), var(--rst-shadow-x) var(--rst-shadow-y) 1px color-mix(in srgb, var(--rst-depth-ambient, transparent) var(--rst-hover), transparent); color: var(--rst-text); transition: --rst-hover 0.2s ease, --rst-pressed 0.2s ease; }
+  .rst-shell-console .rst-shell__nav a:not([aria-current]):hover:active, [rst-shell-console] [rst-shell-nav] a:not([aria-current]):hover:active { --rst-pressed: 100%; background-color: var(--rst-tint-press, var(--rst-accent-soft)); box-shadow: inset 0 1px 2px var(--rst-depth-ambient, transparent); transition: none; }
 }
 .rst-shell-console .rst-shell__nav a[aria-current], [rst-shell-console] [rst-shell-nav] a[aria-current] { background-color: var(--rst-nav-current-bg, var(--rst-accent-soft)); box-shadow: inset var(--rst-hl-x) 1px 0 var(--rst-depth-hl, transparent), 0 0 0 1px var(--rst-depth-contact, transparent), var(--rst-shadow-x) var(--rst-shadow-y) 2px var(--rst-depth-contact, transparent); color: var(--rst-nav-current-fg, var(--rst-accent)); font-weight: 600; }
 .rst-shell-console .rst-shell__menu:not([open]) + .rst-shell__tail, [rst-shell-console] [rst-shell-menu]:not([open]) + [rst-shell-tail] { display: none; }
@@ -3405,8 +3477,8 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
   .rst-box, [rst-box], .rst-card, [rst-card], .rst-stats, [rst-stats], .rst-list, [rst-list] { border: 1px solid CanvasText; }
   .rst-switch__track, [rst-switch-track] { background: Canvas; border: 1px solid ButtonText; }
   .rst-switch__track::after, [rst-switch-track]::after { background: ButtonText; }
-  .rst-switch:has(input:checked) .rst-switch__track, [rst-switch]:has(input:checked) [rst-switch-track], .rst-tblock:has(.rst-tblock__head input:checked) .rst-switch__track, [rst-tblock]:has([rst-tblock-head] input:checked) [rst-switch-track] { background: Highlight; }
-  .rst-switch:has(input:checked) .rst-switch__track::after, [rst-switch]:has(input:checked) [rst-switch-track]::after, .rst-tblock:has(.rst-tblock__head input:checked) .rst-switch__track::after, [rst-tblock]:has([rst-tblock-head] input:checked) [rst-switch-track]::after { background: HighlightText; }
+  .rst-switch:has(input:checked) .rst-switch__track, [rst-switch]:has(input:checked) [rst-switch-track], .rst-tblock > .rst-tblock__head:has(> input:checked) > .rst-switch__track, [rst-tblock] > [rst-tblock-head]:has(> input:checked) > [rst-switch-track] { background: Highlight; }
+  .rst-switch:has(input:checked) .rst-switch__track::after, [rst-switch]:has(input:checked) [rst-switch-track]::after, .rst-tblock > .rst-tblock__head:has(> input:checked) > .rst-switch__track::after, [rst-tblock] > [rst-tblock-head]:has(> input:checked) > [rst-switch-track]::after { background: HighlightText; }
   .rst-shell-sidebar .rst-shell__nav a[aria-current], [rst-shell-sidebar] [rst-shell-nav] a[aria-current], .rst-shell-console .rst-shell__nav a[aria-current], [rst-shell-console] [rst-shell-nav] a[aria-current], .rst-shell-topbar .rst-shell__tail > .rst-shell__nav a[aria-current], [rst-shell-topbar] [rst-shell-tail] > [rst-shell-nav] a[aria-current], .rst-dropdown__menu a[aria-current], [rst-dropdown-menu] a[aria-current], .rst-pagination [aria-current="page"], [rst-pagination] [aria-current="page"], .rst-seg-tabs a[aria-current], [rst-seg-tabs] a[aria-current] { background: Highlight; box-shadow: none; color: HighlightText; }
   .rst-shell-sidebar.rst-shell-sidebar--index .rst-shell__nav > a[aria-current]:hover, .rst-shell-sidebar.rst-shell-sidebar--index .rst-shell__nav > a[aria-current]:active, [rst-shell-sidebar][rst-shell-sidebar~="index"] [rst-shell-nav] > a[aria-current]:hover, [rst-shell-sidebar][rst-shell-sidebar~="index"] [rst-shell-nav] > a[aria-current]:active, .rst-shell-console.rst-shell-console--index .rst-shell__nav > a[aria-current]:hover, .rst-shell-console.rst-shell-console--index .rst-shell__nav > a[aria-current]:active, [rst-shell-console][rst-shell-console~="index"] [rst-shell-nav] > a[aria-current]:hover, [rst-shell-console][rst-shell-console~="index"] [rst-shell-nav] > a[aria-current]:active { background: Highlight; color: HighlightText; }
 }
@@ -3426,7 +3498,11 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
    outline, not a border: a border would add 2px to a 15px knob. No
    shadow token is set to none: inside a composed shadow list none is
    not a layer, and the whole list would be invalid, so the menus, tabs
-   and knob get box-shadow: none at their own selectors. The checked
+   and knob get box-shadow: none at their own selectors. The knob's two
+   shadow tokens are flattened to a transparent layer as well: the
+   hover lift sets the knob's box-shadow from a rule that outranks the
+   knob's reset here, and printed the lift under a resting pointer. The
+   checked
    track keeps a fill, the strong line: with both tracks empty rings a
    lone switch on paper gave no reference for which end means on. */
 @media print {
@@ -3436,12 +3512,13 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
     --rst-control-face: transparent; --rst-control-face-hover: transparent; --rst-control-face-press: transparent; --rst-control-border: var(--rst-line-strong); --rst-control-border-hover: var(--rst-line-strong); --rst-control-text-hover: var(--rst-text);
     --rst-ghost-edge: var(--rst-line-strong); --rst-ghost-face-hover: transparent; --rst-ghost-edge-hover: var(--rst-line-strong);
     --rst-summary-face: transparent; --rst-summary-face-hover: transparent;
-    --rst-knob: var(--rst-text); --rst-knob-shade: var(--rst-text); --rst-track-off: transparent; --rst-nav-current-bg: transparent; --rst-nav-current-fg: var(--rst-text); --rst-focus-edge: var(--rst-line-strong); }
+    --rst-knob: var(--rst-text); --rst-knob-shade: var(--rst-text); --rst-track-off: transparent; --rst-nav-current-bg: transparent; --rst-nav-current-fg: var(--rst-text); --rst-focus-edge: var(--rst-line-strong);
+    --rst-shadow-knob: 0 0 0 transparent; --rst-shadow-knob-hover: 0 0 0 transparent; }
   .rst-btn, [rst-btn], .rst-input, [rst-input], .rst-textarea, [rst-textarea], .rst-search, [rst-search], .rst-dropdown > summary, [rst-dropdown] > summary { background-image: none; border: 1px solid var(--rst-line-strong); box-shadow: none; }
   .rst-box, [rst-box], .rst-card, [rst-card], .rst-stats, [rst-stats], .rst-list, [rst-list] { background: transparent; border: 1px solid var(--rst-line-strong); box-shadow: none; }
   .rst-dropdown__menu, [rst-dropdown-menu], .rst-row-menu__panel, [rst-row-menu-panel] { border-color: var(--rst-line-strong); box-shadow: none; }
   .rst-switch__track, [rst-switch-track] { border: 1px solid var(--rst-line-strong); box-shadow: none; }
-  .rst-switch:has(input:checked) .rst-switch__track, [rst-switch]:has(input:checked) [rst-switch-track], .rst-tblock:has(.rst-tblock__head input:checked) .rst-switch__track, [rst-tblock]:has([rst-tblock-head] input:checked) [rst-switch-track] { background-color: var(--rst-line-strong); }
+  .rst-switch:has(input:checked) .rst-switch__track, [rst-switch]:has(input:checked) [rst-switch-track], .rst-tblock > .rst-tblock__head:has(> input:checked) > .rst-switch__track, [rst-tblock] > [rst-tblock-head]:has(> input:checked) > [rst-switch-track] { background-color: var(--rst-line-strong); }
   .rst-switch__track::after, [rst-switch-track]::after { background-image: none; box-shadow: none; outline: 1px solid var(--rst-line-strong); outline-offset: -1px; }
   .rst-shell-sidebar .rst-shell__nav a[aria-current], [rst-shell-sidebar] [rst-shell-nav] a[aria-current], .rst-shell-console .rst-shell__nav a[aria-current], [rst-shell-console] [rst-shell-nav] a[aria-current], .rst-shell-topbar .rst-shell__tail > .rst-shell__nav a[aria-current], [rst-shell-topbar] [rst-shell-tail] > [rst-shell-nav] a[aria-current], .rst-seg-tabs a[aria-current], [rst-seg-tabs] a[aria-current], .rst-pagination [aria-current="page"], [rst-pagination] [aria-current="page"] { box-shadow: none; }
   /* The current chip's edge was its fill, transparent above, and the

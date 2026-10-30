@@ -45,10 +45,11 @@ func TestTheWayBackFromAShellDemoIsATarget(t *testing.T) {
 		for _, shell := range ui.LayoutNames() {
 			where := fmt.Sprintf("the %s demo with %s", shell, c.name)
 			var raw string
-			if err := chromedp.Run(ctx, chromedp.EmulateViewport(c.w, c.h),
+			if err := chromedp.Do(ctx, chromedp.EmulateViewport(c.w, c.h),
 				chromedp.Navigate(rig.Origin+shellHref(mountPath, RootTheme(), "en", shell)),
 				chromedp.WaitReady("body"),
-				chromedp.Evaluate(`JSON.stringify(`+read+`)`, &raw)); err != nil {
+				harness.Into(&raw, chromedp.Evaluate[string](
+					`JSON.stringify(`+read+`)`))); err != nil {
 				cancel()
 				t.Fatalf("%s: %v", where, err)
 			}
@@ -116,10 +117,11 @@ func TestAShellDemoLaysOutAsAnAppWould(t *testing.T) {
 		for _, shell := range ui.LayoutNames() {
 			where := fmt.Sprintf("the %s demo with %s", shell, c.name)
 			var raw string
-			if err := chromedp.Run(ctx, chromedp.EmulateViewport(c.w, c.h),
+			if err := chromedp.Do(ctx, chromedp.EmulateViewport(c.w, c.h),
 				chromedp.Navigate(rig.Origin+shellHref(mountPath, RootTheme(), "en", shell)),
 				chromedp.WaitReady("body"),
-				chromedp.Evaluate(read, &raw)); err != nil {
+				harness.Into(&raw,
+					chromedp.Evaluate[string](read))); err != nil {
 				cancel()
 				t.Fatalf("%s: %v", where, err)
 			}

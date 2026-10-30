@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/basepath"
 	"amadan.net/rastrillo/rastrillo/currency"
 	"amadan.net/rastrillo/rastrillo/op"
 	"amadan.net/rastrillo/rastrillo/ui"
@@ -54,7 +55,7 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		items = append(items, listRow{
-			Href: fmt.Sprintf("/admin/ticket_types/%d", n.ID),
+			Href: basepath.Path(r, fmt.Sprintf("/admin/ticket_types/%d", n.ID)),
 			Main: n.Name,
 			Sub:  priceText,
 		})
@@ -66,19 +67,19 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 	if show {
 		prev := listPageItem{Label: "Previous", Rel: "prev", Disabled: true}
 		if page > 1 {
-			prev = listPageItem{Label: "Previous", Rel: "prev", Href: href(search, carry, page-1)}
+			prev = listPageItem{Label: "Previous", Rel: "prev", Href: basepath.Path(r, href(search, carry, page-1))}
 		}
 		pageItems = append(pageItems, prev)
 		for n := 1; n <= totalPages; n++ {
 			if n == page {
 				pageItems = append(pageItems, listPageItem{Label: strconv.Itoa(n), Current: true})
 			} else {
-				pageItems = append(pageItems, listPageItem{Label: strconv.Itoa(n), Href: href(search, carry, n)})
+				pageItems = append(pageItems, listPageItem{Label: strconv.Itoa(n), Href: basepath.Path(r, href(search, carry, n))})
 			}
 		}
 		next := listPageItem{Label: "Next", Rel: "next", Disabled: true}
 		if page < totalPages {
-			next = listPageItem{Label: "Next", Rel: "next", Href: href(search, carry, page+1)}
+			next = listPageItem{Label: "Next", Rel: "next", Href: basepath.Path(r, href(search, carry, page+1))}
 		}
 		pageItems = append(pageItems, next)
 	}
@@ -87,10 +88,10 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 		SummaryKey: filterStatusLabelKey(filterStatus),
 		AriaField:  "resource.ticket_types.field.status",
 		Items: []filterItem{
-			{Href: filterStatusHref(search, ""), LabelKey: filterStatusLabelKey(""), Current: filterStatus == ""},
-			{Href: filterStatusHref(search, "draft"), LabelKey: filterStatusLabelKey("draft"), Current: filterStatus == "draft"},
-			{Href: filterStatusHref(search, "on_sale"), LabelKey: filterStatusLabelKey("on_sale"), Current: filterStatus == "on_sale"},
-			{Href: filterStatusHref(search, "sold_out"), LabelKey: filterStatusLabelKey("sold_out"), Current: filterStatus == "sold_out"},
+			{Href: basepath.Path(r, filterStatusHref(search, "")), LabelKey: filterStatusLabelKey(""), Current: filterStatus == ""},
+			{Href: basepath.Path(r, filterStatusHref(search, "draft")), LabelKey: filterStatusLabelKey("draft"), Current: filterStatus == "draft"},
+			{Href: basepath.Path(r, filterStatusHref(search, "on_sale")), LabelKey: filterStatusLabelKey("on_sale"), Current: filterStatus == "on_sale"},
+			{Href: basepath.Path(r, filterStatusHref(search, "sold_out")), LabelKey: filterStatusLabelKey("sold_out"), Current: filterStatus == "sold_out"},
 		},
 	}
 

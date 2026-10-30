@@ -5,6 +5,7 @@ import (
 	"net/url"
 	"sync"
 
+	"amadan.net/rastrillo/rastrillo/basepath"
 	"amadan.net/rastrillo/rastrillo/lastsignin"
 	"amadan.net/rastrillo/rastrillo/pow"
 	"amadan.net/rastrillo/rastrillo/sessions"
@@ -98,6 +99,10 @@ type SigninState struct {
 	// Passkey is set by the app, which knows whether and where it
 	// mounted passkey discovery; auth cannot. Nil means no passkey door.
 	Passkey *PasskeyDoor
+	// Unavailable is true under a base path or on its direct host,
+	// where a tenant has no sign-in of its own: the hub signs people
+	// in. The state is otherwise empty, and the partial renders nothing.
+	Unavailable bool
 
 	// clear names cookies SigninState found present and unbelievable:
 	// how the read-only half tells PrepareSigninResponse what to delete.
@@ -151,6 +156,12 @@ const advisoryText = "rastrillo/auth: SigninScreen is off: under the default CSP
 // With SigninScreen off it reads only the query, marks nothing, and
 // logs the advisory once per process.
 func (a *Auth) SigninState(r *http.Request) SigninState {
+	if basepath.PathRouted(r) {
+		// Before any cookie: on a shared origin they may be the hub's,
+		// and PrepareSigninResponse would clear what this marked. No
+		// paths either, as every door they name answers 404 here.
+		return SigninState{Unavailable: true}
+	}
 	q := r.URL.Query()
 	st := SigninState{BeginPath: a.cfg.BeginPath, ForgetPath: a.cfg.ForgetPath, Force: q.Get("force") == "1"}
 	// Before the proof and the cookies: the confirm step posts to
@@ -274,6 +285,9 @@ func (a *Auth) PrepareSigninResponse(w http.ResponseWriter, st SigninState) {
 // a state change on GET is one a link prefetcher can make; same-origin
 // only, as Begin is.
 func (a *Auth) Forget(w http.ResponseWriter, r *http.Request) {
+	if a.pathRouted(w, r) {
+		return
+	}
 	if r.Method != http.MethodPost {
 		w.Header().Set("Allow", http.MethodPost)
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
@@ -297,7 +311,7 @@ func (a *Auth) Forget(w http.ResponseWriter, r *http.Request) {
 // query: the finish request's body is the assertion's JSON, so the
 // query is the one place passkey's sessions.SafeReturn can read it.
 func (s SigninState) PasskeyFinish() string {
-	if s.Passkey == nil {
+	if s.Passkey == nil || s.Unavailable {
 		return ""
 	}
 	u, err := url.Parse(s.Passkey.FinishPath)

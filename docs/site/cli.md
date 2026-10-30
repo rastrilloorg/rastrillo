@@ -12,7 +12,8 @@ Every command except `session-key` takes an optional directory as its last argum
 
 ```sh
 rastrillo new [--icons=<set>] [--icon-delivery=<mode>] [--ux=<profile>]
-              [--theme=<name>] [--shell=<name>] [--locale=<code>] <name>
+              [--theme=<name>] [--shell=<name>] [--locale=<code>]
+              [--auth=<kind>] <name>
 ```
 
 Scaffolds a complete app in `./<name>` — one that compiles, passes its
@@ -26,6 +27,7 @@ own tests, and serves, before you have written anything. It runs
 | `--ux` | `considered`, `standard` | `considered` |
 | `--theme` | `day`, `plain`, `signal` | `day` |
 | `--shell` | `column`, `topbar`, `sidebar`, `console` | `column` |
+| `--auth` | `none`, `magic` | `none` |
 | `--locale` | `en`, `ga`, `zh-Hans`, `es`, `hi`, `pt-PT`, `bn`, `ru`, `ja`, `yue`, `vi`, `ar` | `en` |
 
 All six set × delivery combinations scaffold, compile and pass
@@ -47,6 +49,8 @@ typo fails with your working directory still clean.
 `--icons=font-awesome` also writes the CC BY 4.0 attribution the licence
 requires, because that obligation is the app's and has to travel with
 the code.
+
+`--auth=magic` starts the app with sign-in by emailed link: the [magic links](/docs/magic-links) plugin with its sign-in screen, a Sign in and Sign out control in the header, and an example page only a signed-in person can open. Rows belong to the signed-in address, read and written through the `owned` seam in `auth.go`. Until you set `<APP>_SMTP_HOST` and `<APP>_SMTP_FROM`, each link is written to the log instead of sent. The app's own tests sign in through the emailed link, so `make ci` passes from the first commit.
 
 `--locale` picks the one language the app starts with, written to
 `manifest/app.toml`. It must be one the framework's own strings ship in,
@@ -219,7 +223,7 @@ that it does, and running from outside the app — which is what asking
 | Flag | Purpose |
 |---|---|
 | `--fix` | Re-copy each drifted file from this binary's library copy |
-| `--force` | With `--fix`: re-copy across a version mismatch, and over files recorded as deliberate edits |
+| `--force` | With `--fix`: re-copy across a version mismatch, and over files recorded as deliberate edits or removals |
 | `--theme` | Which theme `static/theme.css` should be, for an app with no pin to read it from |
 | `--probe` | Also build the app and run it to check its language setup. This runs your app's own code |
 
@@ -548,6 +552,7 @@ that already runs `generate --check` needs no extra step.
 
 ```sh
 rastrillo budget size [dir]
+rastrillo budget code [--init | --lower] [dir]
 rastrillo budget test [-no-time] [-require TestA,TestB] [go test arguments]
 ```
 
@@ -557,6 +562,26 @@ minus the exceptions in `.rastrillo/budgets.txt`. It stops at a nested
 module, which has its own budget. It exits 1 when something is over and 2
 when `budgets.txt` cannot be read.
 
+`budget code` holds the Go code of the module at `dir` (default `.`) to
+four limits. A line is at most 80 columns, counting a tab as up to 4. A
+file is at most 400 lines, and a function at most 40, or 15 for an action.
+No name is a single letter, except `t`, `b` and `f` with their testing
+types, and a one-capital-letter type parameter. Tests are held to the
+columns and names limits only. Generated files are skipped, and a file
+marked `//rastrillo:data <reason>` above its package clause is a table, so
+it is not held to columns or length.
+
+`.rastrillo/code.txt` records the offences the code already had. A new
+offence fails, and so does a record that is looser than the code: lower
+it, or delete it when the offence is gone. `--init` writes the file with a
+record for every offence, and refuses if the file exists. `--lower` lowers
+and deletes records to match the code, and never adds or raises one. To
+add or raise a record by hand, write a reason after its count. The check
+compares the file with the copy where your branch left `origin/main`, and
+fails a new or higher record with no reason. It exits 1 when something is
+over a limit and 2 when `code.txt` cannot be read or `--init` finds one
+already there.
+
 `budget test` runs `go test -json` with your arguments (`./...` if you give
 none), and exits with `go test`'s own status. It holds each package to its
 time budget using the line `budget.Main` prints, fails a package that ran
@@ -564,7 +589,8 @@ tests without printing it, and ends with a receipt. `-no-time` turns the
 time budget off, for the perf lane. `-require` names tests that must pass
 in the run, so a lane cannot go green having run nothing.
 
-The scaffold's `make budget`, `make test` and `make perf` call these.
+The scaffold's `make budget`, `make test` and `make perf` call `budget size`
+and `budget test`.
 [Testing](/docs/testing) explains the budgets.
 
 ## rastrillo session-key

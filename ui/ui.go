@@ -264,6 +264,9 @@ var layoutsFS embed.FS
 //go:embed rastrillo.js
 var shimJS []byte
 
+//go:embed live.js
+var liveJS []byte
+
 //go:embed busy.js
 var busyJS []byte
 
@@ -356,6 +359,14 @@ func ThemeCSS(name string) ([]byte, bool) {
 // once and app-owned from then on. The file's own header comment is
 // its contract; TestShimContract holds the two honest.
 func ShimJS() []byte { return shimJS }
+
+// LiveJS returns live.js, the live pages script: one change stream per
+// page, and region swaps that keep to the order fetches started in,
+// leave a region being edited alone, and keep focus off <body>. Inert
+// on a page without the rastrillo-live meta or a data-live region.
+// Delivered once, like ShimJS, and app-owned from then on; its header
+// comment is its contract.
+func LiveJS() []byte { return liveJS }
 
 // BusyJS returns busy.js — the busy rule: every submit button shows a
 // spinner in place of its label for at least 650ms, goes disabled, and

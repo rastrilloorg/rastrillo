@@ -68,7 +68,7 @@ var documentedDayColours = map[string]map[string]string{
 func paintedToken(t *testing.T, ctx context.Context, token string) (serialised string, pixel [4]int) {
 	t.Helper()
 	var raw string
-	mustRun(t, ctx, chromedp.Evaluate(`(() => {
+	mustRun(t, ctx, harness.Into(&raw, chromedp.Evaluate[string](`(() => {
 	  const e = document.createElement("span"); e.style.background = "var(`+token+`)"; document.body.append(e);
 	  const css = getComputedStyle(e).backgroundColor; e.remove();
 	  const c = document.createElement("canvas"); c.width = c.height = 1;
@@ -76,7 +76,7 @@ func paintedToken(t *testing.T, ctx context.Context, token string) (serialised s
 	  g.clearRect(0, 0, 1, 1); g.fillStyle = "#000000"; g.fillStyle = css; g.fillRect(0, 0, 1, 1);
 	  const d = g.getImageData(0, 0, 1, 1).data;
 	  return JSON.stringify({Css: css, Px: [d[0], d[1], d[2], d[3]]});
-	})()`, &raw))
+	})()`)))
 	var out struct {
 		Css string
 		Px  [4]int
@@ -115,7 +115,9 @@ func TestDaysDerivedTokensReproduceTheirDocumentedColours(t *testing.T) {
 			ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
 			defer cancel()
 			open(t, ctx, rig, "/", false)
-			mustRun(t, ctx, chromedp.Evaluate(`document.documentElement.setAttribute("data-theme", "`+scheme+`"), true`, nil))
+			mustRun(t, ctx, chromedp.Evaluate[chromedp.Void](
+				`document.documentElement
+					.setAttribute("data-theme", "`+scheme+`"), true`))
 			resolved := resolvedTokens(t, "day")[scheme]
 			for token, want := range documentedDayColours[scheme] {
 				serialised, px := paintedToken(t, ctx, token)
@@ -154,7 +156,9 @@ func TestOneAccentOverrideRecoloursDay(t *testing.T) {
 			ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
 			defer cancel()
 			open(t, ctx, rig, "/", false)
-			mustRun(t, ctx, chromedp.Evaluate(`document.documentElement.setAttribute("data-theme", "`+scheme+`"), true`, nil))
+			mustRun(t, ctx, chromedp.Evaluate[chromedp.Void](
+				`document.documentElement
+					.setAttribute("data-theme", "`+scheme+`"), true`))
 			still(t, ctx)
 			// The expectation is the theme's own formulas evaluated with
 			// the override in place (derived_test.go), not a second copy
@@ -204,7 +208,17 @@ func TestOneAccentOverrideRecoloursDay(t *testing.T) {
 func paintCSS(t *testing.T, ctx context.Context, css string) string {
 	t.Helper()
 	var raw string
-	mustRun(t, ctx, chromedp.Evaluate(`(() => { const c = document.createElement("canvas"); c.width = c.height = 1; const g = c.getContext("2d", { willReadFrequently: true }); g.fillStyle = "#000000"; g.fillStyle = `+jsStr(css)+`; g.fillRect(0, 0, 1, 1); const d = g.getImageData(0, 0, 1, 1).data; return "#" + [d[0], d[1], d[2]].map(n => n.toString(16).padStart(2, "0")).join(""); })()`, &raw))
+	mustRun(t, ctx, harness.Into(&raw, chromedp.Evaluate[string](`(() => {
+		const c = document.createElement("canvas");
+		c.width = c.height = 1;
+		const g = c.getContext("2d", { willReadFrequently: true });
+		g.fillStyle = "#000000";
+		g.fillStyle = `+jsStr(css)+`;
+		g.fillRect(0, 0, 1, 1);
+		const d = g.getImageData(0, 0, 1, 1).data;
+		return "#" + [d[0], d[1], d[2]]
+			.map(n => n.toString(16).padStart(2, "0")).join("");
+	})()`)))
 	return raw
 }
 
@@ -274,22 +288,37 @@ func TestAnyAccentKeepsTheFillLabelReadable(t *testing.T) {
 			ctx, cancel := context.WithTimeout(rig.Context(), 180*time.Second)
 			defer cancel()
 			open(t, ctx, rig, "/", false)
-			mustRun(t, ctx, chromedp.Evaluate(`document.documentElement.setAttribute("data-theme", "`+scheme+`"), true`, nil))
+			mustRun(t, ctx, chromedp.Evaluate[chromedp.Void](
+				`document.documentElement
+					.setAttribute("data-theme", "`+scheme+`"), true`))
 			still(t, ctx)
 			// The sheen's centre is where light.js puts the pointer; 4px
 			// under the top edge is a pointer resting there, and puts the
 			// sheen's full strength on the shade's lightest rows.
-			mustRun(t, ctx, chromedp.Evaluate(`(() => { const s = document.createElement("style"); s.id = "override"; document.head.append(s); const b = document.getElementById("b-primary"); b.style.setProperty("--rst-mx", "50%"); b.style.setProperty("--rst-my", "4px"); return true; })()`, nil))
+			mustRun(t, ctx, chromedp.Evaluate[chromedp.Void](`(() => {
+				const s = document.createElement("style");
+				s.id = "override";
+				document.head.append(s);
+				const b = document.getElementById("b-primary");
+				b.style.setProperty("--rst-mx", "50%");
+				b.style.setProperty("--rst-my", "4px");
+				return true;
+			})()`))
 			hideLabel := func(hide bool) {
 				v := `""`
 				if hide {
 					v = `"transparent"`
 				}
-				mustRun(t, ctx, chromedp.Evaluate(`document.getElementById("b-primary").style.color = `+v+`, true`, nil))
+				mustRun(t, ctx, chromedp.Evaluate[chromedp.Void](
+					`document.getElementById("b-primary").style.color = `+
+						v+`, true`))
 			}
 			worst, worstComposed := 99.0, 99.0
 			for _, accent := range accentSweep() {
-				mustRun(t, ctx, chromedp.Evaluate(`document.getElementById("override").textContent = `+jsStr(":root { --rst-accent: "+accent+"; }")+`, true`, nil))
+				override := ":root { --rst-accent: " + accent + "; }"
+				mustRun(t, ctx, chromedp.Evaluate[chromedp.Void](
+					`document.getElementById("override").textContent = `+
+						jsStr(override)+`, true`))
 				label := paintCSS(t, ctx, computed(t, ctx, "#b-primary", "color"))
 				fill := paintCSS(t, ctx, computed(t, ctx, "#b-primary", "background-color"))
 				forceState(t, ctx, "#b-primary", "hover")
@@ -383,7 +412,9 @@ func TestWithoutRelativeColourDayKeepsItsCobalt(t *testing.T) {
 			defer cancel()
 			open(t, ctx, rig, "/", false)
 			for scheme, want := range c.fill {
-				mustRun(t, ctx, chromedp.Evaluate(`document.documentElement.setAttribute("data-theme", "`+scheme+`"), true`, nil))
+				mustRun(t, ctx, chromedp.Evaluate[chromedp.Void](
+					`document.documentElement
+						.setAttribute("data-theme", "`+scheme+`"), true`))
 				fill, label := computed(t, ctx, "#b-primary", "background-color"), computed(t, ctx, "#b-primary", "color")
 				if fill != want || label != "rgb(255, 255, 255)" {
 					t.Errorf("%s: primary button is %s on %s, want rgb(255, 255, 255) on %s", scheme, label, fill, want)

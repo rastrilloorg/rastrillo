@@ -102,9 +102,9 @@ doing the same work:
   have landed; every `tokens.css` rule currently carries both spellings
   and a gate enforces the pairing. Stage 3 drops the class selectors
   before 1.0.
-- **Released:** v0.24.0. `main` regularly runs ahead of the latest tag,
-  and the spec's own §0 warns that the gap between RELEASED and ON MAIN
-  is the one that bites.
+- **Released:** v0.29.0. `main` regularly runs ahead of the latest tag,
+  and §0 of the design-system spec warns that the gap between RELEASED
+  and ON MAIN is the one that bites.
 - **Undecided, recorded rather than invented:** whether sign-in screens
   live in `ui` as partials or in `auth` as renderable pages; whether the
   framework should ship a polished username/password screen at all;

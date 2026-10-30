@@ -26,16 +26,16 @@
                        form) */}}
 {{define "content"}}{{$L := localizer $}}
 {{if .IsNew}}
-<form rst-form method="post" action="/admin/announcements">
+<form rst-form method="post" action="{{path $ "/admin/announcements"}}">
 {{template "field-text" dict "L" $L "Name" "Title" "Label" (T $L "resource.announcements.field.title") "Value" .Fields.Title "Error" (Tf $L (index .Errors "Title") (index .ErrorArgs "Title")) "Required" true}}
 {{template "field-textarea" dict "L" $L "Name" "Body" "Label" (T $L "resource.announcements.field.body") "Value" .Fields.Body "Error" (Tf $L (index .Errors "Body") (index .ErrorArgs "Body"))}}
-{{template "form-foot" dict "L" $L "Submit" (T $L "ui.save") "CancelHref" "/admin/announcements" "CancelLabel" (T $L "ui.cancel")}}
+{{template "form-foot" dict "L" $L "Submit" (T $L "ui.save") "CancelHref" (path $ "/admin/announcements") "CancelLabel" (T $L "ui.cancel")}}
 </form>
 {{else}}
 <form rst-form method="post" action="{{.BasicsAction}}">
 {{template "field-text" dict "L" $L "Name" "Title" "Label" (T $L "resource.announcements.field.title") "Value" .Fields.Title "Error" (Tf $L (index .Errors "Title") (index .ErrorArgs "Title")) "Required" true}}
 {{template "field-textarea" dict "L" $L "Name" "Body" "Label" (T $L "resource.announcements.field.body") "Value" .Fields.Body "Error" (Tf $L (index .Errors "Body") (index .ErrorArgs "Body"))}}
-{{template "form-foot" dict "L" $L "Submit" (T $L "ui.save") "CancelHref" "/admin/announcements" "CancelLabel" (T $L "ui.cancel")}}
+{{template "form-foot" dict "L" $L "Submit" (T $L "ui.save") "CancelHref" (path $ "/admin/announcements") "CancelLabel" (T $L "ui.cancel")}}
 </form>
 {{end}}
 {{end}}

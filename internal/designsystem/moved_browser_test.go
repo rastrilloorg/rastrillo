@@ -34,14 +34,14 @@ func TestAMovedSectionsOldLinkReachesIt(t *testing.T) {
 
 	where := "form.html#partial-field-select"
 	start := time.Now()
-	if err := chromedp.Run(ctx, chromedp.EmulateViewport(1280, 900), chromedp.Navigate(form+"#partial-field-select")); err != nil {
+	if err := chromedp.Do(ctx, chromedp.EmulateViewport(1280, 900), chromedp.Navigate(form+"#partial-field-select")); err != nil {
 		t.Fatalf("%s: loading: %v", where, err)
 	}
 	until(t, ctx, where, `location.pathname.endsWith("/`+fileOf("choices-and-actions")+`") && location.hash === "#partial-field-select" && document.readyState === "complete" && (() => { const r = document.getElementById("partial-field-select").getBoundingClientRect(); return r.top >= 0 && r.top < innerHeight; })()`)
 	// Replaced, not pushed: Back from the section goes to wherever the
 	// reader came from, not to a page that would send them on again.
-	var depth int
-	if err := chromedp.Run(ctx, chromedp.Evaluate(`history.length`, &depth)); err != nil {
+	depth, err := chromedp.Run(ctx, chromedp.Evaluate[int](`history.length`))
+	if err != nil {
 		t.Fatalf("%s: reading history: %v", where, err)
 	}
 	if depth != 2 {
@@ -55,13 +55,13 @@ func TestAMovedSectionsOldLinkReachesIt(t *testing.T) {
 		{"#main", "the skip link's target, which is not a section"},
 	} {
 		where := "form.html" + c.hash + ", " + c.want
-		if err := chromedp.Run(ctx, chromedp.Navigate(form+c.hash)); err != nil {
+		if err := chromedp.Do(ctx, chromedp.Navigate(form+c.hash)); err != nil {
 			t.Fatalf("%s: loading: %v", where, err)
 		}
 		until(t, ctx, where, `document.readyState === "complete"`)
 		time.Sleep(settle)
-		var href string
-		if err := chromedp.Run(ctx, chromedp.Evaluate(`location.href`, &href)); err != nil {
+		href, err := chromedp.Run(ctx, chromedp.Evaluate[string](`location.href`))
+		if err != nil {
 			t.Fatalf("%s: reading the address: %v", where, err)
 		}
 		if href != form+c.hash {
@@ -81,13 +81,14 @@ func TestAMovedSectionsOldLinkReachesItFromAnOpenPage(t *testing.T) {
 	defer cancel()
 	form := rig.Origin + pageHref(mountPath, "day", "en", fileOf("form"))
 	where := "form.html open, then #partial-field-select"
-	if err := chromedp.Run(ctx, chromedp.EmulateViewport(1280, 900), chromedp.Navigate(form)); err != nil {
+	if err := chromedp.Do(ctx, chromedp.EmulateViewport(1280, 900), chromedp.Navigate(form)); err != nil {
 		t.Fatalf("%s: loading: %v", where, err)
 	}
 	until(t, ctx, where+", Form loaded", `document.readyState === "complete"`)
 	// The address bar, a bookmark or a link on another site: a change
 	// of fragment on a document that is already there.
-	if err := chromedp.Run(ctx, chromedp.Evaluate(`location.hash = "#partial-field-select"; true`, nil)); err != nil {
+	if err := chromedp.Do(ctx, chromedp.Evaluate[chromedp.Void](
+		`location.hash = "#partial-field-select"; true`)); err != nil {
 		t.Fatalf("%s: setting the hash: %v", where, err)
 	}
 	until(t, ctx, where, `location.pathname.endsWith("/`+fileOf("choices-and-actions")+`") && location.hash === "#partial-field-select" && document.readyState === "complete" && (() => { const r = document.getElementById("partial-field-select").getBoundingClientRect(); return r.top >= 0 && r.top < innerHeight; })()`)

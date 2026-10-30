@@ -74,6 +74,11 @@
           "blurb": "Observable goroutines, their two bounds, and a status page that works with scripts off."
         },
         {
+          "slug": "live",
+          "label": "Live pages",
+          "blurb": "Pages that update themselves when their data changes, and forms that save in place."
+        },
+        {
           "slug": "templates",
           "label": "Templates & UI",
           "blurb": "One template per page, twenty-four partials, and the tokens stylesheet you own."
@@ -154,6 +159,11 @@
           "blurb": "Every rastrillo command and flag, and when you reach for it."
         },
         {
+          "slug": "reference/action",
+          "label": "action",
+          "blurb": "Write an action as one function of one visit, and read the route table."
+        },
+        {
           "slug": "reference/api",
           "label": "api",
           "blurb": "The JSON door: one error shape with a machine code, and how a handler answers."
@@ -177,6 +187,16 @@
           "slug": "reference/background",
           "label": "background",
           "blurb": "Keep track of work nobody waits for, and stop it before the database closes."
+        },
+        {
+          "slug": "reference/basepath",
+          "label": "basepath",
+          "blurb": "Serve your app under a path on another app's domain."
+        },
+        {
+          "slug": "reference/basepathtest",
+          "label": "basepathtest",
+          "blurb": "Find links that would break under a base path."
         },
         {
           "slug": "reference/blobs",
@@ -274,6 +294,11 @@
           "blurb": "The sign-in screen's memory of how this browser got in last, and the seam that ends a sign-in attempt."
         },
         {
+          "slug": "reference/live",
+          "label": "live",
+          "blurb": "Topics and versions, the change stream, and the helpers that answer a request for one region of a page."
+        },
+        {
           "slug": "reference/locales",
           "label": "locales",
           "blurb": "One pack of CLDR data per language, the boot check on the languages you offer, and the probe that runs it."
@@ -309,9 +334,19 @@
           "blurb": "Step-up and sign-in WebAuthn, the Gate, and recovery codes."
         },
         {
+          "slug": "reference/oidc",
+          "label": "oidc",
+          "blurb": "Sign in with Microsoft Entra ID or Google Workspace: the verification core and the HTTP flow."
+        },
+        {
           "slug": "reference/password",
           "label": "password",
           "blurb": "The email-and-password plugin: config, handlers, hashing, rate limit."
+        },
+        {
+          "slug": "reference/pdf",
+          "label": "pdf",
+          "blurb": "A multi-page PDF — headings, paragraphs, tables, callouts — with the standard library alone."
         },
         {
           "slug": "reference/perf",

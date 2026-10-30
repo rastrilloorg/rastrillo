@@ -59,11 +59,9 @@ layout can show a notice. See [Forms](/docs/forms).
 
 ## Template functions
 
-`ui.Pages` registers `dict`, `list`, `menuGroup`, `searchClear`, `icon`,
-`iconAssets`, `opt`, `stageArt`, `displayURL`, `safeHref`,
-`rowMenuItems`, `paginationItems`, `localizer` and `withL`, and the
-locale functions `T`, `Tf`, `Tbdi`, `number`, `displayValue`,
-`dateWords`, `money` and `actor`.
+`ui.Pages` registers `dict`, `list`, `menuGroup`, `searchClear`, `icon`, `iconAssets`, `opt`, `stageArt`, `displayURL`, `safeHref`, `rowMenuItems`, `paginationItems`, `localizer`, `withL` and `path`, and the locale functions `T`, `Tf`, `Tbdi`, `number`, `displayValue`, `dateWords`, `money` and `actor`.
+
+Write a link to one of your own pages with `path`: `{{path $ "/orders"}}`. At the root it changes nothing. Under a [base path](/docs/reference/basepath) it adds the base, so the link stays in your app.
 
 Start each template body with `{{$L := localizer $}}`. Pass `$L` first
 to every locale function, and to every partial as `"L" $L`:
@@ -75,9 +73,9 @@ to every locale function, and to every partial as `"L" $L`:
 <form rst-form method="post">
 {{template "field-text" dict "L" $L "Name" "name" "Label" "Name" "Value" .Name "Required" true}}
 {{template "field-daterange" dict "L" $L "Label" "When" "Start" (dict "Name" "s" "Label" "From") "End" (dict "Name" "e" "Label" "To")}}
-{{template "form-foot" dict "L" $L "Submit" "Save" "CancelHref" "/" "CancelLabel" "Cancel"}}
+{{template "form-foot" dict "L" $L "Submit" "Save" "CancelHref" (path $ "/") "CancelLabel" "Cancel"}}
 </form>
-{{template "pagination" dict "L" $L "Prev" "/p/1" "Next" "/p/3"}}
+{{template "pagination" dict "L" $L "Prev" (path $ "/p/1") "Next" (path $ "/p/3")}}
 {{end}}
 ```
 
@@ -177,8 +175,8 @@ gone. `ClearHref` is the hook, on both `list-bar-search` and `list-bar`:
 
 ```html
 {{template "list-bar" dict "L" $L
-    "SearchAction" "/posts" "Query" .Query "Hidden" .Carry
-    "ClearHref" "/posts"}}
+    "SearchAction" (path $ "/posts") "Query" .Query "Hidden" .Carry
+    "ClearHref" (path $ "/posts")}}
 ```
 
 Anything you pass wins over the computed default.

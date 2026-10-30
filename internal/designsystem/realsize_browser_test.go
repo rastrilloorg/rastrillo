@@ -44,8 +44,8 @@ type realReading struct {
 
 func readReal(t *testing.T, ctx context.Context, where string) []realReading {
 	t.Helper()
-	var raw string
-	if err := chromedp.Run(ctx, chromedp.Evaluate(realSize, &raw)); err != nil {
+	raw, err := chromedp.Run(ctx, chromedp.Evaluate[string](realSize))
+	if err != nil {
 		t.Fatalf("%s: reading the frames: %v", where, err)
 	}
 	var rs []realReading
@@ -82,9 +82,9 @@ func TestMobileIsThePageAtItsRealSize(t *testing.T) {
 			for _, locale := range []string{"en", "ar"} {
 				for _, w := range rig.widths {
 					where := fmt.Sprintf("day/%s %s at %dpx, %s pointer", locale, kind, w, rig.name)
-					if err := chromedp.Run(rig.ctx, chromedp.EmulateViewport(w, 844),
+					if err := chromedp.Do(rig.ctx, chromedp.EmulateViewport(w, 844),
 						chromedp.Navigate(rig.origin+pageHref(mountPath, "day", locale, fileOf(kind))),
-						chromedp.WaitVisible(`.ds-view__box`, chromedp.ByQuery)); err != nil {
+						chromedp.WaitVisible(chromedp.CSS(`.ds-view__box`))); err != nil {
 						t.Fatalf("%s: loading: %v", where, err)
 					}
 					if rig.name == "coarse" {
@@ -92,8 +92,8 @@ func TestMobileIsThePageAtItsRealSize(t *testing.T) {
 					}
 					eagerly(t, rig.ctx, where)
 					requireDrawnScrollbar(t, rig.ctx, where)
-					var sideways float64
-					if err := chromedp.Run(rig.ctx, chromedp.Evaluate(`document.documentElement.scrollWidth - document.documentElement.clientWidth`, &sideways)); err != nil {
+					sideways, err := chromedp.Run(rig.ctx, chromedp.Evaluate[float64](`document.documentElement.scrollWidth - document.documentElement.clientWidth`))
+					if err != nil {
 						t.Fatalf("%s: %v", where, err)
 					}
 					if sideways > 0.5 {
@@ -130,9 +130,9 @@ func TestMobileIsThePageAtItsRealSize(t *testing.T) {
 	// The control: on a desktop the Mobile rendering is the 390px phone
 	// it has always been, centred in its stage.
 	where := "day/en form at 1280px, Mobile chosen"
-	if err := chromedp.Run(fctx, chromedp.EmulateViewport(1280, 900),
+	if err := chromedp.Do(fctx, chromedp.EmulateViewport(1280, 900),
 		chromedp.Navigate(fine.Origin+pageHref(mountPath, "day", "en", fileOf("form"))),
-		chromedp.WaitVisible(`.ds-view__box`, chromedp.ByQuery)); err != nil {
+		chromedp.WaitVisible(chromedp.CSS(`.ds-view__box`))); err != nil {
 		t.Fatalf("%s: loading: %v", where, err)
 	}
 	clickAll(t, fctx, where, clickedMobile, "Mobile")
@@ -165,17 +165,16 @@ func TestDesktopPansFromTheInlineStart(t *testing.T) {
 	}{{"form", 900}, {"shells", 1200}} {
 		for _, locale := range []string{"ar", "en"} {
 			where := fmt.Sprintf("day/%s %s at 390px, Desktop chosen", locale, c.kind)
-			if err := chromedp.Run(ctx, chromedp.EmulateViewport(390, 844),
+			if err := chromedp.Do(ctx, chromedp.EmulateViewport(390, 844),
 				chromedp.Navigate(rig.Origin+pageHref(mountPath, "day", locale, fileOf(c.kind))),
-				chromedp.WaitVisible(`.ds-view__box`, chromedp.ByQuery)); err != nil {
+				chromedp.WaitVisible(chromedp.CSS(`.ds-view__box`))); err != nil {
 				t.Fatalf("%s: loading: %v", where, err)
 			}
 			eagerly(t, ctx, where)
 			// Each widget's own Desktop radio: it is the only control
 			// that chooses a widget's view.
 			clickAll(t, ctx, where, clickedDesktop, "Desktop")
-			var raw string
-			if err := chromedp.Run(ctx, chromedp.Evaluate(`(() => {
+			raw, err := chromedp.Run(ctx, chromedp.Evaluate[string](`(() => {
 			  const rtl = document.documentElement.dir === "rtl", out = [];
 			  for (const v of document.querySelectorAll(".ds-view")) {
 			    const box = v.querySelector(".ds-view__box"), f = v.querySelector(".ds-view__frame");
@@ -190,7 +189,8 @@ func TestDesktopPansFromTheInlineStart(t *testing.T) {
 			      Pans: box.scrollWidth > box.clientWidth, Start: atStart, End: atEnd});
 			  }
 			  return JSON.stringify(out);
-			})()`, &raw)); err != nil {
+			})()`))
+			if err != nil {
 				t.Fatalf("%s: measuring: %v", where, err)
 			}
 			var rs []struct {

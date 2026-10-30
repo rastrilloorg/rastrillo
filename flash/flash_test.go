@@ -7,14 +7,15 @@ import (
 )
 
 func TestSetThenTake(t *testing.T) {
-	// Set(w, "notice", "Note created.") on a recorder; carry the
+	// Set(w, r, "notice", "Note created.") on a recorder; carry the
 	// Set-Cookie into a new request; Take returns
 	// Flash{Kind: "notice", Message: "Note created."}, ok=true, and
 	// writes a clearing Set-Cookie (MaxAge < 0) — one-shot.
 
 	// Step 1: Set a flash cookie
 	w := httptest.NewRecorder()
-	Set(w, "notice", "Note created.")
+	r := httptest.NewRequest("GET", "/", nil)
+	Set(w, r, "notice", "Note created.")
 
 	// Verify that a Set-Cookie was written
 	if w.Header().Get("Set-Cookie") == "" {
@@ -131,7 +132,8 @@ func TestMessageSurvivesEncoding(t *testing.T) {
 
 	// Set a flash with complex message
 	w := httptest.NewRecorder()
-	Set(w, kind, message)
+	r := httptest.NewRequest("GET", "/", nil)
+	Set(w, r, kind, message)
 
 	// Extract and carry the cookie to a new request
 	cookies := w.Result().Cookies()
@@ -167,7 +169,8 @@ func TestMessageWithSeparator(t *testing.T) {
 
 	// Set a flash with separator in the message
 	w := httptest.NewRecorder()
-	Set(w, kind, message)
+	r := httptest.NewRequest("GET", "/", nil)
+	Set(w, r, kind, message)
 
 	// Extract and carry the cookie to a new request
 	cookies := w.Result().Cookies()

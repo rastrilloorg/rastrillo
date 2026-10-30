@@ -41,7 +41,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/chromedp/cdproto/runtime"
 	"github.com/chromedp/chromedp"
 
 	"amadan.net/rastrillo/rastrillo"
@@ -205,17 +204,17 @@ func TestNoGalleryPageStillDrawsTheRakeLine(t *testing.T) {
 		name := tg.theme + "/" + tg.locale + "/" + tg.file
 		url := rig.Origin + pageHref(mountPath, tg.theme, tg.locale, tg.file)
 
-		if err := chromedp.Run(ctx,
+		if err := chromedp.Do(ctx,
 			chromedp.EmulateViewport(1280, 900),
 			chromedp.Navigate(url),
-			chromedp.WaitVisible(`[rst-page-header]`, chromedp.ByQuery),
+			chromedp.WaitVisible(chromedp.CSS(`[rst-page-header]`)),
 		); err != nil {
 			t.Fatalf("%s: driving the page: %v", name, err)
 		}
 		eagerly(t, ctx, name)
-		var raw string
-		if err := chromedp.Run(ctx, chromedp.Evaluate(headerRuleSweep, &raw,
-			func(p *runtime.EvaluateParams) *runtime.EvaluateParams { return p.WithAwaitPromise(true) })); err != nil {
+		raw, err := chromedp.Run(ctx, chromedp.Evaluate[string](headerRuleSweep,
+			chromedp.EvalAwaitPromise))
+		if err != nil {
 			t.Fatalf("%s: sweeping the headers: %v", name, err)
 		}
 		var got headerRuleSweepResult

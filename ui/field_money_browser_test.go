@@ -11,7 +11,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/chromedp/cdproto/emulation"
 	"github.com/chromedp/chromedp"
 
 	"amadan.net/rastrillo/rastrillo/form"
@@ -39,11 +38,10 @@ func TestFieldMoneySubmitsWithNoScript(t *testing.T) {
 	})
 	ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
 	defer cancel()
-	var label string
-	mustRun(t, ctx, emulation.SetScriptExecutionDisabled(true),
-		chromedp.Navigate(rig.Origin+"/"), chromedp.WaitVisible("#save", chromedp.ByQuery),
-		chromedp.Text("label[for='Price']", &label, chromedp.ByQuery),
-		chromedp.Click("#save", chromedp.ByQuery))
+	mustRun(t, ctx, scriptsOff(),
+		chromedp.Navigate(rig.Origin+"/"), chromedp.WaitVisible(chromedp.CSS("#save")))
+	label := mustRead(t, ctx, chromedp.Text(chromedp.CSS("label[for='Price']")))
+	mustRun(t, ctx, chromedp.Click(chromedp.CSS("#save")))
 	if !strings.Contains(label, "USD") {
 		t.Errorf("the ISO code is not shown with the input: label %q", label)
 	}

@@ -3,6 +3,7 @@ package ui
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"strings"
 	"testing"
 
@@ -96,10 +97,58 @@ func TestShimContract(t *testing.T) {
 	// The old sidebar drawer and the toggle-block stay out of it: neither
 	// is a menu, and dismissing them on an outside click would fight the
 	// user. (The topbar's Menu is in, above: it is a card that overlays
-	// the page now, which is what light dismiss is for.)
+	// the page now, which is what light dismiss is for.) The check reads
+	// the light-dismiss code, closeMenus through the two listeners: the
+	// switch's drag names the toggle block's head, which drags like a
+	// switch, and that is not light dismiss.
+	reach, err := lightDismissReach(js)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, bad := range reach {
+		t.Errorf("light dismiss reaches for %q; it covers menus only", bad)
+	}
+}
+
+// lightDismissReach returns which of the names light dismiss must never
+// touch appear in its code, which runs from the menu list, MENUS, with
+// its extensions, through menuAround and closeMenus to the two document
+// listeners; an error when that code is not where it expects.
+func lightDismissReach(js string) ([]string, error) {
+	from, to := strings.Index(js, "var MENUS"), strings.Index(js, `document.addEventListener("keydown", dismissMenus, true)`)
+	if from < 0 || to < from {
+		return nil, fmt.Errorf("the light-dismiss code is not where this check expects it")
+	}
+	var out []string
 	for _, bad := range []string{"rst-shell-chrome", "rst-tblock"} {
-		if strings.Contains(js, bad) {
-			t.Errorf("shim reaches for %q; light dismiss covers menus only", bad)
+		if strings.Contains(js[from:to], bad) {
+			out = append(out, bad)
+		}
+	}
+	return out, nil
+}
+
+// TestTheLightDismissGateReadsTheMenuList (switch review 5): the gate
+// has to read the menu list, not only the functions after it. A drawer
+// or a toggle block spliced into MENUS makes closeMenus(null) close it,
+// and the functions' own text would never say so. The shipped shim is
+// the control.
+func TestTheLightDismissGateReadsTheMenuList(t *testing.T) {
+	js := string(ShimJS())
+	if reach, err := lightDismissReach(js); err != nil || len(reach) != 0 {
+		t.Fatalf("the shipped shim: reach %v, err %v; want none", reach, err)
+	}
+	for _, m := range []struct{ name, bad string }{{"the drawer spliced into MENUS", "rst-shell-chrome"}, {"the toggle block spliced into MENUS", "rst-tblock"}} {
+		mutant := strings.Replace(js, `var MENUS = "`, `var MENUS = "[`+m.bad+`][open],`, 1)
+		if mutant == js {
+			t.Fatal("MENUS is not where this test expects it")
+		}
+		reach, err := lightDismissReach(mutant)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(reach) != 1 || reach[0] != m.bad {
+			t.Errorf("%s: the gate reports %v; want %q, which closeMenus(null) would now close", m.name, reach, m.bad)
 		}
 	}
 }
@@ -118,10 +167,16 @@ func TestBusyRuleIsTheDefault(t *testing.T) {
 	if !strings.Contains(js, `document.addEventListener("submit", busySubmit, true)`) {
 		t.Error("the busy rule is not one delegated capture-phase submit listener on the document")
 	}
-	// Two mentions and no more: the definition and the one listener. A
-	// third would mean someone started binding it per form again.
-	if n := strings.Count(js, "busySubmit"); n != 2 {
-		t.Errorf("busySubmit appears %d times, want 2 (one definition, one document listener)", n)
+	// Three mentions and no more: the definition, the one listener, and
+	// the window listener's late call for a swapping form live.js left
+	// to the browser (armed there because only then is it known whether
+	// live.js took it). A fourth would mean someone started binding it
+	// per form again.
+	if n := strings.Count(js, "busySubmit"); n != 3 {
+		t.Errorf("busySubmit appears %d times, want 3 (one definition, one document listener, one late call for a data-live-form)", n)
+	}
+	if !strings.Contains(js, "busySubmit(e, true)") {
+		t.Error("busy.js no longer arms a swapping form live.js left to the browser")
 	}
 	// The opt-in scan is gone. Any querySelectorAll over a data-busy
 	// selector is the old shape coming back.
@@ -330,8 +385,22 @@ func TestBusyRuleIsTheDefault(t *testing.T) {
 // a universal transition: none under a root attribute, was rejected
 // because nothing shipped carries an !important and without one the
 // rule loses to the nav's and the tile's own, more specific transitions.
+//
+// 19,078 bytes after the switch rework: 848 added, of which 494 are
+// CODE: the second number the drag writes (the on colour's share
+// beside the knob's), and the release's settle mark, settle() and
+// unsettle() with their timer, the call in drop and the clear at a
+// drag's start, which key the firm release curve in the CSS. The other
+// 354 are COMMENT: what the two numbers are and why a release is marked.
+// 202 bytes were under the cap, so neither the code nor the comments
+// fit; the cap moved to 19 KiB rather than cutting the comment that
+// says why the track reads two numbers. The switch review fixes (the
+// toggle block's head in the drag's selector, and the settle mark
+// clearing on the next change event, bar the release's own click) took
+// it to 19,434, 22 under, with two of the new comments shortened to
+// fit.
 func TestShimIsSmall(t *testing.T) {
-	if n := len(ShimJS()); n > 18*1024 {
+	if n := len(ShimJS()); n > 19*1024 {
 		t.Fatalf("shim is %d bytes; the point is that an app owner can read it in one sitting — trim it", n)
 	}
 	if bytes.Contains(ShimJS(), []byte("\t")) {
@@ -429,7 +498,28 @@ func TestSelectContract(t *testing.T) {
 	// focusing click as well as on focus: WebKit put the caret where a
 	// click landed after focus, so clearing "Dublin" took a double-click.
 	// The comment is the one that says why each pointer selects when.
-	if n := len(SelectJS()); n > 52*1024 {
+	//
+	// Then to 53KB (measured 54,094 bytes) by cutting the room only to the
+	// ancestors that can clip the list, its chain of containing blocks: a
+	// list fixed or anchored out of a bar that scrolls sideways opened 0px
+	// tall in Docs' phone toolbar. The comments are the two that say why.
+	//
+	// Then to 54KB (measured 55,248 bytes) when the review on #136 held
+	// that chain to the CSS rules (paint containment and content-visibility
+	// clipping, will-change's triggers, will-change: position for absolute
+	// lists, size containers dropped, the top layer and slots), and added
+	// data-rst-select-ceiling, floor's twin for a sticky header.
+	//
+	// Then to 55KB (measured 55,848 bytes) for the re-review: no
+	// containment, transform or overflow on a box that is not there
+	// (display: contents) or is a plain inline, preserve-3d, and
+	// will-change matched without case and through -webkit- aliases. The
+	// third review's fixes (containment skips table rows and ruby, a
+	// boxless ancestor's position is not the chain's, each will-change
+	// name by its own property's rule, motion paths, only aliases the
+	// engine has) fit under it at 56,306 bytes, folding the computed
+	// values and the will-change names into one check.
+	if n := len(SelectJS()); n > 55*1024 {
 		t.Fatalf("select.js is %d bytes; it is split out of the shim precisely to stay readable — trim it", n)
 	}
 	if bytes.Contains(SelectJS(), []byte("\t")) {
@@ -497,6 +587,11 @@ func TestBusyContract(t *testing.T) {
 		"btn.disabled = wasDisabled", "btn.form !== form", `getAttribute("formtarget")`,
 		// Only a submit with a spinner showing is held.
 		`btn.getAttribute("aria-busy") !== "true") return;`,
+		// The handover: a swapping form is live.js's when live.js sends it.
+		`form.hasAttribute("data-live-form") && !late`,
+		// ...and the late arm leaves one live.js claimed (e.liveForm),
+		// in either script order.
+		`e.defaultPrevented || e.liveForm) return;`,
 	} {
 		if !strings.Contains(js, want) {
 			t.Errorf("busy.js does not mention %q", want)

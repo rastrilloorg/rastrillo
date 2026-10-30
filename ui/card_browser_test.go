@@ -11,7 +11,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/chromedp/cdproto/emulation"
 	"github.com/chromedp/chromedp"
 	"github.com/chromedp/chromedp/kb"
 
@@ -65,7 +64,7 @@ func cardRig(t *testing.T, pages map[string]string, scripts bool) (*harness.Rig,
 	rig := harness.New(t, func(string) http.Handler { return sizingMux(t, pages) }, harness.WithCoarsePointer())
 	ctx, cancel := context.WithTimeout(rig.Context(), 180*time.Second)
 	if !scripts {
-		if err := chromedp.Run(ctx, emulation.SetScriptExecutionDisabled(true)); err != nil {
+		if err := chromedp.Do(ctx, scriptsOff()); err != nil {
 			cancel()
 			t.Fatal(err)
 		}
@@ -113,8 +112,14 @@ func readCard(t *testing.T, ctx context.Context) cardReading {
 // computed style reports, so the current item's fill can be compared.
 func resolvedColor(t *testing.T, ctx context.Context, prop string) string {
 	t.Helper()
-	var s string
-	mustRun(t, ctx, chromedp.Evaluate(`(() => { const e = document.createElement("span"); e.style.backgroundColor = "var(`+prop+`)"; document.body.appendChild(e); const c = getComputedStyle(e).backgroundColor; e.remove(); return c; })()`, &s))
+	s := mustRead(t, ctx, chromedp.Evaluate[string](`(() => {
+		const e = document.createElement("span");
+		e.style.backgroundColor = "var(`+prop+`)";
+		document.body.appendChild(e);
+		const c = getComputedStyle(e).backgroundColor;
+		e.remove();
+		return c;
+	})()`))
 	if s == "" || s == "rgba(0, 0, 0, 0)" {
 		t.Fatalf("%s resolved to %q; a colour compared with it would be compared with nothing", prop, s)
 	}
@@ -131,10 +136,10 @@ func TestTheTopbarMenuIsACardOverThePage(t *testing.T) {
 				rig, ctx, cancel := cardRig(t, map[string]string{"/": topbarPage(t, dir)}, scripts)
 				defer cancel()
 				mustRun(t, ctx, chromedp.EmulateViewport(390, 844), chromedp.Navigate(rig.Origin+"/"),
-					chromedp.WaitVisible("[rst-shell-menu] > summary", chromedp.ByQuery))
+					chromedp.WaitVisible(chromedp.CSS("[rst-shell-menu] > summary")))
 				requirePointer(t, ctx, true)
 				closed := readCard(t, ctx)
-				mustRun(t, ctx, chromedp.Click("[rst-shell-menu] > summary", chromedp.ByQuery))
+				mustRun(t, ctx, chromedp.Click(chromedp.CSS("[rst-shell-menu] > summary")))
 				open := readCard(t, ctx)
 				if !open.MenuOpen {
 					t.Fatal("the Menu did not open")
@@ -173,7 +178,12 @@ func TestTheTopbarMenuIsACardOverThePage(t *testing.T) {
 				// and does not follow the link. A page with no Menu also
 				// ends the wait: that is the link followed, which
 				// clickAndStay then reports as the navigation it was.
-				clickAndStay(t, ctx, probeScripted(t, ctx, scripts, "#main-link", 0.5, 0.5, 0, 0), "", `(() => { const m = document.querySelector("[rst-shell-menu]"); return !m || !m.open; })()`)
+				link := probeScripted(t, ctx, scripts, "#main-link",
+					0.5, 0.5, 0, 0)
+				clickAndStay(t, rig, ctx, link, "", `(() => {
+					const m = document.querySelector("[rst-shell-menu]");
+					return !m || !m.open;
+				})()`)
 			})
 		}
 	}
@@ -198,19 +208,19 @@ func TestEscapeClosesTheWholeCard(t *testing.T) {
 			defer cancel()
 			open := func() {
 				mustRun(t, ctx, chromedp.EmulateViewport(390, 844), chromedp.Navigate(rig.Origin+"/"),
-					chromedp.WaitVisible(menu, chromedp.ByQuery), chromedp.Click(menu, chromedp.ByQuery))
+					chromedp.WaitVisible(chromedp.CSS(menu)), chromedp.Click(chromedp.CSS(menu)))
 			}
 			open()
-			mustRun(t, ctx, chromedp.Focus("#nav-drafts", chromedp.ByQuery), chromedp.KeyEvent(kb.Escape))
+			mustRun(t, ctx, chromedp.Focus(chromedp.CSS("#nav-drafts")), chromedp.KeyEvent(kb.Escape))
 			if c := readCard(t, ctx); c.MenuOpen || c.Focus != "menu-summary" {
 				t.Errorf("Escape from a nav link: open=%v focus=%s, want closed and the Menu summary", c.MenuOpen, c.Focus)
 			}
 			open()
-			mustRun(t, ctx, chromedp.Click(acct, chromedp.ByQuery))
+			mustRun(t, ctx, chromedp.Click(chromedp.CSS(acct)))
 			if c := readCard(t, ctx); !c.MenuOpen || !c.AcctOpen {
 				t.Errorf("opening the account menu inside the card: card open=%v, account open=%v; want both", c.MenuOpen, c.AcctOpen)
 			}
-			mustRun(t, ctx, chromedp.Focus("#acct-profile", chromedp.ByQuery), chromedp.KeyEvent(kb.Escape))
+			mustRun(t, ctx, chromedp.Focus(chromedp.CSS("#acct-profile")), chromedp.KeyEvent(kb.Escape))
 			if c := readCard(t, ctx); c.MenuOpen || c.AcctOpen || c.Focus != "menu-summary" {
 				t.Errorf("Escape from inside the account menu: card %v account %v focus %s; want both closed by one Escape and focus on the Menu summary", c.MenuOpen, c.AcctOpen, c.Focus)
 			}
@@ -230,8 +240,8 @@ func TestTheCardSurvivesAResize(t *testing.T) {
 	defer cancel()
 	load := func() {
 		mustRun(t, ctx, chromedp.EmulateViewport(390, 844), chromedp.Navigate(rig.Origin+"/"),
-			chromedp.WaitVisible("[rst-shell-menu] > summary", chromedp.ByQuery),
-			chromedp.Click("[rst-shell-menu] > summary", chromedp.ByQuery))
+			chromedp.WaitVisible(chromedp.CSS("[rst-shell-menu] > summary")),
+			chromedp.Click(chromedp.CSS("[rst-shell-menu] > summary")))
 	}
 	load()
 	mustRun(t, ctx, chromedp.EmulateViewport(1280, 900))
@@ -250,11 +260,11 @@ func TestTheCardSurvivesAResize(t *testing.T) {
 	clickAndLand(t, ctx, probe(t, ctx, "#main-link", 0.5, 0.5, 0, 0), "/go/main")
 
 	load()
-	mustRun(t, ctx, chromedp.Click("[rst-shell-account] > summary", chromedp.ByQuery), chromedp.EmulateViewport(1280, 900))
+	mustRun(t, ctx, chromedp.Click(chromedp.CSS("[rst-shell-account] > summary")), chromedp.EmulateViewport(1280, 900))
 	if c := readCard(t, ctx); !c.AcctOpen || c.AcctPanel == "static" {
 		t.Errorf("widened with the account menu open: open %v, panel position %s; want today's positioned panel", c.AcctOpen, c.AcctPanel)
 	}
-	mustRun(t, ctx, chromedp.Focus("#acct-profile", chromedp.ByQuery), chromedp.KeyEvent(kb.Escape))
+	mustRun(t, ctx, chromedp.Focus(chromedp.CSS("#acct-profile")), chromedp.KeyEvent(kb.Escape))
 	if c := readCard(t, ctx); c.Focus != "account-summary" || !c.FocusShown {
 		t.Errorf("Escape after widening focused %q (shown %v); want the account summary, which is visible", c.Focus, c.FocusShown)
 	}
@@ -271,7 +281,7 @@ func TestTheCardsControlsAreTaps(t *testing.T) {
 	rig, ctx, cancel := cardRig(t, map[string]string{"/": topbarPage(t, "ltr")}, true)
 	defer cancel()
 	mustRun(t, ctx, chromedp.EmulateViewport(390, 844), chromedp.Navigate(rig.Origin+"/"),
-		chromedp.WaitVisible("[rst-shell-menu] > summary", chromedp.ByQuery), chromedp.Click("[rst-shell-menu] > summary", chromedp.ByQuery))
+		chromedp.WaitVisible(chromedp.CSS("[rst-shell-menu] > summary")), chromedp.Click(chromedp.CSS("[rst-shell-menu] > summary")))
 	requirePointer(t, ctx, true)
 	// The Menu and the card, not the whole bar: while the card is open
 	// the brand is under the outside-tap layer on purpose, so a tap there
@@ -295,10 +305,11 @@ func TestAModalCoversTheTopbarOnAPhone(t *testing.T) {
 	hits := func(t *testing.T, ctx context.Context, sels ...string) {
 		t.Helper()
 		for _, sel := range sels {
-			var hit string
-			mustRun(t, ctx, chromedp.Evaluate(`(() => { const r = document.querySelector(`+"`"+sel+"`"+`).getBoundingClientRect();
+			hit := mustRead(t, ctx, chromedp.Evaluate[string](`(() => {
+				const r = document.querySelector(`+"`"+sel+"`"+`)
+					.getBoundingClientRect();
 			  const h = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
-			  return !h ? "nothing" : h.closest("[rst-modal-overlay]") ? "overlay" : h.tagName + (h.getAttributeNames().filter(n => n.startsWith("rst-")).map(n => "[" + n + "]").join("")); })()`, &hit))
+			  return !h ? "nothing" : h.closest("[rst-modal-overlay]") ? "overlay" : h.tagName + (h.getAttributeNames().filter(n => n.startsWith("rst-")).map(n => "[" + n + "]").join("")); })()`))
 			if hit != "overlay" {
 				t.Errorf("a tap on %s with a modal open lands on %s, want the modal's overlay: it paints above the scrim", sel, hit)
 			}
@@ -308,7 +319,7 @@ func TestAModalCoversTheTopbarOnAPhone(t *testing.T) {
 		rig, ctx, cancel := cardRig(t, map[string]string{"/": topbarPageWith(t, "ltr", Styleguide()["modal"])}, true)
 		defer cancel()
 		mustRun(t, ctx, chromedp.EmulateViewport(390, 844), chromedp.Navigate(rig.Origin+"/"),
-			chromedp.WaitVisible("[rst-modal-overlay]", chromedp.ByQuery))
+			chromedp.WaitVisible(chromedp.CSS("[rst-modal-overlay]")))
 		requirePointer(t, ctx, true)
 		hits(t, ctx, "[rst-shell-brand]", "[rst-shell-menu] > summary")
 	})
@@ -324,7 +335,7 @@ func TestAModalCoversTheTopbarOnAPhone(t *testing.T) {
 			ctx, cancel := context.WithTimeout(rig.Context(), 90*time.Second)
 			defer cancel()
 			mustRun(t, ctx, chromedp.EmulateViewport(390, 844), chromedp.Navigate(rig.Origin+"/"),
-				chromedp.WaitVisible("[rst-modal-overlay]", chromedp.ByQuery), chromedp.WaitVisible("[rst-shell-back] a", chromedp.ByQuery))
+				chromedp.WaitVisible(chromedp.CSS("[rst-modal-overlay]")), chromedp.WaitVisible(chromedp.CSS("[rst-shell-back] a")))
 			requirePointer(t, ctx, true)
 			hits(t, ctx, "[rst-shell-back] a")
 		})
@@ -339,15 +350,16 @@ func TestAClickOnTheDocumentItselfDoesNotThrow(t *testing.T) {
 	rig, ctx, cancel := cardRig(t, map[string]string{"/": topbarPage(t, "ltr")}, true)
 	defer cancel()
 	mustRun(t, ctx, chromedp.EmulateViewport(390, 844), chromedp.Navigate(rig.Origin+"/"),
-		chromedp.WaitVisible("[rst-shell-menu] > summary", chromedp.ByQuery))
+		chromedp.WaitVisible(chromedp.CSS("[rst-shell-menu] > summary")))
 	// The shim is deferred; the drive starts once it has bound, which
 	// the account menu closing on an outside click shows.
 	settleUntil(t, ctx, `(() => { const a = document.querySelector("[rst-shell-account]"); a.open = true; document.body.click(); return !a.open; })()`)
-	var got string
-	mustRun(t, ctx, chromedp.Evaluate(`(() => { let err = "none"; addEventListener("error", e => { err = e.message; });
+	got := mustRead(t, ctx, chromedp.Evaluate[string](`(() => {
+		let err = "none";
+		addEventListener("error", e => { err = e.message; });
 	  const a = document.querySelector("[rst-shell-account]"); a.open = true;
 	  document.dispatchEvent(new MouseEvent("click", {bubbles: true}));
-	  return err + (a.open ? " (menu left open)" : ""); })()`, &got))
+	  return err + (a.open ? " (menu left open)" : ""); })()`))
 	if got != "none" {
 		t.Errorf("a click dispatched on the document: %s; want no error and the open menu closed", got)
 	}
@@ -363,8 +375,8 @@ func TestTheCardFitsTheSmallestPhone(t *testing.T) {
 			rig, ctx, cancel := cardRig(t, map[string]string{"/": topbarPage(t, dir)}, true)
 			defer cancel()
 			mustRun(t, ctx, chromedp.EmulateViewport(320, 640), chromedp.Navigate(rig.Origin+"/"),
-				chromedp.WaitVisible("[rst-shell-menu] > summary", chromedp.ByQuery),
-				chromedp.Click("[rst-shell-menu] > summary", chromedp.ByQuery))
+				chromedp.WaitVisible(chromedp.CSS("[rst-shell-menu] > summary")),
+				chromedp.Click(chromedp.CSS("[rst-shell-menu] > summary")))
 			c := readCard(t, ctx)
 			if !c.MenuOpen {
 				t.Fatal("the Menu did not open")
@@ -394,11 +406,13 @@ func TestTheConsoleBarIsTheSameCard(t *testing.T) {
 			rig := harness.New(t, func(string) http.Handler { return shellAssets(t, pages) }, harness.WithCoarsePointer())
 			ctx, cancel := context.WithTimeout(rig.Context(), 90*time.Second)
 			defer cancel()
-			acts := []chromedp.Action{chromedp.EmulateViewport(390, 844)}
-			if !scripts {
-				acts = append(acts, emulation.SetScriptExecutionDisabled(true))
+			acts := []chromedp.Action[chromedp.Void]{
+				chromedp.EmulateViewport(390, 844),
 			}
-			acts = append(acts, chromedp.Navigate(rig.Origin+"/"), chromedp.WaitVisible("[rst-shell-menu] > summary", chromedp.ByQuery))
+			if !scripts {
+				acts = append(acts, scriptsOff())
+			}
+			acts = append(acts, chromedp.Navigate(rig.Origin+"/"), chromedp.WaitVisible(chromedp.CSS("[rst-shell-menu] > summary")))
 			mustRun(t, ctx, acts...)
 			var before, open struct {
 				Main, Basis, Inner string
@@ -415,7 +429,7 @@ func TestTheConsoleBarIsTheSameCard(t *testing.T) {
 			  const rtl = document.documentElement.dir === "rtl", h = document.documentElement.getBoundingClientRect();
 			  return JSON.stringify({Main: [m.left, m.top, m.width].map(Math.round).join(","), Gap: rtl ? t.left - h.left : h.right - t.right, Basis: cs.flexBasis, Inner: cs.rowGap}); })()`
 			at(t, ctx, read, &before)
-			mustRun(t, ctx, chromedp.Click("[rst-shell-menu] > summary", chromedp.ByQuery), chromedp.WaitVisible("[rst-shell-tail] [rst-shell-account] > summary", chromedp.ByQuery))
+			mustRun(t, ctx, chromedp.Click(chromedp.CSS("[rst-shell-menu] > summary")), chromedp.WaitVisible(chromedp.CSS("[rst-shell-tail] [rst-shell-account] > summary")))
 			at(t, ctx, read, &open)
 			if open.Main != before.Main || open.Gap < 0 || open.Gap > 13 {
 				t.Errorf("main %s -> %s, card %.1fpx from the edge; want a card over a page that did not move", before.Main, open.Main, open.Gap)
@@ -423,12 +437,14 @@ func TestTheConsoleBarIsTheSameCard(t *testing.T) {
 			if open.Basis != "auto" || open.Inner != "0px" {
 				t.Errorf("the console's open tail has flex-basis %s and gap %s; the card's auto and 0 lost to the console's own rule", open.Basis, open.Inner)
 			}
-			clickAndStay(t, ctx, probeScripted(t, ctx, scripts, "#main-link", 0.5, 0.5, 0, 0), "", `!document.querySelector("[rst-shell-menu]").open`)
+			link := probeScripted(t, ctx, scripts, "#main-link", 0.5, 0.5, 0, 0)
+			clickAndStay(t, rig, ctx, link, "",
+				`!document.querySelector("[rst-shell-menu]").open`)
 			if scripts {
-				mustRun(t, ctx, chromedp.Navigate(rig.Origin+"/"), chromedp.WaitVisible("[rst-shell-menu] > summary", chromedp.ByQuery),
-					chromedp.Click("[rst-shell-menu] > summary", chromedp.ByQuery), chromedp.WaitVisible("[rst-shell-tail] [rst-shell-account] > summary", chromedp.ByQuery),
-					chromedp.Click("[rst-shell-account] > summary", chromedp.ByQuery), chromedp.WaitVisible("#acct-profile", chromedp.ByQuery),
-					chromedp.Focus("#acct-profile", chromedp.ByQuery), chromedp.KeyEvent(kb.Escape))
+				mustRun(t, ctx, chromedp.Navigate(rig.Origin+"/"), chromedp.WaitVisible(chromedp.CSS("[rst-shell-menu] > summary")),
+					chromedp.Click(chromedp.CSS("[rst-shell-menu] > summary")), chromedp.WaitVisible(chromedp.CSS("[rst-shell-tail] [rst-shell-account] > summary")),
+					chromedp.Click(chromedp.CSS("[rst-shell-account] > summary")), chromedp.WaitVisible(chromedp.CSS("#acct-profile")),
+					chromedp.Focus(chromedp.CSS("#acct-profile")), chromedp.KeyEvent(kb.Escape))
 				var s struct {
 					Menu, Acct bool
 					Focus      string

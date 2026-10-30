@@ -287,17 +287,19 @@ func TestTheConsoleFoldsItsBarAndIndexesItsRail(t *testing.T) {
 	ctx, cancel := context.WithTimeout(rig.Context(), 120*time.Second)
 	defer cancel()
 
-	at := func(t *testing.T, w, h int, path string, before ...chromedp.Action) consoleReading {
+	at := func(t *testing.T, w, h int, path string,
+		before ...chromedp.Action[chromedp.Void]) consoleReading {
 		t.Helper()
-		acts := []chromedp.Action{
+		acts := []chromedp.Action[chromedp.Void]{
 			chromedp.EmulateViewport(int64(w), int64(h)),
 			chromedp.Navigate(rig.Origin + path),
-			chromedp.WaitVisible(`[rst-shell-bar]`, chromedp.ByQuery),
+			chromedp.WaitVisible(chromedp.CSS(`[rst-shell-bar]`)),
 		}
 		acts = append(acts, before...)
 		var raw string
-		acts = append(acts, chromedp.Evaluate(consoleMeasure, &raw))
-		if err := chromedp.Run(ctx, acts...); err != nil {
+		measure := chromedp.Evaluate[string](consoleMeasure)
+		acts = append(acts, harness.Into(&raw, measure))
+		if err := chromedp.Do(ctx, acts...); err != nil {
 			t.Fatalf("driving %s at %dx%d: %v", path, w, h, err)
 		}
 		return readConsole(t, raw)
@@ -372,8 +374,8 @@ func TestTheConsoleFoldsItsBarAndIndexesItsRail(t *testing.T) {
 	// 3. One click reveals the tail card, and not the rail: on a
 	//    content page the rail is the index's, behind the back control.
 	open := at(t, 390, 780, "/",
-		chromedp.Click(`[rst-shell-menu] > summary`, chromedp.ByQuery),
-		chromedp.WaitVisible(`[rst-shell-tail] [rst-shell-account] > summary`, chromedp.ByQuery),
+		chromedp.Click(chromedp.CSS(`[rst-shell-menu] > summary`)),
+		chromedp.WaitVisible(chromedp.CSS(`[rst-shell-tail] [rst-shell-account] > summary`)),
 	)
 	if !open.TailShown {
 		t.Error("opening the Menu did not reveal the bar's tail")
@@ -388,14 +390,14 @@ func TestTheConsoleFoldsItsBarAndIndexesItsRail(t *testing.T) {
 	// 4. The trap: the account menu must not close the disclosure it
 	//    sits behind, and opening it must not bring the rail in.
 	var trapRaw string
-	if err := chromedp.Run(ctx,
+	if err := chromedp.Do(ctx,
 		// Settle rather than WaitVisible: the failure this step exists
 		// for is the account menu never appearing, because it closed the
 		// disclosure it lives behind. Waiting would report that as a
 		// timeout, and a timeout says nothing about <details name>.
-		chromedp.Click(`[rst-shell-account] > summary`, chromedp.ByQuery),
+		chromedp.Click(chromedp.CSS(`[rst-shell-account] > summary`)),
 		chromedp.Sleep(250*time.Millisecond),
-		chromedp.Evaluate(consoleMeasure, &trapRaw),
+		harness.Into(&trapRaw, chromedp.Evaluate[string](consoleMeasure)),
 	); err != nil {
 		t.Fatalf("opening the account menu inside the collapsed console: %v", err)
 	}
@@ -424,11 +426,11 @@ func TestTheConsoleFoldsItsBarAndIndexesItsRail(t *testing.T) {
 	atIndex := func(w, h int) consoleReading {
 		t.Helper()
 		var raw string
-		if err := chromedp.Run(indexCtx,
+		if err := chromedp.Do(indexCtx,
 			chromedp.EmulateViewport(int64(w), int64(h)),
 			chromedp.Navigate(indexRig.Origin+"/"),
-			chromedp.WaitVisible(`[rst-shell-bar]`, chromedp.ByQuery),
-			chromedp.Evaluate(consoleMeasure, &raw),
+			chromedp.WaitVisible(chromedp.CSS(`[rst-shell-bar]`)),
+			harness.Into(&raw, chromedp.Evaluate[string](consoleMeasure)),
 		); err != nil {
 			t.Fatalf("driving the console's index at %dx%d: %v", w, h, err)
 		}
@@ -442,8 +444,8 @@ func TestTheConsoleFoldsItsBarAndIndexesItsRail(t *testing.T) {
 	// 5. The smallest viewport the shells promise, with the card open on
 	//    a content page: the tail, the back control, no rail.
 	tiny := at(t, 320, 640, "/",
-		chromedp.Click(`[rst-shell-menu] > summary`, chromedp.ByQuery),
-		chromedp.WaitVisible(`[rst-shell-tail] [rst-shell-account] > summary`, chromedp.ByQuery),
+		chromedp.Click(chromedp.CSS(`[rst-shell-menu] > summary`)),
+		chromedp.WaitVisible(chromedp.CSS(`[rst-shell-tail] [rst-shell-account] > summary`)),
 	)
 	if tiny.Overflow > 1 {
 		t.Errorf("the opened console spills %dpx sideways at 320px", tiny.Overflow)
@@ -466,11 +468,11 @@ func TestTheConsoleFoldsItsBarAndIndexesItsRail(t *testing.T) {
 	rtlCtx, rtlCancel := context.WithTimeout(rtlRig.Context(), 60*time.Second)
 	defer rtlCancel()
 	var rtlRaw string
-	if err := chromedp.Run(rtlCtx,
+	if err := chromedp.Do(rtlCtx,
 		chromedp.EmulateViewport(1280, 900),
 		chromedp.Navigate(rtlRig.Origin+"/"),
-		chromedp.WaitVisible(`[rst-shell-bar]`, chromedp.ByQuery),
-		chromedp.Evaluate(consoleMeasure, &rtlRaw),
+		chromedp.WaitVisible(chromedp.CSS(`[rst-shell-bar]`)),
+		harness.Into(&rtlRaw, chromedp.Evaluate[string](consoleMeasure)),
 	); err != nil {
 		t.Fatalf("driving the mirrored console: %v", err)
 	}
@@ -531,19 +533,22 @@ func TestTheConsoleRailFitsTheViewport(t *testing.T) {
 
 	measureAt := func(t *testing.T, path string, scroll bool) consoleReading {
 		t.Helper()
-		acts := []chromedp.Action{
+		acts := []chromedp.Action[chromedp.Void]{
 			chromedp.EmulateViewport(w, h),
 			chromedp.Navigate(rig.Origin + path),
-			chromedp.WaitVisible(`[rst-shell-rail] [rst-shell-nav] a`, chromedp.ByQuery),
+			chromedp.WaitVisible(chromedp.CSS(`[rst-shell-rail] [rst-shell-nav] a`)),
 		}
 		if scroll {
 			acts = append(acts,
-				chromedp.Evaluate(`window.scrollTo(0, document.documentElement.scrollHeight); "ok"`, new(string)),
+				harness.Into(new(string), chromedp.Evaluate[string](
+					`window.scrollTo(0, document.documentElement.scrollHeight);
+					"ok"`)),
 				chromedp.Sleep(250*time.Millisecond))
 		}
 		var raw string
-		acts = append(acts, chromedp.Evaluate(consoleMeasure, &raw))
-		if err := chromedp.Run(ctx, acts...); err != nil {
+		measure := chromedp.Evaluate[string](consoleMeasure)
+		acts = append(acts, harness.Into(&raw, measure))
+		if err := chromedp.Do(ctx, acts...); err != nil {
 			t.Fatalf("driving %s at %dx%d (scrolled=%v): %v", path, w, h, scroll, err)
 		}
 		return readConsole(t, raw)
@@ -756,11 +761,11 @@ func TestTheConsoleDegradesTheWayItSaysItDoesWithoutHas(t *testing.T) {
 	at := func(t *testing.T, w, h int, path string) consoleReading {
 		t.Helper()
 		var raw string
-		if err := chromedp.Run(ctx,
+		if err := chromedp.Do(ctx,
 			chromedp.EmulateViewport(int64(w), int64(h)),
 			chromedp.Navigate(rig.Origin+path),
-			chromedp.WaitVisible(`[rst-shell-bar]`, chromedp.ByQuery),
-			chromedp.Evaluate(consoleMeasure, &raw),
+			chromedp.WaitVisible(chromedp.CSS(`[rst-shell-bar]`)),
+			harness.Into(&raw, chromedp.Evaluate[string](consoleMeasure)),
 		); err != nil {
 			t.Fatalf("driving %s at %dx%d: %v", path, w, h, err)
 		}

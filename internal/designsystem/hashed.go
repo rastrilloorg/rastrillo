@@ -26,12 +26,15 @@ var samplesFS embed.FS
 // galleryAssets is every stylesheet, script and sample picture the
 // tree ships, by its plain name: the framework's, one stylesheet per
 // theme, the gallery's own two, and the media-grid sample's four
-// pictures. Render writes each once, under its hashed name.
+// pictures. Render writes each once, under its hashed name. live.js is
+// here because every scaffold layout links it, and a layout that links
+// an asset missing from the tree fails the render of every page.
 func galleryAssets() map[string][]byte {
 	out := map[string][]byte{
 		"tokens.css":   ui.TokensCSS(),
 		"rastrillo.js": ui.ShimJS(),
 		"busy.js":      ui.BusyJS(),
+		"live.js":      ui.LiveJS(),
 		"light.js":     ui.LightJS(),
 		"anchor.js":    ui.AnchorJS(),
 		"shell.js":     ui.ShellJS(),

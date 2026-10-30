@@ -1,9 +1,11 @@
 {{/* tokens.html: the API token page, drawn by tokens.go's renderTokens
      through ui's api-tokens partial. The new token's secret is in
      .Page.Created only in the response that made it: never put it in
-     a link, a redirect or a flash. */}}
+     a link, a redirect or a flash. Path is the form's action, a URL in
+     the body, so it goes through path: under a base path a bare /tokens
+     would post to the hub. */}}
 {{define "content"}}{{$L := localizer $}}
 <h1>{{T $L "rastrillo.ui.api_tokens_title"}}</h1>
 <p>{{T $L "rastrillo.ui.api_tokens_intro"}}</p>
-{{template "api-tokens" dict "L" $L "Page" .Page "Path" "/tokens"}}
+{{template "api-tokens" dict "L" $L "Page" .Page "Path" (path $ "/tokens")}}
 {{end}}

@@ -79,7 +79,7 @@ func TestNewMountsTheAPIForANewApp(t *testing.T) {
 		}
 	}
 	page := readScaffold(t, "123-app", "internal", "app123app", "templates", "tokens.html")
-	if !strings.Contains(page, `{{template "api-tokens" dict "L" $L "Page" .Page "Path" "/tokens"}}`) {
+	if !strings.Contains(page, `{{template "api-tokens" dict "L" $L "Page" .Page "Path" (path $ "/tokens")}}`) {
 		t.Errorf("tokens.html does not draw the page through the api-tokens partial:\n%s", page)
 	}
 	render := readScaffold(t, "123-app", "internal", "app123app", "render.go")

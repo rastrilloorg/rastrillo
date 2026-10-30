@@ -9,7 +9,8 @@
      under the default CSP, and remembers the way in.
 
      Keys:
-       State    auth.SigninState, required
+       State    auth.SigninState, required; with Unavailable set, as
+                under a base path, the partial renders nothing
        Brand    required: Name (string); optional Pitch (string, one
                 line) and Mark (template.HTML — an img element or inline
                 SVG the app owns; give it aria-hidden or alt="" when the
@@ -32,7 +33,7 @@
      No role="alert" anywhere: every message present at load is where
      focus starts (State.Focus), and a live alert would race the focus
      announcement. The only live region is the passkey message. */}}
-{{define "signin"}}{{$L := localizer $}}{{$s := .State}}{{$door := $s.Door}}{{$focus := $s.Focus}}{{$name := .Brand.Name}}{{$preview := opt . "Preview"}}{{$proof := $s.Proof}}{{$gated := and $proof $proof.NeedsScript}}<section rst-signin aria-labelledby="rst-signin-heading">
+{{define "signin"}}{{$L := localizer $}}{{$s := .State}}{{$door := $s.Door}}{{$focus := $s.Focus}}{{$name := .Brand.Name}}{{$preview := opt . "Preview"}}{{$proof := $s.Proof}}{{$gated := and $proof $proof.NeedsScript}}{{if not $s.Unavailable}}<section rst-signin aria-labelledby="rst-signin-heading">
 <div rst-signin-brand>{{with opt .Brand "Mark"}}<div rst-signin-mark>{{.}}</div>{{end}}<p rst-signin-name>{{$name}}</p>{{with opt .Brand "Pitch"}}<p rst-signin-pitch>{{.}}</p>{{end}}</div>
 <div rst-signin-door>
 {{if eq $door "continue"}}{{/* In the card, not <head>: browsers apply a refresh wherever the element
@@ -102,7 +103,7 @@
      may have been sent to anyone. */}}{{if and (ne $door "ask") (ne $door "continue") (ne $door "confirm")}}<form rst-signin-form method="post" action="{{$s.ForgetPath}}">{{with $s.ReturnTo}}<input type="hidden" name="return_to" value="{{.}}">
 {{end}}<button rst-btn="ghost block" type="submit">{{T $L "rastrillo.ui.signin_different"}}</button></form>
 {{end}}{{if and $gated (ne $door "sent") (ne $door "continue") (ne $door "confirm") (not $preview)}}{{$proof.Script}}{{end}}</div>
-</section>{{end}}
+</section>{{end}}{{end}}
 {{/* signin-title — the document title for the same state, for the
      page's title block: every state has one heading and a title
      that says the same thing, so a screen-reader user who lands on the

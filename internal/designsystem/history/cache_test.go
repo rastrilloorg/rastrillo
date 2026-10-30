@@ -37,36 +37,43 @@ func TestTheSchemeFollowsAPageBackFromTheCache(t *testing.T) {
 	ctx, cancel := context.WithTimeout(rig.Context(), 120*time.Second)
 	defer cancel()
 	where := "day/en at 390px"
-	if err := chromedp.Run(ctx,
+	if err := chromedp.Do(ctx,
 		addInit(`addEventListener("pageshow", e => { window.__restored = e.persisted; });`),
 		chromedp.EmulateViewport(390, 844),
 		chromedp.Navigate(rig.Origin+indexHref(mountPath, "day", "en")),
-		chromedp.WaitVisible(`.ds-index`, chromedp.ByQuery)); err != nil {
+		chromedp.WaitVisible(chromedp.CSS(`.ds-index`))); err != nil {
 		t.Fatalf("%s: loading the index: %v", where, err)
 	}
 	requireCoarse(t, ctx)
 	for _, c := range []struct{ scheme, attr string }{{"dark", "dark"}, {"system", ""}} {
 		step := where + ", " + c.scheme
-		if err := chromedp.Run(ctx, chromedp.Evaluate(`document.getElementById("nav-form").click(); true`, nil)); err != nil {
+		if err := chromedp.Do(ctx, chromedp.Evaluate[chromedp.Void](
+			`document.getElementById("nav-form").click(); true`)); err != nil {
 			t.Fatalf("%s: opening Form: %v", step, err)
 		}
 		until(t, ctx, step+", Form", `location.pathname.endsWith("/form.html") && document.readyState === "complete"`)
-		var started float64
-		if err := chromedp.Run(ctx, chromedp.Evaluate(`performance.getEntriesByType("navigation")[0].startTime + performance.timeOrigin`, &started)); err != nil {
+		started, err := chromedp.Run(ctx, chromedp.Evaluate[float64](`performance.getEntriesByType("navigation")[0].startTime + performance.timeOrigin`))
+		if err != nil {
 			t.Fatalf("%s: reading Form's navigation: %v", step, err)
 		}
-		if err := chromedp.Run(ctx, chromedp.Evaluate(`history.back(); true`, nil)); err != nil {
+		if err := chromedp.Do(ctx, chromedp.Evaluate[chromedp.Void](
+			`history.back(); true`)); err != nil {
 			t.Fatalf("%s: going back: %v", step, err)
 		}
 		until(t, ctx, step+", the index", `location.pathname.endsWith("/index.html") && !!document.querySelector('#ds-prefs [data-ds-scheme="`+c.scheme+`"]')`)
-		if err := chromedp.Run(ctx, chromedp.Evaluate(`document.getElementById("ds-prefs").open = true; document.querySelector('#ds-prefs [data-ds-scheme="`+c.scheme+`"]').click(); history.forward(); true`, nil)); err != nil {
+		if err := chromedp.Do(ctx, chromedp.Evaluate[chromedp.Void](
+			`document.getElementById("ds-prefs").open = true;
+			document.querySelector(
+			  '#ds-prefs [data-ds-scheme="`+c.scheme+`"]').click();
+			history.forward(); true`)); err != nil {
 			t.Fatalf("%s: choosing %s and going forward: %v", step, c.scheme, err)
 		}
 		until(t, ctx, step+", Form again", `location.pathname.endsWith("/form.html") && window.__restored !== undefined`)
-		var raw string
-		if err := chromedp.Run(ctx, chromedp.Evaluate(`JSON.stringify({Restored: window.__restored,
+		raw, err := chromedp.Run(ctx, chromedp.Evaluate[string](
+			`JSON.stringify({Restored: window.__restored,
 		  Started: performance.getEntriesByType("navigation")[0].startTime + performance.timeOrigin,
-		  Why: JSON.stringify((performance.getEntriesByType("navigation")[0] || {}).notRestoredReasons || null)})`, &raw)); err != nil {
+		  Why: JSON.stringify((performance.getEntriesByType("navigation")[0] || {}).notRestoredReasons || null)})`))
+		if err != nil {
 			t.Fatalf("%s: reading the restore: %v", step, err)
 		}
 		var r struct {
@@ -89,7 +96,8 @@ func TestTheSchemeFollowsAPageBackFromTheCache(t *testing.T) {
 		    loaded.every(f => (f.contentDocument.documentElement.getAttribute("data-theme") || "") === %q) &&
 		    [...document.querySelectorAll('[data-ds-scheme=%q]')].every(b => b.getAttribute("aria-pressed") === "true");
 		})()`, c.attr, c.attr, c.scheme))
-		if err := chromedp.Run(ctx, chromedp.Evaluate(`history.back(); true`, nil)); err != nil {
+		if err := chromedp.Do(ctx, chromedp.Evaluate[chromedp.Void](
+			`history.back(); true`)); err != nil {
 			t.Fatalf("%s: back to the index: %v", step, err)
 		}
 		until(t, ctx, step+", index again", `location.pathname.endsWith("/index.html")`)

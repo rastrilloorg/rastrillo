@@ -11,7 +11,6 @@ import (
 	"testing"
 	"time"
 
-	cdppage "github.com/chromedp/cdproto/page"
 	"github.com/chromedp/chromedp"
 
 	"amadan.net/rastrillo/rastrillo/harness"
@@ -83,19 +82,18 @@ func TestADropdownOpensUnderItsOwnSummary(t *testing.T) {
 			defer cancel()
 			reported := strings.Contains(l.name, "reported")
 			if !l.anchor && !reported {
-				mustRun(t, ctx, chromedp.ActionFunc(func(ctx context.Context) error {
-					_, err := cdppage.AddScriptToEvaluateOnNewDocument(withoutAnchorSupport).Do(ctx)
-					return err
-				}))
+				mustRun(t, ctx, galleryrig.AddInit(withoutAnchorSupport))
 			}
 			for _, dir := range []string{"", "/rtl"} {
 				for _, spelling := range []string{"partial", "sample"} {
 					for _, where := range []string{"block", "stretch", "end"} {
 						path := dir + "/" + spelling + "/" + where
-						mustRun(t, ctx, chromedp.EmulateViewport(l.w, 800), chromedp.Navigate(rig.Origin+path), chromedp.WaitVisible("#box", chromedp.ByQuery))
+						mustRun(t, ctx, chromedp.EmulateViewport(l.w, 800), chromedp.Navigate(rig.Origin+path), chromedp.WaitVisible(chromedp.CSS("#box")))
 						requirePointer(t, ctx, l.coarse)
 						if !l.anchor {
-							mustRun(t, ctx, chromedp.Evaluate(galleryrig.WithoutAnchorPositioning, nil, awaitPromise))
+							mustRun(t, ctx, chromedp.Evaluate[chromedp.Void](
+								galleryrig.WithoutAnchorPositioning,
+								awaitPromise))
 						}
 						galleryrig.RequireAnchorPositioning(t, ctx, path, "#box > [rst-dropdown] > [rst-dropdown-menu]", l.anchor)
 						// Edges are distances from the root box's leading edge,
@@ -190,8 +188,8 @@ func TestADropdownWithoutAnchorsOrScriptsStaysOnScreen(t *testing.T) {
 			ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
 			defer cancel()
 			for path := range pages {
-				mustRun(t, ctx, chromedp.EmulateViewport(leg.w, 800), chromedp.Navigate(rig.Origin+path), chromedp.WaitVisible("#box", chromedp.ByQuery),
-					chromedp.Click("#box > [rst-dropdown] > summary", chromedp.ByQuery))
+				mustRun(t, ctx, chromedp.EmulateViewport(leg.w, 800), chromedp.Navigate(rig.Origin+path), chromedp.WaitVisible(chromedp.CSS("#box")),
+					chromedp.Click(chromedp.CSS("#box > [rst-dropdown] > summary")))
 				galleryrig.RequireAnchorPositioning(t, ctx, path, "#box > [rst-dropdown] > [rst-dropdown-menu]", false)
 				var g struct {
 					Open                       bool
@@ -230,20 +228,22 @@ func TestAnOpenDropdownIsPlacedAgainWhenTheWindowChanges(t *testing.T) {
 	rig := sizingRig(t, false, pages)
 	ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
 	defer cancel()
-	mustRun(t, ctx, chromedp.ActionFunc(func(ctx context.Context) error {
-		_, err := cdppage.AddScriptToEvaluateOnNewDocument(withoutAnchorSupport).Do(ctx)
-		return err
-	}))
+	mustRun(t, ctx, galleryrig.AddInit(withoutAnchorSupport))
 	for _, path := range []string{"/", "/rtl"} {
-		mustRun(t, ctx, chromedp.EmulateViewport(1280, 800), chromedp.Navigate(rig.Origin+path), chromedp.WaitVisible("#box", chromedp.ByQuery),
-			chromedp.Evaluate(galleryrig.WithoutAnchorPositioning, nil, awaitPromise))
+		mustRun(t, ctx, chromedp.EmulateViewport(1280, 800), chromedp.Navigate(rig.Origin+path), chromedp.WaitVisible(chromedp.CSS("#box")),
+			chromedp.Evaluate[chromedp.Void](
+				galleryrig.WithoutAnchorPositioning, awaitPromise))
 		galleryrig.RequireAnchorPositioning(t, ctx, path, "#box > [rst-dropdown] > [rst-dropdown-menu]", false)
-		frames := chromedp.Evaluate(`new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))`, nil, awaitPromise)
+		frames := chromedp.Evaluate[chromedp.Void](
+			`new Promise(r =>
+				requestAnimationFrame(() => requestAnimationFrame(r)))`,
+			awaitPromise)
 		// The control: opened at 1280 the menu is flipped, from the
 		// summary's leading edge, or the resize has nothing to undo.
-		var flipped bool
-		mustRun(t, ctx, chromedp.Click("#box > [rst-dropdown] > summary", chromedp.ByQuery), frames,
-			chromedp.Evaluate(`document.querySelector("#box > [rst-dropdown]").classList.contains("is-flip-inline")`, &flipped))
+		mustRun(t, ctx, chromedp.Click(chromedp.CSS("#box > [rst-dropdown] > summary")), frames)
+		flipped := mustRead(t, ctx, chromedp.Evaluate[bool](
+			`document.querySelector("#box > [rst-dropdown]")
+				.classList.contains("is-flip-inline")`))
 		if !flipped {
 			t.Fatalf("%s: opened at the leading edge at 1280, the menu was not flipped; this leg proves nothing", path)
 		}

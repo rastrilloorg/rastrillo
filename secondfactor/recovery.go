@@ -112,6 +112,9 @@ func (g *Gate) RecoveryCodesRemaining(subject string) (int, error) {
 // 10 valid codes at 2^-50 apiece leave even a thousand guesses a
 // second at odds near 3×10⁻⁹ across the whole window.
 func (g *Gate) SignInRecovery(w http.ResponseWriter, r *http.Request) {
+	if g.pathRouted(w, r) {
+		return
+	}
 	if r.Method != http.MethodPost {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return

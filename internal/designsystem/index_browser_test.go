@@ -39,7 +39,7 @@ func TestThePhoneIndexAndTheWayBack(t *testing.T) {
 	for _, locale := range []string{"en", "ar"} {
 		where := "day/" + locale + " at 390px"
 		index := rig.Origin + indexHref(mountPath, "day", locale)
-		if err := chromedp.Run(ctx, chromedp.EmulateViewport(390, 844), chromedp.Navigate(index), chromedp.WaitVisible(`.ds-index`, chromedp.ByQuery)); err != nil {
+		if err := chromedp.Do(ctx, chromedp.EmulateViewport(390, 844), chromedp.Navigate(index), chromedp.WaitVisible(chromedp.CSS(`.ds-index`))); err != nil {
 			t.Fatalf("%s: loading the index: %v", where, err)
 		}
 		requireCoarse(t, ctx)
@@ -47,14 +47,14 @@ func TestThePhoneIndexAndTheWayBack(t *testing.T) {
 		// The Overview is the index: the rail is the page, main and the
 		// bar have no box, the one visible h1 is the index title, and the
 		// rows are the page kinds in table order, then Demos.
-		var raw string
-		if err := chromedp.Run(ctx, chromedp.Evaluate(`(() => {
+		raw, err := chromedp.Run(ctx, chromedp.Evaluate[string](`(() => {
 		  const box = `+boxOf+`;
 		  const h1s = [...document.querySelectorAll("h1")].filter(h => h.getBoundingClientRect().height > 0).map(h => h.textContent.trim());
 		  const rows = [...document.querySelectorAll(".ds-index > a")].map(a => ({T: a.textContent.trim(), H: a.getBoundingClientRect().height, ID: a.id}));
 		  return JSON.stringify({Rail: box("[rst-shell-rail]"), Main: box("main"), Bar: box(".ds-top"), Lead: box(".ds-index-lead"), H1: h1s,
 		    Group: (document.querySelector(".ds-index > [rst-shell-group]") || {}).textContent || "", Rows: rows});
-		})()`, &raw)); err != nil {
+		})()`))
+		if err != nil {
 			t.Fatalf("%s: reading the index: %v", where, err)
 		}
 		var ix struct {
@@ -102,16 +102,21 @@ func TestThePhoneIndexAndTheWayBack(t *testing.T) {
 		// the filter and the rows, in screen order. The controls are in
 		// the menu, closed, so nothing follows the rows.
 		var seq []string
-		if err := chromedp.Run(ctx, chromedp.Evaluate(`document.activeElement && document.activeElement.blur(); scrollTo(0, 0); true`, nil)); err != nil {
+		if err := chromedp.Do(ctx, chromedp.Evaluate[chromedp.Void](
+			`document.activeElement && document.activeElement.blur();
+			scrollTo(0, 0); true`)); err != nil {
 			t.Fatalf("%s: resetting focus: %v", where, err)
 		}
-		var expect []string
-		if err := chromedp.Run(ctx, chromedp.Evaluate(`["summary", "#ds-filter", ...[...document.querySelectorAll(".ds-index > a")].map(a => a.id ? "#" + a.id : a.getAttribute("href"))]`, &expect)); err != nil {
+		expect, err := chromedp.Run(ctx, chromedp.Evaluate[[]string](`["summary", "#ds-filter", ...[...document.querySelectorAll(".ds-index > a")].map(a => a.id ? "#" + a.id : a.getAttribute("href"))]`))
+		if err != nil {
 			t.Fatalf("%s: listing the expected order: %v", where, err)
 		}
 		for range expect {
 			var at string
-			if err := chromedp.Run(ctx, chromedp.KeyEvent(kb.Tab), chromedp.Evaluate(focusID, &at)); err != nil {
+			if err := chromedp.Do(ctx,
+				chromedp.KeyEvent(kb.Tab),
+				harness.Into(&at, chromedp.Evaluate[string](focusID)),
+			); err != nil {
 				t.Fatalf("%s: tabbing: %v", where, err)
 			}
 			seq = append(seq, at)
@@ -126,10 +131,15 @@ func TestThePhoneIndexAndTheWayBack(t *testing.T) {
 			IconIn bool
 			Gap    float64
 		}
-		if err := chromedp.Run(ctx, chromedp.Evaluate(`(() => { const i = document.getElementById("ds-filter").getBoundingClientRect(), g = document.querySelector(".ds-search > .icon").getBoundingClientRect();
+		raw, err = chromedp.Run(ctx, chromedp.Evaluate[string](`(() => {
+		  const i = document.getElementById("ds-filter")
+		      .getBoundingClientRect(),
+		    g = document.querySelector(".ds-search > .icon")
+		      .getBoundingClientRect();
 		  const rtl = document.documentElement.dir === "rtl", row = document.querySelector(".ds-index > a").getBoundingClientRect();
 		  const start = rtl ? i.right - g.right : g.left - i.left;
-		  return JSON.stringify({IconIn: g.width > 0 && g.top >= i.top && g.bottom <= i.bottom && start >= 0 && start < 16, Gap: row.top - i.bottom}); })()`, &raw)); err != nil {
+		  return JSON.stringify({IconIn: g.width > 0 && g.top >= i.top && g.bottom <= i.bottom && start >= 0 && start < 16, Gap: row.top - i.bottom}); })()`))
+		if err != nil {
 			t.Fatalf("%s: measuring the filter: %v", where, err)
 		}
 		if err := json.Unmarshal([]byte(raw), &filter); err != nil {
@@ -141,17 +151,19 @@ func TestThePhoneIndexAndTheWayBack(t *testing.T) {
 
 		// A row opens its page as a content page: Back first after the
 		// skip link, and no rail, bar or switcher with a box.
-		if err := chromedp.Run(ctx, chromedp.Evaluate(`document.getElementById("nav-form").click(); true`, nil)); err != nil {
+		if err := chromedp.Do(ctx, chromedp.Evaluate[chromedp.Void](
+			`document.getElementById("nav-form").click(); true`)); err != nil {
 			t.Fatalf("%s: tapping the Form row: %v", where, err)
 		}
 		until(t, ctx, where+", Form loaded", `location.pathname.endsWith("/form.html") && document.readyState === "complete"`)
-		var page string
-		if err := chromedp.Run(ctx, chromedp.Evaluate(`(() => { const box = `+boxOf+`;
+		page, err := chromedp.Run(ctx, chromedp.Evaluate[string](`(() => {
+		  const box = `+boxOf+`;
 		  const back = document.querySelector("[rst-skip] + [rst-shell-back] > a");
 		  return JSON.stringify({Back: !!back && box("[rst-shell-back]"), Href: back ? back.getAttribute("href") : "",
 		    Rail: box("[rst-shell-rail]"), Bar: box(".ds-top"),
 		    Switch: [...document.querySelectorAll("[data-ds-scheme], [rst-seg-tabs] a, [rst-locale]")].some(e => e.checkVisibility() && e.getBoundingClientRect().width > 0)});
-		})()`, &page)); err != nil {
+		})()`))
+		if err != nil {
 			t.Fatalf("%s: reading Form: %v", where, err)
 		}
 		var cp struct {
@@ -170,7 +182,9 @@ func TestThePhoneIndexAndTheWayBack(t *testing.T) {
 
 		// Back returns to the index with the Form row focused. This is a
 		// history traversal, so the leg polls and clicks through the page.
-		if err := chromedp.Run(ctx, chromedp.Evaluate(`document.querySelector("[rst-shell-back] a").click(); true`, nil)); err != nil {
+		if err := chromedp.Do(ctx, chromedp.Evaluate[chromedp.Void](
+			`document.querySelector("[rst-shell-back] a").click();
+			true`)); err != nil {
 			t.Fatalf("%s: going back: %v", where, err)
 		}
 		until(t, ctx, where+", back on the index", `location.pathname.endsWith("/index.html") && document.activeElement && document.activeElement.id === "nav-form"`)
@@ -194,21 +208,27 @@ func TestThePhoneIndexAndTheWayBack(t *testing.T) {
 	// next Tab lands on the row after it.
 	off := noScripts(t, ctx)
 	where := "day/en at 390px, scripts off"
-	if err := chromedp.Run(off, chromedp.EmulateViewport(390, 844),
+	if err := chromedp.Do(off, chromedp.EmulateViewport(390, 844),
 		chromedp.Navigate(rig.Origin+pageHref(mountPath, "day", "en", fileOf("form"))),
-		chromedp.WaitVisible(`[rst-shell-back]`, chromedp.ByQuery)); err != nil {
+		chromedp.WaitVisible(chromedp.CSS(`[rst-shell-back]`))); err != nil {
 		t.Fatalf("%s: loading: %v", where, err)
 	}
 	requireScriptsOff(t, off, where)
-	if err := chromedp.Run(off, chromedp.Evaluate(`document.querySelector("[rst-shell-back] a").click(); true`, nil)); err != nil {
+	if err := chromedp.Do(off, chromedp.Evaluate[chromedp.Void](
+		`document.querySelector("[rst-shell-back] a").click();
+		true`)); err != nil {
 		t.Fatalf("%s: going back: %v", where, err)
 	}
 	until(t, off, where, `location.hash === "#nav-form" && document.querySelector(":target") && document.querySelector(":target").id === "nav-form"`)
 	requireScriptsOff(t, off, where+", back on the index")
 	var next, after string
-	if err := chromedp.Run(off,
-		chromedp.Evaluate(`document.getElementById("nav-form").nextElementSibling.id || document.getElementById("nav-form").nextElementSibling.getAttribute("href")`, &after),
-		chromedp.KeyEvent(kb.Tab), chromedp.Evaluate(focusID, &next)); err != nil {
+	if err := chromedp.Do(off,
+		harness.Into(&after, chromedp.Evaluate[string](
+			`document.getElementById("nav-form").nextElementSibling.id
+			  || document.getElementById("nav-form").nextElementSibling
+			    .getAttribute("href")`)),
+		chromedp.KeyEvent(kb.Tab),
+		harness.Into(&next, chromedp.Evaluate[string](focusID))); err != nil {
 		t.Fatalf("%s: tabbing from the target: %v", where, err)
 	}
 	if strings.TrimPrefix(next, "#") != after {
@@ -239,10 +259,11 @@ func TestTheIndexTitleIsVisible(t *testing.T) {
 		}{{390, 844, "h1"}, {1280, 800, ".ds-top__brand"}} {
 			where := fmt.Sprintf("day/%s index at %dpx", locale, c.w)
 			var got []string
-			if err := chromedp.Run(ctx, chromedp.EmulateViewport(int64(c.w), int64(c.h)),
+			if err := chromedp.Do(ctx, chromedp.EmulateViewport(int64(c.w), int64(c.h)),
 				chromedp.Navigate(rig.Origin+indexHref(mountPath, "day", locale)),
 				chromedp.WaitReady("body"),
-				chromedp.Evaluate(painted+`("`+c.sel+`")`, &got)); err != nil {
+				harness.Into(&got, chromedp.Evaluate[[]string](
+					painted+`("`+c.sel+`")`))); err != nil {
 				t.Fatalf("%s: %v", where, err)
 			}
 			if !slices.Contains(got, want) {
@@ -264,14 +285,15 @@ func TestA11yScansThePhoneViews(t *testing.T) {
 		for _, view := range []struct{ name, file, ready string }{{"index", "index.html", ".ds-index"}, {"content page", "form.html", "[rst-shell-back]"}} {
 			for _, scheme := range a11ySchemes {
 				where := fmt.Sprintf("%s/en %s at 390px (%s)", theme, view.name, scheme)
-				if err := chromedp.Run(ctx, chromedp.EmulateViewport(390, 844),
+				if err := chromedp.Do(ctx, chromedp.EmulateViewport(390, 844),
 					chromedp.Navigate(rig.Origin+pageHref(mountPath, theme, "en", view.file)),
-					chromedp.WaitVisible(view.ready, chromedp.ByQuery)); err != nil {
+					chromedp.WaitVisible(chromedp.CSS(view.ready))); err != nil {
 					t.Fatalf("%s: loading: %v", where, err)
 				}
 				requireCoarse(t, ctx)
 				settleMotion(t, ctx, where)
-				if err := chromedp.Run(ctx, chromedp.Evaluate(axeJS, nil)); err != nil {
+				if err := chromedp.Do(ctx,
+					chromedp.Evaluate[chromedp.Void](axeJS)); err != nil {
 					t.Fatalf("%s: loading axe: %v", where, err)
 				}
 				paint(t, ctx, scheme)
@@ -281,8 +303,8 @@ func TestA11yScansThePhoneViews(t *testing.T) {
 				// shells' cards: the page outside the card is under the
 				// summary's light-dismiss layer, which axe cannot see.
 				where += ", display settings open"
-				if err := chromedp.Run(ctx, chromedp.Click(".ds-prefs > summary", chromedp.ByQuery), chromedp.WaitVisible(".ds-prefs [rst-locale] > summary", chromedp.ByQuery),
-					chromedp.Click(".ds-prefs [rst-locale] > summary", chromedp.ByQuery), chromedp.WaitVisible(".ds-prefs [rst-locale] [rst-dropdown-menu] a", chromedp.ByQuery)); err != nil {
+				if err := chromedp.Do(ctx, chromedp.Click(chromedp.CSS(".ds-prefs > summary")), chromedp.WaitVisible(chromedp.CSS(".ds-prefs [rst-locale] > summary")),
+					chromedp.Click(chromedp.CSS(".ds-prefs [rst-locale] > summary")), chromedp.WaitVisible(chromedp.CSS(".ds-prefs [rst-locale] [rst-dropdown-menu] a"))); err != nil {
 					t.Fatalf("%s: opening: %v", where, err)
 				}
 				settleMotion(t, ctx, where)
@@ -309,14 +331,16 @@ func TestSearchFindsWhatPeopleCallThings(t *testing.T) {
 		return `(() => { const e = document.querySelector('` + sel + `'); return !!e && e.getBoundingClientRect().height > 0; })()`
 	}
 	typeInto := func(where, q string) {
-		if err := chromedp.Run(ctx, chromedp.Evaluate(`(() => { const i = document.getElementById("ds-filter"); i.value = ""; i.dispatchEvent(new Event("input")); return true; })()`, nil),
-			chromedp.SendKeys(`#ds-filter`, q, chromedp.ByQuery)); err != nil {
+		if err := chromedp.Do(ctx, chromedp.Evaluate[chromedp.Void](`(() => {
+		  const i = document.getElementById("ds-filter"); i.value = "";
+		  i.dispatchEvent(new Event("input")); return true; })()`),
+			chromedp.SendKeys(chromedp.CSS(`#ds-filter`), q)); err != nil {
 			t.Fatalf("%s: typing %q: %v", where, q, err)
 		}
 	}
-	if err := chromedp.Run(ctx, chromedp.EmulateViewport(1280, 900),
+	if err := chromedp.Do(ctx, chromedp.EmulateViewport(1280, 900),
 		chromedp.Navigate(rig.Origin+pageHref(mountPath, "day", "en", fileOf("form"))),
-		chromedp.WaitVisible(`#ds-filter`, chromedp.ByQuery)); err != nil {
+		chromedp.WaitVisible(chromedp.CSS(`#ds-filter`))); err != nil {
 		t.Fatalf("loading Form: %v", err)
 	}
 	for q, id := range map[string]string{"checkbox": "partial-field-check", "dialog": "idiom-modal", "button": "idiom-button", "CHECKBOX": "partial-field-check"} {
@@ -331,20 +355,24 @@ func TestSearchFindsWhatPeopleCallThings(t *testing.T) {
 	pctx, pcancel := context.WithTimeout(phone.Context(), 120*time.Second)
 	defer pcancel()
 	where := "the phone index"
-	if err := chromedp.Run(pctx, chromedp.EmulateViewport(390, 844),
+	if err := chromedp.Do(pctx, chromedp.EmulateViewport(390, 844),
 		chromedp.Navigate(phone.Origin+indexHref(mountPath, "day", "en")),
-		chromedp.WaitVisible(`#ds-filter`, chromedp.ByQuery),
-		chromedp.SendKeys(`#ds-filter`, "checkbox", chromedp.ByQuery)); err != nil {
+		chromedp.WaitVisible(chromedp.CSS(`#ds-filter`)),
+		chromedp.SendKeys(chromedp.CSS(`#ds-filter`), "checkbox")); err != nil {
 		t.Fatalf("%s: typing: %v", where, err)
 	}
 	requireCoarse(t, pctx)
 	until(t, pctx, where+", rows swapped for the tree", `document.querySelector(".ds-index").getBoundingClientRect().height === 0 && `+visible(`#ds-nav a[href$="#partial-field-check"]`))
-	if err := chromedp.Run(pctx, chromedp.Evaluate(`(() => { const i = document.getElementById("ds-filter"); i.value = ""; i.dispatchEvent(new Event("input")); return true; })()`, nil)); err != nil {
+	if err := chromedp.Do(pctx, chromedp.Evaluate[chromedp.Void](`(() => {
+	  const i = document.getElementById("ds-filter"); i.value = "";
+	  i.dispatchEvent(new Event("input")); return true; })()`)); err != nil {
 		t.Fatalf("%s: clearing: %v", where, err)
 	}
 	until(t, pctx, where+", rows back", visible(`.ds-index`))
-	if err := chromedp.Run(pctx, chromedp.SendKeys(`#ds-filter`, "checkbox", chromedp.ByQuery),
-		chromedp.Evaluate(`document.querySelector('#ds-nav a[href$="#partial-field-check"]').click(); true`, nil)); err != nil {
+	if err := chromedp.Do(pctx, chromedp.SendKeys(chromedp.CSS(`#ds-filter`), "checkbox"),
+		chromedp.Evaluate[chromedp.Void](
+			`document.querySelector('#ds-nav a[href$="#partial-field-check"]')
+			  .click(); true`)); err != nil {
 		t.Fatalf("%s: following the result: %v", where, err)
 	}
 	// field-check sits on Choices and actions since the Form page split:

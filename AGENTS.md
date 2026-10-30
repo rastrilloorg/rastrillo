@@ -106,12 +106,28 @@ until a person approves.
 Imperative subject. The body explains *why* — the failure being
 prevented, the alternative rejected — not what the diff already shows.
 
+## Code
+
+Write Go by `skill/code.md`: its fourteen rules, the action shape and
+four measured limits (80 columns, 400-line non-test files, 40-line
+non-test functions or 15 for an action, no one-letter names).
+`make code`, part of `make ci`, checks them at the root, in `money` and
+in each example, against each module's `.rastrillo/code.txt`, whose
+records only go down. When you improve recorded code, run
+`go run ./cmd/rastrillo budget code --lower [dir]` (`dir` is `money` or
+`examples/<name>` for those modules) and commit the file. Add or raise
+a record only with a reason after its count, for review to judge.
+
 ## Comments
 
 The same rule as commits, and it is enforced in review: comments say why
 a thing is the way it is, naming the failure it prevents. A comment that
 restates the code is noise; a subtlety with no comment is a bug waiting
 for the next reader.
+
+Write it in one or two full sentences: why something deliberately looks
+wrong, or a rule that spans files. Long reasoning goes in the spec or
+the commit, and the comment points there.
 
 ## SKILL.md
 

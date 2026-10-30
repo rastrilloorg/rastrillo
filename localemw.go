@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"amadan.net/rastrillo/rastrillo/basepath"
 	"amadan.net/rastrillo/rastrillo/csrf"
 	"amadan.net/rastrillo/rastrillo/internal/returnto"
 )
@@ -91,6 +92,17 @@ func (l *Locales) Middleware(next http.Handler) http.Handler {
 				u.RawPath = strings.TrimPrefix(r.URL.RawPath, "/"+code)
 			}
 			r2.URL = &u
+			// live.js sends Rastrillo-Page as location.pathname, prefix
+			// included, while the app now sees the stripped path. Left
+			// alone, live.Elsewhere would find the two different and turn
+			// every swapping form's followed GET into a navigation. Only
+			// the same locale's prefix is stripped: another prefix really
+			// is another page. Header is cloned first because r2 shares
+			// the caller's map.
+			if pcode, prest := l.splitPrefix(r.Header.Get("Rastrillo-Page")); pcode == code {
+				r2.Header = r.Header.Clone()
+				r2.Header.Set("Rastrillo-Page", prest)
+			}
 		}
 		next.ServeHTTP(w, r2)
 	})
@@ -308,11 +320,14 @@ func LocaleItems(r *http.Request) []LocaleItem {
 		rest += "?" + r.URL.RawQuery
 	}
 	items := make([]LocaleItem, 0, len(l.codes))
+	// Href is a body link, so it carries the base. LocalePrefix and the
+	// switchers' return paths do not: they become a Location, which the
+	// base-path middleware prefixes itself, and a second base would 404.
 	for _, c := range l.codes {
 		items = append(items, LocaleItem{
 			Code:    c,
 			Name:    l.autonym(c),
-			Href:    "/" + c + rest,
+			Href:    basepath.Path(r, "/"+c+rest),
 			Current: c == cur,
 		})
 	}

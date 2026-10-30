@@ -62,11 +62,12 @@ func TestTheButtonSizesAreAnEvenScale(t *testing.T) {
 			ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
 			defer cancel()
 			var raw string
-			if err := chromedp.Run(ctx, chromedp.EmulateViewport(leg.w, leg.h), chromedp.Navigate(rig.Origin+"/"), chromedp.WaitReady("#sm-link", chromedp.ByQuery)); err != nil {
+			if err := chromedp.Do(ctx, chromedp.EmulateViewport(leg.w, leg.h), chromedp.Navigate(rig.Origin+"/"), chromedp.WaitReady(chromedp.CSS("#sm-link"))); err != nil {
 				t.Fatal(err)
 			}
 			requirePointer(t, ctx, leg.coarse)
-			if err := chromedp.Run(ctx, chromedp.Evaluate(buttonScaleJS, &raw)); err != nil {
+			read := chromedp.Evaluate[string](buttonScaleJS)
+			if err := chromedp.Do(ctx, harness.Into(&raw, read)); err != nil {
 				t.Fatal(err)
 			}
 			var got struct{ Sm, Md, Lg, Reach, LinkH, LinkReach, MdReach float64 }
@@ -177,12 +178,17 @@ func TestEveryButtonLabelIsVisible(t *testing.T) {
 			rig := harness.New(t, build, opts...)
 			ctx, cancel := context.WithTimeout(rig.Context(), 90*time.Second)
 			defer cancel()
-			if err := chromedp.Run(ctx, chromedp.EmulateViewport(leg.w, leg.h)); err != nil {
+			if err := chromedp.Do(ctx, chromedp.EmulateViewport(leg.w, leg.h)); err != nil {
 				t.Fatal(err)
 			}
 			for path := range pages {
 				var raw string
-				if err := chromedp.Run(ctx, chromedp.Navigate(rig.Origin+path), chromedp.WaitReady("[rst-btn~=block]", chromedp.ByQuery), chromedp.Evaluate(buttonLabelsJS, &raw)); err != nil {
+				labels := chromedp.Evaluate[string](buttonLabelsJS)
+				err := chromedp.Do(ctx,
+					chromedp.Navigate(rig.Origin+path),
+					chromedp.WaitReady(chromedp.CSS("[rst-btn~=block]")),
+					harness.Into(&raw, labels))
+				if err != nil {
 					t.Fatalf("%s: %v", path, err)
 				}
 				var got []labelReading
@@ -266,7 +272,7 @@ func TestSmallButtonsKeepTheirOwnEdges(t *testing.T) {
 			rig := sizingRig(t, leg.coarse, map[string]string{"/": sizingDoc("small", body)})
 			ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
 			defer cancel()
-			mustRun(t, ctx, chromedp.EmulateViewport(leg.w, leg.h), chromedp.Navigate(rig.Origin+"/"), chromedp.WaitReady("#tip", chromedp.ByQuery))
+			mustRun(t, ctx, chromedp.EmulateViewport(leg.w, leg.h), chromedp.Navigate(rig.Origin+"/"), chromedp.WaitReady(chromedp.CSS("#tip")))
 			requirePointer(t, ctx, leg.coarse)
 			var g struct {
 				Edges      []string

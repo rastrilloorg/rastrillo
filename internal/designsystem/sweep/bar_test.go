@@ -10,7 +10,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/chromedp/cdproto/runtime"
 	"github.com/chromedp/chromedp"
 	"github.com/chromedp/chromedp/kb"
 
@@ -83,7 +82,7 @@ func TestThePinnedBarFitsItsReservation(t *testing.T) {
 		for _, theme := range ui.ThemeNames() {
 			for _, locale := range sweepLocales() {
 				url := rig.Origin + pageHref(mountPath, theme, locale, fileOf("form"))
-				if err := chromedp.Run(tab, chromedp.EmulateViewport(1440, 900), chromedp.Navigate(url), chromedp.WaitReady(`.ds-top`, chromedp.ByQuery)); err != nil {
+				if err := chromedp.Do(tab, chromedp.EmulateViewport(1440, 900), chromedp.Navigate(url), chromedp.WaitReady(chromedp.CSS(`.ds-top`))); err != nil {
 					t.Fatalf("%s/%s scripts=%v: loading: %v", theme, locale, scripts, err)
 				}
 				if !scripts {
@@ -95,14 +94,22 @@ func TestThePinnedBarFitsItsReservation(t *testing.T) {
 					if w < 1024 {
 						band = "800 to 1023"
 					}
-					var raw string
-					var after float64
-					if err := chromedp.Run(tab,
+					if err := chromedp.Do(tab,
 						chromedp.EmulateViewport(w, 900),
-						chromedp.Evaluate(`scrollTo(0, 0)`, nil),
-						chromedp.Evaluate(barFit, &raw),
-						chromedp.Evaluate(`scrollTo(0, document.documentElement.scrollHeight); document.querySelector(".ds-top").getBoundingClientRect().top`, &after),
+						chromedp.Evaluate[chromedp.Void](`scrollTo(0, 0)`),
 					); err != nil {
+						t.Fatalf("%s: reading the bar: %v", where, err)
+					}
+					raw, err := chromedp.Run(tab,
+						chromedp.Evaluate[string](barFit))
+					if err != nil {
+						t.Fatalf("%s: reading the bar: %v", where, err)
+					}
+					after, err := chromedp.Run(tab, chromedp.Evaluate[float64](
+						`scrollTo(0, document.documentElement.scrollHeight);
+						document.querySelector(".ds-top")
+						  .getBoundingClientRect().top`))
+					if err != nil {
 						t.Fatalf("%s: reading the bar: %v", where, err)
 					}
 					var r barReading
@@ -157,30 +164,33 @@ func TestTheBarsLanguageMenuStaysOnScreen(t *testing.T) {
 			for _, anchored := range []bool{true, false} {
 				for _, w := range []int64{1440, 1024, 1023, 800} {
 					where := fmt.Sprintf("day/%s at %dpx, scripts %v, anchor positioning %v", locale, w, scripts, anchored)
-					if err := chromedp.Run(tab, chromedp.EmulateViewport(w, 900),
+					if err := chromedp.Do(tab, chromedp.EmulateViewport(w, 900),
 						chromedp.Navigate(rig.Origin+pageHref(mountPath, "day", locale, fileOf("form"))),
-						chromedp.WaitReady(`.ds-top__controls [rst-locale]`, chromedp.ByQuery)); err != nil {
+						chromedp.WaitReady(chromedp.CSS(`.ds-top__controls [rst-locale]`))); err != nil {
 						t.Fatalf("%s: loading: %v", where, err)
 					}
 					if !scripts {
 						requireScriptsOff(t, tab, where)
 					}
 					if !anchored {
-						if err := chromedp.Run(tab, chromedp.Evaluate(withoutAnchorPositioning, nil,
-							func(p *runtime.EvaluateParams) *runtime.EvaluateParams { return p.WithAwaitPromise(true) })); err != nil {
+						if err := chromedp.Do(tab,
+							chromedp.Evaluate[chromedp.Void](
+								withoutAnchorPositioning,
+								chromedp.EvalAwaitPromise)); err != nil {
 							t.Fatalf("%s: switching anchor positioning off: %v", where, err)
 						}
 					}
 					requireAnchorPositioning(t, tab, where, ".ds-top__controls [rst-dropdown-menu]", anchored)
 					requireDrawnScrollbar(t, tab, where)
-					var raw string
-					if err := chromedp.Run(tab, chromedp.Evaluate(`(() => {
+					raw, err := chromedp.Run(tab,
+						chromedp.Evaluate[string](`(() => {
 					  const d = document.querySelector(".ds-top__controls [rst-locale]");
 					  d.open = true;
 					  const p = d.querySelector("[rst-dropdown-menu]").getBoundingClientRect();
 					  d.querySelector("summary").focus();
 					  return JSON.stringify({L: p.left, R: p.right, T: p.top, B: p.bottom, W: document.documentElement.clientWidth, H: document.documentElement.clientHeight});
-					})()`, &raw)); err != nil {
+					})()`))
+					if err != nil {
 						t.Fatalf("%s: opening the menu: %v", where, err)
 					}
 					var p struct{ L, R, T, B, W, H float64 }
@@ -191,12 +201,15 @@ func TestTheBarsLanguageMenuStaysOnScreen(t *testing.T) {
 						t.Errorf("%s: the open panel [%v…%v × %v…%v] is not inside the %vx%v client box", where, p.L, p.R, p.T, p.B, p.W, p.H)
 					}
 					for i := 0; i < len(rastrillo.BaseLocales()); i++ {
-						var at string
-						if err := chromedp.Run(tab, chromedp.KeyEvent(kb.Tab), chromedp.Evaluate(`(() => {
+						if err := chromedp.Do(tab, chromedp.KeyEvent(kb.Tab)); err != nil {
+							t.Fatalf("%s: tab %d: %v", where, i+1, err)
+						}
+						at, err := chromedp.Run(tab, chromedp.Evaluate[string](`(() => {
 						  const a = document.activeElement, r = a.getBoundingClientRect();
 						  const de = document.documentElement, inside = r.top >= 0 && r.bottom <= de.clientHeight && r.left >= 0 && r.right <= de.clientWidth;
 						  return a.closest(".ds-top__controls [rst-dropdown-menu]") && inside ? a.lang : "not a visible language: " + a.outerHTML.slice(0, 60);
-						})()`, &at)); err != nil {
+						})()`))
+						if err != nil {
 							t.Fatalf("%s: tab %d: %v", where, i+1, err)
 						}
 						if want := rastrillo.BaseLocales()[i]; at != want {

@@ -44,7 +44,6 @@ Mount them behind `csrf.Protect` like every other mutating route:
 | `POST /passkey/stepup/finish` | `Handlers.StepUpFinish` |
 | `POST /passkey/signin/begin` | `Handlers.SignInBegin` |
 | `POST /passkey/signin/finish` | `Handlers.SignInFinish` |
-| `POST /passkey/signin/recovery` | `Handlers.SignInRecovery` |
 | `POST /passkey/discover/begin` | `Handlers.DiscoverBegin` |
 | `POST /passkey/discover/finish` | `Handlers.DiscoverFinish` |
 
@@ -61,6 +60,8 @@ method that says how the authenticator checked the person: `Method`
 present. A finished registration rotates the session the same way: the
 ceremony proved the new passkey as surely as an assertion would. The Gate
 flow suffixes the same two words onto the first factor.
+
+Under a [`basepath`](/docs/reference/basepath), and on the app's direct host, every endpoint answers 404 and logs an error, because a tenant there signs people in through its hub.
 
 ## Discover: the passkey as the front door
 
@@ -143,8 +144,8 @@ func (h *Handlers) RecoveryCodesRemaining(subject string) (int, error)
 existing set. Show them once, from a page you mount behind
 `sessions.RequireFresh`.
 
-`SignInRecovery` redeems one against the pending half-session where an
-assertion would have gone. It is a plain form POST reading the field `code`, with no JavaScript,
+`secondfactor`'s `Gate.SignInRecovery`, at `POST /signin/recovery`, redeems one against the pending half-session where an assertion would have gone.
+It is a plain form POST reading the field `code`, with no JavaScript,
 deliberately: recovery is exactly the moment WebAuthn is not working.
 
 A wrong code does not consume the half-session; it redirects to

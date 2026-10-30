@@ -3,12 +3,14 @@
 package harness
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/chromedp/cdproto/runtime"
 	"github.com/chromedp/chromedp"
 )
 
@@ -67,7 +69,7 @@ func TestWatchersCollectEveryLoudFailure(t *testing.T) {
 	r := New(t, probeBuild(true))
 	r.Run(
 		chromedp.Navigate(r.Origin+"/"),
-		chromedp.WaitVisible("#done", chromedp.ByQuery),
+		chromedp.WaitVisible(chromedp.CSS("#done")),
 	)
 	probs := waitForProblems(t, r, 3)
 	joined := strings.Join(probs, "\n")
@@ -95,7 +97,7 @@ func TestAllowQuietensExpectedProbesAndTheirMirrors(t *testing.T) {
 	r.Allow(http.MethodGet, "/missing", http.StatusNotFound)
 	r.Run(
 		chromedp.Navigate(r.Origin+"/"),
-		chromedp.WaitVisible("#done", chromedp.ByQuery),
+		chromedp.WaitVisible(chromedp.CSS("#done")),
 	)
 	// The fetches settled before #done appeared, but give straggler
 	// events a beat before declaring silence.
@@ -115,5 +117,56 @@ func TestFaviconProbeIsPreAllowed(t *testing.T) {
 	}
 	if !r.logEntryAllowed(r.Origin + "/favicon.ico") {
 		t.Error("the favicon 404's log-domain mirror is not pre-allowed")
+	}
+}
+
+// Listen's promise, which Screen relies on: once a command returns,
+// every event the browser sent before its reply has been handled, so
+// an error the page logged a moment ago is already a problem.
+// Repeated, because handling events late loses only the occasional
+// race; without Listen's ordering the first attempt already fails.
+func TestEventsAreHandledBeforeTheNextReply(t *testing.T) {
+	rig := New(t, servePage(plainPage))
+	rig.Run(chromedp.Navigate(rig.Origin + "/"))
+	for attempt := range 20 {
+		logged := fmt.Sprintf("late %d", attempt)
+		rig.Run(chromedp.Evaluate[chromedp.Void](
+			fmt.Sprintf("console.error(%q)", logged)))
+		problems := strings.Join(rig.take(), "\n")
+		if !strings.Contains(problems, "console.error: "+logged) {
+			t.Fatalf("attempt %d: the reply came back before "+
+				"the watcher handled %q; problems: %q",
+				attempt, logged, problems)
+		}
+	}
+}
+
+// Listen ends at stop, and when its context ends: a tab a test has
+// finished with must not keep feeding a handler that has moved on.
+func TestListenEndsAtStopAndWithItsContext(t *testing.T) {
+	rig := New(t, servePage(plainPage))
+	rig.Run(chromedp.Navigate(rig.Origin + "/"))
+	logError := chromedp.Evaluate[chromedp.Void](`console.error("heard?")`)
+
+	heard := 0
+	stop := Listen(rig, rig.Context(), runtime.ConsoleAPICalled,
+		func(*runtime.EventConsoleAPICalled) { heard++ })
+	rig.Run(logError)
+	stop()
+	rig.Run(logError)
+	if heard != 1 {
+		t.Errorf("heard %d console calls around stop, want 1", heard)
+	}
+
+	listening, cancel := context.WithCancel(rig.Context())
+	heardAfterCancel := 0
+	Listen(rig, listening, runtime.ConsoleAPICalled,
+		func(*runtime.EventConsoleAPICalled) { heardAfterCancel++ })
+	cancel()
+	rig.Run(logError)
+	rig.take()
+	if heardAfterCancel != 0 {
+		t.Errorf("a listener whose context ended heard %d console calls",
+			heardAfterCancel)
 	}
 }

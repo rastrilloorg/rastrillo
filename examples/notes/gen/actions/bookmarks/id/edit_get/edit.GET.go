@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/basepath"
 	"amadan.net/rastrillo/rastrillo/ui"
 	"amadan.net/rastrillo/rastrillo/view"
 	ops_bookmarks "notes/gen/ops/bookmarks"
@@ -33,8 +34,8 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 			"Link":  n.Link,
 			"Notes": n.Notes,
 		},
-		BasicsAction:   fmt.Sprintf("/bookmarks/%d/edit-basics", id),
-		AdvancedAction: fmt.Sprintf("/bookmarks/%d/edit-advanced", id),
+		BasicsAction:   basepath.Path(r, fmt.Sprintf("/bookmarks/%d/edit-basics", id)),
+		AdvancedAction: basepath.Path(r, fmt.Sprintf("/bookmarks/%d/edit-advanced", id)),
 	})
 }
 

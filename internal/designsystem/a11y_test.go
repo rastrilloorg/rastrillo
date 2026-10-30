@@ -45,8 +45,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/chromedp/cdproto/cdp"
 	"github.com/chromedp/cdproto/emulation"
-	"github.com/chromedp/cdproto/runtime"
 	"github.com/chromedp/chromedp"
 	"github.com/chromedp/chromedp/kb"
 
@@ -191,9 +191,8 @@ func axeRun(engine, target, iframes string) string {
 // selector string) and iframes says whether to descend into frames.
 func scan(t *testing.T, bctx context.Context, where, engine, target, iframes string) []axeViolation {
 	t.Helper()
-	var raw string
-	err := chromedp.Run(bctx, chromedp.Evaluate(axeRun(engine, target, iframes), &raw,
-		func(p *runtime.EvaluateParams) *runtime.EvaluateParams { return p.WithAwaitPromise(true) }))
+	raw, err := chromedp.Run(bctx, chromedp.Evaluate[string](
+		axeRun(engine, target, iframes), chromedp.EvalAwaitPromise))
 	if err != nil {
 		t.Fatalf("axe.run: %v", err)
 	}
@@ -306,16 +305,16 @@ const landedJS = `(async () => {
 
 func paint(t *testing.T, bctx context.Context, scheme string) {
 	t.Helper()
-	var got string
 	expr := fmt.Sprintf("%s(%q)", paintJS, scheme)
-	if err := chromedp.Run(bctx, chromedp.Evaluate(expr, &got)); err != nil {
+	got, err := chromedp.Run(bctx, chromedp.Evaluate[string](expr))
+	if err != nil {
 		t.Fatalf("painting %s: %v", scheme, err)
 	}
 	if got != scheme {
 		t.Fatalf("painting %s: page reports %q", scheme, got)
 	}
-	if err := chromedp.Run(bctx, chromedp.Evaluate(landedJS, nil,
-		func(p *runtime.EvaluateParams) *runtime.EvaluateParams { return p.WithAwaitPromise(true) })); err != nil {
+	if err := chromedp.Do(bctx, chromedp.Evaluate[chromedp.Void](landedJS,
+		chromedp.EvalAwaitPromise)); err != nil {
 		t.Fatalf("painting %s: waiting for the scheme to land: %v", scheme, err)
 	}
 }
@@ -471,7 +470,7 @@ func TestA11yScansTheGallery(t *testing.T) {
 		// driven elsewhere. Every other target keeps the default width,
 		// because its reason above names what it shows there: the
 		// back control on the content pages, the index of the demo.
-		size := chromedp.Action(chromedp.EmulateReset())
+		size := chromedp.EmulateReset()
 		if isGalleryPage(tc.href) {
 			size = chromedp.EmulateViewport(1280, 900)
 		}
@@ -481,11 +480,11 @@ func TestA11yScansTheGallery(t *testing.T) {
 			// index frames 110 preview documents, and an init script
 			// would parse half a megabyte of engine into every one of
 			// them. The frames get their own pass below.
-			if err := chromedp.Run(ctx,
+			if err := chromedp.Do(ctx,
 				size,
 				chromedp.Navigate(rig.Origin+tc.href),
 				chromedp.WaitReady("body"),
-				chromedp.Evaluate(axeJS, nil),
+				chromedp.Evaluate[chromedp.Void](axeJS),
 			); err != nil {
 				t.Fatalf("%s: loading: %v", where, err)
 			}
@@ -514,7 +513,8 @@ func shownIn(t *testing.T, bctx context.Context, where, sel string) bool {
 	  const r = el.getBoundingClientRect();
 	  return el.checkVisibility() && r.width > 0 && r.height > 0;
 	})()`
-	if err := chromedp.Run(bctx, chromedp.Evaluate(js, &shown)); err != nil {
+	shown, err := chromedp.Run(bctx, chromedp.Evaluate[bool](js))
+	if err != nil {
 		t.Fatalf("%s: reading whether %q is on screen: %v", where, sel, err)
 	}
 	return shown
@@ -546,10 +546,10 @@ func TestA11yScansTheShellsCollapsed(t *testing.T) {
 
 	load := func(where, href, ready string) {
 		t.Helper()
-		if err := chromedp.Run(ctx,
+		if err := chromedp.Do(ctx,
 			chromedp.EmulateViewport(390, 780),
 			chromedp.Navigate(rig.Origin+href),
-			chromedp.WaitVisible(ready, chromedp.ByQuery),
+			chromedp.WaitVisible(chromedp.CSS(ready)),
 		); err != nil {
 			t.Fatalf("%s: loading: %v", where, err)
 		}
@@ -562,14 +562,15 @@ func TestA11yScansTheShellsCollapsed(t *testing.T) {
 	// finishes, and waiting on it would hang the scan.
 	settle := func(where string) {
 		t.Helper()
-		if err := chromedp.Run(ctx, chromedp.Evaluate(`(async () => {
+		if err := chromedp.Do(ctx,
+			chromedp.Evaluate[chromedp.Void](`(async () => {
 		  if (document.activeViewTransition) await document.activeViewTransition.finished.catch(() => null);
 		  await Promise.all(document.getAnimations()
 		    .filter(a => a.effect && a.effect.getComputedTiming().endTime !== Infinity)
 		    .map(a => a.finished.catch(() => null)));
 		  return true;
-		})()`, nil,
-			func(p *runtime.EvaluateParams) *runtime.EvaluateParams { return p.WithAwaitPromise(true) })); err != nil {
+		})()`,
+				chromedp.EvalAwaitPromise)); err != nil {
 			t.Fatalf("%s: waiting for animations: %v", where, err)
 		}
 	}
@@ -578,7 +579,8 @@ func TestA11yScansTheShellsCollapsed(t *testing.T) {
 	axe := func(where, scheme, engine string) {
 		t.Helper()
 		settle(where)
-		if err := chromedp.Run(ctx, chromedp.Evaluate(axeJS, nil)); err != nil {
+		if err := chromedp.Do(ctx,
+			chromedp.Evaluate[chromedp.Void](axeJS)); err != nil {
 			t.Fatalf("%s: loading axe: %v", where, err)
 		}
 		paint(t, ctx, scheme)
@@ -588,12 +590,12 @@ func TestA11yScansTheShellsCollapsed(t *testing.T) {
 	// box is a control's size and visible label.
 	box := func(where, sel string) (w, h int, text string) {
 		t.Helper()
-		var raw string
-		if err := chromedp.Run(ctx, chromedp.Evaluate(`(() => {
+		raw, err := chromedp.Run(ctx, chromedp.Evaluate[string](`(() => {
 		  const s = document.querySelector(`+"`"+sel+"`"+`);
 		  const r = s.getBoundingClientRect();
 		  return JSON.stringify({W: Math.round(r.width), H: Math.round(r.height), Text: s.innerText.trim()});
-		})()`, &raw)); err != nil {
+		})()`))
+		if err != nil {
 			t.Fatalf("%s: measuring %s: %v", where, sel, err)
 		}
 		var got struct {
@@ -616,7 +618,7 @@ func TestA11yScansTheShellsCollapsed(t *testing.T) {
 		if shownIn(t, ctx, where, revealed) {
 			t.Errorf("%s: %q is on screen with the disclosure still CLOSED, so it is not gated by the disclosure and its visibility proves nothing about the click", where, revealed)
 		}
-		if err := chromedp.Run(ctx, chromedp.Click(summary, chromedp.ByQuery)); err != nil {
+		if err := chromedp.Do(ctx, chromedp.Click(chromedp.CSS(summary))); err != nil {
 			t.Fatalf("%s: opening: %v", where, err)
 		}
 		if !shownIn(t, ctx, where, revealed) {
@@ -697,8 +699,8 @@ func TestA11yScansTheShellsCollapsed(t *testing.T) {
 	for _, theme := range ui.ThemeNames() {
 		for _, scheme := range a11ySchemes {
 			where := theme + "/en sidebar content page at 1280px, profile card open (" + scheme + ")"
-			if err := chromedp.Run(ctx, chromedp.EmulateViewport(1280, 720), chromedp.Navigate(rig.Origin+shellPageHref(mountPath, theme, "en", "sidebar")),
-				chromedp.WaitVisible("[rst-shell-profile] > summary", chromedp.ByQuery)); err != nil {
+			if err := chromedp.Do(ctx, chromedp.EmulateViewport(1280, 720), chromedp.Navigate(rig.Origin+shellPageHref(mountPath, theme, "en", "sidebar")),
+				chromedp.WaitVisible(chromedp.CSS("[rst-shell-profile] > summary"))); err != nil {
 				t.Fatalf("%s: loading: %v", where, err)
 			}
 			open(where, "[rst-shell-profile] > summary", "[rst-shell-profile] [rst-shell-who] [rst-person-name]")
@@ -763,8 +765,8 @@ func pickPreviewFrames(t *testing.T, bctx context.Context, kind string) []previe
 	  });
 	  return JSON.stringify({frames: out, articles: articles.length});
 	})()`
-	var raw string
-	if err := chromedp.Run(bctx, chromedp.Evaluate(pick, &raw)); err != nil {
+	raw, err := chromedp.Run(bctx, chromedp.Evaluate[string](pick))
+	if err != nil {
 		t.Fatalf("picking preview frames: %v", err)
 	}
 	var got struct {
@@ -868,7 +870,7 @@ func TestA11yScansThePreviewDocuments(t *testing.T) {
 	total, scans := 0, 0
 	for _, pg := range pages {
 		for _, kind := range previewPageKinds() {
-			if err := chromedp.Run(ctx,
+			if err := chromedp.Do(ctx,
 				chromedp.Navigate(rig.Origin+pageHref(mountPath, pg.theme, pg.locale, fileOf(kind))),
 				chromedp.WaitReady("body"),
 			); err != nil {
@@ -888,8 +890,8 @@ func TestA11yScansThePreviewDocuments(t *testing.T) {
 			// different preview pages as having no <title>, four different
 			// pages on each run, every one of which plainly had one. One
 			// mutation, then wait for stability, then scan.
-			if err := chromedp.Run(ctx, chromedp.Evaluate(
-				`document.querySelectorAll("iframe.ds-view__frame[id^=a11y-]").forEach(f => { f.loading = "eager"; })`, nil)); err != nil {
+			if err := chromedp.Do(ctx, chromedp.Evaluate[chromedp.Void](
+				`document.querySelectorAll("iframe.ds-view__frame[id^=a11y-]").forEach(f => { f.loading = "eager"; })`)); err != nil {
 				t.Fatalf("taking the preview frames off lazy loading: %v", err)
 			}
 
@@ -916,9 +918,9 @@ func TestA11yScansThePreviewDocuments(t *testing.T) {
 				  }
 				  return "never settled";
 				})()`, f.Sel)
-				var state string
-				if err := chromedp.Run(ctx, chromedp.Evaluate(ready, &state,
-					func(p *runtime.EvaluateParams) *runtime.EvaluateParams { return p.WithAwaitPromise(true) })); err != nil {
+				state, err := chromedp.Run(ctx, chromedp.Evaluate[string](ready,
+					chromedp.EvalAwaitPromise))
+				if err != nil {
 					t.Fatalf("%s: waiting for the frame: %v", f.Of, err)
 				}
 				if !strings.HasPrefix(state, "ok") {
@@ -930,9 +932,10 @@ func TestA11yScansThePreviewDocuments(t *testing.T) {
 				// to first frames fails here by name instead of scanning a
 				// grid with no checkbox in it and calling select mode clean.
 				if everyState[f.Of] != "" {
-					var boxes int
-					if err := chromedp.Run(ctx, chromedp.Evaluate(fmt.Sprintf(
-						`document.querySelector(%q).contentDocument.querySelectorAll("[rst-media-tile] [rst-selbox] input[type=checkbox]").length`, f.Sel), &boxes)); err != nil {
+					evaluateCount := chromedp.Evaluate[int]
+					boxes, err := chromedp.Run(ctx, evaluateCount(fmt.Sprintf(
+						`document.querySelector(%q).contentDocument.querySelectorAll("[rst-media-tile] [rst-selbox] input[type=checkbox]").length`, f.Sel)))
+					if err != nil {
 						t.Fatalf("%s: counting checkboxes: %v", f.Of, err)
 					}
 					if boxes > 0 {
@@ -960,8 +963,8 @@ func TestA11yScansThePreviewDocuments(t *testing.T) {
 				  d.head.appendChild(s);
 				  return typeof d.defaultView.axe;
 				})()`, f.Sel, mustJSON(axeJS))
-				var loaded string
-				if err := chromedp.Run(ctx, chromedp.Evaluate(inject, &loaded)); err != nil {
+				loaded, err := chromedp.Run(ctx, chromedp.Evaluate[string](inject))
+				if err != nil {
 					t.Fatalf("%s: injecting axe into the frame: %v", f.Of, err)
 				}
 				if loaded != "object" {
@@ -1078,17 +1081,23 @@ func TestA11yReflowsAt320(t *testing.T) {
 	  return JSON.stringify({doc: de.scrollWidth, client: w, body: document.body.scrollWidth, over: over.slice(0, 8)});
 	})()`
 	for _, p := range pages {
-		if err := chromedp.Run(ctx,
-			chromedp.ActionFunc(func(c context.Context) error {
-				return emulation.SetDeviceMetricsOverride(320, 640, 1, false).Do(c)
+		if err := chromedp.Do(ctx,
+			chromedp.Func(func(
+				c context.Context, target *chromedp.Target,
+			) error {
+				_, err := cdp.Call(c, target, emulation.SetDeviceMetricsOverride,
+					emulation.SetDeviceMetricsOverrideParams{
+						Width: 320, Height: 640, DeviceScaleFactor: 1,
+					})
+				return err
 			}),
 			chromedp.Navigate(rig.Origin+p.href),
 			chromedp.WaitReady("body"),
 		); err != nil {
 			t.Fatalf("%s at 320px: %v", p.name, err)
 		}
-		var raw string
-		if err := chromedp.Run(ctx, chromedp.Evaluate(measure, &raw)); err != nil {
+		raw, err := chromedp.Run(ctx, chromedp.Evaluate[string](measure))
+		if err != nil {
 			t.Fatalf("%s: measuring: %v", p.name, err)
 		}
 		var m struct {
@@ -1248,8 +1257,7 @@ func TestA11yWalksTheKeyboard(t *testing.T) {
 	ctx, cancel := context.WithTimeout(rig.Context(), 300*time.Second)
 	defer cancel()
 
-	var count int
-	if err := chromedp.Run(ctx,
+	if err := chromedp.Do(ctx,
 		chromedp.EmulateViewport(1280, 900),
 		chromedp.Navigate(rig.Origin+pageHref(mountPath, "day", "en", fileOf("form"))),
 		chromedp.WaitReady("body"),
@@ -1261,9 +1269,10 @@ func TestA11yWalksTheKeyboard(t *testing.T) {
 	// next Tab, which the walk would report as a keyboard trap: that is
 	// a loading race in the test, not a trap a reader meets.
 	eagerly(t, ctx, "form")
-	if err := chromedp.Run(ctx,
-		chromedp.Evaluate(`document.querySelectorAll(`+focusablesJS+`).length`, &count),
-	); err != nil {
+	count, err := chromedp.Run(ctx, chromedp.Evaluate[int](
+		`document.querySelectorAll(`+focusablesJS+`).length`,
+	))
+	if err != nil {
 		t.Fatalf("counting the form page's stops: %v", err)
 	}
 	t.Logf("form: %d focusable elements in its own document, before any frame", count)
@@ -1276,7 +1285,11 @@ func TestA11yWalksTheKeyboard(t *testing.T) {
 	inPage := `!!(document.activeElement && document.activeElement.closest("[rst-page]"))`
 	var reached bool
 	for i := 0; i < seekLimit && !reached; i++ {
-		if err := chromedp.Run(ctx, chromedp.KeyEvent(kb.Tab), chromedp.Evaluate(inPage, &reached)); err != nil {
+		if err := chromedp.Do(ctx, chromedp.KeyEvent(kb.Tab)); err != nil {
+			t.Fatalf("seeking to the content, tab %d: %v", i+1, err)
+		}
+		reached, err = chromedp.Run(ctx, chromedp.Evaluate[bool](inPage))
+		if err != nil {
 			t.Fatalf("seeking to the content, tab %d: %v", i+1, err)
 		}
 	}
@@ -1290,12 +1303,13 @@ func TestA11yWalksTheKeyboard(t *testing.T) {
 		// The first stop is where the seek left focus — the first
 		// focusable in the content — so the Tab comes after the
 		// reading, not before it.
-		var raw string
-		actions := []chromedp.Action{chromedp.Evaluate(walkJS, &raw)}
 		if i > 0 {
-			actions = []chromedp.Action{chromedp.KeyEvent(kb.Tab), chromedp.Evaluate(walkJS, &raw)}
+			if err := chromedp.Do(ctx, chromedp.KeyEvent(kb.Tab)); err != nil {
+				t.Fatalf("tab %d: %v", i+1, err)
+			}
 		}
-		if err := chromedp.Run(ctx, actions...); err != nil {
+		raw, err := chromedp.Run(ctx, chromedp.Evaluate[string](walkJS))
+		if err != nil {
 			t.Fatalf("tab %d: %v", i+1, err)
 		}
 		var s struct {
@@ -1329,20 +1343,27 @@ func TestA11yWalksTheKeyboard(t *testing.T) {
 	t.Logf("form: %d of %d stops below the rail showed a focus indicator", rings, steps)
 
 	// The full circuit, on the page small enough to walk all of.
-	var modalCount int
-	if err := chromedp.Run(ctx,
+	if err := chromedp.Do(ctx,
 		chromedp.Navigate(rig.Origin+modalHref(mountPath, "day", "en")),
 		chromedp.WaitReady("body"),
-		chromedp.Evaluate(`document.querySelectorAll(`+focusablesJS+`).length`, &modalCount),
 	); err != nil {
+		t.Fatalf("loading the modal demo: %v", err)
+	}
+	modalCount, err := chromedp.Run(ctx, chromedp.Evaluate[int](
+		`document.querySelectorAll(`+focusablesJS+`).length`,
+	))
+	if err != nil {
 		t.Fatalf("loading the modal demo: %v", err)
 	}
 	if modalCount == 0 {
 		t.Fatal("the modal demo has nothing focusable — Close is a link, so this is a rendering failure")
 	}
 	const firstOf = `(() => { const e = document.activeElement; return e && e !== document.body ? (e.tagName.toLowerCase() + (e.id ? "#" + e.id : "") + "|" + (e.textContent || "").trim().slice(0, 40)) : "body"; })()`
-	var first string
-	if err := chromedp.Run(ctx, chromedp.KeyEvent(kb.Tab), chromedp.Evaluate(firstOf, &first)); err != nil {
+	if err := chromedp.Do(ctx, chromedp.KeyEvent(kb.Tab)); err != nil {
+		t.Fatalf("modal: first tab: %v", err)
+	}
+	first, err := chromedp.Run(ctx, chromedp.Evaluate[string](firstOf))
+	if err != nil {
 		t.Fatalf("modal: first tab: %v", err)
 	}
 	// One extra tab past the count is the browser's own chrome, which
@@ -1350,8 +1371,11 @@ func TestA11yWalksTheKeyboard(t *testing.T) {
 	// are ways out, and either proves there is no trap.
 	escaped := false
 	for i := 0; i < modalCount+3 && !escaped; i++ {
-		var here string
-		if err := chromedp.Run(ctx, chromedp.KeyEvent(kb.Tab), chromedp.Evaluate(firstOf, &here)); err != nil {
+		if err := chromedp.Do(ctx, chromedp.KeyEvent(kb.Tab)); err != nil {
+			t.Fatalf("modal: tab %d: %v", i+2, err)
+		}
+		here, err := chromedp.Run(ctx, chromedp.Evaluate[string](firstOf))
+		if err != nil {
 			t.Fatalf("modal: tab %d: %v", i+2, err)
 		}
 		if here == "body" || here == first {
@@ -1467,9 +1491,17 @@ func TestA11yScansEverySigninState(t *testing.T) {
 	for _, href := range hrefs {
 		// The card is the thing under test: a page whose partial failed
 		// to reach the document would scan clean with nothing in it.
-		var cards int
-		if err := chromedp.Run(ctx, chromedp.Navigate(rig.Origin+href), chromedp.WaitReady("body"),
-			chromedp.Evaluate(`document.querySelectorAll("[rst-signin] h1").length`, &cards), chromedp.Evaluate(axeJS, nil)); err != nil {
+		if err := chromedp.Do(ctx, chromedp.Navigate(rig.Origin+href),
+			chromedp.WaitReady("body")); err != nil {
+			t.Fatalf("%s: loading: %v", href, err)
+		}
+		cards, err := chromedp.Run(ctx, chromedp.Evaluate[int](
+			`document.querySelectorAll("[rst-signin] h1").length`))
+		if err != nil {
+			t.Fatalf("%s: loading: %v", href, err)
+		}
+		if err := chromedp.Do(ctx,
+			chromedp.Evaluate[chromedp.Void](axeJS)); err != nil {
 			t.Fatalf("%s: loading: %v", href, err)
 		}
 		if cards != 1 {
@@ -1502,18 +1534,25 @@ func TestA11yWalksTheStageShell(t *testing.T) {
 	ctx, cancel := context.WithTimeout(rig.Context(), 120*time.Second)
 	defer cancel()
 
-	var count int
-	var start string
-	if err := chromedp.Run(ctx,
+	if err := chromedp.Do(ctx,
 		chromedp.Navigate(rig.Origin+shellHref(mountPath, "day", "en", "stage")),
 		chromedp.WaitReady("body"),
-		chromedp.Evaluate(`document.querySelectorAll(`+focusablesJS+`).length`, &count),
-		// Autofocus lands at a rendering update, not at load.
-		chromedp.Evaluate(`(async () => {
-		  for (let i = 0; i < 40 && document.activeElement === document.body; i++) await new Promise(r => setTimeout(r, 50));
-		  return document.activeElement.id;
-		})()`, &start, func(p *runtime.EvaluateParams) *runtime.EvaluateParams { return p.WithAwaitPromise(true) }),
 	); err != nil {
+		t.Fatalf("loading the stage shell: %v", err)
+	}
+	count, err := chromedp.Run(ctx, chromedp.Evaluate[int](
+		`document.querySelectorAll(`+focusablesJS+`).length`,
+	))
+	if err != nil {
+		t.Fatalf("loading the stage shell: %v", err)
+	}
+	// Autofocus lands at a rendering update, not at load.
+	start, err := chromedp.Run(ctx, chromedp.Evaluate[string](`(async () => {
+	  for (let i = 0; i < 40 && document.activeElement === document.body; i++)
+	    await new Promise(r => setTimeout(r, 50));
+	  return document.activeElement.id;
+	})()`, chromedp.EvalAwaitPromise))
+	if err != nil {
 		t.Fatalf("loading the stage shell: %v", err)
 	}
 	if start != "rst-signin-email" {
@@ -1525,10 +1564,17 @@ func TestA11yWalksTheStageShell(t *testing.T) {
 		// at is the stop's place among the focusables: walkJS's label is
 		// tag, id and class, and the skip link and the foot's link are
 		// both a bare <a>, so a set of labels would count them as one.
-		var raw string
-		var at int
-		if err := chromedp.Run(ctx, chromedp.KeyEvent(kb.Tab), chromedp.Evaluate(walkJS, &raw),
-			chromedp.Evaluate(`[...document.querySelectorAll(`+focusablesJS+`)].indexOf(document.activeElement)`, &at)); err != nil {
+		if err := chromedp.Do(ctx, chromedp.KeyEvent(kb.Tab)); err != nil {
+			t.Fatalf("stage shell: tab %d: %v", i+1, err)
+		}
+		raw, err := chromedp.Run(ctx, chromedp.Evaluate[string](walkJS))
+		if err != nil {
+			t.Fatalf("stage shell: tab %d: %v", i+1, err)
+		}
+		at, err := chromedp.Run(ctx, chromedp.Evaluate[int](
+			`[...document.querySelectorAll(`+focusablesJS+
+				`)].indexOf(document.activeElement)`))
+		if err != nil {
 			t.Fatalf("stage shell: tab %d: %v", i+1, err)
 		}
 		var s struct {

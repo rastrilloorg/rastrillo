@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/basepath"
 	"amadan.net/rastrillo/rastrillo/form"
 )
 
@@ -133,8 +134,15 @@ func WithT(t func(key string, args ...any) string) Option {
 // page's language, naming people through ActorName:
 // {{actor $L .Actor}} is "Claude for Paul".
 //
+// path puts the page's base path in front of a root-absolute URL:
+// {{path $ (asset "static/tokens.css")}}, {{path $ "/"}}. The base comes
+// from the data's Base (ui.Localized carries it), not from a func bound
+// per request, because this map is built once and shared by every
+// request (see Localizer). With no Base, path returns its argument, so
+// a page at the root renders as it always did.
+//
 // An app is free to add its own entries on top; it must not drop these
-// twenty-two. The shipped partials and shells stop parsing without most
+// twenty-four. The shipped partials and shells stop parsing without most
 // of them, and the docs promise the rest.
 func Funcs(opts ...Option) template.FuncMap {
 	c := config{
@@ -155,6 +163,7 @@ func Funcs(opts ...Option) template.FuncMap {
 		"rowMenuItems": rowMenuItems, "paginationItems": paginationItems,
 		"localizer": localizer, "withL": withL,
 		"strong": strong,
+		"path":   pathFunc,
 	}
 	for name, fn := range localeFuncs(c) {
 		m[name] = fn
@@ -422,6 +431,15 @@ func optPairs(data any, key string) [][2]string {
 		pairs = append(pairs, [2]string{name.String(), value.String()})
 	}
 	return pairs
+}
+
+// pathFunc is the path template func: basepath.Join with the Base the
+// data carries, read the way opt reads a key (a struct field, embedded
+// included, or a map key). It calls Join rather than restating the rule,
+// because a second copy would drift, and one that prefixed //host/x
+// would turn a link to another site into a path on the hub.
+func pathFunc(data any, p string) string {
+	return basepath.Join(optString(data, "Base"), p)
 }
 
 // opt is optKey for templates: the value, or nil for an absent key, an

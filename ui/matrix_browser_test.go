@@ -111,7 +111,7 @@ func snap(t *testing.T, ctx context.Context, selector string, states ...string) 
 	forceState(t, ctx, selector, states...)
 	x, y, w, h := rect(t, ctx, selector)
 	var buf []byte
-	mustRun(t, ctx, chromedp.FullScreenshot(&buf, 100))
+	mustRun(t, ctx, harness.Into(&buf, chromedp.FullScreenshot(100)))
 	forceState(t, ctx, selector)
 	return cropPNG(t, decodePNG(t, buf), x, y, w, h, 0)
 }
@@ -276,8 +276,10 @@ func matrixKey(scheme string, states []string, selector string) string {
 // by one so the 1% allowance is a component's, not the page's.
 func matrixShots(t *testing.T, ctx context.Context, origin, dir, scheme string) map[string][]byte {
 	t.Helper()
-	mustRun(t, ctx, chromedp.EmulateViewport(1280, 1600), chromedp.Navigate(origin+dir), chromedp.WaitVisible("#field", chromedp.ByQuery),
-		chromedp.Evaluate(`document.documentElement.setAttribute("data-theme", "`+scheme+`"), document.getElementById("dd").open = true, true`, nil))
+	mustRun(t, ctx, chromedp.EmulateViewport(1280, 1600), chromedp.Navigate(origin+dir), chromedp.WaitVisible(chromedp.CSS("#field")),
+		chromedp.Evaluate[chromedp.Void](
+			`document.documentElement.setAttribute("data-theme", "`+scheme+`"),
+			document.getElementById("dd").open = true, true`))
 	still(t, ctx)
 	out := map[string][]byte{}
 	for _, states := range matrixStates {
@@ -304,7 +306,7 @@ func matrixShots(t *testing.T, ctx context.Context, origin, dir, scheme string) 
 			}
 		}
 		var buf []byte
-		mustRun(t, ctx, chromedp.FullScreenshot(&buf, 100))
+		mustRun(t, ctx, harness.Into(&buf, chromedp.FullScreenshot(100)))
 		img := decodePNG(t, buf)
 		for _, b := range boxes {
 			out[b.key] = cropPNG(t, img, b.x, b.y, b.w, b.h, matrixMargin)
@@ -326,12 +328,18 @@ func matrixShots(t *testing.T, ctx context.Context, origin, dir, scheme string) 
 // end, which breaks compatibility on purpose and must be caught.
 func TestEveryThemeRendersAsItDidExceptDay(t *testing.T) {
 	oldTokens := legacyFile(t, "tokens-v028.css")
-	for _, c := range []struct{ name, oldTheme, newTheme string }{
-		{"old day theme", "day-v028.css", ""},
-		{"old plain theme", "plain-v028.css", ""},
-		{"old signal theme", "signal-v028.css", ""},
-		{"plain", "plain-v028.css", "plain"},
-		{"signal", "signal-v028.css", "signal"},
+	// head is an app stylesheet after the theme on both pages: the
+	// square-pill case is an old custom theme that sets --rst-radius-pill
+	// to 0 (its chips and tabs square), which must not square its
+	// switch, whose 10px radius never read that token (A15; switch
+	// review fix 2).
+	for _, c := range []struct{ name, oldTheme, newTheme, head string }{
+		{"old day theme", "day-v028.css", "", ""},
+		{"old day theme, square pill", "day-v028.css", "", "<style>:root { --rst-radius-pill: 0; }</style>"},
+		{"old plain theme", "plain-v028.css", "", ""},
+		{"old signal theme", "signal-v028.css", "", ""},
+		{"plain", "plain-v028.css", "plain", ""},
+		{"signal", "signal-v028.css", "signal", ""},
 	} {
 		t.Run(c.name, func(t *testing.T) {
 			oldTheme := legacyFile(t, c.oldTheme)
@@ -339,7 +347,11 @@ func TestEveryThemeRendersAsItDidExceptDay(t *testing.T) {
 			if c.newTheme != "" {
 				newTheme, _ = ThemeCSS(c.newTheme)
 			}
-			rig := legacyRig(t, oldTokens, oldTheme, TokensCSS(), newTheme, false)
+			var head []string
+			if c.head != "" {
+				head = []string{c.head}
+			}
+			rig := legacyRig(t, oldTokens, oldTheme, TokensCSS(), newTheme, false, head...)
 			ctx, cancel := context.WithTimeout(rig.Context(), 300*time.Second)
 			defer cancel()
 			for _, scheme := range []string{"light", "dark"} {

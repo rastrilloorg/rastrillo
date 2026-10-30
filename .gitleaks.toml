@@ -31,6 +31,22 @@ condition = "AND"
 paths = ['''^migrate/frozen_checksums_test\.go$''']
 regexes = ['''^[0-9a-f]{64}$''']
 
+# The oidc package's ceremony-cookie key-derivation LABEL, quoted in the
+# design spec's prose (revision 1's wording; the matched line no longer
+# exists at HEAD, but --full-history still scans the commit that had it).
+# "rastrillo/oidc/ceremony/v1" is an argument to crypto.Derive, not a
+# value derived FROM anything secret — a label is public by construction,
+# the same reason every other crypto.Derive context string in this
+# repository (e.g. "rastrillo/auth/pending/v1") is not flagged; this one
+# only tripped generic-api-key because of where a backtick put it in the
+# prose next to the word "instanceKey". Scoped to the one file and the
+# one string, so nothing else in it loses coverage.
+[[allowlists]]
+description = "oidc ceremony-cookie derivation label, quoted in the spec's prose"
+condition = "AND"
+paths = ['''^docs/superpowers/specs/2026-10-26-oidc-signin-design\.md$''']
+regexes = ['''^rastrillo/oidc/ceremony/v1$''']
+
 # RFC 6238's published TOTP test key: base32 for "12345678901234567890".
 [[allowlists]]
 description = "RFC 6238 test key"

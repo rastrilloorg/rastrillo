@@ -20,7 +20,6 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/chromedp/cdproto/runtime"
 	"github.com/chromedp/chromedp"
 
 	"amadan.net/rastrillo/rastrillo/harness"
@@ -257,11 +256,7 @@ func writeJSON(w http.ResponseWriter, v any) {
 // promise — an unhandled rejection fails the test through Run, with
 // the screen in the report.
 func evalString(r *harness.Rig, expr string) string {
-	var out string
-	r.Run(chromedp.Evaluate(expr, &out, func(p *runtime.EvaluateParams) *runtime.EvaluateParams {
-		return p.WithAwaitPromise(true)
-	}))
-	return out
+	return harness.Evaluate[string](r, expr, chromedp.EvalAwaitPromise)
 }
 
 // TestBrowserCeremoniesRoundTripWithPRF is the whole life of a

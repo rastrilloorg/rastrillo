@@ -1482,6 +1482,7 @@ var previewMobileLocaleHeights = map[string]map[string]int{
 		"partial-api-tokens":            2126,
 		"idiom-button":                  449,
 		"idiom-form-layout":             565,
+		"idiom-tblock":                  358,
 		"partial-callout":               284,
 		"partial-empty-state":           343,
 		"screen-signin-ask":             678,
@@ -2728,6 +2729,8 @@ func buildAssets(mount, theme, locale string) assetsView {
 		"The progressive-enhancement shim: polling fragments, light dismiss and the switch's drag. Every scaffolded app gets it.")
 	add(&out, "busy.js", ui.BusyJS(),
 		"The busy rule: while a form sends, its button shows a spinner for at least 650ms and refuses a second submit, and Back hands it back. Every scaffolded app gets it.")
+	add(&out, "live.js", ui.LiveJS(),
+		"Live pages: sections that update when the server says their data changed, and forms that save in place. Inert until a page carries the rastrillo-live meta tag, and deletable on its own.")
 	add(&out, "light.js", ui.LightJS(),
 		"The light the depth styles read: shadows lit by the hour, and a sheen on the button under the pointer. Delete it for the still design.")
 	add(&out, "anchor.js", ui.AnchorJS(),

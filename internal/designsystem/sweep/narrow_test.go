@@ -85,11 +85,15 @@ func TestPreviewFrameHeightsFitAtThePhonesNarrowest(t *testing.T) {
 	}
 	// The exemptions, held to their reason: no visible preview at 320px.
 	for kind := range narrowExempt {
-		var shown int
-		if err := chromedp.Run(ctx, chromedp.EmulateViewport(320, 844),
+		if err := chromedp.Do(ctx, chromedp.EmulateViewport(320, 844),
 			chromedp.Navigate(rig.Origin+pageHref(mountPath, root, "en", fileOf(kind))),
-			chromedp.WaitReady(`body`, chromedp.ByQuery),
-			chromedp.Evaluate(`[...document.querySelectorAll(".ds-view__frame")].filter(f => f.getBoundingClientRect().height > 0).length`, &shown)); err != nil {
+			chromedp.WaitReady(chromedp.CSS(`body`))); err != nil {
+			t.Fatalf("exempt %s at 320px: %v", kind, err)
+		}
+		shown, err := chromedp.Run(ctx, chromedp.Evaluate[int](
+			`[...document.querySelectorAll(".ds-view__frame")]
+			  .filter(f => f.getBoundingClientRect().height > 0).length`))
+		if err != nil {
 			t.Fatalf("exempt %s at 320px: %v", kind, err)
 		}
 		if shown > 0 {
@@ -108,29 +112,31 @@ func TestPreviewFrameHeightsFitAtThePhonesNarrowest(t *testing.T) {
 				continue
 			}
 			where := fmt.Sprintf("%s/%s at 320px", locale, row.Kind)
-			if err := chromedp.Run(ctx, chromedp.EmulateViewport(320, 844),
+			if err := chromedp.Do(ctx, chromedp.EmulateViewport(320, 844),
 				chromedp.Navigate(rig.Origin+pageHref(mountPath, root, locale, fileOf(row.Kind))),
-				chromedp.WaitVisible(`.ds-view__frame`, chromedp.ByQuery)); err != nil {
+				chromedp.WaitVisible(chromedp.CSS(`.ds-view__frame`))); err != nil {
 				t.Fatalf("%s: loading: %v", where, err)
 			}
 			eagerly(t, ctx, where)
-			if err := chromedp.Run(ctx, chromedp.Evaluate(clickedMobile, nil)); err != nil {
+			if err := chromedp.Do(ctx,
+				chromedp.Evaluate[chromedp.Void](clickedMobile)); err != nil {
 				t.Fatalf("%s: choosing Mobile: %v", where, err)
 			}
 			mobileSettle(t, ctx, where)
 			// The control: every frame is laid out at its stage's width,
 			// under 390px, so this is the narrow frame and not the 390px
 			// one the wide drive already measures.
-			var wide []string
-			if err := chromedp.Run(ctx, chromedp.Evaluate(`[...document.querySelectorAll(".ds-view")].filter(v => {
-			  const f = v.querySelector(".ds-view__frame"); return !(f.offsetWidth < 390 && Math.abs(f.offsetWidth - v.clientWidth) <= 1); }).map(v => (v.closest("article, section") || {}).id)`, &wide)); err != nil {
+			wide, err := chromedp.Run(ctx, chromedp.Evaluate[[]string](
+				`[...document.querySelectorAll(".ds-view")].filter(v => {
+			  const f = v.querySelector(".ds-view__frame"); return !(f.offsetWidth < 390 && Math.abs(f.offsetWidth - v.clientWidth) <= 1); }).map(v => (v.closest("article, section") || {}).id)`))
+			if err != nil {
 				t.Fatalf("%s: checking the frame widths: %v", where, err)
 			}
 			if len(wide) > 0 {
 				t.Fatalf("%s: frames %v are not at the stage's narrow width; the readings would be of the 390px frame", where, wide)
 			}
-			var raw string
-			if err := chromedp.Run(ctx, chromedp.Evaluate(galleryrig.MeasureFrames, &raw)); err != nil {
+			raw, err := chromedp.Run(ctx, chromedp.Evaluate[string](galleryrig.MeasureFrames))
+			if err != nil {
 				t.Fatalf("%s: measuring: %v", where, err)
 			}
 			// Read, not judged: every language is measured before any

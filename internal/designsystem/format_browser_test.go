@@ -270,8 +270,8 @@ func TestTheHTMLTabRendersExactlyLikeThePreview(t *testing.T) {
 	// each one open in turn along with what it takes to show it.
 	read := func(url string) []layoutReading {
 		probe := func() layoutReading {
-			var raw string
-			if err := chromedp.Run(ctx, chromedp.Evaluate(layoutProbe, &raw)); err != nil {
+			raw, err := chromedp.Run(ctx, chromedp.Evaluate[string](layoutProbe))
+			if err != nil {
 				t.Fatalf("%s: %v", url, err)
 			}
 			var out layoutReading
@@ -281,21 +281,27 @@ func TestTheHTMLTabRendersExactlyLikeThePreview(t *testing.T) {
 			return out
 		}
 		var n int
-		if err := chromedp.Run(ctx, chromedp.Navigate(rig.Origin+url),
-			chromedp.Evaluate(`new Promise(r => document.fonts.ready.then(() => requestAnimationFrame(() => requestAnimationFrame(r))))`, nil, awaitPromise),
-			chromedp.Evaluate(`document.querySelectorAll("details").length`, &n)); err != nil {
+		if err := chromedp.Do(ctx, chromedp.Navigate(rig.Origin+url),
+			chromedp.Evaluate[chromedp.Void](
+				`new Promise(r => document.fonts.ready.then(() =>
+				  requestAnimationFrame(() => requestAnimationFrame(r))))`,
+				chromedp.EvalAwaitPromise),
+			harness.Into(&n, chromedp.Evaluate[int](
+				`document.querySelectorAll("details").length`))); err != nil {
 			t.Fatalf("%s: %v", url, err)
 		}
 		out := []layoutReading{probe()}
 		for k := -2; k < n; k++ {
-			if err := chromedp.Run(ctx, chromedp.Evaluate(fmt.Sprintf(`(%s)(%d)`, disclosureState, k), nil, awaitPromise)); err != nil {
+			if err := chromedp.Do(ctx, chromedp.Evaluate[chromedp.Void](
+				fmt.Sprintf(`(%s)(%d)`, disclosureState, k),
+				chromedp.EvalAwaitPromise)); err != nil {
 				t.Fatalf("%s: %v", url, err)
 			}
 			out = append(out, probe())
 		}
 		return out
 	}
-	if err := chromedp.Run(ctx, chromedp.EmulateViewport(900, 900)); err != nil {
+	if err := chromedp.Do(ctx, chromedp.EmulateViewport(900, 900)); err != nil {
 		t.Fatal(err)
 	}
 	if want, got := read(control.raw), read(control.fmt); sameReadings(want, got) == "" {
@@ -304,7 +310,7 @@ func TestTheHTMLTabRendersExactlyLikeThePreview(t *testing.T) {
 	if want, got := read("/fmt/hidden-raw.html"), read("/fmt/hidden.html"); sameReadings(want, got) == "" {
 		t.Fatal("a space inside a closed disclosure moved no box once opened; this drive cannot see a formatter that changes what a menu shows")
 	}
-	if err := chromedp.Run(ctx, chromedp.EmulateViewport(390, 900)); err != nil {
+	if err := chromedp.Do(ctx, chromedp.EmulateViewport(390, 900)); err != nil {
 		t.Fatal(err)
 	}
 	if want, got := read("/fmt/account-raw.html"), read("/fmt/account.html"); sameReadings(want, got) == "" {
@@ -312,7 +318,7 @@ func TestTheHTMLTabRendersExactlyLikeThePreview(t *testing.T) {
 	}
 	var compared, states int
 	for _, width := range []int64{900, 390} {
-		if err := chromedp.Run(ctx, chromedp.EmulateViewport(width, 900)); err != nil {
+		if err := chromedp.Do(ctx, chromedp.EmulateViewport(width, 900)); err != nil {
 			t.Fatal(err)
 		}
 		for _, j := range jobs {

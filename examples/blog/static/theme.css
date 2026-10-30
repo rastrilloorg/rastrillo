@@ -167,7 +167,8 @@
    carried by its text label at 4.5:1 or better, and the current page
    adds a filled background, a heavier weight and aria-current on top.
 
-   --rst-shadow-pop, --rst-shadow-knob, --rst-shadow-lift and
+   --rst-shadow-pop, --rst-shadow-knob, --rst-shadow-knob-hover,
+   --rst-shadow-lift and
    --rst-overlay are not in the table: they paint a translucent shadow or
    scrim over whatever sits underneath, not text over a fixed
    background, so a contrast ratio does not apply. The scrim deepens in
@@ -237,7 +238,10 @@
 
   /* Depth */
   --rst-shadow-pop: 0 2px 4px light-dark(rgba(16, 24, 40, 0.06), rgba(0, 0, 0, 0.35)), 0 8px 16px -4px light-dark(rgba(16, 24, 40, 0.1), rgba(0, 0, 0, 0.5));
-  --rst-shadow-knob: 0 1px 2px light-dark(rgba(16, 24, 40, 0.18), rgba(0, 0, 0, 0.4));
+  /* The knob's dome: a soft drop and a hairline ring, and hovered a
+     longer drop, so the knob lifts as a button does. */
+  --rst-shadow-knob: 0 1px 2px light-dark(rgba(16, 24, 40, 0.22), rgba(0, 0, 0, 0.5)), 0 0 0 0.5px light-dark(rgba(16, 24, 40, 0.08), rgba(0, 0, 0, 0.3));
+  --rst-shadow-knob-hover: 0 1.5px 3px light-dark(rgba(16, 24, 40, 0.26), rgba(0, 0, 0, 0.58)), 0 0 0 0.5px light-dark(rgba(16, 24, 40, 0.08), rgba(0, 0, 0, 0.3));
   --rst-shadow-lift: 0 1px 2px light-dark(rgba(16, 24, 40, 0.08), rgba(0, 0, 0, 0.3));
   --rst-overlay: light-dark(rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.6));
 
@@ -298,6 +302,15 @@
   --rst-knob: #ffffff;
   --rst-knob-shade: light-dark(#f1f3f6, #d9dee8);
   --rst-track-off: light-dark(#8a8a95, #71737c);
+  /* The switch's size: a 40x23 track with a 19px knob under a fine
+     pointer, 51x31 with a 27px knob on a touch screen (the iOS size).
+     The knob is inset 2px, so each height is its knob and 4. */
+  --rst-switch-w: 40px;
+  --rst-switch-h: 23px;
+  --rst-switch-knob: 19px;
+  --rst-switch-touch-w: 51px;
+  --rst-switch-touch-h: 31px;
+  --rst-switch-touch-knob: 27px;
 
   /* Rows, menu items and sidebar items on hover and pressed: the accent
      folded into the surface at 4.5% and 8.5% in light, and in dark into
@@ -336,7 +349,7 @@
   --rst-sheen-fill: light-dark(rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.04));
   --rst-sheen-plain: light-dark(color-mix(in srgb, var(--rst-accent-fill) 9%, transparent), rgba(255, 255, 255, 0.04));
   --rst-light-rim: light-dark(color-mix(in srgb, var(--rst-accent, #1f56d6) 23%, var(--rst-line)), color-mix(in srgb, var(--rst-accent, #7aa2ff) 31%, #505050));
-  --rst-light-wash: light-dark(rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.03));
+  --rst-light-wash: light-dark(rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.015));
 
   /* The press: a whole-face wash and a spot under the pointer, as
      fractions of black, filled and plain. Numbers, because light-dark()

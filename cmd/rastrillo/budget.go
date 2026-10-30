@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"flag"
 	"fmt"
 	"io"
 	"os"
@@ -13,19 +14,25 @@ import (
 	"amadan.net/rastrillo/rastrillo/internal/budgetfile"
 	"amadan.net/rastrillo/rastrillo/internal/budgetrun"
 	"amadan.net/rastrillo/rastrillo/internal/budgetsize"
+	"amadan.net/rastrillo/rastrillo/internal/codelimits"
 )
 
 func runBudget(args []string) error {
 	if len(args) == 0 {
-		return errors.New("usage: rastrillo budget size [dir], or rastrillo budget test [go test args]")
+		return errors.New("usage: rastrillo budget size [dir], " +
+			"rastrillo budget code [--init | --lower] [dir], " +
+			"or rastrillo budget test [go test args]")
 	}
 	switch args[0] {
 	case "size":
 		return budgetSize(args[1:], os.Stdout)
+	case "code":
+		return budgetCode(args[1:], os.Stdout)
 	case "test":
 		return budgetTest(args[1:], ".", os.Stdout, os.Stderr, os.Getenv)
 	default:
-		return fmt.Errorf("unknown budget subcommand %q (size, test)", args[0])
+		return fmt.Errorf("unknown budget subcommand %q (size, code, test)",
+			args[0])
 	}
 }
 
@@ -57,6 +64,69 @@ func budgetSize(args []string, out io.Writer) error {
 	}
 	fmt.Fprintf(out, "budget size: %d directories within budget\n", len(counts))
 	return nil
+}
+
+// budgetCode exits 1 for code over a limit and 2 for a records file it
+// cannot use, as budget size does. The measuring and judging live in
+// internal/codelimits; this is only its flags and exit codes.
+func budgetCode(args []string, out io.Writer) error {
+	mode, root, err := budgetCodeArguments(args, out)
+	if err != nil {
+		return err
+	}
+	if _, err := os.Stat(filepath.Join(root, "go.mod")); err != nil {
+		return fmt.Errorf("budget code: %s has no go.mod; run it at a "+
+			"module root", root)
+	}
+	outcome, err := codelimits.Run(mode, root)
+	if err != nil {
+		return fmt.Errorf("budget code: %w", err)
+	}
+	if outcome.Note != "" {
+		fmt.Fprintln(out, outcome.Note)
+	}
+	for _, message := range outcome.Messages {
+		fmt.Fprintln(out, message)
+	}
+	switch {
+	case outcome.Malformed:
+		return exitError{code: 2, msg: codelimits.MalformedSummary}
+	case outcome.Exists:
+		return exitError{code: 2, msg: codelimits.ExistsSummary}
+	case len(outcome.Messages) > 0:
+		count := len(outcome.Messages)
+		return exitError{code: 1, msg: codelimits.ProblemsSummary(count)}
+	}
+	fmt.Fprintln(out, codelimits.PassSummary(mode, outcome.Records))
+	return nil
+}
+
+// budgetCodeArguments reads [--init | --lower] [dir]. A FlagSet, not a
+// hand loop like budget test's, because the CLI page's check reads a
+// FlagSet's declarations and fails a flag the page does not document.
+func budgetCodeArguments(args []string, out io.Writer) (
+	codelimits.Mode, string, error) {
+	flags := flag.NewFlagSet("budget code", flag.ContinueOnError)
+	flags.SetOutput(out)
+	flags.Usage = func() {} // the usage line below says it once
+	initialise := flags.Bool("init", false, "record every offence there is now")
+	lower := flags.Bool("lower", false, "lower the records to the code")
+	usage := exitError{code: 2, msg: codelimits.UsageCode}
+	if err := flags.Parse(args); err != nil || flags.NArg() > 1 ||
+		*initialise && *lower {
+		return 0, "", usage
+	}
+	root := "."
+	if flags.NArg() == 1 {
+		root = flags.Arg(0)
+	}
+	switch {
+	case *initialise:
+		return codelimits.InitMode, root, nil
+	case *lower:
+		return codelimits.LowerMode, root, nil
+	}
+	return codelimits.CheckMode, root, nil
 }
 
 // goCommand is the go binary budget test runs. A variable only so a test

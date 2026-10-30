@@ -374,11 +374,12 @@ func TestBothSpellingsComputeTheSameStyles(t *testing.T) {
 	read := func(spelling string, width int64) []string {
 		t.Helper()
 		var got []string
-		if err := chromedp.Run(ctx,
+		if err := chromedp.Do(ctx,
 			chromedp.EmulateViewport(width, 900),
 			chromedp.Navigate(rig.Origin+"/?spelling="+spelling),
-			chromedp.WaitVisible("#fixture", chromedp.ByQuery),
-			chromedp.Evaluate(fmt.Sprintf(digestJS, propsJSON), &got),
+			chromedp.WaitVisible(chromedp.CSS("#fixture")),
+			harness.Into(&got, chromedp.Evaluate[[]string](
+				fmt.Sprintf(digestJS, propsJSON))),
 		); err != nil {
 			t.Fatalf("reading the %s pass at %dpx: %v", spelling, width, err)
 		}
@@ -440,11 +441,12 @@ func TestBothSpellingsComputeTheSameStyles(t *testing.T) {
 		}
 		detail := func(spelling string) map[string]styleDetail {
 			var got map[string]styleDetail
-			if err := chromedp.Run(ctx,
+			if err := chromedp.Do(ctx,
 				chromedp.EmulateViewport(width, 900),
 				chromedp.Navigate(rig.Origin+"/?spelling="+spelling),
-				chromedp.WaitVisible("#fixture", chromedp.ByQuery),
-				chromedp.Evaluate(fmt.Sprintf(detailJS, propsJSON, wantJSON), &got),
+				chromedp.WaitVisible(chromedp.CSS("#fixture")),
+				harness.Into(&got, chromedp.Evaluate[map[string]styleDetail](
+					fmt.Sprintf(detailJS, propsJSON, wantJSON))),
 			); err != nil {
 				t.Fatalf("reading the %s detail at %dpx: %v", spelling, width, err)
 			}

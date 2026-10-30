@@ -5,7 +5,6 @@ package auth
 import (
 	"bytes"
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"html/template"
@@ -26,7 +25,6 @@ import (
 	"github.com/chromedp/cdproto/fetch"
 	"github.com/chromedp/cdproto/network"
 	"github.com/chromedp/cdproto/page"
-	"github.com/chromedp/cdproto/runtime"
 	"github.com/chromedp/chromedp"
 	"github.com/chromedp/chromedp/kb"
 
@@ -217,66 +215,103 @@ var metaRefresh = regexp.MustCompile(`<meta http-equiv="refresh"[^>]*>`)
 func interceptProvider(rig *harness.Rig) *provider {
 	p := &provider{authorize: make(chan string, 8)}
 	ctx := rig.Context()
-	chromedp.ListenTarget(ctx, func(ev any) {
-		e, ok := ev.(*fetch.EventRequestPaused)
-		if !ok {
-			return
-		}
-		// Answered from a goroutine: a CDP call made inside a listener
-		// deadlocks the event loop it is waiting on.
-		go func() {
-			ectx := cdp.WithExecutor(ctx, chromedp.FromContext(ctx).Target)
-			if strings.Contains(e.Request.URL, "/signin?continue=") {
-				if !p.holdRefresh.Load() {
-					_ = fetch.ContinueRequest(e.RequestID).Do(ectx)
-					return
-				}
-				body, err := fetch.GetResponseBody(e.RequestID).Do(ectx)
-				if err != nil {
-					_ = fetch.ContinueRequest(e.RequestID).Do(ectx)
-					return
-				}
-				_ = fetch.FulfillRequest(e.RequestID, e.ResponseStatusCode).
-					WithResponseHeaders(e.ResponseHeaders).
-					WithBody(base64.StdEncoding.EncodeToString(metaRefresh.ReplaceAll(body, nil))).Do(ectx)
+	paused := chromedp.Events(ctx, fetch.RequestPaused)
+	go func() {
+		for e, err := range paused {
+			if err != nil {
 				return
 			}
-			if e.ResourceType == network.ResourceTypeDocument && strings.HasPrefix(e.Request.URL, "https://keymail.test/oauth/authorize?") {
-				p.authorize <- e.Request.URL
-			}
-			body := base64.StdEncoding.EncodeToString([]byte(`<!doctype html><html lang="en"><title>Keymail</title><main><h1 id="provider">Keymail stand-in</h1></main></html>`))
-			_ = fetch.FulfillRequest(e.RequestID, http.StatusOK).
-				WithResponseHeaders([]*fetch.HeaderEntry{{Name: "Content-Type", Value: "text/html; charset=utf-8"}}).
-				WithBody(body).Do(ectx)
-		}()
-	})
+			// Each request is answered from its own goroutine, so one
+			// slow answer holds up no other.
+			go func() {
+				continueRequest := fetch.ContinueRequestParams{
+					RequestID: e.RequestID,
+				}
+				if strings.Contains(e.Request.URL, "/signin?continue=") {
+					if !p.holdRefresh.Load() {
+						_, _ = chromedp.Call(ctx,
+							fetch.ContinueRequest, continueRequest)
+						return
+					}
+					response, err := chromedp.Call(ctx, fetch.GetResponseBody,
+						fetch.GetResponseBodyParams{RequestID: e.RequestID})
+					if err != nil {
+						_, _ = chromedp.Call(ctx,
+							fetch.ContinueRequest, continueRequest)
+						return
+					}
+					withoutRefresh := metaRefresh.ReplaceAll(response.Body, nil)
+					fulfillRequest := fetch.FulfillRequestParams{
+						RequestID:       e.RequestID,
+						ResponseCode:    e.ResponseStatusCode,
+						ResponseHeaders: e.ResponseHeaders,
+						Body:            withoutRefresh,
+					}
+					_, _ = chromedp.Call(ctx,
+						fetch.FulfillRequest, fulfillRequest)
+					return
+				}
+				const authorizeURL = "https://keymail.test/oauth/authorize?"
+				if e.ResourceType == network.ResourceTypeDocument &&
+					strings.HasPrefix(e.Request.URL, authorizeURL) {
+					p.authorize <- e.Request.URL
+				}
+				body := []byte(`<!doctype html><html lang="en"><title>Keymail</title><main><h1 id="provider">Keymail stand-in</h1></main></html>`)
+				fulfillRequest := fetch.FulfillRequestParams{
+					RequestID:    e.RequestID,
+					ResponseCode: http.StatusOK,
+					ResponseHeaders: []*fetch.HeaderEntry{
+						{Name: "Content-Type", Value: "text/html; charset=utf-8"},
+					},
+					Body: body,
+				}
+				_, _ = chromedp.Call(ctx, fetch.FulfillRequest, fulfillRequest)
+			}()
+		}
+	}()
 	// The '?' is escaped: in a Fetch pattern it is a one-character
 	// wildcard, not the query's start.
-	rig.Run(fetch.Enable().WithPatterns([]*fetch.RequestPattern{
-		{URLPattern: "https://keymail.test/*"},
-		{URLPattern: `*/signin\?continue=*`, RequestStage: fetch.RequestStageResponse},
+	rig.Run(chromedp.Func(func(
+		ctx context.Context, target *chromedp.Target,
+	) error {
+		_, err := cdp.Call(ctx, target, fetch.Enable, fetch.EnableParams{
+			Patterns: []*fetch.RequestPattern{
+				{URLPattern: "https://keymail.test/*"},
+				{URLPattern: `*/signin\?continue=*`,
+					RequestStage: fetch.RequestStageResponse},
+			},
+		})
+		return err
 	}))
 	return p
 }
 
-// requestsFor counts the requests the page makes whose URL path is path.
-func requestsFor(rig *harness.Rig, path string) func() int {
-	var mu sync.Mutex
-	n := 0
-	chromedp.ListenTarget(rig.Context(), func(ev any) {
-		if e, ok := ev.(*network.EventRequestWillBeSent); ok {
-			if u, err := url.Parse(e.Request.URL); err == nil && u.Path == path {
-				mu.Lock()
-				n++
-				mu.Unlock()
+// requestCount counts the requests the server answers at one path. It
+// counts at the server, so a request the browser has made is counted
+// before the page that made it finishes loading.
+type requestCount struct {
+	path  string
+	count atomic.Int64
+}
+
+func (counter *requestCount) wrap(
+	build func(origin string) http.Handler,
+) func(origin string) http.Handler {
+	return func(origin string) http.Handler {
+		app := build(origin)
+		return http.HandlerFunc(func(
+			response http.ResponseWriter, request *http.Request,
+		) {
+			if request.URL.Path == counter.path {
+				counter.count.Add(1)
 			}
-		}
-	})
-	return func() int {
-		mu.Lock()
-		defer mu.Unlock()
-		return n
+			app.ServeHTTP(response, request)
+		})
 	}
+}
+
+func (counter *requestCount) loads() int {
+	return int(counter.count.Load())
 }
 
 // continuations records every /signin?continue= document the browser
@@ -288,16 +323,16 @@ type continuations struct {
 
 func watchContinuations(rig *harness.Rig) *continuations {
 	c := &continuations{}
-	chromedp.ListenTarget(rig.Context(), func(ev any) {
-		e, ok := ev.(*network.EventResponseReceived)
-		if !ok || e.Type != network.ResourceTypeDocument || !strings.Contains(e.Response.URL, "/signin?continue=") {
-			return
-		}
-		csp, _ := e.Response.Headers["Content-Security-Policy"].(string)
-		c.mu.Lock()
-		c.seen = append(c.seen, [2]string{e.Response.URL, csp})
-		c.mu.Unlock()
-	})
+	harness.Listen(rig, rig.Context(), network.ResponseReceived,
+		func(e *network.EventResponseReceived) {
+			if e.Type != network.ResourceTypeDocument || !strings.Contains(e.Response.URL, "/signin?continue=") {
+				return
+			}
+			csp, _ := e.Response.Headers["Content-Security-Policy"].(string)
+			c.mu.Lock()
+			c.seen = append(c.seen, [2]string{e.Response.URL, csp})
+			c.mu.Unlock()
+		})
 	return c
 }
 
@@ -340,13 +375,15 @@ const driveBudget = 30 * time.Second
 
 // run is rig.Run with driveBudget, and the same report: what was on
 // screen when the step failed.
-func run(t *testing.T, rig *harness.Rig, actions ...chromedp.Action) {
+func run(
+	t *testing.T, rig *harness.Rig, actions ...chromedp.Action[chromedp.Void],
+) {
 	t.Helper()
 	ctx, cancel := context.WithTimeout(rig.Context(), driveBudget)
 	defer cancel()
-	if err := chromedp.Run(ctx, actions...); err != nil {
-		var text string
-		_ = chromedp.Run(rig.Context(), chromedp.Evaluate(`document.body ? document.body.innerText : ""`, &text))
+	if err := chromedp.Do(ctx, actions...); err != nil {
+		text, _ := chromedp.Run(rig.Context(), chromedp.Evaluate[string](
+			`document.body ? document.body.innerText : ""`))
 		t.Fatalf("drive failed: %v\non screen:\n%s", err, text)
 	}
 }
@@ -362,18 +399,30 @@ func run(t *testing.T, rig *harness.Rig, actions ...chromedp.Action) {
 // pow has not enabled the submit either, and a click on it posts
 // nothing. The marker comes first because Poll's script dies with the
 // page it runs in, while WaitVisible keeps looking across the navigation.
-func arrive(marker string) chromedp.Action {
-	return chromedp.Tasks{
-		chromedp.WaitVisible(marker, chromedp.ByQuery),
-		chromedp.Poll(`document.readyState === "complete"`, nil, chromedp.WithPollingTimeout(10*time.Second)),
-	}
+func arrive(marker string) chromedp.Action[chromedp.Void] {
+	return chromedp.Steps(
+		chromedp.WaitVisible(chromedp.CSS(marker)),
+		chromedp.Poll[chromedp.Void](`document.readyState === "complete"`,
+			chromedp.WithPollingTimeout(10*time.Second)),
+	)
 }
 
-func eval(t *testing.T, rig *harness.Rig, expr string, out any) {
+// read is run for one action that returns a value.
+func read[T any](t *testing.T, rig *harness.Rig, action chromedp.Action[T]) T {
 	t.Helper()
-	run(t, rig, chromedp.Evaluate(expr, out, func(p *runtime.EvaluateParams) *runtime.EvaluateParams {
-		return p.WithAwaitPromise(true)
-	}))
+	var value T
+	run(t, rig, chromedp.Func(
+		func(ctx context.Context, target *chromedp.Target) error {
+			var err error
+			value, err = action(ctx, target)
+			return err
+		}))
+	return value
+}
+
+func eval[T any](t *testing.T, rig *harness.Rig, expr string, out *T) {
+	t.Helper()
+	*out = read(t, rig, chromedp.Evaluate[T](expr, chromedp.EvalAwaitPromise))
 }
 
 // awaitAutofocus resolves to the focused element once autofocus has
@@ -400,7 +449,8 @@ const sentMarker = `[rst-signin-door] > p > bdi`
 func awaitSent(t *testing.T, rig *harness.Rig) string {
 	t.Helper()
 	var here, s string
-	run(t, rig, chromedp.WaitVisible(sentMarker, chromedp.ByQuery), chromedp.Location(&here))
+	run(t, rig, chromedp.WaitVisible(chromedp.CSS(sentMarker)))
+	here = read(t, rig, chromedp.Location())
 	if u, err := url.Parse(here); err != nil || u.Path != "/signin" || u.Query().Get("sent") != "1" {
 		t.Fatalf("the Sent marker showed on %q, not a /signin?sent=1 page", here)
 	}
@@ -417,13 +467,13 @@ func openLink(t *testing.T, rig *harness.Rig, app *screenApp) {
 	t.Helper()
 	confirm := `form[action="/auth/verify"] button[autofocus]`
 	app.requests()
-	run(t, rig, chromedp.Navigate(verifyLink.FindString(app.mail.sentBody())), chromedp.WaitVisible(confirm, chromedp.ByQuery))
+	run(t, rig, chromedp.Navigate(verifyLink.FindString(app.mail.sentBody())), chromedp.WaitVisible(chromedp.CSS(confirm)))
 	var label string
 	eval(t, rig, `document.querySelector('form[action="/auth/verify"] button').textContent.trim()`, &label)
 	if want := rastrillo.BaseCatalog()["rastrillo.ui.signin_confirm_submit"]; label != want {
 		t.Fatalf("the confirm button reads %q, want %q", label, want)
 	}
-	run(t, rig, chromedp.Click(confirm, chromedp.ByQuery), chromedp.WaitVisible("#home", chromedp.ByQuery))
+	run(t, rig, chromedp.Click(chromedp.CSS(confirm)), chromedp.WaitVisible(chromedp.CSS("#home")))
 
 	// The page's URL is a live credential, so its Referer must be the
 	// origin alone (Referrer-Policy: strict-origin) on every request it
@@ -479,8 +529,8 @@ func signOut(t *testing.T, rig *harness.Rig) {
 	if out.Status != http.StatusOK || !out.Redirected || out.Path != "/signin" {
 		t.Fatalf("POST /signout answered %+v; want a redirect that lands on /signin", out)
 	}
-	var here string
-	run(t, rig, chromedp.Navigate(rig.Origin+"/"), chromedp.WaitVisible(`[rst-signin]`, chromedp.ByQuery), chromedp.Location(&here))
+	run(t, rig, chromedp.Navigate(rig.Origin+"/"), chromedp.WaitVisible(chromedp.CSS(`[rst-signin]`)))
+	here := read(t, rig, chromedp.Location())
 	if u, _ := url.Parse(here); u.Path != "/signin" {
 		t.Fatalf("after signing out, home is %q; want the sign-in page", here)
 	}
@@ -522,7 +572,8 @@ const reflowJS = `(() => {
 // "complete" means the rules that wrap the address are in.
 func requireReflow(t *testing.T, rig *harness.Rig, what string) {
 	t.Helper()
-	run(t, rig, chromedp.Poll(`document.readyState === "complete"`, nil, chromedp.WithPollingTimeout(10*time.Second)))
+	run(t, rig, chromedp.Poll[chromedp.Void](`document.readyState === "complete"`,
+		chromedp.WithPollingTimeout(10*time.Second)))
 	var over string
 	eval(t, rig, reflowJS, &over)
 	if over != "" {
@@ -546,12 +597,23 @@ const longAddress = "averyverylonglocalpartwithnobreakopportunityatall@anequally
 // bytes in all, inside the 254 the screen remembers.
 var longLocalPart = strings.Repeat("x", 230) + "@example.com"
 
+// scriptExecutionDisabled switches script execution in the page.
+func scriptExecutionDisabled(disabled bool) chromedp.Action[chromedp.Void] {
+	return chromedp.Func(func(
+		ctx context.Context, target *chromedp.Target,
+	) error {
+		_, err := cdp.Call(ctx, target, emulation.SetScriptExecutionDisabled,
+			emulation.SetScriptExecutionDisabledParams{Value: disabled})
+		return err
+	})
+}
+
 func TestSigninScreenInTheBrowser(t *testing.T) {
 	app, build := newScreenApp(t)
-	rig := harness.New(t, build)
+	module := &requestCount{path: "/static/passkey-signin.mjs"}
+	rig := harness.New(t, module.wrap(build))
 	keymail := interceptProvider(rig)
 	conts := watchContinuations(rig)
-	moduleLoads := requestsFor(rig, "/static/passkey-signin.mjs")
 	catalog := rastrillo.BaseCatalog()
 	var s string
 	var ok bool
@@ -573,17 +635,17 @@ func TestSigninScreenInTheBrowser(t *testing.T) {
 
 	// Ordinary pages and an email-only sign-in screen never ask for the
 	// passkey door's module; the screen with a door does.
-	run(t, rig, chromedp.Navigate(rig.Origin+"/about"), chromedp.WaitVisible("#about", chromedp.ByQuery))
-	run(t, rig, chromedp.Navigate(rig.Origin+"/signin-plain"), chromedp.WaitVisible("#rst-signin-email", chromedp.ByQuery))
+	run(t, rig, chromedp.Navigate(rig.Origin+"/about"), chromedp.WaitVisible(chromedp.CSS("#about")))
+	run(t, rig, chromedp.Navigate(rig.Origin+"/signin-plain"), chromedp.WaitVisible(chromedp.CSS("#rst-signin-email")))
 	rig.Screen("[rst-signin]", "the email-only screen")
-	if n := moduleLoads(); n != 0 {
+	if n := module.loads(); n != 0 {
 		t.Fatalf("%d requests for the passkey module from pages with no passkey door", n)
 	}
 
 	// Ask: focus starts in the field, and Tab reaches Continue, then the
 	// passkey door, which its module revealed.
-	run(t, rig, chromedp.Navigate(rig.Origin+"/signin"), chromedp.WaitVisible(`[data-rst-passkey]`, chromedp.ByQuery))
-	if moduleLoads() == 0 {
+	run(t, rig, chromedp.Navigate(rig.Origin+"/signin"), chromedp.WaitVisible(chromedp.CSS(`[data-rst-passkey]`)))
+	if module.loads() == 0 {
 		t.Fatal("the screen with a passkey door never loaded its module")
 	}
 	rig.Screen("[rst-signin]", "the Ask screen")
@@ -608,8 +670,8 @@ func TestSigninScreenInTheBrowser(t *testing.T) {
 
 	// A typed address: the Sent page names it.
 	run(t, rig,
-		chromedp.SendKeys("#rst-signin-email", "ada@example.com", chromedp.ByQuery),
-		chromedp.Click(`form[action="/signin"] button[type="submit"]`, chromedp.ByQuery),
+		chromedp.SendKeys(chromedp.CSS("#rst-signin-email"), "ada@example.com"),
+		chromedp.Click(chromedp.CSS(`form[action="/signin"] button[type="submit"]`)),
 	)
 	if s = awaitSent(t, rig); s != "ada@example.com" {
 		t.Fatalf("Sent names %q", s)
@@ -627,7 +689,7 @@ func TestSigninScreenInTheBrowser(t *testing.T) {
 
 	// The next visit offers the one-tap, focused, naming Ada; Enter on it
 	// — the keyboard, not a click — posts the remembered address.
-	run(t, rig, chromedp.Navigate(rig.Origin+"/signin"), chromedp.WaitVisible(`form[action="/signin"] button[autofocus]`, chromedp.ByQuery))
+	run(t, rig, chromedp.Navigate(rig.Origin+"/signin"), chromedp.WaitVisible(chromedp.CSS(`form[action="/signin"] button[autofocus]`)))
 	rig.Screen("[rst-signin]", "the Returning screen")
 	eval(t, rig, awaitAutofocus+`.then(b => b.tagName + " " + (b.querySelector("bdi")?.textContent ?? ""))`, &s)
 	if s != "BUTTON ada@example.com" {
@@ -640,8 +702,8 @@ func TestSigninScreenInTheBrowser(t *testing.T) {
 
 	// "Use a different email" returns to an empty Ask. The field is the
 	// marker: the Returning page being left has none.
-	run(t, rig, chromedp.Navigate(rig.Origin+"/signin"), chromedp.WaitVisible(`form[action="/signin/forget"] button`, chromedp.ByQuery),
-		chromedp.Click(`form[action="/signin/forget"] button`, chromedp.ByQuery), arrive("#rst-signin-email"))
+	run(t, rig, chromedp.Navigate(rig.Origin+"/signin"), chromedp.WaitVisible(chromedp.CSS(`form[action="/signin/forget"] button`)),
+		chromedp.Click(chromedp.CSS(`form[action="/signin/forget"] button`)), arrive("#rst-signin-email"))
 	eval(t, rig, `document.getElementById("rst-signin-email").value + "|" + document.querySelectorAll("button[autofocus]").length`, &s)
 	if s != "|0" {
 		t.Fatalf("after Use a different email the field and one-taps are %q, want an empty field and none", s)
@@ -651,8 +713,8 @@ func TestSigninScreenInTheBrowser(t *testing.T) {
 	// provider, with the page's CSP still form-action 'self'. A CSP
 	// violation is a console error, which the Screen below reports.
 	run(t, rig,
-		chromedp.SendKeys("#rst-signin-email", "kay@example.org", chromedp.ByQuery),
-		chromedp.Click(`form[action="/signin"] button[type="submit"]`, chromedp.ByQuery),
+		chromedp.SendKeys(chromedp.CSS("#rst-signin-email"), "kay@example.org"),
+		chromedp.Click(chromedp.CSS(`form[action="/signin"] button[type="submit"]`)),
 	)
 	went := awaitURL(t, keymail)
 	if !app.auth.validAuthorizeURL(went) {
@@ -667,7 +729,7 @@ func TestSigninScreenInTheBrowser(t *testing.T) {
 	// refresh held back, so the link is what navigates — and it reaches
 	// the same URL the refresh did.
 	keymail.holdRefresh.Store(true)
-	run(t, rig, chromedp.Navigate(rig.Origin+"/signin?continue="+id), chromedp.WaitVisible(`[rst-signin-door] a[rst-btn]`, chromedp.ByQuery))
+	run(t, rig, chromedp.Navigate(rig.Origin+"/signin?continue="+id), chromedp.WaitVisible(chromedp.CSS(`[rst-signin-door] a[rst-btn]`)))
 	rig.Screen("[rst-signin]", "the Continue screen")
 	// The select below takes no time to wait, so it proves "nothing went
 	// by itself" only if nothing could: a refresh still in the page would
@@ -681,7 +743,7 @@ func TestSigninScreenInTheBrowser(t *testing.T) {
 		t.Fatalf("with its refresh held back the Continue page still went to %q by itself", u)
 	default:
 	}
-	run(t, rig, chromedp.Click(`[rst-signin-door] a[rst-btn]`, chromedp.ByQuery))
+	run(t, rig, chromedp.Click(chromedp.CSS(`[rst-signin-door] a[rst-btn]`)))
 	if byLink := awaitURL(t, keymail); byLink != went {
 		t.Fatalf("the fallback link went to %q; the refresh went to %q", byLink, went)
 	}
@@ -696,7 +758,7 @@ func TestSigninScreenInTheBrowser(t *testing.T) {
 	// The same half-second is given to the page scripts-on would need to
 	// reveal the door, so "hidden" is the scripts' absence and not a read
 	// taken before they ran.
-	run(t, rig, emulation.SetScriptExecutionDisabled(true), chromedp.Navigate(rig.Origin+"/signin"), chromedp.WaitVisible("#rst-signin-email", chromedp.ByQuery),
+	run(t, rig, scriptExecutionDisabled(true), chromedp.Navigate(rig.Origin+"/signin"), chromedp.WaitVisible(chromedp.CSS("#rst-signin-email")),
 		chromedp.Sleep(500*time.Millisecond))
 	eval(t, rig, `document.querySelector("[data-rst-passkey]").hidden`, &ok)
 	if !ok {
@@ -726,12 +788,12 @@ func TestSigninScreenInTheBrowser(t *testing.T) {
 	if _, csp := conts.last(t); !strings.Contains(csp, "form-action 'self'") {
 		t.Fatalf("scripts off, the continuation page's CSP is %q", csp)
 	}
-	run(t, rig, emulation.SetScriptExecutionDisabled(false))
+	run(t, rig, scriptExecutionDisabled(false))
 
 	// A passkey signs in from nothing, and the next visit is Returning
 	// (passkey) with the typed address gone — kay's attempt cookie from
 	// the keymail leg above is still set until the passkey ends it.
-	run(t, rig, chromedp.Navigate(rig.Origin+"/signin"), chromedp.WaitVisible(`[data-rst-passkey]`, chromedp.ByQuery))
+	run(t, rig, chromedp.Navigate(rig.Origin+"/signin"), chromedp.WaitVisible(chromedp.CSS(`[data-rst-passkey]`)))
 	eval(t, rig, `document.getElementById("rst-signin-email").value`, &s)
 	if s != "kay@example.org" {
 		t.Fatalf("before the passkey the field holds %q, want kay's typed address", s)
@@ -739,13 +801,13 @@ func TestSigninScreenInTheBrowser(t *testing.T) {
 	// Wait for home itself — the sign-in page has an h1 too — and check
 	// the URL and who it says is signed in before leaving it, so the
 	// ceremony's cookies are set before the next navigation.
-	var here string
-	run(t, rig, chromedp.Click(`[data-rst-passkey]`, chromedp.ByQuery), chromedp.WaitVisible("#home", chromedp.ByQuery), chromedp.Location(&here))
+	run(t, rig, chromedp.Click(chromedp.CSS(`[data-rst-passkey]`)), chromedp.WaitVisible(chromedp.CSS("#home")))
+	here := read(t, rig, chromedp.Location())
 	eval(t, rig, `document.getElementById("home").textContent`, &s)
 	if here != rig.Origin+"/" || s != "ada@example.com" {
 		t.Fatalf("the passkey sign-in landed on %q as %q, want / as ada@example.com", here, s)
 	}
-	run(t, rig, chromedp.Navigate(rig.Origin+"/signin"), chromedp.WaitVisible(`[data-rst-passkey]`, chromedp.ByQuery))
+	run(t, rig, chromedp.Navigate(rig.Origin+"/signin"), chromedp.WaitVisible(chromedp.CSS(`[data-rst-passkey]`)))
 	rig.Screen("[rst-signin]", "the Returning (passkey) screen")
 	eval(t, rig, orShown, &ok)
 	if !ok {
@@ -764,16 +826,16 @@ func TestSigninScreenInTheBrowser(t *testing.T) {
 	continueAs := catalog["rastrillo.ui.signin_continue_as"]
 	atNarrowest := func(address string) {
 		t.Helper()
-		run(t, rig, chromedp.Navigate(rig.Origin+"/signin"), chromedp.WaitVisible("#rst-signin-email", chromedp.ByQuery),
-			chromedp.SetValue("#rst-signin-email", address, chromedp.ByQuery),
-			chromedp.Click(`form[action="/signin"] button[type="submit"]`, chromedp.ByQuery))
+		run(t, rig, chromedp.Navigate(rig.Origin+"/signin"), chromedp.WaitVisible(chromedp.CSS("#rst-signin-email")),
+			chromedp.SetValue(chromedp.CSS("#rst-signin-email"), address),
+			chromedp.Click(chromedp.CSS(`form[action="/signin"] button[type="submit"]`)))
 		if s = awaitSent(t, rig); s != address {
 			t.Fatalf("Sent names %q", s)
 		}
 		requireReflow(t, rig, "the Sent page with "+address)
 		openLink(t, rig, app)
 		signOut(t, rig)
-		run(t, rig, chromedp.Navigate(rig.Origin+"/signin"), chromedp.WaitVisible(`form[action="/signin"] button[autofocus]`, chromedp.ByQuery))
+		run(t, rig, chromedp.Navigate(rig.Origin+"/signin"), chromedp.WaitVisible(chromedp.CSS(`form[action="/signin"] button[autofocus]`)))
 		eval(t, rig, `document.querySelector("form[action='/signin'] button[autofocus]").textContent.replace(/\s+/g, " ").trim()`, &s)
 		if want := strings.Replace(continueAs, "{address}", address, 1); s != want {
 			t.Fatalf("the one-tap reads %q, want %q", s, want)
@@ -786,8 +848,8 @@ func TestSigninScreenInTheBrowser(t *testing.T) {
 	// near the 254-byte ceiling the attempt cookie and the jar keep, with
 	// "Continue as" on the same line to crowd it. "Use a different email"
 	// first, because the one-tap above has replaced the field.
-	run(t, rig, chromedp.Navigate(rig.Origin+"/signin"), chromedp.WaitVisible(`form[action="/signin/forget"] button`, chromedp.ByQuery),
-		chromedp.Click(`form[action="/signin/forget"] button`, chromedp.ByQuery), arrive("#rst-signin-email"))
+	run(t, rig, chromedp.Navigate(rig.Origin+"/signin"), chromedp.WaitVisible(chromedp.CSS(`form[action="/signin/forget"] button`)),
+		chromedp.Click(chromedp.CSS(`form[action="/signin/forget"] button`)), arrive("#rst-signin-email"))
 	atNarrowest(longLocalPart)
 	run(t, rig, chromedp.EmulateViewport(1280, 800))
 }
@@ -808,11 +870,14 @@ const passkeyStandIn = `(() => {
 func TestThePasskeyDoorFailsQuietlyAndOnce(t *testing.T) {
 	_, build := newScreenApp(t)
 	rig := harness.New(t, build)
-	run(t, rig, chromedp.ActionFunc(func(ctx context.Context) error {
-		_, err := page.AddScriptToEvaluateOnNewDocument(passkeyStandIn).Do(ctx)
+	run(t, rig, chromedp.Func(func(
+		ctx context.Context, target *chromedp.Target,
+	) error {
+		_, err := cdp.Call(ctx, target, page.AddScriptToEvaluateOnNewDocument,
+			page.AddScriptToEvaluateOnNewDocumentParams{Source: passkeyStandIn})
 		return err
 	}))
-	run(t, rig, chromedp.Navigate(rig.Origin+"/signin"), chromedp.WaitVisible(`[data-rst-passkey]`, chromedp.ByQuery))
+	run(t, rig, chromedp.Navigate(rig.Origin+"/signin"), chromedp.WaitVisible(chromedp.CSS(`[data-rst-passkey]`)))
 
 	var raw string
 	eval(t, rig, `(async () => {

@@ -54,6 +54,8 @@ every call.
 r.Use(csrf.Protect(origin, csrf.Exempt("/stripe/webhook", "/jobs/sync")))
 ```
 
+Under a [`basepath`](/docs/reference/basepath), name the path without the base, as above, and register the webhook at its product URL, such as `https://example.com/acme/stripe/webhook`. On the instance's own hostname the call gets a redirect, and webhook senders do not follow one. A `carlos schedule` tick reaches the app on either host.
+
 **An exempt path is not checked by `Protect` at all.** Its handler must
 check its own credential first and refuse the request if the check
 fails. Without that check, any site on the internet can post to it.
