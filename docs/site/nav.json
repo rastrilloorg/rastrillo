@@ -159,6 +159,11 @@
           "blurb": "Every rastrillo command and flag, and when you reach for it."
         },
         {
+          "slug": "reference/action",
+          "label": "action",
+          "blurb": "Write an action as one function of one visit, and read the route table."
+        },
+        {
           "slug": "reference/api",
           "label": "api",
           "blurb": "The JSON door: one error shape with a machine code, and how a handler answers."

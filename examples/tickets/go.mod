@@ -2,7 +2,10 @@ module tickets
 
 go 1.26.0
 
-require amadan.net/rastrillo/rastrillo v0.1.0
+require (
+	amadan.net/rastrillo/rastrillo v0.1.0
+	github.com/go-chi/chi/v5 v5.3.2
+)
 
 require (
 	amadan.net/rastrillo/rastrillo/money v0.1.0 // indirect

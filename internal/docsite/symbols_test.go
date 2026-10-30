@@ -25,6 +25,7 @@ import (
 // would let a package go undocumented by staying out of the map, and
 // the second would accept an empty page.
 var referencePages = map[string]string{
+	"action":        "reference/action",
 	"assertion":     "reference/assertion",
 	"scope":         "reference/scope",
 	"table":         "reference/table",

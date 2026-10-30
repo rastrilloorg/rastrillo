@@ -74,6 +74,10 @@ A searchable select in a toolbar that scrolls sideways opened to a list 10px tal
 
 Mark a header that stays pinned above your form with `data-rst-select-ceiling`, as you mark a bar below it with `data-rst-select-floor`. A list then never opens upward behind the header: when the header leaves less room above the field than there is below, the list opens down.
 
+### Added: write an action as one function, with `action`
+
+New package `action`. An action takes one `*action.Visit` and does four things with it: read the input, run one operation, answer a refusal, say what success looks like. `Visit` has a method for each step: `ReadForm`, `PathID`, `Render`, `Flash`, `Redirect`, and `Refused` or `RefusedShowing` to answer an error. `action.NewRoutes` mounts your actions on a chi router, and `List` returns the routes it mounted, with their guards, so a test can check them without serving a request. Nothing existing changes, and nothing calls `action` yet. See [action](/docs/reference/action).
+
 ## v0.29.0
 
 A JSON API with agents that act for a person, money in any currency, a colour-scheme switch, a new look for `day`, and sign-in without a database. The first seven sections change what an existing app does without a compile error: the JSON API, the colour-scheme switch, money, sign-in's return to the page, pagination, hand-edited migrations and `job-status`. Read them before you upgrade.
