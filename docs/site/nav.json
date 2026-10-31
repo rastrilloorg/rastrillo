@@ -394,6 +394,11 @@
           "blurb": "One table as a CSV or XLSX download, safe from CSV formula injection."
         },
         {
+          "slug": "reference/tmpl",
+          "label": "tmpl",
+          "blurb": "html/template that runs compiled Go when it can, with a safe fallback."
+        },
+        {
           "slug": "reference/totp",
           "label": "totp",
           "blurb": "Authenticator apps: enrolment and the QR, sign-in and step-up, and secrets sealed at rest."

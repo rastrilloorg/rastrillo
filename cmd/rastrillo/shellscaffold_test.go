@@ -38,6 +38,10 @@ func scaffoldWithReplace(t *testing.T, name string, args ...string) string {
 	if err != nil {
 		t.Fatal(err)
 	}
+	// What rastrillo new does once the app resolves, so the app is the
+	// one new leaves: TestMain turned the step off inside runNew, where
+	// it would have tidied against the published module.
+	compileNewTemplates(dir)
 	return dir
 }
 

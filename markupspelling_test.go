@@ -31,7 +31,11 @@ import (
 // come out of tokens.css, anything this test would have caught renders
 // unstyled with nothing to say why.
 func TestNoClassSpellingSurvives(t *testing.T) {
-	classAttr := regexp.MustCompile(`class=\\?"([^"]*)"`)
+	// Inside a Go interpreted string both quotes are escaped, and the
+	// value ends at \", not ". Taking it to the bare " kept the backslash
+	// on the last class, so the generated templates' rst-sr-only\ read as
+	// an old spelling rather than the utility it is.
+	classAttr := regexp.MustCompile(`class=\\"([^"\\]*)\\"|class="([^"]*)"`)
 	root := repoRoot(t)
 	var found []string
 	err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
@@ -78,7 +82,7 @@ func TestNoClassSpellingSurvives(t *testing.T) {
 				continue
 			}
 			for _, m := range classAttr.FindAllStringSubmatch(line, -1) {
-				for _, token := range strings.Fields(m[1]) {
+				for _, token := range strings.Fields(m[1] + " " + m[2]) {
 					if !strings.HasPrefix(token, "rst-") {
 						continue
 					}

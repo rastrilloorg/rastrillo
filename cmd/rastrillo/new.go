@@ -357,14 +357,9 @@ func runNew(args []string) error {
 		fmt.Printf("  %s   (%s requires attribution — keep it)\n", rendered.AttribName, *iconSet)
 	}
 
-	// Informed consent, stated once. A supported choice that nags on
-	// every build is not really supported.
-	if rendered.Notice != "" {
-		fmt.Printf("\nnote: --icon-delivery=%s\n", *iconDelivery)
-		for _, line := range strings.Split(strings.TrimRight(rendered.Notice, "\n"), "\n") {
-			fmt.Println("  " + line)
-		}
-	}
+	printIconNotice(rendered.Notice, *iconDelivery)
+
+	newTemplates(name)
 
 	// The scaffold ships with passing tests (the harness above), so the
 	// first suggested command is running them: the TDD loop starts from

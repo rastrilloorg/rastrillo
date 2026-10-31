@@ -61,10 +61,7 @@ func TestExposingAnUnscopedResourceNeedsAPolicy(t *testing.T) {
 	}
 	t.Parallel()
 	src := appRoot(t)
-	root, err := filepath.Abs(filepath.Join(src, "..", ".."))
-	if err != nil {
-		t.Fatal(err)
-	}
+	root := rastrilloDir(t, src)
 	dst := filepath.Join(t.TempDir(), "tickets")
 	copyApp(t, src, dst)
 
@@ -100,6 +97,27 @@ func TestExposingAnUnscopedResourceNeedsAPolicy(t *testing.T) {
 	run("mod", "edit", "-replace", "amadan.net/rastrillo/rastrillo="+root)
 	run("run", "amadan.net/rastrillo/rastrillo/cmd/rastrillo", "generate", ".")
 	run("test", "-count=1", "./internal/exposedtest/")
+}
+
+// rastrilloDir is the directory the app at src builds rastrillo from,
+// as its go.mod's replace resolves it there. The copy needs it as an
+// absolute path, and the app need not sit in a checkout's examples
+// directory for that to be two levels up.
+func rastrilloDir(t *testing.T, src string) string {
+	t.Helper()
+	cmd := exec.Command("go", "list", "-m", "-f", "{{.Dir}}",
+		"amadan.net/rastrillo/rastrillo")
+	cmd.Dir = src
+	cmd.Env = withModMode(os.Environ())
+	out, err := cmd.Output()
+	if err != nil {
+		t.Fatalf("go list -m amadan.net/rastrillo/rastrillo: %v", err)
+	}
+	dir := strings.TrimSpace(string(out))
+	if dir == "" {
+		t.Fatal("go list -m amadan.net/rastrillo/rastrillo gave no directory")
+	}
+	return dir
 }
 
 // copyApp copies the app's source to dst, leaving out what .gitignore

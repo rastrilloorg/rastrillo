@@ -2,6 +2,7 @@ package ui
 
 import (
 	"bytes"
+	"cmp"
 	"errors"
 	"fmt"
 	"html/template"
@@ -15,6 +16,7 @@ import (
 	"amadan.net/rastrillo/rastrillo"
 	"amadan.net/rastrillo/rastrillo/live"
 	"amadan.net/rastrillo/rastrillo/locales"
+	"amadan.net/rastrillo/rastrillo/tmpl"
 )
 
 // Appendix C.2 of the multi-currency money spec, verbatim: op.pages.*.
@@ -96,7 +98,7 @@ type PageFile struct {
 // render in the wrong language. PagesConfig.Compat relaxes that for
 // apps mid-migration.
 type Pages struct {
-	pages      map[string]*template.Template
+	pages      map[string]*tmpl.Template
 	localizers map[string]*Localizer // fixed at NewPages
 	def        *Localizer
 	locales    *rastrillo.Locales
@@ -109,11 +111,10 @@ type Pages struct {
 // NewPages builds one localizer per offered identity, parses the base
 // once, and makes one clone per page.
 func NewPages(cfg PagesConfig) (*Pages, error) {
-	p := &Pages{pages: map[string]*template.Template{}, localizers: map[string]*Localizer{},
+	p := &Pages{
+		pages: map[string]*tmpl.Template{}, localizers: map[string]*Localizer{},
 		entry: cfg.Entry, compat: cfg.Compat, logger: cfg.Logger}
-	if p.entry == "" {
-		p.entry = "layout"
-	}
+	p.entry = cmp.Or(p.entry, "layout")
 	if p.logger == nil {
 		p.logger = slog.Default()
 	}
@@ -165,13 +166,13 @@ func NewPages(cfg PagesConfig) (*Pages, error) {
 
 	// ui's partials parse first, so an app's {{define}} of a partial
 	// wins, as it does on an app's own tree.
-	tmpl, err := template.New(p.entry).Funcs(funcs).ParseFS(Templates(), "*.html")
+	set, err := tmpl.New(p.entry).Funcs(funcs).ParseFS(Templates(), "*.html")
 	var shared []string
 	if cfg.Layout != "" {
 		shared = append(shared, cfg.Layout)
 	}
 	if shared = append(shared, cfg.Shared...); err == nil && len(shared) > 0 {
-		tmpl, err = tmpl.ParseFS(cfg.App, shared...)
+		set, err = set.ParseFS(cfg.App, shared...)
 	}
 	if err != nil {
 		return nil, fmt.Errorf(baseParseMsg, err)
@@ -181,7 +182,7 @@ func NewPages(cfg PagesConfig) (*Pages, error) {
 		if fsys == nil {
 			fsys = cfg.App
 		}
-		c, err := tmpl.Clone() // at boot, once per page; never per language or request
+		c, err := set.Clone() // at boot, per page, not per language or request
 		if err == nil {
 			c, err = c.ParseFS(fsys, file.Path)
 		}

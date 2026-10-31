@@ -27,15 +27,18 @@ type unit struct {
 	// in that package, or in a file that dot-imports it.
 	bareVisit bool
 
-	// generated and data come from the comments before the package
-	// clause. A generated file is not measured at all; a data file is
-	// not measured for columns or file length.
-	generated, data bool
+	// generated, vendored and data come from the comments before the
+	// package clause. A generated or vendored file is not measured at
+	// all; a data file is not measured for columns or file length.
+	generated, vendored, data bool
 }
 
 var generatedLine = regexp.MustCompile(`^// Code generated .* DO NOT EDIT\.$`)
 
-const dataMarker = "//rastrillo:data "
+const (
+	dataMarker     = "//rastrillo:data "
+	vendoredMarker = "//rastrillo:vendored "
+)
 
 func parseUnit(name, module string, source []byte) (*unit, error) {
 	fset := token.NewFileSet()
@@ -97,8 +100,8 @@ func dotImports(file *ast.File, wanted string) bool {
 }
 
 // readHeader looks only above the package clause, where a build tag, a
-// generated-code line or a data marker is meaningful. The same text in
-// a function body is just a comment.
+// generated-code line, a vendored marker or a data marker is
+// meaningful. The same text in a function body is just a comment.
 func (unit *unit) readHeader() {
 	for _, group := range unit.file.Comments {
 		if group.Pos() >= unit.file.Package {
@@ -111,6 +114,10 @@ func (unit *unit) readHeader() {
 			reason, ok := strings.CutPrefix(comment.Text, dataMarker)
 			if ok && strings.TrimSpace(reason) != "" {
 				unit.data = true
+			}
+			source, ok := strings.CutPrefix(comment.Text, vendoredMarker)
+			if ok && strings.TrimSpace(source) != "" {
+				unit.vendored = true
 			}
 		}
 	}

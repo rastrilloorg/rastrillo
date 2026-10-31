@@ -18,7 +18,11 @@ rastrillo new [--icons=<set>] [--icon-delivery=<mode>] [--ux=<profile>]
 
 Scaffolds a complete app in `./<name>` — one that compiles, passes its
 own tests, and serves, before you have written anything. It runs
-`generate` once on the way out so `go build` works immediately.
+`generate` once on the way out so `go build` works immediately. Then it
+runs `go mod tidy` in the app and compiles its templates, so the app
+starts with its `rastrillo_templates_gen.go`. If that cannot run, for
+example offline, `new` still succeeds and prints a line telling you to
+run `rastrillo generate` after `go mod tidy`.
 
 | Flag | Values | Default |
 |---|---|---|
@@ -66,7 +70,7 @@ switcher. Add more later; see [Localization](/docs/localization#declaring).
 ## rastrillo generate
 
 ```sh
-rastrillo generate [--check] [--accept-breaking] [dir]
+rastrillo generate [--check] [--accept-breaking] [--templates=false] [dir]
 ```
 
 Walks `actions/` and `manifest/` and emits `gen/`: the router on a Go
@@ -105,6 +109,20 @@ over a break on purpose, run `rastrillo generate --accept-breaking`; the
 diff shows the break in review. `--check` fails if the file is missing
 or stale, and never writes it.
 
+Last, `generate` compiles your templates to Go, manifests or not. It
+starts each program under `cmd/` that uses templates, records the
+template sets it builds, and writes `rastrillo_templates_gen.go` into
+each package that builds one. Commit those files. A template it cannot
+compile, or a program that cannot start this way, gets one line, and
+those templates render through `html/template` as before. See
+[tmpl](/docs/reference/tmpl). Pass `--templates=false` to skip this step.
+
+`--check` fails when a `rastrillo_templates_gen.go` is missing or out of
+date with your templates. It also fails when a program cannot start
+this way and imports a package with a `rastrillo_templates_gen.go`,
+because it cannot check that file. Fix what stops the program, or run
+`--check` where it can start.
+
 ## rastrillo dev
 
 ```sh
@@ -115,6 +133,13 @@ The watch loop: polls `app/`, `actions/`, `manifest/`, `cmd/`,
 `locales/` and `templates/`, and on any change reruns `generate`,
 rebuilds `./cmd/<name>` to a temporary binary, and restarts the process
 with a graceful SIGTERM. Anything after `--` is passed to your app.
+
+`dev` leaves compiled templates out. It runs
+`generate --templates=false` and builds with `-tags rastrillo_dev`, so
+every page renders through `html/template` from the files on disk, and
+a compiled file that no longer fits your code cannot break the build.
+Run `rastrillo generate` before you commit: `generate --check` fails
+until you do.
 
 A failed generate or rebuild keeps the previous build serving, and a
 failed restart keeps the loop watching — either way the next save
@@ -558,8 +583,9 @@ rastrillo budget test [-no-time] [-require TestA,TestB] [go test arguments]
 
 `budget size` counts the lines in each directory of the module at `dir`
 (default `.`) and holds them to 5,000 lines of code and 8,000 of tests,
-minus the exceptions in `.rastrillo/budgets.txt`. It stops at a nested
-module, which has its own budget. It exits 1 when something is over and 2
+minus the exceptions in `.rastrillo/budgets.txt`. It leaves out generated
+files, the ones whose first lines say `// Code generated ... DO NOT EDIT.`.
+It stops at a nested module, which has its own budget. It exits 1 when something is over and 2
 when `budgets.txt` cannot be read.
 
 `budget code` holds the Go code of the module at `dir` (default `.`) to
@@ -570,6 +596,8 @@ types, and a one-capital-letter type parameter. Tests are held to the
 columns and names limits only. Generated files are skipped, and a file
 marked `//rastrillo:data <reason>` above its package clause is a table, so
 it is not held to columns or length.
+A file marked `//rastrillo:vendored <source>`, a copy of code from
+elsewhere, is skipped like a generated one.
 
 `.rastrillo/code.txt` records the offences the code already had. A new
 offence fails, and so does a record that is looser than the code: lower

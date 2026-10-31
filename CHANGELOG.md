@@ -10,6 +10,55 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+### Added: compiled templates
+
+`rastrillo generate` now compiles your templates to Go. A compiled page
+renders the same bytes as `html/template`, faster. It writes
+`rastrillo_templates_gen.go` into each package that builds a template
+set; commit those files. A template it cannot compile renders through
+`html/template` as before, and `generate` prints a line naming it. A
+template you changed since the last `generate` renders through
+`html/template` too, and the app logs a warning, so a page never shows
+old HTML. See [tmpl](/docs/reference/tmpl).
+
+`generate` now starts your app to find its templates. It builds each
+program under `cmd/` that uses templates and runs it in a scratch
+directory, where `rastrillo.Serve` builds the app and returns before it
+listens. It gets only `PATH`, `HOME`, `TMPDIR` and `LANG` from your
+environment. A database it opens through `rastrillo.OpenDB` or
+`db.Open` is a new file in the scratch directory, whatever path is
+configured, so capture never opens a real one.
+
+To upgrade:
+
+1. An app on `ui.Pages` changes nothing. An app that parses its own
+   templates replaces its `html/template` import with
+   `amadan.net/rastrillo/rastrillo/tmpl`.
+2. Run `rastrillo generate` once after upgrading and commit the new
+   files. Until you do, `generate --check` fails and names each one.
+3. Set `RASTRILLO_TEMPLATE_SHADOW=1` in your tests. Each compiled page
+   then renders through `html/template` too, and fails on any
+   difference.
+
+What changed:
+
+- New package `tmpl`: a template set with the API of
+  `*html/template.Template`, plus `IsCompiled`, `ShadowEnv` and `DevEnv`,
+  and the capture types `rastrillo generate` reads.
+- `ui.Pages` builds its pages with `tmpl`.
+- `live.Render`, `Has`, `ExecuteRegions` and `WriteRegions` take
+  `live.Templates`, which a `*template.Template` and a `*tmpl.Template`
+  both satisfy.
+- `rastrillo generate` compiles templates for every app, manifests or
+  not. `--templates=false` skips that step. `--check` fails when a
+  compiled file is missing or out of date with its templates.
+- `rastrillo new` runs `go mod tidy` and compiles the new app's
+  templates, so a new app passes `generate --check` from the start.
+- `rastrillo dev` leaves compiled templates out: it skips the step and
+  builds with `-tags rastrillo_dev`, so pages render from the files on
+  disk and a stale compiled file cannot break the build. It sets
+  `RASTRILLO_DEV=1` for your app.
+
 **Browser tests move to chromedp v0.21 (breaking for code built with `-tags browser`).** chromedp rewrote its API around generics between v0.15 and v0.21, and `harness` follows it. An app's ordinary build and tests are unaffected; only its browser tests change.
 
 To upgrade:

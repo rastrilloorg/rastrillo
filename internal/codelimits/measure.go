@@ -139,7 +139,7 @@ func measureFile(root, module, path string) ([]Offence, error) {
 	if err != nil {
 		return nil, err
 	}
-	if unit.generated {
+	if unit.generated || unit.vendored {
 		return nil, nil
 	}
 	var found []Offence

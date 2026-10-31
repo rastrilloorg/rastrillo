@@ -9,9 +9,13 @@
 // names it within its file and survives edits elsewhere in the file,
 // which is what a record of known offences needs to point at.
 //
-// Three kinds of file are never measured against some or all limits.
+// Four kinds of file are never measured against some or all limits.
 // A generated file (a "Code generated ... DO NOT EDIT." line before the
 // package clause) is skipped whole, because the fix is in the generator.
+// So is a vendored file, one whose header carries
+// "//rastrillo:vendored <source>" naming where it was copied from,
+// because the fix is upstream and the copy stays close enough to take
+// the next release. A marker with no source does not count.
 // A data file, one whose header carries "//rastrillo:data <reason>", is
 // exempt from the columns and file limits, because a table of strings
 // cannot be wrapped without being made worse. Directories named

@@ -1,0 +1,10 @@
+{{define "content"}}{{$L := localizer $}}
+<h1>{{T $L "rastrillo.ui.edit"}}</h1>
+<p>{{number $L .Count}} · {{money $L .Price .Currency}}</p>
+<form rst-form method="post">
+{{template "field-text" dict "L" $L "Name" "name" "Label" "Name" "Value" .Name "Required" true}}
+{{template "field-daterange" dict "L" $L "Label" "When" "Start" (dict "Name" "s" "Label" "From") "End" (dict "Name" "e" "Label" "To")}}
+{{template "form-foot" dict "L" $L "Submit" "Save" "CancelHref" "/" "CancelLabel" "Cancel"}}
+</form>
+{{template "pagination" dict "L" $L "Prev" "/p/1" "Next" "/p/3"}}
+{{end}}

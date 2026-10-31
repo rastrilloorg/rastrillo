@@ -639,6 +639,9 @@ func scaffoldGate(t *testing.T, args ...string) string {
 	if out, err := tidy.CombinedOutput(); err != nil {
 		t.Fatalf("go mod tidy: %v\n%s", err, out)
 	}
+	// The template step rastrillo new runs, here where the app resolves
+	// against this checkout (see scaffoldWithReplace).
+	compileNewTemplates(app)
 	goBin, err := exec.LookPath("go")
 	if err != nil {
 		t.Fatal(err)

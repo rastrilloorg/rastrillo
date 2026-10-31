@@ -1002,3 +1002,25 @@ func TestNewScaffoldsVendoredPinTest(t *testing.T) {
 		t.Errorf("scaffolded vendored_test.go does not parse: %v", err)
 	}
 }
+
+// rastrillo new compiles the new app's templates once every file is
+// written, so a fresh app's generate --check passes from the start.
+func TestNewCompilesTheAppsTemplates(t *testing.T) {
+	saved := newTemplates
+	t.Cleanup(func() { newTemplates = saved })
+	var got string
+	var hadGoMod bool
+	newTemplates = func(dir string) {
+		got = dir
+		_, err := os.Stat(filepath.Join(dir, "go.mod"))
+		hadGoMod = err == nil
+	}
+	t.Chdir(t.TempDir())
+	if err := runNew([]string{"demoapp"}); err != nil {
+		t.Fatal(err)
+	}
+	if got != "demoapp" || !hadGoMod {
+		t.Errorf("new ran the template step on %q (go.mod written: %v), "+
+			"want demoapp after its files", got, hadGoMod)
+	}
+}

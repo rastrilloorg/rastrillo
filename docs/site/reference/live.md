@@ -327,10 +327,27 @@ If you call the building blocks yourself, the order is:
    fragment, send it with the first body byte, after `WriteRegions`
    has set its header.
 
+### Templates
+
+```go
+type Templates interface {
+	ExecuteTemplate(w io.Writer, name string, data any) error
+}
+```
+
+The templates `Render`, `Has`, `ExecuteRegions` and `WriteRegions` take.
+Pass a `*template.Template` or a [`*tmpl.Template`](/docs/reference/tmpl);
+both satisfy it. A `*tmpl.Template` runs compiled code where it has it.
+
+A region counts when the set has a template of that name: `Defined` on
+a `*tmpl.Template`, `Lookup` on a `*template.Template`. A region that
+was created but never parsed counts too, and rendering it is an error
+for both.
+
 ### Render
 
 ```go
-func Render(w http.ResponseWriter, r *http.Request, status int, t *template.Template, entry string,
+func Render(w http.ResponseWriter, r *http.Request, status int, t Templates, entry string,
 	data func(takeFlash bool) (any, error)) error
 ```
 
@@ -428,7 +445,7 @@ notice, and if it took the flash it would eat a message it never shows.
 ### Has
 
 ```go
-func Has(t *template.Template, names []string) bool
+func Has(t Templates, names []string) bool
 ```
 
 Reports whether the template defines `region:<name>` for any of the
@@ -440,7 +457,7 @@ flash. Any other method is answered with the whole page.
 ### ExecuteRegions
 
 ```go
-func ExecuteRegions(w io.Writer, t *template.Template, names []string, data any) (rendered []string, err error)
+func ExecuteRegions(w io.Writer, t Templates, names []string, data any) (rendered []string, err error)
 ```
 
 Renders each name the template defines as `region:<name>`, in order, and
@@ -457,7 +474,7 @@ localizer first.
 ### WriteRegions
 
 ```go
-func WriteRegions(w http.ResponseWriter, r *http.Request, t *template.Template, names []string, data any) error
+func WriteRegions(w http.ResponseWriter, r *http.Request, t Templates, names []string, data any) error
 ```
 
 Answers a fragment request: renders the regions, sets

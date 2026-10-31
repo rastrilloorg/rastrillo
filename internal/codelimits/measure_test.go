@@ -311,3 +311,46 @@ func (pair *Pair[_, V]) Values() {}
 `)
 	requireKeys(t, got, "Box.Read/t", "Pair.Keys/k")
 }
+
+// A vendored file is a copy kept close to its upstream so it can be
+// re-synced, so nothing in it is measured, however much of it offends.
+func TestAVendoredFileIsNotMeasured(t *testing.T) {
+	body := strings.Repeat("\t_ = 1\n", 41)
+	got := measureSource(t, `// Copyright The Go Authors.
+
+//rastrillo:vendored go1.26.10 src/html/template/escape.go
+
+package probe
+
+// `+strings.Repeat("x", 82)+`
+var x = 1
+
+func long() {
+`+body+`}
+`)
+	requireKeys(t, got)
+}
+
+// A marker that names no source is no marker: the copy could not be
+// traced back to the file it should be re-synced from.
+func TestAVendoredMarkerNeedsASource(t *testing.T) {
+	for _, marker := range []string{
+		"//rastrillo:vendored ", "//rastrillo:vendored    ",
+		"//rastrillo:vendored",
+	} {
+		got := measureSource(t, marker+"\n\npackage probe\n\nvar x = 1\n")
+		requireKeys(t, got, "-/x")
+	}
+}
+
+// Only the comments above the package clause can mark a file, so the
+// same text lower down is just a comment.
+func TestAVendoredMarkerAfterThePackageClauseDoesNotCount(t *testing.T) {
+	got := measureSource(t, `package probe
+
+//rastrillo:vendored go1.26.10 src/html/template/escape.go
+
+var x = 1
+`)
+	requireKeys(t, got, "-/x")
+}

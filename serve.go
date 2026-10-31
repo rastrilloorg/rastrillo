@@ -24,19 +24,19 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"os/signal"
 	"runtime/debug"
 	"strconv"
 	"strings"
-	"syscall"
 	"time"
 
 	"amadan.net/rastrillo/rastrillo/background"
 	"amadan.net/rastrillo/rastrillo/basepath"
 	"amadan.net/rastrillo/rastrillo/carlos"
+	"amadan.net/rastrillo/rastrillo/internal/capturemode"
 	"amadan.net/rastrillo/rastrillo/internal/checkconfig"
 	"amadan.net/rastrillo/rastrillo/live"
 	"amadan.net/rastrillo/rastrillo/locales"
+	"amadan.net/rastrillo/rastrillo/tmpl"
 
 	_ "modernc.org/sqlite"
 )
@@ -395,32 +395,20 @@ func Serve(opts Options) error {
 	}
 	defer closeDB()
 
+	// Capture mode is rastrillo generate asking what sets the app builds.
+	// The handler is built, which is what builds them, and the deferred
+	// close releases what Handler opened. Nothing listens.
+	if path := os.Getenv(tmpl.CaptureEnv); path != "" {
+		return tmpl.WriteCapture(path)
+	}
+
 	ln, err := listen(opts.Socket, opts.Addr)
 	if err != nil {
 		return fmt.Errorf("rastrillo: listen: %w", err)
 	}
 	logger.Info("rastrillo: serving", "addr", ln.Addr().String(), "version", BuildVersion)
 
-	srv := newServer(opts, handler)
-	errCh := make(chan error, 1)
-	go func() { errCh <- srv.Serve(ln) }()
-
-	sigCh := make(chan os.Signal, 1)
-	signal.Notify(sigCh, syscall.SIGTERM, syscall.SIGINT)
-	select {
-	case err := <-errCh:
-		if err != nil && !errors.Is(err, http.ErrServerClosed) {
-			return err
-		}
-	case <-sigCh:
-		logger.Info("rastrillo: shutting down")
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
-		if err := srv.Shutdown(ctx); err != nil {
-			return err
-		}
-	}
-	return nil
+	return serveUntilStopped(newServer(opts, handler), ln, logger)
 }
 
 // Handler is everything Serve builds short of the listener and the
@@ -836,6 +824,7 @@ func listen(socket, addr string) (net.Listener, error) {
 // instead of reproducing the DSN by hand (the blog's F4).
 func OpenDB(path string, migrations []string) (*sql.DB, error) {
 	checkconfig.Guard("rastrillo.OpenDB")
+	path = capturemode.DBPath(path)
 	db, err := sql.Open("sqlite", path+"?_pragma=busy_timeout(5000)&_pragma=journal_mode(WAL)")
 	if err != nil {
 		return nil, err

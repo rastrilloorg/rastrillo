@@ -263,9 +263,10 @@ gorm-free:
 # Get reads the same map) sessions and assertion verification; provision,
 # whose publishers on one hostname must serialize; and
 # ui.Pages alone in ui, whose isolation test runs 200 executions in two
-# languages at once.
+# languages at once; and tmpl, whose sets are prepared by whichever of
+# many concurrent first executions gets there first.
 race:
-	CGO_ENABLED=1 go test -race -count=1 ./jobs/ ./live/ ./sessions/ ./assertion/ ./locales/ ./provision/
+	CGO_ENABLED=1 go test -race -count=1 ./jobs/ ./live/ ./sessions/ ./assertion/ ./locales/ ./provision/ ./tmpl/
 	CGO_ENABLED=1 go test -race -count=1 -run '^TestPages' ./ui/
 
 # The examples are separate modules with a replace back to this
@@ -274,8 +275,12 @@ race:
 # their first run fetches sqlc through the module proxy; that network
 # access is load-bearing - do not cache it away without keeping the
 # module download path working.
+#
+# The examples are where generated template code meets real pages, so
+# their tests run in shadow mode, as hack/gotest.sh runs the root's: a
+# compiled page whose bytes differ from html/template's fails the test.
 example-%: | $(BIN)/tmp
-	cd examples/$* && go build ./... && go vet ./... && go test ./... -count=1
+	cd examples/$* && go build ./... && go vet ./... && RASTRILLO_TEMPLATE_SHADOW=1 go test ./... -count=1
 
 # Not a file target, deliberately. A stale binary from an earlier
 # checkout would let generate-check and scaffold-smoke pass against a
@@ -305,8 +310,10 @@ generate-check: build-cli
 	# matches nothing below gen/ - only 'examples/*/gen/**' recurses into it.
 	# api/v1.json is the one file generate writes outside gen/ (the committed API
 	# contract, JSON API spec section 6); --check above already fails when it is
-	# stale, so this only catches a generator that writes it differently.
-	git diff --exit-code -- 'examples/*/gen/**' 'examples/*/api/v1.json'
+	# stale, so this only catches a generator that writes it differently. The
+	# compiled templates are the other: each goes in the package that builds the
+	# set, anywhere under the example, so its pathspec is a recursive glob.
+	git diff --exit-code -- 'examples/*/gen/**' 'examples/*/api/v1.json' 'examples/*/**/rastrillo_templates_gen.go'
 
 # Depends on the binary, NOT on generate-check: sharing that prerequisite
 # would make step 95 re-run step 90's work and fail for step 90's reasons,
