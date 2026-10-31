@@ -381,7 +381,12 @@ func localePackCoverage(repo string) (map[string]string, error) {
 // undocumented, and no page is empty.
 func TestEveryPackageHasAReferencePage(t *testing.T) {
 	const repo = "../.."
-	skip := map[string]bool{"internal": true, "cmd": true, "examples": true, "hack": true, "docs": true}
+	// bench is the agent benchmark's own module: a tool for measuring
+	// the framework, imported by no app, like hack.
+	skip := map[string]bool{
+		"internal": true, "cmd": true, "examples": true, "hack": true,
+		"docs": true, "bench": true,
+	}
 
 	packs, err := localePackCoverage(repo)
 	if err != nil {

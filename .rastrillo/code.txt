@@ -9899,7 +9899,6 @@ columns internal/docsite/symbols_test.go 4b019200e314 1
 columns internal/docsite/symbols_test.go 69d06426a69e 1
 columns internal/docsite/symbols_test.go 7e018cb14051 1
 columns internal/docsite/symbols_test.go 80876be59b4c 1
-columns internal/docsite/symbols_test.go abb90146f01c 1
 columns internal/docsite/symbols_test.go d4887dc79a1d 1
 columns internal/docsite/symbols_test.go e0a776e01df3 2
 columns internal/docsite/symbols_test.go f2ba795dfd5f 1

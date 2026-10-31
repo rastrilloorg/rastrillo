@@ -5,7 +5,7 @@
 # runs. None of the four names a real file, so the pattern rule already
 # reruns unconditionally without needing .PHONY's safety here.
 .PHONY: ci suite suite-roles gofmt budget code root perf staticcheck govulncheck gitleaks chromedp-graph gorm-free race generate-check scaffold-smoke browser \
-        browser-sweep mirror mirror-check money money-cldr
+        browser-sweep mirror mirror-check money money-cldr bench
 
 # The READMEs' documented sweeps all run with GOFLAGS=-mod=mod: the tests
 # that build scratch modules (replace => this repo) rely on it to resolve
@@ -75,7 +75,7 @@ go-roles = $(foreach p,$(2),$(if $(findstring @,$(p)),$(call go-slices,$(1),$(su
 go-slices = $(foreach k,$(shell seq 1 $(3)),$(1).$(2)~$(k)of$(3))
 BROWSER_ROLES := $(call go-roles,browser,$(BROWSER_PKGS))
 TEST_ROLES := $(call go-roles,test,$(ROOT_SPLIT))
-SUITE := root $(TEST_ROLES) staticcheck govulncheck gitleaks money budget code race \
+SUITE := root $(TEST_ROLES) staticcheck govulncheck gitleaks money bench budget code race \
          $(addprefix example-,$(EXAMPLES)) scaffold-smoke $(BROWSER_ROLES)
 
 suite:
@@ -106,6 +106,7 @@ gofmt:
 budget: | $(BIN)/tmp
 	go run ./cmd/rastrillo budget size
 	go run ./cmd/rastrillo budget size money
+	go run ./cmd/rastrillo budget size bench/agent
 	@for e in $(EXAMPLES); do go run ./cmd/rastrillo budget size examples/$$e || exit 1; done
 
 # The readable-code limits: 80 columns, 400-line files, 40-line functions
@@ -119,6 +120,13 @@ code: | $(BIN)/tmp
 
 money:
 	cd money && go build ./... && go vet ./... && go test ./... -count=1
+
+# bench/agent is the agent benchmark (docs/superpowers/specs/
+# 2026-10-30-agent-benchmark-design.md), a separate module so chromedp's
+# measuring code never joins the framework's build graph. Only its
+# offline tests run here; a round spends money and needs a token.
+bench: | $(BIN)/tmp
+	cd bench/agent && go build ./... && go vet ./... && go test ./... -count=1
 
 # money-cldr is the evidence behind the multi-currency money spec
 # (docs/superpowers/specs/2026-10-09-multi-currency-money-design.md). It
@@ -192,6 +200,7 @@ endif
 staticcheck:
 	go run $(STATICCHECK) -tags browser ./...
 	cd money && go run $(STATICCHECK) ./...
+	cd bench/agent && go run $(STATICCHECK) ./...
 	@for e in $(EXAMPLES); do echo "staticcheck examples/$$e"; (cd examples/$$e && go run $(STATICCHECK) ./...) || exit 1; done
 
 # govulncheck reports only vulnerabilities this code can reach, so a
@@ -204,6 +213,7 @@ GOVULNCHECK := golang.org/x/vuln/cmd/govulncheck@v1.8.0
 govulncheck:
 	go run $(GOVULNCHECK) ./...
 	cd money && go run $(GOVULNCHECK) ./...
+	cd bench/agent && go run $(GOVULNCHECK) ./...
 	@for e in $(EXAMPLES); do echo "govulncheck examples/$$e"; (cd examples/$$e && go run $(GOVULNCHECK) ./...) || exit 1; done
 
 # The whole git history, not only the tree: a key committed and deleted

@@ -1,0 +1,4 @@
+home | no | the public home page
+search | no | the search results for a word that matches at least one notice
+listing | no | one notice's own page
+contact | no | the form for replying to a notice

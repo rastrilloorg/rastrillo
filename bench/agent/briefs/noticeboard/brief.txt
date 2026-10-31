@@ -1,0 +1,3 @@
+Build a community noticeboard for a small town. Anyone can browse notices, search them, and filter them by category: events, for sale, lost and found, and services. Each notice has its own page, with a form for replying to it. Replies are kept for moderators to read and pass on. Moderators sign in to add, edit and remove notices and to read replies.
+
+There's no email anywhere: replies are stored, not emailed, and sign-in isn't by email. This is a public demo, so seed it with example notices and replies, and show the demo moderator's sign-in details on the sign-in page.
