@@ -8,12 +8,11 @@ copy them into new code: spell the names out.
 
 1. **Spell names out, everywhere, except `err`, `ctx` and Go's testing
    values (`t`, `b`, `f`).** `response`, not `w`; `request`, not `r`;
-   `app`, not `a`; `submitted`, not `in`; `tag`, not `t`. `ctx` stays
-   because `context` is the package. Type parameters may be one capital
-   (`Opt[T]`).
+   `app`, not `a`; `tag`, not `t`. `ctx` stays because `context` is the
+   package. Type parameters may be one capital (`Opt[T]`).
 2. **Name things for what the person is doing, not how the code does
-   it.** Not `saveEntry`, but `entries.Publish`, `entries.Update`,
-   `entries.Unpublish` and `entries.SaveDraft`, one per button.
+   it.** Not `saveEntry`, but `entries.Publish` and `entries.SaveDraft`,
+   one per button.
 3. **One route, one intent.** No `isNew` or `intent` switch inside a
    handler. Two buttons that mean two things post to two routes; in one
    form, each button's `formaction` sends it to its own route, with no
@@ -34,10 +33,9 @@ copy them into new code: spell the names out.
    learn that the row exists.`
 8. **One way to do each thing.** Agents copy the nearest example, so
    three patterns means a random pick. For routing, the one way is the
-   route table: `routes := action.NewRoutes(router, ctxFor)`.
-9. **One canonical example app follows every rule.** It is coming;
-   until then, copy the action below, from
-   `docs/site/reference/action.md`.
+   route table, below.
+9. **One canonical example app follows every rule.** Until it lands,
+   copy the action below, from `docs/site/reference/action.md`.
 10. **Names you can grep and land in one place.** `tagUpdate` and
     `access.UpdateTag` each find one definition; a `Handle` in every
     action file finds dozens. No `util` packages.
@@ -48,7 +46,7 @@ copy them into new code: spell the names out.
     mix-up is plausible, type the ID: `type TagName string`, not
     `string`.
 13. **Error messages say the fix:** what is wrong, where, and what to
-    change, the way `generate --check` and this gate's messages do.
+    change.
 14. **Tests are named as sentences and run fast.**
 
 ## An action
@@ -64,7 +62,7 @@ func (again tagForm) ShowAgain(
 	})
 }
 
-func (app *app) tagRename(visit *action.Visit) {
+func (app *App) tagRename(visit *action.Visit) {
 	parsed, err := visit.ReadForm(form.Field{Name: "Name", Required: true})
 	if visit.RefusedShowing(err, tagForm{parsed}) {
 		return
@@ -78,17 +76,29 @@ func (app *app) tagRename(visit *action.Visit) {
 		return
 	}
 	visit.Flash("Tag renamed.")
-	visit.Redirect("/tags")
+	visit.Redirect(tagPage.For(id))
 }
 ```
 
-Mount it with `routes.Post("/tags/{id}", app.tagRename)`. Read the form
-first, so a broken body is a 400 before any path or database work.
-`RefusedShowing` shows the form again at 422 for `op.Invalid` and 409
-for `op.Conflict`, and the rest as `Refused` does (404, 403, 500). Use
-`Refused` on a page with no form; `RefusedShowing` panics on a nil
-form. If an action outgrows 15 lines, the extra work belongs in the
-operation.
+Read the form first, so a broken body is a 400 before any path or
+database work. `RefusedShowing` shows the form again at 422 for
+`op.Invalid` and 409 for `op.Conflict`, and the rest as `Refused` does
+(404, 403, 500). Use `Refused` on a page with no form; `RefusedShowing`
+panics on a nil form. If an action outgrows 15 lines, the extra work
+belongs in the operation.
+
+## Routes
+
+One `func Routes(routes *action.Routes, app *App)` under `internal/`
+registers every route; the app serves with
+`Routes(action.NewRoutes(router, ctxFor), app)`. It only registers:
+`rastrillo routes` calls it with an empty `App`, and `--check` fails an
+action no route mounts. Paths are full, inside `Route` too:
+`Route("/admin", ...)` holds `"/admin/tags"`. A named `Path` registers
+and fills:
+`const tagPage action.Path = "/tags/{id}"`;
+`routes.Get(tagPage, app.tagShow)`;
+`routes.Post(tagPage, app.tagRename)`.
 
 ## An operation
 
@@ -109,15 +119,12 @@ func (tags *Tags) Rename(ctx context.Context, id int64, name string) error {
 }
 ```
 
-No `http`, no `Visit`: test it with a database and no request.
-
 ## The limits, as measured
 
 `rastrillo budget code [dir]` measures the module at `dir` (default `.`).
 
 - **columns:** a line over 80 columns, a tab moving to the next stop of
-  4 (as `expand -t4` shows it), each rune one column. Every Go file,
-  tests included.
+  4, each rune one column. Every Go file, tests included.
 - **file:** a non-test `.go` file over 400 lines, counted as `wc -l`
   does, plus one for a last line with no newline.
 - **func:** a body over 40 lines, or 15 for an action: the lines
@@ -159,17 +166,14 @@ count the body's ceiling. A file key is `-`, its count the ceiling.
 So editing or re-indenting a recorded wide line makes it new: wrap it.
 A renamed, moved or split function or file is new: it must fit.
 
-Records only go down. The gate fails an offence with no record, one
-over its record, a record looser than the code, and a record with
-nothing left. `--lower` lowers and deletes records to match, never
-adds or raises one. `--init` records every offence and refuses if the
-file exists. A record you add or raise needs a reason after its count:
-the gate compares with the file at `git merge-base HEAD origin/main`,
-and a reviewer judges the reason. Fix the code first.
+Records only go down. `--lower` lowers and deletes records to match,
+never adds or raises one. `--init` records every offence and refuses if
+the file exists. A record you add or raise needs a reason after its
+count: the gate compares with the file at
+`git merge-base HEAD origin/main`, and a reviewer judges the reason.
+Fix the code first.
 
 ## What the gate says
-
-Every message names the file, the line and the fix.
 
 | It says | It means |
 |---|---|

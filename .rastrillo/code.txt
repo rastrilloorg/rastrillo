@@ -3890,11 +3890,9 @@ columns cmd/rastrillo/main.go dc8566fe76d1 1
 columns cmd/rastrillo/main.go e30fba5f11e3 1
 columns cmd/rastrillo/main.go e53e472ece62 1
 columns cmd/rastrillo/main.go e675e10f5c0e 1
-columns cmd/rastrillo/main.go ecce36cb1fab 1
 columns cmd/rastrillo/main.go f60f7f249a22 1
 columns cmd/rastrillo/main.go fa00bb11c6c3 1
 columns cmd/rastrillo/main.go fd28fc33ba18 1
-func cmd/rastrillo/main.go main 51
 columns cmd/rastrillo/markup.go 0fcd0e222862 1
 columns cmd/rastrillo/markup.go 1723722aa60c 1
 columns cmd/rastrillo/markup.go 17e8f891ebe9 1

@@ -46,6 +46,23 @@ What changed:
 - `auth`, `password`, `passkey`, `secondfactor`, `totp` and `vault` answer 404 under a base path and on the direct host, and log an error. `auth.SigninState` gains `Unavailable`, and the `signin` partial renders nothing for it.
 - New apps read `RASTRILLO_SLUG` or `RASTRILLO_SLUG_FROM_HOST` at boot, and their README says how to deploy one as a tenant.
 
+### Added: `rastrillo routes` lists an app's routes, and `--check` finds an action no route mounts
+
+New command `rastrillo routes` prints every route of the app: the method, the full path, the action and the guards, in the order they are registered. It does not start the app. It calls the app's `Routes` function with an empty `App` and a table that only records. Nothing is written into the app, and `go.mod` and `go.sum` stay as they are. With `--check` it also fails for each action no route mounts. Nothing runs it in an app's `make ci` yet. See [CLI](/docs/cli#rastrillo-routes).
+
+The `action` package changes with it. `action` is not in a release yet, so only code written against `main` needs to change:
+
+- Register every route in one function, `func Routes(routes *action.Routes, app *App)`, in a package under `internal/`. It must only register routes.
+- Every path is the full path, inside a `Route` too. Inside `Route("/admin", ...)`, write `"/admin/tags"`, not `"/tags"`. A path that does not start with the prefix panics, and the message gives the full path to write.
+- New type `action.Path`. Name a path once, register the route with it, and fill it with `For` to redirect: `visit.Redirect(tagPage.For(id))`.
+- New function `action.NewRecorder`: a route table that records what you register and serves nothing.
+- `action.Route` gains `Action`, the action's full name, such as `example.com/app/internal/app.(*App).tagRename`.
+- `PathValue` gives back a value that `For` filled as it was given, even one with `/` or `%` in it.
+
+You don't need to rewrite existing handlers: write new routes this way, and move old ones when you change them.
+
+See [action](/docs/reference/action).
+
 ### Added: sign in with Microsoft Entra ID or Google Workspace
 
 New package `oidc` signs people in through OpenID Connect into the same `sessions` as `password` and `auth`. The app lists the tenants and Workspace domains it accepts, and maps each verified identity to one of its own users with `Config.Admit`, which has no default. ID tokens are checked with the standard library alone: RS256 only, https only, and no refresh token is kept. It has not yet been tried against real Entra and Google tenants; `oidc/INTEROP.md` is the checklist for doing that. Under a base path it answers 404, like the other sign-in packages. See [oidc](/docs/reference/oidc).

@@ -102,8 +102,8 @@ func (basics *basicsForm) ShowAgain(
 		Errors:         fieldErrors,
 		ErrorArgs:      basics.parsed.ErrorArgs(),
 		Money:          map[string]form.MoneyInput{"Price": price},
-		BasicsAction:   basics.action(request, "edit-basics"),
-		AdvancedAction: basics.action(request, "edit-advanced"),
+		BasicsAction:   basics.action(request, editBasics),
+		AdvancedAction: basics.action(request, editAdvanced),
 	})
 }
 
@@ -136,9 +136,12 @@ func (basics *basicsForm) price(
 	return price, nil
 }
 
-func (basics *basicsForm) action(request *http.Request, name string) string {
-	return basepath.Path(request,
-		fmt.Sprintf("/admin/ticket_types/%d/%s", basics.record.ID, name))
+// action is a form's action attribute. A page's body is not rewritten
+// the way a redirect's Location is, so it carries the tenant's base.
+func (basics *basicsForm) action(
+	request *http.Request, path action.Path,
+) string {
+	return basepath.Path(request, path.For(basics.record.ID))
 }
 
 // formView is the data ticket_types/form.html declares in its header.

@@ -52,7 +52,7 @@ func pathCases() []pathCase {
 	return []pathCase{
 		{"trailing slash prefix", func(routes *action.Routes, hit *bool) {
 			routes.Route("/admin/", func(admin *action.Routes) {
-				admin.Handle("GET", "/x", reached(hit), "x")
+				admin.Handle("GET", "/admin/x", reached(hit), "x")
 			})
 		}, "/admin/x"},
 		{"root prefix", func(routes *action.Routes, hit *bool) {
@@ -62,8 +62,8 @@ func pathCases() []pathCase {
 		}, "/x"},
 		{"nested trailing slashes", func(routes *action.Routes, hit *bool) {
 			routes.Route("/a/", func(outer *action.Routes) {
-				outer.Route("/b/", func(inner *action.Routes) {
-					inner.Handle("GET", "/c", reached(hit), "c")
+				outer.Route("/a/b/", func(inner *action.Routes) {
+					inner.Handle("GET", "/a/b/c", reached(hit), "c")
 				})
 			})
 		}, "/a/b/c"},
@@ -75,7 +75,7 @@ func pathCases() []pathCase {
 		}, "/api/*"},
 		{"mount inside a prefix", func(routes *action.Routes, hit *bool) {
 			routes.Route("/admin/", func(admin *action.Routes) {
-				admin.Mount("/api", reached(hit), "api")
+				admin.Mount("/admin/api", reached(hit), "api")
 			})
 		}, "/admin/api/*"},
 	}
@@ -122,38 +122,41 @@ func nestedRoutes(routes *action.Routes, passed *trace, hit *bool) {
 		inside.Guard("inner", passed.guard("inner"))
 		inside.Handle("GET", "/in-group", reached(hit), "inGroup")
 		inside.Route("/deep", func(deep *action.Routes) {
-			deep.Handle("GET", "/x", reached(hit), "deep")
+			deep.Handle("GET", "/deep/x", reached(hit), "deep")
 		})
 	})
 	routes.Group(func(sibling *action.Routes) {
 		sibling.Handle("GET", "/sibling", reached(hit), "sibling")
 	})
 	routes.Route("/admin", func(admin *action.Routes) {
-		admin.Handle("GET", "/in-route", reached(hit), "inRoute")
-		admin.Route("/nested", func(nested *action.Routes) {
+		admin.Handle("GET", "/admin/in-route", reached(hit), "inRoute")
+		admin.Route("/admin/nested", func(nested *action.Routes) {
 			nested.Guard("nested", passed.guard("nested"))
-			nested.Handle("GET", "/y", reached(hit), "nested")
+			nested.Handle("GET", "/admin/nested/y", reached(hit), "nested")
 		})
 	})
 	routes.Mount("/api", reached(hit), "api")
 }
 
-func TestGuardsAndPrefixesAreInheritedAndStayInTheirGroup(t *testing.T) {
-	var passed trace
-	var hit bool
-	router := chi.NewRouter()
-	routes := action.NewRoutes(router, emptyCtx)
-	nestedRoutes(routes, &passed, &hit)
+// served is a route table on its own router, with the guards the last
+// request passed and whether it reached a handler.
+type served struct {
+	router *chi.Mux
+	routes *action.Routes
+	passed trace
+	hit    bool
+}
 
-	want := map[string][]string{
-		"/in-group":       {"outer", "inner"},
-		"/deep/x":         {"outer", "inner"},
-		"/sibling":        {"outer"},
-		"/admin/in-route": {"outer"},
-		"/admin/nested/y": {"outer", "nested"},
-		"/api/*":          {"outer"},
-	}
-	listed := routes.List()
+func newServed() *served {
+	router := chi.NewRouter()
+	return &served{router: router, routes: action.NewRoutes(router, emptyCtx)}
+}
+
+// wantGuards checks that List records exactly the wanted paths, each
+// with its guards, and that a request to each is served through them.
+func (table *served) wantGuards(t *testing.T, want map[string][]string) {
+	t.Helper()
+	listed := table.routes.List()
 	if len(listed) != len(want) {
 		t.Fatalf("List() has %d routes, want %d", len(listed), len(want))
 	}
@@ -167,15 +170,28 @@ func TestGuardsAndPrefixesAreInheritedAndStayInTheirGroup(t *testing.T) {
 			t.Errorf("%s: recorded guards %v, want %v",
 				route.Path, route.Guards, guards)
 		}
-		passed = nil
-		if !serveRecorded(router, route.Path, &hit) {
+		table.passed = nil
+		if !serveRecorded(table.router, route.Path, &table.hit) {
 			t.Errorf("%s: chi does not serve the recorded path", route.Path)
 		}
-		if !reflect.DeepEqual([]string(passed), guards) {
+		if !reflect.DeepEqual([]string(table.passed), guards) {
 			t.Errorf("%s: request passed guards %v, want %v",
-				route.Path, []string(passed), guards)
+				route.Path, []string(table.passed), guards)
 		}
 	}
+}
+
+func TestGuardsAndPrefixesAreInheritedAndStayInTheirGroup(t *testing.T) {
+	table := newServed()
+	nestedRoutes(table.routes, &table.passed, &table.hit)
+	table.wantGuards(t, map[string][]string{
+		"/in-group":       {"outer", "inner"},
+		"/deep/x":         {"outer", "inner"},
+		"/sibling":        {"outer"},
+		"/admin/in-route": {"outer"},
+		"/admin/nested/y": {"outer", "nested"},
+		"/api/*":          {"outer"},
+	})
 }
 
 func TestChangingAListingLeavesTheNextOneUnchanged(t *testing.T) {

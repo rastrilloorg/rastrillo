@@ -36,17 +36,18 @@ func mountEverything(routes *action.Routes, api http.Handler) {
 	routes.Get("/a", handlerA)
 	routes.Route("/admin", func(admin *action.Routes) {
 		admin.Guard("admin", passThrough)
-		admin.Post("/b", handlerB)
-		admin.Handle("GET", "/c", plain, "plain")
+		admin.Post("/admin/b", handlerB)
+		admin.Handle("GET", "/admin/c", plain, "plain")
 	})
 	routes.Mount("/api", api, "api")
 }
 
 func wantedRoutes() []action.Route {
 	return []action.Route{
-		{Method: "GET", Path: "/a", Handler: "handlerA"},
+		{Method: "GET", Path: "/a", Handler: "handlerA",
+			Action: testPackage + ".handlerA"},
 		{Method: "POST", Path: "/admin/b", Handler: "handlerB",
-			Guards: []string{"admin"}},
+			Action: testPackage + ".handlerB", Guards: []string{"admin"}},
 		{Method: "GET", Path: "/admin/c", Handler: "plain",
 			Guards: []string{"admin"}},
 		{Method: "*", Path: "/api/*", Handler: "api"},

@@ -1,6 +1,6 @@
 # 🤖 The CLI
 
-One binary, ten commands. Install it with:
+One binary, eleven commands. Install it with:
 
 ```sh
 go install amadan.net/rastrillo/rastrillo/cmd/rastrillo@latest
@@ -592,6 +592,74 @@ in the run, so a lane cannot go green having run nothing.
 The scaffold's `make budget`, `make test` and `make perf` call `budget size`
 and `budget test`.
 [Testing](/docs/testing) explains the budgets.
+
+## rastrillo routes
+
+```sh
+rastrillo routes [--package path] [--check] [dir]
+```
+
+Prints the routes of the app at `dir` (default `.`), one a line, in the
+order they are registered: the method, the full path, the action and the
+guards. The last line is a reminder of what guards do not decide.
+
+```
+GET   /           app.(*App).index
+GET   /tags       app.(*App).tagList
+POST  /tags/{id}  app.(*App).tagRename  signedIn
+GET   /admin      app.(*App).adminHome  admin
+*     /api/*      api
+
+Guards are page middleware. An operation's Authorize can still refuse a request that passes them.
+```
+
+It does not start the app. It calls the app's `Routes` function with an
+empty `App` and a table that only records. Write the function in a
+package under `internal/`:
+
+```go
+func Routes(routes *action.Routes, app *App)
+```
+
+`App` can be any exported type in that package, or a pointer to one.
+`Routes` must only register routes: no queries, no network calls,
+nothing built. See [action](/docs/reference/action#registering-every-route).
+
+To call it, `routes` builds a small program inside your module with the
+go command's `-overlay`, and runs it. Nothing is written into the app,
+and `go.mod` and `go.sum` stay as they are. What the app prints while it
+starts goes to standard error, so the table on standard output stays
+clean.
+
+If your module has `vendor/modules.txt`, `routes` builds with your
+vendored code, as `go build` does, and needs no network. Otherwise it
+uses the module cache and changes neither `go.mod` nor `go.sum`.
+
+| Flag | Purpose |
+|---|---|
+| `--package` | The import path of the package whose `Routes` to call, when more than one package has one |
+| `--check` | Also fail for each action no route mounts |
+
+`--check` finds every action in the module: each function or method that
+takes one `*action.Visit` and returns nothing. It names each one that no
+route mounts. Mount it in `Routes`, or delete it. An action mounted
+through an interface value counts as not mounted: mount the method on
+its type instead.
+
+`routes` refuses to run, and exits 1, in three cases:
+
+- In a Go workspace, because Go may write `go.work.sum` there. Run it
+  with `GOWORK=off`, or outside the workspace.
+- On a system other than Linux and macOS, where it cannot promise to
+  stop and clean up what it starts.
+- When `Routes` is in a package below a second `internal` directory,
+  such as `internal/feature/internal/web`. The program it builds cannot
+  import that package. Move `Routes` to a package under the top-level
+  `internal/`.
+
+Exits 1 when the routes cannot be listed, or when `--check` finds an
+action no route mounts, and 2 when the arguments are wrong. Ctrl-C stops
+it and removes what it built.
 
 ## rastrillo session-key
 
