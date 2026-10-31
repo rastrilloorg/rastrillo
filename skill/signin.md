@@ -4,6 +4,8 @@ Adding sign-in to an app that has none, step by step: skill/add-signin.md.
 
 ## The session core
 
+- `sessions` keeps a SQLite row and a cookie per session (`__Host-`
+  prefixed on https), with a 30-day TTL by default.
 - Viewer: `sessions.UserID(r)` (int64, ok) or `sessions.Current(r)`
   (Subject, Method, AuthTime, At). Past `Require`, `ok` holds only when
   the plugin's Subject is a numeric user id (see magic links below).
@@ -48,18 +50,20 @@ spend the link; GET alone 405s. **Under `auth`, never
 0`. Use `auth.From(r)` or `sessions.Current(r)` and map the address to
 your user's id first. docs/site/magic-links.md
 
-**No database (a home or hub):** `auth.Config{Records, Pepper, Signed: &sessions.Signed{Name, Key}}` keeps users and links in `objrec` and signs 15-minute cookies; mount `a.Refresh` at `/_carlos/refresh`. A path-routed tenant only verifies: `sessions.Config{Signed: &sessions.Signed{Name, Keys}}`. `Blind` stores only the email's HMAC. No `SecondFactor`. docs/site/sessions.md
+**No database (a home or hub):** `auth.Config{Records, Pepper, Signed: &sessions.Signed{Name, Key}}` keeps users and links in `objrec` and signs 15-minute cookies; mount `app.auth.Refresh` at `/_carlos/refresh`. A path-routed tenant only verifies: `sessions.Config{Signed: &sessions.Signed{Name, Keys}}`. `Blind` stores only the email's HMAC. No `SecondFactor`. docs/site/sessions.md
 
 **Sign-in screen:** set `auth.Config.SigninScreen: true` and render
 `{{template "signin" (dict "L" $L "State" .Signin "Brand" .Brand)}}`
-(title: `signin-title`) in the `stage` shell, from `st :=
-a.SigninState(r)` (set `st.Passkey` if passkey discovery is mounted),
-then `a.PrepareSigninResponse(w, st)` before rendering; make that
-handler `RenderConfirm` too. Mount `POST /signin/forget` → `a.Forget`;
-with passkeys, serve `passkey.JS()` beside `webauthn.JS()`, set both
-URLs (`ScriptURL`, `ModuleURL`) on `st.Passkey`, and wire
-`passkey.Config.Remember: a.RememberJar()`. An admission check in front
-of `Begin` answers refusals with `a.AnswerAsSent(w, r)`, never its own
+(title: `signin-title`) in the `stage` shell, from `state :=
+app.auth.SigninState(request)` (set `state.Passkey` if passkey
+discovery is mounted), then `app.auth.PrepareSigninResponse(response,
+state)` before rendering; make that handler `RenderConfirm` too, as an
+`--auth=magic` app's `signinScreen` is. Mount `POST /signin/forget` →
+`app.auth.Forget`; with passkeys, serve `passkey.JS()` beside
+`webauthn.JS()`, set both URLs (`ScriptURL`, `ModuleURL`) on
+`state.Passkey`, and wire `passkey.Config.Remember:
+app.auth.RememberJar()`. An admission check in front of `Begin` answers
+refusals with `app.auth.AnswerAsSent(response, request)`, never its own
 `?sent=1`.
 
 **CSP:** `form-action 'self'` covers a form's whole redirect chain, so

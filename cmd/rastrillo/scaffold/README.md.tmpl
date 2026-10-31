@@ -1,0 +1,27 @@
+# %[1]s
+
+A [rastrillo](https://amadan.net/rastrillo/rastrillo) app. Run `make ci` before you push: it is the same gate CI runs. AGENTS.md has the working rules.
+
+## Templates
+
+Start each template body with `{{$L := localizer $}}`. Pass `$L` first to `T`, `money` and the other locale functions, and pass `"L" $L` to every partial. A page without `$L` fails instead of showing the wrong language.
+
+## Browser drive
+
+`internal/%[2]stest/browser_test.go` walks the app in a real Chromium. It fails on any console error, failed request, or JS value shown on the page:
+
+```sh
+go test -tags browser ./...
+```
+
+It finds Chromium on PATH, through `RASTRILLO_CHROME`, or in a Playwright cache. **A skip is not a pass:** with no browser it fails. Set `RASTRILLO_BROWSER_OPTIONAL=1` to skip it on purpose. `make ci` does not run it. Choose whether your CI runs it.
+
+## Deploy
+
+A hub can serve this app as a tenant, each instance under its own `/<slug>`. Set the app's config once, before its first instance:
+
+```sh
+carlos env set --app %[1]s %[3]s_ORIGIN=https://<product> RASTRILLO_SLUG_FROM_HOST=1
+```
+
+Each instance then reads its slug from its hostname. Keep slugs to 25 characters (`provision.MaxSlug`), or set `RASTRILLO_SLUG`.

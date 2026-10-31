@@ -17,6 +17,11 @@ import (
 // way an action does: from a request chi has routed.
 func visitAt(t *testing.T, path string) *Visit {
 	t.Helper()
+	return visitOf(t, httptest.NewRequest(http.MethodGet, path, nil))
+}
+
+func visitOf(t *testing.T, request *http.Request) *Visit {
+	t.Helper()
 	var visit *Visit
 	router := chi.NewRouter()
 	router.Get("/things/{id}", func(
@@ -24,12 +29,40 @@ func visitAt(t *testing.T, path string) *Visit {
 	) {
 		visit = NewVisit(response, request, &rastrillo.Ctx{})
 	})
-	request := httptest.NewRequest(http.MethodGet, path, nil)
 	router.ServeHTTP(httptest.NewRecorder(), request)
 	if visit == nil {
-		t.Fatalf("GET %s did not reach the route", path)
+		t.Fatalf("GET %s did not reach the route", request.URL)
 	}
 	return visit
+}
+
+// A RawPath that is not a valid escape cannot come from a parsed URL,
+// so the test sets one by hand, as a middleware that rewrote the path
+// carelessly could.
+func TestPathValueKeepsTextItCannotUnescape(t *testing.T) {
+	request := httptest.NewRequest(http.MethodGet, "/things/x", nil)
+	request.URL.RawPath = "/things/%zz"
+	visit := visitOf(t, request)
+	if got := visit.PathValue("id"); got != "%zz" {
+		t.Errorf("PathValue(id) = %q, want the raw %%zz", got)
+	}
+	if _, err := visit.PathID("id"); !errors.As(err, new(op.NotFound)) {
+		t.Errorf("PathID(id) = %v, want op.NotFound", err)
+	}
+}
+
+func TestPathValueUnescapesOnlyWhatChiReadEscaped(t *testing.T) {
+	for target, want := range map[string]string{
+		"/things/a%2Fb":  "a/b",
+		"/things/x%20y":  "x y",
+		"/things/100%25": "100%",
+		"/things/%252F":  "%2F",
+	} {
+		if got := visitAt(t, target).PathValue("id"); got != want {
+			t.Errorf("GET %s: PathValue(id) = %q, want %q",
+				target, got, want)
+		}
+	}
 }
 
 func TestPathIDRefusesWhatIsNotAnID(t *testing.T) {

@@ -1,0 +1,77 @@
+package %[1]s
+
+import (
+	"context"
+	"log/slog"
+	"net/http"
+	"time"
+
+	"github.com/go-chi/chi/v5"
+
+	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/action"
+	"amadan.net/rastrillo/rastrillo/db"
+	"amadan.net/rastrillo/rastrillo/migrate"
+	"amadan.net/rastrillo/rastrillo/perf"
+
+	// Here, not in main, so the app's tests link the packs too.
+	_ "%[2]s/gen/locales"
+)
+
+// App is what the app's actions need. New builds it; Routes reads it.
+type App struct {
+	database *db.DB
+	logger   *slog.Logger
+	origin   string
+	api      http.Handler
+}
+
+// New migrates the database and builds the app, as one router inside the
+// ServeMux that rastrillo.Options.Mux takes.
+func New(
+	database *db.DB, origin string, logger *slog.Logger,
+) (*http.ServeMux, error) {
+	router, err := Router(database, origin, logger)
+	if err != nil {
+		return nil, err
+	}
+	mux := http.NewServeMux()
+	mux.Handle("/", router)
+	return mux, nil
+}
+
+// Router is New's router, apart so that the perf test can walk it.
+func Router(
+	database *db.DB, origin string, logger *slog.Logger,
+) (chi.Router, error) {
+	if pagesErr != nil {
+		return nil, pagesErr
+	}
+	// BootSchema, not Schema: migrations.go says why.
+	migrated, err := migrate.Apply(context.Background(), database, BootSchema)
+	if err != nil {
+		return nil, err
+	}
+	logger.Info("migrate", "applied", migrated.Applied,
+		"skipped", migrated.Skipped, "adopted", migrated.Adopted)
+	api, err := newAPI(database, logger)
+	if err != nil {
+		return nil, err
+	}
+	app := &App{database: database, logger: logger, origin: origin, api: api}
+	router := chi.NewRouter()
+	Routes(action.NewRoutes(router, app.contextFor), app)
+	return router, nil
+}
+
+// Configure sets the serving options for main.go and the perf test, so
+// what the perf lane measures is what production serves.
+func Configure(
+	options *rastrillo.Options, mux *http.ServeMux, started time.Time,
+) {
+	options.Mux = mux
+	options.ErrorPage = ErrorPage
+	var recorder perf.Recorder
+	options.Wrap = perf.Middleware(&recorder,
+		perf.Options{Started: started, Logger: options.Logger})
+}

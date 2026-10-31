@@ -1,0 +1,4 @@
+home | no | the home page a visitor lands on
+signin | no | the sign-in page
+borrow | yes | the page where a member sees what's available and borrows an item
+overdue | yes | the admin's list of overdue loans

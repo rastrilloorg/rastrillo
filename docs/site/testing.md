@@ -203,9 +203,11 @@ and the packages compile and test in parallel.
 Don't split by layer instead (`store/`, `web/`). Every handler change still
 rebuilds and retests the whole web layer, so it only delays the problem.
 
-Generated code counts toward the budget, since it costs compile time like
-anything else. If a manifest's generated screens push a directory over,
-split the manifest, or record an exception that says so.
+Generated files don't count. A Go file whose first lines say
+`// Code generated ... DO NOT EDIT.`, as `go help generate` asks, is left
+out, because splitting your code by feature cannot make it smaller. That
+covers what `rastrillo generate` writes: `gen/` and each
+`rastrillo_templates_gen.go`.
 
 ## Keeping tests fast
 

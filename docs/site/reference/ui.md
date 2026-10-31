@@ -110,6 +110,11 @@ with that page's own file. A `PageFile` with a nil `FS` is read from
 is copied per language or per request, and the function map never
 changes after `NewPages` returns.
 
+Pages are [`tmpl`](/docs/reference/tmpl) templates. Once
+`rastrillo generate` has compiled them they render as compiled Go, and
+until then, or when a template has changed since, they render through
+`html/template` as before. You change nothing in your app.
+
 `Funcs` adds your own functions, such as your icon set's `icon` and
 `iconAssets` and your `asset`. A function named after a locale function,
 `localizer` or `withL` is refused:

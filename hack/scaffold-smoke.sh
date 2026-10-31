@@ -26,6 +26,21 @@ cd "$appdir"
 cd smokeapp
 go mod edit -replace amadan.net/rastrillo/rastrillo="$repo"
 go mod tidy
+# A new app's templates compile: generate writes the code into the
+# package that builds the pages, before anything below builds, so
+# build, vet, staticcheck and the server all run with it. --check right
+# after is the app's own gate passing on what generate just wrote.
+"$bin" generate
+gen=internal/smokeapp/rastrillo_templates_gen.go
+if ! [ -f "$gen" ]; then
+	echo "scaffold-smoke: rastrillo generate wrote no $gen"
+	exit 1
+fi
+"$bin" generate --check
+# The app's own line budget, with the compiled file in its package: a
+# generated file must not count, or every new app is over budget after
+# its first generate.
+make budget
 go build ./...
 go vet ./...
 # The app's own staticcheck target, not a copy of it: a fresh scaffold
@@ -62,7 +77,12 @@ esac
 git reset -q --hard HEAD~1
 go build -o smokeapp ./cmd/smokeapp
 
-./smokeapp -addr 127.0.0.1:8199 &
+# Shadow mode renders each compiled page through html/template too and
+# fails the request on any difference, and tracing logs whether each
+# render ran compiled code, so the home page served here is proved to
+# be compiled code giving html/template's bytes. The log also shows
+# that no template fell back as stale.
+RASTRILLO_TEMPLATE_SHADOW=1 RASTRILLO_TEMPLATE_TRACE=1 ./smokeapp -addr 127.0.0.1:8199 >server.log 2>&1 &
 server=$!
 trap 'kill "$server" 2>/dev/null; rm -rf "$appdir"' EXIT
 
@@ -71,3 +91,22 @@ for _ in $(seq 1 20); do
 	sleep 0.5
 done
 curl -sf http://127.0.0.1:8199/healthz
+if ! home=$(curl -sf http://127.0.0.1:8199/); then
+	echo "scaffold-smoke: the home page failed to render with compiled templates:"
+	cat server.log
+	exit 1
+fi
+case "$home" in
+*"this is a rastrillo app"*) ;;
+*) echo "scaffold-smoke: the home page is not the scaffold's:"; echo "$home"; exit 1 ;;
+esac
+if ! grep -q "tmpl: executed.*template=layout compiled=true" server.log || grep -q "compiled=false" server.log; then
+	echo "scaffold-smoke: the home page did not render through compiled code:"
+	cat server.log
+	exit 1
+fi
+if grep -q "templates changed since the last rastrillo generate" server.log; then
+	echo "scaffold-smoke: templates fell back to html/template as stale:"
+	cat server.log
+	exit 1
+fi

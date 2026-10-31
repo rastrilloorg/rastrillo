@@ -1,0 +1,75 @@
+{
+  "disableAllHooks": true,
+  "permissions": {
+    "deny": [
+      "Read(~/.claude/**)",
+      "Edit(~/.claude/**)",
+      "Read(~/.ssh/**)",
+      "Edit(~/.ssh/**)",
+      "Read(~/.config/agent-secrets/**)",
+      "Edit(~/.config/agent-secrets/**)",
+      "Read(~/.config/Bitwarden CLI/**)",
+      "Edit(~/.config/Bitwarden CLI/**)",
+      "Read(~/.config/op/**)",
+      "Edit(~/.config/op/**)",
+      "Read(~/.codex/**)",
+      "Edit(~/.codex/**)",
+      "Read(~/.paseo/**)",
+      "Edit(~/.paseo/**)",
+      "Read(~/.aws/**)",
+      "Edit(~/.aws/**)",
+      "Read(~/.netrc)",
+      "Edit(~/.netrc)",
+      "Read(~/.git-credentials)",
+      "Edit(~/.git-credentials)",
+      "Read(~/.config/agent-bench/**)",
+      "Edit(~/.config/agent-bench/**)"
+    ]
+  },
+  "sandbox": {
+    "enabled": true,
+    "network": {
+      "allowedDomains": [
+        "api.anthropic.com",
+        "*.anthropic.com",
+        "proxy.golang.org",
+        "sum.golang.org",
+        "storage.googleapis.com",
+        "dl.google.com",
+        "golang.org",
+        "go.dev",
+        "github.com",
+        "*.github.com",
+        "raw.githubusercontent.com",
+        "*.githubusercontent.com",
+        "registry.npmjs.org",
+        "*.npmjs.org",
+        "rastrillo.org",
+        "amadan.net",
+        "carloku.com",
+        "*.carloku.com",
+        "*.oncarlos.com"
+      ]
+    },
+    "credentials": {
+      "files": [
+        {
+          "path": "~/.ssh",
+          "mode": "deny"
+        },
+        {
+          "path": "~/.config/agent-secrets",
+          "mode": "deny"
+        },
+        {
+          "path": "~/.config/Bitwarden CLI",
+          "mode": "deny"
+        },
+        {
+          "path": "~/.config/op",
+          "mode": "deny"
+        }
+      ]
+    }
+  }
+}

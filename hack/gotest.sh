@@ -24,6 +24,19 @@
 # checks is a partition without compiling anything.
 set -eu
 
+# The plain roles run in shadow mode: every render that has compiled
+# code also runs html/template and fails on a byte of difference, the
+# strongest check that generated code is right. Not for perf or
+# budget, which measure renders and do not come through here, and not
+# for the browser roles, which wait on pages in a real browser against
+# timeouts; their packages' plain tests run here, in shadow mode.
+case "${1:-}" in
+root | test)
+	RASTRILLO_TEMPLATE_SHADOW=1
+	export RASTRILLO_TEMPLATE_SHADOW
+	;;
+esac
+
 weights=$(dirname "$0")/test-weights.txt
 
 # deal <mode> <pkg> <n>: names on stdin, "<k> <name>" out. Ties sort by

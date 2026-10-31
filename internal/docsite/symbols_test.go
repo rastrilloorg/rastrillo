@@ -56,6 +56,7 @@ var referencePages = map[string]string{
 	"webauthn":      "reference/webauthn",
 	"jobs":          "reference/jobs",
 	"live":          "reference/live",
+	"tmpl":          "reference/tmpl",
 	"ui":            "reference/ui",
 	"crypto":        "reference/crypto",
 	"keyring":       "reference/keyring",
@@ -334,6 +335,15 @@ var coveredElsewhere = map[string]string{
 	"currency/sqlmoney":             "reference/currency",
 	"locales/localestest/crosspack": "reference/locales",
 	"locales/localestest/gallery":   "reference/locales",
+	// Compiled-code support for tmpl: generated code calls these, and
+	// the tmpl page covers what an app sees.
+	"tmpl/tmplrt": "reference/tmpl",
+	// The compiled path's test corpus, the command that captures it for
+	// rastrillo generate, and the hook its tests listen on; nothing
+	// outside tmpl's tests uses them.
+	"tmpl/internal/corpus":                   "reference/tmpl",
+	"tmpl/internal/corpus/cmd/corpuscapture": "reference/tmpl",
+	"tmpl/internal/tmplhook":                 "reference/tmpl",
 }
 
 // localePackCoverage maps every generated CLDR locale pack under
@@ -371,7 +381,12 @@ func localePackCoverage(repo string) (map[string]string, error) {
 // undocumented, and no page is empty.
 func TestEveryPackageHasAReferencePage(t *testing.T) {
 	const repo = "../.."
-	skip := map[string]bool{"internal": true, "cmd": true, "examples": true, "hack": true, "docs": true}
+	// bench is the agent benchmark's own module: a tool for measuring
+	// the framework, imported by no app, like hack.
+	skip := map[string]bool{
+		"internal": true, "cmd": true, "examples": true, "hack": true,
+		"docs": true, "bench": true,
+	}
 
 	packs, err := localePackCoverage(repo)
 	if err != nil {

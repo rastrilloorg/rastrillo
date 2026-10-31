@@ -1,0 +1,4 @@
+home | no | the public home page
+book | no | the page where a customer picks a time and books
+signin | no | the sign-in page
+owner | yes | the owner's list of bookings

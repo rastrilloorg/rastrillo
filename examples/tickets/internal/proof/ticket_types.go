@@ -7,7 +7,6 @@ package proof
 import (
 	"context"
 	"errors"
-	"fmt"
 
 	"amadan.net/rastrillo/rastrillo"
 	"amadan.net/rastrillo/rastrillo/action"
@@ -25,11 +24,23 @@ type TicketTypes struct {
 	) (ops_ticket_types.TicketType, error)
 }
 
-// Mount takes the route table, not a router, so that every route it
-// adds is recorded where a test or a doc can list it.
-func (ticketTypes *TicketTypes) Mount(routes *action.Routes) {
-	routes.Post("/admin/ticket_types/{id}/edit-basics",
-		ticketTypes.updateBasics)
+// The paths the ticket type pages link and redirect to, each written
+// once. Only editBasics is registered here: the page and the advanced
+// form are still the generated router's, so those two must match
+// gen/router.go until step 5 puts every route on the table.
+const (
+	ticketTypePage action.Path = "/admin/ticket_types/{id}"
+	editBasics     action.Path = "/admin/ticket_types/{id}/edit-basics"
+	editAdvanced   action.Path = "/admin/ticket_types/{id}/edit-advanced"
+)
+
+// Routes is the one function that registers everything, given what the
+// pages depend on. It takes the route table, not a router, so that
+// every route it adds is recorded where a test or a doc can list it,
+// and it only registers: `rastrillo routes` calls it on a recorder
+// with an empty TicketTypes.
+func Routes(routes *action.Routes, ticketTypes *TicketTypes) {
+	routes.Post(editBasics, ticketTypes.updateBasics)
 }
 
 // updateBasics reads the record before the form, because the price's
@@ -47,7 +58,7 @@ func (ticketTypes *TicketTypes) updateBasics(visit *action.Visit) {
 	if visit.RefusedShowing(err, basics) {
 		return
 	}
-	visit.Redirect(fmt.Sprintf("/admin/ticket_types/%d", record.ID))
+	visit.Redirect(ticketTypePage.For(record.ID))
 }
 
 // readRecord reads the body before the id, so a broken body is a 400

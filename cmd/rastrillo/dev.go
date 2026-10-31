@@ -195,8 +195,8 @@ func (d *driftChecker) close() {
 
 // runDev implements `rastrillo dev [dir] [-- app args...]` (design doc
 // §11): watch, and on any change regenerate → rebuild → restart. It
-// calls the same runGenerate that CI calls — one code path, not two.
-// Everything after -- is passed to the app verbatim (e.g. -addr :9000).
+// calls CI's runGenerate, one code path not two, less the template
+// step (devGenerateArgs). Everything after -- goes to the app verbatim.
 func runDev(args []string) error {
 	dir, appArgs, help, err := parseDevArgs(args)
 	if err != nil {
@@ -224,10 +224,10 @@ func runDev(args []string) error {
 	bin := filepath.Join(binDir, appName)
 
 	rebuild := func() error {
-		if err := runGenerate([]string{dir}); err != nil {
+		if err := runGenerate(devGenerateArgs(dir)); err != nil {
 			return err
 		}
-		cmd := exec.Command("go", "build", "-o", bin, appPkg)
+		cmd := exec.Command("go", devBuildArgs(bin, appPkg)...)
 		cmd.Dir = dir
 		cmd.Stdout, cmd.Stderr = os.Stdout, os.Stderr
 		if err := cmd.Run(); err != nil {
@@ -245,7 +245,7 @@ func runDev(args []string) error {
 	var exitCh chan error
 	start := func() error {
 		c := exec.Command(bin, appArgs...)
-		c.Dir = dir
+		c.Dir, c.Env = dir, devChildEnv()
 		c.Stdout, c.Stderr = os.Stdout, os.Stderr
 		if err := c.Start(); err != nil {
 			return err

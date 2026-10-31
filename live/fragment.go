@@ -118,6 +118,30 @@ func TakesFlash(r *http.Request) bool {
 	return !ok || contains(regions, Notice)
 }
 
+// Templates is a set of templates that can run one by name: a
+// *html/template.Template or a *tmpl.Template. live takes the interface
+// so an app moves to compiled templates without a change here, and so
+// live keeps importing only the standard library.
+type Templates interface {
+	ExecuteTemplate(writer io.Writer, name string, data any) error
+}
+
+// defines reports whether templates has a template of that name: the answer
+// Lookup gives on html/template, which *tmpl.Template gives as Defined.
+// A name that was only New'd counts, and running it is an error on
+// either kind, so a region's failure does not depend on which kind the
+// app uses. A type that offers neither defines nothing, so a request
+// can never reach a template this package cannot vouch for.
+func defines(templates Templates, name string) bool {
+	switch concrete := templates.(type) {
+	case interface{ Defined(name string) bool }:
+		return concrete.Defined(name)
+	case *template.Template:
+		return concrete.Lookup(name) != nil
+	}
+	return false
+}
+
 // Has reports whether the template defines a region:<name> for any of
 // names other than Notice. Every layout defines the notice, so a match
 // on it alone says nothing about whether this is the page that was
@@ -127,9 +151,9 @@ func TakesFlash(r *http.Request) bool {
 // by navigating (Respond with nothing), and the page navigated to must
 // still find the flash; any other method gets the whole page, with its
 // status, as the browser would show it.
-func Has(t *template.Template, names []string) bool {
+func Has(t Templates, names []string) bool {
 	for _, n := range names {
-		if n != Notice && t.Lookup("region:"+n) != nil {
+		if n != Notice && defines(t, "region:"+n) {
 			return true
 		}
 	}
@@ -144,14 +168,15 @@ func Has(t *template.Template, names []string) bool {
 // as it executes and a failure halfway would leave a torn fragment
 // under a 200. It is for apps with their own template map; ui.Pages
 // has a method that checks the localizer first.
-func ExecuteRegions(w io.Writer, t *template.Template, names []string, data any) (rendered []string, err error) {
+func ExecuteRegions(
+	w io.Writer, t Templates, names []string, data any,
+) (rendered []string, err error) {
 	var b bytes.Buffer
 	for _, n := range names {
-		region := t.Lookup("region:" + n)
-		if region == nil {
+		if !defines(t, "region:"+n) {
 			continue
 		}
-		if err := region.Execute(&b, data); err != nil {
+		if err := t.ExecuteTemplate(&b, "region:"+n, data); err != nil {
 			return nil, err
 		}
 		rendered = append(rendered, n)
@@ -170,7 +195,10 @@ func ExecuteRegions(w io.Writer, t *template.Template, names []string, data any)
 // would be dropped silently. Nothing is sent on error, so the caller
 // can write its 500. When no region was rendered, a GET or HEAD gets
 // Answer's 204 and Rastrillo-Location, and no body.
-func WriteRegions(w http.ResponseWriter, r *http.Request, t *template.Template, names []string, data any) error {
+func WriteRegions(
+	w http.ResponseWriter, r *http.Request, t Templates, names []string,
+	data any,
+) error {
 	var b bytes.Buffer
 	rendered, err := ExecuteRegions(&b, t, names, data)
 	if err != nil {

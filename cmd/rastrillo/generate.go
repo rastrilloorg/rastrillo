@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"flag"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -32,33 +31,18 @@ const defaultLocaleRemoved = "--default-locale was removed: the default comes fr
 // overrides (JSON API spec §7) today; the rest of §11's list arrives
 // with the subsystems it checks.
 //
+// Both modes end with the template step (compiled templates spec §5),
+// for every app, manifests or not: it keys on the mains under cmd/.
+//
 // Flags come before the directory: FlagSet.Parse stops at the first
 // non-flag argument, which is what keeps the older bare `rastrillo
 // generate <dir>` form working unchanged.
 func runGenerate(args []string) error {
-	fset := flag.NewFlagSet("generate", flag.ContinueOnError)
-	check := fset.Bool("check", false, "verify without writing (route collisions, action build tags, i18n catalog completeness, hand-written code on its operation)")
-	acceptBreaking := fset.Bool("accept-breaking", false, "rewrite api/v1.json over a change that breaks /api/v1 clients; without it, generate refuses and leaves the file as it was")
-	// Kept only to refuse: an undefined flag fails with Go's generic
-	// "flag provided but not defined", which names no way out.
-	fset.String("default-locale", "", defaultLocaleRemoved)
-	if err := fset.Parse(args); err != nil {
-		return err
-	}
-	removed := false
-	fset.Visit(func(f *flag.Flag) { removed = removed || f.Name == "default-locale" })
-	if removed {
-		return errors.New(defaultLocaleRemoved)
-	}
-
-	dir := "."
-	if rest := fset.Args(); len(rest) > 0 {
-		dir = rest[0]
-	}
-	dir, err := filepath.Abs(dir)
+	options, err := parseGenerateArgs(args)
 	if err != nil {
 		return err
 	}
+	dir := options.dir
 
 	module, err := modulePath(dir)
 	if err != nil {
@@ -100,7 +84,7 @@ func runGenerate(args []string) error {
 
 	genDir := filepath.Join(dir, "gen")
 
-	if *check {
+	if options.check {
 		// Untagged action files don't break the app — plain generate
 		// tolerates them, so iterating stays smooth — but they do break
 		// every `go build ./...` in the tree (friction log F9), and the
@@ -230,7 +214,13 @@ func runGenerate(args []string) error {
 			return err
 		}
 
-		fmt.Printf("rastrillo generate --check: %d route(s), actions tagged, locale catalogs complete, icon slugs resolve, hand-written code on its operation\n", len(actions))
+		// Last, because it builds and starts the app: every cheaper
+		// failure above is named first.
+		checked, err := checkTemplates(dir, options.templates)
+		if err != nil {
+			return err
+		}
+		fmt.Printf(checkSummary+checked+"\n", len(actions))
 		return nil
 	}
 
@@ -257,7 +247,7 @@ func runGenerate(args []string) error {
 	if bound, err := contractBinds(dir, manifests); err != nil {
 		return err
 	} else if bound {
-		notes, err := contract.Write(dir, rs, *acceptBreaking)
+		notes, err := contract.Write(dir, rs, options.acceptBreaking)
 		if err != nil {
 			return err
 		}
@@ -358,6 +348,13 @@ func runGenerate(args []string) error {
 	}
 	for _, a := range manifestActions {
 		fmt.Printf("  %-24s %s\n", a.Route, a.SourcePath)
+	}
+
+	// After gen/ is complete: capture builds the app, and the app
+	// imports gen/.
+	if options.templates {
+		_, err := compileTemplates(dir, false)
+		return err
 	}
 	return nil
 }

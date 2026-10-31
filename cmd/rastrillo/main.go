@@ -19,38 +19,7 @@ func main() {
 		usage()
 		os.Exit(2)
 	}
-	var err error
-	switch os.Args[1] {
-	case "new":
-		err = runNew(os.Args[2:])
-	case "generate":
-		err = runGenerate(os.Args[2:])
-	case "dev":
-		err = runDev(os.Args[2:])
-	case "migration":
-		err = runMigration(os.Args[2:])
-	case "vectors":
-		err = runVectors(os.Args[2:])
-	case "doctor":
-		err = runDoctor(os.Args[2:])
-	case "migrate-templates":
-		if code := tmplmigrate.Run(os.Args[2:], os.Stdout, os.Stderr); code != 0 {
-			err = exitError{code: code}
-		}
-	case "markup":
-		err = runMarkup(os.Args[2:])
-	case "budget":
-		err = runBudget(os.Args[2:])
-	case "session-key":
-		err = runSessionKey(os.Args[2:], os.Stdout)
-	case "-h", "--help", "help":
-		usage()
-		return
-	default:
-		fmt.Fprintf(os.Stderr, "rastrillo: unknown command %q\n\n", os.Args[1])
-		usage()
-		os.Exit(2)
-	}
+	err := dispatch(os.Args[1], os.Args[2:])
 	if err != nil {
 		// A subcommand with findings rather than a failure — doctor —
 		// returns its own exit code, and has already printed its
@@ -66,6 +35,44 @@ func main() {
 		fmt.Fprintf(os.Stderr, "rastrillo: %v\n", err)
 		os.Exit(1)
 	}
+}
+
+// dispatch runs the command named. An unknown one prints the usage and
+// returns status 2 with no message, so main adds no second line.
+func dispatch(command string, args []string) error {
+	switch command {
+	case "new":
+		return runNew(args)
+	case "generate":
+		return runGenerate(args)
+	case "dev":
+		return runDev(args)
+	case "migration":
+		return runMigration(args)
+	case "vectors":
+		return runVectors(args)
+	case "doctor":
+		return runDoctor(args)
+	case "migrate-templates":
+		if code := tmplmigrate.Run(args, os.Stdout, os.Stderr); code != 0 {
+			return exitError{code: code}
+		}
+		return nil
+	case "markup":
+		return runMarkup(args)
+	case "budget":
+		return runBudget(args)
+	case "routes":
+		return runRoutes(args, os.Stdout)
+	case "session-key":
+		return runSessionKey(args, os.Stdout)
+	case "-h", "--help", "help":
+		usage()
+		return nil
+	}
+	fmt.Fprintf(os.Stderr, "rastrillo: unknown command %q\n\n", command)
+	usage()
+	return exitError{code: 2}
 }
 
 func usage() {
@@ -118,5 +125,10 @@ Usage:
                                                 --init finds one already there
   rastrillo budget test [-no-time] [-require T,...] [go test args]
                                                 run go test -json, judge each package's time, print a receipt
+  rastrillo routes [--package path] [--check] [dir]
+                                                print each route and its
+                                                guards (default dir: .);
+                                                --check exits 1 for an
+                                                action no route mounts
   rastrillo session-key <kid>                   print a new signing key for signed sessions, and its public key
 `

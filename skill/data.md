@@ -7,8 +7,8 @@ About 12–16% less CRUD code. Costs ~2× read time (1.7–1.9× the
 allocations), +4.8 MB of binary, a hidden `BEGIN`/`COMMIT` around every
 standalone write, and silent traps: `Updates(struct)` skips zero fields
 (always `Select`); int64 `CreatedAt`/`UpdatedAt` get the wall clock;
-`Session` shares its parent's statement; a `d.G` statement inside a
-transaction deadlocks; `Model(&T{ID: 0})` refuses the update.
+`Session` shares its parent's statement; a `database.G` statement
+inside a transaction deadlocks; `Model(&T{ID: 0})` refuses the update.
 Upserts, `RETURNING` and locking writes need escape hatches.
 (b) **Plain `database/sql`**, as Tito Go does: open your own
 one-connection writer (db.Open's DSN) and readers;
@@ -29,8 +29,8 @@ Models: no base type, no embedding. Owner column `UserID int64` tagged
 
 `db.Open(path, logger)` returns `*db.DB`: `.G` is the `*gorm.DB`,
 SQLite-wired (one file, WAL, one writer connection, several readers,
-routed per statement). `d.Close()` closes both pools; `d.G.DB()` returns
-the writer `*sql.DB` for database/sql packages.
+routed per statement). `database.Close()` closes both pools;
+`database.Writer()` is the writer `*sql.DB` for database/sql packages.
 
 **Bytes go in the object store, never on disk or in a column.** The
 instance's filesystem is ephemeral and it hibernates, so a saved upload
@@ -60,8 +60,8 @@ Schema changes: edit a model, `rastrillo migration generate`, read the
 SQL before committing. Migrations apply once at boot, ledgered — never
 re-run, never reversed. `migrations.go` declares two `*migrate.Set`:
 `Schema` (the app's own; `generate`/`check` diff it against `Models`)
-and `BootSchema = migrate.Merge(sessions.Schema, Schema)` (argument
-order = apply order) — everything `App()` applies. Subsystems go in
+and `BootSchema = migrate.Merge(apitoken.Schema, Schema)` (argument
+order = apply order) — everything boot applies. Subsystems go in
 `BootSchema`, never `Schema`, or `check` proposes dropping their
 tables. Never edit a shipped migration; add a new one. Renames are
 hand-written (`rastrillo migration new rename_x`); destructive changes

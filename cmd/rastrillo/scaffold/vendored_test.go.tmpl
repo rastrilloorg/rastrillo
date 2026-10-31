@@ -1,0 +1,50 @@
+package %[1]stest
+
+import (
+	"bytes"
+	"os"
+	"path/filepath"
+	"testing"
+
+	"amadan.net/rastrillo/rastrillo/ui"
+)
+
+// vendoredTheme is the theme this app was scaffolded with. Change it
+// when you swap static/theme.css for another of ui.ThemeNames().
+const vendoredTheme = "%[2]s"
+
+// staticDir is the app's static/, where the vendored files are.
+var staticDir = filepath.Join("..", "%[1]s", "static")
+
+// vendoredIsMine names the vendored files this app edited or deleted on
+// purpose: this test and rastrillo doctor then leave them alone.
+var vendoredIsMine = map[string]bool{
+	// "light.js": true, // deleted for the still design
+	// "shell.js": true, "shell.css": true, // sidebar and console only
+}
+
+// Each vendored file is byte for byte the library's, so a reviewer need
+// not read it and an upgrade that forgets to re-copy one is caught.
+func TestVendoredAssetsMatchTheLibrary(t *testing.T) {
+	t.Parallel()
+	assets, ok := ui.VendoredAssets(vendoredTheme)
+	if !ok {
+		t.Fatalf("unknown theme %%q", vendoredTheme)
+	}
+	for name, library := range assets {
+		if vendoredIsMine[name] {
+			continue
+		}
+		vendored, err := os.ReadFile(filepath.Join(staticDir, name))
+		if err != nil {
+			t.Errorf("read vendored %%s: %%v; if you deleted it on "+
+				"purpose, add it to vendoredIsMine", name, err)
+			continue
+		}
+		if !bytes.Equal(vendored, library) {
+			t.Errorf("static/%%s differs from the library copy; re-copy it "+
+				"with rastrillo doctor --fix, or add it to vendoredIsMine "+
+				"if the edit was deliberate", name)
+		}
+	}
+}

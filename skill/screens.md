@@ -2,16 +2,21 @@
 
 ## Add a screen
 
-1. **Route** in `Router` (`app.go`): `r.Get("/sheets/new", a.newSheet)`;
-   an owned screen goes inside the `sess.Require` group.
-2. **Handler** in `handlers.go`: load through the `owned(r)` seam, 404
-   on a miss, then `render(w, r, "sheet-new", map[string]any{...})`.
-   On a failed POST write `422` before rendering; after a mutation
-   `flash.Set(w, r, "notice", "...")` and 303 (showing it: skill/forms.md).
+1. **Route** in `Routes` (`routes.go`): name the path,
+   `const newSheetPage action.Path = "/sheets/new"`, and mount it in
+   the page group, `guarded.Get(newSheetPage, app.newSheet)`; an owned
+   screen goes in the `Group` behind the session guard.
+2. **Action** in `handlers.go`, `func (app *App) newSheet(visit
+   *action.Visit)` (its shape: skill/code.md): load through
+   `app.owned(visit.Request())`, `op.NotFound{}` on a miss, then
+   `visit.Render("sheet-new", http.StatusOK, map[string]any{...})`. A
+   failed POST shows the form again with `visit.RefusedShowing` (422);
+   after a mutation, `visit.Flash("...")` and `visit.Redirect(path)`,
+   a 303 (showing the flash: skill/forms.md).
 3. **Template** `templates/sheet-new.html` defining `"content"`, its
    body starting `{{$L := localizer $}}`, built from `ui` partials
    (skill/partials.md). **Add its name to the page list in
-   `render.go`'s `newPages`**, or `render` fails on it.
+   `render.go`'s `newPages`**, or rendering it fails.
 4. **Perf:** `make perf` measures every GET route the router serves.
    A route with a parameter needs `ScreenConfig.Paths["/sheets/{id}"] =
    "/sheets/1"` with that row seeded first; a screen behind sign-in
@@ -63,14 +68,16 @@ instead of migrating. While editing, test the package you touch plus
 cannot see (execs `go build`, reads outside its package, uses the
 network) gets its own `-count=1` target. Past 5,000 lines in
 `internal/<app>`, split by feature: `internal/<app>/<feature>` exposing
-`Mount(r chi.Router, deps)`, called from `Router`; `make budget`
-enforces it. docs/site/testing.md
+`func Mount(routes *action.Routes, deps *Deps)`, called from the app's
+`Routes`, the one function of that name (`rastrillo routes` finds it);
+`make budget` enforces it. docs/site/testing.md
 
 ## Error pages
 
-**Never hand-roll an error page.** `view.Fail`/`NotFound`/`Forbidden`
-render styled pages inside the shell; a 500 shows a ref matching the
-log line's `ref`. Wire `opts.ErrorPage` (and `Ctx.ErrorPage`) to a
+**Never hand-roll an error page.** `visit.Refused(err)`, over
+`view.Fail`/`NotFound`/`Forbidden`, renders styled pages inside the
+shell; a 500 shows a ref matching the log line's `ref`. Wire
+`options.ErrorPage` (and `Ctx.ErrorPage`) to a
 `rastrillo.ErrorPageFunc` — `rastrillo new` scaffolds it as
 `render.go`'s `ErrorPage` over `templates/errors.html`; panics recover
 there. Unwired, errors are bare text. docs/site/templates.md

@@ -1,0 +1,3 @@
+Build, test and deploy the app to {{.Platform}}. Build it as a CARLOS app: read the specification at https://spec.carlosframework.com first, and meet every rule in it that applies to an app like this. I'm already signed in: use the demo account and call the app {{.App}}.
+
+Work without asking me questions. Make sensible choices and tell me what you chose when you're done.

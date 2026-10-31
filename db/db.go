@@ -27,6 +27,7 @@ import (
 	"gorm.io/plugin/dbresolver"
 
 	"amadan.net/rastrillo/rastrillo/gormlite"
+	"amadan.net/rastrillo/rastrillo/internal/capturemode"
 	"amadan.net/rastrillo/rastrillo/internal/checkconfig"
 )
 
@@ -49,6 +50,7 @@ type DB struct {
 
 func Open(path string, log *slog.Logger) (*DB, error) {
 	checkconfig.Guard("db.Open")
+	path = capturemode.DBPath(path)
 	if log == nil {
 		log = slog.Default()
 	}
@@ -88,11 +90,7 @@ func Open(path string, log *slog.Logger) (*DB, error) {
 		w.Close()
 		return nil, err
 	}
-	readers := runtime.NumCPU()
-	if readers < 4 {
-		readers = 4
-	}
-	r.SetMaxOpenConns(readers)
+	r.SetMaxOpenConns(max(runtime.NumCPU(), 4))
 	if err := r.Ping(); err != nil {
 		w.Close()
 		r.Close()

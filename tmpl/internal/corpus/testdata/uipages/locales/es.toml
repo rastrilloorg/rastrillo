@@ -1,0 +1,4 @@
+app.title = "Tienda"
+app.hello = "Hola"
+app.delete = "¿Borrar {name}?"
+app.only = "Solo en español"

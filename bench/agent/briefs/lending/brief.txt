@@ -1,0 +1,3 @@
+Build an equipment-lending app for a community makerspace. Members sign in to see what's available, borrow an item for up to two weeks, and mark it returned. Admins add and retire equipment, see what's overdue and who has it, and download the loan history as a CSV file.
+
+There's no email anywhere: no reminder emails and no email sign-in. This is a public demo, so seed it with example members, equipment and loans, some of them overdue, and show the demo member's and the demo admin's sign-in details on the sign-in page.

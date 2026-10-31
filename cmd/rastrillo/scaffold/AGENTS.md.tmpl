@@ -1,0 +1,115 @@
+# %[1]s
+
+A [rastrillo](https://amadan.net/rastrillo/rastrillo) app. Before
+writing app code, read the framework's skill at the version this app
+builds against:
+
+    cat "$(go list -m -f '{{.Dir}}' amadan.net/rastrillo/rastrillo)/SKILL.md"
+
+then, before each piece of work, the `skill/` topic its index names for
+it. Never another copy from the module cache: an older SKILL.md
+describes a framework this app is not built on.
+
+## Layout
+
+- `internal/<app>/`: `app.go` (`App`, `New`), `routes.go` (every
+  route), `handlers.go` (actions), `models.go`, `migrations.go`,
+  `render.go`, `api.go` (`/api/v1`), and `static/`, served by the app.
+- `internal/<app>test/`: tests through the real handler. Write the
+  failing test here first.
+- `manifest/`: optional, a screen set per manifest, generated into
+  `gen/` (never edit; run `rastrillo generate`). manifest/README.md
+  mounts the first.
+
+## Code
+
+`make code` (`rastrillo budget code`) holds Go to four limits:
+
+- lines at most 80 columns, a tab reaching the next stop of 4;
+- non-test files at most 400 lines;
+- non-test functions at most 40 lines; an action,
+  `func(*action.Visit)`, 15;
+- no one-letter names but a capital type parameter and the testing
+  types' `t`, `b`, `f`.
+
+1. Spell names out, except those, `err` and `ctx`: `request`, not `r`.
+2. Name things for what the person is doing (`entries.Publish`), not
+   how the code does it (`saveEntry`).
+3. One route, one intent: two buttons that mean two things post to two
+   routes.
+4. An action has four beats: read the input, run one operation, answer
+   a refusal, say what success looks like.
+5. Operations hold the rules and the database work, return `op`
+   refusals and never touch HTTP.
+6. A helper answers refusals; success stays written out in the action.
+7. Comments say why, in one or two full sentences, never what the code
+   does.
+
+The rest, and what each gate message means:
+
+    cat "$(go list -m -f '{{.Dir}}' amadan.net/rastrillo/rastrillo)/skill/code.md"
+
+## Rules the family holds hard
+
+- Every query touching user-owned rows goes through `scope.Owned` —
+  reads AND writes, transactions included. A row that isn't yours 404s,
+  never 403s.
+- Never bind a request body onto a GORM model: explicit
+  `map[string]any` + `.Select` allowlist.
+- Every page and form goes in `Routes`' guarded group, which checks
+  CSRF by origin. The API sits outside it: a bearer token is its only
+  credential.
+- The API cannot see page middleware: a page's rule beyond ownership
+  (admins only, say) goes in `api.go`'s `authorize` too, or a token
+  gets around it.
+- Money is a whole number of the currency's smallest unit, stored with its ISO 4217 code beside it, and shown with `money`. A float never touches a value a person will be held to.
+- Screens work with JavaScript disabled; destructive actions get their
+  own confirm-page URL.
+
+## Schema
+
+- Edit models.go, run `rastrillo migration generate`, and read the SQL:
+  it may rebuild a table. Write a rename by hand with
+  `rastrillo migration new rename_x`: generate sees a drop and an add.
+  Never edit a migration that has shipped; they apply at boot, once.
+- A subsystem's schema goes in `BootSchema`, in the order it applies,
+  `migrate.Merge(sessions.Schema, apitoken.Schema, Schema)`, and never
+  in `Schema`, which generate and check diff against the models.
+
+## Growing
+
+- Sign-in: `skill/signin.md`. With `*sessions.Sessions`, keep
+  `NewTokenPage(database, sessions)` on `App` and call
+  `app.tokens.Mount(guarded)` in `Routes`' page group.
+- Past 5,000 lines, split by feature: `internal/<app>/<feature>` with
+  `func Mount(routes *action.Routes, deps *Deps)`, called from the
+  app's `Routes`, the one function of that name.
+
+## The gate
+
+- `make ci` runs vet, gofmt, staticcheck, govulncheck, gitleaks, the
+  budgets, `make code`, `make routes` (every action is mounted), the
+  tests, perf, and the migration and generate checks, as CI does. Run
+  it before every push. If that is too slow, a budget has failed: fix
+  it, never skip the gate. While editing: `go test -short ./...`.
+- Budgets: 5,000 source and 8,000 test lines per directory, 10s per
+  test package, 150ms to first byte per GET screen, 500ms cold boot
+  (timing fails only on CI). An exception goes in
+  `.rastrillo/budgets.txt` or `code.txt`, with its reason.
+- `TestMain` calls `budget.Main`; each test starts with `t.Parallel()`
+  (perf excepted) and copies the `dbtest` template.
+- The two `TestIndex` tests check the placeholder index: behind sign-in
+  they get a 303, so repoint or delete them. `TestPerfScreens` then
+  needs `Signin`, and a `{param}` route a `Paths` entry it seeds.
+- A test whose inputs Go cannot see (it runs `go build`, reads outside
+  its package, uses the network) gets its own target with `-count=1`.
+- `CGO_ENABLED=0` throughout: the stack is cgo-free.
+- Raise the Makefile's `GOTOOLCHAIN` with each Go security release.
+
+## Serving
+
+`rastrillo.Resolve` + `Serve` speak the CARLOS activation contract;
+`./app -addr :8080` serves anywhere. The framework answers `/healthz`
+and `/api/version`. The CSRF check and, with accounts, the cookies go
+by `<APP>_ORIGIN`. Under a hub's `/<slug>`: README.md's Deploy and
+`skill/data.md`.

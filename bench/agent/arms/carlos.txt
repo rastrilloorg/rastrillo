@@ -1,0 +1,5 @@
+Use CARLOS principles and Rastrillo. Read https://github.com/carlosframework/skills/blob/main/skills/getting-started/SKILL.md and {{.SkillURL}} first, and use the installation commands in Rastrillo's SKILL.md.
+
+Build, test and deploy the app to carloku.com. I'm already signed in: use the demo account and call the app {{.App}}.
+
+Work without asking me questions. Make sensible choices and tell me what you chose when you're done.

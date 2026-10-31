@@ -106,10 +106,11 @@ func newProofAppWith(
 			}
 			router := chi.NewRouter()
 			ticketTypes := &proof.TicketTypes{Update: update}
-			ticketTypes.Mount(
+			proof.Routes(
 				action.NewRoutes(
 					router, bootChecked(opened, factory),
 				),
+				ticketTypes,
 			)
 			outer := http.NewServeMux()
 			outer.Handle("POST /admin/ticket_types/{id}/edit-basics",

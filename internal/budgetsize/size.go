@@ -5,11 +5,19 @@
 // a deterministic proxy for how much an edit there makes the toolchain
 // reread, and Tito Go's internal/instance (957k lines, 72s to link its
 // test binary after a one-line edit) is what it is a proxy against.
+//
+// A generated file does not count. The budget's answer to a directory
+// over it is to split it by feature, and nothing an author splits
+// shrinks a file a tool writes: compiled templates put ui's partials,
+// thousands of lines, beside every package's pages.
 package budgetsize
 
 import (
 	"bytes"
 	"fmt"
+	"go/ast"
+	"go/parser"
+	"go/token"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -51,13 +59,9 @@ func Measure(root string) ([]Count, error) {
 		if !strings.HasSuffix(p, ".go") {
 			return nil
 		}
-		b, err := os.ReadFile(p)
-		if err != nil {
+		lines, generated, err := countLines(p)
+		if err != nil || generated {
 			return err
-		}
-		lines := bytes.Count(b, []byte("\n"))
-		if len(b) > 0 && b[len(b)-1] != '\n' {
-			lines++
 		}
 		rel, err := filepath.Rel(root, filepath.Dir(p))
 		if err != nil {
@@ -85,6 +89,32 @@ func Measure(root string) ([]Count, error) {
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].Dir < out[j].Dir })
 	return out, nil
+}
+
+// countLines counts the file at path's lines, or reports that a tool
+// wrote it, which leaves it out.
+func countLines(path string) (lines int, generated bool, err error) {
+	source, err := os.ReadFile(path)
+	if err != nil || isGenerated(source) {
+		return 0, err == nil, err
+	}
+	lines = bytes.Count(source, []byte("\n"))
+	if len(source) > 0 && source[len(source)-1] != '\n' {
+		lines++
+	}
+	return lines, false, nil
+}
+
+// isGenerated reports whether src carries the generated-code comment
+// `go help generate` describes before its package clause. It asks
+// go/parser and go/ast, whose rule it is, rather than matching lines:
+// a "package" opening a line of a block comment is not the clause, and
+// "package\tapp" is, so a header below it does not exempt the file.
+// A file whose clause does not parse counts.
+func isGenerated(src []byte) bool {
+	file, err := parser.ParseFile(token.NewFileSet(), "", src,
+		parser.PackageClauseOnly|parser.ParseComments)
+	return err == nil && ast.IsGenerated(file)
 }
 
 // Check returns one message per violation. A record for a directory

@@ -8,6 +8,9 @@ common step: read a form, render a page, flash a notice, redirect, answer
 a refusal. The route table mounts your actions on a chi router and lists
 what it mounted.
 
+You don't need to rewrite existing handlers: write new routes this way,
+and move old ones when you change them.
+
 `action` is built on [view](/docs/reference/view),
 [flash](/docs/reference/flash), [form](/docs/reference/form) and
 [op](/docs/reference/op), and changes none of them. Your actions are
@@ -17,6 +20,8 @@ generated actions.
 ## An action
 
 ```go
+const tagPage action.Path = "/tags/{id}"
+
 type tagForm struct{ parsed *form.Parsed }
 
 func (again tagForm) ShowAgain(
@@ -27,7 +32,7 @@ func (again tagForm) ShowAgain(
 	})
 }
 
-func (app *app) tagRename(visit *action.Visit) {
+func (app *App) tagRename(visit *action.Visit) {
 	parsed, err := visit.ReadForm(form.Field{Name: "Name", Required: true})
 	if visit.RefusedShowing(err, tagForm{parsed}) {
 		return
@@ -41,13 +46,16 @@ func (app *app) tagRename(visit *action.Visit) {
 		return
 	}
 	visit.Flash("Tag renamed.")
-	visit.Redirect("/tags")
+	visit.Redirect(tagPage.For(id))
 }
 ```
 
 An action does four things in order. It reads the input. It runs one
 operation. It answers a refusal and returns. It says what success looks
-like. Mount it with `routes.Post("/tags/{id}", app.tagRename)`.
+like. Mount it, and the page it redirects to, on the same path:
+
+    routes.Get(tagPage, app.tagShow)
+    routes.Post(tagPage, app.tagRename)
 
 ## Routes
 
@@ -71,21 +79,23 @@ every request the same `Ctx`: one person's actor never reaches the next
 request.
 
 ```go
-func (routes *Routes) Get(path string, handler Handler)
-func (routes *Routes) Post(path string, handler Handler)
-func (routes *Routes) Handle(method, path string, handler http.Handler, name string)
-func (routes *Routes) Mount(prefix string, handler http.Handler, name string)
+func (routes *Routes) Get(path Path, handler Handler)
+func (routes *Routes) Post(path Path, handler Handler)
+func (routes *Routes) Handle(method string, path Path, handler http.Handler, name string)
+func (routes *Routes) Mount(prefix Path, handler http.Handler, name string)
 ```
 
 `Get` and `Post` mount an action. `Handle` mounts an existing
 `net/http` handler for any method. `Mount` hands a whole subtree, such as
 your API, to its own handler. `Handle` and `Mount` take a `name`, because
 a handler of that kind has no function name worth showing in the list.
+Every path is the full path from the root. A quoted string such as
+`"/tags/{id}"` works where a `Path` is asked for.
 
 ```go
 func (routes *Routes) Guard(name string, middleware func(http.Handler) http.Handler)
 func (routes *Routes) Group(mount func(routes *Routes))
-func (routes *Routes) Route(prefix string, mount func(routes *Routes))
+func (routes *Routes) Route(prefix Path, mount func(routes *Routes))
 ```
 
 `Guard` runs middleware before every route mounted after it in the same
@@ -95,11 +105,32 @@ first, because chi would leave that route unguarded without a word.
 routes under a prefix. A guard added inside a `Group` or a `Route` does
 not reach the routes outside it.
 
+Inside a `Route`, still write each path in full, starting with the
+prefix:
+
+```go
+routes.Route("/admin", func(admin *action.Routes) {
+	admin.Guard("admin", app.requireAdmin)
+	admin.Get("/admin", app.adminHome)
+	admin.Get("/admin/tags", app.adminTags)
+})
+```
+
+A path that does not start with the prefix panics when you register it,
+and the message gives the full path to write.
+
+Register each method and path once. A second `Get`, `Post` or `Handle`
+for the same method and path panics, even from another group or `Route`,
+because chi would serve only the second one. Parameter names do not make
+two paths different: `/tags/{id}` and `/tags/{name}` are the same path.
+A pattern does: `/tags/{id}` and `/tags/{id:[0-9]+}` are two.
+
 ```go
 type Route struct {
 	Method  string
 	Path    string
 	Handler string
+	Action  string
 	Guards  []string
 }
 
@@ -107,11 +138,79 @@ func (routes *Routes) List() []Route
 ```
 
 `List` returns every route mounted so far, in the order it was mounted.
-Each `Path` is the full path with its prefixes, and `Guards` names the
-guards that apply. A `Get` or `Post` is listed by its function's name, so
-a method value such as `app.tagRename` appears as `tagRename`. A `Mount`
-is one line, `*` with the path `<prefix>/*`. Read `List` in a test to
-check that an admin route has its guard, without serving a request.
+Each `Path` is the path as you wrote it, and `Guards` names the guards
+that apply. A `Get` or `Post` is listed by its function's name, so a
+method value such as `app.tagRename` appears as `tagRename`. Its `Action`
+is the full name, such as `example.com/app/internal/app.(*App).tagRename`.
+Compare `Action`, not `Handler`, to tell two methods called `Show` apart.
+`Action` is empty for `Handle` and `Mount`. A `Mount` is one line, `*`
+with the path `<prefix>/*`. Read `List` in a test to check that an admin
+route has its guard, without serving a request.
+
+## Naming a path
+
+```go
+type Path string
+
+func (path Path) For(values ...any) string
+```
+
+Name a route's path once, and use the name both to register the route
+and to fill the URL you redirect to:
+
+```go
+const tagPage action.Path = "/tags/{id}"
+
+routes.Get(tagPage, app.tagShow)
+visit.Redirect(tagPage.For(id))
+```
+
+`For` fills the path's parameters with your values, in order. Each value
+is escaped as one part of the path, so `"a/b"` stays one value, and
+`PathValue` gives it back as you passed it. A path with no parameters
+comes back as it is.
+
+`For` panics when the number of values does not match the parameters,
+when the path ends in a `*`, and when a value is empty, `.` or `..`,
+which would send the redirect somewhere else. It also panics on a value
+that chi would read back as a different one:
+
+- A value that contains the character right after its parameter, such as
+  `"a-b"` for `{owner}` in `"/{owner}-{name}"`, or `"a.b"` in
+  `"/x-{id}.json"`. Pass a value without that character, or put a `/`
+  after the parameter.
+- A value that the parameter's pattern does not match, such as `42` for
+  `{name:[a-z]+}`. Pass a value the pattern matches.
+- For a parameter with a pattern, a value that escaping would change,
+  such as `"x y"`. Use only letters, digits, `-` and `_` there, or drop
+  the pattern.
+
+Each is a mistake in the code, so the first test that runs it fails.
+
+## Registering every route
+
+Register every route in one function, in a package under `internal/`:
+
+```go
+func Routes(routes *action.Routes, app *App)
+```
+
+`App` can be any exported type in that package, or a pointer to one.
+Your app calls `Routes` with its real dependencies when it serves.
+[`rastrillo routes`](/docs/cli#rastrillo-routes) calls it with a
+recorder and an empty `App` to print the route table, so `Routes` must
+only register: no queries, no network calls, nothing built. Code that
+runs when the package loads must not need the app's dependencies either.
+
+```go
+func NewRecorder() *Routes
+```
+
+`NewRecorder` returns a route table that records what you register and
+serves nothing. It never builds a guard or calls a handler, so `Routes`
+can run on it with an empty `App`. `List` reports what a real table
+would. It refuses what chi would refuse, such as the same prefix mounted
+twice, so an app that lists cleanly also starts.
 
 ## Visit
 
@@ -141,7 +240,8 @@ func (visit *Visit) PathID(name string) (int64, error)
 ```
 
 `PathValue` reads a URL parameter, from chi first and then from the
-request's own path values. `PathID` reads a row id. An id that is not a
+request's own path values. A value that `For` filled comes back as it
+was given, even one with `/` or `%` in it. `PathID` reads a row id. An id that is not a
 whole number above zero returns `op.NotFound`, so the person sees the 404
 page, not a 400.
 

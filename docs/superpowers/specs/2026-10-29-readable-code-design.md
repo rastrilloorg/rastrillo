@@ -365,6 +365,17 @@ refuses to overwrite ceilings that already exist, so it cannot be used
 to wave new violations through. The CHANGELOG says how. Patrix's step
 starts with it.
 
+**Amended in step 4 (2026-10-31, ruled by Paul): adoption is by hand.**
+There is no command of its own. `rastrillo budget code --init` already
+writes the starting records and refuses when the file exists, and the
+first adopters are new apps, which have the gates from the start, and
+Patrix in step 9. An existing app adopts the rules going forward and
+does not rewrite what works: it runs `rastrillo budget code --init`,
+adds the `code` lane to `make ci`, and adds the `routes` lane only
+after it has a `Routes` function, because `routes --check` fails when
+it cannot find one. The CHANGELOG says so. If adopting by hand proves
+error-prone, a small installer can follow.
+
 `SKILL.md` is byte-budgeted (`skillmd_test.go`). Per `AGENTS.md`, if
 the new section does not fit, trim redundant prose or raise the ceiling
 in the test with the reason; never cut a load-bearing fact to fit.
@@ -413,11 +424,19 @@ proved before anything enforces it.
    for invalid forms, and the deprecation warning.
 6. **The canonical example.** `examples/blog` and `examples/helloworld`
    moved to the route table and rewritten; the guidance points at them.
+   `skill/live.md` moves here too, deferred from step 4, with
+   `examples/notes` that it is modelled on. Its render path,
+   `ui.Pages.Render` with a `data(takeFlash)` callback, cannot go
+   through `visit.Render` yet. Its mounting is not a word swap either:
+   a top-level `Guard` after `routes.Mount` panics, so "the first
+   `r.Use`" becomes a guard inside the page group, with a test.
+   `skillmd_test.go` exempts it from the net/http phrases until then.
 7. **The framework pass.** Rename and split Rastrillo's own code,
    lowering the ceilings. This can be many small branches.
 8. **The CARLOS skill line**, once step 2 has landed.
 9. **Patrix, as the proof**, on a Patrix branch once it pins a
-   Rastrillo with steps 1 to 3. It starts with `rastrillo gates init`.
+   Rastrillo with steps 1 to 3. It starts with `rastrillo budget code
+   --init` (adoption by hand, as amended in step 4).
    Then `tagSave` as in the spike, and `saveEntry` split by the table
    below. Then the other handlers over 40 lines (`settingsSave`,
    `redirectSave`, `invite`, `storeUpload`, `renderDashboard`,
@@ -583,7 +602,8 @@ Not discussed with Paul; listed here so Paul can check them.
   underneath, and nothing is removed.
 - `t`, `b`, `f` and one-capital type parameters are exempt from rule 1.
 - Existing apps opt in to the gates through a command of its own, not
-  `doctor --fix`.
+  `doctor --fix`. Amended in step 4: by hand, with `budget code --init`
+  (see "Where the rules live").
 - The refusal helper is two calls, and `Visit` carries no app
   dependencies (both from the focus group).
 - Named paths are in scope, as step 3 (from the focus group).

@@ -1,0 +1,42 @@
+//go:build browser
+
+// The browser drive: the whole app in a real Chromium, loud on any
+// console error or failed request. With no browser it fails, unless
+// RASTRILLO_BROWSER_OPTIONAL is set. README.md says how to run it.
+package %[2]stest
+
+import (
+	"io"
+	"log/slog"
+	"net/http"
+	"path/filepath"
+	"testing"
+
+	"amadan.net/rastrillo/rastrillo/db"
+	"amadan.net/rastrillo/rastrillo/harness"
+	"github.com/chromedp/chromedp"
+
+	"%[1]s/internal/%[2]s"
+)
+
+// TestBrowserWalk opens the home screen. Each screen a flow reaches gets
+// a Screen line, and each expected probe, such as a 401, a rig.Allow.
+func TestBrowserWalk(t *testing.T) {
+	rig := harness.New(t, func(origin string) http.Handler {
+		logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+		path := filepath.Join(t.TempDir(), "app.db")
+		database, err := db.Open(path, logger)
+		if err != nil {
+			t.Fatalf("db.Open: %%v", err)
+		}
+		t.Cleanup(func() { database.Close() })
+		mux, err := %[2]s.New(
+			database, origin, logger)
+		if err != nil {
+			t.Fatalf("New: %%v", err)
+		}
+		return mux
+	})
+	rig.Run(chromedp.Navigate(rig.Origin + "/"))
+	rig.Screen("body", "home")
+}

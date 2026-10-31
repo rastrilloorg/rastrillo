@@ -45,9 +45,9 @@ func tenant(t *testing.T, slug string, mode basepath.DirectHost, origin string) 
 		t.Fatalf("db.Open: %v", err)
 	}
 	t.Cleanup(func() { d.Close() })
-	mux, err := walkapp.App(d, origin, logger)
+	mux, err := walkapp.New(d, origin, logger)
 	if err != nil {
-		t.Fatalf("App: %v", err)
+		t.Fatalf("New: %v", err)
 	}
 	opts := rastrillo.Options{Logger: logger, Locales: genlocales.Locales, DefaultLocale: genlocales.DefaultLocale,
 		BasePath: basepath.Config{Origin: origin, Slug: slug, DirectHost: mode}}

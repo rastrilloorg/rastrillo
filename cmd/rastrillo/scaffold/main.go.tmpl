@@ -1,0 +1,66 @@
+// Command %[1]s serves the app:
+// resolve the platform's activation argv, open the database, build the
+// app, serve.
+package main
+
+import (
+	"log/slog"
+	"os"
+	"time"
+
+	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/basepath"
+	"amadan.net/rastrillo/rastrillo/db"
+
+	genlocales "%[1]s/gen/locales"
+	"%[1]s/internal/%[2]s"
+)
+
+func main() {
+	// First, so perf's cold budget counts the whole start.
+	started := time.Now()
+	logger := slog.New(slog.NewTextHandler(os.Stderr, nil))
+	options, err := rastrillo.Resolve(rastrillo.Options{
+		DBPath:        "%[1]s.db",
+		Logger:        logger,
+		Locales:       genlocales.Locales,
+		DefaultLocale: genlocales.DefaultLocale,
+	})
+	exitOnError(logger, "resolve activation", err)
+	database, err := db.Open(options.DBPath, logger)
+	exitOnError(logger, "open database", err)
+	defer database.Close()
+	origin := originFrom(logger)
+	// RASTRILLO_SLUG serves under /<slug>; README.md's Deploy says more.
+	options.BasePath, err = basepath.FromEnv(origin, os.Getenv)
+	exitOnError(logger, "base path", err)
+	if options.BasePath.Enabled() {
+		logger.Info("base path", "path", "/"+options.BasePath.Slug)
+	}
+	mux, err := %[2]s.New(
+		database, origin, logger)
+	exitOnError(logger, "build app", err)
+	%[2]s.Configure(&options, mux, started)
+	// The app opened the database itself: Serve must not open another.
+	options.DBPath = ""
+	exitOnError(logger, "serve", rastrillo.Serve(options))
+}
+
+// originFrom is the app's external origin, which the CSRF check compares
+// with. A missing one is loud: a quiet default in production is a bug.
+func originFrom(logger *slog.Logger) string {
+	const variable = "%[3]s_ORIGIN"
+	origin := os.Getenv(variable)
+	if origin == "" {
+		origin = "http://localhost:8080"
+		logger.Warn(variable+" not set; defaulting", "origin", origin)
+	}
+	return origin
+}
+
+func exitOnError(logger *slog.Logger, step string, err error) {
+	if err != nil {
+		logger.Error(step, "err", err)
+		os.Exit(1)
+	}
+}

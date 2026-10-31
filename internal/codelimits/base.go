@@ -39,12 +39,13 @@ func CompareWithBase(current, base *File) []string {
 // LoadBase reads the module's file as the branch's base had it: the
 // merge base of HEAD and origin/main. The note it returns is a sentence
 // for the person running the gate, and is one of two kinds. With no file,
-// it says why there is nothing to compare with: there is no origin/main,
-// or the base has no records file. With a file, it says the comparison is
-// with origin/main's tip, because the checkout is shallow and has no merge
-// base to find. Anything else that goes wrong (git missing, a root that is
-// not there, histories with nothing in common in a full clone) is an
-// error, because skipping would turn the ratchet off unseen.
+// it says why there is nothing to compare with: there is no repository,
+// no origin/main, or the base has no records file. With a file, it says
+// the comparison is with origin/main's tip, because the checkout is
+// shallow and has no merge base to find. Anything else that goes wrong
+// (git missing, a root that is not there, histories with nothing in
+// common in a full clone) is an error, because skipping would turn the
+// ratchet off unseen.
 //
 // The file is named relative to root, not to the top of the repository,
 // since root may be a nested module: git resolves "./" from the directory
@@ -53,6 +54,9 @@ func LoadBase(root string) (file *File, note string, err error) {
 	_, err = gitOutput(root, "rev-parse", "--verify", "--quiet", "origin/main")
 	if exitCode(err) == 1 {
 		return nil, NoOrigin, nil
+	}
+	if outsideRepository(err) {
+		return nil, NotARepository, nil
 	}
 	if err != nil {
 		return nil, "", err
@@ -98,6 +102,19 @@ func baseRevision(root string) (revision, note string, err error) {
 	return "origin/main", ShallowTip, nil
 }
 
+// outsideRepository is git finding no repository at all. A broken one
+// also exits 128 but says something else, and stays an error.
+func outsideRepository(err error) bool {
+	return exitCode(err) == 128 && saysNoRepository(err.Error())
+}
+
+// saysNoRepository reads both of git's endings, "(or any of the parent
+// directories)" and, at a filesystem boundary, "(or any parent up to
+// mount point". A .git file pointing nowhere says "not a git repository:".
+func saysNoRepository(message string) bool {
+	return strings.Contains(message, "not a git repository (or any ")
+}
+
 // exitCode is git's exit status, or -1 when git did not run to one.
 func exitCode(err error) int {
 	var exit *exec.ExitError
@@ -117,6 +134,8 @@ func gitOutput(directory string, arguments ...string) (string, error) {
 		return strings.HasPrefix(entry, "GIT_DIR=") ||
 			strings.HasPrefix(entry, "GIT_WORK_TREE=")
 	})
+	// In English, so outsideRepository can read it in any locale.
+	command.Env = append(command.Env, "LC_ALL=C")
 	output, err := command.Output()
 	if err != nil {
 		return "", gitFailed(arguments, err, stderrOf(err))

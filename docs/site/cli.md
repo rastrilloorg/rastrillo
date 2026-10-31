@@ -1,6 +1,6 @@
 # 🤖 The CLI
 
-One binary, ten commands. Install it with:
+One binary, eleven commands. Install it with:
 
 ```sh
 go install amadan.net/rastrillo/rastrillo/cmd/rastrillo@latest
@@ -18,7 +18,11 @@ rastrillo new [--icons=<set>] [--icon-delivery=<mode>] [--ux=<profile>]
 
 Scaffolds a complete app in `./<name>` — one that compiles, passes its
 own tests, and serves, before you have written anything. It runs
-`generate` once on the way out so `go build` works immediately.
+`generate` once on the way out so `go build` works immediately. Then it
+runs `go mod tidy` in the app and compiles its templates, so the app
+starts with its `rastrillo_templates_gen.go`. If that cannot run, for
+example offline, `new` still succeeds and prints a line telling you to
+run `rastrillo generate` after `go mod tidy`.
 
 | Flag | Values | Default |
 |---|---|---|
@@ -66,7 +70,7 @@ switcher. Add more later; see [Localization](/docs/localization#declaring).
 ## rastrillo generate
 
 ```sh
-rastrillo generate [--check] [--accept-breaking] [dir]
+rastrillo generate [--check] [--accept-breaking] [--templates=false] [dir]
 ```
 
 Walks `actions/` and `manifest/` and emits `gen/`: the router on a Go
@@ -105,6 +109,20 @@ over a break on purpose, run `rastrillo generate --accept-breaking`; the
 diff shows the break in review. `--check` fails if the file is missing
 or stale, and never writes it.
 
+Last, `generate` compiles your templates to Go, manifests or not. It
+starts each program under `cmd/` that uses templates, records the
+template sets it builds, and writes `rastrillo_templates_gen.go` into
+each package that builds one. Commit those files. A template it cannot
+compile, or a program that cannot start this way, gets one line, and
+those templates render through `html/template` as before. See
+[tmpl](/docs/reference/tmpl). Pass `--templates=false` to skip this step.
+
+`--check` fails when a `rastrillo_templates_gen.go` is missing or out of
+date with your templates. It also fails when a program cannot start
+this way and imports a package with a `rastrillo_templates_gen.go`,
+because it cannot check that file. Fix what stops the program, or run
+`--check` where it can start.
+
 ## rastrillo dev
 
 ```sh
@@ -115,6 +133,13 @@ The watch loop: polls `app/`, `actions/`, `manifest/`, `cmd/`,
 `locales/` and `templates/`, and on any change reruns `generate`,
 rebuilds `./cmd/<name>` to a temporary binary, and restarts the process
 with a graceful SIGTERM. Anything after `--` is passed to your app.
+
+`dev` leaves compiled templates out. It runs
+`generate --templates=false` and builds with `-tags rastrillo_dev`, so
+every page renders through `html/template` from the files on disk, and
+a compiled file that no longer fits your code cannot break the build.
+Run `rastrillo generate` before you commit: `generate --check` fails
+until you do.
 
 A failed generate or rebuild keeps the previous build serving, and a
 failed restart keeps the loop watching — either way the next save
@@ -558,8 +583,9 @@ rastrillo budget test [-no-time] [-require TestA,TestB] [go test arguments]
 
 `budget size` counts the lines in each directory of the module at `dir`
 (default `.`) and holds them to 5,000 lines of code and 8,000 of tests,
-minus the exceptions in `.rastrillo/budgets.txt`. It stops at a nested
-module, which has its own budget. It exits 1 when something is over and 2
+minus the exceptions in `.rastrillo/budgets.txt`. It leaves out generated
+files, the ones whose first lines say `// Code generated ... DO NOT EDIT.`.
+It stops at a nested module, which has its own budget. It exits 1 when something is over and 2
 when `budgets.txt` cannot be read.
 
 `budget code` holds the Go code of the module at `dir` (default `.`) to
@@ -570,6 +596,8 @@ types, and a one-capital-letter type parameter. Tests are held to the
 columns and names limits only. Generated files are skipped, and a file
 marked `//rastrillo:data <reason>` above its package clause is a table, so
 it is not held to columns or length.
+A file marked `//rastrillo:vendored <source>`, a copy of code from
+elsewhere, is skipped like a generated one.
 
 `.rastrillo/code.txt` records the offences the code already had. A new
 offence fails, and so does a record that is looser than the code: lower
@@ -592,6 +620,74 @@ in the run, so a lane cannot go green having run nothing.
 The scaffold's `make budget`, `make test` and `make perf` call `budget size`
 and `budget test`.
 [Testing](/docs/testing) explains the budgets.
+
+## rastrillo routes
+
+```sh
+rastrillo routes [--package path] [--check] [dir]
+```
+
+Prints the routes of the app at `dir` (default `.`), one a line, in the
+order they are registered: the method, the full path, the action and the
+guards. The last line is a reminder of what guards do not decide.
+
+```
+GET   /           app.(*App).index
+GET   /tags       app.(*App).tagList
+POST  /tags/{id}  app.(*App).tagRename  signedIn
+GET   /admin      app.(*App).adminHome  admin
+*     /api/*      api
+
+Guards are page middleware. An operation's Authorize can still refuse a request that passes them.
+```
+
+It does not start the app. It calls the app's `Routes` function with an
+empty `App` and a table that only records. Write the function in a
+package under `internal/`:
+
+```go
+func Routes(routes *action.Routes, app *App)
+```
+
+`App` can be any exported type in that package, or a pointer to one.
+`Routes` must only register routes: no queries, no network calls,
+nothing built. See [action](/docs/reference/action#registering-every-route).
+
+To call it, `routes` builds a small program inside your module with the
+go command's `-overlay`, and runs it. Nothing is written into the app,
+and `go.mod` and `go.sum` stay as they are. What the app prints while it
+starts goes to standard error, so the table on standard output stays
+clean.
+
+If your module has `vendor/modules.txt`, `routes` builds with your
+vendored code, as `go build` does, and needs no network. Otherwise it
+uses the module cache and changes neither `go.mod` nor `go.sum`.
+
+| Flag | Purpose |
+|---|---|
+| `--package` | The import path of the package whose `Routes` to call, when more than one package has one |
+| `--check` | Also fail for each action no route mounts |
+
+`--check` finds every action in the module: each function or method that
+takes one `*action.Visit` and returns nothing. It names each one that no
+route mounts. Mount it in `Routes`, or delete it. An action mounted
+through an interface value counts as not mounted: mount the method on
+its type instead.
+
+`routes` refuses to run, and exits 1, in three cases:
+
+- In a Go workspace, because Go may write `go.work.sum` there. Run it
+  with `GOWORK=off`, or outside the workspace.
+- On a system other than Linux and macOS, where it cannot promise to
+  stop and clean up what it starts.
+- When `Routes` is in a package below a second `internal` directory,
+  such as `internal/feature/internal/web`. The program it builds cannot
+  import that package. Move `Routes` to a package under the top-level
+  `internal/`.
+
+Exits 1 when the routes cannot be listed, or when `--check` finds an
+action no route mounts, and 2 when the arguments are wrong. Ctrl-C stops
+it and removes what it built.
 
 ## rastrillo session-key
 

@@ -1,0 +1,111 @@
+APP := %[1]s
+
+# govulncheck judges this Go's standard library, and release ships it:
+# raise it with each Go security release. A plain =: Go's images set
+# GOTOOLCHAIN=local, and ?= would quietly keep their Go instead.
+# For one run: make ci GOTOOLCHAIN=local
+export GOTOOLCHAIN = %[5]s
+
+# carlos ship -target's default: a build for this machine fails there.
+# For one release: make release RELEASE_GOARCH=amd64
+RELEASE_GOOS   ?= linux
+RELEASE_GOARCH ?= arm64
+RELEASE_BIN := releases/$(APP)-$(RELEASE_GOOS)-$(RELEASE_GOARCH)
+
+# GET /api/version reports it, so a deploy can tell which release runs.
+VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null)
+
+# One target at a time: the perf lane measures time.
+.NOTPARALLEL:
+
+.PHONY: build release version-check test vet fmt-check staticcheck govulncheck gitleaks budget code routes perf migration-check generate-check ci
+
+# Needs only Go on PATH, through go.mod's tool line.
+RASTRILLO := go run amadan.net/rastrillo/rastrillo/cmd/rastrillo
+
+build:
+	CGO_ENABLED=0 go build ./...
+
+# -s -w takes a quarter off the binary; panic traces keep their lines.
+release: version-check
+	@mkdir -p releases
+	CGO_ENABLED=0 GOOS=$(RELEASE_GOOS) GOARCH=$(RELEASE_GOARCH) \
+		go build -ldflags="-s -w -X 'amadan.net/rastrillo/rastrillo.BuildVersion=$(VERSION)'" \
+		-o $(RELEASE_BIN) ./cmd/$(APP)
+	@echo
+	@echo "built $(RELEASE_BIN) reporting version $(VERSION)"
+	@echo "ship it with:"
+	@echo "  carlos ship -app $(APP) -target $(RELEASE_GOOS)-$(RELEASE_GOARCH) $(RELEASE_BIN)"
+
+# An empty or -dirty stamp names no one binary, so the deploy check
+# could pass a stale one.
+version-check:
+	@if [ -z "$(VERSION)" ]; then \
+		echo "make release: no version to stamp."; \
+		echo "  git describe found nothing here: no repository, or no commit yet."; \
+		echo "  Commit, or name it:  make release VERSION=v0.1.0"; \
+		exit 1; \
+	fi
+	@case "$(VERSION)" in *-dirty) \
+		echo "make release: the tree is dirty, so $(VERSION) does not name what you are about to ship."; \
+		echo "  Commit or stash first, or name it:  make release VERSION=v0.1.0-wip"; \
+		exit 1;; \
+	esac
+
+budget:
+	$(RASTRILLO) budget size
+
+code:
+	$(RASTRILLO) budget code
+
+routes:
+	$(RASTRILLO) routes --check
+
+# Timing fails only on CI (AMADAN_CI or CI set); here it reports.
+test:
+	$(RASTRILLO) budget test ./...
+
+# Serial and uncached, or it times other work or a cache.
+perf:
+	$(RASTRILLO) budget test -no-time -require TestPerfScreens,TestPerfBoot -tags perf -count=1 -p 1 -parallel 1 -run '^TestPerf' ./...
+
+vet:
+	go vet ./...
+
+fmt-check:
+	@out=$$(gofmt -l .); if [ -n "$$out" ]; then echo "gofmt needed:"; echo "$$out"; exit 1; fi
+
+# At a version, not a tool line, which would move the app's own modules.
+# Raise it with the go directive. The cache: a runner's ~/.cache may be
+# read-only.
+STATICCHECK := honnef.co/go/tools/cmd/staticcheck@%[2]s
+ifneq ($(filter /%%,$(firstword $(GOCACHE))),)
+export STATICCHECK_CACHE ?= $(GOCACHE)/staticcheck
+endif
+
+staticcheck:
+	go run $(STATICCHECK) -tags browser,perf ./...
+
+# The live database, so it can fail with no change here. Fix a module in
+# go.mod, the standard library with GOTOOLCHAIN.
+GOVULNCHECK := golang.org/x/vuln/cmd/govulncheck@%[3]s
+govulncheck:
+	go run $(GOVULNCHECK) ./...
+
+# Every commit, and only at the root of this app's own repository.
+GITLEAKS := github.com/zricethezav/gitleaks/v8@%[4]s
+gitleaks:
+	@if [ "$$(git rev-parse --is-inside-work-tree 2>/dev/null)" = true ] && [ -z "$$(git rev-parse --show-prefix)" ]; then \
+		go run $(GITLEAKS) git --no-banner --redact .; \
+	else \
+		echo "gitleaks: this directory is not the root of a git repository, so there is nothing committed to scan"; \
+	fi
+
+migration-check:
+	go run amadan.net/rastrillo/rastrillo/cmd/rastrillo migration check
+
+generate-check:
+	$(RASTRILLO) generate --check
+
+# The one gate. .amadan/ci.d/ runs it a step per target: add to both.
+ci: vet fmt-check staticcheck govulncheck gitleaks budget code routes test perf migration-check generate-check

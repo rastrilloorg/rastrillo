@@ -17,6 +17,8 @@ staticcheck, govulncheck and gitleaks, pinned in the Makefile along with
 the Go release (`GOTOOLCHAIN`); raise the tool pins with the go
 directive, and `GOTOOLCHAIN` with each Go security release. `rastrillo
 dev` watches, regenerates, rebuilds and restarts.
+After editing templates, run `rastrillo generate` and commit
+`rastrillo_templates_gen.go`: `generate --check` fails until you do.
 docs/site/getting-started.md
 
 `rastrillo doctor [--fix]` compares `static/`'s vendored files with the

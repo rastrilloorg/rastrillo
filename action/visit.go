@@ -3,6 +3,7 @@ package action
 import (
 	"context"
 	"net/http"
+	"net/url"
 	"strconv"
 
 	"amadan.net/rastrillo/rastrillo"
@@ -59,11 +60,26 @@ func (visit *Visit) Context() context.Context {
 // PathValue reads chi's URL parameter first, because the generated
 // router is chi. It falls back to the request's own path value so that
 // a handler mounted on a plain ServeMux pattern still finds its id.
+//
+// chi matches the escaped path when the request has one (RawPath: the
+// URL came escaped, or basepath set it) and the decoded path when it
+// does not. So the value is unescaped then and only then: unescaping a
+// value chi read decoded would turn a literal "%2F" into "/". A value
+// that does not unescape is returned as it came, and PathID finds no
+// id in it.
 func (visit *Visit) PathValue(name string) string {
-	if value := chi.URLParam(visit.request, name); value != "" {
+	value := chi.URLParam(visit.request, name)
+	if value == "" {
+		return visit.request.PathValue(name)
+	}
+	if visit.request.URL.RawPath == "" {
 		return value
 	}
-	return visit.request.PathValue(name)
+	unescaped, err := url.PathUnescape(value)
+	if err != nil {
+		return value
+	}
+	return unescaped
 }
 
 // PathID reads a row id from the path. A malformed or non-positive id is

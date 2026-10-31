@@ -17,33 +17,34 @@ import (
 )
 
 // outbox is the mail.Sender the tests hand the app: it keeps each
-// message so a test can open the link it carries.
+// message, so a test can open the link it carries.
 type outbox struct {
-	mu     sync.Mutex
+	lock   sync.Mutex
 	bodies []string
 }
 
-func (o *outbox) Send(_ context.Context, _, _, body string) error {
-	o.mu.Lock()
-	defer o.mu.Unlock()
-	o.bodies = append(o.bodies, body)
+func (box *outbox) Send(_ context.Context, _, _, body string) error {
+	box.lock.Lock()
+	defer box.lock.Unlock()
+	box.bodies = append(box.bodies, body)
 	return nil
 }
 
 var (
-	linkRE         = regexp.MustCompile(`/auth/verify\?token=[A-Za-z0-9_-]+`)
-	confirmTokenRE = regexp.MustCompile(`name="token" value="([^"]+)"`)
-	confirmFormRE  = regexp.MustCompile(`<form[^>]*method="post"[^>]*action="([^"]+)"|<form[^>]*action="([^"]+)"[^>]*method="post"`)
+	linkPattern    = regexp.MustCompile(`/auth/verify\?token=[A-Za-z0-9_-]+`)
+	confirmPattern = regexp.MustCompile(`name="token" value="([^"]+)"`)
+	formPattern    = regexp.MustCompile(`<form[^>]*method="post"[^>]*` +
+		`action="([^"]+)"|<form[^>]*action="([^"]+)"[^>]*method="post"`)
 )
 
 // link is the newest sign-in link the outbox holds.
-func (o *outbox) link(t *testing.T) string {
+func (box *outbox) link(t *testing.T) string {
 	t.Helper()
-	o.mu.Lock()
-	defer o.mu.Unlock()
-	for i := len(o.bodies) - 1; i >= 0; i-- {
-		if l := linkRE.FindString(o.bodies[i]); l != "" {
-			return l
+	box.lock.Lock()
+	defer box.lock.Unlock()
+	for index := len(box.bodies) - 1; index >= 0; index-- {
+		if link := linkPattern.FindString(box.bodies[index]); link != "" {
+			return link
 		}
 	}
 	t.Fatal("no sign-in link was emailed")
@@ -52,84 +53,111 @@ func (o *outbox) link(t *testing.T) string {
 
 // signIn signs address in through the real screen and the emailed
 // link, and returns the session cookie.
-func signIn(t *testing.T, h http.Handler, box *outbox, address string) *http.Cookie {
+func signIn(
+	t *testing.T, handler http.Handler, box *outbox, address string,
+) *http.Cookie {
 	t.Helper()
-	page := get(t, h, "/signin")
-	time.Sleep(600 * time.Millisecond) // past the guard's MinAge
-	// force=1 sends a link even where the address could use keymail.
-	if rec := post(t, h, "/signin", powtest.Fill(t, page.Body.Bytes(), url.Values{"address": {address}, "force": {"1"}})); rec.Code != http.StatusSeeOther {
-		t.Fatalf("POST /signin = %d, want 303:\n%s", rec.Code, rec.Body)
-	}
-	// Open the emailed link as a person does: its page shows a Sign in
-	// button, and that button's form is what redeems the link.
+	askForLink(t, handler, address)
+	// Open the link as a person does: its page shows a Sign in button,
+	// and that button's form is what redeems the link.
 	link := box.link(t)
-	confirm := get(t, h, link)
-	m := confirmTokenRE.FindStringSubmatch(confirm.Body.String())
-	f := confirmFormRE.FindStringSubmatch(confirm.Body.String())
-	if confirm.Code != http.StatusOK || m == nil || f == nil {
-		t.Fatalf("GET %s = %d, want 200 with a Sign in form:\n%s", link, confirm.Code, confirm.Body)
+	confirm := get(t, handler, link)
+	token := confirmPattern.FindStringSubmatch(confirm.Body.String())
+	form := formPattern.FindStringSubmatch(confirm.Body.String())
+	if confirm.Code != http.StatusOK || token == nil || form == nil {
+		t.Fatalf("GET %s = %d, want 200 with a Sign in form:\n%s",
+			link, confirm.Code, confirm.Body)
 	}
-	action := html.UnescapeString(f[1] + f[2])
-	rec := post(t, h, action, url.Values{"token": {html.UnescapeString(m[1])}})
-	if rec.Code != http.StatusSeeOther {
-		t.Fatalf("POST %s = %d, want 303", action, rec.Code)
+	action := html.UnescapeString(form[1] + form[2])
+	recorder := post(t, handler, action,
+		url.Values{"token": {html.UnescapeString(token[1])}})
+	if recorder.Code != http.StatusSeeOther {
+		t.Fatalf("POST %s = %d, want 303", action, recorder.Code)
 	}
-	for _, c := range rec.Result().Cookies() {
-		if strings.Contains(c.Name, "session") && c.Value != "" {
-			return c
+	for _, cookie := range recorder.Result().Cookies() {
+		if strings.Contains(cookie.Name, "session") && cookie.Value != "" {
+			return cookie
 		}
 	}
 	t.Fatal("redeeming the link set no session cookie")
 	return nil
 }
 
-// signInOver is signIn over HTTP, for the perf test's Signin. Every
-// POST carries Origin: testOrigin, the origin the app was built with,
-// not base: csrf.Protect compares with the app's origin.
-func signInOver(t *testing.T, c *http.Client, base string, box *outbox, address string) {
+// askForLink fills in the sign-in screen, proof of work included.
+func askForLink(t *testing.T, handler http.Handler, address string) {
 	t.Helper()
-	resp, err := c.Get(base + "/signin")
+	page := get(t, handler, "/signin")
+	time.Sleep(600 * time.Millisecond) // past the guard's MinAge
+	// force=1 sends a link even where the address could use keymail.
+	form := powtest.Fill(t, page.Body.Bytes(),
+		url.Values{"address": {address}, "force": {"1"}})
+	if recorder := post(t, handler, "/signin", form); recorder.Code !=
+		http.StatusSeeOther {
+		t.Fatalf("POST /signin = %d, want 303:\n%s", recorder.Code,
+			recorder.Body)
+	}
+}
+
+// signInOver is signIn over HTTP, for the perf test's Signin. Every POST
+// carries testOrigin, the app's origin, which csrf.Protect compares with.
+func signInOver(
+	t *testing.T, client *http.Client, base string, box *outbox,
+	address string,
+) {
+	t.Helper()
+	response, err := client.Get(base + "/signin")
 	if err != nil {
 		t.Fatal(err)
 	}
-	page, _ := io.ReadAll(resp.Body)
-	resp.Body.Close()
+	page, _ := io.ReadAll(response.Body)
+	response.Body.Close()
 	time.Sleep(600 * time.Millisecond)
-	postOver(t, c, base+"/signin", powtest.Fill(t, page, url.Values{"address": {address}, "force": {"1"}}))
+	postOver(t, client, base+"/signin", powtest.Fill(t, page,
+		url.Values{"address": {address}, "force": {"1"}}))
 	link, _ := url.Parse(box.link(t))
-	postOver(t, c, base+link.Path, url.Values{"token": {link.Query().Get("token")}})
+	postOver(t, client, base+link.Path,
+		url.Values{"token": {link.Query().Get("token")}})
 }
 
-func postOver(t *testing.T, c *http.Client, target string, form url.Values) {
+func postOver(
+	t *testing.T, client *http.Client, target string, form url.Values,
+) {
 	t.Helper()
-	req, _ := http.NewRequest(http.MethodPost, target, strings.NewReader(form.Encode()))
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	req.Header.Set("Origin", testOrigin)
-	resp, err := c.Do(req)
+	request, _ := http.NewRequest(http.MethodPost, target,
+		strings.NewReader(form.Encode()))
+	request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	request.Header.Set("Origin", testOrigin)
+	response, err := client.Do(request)
 	if err != nil {
 		t.Fatal(err)
 	}
-	resp.Body.Close()
+	response.Body.Close()
 }
 
-func getAs(t *testing.T, h http.Handler, target string, c *http.Cookie) *httptest.ResponseRecorder {
+func getAs(
+	t *testing.T, handler http.Handler, target string, cookie *http.Cookie,
+) *httptest.ResponseRecorder {
 	t.Helper()
-	req := httptest.NewRequest(http.MethodGet, target, nil)
-	req.AddCookie(c)
-	rec := httptest.NewRecorder()
-	h.ServeHTTP(rec, req)
-	return rec
+	request := httptest.NewRequest(http.MethodGet, target, nil)
+	request.AddCookie(cookie)
+	recorder := httptest.NewRecorder()
+	handler.ServeHTTP(recorder, request)
+	return recorder
 }
 
 func TestSignInByEmailedLink(t *testing.T) {
 	t.Parallel()
-	h, box := newAppWithMail(t)
-	if rec := get(t, h, "/account"); rec.Code != http.StatusSeeOther {
-		t.Fatalf("signed-out /account = %d, want 303 to the sign-in screen", rec.Code)
+	handler, box := newAppWithMail(t)
+	if recorder := get(t, handler, "/account"); recorder.Code !=
+		http.StatusSeeOther {
+		t.Fatalf("signed-out /account = %d, want 303 to sign in",
+			recorder.Code)
 	}
-	c := signIn(t, h, box, "ada@example.com")
-	rec := getAs(t, h, "/account", c)
-	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `action="/signout"`) {
-		t.Fatalf("signed-in /account = %d, want 200 with a sign-out form:\n%s", rec.Code, rec.Body)
+	cookie := signIn(t, handler, box, "ada@example.com")
+	recorder := getAs(t, handler, "/account", cookie)
+	if recorder.Code != http.StatusOK ||
+		!strings.Contains(recorder.Body.String(), `action="/signout"`) {
+		t.Fatalf("signed-in /account = %d, want 200 with a sign-out form:\n%s",
+			recorder.Code, recorder.Body)
 	}
 }
