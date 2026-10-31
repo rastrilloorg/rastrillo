@@ -10,13 +10,17 @@ import (
 // be reviewed in one place. Each says what is wrong, where, and what to
 // do about it.
 
-// NoOrigin and NoRecordsAtBase are said once when the comparison with
-// the base is skipped, one for each reason it can be.
+// NoOrigin, NoRecordsAtBase and NotARepository are said once when the
+// comparison with the base is skipped, one for each reason it can be.
 const (
 	NoOrigin = "No origin/main to compare with: skipping the check that " +
 		"records only go down."
 	NoRecordsAtBase = "The base has no " + FileName + ": skipping the " +
 		"check that records only go down."
+	// NotARepository is said by a new app's first make ci, before git
+	// init.
+	NotARepository = "Not in a git repository: skipping the check that " +
+		"records only go down."
 	// ShallowTip is said when the comparison is made, but against the
 	// tip of origin/main.
 	ShallowTip = "This checkout is shallow, so records are compared with " +

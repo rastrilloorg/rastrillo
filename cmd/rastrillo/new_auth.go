@@ -14,253 +14,387 @@ import (
 // was: accounts are an opt-in, so no existing scaffold changes.
 var authKinds = []string{"none", "magic"}
 
-// applyMagicAuth turns a freshly assembled scaffold into one that signs
+// magicAuth turns a freshly assembled scaffold into one that signs
 // people in by emailed link (rastrillo/auth, with ui's sign-in screen).
-//
-// It is the recipe first applied by hand to a fresh `rastrillo new` app
-// and kept only once that app's whole `make ci` passed, with a test
-// signing in through the emailed link and the perf test measuring an
-// owned page behind that sign-in (discussion #97). Every agent in the
-// skilleval tasks needed sign-in and read examples/notes most to build
-// it; an app that starts with it gives them nothing to look up.
+// It is the recipe first applied by hand to a fresh app and kept once
+// that app's whole make ci passed (discussion #97).
 //
 // It edits the assembled files rather than forking every template, so
 // the default scaffold stays the one template set. Each edit names the
 // text it expects, and a scaffold whose templates moved fails here
 // loudly instead of writing an app that does not build.
-func applyMagicAuth(files map[string]string, name, pkg, appDir string) error {
-	testDir := filepath.Join(name, "internal", pkg+"test")
-	env := strings.ToUpper(pkg)
-	var errs []string
-	swap := func(path, old, new string) {
-		s, ok := files[path]
-		if !ok {
-			errs = append(errs, fmt.Sprintf("%s: not in the scaffold", path))
-			return
-		}
-		if !strings.Contains(s, old) {
-			errs = append(errs, fmt.Sprintf("%s: expected %q", path, firstLine(old)))
-			return
-		}
-		files[path] = strings.Replace(s, old, new, 1)
-	}
-	importAfter := func(path, after string, imports ...string) {
-		var b strings.Builder
-		b.WriteString(after)
-		for _, imp := range imports {
-			b.WriteString("\n\t\"" + imp + "\"")
-		}
-		swap(path, after, b.String())
-	}
-	fill := func(tmpl string) string {
-		return strings.NewReplacer("__PKG__", pkg, "__NAME__", name, "__ENV__", env).Replace(tmpl)
-	}
-
-	// The schema: sessions before auth (auth's backfill reads the sessions
-	// table), pow for the guard's nonces, then what was there.
-	migrations := filepath.Join(appDir, "migrations.go")
-	swap(migrations, "var BootSchema = migrate.Merge(apitoken.Schema, Schema)",
-		"var BootSchema = migrate.Merge(sessions.Schema, auth.Schema, pow.Schema, apitoken.Schema, Schema)")
-	importAfter(migrations, `"amadan.net/rastrillo/rastrillo/apitoken"`,
-		"amadan.net/rastrillo/rastrillo/auth", "amadan.net/rastrillo/rastrillo/pow", "amadan.net/rastrillo/rastrillo/sessions")
-
-	// The example model becomes owned: an Owner column holding the
-	// signed-in address, which the owned seam filters on. The migration
-	// and schema are what `rastrillo migration generate` writes for it.
-	swap(filepath.Join(appDir, "models.go"), "type Note struct {\n\tID        int64\n",
-		"type Note struct {\n\tID        int64\n\tOwner     string `gorm:\"index\"`\n")
-	ownedTable := "CREATE TABLE `notes` (`id` integer PRIMARY KEY AUTOINCREMENT,`owner` text,`title` text,`body` text,`created_at` datetime,`updated_at` datetime);\n\nCREATE INDEX `idx_notes_owner` ON `notes`(`owner`);\n\n"
-	plainTable := "CREATE TABLE `notes` (`id` integer PRIMARY KEY AUTOINCREMENT,`title` text,`body` text,`created_at` datetime,`updated_at` datetime);\n\n"
-	swap(filepath.Join(appDir, "migrations", "0001_init.sql"), plainTable, ownedTable)
-	swap(filepath.Join(appDir, "migrations", "schema.sql"), plainTable, ownedTable)
-
-	// App and Router take the background group (the guard's and the
-	// plugin's sweeps run on it, and shutdown stops it) and the mailer
-	// (main's from the environment, a test's outbox).
-	app := filepath.Join(appDir, "app.go")
-	swap(app, "func App(d *db.DB, origin string, logger *slog.Logger) (*http.ServeMux, error) {",
-		"func App(d *db.DB, origin string, bg *background.Group, mailer mail.Sender, logger *slog.Logger) (*http.ServeMux, error) {")
-	swap(app, "r, err := Router(d, origin, logger)", "r, err := Router(d, origin, bg, mailer, logger)")
-	swap(app, "func Router(d *db.DB, origin string, logger *slog.Logger) (chi.Router, error) {",
-		"func Router(d *db.DB, origin string, bg *background.Group, mailer mail.Sender, logger *slog.Logger) (chi.Router, error) {")
-	swap(app, "\ta := &app{db: d, logger: logger}\n", `	a := &app{db: d, logger: logger}
-	au, guard, err := newAuth(d, origin, mailer)
-	if err != nil {
-		return nil, err
-	}
-	bg.Loop(context.Background(), 10*time.Minute, func() {
-		if err := guard.Sweep(time.Now()); err != nil {
-			logger.Warn("sweep spent sign-in challenges", "err", err)
-		}
-		if err := au.Sweep(time.Now()); err != nil {
-			logger.Warn("sweep expired sign-in links", "err", err)
-		}
-	})
-	a.auth = au
-`)
-	swap(app, "\tr.Use(csrf.Protect(origin))\n", "\tr.Use(csrf.Protect(origin))\n\tr.Use(a.signedIn)\n\tmountAuth(r, au)\n")
-	swap(app, "\treturn r, nil\n}", `	// Owned routes go in this group: a signed-out visitor is sent to the
-	// sign-in screen and comes back here after following the link.
-	r.Group(func(r chi.Router) {
-		r.Use(au.RequireSession)
-		r.Get("/account", a.account)
-	})
-	return r, nil
-}`)
-	importAfter(app, `"amadan.net/rastrillo/rastrillo/csrf"`,
-		"amadan.net/rastrillo/rastrillo/background", "amadan.net/rastrillo/rastrillo/mail")
-
-	handlers := filepath.Join(appDir, "handlers.go")
-	swap(handlers, "\tlogger *slog.Logger\n}", "\tlogger *slog.Logger\n\tauth   *auth.Auth\n}")
-	importAfter(handlers, "import (", "amadan.net/rastrillo/rastrillo/auth")
-
-	// The layout offers Sign out to a signed-in visitor and Sign in to
-	// anyone else, on every page; render tells it which.
-	swap(filepath.Join(appDir, "render.go"),
-		"page[\"L\"], page[\"Locales\"], page[\"Return\"], page[\"Scheme\"], page[\"Base\"] = req.L, req.Locales, req.Return, req.Scheme, req.Base\n",
-		"page[\"L\"], page[\"Locales\"], page[\"Return\"], page[\"Scheme\"], page[\"Base\"] = req.L, req.Locales, req.Return, req.Scheme, req.Base\n\tpage[\"SignedIn\"], _ = r.Context().Value(signedInKey{}).(bool)\n")
-	layout := filepath.Join(appDir, "templates", "layout.html")
-	stageShell := false
-	if s, ok := files[layout]; ok {
-		at := strings.Index(s, `{{block "scheme" .}}`)
-		end := -1
-		if at >= 0 {
-			if menu := strings.Index(s[at:], "scheme-menu"); menu >= 0 {
-				if e := strings.Index(s[at+menu:], "{{end}}"); e >= 0 {
-					end = at + menu + e + len("{{end}}")
-				}
-			}
-		}
-		// The stage shell has no header chrome to sit in: an app built on
-		// it reaches the sign-in screen through its own links.
-		if end < 0 && !strings.Contains(s, `{{block "backdrop"`) {
-			errs = append(errs, layout+": no scheme menu block to sit beside")
-		} else if end < 0 {
-			stageShell = true
-		} else {
-			// Under a base path the hub signs people in and the sign-in plugins
-			// answer 404 here: a root-relative /signin would leave the tenant for
-			// the product's own sign-in screen.
-			files[layout] = s[:end] + `{{if not (opt $ "Base")}}{{$authL := localizer $}}{{if opt $ "SignedIn"}}<form method="post" action="/signout"><button rst-btn>{{T $authL "rastrillo.ui.account_signout"}}</button></form>{{else}}<a href="/signin" rst-btn>{{T $authL "rastrillo.ui.account_signin"}}</a>{{end}}{{end}}` + s[end:]
-		}
-	}
-
-	main := filepath.Join(name, "cmd", name, "main.go")
-	swap(main, fmt.Sprintf("mux, err := %s.App(d, origin, logger)", pkg),
-		fmt.Sprintf("bg := &background.Group{}\n\tmux, err := %s.App(d, origin, bg, mail.FromEnv(%q, logger), logger)", pkg, env))
-	swap(main, fmt.Sprintf("\t%s.Configure(&opts, mux, started)\n", pkg),
-		fmt.Sprintf("\t%s.Configure(&opts, mux, started)\n\topts.Background = bg\n", pkg))
-	importAfter(main, `"amadan.net/rastrillo/rastrillo/db"`,
-		"amadan.net/rastrillo/rastrillo/background", "amadan.net/rastrillo/rastrillo/mail")
-
-	// Every caller in the tests passes a group it stops and a mailer: the
-	// harness an outbox a test can open links from, the rest a logger.
-	harness := filepath.Join(testDir, "harness_test.go")
-	swap(harness, "func newApp(t *testing.T) http.Handler {\n\tt.Helper()\n", `func newApp(t *testing.T) http.Handler {
-	t.Helper()
-	h, _ := newAppWithMail(t)
-	return h
+type magicAuth struct {
+	files    map[string]string
+	name     string
+	pkg      string
+	env      string
+	appDir   string
+	testDir  string
+	problems []string
 }
 
-// newAppWithMail is newApp with the outbox its emailed links land in.
-func newAppWithMail(t *testing.T) (http.Handler, *outbox) {
-	t.Helper()
-`)
-	swap(harness, fmt.Sprintf("\tmux, err := %s.App(d, testOrigin, logger)\n", pkg),
-		fmt.Sprintf("\tbg := &background.Group{}\n\tt.Cleanup(bg.Stop) // runs before d.Close: cleanups run last-in, first-out\n\tbox := &outbox{}\n\tmux, err := %s.App(d, testOrigin, bg, box, logger)\n", pkg))
-	swap(harness, "\treturn mux\n}", "\treturn mux, box\n}")
-	importAfter(harness, `"amadan.net/rastrillo/rastrillo/db"`, "amadan.net/rastrillo/rastrillo/background")
+func applyMagicAuth(
+	files map[string]string, name, pkg, appDir string,
+) error {
+	edit := &magicAuth{
+		files: files, name: name, pkg: pkg, appDir: appDir,
+		env:     strings.ToUpper(pkg),
+		testDir: filepath.Join(name, "internal", pkg+"test"),
+	}
+	edit.schema()
+	edit.app()
+	edit.newFiles()
+	edit.layout()
+	edit.main()
+	edit.harness()
+	edit.perf()
+	edit.agents()
+	if len(edit.problems) > 0 {
+		return fmt.Errorf("--auth=magic: the scaffold has moved under "+
+			"it:\n  %s", strings.Join(edit.problems, "\n  "))
+	}
+	return formatGo(files)
+}
 
-	browser := filepath.Join(testDir, "browser_test.go")
-	swap(browser, fmt.Sprintf("\t\tmux, err := %s.App(d, origin, logger)\n", pkg),
-		fmt.Sprintf("\t\tbg := &background.Group{}\n\t\tt.Cleanup(bg.Stop)\n\t\tmux, err := %s.App(d, origin, bg, mail.Logged(logger), logger)\n", pkg))
-	importAfter(browser, `"amadan.net/rastrillo/rastrillo/db"`,
-		"amadan.net/rastrillo/rastrillo/background", "amadan.net/rastrillo/rastrillo/mail")
+func (edit *magicAuth) swap(path, old, replacement string) {
+	source, ok := edit.files[path]
+	if !ok {
+		edit.problems = append(edit.problems, path+": not in the scaffold")
+		return
+	}
+	if !strings.Contains(source, old) {
+		edit.problems = append(edit.problems,
+			fmt.Sprintf("%s: expected %q", path, firstLine(old)))
+		return
+	}
+	edit.files[path] = strings.Replace(source, old, replacement, 1)
+}
 
-	perf := filepath.Join(testDir, "perf_test.go")
-	swap(perf, fmt.Sprintf("\tr, err := %s.Router(d, testOrigin, logger)\n", pkg),
-		fmt.Sprintf("\tbg := &background.Group{}\n\tbox := &outbox{}\n\tr, err := %s.Router(d, testOrigin, bg, box, logger)\n", pkg))
-	swap(perf, fmt.Sprintf("\t%s.Configure(&opts, %s.Mux(r, apiTree), time.Now())\n", pkg, pkg),
-		fmt.Sprintf("\t%s.Configure(&opts, %s.Mux(r, apiTree), time.Now())\n\topts.Background = bg // closeAll stops it\n", pkg, pkg))
-	swap(perf, "\tperftest.Screens(t, perftest.ScreenConfig{Routes: r, Handler: h})", `	perftest.Screens(t, perftest.ScreenConfig{Routes: r, Handler: h, Signin: func(c *http.Client, base string) {
-		signInOver(t, c, base, box, "perf@example.com")
-	}})`)
-	swap(perf, fmt.Sprintf("\t\t\tmux, err := %s.App(d, testOrigin, logger)\n\t\t\tif err != nil {\n\t\t\t\td.Close()\n", pkg),
-		fmt.Sprintf("\t\t\tbg := &background.Group{}\n\t\t\tmux, err := %s.App(d, testOrigin, bg, mail.Logged(logger), logger)\n\t\t\tif err != nil {\n\t\t\t\tbg.Stop()\n\t\t\t\td.Close()\n", pkg))
-	swap(perf, fmt.Sprintf("\t\t\t%s.Configure(&opts, mux, started)\n", pkg),
-		fmt.Sprintf("\t\t\t%s.Configure(&opts, mux, started)\n\t\t\topts.Background = bg // closeAll stops it\n", pkg))
-	importAfter(perf, `"amadan.net/rastrillo/rastrillo/db"`,
-		"amadan.net/rastrillo/rastrillo/background", "amadan.net/rastrillo/rastrillo/mail")
+// importAfter adds imports after a line of an import block; formatGo
+// sorts them later.
+func (edit *magicAuth) importAfter(path, after string, imports ...string) {
+	var lines strings.Builder
+	lines.WriteString(after)
+	for _, imported := range imports {
+		lines.WriteString("\n\t\"amadan.net/rastrillo/rastrillo/" +
+			imported + "\"")
+	}
+	edit.swap(path, after, lines.String())
+}
 
-	// The perf inventory: pow's assets and the two link landings are not
-	// screens. /signin and /account are, and are measured.
-	swap(filepath.Join(name, ".rastrillo", "budgets.txt"), budgetsTxtTemplate, budgetsTxtTemplate+
-		"perf  GET /pow/*          skip  proof-of-work script and worker assets, not a screen\n"+
-		"perf  GET /auth/callback  skip  keymail landing: answers only with a pending sign-in\n"+
-		"perf  GET /auth/verify    skip  an emailed link's page: needs a fresh token, which signin_test.go opens\n")
+// fill and filled name an app's own text: __PKG__ and the rest in a
+// template added whole, %s with the package in an edit.
+func (edit *magicAuth) fill(template string) string {
+	return strings.NewReplacer("__PKG__", edit.pkg, "__NAME__", edit.name,
+		"__ENV__", edit.env).Replace(template)
+}
 
+func (edit *magicAuth) filled(template string) string {
+	return strings.ReplaceAll(template, "%s", edit.pkg)
+}
+
+// schema: sessions before auth (auth's backfill reads the sessions
+// table), pow for the guard's nonces, then what was there. The example
+// model becomes owned, and its migration is what generate writes.
+func (edit *magicAuth) schema() {
+	migrations := filepath.Join(edit.appDir, "migrations.go")
+	edit.swap(migrations,
+		"var BootSchema = migrate.Merge(apitoken.Schema, Schema)",
+		"var BootSchema = migrate.Merge(sessions.Schema, auth.Schema,\n"+
+			"\tpow.Schema, apitoken.Schema, Schema)")
+	edit.importAfter(migrations, `"amadan.net/rastrillo/rastrillo/apitoken"`,
+		"auth", "pow", "sessions")
+	edit.swap(filepath.Join(edit.appDir, "models.go"),
+		"// Never bind a request body onto a model; AGENTS.md says why.\n"+
+			"type Note struct {\n\tID        int64\n",
+		"// Query it through owned (auth.go), and never bind a request\n"+
+			"// body onto a model; AGENTS.md says why.\n"+
+			"type Note struct {\n\tID        int64\n"+
+			"\tOwner     string `gorm:\"index\"`\n")
+	plain := "CREATE TABLE `notes` (`id` integer PRIMARY KEY " +
+		"AUTOINCREMENT,`title` text,`body` text,`created_at` datetime," +
+		"`updated_at` datetime);\n\n"
+	owned := "CREATE TABLE `notes` (`id` integer PRIMARY KEY " +
+		"AUTOINCREMENT,`owner` text,`title` text,`body` text," +
+		"`created_at` datetime,`updated_at` datetime);\n\n" +
+		"CREATE INDEX `idx_notes_owner` ON `notes`(`owner`);\n\n"
+	for _, file := range []string{"0001_init.sql", "schema.sql"} {
+		edit.swap(filepath.Join(edit.appDir, "migrations", file),
+			plain, owned)
+	}
+}
+
+// app: New and Router take the background group the sign-in sweeps run
+// on (named group, not background, which would hide the package), which
+// the caller stops, and the mailer: main's from the
+// environment, a test's outbox. Owned pages sit behind the session.
+func (edit *magicAuth) app() {
+	app := filepath.Join(edit.appDir, "app.go")
+	edit.swap(app, "ServeMux that rastrillo.Options.Mux takes.\n",
+		"ServeMux that rastrillo.Options.Mux takes. Stop group before\n"+
+			"// closing the database: sign-in's sweeps run on it.\n")
+	for _, function := range []string{"New", "Router"} {
+		edit.swap(app, "func "+function+"(\n"+
+			"\tdatabase *db.DB, origin string, logger *slog.Logger,\n",
+			"func "+function+"(\n"+
+				"\tdatabase *db.DB, origin string, "+
+				"group *background.Group,\n"+
+				"\tmailer mail.Sender, logger *slog.Logger,\n")
+	}
+	edit.swap(app, "Router(database, origin, logger)",
+		"Router(database, origin, group, mailer, logger)")
+	edit.swap(app, "api: api}\n", "api: api}\n"+
+		"\tif err := app.startAuth(group, mailer); err != nil {\n"+
+		"\t\treturn nil, err\n\t}\n")
+	edit.swap(app, "\tapi      http.Handler\n}",
+		"\tapi      http.Handler\n\tauth     *auth.Auth\n}")
+	edit.importAfter(app, `"amadan.net/rastrillo/rastrillo/action"`,
+		"auth", "background", "mail")
+	routes := filepath.Join(edit.appDir, "routes.go")
+	edit.swap(routes, `const homePage action.Path = "/"`,
+		`const homePage action.Path = "/"`+"\n"+
+			`const accountPage action.Path = "/account"`)
+	edit.swap(routes, "pages.Middleware)\n", "pages.Middleware)\n"+
+		"\t\tguarded.Guard(\"signedIn\", app.signedIn)\n"+
+		"\t\tapp.mountAuth(guarded)\n")
+	edit.swap(routes, "\n\t})\n}\n", "\n"+
+		"\t\t// Owned pages: a signed-out visitor signs in first.\n"+
+		"\t\tguarded.Group(func(owned *action.Routes) {\n"+
+		"\t\t\towned.Guard(\"session\", app.auth.RequireSession)\n"+
+		"\t\t\towned.Get(accountPage, app.account)\n\t\t})\n\t})\n}\n")
+}
+
+// layout: every page offers Sign out to a signed-in visitor and Sign in
+// to anyone else; renderPage tells it which.
+func (edit *magicAuth) layout() {
+	scheme := "\tvalues[\"Scheme\"], values[\"Base\"] = " +
+		"localized.Scheme, localized.Base\n"
+	edit.swap(filepath.Join(edit.appDir, "render.go"), scheme, scheme+
+		"\tvalues[\"SignedIn\"], _ = "+
+		"request.Context().Value(signedInKey{}).(bool)\n")
+	layout := filepath.Join(edit.appDir, "templates", "layout.html")
+	source, ok := edit.files[layout]
+	if !ok {
+		return
+	}
+	end := schemeMenuEnd(source)
+	switch {
+	// The stage shell has no header chrome to sit in: an app built on
+	// it reaches the sign-in screen through its own links.
+	case end < 0 && strings.Contains(source, `{{block "backdrop"`):
+		edit.swap(filepath.Join(edit.testDir, "signin_test.go"),
+			signoutCheck, stageSignoutCheck)
+	case end < 0:
+		edit.problems = append(edit.problems,
+			layout+": no scheme menu block to sit beside")
+	default:
+		edit.files[layout] = source[:end] + accountControl + source[end:]
+	}
+}
+
+// schemeMenuEnd is where the layout's scheme menu block ends, or -1.
+func schemeMenuEnd(layout string) int {
+	at := strings.Index(layout, `{{block "scheme" .}}`)
+	if at < 0 {
+		return -1
+	}
+	menu := strings.Index(layout[at:], "scheme-menu")
+	if menu < 0 {
+		return -1
+	}
+	end := strings.Index(layout[at+menu:], "{{end}}")
+	if end < 0 {
+		return -1
+	}
+	return at + menu + end + len("{{end}}")
+}
+
+// accountControl is Sign in or Sign out. Under a base path the hub signs
+// people in and the plugins answer 404 here: a root-relative /signin
+// would leave the tenant for the product's own sign-in screen.
+const accountControl = `{{if not (opt $ "Base")}}{{$authL := localizer $}}` +
+	`{{if opt $ "SignedIn"}}<form method="post" action="/signout">` +
+	`<button rst-btn>{{T $authL "rastrillo.ui.account_signout"}}</button>` +
+	`</form>{{else}}<a href="/signin" rst-btn>` +
+	`{{T $authL "rastrillo.ui.account_signin"}}</a>{{end}}{{end}}`
+
+// signoutCheck is the sign-in test's check for the layout's sign-out
+// form, which the stage shell has no header for.
+const (
+	signoutCheck = "if recorder.Code != http.StatusOK ||\n" +
+		"\t\t!strings.Contains(recorder.Body.String(), " +
+		"`action=\"/signout\"`) {\n" +
+		"\t\tt.Fatalf(\"signed-in /account = %d, want 200 with a " +
+		"sign-out form:\\n%s\","
+	stageSignoutCheck = "// The stage shell has no header, so no " +
+		"sign-out form to look for.\n" +
+		"\tif recorder.Code != http.StatusOK {\n" +
+		"\t\tt.Fatalf(\"signed-in /account = %d, want 200:\\n%s\","
+)
+
+func (edit *magicAuth) main() {
+	main := filepath.Join(edit.name, "cmd", edit.name, "main.go")
+	edit.swap(main, edit.filled("\tmux, err := %s.New(\n"+
+		"\t\tdatabase, origin, logger)\n"),
+		fmt.Sprintf("\tmailer := mail.FromEnv(%q, logger)\n", edit.env)+
+			"\tgroup := &background.Group{}\n"+
+			edit.filled("\tmux, err := %s.New(\n"+
+				"\t\tdatabase, origin, group, mailer, logger)\n"))
+	configure := edit.filled("\t%s.Configure(&options, mux, started)\n")
+	edit.swap(main, configure, configure+"\toptions.Background = group\n")
+	edit.importAfter(main, `"amadan.net/rastrillo/rastrillo/db"`,
+		"background", "mail")
+}
+
+// harness: every caller in the tests passes a group it stops and a
+// mailer: the harness an outbox a test can open links from, the rest
+// the logger.
+func (edit *magicAuth) harness() {
+	harness := filepath.Join(edit.testDir, "harness_test.go")
+	edit.swap(harness, "func newApp(t *testing.T) http.Handler {\n"+
+		"\tt.Helper()\n", "func newApp(t *testing.T) http.Handler {\n"+
+		"\tt.Helper()\n\thandler, _ := newAppWithMail(t)\n"+
+		"\treturn handler\n}\n\n"+
+		"// newAppWithMail is newApp with the outbox its links land in.\n"+
+		"func newAppWithMail(t *testing.T) (http.Handler, *outbox) {\n"+
+		"\tt.Helper()\n")
+	edit.swap(harness, edit.filled("\tmux, err := %s.New(\n"+
+		"\t\tdatabase, testOrigin, logger)\n"),
+		"\tgroup := &background.Group{}\n"+
+			"\tt.Cleanup(group.Stop) // before database.Close: "+
+			"last in, first out\n\tbox := &outbox{}\n"+
+			edit.filled("\tmux, err := %s.New(\n"+
+				"\t\tdatabase, testOrigin, group, box, logger)\n"))
+	edit.swap(harness, "\treturn mux\n}", "\treturn mux, box\n}")
+	edit.importAfter(harness, `"amadan.net/rastrillo/rastrillo/db"`,
+		"background")
+	browser := filepath.Join(edit.testDir, "browser_test.go")
+	edit.swap(browser, edit.filled("\t\tmux, err := %s.New(\n"+
+		"\t\t\tdatabase, origin, logger)\n"),
+		"\t\tgroup := &background.Group{}\n\t\tt.Cleanup(group.Stop)\n"+
+			"\t\tmailer := mail.Logged(logger)\n"+
+			edit.filled("\t\tmux, err := %s.New(\n"+
+				"\t\t\tdatabase, origin, group, mailer, logger)\n"))
+	edit.importAfter(browser, `"amadan.net/rastrillo/rastrillo/db"`,
+		"background", "mail")
+}
+
+// perf: /account is measured behind the perf test's own sign-in, and
+// pow's assets and the two link landings are not screens.
+func (edit *magicAuth) perf() {
+	perf := filepath.Join(edit.testDir, "perf_test.go")
+	edit.swap(perf, edit.filled("\trouter, err := %s.Router(\n"+
+		"\t\tdatabase, testOrigin, logger)\n"),
+		"\tgroup := &background.Group{}\n\tbox := &outbox{}\n"+
+			edit.filled("\trouter, err := %s.Router(\n"+
+				"\t\tdatabase, testOrigin, group, box, logger)\n"))
+	stops := "\toptions.Background = group // closeAll stops it\n"
+	for _, started := range []string{"time.Now()", "started"} {
+		configure := edit.filled("\t%s.Configure(&options, mux, " +
+			started + ")\n")
+		edit.swap(perf, configure, configure+stops)
+	}
+	edit.swap(perf, "\tperftest.Screens(t, perftest.ScreenConfig{"+
+		"Routes: router, Handler: handler})", "\tperftest.Screens(t, "+
+		"perftest.ScreenConfig{\n\t\tRoutes: router, Handler: handler,\n"+
+		"\t\tSignin: func(client *http.Client, base string) {\n"+
+		"\t\t\tsignInOver(t, client, base, box, \"perf@example.com\")\n"+
+		"\t\t},\n\t})")
+	edit.swap(perf, edit.filled("\tmux, err := %s.New(\n"+
+		"\t\tdatabase, testOrigin, logger)\n\tif err != nil {\n"),
+		"\tgroup := &background.Group{}\n\tmailer := mail.Logged(logger)\n"+
+			edit.filled("\tmux, err := %s.New(\n"+
+				"\t\tdatabase, testOrigin, group, mailer, logger)\n"+
+				"\tif err != nil {\n\t\tgroup.Stop()\n"))
+	edit.importAfter(perf, `"amadan.net/rastrillo/rastrillo/db"`,
+		"background", "mail")
+	budgets := filepath.Join(edit.name, ".rastrillo", "budgets.txt")
+	edit.swap(budgets, budgetsTxtTemplate, budgetsTxtTemplate+
+		"perf  GET /pow/*          skip  proof-of-work script and worker "+
+		"assets, not a screen\n"+
+		"perf  GET /auth/callback  skip  keymail landing: answers only "+
+		"with a pending sign-in\n"+
+		"perf  GET /auth/verify    skip  an emailed link's page: needs a "+
+		"fresh token, which signin_test.go opens\n")
+}
+
+func (edit *magicAuth) newFiles() {
 	stage, ok := ui.Layout("stage")
 	if !ok {
-		errs = append(errs, "ui has no stage layout for the sign-in screen")
+		edit.problems = append(edit.problems,
+			"ui has no stage layout for the sign-in screen")
 	}
-	files[filepath.Join(appDir, "auth.go")] = fill(scaffoldFile("auth.go.tmpl"))
-	files[filepath.Join(appDir, "templates", "signin.html")] = scaffoldFile("signin.html")
-	files[filepath.Join(appDir, "templates", "stage.html")] = string(stage)
-	files[filepath.Join(testDir, "signin_test.go")] = fill(scaffoldFile("signin_test.go.tmpl"))
-	if stageShell {
-		swap(filepath.Join(testDir, "signin_test.go"),
-			"if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `action=\"/signout\"`) {\n\t\tt.Fatalf(\"signed-in /account = %d, want 200 with a sign-out form:\\n%s\", rec.Code, rec.Body)",
-			"// The stage shell has no header, so no sign-out form to look for.\n\tif rec.Code != http.StatusOK {\n\t\tt.Fatalf(\"signed-in /account = %d, want 200:\\n%s\", rec.Code, rec.Body)")
-	}
+	templates := filepath.Join(edit.appDir, "templates")
+	edit.files[filepath.Join(edit.appDir, "auth.go")] =
+		edit.fill(scaffoldFile("auth.go.tmpl"))
+	edit.files[filepath.Join(templates, "signin.html")] =
+		scaffoldFile("signin.html")
+	edit.files[filepath.Join(templates, "stage.html")] = string(stage)
+	edit.files[filepath.Join(edit.testDir, "signin_test.go")] =
+		edit.fill(scaffoldFile("signin_test.go.tmpl"))
+}
 
-	// The inherited text that says otherwise, fixed where it stands.
-	agents := filepath.Join(name, "AGENTS.md")
-	swap(agents, "- Every query touching user-owned rows goes through `scope.Owned` —\n  reads AND writes, transactions included.",
-		"- Every query touching user-owned rows goes through `a.owned(r)`\n  (auth.go) — reads AND writes — and a new row sets\n  `Owner: ownerOf(r)`. Inside a transaction scope the callback's `tx`\n  instead, `scope.OwnedBy(tx, \"owner\", ownerOf(r))`: `a.owned(r)`\n  there waits on the writer connection the transaction holds.")
-	swap(agents, "- Screens work with JavaScript disabled;", "- Screens work with JavaScript disabled, except the sign-in screen,\n  whose proof of work needs it;")
-	swap(agents, "never dependent on JavaScript to be usable.", "never dependent on JavaScript to be usable,\nexcept to sign in.")
-	swap(filepath.Join(appDir, "models.go"), "touching user-owned rows goes through scope.Owned (SKILL.md) — reads",
-		"touching user-owned rows goes through a.owned(r) (auth.go) — reads")
-	swap(filepath.Join(appDir, "tokens.go"), "which a new app does not have yet. Once it does\n// (examples/notes in the rastrillo repository shows how), add this to\n// Router after csrf.Protect:",
-		"and this app's sign-in (auth.go) keeps its\n// own sessions, not the *sessions.Sessions Tokens takes. examples/notes\n// in the rastrillo repository wires it in an app that has one, after\n// csrf.Protect:")
+// agents rewrites what AGENTS.md says otherwise, and adds the sign-in.
+func (edit *magicAuth) agents() {
+	agents := filepath.Join(edit.name, "AGENTS.md")
+	edit.swap(agents, "- Every query touching user-owned rows goes "+
+		"through `scope.Owned` —\n  reads AND writes, transactions included.",
+		"- Every query touching user-owned rows goes through "+
+			"`app.owned(request)`\n  (auth.go), reads and writes, and a new "+
+			"row sets\n  `Owner: ownerOf(request)`. Inside a transaction, "+
+			"scope the callback's\n  `tx` instead, "+
+			"`scope.OwnedBy(tx, \"owner\", ownerOf(request))`:\n"+
+			"  `app.owned(request)` there waits on the writer connection "+
+			"the\n  transaction holds.")
+	edit.swap(agents, "- Screens work with JavaScript disabled;",
+		"- Screens work with JavaScript disabled, except the sign-in "+
+			"screen,\n  whose proof of work needs it;")
+	edit.swap(agents, "never dependent on JavaScript to be usable.",
+		"never dependent on JavaScript to be usable,\nexcept to sign in.")
+	edit.swap(filepath.Join(edit.appDir, "tokens.go"),
+		"It needs sign-in, which a new\n// app does not have yet; "+
+			"AGENTS.md says how to mount it.",
+		"It needs *sessions.Sessions,\n// which this app's sign-in "+
+			"(auth.go) does not keep.")
+	edit.swap(agents, "- Sign-in: `skill/signin.md`. With "+
+		"`*sessions.Sessions`, keep\n  `NewTokenPage(database, sessions)` "+
+		"on `App` and call\n  `app.tokens.Mount(guarded)` in `Routes`' "+
+		"page group.", "- More sign-in, such as 2FA: `skill/signin.md`. "+
+		"tokens.go's page\n  needs `*sessions.Sessions`, which this sign-in "+
+		"does not keep.")
+	edit.swap(agents, "\n## Layout", "\n"+fmt.Sprintf(signinSection,
+		"`", edit.pkg, edit.env)+"\n\n## Layout")
+}
 
-	// The agent working in the app finds the sign-in it starts with.
-	section := fmt.Sprintf(`## Sign-in
+// signinSection is the agent's note on the sign-in the app starts with.
+const signinSection = `## Sign-in
 
 This app signs people in by emailed link (%[1]srastrillo/auth%[1]s, ui's
-sign-in screen on the stage shell), wired in %[1]sinternal/%[2]s/auth.go%[1]s.
-Owned rows carry %[1]sOwner string%[1]s, the signed-in address; read and
-write them only through %[1]sa.owned(r)%[1]s, never %[1]ssessions.UserID%[1]s
-(it reads (0, false) here). Owned routes go in the
-%[1]sau.RequireSession%[1]s group in %[1]sRouter%[1]s. Tests sign in with
-%[1]ssignIn(t, h, box, address)%[1]s from %[1]ssignin_test.go%[1]s. Set
-%[1]s%[3]s_SMTP_HOST%[1]s and %[1]s%[3]s_SMTP_FROM%[1]s to send real mail;
-without them links are logged.
+sign-in screen on the stage shell), in %[1]sinternal/%[2]s/auth.go%[1]s.
+Owned rows carry %[1]sOwner string%[1]s, the signed-in address, never
+%[1]ssessions.UserID%[1]s (it reads (0, false) here). Owned pages go in
+the %[1]sowned%[1]s group in %[1]sRoutes%[1]s; tests sign in with
+%[1]ssignIn(t, handler, box, address)%[1]s. Set %[1]s%[3]s_SMTP_HOST%[1]s
+and %[1]s%[3]s_SMTP_FROM%[1]s to send mail, or links are logged. Off
+CARLOS, set %[1]s%[3]s_INSTANCE_KEY%[1]s to keep links across restarts.`
 
-## Layout`, "`", pkg, env)
-	swap(filepath.Join(name, "AGENTS.md"), "\n## Layout", "\n"+section)
-
-	if len(errs) > 0 {
-		return fmt.Errorf("--auth=magic: the scaffold has moved under it:\n  %s", strings.Join(errs, "\n  "))
-	}
-	// The edits add imports out of order; formatting puts them where gofmt
-	// would, so the new app's own fmt-check passes.
-	for path, s := range files {
+// formatGo puts the imports the edits added where gofmt would, so the
+// new app's own fmt-check passes.
+func formatGo(files map[string]string) error {
+	for path, source := range files {
 		if !strings.HasSuffix(path, ".go") {
 			continue
 		}
-		b, err := format.Source([]byte(s))
+		formatted, err := format.Source([]byte(source))
 		if err != nil {
 			return fmt.Errorf("--auth=magic: %s does not parse: %w", path, err)
 		}
-		files[path] = string(b)
+		files[path] = string(formatted)
 	}
 	return nil
 }
 
-func firstLine(s string) string {
-	if i := strings.IndexByte(s, '\n'); i >= 0 {
-		return s[:i]
-	}
-	return s
+func firstLine(text string) string {
+	line, _, _ := strings.Cut(text, "\n")
+	return line
 }

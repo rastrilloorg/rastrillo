@@ -69,8 +69,8 @@ ci: gofmt chromedp-graph gorm-free generate-check suite
 # by hack/gotest.sh. In a role's name a / in the path is a . so
 # internal/designsystem@6 becomes browser.internal.designsystem~1of6
 # to ~6of6.
-BROWSER_PKGS := harness webauthn ui@2 pow internal/designsystem@6 internal/designsystem/sweep internal/designsystem/history auth internal/basepathe2e
-ROOT_SPLIT := internal/designsystem@4 cmd/rastrillo@2 cmd/dsgen
+BROWSER_PKGS := harness webauthn ui@2 pow internal/designsystem@6 internal/designsystem/sweep internal/designsystem/history auth internal/basepathe2e internal/scaffoldcheck
+ROOT_SPLIT := internal/designsystem@4 cmd/rastrillo@2 cmd/dsgen internal/scaffoldcheck
 go-roles = $(foreach p,$(2),$(if $(findstring @,$(p)),$(call go-slices,$(1),$(subst /,.,$(word 1,$(subst @, ,$(p)))),$(word 2,$(subst @, ,$(p)))),$(1).$(subst /,.,$(p))))
 go-slices = $(foreach k,$(shell seq 1 $(3)),$(1).$(2)~$(k)of$(3))
 BROWSER_ROLES := $(call go-roles,browser,$(BROWSER_PKGS))
@@ -333,7 +333,8 @@ scaffold-smoke: build-cli
 
 # The browser drive: the ui select journey, the harness's own checks,
 # the design system's, webauthn's PRF ceremonies including the
-# prfByAssertion fallback, and the sign-in screen's whole journey, one
+# prfByAssertion fallback, the sign-in screen's whole journey, and a new
+# app's own drive on a plain and a sign-in scaffold, one
 # package or slice per browser.<pkg>[~<k>of<n>] target (a / in the path
 # is a . in the name). `make browser` runs them one after another, as
 # the old -p 1 did; the suite runs each as its own shard. RASTRILLO_BROWSER_OPTIONAL

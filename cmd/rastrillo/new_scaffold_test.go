@@ -61,9 +61,6 @@ func TestNewScaffoldsCIAndManifest(t *testing.T) {
 	}
 
 	mk, _ := os.ReadFile(filepath.Join("demoapp", "Makefile"))
-	if !strings.Contains(string(mk), "ci: vet fmt-check staticcheck govulncheck gitleaks budget test perf migration-check generate-check") {
-		t.Fatalf("Makefile must define the one ci gate:\n%s", mk)
-	}
 	for _, want := range []string{
 		".NOTPARALLEL:",
 		"$(RASTRILLO) budget size",
@@ -163,7 +160,7 @@ func TestNewScaffoldsTwoMigrationSets(t *testing.T) {
 	if strings.Contains(string(app), "AutoMigrate") {
 		t.Fatal("app.go still calls AutoMigrate; boot must go through migrate.Apply")
 	}
-	if !strings.Contains(string(app), "migrate.Apply(context.Background(), d, BootSchema)") {
+	if !strings.Contains(string(app), ", database, BootSchema)") {
 		t.Errorf("app.go must apply BootSchema (the composed set), not Schema alone:\n%s", app)
 	}
 }
@@ -688,6 +685,12 @@ func scaffoldGate(t *testing.T, args ...string) string {
 	if err != nil {
 		t.Fatalf("make ci on a fresh scaffold:\n%s", out)
 	}
+	for _, lane := range []string{"budget code: within the limits.",
+		"cmd/rastrillo routes --check\n"} {
+		if !strings.Contains(string(out), lane) {
+			t.Errorf("make ci ran no %q:\n%s", lane, out)
+		}
+	}
 	return string(out)
 }
 
@@ -778,7 +781,8 @@ func TestNewDeclaresOneLocaleAndLinksItsPack(t *testing.T) {
 		t.Errorf("app.go must link gen/locales so the app's tests link the packs:\n%s", src)
 	}
 	mainSrc, _ := os.ReadFile(filepath.Join("demoapp", "cmd", "demoapp", "main.go"))
-	for _, want := range []string{"Locales:       genlocales.Locales,", "DefaultLocale: genlocales.DefaultLocale,"} {
+	for _, want := range []string{"Locales:       genlocales.Locales,",
+		"DefaultLocale: genlocales.DefaultLocale,"} {
 		if !strings.Contains(string(mainSrc), want) {
 			t.Errorf("main.go lacks %q", want)
 		}
@@ -1003,7 +1007,8 @@ import (
 
 func TestRenderLeavesTheCallersMapAlone(t *testing.T) {
 	data := map[string]any{"X": 1}
-	render(httptest.NewRecorder(), httptest.NewRequest("GET", "/", nil), "index", data)
+	renderPage(httptest.NewRecorder(), httptest.NewRequest("GET", "/", nil),
+		"index", 200, data)
 	if len(data) != 1 {
 		t.Errorf("render wrote into the caller's map: %v", data)
 	}
@@ -1025,8 +1030,8 @@ func TestRenderLeavesTheCallersMapAlone(t *testing.T) {
 }
 
 // A locale configuration boot refuses never panics the app's own entry
-// points: App refuses, and Mux and ErrorPage, reached without App by
-// Options.ErrorPage and the perf lane, answer a plain 500.
+// points: New and Router (the perf lane's) refuse, and ErrorPage, reached
+// without New by Options.ErrorPage, answers a plain 500.
 func TestScaffoldWithABadLocaleConfigFailsSafely(t *testing.T) {
 	if testing.Short() {
 		t.Skip("scaffolds, tidies and tests a whole app")
@@ -1060,15 +1065,13 @@ func TestBadConfig(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer d.Close()
-	if _, err := notes.App(d, testOrigin, logger); err == nil {
-		t.Error("App accepted a default locale whose pack is not linked")
+	if _, err := notes.New(d, testOrigin, logger); err == nil {
+		t.Error("New accepted a default locale whose pack is not linked")
+	}
+	if _, err := notes.Router(d, testOrigin, logger); err == nil {
+		t.Error("Router accepted a default locale whose pack is not linked")
 	}
 	rec := httptest.NewRecorder()
-	notes.Mux(http.NotFoundHandler(), http.NotFoundHandler()).ServeHTTP(rec, httptest.NewRequest("GET", "/", nil))
-	if rec.Code != http.StatusInternalServerError {
-		t.Errorf("Mux: %d, want 500", rec.Code)
-	}
-	rec = httptest.NewRecorder()
 	notes.ErrorPage(rec, httptest.NewRequest("GET", "/", nil), http.StatusNotFound, "")
 	if rec.Code != http.StatusInternalServerError {
 		t.Errorf("ErrorPage: %d, want 500", rec.Code)
@@ -1101,6 +1104,7 @@ import (
 	"github.com/go-chi/chi/v5"
 
 	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/action"
 	"amadan.net/rastrillo/rastrillo/basepath"
 	"amadan.net/rastrillo/rastrillo/basepath/basepathtest"
 	"amadan.net/rastrillo/rastrillo/csrf"
@@ -1211,7 +1215,7 @@ func TestUnderABasePath(t *testing.T) {
 	}
 }
 
-// tokenPage is GET /acme/tokens, mounted as tokens.go says. The row
+// tokenPage is GET /acme/tokens, with TokenPage mounted. The row
 // store is inert under a base path (a tenant verifies the hub's session
 // and never mints one), so this signs in the way a path-routed tenant
 // is signed in: a signed session, minted here at the root as the hub
@@ -1237,18 +1241,18 @@ func tokenPage(t *testing.T) *httptest.ResponseRecorder {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { d.Close() })
-	tokens, err := notes.Tokens(d, sess)
+	page, err := notes.NewTokenPage(d, sess)
 	if err != nil {
 		t.Fatal(err)
 	}
 	r := chi.NewRouter()
-	r.Use(csrf.Protect(testOrigin))
-	r.Group(tokens)
-	apiTree, err := notes.API(d, logger)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return send(underAcme(t, notes.Mux(r, apiTree)), "GET", product, "/acme/tokens", nil, signin.Result().Cookies()...)
+	routes := action.NewRoutes(r, nil)
+	routes.Guard("csrf", csrf.Protect(testOrigin))
+	page.Mount(routes)
+	mux := http.NewServeMux()
+	mux.Handle("/", r)
+	return send(underAcme(t, mux), "GET", product, "/acme/tokens", nil,
+		signin.Result().Cookies()...)
 }
 `
 

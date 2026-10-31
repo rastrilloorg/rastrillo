@@ -330,22 +330,11 @@ var sourceTmpl = template.Must(template.New("icons.go").Funcs(template.FuncMap{
 		return strings.TrimRight(b.String(), "\n")
 	},
 	"bt": func() string { return "`" },
-}).Parse(`// Package icons is this app's icon set, scaffolded once by
-// rastrillo new --icons={{.Set}} --icon-delivery={{.Delivery}} and owned
-// by this app from then on. Edit it, add to it, or replace it.
-//
-// Keys are Lucide slugs whatever the set: that is rastrillo's icon
-// vocabulary, so {{"{{icon \"search\"}}"}} means the same thing in every
-// app and the shipped ui/ partials never have to change.
-//
-// Pass both seams to ui.Pages with the app's other functions, in
-// render.go:
-//
-//	Funcs: template.FuncMap{"icon": icons.Icon, "iconAssets": icons.Assets, "asset": assets.Path},
-//
-// Every icon is aria-hidden: it sits beside its own visible text label,
-// which is the accessible name. A control that uses an icon as its ONLY
-// label needs an explicit aria-label.
+}).Parse(`//rastrillo:data a table of SVG strings, one per icon
+
+// Package icons is this app's icon set, from rastrillo new
+// --icons={{.Set}} --icon-delivery={{.Delivery}}, and the app's to edit.
+// Keys are Lucide slugs whatever the set: rastrillo's icon vocabulary.
 {{- if not .Inline}}
 //
 // TRADEOFF, chosen at scaffold time:
@@ -362,17 +351,14 @@ import "html/template"
 {{- end}}
 }
 
-// Icon renders one icon by its Lucide slug. An unknown slug renders
-// nothing rather than panicking a page mid-response — a typo costs a
-// missing icon, not a crash. rastrillo generate --check catches it
-// before ship.
+// Icon renders one icon, aria-hidden beside its visible label: a control
+// whose only label is an icon needs an aria-label. An unknown slug
+// renders nothing, which rastrillo generate --check catches.
 func Icon(slug string) template.HTML { return icons[slug] }
 
-// Assets is the markup this delivery mode needs in the document <head>.
+// Assets is the <head> markup this delivery needs. Call it even when it
+// is empty, so changing the delivery later needs no template edit.
 {{if .Inline -}}
-// Inline delivery vendors every icon into the binary, so there is
-// nothing to load and this returns empty. Call it anyway: switching
-// --icon-delivery later then needs no template change.
 func Assets() template.HTML { return "" }
 {{- else if .Href -}}
 func Assets() template.HTML {

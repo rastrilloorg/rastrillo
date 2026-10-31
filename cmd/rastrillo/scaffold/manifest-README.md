@@ -1,40 +1,43 @@
-# manifest/ — the declarative path
+# manifest/: the declarative path
 
-Manifest-driven and code-driven are equal, optional paths: declare the
-resources that are pure CRUD, hand-write the ones that aren't, per
-resource, in one app. One TOML file here declares a whole screen set —
-List → Show → Edit/New plus the confirm-page delete flow — generated
-as real committed code under gen/ by `rastrillo generate`:
+Manifests and hand-written code are equal, optional paths: declare a
+resource that is pure CRUD here, and hand-write the rest. One TOML file
+defines a screen set (list, show, edit, new and a confirm-page delete).
+`rastrillo generate` writes it as committed code under gen/:
 
     name     = "ticket_types"
     route    = "/admin/ticket_types"
     currency = "USD"
 
     [list]
-    columns = [{ field = "Name", kind = "text" }, { field = "Price", kind = "money" }]
+    columns = [
+        { field = "Name", kind = "text" },
+        { field = "Price", kind = "money" },
+    ]
     search  = true
 
     [form]
-    basics = [{ name = "Name", required = true }, { name = "Price", kind = "money" }]
+    basics = [
+        { name = "Name", required = true },
+        { name = "Price", kind = "money" },
+    ]
 
-The vocabulary covers one flat table per resource, three field kinds,
-no relations. Add `scope = "user"` and every generated query is
-owner-filtered by the session subject — someone else's row answers
-404 — for resources a user owns; mount those routes behind
-`sessions.Require`. Add `store = "mergeable"` and the resource lives as
-event-log streams (tombstone deletes, derive-on-read) instead of a
-sqlc table — it needs no sqlc tool. Relations or a custom flow:
-hand-write it.
+Use one flat table per resource and choose from three field kinds;
+manifests do not support relations. With `scope = "user"`, every
+generated query is filtered to the signed-in owner (another's row is a
+404). `store = "mergeable"` keeps the resource as event streams instead
+of a sqlc table, and needs no sqlc. For relations or a custom flow,
+hand-write the code.
 
-Adding the first manifest to this app:
+Adding the first manifest, the one above as
+manifest/ticket_types.toml:
 
-1. `go get -tool github.com/sqlc-dev/sqlc/cmd/sqlc` (once — the
+1. `go get -tool github.com/sqlc-dev/sqlc/cmd/sqlc` (run once; the
    generated store is sqlc input).
-2. `rastrillo generate` writes gen/ — committed, never hand-edited.
-3. Embed the generated templates. This file goes at the MODULE ROOT,
-   not beside the hand templates: a go:embed pattern cannot contain
-   "..", and gen/templates is not under internal/%[2]s. Call it
-   genassets.go —
+2. `rastrillo generate` writes gen/ as committed code; do not edit it by
+   hand.
+3. Embed the generated templates in genassets.go at the module root.
+   `go:embed` cannot reach up to gen/ from internal/%[2]s:
 
        package %[2]sassets
 
@@ -43,121 +46,120 @@ Adding the first manifest to this app:
        //go:embed gen/templates
        var GenTemplatesFS embed.FS
 
-   `rastrillo generate` only ever clears and rewrites gen/actions/,
-   never a file sitting beside gen/, so this survives regeneration.
+   `generate` never touches a file beside gen/.
 
-4. Add the generated screens to the pages render.go builds, and give
-   the generated actions their Ctx.Render seam. A generated action calls
-   Ctx.Render with a page name that is always "<resource>/list",
-   "<resource>/show", "<resource>/form" or "<resource>/confirm". In
-   internal/%[2]s/render.go's newPages, after the hand pages, add:
+4. In internal/%[2]s/render.go's newPages, before its return, add the
+   generated screens:
 
-       gen, err := fs.Sub(%[2]sassets.GenTemplatesFS, "gen/templates")
+       generated, err := fs.Sub(
+           %[2]sassets.GenTemplatesFS, "gen/templates")
        if err != nil {
            return nil, err
        }
-       genFiles, err := fs.Glob(gen, "*/*.html")
+       names, err := fs.Glob(generated, "*/*.html")
        if err != nil {
            return nil, err
        }
-       for _, f := range genFiles {
-           files[strings.TrimSuffix(f, ".html")] = ui.PageFile{FS: gen, Path: f}
+       for _, name := range names {
+           page := strings.TrimSuffix(name, ".html")
+           files[page] = ui.PageFile{FS: generated, Path: name}
        }
 
    and Catalog: genlocales.BaseCatalog to its ui.PagesConfig, so the
    generated strings are found. Import "io/fs", "strings" and
-   %[2]sassets "%[1]s". Then add the seam:
+   %[2]sassets "%[1]s". A generated action renders "<resource>/list",
+   "/show", "/form" or "/confirm" through contextFor's Render, as a
+   hand page does.
 
-       // GenRender is the Ctx.Render seam every generated action calls.
-       func GenRender(ctx *rastrillo.Ctx, w http.ResponseWriter, name string, status int, data any) {
-           var buf bytes.Buffer
-           if err := pages.Execute(&buf, name, data); err != nil {
-               if ctx != nil && ctx.Logger != nil {
-                   ctx.Logger.Error("%[2]s: rendering "+name, "err", err)
-               }
-               http.Error(w, "something went wrong", http.StatusInternalServerError)
-               return
-           }
-           w.Header().Set("Content-Type", "text/html; charset=utf-8")
-           w.WriteHeader(status)
-           buf.WriteTo(w)
-       }
-
-   A generated view carries the request's localizer, switcher items and
-   return path, so the layout renders it as it renders a hand page.
-   When a generated screen needs this request's flash or signed-in
-   state, make GenRender a func(r) returning a rastrillo.RenderFunc
-   closed over r, and call it from the ctx factory: RenderFunc carries
-   no *http.Request of its own.
-
-5. Apply the generated store's migrations at boot, or the table the
-   screens read does not exist. In internal/%[2]s/migrations.go:
+5. In internal/%[2]s/migrations.go, add generatedSchema() to
+   BootSchema's Merge, just before Schema, then add:
 
        import (
            "fmt"
 
-           bookmarksstore "%[1]s/gen/store/bookmarks"
+           ticket_typesstore "%[1]s/gen/store/ticket_types"
        )
 
-       func genSchemaSet() *migrate.Set {
-           s := new(migrate.Set)
-           for i, stmt := range bookmarksstore.Migrations {
-               s.Add(migrate.Migration{ID: fmt.Sprintf("bookmarks_gen/%%04d_init", i+1), SQL: stmt})
+       func generatedSchema() *migrate.Set {
+           set := new(migrate.Set)
+           for index, statement := range ticket_typesstore.Migrations {
+               set.Add(migrate.Migration{
+                   ID:  fmt.Sprintf("ticket_types_gen/%%04d_init", index+1),
+                   SQL: statement,
+               })
            }
-           return s
+           return set
        }
 
-       var genSchema = genSchemaSet()
+   Keep it out of Schema: migration check diffs Schema against Models.
+   When you add a field, append a statement with the next ID.
 
-       var BootSchema = migrate.Merge(apitoken.Schema, genSchema, Schema)
+6. Boot the generated code and mount its screens. In
+   internal/%[2]s/app.go, add a field to App:
 
-   Keep every schema already in BootSchema, apitoken.Schema and any
-   other subsystem's. A schema left out is a table boot never creates:
-   without api_tokens, every API request fails.
+       generated http.Handler
 
-   genSchema goes in BootSchema and never in Schema: Schema is what
-   `rastrillo migration check` diffs against Models, and a generated
-   table in it reads as one Models forgot.
+   In Router, after app is built and before the Routes call, add this
+   and import "%[1]s/gen":
 
-   generate never edits a statement in gen/store/<name>/migrations.go
-   once it has been released. Adding a field appends a statement, and
-   genSchemaSet gives it the next ID, so the ledger applies it as a new
-   migration.
-
-6. Boot the generated code and mount its router inside the chi router.
-   In internal/%[2]s/app.go's Router, after migrate.Apply and the routes,
-   add (and import "%[1]s/gen"):
-
-       booted, err := gen.Boot(context.Background(), d.Writer())
+       booted, err := gen.Boot(context.Background(), database.Writer())
        if err != nil {
            return nil, err
        }
-       gmux := gen.Router(booted, func(*http.Request) *rastrillo.Ctx {
-           return &rastrillo.Ctx{DB: d.Writer(), Logger: logger,
-               Actor: rastrillo.Actor{}, Authorize: authorize,
-               Render: GenRender}
-       })
-       r.Handle("/admin/*", gmux)
+       app.generated = gen.Router(booted, app.generatedContext)
+
+   Add this at the end of app.go:
+
+       func (app *App) generatedContext(request *http.Request) *rastrillo.Ctx {
+           ctx, err := app.contextFor(request)
+           if err != nil {
+               panic(err)
+           }
+           return ctx
+       }
+
+   In routes.go, after guarded.Get(homePage, app.home), add:
+
+       guarded.Mount("/admin", app.generated, "generated")
+
+   For a resource with scope = "user", use the owned group (owned.Mount)
+   behind the session guard. A plain app has no sign-in. Mount every
+   prefix the manifests' routes use.
 
    gen.Boot upgrades and checks the generated money columns, and
-   gen.Router will not build without what it returns. Mounted inside
-   the chi router, the generated screens get the same CSRF check and
-   the same localizer as the hand ones. Authorize is api.go's
-   authorize, so the pages and the API follow the same rules.
+   gen.Router will not build without what it returns. contextFor gives
+   a generated screen the request's language and base path, and
+   Authorize: authorize, so api.go's one policy rules the pages and the
+   API alike. gen.Router's context has no error to return, so a failing
+   contextFor panics: a logged 500 with its cause. Generated screens do
+   not show sign-in state yet.
+
+   In internal/%[2]stest/perf_test.go, add to its perftest.ScreenConfig,
+   with a screen for each resource's list:
+
+       Opaque: []perftest.Opaque{{
+           Patterns: []string{"/admin/*"},
+           Screens: []perftest.OpaqueScreen{{
+               Key: "GET /admin/ticket_types", Path: "/admin/ticket_types",
+           }},
+       }},
 
 7. Commit api/v1.json with gen/. A resource with scope = "user" is on
    the JSON API at /api/v1/<name> after its first generate. A resource
-   with no scope stays off it until its manifest adds:
+   with no scope stays off the API until its manifest adds:
 
        [api]
        expose = true
 
-   Tokens are still refused there until you allow them in api.go's
-   authorize. `make ci` runs `rastrillo generate --check`, which fails
-   when gen/ or api/v1.json is out of date.
+   Allow tokens in api.go's authorize before the API accepts them.
 
-Drop to a .go manifest in this directory (package manifest, a
-`var X = rastrillo.Resource{...}`) the moment you need a function
-value — a custom Column.Render, say. To take any single generated
-screen over by hand, write your own action file at the same computed
-path under actions/ — the generator skips that one from then on.
+8. Run `rastrillo generate` again to compile the generated templates
+   with the app's templates. `make ci` runs
+   `rastrillo generate --check`, which fails when anything `generate`
+   writes is out of date.
+
+For a function value such as a custom Column.Render, write a .go
+manifest here (package manifest, `var X = rastrillo.Resource{...}`). To
+take over a generated screen, write an action file at its path under
+actions/, tagged `//go:build rastrillo_actions`. `generate` skips that
+file.

@@ -10,8 +10,8 @@ caller to `/jobs/`+job.ID. Owner is the session **Subject**, not
 the owner. `j.Get(id, owner)` 404s a foreign or unknown id.
 
 `jobs.NewHandlers(jobs.Config{Jobs, Render, RenderFragment})` returns
-`StatusPage`/`Fragment`/`Events` (SSE); mount all three in the
-`sess.Require` group under `/jobs/{id}`. Two traps: `Render` draws the
+`StatusPage`/`Fragment`/`Events` (SSE); mount all three with
+`Handle` under `/jobs/{id}`, in the group behind the session guard. Two traps: `Render` draws the
 whole page and `RenderFragment` the partial alone, or the layout nests
 on the next poll; and it must work with scripts off — a `<noscript>`
 meta refresh only while Running, or a failed page refreshes forever.

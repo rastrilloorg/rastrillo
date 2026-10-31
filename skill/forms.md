@@ -1,32 +1,34 @@
 # Forms
 
 Never bind a request body onto a GORM model. Read each permitted field
-by name (`r.PostFormValue("Title")`), write through
+by name (`parsed.String("Title")`), write through
 `.Select("Title", "Body").Updates(...)` — `Select`'s strings are GORM
 field names, the allowlist keeping unexpected fields out of columns.
 
-Validate with `form.Parse(r, form.Field{Name: "title", Required: true},
-form.Field{Name: "body", Kind: form.Textarea})` — one declaration per
-field. On `!p.OK()`: `w.WriteHeader(422)`, re-render seeding values
-(`p.String("title")`; `p.Echo()` is the seed-back map for
-map-shaped views). Write the status before rendering; the render helper
-writes none.
+Validate in the action with `parsed, err :=
+visit.ReadForm(form.Field{Name: "title", Required: true},
+form.Field{Name: "body", Kind: form.Textarea})`, one declaration per
+field (over `form.Parse`). A field that does not parse comes back as
+`op.Invalid`, and `visit.RefusedShowing(err, again)` calls your form's
+`ShowAgain` with 422 (skill/code.md): render at that status, seeding
+values (`parsed.String("title")`; `parsed.Echo()` is the seed-back map
+for map-shaped views).
 
 **Money:** `form.Field{Kind: form.Money, Currency: code, LocaleEcho:
-true}`, code from the server; read `p.Minor`, store the code with it;
+true}`, code from the server; read `parsed.Minor`, store the code with it;
 seed `form.SeedMoney`, draw `field-money`, show `{{money $L .Amount
 .Currency}}`. Input is normalised; `Strict: true` keeps the exact
 format. On edit set `Stored`: an unchanged `<Name>.seed` keeps it, so
-an ambiguous seed saves. No `Currency`: legacy USD cents (`p.Cents`,
+an ambiguous seed saves. No `Currency`: legacy USD cents (`parsed.Cents`,
 `""` = 0, seed `FormatCentsPlain`, show `FormatCents`). A manifest
 field of kind `money` does all of this for you (SKILL.md).
 
 **Dates:** `form.Date` and `DateTime` parse fixed layouts only, in
-`Field.Location`; `form.Range(p, "starts", "ends")` checks
+`Field.Location`; `form.Range(parsed, "starts", "ends")` checks
 end-before-start for those two only. `form.Time` reads back as
-`p.Time(name) (h, m int, ok bool)`, a time of day, which `Range` does
+`parsed.Time(name) (h, m int, ok bool)`, a time of day, which `Range` does
 not compare. Three traps: empty, unparseable and undeclared dates
-all read back as the zero time — ask `p.OK()`, never `IsZero`; their
+all read back as the zero time — ask `parsed.OK()`, never `IsZero`; their
 error values are `rastrillo.ui.*` **keys**, not sentences, so render
 `"Error" (T $L (index .Errors "Starts"))`; and `field-daterange`'s two
 halves need distinct `Name`s. docs/site/forms.md
@@ -35,15 +37,23 @@ halves need distinct `Name`s. docs/site/forms.md
 keys too). Link a stored one only through `{{with safeHref .Site}}`,
 show it with `displayURL`; never `<input type="url">`.
 
-**After a mutation:** `flash.Set(w, r, "notice", "...")`, then 303. The
-scaffold does not show flashes until you wire it: in `render.go`'s
-`render`, `if f, ok := flash.Take(w, r); ok { page["Flash"] =
-f.Message }`, and in `layout.html`, just before `{{template "content"
-.}}`, `{{template "notice" (opt $ "Flash")}}`. Take clears the flash
-with a header, so it only works before the status is written: a
-handler that writes 422 and then renders shows a pending flash without
-clearing it. Flashes follow a 303, so take them only on pages rendered
+**After a mutation:** `visit.Flash("...")`, then `visit.Redirect(path)`,
+a 303. The scaffold does not show flashes until you wire it. In
+`render.go`'s `renderPage`, replace `data = withRequest(request,
+values)` with the lines below (and import `flash`); in `layout.html`,
+just before `{{template "content" .}}`, add `{{template "notice" (opt $
+"Flash")}}`. Flashes follow a 303, so take them only on pages rendered
 with 200.
+
+```go
+values = withRequest(request, values)
+if status == http.StatusOK {
+	if notice, found := flash.Take(response, request); found {
+		values["Flash"] = notice.Message
+	}
+}
+data = values
+```
 
 **A labelled control is never hand-rolled:** `field-text`,
 `field-textarea`, `field-select` (and the date kinds) inside `<form

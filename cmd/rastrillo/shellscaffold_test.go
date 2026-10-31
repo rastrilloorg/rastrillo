@@ -188,7 +188,7 @@ func TestNewWritesAnIndexAndASectionForTheShellsThatHaveOne(t *testing.T) {
 		}
 		dir := filepath.Join(name, "internal", name)
 		index := readScaffold(t, dir, "templates", "index.html")
-		app := readScaffold(t, dir, "app.go")
+		app := readScaffold(t, dir, "routes.go")
 		handlers := readScaffold(t, dir, "handlers.go")
 		render := readScaffold(t, dir, "render.go")
 		overview, err := os.ReadFile(filepath.Join(dir, "templates", "overview.html"))
@@ -207,8 +207,8 @@ func TestNewWritesAnIndexAndASectionForTheShellsThatHaveOne(t *testing.T) {
 			{"index.html", index, `<a id="nav-overview" href="{{path $ "/overview"}}">` + scaffoldOverview + `</a>`},
 			{"overview.html", string(overview), `{{define "up"}}{{path $ "/#nav-overview"}}{{end}}`},
 			{"overview.html", string(overview), `<a id="nav-overview" href="{{path $ "/overview"}}" aria-current="page">` + scaffoldOverview + `</a>`},
-			{"app.go", app, `r.Get("/overview", a.overview)`},
-			{"handlers.go", handlers, `func (a *app) overview(w http.ResponseWriter, r *http.Request) {`},
+			{"routes.go", app, `guarded.Get(overviewPage, app.overview)`},
+			{"handlers.go", handlers, "overview(visit *action.Visit) {"},
 			{"render.go", render, `[]string{"index", "overview", "errors", "tokens"}`},
 		} {
 			if !strings.Contains(c.got, c.want) {

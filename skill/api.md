@@ -7,12 +7,11 @@ personal token. Each action is one operation in `gen/ops/<name>/`
 call it, and it begins with `op.Check`. Rules live in the operation
 and the policy, never in a door. docs/site/api.md
 
-**Wiring** (a new app has it in `internal/<app>/api.go`):
-`tokens, err := apitoken.New(apitoken.Config{DB: d.Writer(), Prefix: tokenPrefix})`;
+**Wiring** (a new app has it in `internal/<app>/api.go`'s `newAPI`):
+`tokens, err := apitoken.New(apitoken.Config{DB: database.Writer(), Prefix: tokenPrefix})`;
 `api.New(api.Config{Verify: tokens, Ctx: ctxFactory, Authorize: authorize, Logger: logger, Redact: tokens.Redact}, gen.APIRoutes()...)`;
-`mux.Handle("/api/v1", t)` and `mux.Handle("/api/v1/", t)` on the
-outer `*http.ServeMux`, beside the chi router, never inside it:
-`csrf.Protect` refuses a write with no browser headers, and
+`Routes` mounts it with `routes.Mount("/api/v1", app.api, "api")`,
+outside the page group, never inside it: `csrf.Protect` refuses a write with no browser headers, and
 `csrf.Exempt` matches exact paths only and still runs sessions. Add
 `apitoken.Schema` to `BootSchema`. `api.New` errors at boot without
 `Verify`, `Ctx` or `Authorize`.
@@ -30,8 +29,9 @@ allows scoped ops (the owner filter limits rows), allows unscoped ops
 for sessions, anonymous callers and the app, and **refuses every token
 on an unscoped op, even with `expose = true`**. The API cannot see
 page middleware: put role, suspension and admin rules in `authorize`,
-matching `o.ID` (`"ticket_types.create"`), `o.Resource`, `o.Access`,
-`a.IsToken()`, `a.Agent`, and end with `return op.DefaultPolicy(ctx, a, o)`.
+matching `operation.ID` (`"ticket_types.create"`), `operation.Resource`,
+`operation.Access`, `actor.IsToken()`, `actor.Agent`, and end with
+`return op.DefaultPolicy(ctx, actor, operation)`.
 
 **Actor.** `rastrillo.Actor{Subject, Agent, Credential, Access,
 Session, Harness}`; `Human` and `Name` are gone. Zero value = the app.
@@ -55,10 +55,10 @@ page is `apitoken.NewHandlers`; `Render` calls `ui`'s `api-tokens`
 partial with `PageData` as `Page` and the path as `Path` (a new app
 ships `tokens.go` and `templates/tokens.html`, mounted once it has
 sign-in); `PageData` carries each row's `Revoked`/`Expired` and the
-live `Agents`. Mount in the
-signed-in group behind `csrf.Protect`; `Create` also behind
-`sess.RequireFresh(10*time.Minute)`; revokes not. The subject comes
-from the session, never the form. Show the secret only in the create
+live `Agents`. Mount in the signed-in group behind `csrf.Protect`;
+`Create` also behind `RequireFresh(10*time.Minute)`, as `tokens.go`'s
+`Mount` does; revokes not. The subject comes from the session, never
+the form. Show the secret only in the create
 response, never in a URL, redirect, flash or session.
 
 **Calling.** `Authorization: Bearer <token>` only (no cookie, no query

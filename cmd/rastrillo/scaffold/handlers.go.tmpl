@@ -1,0 +1,12 @@
+package %[1]s
+
+import (
+	"net/http"
+
+	"amadan.net/rastrillo/rastrillo/action"
+)
+
+func (app *App) home(visit *action.Visit) {
+	visit.Render("index", http.StatusOK, nil)
+}
+%[2]s

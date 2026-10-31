@@ -44,7 +44,7 @@ import (
 // BuildVersion is what GET /api/version reports. The scaffolded
 // Makefile's release target stamps it with -X from git describe, and
 // refuses to build rather than stamping an empty string or a dirty
-// tree — see makefileTemplate in cmd/rastrillo/new.go.
+// tree — see cmd/rastrillo/scaffold/Makefile.tmpl.
 //
 // The platform's deploy verification polls GET /api/version on every
 // instance socket — see blueprint.md, "The carlos core": "every

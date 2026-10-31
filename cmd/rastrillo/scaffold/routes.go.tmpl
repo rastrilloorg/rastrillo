@@ -1,0 +1,22 @@
+package %[1]s
+
+import (
+	"amadan.net/rastrillo/rastrillo/action"
+	"amadan.net/rastrillo/rastrillo/csrf"
+)
+
+const homePage action.Path = "/"%[2]s
+
+// Routes registers everything the app serves. The API is outside the
+// page group: a bearer token is its only credential, so it gets no CSRF
+// check and no page middleware.
+func Routes(routes *action.Routes, app *App) {
+	routes.Mount("/static", assets.Handler(), "static")
+	routes.Mount("/api/v1", app.api, "api")
+	// Every page and form goes in this group: it is what checks CSRF.
+	routes.Group(func(guarded *action.Routes) {
+		guarded.Guard("csrf", csrf.Protect(app.origin))
+		guarded.Guard("pages", pages.Middleware)
+		guarded.Get(homePage, app.home)%[3]s
+	})
+}

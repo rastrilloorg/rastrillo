@@ -1,0 +1,19 @@
+package %[1]s
+
+import "time"
+
+// Models is every model rastrillo migration generate manages; migration
+// check fails the gate when it and migrations/ disagree.
+var Models = []any{
+	&Note{},
+}
+
+// Note is an example model: rename it, replace it, add more beside it.
+// Never bind a request body onto a model; AGENTS.md says why.
+type Note struct {
+	ID        int64
+	Title     string
+	Body      string
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}

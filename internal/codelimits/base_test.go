@@ -157,6 +157,68 @@ func TestAFileNewSinceTheBaseHasNoBase(t *testing.T) {
 	}
 }
 
+// A new app runs make ci before anyone types git init. There is no
+// base to compare with, and that is no fault to stop the gate for.
+func TestOutsideARepositorySkipsTheComparison(t *testing.T) {
+	directory := t.TempDir()
+	t.Setenv("GIT_CEILING_DIRECTORIES", filepath.Dir(directory))
+	base, skipped, err := LoadBase(directory)
+	if err != nil || base != nil || skipped != NotARepository {
+		t.Fatalf("got %+v, %q, %v outside a repository", base, skipped, err)
+	}
+}
+
+// Git exits 128 for a broken repository too, with other words. Taking
+// that for "no repository" would turn the ratchet off unseen.
+func TestABrokenRepositoryIsStillAnError(t *testing.T) {
+	broken := scratchRepository(t)
+	appendLine(t, filepath.Join(broken, ".git", "config"), "[[[")
+	worktree := t.TempDir()
+	appendLine(t, filepath.Join(worktree, ".git"), "gitdir: /nowhere")
+	for _, directory := range []string{broken, worktree} {
+		t.Setenv("GIT_CEILING_DIRECTORIES", filepath.Dir(directory))
+		base, skipped, err := LoadBase(directory)
+		if err == nil {
+			t.Errorf("%s: got %+v, %q, no error", directory, base, skipped)
+		}
+	}
+}
+
+// Git's words for finding no repository, searching up to the root or
+// stopping at a filesystem boundary (a tmpfs /tmp, a separate /home),
+// against its words for a .git file that points nowhere.
+func TestOnlyGitsNoRepositoryWordsMeanNoRepository(t *testing.T) {
+	for message, want := range map[string]bool{
+		"fatal: not a git repository (or any of the parent " +
+			"directories): .git": true,
+		"fatal: not a git repository (or any parent up to mount point " +
+			"/tmp)\nStopping at filesystem boundary " +
+			"(GIT_DISCOVERY_ACROSS_FILESYSTEM not set).": true,
+		"fatal: not a git repository: /nowhere":        false,
+		"fatal: bad config line 6 in file .git/config": false,
+	} {
+		if got := saysNoRepository(message); got != want {
+			t.Errorf("saysNoRepository(%q) = %v, want %v", message, got,
+				want)
+		}
+	}
+}
+
+func appendLine(t *testing.T, path, line string) {
+	t.Helper()
+	file, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY,
+		0o644)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := file.WriteString(line + "\n"); err != nil {
+		t.Fatal(err)
+	}
+	if err := file.Close(); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestARootThatDoesNotExistIsAnError(t *testing.T) {
 	missing := filepath.Join(t.TempDir(), "nowhere")
 	base, skipped, err := LoadBase(missing)

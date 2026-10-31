@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -27,33 +26,33 @@ func TestNewMountsTheAPIForANewApp(t *testing.T) {
 	if err := runNew([]string{"123-app"}); err != nil {
 		t.Fatalf("runNew: %v", err)
 	}
-	app := readScaffold(t, "123-app", "internal", "app123app", "app.go")
+	app := readScaffold(t, "123-app", "internal", "app123app", "app.go") +
+		readScaffold(t, "123-app", "internal", "app123app", "routes.go")
 	for _, want := range []string{
-		"func Mux(r, apiTree http.Handler) *http.ServeMux",
-		`mux.Handle("/api/v1", apiTree)`,
-		`mux.Handle("/api/v1/", apiTree)`,
-		"apiTree, err := API(d, logger)",
+		`routes.Mount("/api/v1", app.api, "api")`,
+		"api, err := newAPI(database, logger)",
+		"routes.Group(func(guarded *action.Routes) {",
 	} {
 		if !strings.Contains(app, want) {
-			t.Errorf("app.go missing %q:\n%s", want, app)
+			t.Errorf("app.go and routes.go missing %q:\n%s", want, app)
 		}
 	}
-	// The mount is on the outer mux, not the chi router: inside it the
-	// API would sit behind csrf.Protect, which refuses a POST with no
-	// Origin, and an agent's request has none.
-	if strings.Contains(app, `r.Handle("/api/v1`) || strings.Contains(app, `r.Mount("/api/v1`) {
-		t.Errorf("app.go mounts the API inside the router, behind csrf.Protect:\n%s", app)
+	// The mount is beside the page group, not in it: inside it the API
+	// would sit behind csrf.Protect, which refuses a POST with no Origin,
+	// and an agent's request has none.
+	if strings.Index(app, `Mount("/api/v1"`) > strings.Index(app, "Group(") {
+		t.Errorf("the API is mounted in the page group, behind csrf:\n%s", app)
 	}
 
 	apiGo := readScaffold(t, "123-app", "internal", "app123app", "api.go")
 	for _, want := range []string{
 		// apitoken.DerivePrefix("123-app"), the spec's own example.
 		`const tokenPrefix = "app123app"`,
-		"apitoken.New(apitoken.Config{DB: d.Writer(), Prefix: tokenPrefix})",
+		"DB: database.Writer(), Prefix: tokenPrefix,",
 		"gen.APIRoutes()...",
 		"Authorize: authorize,",
-		"return op.DefaultPolicy(ctx, a, o)",
-		"Redact: tokens.Redact,",
+		"return op.DefaultPolicy(ctx, actor, operation)",
+		"Redact:    tokens.Redact,",
 	} {
 		if !strings.Contains(apiGo, want) {
 			t.Errorf("api.go missing %q:\n%s", want, apiGo)
@@ -67,12 +66,11 @@ func TestNewMountsTheAPIForANewApp(t *testing.T) {
 
 	tokens := readScaffold(t, "123-app", "internal", "app123app", "tokens.go")
 	for _, want := range []string{
-		"r.Use(sess.Require)",
-		`r.Get("/tokens", th.Page)`,
-		`r.With(sess.RequireFresh(10*time.Minute)).Post("/tokens", th.Create)`,
-		`r.Post("/tokens/revoke", th.Revoke)`,
-		`r.Post("/tokens/revoke-agent", th.RevokeAgent)`,
-		`r.Post("/tokens/revoke-all", th.RevokeAll)`,
+		`signedIn.Guard("session", page.sessions.Require)`,
+		`signedIn.Handle("GET", tokensPage,`,
+		`fresh.Guard("fresh", page.sessions.RequireFresh(10*time.Minute))`,
+		"http.HandlerFunc(handlers.Create)",
+		`"/tokens/revoke",`, `"/tokens/revoke-agent",`, `"/tokens/revoke-all",`,
 	} {
 		if !strings.Contains(tokens, want) {
 			t.Errorf("tokens.go missing %q:\n%s", want, tokens)
@@ -182,96 +180,5 @@ func TestGitleaksFindsAPITokens(t *testing.T) {
 		if !found {
 			t.Errorf("%s: no rule with the token regex %s", path, tokenRule)
 		}
-	}
-}
-
-// manifest/README.md's step 5 rewrites BootSchema, and an author copies
-// it. This scaffolds an app, declares a resource, generates, and applies
-// step 5's code exactly as the README prints it, then boots the app over
-// a database migrated from the resulting BootSchema. A recipe that
-// drops apitoken.Schema leaves api_tokens uncreated, and every API
-// request then fails on a missing table.
-func TestTheManifestRecipeKeepsTheTokenTable(t *testing.T) {
-	if testing.Short() {
-		t.Skip("scaffolds, generates and tests a whole app")
-	}
-	dir := scaffoldApp(t, "recipeapp")
-	mustWrite(t, filepath.Join(dir, "manifest", "bookmarks.toml"), `name  = "bookmarks"
-route = "/bookmarks"
-store = "mergeable"
-
-[list]
-columns = [{ field = "Title" }]
-
-[form]
-basics = [{ name = "Title", required = true }]
-`)
-	if err := runGenerate([]string{dir}); err != nil {
-		t.Fatalf("generate: %v", err)
-	}
-
-	// Step 5's code is the README's indented lines between its heading
-	// and step 6, with the indent taken off.
-	readme := fmt.Sprintf(manifestReadme, "recipeapp", "recipeapp")
-	step := readme[strings.Index(readme, "\n5. "):strings.Index(readme, "\n6. ")]
-	var code []string
-	for _, line := range strings.Split(step, "\n") {
-		if strings.HasPrefix(line, "       ") {
-			code = append(code, strings.TrimPrefix(line, "       "))
-		}
-	}
-	snippet := strings.Join(code, "\n")
-	imports := snippet[:strings.Index(snippet, ")\n")+2]
-	rest := snippet[len(imports):]
-	if !strings.HasPrefix(imports, "import (") || !strings.Contains(rest, "var BootSchema = ") {
-		t.Fatalf("step 5 no longer reads as an import block then code:\n%s", snippet)
-	}
-
-	path := filepath.Join(dir, "internal", "recipeapp", "migrations.go")
-	b, err := os.ReadFile(path)
-	if err != nil {
-		t.Fatal(err)
-	}
-	src := string(b)
-	boot := regexp.MustCompile(`(?m)^var BootSchema = .*\n`)
-	if !boot.MatchString(src) {
-		t.Fatalf("migrations.go has no BootSchema line to replace:\n%s", src)
-	}
-	src = boot.ReplaceAllString(src, "")
-	end := strings.Index(src, ")\n") + 2
-	src = src[:end] + "\n" + imports + src[end:] + "\n" + rest + "\n"
-	// What an author's editor does next when the recipe no longer names
-	// apitoken: the unused import goes, and the build stays green.
-	if !regexp.MustCompile(`(?m)^[^/\n]*apitoken\.`).MatchString(src) {
-		src = strings.Replace(src, "\t\"amadan.net/rastrillo/rastrillo/apitoken\"\n", "", 1)
-	}
-	mustWrite(t, path, src)
-
-	mustWrite(t, filepath.Join(dir, "internal", "recipeapptest", "recipe_test.go"), `package recipeapptest
-
-import (
-	"testing"
-
-	"amadan.net/rastrillo/rastrillo/dbtest"
-
-	"recipeapp/internal/recipeapp"
-)
-
-func TestBootSchemaHasTheTokenTable(t *testing.T) {
-	newApp(t)
-	set := dbtest.FromSet(recipeapp.BootSchema)
-	defer set.Remove()
-	d := set.Open(t)
-	var n int
-	if err := d.QueryRow("SELECT count(*) FROM sqlite_master WHERE type = 'table' AND name = 'api_tokens'").Scan(&n); err != nil {
-		t.Fatal(err)
-	}
-	if n != 1 {
-		t.Error("BootSchema after manifest/README.md's step 5 creates no api_tokens table")
-	}
-}
-`)
-	if out, err := goTestIn(dir, "-run", "^TestBootSchemaHasTheTokenTable$", "./internal/recipeapptest/"); err != nil {
-		t.Fatalf("the app after the recipe's step 5:\n%s", out)
 	}
 }

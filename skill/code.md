@@ -1,8 +1,6 @@
 # Code that reads like a sentence
 
-Write Go to fourteen rules and four measured limits. The scaffold still
-writes `a`, `w`, `r` and `(a *app)`; those are being renamed. Never
-copy them into new code: spell the names out.
+Write Go to fourteen rules and four measured limits.
 
 ## The rules
 
@@ -91,7 +89,7 @@ belongs in the operation.
 
 One `func Routes(routes *action.Routes, app *App)` under `internal/`
 registers every route; the app serves with
-`Routes(action.NewRoutes(router, ctxFor), app)`. It only registers:
+`Routes(action.NewRoutes(router, app.contextFor), app)`. It only registers:
 `rastrillo routes` calls it with an empty `App`, and `--check` fails an
 action no route mounts. Paths are full, inside `Route` too:
 `Route("/admin", ...)` holds `"/admin/tags"`. A named `Path` registers
@@ -193,5 +191,6 @@ shallow` compares with origin/main's tip: if a raise is only main
 moving on, merge origin/main.
 
 It exits 0 within the limits, 1 over one, 2 when `code.txt` cannot be
-read or `--init` finds it. A scaffolded app's `make ci` does not run
-it yet; write to the limits anyway.
+read or `--init` finds it. A new app's `make ci` runs it as
+`make code`. An older app adopts it with `--init` and a `code` lane in
+`make ci`, and adds `routes --check` only once it has a `Routes`.

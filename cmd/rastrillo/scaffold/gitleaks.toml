@@ -1,12 +1,9 @@
-# gitleaks' default rules, plus one for this app's API tokens. make
-# gitleaks reads this file because it sits at the repository root.
+# gitleaks' default rules, and one for this app's API tokens, which the
+# defaults do not know. A token found here stays in every clone of the
+# history: revoke it on the app's token page.
 [extend]
 useDefault = true
 
-# An API token reads <prefix>_<public id>_<secret>. The default rules do
-# not know the shape, so without this one a token pasted into a test or
-# a config file would be committed unnoticed. If one is found, revoke it
-# on the app's token page: it stays in every clone of the history.
 [[rules]]
 id = "rastrillo-api-token"
 description = "Rastrillo API token"

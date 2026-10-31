@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -241,6 +242,15 @@ import (
 // core is facts, and the 1,461 bytes added land the file at 9,084.
 // The ceiling is the next hundred above that: slack for a one-line
 // correction from review, not room to fill.
+//
+// Held at 9,100 on 2026-10-31, when step 4 rewrote the App shape and
+// Owner scoping for the scaffold's App, New and Routes. The longer
+// names were paid for without cutting a fact: the file list moved to
+// the app's AGENTS.md, which lists it, the session cookie facts to
+// skill/signin.md, and the body-binding rule is said once here, its
+// detail in skill/forms.md. Review's fixes (map gorm.ErrRecordNotFound
+// to op.NotFound; mount gen.Router in Routes) took it to 9,100, with
+// "the scaffold's *gorm.DB" cut to "a *gorm.DB": no slack is left.
 const (
 	// skillCoreBudget holds SKILL.md near its 2026-10-22 size (6,660
 	// bytes) with room for the index to grow by a few topics. Raising
@@ -372,4 +382,77 @@ func TestSkillTeachesTheLocalizerAndCurrencyContract(t *testing.T) {
 			t.Errorf("the skill does not mention %q", want)
 		}
 	}
+}
+
+// The skill teaches the shape rastrillo new writes (readable-code step
+// 4): an agent copies the nearest example, so a line still showing the
+// old chi wiring or a one-letter handler is the code it writes next.
+func TestSkillTeachesTheScaffoldsShape(t *testing.T) {
+	files := skillFiles(t)
+	files["docs/site/app-shape.md"] = readSkillPage(t,
+		"docs/site/app-shape.md")
+	for path, text := range files {
+		joined := strings.Join(strings.Fields(text), " ")
+		gones := obsoleteShape
+		if path != "skill/live.md" {
+			gones = slices.Concat(obsoleteShape, netHTTPShape)
+		}
+		for _, gone := range gones {
+			if strings.Contains(joined, gone) {
+				t.Errorf("%s still says %q", path, gone)
+			}
+		}
+	}
+	core := strings.Join(strings.Fields(files["SKILL.md"]), " ")
+	for _, want := range []string{
+		"`func Routes(routes *action.Routes, app *App)`",
+		"`routes.Mount(\"/api/v1\", app.api, \"api\")`",
+		"`visit.Render(", "`app.owned(request).",
+		"`app.auth.RequireSession`", "`make code`", "`make routes`",
+	} {
+		if !strings.Contains(core, want) {
+			t.Errorf("SKILL.md does not say %q", want)
+		}
+	}
+	screens := strings.Join(strings.Fields(files["skill/screens.md"]), " ")
+	if want := "`func Mount(routes *action.Routes, deps *Deps)`"; !strings.
+		Contains(screens, want) {
+		t.Errorf("skill/screens.md does not say %q", want)
+	}
+	unreleased, _, _ := strings.Cut(readSkillPage(t, "CHANGELOG.md"),
+		"\n## v")
+	unreleased = strings.Join(strings.Fields(unreleased), " ")
+	if strings.Contains(unreleased, "Nothing runs it in an app") ||
+		!strings.Contains(unreleased, "rastrillo budget code --init") ||
+		!strings.Contains(unreleased,
+			"only once the app has a `Routes` function") {
+		t.Errorf("CHANGELOG.md's Unreleased section does not say how " +
+			"an existing app adopts the gates, the routes lane last")
+	}
+}
+
+// obsoleteShape is what the skill said before the scaffold moved to App,
+// New, Routes and actions, and what said an app does not run the gates.
+var obsoleteShape = []string{
+	"does not run it yet", "The scaffold still writes", "being renamed",
+	"Mount(r chi.Router, deps)", "owned(r)", "(a *app)", "notes.App(",
+	"func App(", "r.Use(csrf.Protect(origin))", "r.Use(sess.Require)",
+	"`sess.Require` group", "render(w, r", "`Router` (`app.go`)",
+	"called from `Router`", "`render.go`'s `render`",
+	"the render helper writes none", "everything `App()` applies",
+	"r.Use(sess.Middleware)", "mux.Handle(\"/api/v1\"", "`d.G",
+}
+
+// netHTTPShape is a handler written on net/http and chi. skill/live.md is
+// exempt until step 6 or 7 moves it: its render path cannot go through
+// visit.Render yet (the design's order of work says why).
+var netHTTPShape = []string{"(w, r", "r.Use(", "pages.Render(w, r"}
+
+func readSkillPage(t *testing.T, path string) string {
+	t.Helper()
+	text, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return string(text)
 }

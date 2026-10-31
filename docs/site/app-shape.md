@@ -1,203 +1,191 @@
 # 🤖 The shape of an app
 
-A Rastrillo app is five files plus `migrations.go`. `rastrillo new`
-writes all of them, and they are worth reading in order before you
-change anything.
+Before you change a new app, read these files in order.
 
 ```text
+cmd/<app>/main.go              Resolve, db.Open, New, Serve
+internal/<app>/app.go          App, New and Router
+internal/<app>/routes.go       Routes: every path the app serves
+internal/<app>/handlers.go     the actions
+internal/<app>/render.go       the pages, contextFor and ErrorPage
+internal/<app>/api.go          the JSON API at /api/v1
 internal/<app>/models.go       plain GORM structs
 internal/<app>/migrations.go   Schema and BootSchema
-internal/<app>/app.go          migrate.Apply, sessions, identity plugin, router
-internal/<app>/handlers.go     the owner-scoped CRUD
-internal/<app>/render.go       embedded templates, flash/session-aware page data
-cmd/<app>/main.go              Resolve -> db.Open -> App -> Serve
 ```
 
-`examples/notes` in the framework repo is the worked reference.
+An app made with `--auth=magic` also has `auth.go`, which signs people
+in by emailed link and holds the `owned` seam.
 
 ## main.go
 
 ```go
-logger := slog.Default()
-opts, err := rastrillo.Resolve(rastrillo.Options{DBPath: "notes.db", Logger: logger})
-if err != nil {
-	logger.Error("resolve", "err", err)
-	os.Exit(1)
-}
-
-d, err := db.Open(opts.DBPath, logger)
-if err != nil {
-	logger.Error("open db", "err", err)
-	os.Exit(1)
-}
-defer d.Close()
-
-instanceKey, err := carlos.InstanceKey(os.Getenv("NOTES_INSTANCE_KEY")) // your key if set, else the one CARLOS made
-if err != nil {
-	logger.Error("instance key", "err", err)
-	os.Exit(1)
-}
-bg := &background.Group{}
-mux, err := notes.App(d, origin, instanceKey, bg, logger)
-if err != nil {
-	logger.Error("build", "err", err)
-	os.Exit(1)
-}
-
-opts.Mux = mux
-opts.DBPath = ""
-opts.Background = bg
-if err := rastrillo.Serve(opts); err != nil {
-	logger.Error("serve", "err", err)
-	os.Exit(1)
-}
+started := time.Now()
+logger := slog.New(slog.NewTextHandler(os.Stderr, nil))
+options, err := rastrillo.Resolve(rastrillo.Options{
+	DBPath:        "notes.db",
+	Logger:        logger,
+	Locales:       genlocales.Locales,
+	DefaultLocale: genlocales.DefaultLocale,
+})
+exitOnError(logger, "resolve activation", err)
+database, err := db.Open(options.DBPath, logger)
+exitOnError(logger, "open database", err)
+defer database.Close()
+origin := originFrom(logger)
+// ... the base path, from RASTRILLO_SLUG
+mux, err := notes.New(database, origin, logger)
+exitOnError(logger, "build app", err)
+notes.Configure(&options, mux, started)
+options.DBPath = ""
+exitOnError(logger, "serve", rastrillo.Serve(options))
 ```
 
-Two lines there are easy to miss: set `opts.Mux` after `App` returns,
-and blank `opts.DBPath` so `Serve` does not open the database file a
+Keep these two lines: `Configure` sets `options.Mux` to the app.
+`options.DBPath = ""` stops `Serve` from opening the database file a
 second time.
 
-### Use Resolve and Serve, not Run
+### Use Resolve and Serve
 
-`rastrillo.Run` is the right call when you let the framework own the
-database. Your scaffolded app does not — it calls `db.Open` itself — so
-it uses `Resolve` and `Serve` instead.
+Use `Resolve` and `Serve` because this app opens its database with
+`db.Open`.
 
-The reason is small and annoying. `Run` re-parses argv and repopulates
-`Options.DBPath`, so `Serve` would open a second connection to the file
-`db.Open` already owns. `Resolve` does the same activation-argv and
-`$STATE_DIRECTORY` work without the serving, and hands you the resolved
-options.
+`Run` re-parses argv and fills in `Options.DBPath` again, so `Serve`
+would open a second connection to the file opened by `db.Open`. Use
+`Resolve` to do the activation-argv and `$STATE_DIRECTORY` work without
+serving; it returns the resolved options.
 
 ### What you get from Resolve and Serve
 
-The whole platform contract, and you should never hand-roll any of it:
-activation argv in both shapes the platform uses, `LISTEN_FDS` socket
-activation, `$STATE_DIRECTORY` resolution for a relative database path,
-`GET /healthz` and `GET /api/version`, the SIGTERM drain, and baseline
-security headers with your own `Set` winning.
+Use the framework's start-up support for activation argv in both shapes
+the platform uses, `LISTEN_FDS` socket activation, `$STATE_DIRECTORY`
+resolution for a relative database path, `GET /healthz` and
+`GET /api/version`, the SIGTERM drain, and baseline security headers.
+Your own `Set` wins.
 
 [Deploying](/docs/deploying) covers what the platform does with all of
 that.
 
 ## app.go
 
-The whole wiring, in order:
+`App` holds what the actions need. Its fields are unexported.
 
 ```go
-func App(d *db.DB, origin, instanceKey string, bg *background.Group, logger *slog.Logger) (*http.ServeMux, error) {
-	if _, err := migrate.Apply(context.Background(), d, BootSchema); err != nil {
-		return nil, err
-	}
-	writer, err := d.G.DB()
-	if err != nil {
-		return nil, err
-	}
-	sess, err := sessions.New(sessions.Config{DB: writer, Origin: origin, Logger: logger})
-	if err != nil {
-		return nil, err
-	}
-
-	powAssets := rastrillo.NewAssets(pow.Assets())
-	guard, err := pow.New(pow.Config{
-		InstanceKey: instanceKey,
-		Nonces:      pow.SQLNonces(writer),
-		Difficulty:  16,
-		MinAge:      500 * time.Millisecond,
-		ScriptURL:   "/pow" + powAssets.Path("pow.js"),
-		WorkerURL:   "/pow" + powAssets.Path("pow-worker.js"),
-	})
-	if err != nil {
-		return nil, err
-	}
-	bg.Loop(context.Background(), 10*time.Minute, func() {
-		if err := guard.Sweep(time.Now()); err != nil {
-			logger.Warn("sweep spent challenges", "err", err)
-		}
-	})
-
-	a := &app{db: d.G}
-	ph, err := password.New(password.Config{
-		Sessions: sess, Proof: guard, Lookup: lookupUser(d.G), Create: createUser(d.G),
-		RenderSignin: renderSignin, RenderSignup: renderSignup,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	r := chi.NewRouter()
-	r.Use(csrf.Protect(origin))
-	r.Handle("/pow/*", http.StripPrefix("/pow/", powAssets.Handler()))
-	r.Get("/signin", ph.SigninPage)
-	r.Post("/signin", ph.Signin)
-	r.Get("/signup", ph.SignupPage)
-	r.Post("/signup", ph.Signup)
-	r.Post("/signout", ph.Signout)
-	r.Group(func(r chi.Router) {
-		r.Use(sess.Require)
-		r.Get("/", a.listNotes)
-	})
-	mux := http.NewServeMux()
-	mux.Handle("/", r)
-	return mux, nil
+type App struct {
+	database *db.DB
+	logger   *slog.Logger
+	origin   string
+	api      http.Handler
 }
 ```
 
-The order matters in a few places. `migrate.Apply` runs before anything
-reads a table — [Migrations](/docs/migrations) explains `BootSchema`.
-`csrf.Protect(origin)` goes on app-wide, above the route groups, so a
-route you add in six months is protected without you remembering
-anything. Signed-in routes live in a `chi.Group` with `sess.Require`,
-while sign-in and sign-up sit outside it, since a signed-out visitor has
-to be able to reach them.
+`New` builds the app and returns the `*http.ServeMux` that `Configure`
+hands to `Serve`. It calls `Router`, which does the work:
 
-The Guard is built after `migrate.Apply` because `pow.New` checks its
-table is there; [pow](/docs/reference/pow) covers the rest.
+```go
+migrated, err := migrate.Apply(context.Background(), database, BootSchema)
+// ...
+api, err := newAPI(database, logger)
+// ...
+app := &App{database: database, logger: logger, origin: origin, api: api}
+router := chi.NewRouter()
+Routes(action.NewRoutes(router, app.contextFor), app)
+```
 
-`App` returns the `*http.ServeMux` that `main.go` hands to `Serve` as
-`opts.Mux`.
+`migrate.Apply` runs before anything reads a table.
+[Migrations](/docs/migrations) explains `BootSchema`. The perf test
+calls `Router` too, so build anything the app needs at boot there.
+
+## routes.go
+
+```go
+const homePage action.Path = "/"
+
+func Routes(routes *action.Routes, app *App) {
+	routes.Mount("/static", assets.Handler(), "static")
+	routes.Mount("/api/v1", app.api, "api")
+	routes.Group(func(guarded *action.Routes) {
+		guarded.Guard("csrf", csrf.Protect(app.origin))
+		guarded.Guard("pages", pages.Middleware)
+		guarded.Get(homePage, app.home)
+	})
+}
+```
+
+`Routes` registers everything the app serves. Put every page and form
+in the guarded group: its `csrf` guard refuses a write from another
+origin. The static files and the API stay outside it. A bearer token is
+the API's only credential, so the API gets no CSRF check.
+
+`Routes` must only register routes. `rastrillo routes` calls it with an
+empty `App` to list them, and `make routes` fails for an action that no
+route mounts. See [CLI](/docs/cli#rastrillo-routes).
+
+In an `--auth=magic` app, put sign-in in the guarded group and pages
+that need a session in their own group. A signed-out visitor who opens
+one of those pages is sent to sign in.
+
+```go
+guarded.Group(func(owned *action.Routes) {
+	owned.Guard("session", app.auth.RequireSession)
+	owned.Get(accountPage, app.account)
+})
+```
 
 ## handlers.go
 
-Handlers hang off one struct holding the `*gorm.DB`:
+Each page is an action: a method on `App` that takes one
+`*action.Visit`.
 
 ```go
-type app struct{ db *gorm.DB }
-
-func (a *app) owned(r *http.Request) *gorm.DB {
-	uid, _ := sessions.UserID(r)
-	return scope.Owned(a.db, uid)
+func (app *App) home(visit *action.Visit) {
+	visit.Render("index", http.StatusOK, nil)
 }
 ```
 
-That `owned(r)` method is the most important line in the app.
-[Scoping](/docs/scoping) explains what goes wrong without it, and the
-one identity plugin where dropping the `ok` is a bug.
+An action reads its input, runs one operation, answers a refusal, and
+says what success looks like. [action](/docs/reference/action) shows
+an action with a form.
+
+In an `--auth=magic` app, every query on an owned row goes through
+`app.owned`, in `auth.go`:
+
+```go
+func (app *App) owned(request *http.Request) *gorm.DB {
+	return scope.OwnedBy(app.database.G, "owner", ownerOf(request))
+}
+```
+
+Use this method to scope owned rows. [Scoping](/docs/scoping) explains
+what goes wrong without it.
 
 ## render.go
 
-Parse one `*template.Template` per page — layout plus that page —
-instead of one tree containing everything. Two pages can then both
-define `"content"`, which they otherwise could not.
+`render.go` parses every page once, at boot. Add a new page's name to
+the list in `newPages`.
 
-This is also where `flash.Take(w, r)` gets called, once per page, so the
-layout can render a notice. [Templates](/docs/templates) covers what is
-available inside them.
+`contextFor` builds each request's `Ctx`. Its `Render` draws through
+that request, so `visit.Render` uses the request's language and base
+path.
 
-`render.go` also holds `ErrorPage`, a `rastrillo.ErrorPageFunc` that
-renders `templates/errors.html` — `ui`'s `error-page` partial inside
-your own layout. `main.go` points `opts.ErrorPage` at it so a panic gets
-a real page; wire it to `Ctx.ErrorPage` too and the 500 a handler
-answers looks the same as the 500 a panic answers.
+`ErrorPage` draws `templates/errors.html` for a refusal and, through
+`Options.ErrorPage`, for a panic. A 500 from an action looks the same
+as a 500 from a panic. [Templates](/docs/templates) covers what a page
+can use.
+
+## api.go
+
+`newAPI` builds the JSON API at `/api/v1`. `authorize` is the one policy
+for pages and the API. The API cannot see page middleware, so add page
+rules to `authorize` too. [JSON API](/docs/api) covers the rest.
 
 ## Before you call it done
 
-1. Every handler on an owned model goes through the `owned(r)` method.
+1. Every action on an owned model goes through `app.owned`.
 2. Every update names its columns in `.Select(...)`.
-3. `csrf.Protect(origin)` is mounted app-wide, above the route groups.
-4. Signed-in routes, jobs' included, are in a group with `sess.Require`.
+3. Every page and form is in the guarded group in `Routes`.
+4. Signed-in pages are behind the session guard.
 5. One `migrate.Apply` runs at boot, and `make ci` runs
    `rastrillo migration check`.
-6. `opts.DBPath` is blanked before `Serve` when your app opened its own
-   handle.
+6. `options.DBPath` is blanked before `Serve`.
 7. Not-found and not-yours both answer 404.
+8. `make ci` passes, `make code` and `make routes` included.

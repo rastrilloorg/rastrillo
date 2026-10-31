@@ -5,17 +5,15 @@ import (
 	"embed"
 	"flag"
 	"fmt"
-	"go/token"
 	"html"
 	"os"
 	"path/filepath"
 	"slices"
 	"strings"
-	"unicode"
-	"unicode/utf8"
 
 	"amadan.net/rastrillo/rastrillo"
 	"amadan.net/rastrillo/rastrillo/apitoken"
+	"amadan.net/rastrillo/rastrillo/internal/appname"
 	"amadan.net/rastrillo/rastrillo/internal/generate/apigen"
 	"amadan.net/rastrillo/rastrillo/internal/generate/contract"
 	"amadan.net/rastrillo/rastrillo/internal/generate/packs"
@@ -48,7 +46,7 @@ func scaffoldFile(name string) string {
 
 // runNew implements `rastrillo new <name>`: the middle-layer app shape
 // (SKILL.md's app shape) — GORM models, a chi router, embedded templates, and a
-// main.go wiring Resolve → db.Open → App → Serve — plus a passing test
+// main.go wiring Resolve → db.Open → New → Serve — plus a passing test
 // harness, so the first `go test ./...` is green before the developer
 // writes a line.
 //
@@ -89,6 +87,9 @@ func runNew(args []string) error {
 		return fmt.Errorf("unknown --auth %q: known kinds are %s", *authKind, strings.Join(authKinds, ", "))
 	}
 	name := rest[0]
+	if err := appname.CheckPackage(name, packageName(name)); err != nil {
+		return err
+	}
 	if _, err := os.Stat(name); err == nil {
 		return fmt.Errorf("%s already exists", name)
 	}
@@ -131,142 +132,77 @@ func runNew(args []string) error {
 	}
 
 	pkg := packageName(name)
-	dirs := []string{
-		name,
-		filepath.Join(name, "cmd", name),
-		filepath.Join(name, "manifest"),
-		filepath.Join(name, "internal", pkg),
-		filepath.Join(name, "internal", pkg, "static"),
-		filepath.Join(name, "internal", pkg, "templates"),
-		filepath.Join(name, "internal", pkg, "migrations"),
-		filepath.Join(name, "internal", pkg, "icons"),
-		filepath.Join(name, "internal", pkg+"test"),
-		filepath.Join(name, ".amadan", "ci.d"),
-		filepath.Join(name, ".rastrillo"),
-	}
-	for _, d := range dirs {
-		if err := os.MkdirAll(d, 0o755); err != nil {
-			return err
-		}
-	}
-
 	appDir := filepath.Join(name, "internal", pkg)
+	inApp := func(parts ...string) string {
+		return filepath.Join(append([]string{appDir}, parts...)...)
+	}
+	inTests := func(file string) string {
+		return filepath.Join(name, "internal", pkg+"test", file)
+	}
+	atRoot := func(parts ...string) string {
+		return filepath.Join(append([]string{name}, parts...)...)
+	}
+	env, prefix := strings.ToUpper(pkg), apitoken.DerivePrefix(name)
 
-	// The sidebar and console shells open on a phone to the index, with
-	// its content hidden there (ui's phone layout), so those two shells
-	// alone get a second page to hold it, plus the route, handler and
-	// test that go with it. Every other shell keeps today's one page.
-	indexHTML, routes, handlers, pages, extraTests := indexTemplate, "", "", `"index", "errors", "tokens"`, ""
+	// The sidebar and console shells open on a phone to the index, whose
+	// content is hidden there, so they alone get a second page to hold
+	// it, with its path, route, action and test.
+	indexHTML, pages := indexTemplate, `"index", "errors", "tokens"`
+	var paths, routes, actions, extraTests string
 	if twoPageShells[*shell] {
-		indexHTML = fmt.Sprintf(sectionsIndexTemplate, scaffoldOverview, html.EscapeString(name))
-		routes = "\n\tr.Get(\"/overview\", a.overview)"
-		handlers = overviewHandler
+		indexHTML = fmt.Sprintf(sectionsIndexTemplate, scaffoldOverview,
+			html.EscapeString(name))
 		pages = `"index", "overview", "errors", "tokens"`
-		extraTests = overviewTest
+		paths, routes = overviewPath, overviewRoute
+		actions, extraTests = overviewAction, overviewTest
 	}
 
-	files := map[string]string{
-		filepath.Join(name, "go.mod"): fmt.Sprintf(goModTemplate,
-			name, rastrilloVersion(), chiPinnedVersion, gormPinnedVersion),
-		filepath.Join(name, "cmd", name, "main.go"): fmt.Sprintf(mainTemplate, name, pkg, strings.ToUpper(pkg)),
-		filepath.Join(appDir, "app.go"):             fmt.Sprintf(appTemplate, pkg, routes, name),
-		filepath.Join(appDir, "models.go"):          fmt.Sprintf(modelsTemplate, pkg),
-		filepath.Join(appDir, "migrations.go"):      fmt.Sprintf(migrationsTemplate, pkg),
-		filepath.Join(appDir, "handlers.go"):        fmt.Sprintf(handlersTemplate, pkg, handlers),
-		filepath.Join(appDir, "render.go"):          fmt.Sprintf(renderTemplate, name, pkg, pages),
-		// The JSON API and its token page (JSON API spec §3, §5). The
-		// prefix is worked out here, once, from the app's name.
-		filepath.Join(appDir, "api.go"):                            fmt.Sprintf(scaffoldFile("api.go.tmpl"), pkg, name, apitoken.DerivePrefix(name)),
-		filepath.Join(appDir, "tokens.go"):                         fmt.Sprintf(scaffoldFile("tokens.go.tmpl"), pkg),
-		filepath.Join(appDir, "templates", "tokens.html"):          scaffoldFile("tokens.html"),
-		filepath.Join(name, "internal", pkg+"test", "api_test.go"): fmt.Sprintf(scaffoldFile("api_test.go.tmpl"), name, pkg, apitoken.DerivePrefix(name)),
-		filepath.Join(name, ".gitleaks.toml"):                      scaffoldFile("gitleaks.toml"),
-		// The page frame, chosen by --shell and delivered verbatim from
-		// ui.Layout: app-owned from here on, exactly like tokens.css.
-		// Its chrome is blocks with working defaults (title, lang, dir,
-		// and in the chrome shells brand/nav/account/locale/foot), so a
-		// page overrides only what it cares about.
-		filepath.Join(appDir, "templates", "layout.html"): string(layoutHTML),
-		filepath.Join(appDir, "templates", "index.html"):  indexHTML,
-		filepath.Join(appDir, "templates", "errors.html"): errorsTemplate,
-		// The initial migration and the schema.sql snapshot it adds up
-		// to, both static: the scaffold's Note model is fixed and
-		// known at the time this template is written, so unlike a real
-		// app's later migrations, generating this one at `new` time
-		// would buy nothing but a network fetch and a full compile —
-		// exactly what `new` promises not to need. Produced once by
-		// hand (scaffold an app, run `rastrillo migration generate`
-		// against it, paste the result here); TestScaffoldMigratesAndPassesCheck
-		// is what keeps it from drifting off of modelsTemplate's Note.
-		filepath.Join(appDir, "migrations", "0001_init.sql"): initMigrationTemplate,
-		filepath.Join(appDir, "migrations", "schema.sql"):    schemaSQLTemplate,
-		// The test harness, delivered once like tokens.css: app-owned
-		// from here on — edit it, grow it, or delete it. The example
-		// tests pass on a fresh scaffold and pin the out-of-the-box
-		// asset-fingerprinting behavior.
-		filepath.Join(name, "internal", pkg+"test", "harness_test.go"): fmt.Sprintf(harnessTemplate, name, pkg),
-		// The pin that makes the vendored bytes above verifiable: a
-		// reviewer runs the suite and knows static/'s ~56KB is the
-		// library's, not app diff to read line by line.
-		filepath.Join(name, "internal", pkg+"test", "vendored_test.go"): fmt.Sprintf(vendoredTestTemplate, pkg, *theme),
-		filepath.Join(name, "internal", pkg+"test", "index_test.go"):    fmt.Sprintf(indexTestTemplate, name, pkg, extraTests),
-		// The browser drive, on the same delivered-once terms as the
-		// harness. browser_test.go, never harness_test.go: that name
-		// (and word) already belongs to the httptest HTTP harness.
-		filepath.Join(name, "internal", pkg+"test", "browser_test.go"): fmt.Sprintf(browserTestTemplate, name, pkg, strings.ToUpper(pkg)),
-		// The perf lane and the exemptions file every budget reads.
-		filepath.Join(name, "internal", pkg+"test", "perf_test.go"): fmt.Sprintf(perfTestTemplate, name, pkg),
-		filepath.Join(name, ".rastrillo", "budgets.txt"):            budgetsTxtTemplate,
-		filepath.Join(name, "README.md"):                            fmt.Sprintf(readmeTemplate, name, pkg, strings.ToUpper(pkg)),
-		filepath.Join(name, "manifest", "README.md"):                fmt.Sprintf(manifestReadme, name, pkg),
-		filepath.Join(name, "manifest", "app.toml"):                 fmt.Sprintf(appTOMLTemplate, code),
-		filepath.Join(name, "Makefile"):                             fmt.Sprintf(makefileTemplate, name, staticcheckVersion, govulncheckVersion, gitleaksVersion, goToolchain),
-		filepath.Join(name, ".gitignore"):                           fmt.Sprintf(gitignoreTemplate, name),
-		// The app's icon set, on the same terms as tokens.css and
-		// rastrillo.js: delivered once, app-owned from here on.
-		filepath.Join(appDir, "icons", "icons.go"): string(rendered.Source),
-		// AGENTS.md carries the instructions — it is the cross-agent
-		// file, so they reach whatever agent someone uses. CLAUDE.md is
-		// an @AGENTS.md import and nothing else.
-		filepath.Join(name, "AGENTS.md"): fmt.Sprintf(agentsMDTemplate, name) + string(conventions),
-		filepath.Join(name, "CLAUDE.md"): claudeMDPointer,
-	}
-	// The vendored static files, written from the one list. Each is
-	// delivered once and app-owned from here on: rastrillo.Serve never
-	// serves CSS at runtime, and new/generate never touch these again.
-	//
-	//	tokens.css     the design-token stylesheet — structure only
-	//	theme.css      the colour, type family and shape tokens
-	//	               tokens.css paints its classes with; swap it for
-	//	               another of ui.ThemeNames() or edit it freely
-	//	shell.css      the sidebar and console shells' slide between
-	//	               the index and a page on a phone
-	//	rastrillo.js   the fragment shim behind data-poll and menu dismiss
-	//	busy.js        the busy rule: every submit button, data-busy opts out
-	//	live.js        live pages: inert until a page carries the rastrillo-live meta
-	//	light.js       the light the depth styles read; delete it for the still design
-	//	anchor.js      a dropdown's menu kept on the screen where CSS anchor
-	//	               positioning is missing; inert where it is not, and
-	//	               deletable once every browser the app supports has it
-	//	shell.js       the same two shells' phone navigation: the slide's
-	//	               direction, a back control that reuses history,
-	//	               focus returned to the section the reader left
-	//	select.js      field-select's searchable enhancement, inert
-	//	               until a <select> opts in with data-rst-select
-	//	datetime.js    the date fields' natural-language combobox,
-	//	               inert until an input opts in with data-rst-date
-	//	calendar.js    the month grid that combobox's button opens,
-	//	               inert until datetime.js asks it for a panel
-	//
-	// An app that never renders a big select or a date field can delete
-	// that script and its tag; nothing else changes. The date fields are
-	// two files, and deleting one of the pair is the awkward case: drop
-	// calendar.js alone and the field still works, with its button
-	// falling back to the browser's own picker. shell.js and shell.css
-	// are written for every shell like the rest (select.js and calendar.js
-	// already ship to apps that never link them), and are deletable where
-	// the shell does not link them; the app's vendoring test then needs
-	// them in vendoredIsMine, or it fails on the missing files.
+	files := map[string]string{}
+	files[atRoot("go.mod")] = fmt.Sprintf(goModTemplate,
+		name, rastrilloVersion(), chiPinnedVersion, gormPinnedVersion)
+	files[atRoot("cmd", name, "main.go")] = fmt.Sprintf(mainTemplate,
+		name, pkg, env)
+	files[inApp("app.go")] = fmt.Sprintf(appTemplate, pkg, name)
+	files[inApp("routes.go")] = fmt.Sprintf(routesTemplate, pkg, paths, routes)
+	files[inApp("models.go")] = fmt.Sprintf(modelsTemplate, pkg)
+	files[inApp("migrations.go")] = fmt.Sprintf(migrationsTemplate, pkg)
+	files[inApp("handlers.go")] = fmt.Sprintf(handlersTemplate, pkg, actions)
+	files[inApp("render.go")] = fmt.Sprintf(renderTemplate, name, pkg, pages)
+	files[inApp("api.go")] = fmt.Sprintf(apiTemplate, pkg, name, prefix)
+	files[inApp("tokens.go")] = fmt.Sprintf(tokensTemplate, pkg)
+	files[inApp("templates", "tokens.html")] = scaffoldFile("tokens.html")
+	files[inApp("templates", "layout.html")] = string(layoutHTML)
+	files[inApp("templates", "index.html")] = indexHTML
+	files[inApp("templates", "errors.html")] = errorsTemplate
+	files[inApp("migrations", "0001_init.sql")] = initMigrationTemplate
+	files[inApp("migrations", "schema.sql")] = schemaSQLTemplate
+	files[inApp("icons", "icons.go")] = string(rendered.Source)
+	files[inTests("api_test.go")] = fmt.Sprintf(apiTestTemplate,
+		name, pkg, prefix)
+	files[inTests("harness_test.go")] = fmt.Sprintf(harnessTemplate, name, pkg)
+	files[inTests("vendored_test.go")] = fmt.Sprintf(vendoredTestTemplate,
+		pkg, *theme)
+	files[inTests("index_test.go")] = fmt.Sprintf(indexTestTemplate,
+		name, pkg, extraTests)
+	files[inTests("browser_test.go")] = fmt.Sprintf(browserTestTemplate,
+		name, pkg)
+	files[inTests("perf_test.go")] = fmt.Sprintf(perfTestTemplate, name, pkg)
+	files[atRoot(".gitleaks.toml")] = scaffoldFile("gitleaks.toml")
+	files[atRoot(".rastrillo", "budgets.txt")] = budgetsTxtTemplate
+	files[atRoot("README.md")] = fmt.Sprintf(readmeTemplate, name, pkg, env)
+	files[atRoot("manifest", "README.md")] = fmt.Sprintf(manifestReadme,
+		name, pkg)
+	files[atRoot("manifest", "app.toml")] = fmt.Sprintf(appTOMLTemplate,
+		code)
+	files[atRoot("Makefile")] = fmt.Sprintf(makefileTemplate, name,
+		staticcheckVersion, govulncheckVersion, gitleaksVersion, goToolchain)
+	files[atRoot(".gitignore")] = fmt.Sprintf(gitignoreTemplate, name)
+	// AGENTS.md carries the instructions, for whatever agent someone
+	// uses; CLAUDE.md is an @AGENTS.md import and nothing else.
+	files[atRoot("AGENTS.md")] = fmt.Sprintf(agentsMDTemplate, name) +
+		string(conventions)
+	files[atRoot("CLAUDE.md")] = claudeMDPointer
+	// The vendored static files: see the list below runNew.
 	if twoPageShells[*shell] {
 		files[filepath.Join(appDir, "templates", "overview.html")] = fmt.Sprintf(overviewTemplate, scaffoldOverview, html.EscapeString(name))
 	}
@@ -281,10 +217,8 @@ func runNew(args []string) error {
 		}
 	}
 
-	for path, content := range files {
-		if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
-			return err
-		}
+	if err := writeScaffold(name, files); err != nil {
+		return err
 	}
 	// The packs app.toml above declares, written now so a new app
 	// builds and boots before its first rastrillo generate. So are
@@ -309,17 +243,11 @@ func runNew(args []string) error {
 	// non-executable job "skipped" with only a hint — the known silent
 	// failure mode, closed at scaffold time.
 	ciScripts := map[string]string{
-		filepath.Join(name, ".amadan", "ci"):                         amadanCI,
-		filepath.Join(name, ".amadan", "ci.d", "10-vet"):             amadanStep("vet"),
-		filepath.Join(name, ".amadan", "ci.d", "15-budget"):          amadanStep("budget"),
-		filepath.Join(name, ".amadan", "ci.d", "20-fmt"):             amadanStep("fmt-check"),
-		filepath.Join(name, ".amadan", "ci.d", "25-staticcheck"):     amadanStep("staticcheck"),
-		filepath.Join(name, ".amadan", "ci.d", "26-govulncheck"):     amadanStep("govulncheck"),
-		filepath.Join(name, ".amadan", "ci.d", "27-gitleaks"):        amadanStep("gitleaks"),
-		filepath.Join(name, ".amadan", "ci.d", "30-test"):            amadanStep("test"),
-		filepath.Join(name, ".amadan", "ci.d", "35-perf"):            amadanStep("perf"),
-		filepath.Join(name, ".amadan", "ci.d", "40-migration-check"): amadanStep("migration-check"),
-		filepath.Join(name, ".amadan", "ci.d", "45-generate-check"):  amadanStep("generate-check"),
+		filepath.Join(name, ".amadan", "ci"): amadanCI,
+	}
+	for _, step := range runnerSteps {
+		path := filepath.Join(name, ".amadan", "ci.d", step.file)
+		ciScripts[path] = amadanStep(step.target)
 	}
 	for path, content := range ciScripts {
 		if err := os.WriteFile(path, []byte(content), 0o755); err != nil {
@@ -336,12 +264,16 @@ func runNew(args []string) error {
 	}
 
 	fmt.Printf("rastrillo new: scaffolded %s/\n", name)
-	fmt.Printf("  cmd/%s/main.go       (Resolve -> db.Open -> App -> Serve)\n", name)
-	fmt.Printf("  internal/%s/         (models, migrations, app, handlers, render, templates, static)\n", pkg)
+	fmt.Printf("  cmd/%s/main.go       (Resolve -> db.Open -> New -> Serve)\n",
+		name)
+	fmt.Printf("  internal/%s/         (app, routes, handlers, models, "+
+		"migrations, render, templates, static)\n", pkg)
 	fmt.Printf("  internal/%stest/     (harness + example tests, passing out of the box;\n", pkg)
 	fmt.Println("                        browser_test.go = the browser drive, go test -tags browser ./...)")
 	fmt.Println("  manifest/            (the declarative path: drop a <name>.toml here, see its README)")
-	fmt.Println("  Makefile             (make ci = vet + fmt + staticcheck + govulncheck + gitleaks + budget + test + perf + migration check + generate check, the one gate definition;")
+	fmt.Println("  Makefile             (make ci = vet + fmt + staticcheck + " +
+		"govulncheck + gitleaks + budget + code + routes + test + perf + " +
+		"migration check + generate check, the one gate definition;")
 	fmt.Println("                        make release = the stripped binary)")
 	fmt.Println("  .gitignore           (build output and the local database)")
 	fmt.Println("  .amadan/ci, ci.d/    (amadan runner CI, executable, delegating to make)")
@@ -368,28 +300,45 @@ func runNew(args []string) error {
 	return nil
 }
 
-// packageName derives a valid Go identifier from the app name for the
-// scaffolded app package: name also serves as the module path, where
-// hyphens (and other punctuation) are legal, but a package clause
-// needs an identifier. Non-identifier runes are dropped rather than
-// rejected, so every name rastrillo new already accepts keeps working.
-// A leading digit (decoded properly, not just the first byte, so a
-// multi-byte leading digit is still caught) or a bare Go keyword — a
-// package clause can't start with either — earns the same "app" prefix.
-func packageName(name string) string {
-	var b strings.Builder
-	for _, r := range name {
-		if r == '_' || unicode.IsLetter(r) || unicode.IsDigit(r) {
-			b.WriteRune(r)
-		}
-	}
-	out := b.String()
-	first, _ := utf8.DecodeRuneInString(out)
-	if out == "" || unicode.IsDigit(first) || token.IsKeyword(out) {
-		out = "app" + out
-	}
-	return out
-}
+// The vendored static files rastrillo new writes into static/, from the
+// one list in ui.VendoredAssets. Each is delivered once and app-owned
+// from then on: rastrillo.Serve never serves CSS at runtime, and
+// new/generate never touch these again.
+//
+//	tokens.css     the design-token stylesheet — structure only
+//	theme.css      the colour, type family and shape tokens
+//	               tokens.css paints its classes with; swap it for
+//	               another of ui.ThemeNames() or edit it freely
+//	shell.css      the sidebar and console shells' slide between
+//	               the index and a page on a phone
+//	rastrillo.js   the fragment shim behind data-poll and menu dismiss
+//	busy.js        the busy rule: every submit button, data-busy opts out
+//	live.js        live pages: inert until a page carries the
+//	               rastrillo-live meta
+//	light.js       the light the depth styles read; delete it for the
+//	               still design
+//	anchor.js      a dropdown's menu kept on the screen where CSS anchor
+//	               positioning is missing; inert where it is not, and
+//	               deletable once every browser the app supports has it
+//	shell.js       the same two shells' phone navigation: the slide's
+//	               direction, a back control that reuses history,
+//	               focus returned to the section the reader left
+//	select.js      field-select's searchable enhancement, inert
+//	               until a <select> opts in with data-rst-select
+//	datetime.js    the date fields' natural-language combobox,
+//	               inert until an input opts in with data-rst-date
+//	calendar.js    the month grid that combobox's button opens,
+//	               inert until datetime.js asks it for a panel
+//
+// An app that never renders a big select or a date field can delete
+// that script and its tag; nothing else changes. The date fields are
+// two files, and deleting one of the pair is the awkward case: drop
+// calendar.js alone and the field still works, with its button
+// falling back to the browser's own picker. shell.js and shell.css
+// are written for every shell like the rest (select.js and calendar.js
+// already ship to apps that never link them), and are deletable where
+// the shell does not link them; the app's vendoring test then needs
+// them in vendoredIsMine, or it fails on the missing files.
 
 // The scaffold's chi and gorm pins. The CLI's own build info can't
 // supply these (cmd/rastrillo imports neither), so they are constants
@@ -412,110 +361,33 @@ require (
 	gorm.io/gorm %s
 )
 
-// The CLI this app's own gate runs: make migration-check and make
-// generate-check. It is
-// declared as a tool so that go mod tidy records the CLI's build
-// dependencies in go.sum alongside the app's own. Nothing an app
-// imports reaches, say, the TOML parser behind manifest, so without
-// this line tidy prunes it and the first make ci on a clean scaffold
-// dies with "missing go.sum entry for github.com/BurntSushi/toml" —
-// a dependency that is real at go run time and invisible at tidy
-// time. Deleting this line breaks the gate, not the app.
+// The CLI make ci runs. Without this line go mod tidy drops its
+// dependencies from go.sum, and make ci fails on a missing entry.
 tool amadan.net/rastrillo/rastrillo/cmd/rastrillo
 `
 
-const mainTemplate = `// Command %[1]s wires the app: resolve the platform's activation
-// argv, open the database, build the app, serve.
-package main
-
-import (
-	"log/slog"
-	"os"
-	"time"
-
-	"amadan.net/rastrillo/rastrillo"
-	"amadan.net/rastrillo/rastrillo/basepath"
-	"amadan.net/rastrillo/rastrillo/db"
-
-	genlocales "%[1]s/gen/locales"
-	%[2]s "%[1]s/internal/%[2]s"
+// The app's Go files, as the files they become: %[n]s are filled in at
+// scaffold time, in the order each runNew call gives.
+var (
+	mainTemplate         = scaffoldFile("main.go.tmpl")
+	appTemplate          = scaffoldFile("app.go.tmpl")
+	routesTemplate       = scaffoldFile("routes.go.tmpl")
+	modelsTemplate       = scaffoldFile("models.go.tmpl")
+	migrationsTemplate   = scaffoldFile("migrations.go.tmpl")
+	handlersTemplate     = scaffoldFile("handlers.go.tmpl")
+	renderTemplate       = scaffoldFile("render.go.tmpl")
+	harnessTemplate      = scaffoldFile("harness_test.go.tmpl")
+	vendoredTestTemplate = scaffoldFile("vendored_test.go.tmpl")
+	indexTestTemplate    = scaffoldFile("index_test.go.tmpl")
+	browserTestTemplate  = scaffoldFile("browser_test.go.tmpl")
+	perfTestTemplate     = scaffoldFile("perf_test.go.tmpl")
+	apiTemplate          = scaffoldFile("api.go.tmpl")
+	tokensTemplate       = scaffoldFile("tokens.go.tmpl")
+	apiTestTemplate      = scaffoldFile("api_test.go.tmpl")
+	readmeTemplate       = scaffoldFile("README.md.tmpl")
+	makefileTemplate     = scaffoldFile("Makefile.tmpl")
+	agentsMDTemplate     = scaffoldFile("AGENTS.md.tmpl")
 )
-
-func main() {
-	// First, so perf's cold budget counts the whole start: a hibernated
-	// instance pays all of it on someone's click.
-	started := time.Now()
-	logger := slog.New(slog.NewTextHandler(os.Stderr, nil))
-
-	// Resolve, not Run: this app opens its own database handle via
-	// db.Open — a *gorm.DB with a split reader/writer pool, not the
-	// bare *sql.DB Options.Router would hand back — so Options.DBPath
-	// must be empty again by the Serve call below, or Serve would open
-	// a second, unused connection to the same file.
-	opts, err := rastrillo.Resolve(rastrillo.Options{
-		DBPath: "%[1]s.db",
-		Logger: logger,
-		// Locales and DefaultLocale come from manifest/app.toml, through
-		// gen/locales. Boot refuses a configuration whose packs this
-		// binary does not link.
-		Locales:       genlocales.Locales,
-		DefaultLocale: genlocales.DefaultLocale,
-	})
-	if err != nil {
-		logger.Error("resolve activation", "err", err)
-		os.Exit(1)
-	}
-
-	d, err := db.Open(opts.DBPath, logger)
-	if err != nil {
-		logger.Error("open database", "err", err)
-		os.Exit(1)
-	}
-	defer d.Close()
-
-	// Origin decides the CSRF same-origin check (and, when the app
-	// grows accounts, the Secure/__Host- cookie attributes) — so
-	// defaulting it silently in production would be a real bug. Loud
-	// on purpose, harmless in local dev.
-	origin := os.Getenv("%[3]s_ORIGIN")
-	if origin == "" {
-		origin = "http://localhost:8080"
-		logger.Warn("%[3]s_ORIGIN not set; defaulting", "origin", origin)
-	}
-
-	// A path-routed tenant serves under /<slug> on the origin above:
-	// RASTRILLO_SLUG names the slug, or RASTRILLO_SLUG_FROM_HOST=1 reads
-	// it from CARLOS_HOST, the instance's hostname. Neither serves at the
-	// root. A slug it cannot serve stops the app here: at the root it
-	// would answer the hub's own paths. The instance's hostname redirects
-	// to the product path; set opts.BasePath.DirectHost =
-	// basepath.ServeDirect to serve a public view there instead.
-	opts.BasePath, err = basepath.FromEnv(origin, os.Getenv)
-	if err != nil {
-		logger.Error("base path", "err", err)
-		os.Exit(1)
-	}
-	if opts.BasePath.Enabled() {
-		logger.Info("base path", "path", "/"+opts.BasePath.Slug)
-	}
-
-	mux, err := %[2]s.App(d, origin, logger)
-	if err != nil {
-		logger.Error("build app", "err", err)
-		os.Exit(1)
-	}
-
-	// Configure sets Mux, ErrorPage (wire render.go's ErrorPage to
-	// Ctx.ErrorPage too as the app grows handlers) and perf's timing,
-	// the same options the perf test measures through.
-	%[2]s.Configure(&opts, mux, started)
-	opts.DBPath = ""
-	if err := rastrillo.Serve(opts); err != nil {
-		logger.Error("serve failed", "err", err)
-		os.Exit(1)
-	}
-}
-`
 
 // appTOMLTemplate's comment is Appendix C.6's scaffold.app_toml.
 const appTOMLTemplate = `# The locales this app offers. Add a code to offer another language,
@@ -525,344 +397,17 @@ locales = [%[1]q]
 default_locale = %[1]q
 `
 
-const appTemplate = `package %[1]s
-
-import (
-	"context"
-	"log/slog"
-	"net/http"
-	"time"
-
-	"github.com/go-chi/chi/v5"
-
-	"amadan.net/rastrillo/rastrillo"
-	"amadan.net/rastrillo/rastrillo/csrf"
-	"amadan.net/rastrillo/rastrillo/db"
-	"amadan.net/rastrillo/rastrillo/migrate"
-	"amadan.net/rastrillo/rastrillo/perf"
-
-	// Links the formatting packs manifest/app.toml declares. It is
-	// here, not in main, so the app's tests link them too: boot refuses
-	// a configuration whose packs are missing.
-	_ "%[3]s/gen/locales"
-)
-
-// App wires the whole app: schema, router, JSON API, static files. It
-// returns a *http.ServeMux because rastrillo.Options.Mux is typed that
-// way — the chi router mounts inside it. Router and Mux are its two
-// halves, separate only so the perf test can walk the chi routes while
-// measuring through the same handler production serves. origin is the app's external origin
-// ("https://app.example.com") — the CSRF check's yardstick, and, once
-// the app grows accounts, sessions.Config.Origin too.
-//
-// Growing the app is SKILL.md's five-file shape: models in models.go,
-// handlers in handlers.go, and — for a multi-user app — the sessions
-// core plus an identity plugin wired right here (examples/notes is the
-// worked example to copy — it lives in the repository at
-// amadan.net/rastrillo/rastrillo, not in the module you depend on, so
-// read it there rather than looking for the directory). Adding a subsystem
-// also means adding its Schema to migrations.go's BootSchema — see
-// the comment there. Past 5,000 lines here, split by feature: a package
-// per feature under internal/%[1]s/, each with Mount(r chi.Router, deps)
-// called from Router (docs/site/testing.md).
-func App(d *db.DB, origin string, logger *slog.Logger) (*http.ServeMux, error) {
-	r, err := Router(d, origin, logger)
-	if err != nil {
-		return nil, err
-	}
-	apiTree, err := API(d, logger)
-	if err != nil {
-		return nil, err
-	}
-	return Mux(r, apiTree), nil
-}
-
-// Router applies the schema and builds the routes.
-func Router(d *db.DB, origin string, logger *slog.Logger) (chi.Router, error) {
-	// pagesErr is render.go's: a template that does not parse, or a
-	// locale configuration boot refuses. Either stops the app here,
-	// before any migration runs, not at the first request.
-	if pagesErr != nil {
-		return nil, pagesErr
-	}
-	// Apply BootSchema, not Schema: BootSchema is everything this
-	// app needs at boot (its own migrations plus any subsystem's),
-	// while Schema (migrations.go) stays just this app's own so the
-	// generator and its check never see a subsystem's tables and try
-	// to drop them.
-	migrated, err := migrate.Apply(context.Background(), d, BootSchema)
-	if err != nil {
-		return nil, err
-	}
-	// One line per boot. Result exists so this can be logged, and
-	// until something does, a fleet-wide adoption — every database
-	// stamped, no DDL run, exactly once, never again — produces no
-	// output at all, which is the last event you want to be silent.
-	logger.Info("migrate", "applied", migrated.Applied,
-		"skipped", migrated.Skipped, "adopted", migrated.Adopted)
-
-	a := &app{db: d, logger: logger}
-
-	r := chi.NewRouter()
-	// App-wide, from day one: every state-changing route added below
-	// is born covered. Origin-checking, not tokens — nothing to mint
-	// or forget in a form.
-	r.Use(csrf.Protect(origin))
-	r.Get("/", a.index)%[2]s
-	return r, nil
-}
-
-// Mux mounts the static files and the JSON API (api.go) beside the router.
-func Mux(r, apiTree http.Handler) *http.ServeMux {
-	mux := http.NewServeMux()
-	// The app serves its own static files — the framework never does.
-	// They are embedded (render.go) and fingerprinted: templates link
-	// them via {{asset ...}}, which returns a content-hashed URL the
-	// handler serves cacheable-forever.
-	mux.Handle("GET /static/", assets.Handler())
-	h := pages.Middleware(r)
-	// Without pages, every request gets ErrorPage's plain 500 instead of
-	// a panic in the middleware. App never builds a Mux like this, since
-	// Router fails first; a caller that builds one directly, such as a
-	// test, does.
-	if pagesErr != nil {
-		h = http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) { ErrorPage(w, req, http.StatusInternalServerError, "") })
-	}
-	mux.Handle("/", h)
-	// Outside the router on purpose: no CSRF check and no page middleware.
-	// A bearer token is the API's only credential, so a page cannot make
-	// it act with the browser's cookies. Both patterns, so a bare /api/v1
-	// gets the API's JSON 404 rather than the mux's own redirect.
-	mux.Handle("/api/v1", apiTree)
-	mux.Handle("/api/v1/", apiTree)
-	return mux
-}
-
-// Configure is the one place the serving options are set, so main.go and
-// the perf test cannot drift apart: what the perf lane measures is what
-// production serves.
-//
-// ErrorPage is the page a handler's own error path renders, so a panic
-// and a handled failure look identical. perf.Middleware times every
-// request against 150ms to first byte (500ms for the first one after
-// start, counted from started) and logs what is over budget.
-func Configure(opts *rastrillo.Options, mux *http.ServeMux, started time.Time) {
-	opts.Mux = mux
-	opts.ErrorPage = ErrorPage
-	var rec perf.Recorder
-	opts.Wrap = perf.Middleware(&rec, perf.Options{Started: started, Logger: opts.Logger})
-}
-`
-
-const modelsTemplate = `package %[1]s
-
-import "time"
-
-// Models is every model the schema generator manages. Keep it in step
-// with the structs below: ` + "`rastrillo migration generate`" + ` reads
-// it to work out what the database should look like, and
-// ` + "`rastrillo migration check`" + ` fails CI when it and the
-// migrations disagree.
-var Models = []any{
-	&Note{},
-}
-
-// Note is a starting example model — rename it, replace it, add more
-// beside it. Whatever it becomes, the rule stays the same: every query
-// touching user-owned rows goes through scope.Owned (SKILL.md) — reads
-// AND writes — and a request body is never bound onto a model directly
-// (explicit map[string]any + .Select allowlist).
-type Note struct {
-	ID        int64
-	Title     string
-	Body      string
-	CreatedAt time.Time
-	UpdatedAt time.Time
-}
-`
-
-// migrationsTemplate declares the two schema variables an app needs,
-// and only two: see the doc comments below for why one is not enough.
-const migrationsTemplate = `package %[1]s
-
-import (
-	"embed"
-
-	"amadan.net/rastrillo/rastrillo/apitoken"
-	"amadan.net/rastrillo/rastrillo/migrate"
-)
-
-//go:embed migrations/*.sql
-var migrationFS embed.FS
-
-// Schema is this app's own migrations, in order — nothing else. It is
-// what ` + "`rastrillo migration generate`" + ` and ` + "`rastrillo migration check`" + ` read
-// and write: both work by replaying a set into an in-memory database
-// and diffing the result against Models, so Schema must never carry a
-// framework subsystem's migrations too — mixed in, the diff would see
-// tables (sessions, auth_links, ...) that Models knows nothing about
-// and want to drop every one of them.
-//
-// Add to it with ` + "`rastrillo migration generate`" + ` after changing a
-// model, or ` + "`rastrillo migration new <name>`" + ` to write one by hand.
-// Migrations apply at boot and are never re-run or reversed: never
-// edit one that has shipped, add a new one instead.
-var Schema = migrate.MustFromFS(migrationFS, %[1]q)
-
-// BootSchema is everything applied at boot, in order — this app's own
-// Schema plus every framework subsystem's — and it is what App() below
-// hands to migrate.Apply. It is a separate variable from Schema for
-// the same reason Schema must stay narrow: generate and check would
-// misread a subsystem's tables as ones Models forgot.
-//
-// A fresh scaffold uses one subsystem, apitoken, whose table the JSON
-// API reads on every request (api.go). Adding another (say, sessions)
-// means editing this line, not Schema:
-//
-//	var BootSchema = migrate.Merge(sessions.Schema, apitoken.Schema, Schema)
-//
-// Merge's argument order is apply order, so a subsystem whose
-// migrations another one reads (auth after sessions) goes first.
-// Get this line wrong and either boot silently skips a subsystem's
-// tables, or generate/check try to drop them.
-var BootSchema = migrate.Merge(apitoken.Schema, Schema)
-`
-
-// initMigrationTemplate is the scaffold's first migration: static,
-// not generated at `new` time (see the files map's comment on why),
-// but produced the same way `rastrillo migration generate` would
-// produce it — by running the generator once, by hand, against the
-// Note model above, and pasting the result here. Written verbatim by
-// migrationGenerate's own body-building loop:
-// strings.TrimSpace(sql) + "\n\n" per statement.
+// initMigrationTemplate is what rastrillo migration generate writes for
+// the Note model, pasted here so new needs no network or build.
+// TestScaffoldMigratesAndPassesCheck keeps the two in step.
 const initMigrationTemplate = "CREATE TABLE `notes` (`id` integer PRIMARY KEY AUTOINCREMENT,`title` text,`body` text,`created_at` datetime,`updated_at` datetime);\n\n"
 
-// schemaSQLTemplate is the snapshot `rastrillo migration generate`
-// would write alongside 0001_init.sql above — the schema every
-// migration in the directory adds up to. Kept in the same format
-// migrate.SchemaSQL produces so a diff against a real regeneration is
-// silent.
+// schemaSQLTemplate is the snapshot migration generate writes beside it.
 const schemaSQLTemplate = `-- Generated by rastrillo migration generate; DO NOT EDIT.
 -- The schema every migration in this directory adds up to.
 
 CREATE TABLE ` + "`notes`" + ` (` + "`id`" + ` integer PRIMARY KEY AUTOINCREMENT,` + "`title`" + ` text,` + "`body`" + ` text,` + "`created_at`" + ` datetime,` + "`updated_at`" + ` datetime);
 
-`
-
-const handlersTemplate = `package %[1]s
-
-import (
-	"log/slog"
-	"net/http"
-
-	"amadan.net/rastrillo/rastrillo/db"
-)
-
-// app holds what every handler needs. When the app grows accounts,
-// this is where the sessions handle lands too.
-type app struct {
-	db     *db.DB
-	logger *slog.Logger
-}
-
-func (a *app) index(w http.ResponseWriter, r *http.Request) {
-	render(w, r, "index", nil)
-}
-%[2]s`
-
-const renderTemplate = `package %[2]s
-
-import (
-	"bytes"
-	"embed"
-	"html/template"
-	"maps"
-	"net/http"
-
-	"amadan.net/rastrillo/rastrillo"
-	"amadan.net/rastrillo/rastrillo/basepath"
-	"amadan.net/rastrillo/rastrillo/locales"
-	"amadan.net/rastrillo/rastrillo/ui"
-
-	genlocales "%[1]s/gen/locales"
-	"%[1]s/internal/%[2]s/icons"
-)
-
-//go:embed templates static
-var appFS embed.FS
-
-// assets fingerprints static/: {{asset "static/tokens.css"}} in a
-// template returns a content-hashed URL, served immutable-cacheable by
-// the handler App mounts.
-var assets = rastrillo.NewAssets(appFS)
-
-// pages is every page of this app, built once at boot: ui's partials and
-// layout.html parsed once, then one copy per page with that page's own
-// file. Every language and every request runs these same templates; the
-// localizer in each page's data decides the language.
-var pages, pagesErr = newPages()
-
-func newPages() (*ui.Pages, error) {
-	cfg, err := locales.CheckConfig(genlocales.DefaultLocale, genlocales.Locales)
-	if err != nil {
-		return nil, err
-	}
-	files := map[string]ui.PageFile{}
-	for _, name := range []string{%[3]s} {
-		files[name] = ui.PageFile{Path: "templates/" + name + ".html"}
-	}
-	return ui.NewPages(ui.PagesConfig{
-		App:    appFS,
-		Layout: "templates/layout.html",
-		Pages:  files,
-		Locale: cfg,
-		// icon and iconAssets point ui's two icon seams at the app's own set
-		// (internal/%[2]s/icons, scaffolded by rastrillo new). Pass both, always:
-		// passing only icon would leave iconAssets on the framework default and
-		// silently break cdn and js delivery. iconAssets is whatever <head>
-		// markup the chosen delivery needs, empty for the vendored-inline
-		// default, so the layout calls it unconditionally and switching
-		// delivery later needs no template edit.
-		Funcs: template.FuncMap{"icon": icons.Icon, "iconAssets": icons.Assets, "asset": assets.Path},
-	})
-}
-
-// render adds the request's localizer, the language switcher's items,
-// the current path, the colour scheme the cookie chose and the base path
-// to data, then executes name into a buffer before anything touches the
-// wire: a template error becomes a clean 500 instead of half a page.
-// Scheme is what the layout writes as data-theme; without it a chosen
-// Dark would paint System on every reload. Base is what path puts in
-// front of a link; without it a tenant's links lead to the hub.
-func render(w http.ResponseWriter, r *http.Request, name string, data map[string]any) {
-	req := ui.ForRequest(r)
-	page := map[string]any{}
-	maps.Copy(page, data)
-	page["L"], page["Locales"], page["Return"], page["Scheme"], page["Base"] = req.L, req.Locales, req.Return, req.Scheme, req.Base
-	if err := pages.Execute(w, name, page); err != nil {
-		http.Error(w, "something went wrong", http.StatusInternalServerError)
-	}
-}
-
-// ErrorPage renders the "errors" page — templates/errors.html, which
-// wraps ui's error-page partial in the layout — for status inside ref
-// (rastrillo.NewRef, or empty when there is none to show). It is the
-// rastrillo.ErrorPageFunc cmd/%[1]s/main.go points Options.ErrorPage at,
-// so a panic gets the same page a handled failure would; wire it to
-// Ctx.ErrorPage too as the app grows handlers of its own. It finds the
-// request's language with pages.LocalizerFor rather than the middleware,
-// because a recovered panic reaches it outside the middleware.
-func ErrorPage(w http.ResponseWriter, r *http.Request, status int, ref string) {
-	// Without pages there is nothing to render, so a failed boot still
-	// answers a plain 500 rather than panicking.
-	var buf bytes.Buffer
-	if pagesErr != nil || pages.Execute(&buf, "errors", map[string]any{"L": pages.LocalizerFor(r), "Scheme": rastrillo.SchemeFrom(r), "Base": basepath.Base(r), "Status": status, "Ref": ref}) != nil {
-		http.Error(w, "something went wrong", http.StatusInternalServerError)
-		return
-	}
-	w.WriteHeader(status)
-	buf.WriteTo(w)
-}
 `
 
 const indexTemplate = `{{define "content"}}
@@ -883,14 +428,11 @@ const scaffoldOverview = "Overview"
 
 // sectionsIndexTemplate is templates/index.html for the two-page shells.
 // %[1]s is the section's name and %[2]s the app's, which is the brand:
-// the phone index's heading is the brand, and the layout's default
-// brand is the word Home, which on a phone would title the app "Home".
-const sectionsIndexTemplate = `{{/* index.html: the home page, and on a phone the list of
-     sections: the view block says this page is the index, so below
-     800px the rail is the whole page and this content is hidden; on a
-     desktop the rail sits beside it. Give each section a nav link with
-     an id here, and give its page an up block naming
-     {{path $ "/#<that id>"}}, so a phone comes back to the row it left. */}}
+// the layout's default brand, Home, would title the app "Home" on a phone.
+const sectionsIndexTemplate = `{{/* The home page, and on a phone the list
+     of sections. Give each section a nav link with an id, and its page
+     an up block naming {{path $ "/#<that id>"}}, so a phone comes back
+     to the row it left. */}}
 {{define "view"}}index{{end}}
 {{define "brand"}}<a rst-shell-brand href="{{path $ "/"}}">%[2]s</a>{{end}}
 {{define "nav"}}<a id="nav-overview" href="{{path $ "/overview"}}">%[1]s</a>{{end}}
@@ -902,9 +444,8 @@ const sectionsIndexTemplate = `{{/* index.html: the home page, and on a phone th
 // overviewTemplate is templates/overview.html, the one section page,
 // with the same two arguments: a block is per page here, so every page
 // names the brand.
-const overviewTemplate = `{{/* overview.html: a section. up is its way back: the index, with
-     this section's nav link as the fragment, which is where focus
-     returns on a phone even with scripts off. */}}
+const overviewTemplate = `{{/* A section. up is its way back: the
+     index's row for it. */}}
 {{define "up"}}{{path $ "/#nav-overview"}}{{end}}
 {{define "brand"}}<a rst-shell-brand href="{{path $ "/"}}">%[2]s</a>{{end}}
 {{define "nav"}}<a id="nav-overview" href="{{path $ "/overview"}}" aria-current="page">%[1]s</a>{{end}}
@@ -913,416 +454,40 @@ const overviewTemplate = `{{/* overview.html: a section. up is its way back: the
 {{end}}
 `
 
-// overviewHandler is appended to handlers.go for the two-page shells.
-const overviewHandler = `
-func (a *app) overview(w http.ResponseWriter, r *http.Request) {
-	render(w, r, "overview", nil)
+// The two-page shells' extra path, route and action.
+const (
+	overviewPath   = "\nconst overviewPage action.Path = \"/overview\""
+	overviewRoute  = "\n\t\tguarded.Get(overviewPage, app.overview)"
+	overviewAction = `
+func (app *App) overview(visit *action.Visit) {
+	visit.Render("overview", http.StatusOK, nil)
 }
 `
+)
 
 // overviewTest is appended to index_test.go for the two-page shells: the
 // section page renders, and its back control goes to the index's row.
 const overviewTest = `
 func TestOverviewRenders(t *testing.T) {
-	rec := get(t, newApp(t), "/overview")
-	if rec.Code != http.StatusOK {
-		t.Fatalf("GET /overview: status %d, want 200", rec.Code)
+	t.Parallel()
+	recorder := get(t, newApp(t), "/overview")
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("GET /overview: status %d, want 200", recorder.Code)
 	}
-	if !strings.Contains(rec.Body.String(), ` + "`" + `href="/#nav-overview" rel="up"` + "`" + `) {
-		t.Errorf("GET /overview: no back control to the index's row:\n%s", rec.Body.String())
+	if !strings.Contains(recorder.Body.String(),
+		` + "`" + `href="/#nav-overview" rel="up"` + "`" + `) {
+		t.Errorf("GET /overview: no way back to the index's row:\n%s",
+			recorder.Body.String())
 	}
 }
 `
 
-// errorsTemplate is templates/errors.html: the whole page is ui's
-// error-page partial (dict builds its one data value inline — no
-// per-page view-model type for a two-field page), so restyling the
-// error page or adding a Body/BackHref override means editing this one
-// file, not the partial ui ships.
-const errorsTemplate = `{{/* errors.html — the app's error page: layout.html's content block
-     rendered by render.go's ErrorPage, which cmd/<app>/main.go points
-     Options.ErrorPage at (so a panic gets this page) and which the app
-     can wire to Ctx.ErrorPage too as handlers grow. All the wording
-     and layout live in the partial below — restyle the error page by
-     editing this file, or hand it Title/Body/HomeHref/BackHref to
-     override the partial's own catalog defaults; see
-     ui/partials/error-page.html for what it accepts. */}}
+// errorsTemplate is templates/errors.html: ui's error-page partial in
+// the layout, so restyling the error page means editing this one file.
+const errorsTemplate = `{{/* The app's error page, drawn by ErrorPage.
+     Hand the partial Title, Body, HomeHref or BackHref to change its
+     wording; ui/partials/error-page.html says what it accepts. */}}
 {{define "content"}}{{$L := localizer $}}{{template "error-page" dict "L" $L "Status" .Status "Ref" .Ref "HomeHref" (path $ "/")}}{{end}}
-`
-
-// harnessTemplate is the scaffolded test harness, delivered once as
-// app-owned files: it builds the whole app exactly as
-// cmd/<name>/main.go does — a real temp-file database through db.Open
-// (the split-pool configuration under test, never :memory:), the real
-// router, the real asset handler — so a test exercises the app, not a
-// parallel universe.
-const harnessTemplate = `// Package %[2]stest tests the app from the outside: real HTTP
-// requests against the real router, wired exactly as
-// cmd/%[1]s/main.go wires it.
-//
-// The TDD loop: write a failing test here, make it pass in
-// internal/%[2]s, repeat.
-package %[2]stest
-
-import (
-	"io"
-	"log/slog"
-	"net/http"
-	"net/http/httptest"
-	"net/url"
-	"os"
-	"strings"
-	"testing"
-
-	"amadan.net/rastrillo/rastrillo/budget"
-	"amadan.net/rastrillo/rastrillo/db"
-	"amadan.net/rastrillo/rastrillo/dbtest"
-
-	%[2]s "%[1]s/internal/%[2]s"
-)
-
-// testOrigin is the origin newApp wires and post presents as its
-// same-origin evidence — the pair a browser form submission would be.
-const testOrigin = "http://app.test"
-
-// schema is migrated once per test binary and copied for each test:
-// migrating a fresh database in every test is the cost Tito Go measured
-// at 207ms a test against 2.5ms for a copy.
-var schema = dbtest.FromSet(%[2]s.BootSchema)
-
-// TestMain prints this package's time for rastrillo budget test (make
-// test), then removes the template, which outlives every test that
-// copied it.
-func TestMain(m *testing.M) {
-	code := budget.Main(m)
-	schema.Remove()
-	os.Exit(code)
-}
-
-// newApp builds the whole app per test over its own copy of the
-// migrated database, exactly as main.go does.
-func newApp(t *testing.T) http.Handler {
-	t.Helper()
-	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
-	d, err := db.Open(schema.Path(t), logger)
-	if err != nil {
-		t.Fatalf("db.Open: %%v", err)
-	}
-	t.Cleanup(func() { d.Close() })
-	mux, err := %[2]s.App(d, testOrigin, logger)
-	if err != nil {
-		t.Fatalf("App: %%v", err)
-	}
-	return mux
-}
-
-func get(t *testing.T, h http.Handler, target string) *httptest.ResponseRecorder {
-	t.Helper()
-	rec := httptest.NewRecorder()
-	h.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, target, nil))
-	return rec
-}
-
-// post is here before anything calls it: the first form test you write
-// needs the Origin header below, and nothing about a 403 says so.
-//
-//lint:ignore U1000 kept for the app's first form test; see above
-func post(t *testing.T, h http.Handler, target string, form url.Values) *httptest.ResponseRecorder {
-	t.Helper()
-	req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(form.Encode()))
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	// The same-origin evidence csrf.Protect requires — every current
-	// browser sends it on a form POST; a test client must too.
-	req.Header.Set("Origin", testOrigin)
-	rec := httptest.NewRecorder()
-	h.ServeHTTP(rec, req)
-	return rec
-}
-`
-
-// indexTestTemplate is the scaffolded example suite: passing from the
-// first `go test`, and pinning the out-of-the-box asset story — the
-// index page links a fingerprinted stylesheet, that URL is immutable,
-// the bare name stays fresh.
-// vendoredTestTemplate pins the scaffold-delivered static files
-// byte-identical to the library copies they came from — the same pin
-// examples/blog carries for tokens.css. Vendored-then-forgotten is the
-// known failure (tickets' stylesheet drifted for months), and without
-// the pin a reviewer meets ~56KB of static assets as unverifiable app
-// diff.
-const vendoredTestTemplate = `package %[1]stest
-
-import (
-	"bytes"
-	"os"
-	"path/filepath"
-	"testing"
-
-	"amadan.net/rastrillo/rastrillo/ui"
-)
-
-// vendoredTheme is the theme this app was scaffolded with. Change it
-// here when you swap static/theme.css for another of ui.ThemeNames().
-const vendoredTheme = "%[2]s"
-
-// vendoredIsMine names the vendored files this app has edited or
-// deleted DELIBERATELY. Add one here when you mean to diverge: this
-// test stops pinning it, and rastrillo doctor leaves it alone too. The
-// file was yours from the moment the scaffold wrote it; this is only
-// where you record that the edit, or the deletion, was on purpose, so
-// the next reader (and the next upgrade) can tell it from drift.
-var vendoredIsMine = map[string]bool{
-	// "tokens.css": true,
-	//
-	// A file you deleted goes here too, or this test fails on the
-	// missing file. light.js is deletable on any shell (the still
-	// design); only the sidebar and console shells link shell.js and
-	// shell.css:
-	// "light.js": true,
-	// "shell.js": true, "shell.css": true,
-}
-
-// The scaffold delivered these files once; they are app-owned from
-// then on. This test pins each vendored copy byte-identical to the
-// library it came from: a reviewer runs the suite instead of reading
-// ~56KB of assets as app diff, and a framework upgrade that forgets
-// to re-copy is caught instead of drifting silently.
-//
-// The list is ui.VendoredAssets — the same function rastrillo new
-// wrote these files from and rastrillo doctor compares them against —
-// so a file added to the library's vendored set is pinned here without
-// this file changing.
-func TestVendoredAssetsMatchTheLibrary(t *testing.T) {
-	t.Parallel()
-	assets, ok := ui.VendoredAssets(vendoredTheme)
-	if !ok {
-		t.Fatalf("unknown theme %%q", vendoredTheme)
-	}
-	for name, lib := range assets {
-		if vendoredIsMine[name] {
-			continue
-		}
-		vendored, err := os.ReadFile(filepath.Join("..", "%[1]s", "static", name))
-		if err != nil {
-			t.Errorf("read vendored %%s: %%v; if you deleted it on purpose, add it to vendoredIsMine", name, err)
-			continue
-		}
-		if !bytes.Equal(vendored, lib) {
-			t.Errorf("static/%%s differs from the library copy; re-copy it with rastrillo doctor --fix (or add it to vendoredIsMine if the edit was deliberate)", name)
-		}
-	}
-}
-`
-
-const indexTestTemplate = `package %[2]stest
-
-import (
-	"html/template"
-	"net/http"
-	"net/http/httptest"
-	"regexp"
-	"strings"
-	"testing"
-
-	"amadan.net/rastrillo/rastrillo"
-
-	genlocales "%[1]s/gen/locales"
-	%[2]s "%[1]s/internal/%[2]s"
-)
-
-// hashedStylesheet is the fingerprinted URL shape the index page
-// links: /static/tokens.<16 hex>.css.
-var hashedStylesheet = regexp.MustCompile(` + "`" + `/static/tokens\.[0-9a-f]{16}\.css` + "`" + `)
-
-// These two tests are about the PLACEHOLDER index page, and they are
-// yours to rewrite. They ship because a scaffold whose suite asserts
-// nothing teaches nothing, not because "/" answering 200 with those
-// words in it is a property of your app.
-//
-// The first feature that breaks them is sign-in, which is also the
-// first feature most apps add: put "/" in a Group behind
-// sessions.Require and a signed-out GET is a 303 to SigninPath, so
-// the status assertion fails and the redirect's body carries neither
-// the heading nor a stylesheet link. That is the app working. Point
-// them at a page that is public in your app, or delete them — the
-// rest of this file (the asset URLs, the error page) is about the
-// framework's behaviour rather than the placeholder's, and keeps
-// earning its place.
-//
-// Said in the failure messages too, and not only here. The reader who
-// needs it is looking at a red gate, and the gate prints messages
-// rather than source.
-//
-// Each test's first statement is t.Parallel(): anything before it runs
-// serially, and a fixture built there is held for the whole run.
-func TestIndexRenders(t *testing.T) {
-	t.Parallel()
-	rec := get(t, newApp(t), "/")
-	if rec.Code != http.StatusOK {
-		t.Fatalf("GET /: status %%d, want 200. If you have put %%q behind sign-in this is the placeholder test, not a fault: a signed-out GET redirects, and this test is yours to repoint or delete", rec.Code, "/")
-	}
-	if !strings.Contains(rec.Body.String(), "this is a rastrillo app") {
-		t.Errorf("GET /: page is missing its heading. If you have replaced the placeholder index this test is yours to rewrite:\n%%s", rec.Body.String())
-	}
-	skip := template.HTMLEscapeString(rastrillo.BaseCatalogs()[genlocales.DefaultLocale]["rastrillo.ui.shell_skip"])
-	if !strings.Contains(rec.Body.String(), skip) {
-		t.Errorf("GET /: page is missing its skip link in %%s, the default language:\n%%s", genlocales.DefaultLocale, rec.Body.String())
-	}
-}
-
-func TestIndexLinksFingerprintedStylesheet(t *testing.T) {
-	t.Parallel()
-	h := newApp(t)
-	href := hashedStylesheet.FindString(get(t, h, "/").Body.String())
-	if href == "" {
-		t.Fatal("index page links no fingerprinted stylesheet. If you have put \"/\" behind sign-in, the redirect body has no <link> in it and this test wants pointing at a page that is still public")
-	}
-	rec := get(t, h, href)
-	if rec.Code != http.StatusOK {
-		t.Fatalf("GET %%s: status %%d, want 200", href, rec.Code)
-	}
-	if got := rec.Header().Get("Cache-Control"); got != "public, max-age=31536000, immutable" {
-		t.Errorf("GET %%s: Cache-Control = %%q, want immutable year", href, got)
-	}
-}
-
-// The bare name keeps working, just never long-cached — so a changed
-// file always shows on an ordinary reload.
-func TestBareAssetNameStaysFresh(t *testing.T) {
-	t.Parallel()
-	rec := get(t, newApp(t), "/static/tokens.css")
-	if rec.Code != http.StatusOK {
-		t.Fatalf("GET /static/tokens.css: status %%d, want 200", rec.Code)
-	}
-	if got := rec.Header().Get("Cache-Control"); got != "no-cache" {
-		t.Errorf("Cache-Control = %%q, want no-cache", got)
-	}
-}
-
-// ErrorPage is what main.go points Options.ErrorPage at (and the seam
-// to wire into Ctx.ErrorPage as handlers grow); called directly, it
-// pins that a panic's page is the framework's error-page partial, not
-// a stray net/http default.
-func TestErrorPageRendersFrameworkPartial(t *testing.T) {
-	t.Parallel()
-	rec := httptest.NewRecorder()
-	%[2]s.ErrorPage(rec, httptest.NewRequest(http.MethodGet, "/", nil), http.StatusInternalServerError, "abc123")
-	if rec.Code != http.StatusInternalServerError {
-		t.Fatalf("ErrorPage: status %%d, want %%d", rec.Code, http.StatusInternalServerError)
-	}
-	body := rec.Body.String()
-	if !strings.Contains(body, template.HTMLEscapeString(rastrillo.BaseCatalogs()[genlocales.DefaultLocale]["rastrillo.ui.error_500_title"])) {
-		t.Errorf("ErrorPage body missing the 500 title:\n%%s", body)
-	}
-	if !strings.Contains(body, "abc123") {
-		t.Errorf("ErrorPage body missing the ref:\n%%s", body)
-	}
-}
-%[3]s`
-
-// browserTestTemplate is the scaffolded browser drive, delivered once
-// like the harness: app-owned from here on. The existing
-// harness_test.go is the httptest HTTP harness and keeps its name —
-// the browser rig takes a different one everywhere (file, tag,
-// invocation), because "harness" already means the HTTP one throughout
-// the scaffold's prose.
-const browserTestTemplate = `//go:build browser
-
-// The browser drive: the whole app in a real Chromium, wired exactly
-// as cmd/%[1]s/main.go wires it — loud on any console error, failed
-// request, 4xx/5xx, or JS value that leaked to the screen unrendered.
-// Not part of the plain suite:
-//
-//	go test -tags browser ./...
-//
-// It needs a Chromium: on PATH, via RASTRILLO_CHROME, or in a
-// Playwright cache. A skip is not a pass — with no browser this fails,
-// unless RASTRILLO_BROWSER_OPTIONAL is set, which makes the skip a
-// deliberate visible choice rather than an accident.
-package %[2]stest
-
-import (
-	"io"
-	"log/slog"
-	"net/http"
-	"path/filepath"
-	"testing"
-
-	"amadan.net/rastrillo/rastrillo/db"
-	"amadan.net/rastrillo/rastrillo/harness"
-	"github.com/chromedp/chromedp"
-
-	%[2]s "%[1]s/internal/%[2]s"
-)
-
-// TestBrowserWalk is the minimal loud walk: the home screen arrives
-// with nothing wrong anywhere the rig watches. Grow it with the app —
-// each screen a flow reaches earns a Screen() line, and an expected
-// probe (a signed-out 401, say) earns a rig.Allow.
-func TestBrowserWalk(t *testing.T) {
-	rig := harness.New(t, func(origin string) http.Handler {
-		// The scaffold's own wiring, origin included: the rig hands
-		// the app its localhost origin before serving — the same seam
-		// main.go fills from %[3]s_ORIGIN.
-		logger := slog.New(slog.NewTextHandler(io.Discard, nil))
-		d, err := db.Open(filepath.Join(t.TempDir(), "app.db"), logger)
-		if err != nil {
-			t.Fatalf("db.Open: %%v", err)
-		}
-		t.Cleanup(func() { d.Close() })
-		mux, err := %[2]s.App(d, origin, logger)
-		if err != nil {
-			t.Fatalf("App: %%v", err)
-		}
-		return mux
-	})
-	rig.Run(chromedp.Navigate(rig.Origin + "/"))
-	rig.Screen("body", "home")
-}
-`
-
-// readmeTemplate is the scaffolded app README. Small on purpose:
-// AGENTS.md carries the conventions; this says what the app is and
-// how the browser drive runs — including that CI participation is the
-// app's own call.
-const readmeTemplate = `# %[1]s
-
-A [rastrillo](https://amadan.net/rastrillo/rastrillo) app. ` + "`make ci`" + ` is the gate: vet, gofmt, staticcheck, govulncheck, gitleaks, tests, the migration check and the generate check, one definition for CI and for you. AGENTS.md carries the working conventions.
-
-## Templates
-
-` + "`internal/%[2]s/render.go`" + ` builds every page once, at boot, with ` + "`ui.Pages`" + `. Every language and every request runs those same templates, and the localizer in each page's data picks the language. Start each template body with ` + "`{{$L := localizer $}}`" + `, pass ` + "`$L`" + ` first to ` + "`T`" + `, ` + "`money`" + ` and the other locale functions, and pass ` + "`\"L\" $L`" + ` to every partial. A call without it fails the page rather than render it in the wrong language.
-
-## Browser drive
-
-` + "`internal/%[2]stest/browser_test.go`" + ` walks the app in a real
-Chromium — loud on any console error, failed request, or JS value that
-leaked to the screen:
-
-` + "```sh" + `
-go test -tags browser ./...   # real browser, loud on any console error
-                              # — not part of the plain suite
-` + "```" + `
-
-It needs a Chromium: on PATH, via ` + "`RASTRILLO_CHROME`" + `, or in a
-Playwright cache. **A skip is not a pass:** with no browser it fails,
-unless ` + "`RASTRILLO_BROWSER_OPTIONAL=1`" + ` makes the skip a deliberate,
-visible choice. ` + "`make ci`" + ` runs the plain suite only — whether CI
-also runs the browser drive, and on what runner, is this app's call.
-
-## Deploy
-
-A hub can serve this app as a tenant, each instance under its own
-` + "`/<slug>`" + ` on the hub's origin. Set the tenant app's config once,
-before its first instance:
-
-` + "```sh" + `
-carlos env set --app %[1]s %[3]s_ORIGIN=https://<product> RASTRILLO_SLUG_FROM_HOST=1
-` + "```" + `
-
-Each instance reads its slug from its hostname, so a path-routed hub
-keeps its slugs at most ` + "`provision.MaxSlug`" + ` (25) characters, or else
-sets ` + "`RASTRILLO_SLUG`" + `.
 `
 
 // manifestReadme is manifest/README.md, the recipe for mounting the
@@ -1348,322 +513,31 @@ const (
 	goToolchain        = "go1.26.10"
 )
 
-// makefileTemplate is the one gate definition: CI steps exec these
-// targets, never their own copies of the commands (amadan's own rule).
-const makefileTemplate = `APP := %[1]s
-
-# The gate and the release run on one named Go, not whichever release this
-# machine has. govulncheck judges the standard library of the Go doing the
-# scan, and make release builds the binary you ship with it, so a patch
-# release behind is both a red gate and an unpatched binary. go fetches
-# this release through the module proxy on first use. It is the Go
-# rastrillo's own gate runs; raise it with each Go security release.
-#
-# A plain =, not ?=: Go's container images set GOTOOLCHAIN=local, and ?=
-# would quietly keep whatever Go they ship. To override for one run:
-#   make ci GOTOOLCHAIN=local
-export GOTOOLCHAIN = %[5]s
-
-# What ` + "`carlos ship -target`" + ` defaults to, and therefore what a release
-# must be built for. Building for your own machine and shipping that is a
-# silent architecture mismatch: the binary uploads fine and fails to exec
-# on the instance. Override for a one-off:
-#   make release RELEASE_GOARCH=amd64
-RELEASE_GOOS   ?= linux
-RELEASE_GOARCH ?= arm64
-RELEASE_BIN := releases/$(APP)-$(RELEASE_GOOS)-$(RELEASE_GOARCH)
-
-# What the running binary reports from GET /api/version. The platform's
-# deploy verification polls that endpoint on every instance socket and
-# compares what it finds against the release it believes it adopted; an
-# unstamped binary answers "dev" from every build you have ever made, so
-# those two facts can never disagree and a process that was never
-# recycled onto the new release verifies green. Stamping this is what
-# gives that check the ability to fail.
-#
-# git describe, because the tag is what you ship against. Outside a
-# repository, or before the first commit, name it yourself:
-#   make release VERSION=v0.1.0
-VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null)
-
-# One target at a time, even under make -j: the perf lane measures time,
-# and a suite running beside it would be measured too.
-.NOTPARALLEL:
-
-.PHONY: build release version-check test vet fmt-check staticcheck govulncheck gitleaks budget perf migration-check generate-check ci
-
-RASTRILLO := go run amadan.net/rastrillo/rastrillo/cmd/rastrillo
-
-# build is the compile check: with more than one package matched, go
-# build discards the output, so this catches a broken package without
-# producing an artifact.
-build:
-	CGO_ENABLED=0 go build ./...
-
-# release is what ships. -s -w drops the symbol table and DWARF, which on
-# this family's apps is 23-31%% off the binary and 45-53%% off the
-# compressed artifact — and compressed size is what actually gets
-# transferred. carlos is built the same way (see platform's Makefile).
-#
-# What survives: panic traces keep their function names AND line numbers
-# (Go's pclntab is untouched by these flags), debug.ReadBuildInfo works,
-# and go version -m still reports module metadata. What you lose is
-# source-level debugging with delve or gdb — build without the flags for
-# that. rastrillo dev never strips, for the same reason.
-release: version-check
-	@mkdir -p releases
-	CGO_ENABLED=0 GOOS=$(RELEASE_GOOS) GOARCH=$(RELEASE_GOARCH) \
-		go build -ldflags="-s -w -X 'amadan.net/rastrillo/rastrillo.BuildVersion=$(VERSION)'" \
-		-o $(RELEASE_BIN) ./cmd/$(APP)
-	@echo
-	@echo "built $(RELEASE_BIN) reporting version $(VERSION)"
-	@echo "ship it with:"
-	@echo "  carlos ship -app $(APP) -target $(RELEASE_GOOS)-$(RELEASE_GOARCH) $(RELEASE_BIN)"
-
-# version-check refuses rather than letting release ship a binary whose
-# version is untrue. Both refusals are about the same thing: /api/version
-# is only evidence if the answer identifies one artifact.
-#
-# An empty stamp is worse than the "dev" default, because "dev" is
-# saying something true about itself and "" looks like a value that
-# arrived from somewhere.
-#
-# A dirty tree is refused rather than suffixed. A -dirty stamp names a
-# commit plus changes nobody can name, so two different binaries can
-# carry the identical string — which does not fix the check, it makes
-# it look reliable while it is not, and that is the more expensive
-# failure. Refusing costs one ` + "`git stash`" + `; a wrong stamp ships. If you
-# mean to ship uncommitted work, say so out loud:
-#   make release VERSION=v0.1.0-wip
-version-check:
-	@if [ -z "$(VERSION)" ]; then \
-		echo "make release: no version to stamp."; \
-		echo "  git describe found nothing here: no repository, or no commit yet."; \
-		echo "  Commit, or name it:  make release VERSION=v0.1.0"; \
-		exit 1; \
-	fi
-	@case "$(VERSION)" in *-dirty) \
-		echo "make release: the tree is dirty, so $(VERSION) does not name what you are about to ship."; \
-		echo "  Commit or stash first, or name it:  make release VERSION=v0.1.0-wip"; \
-		exit 1;; \
-	esac
-
-# budget size holds each directory to 5,000 source and 8,000 test lines.
-# Past that, split by feature (docs/site/testing.md); a record in
-# .rastrillo/budgets.txt with a reason is the exception, not the fix.
-budget:
-	$(RASTRILLO) budget size
-
-# budget test runs go test itself, so its exit status survives, and holds
-# each package to 10s using the time budget.Main prints in the package's
-# TestMain, cached runs included. Timing fails only on CI (AMADAN_CI or
-# CI set); here it reports.
-test:
-	$(RASTRILLO) budget test ./...
-
-# The perf lane: every GET screen at 150ms to first byte, cold boot at
-# 500ms. Serial (-p 1 -parallel 1) and uncached (-count=1), because a
-# measurement taken beside other work, or replayed from a cache, is not
-# one. -require fails the lane if the perf tests did not both run.
-perf:
-	$(RASTRILLO) budget test -no-time -require TestPerfScreens,TestPerfBoot -tags perf -count=1 -p 1 -parallel 1 -run '^TestPerf' ./...
-
-vet:
-	go vet ./...
-
-fmt-check:
-	@out=$$(gofmt -l .); if [ -n "$$out" ]; then echo "gofmt needed:"; echo "$$out"; exit 1; fi
-
-# staticcheck catches what vet does not: deprecated APIs, values that are
-# never read, a &*x that looks like a copy and is not.
-#
-# go run with a version, not a tool directive in go.mod. A tool's
-# requirements join the app's own module graph and can move the versions
-# of modules the app shares with it (golang.org/x/tools, which sqlc also
-# needs); go run resolves the tool in a graph of its own. The version is
-# the one rastrillo's own gate runs. Bump it when you raise the go
-# directive: a staticcheck older than your Go does not know that
-# release's deprecations, and says nothing.
-#
-# -tags browser,perf so the browser drive and the perf tests are read
-# too; no file is left out by them, so it covers everything the plain
-# build does.
-STATICCHECK := honnef.co/go/tools/cmd/staticcheck@%[2]s
-# staticcheck keeps its cache in the user cache directory, ~/.cache,
-# which a sandboxed CI runner mounts read-only: "failed to initialize
-# build cache ... read-only file system". Where the runner hands the job
-# an absolute GOCACHE, staticcheck's goes inside it: writable wherever
-# Go's is, and evicted with it. Anywhere else it stays where staticcheck
-# puts it. Not beside it: a writable GOCACHE says nothing about its
-# parent.
-ifneq ($(filter /%%,$(firstword $(GOCACHE))),)
-export STATICCHECK_CACHE ?= $(GOCACHE)/staticcheck
-endif
-
-staticcheck:
-	go run $(STATICCHECK) -tags browser,perf ./...
-
-# govulncheck reports only the vulnerabilities your code can reach: a call
-# path, not a module that merely sits in go.sum. It reads the live
-# vulnerability database, so it can go red with no change here, which is
-# the point of running it on every push. A module finding is fixed by
-# raising that requirement in go.mod; a standard-library one by raising
-# GOTOOLCHAIN above.
-GOVULNCHECK := golang.org/x/vuln/cmd/govulncheck@%[3]s
-govulncheck:
-	go run $(GOVULNCHECK) ./...
-
-# gitleaks scans every commit, not just the files you have now: a key that
-# was committed and then deleted is still in every clone. It only scans
-# when this directory is the root of its own repository. Before git init
-# there is nothing committed, and an app scaffolded inside somebody else's
-# checkout must not scan theirs. --redact keeps a finding out of CI logs.
-# .gitleaks.toml adds a rule for this app's API tokens to the defaults.
-GITLEAKS := github.com/zricethezav/gitleaks/v8@%[4]s
-gitleaks:
-	@if [ "$$(git rev-parse --is-inside-work-tree 2>/dev/null)" = true ] && [ -z "$$(git rev-parse --show-prefix)" ]; then \
-		go run $(GITLEAKS) git --no-banner --redact .; \
-	else \
-		echo "gitleaks: this directory is not the root of a git repository, so there is nothing committed to scan"; \
-	fi
-
-# A step of its own, not folded into another target's recipe: ci.d/
-# steps each exec one make target, so migration-check needs its own
-# name to get its own reported step on a runner with step support.
-#
-# go run, not a bare "rastrillo": go.mod already requires rastrillo, so
-# this needs nothing on PATH but the Go toolchain, and works offline
-# after go mod download. A bare "rastrillo migration check" failed a
-# fresh clone's very first CI run with "make: rastrillo: Command not
-# found", and nothing in the scaffold said what to install.
-#
-# What makes the go run resolve is the tool directive at the foot of
-# go.mod — it is what keeps the CLI's own dependencies in go.sum. See
-# the comment there before removing it.
-migration-check:
-	go run amadan.net/rastrillo/rastrillo/cmd/rastrillo migration check
-
-# generate-check fails when gen/ or api/v1.json is not what rastrillo
-# generate would write from manifest/, or when a manifest change breaks
-# a client of /api/v1. Run rastrillo generate to bring them up to date.
-generate-check:
-	$(RASTRILLO) generate --check
-
-# ci is the one gate: what a runner executes and what you run before
-# pushing are the same definition. amadan's runner falls back to this
-# target when .amadan/ci is absent; ci.d/ carries the same targets,
-# reported one by one, for a runner with step support. migration-check
-# fails the build the moment models.go and migrations/ disagree,
-# instead of at boot on whatever machine notices next.
-ci: vet fmt-check staticcheck govulncheck gitleaks budget test perf migration-check generate-check
-`
-
-const gitignoreTemplate = `# Build output. make release writes here; nothing in it is source.
+const gitignoreTemplate = `# Build output and the local database.
 /releases/
-
-# The local SQLite database the app creates when you run it, and its
-# write-ahead log. Real data lives on the platform, never in the repo.
 /%[1]s.db
 /%[1]s.db-wal
 /%[1]s.db-shm
 `
 
 const amadanCI = `#!/bin/sh
-# amadan CI entry (single-script fallback for runners without step
-# support). The steps in ci.d/ are the same targets, reported one by
-# one. Must stay executable: a non-executable script resolves "skipped".
-set -e
+# For a runner without steps. Keep it executable, or the job is skipped.
 exec make ci
 `
+
+// runnerSteps are .amadan/ci.d/'s steps, each the make target of a lane
+// on the ci line, so a runner that reports steps runs the same gate.
+var runnerSteps = []struct{ file, target string }{
+	{"10-vet", "vet"}, {"15-budget", "budget"}, {"16-code", "code"},
+	{"17-routes", "routes"}, {"20-fmt", "fmt-check"},
+	{"25-staticcheck", "staticcheck"}, {"26-govulncheck", "govulncheck"},
+	{"27-gitleaks", "gitleaks"}, {"30-test", "test"}, {"35-perf", "perf"},
+	{"40-migration-check", "migration-check"},
+	{"45-generate-check", "generate-check"},
+}
 
 // amadanStep emits one .amadan/ci.d/ step: exec a Makefile target, so
 // CI and the local gate stay one definition.
 func amadanStep(target string) string {
 	return "#!/bin/sh\nexec make " + target + "\n"
 }
-
-const agentsMDTemplate = `# %s
-
-A [rastrillo](https://amadan.net/rastrillo/rastrillo) app. Before
-writing app code, read the framework's skill at the version this app
-builds against:
-
-    cat "$(go list -m -f '{{.Dir}}' amadan.net/rastrillo/rastrillo)/SKILL.md"
-
-then, before each piece of work, the ` + "`skill/`" + ` topic its index names for
-it. Never another copy from the module cache: an older SKILL.md
-describes a framework this app is not built on. The conventions below
-are load-bearing; the framework enforces most of them mechanically.
-
-## Layout
-
-- ` + "`internal/<app>/`" + ` — the app: ` + "`models.go`" + ` (plain GORM structs
-  + Models), ` + "`migrations.go`" + ` + ` + "`migrations/`" + ` (Schema, BootSchema),
-  ` + "`app.go`" + ` (migrate.Apply + chi router), ` + "`handlers.go`" + `,
-  ` + "`render.go`" + ` + ` + "`templates/`" + `. This is SKILL.md's five-file shape.
-- ` + "`manifest/`" + ` — the declarative path, optional and equal: TOML or .go
-  Resource manifests, each generating a full screen set under ` + "`gen/`" + `
-  (see manifest/README.md for the mounting recipe). A hand-written
-  action file at a generated path (carrying ` + "`//go:build rastrillo_actions`" + `)
-  takes that one screen over, by existence.
-- ` + "`gen/`" + ` — generated when manifests are used; never edit. Regenerate
-  with ` + "`rastrillo generate`" + `.
-
-## Rules the family holds hard
-
-- Every query touching user-owned rows goes through ` + "`scope.Owned`" + ` —
-  reads AND writes, transactions included. A row that isn't yours 404s,
-  never 403s.
-- Never bind a request body onto a GORM model: explicit
-  ` + "`map[string]any`" + ` + ` + "`.Select`" + ` allowlist.
-- The API cannot see page middleware. When a page gains a rule beyond
-  ownership (admins only, no writes while suspended), add it to
-  ` + "`authorize`" + ` in ` + "`api.go`" + ` too, or a token gets around it.
-- Migrations apply at boot, once each, and are never re-run or reversed.
-- Schema changes: edit models.go, then run ` + "`rastrillo migration generate`" + `
-  and read the SQL it writes — it may be a full table rebuild, not just
-  an ` + "`ADD COLUMN`" + `. Never edit a migration that has shipped.
-  Renames are hand-written (` + "`rastrillo migration new rename_x`" + `) because
-  a rename is indistinguishable from a drop plus an add.
-- Money is a whole number of the currency's smallest unit, stored with its ISO 4217 code beside it, and shown with ` + "`money`" + `. A float never touches a value a person will be held to.
-- Screens work with JavaScript disabled; destructive actions get their
-  own confirm-page URL.
-- The gate is ` + "`make ci`" + ` (vet, gofmt, staticcheck, govulncheck, gitleaks, budgets, tests, the perf lane, the migration check and the generate check), the same definition CI runs. Run it before every push. ` + "`CGO_ENABLED=0`" + ` throughout: the stack is cgo-free by design. The Makefile names the Go release the gate and ` + "`make release`" + ` use (` + "`GOTOOLCHAIN`" + `); raise it with each Go security release.
-- Two of the scaffolded tests are about the **placeholder index page**
-  and are yours to rewrite: ` + "`TestIndexRenders`" + ` and
-  ` + "`TestIndexLinksFingerprintedStylesheet`" + `. Putting ` + "`/`" + ` behind sign-in
-  turns a signed-out GET into a 303 and both fail — that is the app
-  working, not the gate finding a fault. Repoint them at a page that
-  is public in your app, or delete them. The gate is a definition of
-  done for *your* tests; it does not promise the ones you were handed
-  are still describing your app. ` + "`TestPerfScreens`" + ` will then want
-  ` + "`Signin`" + ` in its config, so it measures the page rather than the redirect.
-
-## Testing and budgets
-
-- While editing: ` + "`go test -short ./internal/<app>/... ./internal/<app>test/`" + `.
-  Before pushing: ` + "`make ci`" + `. If it is too slow to run before every
-  push, a budget has already failed: fix that, never skip the gate.
-- Budgets: 5,000 source and 8,000 test lines per directory (` + "`make budget`" + `),
-  10s per test package (` + "`make test`" + `), 150ms to first byte per GET
-  screen and 500ms cold boot (` + "`make perf`" + `). Timing fails only on CI.
-  Exceptions go in ` + "`.rastrillo/budgets.txt`" + `, each with a reason.
-- Past 5,000 lines, split ` + "`internal/<app>`" + ` by feature:
-  ` + "`internal/<app>/<feature>`" + ` with ` + "`Mount(r chi.Router, deps)`" + `, called
-  from ` + "`Router`" + `.
-- Every test package has ` + "`func TestMain(m *testing.M) { os.Exit(budget.Main(m)) }`" + `
-  (or calls ` + "`budget.Main`" + ` inside its own), every test starts with
-  ` + "`t.Parallel()`" + ` (perf tests excepted), and tests copy the
-  ` + "`dbtest`" + ` template rather than migrating.
-- A test whose inputs Go cannot see (it execs ` + "`go build`" + `, reads files
-  outside its package, or uses the network) gets its own make target
-  with ` + "`-count=1`" + `, or Go's test cache will replay a stale pass.
-
-## Serving
-
-` + "`rastrillo.Resolve`" + ` + ` + "`Serve`" + ` speak the CARLOS activation contract
-(socket/addr/db argv, LISTEN_FDS, $STATE_DIRECTORY, ` + "`sidecar run`" + `) —
-the golden deployment target, not a requirement: ` + "`./app -addr :8080`" + `
-serves anywhere. ` + "`GET /healthz`" + ` and ` + "`GET /api/version`" + ` are answered
-by the framework, outside app middleware.
-`

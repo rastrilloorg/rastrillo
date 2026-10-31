@@ -151,6 +151,21 @@ func measureFile(root, module, path string) ([]Offence, error) {
 	return append(found, unit.nameOffences()...), nil
 }
 
+// ColumnOffences is the columns limit Measure applies to the file at
+// path, judged on source that is not on disk yet: rastrillo new
+// measures an app before it writes it, so a refused name leaves nothing
+// behind. A file Measure skips or exempts from columns has none.
+func ColumnOffences(path string, source []byte) ([]Offence, error) {
+	unit, err := parseUnit(path, "", source)
+	if err != nil {
+		return nil, err
+	}
+	if unit.generated || unit.vendored || unit.data {
+		return nil, nil
+	}
+	return columnOffences(unit.path, source), nil
+}
+
 // fileOffences counts lines the way wc -l does: newlines, plus one for
 // a final line without one. Test files may be as long as they need.
 func fileOffences(unit *unit, source []byte) []Offence {

@@ -10,6 +10,23 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+### Changed: `rastrillo new` writes actions on a route table, and its `make ci` runs `make code` and `make routes`
+
+New apps get an exported `App`, a `New` constructor, and one `Routes` function in `routes.go`. Pages are actions, such as `func (app *App) home(visit *action.Visit)`, and answer with `visit.Render`. The `AGENTS.md` file lists the code rules. The `make ci` gate runs two new lanes: `make code` (`rastrillo budget code`) and `make routes` (`rastrillo routes --check`). Static files and the JSON API are mounted outside the page group, so the API gets no CSRF check or page middleware.
+
+Existing apps do not change, and upgrading adds nothing to `make ci`. Follow these rules for new code. Leave working code as it is. To add the gates:
+
+1. Run `rastrillo budget code --init` and commit `.rastrillo/code.txt`. It records the offences the code has today, so the gate fails only on new ones.
+2. Add a `code` lane that runs `rastrillo budget code` to `make ci`, and a step for it if your CI runs steps.
+3. Add a `routes` lane that runs `rastrillo routes --check` only once the app has a `Routes` function. Until then, `routes --check` fails because it cannot find one.
+
+What changed:
+
+- `rastrillo new` writes `routes.go`. `New` takes the place of `App(...)`, with the same arguments in the same order.
+- An `--auth=magic` app keeps its owned pages in a group behind `app.auth.RequireSession`, and its rows go through `app.owned(request)`.
+- `manifest/README.md` mounts a manifest's generated screens in `Routes`.
+- `SKILL.md` and `skill/` teach this shape.
+
 ### Added: compiled templates
 
 `rastrillo generate` now compiles your templates to Go. A compiled page
@@ -97,7 +114,7 @@ What changed:
 
 ### Added: `rastrillo routes` lists an app's routes, and `--check` finds an action no route mounts
 
-New command `rastrillo routes` prints every route of the app: the method, the full path, the action and the guards, in the order they are registered. It does not start the app. It calls the app's `Routes` function with an empty `App` and a table that only records. Nothing is written into the app, and `go.mod` and `go.sum` stay as they are. With `--check` it also fails for each action no route mounts. Nothing runs it in an app's `make ci` yet. See [CLI](/docs/cli#rastrillo-routes).
+New command `rastrillo routes` prints every route of the app: the method, the full path, the action and the guards, in the order they are registered. It does not start the app. It calls the app's `Routes` function with an empty `App` and a table that only records. Nothing is written into the app, and `go.mod` and `go.sum` stay as they are. With `--check` it also fails for each action no route mounts. A new app's `make ci` runs it as `make routes`. See [CLI](/docs/cli#rastrillo-routes).
 
 The `action` package changes with it. `action` is not in a release yet, so only code written against `main` needs to change:
 
@@ -158,11 +175,11 @@ Mark a header that stays pinned above your form with `data-rst-select-ceiling`, 
 
 ### Added: `rastrillo budget code` holds Go code to readable limits
 
-New command `rastrillo budget code` holds a module's Go code to 80 columns, 400-line files, 40-line functions (15 for an action) and no single-letter names. Run it with `--init` once to record the offences the code already has in `.rastrillo/code.txt`. From then on a new offence fails, and records only go down: run it with `--lower` as the code improves. A record you add or raise on a branch needs a reason after its count. Rastrillo's own gate runs it as `make code`. Nothing runs it in an app yet. See [CLI](/docs/cli).
+New command `rastrillo budget code` holds a module's Go code to 80 columns, 400-line files, 40-line functions (15 for an action) and no single-letter names. Run it with `--init` once to record the offences the code already has in `.rastrillo/code.txt`. From then on a new offence fails, and records only go down: run it with `--lower` as the code improves. A record you add or raise on a branch needs a reason after its count. Rastrillo's own gate runs it as `make code`, and so does a new app's `make ci`. See [CLI](/docs/cli).
 
 ### Added: write an action as one function, with `action`
 
-New package `action`. An action takes one `*action.Visit` and does four things with it: read the input, run one operation, answer a refusal, say what success looks like. `Visit` has a method for each step: `ReadForm`, `PathID`, `Render`, `Flash`, `Redirect`, and `Refused` or `RefusedShowing` to answer an error. `action.NewRoutes` mounts your actions on a chi router, and `List` returns the routes it mounted, with their guards, so a test can check them without serving a request. Nothing existing changes, and nothing calls `action` yet. See [action](/docs/reference/action).
+New package `action`. An action takes one `*action.Visit` and does four things with it: read the input, run one operation, answer a refusal, say what success looks like. `Visit` has a method for each step: `ReadForm`, `PathID`, `Render`, `Flash`, `Redirect`, and `Refused` or `RefusedShowing` to answer an error. `action.NewRoutes` mounts your actions on a chi router, and `List` returns the routes it mounted, with their guards, so a test can check them without serving a request. Nothing existing changes. See [action](/docs/reference/action).
 
 ## v0.29.0
 

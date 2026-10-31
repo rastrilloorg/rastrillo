@@ -6,7 +6,7 @@ description: "Build a multi-user CARLOS app: GORM models or plain SQL, chi route
 # Rastrillo
 
 CARLOS middle layer, not full-stack: you write GORM models (or plain
-SQL), `net/http` handlers on a chi router and `html/template`
+SQL), actions on a route table (`action`, over chi) and `html/template`
 pages; it supplies the database opener, session store, identity
 plugins, CSRF, owner scoping, form helpers. Module `amadan.net/rastrillo/rastrillo`; worked
 reference `examples/notes` — in the repository, **not** in the
@@ -45,9 +45,8 @@ rastrillo new notes && cd notes && go mod tidy && go test ./...
 ```
 
 **People sign in? Start with `rastrillo new --auth=magic <name>`.** The
-app then signs people in by emailed link from its first commit, its
-owned rows go through `a.owned(r)` and are created with
-`Owner: ownerOf(r)`, and its tests sign in for you; its
+app then signs people in by emailed link from its first commit, scopes
+owned rows (below) and its tests sign in for you; its
 `AGENTS.md` says where each piece is. Without `--auth` the scaffold has
 no accounts.
 
@@ -59,8 +58,9 @@ truth for that app's code; this file stays the framework's.
 **Reach for a manifest before hand-writing.** A `manifest/*.toml`
 resource generates CRUD screens (field kinds text, textarea, money;
 `scope = "user"` owner-filters by session subject), correct by
-construction; run `rastrillo generate`, commit `gen/` and `api/v1.json`, and pass
-`gen.Boot`'s result to `gen.Router`. docs/site/manifests.md
+construction; run `rastrillo generate`, commit `gen/` and `api/v1.json`,
+and mount `gen.Router` in `Routes` (`manifest/README.md`).
+docs/site/manifests.md
 
 **Look before you build.** Most things an app needs already ship: a
 Light/Dark/System switch in every shell, a picture grid (`media-grid`),
@@ -69,65 +69,71 @@ error pages. Check the index first.
 
 ## App shape
 
-Five files plus `migrations.go`: `internal/<app>/models.go` (plain
-GORM structs), `app.go` (wiring), `handlers.go` (owned CRUD),
-`render.go` (embedded templates, page data), `cmd/<app>/main.go`.
+`main.go`, in order: `rastrillo.Resolve(rastrillo.Options{DBPath:
+"notes.db", ...})`; `db.Open(options.DBPath, logger)` (deferred
+`Close`); `notes.New(database, origin, logger)`;
+`notes.Configure(&options, mux, started)`; `options.DBPath = ""`;
+`rastrillo.Serve(options)`. **Use `Resolve` + `Serve`, never `Run`,
+when the app opens its own database:** `Run` re-parses argv and
+repopulates `Options.DBPath`, so `Serve` opens a second connection to
+the file `db.Open` owns. Resolve/Serve supply the platform contract
+(activation, /healthz, SIGTERM drain, security headers); never
+hand-roll it.
 
-`main.go`, in order: `opts, err := rastrillo.Resolve(rastrillo.Options{DBPath:
-"notes.db", Logger: logger})`; `d, err := db.Open(opts.DBPath, logger)`;
-`defer d.Close()`; `mux, err := notes.App(d, origin, logger)`;
-`notes.Configure(&opts, mux, started)`; `opts.DBPath = ""`;
-`rastrillo.Serve(opts)`. **Use `Resolve` + `Serve`, never `Run`, when
-the app opens its own database:** `Run` re-parses argv and repopulates
-`Options.DBPath`, so `Serve` opens a second connection to the file
-`db.Open` owns. Resolve/Serve supply the platform contract (activation,
-/healthz, SIGTERM drain, security headers); never hand-roll it.
-
-`app.go`'s `Router`, in order: `migrate.Apply(ctx, d, BootSchema)`;
-`r := chi.NewRouter()`; `r.Use(csrf.Protect(origin))` app-wide; public
-routes; owned routes inside `r.Group(func(r chi.Router) {
-r.Use(sess.Require); ... })` (sessions: `skill/signin.md`). `render.go`
-builds `ui.Pages` once at boot; a new page goes in its list
-(`skill/screens.md`).
+`app.go`'s `New` wraps `Router`, which the perf test walks:
+`migrate.Apply(ctx, database, BootSchema)`, then `App`, then
+`Routes(action.NewRoutes(router, app.contextFor), app)`. `routes.go`
+holds named paths and `func Routes(routes *action.Routes, app *App)`,
+which registers everything: `/static` and
+`routes.Mount("/api/v1", app.api, "api")` unguarded (a bearer token is
+the API's only credential), then every page in a `routes.Group`
+starting `Guard("csrf", csrf.Protect(app.origin))` and
+`Guard("pages", pages.Middleware)`. Owned pages go in a `Group` within,
+behind the session guard (`app.auth.RequireSession` under
+`--auth=magic`). An action, `func (app *App) home(visit
+*action.Visit)`, answers with `visit.Render("index", http.StatusOK,
+data)`; its page also goes in `render.go`'s list.
 
 ## Owner scoping
 
-One seam, every read and write (`a.db` is the scaffold's `*db.DB`;
-`.G` is its `*gorm.DB`): `func (a *app) owned(r *http.Request) *gorm.DB
-{ uid, _ := sessions.UserID(r); return scope.Owned(a.db.G, uid) }`.
+One seam, every read and write (`app.database.G` is a
+`*gorm.DB`; in an action, `request` is `visit.Request()`):
+`func (app *App) owned(request *http.Request) *gorm.DB { userID, _ :=
+sessions.UserID(request); return scope.Owned(app.database.G, userID) }`.
 An `--auth=magic` app has it already (`auth.go`), over an `Owner`
-address column: create rows with `Owner: ownerOf(r)`, never `UserID`.
-`scope.Owned(g, owner)` adds `WHERE user_id = ?`; `scope.OwnedBy(g,
+address column: create rows with `Owner: ownerOf(request)`, never
+`UserID`. `scope.Owned(g, owner)` adds `WHERE user_id = ?`; `scope.OwnedBy(g,
 column, owner)` takes another owner column, panicking unless plain
 `lower_snake` (it is interpolated into SQL). Never
-First/Find/Update/Delete an owned model without the filter — in
-`d.G.Transaction` too: scope the callback's `tx`, never `d.G` (a `d.G`
-statement there hangs on the writer connection the transaction holds).
+First/Find/Update/Delete an owned model without the filter — in a
+transaction too: scope the callback's `tx`, never `app.database.G` (a
+statement on it there hangs on the writer connection `tx` holds).
 
 Scope the write, not just the read that loaded the row: after
-`a.owned(r).First(&n, id)` (404 on err),
-`a.owned(r).Model(&n).Select("Title", "Body", "UpdatedAt").Updates(...)`.
-A row that isn't yours doesn't exist: 404, never 403 — malformed `{id}`
-too. A join table is scoped through BOTH sides. Creating takes the
-owner from the session, never the form: `Note{UserID: uid, ...}`.
+`app.owned(request).First(&note, id)` (map `gorm.ErrRecordNotFound`
+to `op.NotFound{}`), `app.owned(request).Model(&note).Select("Title",
+"Body", "UpdatedAt").Updates(...)`. A row that isn't yours doesn't
+exist: 404, never 403 — malformed `{id}` too. A join table is scoped
+through BOTH sides. Creating takes the owner from the session, never
+the form: `Note{UserID: userID, ...}`.
 
-Never bind a request body onto a model: read each permitted field by
-name and write through `.Select(...)`, the allowlist keeping unexpected
-fields out of columns. Validate with `form.Parse` (`skill/forms.md`).
+Never bind a request body onto a model: write each permitted field
+through `.Select(...)` (`skill/forms.md`).
 
 ## Sessions in one paragraph
 
-`sessions` owns signed-in state: SQLite rows, cookies (`__Host-`
-prefixed on https), 30-day TTL; an identity plugin verifies a credential and calls
-`SignIn`. `csrf.Protect(origin)` refuses cross-origin writes with no
-tokens. **Under magic links (`auth`), never `sessions.UserID`:** the
-subject is an email, so the seam above would scope to `user_id = 0`.
+`sessions` owns signed-in state; an identity plugin verifies a
+credential and calls `SignIn`. `csrf.Protect(origin)` refuses
+cross-origin writes with no tokens. **Under magic links (`auth`),
+never `sessions.UserID`:** the subject is an email, so the seam above
+would scope to `user_id = 0`.
 Everything else: `skill/signin.md`.
 
 ## Write code that reads like a sentence
 
-Rastrillo's own gate, `rastrillo budget code`, holds Go to four limits.
-An app's `make ci` does not run it yet; meet them anyway:
+`rastrillo budget code` holds Go to four limits. An app's `make ci`
+runs it as `make code`, and `make routes` fails an action no route
+mounts:
 
 - lines at most 80 columns, a tab reaching the next stop of 4;
 - non-test files at most 400 lines;
@@ -137,9 +143,7 @@ An app's `make ci` does not run it yet; meet them anyway:
   types' `t`, `b`, `f`.
 
 1. Spell names out, except those, `err` and `ctx` (`context` is the
-   package): `request`, not `r`. The scaffold's short names
-   (`a.owned(r)` above) are being renamed; new code spells them out:
-   `app.owned(request)`.
+   package): `request`, not `r`.
 2. Name things for what the person is doing (`entries.Publish`), not
    how the code does it (`saveEntry`).
 3. One route, one intent: two buttons that mean two things post to two
@@ -170,11 +174,11 @@ The other seven, an action's shape and what each gate message means:
 
 ## Checklist before you call an app done
 
-1. Every handler on an owned model goes through the `owned(r)` seam.
+1. Every action on an owned model goes through the `owned` seam.
 2. Every update names its columns in `.Select(...)`.
-3. `csrf.Protect(origin)` mounted app-wide, above the route groups.
-4. Signed-in routes, jobs' included, in a `Group` with `sess.Require`.
+3. Pages and forms only inside `Routes`' `csrf.Protect` group.
+4. Signed-in routes, jobs' included, behind the session guard.
 5. One `migrate.Apply` at boot; `make ci` runs `rastrillo migration check`.
-6. `opts.DBPath` blanked before `Serve` when the app opened its own handle.
+6. `options.DBPath` blanked before `Serve` when the app opened its own handle.
 7. Not-found and not-yours both answer 404.
 8. No screen carries two ways to start work; each action has its own page.

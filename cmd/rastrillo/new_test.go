@@ -246,42 +246,38 @@ func TestMainTemplateWiresResolveOpenServe(t *testing.T) {
 	src := fmt.Sprintf(mainTemplate, "blogapp", "blogapp", "BLOGAPP")
 	for _, want := range []string{
 		"rastrillo.Resolve(rastrillo.Options{",
-		"db.Open(opts.DBPath, logger)",
-		"blogapp.App(d, origin, logger)",
-		"opts.DBPath = \"\"",
-		"rastrillo.Serve(opts)",
+		"db.Open(options.DBPath, logger)",
+		"blogapp.New(\n\t\tdatabase, origin, logger)",
+		"options.DBPath = \"\"",
+		"rastrillo.Serve(options)",
 	} {
 		if !strings.Contains(src, want) {
 			t.Errorf("main.go template missing %q:\n%s", want, src)
 		}
 	}
-	if strings.Index(src, `opts.DBPath = ""`) < strings.Index(src, "db.Open(") {
+	if strings.Index(src, `DBPath = ""`) < strings.Index(src, "db.Open(") {
 		t.Error("DBPath must be cleared only after db.Open used it")
 	}
 }
 
-// main.go wires Options.ErrorPage to the app's own ErrorPage, and only
-// after opts.Mux is set — Resolve populates opts fresh, so setting
-// ErrorPage any earlier would be overwritten by nothing but reads
-// stranger than setting it alongside the rest of the app wiring.
+// Configure owns the serving options, ErrorPage included, so main.go
+// and the perf test cannot set them differently.
 func TestMainTemplateWiresErrorPage(t *testing.T) {
-	// Configure owns the serving options, ErrorPage included, so main.go
-	// and the perf test cannot set them differently.
 	src := fmt.Sprintf(mainTemplate, "blogapp", "blogapp", "BLOGAPP")
-	if !strings.Contains(src, "blogapp.Configure(&opts, mux, started)") {
+	if !strings.Contains(src, "blogapp.Configure(&options, mux, started)") {
 		t.Errorf("main.go template does not set its options through Configure:\n%s", src)
 	}
 	if strings.Index(src, "started := time.Now()") > strings.Index(src, "rastrillo.Resolve(") {
 		t.Error("started must be taken before anything else, or perf's cold budget misses part of the start")
 	}
-	app := fmt.Sprintf(appTemplate, "blogapp", "", "blogapp")
+	app := fmt.Sprintf(appTemplate, "blogapp", "blogapp")
 	for _, want := range []string{
-		"func Configure(opts *rastrillo.Options, mux *http.ServeMux, started time.Time)",
-		"opts.ErrorPage = ErrorPage",
-		"opts.Mux = mux",
+		"options *rastrillo.Options, mux *http.ServeMux, started time.Time,",
+		"options.ErrorPage = ErrorPage",
+		"options.Mux = mux",
 		"perf.Middleware(",
-		"func Router(d *db.DB, origin string, logger *slog.Logger) (chi.Router, error)",
-		"func Mux(r, apiTree http.Handler) *http.ServeMux",
+		"logger *slog.Logger,\n) (chi.Router, error)",
+		"Routes(action.NewRoutes(router, app.contextFor), app)",
 	} {
 		if !strings.Contains(app, want) {
 			t.Errorf("app.go template missing %q:\n%s", want, app)
@@ -289,23 +285,25 @@ func TestMainTemplateWiresErrorPage(t *testing.T) {
 	}
 }
 
-// render.go exports ErrorPage (the func Options.ErrorPage above points
-// at) and registers "errors" as a page. ErrorPage finds the request's
-// language with LocalizerFor, because a recovered panic reaches it
-// outside the middleware that puts the localizer on the request.
+// render.go exports ErrorPage with the ErrorPageFunc signature and
+// registers "errors" as a page. ErrorPage finds the request's language,
+// scheme and base path itself: a recovered panic reaches it outside the
+// page middleware, and without Scheme it would paint System for a reader
+// who chose Dark.
 func TestRenderTemplateWiresErrorPage(t *testing.T) {
 	src := fmt.Sprintf(renderTemplate, "blogapp", "blogapp", `"index", "errors"`)
-	if !strings.Contains(src, `[]string{"index", "errors"}`) {
-		t.Errorf("render.go's pages loop does not include \"errors\":\n%s", src)
-	}
-	if !strings.Contains(src, "func ErrorPage(w http.ResponseWriter, r *http.Request, status int, ref string)") {
-		t.Errorf("render.go does not export ErrorPage with the ErrorPageFunc signature:\n%s", src)
-	}
-	// Scheme too: a 500 after a panic reaches ErrorPage outside render,
-	// and without it the error page would paint System for a reader who
-	// chose Dark.
-	if !strings.Contains(src, `pages.Execute(&buf, "errors", map[string]any{"L": pages.LocalizerFor(r), "Scheme": rastrillo.SchemeFrom(r), "Base": basepath.Base(r), "Status": status, "Ref": ref})`) {
-		t.Errorf("render.go's ErrorPage does not render the \"errors\" page in the request's language, scheme and base path:\n%s", src)
+	for _, want := range []string{
+		`[]string{"index", "errors"}`,
+		"func ErrorPage(\n\tresponse http.ResponseWriter,",
+		"request *http.Request, status int,\n\tref string,\n)",
+		`writePage(response, "errors", status, map[string]any{`,
+		`"L":      pages.LocalizerFor(request),`,
+		`"Scheme": rastrillo.SchemeFrom(request),`,
+		`"Base":   basepath.Base(request), "Status": status, "Ref": ref,`,
+	} {
+		if !strings.Contains(src, want) {
+			t.Errorf("render.go's ErrorPage lacks %q:\n%s", want, src)
+		}
 	}
 }
 
@@ -347,11 +345,11 @@ func TestManifestReadmeCarriesTheRecipe(t *testing.T) {
 		"//go:embed gen/templates",
 		"var GenTemplatesFS embed.FS",
 		// The generated screens join the pages render.go builds, and
-		// the Ctx.Render seam executes them: without both the generated
+		// contextFor's Render draws them: without both the generated
 		// actions have nowhere to render to.
-		"ui.PageFile{FS: gen, Path: f}",
-		"func GenRender(ctx *rastrillo.Ctx, w http.ResponseWriter, name string, status int, data any)",
-		"pages.Execute(&buf, name, data)",
+		"ui.PageFile{FS: generated, Path: name}",
+		"through contextFor's Render",
+		"app.generatedContext",
 		// The catalog, because the generated templates call T with keys
 		// that live in gen/locales and not in ui's default catalog.
 		"Catalog: genlocales.BaseCatalog",
@@ -359,12 +357,13 @@ func TestManifestReadmeCarriesTheRecipe(t *testing.T) {
 		// framework bug rather than a missing step: everything
 		// compiles and the screen 500s on a table that was never
 		// created.
-		"migrate.Merge(apitoken.Schema, genSchema, Schema)",
+		"add generatedSchema() to",
+		"BootSchema's Merge",
 		".Migrations {",
 		// And the mount, which will not compile without Boot's result.
-		"gen.Boot(context.Background(), d.Writer())",
+		"gen.Boot(context.Background(), database.Writer())",
 		"gen.Router(booted, ",
-		"Render: GenRender",
+		"guarded.Mount(",
 	} {
 		if !strings.Contains(src, want) {
 			t.Errorf("manifest README missing %q", want)
@@ -421,7 +420,7 @@ func TestNewSanitizesHyphenatedAppName(t *testing.T) {
 	if err != nil {
 		t.Fatalf("expected a scaffolded main.go: %v", err)
 	}
-	if !strings.Contains(string(mainSrc), `myblog "my-blog/internal/myblog"`) {
+	if !strings.Contains(string(mainSrc), `"my-blog/internal/myblog"`) {
 		t.Errorf("main.go does not import the app package from the hyphenated module path:\n%s", mainSrc)
 	}
 }
@@ -441,12 +440,12 @@ func TestNewScaffoldsTestHarness(t *testing.T) {
 	for _, want := range []string{
 		"package myblogtest",
 		"func newApp(t *testing.T) http.Handler",
-		`myblog "my-blog/internal/myblog"`,
+		`"my-blog/internal/myblog"`,
 		"var schema = dbtest.FromSet(myblog.BootSchema)",
 		"db.Open(schema.Path(t), logger)",
-		"code := budget.Main(m)",
+		"code := budget.Main(suite)",
 		"schema.Remove()",
-		"myblog.App(d, testOrigin, logger)",
+		"myblog.New(\n\t\tdatabase, testOrigin, logger)",
 	} {
 		if !strings.Contains(string(harness), want) {
 			t.Errorf("harness_test.go missing %q:\n%s", want, harness)
@@ -884,11 +883,11 @@ func TestNewWiresCSRFProtection(t *testing.T) {
 	if err := runNew([]string{"blogapp"}); err != nil {
 		t.Fatalf("runNew: %v", err)
 	}
-	appGo := readScaffold(t, "blogapp", "internal", "blogapp", "app.go")
+	appGo := readScaffold(t, "blogapp", "internal", "blogapp", "routes.go")
 	for _, want := range []string{
 		"amadan.net/rastrillo/rastrillo/csrf",
-		"r.Use(csrf.Protect(origin))",
-		"origin string",
+		`guarded.Guard("csrf", csrf.Protect(app.origin))`,
+		"routes.Group(func(guarded *action.Routes) {",
 	} {
 		if !strings.Contains(appGo, want) {
 			t.Errorf("scaffolded app.go does not contain %q", want)
@@ -896,9 +895,9 @@ func TestNewWiresCSRFProtection(t *testing.T) {
 	}
 	mainGo := readScaffold(t, "blogapp", "cmd", "blogapp", "main.go")
 	for _, want := range []string{
-		`os.Getenv("BLOGAPP_ORIGIN")`,
+		`const variable = "BLOGAPP_ORIGIN"`,
 		`origin = "http://localhost:8080"`,
-		"App(d, origin, logger)",
+		"New(\n\t\tdatabase, origin, logger)",
 	} {
 		if !strings.Contains(mainGo, want) {
 			t.Errorf("scaffolded main.go does not contain %q", want)
@@ -906,8 +905,8 @@ func TestNewWiresCSRFProtection(t *testing.T) {
 	}
 	harness := readScaffold(t, "blogapp", "internal", "blogapptest", "harness_test.go")
 	for _, want := range []string{
-		`req.Header.Set("Origin", testOrigin)`,
-		"App(d, testOrigin, logger)",
+		`request.Header.Set("Origin", testOrigin)`,
+		"New(\n\t\tdatabase, testOrigin, logger)",
 	} {
 		if !strings.Contains(harness, want) {
 			t.Errorf("scaffolded harness_test.go does not contain %q", want)
@@ -941,7 +940,7 @@ func TestNewScaffoldsBrowserDrive(t *testing.T) {
 		"package myblogtest",
 		"amadan.net/rastrillo/rastrillo/harness",
 		"harness.New(t, func(origin string) http.Handler {",
-		"myblog.App(d, origin, logger)",
+		"myblog.New(\n\t\t\tdatabase, origin, logger)",
 		`rig.Screen("body", "home")`,
 		"RASTRILLO_BROWSER_OPTIONAL",
 	} {
@@ -959,7 +958,7 @@ func TestNewScaffoldsBrowserDrive(t *testing.T) {
 		"RASTRILLO_CHROME",
 		"RASTRILLO_BROWSER_OPTIONAL",
 		"A skip is not a pass",
-		"this app's call",
+		"Choose whether your CI runs it",
 		// The template contract: a page that skips $L fails strict
 		// rendering, so the README must say how every body starts.
 		"{{$L := localizer $}}",
@@ -992,7 +991,7 @@ func TestNewScaffoldsVendoredPinTest(t *testing.T) {
 		// too — without it, an app that meant to diverge has no way to
 		// say so except deleting the whole test.
 		"vendoredIsMine",
-		`filepath.Join("..", "blogapp", "static", name)`,
+		`filepath.Join("..", "blogapp", "static")`,
 	} {
 		if !strings.Contains(src, want) {
 			t.Errorf("scaffolded vendored_test.go does not contain %q", want)

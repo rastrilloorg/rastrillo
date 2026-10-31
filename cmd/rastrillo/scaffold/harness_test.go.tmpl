@@ -1,0 +1,79 @@
+// Package %[2]stest tests the app from the outside:
+// real requests to the app, built as cmd/%[1]s/main.go
+// builds it.
+package %[2]stest
+
+import (
+	"io"
+	"log/slog"
+	"net/http"
+	"net/http/httptest"
+	"net/url"
+	"os"
+	"strings"
+	"testing"
+
+	"amadan.net/rastrillo/rastrillo/budget"
+	"amadan.net/rastrillo/rastrillo/db"
+	"amadan.net/rastrillo/rastrillo/dbtest"
+
+	"%[1]s/internal/%[2]s"
+)
+
+// testOrigin is the app's origin here, which post presents as a browser
+// form would.
+const testOrigin = "http://app.test"
+
+// schema is migrated once and copied for each test: migrating per test
+// cost Tito Go 207ms a test against 2.5ms for a copy.
+var schema = dbtest.FromSet(%[2]s.BootSchema)
+
+// TestMain prints the package's time for rastrillo budget test.
+func TestMain(suite *testing.M) {
+	code := budget.Main(suite)
+	schema.Remove()
+	os.Exit(code)
+}
+
+func newApp(t *testing.T) http.Handler {
+	t.Helper()
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	database, err := db.Open(schema.Path(t), logger)
+	if err != nil {
+		t.Fatalf("db.Open: %%v", err)
+	}
+	t.Cleanup(func() { database.Close() })
+	mux, err := %[2]s.New(
+		database, testOrigin, logger)
+	if err != nil {
+		t.Fatalf("New: %%v", err)
+	}
+	return mux
+}
+
+func get(
+	t *testing.T, handler http.Handler, target string,
+) *httptest.ResponseRecorder {
+	t.Helper()
+	recorder := httptest.NewRecorder()
+	handler.ServeHTTP(recorder,
+		httptest.NewRequest(http.MethodGet, target, nil))
+	return recorder
+}
+
+// post sends the Origin header csrf.Protect asks of a form; a 403 does
+// not say it is missing.
+//
+//lint:ignore U1000 kept for the app's first form test
+func post(
+	t *testing.T, handler http.Handler, target string, form url.Values,
+) *httptest.ResponseRecorder {
+	t.Helper()
+	request := httptest.NewRequest(http.MethodPost, target,
+		strings.NewReader(form.Encode()))
+	request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	request.Header.Set("Origin", testOrigin)
+	recorder := httptest.NewRecorder()
+	handler.ServeHTTP(recorder, request)
+	return recorder
+}
