@@ -8,6 +8,14 @@ This file starts at v0.23.0. Earlier releases are in the git history and their
 tags; nothing has been reconstructed for them, because a changelog written
 backwards from commits is a guess wearing a date.
 
+## v0.29.1
+
+Apps can now start on first boot with migrations, even when Litestream replicates their database.
+
+### Fixed: migrations run on databases replicated by Litestream
+
+Litestream adds `_litestream_seq` and `_litestream_lock` tables to databases it replicates. On an app's first boot, `migrate` treated those tables as extras during adoption and refused to start. A new database containing only Litestream's tables was also treated as non-empty, so its migrations did not run. The `migrate` package now ignores tables whose names start with `_litestream_`, as it already does for SQLite's `sqlite_` tables. Apps can now adopt existing databases and run migrations on new ones.
+
 ## v0.29.0
 
 A JSON API with agents that act for a person, money in any currency, a colour-scheme switch, a new look for `day`, and sign-in without a database. The first seven sections change what an existing app does without a compile error: the JSON API, the colour-scheme switch, money, sign-in's return to the page, pagination, hand-edited migrations and `job-status`. Read them before you upgrade.
