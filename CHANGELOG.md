@@ -45,12 +45,15 @@ template you changed since the last `generate` renders through
 old HTML. See [tmpl](/docs/reference/tmpl).
 
 `generate` now starts your app to find its templates. It builds each
-program under `cmd/` that uses templates and runs it in a scratch
-directory, where `rastrillo.Serve` builds the app and returns before it
-listens. It gets only `PATH`, `HOME`, `TMPDIR` and `LANG` from your
-environment. A database it opens through `rastrillo.OpenDB` or
-`db.Open` is a new file in the scratch directory, whatever path is
-configured, so capture never opens a real one.
+program under `cmd/` whose `func main` calls `rastrillo.Run` or
+`rastrillo.Serve` and runs it in a scratch directory, where
+`rastrillo.Serve` builds the app and exits before it listens. @@CL@@ It never starts any other program, so a migration or a mail-out under
+`cmd/` does not run; `generate` names it on one line, and its templates
+render through `html/template`. The program it starts gets only `PATH`,
+`HOME`, `TMPDIR` and `LANG` from your environment. A database it opens
+through `rastrillo.OpenDB` or `db.Open` is a new file in the scratch
+directory, whatever path is configured, so capture never opens a real
+one.
 
 To upgrade:
 

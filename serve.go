@@ -393,14 +393,12 @@ func Serve(opts Options) error {
 	if err != nil {
 		return err
 	}
-	defer closeDB()
-
 	// Capture mode is rastrillo generate asking what sets the app builds.
-	// The handler is built, which is what builds them, and the deferred
-	// close releases what Handler opened. Nothing listens.
+	// Building the handler built them. Nothing listens, and nothing runs.
 	if path := os.Getenv(tmpl.CaptureEnv); path != "" {
-		return tmpl.WriteCapture(path)
+		return captureAndExit(path, closeDB)
 	}
+	defer closeDB()
 
 	ln, err := listen(opts.Socket, opts.Addr)
 	if err != nil {

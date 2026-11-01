@@ -38,7 +38,10 @@ func checkTemplates(dir string, templates bool) (string, error) {
 const (
 	templatesWrote   = "wrote %s: compiled templates"
 	templatesRemoved = "removed %s: its package builds no template sets now"
-	templatesStale   = "%s is out of date with the app's templates; " +
+	templatesSkipped = "did not run %s: its func main calls neither " +
+		"rastrillo.Run nor rastrillo.Serve, so any templates it builds " +
+		"stay on html/template"
+	templatesStale = "%s is out of date with the app's templates; " +
 		"run rastrillo generate"
 	templatesMissing     = "%s is missing; run rastrillo generate and commit it"
 	templatesUnsupported = "template %q in %s stays on html/template: %s"
@@ -50,31 +53,24 @@ const (
 // with check compares its generated files with what it would write,
 // and returns what it found.
 //
-// A template the compiler cannot handle, and a main that cannot start
-// in capture mode, are one line each and never an error: those
-// templates render through html/template, which is correct, only
-// slower, and failing the command would block gen/ over a speed-up.
-// A stale file is an error only under --check, where it is the gate.
-// So is a missing one: a file deleted or never committed would ship
-// its pages on html/template with the gate green. A new app is not red
-// for it, because rastrillo new compiles its templates. So, under
-// --check, is a main that cannot start beside a compiled file it
-// builds sets for: the gate cannot say that file is current.
+// A template the compiler cannot handle, a main that cannot start in
+// capture mode, and one generate does not start because it calls
+// neither rastrillo.Run nor rastrillo.Serve, are one line each and
+// never an error: those templates render through html/template, which
+// is correct, only slower, and failing the command would block gen/
+// over a speed-up. A stale file is an error only under --check, where
+// it is the gate. So is a missing one: a file deleted or never
+// committed would ship its pages on html/template with the gate green.
+// A new app is not red for it, because rastrillo new compiles its
+// templates. So, under --check, is a main that cannot start beside a
+// compiled file it builds sets for: the gate cannot say that file is
+// current.
 func compileTemplates(dir string, check bool) (tmplgen.Result, error) {
 	res, err := tmplgen.Run(dir, tmplgen.Options{Check: check})
 	if err != nil {
 		return res, fmt.Errorf("compile templates: %w", err)
 	}
-	for _, path := range res.Written {
-		fmt.Printf(templatesWrote+"\n", path)
-	}
-	for _, path := range res.Removed {
-		fmt.Printf(templatesRemoved+"\n", path)
-	}
-	for _, note := range res.Unsupported {
-		fmt.Fprintf(os.Stderr, templatesUnsupported+"\n",
-			note.Template, note.Owner, note.Reason)
-	}
+	reportTemplates(res)
 	var lines []string
 	for _, failure := range res.CaptureFailures {
 		if slices.Contains(res.Unverified, failure) {
@@ -99,4 +95,22 @@ func compileTemplates(dir string, check bool) (tmplgen.Result, error) {
 		return res, nil
 	}
 	return res, errors.New(strings.Join(lines, "\n"))
+}
+
+// reportTemplates prints what the template step did, and the templates
+// it left on html/template.
+func reportTemplates(res tmplgen.Result) {
+	for _, path := range res.Written {
+		fmt.Printf(templatesWrote+"\n", path)
+	}
+	for _, path := range res.Removed {
+		fmt.Printf(templatesRemoved+"\n", path)
+	}
+	for _, mainPath := range res.Skipped {
+		fmt.Printf(templatesSkipped+"\n", mainPath)
+	}
+	for _, note := range res.Unsupported {
+		fmt.Fprintf(os.Stderr, templatesUnsupported+"\n",
+			note.Template, note.Owner, note.Reason)
+	}
 }

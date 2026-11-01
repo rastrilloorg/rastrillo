@@ -18,7 +18,7 @@ import (
 	"strconv"
 	"time"
 
-	_ "amadan.net/rastrillo/rastrillo/tmpl"
+	"amadan.net/rastrillo/rastrillo"
 )
 
 // pidfile is written into the source: the capture child gets no
@@ -32,13 +32,14 @@ func main() {
 	}
 	os.WriteFile(pidfile, []byte(strconv.Itoa(child.Process.Pid)), 0o644)
 	time.Sleep(time.Hour)
+	rastrillo.Serve(rastrillo.Options{})
 }
 `
 
 // TestRunStopsAHangingCapture runs a main that serves instead of
 // capturing, and has started a child: generate reports it, and leaves
-// neither process nor scratch directory behind. It imports tmpl, as a
-// main that could build a set does, or Run would not start it.
+// neither process nor scratch directory behind. It calls
+// rastrillo.Serve, as an app's main does, or Run would not start it.
 func TestRunStopsAHangingCapture(t *testing.T) {
 	if testing.Short() {
 		t.Skip("waits for the capture timeout")

@@ -178,11 +178,19 @@ yourself from adding templates.
 ## Capture
 
 `rastrillo generate` compiles the sets your app really builds, so it
-runs your app to find them. It builds the app with the
-`rastrillo_capture` tag and starts it with `RASTRILLO_TEMPLATE_CAPTURE`
+runs your app to find them. It builds, with the `rastrillo_capture`
+tag, each program under `cmd/` whose `func main` calls `rastrillo.Run`
+or `rastrillo.Serve`, and starts it with `RASTRILLO_TEMPLATE_CAPTURE`
 (`CaptureEnv`) set to a file. While that is set, every set your app
 creates is recorded. `rastrillo.Serve` writes them to the file with
-`WriteCapture` and returns without listening.
+`WriteCapture` and exits without listening.
+
+`rastrillo generate` finds the call by reading the source, without
+running anything, so the call must be in `func main` itself, not in a
+function it calls. @@DOC@@ A
+program that calls neither, such as a migration, or one that serves
+`rastrillo.Handler` on its own server, is never started: `generate`
+names it on one line, and its templates render through `html/template`.
 
 The app runs in a scratch directory with only `PATH`, `HOME`, `TMPDIR`
 and `LANG` from your environment. A database it opens through

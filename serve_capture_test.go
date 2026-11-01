@@ -12,11 +12,24 @@ import (
 	"amadan.net/rastrillo/rastrillo/tmpl"
 )
 
+// stubCaptureExit records the code Serve exits with after a capture,
+// -1 until it does, instead of ending the test binary.
+func stubCaptureExit(t *testing.T) *int {
+	t.Helper()
+	code := -1
+	saved := captureExit
+	captureExit = func(exitCode int) { code = exitCode }
+	t.Cleanup(func() { captureExit = saved })
+	return &code
+}
+
 // In capture mode Serve builds the handler, so the app's Router runs and
-// its sets exist, writes them, and returns without listening. Addr is in
-// the TEST-NET-1 documentation range so that a Serve that went on to
-// listen would fail to bind instead of passing.
+// its sets exist, writes them, and exits 0 without listening, so nothing
+// after Serve in the app's main runs. Addr is in the TEST-NET-1
+// documentation range so that a Serve that went on to listen would fail
+// to bind instead of passing.
 func TestServeCaptureMode(t *testing.T) {
+	exitCode := stubCaptureExit(t)
 	dir := t.TempDir()
 	out := filepath.Join(dir, "capture.json")
 	t.Setenv(tmpl.CaptureEnv, out)
@@ -36,6 +49,9 @@ func TestServeCaptureMode(t *testing.T) {
 	})
 	if err != nil {
 		t.Fatalf("Serve in capture mode = %v, want nil", err)
+	}
+	if *exitCode != 0 {
+		t.Errorf("Serve in capture mode exited %d, want 0", *exitCode)
 	}
 
 	data, err := os.ReadFile(out)
@@ -73,8 +89,9 @@ func emptyRouter(*sql.DB) (*http.ServeMux, error) {
 }
 
 // A capture that cannot be written is the app's startup failing, and
-// generate has to hear about it.
-func TestServeCaptureModeReturnsTheWriteError(t *testing.T) {
+// generate has to hear about it: Serve exits 1.
+func TestServeCaptureModeExitsOverTheWriteError(t *testing.T) {
+	exitCode := stubCaptureExit(t)
 	t.Setenv(
 		tmpl.CaptureEnv,
 		filepath.Join(t.TempDir(), "no", "such", "dir", "c.json"),
@@ -83,8 +100,9 @@ func TestServeCaptureModeReturnsTheWriteError(t *testing.T) {
 		Addr:   "192.0.2.1:1",
 		Router: emptyRouter,
 	})
-	if err == nil {
-		t.Fatal("Serve swallowed the write error")
+	if err == nil || *exitCode != 1 {
+		t.Fatalf("Serve returned %v and exited %d over a capture it "+
+			"could not write, want the error and 1", err, *exitCode)
 	}
 }
 
@@ -103,6 +121,7 @@ func TestServeCaptureModeKeepsTheDatabaseInTheWorkingDirectory(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
+			stubCaptureExit(t)
 			real := filepath.Join(t.TempDir(), "app.db")
 			work := t.TempDir()
 			t.Chdir(work)
