@@ -419,14 +419,20 @@ func TestSkillTeachesTheScaffoldsShape(t *testing.T) {
 		Contains(screens, want) {
 		t.Errorf("skill/screens.md does not say %q", want)
 	}
-	unreleased, _, _ := strings.Cut(readSkillPage(t, "CHANGELOG.md"),
-		"\n## v")
-	unreleased = strings.Join(strings.Fields(unreleased), " ")
-	if strings.Contains(unreleased, "Nothing runs it in an app") ||
-		!strings.Contains(unreleased, "rastrillo budget code --init") ||
-		!strings.Contains(unreleased,
+	// v0.30.0 brought the scaffold, so its own section says how to
+	// adopt the gates: from its heading to the next release's.
+	_, release, found := strings.Cut(readSkillPage(t, "CHANGELOG.md"),
+		"\n## v0.30.0\n")
+	if !found {
+		t.Fatal("CHANGELOG.md has no `## v0.30.0` heading")
+	}
+	release, _, _ = strings.Cut(release, "\n## v")
+	release = strings.Join(strings.Fields(release), " ")
+	if strings.Contains(release, "Nothing runs it in an app") ||
+		!strings.Contains(release, "rastrillo budget code --init") ||
+		!strings.Contains(release,
 			"only once the app has a `Routes` function") {
-		t.Errorf("CHANGELOG.md's Unreleased section does not say how " +
+		t.Errorf("CHANGELOG.md's v0.30.0 section does not say how " +
 			"an existing app adopts the gates, the routes lane last")
 	}
 }

@@ -187,7 +187,7 @@ creates is recorded. `rastrillo.Serve` writes them to the file with
 
 `rastrillo generate` finds the call by reading the source, without
 running anything, so the call must be in `func main` itself, not in a
-function it calls. @@DOC@@ A
+function it calls. Anything your program does before that call still runs during `generate`. Nothing after it does: capture mode exits the process after `rastrillo.Serve` writes the capture. A
 program that calls neither, such as a migration, or one that serves
 `rastrillo.Handler` on its own server, is never started: `generate`
 names it on one line, and its templates render through `html/template`.
