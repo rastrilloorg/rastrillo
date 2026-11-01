@@ -27,7 +27,6 @@
 package webauthn
 
 import (
-	"crypto/ecdh"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/sha256"
@@ -36,7 +35,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"math/big"
 )
 
 // Authenticator data flags (WebAuthn §6.1).
@@ -325,14 +323,12 @@ func parseCOSEKey(b []byte) ([]byte, error) {
 }
 
 // publicKey turns a stored point back into a verifier, rejecting anything not
-// actually on the curve — ecdh does that check for us.
+// actually on the curve: ParseUncompressedPublicKey does that check for us,
+// and builds the key without the X and Y fields Go 1.26 deprecated.
 func publicKey(point []byte) (*ecdsa.PublicKey, error) {
-	if _, err := ecdh.P256().NewPublicKey(point); err != nil {
+	key, err := ecdsa.ParseUncompressedPublicKey(elliptic.P256(), point)
+	if err != nil {
 		return nil, fmt.Errorf("public key is not a point on P-256: %w", err)
 	}
-	return &ecdsa.PublicKey{
-		Curve: elliptic.P256(),
-		X:     new(big.Int).SetBytes(point[1:33]),
-		Y:     new(big.Int).SetBytes(point[33:65]),
-	}, nil
+	return key, nil
 }

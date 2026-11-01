@@ -4,7 +4,7 @@
 # silently no-op with "Nothing to be done" - exit 0, and the sweep never
 # runs. None of the four names a real file, so the pattern rule already
 # reruns unconditionally without needing .PHONY's safety here.
-.PHONY: ci suite suite-roles gofmt budget code root perf staticcheck govulncheck gitleaks chromedp-graph gorm-free race generate-check scaffold-smoke browser \
+.PHONY: ci suite suite-roles gofmt budget code root next-go perf staticcheck govulncheck gitleaks chromedp-graph gorm-free race generate-check scaffold-smoke browser \
         browser-sweep mirror mirror-check money money-cldr bench
 
 # The READMEs' documented sweeps all run with GOFLAGS=-mod=mod: the tests
@@ -33,9 +33,9 @@ export CGO_ENABLED = 0
 # version is the signal.
 #
 # Held on 1.26 deliberately. Go 1.27 writes export data that x/tools
-# before v0.50.0 cannot read, which breaks tmplmigrate's type-check, and
-# v0.50.0 needs go 1.26 in go.mod: moving to 1.27 raises the Go floor
-# for every app that imports rastrillo, so it is its own change.
+# before v0.50.0 cannot read, which breaks tmplmigrate's type-check, so
+# moving to 1.27 means moving x/tools too: its own change. Until then
+# next-go checks that apps still build on 1.27.
 export GOTOOLCHAIN = go1.26.10
 
 BIN := $(CURDIR)/.build
@@ -75,7 +75,7 @@ go-roles = $(foreach p,$(2),$(if $(findstring @,$(p)),$(call go-slices,$(1),$(su
 go-slices = $(foreach k,$(shell seq 1 $(3)),$(1).$(2)~$(k)of$(3))
 BROWSER_ROLES := $(call go-roles,browser,$(BROWSER_PKGS))
 TEST_ROLES := $(call go-roles,test,$(ROOT_SPLIT))
-SUITE := root $(TEST_ROLES) staticcheck govulncheck gitleaks money bench budget code race \
+SUITE := root $(TEST_ROLES) next-go staticcheck govulncheck gitleaks money bench budget code race \
          $(addprefix example-,$(EXAMPLES)) scaffold-smoke $(BROWSER_ROLES)
 
 suite:
@@ -167,6 +167,25 @@ root:
 
 test.%: | $(BIN)/tmp
 	RASTRILLO_TEST_REQUIRE_NODE=$(RASTRILLO_TEST_REQUIRE_NODE) ./hack/gotest.sh test '$*'
+
+# An app builds with whatever Go its machine has, not with GOTOOLCHAIN
+# above, so the gate builds with the next release too. Go 1.27 turned
+# the jsonv2 experiment on, which makes go-json-experiment an alias of
+# the standard library's encoding/json/v2, and the version pinned then
+# did not compile against 1.27's: every app broke while this gate, on
+# 1.26, stayed green. op hooks into json's decoding and api writes
+# json, so their tests run on the next Go and on this one with the
+# experiment on; with root's plain run, those are the three ways
+# op/decode_pass*.go is built and the three json v2s apps meet. go
+# fetches NEXT_GO through the module proxy on first use, as it does
+# GOTOOLCHAIN, and the runner's module cache keeps it. When GOTOOLCHAIN
+# moves to 1.27, NEXT_GO moves to 1.28.
+NEXT_GO := go1.27.3
+next-go: | $(BIN)/tmp
+	GOTOOLCHAIN=$(NEXT_GO) go build ./...
+	GOTOOLCHAIN=$(NEXT_GO) go vet ./op/...
+	GOTOOLCHAIN=$(NEXT_GO) go test -count=1 ./op/... ./api/...
+	GOEXPERIMENT=jsonv2 go test -count=1 ./op/... ./api/...
 
 # staticcheck catches what vet does not: deprecated APIs, values that are
 # never read, and the &*x that looks like a copy and is not (SA4001 found

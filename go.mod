@@ -1,6 +1,6 @@
 module amadan.net/rastrillo/rastrillo
 
-go 1.25.0
+go 1.26.0
 
 require (
 	amadan.net/rastrillo/rastrillo/money v0.1.0
@@ -8,7 +8,7 @@ require (
 	github.com/chromedp/cdproto v0.158.6
 	github.com/chromedp/chromedp v0.21.0
 	github.com/go-chi/chi/v5 v5.3.2
-	github.com/go-json-experiment/json v0.0.0-20260213210345-44df1a37e875
+	github.com/go-json-experiment/json v0.0.0-20260820222146-c27c302e5fc3
 	github.com/keymaildev/signin v0.1.1
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
 	golang.org/x/crypto v0.53.0

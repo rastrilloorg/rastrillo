@@ -2,6 +2,12 @@ package crypto
 
 import (
 	"bytes"
+	"crypto/ecdh"
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
+	"encoding/hex"
+	"encoding/json"
 	"strings"
 	"testing"
 )
@@ -126,6 +132,76 @@ func TestMarshalKeypairRoundTrip(t *testing.T) {
 	}
 }
 
+// TestMarshalKeypairWritesTwo32ByteScalars pins the stored shape: each
+// scalar is 32 bytes, zero-padded, as D.FillBytes wrote it before
+// PrivateKey.Bytes replaced it. D = 1 shows the padding.
+func TestMarshalKeypairWritesTwo32ByteScalars(t *testing.T) {
+	one := strings.Repeat("0", 62) + "01"
+	kp, err := UnmarshalKeypair(
+		[]byte(`{"sign_priv_d":"01","box_priv_d":"` + one + `"}`))
+	if err != nil {
+		t.Fatalf("UnmarshalKeypair: %v", err)
+	}
+	stored, err := MarshalKeypair(kp)
+	if err != nil {
+		t.Fatalf("MarshalKeypair: %v", err)
+	}
+	want := `{"sign_priv_d":"` + one + `","box_priv_d":"` + one + `"}`
+	if string(stored) != want {
+		t.Fatalf("MarshalKeypair wrote %s, want %s", stored, want)
+	}
+	generated, _ := Generate()
+	stored, err = MarshalKeypair(generated)
+	var scalars keypairJSON
+	if err != nil || json.Unmarshal(stored, &scalars) != nil {
+		t.Fatalf("MarshalKeypair wrote %s, %v", stored, err)
+	}
+	for name, encoded := range map[string]string{
+		"sign_priv_d": scalars.SignPrivD, "box_priv_d": scalars.BoxPrivD,
+	} {
+		if scalar, err := hex.DecodeString(encoded); err != nil ||
+			len(scalar) != 32 {
+			t.Errorf("%s = %q, want 32 bytes in hex", name, encoded)
+		}
+	}
+}
+
+// TestMarshalKeypairRefusesWhatItCannotStore: a key on another curve,
+// a missing key and a signing key with a nil field each get an error,
+// not a panic and not a file UnmarshalKeypair would refuse or misread.
+func TestMarshalKeypairRefusesWhatItCannotStore(t *testing.T) {
+	valid, _ := Generate()
+	p224, _ := ecdsa.GenerateKey(elliptic.P224(), rand.Reader)
+	p384, _ := ecdsa.GenerateKey(elliptic.P384(), rand.Reader)
+	x25519, _ := ecdh.X25519().GenerateKey(rand.Reader)
+	withoutD, withoutX, withoutY := *valid.SignPriv, *valid.SignPriv,
+		*valid.SignPriv
+	//lint:ignore SA1019 incomplete keys are what this test needs
+	withoutD.D, withoutX.X, withoutY.Y = nil, nil, nil
+	box := valid.BoxPriv
+	for name, kp := range map[string]*Keypair{
+		"nil keypair":    nil,
+		"empty keypair":  {},
+		"no signing key": {BoxPriv: box},
+		"no box key":     {SignPriv: valid.SignPriv},
+		"zero signing":   {SignPriv: &ecdsa.PrivateKey{}, BoxPriv: box},
+		"zero box": {
+			SignPriv: valid.SignPriv, BoxPriv: &ecdh.PrivateKey{},
+		},
+		"signing nil D": {SignPriv: &withoutD, BoxPriv: box},
+		"signing nil X": {SignPriv: &withoutX, BoxPriv: box},
+		"signing nil Y": {SignPriv: &withoutY, BoxPriv: box},
+		"signing P-224": {SignPriv: p224, BoxPriv: box},
+		"signing P-384": {SignPriv: p384, BoxPriv: box},
+		"box on X25519": {SignPriv: valid.SignPriv, BoxPriv: x25519},
+	} {
+		if stored, err := MarshalKeypair(kp); err == nil {
+			t.Errorf("%s: MarshalKeypair wrote %s, want an error",
+				name, stored)
+		}
+	}
+}
+
 func TestDeriveIsDeterministicAndSeparated(t *testing.T) {
 	key, err := NewKey()
 	if err != nil {
@@ -201,7 +277,10 @@ func TestUnmarshalKeypairAcceptsShortSignPrivD(t *testing.T) {
 		t.Fatalf("stripped and padded sign_priv_d derived different public keys:\n stripped %x\n padded   %x",
 			short.SignPub(), padded.SignPub())
 	}
-	if short.SignPriv.D.Int64() != 1 {
-		t.Fatalf("stripped sign_priv_d parsed to D = %v, want 1", short.SignPriv.D)
+	one := append(make([]byte, 31), 1)
+	scalar, err := short.SignPriv.Bytes()
+	if err != nil || !bytes.Equal(scalar, one) {
+		t.Fatalf("stripped sign_priv_d parsed to D = %x (%v), want 1",
+			scalar, err)
 	}
 }

@@ -10,6 +10,12 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+### Changed: Go 1.27 builds; run `go mod tidy` after upgrading
+
+Apps that use rastrillo failed to build with Go 1.27. Go 1.27 enables the `jsonv2` experiment by default. The pinned `github.com/go-json-experiment/json` version did not compile with it. Rastrillo now pins a version that compiles with Go 1.27 and requires Go 1.26. After upgrading rastrillo, run `go mod tidy`. It updates the `go` line in your `go.mod` to at least `1.26.0`.
+
+The new version handles several JSON tag options differently. Check types used by `op.DecodeInput` or `api.Write`. A named field tagged `,inline` or `,unknown` is now nested under its field name. Embed the field to keep its members flat. A `format:` tag makes input decoding refuse the member and makes `api.Write` panic. Give the field a type with its own JSON methods. `,string` now works only on fields encoded as numbers. Remove it from slices, maps, and structs.
+
 ### Changed: `rastrillo new` writes actions on a route table, and its `make ci` runs `make code` and `make routes`
 
 New apps get an exported `App`, a `New` constructor, and one `Routes` function in `routes.go`. Pages are actions, such as `func (app *App) home(visit *action.Visit)`, and answer with `visit.Render`. The `AGENTS.md` file lists the code rules. The `make ci` gate runs two new lanes: `make code` (`rastrillo budget code`) and `make routes` (`rastrillo routes --check`). Static files and the JSON API are mounted outside the page group, so the API gets no CSRF check or page middleware.
