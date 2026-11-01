@@ -139,12 +139,12 @@ func recovery(strands bool) string {
 		"only in a later release."
 }
 
-// isEmpty reports whether the database has no user tables. The ledger
+// isEmpty reports whether the database has no app tables. The ledger
 // itself is excluded: Apply creates it before calling adopt.
 func isEmpty(ctx context.Context, conn *sql.Conn) (bool, error) {
 	var n int
 	err := conn.QueryRowContext(ctx, `SELECT count(*) FROM sqlite_master
-	  WHERE type = 'table' AND name NOT LIKE 'sqlite_%' AND name <> 'rastrillo_migrations'`).Scan(&n)
+	  WHERE `+appTables+` AND name <> 'rastrillo_migrations'`).Scan(&n)
 	return n == 0, err
 }
 

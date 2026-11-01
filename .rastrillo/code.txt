@@ -14206,7 +14206,6 @@ names markupspelling_test.go itoa/n 1
 columns migrate/adopt.go 11818be6c846 1
 columns migrate/adopt.go 2b309a5c67ab 1
 columns migrate/adopt.go 3281c7987e2d 1
-columns migrate/adopt.go 45a4c4de60d6 1
 columns migrate/adopt.go 47fce882793d 1
 columns migrate/adopt.go 51a7856365c8 1
 columns migrate/adopt.go 5c02e76c1562 1

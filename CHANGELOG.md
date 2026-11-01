@@ -181,6 +181,14 @@ New command `rastrillo budget code` holds a module's Go code to 80 columns, 400-
 
 New package `action`. An action takes one `*action.Visit` and does four things with it: read the input, run one operation, answer a refusal, say what success looks like. `Visit` has a method for each step: `ReadForm`, `PathID`, `Render`, `Flash`, `Redirect`, and `Refused` or `RefusedShowing` to answer an error. `action.NewRoutes` mounts your actions on a chi router, and `List` returns the routes it mounted, with their guards, so a test can check them without serving a request. Nothing existing changes. See [action](/docs/reference/action).
 
+## v0.29.1
+
+Apps can now start on first boot with migrations, even when Litestream replicates their database.
+
+### Fixed: migrations run on databases replicated by Litestream
+
+Litestream adds `_litestream_seq` and `_litestream_lock` tables to databases it replicates. On an app's first boot, `migrate` treated those tables as extras during adoption and refused to start. A new database containing only Litestream's tables was also treated as non-empty, so its migrations did not run. The `migrate` package now ignores tables whose names start with `_litestream_`, as it already does for SQLite's `sqlite_` tables. Apps can now adopt existing databases and run migrations on new ones.
+
 ## v0.29.0
 
 A JSON API with agents that act for a person, money in any currency, a colour-scheme switch, a new look for `day`, and sign-in without a database. The first seven sections change what an existing app does without a compile error: the JSON API, the colour-scheme switch, money, sign-in's return to the page, pagination, hand-edited migrations and `job-status`. Read them before you upgrade.

@@ -153,3 +153,66 @@ func TestAdoptRefusalRecommendsBaselineWhenTheDiffIsExtrasOnly(t *testing.T) {
 		t.Fatalf("error = %v, must not warn against baseline when nothing is missing", err)
 	}
 }
+
+// litestream is what litestream creates in every database it
+// replicates, and CARLOS's activator replicates every app's database.
+// The DDL is litestream's own.
+const litestream = `
+	CREATE TABLE IF NOT EXISTS _litestream_seq (
+	  id INTEGER PRIMARY KEY, seq INTEGER
+	);
+	CREATE TABLE IF NOT EXISTS _litestream_lock (id INTEGER);`
+
+// TestAdoptIgnoresLitestreamTables is #203: a deployed app whose
+// database predates the ledger was refused on its first ledgered boot
+// with "extra table _litestream_lock" and "extra table
+// _litestream_seq", which in production is a boot failure.
+func TestAdoptIgnoresLitestreamTables(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "app.db")
+	database, err := db.Open(path, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer database.Close()
+	if err := database.G.Exec(legacy).Error; err != nil {
+		t.Fatal(err)
+	}
+	if err := database.G.Exec(litestream).Error; err != nil {
+		t.Fatal(err)
+	}
+	init := Migration{ID: "0001_init", SQL: legacy}
+	result, err := Apply(context.Background(), database, set("sessions", init))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !result.Adopted {
+		t.Fatalf("Result = %+v, want Adopted", result)
+	}
+}
+
+// TestLitestreamTablesDoNotMakeANewDatabaseNonEmpty covers a brand-new
+// app whose database litestream has already written to before the
+// first Apply: it is still empty, so the set runs normally rather than
+// being diffed as an adoption with every table missing.
+func TestLitestreamTablesDoNotMakeANewDatabaseNonEmpty(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "app.db")
+	database, err := db.Open(path, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer database.Close()
+	if err := database.G.Exec(litestream).Error; err != nil {
+		t.Fatal(err)
+	}
+	init := Migration{ID: "0001_init", SQL: legacy}
+	result, err := Apply(context.Background(), database, set("sessions", init))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Adopted {
+		t.Fatal("litestream's tables alone sent a database to adoption")
+	}
+	if len(result.Applied) != 1 {
+		t.Fatalf("Applied = %v, want one", result.Applied)
+	}
+}
