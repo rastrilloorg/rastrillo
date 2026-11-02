@@ -74,7 +74,8 @@ func checkDescriptor(descriptor op.Descriptor) error {
 	}
 	if !toolNamePattern.MatchString(name) {
 		return fmt.Errorf("mcp: operation %s: its tool name %s must "+
-			"match %s; use lowercase letters, digits, _ and .",
+			"match %s; use only lowercase letters, digits, underscores "+
+			"and dots",
 			id, name, toolNamePattern)
 	}
 	return nil
