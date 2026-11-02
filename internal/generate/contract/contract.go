@@ -26,6 +26,7 @@ import (
 
 	"amadan.net/rastrillo/rastrillo"
 	"amadan.net/rastrillo/rastrillo/internal/generate/apigen"
+	"amadan.net/rastrillo/rastrillo/internal/generate/opsgen"
 	"amadan.net/rastrillo/rastrillo/internal/generate/shape"
 	"amadan.net/rastrillo/rastrillo/internal/wirename"
 )
@@ -48,14 +49,17 @@ type Document struct {
 // Operation is one exposed route. Input is the arguments as the door
 // decodes them, under their wire names; Result is the fields the door
 // answers. A list's result is the array under the resource's name and
-// the cursor; its items are the get operation's result.
+// the cursor; its items are the get operation's result. Destructive
+// and Idempotent are the descriptor's flags, which MCP clients read.
 type Operation struct {
-	ID     string            `json:"id"`
-	Method string            `json:"method"`
-	Path   string            `json:"path"`
-	Access string            `json:"access"`
-	Input  map[string]Field  `json:"input"`
-	Result map[string]string `json:"result"`
+	ID          string            `json:"id"`
+	Method      string            `json:"method"`
+	Path        string            `json:"path"`
+	Access      string            `json:"access"`
+	Destructive bool              `json:"destructive"`
+	Idempotent  bool              `json:"idempotent"`
+	Input       map[string]Field  `json:"input"`
+	Result      map[string]string `json:"result"`
 }
 
 // Field is one argument: its kind, and whether a request without it is
@@ -74,14 +78,16 @@ const (
 )
 
 // Contract renders the file for rs: one entry per operation of each
-// exposed resource, in a fixed order whatever order rs is in.
-func Contract(rs []rastrillo.Resource) ([]byte, error) {
+// exposed resource, in a fixed order whatever order rs is in. hand is
+// the app's replaced operation bodies, whose flags are the cautious
+// ones, as the descriptors say.
+func Contract(rs []rastrillo.Resource, hand []opsgen.Hand) ([]byte, error) {
 	doc := Document{Version: version, Operations: []Operation{}}
 	for _, r := range rs {
 		if !r.Exposed() {
 			continue
 		}
-		doc.Operations = append(doc.Operations, operations(r)...)
+		doc.Operations = append(doc.Operations, operations(r, hand)...)
 	}
 	sort.Slice(doc.Operations, func(i, j int) bool { return doc.Operations[i].ID < doc.Operations[j].ID })
 	return encode(doc), nil
@@ -93,16 +99,21 @@ func Contract(rs []rastrillo.Resource) ([]byte, error) {
 // declared filter, after and limit; get and delete take the id; create
 // takes every form field with the manifest's required; update takes the
 // id and every field optional, because it changes only what is sent.
-func operations(r rastrillo.Resource) []Operation {
+func operations(
+	r rastrillo.Resource, hand []opsgen.Hand,
+) []Operation {
 	row := map[string]string{"id": kindInteger, "created_at": kindTime, "updated_at": kindTime}
 	for _, c := range shape.Columns(r) {
 		row[wirename.Name(c.Name)] = string(c.Kind)
 	}
 	id := map[string]Field{"id": {Kind: kindInteger, Required: true}}
 
+	replaced := opsgen.Replaced(hand, r.Name)
 	var out []Operation
 	for _, d := range apigen.Doors(r) {
 		o := Operation{ID: r.Name + "." + d.Action, Method: d.Method, Path: d.Pattern, Access: d.Access.String()}
+		o.Destructive, o.Idempotent = opsgen.Effects(
+			d.Action, replaced[d.Action])
 		switch d.Action {
 		case "list":
 			o.Input = map[string]Field{"after": {Kind: kindCursor}, "limit": {Kind: kindInteger}}
@@ -143,7 +154,7 @@ func encode(doc Document) []byte {
 		if i > 0 {
 			b.WriteString(",")
 		}
-		fmt.Fprintf(&b, "\n    {\n      \"id\": %s,\n      \"method\": %s,\n      \"path\": %s,\n      \"access\": %s,\n", str(o.ID), str(o.Method), str(o.Path), str(o.Access))
+		encodeHead(&b, o)
 		b.WriteString("      \"input\": {")
 		for j, name := range sortedKeys(o.Input) {
 			if j > 0 {
@@ -171,6 +182,21 @@ func encode(doc Document) []byte {
 	}
 	b.WriteString("]\n}\n")
 	return b.Bytes()
+}
+
+// encodeHead writes an operation's scalar fields, each on its own line
+// so that a flag changing is a one-line diff.
+func encodeHead(buffer *bytes.Buffer, operation Operation) {
+	buffer.WriteString("\n    {\n")
+	scalar := func(name, value string) {
+		fmt.Fprintf(buffer, "      %s: %s,\n", str(name), value)
+	}
+	scalar("id", str(operation.ID))
+	scalar("method", str(operation.Method))
+	scalar("path", str(operation.Path))
+	scalar("access", str(operation.Access))
+	scalar("destructive", fmt.Sprint(operation.Destructive))
+	scalar("idempotent", fmt.Sprint(operation.Idempotent))
 }
 
 // str is s as a JSON string literal.
@@ -286,7 +312,7 @@ func indent(lines []string) string {
 // file; nothing is returned when it is already current.
 func Write(appRoot string, rs []rastrillo.Resource, acceptBreaking bool) (notes []string, err error) {
 	path := filepath.Join(appRoot, Path)
-	now, err := Contract(rs)
+	now, err := current(appRoot, rs)
 	if err != nil {
 		return nil, err
 	}
@@ -311,6 +337,7 @@ func Write(appRoot string, rs []rastrillo.Resource, acceptBreaking bool) (notes 
 	} else {
 		notes = []string{Path + ": updated"}
 	}
+	notes = append(notes, destructiveNotes(was, now)...)
 	return notes, write(path, now)
 }
 
@@ -328,7 +355,7 @@ func write(path string, content []byte) error {
 // says so, with the breaks, because the operator will otherwise learn
 // of them only from the generate the message sends them to.
 func Check(appRoot string, rs []rastrillo.Resource) error {
-	now, err := Contract(rs)
+	now, err := current(appRoot, rs)
 	if err != nil {
 		return err
 	}

@@ -277,3 +277,35 @@ func TestLocalNeverShadowsAHandlerParameter(t *testing.T) {
 		}
 	}
 }
+
+// TestExposedOperations: an app with exposed resources gets the
+// function that filters Operations, so the MCP server is handed only
+// what the API serves; one with none gets the nil function, as
+// APIRoutes does, so main.go compiles either way.
+func TestExposedOperations(t *testing.T) {
+	got, err := File("scratch", []rastrillo.Resource{bookmarks(t)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{
+		"func ExposedOperations() []op.Descriptor {",
+		"for _, descriptor := range Operations() {",
+		"if descriptor.Exposed {",
+	} {
+		if !strings.Contains(string(got), want) {
+			t.Errorf("api.go lacks %q:\n%s", want, got)
+		}
+	}
+	for _, resources := range [][]rastrillo.Resource{
+		nil, {ticketTypes(t, nil)},
+	} {
+		got, err = File("scratch", resources)
+		if err != nil {
+			t.Fatal(err)
+		}
+		want := "func ExposedOperations() []op.Descriptor { return nil }"
+		if !strings.Contains(string(got), want) {
+			t.Errorf("api.go with none exposed lacks %q:\n%s", want, got)
+		}
+	}
+}

@@ -94,7 +94,7 @@ func TestNewMountsTheAPIForANewApp(t *testing.T) {
 	if got := readScaffold(t, "123-app", "gen", "api.go"); got != string(wantAPI) {
 		t.Errorf("gen/api.go is not what generate writes:\n%s\nwant:\n%s", got, wantAPI)
 	}
-	wantContract, err := contract.Contract(nil)
+	wantContract, err := contract.Contract(nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

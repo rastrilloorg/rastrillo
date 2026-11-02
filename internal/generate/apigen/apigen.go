@@ -256,6 +256,45 @@ func pathID(w http.ResponseWriter, r *http.Request) (int64, bool) {
 	return b.String()
 }
 
+// exposedOperations renders ExposedOperations, which an MCP server is
+// handed so that an app does not filter Operations by hand. With no
+// exposed resource it is the nil function, as APIRoutes is.
+func exposedOperations(hasExposed bool) string {
+	if !hasExposed {
+		return "\n// ExposedOperations is the operations on the API, for " +
+			"mcp.New. This app\n// exposes none.\n" +
+			"func ExposedOperations() []op.Descriptor { return nil }\n"
+	}
+	return "\n// ExposedOperations is Operations without the ones whose " +
+		"resource is not on\n// the API, in the same order, for mcp.New.\n" +
+		"func ExposedOperations() []op.Descriptor {\n" +
+		"\tvar exposed []op.Descriptor\n" +
+		"\tfor _, descriptor := range Operations() {\n" +
+		"\t\tif descriptor.Exposed {\n" +
+		"\t\t\texposed = append(exposed, descriptor)\n" +
+		"\t\t}\n\t}\n\treturn exposed\n}\n"
+}
+
+// importBlock is api.go's imports: the API tree and the operation
+// types, then each exposed resource's doors and every resource's
+// operations.
+func importBlock(module string, all, exposed []rastrillo.Resource) string {
+	var imports strings.Builder
+	imports.WriteString("import (\n")
+	imports.WriteString("\t\"amadan.net/rastrillo/rastrillo/api\"\n")
+	imports.WriteString("\t\"amadan.net/rastrillo/rastrillo/op\"\n")
+	for _, resource := range exposed {
+		path := module + "/gen/api/" + resource.Name
+		fmt.Fprintf(&imports, "\tapi_%s %q\n", resource.Name, path)
+	}
+	for _, resource := range all {
+		path := module + "/gen/ops/" + resource.Name
+		fmt.Fprintf(&imports, "\tops_%s %q\n", resource.Name, path)
+	}
+	imports.WriteString(")\n\n")
+	return imports.String()
+}
+
 // File renders gen/api.go for module: APIRoutes over the exposed
 // resources' doors and Operations over every resource's descriptors,
 // each sorted by name so a regeneration writes the same bytes. Both
@@ -274,16 +313,7 @@ func File(module string, rs []rastrillo.Resource) ([]byte, error) {
 	var b strings.Builder
 	b.WriteString(header)
 	b.WriteString("package gen\n\n")
-	b.WriteString("import (\n")
-	b.WriteString("\t\"amadan.net/rastrillo/rastrillo/api\"\n")
-	b.WriteString("\t\"amadan.net/rastrillo/rastrillo/op\"\n")
-	for _, r := range exposed {
-		fmt.Fprintf(&b, "\tapi_%s %q\n", r.Name, module+"/gen/api/"+r.Name)
-	}
-	for _, r := range sorted {
-		fmt.Fprintf(&b, "\tops_%s %q\n", r.Name, module+"/gen/ops/"+r.Name)
-	}
-	b.WriteString(")\n\n")
+	b.WriteString(importBlock(module, sorted, exposed))
 
 	if len(exposed) == 0 {
 		b.WriteString("// APIRoutes is every exposed resource's API doors, for api.New. This app\n// exposes none.\nfunc APIRoutes() []api.Route { return nil }\n\n")
@@ -304,6 +334,7 @@ func File(module string, rs []rastrillo.Resource) ([]byte, error) {
 		}
 		b.WriteString("\treturn ops\n}\n")
 	}
+	b.WriteString(exposedOperations(len(exposed) > 0))
 	formatted, err := format.Source([]byte(b.String()))
 	if err != nil {
 		return nil, fmt.Errorf("api.go: %w\n%s", err, b.String())
