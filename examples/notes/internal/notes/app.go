@@ -15,7 +15,6 @@ import (
 	"notes/gen"
 
 	"amadan.net/rastrillo/rastrillo"
-	"amadan.net/rastrillo/rastrillo/api"
 	"amadan.net/rastrillo/rastrillo/apitoken"
 	"amadan.net/rastrillo/rastrillo/background"
 	"amadan.net/rastrillo/rastrillo/csrf"
@@ -196,16 +195,7 @@ func App(d *db.DB, origin, instanceKey string, bg *background.Group, logger *slo
 		return &rastrillo.Ctx{DB: writer, Logger: logger, Actor: rastrillo.Actor{}, Authorize: op.DefaultPolicy, Render: a.GenRender(r)}
 	}
 
-	// The API tree: the same generated operations the bookmarks pages
-	// call, behind a bearer token instead of a session. Redact keeps a
-	// token quoted in an error out of the log.
-	apiTree, err := api.New(api.Config{
-		Verify:    tokens,
-		Ctx:       ctxFactory,
-		Authorize: op.DefaultPolicy,
-		Logger:    logger,
-		Redact:    tokens.Redact,
-	}, gen.APIRoutes()...)
+	apiTree, mcpHandler, err := apiDoors(tokens, ctxFactory, logger)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -331,13 +321,14 @@ func App(d *db.DB, origin, instanceKey string, bg *background.Group, logger *slo
 	// one wraps here.
 	mux := http.NewServeMux()
 	mux.Handle("/", a.pages.Middleware(r))
-	// The API tree is outside r on purpose: no sessions, no CSRF, no
+	// The API tree and MCP are outside r on purpose: no sessions, no CSRF, no
 	// page middleware. A bearer token is its only credential, so a page
 	// cannot be made to call it with the browser's cookies. Both
 	// patterns, so the outer mux never answers a bare /api/v1 with a
 	// redirect of its own instead of the tree's JSON 404.
 	mux.Handle("/api/v1", apiTree)
 	mux.Handle("/api/v1/", apiTree)
+	mux.Handle("/api/v1/mcp", mcpHandler)
 	return mux, hub, nil
 }
 

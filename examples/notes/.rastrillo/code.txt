@@ -16,8 +16,7 @@ columns internal/notes/app.go cbb9706f5549 1
 columns internal/notes/app.go ec3c41e34787 1
 columns internal/notes/app.go f399b1535837 1
 columns internal/notes/app.go f7b46005129f 1
-file internal/notes/app.go - 401
-func internal/notes/app.go App 289
+func internal/notes/app.go App 281
 names internal/notes/app.go App/a 1
 names internal/notes/app.go App/d 1
 names internal/notes/app.go App/r 4

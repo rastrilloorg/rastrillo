@@ -6,9 +6,10 @@ package paritygen
 
 // fixtureDoc is the package doc and clause.
 const fixtureDoc = `// Package paritytest runs one scenario through a resource's page door
-// and through its API door, each against a fresh app of its own, and
-// fails when the two end differently. The app's tests supply a Fixture
-// and call one Run function per exposed resource.
+// and through its API door, and the API door's again through the MCP
+// endpoint, each against a fresh app of its own, and fails when two
+// doors end differently. The app's tests supply a Fixture and call one
+// Run function per exposed resource.
 package paritytest
 
 `
@@ -19,7 +20,8 @@ const fixtureBody = `// Fixture is the app's half of the parity test. A subject 
 // in, the same person across SignIn, Token and Prepare.
 type Fixture interface {
 	// New is a fresh app on its own database, mounted as production
-	// mounts it: the pages and the API tree on one handler.
+	// mounts it: the pages, the API tree and the MCP endpoint at
+	// /api/v1/mcp on one handler.
 	New(t *testing.T) (http.Handler, *sql.DB)
 	// SignIn returns a client carrying subject's browser session. Every
 	// request it sends must reach h, whatever the host; the test sends
@@ -41,22 +43,17 @@ const base = "http://app.test"
 
 // step is how one step of the scenario ended: its kind ("ok",
 // "invalid" or "not_found") and, for a read, the row as the API answers
-// it without id and timestamps, which differ between the two apps.
+// it without id and timestamps, which differ between the two apps. A
+// list step's row is how many items came back.
 type step struct {
 	Name, Kind, Row string
 }
 
-// compare fails on each step the two doors ended differently.
+// compare fails on each step the page door and the API door ended
+// differently.
 func compare(t *testing.T, pages, api []step) {
 	t.Helper()
-	if len(pages) != len(api) {
-		t.Fatalf("the page door ran %d steps and the API door %d", len(pages), len(api))
-	}
-	for i := range pages {
-		if pages[i] != api[i] {
-			t.Errorf("%s: page door %+v, API door %+v", pages[i].Name, pages[i], api[i])
-		}
-	}
+	compareDoors(t, "page", "API", pages, api)
 }
 
 // page sends one request through the signed-in client without following
@@ -190,15 +187,7 @@ func record(t *testing.T, h http.Handler, token, p string) map[string]any {
 // row is record without what differs between two apps by design.
 func row(t *testing.T, h http.Handler, token, p string) string {
 	t.Helper()
-	r := record(t, h, token, p)
-	delete(r, "id")
-	delete(r, "created_at")
-	delete(r, "updated_at")
-	b, err := json.Marshal(r)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return string(b)
+	return bare(t, record(t, h, token, p))
 }
 
 `
