@@ -28,7 +28,6 @@ const testOrigin = "http://app.test"
 // cost Tito Go 207ms a test against 2.5ms for a copy.
 var schema = dbtest.FromSet(%[2]s.BootSchema)
 
-// TestMain prints the package's time for rastrillo budget test.
 func TestMain(suite *testing.M) {
 	code := budget.Main(suite)
 	schema.Remove()

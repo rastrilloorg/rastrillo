@@ -44,7 +44,6 @@ func TestPerfScreens(t *testing.T) {
 	perftest.Screens(t, perftest.ScreenConfig{Routes: router, Handler: handler})
 }
 
-// A cold start, from exec to the first byte of "/", held to 500ms.
 func TestPerfBoot(t *testing.T) {
 	perftest.Boot(t, perftest.BootConfig{
 		Prepare: schema.Path,
