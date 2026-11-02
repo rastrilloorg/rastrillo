@@ -4,10 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"os"
 	"regexp"
 	"strings"
+	"sync/atomic"
 	"testing"
 
 	"github.com/modelcontextprotocol/go-sdk/jsonrpc"
@@ -82,6 +84,12 @@ func TestNewRefuses(t *testing.T) {
 		{name: "tool_name_too_long", change: func(descriptor *op.Descriptor) {
 			descriptor.ID = "bookmarks." + strings.Repeat("x", 60)
 		}, want: []string{"bookmarks.xxx", "^[a-z][a-z0-9_]{0,63}$"}},
+		{name: "bad_header_annotation",
+			change: func(descriptor *op.Descriptor) {
+				descriptor.Input = json.RawMessage(`{"type":"object",` +
+					`"properties":{"tags":{"type":"array",` +
+					`"x-mcp-header":"Tags"}}}`)
+			}, want: []string{"bookmarks.create", "x-mcp-header"}},
 		{name: "duplicate_tool_name", descriptors: []op.Descriptor{
 			renamed(bookmarks()[0], "a_b.create"),
 			renamed(bookmarks()[0], "a.b_create"),
@@ -447,6 +455,58 @@ func TestMaxResponseNeverLowered(t *testing.T) {
 			t.Errorf("maxResponse(%d, %d) = %d, want %d",
 				test.gateMax, test.maxResult, got, test.want)
 		}
+	}
+}
+
+// TestServedBehindALoopbackProxy is an app behind CARLOS or tailscale
+// serve: the request arrives on a loopback address with the public
+// Host, and the SDK's rebinding check would refuse every one.
+func TestServedBehindALoopbackProxy(t *testing.T) {
+	url := serve(t, testConfig(), bookmarks()...)
+	request, err := http.NewRequestWithContext(t.Context(),
+		http.MethodPost, url, strings.NewReader(listBody))
+	if err != nil {
+		t.Fatal(err)
+	}
+	request.Host = "app.example.com"
+	request.Header.Set("Authorization", "Bearer "+writerToken)
+	request.Header.Set("Content-Type", "application/json")
+	request.Header.Set("Accept", "application/json, text/event-stream")
+	request.Header.Set("MCP-Protocol-Version", "2025-06-18")
+	response, err := http.DefaultClient.Do(request)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer response.Body.Close()
+	body, _ := io.ReadAll(response.Body)
+	if response.StatusCode != http.StatusOK {
+		t.Errorf("Host app.example.com over loopback: %d %s, want 200",
+			response.StatusCode, body)
+	}
+}
+
+// TestPanicOutsideTheListIsInternal panics inside tools/call, through
+// an app's Redact that fails once. The SDK runs each method on a bare
+// goroutine, so without the middleware's recovery the process dies.
+func TestPanicOutsideTheListIsInternal(t *testing.T) {
+	config := testConfig()
+	var redactions atomic.Int64
+	config.Gate.Redact = func(text string) string {
+		if redactions.Add(1) == 1 {
+			panic("redactor bug")
+		}
+		return text
+	}
+	url := serve(t, config, bookmarks()...)
+	session, _ := connect(t, url, writerToken, "2025-06-18")
+	_, err := session.CallTool(t.Context(),
+		&sdk.CallToolParams{Name: "bookmarks_get"})
+	var rpc *jsonrpc.Error
+	if !errors.As(err, &rpc) || rpc.Code != jsonrpc.CodeInternalError {
+		t.Errorf("tools/call = %v, want an internal JSON-RPC error", err)
+	}
+	if got := toolNames(t, url, writerToken); len(got) != 5 {
+		t.Errorf("after the panic the list is %v", got)
 	}
 }
 

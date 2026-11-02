@@ -313,3 +313,24 @@ func TestDisclosedOutsideWrapDoesNothing(t *testing.T) {
 		t.Fatal("Disclosed ran its check on registration")
 	}
 }
+
+func TestIsAgentSessionRefusal(t *testing.T) {
+	strict := Gate{RequireAgentSession: true}
+	if err := strict.Admit(agentWrite, writeThing); !IsAgentSessionRefusal(
+		err) {
+		t.Errorf("an agent's write with no session: Admit = %v, "+
+			"not the session refusal", err)
+	}
+	wrapped := fmt.Errorf("mcp: %w", strict.Admit(agentWrite, writeThing))
+	if !IsAgentSessionRefusal(wrapped) {
+		t.Errorf("%v, wrapped, is not the session refusal", wrapped)
+	}
+	err := Gate{}.Admit(personRead, writeThing)
+	if err == nil || IsAgentSessionRefusal(err) {
+		t.Errorf("a read-only write: Admit = %v, want a refusal that is "+
+			"not the session one", err)
+	}
+	if IsAgentSessionRefusal(nil) {
+		t.Error("nil is the session refusal")
+	}
+}

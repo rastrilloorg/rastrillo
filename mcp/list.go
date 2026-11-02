@@ -33,58 +33,85 @@ func (caller listing) narrowing(next sdk.MethodHandler) sdk.MethodHandler {
 	return func(
 		ctx context.Context, method string, request sdk.Request,
 	) (result sdk.Result, err error) {
-		if method != methodListTools {
-			return next(ctx, method, request)
-		}
-		// The SDK runs this on a goroutine of its own, with no recovery,
-		// so the gate's recovery cannot reach a panic here.
+		// For every method: the SDK runs each on a goroutine of its own
+		// with no recovery, where a panic would end the process.
 		defer func() {
 			if value := recover(); value != nil {
 				result, err = nil, caller.internal(fmt.Errorf(
-					"mcp: panic in tools/list: %v\n%s", value, debug.Stack()))
+					"mcp: panic in %s: %v\n%s", method, value, debug.Stack()))
 			}
 		}()
-		result, err = next(ctx, method, request)
-		if err != nil {
-			return nil, err
+		if method != methodListTools {
+			return next(ctx, method, request)
 		}
-		list, isList := result.(*sdk.ListToolsResult)
-		if !isList {
-			return nil, caller.internal(
-				fmt.Errorf("mcp: tools/list answered a %T", result))
-		}
-		listed := caller.narrow(ctx, list)
-		// On the request's own context, where the gate holds the checks:
-		// registered anywhere else, Disclosed would do nothing.
-		api.Disclosed(caller.request.Context(), caller.recheck(listed))
-		return list, nil
+		return caller.list(ctx, next, method, request)
 	}
 }
 
-// narrow keeps the tools this caller passes Admit and op.Check for, and
-// returns their descriptors, which the list's recheck holds it to.
+func (caller listing) list(
+	ctx context.Context, next sdk.MethodHandler,
+	method string, request sdk.Request,
+) (sdk.Result, error) {
+	result, err := next(ctx, method, request)
+	if err != nil {
+		return nil, err
+	}
+	list, isList := result.(*sdk.ListToolsResult)
+	if !isList {
+		return nil, caller.internal(
+			fmt.Errorf("mcp: tools/list answered a %T", result))
+	}
+	listed, err := caller.narrow(ctx, list)
+	if err != nil {
+		return nil, caller.internal(err)
+	}
+	// On the request's own context, where the gate holds the checks:
+	// registered anywhere else, Disclosed would do nothing.
+	api.Disclosed(caller.request.Context(), caller.recheck(listed))
+	return list, nil
+}
+
+// narrow keeps the tools this caller may use, and returns their
+// descriptors, which the list's recheck holds it to. Only a refusal
+// hides a tool: an outage must fail the list, not shorten it.
 func (caller listing) narrow(
 	ctx context.Context, list *sdk.ListToolsResult,
-) []op.Descriptor {
+) ([]op.Descriptor, error) {
 	tools := []*sdk.Tool{}
 	var listed []op.Descriptor
 	for _, tool := range list.Tools {
 		descriptor, known := caller.served.descriptors[tool.Name]
-		if !known || caller.allows(ctx, caller.appContext, descriptor) != nil {
+		if !known {
 			continue
+		}
+		err := caller.allows(ctx, caller.appContext, descriptor)
+		if refused(err) {
+			continue
+		}
+		if err != nil {
+			return nil, fmt.Errorf("mcp: list %s: %w", descriptor.ID, err)
 		}
 		tools = append(tools, tool)
 		listed = append(listed, descriptor)
 	}
 	list.Tools = tools
-	return listed
+	return listed, nil
 }
 
+func refused(err error) bool {
+	var forbidden op.Forbidden
+	var notFound op.NotFound
+	return errors.As(err, &forbidden) || errors.As(err, &notFound)
+}
+
+// allows is Admit and op.Check, less the agent-session refusal: a list
+// never needs a session (spec §2), and the call itself tells an agent
+// that sent none which header to send.
 func (caller listing) allows(
 	ctx context.Context, appContext rastrillo.Ctx, descriptor op.Descriptor,
 ) error {
 	err := caller.served.gate.Admit(appContext.Actor, descriptor.Operation)
-	if err != nil {
+	if err != nil && !api.IsAgentSessionRefusal(err) {
 		return err
 	}
 	return op.Check(ctx, &appContext, descriptor.Operation)

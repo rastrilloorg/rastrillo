@@ -7,6 +7,7 @@ package mcp
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
@@ -91,6 +92,11 @@ func New(config Config, descriptors ...op.Descriptor) (http.Handler, error) {
 	}
 	served.gate.MaxResponse = maxResponse(
 		served.gate.MaxResponse, config.MaxResult)
+	// Built once here, so a tool the SDK would panic on registering
+	// fails the app's start rather than every request.
+	if _, err := served.build(listing{served: served}); err != nil {
+		return nil, err
+	}
 	return served.gate.Wrap(refusingStreams(served)), nil
 }
 
@@ -151,17 +157,27 @@ func (served *server) ServeHTTP(
 	caller.appContext.Actor, _ = rastrillo.ActorFromContext(
 		request.Context())
 	caller.appContext.Authorize = served.config.Authorize
-	built := served.build(caller)
+	built, err := served.build(caller)
+	if err != nil {
+		api.Refuse(response, request, err)
+		return
+	}
 	handler := sdk.NewStreamableHTTPHandler(
 		func(*http.Request) *sdk.Server { return built },
-		&sdk.StreamableHTTPOptions{Stateless: true, JSONResponse: true})
+		&sdk.StreamableHTTPOptions{
+			Stateless: true, JSONResponse: true,
+			// The SDK's DNS-rebinding check would refuse every app behind
+			// a loopback proxy, and the gate has already required a bearer
+			// token, which a rebinding page does not have.
+			DisableLocalhostProtection: true,
+		})
 	handler.ServeHTTP(response, request)
 }
 
 // build is one request's server. Every tool is registered, so a call to
 // one the list hides still reaches Admit and op.Check and is refused as
 // the API would, rather than as an unknown tool.
-func (served *server) build(caller listing) *sdk.Server {
+func (served *server) build(caller listing) (*sdk.Server, error) {
 	built := sdk.NewServer(
 		&sdk.Implementation{
 			Name: served.config.Name, Version: served.config.Version,
@@ -176,12 +192,28 @@ func (served *server) build(caller listing) *sdk.Server {
 			SetCacheable: private,
 		})
 	for _, tool := range served.tools {
-		// The low-level AddTool: the generic one validates arguments
-		// against the schema first, and the API door's own rules decide.
-		built.AddTool(tool, caller.notServedYet)
+		if err := served.addTool(built, tool, caller.notServedYet); err != nil {
+			return nil, err
+		}
 	}
 	built.AddReceivingMiddleware(caller.narrowing)
-	return built
+	return built, nil
+}
+
+// addTool uses the low-level AddTool: the generic one validates
+// arguments against the schema first, and the API door's own rules
+// decide. It panics on what it refuses, such as a bad x-mcp-header.
+func (served *server) addTool(
+	built *sdk.Server, tool *sdk.Tool, handler sdk.ToolHandler,
+) (err error) {
+	defer func() {
+		if value := recover(); value != nil {
+			err = fmt.Errorf("mcp: operation %s: the SDK refuses its "+
+				"tool: %v", served.descriptors[tool.Name].ID, value)
+		}
+	}()
+	built.AddTool(tool, handler)
+	return nil
 }
 
 // private marks every cacheable result as this caller's alone, since

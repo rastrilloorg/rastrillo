@@ -1,11 +1,14 @@
 package mcp
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
+	"log/slog"
 	"net/http"
 	"slices"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -37,6 +40,17 @@ func TestListPerCaller(t *testing.T) {
 			return nil
 		}
 	}
+	hidden := func(id string) func(
+		context.Context, rastrillo.Actor, rastrillo.Operation) error {
+		return func(
+			_ context.Context, _ rastrillo.Actor, operation rastrillo.Operation,
+		) error {
+			if operation.ID == id {
+				return op.NotFound{}
+			}
+			return nil
+		}
+	}
 	// A connection service's grant whose scopes leave out writing: the
 	// app's policy, not the framework, reads what a scope means.
 	scoped := func(
@@ -64,6 +78,8 @@ func TestListPerCaller(t *testing.T) {
 				"bookmarks_create", "bookmarks_delete", "bookmarks_get",
 				"bookmarks_list",
 			}},
+		{"policy_not_found", hidden("bookmarks.get"), readerToken,
+			[]string{"bookmarks_list"}},
 		{"grant_without_write_scope", scoped, grantedToken, readTools},
 		{"grant_policy_for_a_writer", scoped, writerToken, everyTool},
 	}
@@ -247,4 +263,79 @@ func TestListPanicIsInternal(t *testing.T) {
 	if got := toolNames(t, url, writerToken); !slices.Equal(got, everyTool) {
 		t.Errorf("after a panic the writer's list is %v", got)
 	}
+}
+
+// TestListFailsOnAPolicyError has the policy fail rather than refuse.
+// Hiding the tool would show a shorter list for the whole connection
+// and log nothing, so the list fails, under a ref the log shares.
+func TestListFailsOnAPolicyError(t *testing.T) {
+	config := testConfig()
+	logged := &lockedBuffer{}
+	config.Gate.Logger = slog.New(slog.NewTextHandler(logged, nil))
+	config.Authorize = func(
+		_ context.Context, _ rastrillo.Actor, operation rastrillo.Operation,
+	) error {
+		if operation.ID == "bookmarks.get" {
+			return errors.New("the policy database is down")
+		}
+		return nil
+	}
+	url := serve(t, config, bookmarks()...)
+	session, _ := connect(t, url, writerToken, "2025-06-18")
+	listed, err := session.ListTools(t.Context(), nil)
+	var rpc *jsonrpc.Error
+	if !errors.As(err, &rpc) || rpc.Code != jsonrpc.CodeInternalError {
+		t.Fatalf("tools/list = %v, %v; want an internal JSON-RPC error",
+			listed, err)
+	}
+	var data api.Error
+	if err := json.Unmarshal(rpc.Data, &data); err != nil ||
+		data.Ref == "" {
+		t.Fatalf("error data %s has no ref", rpc.Data)
+	}
+	line := logged.String()
+	if !strings.Contains(line, data.Ref) ||
+		!strings.Contains(line, "the policy database is down") {
+		t.Errorf("no log line names the cause under ref %s: %s",
+			data.Ref, line)
+	}
+}
+
+// TestListShowsWritesWithoutASession: tools/list never needs a session
+// (spec §2), and a hidden write would never show the agent the message
+// that tells it to send Agent-Session. The recheck holds to the same.
+func TestListShowsWritesWithoutASession(t *testing.T) {
+	checker := &fakeRechecker{}
+	config := countedConfig(checker).config
+	config.Gate.RequireAgentSession = true
+	url := serve(t, config, bookmarks()...)
+	if got := toolNames(t, url, writerToken); !slices.Equal(got, everyTool) {
+		t.Errorf("an agent with no session lists %v, want %v",
+			got, everyTool)
+	}
+	if got := toolNames(t, url, readerToken); !slices.Equal(got, readTools) {
+		t.Errorf("a read-only agent with no session lists %v, want %v",
+			got, readTools)
+	}
+	if checker.rechecks.Load() == 0 {
+		t.Error("the lists were never rechecked")
+	}
+}
+
+// lockedBuffer is a log destination the server's goroutines share.
+type lockedBuffer struct {
+	mutex  sync.Mutex
+	buffer bytes.Buffer
+}
+
+func (locked *lockedBuffer) Write(data []byte) (int, error) {
+	locked.mutex.Lock()
+	defer locked.mutex.Unlock()
+	return locked.buffer.Write(data)
+}
+
+func (locked *lockedBuffer) String() string {
+	locked.mutex.Lock()
+	defer locked.mutex.Unlock()
+	return locked.buffer.String()
 }

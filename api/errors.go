@@ -156,6 +156,14 @@ func Refuse(w http.ResponseWriter, r *http.Request, err error) {
 	WriteError(w, status, refused)
 }
 
+// IsAgentSessionRefusal reports whether err is, or wraps, Admit's
+// refusal of an agent's write sent with no Agent-Session header. MCP
+// lists such a write anyway, so that the call itself tells the agent
+// which header to send.
+func IsAgentSessionRefusal(err error) bool {
+	return errors.Is(err, errAgentSession)
+}
+
 // Refusal is Refuse without the write: it logs as Refuse does and
 // returns the status and envelope. MCP answers with it in a tool error,
 // so both doors say the same thing about the same failure.
