@@ -9,7 +9,9 @@ import (
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"slices"
+	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -71,10 +73,12 @@ func (fakeVerifier) Verify(
 }
 
 // fakeRechecker answers Recheck with the original actor, or with it made
-// read-only once narrowed is set, and counts its calls.
+// read-only once narrowed is set, or not at all once revoked is, and
+// counts its calls.
 type fakeRechecker struct {
 	fakeVerifier
 	narrowed atomic.Bool
+	revoked  atomic.Bool
 	rechecks atomic.Int64
 }
 
@@ -82,6 +86,10 @@ func (checker *fakeRechecker) Recheck(
 	_ context.Context, _ *http.Request, was rastrillo.Actor,
 ) (rastrillo.Actor, error) {
 	checker.rechecks.Add(1)
+	if checker.revoked.Load() {
+		return rastrillo.Actor{},
+			fmt.Errorf("fake: revoked: %w", api.ErrUnauthorized)
+	}
 	fresh := was
 	fresh.Session, fresh.Harness = "", ""
 	if checker.narrowed.Load() {
@@ -327,3 +335,302 @@ func (answer posted) rpcError(t *testing.T) rpcError {
 }
 
 const listBody = `{"jsonrpc":"2.0","id":1,"method":"tools/list"}`
+
+// storedBookmark is one row of the in-memory store, and the result a
+// create, get or update answers with. The owner never goes out.
+type storedBookmark struct {
+	ID    string `json:"id"`
+	URL   string `json:"url"`
+	Title string `json:"title"`
+	owner string
+}
+
+// bookmarkInput is every member the five bookmark tools accept.
+type bookmarkInput struct {
+	ID    op.Opt[string] `json:"id"`
+	URL   op.Opt[string] `json:"url"`
+	Title op.Opt[string] `json:"title"`
+	Limit op.Opt[int]    `json:"limit"`
+}
+
+// bookmarkStore is the owner-scoped table behind bookmarks(), standing
+// in for a generated resource until Task 9 runs the generated ones:
+// each Invoke runs op.Check first and decodes with op.DecodeInput, and
+// another person's row is not found.
+type bookmarkStore struct {
+	mutex   sync.Mutex
+	rows    map[string]storedBookmark
+	last    int
+	writes  atomic.Int64
+	invokes atomic.Int64
+	// afterWrite runs once a write is stored, so a test can change the
+	// token between Invoke and the answer.
+	afterWrite func()
+}
+
+func newBookmarkStore() *bookmarkStore {
+	return &bookmarkStore{rows: map[string]storedBookmark{}}
+}
+
+// descriptors are bookmarks(), with the generator's flags, over store.
+func (store *bookmarkStore) descriptors() []op.Descriptor {
+	runs := map[string]func(string, bookmarkInput) (any, error){
+		"bookmarks.create": store.create,
+		"bookmarks.list":   store.list,
+		"bookmarks.get":    store.get,
+		"bookmarks.update": store.update,
+		"bookmarks.delete": store.remove,
+	}
+	descriptors := bookmarks()
+	for index := range descriptors {
+		operation := descriptors[index].Operation
+		run := runs[operation.ID]
+		descriptors[index].Invoke = func(
+			ctx context.Context, rc *rastrillo.Ctx, raw json.RawMessage,
+		) (any, error) {
+			store.invokes.Add(1)
+			if err := op.Check(ctx, rc, operation); err != nil {
+				return nil, err
+			}
+			var input bookmarkInput
+			if err := op.DecodeInput(raw, &input); err != nil {
+				return nil, err
+			}
+			return run(rc.Actor.Subject, input)
+		}
+	}
+	return descriptors
+}
+
+// add stores a row directly, as owner, and returns its ID.
+func (store *bookmarkStore) add(owner, url, title string) string {
+	store.mutex.Lock()
+	defer store.mutex.Unlock()
+	store.last++
+	id := strconv.Itoa(store.last)
+	store.rows[id] = storedBookmark{
+		ID: id, URL: url, Title: title, owner: owner,
+	}
+	return id
+}
+
+func (store *bookmarkStore) row(id string) (storedBookmark, bool) {
+	store.mutex.Lock()
+	defer store.mutex.Unlock()
+	row, found := store.rows[id]
+	return row, found
+}
+
+func (store *bookmarkStore) wrote() {
+	store.writes.Add(1)
+	if store.afterWrite != nil {
+		store.afterWrite()
+	}
+}
+
+func (store *bookmarkStore) create(
+	owner string, input bookmarkInput,
+) (any, error) {
+	if input.Title.Value == "" {
+		return nil, op.Invalid{Fields: map[string]string{
+			"Title": "Enter a title.",
+		}}
+	}
+	id := store.add(owner, input.URL.Value, input.Title.Value)
+	store.wrote()
+	row, _ := store.row(id)
+	return row, nil
+}
+
+func (store *bookmarkStore) list(
+	owner string, _ bookmarkInput,
+) (any, error) {
+	store.mutex.Lock()
+	defer store.mutex.Unlock()
+	items := []storedBookmark{}
+	for _, row := range store.rows {
+		if row.owner == owner {
+			items = append(items, row)
+		}
+	}
+	slices.SortFunc(items, func(first, second storedBookmark) int {
+		return strings.Compare(first.ID, second.ID)
+	})
+	return map[string]any{"items": items, "next_after": nil}, nil
+}
+
+// owned is owner's row, or NotFound for a row that is someone else's.
+func (store *bookmarkStore) owned(
+	owner string, input bookmarkInput,
+) (storedBookmark, error) {
+	row, found := store.row(input.ID.Value)
+	if !found || row.owner != owner {
+		return storedBookmark{}, op.NotFound{}
+	}
+	return row, nil
+}
+
+func (store *bookmarkStore) get(
+	owner string, input bookmarkInput,
+) (any, error) {
+	return store.owned(owner, input)
+}
+
+func (store *bookmarkStore) update(
+	owner string, input bookmarkInput,
+) (any, error) {
+	row, err := store.owned(owner, input)
+	if err != nil {
+		return nil, err
+	}
+	if input.Title.Set {
+		row.Title = input.Title.Value
+	}
+	if input.URL.Set {
+		row.URL = input.URL.Value
+	}
+	store.mutex.Lock()
+	store.rows[row.ID] = row
+	store.mutex.Unlock()
+	store.wrote()
+	return row, nil
+}
+
+func (store *bookmarkStore) remove(
+	owner string, input bookmarkInput,
+) (any, error) {
+	row, err := store.owned(owner, input)
+	if err != nil {
+		return nil, err
+	}
+	store.mutex.Lock()
+	delete(store.rows, row.ID)
+	store.mutex.Unlock()
+	store.wrote()
+	return nil, nil
+}
+
+// withInvoke is descriptors with id's Invoke replaced.
+func withInvoke(
+	descriptors []op.Descriptor, id string,
+	invoke func(context.Context, *rastrillo.Ctx, json.RawMessage) (
+		any, error),
+) []op.Descriptor {
+	for index := range descriptors {
+		if descriptors[index].ID == id {
+			descriptors[index].Invoke = invoke
+		}
+	}
+	return descriptors
+}
+
+// callTool calls a tool through the SDK client and fails the test on a
+// protocol error: every answer under test here is a tool result.
+func callTool(
+	t *testing.T, session *sdk.ClientSession, name string, arguments any,
+) *sdk.CallToolResult {
+	t.Helper()
+	result, err := session.CallTool(t.Context(),
+		&sdk.CallToolParams{Name: name, Arguments: arguments})
+	if err != nil {
+		t.Fatalf("tools/call %s: %v, want a tool result", name, err)
+	}
+	return result
+}
+
+// textOf is a result's one text block.
+func textOf(t *testing.T, result *sdk.CallToolResult) string {
+	t.Helper()
+	if len(result.Content) != 1 {
+		t.Fatalf("result has %d content blocks, want 1: %+v",
+			len(result.Content), result.Content)
+	}
+	text, isText := result.Content[0].(*sdk.TextContent)
+	if !isText {
+		t.Fatalf("result block is a %T, want text", result.Content[0])
+	}
+	return text.Text
+}
+
+// structured is a successful result's structuredContent, after checking
+// that it is the text block's own value.
+func structured(t *testing.T, result *sdk.CallToolResult) map[string]any {
+	t.Helper()
+	text := textOf(t, result)
+	if result.IsError {
+		t.Fatalf("result is a tool error: %s", text)
+	}
+	var parsed map[string]any
+	if err := json.Unmarshal([]byte(text), &parsed); err != nil {
+		t.Fatalf("text block %q is not a JSON object: %v", text, err)
+	}
+	if !reflect.DeepEqual(result.StructuredContent, any(parsed)) {
+		t.Errorf("structuredContent %#v, text block %s",
+			result.StructuredContent, text)
+	}
+	return parsed
+}
+
+// refusalOf is a tool error's envelope, the API's {"error": ...}.
+func refusalOf(t *testing.T, result *sdk.CallToolResult) api.Error {
+	t.Helper()
+	text := textOf(t, result)
+	if !result.IsError {
+		t.Fatalf("result %s is not a tool error", text)
+	}
+	if result.StructuredContent != nil {
+		t.Errorf("a tool error carries structuredContent %#v",
+			result.StructuredContent)
+	}
+	var envelope struct {
+		Error api.Error `json:"error"`
+	}
+	if err := json.Unmarshal([]byte(text), &envelope); err != nil {
+		t.Fatalf("tool error %q is not the API's envelope: %v", text, err)
+	}
+	return envelope.Error
+}
+
+// callBody is a raw tools/call, with arguments as the exact bytes sent.
+func callBody(name, arguments string) string {
+	return `{"jsonrpc":"2.0","id":1,"method":"tools/call",` +
+		`"params":{"name":"` + name + `","arguments":` + arguments + `}}`
+}
+
+// rawCall is a tools/call answer read with its values kept as bytes.
+type rawCall struct {
+	Result struct {
+		Content []struct {
+			Type string `json:"type"`
+			Text string `json:"text"`
+		} `json:"content"`
+		StructuredContent json.RawMessage `json:"structuredContent"`
+		IsError           bool            `json:"isError"`
+	} `json:"result"`
+}
+
+func (answer posted) call(t *testing.T) rawCall {
+	t.Helper()
+	var decoded rawCall
+	if err := json.Unmarshal(answer.body, &decoded); err != nil ||
+		answer.status != http.StatusOK ||
+		len(decoded.Result.Content) != 1 {
+		t.Fatalf("answer %d is not one tool result: %v: %s",
+			answer.status, err, answer.body)
+	}
+	return decoded
+}
+
+// refusal is the API envelope in a raw tool error.
+func (call rawCall) refusal(t *testing.T) api.Error {
+	t.Helper()
+	var envelope struct {
+		Error api.Error `json:"error"`
+	}
+	text := call.Result.Content[0].Text
+	if !call.Result.IsError ||
+		json.Unmarshal([]byte(text), &envelope) != nil {
+		t.Fatalf("answer %s is not a tool error", text)
+	}
+	return envelope.Error
+}

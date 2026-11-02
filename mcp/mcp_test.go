@@ -6,6 +6,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"regexp"
 	"strings"
@@ -487,7 +488,7 @@ func TestServedBehindALoopbackProxy(t *testing.T) {
 
 // TestPanicOutsideTheListIsInternal panics inside tools/call, through
 // an app's Redact that fails once. The SDK runs each method on a bare
-// goroutine, so without the middleware's recovery the process dies.
+// goroutine, so the call recovers it, as the API's internal error.
 func TestPanicOutsideTheListIsInternal(t *testing.T) {
 	config := testConfig()
 	var redactions atomic.Int64
@@ -499,14 +500,37 @@ func TestPanicOutsideTheListIsInternal(t *testing.T) {
 	}
 	url := serve(t, config, bookmarks()...)
 	session, _ := connect(t, url, writerToken, "2025-06-18")
-	_, err := session.CallTool(t.Context(),
-		&sdk.CallToolParams{Name: "bookmarks_get"})
-	var rpc *jsonrpc.Error
-	if !errors.As(err, &rpc) || rpc.Code != jsonrpc.CodeInternalError {
-		t.Errorf("tools/call = %v, want an internal JSON-RPC error", err)
+	refused := refusalOf(t, callTool(t, session, "bookmarks_get", nil))
+	if refused.Code != "internal" || refused.Ref == "" {
+		t.Errorf("tools/call answered %+v, want internal with a ref",
+			refused)
 	}
 	if got := toolNames(t, url, writerToken); len(got) != 5 {
 		t.Errorf("after the panic the list is %v", got)
+	}
+}
+
+// TestNarrowingRecoversEveryMethod pins the middleware's backstop for a
+// method with no recovery of its own, which no app code reaches today.
+func TestNarrowingRecoversEveryMethod(t *testing.T) {
+	config := testConfig()
+	request := api.WithLogger(
+		httptest.NewRequest(http.MethodPost, "/", nil),
+		config.Gate.Logger)
+	caller := listing{
+		served:  &server{config: config, gate: config.Gate},
+		request: request,
+	}
+	panicking := func(
+		context.Context, string, sdk.Request,
+	) (sdk.Result, error) {
+		panic("handler bug")
+	}
+	_, err := caller.narrowing(panicking)(t.Context(), "ping", nil)
+	var rpc *jsonrpc.Error
+	if !errors.As(err, &rpc) || rpc.Code != jsonrpc.CodeInternalError {
+		t.Errorf("a panic answered %v, want an internal JSON-RPC error",
+			err)
 	}
 }
 
@@ -541,9 +565,11 @@ func TestCopyIsApproved(t *testing.T) {
 		approved[match[1]] = match[2]
 	}
 	ours := map[string]string{
-		"instructionsText": instructionsText,
-		"confirmLine":      confirmLine,
-		"msgNoStreams":     msgNoStreams,
+		"instructionsText":  instructionsText,
+		"confirmLine":       confirmLine,
+		"msgNoStreams":      msgNoStreams,
+		"msgResultTooLarge": msgResultTooLarge,
+		"msgArgumentBytes":  msgArgumentBytes,
 	}
 	for name, got := range ours {
 		want, found := approved[name]

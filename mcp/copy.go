@@ -21,3 +21,13 @@ const confirmLine = "Before calling, ask the person to confirm: "
 // msgNoStreams answers a GET, a batch and subscriptions/listen.
 const msgNoStreams = "Send one JSON-RPC message per HTTP POST. " +
 	"Do not send batches, use GET, or request subscriptions."
+
+// msgResultTooLarge answers a tool result over Config.MaxResult, as a
+// tool error with the code response_too_large.
+const msgResultTooLarge = "Request a smaller result. " +
+	"For lists, pass a smaller limit or narrow the query."
+
+// msgArgumentBytes answers arguments that are not valid UTF-8 or that
+// carry an unpaired surrogate escape, as an invalid tool error.
+const msgArgumentBytes = "Send arguments as valid UTF-8. " +
+	"Do not use unpaired surrogate escapes."

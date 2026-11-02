@@ -192,7 +192,8 @@ func (served *server) build(caller listing) (*sdk.Server, error) {
 			SetCacheable: private,
 		})
 	for _, tool := range served.tools {
-		if err := served.addTool(built, tool, caller.notServedYet); err != nil {
+		handler := caller.calling(served.descriptors[tool.Name])
+		if err := served.addTool(built, tool, handler); err != nil {
 			return nil, err
 		}
 	}

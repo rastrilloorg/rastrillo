@@ -152,20 +152,3 @@ func (caller listing) internal(cause error) error {
 		Data: data,
 	}
 }
-
-// notServedYet answers every tool call until calls are served: an
-// internal error with a ref, never a result.
-func (caller listing) notServedYet(
-	context.Context, *sdk.CallToolRequest,
-) (*sdk.CallToolResult, error) {
-	_, refused := api.Refusal(caller.request,
-		errors.New("mcp: tools/call is not served yet"))
-	encoded, err := json.Marshal(map[string]api.Error{"error": refused})
-	if err != nil {
-		return nil, err
-	}
-	return &sdk.CallToolResult{
-		IsError: true,
-		Content: []sdk.Content{&sdk.TextContent{Text: string(encoded)}},
-	}, nil
-}
