@@ -87,17 +87,24 @@
     if (hit) hit.focus();
   }
 
-  // 1. Direction. Back when the page being left recorded that its back
-  // control was used AND this page is where it pointed, or when the
-  // Navigation API reports a traverse to an earlier entry (the browser's
-  // own Back); forward otherwise. The record is written on the click,
-  // before anything commits, so a Back whose leave-page prompt was
-  // cancelled leaves it behind: scoped to its destination, the next link
-  // followed still slides forward. Taken on every reveal, matched or not,
-  // so a stale one never waits for its URL to come round. A URL pattern
-  // cannot decide it: the new page cannot know which URL is the index,
-  // and the pattern is the app's.
+  // A skipped browser transition rejects even though navigation succeeds.
+  // Observe only its promises, so unrelated failures remain visible.
+  function observeTransition(transition) {
+    if (!transition) return;
+    ["ready", "finished", "updateCallbackDone"].forEach(function (key) {
+      if (transition[key]) transition[key].catch(function (err) {
+        if (!(err instanceof DOMException) ||
+            ["AbortError", "InvalidStateError", "TimeoutError"].indexOf(err.name) < 0) throw err;
+      });
+    });
+  }
+
+  // 1. Direction. The back record is scoped to its destination because
+  // a cancelled leave-page prompt can leave it behind. Consume it on
+  // every reveal so it cannot affect a later visit. Browser Back uses
+  // the Navigation API's entry order; URL patterns belong to the app.
   function reveal(e) {
+    observeTransition(e.viewTransition);
     var back = take(WENT_BACK) === location.pathname + location.search, a = window.navigation && navigation.activation;
     if (!back && a && a.navigationType === "traverse" && a.from && a.entry) back = a.entry.index < a.from.index;
     // Focus first, and the type only where there is a set to add it to:
@@ -116,7 +123,8 @@
   // revealed; pagehide is the fallback where there is no pageswap.
   // Never both: a pagehide landing after the index took the record
   // would leave a stale one behind.
-  function leave() {
+  function leave(e) {
+    observeTransition(e.viewTransition);
     if (view(PAGE)) store(function (s) { s.setItem(RETURN, location.pathname + location.search); });
   }
   window.addEventListener("onpageswap" in window ? "pageswap" : "pagehide", leave);

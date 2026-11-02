@@ -90,6 +90,18 @@ What changed:
   `github.com/yosida95/uritemplate/v3`, `golang.org/x/oauth2` and
   `golang.org/x/time`.
 
+## v0.30.2
+
+### Fixed: the console rail's current item draws its ring and shadow whole
+
+The console rail's current item draws its ring and shadow whole. Before, the rail cut them off at its edges. Apps own their tokens.css, so copy it again to get the fix.
+
+## v0.30.1
+
+### Fixed: no uncaught error when the browser skips a page transition
+
+Navigating with motion on could log `AbortError: Transition was skipped` as an uncaught error in the browser console, and browser tests built on the harness failed on it. The browser skips a page transition in some cases and rejects its promises, and the shell never handled them. The shell now handles them and ignores only that skip. Other errors still show. Nothing to change in your app; upgrade and run `go mod tidy`.
+
 ## v0.30.0
 
 Compiled templates, serving an app under a path on a hub's domain, live pages, routes you can list and check, sign-in with Microsoft Entra ID or Google Workspace, a PDF writer, and builds on Go 1.27. Rastrillo now needs Go 1.26. The first four sections include upgrade steps for existing apps. Read them before you upgrade. If you build browser tests with `-tags browser`, port them for chromedp v0.21.
