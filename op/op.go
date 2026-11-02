@@ -85,6 +85,12 @@ type Descriptor struct {
 	Description string
 	// Confirm is the consent sentence an agent shows before a write.
 	Confirm string
+	// Destructive means a call may change or remove what is already
+	// there; false means it only adds. MCP's destructiveHint.
+	Destructive bool
+	// Idempotent means calling twice with the same input leaves the
+	// same state as calling once. MCP's idempotentHint.
+	Idempotent bool
 	// Input and Result are JSON Schema. Both are required: api.New
 	// refuses a route whose descriptor leaves either empty, so a
 	// hand-written operation must describe itself too.
