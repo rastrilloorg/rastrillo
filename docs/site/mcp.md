@@ -68,11 +68,11 @@ url = "https://notes.example.com/api/v1/mcp"
 bearer_token_env_var = "NOTES_TOKEN"
 ```
 
-If the app sets `RequireAgentSession`, the client must also send an
-`Agent-Session` header. Without one, the agent still sees the write
-tools, but each write call is refused as `invalid`, with a message
-telling it to send the header. In Claude Code, add
-`--header "Agent-Session: <id>"`.
+If the app sets `RequireAgentSession` and the token was made for an
+agent, the client must also send an `Agent-Session` header. Without
+one, the agent still sees the write tools, but each write call is
+refused as `invalid`, with a message telling it to send the header. In
+Claude Code, add `--header "Agent-Session: <id>"`.
 
 ChatGPT and claude.ai connect through OAuth, which Rastrillo doesn't
 serve yet. A request with no token gets 401 with
@@ -99,9 +99,12 @@ such as every generated delete, has no output schema.
 
 The tool list is per caller. A tool is listed only when `op.Check` and
 the gate allow this caller to use it, so a read-only token sees no write
-tools. Tool names and schemas are also in `api/v1.json`. A call to a
-tool the list left out is refused the way the API would refuse it,
-usually with `forbidden`.
+tools. `api/v1.json` lists each operation's id, method, path, access,
+destructive and idempotent flags, and input and result field kinds. It
+does not list tool names or JSON schemas. A tool's name is its
+operation id with `.` replaced by `_`. A call to a tool the list left
+out is refused the way the API would refuse it, usually with
+`forbidden`.
 
 ## The flags
 
