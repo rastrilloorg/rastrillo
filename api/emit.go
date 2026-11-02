@@ -86,7 +86,10 @@ func (gate Gate) emitting(next http.Handler) http.Handler {
 // guarded sends the answer a chunk at a time, each behind a recheck
 // whose deadline also bounds the write after it (spec §3, steps 2-5).
 func (out emission) guarded() {
-	controller := http.NewResponseController(out.response)
+	// Over the gate's own wrapper of the transport, not out.response: a
+	// Before middleware's writer wrapper seldom has Unwrap, and through
+	// it every rechecked answer would find no deadline and be a 503.
+	controller := http.NewResponseController(startedFrom(out.request))
 	// Without a write deadline a slow client could hold a checked chunk
 	// open long after the check that allowed it.
 	if err := controller.SetWriteDeadline(time.Time{}); err != nil {

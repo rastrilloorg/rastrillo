@@ -627,3 +627,39 @@ func bodyOf(size int, chunked bool) *http.Request {
 	request.Header.Set("Authorization", "Bearer person-read")
 	return request
 }
+
+// plainWrapper is the hand-rolled writer wrapper a Before middleware
+// often uses: it embeds the writer and has no Unwrap.
+type plainWrapper struct{ http.ResponseWriter }
+
+// A Before that wraps the writer must not hide the transport's write
+// deadline from the gate: if it did, every rechecked answer would be a
+// 503 the moment the verifier became a Rechecker.
+func TestEmitPastBeforesWriterWrapper(t *testing.T) {
+	checker := newRechecker(verifier())
+	gate := gateWith(checker)
+	gate.Before = []func(http.Handler) http.Handler{
+		func(next http.Handler) http.Handler {
+			return http.HandlerFunc(func(
+				response http.ResponseWriter, request *http.Request,
+			) {
+				next.ServeHTTP(plainWrapper{response}, request)
+			})
+		},
+	}
+	wrapped := gate.Wrap(http.HandlerFunc(writesSecret))
+
+	answer := fetch(t, wrapped, http.MethodGet, "/", "person-read")
+	if answer.status != http.StatusOK || answer.readErr != nil ||
+		!strings.Contains(string(answer.body), secretAnswer) {
+		t.Fatalf("answered %d, read error %v, body %s; want a whole 200",
+			answer.status, answer.readErr, answer.body)
+	}
+	if checker.calls() == 0 {
+		t.Fatal("the answer went out with no recheck")
+	}
+
+	checker.answerWith(revoked)
+	answer = fetch(t, wrapped, http.MethodGet, "/", "person-read")
+	answer.assertRefused(t, http.StatusUnauthorized, "unauthorized")
+}
