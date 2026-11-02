@@ -26,3 +26,7 @@ func TestACancelledBackDoesNotSlideTheNextPageBack(t *testing.T) {
 		t.Errorf("Back tapped, the prompt cancelled, then a link to another page followed: it slid %q, want forward", got.Cancelled)
 	}
 }
+
+func TestShellTransitionPromisesOnlyIgnoreSkippedTransitions(t *testing.T) {
+	nodetest.Run(t, nodetest.Cmd{Args: []string{"shell_transition_node.mjs"}})
+}
