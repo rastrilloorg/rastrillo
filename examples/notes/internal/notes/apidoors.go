@@ -16,9 +16,9 @@ import (
 // apiDoors builds the two doors an agent can use instead of the pages,
 // both behind a bearer token: the JSON API tree, with the same generated
 // operations the bookmarks pages call, and the same operations as MCP
-// tools. They share one api.Config, so the token check and the policy
-// cannot differ between them. Redact keeps a token quoted in an error
-// out of the log.
+// tools. The MCP config takes its gate, context factory and policy from
+// the one api.Config, so none of the three can differ between them.
+// Redact keeps a token quoted in an error out of the log.
 func apiDoors(
 	tokens *apitoken.Store,
 	ctxFactory func(*http.Request) *rastrillo.Ctx,
@@ -37,8 +37,8 @@ func apiDoors(
 	}
 	tools, err = mcp.New(mcp.Config{
 		Gate:      config.Gate(),
-		Ctx:       ctxFactory,
-		Authorize: op.DefaultPolicy,
+		Ctx:       config.Ctx,
+		Authorize: config.Authorize,
 		Name:      "notes",
 		Version:   rastrillo.BuildVersion,
 	}, gen.ExposedOperations()...)
