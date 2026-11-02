@@ -16,8 +16,6 @@ import (
 	"net/http"
 	"strconv"
 
-	json "github.com/go-json-experiment/json"
-
 	rastrillo "amadan.net/rastrillo/rastrillo"
 	"amadan.net/rastrillo/rastrillo/internal/wirename"
 	"amadan.net/rastrillo/rastrillo/op"
@@ -113,9 +111,7 @@ func tableRefusal(code string) (int, Error) {
 // have no logger to tell. json v2 writes a nil slice as [] and a nil
 // map as {}, which is what the spec promises for an empty list.
 func Write(w http.ResponseWriter, status int, v any) {
-	// Deterministic sorts map keys, so a fields map encodes the same way
-	// every time and a client's test can compare bodies as strings.
-	b, err := json.Marshal(v, json.Deterministic(true))
+	b, err := Encode(v)
 	if err != nil {
 		panic(fmt.Errorf("api: encode %T: %w", v, err))
 	}

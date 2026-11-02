@@ -6,7 +6,6 @@ import (
 	encodingjson "encoding/json"
 	"fmt"
 	"log/slog"
-	"regexp"
 	"runtime/debug"
 	"slices"
 
@@ -91,7 +90,10 @@ func (caller listing) admit(
 func (caller listing) encode(
 	descriptor op.Descriptor, value any,
 ) ([]byte, *sdk.CallToolResult) {
-	encoded, err := encodeResult(value)
+	// The result's one encoding; the SDK only copies it. It is the body
+	// api.Write gives at the API door, so the text block the agent reads
+	// matches it.
+	encoded, err := api.Encode(value)
 	if err != nil {
 		// %v, not %w: whatever a marshaler returned, a result that will
 		// not encode is the app's bug, never the caller's refusal.
@@ -176,30 +178,6 @@ func (caller listing) guard(
 	) error {
 		return guard(ctx, fresh, &descriptor, sent, result)
 	})
-}
-
-// jsonNumber is the grammar of a JSON number, which encoding/json's
-// Number does not enforce on what it holds.
-var jsonNumber = regexp.MustCompile(
-	`^-?(?:0|[1-9][0-9]*)(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?$`)
-
-// exactNumbers writes encoding/json's Number as the number it holds.
-// json v2 would quote it, as a named string, and Oficina's results
-// carry their numbers that way (spec §6).
-var exactNumbers = json.WithMarshalers(json.MarshalToFunc(
-	func(encoder *jsontext.Encoder, number encodingjson.Number) error {
-		if !jsonNumber.MatchString(string(number)) {
-			return fmt.Errorf("mcp: json.Number %q is not a JSON number",
-				string(number))
-		}
-		return encoder.WriteValue(jsontext.Value(number))
-	}))
-
-// encodeResult is the result's one encoding; the SDK only copies it.
-// It leaves < and & as they are, so the text block the agent reads
-// matches the body api.Write gives at the API door.
-func encodeResult(value any) ([]byte, error) {
-	return json.Marshal(value, exactNumbers, json.Deterministic(true))
 }
 
 // escapedSize is encoded's length once the SDK's encoding/json escapes

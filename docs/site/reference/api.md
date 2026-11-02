@@ -232,17 +232,21 @@ to send `Agent-Session` with every write.
 such a write tool anyway, so the call itself tells the agent which
 header to send.
 
-## Write, WriteError and Refuse
+## Write, Encode, WriteError and Refuse
 
 ```go
 func Write(w http.ResponseWriter, status int, v any)
+func Encode(value any) ([]byte, error)
 func WriteError(w http.ResponseWriter, status int, e Error)
 func Refuse(w http.ResponseWriter, r *http.Request, err error)
 ```
 
 `Write` answers with `v` as JSON, with `Content-Type: application/json`
 and `Cache-Control: no-store`. An empty list encodes as `[]`, never
-`null`. `WriteError` puts `e` under `"error"` and writes it. Use it for a
+`null`. An `encoding/json` `json.Number` is written as the number it
+holds, not as a string. `Encode` returns the bytes `Write` sends; MCP
+encodes each tool result with it, so both endpoints write the same
+value the same way. `WriteError` puts `e` under `"error"` and writes it. Use it for a
 code `Refuse` cannot derive from an error, such as `rate_limited` from a
 rate limiter.
 
