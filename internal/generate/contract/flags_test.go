@@ -1,13 +1,16 @@
 package contract
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 
 	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/internal/generate/opsgen"
 	"amadan.net/rastrillo/rastrillo/internal/generate/scratch"
 )
 
@@ -207,4 +210,97 @@ func TestGenerateCheckWithReplacedBodies(t *testing.T) {
 	}
 	wantCautious(t, flags(t, read(t, app)),
 		"bookmarks.create", "bookmarks.delete")
+}
+
+// descriptorFlags reads every operation's flags out of an emitted
+// types.go, keyed by the operation's id.
+func descriptorFlags(t *testing.T, types string) map[string][2]bool {
+	t.Helper()
+	pattern := regexp.MustCompile(`(?s)Operation:\s+(\w+)Op,.*?` +
+		`Destructive:\s+(true|false),\s+Idempotent:\s+(true|false),`)
+	found := map[string][2]bool{}
+	for _, match := range pattern.FindAllStringSubmatch(types, -1) {
+		id := "bookmarks." + strings.ToLower(match[1])
+		found[id] = [2]bool{match[2] == "true", match[3] == "true"}
+	}
+	return found
+}
+
+// writeFile writes content at path under app, making the directories.
+func writeFile(t *testing.T, app, path, content string) {
+	t.Helper()
+	full := filepath.Join(app, path)
+	if err := os.MkdirAll(filepath.Dir(full), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(full, []byte(content), 0o644); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// TestEmittedFlagsMatchTheContract: the descriptors in types.go and
+// api/v1.json each decide which bodies are replaced, from the same
+// ops/ tree, and must reach the same flags for every operation. A
+// dangling symlink named create.go is the case that tells two ways of
+// looking apart: a directory listing sees it and a stat does not.
+func TestEmittedFlagsMatchTheContract(t *testing.T) {
+	app := t.TempDir()
+	writeFile(t, app, "go.mod", "module scratch\n\ngo 1.25.0\n")
+	writeFile(t, app, "ops/bookmarks/delete.go",
+		"//go:build rastrillo_actions\n\npackage anything\n")
+	dangling := filepath.Join(app, "ops", "bookmarks", "create.go")
+	if err := os.Symlink("nowhere.go", dangling); err != nil {
+		t.Skipf("no symlinks here: %v", err)
+	}
+	resources := []rastrillo.Resource{bookmarks(t)}
+	genDir := filepath.Join(app, "gen")
+	if _, _, err := opsgen.Emit(app, genDir, resources[0]); err != nil {
+		t.Fatal(err)
+	}
+	types := filepath.Join(genDir, "ops", "bookmarks", "types.go")
+	source, err := os.ReadFile(types)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Write(app, resources, false); err != nil {
+		t.Fatal(err)
+	}
+	emitted := descriptorFlags(t, string(source))
+	written := flags(t, read(t, app))
+	if len(emitted) != 5 {
+		t.Fatalf("read %d descriptors from types.go; want 5: %v",
+			len(emitted), emitted)
+	}
+	for id, want := range written {
+		if emitted[id] != want {
+			t.Errorf("%s: types.go says %v, api/v1.json says %v",
+				id, emitted[id], want)
+		}
+	}
+}
+
+// TestFlaglessContractNotesNothing: an api/v1.json from before the
+// flags were recorded has no destructive key, so no client could have
+// relied on one. Regenerating over it says nothing.
+func TestFlaglessContractNotesNothing(t *testing.T) {
+	app := t.TempDir()
+	resources := []rastrillo.Resource{bookmarks(t)}
+	if _, err := Write(app, resources, false); err != nil {
+		t.Fatal(err)
+	}
+	pattern := regexp.MustCompile(
+		`\n      "(destructive|idempotent)": (true|false),`)
+	flagless := pattern.ReplaceAll(read(t, app), nil)
+	if bytes.Contains(flagless, []byte("destructive")) {
+		t.Fatalf("the old file still has flags:\n%s", flagless)
+	}
+	commit(t, app, flagless)
+	notes, err := Write(app, resources, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []string{Path + ": updated"}
+	if strings.Join(notes, "|") != strings.Join(want, "|") {
+		t.Errorf("notes over a flag-less file = %q; want %q", notes, want)
+	}
 }

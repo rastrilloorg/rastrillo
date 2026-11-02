@@ -89,14 +89,19 @@ func HandFiles(appRoot string, rs []rastrillo.Resource) ([]Hand, error) {
 }
 
 // replacedActions is the actions of resource that have a hand-written
-// file under appRoot, found without reading them so that Emit can say
-// what the descriptors in types.go promise before it writes anything.
+// file under appRoot, found as HandFiles finds them, by listing the
+// directory, so that the descriptors Emit writes and the contract
+// agree on a file a stat would miss, such as a dangling symlink. The
+// files are not read, so Emit can say what types.go promises before
+// it writes anything.
 func replacedActions(appRoot, resource string) map[string]bool {
 	replaced := map[string]bool{}
-	for _, action := range opFiles {
-		source := Hand{Resource: resource, Op: action}.Source()
-		_, err := os.Stat(filepath.Join(appRoot, filepath.FromSlash(source)))
-		replaced[action] = err == nil
+	dir := filepath.Join(appRoot, "ops", resource)
+	entries, _ := os.ReadDir(dir)
+	for _, entry := range entries {
+		if action, ok := opOf(entry.Name()); ok {
+			replaced[action] = true
+		}
 	}
 	return replaced
 }
