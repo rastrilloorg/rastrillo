@@ -2923,8 +2923,13 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
      the gate that missed it asked where the person sat inside the rail
      — a question that stayed true while the rail hung off the screen.
      TestTheConsoleRailFitsTheViewport asks the other question, and
-     carries a control page that must answer it the other way. */
-  .rst-shell-console > .rst-shell__rail > .rst-shell__nav, [rst-shell-console] > [rst-shell-rail] > [rst-shell-nav] { box-sizing: border-box; inset-block-start: var(--rst-sp-4); max-block-size: calc(100dvh - 2 * var(--rst-sp-4)); overflow-y: auto; position: sticky; }
+     carries a control page that must answer it the other way.
+     THE RING. overflow-y: auto clips the nav at its padding box on
+     both axes, which cut the current item's ring and contact shadow
+     off at the nav's edges. The 5px of padding is room for the shadow
+     at any light position, and the negative margin, inset and cap give
+     it back so nothing moves (TestTheConsoleRailDrawsTheCurrentItemWhole). */
+  .rst-shell-console > .rst-shell__rail > .rst-shell__nav, [rst-shell-console] > [rst-shell-rail] > [rst-shell-nav] { box-sizing: border-box; inset-block-start: calc(var(--rst-sp-4) - 5px); margin-block: -5px; margin-inline: -5px; max-block-size: calc(100dvh - 2 * var(--rst-sp-4) + 10px); overflow-y: auto; padding-block: 5px; padding-inline: 5px; position: sticky; }
 }
 
 /* The topbar's narrow menu is a floating card: it overlays the page and

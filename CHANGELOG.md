@@ -10,6 +10,10 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+### Fixed: the console rail's current item draws its ring and shadow whole
+
+The console rail's current item draws its ring and shadow whole. Before, the rail cut them off at its edges. Apps own their tokens.css, so copy it again to get the fix.
+
 ## v0.30.1
 
 ### Fixed: no uncaught error when the browser skips a page transition
