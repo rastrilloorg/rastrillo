@@ -29,7 +29,15 @@ import (
 // ("Title"), never the wire name: the API door converts to snake_case
 // and the page door uses the form's own names, so neither has to agree
 // with the other here.
-type Invalid struct{ Fields map[string]string }
+//
+// AsSent marks Fields as keyed instead by each member's name as the
+// client sent it, as DecodeInput's are. Every door reports those names
+// unchanged: converted, a misspelt "Title" would be reported as
+// "title", which is the field the client should have sent.
+type Invalid struct {
+	Fields map[string]string
+	AsSent bool
+}
 
 // NotFound refuses a request for a row that is not there, or that is
 // not the actor's. The two are deliberately the same answer, so a

@@ -184,7 +184,7 @@ func Refusal(request *http.Request, err error) (int, Error) {
 		return codes["invalid"].status, Error{
 			Code:    "invalid",
 			Message: codes["invalid"].message,
-			Fields:  wireFields(invalidInput.Fields),
+			Fields:  wireFields(invalidInput),
 		}
 	case errors.As(err, &notFound):
 		return tableRefusal("not_found")
@@ -206,9 +206,14 @@ func Refusal(request *http.Request, err error) (int, Error) {
 	}
 }
 
-func wireFields(fields map[string]string) map[string]string {
-	wire := make(map[string]string, len(fields))
-	for name, message := range fields {
+// wireFields is refused's fields by wire name. Names DecodeInput kept
+// as the client sent them stay as they are, as Decode writes them.
+func wireFields(refused op.Invalid) map[string]string {
+	if refused.AsSent {
+		return refused.Fields
+	}
+	wire := make(map[string]string, len(refused.Fields))
+	for name, message := range refused.Fields {
 		wire[FieldName(name)] = message
 	}
 	return wire
