@@ -48,8 +48,7 @@ func (caller listing) call(
 		return toolError(api.Error{Code: "invalid", Message: msgArgumentBytes})
 	}
 	appContext := caller.appContext
-	err := caller.served.gate.Admit(appContext.Actor, descriptor.Operation)
-	if err != nil {
+	if err := caller.admit(ctx, &appContext, descriptor); err != nil {
 		return caller.refusal(err)
 	}
 	// Kept apart, so the guard reads the arguments as sent even if the
@@ -59,20 +58,58 @@ func (caller listing) call(
 	if err != nil {
 		return caller.refusal(err)
 	}
+	encoded, refused := caller.encode(descriptor, value)
+	if refused != nil {
+		return refused
+	}
+	caller.guard(descriptor, sent, value)
+	return resultOf(encoded)
+}
+
+// admit is the call's own Admit and op.Check, so a hand-written Invoke
+// that skips op.Check still meets the policy. Once both pass, the gate
+// holds every answer to them, a refusal or a panic as much as a result.
+func (caller listing) admit(
+	ctx context.Context, appContext *rastrillo.Ctx,
+	descriptor op.Descriptor,
+) error {
+	err := caller.served.gate.Admit(appContext.Actor, descriptor.Operation)
+	if err != nil {
+		return err
+	}
+	if err := op.Check(ctx, appContext, descriptor.Operation); err != nil {
+		return err
+	}
+	caller.recheckCall(descriptor)
+	return nil
+}
+
+// encode is the result's one encoding, or the tool error that answers
+// instead: a result that will not encode or is not the object the
+// tool's schema promises is internal, and one over MaxResult is too
+// large.
+func (caller listing) encode(
+	descriptor op.Descriptor, value any,
+) ([]byte, *sdk.CallToolResult) {
 	encoded, err := encodeResult(value)
 	if err != nil {
 		// %v, not %w: whatever a marshaler returned, a result that will
 		// not encode is the app's bug, never the caller's refusal.
-		return caller.refusal(fmt.Errorf("mcp: encode the result of %s: %v",
-			descriptor.ID, err))
+		return nil, caller.refusal(fmt.Errorf(
+			"mcp: encode the result of %s: %v", descriptor.ID, err))
+	}
+	if !isNullSchema(descriptor.Result) && !bytes.HasPrefix(encoded,
+		[]byte("{")) {
+		return nil, caller.refusal(fmt.Errorf("mcp: the result of %s "+
+			"is not a JSON object, as its Result schema requires",
+			descriptor.ID))
 	}
 	if escapedSize(encoded) > caller.served.config.MaxResult {
-		return toolError(api.Error{
+		return nil, toolError(api.Error{
 			Code: "response_too_large", Message: msgResultTooLarge,
 		})
 	}
-	caller.disclose(descriptor, sent, value)
-	return resultOf(encoded)
+	return encoded, nil
 }
 
 // argumentsOf reads absent or null arguments as no arguments, so a tool
@@ -107,13 +144,9 @@ func (caller listing) logCall(descriptor op.Descriptor) {
 		"mcp: call", attributes...)
 }
 
-// disclose has the gate hold this answer to what the fresh actor may
-// still see: Admit and op.Check again for the operation that ran, then
-// the app's Guard, last, on the arguments sent and the result returned.
-func (caller listing) disclose(
-	descriptor op.Descriptor, sent encodingjson.RawMessage, result any,
-) {
-	guard := caller.served.config.Guard
+// recheckCall has the gate hold this answer to what the fresh actor may
+// still do: Admit and op.Check again for the operation that ran.
+func (caller listing) recheckCall(descriptor op.Descriptor) {
 	check := func(ctx context.Context, fresh rastrillo.Actor) error {
 		err := caller.served.gate.Admit(fresh, descriptor.Operation)
 		if err != nil {
@@ -121,17 +154,28 @@ func (caller listing) disclose(
 		}
 		checked := caller.appContext
 		checked.Actor = fresh
-		if err := op.Check(ctx, &checked, descriptor.Operation); err != nil {
-			return err
-		}
-		if guard == nil {
-			return nil
-		}
-		return guard(ctx, fresh, &descriptor, sent, result)
+		return op.Check(ctx, &checked, descriptor.Operation)
 	}
 	// On the request's own context, where the gate holds the checks:
 	// registered on the SDK's, Disclosed would do nothing.
 	api.Disclosed(caller.request.Context(), check)
+}
+
+// guard has the gate run the app's Guard, after recheckCall's checks, on
+// the arguments sent and the result returned. Only a result has one: a
+// refusal carries no rows for Guard to judge.
+func (caller listing) guard(
+	descriptor op.Descriptor, sent encodingjson.RawMessage, result any,
+) {
+	guard := caller.served.config.Guard
+	if guard == nil {
+		return
+	}
+	api.Disclosed(caller.request.Context(), func(
+		ctx context.Context, fresh rastrillo.Actor,
+	) error {
+		return guard(ctx, fresh, &descriptor, sent, result)
+	})
 }
 
 // jsonNumber is the grammar of a JSON number, which encoding/json's
