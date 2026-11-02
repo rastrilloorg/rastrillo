@@ -223,7 +223,7 @@ func followTheBootStep(t *testing.T, directory string, step step) {
 	t.Helper()
 	app := filepath.Join(directory, "internal", "recipeapp", "app.go")
 	insertAfter(t, app, "type App struct {", step.blocks[0])
-	insertAfter(t, app, "api: api}", step.blocks[1])
+	insertAfter(t, app, "mcp: mcp}", step.blocks[1])
 	addImports(t, app, importsIn(step.prose))
 	appendTo(t, app, "\n"+step.blocks[2])
 	insertAfter(t, filepath.Join(directory, "internal", "recipeapp",

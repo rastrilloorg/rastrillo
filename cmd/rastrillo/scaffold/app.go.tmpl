@@ -24,6 +24,7 @@ type App struct {
 	logger   *slog.Logger
 	origin   string
 	api      http.Handler
+	mcp      http.Handler
 }
 
 // New migrates the database and builds the app, as one router inside the
@@ -54,11 +55,21 @@ func Router(
 	}
 	logger.Info("migrate", "applied", migrated.Applied,
 		"skipped", migrated.Skipped, "adopted", migrated.Adopted)
-	api, err := newAPI(database, logger)
+	tokens, err := newTokens(database)
 	if err != nil {
 		return nil, err
 	}
-	app := &App{database: database, logger: logger, origin: origin, api: api}
+	config := apiConfig(database, logger, tokens)
+	api, err := newAPI(config)
+	if err != nil {
+		return nil, err
+	}
+	mcp, err := newMCP(config)
+	if err != nil {
+		return nil, err
+	}
+	app := &App{database: database, logger: logger, origin: origin,
+		api: api, mcp: mcp}
 	router := chi.NewRouter()
 	Routes(action.NewRoutes(router, app.contextFor), app)
 	return router, nil

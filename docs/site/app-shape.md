@@ -75,6 +75,7 @@ type App struct {
 	logger   *slog.Logger
 	origin   string
 	api      http.Handler
+	mcp      http.Handler
 }
 ```
 
@@ -84,9 +85,12 @@ hands to `Serve`. It calls `Router`, which does the work:
 ```go
 migrated, err := migrate.Apply(context.Background(), database, BootSchema)
 // ...
-api, err := newAPI(database, logger)
+api, err := newAPI(config)
 // ...
-app := &App{database: database, logger: logger, origin: origin, api: api}
+mcp, err := newMCP(config)
+// ...
+app := &App{database: database, logger: logger, origin: origin,
+	api: api, mcp: mcp}
 router := chi.NewRouter()
 Routes(action.NewRoutes(router, app.contextFor), app)
 ```

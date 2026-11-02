@@ -30,7 +30,9 @@ func TestNewMountsTheAPIForANewApp(t *testing.T) {
 		readScaffold(t, "123-app", "internal", "app123app", "routes.go")
 	for _, want := range []string{
 		`routes.Mount("/api/v1", app.api, "api")`,
-		"api, err := newAPI(database, logger)",
+		"api, err := newAPI(config)",
+		"mcp, err := newMCP(config)",
+		`routes.Mount("/api/v1/mcp", app.mcp, "mcp")`,
 		"routes.Group(func(guarded *action.Routes) {",
 	} {
 		if !strings.Contains(app, want) {
@@ -40,7 +42,9 @@ func TestNewMountsTheAPIForANewApp(t *testing.T) {
 	// The mount is beside the page group, not in it: inside it the API
 	// would sit behind csrf.Protect, which refuses a POST with no Origin,
 	// and an agent's request has none.
-	if strings.Index(app, `Mount("/api/v1"`) > strings.Index(app, "Group(") {
+	group := strings.Index(app, "Group(")
+	if strings.Index(app, `Mount("/api/v1/mcp"`) > group ||
+		strings.Index(app, `Mount("/api/v1"`) > group {
 		t.Errorf("the API is mounted in the page group, behind csrf:\n%s", app)
 	}
 

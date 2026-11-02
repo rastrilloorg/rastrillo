@@ -9,6 +9,7 @@ import (
 	"amadan.net/rastrillo/rastrillo/api"
 	"amadan.net/rastrillo/rastrillo/apitoken"
 	"amadan.net/rastrillo/rastrillo/db"
+	"amadan.net/rastrillo/rastrillo/mcp"
 	"amadan.net/rastrillo/rastrillo/op"
 
 	"%[2]s/gen"
@@ -18,14 +19,12 @@ import (
 // knows a leaked one. Changing it voids every token already given out.
 const tokenPrefix = %[3]q
 
-// newAPI is the JSON API: each operation a manifest resource exposes,
-// called with a bearer token. A new app exposes none, so it answers 404.
-func newAPI(database *db.DB, logger *slog.Logger) (http.Handler, error) {
-	tokens, err := newTokens(database)
-	if err != nil {
-		return nil, err
-	}
-	return api.New(api.Config{
+// apiConfig is the one config both doors are built from, so the token
+// check, the context and the policy cannot differ between them.
+func apiConfig(
+	database *db.DB, logger *slog.Logger, tokens *apitoken.Store,
+) api.Config {
+	return api.Config{
 		Verify: tokens,
 		// Actor stays zero: the API fills it from the token.
 		Ctx: func(*http.Request) *rastrillo.Ctx {
@@ -35,7 +34,24 @@ func newAPI(database *db.DB, logger *slog.Logger) (http.Handler, error) {
 		Authorize: authorize,
 		Logger:    logger,
 		Redact:    tokens.Redact,
-	}, gen.APIRoutes()...)
+	}
+}
+
+// newAPI is the JSON API: each operation a manifest resource exposes,
+// called with a bearer token. A new app exposes none, so it answers 404.
+func newAPI(config api.Config) (http.Handler, error) {
+	return api.New(config, gen.APIRoutes()...)
+}
+
+// newMCP serves the same operations as MCP tools, at the API's door.
+func newMCP(config api.Config) (http.Handler, error) {
+	return mcp.New(mcp.Config{
+		Gate:      config.Gate(),
+		Ctx:       config.Ctx,
+		Authorize: config.Authorize,
+		Name:      %[2]q,
+		Version:   rastrillo.BuildVersion,
+	}, gen.ExposedOperations()...)
 }
 
 // authorize is the one policy for the pages and the API. The API cannot

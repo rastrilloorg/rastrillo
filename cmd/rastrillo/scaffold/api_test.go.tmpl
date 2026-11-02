@@ -17,6 +17,7 @@ import (
 
 	"amadan.net/rastrillo/rastrillo"
 	"amadan.net/rastrillo/rastrillo/action"
+	"amadan.net/rastrillo/rastrillo/apitoken"
 	"amadan.net/rastrillo/rastrillo/csrf"
 	"amadan.net/rastrillo/rastrillo/db"
 	"amadan.net/rastrillo/rastrillo/migrate"
@@ -44,6 +45,103 @@ func TestAPIAnswersInJSON(t *testing.T) {
 			t.Errorf("GET %%s: Cache-Control = %%q, want no-store", path, got)
 		}
 	}
+}
+
+// initialize and list are the two requests of a stateless MCP client.
+const (
+	initialize = `{"jsonrpc":"2.0","id":1,"method":"initialize","params":` +
+		`{"protocolVersion":"2025-06-18","capabilities":{},` +
+		`"clientInfo":{"name":"test","version":"1"}}}`
+	listTools = `{"jsonrpc":"2.0","id":2,"method":"tools/list"}`
+)
+
+// The MCP door answers at /api/v1/mcp, beside the API's, and a new app
+// exposes no tools. A real server, because the token store's recheck
+// needs a connection it can set a write deadline on.
+func TestMCPListsNothingYet(t *testing.T) {
+	t.Parallel()
+	database, token := mintedToken(t)
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	mux, err := %[2]s.New(database, testOrigin, logger)
+	if err != nil {
+		t.Fatalf("New: %%v", err)
+	}
+	server := httptest.NewServer(mux)
+	t.Cleanup(server.Close)
+	var started struct {
+		Result struct{ ProtocolVersion string }
+	}
+	status := rpc(t, server.URL, token, initialize, &started)
+	if status != http.StatusOK ||
+		started.Result.ProtocolVersion != "2025-06-18" {
+		t.Errorf("initialize: %%d and protocol %%q, want 200 and 2025-06-18",
+			status, started.Result.ProtocolVersion)
+	}
+	var listed struct {
+		Result struct{ Tools []json.RawMessage }
+	}
+	status = rpc(t, server.URL, token, listTools, &listed)
+	if status != http.StatusOK || len(listed.Result.Tools) != 0 {
+		t.Errorf("tools/list: %%d and %%d tools, want 200 and none",
+			status, len(listed.Result.Tools))
+	}
+}
+
+// rpc posts one JSON-RPC request to the MCP door and decodes the answer
+// into into. It does not follow a redirect: one would hide a mount that
+// sends the client elsewhere.
+func rpc(t *testing.T, base, token, body string, into any) int {
+	t.Helper()
+	request, err := http.NewRequest(http.MethodPost, base+"/api/v1/mcp",
+		strings.NewReader(body))
+	if err != nil {
+		t.Fatal(err)
+	}
+	request.Header.Set("Content-Type", "application/json")
+	request.Header.Set("Accept", "application/json, text/event-stream")
+	request.Header.Set("Authorization", "Bearer "+token)
+	client := &http.Client{CheckRedirect: func(*http.Request,
+		[]*http.Request) error {
+		return http.ErrUseLastResponse
+	}}
+	response, err := client.Do(request)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer response.Body.Close()
+	answer, err := io.ReadAll(response.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := json.Unmarshal(answer, into); err != nil {
+		t.Fatalf("%%d, not JSON-RPC (%%v):\n%%s", response.StatusCode, err,
+			answer)
+	}
+	return response.StatusCode
+}
+
+// mintedToken is a read token for a person, from a store of the test's
+// own: this package cannot call the app's newTokens.
+func mintedToken(t *testing.T) (*db.DB, string) {
+	t.Helper()
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	database, err := db.Open(schema.Path(t), logger)
+	if err != nil {
+		t.Fatalf("db.Open: %%v", err)
+	}
+	t.Cleanup(func() { database.Close() })
+	store, err := apitoken.New(apitoken.Config{
+		DB: database.Writer(), Prefix: %[3]q,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	token, _, err := store.Mint(context.Background(), "1",
+		apitoken.MintInput{Agent: "Claude", Access: rastrillo.Read})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return database, token
 }
 
 // tokenPattern is a whole token with this app's prefix.
