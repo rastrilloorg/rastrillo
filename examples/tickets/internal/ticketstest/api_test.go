@@ -158,6 +158,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
@@ -178,6 +179,14 @@ import (
 )
 
 type writer struct{ *sql.DB }
+
+type answer struct {
+	Code           int
+	Location, Body string
+}
+
+const payload = ` + "`" + `{"name": "General",
+	"price": {"amount": 2500, "currency": "USD"}}` + "`" + `
 
 func (w writer) Writer() *sql.DB { return w.DB }
 
@@ -220,13 +229,29 @@ func TestExposedUnscopedNeedsAPolicy(t *testing.T) {
 		}
 		return h
 	}
-	create := func(h http.Handler, target string) *httptest.ResponseRecorder {
-		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(` + "`" + `{"name": "General", "price": {"amount": 2500, "currency": "USD"}}` + "`" + `))
+	// A real server, not a recorder: the API checks the token again as
+	// each answer is sent, which needs a transport with write deadlines.
+	create := func(h http.Handler, target string) answer {
+		server := httptest.NewServer(h)
+		defer server.Close()
+		req, err := http.NewRequest(http.MethodPost, server.URL+target,
+			strings.NewReader(payload))
+		if err != nil {
+			t.Fatal(err)
+		}
+		req.Host = "example.com"
 		req.Header.Set("Content-Type", "application/json")
 		req.Header.Set("Authorization", "Bearer "+token)
-		rec := httptest.NewRecorder()
-		h.ServeHTTP(rec, req)
-		return rec
+		res, err := server.Client().Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer res.Body.Close()
+		body, err := io.ReadAll(res.Body)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return answer{res.StatusCode, res.Header.Get("Location"), string(body)}
 	}
 
 	// api.New refuses a nil Authorize, so the default is named: it is
@@ -244,8 +269,10 @@ func TestExposedUnscopedNeedsAPolicy(t *testing.T) {
 	// not at the hub's /api/v1, and not at /acme/acme.
 	acme := basepath.Config{Origin: "https://example.com", Slug: "acme"}.Handler(allow)
 	rec := create(acme, "/acme/api/v1/ticket_types")
-	if loc := rec.Header().Get("Location"); rec.Code != http.StatusCreated || loc != "/acme/api/v1/ticket_types/2" {
-		t.Errorf("POST /acme/api/v1/ticket_types: %d, Location %q; want 201, /acme/api/v1/ticket_types/2\n%s", rec.Code, loc, rec.Body)
+	const want = "/acme/api/v1/ticket_types/2"
+	if rec.Code != http.StatusCreated || rec.Location != want {
+		t.Errorf("POST /acme/api/v1/ticket_types: %d, Location %q; "+
+			"want 201, %s\n%s", rec.Code, rec.Location, want, rec.Body)
 	}
 }
 `

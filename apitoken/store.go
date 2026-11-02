@@ -3,13 +3,11 @@ package apitoken
 import (
 	"context"
 	"crypto/sha256"
-	"crypto/subtle"
 	"database/sql"
 	"errors"
 	"fmt"
 	"net/http"
 	"regexp"
-	"strings"
 	"time"
 
 	rastrillo "amadan.net/rastrillo/rastrillo"
@@ -190,75 +188,9 @@ func (s *Store) Mint(ctx context.Context, subject string, in MintInput) (string,
 // and bcrypt's 50 to 100ms on every API call would spend most of the
 // first-byte budget.
 func (s *Store) Verify(ctx context.Context, r *http.Request) (rastrillo.Actor, error) {
-	// Only the Authorization header: never a cookie, so a page cannot
-	// be made to call the API with the browser's credentials, and
-	// never the query string, so tokens stay out of access logs.
-	hs := r.Header.Values("Authorization")
-	if len(hs) != 1 {
-		return rastrillo.Actor{}, fmt.Errorf("%w: want one Authorization header, got %d", api.ErrUnauthorized, len(hs))
-	}
-	scheme, token, _ := strings.Cut(hs[0], " ")
-	if !strings.EqualFold(scheme, "Bearer") {
-		return rastrillo.Actor{}, fmt.Errorf("%w: not a Bearer token", api.ErrUnauthorized)
-	}
-	id, secret, ok := s.parse(strings.TrimLeft(token, " "))
-	if !ok {
-		return rastrillo.Actor{}, fmt.Errorf("%w: not a %s token", api.ErrUnauthorized, s.cfg.Prefix)
-	}
-
-	var (
-		subject, agent, access string
-		hash                   []byte
-		lastUsed, expires      sql.NullString
-		revoked                sql.NullString
-	)
-	err := s.cfg.DB.QueryRowContext(ctx,
-		`SELECT subject, agent, access, secret_hash, last_used, expires_at, revoked_at FROM api_tokens WHERE id = ?`, id).
-		Scan(&subject, &agent, &access, &hash, &lastUsed, &expires, &revoked)
-	if errors.Is(err, sql.ErrNoRows) {
-		return rastrillo.Actor{}, fmt.Errorf("%w: no token %s", api.ErrUnauthorized, id)
-	}
+	found, err := s.lookup(ctx, r)
 	if err != nil {
-		return rastrillo.Actor{}, fmt.Errorf("%w: apitoken: looking up %s: %w", api.ErrUnavailable, id, err)
-	}
-	// Constant time on the 32-byte hashes, so how long the comparison
-	// takes says nothing about how much of a guessed secret was right.
-	sum := sha256.Sum256([]byte(secret))
-	if subtle.ConstantTimeCompare(sum[:], hash) != 1 {
-		return rastrillo.Actor{}, fmt.Errorf("%w: wrong secret for %s", api.ErrUnauthorized, id)
-	}
-	if revoked.Valid {
-		return rastrillo.Actor{}, fmt.Errorf("%w: %s is revoked", api.ErrUnauthorized, id)
-	}
-	// A column this package could not have written is a storage
-	// failure, so 503 like any other: a 401 would tell the agent its
-	// token is dead when the fault is in the database. It still grants
-	// nothing. These checks come after the secret, so only the token's
-	// holder can learn that its row is damaged.
-	exp, err := parseTime(expires)
-	if err != nil {
-		return rastrillo.Actor{}, fmt.Errorf("%w: apitoken: %s expires_at: %w", api.ErrUnavailable, id, err)
-	}
-	last, err := parseTime(lastUsed)
-	if err != nil {
-		return rastrillo.Actor{}, fmt.Errorf("%w: apitoken: %s last_used: %w", api.ErrUnavailable, id, err)
-	}
-	acc, err := parseAccess(access)
-	if err != nil {
-		return rastrillo.Actor{}, fmt.Errorf("%w: apitoken: %s: %w", api.ErrUnavailable, id, err)
-	}
-	now := s.now()
-	if exp != nil && !now.Before(*exp) {
-		return rastrillo.Actor{}, fmt.Errorf("%w: %s expired", api.ErrUnauthorized, id)
-	}
-	if s.cfg.Allowed != nil {
-		allowed, err := s.cfg.Allowed(ctx, subject)
-		if err != nil {
-			return rastrillo.Actor{}, fmt.Errorf("%w: apitoken: Allowed(%s): %w", api.ErrUnavailable, subject, err)
-		}
-		if !allowed {
-			return rastrillo.Actor{}, fmt.Errorf("%w: the owner of %s is not allowed", api.ErrUnauthorized, id)
-		}
+		return rastrillo.Actor{}, err
 	}
 	// At most once a minute, so a busy agent's reads do not each
 	// become a write on SQLite's single writer. The Go check skips the
@@ -269,14 +201,15 @@ func (s *Store) Verify(ctx context.Context, r *http.Request) (rastrillo.Actor, e
 	// moving last_used back past a newer one's time. The strings
 	// compare in time order because parseTime admits only formatTime's
 	// fixed-width UTC form.
-	if last == nil || now.Sub(*last) >= time.Minute {
+	id, now := found.actor.Credential, found.now
+	if found.lastUsed == nil || now.Sub(*found.lastUsed) >= time.Minute {
 		if _, err := s.cfg.DB.ExecContext(ctx,
 			`UPDATE api_tokens SET last_used = ? WHERE id = ? AND (last_used IS NULL OR last_used <= ?)`,
 			formatTime(now), id, formatTime(now.Add(-time.Minute))); err != nil {
 			return rastrillo.Actor{}, fmt.Errorf("%w: apitoken: last_used for %s: %w", api.ErrUnavailable, id, err)
 		}
 	}
-	return rastrillo.Actor{Subject: subject, Agent: agent, Credential: id, Access: acc}, nil
+	return found.actor, nil
 }
 
 // List returns every token subject owns, newest first, including

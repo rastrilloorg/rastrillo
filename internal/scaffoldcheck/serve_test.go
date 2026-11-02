@@ -44,12 +44,39 @@ import (
 	"apiapp/internal/apiapp"
 )
 
-func serve(
-	handler http.Handler, request *http.Request,
-) *httptest.ResponseRecorder {
-	recorder := httptest.NewRecorder()
-	handler.ServeHTTP(recorder, request)
-	return recorder
+type answer struct {
+	Code int
+	Body string
+}
+
+// send makes a real request. The API gate rechecks the token as each
+// answer goes out, and a recorder cannot set the write deadline that
+// needs.
+func send(
+	t *testing.T, server *httptest.Server, method, path, body, secret string,
+) answer {
+	t.Helper()
+	request, err := http.NewRequest(method, server.URL+path,
+		strings.NewReader(body))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if body != "" {
+		request.Header.Set("Content-Type", "application/json")
+	}
+	if secret != "" {
+		request.Header.Set("Authorization", "Bearer "+secret)
+	}
+	response, err := server.Client().Do(request)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer response.Body.Close()
+	text, err := io.ReadAll(response.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return answer{Code: response.StatusCode, Body: string(text)}
 }
 
 func TestABearerTokenNeedsNoOrigin(t *testing.T) {
@@ -73,26 +100,25 @@ func TestABearerTokenNeedsNoOrigin(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	create := httptest.NewRequest("POST", "/api/v1/bookmarks",
-		strings.NewReader(` + "`" + `{"title": "Read later"}` + "`" + `))
-	create.Header.Set("Authorization", "Bearer "+secret)
-	create.Header.Set("Content-Type", "application/json")
-	if answer := serve(handler, create); answer.Code != http.StatusCreated {
+	server := httptest.NewServer(handler)
+	defer server.Close()
+	const title = ` + "`" + `{"title": "Read later"}` + "`" + `
+	create := send(t, server, "POST", "/api/v1/bookmarks", title, secret)
+	if create.Code != http.StatusCreated {
 		t.Errorf("POST /api/v1/bookmarks: %d, want 201:\n%s",
-			answer.Code, answer.Body)
+			create.Code, create.Body)
 	}
-	bare := serve(handler, httptest.NewRequest("GET", "/api/v1", nil))
+	bare := send(t, server, "GET", "/api/v1", "", "")
 	var body struct{ Error struct{ Code string } }
-	json.Unmarshal(bare.Body.Bytes(), &body)
+	json.Unmarshal([]byte(bare.Body), &body)
 	if bare.Code != http.StatusNotFound || body.Error.Code != "not_found" {
 		t.Errorf("GET /api/v1: %d, want the API's JSON 404:\n%s",
 			bare.Code, bare.Body)
 	}
-	anonymous := httptest.NewRequest("POST", "/api/v1/bookmarks",
-		strings.NewReader(` + "`" + `{"title": "Read later"}` + "`" + `))
-	if answer := serve(handler, anonymous); answer.Code != 401 {
+	anonymous := send(t, server, "POST", "/api/v1/bookmarks", title, "")
+	if anonymous.Code != 401 {
 		t.Errorf("POST /api/v1/bookmarks with no token: %d, want 401",
-			answer.Code)
+			anonymous.Code)
 	}
 }
 `

@@ -381,7 +381,7 @@ func TestThePagesAndTheAPIShareOnePolicy(t *testing.T) {
 		t.Fatal(err)
 	}
 	secret := mint(t, database)
-	page := func(method string) *httptest.ResponseRecorder {
+	page := func(method string) answer {
 		request := httptest.NewRequest(method, "/admin/ticket_types",
 			strings.NewReader("Name=General&Price=12.50"+
 				"&Price.locale=root&Price.currency=USD"))
@@ -390,12 +390,29 @@ func TestThePagesAndTheAPIShareOnePolicy(t *testing.T) {
 		request.Header.Set("Origin", origin)
 		return serve(handler, request)
 	}
-	api := func(method string) *httptest.ResponseRecorder {
-		request := httptest.NewRequest(method, "/api/v1/ticket_types",
+	// The API gate rechecks the token as each answer goes out, which a
+	// recorder cannot take; only the pages can use one.
+	server := httptest.NewServer(handler)
+	defer server.Close()
+	api := func(method string) answer {
+		request, err := http.NewRequest(method,
+			server.URL+"/api/v1/ticket_types",
 			strings.NewReader(` + "`" + `{"name": "General"}` + "`" + `))
+		if err != nil {
+			t.Fatal(err)
+		}
 		request.Header.Set("Authorization", "Bearer "+secret)
 		request.Header.Set("Content-Type", "application/json")
-		return serve(handler, request)
+		response, err := server.Client().Do(request)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer response.Body.Close()
+		body, err := io.ReadAll(response.Body)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return answer{Code: response.StatusCode, Body: string(body)}
 	}
 	expect(t, "the list page", page("GET"), http.StatusOK)
 	expect(t, "the API's list", api("GET"), http.StatusOK)
@@ -419,21 +436,21 @@ func mint(t *testing.T, database *db.DB) string {
 	return secret
 }
 
-func serve(
-	handler http.Handler, request *http.Request,
-) *httptest.ResponseRecorder {
-	recorder := httptest.NewRecorder()
-	handler.ServeHTTP(recorder, request)
-	return recorder
+type answer struct {
+	Code int
+	Body string
 }
 
-func expect(
-	t *testing.T, what string, answer *httptest.ResponseRecorder, want int,
-) {
+func serve(handler http.Handler, request *http.Request) answer {
+	recorder := httptest.NewRecorder()
+	handler.ServeHTTP(recorder, request)
+	return answer{Code: recorder.Code, Body: recorder.Body.String()}
+}
+
+func expect(t *testing.T, what string, got answer, want int) {
 	t.Helper()
-	if answer.Code != want {
-		t.Errorf("%s: %d, want %d:\n%s", what, answer.Code, want,
-			answer.Body)
+	if got.Code != want {
+		t.Errorf("%s: %d, want %d:\n%s", what, got.Code, want, got.Body)
 	}
 }
 `

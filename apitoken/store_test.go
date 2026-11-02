@@ -26,6 +26,10 @@ var _ interface {
 	Verify(context.Context, *http.Request) (rastrillo.Actor, error)
 } = (*apitoken.Store)(nil)
 
+// The API gate rechecks a token as each answer goes out when the
+// verifier it was given can; the scaffold passes the Store.
+var _ api.Rechecker = (*apitoken.Store)(nil)
+
 var grammar = regexp.MustCompile(`^tickets_([0-9A-Za-z]{12})_([0-9A-Za-z]{43})$`)
 
 // clock is a settable Now, so expiry and the once-a-minute last_used
@@ -530,4 +534,92 @@ func TestCorruptRowIsUnavailable(t *testing.T) {
 			}
 		})
 	}
+}
+
+func recheck(
+	store *apitoken.Store, request *http.Request, was rastrillo.Actor,
+) (rastrillo.Actor, error) {
+	return store.Recheck(context.Background(), request, was)
+}
+
+func TestRecheckIsPure(t *testing.T) {
+	store, db, timeline := newStore(t, nil)
+	secret, token := mint(t, store, "alice", claude)
+	timeline.t = t0.Add(-time.Hour)
+	was, err := verify(store, bearer(secret))
+	if err != nil {
+		t.Fatal(err)
+	}
+	lastUsed := func() string {
+		t.Helper()
+		var got string
+		err := db.QueryRow(
+			`SELECT last_used FROM api_tokens WHERE id = ?`, token.ID,
+		).Scan(&got)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return got
+	}
+	hourAgo := lastUsed()
+	if want := t0.Add(-time.Hour).Format(time.RFC3339); hourAgo != want {
+		t.Fatalf("last_used = %q after Verify, want %q", hourAgo, want)
+	}
+	timeline.t = t0
+	for range 3 {
+		now, err := recheck(store, bearer(secret), was)
+		if err != nil {
+			t.Fatalf("Recheck: %v", err)
+		}
+		if now != was {
+			t.Errorf("Recheck = %+v, want what Verify gave: %+v", now, was)
+		}
+	}
+	if got := lastUsed(); got != hourAgo {
+		t.Errorf("last_used = %q after 3 rechecks, want %q: Recheck wrote",
+			got, hourAgo)
+	}
+}
+
+func TestRecheckRevoked(t *testing.T) {
+	store, _, _ := newStore(t, nil)
+	secret, token := mint(t, store, "alice", claude)
+	was, err := verify(store, bearer(secret))
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = store.Revoke(context.Background(), "alice", token.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = recheck(store, bearer(secret), was)
+	if !errors.Is(err, api.ErrUnauthorized) {
+		t.Errorf("Recheck after Revoke: err = %v, want ErrUnauthorized", err)
+	}
+}
+
+func TestRecheckRefusesWhatVerifyRefuses(t *testing.T) {
+	allowed := true
+	store, _, timeline := newStore(t, func(config *apitoken.Config) {
+		config.Allowed = func(context.Context, string) (bool, error) {
+			return allowed, nil
+		}
+	})
+	secret, _ := mint(t, store, "alice", claude)
+	expiring, _ := mint(t, store, "alice", apitoken.MintInput{
+		Agent: "Claude", Access: rastrillo.Write, TTL: time.Hour,
+	})
+	was := rastrillo.Actor{Subject: "alice"}
+	refused := func(name, token string) {
+		t.Helper()
+		_, err := recheck(store, bearer(token), was)
+		if !errors.Is(err, api.ErrUnauthorized) {
+			t.Errorf("%s: Recheck err = %v, want ErrUnauthorized", name, err)
+		}
+	}
+	refused("malformed", "tickets_short_x")
+	timeline.t = t0.Add(time.Hour)
+	refused("expired", expiring)
+	allowed = false
+	refused("Allowed false", secret)
 }
