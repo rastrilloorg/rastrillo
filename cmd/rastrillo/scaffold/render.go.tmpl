@@ -61,6 +61,7 @@ func renderPage(
 	response http.ResponseWriter, request *http.Request,
 	page string, status int, data any,
 ) {
+	// Other data, such as a generated page's, carries its own.
 	if values, isMap := data.(map[string]any); isMap || data == nil {
 		data = withRequest(request, values)
 	}
