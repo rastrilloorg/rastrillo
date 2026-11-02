@@ -71,6 +71,28 @@ type Actor struct {
 	// Harness is the agent's client, e.g. "claude-code/2.1.288", when
 	// it sent one.
 	Harness string
+	// Grant is nil for a browser session and a personal token.
+	Grant *Grant
+}
+
+// Grant is what a connection service's token carries beyond a person:
+// the grant it belongs to and who vouches for it. Only a verifier sets
+// it; the framework records it and leaves Teams and Scopes to the app's
+// policy, because their meaning is the app's.
+type Grant struct {
+	// ID is the grant this token belongs to. Revoking the grant ends
+	// every token under it.
+	ID string
+	// Issuer is who issued the grant: the connection service.
+	Issuer string
+	// IdentityIssuer is who says who Subject is: the identity provider.
+	IdentityIssuer string
+	// Audience is the app this token is for.
+	Audience string
+	// Teams is empty when the grant names no team.
+	Teams []string
+	// Scopes is empty when the grant names no scope.
+	Scopes []string
 }
 
 // String is the actor's compact audit form, the encoding eventlog
@@ -80,9 +102,11 @@ type Actor struct {
 //	user:<subject>
 //	user:<subject> token:<public id>
 //	agent:<agent> for user:<subject> token:<public id>
+//	agent:<agent> for user:<subject> token:<public id> grant:<grant id>
 //
 // The token's public ID is in it so that two tokens both named "Claude"
-// stay distinguishable. Nothing in this repo parses the string.
+// stay distinguishable, and the grant's so that an event can be traced
+// to the grant that was revoked. Nothing in this repo parses the string.
 func (a Actor) String() string {
 	if a.Subject == "" && a.Agent == "" && a.Credential == "" {
 		return "app"
@@ -94,14 +118,24 @@ func (a Actor) String() string {
 	if a.Credential != "" {
 		who += " token:" + a.Credential
 	}
+	if a.Grant != nil {
+		who += " grant:" + a.Grant.ID
+	}
 	return who
 }
 
 // LogAttrs is the actor as structured log fields. Session and harness
 // are logged per request here rather than stored in every event, and
-// only when the client sent them.
+// only when the client sent them. A grant's issuers and audience are
+// logged here too, not in String, to keep every stored event short.
 func (a Actor) LogAttrs() []slog.Attr {
 	attrs := []slog.Attr{slog.String("actor", a.String())}
+	if a.Grant != nil {
+		attrs = append(attrs,
+			slog.String("grant_issuer", a.Grant.Issuer),
+			slog.String("identity_issuer", a.Grant.IdentityIssuer),
+			slog.String("grant_audience", a.Grant.Audience))
+	}
 	if a.Session != "" {
 		attrs = append(attrs, slog.String("agent_session", a.Session))
 	}
