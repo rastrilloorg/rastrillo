@@ -33,12 +33,11 @@ if errors.As(err, &inv) {
 
 `Invalid.Fields` is keyed by manifest field name, such as `Title`. The
 page door puts each message beside its field, and the API door turns the
-key into its wire name. When `AsSent` is true, the keys are the names
-the client sent, and the API and MCP report them unchanged. `NotFound`
-is the answer both for a row that does not exist and for one that is
-not the caller's. `Forbidden.Reason` is for
-your logs and never reaches the response. `Conflict.Message` is safe to
-show.
+key into its wire name. When `AsSent` is true, the API and MCP report
+the keys under the names the client sent. `NotFound` is the answer both
+for a row that does not exist and for one that is not the caller's.
+`Forbidden.Reason` is for your logs and never reaches the response.
+`Conflict.Message` is safe to show.
 
 `Invalid.Error`, `NotFound.Error`, `Forbidden.Error` and `Conflict.Error`
 are for log lines: `invalid: Amount, Title` (the field names, sorted,
@@ -141,11 +140,10 @@ func DecodeInput(data []byte, dst any) error
 with the rules both doors share. `api.Decode` calls it on the body it
 read, and every generated `Descriptor.Invoke` calls it on its
 arguments, so the two cannot drift. It refuses an unknown member, a
-member sent twice, a wrong type, and `null` anywhere but a `Nullable`
-field, each as an `Invalid` keyed by the member's name as sent, with
-`AsSent` set. A value
-that is not one JSON object is an `Invalid` with no fields; the door
-says what to send instead.
+member sent twice, a wrong type, or `null` outside a `Nullable` field.
+It returns each as an `Invalid` keyed by the member's name as sent,
+with `AsSent` set. A value that is not one JSON object is an `Invalid`
+with no fields; the door says what to send instead.
 
 ## EncodeCursor and DecodeCursor
 

@@ -10,10 +10,10 @@ import (
 	rastrillo "amadan.net/rastrillo/rastrillo"
 )
 
-// msgInexactIDCopy is the id refusal, a protocol message for client
-// developers rather than approved copy.
-const msgInexactIDCopy = "The id must be a string or an integer " +
-	"between -9007199254740991 and 9007199254740991."
+// msgInexactIDCopy is the id refusal, kept apart from the const it
+// checks, so a change to the reviewed text fails here.
+const msgInexactIDCopy = "The id must be a string or a plain integer " +
+	"from -9007199254740991 through 9007199254740991."
 
 func idCall(id string) string {
 	return `{"jsonrpc":"2.0","id":` + id + `,"method":"tools/call",` +

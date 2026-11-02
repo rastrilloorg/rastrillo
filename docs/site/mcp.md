@@ -168,9 +168,14 @@ MCP passes the arguments to `Invoke` as they were sent. It doesn't check
 them against `Input`, because the API doesn't either: a generated
 `Invoke` decodes with `op.DecodeInput`, under the API's rules, so both
 endpoints accept and refuse the same things. A hand-written `Invoke`
-validates its own input, and its operation begins with `op.Check`, as a
-generated one does. MCP refuses arguments that aren't valid UTF-8, or
-that hold an unpaired surrogate escape, before `Invoke` sees them.
+validates its own input. MCP refuses arguments that aren't valid UTF-8,
+or that hold an unpaired surrogate escape, before `Invoke` sees them.
+
+Before `Invoke` runs, MCP runs the gate's `Admit` and `op.Check` for the
+operation, so your policy decides every call, even one to a
+hand-written `Invoke` that skips `op.Check`. Still begin the operation
+with `op.Check`, as a generated one does. The API and your pages call it
+without that step.
 
 Put a check that depends on the input inside `Invoke`, before the
 operation does anything. `Authorize` sees the operation but not its
@@ -180,13 +185,15 @@ names. Check the team in `Invoke`, then again in your
 The guard is never the first check, because by the time it runs a write
 has already happened.
 
-A result is a JSON object, or null when `Result` is `{"type":"null"}`.
-It goes out as `structuredContent` and as JSON in a text block. Numbers
-come out exactly as the operation returned them, never through a
-float64, and an `encoding/json` `json.Number` is written as the number it
-holds. A result over `Config.MaxResult`, 2 MiB unless you set it, is
-replaced with a `response_too_large` tool error that tells the agent to
-ask for less.
+A result must be a JSON object, unless `Result` is `{"type":"null"}`, in
+which case it may be `null`. If a result isn't an object and `Result`
+isn't exactly `{"type":"null"}`, MCP returns an `internal` tool error
+with a ref. A result goes out as `structuredContent` and as JSON in a
+text block. Numbers come out exactly as the operation returned them,
+never through a float64, and an `encoding/json` `json.Number` is
+written as the number it holds. A result over `Config.MaxResult`, 2 MiB
+unless you set it, is replaced with a `response_too_large` tool error
+that tells the agent to ask for less.
 
 ## Refusals
 
@@ -216,10 +223,11 @@ body, the same way the
 [API does](/docs/api#checking-again-as-the-answer-goes-out).
 
 For a tool call, each check is the token, then the gate and `op.Check`
-for the operation that ran, then your `Config.Guard`. For the tool list,
-it is every tool that was listed. If any of them is no longer the
-caller's to use, the whole list is refused rather than quietly
-shortened.
+for the operation that ran. The gate rechecks them on every answer.
+Your `Config.Guard` runs last only when the call returns a successful
+result. For the tool list, each check covers every tool that was
+listed. If any of them is no longer the caller's to use, the whole list
+is refused rather than quietly shortened.
 
 `Guard` is an `op.ResponseGuard`. It gets the fresh actor, the
 descriptor, the arguments as sent and the value `Invoke` returned, and

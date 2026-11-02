@@ -25,10 +25,10 @@ const methodListen = "subscriptions/listen"
 // internal/jsonrpc2/messages.go:30), so a larger id would be rounded.
 const maxExactID = 1<<53 - 1
 
-// msgInexactID answers such an id. It is a protocol error for client
-// developers, not copy an agent or a person reads.
-const msgInexactID = "The id must be a string or an integer " +
-	"between -9007199254740991 and 9007199254740991."
+// msgInexactID answers such an id. It is a protocol error, read by the
+// developer of the client rather than by an agent or a person.
+const msgInexactID = "The id must be a string or a plain integer " +
+	"from -9007199254740991 through 9007199254740991."
 
 // refusal is a JSON-RPC error answered before the SDK runs. Its id is
 // nil when the request has none to give, and goes out as null, as

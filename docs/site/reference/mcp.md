@@ -59,19 +59,30 @@ token gets the API's 401 or 503, and every answer has
   `Content-Type: application/json` with each POST. Without `Accept`,
   the SDK returns a plain-text 400. Without `Content-Type`, it returns a
   plain-text 415. These are not JSON-RPC errors.
+- A message whose `id` is a number is refused unless the number is a
+  plain integer, with no fraction or exponent, within
+  ±9007199254740991. The SDK would round any other number, and the
+  answer would carry a different id. The refusal is 400 with JSON-RPC
+  error -32600 and a null id, and nothing runs. A string `id` is never
+  refused.
 - Each request gets its own stateless server, which answers plain JSON
   and never advertises list changes.
 - `tools/list` shows only the tools `Gate.Admit` and `op.Check` allow
   the caller, without the agent-session check, which a list never needs.
   Only `op.Forbidden` or `op.NotFound` hides a tool. Any other error
   fails the list as a JSON-RPC internal error, with a ref in its data.
-- A tool call's refusal is a tool error holding the API's error
-  envelope, from `api.Refusal`. A panic in a call is an `internal` tool
-  error with a ref.
-- With a `Rechecker`, the gate checks the answer again as it goes out:
-  for a call, `Admit`, `op.Check` and `Guard` for the operation that
-  ran; for the list, every tool that was listed, then `Guard` with a nil
-  descriptor and the listed descriptors as the result.
+- A tool call runs `Gate.Admit` and `op.Check` before `Invoke`, so a
+  hand-written `Invoke` that skips `op.Check` is still checked. A
+  refusal is a tool error holding the API's error envelope, from
+  `api.Refusal`. A panic in a call is an `internal` tool error with a
+  ref. So is a result that isn't an object, including `null`, when the
+  tool's `Result` is an object schema.
+- With a `Rechecker`, the gate checks the answer again as it goes out.
+  For a call, it reruns `Admit` and `op.Check` for the operation that
+  ran on every answer. It runs `Guard` only when the call returned a
+  successful result. For the list, it reruns them for every tool that
+  was listed, then runs `Guard` with a nil descriptor and the listed
+  descriptors as the result.
 
 `New` raises `Gate.MaxResponse`, when it is lower, to three times
 `MaxResult` plus 64 KiB. A result goes out twice, as

@@ -246,14 +246,18 @@ and `Cache-Control: no-store`. An empty list encodes as `[]`, never
 `null`. An `encoding/json` `json.Number` is written as the number it
 holds, not as a string. `Encode` returns the bytes `Write` sends; MCP
 encodes each tool result with it, so both endpoints write the same
-value the same way. `WriteError` puts `e` under `"error"` and writes it. Use it for a
-code `Refuse` cannot derive from an error, such as `rate_limited` from a
-rate limiter.
+value the same way. An empty `json.Number`, or one that isn't a JSON
+number, can't be encoded. `Encode` returns an error. `Write` panics,
+and the tree answers with a 500 and a ref. `WriteError` puts `e` under
+`"error"` and writes it. Use it for a code `Refuse` cannot derive from
+an error, such as `rate_limited` from a rate limiter.
 
 `Refuse` answers an error. An `op` refusal gets its code and status:
 `op.Invalid` is 422 with its fields re-keyed by `FieldName`,
 `op.NotFound` 404, `op.Forbidden` 403, `op.Conflict` 409 with
-`Conflict.Message` as the message. `ErrUnauthorized` is 401 with
+`Conflict.Message` as the message. An `op.Invalid` with `AsSent` set
+keeps its field names as the client sent them; `op.DecodeInput` sets
+it. `ErrUnauthorized` is 401 with
 `WWW-Authenticate: Bearer`, and `ErrUnavailable` is 503. Any other error
 is a 500: the error text goes to the log under a fresh ref, and the
 response carries only the ref. `op.Forbidden.Reason` is logged and never

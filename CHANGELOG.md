@@ -33,6 +33,13 @@ To upgrade:
    [Testing the API](/docs/api#testing-the-api).
 2. If one of your API handlers answers more than 2 MiB, make it page
    its results.
+3. If one of your API handlers writes an `encoding/json` `json.Number`,
+   clients now get a JSON number where they got a string. Make sure
+   they expect one. An empty `json.Number`, or one that isn't a number,
+   now gets a 500.
+4. A test that compares an `op.DecodeInput` error with
+   `reflect.DeepEqual` against `op.Invalid{Fields: ...}` must add
+   `AsSent: true`.
 
 What changed:
 
@@ -46,6 +53,17 @@ What changed:
 - Each 64 KiB chunk of a rechecked answer gets its own write deadline
   of at most 5 seconds, so your server's `WriteTimeout` no longer bounds
   the whole answer.
+- `api.Write` writes an `encoding/json` `json.Number` as the number it
+  holds, not as a string.
+- New `api.Encode` returns the bytes `Write` sends. MCP uses it to
+  encode each tool result.
+- New field `op.Invalid.AsSent`. `op.DecodeInput` sets it, and the API
+  and MCP keep field names as the client sent them.
+- When the API answers 503 `unavailable` while an answer is going out,
+  it logs `api: answer withheld` at Warn, with the cause. Middleware
+  outside the API that wraps the response writer needs an
+  `Unwrap() http.ResponseWriter` method. Without it, every rechecked
+  answer is 503.
 
 ### Added: MCP for every app, at `/api/v1/mcp`
 
@@ -65,6 +83,11 @@ To add it to an existing app:
 What changed:
 
 - New package `mcp`: `New`, `Config` and `ToolName`.
+- A tool call checks your policy with `Admit` and `op.Check` before
+  `Invoke` runs. The endpoint refuses a JSON-RPC `id` it can't keep
+  exact: a number that isn't a plain integer, or is outside
+  ±(2^53−1). A result that isn't an object, when the tool's `Result` is
+  an object schema, is an `internal` tool error.
 - `op.Descriptor` gains `Destructive` and `Idempotent`, which MCP sends
   to clients as hints. New `op.CheckFlags` and `op.FenceVerbs`, which
   require writes named for undoing or sending something to be
