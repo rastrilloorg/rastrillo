@@ -55,6 +55,10 @@ token gets the API's 401 or 503, and every answer has
 - It answers only POST. Any other method, GET included, is 405 with
   `Allow: POST`. A batch is 400, and `subscriptions/listen` is 404,
   each with a JSON-RPC error.
+- Send `Accept: application/json, text/event-stream` and
+  `Content-Type: application/json` with each POST. Without `Accept`,
+  the SDK returns a plain-text 400. Without `Content-Type`, it returns a
+  plain-text 415. These are not JSON-RPC errors.
 - Each request gets its own stateless server, which answers plain JSON
   and never advertises list changes.
 - `tools/list` shows only the tools `Gate.Admit` and `op.Check` allow
