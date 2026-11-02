@@ -3,6 +3,7 @@ package api
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"maps"
 	"net/http"
@@ -93,8 +94,8 @@ func (out emission) guarded() {
 	// Without a write deadline a slow client could hold a checked chunk
 	// open long after the check that allowed it.
 	if err := controller.SetWriteDeadline(time.Time{}); err != nil {
-		Refuse(out.response, out.request,
-			fmt.Errorf("api: no write deadline: %v: %w", err, ErrUnavailable))
+		out.refuse(fmt.Errorf("api: no write deadline: %v: %w",
+			err, ErrUnavailable))
 		return
 	}
 	// The connection may go on to serve another request, which must not
@@ -105,7 +106,7 @@ func (out emission) guarded() {
 		end := min(offset+emitChunk, len(body))
 		err := out.recheck(controller)
 		if err != nil && first {
-			Refuse(out.response, out.request, err)
+			out.refuse(err)
 			return
 		}
 		if err != nil {
@@ -120,6 +121,19 @@ func (out emission) guarded() {
 		}
 		offset = end
 	}
+}
+
+// refuse answers err before the headers have gone. Refusal logs
+// nothing for unavailable, and here its causes, a writer that takes no
+// deadline or a check that runs slow, are the operator's to fix, so
+// the cause is logged first, as abort logs it after the headers.
+func (out emission) refuse(err error) {
+	if errors.Is(err, ErrUnavailable) {
+		loggerFrom(out.request).Warn("api: answer withheld",
+			"err", redactorFrom(out.request)(err.Error()),
+			"method", method(out.request), "path", path(out.request))
+	}
+	Refuse(out.response, out.request, err)
 }
 
 // recheck is one cycle: the credential, the holder, then every

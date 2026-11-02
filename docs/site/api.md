@@ -237,6 +237,11 @@ yours. A wrapper that keeps bytes in a buffer of its own, such as a
 gzip writer, sends them when it closes, after the last check, rather
 than chunk by chunk.
 
+If middleware outside the API wraps `http.ResponseWriter`, give the
+wrapper an `Unwrap() http.ResponseWriter` method. Otherwise, the API
+cannot set a write deadline and returns 503 `unavailable` for every
+rechecked answer. The server logs the cause at Warn.
+
 ## Requests and answers
 
 **Answers.** A single row is a bare JSON object. A list puts the rows
