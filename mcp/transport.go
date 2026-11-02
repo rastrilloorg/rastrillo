@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 
 	json "github.com/go-json-experiment/json"
+	"github.com/go-json-experiment/json/jsontext"
 	"github.com/modelcontextprotocol/go-sdk/jsonrpc"
 )
 
@@ -18,13 +20,24 @@ const jsonSpace = " \t\r\n"
 // mcp/streamable.go:1678-1683).
 const methodListen = "subscriptions/listen"
 
+// maxExactID is the largest integer a float64 holds exactly, 2^53-1.
+// The SDK reads a numeric id through one (go-sdk v1.8.0
+// internal/jsonrpc2/messages.go:30), so a larger id would be rounded.
+const maxExactID = 1<<53 - 1
+
+// msgInexactID answers such an id. It is a protocol error for client
+// developers, not copy an agent or a person reads.
+const msgInexactID = "The id must be a string or an integer " +
+	"between -9007199254740991 and 9007199254740991."
+
 // refusal is a JSON-RPC error answered before the SDK runs. Its id is
 // nil when the request has none to give, and goes out as null, as
 // JSON-RPC asks, where the SDK's own encoder would leave it out.
 type refusal struct {
-	status int
-	id     any
-	code   int64
+	status  int
+	id      any
+	code    int64
+	message string
 }
 
 type answer struct {
@@ -44,8 +57,9 @@ func refusingStreams(next http.Handler) http.Handler {
 		if request.Method != http.MethodPost {
 			response.Header().Set("Allow", http.MethodPost)
 			refuse(response, refusal{
-				status: http.StatusMethodNotAllowed,
-				code:   jsonrpc.CodeInvalidRequest,
+				status:  http.StatusMethodNotAllowed,
+				code:    jsonrpc.CodeInvalidRequest,
+				message: msgNoStreams,
 			})
 			return
 		}
@@ -56,6 +70,14 @@ func refusingStreams(next http.Handler) http.Handler {
 		if err == nil {
 			if refused, found := streamed(body); found {
 				refuse(response, refused)
+				return
+			}
+			if inexactID(body) {
+				refuse(response, refusal{
+					status:  http.StatusBadRequest,
+					code:    jsonrpc.CodeInvalidRequest,
+					message: msgInexactID,
+				})
 				return
 			}
 		}
@@ -77,8 +99,9 @@ func streamed(body []byte) (refusal, bool) {
 	start := bytes.TrimLeft(body, jsonSpace)
 	if len(start) > 0 && start[0] == '[' {
 		return refusal{
-			status: http.StatusBadRequest,
-			code:   jsonrpc.CodeInvalidRequest,
+			status:  http.StatusBadRequest,
+			code:    jsonrpc.CodeInvalidRequest,
+			message: msgNoStreams,
 		}, true
 	}
 	message, err := jsonrpc.DecodeMessage(body)
@@ -89,17 +112,55 @@ func streamed(body []byte) (refusal, bool) {
 	// A 404, as the SDK answers any unknown method under the protocol
 	// that has subscriptions/listen (SEP-2575).
 	return refusal{
-		status: http.StatusNotFound,
-		id:     call.ID.Raw(),
-		code:   jsonrpc.CodeMethodNotFound,
+		status:  http.StatusNotFound,
+		id:      call.ID.Raw(),
+		code:    jsonrpc.CodeMethodNotFound,
+		message: msgNoStreams,
 	}, true
+}
+
+// inexactID reports whether the message has a numeric id the SDK would
+// round, read from the raw token and never through a float64. Every id
+// member counts, as a decoder may keep any one of duplicates; a body
+// that does not parse is left to the SDK to refuse.
+func inexactID(body []byte) bool {
+	decoder := jsontext.NewDecoder(bytes.NewReader(body),
+		jsontext.AllowDuplicateNames(true), jsontext.AllowInvalidUTF8(true))
+	if token, err := decoder.ReadToken(); err != nil || token.Kind() != '{' {
+		return false
+	}
+	for decoder.PeekKind() == '"' {
+		name, err := decoder.ReadToken()
+		if err != nil {
+			return false
+		}
+		// Read now: the next read voids the token.
+		isID := name.String() == "id"
+		value, err := decoder.ReadValue()
+		if err != nil {
+			return false
+		}
+		if isID && value.Kind() == '0' && !exactInteger(value) {
+			return true
+		}
+	}
+	return false
+}
+
+// exactInteger is a number token written as an integer within
+// maxExactID either side of zero; 1.0 and 1e3 are not, as written.
+func exactInteger(number jsontext.Value) bool {
+	integer, err := strconv.ParseInt(string(number), 10, 64)
+	return err == nil && integer >= -maxExactID && integer <= maxExactID
 }
 
 func refuse(response http.ResponseWriter, refused refusal) {
 	encoded, err := json.Marshal(answer{
 		Version: "2.0",
 		ID:      refused.id,
-		Error:   &jsonrpc.Error{Code: refused.code, Message: msgNoStreams},
+		Error: &jsonrpc.Error{
+			Code: refused.code, Message: refused.message,
+		},
 	})
 	if err != nil {
 		// The gate answers a panic as a 500 with a ref.
