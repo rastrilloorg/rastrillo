@@ -33,9 +33,11 @@ type Spec struct {
 	Source                       source.Source
 	ExtraHosts                   []string
 	Measure                      measure.Options
-	Timeout                      time.Duration // per prompt
-	Token                        string        // claude's auth; else the environment's
-	TokenFile                    string        // where Token came from, denied to the agent
+	Timeout                      time.Duration     // per prompt
+	Token                        string            // claude's auth; else the environment's
+	TokenFile                    string            // where Token came from, denied to the agent
+	DeployEnv                    map[string]string // the arm's own deploy credential, if any
+	DeniedFiles                  []string          // more files the agent's tools may not read
 }
 
 type Phase struct {
@@ -146,7 +148,7 @@ func prepare(spec Spec) (*session, error) {
 	}
 	hosts := append(append([]string(nil), spec.ExtraHosts...), spec.Source.Hosts...)
 	var err error
-	var denied []string
+	denied := append([]string(nil), spec.DeniedFiles...)
 	if spec.TokenFile != "" {
 		denied = append(denied, spec.TokenFile)
 	}
@@ -159,6 +161,9 @@ func prepare(spec Spec) (*session, error) {
 	}
 	if spec.Token != "" {
 		extra["CLAUDE_CODE_OAUTH_TOKEN"] = spec.Token
+	}
+	for name, value := range spec.DeployEnv {
+		extra[name] = value
 	}
 	if s.env, err = cleanenv.Env(os.Environ(), config, extra); err != nil {
 		return nil, err

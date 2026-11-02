@@ -35,6 +35,9 @@ func Config(benchRoot, dir string, extraHosts, deniedFiles []string) (string, er
 	permissions := settings["permissions"].(map[string]any)
 	deny, _ := permissions["deny"].([]any)
 	for _, file := range deniedFiles {
+		if file == "" {
+			continue
+		}
 		absolute, err := filepath.Abs(file)
 		if err != nil {
 			return "", err

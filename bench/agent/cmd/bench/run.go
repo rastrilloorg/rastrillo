@@ -12,6 +12,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"sort"
 	"strings"
 	"sync"
@@ -19,6 +20,7 @@ import (
 
 	"amadan.net/rastrillo/rastrillo/bench/agent/internal/brief"
 	"amadan.net/rastrillo/rastrillo/bench/agent/internal/classify"
+	"amadan.net/rastrillo/rastrillo/bench/agent/internal/cleanenv"
 	"amadan.net/rastrillo/rastrillo/bench/agent/internal/measure"
 	"amadan.net/rastrillo/rastrillo/bench/agent/internal/round"
 	"amadan.net/rastrillo/rastrillo/bench/agent/internal/runner"
@@ -52,6 +54,10 @@ func runRound(args []string) error {
 	chrome := flags.String("chrome", defaultChrome(), "Chromium, for measuring")
 	lighthouse := flags.String("lighthouse", defaultLighthouse(), "the lighthouse binary")
 	timeout := flags.Duration("timeout", time.Hour, "per prompt")
+	carlokuTokenFile := flags.String("carloku-token-file", "",
+		"a service credential for the carlos arm; none by default, since one cannot enable instances")
+	carlokuConsole := flags.String("carloku-console", "https://console.carloku.com",
+		"the console that credential belongs to")
 	tokenFile := flags.String("token-file", defaultTokenFile(), "the token from claude setup-token, if CLAUDE_CODE_OAUTH_TOKEN is not set")
 	flags.Parse(args)
 	authToken, err := token(*tokenFile)
@@ -63,6 +69,10 @@ func runRound(args []string) error {
 		return err
 	}
 	arms := armsOf(*armList)
+	carlokuToken, err := carlokuCredential(*carlokuTokenFile)
+	if err != nil {
+		return err
+	}
 	if (contains(arms, brief.Control) || contains(arms, brief.Spec)) &&
 		(*platform == "" || *controlAccount == "") {
 		return errors.New("the control and spec arms need -platform and -control-account")
@@ -108,8 +118,13 @@ func runRound(args []string) error {
 		return err
 	}
 	defer unlock()
+	carlosAuth := "operator"
+	if carlokuToken != "" {
+		carlosAuth = "service " + *carlokuConsole
+	}
 	settings := map[string]string{
-		"rastrillo": rastrilloSource.Label, "platform": *platform,
+		"carlos-auth": carlosAuth,
+		"rastrillo":   rastrilloSource.Label, "platform": *platform,
 		"control-account": *controlAccount, "control-hosts": *controlHosts,
 		"timeout": timeout.String(), "model": *model, "claude": version,
 	}
@@ -148,7 +163,8 @@ func runRound(args []string) error {
 			"framing, brief, platform or claude: start a new round", r.Label)
 	}
 	if *reuseControl != "" {
-		if err := reuseControlRuns(root, &r, *reuseControl, briefs, *runs); err != nil {
+		if err := reuseControlRuns(root, &r, *reuseControl, briefs, *runs,
+			settings); err != nil {
 			return err
 		}
 		arms = without(arms, brief.Control)
@@ -197,9 +213,14 @@ func runRound(args []string) error {
 					SkillURL: rastrilloSource.SkillURL,
 				}
 				deploy := deployVars(j.arm, *platform, *controlAccount, *controlHosts)
+				deploy.withCarloku(carlokuToken, *carlokuConsole)
 				spec.Vars.Platform = deploy.platform
 				spec.Vars.DeployAccount = deploy.account
 				spec.ExtraHosts = deploy.hosts
+				spec.DeployEnv = deploy.env
+				if *carlokuTokenFile != "" {
+					spec.DeniedFiles = []string{*carlokuTokenFile}
+				}
 				var record round.RunRecord
 				err := error(nil)
 				if j.arm == brief.Spec {
@@ -323,8 +344,24 @@ func specStillMatches(address, pinned string) error {
 }
 
 type deployment struct {
+	arm               brief.Arm
 	platform, account string
 	hosts             []string
+	env               map[string]string
+}
+
+// withCarloku gives the carlos arm the demo account's service
+// credential: it draws on its own creation budget rather than the
+// operator's ten a day, shared by every agent on the machine, and it
+// reaches the demo account only. Other arms deploy elsewhere and never
+// see it.
+func (d *deployment) withCarloku(token, console string) {
+	if d.arm != brief.Carlos || token == "" {
+		return
+	}
+	d.env = map[string]string{
+		"CARLOS_SERVICE_TOKEN": token, "CARLOS_CONSOLE": console,
+	}
 }
 
 // deployVars is where an arm deploys. The spec arm goes where the
@@ -332,14 +369,15 @@ type deployment struct {
 func deployVars(arm brief.Arm, platform, account, hosts string) deployment {
 	switch arm {
 	case brief.Carlos:
-		return deployment{account: carlokuAccount}
+		return deployment{arm: arm, account: carlokuAccount}
 	case brief.Spec:
 		// Only the spec arm may fetch the spec: the shared settings stay
 		// as round 1 had them, so its control runs remain reusable.
-		return deployment{platform: platform, account: account,
+		return deployment{arm: arm, platform: platform, account: account,
 			hosts: append(splitList(hosts), "spec.carlosframework.com")}
 	}
-	return deployment{platform: platform, account: account, hosts: splitList(hosts)}
+	return deployment{arm: arm, platform: platform, account: account,
+		hosts: splitList(hosts)}
 }
 
 // setAside moves an earlier attempt out of the way under a name no
@@ -411,6 +449,7 @@ func fingerprints(
 	delete(inputs, "arms/carlos.txt")
 	delete(inputs, "arms/spec.txt")
 	delete(inputs, specURL)
+	delete(inputs, "carlos-auth")
 	delete(inputs, "rastrillo")
 	return config, round.Fingerprint(inputs), nil
 }
@@ -466,12 +505,32 @@ func requiredRastrillo(app string) string {
 // everything the control depends on matches, and only when that round
 // has every run this one asks for: round 0, run on another config,
 // never qualifies.
-func reuseControlRuns(root string, r *round.Round, from string, briefs []brief.Brief, runs int) error {
+func reuseControlRuns(
+	root string, r *round.Round, from string, briefs []brief.Brief,
+	runs int, settings map[string]string,
+) error {
 	earlier, err := loadRound(root, from)
 	if err != nil {
 		return err
 	}
-	if earlier.ControlConfig == "" || earlier.ControlConfig != r.ControlConfig {
+	// The earlier fingerprint covers the earlier round's briefs, so it is
+	// recomputed on those: a groomer-only round may reuse a three-brief
+	// round's groomer controls when nothing they depend on has changed.
+	var earlierNames []string
+	for _, run := range earlier.Runs {
+		if !slices.Contains(earlierNames, run.Brief) {
+			earlierNames = append(earlierNames, run.Brief)
+		}
+	}
+	earlierBriefs, err := pickBriefs(root, strings.Join(earlierNames, ","))
+	if err != nil {
+		return err
+	}
+	_, control, err := fingerprints(root, earlierBriefs, settings)
+	if err != nil {
+		return err
+	}
+	if earlier.ControlConfig == "" || earlier.ControlConfig != control {
 		return fmt.Errorf("round %s's control ran with a different model, "+
 			"claude, framing, brief or platform; rerun the control", from)
 	}
@@ -599,4 +658,14 @@ func defaultLighthouse() string {
 		return ""
 	}
 	return installed
+}
+
+// carlokuCredential reads the carlos arm's service credential only when
+// one is named, and fails if the named file cannot be read: silently
+// deploying as the operator instead would change the round unseen.
+func carlokuCredential(path string) (string, error) {
+	if path == "" {
+		return "", nil
+	}
+	return cleanenv.ReadTokenFile(path)
 }

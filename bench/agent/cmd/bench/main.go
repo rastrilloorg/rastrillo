@@ -6,7 +6,9 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"errors"
+	"flag"
 	"fmt"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -14,6 +16,7 @@ import (
 	"strings"
 	"syscall"
 
+	"amadan.net/rastrillo/rastrillo/bench/agent/internal/classify"
 	"amadan.net/rastrillo/rastrillo/bench/agent/internal/cleanenv"
 	"amadan.net/rastrillo/rastrillo/bench/agent/internal/round"
 )
@@ -25,6 +28,9 @@ const usage = `usage: go run ./cmd/bench <command> [flags]
   report    rewrite results/<round>.md from results/<round>.json
   import    build round 0 from the 2026-10-30 transcripts
   cleanup   print the commands that delete a round's deployed apps
+  baseline  make a round the one later rounds are held to (baseline.json)
+  check     fail when a round's Rastrillo medians drift above the baseline
+  rescore   recompute a round's costs from its transcripts on disk
 
 Each command takes -h for its flags.`
 
@@ -36,6 +42,8 @@ func main() {
 	commands := map[string]func([]string) error{
 		"run": runRound, "poll": poll, "report": report,
 		"import": importRound, "cleanup": cleanup,
+		"baseline": baselineCommand, "check": checkCommand,
+		"rescore": rescoreCommand,
 	}
 	command, known := commands[os.Args[1]]
 	if !known {
@@ -240,4 +248,146 @@ func policyHash() string {
 		return "none"
 	}
 	return fmt.Sprintf("%x", hash.Sum(nil))[:16]
+}
+
+func baselinePath(root string) string {
+	return filepath.Join(root, "baseline.json")
+}
+
+// writeBaseline makes a round the one later rounds are held to. It is
+// its own command, and its file is committed, so the baseline only
+// moves when someone means it to.
+func writeBaseline(root, label string, tolerance round.Tolerance) error {
+	r, err := loadRound(root, label)
+	if err != nil {
+		return err
+	}
+	encoded, err := json.MarshalIndent(round.BaselineFrom(r, tolerance), "", "  ")
+	if err != nil {
+		return err
+	}
+	return replaceFile(baselinePath(root), append(encoded, '\n'))
+}
+
+func checkRound(root, label string) ([]string, error) {
+	r, err := loadRound(root, label)
+	if err != nil {
+		return nil, err
+	}
+	raw, err := os.ReadFile(baselinePath(root))
+	if err != nil {
+		return nil, err
+	}
+	var baseline round.Baseline
+	if err := json.Unmarshal(raw, &baseline); err != nil {
+		return nil, err
+	}
+	return round.Check(r, baseline), nil
+}
+
+func baselineCommand(args []string) error {
+	flags := flag.NewFlagSet("baseline", flag.ExitOnError)
+	label := flags.String("round", "", "the round to hold later rounds to")
+	cost := flags.Float64("cost", 0.15, "how far build cost may rise, as a fraction")
+	context := flags.Float64("context", 0.15, "how far context at the first write may rise")
+	weight := flags.Float64("weight", 0.05, "how far the home page's bytes may rise")
+	flags.Parse(args)
+	root, err := benchRoot()
+	if err != nil {
+		return err
+	}
+	return writeBaseline(root, *label,
+		round.Tolerance{Cost: *cost, Context: *context, Weight: *weight})
+}
+
+func checkCommand(args []string) error {
+	flags := flag.NewFlagSet("check", flag.ExitOnError)
+	label := flags.String("round", "", "the round to check against baseline.json")
+	flags.Parse(args)
+	root, err := benchRoot()
+	if err != nil {
+		return err
+	}
+	problems, err := checkRound(root, *label)
+	if err != nil {
+		return err
+	}
+	for _, problem := range problems {
+		fmt.Println(problem)
+	}
+	if len(problems) > 0 {
+		return fmt.Errorf("round %s drifted from the baseline in %d places",
+			*label, len(problems))
+	}
+	fmt.Printf("round %s is within the baseline\n", *label)
+	return nil
+}
+
+// rescore recomputes each run's cost from its transcripts on disk, for
+// a round recorded before a fix to how cost is read. A run whose
+// transcript is gone keeps what it had.
+func rescore(r *round.Round, runsDir string) error {
+	for i := range r.Runs {
+		run := &r.Runs[i]
+		if run.ReusedFrom != "" {
+			continue
+		}
+		dir := filepath.Join(runsDir,
+			fmt.Sprintf("%s-%s-%d", run.Brief, run.Arm, run.N))
+		where := classify.Where{AppDir: filepath.Join(dir, "app")}
+		for _, measured := range run.Measured {
+			for _, page := range measured.Pages {
+				if parsed, err := url.Parse(page.URL); err == nil && parsed.Host != "" {
+					where.LiveHosts = append(where.LiveHosts, parsed.Hostname())
+				}
+			}
+		}
+		for phase, cost := range map[string]*round.Cost{
+			"build": &run.Build, "followup": &run.Followup,
+		} {
+			path := filepath.Join(dir, "rec", phase+".jsonl")
+			if _, err := os.Stat(path); err != nil {
+				continue
+			}
+			parsed, err := readTranscript(path)
+			if err != nil {
+				return err
+			}
+			*cost = round.CostOf(parsed, where)
+		}
+	}
+	return nil
+}
+
+func rescoreCommand(args []string) error {
+	flags := flag.NewFlagSet("rescore", flag.ExitOnError)
+	label := flags.String("round", "", "the round to recompute from its transcripts")
+	flags.Parse(args)
+	root, err := benchRoot()
+	if err != nil {
+		return err
+	}
+	cache, err := runsRoot()
+	if err != nil {
+		return err
+	}
+	return rescoreRound(root, filepath.Join(cache, *label), *label)
+}
+
+// rescoreRound holds the round's lock from load to save, so a bench run
+// saving a finished run meanwhile is never overwritten by this older copy.
+func rescoreRound(root, runsDir, label string) error {
+	unlock, err := lockRound(root, label)
+	if err != nil {
+		return err
+	}
+	defer unlock()
+	r, err := loadRound(root, label)
+	if err != nil {
+		return err
+	}
+	if err := rescore(&r, runsDir); err != nil {
+		return err
+	}
+	return saveRound(root, r)
 }

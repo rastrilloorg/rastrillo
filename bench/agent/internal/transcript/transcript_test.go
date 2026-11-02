@@ -105,3 +105,50 @@ func TestParseSeparatesBuiltinPlugins(t *testing.T) {
 		t.Errorf("BuiltinPlugins = %s", got)
 	}
 }
+
+// An agent that starts background work keeps going after its first
+// answer: claude writes a result record each time it stops. The phase
+// is all of them; the last alone once scored a $7.03, 92-turn build as
+// $0.32 and 5 turns.
+func TestParseAddsUpEveryResultInAPhase(t *testing.T) {
+	raw := strings.Join([]string{
+		`{"type":"system","subtype":"init","claude_code_version":"9"}`,
+		`{"type":"result","subtype":"success","num_turns":80,"duration_ms":1000,"total_cost_usd":6.31,"result":"first","model_usage_since_last_result":{"a":{"costUSD":6.3}},"usage":{"output_tokens":100}}`,
+		`{"type":"result","subtype":"success","num_turns":7,"duration_ms":200,"total_cost_usd":6.71,"result":"second","model_usage_since_last_result":{"a":{"costUSD":0.4}},"usage":{"output_tokens":10}}`,
+		`{"type":"result","subtype":"success","num_turns":5,"duration_ms":100,"total_cost_usd":7.03,"result":"last","model_usage_since_last_result":{"a":{"costUSD":0.32}},"usage":{"output_tokens":5}}`,
+	}, "\n") + "\n"
+
+	transcript, err := Parse(strings.NewReader(raw))
+	if err != nil {
+		t.Fatal(err)
+	}
+	result := transcript.Result
+	if got := result.PhaseCostUSD; got < 7.0199 || got > 7.0201 {
+		t.Errorf("phase cost = %v, want 7.02, every record's", got)
+	}
+	if result.NumTurns != 92 || result.DurationMS != 1300 || result.Usage.Output != 115 {
+		t.Errorf("result = %+v, want 92 turns, 1300 ms, 115 output tokens", result)
+	}
+	if result.Text != "last" {
+		t.Errorf("text = %q, want the last answer", result.Text)
+	}
+}
+
+// A resumed session's first record can carry the session's running
+// total with an empty per-model map: that is zero new cost, not the
+// whole total again. It once billed a $3.85 follow-up as $11.46.
+func TestAnEmptyUsageMapIsZeroNewCost(t *testing.T) {
+	raw := strings.Join([]string{
+		`{"type":"system","subtype":"init","claude_code_version":"9"}`,
+		`{"type":"result","num_turns":0,"total_cost_usd":7.61,"model_usage_since_last_result":{}}`,
+		`{"type":"result","num_turns":30,"total_cost_usd":11.46,"model_usage_since_last_result":{"a":{"costUSD":3.85}}}`,
+	}, "\n") + "\n"
+
+	transcript, err := Parse(strings.NewReader(raw))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := transcript.Result.PhaseCostUSD; got < 3.8499 || got > 3.8501 {
+		t.Errorf("phase cost = %v, want 3.85", got)
+	}
+}

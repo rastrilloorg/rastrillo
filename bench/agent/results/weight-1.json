@@ -1,0 +1,2036 @@
+{
+  "Label": "weight-1",
+  "Date": "2026-10-31",
+  "Model": "claude-opus-5-5",
+  "ClaudeVersion": "2.1.312",
+  "Rastrillo": "a386b11d1cc8 (v0.30.0-bench.ga386b11d1cc8)",
+  "Platform": "Fly.io",
+  "Poll": "poll-2026-10-30.json",
+  "GettingStartedCommit": "e92307c11f5b",
+  "PolicyHash": "47433b0aa1a2018a",
+  "Config": "f89b60ba041fb8f2",
+  "ControlConfig": "a21a5b1ea8a9c2e7",
+  "Notes": [
+    "Control runs reused from round 1."
+  ],
+  "Runs": [
+    {
+      "Brief": "groomer",
+      "Arm": "carlos",
+      "N": 1,
+      "App": "groomer-rweight-1-1",
+      "RastrilloVersion": "v0.30.0-bench.ga386b11d1cc8",
+      "Build": {
+        "Complete": true,
+        "Messages": 128,
+        "ToolCalls": 132,
+        "NumTurns": 133,
+        "Output": 124323,
+        "CacheRead": 24081400,
+        "CacheWrite": 298514,
+        "CostUSD": 9.691875999999997,
+        "DurationS": 1511,
+        "FirstWriteContext": 123217,
+        "DeployMessages": 12,
+        "Stages": {
+          "app-read": {
+            "Messages": 13,
+            "ToolCalls": 14,
+            "Context": 2485078
+          },
+          "build-test": {
+            "Messages": 16,
+            "ToolCalls": 16,
+            "Context": 3395389
+          },
+          "deploy": {
+            "Messages": 10,
+            "ToolCalls": 10,
+            "Context": 2381875
+          },
+          "framework-read": {
+            "Messages": 29,
+            "ToolCalls": 29,
+            "Context": 3826995
+          },
+          "gates": {
+            "Messages": 4,
+            "ToolCalls": 4,
+            "Context": 962681
+          },
+          "live-check": {
+            "Messages": 2,
+            "ToolCalls": 2,
+            "Context": 584297
+          },
+          "other": {
+            "Messages": 9,
+            "ToolCalls": 8,
+            "Context": 1755799
+          },
+          "scaffold": {
+            "Messages": 2,
+            "ToolCalls": 2,
+            "Context": 324823
+          },
+          "write": {
+            "Messages": 43,
+            "ToolCalls": 47,
+            "Context": 8663233
+          }
+        }
+      },
+      "Followup": {
+        "Complete": true,
+        "Messages": 30,
+        "ToolCalls": 31,
+        "NumTurns": 34,
+        "Output": 26303,
+        "CacheRead": 9883465,
+        "CacheWrite": 49695,
+        "CostUSD": 2.9005529999999995,
+        "DurationS": 359,
+        "FirstWriteContext": 315429,
+        "DeployMessages": 1,
+        "Stages": {
+          "app-read": {
+            "Messages": 5,
+            "ToolCalls": 5,
+            "Context": 1586575
+          },
+          "build-test": {
+            "Messages": 2,
+            "ToolCalls": 2,
+            "Context": 646244
+          },
+          "deploy": {
+            "Messages": 1,
+            "ToolCalls": 1,
+            "Context": 346768
+          },
+          "framework-read": {
+            "Messages": 2,
+            "ToolCalls": 2,
+            "Context": 624071
+          },
+          "gates": {
+            "Messages": 2,
+            "ToolCalls": 2,
+            "Context": 690685
+          },
+          "other": {
+            "Messages": 8,
+            "ToolCalls": 7,
+            "Context": 2720363
+          },
+          "screenshots": {
+            "Messages": 4,
+            "ToolCalls": 5,
+            "Context": 1342017
+          },
+          "write": {
+            "Messages": 6,
+            "ToolCalls": 7,
+            "Context": 1976497
+          }
+        }
+      },
+      "Measured": [
+        {
+          "Pages": [
+            {
+              "Role": "home",
+              "URL": "https://groomer-rweight-1-1.bdf.oncarlos.com/",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 22177,
+                  "html": 1987,
+                  "js": 10934,
+                  "other": 542
+                },
+                "Decoded": {
+                  "css": 141548,
+                  "html": 4847,
+                  "js": 28260,
+                  "other": 402
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 96,
+                "performance": 100,
+                "seo": 90
+              }
+            },
+            {
+              "Role": "book",
+              "URL": "https://groomer-rweight-1-1.bdf.oncarlos.com/book/4/2026-11-02",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 22232,
+                  "html": 1655,
+                  "js": 10898,
+                  "other": 542
+                },
+                "Decoded": {
+                  "css": 141548,
+                  "html": 3791,
+                  "js": 28260,
+                  "other": 402
+                }
+              },
+              "Axe": {
+                "moderate": 1
+              },
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 96,
+                "performance": 100,
+                "seo": 90
+              }
+            },
+            {
+              "Role": "signin",
+              "URL": "https://groomer-rweight-1-1.bdf.oncarlos.com/signin",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 22232,
+                  "html": 2257,
+                  "js": 19527,
+                  "other": 542
+                },
+                "Decoded": {
+                  "css": 141548,
+                  "html": 5398,
+                  "js": 49037,
+                  "other": 402
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 96,
+                "performance": 100,
+                "seo": 90
+              }
+            },
+            {
+              "Role": "owner",
+              "URL": "https://groomer-rweight-1-1.bdf.oncarlos.com/admin",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 22098,
+                  "html": 1445,
+                  "js": 10765,
+                  "other": 413
+                },
+                "Decoded": {
+                  "css": 141548,
+                  "html": 4260,
+                  "js": 28260,
+                  "other": 383
+                }
+              },
+              "Axe": {},
+              "Lighthouse": null
+            }
+          ],
+          "Headers": {
+            "content-security-policy": "default-src 'self'; style-src 'self' 'unsafe-hashes' 'sha256-yJxAE4rjdcckohdlnvecSporPcqS9xOaA4hJxi87LMc='; img-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
+            "frame-ancestors": "frame-ancestors 'none'",
+            "referrer-policy": "strict-origin-when-cross-origin",
+            "strict-transport-security": "max-age=31536000",
+            "x-content-type-options": "nosniff",
+            "x-frame-options": "DENY"
+          },
+          "DeployOK": true,
+          "Failures": [
+            "signin: requests still open after 30s; weight counts what finished"
+          ]
+        },
+        {
+          "Pages": [
+            {
+              "Role": "home",
+              "URL": "https://groomer-rweight-1-1.bdf.oncarlos.com/",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 24121,
+                  "html": 4082,
+                  "js": 10902,
+                  "other": 542
+                },
+                "Decoded": {
+                  "css": 149205,
+                  "html": 14394,
+                  "js": 28260,
+                  "other": 402
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 96,
+                "performance": 100,
+                "seo": 100
+              }
+            },
+            {
+              "Role": "book",
+              "URL": "https://groomer-rweight-1-1.bdf.oncarlos.com/book/4",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 24144,
+                  "html": 2196,
+                  "js": 10898,
+                  "other": 542
+                },
+                "Decoded": {
+                  "css": 149205,
+                  "html": 6583,
+                  "js": 28260,
+                  "other": 402
+                }
+              },
+              "Axe": {
+                "moderate": 1
+              },
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 96,
+                "performance": 100,
+                "seo": 100
+              }
+            },
+            {
+              "Role": "signin",
+              "URL": "https://groomer-rweight-1-1.bdf.oncarlos.com/signin",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 24144,
+                  "html": 2721,
+                  "js": 19527,
+                  "other": 542
+                },
+                "Decoded": {
+                  "css": 149205,
+                  "html": 7279,
+                  "js": 49037,
+                  "other": 402
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 96,
+                "performance": 100,
+                "seo": 100
+              }
+            },
+            {
+              "Role": "owner",
+              "URL": "https://groomer-rweight-1-1.bdf.oncarlos.com/admin",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 23985,
+                  "html": 1900,
+                  "js": 10765,
+                  "other": 413
+                },
+                "Decoded": {
+                  "css": 149205,
+                  "html": 6141,
+                  "js": 28260,
+                  "other": 383
+                }
+              },
+              "Axe": {},
+              "Lighthouse": null
+            }
+          ],
+          "Headers": {
+            "content-security-policy": "default-src 'self'; style-src 'self' 'unsafe-hashes' 'sha256-yJxAE4rjdcckohdlnvecSporPcqS9xOaA4hJxi87LMc='; img-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
+            "frame-ancestors": "frame-ancestors 'none'",
+            "referrer-policy": "strict-origin-when-cross-origin",
+            "strict-transport-security": "max-age=31536000",
+            "x-content-type-options": "nosniff",
+            "x-frame-options": "DENY"
+          },
+          "DeployOK": true,
+          "Failures": [
+            "signin: requests still open after 30s; weight counts what finished"
+          ]
+        }
+      ],
+      "AgentFailures": null,
+      "ReusedFrom": ""
+    },
+    {
+      "Brief": "groomer",
+      "Arm": "carlos",
+      "N": 2,
+      "App": "groomer-rweight-1-2",
+      "RastrilloVersion": "v0.30.0-bench.ga386b11d1cc8",
+      "Build": {
+        "Complete": true,
+        "Messages": 116,
+        "ToolCalls": 122,
+        "NumTurns": 123,
+        "Output": 93317,
+        "CacheRead": 22028974,
+        "CacheWrite": 263731,
+        "CostUSD": 8.382910799999998,
+        "DurationS": 1687,
+        "FirstWriteContext": 134010,
+        "DeployMessages": 16,
+        "Stages": {
+          "app-read": {
+            "Messages": 11,
+            "ToolCalls": 11,
+            "Context": 1999177
+          },
+          "build-test": {
+            "Messages": 18,
+            "ToolCalls": 18,
+            "Context": 3947714
+          },
+          "deploy": {
+            "Messages": 12,
+            "ToolCalls": 12,
+            "Context": 2818953
+          },
+          "framework-read": {
+            "Messages": 26,
+            "ToolCalls": 27,
+            "Context": 3627950
+          },
+          "gates": {
+            "Messages": 7,
+            "ToolCalls": 7,
+            "Context": 1711726
+          },
+          "live-check": {
+            "Messages": 4,
+            "ToolCalls": 4,
+            "Context": 1071568
+          },
+          "other": {
+            "Messages": 18,
+            "ToolCalls": 18,
+            "Context": 4038727
+          },
+          "scaffold": {
+            "Messages": 3,
+            "ToolCalls": 3,
+            "Context": 145159
+          },
+          "write": {
+            "Messages": 17,
+            "ToolCalls": 22,
+            "Context": 2931963
+          }
+        }
+      },
+      "Followup": {
+        "Complete": true,
+        "Messages": 46,
+        "ToolCalls": 46,
+        "NumTurns": 49,
+        "Output": 35112,
+        "CacheRead": 15445312,
+        "CacheWrite": 94003,
+        "CostUSD": 4.5436944,
+        "DurationS": 590,
+        "FirstWriteContext": 301108,
+        "DeployMessages": 1,
+        "Stages": {
+          "app-read": {
+            "Messages": 6,
+            "ToolCalls": 6,
+            "Context": 1868147
+          },
+          "build-test": {
+            "Messages": 3,
+            "ToolCalls": 3,
+            "Context": 1005797
+          },
+          "deploy": {
+            "Messages": 1,
+            "ToolCalls": 1,
+            "Context": 373504
+          },
+          "gates": {
+            "Messages": 3,
+            "ToolCalls": 3,
+            "Context": 1102408
+          },
+          "other": {
+            "Messages": 13,
+            "ToolCalls": 12,
+            "Context": 4470687
+          },
+          "screenshots": {
+            "Messages": 12,
+            "ToolCalls": 13,
+            "Context": 4185091
+          },
+          "write": {
+            "Messages": 8,
+            "ToolCalls": 8,
+            "Context": 2533773
+          }
+        }
+      },
+      "Measured": [
+        {
+          "Pages": [
+            {
+              "Role": "home",
+              "URL": "https://groomer-rweight-1-2.bdf.oncarlos.com/",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 22420,
+                  "html": 2013,
+                  "js": 10934,
+                  "other": 542
+                },
+                "Decoded": {
+                  "css": 141791,
+                  "html": 4810,
+                  "js": 28260,
+                  "other": 402
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 96,
+                "performance": 100,
+                "seo": 90
+              }
+            },
+            {
+              "Role": "book",
+              "URL": "https://groomer-rweight-1-2.bdf.oncarlos.com/book/1",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 22452,
+                  "html": 2557,
+                  "js": 10898,
+                  "other": 565
+                },
+                "Decoded": {
+                  "css": 141791,
+                  "html": 14852,
+                  "js": 28260,
+                  "other": 402
+                }
+              },
+              "Axe": {
+                "moderate": 1
+              },
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 96,
+                "performance": 100,
+                "seo": 90
+              }
+            },
+            {
+              "Role": "signin",
+              "URL": "https://groomer-rweight-1-2.bdf.oncarlos.com/signin",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 22475,
+                  "html": 2100,
+                  "js": 10898,
+                  "other": 542
+                },
+                "Decoded": {
+                  "css": 141791,
+                  "html": 4975,
+                  "js": 28260,
+                  "other": 402
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 96,
+                "performance": 100,
+                "seo": 90
+              }
+            },
+            {
+              "Role": "owner",
+              "URL": "https://groomer-rweight-1-2.bdf.oncarlos.com/manage/bookings",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 22341,
+                  "html": 1531,
+                  "js": 10765,
+                  "other": 413
+                },
+                "Decoded": {
+                  "css": 141791,
+                  "html": 4987,
+                  "js": 28260,
+                  "other": 383
+                }
+              },
+              "Axe": {},
+              "Lighthouse": null
+            }
+          ],
+          "Headers": {
+            "content-security-policy": "default-src 'self'; style-src 'self' 'unsafe-hashes' 'sha256-yJxAE4rjdcckohdlnvecSporPcqS9xOaA4hJxi87LMc='; img-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
+            "frame-ancestors": "frame-ancestors 'none'",
+            "referrer-policy": "strict-origin-when-cross-origin",
+            "strict-transport-security": "max-age=31536000",
+            "x-content-type-options": "nosniff",
+            "x-frame-options": "DENY"
+          },
+          "DeployOK": true,
+          "Failures": null
+        },
+        {
+          "Pages": [
+            {
+              "Role": "home",
+              "URL": "https://groomer-rweight-1-2.bdf.oncarlos.com/",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 25091,
+                  "html": 4430,
+                  "js": 10902,
+                  "other": 923
+                },
+                "Decoded": {
+                  "css": 153417,
+                  "html": 14360,
+                  "js": 28260,
+                  "other": 785
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 100,
+                "performance": 98,
+                "seo": 100
+              }
+            },
+            {
+              "Role": "book",
+              "URL": "https://groomer-rweight-1-2.bdf.oncarlos.com/book/1",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 25114,
+                  "html": 2994,
+                  "js": 10898,
+                  "other": 923
+                },
+                "Decoded": {
+                  "css": 153417,
+                  "html": 16292,
+                  "js": 28260,
+                  "other": 785
+                }
+              },
+              "Axe": {
+                "moderate": 1
+              },
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 100,
+                "performance": 100,
+                "seo": 100
+              }
+            },
+            {
+              "Role": "signin",
+              "URL": "https://groomer-rweight-1-2.bdf.oncarlos.com/signin",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 25091,
+                  "html": 2475,
+                  "js": 10898,
+                  "other": 946
+                },
+                "Decoded": {
+                  "css": 153417,
+                  "html": 6352,
+                  "js": 28260,
+                  "other": 785
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 100,
+                "performance": 100,
+                "seo": 100
+              }
+            },
+            {
+              "Role": "owner",
+              "URL": "https://groomer-rweight-1-2.bdf.oncarlos.com/manage/bookings",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 24955,
+                  "html": 1904,
+                  "js": 10765,
+                  "other": 847
+                },
+                "Decoded": {
+                  "css": 153417,
+                  "html": 6364,
+                  "js": 28260,
+                  "other": 785
+                }
+              },
+              "Axe": {},
+              "Lighthouse": null
+            }
+          ],
+          "Headers": {
+            "content-security-policy": "default-src 'self'; style-src 'self' 'unsafe-hashes' 'sha256-yJxAE4rjdcckohdlnvecSporPcqS9xOaA4hJxi87LMc='; img-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
+            "frame-ancestors": "frame-ancestors 'none'",
+            "referrer-policy": "strict-origin-when-cross-origin",
+            "strict-transport-security": "max-age=31536000",
+            "x-content-type-options": "nosniff",
+            "x-frame-options": "DENY"
+          },
+          "DeployOK": true,
+          "Failures": null
+        }
+      ],
+      "AgentFailures": null,
+      "ReusedFrom": ""
+    },
+    {
+      "Brief": "groomer",
+      "Arm": "carlos",
+      "N": 3,
+      "App": "groomer-rweight-1-3",
+      "RastrilloVersion": "v0.30.0-bench.ga386b11d1cc8",
+      "Build": {
+        "Complete": true,
+        "Messages": 93,
+        "ToolCalls": 103,
+        "NumTurns": 104,
+        "Output": 98399,
+        "CacheRead": 15609650,
+        "CacheWrite": 230804,
+        "CostUSD": 6.9370860000000025,
+        "DurationS": 973,
+        "FirstWriteContext": 119861,
+        "DeployMessages": 11,
+        "Stages": {
+          "app-read": {
+            "Messages": 5,
+            "ToolCalls": 6,
+            "Context": 656643
+          },
+          "build-test": {
+            "Messages": 16,
+            "ToolCalls": 16,
+            "Context": 3079033
+          },
+          "deploy": {
+            "Messages": 8,
+            "ToolCalls": 8,
+            "Context": 1515440
+          },
+          "framework-read": {
+            "Messages": 4,
+            "ToolCalls": 4,
+            "Context": 194682
+          },
+          "gates": {
+            "Messages": 3,
+            "ToolCalls": 3,
+            "Context": 709255
+          },
+          "live-check": {
+            "Messages": 3,
+            "ToolCalls": 3,
+            "Context": 729099
+          },
+          "other": {
+            "Messages": 20,
+            "ToolCalls": 20,
+            "Context": 3605356
+          },
+          "scaffold": {
+            "Messages": 4,
+            "ToolCalls": 4,
+            "Context": 253010
+          },
+          "screenshots": {
+            "Messages": 2,
+            "ToolCalls": 4,
+            "Context": 447963
+          },
+          "write": {
+            "Messages": 28,
+            "ToolCalls": 35,
+            "Context": 4650159
+          }
+        }
+      },
+      "Followup": {
+        "Complete": true,
+        "Messages": 40,
+        "ToolCalls": 44,
+        "NumTurns": 48,
+        "Output": 40283,
+        "CacheRead": 12180328,
+        "CacheWrite": 86572,
+        "CostUSD": 3.934621599999999,
+        "DurationS": 464,
+        "FirstWriteContext": 280526,
+        "DeployMessages": 1,
+        "Stages": {
+          "app-read": {
+            "Messages": 5,
+            "ToolCalls": 5,
+            "Context": 1370801
+          },
+          "build-test": {
+            "Messages": 10,
+            "ToolCalls": 10,
+            "Context": 3068766
+          },
+          "deploy": {
+            "Messages": 1,
+            "ToolCalls": 1,
+            "Context": 333229
+          },
+          "gates": {
+            "Messages": 1,
+            "ToolCalls": 1,
+            "Context": 332563
+          },
+          "other": {
+            "Messages": 9,
+            "ToolCalls": 9,
+            "Context": 2865228
+          },
+          "screenshots": {
+            "Messages": 8,
+            "ToolCalls": 11,
+            "Context": 2548457
+          },
+          "write": {
+            "Messages": 6,
+            "ToolCalls": 7,
+            "Context": 1747936
+          }
+        }
+      },
+      "Measured": [
+        {
+          "Pages": [
+            {
+              "Role": "home",
+              "URL": "https://groomer-rweight-1-3.bdf.oncarlos.com/",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 22261,
+                  "html": 1778,
+                  "js": 10902,
+                  "other": 542
+                },
+                "Decoded": {
+                  "css": 141600,
+                  "html": 4099,
+                  "js": 28260,
+                  "other": 402
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 96,
+                "performance": 100,
+                "seo": 90
+              }
+            },
+            {
+              "Role": "book",
+              "URL": "https://groomer-rweight-1-3.bdf.oncarlos.com/services/1",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 22284,
+                  "html": 2275,
+                  "js": 10898,
+                  "other": 542
+                },
+                "Decoded": {
+                  "css": 141600,
+                  "html": 15016,
+                  "js": 28260,
+                  "other": 402
+                }
+              },
+              "Axe": {
+                "moderate": 1
+              },
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 96,
+                "performance": 100,
+                "seo": 90
+              }
+            },
+            {
+              "Role": "signin",
+              "URL": "https://groomer-rweight-1-3.bdf.oncarlos.com/signin",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 22284,
+                  "html": 2298,
+                  "js": 19527,
+                  "other": 542
+                },
+                "Decoded": {
+                  "css": 141600,
+                  "html": 5337,
+                  "js": 49037,
+                  "other": 402
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 96,
+                "performance": 100,
+                "seo": 90
+              }
+            },
+            {
+              "Role": "owner",
+              "URL": "https://groomer-rweight-1-3.bdf.oncarlos.com/admin/bookings",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 22150,
+                  "html": 1578,
+                  "js": 10773,
+                  "other": 413
+                },
+                "Decoded": {
+                  "css": 141600,
+                  "html": 5378,
+                  "js": 28260,
+                  "other": 383
+                }
+              },
+              "Axe": {},
+              "Lighthouse": null
+            }
+          ],
+          "Headers": {
+            "content-security-policy": "default-src 'self'; style-src 'self' 'unsafe-hashes' 'sha256-yJxAE4rjdcckohdlnvecSporPcqS9xOaA4hJxi87LMc='; img-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
+            "frame-ancestors": "frame-ancestors 'none'",
+            "referrer-policy": "strict-origin-when-cross-origin",
+            "strict-transport-security": "max-age=31536000",
+            "x-content-type-options": "nosniff",
+            "x-frame-options": "DENY"
+          },
+          "DeployOK": true,
+          "Failures": [
+            "signin: requests still open after 30s; weight counts what finished"
+          ]
+        },
+        {
+          "Pages": [
+            {
+              "Role": "home",
+              "URL": "https://groomer-rweight-1-3.bdf.oncarlos.com/",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 25932,
+                  "html": 4247,
+                  "js": 10902,
+                  "other": 1215
+                },
+                "Decoded": {
+                  "css": 156507,
+                  "html": 17106,
+                  "js": 28260,
+                  "other": 715
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 100,
+                "performance": 100,
+                "seo": 100
+              }
+            },
+            {
+              "Role": "book",
+              "URL": "https://groomer-rweight-1-3.bdf.oncarlos.com/services/1",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 25955,
+                  "html": 2829,
+                  "js": 10898,
+                  "other": 877
+                },
+                "Decoded": {
+                  "css": 156507,
+                  "html": 15864,
+                  "js": 28260,
+                  "other": 715
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 100,
+                "performance": 100,
+                "seo": 100
+              }
+            },
+            {
+              "Role": "signin",
+              "URL": "https://groomer-rweight-1-3.bdf.oncarlos.com/signin",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 25955,
+                  "html": 2740,
+                  "js": 19527,
+                  "other": 877
+                },
+                "Decoded": {
+                  "css": 156507,
+                  "html": 6943,
+                  "js": 49037,
+                  "other": 715
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 100,
+                "performance": 100,
+                "seo": 100
+              }
+            },
+            {
+              "Role": "owner",
+              "URL": "https://groomer-rweight-1-3.bdf.oncarlos.com/admin/bookings",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 25932,
+                  "html": 2148,
+                  "js": 10788,
+                  "other": 846
+                },
+                "Decoded": {
+                  "css": 156507,
+                  "html": 6945,
+                  "js": 28260,
+                  "other": 715
+                }
+              },
+              "Axe": {},
+              "Lighthouse": null
+            }
+          ],
+          "Headers": {
+            "content-security-policy": "default-src 'self'; style-src 'self' 'unsafe-hashes' 'sha256-yJxAE4rjdcckohdlnvecSporPcqS9xOaA4hJxi87LMc='; img-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
+            "frame-ancestors": "frame-ancestors 'none'",
+            "referrer-policy": "strict-origin-when-cross-origin",
+            "strict-transport-security": "max-age=31536000",
+            "x-content-type-options": "nosniff",
+            "x-frame-options": "DENY"
+          },
+          "DeployOK": true,
+          "Failures": [
+            "signin: requests still open after 30s; weight counts what finished"
+          ]
+        }
+      ],
+      "AgentFailures": null,
+      "ReusedFrom": ""
+    },
+    {
+      "Brief": "groomer",
+      "Arm": "control",
+      "N": 1,
+      "App": "groomer-r1-1-a2",
+      "RastrilloVersion": "",
+      "Build": {
+        "Complete": true,
+        "Messages": 29,
+        "ToolCalls": 29,
+        "NumTurns": 30,
+        "Output": 47776,
+        "CacheRead": 1644377,
+        "CacheWrite": 61735,
+        "CostUSD": 1.7785074,
+        "DurationS": 497,
+        "FirstWriteContext": 31002,
+        "DeployMessages": 6,
+        "Stages": {
+          "app-read": {
+            "Messages": 2,
+            "ToolCalls": 2,
+            "Context": 99988
+          },
+          "build-test": {
+            "Messages": 7,
+            "ToolCalls": 7,
+            "Context": 496702
+          },
+          "deploy": {
+            "Messages": 6,
+            "ToolCalls": 6,
+            "Context": 364344
+          },
+          "other": {
+            "Messages": 4,
+            "ToolCalls": 3,
+            "Context": 314035
+          },
+          "scaffold": {
+            "Messages": 1,
+            "ToolCalls": 1,
+            "Context": 30441
+          },
+          "write": {
+            "Messages": 9,
+            "ToolCalls": 10,
+            "Context": 400660
+          }
+        }
+      },
+      "Followup": {
+        "Complete": true,
+        "Messages": 27,
+        "ToolCalls": 33,
+        "NumTurns": 37,
+        "Output": 40825,
+        "CacheRead": 3218273,
+        "CacheWrite": 79400,
+        "CostUSD": 2.0955706000000007,
+        "DurationS": 461,
+        "FirstWriteContext": 86355,
+        "DeployMessages": 1,
+        "Stages": {
+          "app-read": {
+            "Messages": 2,
+            "ToolCalls": 2,
+            "Context": 202484
+          },
+          "build-test": {
+            "Messages": 5,
+            "ToolCalls": 5,
+            "Context": 601181
+          },
+          "deploy": {
+            "Messages": 1,
+            "ToolCalls": 1,
+            "Context": 158704
+          },
+          "other": {
+            "Messages": 4,
+            "ToolCalls": 3,
+            "Context": 520979
+          },
+          "screenshots": {
+            "Messages": 7,
+            "ToolCalls": 13,
+            "Context": 986937
+          },
+          "write": {
+            "Messages": 8,
+            "ToolCalls": 9,
+            "Context": 827442
+          }
+        }
+      },
+      "Measured": [
+        {
+          "Pages": [
+            {
+              "Role": "home",
+              "URL": "https://groomer-r1-1-a2.fly.dev/",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 2002,
+                  "html": 1597
+                },
+                "Decoded": {
+                  "css": 5821,
+                  "html": 2797
+                }
+              },
+              "Axe": {
+                "moderate": 1
+              },
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 100,
+                "performance": 100,
+                "seo": 90
+              }
+            },
+            {
+              "Role": "book",
+              "URL": "https://groomer-r1-1-a2.fly.dev/book?service=1",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 2001,
+                  "html": 1997
+                },
+                "Decoded": {
+                  "css": 5821,
+                  "html": 5890
+                }
+              },
+              "Axe": {
+                "moderate": 1,
+                "serious": 1
+              },
+              "Lighthouse": {
+                "accessibility": 94,
+                "best-practices": 100,
+                "performance": 100,
+                "seo": 90
+              }
+            },
+            {
+              "Role": "signin",
+              "URL": "https://groomer-r1-1-a2.fly.dev/admin/login",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 2002,
+                  "html": 1146
+                },
+                "Decoded": {
+                  "css": 5821,
+                  "html": 1383
+                }
+              },
+              "Axe": {
+                "moderate": 1
+              },
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 100,
+                "performance": 100,
+                "seo": 90
+              }
+            },
+            {
+              "Role": "owner",
+              "URL": "https://groomer-r1-1-a2.fly.dev/admin/bookings",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 1928,
+                  "html": 1751,
+                  "image": 0
+                },
+                "Decoded": {
+                  "css": 5821,
+                  "html": 4617,
+                  "image": 266
+                }
+              },
+              "Axe": {
+                "critical": 1,
+                "minor": 1,
+                "moderate": 2,
+                "serious": 1
+              },
+              "Lighthouse": null
+            }
+          ],
+          "Headers": {
+            "content-security-policy": "default-src 'self'; style-src 'self'; img-src 'self' data:; form-action 'self'; frame-ancestors 'none'",
+            "frame-ancestors": "frame-ancestors 'none'",
+            "referrer-policy": "same-origin",
+            "x-content-type-options": "nosniff"
+          },
+          "DeployOK": true,
+          "Failures": null
+        },
+        {
+          "Pages": [
+            {
+              "Role": "home",
+              "URL": "https://groomer-r1-1-a2.fly.dev/",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 4916,
+                  "html": 3989,
+                  "other": 365
+                },
+                "Decoded": {
+                  "css": 19139,
+                  "html": 12530,
+                  "other": 700
+                }
+              },
+              "Axe": {
+                "moderate": 1
+              },
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 100,
+                "performance": 100,
+                "seo": 100
+              }
+            },
+            {
+              "Role": "book",
+              "URL": "https://groomer-r1-1-a2.fly.dev/book?service=1",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 4906,
+                  "html": 3035,
+                  "other": 365
+                },
+                "Decoded": {
+                  "css": 19139,
+                  "html": 14442,
+                  "other": 700
+                }
+              },
+              "Axe": {
+                "moderate": 1,
+                "serious": 1
+              },
+              "Lighthouse": {
+                "accessibility": 96,
+                "best-practices": 100,
+                "performance": 100,
+                "seo": 100
+              }
+            },
+            {
+              "Role": "signin",
+              "URL": "https://groomer-r1-1-a2.fly.dev/admin/login",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 4906,
+                  "html": 1722,
+                  "other": 365
+                },
+                "Decoded": {
+                  "css": 19139,
+                  "html": 4131,
+                  "other": 700
+                }
+              },
+              "Axe": {
+                "moderate": 1
+              },
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 100,
+                "performance": 100,
+                "seo": 100
+              }
+            },
+            {
+              "Role": "owner",
+              "URL": "https://groomer-r1-1-a2.fly.dev/admin/bookings",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 4861,
+                  "html": 2119,
+                  "image": 0,
+                  "other": 353
+                },
+                "Decoded": {
+                  "css": 19139,
+                  "html": 7190,
+                  "image": 266,
+                  "other": 700
+                }
+              },
+              "Axe": {
+                "critical": 1,
+                "minor": 1,
+                "moderate": 1
+              },
+              "Lighthouse": null
+            }
+          ],
+          "Headers": {
+            "content-security-policy": "default-src 'self'; style-src 'self'; img-src 'self' data:; form-action 'self'; frame-ancestors 'none'",
+            "frame-ancestors": "frame-ancestors 'none'",
+            "referrer-policy": "same-origin",
+            "x-content-type-options": "nosniff"
+          },
+          "DeployOK": true,
+          "Failures": null
+        }
+      ],
+      "AgentFailures": null,
+      "ReusedFrom": "1"
+    },
+    {
+      "Brief": "groomer",
+      "Arm": "control",
+      "N": 2,
+      "App": "groomer-r1-2",
+      "RastrilloVersion": "",
+      "Build": {
+        "Complete": true,
+        "Messages": 23,
+        "ToolCalls": 23,
+        "NumTurns": 24,
+        "Output": 44312,
+        "CacheRead": 1283745,
+        "CacheWrite": 61164,
+        "CostUSD": 1.6324849999999995,
+        "DurationS": 470,
+        "FirstWriteContext": 30163,
+        "DeployMessages": 5,
+        "Stages": {
+          "build-test": {
+            "Messages": 6,
+            "ToolCalls": 6,
+            "Context": 403785
+          },
+          "deploy": {
+            "Messages": 5,
+            "ToolCalls": 5,
+            "Context": 279066
+          },
+          "other": {
+            "Messages": 4,
+            "ToolCalls": 3,
+            "Context": 258954
+          },
+          "screenshots": {
+            "Messages": 1,
+            "ToolCalls": 1,
+            "Context": 73926
+          },
+          "write": {
+            "Messages": 7,
+            "ToolCalls": 8,
+            "Context": 329224
+          }
+        }
+      },
+      "Followup": {
+        "Complete": true,
+        "Messages": 22,
+        "ToolCalls": 26,
+        "NumTurns": 29,
+        "Output": 52650,
+        "CacheRead": 2661707,
+        "CacheWrite": 72698,
+        "CostUSD": 2.1671014000000004,
+        "DurationS": 531,
+        "FirstWriteContext": 79936,
+        "DeployMessages": 1,
+        "Stages": {
+          "app-read": {
+            "Messages": 1,
+            "ToolCalls": 1,
+            "Context": 101207
+          },
+          "build-test": {
+            "Messages": 2,
+            "ToolCalls": 2,
+            "Context": 266444
+          },
+          "deploy": {
+            "Messages": 1,
+            "ToolCalls": 1,
+            "Context": 150216
+          },
+          "other": {
+            "Messages": 4,
+            "ToolCalls": 3,
+            "Context": 530777
+          },
+          "screenshots": {
+            "Messages": 5,
+            "ToolCalls": 10,
+            "Context": 650402
+          },
+          "write": {
+            "Messages": 9,
+            "ToolCalls": 9,
+            "Context": 1035403
+          }
+        }
+      },
+      "Measured": [
+        {
+          "Pages": [
+            {
+              "Role": "home",
+              "URL": "https://groomer-r1-2.fly.dev/",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "html": 3136,
+                  "other": 2226
+                },
+                "Decoded": {
+                  "html": 6621,
+                  "other": 4688
+                }
+              },
+              "Axe": {
+                "moderate": 1,
+                "serious": 1
+              },
+              "Lighthouse": {
+                "accessibility": 86,
+                "best-practices": 96,
+                "performance": 100,
+                "seo": 82
+              }
+            },
+            {
+              "Role": "book",
+              "URL": "https://groomer-r1-2.fly.dev/book?service=1",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "html": 3040,
+                  "other": 2233
+                },
+                "Decoded": {
+                  "html": 9257,
+                  "other": 4688
+                }
+              },
+              "Axe": {
+                "serious": 1
+              },
+              "Lighthouse": {
+                "accessibility": 89,
+                "best-practices": 96,
+                "performance": 100,
+                "seo": 82
+              }
+            },
+            {
+              "Role": "signin",
+              "URL": "https://groomer-r1-2.fly.dev/signin",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "html": 2774,
+                  "other": 2249
+                },
+                "Decoded": {
+                  "html": 5329,
+                  "other": 4688
+                }
+              },
+              "Axe": {
+                "serious": 1
+              },
+              "Lighthouse": {
+                "accessibility": 91,
+                "best-practices": 96,
+                "performance": 100,
+                "seo": 82
+              }
+            },
+            {
+              "Role": "owner",
+              "URL": "https://groomer-r1-2.fly.dev/admin",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "html": 3514
+                },
+                "Decoded": {
+                  "html": 13201
+                }
+              },
+              "Axe": {
+                "minor": 1,
+                "serious": 1
+              },
+              "Lighthouse": null
+            }
+          ],
+          "Headers": {
+            "content-security-policy": "default-src 'none'; style-src 'unsafe-inline'; img-src 'self' data:; form-action 'self'; frame-ancestors 'none'; base-uri 'none'",
+            "frame-ancestors": "frame-ancestors 'none'",
+            "referrer-policy": "same-origin",
+            "x-content-type-options": "nosniff",
+            "x-frame-options": "DENY"
+          },
+          "DeployOK": true,
+          "Failures": null
+        },
+        {
+          "Pages": [
+            {
+              "Role": "home",
+              "URL": "https://groomer-r1-2.fly.dev/",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 4647,
+                  "html": 4758,
+                  "other": 649
+                },
+                "Decoded": {
+                  "css": 17595,
+                  "html": 18071,
+                  "other": 1359
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 100,
+                "performance": 100,
+                "seo": 91
+              }
+            },
+            {
+              "Role": "book",
+              "URL": "https://groomer-r1-2.fly.dev/book?service=1",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 4646,
+                  "html": 2753,
+                  "other": 649
+                },
+                "Decoded": {
+                  "css": 17595,
+                  "html": 10188,
+                  "other": 1359
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 100,
+                "performance": 100,
+                "seo": 91
+              }
+            },
+            {
+              "Role": "signin",
+              "URL": "https://groomer-r1-2.fly.dev/signin",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 4647,
+                  "html": 1917,
+                  "other": 650
+                },
+                "Decoded": {
+                  "css": 17595,
+                  "html": 3836,
+                  "other": 1359
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 100,
+                "performance": 100,
+                "seo": 91
+              }
+            },
+            {
+              "Role": "owner",
+              "URL": "https://groomer-r1-2.fly.dev/admin",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 4600,
+                  "html": 2704,
+                  "other": 632
+                },
+                "Decoded": {
+                  "css": 17595,
+                  "html": 13213,
+                  "other": 1359
+                }
+              },
+              "Axe": {
+                "moderate": 1
+              },
+              "Lighthouse": null
+            }
+          ],
+          "Headers": {
+            "content-security-policy": "default-src 'none'; style-src 'self'; img-src 'self' data:; form-action 'self'; frame-ancestors 'none'; base-uri 'none'",
+            "frame-ancestors": "frame-ancestors 'none'",
+            "referrer-policy": "same-origin",
+            "x-content-type-options": "nosniff",
+            "x-frame-options": "DENY"
+          },
+          "DeployOK": true,
+          "Failures": null
+        }
+      ],
+      "AgentFailures": null,
+      "ReusedFrom": "1"
+    },
+    {
+      "Brief": "groomer",
+      "Arm": "control",
+      "N": 3,
+      "App": "groomer-r1-3",
+      "RastrilloVersion": "",
+      "Build": {
+        "Complete": true,
+        "Messages": 38,
+        "ToolCalls": 38,
+        "NumTurns": 39,
+        "Output": 46740,
+        "CacheRead": 2370823,
+        "CacheWrite": 73617,
+        "CostUSD": 1.9982046000000002,
+        "DurationS": 483,
+        "FirstWriteContext": 29252,
+        "DeployMessages": 7,
+        "Stages": {
+          "app-read": {
+            "Messages": 1,
+            "ToolCalls": 1,
+            "Context": 57801
+          },
+          "build-test": {
+            "Messages": 5,
+            "ToolCalls": 5,
+            "Context": 351973
+          },
+          "deploy": {
+            "Messages": 5,
+            "ToolCalls": 5,
+            "Context": 313431
+          },
+          "live-check": {
+            "Messages": 2,
+            "ToolCalls": 2,
+            "Context": 178303
+          },
+          "other": {
+            "Messages": 7,
+            "ToolCalls": 6,
+            "Context": 485330
+          },
+          "screenshots": {
+            "Messages": 8,
+            "ToolCalls": 9,
+            "Context": 628659
+          },
+          "write": {
+            "Messages": 10,
+            "ToolCalls": 10,
+            "Context": 429019
+          }
+        }
+      },
+      "Followup": {
+        "Complete": true,
+        "Messages": 22,
+        "ToolCalls": 27,
+        "NumTurns": 30,
+        "Output": 40299,
+        "CacheRead": 2777950,
+        "CacheWrite": 61965,
+        "CostUSD": 1.8574660000000003,
+        "DurationS": 429,
+        "FirstWriteContext": 95522,
+        "DeployMessages": 2,
+        "Stages": {
+          "app-read": {
+            "Messages": 2,
+            "ToolCalls": 2,
+            "Context": 218425
+          },
+          "build-test": {
+            "Messages": 2,
+            "ToolCalls": 2,
+            "Context": 248986
+          },
+          "deploy": {
+            "Messages": 2,
+            "ToolCalls": 2,
+            "Context": 302786
+          },
+          "other": {
+            "Messages": 2,
+            "ToolCalls": 1,
+            "Context": 304868
+          },
+          "screenshots": {
+            "Messages": 10,
+            "ToolCalls": 16,
+            "Context": 1345317
+          },
+          "write": {
+            "Messages": 4,
+            "ToolCalls": 4,
+            "Context": 419577
+          }
+        }
+      },
+      "Measured": [
+        {
+          "Pages": [
+            {
+              "Role": "home",
+              "URL": "https://groomer-r1-3.fly.dev/",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 2340,
+                  "html": 1257,
+                  "other": 462
+                },
+                "Decoded": {
+                  "css": 6589,
+                  "html": 2401,
+                  "other": 602
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 96,
+                "performance": 100,
+                "seo": 82
+              }
+            },
+            {
+              "Role": "book",
+              "URL": "https://groomer-r1-3.fly.dev/book/1",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 2361,
+                  "html": 1601,
+                  "other": 462
+                },
+                "Decoded": {
+                  "css": 6589,
+                  "html": 4033,
+                  "other": 602
+                }
+              },
+              "Axe": {
+                "serious": 1
+              },
+              "Lighthouse": {
+                "accessibility": 94,
+                "best-practices": 96,
+                "performance": 100,
+                "seo": 82
+              }
+            },
+            {
+              "Role": "signin",
+              "URL": "https://groomer-r1-3.fly.dev/admin/login",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 2340,
+                  "html": 973,
+                  "other": 463
+                },
+                "Decoded": {
+                  "css": 6589,
+                  "html": 1137,
+                  "other": 602
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 96,
+                "performance": 100,
+                "seo": 82
+              }
+            },
+            {
+              "Role": "owner",
+              "URL": "https://groomer-r1-3.fly.dev/admin",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 2305,
+                  "html": 1546
+                },
+                "Decoded": {
+                  "css": 6589,
+                  "html": 7733
+                }
+              },
+              "Axe": {
+                "minor": 1,
+                "moderate": 1
+              },
+              "Lighthouse": null
+            }
+          ],
+          "Headers": {
+            "content-security-policy": "default-src 'none'; style-src 'self'; img-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'",
+            "frame-ancestors": "frame-ancestors 'none'",
+            "referrer-policy": "same-origin",
+            "x-content-type-options": "nosniff"
+          },
+          "DeployOK": true,
+          "Failures": null
+        },
+        {
+          "Pages": [
+            {
+              "Role": "home",
+              "URL": "https://groomer-r1-3.fly.dev/",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 5595,
+                  "html": 4990,
+                  "other": 373
+                },
+                "Decoded": {
+                  "css": 22871,
+                  "html": 18267,
+                  "other": 456
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 100,
+                "performance": 100,
+                "seo": 91
+              }
+            },
+            {
+              "Role": "book",
+              "URL": "https://groomer-r1-3.fly.dev/book/1",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 5595,
+                  "html": 3994,
+                  "other": 396
+                },
+                "Decoded": {
+                  "css": 22871,
+                  "html": 15857,
+                  "other": 456
+                }
+              },
+              "Axe": {
+                "serious": 1
+              },
+              "Lighthouse": {
+                "accessibility": 96,
+                "best-practices": 100,
+                "performance": 100,
+                "seo": 91
+              }
+            },
+            {
+              "Role": "signin",
+              "URL": "https://groomer-r1-3.fly.dev/admin/login",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 5595,
+                  "html": 2537,
+                  "other": 374
+                },
+                "Decoded": {
+                  "css": 22871,
+                  "html": 6764,
+                  "other": 456
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 100,
+                "performance": 100,
+                "seo": 91
+              }
+            },
+            {
+              "Role": "owner",
+              "URL": "https://groomer-r1-3.fly.dev/admin",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 5548,
+                  "html": 3244,
+                  "other": 339
+                },
+                "Decoded": {
+                  "css": 22871,
+                  "html": 14478,
+                  "other": 456
+                }
+              },
+              "Axe": {},
+              "Lighthouse": null
+            }
+          ],
+          "Headers": {
+            "content-security-policy": "default-src 'none'; style-src 'self'; img-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'",
+            "frame-ancestors": "frame-ancestors 'none'",
+            "referrer-policy": "same-origin",
+            "x-content-type-options": "nosniff"
+          },
+          "DeployOK": true,
+          "Failures": null
+        }
+      ],
+      "AgentFailures": null,
+      "ReusedFrom": "1"
+    }
+  ]
+}

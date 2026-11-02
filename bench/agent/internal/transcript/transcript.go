@@ -147,24 +147,47 @@ func readLine(
 	case event.Type == "user":
 		readResults(event, transcript, toolAt)
 	case event.Type == "result":
-		transcript.Result = &Result{
-			NumTurns:   event.NumTurns,
-			CostUSD:    event.CostUSD,
-			DurationMS: event.DurationMS,
-			IsError:    event.IsError,
-			Subtype:    event.Subtype,
-			APIError:   apiError(event.APIError),
-			Text:       event.Text,
-			Usage:      Usage(event.Usage),
-		}
-		transcript.Result.PhaseCostUSD = event.CostUSD
-		if len(event.SinceLast) > 0 {
-			transcript.Result.PhaseCostUSD = 0
-			for _, model := range event.SinceLast {
-				transcript.Result.PhaseCostUSD += model.CostUSD
-			}
+		readResult(event, transcript)
+	}
+}
+
+// readResult folds one result record into the phase's. An agent that
+// starts background work keeps going after its first answer, and claude
+// writes a record each time it stops, so a phase's turns, time, usage
+// and cost are the sum of every record; its answer is the last one.
+func readResult(event line, transcript *Transcript) {
+	cost := event.CostUSD
+	if transcript.Result != nil {
+		cost -= transcript.Result.CostUSD
+	}
+	// Present but empty is zero new cost, not "absent": a resumed
+	// session's first record carries the running total and an empty
+	// map, and reading that as absent bills the earlier work again.
+	if event.SinceLast != nil {
+		cost = 0
+		for _, model := range event.SinceLast {
+			cost += model.CostUSD
 		}
 	}
+	result := transcript.Result
+	if result == nil {
+		result = &Result{}
+		transcript.Result = result
+	}
+	result.NumTurns += event.NumTurns
+	result.DurationMS += event.DurationMS
+	result.PhaseCostUSD += cost
+	result.CostUSD = event.CostUSD
+	result.IsError = event.IsError
+	result.Subtype = event.Subtype
+	if errorText := apiError(event.APIError); errorText != "" {
+		result.APIError = errorText
+	}
+	result.Text = event.Text
+	result.Usage.Input += event.Usage.Input
+	result.Usage.Output += event.Usage.Output
+	result.Usage.CacheRead += event.Usage.CacheRead
+	result.Usage.CacheWrite += event.Usage.CacheWrite
 }
 
 func readAssistant(
