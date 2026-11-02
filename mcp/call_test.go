@@ -1,6 +1,7 @@
 package mcp
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"log/slog"
@@ -129,23 +130,57 @@ func TestCallWithoutArguments(t *testing.T) {
 		t.Errorf("list with no arguments answered %v, want two items",
 			listed)
 	}
-	answer := post(t, http.MethodPost, url, writerToken, "2025-06-18",
-		callBody("bookmarks_list", "null"))
-	call := answer.call(t)
-	var page struct{ Items []storedBookmark }
-	err := json.Unmarshal(call.Result.StructuredContent, &page)
-	if call.Result.IsError || err != nil || len(page.Items) != 2 {
-		t.Errorf("list with null arguments answered %s", answer.body)
+	// The SDK's client sends {} for nil, so these two go raw.
+	for name, body := range map[string]string{
+		"absent": `{"jsonrpc":"2.0","id":1,"method":"tools/call",` +
+			`"params":{"name":"bookmarks_list"}}`,
+		"null": callBody("bookmarks_list", "null"),
+	} {
+		answer := post(t, http.MethodPost, url, writerToken, "2025-06-18",
+			body)
+		call := answer.call(t)
+		var page struct{ Items []storedBookmark }
+		err := json.Unmarshal(call.Result.StructuredContent, &page)
+		if call.Result.IsError || err != nil || len(page.Items) != 2 {
+			t.Errorf("list with %s arguments answered %s",
+				name, answer.body)
+		}
 	}
 }
 
+// escape is a JSON escape per UTF-16 unit, a backslash, u and the four
+// hex digits given. It is built at run time because an editor or tool
+// that meets an escape in source may write the character instead, and
+// a test of escapes would then test none.
+func escape(units ...string) string {
+	var built strings.Builder
+	for _, unit := range units {
+		built.WriteString(`\` + "u" + unit)
+	}
+	return built.String()
+}
+
+// requireEscape fails the test unless arguments still hold an escape.
+func requireEscape(t *testing.T, arguments string) {
+	t.Helper()
+	if !bytes.Contains([]byte(arguments), []byte{'\\', 'u'}) {
+		t.Fatalf("%q holds no escape to test", arguments)
+	}
+}
+
+// emoji is U+1F600, which the escapes d83d and de00 name.
+var emoji = string(rune(0x1F600))
+
 func TestArgumentBytes(t *testing.T) {
 	accepted := []struct{ name, arguments, title string }{
-		{"escaped_pair", `{"title":"😀"}`, "\U0001F600"},
-		{"escaped_backslash", `{"title":"\\ud83d"}`, `\ud83d`},
+		{"escaped_pair",
+			`{"title":"` + escape("d83d", "de00") + `"}`, emoji},
+		{"escaped_backslash",
+			`{"title":"\\` + `ud83d"}`, `\` + "ud83d"},
 	}
 	for _, test := range accepted {
 		t.Run(test.name, func(t *testing.T) {
+			requireEscape(t, test.arguments)
 			store := newBookmarkStore()
 			url := serve(t, testConfig(), store.descriptors()...)
 			answer := post(t, http.MethodPost, url, writerToken,
@@ -160,13 +195,19 @@ func TestArgumentBytes(t *testing.T) {
 			}
 		})
 	}
-	refused := []struct{ name, arguments string }{
-		{"lone_high", `{"title":"\ud83d"}`},
-		{"lone_low", `{"title":"\ude00x"}`},
-		{"invalid_byte", "{\"title\":\"a\xffb\"}"},
+	refused := []struct {
+		name, arguments string
+		escapes         bool
+	}{
+		{"lone_high", `{"title":"` + escape("d83d") + `"}`, true},
+		{"lone_low", `{"title":"` + escape("de00") + `x"}`, true},
+		{"invalid_byte", "{\"title\":\"a\xffb\"}", false},
 	}
 	for _, test := range refused {
 		t.Run(test.name, func(t *testing.T) {
+			if test.escapes {
+				requireEscape(t, test.arguments)
+			}
 			store := newBookmarkStore()
 			url := serve(t, testConfig(), store.descriptors()...)
 			answer := post(t, http.MethodPost, url, writerToken,
@@ -188,31 +229,37 @@ func TestArgumentBytes(t *testing.T) {
 // TestArgumentScanner holds the byte check to JSON's string escapes,
 // where a backslash can itself be escaped.
 func TestArgumentScanner(t *testing.T) {
+	pair, high, low := escape("d83d", "de00"), escape("d83d"),
+		escape("de00")
 	tests := []struct {
 		arguments string
 		valid     bool
+		escapes   bool
 	}{
-		{`{"a":"😀"}`, true},
-		{`{"a":"😀"}`, true},
-		{`{"a":"\\ud83d"}`, true},
-		{`{"a":"\\😀"}`, true},
-		{`{"a":"\"","b":"é\n"}`, true},
-		{`{"a":1,"b":["😀", "x"]}`, true},
-		{"{\"a\":\"é\"}", true},
-		{`{"a":"\ud83d"}`, false},
-		{`{"a":"\ud83dx"}`, false},
-		{`{"a":"\ud83dA"}`, false},
-		{`{"a":"\ud83d😀"}`, false},
-		{`{"a":"\ude00"}`, false},
-		{`{"a":"\uDE00"}`, false},
-		{`{"a":"\\\ud83d"}`, false},
-		{`{"a":"\"\ud83d"}`, false},
-		{`{"\ud83d":1}`, false},
-		{`{"a":"\ud83d`, false},
-		{"{\"a\":\"\xff\"}", false},
-		{"{\"a\":\"\xed\xa0\xbd\"}", false},
+		{`{"a":"` + pair + `"}`, true, true},
+		{`{"a":"` + escape("D83D", "DE00") + `"}`, true, true},
+		{`{"a":"\\` + `ud83d"}`, true, true},
+		{`{"a":"\\` + pair + `"}`, true, true},
+		{`{"a":"\"","b":"` + escape("00e9") + `\n"}`, true, true},
+		{`{"a":1,"b":["` + pair + `", "x"]}`, true, true},
+		{`{"a":"` + emoji + string(rune(0xE9)) + `"}`, true, false},
+		{`{"a":"` + high + `"}`, false, true},
+		{`{"a":"` + high + `x"}`, false, true},
+		{`{"a":"` + escape("d83d", "0041") + `"}`, false, true},
+		{`{"a":"` + escape("d83d", "d83d", "de00") + `"}`, false, true},
+		{`{"a":"` + low + `"}`, false, true},
+		{`{"a":"` + escape("DE00") + `"}`, false, true},
+		{`{"a":"\\` + high + `"}`, false, true},
+		{`{"a":"\"` + high + `"}`, false, true},
+		{`{"` + high + `":1}`, false, true},
+		{`{"a":"` + high, false, true},
+		{"{\"a\":\"\xff\"}", false, false},
+		{"{\"a\":\"\xed\xa0\xbd\"}", false, false},
 	}
 	for _, test := range tests {
+		if test.escapes {
+			requireEscape(t, test.arguments)
+		}
 		if got := argumentBytesValid([]byte(test.arguments)); got !=
 			test.valid {
 			t.Errorf("argumentBytesValid(%q) = %v, want %v",
@@ -265,59 +312,70 @@ func TestMalformedNumbers(t *testing.T) {
 	}
 }
 
-func largeResult(size int) func(
+// lineSeparator is U+2028, which the SDK's encoding/json escapes.
+var lineSeparator = string(rune(0x2028))
+
+func resultOfText(text string) func(
 	context.Context, *rastrillo.Ctx, json.RawMessage) (any, error) {
 	return func(
 		context.Context, *rastrillo.Ctx, json.RawMessage,
 	) (any, error) {
-		return map[string]any{"text": strings.Repeat("a", size)}, nil
+		return map[string]any{"q": text}, nil
 	}
 }
 
 func TestResultTooLarge(t *testing.T) {
-	config := testConfig()
-	config.MaxResult = 1024
-	url := serve(t, config,
-		withInvoke(bookmarks(), "bookmarks.list", largeResult(2048))...)
-	session, _ := connect(t, url, writerToken, "")
-	refused := refusalOf(t, callTool(t, session, "bookmarks_list", nil))
-	if refused.Code != "response_too_large" ||
-		refused.Message != msgResultTooLarge {
-		t.Errorf("answered %+v, want response_too_large with %q",
-			refused, msgResultTooLarge)
+	// The second is 208 bytes encoded, but 1208 once the SDK escapes
+	// each < in it as six bytes.
+	for name, text := range map[string]string{
+		"long":           strings.Repeat("a", 2048),
+		"escaped_by_sdk": strings.Repeat("<", 200),
+	} {
+		t.Run(name, func(t *testing.T) {
+			config := testConfig()
+			config.MaxResult = 1024
+			url := serve(t, config, withInvoke(bookmarks(),
+				"bookmarks.list", resultOfText(text))...)
+			session, _ := connect(t, url, writerToken, "")
+			refused := refusalOf(t,
+				callTool(t, session, "bookmarks_list", nil))
+			if refused.Code != "response_too_large" ||
+				refused.Message != msgResultTooLarge {
+				t.Errorf("answered %+v, want response_too_large with %q",
+					refused, msgResultTooLarge)
+			}
+		})
 	}
 }
 
-// TestResultJustUnderCap sends results of MaxResult - 64 bytes made of
-// characters the result's encoding escapes: " doubles again in the
-// text block, and the SDK would escape < and U+2028 itself, six bytes
-// each, if the encoding had left them for it.
+// TestResultJustUnderCap sends results whose size, counted as the SDK
+// will escape them, is MaxResult - 64 bytes: " doubles again in the
+// text block, and the SDK writes < and U+2028 as six bytes each. The
+// agent's text block holds < and U+2028 as they are, as the API's does.
 func TestResultJustUnderCap(t *testing.T) {
-	// {"q":"..."} is eight bytes around the escaped characters.
+	// {"q":"..."} is eight bytes around the characters.
 	const budget = defaultMaxResult - 64 - 8
 	for _, test := range []struct {
-		name, character string
-		escaped         int
+		name, character, encoded string
+		counted                  int
 	}{
-		{"quotes", `"`, len(`\"`)},
-		{"angle_brackets", "<", len(`\u003c`)},
-		{"line_separators", "\u2028", len(`\u2028`)},
+		{"quotes", `"`, `\"`, 2},
+		{"angle_brackets", "<", "<", 6},
+		{"line_separators", lineSeparator, lineSeparator, 6},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			count := budget / test.escaped
-			text := strings.Repeat(test.character, count) +
-				strings.Repeat("a", budget-count*test.escaped)
-			descriptors := withInvoke(bookmarks(), "bookmarks.list",
-				func(context.Context, *rastrillo.Ctx, json.RawMessage) (
-					any, error) {
-					return map[string]any{"q": text}, nil
-				})
-			url := serve(t, testConfig(), descriptors...)
+			count := budget / test.counted
+			padding := strings.Repeat("a", budget-count*test.counted)
+			text := strings.Repeat(test.character, count) + padding
+			url := serve(t, testConfig(), withInvoke(bookmarks(),
+				"bookmarks.list", resultOfText(text))...)
 			session, _ := connect(t, url, writerToken, "")
 			result := callTool(t, session, "bookmarks_list", nil)
-			if got := textOf(t, result); len(got) != defaultMaxResult-64 {
+			want := `{"q":"` + strings.Repeat(test.encoded, count) +
+				padding + `"}`
+			if got := textOf(t, result); got != want {
 				t.Fatalf("text block is %d bytes, want %d: %.200s",
-					len(got), defaultMaxResult-64, got)
+					len(got), len(want), got)
 			}
 			if got, _ := structured(t, result)["q"].(string); got != text {
 				t.Errorf("structuredContent q is %d bytes, want %d",

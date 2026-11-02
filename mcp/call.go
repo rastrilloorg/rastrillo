@@ -66,7 +66,7 @@ func (caller listing) call(
 		return caller.refusal(fmt.Errorf("mcp: encode the result of %s: %v",
 			descriptor.ID, err))
 	}
-	if len(encoded) > caller.served.config.MaxResult {
+	if escapedSize(encoded) > caller.served.config.MaxResult {
 		return toolError(api.Error{
 			Code: "response_too_large", Message: msgResultTooLarge,
 		})
@@ -152,12 +152,25 @@ var exactNumbers = json.WithMarshalers(json.MarshalToFunc(
 	}))
 
 // encodeResult is the result's one encoding; the SDK only copies it.
-// Escaping for HTML and JavaScript leaves no byte the SDK's own
-// escaping would grow in structuredContent, or more than double in the
-// text block, which is what the gate's raised cap allows for.
+// It leaves < and & as they are, so the text block the agent reads
+// matches the body api.Write gives at the API door.
 func encodeResult(value any) ([]byte, error) {
-	return json.Marshal(value, exactNumbers, json.Deterministic(true),
-		jsontext.EscapeForHTML(true), jsontext.EscapeForJS(true))
+	return json.Marshal(value, exactNumbers, json.Deterministic(true))
+}
+
+// escapedSize is encoded's length once the SDK's encoding/json escapes
+// it for HTML, in structuredContent and the text block alike, so a
+// result under MaxResult stays within the gate's cap of three results.
+func escapedSize(encoded []byte) int {
+	size := len(encoded)
+	for _, character := range []string{"<", ">", "&"} {
+		size += 5 * bytes.Count(encoded, []byte(character))
+	}
+	// Three bytes in UTF-8, written as a six-byte escape.
+	for _, separator := range []rune{0x2028, 0x2029} {
+		size += 3 * bytes.Count(encoded, []byte(string(separator)))
+	}
+	return size
 }
 
 // resultOf is the encoded result as both structuredContent and the
