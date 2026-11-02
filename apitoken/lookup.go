@@ -56,12 +56,12 @@ func (store *Store) lookup(
 	if err != nil {
 		return lookedUp{}, err
 	}
-	exp, last, acc, err := parseColumns(stored, id)
+	expires, lastUsed, access, err := parseColumns(stored, id)
 	if err != nil {
 		return lookedUp{}, err
 	}
 	now := store.now()
-	if exp != nil && !now.Before(*exp) {
+	if expires != nil && !now.Before(*expires) {
 		return lookedUp{}, fmt.Errorf(
 			"%w: %s expired", api.ErrUnauthorized, id)
 	}
@@ -70,9 +70,9 @@ func (store *Store) lookup(
 	}
 	actor := rastrillo.Actor{
 		Subject: stored.subject, Agent: stored.agent,
-		Credential: id, Access: acc,
+		Credential: id, Access: access,
 	}
-	return lookedUp{actor: actor, lastUsed: last, now: now}, nil
+	return lookedUp{actor: actor, lastUsed: lastUsed, now: now}, nil
 }
 
 // parseColumns reads the time and access columns back.
