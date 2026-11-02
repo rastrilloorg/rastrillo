@@ -30,8 +30,7 @@ func TestNewMountsTheAPIForANewApp(t *testing.T) {
 		readScaffold(t, "123-app", "internal", "app123app", "routes.go")
 	for _, want := range []string{
 		`routes.Mount("/api/v1", app.api, "api")`,
-		"api, err := newAPI(config)",
-		"mcp, err := newMCP(config)",
+		"api, mcp, err := newDoors(database, logger)",
 		`routes.Mount("/api/v1/mcp", app.mcp, "mcp")`,
 		"routes.Group(func(guarded *action.Routes) {",
 	} {

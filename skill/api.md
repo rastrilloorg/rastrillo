@@ -7,7 +7,7 @@ personal token. Each action is one operation in `gen/ops/<name>/`
 call it, and it begins with `op.Check`. Rules live in the operation
 and the policy, never in a door. docs/site/api.md
 
-**Wiring** (a new app has it in `internal/<app>/api.go`'s `newAPI`):
+**Wiring** (a new app has it in `internal/<app>/api.go`'s `newDoors`):
 `tokens, err := apitoken.New(apitoken.Config{DB: database.Writer(), Prefix: tokenPrefix})`;
 `api.New(api.Config{Verify: tokens, Ctx: ctxFactory, Authorize: authorize, Logger: logger, Redact: tokens.Redact}, gen.APIRoutes()...)`;
 `Routes` mounts it with `routes.Mount("/api/v1", app.api, "api")`,

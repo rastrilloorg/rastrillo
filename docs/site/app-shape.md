@@ -85,9 +85,7 @@ hands to `Serve`. It calls `Router`, which does the work:
 ```go
 migrated, err := migrate.Apply(context.Background(), database, BootSchema)
 // ...
-api, err := newAPI(config)
-// ...
-mcp, err := newMCP(config)
+api, mcp, err := newDoors(database, logger)
 // ...
 app := &App{database: database, logger: logger, origin: origin,
 	api: api, mcp: mcp}
@@ -178,7 +176,7 @@ can use.
 
 ## api.go
 
-`newAPI` builds the JSON API at `/api/v1`. `authorize` is the one policy
+`newDoors` builds the JSON API at `/api/v1` and MCP at `/api/v1/mcp`. `authorize` is the one policy
 for pages and the API. The API cannot see page middleware, so add page
 rules to `authorize` too. [JSON API](/docs/api) covers the rest.
 

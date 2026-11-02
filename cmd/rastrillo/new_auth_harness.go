@@ -28,11 +28,13 @@ func (edit *magicAuth) harness() {
 	edit.importAfter(harness, `"amadan.net/rastrillo/rastrillo/db"`,
 		"background")
 	api := filepath.Join(edit.testDir, "api_test.go")
-	edit.swap(api, edit.filled("\tmux, err := %s.New(database, testOrigin, "+
-		"logger)\n"), "\tgroup := &background.Group{}\n"+
-		"\tt.Cleanup(group.Stop)\n"+
-		edit.filled("\tmux, err := %s.New(\n"+
-			"\t\tdatabase, testOrigin, group, mail.Logged(logger), logger)\n"))
+	edit.swap(api, edit.filled("\tmux, err := %s.New(\n"+
+		"\t\tdatabase, testOrigin, slog.New(slog.DiscardHandler))\n"),
+		"\tlogger := slog.New(slog.DiscardHandler)\n"+
+			"\tgroup := &background.Group{}\n\tt.Cleanup(group.Stop)\n"+
+			edit.filled("\tmux, err := %s.New(\n"+
+				"\t\tdatabase, testOrigin, group, mail.Logged(logger), "+
+				"logger)\n"))
 	edit.importAfter(api, `"amadan.net/rastrillo/rastrillo/db"`,
 		"background", "mail")
 	browser := filepath.Join(edit.testDir, "browser_test.go")

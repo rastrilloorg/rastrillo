@@ -55,16 +55,7 @@ func Router(
 	}
 	logger.Info("migrate", "applied", migrated.Applied,
 		"skipped", migrated.Skipped, "adopted", migrated.Adopted)
-	tokens, err := newTokens(database)
-	if err != nil {
-		return nil, err
-	}
-	config := apiConfig(database, logger, tokens)
-	api, err := newAPI(config)
-	if err != nil {
-		return nil, err
-	}
-	mcp, err := newMCP(config)
+	api, mcp, err := newDoors(database, logger)
 	if err != nil {
 		return nil, err
 	}
