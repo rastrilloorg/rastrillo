@@ -242,7 +242,11 @@ func TestExposedUnscopedNeedsAPolicy(t *testing.T) {
 		req.Host = "example.com"
 		req.Header.Set("Content-Type", "application/json")
 		req.Header.Set("Authorization", "Bearer "+token)
-		res, err := server.Client().Do(req)
+		client := *server.Client()
+		client.CheckRedirect = func(*http.Request, []*http.Request) error {
+			return http.ErrUseLastResponse
+		}
+		res, err := client.Do(req)
 		if err != nil {
 			t.Fatal(err)
 		}

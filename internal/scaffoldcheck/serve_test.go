@@ -67,7 +67,11 @@ func send(
 	if secret != "" {
 		request.Header.Set("Authorization", "Bearer "+secret)
 	}
-	response, err := server.Client().Do(request)
+	client := *server.Client()
+	client.CheckRedirect = func(*http.Request, []*http.Request) error {
+		return http.ErrUseLastResponse
+	}
+	response, err := client.Do(request)
 	if err != nil {
 		t.Fatal(err)
 	}

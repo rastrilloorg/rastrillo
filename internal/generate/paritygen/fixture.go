@@ -118,7 +118,8 @@ func lastID(t *testing.T, outcome string) string {
 // call sends one API request with token and answers its kind and its
 // decoded body. It goes to a real server because the API checks the
 // token again as the answer is sent, which a recorder cannot take. The
-// request keeps the app.test host the handler was always given.
+// request keeps the app.test host the handler was always given, and a
+// redirect is the answer, not followed, as a recorder showed it.
 func call(t *testing.T, h http.Handler, token, method, p string, body any) (string, map[string]any) {
 	t.Helper()
 	var r io.Reader
@@ -140,7 +141,11 @@ func call(t *testing.T, h http.Handler, token, method, p string, body any) (stri
 	if body != nil {
 		req.Header.Set("Content-Type", "application/json")
 	}
-	res, err := server.Client().Do(req)
+	client := *server.Client()
+	client.CheckRedirect = func(*http.Request, []*http.Request) error {
+		return http.ErrUseLastResponse
+	}
+	res, err := client.Do(req)
 	if err != nil {
 		t.Fatal(err)
 	}
