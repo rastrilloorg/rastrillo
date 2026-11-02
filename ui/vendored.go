@@ -1,5 +1,7 @@
 package ui
 
+import "amadan.net/rastrillo/rastrillo/internal/vendored"
+
 // The vendored set: the files `rastrillo new` copies into a new app's
 // static/ directory once, and that are the app's own from that moment.
 //
@@ -10,22 +12,12 @@ package ui
 // against these. Two of those lists drifting apart — a file added to
 // the scaffold and forgotten by the pin — is the failure this closes.
 
-// vendoredNames lists the vendored files in the order they are worth
-// reading: the structural stylesheet, the theme that colours it and the
-// shells' slide, then the scripts: the shim, the busy rule beside it,
-// the live pages' script (inert until a page opts in), and the light
-// the depth styles read, which an app may delete; the
-// menus' fallback for a browser without anchor positioning, the
-// shells' navigation, and calendar.js last because it is the only
-// one that is not an enhancement in its own right: it draws the month
-// grid datetime.js asks it for. TestVendoredNamesMatchVendoredAssets
-// holds this and VendoredAssets to the same set.
-var vendoredNames = []string{"tokens.css", "theme.css", "shell.css", "rastrillo.js", "busy.js", "live.js", "light.js", "anchor.js", "shell.js", "select.js", "datetime.js", "calendar.js"}
-
 // VendoredNames returns the names the vendored files take in an app's
 // static/ directory, in a stable order, for a caller that wants to
-// report on them one at a time. The returned slice is a copy.
-func VendoredNames() []string { return append([]string(nil), vendoredNames...) }
+// report on them one at a time. The list and its order live in
+// internal/vendored, where the root package can read them too. The
+// returned slice is a copy.
+func VendoredNames() []string { return vendored.Names() }
 
 // VendoredAssets returns every file rastrillo new writes into a new
 // app's static/ directory, keyed by the name it takes there, for the

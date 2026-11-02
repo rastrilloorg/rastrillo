@@ -330,15 +330,15 @@ func runNew(args []string) error {
 //	calendar.js    the month grid that combobox's button opens,
 //	               inert until datetime.js asks it for a panel
 //
-// An app that never renders a big select or a date field can delete
-// that script and its tag; nothing else changes. The date fields are
-// two files, and deleting one of the pair is the awkward case: drop
-// calendar.js alone and the field still works, with its button
-// falling back to the browser's own picker. shell.js and shell.css
-// are written for every shell like the rest (select.js and calendar.js
-// already ship to apps that never link them), and are deletable where
-// the shell does not link them; the app's vendoring test then needs
-// them in vendoredIsMine, or it fails on the missing files.
+// The layouts load the last three only on a page whose fields need
+// them, so an app with no big select or date field never sends them
+// and can delete them. The date fields are two files, and deleting one
+// of the pair is the awkward case: drop calendar.js alone and the field
+// still works, with its button falling back to the browser's own
+// picker. shell.js and shell.css are written for every shell like the
+// rest, and are deletable where the shell does not link them; the app's
+// vendoring test then needs them in vendoredIsMine, or it fails on the
+// missing files.
 
 // The scaffold's chi and gorm pins. The CLI's own build info can't
 // supply these (cmd/rastrillo imports neither), so they are constants

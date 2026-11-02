@@ -19,15 +19,12 @@ func init() {
 	tmplrt.Register("0134fea7b535131c849015a622c7cc8ac6d822db735b0d0a01e556b31cda1bcc", bind_0134fea7b535131c)
 	tmplrt.Register("02ad54ac586387e06b869ecfed805ec4830fd7eefbbee8f30de2c57f41b9e4f9", bind_02ad54ac586387e0)
 	tmplrt.Register("02c7a6197b9e7cb9c581368cb8bd59f3cdd7abda7f4d7ef2ed0580b129f30b8d", bind_02c7a6197b9e7cb9)
-	tmplrt.Register("02c9203e9b7436737c4f5ec9b630730903c7011757e890d28fe5bf18552a58b6", bind_02c9203e9b743673)
 	tmplrt.Register("039794530178d405a9133e7508b9eee7340bd2578704c5cc69c0ab6f1b040166", bind_039794530178d405)
 	tmplrt.Register("04917a4633734ddaa8da28e13fa762055fd43d8b933ba1bf25a646f7fd16f43e", bind_04917a4633734dda)
 	tmplrt.Register("07879fb0c2217ba5d30654cb9c258b0abe170fbf31c12620c78e092dac560455", bind_07879fb0c2217ba5)
 	tmplrt.Register("07a81bfa838e79f3339c7be0cfd8f604ebf46eb3264b228010e978e18d6e4400", bind_07a81bfa838e79f3)
 	tmplrt.Register("098c2934b26b7f7588f0a824b10400cc9b7babc1008d3f3465f1f2e4da31e016", bind_098c2934b26b7f75)
-	tmplrt.Register("09fa0b35b84686a49e7208cfd6787a2de29506be3b195deffcf8ce44ea3a69b3", bind_09fa0b35b84686a4)
 	tmplrt.Register("0a71d52ec760e77e1526017446603e4b29095688ccd217a544d5bda149cd00e6", bind_0a71d52ec760e77e)
-	tmplrt.Register("0ce725bcb7cac149aedcc9aa272b00da2fc8b453e2ad229af37986dd205e34b6", bind_0ce725bcb7cac149)
 	tmplrt.Register("0d12e626d91681dcdaccb7a54cb35de7faab1e5b27eba69b2ff39b9141e0395b", bind_0d12e626d91681dc)
 	tmplrt.Register("0f24630096c49b29aa43337714800bfc335d6d73609f8da91cb1893841aebf9c", bind_0f24630096c49b29)
 	tmplrt.Register("1073ec0d38c56faf597bf6b9a9656536883222dade5359abcb1a15605b60bb8f", bind_1073ec0d38c56faf)
@@ -40,6 +37,7 @@ func init() {
 	tmplrt.Register("2e7f774feda89d73aa381ff04d505c9435cc5b4079591ead0c4961c1b1afc406", bind_2e7f774feda89d73)
 	tmplrt.Register("2f7f3855654925a2d40d247610256af3182dd55ca6672d1155b21dd4f970aaff", bind_2f7f3855654925a2)
 	tmplrt.Register("312fa80235218084872af6281a3101220c4ba07a0ef248d095b9c5f5d85a1b2f", bind_312fa80235218084)
+	tmplrt.Register("31cb3007823cf32ebf79a32ce73ba3f9071eab06f9592a9b4cee6d3ad6474fc9", bind_31cb3007823cf32e)
 	tmplrt.Register("339b7c68e8e94bbef4845ce41f74419eb5fb5465d94127ccbaa85c7b366e7f83", bind_339b7c68e8e94bbe)
 	tmplrt.Register("33fe510fa14ee7889aa5dcc39b9fa758d60270d214508ea8697948f8b5825d7f", bind_33fe510fa14ee788)
 	tmplrt.Register("342f5d9dc0cfc75084b56450808e18b37443abd9be8b96b884a9f51487851c87", bind_342f5d9dc0cfc750)
@@ -54,6 +52,7 @@ func init() {
 	tmplrt.Register("45292b628ffae796aa8c1f4bd72116bc305d7d84d20725c894deedf7684e087b", bind_45292b628ffae796)
 	tmplrt.Register("4a20d6ebe22392e7a53adab8a7e0b53c1695b1c00653e4e277c42e3785b56e60", bind_4a20d6ebe22392e7)
 	tmplrt.Register("4ae7ea50e115a11689ff349820f0a9056836ec9b130c027c1a5e2ff909f0eb19", bind_4ae7ea50e115a116)
+	tmplrt.Register("4c0d5fef9b1484dc733a6046afd14fd78625dd8fc5feff3145a531f7eabf63e4", bind_4c0d5fef9b1484dc)
 	tmplrt.Register("4fbe4210f13670b00c478b18a4442e57de99d0d964d3c2659fd16d3f1e33e91e", bind_4fbe4210f13670b0)
 	tmplrt.Register("51d8769939a47ef4672a80404800f638134c0be160616d40707d336c49482d31", bind_51d8769939a47ef4)
 	tmplrt.Register("51feeabf52c3ed6acfbdd89bc72c6f06203caf54022689007b5650704fde59db", bind_51feeabf52c3ed6a)
@@ -68,11 +67,14 @@ func init() {
 	tmplrt.Register("644a1f3f6c5c480800b1063764396187cd5c1b516485302d161efa8aae71369d", bind_644a1f3f6c5c4808)
 	tmplrt.Register("65fafc93875ca974d6312be450b46a94eb0a5bda2947c1f9987fb78b2a972bff", bind_65fafc93875ca974)
 	tmplrt.Register("67601890b128f5540604393efde2be8741c08955dd4b71814dc0651530cfa815", bind_67601890b128f554)
+	tmplrt.Register("69e588b94527a276db8276d52e1fe3c4b419b12eb644010575de2c96a0d62e24", bind_69e588b94527a276)
 	tmplrt.Register("6e8e757e9c4db9ee763e84372fbf6f7b33aa6d2bf0b01c5b6858cdde67280258", bind_6e8e757e9c4db9ee)
 	tmplrt.Register("6e9f4e3ec657a71a90bad68c8ec63ffb78e16af350b46f19717ac8b8c6df7698", bind_6e9f4e3ec657a71a)
 	tmplrt.Register("73f5122c9a581587f6176839908efc9aceecb8984a01cfe7ae5aa6442327639e", bind_73f5122c9a581587)
 	tmplrt.Register("74dcb7c9cc20a8cd0db1ff57ef9ff9b5de6e9d6b9e546e0dd431e4361def5615", bind_74dcb7c9cc20a8cd)
 	tmplrt.Register("77ca247387c83766ec664e420a325aac189359af8f369cee707e97185ba1d6b6", bind_77ca247387c83766)
+	tmplrt.Register("787d990b0a5fcb83f6cd197dba2234f772faf72e56d8cf8e874e0d0e4aaeb32e", bind_787d990b0a5fcb83)
+	tmplrt.Register("7f234292a64bfee6f72ce0036a56b83f720eeefeccc03f3273a053b74914725f", bind_7f234292a64bfee6)
 	tmplrt.Register("80ca1a638c42511a67982513b96e719be31623b8229e47de3b6f8d1e09046fa7", bind_80ca1a638c42511a)
 	tmplrt.Register("820fbab31d98272d39a826f9a04439ff402ccfaf703147e889e01fc71aa65f69", bind_820fbab31d98272d)
 	tmplrt.Register("898ceca0a464def416d187d44bfed74619187febc3a9c0d4573595c4052dddc0", bind_898ceca0a464def4)
@@ -81,10 +83,10 @@ func init() {
 	tmplrt.Register("8b5e743942b2cb0350464c007c7e87f9ed566c1b8732b293d1f24b7c8407e1b5", bind_8b5e743942b2cb03)
 	tmplrt.Register("8c0b286389924fff219eda2930cd4902a29b112e654c6f3cc43671c588474ce8", bind_8c0b286389924fff)
 	tmplrt.Register("8c615da64918643dfedd89cc36bafa21b2eb141ccb04f77ecf456c2c7922e551", bind_8c615da64918643d)
+	tmplrt.Register("8d286c14d2be09c99642b1df4c9b6cac97823b21d8dc04438c850919f6ecb761", bind_8d286c14d2be09c9)
 	tmplrt.Register("8e84db4a12da5f22b1fba8c3a29d12ad2b8f301d37ec27fd3c7b89ed7eae4419", bind_8e84db4a12da5f22)
 	tmplrt.Register("8fc8cd3d560c58a75e327836230a9210f80b3a61bab3defe3ed4cb359cce6eb0", bind_8fc8cd3d560c58a7)
 	tmplrt.Register("932530568cadf4d0fb26c1421bea3490ace3ba77be2f299984479da9eb3630c2", bind_932530568cadf4d0)
-	tmplrt.Register("93652e6bc90ed459ce7ae2f3e181e3c6fd95c1c740d9daefc4831eeb07cb3b90", bind_93652e6bc90ed459)
 	tmplrt.Register("96bdf2b5ade56abd7d3c23c6009db9dcd0a958a7d8407737b376b9144576dadb", bind_96bdf2b5ade56abd)
 	tmplrt.Register("98717b1a252f93a754ea23790c256a594cc9c817de9dd75668a50d6923fa46b0", bind_98717b1a252f93a7)
 	tmplrt.Register("9ad2f8749261fec7ed56266f20738f2278796ce8bb954421eff860e5d4337cf3", bind_9ad2f8749261fec7)
@@ -106,10 +108,10 @@ func init() {
 	tmplrt.Register("c003f4adf65848a764f1d56ecf80efe0d156bbd39c040520af7b802f1bd2cce4", bind_c003f4adf65848a7)
 	tmplrt.Register("c06ed44f1184dc1333e99ba0040776f83f05fd9a5a9c6db81073ea1e50d2965b", bind_c06ed44f1184dc13)
 	tmplrt.Register("c1de90d2131edfcb9d55994108d773211545e15522b0848b495f812a4e717c4d", bind_c1de90d2131edfcb)
-	tmplrt.Register("c31b8c214af46d1698878250609549c83b077db0b144114369dfb9d0dd09a8d7", bind_c31b8c214af46d16)
 	tmplrt.Register("c6cfdcc7759c42d134441ec92a78159a339b5c82e7563ca611b670d7953d7550", bind_c6cfdcc7759c42d1)
 	tmplrt.Register("c7590ac83700031b3be3573dae0155ee5c93a6afdd59bf5ade508572f7223987", bind_c7590ac83700031b)
 	tmplrt.Register("c8c4e1e2a369b7b1454cbbdc8e7dcec3bb8755135536f6b93d57d3bd85f679c5", bind_c8c4e1e2a369b7b1)
+	tmplrt.Register("ca759e4b9815cf999e67e9bb5058892e15b70de6c1f967323ce558854550f102", bind_ca759e4b9815cf99)
 	tmplrt.Register("cd3dce18e3b45d133eb1f4719e69148111f228d75b11af961437ff590e64ecc4", bind_cd3dce18e3b45d13)
 	tmplrt.Register("cd64ed12f1c363e87f5ba404b8d30d4b9ed535e925734369e070763aaa298d02", bind_cd64ed12f1c363e8)
 	tmplrt.Register("d12a5ada0c678fb2eddd7eb551b1dfb9d338e3eeeb57751c91eba43f26f6e5f9", bind_d12a5ada0c678fb2)
@@ -119,7 +121,6 @@ func init() {
 	tmplrt.Register("d815f33d3a90f814cf8c4020e01d3f657283854dbc8a01187b2d31cea0c2fbcd", bind_d815f33d3a90f814)
 	tmplrt.Register("db3e5657ff55bb1c44e5490cc5cf378a2e8a2c3e05f3d5ec564b9a89e1a20d94", bind_db3e5657ff55bb1c)
 	tmplrt.Register("dd2a7a8808ace211dea047af73984014083429e8d48084b36ddb9710b2eaa84b", bind_dd2a7a8808ace211)
-	tmplrt.Register("dea8d8bacd84c8e17d7710b7156b7aa231e0d6277ee67b21f78f767182ea98b1", bind_dea8d8bacd84c8e1)
 	tmplrt.Register("dfdf72857d4984b98db0ede2c5de0d2efb7e685ef39a1b7767178da4481db14e", bind_dfdf72857d4984b9)
 	tmplrt.Register("e071ec706a9a8b5188a23ba19d697dda3a196bb7b5b4275e187500dfd6d8a334", bind_e071ec706a9a8b51)
 	tmplrt.Register("e2f80bfe26154f51cfa59019ba442d7a7c002405ded7f87e0e728b02fe03d0e3", bind_e2f80bfe26154f51)
@@ -129,12 +130,11 @@ func init() {
 	tmplrt.Register("e855fa442122d807f0ecf7abd04bce8b63b357f4fc7528e9ec0a24eed34cf19c", bind_e855fa442122d807)
 	tmplrt.Register("ece6b55e1c87c97d73d951b694449ac6e052a6d577f84e8f49bf5eb506435469", bind_ece6b55e1c87c97d)
 	tmplrt.Register("f189b306eba210e2cdebfbf92f6f12bf7b8317438bd87f89b05ddebb12952748", bind_f189b306eba210e2)
+	tmplrt.Register("f311244df7ec109c2ef07e5c7032e6d7a513cac8e204435b16a73c003536b666", bind_f311244df7ec109c)
 	tmplrt.Register("f34a6492e5b362674dbe0f7ed7edbac753542b116ce368533801dcd986c306d7", bind_f34a6492e5b36267)
 	tmplrt.Register("f493cc3dc42ca584e902e2dd1ebf2d6c5efe8c0a58f4e246f108c17d068f7cab", bind_f493cc3dc42ca584)
-	tmplrt.Register("f5c91f08449d511c0458eed1e5c2fea36f46943ce8a6d44127ff11920da8eb44", bind_f5c91f08449d511c)
 	tmplrt.Register("f875ce59ecd83565163e5d061a729eda5d59b4518d0ec8b26bcd2540145d59f4", bind_f875ce59ecd83565)
 	tmplrt.Register("fa27a2c3acb3016502b72354f6b09c0ccbacedf9c2f88c257de29853404cabc7", bind_fa27a2c3acb30165)
-	tmplrt.Register("fb0a9655234fcf05519b6449559b38e4fec0e7e4f5d3c5eebf95758498c599bc", bind_fb0a9655234fcf05)
 	tmplrt.Register("fc91c9bc7b1611890b9ad55642d6b7856559c8149e4d729f8d4f47d40615c54d", bind_fc91c9bc7b161189)
 	tmplrt.Register("fda1e272084628fc9cef51c64fe68c036d175d62f2fa4800ccfcb75c2685deb6", bind_fda1e272084628fc)
 	tmplrt.Register("ff51d8a050ed8517302630d5685534e21490c070ebb3ff05c62a74243ccf41fa", bind_ff51d8a050ed8517)
@@ -154,6 +154,7 @@ type templateFuncs struct {
 	list_ae7df14d         func(...any) []any
 	localizer_634df8c4    func(any) *ui.Localizer
 	menuGroup_fbb579ee    func(any) string
+	needs_e5e4fd6b        func(string) (string, error)
 	number_a3eca208       func(...any) (any, error)
 	opt_08785a53          func(any, string) any
 	paginationItems_r     reflect.Value
@@ -231,71 +232,6 @@ func bind_02c7a6197b9e7cb9(funcs map[string]any) (tmplrt.Exec, error) {
 			}
 		}
 		return exec_4cad256f522c786d(b, tmplrt.Data(data), fn, 0)
-	}, nil
-}
-
-// bind_02c9203e9b743673 binds "content".
-func bind_02c9203e9b743673(funcs map[string]any) (tmplrt.Exec, error) {
-	fn := new(templateFuncs)
-	var ok bool
-	if fn.T_a3eca208, ok = funcs["T"].(func(...any) (any, error)); !ok {
-		return nil, tmplrt.BindError("T", funcs["T"])
-	}
-	if fn.Tf_a3eca208, ok = funcs["Tf"].(func(...any) (any, error)); !ok {
-		return nil, tmplrt.BindError("Tf", funcs["Tf"])
-	}
-	if fn.actor_a3eca208, ok = funcs["actor"].(func(...any) (any, error)); !ok {
-		return nil, tmplrt.BindError("actor", funcs["actor"])
-	}
-	if fn.dict_72aa8d8f, ok = funcs["dict"].(func(...any) (map[string]any, error)); !ok {
-		return nil, tmplrt.BindError("dict", funcs["dict"])
-	}
-	if fn.icon_bd1e407c, ok = funcs["icon"].(func(string) template.HTML); !ok {
-		return nil, tmplrt.BindError("icon", funcs["icon"])
-	}
-	if fn.list_ae7df14d, ok = funcs["list"].(func(...any) []any); !ok {
-		return nil, tmplrt.BindError("list", funcs["list"])
-	}
-	if fn.localizer_634df8c4, ok = funcs["localizer"].(func(any) *ui.Localizer); !ok {
-		return nil, tmplrt.BindError("localizer", funcs["localizer"])
-	}
-	if fn.menuGroup_fbb579ee, ok = funcs["menuGroup"].(func(any) string); !ok {
-		return nil, tmplrt.BindError("menuGroup", funcs["menuGroup"])
-	}
-	if fn.opt_08785a53, ok = funcs["opt"].(func(any, string) any); !ok {
-		return nil, tmplrt.BindError("opt", funcs["opt"])
-	}
-	if fn.rowMenuItems_r = reflect.ValueOf(funcs["rowMenuItems"]); fn.rowMenuItems_r.Kind() != reflect.Func {
-		return nil, tmplrt.BindError("rowMenuItems", funcs["rowMenuItems"])
-	}
-	if err := tmplrt.Holds(&facts_06f87dfb295d1794, &facts_322e3d45451882be, &facts_67e9e6211bc1b42d, &facts_a9940eda8e2e00ba, &facts_d1285cef9f043c97, &facts_f4500a7b62dea99a); err != nil {
-		return nil, err
-	}
-	typed0 := tmplrt.Holds(&facts_06f87dfb295d1794_36648955) == nil
-	typed1 := tmplrt.Holds(&facts_06f87dfb295d1794_20041b88) == nil
-	typed2 := tmplrt.Holds(&facts_06f87dfb295d1794_3660315a) == nil
-	typed3 := tmplrt.Holds(&facts_06f87dfb295d1794_0ac538bf) == nil
-	return func(b *bytes.Buffer, data any) (err error) {
-		defer tmplrt.Recover(&err, "content")
-		switch data := data.(type) {
-		case Export:
-			if typed0 {
-				return exec_06f87dfb295d1794_36648955(b, data, fn, 0)
-			}
-		case *Export:
-			if typed1 {
-				return exec_06f87dfb295d1794_20041b88(b, data, fn, 0)
-			}
-		case page:
-			if typed2 {
-				return exec_06f87dfb295d1794_3660315a(b, data, fn, 0)
-			}
-		case *page:
-			if typed3 {
-				return exec_06f87dfb295d1794_0ac538bf(b, data, fn, 0)
-			}
-		}
-		return exec_06f87dfb295d1794(b, tmplrt.Data(data), fn, 0)
 	}, nil
 }
 
@@ -405,25 +341,6 @@ func bind_098c2934b26b7f75(funcs map[string]any) (tmplrt.Exec, error) {
 	}, nil
 }
 
-// bind_09fa0b35b84686a4 binds "field-select".
-func bind_09fa0b35b84686a4(funcs map[string]any) (tmplrt.Exec, error) {
-	fn := new(templateFuncs)
-	var ok bool
-	if fn.T_a3eca208, ok = funcs["T"].(func(...any) (any, error)); !ok {
-		return nil, tmplrt.BindError("T", funcs["T"])
-	}
-	if fn.localizer_634df8c4, ok = funcs["localizer"].(func(any) *ui.Localizer); !ok {
-		return nil, tmplrt.BindError("localizer", funcs["localizer"])
-	}
-	if err := tmplrt.Holds(&facts_f4500a7b62dea99a); err != nil {
-		return nil, err
-	}
-	return func(b *bytes.Buffer, data any) (err error) {
-		defer tmplrt.Recover(&err, "field-select")
-		return exec_f4500a7b62dea99a(b, tmplrt.Data(data), fn, 0)
-	}, nil
-}
-
 // bind_0a71d52ec760e77e binds "list-search-submit".
 func bind_0a71d52ec760e77e(funcs map[string]any) (tmplrt.Exec, error) {
 	fn := new(templateFuncs)
@@ -440,28 +357,6 @@ func bind_0a71d52ec760e77e(funcs map[string]any) (tmplrt.Exec, error) {
 	return func(b *bytes.Buffer, data any) (err error) {
 		defer tmplrt.Recover(&err, "list-search-submit")
 		return exec_eed2e2429162b6c6(b, tmplrt.Data(data), fn, 0)
-	}, nil
-}
-
-// bind_0ce725bcb7cac149 binds "field-time".
-func bind_0ce725bcb7cac149(funcs map[string]any) (tmplrt.Exec, error) {
-	fn := new(templateFuncs)
-	var ok bool
-	if fn.T_a3eca208, ok = funcs["T"].(func(...any) (any, error)); !ok {
-		return nil, tmplrt.BindError("T", funcs["T"])
-	}
-	if fn.dateWords_a3eca208, ok = funcs["dateWords"].(func(...any) (any, error)); !ok {
-		return nil, tmplrt.BindError("dateWords", funcs["dateWords"])
-	}
-	if fn.localizer_634df8c4, ok = funcs["localizer"].(func(any) *ui.Localizer); !ok {
-		return nil, tmplrt.BindError("localizer", funcs["localizer"])
-	}
-	if err := tmplrt.Holds(&facts_a091adfe0c36b494); err != nil {
-		return nil, err
-	}
-	return func(b *bytes.Buffer, data any) (err error) {
-		defer tmplrt.Recover(&err, "field-time")
-		return exec_a091adfe0c36b494(b, tmplrt.Data(data), fn, 0)
 	}, nil
 }
 
@@ -750,6 +645,31 @@ func bind_312fa80235218084(funcs map[string]any) (tmplrt.Exec, error) {
 	}, nil
 }
 
+// bind_31cb3007823cf32e binds "field-datetime".
+func bind_31cb3007823cf32e(funcs map[string]any) (tmplrt.Exec, error) {
+	fn := new(templateFuncs)
+	var ok bool
+	if fn.T_a3eca208, ok = funcs["T"].(func(...any) (any, error)); !ok {
+		return nil, tmplrt.BindError("T", funcs["T"])
+	}
+	if fn.dateWords_a3eca208, ok = funcs["dateWords"].(func(...any) (any, error)); !ok {
+		return nil, tmplrt.BindError("dateWords", funcs["dateWords"])
+	}
+	if fn.localizer_634df8c4, ok = funcs["localizer"].(func(any) *ui.Localizer); !ok {
+		return nil, tmplrt.BindError("localizer", funcs["localizer"])
+	}
+	if fn.needs_e5e4fd6b, ok = funcs["needs"].(func(string) (string, error)); !ok {
+		return nil, tmplrt.BindError("needs", funcs["needs"])
+	}
+	if err := tmplrt.Holds(&facts_ae0db17aab33c528); err != nil {
+		return nil, err
+	}
+	return func(b *bytes.Buffer, data any) (err error) {
+		defer tmplrt.Recover(&err, "field-datetime")
+		return exec_ae0db17aab33c528(b, tmplrt.Data(data), fn, 0)
+	}, nil
+}
+
 // bind_339b7c68e8e94bbe binds "content".
 func bind_339b7c68e8e94bbe(funcs map[string]any) (tmplrt.Exec, error) {
 	fn := new(templateFuncs)
@@ -1030,6 +950,31 @@ func bind_4ae7ea50e115a116(funcs map[string]any) (tmplrt.Exec, error) {
 	}, nil
 }
 
+// bind_4c0d5fef9b1484dc binds "field-time".
+func bind_4c0d5fef9b1484dc(funcs map[string]any) (tmplrt.Exec, error) {
+	fn := new(templateFuncs)
+	var ok bool
+	if fn.T_a3eca208, ok = funcs["T"].(func(...any) (any, error)); !ok {
+		return nil, tmplrt.BindError("T", funcs["T"])
+	}
+	if fn.dateWords_a3eca208, ok = funcs["dateWords"].(func(...any) (any, error)); !ok {
+		return nil, tmplrt.BindError("dateWords", funcs["dateWords"])
+	}
+	if fn.localizer_634df8c4, ok = funcs["localizer"].(func(any) *ui.Localizer); !ok {
+		return nil, tmplrt.BindError("localizer", funcs["localizer"])
+	}
+	if fn.needs_e5e4fd6b, ok = funcs["needs"].(func(string) (string, error)); !ok {
+		return nil, tmplrt.BindError("needs", funcs["needs"])
+	}
+	if err := tmplrt.Holds(&facts_72629bf6ccf3f07b); err != nil {
+		return nil, err
+	}
+	return func(b *bytes.Buffer, data any) (err error) {
+		defer tmplrt.Recover(&err, "field-time")
+		return exec_72629bf6ccf3f07b(b, tmplrt.Data(data), fn, 0)
+	}, nil
+}
+
 // bind_4fbe4210f13670b0 binds "confirm.html".
 func bind_4fbe4210f13670b0(map[string]any) (tmplrt.Exec, error) {
 	return func(b *bytes.Buffer, data any) (err error) {
@@ -1280,6 +1225,28 @@ func bind_67601890b128f554(funcs map[string]any) (tmplrt.Exec, error) {
 	}, nil
 }
 
+// bind_69e588b94527a276 binds "field-select".
+func bind_69e588b94527a276(funcs map[string]any) (tmplrt.Exec, error) {
+	fn := new(templateFuncs)
+	var ok bool
+	if fn.T_a3eca208, ok = funcs["T"].(func(...any) (any, error)); !ok {
+		return nil, tmplrt.BindError("T", funcs["T"])
+	}
+	if fn.localizer_634df8c4, ok = funcs["localizer"].(func(any) *ui.Localizer); !ok {
+		return nil, tmplrt.BindError("localizer", funcs["localizer"])
+	}
+	if fn.needs_e5e4fd6b, ok = funcs["needs"].(func(string) (string, error)); !ok {
+		return nil, tmplrt.BindError("needs", funcs["needs"])
+	}
+	if err := tmplrt.Holds(&facts_0295a3503a9d9606); err != nil {
+		return nil, err
+	}
+	return func(b *bytes.Buffer, data any) (err error) {
+		defer tmplrt.Recover(&err, "field-select")
+		return exec_0295a3503a9d9606(b, tmplrt.Data(data), fn, 0)
+	}, nil
+}
+
 // bind_6e8e757e9c4db9ee binds "layout".
 func bind_6e8e757e9c4db9ee(funcs map[string]any) (tmplrt.Exec, error) {
 	fn := new(templateFuncs)
@@ -1358,6 +1325,77 @@ func bind_77ca247387c83766(map[string]any) (tmplrt.Exec, error) {
 	return func(b *bytes.Buffer, data any) (err error) {
 		defer tmplrt.Recover(&err, "dropdown.html")
 		return exec_ae6e1b6107f389ee(b, tmplrt.Data(data), nil, 0)
+	}, nil
+}
+
+// bind_787d990b0a5fcb83 binds "field-date".
+func bind_787d990b0a5fcb83(funcs map[string]any) (tmplrt.Exec, error) {
+	fn := new(templateFuncs)
+	var ok bool
+	if fn.T_a3eca208, ok = funcs["T"].(func(...any) (any, error)); !ok {
+		return nil, tmplrt.BindError("T", funcs["T"])
+	}
+	if fn.dateWords_a3eca208, ok = funcs["dateWords"].(func(...any) (any, error)); !ok {
+		return nil, tmplrt.BindError("dateWords", funcs["dateWords"])
+	}
+	if fn.localizer_634df8c4, ok = funcs["localizer"].(func(any) *ui.Localizer); !ok {
+		return nil, tmplrt.BindError("localizer", funcs["localizer"])
+	}
+	if fn.needs_e5e4fd6b, ok = funcs["needs"].(func(string) (string, error)); !ok {
+		return nil, tmplrt.BindError("needs", funcs["needs"])
+	}
+	if err := tmplrt.Holds(&facts_4976ad99edc8a465); err != nil {
+		return nil, err
+	}
+	return func(b *bytes.Buffer, data any) (err error) {
+		defer tmplrt.Recover(&err, "field-date")
+		return exec_4976ad99edc8a465(b, tmplrt.Data(data), fn, 0)
+	}, nil
+}
+
+// bind_7f234292a64bfee6 binds "api-tokens".
+func bind_7f234292a64bfee6(funcs map[string]any) (tmplrt.Exec, error) {
+	fn := new(templateFuncs)
+	var ok bool
+	if fn.T_a3eca208, ok = funcs["T"].(func(...any) (any, error)); !ok {
+		return nil, tmplrt.BindError("T", funcs["T"])
+	}
+	if fn.Tf_a3eca208, ok = funcs["Tf"].(func(...any) (any, error)); !ok {
+		return nil, tmplrt.BindError("Tf", funcs["Tf"])
+	}
+	if fn.actor_a3eca208, ok = funcs["actor"].(func(...any) (any, error)); !ok {
+		return nil, tmplrt.BindError("actor", funcs["actor"])
+	}
+	if fn.dict_72aa8d8f, ok = funcs["dict"].(func(...any) (map[string]any, error)); !ok {
+		return nil, tmplrt.BindError("dict", funcs["dict"])
+	}
+	if fn.icon_bd1e407c, ok = funcs["icon"].(func(string) template.HTML); !ok {
+		return nil, tmplrt.BindError("icon", funcs["icon"])
+	}
+	if fn.list_ae7df14d, ok = funcs["list"].(func(...any) []any); !ok {
+		return nil, tmplrt.BindError("list", funcs["list"])
+	}
+	if fn.localizer_634df8c4, ok = funcs["localizer"].(func(any) *ui.Localizer); !ok {
+		return nil, tmplrt.BindError("localizer", funcs["localizer"])
+	}
+	if fn.menuGroup_fbb579ee, ok = funcs["menuGroup"].(func(any) string); !ok {
+		return nil, tmplrt.BindError("menuGroup", funcs["menuGroup"])
+	}
+	if fn.needs_e5e4fd6b, ok = funcs["needs"].(func(string) (string, error)); !ok {
+		return nil, tmplrt.BindError("needs", funcs["needs"])
+	}
+	if fn.opt_08785a53, ok = funcs["opt"].(func(any, string) any); !ok {
+		return nil, tmplrt.BindError("opt", funcs["opt"])
+	}
+	if fn.rowMenuItems_r = reflect.ValueOf(funcs["rowMenuItems"]); fn.rowMenuItems_r.Kind() != reflect.Func {
+		return nil, tmplrt.BindError("rowMenuItems", funcs["rowMenuItems"])
+	}
+	if err := tmplrt.Holds(&facts_0295a3503a9d9606, &facts_5403ae9eae502f7d, &facts_67e9e6211bc1b42d, &facts_a9940eda8e2e00ba, &facts_d1285cef9f043c97); err != nil {
+		return nil, err
+	}
+	return func(b *bytes.Buffer, data any) (err error) {
+		defer tmplrt.Recover(&err, "api-tokens")
+		return exec_5403ae9eae502f7d(b, tmplrt.Data(data), fn, 0)
 	}, nil
 }
 
@@ -1539,6 +1577,64 @@ func bind_8c615da64918643d(funcs map[string]any) (tmplrt.Exec, error) {
 	}, nil
 }
 
+// bind_8d286c14d2be09c9 binds "layout".
+func bind_8d286c14d2be09c9(funcs map[string]any) (tmplrt.Exec, error) {
+	fn := new(templateFuncs)
+	var ok bool
+	if fn.T_a3eca208, ok = funcs["T"].(func(...any) (any, error)); !ok {
+		return nil, tmplrt.BindError("T", funcs["T"])
+	}
+	if fn.Tf_a3eca208, ok = funcs["Tf"].(func(...any) (any, error)); !ok {
+		return nil, tmplrt.BindError("Tf", funcs["Tf"])
+	}
+	if fn.actor_a3eca208, ok = funcs["actor"].(func(...any) (any, error)); !ok {
+		return nil, tmplrt.BindError("actor", funcs["actor"])
+	}
+	if fn.dict_72aa8d8f, ok = funcs["dict"].(func(...any) (map[string]any, error)); !ok {
+		return nil, tmplrt.BindError("dict", funcs["dict"])
+	}
+	if fn.icon_bd1e407c, ok = funcs["icon"].(func(string) template.HTML); !ok {
+		return nil, tmplrt.BindError("icon", funcs["icon"])
+	}
+	if fn.list_ae7df14d, ok = funcs["list"].(func(...any) []any); !ok {
+		return nil, tmplrt.BindError("list", funcs["list"])
+	}
+	if fn.localizer_634df8c4, ok = funcs["localizer"].(func(any) *ui.Localizer); !ok {
+		return nil, tmplrt.BindError("localizer", funcs["localizer"])
+	}
+	if fn.menuGroup_fbb579ee, ok = funcs["menuGroup"].(func(any) string); !ok {
+		return nil, tmplrt.BindError("menuGroup", funcs["menuGroup"])
+	}
+	if fn.needs_e5e4fd6b, ok = funcs["needs"].(func(string) (string, error)); !ok {
+		return nil, tmplrt.BindError("needs", funcs["needs"])
+	}
+	if fn.opt_08785a53, ok = funcs["opt"].(func(any, string) any); !ok {
+		return nil, tmplrt.BindError("opt", funcs["opt"])
+	}
+	if fn.rowMenuItems_r = reflect.ValueOf(funcs["rowMenuItems"]); fn.rowMenuItems_r.Kind() != reflect.Func {
+		return nil, tmplrt.BindError("rowMenuItems", funcs["rowMenuItems"])
+	}
+	if err := tmplrt.Holds(&facts_0295a3503a9d9606, &facts_22e3edc7b3dfae9c, &facts_5403ae9eae502f7d, &facts_67e9e6211bc1b42d, &facts_a9940eda8e2e00ba, &facts_c823ec8862ccbae4, &facts_d1285cef9f043c97, &facts_f605c207f3e121d6); err != nil {
+		return nil, err
+	}
+	typed0 := tmplrt.Holds(&facts_0fa5ba82dbbd05e9_3660315a, &facts_22e3edc7b3dfae9c_3660315a, &facts_c823ec8862ccbae4_3660315a) == nil
+	typed1 := tmplrt.Holds(&facts_0fa5ba82dbbd05e9_0ac538bf, &facts_22e3edc7b3dfae9c_0ac538bf, &facts_c823ec8862ccbae4_0ac538bf) == nil
+	return func(b *bytes.Buffer, data any) (err error) {
+		defer tmplrt.Recover(&err, "layout")
+		switch data := data.(type) {
+		case page:
+			if typed0 {
+				return exec_22e3edc7b3dfae9c_3660315a(b, data, fn, 0)
+			}
+		case *page:
+			if typed1 {
+				return exec_22e3edc7b3dfae9c_0ac538bf(b, data, fn, 0)
+			}
+		}
+		return exec_22e3edc7b3dfae9c(b, tmplrt.Data(data), fn, 0)
+	}, nil
+}
+
 // bind_8e84db4a12da5f22 binds "badge".
 func bind_8e84db4a12da5f22(funcs map[string]any) (tmplrt.Exec, error) {
 	fn := new(templateFuncs)
@@ -1603,31 +1699,6 @@ func bind_932530568cadf4d0(funcs map[string]any) (tmplrt.Exec, error) {
 	return func(b *bytes.Buffer, data any) (err error) {
 		defer tmplrt.Recover(&err, "row-menu")
 		return exec_a9940eda8e2e00ba(b, tmplrt.Data(data), fn, 0)
-	}, nil
-}
-
-// bind_93652e6bc90ed459 binds "field-daterange".
-func bind_93652e6bc90ed459(funcs map[string]any) (tmplrt.Exec, error) {
-	fn := new(templateFuncs)
-	var ok bool
-	if fn.T_a3eca208, ok = funcs["T"].(func(...any) (any, error)); !ok {
-		return nil, tmplrt.BindError("T", funcs["T"])
-	}
-	if fn.dateWords_a3eca208, ok = funcs["dateWords"].(func(...any) (any, error)); !ok {
-		return nil, tmplrt.BindError("dateWords", funcs["dateWords"])
-	}
-	if fn.localizer_634df8c4, ok = funcs["localizer"].(func(any) *ui.Localizer); !ok {
-		return nil, tmplrt.BindError("localizer", funcs["localizer"])
-	}
-	if fn.withL_2f8846c9, ok = funcs["withL"].(func(any, *ui.Localizer) any); !ok {
-		return nil, tmplrt.BindError("withL", funcs["withL"])
-	}
-	if err := tmplrt.Holds(&facts_736e46f495816b61, &facts_947243fb105a484d, &facts_d39babba6820218b); err != nil {
-		return nil, err
-	}
-	return func(b *bytes.Buffer, data any) (err error) {
-		defer tmplrt.Recover(&err, "field-daterange")
-		return exec_947243fb105a484d(b, tmplrt.Data(data), fn, 0)
 	}, nil
 }
 
@@ -1951,28 +2022,6 @@ func bind_c1de90d2131edfcb(funcs map[string]any) (tmplrt.Exec, error) {
 	}, nil
 }
 
-// bind_c31b8c214af46d16 binds "field-datetime".
-func bind_c31b8c214af46d16(funcs map[string]any) (tmplrt.Exec, error) {
-	fn := new(templateFuncs)
-	var ok bool
-	if fn.T_a3eca208, ok = funcs["T"].(func(...any) (any, error)); !ok {
-		return nil, tmplrt.BindError("T", funcs["T"])
-	}
-	if fn.dateWords_a3eca208, ok = funcs["dateWords"].(func(...any) (any, error)); !ok {
-		return nil, tmplrt.BindError("dateWords", funcs["dateWords"])
-	}
-	if fn.localizer_634df8c4, ok = funcs["localizer"].(func(any) *ui.Localizer); !ok {
-		return nil, tmplrt.BindError("localizer", funcs["localizer"])
-	}
-	if err := tmplrt.Holds(&facts_736e46f495816b61); err != nil {
-		return nil, err
-	}
-	return func(b *bytes.Buffer, data any) (err error) {
-		defer tmplrt.Recover(&err, "field-datetime")
-		return exec_736e46f495816b61(b, tmplrt.Data(data), fn, 0)
-	}, nil
-}
-
 // bind_c6cfdcc7759c42d1 binds "content".
 func bind_c6cfdcc7759c42d1(funcs map[string]any) (tmplrt.Exec, error) {
 	fn := new(templateFuncs)
@@ -2041,6 +2090,74 @@ func bind_c8c4e1e2a369b7b1(map[string]any) (tmplrt.Exec, error) {
 			}
 		}
 		return exec_083da4f013400a8b(b, tmplrt.Data(data), nil, 0)
+	}, nil
+}
+
+// bind_ca759e4b9815cf99 binds "content".
+func bind_ca759e4b9815cf99(funcs map[string]any) (tmplrt.Exec, error) {
+	fn := new(templateFuncs)
+	var ok bool
+	if fn.T_a3eca208, ok = funcs["T"].(func(...any) (any, error)); !ok {
+		return nil, tmplrt.BindError("T", funcs["T"])
+	}
+	if fn.Tf_a3eca208, ok = funcs["Tf"].(func(...any) (any, error)); !ok {
+		return nil, tmplrt.BindError("Tf", funcs["Tf"])
+	}
+	if fn.actor_a3eca208, ok = funcs["actor"].(func(...any) (any, error)); !ok {
+		return nil, tmplrt.BindError("actor", funcs["actor"])
+	}
+	if fn.dict_72aa8d8f, ok = funcs["dict"].(func(...any) (map[string]any, error)); !ok {
+		return nil, tmplrt.BindError("dict", funcs["dict"])
+	}
+	if fn.icon_bd1e407c, ok = funcs["icon"].(func(string) template.HTML); !ok {
+		return nil, tmplrt.BindError("icon", funcs["icon"])
+	}
+	if fn.list_ae7df14d, ok = funcs["list"].(func(...any) []any); !ok {
+		return nil, tmplrt.BindError("list", funcs["list"])
+	}
+	if fn.localizer_634df8c4, ok = funcs["localizer"].(func(any) *ui.Localizer); !ok {
+		return nil, tmplrt.BindError("localizer", funcs["localizer"])
+	}
+	if fn.menuGroup_fbb579ee, ok = funcs["menuGroup"].(func(any) string); !ok {
+		return nil, tmplrt.BindError("menuGroup", funcs["menuGroup"])
+	}
+	if fn.needs_e5e4fd6b, ok = funcs["needs"].(func(string) (string, error)); !ok {
+		return nil, tmplrt.BindError("needs", funcs["needs"])
+	}
+	if fn.opt_08785a53, ok = funcs["opt"].(func(any, string) any); !ok {
+		return nil, tmplrt.BindError("opt", funcs["opt"])
+	}
+	if fn.rowMenuItems_r = reflect.ValueOf(funcs["rowMenuItems"]); fn.rowMenuItems_r.Kind() != reflect.Func {
+		return nil, tmplrt.BindError("rowMenuItems", funcs["rowMenuItems"])
+	}
+	if err := tmplrt.Holds(&facts_0295a3503a9d9606, &facts_5403ae9eae502f7d, &facts_67e9e6211bc1b42d, &facts_a9940eda8e2e00ba, &facts_c823ec8862ccbae4, &facts_d1285cef9f043c97); err != nil {
+		return nil, err
+	}
+	typed0 := tmplrt.Holds(&facts_c823ec8862ccbae4_36648955) == nil
+	typed1 := tmplrt.Holds(&facts_c823ec8862ccbae4_20041b88) == nil
+	typed2 := tmplrt.Holds(&facts_c823ec8862ccbae4_3660315a) == nil
+	typed3 := tmplrt.Holds(&facts_c823ec8862ccbae4_0ac538bf) == nil
+	return func(b *bytes.Buffer, data any) (err error) {
+		defer tmplrt.Recover(&err, "content")
+		switch data := data.(type) {
+		case Export:
+			if typed0 {
+				return exec_c823ec8862ccbae4_36648955(b, data, fn, 0)
+			}
+		case *Export:
+			if typed1 {
+				return exec_c823ec8862ccbae4_20041b88(b, data, fn, 0)
+			}
+		case page:
+			if typed2 {
+				return exec_c823ec8862ccbae4_3660315a(b, data, fn, 0)
+			}
+		case *page:
+			if typed3 {
+				return exec_c823ec8862ccbae4_0ac538bf(b, data, fn, 0)
+			}
+		}
+		return exec_c823ec8862ccbae4(b, tmplrt.Data(data), fn, 0)
 	}, nil
 }
 
@@ -2218,49 +2335,6 @@ func bind_dd2a7a8808ace211(funcs map[string]any) (tmplrt.Exec, error) {
 	}, nil
 }
 
-// bind_dea8d8bacd84c8e1 binds "api-tokens".
-func bind_dea8d8bacd84c8e1(funcs map[string]any) (tmplrt.Exec, error) {
-	fn := new(templateFuncs)
-	var ok bool
-	if fn.T_a3eca208, ok = funcs["T"].(func(...any) (any, error)); !ok {
-		return nil, tmplrt.BindError("T", funcs["T"])
-	}
-	if fn.Tf_a3eca208, ok = funcs["Tf"].(func(...any) (any, error)); !ok {
-		return nil, tmplrt.BindError("Tf", funcs["Tf"])
-	}
-	if fn.actor_a3eca208, ok = funcs["actor"].(func(...any) (any, error)); !ok {
-		return nil, tmplrt.BindError("actor", funcs["actor"])
-	}
-	if fn.dict_72aa8d8f, ok = funcs["dict"].(func(...any) (map[string]any, error)); !ok {
-		return nil, tmplrt.BindError("dict", funcs["dict"])
-	}
-	if fn.icon_bd1e407c, ok = funcs["icon"].(func(string) template.HTML); !ok {
-		return nil, tmplrt.BindError("icon", funcs["icon"])
-	}
-	if fn.list_ae7df14d, ok = funcs["list"].(func(...any) []any); !ok {
-		return nil, tmplrt.BindError("list", funcs["list"])
-	}
-	if fn.localizer_634df8c4, ok = funcs["localizer"].(func(any) *ui.Localizer); !ok {
-		return nil, tmplrt.BindError("localizer", funcs["localizer"])
-	}
-	if fn.menuGroup_fbb579ee, ok = funcs["menuGroup"].(func(any) string); !ok {
-		return nil, tmplrt.BindError("menuGroup", funcs["menuGroup"])
-	}
-	if fn.opt_08785a53, ok = funcs["opt"].(func(any, string) any); !ok {
-		return nil, tmplrt.BindError("opt", funcs["opt"])
-	}
-	if fn.rowMenuItems_r = reflect.ValueOf(funcs["rowMenuItems"]); fn.rowMenuItems_r.Kind() != reflect.Func {
-		return nil, tmplrt.BindError("rowMenuItems", funcs["rowMenuItems"])
-	}
-	if err := tmplrt.Holds(&facts_322e3d45451882be, &facts_67e9e6211bc1b42d, &facts_a9940eda8e2e00ba, &facts_d1285cef9f043c97, &facts_f4500a7b62dea99a); err != nil {
-		return nil, err
-	}
-	return func(b *bytes.Buffer, data any) (err error) {
-		defer tmplrt.Recover(&err, "api-tokens")
-		return exec_322e3d45451882be(b, tmplrt.Data(data), fn, 0)
-	}, nil
-}
-
 // bind_dfdf72857d4984b9 binds "new.html".
 func bind_dfdf72857d4984b9(map[string]any) (tmplrt.Exec, error) {
 	return func(b *bytes.Buffer, data any) (err error) {
@@ -2350,6 +2424,34 @@ func bind_f189b306eba210e2(map[string]any) (tmplrt.Exec, error) {
 	}, nil
 }
 
+// bind_f311244df7ec109c binds "field-daterange".
+func bind_f311244df7ec109c(funcs map[string]any) (tmplrt.Exec, error) {
+	fn := new(templateFuncs)
+	var ok bool
+	if fn.T_a3eca208, ok = funcs["T"].(func(...any) (any, error)); !ok {
+		return nil, tmplrt.BindError("T", funcs["T"])
+	}
+	if fn.dateWords_a3eca208, ok = funcs["dateWords"].(func(...any) (any, error)); !ok {
+		return nil, tmplrt.BindError("dateWords", funcs["dateWords"])
+	}
+	if fn.localizer_634df8c4, ok = funcs["localizer"].(func(any) *ui.Localizer); !ok {
+		return nil, tmplrt.BindError("localizer", funcs["localizer"])
+	}
+	if fn.needs_e5e4fd6b, ok = funcs["needs"].(func(string) (string, error)); !ok {
+		return nil, tmplrt.BindError("needs", funcs["needs"])
+	}
+	if fn.withL_2f8846c9, ok = funcs["withL"].(func(any, *ui.Localizer) any); !ok {
+		return nil, tmplrt.BindError("withL", funcs["withL"])
+	}
+	if err := tmplrt.Holds(&facts_4976ad99edc8a465, &facts_4d367691bf74e3e0, &facts_ae0db17aab33c528); err != nil {
+		return nil, err
+	}
+	return func(b *bytes.Buffer, data any) (err error) {
+		defer tmplrt.Recover(&err, "field-daterange")
+		return exec_4d367691bf74e3e0(b, tmplrt.Data(data), fn, 0)
+	}, nil
+}
+
 // bind_f34a6492e5b36267 binds "field-select.html".
 func bind_f34a6492e5b36267(map[string]any) (tmplrt.Exec, error) {
 	return func(b *bytes.Buffer, data any) (err error) {
@@ -2363,28 +2465,6 @@ func bind_f493cc3dc42ca584(map[string]any) (tmplrt.Exec, error) {
 	return func(b *bytes.Buffer, data any) (err error) {
 		defer tmplrt.Recover(&err, "layout.html")
 		return exec_03f3f031d51be752(b, tmplrt.Data(data), nil, 0)
-	}, nil
-}
-
-// bind_f5c91f08449d511c binds "field-date".
-func bind_f5c91f08449d511c(funcs map[string]any) (tmplrt.Exec, error) {
-	fn := new(templateFuncs)
-	var ok bool
-	if fn.T_a3eca208, ok = funcs["T"].(func(...any) (any, error)); !ok {
-		return nil, tmplrt.BindError("T", funcs["T"])
-	}
-	if fn.dateWords_a3eca208, ok = funcs["dateWords"].(func(...any) (any, error)); !ok {
-		return nil, tmplrt.BindError("dateWords", funcs["dateWords"])
-	}
-	if fn.localizer_634df8c4, ok = funcs["localizer"].(func(any) *ui.Localizer); !ok {
-		return nil, tmplrt.BindError("localizer", funcs["localizer"])
-	}
-	if err := tmplrt.Holds(&facts_d39babba6820218b); err != nil {
-		return nil, err
-	}
-	return func(b *bytes.Buffer, data any) (err error) {
-		defer tmplrt.Recover(&err, "field-date")
-		return exec_d39babba6820218b(b, tmplrt.Data(data), fn, 0)
 	}, nil
 }
 
@@ -2412,61 +2492,6 @@ func bind_fa27a2c3acb30165(map[string]any) (tmplrt.Exec, error) {
 	return func(b *bytes.Buffer, data any) (err error) {
 		defer tmplrt.Recover(&err, "bulk-bar.html")
 		return exec_ea09462fb9b75dba(b, tmplrt.Data(data), nil, 0)
-	}, nil
-}
-
-// bind_fb0a9655234fcf05 binds "layout".
-func bind_fb0a9655234fcf05(funcs map[string]any) (tmplrt.Exec, error) {
-	fn := new(templateFuncs)
-	var ok bool
-	if fn.T_a3eca208, ok = funcs["T"].(func(...any) (any, error)); !ok {
-		return nil, tmplrt.BindError("T", funcs["T"])
-	}
-	if fn.Tf_a3eca208, ok = funcs["Tf"].(func(...any) (any, error)); !ok {
-		return nil, tmplrt.BindError("Tf", funcs["Tf"])
-	}
-	if fn.actor_a3eca208, ok = funcs["actor"].(func(...any) (any, error)); !ok {
-		return nil, tmplrt.BindError("actor", funcs["actor"])
-	}
-	if fn.dict_72aa8d8f, ok = funcs["dict"].(func(...any) (map[string]any, error)); !ok {
-		return nil, tmplrt.BindError("dict", funcs["dict"])
-	}
-	if fn.icon_bd1e407c, ok = funcs["icon"].(func(string) template.HTML); !ok {
-		return nil, tmplrt.BindError("icon", funcs["icon"])
-	}
-	if fn.list_ae7df14d, ok = funcs["list"].(func(...any) []any); !ok {
-		return nil, tmplrt.BindError("list", funcs["list"])
-	}
-	if fn.localizer_634df8c4, ok = funcs["localizer"].(func(any) *ui.Localizer); !ok {
-		return nil, tmplrt.BindError("localizer", funcs["localizer"])
-	}
-	if fn.menuGroup_fbb579ee, ok = funcs["menuGroup"].(func(any) string); !ok {
-		return nil, tmplrt.BindError("menuGroup", funcs["menuGroup"])
-	}
-	if fn.opt_08785a53, ok = funcs["opt"].(func(any, string) any); !ok {
-		return nil, tmplrt.BindError("opt", funcs["opt"])
-	}
-	if fn.rowMenuItems_r = reflect.ValueOf(funcs["rowMenuItems"]); fn.rowMenuItems_r.Kind() != reflect.Func {
-		return nil, tmplrt.BindError("rowMenuItems", funcs["rowMenuItems"])
-	}
-	if err := tmplrt.Holds(&facts_06f87dfb295d1794, &facts_322e3d45451882be, &facts_343fda220004556a, &facts_67e9e6211bc1b42d, &facts_a9940eda8e2e00ba, &facts_d1285cef9f043c97, &facts_f4500a7b62dea99a, &facts_f605c207f3e121d6); err != nil {
-		return nil, err
-	}
-	typed0 := tmplrt.Holds(&facts_06f87dfb295d1794_3660315a, &facts_0fa5ba82dbbd05e9_3660315a, &facts_343fda220004556a_3660315a) == nil
-	typed1 := tmplrt.Holds(&facts_06f87dfb295d1794_0ac538bf, &facts_0fa5ba82dbbd05e9_0ac538bf, &facts_343fda220004556a_0ac538bf) == nil
-	return func(b *bytes.Buffer, data any) (err error) {
-		defer tmplrt.Recover(&err, "layout")
-		switch data := data.(type) {
-		case page:
-			if typed0 {
-				return exec_343fda220004556a_3660315a(b, data, fn, 0)
-			}
-		case *page:
-			if typed1 {
-				return exec_343fda220004556a_0ac538bf(b, data, fn, 0)
-			}
-		}
-		return exec_343fda220004556a(b, tmplrt.Data(data), fn, 0)
 	}, nil
 }
 
@@ -2584,6 +2609,262 @@ var facts_02406f1496159800 = tmplrt.Facts{
 	},
 }
 
+// exec_0295a3503a9d9606 renders "field-select".
+func exec_0295a3503a9d9606(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
+	root := dot
+	v1 := fn.localizer_634df8c4(tmplrt.Arg(root))
+	x1 := v1
+	_ = x1
+	v2, err := fn.needs_e5e4fd6b("select.js")
+	if err != nil {
+		return tmplrt.ExecError("field-select", "needs \"select.js\"", tmplrt.CallError("needs", err))
+	}
+	tmplrt.WriteHTMLEscaped(b, v2)
+	b.WriteString("<div rst-field><label rst-field-label for=\"")
+	v3, err := tmplrt.Field(dot, "ID")
+	if err != nil {
+		return tmplrt.ExecError("field-select", ".ID", err)
+	}
+	v4 := tmplrt.Unwrap(v3)
+	b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v4)))
+	b.WriteString("\">")
+	v5, err := tmplrt.Field(dot, "Label")
+	if err != nil {
+		return tmplrt.ExecError("field-select", ".Label", err)
+	}
+	v6 := tmplrt.Unwrap(v5)
+	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v6)))
+	v7, err := tmplrt.Field(dot, "Hint")
+	if err != nil {
+		return tmplrt.ExecError("field-select", ".Hint", err)
+	}
+	v8 := tmplrt.Unwrap(v7)
+	if tmplrt.Truth(v8) {
+		dot := v8
+		_ = dot
+		b.WriteString(" <span rst-field-hint>(")
+		v9 := tmplrt.Unwrap(dot)
+		b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v9)))
+		b.WriteString(")</span>")
+	}
+	b.WriteString("</label>\n<select rst-input")
+	v10, err := tmplrt.Field(dot, "Short")
+	if err != nil {
+		return tmplrt.ExecError("field-select", ".Short", err)
+	}
+	v11 := tmplrt.Unwrap(v10)
+	if tmplrt.Truth(v11) {
+		b.WriteString("=\"short\"")
+	}
+	b.WriteString(" id=\"")
+	v12, err := tmplrt.Field(dot, "ID")
+	if err != nil {
+		return tmplrt.ExecError("field-select", ".ID", err)
+	}
+	v13 := tmplrt.Unwrap(v12)
+	b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v13)))
+	b.WriteString("\" name=\"")
+	v14, err := tmplrt.Field(dot, "Name")
+	if err != nil {
+		return tmplrt.ExecError("field-select", ".Name", err)
+	}
+	v15 := tmplrt.Unwrap(v14)
+	b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v15)))
+	b.WriteString("\"")
+	v16, err := tmplrt.Field(dot, "Required")
+	if err != nil {
+		return tmplrt.ExecError("field-select", ".Required", err)
+	}
+	v17 := tmplrt.Unwrap(v16)
+	if tmplrt.Truth(v17) {
+		b.WriteString(" required")
+	}
+	v19, err := tmplrt.Field(dot, "Plain")
+	if err != nil {
+		return tmplrt.ExecError("field-select", ".Plain", err)
+	}
+	v20 := tmplrt.Not(v19)
+	v18 := tmplrt.ValueArg(reflect.ValueOf(v20))
+	if tmplrt.Truth(v18) {
+		v21, err := tmplrt.Field(dot, "Options")
+		if err != nil {
+			return tmplrt.ExecError("field-select", ".Options", err)
+		}
+		v18 = tmplrt.ValueArg(v21)
+		if tmplrt.Truth(v18) {
+			v22, err := tmplrt.Field(dot, "Options")
+			if err != nil {
+				return tmplrt.ExecError("field-select", ".Options", err)
+			}
+			v23, err := tmplrt.Len(v22)
+			if err != nil {
+				return tmplrt.ExecError("field-select", "len .Options", tmplrt.CallError("len", err))
+			}
+			v24, err := tmplrt.Ge(reflect.ValueOf(v23), reflect.ValueOf(10))
+			if err != nil {
+				return tmplrt.ExecError("field-select", "ge (len .Options) 10", tmplrt.CallError("ge", err))
+			}
+			v18 = tmplrt.ValueArg(reflect.ValueOf(v24))
+		}
+	}
+	v25 := tmplrt.Unwrap(v18)
+	if tmplrt.Truth(v25) {
+		b.WriteString(" data-rst-select data-rst-select-filter=\"")
+		v26, err := fn.T_a3eca208(x1, "rastrillo.ui.select_filter")
+		if err != nil {
+			return tmplrt.ExecError("field-select", "T $L \"rastrillo.ui.select_filter\"", tmplrt.CallError("T", err))
+		}
+		v27 := reflect.ValueOf(v26)
+		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v27)))
+		b.WriteString("\" data-rst-select-results=\"")
+		v28, err := fn.T_a3eca208(x1, "rastrillo.ui.select_results")
+		if err != nil {
+			return tmplrt.ExecError("field-select", "T $L \"rastrillo.ui.select_results\"", tmplrt.CallError("T", err))
+		}
+		v29 := reflect.ValueOf(v28)
+		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v29)))
+		b.WriteString("\" data-rst-select-result-one=\"")
+		v30, err := fn.T_a3eca208(x1, "rastrillo.ui.select_result_one")
+		if err != nil {
+			return tmplrt.ExecError("field-select", "T $L \"rastrillo.ui.select_result_one\"", tmplrt.CallError("T", err))
+		}
+		v31 := reflect.ValueOf(v30)
+		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v31)))
+		b.WriteString("\" data-rst-select-no-matches=\"")
+		v32, err := fn.T_a3eca208(x1, "rastrillo.ui.select_no_matches")
+		if err != nil {
+			return tmplrt.ExecError("field-select", "T $L \"rastrillo.ui.select_no_matches\"", tmplrt.CallError("T", err))
+		}
+		v33 := reflect.ValueOf(v32)
+		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v33)))
+		b.WriteString("\"")
+	}
+	v34, err := tmplrt.Field(dot, "Error")
+	if err != nil {
+		return tmplrt.ExecError("field-select", ".Error", err)
+	}
+	v35 := tmplrt.Unwrap(v34)
+	if tmplrt.Truth(v35) {
+		b.WriteString(" aria-invalid=\"true\" aria-describedby=\"")
+		v36, err := tmplrt.Field(dot, "ID")
+		if err != nil {
+			return tmplrt.ExecError("field-select", ".ID", err)
+		}
+		v37 := tmplrt.Unwrap(v36)
+		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v37)))
+		b.WriteString("-error\"")
+	} else {
+		v38, err := tmplrt.Field(dot, "Help")
+		if err != nil {
+			return tmplrt.ExecError("field-select", ".Help", err)
+		}
+		v39 := tmplrt.Unwrap(v38)
+		if tmplrt.Truth(v39) {
+			b.WriteString(" aria-describedby=\"")
+			v40, err := tmplrt.Field(dot, "ID")
+			if err != nil {
+				return tmplrt.ExecError("field-select", ".ID", err)
+			}
+			v41 := tmplrt.Unwrap(v40)
+			b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v41)))
+			b.WriteString("-help\"")
+		}
+	}
+	b.WriteString(">")
+	v42, err := tmplrt.Field(dot, "Options")
+	if err != nil {
+		return tmplrt.ExecError("field-select", ".Options", err)
+	}
+	v43 := tmplrt.Unwrap(v42)
+	if err := tmplrt.Range(v43, func(_, dot reflect.Value) error {
+		b.WriteString("<option value=\"")
+		v44, err := tmplrt.Field(dot, "Value")
+		if err != nil {
+			return tmplrt.ExecError("field-select", ".Value", err)
+		}
+		v45 := tmplrt.Unwrap(v44)
+		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v45)))
+		b.WriteString("\"")
+		v46, err := tmplrt.Field(dot, "Selected")
+		if err != nil {
+			return tmplrt.ExecError("field-select", ".Selected", err)
+		}
+		v47 := tmplrt.Unwrap(v46)
+		if tmplrt.Truth(v47) {
+			b.WriteString(" selected")
+		}
+		b.WriteString(">")
+		v48, err := tmplrt.Field(dot, "Label")
+		if err != nil {
+			return tmplrt.ExecError("field-select", ".Label", err)
+		}
+		v49 := tmplrt.Unwrap(v48)
+		b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v49)))
+		b.WriteString("</option>")
+		return nil
+	}); err != nil {
+		return tmplrt.ExecError("field-select", ".Options", err)
+	}
+	b.WriteString("</select>\n")
+	v50, err := tmplrt.Field(dot, "Error")
+	if err != nil {
+		return tmplrt.ExecError("field-select", ".Error", err)
+	}
+	v51 := tmplrt.Unwrap(v50)
+	if tmplrt.Truth(v51) {
+		b.WriteString("<p rst-field-error id=\"")
+		v52, err := tmplrt.Field(dot, "ID")
+		if err != nil {
+			return tmplrt.ExecError("field-select", ".ID", err)
+		}
+		v53 := tmplrt.Unwrap(v52)
+		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v53)))
+		b.WriteString("-error\" role=\"alert\">")
+		v54, err := tmplrt.Field(dot, "Error")
+		if err != nil {
+			return tmplrt.ExecError("field-select", ".Error", err)
+		}
+		v55 := tmplrt.Unwrap(v54)
+		b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v55)))
+		b.WriteString("</p>\n")
+	} else {
+		v56, err := tmplrt.Field(dot, "Help")
+		if err != nil {
+			return tmplrt.ExecError("field-select", ".Help", err)
+		}
+		v57 := tmplrt.Unwrap(v56)
+		if tmplrt.Truth(v57) {
+			b.WriteString("<p rst-field-help id=\"")
+			v58, err := tmplrt.Field(dot, "ID")
+			if err != nil {
+				return tmplrt.ExecError("field-select", ".ID", err)
+			}
+			v59 := tmplrt.Unwrap(v58)
+			b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v59)))
+			b.WriteString("-help\">")
+			v60, err := tmplrt.Field(dot, "Help")
+			if err != nil {
+				return tmplrt.ExecError("field-select", ".Help", err)
+			}
+			v61 := tmplrt.Unwrap(v60)
+			b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v61)))
+			b.WriteString("</p>\n")
+		}
+	}
+	b.WriteString("</div>")
+	return nil
+}
+
+// facts_0295a3503a9d9606 is what exec_0295a3503a9d9606 assumes of the types it reads.
+var facts_0295a3503a9d9606 = tmplrt.Facts{
+	Funcs: map[string]reflect.Type{
+		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
+	},
+	Facts: []tmplrt.Fact{
+		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
+	},
+}
+
 // exec_03f3f031d51be752 renders "layout.html".
 func exec_03f3f031d51be752(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
 	b.WriteString("\n\n\n")
@@ -2695,255 +2976,6 @@ func exec_05e29369b37c6208(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs
 func exec_06c132f9b1a951b7(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
 	b.WriteString("\n\n")
 	return nil
-}
-
-// exec_06f87dfb295d1794 renders "content".
-func exec_06f87dfb295d1794(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
-	root := dot
-	v1 := fn.localizer_634df8c4(tmplrt.Arg(root))
-	x1 := v1
-	_ = x1
-	b.WriteString("\n<h1>")
-	v2, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_title")
-	if err != nil {
-		return tmplrt.ExecError("content", "T $L \"rastrillo.ui.api_tokens_title\"", tmplrt.CallError("T", err))
-	}
-	v3 := reflect.ValueOf(v2)
-	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v3)))
-	b.WriteString("</h1>\n<p>")
-	v4, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_intro")
-	if err != nil {
-		return tmplrt.ExecError("content", "T $L \"rastrillo.ui.api_tokens_intro\"", tmplrt.CallError("T", err))
-	}
-	v5 := reflect.ValueOf(v4)
-	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v5)))
-	b.WriteString("</p>\n")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("content", "{{template \"api-tokens\" dict \"L\" $L \"Page\" .Content \"Path\" \"/tokens\"}}", tmplrt.DepthError())
-	}
-	v6, err := tmplrt.Field(dot, "Content")
-	if err != nil {
-		return tmplrt.ExecError("content", ".Content", err)
-	}
-	v7, err := fn.dict_72aa8d8f("L", x1, "Page", tmplrt.Arg(v6), "Path", "/tokens")
-	if err != nil {
-		return tmplrt.ExecError("content", "dict \"L\" $L \"Page\" .Content \"Path\" \"/tokens\"", tmplrt.CallError("dict", err))
-	}
-	if err := exec_322e3d45451882be(b, reflect.ValueOf(v7), fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\n")
-	return nil
-}
-
-// facts_06f87dfb295d1794 is what exec_06f87dfb295d1794 assumes of the types it reads.
-var facts_06f87dfb295d1794 = tmplrt.Facts{
-	Funcs: map[string]reflect.Type{
-		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
-	},
-	Facts: []tmplrt.Fact{
-		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
-	},
-}
-
-// exec_06f87dfb295d1794_0ac538bf renders "content" for a dot of type *page.
-func exec_06f87dfb295d1794_0ac538bf(b *bytes.Buffer, dot *page, fn *templateFuncs, depth int) error {
-	root := dot
-	v1 := fn.localizer_634df8c4(root)
-	x1 := v1
-	_ = x1
-	b.WriteString("\n<h1>")
-	v2, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_title")
-	if err != nil {
-		return tmplrt.ExecError("content", "T $L \"rastrillo.ui.api_tokens_title\"", tmplrt.CallError("T", err))
-	}
-	v3 := reflect.ValueOf(v2)
-	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v3)))
-	b.WriteString("</h1>\n<p>")
-	v4, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_intro")
-	if err != nil {
-		return tmplrt.ExecError("content", "T $L \"rastrillo.ui.api_tokens_intro\"", tmplrt.CallError("T", err))
-	}
-	v5 := reflect.ValueOf(v4)
-	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v5)))
-	b.WriteString("</p>\n")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("content", "{{template \"api-tokens\" dict \"L\" $L \"Page\" .Content \"Path\" \"/tokens\"}}", tmplrt.DepthError())
-	}
-	if dot == nil {
-		_, err := tmplrt.Fail("nil pointer evaluating *notes.page.Content")
-		return tmplrt.ExecError("content", ".Content", err)
-	}
-	v6, err := fn.dict_72aa8d8f("L", x1, "Page", dot.Content, "Path", "/tokens")
-	if err != nil {
-		return tmplrt.ExecError("content", "dict \"L\" $L \"Page\" .Content \"Path\" \"/tokens\"", tmplrt.CallError("dict", err))
-	}
-	if err := exec_322e3d45451882be(b, reflect.ValueOf(v6), fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\n")
-	return nil
-}
-
-// facts_06f87dfb295d1794_0ac538bf is what exec_06f87dfb295d1794_0ac538bf assumes of the types it reads.
-var facts_06f87dfb295d1794_0ac538bf = tmplrt.Facts{
-	Dot: reflect.TypeFor[*page](),
-	Funcs: map[string]reflect.Type{
-		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
-	},
-	Facts: []tmplrt.Fact{
-		{Type: "*notes/internal/notes.page"},
-		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
-		{Path: []string{".Content"}, Type: "interface {}"},
-	},
-}
-
-// exec_06f87dfb295d1794_20041b88 renders "content" for a dot of type *Export.
-func exec_06f87dfb295d1794_20041b88(b *bytes.Buffer, dot *Export, fn *templateFuncs, depth int) error {
-	root := dot
-	v1 := fn.localizer_634df8c4(root)
-	x1 := v1
-	_ = x1
-	b.WriteString("\n<h1>")
-	v2, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_title")
-	if err != nil {
-		return tmplrt.ExecError("content", "T $L \"rastrillo.ui.api_tokens_title\"", tmplrt.CallError("T", err))
-	}
-	v3 := reflect.ValueOf(v2)
-	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v3)))
-	b.WriteString("</h1>\n<p>")
-	v4, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_intro")
-	if err != nil {
-		return tmplrt.ExecError("content", "T $L \"rastrillo.ui.api_tokens_intro\"", tmplrt.CallError("T", err))
-	}
-	v5 := reflect.ValueOf(v4)
-	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v5)))
-	b.WriteString("</p>\n")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("content", "{{template \"api-tokens\" dict \"L\" $L \"Page\" .Content \"Path\" \"/tokens\"}}", tmplrt.DepthError())
-	}
-	if dot == nil {
-		_, err := tmplrt.Fail("nil pointer evaluating *notes.Export.Content")
-		return tmplrt.ExecError("content", ".Content", err)
-	}
-	v6, err := fn.dict_72aa8d8f("L", x1, "Page", dot.Content, "Path", "/tokens")
-	if err != nil {
-		return tmplrt.ExecError("content", "dict \"L\" $L \"Page\" .Content \"Path\" \"/tokens\"", tmplrt.CallError("dict", err))
-	}
-	if err := exec_322e3d45451882be(b, reflect.ValueOf(v6), fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\n")
-	return nil
-}
-
-// facts_06f87dfb295d1794_20041b88 is what exec_06f87dfb295d1794_20041b88 assumes of the types it reads.
-var facts_06f87dfb295d1794_20041b88 = tmplrt.Facts{
-	Dot: reflect.TypeFor[*Export](),
-	Funcs: map[string]reflect.Type{
-		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
-	},
-	Facts: []tmplrt.Fact{
-		{Type: "*notes/internal/notes.Export"},
-		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
-		{Path: []string{".Content"}, Type: "string"},
-	},
-}
-
-// exec_06f87dfb295d1794_3660315a renders "content" for a dot of type page.
-func exec_06f87dfb295d1794_3660315a(b *bytes.Buffer, dot page, fn *templateFuncs, depth int) error {
-	root := dot
-	v1 := fn.localizer_634df8c4(root)
-	x1 := v1
-	_ = x1
-	b.WriteString("\n<h1>")
-	v2, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_title")
-	if err != nil {
-		return tmplrt.ExecError("content", "T $L \"rastrillo.ui.api_tokens_title\"", tmplrt.CallError("T", err))
-	}
-	v3 := reflect.ValueOf(v2)
-	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v3)))
-	b.WriteString("</h1>\n<p>")
-	v4, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_intro")
-	if err != nil {
-		return tmplrt.ExecError("content", "T $L \"rastrillo.ui.api_tokens_intro\"", tmplrt.CallError("T", err))
-	}
-	v5 := reflect.ValueOf(v4)
-	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v5)))
-	b.WriteString("</p>\n")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("content", "{{template \"api-tokens\" dict \"L\" $L \"Page\" .Content \"Path\" \"/tokens\"}}", tmplrt.DepthError())
-	}
-	v6, err := fn.dict_72aa8d8f("L", x1, "Page", dot.Content, "Path", "/tokens")
-	if err != nil {
-		return tmplrt.ExecError("content", "dict \"L\" $L \"Page\" .Content \"Path\" \"/tokens\"", tmplrt.CallError("dict", err))
-	}
-	if err := exec_322e3d45451882be(b, reflect.ValueOf(v6), fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\n")
-	return nil
-}
-
-// facts_06f87dfb295d1794_3660315a is what exec_06f87dfb295d1794_3660315a assumes of the types it reads.
-var facts_06f87dfb295d1794_3660315a = tmplrt.Facts{
-	Dot: reflect.TypeFor[page](),
-	Funcs: map[string]reflect.Type{
-		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
-	},
-	Facts: []tmplrt.Fact{
-		{Type: "notes/internal/notes.page struct"},
-		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
-		{Path: []string{".Content"}, Type: "interface {}"},
-	},
-}
-
-// exec_06f87dfb295d1794_36648955 renders "content" for a dot of type Export.
-func exec_06f87dfb295d1794_36648955(b *bytes.Buffer, dot Export, fn *templateFuncs, depth int) error {
-	root := dot
-	v1 := fn.localizer_634df8c4(root)
-	x1 := v1
-	_ = x1
-	b.WriteString("\n<h1>")
-	v2, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_title")
-	if err != nil {
-		return tmplrt.ExecError("content", "T $L \"rastrillo.ui.api_tokens_title\"", tmplrt.CallError("T", err))
-	}
-	v3 := reflect.ValueOf(v2)
-	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v3)))
-	b.WriteString("</h1>\n<p>")
-	v4, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_intro")
-	if err != nil {
-		return tmplrt.ExecError("content", "T $L \"rastrillo.ui.api_tokens_intro\"", tmplrt.CallError("T", err))
-	}
-	v5 := reflect.ValueOf(v4)
-	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v5)))
-	b.WriteString("</p>\n")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("content", "{{template \"api-tokens\" dict \"L\" $L \"Page\" .Content \"Path\" \"/tokens\"}}", tmplrt.DepthError())
-	}
-	v6, err := fn.dict_72aa8d8f("L", x1, "Page", dot.Content, "Path", "/tokens")
-	if err != nil {
-		return tmplrt.ExecError("content", "dict \"L\" $L \"Page\" .Content \"Path\" \"/tokens\"", tmplrt.CallError("dict", err))
-	}
-	if err := exec_322e3d45451882be(b, reflect.ValueOf(v6), fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\n")
-	return nil
-}
-
-// facts_06f87dfb295d1794_36648955 is what exec_06f87dfb295d1794_36648955 assumes of the types it reads.
-var facts_06f87dfb295d1794_36648955 = tmplrt.Facts{
-	Dot: reflect.TypeFor[Export](),
-	Funcs: map[string]reflect.Type{
-		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
-	},
-	Facts: []tmplrt.Fact{
-		{Type: "notes/internal/notes.Export struct"},
-		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
-		{Path: []string{".Content"}, Type: "string"},
-	},
 }
 
 // exec_083da4f013400a8b renders "region:notes-list".
@@ -3690,6 +3722,332 @@ func exec_19c92c8c0df73bc1(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs
 	return nil
 }
 
+// exec_22e3edc7b3dfae9c renders "layout".
+func exec_22e3edc7b3dfae9c(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
+	root := dot
+	v1 := fn.localizer_634df8c4(tmplrt.Arg(root))
+	x1 := v1
+	_ = x1
+	b.WriteString("<!doctype html>\n<html lang=\"")
+	v2 := x1.Identity()
+	tmplrt.WriteAttrEscaped(b, v2)
+	b.WriteString("\" dir=\"")
+	v3 := x1.Dir()
+	tmplrt.WriteAttrEscaped(b, v3)
+	b.WriteString("\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width\">\n<link rel=\"stylesheet\" href=\"/static/app.css\">\n<title>Notes</title>\n")
+	v4, err := tmplrt.Field(dot, "Live")
+	if err != nil {
+		return tmplrt.ExecError("layout", ".Live.Head", err)
+	}
+	var v5 reflect.Value
+	if v4.IsValid() {
+		v6, err := tmplrt.MethodOf(v4, "Head")
+		if err != nil {
+			return tmplrt.ExecError("layout", ".Live.Head", err)
+		}
+		c8, err := v6.Args(2)
+		if err != nil {
+			return tmplrt.ExecError("layout", ".Live.Head", err)
+		}
+		v9, err := fn.T_a3eca208(x1, "rastrillo.ui.live.paused")
+		if err != nil {
+			return tmplrt.ExecError("layout", "T $L \"rastrillo.ui.live.paused\"", tmplrt.CallError("T", err))
+		}
+		v10 := reflect.ValueOf(v9)
+		if err := c8.Add(tmplrt.Val(v10)); err != nil {
+			return tmplrt.ExecError("layout", ".Live.Head", err)
+		}
+		v11, err := fn.T_a3eca208(x1, "rastrillo.ui.live.unconfirmed")
+		if err != nil {
+			return tmplrt.ExecError("layout", "T $L \"rastrillo.ui.live.unconfirmed\"", tmplrt.CallError("T", err))
+		}
+		v12 := reflect.ValueOf(v11)
+		if err := c8.Add(tmplrt.Val(v12)); err != nil {
+			return tmplrt.ExecError("layout", ".Live.Head", err)
+		}
+		v7, err := c8.Call()
+		if err != nil {
+			return tmplrt.ExecError("layout", ".Live.Head", err)
+		}
+		v5 = v7
+	}
+	v13 := tmplrt.Unwrap(v5)
+	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v13)))
+	b.WriteString("\n</head>\n<body>\n<header>\n<nav>\n<a href=\"/\">Notes</a>\n")
+	v14, err := tmplrt.Field(dot, "SignedIn")
+	if err != nil {
+		return tmplrt.ExecError("layout", ".SignedIn", err)
+	}
+	v15 := tmplrt.Unwrap(v14)
+	if tmplrt.Truth(v15) {
+		b.WriteString("\n<a href=\"/bookmarks\">Bookmarks</a>\n<a href=\"/tokens\">")
+		v16, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_title")
+		if err != nil {
+			return tmplrt.ExecError("layout", "T $L \"rastrillo.ui.api_tokens_title\"", tmplrt.CallError("T", err))
+		}
+		v17 := reflect.ValueOf(v16)
+		b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v17)))
+		b.WriteString("</a>\n<form method=\"post\" action=\"/signout\"><button type=\"submit\">Sign out</button></form>\n")
+	} else {
+		b.WriteString("\n<a href=\"/signin\">Sign in</a>\n<a href=\"/signup\">Sign up</a>\n")
+	}
+	b.WriteString("\n</nav>\n")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"locale-menu\" dict \"L\" $L \"Items\" .Locales \"Return\" .Return}}", tmplrt.DepthError())
+	}
+	v18, err := tmplrt.Field(dot, "Locales")
+	if err != nil {
+		return tmplrt.ExecError("layout", ".Locales", err)
+	}
+	v19, err := tmplrt.Field(dot, "Return")
+	if err != nil {
+		return tmplrt.ExecError("layout", ".Return", err)
+	}
+	v20, err := fn.dict_72aa8d8f("L", x1, "Items", tmplrt.Arg(v18), "Return", tmplrt.Arg(v19))
+	if err != nil {
+		return tmplrt.ExecError("layout", "dict \"L\" $L \"Items\" .Locales \"Return\" .Return", tmplrt.CallError("dict", err))
+	}
+	if err := exec_f605c207f3e121d6(b, reflect.ValueOf(v20), fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\n</header>\n")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"region:notice\" .}}", tmplrt.DepthError())
+	}
+	v21 := tmplrt.Unwrap(dot)
+	if err := exec_0fa5ba82dbbd05e9(b, v21, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\n<main rst-page>\n")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"content\" .}}", tmplrt.DepthError())
+	}
+	v22 := tmplrt.Unwrap(dot)
+	if err := exec_c823ec8862ccbae4(b, v22, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\n</main>\n<script defer src=\"/static/rastrillo.js\"></script>\n<script defer src=\"/static/busy.js\"></script>\n<script defer src=\"/static/live.js\"></script>\n</body>\n</html>\n")
+	return nil
+}
+
+// facts_22e3edc7b3dfae9c is what exec_22e3edc7b3dfae9c assumes of the types it reads.
+var facts_22e3edc7b3dfae9c = tmplrt.Facts{
+	Funcs: map[string]reflect.Type{
+		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
+	},
+	Facts: []tmplrt.Fact{
+		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
+		{Func: "localizer_634df8c4", Path: []string{".Identity() func() string"}, Type: "string"},
+		{Func: "localizer_634df8c4", Path: []string{".Dir() func() string"}, Type: "string"},
+	},
+}
+
+// exec_22e3edc7b3dfae9c_0ac538bf renders "layout" for a dot of type *page.
+func exec_22e3edc7b3dfae9c_0ac538bf(b *bytes.Buffer, dot *page, fn *templateFuncs, depth int) error {
+	root := dot
+	v1 := fn.localizer_634df8c4(root)
+	x1 := v1
+	_ = x1
+	b.WriteString("<!doctype html>\n<html lang=\"")
+	v2 := x1.Identity()
+	tmplrt.WriteAttrEscaped(b, v2)
+	b.WriteString("\" dir=\"")
+	v3 := x1.Dir()
+	tmplrt.WriteAttrEscaped(b, v3)
+	b.WriteString("\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width\">\n<link rel=\"stylesheet\" href=\"/static/app.css\">\n<title>Notes</title>\n")
+	if dot == nil {
+		_, err := tmplrt.Fail("nil pointer evaluating *notes.page.Live")
+		return tmplrt.ExecError("layout", ".Live.Head", err)
+	}
+	v4 := &dot.Live
+	v5, err := fn.T_a3eca208(x1, "rastrillo.ui.live.paused")
+	if err != nil {
+		return tmplrt.ExecError("layout", "T $L \"rastrillo.ui.live.paused\"", tmplrt.CallError("T", err))
+	}
+	v6 := reflect.ValueOf(v5)
+	a7, err := tmplrt.Convert[string](tmplrt.Val(v6))
+	if err != nil {
+		return tmplrt.ExecError("layout", ".Live.Head", err)
+	}
+	v8, err := fn.T_a3eca208(x1, "rastrillo.ui.live.unconfirmed")
+	if err != nil {
+		return tmplrt.ExecError("layout", "T $L \"rastrillo.ui.live.unconfirmed\"", tmplrt.CallError("T", err))
+	}
+	v9 := reflect.ValueOf(v8)
+	a10, err := tmplrt.Param[string](tmplrt.Val(v9))
+	if err != nil {
+		return tmplrt.ExecError("layout", ".Live.Head", err)
+	}
+	v11 := v4.Head(tmplrt.As[string](a7), a10)
+	b.WriteString(tmplrt.HTMLEscaper(v11))
+	b.WriteString("\n</head>\n<body>\n<header>\n<nav>\n<a href=\"/\">Notes</a>\n")
+	if dot == nil {
+		_, err := tmplrt.Fail("nil pointer evaluating *notes.page.SignedIn")
+		return tmplrt.ExecError("layout", ".SignedIn", err)
+	}
+	if dot.SignedIn {
+		b.WriteString("\n<a href=\"/bookmarks\">Bookmarks</a>\n<a href=\"/tokens\">")
+		v12, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_title")
+		if err != nil {
+			return tmplrt.ExecError("layout", "T $L \"rastrillo.ui.api_tokens_title\"", tmplrt.CallError("T", err))
+		}
+		v13 := reflect.ValueOf(v12)
+		b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v13)))
+		b.WriteString("</a>\n<form method=\"post\" action=\"/signout\"><button type=\"submit\">Sign out</button></form>\n")
+	} else {
+		b.WriteString("\n<a href=\"/signin\">Sign in</a>\n<a href=\"/signup\">Sign up</a>\n")
+	}
+	b.WriteString("\n</nav>\n")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"locale-menu\" dict \"L\" $L \"Items\" .Locales \"Return\" .Return}}", tmplrt.DepthError())
+	}
+	if dot == nil {
+		_, err := tmplrt.Fail("nil pointer evaluating *notes.page.Locales")
+		return tmplrt.ExecError("layout", ".Locales", err)
+	}
+	if dot == nil {
+		_, err := tmplrt.Fail("nil pointer evaluating *notes.page.Return")
+		return tmplrt.ExecError("layout", ".Return", err)
+	}
+	v14, err := fn.dict_72aa8d8f("L", x1, "Items", dot.Locales, "Return", dot.Return)
+	if err != nil {
+		return tmplrt.ExecError("layout", "dict \"L\" $L \"Items\" .Locales \"Return\" .Return", tmplrt.CallError("dict", err))
+	}
+	if err := exec_f605c207f3e121d6(b, reflect.ValueOf(v14), fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\n</header>\n")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"region:notice\" .}}", tmplrt.DepthError())
+	}
+	if err := exec_0fa5ba82dbbd05e9_0ac538bf(b, dot, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\n<main rst-page>\n")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"content\" .}}", tmplrt.DepthError())
+	}
+	if err := exec_c823ec8862ccbae4_0ac538bf(b, dot, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\n</main>\n<script defer src=\"/static/rastrillo.js\"></script>\n<script defer src=\"/static/busy.js\"></script>\n<script defer src=\"/static/live.js\"></script>\n</body>\n</html>\n")
+	return nil
+}
+
+// facts_22e3edc7b3dfae9c_0ac538bf is what exec_22e3edc7b3dfae9c_0ac538bf assumes of the types it reads.
+var facts_22e3edc7b3dfae9c_0ac538bf = tmplrt.Facts{
+	Dot: reflect.TypeFor[*page](),
+	Funcs: map[string]reflect.Type{
+		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
+	},
+	Facts: []tmplrt.Fact{
+		{Type: "*notes/internal/notes.page"},
+		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
+		{Func: "localizer_634df8c4", Path: []string{".Identity() func() string"}, Type: "string"},
+		{Func: "localizer_634df8c4", Path: []string{".Dir() func() string"}, Type: "string"},
+		{Path: []string{".Live"}, Type: "amadan.net/rastrillo/rastrillo/live.View struct"},
+		{Path: []string{".Live", "&.Head() func(string, string) html/template.HTML"}, Type: "html/template.HTML string"},
+		{Path: []string{".SignedIn"}, Type: "bool"},
+		{Path: []string{".Locales"}, Type: "[]amadan.net/rastrillo/rastrillo.LocaleItem"},
+		{Path: []string{".Return"}, Type: "string"},
+	},
+}
+
+// exec_22e3edc7b3dfae9c_3660315a renders "layout" for a dot of type page.
+func exec_22e3edc7b3dfae9c_3660315a(b *bytes.Buffer, dot page, fn *templateFuncs, depth int) error {
+	root := dot
+	v1 := fn.localizer_634df8c4(root)
+	x1 := v1
+	_ = x1
+	b.WriteString("<!doctype html>\n<html lang=\"")
+	v2 := x1.Identity()
+	tmplrt.WriteAttrEscaped(b, v2)
+	b.WriteString("\" dir=\"")
+	v3 := x1.Dir()
+	tmplrt.WriteAttrEscaped(b, v3)
+	b.WriteString("\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width\">\n<link rel=\"stylesheet\" href=\"/static/app.css\">\n<title>Notes</title>\n")
+	v4 := dot.Live
+	v5, err := fn.T_a3eca208(x1, "rastrillo.ui.live.paused")
+	if err != nil {
+		return tmplrt.ExecError("layout", "T $L \"rastrillo.ui.live.paused\"", tmplrt.CallError("T", err))
+	}
+	v6 := reflect.ValueOf(v5)
+	a7, err := tmplrt.Convert[string](tmplrt.Val(v6))
+	if err != nil {
+		return tmplrt.ExecError("layout", ".Live.Head", err)
+	}
+	v8, err := fn.T_a3eca208(x1, "rastrillo.ui.live.unconfirmed")
+	if err != nil {
+		return tmplrt.ExecError("layout", "T $L \"rastrillo.ui.live.unconfirmed\"", tmplrt.CallError("T", err))
+	}
+	v9 := reflect.ValueOf(v8)
+	a10, err := tmplrt.Param[string](tmplrt.Val(v9))
+	if err != nil {
+		return tmplrt.ExecError("layout", ".Live.Head", err)
+	}
+	v11 := v4.Head(tmplrt.As[string](a7), a10)
+	b.WriteString(tmplrt.HTMLEscaper(v11))
+	b.WriteString("\n</head>\n<body>\n<header>\n<nav>\n<a href=\"/\">Notes</a>\n")
+	if dot.SignedIn {
+		b.WriteString("\n<a href=\"/bookmarks\">Bookmarks</a>\n<a href=\"/tokens\">")
+		v12, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_title")
+		if err != nil {
+			return tmplrt.ExecError("layout", "T $L \"rastrillo.ui.api_tokens_title\"", tmplrt.CallError("T", err))
+		}
+		v13 := reflect.ValueOf(v12)
+		b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v13)))
+		b.WriteString("</a>\n<form method=\"post\" action=\"/signout\"><button type=\"submit\">Sign out</button></form>\n")
+	} else {
+		b.WriteString("\n<a href=\"/signin\">Sign in</a>\n<a href=\"/signup\">Sign up</a>\n")
+	}
+	b.WriteString("\n</nav>\n")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"locale-menu\" dict \"L\" $L \"Items\" .Locales \"Return\" .Return}}", tmplrt.DepthError())
+	}
+	v14, err := fn.dict_72aa8d8f("L", x1, "Items", dot.Locales, "Return", dot.Return)
+	if err != nil {
+		return tmplrt.ExecError("layout", "dict \"L\" $L \"Items\" .Locales \"Return\" .Return", tmplrt.CallError("dict", err))
+	}
+	if err := exec_f605c207f3e121d6(b, reflect.ValueOf(v14), fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\n</header>\n")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"region:notice\" .}}", tmplrt.DepthError())
+	}
+	if err := exec_0fa5ba82dbbd05e9_3660315a(b, dot, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\n<main rst-page>\n")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"content\" .}}", tmplrt.DepthError())
+	}
+	if err := exec_c823ec8862ccbae4_3660315a(b, dot, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\n</main>\n<script defer src=\"/static/rastrillo.js\"></script>\n<script defer src=\"/static/busy.js\"></script>\n<script defer src=\"/static/live.js\"></script>\n</body>\n</html>\n")
+	return nil
+}
+
+// facts_22e3edc7b3dfae9c_3660315a is what exec_22e3edc7b3dfae9c_3660315a assumes of the types it reads.
+var facts_22e3edc7b3dfae9c_3660315a = tmplrt.Facts{
+	Dot: reflect.TypeFor[page](),
+	Funcs: map[string]reflect.Type{
+		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
+	},
+	Facts: []tmplrt.Fact{
+		{Type: "notes/internal/notes.page struct"},
+		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
+		{Func: "localizer_634df8c4", Path: []string{".Identity() func() string"}, Type: "string"},
+		{Func: "localizer_634df8c4", Path: []string{".Dir() func() string"}, Type: "string"},
+		{Path: []string{".Live"}, Type: "amadan.net/rastrillo/rastrillo/live.View struct"},
+		{Path: []string{".Live", ".Head() func(string, string) html/template.HTML"}, Type: "html/template.HTML string"},
+		{Path: []string{".SignedIn"}, Type: "bool"},
+		{Path: []string{".Locales"}, Type: "[]amadan.net/rastrillo/rastrillo.LocaleItem"},
+		{Path: []string{".Return"}, Type: "string"},
+	},
+}
+
 // exec_26da19d60c2192e5 renders "seg-tabs".
 func exec_26da19d60c2192e5(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
 	b.WriteString("<nav rst-seg-tabs aria-label=\"")
@@ -3979,1080 +4337,10 @@ func exec_2e74757c5db9ac82(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs
 	return nil
 }
 
-// exec_322e3d45451882be renders "api-tokens".
-func exec_322e3d45451882be(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
-	root := dot
-	v1 := fn.localizer_634df8c4(tmplrt.Arg(root))
-	x1 := v1
-	_ = x1
-	v2, err := tmplrt.Field(dot, "Page")
-	if err != nil {
-		return tmplrt.ExecError("api-tokens", ".Page", err)
-	}
-	v3 := tmplrt.Unwrap(v2)
-	x2 := v3
-	_ = x2
-	v4, err := tmplrt.Field(dot, "Path")
-	if err != nil {
-		return tmplrt.ExecError("api-tokens", ".Path", err)
-	}
-	v5 := tmplrt.Unwrap(v4)
-	x3 := v5
-	_ = x3
-	v7 := fn.opt_08785a53(tmplrt.Arg(dot), "RevokePath")
-	v8 := reflect.ValueOf(v7)
-	v6 := tmplrt.ValueArg(v8)
-	if !tmplrt.Truth(v6) {
-		v9 := tmplrt.Print(tmplrt.Arg(x3), "/revoke")
-		v6 = tmplrt.ValueArg(reflect.ValueOf(v9))
-	}
-	v10 := tmplrt.Unwrap(v6)
-	x4 := v10
-	_ = x4
-	v12 := fn.opt_08785a53(tmplrt.Arg(dot), "RevokeAgentPath")
-	v13 := reflect.ValueOf(v12)
-	v11 := tmplrt.ValueArg(v13)
-	if !tmplrt.Truth(v11) {
-		v14 := tmplrt.Print(tmplrt.Arg(x3), "/revoke-agent")
-		v11 = tmplrt.ValueArg(reflect.ValueOf(v14))
-	}
-	v15 := tmplrt.Unwrap(v11)
-	x5 := v15
-	_ = x5
-	v17 := fn.opt_08785a53(tmplrt.Arg(dot), "RevokeAllPath")
-	v18 := reflect.ValueOf(v17)
-	v16 := tmplrt.ValueArg(v18)
-	if !tmplrt.Truth(v16) {
-		v19 := tmplrt.Print(tmplrt.Arg(x3), "/revoke-all")
-		v16 = tmplrt.ValueArg(reflect.ValueOf(v19))
-	}
-	v20 := tmplrt.Unwrap(v16)
-	x6 := v20
-	_ = x6
-	b.WriteString("<div rst-tokens>")
-	v21, err := tmplrt.Field(x2, "Created")
-	if err != nil {
-		return tmplrt.ExecError("api-tokens", "$p.Created", err)
-	}
-	v22 := tmplrt.Unwrap(v21)
-	if tmplrt.Truth(v22) {
-		dot := v22
-		_ = dot
-		b.WriteString("\n  <div rst-callout rst-tone=\"positive\" tabindex=\"-1\" autofocus><span rst-callout-ic aria-hidden=\"true\">")
-		v23 := fn.icon_bd1e407c("check-circle")
-		b.WriteString(tmplrt.HTMLEscaper(v23))
-		b.WriteString("</span><div rst-callout-body><strong>")
-		v24, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_reveal")
-		if err != nil {
-			return tmplrt.ExecError("api-tokens", "T $L \"rastrillo.ui.api_tokens_reveal\"", tmplrt.CallError("T", err))
-		}
-		v25 := reflect.ValueOf(v24)
-		b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v25)))
-		b.WriteString("</strong><p><code rst-tokens-secret>")
-		v26, err := tmplrt.Field(dot, "Secret")
-		if err != nil {
-			return tmplrt.ExecError("api-tokens", ".Secret", err)
-		}
-		v27 := tmplrt.Unwrap(v26)
-		b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v27)))
-		b.WriteString("</code></p></div></div>")
-	}
-	b.WriteString("\n  <section rst-box><form rst-form method=\"post\" action=\"")
-	v28 := tmplrt.Unwrap(x3)
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilter(tmplrt.Arg(v28))))
-	b.WriteString("\">\n    ")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("api-tokens", "{{template \"field\" dict \"L\" $L \"ID\" \"agent\" \"Name\" \"agent\" \"Label\" (T $L \"rastrillo.ui.api_tokens_agent\") \"Value\" (index $p.Form \"agent\") \"Maxlength\" \"40\" \"Error\" (index $p.Errors \"agent\")}}", tmplrt.DepthError())
-	}
-	v29, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_agent")
-	if err != nil {
-		return tmplrt.ExecError("api-tokens", "T $L \"rastrillo.ui.api_tokens_agent\"", tmplrt.CallError("T", err))
-	}
-	v30 := reflect.ValueOf(v29)
-	v31, err := tmplrt.Field(x2, "Form")
-	if err != nil {
-		return tmplrt.ExecError("api-tokens", "$p.Form", err)
-	}
-	v32, err := tmplrt.Index(v31, reflect.ValueOf("agent"))
-	if err != nil {
-		return tmplrt.ExecError("api-tokens", "index $p.Form \"agent\"", tmplrt.CallError("index", err))
-	}
-	v33 := tmplrt.Unwrap(v32)
-	v34, err := tmplrt.Field(x2, "Errors")
-	if err != nil {
-		return tmplrt.ExecError("api-tokens", "$p.Errors", err)
-	}
-	v35, err := tmplrt.Index(v34, reflect.ValueOf("agent"))
-	if err != nil {
-		return tmplrt.ExecError("api-tokens", "index $p.Errors \"agent\"", tmplrt.CallError("index", err))
-	}
-	v36 := tmplrt.Unwrap(v35)
-	v37, err := fn.dict_72aa8d8f("L", x1, "ID", "agent", "Name", "agent", "Label", tmplrt.Arg(v30), "Value", tmplrt.Arg(v33), "Maxlength", "40", "Error", tmplrt.Arg(v36))
-	if err != nil {
-		return tmplrt.ExecError("api-tokens", "dict \"L\" $L \"ID\" \"agent\" \"Name\" \"agent\" \"Label\" (T $L \"rastrillo.ui.api_tokens_agent\") \"Value\" (index $p.Form \"agent\") \"Maxlength\" \"40\" \"Error\" (index $p.Errors \"agent\")", tmplrt.CallError("dict", err))
-	}
-	if err := exec_a07b1eb463055a55(b, reflect.ValueOf(v37), fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\n    ")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("api-tokens", "{{template \"field-check\" dict \"L\" $L \"Name\" \"for_self\" \"Value\" \"on\" \"Label\" (T $L \"rastrillo.ui.api_tokens_for_self\") \"Checked\" (ne (index $p.Form \"for_self\") \"\")}}", tmplrt.DepthError())
-	}
-	v38, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_for_self")
-	if err != nil {
-		return tmplrt.ExecError("api-tokens", "T $L \"rastrillo.ui.api_tokens_for_self\"", tmplrt.CallError("T", err))
-	}
-	v39 := reflect.ValueOf(v38)
-	v40, err := tmplrt.Field(x2, "Form")
-	if err != nil {
-		return tmplrt.ExecError("api-tokens", "$p.Form", err)
-	}
-	v41, err := tmplrt.Index(v40, reflect.ValueOf("for_self"))
-	if err != nil {
-		return tmplrt.ExecError("api-tokens", "index $p.Form \"for_self\"", tmplrt.CallError("index", err))
-	}
-	v42 := tmplrt.Unwrap(v41)
-	v43, err := tmplrt.Ne(v42, reflect.ValueOf(""))
-	if err != nil {
-		return tmplrt.ExecError("api-tokens", "ne (index $p.Form \"for_self\") \"\"", tmplrt.CallError("ne", err))
-	}
-	v44, err := fn.dict_72aa8d8f("L", x1, "Name", "for_self", "Value", "on", "Label", tmplrt.Arg(v39), "Checked", v43)
-	if err != nil {
-		return tmplrt.ExecError("api-tokens", "dict \"L\" $L \"Name\" \"for_self\" \"Value\" \"on\" \"Label\" (T $L \"rastrillo.ui.api_tokens_for_self\") \"Checked\" (ne (index $p.Form \"for_self\") \"\")", tmplrt.CallError("dict", err))
-	}
-	if err := exec_d6cd5d2f1a106459(b, reflect.ValueOf(v44), fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\n    ")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("api-tokens", "{{template \"choice-field\" dict \"L\" $L \"Legend\" (T $L \"rastrillo.ui.api_tokens_access\") \"Name\" \"access\" \"Options\" (list (dict \"Value\" \"write\" \"Title\" (T $L \"rastrillo.ui.api_tokens_access_write\") \"Checked\" (eq (index $p.Form \"access\") \"write\")) (dict \"Value\" \"read\" \"Title\" (T $L \"rastrillo.ui.api_tokens_access_read\") \"Checked\" (eq (index $p.Form \"access\") \"read\")))}}", tmplrt.DepthError())
-	}
-	v45, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_access")
-	if err != nil {
-		return tmplrt.ExecError("api-tokens", "T $L \"rastrillo.ui.api_tokens_access\"", tmplrt.CallError("T", err))
-	}
-	v46 := reflect.ValueOf(v45)
-	v47, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_access_write")
-	if err != nil {
-		return tmplrt.ExecError("api-tokens", "T $L \"rastrillo.ui.api_tokens_access_write\"", tmplrt.CallError("T", err))
-	}
-	v48 := reflect.ValueOf(v47)
-	v49, err := tmplrt.Field(x2, "Form")
-	if err != nil {
-		return tmplrt.ExecError("api-tokens", "$p.Form", err)
-	}
-	v50, err := tmplrt.Index(v49, reflect.ValueOf("access"))
-	if err != nil {
-		return tmplrt.ExecError("api-tokens", "index $p.Form \"access\"", tmplrt.CallError("index", err))
-	}
-	v51 := tmplrt.Unwrap(v50)
-	v52, err := tmplrt.Eq(v51, reflect.ValueOf("write"))
-	if err != nil {
-		return tmplrt.ExecError("api-tokens", "eq (index $p.Form \"access\") \"write\"", tmplrt.CallError("eq", err))
-	}
-	v53, err := fn.dict_72aa8d8f("Value", "write", "Title", tmplrt.Arg(v48), "Checked", v52)
-	if err != nil {
-		return tmplrt.ExecError("api-tokens", "dict \"Value\" \"write\" \"Title\" (T $L \"rastrillo.ui.api_tokens_access_write\") \"Checked\" (eq (index $p.Form \"access\") \"write\")", tmplrt.CallError("dict", err))
-	}
-	v54, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_access_read")
-	if err != nil {
-		return tmplrt.ExecError("api-tokens", "T $L \"rastrillo.ui.api_tokens_access_read\"", tmplrt.CallError("T", err))
-	}
-	v55 := reflect.ValueOf(v54)
-	v56, err := tmplrt.Field(x2, "Form")
-	if err != nil {
-		return tmplrt.ExecError("api-tokens", "$p.Form", err)
-	}
-	v57, err := tmplrt.Index(v56, reflect.ValueOf("access"))
-	if err != nil {
-		return tmplrt.ExecError("api-tokens", "index $p.Form \"access\"", tmplrt.CallError("index", err))
-	}
-	v58 := tmplrt.Unwrap(v57)
-	v59, err := tmplrt.Eq(v58, reflect.ValueOf("read"))
-	if err != nil {
-		return tmplrt.ExecError("api-tokens", "eq (index $p.Form \"access\") \"read\"", tmplrt.CallError("eq", err))
-	}
-	v60, err := fn.dict_72aa8d8f("Value", "read", "Title", tmplrt.Arg(v55), "Checked", v59)
-	if err != nil {
-		return tmplrt.ExecError("api-tokens", "dict \"Value\" \"read\" \"Title\" (T $L \"rastrillo.ui.api_tokens_access_read\") \"Checked\" (eq (index $p.Form \"access\") \"read\")", tmplrt.CallError("dict", err))
-	}
-	v61 := fn.list_ae7df14d(v53, v60)
-	v62, err := fn.dict_72aa8d8f("L", x1, "Legend", tmplrt.Arg(v46), "Name", "access", "Options", v61)
-	if err != nil {
-		return tmplrt.ExecError("api-tokens", "dict \"L\" $L \"Legend\" (T $L \"rastrillo.ui.api_tokens_access\") \"Name\" \"access\" \"Options\" (list (dict \"Value\" \"write\" \"Title\" (T $L \"rastrillo.ui.api_tokens_access_write\") \"Checked\" (eq (index $p.Form \"access\") \"write\")) (dict \"Value\" \"read\" \"Title\" (T $L \"rastrillo.ui.api_tokens_access_read\") \"Checked\" (eq (index $p.Form \"access\") \"read\")))", tmplrt.CallError("dict", err))
-	}
-	if err := exec_0517b2ea2527aeca(b, reflect.ValueOf(v62), fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\n    ")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("api-tokens", "{{template \"field-select\" dict \"L\" $L \"ID\" \"expiry\" \"Name\" \"expiry\" \"Label\" (T $L \"rastrillo.ui.api_tokens_expires\") \"Short\" true \"Options\" (list (dict \"Value\" \"30\" \"Label\" (T $L \"rastrillo.ui.api_tokens_expiry_30\") \"Selected\" (eq (index $p.Form \"expiry\") \"30\")) (dict \"Value\" \"90\" \"Label\" (T $L \"rastrillo.ui.api_tokens_expiry_90\") \"Selected\" (eq (index $p.Form \"expiry\") \"90\")) (dict \"Value\" \"365\" \"Label\" (T $L \"rastrillo.ui.api_tokens_expiry_365\") \"Selected\" (eq (index $p.Form \"expiry\") \"365\")) (dict \"Value\" \"never\" \"Label\" (T $L \"rastrillo.ui.api_tokens_expiry_never\") \"Selected\" (eq (index $p.Form \"expiry\") \"never\")))}}", tmplrt.DepthError())
-	}
-	v63, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_expires")
-	if err != nil {
-		return tmplrt.ExecError("api-tokens", "T $L \"rastrillo.ui.api_tokens_expires\"", tmplrt.CallError("T", err))
-	}
-	v64 := reflect.ValueOf(v63)
-	v65, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_expiry_30")
-	if err != nil {
-		return tmplrt.ExecError("api-tokens", "T $L \"rastrillo.ui.api_tokens_expiry_30\"", tmplrt.CallError("T", err))
-	}
-	v66 := reflect.ValueOf(v65)
-	v67, err := tmplrt.Field(x2, "Form")
-	if err != nil {
-		return tmplrt.ExecError("api-tokens", "$p.Form", err)
-	}
-	v68, err := tmplrt.Index(v67, reflect.ValueOf("expiry"))
-	if err != nil {
-		return tmplrt.ExecError("api-tokens", "index $p.Form \"expiry\"", tmplrt.CallError("index", err))
-	}
-	v69 := tmplrt.Unwrap(v68)
-	v70, err := tmplrt.Eq(v69, reflect.ValueOf("30"))
-	if err != nil {
-		return tmplrt.ExecError("api-tokens", "eq (index $p.Form \"expiry\") \"30\"", tmplrt.CallError("eq", err))
-	}
-	v71, err := fn.dict_72aa8d8f("Value", "30", "Label", tmplrt.Arg(v66), "Selected", v70)
-	if err != nil {
-		return tmplrt.ExecError("api-tokens", "dict \"Value\" \"30\" \"Label\" (T $L \"rastrillo.ui.api_tokens_expiry_30\") \"Selected\" (eq (index $p.Form \"expiry\") \"30\")", tmplrt.CallError("dict", err))
-	}
-	v72, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_expiry_90")
-	if err != nil {
-		return tmplrt.ExecError("api-tokens", "T $L \"rastrillo.ui.api_tokens_expiry_90\"", tmplrt.CallError("T", err))
-	}
-	v73 := reflect.ValueOf(v72)
-	v74, err := tmplrt.Field(x2, "Form")
-	if err != nil {
-		return tmplrt.ExecError("api-tokens", "$p.Form", err)
-	}
-	v75, err := tmplrt.Index(v74, reflect.ValueOf("expiry"))
-	if err != nil {
-		return tmplrt.ExecError("api-tokens", "index $p.Form \"expiry\"", tmplrt.CallError("index", err))
-	}
-	v76 := tmplrt.Unwrap(v75)
-	v77, err := tmplrt.Eq(v76, reflect.ValueOf("90"))
-	if err != nil {
-		return tmplrt.ExecError("api-tokens", "eq (index $p.Form \"expiry\") \"90\"", tmplrt.CallError("eq", err))
-	}
-	v78, err := fn.dict_72aa8d8f("Value", "90", "Label", tmplrt.Arg(v73), "Selected", v77)
-	if err != nil {
-		return tmplrt.ExecError("api-tokens", "dict \"Value\" \"90\" \"Label\" (T $L \"rastrillo.ui.api_tokens_expiry_90\") \"Selected\" (eq (index $p.Form \"expiry\") \"90\")", tmplrt.CallError("dict", err))
-	}
-	v79, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_expiry_365")
-	if err != nil {
-		return tmplrt.ExecError("api-tokens", "T $L \"rastrillo.ui.api_tokens_expiry_365\"", tmplrt.CallError("T", err))
-	}
-	v80 := reflect.ValueOf(v79)
-	v81, err := tmplrt.Field(x2, "Form")
-	if err != nil {
-		return tmplrt.ExecError("api-tokens", "$p.Form", err)
-	}
-	v82, err := tmplrt.Index(v81, reflect.ValueOf("expiry"))
-	if err != nil {
-		return tmplrt.ExecError("api-tokens", "index $p.Form \"expiry\"", tmplrt.CallError("index", err))
-	}
-	v83 := tmplrt.Unwrap(v82)
-	v84, err := tmplrt.Eq(v83, reflect.ValueOf("365"))
-	if err != nil {
-		return tmplrt.ExecError("api-tokens", "eq (index $p.Form \"expiry\") \"365\"", tmplrt.CallError("eq", err))
-	}
-	v85, err := fn.dict_72aa8d8f("Value", "365", "Label", tmplrt.Arg(v80), "Selected", v84)
-	if err != nil {
-		return tmplrt.ExecError("api-tokens", "dict \"Value\" \"365\" \"Label\" (T $L \"rastrillo.ui.api_tokens_expiry_365\") \"Selected\" (eq (index $p.Form \"expiry\") \"365\")", tmplrt.CallError("dict", err))
-	}
-	v86, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_expiry_never")
-	if err != nil {
-		return tmplrt.ExecError("api-tokens", "T $L \"rastrillo.ui.api_tokens_expiry_never\"", tmplrt.CallError("T", err))
-	}
-	v87 := reflect.ValueOf(v86)
-	v88, err := tmplrt.Field(x2, "Form")
-	if err != nil {
-		return tmplrt.ExecError("api-tokens", "$p.Form", err)
-	}
-	v89, err := tmplrt.Index(v88, reflect.ValueOf("expiry"))
-	if err != nil {
-		return tmplrt.ExecError("api-tokens", "index $p.Form \"expiry\"", tmplrt.CallError("index", err))
-	}
-	v90 := tmplrt.Unwrap(v89)
-	v91, err := tmplrt.Eq(v90, reflect.ValueOf("never"))
-	if err != nil {
-		return tmplrt.ExecError("api-tokens", "eq (index $p.Form \"expiry\") \"never\"", tmplrt.CallError("eq", err))
-	}
-	v92, err := fn.dict_72aa8d8f("Value", "never", "Label", tmplrt.Arg(v87), "Selected", v91)
-	if err != nil {
-		return tmplrt.ExecError("api-tokens", "dict \"Value\" \"never\" \"Label\" (T $L \"rastrillo.ui.api_tokens_expiry_never\") \"Selected\" (eq (index $p.Form \"expiry\") \"never\")", tmplrt.CallError("dict", err))
-	}
-	v93 := fn.list_ae7df14d(v71, v78, v85, v92)
-	v94, err := fn.dict_72aa8d8f("L", x1, "ID", "expiry", "Name", "expiry", "Label", tmplrt.Arg(v64), "Short", true, "Options", v93)
-	if err != nil {
-		return tmplrt.ExecError("api-tokens", "dict \"L\" $L \"ID\" \"expiry\" \"Name\" \"expiry\" \"Label\" (T $L \"rastrillo.ui.api_tokens_expires\") \"Short\" true \"Options\" (list (dict \"Value\" \"30\" \"Label\" (T $L \"rastrillo.ui.api_tokens_expiry_30\") \"Selected\" (eq (index $p.Form \"expiry\") \"30\")) (dict \"Value\" \"90\" \"Label\" (T $L \"rastrillo.ui.api_tokens_expiry_90\") \"Selected\" (eq (index $p.Form \"expiry\") \"90\")) (dict \"Value\" \"365\" \"Label\" (T $L \"rastrillo.ui.api_tokens_expiry_365\") \"Selected\" (eq (index $p.Form \"expiry\") \"365\")) (dict \"Value\" \"never\" \"Label\" (T $L \"rastrillo.ui.api_tokens_expiry_never\") \"Selected\" (eq (index $p.Form \"expiry\") \"never\")))", tmplrt.CallError("dict", err))
-	}
-	if err := exec_f4500a7b62dea99a(b, reflect.ValueOf(v94), fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\n    ")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("api-tokens", "{{template \"form-foot\" dict \"L\" $L \"Submit\" (T $L \"rastrillo.ui.api_tokens_create\")}}", tmplrt.DepthError())
-	}
-	v95, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_create")
-	if err != nil {
-		return tmplrt.ExecError("api-tokens", "T $L \"rastrillo.ui.api_tokens_create\"", tmplrt.CallError("T", err))
-	}
-	v96 := reflect.ValueOf(v95)
-	v97, err := fn.dict_72aa8d8f("L", x1, "Submit", tmplrt.Arg(v96))
-	if err != nil {
-		return tmplrt.ExecError("api-tokens", "dict \"L\" $L \"Submit\" (T $L \"rastrillo.ui.api_tokens_create\")", tmplrt.CallError("dict", err))
-	}
-	if err := exec_d1285cef9f043c97(b, reflect.ValueOf(v97), fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\n  </form></section>")
-	v98, err := tmplrt.Field(x2, "Tokens")
-	if err != nil {
-		return tmplrt.ExecError("api-tokens", "$p.Tokens", err)
-	}
-	v99 := tmplrt.Unwrap(v98)
-	if tmplrt.Truth(v99) {
-		b.WriteString("\n  <div rst-card rst-tokens-list>\n    <div rst-lrow=\"head\"><span>")
-		v100, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_col_token")
-		if err != nil {
-			return tmplrt.ExecError("api-tokens", "T $L \"rastrillo.ui.api_tokens_col_token\"", tmplrt.CallError("T", err))
-		}
-		v101 := reflect.ValueOf(v100)
-		b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v101)))
-		b.WriteString("</span><span class=\"rst-m-hide\">")
-		v102, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_access")
-		if err != nil {
-			return tmplrt.ExecError("api-tokens", "T $L \"rastrillo.ui.api_tokens_access\"", tmplrt.CallError("T", err))
-		}
-		v103 := reflect.ValueOf(v102)
-		b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v103)))
-		b.WriteString("</span><span class=\"rst-m-hide\">")
-		v104, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_col_created")
-		if err != nil {
-			return tmplrt.ExecError("api-tokens", "T $L \"rastrillo.ui.api_tokens_col_created\"", tmplrt.CallError("T", err))
-		}
-		v105 := reflect.ValueOf(v104)
-		b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v105)))
-		b.WriteString("</span><span class=\"rst-m-hide\">")
-		v106, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_col_last_used")
-		if err != nil {
-			return tmplrt.ExecError("api-tokens", "T $L \"rastrillo.ui.api_tokens_col_last_used\"", tmplrt.CallError("T", err))
-		}
-		v107 := reflect.ValueOf(v106)
-		b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v107)))
-		b.WriteString("</span><span class=\"rst-m-hide\">")
-		v108, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_expires")
-		if err != nil {
-			return tmplrt.ExecError("api-tokens", "T $L \"rastrillo.ui.api_tokens_expires\"", tmplrt.CallError("T", err))
-		}
-		v109 := reflect.ValueOf(v108)
-		b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v109)))
-		b.WriteString("</span><span></span><span></span></div>")
-		v110, err := tmplrt.Field(x2, "Tokens")
-		if err != nil {
-			return tmplrt.ExecError("api-tokens", "$p.Tokens", err)
-		}
-		v111 := tmplrt.Unwrap(v110)
-		if err := tmplrt.Range(v111, func(_, dot reflect.Value) error {
-			b.WriteString("\n    <div rst-lrow>\n      <span class=\"rst-nm\">")
-			if depth == tmplrt.MaxExecDepth {
-				return tmplrt.ExecError("api-tokens", "{{template \"actor\" dict \"L\" $L \"Actor\" .Actor \"Display\" .Display}}", tmplrt.DepthError())
-			}
-			v112, err := tmplrt.Field(dot, "Actor")
-			if err != nil {
-				return tmplrt.ExecError("api-tokens", ".Actor", err)
-			}
-			v113, err := tmplrt.Field(dot, "Display")
-			if err != nil {
-				return tmplrt.ExecError("api-tokens", ".Display", err)
-			}
-			v114, err := fn.dict_72aa8d8f("L", x1, "Actor", tmplrt.Arg(v112), "Display", tmplrt.Arg(v113))
-			if err != nil {
-				return tmplrt.ExecError("api-tokens", "dict \"L\" $L \"Actor\" .Actor \"Display\" .Display", tmplrt.CallError("dict", err))
-			}
-			if err := exec_67e9e6211bc1b42d(b, reflect.ValueOf(v114), fn, depth+1); err != nil {
-				return err
-			}
-			b.WriteString("<small><code>")
-			v115, err := tmplrt.Field(dot, "ID")
-			if err != nil {
-				return tmplrt.ExecError("api-tokens", ".ID", err)
-			}
-			v116 := tmplrt.Unwrap(v115)
-			b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v116)))
-			b.WriteString("</code></small></span>\n      <span rst-tokens-fact><span rst-tokens-fact-label>")
-			v117, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_access")
-			if err != nil {
-				return tmplrt.ExecError("api-tokens", "T $L \"rastrillo.ui.api_tokens_access\"", tmplrt.CallError("T", err))
-			}
-			v118 := reflect.ValueOf(v117)
-			b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v118)))
-			b.WriteString("</span>")
-			v119, err := tmplrt.Field(dot, "Access")
-			if err != nil {
-				return tmplrt.ExecError("api-tokens", ".Access.String", err)
-			}
-			v120, err := tmplrt.Field(v119, "String")
-			if err != nil {
-				return tmplrt.ExecError("api-tokens", ".Access.String", err)
-			}
-			v121, err := tmplrt.Eq(v120, reflect.ValueOf("write"))
-			if err != nil {
-				return tmplrt.ExecError("api-tokens", "eq .Access.String \"write\"", tmplrt.CallError("eq", err))
-			}
-			if v121 {
-				v122, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_access_write")
-				if err != nil {
-					return tmplrt.ExecError("api-tokens", "T $L \"rastrillo.ui.api_tokens_access_write\"", tmplrt.CallError("T", err))
-				}
-				v123 := reflect.ValueOf(v122)
-				b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v123)))
-			} else {
-				v124, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_access_read")
-				if err != nil {
-					return tmplrt.ExecError("api-tokens", "T $L \"rastrillo.ui.api_tokens_access_read\"", tmplrt.CallError("T", err))
-				}
-				v125 := reflect.ValueOf(v124)
-				b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v125)))
-			}
-			b.WriteString("</span>\n      <span rst-tokens-fact><span rst-tokens-fact-label>")
-			v126, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_col_created")
-			if err != nil {
-				return tmplrt.ExecError("api-tokens", "T $L \"rastrillo.ui.api_tokens_col_created\"", tmplrt.CallError("T", err))
-			}
-			v127 := reflect.ValueOf(v126)
-			b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v127)))
-			b.WriteString("</span><time datetime=\"")
-			v128, err := tmplrt.Field(dot, "CreatedAt")
-			if err != nil {
-				return tmplrt.ExecError("api-tokens", ".CreatedAt.Format", err)
-			}
-			var v129 reflect.Value
-			if v128.IsValid() {
-				v130, err := tmplrt.MethodOf(v128, "Format")
-				if err != nil {
-					return tmplrt.ExecError("api-tokens", ".CreatedAt.Format", err)
-				}
-				v131, err := v130.Call(tmplrt.ConstString("2006-01-02", "\"2006-01-02\""))
-				if err != nil {
-					return tmplrt.ExecError("api-tokens", ".CreatedAt.Format", err)
-				}
-				v129 = v131
-			}
-			v132 := tmplrt.Unwrap(v129)
-			b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v132)))
-			b.WriteString("\">")
-			v133, err := tmplrt.Field(dot, "CreatedAt")
-			if err != nil {
-				return tmplrt.ExecError("api-tokens", ".CreatedAt.Format", err)
-			}
-			var v134 reflect.Value
-			if v133.IsValid() {
-				v135, err := tmplrt.MethodOf(v133, "Format")
-				if err != nil {
-					return tmplrt.ExecError("api-tokens", ".CreatedAt.Format", err)
-				}
-				v136, err := v135.Call(tmplrt.ConstString("2006-01-02", "\"2006-01-02\""))
-				if err != nil {
-					return tmplrt.ExecError("api-tokens", ".CreatedAt.Format", err)
-				}
-				v134 = v136
-			}
-			v137 := tmplrt.Unwrap(v134)
-			b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v137)))
-			b.WriteString("</time></span>\n      <span rst-tokens-fact><span rst-tokens-fact-label>")
-			v138, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_col_last_used")
-			if err != nil {
-				return tmplrt.ExecError("api-tokens", "T $L \"rastrillo.ui.api_tokens_col_last_used\"", tmplrt.CallError("T", err))
-			}
-			v139 := reflect.ValueOf(v138)
-			b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v139)))
-			b.WriteString("</span>")
-			v140, err := tmplrt.Field(dot, "LastUsed")
-			if err != nil {
-				return tmplrt.ExecError("api-tokens", ".LastUsed", err)
-			}
-			v141 := tmplrt.Unwrap(v140)
-			if tmplrt.Truth(v141) {
-				dot := v141
-				_ = dot
-				b.WriteString("<time datetime=\"")
-				var v142 reflect.Value
-				if dot.IsValid() {
-					v143, err := tmplrt.MethodOf(dot, "Format")
-					if err != nil {
-						return tmplrt.ExecError("api-tokens", ".Format", err)
-					}
-					v144, err := v143.Call(tmplrt.ConstString("2006-01-02", "\"2006-01-02\""))
-					if err != nil {
-						return tmplrt.ExecError("api-tokens", ".Format", err)
-					}
-					v142 = v144
-				}
-				v145 := tmplrt.Unwrap(v142)
-				b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v145)))
-				b.WriteString("\">")
-				var v146 reflect.Value
-				if dot.IsValid() {
-					v147, err := tmplrt.MethodOf(dot, "Format")
-					if err != nil {
-						return tmplrt.ExecError("api-tokens", ".Format", err)
-					}
-					v148, err := v147.Call(tmplrt.ConstString("2006-01-02", "\"2006-01-02\""))
-					if err != nil {
-						return tmplrt.ExecError("api-tokens", ".Format", err)
-					}
-					v146 = v148
-				}
-				v149 := tmplrt.Unwrap(v146)
-				b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v149)))
-				b.WriteString("</time>")
-			}
-			b.WriteString("</span>\n      <span rst-tokens-fact><span rst-tokens-fact-label>")
-			v150, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_expires")
-			if err != nil {
-				return tmplrt.ExecError("api-tokens", "T $L \"rastrillo.ui.api_tokens_expires\"", tmplrt.CallError("T", err))
-			}
-			v151 := reflect.ValueOf(v150)
-			b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v151)))
-			b.WriteString("</span>")
-			v152, err := tmplrt.Field(dot, "ExpiresAt")
-			if err != nil {
-				return tmplrt.ExecError("api-tokens", ".ExpiresAt", err)
-			}
-			v153 := tmplrt.Unwrap(v152)
-			if tmplrt.Truth(v153) {
-				dot := v153
-				_ = dot
-				b.WriteString("<time datetime=\"")
-				var v154 reflect.Value
-				if dot.IsValid() {
-					v155, err := tmplrt.MethodOf(dot, "Format")
-					if err != nil {
-						return tmplrt.ExecError("api-tokens", ".Format", err)
-					}
-					v156, err := v155.Call(tmplrt.ConstString("2006-01-02", "\"2006-01-02\""))
-					if err != nil {
-						return tmplrt.ExecError("api-tokens", ".Format", err)
-					}
-					v154 = v156
-				}
-				v157 := tmplrt.Unwrap(v154)
-				b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v157)))
-				b.WriteString("\">")
-				var v158 reflect.Value
-				if dot.IsValid() {
-					v159, err := tmplrt.MethodOf(dot, "Format")
-					if err != nil {
-						return tmplrt.ExecError("api-tokens", ".Format", err)
-					}
-					v160, err := v159.Call(tmplrt.ConstString("2006-01-02", "\"2006-01-02\""))
-					if err != nil {
-						return tmplrt.ExecError("api-tokens", ".Format", err)
-					}
-					v158 = v160
-				}
-				v161 := tmplrt.Unwrap(v158)
-				b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v161)))
-				b.WriteString("</time>")
-			} else {
-				v162, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_expiry_never")
-				if err != nil {
-					return tmplrt.ExecError("api-tokens", "T $L \"rastrillo.ui.api_tokens_expiry_never\"", tmplrt.CallError("T", err))
-				}
-				v163 := reflect.ValueOf(v162)
-				b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v163)))
-			}
-			b.WriteString("</span>")
-			v164, err := tmplrt.Field(dot, "Revoked")
-			if err != nil {
-				return tmplrt.ExecError("api-tokens", ".Revoked", err)
-			}
-			v165 := tmplrt.Unwrap(v164)
-			if tmplrt.Truth(v165) {
-				b.WriteString("\n      <span rst-tokens-state>")
-				if depth == tmplrt.MaxExecDepth {
-					return tmplrt.ExecError("api-tokens", "{{template \"status-pill\" dict \"L\" $L \"Label\" (T $L \"rastrillo.ui.api_tokens_revoked\")}}", tmplrt.DepthError())
-				}
-				v166, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_revoked")
-				if err != nil {
-					return tmplrt.ExecError("api-tokens", "T $L \"rastrillo.ui.api_tokens_revoked\"", tmplrt.CallError("T", err))
-				}
-				v167 := reflect.ValueOf(v166)
-				v168, err := fn.dict_72aa8d8f("L", x1, "Label", tmplrt.Arg(v167))
-				if err != nil {
-					return tmplrt.ExecError("api-tokens", "dict \"L\" $L \"Label\" (T $L \"rastrillo.ui.api_tokens_revoked\")", tmplrt.CallError("dict", err))
-				}
-				if err := exec_452843fb8e86ab18(b, reflect.ValueOf(v168), fn, depth+1); err != nil {
-					return err
-				}
-				b.WriteString("</span>")
-			} else {
-				v169, err := tmplrt.Field(dot, "Expired")
-				if err != nil {
-					return tmplrt.ExecError("api-tokens", ".Expired", err)
-				}
-				v170 := tmplrt.Unwrap(v169)
-				if tmplrt.Truth(v170) {
-					b.WriteString("\n      <span rst-tokens-state>")
-					if depth == tmplrt.MaxExecDepth {
-						return tmplrt.ExecError("api-tokens", "{{template \"status-pill\" dict \"L\" $L \"Tone\" \"warning\" \"Label\" (T $L \"rastrillo.ui.api_tokens_expired\")}}", tmplrt.DepthError())
-					}
-					v171, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_expired")
-					if err != nil {
-						return tmplrt.ExecError("api-tokens", "T $L \"rastrillo.ui.api_tokens_expired\"", tmplrt.CallError("T", err))
-					}
-					v172 := reflect.ValueOf(v171)
-					v173, err := fn.dict_72aa8d8f("L", x1, "Tone", "warning", "Label", tmplrt.Arg(v172))
-					if err != nil {
-						return tmplrt.ExecError("api-tokens", "dict \"L\" $L \"Tone\" \"warning\" \"Label\" (T $L \"rastrillo.ui.api_tokens_expired\")", tmplrt.CallError("dict", err))
-					}
-					if err := exec_452843fb8e86ab18(b, reflect.ValueOf(v173), fn, depth+1); err != nil {
-						return err
-					}
-					b.WriteString("</span>")
-				} else {
-					b.WriteString("\n      <span rst-tokens-state></span>\n      ")
-					if depth == tmplrt.MaxExecDepth {
-						return tmplrt.ExecError("api-tokens", "{{template \"row-menu\" dict \"L\" $L \"Name\" .Display \"Items\" (list (dict \"Label\" (T $L \"rastrillo.ui.api_tokens_revoke\") \"Action\" $revoke \"Hidden\" (list (list \"id\" .ID))))}}", tmplrt.DepthError())
-					}
-					v174, err := tmplrt.Field(dot, "Display")
-					if err != nil {
-						return tmplrt.ExecError("api-tokens", ".Display", err)
-					}
-					v175, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_revoke")
-					if err != nil {
-						return tmplrt.ExecError("api-tokens", "T $L \"rastrillo.ui.api_tokens_revoke\"", tmplrt.CallError("T", err))
-					}
-					v176 := reflect.ValueOf(v175)
-					v177, err := tmplrt.Field(dot, "ID")
-					if err != nil {
-						return tmplrt.ExecError("api-tokens", ".ID", err)
-					}
-					v178 := fn.list_ae7df14d("id", tmplrt.Arg(v177))
-					v179 := fn.list_ae7df14d(v178)
-					v180, err := fn.dict_72aa8d8f("Label", tmplrt.Arg(v176), "Action", tmplrt.Arg(x4), "Hidden", v179)
-					if err != nil {
-						return tmplrt.ExecError("api-tokens", "dict \"Label\" (T $L \"rastrillo.ui.api_tokens_revoke\") \"Action\" $revoke \"Hidden\" (list (list \"id\" .ID))", tmplrt.CallError("dict", err))
-					}
-					v181 := fn.list_ae7df14d(v180)
-					v182, err := fn.dict_72aa8d8f("L", x1, "Name", tmplrt.Arg(v174), "Items", v181)
-					if err != nil {
-						return tmplrt.ExecError("api-tokens", "dict \"L\" $L \"Name\" .Display \"Items\" (list (dict \"Label\" (T $L \"rastrillo.ui.api_tokens_revoke\") \"Action\" $revoke \"Hidden\" (list (list \"id\" .ID))))", tmplrt.CallError("dict", err))
-					}
-					if err := exec_a9940eda8e2e00ba(b, reflect.ValueOf(v182), fn, depth+1); err != nil {
-						return err
-					}
-				}
-			}
-			b.WriteString("\n    </div>")
-			return nil
-		}); err != nil {
-			return tmplrt.ExecError("api-tokens", "$p.Tokens", err)
-		}
-		b.WriteString("\n  </div>\n  <div rst-tokens-revoke>")
-		v183, err := tmplrt.Field(x2, "Agents")
-		if err != nil {
-			return tmplrt.ExecError("api-tokens", "$p.Agents", err)
-		}
-		v184 := tmplrt.Unwrap(v183)
-		if err := tmplrt.Range(v184, func(_, dot reflect.Value) error {
-			b.WriteString("\n    <form method=\"post\" action=\"")
-			v185 := tmplrt.Unwrap(x5)
-			tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilter(tmplrt.Arg(v185))))
-			b.WriteString("\"><input type=\"hidden\" name=\"agent\" value=\"")
-			v186 := tmplrt.Unwrap(dot)
-			b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v186)))
-			b.WriteString("\"><button rst-btn type=\"submit\">")
-			v187, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_revoke_agent")
-			if err != nil {
-				return tmplrt.ExecError("api-tokens", "T $L \"rastrillo.ui.api_tokens_revoke_agent\"", tmplrt.CallError("T", err))
-			}
-			v188 := reflect.ValueOf(v187)
-			b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v188)))
-			b.WriteString(": ")
-			v189 := tmplrt.Unwrap(dot)
-			b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v189)))
-			b.WriteString("</button></form>")
-			return nil
-		}); err != nil {
-			return tmplrt.ExecError("api-tokens", "$p.Agents", err)
-		}
-		b.WriteString("\n    <form method=\"post\" action=\"")
-		v190 := tmplrt.Unwrap(x6)
-		tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilter(tmplrt.Arg(v190))))
-		b.WriteString("\"><button rst-btn=\"danger\" type=\"submit\">")
-		v191, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_revoke_all")
-		if err != nil {
-			return tmplrt.ExecError("api-tokens", "T $L \"rastrillo.ui.api_tokens_revoke_all\"", tmplrt.CallError("T", err))
-		}
-		v192 := reflect.ValueOf(v191)
-		b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v192)))
-		b.WriteString("</button></form>\n  </div>")
-	} else {
-		b.WriteString("\n  ")
-		if depth == tmplrt.MaxExecDepth {
-			return tmplrt.ExecError("api-tokens", "{{template \"empty-state\" dict \"L\" $L \"Body\" (T $L \"rastrillo.ui.api_tokens_empty\")}}", tmplrt.DepthError())
-		}
-		v193, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_empty")
-		if err != nil {
-			return tmplrt.ExecError("api-tokens", "T $L \"rastrillo.ui.api_tokens_empty\"", tmplrt.CallError("T", err))
-		}
-		v194 := reflect.ValueOf(v193)
-		v195, err := fn.dict_72aa8d8f("L", x1, "Body", tmplrt.Arg(v194))
-		if err != nil {
-			return tmplrt.ExecError("api-tokens", "dict \"L\" $L \"Body\" (T $L \"rastrillo.ui.api_tokens_empty\")", tmplrt.CallError("dict", err))
-		}
-		if err := exec_61dfa84b6b25c690(b, reflect.ValueOf(v195), fn, depth+1); err != nil {
-			return err
-		}
-	}
-	b.WriteString("\n</div>")
-	return nil
-}
-
-// facts_322e3d45451882be is what exec_322e3d45451882be assumes of the types it reads.
-var facts_322e3d45451882be = tmplrt.Facts{
-	Funcs: map[string]reflect.Type{
-		"icon_bd1e407c":      reflect.TypeFor[func(string) template.HTML](),
-		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
-	},
-	Facts: []tmplrt.Fact{
-		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
-		{Func: "icon_bd1e407c", Type: "html/template.HTML string"},
-	},
-}
-
 // exec_3280c08ef62c802b renders "status-pill.html".
 func exec_3280c08ef62c802b(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
 	b.WriteString("\n\n")
 	return nil
-}
-
-// exec_343fda220004556a renders "layout".
-func exec_343fda220004556a(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
-	root := dot
-	v1 := fn.localizer_634df8c4(tmplrt.Arg(root))
-	x1 := v1
-	_ = x1
-	b.WriteString("<!doctype html>\n<html lang=\"")
-	v2 := x1.Identity()
-	tmplrt.WriteAttrEscaped(b, v2)
-	b.WriteString("\" dir=\"")
-	v3 := x1.Dir()
-	tmplrt.WriteAttrEscaped(b, v3)
-	b.WriteString("\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width\">\n<link rel=\"stylesheet\" href=\"/static/app.css\">\n<title>Notes</title>\n")
-	v4, err := tmplrt.Field(dot, "Live")
-	if err != nil {
-		return tmplrt.ExecError("layout", ".Live.Head", err)
-	}
-	var v5 reflect.Value
-	if v4.IsValid() {
-		v6, err := tmplrt.MethodOf(v4, "Head")
-		if err != nil {
-			return tmplrt.ExecError("layout", ".Live.Head", err)
-		}
-		c8, err := v6.Args(2)
-		if err != nil {
-			return tmplrt.ExecError("layout", ".Live.Head", err)
-		}
-		v9, err := fn.T_a3eca208(x1, "rastrillo.ui.live.paused")
-		if err != nil {
-			return tmplrt.ExecError("layout", "T $L \"rastrillo.ui.live.paused\"", tmplrt.CallError("T", err))
-		}
-		v10 := reflect.ValueOf(v9)
-		if err := c8.Add(tmplrt.Val(v10)); err != nil {
-			return tmplrt.ExecError("layout", ".Live.Head", err)
-		}
-		v11, err := fn.T_a3eca208(x1, "rastrillo.ui.live.unconfirmed")
-		if err != nil {
-			return tmplrt.ExecError("layout", "T $L \"rastrillo.ui.live.unconfirmed\"", tmplrt.CallError("T", err))
-		}
-		v12 := reflect.ValueOf(v11)
-		if err := c8.Add(tmplrt.Val(v12)); err != nil {
-			return tmplrt.ExecError("layout", ".Live.Head", err)
-		}
-		v7, err := c8.Call()
-		if err != nil {
-			return tmplrt.ExecError("layout", ".Live.Head", err)
-		}
-		v5 = v7
-	}
-	v13 := tmplrt.Unwrap(v5)
-	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v13)))
-	b.WriteString("\n</head>\n<body>\n<header>\n<nav>\n<a href=\"/\">Notes</a>\n")
-	v14, err := tmplrt.Field(dot, "SignedIn")
-	if err != nil {
-		return tmplrt.ExecError("layout", ".SignedIn", err)
-	}
-	v15 := tmplrt.Unwrap(v14)
-	if tmplrt.Truth(v15) {
-		b.WriteString("\n<a href=\"/bookmarks\">Bookmarks</a>\n<a href=\"/tokens\">")
-		v16, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_title")
-		if err != nil {
-			return tmplrt.ExecError("layout", "T $L \"rastrillo.ui.api_tokens_title\"", tmplrt.CallError("T", err))
-		}
-		v17 := reflect.ValueOf(v16)
-		b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v17)))
-		b.WriteString("</a>\n<form method=\"post\" action=\"/signout\"><button type=\"submit\">Sign out</button></form>\n")
-	} else {
-		b.WriteString("\n<a href=\"/signin\">Sign in</a>\n<a href=\"/signup\">Sign up</a>\n")
-	}
-	b.WriteString("\n</nav>\n")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"locale-menu\" dict \"L\" $L \"Items\" .Locales \"Return\" .Return}}", tmplrt.DepthError())
-	}
-	v18, err := tmplrt.Field(dot, "Locales")
-	if err != nil {
-		return tmplrt.ExecError("layout", ".Locales", err)
-	}
-	v19, err := tmplrt.Field(dot, "Return")
-	if err != nil {
-		return tmplrt.ExecError("layout", ".Return", err)
-	}
-	v20, err := fn.dict_72aa8d8f("L", x1, "Items", tmplrt.Arg(v18), "Return", tmplrt.Arg(v19))
-	if err != nil {
-		return tmplrt.ExecError("layout", "dict \"L\" $L \"Items\" .Locales \"Return\" .Return", tmplrt.CallError("dict", err))
-	}
-	if err := exec_f605c207f3e121d6(b, reflect.ValueOf(v20), fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\n</header>\n")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"region:notice\" .}}", tmplrt.DepthError())
-	}
-	v21 := tmplrt.Unwrap(dot)
-	if err := exec_0fa5ba82dbbd05e9(b, v21, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\n<main rst-page>\n")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"content\" .}}", tmplrt.DepthError())
-	}
-	v22 := tmplrt.Unwrap(dot)
-	if err := exec_06f87dfb295d1794(b, v22, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\n</main>\n<script defer src=\"/static/rastrillo.js\"></script>\n<script defer src=\"/static/busy.js\"></script>\n<script defer src=\"/static/live.js\"></script>\n</body>\n</html>\n")
-	return nil
-}
-
-// facts_343fda220004556a is what exec_343fda220004556a assumes of the types it reads.
-var facts_343fda220004556a = tmplrt.Facts{
-	Funcs: map[string]reflect.Type{
-		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
-	},
-	Facts: []tmplrt.Fact{
-		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
-		{Func: "localizer_634df8c4", Path: []string{".Identity() func() string"}, Type: "string"},
-		{Func: "localizer_634df8c4", Path: []string{".Dir() func() string"}, Type: "string"},
-	},
-}
-
-// exec_343fda220004556a_0ac538bf renders "layout" for a dot of type *page.
-func exec_343fda220004556a_0ac538bf(b *bytes.Buffer, dot *page, fn *templateFuncs, depth int) error {
-	root := dot
-	v1 := fn.localizer_634df8c4(root)
-	x1 := v1
-	_ = x1
-	b.WriteString("<!doctype html>\n<html lang=\"")
-	v2 := x1.Identity()
-	tmplrt.WriteAttrEscaped(b, v2)
-	b.WriteString("\" dir=\"")
-	v3 := x1.Dir()
-	tmplrt.WriteAttrEscaped(b, v3)
-	b.WriteString("\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width\">\n<link rel=\"stylesheet\" href=\"/static/app.css\">\n<title>Notes</title>\n")
-	if dot == nil {
-		_, err := tmplrt.Fail("nil pointer evaluating *notes.page.Live")
-		return tmplrt.ExecError("layout", ".Live.Head", err)
-	}
-	v4 := &dot.Live
-	v5, err := fn.T_a3eca208(x1, "rastrillo.ui.live.paused")
-	if err != nil {
-		return tmplrt.ExecError("layout", "T $L \"rastrillo.ui.live.paused\"", tmplrt.CallError("T", err))
-	}
-	v6 := reflect.ValueOf(v5)
-	a7, err := tmplrt.Convert[string](tmplrt.Val(v6))
-	if err != nil {
-		return tmplrt.ExecError("layout", ".Live.Head", err)
-	}
-	v8, err := fn.T_a3eca208(x1, "rastrillo.ui.live.unconfirmed")
-	if err != nil {
-		return tmplrt.ExecError("layout", "T $L \"rastrillo.ui.live.unconfirmed\"", tmplrt.CallError("T", err))
-	}
-	v9 := reflect.ValueOf(v8)
-	a10, err := tmplrt.Param[string](tmplrt.Val(v9))
-	if err != nil {
-		return tmplrt.ExecError("layout", ".Live.Head", err)
-	}
-	v11 := v4.Head(tmplrt.As[string](a7), a10)
-	b.WriteString(tmplrt.HTMLEscaper(v11))
-	b.WriteString("\n</head>\n<body>\n<header>\n<nav>\n<a href=\"/\">Notes</a>\n")
-	if dot == nil {
-		_, err := tmplrt.Fail("nil pointer evaluating *notes.page.SignedIn")
-		return tmplrt.ExecError("layout", ".SignedIn", err)
-	}
-	if dot.SignedIn {
-		b.WriteString("\n<a href=\"/bookmarks\">Bookmarks</a>\n<a href=\"/tokens\">")
-		v12, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_title")
-		if err != nil {
-			return tmplrt.ExecError("layout", "T $L \"rastrillo.ui.api_tokens_title\"", tmplrt.CallError("T", err))
-		}
-		v13 := reflect.ValueOf(v12)
-		b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v13)))
-		b.WriteString("</a>\n<form method=\"post\" action=\"/signout\"><button type=\"submit\">Sign out</button></form>\n")
-	} else {
-		b.WriteString("\n<a href=\"/signin\">Sign in</a>\n<a href=\"/signup\">Sign up</a>\n")
-	}
-	b.WriteString("\n</nav>\n")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"locale-menu\" dict \"L\" $L \"Items\" .Locales \"Return\" .Return}}", tmplrt.DepthError())
-	}
-	if dot == nil {
-		_, err := tmplrt.Fail("nil pointer evaluating *notes.page.Locales")
-		return tmplrt.ExecError("layout", ".Locales", err)
-	}
-	if dot == nil {
-		_, err := tmplrt.Fail("nil pointer evaluating *notes.page.Return")
-		return tmplrt.ExecError("layout", ".Return", err)
-	}
-	v14, err := fn.dict_72aa8d8f("L", x1, "Items", dot.Locales, "Return", dot.Return)
-	if err != nil {
-		return tmplrt.ExecError("layout", "dict \"L\" $L \"Items\" .Locales \"Return\" .Return", tmplrt.CallError("dict", err))
-	}
-	if err := exec_f605c207f3e121d6(b, reflect.ValueOf(v14), fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\n</header>\n")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"region:notice\" .}}", tmplrt.DepthError())
-	}
-	if err := exec_0fa5ba82dbbd05e9_0ac538bf(b, dot, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\n<main rst-page>\n")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"content\" .}}", tmplrt.DepthError())
-	}
-	if err := exec_06f87dfb295d1794_0ac538bf(b, dot, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\n</main>\n<script defer src=\"/static/rastrillo.js\"></script>\n<script defer src=\"/static/busy.js\"></script>\n<script defer src=\"/static/live.js\"></script>\n</body>\n</html>\n")
-	return nil
-}
-
-// facts_343fda220004556a_0ac538bf is what exec_343fda220004556a_0ac538bf assumes of the types it reads.
-var facts_343fda220004556a_0ac538bf = tmplrt.Facts{
-	Dot: reflect.TypeFor[*page](),
-	Funcs: map[string]reflect.Type{
-		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
-	},
-	Facts: []tmplrt.Fact{
-		{Type: "*notes/internal/notes.page"},
-		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
-		{Func: "localizer_634df8c4", Path: []string{".Identity() func() string"}, Type: "string"},
-		{Func: "localizer_634df8c4", Path: []string{".Dir() func() string"}, Type: "string"},
-		{Path: []string{".Live"}, Type: "amadan.net/rastrillo/rastrillo/live.View struct"},
-		{Path: []string{".Live", "&.Head() func(string, string) html/template.HTML"}, Type: "html/template.HTML string"},
-		{Path: []string{".SignedIn"}, Type: "bool"},
-		{Path: []string{".Locales"}, Type: "[]amadan.net/rastrillo/rastrillo.LocaleItem"},
-		{Path: []string{".Return"}, Type: "string"},
-	},
-}
-
-// exec_343fda220004556a_3660315a renders "layout" for a dot of type page.
-func exec_343fda220004556a_3660315a(b *bytes.Buffer, dot page, fn *templateFuncs, depth int) error {
-	root := dot
-	v1 := fn.localizer_634df8c4(root)
-	x1 := v1
-	_ = x1
-	b.WriteString("<!doctype html>\n<html lang=\"")
-	v2 := x1.Identity()
-	tmplrt.WriteAttrEscaped(b, v2)
-	b.WriteString("\" dir=\"")
-	v3 := x1.Dir()
-	tmplrt.WriteAttrEscaped(b, v3)
-	b.WriteString("\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width\">\n<link rel=\"stylesheet\" href=\"/static/app.css\">\n<title>Notes</title>\n")
-	v4 := dot.Live
-	v5, err := fn.T_a3eca208(x1, "rastrillo.ui.live.paused")
-	if err != nil {
-		return tmplrt.ExecError("layout", "T $L \"rastrillo.ui.live.paused\"", tmplrt.CallError("T", err))
-	}
-	v6 := reflect.ValueOf(v5)
-	a7, err := tmplrt.Convert[string](tmplrt.Val(v6))
-	if err != nil {
-		return tmplrt.ExecError("layout", ".Live.Head", err)
-	}
-	v8, err := fn.T_a3eca208(x1, "rastrillo.ui.live.unconfirmed")
-	if err != nil {
-		return tmplrt.ExecError("layout", "T $L \"rastrillo.ui.live.unconfirmed\"", tmplrt.CallError("T", err))
-	}
-	v9 := reflect.ValueOf(v8)
-	a10, err := tmplrt.Param[string](tmplrt.Val(v9))
-	if err != nil {
-		return tmplrt.ExecError("layout", ".Live.Head", err)
-	}
-	v11 := v4.Head(tmplrt.As[string](a7), a10)
-	b.WriteString(tmplrt.HTMLEscaper(v11))
-	b.WriteString("\n</head>\n<body>\n<header>\n<nav>\n<a href=\"/\">Notes</a>\n")
-	if dot.SignedIn {
-		b.WriteString("\n<a href=\"/bookmarks\">Bookmarks</a>\n<a href=\"/tokens\">")
-		v12, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_title")
-		if err != nil {
-			return tmplrt.ExecError("layout", "T $L \"rastrillo.ui.api_tokens_title\"", tmplrt.CallError("T", err))
-		}
-		v13 := reflect.ValueOf(v12)
-		b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v13)))
-		b.WriteString("</a>\n<form method=\"post\" action=\"/signout\"><button type=\"submit\">Sign out</button></form>\n")
-	} else {
-		b.WriteString("\n<a href=\"/signin\">Sign in</a>\n<a href=\"/signup\">Sign up</a>\n")
-	}
-	b.WriteString("\n</nav>\n")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"locale-menu\" dict \"L\" $L \"Items\" .Locales \"Return\" .Return}}", tmplrt.DepthError())
-	}
-	v14, err := fn.dict_72aa8d8f("L", x1, "Items", dot.Locales, "Return", dot.Return)
-	if err != nil {
-		return tmplrt.ExecError("layout", "dict \"L\" $L \"Items\" .Locales \"Return\" .Return", tmplrt.CallError("dict", err))
-	}
-	if err := exec_f605c207f3e121d6(b, reflect.ValueOf(v14), fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\n</header>\n")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"region:notice\" .}}", tmplrt.DepthError())
-	}
-	if err := exec_0fa5ba82dbbd05e9_3660315a(b, dot, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\n<main rst-page>\n")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"content\" .}}", tmplrt.DepthError())
-	}
-	if err := exec_06f87dfb295d1794_3660315a(b, dot, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\n</main>\n<script defer src=\"/static/rastrillo.js\"></script>\n<script defer src=\"/static/busy.js\"></script>\n<script defer src=\"/static/live.js\"></script>\n</body>\n</html>\n")
-	return nil
-}
-
-// facts_343fda220004556a_3660315a is what exec_343fda220004556a_3660315a assumes of the types it reads.
-var facts_343fda220004556a_3660315a = tmplrt.Facts{
-	Dot: reflect.TypeFor[page](),
-	Funcs: map[string]reflect.Type{
-		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
-	},
-	Facts: []tmplrt.Fact{
-		{Type: "notes/internal/notes.page struct"},
-		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
-		{Func: "localizer_634df8c4", Path: []string{".Identity() func() string"}, Type: "string"},
-		{Func: "localizer_634df8c4", Path: []string{".Dir() func() string"}, Type: "string"},
-		{Path: []string{".Live"}, Type: "amadan.net/rastrillo/rastrillo/live.View struct"},
-		{Path: []string{".Live", ".Head() func(string, string) html/template.HTML"}, Type: "html/template.HTML string"},
-		{Path: []string{".SignedIn"}, Type: "bool"},
-		{Path: []string{".Locales"}, Type: "[]amadan.net/rastrillo/rastrillo.LocaleItem"},
-		{Path: []string{".Return"}, Type: "string"},
-	},
 }
 
 // exec_34563c60a76000f9 renders "signin".
@@ -7045,6 +6333,351 @@ func exec_452843fb8e86ab18(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs
 	return nil
 }
 
+// exec_4976ad99edc8a465 renders "field-date".
+func exec_4976ad99edc8a465(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
+	root := dot
+	v1 := fn.localizer_634df8c4(tmplrt.Arg(root))
+	x1 := v1
+	_ = x1
+	v2, err := fn.needs_e5e4fd6b("datetime.js")
+	if err != nil {
+		return tmplrt.ExecError("field-date", "needs \"datetime.js\"", tmplrt.CallError("needs", err))
+	}
+	tmplrt.WriteHTMLEscaped(b, v2)
+	b.WriteString("<div rst-field>\n  <label rst-field-label for=\"")
+	v3, err := tmplrt.Field(dot, "Name")
+	if err != nil {
+		return tmplrt.ExecError("field-date", ".Name", err)
+	}
+	v4 := tmplrt.Unwrap(v3)
+	b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v4)))
+	b.WriteString("\">")
+	v5, err := tmplrt.Field(dot, "Label")
+	if err != nil {
+		return tmplrt.ExecError("field-date", ".Label", err)
+	}
+	v6 := tmplrt.Unwrap(v5)
+	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v6)))
+	v7, err := tmplrt.Field(dot, "Required")
+	if err != nil {
+		return tmplrt.ExecError("field-date", ".Required", err)
+	}
+	v8 := tmplrt.Unwrap(v7)
+	if tmplrt.Truth(v8) {
+		b.WriteString(" <span rst-field-required aria-hidden=\"true\">*</span>")
+	}
+	b.WriteString("</label>\n  <input rst-input id=\"")
+	v9, err := tmplrt.Field(dot, "Name")
+	if err != nil {
+		return tmplrt.ExecError("field-date", ".Name", err)
+	}
+	v10 := tmplrt.Unwrap(v9)
+	b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v10)))
+	b.WriteString("\" name=\"")
+	v11, err := tmplrt.Field(dot, "Name")
+	if err != nil {
+		return tmplrt.ExecError("field-date", ".Name", err)
+	}
+	v12 := tmplrt.Unwrap(v11)
+	b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v12)))
+	b.WriteString("\" type=\"date\"")
+	v13, err := tmplrt.Field(dot, "Value")
+	if err != nil {
+		return tmplrt.ExecError("field-date", ".Value", err)
+	}
+	v14 := tmplrt.Unwrap(v13)
+	if tmplrt.Truth(v14) {
+		b.WriteString(" value=\"")
+		v15, err := tmplrt.Field(dot, "Value")
+		if err != nil {
+			return tmplrt.ExecError("field-date", ".Value", err)
+		}
+		v16 := tmplrt.Unwrap(v15)
+		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v16)))
+		b.WriteString("\"")
+	}
+	v17, err := tmplrt.Field(dot, "Min")
+	if err != nil {
+		return tmplrt.ExecError("field-date", ".Min", err)
+	}
+	v18 := tmplrt.Unwrap(v17)
+	if tmplrt.Truth(v18) {
+		dot := v18
+		_ = dot
+		b.WriteString(" min=\"")
+		v19 := tmplrt.Unwrap(dot)
+		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v19)))
+		b.WriteString("\"")
+	}
+	v20, err := tmplrt.Field(dot, "Max")
+	if err != nil {
+		return tmplrt.ExecError("field-date", ".Max", err)
+	}
+	v21 := tmplrt.Unwrap(v20)
+	if tmplrt.Truth(v21) {
+		dot := v21
+		_ = dot
+		b.WriteString(" max=\"")
+		v22 := tmplrt.Unwrap(dot)
+		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v22)))
+		b.WriteString("\"")
+	}
+	v23, err := tmplrt.Field(dot, "Required")
+	if err != nil {
+		return tmplrt.ExecError("field-date", ".Required", err)
+	}
+	v24 := tmplrt.Unwrap(v23)
+	if tmplrt.Truth(v24) {
+		b.WriteString(" required")
+	}
+	v25, err := tmplrt.Field(dot, "Error")
+	if err != nil {
+		return tmplrt.ExecError("field-date", ".Error", err)
+	}
+	v26 := tmplrt.Unwrap(v25)
+	if tmplrt.Truth(v26) {
+		b.WriteString(" aria-invalid=\"true\"")
+	}
+	v28, err := tmplrt.Field(dot, "Hint")
+	if err != nil {
+		return tmplrt.ExecError("field-date", ".Hint", err)
+	}
+	v27 := tmplrt.ValueArg(v28)
+	if !tmplrt.Truth(v27) {
+		v29, err := tmplrt.Field(dot, "Error")
+		if err != nil {
+			return tmplrt.ExecError("field-date", ".Error", err)
+		}
+		v27 = tmplrt.ValueArg(v29)
+	}
+	v30 := tmplrt.Unwrap(v27)
+	if tmplrt.Truth(v30) {
+		b.WriteString(" aria-describedby=\"")
+		v31, err := tmplrt.Field(dot, "Hint")
+		if err != nil {
+			return tmplrt.ExecError("field-date", ".Hint", err)
+		}
+		v32 := tmplrt.Unwrap(v31)
+		if tmplrt.Truth(v32) {
+			v33, err := tmplrt.Field(dot, "Name")
+			if err != nil {
+				return tmplrt.ExecError("field-date", ".Name", err)
+			}
+			v34 := tmplrt.Unwrap(v33)
+			b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v34)))
+			b.WriteString("-hint")
+		}
+		v36, err := tmplrt.Field(dot, "Hint")
+		if err != nil {
+			return tmplrt.ExecError("field-date", ".Hint", err)
+		}
+		v35 := tmplrt.ValueArg(v36)
+		if tmplrt.Truth(v35) {
+			v37, err := tmplrt.Field(dot, "Error")
+			if err != nil {
+				return tmplrt.ExecError("field-date", ".Error", err)
+			}
+			v35 = tmplrt.ValueArg(v37)
+		}
+		v38 := tmplrt.Unwrap(v35)
+		if tmplrt.Truth(v38) {
+			b.WriteString(" ")
+		}
+		v39, err := tmplrt.Field(dot, "Error")
+		if err != nil {
+			return tmplrt.ExecError("field-date", ".Error", err)
+		}
+		v40 := tmplrt.Unwrap(v39)
+		if tmplrt.Truth(v40) {
+			v41, err := tmplrt.Field(dot, "Name")
+			if err != nil {
+				return tmplrt.ExecError("field-date", ".Name", err)
+			}
+			v42 := tmplrt.Unwrap(v41)
+			b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v42)))
+			b.WriteString("-error")
+		}
+		b.WriteString("\"")
+	}
+	v43, err := tmplrt.Field(dot, "Plain")
+	if err != nil {
+		return tmplrt.ExecError("field-date", ".Plain", err)
+	}
+	v44 := tmplrt.Not(v43)
+	if v44 {
+		b.WriteString(" data-rst-date data-rst-date-words=\"")
+		v45, err := fn.dateWords_a3eca208(x1)
+		if err != nil {
+			return tmplrt.ExecError("field-date", "dateWords $L", tmplrt.CallError("dateWords", err))
+		}
+		v46 := reflect.ValueOf(v45)
+		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v46)))
+		b.WriteString("\" data-rst-date-set=\"")
+		v47, err := fn.T_a3eca208(x1, "rastrillo.ui.date_set")
+		if err != nil {
+			return tmplrt.ExecError("field-date", "T $L \"rastrillo.ui.date_set\"", tmplrt.CallError("T", err))
+		}
+		v48 := reflect.ValueOf(v47)
+		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v48)))
+		b.WriteString("\" data-rst-date-hint=\"")
+		v49, err := fn.T_a3eca208(x1, "rastrillo.ui.date_hint")
+		if err != nil {
+			return tmplrt.ExecError("field-date", "T $L \"rastrillo.ui.date_hint\"", tmplrt.CallError("T", err))
+		}
+		v50 := reflect.ValueOf(v49)
+		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v50)))
+		b.WriteString("\" data-rst-date-pick=\"")
+		v51, err := fn.T_a3eca208(x1, "rastrillo.ui.date_pick")
+		if err != nil {
+			return tmplrt.ExecError("field-date", "T $L \"rastrillo.ui.date_pick\"", tmplrt.CallError("T", err))
+		}
+		v52 := reflect.ValueOf(v51)
+		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v52)))
+		b.WriteString("\" data-rst-date-calendar=\"")
+		v53, err := fn.T_a3eca208(x1, "rastrillo.ui.date_calendar")
+		if err != nil {
+			return tmplrt.ExecError("field-date", "T $L \"rastrillo.ui.date_calendar\"", tmplrt.CallError("T", err))
+		}
+		v54 := reflect.ValueOf(v53)
+		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v54)))
+		b.WriteString("\" data-rst-date-prev-month=\"")
+		v55, err := fn.T_a3eca208(x1, "rastrillo.ui.date_prev_month")
+		if err != nil {
+			return tmplrt.ExecError("field-date", "T $L \"rastrillo.ui.date_prev_month\"", tmplrt.CallError("T", err))
+		}
+		v56 := reflect.ValueOf(v55)
+		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v56)))
+		b.WriteString("\" data-rst-date-next-month=\"")
+		v57, err := fn.T_a3eca208(x1, "rastrillo.ui.date_next_month")
+		if err != nil {
+			return tmplrt.ExecError("field-date", "T $L \"rastrillo.ui.date_next_month\"", tmplrt.CallError("T", err))
+		}
+		v58 := reflect.ValueOf(v57)
+		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v58)))
+		b.WriteString("\" data-rst-date-results=\"")
+		v59, err := fn.T_a3eca208(x1, "rastrillo.ui.date_results")
+		if err != nil {
+			return tmplrt.ExecError("field-date", "T $L \"rastrillo.ui.date_results\"", tmplrt.CallError("T", err))
+		}
+		v60 := reflect.ValueOf(v59)
+		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v60)))
+		b.WriteString("\" data-rst-date-result-one=\"")
+		v61, err := fn.T_a3eca208(x1, "rastrillo.ui.date_result_one")
+		if err != nil {
+			return tmplrt.ExecError("field-date", "T $L \"rastrillo.ui.date_result_one\"", tmplrt.CallError("T", err))
+		}
+		v62 := reflect.ValueOf(v61)
+		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v62)))
+		b.WriteString("\" data-rst-date-quick-today=\"")
+		v63, err := fn.T_a3eca208(x1, "rastrillo.ui.date_quick_today")
+		if err != nil {
+			return tmplrt.ExecError("field-date", "T $L \"rastrillo.ui.date_quick_today\"", tmplrt.CallError("T", err))
+		}
+		v64 := reflect.ValueOf(v63)
+		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v64)))
+		b.WriteString("\" data-rst-date-quick-tomorrow=\"")
+		v65, err := fn.T_a3eca208(x1, "rastrillo.ui.date_quick_tomorrow")
+		if err != nil {
+			return tmplrt.ExecError("field-date", "T $L \"rastrillo.ui.date_quick_tomorrow\"", tmplrt.CallError("T", err))
+		}
+		v66 := reflect.ValueOf(v65)
+		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v66)))
+		b.WriteString("\" data-rst-date-quick-next-week=\"")
+		v67, err := fn.T_a3eca208(x1, "rastrillo.ui.date_quick_next_week")
+		if err != nil {
+			return tmplrt.ExecError("field-date", "T $L \"rastrillo.ui.date_quick_next_week\"", tmplrt.CallError("T", err))
+		}
+		v68 := reflect.ValueOf(v67)
+		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v68)))
+		b.WriteString("\" data-rst-date-quick-plus-1h=\"")
+		v69, err := fn.T_a3eca208(x1, "rastrillo.ui.date_quick_plus_1h")
+		if err != nil {
+			return tmplrt.ExecError("field-date", "T $L \"rastrillo.ui.date_quick_plus_1h\"", tmplrt.CallError("T", err))
+		}
+		v70 := reflect.ValueOf(v69)
+		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v70)))
+		b.WriteString("\" data-rst-date-quick-plus-2h=\"")
+		v71, err := fn.T_a3eca208(x1, "rastrillo.ui.date_quick_plus_2h")
+		if err != nil {
+			return tmplrt.ExecError("field-date", "T $L \"rastrillo.ui.date_quick_plus_2h\"", tmplrt.CallError("T", err))
+		}
+		v72 := reflect.ValueOf(v71)
+		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v72)))
+		b.WriteString("\" data-rst-date-quick-end-of-day=\"")
+		v73, err := fn.T_a3eca208(x1, "rastrillo.ui.date_quick_end_of_day")
+		if err != nil {
+			return tmplrt.ExecError("field-date", "T $L \"rastrillo.ui.date_quick_end_of_day\"", tmplrt.CallError("T", err))
+		}
+		v74 := reflect.ValueOf(v73)
+		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v74)))
+		b.WriteString("\" data-rst-date-quick-next-day=\"")
+		v75, err := fn.T_a3eca208(x1, "rastrillo.ui.date_quick_next_day")
+		if err != nil {
+			return tmplrt.ExecError("field-date", "T $L \"rastrillo.ui.date_quick_next_day\"", tmplrt.CallError("T", err))
+		}
+		v76 := reflect.ValueOf(v75)
+		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v76)))
+		b.WriteString("\"")
+	}
+	b.WriteString(">")
+	v77, err := tmplrt.Field(dot, "Hint")
+	if err != nil {
+		return tmplrt.ExecError("field-date", ".Hint", err)
+	}
+	v78 := tmplrt.Unwrap(v77)
+	if tmplrt.Truth(v78) {
+		b.WriteString("\n  <small rst-field-hint id=\"")
+		v79, err := tmplrt.Field(dot, "Name")
+		if err != nil {
+			return tmplrt.ExecError("field-date", ".Name", err)
+		}
+		v80 := tmplrt.Unwrap(v79)
+		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v80)))
+		b.WriteString("-hint\">")
+		v81, err := tmplrt.Field(dot, "Hint")
+		if err != nil {
+			return tmplrt.ExecError("field-date", ".Hint", err)
+		}
+		v82 := tmplrt.Unwrap(v81)
+		b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v82)))
+		b.WriteString("</small>")
+	}
+	v83, err := tmplrt.Field(dot, "Error")
+	if err != nil {
+		return tmplrt.ExecError("field-date", ".Error", err)
+	}
+	v84 := tmplrt.Unwrap(v83)
+	if tmplrt.Truth(v84) {
+		b.WriteString("\n  <small rst-field-error id=\"")
+		v85, err := tmplrt.Field(dot, "Name")
+		if err != nil {
+			return tmplrt.ExecError("field-date", ".Name", err)
+		}
+		v86 := tmplrt.Unwrap(v85)
+		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v86)))
+		b.WriteString("-error\">")
+		v87, err := tmplrt.Field(dot, "Error")
+		if err != nil {
+			return tmplrt.ExecError("field-date", ".Error", err)
+		}
+		v88 := tmplrt.Unwrap(v87)
+		b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v88)))
+		b.WriteString("</small>")
+	}
+	b.WriteString("\n</div>")
+	return nil
+}
+
+// facts_4976ad99edc8a465 is what exec_4976ad99edc8a465 assumes of the types it reads.
+var facts_4976ad99edc8a465 = tmplrt.Facts{
+	Funcs: map[string]reflect.Type{
+		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
+	},
+	Facts: []tmplrt.Fact{
+		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
+	},
+}
+
 // exec_4b0cd6aedb4f5c94 renders "status.html".
 func exec_4b0cd6aedb4f5c94(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
 	b.WriteString("\n")
@@ -7619,6 +7252,129 @@ var facts_4cad256f522c786d_3660315a = tmplrt.Facts{
 	},
 }
 
+// exec_4d367691bf74e3e0 renders "field-daterange".
+func exec_4d367691bf74e3e0(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
+	root := dot
+	v1 := fn.localizer_634df8c4(tmplrt.Arg(root))
+	x1 := v1
+	_ = x1
+	b.WriteString("<fieldset rst-field-range>\n  <legend")
+	v2, err := tmplrt.Field(dot, "LegendHidden")
+	if err != nil {
+		return tmplrt.ExecError("field-daterange", ".LegendHidden", err)
+	}
+	v3 := tmplrt.Unwrap(v2)
+	if tmplrt.Truth(v3) {
+		b.WriteString(" class=\"rst-sr-only\"")
+	}
+	b.WriteString(">")
+	v4, err := tmplrt.Field(dot, "Legend")
+	if err != nil {
+		return tmplrt.ExecError("field-daterange", ".Legend", err)
+	}
+	v5 := tmplrt.Unwrap(v4)
+	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v5)))
+	b.WriteString("</legend>\n  <div rst-field-row data-rst-range")
+	v6, err := tmplrt.Field(dot, "Seed")
+	if err != nil {
+		return tmplrt.ExecError("field-daterange", ".Seed", err)
+	}
+	v7 := tmplrt.Unwrap(v6)
+	if tmplrt.Truth(v7) {
+		dot := v7
+		_ = dot
+		b.WriteString("=\"")
+		v8 := tmplrt.Unwrap(dot)
+		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v8)))
+		b.WriteString("\"")
+	}
+	b.WriteString(">")
+	v10, err := tmplrt.Field(dot, "Kind")
+	if err != nil {
+		return tmplrt.ExecError("field-daterange", ".Kind", err)
+	}
+	v9 := tmplrt.ValueArg(v10)
+	if !tmplrt.Truth(v9) {
+		v9 = tmplrt.ValueArg(reflect.ValueOf("datetime"))
+	}
+	v11 := tmplrt.Unwrap(v9)
+	v12, err := tmplrt.Eq(v11, reflect.ValueOf("date"))
+	if err != nil {
+		return tmplrt.ExecError("field-daterange", "eq (or .Kind \"datetime\") \"date\"", tmplrt.CallError("eq", err))
+	}
+	if v12 {
+		b.WriteString("\n    ")
+		if depth == tmplrt.MaxExecDepth {
+			return tmplrt.ExecError("field-daterange", "{{template \"field-date\" (withL (.Start) $L)}}", tmplrt.DepthError())
+		}
+		v13, err := tmplrt.Field(dot, "Start")
+		if err != nil {
+			return tmplrt.ExecError("field-daterange", ".Start", err)
+		}
+		v14 := tmplrt.Unwrap(v13)
+		v15 := fn.withL_2f8846c9(tmplrt.Arg(v14), x1)
+		v16 := reflect.ValueOf(v15)
+		if err := exec_4976ad99edc8a465(b, v16, fn, depth+1); err != nil {
+			return err
+		}
+		b.WriteString("\n    ")
+		if depth == tmplrt.MaxExecDepth {
+			return tmplrt.ExecError("field-daterange", "{{template \"field-date\" (withL (.End) $L)}}", tmplrt.DepthError())
+		}
+		v17, err := tmplrt.Field(dot, "End")
+		if err != nil {
+			return tmplrt.ExecError("field-daterange", ".End", err)
+		}
+		v18 := tmplrt.Unwrap(v17)
+		v19 := fn.withL_2f8846c9(tmplrt.Arg(v18), x1)
+		v20 := reflect.ValueOf(v19)
+		if err := exec_4976ad99edc8a465(b, v20, fn, depth+1); err != nil {
+			return err
+		}
+	} else {
+		b.WriteString("\n    ")
+		if depth == tmplrt.MaxExecDepth {
+			return tmplrt.ExecError("field-daterange", "{{template \"field-datetime\" (withL (.Start) $L)}}", tmplrt.DepthError())
+		}
+		v21, err := tmplrt.Field(dot, "Start")
+		if err != nil {
+			return tmplrt.ExecError("field-daterange", ".Start", err)
+		}
+		v22 := tmplrt.Unwrap(v21)
+		v23 := fn.withL_2f8846c9(tmplrt.Arg(v22), x1)
+		v24 := reflect.ValueOf(v23)
+		if err := exec_ae0db17aab33c528(b, v24, fn, depth+1); err != nil {
+			return err
+		}
+		b.WriteString("\n    ")
+		if depth == tmplrt.MaxExecDepth {
+			return tmplrt.ExecError("field-daterange", "{{template \"field-datetime\" (withL (.End) $L)}}", tmplrt.DepthError())
+		}
+		v25, err := tmplrt.Field(dot, "End")
+		if err != nil {
+			return tmplrt.ExecError("field-daterange", ".End", err)
+		}
+		v26 := tmplrt.Unwrap(v25)
+		v27 := fn.withL_2f8846c9(tmplrt.Arg(v26), x1)
+		v28 := reflect.ValueOf(v27)
+		if err := exec_ae0db17aab33c528(b, v28, fn, depth+1); err != nil {
+			return err
+		}
+	}
+	b.WriteString("\n  </div>\n</fieldset>")
+	return nil
+}
+
+// facts_4d367691bf74e3e0 is what exec_4d367691bf74e3e0 assumes of the types it reads.
+var facts_4d367691bf74e3e0 = tmplrt.Facts{
+	Funcs: map[string]reflect.Type{
+		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
+	},
+	Facts: []tmplrt.Fact{
+		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
+	},
+}
+
 // exec_4f06e107ff5efd20 renders "seg-tabs.html".
 func exec_4f06e107ff5efd20(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
 	b.WriteString("\n\n")
@@ -7629,6 +7385,750 @@ func exec_4f06e107ff5efd20(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs
 func exec_50bf256eaf779720(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
 	b.WriteString("\n")
 	return nil
+}
+
+// exec_5403ae9eae502f7d renders "api-tokens".
+func exec_5403ae9eae502f7d(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
+	root := dot
+	v1 := fn.localizer_634df8c4(tmplrt.Arg(root))
+	x1 := v1
+	_ = x1
+	v2, err := tmplrt.Field(dot, "Page")
+	if err != nil {
+		return tmplrt.ExecError("api-tokens", ".Page", err)
+	}
+	v3 := tmplrt.Unwrap(v2)
+	x2 := v3
+	_ = x2
+	v4, err := tmplrt.Field(dot, "Path")
+	if err != nil {
+		return tmplrt.ExecError("api-tokens", ".Path", err)
+	}
+	v5 := tmplrt.Unwrap(v4)
+	x3 := v5
+	_ = x3
+	v7 := fn.opt_08785a53(tmplrt.Arg(dot), "RevokePath")
+	v8 := reflect.ValueOf(v7)
+	v6 := tmplrt.ValueArg(v8)
+	if !tmplrt.Truth(v6) {
+		v9 := tmplrt.Print(tmplrt.Arg(x3), "/revoke")
+		v6 = tmplrt.ValueArg(reflect.ValueOf(v9))
+	}
+	v10 := tmplrt.Unwrap(v6)
+	x4 := v10
+	_ = x4
+	v12 := fn.opt_08785a53(tmplrt.Arg(dot), "RevokeAgentPath")
+	v13 := reflect.ValueOf(v12)
+	v11 := tmplrt.ValueArg(v13)
+	if !tmplrt.Truth(v11) {
+		v14 := tmplrt.Print(tmplrt.Arg(x3), "/revoke-agent")
+		v11 = tmplrt.ValueArg(reflect.ValueOf(v14))
+	}
+	v15 := tmplrt.Unwrap(v11)
+	x5 := v15
+	_ = x5
+	v17 := fn.opt_08785a53(tmplrt.Arg(dot), "RevokeAllPath")
+	v18 := reflect.ValueOf(v17)
+	v16 := tmplrt.ValueArg(v18)
+	if !tmplrt.Truth(v16) {
+		v19 := tmplrt.Print(tmplrt.Arg(x3), "/revoke-all")
+		v16 = tmplrt.ValueArg(reflect.ValueOf(v19))
+	}
+	v20 := tmplrt.Unwrap(v16)
+	x6 := v20
+	_ = x6
+	b.WriteString("<div rst-tokens>")
+	v21, err := tmplrt.Field(x2, "Created")
+	if err != nil {
+		return tmplrt.ExecError("api-tokens", "$p.Created", err)
+	}
+	v22 := tmplrt.Unwrap(v21)
+	if tmplrt.Truth(v22) {
+		dot := v22
+		_ = dot
+		b.WriteString("\n  <div rst-callout rst-tone=\"positive\" tabindex=\"-1\" autofocus><span rst-callout-ic aria-hidden=\"true\">")
+		v23 := fn.icon_bd1e407c("check-circle")
+		b.WriteString(tmplrt.HTMLEscaper(v23))
+		b.WriteString("</span><div rst-callout-body><strong>")
+		v24, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_reveal")
+		if err != nil {
+			return tmplrt.ExecError("api-tokens", "T $L \"rastrillo.ui.api_tokens_reveal\"", tmplrt.CallError("T", err))
+		}
+		v25 := reflect.ValueOf(v24)
+		b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v25)))
+		b.WriteString("</strong><p><code rst-tokens-secret>")
+		v26, err := tmplrt.Field(dot, "Secret")
+		if err != nil {
+			return tmplrt.ExecError("api-tokens", ".Secret", err)
+		}
+		v27 := tmplrt.Unwrap(v26)
+		b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v27)))
+		b.WriteString("</code></p></div></div>")
+	}
+	b.WriteString("\n  <section rst-box><form rst-form method=\"post\" action=\"")
+	v28 := tmplrt.Unwrap(x3)
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilter(tmplrt.Arg(v28))))
+	b.WriteString("\">\n    ")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("api-tokens", "{{template \"field\" dict \"L\" $L \"ID\" \"agent\" \"Name\" \"agent\" \"Label\" (T $L \"rastrillo.ui.api_tokens_agent\") \"Value\" (index $p.Form \"agent\") \"Maxlength\" \"40\" \"Error\" (index $p.Errors \"agent\")}}", tmplrt.DepthError())
+	}
+	v29, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_agent")
+	if err != nil {
+		return tmplrt.ExecError("api-tokens", "T $L \"rastrillo.ui.api_tokens_agent\"", tmplrt.CallError("T", err))
+	}
+	v30 := reflect.ValueOf(v29)
+	v31, err := tmplrt.Field(x2, "Form")
+	if err != nil {
+		return tmplrt.ExecError("api-tokens", "$p.Form", err)
+	}
+	v32, err := tmplrt.Index(v31, reflect.ValueOf("agent"))
+	if err != nil {
+		return tmplrt.ExecError("api-tokens", "index $p.Form \"agent\"", tmplrt.CallError("index", err))
+	}
+	v33 := tmplrt.Unwrap(v32)
+	v34, err := tmplrt.Field(x2, "Errors")
+	if err != nil {
+		return tmplrt.ExecError("api-tokens", "$p.Errors", err)
+	}
+	v35, err := tmplrt.Index(v34, reflect.ValueOf("agent"))
+	if err != nil {
+		return tmplrt.ExecError("api-tokens", "index $p.Errors \"agent\"", tmplrt.CallError("index", err))
+	}
+	v36 := tmplrt.Unwrap(v35)
+	v37, err := fn.dict_72aa8d8f("L", x1, "ID", "agent", "Name", "agent", "Label", tmplrt.Arg(v30), "Value", tmplrt.Arg(v33), "Maxlength", "40", "Error", tmplrt.Arg(v36))
+	if err != nil {
+		return tmplrt.ExecError("api-tokens", "dict \"L\" $L \"ID\" \"agent\" \"Name\" \"agent\" \"Label\" (T $L \"rastrillo.ui.api_tokens_agent\") \"Value\" (index $p.Form \"agent\") \"Maxlength\" \"40\" \"Error\" (index $p.Errors \"agent\")", tmplrt.CallError("dict", err))
+	}
+	if err := exec_a07b1eb463055a55(b, reflect.ValueOf(v37), fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\n    ")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("api-tokens", "{{template \"field-check\" dict \"L\" $L \"Name\" \"for_self\" \"Value\" \"on\" \"Label\" (T $L \"rastrillo.ui.api_tokens_for_self\") \"Checked\" (ne (index $p.Form \"for_self\") \"\")}}", tmplrt.DepthError())
+	}
+	v38, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_for_self")
+	if err != nil {
+		return tmplrt.ExecError("api-tokens", "T $L \"rastrillo.ui.api_tokens_for_self\"", tmplrt.CallError("T", err))
+	}
+	v39 := reflect.ValueOf(v38)
+	v40, err := tmplrt.Field(x2, "Form")
+	if err != nil {
+		return tmplrt.ExecError("api-tokens", "$p.Form", err)
+	}
+	v41, err := tmplrt.Index(v40, reflect.ValueOf("for_self"))
+	if err != nil {
+		return tmplrt.ExecError("api-tokens", "index $p.Form \"for_self\"", tmplrt.CallError("index", err))
+	}
+	v42 := tmplrt.Unwrap(v41)
+	v43, err := tmplrt.Ne(v42, reflect.ValueOf(""))
+	if err != nil {
+		return tmplrt.ExecError("api-tokens", "ne (index $p.Form \"for_self\") \"\"", tmplrt.CallError("ne", err))
+	}
+	v44, err := fn.dict_72aa8d8f("L", x1, "Name", "for_self", "Value", "on", "Label", tmplrt.Arg(v39), "Checked", v43)
+	if err != nil {
+		return tmplrt.ExecError("api-tokens", "dict \"L\" $L \"Name\" \"for_self\" \"Value\" \"on\" \"Label\" (T $L \"rastrillo.ui.api_tokens_for_self\") \"Checked\" (ne (index $p.Form \"for_self\") \"\")", tmplrt.CallError("dict", err))
+	}
+	if err := exec_d6cd5d2f1a106459(b, reflect.ValueOf(v44), fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\n    ")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("api-tokens", "{{template \"choice-field\" dict \"L\" $L \"Legend\" (T $L \"rastrillo.ui.api_tokens_access\") \"Name\" \"access\" \"Options\" (list (dict \"Value\" \"write\" \"Title\" (T $L \"rastrillo.ui.api_tokens_access_write\") \"Checked\" (eq (index $p.Form \"access\") \"write\")) (dict \"Value\" \"read\" \"Title\" (T $L \"rastrillo.ui.api_tokens_access_read\") \"Checked\" (eq (index $p.Form \"access\") \"read\")))}}", tmplrt.DepthError())
+	}
+	v45, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_access")
+	if err != nil {
+		return tmplrt.ExecError("api-tokens", "T $L \"rastrillo.ui.api_tokens_access\"", tmplrt.CallError("T", err))
+	}
+	v46 := reflect.ValueOf(v45)
+	v47, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_access_write")
+	if err != nil {
+		return tmplrt.ExecError("api-tokens", "T $L \"rastrillo.ui.api_tokens_access_write\"", tmplrt.CallError("T", err))
+	}
+	v48 := reflect.ValueOf(v47)
+	v49, err := tmplrt.Field(x2, "Form")
+	if err != nil {
+		return tmplrt.ExecError("api-tokens", "$p.Form", err)
+	}
+	v50, err := tmplrt.Index(v49, reflect.ValueOf("access"))
+	if err != nil {
+		return tmplrt.ExecError("api-tokens", "index $p.Form \"access\"", tmplrt.CallError("index", err))
+	}
+	v51 := tmplrt.Unwrap(v50)
+	v52, err := tmplrt.Eq(v51, reflect.ValueOf("write"))
+	if err != nil {
+		return tmplrt.ExecError("api-tokens", "eq (index $p.Form \"access\") \"write\"", tmplrt.CallError("eq", err))
+	}
+	v53, err := fn.dict_72aa8d8f("Value", "write", "Title", tmplrt.Arg(v48), "Checked", v52)
+	if err != nil {
+		return tmplrt.ExecError("api-tokens", "dict \"Value\" \"write\" \"Title\" (T $L \"rastrillo.ui.api_tokens_access_write\") \"Checked\" (eq (index $p.Form \"access\") \"write\")", tmplrt.CallError("dict", err))
+	}
+	v54, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_access_read")
+	if err != nil {
+		return tmplrt.ExecError("api-tokens", "T $L \"rastrillo.ui.api_tokens_access_read\"", tmplrt.CallError("T", err))
+	}
+	v55 := reflect.ValueOf(v54)
+	v56, err := tmplrt.Field(x2, "Form")
+	if err != nil {
+		return tmplrt.ExecError("api-tokens", "$p.Form", err)
+	}
+	v57, err := tmplrt.Index(v56, reflect.ValueOf("access"))
+	if err != nil {
+		return tmplrt.ExecError("api-tokens", "index $p.Form \"access\"", tmplrt.CallError("index", err))
+	}
+	v58 := tmplrt.Unwrap(v57)
+	v59, err := tmplrt.Eq(v58, reflect.ValueOf("read"))
+	if err != nil {
+		return tmplrt.ExecError("api-tokens", "eq (index $p.Form \"access\") \"read\"", tmplrt.CallError("eq", err))
+	}
+	v60, err := fn.dict_72aa8d8f("Value", "read", "Title", tmplrt.Arg(v55), "Checked", v59)
+	if err != nil {
+		return tmplrt.ExecError("api-tokens", "dict \"Value\" \"read\" \"Title\" (T $L \"rastrillo.ui.api_tokens_access_read\") \"Checked\" (eq (index $p.Form \"access\") \"read\")", tmplrt.CallError("dict", err))
+	}
+	v61 := fn.list_ae7df14d(v53, v60)
+	v62, err := fn.dict_72aa8d8f("L", x1, "Legend", tmplrt.Arg(v46), "Name", "access", "Options", v61)
+	if err != nil {
+		return tmplrt.ExecError("api-tokens", "dict \"L\" $L \"Legend\" (T $L \"rastrillo.ui.api_tokens_access\") \"Name\" \"access\" \"Options\" (list (dict \"Value\" \"write\" \"Title\" (T $L \"rastrillo.ui.api_tokens_access_write\") \"Checked\" (eq (index $p.Form \"access\") \"write\")) (dict \"Value\" \"read\" \"Title\" (T $L \"rastrillo.ui.api_tokens_access_read\") \"Checked\" (eq (index $p.Form \"access\") \"read\")))", tmplrt.CallError("dict", err))
+	}
+	if err := exec_0517b2ea2527aeca(b, reflect.ValueOf(v62), fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\n    ")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("api-tokens", "{{template \"field-select\" dict \"L\" $L \"ID\" \"expiry\" \"Name\" \"expiry\" \"Label\" (T $L \"rastrillo.ui.api_tokens_expires\") \"Short\" true \"Options\" (list (dict \"Value\" \"30\" \"Label\" (T $L \"rastrillo.ui.api_tokens_expiry_30\") \"Selected\" (eq (index $p.Form \"expiry\") \"30\")) (dict \"Value\" \"90\" \"Label\" (T $L \"rastrillo.ui.api_tokens_expiry_90\") \"Selected\" (eq (index $p.Form \"expiry\") \"90\")) (dict \"Value\" \"365\" \"Label\" (T $L \"rastrillo.ui.api_tokens_expiry_365\") \"Selected\" (eq (index $p.Form \"expiry\") \"365\")) (dict \"Value\" \"never\" \"Label\" (T $L \"rastrillo.ui.api_tokens_expiry_never\") \"Selected\" (eq (index $p.Form \"expiry\") \"never\")))}}", tmplrt.DepthError())
+	}
+	v63, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_expires")
+	if err != nil {
+		return tmplrt.ExecError("api-tokens", "T $L \"rastrillo.ui.api_tokens_expires\"", tmplrt.CallError("T", err))
+	}
+	v64 := reflect.ValueOf(v63)
+	v65, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_expiry_30")
+	if err != nil {
+		return tmplrt.ExecError("api-tokens", "T $L \"rastrillo.ui.api_tokens_expiry_30\"", tmplrt.CallError("T", err))
+	}
+	v66 := reflect.ValueOf(v65)
+	v67, err := tmplrt.Field(x2, "Form")
+	if err != nil {
+		return tmplrt.ExecError("api-tokens", "$p.Form", err)
+	}
+	v68, err := tmplrt.Index(v67, reflect.ValueOf("expiry"))
+	if err != nil {
+		return tmplrt.ExecError("api-tokens", "index $p.Form \"expiry\"", tmplrt.CallError("index", err))
+	}
+	v69 := tmplrt.Unwrap(v68)
+	v70, err := tmplrt.Eq(v69, reflect.ValueOf("30"))
+	if err != nil {
+		return tmplrt.ExecError("api-tokens", "eq (index $p.Form \"expiry\") \"30\"", tmplrt.CallError("eq", err))
+	}
+	v71, err := fn.dict_72aa8d8f("Value", "30", "Label", tmplrt.Arg(v66), "Selected", v70)
+	if err != nil {
+		return tmplrt.ExecError("api-tokens", "dict \"Value\" \"30\" \"Label\" (T $L \"rastrillo.ui.api_tokens_expiry_30\") \"Selected\" (eq (index $p.Form \"expiry\") \"30\")", tmplrt.CallError("dict", err))
+	}
+	v72, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_expiry_90")
+	if err != nil {
+		return tmplrt.ExecError("api-tokens", "T $L \"rastrillo.ui.api_tokens_expiry_90\"", tmplrt.CallError("T", err))
+	}
+	v73 := reflect.ValueOf(v72)
+	v74, err := tmplrt.Field(x2, "Form")
+	if err != nil {
+		return tmplrt.ExecError("api-tokens", "$p.Form", err)
+	}
+	v75, err := tmplrt.Index(v74, reflect.ValueOf("expiry"))
+	if err != nil {
+		return tmplrt.ExecError("api-tokens", "index $p.Form \"expiry\"", tmplrt.CallError("index", err))
+	}
+	v76 := tmplrt.Unwrap(v75)
+	v77, err := tmplrt.Eq(v76, reflect.ValueOf("90"))
+	if err != nil {
+		return tmplrt.ExecError("api-tokens", "eq (index $p.Form \"expiry\") \"90\"", tmplrt.CallError("eq", err))
+	}
+	v78, err := fn.dict_72aa8d8f("Value", "90", "Label", tmplrt.Arg(v73), "Selected", v77)
+	if err != nil {
+		return tmplrt.ExecError("api-tokens", "dict \"Value\" \"90\" \"Label\" (T $L \"rastrillo.ui.api_tokens_expiry_90\") \"Selected\" (eq (index $p.Form \"expiry\") \"90\")", tmplrt.CallError("dict", err))
+	}
+	v79, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_expiry_365")
+	if err != nil {
+		return tmplrt.ExecError("api-tokens", "T $L \"rastrillo.ui.api_tokens_expiry_365\"", tmplrt.CallError("T", err))
+	}
+	v80 := reflect.ValueOf(v79)
+	v81, err := tmplrt.Field(x2, "Form")
+	if err != nil {
+		return tmplrt.ExecError("api-tokens", "$p.Form", err)
+	}
+	v82, err := tmplrt.Index(v81, reflect.ValueOf("expiry"))
+	if err != nil {
+		return tmplrt.ExecError("api-tokens", "index $p.Form \"expiry\"", tmplrt.CallError("index", err))
+	}
+	v83 := tmplrt.Unwrap(v82)
+	v84, err := tmplrt.Eq(v83, reflect.ValueOf("365"))
+	if err != nil {
+		return tmplrt.ExecError("api-tokens", "eq (index $p.Form \"expiry\") \"365\"", tmplrt.CallError("eq", err))
+	}
+	v85, err := fn.dict_72aa8d8f("Value", "365", "Label", tmplrt.Arg(v80), "Selected", v84)
+	if err != nil {
+		return tmplrt.ExecError("api-tokens", "dict \"Value\" \"365\" \"Label\" (T $L \"rastrillo.ui.api_tokens_expiry_365\") \"Selected\" (eq (index $p.Form \"expiry\") \"365\")", tmplrt.CallError("dict", err))
+	}
+	v86, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_expiry_never")
+	if err != nil {
+		return tmplrt.ExecError("api-tokens", "T $L \"rastrillo.ui.api_tokens_expiry_never\"", tmplrt.CallError("T", err))
+	}
+	v87 := reflect.ValueOf(v86)
+	v88, err := tmplrt.Field(x2, "Form")
+	if err != nil {
+		return tmplrt.ExecError("api-tokens", "$p.Form", err)
+	}
+	v89, err := tmplrt.Index(v88, reflect.ValueOf("expiry"))
+	if err != nil {
+		return tmplrt.ExecError("api-tokens", "index $p.Form \"expiry\"", tmplrt.CallError("index", err))
+	}
+	v90 := tmplrt.Unwrap(v89)
+	v91, err := tmplrt.Eq(v90, reflect.ValueOf("never"))
+	if err != nil {
+		return tmplrt.ExecError("api-tokens", "eq (index $p.Form \"expiry\") \"never\"", tmplrt.CallError("eq", err))
+	}
+	v92, err := fn.dict_72aa8d8f("Value", "never", "Label", tmplrt.Arg(v87), "Selected", v91)
+	if err != nil {
+		return tmplrt.ExecError("api-tokens", "dict \"Value\" \"never\" \"Label\" (T $L \"rastrillo.ui.api_tokens_expiry_never\") \"Selected\" (eq (index $p.Form \"expiry\") \"never\")", tmplrt.CallError("dict", err))
+	}
+	v93 := fn.list_ae7df14d(v71, v78, v85, v92)
+	v94, err := fn.dict_72aa8d8f("L", x1, "ID", "expiry", "Name", "expiry", "Label", tmplrt.Arg(v64), "Short", true, "Options", v93)
+	if err != nil {
+		return tmplrt.ExecError("api-tokens", "dict \"L\" $L \"ID\" \"expiry\" \"Name\" \"expiry\" \"Label\" (T $L \"rastrillo.ui.api_tokens_expires\") \"Short\" true \"Options\" (list (dict \"Value\" \"30\" \"Label\" (T $L \"rastrillo.ui.api_tokens_expiry_30\") \"Selected\" (eq (index $p.Form \"expiry\") \"30\")) (dict \"Value\" \"90\" \"Label\" (T $L \"rastrillo.ui.api_tokens_expiry_90\") \"Selected\" (eq (index $p.Form \"expiry\") \"90\")) (dict \"Value\" \"365\" \"Label\" (T $L \"rastrillo.ui.api_tokens_expiry_365\") \"Selected\" (eq (index $p.Form \"expiry\") \"365\")) (dict \"Value\" \"never\" \"Label\" (T $L \"rastrillo.ui.api_tokens_expiry_never\") \"Selected\" (eq (index $p.Form \"expiry\") \"never\")))", tmplrt.CallError("dict", err))
+	}
+	if err := exec_0295a3503a9d9606(b, reflect.ValueOf(v94), fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\n    ")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("api-tokens", "{{template \"form-foot\" dict \"L\" $L \"Submit\" (T $L \"rastrillo.ui.api_tokens_create\")}}", tmplrt.DepthError())
+	}
+	v95, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_create")
+	if err != nil {
+		return tmplrt.ExecError("api-tokens", "T $L \"rastrillo.ui.api_tokens_create\"", tmplrt.CallError("T", err))
+	}
+	v96 := reflect.ValueOf(v95)
+	v97, err := fn.dict_72aa8d8f("L", x1, "Submit", tmplrt.Arg(v96))
+	if err != nil {
+		return tmplrt.ExecError("api-tokens", "dict \"L\" $L \"Submit\" (T $L \"rastrillo.ui.api_tokens_create\")", tmplrt.CallError("dict", err))
+	}
+	if err := exec_d1285cef9f043c97(b, reflect.ValueOf(v97), fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\n  </form></section>")
+	v98, err := tmplrt.Field(x2, "Tokens")
+	if err != nil {
+		return tmplrt.ExecError("api-tokens", "$p.Tokens", err)
+	}
+	v99 := tmplrt.Unwrap(v98)
+	if tmplrt.Truth(v99) {
+		b.WriteString("\n  <div rst-card rst-tokens-list>\n    <div rst-lrow=\"head\"><span>")
+		v100, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_col_token")
+		if err != nil {
+			return tmplrt.ExecError("api-tokens", "T $L \"rastrillo.ui.api_tokens_col_token\"", tmplrt.CallError("T", err))
+		}
+		v101 := reflect.ValueOf(v100)
+		b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v101)))
+		b.WriteString("</span><span class=\"rst-m-hide\">")
+		v102, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_access")
+		if err != nil {
+			return tmplrt.ExecError("api-tokens", "T $L \"rastrillo.ui.api_tokens_access\"", tmplrt.CallError("T", err))
+		}
+		v103 := reflect.ValueOf(v102)
+		b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v103)))
+		b.WriteString("</span><span class=\"rst-m-hide\">")
+		v104, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_col_created")
+		if err != nil {
+			return tmplrt.ExecError("api-tokens", "T $L \"rastrillo.ui.api_tokens_col_created\"", tmplrt.CallError("T", err))
+		}
+		v105 := reflect.ValueOf(v104)
+		b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v105)))
+		b.WriteString("</span><span class=\"rst-m-hide\">")
+		v106, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_col_last_used")
+		if err != nil {
+			return tmplrt.ExecError("api-tokens", "T $L \"rastrillo.ui.api_tokens_col_last_used\"", tmplrt.CallError("T", err))
+		}
+		v107 := reflect.ValueOf(v106)
+		b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v107)))
+		b.WriteString("</span><span class=\"rst-m-hide\">")
+		v108, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_expires")
+		if err != nil {
+			return tmplrt.ExecError("api-tokens", "T $L \"rastrillo.ui.api_tokens_expires\"", tmplrt.CallError("T", err))
+		}
+		v109 := reflect.ValueOf(v108)
+		b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v109)))
+		b.WriteString("</span><span></span><span></span></div>")
+		v110, err := tmplrt.Field(x2, "Tokens")
+		if err != nil {
+			return tmplrt.ExecError("api-tokens", "$p.Tokens", err)
+		}
+		v111 := tmplrt.Unwrap(v110)
+		if err := tmplrt.Range(v111, func(_, dot reflect.Value) error {
+			b.WriteString("\n    <div rst-lrow>\n      <span class=\"rst-nm\">")
+			if depth == tmplrt.MaxExecDepth {
+				return tmplrt.ExecError("api-tokens", "{{template \"actor\" dict \"L\" $L \"Actor\" .Actor \"Display\" .Display}}", tmplrt.DepthError())
+			}
+			v112, err := tmplrt.Field(dot, "Actor")
+			if err != nil {
+				return tmplrt.ExecError("api-tokens", ".Actor", err)
+			}
+			v113, err := tmplrt.Field(dot, "Display")
+			if err != nil {
+				return tmplrt.ExecError("api-tokens", ".Display", err)
+			}
+			v114, err := fn.dict_72aa8d8f("L", x1, "Actor", tmplrt.Arg(v112), "Display", tmplrt.Arg(v113))
+			if err != nil {
+				return tmplrt.ExecError("api-tokens", "dict \"L\" $L \"Actor\" .Actor \"Display\" .Display", tmplrt.CallError("dict", err))
+			}
+			if err := exec_67e9e6211bc1b42d(b, reflect.ValueOf(v114), fn, depth+1); err != nil {
+				return err
+			}
+			b.WriteString("<small><code>")
+			v115, err := tmplrt.Field(dot, "ID")
+			if err != nil {
+				return tmplrt.ExecError("api-tokens", ".ID", err)
+			}
+			v116 := tmplrt.Unwrap(v115)
+			b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v116)))
+			b.WriteString("</code></small></span>\n      <span rst-tokens-fact><span rst-tokens-fact-label>")
+			v117, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_access")
+			if err != nil {
+				return tmplrt.ExecError("api-tokens", "T $L \"rastrillo.ui.api_tokens_access\"", tmplrt.CallError("T", err))
+			}
+			v118 := reflect.ValueOf(v117)
+			b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v118)))
+			b.WriteString("</span>")
+			v119, err := tmplrt.Field(dot, "Access")
+			if err != nil {
+				return tmplrt.ExecError("api-tokens", ".Access.String", err)
+			}
+			v120, err := tmplrt.Field(v119, "String")
+			if err != nil {
+				return tmplrt.ExecError("api-tokens", ".Access.String", err)
+			}
+			v121, err := tmplrt.Eq(v120, reflect.ValueOf("write"))
+			if err != nil {
+				return tmplrt.ExecError("api-tokens", "eq .Access.String \"write\"", tmplrt.CallError("eq", err))
+			}
+			if v121 {
+				v122, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_access_write")
+				if err != nil {
+					return tmplrt.ExecError("api-tokens", "T $L \"rastrillo.ui.api_tokens_access_write\"", tmplrt.CallError("T", err))
+				}
+				v123 := reflect.ValueOf(v122)
+				b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v123)))
+			} else {
+				v124, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_access_read")
+				if err != nil {
+					return tmplrt.ExecError("api-tokens", "T $L \"rastrillo.ui.api_tokens_access_read\"", tmplrt.CallError("T", err))
+				}
+				v125 := reflect.ValueOf(v124)
+				b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v125)))
+			}
+			b.WriteString("</span>\n      <span rst-tokens-fact><span rst-tokens-fact-label>")
+			v126, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_col_created")
+			if err != nil {
+				return tmplrt.ExecError("api-tokens", "T $L \"rastrillo.ui.api_tokens_col_created\"", tmplrt.CallError("T", err))
+			}
+			v127 := reflect.ValueOf(v126)
+			b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v127)))
+			b.WriteString("</span><time datetime=\"")
+			v128, err := tmplrt.Field(dot, "CreatedAt")
+			if err != nil {
+				return tmplrt.ExecError("api-tokens", ".CreatedAt.Format", err)
+			}
+			var v129 reflect.Value
+			if v128.IsValid() {
+				v130, err := tmplrt.MethodOf(v128, "Format")
+				if err != nil {
+					return tmplrt.ExecError("api-tokens", ".CreatedAt.Format", err)
+				}
+				v131, err := v130.Call(tmplrt.ConstString("2006-01-02", "\"2006-01-02\""))
+				if err != nil {
+					return tmplrt.ExecError("api-tokens", ".CreatedAt.Format", err)
+				}
+				v129 = v131
+			}
+			v132 := tmplrt.Unwrap(v129)
+			b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v132)))
+			b.WriteString("\">")
+			v133, err := tmplrt.Field(dot, "CreatedAt")
+			if err != nil {
+				return tmplrt.ExecError("api-tokens", ".CreatedAt.Format", err)
+			}
+			var v134 reflect.Value
+			if v133.IsValid() {
+				v135, err := tmplrt.MethodOf(v133, "Format")
+				if err != nil {
+					return tmplrt.ExecError("api-tokens", ".CreatedAt.Format", err)
+				}
+				v136, err := v135.Call(tmplrt.ConstString("2006-01-02", "\"2006-01-02\""))
+				if err != nil {
+					return tmplrt.ExecError("api-tokens", ".CreatedAt.Format", err)
+				}
+				v134 = v136
+			}
+			v137 := tmplrt.Unwrap(v134)
+			b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v137)))
+			b.WriteString("</time></span>\n      <span rst-tokens-fact><span rst-tokens-fact-label>")
+			v138, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_col_last_used")
+			if err != nil {
+				return tmplrt.ExecError("api-tokens", "T $L \"rastrillo.ui.api_tokens_col_last_used\"", tmplrt.CallError("T", err))
+			}
+			v139 := reflect.ValueOf(v138)
+			b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v139)))
+			b.WriteString("</span>")
+			v140, err := tmplrt.Field(dot, "LastUsed")
+			if err != nil {
+				return tmplrt.ExecError("api-tokens", ".LastUsed", err)
+			}
+			v141 := tmplrt.Unwrap(v140)
+			if tmplrt.Truth(v141) {
+				dot := v141
+				_ = dot
+				b.WriteString("<time datetime=\"")
+				var v142 reflect.Value
+				if dot.IsValid() {
+					v143, err := tmplrt.MethodOf(dot, "Format")
+					if err != nil {
+						return tmplrt.ExecError("api-tokens", ".Format", err)
+					}
+					v144, err := v143.Call(tmplrt.ConstString("2006-01-02", "\"2006-01-02\""))
+					if err != nil {
+						return tmplrt.ExecError("api-tokens", ".Format", err)
+					}
+					v142 = v144
+				}
+				v145 := tmplrt.Unwrap(v142)
+				b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v145)))
+				b.WriteString("\">")
+				var v146 reflect.Value
+				if dot.IsValid() {
+					v147, err := tmplrt.MethodOf(dot, "Format")
+					if err != nil {
+						return tmplrt.ExecError("api-tokens", ".Format", err)
+					}
+					v148, err := v147.Call(tmplrt.ConstString("2006-01-02", "\"2006-01-02\""))
+					if err != nil {
+						return tmplrt.ExecError("api-tokens", ".Format", err)
+					}
+					v146 = v148
+				}
+				v149 := tmplrt.Unwrap(v146)
+				b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v149)))
+				b.WriteString("</time>")
+			}
+			b.WriteString("</span>\n      <span rst-tokens-fact><span rst-tokens-fact-label>")
+			v150, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_expires")
+			if err != nil {
+				return tmplrt.ExecError("api-tokens", "T $L \"rastrillo.ui.api_tokens_expires\"", tmplrt.CallError("T", err))
+			}
+			v151 := reflect.ValueOf(v150)
+			b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v151)))
+			b.WriteString("</span>")
+			v152, err := tmplrt.Field(dot, "ExpiresAt")
+			if err != nil {
+				return tmplrt.ExecError("api-tokens", ".ExpiresAt", err)
+			}
+			v153 := tmplrt.Unwrap(v152)
+			if tmplrt.Truth(v153) {
+				dot := v153
+				_ = dot
+				b.WriteString("<time datetime=\"")
+				var v154 reflect.Value
+				if dot.IsValid() {
+					v155, err := tmplrt.MethodOf(dot, "Format")
+					if err != nil {
+						return tmplrt.ExecError("api-tokens", ".Format", err)
+					}
+					v156, err := v155.Call(tmplrt.ConstString("2006-01-02", "\"2006-01-02\""))
+					if err != nil {
+						return tmplrt.ExecError("api-tokens", ".Format", err)
+					}
+					v154 = v156
+				}
+				v157 := tmplrt.Unwrap(v154)
+				b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v157)))
+				b.WriteString("\">")
+				var v158 reflect.Value
+				if dot.IsValid() {
+					v159, err := tmplrt.MethodOf(dot, "Format")
+					if err != nil {
+						return tmplrt.ExecError("api-tokens", ".Format", err)
+					}
+					v160, err := v159.Call(tmplrt.ConstString("2006-01-02", "\"2006-01-02\""))
+					if err != nil {
+						return tmplrt.ExecError("api-tokens", ".Format", err)
+					}
+					v158 = v160
+				}
+				v161 := tmplrt.Unwrap(v158)
+				b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v161)))
+				b.WriteString("</time>")
+			} else {
+				v162, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_expiry_never")
+				if err != nil {
+					return tmplrt.ExecError("api-tokens", "T $L \"rastrillo.ui.api_tokens_expiry_never\"", tmplrt.CallError("T", err))
+				}
+				v163 := reflect.ValueOf(v162)
+				b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v163)))
+			}
+			b.WriteString("</span>")
+			v164, err := tmplrt.Field(dot, "Revoked")
+			if err != nil {
+				return tmplrt.ExecError("api-tokens", ".Revoked", err)
+			}
+			v165 := tmplrt.Unwrap(v164)
+			if tmplrt.Truth(v165) {
+				b.WriteString("\n      <span rst-tokens-state>")
+				if depth == tmplrt.MaxExecDepth {
+					return tmplrt.ExecError("api-tokens", "{{template \"status-pill\" dict \"L\" $L \"Label\" (T $L \"rastrillo.ui.api_tokens_revoked\")}}", tmplrt.DepthError())
+				}
+				v166, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_revoked")
+				if err != nil {
+					return tmplrt.ExecError("api-tokens", "T $L \"rastrillo.ui.api_tokens_revoked\"", tmplrt.CallError("T", err))
+				}
+				v167 := reflect.ValueOf(v166)
+				v168, err := fn.dict_72aa8d8f("L", x1, "Label", tmplrt.Arg(v167))
+				if err != nil {
+					return tmplrt.ExecError("api-tokens", "dict \"L\" $L \"Label\" (T $L \"rastrillo.ui.api_tokens_revoked\")", tmplrt.CallError("dict", err))
+				}
+				if err := exec_452843fb8e86ab18(b, reflect.ValueOf(v168), fn, depth+1); err != nil {
+					return err
+				}
+				b.WriteString("</span>")
+			} else {
+				v169, err := tmplrt.Field(dot, "Expired")
+				if err != nil {
+					return tmplrt.ExecError("api-tokens", ".Expired", err)
+				}
+				v170 := tmplrt.Unwrap(v169)
+				if tmplrt.Truth(v170) {
+					b.WriteString("\n      <span rst-tokens-state>")
+					if depth == tmplrt.MaxExecDepth {
+						return tmplrt.ExecError("api-tokens", "{{template \"status-pill\" dict \"L\" $L \"Tone\" \"warning\" \"Label\" (T $L \"rastrillo.ui.api_tokens_expired\")}}", tmplrt.DepthError())
+					}
+					v171, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_expired")
+					if err != nil {
+						return tmplrt.ExecError("api-tokens", "T $L \"rastrillo.ui.api_tokens_expired\"", tmplrt.CallError("T", err))
+					}
+					v172 := reflect.ValueOf(v171)
+					v173, err := fn.dict_72aa8d8f("L", x1, "Tone", "warning", "Label", tmplrt.Arg(v172))
+					if err != nil {
+						return tmplrt.ExecError("api-tokens", "dict \"L\" $L \"Tone\" \"warning\" \"Label\" (T $L \"rastrillo.ui.api_tokens_expired\")", tmplrt.CallError("dict", err))
+					}
+					if err := exec_452843fb8e86ab18(b, reflect.ValueOf(v173), fn, depth+1); err != nil {
+						return err
+					}
+					b.WriteString("</span>")
+				} else {
+					b.WriteString("\n      <span rst-tokens-state></span>\n      ")
+					if depth == tmplrt.MaxExecDepth {
+						return tmplrt.ExecError("api-tokens", "{{template \"row-menu\" dict \"L\" $L \"Name\" .Display \"Items\" (list (dict \"Label\" (T $L \"rastrillo.ui.api_tokens_revoke\") \"Action\" $revoke \"Hidden\" (list (list \"id\" .ID))))}}", tmplrt.DepthError())
+					}
+					v174, err := tmplrt.Field(dot, "Display")
+					if err != nil {
+						return tmplrt.ExecError("api-tokens", ".Display", err)
+					}
+					v175, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_revoke")
+					if err != nil {
+						return tmplrt.ExecError("api-tokens", "T $L \"rastrillo.ui.api_tokens_revoke\"", tmplrt.CallError("T", err))
+					}
+					v176 := reflect.ValueOf(v175)
+					v177, err := tmplrt.Field(dot, "ID")
+					if err != nil {
+						return tmplrt.ExecError("api-tokens", ".ID", err)
+					}
+					v178 := fn.list_ae7df14d("id", tmplrt.Arg(v177))
+					v179 := fn.list_ae7df14d(v178)
+					v180, err := fn.dict_72aa8d8f("Label", tmplrt.Arg(v176), "Action", tmplrt.Arg(x4), "Hidden", v179)
+					if err != nil {
+						return tmplrt.ExecError("api-tokens", "dict \"Label\" (T $L \"rastrillo.ui.api_tokens_revoke\") \"Action\" $revoke \"Hidden\" (list (list \"id\" .ID))", tmplrt.CallError("dict", err))
+					}
+					v181 := fn.list_ae7df14d(v180)
+					v182, err := fn.dict_72aa8d8f("L", x1, "Name", tmplrt.Arg(v174), "Items", v181)
+					if err != nil {
+						return tmplrt.ExecError("api-tokens", "dict \"L\" $L \"Name\" .Display \"Items\" (list (dict \"Label\" (T $L \"rastrillo.ui.api_tokens_revoke\") \"Action\" $revoke \"Hidden\" (list (list \"id\" .ID))))", tmplrt.CallError("dict", err))
+					}
+					if err := exec_a9940eda8e2e00ba(b, reflect.ValueOf(v182), fn, depth+1); err != nil {
+						return err
+					}
+				}
+			}
+			b.WriteString("\n    </div>")
+			return nil
+		}); err != nil {
+			return tmplrt.ExecError("api-tokens", "$p.Tokens", err)
+		}
+		b.WriteString("\n  </div>\n  <div rst-tokens-revoke>")
+		v183, err := tmplrt.Field(x2, "Agents")
+		if err != nil {
+			return tmplrt.ExecError("api-tokens", "$p.Agents", err)
+		}
+		v184 := tmplrt.Unwrap(v183)
+		if err := tmplrt.Range(v184, func(_, dot reflect.Value) error {
+			b.WriteString("\n    <form method=\"post\" action=\"")
+			v185 := tmplrt.Unwrap(x5)
+			tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilter(tmplrt.Arg(v185))))
+			b.WriteString("\"><input type=\"hidden\" name=\"agent\" value=\"")
+			v186 := tmplrt.Unwrap(dot)
+			b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v186)))
+			b.WriteString("\"><button rst-btn type=\"submit\">")
+			v187, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_revoke_agent")
+			if err != nil {
+				return tmplrt.ExecError("api-tokens", "T $L \"rastrillo.ui.api_tokens_revoke_agent\"", tmplrt.CallError("T", err))
+			}
+			v188 := reflect.ValueOf(v187)
+			b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v188)))
+			b.WriteString(": ")
+			v189 := tmplrt.Unwrap(dot)
+			b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v189)))
+			b.WriteString("</button></form>")
+			return nil
+		}); err != nil {
+			return tmplrt.ExecError("api-tokens", "$p.Agents", err)
+		}
+		b.WriteString("\n    <form method=\"post\" action=\"")
+		v190 := tmplrt.Unwrap(x6)
+		tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilter(tmplrt.Arg(v190))))
+		b.WriteString("\"><button rst-btn=\"danger\" type=\"submit\">")
+		v191, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_revoke_all")
+		if err != nil {
+			return tmplrt.ExecError("api-tokens", "T $L \"rastrillo.ui.api_tokens_revoke_all\"", tmplrt.CallError("T", err))
+		}
+		v192 := reflect.ValueOf(v191)
+		b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v192)))
+		b.WriteString("</button></form>\n  </div>")
+	} else {
+		b.WriteString("\n  ")
+		if depth == tmplrt.MaxExecDepth {
+			return tmplrt.ExecError("api-tokens", "{{template \"empty-state\" dict \"L\" $L \"Body\" (T $L \"rastrillo.ui.api_tokens_empty\")}}", tmplrt.DepthError())
+		}
+		v193, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_empty")
+		if err != nil {
+			return tmplrt.ExecError("api-tokens", "T $L \"rastrillo.ui.api_tokens_empty\"", tmplrt.CallError("T", err))
+		}
+		v194 := reflect.ValueOf(v193)
+		v195, err := fn.dict_72aa8d8f("L", x1, "Body", tmplrt.Arg(v194))
+		if err != nil {
+			return tmplrt.ExecError("api-tokens", "dict \"L\" $L \"Body\" (T $L \"rastrillo.ui.api_tokens_empty\")", tmplrt.CallError("dict", err))
+		}
+		if err := exec_61dfa84b6b25c690(b, reflect.ValueOf(v195), fn, depth+1); err != nil {
+			return err
+		}
+	}
+	b.WriteString("\n</div>")
+	return nil
+}
+
+// facts_5403ae9eae502f7d is what exec_5403ae9eae502f7d assumes of the types it reads.
+var facts_5403ae9eae502f7d = tmplrt.Facts{
+	Funcs: map[string]reflect.Type{
+		"icon_bd1e407c":      reflect.TypeFor[func(string) template.HTML](),
+		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
+	},
+	Facts: []tmplrt.Fact{
+		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
+		{Func: "icon_bd1e407c", Type: "html/template.HTML string"},
+	},
 }
 
 // exec_55ad072ac84916d6 renders "meter.html".
@@ -8853,338 +9353,329 @@ var facts_71b8c1a70506bf47_3660315a = tmplrt.Facts{
 	},
 }
 
-// exec_736e46f495816b61 renders "field-datetime".
-func exec_736e46f495816b61(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
+// exec_72629bf6ccf3f07b renders "field-time".
+func exec_72629bf6ccf3f07b(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
 	root := dot
 	v1 := fn.localizer_634df8c4(tmplrt.Arg(root))
 	x1 := v1
 	_ = x1
+	v2, err := fn.needs_e5e4fd6b("datetime.js")
+	if err != nil {
+		return tmplrt.ExecError("field-time", "needs \"datetime.js\"", tmplrt.CallError("needs", err))
+	}
+	tmplrt.WriteHTMLEscaped(b, v2)
 	b.WriteString("<div rst-field>\n  <label rst-field-label for=\"")
-	v2, err := tmplrt.Field(dot, "Name")
+	v3, err := tmplrt.Field(dot, "Name")
 	if err != nil {
-		return tmplrt.ExecError("field-datetime", ".Name", err)
+		return tmplrt.ExecError("field-time", ".Name", err)
 	}
-	v3 := tmplrt.Unwrap(v2)
-	b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v3)))
+	v4 := tmplrt.Unwrap(v3)
+	b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v4)))
 	b.WriteString("\">")
-	v4, err := tmplrt.Field(dot, "Label")
+	v5, err := tmplrt.Field(dot, "Label")
 	if err != nil {
-		return tmplrt.ExecError("field-datetime", ".Label", err)
+		return tmplrt.ExecError("field-time", ".Label", err)
 	}
-	v5 := tmplrt.Unwrap(v4)
-	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v5)))
-	v6, err := tmplrt.Field(dot, "Required")
+	v6 := tmplrt.Unwrap(v5)
+	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v6)))
+	v7, err := tmplrt.Field(dot, "Required")
 	if err != nil {
-		return tmplrt.ExecError("field-datetime", ".Required", err)
+		return tmplrt.ExecError("field-time", ".Required", err)
 	}
-	v7 := tmplrt.Unwrap(v6)
-	if tmplrt.Truth(v7) {
+	v8 := tmplrt.Unwrap(v7)
+	if tmplrt.Truth(v8) {
 		b.WriteString(" <span rst-field-required aria-hidden=\"true\">*</span>")
 	}
 	b.WriteString("</label>\n  <input rst-input id=\"")
-	v8, err := tmplrt.Field(dot, "Name")
+	v9, err := tmplrt.Field(dot, "Name")
 	if err != nil {
-		return tmplrt.ExecError("field-datetime", ".Name", err)
+		return tmplrt.ExecError("field-time", ".Name", err)
 	}
-	v9 := tmplrt.Unwrap(v8)
-	b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v9)))
+	v10 := tmplrt.Unwrap(v9)
+	b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v10)))
 	b.WriteString("\" name=\"")
-	v10, err := tmplrt.Field(dot, "Name")
+	v11, err := tmplrt.Field(dot, "Name")
 	if err != nil {
-		return tmplrt.ExecError("field-datetime", ".Name", err)
+		return tmplrt.ExecError("field-time", ".Name", err)
 	}
-	v11 := tmplrt.Unwrap(v10)
-	b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v11)))
-	b.WriteString("\" type=\"datetime-local\"")
-	v12, err := tmplrt.Field(dot, "Value")
+	v12 := tmplrt.Unwrap(v11)
+	b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v12)))
+	b.WriteString("\" type=\"time\"")
+	v13, err := tmplrt.Field(dot, "Value")
 	if err != nil {
-		return tmplrt.ExecError("field-datetime", ".Value", err)
+		return tmplrt.ExecError("field-time", ".Value", err)
 	}
-	v13 := tmplrt.Unwrap(v12)
-	if tmplrt.Truth(v13) {
+	v14 := tmplrt.Unwrap(v13)
+	if tmplrt.Truth(v14) {
 		b.WriteString(" value=\"")
-		v14, err := tmplrt.Field(dot, "Value")
+		v15, err := tmplrt.Field(dot, "Value")
 		if err != nil {
-			return tmplrt.ExecError("field-datetime", ".Value", err)
+			return tmplrt.ExecError("field-time", ".Value", err)
 		}
-		v15 := tmplrt.Unwrap(v14)
-		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v15)))
+		v16 := tmplrt.Unwrap(v15)
+		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v16)))
 		b.WriteString("\"")
 	}
-	v16, err := tmplrt.Field(dot, "Min")
+	v17, err := tmplrt.Field(dot, "Min")
 	if err != nil {
-		return tmplrt.ExecError("field-datetime", ".Min", err)
+		return tmplrt.ExecError("field-time", ".Min", err)
 	}
-	v17 := tmplrt.Unwrap(v16)
-	if tmplrt.Truth(v17) {
-		dot := v17
+	v18 := tmplrt.Unwrap(v17)
+	if tmplrt.Truth(v18) {
+		dot := v18
 		_ = dot
 		b.WriteString(" min=\"")
-		v18 := tmplrt.Unwrap(dot)
-		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v18)))
+		v19 := tmplrt.Unwrap(dot)
+		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v19)))
 		b.WriteString("\"")
 	}
-	v19, err := tmplrt.Field(dot, "Max")
+	v20, err := tmplrt.Field(dot, "Max")
 	if err != nil {
-		return tmplrt.ExecError("field-datetime", ".Max", err)
+		return tmplrt.ExecError("field-time", ".Max", err)
 	}
-	v20 := tmplrt.Unwrap(v19)
-	if tmplrt.Truth(v20) {
-		dot := v20
+	v21 := tmplrt.Unwrap(v20)
+	if tmplrt.Truth(v21) {
+		dot := v21
 		_ = dot
 		b.WriteString(" max=\"")
-		v21 := tmplrt.Unwrap(dot)
-		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v21)))
+		v22 := tmplrt.Unwrap(dot)
+		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v22)))
 		b.WriteString("\"")
 	}
-	v22, err := tmplrt.Field(dot, "Required")
+	v23, err := tmplrt.Field(dot, "Required")
 	if err != nil {
-		return tmplrt.ExecError("field-datetime", ".Required", err)
+		return tmplrt.ExecError("field-time", ".Required", err)
 	}
-	v23 := tmplrt.Unwrap(v22)
-	if tmplrt.Truth(v23) {
+	v24 := tmplrt.Unwrap(v23)
+	if tmplrt.Truth(v24) {
 		b.WriteString(" required")
 	}
-	v24, err := tmplrt.Field(dot, "Error")
+	v25, err := tmplrt.Field(dot, "Error")
 	if err != nil {
-		return tmplrt.ExecError("field-datetime", ".Error", err)
+		return tmplrt.ExecError("field-time", ".Error", err)
 	}
-	v25 := tmplrt.Unwrap(v24)
-	if tmplrt.Truth(v25) {
+	v26 := tmplrt.Unwrap(v25)
+	if tmplrt.Truth(v26) {
 		b.WriteString(" aria-invalid=\"true\"")
 	}
-	v27, err := tmplrt.Field(dot, "Hint")
+	v28, err := tmplrt.Field(dot, "Hint")
 	if err != nil {
-		return tmplrt.ExecError("field-datetime", ".Hint", err)
+		return tmplrt.ExecError("field-time", ".Hint", err)
 	}
-	v26 := tmplrt.ValueArg(v27)
-	if !tmplrt.Truth(v26) {
-		v28, err := tmplrt.Field(dot, "Error")
+	v27 := tmplrt.ValueArg(v28)
+	if !tmplrt.Truth(v27) {
+		v29, err := tmplrt.Field(dot, "Error")
 		if err != nil {
-			return tmplrt.ExecError("field-datetime", ".Error", err)
+			return tmplrt.ExecError("field-time", ".Error", err)
 		}
-		v26 = tmplrt.ValueArg(v28)
+		v27 = tmplrt.ValueArg(v29)
 	}
-	v29 := tmplrt.Unwrap(v26)
-	if tmplrt.Truth(v29) {
+	v30 := tmplrt.Unwrap(v27)
+	if tmplrt.Truth(v30) {
 		b.WriteString(" aria-describedby=\"")
-		v30, err := tmplrt.Field(dot, "Hint")
+		v31, err := tmplrt.Field(dot, "Hint")
 		if err != nil {
-			return tmplrt.ExecError("field-datetime", ".Hint", err)
+			return tmplrt.ExecError("field-time", ".Hint", err)
 		}
-		v31 := tmplrt.Unwrap(v30)
-		if tmplrt.Truth(v31) {
-			v32, err := tmplrt.Field(dot, "Name")
+		v32 := tmplrt.Unwrap(v31)
+		if tmplrt.Truth(v32) {
+			v33, err := tmplrt.Field(dot, "Name")
 			if err != nil {
-				return tmplrt.ExecError("field-datetime", ".Name", err)
+				return tmplrt.ExecError("field-time", ".Name", err)
 			}
-			v33 := tmplrt.Unwrap(v32)
-			b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v33)))
+			v34 := tmplrt.Unwrap(v33)
+			b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v34)))
 			b.WriteString("-hint")
 		}
-		v35, err := tmplrt.Field(dot, "Hint")
+		v36, err := tmplrt.Field(dot, "Hint")
 		if err != nil {
-			return tmplrt.ExecError("field-datetime", ".Hint", err)
+			return tmplrt.ExecError("field-time", ".Hint", err)
 		}
-		v34 := tmplrt.ValueArg(v35)
-		if tmplrt.Truth(v34) {
-			v36, err := tmplrt.Field(dot, "Error")
+		v35 := tmplrt.ValueArg(v36)
+		if tmplrt.Truth(v35) {
+			v37, err := tmplrt.Field(dot, "Error")
 			if err != nil {
-				return tmplrt.ExecError("field-datetime", ".Error", err)
+				return tmplrt.ExecError("field-time", ".Error", err)
 			}
-			v34 = tmplrt.ValueArg(v36)
+			v35 = tmplrt.ValueArg(v37)
 		}
-		v37 := tmplrt.Unwrap(v34)
-		if tmplrt.Truth(v37) {
+		v38 := tmplrt.Unwrap(v35)
+		if tmplrt.Truth(v38) {
 			b.WriteString(" ")
 		}
-		v38, err := tmplrt.Field(dot, "Error")
+		v39, err := tmplrt.Field(dot, "Error")
 		if err != nil {
-			return tmplrt.ExecError("field-datetime", ".Error", err)
+			return tmplrt.ExecError("field-time", ".Error", err)
 		}
-		v39 := tmplrt.Unwrap(v38)
-		if tmplrt.Truth(v39) {
-			v40, err := tmplrt.Field(dot, "Name")
+		v40 := tmplrt.Unwrap(v39)
+		if tmplrt.Truth(v40) {
+			v41, err := tmplrt.Field(dot, "Name")
 			if err != nil {
-				return tmplrt.ExecError("field-datetime", ".Name", err)
+				return tmplrt.ExecError("field-time", ".Name", err)
 			}
-			v41 := tmplrt.Unwrap(v40)
-			b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v41)))
+			v42 := tmplrt.Unwrap(v41)
+			b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v42)))
 			b.WriteString("-error")
 		}
 		b.WriteString("\"")
 	}
-	v42, err := tmplrt.Field(dot, "Plain")
+	v43, err := tmplrt.Field(dot, "Plain")
 	if err != nil {
-		return tmplrt.ExecError("field-datetime", ".Plain", err)
+		return tmplrt.ExecError("field-time", ".Plain", err)
 	}
-	v43 := tmplrt.Not(v42)
-	if v43 {
-		b.WriteString(" data-rst-date data-rst-date-words=\"")
-		v44, err := fn.dateWords_a3eca208(x1)
+	v44 := tmplrt.Not(v43)
+	if v44 {
+		b.WriteString(" data-rst-time data-rst-date-words=\"")
+		v45, err := fn.dateWords_a3eca208(x1)
 		if err != nil {
-			return tmplrt.ExecError("field-datetime", "dateWords $L", tmplrt.CallError("dateWords", err))
+			return tmplrt.ExecError("field-time", "dateWords $L", tmplrt.CallError("dateWords", err))
 		}
-		v45 := reflect.ValueOf(v44)
-		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v45)))
+		v46 := reflect.ValueOf(v45)
+		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v46)))
 		b.WriteString("\" data-rst-date-set=\"")
-		v46, err := fn.T_a3eca208(x1, "rastrillo.ui.date_set")
+		v47, err := fn.T_a3eca208(x1, "rastrillo.ui.date_set")
 		if err != nil {
-			return tmplrt.ExecError("field-datetime", "T $L \"rastrillo.ui.date_set\"", tmplrt.CallError("T", err))
+			return tmplrt.ExecError("field-time", "T $L \"rastrillo.ui.date_set\"", tmplrt.CallError("T", err))
 		}
-		v47 := reflect.ValueOf(v46)
-		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v47)))
+		v48 := reflect.ValueOf(v47)
+		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v48)))
 		b.WriteString("\" data-rst-date-hint=\"")
-		v48, err := fn.T_a3eca208(x1, "rastrillo.ui.date_hint")
+		v49, err := fn.T_a3eca208(x1, "rastrillo.ui.date_hint")
 		if err != nil {
-			return tmplrt.ExecError("field-datetime", "T $L \"rastrillo.ui.date_hint\"", tmplrt.CallError("T", err))
+			return tmplrt.ExecError("field-time", "T $L \"rastrillo.ui.date_hint\"", tmplrt.CallError("T", err))
 		}
-		v49 := reflect.ValueOf(v48)
-		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v49)))
+		v50 := reflect.ValueOf(v49)
+		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v50)))
 		b.WriteString("\" data-rst-date-pick=\"")
-		v50, err := fn.T_a3eca208(x1, "rastrillo.ui.date_pick")
+		v51, err := fn.T_a3eca208(x1, "rastrillo.ui.date_pick")
 		if err != nil {
-			return tmplrt.ExecError("field-datetime", "T $L \"rastrillo.ui.date_pick\"", tmplrt.CallError("T", err))
+			return tmplrt.ExecError("field-time", "T $L \"rastrillo.ui.date_pick\"", tmplrt.CallError("T", err))
 		}
-		v51 := reflect.ValueOf(v50)
-		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v51)))
-		b.WriteString("\" data-rst-date-calendar=\"")
-		v52, err := fn.T_a3eca208(x1, "rastrillo.ui.date_calendar")
+		v52 := reflect.ValueOf(v51)
+		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v52)))
+		b.WriteString("\" data-rst-date-pick-time=\"")
+		v53, err := fn.T_a3eca208(x1, "rastrillo.ui.date_pick_time")
 		if err != nil {
-			return tmplrt.ExecError("field-datetime", "T $L \"rastrillo.ui.date_calendar\"", tmplrt.CallError("T", err))
+			return tmplrt.ExecError("field-time", "T $L \"rastrillo.ui.date_pick_time\"", tmplrt.CallError("T", err))
 		}
-		v53 := reflect.ValueOf(v52)
-		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v53)))
-		b.WriteString("\" data-rst-date-prev-month=\"")
-		v54, err := fn.T_a3eca208(x1, "rastrillo.ui.date_prev_month")
-		if err != nil {
-			return tmplrt.ExecError("field-datetime", "T $L \"rastrillo.ui.date_prev_month\"", tmplrt.CallError("T", err))
-		}
-		v55 := reflect.ValueOf(v54)
-		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v55)))
-		b.WriteString("\" data-rst-date-next-month=\"")
-		v56, err := fn.T_a3eca208(x1, "rastrillo.ui.date_next_month")
-		if err != nil {
-			return tmplrt.ExecError("field-datetime", "T $L \"rastrillo.ui.date_next_month\"", tmplrt.CallError("T", err))
-		}
-		v57 := reflect.ValueOf(v56)
-		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v57)))
+		v54 := reflect.ValueOf(v53)
+		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v54)))
 		b.WriteString("\" data-rst-date-results=\"")
-		v58, err := fn.T_a3eca208(x1, "rastrillo.ui.date_results")
+		v55, err := fn.T_a3eca208(x1, "rastrillo.ui.date_results")
 		if err != nil {
-			return tmplrt.ExecError("field-datetime", "T $L \"rastrillo.ui.date_results\"", tmplrt.CallError("T", err))
+			return tmplrt.ExecError("field-time", "T $L \"rastrillo.ui.date_results\"", tmplrt.CallError("T", err))
 		}
-		v59 := reflect.ValueOf(v58)
-		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v59)))
+		v56 := reflect.ValueOf(v55)
+		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v56)))
 		b.WriteString("\" data-rst-date-result-one=\"")
-		v60, err := fn.T_a3eca208(x1, "rastrillo.ui.date_result_one")
+		v57, err := fn.T_a3eca208(x1, "rastrillo.ui.date_result_one")
 		if err != nil {
-			return tmplrt.ExecError("field-datetime", "T $L \"rastrillo.ui.date_result_one\"", tmplrt.CallError("T", err))
+			return tmplrt.ExecError("field-time", "T $L \"rastrillo.ui.date_result_one\"", tmplrt.CallError("T", err))
 		}
-		v61 := reflect.ValueOf(v60)
-		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v61)))
+		v58 := reflect.ValueOf(v57)
+		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v58)))
 		b.WriteString("\" data-rst-date-quick-today=\"")
-		v62, err := fn.T_a3eca208(x1, "rastrillo.ui.date_quick_today")
+		v59, err := fn.T_a3eca208(x1, "rastrillo.ui.date_quick_today")
 		if err != nil {
-			return tmplrt.ExecError("field-datetime", "T $L \"rastrillo.ui.date_quick_today\"", tmplrt.CallError("T", err))
+			return tmplrt.ExecError("field-time", "T $L \"rastrillo.ui.date_quick_today\"", tmplrt.CallError("T", err))
 		}
-		v63 := reflect.ValueOf(v62)
-		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v63)))
+		v60 := reflect.ValueOf(v59)
+		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v60)))
 		b.WriteString("\" data-rst-date-quick-tomorrow=\"")
-		v64, err := fn.T_a3eca208(x1, "rastrillo.ui.date_quick_tomorrow")
+		v61, err := fn.T_a3eca208(x1, "rastrillo.ui.date_quick_tomorrow")
 		if err != nil {
-			return tmplrt.ExecError("field-datetime", "T $L \"rastrillo.ui.date_quick_tomorrow\"", tmplrt.CallError("T", err))
+			return tmplrt.ExecError("field-time", "T $L \"rastrillo.ui.date_quick_tomorrow\"", tmplrt.CallError("T", err))
 		}
-		v65 := reflect.ValueOf(v64)
-		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v65)))
+		v62 := reflect.ValueOf(v61)
+		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v62)))
 		b.WriteString("\" data-rst-date-quick-next-week=\"")
-		v66, err := fn.T_a3eca208(x1, "rastrillo.ui.date_quick_next_week")
+		v63, err := fn.T_a3eca208(x1, "rastrillo.ui.date_quick_next_week")
 		if err != nil {
-			return tmplrt.ExecError("field-datetime", "T $L \"rastrillo.ui.date_quick_next_week\"", tmplrt.CallError("T", err))
+			return tmplrt.ExecError("field-time", "T $L \"rastrillo.ui.date_quick_next_week\"", tmplrt.CallError("T", err))
 		}
-		v67 := reflect.ValueOf(v66)
-		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v67)))
+		v64 := reflect.ValueOf(v63)
+		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v64)))
 		b.WriteString("\" data-rst-date-quick-plus-1h=\"")
-		v68, err := fn.T_a3eca208(x1, "rastrillo.ui.date_quick_plus_1h")
+		v65, err := fn.T_a3eca208(x1, "rastrillo.ui.date_quick_plus_1h")
 		if err != nil {
-			return tmplrt.ExecError("field-datetime", "T $L \"rastrillo.ui.date_quick_plus_1h\"", tmplrt.CallError("T", err))
+			return tmplrt.ExecError("field-time", "T $L \"rastrillo.ui.date_quick_plus_1h\"", tmplrt.CallError("T", err))
 		}
-		v69 := reflect.ValueOf(v68)
-		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v69)))
+		v66 := reflect.ValueOf(v65)
+		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v66)))
 		b.WriteString("\" data-rst-date-quick-plus-2h=\"")
-		v70, err := fn.T_a3eca208(x1, "rastrillo.ui.date_quick_plus_2h")
+		v67, err := fn.T_a3eca208(x1, "rastrillo.ui.date_quick_plus_2h")
 		if err != nil {
-			return tmplrt.ExecError("field-datetime", "T $L \"rastrillo.ui.date_quick_plus_2h\"", tmplrt.CallError("T", err))
+			return tmplrt.ExecError("field-time", "T $L \"rastrillo.ui.date_quick_plus_2h\"", tmplrt.CallError("T", err))
 		}
-		v71 := reflect.ValueOf(v70)
-		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v71)))
+		v68 := reflect.ValueOf(v67)
+		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v68)))
 		b.WriteString("\" data-rst-date-quick-end-of-day=\"")
-		v72, err := fn.T_a3eca208(x1, "rastrillo.ui.date_quick_end_of_day")
+		v69, err := fn.T_a3eca208(x1, "rastrillo.ui.date_quick_end_of_day")
 		if err != nil {
-			return tmplrt.ExecError("field-datetime", "T $L \"rastrillo.ui.date_quick_end_of_day\"", tmplrt.CallError("T", err))
+			return tmplrt.ExecError("field-time", "T $L \"rastrillo.ui.date_quick_end_of_day\"", tmplrt.CallError("T", err))
 		}
-		v73 := reflect.ValueOf(v72)
-		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v73)))
+		v70 := reflect.ValueOf(v69)
+		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v70)))
 		b.WriteString("\" data-rst-date-quick-next-day=\"")
-		v74, err := fn.T_a3eca208(x1, "rastrillo.ui.date_quick_next_day")
+		v71, err := fn.T_a3eca208(x1, "rastrillo.ui.date_quick_next_day")
 		if err != nil {
-			return tmplrt.ExecError("field-datetime", "T $L \"rastrillo.ui.date_quick_next_day\"", tmplrt.CallError("T", err))
+			return tmplrt.ExecError("field-time", "T $L \"rastrillo.ui.date_quick_next_day\"", tmplrt.CallError("T", err))
 		}
-		v75 := reflect.ValueOf(v74)
-		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v75)))
+		v72 := reflect.ValueOf(v71)
+		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v72)))
 		b.WriteString("\"")
 	}
 	b.WriteString(">")
-	v76, err := tmplrt.Field(dot, "Hint")
+	v73, err := tmplrt.Field(dot, "Hint")
 	if err != nil {
-		return tmplrt.ExecError("field-datetime", ".Hint", err)
+		return tmplrt.ExecError("field-time", ".Hint", err)
 	}
-	v77 := tmplrt.Unwrap(v76)
-	if tmplrt.Truth(v77) {
+	v74 := tmplrt.Unwrap(v73)
+	if tmplrt.Truth(v74) {
 		b.WriteString("\n  <small rst-field-hint id=\"")
-		v78, err := tmplrt.Field(dot, "Name")
+		v75, err := tmplrt.Field(dot, "Name")
 		if err != nil {
-			return tmplrt.ExecError("field-datetime", ".Name", err)
+			return tmplrt.ExecError("field-time", ".Name", err)
 		}
-		v79 := tmplrt.Unwrap(v78)
-		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v79)))
+		v76 := tmplrt.Unwrap(v75)
+		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v76)))
 		b.WriteString("-hint\">")
-		v80, err := tmplrt.Field(dot, "Hint")
+		v77, err := tmplrt.Field(dot, "Hint")
 		if err != nil {
-			return tmplrt.ExecError("field-datetime", ".Hint", err)
+			return tmplrt.ExecError("field-time", ".Hint", err)
 		}
-		v81 := tmplrt.Unwrap(v80)
-		b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v81)))
+		v78 := tmplrt.Unwrap(v77)
+		b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v78)))
 		b.WriteString("</small>")
 	}
-	v82, err := tmplrt.Field(dot, "Error")
+	v79, err := tmplrt.Field(dot, "Error")
 	if err != nil {
-		return tmplrt.ExecError("field-datetime", ".Error", err)
+		return tmplrt.ExecError("field-time", ".Error", err)
 	}
-	v83 := tmplrt.Unwrap(v82)
-	if tmplrt.Truth(v83) {
+	v80 := tmplrt.Unwrap(v79)
+	if tmplrt.Truth(v80) {
 		b.WriteString("\n  <small rst-field-error id=\"")
-		v84, err := tmplrt.Field(dot, "Name")
+		v81, err := tmplrt.Field(dot, "Name")
 		if err != nil {
-			return tmplrt.ExecError("field-datetime", ".Name", err)
+			return tmplrt.ExecError("field-time", ".Name", err)
 		}
-		v85 := tmplrt.Unwrap(v84)
-		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v85)))
+		v82 := tmplrt.Unwrap(v81)
+		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v82)))
 		b.WriteString("-error\">")
-		v86, err := tmplrt.Field(dot, "Error")
+		v83, err := tmplrt.Field(dot, "Error")
 		if err != nil {
-			return tmplrt.ExecError("field-datetime", ".Error", err)
+			return tmplrt.ExecError("field-time", ".Error", err)
 		}
-		v87 := tmplrt.Unwrap(v86)
-		b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v87)))
+		v84 := tmplrt.Unwrap(v83)
+		b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v84)))
 		b.WriteString("</small>")
 	}
 	b.WriteString("\n</div>")
 	return nil
 }
 
-// facts_736e46f495816b61 is what exec_736e46f495816b61 assumes of the types it reads.
-var facts_736e46f495816b61 = tmplrt.Facts{
+// facts_72629bf6ccf3f07b is what exec_72629bf6ccf3f07b assumes of the types it reads.
+var facts_72629bf6ccf3f07b = tmplrt.Facts{
 	Funcs: map[string]reflect.Type{
 		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
 	},
@@ -10562,129 +11053,6 @@ var facts_92de3beba99d723a = tmplrt.Facts{
 	},
 }
 
-// exec_947243fb105a484d renders "field-daterange".
-func exec_947243fb105a484d(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
-	root := dot
-	v1 := fn.localizer_634df8c4(tmplrt.Arg(root))
-	x1 := v1
-	_ = x1
-	b.WriteString("<fieldset rst-field-range>\n  <legend")
-	v2, err := tmplrt.Field(dot, "LegendHidden")
-	if err != nil {
-		return tmplrt.ExecError("field-daterange", ".LegendHidden", err)
-	}
-	v3 := tmplrt.Unwrap(v2)
-	if tmplrt.Truth(v3) {
-		b.WriteString(" class=\"rst-sr-only\"")
-	}
-	b.WriteString(">")
-	v4, err := tmplrt.Field(dot, "Legend")
-	if err != nil {
-		return tmplrt.ExecError("field-daterange", ".Legend", err)
-	}
-	v5 := tmplrt.Unwrap(v4)
-	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v5)))
-	b.WriteString("</legend>\n  <div rst-field-row data-rst-range")
-	v6, err := tmplrt.Field(dot, "Seed")
-	if err != nil {
-		return tmplrt.ExecError("field-daterange", ".Seed", err)
-	}
-	v7 := tmplrt.Unwrap(v6)
-	if tmplrt.Truth(v7) {
-		dot := v7
-		_ = dot
-		b.WriteString("=\"")
-		v8 := tmplrt.Unwrap(dot)
-		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v8)))
-		b.WriteString("\"")
-	}
-	b.WriteString(">")
-	v10, err := tmplrt.Field(dot, "Kind")
-	if err != nil {
-		return tmplrt.ExecError("field-daterange", ".Kind", err)
-	}
-	v9 := tmplrt.ValueArg(v10)
-	if !tmplrt.Truth(v9) {
-		v9 = tmplrt.ValueArg(reflect.ValueOf("datetime"))
-	}
-	v11 := tmplrt.Unwrap(v9)
-	v12, err := tmplrt.Eq(v11, reflect.ValueOf("date"))
-	if err != nil {
-		return tmplrt.ExecError("field-daterange", "eq (or .Kind \"datetime\") \"date\"", tmplrt.CallError("eq", err))
-	}
-	if v12 {
-		b.WriteString("\n    ")
-		if depth == tmplrt.MaxExecDepth {
-			return tmplrt.ExecError("field-daterange", "{{template \"field-date\" (withL (.Start) $L)}}", tmplrt.DepthError())
-		}
-		v13, err := tmplrt.Field(dot, "Start")
-		if err != nil {
-			return tmplrt.ExecError("field-daterange", ".Start", err)
-		}
-		v14 := tmplrt.Unwrap(v13)
-		v15 := fn.withL_2f8846c9(tmplrt.Arg(v14), x1)
-		v16 := reflect.ValueOf(v15)
-		if err := exec_d39babba6820218b(b, v16, fn, depth+1); err != nil {
-			return err
-		}
-		b.WriteString("\n    ")
-		if depth == tmplrt.MaxExecDepth {
-			return tmplrt.ExecError("field-daterange", "{{template \"field-date\" (withL (.End) $L)}}", tmplrt.DepthError())
-		}
-		v17, err := tmplrt.Field(dot, "End")
-		if err != nil {
-			return tmplrt.ExecError("field-daterange", ".End", err)
-		}
-		v18 := tmplrt.Unwrap(v17)
-		v19 := fn.withL_2f8846c9(tmplrt.Arg(v18), x1)
-		v20 := reflect.ValueOf(v19)
-		if err := exec_d39babba6820218b(b, v20, fn, depth+1); err != nil {
-			return err
-		}
-	} else {
-		b.WriteString("\n    ")
-		if depth == tmplrt.MaxExecDepth {
-			return tmplrt.ExecError("field-daterange", "{{template \"field-datetime\" (withL (.Start) $L)}}", tmplrt.DepthError())
-		}
-		v21, err := tmplrt.Field(dot, "Start")
-		if err != nil {
-			return tmplrt.ExecError("field-daterange", ".Start", err)
-		}
-		v22 := tmplrt.Unwrap(v21)
-		v23 := fn.withL_2f8846c9(tmplrt.Arg(v22), x1)
-		v24 := reflect.ValueOf(v23)
-		if err := exec_736e46f495816b61(b, v24, fn, depth+1); err != nil {
-			return err
-		}
-		b.WriteString("\n    ")
-		if depth == tmplrt.MaxExecDepth {
-			return tmplrt.ExecError("field-daterange", "{{template \"field-datetime\" (withL (.End) $L)}}", tmplrt.DepthError())
-		}
-		v25, err := tmplrt.Field(dot, "End")
-		if err != nil {
-			return tmplrt.ExecError("field-daterange", ".End", err)
-		}
-		v26 := tmplrt.Unwrap(v25)
-		v27 := fn.withL_2f8846c9(tmplrt.Arg(v26), x1)
-		v28 := reflect.ValueOf(v27)
-		if err := exec_736e46f495816b61(b, v28, fn, depth+1); err != nil {
-			return err
-		}
-	}
-	b.WriteString("\n  </div>\n</fieldset>")
-	return nil
-}
-
-// facts_947243fb105a484d is what exec_947243fb105a484d assumes of the types it reads.
-var facts_947243fb105a484d = tmplrt.Facts{
-	Funcs: map[string]reflect.Type{
-		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
-	},
-	Facts: []tmplrt.Fact{
-		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
-	},
-}
-
 // exec_97b24b851f428451 renders "pagination.html".
 func exec_97b24b851f428451(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
 	b.WriteString("\n\n")
@@ -11445,332 +11813,6 @@ func exec_a07b1eb463055a55(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs
 	}
 	b.WriteString("</div>")
 	return nil
-}
-
-// exec_a091adfe0c36b494 renders "field-time".
-func exec_a091adfe0c36b494(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
-	root := dot
-	v1 := fn.localizer_634df8c4(tmplrt.Arg(root))
-	x1 := v1
-	_ = x1
-	b.WriteString("<div rst-field>\n  <label rst-field-label for=\"")
-	v2, err := tmplrt.Field(dot, "Name")
-	if err != nil {
-		return tmplrt.ExecError("field-time", ".Name", err)
-	}
-	v3 := tmplrt.Unwrap(v2)
-	b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v3)))
-	b.WriteString("\">")
-	v4, err := tmplrt.Field(dot, "Label")
-	if err != nil {
-		return tmplrt.ExecError("field-time", ".Label", err)
-	}
-	v5 := tmplrt.Unwrap(v4)
-	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v5)))
-	v6, err := tmplrt.Field(dot, "Required")
-	if err != nil {
-		return tmplrt.ExecError("field-time", ".Required", err)
-	}
-	v7 := tmplrt.Unwrap(v6)
-	if tmplrt.Truth(v7) {
-		b.WriteString(" <span rst-field-required aria-hidden=\"true\">*</span>")
-	}
-	b.WriteString("</label>\n  <input rst-input id=\"")
-	v8, err := tmplrt.Field(dot, "Name")
-	if err != nil {
-		return tmplrt.ExecError("field-time", ".Name", err)
-	}
-	v9 := tmplrt.Unwrap(v8)
-	b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v9)))
-	b.WriteString("\" name=\"")
-	v10, err := tmplrt.Field(dot, "Name")
-	if err != nil {
-		return tmplrt.ExecError("field-time", ".Name", err)
-	}
-	v11 := tmplrt.Unwrap(v10)
-	b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v11)))
-	b.WriteString("\" type=\"time\"")
-	v12, err := tmplrt.Field(dot, "Value")
-	if err != nil {
-		return tmplrt.ExecError("field-time", ".Value", err)
-	}
-	v13 := tmplrt.Unwrap(v12)
-	if tmplrt.Truth(v13) {
-		b.WriteString(" value=\"")
-		v14, err := tmplrt.Field(dot, "Value")
-		if err != nil {
-			return tmplrt.ExecError("field-time", ".Value", err)
-		}
-		v15 := tmplrt.Unwrap(v14)
-		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v15)))
-		b.WriteString("\"")
-	}
-	v16, err := tmplrt.Field(dot, "Min")
-	if err != nil {
-		return tmplrt.ExecError("field-time", ".Min", err)
-	}
-	v17 := tmplrt.Unwrap(v16)
-	if tmplrt.Truth(v17) {
-		dot := v17
-		_ = dot
-		b.WriteString(" min=\"")
-		v18 := tmplrt.Unwrap(dot)
-		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v18)))
-		b.WriteString("\"")
-	}
-	v19, err := tmplrt.Field(dot, "Max")
-	if err != nil {
-		return tmplrt.ExecError("field-time", ".Max", err)
-	}
-	v20 := tmplrt.Unwrap(v19)
-	if tmplrt.Truth(v20) {
-		dot := v20
-		_ = dot
-		b.WriteString(" max=\"")
-		v21 := tmplrt.Unwrap(dot)
-		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v21)))
-		b.WriteString("\"")
-	}
-	v22, err := tmplrt.Field(dot, "Required")
-	if err != nil {
-		return tmplrt.ExecError("field-time", ".Required", err)
-	}
-	v23 := tmplrt.Unwrap(v22)
-	if tmplrt.Truth(v23) {
-		b.WriteString(" required")
-	}
-	v24, err := tmplrt.Field(dot, "Error")
-	if err != nil {
-		return tmplrt.ExecError("field-time", ".Error", err)
-	}
-	v25 := tmplrt.Unwrap(v24)
-	if tmplrt.Truth(v25) {
-		b.WriteString(" aria-invalid=\"true\"")
-	}
-	v27, err := tmplrt.Field(dot, "Hint")
-	if err != nil {
-		return tmplrt.ExecError("field-time", ".Hint", err)
-	}
-	v26 := tmplrt.ValueArg(v27)
-	if !tmplrt.Truth(v26) {
-		v28, err := tmplrt.Field(dot, "Error")
-		if err != nil {
-			return tmplrt.ExecError("field-time", ".Error", err)
-		}
-		v26 = tmplrt.ValueArg(v28)
-	}
-	v29 := tmplrt.Unwrap(v26)
-	if tmplrt.Truth(v29) {
-		b.WriteString(" aria-describedby=\"")
-		v30, err := tmplrt.Field(dot, "Hint")
-		if err != nil {
-			return tmplrt.ExecError("field-time", ".Hint", err)
-		}
-		v31 := tmplrt.Unwrap(v30)
-		if tmplrt.Truth(v31) {
-			v32, err := tmplrt.Field(dot, "Name")
-			if err != nil {
-				return tmplrt.ExecError("field-time", ".Name", err)
-			}
-			v33 := tmplrt.Unwrap(v32)
-			b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v33)))
-			b.WriteString("-hint")
-		}
-		v35, err := tmplrt.Field(dot, "Hint")
-		if err != nil {
-			return tmplrt.ExecError("field-time", ".Hint", err)
-		}
-		v34 := tmplrt.ValueArg(v35)
-		if tmplrt.Truth(v34) {
-			v36, err := tmplrt.Field(dot, "Error")
-			if err != nil {
-				return tmplrt.ExecError("field-time", ".Error", err)
-			}
-			v34 = tmplrt.ValueArg(v36)
-		}
-		v37 := tmplrt.Unwrap(v34)
-		if tmplrt.Truth(v37) {
-			b.WriteString(" ")
-		}
-		v38, err := tmplrt.Field(dot, "Error")
-		if err != nil {
-			return tmplrt.ExecError("field-time", ".Error", err)
-		}
-		v39 := tmplrt.Unwrap(v38)
-		if tmplrt.Truth(v39) {
-			v40, err := tmplrt.Field(dot, "Name")
-			if err != nil {
-				return tmplrt.ExecError("field-time", ".Name", err)
-			}
-			v41 := tmplrt.Unwrap(v40)
-			b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v41)))
-			b.WriteString("-error")
-		}
-		b.WriteString("\"")
-	}
-	v42, err := tmplrt.Field(dot, "Plain")
-	if err != nil {
-		return tmplrt.ExecError("field-time", ".Plain", err)
-	}
-	v43 := tmplrt.Not(v42)
-	if v43 {
-		b.WriteString(" data-rst-time data-rst-date-words=\"")
-		v44, err := fn.dateWords_a3eca208(x1)
-		if err != nil {
-			return tmplrt.ExecError("field-time", "dateWords $L", tmplrt.CallError("dateWords", err))
-		}
-		v45 := reflect.ValueOf(v44)
-		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v45)))
-		b.WriteString("\" data-rst-date-set=\"")
-		v46, err := fn.T_a3eca208(x1, "rastrillo.ui.date_set")
-		if err != nil {
-			return tmplrt.ExecError("field-time", "T $L \"rastrillo.ui.date_set\"", tmplrt.CallError("T", err))
-		}
-		v47 := reflect.ValueOf(v46)
-		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v47)))
-		b.WriteString("\" data-rst-date-hint=\"")
-		v48, err := fn.T_a3eca208(x1, "rastrillo.ui.date_hint")
-		if err != nil {
-			return tmplrt.ExecError("field-time", "T $L \"rastrillo.ui.date_hint\"", tmplrt.CallError("T", err))
-		}
-		v49 := reflect.ValueOf(v48)
-		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v49)))
-		b.WriteString("\" data-rst-date-pick=\"")
-		v50, err := fn.T_a3eca208(x1, "rastrillo.ui.date_pick")
-		if err != nil {
-			return tmplrt.ExecError("field-time", "T $L \"rastrillo.ui.date_pick\"", tmplrt.CallError("T", err))
-		}
-		v51 := reflect.ValueOf(v50)
-		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v51)))
-		b.WriteString("\" data-rst-date-pick-time=\"")
-		v52, err := fn.T_a3eca208(x1, "rastrillo.ui.date_pick_time")
-		if err != nil {
-			return tmplrt.ExecError("field-time", "T $L \"rastrillo.ui.date_pick_time\"", tmplrt.CallError("T", err))
-		}
-		v53 := reflect.ValueOf(v52)
-		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v53)))
-		b.WriteString("\" data-rst-date-results=\"")
-		v54, err := fn.T_a3eca208(x1, "rastrillo.ui.date_results")
-		if err != nil {
-			return tmplrt.ExecError("field-time", "T $L \"rastrillo.ui.date_results\"", tmplrt.CallError("T", err))
-		}
-		v55 := reflect.ValueOf(v54)
-		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v55)))
-		b.WriteString("\" data-rst-date-result-one=\"")
-		v56, err := fn.T_a3eca208(x1, "rastrillo.ui.date_result_one")
-		if err != nil {
-			return tmplrt.ExecError("field-time", "T $L \"rastrillo.ui.date_result_one\"", tmplrt.CallError("T", err))
-		}
-		v57 := reflect.ValueOf(v56)
-		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v57)))
-		b.WriteString("\" data-rst-date-quick-today=\"")
-		v58, err := fn.T_a3eca208(x1, "rastrillo.ui.date_quick_today")
-		if err != nil {
-			return tmplrt.ExecError("field-time", "T $L \"rastrillo.ui.date_quick_today\"", tmplrt.CallError("T", err))
-		}
-		v59 := reflect.ValueOf(v58)
-		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v59)))
-		b.WriteString("\" data-rst-date-quick-tomorrow=\"")
-		v60, err := fn.T_a3eca208(x1, "rastrillo.ui.date_quick_tomorrow")
-		if err != nil {
-			return tmplrt.ExecError("field-time", "T $L \"rastrillo.ui.date_quick_tomorrow\"", tmplrt.CallError("T", err))
-		}
-		v61 := reflect.ValueOf(v60)
-		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v61)))
-		b.WriteString("\" data-rst-date-quick-next-week=\"")
-		v62, err := fn.T_a3eca208(x1, "rastrillo.ui.date_quick_next_week")
-		if err != nil {
-			return tmplrt.ExecError("field-time", "T $L \"rastrillo.ui.date_quick_next_week\"", tmplrt.CallError("T", err))
-		}
-		v63 := reflect.ValueOf(v62)
-		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v63)))
-		b.WriteString("\" data-rst-date-quick-plus-1h=\"")
-		v64, err := fn.T_a3eca208(x1, "rastrillo.ui.date_quick_plus_1h")
-		if err != nil {
-			return tmplrt.ExecError("field-time", "T $L \"rastrillo.ui.date_quick_plus_1h\"", tmplrt.CallError("T", err))
-		}
-		v65 := reflect.ValueOf(v64)
-		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v65)))
-		b.WriteString("\" data-rst-date-quick-plus-2h=\"")
-		v66, err := fn.T_a3eca208(x1, "rastrillo.ui.date_quick_plus_2h")
-		if err != nil {
-			return tmplrt.ExecError("field-time", "T $L \"rastrillo.ui.date_quick_plus_2h\"", tmplrt.CallError("T", err))
-		}
-		v67 := reflect.ValueOf(v66)
-		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v67)))
-		b.WriteString("\" data-rst-date-quick-end-of-day=\"")
-		v68, err := fn.T_a3eca208(x1, "rastrillo.ui.date_quick_end_of_day")
-		if err != nil {
-			return tmplrt.ExecError("field-time", "T $L \"rastrillo.ui.date_quick_end_of_day\"", tmplrt.CallError("T", err))
-		}
-		v69 := reflect.ValueOf(v68)
-		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v69)))
-		b.WriteString("\" data-rst-date-quick-next-day=\"")
-		v70, err := fn.T_a3eca208(x1, "rastrillo.ui.date_quick_next_day")
-		if err != nil {
-			return tmplrt.ExecError("field-time", "T $L \"rastrillo.ui.date_quick_next_day\"", tmplrt.CallError("T", err))
-		}
-		v71 := reflect.ValueOf(v70)
-		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v71)))
-		b.WriteString("\"")
-	}
-	b.WriteString(">")
-	v72, err := tmplrt.Field(dot, "Hint")
-	if err != nil {
-		return tmplrt.ExecError("field-time", ".Hint", err)
-	}
-	v73 := tmplrt.Unwrap(v72)
-	if tmplrt.Truth(v73) {
-		b.WriteString("\n  <small rst-field-hint id=\"")
-		v74, err := tmplrt.Field(dot, "Name")
-		if err != nil {
-			return tmplrt.ExecError("field-time", ".Name", err)
-		}
-		v75 := tmplrt.Unwrap(v74)
-		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v75)))
-		b.WriteString("-hint\">")
-		v76, err := tmplrt.Field(dot, "Hint")
-		if err != nil {
-			return tmplrt.ExecError("field-time", ".Hint", err)
-		}
-		v77 := tmplrt.Unwrap(v76)
-		b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v77)))
-		b.WriteString("</small>")
-	}
-	v78, err := tmplrt.Field(dot, "Error")
-	if err != nil {
-		return tmplrt.ExecError("field-time", ".Error", err)
-	}
-	v79 := tmplrt.Unwrap(v78)
-	if tmplrt.Truth(v79) {
-		b.WriteString("\n  <small rst-field-error id=\"")
-		v80, err := tmplrt.Field(dot, "Name")
-		if err != nil {
-			return tmplrt.ExecError("field-time", ".Name", err)
-		}
-		v81 := tmplrt.Unwrap(v80)
-		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v81)))
-		b.WriteString("-error\">")
-		v82, err := tmplrt.Field(dot, "Error")
-		if err != nil {
-			return tmplrt.ExecError("field-time", ".Error", err)
-		}
-		v83 := tmplrt.Unwrap(v82)
-		b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v83)))
-		b.WriteString("</small>")
-	}
-	b.WriteString("\n</div>")
-	return nil
-}
-
-// facts_a091adfe0c36b494 is what exec_a091adfe0c36b494 assumes of the types it reads.
-var facts_a091adfe0c36b494 = tmplrt.Facts{
-	Funcs: map[string]reflect.Type{
-		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
-	},
-	Facts: []tmplrt.Fact{
-		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
-	},
 }
 
 // exec_a09833c64bb0a195 renders "index.html".
@@ -12793,6 +12835,351 @@ func exec_ad598a845f3eb7d6(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs
 	}
 	b.WriteString("\n</div>")
 	return nil
+}
+
+// exec_ae0db17aab33c528 renders "field-datetime".
+func exec_ae0db17aab33c528(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
+	root := dot
+	v1 := fn.localizer_634df8c4(tmplrt.Arg(root))
+	x1 := v1
+	_ = x1
+	v2, err := fn.needs_e5e4fd6b("datetime.js")
+	if err != nil {
+		return tmplrt.ExecError("field-datetime", "needs \"datetime.js\"", tmplrt.CallError("needs", err))
+	}
+	tmplrt.WriteHTMLEscaped(b, v2)
+	b.WriteString("<div rst-field>\n  <label rst-field-label for=\"")
+	v3, err := tmplrt.Field(dot, "Name")
+	if err != nil {
+		return tmplrt.ExecError("field-datetime", ".Name", err)
+	}
+	v4 := tmplrt.Unwrap(v3)
+	b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v4)))
+	b.WriteString("\">")
+	v5, err := tmplrt.Field(dot, "Label")
+	if err != nil {
+		return tmplrt.ExecError("field-datetime", ".Label", err)
+	}
+	v6 := tmplrt.Unwrap(v5)
+	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v6)))
+	v7, err := tmplrt.Field(dot, "Required")
+	if err != nil {
+		return tmplrt.ExecError("field-datetime", ".Required", err)
+	}
+	v8 := tmplrt.Unwrap(v7)
+	if tmplrt.Truth(v8) {
+		b.WriteString(" <span rst-field-required aria-hidden=\"true\">*</span>")
+	}
+	b.WriteString("</label>\n  <input rst-input id=\"")
+	v9, err := tmplrt.Field(dot, "Name")
+	if err != nil {
+		return tmplrt.ExecError("field-datetime", ".Name", err)
+	}
+	v10 := tmplrt.Unwrap(v9)
+	b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v10)))
+	b.WriteString("\" name=\"")
+	v11, err := tmplrt.Field(dot, "Name")
+	if err != nil {
+		return tmplrt.ExecError("field-datetime", ".Name", err)
+	}
+	v12 := tmplrt.Unwrap(v11)
+	b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v12)))
+	b.WriteString("\" type=\"datetime-local\"")
+	v13, err := tmplrt.Field(dot, "Value")
+	if err != nil {
+		return tmplrt.ExecError("field-datetime", ".Value", err)
+	}
+	v14 := tmplrt.Unwrap(v13)
+	if tmplrt.Truth(v14) {
+		b.WriteString(" value=\"")
+		v15, err := tmplrt.Field(dot, "Value")
+		if err != nil {
+			return tmplrt.ExecError("field-datetime", ".Value", err)
+		}
+		v16 := tmplrt.Unwrap(v15)
+		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v16)))
+		b.WriteString("\"")
+	}
+	v17, err := tmplrt.Field(dot, "Min")
+	if err != nil {
+		return tmplrt.ExecError("field-datetime", ".Min", err)
+	}
+	v18 := tmplrt.Unwrap(v17)
+	if tmplrt.Truth(v18) {
+		dot := v18
+		_ = dot
+		b.WriteString(" min=\"")
+		v19 := tmplrt.Unwrap(dot)
+		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v19)))
+		b.WriteString("\"")
+	}
+	v20, err := tmplrt.Field(dot, "Max")
+	if err != nil {
+		return tmplrt.ExecError("field-datetime", ".Max", err)
+	}
+	v21 := tmplrt.Unwrap(v20)
+	if tmplrt.Truth(v21) {
+		dot := v21
+		_ = dot
+		b.WriteString(" max=\"")
+		v22 := tmplrt.Unwrap(dot)
+		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v22)))
+		b.WriteString("\"")
+	}
+	v23, err := tmplrt.Field(dot, "Required")
+	if err != nil {
+		return tmplrt.ExecError("field-datetime", ".Required", err)
+	}
+	v24 := tmplrt.Unwrap(v23)
+	if tmplrt.Truth(v24) {
+		b.WriteString(" required")
+	}
+	v25, err := tmplrt.Field(dot, "Error")
+	if err != nil {
+		return tmplrt.ExecError("field-datetime", ".Error", err)
+	}
+	v26 := tmplrt.Unwrap(v25)
+	if tmplrt.Truth(v26) {
+		b.WriteString(" aria-invalid=\"true\"")
+	}
+	v28, err := tmplrt.Field(dot, "Hint")
+	if err != nil {
+		return tmplrt.ExecError("field-datetime", ".Hint", err)
+	}
+	v27 := tmplrt.ValueArg(v28)
+	if !tmplrt.Truth(v27) {
+		v29, err := tmplrt.Field(dot, "Error")
+		if err != nil {
+			return tmplrt.ExecError("field-datetime", ".Error", err)
+		}
+		v27 = tmplrt.ValueArg(v29)
+	}
+	v30 := tmplrt.Unwrap(v27)
+	if tmplrt.Truth(v30) {
+		b.WriteString(" aria-describedby=\"")
+		v31, err := tmplrt.Field(dot, "Hint")
+		if err != nil {
+			return tmplrt.ExecError("field-datetime", ".Hint", err)
+		}
+		v32 := tmplrt.Unwrap(v31)
+		if tmplrt.Truth(v32) {
+			v33, err := tmplrt.Field(dot, "Name")
+			if err != nil {
+				return tmplrt.ExecError("field-datetime", ".Name", err)
+			}
+			v34 := tmplrt.Unwrap(v33)
+			b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v34)))
+			b.WriteString("-hint")
+		}
+		v36, err := tmplrt.Field(dot, "Hint")
+		if err != nil {
+			return tmplrt.ExecError("field-datetime", ".Hint", err)
+		}
+		v35 := tmplrt.ValueArg(v36)
+		if tmplrt.Truth(v35) {
+			v37, err := tmplrt.Field(dot, "Error")
+			if err != nil {
+				return tmplrt.ExecError("field-datetime", ".Error", err)
+			}
+			v35 = tmplrt.ValueArg(v37)
+		}
+		v38 := tmplrt.Unwrap(v35)
+		if tmplrt.Truth(v38) {
+			b.WriteString(" ")
+		}
+		v39, err := tmplrt.Field(dot, "Error")
+		if err != nil {
+			return tmplrt.ExecError("field-datetime", ".Error", err)
+		}
+		v40 := tmplrt.Unwrap(v39)
+		if tmplrt.Truth(v40) {
+			v41, err := tmplrt.Field(dot, "Name")
+			if err != nil {
+				return tmplrt.ExecError("field-datetime", ".Name", err)
+			}
+			v42 := tmplrt.Unwrap(v41)
+			b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v42)))
+			b.WriteString("-error")
+		}
+		b.WriteString("\"")
+	}
+	v43, err := tmplrt.Field(dot, "Plain")
+	if err != nil {
+		return tmplrt.ExecError("field-datetime", ".Plain", err)
+	}
+	v44 := tmplrt.Not(v43)
+	if v44 {
+		b.WriteString(" data-rst-date data-rst-date-words=\"")
+		v45, err := fn.dateWords_a3eca208(x1)
+		if err != nil {
+			return tmplrt.ExecError("field-datetime", "dateWords $L", tmplrt.CallError("dateWords", err))
+		}
+		v46 := reflect.ValueOf(v45)
+		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v46)))
+		b.WriteString("\" data-rst-date-set=\"")
+		v47, err := fn.T_a3eca208(x1, "rastrillo.ui.date_set")
+		if err != nil {
+			return tmplrt.ExecError("field-datetime", "T $L \"rastrillo.ui.date_set\"", tmplrt.CallError("T", err))
+		}
+		v48 := reflect.ValueOf(v47)
+		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v48)))
+		b.WriteString("\" data-rst-date-hint=\"")
+		v49, err := fn.T_a3eca208(x1, "rastrillo.ui.date_hint")
+		if err != nil {
+			return tmplrt.ExecError("field-datetime", "T $L \"rastrillo.ui.date_hint\"", tmplrt.CallError("T", err))
+		}
+		v50 := reflect.ValueOf(v49)
+		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v50)))
+		b.WriteString("\" data-rst-date-pick=\"")
+		v51, err := fn.T_a3eca208(x1, "rastrillo.ui.date_pick")
+		if err != nil {
+			return tmplrt.ExecError("field-datetime", "T $L \"rastrillo.ui.date_pick\"", tmplrt.CallError("T", err))
+		}
+		v52 := reflect.ValueOf(v51)
+		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v52)))
+		b.WriteString("\" data-rst-date-calendar=\"")
+		v53, err := fn.T_a3eca208(x1, "rastrillo.ui.date_calendar")
+		if err != nil {
+			return tmplrt.ExecError("field-datetime", "T $L \"rastrillo.ui.date_calendar\"", tmplrt.CallError("T", err))
+		}
+		v54 := reflect.ValueOf(v53)
+		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v54)))
+		b.WriteString("\" data-rst-date-prev-month=\"")
+		v55, err := fn.T_a3eca208(x1, "rastrillo.ui.date_prev_month")
+		if err != nil {
+			return tmplrt.ExecError("field-datetime", "T $L \"rastrillo.ui.date_prev_month\"", tmplrt.CallError("T", err))
+		}
+		v56 := reflect.ValueOf(v55)
+		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v56)))
+		b.WriteString("\" data-rst-date-next-month=\"")
+		v57, err := fn.T_a3eca208(x1, "rastrillo.ui.date_next_month")
+		if err != nil {
+			return tmplrt.ExecError("field-datetime", "T $L \"rastrillo.ui.date_next_month\"", tmplrt.CallError("T", err))
+		}
+		v58 := reflect.ValueOf(v57)
+		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v58)))
+		b.WriteString("\" data-rst-date-results=\"")
+		v59, err := fn.T_a3eca208(x1, "rastrillo.ui.date_results")
+		if err != nil {
+			return tmplrt.ExecError("field-datetime", "T $L \"rastrillo.ui.date_results\"", tmplrt.CallError("T", err))
+		}
+		v60 := reflect.ValueOf(v59)
+		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v60)))
+		b.WriteString("\" data-rst-date-result-one=\"")
+		v61, err := fn.T_a3eca208(x1, "rastrillo.ui.date_result_one")
+		if err != nil {
+			return tmplrt.ExecError("field-datetime", "T $L \"rastrillo.ui.date_result_one\"", tmplrt.CallError("T", err))
+		}
+		v62 := reflect.ValueOf(v61)
+		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v62)))
+		b.WriteString("\" data-rst-date-quick-today=\"")
+		v63, err := fn.T_a3eca208(x1, "rastrillo.ui.date_quick_today")
+		if err != nil {
+			return tmplrt.ExecError("field-datetime", "T $L \"rastrillo.ui.date_quick_today\"", tmplrt.CallError("T", err))
+		}
+		v64 := reflect.ValueOf(v63)
+		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v64)))
+		b.WriteString("\" data-rst-date-quick-tomorrow=\"")
+		v65, err := fn.T_a3eca208(x1, "rastrillo.ui.date_quick_tomorrow")
+		if err != nil {
+			return tmplrt.ExecError("field-datetime", "T $L \"rastrillo.ui.date_quick_tomorrow\"", tmplrt.CallError("T", err))
+		}
+		v66 := reflect.ValueOf(v65)
+		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v66)))
+		b.WriteString("\" data-rst-date-quick-next-week=\"")
+		v67, err := fn.T_a3eca208(x1, "rastrillo.ui.date_quick_next_week")
+		if err != nil {
+			return tmplrt.ExecError("field-datetime", "T $L \"rastrillo.ui.date_quick_next_week\"", tmplrt.CallError("T", err))
+		}
+		v68 := reflect.ValueOf(v67)
+		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v68)))
+		b.WriteString("\" data-rst-date-quick-plus-1h=\"")
+		v69, err := fn.T_a3eca208(x1, "rastrillo.ui.date_quick_plus_1h")
+		if err != nil {
+			return tmplrt.ExecError("field-datetime", "T $L \"rastrillo.ui.date_quick_plus_1h\"", tmplrt.CallError("T", err))
+		}
+		v70 := reflect.ValueOf(v69)
+		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v70)))
+		b.WriteString("\" data-rst-date-quick-plus-2h=\"")
+		v71, err := fn.T_a3eca208(x1, "rastrillo.ui.date_quick_plus_2h")
+		if err != nil {
+			return tmplrt.ExecError("field-datetime", "T $L \"rastrillo.ui.date_quick_plus_2h\"", tmplrt.CallError("T", err))
+		}
+		v72 := reflect.ValueOf(v71)
+		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v72)))
+		b.WriteString("\" data-rst-date-quick-end-of-day=\"")
+		v73, err := fn.T_a3eca208(x1, "rastrillo.ui.date_quick_end_of_day")
+		if err != nil {
+			return tmplrt.ExecError("field-datetime", "T $L \"rastrillo.ui.date_quick_end_of_day\"", tmplrt.CallError("T", err))
+		}
+		v74 := reflect.ValueOf(v73)
+		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v74)))
+		b.WriteString("\" data-rst-date-quick-next-day=\"")
+		v75, err := fn.T_a3eca208(x1, "rastrillo.ui.date_quick_next_day")
+		if err != nil {
+			return tmplrt.ExecError("field-datetime", "T $L \"rastrillo.ui.date_quick_next_day\"", tmplrt.CallError("T", err))
+		}
+		v76 := reflect.ValueOf(v75)
+		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v76)))
+		b.WriteString("\"")
+	}
+	b.WriteString(">")
+	v77, err := tmplrt.Field(dot, "Hint")
+	if err != nil {
+		return tmplrt.ExecError("field-datetime", ".Hint", err)
+	}
+	v78 := tmplrt.Unwrap(v77)
+	if tmplrt.Truth(v78) {
+		b.WriteString("\n  <small rst-field-hint id=\"")
+		v79, err := tmplrt.Field(dot, "Name")
+		if err != nil {
+			return tmplrt.ExecError("field-datetime", ".Name", err)
+		}
+		v80 := tmplrt.Unwrap(v79)
+		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v80)))
+		b.WriteString("-hint\">")
+		v81, err := tmplrt.Field(dot, "Hint")
+		if err != nil {
+			return tmplrt.ExecError("field-datetime", ".Hint", err)
+		}
+		v82 := tmplrt.Unwrap(v81)
+		b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v82)))
+		b.WriteString("</small>")
+	}
+	v83, err := tmplrt.Field(dot, "Error")
+	if err != nil {
+		return tmplrt.ExecError("field-datetime", ".Error", err)
+	}
+	v84 := tmplrt.Unwrap(v83)
+	if tmplrt.Truth(v84) {
+		b.WriteString("\n  <small rst-field-error id=\"")
+		v85, err := tmplrt.Field(dot, "Name")
+		if err != nil {
+			return tmplrt.ExecError("field-datetime", ".Name", err)
+		}
+		v86 := tmplrt.Unwrap(v85)
+		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v86)))
+		b.WriteString("-error\">")
+		v87, err := tmplrt.Field(dot, "Error")
+		if err != nil {
+			return tmplrt.ExecError("field-datetime", ".Error", err)
+		}
+		v88 := tmplrt.Unwrap(v87)
+		b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v88)))
+		b.WriteString("</small>")
+	}
+	b.WriteString("\n</div>")
+	return nil
+}
+
+// facts_ae0db17aab33c528 is what exec_ae0db17aab33c528 assumes of the types it reads.
+var facts_ae0db17aab33c528 = tmplrt.Facts{
+	Funcs: map[string]reflect.Type{
+		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
+	},
+	Facts: []tmplrt.Fact{
+		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
+	},
 }
 
 // exec_ae0e2b3e2c009d84 renders "field-textarea.html".
@@ -14835,6 +15222,255 @@ func exec_c4103c119ab1c89c(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs
 	return nil
 }
 
+// exec_c823ec8862ccbae4 renders "content".
+func exec_c823ec8862ccbae4(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
+	root := dot
+	v1 := fn.localizer_634df8c4(tmplrt.Arg(root))
+	x1 := v1
+	_ = x1
+	b.WriteString("\n<h1>")
+	v2, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_title")
+	if err != nil {
+		return tmplrt.ExecError("content", "T $L \"rastrillo.ui.api_tokens_title\"", tmplrt.CallError("T", err))
+	}
+	v3 := reflect.ValueOf(v2)
+	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v3)))
+	b.WriteString("</h1>\n<p>")
+	v4, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_intro")
+	if err != nil {
+		return tmplrt.ExecError("content", "T $L \"rastrillo.ui.api_tokens_intro\"", tmplrt.CallError("T", err))
+	}
+	v5 := reflect.ValueOf(v4)
+	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v5)))
+	b.WriteString("</p>\n")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("content", "{{template \"api-tokens\" dict \"L\" $L \"Page\" .Content \"Path\" \"/tokens\"}}", tmplrt.DepthError())
+	}
+	v6, err := tmplrt.Field(dot, "Content")
+	if err != nil {
+		return tmplrt.ExecError("content", ".Content", err)
+	}
+	v7, err := fn.dict_72aa8d8f("L", x1, "Page", tmplrt.Arg(v6), "Path", "/tokens")
+	if err != nil {
+		return tmplrt.ExecError("content", "dict \"L\" $L \"Page\" .Content \"Path\" \"/tokens\"", tmplrt.CallError("dict", err))
+	}
+	if err := exec_5403ae9eae502f7d(b, reflect.ValueOf(v7), fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\n")
+	return nil
+}
+
+// facts_c823ec8862ccbae4 is what exec_c823ec8862ccbae4 assumes of the types it reads.
+var facts_c823ec8862ccbae4 = tmplrt.Facts{
+	Funcs: map[string]reflect.Type{
+		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
+	},
+	Facts: []tmplrt.Fact{
+		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
+	},
+}
+
+// exec_c823ec8862ccbae4_0ac538bf renders "content" for a dot of type *page.
+func exec_c823ec8862ccbae4_0ac538bf(b *bytes.Buffer, dot *page, fn *templateFuncs, depth int) error {
+	root := dot
+	v1 := fn.localizer_634df8c4(root)
+	x1 := v1
+	_ = x1
+	b.WriteString("\n<h1>")
+	v2, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_title")
+	if err != nil {
+		return tmplrt.ExecError("content", "T $L \"rastrillo.ui.api_tokens_title\"", tmplrt.CallError("T", err))
+	}
+	v3 := reflect.ValueOf(v2)
+	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v3)))
+	b.WriteString("</h1>\n<p>")
+	v4, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_intro")
+	if err != nil {
+		return tmplrt.ExecError("content", "T $L \"rastrillo.ui.api_tokens_intro\"", tmplrt.CallError("T", err))
+	}
+	v5 := reflect.ValueOf(v4)
+	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v5)))
+	b.WriteString("</p>\n")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("content", "{{template \"api-tokens\" dict \"L\" $L \"Page\" .Content \"Path\" \"/tokens\"}}", tmplrt.DepthError())
+	}
+	if dot == nil {
+		_, err := tmplrt.Fail("nil pointer evaluating *notes.page.Content")
+		return tmplrt.ExecError("content", ".Content", err)
+	}
+	v6, err := fn.dict_72aa8d8f("L", x1, "Page", dot.Content, "Path", "/tokens")
+	if err != nil {
+		return tmplrt.ExecError("content", "dict \"L\" $L \"Page\" .Content \"Path\" \"/tokens\"", tmplrt.CallError("dict", err))
+	}
+	if err := exec_5403ae9eae502f7d(b, reflect.ValueOf(v6), fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\n")
+	return nil
+}
+
+// facts_c823ec8862ccbae4_0ac538bf is what exec_c823ec8862ccbae4_0ac538bf assumes of the types it reads.
+var facts_c823ec8862ccbae4_0ac538bf = tmplrt.Facts{
+	Dot: reflect.TypeFor[*page](),
+	Funcs: map[string]reflect.Type{
+		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
+	},
+	Facts: []tmplrt.Fact{
+		{Type: "*notes/internal/notes.page"},
+		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
+		{Path: []string{".Content"}, Type: "interface {}"},
+	},
+}
+
+// exec_c823ec8862ccbae4_20041b88 renders "content" for a dot of type *Export.
+func exec_c823ec8862ccbae4_20041b88(b *bytes.Buffer, dot *Export, fn *templateFuncs, depth int) error {
+	root := dot
+	v1 := fn.localizer_634df8c4(root)
+	x1 := v1
+	_ = x1
+	b.WriteString("\n<h1>")
+	v2, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_title")
+	if err != nil {
+		return tmplrt.ExecError("content", "T $L \"rastrillo.ui.api_tokens_title\"", tmplrt.CallError("T", err))
+	}
+	v3 := reflect.ValueOf(v2)
+	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v3)))
+	b.WriteString("</h1>\n<p>")
+	v4, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_intro")
+	if err != nil {
+		return tmplrt.ExecError("content", "T $L \"rastrillo.ui.api_tokens_intro\"", tmplrt.CallError("T", err))
+	}
+	v5 := reflect.ValueOf(v4)
+	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v5)))
+	b.WriteString("</p>\n")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("content", "{{template \"api-tokens\" dict \"L\" $L \"Page\" .Content \"Path\" \"/tokens\"}}", tmplrt.DepthError())
+	}
+	if dot == nil {
+		_, err := tmplrt.Fail("nil pointer evaluating *notes.Export.Content")
+		return tmplrt.ExecError("content", ".Content", err)
+	}
+	v6, err := fn.dict_72aa8d8f("L", x1, "Page", dot.Content, "Path", "/tokens")
+	if err != nil {
+		return tmplrt.ExecError("content", "dict \"L\" $L \"Page\" .Content \"Path\" \"/tokens\"", tmplrt.CallError("dict", err))
+	}
+	if err := exec_5403ae9eae502f7d(b, reflect.ValueOf(v6), fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\n")
+	return nil
+}
+
+// facts_c823ec8862ccbae4_20041b88 is what exec_c823ec8862ccbae4_20041b88 assumes of the types it reads.
+var facts_c823ec8862ccbae4_20041b88 = tmplrt.Facts{
+	Dot: reflect.TypeFor[*Export](),
+	Funcs: map[string]reflect.Type{
+		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
+	},
+	Facts: []tmplrt.Fact{
+		{Type: "*notes/internal/notes.Export"},
+		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
+		{Path: []string{".Content"}, Type: "string"},
+	},
+}
+
+// exec_c823ec8862ccbae4_3660315a renders "content" for a dot of type page.
+func exec_c823ec8862ccbae4_3660315a(b *bytes.Buffer, dot page, fn *templateFuncs, depth int) error {
+	root := dot
+	v1 := fn.localizer_634df8c4(root)
+	x1 := v1
+	_ = x1
+	b.WriteString("\n<h1>")
+	v2, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_title")
+	if err != nil {
+		return tmplrt.ExecError("content", "T $L \"rastrillo.ui.api_tokens_title\"", tmplrt.CallError("T", err))
+	}
+	v3 := reflect.ValueOf(v2)
+	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v3)))
+	b.WriteString("</h1>\n<p>")
+	v4, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_intro")
+	if err != nil {
+		return tmplrt.ExecError("content", "T $L \"rastrillo.ui.api_tokens_intro\"", tmplrt.CallError("T", err))
+	}
+	v5 := reflect.ValueOf(v4)
+	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v5)))
+	b.WriteString("</p>\n")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("content", "{{template \"api-tokens\" dict \"L\" $L \"Page\" .Content \"Path\" \"/tokens\"}}", tmplrt.DepthError())
+	}
+	v6, err := fn.dict_72aa8d8f("L", x1, "Page", dot.Content, "Path", "/tokens")
+	if err != nil {
+		return tmplrt.ExecError("content", "dict \"L\" $L \"Page\" .Content \"Path\" \"/tokens\"", tmplrt.CallError("dict", err))
+	}
+	if err := exec_5403ae9eae502f7d(b, reflect.ValueOf(v6), fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\n")
+	return nil
+}
+
+// facts_c823ec8862ccbae4_3660315a is what exec_c823ec8862ccbae4_3660315a assumes of the types it reads.
+var facts_c823ec8862ccbae4_3660315a = tmplrt.Facts{
+	Dot: reflect.TypeFor[page](),
+	Funcs: map[string]reflect.Type{
+		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
+	},
+	Facts: []tmplrt.Fact{
+		{Type: "notes/internal/notes.page struct"},
+		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
+		{Path: []string{".Content"}, Type: "interface {}"},
+	},
+}
+
+// exec_c823ec8862ccbae4_36648955 renders "content" for a dot of type Export.
+func exec_c823ec8862ccbae4_36648955(b *bytes.Buffer, dot Export, fn *templateFuncs, depth int) error {
+	root := dot
+	v1 := fn.localizer_634df8c4(root)
+	x1 := v1
+	_ = x1
+	b.WriteString("\n<h1>")
+	v2, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_title")
+	if err != nil {
+		return tmplrt.ExecError("content", "T $L \"rastrillo.ui.api_tokens_title\"", tmplrt.CallError("T", err))
+	}
+	v3 := reflect.ValueOf(v2)
+	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v3)))
+	b.WriteString("</h1>\n<p>")
+	v4, err := fn.T_a3eca208(x1, "rastrillo.ui.api_tokens_intro")
+	if err != nil {
+		return tmplrt.ExecError("content", "T $L \"rastrillo.ui.api_tokens_intro\"", tmplrt.CallError("T", err))
+	}
+	v5 := reflect.ValueOf(v4)
+	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v5)))
+	b.WriteString("</p>\n")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("content", "{{template \"api-tokens\" dict \"L\" $L \"Page\" .Content \"Path\" \"/tokens\"}}", tmplrt.DepthError())
+	}
+	v6, err := fn.dict_72aa8d8f("L", x1, "Page", dot.Content, "Path", "/tokens")
+	if err != nil {
+		return tmplrt.ExecError("content", "dict \"L\" $L \"Page\" .Content \"Path\" \"/tokens\"", tmplrt.CallError("dict", err))
+	}
+	if err := exec_5403ae9eae502f7d(b, reflect.ValueOf(v6), fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\n")
+	return nil
+}
+
+// facts_c823ec8862ccbae4_36648955 is what exec_c823ec8862ccbae4_36648955 assumes of the types it reads.
+var facts_c823ec8862ccbae4_36648955 = tmplrt.Facts{
+	Dot: reflect.TypeFor[Export](),
+	Funcs: map[string]reflect.Type{
+		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
+	},
+	Facts: []tmplrt.Fact{
+		{Type: "notes/internal/notes.Export struct"},
+		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
+		{Path: []string{".Content"}, Type: "string"},
+	},
+}
+
 // exec_ca51780f894088fd renders "content".
 func exec_ca51780f894088fd(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
 	root := dot
@@ -15489,346 +16125,6 @@ func exec_d1ac05bb489f97e4(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs
 
 // facts_d1ac05bb489f97e4 is what exec_d1ac05bb489f97e4 assumes of the types it reads.
 var facts_d1ac05bb489f97e4 = tmplrt.Facts{
-	Funcs: map[string]reflect.Type{
-		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
-	},
-	Facts: []tmplrt.Fact{
-		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
-	},
-}
-
-// exec_d39babba6820218b renders "field-date".
-func exec_d39babba6820218b(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
-	root := dot
-	v1 := fn.localizer_634df8c4(tmplrt.Arg(root))
-	x1 := v1
-	_ = x1
-	b.WriteString("<div rst-field>\n  <label rst-field-label for=\"")
-	v2, err := tmplrt.Field(dot, "Name")
-	if err != nil {
-		return tmplrt.ExecError("field-date", ".Name", err)
-	}
-	v3 := tmplrt.Unwrap(v2)
-	b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v3)))
-	b.WriteString("\">")
-	v4, err := tmplrt.Field(dot, "Label")
-	if err != nil {
-		return tmplrt.ExecError("field-date", ".Label", err)
-	}
-	v5 := tmplrt.Unwrap(v4)
-	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v5)))
-	v6, err := tmplrt.Field(dot, "Required")
-	if err != nil {
-		return tmplrt.ExecError("field-date", ".Required", err)
-	}
-	v7 := tmplrt.Unwrap(v6)
-	if tmplrt.Truth(v7) {
-		b.WriteString(" <span rst-field-required aria-hidden=\"true\">*</span>")
-	}
-	b.WriteString("</label>\n  <input rst-input id=\"")
-	v8, err := tmplrt.Field(dot, "Name")
-	if err != nil {
-		return tmplrt.ExecError("field-date", ".Name", err)
-	}
-	v9 := tmplrt.Unwrap(v8)
-	b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v9)))
-	b.WriteString("\" name=\"")
-	v10, err := tmplrt.Field(dot, "Name")
-	if err != nil {
-		return tmplrt.ExecError("field-date", ".Name", err)
-	}
-	v11 := tmplrt.Unwrap(v10)
-	b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v11)))
-	b.WriteString("\" type=\"date\"")
-	v12, err := tmplrt.Field(dot, "Value")
-	if err != nil {
-		return tmplrt.ExecError("field-date", ".Value", err)
-	}
-	v13 := tmplrt.Unwrap(v12)
-	if tmplrt.Truth(v13) {
-		b.WriteString(" value=\"")
-		v14, err := tmplrt.Field(dot, "Value")
-		if err != nil {
-			return tmplrt.ExecError("field-date", ".Value", err)
-		}
-		v15 := tmplrt.Unwrap(v14)
-		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v15)))
-		b.WriteString("\"")
-	}
-	v16, err := tmplrt.Field(dot, "Min")
-	if err != nil {
-		return tmplrt.ExecError("field-date", ".Min", err)
-	}
-	v17 := tmplrt.Unwrap(v16)
-	if tmplrt.Truth(v17) {
-		dot := v17
-		_ = dot
-		b.WriteString(" min=\"")
-		v18 := tmplrt.Unwrap(dot)
-		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v18)))
-		b.WriteString("\"")
-	}
-	v19, err := tmplrt.Field(dot, "Max")
-	if err != nil {
-		return tmplrt.ExecError("field-date", ".Max", err)
-	}
-	v20 := tmplrt.Unwrap(v19)
-	if tmplrt.Truth(v20) {
-		dot := v20
-		_ = dot
-		b.WriteString(" max=\"")
-		v21 := tmplrt.Unwrap(dot)
-		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v21)))
-		b.WriteString("\"")
-	}
-	v22, err := tmplrt.Field(dot, "Required")
-	if err != nil {
-		return tmplrt.ExecError("field-date", ".Required", err)
-	}
-	v23 := tmplrt.Unwrap(v22)
-	if tmplrt.Truth(v23) {
-		b.WriteString(" required")
-	}
-	v24, err := tmplrt.Field(dot, "Error")
-	if err != nil {
-		return tmplrt.ExecError("field-date", ".Error", err)
-	}
-	v25 := tmplrt.Unwrap(v24)
-	if tmplrt.Truth(v25) {
-		b.WriteString(" aria-invalid=\"true\"")
-	}
-	v27, err := tmplrt.Field(dot, "Hint")
-	if err != nil {
-		return tmplrt.ExecError("field-date", ".Hint", err)
-	}
-	v26 := tmplrt.ValueArg(v27)
-	if !tmplrt.Truth(v26) {
-		v28, err := tmplrt.Field(dot, "Error")
-		if err != nil {
-			return tmplrt.ExecError("field-date", ".Error", err)
-		}
-		v26 = tmplrt.ValueArg(v28)
-	}
-	v29 := tmplrt.Unwrap(v26)
-	if tmplrt.Truth(v29) {
-		b.WriteString(" aria-describedby=\"")
-		v30, err := tmplrt.Field(dot, "Hint")
-		if err != nil {
-			return tmplrt.ExecError("field-date", ".Hint", err)
-		}
-		v31 := tmplrt.Unwrap(v30)
-		if tmplrt.Truth(v31) {
-			v32, err := tmplrt.Field(dot, "Name")
-			if err != nil {
-				return tmplrt.ExecError("field-date", ".Name", err)
-			}
-			v33 := tmplrt.Unwrap(v32)
-			b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v33)))
-			b.WriteString("-hint")
-		}
-		v35, err := tmplrt.Field(dot, "Hint")
-		if err != nil {
-			return tmplrt.ExecError("field-date", ".Hint", err)
-		}
-		v34 := tmplrt.ValueArg(v35)
-		if tmplrt.Truth(v34) {
-			v36, err := tmplrt.Field(dot, "Error")
-			if err != nil {
-				return tmplrt.ExecError("field-date", ".Error", err)
-			}
-			v34 = tmplrt.ValueArg(v36)
-		}
-		v37 := tmplrt.Unwrap(v34)
-		if tmplrt.Truth(v37) {
-			b.WriteString(" ")
-		}
-		v38, err := tmplrt.Field(dot, "Error")
-		if err != nil {
-			return tmplrt.ExecError("field-date", ".Error", err)
-		}
-		v39 := tmplrt.Unwrap(v38)
-		if tmplrt.Truth(v39) {
-			v40, err := tmplrt.Field(dot, "Name")
-			if err != nil {
-				return tmplrt.ExecError("field-date", ".Name", err)
-			}
-			v41 := tmplrt.Unwrap(v40)
-			b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v41)))
-			b.WriteString("-error")
-		}
-		b.WriteString("\"")
-	}
-	v42, err := tmplrt.Field(dot, "Plain")
-	if err != nil {
-		return tmplrt.ExecError("field-date", ".Plain", err)
-	}
-	v43 := tmplrt.Not(v42)
-	if v43 {
-		b.WriteString(" data-rst-date data-rst-date-words=\"")
-		v44, err := fn.dateWords_a3eca208(x1)
-		if err != nil {
-			return tmplrt.ExecError("field-date", "dateWords $L", tmplrt.CallError("dateWords", err))
-		}
-		v45 := reflect.ValueOf(v44)
-		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v45)))
-		b.WriteString("\" data-rst-date-set=\"")
-		v46, err := fn.T_a3eca208(x1, "rastrillo.ui.date_set")
-		if err != nil {
-			return tmplrt.ExecError("field-date", "T $L \"rastrillo.ui.date_set\"", tmplrt.CallError("T", err))
-		}
-		v47 := reflect.ValueOf(v46)
-		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v47)))
-		b.WriteString("\" data-rst-date-hint=\"")
-		v48, err := fn.T_a3eca208(x1, "rastrillo.ui.date_hint")
-		if err != nil {
-			return tmplrt.ExecError("field-date", "T $L \"rastrillo.ui.date_hint\"", tmplrt.CallError("T", err))
-		}
-		v49 := reflect.ValueOf(v48)
-		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v49)))
-		b.WriteString("\" data-rst-date-pick=\"")
-		v50, err := fn.T_a3eca208(x1, "rastrillo.ui.date_pick")
-		if err != nil {
-			return tmplrt.ExecError("field-date", "T $L \"rastrillo.ui.date_pick\"", tmplrt.CallError("T", err))
-		}
-		v51 := reflect.ValueOf(v50)
-		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v51)))
-		b.WriteString("\" data-rst-date-calendar=\"")
-		v52, err := fn.T_a3eca208(x1, "rastrillo.ui.date_calendar")
-		if err != nil {
-			return tmplrt.ExecError("field-date", "T $L \"rastrillo.ui.date_calendar\"", tmplrt.CallError("T", err))
-		}
-		v53 := reflect.ValueOf(v52)
-		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v53)))
-		b.WriteString("\" data-rst-date-prev-month=\"")
-		v54, err := fn.T_a3eca208(x1, "rastrillo.ui.date_prev_month")
-		if err != nil {
-			return tmplrt.ExecError("field-date", "T $L \"rastrillo.ui.date_prev_month\"", tmplrt.CallError("T", err))
-		}
-		v55 := reflect.ValueOf(v54)
-		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v55)))
-		b.WriteString("\" data-rst-date-next-month=\"")
-		v56, err := fn.T_a3eca208(x1, "rastrillo.ui.date_next_month")
-		if err != nil {
-			return tmplrt.ExecError("field-date", "T $L \"rastrillo.ui.date_next_month\"", tmplrt.CallError("T", err))
-		}
-		v57 := reflect.ValueOf(v56)
-		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v57)))
-		b.WriteString("\" data-rst-date-results=\"")
-		v58, err := fn.T_a3eca208(x1, "rastrillo.ui.date_results")
-		if err != nil {
-			return tmplrt.ExecError("field-date", "T $L \"rastrillo.ui.date_results\"", tmplrt.CallError("T", err))
-		}
-		v59 := reflect.ValueOf(v58)
-		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v59)))
-		b.WriteString("\" data-rst-date-result-one=\"")
-		v60, err := fn.T_a3eca208(x1, "rastrillo.ui.date_result_one")
-		if err != nil {
-			return tmplrt.ExecError("field-date", "T $L \"rastrillo.ui.date_result_one\"", tmplrt.CallError("T", err))
-		}
-		v61 := reflect.ValueOf(v60)
-		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v61)))
-		b.WriteString("\" data-rst-date-quick-today=\"")
-		v62, err := fn.T_a3eca208(x1, "rastrillo.ui.date_quick_today")
-		if err != nil {
-			return tmplrt.ExecError("field-date", "T $L \"rastrillo.ui.date_quick_today\"", tmplrt.CallError("T", err))
-		}
-		v63 := reflect.ValueOf(v62)
-		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v63)))
-		b.WriteString("\" data-rst-date-quick-tomorrow=\"")
-		v64, err := fn.T_a3eca208(x1, "rastrillo.ui.date_quick_tomorrow")
-		if err != nil {
-			return tmplrt.ExecError("field-date", "T $L \"rastrillo.ui.date_quick_tomorrow\"", tmplrt.CallError("T", err))
-		}
-		v65 := reflect.ValueOf(v64)
-		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v65)))
-		b.WriteString("\" data-rst-date-quick-next-week=\"")
-		v66, err := fn.T_a3eca208(x1, "rastrillo.ui.date_quick_next_week")
-		if err != nil {
-			return tmplrt.ExecError("field-date", "T $L \"rastrillo.ui.date_quick_next_week\"", tmplrt.CallError("T", err))
-		}
-		v67 := reflect.ValueOf(v66)
-		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v67)))
-		b.WriteString("\" data-rst-date-quick-plus-1h=\"")
-		v68, err := fn.T_a3eca208(x1, "rastrillo.ui.date_quick_plus_1h")
-		if err != nil {
-			return tmplrt.ExecError("field-date", "T $L \"rastrillo.ui.date_quick_plus_1h\"", tmplrt.CallError("T", err))
-		}
-		v69 := reflect.ValueOf(v68)
-		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v69)))
-		b.WriteString("\" data-rst-date-quick-plus-2h=\"")
-		v70, err := fn.T_a3eca208(x1, "rastrillo.ui.date_quick_plus_2h")
-		if err != nil {
-			return tmplrt.ExecError("field-date", "T $L \"rastrillo.ui.date_quick_plus_2h\"", tmplrt.CallError("T", err))
-		}
-		v71 := reflect.ValueOf(v70)
-		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v71)))
-		b.WriteString("\" data-rst-date-quick-end-of-day=\"")
-		v72, err := fn.T_a3eca208(x1, "rastrillo.ui.date_quick_end_of_day")
-		if err != nil {
-			return tmplrt.ExecError("field-date", "T $L \"rastrillo.ui.date_quick_end_of_day\"", tmplrt.CallError("T", err))
-		}
-		v73 := reflect.ValueOf(v72)
-		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v73)))
-		b.WriteString("\" data-rst-date-quick-next-day=\"")
-		v74, err := fn.T_a3eca208(x1, "rastrillo.ui.date_quick_next_day")
-		if err != nil {
-			return tmplrt.ExecError("field-date", "T $L \"rastrillo.ui.date_quick_next_day\"", tmplrt.CallError("T", err))
-		}
-		v75 := reflect.ValueOf(v74)
-		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v75)))
-		b.WriteString("\"")
-	}
-	b.WriteString(">")
-	v76, err := tmplrt.Field(dot, "Hint")
-	if err != nil {
-		return tmplrt.ExecError("field-date", ".Hint", err)
-	}
-	v77 := tmplrt.Unwrap(v76)
-	if tmplrt.Truth(v77) {
-		b.WriteString("\n  <small rst-field-hint id=\"")
-		v78, err := tmplrt.Field(dot, "Name")
-		if err != nil {
-			return tmplrt.ExecError("field-date", ".Name", err)
-		}
-		v79 := tmplrt.Unwrap(v78)
-		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v79)))
-		b.WriteString("-hint\">")
-		v80, err := tmplrt.Field(dot, "Hint")
-		if err != nil {
-			return tmplrt.ExecError("field-date", ".Hint", err)
-		}
-		v81 := tmplrt.Unwrap(v80)
-		b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v81)))
-		b.WriteString("</small>")
-	}
-	v82, err := tmplrt.Field(dot, "Error")
-	if err != nil {
-		return tmplrt.ExecError("field-date", ".Error", err)
-	}
-	v83 := tmplrt.Unwrap(v82)
-	if tmplrt.Truth(v83) {
-		b.WriteString("\n  <small rst-field-error id=\"")
-		v84, err := tmplrt.Field(dot, "Name")
-		if err != nil {
-			return tmplrt.ExecError("field-date", ".Name", err)
-		}
-		v85 := tmplrt.Unwrap(v84)
-		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v85)))
-		b.WriteString("-error\">")
-		v86, err := tmplrt.Field(dot, "Error")
-		if err != nil {
-			return tmplrt.ExecError("field-date", ".Error", err)
-		}
-		v87 := tmplrt.Unwrap(v86)
-		b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v87)))
-		b.WriteString("</small>")
-	}
-	b.WriteString("\n</div>")
-	return nil
-}
-
-// facts_d39babba6820218b is what exec_d39babba6820218b assumes of the types it reads.
-var facts_d39babba6820218b = tmplrt.Facts{
 	Funcs: map[string]reflect.Type{
 		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
 	},
@@ -16914,257 +17210,6 @@ var facts_f260b0be7feb536f = tmplrt.Facts{
 func exec_f2fc56b3761f9e96(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
 	b.WriteString("\n\n")
 	return nil
-}
-
-// exec_f4500a7b62dea99a renders "field-select".
-func exec_f4500a7b62dea99a(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
-	root := dot
-	v1 := fn.localizer_634df8c4(tmplrt.Arg(root))
-	x1 := v1
-	_ = x1
-	b.WriteString("<div rst-field><label rst-field-label for=\"")
-	v2, err := tmplrt.Field(dot, "ID")
-	if err != nil {
-		return tmplrt.ExecError("field-select", ".ID", err)
-	}
-	v3 := tmplrt.Unwrap(v2)
-	b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v3)))
-	b.WriteString("\">")
-	v4, err := tmplrt.Field(dot, "Label")
-	if err != nil {
-		return tmplrt.ExecError("field-select", ".Label", err)
-	}
-	v5 := tmplrt.Unwrap(v4)
-	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v5)))
-	v6, err := tmplrt.Field(dot, "Hint")
-	if err != nil {
-		return tmplrt.ExecError("field-select", ".Hint", err)
-	}
-	v7 := tmplrt.Unwrap(v6)
-	if tmplrt.Truth(v7) {
-		dot := v7
-		_ = dot
-		b.WriteString(" <span rst-field-hint>(")
-		v8 := tmplrt.Unwrap(dot)
-		b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v8)))
-		b.WriteString(")</span>")
-	}
-	b.WriteString("</label>\n<select rst-input")
-	v9, err := tmplrt.Field(dot, "Short")
-	if err != nil {
-		return tmplrt.ExecError("field-select", ".Short", err)
-	}
-	v10 := tmplrt.Unwrap(v9)
-	if tmplrt.Truth(v10) {
-		b.WriteString("=\"short\"")
-	}
-	b.WriteString(" id=\"")
-	v11, err := tmplrt.Field(dot, "ID")
-	if err != nil {
-		return tmplrt.ExecError("field-select", ".ID", err)
-	}
-	v12 := tmplrt.Unwrap(v11)
-	b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v12)))
-	b.WriteString("\" name=\"")
-	v13, err := tmplrt.Field(dot, "Name")
-	if err != nil {
-		return tmplrt.ExecError("field-select", ".Name", err)
-	}
-	v14 := tmplrt.Unwrap(v13)
-	b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v14)))
-	b.WriteString("\"")
-	v15, err := tmplrt.Field(dot, "Required")
-	if err != nil {
-		return tmplrt.ExecError("field-select", ".Required", err)
-	}
-	v16 := tmplrt.Unwrap(v15)
-	if tmplrt.Truth(v16) {
-		b.WriteString(" required")
-	}
-	v18, err := tmplrt.Field(dot, "Plain")
-	if err != nil {
-		return tmplrt.ExecError("field-select", ".Plain", err)
-	}
-	v19 := tmplrt.Not(v18)
-	v17 := tmplrt.ValueArg(reflect.ValueOf(v19))
-	if tmplrt.Truth(v17) {
-		v20, err := tmplrt.Field(dot, "Options")
-		if err != nil {
-			return tmplrt.ExecError("field-select", ".Options", err)
-		}
-		v17 = tmplrt.ValueArg(v20)
-		if tmplrt.Truth(v17) {
-			v21, err := tmplrt.Field(dot, "Options")
-			if err != nil {
-				return tmplrt.ExecError("field-select", ".Options", err)
-			}
-			v22, err := tmplrt.Len(v21)
-			if err != nil {
-				return tmplrt.ExecError("field-select", "len .Options", tmplrt.CallError("len", err))
-			}
-			v23, err := tmplrt.Ge(reflect.ValueOf(v22), reflect.ValueOf(10))
-			if err != nil {
-				return tmplrt.ExecError("field-select", "ge (len .Options) 10", tmplrt.CallError("ge", err))
-			}
-			v17 = tmplrt.ValueArg(reflect.ValueOf(v23))
-		}
-	}
-	v24 := tmplrt.Unwrap(v17)
-	if tmplrt.Truth(v24) {
-		b.WriteString(" data-rst-select data-rst-select-filter=\"")
-		v25, err := fn.T_a3eca208(x1, "rastrillo.ui.select_filter")
-		if err != nil {
-			return tmplrt.ExecError("field-select", "T $L \"rastrillo.ui.select_filter\"", tmplrt.CallError("T", err))
-		}
-		v26 := reflect.ValueOf(v25)
-		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v26)))
-		b.WriteString("\" data-rst-select-results=\"")
-		v27, err := fn.T_a3eca208(x1, "rastrillo.ui.select_results")
-		if err != nil {
-			return tmplrt.ExecError("field-select", "T $L \"rastrillo.ui.select_results\"", tmplrt.CallError("T", err))
-		}
-		v28 := reflect.ValueOf(v27)
-		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v28)))
-		b.WriteString("\" data-rst-select-result-one=\"")
-		v29, err := fn.T_a3eca208(x1, "rastrillo.ui.select_result_one")
-		if err != nil {
-			return tmplrt.ExecError("field-select", "T $L \"rastrillo.ui.select_result_one\"", tmplrt.CallError("T", err))
-		}
-		v30 := reflect.ValueOf(v29)
-		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v30)))
-		b.WriteString("\" data-rst-select-no-matches=\"")
-		v31, err := fn.T_a3eca208(x1, "rastrillo.ui.select_no_matches")
-		if err != nil {
-			return tmplrt.ExecError("field-select", "T $L \"rastrillo.ui.select_no_matches\"", tmplrt.CallError("T", err))
-		}
-		v32 := reflect.ValueOf(v31)
-		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v32)))
-		b.WriteString("\"")
-	}
-	v33, err := tmplrt.Field(dot, "Error")
-	if err != nil {
-		return tmplrt.ExecError("field-select", ".Error", err)
-	}
-	v34 := tmplrt.Unwrap(v33)
-	if tmplrt.Truth(v34) {
-		b.WriteString(" aria-invalid=\"true\" aria-describedby=\"")
-		v35, err := tmplrt.Field(dot, "ID")
-		if err != nil {
-			return tmplrt.ExecError("field-select", ".ID", err)
-		}
-		v36 := tmplrt.Unwrap(v35)
-		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v36)))
-		b.WriteString("-error\"")
-	} else {
-		v37, err := tmplrt.Field(dot, "Help")
-		if err != nil {
-			return tmplrt.ExecError("field-select", ".Help", err)
-		}
-		v38 := tmplrt.Unwrap(v37)
-		if tmplrt.Truth(v38) {
-			b.WriteString(" aria-describedby=\"")
-			v39, err := tmplrt.Field(dot, "ID")
-			if err != nil {
-				return tmplrt.ExecError("field-select", ".ID", err)
-			}
-			v40 := tmplrt.Unwrap(v39)
-			b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v40)))
-			b.WriteString("-help\"")
-		}
-	}
-	b.WriteString(">")
-	v41, err := tmplrt.Field(dot, "Options")
-	if err != nil {
-		return tmplrt.ExecError("field-select", ".Options", err)
-	}
-	v42 := tmplrt.Unwrap(v41)
-	if err := tmplrt.Range(v42, func(_, dot reflect.Value) error {
-		b.WriteString("<option value=\"")
-		v43, err := tmplrt.Field(dot, "Value")
-		if err != nil {
-			return tmplrt.ExecError("field-select", ".Value", err)
-		}
-		v44 := tmplrt.Unwrap(v43)
-		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v44)))
-		b.WriteString("\"")
-		v45, err := tmplrt.Field(dot, "Selected")
-		if err != nil {
-			return tmplrt.ExecError("field-select", ".Selected", err)
-		}
-		v46 := tmplrt.Unwrap(v45)
-		if tmplrt.Truth(v46) {
-			b.WriteString(" selected")
-		}
-		b.WriteString(">")
-		v47, err := tmplrt.Field(dot, "Label")
-		if err != nil {
-			return tmplrt.ExecError("field-select", ".Label", err)
-		}
-		v48 := tmplrt.Unwrap(v47)
-		b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v48)))
-		b.WriteString("</option>")
-		return nil
-	}); err != nil {
-		return tmplrt.ExecError("field-select", ".Options", err)
-	}
-	b.WriteString("</select>\n")
-	v49, err := tmplrt.Field(dot, "Error")
-	if err != nil {
-		return tmplrt.ExecError("field-select", ".Error", err)
-	}
-	v50 := tmplrt.Unwrap(v49)
-	if tmplrt.Truth(v50) {
-		b.WriteString("<p rst-field-error id=\"")
-		v51, err := tmplrt.Field(dot, "ID")
-		if err != nil {
-			return tmplrt.ExecError("field-select", ".ID", err)
-		}
-		v52 := tmplrt.Unwrap(v51)
-		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v52)))
-		b.WriteString("-error\" role=\"alert\">")
-		v53, err := tmplrt.Field(dot, "Error")
-		if err != nil {
-			return tmplrt.ExecError("field-select", ".Error", err)
-		}
-		v54 := tmplrt.Unwrap(v53)
-		b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v54)))
-		b.WriteString("</p>\n")
-	} else {
-		v55, err := tmplrt.Field(dot, "Help")
-		if err != nil {
-			return tmplrt.ExecError("field-select", ".Help", err)
-		}
-		v56 := tmplrt.Unwrap(v55)
-		if tmplrt.Truth(v56) {
-			b.WriteString("<p rst-field-help id=\"")
-			v57, err := tmplrt.Field(dot, "ID")
-			if err != nil {
-				return tmplrt.ExecError("field-select", ".ID", err)
-			}
-			v58 := tmplrt.Unwrap(v57)
-			b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v58)))
-			b.WriteString("-help\">")
-			v59, err := tmplrt.Field(dot, "Help")
-			if err != nil {
-				return tmplrt.ExecError("field-select", ".Help", err)
-			}
-			v60 := tmplrt.Unwrap(v59)
-			b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v60)))
-			b.WriteString("</p>\n")
-		}
-	}
-	b.WriteString("</div>")
-	return nil
-}
-
-// facts_f4500a7b62dea99a is what exec_f4500a7b62dea99a assumes of the types it reads.
-var facts_f4500a7b62dea99a = tmplrt.Facts{
-	Funcs: map[string]reflect.Type{
-		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
-	},
-	Facts: []tmplrt.Fact{
-		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
-	},
 }
 
 // exec_f5e79b1a9ec52fa2 renders "layout".

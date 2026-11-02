@@ -17,9 +17,9 @@ import (
 	"%[1]s/internal/%[2]s"
 )
 
-// Every GET screen is held to 150ms to first byte: a new route fails here
-// until it is measured or recorded in .rastrillo/budgets.txt. Never
-// t.Parallel() in this file: a perf test measures its neighbours.
+// Every GET screen is held to 150ms to first byte and to its first-load
+// weight: a new route fails until measured or in .rastrillo/budgets.txt.
+// Never t.Parallel() in this file: a perf test measures its neighbours.
 func TestPerfScreens(t *testing.T) {
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 	database, err := db.Open(schema.Path(t), logger)

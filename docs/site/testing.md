@@ -99,8 +99,9 @@ binary. The budgets stop that early, while fixing it is still cheap.
 | Test package time | 10 seconds | `make test` |
 | Screen | 150ms to first byte, for every GET route | `make perf` |
 | Cold start | 500ms from starting the process to the first byte | `make perf` |
+| First load | 40 kB of framework CSS and JS per page, gzipped, plus each component script it loads | `make perf` |
 
-The size budget always fails the gate. The timing budgets fail it only on
+The size and first-load budgets always fail the gate. The timing budgets fail it only on
 CI, where `AMADAN_CI` or `CI` is set. On your laptop they print the same
 numbers and pass, because a busy laptop says nothing reliable about speed.
 
@@ -169,6 +170,13 @@ over real HTTP, through the same handler production serves, and holds each
 one to 150ms to first byte. It also starts the app in a fresh process
 three times and holds the cold start to 500ms. These are the same numbers
 the [`perf`](/docs/reference/perf) middleware logs in production.
+
+The same walk weighs each page: the framework CSS and JS it makes a
+browser download, gzipped. A column or topbar page may load 40 kB, plus
+the size of each component script it loads. When a page is over budget,
+the failure lists files that grew, if any. If no file grew, it lists
+every framework file the page loads. A file that grew is usually your
+copy in `static/`; `rastrillo doctor` shows what changed.
 
 A route you add fails here until it is measured. Most routes need nothing
 from you. A route with a parameter needs a real path to request, whose row

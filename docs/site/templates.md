@@ -59,7 +59,12 @@ layout can show a notice. See [Forms](/docs/forms).
 
 ## Template functions
 
-`ui.Pages` registers `dict`, `list`, `menuGroup`, `searchClear`, `icon`, `iconAssets`, `opt`, `stageArt`, `displayURL`, `safeHref`, `rowMenuItems`, `paginationItems`, `localizer`, `withL` and `path`, and the locale functions `T`, `Tf`, `Tbdi`, `number`, `displayValue`, `dateWords`, `money` and `actor`.
+`ui.Pages` registers the template functions `dict`, `list`, `menuGroup`,
+`searchClear`, `icon`, `iconAssets`, `opt`, `stageArt`, `displayURL`,
+`safeHref`, `rowMenuItems`, `paginationItems`, `localizer`, `withL`,
+`path`, `needs` and `neededScripts`. It also registers the locale
+functions `T`, `Tf`, `Tbdi`, `number`, `displayValue`, `dateWords`,
+`money` and `actor`.
 
 Write a link to one of your own pages with `path`: `{{path $ "/orders"}}`. At the root it changes nothing. Under a [base path](/docs/reference/basepath) it adds the base, so the link stays in your app.
 
@@ -100,6 +105,35 @@ rendering in the wrong language. `rastrillo migrate-templates` adds
 layout's `<head>`. It renders empty for the vendored-inline default, so
 you can call it unconditionally and never edit the layout when the
 delivery mode changes. See [Icons](/docs/icons).
+
+### Component scripts
+
+`select.js`, `calendar.js` and `datetime.js` load only on a page that
+needs them. The field partials say which they need: `field-select`
+needs `select.js`, and the date and time fields need `datetime.js`,
+which brings `calendar.js`. The layout loads what the page's partials
+ask for, each once:
+
+```html
+{{range neededScripts}}<script defer src="{{path $ (asset .)}}"></script>{{end}}
+```
+
+A page with a live region or a polling fragment loads all three, since
+the HTML it swaps in later may carry a field.
+
+Markup you write yourself loads its script the same way, as long as
+the markup carries the hook attribute: `data-rst-select` loads
+`select.js`, and `data-rst-date`, `data-rst-time` or `data-rst-range`
+load `datetime.js` and `calendar.js`. If the attribute comes from your
+data instead, ask for the script in the same template:
+
+```html
+{{needs "select.js"}}<select {{.Hook}}>
+```
+
+`needs` takes the script's name in quotes. Use a component script name;
+any other name makes `NewPages` return an error naming the page. Do not
+add a `<script>` tag for these scripts yourself.
 
 ## The partials
 

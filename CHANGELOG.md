@@ -113,6 +113,57 @@ What changed:
   `github.com/yosida95/uritemplate/v3`, `golang.org/x/oauth2` and
   `golang.org/x/time`.
 
+### Changed: pages download less
+
+`rastrillo.Assets` now serves the framework's files in `static/`
+minified and gzipped, so every page is lighter with no change to your
+app. Your copies keep their comments. Your own files are served as
+written.
+
+To upgrade:
+
+1. No action is needed for the smaller files.
+2. To load `select.js`, `calendar.js` and `datetime.js` only on pages
+   that use them, replace their three `<script>` lines in
+   `templates/layout.html` with one:
+
+   ```html
+   {{range neededScripts}}<script defer src="{{path $ (asset .)}}"></script>{{end}}
+   ```
+
+   A layout that keeps the three lines still works and loads all
+   three on every page. Fields you wrote yourself, or field partials
+   you redefined, load their scripts if their markup carries the
+   `data-rst-*` attribute; if the attribute comes from your data, add
+   `{{needs "select.js"}}` (or `"datetime.js"`) to that template.
+3. Run `rastrillo generate` and commit the result. The field partials
+   changed, so their compiled code changed too.
+4. `make perf` now checks how much framework CSS and JS each page
+   loads, and fails on every machine, not only on CI. If it fails, it
+   lists files that grew, if any. `rastrillo doctor --fix` puts back a
+   file you did not mean to change.
+
+What changed:
+
+- `Assets` serves each vendored file under `static/` minified, with
+  gzip for a browser that accepts it. Its URL hash is of the bytes
+  sent. A file the minifier cannot read is served as written.
+- New template functions `needs` and `neededScripts`. The field
+  partials call `needs`, and `ui.Pages` works out each page's scripts
+  when it starts, from those calls and from the `data-rst-*`
+  attributes in the page's markup. A page with a live region or a
+  polling fragment loads all three scripts. See
+  [Templates](/docs/templates).
+- The four shells' layouts load component scripts with
+  `neededScripts`.
+- New `perftest.FirstLoad`, which `perftest.Screens` also runs: 40 kB
+  of framework CSS and JS, gzipped, for a column or topbar page, plus
+  each component script it loads. See
+  [perftest](/docs/reference/perftest).
+- New `tmpl.Template.Inspect`, which visits each template and its
+  nodes.
+- New dependency: `github.com/tdewolff/minify/v2` v2.24.19.
+
 ## v0.30.2
 
 ### Fixed: the console rail's current item draws its ring and shadow whole

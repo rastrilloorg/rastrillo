@@ -79,6 +79,41 @@ var cfg = perftest.ScreenConfig{
 `Key` is the screen's name, the one `perf` logs and a `budgets.txt` record
 uses.
 
+## FirstLoad
+
+```go
+func FirstLoad(t testing.TB, cfg ScreenConfig)
+```
+
+`FirstLoad` checks how much framework CSS and JS each page makes a
+browser download. It requests the same routes as `Screens`, with the
+same `ScreenConfig`. For each page that answers 200 with HTML, it
+fetches every framework file the page links (`tokens.css`, `theme.css`,
+`shell.css` and the scripts in `static/`) and adds up their sizes,
+gzipped. Your own
+stylesheets and scripts are not counted, and neither is the HTML.
+
+A page in the column or topbar shell may load 40,000 bytes. Each
+component script it loads (`select.js`, `calendar.js`, `datetime.js`)
+adds its own size to that. The sidebar, console and stage shells have
+their own limits.
+
+`Screens` runs the same check after it times the screens, so the
+scaffold's perf test already does this. Call `FirstLoad` yourself to
+check pages outside that test. Unlike `Screens`, it also runs under
+`-short` and can be called more than once.
+
+When a page is over, the failure says which file grew:
+
+```
+GET /orders: 47310 bytes of framework CSS and JS, gzipped, over its 47300-byte budget (40000 bytes for a column page, plus select.js); tokens.css grew from 20100 to 26170 bytes
+```
+
+A file grows when you edit your copy in `static/`. Run
+`rastrillo doctor` to see what changed, and `rastrillo doctor --fix` to
+put the shipped file back. If no file grew, the failure lists every
+framework file the page loads, so you can see which it should not.
+
 ## Boot
 
 ```go
@@ -112,6 +147,9 @@ top-level test. Redirects are not followed: `Path` must answer `Expect`
 
 ## When it fails
 
-Both functions fail the test only when `AMADAN_CI` or `CI` is set. Locally
-they print every measurement and pass, because a busy laptop says nothing
-reliable about speed. `make perf` shows each measurement either way.
+`Screens` and `Boot` fail their timing checks only when `AMADAN_CI` or
+`CI` is set. Locally, they print every measurement and pass the timing
+checks, because a busy laptop says nothing reliable about speed.
+`Screens` also checks first-load weight, which fails on every machine
+when a page is over budget, because a file's size is the same
+everywhere. `make perf` shows each measurement either way.

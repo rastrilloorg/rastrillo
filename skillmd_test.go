@@ -257,12 +257,22 @@ import (
 // App shape without that line would leave MCP unmounted. The mount and
 // the index row's "or MCP" account for the growth; the ceiling is the
 // next hundred.
+//
+// Raised 9,200 -> 9,300 on 2026-11-02 for the Never bullet on
+// component scripts (#158, docs/superpowers/specs/2026-10-31-page-
+// weight-design.md, change 4). Every page an agent writes is where it
+// would add a <script> tag for select.js by hand, and the layouts now
+// load a component's script only where a field names it, so the bullet
+// is a rule every page task needs. Trimming paid 66 bytes (why Go
+// leaves examples out of the module zip, and "correct by
+// construction"); the 155-byte bullet lands the file at 9,269
+// beside MCP's lines.
 const (
 	// skillCoreBudget holds SKILL.md near its 2026-10-22 size (6,660
 	// bytes) with room for the index to grow by a few topics. Raising
 	// it means moving something into a topic, which is almost always
 	// the right answer, so raise it only for a rule every task needs.
-	skillCoreBudget = 9_200
+	skillCoreBudget = 9_300
 	// skillTopicBudget is per topic file. A topic that outgrows it
 	// splits in two, each with its own index line.
 	skillTopicBudget = 9_000

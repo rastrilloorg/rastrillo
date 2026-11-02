@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"hash"
 	"html/template"
+	"maps"
 	"reflect"
 	"slices"
 	"strconv"
@@ -124,8 +125,28 @@ func field(digest hash.Hash, text string) {
 // reach returns, sorted, the templates entry reaches (entry included)
 // and the functions they call.
 func reach(entry string, trees map[string]*parse.Tree) (called, used []string) {
-	seen := map[string]bool{entry: true}
 	funcs := map[string]bool{}
+	called = reachable(entry, trees, func(node parse.Node) {
+		if identifier, ok := node.(*parse.IdentifierNode); ok {
+			funcs[identifier.Ident] = true
+		}
+	})
+	for name := range funcs {
+		used = append(used, name)
+	}
+	slices.Sort(called)
+	slices.Sort(used)
+	return called, used
+}
+
+// reachable calls visit for every node of entry and of each template it
+// reaches through {{template}}, each template once, and returns the
+// names reached, entry included. A name with no tree is reached but
+// has nothing to visit.
+func reachable(
+	entry string, trees map[string]*parse.Tree, visit func(parse.Node),
+) []string {
+	seen := map[string]bool{entry: true}
 	queue := []string{entry}
 	for len(queue) > 0 {
 		name := queue[0]
@@ -135,26 +156,15 @@ func reach(entry string, trees map[string]*parse.Tree) (called, used []string) {
 			continue
 		}
 		walk(tree.Root, func(node parse.Node) {
-			switch concrete := node.(type) {
-			case *parse.TemplateNode:
-				if !seen[concrete.Name] {
-					seen[concrete.Name] = true
-					queue = append(queue, concrete.Name)
-				}
-			case *parse.IdentifierNode:
-				funcs[concrete.Ident] = true
+			call, ok := node.(*parse.TemplateNode)
+			if ok && !seen[call.Name] {
+				seen[call.Name] = true
+				queue = append(queue, call.Name)
 			}
+			visit(node)
 		})
 	}
-	for name := range seen {
-		called = append(called, name)
-	}
-	for name := range funcs {
-		used = append(used, name)
-	}
-	slices.Sort(called)
-	slices.Sort(used)
-	return called, used
+	return slices.Collect(maps.Keys(seen))
 }
 
 // walk calls visit for node and every node under it.

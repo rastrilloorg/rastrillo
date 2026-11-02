@@ -1,6 +1,7 @@
 // Package perftest is the CI half of package perf: it fails a branch
 // that makes a screen or a cold start slower than perf's production
-// budgets, measured over real HTTP in a serial lane of its own.
+// budgets, measured over real HTTP in a serial lane of its own, or a
+// page's framework CSS and JS heavier than its first-load budget.
 package perftest
 
 import (

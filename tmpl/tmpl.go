@@ -27,6 +27,7 @@ import (
 	"maps"
 	"os"
 	"sync"
+	"text/template/parse"
 
 	"amadan.net/rastrillo/rastrillo/tmpl/internal/tmplhook"
 	"amadan.net/rastrillo/rastrillo/tmpl/tmplrt"
@@ -344,4 +345,14 @@ func (template *Template) owner() string { return template.set.owner }
 // taken when the set was prepared.
 func (template *Template) fingerprints() map[string]string {
 	return maps.Clone(template.set.peek().fingerprints)
+}
+
+// Inspect calls visit for every node of template and of each template
+// it reaches through {{template}}, each template once, so a caller can
+// read what a page uses before it runs; ui.Pages finds the scripts a
+// page needs this way. The nodes are the set's own: visit must not
+// change them, and Inspect must be called before the set executes,
+// since executing escapes its trees in place.
+func (template *Template) Inspect(visit func(node parse.Node)) {
+	reachable(template.Name(), template.set.trees(), visit)
 }

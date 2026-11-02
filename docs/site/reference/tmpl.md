@@ -47,6 +47,7 @@ func (t *Template) Clone() (*Template, error)
 func (t *Template) Execute(w io.Writer, data any) error
 func (t *Template) ExecuteTemplate(w io.Writer, name string, data any) error
 func (t *Template) IsCompiled(name string) bool
+func (t *Template) Inspect(visit func(node parse.Node))
 
 type (
 	FuncMap  = template.FuncMap
@@ -174,6 +175,22 @@ if !t.IsCompiled("layout") {
 compiled code. Use it in a test to catch a page that quietly fell back
 after a change. You can ask before the first `Execute` without stopping
 yourself from adding templates.
+
+## Inspect
+
+```go
+t.Lookup("layout").Inspect(func(node parse.Node) {
+	if text, ok := node.(*parse.TextNode); ok {
+		fmt.Printf("%q\n", text.Text)
+	}
+})
+```
+
+`Inspect` calls `visit` for every node in the template and in each
+template it calls with `{{template}}`. It visits each template once.
+Use it to inspect what a page uses before it runs. `ui.Pages` uses it to
+find the scripts a page needs. Call it before the template set runs for
+the first time. Do not change the nodes.
 
 ## Capture
 

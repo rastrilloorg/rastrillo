@@ -16,9 +16,10 @@
 <script defer src="{{path $ (asset "static/light.js")}}"></script>
 <script defer src="{{path $ (asset "static/anchor.js")}}"></script>
 {{iconAssets}}
-<script defer src="{{path $ (asset "static/select.js")}}"></script>
-<script defer src="{{path $ (asset "static/calendar.js")}}"></script>
-<script defer src="{{path $ (asset "static/datetime.js")}}"></script>
+{{/* Loads the component scripts this page's fields need. A live page
+     loads them all, because later content may include any field. For a
+     field you write by hand, call needs; see SKILL.md. */}}
+{{range neededScripts}}<script defer src="{{path $ (asset .)}}"></script>{{end}}
 {{/* head is the app's own slot in <head>: a favicon, a meta tag, one
      more stylesheet. Empty by default, last in the head so an app's
      own CSS wins over the framework's, and the only block in the

@@ -15,10 +15,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
-	"path"
 	"sort"
-	"strings"
-	"sync"
 	"testing"
 	"time"
 
@@ -29,65 +26,6 @@ import (
 
 	"amadan.net/rastrillo/rastrillo/harness"
 )
-
-// Tree serves a rendered tree at the mount its pages expect, and fails
-// the test that uses it if anything asked for a file the tree does not
-// have. Every URL in a page is absolute under the mount, so serving the
-// tree anywhere else would 404 the stylesheet and a drive would measure
-// an unstyled page; and a preview frame naming a missing file loads a
-// 404 page that settles, measures and scans like any other document, so
-// the miss has to be counted here.
-//
-// The failure is reported from t.Cleanup rather than from the request:
-// lazy frames can still be loading after the test function returns,
-// and t.Errorf from a server goroutine after that panics.
-func Tree(t *testing.T, files map[string][]byte, mountPrefix string) http.Handler {
-	t.Helper()
-	var mu sync.Mutex
-	var missing []string
-	t.Cleanup(func() {
-		mu.Lock()
-		defer mu.Unlock()
-		if len(missing) > 0 {
-			t.Errorf("the tree was asked for %d file(s) it does not have: %v", len(missing), missing)
-		}
-	})
-	return TreeRecording(t, files, mountPrefix, func(p string) {
-		mu.Lock()
-		missing = append(missing, p)
-		mu.Unlock()
-	})
-}
-
-// TreeRecording is Tree with each miss handed to the caller, so the
-// recording itself can be tested.
-func TreeRecording(t *testing.T, files map[string][]byte, mountPrefix string, miss func(path string)) http.Handler {
-	t.Helper()
-	types := map[string]string{
-		".html": "text/html; charset=utf-8",
-		".css":  "text/css; charset=utf-8",
-		".js":   "text/javascript; charset=utf-8",
-	}
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// The browser asks for /favicon.ico on its own; nothing outside
-		// the mount is the tree's to answer.
-		if !strings.HasPrefix(r.URL.Path, mountPrefix) {
-			http.NotFound(w, r)
-			return
-		}
-		name := strings.TrimPrefix(r.URL.Path, mountPrefix)
-		body, ok := files[name]
-		if !ok {
-			miss(r.URL.Path)
-			http.NotFound(w, r)
-			return
-		}
-		if ct, ok := types[path.Ext(name)]; ok {
-			w.Header().Set("Content-Type", ct)
-		}
-		w.Write(body)
-	})
-}
 
 // SettleFrames turns every preview frame eager and reports, for each
 // one, the address its src names (a fresh frame is about:blank for a
@@ -298,19 +236,6 @@ func RequireScriptsOff(t *testing.T, ctx context.Context, where string) {
 		t.Fatalf("%s: data-rst-js is set; gallery.js ran even though this leg switched scripts off", where)
 	}
 }
-
-// WithoutAnchorPositioning replaces the page's tokens.css with a copy
-// whose anchor-positioning @supports condition can never hold, which is
-// what an engine without the feature gets: the menu panel positioned
-// absolutely under its summary instead of fixed against it.
-const WithoutAnchorPositioning = `(async () => {
-  const link = document.querySelector('link[href*="/tokens."][href$=".css"]');
-  const css = await (await fetch(link.href)).text();
-  const style = document.createElement("style");
-  style.textContent = css.replaceAll("@supports (position-area: block-end) and (position-try-fallbacks: flip-block)", "@supports (position-area: rastrillo-no-such-value)");
-  link.replaceWith(style);
-  return true;
-})()`
 
 // RequireAnchorPositioning is the control for every leg that runs with
 // and without the feature: the named menu panel computes position:

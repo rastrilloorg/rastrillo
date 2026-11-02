@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
+	"maps"
 	"net/url"
 	"reflect"
 	"strings"
@@ -165,9 +166,8 @@ func Funcs(opts ...Option) template.FuncMap {
 		"strong": strong,
 		"path":   pathFunc,
 	}
-	for name, fn := range localeFuncs(c) {
-		m[name] = fn
-	}
+	maps.Copy(m, localeFuncs(c))
+	maps.Copy(m, scriptFuncs())
 	return m
 }
 

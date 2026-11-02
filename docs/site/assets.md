@@ -29,6 +29,23 @@ package works the same way.
 Edit them freely. Nothing in the framework will overwrite them, and no
 upgrade will change them under you.
 
+## The framework's files are served minified
+
+`Assets` serves the files `rastrillo new` put in `static/`
+(`tokens.css`, `theme.css`, `shell.css` and the framework's scripts)
+without their comments and extra whitespace, and gzipped for a browser
+that accepts it. A page downloads about a third of what the commented
+files weigh. No change to your app is needed.
+
+Your copies in `static/` keep their comments, so you can still read
+them. `Path` puts the hash of the bytes actually sent in the URL, so an
+edit to your copy still reaches every browser on the next load.
+
+Your own files, and anything outside `static/`'s top level, are served
+exactly as written. If the minifier cannot read a framework file, such
+as a script you edited into invalid JavaScript, `Assets` serves it as
+written. It does not serve an empty file or an error.
+
 ## The pin test
 
 The scaffold ships a `vendored_test.go` asserting the delivered copies

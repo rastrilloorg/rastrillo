@@ -10,7 +10,7 @@ SQL), actions on a route table (`action`, over chi) and `html/template`
 pages; it supplies the database opener, session store, identity
 plugins, CSRF, owner scoping, form helpers. Module `amadan.net/rastrillo/rastrillo`; worked
 reference `examples/notes` — in the repository, **not** in the
-published module (Go excludes nested modules from a zip), so read it
+published module, so read it
 there, never in your checkout. The topics below cover what it shows,
 sign-in and tests included: read the example only for what they do
 not. Rare traps get one sentence plus a page:
@@ -57,9 +57,9 @@ truth for that app's code; this file stays the framework's.
 
 **Reach for a manifest before hand-writing.** A `manifest/*.toml`
 resource generates CRUD screens (field kinds text, textarea, money;
-`scope = "user"` owner-filters by session subject), correct by
-construction; run `rastrillo generate`, commit `gen/` and `api/v1.json`,
-and mount `gen.Router` in `Routes` (`manifest/README.md`).
+`scope = "user"` owner-filters by session subject); run
+`rastrillo generate`, commit `gen/` and `api/v1.json`, and mount
+`gen.Router` in `Routes` (`manifest/README.md`).
 docs/site/manifests.md
 
 **Look before you build.** Most things an app needs already ship: a
@@ -168,6 +168,9 @@ The other seven, an action's shape and what each gate message means:
   them silently), hand-roll a labelled control (use `field-*` partials
   in `<form rst-form>` closed by `form-foot`), an error page, a colour
   toggle or an image grid: they ship (`skill/design.md`).
+- Never add a `<script>` tag for a framework component: the `field-*`
+  partials load their own; hand-written markup asks with
+  `{{needs "select.js"}}`.
 - Never save bytes to disk or a column: the filesystem is ephemeral
   (`skill/data.md`).
 - Never `git merge` to main, even locally: every change lands through

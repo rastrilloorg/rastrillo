@@ -714,8 +714,8 @@ func TestNewScaffoldsSelectJS(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(string(layout), `static/select.js`) {
-		t.Error("the layout never loads select.js, so the enhancement can never run")
+	if !strings.Contains(string(layout), `{{range neededScripts}}`) {
+		t.Error("the layout never loads a page's scripts: select.js never runs")
 	}
 }
 

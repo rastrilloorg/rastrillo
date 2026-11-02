@@ -59,7 +59,10 @@ navigation, on a phone before it is tapped (turn it off with
 `make ci` holds each directory to 5,000 source and 8,000 test lines,
 each test package to 10s, each GET screen to 150ms to first byte and a
 cold boot to 500ms; exceptions go in `.rastrillo/budgets.txt`, each with
-a reason. Timing fails only on CI (`AMADAN_CI`/`CI` set). Every test
+a reason. Timing fails only on CI (`AMADAN_CI`/`CI` set). `make perf`
+also holds each page's framework CSS and JS to 40 kB gzipped, plus each
+component script it loads, on every machine; a failure names the file
+that grew (`rastrillo doctor`). Every test
 package's `TestMain` calls `os.Exit(budget.Main(m))`: it prints the time
 `rastrillo budget test` judges, cached runs included. Tests start with
 `t.Parallel()` (perf tests never) and open a copy of a `dbtest` template

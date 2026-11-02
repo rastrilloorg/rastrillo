@@ -4,6 +4,7 @@ package galleryrig
 
 import (
 	"net/http/httptest"
+	"strings"
 	"testing"
 )
 
@@ -22,5 +23,31 @@ func TestTheTreeHandlerRecordsAMissingFile(t *testing.T) {
 	}
 	if len(missing) != 1 || missing[0] != prefix+"day/en/form/no-such-preview.html" {
 		t.Errorf("recorded %v, want exactly the missing preview", missing)
+	}
+}
+
+// The gallery's drives run on the framework's files as apps serve
+// them, minified; the gallery's own files are served as written.
+func TestTheTreeServesTheFrameworksFilesMinified(t *testing.T) {
+	const prefix = "/design-system/"
+	commented := []byte("/* why */\nbody {\n  color: red;\n}\n")
+	files := map[string][]byte{
+		"tokens.0123456789abcdef.css":    commented,
+		"theme-day.0123456789abcdef.css": commented,
+		"gallery.0123456789abcdef.css":   commented,
+	}
+	handler := Tree(t, files, prefix)
+	for name, wantComment := range map[string]bool{
+		"tokens.0123456789abcdef.css":    false,
+		"theme-day.0123456789abcdef.css": false,
+		"gallery.0123456789abcdef.css":   true,
+	} {
+		recorder := httptest.NewRecorder()
+		request := httptest.NewRequest("GET", prefix+name, nil)
+		handler.ServeHTTP(recorder, request)
+		body := recorder.Body.String()
+		if strings.Contains(body, "why") != wantComment {
+			t.Errorf("%s served as %q", name, body)
+		}
 	}
 }

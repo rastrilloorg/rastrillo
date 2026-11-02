@@ -155,7 +155,7 @@ func NewPages(cfg PagesConfig) (*Pages, error) {
 
 	funcs := p.funcs()
 	for name := range cfg.Funcs {
-		if slices.Contains(LocaleFuncs, name) || name == "localizer" || name == "withL" {
+		if reservedFunc(name) {
 			return nil, fmt.Errorf(reservedFuncMsg, name)
 		}
 		funcs[name] = cfg.Funcs[name]
@@ -178,18 +178,9 @@ func NewPages(cfg PagesConfig) (*Pages, error) {
 		return nil, fmt.Errorf(baseParseMsg, err)
 	}
 	for name, file := range cfg.Pages {
-		fsys := file.FS
-		if fsys == nil {
-			fsys = cfg.App
+		if err := p.addPage(set, name, file, cfg.App); err != nil {
+			return nil, err
 		}
-		c, err := set.Clone() // at boot, per page, not per language or request
-		if err == nil {
-			c, err = c.ParseFS(fsys, file.Path)
-		}
-		if err != nil {
-			return nil, fmt.Errorf(pageParseMsg, name, err)
-		}
-		p.pages[name] = c
 	}
 	return p, nil
 }

@@ -875,20 +875,6 @@ names assertion/assertion_test.go setup/c 1
 names assertion/assertion_test.go setup/e 1
 names assertion/assertion_test.go setup/k 1
 names assertion/assertion_test.go setup/v 1
-columns assets.go f03c9842ab7f 1
-names assets.go Assets.Handler/a 1
-names assets.go Assets.Handler/m 1
-names assets.go Assets.Handler/r 1
-names assets.go Assets.Handler/w 1
-names assets.go Assets.Path/a 1
-names assets.go Assets.Path/h 1
-names assets.go Assets.hashFor/a 1
-names assets.go Assets.hashFor/b 1
-names assets.go Assets.hashFor/h 1
-names assets.go Assets.serveFile/a 1
-names assets.go Assets.serveFile/b 1
-names assets.go Assets.serveFile/r 1
-names assets.go Assets.serveFile/w 1
 columns assets_test.go 0f0ef19dba3a 1
 columns assets_test.go 14f9c6076c9e 1
 columns assets_test.go 1ca0e23a292f 1
@@ -4218,7 +4204,6 @@ columns cmd/rastrillo/new_test.go 19ed6fca24c1 1
 columns cmd/rastrillo/new_test.go 23903bdc20be 1
 columns cmd/rastrillo/new_test.go 250afa3bbbcf 1
 columns cmd/rastrillo/new_test.go 2779438c83db 1
-columns cmd/rastrillo/new_test.go 2a23d0a5b3c7 1
 columns cmd/rastrillo/new_test.go 2ef4e7776c32 1
 columns cmd/rastrillo/new_test.go 30537fc4c772 1
 columns cmd/rastrillo/new_test.go 337fe18cfe82 1
@@ -8359,16 +8344,12 @@ columns internal/designsystem/gallery_os_scheme_browser_test.go b01c16b4230f 1
 columns internal/designsystem/gallery_os_scheme_browser_test.go b5b58db84e4a 1
 columns internal/designsystem/gallery_os_scheme_browser_test.go e02b42e454c0 1
 names internal/designsystem/gallery_os_scheme_browser_test.go TestTheGalleryLandsAnOSFlipWithItsOwnListener/r 1
-columns internal/designsystem/galleryrig/rig.go 00563ab289f3 1
-columns internal/designsystem/galleryrig/rig.go 00c2c3911460 1
 columns internal/designsystem/galleryrig/rig.go 02b5257cefc0 1 rewritten by the chromedp v0.21 port, no wider than the recorded line it replaced
 columns internal/designsystem/galleryrig/rig.go 032f2e1a3916 1
 columns internal/designsystem/galleryrig/rig.go 0bea6543378f 1
 columns internal/designsystem/galleryrig/rig.go 14d042bce746 1
-columns internal/designsystem/galleryrig/rig.go 1bfab0f2ad34 1
 columns internal/designsystem/galleryrig/rig.go 1f2ca341c233 1
 columns internal/designsystem/galleryrig/rig.go 1fe4abe9319d 1
-columns internal/designsystem/galleryrig/rig.go 2066d8272206 1
 columns internal/designsystem/galleryrig/rig.go 2c12a7090beb 1
 columns internal/designsystem/galleryrig/rig.go 2d6f90097115 1
 columns internal/designsystem/galleryrig/rig.go 4aed934e56d0 1
@@ -8389,16 +8370,13 @@ columns internal/designsystem/galleryrig/rig.go e9685b3469ec 1
 columns internal/designsystem/galleryrig/rig.go f1e187a5d187 1
 columns internal/designsystem/galleryrig/rig.go f23951389c43 1
 columns internal/designsystem/galleryrig/rig.go f53643dc87f1 1 rewritten by the chromedp v0.21 port, no wider than the recorded line it replaced
-file internal/designsystem/galleryrig/rig.go - 514
+file internal/designsystem/galleryrig/rig.go - 439
 func internal/designsystem/galleryrig/rig.go Eagerly 56
 names internal/designsystem/galleryrig/rig.go Eagerly/i 3
 names internal/designsystem/galleryrig/rig.go Eagerly/p 3
 names internal/designsystem/galleryrig/rig.go HeightRows/k 1
 names internal/designsystem/galleryrig/rig.go HeightRows/n 1
 names internal/designsystem/galleryrig/rig.go ReadFrames/r 1
-names internal/designsystem/galleryrig/rig.go Tree/p 1
-names internal/designsystem/galleryrig/rig.go TreeRecording/r 1
-names internal/designsystem/galleryrig/rig.go TreeRecording/w 1
 names internal/designsystem/galleryrig/rig.go jsString/b 1
 names internal/designsystem/galleryrig/rig.go jsString/s 1
 columns internal/designsystem/galleryrig/tree_test.go 052ab51a7500 1
@@ -16575,24 +16553,18 @@ columns perf/perftest/screens.go 0bafa5c22950 1
 columns perf/perftest/screens.go 117590858d26 1
 columns perf/perftest/screens.go 14b688141979 1
 columns perf/perftest/screens.go 1a0458af2422 1
-columns perf/perftest/screens.go 492ca922d9b4 1
 columns perf/perftest/screens.go 4e2a93e88b08 1
 columns perf/perftest/screens.go 5ed2e4e6c308 1
 columns perf/perftest/screens.go 61eff1226472 1
-columns perf/perftest/screens.go 6f9b4562ae0d 1
 columns perf/perftest/screens.go 7e67937111a3 1
-columns perf/perftest/screens.go 8a67dbb22d0b 1
 columns perf/perftest/screens.go b8286b635a83 1
 columns perf/perftest/screens.go bda910b9e103 1
 columns perf/perftest/screens.go be610940e9f1 1
 columns perf/perftest/screens.go cf66e9ae638e 1
 columns perf/perftest/screens.go d5c7abed59bf 1
-columns perf/perftest/screens.go e2018c7e720b 1
-columns perf/perftest/screens.go e26a634ee2c4 1
 columns perf/perftest/screens.go ea266c794cdc 1
 columns perf/perftest/screens.go fc5390657e3d 1
 func perf/perftest/screens.go inventory 100
-func perf/perftest/screens.go screens 64
 names perf/perftest/screens.go -/c 1
 names perf/perftest/screens.go inventory/f 1
 names perf/perftest/screens.go inventory/g 2
@@ -16605,8 +16577,6 @@ names perf/perftest/screens.go measure/j 1
 names perf/perftest/screens.go once/c 1
 names perf/perftest/screens.go screens/f 1
 names perf/perftest/screens.go screens/p 1
-names perf/perftest/screens.go screens/r 1
-names perf/perftest/screens.go screens/w 1
 columns perf/perftest/screens_test.go 007e24d59f3a 1
 columns perf/perftest/screens_test.go 0669c1941a59 1
 columns perf/perftest/screens_test.go 0eb9d3f2781e 1
@@ -21793,7 +21763,6 @@ columns ui/funcs_test.go 67eb245d9dcb 1
 columns ui/funcs_test.go 68022769312f 1
 columns ui/funcs_test.go 68da118ea9b8 1
 columns ui/funcs_test.go 6984f0eb5836 1
-columns ui/funcs_test.go 71290fc32478 1
 columns ui/funcs_test.go 75522db6140a 1
 columns ui/funcs_test.go 757d8ce4bf3f 1
 columns ui/funcs_test.go 76740e52d8d9 1
@@ -21802,7 +21771,6 @@ columns ui/funcs_test.go 7b917f6a3177 1
 columns ui/funcs_test.go 7e3fd46a2844 1
 columns ui/funcs_test.go 7ebf386a6303 2
 columns ui/funcs_test.go 8322d17d21b5 1
-columns ui/funcs_test.go 91fb9ddcadd3 2
 columns ui/funcs_test.go 9400afa52f98 1
 columns ui/funcs_test.go 988460db1070 1
 columns ui/funcs_test.go 98cd13f9570d 1
@@ -21815,7 +21783,6 @@ columns ui/funcs_test.go ab819d27ea9c 1
 columns ui/funcs_test.go b4ef3c7515f8 1
 columns ui/funcs_test.go b6278e416697 1
 columns ui/funcs_test.go b65eaf8f7d51 1
-columns ui/funcs_test.go ba4464740a88 1
 columns ui/funcs_test.go bba3d12cda54 1
 columns ui/funcs_test.go be0844e0643b 1
 columns ui/funcs_test.go be171f06a400 1
@@ -23120,7 +23087,6 @@ columns ui/pages.go 37aba78348ee 1
 columns ui/pages.go 65dbc408ff5e 1
 columns ui/pages.go 68073cd069a3 1
 columns ui/pages.go 69f04172f17c 1
-columns ui/pages.go 718f6a79042f 1
 columns ui/pages.go 8139cd375a1d 1
 columns ui/pages.go 91c0dde1bf58 1
 columns ui/pages.go 9582a6d2d6a0 1
@@ -23130,9 +23096,8 @@ columns ui/pages.go ce8c7eec7522 1
 columns ui/pages.go d31b2c001d34 1
 columns ui/pages.go d4449c38f87d 1
 columns ui/pages.go ebd44bb39105 1
-func ui/pages.go NewPages 81
+func ui/pages.go NewPages 72
 names ui/pages.go NewPages/a 1
-names ui/pages.go NewPages/c 1
 names ui/pages.go NewPages/i 1
 names ui/pages.go NewPages/k 2
 names ui/pages.go NewPages/p 1
@@ -26282,7 +26247,6 @@ names ui/ui_test.go shapeLeaks/n 1
 names ui/ui_test.go shapeLeaks/r 1
 names ui/ui_test.go themePropSet/m 1
 names ui/ui_test.go wordsAttr/m 1
-columns ui/vendored.go 3ff22622407e 1
 columns ui/vendored_legacy_browser_test.go 1509234dfc1b 1 rewritten by the chromedp v0.21 port, no wider than the recorded line it replaced
 columns ui/vendored_legacy_browser_test.go 18495e9ef6d2 1
 columns ui/vendored_legacy_browser_test.go 2b01c53150c5 1
