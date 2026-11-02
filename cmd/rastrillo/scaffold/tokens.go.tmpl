@@ -33,7 +33,6 @@ func NewTokenPage(
 	return TokenPage{handlers: handlers, sessions: sessions}, err
 }
 
-// Mount registers the page behind sign-in.
 func (page TokenPage) Mount(routes *action.Routes) {
 	handlers := page.handlers
 	routes.Group(func(signedIn *action.Routes) {

@@ -9,6 +9,7 @@ import (
 	"amadan.net/rastrillo/rastrillo/api"
 	"amadan.net/rastrillo/rastrillo/apitoken"
 	"amadan.net/rastrillo/rastrillo/db"
+	"amadan.net/rastrillo/rastrillo/mcp"
 	"amadan.net/rastrillo/rastrillo/op"
 
 	"%[2]s/gen"
@@ -18,14 +19,15 @@ import (
 // knows a leaked one. Changing it voids every token already given out.
 const tokenPrefix = %[3]q
 
-// newAPI is the JSON API: each operation a manifest resource exposes,
-// called with a bearer token. A new app exposes none, so it answers 404.
-func newAPI(database *db.DB, logger *slog.Logger) (http.Handler, error) {
+// newDoors builds the API and MCP from one config, so they cannot differ.
+func newDoors(
+	database *db.DB, logger *slog.Logger,
+) (tree, tools http.Handler, err error) {
 	tokens, err := newTokens(database)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	return api.New(api.Config{
+	config := api.Config{
 		Verify: tokens,
 		// Actor stays zero: the API fills it from the token.
 		Ctx: func(*http.Request) *rastrillo.Ctx {
@@ -35,7 +37,19 @@ func newAPI(database *db.DB, logger *slog.Logger) (http.Handler, error) {
 		Authorize: authorize,
 		Logger:    logger,
 		Redact:    tokens.Redact,
-	}, gen.APIRoutes()...)
+	}
+	tree, err = api.New(config, gen.APIRoutes()...)
+	if err != nil {
+		return nil, nil, err
+	}
+	tools, err = mcp.New(mcp.Config{
+		Gate:      config.Gate(),
+		Ctx:       config.Ctx,
+		Authorize: config.Authorize,
+		Name:      %[2]q,
+		Version:   rastrillo.BuildVersion,
+	}, gen.ExposedOperations()...)
+	return tree, tools, err
 }
 
 // authorize is the one policy for the pages and the API. The API cannot

@@ -16,8 +16,6 @@ import (
 	"net/http"
 	"strconv"
 
-	json "github.com/go-json-experiment/json"
-
 	rastrillo "amadan.net/rastrillo/rastrillo"
 	"amadan.net/rastrillo/rastrillo/internal/wirename"
 	"amadan.net/rastrillo/rastrillo/op"
@@ -36,7 +34,7 @@ var (
 )
 
 // Error is the body of every refusal, under an "error" member. Code is
-// one of the eleven in the codes table; Fields is set only for invalid,
+// one of the twelve in the codes table; Fields is set only for invalid,
 // keyed by wire name; Ref is set only for internal, so the person who
 // reports the failure can quote what the log line carries.
 type Error struct {
@@ -67,17 +65,40 @@ var codes = map[string]refusal{
 	"rate_limited":           {http.StatusTooManyRequests, ""}, // a Config.Before limiter writes its own, with Retry-After
 	"internal":               {http.StatusInternalServerError, "Something went wrong. Quote the reference if you report it."},
 	"unavailable":            {http.StatusServiceUnavailable, "Try again in a moment."},
+
+	// Not too_large, which is about the request body: here the request
+	// was fine and the answer to it would be too big to send.
+	"response_too_large": {
+		http.StatusUnprocessableEntity, msgResponseTooLarge,
+	},
 }
+
+// msgResponseTooLarge is the tree's refusal of an answer over
+// Gate.MaxResponse; MCP's own is worded for a tool result.
+const msgResponseTooLarge = "The response is too large. " +
+	"Request a smaller result. " +
+	"For lists, pass a smaller limit or narrow the query."
+
+// errResponseTooLarge is the emission buffer's refusal of an answer
+// over the cap, which Refusal answers as response_too_large.
+var errResponseTooLarge = errors.New("api: the answer is over MaxResponse")
 
 // answer writes one code from the table. It panics on a code the table
 // does not have, because that is a typo in this package, not a runtime
 // condition: a client must never see a code the spec does not list.
 func answer(w http.ResponseWriter, code string) {
-	c, ok := codes[code]
-	if !ok {
+	status, refused := tableRefusal(code)
+	WriteError(w, status, refused)
+}
+
+// tableRefusal is one code from the table, with answer's panic for a
+// code the table does not have.
+func tableRefusal(code string) (int, Error) {
+	row, known := codes[code]
+	if !known {
 		panic("api: no such error code " + strconv.Quote(code))
 	}
-	WriteError(w, c.status, Error{Code: code, Message: c.message})
+	return row.status, Error{Code: code, Message: row.message}
 }
 
 // Write answers with v as JSON. It sets Content-Type and Cache-Control
@@ -90,9 +111,7 @@ func answer(w http.ResponseWriter, code string) {
 // have no logger to tell. json v2 writes a nil slice as [] and a nil
 // map as {}, which is what the spec promises for an empty list.
 func Write(w http.ResponseWriter, status int, v any) {
-	// Deterministic sorts map keys, so a fields map encodes the same way
-	// every time and a client's test can compare bodies as strings.
-	b, err := json.Marshal(v, json.Deterministic(true))
+	b, err := Encode(v)
 	if err != nil {
 		panic(fmt.Errorf("api: encode %T: %w", v, err))
 	}
@@ -126,46 +145,93 @@ func WriteError(w http.ResponseWriter, status int, e Error) {
 // the response: a policy that explained itself would otherwise explain
 // to nobody.
 func Refuse(w http.ResponseWriter, r *http.Request, err error) {
+	status, refused := Refusal(r, err)
+	if status == http.StatusUnauthorized {
+		w.Header().Set("WWW-Authenticate", "Bearer")
+	}
+	WriteError(w, status, refused)
+}
+
+// IsAgentSessionRefusal reports whether err is, or wraps, Admit's
+// refusal of an agent's write sent with no Agent-Session header. MCP
+// lists such a write anyway, so that the call itself tells the agent
+// which header to send.
+func IsAgentSessionRefusal(err error) bool {
+	return errors.Is(err, errAgentSession)
+}
+
+// Refusal is Refuse without the write: it logs as Refuse does and
+// returns the status and envelope. MCP answers with it in a tool error,
+// so both doors say the same thing about the same failure.
+func Refusal(request *http.Request, err error) (int, Error) {
 	var (
-		invalid   op.Invalid
-		notFound  op.NotFound
-		forbidden op.Forbidden
-		conflict  op.Conflict
+		invalidInput op.Invalid
+		notFound     op.NotFound
+		forbidden    op.Forbidden
+		conflict     op.Conflict
 	)
 	switch {
-	case errors.As(err, &invalid):
-		fields := make(map[string]string, len(invalid.Fields))
-		for name, msg := range invalid.Fields {
-			fields[FieldName(name)] = msg
-		}
-		WriteError(w, codes["invalid"].status, Error{
+	case errors.Is(err, errAgentSession):
+		return codes["invalid"].status,
+			Error{Code: "invalid", Message: msgAgentSession}
+	case errors.Is(err, errResponseTooLarge):
+		return tableRefusal("response_too_large")
+	case errors.As(err, &invalidInput):
+		return codes["invalid"].status, Error{
 			Code:    "invalid",
 			Message: codes["invalid"].message,
-			Fields:  fields,
-		})
-	case errors.As(err, &notFound):
-		answer(w, "not_found")
-	case errors.As(err, &forbidden):
-		if forbidden.Reason != "" {
-			loggerFrom(r).Info("api: forbidden", "reason", redactorFrom(r)(forbidden.Reason), "method", method(r), "path", path(r))
+			Fields:  wireFields(invalidInput),
 		}
-		answer(w, "forbidden")
+	case errors.As(err, &notFound):
+		return tableRefusal("not_found")
+	case errors.As(err, &forbidden):
+		logForbidden(request, forbidden.Reason)
+		return tableRefusal("forbidden")
 	case errors.As(err, &conflict):
-		WriteError(w, codes["conflict"].status, Error{Code: "conflict", Message: conflict.Message})
+		return codes["conflict"].status,
+			Error{Code: "conflict", Message: conflict.Message}
 	case errors.Is(err, ErrUnauthorized):
-		w.Header().Set("WWW-Authenticate", "Bearer")
-		answer(w, "unauthorized")
+		return tableRefusal("unauthorized")
 	case errors.Is(err, ErrUnavailable):
-		answer(w, "unavailable")
-	default:
-		ref := rastrillo.NewRef()
-		loggerFrom(r).Error("api: internal error", "err", redactorFrom(r)(err.Error()), "ref", ref, "method", method(r), "path", path(r))
-		WriteError(w, codes["internal"].status, Error{
-			Code:    "internal",
-			Message: codes["internal"].message,
-			Ref:     ref,
-		})
+		return tableRefusal("unavailable")
 	}
+	return codes["internal"].status, Error{
+		Code:    "internal",
+		Message: codes["internal"].message,
+		Ref:     logInternal(request, err),
+	}
+}
+
+// wireFields is refused's fields by wire name. Names DecodeInput kept
+// as the client sent them stay as they are, as Decode writes them.
+func wireFields(refused op.Invalid) map[string]string {
+	if refused.AsSent {
+		return refused.Fields
+	}
+	wire := make(map[string]string, len(refused.Fields))
+	for name, message := range refused.Fields {
+		wire[FieldName(name)] = message
+	}
+	return wire
+}
+
+func logForbidden(request *http.Request, reason string) {
+	if reason == "" {
+		return
+	}
+	loggerFrom(request).Info("api: forbidden",
+		"reason", redactorFrom(request)(reason),
+		"method", method(request), "path", path(request))
+}
+
+// logInternal logs err under a fresh ref and returns the ref, the only
+// thing about the cause the client is told.
+func logInternal(request *http.Request, err error) string {
+	ref := rastrillo.NewRef()
+	loggerFrom(request).Error("api: internal error",
+		"err", redactorFrom(request)(err.Error()), "ref", ref,
+		"method", method(request), "path", path(request))
+	return ref
 }
 
 func method(r *http.Request) string {

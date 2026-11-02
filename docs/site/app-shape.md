@@ -75,6 +75,7 @@ type App struct {
 	logger   *slog.Logger
 	origin   string
 	api      http.Handler
+	mcp      http.Handler
 }
 ```
 
@@ -84,9 +85,10 @@ hands to `Serve`. It calls `Router`, which does the work:
 ```go
 migrated, err := migrate.Apply(context.Background(), database, BootSchema)
 // ...
-api, err := newAPI(database, logger)
+api, mcp, err := newDoors(database, logger)
 // ...
-app := &App{database: database, logger: logger, origin: origin, api: api}
+app := &App{database: database, logger: logger, origin: origin,
+	api: api, mcp: mcp}
 router := chi.NewRouter()
 Routes(action.NewRoutes(router, app.contextFor), app)
 ```
@@ -102,6 +104,7 @@ const homePage action.Path = "/"
 
 func Routes(routes *action.Routes, app *App) {
 	routes.Mount("/static", assets.Handler(), "static")
+	routes.Mount("/api/v1/mcp", app.mcp, "mcp")
 	routes.Mount("/api/v1", app.api, "api")
 	routes.Group(func(guarded *action.Routes) {
 		guarded.Guard("csrf", csrf.Protect(app.origin))
@@ -113,8 +116,9 @@ func Routes(routes *action.Routes, app *App) {
 
 `Routes` registers everything the app serves. Put every page and form
 in the guarded group: its `csrf` guard refuses a write from another
-origin. The static files and the API stay outside it. A bearer token is
-the API's only credential, so the API gets no CSRF check.
+origin. Keep the static files, API and MCP endpoints outside it. A
+bearer token is the only credential the API and MCP accept, so neither
+gets a CSRF check.
 
 `Routes` must only register routes. `rastrillo routes` calls it with an
 empty `App` to list them, and `make routes` fails for an action that no
@@ -174,9 +178,11 @@ can use.
 
 ## api.go
 
-`newAPI` builds the JSON API at `/api/v1`. `authorize` is the one policy
-for pages and the API. The API cannot see page middleware, so add page
-rules to `authorize` too. [JSON API](/docs/api) covers the rest.
+`newDoors` builds the JSON API at `/api/v1` and MCP at `/api/v1/mcp`
+from one config, so both apply the same checks. `authorize` is the one
+policy for pages, the API and MCP. The API and MCP endpoints cannot see
+page middleware, so add page rules to `authorize` too. [JSON API](/docs/api)
+and [MCP](/docs/mcp) cover the rest.
 
 ## Before you call it done
 

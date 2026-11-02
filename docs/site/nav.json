@@ -119,6 +119,11 @@
           "blurb": "Serve your manifest resources at /api/v1 to tokens, with one set of rules for the pages and the API."
         },
         {
+          "slug": "mcp",
+          "label": "MCP",
+          "blurb": "Serve the same operations as MCP tools at /api/v1/mcp, for Claude Code, Codex and other agents."
+        },
+        {
           "slug": "agents",
           "label": "Agents",
           "blurb": "Agents act for a person: who the token names, what the audit trail records, and the sidecar loop."
@@ -167,6 +172,11 @@
           "slug": "reference/api",
           "label": "api",
           "blurb": "The JSON door: one error shape with a machine code, and how a handler answers."
+        },
+        {
+          "slug": "reference/mcp",
+          "label": "mcp",
+          "blurb": "The MCP endpoint: one tool per operation, behind the API's gate."
         },
         {
           "slug": "reference/apitoken",

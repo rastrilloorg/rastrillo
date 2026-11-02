@@ -46,7 +46,6 @@ func TestAPIAnswersInJSON(t *testing.T) {
 	}
 }
 
-// tokenPattern is a whole token with this app's prefix.
 var tokenPattern = regexp.MustCompile(
 	`\b%[3]s_([0-9A-Za-z]{12})_[0-9A-Za-z]{43}\b`)
 

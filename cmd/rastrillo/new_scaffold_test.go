@@ -11,6 +11,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"slices"
 	"strings"
@@ -692,6 +693,28 @@ func scaffoldGate(t *testing.T, args ...string) string {
 		}
 	}
 	return string(out)
+}
+
+// A new app mounts MCP beside its API, and the route table shows it. The
+// table is the only place a person sees that a door is open.
+func TestScaffoldRoutesListsTheMCPMount(t *testing.T) {
+	if testing.Short() {
+		t.Skip("compiles and runs a scaffolded app")
+	}
+	binary := buildRastrillo(t)
+	app := scaffoldApp(t, "mcproutes")
+	// A .git above $TMPDIR would otherwise fail the VCS stamping.
+	t.Setenv("GOFLAGS", "-mod=mod -buildvcs=false")
+	status, stdout, stderr := routesRun(t, binary, app)
+	row := regexp.MustCompile(`(?m)^\*\s+/api/v1/mcp/\*\s+mcp\s*$`)
+	if status != 0 || !row.MatchString(stdout) {
+		t.Errorf("routes: exit %d, want 0 and a row for /api/v1/mcp/* mcp:"+
+			"\n%s\nstderr:\n%s", status, stdout, stderr)
+	}
+	status, _, stderr = routesRun(t, binary, "--check", app)
+	if status != 0 {
+		t.Errorf("routes --check: exit %d, want 0:\n%s", status, stderr)
+	}
 }
 
 func TestScaffoldWholeGatePassesOffline(t *testing.T) {

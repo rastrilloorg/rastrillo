@@ -2,6 +2,8 @@
 
 A [rastrillo](https://amadan.net/rastrillo/rastrillo) app. Run `make ci` before you push: it is the same gate CI runs. AGENTS.md has the working rules.
 
+Claude Code: `claude mcp add --transport http %[1]s https://<host>/api/v1/mcp --header "Authorization: Bearer <token>"`, with a personal token
+
 ## Templates
 
 Start each template body with `{{$L := localizer $}}`. Pass `$L` first to `T`, `money` and the other locale functions, and pass `"L" $L` to every partial. A page without `$L` fails instead of showing the wrong language.

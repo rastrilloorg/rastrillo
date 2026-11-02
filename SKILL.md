@@ -35,7 +35,7 @@ Read the topic before you start work it covers, not after the source:
 | run work in the background, poll for progress, schedule | `skill/background.md` |
 | update parts of a page when data changes: live regions, forms that swap in place | `skill/live.md` |
 | use the CLI beyond `new`, manifests, doctor, pins, native or PWA | `skill/tooling.md` |
-| serve JSON at `/api/v1`, mint tokens, let an agent act for a person, write `Authorize`, hand-write an operation | `skill/api.md` |
+| serve JSON at `/api/v1` or MCP at `/api/v1/mcp`, mint tokens, let an agent act for a person, write `Authorize`, hand-write an operation | `skill/api.md`, `skill/mcp.md` |
 
 ## Start here
 
@@ -84,9 +84,10 @@ hand-roll it.
 `migrate.Apply(ctx, database, BootSchema)`, then `App`, then
 `Routes(action.NewRoutes(router, app.contextFor), app)`. `routes.go`
 holds named paths and `func Routes(routes *action.Routes, app *App)`,
-which registers everything: `/static` and
-`routes.Mount("/api/v1", app.api, "api")` unguarded (a bearer token is
-the API's only credential), then every page in a `routes.Group`
+which registers everything: `/static`,
+`routes.Mount("/api/v1/mcp", app.mcp, "mcp")` and
+`routes.Mount("/api/v1", app.api, "api")` outside the page group (both
+use a bearer token), then every page in a `routes.Group`
 starting `Guard("csrf", csrf.Protect(app.origin))` and
 `Guard("pages", pages.Middleware)`. Owned pages go in a `Group` within,
 behind the session guard (`app.auth.RequireSession` under

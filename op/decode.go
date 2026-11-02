@@ -128,7 +128,7 @@ func fieldInvalid(name string, nested bool, message string) error {
 	if nested {
 		message = msgNested
 	}
-	return Invalid{Fields: map[string]string{name: message}}
+	return Invalid{Fields: map[string]string{name: message}, AsSent: true}
 }
 
 // member is the first token of p, unescaped, and whether p goes deeper.

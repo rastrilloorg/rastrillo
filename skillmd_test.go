@@ -251,12 +251,18 @@ import (
 // detail in skill/forms.md. Review's fixes (map gorm.ErrRecordNotFound
 // to op.NotFound; mount gen.Router in Routes) took it to 9,100, with
 // "the scaffold's *gorm.DB" cut to "a *gorm.DB": no slack is left.
+//
+// Raised 9,100 -> 9,200 on 2026-11-02 for MCP: every new app mounts
+// /api/v1/mcp beside the API. An agent that copies Routes from the
+// App shape without that line would leave MCP unmounted. The mount and
+// the index row's "or MCP" account for the growth; the ceiling is the
+// next hundred.
 const (
 	// skillCoreBudget holds SKILL.md near its 2026-10-22 size (6,660
 	// bytes) with room for the index to grow by a few topics. Raising
 	// it means moving something into a topic, which is almost always
 	// the right answer, so raise it only for a rule every task needs.
-	skillCoreBudget = 9_100
+	skillCoreBudget = 9_200
 	// skillTopicBudget is per topic file. A topic that outgrows it
 	// splits in two, each with its own index line.
 	skillTopicBudget = 9_000

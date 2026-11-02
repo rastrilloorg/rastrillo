@@ -18,12 +18,12 @@ import (
 	_ "%[2]s/gen/locales"
 )
 
-// App is what the app's actions need. New builds it; Routes reads it.
 type App struct {
 	database *db.DB
 	logger   *slog.Logger
 	origin   string
 	api      http.Handler
+	mcp      http.Handler
 }
 
 // New migrates the database and builds the app, as one router inside the
@@ -54,11 +54,12 @@ func Router(
 	}
 	logger.Info("migrate", "applied", migrated.Applied,
 		"skipped", migrated.Skipped, "adopted", migrated.Adopted)
-	api, err := newAPI(database, logger)
+	api, mcp, err := newDoors(database, logger)
 	if err != nil {
 		return nil, err
 	}
-	app := &App{database: database, logger: logger, origin: origin, api: api}
+	app := &App{database: database, logger: logger, origin: origin,
+		api: api, mcp: mcp}
 	router := chi.NewRouter()
 	Routes(action.NewRoutes(router, app.contextFor), app)
 	return router, nil

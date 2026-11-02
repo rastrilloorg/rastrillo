@@ -223,7 +223,7 @@ func followTheBootStep(t *testing.T, directory string, step step) {
 	t.Helper()
 	app := filepath.Join(directory, "internal", "recipeapp", "app.go")
 	insertAfter(t, app, "type App struct {", step.blocks[0])
-	insertAfter(t, app, "api: api}", step.blocks[1])
+	insertAfter(t, app, "mcp: mcp}", step.blocks[1])
 	addImports(t, app, importsIn(step.prose))
 	appendTo(t, app, "\n"+step.blocks[2])
 	insertAfter(t, filepath.Join(directory, "internal", "recipeapp",
@@ -331,6 +331,12 @@ func refuseOneOperation(t *testing.T, path string) {
 // sweeps run on the background group, so it stops before the database
 // closes.
 func policyTestFor(variant variant) string {
+	return withTheVariantsNew(variant, policyTest)
+}
+
+// withTheVariantsNew fills a test's "// the app's New" and "// the app's
+// imports" lines with the variant's New. It leaves handler and err set.
+func withTheVariantsNew(variant variant, test string) string {
 	newApp := "\thandler, err := New(database, origin, logger)\n"
 	imports := ""
 	if slices.Contains(variant.flags, "--auth=magic") {
@@ -341,7 +347,7 @@ func policyTestFor(variant variant) string {
 			"\t\"amadan.net/rastrillo/rastrillo/mail\"\n"
 	}
 	return strings.NewReplacer("\t// the app's New\n", newApp,
-		"\t// the app's imports\n", imports).Replace(policyTest)
+		"\t// the app's imports\n", imports).Replace(test)
 }
 
 // policyTest is written into the app's own package, where newTokens and
@@ -381,7 +387,7 @@ func TestThePagesAndTheAPIShareOnePolicy(t *testing.T) {
 		t.Fatal(err)
 	}
 	secret := mint(t, database)
-	page := func(method string) *httptest.ResponseRecorder {
+	page := func(method string) answer {
 		request := httptest.NewRequest(method, "/admin/ticket_types",
 			strings.NewReader("Name=General&Price=12.50"+
 				"&Price.locale=root&Price.currency=USD"))
@@ -390,12 +396,33 @@ func TestThePagesAndTheAPIShareOnePolicy(t *testing.T) {
 		request.Header.Set("Origin", origin)
 		return serve(handler, request)
 	}
-	api := func(method string) *httptest.ResponseRecorder {
-		request := httptest.NewRequest(method, "/api/v1/ticket_types",
+	// The API gate rechecks the token as each answer goes out, which a
+	// recorder cannot take; only the pages can use one.
+	server := httptest.NewServer(handler)
+	defer server.Close()
+	api := func(method string) answer {
+		request, err := http.NewRequest(method,
+			server.URL+"/api/v1/ticket_types",
 			strings.NewReader(` + "`" + `{"name": "General"}` + "`" + `))
+		if err != nil {
+			t.Fatal(err)
+		}
 		request.Header.Set("Authorization", "Bearer "+secret)
 		request.Header.Set("Content-Type", "application/json")
-		return serve(handler, request)
+		client := *server.Client()
+		client.CheckRedirect = func(*http.Request, []*http.Request) error {
+			return http.ErrUseLastResponse
+		}
+		response, err := client.Do(request)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer response.Body.Close()
+		body, err := io.ReadAll(response.Body)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return answer{Code: response.StatusCode, Body: string(body)}
 	}
 	expect(t, "the list page", page("GET"), http.StatusOK)
 	expect(t, "the API's list", api("GET"), http.StatusOK)
@@ -419,21 +446,21 @@ func mint(t *testing.T, database *db.DB) string {
 	return secret
 }
 
-func serve(
-	handler http.Handler, request *http.Request,
-) *httptest.ResponseRecorder {
-	recorder := httptest.NewRecorder()
-	handler.ServeHTTP(recorder, request)
-	return recorder
+type answer struct {
+	Code int
+	Body string
 }
 
-func expect(
-	t *testing.T, what string, answer *httptest.ResponseRecorder, want int,
-) {
+func serve(handler http.Handler, request *http.Request) answer {
+	recorder := httptest.NewRecorder()
+	handler.ServeHTTP(recorder, request)
+	return answer{Code: recorder.Code, Body: recorder.Body.String()}
+}
+
+func expect(t *testing.T, what string, got answer, want int) {
 	t.Helper()
-	if answer.Code != want {
-		t.Errorf("%s: %d, want %d:\n%s", what, answer.Code, want,
-			answer.Body)
+	if got.Code != want {
+		t.Errorf("%s: %d, want %d:\n%s", what, got.Code, want, got.Body)
 	}
 }
 `

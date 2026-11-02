@@ -173,8 +173,8 @@ test.%: | $(BIN)/tmp
 # the jsonv2 experiment on, which makes go-json-experiment an alias of
 # the standard library's encoding/json/v2, and the version pinned then
 # did not compile against 1.27's: every app broke while this gate, on
-# 1.26, stayed green. op hooks into json's decoding and api writes
-# json, so their tests run on the next Go and on this one with the
+# 1.26, stayed green. op hooks into json's decoding, and api and mcp
+# write json, so their tests run on the next Go and on this one with the
 # experiment on; with root's plain run, those are the three ways
 # op/decode_pass*.go is built and the three json v2s apps meet. go
 # fetches NEXT_GO through the module proxy on first use, as it does
@@ -184,8 +184,8 @@ NEXT_GO := go1.27.3
 next-go: | $(BIN)/tmp
 	GOTOOLCHAIN=$(NEXT_GO) go build ./...
 	GOTOOLCHAIN=$(NEXT_GO) go vet ./op/...
-	GOTOOLCHAIN=$(NEXT_GO) go test -count=1 ./op/... ./api/...
-	GOEXPERIMENT=jsonv2 go test -count=1 ./op/... ./api/...
+	GOTOOLCHAIN=$(NEXT_GO) go test -count=1 ./op/... ./api/... ./mcp/...
+	GOEXPERIMENT=jsonv2 go test -count=1 ./op/... ./api/... ./mcp/...
 
 # staticcheck catches what vet does not: deprecated APIs, values that are
 # never read, and the &*x that looks like a copy and is not (SA4001 found

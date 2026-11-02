@@ -6,9 +6,10 @@ package paritygen
 
 // fixtureDoc is the package doc and clause.
 const fixtureDoc = `// Package paritytest runs one scenario through a resource's page door
-// and through its API door, each against a fresh app of its own, and
-// fails when the two end differently. The app's tests supply a Fixture
-// and call one Run function per exposed resource.
+// and through its API door, and the API door's again through the MCP
+// endpoint, each against a fresh app of its own, and fails when two
+// doors end differently. The app's tests supply a Fixture and call one
+// Run function per exposed resource.
 package paritytest
 
 `
@@ -19,7 +20,8 @@ const fixtureBody = `// Fixture is the app's half of the parity test. A subject 
 // in, the same person across SignIn, Token and Prepare.
 type Fixture interface {
 	// New is a fresh app on its own database, mounted as production
-	// mounts it: the pages and the API tree on one handler.
+	// mounts it: the pages, the API tree and the MCP endpoint at
+	// /api/v1/mcp on one handler.
 	New(t *testing.T) (http.Handler, *sql.DB)
 	// SignIn returns a client carrying subject's browser session. Every
 	// request it sends must reach h, whatever the host; the test sends
@@ -41,22 +43,17 @@ const base = "http://app.test"
 
 // step is how one step of the scenario ended: its kind ("ok",
 // "invalid" or "not_found") and, for a read, the row as the API answers
-// it without id and timestamps, which differ between the two apps.
+// it without id and timestamps, which differ between the two apps. A
+// list step's row is how many items came back.
 type step struct {
 	Name, Kind, Row string
 }
 
-// compare fails on each step the two doors ended differently.
+// compare fails on each step the page door and the API door ended
+// differently.
 func compare(t *testing.T, pages, api []step) {
 	t.Helper()
-	if len(pages) != len(api) {
-		t.Fatalf("the page door ran %d steps and the API door %d", len(pages), len(api))
-	}
-	for i := range pages {
-		if pages[i] != api[i] {
-			t.Errorf("%s: page door %+v, API door %+v", pages[i].Name, pages[i], api[i])
-		}
-	}
+	compareDoors(t, "page", "API", pages, api)
 }
 
 // page sends one request through the signed-in client without following
@@ -116,7 +113,10 @@ func lastID(t *testing.T, outcome string) string {
 }
 
 // call sends one API request with token and answers its kind and its
-// decoded body.
+// decoded body. It goes to a real server because the API checks the
+// token again as the answer is sent, which a recorder cannot take. The
+// request keeps the app.test host the handler was always given, and a
+// redirect is the answer, not followed, as a recorder showed it.
 func call(t *testing.T, h http.Handler, token, method, p string, body any) (string, map[string]any) {
 	t.Helper()
 	var r io.Reader
@@ -127,24 +127,41 @@ func call(t *testing.T, h http.Handler, token, method, p string, body any) (stri
 		}
 		r = bytes.NewReader(b)
 	}
-	req := httptest.NewRequest(method, base+p, r)
+	server := httptest.NewServer(h)
+	defer server.Close()
+	req, err := http.NewRequest(method, server.URL+p, r)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Host = strings.TrimPrefix(base, "http://")
 	req.Header.Set("Authorization", "Bearer "+token)
 	if body != nil {
 		req.Header.Set("Content-Type", "application/json")
 	}
-	rec := httptest.NewRecorder()
-	h.ServeHTTP(rec, req)
+	client := *server.Client()
+	client.CheckRedirect = func(*http.Request, []*http.Request) error {
+		return http.ErrUseLastResponse
+	}
+	res, err := client.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer res.Body.Close()
+	raw, err := io.ReadAll(res.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
 	var out map[string]any
-	if rec.Body.Len() > 0 {
+	if len(raw) > 0 {
 		// Numbers stay as written: as float64, two amounts past 2^53
 		// would compare equal, and an edit would post the rounded one.
-		d := json.NewDecoder(bytes.NewReader(rec.Body.Bytes()))
+		d := json.NewDecoder(bytes.NewReader(raw))
 		d.UseNumber()
 		if err := d.Decode(&out); err != nil {
-			t.Fatalf("%s %s: %v: %s", method, p, err, rec.Body)
+			t.Fatalf("%s %s: %v: %s", method, p, err, raw)
 		}
 	}
-	switch rec.Code {
+	switch res.StatusCode {
 	case http.StatusOK, http.StatusCreated, http.StatusNoContent:
 		return "ok", out
 	case http.StatusUnprocessableEntity:
@@ -152,7 +169,8 @@ func call(t *testing.T, h http.Handler, token, method, p string, body any) (stri
 	case http.StatusNotFound:
 		return "not_found", out
 	}
-	t.Fatalf("%s %s: the API door answered %d: %s", method, p, rec.Code, rec.Body)
+	t.Fatalf("%s %s: the API door answered %d: %s", method, p,
+		res.StatusCode, raw)
 	return "", nil
 }
 
@@ -169,15 +187,7 @@ func record(t *testing.T, h http.Handler, token, p string) map[string]any {
 // row is record without what differs between two apps by design.
 func row(t *testing.T, h http.Handler, token, p string) string {
 	t.Helper()
-	r := record(t, h, token, p)
-	delete(r, "id")
-	delete(r, "created_at")
-	delete(r, "updated_at")
-	b, err := json.Marshal(r)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return string(b)
+	return bare(t, record(t, h, token, p))
 }
 
 `

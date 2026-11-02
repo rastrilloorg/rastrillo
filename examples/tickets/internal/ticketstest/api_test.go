@@ -158,6 +158,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
@@ -169,6 +170,7 @@ import (
 	"amadan.net/rastrillo/rastrillo/api"
 	"amadan.net/rastrillo/rastrillo/apitoken"
 	"amadan.net/rastrillo/rastrillo/basepath"
+	"amadan.net/rastrillo/rastrillo/mcp"
 	"amadan.net/rastrillo/rastrillo/migrate"
 	"amadan.net/rastrillo/rastrillo/op"
 
@@ -178,6 +180,14 @@ import (
 )
 
 type writer struct{ *sql.DB }
+
+type answer struct {
+	Code           int
+	Location, Body string
+}
+
+const payload = ` + "`" + `{"name": "General",
+	"price": {"amount": 2500, "currency": "USD"}}` + "`" + `
 
 func (w writer) Writer() *sql.DB { return w.DB }
 
@@ -210,23 +220,71 @@ func TestExposedUnscopedNeedsAPolicy(t *testing.T) {
 		t.Fatal(err)
 	}
 	handler := func(authorize func(context.Context, rastrillo.Actor, rastrillo.Operation) error) http.Handler {
-		h, err := api.New(api.Config{
+		config := api.Config{
 			Verify:    tokens,
 			Ctx:       func(*http.Request) *rastrillo.Ctx { return &rastrillo.Ctx{DB: d} },
 			Authorize: authorize,
-		}, gen.APIRoutes()...)
+		}
+		tree, err := api.New(config, gen.APIRoutes()...)
 		if err != nil {
 			t.Fatal(err)
 		}
-		return h
+		// MCP beside the tree, on the tree's gate and the same policy,
+		// as the scaffold mounts it. tickets' own app mounts neither.
+		endpoint, err := mcp.New(mcp.Config{
+			Gate:      config.Gate(),
+			Ctx:       config.Ctx,
+			Authorize: authorize,
+			Name:      "tickets",
+			Version:   "test",
+		}, gen.ExposedOperations()...)
+		if err != nil {
+			t.Fatal(err)
+		}
+		mux := http.NewServeMux()
+		mux.Handle("/api/v1", tree)
+		mux.Handle("/api/v1/", tree)
+		mux.Handle("/api/v1/mcp", endpoint)
+		return mux
 	}
-	create := func(h http.Handler, target string) *httptest.ResponseRecorder {
-		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(` + "`" + `{"name": "General", "price": {"amount": 2500, "currency": "USD"}}` + "`" + `))
+	// A real server, not a recorder: the API checks the token again as
+	// each answer is sent, which needs a transport with write deadlines.
+	send := func(h http.Handler, target, content string) answer {
+		server := httptest.NewServer(h)
+		defer server.Close()
+		req, err := http.NewRequest(http.MethodPost, server.URL+target,
+			strings.NewReader(content))
+		if err != nil {
+			t.Fatal(err)
+		}
+		req.Host = "example.com"
 		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Accept", "application/json, text/event-stream")
 		req.Header.Set("Authorization", "Bearer "+token)
-		rec := httptest.NewRecorder()
-		h.ServeHTTP(rec, req)
-		return rec
+		client := *server.Client()
+		client.CheckRedirect = func(*http.Request, []*http.Request) error {
+			return http.ErrUseLastResponse
+		}
+		res, err := client.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer res.Body.Close()
+		body, err := io.ReadAll(res.Body)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return answer{res.StatusCode, res.Header.Get("Location"), string(body)}
+	}
+	create := func(h http.Handler, target string) answer {
+		return send(h, target, payload)
+	}
+	// callTool is one MCP tools/call, which needs no initialize first.
+	callTool := func(h http.Handler, name, arguments string) answer {
+		return send(h, "/api/v1/mcp", fmt.Sprintf(
+			"{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"tools/call\", "+
+				"\"params\": {\"name\": %q, \"arguments\": %s}}",
+			name, arguments))
 	}
 
 	// api.New refuses a nil Authorize, so the default is named: it is
@@ -244,8 +302,30 @@ func TestExposedUnscopedNeedsAPolicy(t *testing.T) {
 	// not at the hub's /api/v1, and not at /acme/acme.
 	acme := basepath.Config{Origin: "https://example.com", Slug: "acme"}.Handler(allow)
 	rec := create(acme, "/acme/api/v1/ticket_types")
-	if loc := rec.Header().Get("Location"); rec.Code != http.StatusCreated || loc != "/acme/api/v1/ticket_types/2" {
-		t.Errorf("POST /acme/api/v1/ticket_types: %d, Location %q; want 201, /acme/api/v1/ticket_types/2\n%s", rec.Code, loc, rec.Body)
+	const want = "/acme/api/v1/ticket_types/2"
+	if rec.Code != http.StatusCreated || rec.Location != want {
+		t.Errorf("POST /acme/api/v1/ticket_types: %d, Location %q; "+
+			"want 201, %s\n%s", rec.Code, rec.Location, want, rec.Body)
+	}
+
+	// MCP is mounted beside the tree and answers to the same policy:
+	// the tool is refused as the API's 403 was, and under an Authorize
+	// that allows it the tool lists the rows the API created.
+	refusedTool := callTool(handler(op.DefaultPolicy), "ticket_types_create",
+		payload)
+	if !strings.Contains(refusedTool.Body, "\"isError\":true") ||
+		!strings.Contains(refusedTool.Body, "forbidden") {
+		t.Errorf("tools/call ticket_types_create under op.DefaultPolicy: "+
+			"%d, want a forbidden tool error\n%s", refusedTool.Code,
+			refusedTool.Body)
+	}
+	listed := callTool(allow, "ticket_types_list", "{}")
+	if listed.Code != http.StatusOK ||
+		strings.Contains(listed.Body, "\"isError\":true") ||
+		!strings.Contains(listed.Body, "General") {
+		t.Errorf("tools/call ticket_types_list under an Authorize that "+
+			"allows it: %d, want the rows made above\n%s", listed.Code,
+			listed.Body)
 	}
 }
 `

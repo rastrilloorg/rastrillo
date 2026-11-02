@@ -23,8 +23,6 @@ var appFS embed.FS
 // with the content's hash in it, so it is cached for a year.
 var assets = rastrillo.NewAssets(appFS)
 
-// pages is every page, parsed once at boot. The localizer in a page's
-// data picks its language.
 var pages, pagesErr = newPages()
 
 func newPages() (*ui.Pages, error) {
@@ -59,12 +57,11 @@ func (app *App) contextFor(request *http.Request) (*rastrillo.Ctx, error) {
 	}, nil
 }
 
-// renderPage adds the request's values to map data; other data, such as
-// a generated page's, carries its own.
 func renderPage(
 	response http.ResponseWriter, request *http.Request,
 	page string, status int, data any,
 ) {
+	// Other data, such as a generated page's, carries its own.
 	if values, isMap := data.(map[string]any); isMap || data == nil {
 		data = withRequest(request, values)
 	}
