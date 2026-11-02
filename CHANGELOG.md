@@ -10,6 +10,12 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+## v0.30.1
+
+### Fixed: no uncaught error when the browser skips a page transition
+
+Navigating with motion on could log `AbortError: Transition was skipped` as an uncaught error in the browser console, and browser tests built on the harness failed on it. The browser skips a page transition in some cases and rejects its promises, and the shell never handled them. The shell now handles them and ignores only that skip. Other errors still show. Nothing to change in your app; upgrade and run `go mod tidy`.
+
 ## v0.30.0
 
 Compiled templates, serving an app under a path on a hub's domain, live pages, routes you can list and check, sign-in with Microsoft Entra ID or Google Workspace, a PDF writer, and builds on Go 1.27. Rastrillo now needs Go 1.26. The first four sections include upgrade steps for existing apps. Read them before you upgrade. If you build browser tests with `-tags browser`, port them for chromedp v0.21.
