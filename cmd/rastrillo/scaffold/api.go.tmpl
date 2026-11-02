@@ -19,8 +19,7 @@ import (
 // knows a leaked one. Changing it voids every token already given out.
 const tokenPrefix = %[3]q
 
-// newDoors builds the JSON API and MCP from one config, so they cannot
-// differ. A new app exposes no operations: the API answers 404.
+// newDoors builds the API and MCP from one config, so they cannot differ.
 func newDoors(
 	database *db.DB, logger *slog.Logger,
 ) (tree, tools http.Handler, err error) {

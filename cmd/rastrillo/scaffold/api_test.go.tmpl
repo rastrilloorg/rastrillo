@@ -17,7 +17,6 @@ import (
 
 	"amadan.net/rastrillo/rastrillo"
 	"amadan.net/rastrillo/rastrillo/action"
-	"amadan.net/rastrillo/rastrillo/apitoken"
 	"amadan.net/rastrillo/rastrillo/csrf"
 	"amadan.net/rastrillo/rastrillo/db"
 	"amadan.net/rastrillo/rastrillo/migrate"
@@ -43,62 +42,6 @@ func TestAPIAnswersInJSON(t *testing.T) {
 		}
 		if got := recorder.Header().Get("Cache-Control"); got != "no-store" {
 			t.Errorf("GET %%s: Cache-Control = %%q, want no-store", path, got)
-		}
-	}
-}
-
-// MCP answers at /api/v1/mcp, and a new app exposes no tools. A real
-// server: the token store's recheck needs a write deadline.
-func TestMCPListsNothingYet(t *testing.T) {
-	t.Parallel()
-	database, _ := signinStore(t)
-	store, err := apitoken.New(apitoken.Config{
-		DB: database.Writer(), Prefix: %[3]q,
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	token, _, err := store.Mint(context.Background(), "1",
-		apitoken.MintInput{Agent: "Claude", Access: rastrillo.Read})
-	if err != nil {
-		t.Fatal(err)
-	}
-	mux, err := %[2]s.New(
-		database, testOrigin, slog.New(slog.DiscardHandler))
-	if err != nil {
-		t.Fatal(err)
-	}
-	server := httptest.NewServer(mux)
-	t.Cleanup(server.Close)
-	client := &http.Client{CheckRedirect: func(*http.Request,
-		[]*http.Request) error {
-		return http.ErrUseLastResponse
-	}}
-	for method, want := range map[string]string{
-		"initialize": `"protocolVersion":"2025-06-18"`,
-		"tools/list": `"tools":[]`,
-	} {
-		request, err := http.NewRequest(http.MethodPost,
-			server.URL+"/api/v1/mcp", strings.NewReader(`{"jsonrpc":"2.0",`+
-				`"id":1,"method":"`+method+`","params":{"protocolVersion":`+
-				`"2025-06-18","capabilities":{},"clientInfo":{"name":"t",`+
-				`"version":"1"}}}`))
-		if err != nil {
-			t.Fatal(err)
-		}
-		request.Header.Set("Content-Type", "application/json")
-		request.Header.Set("Accept", "application/json, text/event-stream")
-		request.Header.Set("Authorization", "Bearer "+token)
-		response, err := client.Do(request)
-		if err != nil {
-			t.Fatal(err)
-		}
-		body, _ := io.ReadAll(response.Body)
-		response.Body.Close()
-		if response.StatusCode != http.StatusOK ||
-			!strings.Contains(string(body), want) {
-			t.Errorf("%%s: %%d, want 200 and %%s:\n%%s", method,
-				response.StatusCode, want, body)
 		}
 	}
 }

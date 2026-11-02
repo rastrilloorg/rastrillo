@@ -331,6 +331,12 @@ func refuseOneOperation(t *testing.T, path string) {
 // sweeps run on the background group, so it stops before the database
 // closes.
 func policyTestFor(variant variant) string {
+	return withTheVariantsNew(variant, policyTest)
+}
+
+// withTheVariantsNew fills a test's "// the app's New" and "// the app's
+// imports" lines with the variant's New. It leaves handler and err set.
+func withTheVariantsNew(variant variant, test string) string {
 	newApp := "\thandler, err := New(database, origin, logger)\n"
 	imports := ""
 	if slices.Contains(variant.flags, "--auth=magic") {
@@ -341,7 +347,7 @@ func policyTestFor(variant variant) string {
 			"\t\"amadan.net/rastrillo/rastrillo/mail\"\n"
 	}
 	return strings.NewReplacer("\t// the app's New\n", newApp,
-		"\t// the app's imports\n", imports).Replace(policyTest)
+		"\t// the app's imports\n", imports).Replace(test)
 }
 
 // policyTest is written into the app's own package, where newTokens and
