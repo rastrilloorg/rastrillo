@@ -98,21 +98,27 @@ func validSigningKey(key *crypto.Keypair) bool {
 	if key == nil || key.SignPriv == nil {
 		return false
 	}
-	k := key.SignPriv
+	private := key.SignPriv
 	curve := elliptic.P256()
-	if k.Curve != curve || k.D == nil || k.X == nil || k.Y == nil || k.D.Sign() <= 0 || k.D.Cmp(curve.Params().N) >= 0 {
+	//lint:ignore SA1019 Bytes would panic on a nil field
+	unset := private.D == nil || private.X == nil || private.Y == nil
+	if private.Curve != curve || unset {
 		return false
 	}
-	// PublicKey.Bytes refuses a point that is not on the curve, and
-	// ParseRawPrivateKey re-derives the public half from D. Comparing the
-	// two encodings is the on-curve check and the private/public
-	// consistency check at once - what IsOnCurve plus ScalarBaseMult did.
-	// The range check above is what makes the 32-byte FillBytes safe.
-	declared, err := (&ecdsa.PublicKey{Curve: curve, X: k.X, Y: k.Y}).Bytes()
+	// PrivateKey.Bytes refuses a scalar outside 1..N-1 and PublicKey.Bytes
+	// a point that is not on the curve, and ParseRawPrivateKey re-derives
+	// the public half from the scalar. Comparing the two encodings is the
+	// on-curve check and the private/public consistency check at once -
+	// what IsOnCurve plus ScalarBaseMult did.
+	scalar, err := private.Bytes()
 	if err != nil {
 		return false
 	}
-	derived, err := ecdsa.ParseRawPrivateKey(curve, k.D.FillBytes(make([]byte, 32)))
+	declared, err := private.PublicKey.Bytes()
+	if err != nil {
+		return false
+	}
+	derived, err := ecdsa.ParseRawPrivateKey(curve, scalar)
 	if err != nil {
 		return false
 	}

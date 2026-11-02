@@ -3,9 +3,12 @@ package tmplgen
 import (
 	"cmp"
 	"fmt"
+	"go/ast"
+	"go/types"
 	"io/fs"
 	"maps"
 	"os"
+	"path"
 	"path/filepath"
 	"reflect"
 	"slices"
@@ -119,6 +122,118 @@ func buildsNoSets(root *packages.Package) bool {
 		return none
 	}, nil)
 	return none
+}
+
+// rastrilloPath is the import path of the root package, whose tmpl
+// package is one of its own.
+var rastrilloPath = path.Dir(tmplPath)
+
+// entryPoints are the functions, by package, a main must call for Run
+// to start it. Run and Serve build the app, which builds its sets, and
+// return at the capture before anything else; a main that calls
+// neither, such as a migration or a mail-out, would do its real work
+// instead. WriteCapture is the capture itself, which a main that only
+// builds sets, as the corpus's does, calls directly.
+var entryPoints = map[string][]string{
+	rastrilloPath: {"Run", "Serve"},
+	tmplPath:      {"WriteCapture"},
+}
+
+// servingMains is the import paths of the mains, among those that may
+// build sets, whose func main calls an entry point, and of those that
+// do not type-check. One that does not type-check is captured, and
+// fails to build, rather than taken for one that does not serve.
+func servingMains(
+	moduleDir string,
+	mains []*packages.Package,
+) (map[string]bool, error) {
+	var paths []string
+	for _, mainPkg := range mains {
+		if !buildsNoSets(mainPkg) {
+			paths = append(paths, mainPkg.PkgPath)
+		}
+	}
+	serving := map[string]bool{}
+	if len(paths) == 0 {
+		return serving, nil
+	}
+	cfg := &packages.Config{
+		Mode: packages.NeedName | packages.NeedTypes |
+			packages.NeedSyntax | packages.NeedTypesInfo,
+		Dir:        moduleDir,
+		BuildFlags: buildFlags,
+	}
+	pkgs, err := packages.Load(cfg, paths...)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"tmplgen: type-checking %s: %w",
+			strings.Join(paths, " "),
+			err,
+		)
+	}
+	for _, pkg := range pkgs {
+		if len(pkg.Errors) > 0 || pkg.TypesInfo == nil ||
+			callsEntryPoint(pkg) {
+			serving[pkg.PkgPath] = true
+		}
+	}
+	return serving, nil
+}
+
+// callsEntryPoint reports whether pkg's func main calls an entry
+// point, at any depth of its body, function literals included. A call
+// anywhere else, such as in a helper, does not count, nor does a
+// mention that is no call: either might never reach the capture, and
+// the program's own work would run instead.
+func callsEntryPoint(pkg *packages.Package) bool {
+	body := mainBody(pkg.Syntax)
+	if body == nil {
+		return false
+	}
+	found := false
+	ast.Inspect(body, func(node ast.Node) bool {
+		call, isCall := node.(*ast.CallExpr)
+		if isCall && isEntryPoint(pkg.TypesInfo, call.Fun) {
+			found = true
+		}
+		return !found
+	})
+	return found
+}
+
+// mainBody is the body of the func main among files, or nil.
+func mainBody(files []*ast.File) *ast.BlockStmt {
+	for _, file := range files {
+		for _, decl := range file.Decls {
+			function, isFunc := decl.(*ast.FuncDecl)
+			if isFunc && function.Recv == nil &&
+				function.Name.Name == "main" {
+				return function.Body
+			}
+		}
+	}
+	return nil
+}
+
+// isEntryPoint reports whether callee, the function a call calls, is an
+// entry point.
+func isEntryPoint(info *types.Info, callee ast.Expr) bool {
+	var name *ast.Ident
+	switch callee := ast.Unparen(callee).(type) {
+	case *ast.Ident:
+		name = callee
+	case *ast.SelectorExpr:
+		name = callee.Sel
+	default:
+		return false
+	}
+	function, isFunc := info.Uses[name].(*types.Func)
+	if !isFunc || function.Pkg() == nil ||
+		function.Signature().Recv() != nil {
+		return false
+	}
+	names := entryPoints[function.Pkg().Path()]
+	return slices.Contains(names, function.Name())
 }
 
 // moduleDeps maps root and every package of the main module it imports to

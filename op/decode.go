@@ -84,10 +84,10 @@ type nullable interface{ IsNullable() bool }
 // json's name rules, and would miss a null nested inside a value.
 var refuseNull = json.WithUnmarshalers(json.UnmarshalFromFunc(func(dec *jsontext.Decoder, v any) error {
 	if dec.PeekKind() != 'n' {
-		return json.SkipFunc
+		return errPassOn
 	}
 	if n, ok := v.(nullable); ok && n.IsNullable() {
-		return json.SkipFunc
+		return errPassOn
 	}
 	return errNull
 }))

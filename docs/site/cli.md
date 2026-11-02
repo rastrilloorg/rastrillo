@@ -110,12 +110,16 @@ diff shows the break in review. `--check` fails if the file is missing
 or stale, and never writes it.
 
 Last, `generate` compiles your templates to Go, manifests or not. It
-starts each program under `cmd/` that uses templates, records the
-template sets it builds, and writes `rastrillo_templates_gen.go` into
-each package that builds one. Commit those files. A template it cannot
-compile, or a program that cannot start this way, gets one line, and
-those templates render through `html/template` as before. See
-[tmpl](/docs/reference/tmpl). Pass `--templates=false` to skip this step.
+starts each program under `cmd/` whose `func main` calls `rastrillo.Run`
+or `rastrillo.Serve`, records the template sets it builds, and writes
+`rastrillo_templates_gen.go` into each package that builds one. Commit
+those files. Anything your program does before that call still runs during `generate`. Nothing after it does: capture mode exits the process after `rastrillo.Serve` writes the capture. `generate` never starts any
+other program, so a migration or a mail-out under `cmd/` does not run.
+A template it cannot compile, a
+program that cannot start this way, and a program it does not start get
+one line each, and those templates render through `html/template` as
+before. See [tmpl](/docs/reference/tmpl). Pass `--templates=false` to
+skip this step.
 
 `--check` fails when a `rastrillo_templates_gen.go` is missing or out of
 date with your templates. It also fails when a program cannot start

@@ -230,8 +230,16 @@ type keypairJSON struct {
 }
 
 // MarshalKeypair serializes kp as JSON for on-disk storage (mode 0600).
+// It refuses anything but two whole P-256 keys, with an error rather
+// than a panic, so it never writes a file UnmarshalKeypair cannot read.
 func MarshalKeypair(kp *Keypair) ([]byte, error) {
-	signD := kp.SignPriv.D.FillBytes(make([]byte, 32))
+	if err := marshalable(kp); err != nil {
+		return nil, err
+	}
+	signD, err := kp.SignPriv.Bytes() // 32 bytes for P-256
+	if err != nil {
+		return nil, fmt.Errorf("rastrillo/crypto: signing key: %w", err)
+	}
 	boxD := kp.BoxPriv.Bytes() // already 32 bytes for P-256
 
 	out := keypairJSON{
@@ -239,6 +247,25 @@ func MarshalKeypair(kp *Keypair) ([]byte, error) {
 		BoxPrivD:  hex.EncodeToString(boxD),
 	}
 	return json.Marshal(out)
+}
+
+// marshalable says why kp cannot be stored, or nil. Each key must be
+// P-256: Bytes would write a P-384 scalar in 48 bytes and a P-224 one
+// in 28, and an X25519 box key in 32 that UnmarshalKeypair would load
+// as a different P-256 key.
+func marshalable(kp *Keypair) error {
+	if kp == nil || kp.SignPriv == nil || kp.BoxPriv == nil {
+		return errors.New("rastrillo/crypto: keypair is missing a key")
+	}
+	sign := kp.SignPriv
+	//lint:ignore SA1019 Bytes would panic on a nil field
+	if sign.D == nil || sign.X == nil || sign.Y == nil {
+		return errors.New("rastrillo/crypto: signing key is incomplete")
+	}
+	if sign.Curve != elliptic.P256() || kp.BoxPriv.Curve() != ecdh.P256() {
+		return errors.New("rastrillo/crypto: keypair is not P-256")
+	}
+	return nil
 }
 
 // UnmarshalKeypair parses JSON produced by MarshalKeypair back into a

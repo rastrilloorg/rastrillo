@@ -1,6 +1,7 @@
 package tmplgen
 
 import (
+	"maps"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -373,6 +374,211 @@ func TestRunSkipsAMainWithoutTemplates(t *testing.T) {
 	}
 	if want := []string{"lib/" + GenFile}; !slices.Equal(res.Removed, want) {
 		t.Errorf("Removed = %v, want %v", res.Removed, want)
+	}
+}
+
+// migrateMain imports rastrillo, as a maintenance command beside an app
+// does, but never serves: its work is to write MARKER.
+const migrateMain = `package main
+
+import (
+	"os"
+
+	"amadan.net/rastrillo/rastrillo"
+	"example.com/jobs/lib"
+)
+
+var options = rastrillo.Options{DBPath: "jobs.db"}
+
+func main() {
+	os.WriteFile(MARKER, []byte(lib.Name+options.DBPath), 0o644)
+}
+`
+
+// A main that calls neither rastrillo.Run nor rastrillo.Serve has no
+// startup that stops at the capture, so Run neither builds nor starts
+// it: a migration would do its real work. It is not a capture failure,
+// and a file left in a package only it imports is an orphan, stale in
+// check mode and removed otherwise.
+func TestRunSkipsAMainThatDoesNotServe(t *testing.T) {
+	if testing.Short() {
+		t.Skip("type-checks a scratch app")
+	}
+	root, err := filepath.Abs("../..")
+	if err != nil {
+		t.Fatal(err)
+	}
+	offlineGo(t)
+	app := t.TempDir()
+	marker := filepath.Join(t.TempDir(), "migrated")
+	writeFiles(t, app, map[string]string{
+		"go.mod": goMod("example.com/jobs", root),
+		"cmd/migrate/main.go": strings.Replace(migrateMain, "MARKER",
+			strconv.Quote(marker), 1),
+		"lib/lib.go":     "package lib\n\nconst Name = \"lib\"\n",
+		"lib/" + GenFile: "//go:build !rastrillo_capture\n\npackage lib\n",
+	})
+	run(t, app, "go", "mod", "tidy")
+	wantSkipped := []string{"example.com/jobs/cmd/migrate"}
+	orphan := []string{"lib/" + GenFile}
+
+	check, err := Run(app, Options{Check: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(check.CaptureFailures) > 0 || len(check.Unverified) > 0 {
+		t.Errorf("check: CaptureFailures = %+v, Unverified = %+v, "+
+			"want none", check.CaptureFailures, check.Unverified)
+	}
+	if !slices.Equal(check.Skipped, wantSkipped) {
+		t.Errorf("check: Skipped = %v, want %v", check.Skipped, wantSkipped)
+	}
+	if !slices.Equal(check.Stale, orphan) {
+		t.Errorf("check: Stale = %v, want %v", check.Stale, orphan)
+	}
+
+	res, err := Run(app, Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(marker); !os.IsNotExist(err) {
+		t.Errorf("Run started a main that does not serve (stat err %v)", err)
+	}
+	if len(res.CaptureFailures) > 0 {
+		t.Errorf("CaptureFailures = %+v, want none", res.CaptureFailures)
+	}
+	if !slices.Equal(res.Skipped, wantSkipped) {
+		t.Errorf("Skipped = %v, want %v", res.Skipped, wantSkipped)
+	}
+	if !slices.Equal(res.Removed, orphan) {
+		t.Errorf("Removed = %v, want %v", res.Removed, orphan)
+	}
+}
+
+// mentionMains mention an entry point without main calling it, and do
+// their work, writing MARKER, by directory under cmd/: unused holds
+// rastrillo.Run in a variable, and helper calls rastrillo.Serve from a
+// function nothing calls.
+var mentionMains = map[string]string{
+	"unused": "package main\n\n" +
+		"import (\n\t\"os\"\n\n" +
+		"\t\"amadan.net/rastrillo/rastrillo\"\n)\n\n" +
+		"var unused = rastrillo.Run\n\n" +
+		"func main() { os.WriteFile(MARKER, nil, 0o644) }\n",
+	"helper": "package main\n\n" +
+		"import (\n\t\"os\"\n\n" +
+		"\t\"amadan.net/rastrillo/rastrillo\"\n)\n\n" +
+		"func serve() { rastrillo.Serve(rastrillo.Options{}) }\n\n" +
+		"func main() { os.WriteFile(MARKER, nil, 0o644) }\n",
+}
+
+// Only a call in func main's own body lets Run start a main: a mention
+// that is never called, or a call in a helper, might never reach the
+// capture, and the main's work would run instead.
+func TestRunSkipsAMainThatOnlyMentionsAnEntryPoint(t *testing.T) {
+	if testing.Short() {
+		t.Skip("type-checks a scratch app")
+	}
+	root, err := filepath.Abs("../..")
+	if err != nil {
+		t.Fatal(err)
+	}
+	offlineGo(t)
+	app := t.TempDir()
+	files := map[string]string{"go.mod": goMod("example.com/mention", root)}
+	markers := map[string]string{}
+	for kind, source := range mentionMains {
+		markers[kind] = filepath.Join(t.TempDir(), kind)
+		files["cmd/"+kind+"/main.go"] = strings.Replace(source, "MARKER",
+			strconv.Quote(markers[kind]), 1)
+	}
+	writeFiles(t, app, files)
+	run(t, app, "go", "mod", "tidy")
+	res, err := Run(app, Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for kind, marker := range markers {
+		if _, err := os.Stat(marker); !os.IsNotExist(err) {
+			t.Errorf("Run started cmd/%s (stat err %v)", kind, err)
+		}
+	}
+	want := []string{
+		"example.com/mention/cmd/helper",
+		"example.com/mention/cmd/unused",
+	}
+	if !slices.Equal(res.Skipped, want) || len(res.CaptureFailures) > 0 {
+		t.Errorf("Skipped = %v, CaptureFailures = %+v, want %v and none",
+			res.Skipped, res.CaptureFailures, want)
+	}
+}
+
+// servingKinds is a main of each kind servingMains tells apart, by
+// directory under cmd/. serve imports rastrillo under another name.
+// literal calls Serve in a function literal main calls. handler serves
+// rastrillo.Handler on its own server, whose templates render through
+// html/template.
+var servingKinds = map[string]string{
+	"literal": "package main\n\n" +
+		"import \"amadan.net/rastrillo/rastrillo\"\n\n" +
+		"func main() {\n" +
+		"\tfunc() { rastrillo.Serve(rastrillo.Options{}) }()\n}\n",
+	"run": "package main\n\n" +
+		"import \"amadan.net/rastrillo/rastrillo\"\n\n" +
+		"func main() { rastrillo.Run(rastrillo.Options{}) }\n",
+	"serve": "package main\n\n" +
+		"import app \"amadan.net/rastrillo/rastrillo\"\n\n" +
+		"func main() { app.Serve(app.Options{}) }\n",
+	"neither": "package main\n\n" +
+		"import \"amadan.net/rastrillo/rastrillo\"\n\n" +
+		"var options rastrillo.Options\n\nfunc main() {}\n",
+	"handler": "package main\n\n" +
+		"import (\n\t\"net/http\"\n\n" +
+		"\t\"amadan.net/rastrillo/rastrillo\"\n)\n\n" +
+		"func main() {\n" +
+		"\thandler, closeDB, _ := rastrillo.Handler(rastrillo.Options{})\n" +
+		"\tdefer closeDB()\n" +
+		"\thttp.ListenAndServe(\"127.0.0.1:0\", handler)\n}\n",
+}
+
+// Only a main whose func main calls rastrillo.Run or rastrillo.Serve is
+// captured; one that calls Handler, or only mentions an entry point, is
+// not.
+func TestServingMainsAreThoseThatCallRunOrServe(t *testing.T) {
+	if testing.Short() {
+		t.Skip("type-checks a scratch app")
+	}
+	root, err := filepath.Abs("../..")
+	if err != nil {
+		t.Fatal(err)
+	}
+	offlineGo(t)
+	app := t.TempDir()
+	files := map[string]string{"go.mod": goMod("example.com/kinds", root)}
+	for kind, source := range servingKinds {
+		files["cmd/"+kind+"/main.go"] = source
+	}
+	for kind, source := range mentionMains {
+		files["cmd/"+kind+"/main.go"] = strings.Replace(source, "MARKER",
+			`"unused"`, 1)
+	}
+	writeFiles(t, app, files)
+	run(t, app, "go", "mod", "tidy")
+	mains, err := loadMains(app, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	serving, err := servingMains(app, mains)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := map[string]bool{
+		"example.com/kinds/cmd/run":     true,
+		"example.com/kinds/cmd/serve":   true,
+		"example.com/kinds/cmd/literal": true,
+	}
+	if !maps.Equal(serving, want) {
+		t.Errorf("serving = %v, want %v", serving, want)
 	}
 }
 

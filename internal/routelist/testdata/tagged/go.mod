@@ -1,6 +1,6 @@
 module example.com/tagged
 
-go 1.25.0
+go 1.26.0
 
 require amadan.net/rastrillo/rastrillo v0.0.0
 
@@ -8,7 +8,7 @@ require (
 	amadan.net/rastrillo/rastrillo/money v0.1.0 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/go-chi/chi/v5 v5.3.2 // indirect
-	github.com/go-json-experiment/json v0.0.0-20260213210345-44df1a37e875 // indirect
+	github.com/go-json-experiment/json v0.0.0-20260820222146-c27c302e5fc3 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/ncruces/go-strftime v1.0.0 // indirect

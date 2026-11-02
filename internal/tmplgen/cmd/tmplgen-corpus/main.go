@@ -32,7 +32,7 @@ func main() {
 }
 
 // report prints what the run wrote, removed and left uncompiled, and
-// which mains it could not capture.
+// which mains it did not run or could not capture.
 func report(res tmplgen.Result) {
 	for _, path := range res.Written {
 		fmt.Println("wrote", path)
@@ -43,6 +43,11 @@ func report(res tmplgen.Result) {
 	for _, note := range res.Unsupported {
 		fmt.Printf("not compiled: %s %q: %s\n",
 			note.Set, note.Template, note.Reason)
+	}
+	for _, mainPath := range res.Skipped {
+		fmt.Fprintf(os.Stderr, "tmplgen-corpus: %s: not run: its main calls "+
+			"neither rastrillo.Run, rastrillo.Serve nor tmpl.WriteCapture\n",
+			mainPath)
 	}
 	for _, failure := range res.CaptureFailures {
 		fmt.Fprintf(os.Stderr, "tmplgen-corpus: %s: %s\n",

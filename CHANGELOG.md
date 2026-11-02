@@ -10,24 +10,17 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
-### Changed: `rastrillo new` writes actions on a route table, and its `make ci` runs `make code` and `make routes`
+## v0.30.0
 
-New apps get an exported `App`, a `New` constructor, and one `Routes` function in `routes.go`. Pages are actions, such as `func (app *App) home(visit *action.Visit)`, and answer with `visit.Render`. The `AGENTS.md` file lists the code rules. The `make ci` gate runs two new lanes: `make code` (`rastrillo budget code`) and `make routes` (`rastrillo routes --check`). Static files and the JSON API are mounted outside the page group, so the API gets no CSRF check or page middleware.
+Compiled templates, serving an app under a path on a hub's domain, live pages, routes you can list and check, sign-in with Microsoft Entra ID or Google Workspace, a PDF writer, and builds on Go 1.27. Rastrillo now needs Go 1.26. The first four sections include upgrade steps for existing apps. Read them before you upgrade. If you build browser tests with `-tags browser`, port them for chromedp v0.21.
 
-Existing apps do not change, and upgrading adds nothing to `make ci`. Follow these rules for new code. Leave working code as it is. To add the gates:
+### Changed: Go 1.27 builds; run `go mod tidy` after upgrading
 
-1. Run `rastrillo budget code --init` and commit `.rastrillo/code.txt`. It records the offences the code has today, so the gate fails only on new ones.
-2. Add a `code` lane that runs `rastrillo budget code` to `make ci`, and a step for it if your CI runs steps.
-3. Add a `routes` lane that runs `rastrillo routes --check` only once the app has a `Routes` function. Until then, `routes --check` fails because it cannot find one.
+Apps that use rastrillo failed to build with Go 1.27. Go 1.27 enables the `jsonv2` experiment by default. The pinned `github.com/go-json-experiment/json` version did not compile with it. Rastrillo now pins a version that compiles with Go 1.27 and requires Go 1.26. After upgrading rastrillo, run `go mod tidy`. It updates the `go` line in your `go.mod` to at least `1.26.0`.
 
-What changed:
+The new version handles several JSON tag options differently. Check types used by `op.DecodeInput` or `api.Write`. A named field tagged `,inline` or `,unknown` is now nested under its field name. Embed the field to keep its members flat. A `format:` tag makes input decoding refuse the member and makes `api.Write` panic. Remove the `format:` tag. Implement the formatting in JSON methods on the field's type. `,string` now works only on fields encoded as numbers. Remove it from slices, maps, and structs.
 
-- `rastrillo new` writes `routes.go`. `New` takes the place of `App(...)`, with the same arguments in the same order.
-- An `--auth=magic` app keeps its owned pages in a group behind `app.auth.RequireSession`, and its rows go through `app.owned(request)`.
-- `manifest/README.md` mounts a manifest's generated screens in `Routes`.
-- `SKILL.md` and `skill/` teach this shape.
-
-### Added: compiled templates
+### Changed: compile templates; `rastrillo generate` runs your app to capture them
 
 `rastrillo generate` now compiles your templates to Go. A compiled page
 renders the same bytes as `html/template`, faster. It writes
@@ -39,18 +32,26 @@ template you changed since the last `generate` renders through
 old HTML. See [tmpl](/docs/reference/tmpl).
 
 `generate` now starts your app to find its templates. It builds each
-program under `cmd/` that uses templates and runs it in a scratch
-directory, where `rastrillo.Serve` builds the app and returns before it
-listens. It gets only `PATH`, `HOME`, `TMPDIR` and `LANG` from your
-environment. A database it opens through `rastrillo.OpenDB` or
+program under `cmd/` whose `func main` calls `rastrillo.Run` or
+`rastrillo.Serve` and runs it in a scratch directory, where
+`rastrillo.Serve` builds the app and exits before it listens. Anything
+its `main` does before that call runs too, such as writing a file or
+calling another service. It never starts any other program, so a
+migration or a mail-out under `cmd/` does not run; `generate` names it
+on one line, and its templates render through `html/template`. The
+program it starts gets only `PATH`, `HOME`, `TMPDIR` and `LANG` from
+your environment. A database it opens through `rastrillo.OpenDB` or
 `db.Open` is a new file in the scratch directory, whatever path is
 configured, so capture never opens a real one.
 
 To upgrade:
 
 1. An app on `ui.Pages` changes nothing. An app that parses its own
-   templates replaces its `html/template` import with
-   `amadan.net/rastrillo/rastrillo/tmpl`.
+   templates imports `tmpl` under the old name:
+   `template "amadan.net/rastrillo/rastrillo/tmpl"`. `tmpl` has the
+   part of `html/template` that Rastrillo apps use. It has no
+   `AddParseTree`, no `Tree` field and no package helpers such as
+   `HTMLEscapeString`, so keep `html/template` for code that needs them.
 2. Run `rastrillo generate` once after upgrading and commit the new
    files. Until you do, `generate --check` fails and names each one.
 3. Set `RASTRILLO_TEMPLATE_SHADOW=1` in your tests. Each compiled page
@@ -59,8 +60,8 @@ To upgrade:
 
 What changed:
 
-- New package `tmpl`: a template set with the API of
-  `*html/template.Template`, plus `IsCompiled`, `ShadowEnv` and `DevEnv`,
+- New package `tmpl`: a template set with the part of
+  `*html/template.Template`'s API that Rastrillo apps use, plus `IsCompiled`, `ShadowEnv` and `DevEnv`,
   and the capture types `rastrillo generate` reads.
 - `ui.Pages` builds its pages with `tmpl`.
 - `live.Render`, `Has`, `ExecuteRegions` and `WriteRegions` take
@@ -76,28 +77,15 @@ What changed:
   disk and a stale compiled file cannot break the build. It sets
   `RASTRILLO_DEV=1` for your app.
 
-**Browser tests move to chromedp v0.21 (breaking for code built with `-tags browser`).** chromedp rewrote its API around generics between v0.15 and v0.21, and `harness` follows it. An app's ordinary build and tests are unaffected; only its browser tests change.
+### Changed: serve an app under a path on a hub's domain; update `flash.Set` calls and add `path` to custom FuncMaps
 
-To upgrade:
-
-1. Update rastrillo. It requires chromedp v0.21.0 and cdproto v0.158.6, so `go mod tidy` moves your app to them too.
-2. Port your browser tests with chromedp's [migration guide](https://github.com/chromedp/chromedp/blob/v0.21.0/docs/MIGRATION.md). Most changes take one of two shapes. A selector names its kind, so `chromedp.WaitVisible("#save", chromedp.ByQuery)` becomes `chromedp.WaitVisible(chromedp.CSS("#save"))`. An action returns its value, so `chromedp.Evaluate(script, &count)` becomes `count := harness.Evaluate[int](rig, script)`, or `harness.Into(&count, chromedp.Evaluate[int](script))` inside a longer `rig.Run`.
-3. A new app's browser test needs no change: `rig.Run(chromedp.Navigate(rig.Origin + "/"))` still compiles.
-
-What changed:
-
-- `harness.Rig.Run` takes `chromedp.Action[chromedp.Void]` steps.
-- New functions `harness.Read`, `harness.Evaluate` and `harness.Into` read values from the page. `Read` and `Evaluate` fail the test the way `Run` does.
-- New function `harness.Listen` hands a tab's events over in the order the browser sent them, before the next command returns. chromedp's own `chromedp.Events` hands them over on another goroutine, often later, so use `Listen` to check that something did not happen.
-- `chromedp.Evaluate` fails when a script returns `null` where Go expects a string, number, boolean or struct. It used to give the zero value. Return a fallback from the script, or ask for a pointer.
-- chromedp starts Chromium over a pipe instead of a websocket, and needs only the standard library and cdproto, so `gobwas/ws`, `gobwas/httphead`, `gobwas/pool` and `chromedp/sysutil` leave your module. rastrillo still needs Go 1.25.
-
-**Serve an app under a path on a hub's domain (breaking for code that calls `flash.Set`).** Set `Options.BasePath` and the whole app answers under `/<slug>` on another app's origin, such as `https://example.com/acme`. Redirects get the base added for you. Links in a page go through the new `path` template function, or `basepath.Path` in Go. The instance's own hostname sends visitors to the product path, or shows a read-only view with `basepath.ServeDirect`. Sign-in does not run under a base path: the hub signs people in. An app that does not set `BasePath` works as before. See [basepath](/docs/reference/basepath).
+Set `Options.BasePath` and the whole app answers under `/<slug>` on another app's origin, such as `https://example.com/acme`. Redirects get the base added for you. Links in a page go through the new `path` template function, or `basepath.Path` in Go. The instance's own hostname sends visitors to the product path, or shows a read-only view with `basepath.ServeDirect`. Sign-in does not run under a base path: the hub signs people in. An app that does not set `BasePath` works as before. See [basepath](/docs/reference/basepath).
 
 To upgrade:
 
 1. Change every `flash.Set(w, kind, message)` to `flash.Set(w, r, kind, message)`.
-2. To serve an existing app under a base path, copy the `basepath.FromEnv` lines from a new app's `cmd/<app>/main.go` into yours, add `Base` to the page data in `render.go`'s `render` and to your error page's data, run `rastrillo generate`, and write each root-absolute URL in your own templates and layouts through `path`. Check the pages with `basepathtest.Leaks`. Copied layouts keep working at the root without this.
+2. The screens `rastrillo generate` writes, and a new app's token page, call a new template function, `path`. `ui.Funcs` includes it. If you build your own FuncMap without `ui.Funcs`, add it, or the templates fail to parse.
+3. To serve an existing app under a base path, copy the `basepath.FromEnv` lines from a new app's `cmd/<app>/main.go` into yours, add `Base` to the page data in `render.go`'s `render` and to your error page's data, run `rastrillo generate`, and write each root-absolute URL in your own templates and layouts through `path`. On the token page, pass `Path` through `path`, as in `"Path" (path $ "/tokens")`, and any `RevokePath`, `RevokeAgentPath` or `RevokeAllPath` you set. Check the pages with `basepathtest.Leaks`. Copied layouts keep working at the root without this.
 
 What changed:
 
@@ -112,11 +100,50 @@ What changed:
 - `auth`, `password`, `passkey`, `secondfactor`, `totp` and `vault` answer 404 under a base path and on the direct host, and log an error. `auth.SigninState` gains `Unavailable`, and the `signin` partial renders nothing for it.
 - New apps read `RASTRILLO_SLUG` or `RASTRILLO_SLUG_FROM_HOST` at boot, and their README says how to deploy one as a tenant.
 
+### Changed: `rastrillo budget size` skips generated Go files; lower or remove exemptions that no longer apply
+
+`rastrillo budget size` skips Go files marked as generated, including `rastrillo_templates_gen.go` and generated files under `gen/`. A directory's count can fall, so an exemption in `.rastrillo/budgets.txt` can now fail the gate because it is too high, no longer needed, or for a directory with no Go files left to count. Run `rastrillo budget size` after upgrading, and lower or delete each exemption it names.
+
+### Changed: `rastrillo new` writes actions on a route table, and its `make ci` runs `make code` and `make routes`
+
+New apps get an exported `App`, a `New` constructor, and one `Routes` function in `routes.go`. Pages are actions, such as `func (app *App) home(visit *action.Visit)`, and answer with `visit.Render`. The `AGENTS.md` file lists the code rules. The `make ci` gate runs two new lanes: `make code` (`rastrillo budget code`) and `make routes` (`rastrillo routes --check`). Static files and the JSON API are mounted outside the page group, so the API gets no CSRF check or page middleware.
+
+Existing apps do not change, and upgrading adds nothing to `make ci`. Follow these rules for new code. Leave working code as it is. To add the gates:
+
+1. Run `rastrillo budget code --init` and commit `.rastrillo/code.txt`. It records the offences the code has today, so the gate fails only on new ones.
+2. Add a `code` lane that runs `rastrillo budget code` to `make ci`, and a step for it if your CI runs steps.
+3. Add a `routes` lane that runs `rastrillo routes --check` only once the app has a `Routes` function. Until then, `routes --check` fails because it cannot find one. It runs only on Linux and macOS, and refuses an app inside a Go workspace. Run it as `GOWORK=off rastrillo routes --check`.
+
+What changed:
+
+- `rastrillo new` writes `routes.go`. `New` takes the place of `App(...)`, with the same arguments in the same order.
+- An `--auth=magic` app keeps its owned pages in a group behind `app.auth.RequireSession`, and its rows go through `app.owned(request)`.
+- `manifest/README.md` mounts a manifest's generated screens in `Routes`.
+- `SKILL.md` and `skill/` teach this shape.
+
+### Changed: browser tests move to chromedp v0.21; port code built with `-tags browser`
+
+chromedp rewrote its API around generics between v0.15 and v0.21, and `harness` follows it. An app's ordinary build and tests are unaffected; only its browser tests change.
+
+To upgrade:
+
+1. Update rastrillo. It requires chromedp v0.21.0 and cdproto v0.158.6. Run `go mod tidy` to update your app's dependency versions, including the newer `go-json-experiment/json` they need.
+2. Port your browser tests with chromedp's [migration guide](https://github.com/chromedp/chromedp/blob/v0.21.0/docs/MIGRATION.md). Most changes take one of two shapes. A selector names its kind, so `chromedp.WaitVisible("#save", chromedp.ByQuery)` becomes `chromedp.WaitVisible(chromedp.CSS("#save"))`. An action returns its value, so `chromedp.Evaluate(script, &count)` becomes `count := harness.Evaluate[int](rig, script)`, or `harness.Into(&count, chromedp.Evaluate[int](script))` inside a longer `rig.Run`.
+3. A new app's browser test needs no change: `rig.Run(chromedp.Navigate(rig.Origin + "/"))` still compiles.
+
+What changed:
+
+- `harness.Rig.Run` takes `chromedp.Action[chromedp.Void]` steps.
+- New functions `harness.Read`, `harness.Evaluate` and `harness.Into` read values from the page. `Read` and `Evaluate` fail the test the way `Run` does.
+- New function `harness.Listen` hands a tab's events over in the order the browser sent them, before the next command returns. chromedp's own `chromedp.Events` hands them over on another goroutine, often later, so use `Listen` to check that something did not happen.
+- `chromedp.Evaluate` fails when a script returns `null` where Go expects a string, number, boolean or struct. It used to give the zero value. Return a fallback from the script, or ask for a pointer.
+- chromedp starts Chromium over a pipe instead of a websocket, and needs only the standard library and cdproto, so `gobwas/ws`, `gobwas/httphead`, `gobwas/pool` and `chromedp/sysutil` leave your module.
+
 ### Added: `rastrillo routes` lists an app's routes, and `--check` finds an action no route mounts
 
 New command `rastrillo routes` prints every route of the app: the method, the full path, the action and the guards, in the order they are registered. It does not start the app. It calls the app's `Routes` function with an empty `App` and a table that only records. Nothing is written into the app, and `go.mod` and `go.sum` stay as they are. With `--check` it also fails for each action no route mounts. A new app's `make ci` runs it as `make routes`. See [CLI](/docs/cli#rastrillo-routes).
 
-The `action` package changes with it. `action` is not in a release yet, so only code written against `main` needs to change:
+It reads routes registered with the `action` package, which is new in this release. How `action` registers routes:
 
 - Register every route in one function, `func Routes(routes *action.Routes, app *App)`, in a package under `internal/`. It must only register routes.
 - Every path is the full path, inside a `Route` too. Inside `Route("/admin", ...)`, write `"/admin/tags"`, not `"/tags"`. A path that does not start with the prefix panics, and the message gives the full path to write.
@@ -137,7 +164,11 @@ New package `oidc` signs people in through OpenID Connect into the same `session
 
 ### Added: live pages; vendor `live.js` and re-copy `busy.js`
 
+A live page updates when its data changes. After a write, call `Notify` with a topic. Each open page showing that topic fetches the changed part through its own URL, as that viewer. A form marked `data-live-form` updates the regions in the response without reloading the page. With scripts off, pages and forms work as before. Keep live pages off CARLOS routes that hibernate: an open stream keeps the instance awake. See [Live pages](/docs/live).
+
 Run `rastrillo doctor --fix` to vendor `live.js` and re-copy `busy.js`. Every layout now links `live.js` after `busy.js`; add the tag to yours. It does nothing until a page opts in.
+
+New catalog keys `rastrillo.ui.live.paused` and `rastrillo.ui.live.unconfirmed`. If you ship your own locale, add translations for them.
 
 ### Added: one call to render a live page, and updates at a time
 
@@ -163,11 +194,15 @@ See [pdf](/docs/reference/pdf).
 
 ### Added: `money.Amount`, currency-checked arithmetic and `AllocateProRata`, in `money/v0.2.0`
 
-`Amount` is a count of minor units in one currency. `Add`, `Sub`, `MulInt` and `Cmp` refuse to mix currencies (`ErrCurrencyMismatch`) and return `ErrOverflow` instead of wrapping. `AllocateProRata` splits an amount by integer weights, such as share counts, into parts that always add up to the total: each part is rounded down, and the minor units left over go to the parts that lost most to rounding. See [money](/docs/reference/money).
+`Amount` is a count of minor units in one currency. `Add`, `Sub` and `Cmp` refuse to mix currencies (`ErrCurrencyMismatch`). `Add`, `Sub` and `MulInt` return `ErrOverflow` instead of wrapping. `AllocateProRata` splits an amount by integer weights, such as share counts, into parts that always add up to the total: each part is rounded down, and the minor units left over go to the parts that lost most to rounding. See [money](/docs/reference/money).
 
 ### Fixed: a select list fixed or anchored out of a scrolling bar opens full height; re-vendor `select.js`
 
 A searchable select in a toolbar that scrolls sideways opened to a list 10px tall when your stylesheet fixed the list to the screen or anchored it to its box. `select.js` took the toolbar for the edge of the room, although the toolbar does not cut such a list off. It now counts only the boxes that really cut the list off. A list positioned inside a scrolling box, as `tokens.css` places it, is still held to that box.
+
+### Fixed: `crypto.MarshalKeypair` refuses a keypair it cannot store
+
+`MarshalKeypair` now returns an error if a key is missing, the signing key is incomplete, or either key is not P-256. It used to panic or return data that `UnmarshalKeypair` rejected or read as a different key.
 
 ### Added: `data-rst-select-ceiling` keeps a select list out from under a sticky header; re-vendor `select.js`
 
@@ -180,6 +215,14 @@ New command `rastrillo budget code` holds a module's Go code to 80 columns, 400-
 ### Added: write an action as one function, with `action`
 
 New package `action`. An action takes one `*action.Visit` and does four things with it: read the input, run one operation, answer a refusal, say what success looks like. `Visit` has a method for each step: `ReadForm`, `PathID`, `Render`, `Flash`, `Redirect`, and `Refused` or `RefusedShowing` to answer an error. `action.NewRoutes` mounts your actions on a chi router, and `List` returns the routes it mounted, with their guards, so a test can check them without serving a request. Nothing existing changes. See [action](/docs/reference/action).
+
+## v0.29.1
+
+Apps can now start on first boot with migrations, even when Litestream replicates their database.
+
+### Fixed: migrations run on databases replicated by Litestream
+
+Litestream adds `_litestream_seq` and `_litestream_lock` tables to databases it replicates. On an app's first boot, `migrate` treated those tables as extras during adoption and refused to start. A new database containing only Litestream's tables was also treated as non-empty, so its migrations did not run. The `migrate` package now ignores tables whose names start with `_litestream_`, as it already does for SQLite's `sqlite_` tables. Apps can now adopt existing databases and run migrations on new ones.
 
 ## v0.29.0
 

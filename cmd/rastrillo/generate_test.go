@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"slices"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -866,6 +867,103 @@ func TestGenerateCheckNotesACaptureFailureWithNoCompiledFile(t *testing.T) {
 	}
 	if !strings.Contains(out, "demo/cmd/demo") {
 		t.Errorf("--check did not name the main it could not capture:\n%s", out)
+	}
+}
+
+// migrateMain is a maintenance command beside templateApp's main: it
+// imports rastrillo but never serves, and its work is to write MARKER.
+const migrateMain = `package main
+
+import (
+	"os"
+
+	"amadan.net/rastrillo/rastrillo"
+)
+
+var options = rastrillo.Options{DBPath: "demo.db"}
+
+func main() {
+	os.WriteFile(MARKER, []byte(options.DBPath), 0o644)
+}
+`
+
+// A main that calls neither rastrillo.Run nor rastrillo.Serve would do
+// its real work if generate started it, so generate does not: it says
+// so on one line, and neither generate nor --check fails over it.
+func TestGenerateSkipsAMainThatDoesNotServe(t *testing.T) {
+	if testing.Short() {
+		t.Skip("builds and captures a scratch app")
+	}
+	dir := templateApp(t)
+	marker := filepath.Join(t.TempDir(), "migrated")
+	migrate := filepath.Join(dir, "cmd", "migrate", "main.go")
+	if err := os.MkdirAll(filepath.Dir(migrate), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	source := strings.Replace(migrateMain, "MARKER", strconv.Quote(marker), 1)
+	if err := os.WriteFile(migrate, []byte(source), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	var runErr error
+	out := captureStdout(t, func() { runErr = runGenerate([]string{dir}) })
+	if runErr != nil {
+		t.Fatalf("generate failed over a main that does not serve: %v",
+			runErr)
+	}
+	want := "did not run demo/cmd/migrate: its func main calls neither " +
+		"rastrillo.Run nor rastrillo.Serve, so any templates it builds " +
+		"stay on html/template\n"
+	if strings.Count(out, "demo/cmd/migrate") != 1 ||
+		!strings.Contains(out, want) {
+		t.Errorf("want the one line %q, got:\n%s", want, out)
+	}
+	if _, err := os.Stat(marker); !os.IsNotExist(err) {
+		t.Errorf("generate ran a main that does not serve (stat err %v)",
+			err)
+	}
+	gen := filepath.Join(dir, "internal", "web", "rastrillo_templates_gen.go")
+	if _, err := os.Stat(gen); err != nil {
+		t.Errorf("the serving main's templates were not compiled: %v", err)
+	}
+	if err := runGenerate([]string{"--check", dir}); err != nil {
+		t.Errorf("--check failed over a main that does not serve: %v", err)
+	}
+}
+
+// afterServeMain is templateAppMain with work after Serve returns,
+// writing MARKER, as a main that migrates once it has served would.
+var afterServeMain = strings.Replace(templateAppMain,
+	"\t\tos.Exit(1)\n\t}\n}",
+	"\t\tos.Exit(1)\n\t}\n\tos.WriteFile(MARKER, nil, 0o644)\n}", 1)
+
+// In capture mode Serve exits once it has written the capture, so
+// nothing a main does after Serve runs during generate.
+func TestGenerateDoesNotRunWhatFollowsServe(t *testing.T) {
+	if testing.Short() {
+		t.Skip("builds and captures a scratch app")
+	}
+	if !strings.Contains(afterServeMain, "MARKER") {
+		t.Fatal("afterServeMain did not find the end of templateAppMain")
+	}
+	dir := templateApp(t)
+	marker := filepath.Join(t.TempDir(), "after-serve")
+	source := strings.Replace(afterServeMain, "MARKER",
+		strconv.Quote(marker), 1)
+	mainFile := filepath.Join(dir, "cmd", "demo", "main.go")
+	if err := os.WriteFile(mainFile, []byte(source), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	var runErr error
+	out := captureStderr(t, func() { runErr = runGenerate([]string{dir}) })
+	if runErr != nil || strings.Contains(out, "demo/cmd/demo") {
+		t.Fatalf("generate did not capture the main: %v\n%s", runErr, out)
+	}
+	if _, err := os.Stat(marker); !os.IsNotExist(err) {
+		t.Errorf("generate ran the code after Serve (stat err %v)", err)
+	}
+	gen := filepath.Join(dir, "internal", "web", "rastrillo_templates_gen.go")
+	if _, err := os.Stat(gen); err != nil {
+		t.Errorf("the main's templates were not compiled: %v", err)
 	}
 }
 

@@ -1,8 +1,9 @@
 // Package tmplgen is the template half of rastrillo generate. It builds
-// each of an app's main packages with the rastrillo_capture tag, runs it
-// in capture mode so that it records the template sets its startup
-// builds, and writes rastrillo_templates_gen.go, the compiled code, into
-// every package that built one.
+// each of an app's main packages that calls rastrillo.Run or
+// rastrillo.Serve with the rastrillo_capture tag, runs it in capture
+// mode so that it records the template sets its startup builds, and
+// writes rastrillo_templates_gen.go, the compiled code, into every
+// package that built one.
 package tmplgen
 
 import (
@@ -62,6 +63,9 @@ type Result struct {
 	// main imports a package with a generated file. Check cannot say
 	// whether that file is current, so the check is incomplete.
 	Unverified []tmplc.Note
+	// Skipped has the import path of each main that imports tmpl but
+	// calls none of entryPoints, which Run did not start.
+	Skipped []string
 }
 
 // Run captures the template sets of the module at moduleDir and writes,
@@ -84,8 +88,12 @@ func Run(moduleDir string, options Options) (Result, error) {
 	}
 	defer os.RemoveAll(scratch)
 
+	serving, err := servingMains(moduleDir, mains)
+	if err != nil {
+		return Result{}, err
+	}
 	work := newJob(moduleDir, scratch, options)
-	if err := work.captureAll(mains); err != nil {
+	if err := work.captureAll(mains, serving); err != nil {
 		return Result{}, err
 	}
 	if err := work.compileAll(); err != nil {
@@ -122,41 +130,67 @@ func newJob(moduleDir, scratch string, options Options) *job {
 	}
 }
 
-// captureAll captures each main's sets.
-func (work *job) captureAll(mains []*packages.Package) error {
+// captureAll captures the sets of each main in serving, and skips the
+// rest.
+func (work *job) captureAll(
+	mains []*packages.Package,
+	serving map[string]bool,
+) error {
 	for index, mainPkg := range mains {
 		deps := moduleDeps(mainPkg)
+		switch {
 		// Every set is made by tmpl, so a main that does not import it
 		// builds none, and starting it would only run its real work: a
 		// tool's output written into the scratch directory, reported as
 		// a failure to capture.
-		if buildsNoSets(mainPkg) {
+		case buildsNoSets(mainPkg):
 			work.reach(deps)
-			continue
-		}
-		captured, why, err := capture(
-			work.moduleDir,
-			work.scratch,
-			index,
-			mainPkg.PkgPath,
-		)
-		if err != nil {
-			return err
-		}
-		if why != "" {
-			work.failed(tmplc.Note{Owner: mainPkg.PkgPath, Reason: why}, deps)
-			continue
-		}
-		work.reach(deps)
-		for _, set := range captured.Sets {
-			set = ofMain(set, mainPkg.PkgPath)
-			// A set a framework package builds for itself at init has no
-			// package of the app to go in.
-			if set.Owner == "" {
-				continue
+		// Its templates stay on html/template, which is correct, and its
+		// packages' generated files are orphans unless another main
+		// captures them.
+		case !serving[mainPkg.PkgPath]:
+			work.result.Skipped = append(work.result.Skipped,
+				mainPkg.PkgPath)
+			work.reach(deps)
+		default:
+			err := work.captureMain(index, mainPkg.PkgPath, deps)
+			if err != nil {
+				return err
 			}
-			work.sets[set.Owner] = append(work.sets[set.Owner], set)
 		}
+	}
+	return nil
+}
+
+// captureMain builds and runs the main at mainPath, and records its
+// sets, or its failure.
+func (work *job) captureMain(
+	index int,
+	mainPath string,
+	deps map[string]string,
+) error {
+	captured, why, err := capture(
+		work.moduleDir,
+		work.scratch,
+		index,
+		mainPath,
+	)
+	if err != nil {
+		return err
+	}
+	if why != "" {
+		work.failed(tmplc.Note{Owner: mainPath, Reason: why}, deps)
+		return nil
+	}
+	work.reach(deps)
+	for _, set := range captured.Sets {
+		set = ofMain(set, mainPath)
+		// A set a framework package builds for itself at init has no
+		// package of the app to go in.
+		if set.Owner == "" {
+			continue
+		}
+		work.sets[set.Owner] = append(work.sets[set.Owner], set)
 	}
 	return nil
 }

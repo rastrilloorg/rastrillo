@@ -801,11 +801,9 @@ names apitoken/token_test.go TestNewRefusesBadConfig/p 1
 names apitoken/token_test.go TestRedact/s 1
 columns assertion/assertion.go 0011b93b376f 1
 columns assertion/assertion.go 0a8acff18d09 1
-columns assertion/assertion.go 2517ee7a78ad 1
 columns assertion/assertion.go 339e50d76548 1
 columns assertion/assertion.go 5f94d3a22f9a 1
 columns assertion/assertion.go 62d13060dd2d 1
-columns assertion/assertion.go 84638608a237 1
 columns assertion/assertion.go 9d8624c0a5f5 1
 columns assertion/assertion.go a3b6b0102139 1
 columns assertion/assertion.go c1a831b3d0e4 1
@@ -838,7 +836,6 @@ names assertion/assertion.go parse/c 1
 names assertion/assertion.go parse/n 1
 names assertion/assertion.go randomID/b 1
 names assertion/assertion.go randomID/s 1
-names assertion/assertion.go validSigningKey/k 1
 names assertion/assertion.go validate/c 1
 columns assertion/assertion_test.go 060556474a96 1
 columns assertion/assertion_test.go 0af23bb61364 1
@@ -4492,7 +4489,6 @@ names crypto/crypto.go Verify/s 1
 names crypto/crypto.go signDigest/h 1
 columns crypto/crypto_test.go 2cd3330b889a 1
 columns crypto/crypto_test.go 38400050e278 1
-columns crypto/crypto_test.go 5261df3d422d 1
 columns crypto/crypto_test.go 810e4d81c737 1
 columns crypto/crypto_test.go a6cc54897df1 1
 columns crypto/crypto_test.go bd94578cea1e 1
@@ -14206,7 +14202,6 @@ names markupspelling_test.go itoa/n 1
 columns migrate/adopt.go 11818be6c846 1
 columns migrate/adopt.go 2b309a5c67ab 1
 columns migrate/adopt.go 3281c7987e2d 1
-columns migrate/adopt.go 45a4c4de60d6 1
 columns migrate/adopt.go 47fce882793d 1
 columns migrate/adopt.go 51a7856365c8 1
 columns migrate/adopt.go 5c02e76c1562 1
@@ -18505,7 +18500,7 @@ columns serve.go f3c5ab559eef 1
 columns serve.go f5f8b0d4485b 1
 columns serve.go fe48d8bf59b6 1
 columns serve.go ff53a0259cb6 1
-file serve.go - 861
+file serve.go - 859
 func serve.go Handler 61
 func serve.go buildHandler 87
 names serve.go OpenDB/i 1
