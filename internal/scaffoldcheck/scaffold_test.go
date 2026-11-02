@@ -96,12 +96,24 @@ func goEnvironment() []string {
 }
 
 // newApp runs rastrillo new in a fresh directory and returns the app's
-// directory. The app is not tidied, so it cannot build yet.
+// directory. The app is not tidied, so it cannot build yet. new runs
+// with an empty module cache and no proxy, so it cannot tidy the app or
+// compile its templates either, and the files are new's own whatever
+// this machine's cache holds: once a release reached the cache, new
+// tidied go.mod and wrote go.sum and the compiled templates.
 func newApp(t *testing.T, name string, flags ...string) string {
 	t.Helper()
 	parent := t.TempDir()
-	arguments := append([]string{"new"}, flags...)
-	run(t, parent, rastrilloBinary, append(arguments, name)...)
+	arguments := append(append([]string{"new"}, flags...), name)
+	command := exec.Command(rastrilloBinary, arguments...)
+	command.Dir = parent
+	command.Env = append(goEnvironment(), "GOPROXY=off",
+		"GOFLAGS=-mod=mod -buildvcs=false -modcacherw",
+		"GOMODCACHE="+t.TempDir())
+	if output, err := command.CombinedOutput(); err != nil {
+		t.Fatalf("rastrillo %s: %v\n%s", strings.Join(arguments, " "),
+			err, output)
+	}
 	return filepath.Join(parent, name)
 }
 
