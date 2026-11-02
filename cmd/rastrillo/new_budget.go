@@ -12,5 +12,5 @@ const budgetsTxtTemplate = `# Exceptions to this app's budgets, each
 #   boot                    <duration>            <reason>
 perf  GET /static/*      skip  the static files, not a page
 perf  GET /api/v1/*      skip  the JSON API, not a page
-perf  GET /api/v1/mcp/*  skip  the MCP door, not a page
+perf  GET /api/v1/mcp/*  skip  the MCP endpoint
 `

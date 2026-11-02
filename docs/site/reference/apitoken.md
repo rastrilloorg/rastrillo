@@ -141,10 +141,11 @@ value the form never offers answers 400.
 The revokes redirect to `Path` with 303. `Revoke` answers 404 for a
 token that is not the caller's.
 
-## Verify and Redact
+## Verify, Recheck and Redact
 
 ```go
 func (s *Store) Verify(ctx context.Context, r *http.Request) (rastrillo.Actor, error)
+func (s *Store) Recheck(ctx context.Context, r *http.Request, was rastrillo.Actor) (rastrillo.Actor, error)
 func (s *Store) Redact(text string) string
 ```
 
@@ -155,6 +156,17 @@ Pass the `Store` as `api.Config.Verify`, and `Store.Redact` as
 revoked or expired token gets the same 401. So does an owner `Allowed`
 refuses. A database error, or an error from `Allowed`, is a 503.
 It records when each token was last used, at most once a minute.
+
+`Recheck` makes every check `Verify` makes and writes nothing, so the
+API can call it as each answer goes out without touching `last_used`.
+It ignores `was`: the API compares the two actors itself. This makes
+the `Store` an `api.Rechecker`, so a token revoked while an answer is
+going out stops that answer.
+
+Because of that, an API answer through the store needs a connection
+that takes a write deadline. Through `httptest.ResponseRecorder`, every
+API answer is 503. Test the API with `httptest.NewServer`, as
+[JSON API](/docs/api#testing-the-api) shows.
 
 `Redact` replaces each token's secret in a log line with `[redacted]`.
 The prefix and public ID stay, so the log still shows which token it

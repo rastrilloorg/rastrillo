@@ -7,14 +7,19 @@ personal token. Each action is one operation in `gen/ops/<name>/`
 call it, and it begins with `op.Check`. Rules live in the operation
 and the policy, never in a door. docs/site/api.md
 
-**Wiring** (a new app has it in `internal/<app>/api.go`'s `newDoors`):
+**Wiring** (a new app has it in `internal/<app>/api.go`'s `newDoors`,
+which builds the API and MCP from one `api.Config`):
 `tokens, err := apitoken.New(apitoken.Config{DB: database.Writer(), Prefix: tokenPrefix})`;
-`api.New(api.Config{Verify: tokens, Ctx: ctxFactory, Authorize: authorize, Logger: logger, Redact: tokens.Redact}, gen.APIRoutes()...)`;
-`Routes` mounts it with `routes.Mount("/api/v1", app.api, "api")`,
-outside the page group, never inside it: `csrf.Protect` refuses a write with no browser headers, and
+`config := api.Config{Verify: tokens, Ctx: ctxFactory, Authorize: authorize, Logger: logger, Redact: tokens.Redact}`;
+`api.New(config, gen.APIRoutes()...)`;
+`mcp.New(mcp.Config{Gate: config.Gate(), Ctx: config.Ctx, Authorize: config.Authorize, Name: "<app>", Version: rastrillo.BuildVersion}, gen.ExposedOperations()...)`.
+`Routes` mounts them with `routes.Mount("/api/v1/mcp", app.mcp, "mcp")`
+and `routes.Mount("/api/v1", app.api, "api")`, outside the page group,
+never inside it: `csrf.Protect` refuses a write with no browser headers, and
 `csrf.Exempt` matches exact paths only and still runs sessions. Add
 `apitoken.Schema` to `BootSchema`. `api.New` errors at boot without
-`Verify`, `Ctx` or `Authorize`.
+`Verify`, `Ctx` or `Authorize`. `mcp.New` errors at boot without
+`Gate.Verify`, `Ctx` or `Authorize`.
 
 **One policy for both doors.** Pass the same `authorize` as
 `api.Config.Authorize` and as `Ctx.Authorize` in the page ctx factory;
@@ -34,7 +39,10 @@ matching `operation.ID` (`"ticket_types.create"`), `operation.Resource`,
 `return op.DefaultPolicy(ctx, actor, operation)`.
 
 **Actor.** `rastrillo.Actor{Subject, Agent, Credential, Access,
-Session, Harness}`; `Human` and `Name` are gone. Zero value = the app.
+Session, Harness, Grant}`; `Human` and `Name` are gone. `Grant` is nil
+unless a connection service's verifier sets it (ID, issuers, audience,
+`Teams`, `Scopes`); the framework never reads `Teams` or `Scopes`, your
+`authorize` does. Zero value = the app.
 Pages: `sessions.ActorFrom(r)` (Write access), filled by the generated
 router when the factory leaves `Actor` zero. API: `Subject`, `Agent`,
 `Credential`, `Access` come from the verified token, never the
@@ -69,6 +77,14 @@ write without `Agent-Session`. Each request that reaches a handler logs
 `api: request` with method, path, actor, `agent_session`,
 `agent_harness`.
 
+**Checked answers.** Every answer is held whole before it is sent.
+`apitoken`'s store is an `api.Rechecker`, so before the headers and
+each 64 KiB the gate checks the token again and reruns authorization,
+`Admit` and `op.Check`, plus `Config.Guard` for MCP. A failure before
+the headers is 401, 403 or 503; a failure after the headers cuts the
+connection. Test API answers through `httptest.NewServer` with a client
+that doesn't follow redirects; an `httptest.ResponseRecorder` gets 503.
+
 **Wire.** No envelope. Names are snake_case (`api.FieldName`); IDs
 are numbers; times RFC 3339 UTC strings. Money is
 `{"amount": 1490, "currency": "USD"}` in minor units, `null` when an
@@ -84,7 +100,8 @@ unknown or repeated member, or `null` elsewhere, is 422. Errors are
 `{"error": {"code", "message", "fields", "ref"}}`; branch on `code`:
 unauthorized 401, forbidden 403, not_found 404 (another person's row
 too), method_not_allowed 405, conflict 409, too_large 413,
-unsupported_media_type 415, invalid 422, rate_limited 429, internal
+unsupported_media_type 415, invalid 422, response_too_large 422 (an
+answer over 2 MiB: ask for a smaller result), rate_limited 429, internal
 500, unavailable 503. A handler you write uses `api.Decode`,
 `api.Write`, `api.Refuse`.
 
@@ -132,4 +149,5 @@ empty create are checked in the API's 422 only (a page shows no names);
 the update step is skipped when no form field is non-money.
 Implement `paritytest.Fixture` (`New`, `SignIn`, `Token`, `Prepare`,
 `ValidCreate`) in the app's test package and call it.
-`gen.Operations()` lists every operation's `op.Descriptor`.
+`gen.Operations()` lists every operation's `op.Descriptor`;
+`gen.ExposedOperations()` the exposed ones, for `mcp.New`.

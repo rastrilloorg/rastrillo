@@ -79,6 +79,7 @@ func newSignin(
 ```go
 func Routes(routes *action.Routes, app *App) {
 	routes.Mount("/static", assets.Handler(), "static")
+	routes.Mount("/api/v1/mcp", app.mcp, "mcp")
 	routes.Mount("/api/v1", app.api, "api")
 	routes.Mount("/pow", http.StripPrefix("/pow/", powAssets.Handler()),
 		"pow")

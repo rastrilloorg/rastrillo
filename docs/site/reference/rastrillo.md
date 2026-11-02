@@ -321,6 +321,11 @@ type Actor struct {
 	Subject, Agent, Credential string
 	Access                     Access
 	Session, Harness           string
+	Grant                      *Grant
+}
+type Grant struct {
+	ID, Issuer, IdentityIssuer, Audience string
+	Teams, Scopes                        []string
 }
 func (a Actor) String() string
 func (a Actor) LogAttrs() []slog.Attr
@@ -336,11 +341,23 @@ acting for them (empty when they act directly), and `Credential` is the
 token's public ID (empty for a browser session). The zero `Actor` is the
 app itself. `Actor.String` is the audit form: `app`, `user:<subject>`,
 `user:<subject> token:<id>` or `agent:<name> for user:<subject>
-token:<id>`. It is what `eventlog` stores on every appended event, so a
-stream says who did what without importing this package.
-`Actor.LogAttrs` returns the same as `slog` attributes, plus
-`agent_session` and `agent_harness` when the client sent them.
-`Actor.IsToken` is true when `Credential` is set.
+token:<id>`, with ` grant:<id>` at the end when there is a grant. It is
+what `eventlog` stores on every appended event, so event readers can
+identify the actor without importing this package. `Actor.LogAttrs`
+returns the same as `slog` attributes, plus `agent_session` and
+`agent_harness` when the client sent them, and `grant_issuer`,
+`identity_issuer` and `grant_audience` for a grant. `Actor.IsToken` is
+true when `Credential` is set.
+
+`Grant` is nil for a browser session and a personal token. A verifier
+for a connection service's tokens sets it, and nothing else does. `ID`
+is the grant the token belongs to: revoking the grant ends every token
+under it. `Issuer` is the connection service that issued it,
+`IdentityIssuer` the identity provider that says who `Subject` is, and
+`Audience` the app the token is for. An empty `Teams` or `Scopes` means
+the grant names none. The framework records a grant and never reads
+`Teams` or `Scopes`; your `Authorize` does. [MCP](/docs/mcp) says what
+such a verifier must check.
 
 `ActorPhrase` is the words a page shows for an actor: nothing for the
 app, the person's name, or `Claude for Paul` for an agent. `name` turns

@@ -45,7 +45,7 @@ func destructiveNotes(was, now []byte) []string {
 	for _, operation := range after.Operations {
 		if operation.Destructive && recordedSafe[operation.ID] {
 			notes = append(notes, fmt.Sprintf(
-				"  %s: now marked destructive, so an MCP client may ask first",
+				"  %s: now marked destructive for MCP clients",
 				operation.ID))
 		}
 	}

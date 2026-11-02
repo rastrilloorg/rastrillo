@@ -32,6 +32,7 @@ Every operation gets a `rastrillo.Actor` on `Ctx.Actor`:
 | `Access` | `Read` or `Write`: what the token allows, and `Write` for a browser |
 | `Session` | the agent's `Agent-Session` header, when it sent one |
 | `Harness` | the agent's `Agent-Harness` header, when it sent one |
+| `Grant` | a connection service's grant: its ID, issuers, audience, teams and scopes; nil for a browser and a personal token |
 
 `Subject`, `Agent`, `Credential` and `Access` come from the verified
 token, never from the request. `Session` and `Harness` are what the

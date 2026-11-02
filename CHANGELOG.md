@@ -10,6 +10,86 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+### Changed: API answers are held and checked again as they go out; test the API through a server
+
+The JSON API now holds each answer until the handler has finished, then
+sends it. An answer is at most 2 MiB. A bigger one is refused with 422
+`response_too_large`, whose message tells the client to ask for a
+smaller result, such as with a smaller `limit`. When `api.Config.Verify`
+is also an `api.Rechecker`, as `apitoken`'s store now is, the API checks
+the token, gate and route checks again before the headers and before
+each 64 KiB of the body. A token revoked while an answer is going out
+turns the answer into a 401, or cuts the connection once the headers
+have gone. See [JSON API](/docs/api#checking-again-as-the-answer-goes-out).
+
+To upgrade:
+
+1. Move tests that send API requests through `httptest.ResponseRecorder`
+   onto `httptest.NewServer`. With `apitoken`'s store, every API answer
+   through a recorder is now 503 `unavailable`, because a recorder can't
+   take a write deadline. Use a client that doesn't follow redirects,
+   not `server.Client()`, so a test still sees a 303 or 307 as the
+   answer. Tests of your pages can keep their recorders. See
+   [Testing the API](/docs/api#testing-the-api).
+2. If one of your API handlers answers more than 2 MiB, make it page
+   its results.
+
+What changed:
+
+- New in `api`: `Gate`, the request pipeline the tree and MCP share,
+  with `Validate`, `Wrap` and `Admit`; `Config.Gate`; `Rechecker`;
+  `Disclosed`; `Refusal`; and `IsAgentSessionRefusal`. The tree now
+  runs on `Gate`.
+- New error code `response_too_large`, 422.
+- `apitoken.Store` gains `Recheck`, a lookup that writes nothing, and
+  is an `api.Rechecker`.
+- Each 64 KiB chunk of a rechecked answer gets its own write deadline
+  of at most 5 seconds, so your server's `WriteTimeout` no longer bounds
+  the whole answer.
+
+### Added: MCP for every app, at `/api/v1/mcp`
+
+New package `mcp` serves an app's operations as MCP tools, behind the
+JSON API's token check and policy. Claude Code and Codex connect with a
+personal token. See [MCP](/docs/mcp).
+
+To add it to an existing app:
+
+1. Run `rastrillo generate`, and commit `gen/` and `api/v1.json`.
+2. Build MCP from your API's config and mount it at `/api/v1/mcp`, as
+   [MCP](/docs/mcp#mounting) shows.
+3. Add `perf  GET /api/v1/mcp/*  skip  the MCP endpoint` to
+   `.rastrillo/budgets.txt`.
+4. Run `go mod tidy`.
+
+What changed:
+
+- New package `mcp`: `New`, `Config` and `ToolName`.
+- `op.Descriptor` gains `Destructive` and `Idempotent`, which MCP sends
+  to clients as hints. New `op.CheckFlags` and `op.FenceVerbs`, which
+  require writes named for undoing or sending something to be
+  `Destructive`, and `op.ResponseGuard`, the app's check of what an
+  answer discloses.
+- `rastrillo.Actor` gains `Grant`, a connection service's grant, and
+  there is a new type `rastrillo.Grant`. With a grant, `Actor.String`
+  ends in `grant:<id>`, and `LogAttrs` adds `grant_issuer`,
+  `identity_issuer` and `grant_audience`.
+- `rastrillo generate` sets `Destructive` and `Idempotent` on every
+  generated descriptor, and writes `gen.ExposedOperations()`.
+- `api/v1.json` gains `destructive` and `idempotent` for each
+  operation. The first regeneration of an older file only adds them,
+  with no notes. After that, `generate` notes an operation that turns
+  destructive. A flag change is never a breaking change.
+- New apps serve MCP: `newDoors` builds the API and MCP from one
+  config, `Routes` mounts `/api/v1/mcp`, and the README gives the
+  Claude Code command. The scaffold's comments that restated the code
+  were cut.
+- New dependency: `github.com/modelcontextprotocol/go-sdk` v1.8.0. It
+  brings `github.com/google/jsonschema-go`,
+  `github.com/segmentio/encoding` and `github.com/segmentio/asm`,
+  `github.com/yosida95/uritemplate/v3`, `golang.org/x/oauth2` and
+  `golang.org/x/time`.
+
 ## v0.30.0
 
 Compiled templates, serving an app under a path on a hub's domain, live pages, routes you can list and check, sign-in with Microsoft Entra ID or Google Workspace, a PDF writer, and builds on Go 1.27. Rastrillo now needs Go 1.26. The first four sections include upgrade steps for existing apps. Read them before you upgrade. If you build browser tests with `-tags browser`, port them for chromedp v0.21.
