@@ -1,14 +1,14 @@
 package %[2]s
 
 import (
-	"bytes"
 	"embed"
 	"html/template"
 	"maps"
 	"net/http"
 
 	"amadan.net/rastrillo/rastrillo"
-	"amadan.net/rastrillo/rastrillo/basepath"
+	"amadan.net/rastrillo/rastrillo/flash"
+	"amadan.net/rastrillo/rastrillo/live"
 	"amadan.net/rastrillo/rastrillo/locales"
 	"amadan.net/rastrillo/rastrillo/ui"
 
@@ -52,20 +52,37 @@ func (app *App) contextFor(request *http.Request) (*rastrillo.Ctx, error) {
 		Authorize: authorize, ErrorPage: ErrorPage,
 		Render: func(_ *rastrillo.Ctx, response http.ResponseWriter,
 			page string, status int, data any) {
-			renderPage(response, request, page, status, data)
+			renderPage(response, request, app.live, page, status, data)
 		},
 	}, nil
 }
 
 func renderPage(
-	response http.ResponseWriter, request *http.Request,
+	response http.ResponseWriter, request *http.Request, hub *live.Hub,
 	page string, status int, data any,
 ) {
-	// Other data, such as a generated page's, carries its own.
-	if values, isMap := data.(map[string]any); isMap || data == nil {
-		data = withRequest(request, values)
+	ok := status == http.StatusOK
+	if ok {
+		status = 0 // writes no 200, so a status already sent stands
 	}
-	writePage(response, page, status, data)
+	err := pages.Render(response, request, status, page,
+		func(takeFlash bool) (any, error) {
+			values, isMap := data.(map[string]any)
+			if !isMap && data != nil {
+				return data, nil
+			}
+			values = withRequest(request, values)
+			values["Live"] = hub.View(request)
+			if takeFlash && ok { // a flash follows a 303
+				notice, _ := flash.Take(response, request)
+				values["Notice"] = notice.Message
+			}
+			return values, nil
+		})
+	if err != nil {
+		http.Error(response, "Something went wrong.",
+			http.StatusInternalServerError)
+	}
 }
 
 // withRequest copies data, so a map the caller reuses never carries one
@@ -81,8 +98,7 @@ func withRequest(request *http.Request, data map[string]any) map[string]any {
 }
 
 // ErrorPage draws templates/errors.html for a refusal and, through
-// Options.ErrorPage, for a panic. LocalizerFor finds the language there,
-// outside the page middleware.
+// Options.ErrorPage, for a panic.
 func ErrorPage(
 	response http.ResponseWriter, request *http.Request, status int,
 	ref string,
@@ -92,26 +108,6 @@ func ErrorPage(
 			http.StatusInternalServerError)
 		return
 	}
-	writePage(response, "errors", status, map[string]any{
-		"L":      pages.LocalizerFor(request),
-		"Scheme": rastrillo.SchemeFrom(request),
-		"Base":   basepath.Base(request), "Status": status, "Ref": ref,
-	})
-}
-
-// writePage renders into a buffer first, so a template error is a clean
-// 500, not half a page. It writes no 200, so a status already sent stands.
-func writePage(
-	response http.ResponseWriter, page string, status int, data any,
-) {
-	var buffer bytes.Buffer
-	if err := pages.Execute(&buffer, page, data); err != nil {
-		http.Error(response, "Something went wrong.",
-			http.StatusInternalServerError)
-		return
-	}
-	if status != http.StatusOK {
-		response.WriteHeader(status)
-	}
-	buffer.WriteTo(response)
+	renderPage(response, request, nil, "errors", status,
+		map[string]any{"Status": status, "Ref": ref})
 }

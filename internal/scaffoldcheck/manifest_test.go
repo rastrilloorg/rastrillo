@@ -337,11 +337,11 @@ func policyTestFor(variant variant) string {
 // withTheVariantsNew fills a test's "// the app's New" and "// the app's
 // imports" lines with the variant's New. It leaves handler and err set.
 func withTheVariantsNew(variant variant, test string) string {
-	newApp := "\thandler, err := New(database, origin, logger)\n"
+	newApp := "\thandler, _, err := New(database, origin, logger)\n"
 	imports := ""
 	if slices.Contains(variant.flags, "--auth=magic") {
 		newApp = "\tgroup := &background.Group{}\n\tdefer group.Stop()\n" +
-			"\thandler, err := New(database, origin, group,\n" +
+			"\thandler, _, err := New(database, origin, group,\n" +
 			"\t\tmail.Logged(logger), logger)\n"
 		imports = "\t\"amadan.net/rastrillo/rastrillo/background\"\n" +
 			"\t\"amadan.net/rastrillo/rastrillo/mail\"\n"

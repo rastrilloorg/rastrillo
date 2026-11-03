@@ -72,7 +72,7 @@ error pages. Check the index first.
 `main.go`, in order: `rastrillo.Resolve(rastrillo.Options{DBPath:
 "notes.db", ...})`; `db.Open(options.DBPath, logger)` (deferred
 `Close`); `notes.New(database, origin, logger)`;
-`notes.Configure(&options, mux, started)`; `options.DBPath = ""`;
+`notes.Configure(&options, mux, hub, started)`; `options.DBPath = ""`;
 `rastrillo.Serve(options)`. **Use `Resolve` + `Serve`, never `Run`,
 when the app opens its own database:** `Run` re-parses argv and
 repopulates `Options.DBPath`, so `Serve` opens a second connection to

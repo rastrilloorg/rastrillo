@@ -9056,6 +9056,7 @@ columns internal/designsystem/samples.go 0746a1760a02 1
 columns internal/designsystem/samples.go 08e606402cc3 1
 columns internal/designsystem/samples.go 09922369c666 1
 columns internal/designsystem/samples.go 0a726b06cd14 1
+columns internal/designsystem/samples.go 0b551cd01b2c 1 a gallery blurb is one sentence of prose in a Go string, as every family entry is
 columns internal/designsystem/samples.go 0de756f4bb3b 1
 columns internal/designsystem/samples.go 0e83ecfdd5d8 1
 columns internal/designsystem/samples.go 0f5c1e1f5d0a 1
@@ -9218,6 +9219,7 @@ columns internal/designsystem/samples.go aeedb33a343d 1
 columns internal/designsystem/samples.go af8dab445621 1
 columns internal/designsystem/samples.go b0316d930dc9 1
 columns internal/designsystem/samples.go b33dcefde7da 1
+columns internal/designsystem/samples.go b8db43215fd8 1 a gallery sample's data on one line, as every family entry is
 columns internal/designsystem/samples.go b8e7654b89ba 1
 columns internal/designsystem/samples.go ba4dc4355213 1
 columns internal/designsystem/samples.go ba67726b0d88 1
@@ -9284,8 +9286,8 @@ columns internal/designsystem/samples.go fd98e40afc7e 1
 columns internal/designsystem/samples.go feec4eaa9f02 1
 columns internal/designsystem/samples.go ff2adab2a4c3 1
 columns internal/designsystem/samples.go ff64de57216c 1
-file internal/designsystem/samples.go - 1154
-func internal/designsystem/samples.go families 587
+file internal/designsystem/samples.go - 1161 region:notice joins the notice family: its blurb, its sample and the entry around them
+func internal/designsystem/samples.go families 594 region:notice joins the notice family: its blurb, its sample and the entry around them
 names internal/designsystem/samples.go calloutStates/b 1
 names internal/designsystem/samples.go errorPageStates/s 1
 names internal/designsystem/samples.go mediaSelectable/t 1
@@ -12444,6 +12446,8 @@ names internal/opsnames/opsnames.go Taken/s 1
 names internal/opsnames/opsnames.go contains/n 1
 columns internal/returnto/returnto.go 7ff7772c8dcf 1
 names internal/returnto/returnto.go Safe/c 1
+columns internal/scaffoldcheck/live_test.go 3f5bd971c53c 1 the app test the live guide is checked with is Go source held in a raw string
+columns internal/scaffoldcheck/live_test.go 539edfad53d1 1 the app test the live guide is checked with is Go source held in a raw string
 columns internal/sealedcookie/sealedcookie.go 15dfd95fc851 1
 names internal/sealedcookie/sealedcookie.go Fresh/n 1
 columns internal/sealedcookie/sealedcookie_test.go 190b3fe43a32 1
@@ -25674,6 +25678,7 @@ columns ui/ui_test.go 08eab0f6920a 1
 columns ui/ui_test.go 09d2f8cfccc6 1
 columns ui/ui_test.go 09f522c5063d 1
 columns ui/ui_test.go 09f8c465b606 1
+columns ui/ui_test.go 0a73dcabb8ce 1 a shell's overridable block names, one list per shell, gained live-head and region:notice
 columns ui/ui_test.go 0aa36d24e376 1
 columns ui/ui_test.go 0b935d330766 1
 columns ui/ui_test.go 0d2898e060cb 1
@@ -25761,7 +25766,6 @@ columns ui/ui_test.go 395e184be8ed 1
 columns ui/ui_test.go 3b7a4656f98c 1
 columns ui/ui_test.go 3c1bcf6f4e76 1
 columns ui/ui_test.go 3c693671e9fa 1
-columns ui/ui_test.go 3d4ad60e55e1 1
 columns ui/ui_test.go 3e2a42bc8ce3 1
 columns ui/ui_test.go 3e760081026b 1
 columns ui/ui_test.go 3efb96cb765c 1
@@ -25830,6 +25834,7 @@ columns ui/ui_test.go 6450efdc2ff3 1
 columns ui/ui_test.go 64536f7a8118 1
 columns ui/ui_test.go 6455b16f4a1b 1
 columns ui/ui_test.go 646f15a39e82 1
+columns ui/ui_test.go 64ce3dd1a5cb 1 a shell's overridable block names, one list per shell, gained live-head and region:notice
 columns ui/ui_test.go 662be29079b6 1
 columns ui/ui_test.go 66448db3edb9 1
 columns ui/ui_test.go 66558c061b3e 1
@@ -25861,6 +25866,7 @@ columns ui/ui_test.go 6e9b82942e42 1
 columns ui/ui_test.go 6ed58a6436ec 1
 columns ui/ui_test.go 709ccbcf3f5f 1
 columns ui/ui_test.go 713135228a74 1
+columns ui/ui_test.go 713e279f03b2 1 a shell's overridable block names, one list per shell, gained live-head and region:notice
 columns ui/ui_test.go 71402f0424cb 1
 columns ui/ui_test.go 71980589d6c4 1
 columns ui/ui_test.go 71c10818bbec 1
@@ -25924,6 +25930,7 @@ columns ui/ui_test.go 8ca309474b2b 1
 columns ui/ui_test.go 8cda15ad3f02 1
 columns ui/ui_test.go 8ce6ea82f92a 1
 columns ui/ui_test.go 8d195f6f2f06 1
+columns ui/ui_test.go 8d957fb0b59f 1 a shell's overridable block names, one list per shell, gained live-head and region:notice
 columns ui/ui_test.go 8dd617a405cd 1
 columns ui/ui_test.go 8ddbc963793e 1
 columns ui/ui_test.go 8efa24e42655 1
@@ -25948,7 +25955,6 @@ columns ui/ui_test.go 980e7b894a12 1
 columns ui/ui_test.go 988bb3666d1d 1
 columns ui/ui_test.go 98cd13f9570d 1
 columns ui/ui_test.go 993eb943814b 1
-columns ui/ui_test.go 99ba6d37e8a6 1
 columns ui/ui_test.go 99f46a34ff55 1
 columns ui/ui_test.go 9aa6913f65b1 1
 columns ui/ui_test.go 9c16decce74b 1
@@ -25968,7 +25974,6 @@ columns ui/ui_test.go a2cea0a6b300 1
 columns ui/ui_test.go a31277d20db2 1
 columns ui/ui_test.go a3b9d2d08c14 1
 columns ui/ui_test.go a46341672d93 1
-columns ui/ui_test.go a5653555b5de 1
 columns ui/ui_test.go a7bb571a6861 1
 columns ui/ui_test.go a7cc36d5e12b 1
 columns ui/ui_test.go a85510284fe6 2
@@ -25996,7 +26001,6 @@ columns ui/ui_test.go b3aa7a13757d 1
 columns ui/ui_test.go b6902a8f5784 1
 columns ui/ui_test.go b6aa03d24d12 1
 columns ui/ui_test.go b6e8b67352dd 1
-columns ui/ui_test.go b799458893be 1
 columns ui/ui_test.go b851564dc262 1
 columns ui/ui_test.go b8dc56c786fa 1
 columns ui/ui_test.go b99287167674 1
@@ -26063,7 +26067,6 @@ columns ui/ui_test.go dc489964da6b 1
 columns ui/ui_test.go dcb6205903b7 1
 columns ui/ui_test.go dcf14706ee6a 1
 columns ui/ui_test.go dd12c347eed2 1
-columns ui/ui_test.go dd371ce32613 1
 columns ui/ui_test.go dd86b934d02a 1
 columns ui/ui_test.go ddae85942d82 1
 columns ui/ui_test.go de16af963f17 1
@@ -26106,6 +26109,7 @@ columns ui/ui_test.go f378e9db74cf 1
 columns ui/ui_test.go f3d26829bd67 1
 columns ui/ui_test.go f410618c00b2 1
 columns ui/ui_test.go f4ad03f6a0f5 1
+columns ui/ui_test.go f4efe645cde3 1 a shell's overridable block names, one list per shell, gained live-head and region:notice
 columns ui/ui_test.go f559ebf05d72 1
 columns ui/ui_test.go f5d018615d6c 1
 columns ui/ui_test.go f6296b2217ec 1

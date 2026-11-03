@@ -10,6 +10,7 @@
 <link rel="stylesheet" href="{{path $ pageStylesheet}}">
 <link rel="stylesheet" href="{{path $ (asset "static/theme.css")}}">
 <script defer src="{{path $ (asset "static/rastrillo.js")}}"></script>
+{{template "live-head" .}}
 {{iconAssets}}
 {{/* stage — one card centred on a full-page backdrop, for a screen that
      stands alone: the sign-in page above all. It loads only the scripts
@@ -31,6 +32,7 @@
      it is decoration. */}}
 <div rst-stage-scene aria-hidden="true">{{block "backdrop" .}}{{stageArt "rastrillo"}}{{end}}</div>
 <main rst-page id="main">
+{{template "region:notice" .}}
 {{template "content" .}}
 </main>
 {{/* foot is empty by default. Define it as

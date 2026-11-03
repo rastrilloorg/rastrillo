@@ -12,6 +12,13 @@ published module; its files are in `examples/notes/internal/notes/`
 (`app.go`, `render.go` `renderStatus`, `templates/index.html`,
 `layout.html`).
 
+## In a new app
+
+`rastrillo new` wires the hub (in `Router`), `/live`, middleware,
+`renderPage` (`Live`, `Notice`) and the layout. Left: a topic in
+`Topics`, a `region:<name>`, `app.live.Notify` after
+writes.
+
 ## Vocabulary
 
 - **Topic**: `name` or `name/key`. Name `^[a-z][a-z0-9-]{0,31}$`, key
@@ -49,13 +56,11 @@ are the translated `rastrillo.ui.live.paused` and `.unconfirmed`):
 ```
 
 That meta, `rastrillo-live`, names the stream path; **no meta, no
-stream**. The page data carries `Live live.View` = `hub.View(r)`. A
-scaffolded app already has `static/live.js` and links it in every
-layout after `busy.js`; an older app runs `rastrillo doctor --fix` and
-adds `<script defer src="/static/live.js">` itself. Serving `ui.LiveJS()`
-by hand at that path is for an app without the scaffold, as notes does
-in `app.go`. The layout holds `{{template "region:notice" .}}` above
-the content; notes defines it in `layout.html`.
+stream**. The page data carries `Live live.View` = `hub.View(r)`. An older
+app runs `rastrillo doctor --fix` and adds `<script defer
+src="/static/live.js">`; an app without the scaffold serves
+`ui.LiveJS()` there (notes' `app.go`). The layout holds
+`{{template "region:notice" .}}` above the content.
 
 A form swaps in place with `data-live-form` (value: extra region names,
 may be empty). It sends the form as the browser would, plus

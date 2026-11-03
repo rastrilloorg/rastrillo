@@ -2484,18 +2484,20 @@ func detailsOpenTags(src string) []string {
 // {{define "nav"}} simply stops being called, and the page renders with
 // an empty bar rather than an error.
 func TestTheShellsKeepTheirOverridableBlockNames(t *testing.T) {
+	// live-head (the stream's meta tag) and region:notice (the flash, and
+	// the live notice) are in every shell; an app may redefine either.
 	want := map[string][]string{
 		// locale-menu is the locale block's default body, the switcher
 		// partial; column has a locale block too, at the top of its page.
 		// scheme-menu is the scheme block's default body, beside the
 		// locale block in every shell that has one.
-		"column": {"lang", "dir", "title", "head", "locale", "locale-menu", "scheme", "scheme-menu", "content"},
-		"topbar": {"lang", "dir", "title", "head", "brand", "nav", "account", "locale", "locale-menu", "scheme", "scheme-menu", "content", "foot"},
+		"column": {"lang", "dir", "title", "live-head", "head", "locale", "locale-menu", "scheme", "scheme-menu", "region:notice", "content"},
+		"topbar": {"lang", "dir", "title", "live-head", "head", "brand", "nav", "account", "locale", "locale-menu", "scheme", "scheme-menu", "region:notice", "content", "foot"},
 		// brand and title appear first as the phone index's <h1>, the
 		// app's name with the page's title as its fallback, reused
 		// rather than redefined; profile twice, as the avatar that opens
 		// the rail's one menu and as the name heading the card.
-		"sidebar": {"lang", "dir", "title", "head", "view", "up", "brand", "title", "brand", "nav", "profile", "profile", "locale", "locale-menu", "scheme", "scheme-menu", "account", "content"},
+		"sidebar": {"lang", "dir", "title", "live-head", "head", "view", "up", "brand", "title", "brand", "nav", "profile", "profile", "locale", "locale-menu", "scheme", "scheme-menu", "account", "region:notice", "content"},
 		// console offers topbar's SET, plus the phone index's blocks
 		// (view, up, profile), which a topbar screen can define and the
 		// topbar simply never calls. So a screen moves from console to
@@ -2516,10 +2518,10 @@ func TestTheShellsKeepTheirOverridableBlockNames(t *testing.T) {
 		// page's title as its fallback, so brand and title come before
 		// the brand block itself; profile twice, as the avatar the
 		// Menu becomes on the index and the name heading its card.
-		"console": {"lang", "dir", "title", "head", "view", "brand", "title", "brand", "profile", "profile", "locale", "locale-menu", "scheme", "scheme-menu", "account", "up", "nav", "content", "foot"},
+		"console": {"lang", "dir", "title", "live-head", "head", "view", "brand", "title", "brand", "profile", "profile", "locale", "locale-menu", "scheme", "scheme-menu", "account", "up", "nav", "region:notice", "content", "foot"},
 		// stage has no chrome to override. backdrop is the picture
 		// behind the card, foot an optional line under it.
-		"stage": {"lang", "dir", "title", "head", "backdrop", "content", "foot"},
+		"stage": {"lang", "dir", "title", "live-head", "head", "backdrop", "region:notice", "content", "foot"},
 	}
 	blockName := regexp.MustCompile(`{{block "([^"]+)"|{{template "([^"]+)"`)
 	for _, name := range LayoutNames() {

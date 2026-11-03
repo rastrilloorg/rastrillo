@@ -30,7 +30,7 @@ func TestBrowserWalk(t *testing.T) {
 			t.Fatalf("db.Open: %%v", err)
 		}
 		t.Cleanup(func() { database.Close() })
-		mux, err := %[2]s.New(
+		mux, _, err := %[2]s.New(
 			database, origin, logger)
 		if err != nil {
 			t.Fatalf("New: %%v", err)

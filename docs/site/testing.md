@@ -99,7 +99,7 @@ binary. The budgets stop that early, while fixing it is still cheap.
 | Test package time | 10 seconds | `make test` |
 | Screen | 150ms to first byte, for every GET route | `make perf` |
 | Cold start | 500ms from starting the process to the first byte | `make perf` |
-| First load | 16 kB gzipped per sliced page, plus each component script it loads; live pages use their shell's limit, never under 16 kB, plus live.js and component scripts; pages linking the whole file use 40 kB | `make perf` |
+| First load | 16 kB gzipped per sliced page, plus each component script it loads; live pages 33 kB, room for the whole of every other framework file, plus live.js and component scripts; pages linking the whole file use 40 kB | `make perf` |
 
 The size and first-load budgets always fail the gate. The timing budgets fail it only on
 CI, where `AMADAN_CI` or `CI` is set. On your laptop they print the same

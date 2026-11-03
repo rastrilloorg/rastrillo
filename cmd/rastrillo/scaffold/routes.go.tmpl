@@ -1,11 +1,14 @@
 package %[1]s
 
 import (
+	"net/http"
+
 	"amadan.net/rastrillo/rastrillo/action"
 	"amadan.net/rastrillo/rastrillo/csrf"
 )
 
-const homePage action.Path = "/"%[2]s
+const homePage action.Path = "/"
+const livePage action.Path = "/live"%[2]s
 
 // Routes registers everything the app serves. The API and MCP are outside
 // the page group: a bearer token is their only credential, so they get no
@@ -19,5 +22,6 @@ func Routes(routes *action.Routes, app *App) {
 		guarded.Guard("csrf", csrf.Protect(app.origin))
 		guarded.Guard("pages", pages.Middleware)
 		guarded.Get(homePage, app.home)%[3]s
+		guarded.Handle(http.MethodGet, livePage, app.live.Handler(), "live")
 	})
 }

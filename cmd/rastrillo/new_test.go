@@ -266,7 +266,8 @@ func TestMainTemplateWiresResolveOpenServe(t *testing.T) {
 // and the perf test cannot set them differently.
 func TestMainTemplateWiresErrorPage(t *testing.T) {
 	src := fmt.Sprintf(mainTemplate, "blogapp", "blogapp", "BLOGAPP")
-	if !strings.Contains(src, "blogapp.Configure(&options, mux, started)") {
+	configure := "blogapp.Configure(&options, mux, hub, started)"
+	if !strings.Contains(src, configure) {
 		t.Errorf("main.go template does not set its options through Configure:\n%s", src)
 	}
 	if strings.Index(src, "started := time.Now()") > strings.Index(src, "rastrillo.Resolve(") {
@@ -274,11 +275,11 @@ func TestMainTemplateWiresErrorPage(t *testing.T) {
 	}
 	app := fmt.Sprintf(appTemplate, "blogapp", "blogapp")
 	for _, want := range []string{
-		"options *rastrillo.Options, mux *http.ServeMux, started time.Time,",
+		"options *rastrillo.Options, mux *http.ServeMux, hub *live.Hub,",
 		"options.ErrorPage = ErrorPage",
 		"options.Mux = mux",
 		"perf.Middleware(",
-		"logger *slog.Logger,\n) (chi.Router, error)",
+		"logger *slog.Logger,\n) (chi.Router, *live.Hub, error)",
 		"Routes(action.NewRoutes(router, app.contextFor), app)",
 	} {
 		if !strings.Contains(app, want) {
@@ -288,20 +289,21 @@ func TestMainTemplateWiresErrorPage(t *testing.T) {
 }
 
 // render.go exports ErrorPage with the ErrorPageFunc signature and
-// registers "errors" as a page. ErrorPage finds the request's language,
-// scheme and base path itself: a recovered panic reaches it outside the
-// page middleware, and without Scheme it would paint System for a reader
-// who chose Dark.
+// registers "errors" as a page. ErrorPage draws through renderPage, whose
+// withRequest finds the request's language, scheme and base path from
+// the request itself: a recovered panic reaches it outside the page
+// middleware, and without Scheme it would paint System for a reader who
+// chose Dark.
 func TestRenderTemplateWiresErrorPage(t *testing.T) {
 	src := fmt.Sprintf(renderTemplate, "blogapp", "blogapp", `"index", "errors"`)
 	for _, want := range []string{
 		`[]string{"index", "errors"}`,
 		"func ErrorPage(\n\tresponse http.ResponseWriter,",
 		"request *http.Request, status int,\n\tref string,\n)",
-		`writePage(response, "errors", status, map[string]any{`,
-		`"L":      pages.LocalizerFor(request),`,
-		`"Scheme": rastrillo.SchemeFrom(request),`,
-		`"Base":   basepath.Base(request), "Status": status, "Ref": ref,`,
+		`renderPage(response, request, nil, "errors", status,`,
+		`values["L"] = pages.LocalizerFor(request)`,
+		`localized := ui.ForRequest(request)`,
+		`values["Scheme"], values["Base"] = localized.Scheme, localized.Base`,
 	} {
 		if !strings.Contains(src, want) {
 			t.Errorf("render.go's ErrorPage lacks %q:\n%s", want, src)

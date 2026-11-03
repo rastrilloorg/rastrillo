@@ -35,10 +35,10 @@ func main() {
 	if options.BasePath.Enabled() {
 		logger.Info("base path", "path", "/"+options.BasePath.Slug)
 	}
-	mux, err := %[2]s.New(
+	mux, hub, err := %[2]s.New(
 		database, origin, logger)
 	exitOnError(logger, "build app", err)
-	%[2]s.Configure(&options, mux, started)
+	%[2]s.Configure(&options, mux, hub, started)
 	// The app opened the database itself: Serve must not open another.
 	options.DBPath = ""
 	exitOnError(logger, "serve", rastrillo.Serve(options))

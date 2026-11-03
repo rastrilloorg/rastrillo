@@ -38,22 +38,9 @@ keys too). Link a stored one only through `{{with safeHref .Site}}`,
 show it with `displayURL`; never `<input type="url">`.
 
 **After a mutation:** `visit.Flash("...")`, then `visit.Redirect(path)`,
-a 303. The scaffold does not show flashes until you wire it. In
-`render.go`'s `renderPage`, replace `data = withRequest(request,
-values)` with the lines below (and import `flash`); in `layout.html`,
-just before `{{template "content" .}}`, add `{{template "notice" (opt $
-"Flash")}}`. Flashes follow a 303, so take them only on pages rendered
-with 200.
-
-```go
-values = withRequest(request, values)
-if status == http.StatusOK {
-	if notice, found := flash.Take(response, request); found {
-		values["Flash"] = notice.Message
-	}
-}
-data = values
-```
+a 303. The next page shows it in the layout's notice:
+`render.go`'s `renderPage` takes it on a page drawn with 200, as
+`Notice`, and `region:notice` in `layout.html` shows it.
 
 **A labelled control is never hand-rolled:** `field-text`,
 `field-textarea`, `field-select` (and the date kinds) inside `<form

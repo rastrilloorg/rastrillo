@@ -33,14 +33,16 @@ exitOnError(logger, "open database", err)
 defer database.Close()
 origin := originFrom(logger)
 // ... the base path, from RASTRILLO_SLUG
-mux, err := notes.New(database, origin, logger)
+mux, hub, err := notes.New(database, origin, logger)
 exitOnError(logger, "build app", err)
-notes.Configure(&options, mux, started)
+notes.Configure(&options, mux, hub, started)
 options.DBPath = ""
 exitOnError(logger, "serve", rastrillo.Serve(options))
 ```
 
-Keep these two lines: `Configure` sets `options.Mux` to the app.
+Keep these two lines: `Configure` sets `options.Mux` to the app, and
+`options.Live` to its [live pages](/docs/live) hub, so shutdown ends
+the open streams instead of waiting for them.
 `options.DBPath = ""` stops `Serve` from opening the database file a
 second time.
 
