@@ -84,7 +84,7 @@ columns internal/blog/view.go b37f3e070253 1
 columns internal/blog/view.go be65ddde4b99 1
 columns internal/blog/view.go da2437d1b865 1
 columns internal/blog/view.go f0a0ebf12c09 1
-file internal/blog/view.go - 607
+file internal/blog/view.go - 608 raised from 607 by page-weight 2: the blog passes its Assets to ui.Pages, so each page links its slice of tokens.css
 func internal/blog/view.go BuildPagination 46
 names internal/blog/view.go AdminRows/p 1
 names internal/blog/view.go App.Middleware/a 1

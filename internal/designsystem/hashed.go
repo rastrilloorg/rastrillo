@@ -114,3 +114,14 @@ func assetFunc(mount, theme string) func(string) string {
 		return assetURL(mount, name)
 	}
 }
+
+// shellAssets binds asset for one theme's shell pages, and the
+// pageStylesheet ui's layouts link tokens.css by to the whole file:
+// the gallery renders them outside ui.Pages, which alone slices it.
+func shellAssets(funcs map[string]any, mount, theme string) {
+	asset := assetFunc(mount, theme)
+	funcs["asset"] = asset
+	funcs["pageStylesheet"] = func() string {
+		return asset("static/tokens.css")
+	}
+}

@@ -276,6 +276,8 @@ caveats.
 ```go
 func NewAssets(fsys fs.FS) *Assets
 func (a *Assets) Path(name string) string
+func (a *Assets) Stylesheet(name string, hooks []string) string
+func (a *Assets) Has(name string) bool
 func (a *Assets) Handler() http.Handler
 ```
 
@@ -283,6 +285,13 @@ Fingerprints static files so they cache forever and still update on an
 ordinary reload. `Path` maps a file to a URL carrying its content hash;
 `Handler` serves it with an immutable `Cache-Control`. Mount at
 `GET /static/` with no `StripPrefix`. See [Assets](/docs/assets).
+
+`Stylesheet` returns the URL of a slice of a framework stylesheet, such
+as `static/tokens.css`: only the rules a page showing `hooks` can use,
+fingerprinted like `Path`'s URLs and served by `Handler`. For any other
+file, or one it cannot slice, it returns `Path(name)`. `Has` reports
+whether the app has the file. `ui.Pages` calls both when
+`PagesConfig.Assets` is set.
 
 ## Icons
 

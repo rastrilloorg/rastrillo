@@ -113,12 +113,12 @@ func TestAnAppMissingTheShellFilesIsToldAndFixed(t *testing.T) {
 }
 
 // TestDeletingLightJSIsRecordedWhereTheFailureSays: every scaffolded
-// layout says "Delete it and its tag for the still design", and an app
+// layout says "Delete static/light.js for the still design", and an app
 // that did exactly that failed its own pin test with a message that
 // named no way out (Task 10 review, I1). The failure has to say where
 // the deletion is recorded, the map's comment has to say the same, and
-// an app that records it there passes its whole suite with the file and
-// its tag gone.
+// an app that records it there passes its whole suite with the file
+// gone, which no page then links.
 func TestDeletingLightJSIsRecordedWhereTheFailureSays(t *testing.T) {
 	if testing.Short() {
 		t.Skip("scaffolds, tidies and tests a whole app")
@@ -127,7 +127,6 @@ func TestDeletingLightJSIsRecordedWhereTheFailureSays(t *testing.T) {
 	t.Chdir(t.TempDir())
 	dir := scaffoldWithReplace(t, "stillapp")
 	pin := filepath.Join(dir, "internal", "stillapptest", "vendored_test.go")
-	layout := filepath.Join(dir, "internal", "stillapp", "templates", "layout.html")
 
 	src, err := os.ReadFile(pin)
 	if err != nil {
@@ -137,19 +136,8 @@ func TestDeletingLightJSIsRecordedWhereTheFailureSays(t *testing.T) {
 		t.Errorf("the pin's vendoredIsMine comment never shows light.js as a file an app deletes:\n%s", src)
 	}
 
-	// The opt-out as the layout comment gives it: the file and its tag.
+	// The opt-out as the layout comment gives it: the file alone.
 	if err := os.Remove(filepath.Join(dir, "internal", "stillapp", "static", "light.js")); err != nil {
-		t.Fatal(err)
-	}
-	const tag = `<script defer src="{{path $ (asset "static/light.js")}}"></script>` + "\n"
-	page, err := os.ReadFile(layout)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !strings.Contains(string(page), tag) {
-		t.Fatalf("the scaffolded layout has no light.js tag to delete:\n%s", page)
-	}
-	if err := os.WriteFile(layout, []byte(strings.Replace(string(page), tag, "", 1)), 0o644); err != nil {
 		t.Fatal(err)
 	}
 
@@ -171,7 +159,8 @@ func TestDeletingLightJSIsRecordedWhereTheFailureSays(t *testing.T) {
 		t.Fatal(err)
 	}
 	if out, err := goTestIn(dir, "./..."); err != nil {
-		t.Fatalf("with light.js and its tag deleted and the deletion recorded in vendoredIsMine, the app's suite fails:\n%s", out)
+		t.Fatalf("with light.js deleted and the deletion recorded in "+
+			"vendoredIsMine, the app's suite fails:\n%s", out)
 	}
 }
 

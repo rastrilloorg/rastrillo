@@ -85,6 +85,7 @@ type target struct {
 func screens(t testing.TB, cfg ScreenConfig, f *budgetfile.File, enforce bool) {
 	t.Helper()
 	targets, problems := inventory(cfg, f)
+	problems = append(problems, staleWeights(f, targets)...)
 	for _, p := range problems {
 		t.Errorf("%s", p)
 	}
@@ -114,7 +115,8 @@ func screens(t testing.TB, cfg ScreenConfig, f *budgetfile.File, enforce bool) {
 	}
 	// Only the screens that answered as they must are weighed: the rest
 	// have failed above, and once is enough.
-	checkFirstLoad(t, client, srv.URL, measured, frameworkBudget)
+	checkFirstLoad(t, client, srv.URL, measured,
+		withRecords(frameworkBudget, f))
 }
 
 // reportTiming says a screen's timing, failing it when it is over its

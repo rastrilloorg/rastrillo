@@ -1,6 +1,7 @@
 package perftest
 
 import (
+	"cmp"
 	"fmt"
 	"html"
 	"net/url"
@@ -13,6 +14,7 @@ import (
 	"github.com/tdewolff/parse/v2"
 	htmllex "github.com/tdewolff/parse/v2/html"
 
+	"amadan.net/rastrillo/rastrillo/internal/budgetfile"
 	"amadan.net/rastrillo/rastrillo/internal/vendored"
 )
 
@@ -21,43 +23,240 @@ const (
 		"%d-byte budget"
 	overMsg = "%s: %d bytes of framework CSS and JS, gzipped, " +
 		"over its %d-byte budget (%s); %s"
-	shellLimitMsg     = "%d bytes for a %s page"
-	grewMsg           = "%s grew from %d to %d bytes"
-	noneGrewMsg       = "no file grew: it loads %s"
-	linkFailedMsg     = "links %s, which returns HTTP %d"
-	linkErrorMsg      = "links %s, which did not load: %v"
-	linkRedirectedMsg = "links %s, which redirects to %s instead of a " +
-		"framework file"
+	shellLimitMsg    = "%d bytes for a %s page"
+	liveLimitMsg     = "%d bytes for a live %s page"
+	unslicedLimitMsg = "%d bytes for a page linking the whole tokens.css"
+	grewMsg          = "%s grew from %d to %d bytes"
+	noneGrewMsg      = "no file grew: it loads %s"
+	largestMsg       = "its largest files are %s"
+	unslicedMsg      = "; it links the whole tokens.css: add " +
+		"Assets: assets to ui.PagesConfig (PagesConfig.Assets) in " +
+		"render.go, and in the layout use {{path $ pageStylesheet}} in " +
+		"place of static/tokens.css and replace the busy.js, live.js, " +
+		"light.js and anchor.js tags and the neededScripts line (or " +
+		"the select.js, calendar.js and datetime.js tags) with " +
+		"{{range pageScripts}}, keeping rastrillo.js and shell.js"
+	unreadableMsg = "; it links the whole tokens.css because " +
+		"static/tokens.css cannot be sliced: %v"
+	unstyledMsg = "%s: shows %s, but its slice of tokens.css lacks a " +
+		"rule for it that the whole file has, so it can render " +
+		"unstyled. A page's slice holds the hooks its templates name, " +
+		"not markup built in Go or by a script: ask for this hook in " +
+		"the page's template with {{needs \"%s\"}}"
+	unstyledReadMsg = "%s: its tokens.css cannot be read to check " +
+		"the hooks it shows against its slice: %v"
+	recordLimitMsg = "its record, %s line %d"
+	recordHintMsg  = "; if it cannot be lighter, record " +
+		"`weight %s %d <reason>` in %s: " + plusTenPercentMsg
+	raiseRecordMsg = "; if it cannot be lighter, raise its record " +
+		"to %d: " + plusTenPercentMsg
+	plusTenPercentMsg = "its weight plus 10%%, rounded up to the " +
+		"next 100"
+	staleWeightUnderDefaultMsg = "%s line %d: %s weighs %d bytes, " +
+		"within its %d-byte limit without a record: delete the record"
+	staleWeightLowerMsg = "%s line %d: %s weighs %d bytes, under 60%% " +
+		"of the %d its record allows: lower it to %d, " +
+		plusTenPercentMsg
+	staleWeightScreenMsg = "%s line %d: weight record for %s, which is " +
+		"not a weighed screen: delete it"
+	linkFailedMsg  = "links %s, which %w"
+	wholeFailedMsg = "links %s, but the whole file to compare it " +
+		"with, %s, %w"
+	notLoadedMsg  = "did not load: %v"
+	statusMsg     = "returns HTTP %d"
+	redirectedMsg = "redirects to %s instead of a framework file"
 )
 
+// report is where a passing page's line goes.
+var report = say
+
 // reportWeight says a page's weight, or fails it when it is over its
-// shell's limit plus the references of the component scripts it loads.
+// limit. A page linking the whole tokens.css is told how to slice it,
+// or why it cannot be.
 func reportWeight(
 	t testing.TB,
 	screen, shell string,
 	weights []fileWeight,
+	sheet pageStylesheet,
 	budget firstLoadBudget,
 ) {
 	t.Helper()
-	total, limit := 0, budget.shells[shell]
-	var components []string
+	total := 0
 	for _, weight := range weights {
 		total += weight.size
-		component := slices.Contains(vendored.ComponentScripts(), weight.name)
+	}
+	limit, reason := pageLimit(shell, weights, sheet, budget)
+	hint := fmt.Sprintf(recordHintMsg, screen, roomFor(total),
+		budgetfile.FileName)
+	if record, ok := budget.records[screen]; ok {
+		if stale := staleRecord(screen, total, limit, record); stale != "" {
+			t.Errorf("%s", stale)
+			return
+		}
+		limit = record.Limit
+		reason = fmt.Sprintf(recordLimitMsg, budgetfile.FileName, record.Line)
+		hint = fmt.Sprintf(raiseRecordMsg, roomFor(total))
+	}
+	note := unslicedNote(sheet)
+	if total <= limit {
+		report(weightMsg+"%s", screen, total, limit, note)
+		return
+	}
+	// A slice has no reference size to have grown from: where its
+	// page's bytes went is in its heaviest files.
+	why := whatGrew(weights, budget)
+	if sheet.sliced() {
+		why = largestFiles(weights)
+	}
+	t.Errorf(overMsg+"%s%s", screen, total, limit, reason, why, note, hint)
+}
+
+// staleRecord says why a page's weight record should change, or is "":
+// a page back within its limit needs none, and one well under its
+// record lowers it, as a size record must.
+func staleRecord(
+	screen string, total, limit int, record budgetfile.Weight,
+) string {
+	switch {
+	case total <= limit:
+		return fmt.Sprintf(staleWeightUnderDefaultMsg,
+			budgetfile.FileName, record.Line, screen, total, limit)
+	case total*10 < record.Limit*6:
+		return fmt.Sprintf(staleWeightLowerMsg, budgetfile.FileName,
+			record.Line, screen, total, record.Limit, roomFor(total))
+	}
+	return ""
+}
+
+// roomFor is the weight record a page of total bytes should have, as
+// every hint gives it: room for a little growth, in round numbers.
+func roomFor(total int) int {
+	return (total*11/10 + 99) / 100 * 100
+}
+
+// pageLimit is a page's limit, and the reason it is that: the unsliced
+// limit for a page linking the whole tokens.css, its shell's live limit
+// for a live page, its shell's limit otherwise, plus the references of
+// the component scripts it loads and, on a live page, of live.js.
+func pageLimit(
+	shell string,
+	weights []fileWeight,
+	sheet pageStylesheet,
+	budget firstLoadBudget,
+) (int, string) {
+	limit := budget.shells[shell]
+	reason := fmt.Sprintf(shellLimitMsg, limit, shell)
+	allowed := vendored.ComponentScripts()
+	switch {
+	case sheet.unsliced():
+		limit = budget.unsliced
+		reason = fmt.Sprintf(unslicedLimitMsg, limit)
+	case isLive(weights):
+		limit = budget.live[shell]
+		reason = fmt.Sprintf(liveLimitMsg, limit, shell)
+		allowed = append(allowed, liveScript)
+	}
+	var components []string
+	for _, weight := range weights {
+		component := slices.Contains(allowed, weight.name)
 		if component && !slices.Contains(components, weight.name) {
 			limit += budget.references[weight.name]
 			components = append(components, weight.name)
 		}
 	}
-	if total <= limit {
-		say(weightMsg, screen, total, limit)
-		return
-	}
-	reason := fmt.Sprintf(shellLimitMsg, budget.shells[shell], shell)
 	if len(components) > 0 {
 		reason += ", plus " + strings.Join(components, ", ")
 	}
-	t.Errorf(overMsg, screen, total, limit, reason, whatGrew(weights, budget))
+	return limit, reason
+}
+
+// liveScript is the script only live and polling pages load.
+const liveScript = "live.js"
+
+// isLive reports whether a page is live or polling by whether it loads
+// live.js: ui.Pages links it on exactly those pages (pageScripts), and
+// it is the one sign every such page carries. The rastrillo-live meta
+// and data-live regions are rendered only when the app wires a live
+// hub, and data-poll only on a polling page.
+func isLive(weights []fileWeight) bool {
+	return slices.ContainsFunc(weights, func(weight fileWeight) bool {
+		return weight.name == liveScript
+	})
+}
+
+// unslicedNote says why a page links the whole tokens.css: the app's
+// setup, or a stylesheet the slicer cannot read, which Assets links
+// whole on every page.
+func unslicedNote(sheet pageStylesheet) string {
+	if !sheet.unsliced() {
+		return ""
+	}
+	if _, err := vendored.StyledHooks(sheet.whole); err != nil {
+		return fmt.Sprintf(unreadableMsg, err)
+	}
+	return unslicedMsg
+}
+
+// largestFiles names a page's three heaviest files, heaviest first.
+func largestFiles(weights []fileWeight) string {
+	heaviest := slices.Clone(weights)
+	slices.SortStableFunc(heaviest, func(left, right fileWeight) int {
+		return cmp.Compare(right.size, left.size)
+	})
+	var named []string
+	for _, weight := range heaviest[:min(3, len(heaviest))] {
+		name := weight.name
+		if name == stylesheetName {
+			name += "'s slice"
+		}
+		named = append(named, fmt.Sprintf("%s (%d bytes)", name, weight.size))
+	}
+	return fmt.Sprintf(largestMsg, strings.Join(named, ", "))
+}
+
+// reportUnstyled fails a sliced page for each hook it shows that is
+// named by a rule the whole tokens.css would give it and its slice
+// does not (spec 3a): the slice comes from the page's templates, so
+// markup they do not hold renders unstyled, where the whole file would
+// have styled it. Asking for every hook the failure names puts the
+// rule in the slice. A hook no rule styles is the app's own, and fine.
+func reportUnstyled(
+	t testing.TB, screen string, page []byte, sheet pageStylesheet,
+) {
+	t.Helper()
+	shown := shownHooks(page)
+	if !sheet.sliced() || len(shown) == 0 {
+		return
+	}
+	unkept, err := vendored.Unkept(sheet.whole, sheet.slice, shown)
+	if err != nil {
+		t.Errorf(unstyledReadMsg, screen, err)
+		return
+	}
+	for _, hook := range unkept {
+		t.Errorf(unstyledMsg, screen, hook, hook)
+	}
+}
+
+// shownHooks is the hooks a page's markup carries: its attribute names
+// and class names, read by the reader the slicer's hooks come from. An
+// option's data-rst-class counts as classes: select.js copies them onto
+// the row it draws.
+func shownHooks(page []byte) map[string]bool {
+	var names []byte
+	for _, tag := range pageTags(page) {
+		for name, value := range tag.attributes {
+			names = append(names, name+" "...)
+			if name == "class" || name == "data-rst-class" {
+				names = append(names, value+" "...)
+			}
+		}
+	}
+	shown := map[string]bool{}
+	for _, hook := range vendored.HooksIn(names) {
+		shown[hook] = true
+	}
+	return shown
 }
 
 // whatGrew names each file heavier than its reference, or, when none

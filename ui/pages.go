@@ -55,6 +55,11 @@ type PagesConfig struct {
 	Catalog  rastrillo.Catalog   // Options.BaseCatalog
 	LocaleFS fs.FS               // Options.LocaleFS: locales/<code>.toml
 	Funcs    template.FuncMap    // the app's request-independent functions (icon, iconAssets, asset)
+	// Assets are the app's static files. With them, each page links
+	// a slice of static/tokens.css for its hooks (pageStylesheet),
+	// and pageScripts omits optional scripts the app has deleted; nil
+	// links the whole stylesheet, as every page did before slicing.
+	Assets *rastrillo.Assets
 	// Compat renders legacy-form calls and missing localizers with the
 	// default identity's localizer instead of failing. For apps
 	// mid-migration only; it is logged at NewPages and on each
@@ -160,6 +165,7 @@ func NewPages(cfg PagesConfig) (*Pages, error) {
 		}
 		funcs[name] = cfg.Funcs[name]
 	}
+	funcs["pageStylesheet"] = wholeStylesheet(cfg.Funcs, p.logger)
 	if p.compat {
 		p.logger.Warn(fmt.Sprintf(compatOnMsg, cfg.Locale.Default))
 	}
@@ -177,10 +183,8 @@ func NewPages(cfg PagesConfig) (*Pages, error) {
 	if err != nil {
 		return nil, fmt.Errorf(baseParseMsg, err)
 	}
-	for name, file := range cfg.Pages {
-		if err := p.addPage(set, name, file, cfg.App); err != nil {
-			return nil, err
-		}
+	if err := p.addPages(set, cfg); err != nil {
+		return nil, err
 	}
 	return p, nil
 }

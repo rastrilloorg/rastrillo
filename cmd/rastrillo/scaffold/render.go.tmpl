@@ -37,7 +37,7 @@ func newPages() (*ui.Pages, error) {
 	}
 	return ui.NewPages(ui.PagesConfig{
 		App: appFS, Layout: "templates/layout.html",
-		Pages: files, Locale: config,
+		Pages: files, Locale: config, Assets: assets,
 		// Both icon seams, always: icon alone breaks cdn and js icons.
 		Funcs: template.FuncMap{"icon": icons.Icon, "iconAssets": icons.Assets,
 			"asset": assets.Path},

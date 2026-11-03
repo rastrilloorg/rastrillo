@@ -135,6 +135,12 @@ func WithT(t func(key string, args ...any) string) Option {
 // page's language, naming people through ActorName:
 // {{actor $L .Actor}} is "Claude for Paul".
 //
+// ui.Pages binds pageStylesheet, pageScripts and neededScripts per page.
+// Outside it, pageStylesheet is the whole /static/tokens.css, unhashed,
+// pageScripts every optional script and neededScripts the component
+// scripts; to link the hashed file or a slice (Assets.Stylesheet), bind
+// your own pageStylesheet, as internal/designsystem's shellAssets does.
+//
 // path puts the page's base path in front of a root-absolute URL:
 // {{path $ (asset "static/tokens.css")}}, {{path $ "/"}}. The base comes
 // from the data's Base (ui.Localized carries it), not from a func bound
@@ -143,8 +149,8 @@ func WithT(t func(key string, args ...any) string) Option {
 // a page at the root renders as it always did.
 //
 // An app is free to add its own entries on top; it must not drop these
-// twenty-four. The shipped partials and shells stop parsing without most
-// of them, and the docs promise the rest.
+// twenty-eight. The shipped partials and shells stop parsing without
+// most of them, and the docs promise the rest.
 func Funcs(opts ...Option) template.FuncMap {
 	c := config{
 		icon:   rastrillo.Icon,

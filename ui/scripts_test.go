@@ -174,7 +174,9 @@ func TestNeedsTakesOnlyAQuotedName(t *testing.T) {
 }
 
 func TestAnAppCannotReplaceTheScriptFuncs(t *testing.T) {
-	for _, name := range []string{"needs", "neededScripts"} {
+	for _, name := range []string{
+		"needs", "neededScripts", "pageStylesheet", "pageScripts",
+	} {
 		_, err := scriptPages(t, map[string]string{"page": content(``)},
 			template.FuncMap{name: func() string { return "" }})
 		want := fmt.Sprintf(reservedFuncMsg, name)

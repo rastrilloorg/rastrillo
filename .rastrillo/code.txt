@@ -4204,7 +4204,6 @@ columns cmd/rastrillo/new_test.go 19ed6fca24c1 1
 columns cmd/rastrillo/new_test.go 23903bdc20be 1
 columns cmd/rastrillo/new_test.go 250afa3bbbcf 1
 columns cmd/rastrillo/new_test.go 2779438c83db 1
-columns cmd/rastrillo/new_test.go 2ef4e7776c32 1
 columns cmd/rastrillo/new_test.go 30537fc4c772 1
 columns cmd/rastrillo/new_test.go 337fe18cfe82 1
 columns cmd/rastrillo/new_test.go 3410e03585db 1
@@ -4230,7 +4229,6 @@ columns cmd/rastrillo/new_test.go 7a6dc0ac17ed 1
 columns cmd/rastrillo/new_test.go 7acd5fa6645e 1
 columns cmd/rastrillo/new_test.go 810c52e2ce91 1
 columns cmd/rastrillo/new_test.go 854fb7dc9fa5 1
-columns cmd/rastrillo/new_test.go 8554e2fb0d11 1
 columns cmd/rastrillo/new_test.go 8c6620795a3a 1
 columns cmd/rastrillo/new_test.go 8c76b8f89945 1
 columns cmd/rastrillo/new_test.go 90c2f6ac3231 1
@@ -4248,13 +4246,11 @@ columns cmd/rastrillo/new_test.go b81f1952f5cc 1
 columns cmd/rastrillo/new_test.go bb374bdb4d54 1
 columns cmd/rastrillo/new_test.go bccbcfc8de08 1
 columns cmd/rastrillo/new_test.go bd41a352f490 1
-columns cmd/rastrillo/new_test.go bdec8d5f7ae4 1
 columns cmd/rastrillo/new_test.go c1ba8a14ca64 1
 columns cmd/rastrillo/new_test.go c40fa3f11586 1
 columns cmd/rastrillo/new_test.go ccec44fae579 1
 columns cmd/rastrillo/new_test.go cf6d89c1afa2 1
 columns cmd/rastrillo/new_test.go d1521e79c3ef 1
-columns cmd/rastrillo/new_test.go d1ef77afd3b9 1
 columns cmd/rastrillo/new_test.go d340c2ea5604 1
 columns cmd/rastrillo/new_test.go d6d3a5e5f23f 1
 columns cmd/rastrillo/new_test.go d767a285a43f 1
@@ -4263,7 +4259,6 @@ columns cmd/rastrillo/new_test.go de58193825f5 1
 columns cmd/rastrillo/new_test.go e265723a151e 1
 columns cmd/rastrillo/new_test.go e2d015c838fc 1
 columns cmd/rastrillo/new_test.go e7078c2c6caa 1
-columns cmd/rastrillo/new_test.go e8b083b2f815 1
 columns cmd/rastrillo/new_test.go eb2c9f5689f1 1
 columns cmd/rastrillo/new_test.go ec64d5524e57 1
 columns cmd/rastrillo/new_test.go edd01ac4764d 1
@@ -4275,8 +4270,6 @@ names cmd/rastrillo/new_test.go TestNewWritesAgentsMDWithClaudeMDPointingAtIt/c 
 names cmd/rastrillo/new_test.go TestPackageName/c 1
 names cmd/rastrillo/new_test.go TestScaffoldedAppTestsPass/f 1
 names cmd/rastrillo/new_test.go TestStandardProfileAddsNoConventions/s 1
-names cmd/rastrillo/new_test.go assertLiveTagAfterBusy/b 1
-names cmd/rastrillo/new_test.go assertLiveTagAfterBusy/l 1
 names cmd/rastrillo/new_test.go readScaffold/b 1
 columns cmd/rastrillo/newapi_test.go 45fc73ab82b4 1
 columns cmd/rastrillo/newapi_test.go 4790891c3e40 1
@@ -4308,25 +4301,20 @@ columns cmd/rastrillo/sessionkey_test.go f24da777138e 1
 names cmd/rastrillo/sessionkey_test.go TestSessionKeyPrintsAPairThatParses/k 1
 columns cmd/rastrillo/shellscaffold_test.go 00e15b84d435 1
 columns cmd/rastrillo/shellscaffold_test.go 067d85b3cd06 1
-columns cmd/rastrillo/shellscaffold_test.go 06e53e037d7d 1
 columns cmd/rastrillo/shellscaffold_test.go 0de09626f9cc 1
 columns cmd/rastrillo/shellscaffold_test.go 19c089a1c816 1
 columns cmd/rastrillo/shellscaffold_test.go 1f1c5cfad56c 1
 columns cmd/rastrillo/shellscaffold_test.go 1fbaf5edad70 1
-columns cmd/rastrillo/shellscaffold_test.go 29bb09e2aecc 1
 columns cmd/rastrillo/shellscaffold_test.go 2c9d9e163fe4 1
 columns cmd/rastrillo/shellscaffold_test.go 2dc4fff5f412 1
 columns cmd/rastrillo/shellscaffold_test.go 3c3ff181bb14 1
 columns cmd/rastrillo/shellscaffold_test.go 3da36d143b61 1
-columns cmd/rastrillo/shellscaffold_test.go 4c76974ec945 1
 columns cmd/rastrillo/shellscaffold_test.go 5460234ed0fe 1
 columns cmd/rastrillo/shellscaffold_test.go 651db8a689ee 1
 columns cmd/rastrillo/shellscaffold_test.go 6d64cc1d9c0f 1
 columns cmd/rastrillo/shellscaffold_test.go 6fa76da20f0a 1
-columns cmd/rastrillo/shellscaffold_test.go 70d542561ee8 1
 columns cmd/rastrillo/shellscaffold_test.go 7f8d7f4947ca 1
 columns cmd/rastrillo/shellscaffold_test.go 835cf7ad1680 1
-columns cmd/rastrillo/shellscaffold_test.go 8761a1f66573 1
 columns cmd/rastrillo/shellscaffold_test.go a27b1955abb9 1
 columns cmd/rastrillo/shellscaffold_test.go b05f10467bd3 1
 columns cmd/rastrillo/shellscaffold_test.go ccb707112e89 1
@@ -6457,25 +6445,20 @@ columns internal/basepathe2e/walk_browser_test.go 8e885a2a9247 1
 columns internal/basepathe2e/walk_browser_test.go d767a285a43f 1
 columns internal/basepathe2e/walk_browser_test.go fd23d1bb3170 1
 names internal/basepathe2e/walk_browser_test.go TestAScaffoldedAppWorksUnderABasePath/f 1
-columns internal/budgetfile/budgetfile.go 10b271b5f4f7 1
 columns internal/budgetfile/budgetfile.go 1d4ddc2011e7 1
 columns internal/budgetfile/budgetfile.go 3af619964133 1
 columns internal/budgetfile/budgetfile.go 443a2b50a595 1
-columns internal/budgetfile/budgetfile.go 699ec67b705d 1
-columns internal/budgetfile/budgetfile.go 6a51e9af5c8c 1
 columns internal/budgetfile/budgetfile.go 6d29ab89655e 1
 columns internal/budgetfile/budgetfile.go 83f72c734c8d 1
-columns internal/budgetfile/budgetfile.go 8f5db801feec 1
 columns internal/budgetfile/budgetfile.go a3be597cf772 1
 columns internal/budgetfile/budgetfile.go ab70165f777f 1
 columns internal/budgetfile/budgetfile.go c2bf9a5da0fa 1
 columns internal/budgetfile/budgetfile.go e2a7bc7f15a0 1
 columns internal/budgetfile/budgetfile.go f959d5bd5aa8 1
-func internal/budgetfile/budgetfile.go File.add 101
-names internal/budgetfile/budgetfile.go File.add/d 3
+func internal/budgetfile/budgetfile.go File.add 79
+names internal/budgetfile/budgetfile.go File.add/d 2
 names internal/budgetfile/budgetfile.go File.add/f 1
 names internal/budgetfile/budgetfile.go File.add/n 1
-names internal/budgetfile/budgetfile.go File.add/p 1
 names internal/budgetfile/budgetfile.go ModulePath/b 1
 names internal/budgetfile/budgetfile.go ModulePath/f 1
 names internal/budgetfile/budgetfile.go ModulePath/l 1
@@ -20396,8 +20379,6 @@ columns ui/card_browser_test.go 82ce2fae21c3 1
 columns ui/card_browser_test.go 82ea27cc60ee 1
 columns ui/card_browser_test.go 8577abb07b87 1
 columns ui/card_browser_test.go 880e684568ef 1 rewritten by the chromedp v0.21 port, no wider than the recorded line it replaced
-columns ui/card_browser_test.go 88c311a1f4e0 1
-columns ui/card_browser_test.go 894e14b6a909 1
 columns ui/card_browser_test.go 8a4a447c3fb0 1
 columns ui/card_browser_test.go 92f4b0357c8b 1
 columns ui/card_browser_test.go 948fa303302a 1 rewritten by the chromedp v0.21 port, no wider than the recorded line it replaced
@@ -20446,7 +20427,6 @@ names ui/card_browser_test.go TestTheConsoleBarIsTheSameCard/s 1
 names ui/card_browser_test.go readCard/c 1
 names ui/card_browser_test.go resolvedColor/s 1
 names ui/card_browser_test.go topbarPageWith/b 1
-names ui/card_browser_test.go topbarPageWith/p 1
 columns ui/colour.go 0f7314d9d3eb 1
 columns ui/colour.go 1346e9aaaf5c 1
 columns ui/colour.go 19c1cb70edd4 1
@@ -20950,8 +20930,6 @@ columns ui/console_shell_browser_test.go 7b149872bbfd 1
 columns ui/console_shell_browser_test.go 7d62696101ad 1
 columns ui/console_shell_browser_test.go 83645212637d 1
 columns ui/console_shell_browser_test.go 87774374506c 1
-columns ui/console_shell_browser_test.go 88c311a1f4e0 1
-columns ui/console_shell_browser_test.go 894e14b6a909 1
 columns ui/console_shell_browser_test.go 8d1fda0cad35 1
 columns ui/console_shell_browser_test.go 8df847ac01a5 1
 columns ui/console_shell_browser_test.go 8e41fab23ee1 1
@@ -21005,7 +20983,6 @@ names ui/console_shell_browser_test.go TestTheConsoleRailFitsTheViewport/h 1
 names ui/console_shell_browser_test.go TestTheConsoleRailFitsTheViewport/w 1
 names ui/console_shell_browser_test.go consolePageFrom/d 1
 names ui/console_shell_browser_test.go consolePageFrom/i 1
-names ui/console_shell_browser_test.go consolePageFrom/p 1
 names ui/console_shell_browser_test.go consoleServe/r 1
 names ui/console_shell_browser_test.go consoleServe/w 1
 columns ui/contrast_face_test.go 08fefd6f9093 1
@@ -21684,7 +21661,7 @@ columns ui/funcs.go b6d8b3a0ea2d 1
 columns ui/funcs.go cc779ca93205 1
 columns ui/funcs.go ce9bd82b0ad4 1
 columns ui/funcs.go dd0b575a0467 1
-file ui/funcs.go - 827
+file ui/funcs.go - 833 raised from 827 by page-weight 2: Funcs says what pageStylesheet links outside ui.Pages and how such a render binds its own
 func ui/funcs.go paginationItems 75
 func ui/funcs.go rowMenuItems 48
 names ui/funcs.go Funcs/c 1
@@ -21972,9 +21949,7 @@ columns ui/index_browser_test.go 7f96b63da30c 1
 columns ui/index_browser_test.go 82aace12a999 1
 columns ui/index_browser_test.go 854db4010c21 1
 columns ui/index_browser_test.go 8775fdb4a0aa 1
-columns ui/index_browser_test.go 88c311a1f4e0 1
 columns ui/index_browser_test.go 8940982b2582 1
-columns ui/index_browser_test.go 894e14b6a909 1
 columns ui/index_browser_test.go 89d3c4c5f3cf 1
 columns ui/index_browser_test.go 8b8a95411e02 1
 columns ui/index_browser_test.go 8c0bbed4dfc1 1 rewritten by the chromedp v0.21 port, no wider than the recorded line it replaced
@@ -22051,7 +22026,6 @@ names ui/index_browser_test.go scriptErrors/e 1
 names ui/index_browser_test.go shellAssets/w 1
 names ui/index_browser_test.go shellLayoutPage/b 1
 names ui/index_browser_test.go shellLayoutPage/d 1
-names ui/index_browser_test.go shellLayoutPage/p 1
 columns ui/light_browser_test.go 110aaea4fe5a 1
 columns ui/light_browser_test.go 17bb84165cc2 1
 columns ui/light_browser_test.go 18808419457b 1
@@ -23096,7 +23070,7 @@ columns ui/pages.go ce8c7eec7522 1
 columns ui/pages.go d31b2c001d34 1
 columns ui/pages.go d4449c38f87d 1
 columns ui/pages.go ebd44bb39105 1
-func ui/pages.go NewPages 72
+func ui/pages.go NewPages 71
 names ui/pages.go NewPages/a 1
 names ui/pages.go NewPages/i 1
 names ui/pages.go NewPages/k 2
@@ -24432,8 +24406,6 @@ columns ui/shell_browser_test.go 82fa4761293d 1
 columns ui/shell_browser_test.go 830c97d8422c 1
 columns ui/shell_browser_test.go 83f9f8990fd6 1
 columns ui/shell_browser_test.go 851a64eda4be 1
-columns ui/shell_browser_test.go 88c311a1f4e0 2
-columns ui/shell_browser_test.go 894e14b6a909 2
 columns ui/shell_browser_test.go 89afff783fe5 1
 columns ui/shell_browser_test.go 8aac9f764185 1
 columns ui/shell_browser_test.go 8c2cafefcfd5 1
@@ -24525,10 +24497,8 @@ names ui/shell_browser_test.go TestSelfShapedChildrenKeepTheirCornersInsideACard
 names ui/shell_browser_test.go TestSelfShapedChildrenKeepTheirCornersInsideACard/w 3
 names ui/shell_browser_test.go TestTheScrollbarGutterHoldsTheLayoutStill/r 1
 names ui/shell_browser_test.go TestTheScrollbarGutterHoldsTheLayoutStill/w 1
-names ui/shell_browser_test.go TestTheSidebarRailPutsThePersonAtItsFootAndTheProfileMenuOpensUpward/p 1
 names ui/shell_browser_test.go TestTheSidebarRailPutsThePersonAtItsFootAndTheProfileMenuOpensUpward/r 3
 names ui/shell_browser_test.go TestTheSidebarRailPutsThePersonAtItsFootAndTheProfileMenuOpensUpward/w 3
-names ui/shell_browser_test.go TestTheTopbarCollapsesItsTailBehindOneDisclosure/p 1
 names ui/shell_browser_test.go TestTheTopbarCollapsesItsTailBehindOneDisclosure/r 1
 names ui/shell_browser_test.go TestTheTopbarCollapsesItsTailBehindOneDisclosure/w 1
 names ui/shell_browser_test.go cornerReading.String/c 1

@@ -191,10 +191,8 @@ func legacyConsolePage(t *testing.T, nav, dir string) (page, control string) {
 
 func consolePageFrom(t *testing.T, src []byte, nav, dir string, defs ...string) (page, control string) {
 	t.Helper()
-	tmpl := template.Must(template.New("layout").Funcs(Funcs()).Funcs(template.FuncMap{
-		"asset":      func(p string) string { return "/" + strings.TrimPrefix(p, "static/") },
-		"iconAssets": func() template.HTML { return "" },
-	}).Parse(string(src)))
+	tmpl := template.Must(template.New("layout").Funcs(Funcs()).
+		Funcs(fixtureFuncs()).Parse(string(src)))
 	// ui's partials, as an app parses them: the locale block calls locale-menu.
 	template.Must(tmpl.ParseFS(Templates(), "*.html"))
 	template.Must(tmpl.Parse(`{{define "content"}}<p>Content.</p>{{end}}`))

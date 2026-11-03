@@ -354,5 +354,15 @@ func (template *Template) fingerprints() map[string]string {
 // change them, and Inspect must be called before the set executes,
 // since executing escapes its trees in place.
 func (template *Template) Inspect(visit func(node parse.Node)) {
+	template.InspectNamed(func(_ string, node parse.Node) { visit(node) })
+}
+
+// InspectNamed is Inspect that also says which template each node is
+// in, for a caller that treats a node differently by where it sits: the
+// layout's language menu form is not a page's own form. It has all of
+// Inspect's guarantees and restrictions.
+func (template *Template) InspectNamed(
+	visit func(name string, node parse.Node),
+) {
 	reachable(template.Name(), template.set.trees(), visit)
 }

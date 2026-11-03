@@ -7,25 +7,19 @@
      pagereveal; a deferred observer misses it. */}}
 <script src="{{path $ (asset "static/transition.js")}}"></script>
 <title>{{block "title" .}}Hello{{end}}</title>
-<link rel="stylesheet" href="{{path $ (asset "static/tokens.css")}}">
+<link rel="stylesheet" href="{{path $ pageStylesheet}}">
 <link rel="stylesheet" href="{{path $ (asset "static/theme.css")}}">
 <script defer src="{{path $ (asset "static/rastrillo.js")}}"></script>
-<script defer src="{{path $ (asset "static/busy.js")}}"></script>
-{{/* live.js does nothing until a page carries the rastrillo-live meta;
-     busy.js hands it a live form, so keep it after busy.js. */}}
-<script defer src="{{path $ (asset "static/live.js")}}"></script>
-{{/* light.js moves the light the depth styles read. Delete it and its
-     tag for the still design. */}}
-<script defer src="{{path $ (asset "static/light.js")}}"></script>
-<script defer src="{{path $ (asset "static/anchor.js")}}"></script>
 {{iconAssets}}
 {{/* stage — one card centred on a full-page backdrop, for a screen that
-     stands alone: the sign-in page above all. No select.js, calendar.js
-     or datetime.js: a stage page has no enhanced fields, and each would
-     be a request in front of the one screen every visitor meets first.
-     transition.js is the deliberate exception because the defer probe
-     showed that a later observer can miss the rejection.
+     stands alone: the sign-in page above all. It loads only the scripts
+     its card uses, as the other shells do: each is a request in front
+     of the one screen every visitor meets first. transition.js is the
+     deliberate exception because the defer probe showed that a later
+     observer can miss the rejection. Delete static/light.js for the
+     still design; for markup you write by hand, call needs.
      head is the app's slot, last so its CSS wins the ties it should. */}}
+{{range pageScripts}}<script defer src="{{path $ (asset .)}}"></script>{{end}}
 {{block "head" .}}{{end}}
 </head>
 <body rst-stage>

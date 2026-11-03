@@ -99,7 +99,7 @@ binary. The budgets stop that early, while fixing it is still cheap.
 | Test package time | 10 seconds | `make test` |
 | Screen | 150ms to first byte, for every GET route | `make perf` |
 | Cold start | 500ms from starting the process to the first byte | `make perf` |
-| First load | 40 kB of framework CSS and JS per page, gzipped, plus each component script it loads | `make perf` |
+| First load | 16 kB gzipped per sliced page, plus each component script it loads; live pages use their shell's limit, never under 16 kB, plus live.js and component scripts; pages linking the whole file use 40 kB | `make perf` |
 
 The size and first-load budgets always fail the gate. The timing budgets fail it only on
 CI, where `AMADAN_CI` or `CI` is set. On your laptop they print the same
@@ -120,19 +120,24 @@ size  internal/notes          7200 -     billing split owed, see #41
 time  internal/notes/import   25s        replays a 40MB fixture
 perf  GET /notes/export       1200ms     streams every row
 perf  GET /jobs/{id}/events   skip       server-sent events never finish
+weight GET /reports            18000      draws every chart on one page
 boot                          800ms      loads twelve locales at start
 ```
 
 A size record states the source and test ceilings, with `-` for a column
-that keeps its default. Every record needs a reason. The file is read
-strictly: a line it cannot parse, a directory spelled two ways, or a
-second record for the same thing is an error, with its line number.
+that keeps its default. A weight record is a page's first-load limit in
+gzipped bytes, in place of its shell's. Every record needs a reason.
+The file is read strictly: a line it cannot parse, a directory spelled
+two ways, or a second record for the same thing is an error, with its
+line number.
 
 Records cannot go stale quietly. One naming a directory, package or screen
 that no longer exists fails the gate. A size record also has to shrink as
 its directory does: once the code is under 60% of the recorded ceiling,
 the gate asks you to lower the number, and once it is back under the
-default, to remove the record.
+default, to remove the record. A weight record works the same way: under
+60% of the record, the gate asks you to lower it to the page's weight
+plus 10%, rounded up to the next 100.
 
 ## Test time and Go's cache
 
@@ -172,11 +177,27 @@ three times and holds the cold start to 500ms. These are the same numbers
 the [`perf`](/docs/reference/perf) middleware logs in production.
 
 The same walk weighs each page: the framework CSS and JS it makes a
-browser download, gzipped. A column or topbar page may load 40 kB, plus
-the size of each component script it loads. When a page is over budget,
-the failure lists files that grew, if any. If no file grew, it lists
-every framework file the page loads. A file that grew is usually your
-copy in `static/`; `rastrillo doctor` shows what changed.
+browser download, gzipped. A page may load 16 kB, plus the size of each
+component script it loads. A live or polling page, which links the CSS
+for every page, has its shell's own limit, never under 16 kB, with
+`live.js` on top. A page whose layout still links the whole `tokens.css`
+may load 40 kB, and its report says how to link the page's slice
+instead; see
+[Templates](/docs/templates#the-page-s-stylesheet-and-scripts).
+
+When a page is over budget, the failure names its three largest files.
+For a page linking the whole `tokens.css`, it lists the files that grew
+instead, or every framework file the page loads if none grew. A file
+that grew is usually your copy in `static/`; `rastrillo doctor` shows
+what changed. If the page can't be lighter, record a weight for it in
+`.rastrillo/budgets.txt`, as below.
+
+The walk also checks each page's hooks against its slice. A hook in
+HTML your Go code builds, or in markup your script adds, may be missing
+a rule from the slice and could render unstyled. The failure names the
+page and the hook. Ask for it in the page's template with
+`{{needs "rst-card"}}`; see
+[Asking with needs](/docs/templates#asking-with-needs).
 
 A route you add fails here until it is measured. Most routes need nothing
 from you. A route with a parameter needs a real path to request, whose row

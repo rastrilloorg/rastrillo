@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"net/http/httptest"
+	"strings"
 	"testing"
 	"testing/fstest"
 
@@ -46,8 +48,11 @@ func twelveOptions() []any {
 }
 
 // shellApp is a ui.Pages app over the named shell's layout, serving
-// the framework's files for theme through rastrillo.Assets.
-func shellApp(t *testing.T, shell, theme string) chi.Router {
+// the framework's files for theme through rastrillo.Assets, which its
+// pages are given, so each links its slice of tokens.css.
+func shellApp(
+	t *testing.T, shell, theme string,
+) (chi.Router, *rastrillo.Assets) {
 	t.Helper()
 	layout, _ := ui.Layout(shell)
 	files, _ := ui.VendoredAssets(theme)
@@ -69,7 +74,8 @@ func shellApp(t *testing.T, shell, theme string) chi.Router {
 	pages, err := ui.NewPages(ui.PagesConfig{
 		App: app, Layout: "layout.html", Pages: pageFiles,
 		Locale: config, LocaleFS: app,
-		Funcs: template.FuncMap{"asset": assets.Path},
+		Funcs:  template.FuncMap{"asset": assets.Path},
+		Assets: assets,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -92,16 +98,18 @@ func shellApp(t *testing.T, shell, theme string) chi.Router {
 			}
 		})
 	}
-	return router
+	return router, assets
 }
 
 // TestEveryShellsPagesMeetTheFirstLoadBudget weighs every shipped
-// shell, in every theme, as an app serves it.
+// shell, in every theme, as an app serves it: sliced, so under the
+// sliced limits and with every hook a page shows styled by its slice.
 func TestEveryShellsPagesMeetTheFirstLoadBudget(t *testing.T) {
 	for _, shell := range ui.LayoutNames() {
 		for _, theme := range ui.ThemeNames() {
 			t.Run(shell+"/"+theme, func(t *testing.T) {
-				router := shellApp(t, shell, theme)
+				router, assets := shellApp(t, shell, theme)
+				requireSliced(t, router, assets)
 				perftest.FirstLoad(t, perftest.ScreenConfig{
 					Routes: router, Handler: router,
 					Opaque: []perftest.Opaque{{
@@ -113,6 +121,23 @@ func TestEveryShellsPagesMeetTheFirstLoadBudget(t *testing.T) {
 					}},
 				})
 			})
+		}
+	}
+}
+
+// requireSliced fails unless every frame page links a slice, so the
+// budget below holds them to the sliced limits, not the unsliced one.
+func requireSliced(
+	t *testing.T, router http.Handler, assets *rastrillo.Assets,
+) {
+	t.Helper()
+	whole := assets.Path("static/tokens.css")
+	for name := range framePages {
+		recorder := httptest.NewRecorder()
+		router.ServeHTTP(recorder,
+			httptest.NewRequest(http.MethodGet, "/"+name, nil))
+		if body := recorder.Body.String(); strings.Contains(body, whole) {
+			t.Errorf("the %s page links the whole %s", name, whole)
 		}
 	}
 }

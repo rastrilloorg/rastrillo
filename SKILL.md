@@ -169,8 +169,8 @@ The other seven, an action's shape and what each gate message means:
   in `<form rst-form>` closed by `form-foot`), an error page, a colour
   toggle or an image grid: they ship (`skill/design.md`).
 - Never add a `<script>` tag for a framework component: the `field-*`
-  partials load their own; hand-written markup asks with
-  `{{needs "select.js"}}`.
+  partials load their own; markup built in Go asks with
+  `{{needs "select.js"}}` or `{{needs "rst-card"}}`.
 - Never save bytes to disk or a column: the filesystem is ephemeral
   (`skill/data.md`).
 - Never `git merge` to main, even locally: every change lands through

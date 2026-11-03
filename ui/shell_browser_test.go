@@ -60,6 +60,22 @@ func stylesheets(t *testing.T, mux *http.ServeMux) {
 	})
 }
 
+// fixtureFuncs are the asset functions a shell page parsed outside
+// ui.Pages needs to load what stylesheets and vendoredScripts serve,
+// each file at its bare name. pageStylesheet is bound here as the
+// funcs doc tells an app to: ui.Funcs' own default is a fixed
+// /static/tokens.css, which these routes do not serve.
+func fixtureFuncs() template.FuncMap {
+	asset := func(name string) string {
+		return "/" + strings.TrimPrefix(name, "static/")
+	}
+	return template.FuncMap{
+		"asset":          asset,
+		"pageStylesheet": func() string { return asset(stylesheet) },
+		"iconAssets":     func() template.HTML { return "" },
+	}
+}
+
 // vendoredScripts serves every script the vendored set ships, under the
 // name each layout links it by. It reads ui.VendoredAssets rather than a
 // list of its own, so a script added to the set and linked by the shells
@@ -320,10 +336,8 @@ func TestTheSidebarRailPutsThePersonAtItsFootAndTheProfileMenuOpensUpward(t *tes
 	if !ok {
 		t.Fatal("no sidebar layout")
 	}
-	tmpl := template.Must(template.New("layout").Funcs(Funcs()).Funcs(template.FuncMap{
-		"asset":      func(p string) string { return "/" + strings.TrimPrefix(p, "static/") },
-		"iconAssets": func() template.HTML { return "" },
-	}).Parse(string(src)))
+	tmpl := template.Must(template.New("layout").Funcs(Funcs()).
+		Funcs(fixtureFuncs()).Parse(string(src)))
 	// ui's partials, as an app parses them: the locale block calls locale-menu.
 	template.Must(tmpl.ParseFS(Templates(), "*.html"))
 	template.Must(tmpl.Parse(`{{define "content"}}<p>Content.</p>{{end}}`))
@@ -622,10 +636,8 @@ func TestTheTopbarCollapsesItsTailBehindOneDisclosure(t *testing.T) {
 	if !ok {
 		t.Fatal("no topbar layout")
 	}
-	tmpl := template.Must(template.New("layout").Funcs(Funcs()).Funcs(template.FuncMap{
-		"asset":      func(p string) string { return "/" + strings.TrimPrefix(p, "static/") },
-		"iconAssets": func() template.HTML { return "" },
-	}).Parse(string(src)))
+	tmpl := template.Must(template.New("layout").Funcs(Funcs()).
+		Funcs(fixtureFuncs()).Parse(string(src)))
 	// ui's partials, as an app parses them: the locale block calls locale-menu.
 	template.Must(tmpl.ParseFS(Templates(), "*.html"))
 	template.Must(tmpl.Parse(`{{define "content"}}<p>Content.</p>{{end}}`))

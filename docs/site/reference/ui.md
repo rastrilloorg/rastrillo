@@ -42,7 +42,7 @@ checkbox and kebab a list row carries. See
 func Funcs(opts ...Option) template.FuncMap
 ```
 
-The function map the partials need, for an app that renders through its own template tree instead of [`ui.Pages`](#pages). It holds twenty-four: `dict`, `list`, `menuGroup`, `searchClear`, `icon`, `iconAssets`, `opt`, `stageArt`, `displayURL`, `safeHref`, `rowMenuItems`, `paginationItems`, `localizer`, `withL`, `strong`, `path`, and the locale functions `T`, `Tf`, `Tbdi`, `number`, `displayValue`, `dateWords`, `money` and `actor`. Add your own on top; do not drop any. `rowMenuItems` checks `row-menu`'s items and stops the render on one it cannot show.
+The function map the partials need, for an app that renders through its own template tree instead of [`ui.Pages`](#pages). It holds twenty-eight: `dict`, `list`, `menuGroup`, `searchClear`, `icon`, `iconAssets`, `opt`, `stageArt`, `displayURL`, `safeHref`, `rowMenuItems`, `paginationItems`, `localizer`, `withL`, `strong`, `path`, `needs`, `neededScripts`, `pageStylesheet`, `pageScripts`, and the locale functions `T`, `Tf`, `Tbdi`, `number`, `displayValue`, `dateWords`, `money` and `actor`. Add your own on top; do not drop any. `rowMenuItems` checks `row-menu`'s items and stops the render on one it cannot show. Outside `ui.Pages`, `pageStylesheet` links the whole `tokens.css` at `/static/tokens.css`, without a hash, `pageScripts` gives every optional script, and `neededScripts` gives the three component scripts; bind your own `pageStylesheet` to link the hashed file or a slice from `Assets.Stylesheet`.
 
 `opt` reads an optional key off a partial's data, whether it is a map or
 a struct, and gives nil when it is missing. `Tbdi` is `Tf` for a
@@ -93,6 +93,7 @@ type PagesConfig struct {
 	Catalog  rastrillo.Catalog   // Options.BaseCatalog
 	LocaleFS fs.FS               // Options.LocaleFS: locales/<code>.toml
 	Funcs    template.FuncMap    // the app's request-independent functions (icon, iconAssets, asset)
+	Assets   *rastrillo.Assets   // the app's static files; nil links the whole tokens.css
 	Compat   bool
 	Logger   *slog.Logger // nil means slog.Default()
 }
@@ -119,6 +120,11 @@ until then, or when a template has changed since, they render through
 `iconAssets` and your `asset`. A function named after a locale function,
 `localizer` or `withL` is refused:
 `ui: app function "T" would replace a framework function`.
+
+`Assets` is the app's `rastrillo.Assets`. With it, each page links a
+slice of `static/tokens.css` for its hooks, and `pageScripts` does not
+list an optional script the app has deleted. Without it, every page links the whole file. See
+[Templates](/docs/templates#the-page-s-stylesheet-and-scripts).
 
 `Execute` renders a page. Its data must carry a non-nil localizer as
 `L`. It renders into a buffer and writes nothing unless the whole page

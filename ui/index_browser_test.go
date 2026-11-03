@@ -35,10 +35,8 @@ func legacyLayout(t *testing.T, name string) []byte {
 // a title, a language menu, and the given extra defines.
 func shellLayoutPage(t *testing.T, src []byte, dir string, defs ...string) string {
 	t.Helper()
-	tmpl := template.Must(template.New("layout").Funcs(Funcs()).Funcs(template.FuncMap{
-		"asset":      func(p string) string { return "/" + strings.TrimPrefix(p, "static/") },
-		"iconAssets": func() template.HTML { return "" },
-	}).Parse(string(src)))
+	tmpl := template.Must(template.New("layout").Funcs(Funcs()).
+		Funcs(fixtureFuncs()).Parse(string(src)))
 	// ui's partials, as an app parses them: the locale block calls locale-menu.
 	template.Must(tmpl.ParseFS(Templates(), "*.html"))
 	base := []string{

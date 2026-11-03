@@ -9,6 +9,7 @@ import (
 	"testing"
 	"testing/fstest"
 
+	"amadan.net/rastrillo/rastrillo"
 	"amadan.net/rastrillo/rastrillo/locales"
 )
 
@@ -31,12 +32,16 @@ var shellContents = map[string]string{
 		`{{define "region:items"}}<p>Running</p>{{end}}`,
 }
 
-// shellWants is the component scripts each of shellContents loads.
+// shellWants is the optional scripts each of shellContents loads in a
+// shell with menus, which load anchor.js on every page. Only the live
+// page has a form of its own or a lit hook: a fragment may bring one.
 var shellWants = map[string][]string{
-	"plain":  nil,
-	"select": {"/" + selectSrc},
-	"date":   {"/" + calendarSrc, "/" + datetimeSrc},
-	"live":   {"/" + selectSrc, "/" + calendarSrc, "/" + datetimeSrc},
+	"plain":  {"/static/anchor.js"},
+	"select": {"/static/anchor.js", "/" + selectSrc},
+	"date":   {"/static/anchor.js", "/" + calendarSrc, "/" + datetimeSrc},
+	"live": {"/static/busy.js", "/static/live.js", "/static/light.js",
+		"/static/anchor.js", "/" + selectSrc, "/" + calendarSrc,
+		"/" + datetimeSrc},
 }
 
 var deferredSrc = regexp.MustCompile(`<script defer[^>]* src="([^"]*)">`)
@@ -45,6 +50,22 @@ var deferredSrc = regexp.MustCompile(`<script defer[^>]* src="([^"]*)">`)
 // returns the HTML by page name.
 func renderShellPages(
 	t *testing.T, layout []byte, contents map[string]string,
+) map[string]string {
+	t.Helper()
+	return renderPagesWith(t, layout, contents, shellSetup{})
+}
+
+// shellSetup is what renderPagesWith gives the pages beyond their files.
+type shellSetup struct {
+	assets *rastrillo.Assets // PagesConfig.Assets
+	asset  any               // the asset func; nil puts "/" before a name
+	base   string            // the base path the data carries
+}
+
+// renderPagesWith is renderShellPages with setup.
+func renderPagesWith(
+	t *testing.T, layout []byte, contents map[string]string,
+	setup shellSetup,
 ) map[string]string {
 	t.Helper()
 	config, err := locales.CheckConfig("en", []string{"en"})
@@ -57,11 +78,15 @@ func renderShellPages(
 		app[name+".html"] = &fstest.MapFile{Data: []byte(body)}
 		pages[name] = PageFile{Path: name + ".html"}
 	}
+	var asset any = func(name string) string { return "/" + name }
+	if setup.asset != nil {
+		asset = setup.asset
+	}
 	built, err := NewPages(PagesConfig{
 		App: app, Layout: "layout.html", Pages: pages,
-		Locale: config, LocaleFS: app,
+		Locale: config, LocaleFS: app, Assets: setup.assets,
 		Funcs: template.FuncMap{
-			"asset":      func(name string) string { return "/" + name },
+			"asset":      asset,
 			"iconAssets": func() template.HTML { return "" },
 		},
 	})
@@ -69,7 +94,7 @@ func renderShellPages(
 		t.Fatal(err)
 	}
 	data := shellFields{
-		Localized: Localized{L: built.Localizer("en")},
+		Localized: Localized{L: built.Localizer("en"), Base: setup.base},
 		Select:    selectData(12),
 		Date:      map[string]any{"ID": "due", "Name": "due", "Label": "Due"},
 	}
@@ -117,13 +142,20 @@ func shellPages(t *testing.T) map[string]map[string]string {
 	return out
 }
 
-func TestEachShellLoadsOnlyTheScriptsItsFieldsNeed(t *testing.T) {
-	always := []string{"rastrillo.js", "busy.js", "live.js", "light.js",
-		"anchor.js"}
+// optionalIn is the srcs of the scripts a page loads only where used.
+func optionalIn(srcs []string) []string {
+	optional := static(optionalScripts()...)
+	return slices.DeleteFunc(slices.Clone(srcs), func(src string) bool {
+		return !slices.Contains(optional, strings.TrimPrefix(src, "/"))
+	})
+}
+
+func TestEachShellLoadsOnlyTheScriptsItsPageUses(t *testing.T) {
+	always := []string{"rastrillo.js"}
 	for shell, pages := range shellPages(t) {
 		for name, page := range pages {
 			srcs := deferredScripts(page)
-			got := componentsIn(srcs)
+			got := optionalIn(srcs)
 			if !slices.Equal(got, shellWants[name]) {
 				t.Errorf("%s %s loads %v, want %v",
 					shell, name, got, shellWants[name])
@@ -192,7 +224,8 @@ func TestAnUneditedLayoutStillLoadsEveryComponentScript(t *testing.T) {
 		"plain": shellContents["plain"],
 	})
 	got := componentsIn(deferredScripts(pages["plain"]))
-	if !slices.Equal(got, shellWants["live"]) {
+	want := []string{"/" + selectSrc, "/" + calendarSrc, "/" + datetimeSrc}
+	if !slices.Equal(got, want) {
 		t.Errorf("an unedited layout loads %v, want all three", got)
 	}
 }

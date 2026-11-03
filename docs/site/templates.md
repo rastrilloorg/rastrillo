@@ -62,9 +62,9 @@ layout can show a notice. See [Forms](/docs/forms).
 `ui.Pages` registers the template functions `dict`, `list`, `menuGroup`,
 `searchClear`, `icon`, `iconAssets`, `opt`, `stageArt`, `displayURL`,
 `safeHref`, `rowMenuItems`, `paginationItems`, `localizer`, `withL`,
-`path`, `needs` and `neededScripts`. It also registers the locale
-functions `T`, `Tf`, `Tbdi`, `number`, `displayValue`, `dateWords`,
-`money` and `actor`.
+`path`, `needs`, `pageStylesheet`, `pageScripts` and `neededScripts`.
+It also registers the locale functions `T`, `Tf`, `Tbdi`, `number`,
+`displayValue`, `dateWords`, `money` and `actor`.
 
 Write a link to one of your own pages with `path`: `{{path $ "/orders"}}`. At the root it changes nothing. Under a [base path](/docs/reference/basepath) it adds the base, so the link stays in your app.
 
@@ -106,34 +106,76 @@ layout's `<head>`. It renders empty for the vendored-inline default, so
 you can call it unconditionally and never edit the layout when the
 delivery mode changes. See [Icons](/docs/icons).
 
-### Component scripts
+### The page's stylesheet and scripts
 
-`select.js`, `calendar.js` and `datetime.js` load only on a page that
-needs them. The field partials say which they need: `field-select`
-needs `select.js`, and the date and time fields need `datetime.js`,
-which brings `calendar.js`. The layout loads what the page's partials
-ask for, each once:
+Each page sends only the CSS and JS it can use. When `ui.Pages` starts,
+it reads each page's templates for the hooks they show, such as
+`rst-card` and `rst-btn`, and the scripts they need. The layout links
+the result with two functions:
 
 ```html
-{{range neededScripts}}<script defer src="{{path $ (asset .)}}"></script>{{end}}
+<link rel="stylesheet" href="{{path $ pageStylesheet}}">
+{{range pageScripts}}<script defer src="{{path $ (asset .)}}"></script>{{end}}
 ```
 
-A page with a live region or a polling fragment loads all three, since
-the HTML it swaps in later may carry a field.
+`pageStylesheet` is the page's slice of `static/tokens.css`: the rules
+for the hooks the page shows, and the rules every page needs. Slices
+are minified, gzipped and cached like your other files, and pages that
+show the same hooks share one. Your `tokens.css` stays one file, and an
+edit to it reaches every slice. If it can't be read, for example
+because it uses CSS nesting, every page links the whole file.
+`theme.css` is never sliced.
 
-Markup you write yourself loads its script the same way, as long as
-the markup carries the hook attribute: `data-rst-select` loads
-`select.js`, and `data-rst-date`, `data-rst-time` or `data-rst-range`
-load `datetime.js` and `calendar.js`. If the attribute comes from your
-data instead, ask for the script in the same template:
+`pageScripts` lists the scripts the page uses, in the order they load:
+
+- `busy.js` with a form of the page's own. The layout's language and
+  scheme menus don't count.
+- `light.js` with a component it lights: `rst-btn`, `rst-box`,
+  `rst-card`, `rst-stats` or `rst-list`.
+- `anchor.js` with a menu.
+- `select.js` with `field-select`, and `datetime.js` and `calendar.js`
+  with the date and time fields.
+
+A page with a live region or a polling fragment links the slice for
+every page's hooks and loads every script, because the HTML it swaps
+in later may carry anything.
+
+Pass your app's `rastrillo.Assets` as `PagesConfig.Assets`. With it,
+`pageScripts` does not list an optional script you deleted from
+`static/`, such as `light.js` for the still design. Without it, every
+page links the whole `tokens.css`.
+
+Markup you write in a template is read like a partial's. A field you
+write yourself loads its script as long as the markup carries its
+attribute: `data-rst-select` loads `select.js`, and `data-rst-date`,
+`data-rst-time` or `data-rst-range` load `datetime.js` and
+`calendar.js`.
+
+### Asking with needs
+
+Some markup is not in the templates: HTML your Go code builds, an
+attribute that comes from your data, or markup your own script adds.
+Ask for what it needs in the template that shows it:
 
 ```html
 {{needs "select.js"}}<select {{.Hook}}>
+{{needs "rst-card"}}{{.Summary}}
 ```
 
-`needs` takes the script's name in quotes. Use a component script name;
-any other name makes `NewPages` return an error naming the page. Do not
-add a `<script>` tag for these scripts yourself.
+`needs` takes a script or a hook, in quotes, and renders nothing. The
+scripts are `busy.js`, `live.js`, `light.js`, `anchor.js`,
+`select.js`, `calendar.js` and `datetime.js`. A hook is `rst-` and a
+component's name. Any other name makes `NewPages` return an error
+naming the page. Don't add a `<script>` tag for these scripts yourself.
+
+You don't have to find every hook by hand. `make perf` fails when a
+page's slice lacks a rule for a hook that the whole `tokens.css` would
+apply to it, and names the hook to ask for. See
+[Testing](/docs/testing#the-perf-lane).
+
+A layout written before `pageScripts` may load the component scripts
+with `neededScripts`, which lists only `select.js`, `calendar.js` and
+`datetime.js`. It still works.
 
 ## The partials
 

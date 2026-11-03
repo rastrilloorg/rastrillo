@@ -9,30 +9,55 @@ import (
 	"mime"
 	"net/http"
 	"net/url"
+	"path"
+	"slices"
 	"testing"
 	"time"
+
+	"amadan.net/rastrillo/rastrillo/internal/budgetfile"
 )
 
 // firstLoadBudget is what a page's framework CSS and JS may weigh,
-// gzipped. shells is the limit for a page of each shell that loads no
-// component script; references pins each vendored file's size, which
-// is how a failure names the file that grew, and a component script's
-// reference is also what it adds to a page's limit.
+// gzipped. shells is the limit for a page of each shell that links a
+// slice of tokens.css and loads no component script, live the same for
+// a live page before live.js, and unsliced the limit for any page
+// linking the whole file; references pins each
+// vendored file's size, which is how a failure names the file that
+// grew, and a component script's reference is also what it adds to a
+// page's limit. records are the app's budgets.txt weight records, by
+// screen, each a page's whole limit in place of these.
 type firstLoadBudget struct {
-	shells, references map[string]int
+	shells, live, references map[string]int
+	unsliced                 int
+	records                  map[string]budgetfile.Weight
 }
 
 // frameworkBudget is measured from the shipped files, minified and
 // gzipped at the default level, with each reference rounded up to the
 // next 100 bytes so a compressor change of a few bytes is not a
-// failure; theme.css's is the largest theme's. The sidebar, console
-// and stage limits are their plain page's weight in its heaviest theme
-// plus 10%, rounded up the same way (the page-weight spec, change 3).
+// failure; theme.css's is the largest theme's. A sliced page in any
+// shell gets 16 kB (page-weight 2, change 6): the spec's "about 15 kB",
+// raised so the framework's own screens pass with no record. A
+// generated list screen links the rules of every branch of its rows
+// and pagination, and loads busy.js, light.js and anchor.js for its
+// search form, buttons and filter menu: 15,399 bytes. The stage
+// shell's sign-in screen, its real first page, is 11,866. A live page
+// loads live.js and every component script, and links the slice of
+// every page's hooks, so its shell's live limit is its live page in its
+// heaviest theme, less those scripts' references, plus 10%, rounded up
+// the same way, and never under the sliced limit: a live page shows at
+// least what a plain one does. That raises column (14,200 measured),
+// topbar (15,500) and stage (13,200) to 16,000.
 var frameworkBudget = firstLoadBudget{
 	shells: map[string]int{
-		"column": 40000, "topbar": 40000,
-		"sidebar": 37400, "console": 37400, "stage": 35700,
+		"column": 16000, "topbar": 16000,
+		"sidebar": 16000, "console": 16000, "stage": 16000,
 	},
+	live: map[string]int{
+		"column": 16000, "topbar": 16000,
+		"sidebar": 18700, "console": 19500, "stage": 16000,
+	},
+	unsliced: 40000,
 	references: map[string]int{
 		"tokens.css": 20100, "theme.css": 1800, "shell.css": 500,
 		"rastrillo.js": 2400, "busy.js": 1200, "live.js": 4600,
@@ -50,7 +75,9 @@ var frameworkBudget = firstLoadBudget{
 // machine.
 func FirstLoad(t testing.TB, cfg ScreenConfig) {
 	t.Helper()
-	targets, problems := inventory(cfg, load(t))
+	file := load(t)
+	targets, problems := inventory(cfg, file)
+	problems = append(problems, staleWeights(file, targets)...)
 	for _, problem := range problems {
 		t.Errorf("%s", problem)
 	}
@@ -59,7 +86,8 @@ func FirstLoad(t testing.TB, cfg ScreenConfig) {
 	}
 	client, server, _ := startServer(t, cfg)
 	defer closeBounded(server)
-	checkFirstLoad(t, client, server.URL, targets, frameworkBudget)
+	checkFirstLoad(t, client, server.URL, targets,
+		withRecords(frameworkBudget, file))
 }
 
 // checkFirstLoad weighs each target that answers its expected status
@@ -87,13 +115,31 @@ func checkFirstLoad(
 		case !isPage(response):
 			continue
 		}
-		weights, err := frameworkWeights(following(client), pageURL, page)
-		if err != nil {
-			t.Errorf("%s %v", target.screen, err)
-			continue
-		}
-		reportWeight(t, target.screen, shellOf(page), weights, budget)
+		weighPage(t, following(client), target.screen, pageURL, page, budget)
 	}
+}
+
+// weighPage holds page to its limit, and its hooks to its slice.
+func weighPage(
+	t testing.TB,
+	client *http.Client,
+	screen, pageURL string,
+	page []byte,
+	budget firstLoadBudget,
+) {
+	t.Helper()
+	weights, err := frameworkWeights(client, pageURL, page)
+	if err != nil {
+		t.Errorf("%s %v", screen, err)
+		return
+	}
+	sheet, err := stylesheetOf(client, weights)
+	if err != nil {
+		t.Errorf("%s %v", screen, err)
+		return
+	}
+	reportWeight(t, screen, shellOf(page), weights, sheet, budget)
+	reportUnstyled(t, screen, page, sheet)
 }
 
 // requestBound caps each request FirstLoad makes, body included, so a
@@ -147,10 +193,13 @@ func following(client *http.Client) *http.Client {
 	return &copied
 }
 
-// fileWeight is one framework file a page links and its gzipped size.
+// fileWeight is one framework file a page links, where it was fetched
+// from, its bytes and their gzipped size.
 type fileWeight struct {
-	name string
-	size int
+	name    string
+	size    int
+	address string
+	body    []byte
 }
 
 // frameworkWeights fetches each framework file page links, resolved
@@ -183,22 +232,79 @@ func frameworkWeights(
 			continue
 		}
 		seen[address] = true
-		response, body, err := get(client, address, always)
+		body, err := fetchFramework(client, address)
 		if err != nil {
-			return nil, fmt.Errorf(linkErrorMsg, href, err)
+			return nil, fmt.Errorf(linkFailedMsg, href, err)
 		}
-		if response.StatusCode != http.StatusOK {
-			return nil, fmt.Errorf(linkFailedMsg, href, response.StatusCode)
-		}
-		// A redirect to a sign-in page answers 200 with HTML, which the
-		// browser cannot run as the file it asked for.
-		landed := response.Request.URL.String()
-		if _, ok := frameworkName(landed); !ok {
-			return nil, fmt.Errorf(linkRedirectedMsg, href, landed)
-		}
-		weights = append(weights, fileWeight{name, gzippedSize(body)})
+		weights = append(weights,
+			fileWeight{name, gzippedSize(body), address, body})
 	}
 	return weights, nil
+}
+
+// fetchFramework fetches the framework file at address. One that does
+// not answer 200 is an error, never a file of 0 bytes, and so is a
+// redirect to a sign-in page, which answers 200 with HTML the browser
+// cannot use as the file it asked for.
+func fetchFramework(client *http.Client, address string) ([]byte, error) {
+	response, body, err := get(client, address, always)
+	if err != nil {
+		return nil, fmt.Errorf(notLoadedMsg, err)
+	}
+	if response.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf(statusMsg, response.StatusCode)
+	}
+	landed := response.Request.URL.String()
+	if _, ok := frameworkName(landed); !ok {
+		return nil, fmt.Errorf(redirectedMsg, landed)
+	}
+	return body, nil
+}
+
+// stylesheetName is the framework file a page may link a slice of.
+const stylesheetName = "tokens.css"
+
+// pageStylesheet is the tokens.css a page links: the whole file, and
+// the slice the page links in its place, if it does. Both are nil for a
+// page that links no tokens.css.
+type pageStylesheet struct {
+	whole, slice []byte
+}
+
+func (sheet pageStylesheet) sliced() bool { return sheet.slice != nil }
+
+func (sheet pageStylesheet) unsliced() bool {
+	return sheet.whole != nil && sheet.slice == nil
+}
+
+// stylesheetOf tells whether the tokens.css among a page's weights is
+// a slice by its bytes: Assets answers the bare static/tokens.css
+// beside it with the whole file, and serves a slice only under a
+// fingerprint, which the whole file's own link also carries.
+func stylesheetOf(
+	client *http.Client, weights []fileWeight,
+) (pageStylesheet, error) {
+	for _, weight := range weights {
+		if weight.name != stylesheetName {
+			continue
+		}
+		bare, err := url.Parse(weight.address)
+		if err != nil {
+			return pageStylesheet{}, err
+		}
+		bare.Path = path.Join(path.Dir(bare.Path), stylesheetName)
+		bare.RawPath, bare.RawQuery = "", ""
+		whole, err := fetchFramework(client, bare.String())
+		if err != nil {
+			return pageStylesheet{},
+				fmt.Errorf(wholeFailedMsg, weight.address, bare, err)
+		}
+		if bytes.Equal(whole, weight.body) {
+			return pageStylesheet{whole: whole}, nil
+		}
+		return pageStylesheet{whole: whole, slice: weight.body}, nil
+	}
+	return pageStylesheet{}, nil
 }
 
 // gzippedSize is body's size gzipped at the default level, the level a
@@ -209,4 +315,30 @@ func gzippedSize(body []byte) int {
 	zipper.Write(body)
 	zipper.Close()
 	return compressed.Len()
+}
+
+// withRecords is budget with the app's weight records from file.
+func withRecords(
+	budget firstLoadBudget, file *budgetfile.File,
+) firstLoadBudget {
+	budget.records = file.Weights
+	return budget
+}
+
+// staleWeights is a problem for each weight record naming a screen that
+// is not weighed: like a perf record, it cannot go stale quietly.
+func staleWeights(file *budgetfile.File, targets []target) []string {
+	weighed := map[string]bool{}
+	for _, target := range targets {
+		weighed[target.screen] = true
+	}
+	var problems []string
+	for screen, record := range file.Weights {
+		if !weighed[screen] {
+			problems = append(problems, fmt.Sprintf(staleWeightScreenMsg,
+				budgetfile.FileName, record.Line, screen))
+		}
+	}
+	slices.Sort(problems)
+	return problems
 }

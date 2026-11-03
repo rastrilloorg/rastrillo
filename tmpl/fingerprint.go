@@ -126,7 +126,7 @@ func field(digest hash.Hash, text string) {
 // and the functions they call.
 func reach(entry string, trees map[string]*parse.Tree) (called, used []string) {
 	funcs := map[string]bool{}
-	called = reachable(entry, trees, func(node parse.Node) {
+	called = reachable(entry, trees, func(_ string, node parse.Node) {
 		if identifier, ok := node.(*parse.IdentifierNode); ok {
 			funcs[identifier.Ident] = true
 		}
@@ -140,11 +140,13 @@ func reach(entry string, trees map[string]*parse.Tree) (called, used []string) {
 }
 
 // reachable calls visit for every node of entry and of each template it
-// reaches through {{template}}, each template once, and returns the
-// names reached, entry included. A name with no tree is reached but
-// has nothing to visit.
+// reaches through {{template}}, each template once, along with the name
+// of the template the node is in, and returns the names reached, entry
+// included. A name with no tree is reached but has nothing to visit.
 func reachable(
-	entry string, trees map[string]*parse.Tree, visit func(parse.Node),
+	entry string,
+	trees map[string]*parse.Tree,
+	visit func(name string, node parse.Node),
 ) []string {
 	seen := map[string]bool{entry: true}
 	queue := []string{entry}
@@ -161,7 +163,7 @@ func reachable(
 				seen[call.Name] = true
 				queue = append(queue, call.Name)
 			}
-			visit(node)
+			visit(name, node)
 		})
 	}
 	return slices.Collect(maps.Keys(seen))

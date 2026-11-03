@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"html/template"
 	"io/fs"
+	"maps"
 	"regexp"
 	"slices"
 	"strings"
@@ -16,24 +17,42 @@ import (
 )
 
 const (
-	needsLiteralMsg = "ui: page %q: put the script name in quotes, " +
-		"such as {{needs \"select.js\"}}"
-	needsUnknownMsg = "ui: page %q: needs %q, which is not a component " +
-		"script; use one of: %s"
-	needsRenderMsg = "ui: needs %q, which is not a component script; " +
-		"use one of: %s"
+	needsLiteralMsg = "ui: page %q: put the script or hook in quotes, " +
+		"such as {{needs \"select.js\"}} or {{needs \"rst-card\"}}"
+	needsUnknownMsg = "ui: page %q: needs %q, which is neither a script " +
+		"nor a hook; use one of the scripts (%s) or a hook: rst- and " +
+		"a component's name, such as \"rst-card\""
+	needsRenderMsg = "ui: needs %q, which is neither a script nor a " +
+		"hook; use one of the scripts (%s) or a hook: rst- and a " +
+		"component's name, such as \"rst-card\""
 )
 
 // needs renders nothing. NewPages reads each call off the page's parse
-// tree before the page runs, because the layout writes its scripts in
-// <head>, ahead of the content that would call needs while rendering.
+// tree before the page runs, because the layout writes its scripts and
+// stylesheet in <head>, ahead of the content that would call needs
+// while rendering.
 func needs(name string) (string, error) {
-	scripts := vendored.ComponentScripts()
-	if !slices.Contains(scripts, name) {
+	if !needable(name) {
 		return "", fmt.Errorf(needsRenderMsg, name,
-			strings.Join(scripts, ", "))
+			strings.Join(optionalScripts(), ", "))
 	}
 	return "", nil
+}
+
+// needable reports whether a page may ask for name: a hook whose rules
+// its stylesheet must keep, or a script it loads only where it is used.
+func needable(name string) bool {
+	return vendored.IsHook(name) || slices.Contains(optionalScripts(), name)
+}
+
+// optionalScripts are the vendored scripts a page loads only where it
+// uses them, in the order the layouts load them: live.js after busy.js,
+// which hands it a live form, and the component scripts last, in their
+// own order. rastrillo.js and shell.js load on every page whose layout
+// links them.
+func optionalScripts() []string {
+	return append([]string{"busy.js", "live.js", "light.js", "anchor.js"},
+		vendored.ComponentScripts()...)
 }
 
 // allComponentScripts is every component script, as the static paths
@@ -47,20 +66,58 @@ func allComponentScripts() []string {
 	return paths
 }
 
-// scriptFuncs are the template functions behind component scripts:
-// needs, and neededScripts, which ui.Pages binds per page.
+// allOptionalScripts is every optional script, as static paths, in load
+// order: what a render outside ui.Pages loads.
+func allOptionalScripts() []string {
+	var paths []string
+	for _, name := range optionalScripts() {
+		paths = append(paths, "static/"+name)
+	}
+	return paths
+}
+
+// scriptFuncs are the template functions behind a page's scripts and
+// stylesheet: needs, and neededScripts, pageScripts and pageStylesheet,
+// which ui.Pages binds per page. Outside ui.Pages, which alone reads
+// the page, they give every script and the whole stylesheet.
 func scriptFuncs() template.FuncMap {
 	return template.FuncMap{
-		"needs":         needs,
-		"neededScripts": allComponentScripts,
+		"needs":          needs,
+		"neededScripts":  allComponentScripts,
+		"pageScripts":    allOptionalScripts,
+		"pageStylesheet": func() string { return "/" + stylesheet },
 	}
 }
 
-// addPage parses the page's file into its own clone of base, and binds
-// neededScripts there to the component scripts that page needs.
+// addPages adds each of the app's pages. With the app's assets, a page
+// links only the scripts the app still has, and its stylesheet's slice
+// once every page's hooks are known.
+func (pages *Pages) addPages(base *tmpl.Template, config PagesConfig) error {
+	has := func(string) bool { return true }
+	if config.Assets != nil {
+		has = config.Assets.Has
+	}
+	plans := map[string]pagePlan{}
+	for name, file := range config.Pages {
+		plan, err := pages.addPage(base, name, file, config.App, has)
+		if err != nil {
+			return err
+		}
+		plans[name] = plan
+	}
+	if config.Assets != nil {
+		pages.bindStylesheets(plans, config.Assets)
+	}
+	return nil
+}
+
+// addPage parses the page's file into its own clone of base, binds
+// pageScripts and neededScripts there to the scripts that page needs,
+// and returns its plan. has reports whether the app has a file.
 func (pages *Pages) addPage(
 	base *tmpl.Template, name string, file PageFile, app fs.FS,
-) error {
+	has func(string) bool,
+) (pagePlan, error) {
 	fsys := file.FS
 	if fsys == nil {
 		fsys = app
@@ -70,61 +127,49 @@ func (pages *Pages) addPage(
 		page, err = page.ParseFS(fsys, file.Path)
 	}
 	if err != nil {
-		return fmt.Errorf(pageParseMsg, name, err)
+		return pagePlan{}, fmt.Errorf(pageParseMsg, name, err)
 	}
-	scripts, err := pageScripts(name, page, pages.entry)
+	plan, err := planPage(name, page, pages.entry, has)
 	if err != nil {
-		return err
+		return pagePlan{}, err
 	}
 	page.Funcs(tmpl.FuncMap{
-		"neededScripts": func() []string { return scripts },
+		"pageScripts":   func() []string { return plan.scripts },
+		"neededScripts": func() []string { return plan.components },
 	})
 	pages.pages[name] = page
-	return nil
+	return plan, nil
 }
 
-// pageScripts is the static paths of the component scripts the page
-// called name needs, in load order, each once. A live or polling page
-// gets every one, since a fragment it swaps in later may carry a field
-// that needs a script nothing loaded.
-func pageScripts(
-	name string, page *tmpl.Template, entry string,
-) ([]string, error) {
-	root := page.Lookup(entry)
-	if root == nil {
-		return nil, nil
-	}
-	wanted := map[string]bool{}
-	polls := false
-	var problem error
-	root.Inspect(func(node parse.Node) {
-		switch concrete := node.(type) {
-		case *parse.TextNode:
-			polls = markupNeeds(concrete.Text, wanted) || polls
-		case *parse.CommandNode:
-			script, err := neededScript(name, concrete)
-			if err != nil && problem == nil {
-				problem = err
-			}
-			wanted[script] = wanted[script] || script != ""
+// plannedScripts is the optional scripts a page loads, by what its
+// templates show, in load order:
+//
+//   - busy.js with a form of the page's own;
+//   - light.js with a hook it lights;
+//   - anchor.js with a menu;
+//   - a component script where a field arms it, and calendar.js with
+//     datetime.js, which draws its month grid with it;
+//   - each the page asks for with needs;
+//   - live.js on a live or polling page, which loads every other one
+//     too, since a fragment it swaps in later may carry a form, a field
+//     or a lit hook that no template the walk reached shows: the page
+//     already links the whole app's slice for the same reason.
+func plannedScripts(reading pageReading) []string {
+	wanted := maps.Clone(reading.wanted)
+	if reading.live {
+		for _, script := range optionalScripts() {
+			wanted[script] = true
 		}
+	}
+	wanted["calendar.js"] = wanted["calendar.js"] || wanted["datetime.js"]
+	lit := slices.ContainsFunc(vendored.LitHooks(),
+		func(hook string) bool { return reading.hooks[hook] })
+	wanted["light.js"] = wanted["light.js"] || lit
+	menu := reading.hooks["rst-dropdown"] || reading.hooks["rst-menus"]
+	wanted["anchor.js"] = wanted["anchor.js"] || menu
+	return slices.DeleteFunc(optionalScripts(), func(script string) bool {
+		return !wanted[script]
 	})
-	if problem != nil {
-		return nil, problem
-	}
-	if polls || hasLiveRegion(page) {
-		return allComponentScripts(), nil
-	}
-	if wanted["datetime.js"] {
-		wanted["calendar.js"] = true
-	}
-	var paths []string
-	for _, script := range vendored.ComponentScripts() {
-		if wanted[script] {
-			paths = append(paths, "static/"+script)
-		}
-	}
-	return paths, nil
 }
 
 // hookScripts maps each attribute that arms a component script to that
@@ -157,9 +202,9 @@ var hookAttribute = regexp.MustCompile(
 	`(?i)\s(data-rst-select|data-rst-date|data-rst-time|data-rst-range)` +
 		`(?:[\s=/>]|$)`)
 
-// neededScript is the script a {{needs}} command names, "" for any
-// other command.
-func neededScript(page string, command *parse.CommandNode) (string, error) {
+// neededName is the script or hook a {{needs}} command names, "" for
+// any other command.
+func neededName(page string, command *parse.CommandNode) (string, error) {
 	first, ok := command.Args[0].(*parse.IdentifierNode)
 	if !ok || first.Ident != "needs" {
 		return "", nil
@@ -171,10 +216,9 @@ func neededScript(page string, command *parse.CommandNode) (string, error) {
 	if !ok {
 		return "", fmt.Errorf(needsLiteralMsg, page)
 	}
-	scripts := vendored.ComponentScripts()
-	if !slices.Contains(scripts, literal.Text) {
+	if !needable(literal.Text) {
 		return "", fmt.Errorf(needsUnknownMsg, page, literal.Text,
-			strings.Join(scripts, ", "))
+			strings.Join(optionalScripts(), ", "))
 	}
 	return literal.Text, nil
 }
@@ -196,5 +240,5 @@ func hasLiveRegion(page *tmpl.Template) bool {
 func reservedFunc(name string) bool {
 	return slices.Contains(LocaleFuncs, name) ||
 		slices.Contains([]string{"localizer", "withL", "needs",
-			"neededScripts"}, name)
+			"neededScripts", "pageScripts", "pageStylesheet"}, name)
 }

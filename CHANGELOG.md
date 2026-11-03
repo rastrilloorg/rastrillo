@@ -31,6 +31,82 @@ test allows the missing file.
 Chromium versions without `document.activeViewTransition` still log the
 error. It is harmless and your app remains safe to use.
 
+### Changed: each page sends only the CSS it can show
+
+Each page now links a slice of your `static/tokens.css` with the
+rules for the hooks its templates show, plus the rules every page
+needs. It also loads `busy.js`, `live.js`, `light.js` and `anchor.js`
+only where it uses them. A page looks the same and downloads only the
+CSS and scripts its templates call for. Your `tokens.css` stays one
+commented file, and an edit to it reaches every slice.
+
+To upgrade:
+
+1. In `render.go`, add `Assets: assets` to the `ui.PagesConfig` that
+   `newPages` builds. If your app signs people in, add it to the one
+   in `auth.go`'s `newSigninPages` too.
+2. In each layout in `templates/`, replace the `static/tokens.css`
+   line with:
+
+   ```html
+   <link rel="stylesheet" href="{{path $ pageStylesheet}}">
+   ```
+
+   Then replace the `<script>` lines for `busy.js`, `live.js`,
+   `light.js` and `anchor.js`, and the `neededScripts` line (or the
+   `select.js`, `calendar.js` and `datetime.js` lines), with one:
+
+   ```html
+   {{range pageScripts}}<script defer src="{{path $ (asset .)}}"></script>{{end}}
+   ```
+
+   Keep the `rastrillo.js` and `shell.js` lines. Make both edits
+   together: a page that links its slice expects the scripts
+   `pageScripts` gives it.
+3. Run `rastrillo generate` and commit the result.
+4. Run `make perf`. A hook in HTML your Go code builds, or in markup
+   your own script adds, may be missing a rule from the page's slice.
+   `make perf` fails such a page and names the hook. Ask for it in the
+   page's template with `{{needs "rst-card"}}`.
+
+An app that makes neither edit keeps working. Its pages link the whole
+`tokens.css`, and `make perf` keeps holding them to 40 kB.
+
+What changed:
+
+- New field `ui.PagesConfig.Assets`. With it, `ui.Pages` reads each
+  page's templates when it starts for the hooks they show, adds the
+  hooks the page's scripts create, and links the slice for them. Pages
+  with the same hooks share a slice. A live or polling page links the
+  slice for every page's hooks, because HTML it swaps in later may
+  carry any of them. `pageScripts` never lists an optional script the
+  app has deleted.
+- New template functions `pageStylesheet` and `pageScripts`, which the
+  five shells' layouts use. Outside `ui.Pages`, `pageStylesheet` is the
+  whole `tokens.css` and `pageScripts` is every script. See
+  [Templates](/docs/templates#the-page-s-stylesheet-and-scripts).
+- `needs` also takes a hook, such as `{{needs "rst-card"}}`, and the
+  scripts `busy.js`, `live.js`, `light.js` and `anchor.js`.
+- New `rastrillo.Assets.Stylesheet`, which slices a framework
+  stylesheet to a set of hooks and serves the slice fingerprinted and
+  immutable, and `Assets.Has`.
+- A `tokens.css` the slicer cannot read, such as one that uses CSS
+  nesting, is linked whole on every page, and `Assets` logs a warning.
+  `theme.css` is never sliced.
+- `perftest.FirstLoad` holds a page that links its slice to 16,000
+  bytes, plus each component script it loads. A live page has its
+  shell's own limit, never under 16,000, with `live.js` on top. A page
+  that links the whole `tokens.css` keeps 40,000, and its report names
+  the two edits above, or says why the file can't be sliced. A page that
+  shows a hook whose rule is in the whole `tokens.css` but missing from
+  its slice fails, naming the hook and the `needs` to add. See
+  [perftest](/docs/reference/perftest#firstload).
+- `.rastrillo/budgets.txt` takes `weight GET /path <bytes> <reason>`
+  for a page that can't be lighter.
+- New apps pass `Assets` in `render.go` and to the sign-in pages.
+- New `tmpl.Template.InspectNamed`, which also says which template each
+  node is in.
+
 ### Changed: API answers are held and checked again as they go out; test the API through a server
 
 The JSON API now holds each answer until the handler has finished, then

@@ -32,10 +32,8 @@ func topbarPageWith(t *testing.T, dir, content string) string {
 	if !ok {
 		t.Fatal("no topbar layout")
 	}
-	tmpl := template.Must(template.New("layout").Funcs(Funcs()).Funcs(template.FuncMap{
-		"asset":      func(p string) string { return "/" + strings.TrimPrefix(p, "static/") },
-		"iconAssets": func() template.HTML { return "" },
-	}).Parse(string(src)))
+	tmpl := template.Must(template.New("layout").Funcs(Funcs()).
+		Funcs(fixtureFuncs()).Parse(string(src)))
 	// ui's partials, as an app parses them: the locale block calls locale-menu.
 	template.Must(tmpl.ParseFS(Templates(), "*.html"))
 	for _, def := range []string{

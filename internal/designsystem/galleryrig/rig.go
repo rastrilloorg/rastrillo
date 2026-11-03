@@ -4,7 +4,7 @@
 // equipment: the rendered tree served at its mount, frames waited on
 // until each shows its own document, and the other conditions that
 // internal/designsystem's browser tests and its sweep package both
-// need. A package rather than test files because two test packages use
+// need. A package rather than test files because several test packages use
 // it; browser-tagged like harness, so chromedp stays out of the
 // ordinary build graph. It imports nothing of the gallery's: the
 // gallery's own tests import it, and an import back would be a cycle,

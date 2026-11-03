@@ -150,6 +150,7 @@ func newSigninPages() (*ui.Pages, error) {
 	return ui.NewPages(ui.PagesConfig{
 		App: appFS, Layout: "templates/stage.html",
 		Pages: map[string]ui.PageFile{"signin": signin}, Locale: config,
+		Assets: assets,
 		Funcs: template.FuncMap{"icon": icons.Icon, "iconAssets": icons.Assets,
 			"asset": assets.Path},
 	})

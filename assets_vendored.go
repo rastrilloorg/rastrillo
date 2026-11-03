@@ -23,6 +23,18 @@ func (assets *Assets) serveVendored(
 	if err != nil {
 		return false
 	}
+	writeVendored(writer, request, name, hashInURL, entry)
+	return true
+}
+
+// writeVendored writes entry, a vendored file or a slice of one, as
+// serveVendored describes.
+func writeVendored(
+	writer http.ResponseWriter,
+	request *http.Request,
+	name, hashInURL string,
+	entry assetInfo,
+) {
 	header := writer.Header()
 	header.Set("Cache-Control", cachePolicy(entry.hash, hashInURL))
 	header.Add("Vary", "Accept-Encoding")
@@ -35,7 +47,6 @@ func (assets *Assets) serveVendored(
 	http.ServeContent(
 		writer, request, name, entry.mtime, bytes.NewReader(body),
 	)
-	return true
 }
 
 // servedForms returns the bytes a vendored file is served as and their
@@ -48,11 +59,17 @@ func servedForms(name string, body []byte) (served, gzipped []byte) {
 	if err != nil || len(served) == 0 {
 		served = body
 	}
+	return served, gzipOf(served)
+}
+
+// gzipOf compresses body as hard as gzip can, once per version, since
+// the answer is sent many times.
+func gzipOf(body []byte) []byte {
 	var compressed bytes.Buffer
 	zipper, _ := gzip.NewWriterLevel(&compressed, gzip.BestCompression)
-	zipper.Write(served)
+	zipper.Write(body)
 	zipper.Close()
-	return served, compressed.Bytes()
+	return compressed.Bytes()
 }
 
 // acceptsGzip reports whether the request's Accept-Encoding allows

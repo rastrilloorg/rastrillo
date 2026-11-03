@@ -1,0 +1,37 @@
+{{define "layout"}}{{$L := localizer $}}<!doctype html>
+<html lang="{{block "lang" .}}{{$L := localizer $}}{{if $L}}{{$L.Identity}}{{else}}en{{end}}{{end}}" dir="{{block "dir" .}}{{$L := localizer $}}{{if $L}}{{$L.Dir}}{{else}}ltr{{end}}{{end}}"{{with opt $ "Scheme"}} data-theme="{{.}}"{{end}}>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<title>{{block "title" .}}Hello{{end}}</title>
+<link rel="stylesheet" href="{{path $ (asset "static/tokens.css")}}">
+<link rel="stylesheet" href="{{path $ (asset "static/theme.css")}}">
+<script defer src="{{path $ (asset "static/rastrillo.js")}}"></script>
+<script defer src="{{path $ (asset "static/busy.js")}}"></script>
+{{/* live.js does nothing until a page carries the rastrillo-live meta;
+     busy.js hands it a live form, so keep it after busy.js. */}}
+<script defer src="{{path $ (asset "static/live.js")}}"></script>
+{{/* light.js moves the light the depth styles read. Delete it and its
+     tag for the still design. */}}
+<script defer src="{{path $ (asset "static/light.js")}}"></script>
+<script defer src="{{path $ (asset "static/anchor.js")}}"></script>
+{{iconAssets}}
+{{/* Loads the component scripts this page's fields need. A live page
+     loads them all, because later content may include any field. For a
+     field you write by hand, call needs; see SKILL.md. */}}
+{{range neededScripts}}<script defer src="{{path $ (asset .)}}"></script>{{end}}
+{{/* head is the app's own slot in <head>: a favicon, a meta tag, one
+     more stylesheet. Empty by default, last in the head so an app's
+     own CSS wins over the framework's, and the only block in the
+     three shells that is not chrome. */}}
+{{block "head" .}}{{end}}
+</head>
+<body>
+<a rst-skip href="#main">{{T $L "rastrillo.ui.shell_skip"}}</a>
+<main rst-page id="main">
+{{block "locale" .}}{{$L := localizer $}}{{template "locale-menu" dict "L" $L "Items" (opt $ "Locales") "Return" (opt $ "Return") "Action" (path $ "/_locale")}}{{end}}{{block "scheme" .}}{{$L := localizer $}}{{template "scheme-menu" dict "L" $L "Scheme" (opt $ "Scheme") "Return" (opt $ "Return") "Action" (path $ "/_theme")}}{{end}}
+{{template "content" .}}
+</main>
+</body>
+</html>
+{{end}}

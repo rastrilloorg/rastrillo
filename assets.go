@@ -31,6 +31,11 @@ type Assets struct {
 
 	mu    sync.Mutex
 	cache map[string]assetInfo
+
+	// slicing guards slices apart from mu, so cutting a page's first
+	// slice does not hold up every other file's lookup.
+	slicing sync.Mutex
+	slices  map[string]*slicesOfFile
 }
 
 // assetInfo caches one file's hash keyed by the stat that produced it.
@@ -56,7 +61,11 @@ type assetInfo struct {
 // os.DirFS for an app serving a live directory — in a content-hash
 // registry.
 func NewAssets(fsys fs.FS) *Assets {
-	return &Assets{fsys: fsys, cache: make(map[string]assetInfo)}
+	return &Assets{
+		fsys:   fsys,
+		cache:  make(map[string]assetInfo),
+		slices: make(map[string]*slicesOfFile),
+	}
 }
 
 // assetHashLen is how much of the SHA-256 hex survives into the URL.
@@ -76,9 +85,15 @@ func (assets *Assets) Path(name string) string {
 	if err != nil {
 		return "/" + name
 	}
+	return hashedPath(name, entry.hash)
+}
+
+// hashedPath inserts hash before name's extension, the URL shape
+// Handler and hashedName read back.
+func hashedPath(name, hash string) string {
 	dir, base := path.Split(name)
 	ext := path.Ext(base)
-	return "/" + dir + strings.TrimSuffix(base, ext) + "." + entry.hash + ext
+	return "/" + dir + strings.TrimSuffix(base, ext) + "." + hash + ext
 }
 
 // lookup returns name's cached entry, rebuilding it only when the
@@ -141,8 +156,11 @@ var hashedName = regexp.MustCompile(`^(.+)\.([0-9a-f]{16})(\.[^.]*)?$`)
 //   - a hashed name matching the file's current content is immutable —
 //     Cache-Control: public, max-age=31536000, immutable — because that
 //     exact URL can never serve different bytes;
+//   - a hashed name of a slice of the file as it is now (Stylesheet)
+//     is that slice, immutable on the same terms;
 //   - a hashed name that no longer matches (a stale page asking for an
-//     old version) serves the *current* content with no-cache: a
+//     old version, or an old version's slice) serves the *current*
+//     whole content with no-cache: a
 //     slightly-stale stylesheet on a stale page beats a 404;
 //   - a bare name serves no-cache, so deep links keep working;
 //   - a real file whose name merely looks hashed wins over
@@ -167,6 +185,9 @@ func (assets *Assets) Handler() http.Handler {
 			return
 		}
 		original := dir + match[1] + match[3]
+		if assets.serveSlice(writer, request, original, match[2]) {
+			return
+		}
 		if !assets.serveFile(writer, request, original, match[2]) {
 			http.NotFound(writer, request)
 		}

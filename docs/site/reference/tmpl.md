@@ -48,6 +48,7 @@ func (t *Template) Execute(w io.Writer, data any) error
 func (t *Template) ExecuteTemplate(w io.Writer, name string, data any) error
 func (t *Template) IsCompiled(name string) bool
 func (t *Template) Inspect(visit func(node parse.Node))
+func (t *Template) InspectNamed(visit func(name string, node parse.Node))
 
 type (
 	FuncMap  = template.FuncMap
@@ -189,8 +190,12 @@ t.Lookup("layout").Inspect(func(node parse.Node) {
 `Inspect` calls `visit` for every node in the template and in each
 template it calls with `{{template}}`. It visits each template once.
 Use it to inspect what a page uses before it runs. `ui.Pages` uses it to
-find the scripts a page needs. Call it before the template set runs for
-the first time. Do not change the nodes.
+find the scripts and hooks a page needs. Call it before the template set
+runs for the first time. Do not change the nodes.
+
+`InspectNamed` is `Inspect` that also passes the name of the template
+each node is in. `ui.Pages` uses it to tell the layout's language and
+scheme menus, which are forms, from a page's own forms.
 
 ## Capture
 

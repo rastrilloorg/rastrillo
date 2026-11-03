@@ -60,9 +60,13 @@ navigation, on a phone before it is tapped (turn it off with
 each test package to 10s, each GET screen to 150ms to first byte and a
 cold boot to 500ms; exceptions go in `.rastrillo/budgets.txt`, each with
 a reason. Timing fails only on CI (`AMADAN_CI`/`CI` set). `make perf`
-also holds each page's framework CSS and JS to 40 kB gzipped, plus each
-component script it loads, on every machine; a failure names the file
-that grew (`rastrillo doctor`). Every test
+also holds each page's framework CSS and JS to 16 kB gzipped, plus each
+component script it loads, on every machine (a live page has its
+shell's own limit; one whose layout links the whole `tokens.css`,
+40 kB); a failure names the file that grew (`rastrillo doctor`). It
+also fails a page when its slice lacks a rule for a hook that the whole
+`tokens.css` would apply to the page, such as one in HTML built in Go:
+add `{{needs "rst-card"}}` to the page's template. Every test
 package's `TestMain` calls `os.Exit(budget.Main(m))`: it prints the time
 `rastrillo budget test` judges, cached runs included. Tests start with
 `t.Parallel()` (perf tests never) and open a copy of a `dbtest` template

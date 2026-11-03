@@ -2202,7 +2202,7 @@ func renderShell(mount, theme, locale, shell string) (map[string][]byte, error) 
 		return nil, fmt.Errorf("no shell %q", shell)
 	}
 	funcs := galleryFuncs(locale)
-	funcs["asset"] = assetFunc(mount, theme)
+	shellAssets(funcs, mount, theme)
 	tmpl, err := template.New("designsystem").Funcs(funcs).ParseFS(ui.Templates(), "*.html")
 	if err != nil {
 		return nil, fmt.Errorf("parsing partials: %w", err)
@@ -2398,7 +2398,7 @@ func renderDemo(mount, theme, locale string) (map[string][]byte, error) {
 		return nil, fmt.Errorf("no shell %q to build the demo application in", demoShell)
 	}
 	funcs := galleryFuncs(locale)
-	funcs["asset"] = assetFunc(mount, theme)
+	shellAssets(funcs, mount, theme)
 	tmpl, err := template.New("designsystem").Funcs(funcs).ParseFS(ui.Templates(), "*.html")
 	if err != nil {
 		return nil, fmt.Errorf("parsing partials: %w", err)

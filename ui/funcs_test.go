@@ -840,12 +840,12 @@ func TestActorIsALocaleFunc(t *testing.T) {
 }
 
 // documentedFuncs is every name Funcs registers: the 18 it began with,
-// then localizer, withL, money, actor, strong, path, needs and
-// neededScripts.
+// then localizer, withL, money, actor, strong, path, needs,
+// neededScripts, pageStylesheet and pageScripts.
 var documentedFuncs = []string{
 	"dict", "list", "menuGroup", "searchClear", "icon", "iconAssets",
 	"T", "Tf", "dateWords", "opt", "Tbdi", "stageArt", "displayURL",
 	"safeHref", "number", "displayValue", "rowMenuItems", "paginationItems",
 	"localizer", "withL", "money", "actor", "strong", "path",
-	"needs", "neededScripts",
+	"needs", "neededScripts", "pageStylesheet", "pageScripts",
 }

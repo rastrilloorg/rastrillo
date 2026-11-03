@@ -15,7 +15,7 @@ import (
 )
 
 func init() {
-	tmplrt.RegisterOwner("blog/internal/blog", []string{"d8873bb329a4030e2bf9c9705f9ffe38ac8a2eb842b6ab913eb6717e024c95f4"})
+	tmplrt.RegisterOwner("blog/internal/blog", []string{"0152e78b799d6f8c6049951e05012a76132fde945b08ce420c6ae4a62c55e851"})
 	tmplrt.Register("0134fea7b535131c849015a622c7cc8ac6d822db735b0d0a01e556b31cda1bcc", bind_0134fea7b535131c)
 	tmplrt.Register("02ad54ac586387e06b869ecfed805ec4830fd7eefbbee8f30de2c57f41b9e4f9", bind_02ad54ac586387e0)
 	tmplrt.Register("04917a4633734ddaa8da28e13fa762055fd43d8b933ba1bf25a646f7fd16f43e", bind_04917a4633734dda)
@@ -27,16 +27,16 @@ func init() {
 	tmplrt.Register("0f24630096c49b29aa43337714800bfc335d6d73609f8da91cb1893841aebf9c", bind_0f24630096c49b29)
 	tmplrt.Register("1073ec0d38c56faf597bf6b9a9656536883222dade5359abcb1a15605b60bb8f", bind_1073ec0d38c56faf)
 	tmplrt.Register("13171a839254134d00f632a28d18db413fdd7f660264baacd3bb2430efe14d93", bind_13171a839254134d)
-	tmplrt.Register("152446d582c47dc234e57b2d2883f2c17d47a0954998ce12137e07c5a0b3128a", bind_152446d582c47dc2)
 	tmplrt.Register("1cd80f8ffc770b1d8aa043a8cd29314df595538ca2cbd6efdc9944034bd8a3f1", bind_1cd80f8ffc770b1d)
 	tmplrt.Register("20672c55a07cc47d202ee1213d4d35cb25fe32fb0e018b2eed5e08843edd5e2c", bind_20672c55a07cc47d)
 	tmplrt.Register("24f6f6b170dbb06f4f7b0c21005a609b6aa61e057f5d94ea548f79af94d63c96", bind_24f6f6b170dbb06f)
+	tmplrt.Register("26f2bb1c0568a228e076f68e4be4402470c0d5e654dff6c5b4d16cb1e8a10d23", bind_26f2bb1c0568a228)
+	tmplrt.Register("273c99252d0487ccf32e44dbdab9348bef869512ca36c1b987a7b64c2aa1a011", bind_273c99252d0487cc)
+	tmplrt.Register("2e3f7fca34a21f3cdbca626667bb6114600de062f94fce81b27a24bf767428d8", bind_2e3f7fca34a21f3c)
 	tmplrt.Register("2e7f774feda89d73aa381ff04d505c9435cc5b4079591ead0c4961c1b1afc406", bind_2e7f774feda89d73)
 	tmplrt.Register("31cb3007823cf32ebf79a32ce73ba3f9071eab06f9592a9b4cee6d3ad6474fc9", bind_31cb3007823cf32e)
-	tmplrt.Register("3252c1a7a06fb5c504cdf99f6587ba54300866e2aaaa8f4b3ddf6dc73d57f9b9", bind_3252c1a7a06fb5c5)
+	tmplrt.Register("32ba7367a0281f54e1a5853c654a53759a9780c534b4c06c7e6009ca2c9be28c", bind_32ba7367a0281f54)
 	tmplrt.Register("342f5d9dc0cfc75084b56450808e18b37443abd9be8b96b884a9f51487851c87", bind_342f5d9dc0cfc750)
-	tmplrt.Register("35869e05538b827d5cf232c49088b8d6632037046da3a40e71a2c319c0dafe5a", bind_35869e05538b827d)
-	tmplrt.Register("36f3f74369f13da72e613e09b91474f756cd3f5d58a9490742650aa52f0fd16f", bind_36f3f74369f13da7)
 	tmplrt.Register("38bf6520640d9dfc17d40e99b67f9e087e9a53e3a64cd878dbd4f93610e1070f", bind_38bf6520640d9dfc)
 	tmplrt.Register("3ce9f273a11f7061056d368b7d481ae3b0801e8005552e8da5ed604d714d0115", bind_3ce9f273a11f7061)
 	tmplrt.Register("404322a16f81b346729af0cfd3fcf5cca04fc68b0759ba483e50b66ef96e65d8", bind_404322a16f81b346)
@@ -82,16 +82,16 @@ func init() {
 	tmplrt.Register("9ad2f8749261fec7ed56266f20738f2278796ce8bb954421eff860e5d4337cf3", bind_9ad2f8749261fec7)
 	tmplrt.Register("a1b66b7e4058cd53f757e7b3d90a1235913e3cb58162280ad95fce6bd8251330", bind_a1b66b7e4058cd53)
 	tmplrt.Register("a1dda2a7ab396ae3c88b792452a33f72b88a0ef3763004cb71bb8af83478ca72", bind_a1dda2a7ab396ae3)
-	tmplrt.Register("a8623b94cd60f6f3b22eacbf9d4d09b5b1cf07173f2705c921c158adfffef6f6", bind_a8623b94cd60f6f3)
 	tmplrt.Register("aa59e9119e8e3883ebd149e4b582e6a74d679abfe11c006ed8e9eb4f778dd65a", bind_aa59e9119e8e3883)
 	tmplrt.Register("ac4bdab505507c3314b0dc2d069cc22bf0ac018939c26a583a5362e840c6a070", bind_ac4bdab505507c33)
 	tmplrt.Register("acfa9226edf3c947b7c7f3e391fc4f0e4319d8827565024d69d29820d75c2dc6", bind_acfa9226edf3c947)
 	tmplrt.Register("af0bfa10c74d24770384578acb8ddfacf0cf64555a5b1633c4201a6015f83312", bind_af0bfa10c74d2477)
+	tmplrt.Register("b3b177a891b3d4affeb78d8dca7e8777aeab9ecf4611ec8abcc3aa5aa9877060", bind_b3b177a891b3d4af)
 	tmplrt.Register("b4906f50c2d0358f8909e030a3e44d8c6421db062e8073a99bd2124bb833cb22", bind_b4906f50c2d0358f)
 	tmplrt.Register("b66284b6c15b99f0d4178d4a21ead61a3cbe850f7b5d34237ff179ab867e20b4", bind_b66284b6c15b99f0)
+	tmplrt.Register("ba43b6ef216988d914d024694396ff2a0d35ed919fbeec1330e217db78667230", bind_ba43b6ef216988d9)
 	tmplrt.Register("bbb8f84eb6bbf5a31a3b0103001d06780869496752b027c70f03666a1c402d82", bind_bbb8f84eb6bbf5a3)
 	tmplrt.Register("be05192d80831f5877765bc67f1fe535761c216513b8654a8f593f23d4338351", bind_be05192d80831f58)
-	tmplrt.Register("be806b4845d03480fc50194a1b0caa953ed50a0388faf4f0be9dce4da31d3281", bind_be806b4845d03480)
 	tmplrt.Register("c003f4adf65848a764f1d56ecf80efe0d156bbd39c040520af7b802f1bd2cce4", bind_c003f4adf65848a7)
 	tmplrt.Register("c06ed44f1184dc1333e99ba0040776f83f05fd9a5a9c6db81073ea1e50d2965b", bind_c06ed44f1184dc13)
 	tmplrt.Register("c1de90d2131edfcb9d55994108d773211545e15522b0848b495f812a4e717c4d", bind_c1de90d2131edfcb)
@@ -123,26 +123,27 @@ func init() {
 // templateFuncs holds the FuncMap functions the code calls, which a Bind
 // takes from its set once.
 type templateFuncs struct {
-	T_a3eca208            func(...any) (any, error)
-	Tbdi_a3eca208         func(...any) (any, error)
-	Tf_a3eca208           func(...any) (any, error)
-	actor_a3eca208        func(...any) (any, error)
-	asset_0e0a6fbe        func(string) string
-	dateWords_a3eca208    func(...any) (any, error)
-	dict_72aa8d8f         func(...any) (map[string]any, error)
-	displayValue_a3eca208 func(...any) (any, error)
-	icon_bd1e407c         func(string) template.HTML
-	list_ae7df14d         func(...any) []any
-	localizer_634df8c4    func(any) *ui.Localizer
-	menuGroup_fbb579ee    func(any) string
-	needs_e5e4fd6b        func(string) (string, error)
-	number_a3eca208       func(...any) (any, error)
-	opt_08785a53          func(any, string) any
-	paginationItems_r     reflect.Value
-	rowMenuItems_r        reflect.Value
-	searchClear_fbb579ee  func(any) string
-	strong_r              reflect.Value
-	withL_2f8846c9        func(any, *ui.Localizer) any
+	T_a3eca208              func(...any) (any, error)
+	Tbdi_a3eca208           func(...any) (any, error)
+	Tf_a3eca208             func(...any) (any, error)
+	actor_a3eca208          func(...any) (any, error)
+	asset_0e0a6fbe          func(string) string
+	dateWords_a3eca208      func(...any) (any, error)
+	dict_72aa8d8f           func(...any) (map[string]any, error)
+	displayValue_a3eca208   func(...any) (any, error)
+	icon_bd1e407c           func(string) template.HTML
+	list_ae7df14d           func(...any) []any
+	localizer_634df8c4      func(any) *ui.Localizer
+	menuGroup_fbb579ee      func(any) string
+	needs_e5e4fd6b          func(string) (string, error)
+	number_a3eca208         func(...any) (any, error)
+	opt_08785a53            func(any, string) any
+	pageStylesheet_fe1f5563 func() string
+	paginationItems_r       reflect.Value
+	rowMenuItems_r          reflect.Value
+	searchClear_fbb579ee    func(any) string
+	strong_r                reflect.Value
+	withL_2f8846c9          func(any, *ui.Localizer) any
 }
 
 // bind_0134fea7b535131c binds "list-bar-search.html".
@@ -376,52 +377,6 @@ func bind_13171a839254134d(map[string]any) (tmplrt.Exec, error) {
 	}, nil
 }
 
-// bind_152446d582c47dc2 binds "layout".
-func bind_152446d582c47dc2(funcs map[string]any) (tmplrt.Exec, error) {
-	fn := new(templateFuncs)
-	var ok bool
-	if fn.T_a3eca208, ok = funcs["T"].(func(...any) (any, error)); !ok {
-		return nil, tmplrt.BindError("T", funcs["T"])
-	}
-	if fn.asset_0e0a6fbe, ok = funcs["asset"].(func(string) string); !ok {
-		return nil, tmplrt.BindError("asset", funcs["asset"])
-	}
-	if fn.dict_72aa8d8f, ok = funcs["dict"].(func(...any) (map[string]any, error)); !ok {
-		return nil, tmplrt.BindError("dict", funcs["dict"])
-	}
-	if fn.icon_bd1e407c, ok = funcs["icon"].(func(string) template.HTML); !ok {
-		return nil, tmplrt.BindError("icon", funcs["icon"])
-	}
-	if fn.localizer_634df8c4, ok = funcs["localizer"].(func(any) *ui.Localizer); !ok {
-		return nil, tmplrt.BindError("localizer", funcs["localizer"])
-	}
-	if fn.menuGroup_fbb579ee, ok = funcs["menuGroup"].(func(any) string); !ok {
-		return nil, tmplrt.BindError("menuGroup", funcs["menuGroup"])
-	}
-	if fn.withL_2f8846c9, ok = funcs["withL"].(func(any, *ui.Localizer) any); !ok {
-		return nil, tmplrt.BindError("withL", funcs["withL"])
-	}
-	if err := tmplrt.Holds(&facts_02642d6513a29e27, &facts_053717be71dd7871, &facts_35c8835e99673ad9, &facts_f605c207f3e121d6); err != nil {
-		return nil, err
-	}
-	typed0 := tmplrt.Holds(&facts_02642d6513a29e27_0a42071c) == nil
-	typed1 := tmplrt.Holds(&facts_02642d6513a29e27_b6cf1f3e) == nil
-	return func(b *bytes.Buffer, data any) (err error) {
-		defer tmplrt.Recover(&err, "layout")
-		switch data := data.(type) {
-		case pageData:
-			if typed0 {
-				return exec_02642d6513a29e27_0a42071c(b, data, fn, 0)
-			}
-		case *pageData:
-			if typed1 {
-				return exec_02642d6513a29e27_b6cf1f3e(b, data, fn, 0)
-			}
-		}
-		return exec_02642d6513a29e27(b, tmplrt.Data(data), fn, 0)
-	}, nil
-}
-
 // bind_1cd80f8ffc770b1d binds "field.html".
 func bind_1cd80f8ffc770b1d(map[string]any) (tmplrt.Exec, error) {
 	return func(b *bytes.Buffer, data any) (err error) {
@@ -463,6 +418,177 @@ func bind_24f6f6b170dbb06f(map[string]any) (tmplrt.Exec, error) {
 	}, nil
 }
 
+// bind_26f2bb1c0568a228 binds "layout".
+func bind_26f2bb1c0568a228(funcs map[string]any) (tmplrt.Exec, error) {
+	fn := new(templateFuncs)
+	var ok bool
+	if fn.T_a3eca208, ok = funcs["T"].(func(...any) (any, error)); !ok {
+		return nil, tmplrt.BindError("T", funcs["T"])
+	}
+	if fn.asset_0e0a6fbe, ok = funcs["asset"].(func(string) string); !ok {
+		return nil, tmplrt.BindError("asset", funcs["asset"])
+	}
+	if fn.dict_72aa8d8f, ok = funcs["dict"].(func(...any) (map[string]any, error)); !ok {
+		return nil, tmplrt.BindError("dict", funcs["dict"])
+	}
+	if fn.icon_bd1e407c, ok = funcs["icon"].(func(string) template.HTML); !ok {
+		return nil, tmplrt.BindError("icon", funcs["icon"])
+	}
+	if fn.localizer_634df8c4, ok = funcs["localizer"].(func(any) *ui.Localizer); !ok {
+		return nil, tmplrt.BindError("localizer", funcs["localizer"])
+	}
+	if fn.menuGroup_fbb579ee, ok = funcs["menuGroup"].(func(any) string); !ok {
+		return nil, tmplrt.BindError("menuGroup", funcs["menuGroup"])
+	}
+	if fn.opt_08785a53, ok = funcs["opt"].(func(any, string) any); !ok {
+		return nil, tmplrt.BindError("opt", funcs["opt"])
+	}
+	if fn.pageStylesheet_fe1f5563, ok = funcs["pageStylesheet"].(func() string); !ok {
+		return nil, tmplrt.BindError("pageStylesheet", funcs["pageStylesheet"])
+	}
+	if fn.withL_2f8846c9, ok = funcs["withL"].(func(any, *ui.Localizer) any); !ok {
+		return nil, tmplrt.BindError("withL", funcs["withL"])
+	}
+	if err := tmplrt.Holds(&facts_15f98e7ac010dc8a, &facts_35c8835e99673ad9, &facts_6d147293fae93baa, &facts_d1285cef9f043c97, &facts_f605c207f3e121d6); err != nil {
+		return nil, err
+	}
+	typed0 := tmplrt.Holds(&facts_6d147293fae93baa_0a42071c) == nil
+	typed1 := tmplrt.Holds(&facts_6d147293fae93baa_b6cf1f3e) == nil
+	return func(b *bytes.Buffer, data any) (err error) {
+		defer tmplrt.Recover(&err, "layout")
+		switch data := data.(type) {
+		case pageData:
+			if typed0 {
+				return exec_6d147293fae93baa_0a42071c(b, data, fn, 0)
+			}
+		case *pageData:
+			if typed1 {
+				return exec_6d147293fae93baa_b6cf1f3e(b, data, fn, 0)
+			}
+		}
+		return exec_6d147293fae93baa(b, tmplrt.Data(data), fn, 0)
+	}, nil
+}
+
+// bind_273c99252d0487cc binds "layout".
+func bind_273c99252d0487cc(funcs map[string]any) (tmplrt.Exec, error) {
+	fn := new(templateFuncs)
+	var ok bool
+	if fn.T_a3eca208, ok = funcs["T"].(func(...any) (any, error)); !ok {
+		return nil, tmplrt.BindError("T", funcs["T"])
+	}
+	if fn.asset_0e0a6fbe, ok = funcs["asset"].(func(string) string); !ok {
+		return nil, tmplrt.BindError("asset", funcs["asset"])
+	}
+	if fn.dict_72aa8d8f, ok = funcs["dict"].(func(...any) (map[string]any, error)); !ok {
+		return nil, tmplrt.BindError("dict", funcs["dict"])
+	}
+	if fn.icon_bd1e407c, ok = funcs["icon"].(func(string) template.HTML); !ok {
+		return nil, tmplrt.BindError("icon", funcs["icon"])
+	}
+	if fn.localizer_634df8c4, ok = funcs["localizer"].(func(any) *ui.Localizer); !ok {
+		return nil, tmplrt.BindError("localizer", funcs["localizer"])
+	}
+	if fn.menuGroup_fbb579ee, ok = funcs["menuGroup"].(func(any) string); !ok {
+		return nil, tmplrt.BindError("menuGroup", funcs["menuGroup"])
+	}
+	if fn.pageStylesheet_fe1f5563, ok = funcs["pageStylesheet"].(func() string); !ok {
+		return nil, tmplrt.BindError("pageStylesheet", funcs["pageStylesheet"])
+	}
+	if fn.withL_2f8846c9, ok = funcs["withL"].(func(any, *ui.Localizer) any); !ok {
+		return nil, tmplrt.BindError("withL", funcs["withL"])
+	}
+	if err := tmplrt.Holds(&facts_0238ac1c99281ca9, &facts_0ef81ace325a890c, &facts_35c8835e99673ad9, &facts_aa87a6087793992a, &facts_f605c207f3e121d6); err != nil {
+		return nil, err
+	}
+	typed0 := tmplrt.Holds(&facts_0238ac1c99281ca9_0a42071c) == nil
+	typed1 := tmplrt.Holds(&facts_0238ac1c99281ca9_b6cf1f3e) == nil
+	return func(b *bytes.Buffer, data any) (err error) {
+		defer tmplrt.Recover(&err, "layout")
+		switch data := data.(type) {
+		case pageData:
+			if typed0 {
+				return exec_0238ac1c99281ca9_0a42071c(b, data, fn, 0)
+			}
+		case *pageData:
+			if typed1 {
+				return exec_0238ac1c99281ca9_b6cf1f3e(b, data, fn, 0)
+			}
+		}
+		return exec_0238ac1c99281ca9(b, tmplrt.Data(data), fn, 0)
+	}, nil
+}
+
+// bind_2e3f7fca34a21f3c binds "layout".
+func bind_2e3f7fca34a21f3c(funcs map[string]any) (tmplrt.Exec, error) {
+	fn := new(templateFuncs)
+	var ok bool
+	if fn.T_a3eca208, ok = funcs["T"].(func(...any) (any, error)); !ok {
+		return nil, tmplrt.BindError("T", funcs["T"])
+	}
+	if fn.Tf_a3eca208, ok = funcs["Tf"].(func(...any) (any, error)); !ok {
+		return nil, tmplrt.BindError("Tf", funcs["Tf"])
+	}
+	if fn.asset_0e0a6fbe, ok = funcs["asset"].(func(string) string); !ok {
+		return nil, tmplrt.BindError("asset", funcs["asset"])
+	}
+	if fn.dict_72aa8d8f, ok = funcs["dict"].(func(...any) (map[string]any, error)); !ok {
+		return nil, tmplrt.BindError("dict", funcs["dict"])
+	}
+	if fn.displayValue_a3eca208, ok = funcs["displayValue"].(func(...any) (any, error)); !ok {
+		return nil, tmplrt.BindError("displayValue", funcs["displayValue"])
+	}
+	if fn.icon_bd1e407c, ok = funcs["icon"].(func(string) template.HTML); !ok {
+		return nil, tmplrt.BindError("icon", funcs["icon"])
+	}
+	if fn.localizer_634df8c4, ok = funcs["localizer"].(func(any) *ui.Localizer); !ok {
+		return nil, tmplrt.BindError("localizer", funcs["localizer"])
+	}
+	if fn.menuGroup_fbb579ee, ok = funcs["menuGroup"].(func(any) string); !ok {
+		return nil, tmplrt.BindError("menuGroup", funcs["menuGroup"])
+	}
+	if fn.number_a3eca208, ok = funcs["number"].(func(...any) (any, error)); !ok {
+		return nil, tmplrt.BindError("number", funcs["number"])
+	}
+	if fn.opt_08785a53, ok = funcs["opt"].(func(any, string) any); !ok {
+		return nil, tmplrt.BindError("opt", funcs["opt"])
+	}
+	if fn.pageStylesheet_fe1f5563, ok = funcs["pageStylesheet"].(func() string); !ok {
+		return nil, tmplrt.BindError("pageStylesheet", funcs["pageStylesheet"])
+	}
+	if fn.paginationItems_r = reflect.ValueOf(funcs["paginationItems"]); fn.paginationItems_r.Kind() != reflect.Func {
+		return nil, tmplrt.BindError("paginationItems", funcs["paginationItems"])
+	}
+	if fn.rowMenuItems_r = reflect.ValueOf(funcs["rowMenuItems"]); fn.rowMenuItems_r.Kind() != reflect.Func {
+		return nil, tmplrt.BindError("rowMenuItems", funcs["rowMenuItems"])
+	}
+	if fn.searchClear_fbb579ee, ok = funcs["searchClear"].(func(any) string); !ok {
+		return nil, tmplrt.BindError("searchClear", funcs["searchClear"])
+	}
+	if fn.withL_2f8846c9, ok = funcs["withL"].(func(any, *ui.Localizer) any); !ok {
+		return nil, tmplrt.BindError("withL", funcs["withL"])
+	}
+	if err := tmplrt.Holds(&facts_02406f1496159800, &facts_35c8835e99673ad9, &facts_35cd6f0da498c8b0, &facts_3c3d69ee309152c5, &facts_879517ac9255e4f6, &facts_a9940eda8e2e00ba, &facts_bdc4404ab629ded7, &facts_d4bb90fc7ac76d9c, &facts_eed2e2429162b6c6, &facts_f605c207f3e121d6, &facts_f7ee04e68597313e); err != nil {
+		return nil, err
+	}
+	typed0 := tmplrt.Holds(&facts_3c3d69ee309152c5_0a42071c) == nil
+	typed1 := tmplrt.Holds(&facts_3c3d69ee309152c5_b6cf1f3e) == nil
+	return func(b *bytes.Buffer, data any) (err error) {
+		defer tmplrt.Recover(&err, "layout")
+		switch data := data.(type) {
+		case pageData:
+			if typed0 {
+				return exec_3c3d69ee309152c5_0a42071c(b, data, fn, 0)
+			}
+		case *pageData:
+			if typed1 {
+				return exec_3c3d69ee309152c5_b6cf1f3e(b, data, fn, 0)
+			}
+		}
+		return exec_3c3d69ee309152c5(b, tmplrt.Data(data), fn, 0)
+	}, nil
+}
+
 // bind_2e7f774feda89d73 binds "confirm-form.html".
 func bind_2e7f774feda89d73(map[string]any) (tmplrt.Exec, error) {
 	return func(b *bytes.Buffer, data any) (err error) {
@@ -496,8 +622,8 @@ func bind_31cb3007823cf32e(funcs map[string]any) (tmplrt.Exec, error) {
 	}, nil
 }
 
-// bind_3252c1a7a06fb5c5 binds "layout".
-func bind_3252c1a7a06fb5c5(funcs map[string]any) (tmplrt.Exec, error) {
+// bind_32ba7367a0281f54 binds "layout".
+func bind_32ba7367a0281f54(funcs map[string]any) (tmplrt.Exec, error) {
 	fn := new(templateFuncs)
 	var ok bool
 	if fn.T_a3eca208, ok = funcs["T"].(func(...any) (any, error)); !ok {
@@ -530,36 +656,36 @@ func bind_3252c1a7a06fb5c5(funcs map[string]any) (tmplrt.Exec, error) {
 	if fn.opt_08785a53, ok = funcs["opt"].(func(any, string) any); !ok {
 		return nil, tmplrt.BindError("opt", funcs["opt"])
 	}
+	if fn.pageStylesheet_fe1f5563, ok = funcs["pageStylesheet"].(func() string); !ok {
+		return nil, tmplrt.BindError("pageStylesheet", funcs["pageStylesheet"])
+	}
 	if fn.paginationItems_r = reflect.ValueOf(funcs["paginationItems"]); fn.paginationItems_r.Kind() != reflect.Func {
 		return nil, tmplrt.BindError("paginationItems", funcs["paginationItems"])
 	}
 	if fn.rowMenuItems_r = reflect.ValueOf(funcs["rowMenuItems"]); fn.rowMenuItems_r.Kind() != reflect.Func {
 		return nil, tmplrt.BindError("rowMenuItems", funcs["rowMenuItems"])
 	}
-	if fn.searchClear_fbb579ee, ok = funcs["searchClear"].(func(any) string); !ok {
-		return nil, tmplrt.BindError("searchClear", funcs["searchClear"])
-	}
 	if fn.withL_2f8846c9, ok = funcs["withL"].(func(any, *ui.Localizer) any); !ok {
 		return nil, tmplrt.BindError("withL", funcs["withL"])
 	}
-	if err := tmplrt.Holds(&facts_02406f1496159800, &facts_35c8835e99673ad9, &facts_35cd6f0da498c8b0, &facts_879517ac9255e4f6, &facts_a9940eda8e2e00ba, &facts_bdc4404ab629ded7, &facts_d4bb90fc7ac76d9c, &facts_ebe9f94bb365d8a7, &facts_eed2e2429162b6c6, &facts_f605c207f3e121d6, &facts_f7ee04e68597313e); err != nil {
+	if err := tmplrt.Holds(&facts_35c8835e99673ad9, &facts_35cd6f0da498c8b0, &facts_a9940eda8e2e00ba, &facts_d4bb90fc7ac76d9c, &facts_d79a096b70b07043, &facts_e61d8613b8c2b866, &facts_f605c207f3e121d6); err != nil {
 		return nil, err
 	}
-	typed0 := tmplrt.Holds(&facts_ebe9f94bb365d8a7_0a42071c) == nil
-	typed1 := tmplrt.Holds(&facts_ebe9f94bb365d8a7_b6cf1f3e) == nil
+	typed0 := tmplrt.Holds(&facts_d79a096b70b07043_0a42071c) == nil
+	typed1 := tmplrt.Holds(&facts_d79a096b70b07043_b6cf1f3e) == nil
 	return func(b *bytes.Buffer, data any) (err error) {
 		defer tmplrt.Recover(&err, "layout")
 		switch data := data.(type) {
 		case pageData:
 			if typed0 {
-				return exec_ebe9f94bb365d8a7_0a42071c(b, data, fn, 0)
+				return exec_d79a096b70b07043_0a42071c(b, data, fn, 0)
 			}
 		case *pageData:
 			if typed1 {
-				return exec_ebe9f94bb365d8a7_b6cf1f3e(b, data, fn, 0)
+				return exec_d79a096b70b07043_b6cf1f3e(b, data, fn, 0)
 			}
 		}
-		return exec_ebe9f94bb365d8a7(b, tmplrt.Data(data), fn, 0)
+		return exec_d79a096b70b07043(b, tmplrt.Data(data), fn, 0)
 	}, nil
 }
 
@@ -568,101 +694,6 @@ func bind_342f5d9dc0cfc750(map[string]any) (tmplrt.Exec, error) {
 	return func(b *bytes.Buffer, data any) (err error) {
 		defer tmplrt.Recover(&err, "actor.html")
 		return exec_2e74757c5db9ac82(b, tmplrt.Data(data), nil, 0)
-	}, nil
-}
-
-// bind_35869e05538b827d binds "layout".
-func bind_35869e05538b827d(funcs map[string]any) (tmplrt.Exec, error) {
-	fn := new(templateFuncs)
-	var ok bool
-	if fn.T_a3eca208, ok = funcs["T"].(func(...any) (any, error)); !ok {
-		return nil, tmplrt.BindError("T", funcs["T"])
-	}
-	if fn.asset_0e0a6fbe, ok = funcs["asset"].(func(string) string); !ok {
-		return nil, tmplrt.BindError("asset", funcs["asset"])
-	}
-	if fn.dict_72aa8d8f, ok = funcs["dict"].(func(...any) (map[string]any, error)); !ok {
-		return nil, tmplrt.BindError("dict", funcs["dict"])
-	}
-	if fn.icon_bd1e407c, ok = funcs["icon"].(func(string) template.HTML); !ok {
-		return nil, tmplrt.BindError("icon", funcs["icon"])
-	}
-	if fn.localizer_634df8c4, ok = funcs["localizer"].(func(any) *ui.Localizer); !ok {
-		return nil, tmplrt.BindError("localizer", funcs["localizer"])
-	}
-	if fn.menuGroup_fbb579ee, ok = funcs["menuGroup"].(func(any) string); !ok {
-		return nil, tmplrt.BindError("menuGroup", funcs["menuGroup"])
-	}
-	if fn.opt_08785a53, ok = funcs["opt"].(func(any, string) any); !ok {
-		return nil, tmplrt.BindError("opt", funcs["opt"])
-	}
-	if fn.withL_2f8846c9, ok = funcs["withL"].(func(any, *ui.Localizer) any); !ok {
-		return nil, tmplrt.BindError("withL", funcs["withL"])
-	}
-	if err := tmplrt.Holds(&facts_15f98e7ac010dc8a, &facts_35c8835e99673ad9, &facts_8df7cda32ebfd8ae, &facts_d1285cef9f043c97, &facts_f605c207f3e121d6); err != nil {
-		return nil, err
-	}
-	typed0 := tmplrt.Holds(&facts_8df7cda32ebfd8ae_0a42071c) == nil
-	typed1 := tmplrt.Holds(&facts_8df7cda32ebfd8ae_b6cf1f3e) == nil
-	return func(b *bytes.Buffer, data any) (err error) {
-		defer tmplrt.Recover(&err, "layout")
-		switch data := data.(type) {
-		case pageData:
-			if typed0 {
-				return exec_8df7cda32ebfd8ae_0a42071c(b, data, fn, 0)
-			}
-		case *pageData:
-			if typed1 {
-				return exec_8df7cda32ebfd8ae_b6cf1f3e(b, data, fn, 0)
-			}
-		}
-		return exec_8df7cda32ebfd8ae(b, tmplrt.Data(data), fn, 0)
-	}, nil
-}
-
-// bind_36f3f74369f13da7 binds "layout".
-func bind_36f3f74369f13da7(funcs map[string]any) (tmplrt.Exec, error) {
-	fn := new(templateFuncs)
-	var ok bool
-	if fn.T_a3eca208, ok = funcs["T"].(func(...any) (any, error)); !ok {
-		return nil, tmplrt.BindError("T", funcs["T"])
-	}
-	if fn.asset_0e0a6fbe, ok = funcs["asset"].(func(string) string); !ok {
-		return nil, tmplrt.BindError("asset", funcs["asset"])
-	}
-	if fn.dict_72aa8d8f, ok = funcs["dict"].(func(...any) (map[string]any, error)); !ok {
-		return nil, tmplrt.BindError("dict", funcs["dict"])
-	}
-	if fn.icon_bd1e407c, ok = funcs["icon"].(func(string) template.HTML); !ok {
-		return nil, tmplrt.BindError("icon", funcs["icon"])
-	}
-	if fn.localizer_634df8c4, ok = funcs["localizer"].(func(any) *ui.Localizer); !ok {
-		return nil, tmplrt.BindError("localizer", funcs["localizer"])
-	}
-	if fn.menuGroup_fbb579ee, ok = funcs["menuGroup"].(func(any) string); !ok {
-		return nil, tmplrt.BindError("menuGroup", funcs["menuGroup"])
-	}
-	if fn.withL_2f8846c9, ok = funcs["withL"].(func(any, *ui.Localizer) any); !ok {
-		return nil, tmplrt.BindError("withL", funcs["withL"])
-	}
-	if err := tmplrt.Holds(&facts_0ef81ace325a890c, &facts_1af6c46c7737af8a, &facts_35c8835e99673ad9, &facts_aa87a6087793992a, &facts_f605c207f3e121d6); err != nil {
-		return nil, err
-	}
-	typed0 := tmplrt.Holds(&facts_1af6c46c7737af8a_0a42071c) == nil
-	typed1 := tmplrt.Holds(&facts_1af6c46c7737af8a_b6cf1f3e) == nil
-	return func(b *bytes.Buffer, data any) (err error) {
-		defer tmplrt.Recover(&err, "layout")
-		switch data := data.(type) {
-		case pageData:
-			if typed0 {
-				return exec_1af6c46c7737af8a_0a42071c(b, data, fn, 0)
-			}
-		case *pageData:
-			if typed1 {
-				return exec_1af6c46c7737af8a_b6cf1f3e(b, data, fn, 0)
-			}
-		}
-		return exec_1af6c46c7737af8a(b, tmplrt.Data(data), fn, 0)
 	}, nil
 }
 
@@ -1485,58 +1516,6 @@ func bind_a1dda2a7ab396ae3(funcs map[string]any) (tmplrt.Exec, error) {
 	}, nil
 }
 
-// bind_a8623b94cd60f6f3 binds "layout".
-func bind_a8623b94cd60f6f3(funcs map[string]any) (tmplrt.Exec, error) {
-	fn := new(templateFuncs)
-	var ok bool
-	if fn.T_a3eca208, ok = funcs["T"].(func(...any) (any, error)); !ok {
-		return nil, tmplrt.BindError("T", funcs["T"])
-	}
-	if fn.asset_0e0a6fbe, ok = funcs["asset"].(func(string) string); !ok {
-		return nil, tmplrt.BindError("asset", funcs["asset"])
-	}
-	if fn.dict_72aa8d8f, ok = funcs["dict"].(func(...any) (map[string]any, error)); !ok {
-		return nil, tmplrt.BindError("dict", funcs["dict"])
-	}
-	if fn.displayValue_a3eca208, ok = funcs["displayValue"].(func(...any) (any, error)); !ok {
-		return nil, tmplrt.BindError("displayValue", funcs["displayValue"])
-	}
-	if fn.icon_bd1e407c, ok = funcs["icon"].(func(string) template.HTML); !ok {
-		return nil, tmplrt.BindError("icon", funcs["icon"])
-	}
-	if fn.list_ae7df14d, ok = funcs["list"].(func(...any) []any); !ok {
-		return nil, tmplrt.BindError("list", funcs["list"])
-	}
-	if fn.localizer_634df8c4, ok = funcs["localizer"].(func(any) *ui.Localizer); !ok {
-		return nil, tmplrt.BindError("localizer", funcs["localizer"])
-	}
-	if fn.menuGroup_fbb579ee, ok = funcs["menuGroup"].(func(any) string); !ok {
-		return nil, tmplrt.BindError("menuGroup", funcs["menuGroup"])
-	}
-	if fn.withL_2f8846c9, ok = funcs["withL"].(func(any, *ui.Localizer) any); !ok {
-		return nil, tmplrt.BindError("withL", funcs["withL"])
-	}
-	if err := tmplrt.Holds(&facts_12674ed2901faa91, &facts_35c8835e99673ad9, &facts_9b5039c7cb5e7369, &facts_a62e82e00b67ab12, &facts_f605c207f3e121d6); err != nil {
-		return nil, err
-	}
-	typed0 := tmplrt.Holds(&facts_12674ed2901faa91_0a42071c) == nil
-	typed1 := tmplrt.Holds(&facts_12674ed2901faa91_b6cf1f3e) == nil
-	return func(b *bytes.Buffer, data any) (err error) {
-		defer tmplrt.Recover(&err, "layout")
-		switch data := data.(type) {
-		case pageData:
-			if typed0 {
-				return exec_12674ed2901faa91_0a42071c(b, data, fn, 0)
-			}
-		case *pageData:
-			if typed1 {
-				return exec_12674ed2901faa91_b6cf1f3e(b, data, fn, 0)
-			}
-		}
-		return exec_12674ed2901faa91(b, tmplrt.Data(data), fn, 0)
-	}, nil
-}
-
 // bind_aa59e9119e8e3883 binds "stat".
 func bind_aa59e9119e8e3883(funcs map[string]any) (tmplrt.Exec, error) {
 	fn := new(templateFuncs)
@@ -1602,6 +1581,61 @@ func bind_af0bfa10c74d2477(map[string]any) (tmplrt.Exec, error) {
 	}, nil
 }
 
+// bind_b3b177a891b3d4af binds "layout".
+func bind_b3b177a891b3d4af(funcs map[string]any) (tmplrt.Exec, error) {
+	fn := new(templateFuncs)
+	var ok bool
+	if fn.T_a3eca208, ok = funcs["T"].(func(...any) (any, error)); !ok {
+		return nil, tmplrt.BindError("T", funcs["T"])
+	}
+	if fn.asset_0e0a6fbe, ok = funcs["asset"].(func(string) string); !ok {
+		return nil, tmplrt.BindError("asset", funcs["asset"])
+	}
+	if fn.dict_72aa8d8f, ok = funcs["dict"].(func(...any) (map[string]any, error)); !ok {
+		return nil, tmplrt.BindError("dict", funcs["dict"])
+	}
+	if fn.displayValue_a3eca208, ok = funcs["displayValue"].(func(...any) (any, error)); !ok {
+		return nil, tmplrt.BindError("displayValue", funcs["displayValue"])
+	}
+	if fn.icon_bd1e407c, ok = funcs["icon"].(func(string) template.HTML); !ok {
+		return nil, tmplrt.BindError("icon", funcs["icon"])
+	}
+	if fn.list_ae7df14d, ok = funcs["list"].(func(...any) []any); !ok {
+		return nil, tmplrt.BindError("list", funcs["list"])
+	}
+	if fn.localizer_634df8c4, ok = funcs["localizer"].(func(any) *ui.Localizer); !ok {
+		return nil, tmplrt.BindError("localizer", funcs["localizer"])
+	}
+	if fn.menuGroup_fbb579ee, ok = funcs["menuGroup"].(func(any) string); !ok {
+		return nil, tmplrt.BindError("menuGroup", funcs["menuGroup"])
+	}
+	if fn.pageStylesheet_fe1f5563, ok = funcs["pageStylesheet"].(func() string); !ok {
+		return nil, tmplrt.BindError("pageStylesheet", funcs["pageStylesheet"])
+	}
+	if fn.withL_2f8846c9, ok = funcs["withL"].(func(any, *ui.Localizer) any); !ok {
+		return nil, tmplrt.BindError("withL", funcs["withL"])
+	}
+	if err := tmplrt.Holds(&facts_35c8835e99673ad9, &facts_9b5039c7cb5e7369, &facts_a62e82e00b67ab12, &facts_c35a6e873638d5f9, &facts_f605c207f3e121d6); err != nil {
+		return nil, err
+	}
+	typed0 := tmplrt.Holds(&facts_c35a6e873638d5f9_0a42071c) == nil
+	typed1 := tmplrt.Holds(&facts_c35a6e873638d5f9_b6cf1f3e) == nil
+	return func(b *bytes.Buffer, data any) (err error) {
+		defer tmplrt.Recover(&err, "layout")
+		switch data := data.(type) {
+		case pageData:
+			if typed0 {
+				return exec_c35a6e873638d5f9_0a42071c(b, data, fn, 0)
+			}
+		case *pageData:
+			if typed1 {
+				return exec_c35a6e873638d5f9_b6cf1f3e(b, data, fn, 0)
+			}
+		}
+		return exec_c35a6e873638d5f9(b, tmplrt.Data(data), fn, 0)
+	}, nil
+}
+
 // bind_b4906f50c2d0358f binds "api-tokens.html".
 func bind_b4906f50c2d0358f(map[string]any) (tmplrt.Exec, error) {
 	return func(b *bytes.Buffer, data any) (err error) {
@@ -1626,6 +1660,55 @@ func bind_b66284b6c15b99f0(funcs map[string]any) (tmplrt.Exec, error) {
 	return func(b *bytes.Buffer, data any) (err error) {
 		defer tmplrt.Recover(&err, "meter")
 		return exec_f260b0be7feb536f(b, tmplrt.Data(data), fn, 0)
+	}, nil
+}
+
+// bind_ba43b6ef216988d9 binds "layout".
+func bind_ba43b6ef216988d9(funcs map[string]any) (tmplrt.Exec, error) {
+	fn := new(templateFuncs)
+	var ok bool
+	if fn.T_a3eca208, ok = funcs["T"].(func(...any) (any, error)); !ok {
+		return nil, tmplrt.BindError("T", funcs["T"])
+	}
+	if fn.asset_0e0a6fbe, ok = funcs["asset"].(func(string) string); !ok {
+		return nil, tmplrt.BindError("asset", funcs["asset"])
+	}
+	if fn.dict_72aa8d8f, ok = funcs["dict"].(func(...any) (map[string]any, error)); !ok {
+		return nil, tmplrt.BindError("dict", funcs["dict"])
+	}
+	if fn.icon_bd1e407c, ok = funcs["icon"].(func(string) template.HTML); !ok {
+		return nil, tmplrt.BindError("icon", funcs["icon"])
+	}
+	if fn.localizer_634df8c4, ok = funcs["localizer"].(func(any) *ui.Localizer); !ok {
+		return nil, tmplrt.BindError("localizer", funcs["localizer"])
+	}
+	if fn.menuGroup_fbb579ee, ok = funcs["menuGroup"].(func(any) string); !ok {
+		return nil, tmplrt.BindError("menuGroup", funcs["menuGroup"])
+	}
+	if fn.pageStylesheet_fe1f5563, ok = funcs["pageStylesheet"].(func() string); !ok {
+		return nil, tmplrt.BindError("pageStylesheet", funcs["pageStylesheet"])
+	}
+	if fn.withL_2f8846c9, ok = funcs["withL"].(func(any, *ui.Localizer) any); !ok {
+		return nil, tmplrt.BindError("withL", funcs["withL"])
+	}
+	if err := tmplrt.Holds(&facts_053717be71dd7871, &facts_35c8835e99673ad9, &facts_97ae18ef3b28d1a7, &facts_f605c207f3e121d6); err != nil {
+		return nil, err
+	}
+	typed0 := tmplrt.Holds(&facts_97ae18ef3b28d1a7_0a42071c) == nil
+	typed1 := tmplrt.Holds(&facts_97ae18ef3b28d1a7_b6cf1f3e) == nil
+	return func(b *bytes.Buffer, data any) (err error) {
+		defer tmplrt.Recover(&err, "layout")
+		switch data := data.(type) {
+		case pageData:
+			if typed0 {
+				return exec_97ae18ef3b28d1a7_0a42071c(b, data, fn, 0)
+			}
+		case *pageData:
+			if typed1 {
+				return exec_97ae18ef3b28d1a7_b6cf1f3e(b, data, fn, 0)
+			}
+		}
+		return exec_97ae18ef3b28d1a7(b, tmplrt.Data(data), fn, 0)
 	}, nil
 }
 
@@ -1659,70 +1742,6 @@ func bind_be05192d80831f58(map[string]any) (tmplrt.Exec, error) {
 	return func(b *bytes.Buffer, data any) (err error) {
 		defer tmplrt.Recover(&err, "field-textarea")
 		return exec_3e92d1d527224091(b, tmplrt.Data(data), nil, 0)
-	}, nil
-}
-
-// bind_be806b4845d03480 binds "layout".
-func bind_be806b4845d03480(funcs map[string]any) (tmplrt.Exec, error) {
-	fn := new(templateFuncs)
-	var ok bool
-	if fn.T_a3eca208, ok = funcs["T"].(func(...any) (any, error)); !ok {
-		return nil, tmplrt.BindError("T", funcs["T"])
-	}
-	if fn.Tf_a3eca208, ok = funcs["Tf"].(func(...any) (any, error)); !ok {
-		return nil, tmplrt.BindError("Tf", funcs["Tf"])
-	}
-	if fn.asset_0e0a6fbe, ok = funcs["asset"].(func(string) string); !ok {
-		return nil, tmplrt.BindError("asset", funcs["asset"])
-	}
-	if fn.dict_72aa8d8f, ok = funcs["dict"].(func(...any) (map[string]any, error)); !ok {
-		return nil, tmplrt.BindError("dict", funcs["dict"])
-	}
-	if fn.displayValue_a3eca208, ok = funcs["displayValue"].(func(...any) (any, error)); !ok {
-		return nil, tmplrt.BindError("displayValue", funcs["displayValue"])
-	}
-	if fn.icon_bd1e407c, ok = funcs["icon"].(func(string) template.HTML); !ok {
-		return nil, tmplrt.BindError("icon", funcs["icon"])
-	}
-	if fn.localizer_634df8c4, ok = funcs["localizer"].(func(any) *ui.Localizer); !ok {
-		return nil, tmplrt.BindError("localizer", funcs["localizer"])
-	}
-	if fn.menuGroup_fbb579ee, ok = funcs["menuGroup"].(func(any) string); !ok {
-		return nil, tmplrt.BindError("menuGroup", funcs["menuGroup"])
-	}
-	if fn.number_a3eca208, ok = funcs["number"].(func(...any) (any, error)); !ok {
-		return nil, tmplrt.BindError("number", funcs["number"])
-	}
-	if fn.opt_08785a53, ok = funcs["opt"].(func(any, string) any); !ok {
-		return nil, tmplrt.BindError("opt", funcs["opt"])
-	}
-	if fn.paginationItems_r = reflect.ValueOf(funcs["paginationItems"]); fn.paginationItems_r.Kind() != reflect.Func {
-		return nil, tmplrt.BindError("paginationItems", funcs["paginationItems"])
-	}
-	if fn.rowMenuItems_r = reflect.ValueOf(funcs["rowMenuItems"]); fn.rowMenuItems_r.Kind() != reflect.Func {
-		return nil, tmplrt.BindError("rowMenuItems", funcs["rowMenuItems"])
-	}
-	if fn.withL_2f8846c9, ok = funcs["withL"].(func(any, *ui.Localizer) any); !ok {
-		return nil, tmplrt.BindError("withL", funcs["withL"])
-	}
-	if err := tmplrt.Holds(&facts_35c8835e99673ad9, &facts_35cd6f0da498c8b0, &facts_86226d55f25f5451, &facts_a9940eda8e2e00ba, &facts_d4bb90fc7ac76d9c, &facts_e61d8613b8c2b866, &facts_f605c207f3e121d6); err != nil {
-		return nil, err
-	}
-	typed0 := tmplrt.Holds(&facts_86226d55f25f5451_0a42071c) == nil
-	typed1 := tmplrt.Holds(&facts_86226d55f25f5451_b6cf1f3e) == nil
-	return func(b *bytes.Buffer, data any) (err error) {
-		defer tmplrt.Recover(&err, "layout")
-		switch data := data.(type) {
-		case pageData:
-			if typed0 {
-				return exec_86226d55f25f5451_0a42071c(b, data, fn, 0)
-			}
-		case *pageData:
-			if typed1 {
-				return exec_86226d55f25f5451_b6cf1f3e(b, data, fn, 0)
-			}
-		}
-		return exec_86226d55f25f5451(b, tmplrt.Data(data), fn, 0)
 	}, nil
 }
 
@@ -2078,6 +2097,237 @@ func bind_ff51d8a050ed8517(map[string]any) (tmplrt.Exec, error) {
 	}, nil
 }
 
+// exec_0238ac1c99281ca9 renders "layout".
+func exec_0238ac1c99281ca9(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
+	root := dot
+	v1 := fn.localizer_634df8c4(tmplrt.Arg(root))
+	x1 := v1
+	_ = x1
+	b.WriteString("<!doctype html>\n<html lang=\"")
+	v2 := x1.Identity()
+	tmplrt.WriteAttrEscaped(b, v2)
+	b.WriteString("\" dir=\"")
+	v3 := x1.Dir()
+	tmplrt.WriteAttrEscaped(b, v3)
+	b.WriteString("\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width\">\n<title>")
+	v4, err := tmplrt.Field(dot, "Head")
+	if err != nil {
+		return tmplrt.ExecError("layout", ".Head.Title", err)
+	}
+	v5, err := tmplrt.Field(v4, "Title")
+	if err != nil {
+		return tmplrt.ExecError("layout", ".Head.Title", err)
+	}
+	v6 := tmplrt.Unwrap(v5)
+	b.WriteString(tmplrt.RCDATAEscaper(tmplrt.Arg(v6)))
+	b.WriteString(" · The blog</title>\n<link rel=\"stylesheet\" href=\"")
+	v7 := fn.pageStylesheet_fe1f5563()
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v7)))
+	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
+	v8 := fn.asset_0e0a6fbe("static/theme.css")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v8)))
+	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
+	v9 := fn.asset_0e0a6fbe("static/blog.css")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v9)))
+	b.WriteString("\">\n</head>\n<body>\n<div rst-page>\n")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"locale-menu\" dict \"L\" $L \"Items\" .Locales \"Return\" .Return}}", tmplrt.DepthError())
+	}
+	v10, err := tmplrt.Field(dot, "Locales")
+	if err != nil {
+		return tmplrt.ExecError("layout", ".Locales", err)
+	}
+	v11, err := tmplrt.Field(dot, "Return")
+	if err != nil {
+		return tmplrt.ExecError("layout", ".Return", err)
+	}
+	v12, err := fn.dict_72aa8d8f("L", x1, "Items", tmplrt.Arg(v10), "Return", tmplrt.Arg(v11))
+	if err != nil {
+		return tmplrt.ExecError("layout", "dict \"L\" $L \"Items\" .Locales \"Return\" .Return", tmplrt.CallError("dict", err))
+	}
+	if err := exec_f605c207f3e121d6(b, reflect.ValueOf(v12), fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\n")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"content\" (withL (.Data) $L)}}", tmplrt.DepthError())
+	}
+	v13, err := tmplrt.Field(dot, "Data")
+	if err != nil {
+		return tmplrt.ExecError("layout", ".Data", err)
+	}
+	v14 := tmplrt.Unwrap(v13)
+	v15 := fn.withL_2f8846c9(tmplrt.Arg(v14), x1)
+	v16 := reflect.ValueOf(v15)
+	if err := exec_0ef81ace325a890c(b, v16, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\n<footer class=\"blog-footer\">\n<a href=\"/\">The blog</a>\n<a href=\"/admin/posts\">Posts admin</a>\n</footer>\n</div>\n</body>\n</html>\n")
+	return nil
+}
+
+// facts_0238ac1c99281ca9 is what exec_0238ac1c99281ca9 assumes of the types it reads.
+var facts_0238ac1c99281ca9 = tmplrt.Facts{
+	Funcs: map[string]reflect.Type{
+		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
+	},
+	Facts: []tmplrt.Fact{
+		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
+		{Func: "localizer_634df8c4", Path: []string{".Identity() func() string"}, Type: "string"},
+		{Func: "localizer_634df8c4", Path: []string{".Dir() func() string"}, Type: "string"},
+	},
+}
+
+// exec_0238ac1c99281ca9_0a42071c renders "layout" for a dot of type pageData.
+func exec_0238ac1c99281ca9_0a42071c(b *bytes.Buffer, dot pageData, fn *templateFuncs, depth int) error {
+	root := dot
+	v1 := fn.localizer_634df8c4(root)
+	x1 := v1
+	_ = x1
+	b.WriteString("<!doctype html>\n<html lang=\"")
+	v2 := x1.Identity()
+	tmplrt.WriteAttrEscaped(b, v2)
+	b.WriteString("\" dir=\"")
+	v3 := x1.Dir()
+	tmplrt.WriteAttrEscaped(b, v3)
+	b.WriteString("\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width\">\n<title>")
+	tmplrt.WriteHTMLEscaped(b, dot.Head.Title)
+	b.WriteString(" · The blog</title>\n<link rel=\"stylesheet\" href=\"")
+	v4 := fn.pageStylesheet_fe1f5563()
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v4)))
+	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
+	v5 := fn.asset_0e0a6fbe("static/theme.css")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v5)))
+	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
+	v6 := fn.asset_0e0a6fbe("static/blog.css")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v6)))
+	b.WriteString("\">\n</head>\n<body>\n<div rst-page>\n")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"locale-menu\" dict \"L\" $L \"Items\" .Locales \"Return\" .Return}}", tmplrt.DepthError())
+	}
+	v7, err := fn.dict_72aa8d8f("L", x1, "Items", dot.Locales, "Return", dot.Return)
+	if err != nil {
+		return tmplrt.ExecError("layout", "dict \"L\" $L \"Items\" .Locales \"Return\" .Return", tmplrt.CallError("dict", err))
+	}
+	if err := exec_f605c207f3e121d6(b, reflect.ValueOf(v7), fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\n")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"content\" (withL (.Data) $L)}}", tmplrt.DepthError())
+	}
+	v8 := reflect.ValueOf(dot.Data)
+	v9 := fn.withL_2f8846c9(tmplrt.Arg(v8), x1)
+	v10 := reflect.ValueOf(v9)
+	if err := exec_0ef81ace325a890c(b, v10, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\n<footer class=\"blog-footer\">\n<a href=\"/\">The blog</a>\n<a href=\"/admin/posts\">Posts admin</a>\n</footer>\n</div>\n</body>\n</html>\n")
+	return nil
+}
+
+// facts_0238ac1c99281ca9_0a42071c is what exec_0238ac1c99281ca9_0a42071c assumes of the types it reads.
+var facts_0238ac1c99281ca9_0a42071c = tmplrt.Facts{
+	Dot: reflect.TypeFor[pageData](),
+	Funcs: map[string]reflect.Type{
+		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
+	},
+	Facts: []tmplrt.Fact{
+		{Type: "blog/internal/blog.pageData struct"},
+		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
+		{Func: "localizer_634df8c4", Path: []string{".Identity() func() string"}, Type: "string"},
+		{Func: "localizer_634df8c4", Path: []string{".Dir() func() string"}, Type: "string"},
+		{Path: []string{".Head"}, Type: "blog/internal/blog.Head struct"},
+		{Path: []string{".Head", ".Title"}, Type: "string"},
+		{Path: []string{".Locales"}, Type: "[]amadan.net/rastrillo/rastrillo.LocaleItem"},
+		{Path: []string{".Return"}, Type: "string"},
+		{Path: []string{".Data"}, Type: "interface {}"},
+	},
+}
+
+// exec_0238ac1c99281ca9_b6cf1f3e renders "layout" for a dot of type *pageData.
+func exec_0238ac1c99281ca9_b6cf1f3e(b *bytes.Buffer, dot *pageData, fn *templateFuncs, depth int) error {
+	root := dot
+	v1 := fn.localizer_634df8c4(root)
+	x1 := v1
+	_ = x1
+	b.WriteString("<!doctype html>\n<html lang=\"")
+	v2 := x1.Identity()
+	tmplrt.WriteAttrEscaped(b, v2)
+	b.WriteString("\" dir=\"")
+	v3 := x1.Dir()
+	tmplrt.WriteAttrEscaped(b, v3)
+	b.WriteString("\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width\">\n<title>")
+	if dot == nil {
+		_, err := tmplrt.Fail("nil pointer evaluating *blog.pageData.Head")
+		return tmplrt.ExecError("layout", ".Head.Title", err)
+	}
+	tmplrt.WriteHTMLEscaped(b, dot.Head.Title)
+	b.WriteString(" · The blog</title>\n<link rel=\"stylesheet\" href=\"")
+	v4 := fn.pageStylesheet_fe1f5563()
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v4)))
+	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
+	v5 := fn.asset_0e0a6fbe("static/theme.css")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v5)))
+	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
+	v6 := fn.asset_0e0a6fbe("static/blog.css")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v6)))
+	b.WriteString("\">\n</head>\n<body>\n<div rst-page>\n")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"locale-menu\" dict \"L\" $L \"Items\" .Locales \"Return\" .Return}}", tmplrt.DepthError())
+	}
+	if dot == nil {
+		_, err := tmplrt.Fail("nil pointer evaluating *blog.pageData.Locales")
+		return tmplrt.ExecError("layout", ".Locales", err)
+	}
+	if dot == nil {
+		_, err := tmplrt.Fail("nil pointer evaluating *blog.pageData.Return")
+		return tmplrt.ExecError("layout", ".Return", err)
+	}
+	v7, err := fn.dict_72aa8d8f("L", x1, "Items", dot.Locales, "Return", dot.Return)
+	if err != nil {
+		return tmplrt.ExecError("layout", "dict \"L\" $L \"Items\" .Locales \"Return\" .Return", tmplrt.CallError("dict", err))
+	}
+	if err := exec_f605c207f3e121d6(b, reflect.ValueOf(v7), fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\n")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"content\" (withL (.Data) $L)}}", tmplrt.DepthError())
+	}
+	if dot == nil {
+		_, err := tmplrt.Fail("nil pointer evaluating *blog.pageData.Data")
+		return tmplrt.ExecError("layout", ".Data", err)
+	}
+	v8 := reflect.ValueOf(dot.Data)
+	v9 := fn.withL_2f8846c9(tmplrt.Arg(v8), x1)
+	v10 := reflect.ValueOf(v9)
+	if err := exec_0ef81ace325a890c(b, v10, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\n<footer class=\"blog-footer\">\n<a href=\"/\">The blog</a>\n<a href=\"/admin/posts\">Posts admin</a>\n</footer>\n</div>\n</body>\n</html>\n")
+	return nil
+}
+
+// facts_0238ac1c99281ca9_b6cf1f3e is what exec_0238ac1c99281ca9_b6cf1f3e assumes of the types it reads.
+var facts_0238ac1c99281ca9_b6cf1f3e = tmplrt.Facts{
+	Dot: reflect.TypeFor[*pageData](),
+	Funcs: map[string]reflect.Type{
+		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
+	},
+	Facts: []tmplrt.Fact{
+		{Type: "*blog/internal/blog.pageData"},
+		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
+		{Func: "localizer_634df8c4", Path: []string{".Identity() func() string"}, Type: "string"},
+		{Func: "localizer_634df8c4", Path: []string{".Dir() func() string"}, Type: "string"},
+		{Path: []string{".Head"}, Type: "blog/internal/blog.Head struct"},
+		{Path: []string{".Head", "&.Title"}, Type: "string"},
+		{Path: []string{".Locales"}, Type: "[]amadan.net/rastrillo/rastrillo.LocaleItem"},
+		{Path: []string{".Return"}, Type: "string"},
+		{Path: []string{".Data"}, Type: "interface {}"},
+	},
+}
+
 // exec_02406f1496159800 renders "dropdown".
 func exec_02406f1496159800(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
 	b.WriteString("<details rst-dropdown name=\"")
@@ -2299,237 +2549,6 @@ var facts_02406f1496159800_9a540375 = tmplrt.Facts{
 		{Path: []string{".Items", "[]", "&.Href"}, Type: "string"},
 		{Path: []string{".Items", "[]", "&.Current"}, Type: "bool"},
 		{Path: []string{".Items", "[]", "&.Label"}, Type: "string"},
-	},
-}
-
-// exec_02642d6513a29e27 renders "layout".
-func exec_02642d6513a29e27(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
-	root := dot
-	v1 := fn.localizer_634df8c4(tmplrt.Arg(root))
-	x1 := v1
-	_ = x1
-	b.WriteString("<!doctype html>\n<html lang=\"")
-	v2 := x1.Identity()
-	tmplrt.WriteAttrEscaped(b, v2)
-	b.WriteString("\" dir=\"")
-	v3 := x1.Dir()
-	tmplrt.WriteAttrEscaped(b, v3)
-	b.WriteString("\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width\">\n<title>")
-	v4, err := tmplrt.Field(dot, "Head")
-	if err != nil {
-		return tmplrt.ExecError("layout", ".Head.Title", err)
-	}
-	v5, err := tmplrt.Field(v4, "Title")
-	if err != nil {
-		return tmplrt.ExecError("layout", ".Head.Title", err)
-	}
-	v6 := tmplrt.Unwrap(v5)
-	b.WriteString(tmplrt.RCDATAEscaper(tmplrt.Arg(v6)))
-	b.WriteString(" · The blog</title>\n<link rel=\"stylesheet\" href=\"")
-	v7 := fn.asset_0e0a6fbe("static/tokens.css")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v7)))
-	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
-	v8 := fn.asset_0e0a6fbe("static/theme.css")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v8)))
-	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
-	v9 := fn.asset_0e0a6fbe("static/blog.css")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v9)))
-	b.WriteString("\">\n</head>\n<body>\n<div rst-page>\n")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"locale-menu\" dict \"L\" $L \"Items\" .Locales \"Return\" .Return}}", tmplrt.DepthError())
-	}
-	v10, err := tmplrt.Field(dot, "Locales")
-	if err != nil {
-		return tmplrt.ExecError("layout", ".Locales", err)
-	}
-	v11, err := tmplrt.Field(dot, "Return")
-	if err != nil {
-		return tmplrt.ExecError("layout", ".Return", err)
-	}
-	v12, err := fn.dict_72aa8d8f("L", x1, "Items", tmplrt.Arg(v10), "Return", tmplrt.Arg(v11))
-	if err != nil {
-		return tmplrt.ExecError("layout", "dict \"L\" $L \"Items\" .Locales \"Return\" .Return", tmplrt.CallError("dict", err))
-	}
-	if err := exec_f605c207f3e121d6(b, reflect.ValueOf(v12), fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\n")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"content\" (withL (.Data) $L)}}", tmplrt.DepthError())
-	}
-	v13, err := tmplrt.Field(dot, "Data")
-	if err != nil {
-		return tmplrt.ExecError("layout", ".Data", err)
-	}
-	v14 := tmplrt.Unwrap(v13)
-	v15 := fn.withL_2f8846c9(tmplrt.Arg(v14), x1)
-	v16 := reflect.ValueOf(v15)
-	if err := exec_053717be71dd7871(b, v16, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\n<footer class=\"blog-footer\">\n<a href=\"/\">The blog</a>\n<a href=\"/admin/posts\">Posts admin</a>\n</footer>\n</div>\n</body>\n</html>\n")
-	return nil
-}
-
-// facts_02642d6513a29e27 is what exec_02642d6513a29e27 assumes of the types it reads.
-var facts_02642d6513a29e27 = tmplrt.Facts{
-	Funcs: map[string]reflect.Type{
-		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
-	},
-	Facts: []tmplrt.Fact{
-		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
-		{Func: "localizer_634df8c4", Path: []string{".Identity() func() string"}, Type: "string"},
-		{Func: "localizer_634df8c4", Path: []string{".Dir() func() string"}, Type: "string"},
-	},
-}
-
-// exec_02642d6513a29e27_0a42071c renders "layout" for a dot of type pageData.
-func exec_02642d6513a29e27_0a42071c(b *bytes.Buffer, dot pageData, fn *templateFuncs, depth int) error {
-	root := dot
-	v1 := fn.localizer_634df8c4(root)
-	x1 := v1
-	_ = x1
-	b.WriteString("<!doctype html>\n<html lang=\"")
-	v2 := x1.Identity()
-	tmplrt.WriteAttrEscaped(b, v2)
-	b.WriteString("\" dir=\"")
-	v3 := x1.Dir()
-	tmplrt.WriteAttrEscaped(b, v3)
-	b.WriteString("\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width\">\n<title>")
-	tmplrt.WriteHTMLEscaped(b, dot.Head.Title)
-	b.WriteString(" · The blog</title>\n<link rel=\"stylesheet\" href=\"")
-	v4 := fn.asset_0e0a6fbe("static/tokens.css")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v4)))
-	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
-	v5 := fn.asset_0e0a6fbe("static/theme.css")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v5)))
-	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
-	v6 := fn.asset_0e0a6fbe("static/blog.css")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v6)))
-	b.WriteString("\">\n</head>\n<body>\n<div rst-page>\n")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"locale-menu\" dict \"L\" $L \"Items\" .Locales \"Return\" .Return}}", tmplrt.DepthError())
-	}
-	v7, err := fn.dict_72aa8d8f("L", x1, "Items", dot.Locales, "Return", dot.Return)
-	if err != nil {
-		return tmplrt.ExecError("layout", "dict \"L\" $L \"Items\" .Locales \"Return\" .Return", tmplrt.CallError("dict", err))
-	}
-	if err := exec_f605c207f3e121d6(b, reflect.ValueOf(v7), fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\n")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"content\" (withL (.Data) $L)}}", tmplrt.DepthError())
-	}
-	v8 := reflect.ValueOf(dot.Data)
-	v9 := fn.withL_2f8846c9(tmplrt.Arg(v8), x1)
-	v10 := reflect.ValueOf(v9)
-	if err := exec_053717be71dd7871(b, v10, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\n<footer class=\"blog-footer\">\n<a href=\"/\">The blog</a>\n<a href=\"/admin/posts\">Posts admin</a>\n</footer>\n</div>\n</body>\n</html>\n")
-	return nil
-}
-
-// facts_02642d6513a29e27_0a42071c is what exec_02642d6513a29e27_0a42071c assumes of the types it reads.
-var facts_02642d6513a29e27_0a42071c = tmplrt.Facts{
-	Dot: reflect.TypeFor[pageData](),
-	Funcs: map[string]reflect.Type{
-		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
-	},
-	Facts: []tmplrt.Fact{
-		{Type: "blog/internal/blog.pageData struct"},
-		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
-		{Func: "localizer_634df8c4", Path: []string{".Identity() func() string"}, Type: "string"},
-		{Func: "localizer_634df8c4", Path: []string{".Dir() func() string"}, Type: "string"},
-		{Path: []string{".Head"}, Type: "blog/internal/blog.Head struct"},
-		{Path: []string{".Head", ".Title"}, Type: "string"},
-		{Path: []string{".Locales"}, Type: "[]amadan.net/rastrillo/rastrillo.LocaleItem"},
-		{Path: []string{".Return"}, Type: "string"},
-		{Path: []string{".Data"}, Type: "interface {}"},
-	},
-}
-
-// exec_02642d6513a29e27_b6cf1f3e renders "layout" for a dot of type *pageData.
-func exec_02642d6513a29e27_b6cf1f3e(b *bytes.Buffer, dot *pageData, fn *templateFuncs, depth int) error {
-	root := dot
-	v1 := fn.localizer_634df8c4(root)
-	x1 := v1
-	_ = x1
-	b.WriteString("<!doctype html>\n<html lang=\"")
-	v2 := x1.Identity()
-	tmplrt.WriteAttrEscaped(b, v2)
-	b.WriteString("\" dir=\"")
-	v3 := x1.Dir()
-	tmplrt.WriteAttrEscaped(b, v3)
-	b.WriteString("\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width\">\n<title>")
-	if dot == nil {
-		_, err := tmplrt.Fail("nil pointer evaluating *blog.pageData.Head")
-		return tmplrt.ExecError("layout", ".Head.Title", err)
-	}
-	tmplrt.WriteHTMLEscaped(b, dot.Head.Title)
-	b.WriteString(" · The blog</title>\n<link rel=\"stylesheet\" href=\"")
-	v4 := fn.asset_0e0a6fbe("static/tokens.css")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v4)))
-	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
-	v5 := fn.asset_0e0a6fbe("static/theme.css")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v5)))
-	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
-	v6 := fn.asset_0e0a6fbe("static/blog.css")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v6)))
-	b.WriteString("\">\n</head>\n<body>\n<div rst-page>\n")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"locale-menu\" dict \"L\" $L \"Items\" .Locales \"Return\" .Return}}", tmplrt.DepthError())
-	}
-	if dot == nil {
-		_, err := tmplrt.Fail("nil pointer evaluating *blog.pageData.Locales")
-		return tmplrt.ExecError("layout", ".Locales", err)
-	}
-	if dot == nil {
-		_, err := tmplrt.Fail("nil pointer evaluating *blog.pageData.Return")
-		return tmplrt.ExecError("layout", ".Return", err)
-	}
-	v7, err := fn.dict_72aa8d8f("L", x1, "Items", dot.Locales, "Return", dot.Return)
-	if err != nil {
-		return tmplrt.ExecError("layout", "dict \"L\" $L \"Items\" .Locales \"Return\" .Return", tmplrt.CallError("dict", err))
-	}
-	if err := exec_f605c207f3e121d6(b, reflect.ValueOf(v7), fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\n")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"content\" (withL (.Data) $L)}}", tmplrt.DepthError())
-	}
-	if dot == nil {
-		_, err := tmplrt.Fail("nil pointer evaluating *blog.pageData.Data")
-		return tmplrt.ExecError("layout", ".Data", err)
-	}
-	v8 := reflect.ValueOf(dot.Data)
-	v9 := fn.withL_2f8846c9(tmplrt.Arg(v8), x1)
-	v10 := reflect.ValueOf(v9)
-	if err := exec_053717be71dd7871(b, v10, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\n<footer class=\"blog-footer\">\n<a href=\"/\">The blog</a>\n<a href=\"/admin/posts\">Posts admin</a>\n</footer>\n</div>\n</body>\n</html>\n")
-	return nil
-}
-
-// facts_02642d6513a29e27_b6cf1f3e is what exec_02642d6513a29e27_b6cf1f3e assumes of the types it reads.
-var facts_02642d6513a29e27_b6cf1f3e = tmplrt.Facts{
-	Dot: reflect.TypeFor[*pageData](),
-	Funcs: map[string]reflect.Type{
-		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
-	},
-	Facts: []tmplrt.Fact{
-		{Type: "*blog/internal/blog.pageData"},
-		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
-		{Func: "localizer_634df8c4", Path: []string{".Identity() func() string"}, Type: "string"},
-		{Func: "localizer_634df8c4", Path: []string{".Dir() func() string"}, Type: "string"},
-		{Path: []string{".Head"}, Type: "blog/internal/blog.Head struct"},
-		{Path: []string{".Head", "&.Title"}, Type: "string"},
-		{Path: []string{".Locales"}, Type: "[]amadan.net/rastrillo/rastrillo.LocaleItem"},
-		{Path: []string{".Return"}, Type: "string"},
-		{Path: []string{".Data"}, Type: "interface {}"},
 	},
 }
 
@@ -3161,237 +3180,6 @@ var facts_0ef81ace325a890c = tmplrt.Facts{
 	},
 	Facts: []tmplrt.Fact{
 		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
-	},
-}
-
-// exec_12674ed2901faa91 renders "layout".
-func exec_12674ed2901faa91(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
-	root := dot
-	v1 := fn.localizer_634df8c4(tmplrt.Arg(root))
-	x1 := v1
-	_ = x1
-	b.WriteString("<!doctype html>\n<html lang=\"")
-	v2 := x1.Identity()
-	tmplrt.WriteAttrEscaped(b, v2)
-	b.WriteString("\" dir=\"")
-	v3 := x1.Dir()
-	tmplrt.WriteAttrEscaped(b, v3)
-	b.WriteString("\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width\">\n<title>")
-	v4, err := tmplrt.Field(dot, "Head")
-	if err != nil {
-		return tmplrt.ExecError("layout", ".Head.Title", err)
-	}
-	v5, err := tmplrt.Field(v4, "Title")
-	if err != nil {
-		return tmplrt.ExecError("layout", ".Head.Title", err)
-	}
-	v6 := tmplrt.Unwrap(v5)
-	b.WriteString(tmplrt.RCDATAEscaper(tmplrt.Arg(v6)))
-	b.WriteString(" · The blog</title>\n<link rel=\"stylesheet\" href=\"")
-	v7 := fn.asset_0e0a6fbe("static/tokens.css")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v7)))
-	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
-	v8 := fn.asset_0e0a6fbe("static/theme.css")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v8)))
-	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
-	v9 := fn.asset_0e0a6fbe("static/blog.css")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v9)))
-	b.WriteString("\">\n</head>\n<body>\n<div rst-page>\n")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"locale-menu\" dict \"L\" $L \"Items\" .Locales \"Return\" .Return}}", tmplrt.DepthError())
-	}
-	v10, err := tmplrt.Field(dot, "Locales")
-	if err != nil {
-		return tmplrt.ExecError("layout", ".Locales", err)
-	}
-	v11, err := tmplrt.Field(dot, "Return")
-	if err != nil {
-		return tmplrt.ExecError("layout", ".Return", err)
-	}
-	v12, err := fn.dict_72aa8d8f("L", x1, "Items", tmplrt.Arg(v10), "Return", tmplrt.Arg(v11))
-	if err != nil {
-		return tmplrt.ExecError("layout", "dict \"L\" $L \"Items\" .Locales \"Return\" .Return", tmplrt.CallError("dict", err))
-	}
-	if err := exec_f605c207f3e121d6(b, reflect.ValueOf(v12), fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\n")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"content\" (withL (.Data) $L)}}", tmplrt.DepthError())
-	}
-	v13, err := tmplrt.Field(dot, "Data")
-	if err != nil {
-		return tmplrt.ExecError("layout", ".Data", err)
-	}
-	v14 := tmplrt.Unwrap(v13)
-	v15 := fn.withL_2f8846c9(tmplrt.Arg(v14), x1)
-	v16 := reflect.ValueOf(v15)
-	if err := exec_9b5039c7cb5e7369(b, v16, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\n<footer class=\"blog-footer\">\n<a href=\"/\">The blog</a>\n<a href=\"/admin/posts\">Posts admin</a>\n</footer>\n</div>\n</body>\n</html>\n")
-	return nil
-}
-
-// facts_12674ed2901faa91 is what exec_12674ed2901faa91 assumes of the types it reads.
-var facts_12674ed2901faa91 = tmplrt.Facts{
-	Funcs: map[string]reflect.Type{
-		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
-	},
-	Facts: []tmplrt.Fact{
-		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
-		{Func: "localizer_634df8c4", Path: []string{".Identity() func() string"}, Type: "string"},
-		{Func: "localizer_634df8c4", Path: []string{".Dir() func() string"}, Type: "string"},
-	},
-}
-
-// exec_12674ed2901faa91_0a42071c renders "layout" for a dot of type pageData.
-func exec_12674ed2901faa91_0a42071c(b *bytes.Buffer, dot pageData, fn *templateFuncs, depth int) error {
-	root := dot
-	v1 := fn.localizer_634df8c4(root)
-	x1 := v1
-	_ = x1
-	b.WriteString("<!doctype html>\n<html lang=\"")
-	v2 := x1.Identity()
-	tmplrt.WriteAttrEscaped(b, v2)
-	b.WriteString("\" dir=\"")
-	v3 := x1.Dir()
-	tmplrt.WriteAttrEscaped(b, v3)
-	b.WriteString("\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width\">\n<title>")
-	tmplrt.WriteHTMLEscaped(b, dot.Head.Title)
-	b.WriteString(" · The blog</title>\n<link rel=\"stylesheet\" href=\"")
-	v4 := fn.asset_0e0a6fbe("static/tokens.css")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v4)))
-	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
-	v5 := fn.asset_0e0a6fbe("static/theme.css")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v5)))
-	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
-	v6 := fn.asset_0e0a6fbe("static/blog.css")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v6)))
-	b.WriteString("\">\n</head>\n<body>\n<div rst-page>\n")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"locale-menu\" dict \"L\" $L \"Items\" .Locales \"Return\" .Return}}", tmplrt.DepthError())
-	}
-	v7, err := fn.dict_72aa8d8f("L", x1, "Items", dot.Locales, "Return", dot.Return)
-	if err != nil {
-		return tmplrt.ExecError("layout", "dict \"L\" $L \"Items\" .Locales \"Return\" .Return", tmplrt.CallError("dict", err))
-	}
-	if err := exec_f605c207f3e121d6(b, reflect.ValueOf(v7), fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\n")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"content\" (withL (.Data) $L)}}", tmplrt.DepthError())
-	}
-	v8 := reflect.ValueOf(dot.Data)
-	v9 := fn.withL_2f8846c9(tmplrt.Arg(v8), x1)
-	v10 := reflect.ValueOf(v9)
-	if err := exec_9b5039c7cb5e7369(b, v10, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\n<footer class=\"blog-footer\">\n<a href=\"/\">The blog</a>\n<a href=\"/admin/posts\">Posts admin</a>\n</footer>\n</div>\n</body>\n</html>\n")
-	return nil
-}
-
-// facts_12674ed2901faa91_0a42071c is what exec_12674ed2901faa91_0a42071c assumes of the types it reads.
-var facts_12674ed2901faa91_0a42071c = tmplrt.Facts{
-	Dot: reflect.TypeFor[pageData](),
-	Funcs: map[string]reflect.Type{
-		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
-	},
-	Facts: []tmplrt.Fact{
-		{Type: "blog/internal/blog.pageData struct"},
-		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
-		{Func: "localizer_634df8c4", Path: []string{".Identity() func() string"}, Type: "string"},
-		{Func: "localizer_634df8c4", Path: []string{".Dir() func() string"}, Type: "string"},
-		{Path: []string{".Head"}, Type: "blog/internal/blog.Head struct"},
-		{Path: []string{".Head", ".Title"}, Type: "string"},
-		{Path: []string{".Locales"}, Type: "[]amadan.net/rastrillo/rastrillo.LocaleItem"},
-		{Path: []string{".Return"}, Type: "string"},
-		{Path: []string{".Data"}, Type: "interface {}"},
-	},
-}
-
-// exec_12674ed2901faa91_b6cf1f3e renders "layout" for a dot of type *pageData.
-func exec_12674ed2901faa91_b6cf1f3e(b *bytes.Buffer, dot *pageData, fn *templateFuncs, depth int) error {
-	root := dot
-	v1 := fn.localizer_634df8c4(root)
-	x1 := v1
-	_ = x1
-	b.WriteString("<!doctype html>\n<html lang=\"")
-	v2 := x1.Identity()
-	tmplrt.WriteAttrEscaped(b, v2)
-	b.WriteString("\" dir=\"")
-	v3 := x1.Dir()
-	tmplrt.WriteAttrEscaped(b, v3)
-	b.WriteString("\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width\">\n<title>")
-	if dot == nil {
-		_, err := tmplrt.Fail("nil pointer evaluating *blog.pageData.Head")
-		return tmplrt.ExecError("layout", ".Head.Title", err)
-	}
-	tmplrt.WriteHTMLEscaped(b, dot.Head.Title)
-	b.WriteString(" · The blog</title>\n<link rel=\"stylesheet\" href=\"")
-	v4 := fn.asset_0e0a6fbe("static/tokens.css")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v4)))
-	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
-	v5 := fn.asset_0e0a6fbe("static/theme.css")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v5)))
-	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
-	v6 := fn.asset_0e0a6fbe("static/blog.css")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v6)))
-	b.WriteString("\">\n</head>\n<body>\n<div rst-page>\n")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"locale-menu\" dict \"L\" $L \"Items\" .Locales \"Return\" .Return}}", tmplrt.DepthError())
-	}
-	if dot == nil {
-		_, err := tmplrt.Fail("nil pointer evaluating *blog.pageData.Locales")
-		return tmplrt.ExecError("layout", ".Locales", err)
-	}
-	if dot == nil {
-		_, err := tmplrt.Fail("nil pointer evaluating *blog.pageData.Return")
-		return tmplrt.ExecError("layout", ".Return", err)
-	}
-	v7, err := fn.dict_72aa8d8f("L", x1, "Items", dot.Locales, "Return", dot.Return)
-	if err != nil {
-		return tmplrt.ExecError("layout", "dict \"L\" $L \"Items\" .Locales \"Return\" .Return", tmplrt.CallError("dict", err))
-	}
-	if err := exec_f605c207f3e121d6(b, reflect.ValueOf(v7), fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\n")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"content\" (withL (.Data) $L)}}", tmplrt.DepthError())
-	}
-	if dot == nil {
-		_, err := tmplrt.Fail("nil pointer evaluating *blog.pageData.Data")
-		return tmplrt.ExecError("layout", ".Data", err)
-	}
-	v8 := reflect.ValueOf(dot.Data)
-	v9 := fn.withL_2f8846c9(tmplrt.Arg(v8), x1)
-	v10 := reflect.ValueOf(v9)
-	if err := exec_9b5039c7cb5e7369(b, v10, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\n<footer class=\"blog-footer\">\n<a href=\"/\">The blog</a>\n<a href=\"/admin/posts\">Posts admin</a>\n</footer>\n</div>\n</body>\n</html>\n")
-	return nil
-}
-
-// facts_12674ed2901faa91_b6cf1f3e is what exec_12674ed2901faa91_b6cf1f3e assumes of the types it reads.
-var facts_12674ed2901faa91_b6cf1f3e = tmplrt.Facts{
-	Dot: reflect.TypeFor[*pageData](),
-	Funcs: map[string]reflect.Type{
-		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
-	},
-	Facts: []tmplrt.Fact{
-		{Type: "*blog/internal/blog.pageData"},
-		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
-		{Func: "localizer_634df8c4", Path: []string{".Identity() func() string"}, Type: "string"},
-		{Func: "localizer_634df8c4", Path: []string{".Dir() func() string"}, Type: "string"},
-		{Path: []string{".Head"}, Type: "blog/internal/blog.Head struct"},
-		{Path: []string{".Head", "&.Title"}, Type: "string"},
-		{Path: []string{".Locales"}, Type: "[]amadan.net/rastrillo/rastrillo.LocaleItem"},
-		{Path: []string{".Return"}, Type: "string"},
-		{Path: []string{".Data"}, Type: "interface {}"},
 	},
 }
 
@@ -4377,237 +4165,6 @@ var facts_175d21768bd32c22 = tmplrt.Facts{
 func exec_19c92c8c0df73bc1(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
 	b.WriteString("\n\n")
 	return nil
-}
-
-// exec_1af6c46c7737af8a renders "layout".
-func exec_1af6c46c7737af8a(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
-	root := dot
-	v1 := fn.localizer_634df8c4(tmplrt.Arg(root))
-	x1 := v1
-	_ = x1
-	b.WriteString("<!doctype html>\n<html lang=\"")
-	v2 := x1.Identity()
-	tmplrt.WriteAttrEscaped(b, v2)
-	b.WriteString("\" dir=\"")
-	v3 := x1.Dir()
-	tmplrt.WriteAttrEscaped(b, v3)
-	b.WriteString("\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width\">\n<title>")
-	v4, err := tmplrt.Field(dot, "Head")
-	if err != nil {
-		return tmplrt.ExecError("layout", ".Head.Title", err)
-	}
-	v5, err := tmplrt.Field(v4, "Title")
-	if err != nil {
-		return tmplrt.ExecError("layout", ".Head.Title", err)
-	}
-	v6 := tmplrt.Unwrap(v5)
-	b.WriteString(tmplrt.RCDATAEscaper(tmplrt.Arg(v6)))
-	b.WriteString(" · The blog</title>\n<link rel=\"stylesheet\" href=\"")
-	v7 := fn.asset_0e0a6fbe("static/tokens.css")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v7)))
-	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
-	v8 := fn.asset_0e0a6fbe("static/theme.css")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v8)))
-	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
-	v9 := fn.asset_0e0a6fbe("static/blog.css")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v9)))
-	b.WriteString("\">\n</head>\n<body>\n<div rst-page>\n")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"locale-menu\" dict \"L\" $L \"Items\" .Locales \"Return\" .Return}}", tmplrt.DepthError())
-	}
-	v10, err := tmplrt.Field(dot, "Locales")
-	if err != nil {
-		return tmplrt.ExecError("layout", ".Locales", err)
-	}
-	v11, err := tmplrt.Field(dot, "Return")
-	if err != nil {
-		return tmplrt.ExecError("layout", ".Return", err)
-	}
-	v12, err := fn.dict_72aa8d8f("L", x1, "Items", tmplrt.Arg(v10), "Return", tmplrt.Arg(v11))
-	if err != nil {
-		return tmplrt.ExecError("layout", "dict \"L\" $L \"Items\" .Locales \"Return\" .Return", tmplrt.CallError("dict", err))
-	}
-	if err := exec_f605c207f3e121d6(b, reflect.ValueOf(v12), fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\n")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"content\" (withL (.Data) $L)}}", tmplrt.DepthError())
-	}
-	v13, err := tmplrt.Field(dot, "Data")
-	if err != nil {
-		return tmplrt.ExecError("layout", ".Data", err)
-	}
-	v14 := tmplrt.Unwrap(v13)
-	v15 := fn.withL_2f8846c9(tmplrt.Arg(v14), x1)
-	v16 := reflect.ValueOf(v15)
-	if err := exec_0ef81ace325a890c(b, v16, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\n<footer class=\"blog-footer\">\n<a href=\"/\">The blog</a>\n<a href=\"/admin/posts\">Posts admin</a>\n</footer>\n</div>\n</body>\n</html>\n")
-	return nil
-}
-
-// facts_1af6c46c7737af8a is what exec_1af6c46c7737af8a assumes of the types it reads.
-var facts_1af6c46c7737af8a = tmplrt.Facts{
-	Funcs: map[string]reflect.Type{
-		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
-	},
-	Facts: []tmplrt.Fact{
-		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
-		{Func: "localizer_634df8c4", Path: []string{".Identity() func() string"}, Type: "string"},
-		{Func: "localizer_634df8c4", Path: []string{".Dir() func() string"}, Type: "string"},
-	},
-}
-
-// exec_1af6c46c7737af8a_0a42071c renders "layout" for a dot of type pageData.
-func exec_1af6c46c7737af8a_0a42071c(b *bytes.Buffer, dot pageData, fn *templateFuncs, depth int) error {
-	root := dot
-	v1 := fn.localizer_634df8c4(root)
-	x1 := v1
-	_ = x1
-	b.WriteString("<!doctype html>\n<html lang=\"")
-	v2 := x1.Identity()
-	tmplrt.WriteAttrEscaped(b, v2)
-	b.WriteString("\" dir=\"")
-	v3 := x1.Dir()
-	tmplrt.WriteAttrEscaped(b, v3)
-	b.WriteString("\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width\">\n<title>")
-	tmplrt.WriteHTMLEscaped(b, dot.Head.Title)
-	b.WriteString(" · The blog</title>\n<link rel=\"stylesheet\" href=\"")
-	v4 := fn.asset_0e0a6fbe("static/tokens.css")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v4)))
-	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
-	v5 := fn.asset_0e0a6fbe("static/theme.css")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v5)))
-	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
-	v6 := fn.asset_0e0a6fbe("static/blog.css")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v6)))
-	b.WriteString("\">\n</head>\n<body>\n<div rst-page>\n")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"locale-menu\" dict \"L\" $L \"Items\" .Locales \"Return\" .Return}}", tmplrt.DepthError())
-	}
-	v7, err := fn.dict_72aa8d8f("L", x1, "Items", dot.Locales, "Return", dot.Return)
-	if err != nil {
-		return tmplrt.ExecError("layout", "dict \"L\" $L \"Items\" .Locales \"Return\" .Return", tmplrt.CallError("dict", err))
-	}
-	if err := exec_f605c207f3e121d6(b, reflect.ValueOf(v7), fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\n")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"content\" (withL (.Data) $L)}}", tmplrt.DepthError())
-	}
-	v8 := reflect.ValueOf(dot.Data)
-	v9 := fn.withL_2f8846c9(tmplrt.Arg(v8), x1)
-	v10 := reflect.ValueOf(v9)
-	if err := exec_0ef81ace325a890c(b, v10, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\n<footer class=\"blog-footer\">\n<a href=\"/\">The blog</a>\n<a href=\"/admin/posts\">Posts admin</a>\n</footer>\n</div>\n</body>\n</html>\n")
-	return nil
-}
-
-// facts_1af6c46c7737af8a_0a42071c is what exec_1af6c46c7737af8a_0a42071c assumes of the types it reads.
-var facts_1af6c46c7737af8a_0a42071c = tmplrt.Facts{
-	Dot: reflect.TypeFor[pageData](),
-	Funcs: map[string]reflect.Type{
-		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
-	},
-	Facts: []tmplrt.Fact{
-		{Type: "blog/internal/blog.pageData struct"},
-		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
-		{Func: "localizer_634df8c4", Path: []string{".Identity() func() string"}, Type: "string"},
-		{Func: "localizer_634df8c4", Path: []string{".Dir() func() string"}, Type: "string"},
-		{Path: []string{".Head"}, Type: "blog/internal/blog.Head struct"},
-		{Path: []string{".Head", ".Title"}, Type: "string"},
-		{Path: []string{".Locales"}, Type: "[]amadan.net/rastrillo/rastrillo.LocaleItem"},
-		{Path: []string{".Return"}, Type: "string"},
-		{Path: []string{".Data"}, Type: "interface {}"},
-	},
-}
-
-// exec_1af6c46c7737af8a_b6cf1f3e renders "layout" for a dot of type *pageData.
-func exec_1af6c46c7737af8a_b6cf1f3e(b *bytes.Buffer, dot *pageData, fn *templateFuncs, depth int) error {
-	root := dot
-	v1 := fn.localizer_634df8c4(root)
-	x1 := v1
-	_ = x1
-	b.WriteString("<!doctype html>\n<html lang=\"")
-	v2 := x1.Identity()
-	tmplrt.WriteAttrEscaped(b, v2)
-	b.WriteString("\" dir=\"")
-	v3 := x1.Dir()
-	tmplrt.WriteAttrEscaped(b, v3)
-	b.WriteString("\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width\">\n<title>")
-	if dot == nil {
-		_, err := tmplrt.Fail("nil pointer evaluating *blog.pageData.Head")
-		return tmplrt.ExecError("layout", ".Head.Title", err)
-	}
-	tmplrt.WriteHTMLEscaped(b, dot.Head.Title)
-	b.WriteString(" · The blog</title>\n<link rel=\"stylesheet\" href=\"")
-	v4 := fn.asset_0e0a6fbe("static/tokens.css")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v4)))
-	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
-	v5 := fn.asset_0e0a6fbe("static/theme.css")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v5)))
-	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
-	v6 := fn.asset_0e0a6fbe("static/blog.css")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v6)))
-	b.WriteString("\">\n</head>\n<body>\n<div rst-page>\n")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"locale-menu\" dict \"L\" $L \"Items\" .Locales \"Return\" .Return}}", tmplrt.DepthError())
-	}
-	if dot == nil {
-		_, err := tmplrt.Fail("nil pointer evaluating *blog.pageData.Locales")
-		return tmplrt.ExecError("layout", ".Locales", err)
-	}
-	if dot == nil {
-		_, err := tmplrt.Fail("nil pointer evaluating *blog.pageData.Return")
-		return tmplrt.ExecError("layout", ".Return", err)
-	}
-	v7, err := fn.dict_72aa8d8f("L", x1, "Items", dot.Locales, "Return", dot.Return)
-	if err != nil {
-		return tmplrt.ExecError("layout", "dict \"L\" $L \"Items\" .Locales \"Return\" .Return", tmplrt.CallError("dict", err))
-	}
-	if err := exec_f605c207f3e121d6(b, reflect.ValueOf(v7), fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\n")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"content\" (withL (.Data) $L)}}", tmplrt.DepthError())
-	}
-	if dot == nil {
-		_, err := tmplrt.Fail("nil pointer evaluating *blog.pageData.Data")
-		return tmplrt.ExecError("layout", ".Data", err)
-	}
-	v8 := reflect.ValueOf(dot.Data)
-	v9 := fn.withL_2f8846c9(tmplrt.Arg(v8), x1)
-	v10 := reflect.ValueOf(v9)
-	if err := exec_0ef81ace325a890c(b, v10, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\n<footer class=\"blog-footer\">\n<a href=\"/\">The blog</a>\n<a href=\"/admin/posts\">Posts admin</a>\n</footer>\n</div>\n</body>\n</html>\n")
-	return nil
-}
-
-// facts_1af6c46c7737af8a_b6cf1f3e is what exec_1af6c46c7737af8a_b6cf1f3e assumes of the types it reads.
-var facts_1af6c46c7737af8a_b6cf1f3e = tmplrt.Facts{
-	Dot: reflect.TypeFor[*pageData](),
-	Funcs: map[string]reflect.Type{
-		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
-	},
-	Facts: []tmplrt.Fact{
-		{Type: "*blog/internal/blog.pageData"},
-		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
-		{Func: "localizer_634df8c4", Path: []string{".Identity() func() string"}, Type: "string"},
-		{Func: "localizer_634df8c4", Path: []string{".Dir() func() string"}, Type: "string"},
-		{Path: []string{".Head"}, Type: "blog/internal/blog.Head struct"},
-		{Path: []string{".Head", "&.Title"}, Type: "string"},
-		{Path: []string{".Locales"}, Type: "[]amadan.net/rastrillo/rastrillo.LocaleItem"},
-		{Path: []string{".Return"}, Type: "string"},
-		{Path: []string{".Data"}, Type: "interface {}"},
-	},
 }
 
 // exec_2114f5b7627c9953 renders "layout.html".
@@ -6161,6 +5718,237 @@ var facts_35cd6f0da498c8b0 = tmplrt.Facts{
 	},
 	Facts: []tmplrt.Fact{
 		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
+	},
+}
+
+// exec_3c3d69ee309152c5 renders "layout".
+func exec_3c3d69ee309152c5(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
+	root := dot
+	v1 := fn.localizer_634df8c4(tmplrt.Arg(root))
+	x1 := v1
+	_ = x1
+	b.WriteString("<!doctype html>\n<html lang=\"")
+	v2 := x1.Identity()
+	tmplrt.WriteAttrEscaped(b, v2)
+	b.WriteString("\" dir=\"")
+	v3 := x1.Dir()
+	tmplrt.WriteAttrEscaped(b, v3)
+	b.WriteString("\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width\">\n<title>")
+	v4, err := tmplrt.Field(dot, "Head")
+	if err != nil {
+		return tmplrt.ExecError("layout", ".Head.Title", err)
+	}
+	v5, err := tmplrt.Field(v4, "Title")
+	if err != nil {
+		return tmplrt.ExecError("layout", ".Head.Title", err)
+	}
+	v6 := tmplrt.Unwrap(v5)
+	b.WriteString(tmplrt.RCDATAEscaper(tmplrt.Arg(v6)))
+	b.WriteString(" · The blog</title>\n<link rel=\"stylesheet\" href=\"")
+	v7 := fn.pageStylesheet_fe1f5563()
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v7)))
+	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
+	v8 := fn.asset_0e0a6fbe("static/theme.css")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v8)))
+	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
+	v9 := fn.asset_0e0a6fbe("static/blog.css")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v9)))
+	b.WriteString("\">\n</head>\n<body>\n<div rst-page>\n")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"locale-menu\" dict \"L\" $L \"Items\" .Locales \"Return\" .Return}}", tmplrt.DepthError())
+	}
+	v10, err := tmplrt.Field(dot, "Locales")
+	if err != nil {
+		return tmplrt.ExecError("layout", ".Locales", err)
+	}
+	v11, err := tmplrt.Field(dot, "Return")
+	if err != nil {
+		return tmplrt.ExecError("layout", ".Return", err)
+	}
+	v12, err := fn.dict_72aa8d8f("L", x1, "Items", tmplrt.Arg(v10), "Return", tmplrt.Arg(v11))
+	if err != nil {
+		return tmplrt.ExecError("layout", "dict \"L\" $L \"Items\" .Locales \"Return\" .Return", tmplrt.CallError("dict", err))
+	}
+	if err := exec_f605c207f3e121d6(b, reflect.ValueOf(v12), fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\n")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"content\" (withL (.Data) $L)}}", tmplrt.DepthError())
+	}
+	v13, err := tmplrt.Field(dot, "Data")
+	if err != nil {
+		return tmplrt.ExecError("layout", ".Data", err)
+	}
+	v14 := tmplrt.Unwrap(v13)
+	v15 := fn.withL_2f8846c9(tmplrt.Arg(v14), x1)
+	v16 := reflect.ValueOf(v15)
+	if err := exec_f7ee04e68597313e(b, v16, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\n<footer class=\"blog-footer\">\n<a href=\"/\">The blog</a>\n<a href=\"/admin/posts\">Posts admin</a>\n</footer>\n</div>\n</body>\n</html>\n")
+	return nil
+}
+
+// facts_3c3d69ee309152c5 is what exec_3c3d69ee309152c5 assumes of the types it reads.
+var facts_3c3d69ee309152c5 = tmplrt.Facts{
+	Funcs: map[string]reflect.Type{
+		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
+	},
+	Facts: []tmplrt.Fact{
+		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
+		{Func: "localizer_634df8c4", Path: []string{".Identity() func() string"}, Type: "string"},
+		{Func: "localizer_634df8c4", Path: []string{".Dir() func() string"}, Type: "string"},
+	},
+}
+
+// exec_3c3d69ee309152c5_0a42071c renders "layout" for a dot of type pageData.
+func exec_3c3d69ee309152c5_0a42071c(b *bytes.Buffer, dot pageData, fn *templateFuncs, depth int) error {
+	root := dot
+	v1 := fn.localizer_634df8c4(root)
+	x1 := v1
+	_ = x1
+	b.WriteString("<!doctype html>\n<html lang=\"")
+	v2 := x1.Identity()
+	tmplrt.WriteAttrEscaped(b, v2)
+	b.WriteString("\" dir=\"")
+	v3 := x1.Dir()
+	tmplrt.WriteAttrEscaped(b, v3)
+	b.WriteString("\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width\">\n<title>")
+	tmplrt.WriteHTMLEscaped(b, dot.Head.Title)
+	b.WriteString(" · The blog</title>\n<link rel=\"stylesheet\" href=\"")
+	v4 := fn.pageStylesheet_fe1f5563()
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v4)))
+	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
+	v5 := fn.asset_0e0a6fbe("static/theme.css")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v5)))
+	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
+	v6 := fn.asset_0e0a6fbe("static/blog.css")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v6)))
+	b.WriteString("\">\n</head>\n<body>\n<div rst-page>\n")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"locale-menu\" dict \"L\" $L \"Items\" .Locales \"Return\" .Return}}", tmplrt.DepthError())
+	}
+	v7, err := fn.dict_72aa8d8f("L", x1, "Items", dot.Locales, "Return", dot.Return)
+	if err != nil {
+		return tmplrt.ExecError("layout", "dict \"L\" $L \"Items\" .Locales \"Return\" .Return", tmplrt.CallError("dict", err))
+	}
+	if err := exec_f605c207f3e121d6(b, reflect.ValueOf(v7), fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\n")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"content\" (withL (.Data) $L)}}", tmplrt.DepthError())
+	}
+	v8 := reflect.ValueOf(dot.Data)
+	v9 := fn.withL_2f8846c9(tmplrt.Arg(v8), x1)
+	v10 := reflect.ValueOf(v9)
+	if err := exec_f7ee04e68597313e(b, v10, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\n<footer class=\"blog-footer\">\n<a href=\"/\">The blog</a>\n<a href=\"/admin/posts\">Posts admin</a>\n</footer>\n</div>\n</body>\n</html>\n")
+	return nil
+}
+
+// facts_3c3d69ee309152c5_0a42071c is what exec_3c3d69ee309152c5_0a42071c assumes of the types it reads.
+var facts_3c3d69ee309152c5_0a42071c = tmplrt.Facts{
+	Dot: reflect.TypeFor[pageData](),
+	Funcs: map[string]reflect.Type{
+		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
+	},
+	Facts: []tmplrt.Fact{
+		{Type: "blog/internal/blog.pageData struct"},
+		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
+		{Func: "localizer_634df8c4", Path: []string{".Identity() func() string"}, Type: "string"},
+		{Func: "localizer_634df8c4", Path: []string{".Dir() func() string"}, Type: "string"},
+		{Path: []string{".Head"}, Type: "blog/internal/blog.Head struct"},
+		{Path: []string{".Head", ".Title"}, Type: "string"},
+		{Path: []string{".Locales"}, Type: "[]amadan.net/rastrillo/rastrillo.LocaleItem"},
+		{Path: []string{".Return"}, Type: "string"},
+		{Path: []string{".Data"}, Type: "interface {}"},
+	},
+}
+
+// exec_3c3d69ee309152c5_b6cf1f3e renders "layout" for a dot of type *pageData.
+func exec_3c3d69ee309152c5_b6cf1f3e(b *bytes.Buffer, dot *pageData, fn *templateFuncs, depth int) error {
+	root := dot
+	v1 := fn.localizer_634df8c4(root)
+	x1 := v1
+	_ = x1
+	b.WriteString("<!doctype html>\n<html lang=\"")
+	v2 := x1.Identity()
+	tmplrt.WriteAttrEscaped(b, v2)
+	b.WriteString("\" dir=\"")
+	v3 := x1.Dir()
+	tmplrt.WriteAttrEscaped(b, v3)
+	b.WriteString("\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width\">\n<title>")
+	if dot == nil {
+		_, err := tmplrt.Fail("nil pointer evaluating *blog.pageData.Head")
+		return tmplrt.ExecError("layout", ".Head.Title", err)
+	}
+	tmplrt.WriteHTMLEscaped(b, dot.Head.Title)
+	b.WriteString(" · The blog</title>\n<link rel=\"stylesheet\" href=\"")
+	v4 := fn.pageStylesheet_fe1f5563()
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v4)))
+	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
+	v5 := fn.asset_0e0a6fbe("static/theme.css")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v5)))
+	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
+	v6 := fn.asset_0e0a6fbe("static/blog.css")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v6)))
+	b.WriteString("\">\n</head>\n<body>\n<div rst-page>\n")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"locale-menu\" dict \"L\" $L \"Items\" .Locales \"Return\" .Return}}", tmplrt.DepthError())
+	}
+	if dot == nil {
+		_, err := tmplrt.Fail("nil pointer evaluating *blog.pageData.Locales")
+		return tmplrt.ExecError("layout", ".Locales", err)
+	}
+	if dot == nil {
+		_, err := tmplrt.Fail("nil pointer evaluating *blog.pageData.Return")
+		return tmplrt.ExecError("layout", ".Return", err)
+	}
+	v7, err := fn.dict_72aa8d8f("L", x1, "Items", dot.Locales, "Return", dot.Return)
+	if err != nil {
+		return tmplrt.ExecError("layout", "dict \"L\" $L \"Items\" .Locales \"Return\" .Return", tmplrt.CallError("dict", err))
+	}
+	if err := exec_f605c207f3e121d6(b, reflect.ValueOf(v7), fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\n")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"content\" (withL (.Data) $L)}}", tmplrt.DepthError())
+	}
+	if dot == nil {
+		_, err := tmplrt.Fail("nil pointer evaluating *blog.pageData.Data")
+		return tmplrt.ExecError("layout", ".Data", err)
+	}
+	v8 := reflect.ValueOf(dot.Data)
+	v9 := fn.withL_2f8846c9(tmplrt.Arg(v8), x1)
+	v10 := reflect.ValueOf(v9)
+	if err := exec_f7ee04e68597313e(b, v10, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\n<footer class=\"blog-footer\">\n<a href=\"/\">The blog</a>\n<a href=\"/admin/posts\">Posts admin</a>\n</footer>\n</div>\n</body>\n</html>\n")
+	return nil
+}
+
+// facts_3c3d69ee309152c5_b6cf1f3e is what exec_3c3d69ee309152c5_b6cf1f3e assumes of the types it reads.
+var facts_3c3d69ee309152c5_b6cf1f3e = tmplrt.Facts{
+	Dot: reflect.TypeFor[*pageData](),
+	Funcs: map[string]reflect.Type{
+		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
+	},
+	Facts: []tmplrt.Fact{
+		{Type: "*blog/internal/blog.pageData"},
+		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
+		{Func: "localizer_634df8c4", Path: []string{".Identity() func() string"}, Type: "string"},
+		{Func: "localizer_634df8c4", Path: []string{".Dir() func() string"}, Type: "string"},
+		{Path: []string{".Head"}, Type: "blog/internal/blog.Head struct"},
+		{Path: []string{".Head", "&.Title"}, Type: "string"},
+		{Path: []string{".Locales"}, Type: "[]amadan.net/rastrillo/rastrillo.LocaleItem"},
+		{Path: []string{".Return"}, Type: "string"},
+		{Path: []string{".Data"}, Type: "interface {}"},
 	},
 }
 
@@ -8058,6 +7846,237 @@ func exec_688fcddee6e49381(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs
 	return nil
 }
 
+// exec_6d147293fae93baa renders "layout".
+func exec_6d147293fae93baa(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
+	root := dot
+	v1 := fn.localizer_634df8c4(tmplrt.Arg(root))
+	x1 := v1
+	_ = x1
+	b.WriteString("<!doctype html>\n<html lang=\"")
+	v2 := x1.Identity()
+	tmplrt.WriteAttrEscaped(b, v2)
+	b.WriteString("\" dir=\"")
+	v3 := x1.Dir()
+	tmplrt.WriteAttrEscaped(b, v3)
+	b.WriteString("\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width\">\n<title>")
+	v4, err := tmplrt.Field(dot, "Head")
+	if err != nil {
+		return tmplrt.ExecError("layout", ".Head.Title", err)
+	}
+	v5, err := tmplrt.Field(v4, "Title")
+	if err != nil {
+		return tmplrt.ExecError("layout", ".Head.Title", err)
+	}
+	v6 := tmplrt.Unwrap(v5)
+	b.WriteString(tmplrt.RCDATAEscaper(tmplrt.Arg(v6)))
+	b.WriteString(" · The blog</title>\n<link rel=\"stylesheet\" href=\"")
+	v7 := fn.pageStylesheet_fe1f5563()
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v7)))
+	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
+	v8 := fn.asset_0e0a6fbe("static/theme.css")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v8)))
+	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
+	v9 := fn.asset_0e0a6fbe("static/blog.css")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v9)))
+	b.WriteString("\">\n</head>\n<body>\n<div rst-page>\n")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"locale-menu\" dict \"L\" $L \"Items\" .Locales \"Return\" .Return}}", tmplrt.DepthError())
+	}
+	v10, err := tmplrt.Field(dot, "Locales")
+	if err != nil {
+		return tmplrt.ExecError("layout", ".Locales", err)
+	}
+	v11, err := tmplrt.Field(dot, "Return")
+	if err != nil {
+		return tmplrt.ExecError("layout", ".Return", err)
+	}
+	v12, err := fn.dict_72aa8d8f("L", x1, "Items", tmplrt.Arg(v10), "Return", tmplrt.Arg(v11))
+	if err != nil {
+		return tmplrt.ExecError("layout", "dict \"L\" $L \"Items\" .Locales \"Return\" .Return", tmplrt.CallError("dict", err))
+	}
+	if err := exec_f605c207f3e121d6(b, reflect.ValueOf(v12), fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\n")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"content\" (withL (.Data) $L)}}", tmplrt.DepthError())
+	}
+	v13, err := tmplrt.Field(dot, "Data")
+	if err != nil {
+		return tmplrt.ExecError("layout", ".Data", err)
+	}
+	v14 := tmplrt.Unwrap(v13)
+	v15 := fn.withL_2f8846c9(tmplrt.Arg(v14), x1)
+	v16 := reflect.ValueOf(v15)
+	if err := exec_15f98e7ac010dc8a(b, v16, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\n<footer class=\"blog-footer\">\n<a href=\"/\">The blog</a>\n<a href=\"/admin/posts\">Posts admin</a>\n</footer>\n</div>\n</body>\n</html>\n")
+	return nil
+}
+
+// facts_6d147293fae93baa is what exec_6d147293fae93baa assumes of the types it reads.
+var facts_6d147293fae93baa = tmplrt.Facts{
+	Funcs: map[string]reflect.Type{
+		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
+	},
+	Facts: []tmplrt.Fact{
+		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
+		{Func: "localizer_634df8c4", Path: []string{".Identity() func() string"}, Type: "string"},
+		{Func: "localizer_634df8c4", Path: []string{".Dir() func() string"}, Type: "string"},
+	},
+}
+
+// exec_6d147293fae93baa_0a42071c renders "layout" for a dot of type pageData.
+func exec_6d147293fae93baa_0a42071c(b *bytes.Buffer, dot pageData, fn *templateFuncs, depth int) error {
+	root := dot
+	v1 := fn.localizer_634df8c4(root)
+	x1 := v1
+	_ = x1
+	b.WriteString("<!doctype html>\n<html lang=\"")
+	v2 := x1.Identity()
+	tmplrt.WriteAttrEscaped(b, v2)
+	b.WriteString("\" dir=\"")
+	v3 := x1.Dir()
+	tmplrt.WriteAttrEscaped(b, v3)
+	b.WriteString("\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width\">\n<title>")
+	tmplrt.WriteHTMLEscaped(b, dot.Head.Title)
+	b.WriteString(" · The blog</title>\n<link rel=\"stylesheet\" href=\"")
+	v4 := fn.pageStylesheet_fe1f5563()
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v4)))
+	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
+	v5 := fn.asset_0e0a6fbe("static/theme.css")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v5)))
+	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
+	v6 := fn.asset_0e0a6fbe("static/blog.css")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v6)))
+	b.WriteString("\">\n</head>\n<body>\n<div rst-page>\n")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"locale-menu\" dict \"L\" $L \"Items\" .Locales \"Return\" .Return}}", tmplrt.DepthError())
+	}
+	v7, err := fn.dict_72aa8d8f("L", x1, "Items", dot.Locales, "Return", dot.Return)
+	if err != nil {
+		return tmplrt.ExecError("layout", "dict \"L\" $L \"Items\" .Locales \"Return\" .Return", tmplrt.CallError("dict", err))
+	}
+	if err := exec_f605c207f3e121d6(b, reflect.ValueOf(v7), fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\n")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"content\" (withL (.Data) $L)}}", tmplrt.DepthError())
+	}
+	v8 := reflect.ValueOf(dot.Data)
+	v9 := fn.withL_2f8846c9(tmplrt.Arg(v8), x1)
+	v10 := reflect.ValueOf(v9)
+	if err := exec_15f98e7ac010dc8a(b, v10, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\n<footer class=\"blog-footer\">\n<a href=\"/\">The blog</a>\n<a href=\"/admin/posts\">Posts admin</a>\n</footer>\n</div>\n</body>\n</html>\n")
+	return nil
+}
+
+// facts_6d147293fae93baa_0a42071c is what exec_6d147293fae93baa_0a42071c assumes of the types it reads.
+var facts_6d147293fae93baa_0a42071c = tmplrt.Facts{
+	Dot: reflect.TypeFor[pageData](),
+	Funcs: map[string]reflect.Type{
+		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
+	},
+	Facts: []tmplrt.Fact{
+		{Type: "blog/internal/blog.pageData struct"},
+		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
+		{Func: "localizer_634df8c4", Path: []string{".Identity() func() string"}, Type: "string"},
+		{Func: "localizer_634df8c4", Path: []string{".Dir() func() string"}, Type: "string"},
+		{Path: []string{".Head"}, Type: "blog/internal/blog.Head struct"},
+		{Path: []string{".Head", ".Title"}, Type: "string"},
+		{Path: []string{".Locales"}, Type: "[]amadan.net/rastrillo/rastrillo.LocaleItem"},
+		{Path: []string{".Return"}, Type: "string"},
+		{Path: []string{".Data"}, Type: "interface {}"},
+	},
+}
+
+// exec_6d147293fae93baa_b6cf1f3e renders "layout" for a dot of type *pageData.
+func exec_6d147293fae93baa_b6cf1f3e(b *bytes.Buffer, dot *pageData, fn *templateFuncs, depth int) error {
+	root := dot
+	v1 := fn.localizer_634df8c4(root)
+	x1 := v1
+	_ = x1
+	b.WriteString("<!doctype html>\n<html lang=\"")
+	v2 := x1.Identity()
+	tmplrt.WriteAttrEscaped(b, v2)
+	b.WriteString("\" dir=\"")
+	v3 := x1.Dir()
+	tmplrt.WriteAttrEscaped(b, v3)
+	b.WriteString("\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width\">\n<title>")
+	if dot == nil {
+		_, err := tmplrt.Fail("nil pointer evaluating *blog.pageData.Head")
+		return tmplrt.ExecError("layout", ".Head.Title", err)
+	}
+	tmplrt.WriteHTMLEscaped(b, dot.Head.Title)
+	b.WriteString(" · The blog</title>\n<link rel=\"stylesheet\" href=\"")
+	v4 := fn.pageStylesheet_fe1f5563()
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v4)))
+	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
+	v5 := fn.asset_0e0a6fbe("static/theme.css")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v5)))
+	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
+	v6 := fn.asset_0e0a6fbe("static/blog.css")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v6)))
+	b.WriteString("\">\n</head>\n<body>\n<div rst-page>\n")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"locale-menu\" dict \"L\" $L \"Items\" .Locales \"Return\" .Return}}", tmplrt.DepthError())
+	}
+	if dot == nil {
+		_, err := tmplrt.Fail("nil pointer evaluating *blog.pageData.Locales")
+		return tmplrt.ExecError("layout", ".Locales", err)
+	}
+	if dot == nil {
+		_, err := tmplrt.Fail("nil pointer evaluating *blog.pageData.Return")
+		return tmplrt.ExecError("layout", ".Return", err)
+	}
+	v7, err := fn.dict_72aa8d8f("L", x1, "Items", dot.Locales, "Return", dot.Return)
+	if err != nil {
+		return tmplrt.ExecError("layout", "dict \"L\" $L \"Items\" .Locales \"Return\" .Return", tmplrt.CallError("dict", err))
+	}
+	if err := exec_f605c207f3e121d6(b, reflect.ValueOf(v7), fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\n")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"content\" (withL (.Data) $L)}}", tmplrt.DepthError())
+	}
+	if dot == nil {
+		_, err := tmplrt.Fail("nil pointer evaluating *blog.pageData.Data")
+		return tmplrt.ExecError("layout", ".Data", err)
+	}
+	v8 := reflect.ValueOf(dot.Data)
+	v9 := fn.withL_2f8846c9(tmplrt.Arg(v8), x1)
+	v10 := reflect.ValueOf(v9)
+	if err := exec_15f98e7ac010dc8a(b, v10, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\n<footer class=\"blog-footer\">\n<a href=\"/\">The blog</a>\n<a href=\"/admin/posts\">Posts admin</a>\n</footer>\n</div>\n</body>\n</html>\n")
+	return nil
+}
+
+// facts_6d147293fae93baa_b6cf1f3e is what exec_6d147293fae93baa_b6cf1f3e assumes of the types it reads.
+var facts_6d147293fae93baa_b6cf1f3e = tmplrt.Facts{
+	Dot: reflect.TypeFor[*pageData](),
+	Funcs: map[string]reflect.Type{
+		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
+	},
+	Facts: []tmplrt.Fact{
+		{Type: "*blog/internal/blog.pageData"},
+		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
+		{Func: "localizer_634df8c4", Path: []string{".Identity() func() string"}, Type: "string"},
+		{Func: "localizer_634df8c4", Path: []string{".Dir() func() string"}, Type: "string"},
+		{Path: []string{".Head"}, Type: "blog/internal/blog.Head struct"},
+		{Path: []string{".Head", "&.Title"}, Type: "string"},
+		{Path: []string{".Locales"}, Type: "[]amadan.net/rastrillo/rastrillo.LocaleItem"},
+		{Path: []string{".Return"}, Type: "string"},
+		{Path: []string{".Data"}, Type: "interface {}"},
+	},
+}
+
 // exec_6f898f1a18fa1739 renders "index.html".
 func exec_6f898f1a18fa1739(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
 	b.WriteString("\n")
@@ -8982,237 +9001,6 @@ func exec_7fc7c4990a56dccd(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs
 	return nil
 }
 
-// exec_86226d55f25f5451 renders "layout".
-func exec_86226d55f25f5451(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
-	root := dot
-	v1 := fn.localizer_634df8c4(tmplrt.Arg(root))
-	x1 := v1
-	_ = x1
-	b.WriteString("<!doctype html>\n<html lang=\"")
-	v2 := x1.Identity()
-	tmplrt.WriteAttrEscaped(b, v2)
-	b.WriteString("\" dir=\"")
-	v3 := x1.Dir()
-	tmplrt.WriteAttrEscaped(b, v3)
-	b.WriteString("\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width\">\n<title>")
-	v4, err := tmplrt.Field(dot, "Head")
-	if err != nil {
-		return tmplrt.ExecError("layout", ".Head.Title", err)
-	}
-	v5, err := tmplrt.Field(v4, "Title")
-	if err != nil {
-		return tmplrt.ExecError("layout", ".Head.Title", err)
-	}
-	v6 := tmplrt.Unwrap(v5)
-	b.WriteString(tmplrt.RCDATAEscaper(tmplrt.Arg(v6)))
-	b.WriteString(" · The blog</title>\n<link rel=\"stylesheet\" href=\"")
-	v7 := fn.asset_0e0a6fbe("static/tokens.css")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v7)))
-	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
-	v8 := fn.asset_0e0a6fbe("static/theme.css")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v8)))
-	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
-	v9 := fn.asset_0e0a6fbe("static/blog.css")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v9)))
-	b.WriteString("\">\n</head>\n<body>\n<div rst-page>\n")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"locale-menu\" dict \"L\" $L \"Items\" .Locales \"Return\" .Return}}", tmplrt.DepthError())
-	}
-	v10, err := tmplrt.Field(dot, "Locales")
-	if err != nil {
-		return tmplrt.ExecError("layout", ".Locales", err)
-	}
-	v11, err := tmplrt.Field(dot, "Return")
-	if err != nil {
-		return tmplrt.ExecError("layout", ".Return", err)
-	}
-	v12, err := fn.dict_72aa8d8f("L", x1, "Items", tmplrt.Arg(v10), "Return", tmplrt.Arg(v11))
-	if err != nil {
-		return tmplrt.ExecError("layout", "dict \"L\" $L \"Items\" .Locales \"Return\" .Return", tmplrt.CallError("dict", err))
-	}
-	if err := exec_f605c207f3e121d6(b, reflect.ValueOf(v12), fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\n")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"content\" (withL (.Data) $L)}}", tmplrt.DepthError())
-	}
-	v13, err := tmplrt.Field(dot, "Data")
-	if err != nil {
-		return tmplrt.ExecError("layout", ".Data", err)
-	}
-	v14 := tmplrt.Unwrap(v13)
-	v15 := fn.withL_2f8846c9(tmplrt.Arg(v14), x1)
-	v16 := reflect.ValueOf(v15)
-	if err := exec_e61d8613b8c2b866(b, v16, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\n<footer class=\"blog-footer\">\n<a href=\"/\">The blog</a>\n<a href=\"/admin/posts\">Posts admin</a>\n</footer>\n</div>\n</body>\n</html>\n")
-	return nil
-}
-
-// facts_86226d55f25f5451 is what exec_86226d55f25f5451 assumes of the types it reads.
-var facts_86226d55f25f5451 = tmplrt.Facts{
-	Funcs: map[string]reflect.Type{
-		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
-	},
-	Facts: []tmplrt.Fact{
-		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
-		{Func: "localizer_634df8c4", Path: []string{".Identity() func() string"}, Type: "string"},
-		{Func: "localizer_634df8c4", Path: []string{".Dir() func() string"}, Type: "string"},
-	},
-}
-
-// exec_86226d55f25f5451_0a42071c renders "layout" for a dot of type pageData.
-func exec_86226d55f25f5451_0a42071c(b *bytes.Buffer, dot pageData, fn *templateFuncs, depth int) error {
-	root := dot
-	v1 := fn.localizer_634df8c4(root)
-	x1 := v1
-	_ = x1
-	b.WriteString("<!doctype html>\n<html lang=\"")
-	v2 := x1.Identity()
-	tmplrt.WriteAttrEscaped(b, v2)
-	b.WriteString("\" dir=\"")
-	v3 := x1.Dir()
-	tmplrt.WriteAttrEscaped(b, v3)
-	b.WriteString("\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width\">\n<title>")
-	tmplrt.WriteHTMLEscaped(b, dot.Head.Title)
-	b.WriteString(" · The blog</title>\n<link rel=\"stylesheet\" href=\"")
-	v4 := fn.asset_0e0a6fbe("static/tokens.css")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v4)))
-	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
-	v5 := fn.asset_0e0a6fbe("static/theme.css")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v5)))
-	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
-	v6 := fn.asset_0e0a6fbe("static/blog.css")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v6)))
-	b.WriteString("\">\n</head>\n<body>\n<div rst-page>\n")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"locale-menu\" dict \"L\" $L \"Items\" .Locales \"Return\" .Return}}", tmplrt.DepthError())
-	}
-	v7, err := fn.dict_72aa8d8f("L", x1, "Items", dot.Locales, "Return", dot.Return)
-	if err != nil {
-		return tmplrt.ExecError("layout", "dict \"L\" $L \"Items\" .Locales \"Return\" .Return", tmplrt.CallError("dict", err))
-	}
-	if err := exec_f605c207f3e121d6(b, reflect.ValueOf(v7), fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\n")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"content\" (withL (.Data) $L)}}", tmplrt.DepthError())
-	}
-	v8 := reflect.ValueOf(dot.Data)
-	v9 := fn.withL_2f8846c9(tmplrt.Arg(v8), x1)
-	v10 := reflect.ValueOf(v9)
-	if err := exec_e61d8613b8c2b866(b, v10, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\n<footer class=\"blog-footer\">\n<a href=\"/\">The blog</a>\n<a href=\"/admin/posts\">Posts admin</a>\n</footer>\n</div>\n</body>\n</html>\n")
-	return nil
-}
-
-// facts_86226d55f25f5451_0a42071c is what exec_86226d55f25f5451_0a42071c assumes of the types it reads.
-var facts_86226d55f25f5451_0a42071c = tmplrt.Facts{
-	Dot: reflect.TypeFor[pageData](),
-	Funcs: map[string]reflect.Type{
-		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
-	},
-	Facts: []tmplrt.Fact{
-		{Type: "blog/internal/blog.pageData struct"},
-		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
-		{Func: "localizer_634df8c4", Path: []string{".Identity() func() string"}, Type: "string"},
-		{Func: "localizer_634df8c4", Path: []string{".Dir() func() string"}, Type: "string"},
-		{Path: []string{".Head"}, Type: "blog/internal/blog.Head struct"},
-		{Path: []string{".Head", ".Title"}, Type: "string"},
-		{Path: []string{".Locales"}, Type: "[]amadan.net/rastrillo/rastrillo.LocaleItem"},
-		{Path: []string{".Return"}, Type: "string"},
-		{Path: []string{".Data"}, Type: "interface {}"},
-	},
-}
-
-// exec_86226d55f25f5451_b6cf1f3e renders "layout" for a dot of type *pageData.
-func exec_86226d55f25f5451_b6cf1f3e(b *bytes.Buffer, dot *pageData, fn *templateFuncs, depth int) error {
-	root := dot
-	v1 := fn.localizer_634df8c4(root)
-	x1 := v1
-	_ = x1
-	b.WriteString("<!doctype html>\n<html lang=\"")
-	v2 := x1.Identity()
-	tmplrt.WriteAttrEscaped(b, v2)
-	b.WriteString("\" dir=\"")
-	v3 := x1.Dir()
-	tmplrt.WriteAttrEscaped(b, v3)
-	b.WriteString("\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width\">\n<title>")
-	if dot == nil {
-		_, err := tmplrt.Fail("nil pointer evaluating *blog.pageData.Head")
-		return tmplrt.ExecError("layout", ".Head.Title", err)
-	}
-	tmplrt.WriteHTMLEscaped(b, dot.Head.Title)
-	b.WriteString(" · The blog</title>\n<link rel=\"stylesheet\" href=\"")
-	v4 := fn.asset_0e0a6fbe("static/tokens.css")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v4)))
-	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
-	v5 := fn.asset_0e0a6fbe("static/theme.css")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v5)))
-	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
-	v6 := fn.asset_0e0a6fbe("static/blog.css")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v6)))
-	b.WriteString("\">\n</head>\n<body>\n<div rst-page>\n")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"locale-menu\" dict \"L\" $L \"Items\" .Locales \"Return\" .Return}}", tmplrt.DepthError())
-	}
-	if dot == nil {
-		_, err := tmplrt.Fail("nil pointer evaluating *blog.pageData.Locales")
-		return tmplrt.ExecError("layout", ".Locales", err)
-	}
-	if dot == nil {
-		_, err := tmplrt.Fail("nil pointer evaluating *blog.pageData.Return")
-		return tmplrt.ExecError("layout", ".Return", err)
-	}
-	v7, err := fn.dict_72aa8d8f("L", x1, "Items", dot.Locales, "Return", dot.Return)
-	if err != nil {
-		return tmplrt.ExecError("layout", "dict \"L\" $L \"Items\" .Locales \"Return\" .Return", tmplrt.CallError("dict", err))
-	}
-	if err := exec_f605c207f3e121d6(b, reflect.ValueOf(v7), fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\n")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"content\" (withL (.Data) $L)}}", tmplrt.DepthError())
-	}
-	if dot == nil {
-		_, err := tmplrt.Fail("nil pointer evaluating *blog.pageData.Data")
-		return tmplrt.ExecError("layout", ".Data", err)
-	}
-	v8 := reflect.ValueOf(dot.Data)
-	v9 := fn.withL_2f8846c9(tmplrt.Arg(v8), x1)
-	v10 := reflect.ValueOf(v9)
-	if err := exec_e61d8613b8c2b866(b, v10, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\n<footer class=\"blog-footer\">\n<a href=\"/\">The blog</a>\n<a href=\"/admin/posts\">Posts admin</a>\n</footer>\n</div>\n</body>\n</html>\n")
-	return nil
-}
-
-// facts_86226d55f25f5451_b6cf1f3e is what exec_86226d55f25f5451_b6cf1f3e assumes of the types it reads.
-var facts_86226d55f25f5451_b6cf1f3e = tmplrt.Facts{
-	Dot: reflect.TypeFor[*pageData](),
-	Funcs: map[string]reflect.Type{
-		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
-	},
-	Facts: []tmplrt.Fact{
-		{Type: "*blog/internal/blog.pageData"},
-		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
-		{Func: "localizer_634df8c4", Path: []string{".Identity() func() string"}, Type: "string"},
-		{Func: "localizer_634df8c4", Path: []string{".Dir() func() string"}, Type: "string"},
-		{Path: []string{".Head"}, Type: "blog/internal/blog.Head struct"},
-		{Path: []string{".Head", "&.Title"}, Type: "string"},
-		{Path: []string{".Locales"}, Type: "[]amadan.net/rastrillo/rastrillo.LocaleItem"},
-		{Path: []string{".Return"}, Type: "string"},
-		{Path: []string{".Data"}, Type: "interface {}"},
-	},
-}
-
 // exec_879517ac9255e4f6 renders "list-bar-search".
 func exec_879517ac9255e4f6(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
 	root := dot
@@ -9437,237 +9225,6 @@ func exec_8cde1e99f92b7062(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs
 	return nil
 }
 
-// exec_8df7cda32ebfd8ae renders "layout".
-func exec_8df7cda32ebfd8ae(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
-	root := dot
-	v1 := fn.localizer_634df8c4(tmplrt.Arg(root))
-	x1 := v1
-	_ = x1
-	b.WriteString("<!doctype html>\n<html lang=\"")
-	v2 := x1.Identity()
-	tmplrt.WriteAttrEscaped(b, v2)
-	b.WriteString("\" dir=\"")
-	v3 := x1.Dir()
-	tmplrt.WriteAttrEscaped(b, v3)
-	b.WriteString("\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width\">\n<title>")
-	v4, err := tmplrt.Field(dot, "Head")
-	if err != nil {
-		return tmplrt.ExecError("layout", ".Head.Title", err)
-	}
-	v5, err := tmplrt.Field(v4, "Title")
-	if err != nil {
-		return tmplrt.ExecError("layout", ".Head.Title", err)
-	}
-	v6 := tmplrt.Unwrap(v5)
-	b.WriteString(tmplrt.RCDATAEscaper(tmplrt.Arg(v6)))
-	b.WriteString(" · The blog</title>\n<link rel=\"stylesheet\" href=\"")
-	v7 := fn.asset_0e0a6fbe("static/tokens.css")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v7)))
-	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
-	v8 := fn.asset_0e0a6fbe("static/theme.css")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v8)))
-	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
-	v9 := fn.asset_0e0a6fbe("static/blog.css")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v9)))
-	b.WriteString("\">\n</head>\n<body>\n<div rst-page>\n")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"locale-menu\" dict \"L\" $L \"Items\" .Locales \"Return\" .Return}}", tmplrt.DepthError())
-	}
-	v10, err := tmplrt.Field(dot, "Locales")
-	if err != nil {
-		return tmplrt.ExecError("layout", ".Locales", err)
-	}
-	v11, err := tmplrt.Field(dot, "Return")
-	if err != nil {
-		return tmplrt.ExecError("layout", ".Return", err)
-	}
-	v12, err := fn.dict_72aa8d8f("L", x1, "Items", tmplrt.Arg(v10), "Return", tmplrt.Arg(v11))
-	if err != nil {
-		return tmplrt.ExecError("layout", "dict \"L\" $L \"Items\" .Locales \"Return\" .Return", tmplrt.CallError("dict", err))
-	}
-	if err := exec_f605c207f3e121d6(b, reflect.ValueOf(v12), fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\n")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"content\" (withL (.Data) $L)}}", tmplrt.DepthError())
-	}
-	v13, err := tmplrt.Field(dot, "Data")
-	if err != nil {
-		return tmplrt.ExecError("layout", ".Data", err)
-	}
-	v14 := tmplrt.Unwrap(v13)
-	v15 := fn.withL_2f8846c9(tmplrt.Arg(v14), x1)
-	v16 := reflect.ValueOf(v15)
-	if err := exec_15f98e7ac010dc8a(b, v16, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\n<footer class=\"blog-footer\">\n<a href=\"/\">The blog</a>\n<a href=\"/admin/posts\">Posts admin</a>\n</footer>\n</div>\n</body>\n</html>\n")
-	return nil
-}
-
-// facts_8df7cda32ebfd8ae is what exec_8df7cda32ebfd8ae assumes of the types it reads.
-var facts_8df7cda32ebfd8ae = tmplrt.Facts{
-	Funcs: map[string]reflect.Type{
-		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
-	},
-	Facts: []tmplrt.Fact{
-		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
-		{Func: "localizer_634df8c4", Path: []string{".Identity() func() string"}, Type: "string"},
-		{Func: "localizer_634df8c4", Path: []string{".Dir() func() string"}, Type: "string"},
-	},
-}
-
-// exec_8df7cda32ebfd8ae_0a42071c renders "layout" for a dot of type pageData.
-func exec_8df7cda32ebfd8ae_0a42071c(b *bytes.Buffer, dot pageData, fn *templateFuncs, depth int) error {
-	root := dot
-	v1 := fn.localizer_634df8c4(root)
-	x1 := v1
-	_ = x1
-	b.WriteString("<!doctype html>\n<html lang=\"")
-	v2 := x1.Identity()
-	tmplrt.WriteAttrEscaped(b, v2)
-	b.WriteString("\" dir=\"")
-	v3 := x1.Dir()
-	tmplrt.WriteAttrEscaped(b, v3)
-	b.WriteString("\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width\">\n<title>")
-	tmplrt.WriteHTMLEscaped(b, dot.Head.Title)
-	b.WriteString(" · The blog</title>\n<link rel=\"stylesheet\" href=\"")
-	v4 := fn.asset_0e0a6fbe("static/tokens.css")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v4)))
-	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
-	v5 := fn.asset_0e0a6fbe("static/theme.css")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v5)))
-	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
-	v6 := fn.asset_0e0a6fbe("static/blog.css")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v6)))
-	b.WriteString("\">\n</head>\n<body>\n<div rst-page>\n")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"locale-menu\" dict \"L\" $L \"Items\" .Locales \"Return\" .Return}}", tmplrt.DepthError())
-	}
-	v7, err := fn.dict_72aa8d8f("L", x1, "Items", dot.Locales, "Return", dot.Return)
-	if err != nil {
-		return tmplrt.ExecError("layout", "dict \"L\" $L \"Items\" .Locales \"Return\" .Return", tmplrt.CallError("dict", err))
-	}
-	if err := exec_f605c207f3e121d6(b, reflect.ValueOf(v7), fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\n")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"content\" (withL (.Data) $L)}}", tmplrt.DepthError())
-	}
-	v8 := reflect.ValueOf(dot.Data)
-	v9 := fn.withL_2f8846c9(tmplrt.Arg(v8), x1)
-	v10 := reflect.ValueOf(v9)
-	if err := exec_15f98e7ac010dc8a(b, v10, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\n<footer class=\"blog-footer\">\n<a href=\"/\">The blog</a>\n<a href=\"/admin/posts\">Posts admin</a>\n</footer>\n</div>\n</body>\n</html>\n")
-	return nil
-}
-
-// facts_8df7cda32ebfd8ae_0a42071c is what exec_8df7cda32ebfd8ae_0a42071c assumes of the types it reads.
-var facts_8df7cda32ebfd8ae_0a42071c = tmplrt.Facts{
-	Dot: reflect.TypeFor[pageData](),
-	Funcs: map[string]reflect.Type{
-		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
-	},
-	Facts: []tmplrt.Fact{
-		{Type: "blog/internal/blog.pageData struct"},
-		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
-		{Func: "localizer_634df8c4", Path: []string{".Identity() func() string"}, Type: "string"},
-		{Func: "localizer_634df8c4", Path: []string{".Dir() func() string"}, Type: "string"},
-		{Path: []string{".Head"}, Type: "blog/internal/blog.Head struct"},
-		{Path: []string{".Head", ".Title"}, Type: "string"},
-		{Path: []string{".Locales"}, Type: "[]amadan.net/rastrillo/rastrillo.LocaleItem"},
-		{Path: []string{".Return"}, Type: "string"},
-		{Path: []string{".Data"}, Type: "interface {}"},
-	},
-}
-
-// exec_8df7cda32ebfd8ae_b6cf1f3e renders "layout" for a dot of type *pageData.
-func exec_8df7cda32ebfd8ae_b6cf1f3e(b *bytes.Buffer, dot *pageData, fn *templateFuncs, depth int) error {
-	root := dot
-	v1 := fn.localizer_634df8c4(root)
-	x1 := v1
-	_ = x1
-	b.WriteString("<!doctype html>\n<html lang=\"")
-	v2 := x1.Identity()
-	tmplrt.WriteAttrEscaped(b, v2)
-	b.WriteString("\" dir=\"")
-	v3 := x1.Dir()
-	tmplrt.WriteAttrEscaped(b, v3)
-	b.WriteString("\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width\">\n<title>")
-	if dot == nil {
-		_, err := tmplrt.Fail("nil pointer evaluating *blog.pageData.Head")
-		return tmplrt.ExecError("layout", ".Head.Title", err)
-	}
-	tmplrt.WriteHTMLEscaped(b, dot.Head.Title)
-	b.WriteString(" · The blog</title>\n<link rel=\"stylesheet\" href=\"")
-	v4 := fn.asset_0e0a6fbe("static/tokens.css")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v4)))
-	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
-	v5 := fn.asset_0e0a6fbe("static/theme.css")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v5)))
-	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
-	v6 := fn.asset_0e0a6fbe("static/blog.css")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v6)))
-	b.WriteString("\">\n</head>\n<body>\n<div rst-page>\n")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"locale-menu\" dict \"L\" $L \"Items\" .Locales \"Return\" .Return}}", tmplrt.DepthError())
-	}
-	if dot == nil {
-		_, err := tmplrt.Fail("nil pointer evaluating *blog.pageData.Locales")
-		return tmplrt.ExecError("layout", ".Locales", err)
-	}
-	if dot == nil {
-		_, err := tmplrt.Fail("nil pointer evaluating *blog.pageData.Return")
-		return tmplrt.ExecError("layout", ".Return", err)
-	}
-	v7, err := fn.dict_72aa8d8f("L", x1, "Items", dot.Locales, "Return", dot.Return)
-	if err != nil {
-		return tmplrt.ExecError("layout", "dict \"L\" $L \"Items\" .Locales \"Return\" .Return", tmplrt.CallError("dict", err))
-	}
-	if err := exec_f605c207f3e121d6(b, reflect.ValueOf(v7), fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\n")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"content\" (withL (.Data) $L)}}", tmplrt.DepthError())
-	}
-	if dot == nil {
-		_, err := tmplrt.Fail("nil pointer evaluating *blog.pageData.Data")
-		return tmplrt.ExecError("layout", ".Data", err)
-	}
-	v8 := reflect.ValueOf(dot.Data)
-	v9 := fn.withL_2f8846c9(tmplrt.Arg(v8), x1)
-	v10 := reflect.ValueOf(v9)
-	if err := exec_15f98e7ac010dc8a(b, v10, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\n<footer class=\"blog-footer\">\n<a href=\"/\">The blog</a>\n<a href=\"/admin/posts\">Posts admin</a>\n</footer>\n</div>\n</body>\n</html>\n")
-	return nil
-}
-
-// facts_8df7cda32ebfd8ae_b6cf1f3e is what exec_8df7cda32ebfd8ae_b6cf1f3e assumes of the types it reads.
-var facts_8df7cda32ebfd8ae_b6cf1f3e = tmplrt.Facts{
-	Dot: reflect.TypeFor[*pageData](),
-	Funcs: map[string]reflect.Type{
-		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
-	},
-	Facts: []tmplrt.Fact{
-		{Type: "*blog/internal/blog.pageData"},
-		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
-		{Func: "localizer_634df8c4", Path: []string{".Identity() func() string"}, Type: "string"},
-		{Func: "localizer_634df8c4", Path: []string{".Dir() func() string"}, Type: "string"},
-		{Path: []string{".Head"}, Type: "blog/internal/blog.Head struct"},
-		{Path: []string{".Head", "&.Title"}, Type: "string"},
-		{Path: []string{".Locales"}, Type: "[]amadan.net/rastrillo/rastrillo.LocaleItem"},
-		{Path: []string{".Return"}, Type: "string"},
-		{Path: []string{".Data"}, Type: "interface {}"},
-	},
-}
-
 // exec_92de3beba99d723a renders "bulk-bar".
 func exec_92de3beba99d723a(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
 	root := dot
@@ -9796,6 +9353,237 @@ var facts_92de3beba99d723a = tmplrt.Facts{
 	Facts: []tmplrt.Fact{
 		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
 		{Func: "icon_bd1e407c", Type: "html/template.HTML string"},
+	},
+}
+
+// exec_97ae18ef3b28d1a7 renders "layout".
+func exec_97ae18ef3b28d1a7(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
+	root := dot
+	v1 := fn.localizer_634df8c4(tmplrt.Arg(root))
+	x1 := v1
+	_ = x1
+	b.WriteString("<!doctype html>\n<html lang=\"")
+	v2 := x1.Identity()
+	tmplrt.WriteAttrEscaped(b, v2)
+	b.WriteString("\" dir=\"")
+	v3 := x1.Dir()
+	tmplrt.WriteAttrEscaped(b, v3)
+	b.WriteString("\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width\">\n<title>")
+	v4, err := tmplrt.Field(dot, "Head")
+	if err != nil {
+		return tmplrt.ExecError("layout", ".Head.Title", err)
+	}
+	v5, err := tmplrt.Field(v4, "Title")
+	if err != nil {
+		return tmplrt.ExecError("layout", ".Head.Title", err)
+	}
+	v6 := tmplrt.Unwrap(v5)
+	b.WriteString(tmplrt.RCDATAEscaper(tmplrt.Arg(v6)))
+	b.WriteString(" · The blog</title>\n<link rel=\"stylesheet\" href=\"")
+	v7 := fn.pageStylesheet_fe1f5563()
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v7)))
+	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
+	v8 := fn.asset_0e0a6fbe("static/theme.css")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v8)))
+	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
+	v9 := fn.asset_0e0a6fbe("static/blog.css")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v9)))
+	b.WriteString("\">\n</head>\n<body>\n<div rst-page>\n")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"locale-menu\" dict \"L\" $L \"Items\" .Locales \"Return\" .Return}}", tmplrt.DepthError())
+	}
+	v10, err := tmplrt.Field(dot, "Locales")
+	if err != nil {
+		return tmplrt.ExecError("layout", ".Locales", err)
+	}
+	v11, err := tmplrt.Field(dot, "Return")
+	if err != nil {
+		return tmplrt.ExecError("layout", ".Return", err)
+	}
+	v12, err := fn.dict_72aa8d8f("L", x1, "Items", tmplrt.Arg(v10), "Return", tmplrt.Arg(v11))
+	if err != nil {
+		return tmplrt.ExecError("layout", "dict \"L\" $L \"Items\" .Locales \"Return\" .Return", tmplrt.CallError("dict", err))
+	}
+	if err := exec_f605c207f3e121d6(b, reflect.ValueOf(v12), fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\n")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"content\" (withL (.Data) $L)}}", tmplrt.DepthError())
+	}
+	v13, err := tmplrt.Field(dot, "Data")
+	if err != nil {
+		return tmplrt.ExecError("layout", ".Data", err)
+	}
+	v14 := tmplrt.Unwrap(v13)
+	v15 := fn.withL_2f8846c9(tmplrt.Arg(v14), x1)
+	v16 := reflect.ValueOf(v15)
+	if err := exec_053717be71dd7871(b, v16, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\n<footer class=\"blog-footer\">\n<a href=\"/\">The blog</a>\n<a href=\"/admin/posts\">Posts admin</a>\n</footer>\n</div>\n</body>\n</html>\n")
+	return nil
+}
+
+// facts_97ae18ef3b28d1a7 is what exec_97ae18ef3b28d1a7 assumes of the types it reads.
+var facts_97ae18ef3b28d1a7 = tmplrt.Facts{
+	Funcs: map[string]reflect.Type{
+		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
+	},
+	Facts: []tmplrt.Fact{
+		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
+		{Func: "localizer_634df8c4", Path: []string{".Identity() func() string"}, Type: "string"},
+		{Func: "localizer_634df8c4", Path: []string{".Dir() func() string"}, Type: "string"},
+	},
+}
+
+// exec_97ae18ef3b28d1a7_0a42071c renders "layout" for a dot of type pageData.
+func exec_97ae18ef3b28d1a7_0a42071c(b *bytes.Buffer, dot pageData, fn *templateFuncs, depth int) error {
+	root := dot
+	v1 := fn.localizer_634df8c4(root)
+	x1 := v1
+	_ = x1
+	b.WriteString("<!doctype html>\n<html lang=\"")
+	v2 := x1.Identity()
+	tmplrt.WriteAttrEscaped(b, v2)
+	b.WriteString("\" dir=\"")
+	v3 := x1.Dir()
+	tmplrt.WriteAttrEscaped(b, v3)
+	b.WriteString("\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width\">\n<title>")
+	tmplrt.WriteHTMLEscaped(b, dot.Head.Title)
+	b.WriteString(" · The blog</title>\n<link rel=\"stylesheet\" href=\"")
+	v4 := fn.pageStylesheet_fe1f5563()
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v4)))
+	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
+	v5 := fn.asset_0e0a6fbe("static/theme.css")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v5)))
+	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
+	v6 := fn.asset_0e0a6fbe("static/blog.css")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v6)))
+	b.WriteString("\">\n</head>\n<body>\n<div rst-page>\n")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"locale-menu\" dict \"L\" $L \"Items\" .Locales \"Return\" .Return}}", tmplrt.DepthError())
+	}
+	v7, err := fn.dict_72aa8d8f("L", x1, "Items", dot.Locales, "Return", dot.Return)
+	if err != nil {
+		return tmplrt.ExecError("layout", "dict \"L\" $L \"Items\" .Locales \"Return\" .Return", tmplrt.CallError("dict", err))
+	}
+	if err := exec_f605c207f3e121d6(b, reflect.ValueOf(v7), fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\n")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"content\" (withL (.Data) $L)}}", tmplrt.DepthError())
+	}
+	v8 := reflect.ValueOf(dot.Data)
+	v9 := fn.withL_2f8846c9(tmplrt.Arg(v8), x1)
+	v10 := reflect.ValueOf(v9)
+	if err := exec_053717be71dd7871(b, v10, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\n<footer class=\"blog-footer\">\n<a href=\"/\">The blog</a>\n<a href=\"/admin/posts\">Posts admin</a>\n</footer>\n</div>\n</body>\n</html>\n")
+	return nil
+}
+
+// facts_97ae18ef3b28d1a7_0a42071c is what exec_97ae18ef3b28d1a7_0a42071c assumes of the types it reads.
+var facts_97ae18ef3b28d1a7_0a42071c = tmplrt.Facts{
+	Dot: reflect.TypeFor[pageData](),
+	Funcs: map[string]reflect.Type{
+		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
+	},
+	Facts: []tmplrt.Fact{
+		{Type: "blog/internal/blog.pageData struct"},
+		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
+		{Func: "localizer_634df8c4", Path: []string{".Identity() func() string"}, Type: "string"},
+		{Func: "localizer_634df8c4", Path: []string{".Dir() func() string"}, Type: "string"},
+		{Path: []string{".Head"}, Type: "blog/internal/blog.Head struct"},
+		{Path: []string{".Head", ".Title"}, Type: "string"},
+		{Path: []string{".Locales"}, Type: "[]amadan.net/rastrillo/rastrillo.LocaleItem"},
+		{Path: []string{".Return"}, Type: "string"},
+		{Path: []string{".Data"}, Type: "interface {}"},
+	},
+}
+
+// exec_97ae18ef3b28d1a7_b6cf1f3e renders "layout" for a dot of type *pageData.
+func exec_97ae18ef3b28d1a7_b6cf1f3e(b *bytes.Buffer, dot *pageData, fn *templateFuncs, depth int) error {
+	root := dot
+	v1 := fn.localizer_634df8c4(root)
+	x1 := v1
+	_ = x1
+	b.WriteString("<!doctype html>\n<html lang=\"")
+	v2 := x1.Identity()
+	tmplrt.WriteAttrEscaped(b, v2)
+	b.WriteString("\" dir=\"")
+	v3 := x1.Dir()
+	tmplrt.WriteAttrEscaped(b, v3)
+	b.WriteString("\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width\">\n<title>")
+	if dot == nil {
+		_, err := tmplrt.Fail("nil pointer evaluating *blog.pageData.Head")
+		return tmplrt.ExecError("layout", ".Head.Title", err)
+	}
+	tmplrt.WriteHTMLEscaped(b, dot.Head.Title)
+	b.WriteString(" · The blog</title>\n<link rel=\"stylesheet\" href=\"")
+	v4 := fn.pageStylesheet_fe1f5563()
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v4)))
+	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
+	v5 := fn.asset_0e0a6fbe("static/theme.css")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v5)))
+	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
+	v6 := fn.asset_0e0a6fbe("static/blog.css")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v6)))
+	b.WriteString("\">\n</head>\n<body>\n<div rst-page>\n")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"locale-menu\" dict \"L\" $L \"Items\" .Locales \"Return\" .Return}}", tmplrt.DepthError())
+	}
+	if dot == nil {
+		_, err := tmplrt.Fail("nil pointer evaluating *blog.pageData.Locales")
+		return tmplrt.ExecError("layout", ".Locales", err)
+	}
+	if dot == nil {
+		_, err := tmplrt.Fail("nil pointer evaluating *blog.pageData.Return")
+		return tmplrt.ExecError("layout", ".Return", err)
+	}
+	v7, err := fn.dict_72aa8d8f("L", x1, "Items", dot.Locales, "Return", dot.Return)
+	if err != nil {
+		return tmplrt.ExecError("layout", "dict \"L\" $L \"Items\" .Locales \"Return\" .Return", tmplrt.CallError("dict", err))
+	}
+	if err := exec_f605c207f3e121d6(b, reflect.ValueOf(v7), fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\n")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"content\" (withL (.Data) $L)}}", tmplrt.DepthError())
+	}
+	if dot == nil {
+		_, err := tmplrt.Fail("nil pointer evaluating *blog.pageData.Data")
+		return tmplrt.ExecError("layout", ".Data", err)
+	}
+	v8 := reflect.ValueOf(dot.Data)
+	v9 := fn.withL_2f8846c9(tmplrt.Arg(v8), x1)
+	v10 := reflect.ValueOf(v9)
+	if err := exec_053717be71dd7871(b, v10, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\n<footer class=\"blog-footer\">\n<a href=\"/\">The blog</a>\n<a href=\"/admin/posts\">Posts admin</a>\n</footer>\n</div>\n</body>\n</html>\n")
+	return nil
+}
+
+// facts_97ae18ef3b28d1a7_b6cf1f3e is what exec_97ae18ef3b28d1a7_b6cf1f3e assumes of the types it reads.
+var facts_97ae18ef3b28d1a7_b6cf1f3e = tmplrt.Facts{
+	Dot: reflect.TypeFor[*pageData](),
+	Funcs: map[string]reflect.Type{
+		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
+	},
+	Facts: []tmplrt.Fact{
+		{Type: "*blog/internal/blog.pageData"},
+		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
+		{Func: "localizer_634df8c4", Path: []string{".Identity() func() string"}, Type: "string"},
+		{Func: "localizer_634df8c4", Path: []string{".Dir() func() string"}, Type: "string"},
+		{Path: []string{".Head"}, Type: "blog/internal/blog.Head struct"},
+		{Path: []string{".Head", "&.Title"}, Type: "string"},
+		{Path: []string{".Locales"}, Type: "[]amadan.net/rastrillo/rastrillo.LocaleItem"},
+		{Path: []string{".Return"}, Type: "string"},
+		{Path: []string{".Data"}, Type: "interface {}"},
 	},
 }
 
@@ -11940,6 +11728,237 @@ var facts_bdc4404ab629ded7 = tmplrt.Facts{
 	},
 }
 
+// exec_c35a6e873638d5f9 renders "layout".
+func exec_c35a6e873638d5f9(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
+	root := dot
+	v1 := fn.localizer_634df8c4(tmplrt.Arg(root))
+	x1 := v1
+	_ = x1
+	b.WriteString("<!doctype html>\n<html lang=\"")
+	v2 := x1.Identity()
+	tmplrt.WriteAttrEscaped(b, v2)
+	b.WriteString("\" dir=\"")
+	v3 := x1.Dir()
+	tmplrt.WriteAttrEscaped(b, v3)
+	b.WriteString("\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width\">\n<title>")
+	v4, err := tmplrt.Field(dot, "Head")
+	if err != nil {
+		return tmplrt.ExecError("layout", ".Head.Title", err)
+	}
+	v5, err := tmplrt.Field(v4, "Title")
+	if err != nil {
+		return tmplrt.ExecError("layout", ".Head.Title", err)
+	}
+	v6 := tmplrt.Unwrap(v5)
+	b.WriteString(tmplrt.RCDATAEscaper(tmplrt.Arg(v6)))
+	b.WriteString(" · The blog</title>\n<link rel=\"stylesheet\" href=\"")
+	v7 := fn.pageStylesheet_fe1f5563()
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v7)))
+	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
+	v8 := fn.asset_0e0a6fbe("static/theme.css")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v8)))
+	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
+	v9 := fn.asset_0e0a6fbe("static/blog.css")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v9)))
+	b.WriteString("\">\n</head>\n<body>\n<div rst-page>\n")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"locale-menu\" dict \"L\" $L \"Items\" .Locales \"Return\" .Return}}", tmplrt.DepthError())
+	}
+	v10, err := tmplrt.Field(dot, "Locales")
+	if err != nil {
+		return tmplrt.ExecError("layout", ".Locales", err)
+	}
+	v11, err := tmplrt.Field(dot, "Return")
+	if err != nil {
+		return tmplrt.ExecError("layout", ".Return", err)
+	}
+	v12, err := fn.dict_72aa8d8f("L", x1, "Items", tmplrt.Arg(v10), "Return", tmplrt.Arg(v11))
+	if err != nil {
+		return tmplrt.ExecError("layout", "dict \"L\" $L \"Items\" .Locales \"Return\" .Return", tmplrt.CallError("dict", err))
+	}
+	if err := exec_f605c207f3e121d6(b, reflect.ValueOf(v12), fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\n")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"content\" (withL (.Data) $L)}}", tmplrt.DepthError())
+	}
+	v13, err := tmplrt.Field(dot, "Data")
+	if err != nil {
+		return tmplrt.ExecError("layout", ".Data", err)
+	}
+	v14 := tmplrt.Unwrap(v13)
+	v15 := fn.withL_2f8846c9(tmplrt.Arg(v14), x1)
+	v16 := reflect.ValueOf(v15)
+	if err := exec_9b5039c7cb5e7369(b, v16, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\n<footer class=\"blog-footer\">\n<a href=\"/\">The blog</a>\n<a href=\"/admin/posts\">Posts admin</a>\n</footer>\n</div>\n</body>\n</html>\n")
+	return nil
+}
+
+// facts_c35a6e873638d5f9 is what exec_c35a6e873638d5f9 assumes of the types it reads.
+var facts_c35a6e873638d5f9 = tmplrt.Facts{
+	Funcs: map[string]reflect.Type{
+		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
+	},
+	Facts: []tmplrt.Fact{
+		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
+		{Func: "localizer_634df8c4", Path: []string{".Identity() func() string"}, Type: "string"},
+		{Func: "localizer_634df8c4", Path: []string{".Dir() func() string"}, Type: "string"},
+	},
+}
+
+// exec_c35a6e873638d5f9_0a42071c renders "layout" for a dot of type pageData.
+func exec_c35a6e873638d5f9_0a42071c(b *bytes.Buffer, dot pageData, fn *templateFuncs, depth int) error {
+	root := dot
+	v1 := fn.localizer_634df8c4(root)
+	x1 := v1
+	_ = x1
+	b.WriteString("<!doctype html>\n<html lang=\"")
+	v2 := x1.Identity()
+	tmplrt.WriteAttrEscaped(b, v2)
+	b.WriteString("\" dir=\"")
+	v3 := x1.Dir()
+	tmplrt.WriteAttrEscaped(b, v3)
+	b.WriteString("\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width\">\n<title>")
+	tmplrt.WriteHTMLEscaped(b, dot.Head.Title)
+	b.WriteString(" · The blog</title>\n<link rel=\"stylesheet\" href=\"")
+	v4 := fn.pageStylesheet_fe1f5563()
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v4)))
+	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
+	v5 := fn.asset_0e0a6fbe("static/theme.css")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v5)))
+	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
+	v6 := fn.asset_0e0a6fbe("static/blog.css")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v6)))
+	b.WriteString("\">\n</head>\n<body>\n<div rst-page>\n")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"locale-menu\" dict \"L\" $L \"Items\" .Locales \"Return\" .Return}}", tmplrt.DepthError())
+	}
+	v7, err := fn.dict_72aa8d8f("L", x1, "Items", dot.Locales, "Return", dot.Return)
+	if err != nil {
+		return tmplrt.ExecError("layout", "dict \"L\" $L \"Items\" .Locales \"Return\" .Return", tmplrt.CallError("dict", err))
+	}
+	if err := exec_f605c207f3e121d6(b, reflect.ValueOf(v7), fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\n")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"content\" (withL (.Data) $L)}}", tmplrt.DepthError())
+	}
+	v8 := reflect.ValueOf(dot.Data)
+	v9 := fn.withL_2f8846c9(tmplrt.Arg(v8), x1)
+	v10 := reflect.ValueOf(v9)
+	if err := exec_9b5039c7cb5e7369(b, v10, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\n<footer class=\"blog-footer\">\n<a href=\"/\">The blog</a>\n<a href=\"/admin/posts\">Posts admin</a>\n</footer>\n</div>\n</body>\n</html>\n")
+	return nil
+}
+
+// facts_c35a6e873638d5f9_0a42071c is what exec_c35a6e873638d5f9_0a42071c assumes of the types it reads.
+var facts_c35a6e873638d5f9_0a42071c = tmplrt.Facts{
+	Dot: reflect.TypeFor[pageData](),
+	Funcs: map[string]reflect.Type{
+		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
+	},
+	Facts: []tmplrt.Fact{
+		{Type: "blog/internal/blog.pageData struct"},
+		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
+		{Func: "localizer_634df8c4", Path: []string{".Identity() func() string"}, Type: "string"},
+		{Func: "localizer_634df8c4", Path: []string{".Dir() func() string"}, Type: "string"},
+		{Path: []string{".Head"}, Type: "blog/internal/blog.Head struct"},
+		{Path: []string{".Head", ".Title"}, Type: "string"},
+		{Path: []string{".Locales"}, Type: "[]amadan.net/rastrillo/rastrillo.LocaleItem"},
+		{Path: []string{".Return"}, Type: "string"},
+		{Path: []string{".Data"}, Type: "interface {}"},
+	},
+}
+
+// exec_c35a6e873638d5f9_b6cf1f3e renders "layout" for a dot of type *pageData.
+func exec_c35a6e873638d5f9_b6cf1f3e(b *bytes.Buffer, dot *pageData, fn *templateFuncs, depth int) error {
+	root := dot
+	v1 := fn.localizer_634df8c4(root)
+	x1 := v1
+	_ = x1
+	b.WriteString("<!doctype html>\n<html lang=\"")
+	v2 := x1.Identity()
+	tmplrt.WriteAttrEscaped(b, v2)
+	b.WriteString("\" dir=\"")
+	v3 := x1.Dir()
+	tmplrt.WriteAttrEscaped(b, v3)
+	b.WriteString("\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width\">\n<title>")
+	if dot == nil {
+		_, err := tmplrt.Fail("nil pointer evaluating *blog.pageData.Head")
+		return tmplrt.ExecError("layout", ".Head.Title", err)
+	}
+	tmplrt.WriteHTMLEscaped(b, dot.Head.Title)
+	b.WriteString(" · The blog</title>\n<link rel=\"stylesheet\" href=\"")
+	v4 := fn.pageStylesheet_fe1f5563()
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v4)))
+	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
+	v5 := fn.asset_0e0a6fbe("static/theme.css")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v5)))
+	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
+	v6 := fn.asset_0e0a6fbe("static/blog.css")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v6)))
+	b.WriteString("\">\n</head>\n<body>\n<div rst-page>\n")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"locale-menu\" dict \"L\" $L \"Items\" .Locales \"Return\" .Return}}", tmplrt.DepthError())
+	}
+	if dot == nil {
+		_, err := tmplrt.Fail("nil pointer evaluating *blog.pageData.Locales")
+		return tmplrt.ExecError("layout", ".Locales", err)
+	}
+	if dot == nil {
+		_, err := tmplrt.Fail("nil pointer evaluating *blog.pageData.Return")
+		return tmplrt.ExecError("layout", ".Return", err)
+	}
+	v7, err := fn.dict_72aa8d8f("L", x1, "Items", dot.Locales, "Return", dot.Return)
+	if err != nil {
+		return tmplrt.ExecError("layout", "dict \"L\" $L \"Items\" .Locales \"Return\" .Return", tmplrt.CallError("dict", err))
+	}
+	if err := exec_f605c207f3e121d6(b, reflect.ValueOf(v7), fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\n")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"content\" (withL (.Data) $L)}}", tmplrt.DepthError())
+	}
+	if dot == nil {
+		_, err := tmplrt.Fail("nil pointer evaluating *blog.pageData.Data")
+		return tmplrt.ExecError("layout", ".Data", err)
+	}
+	v8 := reflect.ValueOf(dot.Data)
+	v9 := fn.withL_2f8846c9(tmplrt.Arg(v8), x1)
+	v10 := reflect.ValueOf(v9)
+	if err := exec_9b5039c7cb5e7369(b, v10, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\n<footer class=\"blog-footer\">\n<a href=\"/\">The blog</a>\n<a href=\"/admin/posts\">Posts admin</a>\n</footer>\n</div>\n</body>\n</html>\n")
+	return nil
+}
+
+// facts_c35a6e873638d5f9_b6cf1f3e is what exec_c35a6e873638d5f9_b6cf1f3e assumes of the types it reads.
+var facts_c35a6e873638d5f9_b6cf1f3e = tmplrt.Facts{
+	Dot: reflect.TypeFor[*pageData](),
+	Funcs: map[string]reflect.Type{
+		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
+	},
+	Facts: []tmplrt.Fact{
+		{Type: "*blog/internal/blog.pageData"},
+		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
+		{Func: "localizer_634df8c4", Path: []string{".Identity() func() string"}, Type: "string"},
+		{Func: "localizer_634df8c4", Path: []string{".Dir() func() string"}, Type: "string"},
+		{Path: []string{".Head"}, Type: "blog/internal/blog.Head struct"},
+		{Path: []string{".Head", "&.Title"}, Type: "string"},
+		{Path: []string{".Locales"}, Type: "[]amadan.net/rastrillo/rastrillo.LocaleItem"},
+		{Path: []string{".Return"}, Type: "string"},
+		{Path: []string{".Data"}, Type: "interface {}"},
+	},
+}
+
 // exec_c4103c119ab1c89c renders "list.html".
 func exec_c4103c119ab1c89c(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
 	b.WriteString("\n\n")
@@ -13680,6 +13699,237 @@ func exec_d6cd5d2f1a106459(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs
 	return nil
 }
 
+// exec_d79a096b70b07043 renders "layout".
+func exec_d79a096b70b07043(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
+	root := dot
+	v1 := fn.localizer_634df8c4(tmplrt.Arg(root))
+	x1 := v1
+	_ = x1
+	b.WriteString("<!doctype html>\n<html lang=\"")
+	v2 := x1.Identity()
+	tmplrt.WriteAttrEscaped(b, v2)
+	b.WriteString("\" dir=\"")
+	v3 := x1.Dir()
+	tmplrt.WriteAttrEscaped(b, v3)
+	b.WriteString("\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width\">\n<title>")
+	v4, err := tmplrt.Field(dot, "Head")
+	if err != nil {
+		return tmplrt.ExecError("layout", ".Head.Title", err)
+	}
+	v5, err := tmplrt.Field(v4, "Title")
+	if err != nil {
+		return tmplrt.ExecError("layout", ".Head.Title", err)
+	}
+	v6 := tmplrt.Unwrap(v5)
+	b.WriteString(tmplrt.RCDATAEscaper(tmplrt.Arg(v6)))
+	b.WriteString(" · The blog</title>\n<link rel=\"stylesheet\" href=\"")
+	v7 := fn.pageStylesheet_fe1f5563()
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v7)))
+	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
+	v8 := fn.asset_0e0a6fbe("static/theme.css")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v8)))
+	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
+	v9 := fn.asset_0e0a6fbe("static/blog.css")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v9)))
+	b.WriteString("\">\n</head>\n<body>\n<div rst-page>\n")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"locale-menu\" dict \"L\" $L \"Items\" .Locales \"Return\" .Return}}", tmplrt.DepthError())
+	}
+	v10, err := tmplrt.Field(dot, "Locales")
+	if err != nil {
+		return tmplrt.ExecError("layout", ".Locales", err)
+	}
+	v11, err := tmplrt.Field(dot, "Return")
+	if err != nil {
+		return tmplrt.ExecError("layout", ".Return", err)
+	}
+	v12, err := fn.dict_72aa8d8f("L", x1, "Items", tmplrt.Arg(v10), "Return", tmplrt.Arg(v11))
+	if err != nil {
+		return tmplrt.ExecError("layout", "dict \"L\" $L \"Items\" .Locales \"Return\" .Return", tmplrt.CallError("dict", err))
+	}
+	if err := exec_f605c207f3e121d6(b, reflect.ValueOf(v12), fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\n")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"content\" (withL (.Data) $L)}}", tmplrt.DepthError())
+	}
+	v13, err := tmplrt.Field(dot, "Data")
+	if err != nil {
+		return tmplrt.ExecError("layout", ".Data", err)
+	}
+	v14 := tmplrt.Unwrap(v13)
+	v15 := fn.withL_2f8846c9(tmplrt.Arg(v14), x1)
+	v16 := reflect.ValueOf(v15)
+	if err := exec_e61d8613b8c2b866(b, v16, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\n<footer class=\"blog-footer\">\n<a href=\"/\">The blog</a>\n<a href=\"/admin/posts\">Posts admin</a>\n</footer>\n</div>\n</body>\n</html>\n")
+	return nil
+}
+
+// facts_d79a096b70b07043 is what exec_d79a096b70b07043 assumes of the types it reads.
+var facts_d79a096b70b07043 = tmplrt.Facts{
+	Funcs: map[string]reflect.Type{
+		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
+	},
+	Facts: []tmplrt.Fact{
+		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
+		{Func: "localizer_634df8c4", Path: []string{".Identity() func() string"}, Type: "string"},
+		{Func: "localizer_634df8c4", Path: []string{".Dir() func() string"}, Type: "string"},
+	},
+}
+
+// exec_d79a096b70b07043_0a42071c renders "layout" for a dot of type pageData.
+func exec_d79a096b70b07043_0a42071c(b *bytes.Buffer, dot pageData, fn *templateFuncs, depth int) error {
+	root := dot
+	v1 := fn.localizer_634df8c4(root)
+	x1 := v1
+	_ = x1
+	b.WriteString("<!doctype html>\n<html lang=\"")
+	v2 := x1.Identity()
+	tmplrt.WriteAttrEscaped(b, v2)
+	b.WriteString("\" dir=\"")
+	v3 := x1.Dir()
+	tmplrt.WriteAttrEscaped(b, v3)
+	b.WriteString("\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width\">\n<title>")
+	tmplrt.WriteHTMLEscaped(b, dot.Head.Title)
+	b.WriteString(" · The blog</title>\n<link rel=\"stylesheet\" href=\"")
+	v4 := fn.pageStylesheet_fe1f5563()
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v4)))
+	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
+	v5 := fn.asset_0e0a6fbe("static/theme.css")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v5)))
+	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
+	v6 := fn.asset_0e0a6fbe("static/blog.css")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v6)))
+	b.WriteString("\">\n</head>\n<body>\n<div rst-page>\n")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"locale-menu\" dict \"L\" $L \"Items\" .Locales \"Return\" .Return}}", tmplrt.DepthError())
+	}
+	v7, err := fn.dict_72aa8d8f("L", x1, "Items", dot.Locales, "Return", dot.Return)
+	if err != nil {
+		return tmplrt.ExecError("layout", "dict \"L\" $L \"Items\" .Locales \"Return\" .Return", tmplrt.CallError("dict", err))
+	}
+	if err := exec_f605c207f3e121d6(b, reflect.ValueOf(v7), fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\n")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"content\" (withL (.Data) $L)}}", tmplrt.DepthError())
+	}
+	v8 := reflect.ValueOf(dot.Data)
+	v9 := fn.withL_2f8846c9(tmplrt.Arg(v8), x1)
+	v10 := reflect.ValueOf(v9)
+	if err := exec_e61d8613b8c2b866(b, v10, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\n<footer class=\"blog-footer\">\n<a href=\"/\">The blog</a>\n<a href=\"/admin/posts\">Posts admin</a>\n</footer>\n</div>\n</body>\n</html>\n")
+	return nil
+}
+
+// facts_d79a096b70b07043_0a42071c is what exec_d79a096b70b07043_0a42071c assumes of the types it reads.
+var facts_d79a096b70b07043_0a42071c = tmplrt.Facts{
+	Dot: reflect.TypeFor[pageData](),
+	Funcs: map[string]reflect.Type{
+		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
+	},
+	Facts: []tmplrt.Fact{
+		{Type: "blog/internal/blog.pageData struct"},
+		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
+		{Func: "localizer_634df8c4", Path: []string{".Identity() func() string"}, Type: "string"},
+		{Func: "localizer_634df8c4", Path: []string{".Dir() func() string"}, Type: "string"},
+		{Path: []string{".Head"}, Type: "blog/internal/blog.Head struct"},
+		{Path: []string{".Head", ".Title"}, Type: "string"},
+		{Path: []string{".Locales"}, Type: "[]amadan.net/rastrillo/rastrillo.LocaleItem"},
+		{Path: []string{".Return"}, Type: "string"},
+		{Path: []string{".Data"}, Type: "interface {}"},
+	},
+}
+
+// exec_d79a096b70b07043_b6cf1f3e renders "layout" for a dot of type *pageData.
+func exec_d79a096b70b07043_b6cf1f3e(b *bytes.Buffer, dot *pageData, fn *templateFuncs, depth int) error {
+	root := dot
+	v1 := fn.localizer_634df8c4(root)
+	x1 := v1
+	_ = x1
+	b.WriteString("<!doctype html>\n<html lang=\"")
+	v2 := x1.Identity()
+	tmplrt.WriteAttrEscaped(b, v2)
+	b.WriteString("\" dir=\"")
+	v3 := x1.Dir()
+	tmplrt.WriteAttrEscaped(b, v3)
+	b.WriteString("\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width\">\n<title>")
+	if dot == nil {
+		_, err := tmplrt.Fail("nil pointer evaluating *blog.pageData.Head")
+		return tmplrt.ExecError("layout", ".Head.Title", err)
+	}
+	tmplrt.WriteHTMLEscaped(b, dot.Head.Title)
+	b.WriteString(" · The blog</title>\n<link rel=\"stylesheet\" href=\"")
+	v4 := fn.pageStylesheet_fe1f5563()
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v4)))
+	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
+	v5 := fn.asset_0e0a6fbe("static/theme.css")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v5)))
+	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
+	v6 := fn.asset_0e0a6fbe("static/blog.css")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v6)))
+	b.WriteString("\">\n</head>\n<body>\n<div rst-page>\n")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"locale-menu\" dict \"L\" $L \"Items\" .Locales \"Return\" .Return}}", tmplrt.DepthError())
+	}
+	if dot == nil {
+		_, err := tmplrt.Fail("nil pointer evaluating *blog.pageData.Locales")
+		return tmplrt.ExecError("layout", ".Locales", err)
+	}
+	if dot == nil {
+		_, err := tmplrt.Fail("nil pointer evaluating *blog.pageData.Return")
+		return tmplrt.ExecError("layout", ".Return", err)
+	}
+	v7, err := fn.dict_72aa8d8f("L", x1, "Items", dot.Locales, "Return", dot.Return)
+	if err != nil {
+		return tmplrt.ExecError("layout", "dict \"L\" $L \"Items\" .Locales \"Return\" .Return", tmplrt.CallError("dict", err))
+	}
+	if err := exec_f605c207f3e121d6(b, reflect.ValueOf(v7), fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\n")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"content\" (withL (.Data) $L)}}", tmplrt.DepthError())
+	}
+	if dot == nil {
+		_, err := tmplrt.Fail("nil pointer evaluating *blog.pageData.Data")
+		return tmplrt.ExecError("layout", ".Data", err)
+	}
+	v8 := reflect.ValueOf(dot.Data)
+	v9 := fn.withL_2f8846c9(tmplrt.Arg(v8), x1)
+	v10 := reflect.ValueOf(v9)
+	if err := exec_e61d8613b8c2b866(b, v10, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\n<footer class=\"blog-footer\">\n<a href=\"/\">The blog</a>\n<a href=\"/admin/posts\">Posts admin</a>\n</footer>\n</div>\n</body>\n</html>\n")
+	return nil
+}
+
+// facts_d79a096b70b07043_b6cf1f3e is what exec_d79a096b70b07043_b6cf1f3e assumes of the types it reads.
+var facts_d79a096b70b07043_b6cf1f3e = tmplrt.Facts{
+	Dot: reflect.TypeFor[*pageData](),
+	Funcs: map[string]reflect.Type{
+		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
+	},
+	Facts: []tmplrt.Fact{
+		{Type: "*blog/internal/blog.pageData"},
+		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
+		{Func: "localizer_634df8c4", Path: []string{".Identity() func() string"}, Type: "string"},
+		{Func: "localizer_634df8c4", Path: []string{".Dir() func() string"}, Type: "string"},
+		{Path: []string{".Head"}, Type: "blog/internal/blog.Head struct"},
+		{Path: []string{".Head", "&.Title"}, Type: "string"},
+		{Path: []string{".Locales"}, Type: "[]amadan.net/rastrillo/rastrillo.LocaleItem"},
+		{Path: []string{".Return"}, Type: "string"},
+		{Path: []string{".Data"}, Type: "interface {}"},
+	},
+}
+
 // exec_d9167099a4a33375 renders "field-date.html".
 func exec_d9167099a4a33375(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
 	b.WriteString("\n\n")
@@ -14197,237 +14447,6 @@ var facts_e61d8613b8c2b866_f6c12cfe = tmplrt.Facts{
 func exec_ea09462fb9b75dba(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
 	b.WriteString("\n\n")
 	return nil
-}
-
-// exec_ebe9f94bb365d8a7 renders "layout".
-func exec_ebe9f94bb365d8a7(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
-	root := dot
-	v1 := fn.localizer_634df8c4(tmplrt.Arg(root))
-	x1 := v1
-	_ = x1
-	b.WriteString("<!doctype html>\n<html lang=\"")
-	v2 := x1.Identity()
-	tmplrt.WriteAttrEscaped(b, v2)
-	b.WriteString("\" dir=\"")
-	v3 := x1.Dir()
-	tmplrt.WriteAttrEscaped(b, v3)
-	b.WriteString("\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width\">\n<title>")
-	v4, err := tmplrt.Field(dot, "Head")
-	if err != nil {
-		return tmplrt.ExecError("layout", ".Head.Title", err)
-	}
-	v5, err := tmplrt.Field(v4, "Title")
-	if err != nil {
-		return tmplrt.ExecError("layout", ".Head.Title", err)
-	}
-	v6 := tmplrt.Unwrap(v5)
-	b.WriteString(tmplrt.RCDATAEscaper(tmplrt.Arg(v6)))
-	b.WriteString(" · The blog</title>\n<link rel=\"stylesheet\" href=\"")
-	v7 := fn.asset_0e0a6fbe("static/tokens.css")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v7)))
-	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
-	v8 := fn.asset_0e0a6fbe("static/theme.css")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v8)))
-	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
-	v9 := fn.asset_0e0a6fbe("static/blog.css")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v9)))
-	b.WriteString("\">\n</head>\n<body>\n<div rst-page>\n")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"locale-menu\" dict \"L\" $L \"Items\" .Locales \"Return\" .Return}}", tmplrt.DepthError())
-	}
-	v10, err := tmplrt.Field(dot, "Locales")
-	if err != nil {
-		return tmplrt.ExecError("layout", ".Locales", err)
-	}
-	v11, err := tmplrt.Field(dot, "Return")
-	if err != nil {
-		return tmplrt.ExecError("layout", ".Return", err)
-	}
-	v12, err := fn.dict_72aa8d8f("L", x1, "Items", tmplrt.Arg(v10), "Return", tmplrt.Arg(v11))
-	if err != nil {
-		return tmplrt.ExecError("layout", "dict \"L\" $L \"Items\" .Locales \"Return\" .Return", tmplrt.CallError("dict", err))
-	}
-	if err := exec_f605c207f3e121d6(b, reflect.ValueOf(v12), fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\n")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"content\" (withL (.Data) $L)}}", tmplrt.DepthError())
-	}
-	v13, err := tmplrt.Field(dot, "Data")
-	if err != nil {
-		return tmplrt.ExecError("layout", ".Data", err)
-	}
-	v14 := tmplrt.Unwrap(v13)
-	v15 := fn.withL_2f8846c9(tmplrt.Arg(v14), x1)
-	v16 := reflect.ValueOf(v15)
-	if err := exec_f7ee04e68597313e(b, v16, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\n<footer class=\"blog-footer\">\n<a href=\"/\">The blog</a>\n<a href=\"/admin/posts\">Posts admin</a>\n</footer>\n</div>\n</body>\n</html>\n")
-	return nil
-}
-
-// facts_ebe9f94bb365d8a7 is what exec_ebe9f94bb365d8a7 assumes of the types it reads.
-var facts_ebe9f94bb365d8a7 = tmplrt.Facts{
-	Funcs: map[string]reflect.Type{
-		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
-	},
-	Facts: []tmplrt.Fact{
-		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
-		{Func: "localizer_634df8c4", Path: []string{".Identity() func() string"}, Type: "string"},
-		{Func: "localizer_634df8c4", Path: []string{".Dir() func() string"}, Type: "string"},
-	},
-}
-
-// exec_ebe9f94bb365d8a7_0a42071c renders "layout" for a dot of type pageData.
-func exec_ebe9f94bb365d8a7_0a42071c(b *bytes.Buffer, dot pageData, fn *templateFuncs, depth int) error {
-	root := dot
-	v1 := fn.localizer_634df8c4(root)
-	x1 := v1
-	_ = x1
-	b.WriteString("<!doctype html>\n<html lang=\"")
-	v2 := x1.Identity()
-	tmplrt.WriteAttrEscaped(b, v2)
-	b.WriteString("\" dir=\"")
-	v3 := x1.Dir()
-	tmplrt.WriteAttrEscaped(b, v3)
-	b.WriteString("\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width\">\n<title>")
-	tmplrt.WriteHTMLEscaped(b, dot.Head.Title)
-	b.WriteString(" · The blog</title>\n<link rel=\"stylesheet\" href=\"")
-	v4 := fn.asset_0e0a6fbe("static/tokens.css")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v4)))
-	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
-	v5 := fn.asset_0e0a6fbe("static/theme.css")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v5)))
-	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
-	v6 := fn.asset_0e0a6fbe("static/blog.css")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v6)))
-	b.WriteString("\">\n</head>\n<body>\n<div rst-page>\n")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"locale-menu\" dict \"L\" $L \"Items\" .Locales \"Return\" .Return}}", tmplrt.DepthError())
-	}
-	v7, err := fn.dict_72aa8d8f("L", x1, "Items", dot.Locales, "Return", dot.Return)
-	if err != nil {
-		return tmplrt.ExecError("layout", "dict \"L\" $L \"Items\" .Locales \"Return\" .Return", tmplrt.CallError("dict", err))
-	}
-	if err := exec_f605c207f3e121d6(b, reflect.ValueOf(v7), fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\n")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"content\" (withL (.Data) $L)}}", tmplrt.DepthError())
-	}
-	v8 := reflect.ValueOf(dot.Data)
-	v9 := fn.withL_2f8846c9(tmplrt.Arg(v8), x1)
-	v10 := reflect.ValueOf(v9)
-	if err := exec_f7ee04e68597313e(b, v10, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\n<footer class=\"blog-footer\">\n<a href=\"/\">The blog</a>\n<a href=\"/admin/posts\">Posts admin</a>\n</footer>\n</div>\n</body>\n</html>\n")
-	return nil
-}
-
-// facts_ebe9f94bb365d8a7_0a42071c is what exec_ebe9f94bb365d8a7_0a42071c assumes of the types it reads.
-var facts_ebe9f94bb365d8a7_0a42071c = tmplrt.Facts{
-	Dot: reflect.TypeFor[pageData](),
-	Funcs: map[string]reflect.Type{
-		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
-	},
-	Facts: []tmplrt.Fact{
-		{Type: "blog/internal/blog.pageData struct"},
-		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
-		{Func: "localizer_634df8c4", Path: []string{".Identity() func() string"}, Type: "string"},
-		{Func: "localizer_634df8c4", Path: []string{".Dir() func() string"}, Type: "string"},
-		{Path: []string{".Head"}, Type: "blog/internal/blog.Head struct"},
-		{Path: []string{".Head", ".Title"}, Type: "string"},
-		{Path: []string{".Locales"}, Type: "[]amadan.net/rastrillo/rastrillo.LocaleItem"},
-		{Path: []string{".Return"}, Type: "string"},
-		{Path: []string{".Data"}, Type: "interface {}"},
-	},
-}
-
-// exec_ebe9f94bb365d8a7_b6cf1f3e renders "layout" for a dot of type *pageData.
-func exec_ebe9f94bb365d8a7_b6cf1f3e(b *bytes.Buffer, dot *pageData, fn *templateFuncs, depth int) error {
-	root := dot
-	v1 := fn.localizer_634df8c4(root)
-	x1 := v1
-	_ = x1
-	b.WriteString("<!doctype html>\n<html lang=\"")
-	v2 := x1.Identity()
-	tmplrt.WriteAttrEscaped(b, v2)
-	b.WriteString("\" dir=\"")
-	v3 := x1.Dir()
-	tmplrt.WriteAttrEscaped(b, v3)
-	b.WriteString("\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width\">\n<title>")
-	if dot == nil {
-		_, err := tmplrt.Fail("nil pointer evaluating *blog.pageData.Head")
-		return tmplrt.ExecError("layout", ".Head.Title", err)
-	}
-	tmplrt.WriteHTMLEscaped(b, dot.Head.Title)
-	b.WriteString(" · The blog</title>\n<link rel=\"stylesheet\" href=\"")
-	v4 := fn.asset_0e0a6fbe("static/tokens.css")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v4)))
-	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
-	v5 := fn.asset_0e0a6fbe("static/theme.css")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v5)))
-	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
-	v6 := fn.asset_0e0a6fbe("static/blog.css")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v6)))
-	b.WriteString("\">\n</head>\n<body>\n<div rst-page>\n")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"locale-menu\" dict \"L\" $L \"Items\" .Locales \"Return\" .Return}}", tmplrt.DepthError())
-	}
-	if dot == nil {
-		_, err := tmplrt.Fail("nil pointer evaluating *blog.pageData.Locales")
-		return tmplrt.ExecError("layout", ".Locales", err)
-	}
-	if dot == nil {
-		_, err := tmplrt.Fail("nil pointer evaluating *blog.pageData.Return")
-		return tmplrt.ExecError("layout", ".Return", err)
-	}
-	v7, err := fn.dict_72aa8d8f("L", x1, "Items", dot.Locales, "Return", dot.Return)
-	if err != nil {
-		return tmplrt.ExecError("layout", "dict \"L\" $L \"Items\" .Locales \"Return\" .Return", tmplrt.CallError("dict", err))
-	}
-	if err := exec_f605c207f3e121d6(b, reflect.ValueOf(v7), fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\n")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"content\" (withL (.Data) $L)}}", tmplrt.DepthError())
-	}
-	if dot == nil {
-		_, err := tmplrt.Fail("nil pointer evaluating *blog.pageData.Data")
-		return tmplrt.ExecError("layout", ".Data", err)
-	}
-	v8 := reflect.ValueOf(dot.Data)
-	v9 := fn.withL_2f8846c9(tmplrt.Arg(v8), x1)
-	v10 := reflect.ValueOf(v9)
-	if err := exec_f7ee04e68597313e(b, v10, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\n<footer class=\"blog-footer\">\n<a href=\"/\">The blog</a>\n<a href=\"/admin/posts\">Posts admin</a>\n</footer>\n</div>\n</body>\n</html>\n")
-	return nil
-}
-
-// facts_ebe9f94bb365d8a7_b6cf1f3e is what exec_ebe9f94bb365d8a7_b6cf1f3e assumes of the types it reads.
-var facts_ebe9f94bb365d8a7_b6cf1f3e = tmplrt.Facts{
-	Dot: reflect.TypeFor[*pageData](),
-	Funcs: map[string]reflect.Type{
-		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
-	},
-	Facts: []tmplrt.Fact{
-		{Type: "*blog/internal/blog.pageData"},
-		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
-		{Func: "localizer_634df8c4", Path: []string{".Identity() func() string"}, Type: "string"},
-		{Func: "localizer_634df8c4", Path: []string{".Dir() func() string"}, Type: "string"},
-		{Path: []string{".Head"}, Type: "blog/internal/blog.Head struct"},
-		{Path: []string{".Head", "&.Title"}, Type: "string"},
-		{Path: []string{".Locales"}, Type: "[]amadan.net/rastrillo/rastrillo.LocaleItem"},
-		{Path: []string{".Return"}, Type: "string"},
-		{Path: []string{".Data"}, Type: "interface {}"},
-	},
 }
 
 // exec_eed2e2429162b6c6 renders "list-search-submit".
