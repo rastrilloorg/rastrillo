@@ -1,0 +1,15 @@
+{{define "title"}}{{.Room.Name}}{{end}}
+{{define "content"}}{{$L := localizer $}}
+{{template "back-nav" dict "Href" (path $ "/") "Label" "Rooms"}}
+{{template "page-header" dict "Title" .Room.Name}}
+<div rst-box>
+{{range .Messages}}<p><strong>{{.Sender}}</strong> {{.Text}}</p>
+{{else}}<p>No messages yet. Say hello.</p>
+{{end}}</div>
+<section rst-box>
+  <form rst-form method="post" action="{{path $ (printf "/rooms/%d/messages" .Room.ID)}}">
+    {{template "field-text" dict "Name" "Text" "Label" "Message" "Value" (index .Echo "Text") "Error" (index .Errors "Text")}}
+    {{template "form-foot" dict "L" $L "Submit" "Send"}}
+  </form>
+</section>
+{{end}}

@@ -1,0 +1,3 @@
+title = "Build a live chat app"
+app = "chat"
+new = ["-auth", "magic"]

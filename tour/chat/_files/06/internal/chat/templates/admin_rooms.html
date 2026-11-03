@@ -1,0 +1,13 @@
+{{define "title"}}Rooms · Admin{{end}}
+{{define "content"}}{{$L := localizer $}}
+{{template "page-header" dict "Title" "Rooms" "Sub" "Only admins see this page."}}
+<section rst-box>
+  <form rst-form method="post" action="{{path $ "/admin/rooms"}}">
+    {{template "field-text" dict "Name" "Name" "Label" "New room" "Value" (index .Echo "Name") "Error" (index .Errors "Name") "Required" true}}
+    {{template "form-foot" dict "L" $L "Submit" "Add room"}}
+  </form>
+</section>
+{{if .Rooms}}<div rst-list>
+{{range .Rooms}}{{template "list-row-action" dict "L" $L "Href" (path $ (printf "/admin/rooms/%d" .ID)) "Main" .Name}}
+{{end}}</div>{{end}}
+{{end}}

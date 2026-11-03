@@ -345,6 +345,9 @@ var coveredElsewhere = map[string]string{
 	"tmpl/internal/corpus":                   "reference/tmpl",
 	"tmpl/internal/corpus/cmd/corpuscapture": "reference/tmpl",
 	"tmpl/internal/tmplhook":                 "reference/tmpl",
+	// rastrillo.org's tours and their replay: the site renders them from
+	// cmd/tourgen's output, and the chat tour is their documentation.
+	"tour": "getting-started",
 }
 
 // localePackCoverage maps every generated CLDR locale pack under

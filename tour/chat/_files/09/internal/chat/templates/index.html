@@ -1,0 +1,8 @@
+{{define "title"}}Chat{{end}}
+{{define "content"}}{{$L := localizer $}}
+{{template "page-header" dict "Title" "Rooms"}}
+{{if .Rooms}}<div rst-list>
+{{range .Rooms}}{{template "list-row-action" dict "L" $L "Href" (path $ (printf "/rooms/%d" .ID)) "Main" .Name}}
+{{end}}</div>
+{{else}}{{template "empty-state" dict "Title" "No rooms yet" "Body" "An admin adds rooms at /admin/rooms."}}{{end}}
+{{end}}
