@@ -10,6 +10,8 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+## v0.31.0
+
 ### Changed: a new app comes ready for live pages
 
 `rastrillo new` now wires [live pages](docs/site/live.md) for you.
