@@ -28,9 +28,8 @@ var content embed.FS
 type Tour struct {
 	Slug  string
 	Title string
-	// App is the name rastrillo new is given, and New its flags.
+	// App is the name the scaffold step's rastrillo new gives the app.
 	App   string
-	New   []string
 	Steps []Step
 }
 
@@ -136,6 +135,21 @@ func (tour Tour) check() error {
 			tour.Slug, scaffolds)
 	}
 	return nil
+}
+
+// newCommand is the scaffold step's rastrillo new, exactly as the reader
+// is shown it: the replay runs that line, so a command a reader cannot
+// run fails the tour's test.
+func (tour Tour) newCommand(step Step) (string, error) {
+	for _, command := range step.Commands {
+		words := strings.Fields(command)
+		if len(words) > 2 && words[0] == "rastrillo" && words[1] == "new" &&
+			words[len(words)-1] == tour.App {
+			return command, nil
+		}
+	}
+	return "", fmt.Errorf("tour %s step %d makes the app but shows no "+
+		"rastrillo new ending in %s", tour.Slug, step.Number, tour.App)
 }
 
 // File is the whole text of file as step leaves it.

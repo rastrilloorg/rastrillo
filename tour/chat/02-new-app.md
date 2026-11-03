@@ -1,12 +1,12 @@
 +++
 title = "Create the app"
 scaffold = true
-commands = ["rastrillo new chat -auth magic", "cd chat"]
+commands = ["rastrillo new --auth=magic chat", "cd chat"]
 check = "`ls` shows `cmd`, `internal`, `Makefile` and `AGENTS.md`, among others."
 +++
 
 `rastrillo new` writes a whole app, not a stub. It builds, its tests pass
-and it serves before you write a line. `-auth magic` gives it sign-in by
+and it serves before you write a line. `--auth=magic` gives it sign-in by
 emailed link, so people can sign in without a password.
 
 The files you will edit live in `internal/chat/`:

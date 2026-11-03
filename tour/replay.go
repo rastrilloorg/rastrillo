@@ -41,7 +41,7 @@ func (tour Tour) Replay(
 	directory := ""
 	for _, step := range tour.Steps {
 		if step.Scaffold {
-			made, err := tour.scaffold(parent, toolchain)
+			made, err := tour.scaffold(step, parent, toolchain)
 			if err != nil {
 				return err
 			}
@@ -60,12 +60,17 @@ func (tour Tour) Replay(
 	return nil
 }
 
-func (tour Tour) scaffold(parent string, toolchain Toolchain) (string, error) {
-	arguments := append(append([]string{"new"}, tour.New...), tour.App)
+func (tour Tour) scaffold(
+	step Step, parent string, toolchain Toolchain,
+) (string, error) {
+	command, err := tour.newCommand(step)
+	if err != nil {
+		return "", err
+	}
 	making := toolchain
 	making.Env = append(append([]string{}, toolchain.Env...),
 		toolchain.NewEnv...)
-	if err := making.rastrillo(parent, arguments...); err != nil {
+	if err := making.command(parent, command); err != nil {
 		return "", err
 	}
 	directory := filepath.Join(parent, tour.App)

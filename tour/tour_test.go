@@ -39,6 +39,28 @@ func TestEveryReplayedCommandIsOneTheReaderIsShown(t *testing.T) {
 	}
 }
 
+// The scaffold step shows the rastrillo new the replay runs, flags
+// before the name: Go's flag parsing stops at the first argument that
+// is not a flag, so `rastrillo new chat --auth=magic` refuses the flag.
+func TestTheScaffoldStepShowsARunnableNew(t *testing.T) {
+	tour, err := Load("chat")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, step := range tour.Steps {
+		if !step.Scaffold {
+			continue
+		}
+		command, err := tour.newCommand(step)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if command != "rastrillo new --auth=magic chat" {
+			t.Errorf("step %d shows %q", step.Number, command)
+		}
+	}
+}
+
 func TestChangedLinesMarksWhatIsNew(t *testing.T) {
 	old := "package chat\n\nfunc a() {}\n"
 	updated := "package chat\n\nimport \"time\"\n\nfunc a() {}\n\nfunc b() {}\n"

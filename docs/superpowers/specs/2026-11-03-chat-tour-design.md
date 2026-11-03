@@ -91,7 +91,7 @@ These would make it a failure even if it technically works:
 
 A chat app called `chat`:
 
-- Sign-in by emailed link, from `rastrillo new chat -auth magic`. In
+- Sign-in by emailed link, from `rastrillo new --auth=magic chat`. In
   dev no mailer is configured, so the link is written to the server
   log; the tour tells the reader to copy it from there.
 - `/` lists rooms. A room page shows its messages, newest at the
@@ -114,7 +114,7 @@ Fourteen steps (revised from twelve while building: rename and delete
 got a step of their own, and the admin became three small steps).
 
 1. Install the CLI at the pinned release.
-2. Make the app: `rastrillo new chat -auth magic`.
+2. Make the app: `rastrillo new --auth=magic chat`.
 3. Run it: `rastrillo dev`, sign in with the link from the log.
 4. Run the tests the app came with.
 5. Give rooms a table: the model and `rastrillo migration generate`.
@@ -172,7 +172,7 @@ framework through the module proxy like `dsgen`, could never see it.)
   Go ignores `_` directories, so those files never build as part of
   the framework.
 - Package `tour` embeds it and replays it: scaffold with
-  `rastrillo new chat -auth magic`, then per step write its files and
+  `rastrillo new --auth=magic chat`, then per step write its files and
   run its commands, then `rastrillo generate` as `rastrillo dev`
   would.
 - A test replays every step in CI and builds, vets and tests the app

@@ -10,6 +10,15 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+## v0.31.1
+
+### Fixed: the chat tour's second step runs as shown
+
+The tour at rastrillo.org/tour showed `rastrillo new chat -auth magic`,
+which refuses the flag: Go reads flags only before the app's name. It
+now shows `rastrillo new --auth=magic chat`, and its test runs the
+command exactly as the page shows it.
+
 ## v0.31.0
 
 ### Changed: a new app comes ready for live pages
