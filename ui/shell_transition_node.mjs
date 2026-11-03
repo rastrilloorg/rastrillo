@@ -13,15 +13,17 @@ const window = {
   onpageswap: null,
   addEventListener: (event, listener) => { listeners[event] = listener; },
 };
-vm.runInNewContext(source, {
+const start = () => vm.runInNewContext(source, {
   window, document, URL, DOMException,
   location: new URL("https://app.test/"),
 });
 
+start();
+
 const unhandled = [];
 process.on("unhandledRejection", reason => { unhandled.push(reason); });
 const turn = () => new Promise(resolve => setImmediate(resolve));
-for (const event of ["pagereveal", "pageswap"]) {
+for (const event of ["startup", "pagereveal", "pageswap"]) {
   for (const promise of ["ready", "finished", "updateCallbackDone"]) {
     const skips = ["AbortError", "InvalidStateError", "TimeoutError"];
     const reasons = skips.map(name => new DOMException("No transition", name));
@@ -37,7 +39,15 @@ for (const event of ["pagereveal", "pageswap"]) {
         updateCallbackDone: Promise.resolve(),
       };
       transition[promise] = Promise.reject(reason);
-      listeners[event]({ viewTransition: transition });
+      if (event === "startup") {
+        document.activeViewTransition = transition;
+        start();
+        assert.equal(transition.types.size, 0);
+        await turn();
+        listeners.pagereveal({ viewTransition: transition });
+      } else {
+        listeners[event]({ viewTransition: transition });
+      }
       await turn();
       await turn();
       const skipped = reason instanceof DOMException && skips.includes(reason.name);

@@ -4108,9 +4108,7 @@ func renderShellLayout(t *testing.T, name string, defs ...string) string {
 // rel="up" says the relationship, the index's <h1> is the app's name
 // (the brand, with the page's title after it for an app whose brand
 // renders nothing; tokens.css shows the title only then), the drawer
-// is gone, and only these two shells link shell.js and shell.css, the
-// script with blocking="render" so it is there for the first
-// pagereveal.
+// is gone, and only these two shells link shell.css to opt into slides.
 func TestTheSidebarAndConsoleNameTheirViewAndTheirWayBack(t *testing.T) {
 	label := defaultT("rastrillo.ui.shell_up_label")
 	name := defaultTf("rastrillo.ui.shell_up", "name", label)
@@ -4151,8 +4149,9 @@ func TestTheSidebarAndConsoleNameTheirViewAndTheirWayBack(t *testing.T) {
 		}
 	}
 	for _, shell := range []string{"column", "topbar", "stage"} {
-		if src, _ := Layout(shell); strings.Contains(string(src), "shell.js") || strings.Contains(string(src), "shell.css") {
-			t.Errorf("%s links shell.js or shell.css; only the sidebar and console need them", shell)
+		src, _ := Layout(shell)
+		if strings.Contains(string(src), "static/shell.css") {
+			t.Errorf("%s links shell.css; only phone shells opt in", shell)
 		}
 	}
 }

@@ -121,8 +121,6 @@ func TestEachShellLoadsOnlyTheScriptsItsFieldsNeed(t *testing.T) {
 	always := []string{"rastrillo.js", "busy.js", "live.js", "light.js",
 		"anchor.js"}
 	for shell, pages := range shellPages(t) {
-		layout, _ := Layout(shell)
-		shellJS := strings.Contains(string(layout), "static/shell.js")
 		for name, page := range pages {
 			srcs := deferredScripts(page)
 			got := componentsIn(srcs)
@@ -131,7 +129,7 @@ func TestEachShellLoadsOnlyTheScriptsItsFieldsNeed(t *testing.T) {
 					shell, name, got, shellWants[name])
 			}
 			want := always
-			if shellJS {
+			if shell == "sidebar" || shell == "console" {
 				want = append(slices.Clone(always), "shell.js")
 			}
 			for _, script := range want {
@@ -196,5 +194,22 @@ func TestAnUneditedLayoutStillLoadsEveryComponentScript(t *testing.T) {
 	got := componentsIn(deferredScripts(pages["plain"]))
 	if !slices.Equal(got, shellWants["live"]) {
 		t.Errorf("an unedited layout loads %v, want all three", got)
+	}
+}
+
+func TestNonTransitionLayoutsObserveBeforeStylesLoad(t *testing.T) {
+	for _, shell := range []string{
+		"column", "topbar", "stage",
+	} {
+		page := renderShellLayout(t, shell)
+		script := `<script src="/static/shell.js"></script>`
+		scriptAt := strings.Index(page, script)
+		stylesAt := strings.Index(page, `<link rel="stylesheet"`)
+		if scriptAt < 0 || stylesAt < 0 || scriptAt > stylesAt {
+			t.Errorf("%s: load shell.js before styles without defer", shell)
+		}
+		if strings.Count(page, "/static/shell.js") != 1 {
+			t.Errorf("%s: load shell.js exactly once", shell)
+		}
 	}
 }
