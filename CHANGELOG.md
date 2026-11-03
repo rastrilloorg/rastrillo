@@ -10,6 +10,27 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+### Fixed: no uncaught error when a form's redirect lands on a column, stage or topbar page
+
+A form's redirect to a column, stage or topbar page could log
+`AbortError: Transition was skipped` as an uncaught error. These layouts
+now load `transition.js` before styles to handle the skipped transition.
+
+After upgrading, run `rastrillo doctor --fix`. It adds `transition.js`
+and re-copies `shell.js`. In each column, stage and topbar layout your
+app copied, add this before the first stylesheet:
+
+```html
+<script src="{{path $ (asset "static/transition.js")}}"></script>
+```
+
+Sidebar and console apps may delete `transition.js`. Add
+`"transition.js": true` to `vendoredIsMine` in `vendored_test.go` so the
+test allows the missing file.
+
+Chromium versions without `document.activeViewTransition` still log the
+error. It is harmless and your app remains safe to use.
+
 ### Changed: API answers are held and checked again as they go out; test the API through a server
 
 The JSON API now holds each answer until the handler has finished, then
@@ -166,27 +187,6 @@ What changed:
 
 ## v0.30.2
 
-### Fixed: no uncaught error when a form's redirect lands on a column, stage or topbar page
-
-A form's redirect to a column, stage or topbar page could log
-`AbortError: Transition was skipped` as an uncaught error. These layouts
-now load `transition.js` before styles to handle the skipped transition.
-
-After upgrading, run `rastrillo doctor --fix`. It adds `transition.js`
-and re-copies `shell.js`. In each column, stage and topbar layout your
-app copied, add this before the first stylesheet:
-
-```html
-<script src="{{path $ (asset "static/transition.js")}}"></script>
-```
-
-Sidebar and console apps may delete `transition.js`. Add
-`"transition.js": true` to `vendoredIsMine` in `vendored_test.go` so the
-test allows the missing file.
-
-Chromium versions without `document.activeViewTransition` still log the
-error. It is harmless and your app remains safe to use.
-
 ### Fixed: the console rail's current item draws its ring and shadow whole
 
 The console rail's current item draws its ring and shadow whole. Before, the rail cut them off at its edges. Apps own their tokens.css, so copy it again to get the fix.
@@ -195,7 +195,7 @@ The console rail's current item draws its ring and shadow whole. Before, the rai
 
 ### Fixed: no uncaught error when the browser skips a page transition
 
-Navigating with motion on could log `AbortError: Transition was skipped` as an uncaught error in the browser console, and browser tests built on the harness failed on it. The browser skips a page transition in some cases and rejects its promises, and the shell never handled them. The shell now handles them and ignores only that skip. Other errors still show. Upgrade and run `go mod tidy`, then follow the asset and layout upgrade steps in v0.30.2 above.
+Navigating with motion on could log `AbortError: Transition was skipped` as an uncaught error in the browser console, and browser tests built on the harness failed on it. The browser skips a page transition in some cases and rejects its promises, and the shell never handled them. The shell now handles them and ignores only that skip. Other errors still show. Upgrade and run `go mod tidy`, then follow the asset and layout upgrade steps in the release above that fixes skipped transitions on column, stage and topbar pages.
 
 ## v0.30.0
 
