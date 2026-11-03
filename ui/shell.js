@@ -1,4 +1,4 @@
-/* shell.js — phone navigation for the sidebar and console shells.
+/* shell.js — transition observation and phone shell navigation.
    First-party, dependency-free, CSP-clean, and optional: delete it (and
    its <script> tag) and every page still works, because the index and
    the back control are ordinary server-rendered pages and links. It is
@@ -26,10 +26,9 @@
       width focuses the nav link to that path, or else the one the URL's
       #fragment names.
 
-   The layouts load it with blocking="render": the direction is set in
-   pagereveal, at the first render, and a deferred script can run after
-   it. An engine that ignores blocking gets an untyped transition, which
-   shell.css draws as a cross-fade. */
+   Sidebar and console use defer blocking="render" for focus and
+   direction after parsing. Other layouts use transition.js before
+   styles so incoming transitions skipped before pagereveal are observed. */
 (function () {
   "use strict";
 
@@ -88,9 +87,11 @@
   }
 
   // A skipped browser transition rejects even though navigation succeeds.
-  // Observe only its promises, so unrelated failures remain visible.
+  // Startup and pagereveal can expose the same object; observe it once.
+  var observed = new WeakSet();
   function observeTransition(transition) {
-    if (!transition) return;
+    if (!transition || observed.has(transition)) return;
+    observed.add(transition);
     ["ready", "finished", "updateCallbackDone"].forEach(function (key) {
       if (transition[key]) transition[key].catch(function (err) {
         if (!(err instanceof DOMException) ||
@@ -98,6 +99,8 @@
       });
     });
   }
+
+  observeTransition(document.activeViewTransition);
 
   // 1. Direction. The back record is scoped to its destination because
   // a cancelled leave-page prompt can leave it behind. Consume it on

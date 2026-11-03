@@ -692,6 +692,7 @@ func SelectJS() []byte
 func DatetimeJS() []byte
 func CalendarJS() []byte
 func ShellJS() []byte
+func TransitionJS() []byte
 func ShellCSS() []byte
 ```
 

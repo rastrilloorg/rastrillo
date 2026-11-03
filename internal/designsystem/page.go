@@ -2678,13 +2678,8 @@ type assetsView struct {
 // the same ones Render writes the tree's copies from — the file a
 // reader downloads and the number beside it cannot disagree.
 func buildAssets(mount, theme, locale string) assetsView {
-	// The vendored set, from the one place it is defined:
-	// ui.VendoredAssets, shared with rastrillo new's scaffold, the pin
-	// test it generates into every app, and rastrillo doctor. This page
-	// is the fourth reader of that list, and the only one whose numbers
-	// nobody would notice going stale — so it reads the list rather
-	// than repeating it, and a sixth vendored file lands in the total
-	// here on the same commit it reaches an app.
+	// Read the scaffold's vendored set so the total includes every file
+	// a new app ships.
 	vendored, ok := ui.VendoredAssets(theme)
 	if !ok {
 		// Render has already failed on an unknown theme by the time
@@ -2737,6 +2732,7 @@ func buildAssets(mount, theme, locale string) assetsView {
 		"Keeps a dropdown's menu on the screen in browsers without CSS anchor positioning. It does nothing where they have it: delete it once every browser you support does.")
 	add(&out, "shell.js", ui.ShellJS(),
 		"Phone navigation for the sidebar and console shells: the slide between pages, Back that reuses history, and focus returned to the section you left. Deletable on its own.")
+	add(&out, "transition.js", ui.TransitionJS(), transitionAssetBlurb)
 	add(&out, "select.js", ui.SelectJS(),
 		"field-select's searchable combobox. Inert until a select opts in with data-rst-select, and deletable on its own.")
 	add(&out, "datetime.js", ui.DatetimeJS(),

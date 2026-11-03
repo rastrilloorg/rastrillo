@@ -2,7 +2,8 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import vm from "node:vm";
 
-const source = readFileSync(new URL("./shell.js", import.meta.url), "utf8");
+const observer = process.argv[2] === "observer";
+const source = readFileSync(observer ? 0 : new URL("./shell.js", import.meta.url), "utf8");
 const listeners = {};
 const document = {
   querySelector: () => null,
@@ -13,15 +14,20 @@ const window = {
   onpageswap: null,
   addEventListener: (event, listener) => { listeners[event] = listener; },
 };
-vm.runInNewContext(source, {
+const start = () => vm.runInNewContext(source, {
   window, document, URL, DOMException,
   location: new URL("https://app.test/"),
 });
 
+start();
+assert.equal(typeof listeners.pageswap, "function",
+  "Observe outgoing transitions when an app opts in with its own CSS");
+
 const unhandled = [];
 process.on("unhandledRejection", reason => { unhandled.push(reason); });
 const turn = () => new Promise(resolve => setImmediate(resolve));
-for (const event of ["pagereveal", "pageswap"]) {
+const events = ["startup", "pagereveal", "pageswap"];
+for (const event of events) {
   for (const promise of ["ready", "finished", "updateCallbackDone"]) {
     const skips = ["AbortError", "InvalidStateError", "TimeoutError"];
     const reasons = skips.map(name => new DOMException("No transition", name));
@@ -37,7 +43,15 @@ for (const event of ["pagereveal", "pageswap"]) {
         updateCallbackDone: Promise.resolve(),
       };
       transition[promise] = Promise.reject(reason);
-      listeners[event]({ viewTransition: transition });
+      if (event === "startup") {
+        document.activeViewTransition = transition;
+        start();
+        assert.equal(transition.types.size, 0);
+        await turn();
+        listeners.pagereveal({ viewTransition: transition });
+      } else {
+        listeners[event]({ viewTransition: transition });
+      }
       await turn();
       await turn();
       const skipped = reason instanceof DOMException && skips.includes(reason.name);

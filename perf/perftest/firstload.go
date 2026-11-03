@@ -37,7 +37,8 @@ var frameworkBudget = firstLoadBudget{
 		"tokens.css": 20100, "theme.css": 1800, "shell.css": 500,
 		"rastrillo.js": 2400, "busy.js": 1200, "live.js": 4600,
 		"light.js": 1900, "anchor.js": 600, "shell.js": 1100,
-		"select.js": 7300, "datetime.js": 9500, "calendar.js": 2800,
+		"transition.js": 400,
+		"select.js":     7300, "datetime.js": 9500, "calendar.js": 2800,
 	},
 }
 

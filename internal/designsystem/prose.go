@@ -173,6 +173,10 @@ func setProseTrace(fn func(string)) func() {
 	}
 }
 
+const transitionAssetBlurb = "Stops a skipped page transition logging an " +
+	"error on column, stage and topbar pages. " +
+	"Sidebar and console pages don't need it."
+
 // prose is the table: English source → locale code → translation. See
 // the file comment above for why the key is the English sentence and
 // why en is absent from every row.
@@ -4694,6 +4698,19 @@ var prose = map[string]map[string]string{
 		`yue`:     `喺唔支援 CSS 錨點定位嘅瀏覽器，令下拉選單留喺畫面入面。支援嘅瀏覽器就乜都唔做：你支援嘅瀏覽器全部都支援之後，就可以刪走佢。`,
 		`vi`:      `Giữ menu của danh sách thả xuống trong màn hình trên các trình duyệt không có định vị neo CSS. Không làm gì ở nơi đã có: hãy xoá nó khi mọi trình duyệt bạn hỗ trợ đều có.`,
 		`ar`:      `يُبقي قائمة العناصر المنسدلة داخل الشاشة في المتصفحات التي لا تدعم تموضع المرساة في CSS. لا يفعل شيئًا حيث تدعمه: احذفه حين تدعمه كل المتصفحات التي تستهدفها.`,
+	},
+	`Stops a skipped page transition logging an error on column, stage and topbar pages. Sidebar and console pages don't need it.`: {
+		`ga`:      `Cuireann sé cosc ar earráid a logáil nuair a scipeáiltear trasdul leathanaigh ar leathanaigh column, stage agus topbar. Níl sé de dhíth ar leathanaigh sidebar ná console.`,
+		`zh-Hans`: `防止 column、stage 和 topbar 页面在跳过页面过渡时记录错误。sidebar 和 console 页面不需要它。`,
+		`es`:      `Evita que una transición de página omitida registre un error en las páginas column, stage y topbar. Las páginas sidebar y console no lo necesitan.`,
+		`hi`:      `column, stage और topbar पन्नों पर पन्ने का ट्रांज़िशन छोड़ दिए जाने पर त्रुटि लॉग होने से रोकता है। sidebar और console पन्नों को इसकी ज़रूरत नहीं है।`,
+		`pt-PT`:   `Impede o registo de um erro quando uma transição de página é ignorada nas páginas column, stage e topbar. As páginas sidebar e console não precisam dele.`,
+		`bn`:      `column, stage ও topbar পাতায় পাতার ট্রানজিশন বাদ পড়লে ত্রুটি লগ হওয়া আটকায়। sidebar ও console পাতায় এটি লাগে না।`,
+		`ru`:      `Не даёт записать ошибку при пропуске перехода на страницах column, stage и topbar. Страницам sidebar и console он не нужен.`,
+		`ja`:      `column、stage、topbar のページで、ページ遷移がスキップされた際にエラーが記録されるのを防ぎます。sidebar と console のページには不要です。`,
+		`yue`:     `防止 column、stage 同 topbar 頁面喺略過頁面轉場時記錄錯誤。sidebar 同 console 頁面唔需要佢。`,
+		`vi`:      `Ngăn ghi lỗi khi hiệu ứng chuyển trang bị bỏ qua trên các trang column, stage và topbar. Các trang sidebar và console không cần tệp này.`,
+		`ar`:      `يمنع تسجيل خطأ عند تخطّي انتقال الصفحة في صفحات column وstage وtopbar. لا تحتاجه صفحات sidebar وconsole.`,
 	},
 	`field-select's searchable combobox. Inert until a select opts in with data-rst-select, and deletable on its own.`: {
 		`ga`:      `Bosca teaglama inchuardaithe field-select. Marbh go dtí go roghnaíonn select isteach le data-rst-select, agus inscriosta leis féin.`,

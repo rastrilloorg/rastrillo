@@ -3,6 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width">
+{{/* The browser rejects a skipped incoming transition before
+     pagereveal; a deferred observer misses it. */}}
+<script src="{{path $ (asset "static/transition.js")}}"></script>
 <title>{{block "title" .}}Hello{{end}}</title>
 <link rel="stylesheet" href="{{path $ (asset "static/tokens.css")}}">
 <link rel="stylesheet" href="{{path $ (asset "static/theme.css")}}">
@@ -20,6 +23,8 @@
      stands alone: the sign-in page above all. No select.js, calendar.js
      or datetime.js: a stage page has no enhanced fields, and each would
      be a request in front of the one screen every visitor meets first.
+     transition.js is the deliberate exception because the defer probe
+     showed that a later observer can miss the rejection.
      head is the app's slot, last so its CSS wins the ties it should. */}}
 {{block "head" .}}{{end}}
 </head>
