@@ -60,7 +60,7 @@ func shellPostRedirect(
 				response.Write(theme)
 				return
 			}
-			if slowScript && request.URL.Path == "/shell.js" &&
+			if slowScript && request.URL.Path == "/transition.js" &&
 				strings.HasSuffix(request.Referer(), "/signin") {
 				delayed.Add(1)
 				time.Sleep(200 * time.Millisecond)
@@ -86,7 +86,8 @@ func shellPostRedirect(
 		t.Fatalf("signout received %d POSTs, want one", posts.Load())
 	}
 	if slowScript && delayed.Load() != 1 {
-		t.Fatalf("delayed %d destination script loads, want one", delayed.Load())
+		t.Fatalf("delayed %d destination script loads, want one",
+			delayed.Load())
 	}
 	rig.Screen("body", "POST redirect to "+destination)
 }

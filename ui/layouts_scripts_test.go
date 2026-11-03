@@ -202,14 +202,23 @@ func TestNonTransitionLayoutsObserveBeforeStylesLoad(t *testing.T) {
 		"column", "topbar", "stage",
 	} {
 		page := renderShellLayout(t, shell)
-		script := `<script src="/static/shell.js"></script>`
+		script := `<script src="/static/transition.js"></script>`
 		scriptAt := strings.Index(page, script)
 		stylesAt := strings.Index(page, `<link rel="stylesheet"`)
 		if scriptAt < 0 || stylesAt < 0 || scriptAt > stylesAt {
-			t.Errorf("%s: load shell.js before styles without defer", shell)
+			t.Errorf("%s: load transition.js before styles without defer",
+				shell)
 		}
-		if strings.Count(page, "/static/shell.js") != 1 {
-			t.Errorf("%s: load shell.js exactly once", shell)
+		if strings.Count(page, "/static/transition.js") != 1 {
+			t.Errorf("%s: load transition.js exactly once", shell)
+		}
+	}
+}
+
+func TestNonTransitionLayoutsDoNotLoadShellJS(t *testing.T) {
+	for _, shell := range []string{"column", "topbar", "stage"} {
+		if strings.Contains(renderShellLayout(t, shell), "/static/shell.js") {
+			t.Errorf("%s loads shell.js without phone shell navigation", shell)
 		}
 	}
 }

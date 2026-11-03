@@ -38,17 +38,18 @@ func VendoredAssets(theme string) (map[string][]byte, bool) {
 		return nil, false
 	}
 	return map[string][]byte{
-		"tokens.css":   TokensCSS(),
-		"theme.css":    themeCSS,
-		"shell.css":    ShellCSS(),
-		"rastrillo.js": ShimJS(),
-		"busy.js":      BusyJS(),
-		"live.js":      LiveJS(),
-		"light.js":     LightJS(),
-		"anchor.js":    AnchorJS(),
-		"shell.js":     ShellJS(),
-		"select.js":    SelectJS(),
-		"datetime.js":  DatetimeJS(),
-		"calendar.js":  CalendarJS(),
+		"tokens.css":    TokensCSS(),
+		"theme.css":     themeCSS,
+		"shell.css":     ShellCSS(),
+		"rastrillo.js":  ShimJS(),
+		"busy.js":       BusyJS(),
+		"live.js":       LiveJS(),
+		"light.js":      LightJS(),
+		"anchor.js":     AnchorJS(),
+		"shell.js":      ShellJS(),
+		"transition.js": TransitionJS(),
+		"select.js":     SelectJS(),
+		"datetime.js":   DatetimeJS(),
+		"calendar.js":   CalendarJS(),
 	}, true
 }

@@ -300,10 +300,8 @@ func runNew(args []string) error {
 	return nil
 }
 
-// The vendored static files rastrillo new writes into static/, from the
-// one list in ui.VendoredAssets. Each is delivered once and app-owned
-// from then on: rastrillo.Serve never serves CSS at runtime, and
-// new/generate never touch these again.
+// Vendored files come from ui.VendoredAssets and become app-owned.
+// Serve never serves CSS at runtime; new/generate never touch these again.
 //
 //	tokens.css     the design-token stylesheet — structure only
 //	theme.css      the colour, type family and shape tokens
@@ -323,6 +321,8 @@ func runNew(args []string) error {
 //	shell.js       the same two shells' phone navigation: the slide's
 //	               direction, a back control that reuses history,
 //	               focus returned to the section the reader left
+//	transition.js  observes skipped incoming transitions on column, stage
+//	               and topbar pages before styles opt them out
 //	select.js      field-select's searchable enhancement, inert
 //	               until a <select> opts in with data-rst-select
 //	datetime.js    the date fields' natural-language combobox,

@@ -31,19 +31,20 @@ var samplesFS embed.FS
 // an asset missing from the tree fails the render of every page.
 func galleryAssets() map[string][]byte {
 	out := map[string][]byte{
-		"tokens.css":   ui.TokensCSS(),
-		"rastrillo.js": ui.ShimJS(),
-		"busy.js":      ui.BusyJS(),
-		"live.js":      ui.LiveJS(),
-		"light.js":     ui.LightJS(),
-		"anchor.js":    ui.AnchorJS(),
-		"shell.js":     ui.ShellJS(),
-		"shell.css":    ui.ShellCSS(),
-		"select.js":    ui.SelectJS(),
-		"datetime.js":  ui.DatetimeJS(),
-		"calendar.js":  ui.CalendarJS(),
-		"gallery.js":   GalleryJS(),
-		"gallery.css":  GalleryCSS(),
+		"tokens.css":    ui.TokensCSS(),
+		"rastrillo.js":  ui.ShimJS(),
+		"busy.js":       ui.BusyJS(),
+		"live.js":       ui.LiveJS(),
+		"light.js":      ui.LightJS(),
+		"anchor.js":     ui.AnchorJS(),
+		"shell.js":      ui.ShellJS(),
+		"transition.js": ui.TransitionJS(),
+		"shell.css":     ui.ShellCSS(),
+		"select.js":     ui.SelectJS(),
+		"datetime.js":   ui.DatetimeJS(),
+		"calendar.js":   ui.CalendarJS(),
+		"gallery.js":    GalleryJS(),
+		"gallery.css":   GalleryCSS(),
 	}
 	for _, theme := range ui.ThemeNames() {
 		if css, ok := ui.ThemeCSS(theme); ok {

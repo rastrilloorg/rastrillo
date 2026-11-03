@@ -2,7 +2,8 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import vm from "node:vm";
 
-const source = readFileSync(new URL("./shell.js", import.meta.url), "utf8");
+const observer = process.argv[2] === "observer";
+const source = readFileSync(observer ? 0 : new URL("./shell.js", import.meta.url), "utf8");
 const listeners = {};
 const document = {
   querySelector: () => null,
@@ -23,7 +24,8 @@ start();
 const unhandled = [];
 process.on("unhandledRejection", reason => { unhandled.push(reason); });
 const turn = () => new Promise(resolve => setImmediate(resolve));
-for (const event of ["startup", "pagereveal", "pageswap"]) {
+const events = observer ? ["startup", "pagereveal"] : ["startup", "pagereveal", "pageswap"];
+for (const event of events) {
   for (const promise of ["ready", "finished", "updateCallbackDone"]) {
     const skips = ["AbortError", "InvalidStateError", "TimeoutError"];
     const reasons = skips.map(name => new DOMException("No transition", name));

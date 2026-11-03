@@ -22,7 +22,7 @@ import (
 var names = []string{
 	"tokens.css", "theme.css", "shell.css",
 	"rastrillo.js", "busy.js", "live.js", "light.js", "anchor.js",
-	"shell.js", "select.js", "datetime.js", "calendar.js",
+	"shell.js", "transition.js", "select.js", "datetime.js", "calendar.js",
 }
 
 // componentScripts are the scripts a page loads only when a field on

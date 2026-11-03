@@ -8879,8 +8879,8 @@ columns internal/designsystem/page.go fc4875c5d5a3 1
 columns internal/designsystem/page.go fc67331745a3 1
 columns internal/designsystem/page.go fe44bdea88a0 1
 columns internal/designsystem/page.go ffcdcfbc1ea4 1
-file internal/designsystem/page.go - 3233
-func internal/designsystem/page.go buildAssets 66
+file internal/designsystem/page.go - 3229
+func internal/designsystem/page.go buildAssets 62
 func internal/designsystem/page.go buildFamilies 96
 func internal/designsystem/page.go previewDocStyled 49
 func internal/designsystem/page.go renderDemo 54

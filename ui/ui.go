@@ -447,9 +447,9 @@ func CalendarJS() []byte { return calendarJS }
 // navigation. It types the slide between pages, makes the back control
 // reuse history when it can prove what is behind it, and returns focus
 // to the section the reader left. Delivered once by rastrillo new like
-// ShimJS and app-owned from then on. Every layout links it so incoming
-// transitions skipped before pagereveal are observed too. Without it,
-// the index and the back control remain ordinary pages and links.
+// ShimJS and app-owned from then on. Only the sidebar and console
+// layouts link it, and it is optional there: without it the index and
+// the back control are ordinary pages and links.
 func ShellJS() []byte { return shellJS }
 
 // ShellCSS returns shell.css: the slide between the index and a page on

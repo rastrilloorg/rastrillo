@@ -27,9 +27,8 @@
       #fragment names.
 
    Sidebar and console use defer blocking="render" for focus and
-   direction after parsing. Other layouts load it before styles:
-   opting out skips the transition before pagereveal,
-   leaving that event with no transition to observe. */
+   direction after parsing. Other layouts use transition.js before
+   styles so incoming transitions skipped before pagereveal are observed. */
 (function () {
   "use strict";
 
