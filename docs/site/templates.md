@@ -1242,7 +1242,11 @@ pages, an index and an Overview section, to show the shape.
 
 An app on `topbar`, `column` or `stage` can delete `shell.js` and
 `shell.css`. Add both to `vendoredIsMine` in `vendored_test.go`, or
-that test fails on the missing files.
+that test fails on the missing files. These apps need `transition.js`
+before the first stylesheet to handle skipped page transitions.
+Sidebar and console apps can delete `transition.js`. Add
+`"transition.js": true` to `vendoredIsMine` in `vendored_test.go` so the
+test allows the missing file.
 
 ### Upgrading: the topbar's tail is a level deeper
 

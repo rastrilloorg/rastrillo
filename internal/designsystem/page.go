@@ -2732,7 +2732,7 @@ func buildAssets(mount, theme, locale string) assetsView {
 		"Keeps a dropdown's menu on the screen in browsers without CSS anchor positioning. It does nothing where they have it: delete it once every browser you support does.")
 	add(&out, "shell.js", ui.ShellJS(),
 		"Phone navigation for the sidebar and console shells: the slide between pages, Back that reuses history, and focus returned to the section you left. Deletable on its own.")
-	add(&out, "transition.js", ui.TransitionJS(), "")
+	add(&out, "transition.js", ui.TransitionJS(), transitionAssetBlurb)
 	add(&out, "select.js", ui.SelectJS(),
 		"field-select's searchable combobox. Inert until a select opts in with data-rst-select, and deletable on its own.")
 	add(&out, "datetime.js", ui.DatetimeJS(),

@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width">
-{{/* An incoming transition can be skipped before pagereveal on pages
-     without shell.css. Observe it before styles can opt it out. */}}
+{{/* The browser rejects a skipped incoming transition before
+     pagereveal; a deferred observer misses it. */}}
 <script src="{{path $ (asset "static/transition.js")}}"></script>
 <title>{{block "title" .}}Hello{{end}}</title>
 <link rel="stylesheet" href="{{path $ (asset "static/tokens.css")}}">

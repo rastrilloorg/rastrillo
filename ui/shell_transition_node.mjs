@@ -20,11 +20,13 @@ const start = () => vm.runInNewContext(source, {
 });
 
 start();
+assert.equal(typeof listeners.pageswap, "function",
+  "Observe outgoing transitions when an app opts in with its own CSS");
 
 const unhandled = [];
 process.on("unhandledRejection", reason => { unhandled.push(reason); });
 const turn = () => new Promise(resolve => setImmediate(resolve));
-const events = observer ? ["startup", "pagereveal"] : ["startup", "pagereveal", "pageswap"];
+const events = ["startup", "pagereveal", "pageswap"];
 for (const event of events) {
   for (const promise of ["ready", "finished", "updateCallbackDone"]) {
     const skips = ["AbortError", "InvalidStateError", "TimeoutError"];

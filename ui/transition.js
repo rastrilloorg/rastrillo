@@ -14,6 +14,9 @@
     });
   }
   observe(document.activeViewTransition);
+  window.addEventListener("pageswap", function (event) {
+    observe(event.viewTransition);
+  });
   window.addEventListener("pagereveal", function (event) {
     observe(event.viewTransition);
   });
