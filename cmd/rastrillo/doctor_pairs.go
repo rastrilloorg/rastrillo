@@ -87,7 +87,7 @@ func (findings *report) leavesForItsPair(
 // hand, pageScripts would load those scripts a second time. It is
 // user-facing copy, so a change to it goes through the copy review.
 const doctorFiestaAdvisory = "layout loads no fiesta.js: add " +
-	`<script defer src="{{asset "static/fiesta.js"}}"></script>` +
+	`<script defer src="{{path $ (asset "static/fiesta.js")}}"></script>` +
 	" right after the layout's rastrillo.js tag (CHANGELOG)"
 
 var rangesPageScripts = regexp.MustCompile(`\{\{-?\s*range\s+pageScripts\b`)

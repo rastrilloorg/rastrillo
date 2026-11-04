@@ -1,0 +1,140 @@
+//go:build browser
+
+// The upgraded app's own drive, copied in by rastrillo's
+// internal/scaffoldcheck after doctor --fix and the layout line it
+// names. A menu closes on Escape only if fiesta.js runs, at the root
+// and under a base path, where a script URL the line forgot to prefix
+// asks the hub and fails the rig on its 404.
+package upgradedapptest
+
+import (
+	"context"
+	"io"
+	"log/slog"
+	"net/http"
+	"path/filepath"
+	"strings"
+	"testing"
+	"time"
+
+	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/basepath"
+	"amadan.net/rastrillo/rastrillo/db"
+	"amadan.net/rastrillo/rastrillo/harness"
+	"amadan.net/rastrillo/rastrillo/live"
+	"github.com/chromedp/chromedp"
+	"github.com/chromedp/chromedp/kb"
+
+	"upgradedapp/internal/upgradedapp"
+)
+
+func TestAMenuClosesOnEscape(t *testing.T) {
+	rig := harness.New(t, func(origin string) http.Handler {
+		mux, _ := upgraded(t, origin)
+		return mux
+	})
+	escapeCloses(t, rig, rig.Origin+"/")
+}
+
+func TestAMenuClosesOnEscapeUnderABasePath(t *testing.T) {
+	rig := harness.New(t, func(origin string) http.Handler {
+		tenant := underBase(t, origin)
+		return http.HandlerFunc(func(
+			writer http.ResponseWriter, request *http.Request,
+		) {
+			path := request.URL.Path
+			if path == "/acme" || strings.HasPrefix(path, "/acme/") {
+				tenant.ServeHTTP(writer, request)
+				return
+			}
+			http.NotFound(writer, request)
+		})
+	})
+	escapeCloses(t, rig, rig.Origin+"/acme/")
+}
+
+func upgraded(t *testing.T, origin string) (*http.ServeMux, *live.Hub) {
+	t.Helper()
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	database, err := db.Open(filepath.Join(t.TempDir(), "app.db"), logger)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { database.Close() })
+	mux, hub, err := upgradedapp.New(database, origin, logger)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return mux, hub
+}
+
+// underBase wires the app as main.go does with a base path set.
+func underBase(t *testing.T, origin string) http.Handler {
+	t.Helper()
+	mux, hub := upgraded(t, origin)
+	options := rastrillo.Options{
+		Logger: slog.New(slog.NewTextHandler(io.Discard, nil)),
+		BasePath: basepath.Config{Origin: origin, Slug: "acme",
+			DirectHost: basepath.RedirectDirect},
+	}
+	upgradedapp.Configure(&options, mux, hub, time.Now())
+	handler, closeAll, err := rastrillo.Handler(options)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { closeAll() })
+	return handler
+}
+
+func escapeCloses(t *testing.T, rig *harness.Rig, page string) {
+	const menu = "details[rst-scheme]"
+	rig.Run(chromedp.Navigate(page),
+		chromedp.Click(chromedp.CSS(menu+" > summary")),
+		chromedp.WaitVisible(chromedp.CSS(menu+"[open] button")),
+		chromedp.Focus(chromedp.CSS(menu+" button")),
+		chromedp.KeyEvent(kb.Escape))
+	ctx, cancel := context.WithTimeout(rig.Context(), 10*time.Second)
+	defer cancel()
+	closed := chromedp.WaitNotPresent(chromedp.CSS(menu + "[open]"))
+	if err := chromedp.Do(ctx, closed); err != nil {
+		t.Fatalf("the menu is still open after Escape: %v", err)
+	}
+	if !harness.Evaluate[bool](rig, "document.activeElement === "+
+		"document.querySelector('"+menu+" > summary')") {
+		t.Error("Escape closed the menu but left focus off its summary")
+	}
+	loads := harness.Evaluate[map[string]int](rig, scriptLoads)
+	if loads["fiesta.js"] != 1 {
+		t.Errorf("fiesta.js loaded %d times, want once", loads["fiesta.js"])
+	}
+	for script, count := range loads {
+		if count != 1 {
+			t.Errorf("%s loaded %d times, want once", script, count)
+		}
+	}
+}
+
+// scriptLoads counts each script the page runs or fetches, by its name
+// without the fingerprint the app's asset URLs carry: a second tag for
+// the same URL is fetched once but runs twice, so tags count too.
+const scriptLoads = `(() => {
+	const name = (url) => new URL(url, location.href).pathname
+		.split("/").pop().replace(/\.[0-9a-f]{8,}\.js$/, ".js");
+	const count = (urls) => {
+		const counts = {};
+		for (const url of urls) {
+			if (name(url).endsWith(".js")) {
+				counts[name(url)] = (counts[name(url)] || 0) + 1;
+			}
+		}
+		return counts;
+	};
+	const tags = count([...document.scripts].filter((script) =>
+		script.src).map((script) => script.src));
+	const fetches = count(performance.getEntriesByType("resource")
+		.map((entry) => entry.name));
+	for (const [script, times] of Object.entries(fetches)) {
+		tags[script] = Math.max(tags[script] || 0, times);
+	}
+	return tags;
+})()`

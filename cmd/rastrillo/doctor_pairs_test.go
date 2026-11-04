@@ -90,8 +90,8 @@ func holds(t *testing.T, static, name string, want []byte) {
 	}
 }
 
-const fiestaTag = `<script defer src="{{asset "static/fiesta.js"}}">` +
-	`</script>`
+const fiestaTag = `<script defer ` +
+	`src="{{path $ (asset "static/fiesta.js")}}"></script>`
 
 // The first --fix on an old app is the run that slims rastrillo.js, so
 // it is the run that names the layout line fiesta.js needs; once the

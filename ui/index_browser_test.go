@@ -35,8 +35,8 @@ func legacyLayout(t *testing.T, name string) []byte {
 		t.Fatalf("testdata/legacy/%s.html no longer loads rastrillo.js "+
 			"as %s", name, shim)
 	}
-	fiesta := `<script defer src="{{asset "static/fiesta.js"}}"></script>`
-	return bytes.Replace(b, []byte(shim), []byte(shim+fiesta), 1)
+	fiesta := `<script defer src="{{path $ (asset "static/fiesta.js")}}">`
+	return bytes.Replace(b, []byte(shim), []byte(shim+fiesta+"</script>"), 1)
 }
 
 // shellLayoutPage renders a layout's source with a nav of three
