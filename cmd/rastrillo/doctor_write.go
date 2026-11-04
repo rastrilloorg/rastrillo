@@ -63,16 +63,16 @@ func (findings *report) replaceTogether(group []vendoredFile) error {
 		}
 		staged = append(staged, path)
 	}
-	var moved []vendoredFile
+	var swaps []swap
 	for index, file := range group {
-		if err := findings.swapIn(staged[index], file.path); err != nil {
-			findings.putBack(moved)
-			return pairError(group, err)
+		done, err := findings.swapIn(staged[index], file.path)
+		swaps = append(swaps, done)
+		if err != nil {
+			return findings.rollBack(group, swaps, err)
 		}
-		moved = append(moved, file)
 	}
-	for _, file := range moved {
-		os.Remove(backupOf(file.path))
+	for _, done := range swaps {
+		os.Remove(done.backup)
 	}
 	return nil
 }
@@ -109,33 +109,74 @@ func stage(file vendoredFile) (string, error) {
 	return temporary.Name(), nil
 }
 
-// swapIn keeps the file it replaces as a backup until the whole group
-// is in, which is what putBack restores from.
-func (findings *report) swapIn(staged, target string) error {
-	_, err := os.Stat(target)
-	existed := err == nil
-	if existed {
-		if err := findings.move(target, backupOf(target)); err != nil {
-			return err
-		}
-	}
-	if err := findings.move(staged, target); err != nil {
-		if existed {
-			findings.move(backupOf(target), target)
-		}
-		return err
-	}
-	return nil
+// swap is what one member's move changed. backup holds the original
+// until the whole group is in; it is empty when there was no original,
+// and then placed says whether the new file now stands where nothing
+// stood, which a rollback removes rather than restoring anything.
+type swap struct {
+	target string
+	backup string
+	placed bool
 }
 
-func (findings *report) putBack(moved []vendoredFile) {
-	for _, file := range moved {
-		if _, err := os.Stat(backupOf(file.path)); err == nil {
-			findings.move(backupOf(file.path), file.path)
-		} else {
-			os.Remove(file.path)
+// swapIn moves the original aside to a backup name no other file has,
+// so neither a file the app keeps nor an earlier run's leftover can be
+// overwritten, deleted or restored in its place.
+func (findings *report) swapIn(staged, target string) (swap, error) {
+	done := swap{target: target}
+	if _, err := os.Lstat(target); err == nil {
+		backup, err := reserveBackup(target)
+		if err != nil {
+			return done, err
+		}
+		if err := findings.move(target, backup); err != nil {
+			os.Remove(backup)
+			return done, err
+		}
+		done.backup = backup
+	}
+	if err := findings.move(staged, target); err != nil {
+		return done, err
+	}
+	done.placed = true
+	return done, nil
+}
+
+func reserveBackup(target string) (string, error) {
+	reserved, err := os.CreateTemp(filepath.Dir(target),
+		"."+filepath.Base(target)+".old-*")
+	if err != nil {
+		return "", err
+	}
+	reserved.Close()
+	return reserved.Name(), nil
+}
+
+// rollBack puts every original back. A restore that fails keeps its
+// backup, and the error names it, because a message saying the files
+// are as they were would then send nobody to look for them.
+func (findings *report) rollBack(
+	group []vendoredFile, swaps []swap, cause error,
+) error {
+	var failures []error
+	var kept []string
+	for _, done := range swaps {
+		switch {
+		case done.backup != "":
+			if err := findings.move(done.backup, done.target); err != nil {
+				failures = append(failures, err)
+				kept = append(kept, rel(findings.dir, done.backup))
+			}
+		case done.placed:
+			if err := os.Remove(done.target); err != nil {
+				failures = append(failures, err)
+			}
 		}
 	}
+	if len(failures) == 0 {
+		return pairError(group, cause)
+	}
+	return restoreError(group, cause, errors.Join(failures...), kept)
 }
 
 func (findings *report) move(from, to string) error {
@@ -143,11 +184,6 @@ func (findings *report) move(from, to string) error {
 		return findings.rename(from, to)
 	}
 	return os.Rename(from, to)
-}
-
-func backupOf(path string) string {
-	return filepath.Join(filepath.Dir(path),
-		"."+filepath.Base(path)+".old")
 }
 
 // pairError names every file in the group, so the person knows which
@@ -162,4 +198,21 @@ func pairError(group []vendoredFile, err error) error {
 	}
 	return fmt.Errorf("write %s: %w; both are as they were",
 		strings.Join(names, " and "), err)
+}
+
+func restoreError(
+	group []vendoredFile, cause, restore error, kept []string,
+) error {
+	var names []string
+	for _, file := range group {
+		names = append(names, file.name)
+	}
+	written := strings.Join(names, " and ")
+	if len(kept) == 0 {
+		return fmt.Errorf("write %s: %w; restoring failed (%v)",
+			written, cause, restore)
+	}
+	return fmt.Errorf("write %s: %w; restoring failed (%v): "+
+		"the originals are at %s", written, cause, restore,
+		strings.Join(kept, " and "))
 }
