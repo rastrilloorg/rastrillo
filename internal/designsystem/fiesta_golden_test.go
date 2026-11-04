@@ -45,26 +45,64 @@ var differsFromFiesta = map[string]string{}
 func TestEveryPartialMatchesItsFiestaExample(t *testing.T) {
 	seed := newSeedRender(t)
 	sources := fiesta.Sources()
-	compared := map[string]bool{}
-	states := 0
+	compared := map[string]string{}
 	for _, path := range slices.Sorted(maps.Keys(sources)) {
 		partial, ours, ok := seed.state(path, sources[path])
 		if !ok {
 			continue
 		}
-		compared[partial] = true
-		states++
+		compared[path] = partial
 		holdToFiesta(t, path, partial, ours)
 	}
 	// Over a hundred states, as Fiesta's own coverage gates ask, so an
 	// empty or misread record cannot pass.
-	if states < 100 {
-		t.Fatalf("compared %d example states; Fiesta seeded over 130", states)
+	if len(compared) < 100 {
+		t.Fatalf("compared %d example states; Fiesta seeded over 130",
+			len(compared))
+	}
+	for _, path := range mustCompare(t, sources) {
+		if _, ok := compared[path]; !ok {
+			t.Errorf("Fiesta's %s went uncompared", path)
+		}
+	}
+	everyPartialFileCompared(t, sources, compared)
+}
+
+// mustCompare is every example path the test's categories cover: each
+// state seeded from a partial or the sign-in screen, and by name the two
+// a partial's own name would not catch, since the menu idiom is no
+// partial's and the scheme menu has another state.
+func mustCompare(t *testing.T, sources map[string]fiesta.Source) []string {
+	t.Helper()
+	paths := map[string]bool{menuIdiom: true, standalone: true}
+	for path := range paths {
+		if _, ok := sources[path]; !ok {
+			t.Errorf("Fiesta's record has no %s", path)
+		}
+	}
+	for path, source := range sources {
+		if source.Kind == "partial" || source.Kind == "screen" {
+			paths[path] = true
+		}
+	}
+	return slices.Sorted(maps.Keys(paths))
+}
+
+// everyPartialFileCompared fails for a template in ui/partials that an
+// example was seeded from and no comparison rendered.
+func everyPartialFileCompared(
+	t *testing.T, sources map[string]fiesta.Source,
+	compared map[string]string,
+) {
+	t.Helper()
+	renderedBy := map[string]bool{}
+	for _, partial := range compared {
+		renderedBy[partial] = true
 	}
 	seeded := seededPartials(sources)
 	for file, defined := range partialFiles(t) {
 		for _, name := range defined {
-			if seeded[name] && !compared[name] {
+			if seeded[name] && !renderedBy[name] {
 				t.Errorf("%s has a Fiesta example, but %s went uncompared",
 					file, name)
 			}
@@ -72,8 +110,6 @@ func TestEveryPartialMatchesItsFiestaExample(t *testing.T) {
 	}
 }
 
-// holdToFiesta fails when a state differs from its example and has no
-// exception, or has one and no longer differs.
 func holdToFiesta(t *testing.T, path, partial, ours string) {
 	t.Helper()
 	reason, excepted := differsFromFiesta[path]
@@ -214,8 +250,9 @@ func pictures(markup string) string {
 	})
 }
 
-// firstDifference is empty when the two are equal, and otherwise the
-// first line where they part, with the bytes around where they do.
+// firstDifference shows where the two part rather than both whole: a
+// partial runs to hundreds of bytes on a line, and the sign-in screens
+// to dozens of lines.
 func firstDifference(ours, theirs string) string {
 	if ours == theirs {
 		return ""
@@ -246,7 +283,6 @@ func lineAt(lines []string, number int) string {
 	return "(no line)"
 }
 
-// around is up to sixty bytes either side of at.
 func around(line string, at int) string {
 	start, end := max(at-60, 0), min(at+60, len(line))
 	return fmt.Sprintf("%q", line[start:end])
