@@ -15,9 +15,12 @@ import (
 	"bytes"
 	"fmt"
 	"go/format"
+	"regexp"
 	"sort"
 	"strings"
 	"text/template"
+
+	"amadan.net/rastrillo/fiesta"
 )
 
 // Delivery is how an app's icons reach the browser.
@@ -126,6 +129,29 @@ func LucideName(slug string) string {
 	return rest[:j]
 }
 
+// fiestaGlyphs is the Lucide set: Fiesta's drawing and grid for each
+// slug, and the element lucide-static resolves for each Lucide name.
+// The drawings are a pinned Fiesta release's, so a slug Fiesta does not
+// ship is a broken build, and the panic says which.
+func fiestaGlyphs(lucideNames map[string]string) map[string]glyph {
+	viewBox := regexp.MustCompile(`viewBox="([^"]*)"`)
+	out := map[string]glyph{}
+	for slug, name := range lucideNames {
+		svg, ok := fiesta.Icon(slug)
+		if !ok {
+			panic("iconsets: Fiesta ships no icon " + slug)
+		}
+		_, drawing, _ := strings.Cut(string(svg), ">")
+		out[slug] = glyph{
+			ViewBox: viewBox.FindStringSubmatch(string(svg))[1],
+			Body:    strings.TrimSuffix(drawing, "</svg>"),
+			Element: `<i class="icon icon-` + name +
+				`" aria-hidden="true"></i>`,
+		}
+	}
+	return out
+}
+
 // Names lists the sets an app can choose, sorted.
 func Names() []string {
 	out := make([]string, 0, len(sets))
@@ -164,20 +190,20 @@ var sets = map[string]set{
 		// the icon sizes from the app's own .icon rule and tracks its text.
 		openTag: `<svg class="icon" fill="none" stroke="currentColor" stroke-width="2" ` +
 			`stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"`,
-		glyphs: map[string]glyph{
-			"alert-triangle": {ViewBox: "0 0 24 24", Body: `<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/>`, Element: `<i class="icon icon-triangle-alert" aria-hidden="true"></i>`},
-			"check":          {ViewBox: "0 0 24 24", Body: `<path d="M20 6 9 17l-5-5"/>`, Element: `<i class="icon icon-check" aria-hidden="true"></i>`},
-			"check-circle":   {ViewBox: "0 0 24 24", Body: `<circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>`, Element: `<i class="icon icon-circle-check" aria-hidden="true"></i>`},
-			"chevron-down":   {ViewBox: "0 0 24 24", Body: `<path d="m6 9 6 6 6-6"/>`, Element: `<i class="icon icon-chevron-down" aria-hidden="true"></i>`},
-			"help-circle":    {ViewBox: "0 0 24 24", Body: `<circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/>`, Element: `<i class="icon icon-circle-help" aria-hidden="true"></i>`},
-			"info":           {ViewBox: "0 0 24 24", Body: `<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>`, Element: `<i class="icon icon-info" aria-hidden="true"></i>`},
-			"kebab":          {ViewBox: "0 0 24 24", Body: `<circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/>`, Element: `<i class="icon icon-ellipsis-vertical" aria-hidden="true"></i>`},
-			"menu":           {ViewBox: "0 0 24 24", Body: `<path d="M4 12h16"/><path d="M4 6h16"/><path d="M4 18h16"/>`, Element: `<i class="icon icon-menu" aria-hidden="true"></i>`},
-			"plus":           {ViewBox: "0 0 24 24", Body: `<path d="M5 12h14"/><path d="M12 5v14"/>`, Element: `<i class="icon icon-plus" aria-hidden="true"></i>`},
-			"search":         {ViewBox: "0 0 24 24", Body: `<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>`, Element: `<i class="icon icon-search" aria-hidden="true"></i>`},
-			"x":              {ViewBox: "0 0 24 24", Body: `<path d="M18 6 6 18"/><path d="m6 6 12 12"/>`, Element: `<i class="icon icon-x" aria-hidden="true"></i>`},
-			"x-circle":       {ViewBox: "0 0 24 24", Body: `<circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/>`, Element: `<i class="icon icon-circle-x" aria-hidden="true"></i>`},
-		},
+		glyphs: fiestaGlyphs(map[string]string{
+			"alert-triangle": "triangle-alert",
+			"check":          "check",
+			"check-circle":   "circle-check",
+			"chevron-down":   "chevron-down",
+			"help-circle":    "circle-help",
+			"info":           "info",
+			"kebab":          "ellipsis-vertical",
+			"menu":           "menu",
+			"plus":           "plus",
+			"search":         "search",
+			"x":              "x",
+			"x-circle":       "circle-x",
+		}),
 		// lucide-static's webfont binds via [class^="icon-"], [class*=" icon-"],
 		// so "icon icon-search" matches on the second selector and still picks
 		// up the app's own .icon sizing rule.
