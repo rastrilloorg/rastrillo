@@ -100,7 +100,10 @@ func goEnvironment() []string {
 // with an empty module cache and no proxy, so it cannot tidy the app or
 // compile its templates either, and the files are new's own whatever
 // this machine's cache holds: once a release reached the cache, new
-// tidied go.mod and wrote go.sum and the compiled templates.
+// tidied go.mod and wrote go.sum and the compiled templates. GOPRIVATE
+// and GONOPROXY are cleared because a private module is fetched from
+// its own server past GOPROXY=off, which tidied the app again once the
+// release new pins was published.
 func newApp(t *testing.T, name string, flags ...string) string {
 	t.Helper()
 	parent := t.TempDir()
@@ -108,6 +111,7 @@ func newApp(t *testing.T, name string, flags ...string) string {
 	command := exec.Command(rastrilloBinary, arguments...)
 	command.Dir = parent
 	command.Env = append(goEnvironment(), "GOPROXY=off",
+		"GOPRIVATE=", "GONOPROXY=",
 		"GOFLAGS=-mod=mod -buildvcs=false -modcacherw",
 		"GOMODCACHE="+t.TempDir())
 	if output, err := command.CombinedOutput(); err != nil {
