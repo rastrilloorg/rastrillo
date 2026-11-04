@@ -205,3 +205,16 @@ func pageSliceWith(t *testing.T, body string, funcs template.FuncMap) string {
 	}
 	return string(slice)
 }
+
+// A template that calls itself while it writes an attribute's name
+// enters with a longer name each time; the walk still ends, and keeps
+// every class, since the name is written by a template.
+func TestARecursiveNameEndsAndKeepsEveryClass(t *testing.T) {
+	body := content(`<i rst-mono hidden></i>`+
+		`<div data-{{template "suffix" .}}></div>`) +
+		`{{define "suffix"}}x{{if .}}{{template "suffix" .Next}}{{end}}` +
+		`{{end}}`
+	if !classSelector("rst-mono").MatchString(pageSlice(t, body)) {
+		t.Errorf("the slice drops .rst-mono")
+	}
+}

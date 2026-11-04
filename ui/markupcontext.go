@@ -142,10 +142,30 @@ func (context *markupContext) readTag(character byte) {
 			context.state, context.attribute = inTag, ""
 		}
 	case context.state == inName:
-		context.attribute += string(lower(character))
+		context.attribute = nameSoFar(context.attribute, character)
 	default:
-		context.state, context.attribute = inName, string(lower(character))
+		context.state = inName
+		context.attribute = nameSoFar("", character)
 	}
+}
+
+// otherName is any attribute name that is not class or data-rst-class
+// and cannot grow into one.
+const otherName = "-other"
+
+// nameSoFar is an attribute's name with character added, kept only as
+// far as it matters: while it is, or can still become, class or
+// data-rst-class. Every other name is otherName, so the contexts a
+// template can be entered in are few, even when it calls itself while
+// writing a name.
+func nameSoFar(name string, character byte) string {
+	name += string(lower(character))
+	for attribute := range classAttributes {
+		if strings.HasPrefix(attribute, name) {
+			return name
+		}
+	}
+	return otherName
 }
 
 func (context *markupContext) closeTag() {
@@ -226,10 +246,14 @@ type walkStart struct {
 
 // call follows the template named template from context and returns
 // where it ends. A call met again while it is being followed, as a
-// template that calls itself, is taken to end where it began.
+// template that calls itself, is taken to end where it began. Once the
+// page may write a class, where anything ends no longer matters.
 func (walk *markupWalk) call(
 	template string, context markupContext,
 ) markupContext {
+	if walk.writeClass {
+		return context
+	}
 	start := walkStart{template, context}
 	if end, ok := walk.ends[start]; ok {
 		return end
@@ -247,6 +271,9 @@ func (walk *markupWalk) list(
 		return context
 	}
 	for _, node := range list.Nodes {
+		if walk.writeClass {
+			return context
+		}
 		context = walk.node(node, context)
 	}
 	return context
