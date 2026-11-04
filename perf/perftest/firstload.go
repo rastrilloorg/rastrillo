@@ -48,23 +48,20 @@ type firstLoadBudget struct {
 // pass the whole tokens.css, so a live page's limit is the ceiling:
 // every other file's reference, plus 10%, rounded up the same way. A
 // limit measured on the framework's own few screens failed the first
-// app with an admin area (the chat tour's room page, 2026-11-03). The
-// references include fiesta.js, which pages start loading in the next
-// change, so 2,200 bytes of the ceiling's rise to 36,200 are headroom
-// for it rather than measured page growth.
+// app with an admin area (the chat tour's room page, 2026-11-03).
 var frameworkBudget = firstLoadBudget{
 	shells: map[string]int{
 		"column": 16000, "topbar": 16000,
 		"sidebar": 16000, "console": 16000, "stage": 16000,
 	},
 	live: map[string]int{
-		"column": 36200, "topbar": 36200,
-		"sidebar": 36200, "console": 36200, "stage": 36200,
+		"column": 34700, "topbar": 34700,
+		"sidebar": 34700, "console": 34700, "stage": 34700,
 	},
 	unsliced: 40000,
 	references: map[string]int{
 		"tokens.css": 21000, "theme.css": 1800, "shell.css": 500,
-		"rastrillo.js": 2400, "fiesta.js": 2000, "busy.js": 1200,
+		"rastrillo.js": 1000, "fiesta.js": 2000, "busy.js": 1200,
 		"live.js": 4600, "light.js": 1900, "anchor.js": 600,
 		"shell.js": 1100, "transition.js": 400, "copy.js": 1100,
 		"select.js": 7600, "datetime.js": 10200, "calendar.js": 2800,
