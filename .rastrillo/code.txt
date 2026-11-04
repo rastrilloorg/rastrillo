@@ -11592,7 +11592,6 @@ columns internal/generate/scratch/scratch.go 074c5b2001d8 1
 columns internal/generate/scratch/scratch.go 2532fb914130 1
 columns internal/generate/scratch/scratch.go 2c111a29d180 1
 columns internal/generate/scratch/scratch.go 2f6daa98d148 1
-columns internal/generate/scratch/scratch.go 9c8783e8eb7e 1
 columns internal/generate/scratch/scratch.go c35e2ea85887 1
 columns internal/generate/scratch/scratch.go dea10666302a 1
 columns internal/generate/scratch/scratch.go f7cedb0fa4f0 1
