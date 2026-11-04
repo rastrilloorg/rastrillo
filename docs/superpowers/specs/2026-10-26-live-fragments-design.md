@@ -391,7 +391,9 @@ request is filed:
 - Where the stream lives, and how a route opts in, is the platform's
   call in #432. Rastrillo puts its stream wherever that says.
 
-**Until #432 ships:** live streams stay off on hibernating routes.
+**Until #432 ships** (it shipped in platform v0.33.7; see
+`2026-11-04-live-on-hibernating-routes-design.md`): live streams stay
+off on hibernating routes.
 Pages there are static, as today; live updates work on always-on
 routes. How Rastrillo knows which kind of route it is on is part of the
 #432 contract; until the platform supplies a signal, the app turns live

@@ -27,7 +27,7 @@ An app made with `rastrillo new` is already wired for live pages.
 `Router` in `app.go` builds the hub, with no topics yet. The stream is
 mounted at `/live`, the hub's middleware runs first, every page is drawn through
 `pages.Render`, and the layout has the head tag and the notice. A page
-with no region opens no stream, so an app that hibernates still sleeps.
+with no region opens no stream.
 
 What is left is the part only your app knows. Here a list of messages
 updates in every open tab when someone posts one.
@@ -282,11 +282,26 @@ unless the notice is already showing a message.
 
 ## On CARLOS
 
-Do not turn live streams on for a route that hibernates. An open
-stream keeps the instance awake. Until the platform can hold the
-stream for you (carlos/platform#432), live pages belong on routes
-that are always on.
+Live pages work on every route, including one that hibernates. The
+script asks the CARLOS edge to hold its stream, with `carlos_hold=1` in
+the stream's URL. While the instance sleeps, the edge keeps the page's
+connection open. The stream never wakes the instance and never keeps
+it awake. Off CARLOS the marker does nothing.
 
-For a route that hibernates, build no hub. A nil hub is safe
-everywhere: `Attrs` and `Head` write nothing, `Notify` does nothing,
-and the page is static, as it was before.
+When something else wakes the instance, the edge reconnects the stream.
+The server has restarted while it slept, so each open page fetches its
+live regions once. After that, only changes cost requests.
+
+An app made before this change sends its stream without the marker, so
+an open page keeps a hibernating instance awake. Run `rastrillo doctor
+--fix` to copy the new `live.js`.
+
+A few things to keep in mind:
+
+- Keep `Lifetime` at 30 seconds or more. The edge closes a held stream
+  after five shorter connections in a row.
+- A time you passed to `NotifyAt` does not fire while the instance
+  sleeps. The next wake fetches every open page's regions anyway.
+- If the stream route redirects a signed-out viewer, the edge ends the
+  stream instead of following the redirect. The script tries again
+  later, as it does for any stream that ends.

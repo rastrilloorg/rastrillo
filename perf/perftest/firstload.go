@@ -61,7 +61,7 @@ var frameworkBudget = firstLoadBudget{
 	unsliced: 40000,
 	references: map[string]int{
 		"tokens.css": 20100, "theme.css": 1800, "shell.css": 500,
-		"rastrillo.js": 2400, "busy.js": 1200, "live.js": 4600,
+		"rastrillo.js": 2400, "busy.js": 1200, "live.js": 4700,
 		"light.js": 1900, "anchor.js": 600, "shell.js": 1100,
 		"transition.js": 400,
 		"select.js":     7300, "datetime.js": 9500, "calendar.js": 2800,

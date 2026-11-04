@@ -61,7 +61,9 @@ A zero value takes the default.
 
 `Lifetime` is how a revoked session loses its stream. The connection
 ends cleanly, the page reconnects, and your auth runs again. Keep it
-short enough that you can live with the gap.
+short enough that you can live with the gap. On CARLOS, keep it at 30
+seconds or more: the edge holding the stream closes it after five
+shorter connections in a row.
 
 `WriteDeadline` is re-armed on every write. It is what stops a client
 that has stopped reading from holding a stream, or shutdown, open.

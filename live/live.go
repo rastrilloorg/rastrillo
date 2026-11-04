@@ -79,7 +79,9 @@ type Config struct {
 	// MaxStreams caps open streams per process (default 1000).
 	MaxStreams int
 	// Lifetime bounds one connection so a revoked session loses its
-	// stream at the next reconnect (default 5 minutes).
+	// stream at the next reconnect (default 5 minutes). Keep it at 30
+	// seconds or more: a CARLOS edge holding the stream closes it
+	// after five shorter connections in a row.
 	Lifetime time.Duration
 	// Heartbeat is the quiet-stream comment interval (default 15s).
 	Heartbeat time.Duration

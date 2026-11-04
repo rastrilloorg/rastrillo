@@ -129,6 +129,9 @@ function page({ regions = [], meta = { content: "/live", "data-paused": "Paused"
     },
     // pending lists the delays of the timers not yet run or cleared.
     pending: () => n.timers.filter((t) => !t.done).map((t) => t.ms),
+    // retries is pending without the 30s timer an open stream holds
+    // before it resets the reconnect backoff.
+    retries: () => n.timers.filter((t) => !t.done && t.ms !== 30000).map((t) => t.ms),
     // run runs every pending timer with this delay, once.
     run: async (ms) => {
       for (const t of n.timers.filter((t) => !t.done && t.ms === ms)) { t.done = true; t.fn(); }
@@ -161,7 +164,8 @@ const scenarios = {
     return { url: p.latest() && p.latest().url };
   },
   // An error closes the stream at once; the next one waits for the
-  // backoff timer, which doubles to a minute and resets once open.
+  // backoff timer, which doubles to a minute and resets once a stream
+  // has stayed open thirty seconds.
   async reconnect() {
     const p = page({ regions: [region("list", "a@1")] });
     const first = p.latest();
@@ -179,7 +183,12 @@ const scenarios = {
     out.delays = delays;
     p.latest().fire("open");
     p.latest().fire("error");
-    out.afterOpen = p.pending().filter((ms) => ms !== 10000);
+    out.afterShortOpen = p.pending().filter((ms) => ms !== 10000);
+    await p.run(out.afterShortOpen[0]);
+    p.latest().fire("open");
+    await p.run(30000);
+    p.latest().fire("error");
+    out.afterSteadyOpen = p.pending().filter((ms) => ms !== 10000);
     return out;
   },
   // A change whose fetch keeps failing is retried after 1s, 2s and 4s,
@@ -193,12 +202,12 @@ const scenarios = {
     await p.settle();
     const out = { fetches: [p.n.fetches.length], headers: p.n.fetches[0] && p.n.fetches[0].headers, delays: [] };
     for (let i = 0; i < 3; i++) {
-      const d = p.pending();
+      const d = p.retries();
       out.delays.push(d[0]);
       await p.run(d[0]);
       out.fetches.push(p.n.fetches.length);
     }
-    out.pendingAfter = p.pending();
+    out.pendingAfter = p.retries();
     out.notice = p.notice.textContent;
     p.latest().fire("error");
     await p.run(1000);
@@ -307,7 +316,7 @@ const scenarios = {
     p.latest().fire("open");
     p.latest().fire("change", { data: "a@2", lastEventId: "b00t a@2" });
     await p.settle();
-    for (let i = 0; i < 3; i++) await p.run(p.pending()[0]);
+    for (let i = 0; i < 3; i++) await p.run(p.retries()[0]);
     const before = p.n.fetches.length;
     p.fireWin("pagehide");
     p.fireDoc("visibilitychange");

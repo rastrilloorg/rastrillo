@@ -24,8 +24,11 @@
                          own region (its closest data-live), regions R
                          and the notice, and swapping in the answer
 
-   One EventSource per page, GET PATH?boot=B&t=T@V&t=T@V, each topic at
-   the lowest version a region holds. On a change event, each region
+   One EventSource per page, GET PATH?carlos_hold=1&boot=B&t=T@V&t=T@V,
+   each topic at the lowest version a region holds. carlos_hold=1 asks
+   a CARLOS edge to hold the stream while the instance sleeps, so an
+   open page never keeps it awake; the edge strips it, and a server
+   elsewhere ignores it. On a change event, each region
    showing an older version is fetched with Rastrillo-Fragment: <id>,
    and replaced by the answer's element (listed in Rastrillo-Regions).
    A 204 with Rastrillo-Location navigates to the URL the answer came
@@ -36,7 +39,9 @@
    region only, since that holds what was just sent):
    - This file owns reconnecting: an error closes the EventSource, so
      the browser's own retry never runs beside this one, and it reopens
-     after 1s, doubling to a minute.
+     after 1s, doubling to a minute. Only a stream open 30s resets the
+     delay: one that ends as it opens (an edge over its cap) waits
+     longer each time.
    - One fetch in flight per region, one change queued behind it, and
      an answer, a 204 too, applies only if it is from the fetch the
      region started last, before any pagehide.
@@ -81,7 +86,7 @@
   var up = false; // src is open
   var following = ""; // the topics src follows
   var wait = 1000; // the next reconnect's delay
-  var reconnect = 0, down = 0, hidden = 0; // timers
+  var reconnect = 0, down = 0, hidden = 0, steady = 0; // timers
   var ctl = null; // aborts this run's fetches; null while stopped
   var seq = 0; // fetches started on this page
   var paused = false;
@@ -160,13 +165,13 @@
     if (!sub.topics) return;
     var path = meta.getAttribute("content") || "";
     var es = new EventSource(path + (path.indexOf("?") < 0 ? "?" : "&") +
-      "boot=" + encodeURIComponent(sub.boot) + sub.query);
+      "carlos_hold=1&boot=" + encodeURIComponent(sub.boot) + sub.query);
     src = es;
     following = sub.topics;
     es.addEventListener("open", function () {
       if (src !== es) return;
       up = true;
-      wait = 1000;
+      steady = setTimeout(function () { wait = 1000; }, 30000);
       clearTimeout(down);
       down = 0;
       unpause();
@@ -186,6 +191,8 @@
   function close() {
     if (src) { src.close(); src = null; }
     up = false;
+    clearTimeout(steady);
+    steady = 0;
   }
 
   function changed(e) {

@@ -54,6 +54,9 @@ func TestLiveContract(t *testing.T) {
 		`meta[name="rastrillo-live"]`, "data-paused", "data-live", "data-live-boot", "data-live-stale",
 		`"change"`, "lastEventId", "boot=", "&t=",
 		"Rastrillo-Fragment", "Rastrillo-Regions", "Rastrillo-Location",
+		// The CARLOS edge's opt-in, a wire contract (carlos/platform
+		// #432).
+		"carlos_hold=1",
 		// Swapping forms: the opt-in, the header that names the page
 		// the form is on, and the note for an unknown outcome.
 		"data-live-form", "Rastrillo-Page", "data-unconfirmed", `[aria-invalid="true"]`,
@@ -140,7 +143,8 @@ func TestLiveOwnsReconnects(t *testing.T) {
 		PendingAfterError []int
 		SourcesAfterTimer int
 		Delays            []int
-		AfterOpen         []int
+		AfterShortOpen    []int
+		AfterSteadyOpen   []int
 	}
 	liveNode(t, "reconnect", &got)
 	if !got.Closed {
@@ -158,8 +162,35 @@ func TestLiveOwnsReconnects(t *testing.T) {
 	if want := []int{1000, 2000, 4000, 8000, 16000, 32000, 60000, 60000, 60000}; !reflect.DeepEqual(got.Delays, want) {
 		t.Errorf("reconnect delays %v, want %v (doubling, capped at a minute)", got.Delays, want)
 	}
-	if !reflect.DeepEqual(got.AfterOpen, []int{1000}) {
-		t.Errorf("after a stream opened, the next error waits %v, want [1000]: an open resets the backoff", got.AfterOpen)
+	// The CARLOS edge answers a stream over its cap with an open stream
+	// that ends at once, and so does a server refusing a reopen.
+	// Resetting on open would reconnect every second for as long as
+	// that lasts.
+	if !reflect.DeepEqual(got.AfterShortOpen, []int{60000}) {
+		t.Errorf("a stream that ended as soon as it opened was "+
+			"followed by %v, want [60000]: only a stream that "+
+			"stayed open resets the backoff", got.AfterShortOpen)
+	}
+	if !reflect.DeepEqual(got.AfterSteadyOpen, []int{1000}) {
+		t.Errorf("after a stream stayed open 30s, the next error "+
+			"waits %v, want [1000]", got.AfterSteadyOpen)
+	}
+}
+
+// On a CARLOS route that hibernates, only a marked stream lets the
+// instance sleep; the edge strips the marker, and off CARLOS the
+// server ignores it.
+func TestLiveAsksTheEdgeToHoldItsStream(t *testing.T) {
+	var got struct{ URL string }
+	liveNode(t, "many", &got)
+	stream, err := url.Parse(got.URL)
+	if err != nil {
+		t.Fatalf("stream URL %q: %v", got.URL, err)
+	}
+	hold := stream.Query()["carlos_hold"]
+	if !slices.Equal(hold, []string{"1"}) {
+		t.Errorf("stream URL %q has carlos_hold %q, want exactly 1",
+			got.URL, hold)
 	}
 }
 
