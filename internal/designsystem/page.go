@@ -1466,6 +1466,7 @@ var previewMobileLocaleHeights = map[string]map[string]int{
 		"screen-signin-continue":        589,
 		"screen-signin-problem-keymail": 722,
 		"screen-signin-social":          422,
+		"shell-column":                  1092,
 	},
 	"es": {
 		"partial-api-tokens":              2102,
@@ -1500,6 +1501,7 @@ var previewMobileLocaleHeights = map[string]map[string]int{
 		"screen-signin-continue":     589,
 		"screen-signin-sent-instead": 725,
 		"screen-signin-sent-unbound": 637,
+		"shell-column":               1101,
 	},
 	"ja": {
 		"partial-api-tokens": 2126,
