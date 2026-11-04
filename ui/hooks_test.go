@@ -191,7 +191,7 @@ func TestBusyLoadsOnlyWithTheAppsOwnForm(t *testing.T) {
 func TestLiveLoadsOnLivePages(t *testing.T) {
 	region := content(`<h1>Jobs</h1>`) + `{{define "region:items"}}{{end}}`
 	polling := content(`<div data-poll="/jobs/1"></div>`)
-	every := static(optionalScripts()...)
+	every := static(append([]string{"fiesta.js"}, optionalScripts()...)...)
 	for _, body := range []string{region, polling} {
 		plan := planOne(t, scriptsLayout, body, everyFile)
 		if !plan.live || !slices.Equal(plan.scripts, every) {
@@ -200,8 +200,8 @@ func TestLiveLoadsOnLivePages(t *testing.T) {
 		}
 	}
 	plain := planOne(t, scriptsLayout, content(`<h1>Orders</h1>`), everyFile)
-	if plain.live || len(plain.scripts) != 0 {
-		t.Errorf("a plain page: live %v, scripts %v; want neither",
+	if plain.live || !slices.Equal(plain.scripts, static("fiesta.js")) {
+		t.Errorf("a plain page: live %v, scripts %v; want fiesta.js only",
 			plain.live, plain.scripts)
 	}
 }
@@ -235,8 +235,8 @@ func TestPlannedScriptsFollowTheLayoutsOrder(t *testing.T) {
 		`{{needs "live.js"}}{{template "field-date" .}}` +
 		`{{template "field-select" .}}`)
 	got := planOne(t, columnLayout(t), body, everyFile).scripts
-	want := static("busy.js", "live.js", "light.js", "anchor.js",
-		"select.js", "calendar.js", "datetime.js")
+	want := static("fiesta.js", "busy.js", "live.js", "light.js",
+		"anchor.js", "select.js", "calendar.js", "datetime.js")
 	if !slices.Equal(got, want) {
 		t.Errorf("scripts %v, want %v", got, want)
 	}

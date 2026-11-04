@@ -1700,22 +1700,22 @@ func heightOf(id string) int {
 // script in it at all, which is both smaller and the truth about that
 // component.
 //
-// The menu classes are here because light dismiss is the one thing a
-// <details> menu cannot do by itself, and a preview that cannot do it
-// teaches the opposite of what the shim exists for: a reader who clicks
-// away from an open menu in the frame and watches it stay open has been
-// told, by the page, that menus do not close. It costs one script tag
-// in each frame that holds a menu: 20,202 bytes across the whole tree
-// when it was added, 0.13% of it, against a ceiling still 5.3 MiB away.
-// A switch is here for the same reason: its knob slides only with the
-// shim, and a preview whose knob will not drag says switches do not.
+// fiesta.js is here for the menus because light dismiss is the one
+// thing a <details> menu cannot do by itself, and a preview that cannot
+// do it teaches the opposite: a reader who clicks away from an open
+// menu in the frame and watches it stay open has been told, by the
+// page, that menus do not close. It costs one script tag in each frame
+// that holds a menu. A switch is here for the same reason: its knob
+// slides only with fiesta.js, and a preview whose knob will not drag
+// says switches do not. rastrillo.js polls, and nothing else.
 var previewScripts = []struct {
 	asset string
 	hooks []string
 }{
-	{"rastrillo.js", []string{"data-poll", "rst-dropdown", "rst-row-menu", "rst-switch"}},
+	{"fiesta.js", []string{"rst-dropdown", "rst-row-menu", "rst-switch"}},
+	{"rastrillo.js", []string{"data-poll"}},
 	{"busy.js", []string{"data-busy"}},
-	// light.js is here for the same reason as the shim: a preview whose
+	// light.js is here for the same reason as fiesta.js: a preview whose
 	// buttons never catch a sheen and whose cards never breathe says the
 	// depth design is still, which is the one thing the file exists to
 	// disprove. The hooks are the families it writes on (C16).
@@ -2881,7 +2881,7 @@ const pageTemplate = `{{define "ds-controls"}}<nav rst-seg-tabs aria-label="{{P 
 <link rel="stylesheet" href="{{asset "shell.css"}}">
 <link rel="stylesheet" href="{{asset "gallery.css"}}">
 <script src="{{asset "gallery.js"}}"></script>
-<script defer src="{{asset "rastrillo.js"}}"></script>
+<script defer src="{{asset "fiesta.js"}}"></script>
 <script defer blocking="render" src="{{asset "shell.js"}}"></script>
 </head>
 <body>

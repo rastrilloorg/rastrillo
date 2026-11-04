@@ -22,7 +22,7 @@ const SpeculationRulesPath = "/_speculation-rules"
 // bare root and gets no prerender at all. Its pages were written to
 // run when shown, and a prerender runs their scripts on a hover: a
 // startup POST that marks an inbox read would fire for a page nobody
-// opened. Unquoted ~=page, as in rastrillo.js, keeps the JSON free of
+// opened. Unquoted ~=page, as in fiesta.js, keeps the JSON free of
 // escaped quotes. On desktop, moderate fires on a roughly 200ms hover or
 // pointer-down; on Android Chrome it instead fires around 500ms after
 // scrolling stops, for an anchor near the last pointer-down that is at

@@ -48,8 +48,8 @@ func needable(name string) bool {
 // optionalScripts are the vendored scripts a page loads only where it
 // uses them, in the order the layouts load them: live.js after busy.js,
 // which hands it a live form, and the component scripts last, in their
-// own order. rastrillo.js and shell.js load on every page whose layout
-// links them.
+// own order. fiesta.js loads on every page, through pageScripts;
+// rastrillo.js and shell.js on every page whose layout links them.
 func optionalScripts() []string {
 	return append([]string{"busy.js", "live.js", "light.js", "anchor.js"},
 		vendored.ComponentScripts()...)
@@ -66,10 +66,21 @@ func allComponentScripts() []string {
 	return paths
 }
 
-// allOptionalScripts is every optional script, as static paths, in load
-// order: what a render outside ui.Pages loads.
-func allOptionalScripts() []string {
-	var paths []string
+// everyPageScript is Fiesta's fiesta.js: light dismiss, the switch's
+// drag and the scheme menu's in-place apply. Any page can show a menu
+// or a switch, so every page loads it, ahead of its optional scripts.
+const everyPageScript = "fiesta.js"
+
+// pageScriptNames is everyPageScript, then the optional scripts a
+// page's templates show, in load order.
+func pageScriptNames(reading pageReading) []string {
+	return append([]string{everyPageScript}, plannedScripts(reading)...)
+}
+
+// allPageScripts is everyPageScript and every optional script, as
+// static paths, in load order: what a render outside ui.Pages loads.
+func allPageScripts() []string {
+	paths := []string{"static/" + everyPageScript}
 	for _, name := range optionalScripts() {
 		paths = append(paths, "static/"+name)
 	}
@@ -84,7 +95,7 @@ func scriptFuncs() template.FuncMap {
 	return template.FuncMap{
 		"needs":          needs,
 		"neededScripts":  allComponentScripts,
-		"pageScripts":    allOptionalScripts,
+		"pageScripts":    allPageScripts,
 		"pageStylesheet": func() string { return "/" + stylesheet },
 	}
 }

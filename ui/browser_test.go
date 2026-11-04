@@ -957,6 +957,12 @@ func menuPage(t *testing.T) http.Handler {
 		w.Header().Set("Content-Type", "text/javascript")
 		w.Write(ShimJS())
 	})
+	mux.HandleFunc("GET /fiesta.js", func(
+		writer http.ResponseWriter, _ *http.Request,
+	) {
+		writer.Header().Set("Content-Type", "text/javascript")
+		writer.Write(FiestaJS())
+	})
 	mux.HandleFunc("GET /busy.js", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/javascript")
 		w.Write(BusyJS())
@@ -976,8 +982,8 @@ func menuPage(t *testing.T) http.Handler {
 	})
 	// The mid-upgrade window, in the one spelling this repository no
 	// longer writes anywhere: an app that has taken the new module and
-	// the new rastrillo.js and has not run `rastrillo markup` yet. Its
-	// markup is still classes; its shim is this one. If MENUS only
+	// the new rastrillo.js and fiesta.js and has not run `rastrillo
+	// markup` yet. Its markup is still classes. If MENUS only
 	// matched attributes, this page's menu would stop light-dismissing
 	// and nothing in this repository would ever have noticed.
 	// markup-spelling: old-spelling begin — the fixture below is markup
@@ -988,6 +994,7 @@ func menuPage(t *testing.T) http.Handler {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		fmt.Fprint(w, `<!doctype html><html lang="en"><head><meta charset="utf-8">`+
 			`<title>menus, class spelling</title>`+
+			`<script defer src="/fiesta.js"></script>`+
 			`<script defer src="/rastrillo.js"></script><script defer src="/busy.js"></script></head><body>`+
 			`<details class="rst-dropdown" name="`+MenuGroupDefault+`" id="account">`+
 			`<summary id="account-summary">Account</summary>`+
@@ -1005,9 +1012,10 @@ func menuPage(t *testing.T) http.Handler {
 		fmt.Fprint(w, `<!doctype html><html lang="en"><head><meta charset="utf-8">`+
 			`<title>menus</title><link rel="stylesheet" href="/tokens.css">`+
 			`<link rel="stylesheet" href="/theme.css">`+
+			`<script defer src="/fiesta.js"></script>`+
 			`<script defer src="/rastrillo.js"></script><script defer src="/busy.js"></script></head><body>`+
 			// The header dropdown, in the shared group. In a topbar root,
-			// because rastrillo.js dismisses the shell Menu only in a
+			// because fiesta.js dismisses the shell Menu only in a
 			// topbar or a console that names its view.
 			`<div rst-shell-topbar><header rst-shell-bar>`+
 			`<details rst-dropdown rst-shell-account name="`+MenuGroupDefault+`" id="account">`+

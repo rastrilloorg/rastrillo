@@ -3,6 +3,7 @@ package ui
 import (
 	"html/template"
 	"os"
+	"path"
 	"regexp"
 	"slices"
 	"strings"
@@ -151,7 +152,7 @@ func optionalIn(srcs []string) []string {
 }
 
 func TestEachShellLoadsOnlyTheScriptsItsPageUses(t *testing.T) {
-	always := []string{"rastrillo.js"}
+	always := []string{"rastrillo.js", "fiesta.js"}
 	for shell, pages := range shellPages(t) {
 		for name, page := range pages {
 			srcs := deferredScripts(page)
@@ -252,6 +253,83 @@ func TestNonTransitionLayoutsDoNotLoadShellJS(t *testing.T) {
 	for _, shell := range []string{"column", "topbar", "stage"} {
 		if strings.Contains(renderShellLayout(t, shell), "/static/shell.js") {
 			t.Errorf("%s loads shell.js without phone shell navigation", shell)
+		}
+	}
+}
+
+// everyShell is every layout ui ships.
+var everyShell = []string{"column", "topbar", "sidebar", "console", "stage"}
+
+// fiestaJS runs light dismiss, the switch's drag and the scheme menu
+// on every page, so pageScripts lists it first wherever the app has it,
+// and wherever no asset set can say: a page without Assets asks for it
+// whether or not the app has the file.
+func TestEveryPageLoadsFiestaJS(t *testing.T) {
+	for _, shell := range everyShell {
+		layout, ok := Layout(shell)
+		if !ok {
+			t.Fatalf("no %s layout", shell)
+		}
+		plain := map[string]string{"plain": shellContents["plain"]}
+		assets := appAssets()
+		page := renderPagesWith(t, layout, plain, sliced(assets, ""))
+		srcs := deferredScripts(page["plain"])
+		fiesta := assets.Path("static/fiesta.js")
+		at := slices.Index(srcs, fiesta)
+		if at < 0 || slices.Index(srcs[at+1:], fiesta) >= 0 {
+			t.Errorf("%s loads %v, want %s once", shell, srcs, fiesta)
+			continue
+		}
+		for _, src := range srcs[:at] {
+			if slices.Contains(optionalScripts(), path.Base(src)) {
+				t.Errorf("%s loads %s before fiesta.js", shell, src)
+			}
+		}
+		unknown := renderShellPages(t, layout, plain)["plain"]
+		if !slices.Contains(deferredScripts(unknown), "/static/fiesta.js") {
+			t.Errorf("%s without Assets does not load fiesta.js", shell)
+		}
+		without := renderPagesWith(t, layout, plain,
+			sliced(appAssets("fiesta.js"), ""))["plain"]
+		if strings.Contains(without, "fiesta") {
+			t.Errorf("%s loads fiesta.js for an app without it", shell)
+		}
+	}
+	outside := Funcs()["pageScripts"].(func() []string)()
+	if len(outside) == 0 || outside[0] != "static/fiesta.js" {
+		t.Errorf("pageScripts outside Pages lists %v, want fiesta.js "+
+			"first", outside)
+	}
+}
+
+// transition.js has to observe before the stylesheets load, which a
+// deferred script cannot: it stays out of pageScripts on every page,
+// live ones included, which load every other script.
+func TestTransitionJSStaysBeforeTheStylesheets(t *testing.T) {
+	for _, shell := range everyShell {
+		layout, ok := Layout(shell)
+		if !ok {
+			t.Fatalf("no %s layout", shell)
+		}
+		assets := appAssets()
+		pages := renderPagesWith(t, layout, shellContents,
+			sliced(assets, ""))
+		transition := assets.Path("static/transition.js")
+		for name, page := range pages {
+			if slices.Contains(deferredScripts(page), transition) {
+				t.Errorf("%s %s defers transition.js", shell, name)
+			}
+			blocking := `<script src="` + transition + `"></script>`
+			if !strings.Contains(page, transition) {
+				continue
+			}
+			scriptAt := strings.Index(page, blocking)
+			stylesAt := strings.Index(page, `<link rel="stylesheet"`)
+			if scriptAt < 0 || scriptAt > stylesAt ||
+				strings.Count(page, transition) != 1 {
+				t.Errorf("%s %s: load transition.js once, without "+
+					"defer, before the stylesheets", shell, name)
+			}
 		}
 	}
 }

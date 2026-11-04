@@ -56,7 +56,7 @@ var styleguideSamples = map[string]string{
 	// sharing its parent's group would close the parent the instant it
 	// opened — the submenu would flash and vanish. The toggle-block
 	// stays out of the group because it is not a menu. The topbar's and
-	// console's Menu on a phone is one (rastrillo.js light-dismisses it
+	// console's Menu on a phone is one (fiesta.js light-dismisses it
 	// with the rest) but stays out too: the account menu opens inside
 	// it, and in the same group opening the account menu would close it.
 	"dropdown": `<details rst-dropdown name="rst-menus">

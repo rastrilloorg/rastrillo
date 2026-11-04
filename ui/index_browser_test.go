@@ -3,6 +3,7 @@
 package ui
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"html/template"
@@ -20,14 +21,22 @@ import (
 )
 
 // legacyLayout is a layout as it was before the phone index, kept as a
-// fixture so the legacy rules in tokens.css stay pinned to real markup.
+// fixture so the legacy rules in tokens.css stay pinned to real markup,
+// with the fiesta.js line the upgrade asks an older layout to add: the
+// menus' light dismiss these drives exercise moved there.
 func legacyLayout(t *testing.T, name string) []byte {
 	t.Helper()
 	b, err := os.ReadFile("testdata/legacy/" + name + ".html")
 	if err != nil {
 		t.Fatal(err)
 	}
-	return b
+	shim := `<script defer src="{{asset "static/rastrillo.js"}}"></script>`
+	if !bytes.Contains(b, []byte(shim)) {
+		t.Fatalf("testdata/legacy/%s.html no longer loads rastrillo.js "+
+			"as %s", name, shim)
+	}
+	fiesta := `<script defer src="{{asset "static/fiesta.js"}}"></script>`
+	return bytes.Replace(b, []byte(shim), []byte(shim+fiesta), 1)
 }
 
 // shellLayoutPage renders a layout's source with a nav of three
@@ -499,13 +508,13 @@ func TestAWhitespaceViewIsTheIndexInTheBrowser(t *testing.T) {
 }
 
 // TestAnOldConsoleLayoutKeepsItsRailOpen: an app that re-vendors
-// rastrillo.js and tokens.css but keeps a console layout from before
+// fiesta.js and tokens.css but keeps a console layout from before
 // the phone index still has a rail it can use at 390. Its rail is gated
 // on the Menu's [open], so dismissing that Menu on an outside click, or
 // covering the page with the card's tap-to-close layer, would close the
 // whole navigation on a tap at a group label or the rail's empty space.
 // The control: a dropdown in the page IS dismissed by the same click,
-// so rastrillo.js is running and saw it. It is in the page rather than
+// so fiesta.js is running and saw it. It is in the page rather than
 // in the bar's tail because the tail's open panel would lie over the
 // rail and take the click itself.
 func TestAnOldConsoleLayoutKeepsItsRailOpen(t *testing.T) {

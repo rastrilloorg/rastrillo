@@ -138,7 +138,7 @@ func TestRowMenusExcludeEachOtherWithNoScript(t *testing.T) {
 }
 
 // TestRowMenuDismissesAndHandsFocusBack: an outside click and Escape
-// close it (rastrillo.js), and Escape puts focus back on its summary.
+// close it (fiesta.js), and Escape puts focus back on its summary.
 // Clicking an item goes to the item, never the row.
 func TestRowMenuDismissesAndHandsFocusBack(t *testing.T) {
 	rig, _ := rowMenuRig(t, false)

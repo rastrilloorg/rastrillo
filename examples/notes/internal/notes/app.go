@@ -267,27 +267,27 @@ func App(d *db.DB, origin, instanceKey string, bg *background.Group, logger *slo
 	// visitor solving the challenge is not signed in yet.
 	r.Handle("/pow/*", http.StripPrefix("/pow/", powAssets.Handler()))
 
-	// The fragment shim, outside Require: it is a static asset, not a
-	// protected route, the same way a scaffolded app's static/
-	// rastrillo.js is served by the platform rather than a handler. A
-	// generated app owns its own copy on disk from rastrillo new;
-	// this hand-wired example just serves ui's embedded bytes directly
-	// so there is one fewer file for the demo to keep in sync.
-	r.Get("/static/rastrillo.js", func(w http.ResponseWriter, _ *http.Request) {
-		w.Header().Set("Content-Type", "text/javascript; charset=utf-8")
-		w.Write(ui.ShimJS())
-	})
-	// The busy rule, beside the shim and served the same way.
-	r.Get("/static/busy.js", func(w http.ResponseWriter, _ *http.Request) {
-		w.Header().Set("Content-Type", "text/javascript; charset=utf-8")
-		w.Write(ui.BusyJS())
-	})
-	// The live script, likewise: it opens the stream the layout's meta
-	// tag names and swaps the regions and forms that ask for it.
-	r.Get("/static/live.js", func(w http.ResponseWriter, _ *http.Request) {
-		w.Header().Set("Content-Type", "text/javascript; charset=utf-8")
-		w.Write(ui.LiveJS())
-	})
+	// The scripts, outside Require: static assets, not protected
+	// routes, as a scaffolded app's static/ files are served by the
+	// platform. A generated app owns its copies from rastrillo new;
+	// this hand-wired example serves ui's embedded bytes so there are
+	// fewer files to keep in sync. rastrillo.js is the fragment shim,
+	// fiesta.js the language menu's light dismiss, busy.js the busy
+	// rule, and live.js opens the stream the layout's meta tag names
+	// and swaps the regions and forms that ask for it.
+	scripts := map[string][]byte{
+		"rastrillo.js": ui.ShimJS(), "fiesta.js": ui.FiestaJS(),
+		"busy.js": ui.BusyJS(), "live.js": ui.LiveJS(),
+	}
+	for name, script := range scripts {
+		r.Get("/static/"+name, func(
+			writer http.ResponseWriter, _ *http.Request,
+		) {
+			writer.Header().Set("Content-Type",
+				"text/javascript; charset=utf-8")
+			writer.Write(script)
+		})
+	}
 
 	// The stylesheet, served the same way and for the same reason. It
 	// is one response rather than two files because tokens.css styles

@@ -163,7 +163,7 @@ func TestTheTopbarMenuIsACardOverThePage(t *testing.T) {
 				if fill := resolvedColor(t, ctx, "--rst-nav-current-bg, var(--rst-accent-soft)"); open.CurBg != fill || open.CurStart != "0px" || open.CurEnd != "0px" {
 					t.Errorf("the current item is bg %s border-start %s border-end %s; want %s, 0, 0", open.CurBg, open.CurStart, open.CurEnd, fill)
 				}
-				// The premise of the no-script leg: rastrillo.js would close
+				// The premise of the no-script leg: fiesta.js would close
 				// the card on Escape, so a card that survives one proves no
 				// script is running, and the close below is the CSS layer's.
 				if !scripts {

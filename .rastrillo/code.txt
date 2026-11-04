@@ -8315,16 +8315,10 @@ names internal/designsystem/frame_scheme_browser_test.go readFrame/r 1
 names internal/designsystem/frame_scheme_browser_test.go readFrame/x 2
 names internal/designsystem/frame_scheme_browser_test.go readFrame/y 2
 columns internal/designsystem/gallery_os_scheme_browser_test.go 0231d454b485 1
-columns internal/designsystem/gallery_os_scheme_browser_test.go 0ae760641dd6 1
 columns internal/designsystem/gallery_os_scheme_browser_test.go 169cbe88af73 1
-columns internal/designsystem/gallery_os_scheme_browser_test.go 52da07d4ebe5 1
 columns internal/designsystem/gallery_os_scheme_browser_test.go 78b9b97ff0a8 1 rewritten by the chromedp v0.21 port, no wider than the recorded line it replaced
-columns internal/designsystem/gallery_os_scheme_browser_test.go 880f20fe3f0c 1
-columns internal/designsystem/gallery_os_scheme_browser_test.go 9989d022c769 1
 columns internal/designsystem/gallery_os_scheme_browser_test.go 9d8bbfe6c33b 1
-columns internal/designsystem/gallery_os_scheme_browser_test.go a2624afcf3e8 1
 columns internal/designsystem/gallery_os_scheme_browser_test.go b01c16b4230f 1
-columns internal/designsystem/gallery_os_scheme_browser_test.go b5b58db84e4a 1
 columns internal/designsystem/gallery_os_scheme_browser_test.go e02b42e454c0 1
 names internal/designsystem/gallery_os_scheme_browser_test.go TestTheGalleryLandsAnOSFlipWithItsOwnListener/r 1
 columns internal/designsystem/galleryrig/rig.go 02b5257cefc0 1 rewritten by the chromedp v0.21 port, no wider than the recorded line it replaced
@@ -8771,7 +8765,6 @@ columns internal/designsystem/page.go 97d129ba4be2 1
 columns internal/designsystem/page.go 98647645da0d 1
 columns internal/designsystem/page.go 99a8bd10b150 1
 columns internal/designsystem/page.go 9b7feb362fae 1
-columns internal/designsystem/page.go 9c8348195810 1
 columns internal/designsystem/page.go 9ca6df81967b 1
 columns internal/designsystem/page.go 9cf7e1c08f11 1
 columns internal/designsystem/page.go 9e99d4fe3252 1
@@ -24611,7 +24604,6 @@ columns ui/shim_test.go 3f4839c4da42 1
 columns ui/shim_test.go 448763913bc0 1
 columns ui/shim_test.go 4fa7999077cf 2
 columns ui/shim_test.go 51766e8c65bd 1
-columns ui/shim_test.go 55be5390a816 1
 columns ui/shim_test.go 65225b30bf7e 1
 columns ui/shim_test.go 676ad4d14e66 1
 columns ui/shim_test.go 68203838c366 1
@@ -24622,7 +24614,6 @@ columns ui/shim_test.go 70cd3b7dfe40 1
 columns ui/shim_test.go 7c104822c50e 1
 columns ui/shim_test.go 7f0678b97f46 1
 columns ui/shim_test.go 815ee78858f7 1
-columns ui/shim_test.go 81ad65460929 1
 columns ui/shim_test.go 848a983ab79c 1
 columns ui/shim_test.go 8b16aeb3dcea 1
 columns ui/shim_test.go 8ffb41b99f6b 1
@@ -24658,7 +24649,6 @@ columns ui/shim_test.go fe7384bafd44 1
 names ui/shim_test.go TestBusyRuleIsTheDefault/b 1
 names ui/shim_test.go TestBusyRuleIsTheDefault/n 2
 names ui/shim_test.go TestPollingWaitsForAPrerenderedPageToBeShown/g 1
-names ui/shim_test.go TestShimContract/n 1
 names ui/shim_test.go TestShimIsSmall/n 1
 names ui/shim_test.go TestTheLightDismissGateReadsTheMenuList/m 1
 columns ui/signin_browser_test.go 02f1c41c4b5c 1
@@ -25574,15 +25564,12 @@ columns ui/touch_browser_test.go 94e9ed45b500 1
 columns ui/touch_browser_test.go 97eb05235a1d 1
 columns ui/touch_browser_test.go a46ec179e0f4 1
 columns ui/touch_browser_test.go d43a810db1fe 1
-columns ui/touch_browser_test.go e4ef66cd15d2 1
 columns ui/touch_browser_test.go f2ccb8a5f0c6 1
 columns ui/touch_browser_test.go f3ac1fd83319 1
 names ui/touch_browser_test.go sizingMux/w 1
 columns ui/ui.go 0663bc055e70 1
 columns ui/ui.go 0b88c079254e 1
-columns ui/ui.go 229235831278 1
 columns ui/ui.go 27e8699e3434 1
-columns ui/ui.go 372360113f94 1
 columns ui/ui.go 45fadd65462d 1
 columns ui/ui.go 4bd492454e18 1
 columns ui/ui.go 58f3555c8f19 1
@@ -25594,7 +25581,7 @@ columns ui/ui.go c3c63127b8fa 1
 columns ui/ui.go c3c8287e95c6 1
 columns ui/ui.go d1dbb090f535 1
 columns ui/ui.go d912663cc928 1
-file ui/ui.go - 460
+file ui/ui.go - 470 raised from 460 by Fiesta part 2: FiestaJS joins the script accessors, and the docs say fiesta.js does what rastrillo.js no longer does
 names ui/ui.go Layout/b 1
 columns ui/ui_test.go 03fc6982a9d4 1
 columns ui/ui_test.go 0417a973a256 1

@@ -55,17 +55,18 @@
 // ThemeCSS), which is the colour, the type family and the shape (radii,
 // shadows) those classes paint themselves with. rastrillo.Serve never serves either:
 // from the moment they are scaffolded they are ordinary app-owned
-// static files the app is free to edit in place. rastrillo.js, the fragment shim behind
-// data-poll, and busy.js, the busy rule, ship the same way, landing beside it. It
-// never replaces a native idiom — every "no JavaScript" idiom above
-// still works with scripts disabled; the shim exists only for the kinds
-// of work a native idiom cannot do. Two of them: work that finishes
-// after the response has already been sent, such as a background job's
-// progress, and light dismiss for the menus — closing an open dropdown
-// on an outside click or on Escape, which native <details> has no way to
-// express. Without the shim the menus still open, still close on a
-// second click of their own summary, and still keep one open at a time
-// through the <details name> group.
+// static files the app is free to edit in place. rastrillo.js, the
+// fragment shim behind data-poll, Fiesta's fiesta.js and busy.js, the
+// busy rule, ship the same way, landing beside it. None replaces a
+// native idiom — every "no JavaScript" idiom above still works with
+// scripts disabled; they exist only for the work a native idiom cannot
+// do. Two kinds: work that finishes after the response has already been
+// sent, such as a background job's progress (rastrillo.js), and light
+// dismiss for the menus (fiesta.js) — closing an open dropdown on an
+// outside click or on Escape, which native <details> has no way to
+// express. Without them the menus still open, still close on a second
+// click of their own summary, and still keep one open at a time through
+// the <details name> group.
 //
 // Errors follow ordinary html/template semantics (nothing is
 // special-cased). With dict-built map data a key the caller forgot to set
@@ -325,7 +326,8 @@ func ThemeNames() []string { return fiesta.ThemeNames() }
 // half ships with the shells: the scheme-menu partial posts Light, Dark
 // or System to rastrillo.SchemeSwitchPath, the cookie it writes is what
 // every layout renders as data-theme on <html> (Localized.Scheme), and
-// rastrillo.js applies a choice in place when scripts run. No attribute
+// fiesta.js applies a choice in place when scripts run, and rastrillo.js
+// writes the cookie. No attribute
 // is System, the OS deciding. Radii and shadows live here too, so a
 // theme can change how an app feels and not only what colour it is.
 func ThemeCSS(name string) ([]byte, bool) { return fiesta.ThemeCSS(name) }
@@ -344,6 +346,14 @@ func ShimJS() []byte { return shimJS }
 // Delivered once, like ShimJS, and app-owned from then on; its header
 // comment is its contract.
 func LiveJS() []byte { return liveJS }
+
+// FiestaJS returns Fiesta's fiesta.js: light dismiss for the menus, the
+// switch's drag, the touch listener that gives a tap its pressed state,
+// and the scheme menu's in-place apply. Every page loads it beside
+// rastrillo.js, which writes the scheme cookie from its rst-scheme
+// event. Delivered once by rastrillo new, like ShimJS, and app-owned
+// from then on; its header comment is its contract.
+func FiestaJS() []byte { return fiestaScript("fiesta.js") }
 
 // BusyJS returns Fiesta's busy.js — the busy rule: every submit button
 // shows a spinner in place of its label for at least 650ms, goes

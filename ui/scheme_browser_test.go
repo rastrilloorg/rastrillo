@@ -72,6 +72,7 @@ type schemeState struct {
 	Open    bool   // the menu is still open
 	Mark    bool   // window.__mark survived: no navigation happened
 	Navs    int    // navigation entries: 1 means this page load only
+	Fiesta  bool   // fiesta.js ran: the apply is Fiesta's
 }
 
 const schemeStateJS = `(() => {
@@ -83,17 +84,18 @@ const schemeStateJS = `(() => {
     Current: cur ? cur.form.elements.scheme.value : "",
     Open: m.open,
     Mark: window.__mark === 1,
-    Navs: performance.getEntriesByType("navigation").length
+    Navs: performance.getEntriesByType("navigation").length,
+    Fiesta: window.fiestaShim === true
   });
 })()`
 
-// With scripts on, a choice applies in place: the attribute changes,
-// the cookie is written, the menu closes, and nothing navigates. A
-// reload then shows the server painted the same scheme from the
-// cookie — the shim never applies the cookie on load, so after a reload
-// the attribute can only have come from the server. System undoes all
-// of it.
-func TestTheSchemeSwitchAppliesInPlaceAndSurvivesAReload(t *testing.T) {
+// With scripts on, a choice applies in place: fiesta.js changes the
+// attribute, closes the menu and navigates nowhere, and rastrillo.js
+// writes the cookie from its rst-scheme event. A reload then shows the
+// server painted the same scheme from the cookie — neither script
+// applies the cookie on load, so after a reload the attribute can only
+// have come from the server. System undoes all of it.
+func TestTheSchemeChoicePersistsWithFiestaJS(t *testing.T) {
 	rig := harness.New(t, func(string) http.Handler { return schemeApp(t) })
 	ctx, cancel := context.WithTimeout(rig.Context(), 90*time.Second)
 	defer cancel()
@@ -111,7 +113,8 @@ func TestTheSchemeSwitchAppliesInPlaceAndSurvivesAReload(t *testing.T) {
 	var got schemeState
 	mustRun(t, ctx, chromedp.EmulateViewport(1280, 900), chromedp.Navigate(rig.Origin+"/orders?page=2"), chromedp.WaitVisible(chromedp.CSS(`[rst-scheme]`)))
 	at(t, ctx, schemeStateJS, &got)
-	if got.Theme != "" || got.Current != "system" || got.Cookie != "" {
+	if got.Theme != "" || got.Current != "system" || got.Cookie != "" ||
+		!got.Fiesta {
 		t.Fatalf("first visit: %+v", got)
 	}
 
@@ -425,7 +428,7 @@ const schemeFlipSecondFrameJS = `new Promise(r => requestAnimationFrame(() => r(
 // TestAnAppsOwnSchemeSwitchLandsAtRest is Astra A3: the shipped switch
 // lands a flip by cancelling the running transitions (land(), above),
 // but an app that sets data-theme from its own script, or that took
-// the new stylesheets with an old rastrillo.js, never calls it. The
+// the new stylesheets without fiesta.js, never calls it. The
 // nav items', linked rows' and tiles' background transitions sit on
 // their :hover and :active rules only, not at rest, so at rest a
 // scheme change has no transition to start and lands on the next

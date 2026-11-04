@@ -20,7 +20,7 @@ func internal/notes/app.go App 281
 names internal/notes/app.go App/a 1
 names internal/notes/app.go App/d 1
 names internal/notes/app.go App/r 4
-names internal/notes/app.go App/w 4
+names internal/notes/app.go App/w 1
 names internal/notes/app.go createUser/g 1
 names internal/notes/app.go createUser/u 1
 names internal/notes/app.go lookupUser/g 1

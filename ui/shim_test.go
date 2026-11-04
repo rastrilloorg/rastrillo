@@ -10,12 +10,12 @@ import (
 	"amadan.net/rastrillo/rastrillo/nodetest"
 )
 
-// The shim has no browser harness — JS behavior is verified by hand, by
-// the notes example's no-JS end-to-end path, and for how polling starts
-// by shim_node.mjs in Node. What a Go test can hold honest is the
-// contract the docs promise: the vocabulary the file answers to, its
-// inert-by-default IIFE shape, and the absence of anything a CSP would
-// reject.
+// The shim has no browser harness for polling: JS behavior is verified
+// by the notes example's no-JS end-to-end path, and for how polling
+// starts by shim_node.mjs in Node. What a Go test can hold honest is
+// the contract the docs promise: the vocabulary the file answers to,
+// its inert-by-default IIFE shape, and the absence of anything a CSP
+// would reject.
 func TestShimContract(t *testing.T) {
 	js := string(ShimJS())
 	for _, want := range []string{
@@ -26,45 +26,18 @@ func TestShimContract(t *testing.T) {
 		// statuses that end a poll, the local-path guard on the
 		// header-driven navigation.
 		"403", "404", "localPath",
-		// Light dismiss: the menu classes it answers to — the nested
-		// rst-menu-group among them, so a submenu is never left open
-		// behind its closing parent — the containment test that keeps the
-		// menu being used open, the Escape key, and the focus hand-back to
-		// the summary. Delegated on the document, so the count of
-		// addEventListener calls stays at two however many menus a page
-		// renders.
-		"rst-dropdown", "rst-menu-group", "rst-row-menu",
-		"closeMenus", "contains", "Escape", "summary.focus()",
-		// Both spellings. tokens.css pairs them for the window between
-		// upgrading the module and running `rastrillo markup`, and the
-		// shim has to pair them for the same window or an app's menus
-		// stop dismissing halfway through the upgrade we hand it.
-		`MENUS.replace(`,
-		// The topbar's and console's narrow Menu is a card over the page,
-		// so it is in the light-dismiss list, in both spellings written
-		// out (the rewrite above would give .rst-shell-menu, and the
-		// class is .rst-shell__menu), with its tail counted as inside it
-		// only while its summary is rendered. Scoped to a topbar or a
-		// console that names its view: an old console's Menu also
-		// reveals its rail, which must not close on a tap at a group
-		// label.
-		`[rst-shell-topbar] [rst-shell-menu][open],[rst-shell-console~=page] [rst-shell-menu][open],[rst-shell-console~=index] [rst-shell-menu][open]`,
-		`.rst-shell-topbar .rst-shell__menu[open],.rst-shell-console--page .rst-shell__menu[open],.rst-shell-console--index .rst-shell__menu[open]`,
-		`TAIL = "[rst-shell-tail],.rst-shell__tail"`, "menuAround", "getClientRects().length",
 		// The local-path guard must reject control characters —
 		// browsers strip tab/CR/LF before parsing, so "/\t/evil"
 		// resolves scheme-relative — mirroring sessions.SafeReturn.
 		"\\u0000-\\u001f\\u007f",
-		// The colour-scheme switch: the menu it answers to in both
-		// spellings, the attribute the themes read, and the cookie
-		// with the attributes scheme.go gives it — the same name and
-		// age, or a reload paints the scheme the reader just left.
-		`"[rst-scheme],.rst-scheme"`, "data-theme",
-		`rastrillo_scheme=`, "Max-Age=31536000", "Max-Age=0", "Path=/; SameSite=Lax", "; Secure",
-		// The iOS touch listener (A3): :active lands on a tap only when
-		// a touchstart listener exists, and this file owns it so an app
-		// that deletes light.js keeps its pressed states.
-		`addEventListener("touchstart", function () {}, { passive: true })`,
+		// fiesta.js applies a scheme choice in place and posts nothing,
+		// so the cookie /_theme would have set is written here, from
+		// Fiesta's rst-scheme event, with the attributes scheme.go
+		// gives it: the same name and age, or a reload paints the
+		// scheme the reader just left.
+		`addEventListener("rst-scheme"`,
+		`rastrillo_scheme=`, "Max-Age=31536000", "Max-Age=0",
+		"Path=/; SameSite=Lax", "; Secure",
 	} {
 		if !strings.Contains(js, want) {
 			t.Errorf("shim does not mention %q", want)
@@ -79,28 +52,89 @@ func TestShimContract(t *testing.T) {
 	if strings.Contains(js, "eval(") || strings.Contains(js, "new Function") {
 		t.Error("shim must stay CSP-clean")
 	}
+}
+
+// Fiesta's fiesta.js answers both the menus and the scheme switch, so
+// rastrillo.js answering them too would run every menu's dismissal and
+// every switch's drag twice; Fiesta's header calls the pair
+// unsupported. What is left is polling and the scheme cookie.
+func TestRastrilloJSHoldsOnlyTheShim(t *testing.T) {
+	js := string(ShimJS())
+	for _, gone := range []struct{ code, duty string }{
+		{"dismissMenus", "menu dismiss"},
+		{`addEventListener("keydown"`, "menu dismiss"},
+		{`addEventListener("pointerdown"`, "switch drag"},
+		{`addEventListener("touchstart"`, "touch press"},
+		{`addEventListener("submit"`, "the scheme menu's apply"},
+		{"data-theme", "the scheme menu's apply"},
+		{"prefers-color-scheme", "the OS-scheme listener"},
+	} {
+		if strings.Contains(js, gone.code) {
+			t.Errorf("rastrillo.js still has %s (%s), which fiesta.js "+
+				"does", gone.duty, gone.code)
+		}
+	}
+	if !strings.Contains(js, "function poll(") {
+		t.Error("rastrillo.js no longer polls")
+	}
+}
+
+// fiesta.js holds what rastrillo.js held before it was cut to the shim:
+// light dismiss, the switch's drag, the touch listener and the scheme
+// menu's apply. These are the parts of that contract a Rastrillo page
+// relies on.
+func TestFiestaJSKeepsTheOldShimsContract(t *testing.T) {
+	js := string(FiestaJS())
+	for _, want := range []string{
+		// Light dismiss: the menu classes it answers to — the nested
+		// rst-menu-group among them, so a submenu is never left open
+		// behind its closing parent — the containment test that keeps
+		// the menu being used open, the Escape key, and the focus
+		// hand-back to the summary.
+		"rst-dropdown", "rst-menu-group", "rst-row-menu",
+		"closeMenus", "contains", "Escape", "summary.focus()",
+		// Both spellings, for an app that has not run `rastrillo
+		// markup` yet.
+		`MENUS.replace(`,
+		// The topbar's and console's narrow Menu, in both spellings
+		// written out, scoped to a topbar or a console that names its
+		// view, with its tail counted as inside it only while its
+		// summary is rendered.
+		`[rst-shell-topbar] [rst-shell-menu][open],[rst-shell-console~=page] [rst-shell-menu][open],[rst-shell-console~=index] [rst-shell-menu][open]`,
+		`.rst-shell-topbar .rst-shell__menu[open],.rst-shell-console--page .rst-shell__menu[open],.rst-shell-console--index .rst-shell__menu[open]`,
+		`TAIL = "[rst-shell-tail],.rst-shell__tail"`, "menuAround", "getClientRects().length",
+		// The switch's drag, on a switch and on a toggle block's head.
+		`TRACK = "[rst-switch-track],.rst-switch__track"`,
+		"[rst-tblock-head],.rst-tblock__head",
+		// The colour-scheme switch: the menu in both spellings, the
+		// attribute the themes read, and the event rastrillo.js writes
+		// the cookie from.
+		`"[rst-scheme],.rst-scheme"`, "data-theme",
+		`new CustomEvent("rst-scheme", { bubbles: true, ` +
+			`detail: { scheme: s } })`,
+		// The iOS touch listener: :active lands on a tap only when a
+		// touchstart listener exists.
+		`addEventListener("touchstart", function () {}, { passive: true })`,
+		// The OS flipping under a page on System lands at once.
+		"osScheme.onchange",
+	} {
+		if !strings.Contains(js, want) {
+			t.Errorf("fiesta.js does not mention %q", want)
+		}
+	}
 	// Light dismiss is delegated, not bound per element: a menu that
 	// arrives inside a polled fragment has to be covered the moment it
-	// lands, and re-scanning must never double-bind. A querySelectorAll
-	// over the menus inside scan() would be exactly that bug, so pin the
-	// listeners to the document and pin scan() to the two data-attribute
-	// vocabularies it has always answered.
+	// lands. Three mentions: the definition and the two listeners.
 	if !strings.Contains(js, `document.addEventListener("click", dismissMenus, true)`) ||
 		!strings.Contains(js, `document.addEventListener("keydown", dismissMenus, true)`) {
 		t.Error("light dismiss is not two delegated document listeners")
 	}
-	// Three mentions and no more: the definition and the two listeners.
-	// A fourth would mean someone started binding it per element again.
-	if n := strings.Count(js, "dismissMenus"); n != 3 {
-		t.Errorf("dismissMenus appears %d times, want 3 (one definition, two document listeners)", n)
+	if mentions := strings.Count(js, "dismissMenus"); mentions != 3 {
+		t.Errorf("dismissMenus appears %d times, want 3 (one "+
+			"definition, two document listeners)", mentions)
 	}
-	// The old sidebar drawer and the toggle-block stay out of it: neither
-	// is a menu, and dismissing them on an outside click would fight the
-	// user. (The topbar's Menu is in, above: it is a card that overlays
-	// the page now, which is what light dismiss is for.) The check reads
-	// the light-dismiss code, closeMenus through the two listeners: the
-	// switch's drag names the toggle block's head, which drags like a
-	// switch, and that is not light dismiss.
+	// The old sidebar drawer and the toggle-block stay out of it:
+	// neither is a menu.
 	reach, err := lightDismissReach(js)
 	if err != nil {
 		t.Fatal(err)
@@ -131,12 +165,13 @@ func lightDismissReach(js string) ([]string, error) {
 // TestTheLightDismissGateReadsTheMenuList (switch review 5): the gate
 // has to read the menu list, not only the functions after it. A drawer
 // or a toggle block spliced into MENUS makes closeMenus(null) close it,
-// and the functions' own text would never say so. The shipped shim is
-// the control.
+// and the functions' own text would never say so. The shipped fiesta.js
+// is the control.
 func TestTheLightDismissGateReadsTheMenuList(t *testing.T) {
-	js := string(ShimJS())
+	js := string(FiestaJS())
 	if reach, err := lightDismissReach(js); err != nil || len(reach) != 0 {
-		t.Fatalf("the shipped shim: reach %v, err %v; want none", reach, err)
+		t.Fatalf("the shipped fiesta.js: reach %v, err %v; want none",
+			reach, err)
 	}
 	for _, m := range []struct{ name, bad string }{{"the drawer spliced into MENUS", "rst-shell-chrome"}, {"the toggle block spliced into MENUS", "rst-tblock"}} {
 		mutant := strings.Replace(js, `var MENUS = "`, `var MENUS = "[`+m.bad+`][open],`, 1)
@@ -281,126 +316,11 @@ func TestBusyRuleIsTheDefault(t *testing.T) {
 	}
 }
 
-// Raised twice, each time by one new default-on section, and each time
-// with the arithmetic written down so it stays a decision rather than a
-// drift.
-//
-//	8KB → 12KB, by menu light dismiss. 7,542 → 10,423 bytes: 2,881
-//	added, 715 of them code (one selector constant, two small
-//	functions, two addEventListener calls) and 2,166 comment.
-//
-//	12KB → 16KB, by the busy rule. 11,689 → 16,177 bytes: 4,488 added,
-//	of which 620 are CODE — busyOff, busySubmit, one addEventListener,
-//	and one selector constant deleted — and 3,868 are COMMENT: the
-//	header's second honesty note (two sections are now on by default,
-//	not one), the rewritten data-busy vocabulary entry, the block that
-//	writes down the two traps in longhand, and the note on why
-//	every attribute is read through getAttribute. Those last two are
-//	there because they are the bugs the next person will reintroduce:
-//	setting disabled a tick too early, and reaching for form.target.
-//
-// Not raised a third time, and this is the round that nearly forced it.
-// Two busy-rule defects — a <form method="dialog"> the guard wedged
-// shut, and a form="id" submit button living outside its form that the
-// reset could not reach — cost 98 bytes of CODE and would have cost
-// another 300 in the comment voice the rest of this file is written in.
-// 16,177 → 16,349: 172 added, of which 98 are code and 74 net comment,
-// paid for by two sentences that were already written somewhere else
-// (the data-busy opt-out, which the vocabulary block at the top states,
-// and the delegated-listener rationale, which light dismiss states in
-// full — and which pointed the reader "above" at a section that is
-// below it). 35 bytes are left under the cap. That is the warning, in
-// arithmetic: the next behaviour this file gains does not fit, and the
-// reasoning for these two lives in TestBusyRuleIsTheDefault above and
-// in browser_test.go's legs 2d and 4c because it did not fit here.
-//
-// The round after that closed the third shape of the same defect —
-// <button formmethod="dialog"> in an ordinary form — for +29 bytes, by
-// MERGING rather than adding: one effective method (the submitter's
-// formmethod, else the form's) replaces the bail that read the form's
-// method alone. 16,349 → 16,378: 47 bytes of code, and 18 GIVEN BACK by
-// the comment, because two checks explained separately are now one
-// explanation, and the submitter paragraph moved up to sit beside the
-// var it describes. 6 bytes are left under the cap, and leg 2e in
-// browser_test.go drives the shape.
-//
-// Splitting was the alternative and was rejected on the arithmetic:
-// 618 bytes of behaviour does not earn a third scaffolded file, a third
-// <script> tag on every page a shell renders, and a third thing for the
-// app owner to find. select.js is split out because it is a whole
-// widget; this is twenty-six lines that belong beside the form
-// vocabulary they extend.
-//
-// The topbar card joined light dismiss: 9,784 → 11,424 bytes, for two
-// selector constants, menuAround, two call sites and their comments.
-// The busy.js split had freed the room; this did not come near the cap.
-// Scoping that Menu to a topbar or a console that names its view, so an
-// old console's rail is never dismissed: 11,424 → 11,957. Holding a
-// prerendered page's polling until it is shown: 11,957 → 12,368. A
-// switch's draggable knob: 12,368 → 15,340. A dropdown's flip where
-// anchor positioning is missing went in a file of its own, anchor.js,
-// because an app deletes it once its browsers all have the feature.
-//
-// The cap is still the point, and what it protects is the CODE: an app
-// owner owns this file from the moment it is scaffolded and has to be
-// able to read the whole thing in one sitting. The code in it grew from
-// 5,082 to 5,702 bytes across those 4,488 — the file got more talkative,
-// not more complicated. Past 16KB, split something out instead.
-//
-// select.js keeps the 12KB cap it reached separately. The two files
-// sharing a number was a coincidence of history, not a rule: this one
-// now carries three sections, and that one carries one widget.
-//
-// Raised a third time, 16KB → 17KB, by the colour-scheme switch.
-// 15,340 → 16,586 bytes: 1,246 added, of which 746 are CODE — one
-// delegated capture-phase submit listener that sets or removes
-// data-theme, writes the server's cookie with the server's attributes,
-// moves aria-current and closes the menu — and 500 are COMMENT: the
-// section's five lines and one sentence in the header's section list.
-// The cookie line alone is 180 bytes, because the name, Max-Age, Path,
-// SameSite and the Secure switch have to match scheme.go exactly or
-// the next server render paints a different scheme from the one the
-// reader just chose. Trimming to fit under 16KB left the section at
-// its edge with 6 bytes spare, the position the busy rule's round
-// warned about above; splitting was rejected on the ledger's own
-// arithmetic — 746 bytes of behaviour does not earn a seventh
-// scaffolded file and a seventh <script> on every page — and the
-// section belongs beside the menu light dismiss it shares a vocabulary
-// with.
-//
-// The iOS touch listener for pressed states: 16,586 → 16,845 bytes, one
-// line and its comment.
-//
-// Raised a fourth time, 17KB → 18KB, by landing a scheme flip. 16,845 →
-// 18,067 bytes: 1,222 added, of which 393 are CODE: land(), which
-// cancels every running CSS transition after data-theme changes, its
-// one call in the submit listener, and a prefers-color-scheme change
-// handler that does the same for a page on System. The other 829 are
-// COMMENT: the two paragraphs that say what faded (the current nav
-// item's and a linked tile's background, under text that changed at
-// once) and why the OS flip lands a frame late. 563 bytes were under
-// the cap, so the code alone fit and the comments did not; cutting them
-// to fit would have left the next person to rediscover from the axe
-// report why a scheme change cancels transitions. The CSS alternative,
-// a universal transition: none under a root attribute, was rejected
-// because nothing shipped carries an !important and without one the
-// rule loses to the nav's and the tile's own, more specific transitions.
-//
-// 19,078 bytes after the switch rework: 848 added, of which 494 are
-// CODE: the second number the drag writes (the on colour's share
-// beside the knob's), and the release's settle mark, settle() and
-// unsettle() with their timer, the call in drop and the clear at a
-// drag's start, which key the firm release curve in the CSS. The other
-// 354 are COMMENT: what the two numbers are and why a release is marked.
-// 202 bytes were under the cap, so neither the code nor the comments
-// fit; the cap moved to 19 KiB rather than cutting the comment that
-// says why the track reads two numbers. The switch review fixes (the
-// toggle block's head in the drag's selector, and the settle mark
-// clearing on the next change event, bar the release's own click) took
-// it to 19,434, 22 under, with two of the new comments shortened to
-// fit.
+// 8 KiB, the cap before light dismiss, the busy rule, the switch and
+// the scheme menu moved in; they live in Fiesta's busy.js and fiesta.js
+// now, and the shim is back to polling and the scheme cookie.
 func TestShimIsSmall(t *testing.T) {
-	if n := len(ShimJS()); n > 19*1024 {
+	if n := len(ShimJS()); n > 8*1024 {
 		t.Fatalf("shim is %d bytes; the point is that an app owner can read it in one sitting — trim it", n)
 	}
 	if bytes.Contains(ShimJS(), []byte("\t")) {

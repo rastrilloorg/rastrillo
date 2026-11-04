@@ -9,7 +9,7 @@ import (
 // builds at run time. They never appear in a page's templates, so a
 // stylesheet slice that kept only the rules the markup names would
 // strip the script's own widgets bare. A script that only reads hooks
-// (rastrillo.js finds [rst-dropdown] a page already carries) creates
+// (fiesta.js finds [rst-dropdown] a page already carries) creates
 // none and has no entry. ui's TestEachScriptCreatesExactlyItsListedHooks
 // holds each list to its script.
 var createdHooks = map[string][]string{

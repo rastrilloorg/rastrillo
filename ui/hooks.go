@@ -14,13 +14,13 @@ import (
 
 // A pagePlan is what a page shows and loads, read off its templates at
 // boot: the hooks its stylesheet slice must keep the rules for, the
-// optional scripts it loads, as static paths, and whether it is live,
-// which links the whole app's slice in place of its own. components
-// are the component scripts among them: what neededScripts gives a
-// layout that links busy.js, live.js, light.js and anchor.js itself,
-// so it never loads one of them twice. fragments are the hooks its
-// regions show when one is sent alone, which the whole app's slice
-// keeps too.
+// scripts it loads, as static paths (fiesta.js, then its optional
+// ones), and whether it is live, which links the whole app's slice in
+// place of its own. components are the component scripts among them:
+// what neededScripts gives a layout that links busy.js, live.js,
+// light.js and anchor.js itself, so it never loads one of them twice.
+// fragments are the hooks its regions show when one is sent alone,
+// which the whole app's slice keeps too.
 type pagePlan struct {
 	hooks      []string
 	fragments  []string
@@ -43,7 +43,7 @@ func planPage(
 	plan := pagePlan{live: reading.live}
 	hooks := maps.Clone(reading.hooks)
 	components := vendored.ComponentScripts()
-	for _, script := range plannedScripts(reading) {
+	for _, script := range pageScriptNames(reading) {
 		if !has("static/" + script) {
 			continue
 		}
