@@ -90,9 +90,9 @@ by digest.
 
 ## Roles and teams
 
-Scoping separates users, never tenants: a CARLOS app serves one team; a
-multi-team product runs an instance per team (idle instances hibernate
-free). Roles/membership are the `amadan.net/rastrillo/idear` addon
+Scoping separates users, never tenants: one instance serves one tenant
+unit, usually a team; a multi-team product runs an instance per tenant
+(idle instances hibernate and add no instance-hours). Roles/membership are the `amadan.net/rastrillo/idear` addon
 (Owner/Admin/Member, invitations, a membership gate that mints no
 session) — never core, never a subpath of this repository.
 docs/site/addons.md

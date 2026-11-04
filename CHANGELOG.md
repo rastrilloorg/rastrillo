@@ -10,6 +10,37 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+### Changed: a base path refuses the instance's own host as its origin
+
+`basepath.FromEnv` now returns an error when the origin names
+`CARLOS_HOST`, the instance's own hostname. That host is the direct
+host, which sends visitors to the hub, so it is never the product
+origin. A tenant whose `<APP>_ORIGIN` names its own host stops at
+start with a message saying to set the hub's origin instead. Set it to
+the `https://` host the hub is served at.
+
+### Changed: a new app finds its address on CARLOS
+
+A new app's `main.go` gets its origin from the new `rastrillo.Origin`,
+which reads `<APP>_ORIGIN` when it is set. When that is unset on CARLOS,
+the origin is now `https://$CARLOS_HOST`, the instance's own hostname,
+and the app logs that it used it. It used to be `http://localhost:8080`,
+so the CSRF check refused every form post and sign-in emails linked to
+localhost until someone set the variable. Off CARLOS nothing changes:
+the origin is `http://localhost:8080`, with the warning.
+
+Behind a custom domain, set `<APP>_ORIGIN` to it: `CARLOS_HOST` is still
+the platform hostname there. Under a hub's `/<slug>`, set it to the
+hub's origin. A unit tenant (`carlos-app@`) gets no `CARLOS_HOST` from
+the platform and keeps the localhost default.
+
+`rastrillo doctor` never edits the `main.go` that `rastrillo new` wrote,
+so an existing app changes it by hand. To pick this up in an existing
+app, replace `originFrom(logger)` in `cmd/<app>/main.go` with
+`rastrillo.Origin("<APP>_ORIGIN", logger)`, using your app's variable,
+and delete `originFrom`. An app that already sets `<APP>_ORIGIN`
+everywhere it runs needs nothing.
+
 ## v0.31.1
 
 ### Fixed: the chat tour's second step runs as shown

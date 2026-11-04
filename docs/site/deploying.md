@@ -21,6 +21,26 @@ Between `Serve` and `Run`, every route kind the platform runs —
 always-on instance, hibernating exec child, unit tenant — boots the same
 scaffolded app.
 
+## Your app's address
+
+The CSRF check compares each form post with your app's origin, and
+emailed sign-in links point at it. A new app reads it with
+[`rastrillo.Origin`](/docs/reference/rastrillo), which checks
+`<APP>_ORIGIN` first. When that is unset on CARLOS, the origin is
+`https://$CARLOS_HOST`, the instance's own hostname as `carlos instances
+list` shows it. Off CARLOS it is `http://localhost:8080`, with a warning
+in the log.
+
+Set `<APP>_ORIGIN` when people reach the app at another address:
+
+- **A custom domain.** `CARLOS_HOST` stays the platform hostname after
+  `carlos domains attach`, so set `<APP>_ORIGIN=https://<your domain>`.
+- **A hub's `/<slug>`.** Set it to the hub's origin.
+  [basepath](/docs/reference/basepath) refuses to start with the
+  instance's own hostname.
+- **A unit tenant** (`carlos-app@`). The platform does not give it
+  `CARLOS_HOST`.
+
 ## Hibernation needs nothing from you
 
 The activator owns the restore/replicate cycle. Your app does not

@@ -48,6 +48,18 @@ app this way.
 app use [`db.Open`](/docs/reference/db), which returns the two-pool
 handle.
 
+```go
+func Origin(variable string, logger *slog.Logger) string
+```
+
+`Origin` is your app's external origin, which the CSRF check compares
+with and emailed links start with. It is the environment variable named
+`variable`, such as `NOTES_ORIGIN`. When that is unset on CARLOS, it is
+`https://$CARLOS_HOST`, the instance's own hostname, and the app logs at
+info level that it used it. Elsewhere it is `http://localhost:8080`,
+with a warning. Behind a custom domain or under a hub's `/<slug>`, set
+the variable: people reach the app at another host.
+
 `BuildVersion` is the version string `GET /api/version` reports,
 overridden at build time; it defaults to `"dev"`.
 

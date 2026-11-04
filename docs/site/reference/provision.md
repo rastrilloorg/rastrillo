@@ -88,7 +88,7 @@ Your app writes one record per tenant. Follow these rules, so that a crash, a re
 
 ## Credentials
 
-Make one `Console` per credential, and use credentials bound to one app. An account-wide credential reaches every app in the account. A home needs an `instance` credential for the tenant app. A hub needs that one, and a `publish` or `instance` credential for the hub app to publish paths. Keep both in the central app; a tenant needs neither.
+Make one `Console` per credential, and use credentials bound to one app. An account-wide credential reaches every app in the account. A home needs an `instance` credential for the tenant app. A hub needs that one, and a `publish` or `instance` credential for the hub app to publish paths. Keep both in the central app; a tenant needs neither. An `instance` credential deletes as well as creates: it reaches every instance of the tenant app, with their domains and logs, and the platform has no create-only role yet. List that in the leak profile too.
 
 Set `Config.Account` to the account's sqid, not its name. The console answers 404 to a name.
 

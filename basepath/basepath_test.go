@@ -55,6 +55,14 @@ func TestFromEnv(t *testing.T) {
 		{"a host that does not fit the label shape", map[string]string{"RASTRILLO_SLUG_FROM_HOST": "1", "CARLOS_HOST": "www.bdf.oncarlos.com"}, basepath.Config{}, true},
 		{"both set", map[string]string{"RASTRILLO_SLUG": "acme", "RASTRILLO_SLUG_FROM_HOST": "1"}, basepath.Config{}, true},
 		{"a bad slug", map[string]string{"RASTRILLO_SLUG": "Acme/x"}, basepath.Config{}, true},
+		{"an origin naming the instance's own host",
+			map[string]string{"RASTRILLO_SLUG": "acme",
+				"CARLOS_HOST": "example.com"},
+			basepath.Config{}, true},
+		{"an origin naming the instance's own host in capitals",
+			map[string]string{"RASTRILLO_SLUG": "acme",
+				"CARLOS_HOST": "Example.COM"},
+			basepath.Config{}, true},
 	}
 	for _, c := range cases {
 		got, err := basepath.FromEnv(origin, func(k string) string { return c.env[k] })

@@ -1,6 +1,6 @@
 +++
 title = "Ship it"
-commands = ["make release VERSION=v0.1.0", "carlos ship -app chat -target linux-arm64 releases/chat-linux-arm64", "carlos env set --app chat CHAT_ORIGIN=https://<your-host> CHAT_ADMINS=you@example.com"]
+commands = ["make release VERSION=v0.1.0", "carlos ship -app chat -target linux-arm64 releases/chat-linux-arm64", "carlos env set --app chat CHAT_ADMINS=you@example.com"]
 check = "Your app answers at its URL, and sign-in emails arrive."
 +++
 
@@ -10,10 +10,12 @@ check = "Your app answers at its URL, and sign-in emails arrive."
 `make release` builds one small binary for the server. `carlos ship`
 uploads it; then promote it as the CARLOS documentation describes.
 
-Set `CHAT_ORIGIN` to the address the app is served at: the sign-in
-links and the form checks depend on it. To send real email, set
-`CHAT_SMTP_HOST`, `CHAT_SMTP_PORT`, `CHAT_SMTP_FROM`, `CHAT_SMTP_USER`
-and `CHAT_SMTP_PASS`.
+The sign-in links and the form checks use the address the app is served
+at. On CARLOS it is the instance's own hostname, so there is nothing to
+set unless you use a custom domain or a hub path. To serve it at your
+own domain, set `CHAT_ORIGIN` to it, such as `https://chat.example.com`.
+To send real email, set `CHAT_SMTP_HOST`, `CHAT_SMTP_PORT`,
+`CHAT_SMTP_FROM`, `CHAT_SMTP_USER` and `CHAT_SMTP_PASS`.
 
 Serve it on a route that is always on. An open room page holds a stream
 to the server, which keeps a hibernating instance awake.

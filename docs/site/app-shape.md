@@ -31,7 +31,7 @@ exitOnError(logger, "resolve activation", err)
 database, err := db.Open(options.DBPath, logger)
 exitOnError(logger, "open database", err)
 defer database.Close()
-origin := originFrom(logger)
+origin := rastrillo.Origin("NOTES_ORIGIN", logger)
 // ... the base path, from RASTRILLO_SLUG
 mux, hub, err := notes.New(database, origin, logger)
 exitOnError(logger, "build app", err)

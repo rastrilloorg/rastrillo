@@ -28,7 +28,7 @@ func main() {
 	database, err := db.Open(options.DBPath, logger)
 	exitOnError(logger, "open database", err)
 	defer database.Close()
-	origin := originFrom(logger)
+	origin := rastrillo.Origin("%[3]s_ORIGIN", logger)
 	// RASTRILLO_SLUG serves under /<slug>; README.md's Deploy says more.
 	options.BasePath, err = basepath.FromEnv(origin, os.Getenv)
 	exitOnError(logger, "base path", err)
@@ -42,18 +42,6 @@ func main() {
 	// The app opened the database itself: Serve must not open another.
 	options.DBPath = ""
 	exitOnError(logger, "serve", rastrillo.Serve(options))
-}
-
-// originFrom is the app's external origin, which the CSRF check compares
-// with. A missing one is loud: a quiet default in production is a bug.
-func originFrom(logger *slog.Logger) string {
-	const variable = "%[3]s_ORIGIN"
-	origin := os.Getenv(variable)
-	if origin == "" {
-		origin = "http://localhost:8080"
-		logger.Warn(variable+" not set; defaulting", "origin", origin)
-	}
-	return origin
 }
 
 func exitOnError(logger *slog.Logger, step string, err error) {
