@@ -48,14 +48,13 @@ func readShown(hooks map[string]bool) shown {
 // with a value its attribute test, if it has one, accepts, or as a
 // class, if the selector asks for one.
 func (page shown) hookMet(tokens []css.Token, at int) bool {
-	hook := string(tokens[at].Data)
-	if !page.hooks[hook] {
+	if !page.hooks[string(tokens[at].Data)] {
 		return false
 	}
 	if tokens[at-1].TokenType == css.LeftBracketToken {
 		return page.attributeMet(tokens, at)
 	}
-	return page.classes == nil || page.classes[hook]
+	return page.classes == nil || page.classes[string(tokens[at].Data)]
 }
 
 // attributeMet reports whether the page can show the attribute selector
