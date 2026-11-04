@@ -267,12 +267,23 @@ import (
 // leaves examples out of the module zip, and "correct by
 // construction"); the 155-byte bullet lands the file at 9,269
 // beside MCP's lines.
+//
+// Raised 9,300 -> 9,600 on 2026-11-04 for two index rows, port.md and
+// scripts.md, and a pointer from the component-script bullet. Beta
+// testers' agents argued operators out of the ports they asked for and
+// read the framework's scripts-off floor as a ban on app JavaScript; a
+// topic the index does not name is never read, so the rows are the
+// rule every port and every rich screen needs. The description gains
+// "or port one to it" so the skill loads for a port at all, and the
+// screens row "build a first slice" so the polish questions in
+// skill/screens.md are read before the first screen. The file lands at
+// 9,572; the ceiling is the next hundred.
 const (
 	// skillCoreBudget holds SKILL.md near its 2026-10-22 size (6,660
 	// bytes) with room for the index to grow by a few topics. Raising
 	// it means moving something into a topic, which is almost always
 	// the right answer, so raise it only for a rule every task needs.
-	skillCoreBudget = 9_300
+	skillCoreBudget = 9_600
 	// skillTopicBudget is per topic file. A topic that outgrows it
 	// splits in two, each with its own index line.
 	skillTopicBudget = 9_000
