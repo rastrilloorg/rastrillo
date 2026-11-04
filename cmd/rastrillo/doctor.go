@@ -440,6 +440,10 @@ func diagnose(dir, themeFlag string) (*report, error) {
 		default:
 			f.app, f.err = os.ReadFile(f.path)
 			switch {
+			case f.err != nil && os.IsNotExist(f.err) && name == "fiesta.js":
+				// Not beside the full rastrillo.js, which answers the
+				// same menus; the pair arrives with the slim shim.
+				continue
 			case f.err != nil && os.IsNotExist(f.err):
 				f.state = fileAbsent
 			case f.err != nil:

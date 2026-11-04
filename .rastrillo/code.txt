@@ -3510,8 +3510,8 @@ columns cmd/rastrillo/doctor.go f8a8b84c4867 1
 columns cmd/rastrillo/doctor.go fb8e8756c242 1
 columns cmd/rastrillo/doctor.go fd24af5b2925 1
 columns cmd/rastrillo/doctor.go fdab31e1ef54 1
-file cmd/rastrillo/doctor.go - 1070
-func cmd/rastrillo/doctor.go diagnose 110
+file cmd/rastrillo/doctor.go - 1074 Fiesta part 2 Task 2: doctor neither asks for nor writes fiesta.js beside the full rastrillo.js until Task 4's pair logic replaces the guard
+func cmd/rastrillo/doctor.go diagnose 114 Fiesta part 2 Task 2: doctor neither asks for nor writes fiesta.js beside the full rastrillo.js until Task 4's pair logic replaces the guard
 func cmd/rastrillo/doctor.go readPin 80
 func cmd/rastrillo/doctor.go report.applyFix 74
 func cmd/rastrillo/doctor.go report.print 96
