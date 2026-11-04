@@ -103,6 +103,22 @@ func TestASliceKeepsEveryClassWhereAnActionMayWriteOne(t *testing.T) {
 		"in a name":            mono + `<code data-{{.Name}}="a">x</code>`,
 		"in an else, after a branch that left the tag": mono +
 			`<p {{if .A}}>a{{else}} {{.Attrs}}>b{{end}}</p>`,
+		"after an unquoted value from data": mono +
+			`<code id={{.ID}} {{.Attrs}}>x</code>`,
+		"after a quoted value from data": mono +
+			`<code id="{{.ID}}" {{.Attrs}}>x</code>`,
+		"after an unquoted value with text around data": mono +
+			`<code id=x{{.ID}}y {{.Attrs}}>x</code>`,
+		"after an attribute name from data": mono +
+			`<code {{.Name}} {{.Attrs}}>x</code>`,
+		"after a branch's unquoted value": mono +
+			`<code id={{if .A}}{{.ID}}{{end}} {{.Attrs}}>x</code>`,
+		"in a tag a template call leaves open": mono +
+			`{{template "open" .}} {{.Attrs}}>x</code>` +
+			`{{end}}{{define "open"}}<code id="a"`,
+		"in a value a template call leaves open": mono +
+			`<code title={{template "word" .}} {{.Attrs}}>x</code>` +
+			`{{end}}{{define "word"}}{{.Word}}`,
 		"a template called in a tag": mono +
 			`<code {{template "attributes" .}}>x</code>` +
 			`{{end}}{{define "attributes"}}id="a"`,
@@ -125,9 +141,13 @@ func TestAnActionThatCannotWriteAClassKeepsTheCut(t *testing.T) {
 		"an app function's text":    button + `<p>{{upper "a"}}</p>`,
 		"an app function's markup":  button + `<p>{{markup "a"}}</p>`,
 		"data":                      button + `<p>{{.Body}}</p>`,
-		"a translation":             button + `<p>{{T . "a"}}</p>`,
-		"an icon":                   button + `<p>{{icon "x"}}</p>`,
-		"a variable set":            button + `<p {{$a := .A}}>a</p>`,
+		"a bare attribute in a branch": button +
+			`<input name="a"{{if .A}} checked{{end}}>`,
+		"a value in a branch": button +
+			`<input{{if .A}} value="{{.A}}"{{end}} name="a">`,
+		"a translation":  button + `<p>{{T . "a"}}</p>`,
+		"an icon":        button + `<p>{{icon "x"}}</p>`,
+		"a variable set": button + `<p {{$a := .A}}>a</p>`,
 	} {
 		slice := pageSliceWith(t, content(body), template.FuncMap{
 			"upper":  strings.ToUpper,

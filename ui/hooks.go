@@ -110,8 +110,6 @@ type pageReading struct {
 	scripts    scriptReading              // the scripts it loads
 	wanted     map[string]bool            // the scripts it asks for
 	live       bool                       // a region or a poll
-	contexts   map[string]*markupContext  // where each template's text is
-	elseStarts map[*parse.ListNode]markupContext
 }
 
 // readPage walks every template the page reaches from entry.
@@ -124,8 +122,11 @@ func readPage(
 		return reading, nil
 	}
 	var problem error
+	roots := map[string]*parse.ListNode{}
 	root.InspectNamed(func(template string, node parse.Node) {
-		reading.followMarkup(template, node)
+		if list, ok := node.(*parse.ListNode); ok && roots[template] == nil {
+			roots[template] = list
+		}
 		switch concrete := node.(type) {
 		case *parse.TextNode:
 			reading.readMarkup(template, concrete.Text)
@@ -146,6 +147,7 @@ func readPage(
 		}
 	})
 	reading.scripts.settle()
+	reading.anyClass = reading.anyClass || writesUnseenClass(roots, entry)
 	if problem != nil {
 		return pageReading{}, problem
 	}
