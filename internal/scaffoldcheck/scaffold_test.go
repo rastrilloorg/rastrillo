@@ -101,6 +101,10 @@ func goEnvironment() []string {
 // compile its templates either, and the files are new's own whatever
 // this machine's cache holds: once a release reached the cache, new
 // tidied go.mod and wrote go.sum and the compiled templates.
+//
+// GOPRIVATE and GONOPROXY are emptied because goEnvironment's
+// GOPRIVATE=* sends every module to its repository past GOPROXY=off,
+// and new cloned each dependency, 640 MB and a minute a scaffold.
 func newApp(t *testing.T, name string, flags ...string) string {
 	t.Helper()
 	parent := t.TempDir()
@@ -108,13 +112,21 @@ func newApp(t *testing.T, name string, flags ...string) string {
 	command := exec.Command(rastrilloBinary, arguments...)
 	command.Dir = parent
 	command.Env = append(goEnvironment(), "GOPROXY=off",
+		"GOPRIVATE=", "GONOPROXY=",
 		"GOFLAGS=-mod=mod -buildvcs=false -modcacherw",
 		"GOMODCACHE="+t.TempDir())
-	if output, err := command.CombinedOutput(); err != nil {
+	output, err := command.CombinedOutput()
+	if err != nil {
 		t.Fatalf("rastrillo %s: %v\n%s", strings.Join(arguments, " "),
 			err, output)
 	}
-	return filepath.Join(parent, name)
+	directory := filepath.Join(parent, name)
+	if _, err := os.Stat(filepath.Join(directory, "go.sum")); err == nil {
+		t.Fatalf("rastrillo %s tidied the app, so it reached a module "+
+			"source; newApp must leave it offline:\n%s",
+			strings.Join(arguments, " "), output)
+	}
+	return directory
 }
 
 // buildableApp is newApp pointed at this checkout and tidied.

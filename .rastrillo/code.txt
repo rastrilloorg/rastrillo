@@ -8410,7 +8410,6 @@ columns internal/designsystem/header_rule_test.go f83acea0bc08 1
 columns internal/designsystem/header_rule_test.go fd5d16569032 1
 names internal/designsystem/header_rule_test.go TestColourValueRecognisesADerivedColour/v 2
 columns internal/designsystem/history/cache_test.go 12133667c999 1 rewritten by the chromedp v0.21 port, no wider than the recorded line it replaced
-columns internal/designsystem/history/cache_test.go 1249fcdb6393 1
 columns internal/designsystem/history/cache_test.go 513d43eb9995 1
 columns internal/designsystem/history/cache_test.go 6dacab89a988 1
 columns internal/designsystem/history/cache_test.go 75ca9dfebc74 1
@@ -8519,7 +8518,6 @@ columns internal/designsystem/index_browser_test.go aab306531a33 1 rewritten by 
 columns internal/designsystem/index_browser_test.go af5ffb21910d 1
 columns internal/designsystem/index_browser_test.go bac310bd6585 1
 columns internal/designsystem/index_browser_test.go bb8c0c86c96d 1
-columns internal/designsystem/index_browser_test.go c00e9db7767f 1
 columns internal/designsystem/index_browser_test.go c26da4df189b 2
 columns internal/designsystem/index_browser_test.go c4d7602f9564 1
 columns internal/designsystem/index_browser_test.go c6d600cfe224 1
@@ -19965,7 +19963,6 @@ columns ui/browser_test.go 52bf3e7bdcb7 1
 columns ui/browser_test.go 532fa1a4350d 1
 columns ui/browser_test.go 5432d080a208 1
 columns ui/browser_test.go 545eb456df02 1
-columns ui/browser_test.go 575988f95410 1
 columns ui/browser_test.go 575e1c1786f3 1
 columns ui/browser_test.go 586cb61a8a8d 1 rewritten by the chromedp v0.21 port, no wider than the recorded line it replaced
 columns ui/browser_test.go 58ea904ff2cc 1
