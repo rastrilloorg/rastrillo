@@ -203,58 +203,6 @@ func TestDoctorDoesNotCallAnAbsentFileDrift(t *testing.T) {
 	}
 }
 
-// An app from before fiesta.js has the full rastrillo.js, and Fiesta
-// does not support fiesta.js beside it: both answer the same menus. So
-// until the slim shim arrives, doctor neither asks for fiesta.js nor
-// writes it, with or without --force, whether or not the app's pin
-// names it as its own.
-func TestDoctorFixAddsNoFiestaJSBesideTheFullShim(t *testing.T) {
-	for _, owned := range []bool{false, true} {
-		for _, force := range []bool{false, true} {
-			name := fmt.Sprintf("owned %v, force %v", owned, force)
-			t.Run(name, func(t *testing.T) {
-				fixWithoutFiestaJS(t, owned, force)
-			})
-		}
-	}
-}
-
-// fixWithoutFiestaJS runs doctor and --fix on an app with the full
-// rastrillo.js and no fiesta.js, and requires neither to mention or
-// write fiesta.js. owned records fiesta.js in the app's vendoredIsMine.
-func fixWithoutFiestaJS(t *testing.T, owned, force bool) {
-	dir := doctorApp(t, rastrilloVersion(), "day")
-	static := filepath.Join(dir, "internal", "demoapp", "static")
-	if err := os.Remove(filepath.Join(static, "fiesta.js")); err != nil {
-		t.Fatal(err)
-	}
-	if owned {
-		pin := filepath.Join(dir, "internal", "demoapptest", "vendored_test.go")
-		source, _ := os.ReadFile(pin)
-		mustWrite(t, pin, strings.Replace(string(source),
-			`// "tokens.css": true,`, `"fiesta.js": true,`, 1))
-	}
-	report, err := diagnose(dir, "")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if out := printed(report, false); strings.Contains(out, "fiesta.js") {
-		t.Errorf("doctor reports fiesta.js beside the full shim:\n%s", out)
-	}
-	var output bytes.Buffer
-	if err := report.applyFix(&output, force); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := os.Stat(filepath.Join(static, "fiesta.js")); err == nil {
-		t.Errorf("--fix wrote fiesta.js beside the full rastrillo.js:\n%s",
-			output.String())
-	}
-	shim, err := os.ReadFile(filepath.Join(static, "rastrillo.js"))
-	if err != nil || !bytes.Equal(shim, ui.ShimJS()) {
-		t.Errorf("--fix changed the app's rastrillo.js: %v", err)
-	}
-}
-
 // Deleting light.js is the documented way to turn the light off (spec
 // C16): the doctor says the library ships it and does not call the app
 // drifted; --fix, an explicit request, still adds it back.

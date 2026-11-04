@@ -209,6 +209,10 @@ type report struct {
 	files         []vendoredFile
 	layoutAdvice  string // relative path of an old shell layout, if the app has one
 	profileAdvice string // relative path of a layout whose app keeps the person in account
+
+	// fiestaAdvice lists the layouts that load rastrillo.js and no
+	// fiesta.js, relative to dir.
+	fiestaAdvice []string
 }
 
 // skewed reports whether the CLI and the app are on different rastrillo
@@ -386,6 +390,7 @@ func diagnose(dir, themeFlag string) (*report, error) {
 	r.staticDir = rel(dir, staticDir)
 
 	layout := filepath.Join(filepath.Dir(staticDir), "templates", "layout.html")
+	r.fiestaAdvice = layoutsWithoutFiestaJS(dir, filepath.Dir(layout))
 	if b, err := os.ReadFile(layout); err == nil && oldShellLayout(string(b)) {
 		r.layoutAdvice = rel(dir, layout)
 	} else if err == nil {
@@ -426,10 +431,6 @@ func diagnose(dir, themeFlag string) (*report, error) {
 
 	for _, name := range ui.VendoredNames() {
 		f := vendoredFile{name: name, path: filepath.Join(staticDir, name), lib: assets[name]}
-		if _, err := os.Stat(f.path); name == "fiesta.js" &&
-			os.IsNotExist(err) { // waits for its pair, the slim shim
-			continue
-		}
 		switch {
 		case pin.mine[name]:
 			// A recorded name with no file behind it is a removal, and
@@ -689,27 +690,8 @@ func (r *report) print(w io.Writer, fixing bool) {
 	}
 	fmt.Fprintln(w)
 
-	for _, f := range r.files {
-		switch f.state {
-		case fileOK:
-			fmt.Fprintf(w, "  ok       %s\n", f.name)
-		case fileMine:
-			fmt.Fprintf(w, "  yours    %s (recorded as a deliberate edit in %s)\n", f.name, r.pinFile)
-		case fileRemoved:
-			fmt.Fprintf(w, "  yours    %s (removed on purpose, recorded in %s)\n", f.name, r.pinFile)
-		case fileUnknownTheme:
-			fmt.Fprintf(w, "  yours    %s (%s — a theme of your own is supported, so nothing is compared)\n", f.name, r.themeFrom)
-		case fileAbsent:
-			fmt.Fprintf(w, "  absent   %s (the library ships %s; deleting one you do not use is supported)\n",
-				f.name, size(len(f.lib)))
-		case fileUnreadable:
-			fmt.Fprintf(w, "  error    %s: %v\n", f.name, f.err)
-		case fileDiffers:
-			fmt.Fprintf(w, "  drift    %s\n", f.name)
-			for _, line := range describeDiff(f.app, f.lib) {
-				fmt.Fprintf(w, "             %s\n", line)
-			}
-		}
+	for _, file := range r.files {
+		r.printFile(w, file)
 	}
 	fmt.Fprintln(w)
 
@@ -718,6 +700,9 @@ func (r *report) print(w io.Writer, fixing bool) {
 	}
 	if r.profileAdvice != "" {
 		fmt.Fprintf(w, "%s: %s\n\n", r.profileAdvice, doctorProfileAdvisory)
+	}
+	if !fixing {
+		r.adviseFiestaJS(w, false)
 	}
 
 	// The summary counts what was compared, not what exists: a file the
@@ -733,7 +718,9 @@ func (r *report) print(w io.Writer, fixing bool) {
 		case fileOK:
 			compared++
 		case fileAbsent:
-			absent++
+			if r.heldBy(f, false) == "" {
+				absent++
+			}
 		}
 	}
 	left := len(r.files) - compared - absent
@@ -912,6 +899,10 @@ func (r *report) applyFix(w io.Writer, force bool) error {
 	fmt.Fprintln(w)
 	wrote, skipped := 0, 0
 	for _, f := range r.files {
+		if r.leavesForItsPair(w, f, force) {
+			skipped++
+			continue
+		}
 		switch f.state {
 		case fileMine:
 			if !force {
@@ -954,17 +945,7 @@ func (r *report) applyFix(w io.Writer, force bool) error {
 		}
 		wrote++
 	}
-	fmt.Fprintln(w)
-	if wrote == 0 {
-		fmt.Fprintf(w, "Nothing re-copied (%s left alone).\n", plural(skipped, "file"))
-		if skipped > 0 {
-			return nil
-		}
-		return r.exit()
-	}
-	fmt.Fprintf(w, "Re-copied %s from %s — still yours, so read the diff before you commit it.\n",
-		plural(wrote, "file"), r.cliVersion)
-	return nil
+	return r.fixSummary(w, force, wrote, skipped)
 }
 
 // describeDiff says HOW two files differ, in the few lines a person can

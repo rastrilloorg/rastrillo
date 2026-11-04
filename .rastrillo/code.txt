@@ -3438,7 +3438,6 @@ columns cmd/rastrillo/doctor.go 0384c3499c3c 1
 columns cmd/rastrillo/doctor.go 050eed29e128 1
 columns cmd/rastrillo/doctor.go 0adc963601a3 1
 columns cmd/rastrillo/doctor.go 115ed77e1b8e 1
-columns cmd/rastrillo/doctor.go 166f944294e3 1
 columns cmd/rastrillo/doctor.go 1697f43af943 1
 columns cmd/rastrillo/doctor.go 182064c62947 1
 columns cmd/rastrillo/doctor.go 1f410803136a 1
@@ -3447,7 +3446,6 @@ columns cmd/rastrillo/doctor.go 2e01a18e34df 1
 columns cmd/rastrillo/doctor.go 31867b4479b6 1
 columns cmd/rastrillo/doctor.go 3753182841b1 1
 columns cmd/rastrillo/doctor.go 3d4cd0d3a838 1
-columns cmd/rastrillo/doctor.go 4199f64e344e 1
 columns cmd/rastrillo/doctor.go 424ffc07d609 1
 columns cmd/rastrillo/doctor.go 45f9bd5797e0 1
 columns cmd/rastrillo/doctor.go 4baceeb8b4a8 1
@@ -3461,7 +3459,6 @@ columns cmd/rastrillo/doctor.go 66c96b708c66 1
 columns cmd/rastrillo/doctor.go 67d6a57288c3 1
 columns cmd/rastrillo/doctor.go 69703b6c033e 1
 columns cmd/rastrillo/doctor.go 6ccad279748d 1
-columns cmd/rastrillo/doctor.go 70553f736653 1
 columns cmd/rastrillo/doctor.go 742a14e32f3c 1
 columns cmd/rastrillo/doctor.go 759a54251389 1
 columns cmd/rastrillo/doctor.go 7bac9863a040 1
@@ -3488,8 +3485,6 @@ columns cmd/rastrillo/doctor.go a9c8e20b593b 1
 columns cmd/rastrillo/doctor.go a9e20e846957 1
 columns cmd/rastrillo/doctor.go ab6951f4aa0d 1
 columns cmd/rastrillo/doctor.go ab6edbe599f1 1
-columns cmd/rastrillo/doctor.go add7c48d58aa 1
-columns cmd/rastrillo/doctor.go af6e3caa13f9 1
 columns cmd/rastrillo/doctor.go b4c1bcffc771 1
 columns cmd/rastrillo/doctor.go bd3992e7dcee 1
 columns cmd/rastrillo/doctor.go be85028d2dee 1
@@ -3500,7 +3495,6 @@ columns cmd/rastrillo/doctor.go d16033426ade 1
 columns cmd/rastrillo/doctor.go d37a527628f8 2
 columns cmd/rastrillo/doctor.go e12406aa6af9 1
 columns cmd/rastrillo/doctor.go e4abb792e0fd 1
-columns cmd/rastrillo/doctor.go e72e775b4c88 1
 columns cmd/rastrillo/doctor.go e72efe6e9a9e 1
 columns cmd/rastrillo/doctor.go f207a4b452b6 1
 columns cmd/rastrillo/doctor.go f40bd3e725c8 1
@@ -3510,11 +3504,11 @@ columns cmd/rastrillo/doctor.go f8a8b84c4867 1
 columns cmd/rastrillo/doctor.go fb8e8756c242 1
 columns cmd/rastrillo/doctor.go fd24af5b2925 1
 columns cmd/rastrillo/doctor.go fdab31e1ef54 1
-file cmd/rastrillo/doctor.go - 1074 Fiesta part 2 Task 2: doctor neither asks for nor writes fiesta.js beside the full rastrillo.js until Task 4's pair logic replaces the guard
-func cmd/rastrillo/doctor.go diagnose 114 Fiesta part 2 Task 2: doctor neither asks for nor writes fiesta.js beside the full rastrillo.js until Task 4's pair logic replaces the guard
+file cmd/rastrillo/doctor.go - 1055
+func cmd/rastrillo/doctor.go diagnose 111 raised from 110 by Fiesta part 2 Task 4: diagnose lists the layouts that load rastrillo.js and no fiesta.js, for the advice --fix decides on the files it leaves
 func cmd/rastrillo/doctor.go readPin 80
-func cmd/rastrillo/doctor.go report.applyFix 74
-func cmd/rastrillo/doctor.go report.print 96
+func cmd/rastrillo/doctor.go report.applyFix 68
+func cmd/rastrillo/doctor.go report.print 82
 names cmd/rastrillo/doctor.go clip/n 1
 names cmd/rastrillo/doctor.go clip/s 1
 names cmd/rastrillo/doctor.go count/b 1
@@ -3551,7 +3545,7 @@ names cmd/rastrillo/doctor.go report.applyFix/w 1
 names cmd/rastrillo/doctor.go report.drifted/f 1
 names cmd/rastrillo/doctor.go report.drifted/r 1
 names cmd/rastrillo/doctor.go report.exit/r 1
-names cmd/rastrillo/doctor.go report.print/f 2
+names cmd/rastrillo/doctor.go report.print/f 1
 names cmd/rastrillo/doctor.go report.print/n 1
 names cmd/rastrillo/doctor.go report.print/r 1
 names cmd/rastrillo/doctor.go report.print/w 1
@@ -24450,12 +24444,9 @@ columns ui/shell_locale_test.go 199d7fc339cf 1
 columns ui/shell_locale_test.go 1dcbaa407178 1
 columns ui/shell_locale_test.go 44bd9b04cba7 1
 columns ui/shell_locale_test.go 4743aa4a3c9f 1
-columns ui/shell_locale_test.go 5660b97f6115 1
 columns ui/shell_locale_test.go 5bf0e0dcd0f7 1
 columns ui/shell_locale_test.go 627cc7d377f3 1
-columns ui/shell_locale_test.go 68d6e3d4edd4 1
 columns ui/shell_locale_test.go 698bce994196 1
-columns ui/shell_locale_test.go 9d15ad014e8e 1
 columns ui/shell_locale_test.go b626f7db7a0d 1
 columns ui/shell_locale_test.go bbcc574d7dd5 1
 columns ui/shell_locale_test.go c0e26d8b9229 1
@@ -25597,7 +25588,6 @@ columns ui/ui_test.go 08eab0f6920a 1
 columns ui/ui_test.go 09d2f8cfccc6 1
 columns ui/ui_test.go 09f522c5063d 1
 columns ui/ui_test.go 09f8c465b606 1
-columns ui/ui_test.go 0a73dcabb8ce 1 a shell's overridable block names, one list per shell, gained live-head and region:notice
 columns ui/ui_test.go 0aa36d24e376 1
 columns ui/ui_test.go 0b935d330766 1
 columns ui/ui_test.go 0d2898e060cb 1
