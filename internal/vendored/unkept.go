@@ -22,12 +22,13 @@ func Unkept(whole, slice []byte, hooks map[string]bool) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
+	page := readShown(hooks)
 	kept := map[string]bool{}
-	for _, met := range metRules(served, hooks, "") {
+	for _, met := range metRules(served, page, "") {
 		kept[met.place] = true
 	}
 	unkept := map[string]bool{}
-	for _, met := range metRules(wanted, hooks, "") {
+	for _, met := range metRules(wanted, page, "") {
 		if kept[met.place] {
 			continue
 		}
@@ -49,14 +50,14 @@ type metRule struct {
 
 // metRules returns the style rules of rules, at any depth, whose
 // selectors hooks meet, as writeKept chooses them.
-func metRules(rules []rule, hooks map[string]bool, within string) []metRule {
+func metRules(rules []rule, page shown, within string) []metRule {
 	var met []metRule
 	for _, rule := range rules {
 		switch {
 		case rule.opening != nil:
 			inside := within + string(rule.opening)
-			met = append(met, metRules(rule.rules, hooks, inside)...)
-		case rule.selector != nil && anySelectorMet(rule.selector, hooks):
+			met = append(met, metRules(rule.rules, page, inside)...)
+		case rule.selector != nil && anySelectorMet(rule.selector, page):
 			met = append(met,
 				metRule{within + string(rule.text), rule.named})
 		}

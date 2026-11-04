@@ -99,6 +99,78 @@ func TestSliceKeepsTheRulesAPageCanShow(t *testing.T) {
 	}
 }
 
+// A page whose templates write a hook's every value as a literal shows
+// only those values, so a rule for a variant it never writes goes. A
+// hook with no value written down, because a template writes it from
+// data, keeps every variant's rule.
+func TestSliceKeepsOnlyTheVariantsAPageShows(t *testing.T) {
+	variants := `[rst-btn]{a:b}[rst-btn~=primary]{c:d}` +
+		`[rst-btn~=ghost]{e:f}`
+	primary := vendored.ShownValue("rst-btn", "primary")
+	bare := vendored.ShownValue("rst-btn", "")
+	cases := []struct {
+		name       string
+		stylesheet string
+		hooks      []string
+		want       string
+	}{
+		{"one variant shown", variants, []string{"rst-btn", primary},
+			`[rst-btn]{a:b}[rst-btn~=primary]{c:d}`},
+		{"a value written from data", variants, []string{"rst-btn"},
+			variants},
+		{"only the bare attribute", variants, []string{"rst-btn", bare},
+			`[rst-btn]{a:b}`},
+		{"a variant the rule excludes",
+			`[rst-btn]:not([rst-btn~=ghost]){a:b}`,
+			[]string{"rst-btn", primary},
+			`[rst-btn]:not([rst-btn~=ghost]){a:b}`},
+		{"one branch of a list", `[rst-btn~=ghost],[rst-btn~=primary]{a:b}`,
+			[]string{"rst-btn", primary},
+			`[rst-btn~=ghost],[rst-btn~=primary]{a:b}`},
+		{"inside :is()", `:is([rst-btn~=ghost]) p{a:b}`,
+			[]string{"rst-btn", primary}, ``},
+		{"a quoted value", `[rst-btn~="primary"]{a:b}`,
+			[]string{"rst-btn", primary}, `[rst-btn~="primary"]{a:b}`},
+		{"one of several words",
+			`[rst-btn~=sm]{a:b}[rst-btn~=lg]{c:d}`,
+			[]string{"rst-btn", vendored.ShownValue("rst-btn", "ghost sm")},
+			`[rst-btn~=sm]{a:b}`},
+		{"exact", `[rst-btn=primary]{a:b}[rst-btn="ghost sm"]{c:d}`,
+			[]string{"rst-btn", vendored.ShownValue("rst-btn", "ghost sm")},
+			`[rst-btn="ghost sm"]{c:d}`},
+		{"exact, any case", `[rst-btn=PRIMARY i]{a:b}`,
+			[]string{"rst-btn", primary}, `[rst-btn=PRIMARY i]{a:b}`},
+		{"dash", `[rst-x|=a]{a:b}[rst-x|=b]{c:d}`,
+			[]string{"rst-x", vendored.ShownValue("rst-x", "a-1")},
+			`[rst-x|=a]{a:b}`},
+		{"prefix, suffix and substring",
+			`[rst-x^=ab]{a:b}[rst-x$=yz]{c:d}[rst-x*=mn]{e:f}` +
+				`[rst-x^=yz]{g:h}`,
+			[]string{"rst-x", vendored.ShownValue("rst-x", "abmnyz")},
+			`[rst-x^=ab]{a:b}[rst-x$=yz]{c:d}[rst-x*=mn]{e:f}`},
+		{"another hook's value", `[rst-a~=x]{a:b}`,
+			[]string{"rst-a", vendored.ShownValue("rst-b", "y")},
+			`[rst-a~=x]{a:b}`},
+		{"the hook not shown at all", `[rst-btn~=primary]{a:b}`,
+			[]string{primary}, ``},
+	}
+	for _, test := range cases {
+		hooks := map[string]bool{}
+		for _, hook := range test.hooks {
+			hooks[hook] = true
+		}
+		sliced, err := vendored.Slice([]byte(test.stylesheet), hooks)
+		if err != nil {
+			t.Errorf("%s: %v", test.name, err)
+			continue
+		}
+		if string(sliced) != test.want {
+			t.Errorf("%s: %s with %q: got %q, want %q", test.name,
+				test.stylesheet, test.hooks, sliced, test.want)
+		}
+	}
+}
+
 func TestSliceRefusesWhatItCannotRead(t *testing.T) {
 	unreadable := []string{
 		`[rst-a]{a:b`,

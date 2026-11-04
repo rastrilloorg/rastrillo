@@ -239,20 +239,24 @@ func reportUnstyled(
 }
 
 // shownHooks is the hooks a page's markup carries: its attribute names
-// and class names, read by the reader the slicer's hooks come from. An
-// option's data-rst-class counts as classes: select.js copies them onto
-// the row it draws.
+// and class names, read by the reader the slicer's hooks come from, and
+// the value each hook attribute carries, so a variant the page does not
+// show is not counted as unstyled. An option's data-rst-class counts as
+// classes: select.js copies them onto the row it draws.
 func shownHooks(page []byte) map[string]bool {
 	var names []byte
+	shown := map[string]bool{}
 	for _, tag := range pageTags(page) {
 		for name, value := range tag.attributes {
 			names = append(names, name+" "...)
 			if name == "class" || name == "data-rst-class" {
 				names = append(names, value+" "...)
 			}
+			if vendored.IsHook(name) {
+				shown[vendored.ShownValue(name, value)] = true
+			}
 		}
 	}
-	shown := map[string]bool{}
 	for _, hook := range vendored.HooksIn(names) {
 		shown[hook] = true
 	}

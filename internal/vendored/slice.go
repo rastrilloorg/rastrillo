@@ -52,16 +52,17 @@ type rule struct {
 
 // Slice returns stylesheet with only the rules a page carrying hooks
 // can show: a style rule is kept when one of its comma-separated
-// selectors needs no hook outside hooks, and a group such as @media
-// keeps its kept rules and goes when none are left. Kept rules come
-// back byte for byte, so a minified stylesheet stays minified.
+// selectors needs no hook outside hooks, and no value of a hook that
+// hooks' ShownValue entries rule out, and a group such as @media keeps
+// its kept rules and goes when none are left. Kept rules come back byte
+// for byte, so a minified stylesheet stays minified.
 func Slice(stylesheet []byte, hooks map[string]bool) ([]byte, error) {
 	rules, err := read(stylesheet, 0)
 	if err != nil {
 		return nil, err
 	}
 	var out bytes.Buffer
-	writeKept(&out, rules, hooks)
+	writeKept(&out, rules, readShown(hooks))
 	return out.Bytes(), nil
 }
 
@@ -77,12 +78,12 @@ func StyledHooks(stylesheet []byte) (map[string]bool, error) {
 	return hooks, nil
 }
 
-func writeKept(out *bytes.Buffer, rules []rule, hooks map[string]bool) {
+func writeKept(out *bytes.Buffer, rules []rule, page shown) {
 	for _, rule := range rules {
 		switch {
 		case rule.opening != nil:
 			var inside bytes.Buffer
-			writeKept(&inside, rule.rules, hooks)
+			writeKept(&inside, rule.rules, page)
 			if inside.Len() == 0 {
 				out.Write(rule.emptied)
 				continue
@@ -90,7 +91,7 @@ func writeKept(out *bytes.Buffer, rules []rule, hooks map[string]bool) {
 			out.Write(rule.opening)
 			out.Write(inside.Bytes())
 			out.Write(rule.closing)
-		case rule.selector == nil || anySelectorMet(rule.selector, hooks):
+		case rule.selector == nil || anySelectorMet(rule.selector, page):
 			out.Write(rule.text)
 		}
 	}
@@ -320,33 +321,35 @@ func escapedFunction(selector []css.Token) bool {
 	})
 }
 
-// anySelectorMet reports whether one of list's comma-separated
-// selectors needs no hook outside hooks.
-func anySelectorMet(list []css.Token, hooks map[string]bool) bool {
+// anySelectorMet reports whether the page can show one of list's
+// comma-separated selectors.
+func anySelectorMet(list []css.Token, page shown) bool {
 	for _, selector := range splitAtCommas(list) {
-		if selectorMet(selector, hooks) {
+		if selectorMet(selector, page) {
 			return true
 		}
 	}
 	return false
 }
 
-// selectorMet reports whether hooks hold every hook selector needs. A
-// hook inside :not() is never needed, since the rule applies where it
-// is absent. Any other function's arguments, :is(), :where(), :has()
-// and the "of" list of :nth-child() among them, need one branch.
-func selectorMet(selector []css.Token, hooks map[string]bool) bool {
+// selectorMet reports whether the page shows every hook selector
+// needs, with a value each attribute test accepts. A hook inside
+// :not() is never needed, since the rule applies where it is absent.
+// Any other function's arguments, :is(), :where(), :has() and the "of"
+// list of :nth-child() among them, need one branch.
+func selectorMet(selector []css.Token, page shown) bool {
 	for index := 0; index < len(selector); index++ {
 		if selector[index].TokenType == css.FunctionToken {
 			end := closingParenthesis(selector, index)
 			negated := bytes.EqualFold(selector[index].Data, []byte("not("))
-			if !negated && !anySelectorMet(selector[index+1:end], hooks) {
+			if !negated && !anySelectorMet(selector[index+1:end], page) {
 				return false
 			}
 			index = end
 			continue
 		}
-		if name, ok := hookAt(selector, index); ok && !hooks[name] {
+		if _, ok := hookAt(selector, index); ok &&
+			!page.hookMet(selector, index) {
 			return false
 		}
 	}
