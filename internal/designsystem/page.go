@@ -2711,10 +2711,7 @@ func buildAssets(mount, theme, locale string) assetsView {
 	add(&out, "tokens.css", ui.TokensCSS(),
 		"Structure: every component class, every scale, and no colour literal anywhere. The same file under every theme.")
 	for _, name := range ui.ThemeNames() {
-		css, ok := ui.ThemeCSS(name)
-		if !ok {
-			continue
-		}
+		css, _ := ui.ThemeCSS(name) // every name here is a shipped theme
 		add(&out, "theme-"+name+".css", css,
 			"Colour, type family and shape for the {theme} theme: one :root block where every colour is declared once as a light-dark() pair.", "theme", name)
 	}
@@ -2722,6 +2719,7 @@ func buildAssets(mount, theme, locale string) assetsView {
 		"The slide between pages on a phone, for the sidebar and console shells. Deletable with shell.js.")
 	add(&out, "rastrillo.js", ui.ShimJS(),
 		"The progressive-enhancement shim: polling fragments, light dismiss and the switch's drag. Every scaffolded app gets it.")
+	add(&out, "fiesta.js", vendored["fiesta.js"], fiestaAssetBlurb)
 	add(&out, "busy.js", ui.BusyJS(),
 		"The busy rule: while a form sends, its button shows a spinner for at least 650ms and refuses a second submit, and Back hands it back. Every scaffolded app gets it.")
 	add(&out, "live.js", ui.LiveJS(),
@@ -2733,6 +2731,7 @@ func buildAssets(mount, theme, locale string) assetsView {
 	add(&out, "shell.js", ui.ShellJS(),
 		"Phone navigation for the sidebar and console shells: the slide between pages, Back that reuses history, and focus returned to the section you left. Deletable on its own.")
 	add(&out, "transition.js", ui.TransitionJS(), transitionAssetBlurb)
+	add(&out, "copy.js", vendored["copy.js"], copyAssetBlurb)
 	add(&out, "select.js", ui.SelectJS(),
 		"field-select's searchable combobox. Inert until a select opts in with data-rst-select, and deletable on its own.")
 	add(&out, "datetime.js", ui.DatetimeJS(),

@@ -29,27 +29,26 @@ func VendoredNames() []string { return vendored.Names() }
 // difference. All three read this function, so a file added here
 // reaches all three at once, which is the point of it.
 //
-// The bytes are the library's own embedded copies. They are delivered
-// once and app-owned from then on: nothing in the framework rewrites
-// them, and an app is free to edit or delete any of them.
+// The stylesheets and every script but rastrillo.js and live.js are
+// the pinned Fiesta's own bytes; those two are Rastrillo's. They are
+// delivered once and app-owned from then on: nothing in the framework
+// rewrites them, and an app is free to edit or delete any of them.
 func VendoredAssets(theme string) (map[string][]byte, bool) {
 	themeCSS, ok := ThemeCSS(theme)
 	if !ok {
 		return nil, false
 	}
-	return map[string][]byte{
-		"tokens.css":    TokensCSS(),
-		"theme.css":     themeCSS,
-		"shell.css":     ShellCSS(),
-		"rastrillo.js":  ShimJS(),
-		"busy.js":       BusyJS(),
-		"live.js":       LiveJS(),
-		"light.js":      LightJS(),
-		"anchor.js":     AnchorJS(),
-		"shell.js":      ShellJS(),
-		"transition.js": TransitionJS(),
-		"select.js":     SelectJS(),
-		"datetime.js":   DatetimeJS(),
-		"calendar.js":   CalendarJS(),
-	}, true
+	assets := map[string][]byte{
+		"tokens.css":   TokensCSS(),
+		"theme.css":    themeCSS,
+		"shell.css":    ShellCSS(),
+		"rastrillo.js": ShimJS(),
+		"live.js":      LiveJS(),
+	}
+	for _, name := range VendoredNames() {
+		if _, own := assets[name]; !own {
+			assets[name] = fiestaScript(name)
+		}
+	}
+	return assets, true
 }

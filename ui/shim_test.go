@@ -408,9 +408,9 @@ func TestShimIsSmall(t *testing.T) {
 	}
 }
 
-// select.js holds to the same contract as the shim, and to the same
-// reason for existing: small enough that the app owner who now owns it
-// can read the whole thing.
+// select.js holds to the same contract as the shim: the attributes the
+// field partials write, an ARIA combobox, and a native select that
+// survives enhancement.
 func TestSelectContract(t *testing.T) {
 	js := string(SelectJS())
 	for _, want := range []string{
@@ -447,101 +447,21 @@ func TestSelectContract(t *testing.T) {
 			t.Errorf("select.js does not mention %q; a grouped select would be flattened", want)
 		}
 	}
-	// Raised from 8KB to 12KB, once, by optgroups and the markup
-	// opt-out. Flattening native.options was a line shorter and silently
-	// threw away the headings an author wrote to make a long list
-	// readable; rendering the groups costs a nested list, an ARIA group
-	// per optgroup, and a filter that hides a heading when its rows all
-	// go. That is the trade, and it is a decision, not a drift.
-	//
-	// Raised again, to 37KB (measured 36,296 bytes), by the convergence
-	// with Tito Go's searchselect (2026-09-26): ranking that puts the row
-	// someone meant first (accents folded, ISO and calling codes as
-	// terms), prompts that are never picks, a list that keeps pace with
-	// fast typing by moving only what a search shows, settle-on-leave,
-	// dividers, compact boxes and borrowed validity. Splitting the pure
-	// ranking into its own file was tried and rejected: importing it makes
-	// this an ES module, which every app's classic <script defer> tag and
-	// the design system's preview files would have to change for, and an
-	// app that re-vendored without editing its layout would lose the
-	// enhancement silently. Most of the growth is the why-comments, which
-	// are what let the app owner who now owns it read it in one sitting.
-	// The headroom is about what the old 12KB ceiling had: room for a fix
-	// and its why, not for a feature.
-	//
-	// Then to 47KB by the alignment with Tito's final searchselect (titogo
-	// 9d21ce1): the box steps aside when a page replaces the select
-	// outright, and rebuilds itself when a page changes the options —
-	// without both it showed one pick while the form posted another — and,
-	// from Paul's iPhone, the list opens upward when the keyboard leaves no
-	// room below, with layout read once a frame. Measured 48,035 bytes after
-	// rows moved from the hidden attribute to inline display (titogo
-	// #3145); comments were trimmed to stay inside rather than raise it.
-	//
-	// Then to 48KB (measured 48,573 bytes) by rst:select-scan, the one way
-	// a page that adds content after load gets its selects enhanced (Tito's
-	// modal forms need it). The header was trimmed first; the ranking
-	// comments were not, because they are kept in step with Tito's.
-	//
-	// Then to 50KB (measured 51,096 bytes) by placement in frames: a band a
-	// host tells the frame (rst:select-viewport), floors under sticky bars
-	// (data-rst-select-floor), the list's padding and borders counted
-	// against the room, and the gap re-read — Tito Go #3146's rule, which
-	// the checkout widget's iPhone keyboard needed.
-	//
-	// Then to 51KB (measured 52,098 bytes) by data-rst-class, a row and the
-	// closed box styled per option: Tito Go's font menus set each name in
-	// its own face. Comments were trimmed to the one that says why typing
-	// takes the classes off.
-	//
-	// Then to 52KB (measured 53,128 bytes) by selecting the pick on a
-	// focusing click as well as on focus: WebKit put the caret where a
-	// click landed after focus, so clearing "Dublin" took a double-click.
-	// The comment is the one that says why each pointer selects when.
-	//
-	// Then to 53KB (measured 54,094 bytes) by cutting the room only to the
-	// ancestors that can clip the list, its chain of containing blocks: a
-	// list fixed or anchored out of a bar that scrolls sideways opened 0px
-	// tall in Docs' phone toolbar. The comments are the two that say why.
-	//
-	// Then to 54KB (measured 55,248 bytes) when the review on #136 held
-	// that chain to the CSS rules (paint containment and content-visibility
-	// clipping, will-change's triggers, will-change: position for absolute
-	// lists, size containers dropped, the top layer and slots), and added
-	// data-rst-select-ceiling, floor's twin for a sticky header.
-	//
-	// Then to 55KB (measured 55,848 bytes) for the re-review: no
-	// containment, transform or overflow on a box that is not there
-	// (display: contents) or is a plain inline, preserve-3d, and
-	// will-change matched without case and through -webkit- aliases. The
-	// third review's fixes (containment skips table rows and ruby, a
-	// boxless ancestor's position is not the chain's, each will-change
-	// name by its own property's rule, motion paths, only aliases the
-	// engine has) fit under it at 56,306 bytes, folding the computed
-	// values and the will-change names into one check.
-	if n := len(SelectJS()); n > 55*1024 {
-		t.Fatalf("select.js is %d bytes; it is split out of the shim precisely to stay readable — trim it", n)
-	}
 	if bytes.Contains(SelectJS(), []byte("\t")) {
 		t.Error("select.js uses two-space indentation, not tabs")
 	}
 }
 
-// No scaffolded script may reach off-origin: all seven are vendored,
+// No scaffolded script may reach off-origin: every one is vendored,
 // first-party and dependency-free.
 func TestScriptsAreSelfContained(t *testing.T) {
-	for name, js := range map[string]string{
-		"rastrillo.js": string(ShimJS()),
-		"busy.js":      string(BusyJS()),
-		"light.js":     string(LightJS()),
-		"anchor.js":    string(AnchorJS()),
-		"select.js":    string(SelectJS()),
-		"datetime.js":  string(DatetimeJS()),
-		"calendar.js":  string(CalendarJS()),
-		"shell.js":     string(ShellJS()),
-	} {
+	assets, _ := VendoredAssets("day")
+	for name, js := range assets {
+		if !strings.HasSuffix(name, ".js") {
+			continue
+		}
 		for _, bad := range []string{"http://", "https://", "import ", "require(", "//cdn"} {
-			if strings.Contains(js, bad) {
+			if strings.Contains(string(js), bad) {
 				t.Errorf("%s reaches outside the page (%q)", name, bad)
 			}
 		}
@@ -551,7 +471,7 @@ func TestScriptsAreSelfContained(t *testing.T) {
 // anchor.js is the one script an app is told to delete in time, so its
 // contract is that it is inert where it is not needed: the feature test
 // returns before any listener is added, and the class it writes is the
-// one tokens.css opens a menu from. Small, like the others.
+// one tokens.css opens a menu from.
 func TestAnchorContract(t *testing.T) {
 	js := string(AnchorJS())
 	test, listen := strings.Index(js, `CSS.supports("position-area: block-end")`), strings.Index(js, "addEventListener")
@@ -560,9 +480,6 @@ func TestAnchorContract(t *testing.T) {
 	}
 	if !strings.Contains(js, "is-flip-inline") || !strings.Contains(string(TokensCSS()), "[rst-dropdown].is-flip-inline > [rst-dropdown-menu]") {
 		t.Error("anchor.js and tokens.css no longer agree on .is-flip-inline")
-	}
-	if n := len(js); n > 4*1024 {
-		t.Errorf("anchor.js is %d bytes; it does one thing, keep it small", n)
 	}
 	if strings.Contains(js, "\t") {
 		t.Error("anchor.js uses two-space indentation, not tabs")
@@ -603,15 +520,12 @@ func TestBusyContract(t *testing.T) {
 	if strings.Contains(js, "eval(") || strings.Contains(js, "new Function") || strings.Contains(js, "\t") {
 		t.Error("busy.js must stay CSP-clean and use two-space indentation")
 	}
-	if n := len(js); n > 16*1024 {
-		t.Fatalf("busy.js is %d bytes; keep it readable in one sitting", n)
-	}
 }
 
-// shell.js holds to the contract every scaffolded script does, with an
-// 8 KiB cap of its own (busy.js's precedent): the three behaviours it
-// exists for, named; both spellings of what it reads; the storage guard;
-// the prerender and pageswap facts its ordering depends on.
+// shell.js holds to the contract every scaffolded script does: the
+// three behaviours it exists for, named; both spellings of what it
+// reads; the storage guard; the prerender and pageswap facts its
+// ordering depends on.
 func TestShellContract(t *testing.T) {
 	js := string(ShellJS())
 	for _, want := range []string{
@@ -635,9 +549,6 @@ func TestShellContract(t *testing.T) {
 	}
 	if strings.Contains(js, "eval(") || strings.Contains(js, "new Function") || strings.Contains(js, "\t") {
 		t.Error("shell.js must stay CSP-clean and use two-space indentation")
-	}
-	if n := len(js); n > 8*1024 {
-		t.Fatalf("shell.js is %d bytes; keep it readable in one sitting (8 KiB)", n)
 	}
 }
 

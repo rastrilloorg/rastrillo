@@ -24,28 +24,18 @@ import (
 var samplesFS embed.FS
 
 // galleryAssets is every stylesheet, script and sample picture the
-// tree ships, by its plain name: the framework's, one stylesheet per
-// theme, the gallery's own two, and the media-grid sample's four
-// pictures. Render writes each once, under its hashed name. live.js is
-// here because every scaffold layout links it, and a layout that links
-// an asset missing from the tree fails the render of every page.
+// tree ships, by its plain name: every file an app vendors, one
+// stylesheet per theme in place of theme.css, the gallery's own two,
+// and the media-grid sample's four pictures. Render writes each once,
+// under its hashed name. The vendored files are all here because the
+// gallery renders ui's layouts outside ui.Pages, where they link every
+// optional script, and a layout that links an asset missing from the
+// tree fails the render of every page.
 func galleryAssets() map[string][]byte {
-	out := map[string][]byte{
-		"tokens.css":    ui.TokensCSS(),
-		"rastrillo.js":  ui.ShimJS(),
-		"busy.js":       ui.BusyJS(),
-		"live.js":       ui.LiveJS(),
-		"light.js":      ui.LightJS(),
-		"anchor.js":     ui.AnchorJS(),
-		"shell.js":      ui.ShellJS(),
-		"transition.js": ui.TransitionJS(),
-		"shell.css":     ui.ShellCSS(),
-		"select.js":     ui.SelectJS(),
-		"datetime.js":   ui.DatetimeJS(),
-		"calendar.js":   ui.CalendarJS(),
-		"gallery.js":    GalleryJS(),
-		"gallery.css":   GalleryCSS(),
-	}
+	out, _ := ui.VendoredAssets(RootTheme())
+	delete(out, "theme.css")
+	out["gallery.js"] = GalleryJS()
+	out["gallery.css"] = GalleryCSS()
 	for _, theme := range ui.ThemeNames() {
 		if css, ok := ui.ThemeCSS(theme); ok {
 			out["theme-"+theme+".css"] = css

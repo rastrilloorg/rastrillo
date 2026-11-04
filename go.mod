@@ -3,6 +3,7 @@ module amadan.net/rastrillo/rastrillo
 go 1.26.0
 
 require (
+	amadan.net/rastrillo/fiesta v1.2.0
 	amadan.net/rastrillo/rastrillo/money v0.1.0
 	github.com/BurntSushi/toml v1.6.0
 	github.com/chromedp/cdproto v0.158.6
@@ -15,9 +16,9 @@ require (
 	github.com/tdewolff/minify/v2 v2.24.19
 	github.com/tdewolff/parse/v2 v2.8.16
 	golang.org/x/crypto v0.53.0
-	golang.org/x/mod v0.37.0
-	golang.org/x/text v0.39.0
-	golang.org/x/tools v0.47.0
+	golang.org/x/mod v0.38.0
+	golang.org/x/text v0.41.0
+	golang.org/x/tools v0.48.0
 	gorm.io/gorm v1.31.2
 	gorm.io/plugin/dbresolver v1.6.2
 	modernc.org/sqlite v1.55.0
@@ -36,7 +37,7 @@ require (
 	github.com/segmentio/encoding v0.5.4 // indirect
 	github.com/yosida95/uritemplate/v3 v3.0.2 // indirect
 	golang.org/x/oauth2 v0.35.0 // indirect
-	golang.org/x/sync v0.21.0 // indirect
+	golang.org/x/sync v0.22.0 // indirect
 	golang.org/x/sys v0.47.0 // indirect
 	golang.org/x/time v0.15.0 // indirect
 	modernc.org/libc v1.74.1 // indirect

@@ -4,9 +4,11 @@ import (
 	"testing"
 
 	"amadan.net/rastrillo/rastrillo/internal/vendored"
-	"amadan.net/rastrillo/rastrillo/nodetest"
 )
 
+// transition.js loads before the stylesheets and without defer, so
+// every byte of it holds up the first paint: it stays a few hundred
+// bytes as an app is served it. What it does is Fiesta's to test.
 func TestTransitionObserverIsVendoredBelow600MinifiedBytes(t *testing.T) {
 	files, _ := VendoredAssets("day")
 	source := files["transition.js"]
@@ -21,14 +23,4 @@ func TestTransitionObserverIsVendoredBelow600MinifiedBytes(t *testing.T) {
 		t.Fatalf("transition.js is %d minified bytes, want <600", len(minified))
 	}
 	t.Logf("transition.js: %d minified bytes", len(minified))
-	for name, script := range map[string][]byte{
-		"source": source, "minified": minified,
-	} {
-		t.Run(name, func(t *testing.T) {
-			nodetest.Run(t, nodetest.Cmd{
-				Args:  []string{"shell_transition_node.mjs", "observer"},
-				Stdin: script,
-			})
-		})
-	}
 }

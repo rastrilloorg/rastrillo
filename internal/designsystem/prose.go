@@ -177,6 +177,14 @@ const transitionAssetBlurb = "Stops a skipped page transition logging an " +
 	"error on column, stage and topbar pages. " +
 	"Sidebar and console pages don't need it."
 
+const fiestaAssetBlurb = "Menus that close on Escape or a click outside " +
+	"them, the switch's drag, and a colour scheme applied without a " +
+	"reload. Every scaffolded app gets it."
+
+const copyAssetBlurb = "The Copy button on a snippet of code. Inert " +
+	"until a page shows an rst-snippet, and deletable on its own: " +
+	"without it the code is still there to select by hand."
+
 // prose is the table: English source → locale code → translation. See
 // the file comment above for why the key is the English sentence and
 // why en is absent from every row.
@@ -4620,6 +4628,32 @@ var prose = map[string]map[string]string{
 		`yue`:     `{theme} 主題嘅顏色、字體同形狀：一個 :root 區塊，每隻色以 light-dark() 成對聲明一次。`,
 		`vi`:      `Màu sắc, họ chữ và hình khối cho chủ đề {theme}: một khối :root duy nhất, mỗi màu khai báo một lần dưới dạng cặp light-dark().`,
 		`ar`:      `اللون وعائلة الخط والشكل لسمة {theme}: كتلة :root واحدة يُعلَن فيها كل لون مرة واحدة كزوج light-dark().`,
+	},
+	fiestaAssetBlurb: {
+		`ga`:      `Roghchláir a dhúnann le Escape nó le cliceáil lasmuigh díobh, tarraingt an lasc, agus scéim dathanna a chuirtear i bhfeidhm gan athlódáil. Faigheann gach aip scafallaithe é.`,
+		`zh-Hans`: `按 Escape 或在外面点击即关闭的菜单、开关的拖动，以及无需重新加载即可应用的配色方案。每个脚手架生成的应用都会拿到它。`,
+		`es`:      `Menús que se cierran con Escape o con un clic fuera de ellos, el arrastre del interruptor y un esquema de color que se aplica sin recargar. La recibe toda app generada.`,
+		`hi`:      `Escape दबाने या बाहर क्लिक करने पर बंद होने वाले मेन्यू, स्विच को खींचना, और बिना रीलोड के लागू होने वाली कलर स्कीम। हर स्कैफ़ोल्ड की गई ऐप को यह मिलती है।`,
+		`pt-PT`:   `Menus que fecham com Escape ou com um clique fora deles, o arrastar do interruptor e um esquema de cores aplicado sem recarregar. Toda app gerada a recebe.`,
+		`bn`:      `Escape চাপলে বা বাইরে ক্লিক করলে বন্ধ হওয়া মেনু, সুইচ টেনে সরানো, আর রিলোড ছাড়াই প্রয়োগ হওয়া রঙের স্কিম। প্রতিটি স্ক্যাফোল্ড করা অ্যাপ এটি পায়।`,
+		`ru`:      `Меню, которые закрываются по Escape или щелчку вне их, перетаскивание переключателя и цветовая схема, применяемая без перезагрузки. Его получает каждое сгенерированное приложение.`,
+		`ja`:      `Escape キーや外側のクリックで閉じるメニュー、スイッチのドラッグ、再読み込みなしで適用される配色。足場を組んだアプリはすべて受け取ります。`,
+		`yue`:     `撳 Escape 或者喺外面撳一下就會閂嘅選單、開關嘅拖動，同埋唔使重新載入就套用嘅配色。每個搭骨架生成嘅應用都會攞到。`,
+		`vi`:      `Menu đóng khi nhấn Escape hoặc nhấp ra ngoài, kéo công tắc, và bảng màu áp dụng mà không cần tải lại. Mọi ứng dụng được tạo khung đều nhận nó.`,
+		`ar`:      `قوائم تُغلق بمفتاح Escape أو بنقرة خارجها، وسحب المفتاح، ونظام ألوان يُطبَّق دون إعادة تحميل. يتسلّمها كل تطبيق مولَّد.`,
+	},
+	copyAssetBlurb: {
+		`ga`:      `An cnaipe Cóipeáil ar bhlúire cóid. Marbh go dtí go dtaispeánann leathanach rst-snippet, agus inscriosta leis féin: gan é, tá an cód ann fós le roghnú de láimh.`,
+		`zh-Hans`: `代码片段上的“复制”按钮。在页面显示 rst-snippet 之前是惰性的，也可以单独删除：没有它，代码仍在那里，可以手动选中。`,
+		`es`:      `El botón Copiar de un fragmento de código. Inerte hasta que una página muestra un rst-snippet, y borrable por separado: sin él, el código sigue ahí para seleccionarlo a mano.`,
+		`hi`:      `कोड के स्निपेट पर कॉपी बटन। जब तक कोई पेज rst-snippet न दिखाए तब तक निष्क्रिय, और अलग से हटाया जा सकता है: इसके बिना भी कोड वहीं रहता है, हाथ से चुनने के लिए।`,
+		`pt-PT`:   `O botão Copiar de um excerto de código. Inerte até uma página mostrar um rst-snippet, e apagável por si só: sem ele, o código continua lá para selecionar à mão.`,
+		`bn`:      `কোডের স্নিপেটে কপি বোতাম। কোনও পেজ rst-snippet না দেখানো পর্যন্ত নিষ্ক্রিয়, আর আলাদা করে মুছে ফেলা যায়: এটি ছাড়াও কোড সেখানে থাকে, হাতে বেছে নেওয়ার জন্য।`,
+		`ru`:      `Кнопка «Копировать» у фрагмента кода. Бездействует, пока страница не покажет rst-snippet; удаляется отдельно: без неё код остаётся на месте, его можно выделить вручную.`,
+		`ja`:      `コードのスニペットに付くコピーボタン。ページが rst-snippet を表示するまで何もせず、単独で削除できます。無くてもコードはそこにあり、手で選択できます。`,
+		`yue`:     `代碼片段上面嘅「複製」掣。喺頁面顯示 rst-snippet 之前都係唔郁嘅，可以單獨刪走：冇咗佢，代碼都仲喺度，可以自己揀。`,
+		`vi`:      `Nút Sao chép trên một đoạn mã. Nằm im cho tới khi trang hiển thị một rst-snippet, và xoá riêng được: thiếu nó, mã vẫn ở đó để chọn bằng tay.`,
+		`ar`:      `زر النسخ على مقتطف من الشيفرة. خامل حتى تعرض الصفحة rst-snippet، ويُحذف وحده: بدونه تبقى الشيفرة هناك لتحديدها يدويًا.`,
 	},
 	`The progressive-enhancement shim: polling fragments, light dismiss and the switch's drag. Every scaffolded app gets it.`: {
 		`ga`:      `An seim feabhsúcháin de réir a chéile: blúirí á vótáil, díbhe éadrom agus tarraingt an lasc. Faigheann gach aip scafallaithe é.`,

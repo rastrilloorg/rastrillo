@@ -36,7 +36,7 @@ func TestComponentsEnhanceFromTheMinifiedFiles(t *testing.T) {
 	checks := []struct{ doc, ready string }{
 		{selectDoc, `!!document.querySelector("[rst-combo]")`},
 		{dateDoc, `!!document.querySelector("[rst-dtp-pick]") &&
-			typeof window.rastrilloCalendar === "function"`},
+			typeof window.fiestaCalendar === "function"`},
 	}
 	for _, check := range checks {
 		err := chromedp.Do(ctx, chromedp.Navigate(rig.Origin+check.doc))

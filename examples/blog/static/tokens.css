@@ -235,15 +235,18 @@ body {
    component that sizes its icon (the 12px caret, .rst-caret) still
    wins. Not the list grid's title: it is the row's name, text that an
    icon should follow, and the row is its target. */
-:where(.rst-btn, .rst-search, .rst-search__clear, .rst-ftok a, .rst-help, .rst-dropdown > summary, .rst-dropdown__menu a, .rst-dropdown__menu button, .rst-dropdown__menu .rst-menu-group > summary, .rst-row-menu__panel a, .rst-row-menu__panel button, .rst-locale button, .rst-scheme button, .rst-combo__option, .rst-dtp__row, .rst-dtp__pick, .rst-cal__nav, .rst-row__action, .rst-row-menu > summary, .rst-pagination > a, .rst-seg-tabs a, .rst-switch, .rst-choice__cards label, .rst-tblock__head, .rst-bulkbar__close, .rst-bulkbar__escalate, .rst-modal-close, .rst-modal-panel > nav a, .rst-back-nav a, .rst-signin__providers > a, .rst-shell__brand, .rst-shell__nav a, .rst-shell__menu > summary, .rst-shell__chrome > summary, .rst-shell__account > summary, .rst-shell__back > a) .icon, :where([rst-btn], [rst-search], [rst-search-clear], [rst-ftok] a, [rst-help], [rst-dropdown] > summary, [rst-dropdown-menu] a, [rst-dropdown-menu] button, [rst-dropdown-menu] [rst-menu-group] > summary, [rst-row-menu-panel] a, [rst-row-menu-panel] button, [rst-locale] button, [rst-scheme] button, [rst-combo-option], [rst-dtp-row], [rst-dtp-pick], [rst-cal-nav], [rst-row-action], [rst-row-menu] > summary, [rst-pagination] > a, [rst-seg-tabs] a, [rst-switch], [rst-choice-cards] label, [rst-tblock-head], [rst-bulkbar-close], [rst-bulkbar-escalate], [rst-modal-close], [rst-modal-panel] > nav a, [rst-back-nav] a, [rst-signin-providers] > a, [rst-shell-brand], [rst-shell-nav] a, [rst-shell-menu] > summary, [rst-shell-chrome] > summary, [rst-shell-account] > summary, [rst-shell-back] > a) .icon {
+:where(.rst-btn, .rst-search, .rst-search__clear, .rst-ftok a, .rst-help, .rst-dropdown > summary, .rst-dropdown__menu a, .rst-dropdown__menu button, .rst-dropdown__menu .rst-menu-group > summary, .rst-row-menu__panel a, .rst-row-menu__panel button, .rst-locale button, .rst-scheme button, .rst-combo__option, .rst-dtp__row, .rst-dtp__pick, .rst-cal__nav, .rst-row__action, .rst-row-menu > summary, .rst-pagination > a, .rst-seg-tabs a, .rst-seg-tabs > button, .rst-side__nav a, .rst-switch, .rst-choice__cards label, .rst-tblock__head, .rst-bulkbar__close, .rst-bulkbar__escalate, .rst-modal-close, .rst-modal-panel > nav a, .rst-back-nav a, .rst-signin__providers > a, .rst-shell__brand, .rst-shell__nav a, .rst-shell__menu > summary, .rst-shell__chrome > summary, .rst-shell__account > summary, .rst-shell__back > a) .icon, :where([rst-btn], [rst-search], [rst-search-clear], [rst-ftok] a, [rst-help], [rst-dropdown] > summary, [rst-dropdown-menu] a, [rst-dropdown-menu] button, [rst-dropdown-menu] [rst-menu-group] > summary, [rst-row-menu-panel] a, [rst-row-menu-panel] button, [rst-locale] button, [rst-scheme] button, [rst-combo-option], [rst-dtp-row], [rst-dtp-pick], [rst-cal-nav], [rst-row-action], [rst-row-menu] > summary, [rst-pagination] > a, [rst-seg-tabs] a, [rst-seg-tabs] > button, [rst-side-nav] a, [rst-switch], [rst-choice-cards] label, [rst-tblock-head], [rst-bulkbar-close], [rst-bulkbar-escalate], [rst-modal-close], [rst-modal-panel] > nav a, [rst-back-nav] a, [rst-signin-providers] > a, [rst-shell-brand], [rst-shell-nav] a, [rst-shell-menu] > summary, [rst-shell-chrome] > summary, [rst-shell-account] > summary, [rst-shell-back] > a) .icon {
   block-size: 1rem;
   inline-size: 1rem;
 }
 
 /* Focus is visible everywhere inside the app column (.rst-page) and
    inside any component rendered outside one. :where() contributes no
-   specificity, so any rule below can override it. */
-:where(.rst-page, .rst-page-header, .rst-list, .rst-lbar, .rst-search, .rst-empty, .rst-pagination) :focus-visible, :where([rst-page], [rst-page-header], [rst-list], [rst-lbar], [rst-search], [rst-empty], [rst-pagination]) :focus-visible {
+   specificity, so any rule below can override it. The side nav is
+   here because a page may put one outside an rst-page, as the
+   landing page's sample does, and its links would show the browser's
+   thin ring there. */
+:where(.rst-page, .rst-page-header, .rst-list, .rst-lbar, .rst-search, .rst-empty, .rst-pagination, .rst-side) :focus-visible, :where([rst-page], [rst-page-header], [rst-list], [rst-lbar], [rst-search], [rst-empty], [rst-pagination], [rst-side]) :focus-visible {
   outline: 2px solid var(--rst-accent);
   outline-offset: 2px;
 }
@@ -681,6 +684,48 @@ body {
   margin: var(--rst-sp-1) 0 0;
   max-inline-size: 44rem;
 }
+
+/* ── page-foot: the column's footer row ───────────────────────────── */
+/* The column's last child, for the language and colour-scheme menus.
+   Above the title a menu pushed the page down and read as the page's
+   first action; here it is out of the way and on every page. Quiet:
+   a hairline, muted text one step down, and summaries with no face
+   (the face rules below exclude it, as they do a shell's tail).
+   Packed at the inline end, so one menu sits at the end and two sit
+   side by side, Language first, with whatever else an app puts in the
+   row before them; it wraps on a phone rather than scroll sideways.
+
+   position: relative, and static on its dropdowns, is the fallback
+   where nothing can anchor a panel. A panel then hangs from its
+   <details>, and Language is not at the row's end: its panel, at least
+   176px wide, ran past the opposite edge of a narrow page. With the
+   row as the containing block every panel opens under the row, flush
+   with its inline end, with or without anchor.js. Where anchor
+   positioning applies the panel is fixed to its own summary and none
+   of this matters. The document grows to hold an open panel, so no
+   drop-up rule: the rail foot needs one because its rail is the
+   window's height, and a page's foot is not. */
+.rst-page__foot, [rst-page-foot] {
+  align-items: center;
+  border-block-start: 1px solid var(--rst-line);
+  color: var(--rst-text-muted);
+  display: flex;
+  flex-wrap: wrap;
+  font-size: var(--rst-fs-sm);
+  gap: var(--rst-sp-2) var(--rst-sp-4);
+  justify-content: flex-end;
+  margin-block-start: var(--rst-sp-6);
+  padding-block-start: var(--rst-sp-3);
+  position: relative;
+}
+/* Standing alone, as in a component example, the margin above it
+   would be a blank band over nothing. */
+.rst-page__foot:first-child, [rst-page-foot]:first-child { margin-block-start: 0; }
+/* An app with one language and no scheme menu may render the row with
+   only template whitespace in it, which would draw a hairline under
+   the page for nothing. :empty counts that whitespace as content. */
+.rst-page__foot:not(:has(> *)), [rst-page-foot]:not(:has(> *)) { display: none; }
+.rst-page__foot .rst-dropdown, [rst-page-foot] [rst-dropdown] { position: static; }
 
 /* ── The list card, its toolbar, and its search field ─────────────── */
 /* No padding here, on purpose: a list card holds rows, and each row pads
@@ -1342,6 +1387,28 @@ body {
 .rst-detail dd, [rst-detail] dd { margin: 0; }
 .rst-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: var(--rst-fs-sm); }
 
+/* snippet — a line of code to copy, in a box, with a Copy button that
+   copy.js shows where the browser has a clipboard.
+   The box hugs its line (fit-content) up to the width it is given, and
+   the code wraps anywhere inside it, at any width, with no media
+   query: a URL has no space to break at, and one that will not break
+   runs off a phone's screen and takes the end a reader has to copy
+   with it. border-box, so the 100% is the whole box, its padding and
+   border included. The button is spaced by its own margin, not the
+   grid's gap: a gap would stay behind when the button is hidden (no
+   script, or no clipboard) and pad the box's end twice. user-select:
+   all makes one click select the whole line, which is how it is copied
+   by hand; Safari 17.5 reads only the prefixed property.
+   The status takes a row of its own under the code when it speaks.
+   While empty it is clipped to nothing rather than display: none, so
+   the live region is in the accessibility tree before its first
+   message: one that joins the tree as it speaks may never be heard. */
+.rst-snippet, [rst-snippet] { align-items: center; background: var(--rst-surface); border: 1px solid var(--rst-line); border-radius: var(--rst-radius); box-sizing: border-box; display: grid; grid-template-columns: 1fr auto; inline-size: fit-content; max-inline-size: 100%; padding: var(--rst-sp-2) var(--rst-sp-3); position: relative; row-gap: var(--rst-sp-1); }
+.rst-snippet > code, [rst-snippet] > code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: var(--rst-fs-sm); min-inline-size: 0; overflow-wrap: anywhere; -webkit-user-select: all; user-select: all; }
+.rst-snippet__copy, [rst-snippet-copy] { margin-inline-start: var(--rst-sp-3); }
+.rst-snippet__status, [rst-snippet-status] { color: var(--rst-text-muted); font-size: var(--rst-fs-xs); grid-column: 1 / -1; }
+.rst-snippet__status:empty, [rst-snippet-status]:empty { block-size: 1px; clip-path: inset(50%); inline-size: 1px; overflow: hidden; position: absolute; white-space: nowrap; }
+
 /* ── Narrow screens ───────────────────────────────────────────────── */
 @media (max-width: 34rem) {
   .rst-lbar > search,
@@ -1388,10 +1455,49 @@ body {
     justify-self: start;
     padding-block: 0.05rem;
   }
+  /* A status the page marks inline stays on the first line, in its
+     source place: an implicit column straight after the name's, so the
+     line reads lead, name, status, action (mirrored right to left), and
+     the name's column takes what is left and wraps inside it. It keeps
+     the size above. Marking it is the page saying the status is short;
+     nothing here measures it. Not a wrapping flex line: the name
+     (flex: 1, min-inline-size: 0) shrinks to nothing first, so what
+     breaks the line is the lead, status, action and gaps together
+     outgrowing the row, and flex then drops the action, or the status,
+     to a second line item by item. Which one dropped would vary with
+     each row's status and action labels, row to row in one list; the
+     grid keeps every part on the first line. Opt-in, because a 1.0
+     page's status must stay where 1.0 put it. */
+  .rst-row:has(> .rst-status) > .rst-status--inline, [rst-row]:has(> [rst-status]) > [rst-status~="inline"] {
+    grid-column: auto;
+    grid-row: 1;
+  }
   /* min(), not a second token: a theme that already chose a title at or
      under the narrow size keeps it, and one above it steps down. */
   .rst-page-header h1, [rst-page-header] h1 {
     font-size: min(var(--rst-title-size, 1.375rem), 1.25rem);
+  }
+  /* A band the page marks pairs is two columns. The wrapping flex row
+     above stacks a phone's band one stat to a line at 320px, four short
+     figures four screens of scroll apart, and pairs them at 390px with
+     the leading hairline on the wrong cell. The grid pairs them at
+     every phone width; the first of each pair sits on the band's edge,
+     so it drops the leading hairline, and the second pair is ruled off
+     from the first. Opt-in, because a 1.0 page's band must not reflow:
+     a lead or a long figure wants the whole line, which the page knows
+     and the CSS does not. */
+  .rst-stats--pairs, [rst-stats~="pairs"] {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  .rst-stats--pairs > .rst-stat, [rst-stats~="pairs"] > [rst-stat] {
+    padding: var(--rst-sp-3) var(--rst-sp-4);
+  }
+  .rst-stats--pairs > .rst-stat:nth-child(odd), [rst-stats~="pairs"] > [rst-stat]:nth-child(odd) {
+    border-inline-start: 0;
+  }
+  .rst-stats--pairs > .rst-stat:nth-child(n+3), [rst-stats~="pairs"] > [rst-stat]:nth-child(n+3) {
+    border-block-start: 1px solid var(--rst-line);
   }
 }
 
@@ -1644,18 +1750,19 @@ a.rst-nm:hover { color: var(--rst-accent); }
    theme that paints no face (A15). Not every summary: the topbar and
    console account menus and the sidebar profile are their own
    controls, the menus in a shell's tail are flat beside the nav they
-   sit with (in the bar and as rows of the phone card), a dropdown
+   sit with (in the bar and as rows of the phone card), the footer
+   row's are a quiet line under the page, not buttons, a dropdown
    nested in a menu is one of that menu's rows, the bulk bar's summary
    draws its own small face, and a summary written as a button (the
    dropdown partial's) already has the whole button language, press
    and sheen included, which a second face at a higher weight would
    overpaint. The exclusions are in every state's selector, so an
    excluded summary never regains a face on hover or press. */
-.rst-dropdown:not(.rst-shell__account, .rst-shell__profile, .rst-shell__tail .rst-dropdown, .rst-bulkbar .rst-dropdown, .rst-dropdown__menu .rst-dropdown) > summary:not(.rst-btn), [rst-dropdown]:not([rst-shell-account], [rst-shell-profile], [rst-shell-tail] [rst-dropdown], [rst-bulkbar] [rst-dropdown], [rst-dropdown-menu] [rst-dropdown]) > summary:not([rst-btn]) { background: var(--rst-summary-face, transparent); border-radius: var(--rst-summary-radius, 0); box-shadow: 0 0 0 1px var(--rst-summary-edge, transparent), inset var(--rst-hl-x) 1px 0 var(--rst-depth-hl, transparent), var(--rst-shadow-x) var(--rst-shadow-y) 1px var(--rst-depth-contact, transparent), calc(var(--rst-shadow-x) * 2) calc(var(--rst-shadow-y) * 1.5) 3px var(--rst-depth-ambient, transparent); }
-.rst-dropdown:not(.rst-shell__account, .rst-shell__profile, .rst-shell__tail .rst-dropdown, .rst-bulkbar .rst-dropdown, .rst-dropdown__menu .rst-dropdown) > summary:not(.rst-btn):active, [rst-dropdown]:not([rst-shell-account], [rst-shell-profile], [rst-shell-tail] [rst-dropdown], [rst-bulkbar] [rst-dropdown], [rst-dropdown-menu] [rst-dropdown]) > summary:not([rst-btn]):active { box-shadow: 0 0 0 1px var(--rst-summary-edge, transparent), inset 0 1px 2px var(--rst-depth-contact, transparent); }
+.rst-dropdown:not(.rst-shell__account, .rst-shell__profile, .rst-shell__tail .rst-dropdown, .rst-page__foot .rst-dropdown, .rst-bulkbar .rst-dropdown, .rst-dropdown__menu .rst-dropdown) > summary:not(.rst-btn), [rst-dropdown]:not([rst-shell-account], [rst-shell-profile], [rst-shell-tail] [rst-dropdown], [rst-page-foot] [rst-dropdown], [rst-bulkbar] [rst-dropdown], [rst-dropdown-menu] [rst-dropdown]) > summary:not([rst-btn]) { background: var(--rst-summary-face, transparent); border-radius: var(--rst-summary-radius, 0); box-shadow: 0 0 0 1px var(--rst-summary-edge, transparent), inset var(--rst-hl-x) 1px 0 var(--rst-depth-hl, transparent), var(--rst-shadow-x) var(--rst-shadow-y) 1px var(--rst-depth-contact, transparent), calc(var(--rst-shadow-x) * 2) calc(var(--rst-shadow-y) * 1.5) 3px var(--rst-depth-ambient, transparent); }
+.rst-dropdown:not(.rst-shell__account, .rst-shell__profile, .rst-shell__tail .rst-dropdown, .rst-page__foot .rst-dropdown, .rst-bulkbar .rst-dropdown, .rst-dropdown__menu .rst-dropdown) > summary:not(.rst-btn):active, [rst-dropdown]:not([rst-shell-account], [rst-shell-profile], [rst-shell-tail] [rst-dropdown], [rst-page-foot] [rst-dropdown], [rst-bulkbar] [rst-dropdown], [rst-dropdown-menu] [rst-dropdown]) > summary:not([rst-btn]):active { box-shadow: 0 0 0 1px var(--rst-summary-edge, transparent), inset 0 1px 2px var(--rst-depth-contact, transparent); }
 @media (hover: hover) {
-  .rst-dropdown:not(.rst-shell__account, .rst-shell__profile, .rst-shell__tail .rst-dropdown, .rst-bulkbar .rst-dropdown, .rst-dropdown__menu .rst-dropdown) > summary:not(.rst-btn):hover, [rst-dropdown]:not([rst-shell-account], [rst-shell-profile], [rst-shell-tail] [rst-dropdown], [rst-bulkbar] [rst-dropdown], [rst-dropdown-menu] [rst-dropdown]) > summary:not([rst-btn]):hover { background: var(--rst-summary-face-hover, transparent); box-shadow: 0 0 0 1px var(--rst-summary-edge-hover, transparent), inset var(--rst-hl-x) 1px 0 var(--rst-depth-hl, transparent), var(--rst-shadow-x) var(--rst-shadow-y) 1px var(--rst-depth-contact, transparent), calc(var(--rst-shadow-x) * 2) calc(var(--rst-shadow-y) * 1.5) 3px var(--rst-depth-ambient, transparent); }
-  .rst-dropdown:not(.rst-shell__account, .rst-shell__profile, .rst-shell__tail .rst-dropdown, .rst-bulkbar .rst-dropdown, .rst-dropdown__menu .rst-dropdown) > summary:not(.rst-btn):hover:active, [rst-dropdown]:not([rst-shell-account], [rst-shell-profile], [rst-shell-tail] [rst-dropdown], [rst-bulkbar] [rst-dropdown], [rst-dropdown-menu] [rst-dropdown]) > summary:not([rst-btn]):hover:active { box-shadow: 0 0 0 1px var(--rst-summary-edge-hover, transparent), inset 0 1px 2px var(--rst-depth-contact, transparent); }
+  .rst-dropdown:not(.rst-shell__account, .rst-shell__profile, .rst-shell__tail .rst-dropdown, .rst-page__foot .rst-dropdown, .rst-bulkbar .rst-dropdown, .rst-dropdown__menu .rst-dropdown) > summary:not(.rst-btn):hover, [rst-dropdown]:not([rst-shell-account], [rst-shell-profile], [rst-shell-tail] [rst-dropdown], [rst-page-foot] [rst-dropdown], [rst-bulkbar] [rst-dropdown], [rst-dropdown-menu] [rst-dropdown]) > summary:not([rst-btn]):hover { background: var(--rst-summary-face-hover, transparent); box-shadow: 0 0 0 1px var(--rst-summary-edge-hover, transparent), inset var(--rst-hl-x) 1px 0 var(--rst-depth-hl, transparent), var(--rst-shadow-x) var(--rst-shadow-y) 1px var(--rst-depth-contact, transparent), calc(var(--rst-shadow-x) * 2) calc(var(--rst-shadow-y) * 1.5) 3px var(--rst-depth-ambient, transparent); }
+  .rst-dropdown:not(.rst-shell__account, .rst-shell__profile, .rst-shell__tail .rst-dropdown, .rst-page__foot .rst-dropdown, .rst-bulkbar .rst-dropdown, .rst-dropdown__menu .rst-dropdown) > summary:not(.rst-btn):hover:active, [rst-dropdown]:not([rst-shell-account], [rst-shell-profile], [rst-shell-tail] [rst-dropdown], [rst-page-foot] [rst-dropdown], [rst-bulkbar] [rst-dropdown], [rst-dropdown-menu] [rst-dropdown]) > summary:not([rst-btn]):hover:active { box-shadow: 0 0 0 1px var(--rst-summary-edge-hover, transparent), inset 0 1px 2px var(--rst-depth-contact, transparent); }
 }
 .rst-dropdown > summary:hover, [rst-dropdown] > summary:hover, .rst-dropdown[open] > summary, [rst-dropdown][open] > summary { color: var(--rst-text); }
 .rst-dropdown__menu, [rst-dropdown-menu] { background: var(--rst-surface); border: 1px solid var(--rst-line); border-radius: 9px; box-shadow: var(--rst-shadow-pop); inset-inline-end: 0; margin-top: 4px; min-width: 176px; padding: 0.25rem; position: absolute; top: 100%; z-index: 30; }
@@ -2089,11 +2196,78 @@ small.rst-field__hint, small[rst-field-hint] { display: block; font-size: var(--
    or grid parent that lays the tabs out in a row of controls spaces its
    own items and should zero it. */
 .rst-seg-tabs, [rst-seg-tabs] { background: var(--rst-accent-soft); border-radius: 8px; display: flex; flex-wrap: wrap; gap: 2px; margin-block: 0 var(--rst-sp-4); max-inline-size: 100%; padding: 2px; width: max-content; }
-.rst-seg-tabs a, [rst-seg-tabs] a { border-radius: var(--rst-radius-sm); color: var(--rst-text-muted); font-size: var(--rst-fs-sm); font-weight: 550; padding: 5px 16px; text-decoration: none; -webkit-tap-highlight-color: transparent; }
-.rst-seg-tabs a:hover, [rst-seg-tabs] a:hover { color: var(--rst-text); }
+/* A track of buttons is for a choice that changes the page in place
+   (a view), its script moving aria-pressed; links stay right where the
+   choice has an address, since they work with no script. Each button
+   is the track's own child, so a button nested in a tab's content is
+   left alone, and it wears exactly what a link wears: this reset takes
+   away the browser's face, which would otherwise show grey, bordered
+   and in the system font beside the links. */
+.rst-seg-tabs > button, [rst-seg-tabs] > button { background: none; border: 0; cursor: pointer; font-family: inherit; line-height: inherit; margin: 0; }
+.rst-seg-tabs a, [rst-seg-tabs] a, .rst-seg-tabs > button, [rst-seg-tabs] > button { border-radius: var(--rst-radius-sm); color: var(--rst-text-muted); font-size: var(--rst-fs-sm); font-weight: 550; padding: 5px 16px; text-decoration: none; -webkit-tap-highlight-color: transparent; }
+.rst-seg-tabs a:hover, [rst-seg-tabs] a:hover, .rst-seg-tabs > button:hover, [rst-seg-tabs] > button:hover { color: var(--rst-text); }
 /* The current tab is a thumb: a top highlight first, then the lift.
+   The pressed button is the same thumb, so a reader sees one choice
+   made whichever element made it.
    No press rule, because a pressed tab has no fill today (A15). */
-.rst-seg-tabs a[aria-current], [rst-seg-tabs] a[aria-current] { background: var(--rst-surface); box-shadow: inset var(--rst-hl-x) 1px 0 var(--rst-depth-hl, transparent), var(--rst-shadow-lift); color: var(--rst-text); font-weight: 600; }
+.rst-seg-tabs a[aria-current], [rst-seg-tabs] a[aria-current], .rst-seg-tabs > button[aria-pressed="true"], [rst-seg-tabs] > button[aria-pressed="true"] { background: var(--rst-surface); box-shadow: inset var(--rst-hl-x) 1px 0 var(--rst-depth-hl, transparent), var(--rst-shadow-lift); color: var(--rst-text); font-weight: 600; }
+/* A disabled button is not listening: faint text, as a disabled page
+   chip or calendar day has, and the default cursor, as a disabled
+   rst-btn has. It comes after the hover and the thumb, which weigh the
+   same, so neither a hover nor a pressed state brings back the colour
+   of a tab that would answer a click. */
+.rst-seg-tabs > button:disabled, [rst-seg-tabs] > button:disabled { color: var(--rst-text-faint); cursor: default; }
+
+/* side: a sidebar inside a panel, a column of links beside the
+   panel's content, the open section's. It answers to its own width,
+   not the window's, through a container query: a settings card on a
+   desktop is as narrow as a phone, and a window query would put a
+   column of links in a card with no room for it. The container is
+   rst-side itself, so the side must be given its width by its parent
+   (a block, a grid cell); in a flex row or an inline-block, which size
+   to their content, an inline-size container is zero wide.
+   fit-content(12rem) lets the column be as wide as its longest label,
+   up to 12rem, where a label wraps; minmax(0, 1fr) lets the content
+   shrink below its longest word instead of pushing the side wider than
+   its panel. */
+.rst-side, [rst-side] { container-type: inline-size; display: grid; grid-template-columns: fit-content(12rem) minmax(0, 1fr); }
+.rst-side__nav, [rst-side-nav] { align-content: start; border-inline-end: 1px solid var(--rst-line); display: grid; gap: 2px; padding: var(--rst-sp-3) var(--rst-sp-2); }
+.rst-side > :not(.rst-side__nav), [rst-side] > :not([rst-side-nav]) { padding: var(--rst-sp-4); }
+/* The links are a menu's rows, so a page with a side nav and a
+   dropdown has one way of saying "here" and one of saying "you can
+   go here": the current row on the accent wash in ink at 600, as the
+   dropdown's current item, and the hover, press and tap tints and the
+   top highlight of its other items. Muted at rest, so the current
+   link is the one that stands out; a hovered link comes up to ink, as
+   a menu row reads. The current link has no hover or press of its
+   own, as a menu's current item has none: it is where you are. */
+.rst-side__nav a, [rst-side-nav] a { border-radius: var(--rst-radius-sm); color: var(--rst-text-muted); font-size: var(--rst-fs-sm); padding: 0.4rem 0.65rem; text-decoration: none; -webkit-tap-highlight-color: transparent; }
+.rst-side__nav a[aria-current], [rst-side-nav] a[aria-current] { background: var(--rst-accent-soft); color: var(--rst-text); font-weight: 600; }
+.rst-side__nav a:not([aria-current]):active, [rst-side-nav] a:not([aria-current]):active { background: var(--rst-tint-tap, transparent); }
+@media (hover: hover) {
+  .rst-side__nav a:not([aria-current]):hover, [rst-side-nav] a:not([aria-current]):hover { background: var(--rst-tint-hover, var(--rst-accent-soft)); box-shadow: inset 0 1px 0 var(--rst-depth-hl, transparent); color: var(--rst-text); }
+  .rst-side__nav a:not([aria-current]):hover:active, [rst-side-nav] a:not([aria-current]):hover:active { background: var(--rst-tint-press, var(--rst-accent-soft)); }
+}
+/* A narrow side: both children span the grid, so the nav sits above
+   the content; its links are one row, each as wide as its label
+   (max-content, so a long label never wraps into a tall cell), and
+   the row scrolls inside the nav when it is wider than the panel, so
+   the page never scrolls sideways. The hairline moves under the nav.
+   34rem is the width at which the page's own rows give up their
+   columns.
+   A link reached with Tab must be wholly in view. Chromium does not
+   scroll a focused element that is already partly in view, so a link
+   half under the row's edge stayed there, cut off. scroll-padding sets
+   the part of the row it counts as in view: at 49% on each side that
+   is a sliver at the centre, so a focused link that does not cross the
+   centre is scrolled to it. The ring is drawn inside the link, as the
+   index rows draw theirs, because the row clips anything outside it
+   where a link meets the row's edge. */
+@container (max-width: 34rem) {
+  .rst-side__nav, [rst-side-nav], .rst-side > :not(.rst-side__nav), [rst-side] > :not([rst-side-nav]) { grid-column: 1 / -1; }
+  .rst-side__nav, [rst-side-nav] { border-block-end: 1px solid var(--rst-line); border-inline-end: 0; grid-auto-columns: max-content; grid-auto-flow: column; overflow-x: auto; scroll-padding-inline: 49%; }
+  .rst-side__nav a:focus-visible, [rst-side-nav] a:focus-visible { outline-offset: -2px; }
+}
 
 /* form layout — the interview rhythm and the save bar. */
 .rst-form-flow > .rst-field + .rst-field, [rst-form-flow] > [rst-field] + [rst-field] { margin-top: var(--rst-sp-5); }
@@ -3377,7 +3551,7 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
   .rst-btn, [rst-btn] { justify-content: center; }
   .rst-dropdown__menu .rst-menu-group > summary, [rst-dropdown-menu] [rst-menu-group] > summary, .rst-dropdown__menu a, [rst-dropdown-menu] a, .rst-dropdown__menu button, [rst-dropdown-menu] button, .rst-row-menu__panel a, [rst-row-menu-panel] a, .rst-row-menu__panel button, [rst-row-menu-panel] button, .rst-locale button, .rst-scheme button, [rst-locale] button, [rst-scheme] button, .rst-combo__option, [rst-combo-option], .rst-dtp__row, [rst-dtp-row], .rst-modal-panel > nav a, [rst-modal-panel] > nav a { align-items: center; display: flex; }
   .rst-shell-topbar .rst-shell__nav a, [rst-shell-topbar] [rst-shell-nav] a, .rst-shell-sidebar .rst-shell__nav a, [rst-shell-sidebar] [rst-shell-nav] a, .rst-shell-console .rst-shell__nav a, [rst-shell-console] [rst-shell-nav] a { align-items: center; display: flex; }
-  .rst-pagination > a, [rst-pagination] > a, .rst-pagination > span, [rst-pagination] > span, .rst-seg-tabs a, [rst-seg-tabs] a { align-items: center; display: inline-flex; justify-content: center; }
+  .rst-pagination > a, [rst-pagination] > a, .rst-pagination > span, [rst-pagination] > span, .rst-seg-tabs a, [rst-seg-tabs] a, .rst-seg-tabs > button, [rst-seg-tabs] > button { align-items: center; display: inline-flex; justify-content: center; }
   /* A phone's chip is the 44px tap square it has always been, narrower
      than the desktop's own minimum above. */
   .rst-pagination > a, [rst-pagination] > a, .rst-pagination > span, [rst-pagination] > span { min-inline-size: var(--rst-target); }
@@ -3484,7 +3658,7 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
   .rst-switch__track::after, [rst-switch-track]::after { background: ButtonText; }
   .rst-switch:has(input:checked) .rst-switch__track, [rst-switch]:has(input:checked) [rst-switch-track], .rst-tblock > .rst-tblock__head:has(> input:checked) > .rst-switch__track, [rst-tblock] > [rst-tblock-head]:has(> input:checked) > [rst-switch-track] { background: Highlight; }
   .rst-switch:has(input:checked) .rst-switch__track::after, [rst-switch]:has(input:checked) [rst-switch-track]::after, .rst-tblock > .rst-tblock__head:has(> input:checked) > .rst-switch__track::after, [rst-tblock] > [rst-tblock-head]:has(> input:checked) > [rst-switch-track]::after { background: HighlightText; }
-  .rst-shell-sidebar .rst-shell__nav a[aria-current], [rst-shell-sidebar] [rst-shell-nav] a[aria-current], .rst-shell-console .rst-shell__nav a[aria-current], [rst-shell-console] [rst-shell-nav] a[aria-current], .rst-shell-topbar .rst-shell__tail > .rst-shell__nav a[aria-current], [rst-shell-topbar] [rst-shell-tail] > [rst-shell-nav] a[aria-current], .rst-dropdown__menu a[aria-current], [rst-dropdown-menu] a[aria-current], .rst-pagination [aria-current="page"], [rst-pagination] [aria-current="page"], .rst-seg-tabs a[aria-current], [rst-seg-tabs] a[aria-current] { background: Highlight; box-shadow: none; color: HighlightText; }
+  .rst-shell-sidebar .rst-shell__nav a[aria-current], [rst-shell-sidebar] [rst-shell-nav] a[aria-current], .rst-shell-console .rst-shell__nav a[aria-current], [rst-shell-console] [rst-shell-nav] a[aria-current], .rst-shell-topbar .rst-shell__tail > .rst-shell__nav a[aria-current], [rst-shell-topbar] [rst-shell-tail] > [rst-shell-nav] a[aria-current], .rst-dropdown__menu a[aria-current], [rst-dropdown-menu] a[aria-current], .rst-pagination [aria-current="page"], [rst-pagination] [aria-current="page"], .rst-seg-tabs a[aria-current], [rst-seg-tabs] a[aria-current], .rst-seg-tabs > button[aria-pressed="true"], [rst-seg-tabs] > button[aria-pressed="true"], .rst-side__nav a[aria-current], [rst-side-nav] a[aria-current] { background: Highlight; box-shadow: none; color: HighlightText; }
   .rst-shell-sidebar.rst-shell-sidebar--index .rst-shell__nav > a[aria-current]:hover, .rst-shell-sidebar.rst-shell-sidebar--index .rst-shell__nav > a[aria-current]:active, [rst-shell-sidebar][rst-shell-sidebar~="index"] [rst-shell-nav] > a[aria-current]:hover, [rst-shell-sidebar][rst-shell-sidebar~="index"] [rst-shell-nav] > a[aria-current]:active, .rst-shell-console.rst-shell-console--index .rst-shell__nav > a[aria-current]:hover, .rst-shell-console.rst-shell-console--index .rst-shell__nav > a[aria-current]:active, [rst-shell-console][rst-shell-console~="index"] [rst-shell-nav] > a[aria-current]:hover, [rst-shell-console][rst-shell-console~="index"] [rst-shell-nav] > a[aria-current]:active { background: Highlight; color: HighlightText; }
 }
 /* Print drops every shadow, gradient, sheen and tint the same way,
@@ -3525,11 +3699,16 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
   .rst-switch__track, [rst-switch-track] { border: 1px solid var(--rst-line-strong); box-shadow: none; }
   .rst-switch:has(input:checked) .rst-switch__track, [rst-switch]:has(input:checked) [rst-switch-track], .rst-tblock > .rst-tblock__head:has(> input:checked) > .rst-switch__track, [rst-tblock] > [rst-tblock-head]:has(> input:checked) > [rst-switch-track] { background-color: var(--rst-line-strong); }
   .rst-switch__track::after, [rst-switch-track]::after { background-image: none; box-shadow: none; outline: 1px solid var(--rst-line-strong); outline-offset: -1px; }
-  .rst-shell-sidebar .rst-shell__nav a[aria-current], [rst-shell-sidebar] [rst-shell-nav] a[aria-current], .rst-shell-console .rst-shell__nav a[aria-current], [rst-shell-console] [rst-shell-nav] a[aria-current], .rst-shell-topbar .rst-shell__tail > .rst-shell__nav a[aria-current], [rst-shell-topbar] [rst-shell-tail] > [rst-shell-nav] a[aria-current], .rst-seg-tabs a[aria-current], [rst-seg-tabs] a[aria-current], .rst-pagination [aria-current="page"], [rst-pagination] [aria-current="page"] { box-shadow: none; }
+  .rst-shell-sidebar .rst-shell__nav a[aria-current], [rst-shell-sidebar] [rst-shell-nav] a[aria-current], .rst-shell-console .rst-shell__nav a[aria-current], [rst-shell-console] [rst-shell-nav] a[aria-current], .rst-shell-topbar .rst-shell__tail > .rst-shell__nav a[aria-current], [rst-shell-topbar] [rst-shell-tail] > [rst-shell-nav] a[aria-current], .rst-seg-tabs a[aria-current], [rst-seg-tabs] a[aria-current], .rst-seg-tabs > button[aria-pressed="true"], [rst-seg-tabs] > button[aria-pressed="true"], .rst-pagination [aria-current="page"], [rst-pagination] [aria-current="page"] { box-shadow: none; }
   /* The current chip's edge was its fill, transparent above, and the
      other chips keep their line: without this the current page is the
      one chip with no outline on paper. */
   .rst-pagination [aria-current="page"], [rst-pagination] [aria-current="page"] { border-color: var(--rst-line-strong); }
+  /* The current side link's wash is a background, which a printer
+     drops or keeps by the reader's settings, so on paper it is marked
+     by its ink and weight alone, every time, as the shell's current
+     nav item is. */
+  .rst-side__nav a[aria-current], [rst-side-nav] a[aria-current] { background: transparent; }
 }
 
 /* The browser's own tap flash is a different grey from the press tint,
@@ -3627,7 +3806,10 @@ a.rst-person, a[rst-person] { box-sizing: border-box; min-block-size: var(--rst-
 /* The chip's own minimum width is over the floor on a desktop; the
    touch query sets the phone's. */
 .rst-pagination > a, [rst-pagination] > a, .rst-pagination > span, [rst-pagination] > span { align-content: center; box-sizing: border-box; min-block-size: var(--rst-target); }
-.rst-seg-tabs a, [rst-seg-tabs] a { align-content: center; box-sizing: border-box; min-block-size: var(--rst-target); min-inline-size: var(--rst-target); }
+.rst-seg-tabs a, [rst-seg-tabs] a, .rst-seg-tabs > button, [rst-seg-tabs] > button { align-content: center; box-sizing: border-box; min-block-size: var(--rst-target); min-inline-size: var(--rst-target); }
+/* A side nav link is a menu row, centred as one; in the narrow row it
+   is as wide as its label, so a short one gets the width floor too. */
+.rst-side__nav a, [rst-side-nav] a { align-content: center; box-sizing: border-box; min-block-size: var(--rst-target); min-inline-size: var(--rst-target); }
 .rst-switch, [rst-switch], .rst-choice__cards label, [rst-choice-cards] label, .rst-tblock > .rst-tblock__head, [rst-tblock] > [rst-tblock-head] { box-sizing: border-box; min-block-size: var(--rst-target); }
 
 /* flex: none because the bar is a flex row that, at 390, shrank the

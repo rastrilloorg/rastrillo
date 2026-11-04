@@ -10,6 +10,7 @@ import (
 	"testing"
 	"testing/fstest"
 
+	"amadan.net/rastrillo/rastrillo"
 	"amadan.net/rastrillo/rastrillo/locales"
 )
 
@@ -24,13 +25,24 @@ var (
 	selectSrc   = "static/select.js"
 	calendarSrc = "static/calendar.js"
 	datetimeSrc = "static/datetime.js"
-	allThree    = []string{selectSrc, calendarSrc, datetimeSrc}
+	copySrc     = "static/copy.js"
+	everyOne    = []string{copySrc, selectSrc, calendarSrc, datetimeSrc}
 )
 
 // scriptPages builds a Pages over scriptsLayout with one page per
 // entry of contents, each the body of its content define.
 func scriptPages(
 	t testing.TB, contents map[string]string, funcs template.FuncMap,
+) (*Pages, error) {
+	t.Helper()
+	return scriptPagesWith(t, contents, funcs, nil)
+}
+
+// scriptPagesWith is scriptPages for an app whose static files are
+// assets, so a page leaves out a script the app has deleted.
+func scriptPagesWith(
+	t testing.TB, contents map[string]string, funcs template.FuncMap,
+	assets *rastrillo.Assets,
 ) (*Pages, error) {
 	t.Helper()
 	config, err := locales.CheckConfig("en", []string{"en"})
@@ -45,7 +57,7 @@ func scriptPages(
 	}
 	return NewPages(PagesConfig{
 		App: app, Layout: "layout.html", Pages: pages, Locale: config,
-		Funcs: funcs,
+		Funcs: funcs, Assets: assets,
 	})
 }
 
@@ -104,7 +116,7 @@ func TestADateFieldBringsTheCalendar(t *testing.T) {
 func TestScriptsAreListedOnceInLayoutOrder(t *testing.T) {
 	requireScripts(t, content(`{{template "field-date" .}}`+
 		`{{template "field-select" .}}{{template "field-select" .}}`),
-		allThree)
+		everyOne[1:])
 }
 
 func TestAPartialReachedThroughAnotherCounts(t *testing.T) {
@@ -117,8 +129,8 @@ func TestAPartialReachedThroughAnotherCounts(t *testing.T) {
 func TestALivePageLoadsEveryComponentScript(t *testing.T) {
 	requireScripts(t,
 		content(`<h1>Jobs</h1>`)+`{{define "region:items"}}{{end}}`,
-		allThree)
-	requireScripts(t, content(`{{template "job-status" .}}`), allThree)
+		everyOne)
+	requireScripts(t, content(`{{template "job-status" .}}`), everyOne)
 	requireScripts(t,
 		content(`<h1>Jobs</h1>`)+`{{define "region:notice"}}{{end}}`,
 		nil)
@@ -188,9 +200,9 @@ func TestAnAppCannotReplaceTheScriptFuncs(t *testing.T) {
 
 func TestFuncsOutsidePagesListEveryComponentScript(t *testing.T) {
 	listed := Funcs()["neededScripts"].(func() []string)()
-	if !slices.Equal(listed, allThree) {
+	if !slices.Equal(listed, everyOne) {
 		t.Errorf("neededScripts outside Pages lists %v, want %v",
-			listed, allThree)
+			listed, everyOne)
 	}
 	page := template.Must(template.New("page").Funcs(Funcs()).
 		Parse(`[{{needs "select.js"}}]`))
@@ -201,7 +213,7 @@ func TestFuncsOutsidePagesListEveryComponentScript(t *testing.T) {
 }
 
 func TestAPollMarkerInAnyCaseLoadsEveryComponentScript(t *testing.T) {
-	requireScripts(t, content(`<div DATA-POLL="/jobs/1"></div>`), allThree)
+	requireScripts(t, content(`<div DATA-POLL="/jobs/1"></div>`), everyOne)
 }
 
 // An app's own field markup, or its own definition of a field partial,
@@ -224,4 +236,37 @@ func TestTextThatIsNotAHookLoadsNothing(t *testing.T) {
 		nil)
 	requireScripts(t,
 		content(`<header data-rst-select-ceiling>Orders</header>`), nil)
+}
+
+// copy.js shows a snippet's Copy button, so a page loads it where it
+// has a snippet: in its own markup, or in a region a live page swaps
+// in later, which loads every component script. An app that deleted
+// copy.js keeps its snippets, selectable by hand, and links nothing.
+func TestASnippetLoadsCopyJS(t *testing.T) {
+	snippet := `<div rst-snippet><code>go get example.com</code>` +
+		`<button rst-snippet-copy hidden>Copy</button></div>`
+	requireScripts(t, content(snippet), []string{copySrc})
+	requireScripts(t, content(`<pre><code>go get example.com</code></pre>`),
+		nil)
+	requireScripts(t, content(`<p>Wrap it in rst-snippet.</p>`), nil)
+	live, err := scriptPages(t, map[string]string{
+		"keys": content(`<h1>Keys</h1>`) +
+			`{{define "region:keys"}}` + snippet + `{{end}}`,
+	}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := loadedScripts(t, live, "keys"); !slices.Contains(got, copySrc) {
+		t.Errorf("a snippet in a region loads %v, want %s among them",
+			got, copySrc)
+	}
+	deleted, err := scriptPagesWith(t,
+		map[string]string{"page": content(snippet)}, nil,
+		appAssets("copy.js"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := loadedScripts(t, deleted, "page"); len(got) != 0 {
+		t.Errorf("an app without copy.js loads %v on a snippet page", got)
+	}
 }

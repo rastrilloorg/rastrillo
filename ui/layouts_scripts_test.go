@@ -40,8 +40,8 @@ var shellWants = map[string][]string{
 	"select": {"/static/anchor.js", "/" + selectSrc},
 	"date":   {"/static/anchor.js", "/" + calendarSrc, "/" + datetimeSrc},
 	"live": {"/static/busy.js", "/static/live.js", "/static/light.js",
-		"/static/anchor.js", "/" + selectSrc, "/" + calendarSrc,
-		"/" + datetimeSrc},
+		"/static/anchor.js", "/" + copySrc, "/" + selectSrc,
+		"/" + calendarSrc, "/" + datetimeSrc},
 }
 
 var deferredSrc = regexp.MustCompile(`<script defer[^>]* src="([^"]*)">`)

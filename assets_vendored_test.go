@@ -16,6 +16,9 @@ import (
 	"testing"
 	"testing/fstest"
 	"time"
+
+	"amadan.net/rastrillo/fiesta"
+	"amadan.net/rastrillo/rastrillo/internal/vendored"
 )
 
 // commentedCSS and commentedJS stand in for the vendored files, which
@@ -166,6 +169,38 @@ func TestEachEncodingRevalidatesOnItsOwnETag(t *testing.T) {
 		if recorder.Code != test.want {
 			t.Errorf("If-None-Match %s, Accept-Encoding %q: %d, want %d",
 				test.etag, test.acceptEncoding, recorder.Code, test.want)
+		}
+	}
+}
+
+// Every file the pinned Fiesta ships, under the name an app vendors it
+// by, is a vendored file: Assets serves it minified, not as written,
+// and as the minifier writes it, so a new Fiesta script or one the
+// minifier refuses fails here by name.
+func TestEveryFiestaFileIsServedMinified(t *testing.T) {
+	theme, _ := fiesta.ThemeCSS(fiesta.ThemeNames()[0])
+	files := map[string][]byte{
+		"tokens.css": fiesta.TokensCSS(), "shell.css": fiesta.ShellCSS(),
+		"theme.css": theme,
+	}
+	for _, name := range fiesta.ScriptNames() {
+		files[name], _ = fiesta.Script(name)
+	}
+	tree := fstest.MapFS{}
+	for name, body := range files {
+		tree["static/"+name] = &fstest.MapFile{Data: body}
+	}
+	assets := NewAssets(tree)
+	for name, body := range files {
+		want, err := vendored.Minify(name, body)
+		if err != nil {
+			t.Errorf("Fiesta's %s does not minify: %v", name, err)
+			continue
+		}
+		got := getAsset(t, assets, assets.Path("static/"+name), "").Body
+		if !bytes.Equal(got.Bytes(), want) || len(want) >= len(body) {
+			t.Errorf("static/%s is served as %d bytes; Fiesta's is %d, "+
+				"minified %d", name, got.Len(), len(body), len(want))
 		}
 	}
 }

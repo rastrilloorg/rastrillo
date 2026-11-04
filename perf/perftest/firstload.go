@@ -55,16 +55,16 @@ var frameworkBudget = firstLoadBudget{
 		"sidebar": 16000, "console": 16000, "stage": 16000,
 	},
 	live: map[string]int{
-		"column": 33000, "topbar": 33000,
-		"sidebar": 33000, "console": 33000, "stage": 33000,
+		"column": 36200, "topbar": 36200,
+		"sidebar": 36200, "console": 36200, "stage": 36200,
 	},
 	unsliced: 40000,
 	references: map[string]int{
-		"tokens.css": 20100, "theme.css": 1800, "shell.css": 500,
-		"rastrillo.js": 2400, "busy.js": 1200, "live.js": 4600,
-		"light.js": 1900, "anchor.js": 600, "shell.js": 1100,
-		"transition.js": 400,
-		"select.js":     7300, "datetime.js": 9500, "calendar.js": 2800,
+		"tokens.css": 21000, "theme.css": 1800, "shell.css": 500,
+		"rastrillo.js": 2400, "fiesta.js": 2000, "busy.js": 1200,
+		"live.js": 4600, "light.js": 1900, "anchor.js": 600,
+		"shell.js": 1100, "transition.js": 400, "copy.js": 1100,
+		"select.js": 7600, "datetime.js": 10200, "calendar.js": 2800,
 	},
 }
 

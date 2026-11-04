@@ -147,8 +147,8 @@ func (pages *Pages) addPage(
 //   - busy.js with a form of the page's own;
 //   - light.js with a hook it lights;
 //   - anchor.js with a menu;
-//   - a component script where a field arms it, and calendar.js with
-//     datetime.js, which draws its month grid with it;
+//   - a component script where a field or a snippet arms it, and
+//     calendar.js with datetime.js, which draws its month grid with it;
 //   - each the page asks for with needs;
 //   - live.js on a live or polling page, which loads every other one
 //     too, since a fragment it swaps in later may carry a form, a field
@@ -173,15 +173,17 @@ func plannedScripts(reading pageReading) []string {
 }
 
 // hookScripts maps each attribute that arms a component script to that
-// script. A page's markup carrying one loads its script with no needs,
-// so an app's own field markup, or its own definition of a field
-// partial, keeps its enhancement when the layout stops loading every
-// script.
+// script: a field's data-rst- attribute, or the snippet's box, whose
+// Copy button copy.js shows. A page's markup carrying one loads its
+// script with no needs, so an app's own field markup, or its own
+// definition of a field partial, keeps its enhancement when the layout
+// stops loading every script.
 var hookScripts = map[string]string{
 	"data-rst-select": "select.js",
 	"data-rst-date":   "datetime.js",
 	"data-rst-time":   "datetime.js",
 	"data-rst-range":  "datetime.js",
+	"rst-snippet":     "copy.js",
 }
 
 // markupNeeds marks in wanted the script each hook in text arms, and
@@ -199,8 +201,8 @@ func markupNeeds(text []byte, wanted map[string]bool) (polls bool) {
 // a longer attribute such as data-rst-select-ceiling, is not one. A
 // name at the end of the text is one, since an action may follow it.
 var hookAttribute = regexp.MustCompile(
-	`(?i)\s(data-rst-select|data-rst-date|data-rst-time|data-rst-range)` +
-		`(?:[\s=/>]|$)`)
+	`(?i)\s(data-rst-select|data-rst-date|data-rst-time|data-rst-range|` +
+		`rst-snippet)(?:[\s=/>]|$)`)
 
 // neededName is the script or hook a {{needs}} command names, "" for
 // any other command.

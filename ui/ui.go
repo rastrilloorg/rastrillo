@@ -247,16 +247,12 @@ package ui
 import (
 	"embed"
 	"io/fs"
+
+	"amadan.net/rastrillo/fiesta"
 )
 
 //go:embed partials/*.html
 var partialsFS embed.FS
-
-//go:embed tokens.css
-var tokensCSS []byte
-
-//go:embed themes/*.css
-var themesFS embed.FS
 
 //go:embed layouts/*.html
 var layoutsFS embed.FS
@@ -266,30 +262,6 @@ var shimJS []byte
 
 //go:embed live.js
 var liveJS []byte
-
-//go:embed busy.js
-var busyJS []byte
-
-//go:embed light.js
-var lightJS []byte
-
-//go:embed anchor.js
-var anchorJS []byte
-
-//go:embed select.js
-var selectJS []byte
-
-//go:embed datetime.js
-var datetimeJS []byte
-
-//go:embed calendar.js
-var calendarJS []byte
-
-//go:embed shell.js
-var shellJS []byte
-
-//go:embed shell.css
-var shellCSS []byte
 
 // Templates returns the embedded partials rooted at partials/, so every
 // caller parses "*.html" regardless of this package's own source-tree
@@ -305,31 +277,39 @@ func Templates() fs.FS {
 	return sub
 }
 
-// TokensCSS returns tokens.css's raw bytes, for rastrillo new's scaffold
-// step to write into a new app's static directory. The stylesheet is
-// delivered once, at scaffold time, and is app-owned from then on.
+// fiestaScript returns one of the scripts Fiesta ships. Every name
+// passed here is one the pinned Fiesta lists, so a miss is a broken pin
+// rather than a condition to report: the panic says which file.
+func fiestaScript(name string) []byte {
+	script, ok := fiesta.Script(name)
+	if !ok {
+		panic("ui: Fiesta " + fiesta.Version + " ships no " + name)
+	}
+	return script
+}
+
+// TokensCSS returns tokens.css's raw bytes, Fiesta's structural
+// stylesheet, for rastrillo new's scaffold step to write into a new
+// app's static directory. The stylesheet is delivered once, at
+// scaffold time, and is app-owned from then on.
 //
 // It is structure only. Colour and the type family live in a theme file
 // beside it — see ThemeCSS.
-func TokensCSS() []byte { return tokensCSS }
+func TokensCSS() []byte { return fiesta.TokensCSS() }
 
-// themeNames lists the shipped themes, day first: it is the default and
-// the reference theme, the one every other theme's token set is checked
-// against (ui_test.go, TestThemesDeclareIdenticalTokenSets). The slice
-// matches the files in themes/ exactly — adding a theme means adding
-// both.
+// ThemeNames returns Fiesta's theme names, day first: it is the default
+// and the reference theme, the one every other theme's token set is
+// checked against.
 //
 //	day     the everyday default: an ordinary blue on white and grey
 //	plain   the skeleton: greyscale, system type, almost no shape
 //	signal  graphite and one live cobalt; milled corners, dense shadows
-var themeNames = []string{"day", "plain", "signal"}
+//
+// The returned slice is a copy, so a caller sorting or truncating it
+// cannot reorder the library's own list.
+func ThemeNames() []string { return fiesta.ThemeNames() }
 
-// ThemeNames returns the shipped theme names, day first. The returned
-// slice is a copy, so a caller sorting or truncating it cannot reorder
-// the library's own list.
-func ThemeNames() []string { return append([]string(nil), themeNames...) }
-
-// ThemeCSS returns one theme's raw bytes — the colour, type-family and
+// ThemeCSS returns one of Fiesta's themes — the colour, type-family and
 // shape tokens tokens.css paints its components with — reporting
 // false for a name that is not shipped. rastrillo new writes the chosen
 // theme once as static/theme.css, beside tokens.css and on exactly the
@@ -348,10 +328,7 @@ func ThemeNames() []string { return append([]string(nil), themeNames...) }
 // rastrillo.js applies a choice in place when scripts run. No attribute
 // is System, the OS deciding. Radii and shadows live here too, so a
 // theme can change how an app feels and not only what colour it is.
-func ThemeCSS(name string) ([]byte, bool) {
-	b, err := fs.ReadFile(themesFS, "themes/"+name+".css")
-	return b, err == nil
-}
+func ThemeCSS(name string) ([]byte, bool) { return fiesta.ThemeCSS(name) }
 
 // ShimJS returns rastrillo.js's raw bytes — the fragment shim — for
 // rastrillo new's scaffold step to write into a new app's static
@@ -368,95 +345,73 @@ func ShimJS() []byte { return shimJS }
 // comment is its contract.
 func LiveJS() []byte { return liveJS }
 
-// BusyJS returns busy.js — the busy rule: every submit button shows a
-// spinner in place of its label for at least 650ms, goes disabled, and
-// its form refuses a second submit; Back hands it back. Delivered once
-// by rastrillo new, like ShimJS, and app-owned from then on. Linking it
-// is the whole opt-in; the file's own header comment is its contract.
-func BusyJS() []byte { return busyJS }
+// BusyJS returns Fiesta's busy.js — the busy rule: every submit button
+// shows a spinner in place of its label for at least 650ms, goes
+// disabled, and its form refuses a second submit; Back hands it back.
+// Delivered once by rastrillo new, like ShimJS, and app-owned from then
+// on. Linking it is the whole opt-in; the file's own header comment is
+// its contract.
+func BusyJS() []byte { return fiestaScript("busy.js") }
 
-// LightJS returns light.js: the light the depth styles read. The
-// shadows' light comes from the hour; the button under the pointer
+// LightJS returns Fiesta's light.js: the light the depth styles read.
+// The shadows' light comes from the hour; the button under the pointer
 // catches a sheen, and a card's rim brightens near it. Delivered once by
 // rastrillo new, like BusyJS, and app-owned from then on; delete it and
 // its tag, and the page is the static depth design. Its header comment
 // is its contract.
-func LightJS() []byte { return lightJS }
+func LightJS() []byte { return fiestaScript("light.js") }
 
-// AnchorJS returns anchor.js, which keeps a dropdown's menu on the
-// screen in a browser without CSS anchor positioning and does nothing
-// in one with it. Delivered once by rastrillo new, like ShimJS, and
-// app-owned from then on; an app deletes it, and its tag, once every
+// AnchorJS returns Fiesta's anchor.js, which keeps a dropdown's menu on
+// the screen in a browser without CSS anchor positioning and does
+// nothing in one with it. Delivered once by rastrillo new, like ShimJS,
+// and app-owned from then on; an app deletes it, and its tag, once every
 // browser it supports has the feature.
-func AnchorJS() []byte { return anchorJS }
+func AnchorJS() []byte { return fiestaScript("anchor.js") }
 
-// SelectJS returns select.js — field-select's searchable enhancement,
-// on exactly the same terms as ShimJS: delivered once by rastrillo new,
-// app-owned from then on, inert until a <select> opts in with
-// data-rst-select.
-//
-// A sibling file rather than more of rastrillo.js so both stay small
-// enough to read in one sitting. An app that never renders a select past
-// ten options can delete it and the script tag; nothing else changes.
-func SelectJS() []byte { return selectJS }
+// SelectJS returns Fiesta's select.js — field-select's searchable
+// enhancement, on exactly the same terms as ShimJS: delivered once by
+// rastrillo new, app-owned from then on, inert until a <select> opts in
+// with data-rst-select. An app that never renders a select past ten
+// options can delete it and the script tag; nothing else changes.
+func SelectJS() []byte { return fiestaScript("select.js") }
 
-// DatetimeJS returns datetime.js — the date fields' natural-language
-// combobox, on exactly the same terms as ShimJS and SelectJS:
-// delivered once by rastrillo new, app-owned from then on, inert until
-// an input opts in with data-rst-date or data-rst-time, which
-// field-date, field-time, field-datetime and field-daterange emit
+// DatetimeJS returns Fiesta's datetime.js — the date fields'
+// natural-language combobox, on exactly the same terms as ShimJS and
+// SelectJS: delivered once by rastrillo new, app-owned from then on,
+// inert until an input opts in with data-rst-date or data-rst-time,
+// which field-date, field-time, field-datetime and field-daterange emit
 // unless the caller passes Plain.
 //
-// It is the largest of the three because it carries a parser, and it is
-// still its own file for the same reason the other two are: an app that
-// never renders a date field can delete it and its script tag, and an
-// app that keeps it can read the whole thing. It holds no month names,
-// no weekday names and no English vocabulary — the calendar names come
-// from Intl in the page's own language, and the words it matches on
-// ("tomorrow", "next", "in") ride out on data-rst-date-words from the
-// request's catalog. Like select.js it does keep English fallbacks for
-// the labels it renders, for the field that arrives without them.
-func DatetimeJS() []byte { return datetimeJS }
+// It holds no month or weekday names: those come from Intl in the
+// page's own language. The words it matches on ("tomorrow", "next",
+// "in") ride out on data-rst-date-words from the request's catalog.
+func DatetimeJS() []byte { return fiestaScript("datetime.js") }
 
-// CalendarJS returns calendar.js — the month grid the date fields open
-// when their calendar button is pressed, on the same terms as the other
-// three: delivered once by rastrillo new, app-owned from then on, and
-// inert until datetime.js asks it for a panel.
+// CalendarJS returns Fiesta's calendar.js — the month grid the date
+// fields open when their calendar button is pressed, on the same terms
+// as the others: delivered once by rastrillo new, app-owned from then
+// on, and inert until datetime.js asks it for a panel.
 //
-// It is a separate file from datetime.js because it is a separate job.
-// datetime.js reads and writes dates as TEXT — a parser and a combobox
-// — and this draws six weeks of days with a roving tabindex, a live
-// preview and a month that pages. Neither half needs the other's code,
-// and together they were past the size at which datetime.js's own test
-// says to split something out.
-//
-// The seam between them is one function, window.rastrilloCalendar,
-// which this file publishes and datetime.js looks up at enhance time.
-// An app that ships datetime.js without this one still gets a working
-// field: the calendar button falls back to the browser's own picker,
-// the same way both files fall back when an attribute is missing.
-//
-// Like the others it holds no month names, no weekday names and no
-// English: the names, the digits and the day a week starts on all come
-// from Intl for the page's own lang, and the three strings it puts on
-// screen arrive translated on data-rst-date-calendar,
-// data-rst-date-prev-month and data-rst-date-next-month.
-func CalendarJS() []byte { return calendarJS }
+// The seam between them is one function, window.fiestaCalendar, which
+// this file publishes and datetime.js looks up at enhance time. An app
+// that ships datetime.js without this one still gets a working field:
+// the calendar button falls back to the browser's own picker.
+func CalendarJS() []byte { return fiestaScript("calendar.js") }
 
-// ShellJS returns shell.js: the sidebar and console shells' phone
-// navigation. It types the slide between pages, makes the back control
-// reuse history when it can prove what is behind it, and returns focus
-// to the section the reader left. Delivered once by rastrillo new like
-// ShimJS and app-owned from then on. Only the sidebar and console
+// ShellJS returns Fiesta's shell.js: the sidebar and console shells'
+// phone navigation. It types the slide between pages, makes the back
+// control reuse history when it can prove what is behind it, and returns
+// focus to the section the reader left. Delivered once by rastrillo new
+// like ShimJS and app-owned from then on. Only the sidebar and console
 // layouts link it, and it is optional there: without it the index and
 // the back control are ordinary pages and links.
-func ShellJS() []byte { return shellJS }
+func ShellJS() []byte { return fiestaScript("shell.js") }
 
-// ShellCSS returns shell.css: the slide between the index and a page on
-// a phone. It is a stylesheet of its own because the slide's opt-in
-// cannot be scoped from tokens.css, where it would opt every shell's
-// pages in, the sign-in page included.
-func ShellCSS() []byte { return shellCSS }
+// ShellCSS returns Fiesta's shell.css: the slide between the index and a
+// page on a phone. It is a stylesheet of its own because the slide's
+// opt-in cannot be scoped from tokens.css, where it would opt every
+// shell's pages in, the sign-in page included.
+func ShellCSS() []byte { return fiesta.ShellCSS() }
 
 // layoutNames lists the shipped shells, column first: it is the plain
 // centred page every scaffolded app starts on, the three chrome shells

@@ -2981,7 +2981,7 @@ func TestTheLibrarysOwnSamplesIsolateAName(t *testing.T) {
 // like it had simply ignored the date somebody had just chosen.
 //
 //   - the button opens nothing, or opens the browser's panel again,
-//     because window.rastrilloCalendar was not found;
+//     because window.fiestaCalendar was not found;
 //   - a day is clicked and the grid closes, but the carrier never takes
 //     the value, so the form posts an empty date over a filled-in
 //     screen;

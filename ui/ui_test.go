@@ -16,6 +16,7 @@ import (
 	"testing"
 	"time"
 
+	"amadan.net/rastrillo/fiesta"
 	"amadan.net/rastrillo/rastrillo"
 	"amadan.net/rastrillo/rastrillo/auth"
 )
@@ -2079,10 +2080,11 @@ func TestIdiomClassesAreStyled(t *testing.T) {
 // ThemeCSS and Layout read the embedded FS by filename, but every gate
 // that checks a theme or a shell — the token-set parity check, the WCAG
 // contrast sweep, TestLayoutsParseAndRender — iterates ThemeNames() and
-// LayoutNames() instead. So a themes/foo.css added without its slice
-// entry is scaffoldable (rastrillo new --theme=foo finds the file) while
-// no gate ever looks at it. This test is the one place the directory
-// itself is read, so the file set and the name list cannot drift apart.
+// LayoutNames() instead. So a theme Fiesta adds under css/themes/
+// without its name is scaffoldable (rastrillo new --theme=foo finds the
+// file) while no gate ever looks at it. This test is the one place the
+// directory itself is read, so the file set and the name list cannot
+// drift apart.
 func TestEveryEmbeddedThemeAndLayoutIsNamed(t *testing.T) {
 	for _, tc := range []struct {
 		dir   string
@@ -2090,7 +2092,7 @@ func TestEveryEmbeddedThemeAndLayoutIsNamed(t *testing.T) {
 		fsys  fs.FS
 		names []string
 	}{
-		{"themes", ".css", themesFS, ThemeNames()},
+		{"css/themes", ".css", fiesta.FS(), ThemeNames()},
 		{"layouts", ".html", layoutsFS, LayoutNames()},
 	} {
 		t.Run(tc.dir, func(t *testing.T) {

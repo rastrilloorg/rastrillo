@@ -7,28 +7,29 @@ package vendored
 import (
 	"path"
 	"slices"
+
+	"amadan.net/rastrillo/fiesta"
 )
 
 // names lists the vendored files in the order they are worth reading:
 // the structural stylesheet, the theme that colours it and the shells'
-// slide, then the scripts: the shim, the busy rule beside it, the live
-// pages' script (inert until a page opts in), and the light the depth
-// styles read, which an app may delete; the menus' fallback for a
-// browser without anchor positioning, the shells' navigation, and
-// calendar.js last because it is the only one that is not an
-// enhancement in its own right: it draws the month grid datetime.js
-// asks it for. ui's TestVendoredNamesMatchVendoredAssets holds this and
-// ui.VendoredAssets to the same set.
-var names = []string{
-	"tokens.css", "theme.css", "shell.css",
-	"rastrillo.js", "busy.js", "live.js", "light.js", "anchor.js",
-	"shell.js", "transition.js", "select.js", "datetime.js", "calendar.js",
-}
+// slide, then Rastrillo's own two scripts, the fragment shim and the
+// live pages' script (inert until a page opts in), then every script
+// the pinned Fiesta ships, in Fiesta's load order. A script a Fiesta
+// release adds is vendored by the bump that pins it. ui's
+// TestVendoredNamesMatchVendoredAssets holds this and ui.VendoredAssets
+// to the same set.
+var names = append([]string{
+	"tokens.css", "theme.css", "shell.css", "rastrillo.js", "live.js",
+}, fiesta.ScriptNames()...)
 
-// componentScripts are the scripts a page loads only when a field on
-// it needs them, in the order the layouts load them: calendar.js
-// before datetime.js, which calls it.
-var componentScripts = []string{"select.js", "calendar.js", "datetime.js"}
+// componentScripts are the scripts a page loads only where it shows
+// what they enhance, in the order the layouts load them: the snippet's
+// copy button, then the fields', calendar.js before datetime.js, which
+// calls it.
+var componentScripts = []string{
+	"copy.js", "select.js", "calendar.js", "datetime.js",
+}
 
 // Names returns the vendored files' names, in a stable order. The
 // returned slice is a copy.
