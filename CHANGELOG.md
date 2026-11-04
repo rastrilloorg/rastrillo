@@ -10,13 +10,14 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+## v0.32.0
+
 ### Changed: a base path refuses the instance's own host as its origin
 
-`basepath.FromEnv` now returns an error when the origin names
-`CARLOS_HOST`, the instance's own hostname. That host is the direct
-host, which sends visitors to the hub, so it is never the product
-origin. A tenant whose `<APP>_ORIGIN` names its own host stops at
-start with a message saying to set the hub's origin instead. Set it to
+`basepath.FromEnv` now returns an error when the origin is
+`CARLOS_HOST`, the instance's own hostname, because that hostname never
+points at the hub. A path-routed tenant whose `<APP>_ORIGIN` names its
+own host now stops at start and says to set the hub's origin instead:
 the `https://` host the hub is served at.
 
 ### Changed: a new app finds its address on CARLOS
@@ -40,6 +41,20 @@ app, replace `originFrom(logger)` in `cmd/<app>/main.go` with
 `rastrillo.Origin("<APP>_ORIGIN", logger)`, using your app's variable,
 and delete `originFrom`. An app that already sets `<APP>_ORIGIN`
 everywhere it runs needs nothing.
+
+### Changed: the agent skill plans ports, enhances pages and asks first
+
+The skill an agent reads gains three topics. `skill/port.md`: asked to
+port an app, the agent takes the operator's reason as given, lists the
+gains they may not have counted, maps each feature, then names the
+costs, the plan and the questions. `skill/scripts.md`: pages are links
+and forms first, enhanced with vanilla scripts as richly as the product
+needs, through ES modules, an import map under a CSP hash, and esbuild
+when the code outgrows that. `skill/screens.md` opens with what to ask
+before the first screen: how polished, the personality (a logo,
+colours, typefaces, three words for the feel), a screenshot of a key
+flow, and an offer of mockups. `SKILL.md` no longer tells new work to
+reach for a manifest first.
 
 ## v0.31.1
 
