@@ -251,9 +251,10 @@ What it changed:
 - **Fiesta's `Version` moves to 1.2.0 first**, with a `-candidate`
   build, rebuilt after later asset changes; the release command refuses
   otherwise.
-- **The mapping API keeps `View`.** `Source` is
-  `{Kind, Source, Locale, View string; State int}`, equal to
-  `sources.json` field for field.
+- **The mapping API keeps `View` and the example path.**
+  `fiesta.Sources()` returns `map[string]Source` keyed by the example
+  path, with `Source` as `{Kind, Source, Locale, View string; State
+  int}`, equal to `sources.json` key for key and field for field.
 - **`transition.js` keeps its place:** synchronous, before the
   stylesheets, as today; only its bytes come from Fiesta. `pageScripts`
   is deferred and would miss a rejection before `pagereveal`.

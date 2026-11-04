@@ -40,7 +40,7 @@
 **Files:** `fiesta.go` (Version, scripts list, mapping API), `css/tokens.css`, `js/shell.js`, `js/busy.js`, new `js/transition.js` + example + gallery mention + `check/node` harness, `check/parity_browser_test.go` and `check/oneoh_browser_test.go` (scoped ring exception), `check/baseline_test.go` / `releases_test.go` (named script and declaration exceptions), new regression tests for the excepted script changes, `CHANGELOG.md`, `releases/1.2.0/`, `hack/catch-up-1.2.md`.
 
 **Interfaces:**
-- Produces: Fiesta v1.2.0 tagged and live; `fiesta.ScriptNames()` includes `transition.js`; `fiesta.Sources() []Source` with `type Source struct{ Kind, Source, Locale, View string; State int }`, equal to `hack/seed/sources.json` field for field.
+- Produces: Fiesta v1.2.0 tagged and live; `fiesta.ScriptNames()` includes `transition.js`; `fiesta.Sources() map[string]Source`, keyed by the example path as `hack/seed/sources.json` is, with `type Source struct{ Kind, Source, Locale, View string; State int }`; a test holds keys and values equal to the JSON.
 
 - [ ] **Step 1:** Diff Rastrillo main's `ui/tokens.css`, `shell.js`, `busy.js`, `transition.js`, `select.js`, `datetime.js`, `calendar.js` against Fiesta's; write `hack/catch-up-1.2.md` listing each hunk as Fiesta-newer (keep) or Rastrillo-newer (take), with the Rastrillo commit. Known: Rastrillo-newer are the console ring (cc7c9c69), skipped transitions (d9c9ed13, 023740c5, e5e35a3e, 6b1c5478), busy's `data-live-form` (8548e455); Fiesta-newer are 1.1's additions, the select/date strings and fixes, `fiestaCalendar`.
 - [ ] **Step 2:** Bump `Version` to 1.2.0; `go run ./cmd/fiesta release -version 1.2.0 -candidate`.
@@ -48,7 +48,7 @@
 - [ ] **Step 4:** Add one named exception per change (style of `widenedSelectors` / `newOnOldMarkup`), each with its reason and Rastrillo commit. The pixel suites get a scoped rendering exception for the console rail's current item; the frozen 1.0 tree is untouched. Each excepted script change gets its own regression test (shell.js: a skipped transition's rejection is swallowed, other errors still throw; busy.js: a `data-live-form` form claimed by a live script is not re-armed, one left native is).
 - [ ] **Step 5:** Add `transition.js` (example, gallery line, scripts list, string-free, `check/node` harness ported from Rastrillo's `shell_transition_node.mjs`). Expose `Sources()` with a test that it equals `sources.json`.
 - [ ] **Step 6:** Rebuild the candidate; gates pass locally where cheap, fleet CI green; `CHANGELOG.md` 1.2.0 entry (Luna) announces the ring fix, the shell and busy fixes, `transition.js` and `Sources()`.
-- [ ] **Step 7:** `go run ./cmd/fiesta release -version 1.2.0`, commit `releases/1.2.0/`, push, CI green, land, tag `v1.2.0` (annotated), push tag, ship and promote; check `/1/` serves 1.2.0 from the flagship over SSM.
+- [ ] **Step 7:** Final rebuild with `go run ./cmd/fiesta release -version 1.2.0 -candidate` (the command refuses a non-empty `releases/1.2.0/` without `-candidate`), commit `releases/1.2.0/`, push, CI green, land, tag `v1.2.0` (annotated), push tag, ship and promote; check `/1/` serves 1.2.0 from the flagship over SSM.
 
 ### Task 2: Rastrillo reads its vendored bytes from Fiesta
 
@@ -62,7 +62,7 @@
 
 - [ ] **Step 1: Failing tests:** `TestEveryVendoredFileComesFromThePinnedFiesta` (each name except `rastrillo.js`, `live.js` equals Fiesta's bytes; a missing one fails naming it); `TestNoFiestaFileHasACopyInUI`; `TestServedVendoredBytesEqualFiestas` (HTTP, every asset and every theme as `theme.css`, after Rastrillo's minification, against Fiesta's minified the same way); `TestASnippetLoadsCopyJS` (present, absent, region-inserted, file-deleted); `TestTheGalleryResolvesEveryScriptItLinks`.
 - [ ] **Step 2: Run** `GOFLAGS=-mod=mod go test ./ui ./internal/designsystem -run 'Fiesta|Snippet|Resolves'` — FAIL.
-- [ ] **Step 3: Implement**: require v1.2.0, route embeds through Fiesta's API, delete the copies and harnesses, add `fiesta.js` and `copy.js` to the vendored list and `galleryAssets`; update `vendored.CreatedHooks` and read-only lists for Fiesta's scripts; budget references measured (report any page over its limit); refresh example `static/` files.
+- [ ] **Step 3: Implement**: require v1.2.0, route embeds through Fiesta's API, delete the copies and harnesses (and the Go tests that drive them: `ui/select_test.go`, `ui/datetime_test.go`, `ui/shell_test.go` lose their Node calls; integration checks they made stay as Go or browser tests), add `fiesta.js` and `copy.js` to the vendored list and `galleryAssets`; update `vendored.CreatedHooks` and read-only lists for Fiesta's scripts; budget references measured (report any page over its limit); refresh example `static/` files.
 - [ ] **Step 4: Run** `go test ./ui ./internal/vendored ./internal/designsystem ./perf/... . ./cmd/rastrillo -run 'Vendored|Fiesta|Hook|Scripts|Doctor|Markup|Budget|Gallery|Theme|Transition'`, the examples' token tests, `make code`, `make budget`, `make generate-check` — PASS.
 - [ ] **Step 5: Commit** `ui: vendor Fiesta 1.2.0's files instead of copies`.
 
