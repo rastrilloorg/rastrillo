@@ -1,10 +1,12 @@
 package ui
 
 import (
+	"bytes"
 	"maps"
 	"regexp"
 	"slices"
 	"strings"
+	"unicode"
 
 	"amadan.net/rastrillo/rastrillo/internal/vendored"
 )
@@ -17,7 +19,9 @@ var classAttribute = regexp.MustCompile(
 
 // readClasses reads the hooks a run of markup writes as classes. A
 // class attribute whose value the text does not hold whole is written
-// from data or a template, so the page may wear any class.
+// from data or a template, so the page may wear any class. A browser
+// splits a class list at HTML's spaces; select.js splits
+// data-rst-class at JavaScript's \s, which is wider.
 func (reading *pageReading) readClasses(text []byte) {
 	for _, span := range classAttribute.FindAllIndex(text, -1) {
 		value, state := attributeValue(text[span[1]:])
@@ -25,7 +29,12 @@ func (reading *pageReading) readClasses(text []byte) {
 			reading.anyClass = true
 			continue
 		}
-		for _, class := range strings.FieldsFunc(value, isHTMLSpace) {
+		split := isHTMLSpace
+		name := bytes.ToLower(text[span[0]:span[1]])
+		if bytes.HasSuffix(name, []byte("data-rst-class")) {
+			split = isScriptSpace
+		}
+		for _, class := range strings.FieldsFunc(value, split) {
 			if vendored.IsHook(class) {
 				reading.classes = setOf(reading.classes)
 				reading.classes[class] = true
@@ -36,6 +45,13 @@ func (reading *pageReading) readClasses(text []byte) {
 
 func isHTMLSpace(character rune) bool {
 	return strings.ContainsRune(htmlSpaces, character)
+}
+
+// isScriptSpace is true of every character JavaScript's \s matches, and
+// of U+0085, which it does not: splitting a list at one more place
+// only names more classes.
+func isScriptSpace(character rune) bool {
+	return unicode.IsSpace(character) || character == '\uFEFF'
 }
 
 // shownClasses is a vendored.ShownClass entry for each hook the page

@@ -43,10 +43,12 @@ func readClasses(hooks map[string]bool) map[string]bool {
 
 // keptText is what a style rule writes into a slice: nothing when the
 // page can match none of its comma-separated selectors, the rule as it
-// was read when it can match them all or its classes are not listed,
-// and otherwise the rule with only those it can match. A page whose
-// classes are not listed may wear any class, whether or not it names
-// the hook, so it keeps every selector of a rule it keeps.
+// was read when it can match them all, its classes are not listed or
+// it nests rules, and otherwise the rule with only those it can match.
+// A page whose classes are not listed may wear any class, whether or
+// not it names the hook, so it keeps every selector of a rule it
+// keeps; and a nested rule's & takes the specificity of the most
+// specific selector in the list, matched or not (css-nesting-1).
 func keptText(rule rule, page shown) []byte {
 	selectors := splitAtCommas(rule.selector)
 	met := make([]bool, len(selectors))
@@ -56,7 +58,7 @@ func keptText(rule rule, page shown) []byte {
 	if !slices.Contains(met, true) {
 		return nil
 	}
-	if !slices.Contains(met, false) || page.classes == nil {
+	if !slices.Contains(met, false) || page.classes == nil || rule.nested {
 		return rule.text
 	}
 	lead, entries, block, ok := cutSelectors(rule.text)

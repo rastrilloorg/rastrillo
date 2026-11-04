@@ -18,6 +18,16 @@ func hookPages(
 	t *testing.T, layout string, contents map[string]string,
 ) (*Pages, error) {
 	t.Helper()
+	return hookPagesWith(t, layout, contents, nil)
+}
+
+// hookPagesWith is hookPages for an app with funcs beside asset and
+// iconAssets.
+func hookPagesWith(
+	t *testing.T, layout string, contents map[string]string,
+	funcs template.FuncMap,
+) (*Pages, error) {
+	t.Helper()
 	config, err := locales.CheckConfig("en", []string{"en"})
 	if err != nil {
 		t.Fatal(err)
@@ -31,11 +41,17 @@ func hookPages(
 	return NewPages(PagesConfig{
 		App: app, Layout: "layout.html", Pages: pages,
 		Locale: config, LocaleFS: app,
-		Funcs: template.FuncMap{
-			"asset":      func(name string) string { return "/" + name },
-			"iconAssets": func() template.HTML { return "" },
-		},
+		Funcs: appFuncs(funcs),
 	})
+}
+
+func appFuncs(funcs template.FuncMap) template.FuncMap {
+	all := template.FuncMap{
+		"asset":      func(name string) string { return "/" + name },
+		"iconAssets": func() template.HTML { return "" },
+	}
+	maps.Copy(all, funcs)
+	return all
 }
 
 // everyFile is an app that has deleted no vendored file.

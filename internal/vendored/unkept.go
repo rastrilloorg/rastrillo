@@ -51,7 +51,8 @@ type metSelector struct {
 
 // metSelectors returns the selectors of the style rules of rules, at
 // any depth, that hooks meet, as keptText chooses them. A rule it
-// cannot cut into selectors is placed whole, as keptText keeps it.
+// cannot cut into selectors, or that nests rules, is placed whole, as
+// keptText keeps it.
 func metSelectors(rules []rule, page shown, within string) []metSelector {
 	var met []metSelector
 	for _, rule := range rules {
@@ -65,7 +66,7 @@ func metSelectors(rules []rule, page shown, within string) []metSelector {
 		}
 		selectors := splitAtCommas(rule.selector)
 		_, entries, block, ok := cutSelectors(rule.text)
-		if !ok || len(entries) != len(selectors) {
+		if rule.nested || !ok || len(entries) != len(selectors) {
 			if anySelectorMet(rule.selector, page) {
 				met = append(met,
 					metSelector{within + string(rule.text), rule.named})

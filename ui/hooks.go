@@ -110,6 +110,8 @@ type pageReading struct {
 	scripts    scriptReading              // the scripts it loads
 	wanted     map[string]bool            // the scripts it asks for
 	live       bool                       // a region or a poll
+	contexts   map[string]*markupContext  // where each template's text is
+	elseStarts map[*parse.ListNode]markupContext
 }
 
 // readPage walks every template the page reaches from entry.
@@ -123,6 +125,7 @@ func readPage(
 	}
 	var problem error
 	root.InspectNamed(func(template string, node parse.Node) {
+		reading.followMarkup(template, node)
 		switch concrete := node.(type) {
 		case *parse.TextNode:
 			reading.readMarkup(template, concrete.Text)

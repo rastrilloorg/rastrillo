@@ -1,9 +1,12 @@
 package ui
 
 import (
+	"html/template"
 	"regexp"
 	"strings"
 	"testing"
+
+	"amadan.net/rastrillo/rastrillo/internal/vendored"
 )
 
 // classSelector finds a selector for a hook written as a class.
@@ -85,4 +88,100 @@ func TestALivePageKeepsEveryClass(t *testing.T) {
 	if !classSelector("rst-btn").MatchString(served) {
 		t.Errorf("the live page's slice drops .rst-btn")
 	}
+}
+
+// An action that may write attributes the walk cannot read may put any
+// class on an element: printed in a tag outside a value, a
+// template.HTMLAttr writes whole attributes. So may a template called
+// there.
+func TestASliceKeepsEveryClassWhereAnActionMayWriteOne(t *testing.T) {
+	mono := `<i rst-mono hidden></i>`
+	for name, body := range map[string]string{
+		"attributes from data": mono + `<code {{.Attrs}}>x</code>`,
+		"after a value":        mono + `<code id="a" {{.Attrs}}>x</code>`,
+		"after a bare name":    mono + `<code hidden {{.Attrs}}>x</code>`,
+		"in a name":            mono + `<code data-{{.Name}}="a">x</code>`,
+		"in an else, after a branch that left the tag": mono +
+			`<p {{if .A}}>a{{else}} {{.Attrs}}>b{{end}}</p>`,
+		"a template called in a tag": mono +
+			`<code {{template "attributes" .}}>x</code>` +
+			`{{end}}{{define "attributes"}}id="a"`,
+	} {
+		slice := pageSlice(t, content(body))
+		if !classSelector("rst-mono").MatchString(slice) {
+			t.Errorf("%s: the slice drops .rst-mono", name)
+		}
+	}
+}
+
+// An action whose output cannot put a class on an element leaves the
+// cut: a value of another attribute, and anything printed as text,
+// which is read as text: markup built in Go declares what it shows
+// with needs.
+func TestAnActionThatCannotWriteAClassKeepsTheCut(t *testing.T) {
+	button := `<button rst-btn>Go</button>`
+	for name, body := range map[string]string{
+		"another attribute's value": button + `<a href="{{.URL}}">a</a>`,
+		"an app function's text":    button + `<p>{{upper "a"}}</p>`,
+		"an app function's markup":  button + `<p>{{markup "a"}}</p>`,
+		"data":                      button + `<p>{{.Body}}</p>`,
+		"a translation":             button + `<p>{{T . "a"}}</p>`,
+		"an icon":                   button + `<p>{{icon "x"}}</p>`,
+		"a variable set":            button + `<p {{$a := .A}}>a</p>`,
+	} {
+		slice := pageSliceWith(t, content(body), template.FuncMap{
+			"upper":  strings.ToUpper,
+			"markup": func(string) template.HTML { return "" },
+		})
+		if classSelector("rst-btn").MatchString(slice) {
+			t.Errorf("%s: the slice keeps .rst-btn", name)
+		}
+	}
+}
+
+// Markup built in Go that wears a class declares it with needs, and
+// its slice keeps the class's rules.
+func TestAClassMarkupBuiltInGoNeedsIsKept(t *testing.T) {
+	body := content(`<button rst-btn>Go</button>{{needs "rst-mono"}}` +
+		`<p>{{.Code}}</p>`)
+	if !classSelector("rst-mono").MatchString(pageSlice(t, body)) {
+		t.Errorf("the slice drops .rst-mono, which the page needs")
+	}
+}
+
+// select.js splits an option's data-rst-class at JavaScript's \s,
+// which takes a no-break space for a space, as HTML does not.
+func TestADataRstClassSplitsAsSelectJSSplitsIt(t *testing.T) {
+	body := "<option data-rst-class=\"rst-mono\u00a0extra\">a</option>"
+	if !classSelector("rst-mono").MatchString(pageSlice(t, content(body))) {
+		t.Errorf("the slice drops .rst-mono, which select.js copies")
+	}
+}
+
+// pageSliceWith is pageSlice for an app with funcs.
+func pageSliceWith(t *testing.T, body string, funcs template.FuncMap) string {
+	t.Helper()
+	pages, err := hookPagesWith(t, scriptsLayout,
+		map[string]string{"page": body}, funcs)
+	if err != nil {
+		t.Fatal(err)
+	}
+	plan, err := planPage("page", pages.pages["page"], pages.entry,
+		everyFile)
+	if err != nil {
+		t.Fatal(err)
+	}
+	hooks := map[string]bool{}
+	for _, hook := range plan.hooks {
+		hooks[hook] = true
+	}
+	whole, err := vendored.Minify("tokens.css", TokensCSS())
+	if err != nil {
+		t.Fatal(err)
+	}
+	slice, err := vendored.Slice(whole, hooks)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return string(slice)
 }

@@ -217,9 +217,14 @@ func TestSliceDropsTheSelectorsAPageCannotMatch(t *testing.T) {
 			[]string{"rst-a", listed}, "p {}\n[rst-a] > p{a:b}"},
 		{"inside a group", `@media (x){.rst-a,[rst-a]{a:b}}`,
 			[]string{"rst-a", listed}, `@media (x){[rst-a]{a:b}}`},
-		{"nested rules come along",
-			`.rst-a,[rst-a]{a:b;&:hover{c:d}}`,
-			[]string{"rst-a", listed}, `[rst-a]{a:b;&:hover{c:d}}`},
+		// A nested rule's & is as specific as the most specific
+		// selector in the list, matched or not (css-nesting-1).
+		{"a nested rule's specificity",
+			`.rst-a#absent,[rst-a]{&{color:red}}[rst-a]{color:blue}`,
+			[]string{"rst-a", listed},
+			`.rst-a#absent,[rst-a]{&{color:red}}[rst-a]{color:blue}`},
+		{"a nested group", `.rst-a,[rst-a]{@media (x){&{a:b}}}`,
+			[]string{"rst-a", listed}, `.rst-a,[rst-a]{@media (x){&{a:b}}}`},
 	}
 	for _, test := range cases {
 		hooks := map[string]bool{}

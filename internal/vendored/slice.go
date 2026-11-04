@@ -43,6 +43,7 @@ var (
 type rule struct {
 	text     []byte
 	selector []css.Token // nil for an at-rule or comment: always kept
+	nested   bool        // its block holds a rule or an at-rule
 	named    []string    // hooks named by every selector it holds
 	opening  []byte
 	rules    []rule
@@ -221,13 +222,14 @@ func (reader *ruleReader) styleRule(start int) (rule, error) {
 	if escapedFunction(selector) {
 		return rule{}, reader.unreadable("an escaped function name")
 	}
-	named, err := reader.skipBlock()
+	named, nested, err := reader.skipBlock()
 	if err != nil {
 		return rule{}, err
 	}
 	named = append(hooksNamed(selector), named...)
 	text := reader.since(start)
-	return rule{text: text, selector: selector, named: named}, nil
+	return rule{text: text, selector: selector, nested: nested,
+		named: named}, nil
 }
 
 func (reader *ruleReader) atRule(start int, name string) (rule, error) {
@@ -235,7 +237,7 @@ func (reader *ruleReader) atRule(start int, name string) (rule, error) {
 	opening := reader.since(start)
 	switch {
 	case keptWhole[name]:
-		nested, err := reader.skipBlock()
+		nested, _, err := reader.skipBlock()
 		named = append(named, nested...)
 		return rule{text: reader.since(start), named: named}, err
 	case ruleGroups[name]:
@@ -244,7 +246,7 @@ func (reader *ruleReader) atRule(start int, name string) (rule, error) {
 		return rule{named: named, opening: opening, rules: rules,
 			closing: closing, emptied: emptied}, err
 	case tokenGroups[name]:
-		if _, err := reader.skipBlock(); err != nil {
+		if _, _, err := reader.skipBlock(); err != nil {
 			return rule{}, err
 		}
 		// The whitespace before the closing brace belongs to no rule
@@ -279,27 +281,32 @@ func layerStatement(name string, prelude []css.Token, opening []byte) []byte {
 
 // skipBlock reads past the end of the block the parser has just
 // opened, returning the hooks named by the selectors of rules nested
-// in it.
-func (reader *ruleReader) skipBlock() ([]string, error) {
+// in it, and whether it holds any rule or at-rule.
+func (reader *ruleReader) skipBlock() ([]string, bool, error) {
 	var named []string
+	nested := false
 	for depth := 1; depth > 0; {
 		grammar, token, _ := reader.parser.Next()
 		switch grammar {
 		case css.BeginRulesetGrammar:
 			named = append(named, hooksNamed(reader.parser.Values())...)
 			depth++
+			nested = true
 		case css.BeginAtRuleGrammar:
 			depth++
+			nested = true
+		case css.AtRuleGrammar, css.QualifiedRuleGrammar:
+			nested = true
 		case css.EndRulesetGrammar, css.EndAtRuleGrammar:
 			if token != css.RightBraceToken {
-				return nil, reader.unreadable("an unclosed block")
+				return nil, false, reader.unreadable("an unclosed block")
 			}
 			depth--
 		case css.ErrorGrammar:
-			return nil, reader.unreadable("a parse error")
+			return nil, false, reader.unreadable("a parse error")
 		}
 	}
-	return named, nil
+	return named, nested, nil
 }
 
 func (reader *ruleReader) since(start int) []byte {
@@ -323,78 +330,4 @@ func escapedFunction(selector []css.Token) bool {
 		return token.TokenType == css.FunctionToken &&
 			bytes.ContainsRune(token.Data, '\\')
 	})
-}
-
-// anySelectorMet reports whether the page can show one of list's
-// comma-separated selectors.
-func anySelectorMet(list []css.Token, page shown) bool {
-	for _, selector := range splitAtCommas(list) {
-		if selectorMet(selector, page) {
-			return true
-		}
-	}
-	return false
-}
-
-// selectorMet reports whether the page shows every hook selector
-// needs, with a value each attribute test accepts. A hook inside
-// :not() is never needed, since the rule applies where it is absent.
-// Any other function's arguments, :is(), :where(), :has() and the "of"
-// list of :nth-child() among them, need one branch.
-func selectorMet(selector []css.Token, page shown) bool {
-	for index := 0; index < len(selector); index++ {
-		if selector[index].TokenType == css.FunctionToken {
-			end := closingParenthesis(selector, index)
-			negated := bytes.EqualFold(selector[index].Data, []byte("not("))
-			if !negated && !anySelectorMet(selector[index+1:end], page) {
-				return false
-			}
-			index = end
-			continue
-		}
-		if _, ok := hookAt(selector, index); ok &&
-			!page.hookMet(selector, index) {
-			return false
-		}
-	}
-	return true
-}
-
-func splitAtCommas(list []css.Token) [][]css.Token {
-	var selectors [][]css.Token
-	depth, start := 0, 0
-	for index, token := range list {
-		switch token.TokenType {
-		case css.FunctionToken, css.LeftParenthesisToken,
-			css.LeftBracketToken:
-			depth++
-		case css.RightParenthesisToken, css.RightBracketToken:
-			depth--
-		case css.CommaToken:
-			if depth == 0 {
-				selectors = append(selectors, list[start:index])
-				start = index + 1
-			}
-		}
-	}
-	return append(selectors, list[start:])
-}
-
-// closingParenthesis returns the index of the parenthesis that closes
-// the function opened at tokens[open], or len(tokens) for a function
-// left open.
-func closingParenthesis(tokens []css.Token, open int) int {
-	depth := 0
-	for index := open; index < len(tokens); index++ {
-		switch tokens[index].TokenType {
-		case css.FunctionToken, css.LeftParenthesisToken:
-			depth++
-		case css.RightParenthesisToken:
-			depth--
-			if depth == 0 {
-				return index
-			}
-		}
-	}
-	return len(tokens)
 }
