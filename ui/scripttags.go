@@ -80,7 +80,7 @@ func (scripts *scriptReading) readCommand(
 		}
 		switch argument := command.Args[1].(type) {
 		case *parse.StringNode:
-			scripts.ours = scripts.ours || ourScript(argument.Text)
+			scripts.ours = scripts.ours || ourAsset(argument.Text)
 		case *parse.DotNode:
 			scripts.ours = scripts.ours || scripts.inRange
 		}
@@ -110,15 +110,30 @@ func (scripts *scriptReading) settle() {
 // of Rastrillo's scripts or hold data rather than code.
 func oursOrData(attributes []byte) bool {
 	if source := srcValue.FindSubmatch(attributes); source != nil {
-		return ourScript(string(source[1]))
+		return ourPath(string(source[1]))
 	}
 	kind := typeValue.FindSubmatch(attributes)
 	return kind != nil && dataTypes[strings.ToLower(string(kind[1]))]
 }
 
-// ourScript reports whether a script's path names one of the scripts
-// Rastrillo vendors.
-func ourScript(source string) bool {
-	name := path.Base(source)
-	return path.Ext(name) == ".js" && vendored.Is("static/"+name)
+// ourAsset reports whether an asset name is one of the scripts
+// Rastrillo vendors, as vendored.Is names them: static/ and the file.
+func ourAsset(name string) bool {
+	return path.Ext(name) == ".js" && vendored.Is(name)
+}
+
+// fingerprinted is a served file's name with its 16-hex fingerprint.
+var fingerprinted = regexp.MustCompile(`^(.+)\.[0-9a-f]{16}(\.js)$`)
+
+// ourPath reports whether a script's literal src is exactly where
+// Rastrillo serves one of its scripts, /static/ and the file's name,
+// plain or fingerprinted. A file of the same name anywhere else is the
+// app's, and may hold its code.
+func ourPath(source string) bool {
+	name, served := strings.CutPrefix(source, "/static/")
+	if match := fingerprinted.FindStringSubmatch(name); match != nil {
+		name = match[1] + match[2]
+	}
+	return served && !strings.Contains(name, "/") &&
+		ourAsset("static/"+name)
 }

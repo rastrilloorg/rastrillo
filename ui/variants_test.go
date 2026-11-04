@@ -120,6 +120,10 @@ func TestAPageWithItsOwnScriptKeepsEveryVariant(t *testing.T) {
 	primary := `<button rst-btn="primary">Go</button>`
 	for name, script := range map[string]string{
 		"an app script": `<script src="/static/app.js"></script>`,
+		"an app script named like ours": `<script ` +
+			`src="/custom/fiesta.js"></script>`,
+		"an app script through asset, named like ours": `<script ` +
+			`src="{{asset "custom/fiesta.js"}}"></script>`,
 		"an app script through asset": `<script defer ` +
 			`src="{{asset "static/app.js"}}"></script>`,
 		"an app script from data": `<script src="{{.Script}}"></script>`,
@@ -152,6 +156,20 @@ func TestTheShellsOwnScriptsKeepTheCut(t *testing.T) {
 			slice, ghostRule) || !strings.Contains(slice, primaryRule) {
 			t.Errorf("%s: the slice keeps %s or drops %s", shell,
 				ghostRule, primaryRule)
+		}
+	}
+}
+
+// A literal src counts as Rastrillo's only where Rastrillo serves the
+// file: /static/ and its name, plain or fingerprinted.
+func TestALiteralSrcWhereRastrilloServesItKeepsTheCut(t *testing.T) {
+	for _, source := range []string{
+		"/static/fiesta.js", "/static/fiesta.0123456789abcdef.js",
+	} {
+		body := content(`<a rst-btn="primary">New</a>` +
+			`<script defer src="` + source + `"></script>`)
+		if strings.Contains(pageSlice(t, body), ghostRule) {
+			t.Errorf("%s: the slice keeps %s", source, ghostRule)
 		}
 	}
 }
