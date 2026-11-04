@@ -2,14 +2,15 @@
 
 Rastrillo builds apps; the CARLOS platform runs them. The contract
 between the two is what `rastrillo.Resolve` and `rastrillo.Serve`
-implement, and none of it is yours to hand-roll.
+implement, and none of it is yours to hand-roll. To run the same
+binary somewhere else, see [Hosting elsewhere](/docs/hosting-elsewhere).
 
 ## What the framework answers
 
 Activation argv in both shapes the platform uses: `-socket`/`-addr`/`-db`
 flags for an agent exec child on a hibernating route, or a bare `serve`
 subcommand for a `carlos-app@.service` unit tenant. `LISTEN_FDS` socket
-activation, before falling back to `Addr`. `$STATE_DIRECTORY`, so a
+activation, before falling back to `Addr`, then `$PORT`. `$STATE_DIRECTORY`, so a
 relative `-db` resolves inside it when systemd provides one — a unit
 tenant's working directory is not its state directory. `GET /healthz`
 and `GET /api/version`. The SIGTERM drain, which fits inside the

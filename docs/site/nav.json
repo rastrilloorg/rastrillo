@@ -137,6 +137,11 @@
           "slug": "deploying",
           "label": "Deploying",
           "blurb": "The platform contract Serve implements, hibernation, and the schema-neutral first deploy."
+        },
+        {
+          "slug": "hosting-elsewhere",
+          "label": "Hosting elsewhere",
+          "blurb": "Run the same binary on your own server, a container platform or Kubernetes, and what you then provide."
         }
       ]
     },

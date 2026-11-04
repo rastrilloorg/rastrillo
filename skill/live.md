@@ -159,15 +159,14 @@ or touch `rastrillo.js`.
 
 ## CARLOS: hibernating routes
 
-An open stream would keep a CARLOS instance awake all night, so **live
-streams stay off on routes that hibernate** until carlos/platform#432
-ships (the edge holds the stream and lets the instance sleep). Nothing
-detects the route's kind yet: the app turns streams on explicitly, and
-only on an always-on route. For a hibernating one build no hub: a nil
-`*live.Hub` is safe everywhere but `Handler` (`View` is the zero View,
-`Head` and `Attrs` render nothing, `Notify` and `Middleware` do
-nothing; a served `Handler` panics), so the
-templates need no `if` and the pages are static as before. Do not
-mount `Handler`, and leave `Options.Live` nil.
+live.js opens its stream with `carlos_hold=1`, so on a route that
+hibernates the CARLOS edge holds it (carlos/platform#432): the stream
+never wakes the instance or keeps it awake, so live pages suit any
+route. Off CARLOS the marker is ignored. A wake is a new boot ID, so
+each open page fetches its regions once. An older `static/live.js`
+sends no marker and keeps the instance awake: `rastrillo doctor --fix`.
+Keep `Lifetime` at 30s or more. A `NotifyAt` time passes unseen while
+the instance sleeps; the next wake refetches anyway.
 
-Spec: `docs/superpowers/specs/2026-10-26-live-fragments-design.md`.
+Specs: `docs/superpowers/specs/2026-10-26-live-fragments-design.md`,
+`2026-11-04-live-on-hibernating-routes-design.md`.

@@ -10,6 +10,45 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+### Changed: live pages let a hibernating instance sleep
+
+`live.js` now opens its stream with `carlos_hold=1`. On a CARLOS route
+that hibernates, the edge holds a marked stream while the instance
+sleeps (carlos/platform#432, platform v0.33.7), so an open live page no
+longer keeps the instance awake, and live pages can go on any route.
+The edge strips the marker; off CARLOS the stream handler ignores it.
+When the instance wakes, each open page fetches its regions once.
+
+`live.js` also waits longer between reconnects when a stream ends as
+soon as it opens, which is how the edge answers once its stream limit
+is reached. Before, it reconnected every second.
+
+After upgrading, run `rastrillo doctor --fix` to re-copy `live.js`.
+Until you do, the app's vendored-files test fails, and a hibernating
+instance with an open live page stays awake. If you set
+`live.Config.Lifetime`, keep it at 30 seconds or more.
+
+### Changed: an app with no `-addr` listens on `$PORT`
+
+`rastrillo.Serve` now reads the `PORT` variable that Render, Railway,
+Heroku-like hosts and Cloud Run set. It listens on the first of: a
+socket systemd hands over (`LISTEN_FDS`), `-socket`, `-addr` or
+`Options.Addr`, `:$PORT`, then `:8080` as before. On CARLOS nothing
+changes: the platform hands the app its listener, which comes first.
+
+Two cases behave differently. An app started without `-addr` from a
+shell or host that sets `PORT` now listens there instead of on 8080.
+And a `PORT` that is not a number from 1 to 65535 stops the app with an
+error naming the value, where it used to be ignored. Pass `-addr` to
+keep the old address either way.
+
+### Added: hosting elsewhere
+
+[Hosting elsewhere](docs/site/hosting-elsewhere.md) covers running an
+app off CARLOS: what the platform did that you then provide, a systemd
+unit with Caddy and Litestream, a container image, container platforms
+and Kubernetes.
+
 ## v0.32.0
 
 ### Changed: a base path refuses the instance's own host as its origin

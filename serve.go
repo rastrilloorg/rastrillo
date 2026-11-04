@@ -21,11 +21,9 @@ import (
 	"fmt"
 	"io/fs"
 	"log/slog"
-	"net"
 	"net/http"
 	"os"
 	"runtime/debug"
-	"strconv"
 	"strings"
 	"time"
 
@@ -144,9 +142,10 @@ type Options struct {
 
 	// Socket and Addr mirror the platform's activation contract (see
 	// testdata/echoapp in carlosframework/platform): a unix socket path,
-	// or a TCP host:port for local dev. If both are empty, Serve checks
-	// for a systemd-activated listener (LISTEN_FDS) before falling back
-	// to Addr ":8080".
+	// or a TCP host:port for local dev. A systemd-activated listener
+	// (LISTEN_FDS) wins over both. If both are empty, Serve listens on
+	// ":$PORT" when PORT is set, as Render, Railway and Cloud Run set
+	// it, and refuses a PORT that is not a port; else on ":8080".
 	Socket string
 	Addr   string
 
@@ -790,26 +789,6 @@ func nextDueHandler(nextDue func() time.Time) http.HandlerFunc {
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]int64{"due": due})
 	}
-}
-
-// listen resolves the platform's activation contract, exactly matching
-// carlosframework/platform's testdata/echoapp: a systemd-activated
-// listener (LISTEN_FDS=1, fd 3 — the carlos-app@.socket contract) takes
-// priority; otherwise Socket (unix) or Addr (TCP).
-func listen(socket, addr string) (net.Listener, error) {
-	if n, _ := strconv.Atoi(os.Getenv("LISTEN_FDS")); n >= 1 {
-		if pid := os.Getenv("LISTEN_PID"); pid == "" || pid == strconv.Itoa(os.Getpid()) {
-			return net.FileListener(os.NewFile(3, "listen-fd"))
-		}
-	}
-	if socket != "" {
-		os.Remove(socket)
-		return net.Listen("unix", socket)
-	}
-	if addr == "" {
-		addr = ":8080"
-	}
-	return net.Listen("tcp", addr)
 }
 
 // OpenDB applies the SQLite convention the survey found hand-propagated,
