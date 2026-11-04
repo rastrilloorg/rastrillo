@@ -57,13 +57,6 @@ its tests; it compiles, passes and serves before you write a line, so
 never hand-write any of it. The scaffolded `AGENTS.md` is the source of
 truth for that app's code; this file stays the framework's.
 
-**Reach for a manifest before hand-writing.** A `manifest/*.toml`
-resource generates CRUD screens (field kinds text, textarea, money;
-`scope = "user"` owner-filters by session subject); run
-`rastrillo generate`, commit `gen/` and `api/v1.json`, and mount
-`gen.Router` in `Routes` (`manifest/README.md`).
-docs/site/manifests.md
-
 **Look before you build.** Most things an app needs already ship: a
 Light/Dark/System switch in every shell, a picture grid (`media-grid`),
 the API token page (`api-tokens`), job status pages, money fields,
