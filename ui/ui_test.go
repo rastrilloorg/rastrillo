@@ -2490,10 +2490,10 @@ func TestTheShellsKeepTheirOverridableBlockNames(t *testing.T) {
 	// the live notice) are in every shell; an app may redefine either.
 	want := map[string][]string{
 		// locale-menu is the locale block's default body, the switcher
-		// partial; column has a locale block too, at the top of its page.
-		// scheme-menu is the scheme block's default body, beside the
-		// locale block in every shell that has one.
-		"column": {"lang", "dir", "title", "live-head", "head", "locale", "locale-menu", "scheme", "scheme-menu", "region:notice", "content"},
+		// partial; column has a locale block too, in the footer row after
+		// its content. scheme-menu is the scheme block's default body,
+		// beside the locale block in every shell that has one.
+		"column": {"lang", "dir", "title", "live-head", "head", "region:notice", "content", "locale", "locale-menu", "scheme", "scheme-menu"},
 		"topbar": {"lang", "dir", "title", "live-head", "head", "brand", "nav", "account", "locale", "locale-menu", "scheme", "scheme-menu", "region:notice", "content", "foot"},
 		// brand and title appear first as the phone index's <h1>, the
 		// app's name with the page's title as its fallback, reused
