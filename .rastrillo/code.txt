@@ -8849,7 +8849,7 @@ columns internal/designsystem/page.go fc4875c5d5a3 1
 columns internal/designsystem/page.go fc67331745a3 1
 columns internal/designsystem/page.go fe44bdea88a0 1
 columns internal/designsystem/page.go ffcdcfbc1ea4 1
-file internal/designsystem/page.go - 3228
+file internal/designsystem/page.go - 3230 raised from 3228 by Fiesta part 2 Task 4: the Russian and Irish shell-column previews get their own Mobile heights, since the column shell's footer row makes them taller at 320px
 func internal/designsystem/page.go buildAssets 61
 func internal/designsystem/page.go buildFamilies 96
 func internal/designsystem/page.go previewDocStyled 49
