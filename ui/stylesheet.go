@@ -70,7 +70,8 @@ func isAssetFunc(asset reflect.Value) bool {
 // live page's to the slice of every page's hooks: a fragment it swaps
 // in later is drawn from the app's own templates, so their union
 // covers it, with each region's hooks as it is sent alone, and with
-// any value of each hook rather than the values each page writes. Each
+// any value of each hook, and any class, rather than the values and
+// classes each page writes. Each
 // render asks assets afresh, so an app serving a live directory links
 // the slice of its stylesheet as it is now.
 func (pages *Pages) bindStylesheets(

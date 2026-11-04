@@ -26,12 +26,14 @@ func IsShownValue(entry string) bool {
 // shown is a page's hooks, with the values it writes for those whose
 // every value is known.
 type shown struct {
-	hooks  map[string]bool
-	values map[string][]string
+	hooks   map[string]bool
+	values  map[string][]string
+	classes map[string]bool // nil: any hook shown may be a class
 }
 
 func readShown(hooks map[string]bool) shown {
-	page := shown{hooks: hooks, values: map[string][]string{}}
+	page := shown{hooks: hooks, values: map[string][]string{},
+		classes: readClasses(hooks)}
 	for entry := range hooks {
 		hook, quoted, found := strings.Cut(entry, "=")
 		value, err := strconv.Unquote(quoted)
@@ -43,11 +45,17 @@ func readShown(hooks map[string]bool) shown {
 }
 
 // hookMet reports whether the page shows the hook named at tokens[at],
-// with a value its attribute test, if it has one, accepts.
+// with a value its attribute test, if it has one, accepts, or as a
+// class, if the selector asks for one.
 func (page shown) hookMet(tokens []css.Token, at int) bool {
-	attribute := tokens[at-1].TokenType == css.LeftBracketToken
-	return page.hooks[string(tokens[at].Data)] &&
-		(!attribute || page.attributeMet(tokens, at))
+	hook := string(tokens[at].Data)
+	if !page.hooks[hook] {
+		return false
+	}
+	if tokens[at-1].TokenType == css.LeftBracketToken {
+		return page.attributeMet(tokens, at)
+	}
+	return page.classes == nil || page.classes[hook]
 }
 
 // attributeMet reports whether the page can show the attribute selector

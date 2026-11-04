@@ -87,13 +87,15 @@ func (assets *Assets) slicesOf(name, source string) *slicesOfFile {
 }
 
 // hookKey names a hook set the same whatever order or repeats it
-// arrives in. Only hook names and the values a page writes for them are
-// kept, since only they choose rules; a value may hold a space, and
-// none a newline (ShownValue quotes it), so a newline joins them.
+// arrives in. Only hook names, the values a page writes for them and
+// the classes it writes are kept, since only they choose rules; a value
+// may hold a space, and none a newline (ShownValue quotes it), so a
+// newline joins them.
 func hookKey(hooks []string) string {
 	kept := make([]string, 0, len(hooks))
 	for _, hook := range hooks {
-		if vendored.IsHook(hook) || vendored.IsShownValue(hook) {
+		if vendored.IsHook(hook) || vendored.IsShownValue(hook) ||
+			vendored.IsShownClass(hook) {
 			kept = append(kept, hook)
 		}
 	}

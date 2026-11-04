@@ -59,8 +59,8 @@ func planPage(
 			hooks[hook], created[hook] = true, true
 		}
 	}
-	plan.hooks = append(slices.Sorted(maps.Keys(hooks)),
-		reading.shownValues(created)...)
+	plan.hooks = slices.Concat(slices.Sorted(maps.Keys(hooks)),
+		reading.shownValues(created), reading.shownClasses(created))
 	plan.fragments, err = regionHooks(name, page)
 	if err != nil {
 		return pagePlan{}, err
@@ -102,6 +102,8 @@ type pageReading struct {
 	hooks      map[string]bool            // every hook the templates name
 	values     map[string]map[string]bool // each hook's literal values
 	unknown    map[string]bool            // hooks written with any value
+	classes    map[string]bool            // hooks written as classes
+	anyClass   bool                       // a class it cannot read
 	open       map[string]bool            // hooks a text ends at
 	following  map[string]bool            // values after an action
 	anyFollows bool                       // one of them not whole
@@ -127,6 +129,7 @@ func readPage(
 		case *parse.StringNode:
 			reading.addHooks([]byte(concrete.Text))
 			reading.anyValueIn([]byte(concrete.Text))
+			reading.anyClassIn([]byte(concrete.Text))
 		case *parse.CommandNode:
 			needed, err := neededName(name, concrete)
 			if problem == nil {
@@ -157,6 +160,7 @@ var menuTemplates = map[string]bool{"locale-menu": true, "scheme-menu": true}
 func (reading *pageReading) readMarkup(template string, text []byte) {
 	reading.addHooks(text)
 	reading.readValues(text)
+	reading.readClasses(text)
 	reading.scripts.readText(template, text)
 	reading.live = markupNeeds(text, reading.wanted) || reading.live
 	form := bytes.Contains(bytes.ToLower(text), []byte("<form"))
@@ -185,5 +189,7 @@ func (reading *pageReading) addWrittenHooks(command *parse.CommandNode) {
 	for _, hook := range vendored.WrittenHooks(function.Ident) {
 		reading.hooks[hook] = true
 		reading.anyValue(hook)
+		reading.classes = setOf(reading.classes)
+		reading.classes[hook] = true
 	}
 }

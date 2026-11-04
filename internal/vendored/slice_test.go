@@ -171,6 +171,73 @@ func TestSliceKeepsOnlyTheVariantsAPageShows(t *testing.T) {
 	}
 }
 
+// A page whose classes are listed cannot wear any other hook as a
+// class, so a kept rule loses the selectors it cannot match, and keeps
+// the rest as written. A page whose classes are not listed may wear
+// any, so it keeps every selector of a rule it keeps.
+func TestSliceDropsTheSelectorsAPageCannotMatch(t *testing.T) {
+	listed := vendored.ListedClasses
+	mono := vendored.ShownClass("rst-mono")
+	button := vendored.ShownClass("rst-btn")
+	pair := `.rst-btn,[rst-btn]{a:b}`
+	cases := []struct {
+		name       string
+		stylesheet string
+		hooks      []string
+		want       string
+	}{
+		{"the attribute only", pair, []string{"rst-btn", listed},
+			`[rst-btn]{a:b}`},
+		{"the class only", pair, []string{"rst-btn", listed, button},
+			pair},
+		{"classes not listed", pair, []string{"rst-btn"}, pair},
+		{"a class written", `.rst-mono{a:b}`,
+			[]string{"rst-mono", listed, mono}, `.rst-mono{a:b}`},
+		{"a class not written", `.rst-mono{a:b}`,
+			[]string{"rst-mono", listed}, ``},
+		{"a part never named", `.rst-page__foot,[rst-page-foot]{a:b}`,
+			[]string{"rst-page-foot", listed}, `[rst-page-foot]{a:b}`},
+		{"a variant never named",
+			`.rst-btn--primary,[rst-btn~="primary"]{a:b}`,
+			[]string{"rst-btn", listed}, `[rst-btn~="primary"]{a:b}`},
+		{"a variant not shown", `[rst-btn~=ghost],[rst-btn~=primary]{a:b}`,
+			[]string{"rst-btn", listed,
+				vendored.ShownValue("rst-btn", "primary")},
+			`[rst-btn~=primary]{a:b}`},
+		{"the last selector kept", `[rst-a],[rst-b]{a:b}`,
+			[]string{"rst-a", listed}, `[rst-a]{a:b}`},
+		{"the middle selector dropped", `[rst-a],.rst-b,html{a:b}`,
+			[]string{"rst-a", "rst-b", listed}, `[rst-a],html{a:b}`},
+		{"a selector with no hook", `.rst-btn,::selection{a:b}`,
+			[]string{"rst-btn", listed}, `::selection{a:b}`},
+		{"commas inside a selector",
+			`.rst-a:is(p,q),[rst-a]:is(p,q),[x=","]{a:b}`,
+			[]string{"rst-a", listed}, `[rst-a]:is(p,q),[x=","]{a:b}`},
+		{"spaced", "p {}\n.rst-a , [rst-a] > p {a:b}",
+			[]string{"rst-a", listed}, "p {}\n[rst-a] > p{a:b}"},
+		{"inside a group", `@media (x){.rst-a,[rst-a]{a:b}}`,
+			[]string{"rst-a", listed}, `@media (x){[rst-a]{a:b}}`},
+		{"nested rules come along",
+			`.rst-a,[rst-a]{a:b;&:hover{c:d}}`,
+			[]string{"rst-a", listed}, `[rst-a]{a:b;&:hover{c:d}}`},
+	}
+	for _, test := range cases {
+		hooks := map[string]bool{}
+		for _, hook := range test.hooks {
+			hooks[hook] = true
+		}
+		sliced, err := vendored.Slice([]byte(test.stylesheet), hooks)
+		if err != nil {
+			t.Errorf("%s: %v", test.name, err)
+			continue
+		}
+		if string(sliced) != test.want {
+			t.Errorf("%s: %s with %q: got %q, want %q", test.name,
+				test.stylesheet, test.hooks, sliced, test.want)
+		}
+	}
+}
+
 func TestSliceRefusesWhatItCannotRead(t *testing.T) {
 	unreadable := []string{
 		`[rst-a]{a:b`,

@@ -570,11 +570,11 @@ func TestAnUnreadableStylesheetSaysWhyThePageIsUnsliced(t *testing.T) {
 }
 
 // slicedSite serves markup on GET /orders, linking a slice of a whole
-// file that styles rst-card and rst-btn; the slice keeps rst-btn's
-// rule alone.
+// file that styles rst-card, as a class or an attribute, and rst-btn;
+// the slice keeps rst-btn's rule alone.
 func slicedSite(markup string) *httptest.Server {
 	return slicedSiteOf(markup, "[rst-btn]{color:blue}",
-		"[rst-btn]{color:blue}.rst-card{color:red}")
+		"[rst-btn]{color:blue}.rst-card,[rst-card]{color:red}")
 }
 
 // slicedSiteOf serves markup on GET /orders, linking slice as a slice
@@ -611,6 +611,30 @@ func TestAHookWithoutRulesInItsSliceFails(t *testing.T) {
 			t.Errorf("%s: got %q, want rst-card's failure alone",
 				markup, joined)
 		}
+	}
+}
+
+// A slice that drops a class selector for a hook the page carries only
+// as an attribute leaves nothing unstyled; one that drops a class the
+// page wears does.
+func TestAClassThePageDoesNotWearIsNoLoss(t *testing.T) {
+	const whole = ".rst-btn,[rst-btn]{color:blue}"
+	server := slicedSiteOf(`<button rst-btn>Save</button>`,
+		"[rst-btn]{color:blue}", whole)
+	if recorder := checkOne(server, frameworkBudget); recorder.failed {
+		t.Errorf("an attribute alone: got %q, want a pass", recorder.errs)
+	}
+	server.Close()
+	// The class attribute is the case here.
+	// markup-spelling: old-spelling begin
+	server = slicedSiteOf(`<button class="rst-btn">Save</button>`,
+		"[rst-btn]{color:blue}", whole)
+	// markup-spelling: old-spelling end
+	defer server.Close()
+	recorder := checkOne(server, frameworkBudget)
+	if joined := strings.Join(recorder.errs, "\n"); !strings.Contains(
+		joined, `{{needs "rst-btn"}}`) {
+		t.Errorf("a class worn: got %q, want rst-btn named", joined)
 	}
 }
 

@@ -51,11 +51,13 @@ type rule struct {
 }
 
 // Slice returns stylesheet with only the rules a page carrying hooks
-// can show: a style rule is kept when one of its comma-separated
-// selectors needs no hook outside hooks, and no value of a hook that
-// hooks' ShownValue entries rule out, and a group such as @media keeps
-// its kept rules and goes when none are left. Kept rules come back byte
-// for byte, so a minified stylesheet stays minified.
+// can show: a style rule is kept with those of its comma-separated
+// selectors that need no hook outside hooks, no value of a hook that
+// hooks' ShownValue entries rule out, and, when hooks hold
+// ListedClasses, no class outside their ShownClass entries; a group
+// such as @media keeps its kept rules and goes when none are left. A
+// kept rule comes back byte for byte but for the selectors it loses,
+// so a minified stylesheet stays minified.
 func Slice(stylesheet []byte, hooks map[string]bool) ([]byte, error) {
 	rules, err := read(stylesheet, 0)
 	if err != nil {
@@ -91,8 +93,10 @@ func writeKept(out *bytes.Buffer, rules []rule, page shown) {
 			out.Write(rule.opening)
 			out.Write(inside.Bytes())
 			out.Write(rule.closing)
-		case rule.selector == nil || anySelectorMet(rule.selector, page):
+		case rule.selector == nil:
 			out.Write(rule.text)
+		default:
+			out.Write(keptText(rule, page))
 		}
 	}
 }
