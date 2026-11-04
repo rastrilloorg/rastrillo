@@ -10,6 +10,8 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+## v0.33.0
+
 ### Changed: live pages let a hibernating instance sleep
 
 `live.js` now opens its stream with `carlos_hold=1`. On a CARLOS route
