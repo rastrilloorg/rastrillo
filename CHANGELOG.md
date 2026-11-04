@@ -28,6 +28,27 @@ Until you do, the app's vendored-files test fails, and a hibernating
 instance with an open live page stays awake. If you set
 `live.Config.Lifetime`, keep it at 30 seconds or more.
 
+### Changed: an app with no `-addr` listens on `$PORT`
+
+`rastrillo.Serve` now reads the `PORT` variable that Render, Railway,
+Heroku-like hosts and Cloud Run set. It listens on the first of: a
+socket systemd hands over (`LISTEN_FDS`), `-socket`, `-addr` or
+`Options.Addr`, `:$PORT`, then `:8080` as before. On CARLOS nothing
+changes: the platform hands the app its listener, which comes first.
+
+Two cases behave differently. An app started without `-addr` from a
+shell or host that sets `PORT` now listens there instead of on 8080.
+And a `PORT` that is not a number from 1 to 65535 stops the app with an
+error naming the value, where it used to be ignored. Pass `-addr` to
+keep the old address either way.
+
+### Added: hosting elsewhere
+
+[Hosting elsewhere](docs/site/hosting-elsewhere.md) covers running an
+app off CARLOS: what the platform did that you then provide, a systemd
+unit with Caddy and Litestream, a container image, container platforms
+and Kubernetes.
+
 ## v0.32.0
 
 ### Changed: a base path refuses the instance's own host as its origin

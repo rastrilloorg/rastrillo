@@ -18375,7 +18375,6 @@ columns serve.go 8d078295ca02 1
 columns serve.go a32b7eb0aace 1
 columns serve.go b003745b5f0b 1
 columns serve.go b53910cab1c0 1
-columns serve.go bb2f85fe1ad3 1
 columns serve.go c116945cd983 1
 columns serve.go cf0358a0c895 1
 columns serve.go e93098ec142f 1
@@ -18384,7 +18383,7 @@ columns serve.go f3c5ab559eef 1
 columns serve.go f5f8b0d4485b 1
 columns serve.go fe48d8bf59b6 1
 columns serve.go ff53a0259cb6 1
-file serve.go - 859
+file serve.go - 838
 func serve.go Handler 61
 func serve.go buildHandler 87
 names serve.go OpenDB/i 1
@@ -18393,7 +18392,6 @@ names serve.go buildHandler/h 1
 names serve.go buildHandler/k 1
 names serve.go buildHandler/v 1
 names serve.go buildHandler/w 2
-names serve.go listen/n 1
 names serve.go liveBase/r 1
 names serve.go liveBase/w 1
 names serve.go nextDueHandler/r 1

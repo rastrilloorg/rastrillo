@@ -45,7 +45,8 @@ Answer a port request in this order:
   and scripts make it richer (skill/scripts.md).
 - **No lock-in at either layer.** The app is one process: a Go binary,
   a SQLite file and, if it stores files, an S3-compatible bucket
-  (`blobs.S3FromEnv`). `-addr` serves it on any VPS. Carloku is the
+  (`blobs.S3FromEnv`). `-addr` or `$PORT` serves it on any VPS or
+  container host: `docs/site/hosting-elsewhere.md`. Carloku is the
   hosted flagship of CARLOS Platform, which is open source (MPL-2.0)
   and self-hostable (carlosframework.com/platform/self-host/), keeping
   hibernation and provisioning. On a plain VPS the app gives those up,

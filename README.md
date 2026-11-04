@@ -151,7 +151,8 @@ the meantime. This list is their union. **Built:**
   pragma-ordering fix, `SetMaxOpenConns(1)`, additive migrations; the
   platform's activation contract (`Options.Socket`/`Options.Addr`/systemd
   `LISTEN_FDS`, matching `carlosframework/platform`'s `testdata/echoapp`
-  exactly); `GET /healthz` and `GET /api/version` answered automatically.
+  exactly), then `$PORT` off the platform, then `:8080`
+  ([hosting elsewhere](docs/site/hosting-elsewhere.md)); `GET /healthz` and `GET /api/version` answered automatically.
   An app that keeps its database in `Ctx` sets `Options.Router` instead
   of `Options.Mux` and is handed the `*sql.DB` Serve opened;
   `rastrillo.OpenDB` is the same corrected opener exported for tests.

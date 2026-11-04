@@ -88,9 +88,12 @@ opened its own handle.
 older additive-only mechanism. In a new app use
 [`migrate`](/docs/reference/migrate) instead.
 
-**`Socket`** and **`Addr`** — the platform's activation contract. Both
-empty, `Serve` checks for a systemd-activated listener (`LISTEN_FDS`)
-before falling back to `:8080`.
+**`Socket`** and **`Addr`** — the platform's activation contract. A
+systemd-activated listener (`LISTEN_FDS`) wins over both. Both empty,
+`Serve` listens on `:$PORT` when `PORT` is set, and refuses to start
+when it is not a port; otherwise on `:8080`.
+[Hosting elsewhere](/docs/hosting-elsewhere#where-the-app-listens) has
+the order.
 
 **`Locales`**, **`DefaultLocale`**, **`LocaleFS`** — the locale set and
 its catalogs.
