@@ -112,3 +112,46 @@ func sliceServed(
 	}
 	return recorder.Body.String()
 }
+
+// A script the page's templates load that is not Rastrillo's, inline
+// code, or an event handler attribute may write any value, so such a
+// page keeps every variant of every hook.
+func TestAPageWithItsOwnScriptKeepsEveryVariant(t *testing.T) {
+	primary := `<button rst-btn="primary">Go</button>`
+	for name, script := range map[string]string{
+		"an app script": `<script src="/static/app.js"></script>`,
+		"an app script through asset": `<script defer ` +
+			`src="{{asset "static/app.js"}}"></script>`,
+		"an app script from data": `<script src="{{.Script}}"></script>`,
+		"inline code": `<script>document.querySelector("button")` +
+			`.setAttribute("rst-btn", "ghost")</script>`,
+		"a module": `<script type="module">import "/app.js"</script>`,
+		"a handler": `<button onclick="this.setAttribute('rst-btn', ` +
+			`'ghost')">Swap</button>`,
+		"a javascript: link": `<a href="javascript:swap()">Swap</a>`,
+	} {
+		if !strings.Contains(pageSlice(t, content(primary+script)),
+			ghostRule) {
+			t.Errorf("%s: the slice drops %s", name, ghostRule)
+		}
+	}
+}
+
+// The shells' own script tags, written through asset and pageScripts,
+// are Rastrillo's, and data that runs no code is not a script: a page
+// in a shell still loses the variants it never writes.
+func TestTheShellsOwnScriptsKeepTheCut(t *testing.T) {
+	body := content(`<a rst-btn="primary">New</a>` +
+		`<script type="application/ld+json">{"a": 1}</script>`)
+	for _, shell := range everyShell {
+		layout, _ := Layout(shell)
+		assets := appAssets()
+		page := renderPagesWith(t, layout, map[string]string{"page": body},
+			sliced(assets, ""))["page"]
+		if slice := sliceServed(t, assets, page); strings.Contains(
+			slice, ghostRule) || !strings.Contains(slice, primaryRule) {
+			t.Errorf("%s: the slice keeps %s or drops %s", shell,
+				ghostRule, primaryRule)
+		}
+	}
+}

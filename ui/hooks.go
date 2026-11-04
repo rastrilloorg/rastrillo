@@ -105,6 +105,7 @@ type pageReading struct {
 	open       map[string]bool            // hooks a text ends at
 	following  map[string]bool            // values after an action
 	anyFollows bool                       // one of them not whole
+	scripts    scriptReading              // the scripts it loads
 	wanted     map[string]bool            // the scripts it asks for
 	live       bool                       // a region or a poll
 }
@@ -135,8 +136,10 @@ func readPage(
 				reading.wanted[needed] = true
 			}
 			reading.addWrittenHooks(concrete)
+			reading.scripts.readCommand(template, concrete)
 		}
 	})
+	reading.scripts.settle()
 	if problem != nil {
 		return pageReading{}, problem
 	}
@@ -154,6 +157,7 @@ var menuTemplates = map[string]bool{"locale-menu": true, "scheme-menu": true}
 func (reading *pageReading) readMarkup(template string, text []byte) {
 	reading.addHooks(text)
 	reading.readValues(text)
+	reading.scripts.readText(template, text)
 	reading.live = markupNeeds(text, reading.wanted) || reading.live
 	form := bytes.Contains(bytes.ToLower(text), []byte("<form"))
 	if form && !menuTemplates[template] {

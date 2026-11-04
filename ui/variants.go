@@ -92,8 +92,12 @@ func (reading *pageReading) anyValueIn(text []byte) {
 
 // shownValues is a vendored.ShownValue entry for each value of each
 // hook whose every value the page's text holds. A hook a script
-// creates is left out: the script may write any value.
+// creates is left out, and every hook on a page that runs code of its
+// own: a script may write any value.
 func (reading *pageReading) shownValues(created map[string]bool) []string {
+	if reading.scripts.own {
+		return nil
+	}
 	var entries []string
 	for _, hook := range slices.Sorted(maps.Keys(reading.values)) {
 		open := reading.open[hook]

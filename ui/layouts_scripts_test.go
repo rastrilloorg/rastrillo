@@ -3,7 +3,6 @@ package ui
 import (
 	"html/template"
 	"os"
-	"path"
 	"regexp"
 	"slices"
 	"strings"
@@ -281,8 +280,10 @@ func TestEveryPageLoadsFiestaJS(t *testing.T) {
 			continue
 		}
 		for _, src := range srcs[:at] {
-			if slices.Contains(optionalScripts(), path.Base(src)) {
-				t.Errorf("%s loads %s before fiesta.js", shell, src)
+			for _, script := range static(optionalScripts()...) {
+				if src == assets.Path(script) {
+					t.Errorf("%s loads %s before fiesta.js", shell, src)
+				}
 			}
 		}
 		unknown := renderShellPages(t, layout, plain)["plain"]
@@ -300,6 +301,13 @@ func TestEveryPageLoadsFiestaJS(t *testing.T) {
 		t.Errorf("pageScripts outside Pages lists %v, want fiesta.js "+
 			"first", outside)
 	}
+}
+
+// transitionShells are the layouts that load transition.js; the
+// sidebar and the console have shell.js, which handles their skipped
+// transitions itself.
+var transitionShells = map[string]bool{
+	"column": true, "topbar": true, "stage": true,
 }
 
 // transition.js has to observe before the stylesheets load, which a
@@ -320,7 +328,10 @@ func TestTransitionJSStaysBeforeTheStylesheets(t *testing.T) {
 				t.Errorf("%s %s defers transition.js", shell, name)
 			}
 			blocking := `<script src="` + transition + `"></script>`
-			if !strings.Contains(page, transition) {
+			if !transitionShells[shell] {
+				if strings.Contains(page, transition) {
+					t.Errorf("%s %s loads transition.js", shell, name)
+				}
 				continue
 			}
 			scriptAt := strings.Index(page, blocking)
