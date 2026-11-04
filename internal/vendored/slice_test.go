@@ -68,6 +68,11 @@ func TestSliceKeepsTheRulesAPageCanShow(t *testing.T) {
 		{`@container x (min-width:1px)` + media, []string{"rst-a"},
 			`@container x (min-width:1px){[rst-a]{a:b}}`},
 		{`@container x (min-width:1px)` + media, nil, ``},
+		// The minifier writes a container query's block as it found
+		// it, so the block's last newline is kept with its brace.
+		{"@container (max-width: 34rem) {\n  [rst-a] { a: b; }\n}",
+			[]string{"rst-a"},
+			"@container (max-width: 34rem) {\n  [rst-a] { a: b; }\n}"},
 		{`@scope ([rst-card])` + media, []string{"rst-a"},
 			`@scope ([rst-card]){[rst-a]{a:b}}`},
 		{`[rst-a]{content:"}"}`, []string{"rst-a"}, `[rst-a]{content:"}"}`},

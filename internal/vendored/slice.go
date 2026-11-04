@@ -242,8 +242,13 @@ func (reader *ruleReader) atRule(start int, name string) (rule, error) {
 		if _, err := reader.skipBlock(); err != nil {
 			return rule{}, err
 		}
+		// The whitespace before the closing brace belongs to no rule
+		// inside, so it goes with the brace: the minifier leaves a
+		// container query's block as written, and a sliced block that
+		// keeps every rule must come back byte for byte.
 		inside := start + len(opening)
-		end := reader.parser.Offset() - len("}")
+		block := reader.stylesheet[inside : reader.parser.Offset()-len("}")]
+		end := inside + len(bytes.TrimRight(block, " \t\n\r\f"))
 		rules, err := read(reader.stylesheet[inside:end], reader.base+inside)
 		return rule{named: named, opening: opening, rules: rules,
 			closing: reader.stylesheet[end:reader.parser.Offset()]}, err
