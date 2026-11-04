@@ -19,8 +19,8 @@ var vendoredPairs = map[string]string{
 	"calendar.js": "datetime.js", "datetime.js": "calendar.js",
 }
 
-// rewrites reports whether --fix writes file on its own account, before
-// its pair is considered.
+// rewrites leaves the pair out on purpose: heldBy asks it of both
+// members, and a pair rule inside it would ask itself forever.
 func rewrites(file vendoredFile, force bool) bool {
 	switch file.state {
 	case fileDiffers, fileAbsent:
@@ -47,20 +47,28 @@ func (findings *report) heldBy(file vendoredFile, force bool) string {
 	return ""
 }
 
-// pairNote says why --fix leaves a file for its partner, and how to
-// settle it in the words of the app's own vendored test, which goes on
-// failing on the file until it is refreshed or recorded.
+// pairNote speaks in the words of the app's own vendored test, which
+// goes on failing on the file until it is refreshed or recorded. A
+// partner doctor could not read is held for safety, not owned, so it
+// gets no advice about the pin.
 func (findings *report) pairNote(name, partner string) string {
-	record := "add " + name + " to vendoredIsMine too"
-	if findings.pinLegacy {
-		record = "delete " + name + "'s line from the pin too"
+	for _, other := range findings.files {
+		if other.name == partner && other.state == fileUnreadable {
+			return "paired with " + partner + ", which is held above"
+		}
 	}
-	return fmt.Sprintf("goes with %s, left alone above: %s, "+
-		"or pass --force for both", partner, record)
+	if findings.pinLegacy {
+		return fmt.Sprintf("paired with %s, which is held above; "+
+			"remove %s's line from the pin too, or pass --force to "+
+			"refresh both", partner, name)
+	}
+	return fmt.Sprintf("paired with %s, which is marked as app-owned "+
+		"above; add %s to vendoredIsMine too, or pass --force to "+
+		"refresh both", partner, name)
 }
 
-// leavesForItsPair says so and reports true when --fix leaves file for
-// its partner.
+// leavesForItsPair prints the held line where applyFix prints every
+// other left-alone line, so the two read as one list.
 func (findings *report) leavesForItsPair(
 	output io.Writer, file vendoredFile, force bool,
 ) bool {
@@ -72,19 +80,15 @@ func (findings *report) leavesForItsPair(
 	return partner != ""
 }
 
-// pageScriptsLine loads the scripts a page uses, in ui's order, which
-// puts live.js after busy.js, which hands it a live form. The tags are
-// deferred so they never block paint, and written through path so they
-// do not 404 under a base path.
-const pageScriptsLine = `{{range pageScripts}}` +
-	`<script defer src="{{path $ (asset .)}}"></script>{{end}}`
-
 // doctorFiestaAdvisory is the line doctor prints for a layout that will
 // load the slim rastrillo.js and no fiesta.js, which leaves its menus
-// without light dismiss and its switches without drag. It is
+// without light dismiss and its switches without drag. It names one
+// tag rather than pageScripts: in a layout that links each script by
+// hand, pageScripts would load those scripts a second time. It is
 // user-facing copy, so a change to it goes through the copy review.
 const doctorFiestaAdvisory = "layout loads no fiesta.js: add " +
-	pageScriptsLine + " (CHANGELOG)"
+	`<script defer src="{{asset "static/fiesta.js"}}"></script>` +
+	" right after the layout's rastrillo.js tag (CHANGELOG)"
 
 var rangesPageScripts = regexp.MustCompile(`\{\{-?\s*range\s+pageScripts\b`)
 

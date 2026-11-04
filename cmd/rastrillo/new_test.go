@@ -798,6 +798,13 @@ func TestNewScaffoldsLiveJS(t *testing.T) {
 	}
 }
 
+// pageScriptsLine loads the scripts a page uses, in ui's order, which
+// puts live.js after busy.js, which hands it a live form. The tags are
+// deferred so they never block paint, and written through path so they
+// do not 404 under a base path.
+const pageScriptsLine = `{{range pageScripts}}` +
+	`<script defer src="{{path $ (asset .)}}"></script>{{end}}`
+
 // Every shell carries the line, not only the default: an app that picks
 // --shell=sidebar must not be the one whose pages cannot go live.
 func TestEveryShellLoadsItsPagesScripts(t *testing.T) {

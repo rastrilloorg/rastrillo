@@ -213,6 +213,9 @@ type report struct {
 	// fiestaAdvice lists the layouts that load rastrillo.js and no
 	// fiesta.js, relative to dir.
 	fiestaAdvice []string
+	// rename stands in for os.Rename when a test needs a swap to fail
+	// part way through a pair.
+	rename func(from, to string) error
 }
 
 // skewed reports whether the CLI and the app are on different rastrillo
@@ -897,7 +900,8 @@ func (r *report) applyFix(w io.Writer, force bool) error {
 	}
 
 	fmt.Fprintln(w)
-	wrote, skipped := 0, 0
+	var refresh []vendoredFile
+	skipped := 0
 	for _, f := range r.files {
 		if r.leavesForItsPair(w, f, force) {
 			skipped++
@@ -929,23 +933,12 @@ func (r *report) applyFix(w io.Writer, force bool) error {
 			skipped++
 			continue
 		}
-		if err := os.MkdirAll(filepath.Dir(f.path), 0o755); err != nil {
-			return err
-		}
-		if err := os.WriteFile(f.path, f.lib, 0o644); err != nil {
-			return fmt.Errorf("write %s: %w", f.name, err)
-		}
-		switch {
-		case f.state == fileAbsent:
-			fmt.Fprintf(w, "  wrote       %s (%s, was missing)\n", rel(r.dir, f.path), size(len(f.lib)))
-		case f.state == fileRemoved:
-			fmt.Fprintf(w, "  wrote       %s (%s, was removed)\n", rel(r.dir, f.path), size(len(f.lib)))
-		default:
-			fmt.Fprintf(w, "  re-copied   %s (%s -> %s)\n", rel(r.dir, f.path), size(len(f.app)), size(len(f.lib)))
-		}
-		wrote++
+		refresh = append(refresh, f)
 	}
-	return r.fixSummary(w, force, wrote, skipped)
+	if err := r.refresh(w, refresh); err != nil {
+		return err
+	}
+	return r.fixSummary(w, force, len(refresh), skipped)
 }
 
 // describeDiff says HOW two files differ, in the few lines a person can

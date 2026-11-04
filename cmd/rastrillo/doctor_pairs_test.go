@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -89,13 +90,17 @@ func holds(t *testing.T, static, name string, want []byte) {
 	}
 }
 
+const fiestaTag = `<script defer src="{{asset "static/fiesta.js"}}">` +
+	`</script>`
+
 // The first --fix on an old app is the run that slims rastrillo.js, so
 // it is the run that names the layout line fiesta.js needs; once the
 // layout has the line, doctor says nothing more about it.
 func TestDoctorFixWarnsOnTheRunThatSlimsTheShim(t *testing.T) {
 	dir, static := oldApp(t)
 	warning := filepath.Join("internal", "demoapp", "templates",
-		"layout.html") + ": " + doctorFiestaAdvisory
+		"layout.html") + ": layout loads no fiesta.js: add " + fiestaTag +
+		" right after the layout's rastrillo.js tag (CHANGELOG)"
 	report, err := diagnose(dir, "")
 	if err != nil {
 		t.Fatal(err)
@@ -110,10 +115,12 @@ func TestDoctorFixWarnsOnTheRunThatSlimsTheShim(t *testing.T) {
 	holds(t, static, "fiesta.js", libraryCopy(t, "fiesta.js"))
 
 	layout, _ := os.ReadFile(layoutPath(dir))
-	mustWrite(t, layoutPath(dir), strings.Replace(string(layout),
-		"{{iconAssets}}", "{{iconAssets}}\n"+pageScriptsLine, 1))
+	shim := `<script defer src="{{path $ (asset "static/rastrillo.js")}}">` +
+		`</script>`
+	mustWrite(t, layoutPath(dir), strings.Replace(string(layout), shim,
+		shim+"\n"+fiestaTag, 1))
 	if out := fixed(t, dir, false); strings.Contains(out, "fiesta.js") {
-		t.Errorf("a layout that ranges pageScripts is warned about:\n%s",
+		t.Errorf("a layout that links fiesta.js is warned about:\n%s",
 			out)
 	}
 }
@@ -145,9 +152,9 @@ func keepsThePairApart(t *testing.T, owner string, force bool) {
 	}
 	holds(t, static, "rastrillo.js", []byte(fullShim))
 	holds(t, static, "fiesta.js", nil)
-	note := fmt.Sprintf("left alone  %s (goes with %s, left alone above: "+
-		"add %s to vendoredIsMine too, or pass --force for both)",
-		other, owner, other)
+	note := fmt.Sprintf("left alone  %s (paired with %s, which is marked "+
+		"as app-owned above; add %s to vendoredIsMine too, or pass "+
+		"--force to refresh both)", other, owner, other)
 	if !strings.Contains(output, note) {
 		t.Errorf("--fix does not say why it left %s:\n%s", other, output)
 	}
@@ -177,15 +184,25 @@ func TestDoctorMovesTheDateFilesTogether(t *testing.T) {
 		holds(t, static, "calendar.js", ui.CalendarJS())
 		holds(t, static, "datetime.js", ui.DatetimeJS())
 	})
+	t.Run("the report says why", func(t *testing.T) {
+		dir, _ := oldDates(t)
+		recordAsMine(t, dir, "datetime.js")
+		report, _ := diagnose(dir, "")
+		if out := printed(report, false); !strings.Contains(out,
+			"--fix leaves this file alone: paired with datetime.js") {
+			t.Errorf("the report does not say why:\n%s", out)
+		}
+	})
 	t.Run("datetime.js is the app's", func(t *testing.T) {
 		dir, static := oldDates(t)
 		recordAsMine(t, dir, "datetime.js")
 		output := fixed(t, dir, false)
 		holds(t, static, "calendar.js", []byte("// old calendar\n"))
 		holds(t, static, "datetime.js", []byte("// old datetime\n"))
-		if !strings.Contains(output, "left alone  calendar.js (goes with "+
-			"datetime.js, left alone above: add calendar.js to "+
-			"vendoredIsMine too, or pass --force for both)") {
+		if !strings.Contains(output, "left alone  calendar.js (paired "+
+			"with datetime.js, which is marked as app-owned above; add "+
+			"calendar.js to vendoredIsMine too, or pass --force to "+
+			"refresh both)") {
 			t.Errorf("--fix does not say why it left calendar.js:\n%s",
 				output)
 		}
@@ -196,8 +213,9 @@ func TestDoctorMovesTheDateFilesTogether(t *testing.T) {
 			"vendored_test.go"), olderPinWithout("datetime.js"))
 		output := fixed(t, dir, false)
 		holds(t, static, "calendar.js", []byte("// old calendar\n"))
-		if !strings.Contains(output, "delete calendar.js's line from the "+
-			"pin too, or pass --force for both") {
+		if !strings.Contains(output, "left alone  calendar.js (paired "+
+			"with datetime.js, which is held above; remove calendar.js's "+
+			"line from the pin too, or pass --force to refresh both)") {
 			t.Errorf("--fix does not speak the older pin's words:\n%s",
 				output)
 		}
@@ -218,4 +236,65 @@ func olderPinWithout(mine string) string {
 	}
 	pin.WriteString("\t} {\n\t}\n}\n")
 	return pin.String()
+}
+
+// A pair is written as one change: when the second member cannot be
+// written, the first is put back, so the old datetime.js never sits
+// beside the new calendar.js, and doctor says it wrote neither.
+func TestDoctorFixKeepsAPairWhenAWriteFails(t *testing.T) {
+	failures := map[string]func(t *testing.T, report *report, static string){
+		"its move fails": func(t *testing.T, report *report, _ string) {
+			report.rename = func(from, to string) error {
+				staged := strings.Contains(filepath.Base(from), ".new-")
+				if staged && filepath.Base(to) == "calendar.js" {
+					return errors.New("injected rename failure")
+				}
+				return os.Rename(from, to)
+			}
+		},
+		"it is read-only": func(t *testing.T, _ *report, static string) {
+			path := filepath.Join(static, "calendar.js")
+			if err := os.Chmod(path, 0o444); err != nil {
+				t.Fatal(err)
+			}
+			if file, err := os.OpenFile(path, os.O_WRONLY, 0); err == nil {
+				file.Close()
+				t.Skip("this user writes read-only files (root)")
+			}
+		},
+	}
+	for name, fail := range failures {
+		t.Run(name, func(t *testing.T) {
+			keepsThePairOnFailure(t, fail)
+		})
+	}
+}
+
+func keepsThePairOnFailure(
+	t *testing.T, fail func(*testing.T, *report, string),
+) {
+	dir := doctorApp(t, rastrilloVersion(), "day")
+	static := filepath.Join(dir, "internal", "demoapp", "static")
+	mustWrite(t, filepath.Join(static, "calendar.js"), "// old calendar\n")
+	mustWrite(t, filepath.Join(static, "datetime.js"), "// old datetime\n")
+	report, err := diagnose(dir, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	fail(t, report, static)
+	var output bytes.Buffer
+	err = report.applyFix(&output, false)
+	if err == nil || !strings.Contains(err.Error(),
+		"write datetime.js and calendar.js") {
+		t.Errorf("doctor does not report the failed pair: %v\n%s",
+			err, output.String())
+	}
+	holds(t, static, "calendar.js", []byte("// old calendar\n"))
+	holds(t, static, "datetime.js", []byte("// old datetime\n"))
+	entries, _ := os.ReadDir(static)
+	for _, entry := range entries {
+		if strings.HasPrefix(entry.Name(), ".") {
+			t.Errorf("--fix left %s behind", entry.Name())
+		}
+	}
 }

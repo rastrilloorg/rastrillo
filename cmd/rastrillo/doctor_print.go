@@ -5,8 +5,8 @@ import (
 	"io"
 )
 
-// printFile writes one file's line of the report and, for a file --fix
-// leaves for its pair, why.
+// printFile puts a held file's note directly under its own line, where
+// someone reading the report for that file will find it.
 func (findings *report) printFile(output io.Writer, file vendoredFile) {
 	line := func(format string, arguments ...any) {
 		fmt.Fprintf(output, format+"\n", arguments...)
@@ -35,13 +35,13 @@ func (findings *report) printFile(output io.Writer, file vendoredFile) {
 		}
 	}
 	if partner := findings.heldBy(file, false); partner != "" {
-		line("             --fix leaves it: %s",
+		line("             --fix leaves this file alone: %s",
 			findings.pairNote(file.name, partner))
 	}
 }
 
-// fixSummary closes what --fix printed: the layouts its files leave
-// without fiesta.js, then what it wrote.
+// fixSummary puts the layout advice after the file lines, because it
+// is about the files --fix has just left.
 func (findings *report) fixSummary(
 	output io.Writer, force bool, wrote, skipped int,
 ) error {
@@ -59,4 +59,21 @@ func (findings *report) fixSummary(
 		"diff before you commit it.\n", plural(wrote, "file"),
 		findings.cliVersion)
 	return nil
+}
+
+// printWritten says what --fix wrote over: a person owns these files,
+// so each line says whether one was missing, removed or re-copied.
+func (findings *report) printWritten(output io.Writer, file vendoredFile) {
+	path := rel(findings.dir, file.path)
+	switch file.state {
+	case fileAbsent:
+		fmt.Fprintf(output, "  wrote       %s (%s, was missing)\n",
+			path, size(len(file.lib)))
+	case fileRemoved:
+		fmt.Fprintf(output, "  wrote       %s (%s, was removed)\n",
+			path, size(len(file.lib)))
+	default:
+		fmt.Fprintf(output, "  re-copied   %s (%s -> %s)\n",
+			path, size(len(file.app)), size(len(file.lib)))
+	}
 }

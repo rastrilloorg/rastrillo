@@ -3444,7 +3444,6 @@ columns cmd/rastrillo/doctor.go 1f410803136a 1
 columns cmd/rastrillo/doctor.go 29f2bd4e27be 1
 columns cmd/rastrillo/doctor.go 2e01a18e34df 1
 columns cmd/rastrillo/doctor.go 31867b4479b6 1
-columns cmd/rastrillo/doctor.go 3753182841b1 1
 columns cmd/rastrillo/doctor.go 3d4cd0d3a838 1
 columns cmd/rastrillo/doctor.go 424ffc07d609 1
 columns cmd/rastrillo/doctor.go 45f9bd5797e0 1
@@ -3487,10 +3486,8 @@ columns cmd/rastrillo/doctor.go ab6951f4aa0d 1
 columns cmd/rastrillo/doctor.go ab6edbe599f1 1
 columns cmd/rastrillo/doctor.go b4c1bcffc771 1
 columns cmd/rastrillo/doctor.go bd3992e7dcee 1
-columns cmd/rastrillo/doctor.go be85028d2dee 1
 columns cmd/rastrillo/doctor.go bed42e889f9d 1
 columns cmd/rastrillo/doctor.go c6d9bd30864c 1
-columns cmd/rastrillo/doctor.go c6ff4f18c145 1
 columns cmd/rastrillo/doctor.go d16033426ade 1
 columns cmd/rastrillo/doctor.go d37a527628f8 2
 columns cmd/rastrillo/doctor.go e12406aa6af9 1
@@ -3504,10 +3501,10 @@ columns cmd/rastrillo/doctor.go f8a8b84c4867 1
 columns cmd/rastrillo/doctor.go fb8e8756c242 1
 columns cmd/rastrillo/doctor.go fd24af5b2925 1
 columns cmd/rastrillo/doctor.go fdab31e1ef54 1
-file cmd/rastrillo/doctor.go - 1055
+file cmd/rastrillo/doctor.go - 1048
 func cmd/rastrillo/doctor.go diagnose 111 raised from 110 by Fiesta part 2 Task 4: diagnose lists the layouts that load rastrillo.js and no fiesta.js, for the advice --fix decides on the files it leaves
 func cmd/rastrillo/doctor.go readPin 80
-func cmd/rastrillo/doctor.go report.applyFix 68
+func cmd/rastrillo/doctor.go report.applyFix 58
 func cmd/rastrillo/doctor.go report.print 82
 names cmd/rastrillo/doctor.go clip/n 1
 names cmd/rastrillo/doctor.go clip/s 1
