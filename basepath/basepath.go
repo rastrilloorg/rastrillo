@@ -128,6 +128,14 @@ func FromEnv(origin string, getenv func(string) string) (Config, error) {
 	if err := c.Validate(); err != nil {
 		return Config{}, err
 	}
+	// The instance's own host is its direct host, never the hub's. An
+	// app's origin falls back to it on CARLOS, which would quietly serve
+	// the tenant on its own host instead of the hub's path.
+	if host := getenv("CARLOS_HOST"); host != "" && sameHost(host, origin) {
+		return Config{}, fmt.Errorf("rastrillo/basepath: origin %q is "+
+			"this instance's own host, CARLOS_HOST, not the hub's; set the "+
+			"app's origin to the https://host the hub is served at", origin)
+	}
 	return c, nil
 }
 

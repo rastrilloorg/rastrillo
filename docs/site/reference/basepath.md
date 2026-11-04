@@ -8,7 +8,7 @@ Set two variables on the tenant app, once:
 carlos env set --app tenant TENANT_ORIGIN=https://example.com RASTRILLO_SLUG_FROM_HOST=1
 ```
 
-Each instance then reads its slug from its own hostname, `acme-x7k2pq.<account>.oncarlos.com`, and serves everything under `/acme`. A slug read this way is at most 25 characters (`provision.MaxSlug`); for a longer one, set `RASTRILLO_SLUG` instead.
+Each instance then reads its slug from its own hostname, `acme-x7k2pq.<account>.oncarlos.com`, and serves everything under `/acme`. Without `TENANT_ORIGIN`, an instance on CARLOS refuses to start: its origin would be its own hostname, not the hub's. A slug read this way is at most 25 characters (`provision.MaxSlug`); for a longer one, set `RASTRILLO_SLUG` instead.
 
 In templates, write links with `path`: `<a href="{{path $ "/orders"}}">`. In Go, use `basepath.Path(r, "/orders")` for anything that goes into a page. Redirect as usual, with `http.Redirect(w, r, "/orders", http.StatusSeeOther)`: the base is added for you. To send someone to the hub, use a full URL.
 
@@ -46,7 +46,7 @@ func SlugFromHost(host string) (string, error)
 
 `Validate` checks that `Origin` is an `http` or `https` origin with nothing after the host, and that `Slug` is 1 to 56 lower-case letters, digits and inner hyphens.
 
-`FromEnv` reads `RASTRILLO_SLUG`, or, when `RASTRILLO_SLUG_FROM_HOST` is `1`, the slug in the instance's label in `CARLOS_HOST`. With neither set, it returns the zero `Config`. Setting both is an error. Reading the slug from the host is opt-in, so an app whose hostname only looks like an instance label stays at the root.
+`FromEnv` reads `RASTRILLO_SLUG`, or, when `RASTRILLO_SLUG_FROM_HOST` is `1`, the slug in the instance's label in `CARLOS_HOST`. With neither set, it returns the zero `Config`. Setting both is an error. `FromEnv` also refuses an origin on the instance's own hostname, `CARLOS_HOST`, because that hostname never points to the hub. Reading the slug from the host is opt-in, so an app whose hostname only looks like an instance label stays at the root.
 
 `SlugFromHost` reads the slug from a label in `provision.NewLabel`'s shape, `<slug>-<6 letters>`. That shape cuts a slug to `provision.MaxSlug` (25) characters, so a path-routed hub keeps its slugs to 25 characters, or sets `RASTRILLO_SLUG` on the tenant.
 

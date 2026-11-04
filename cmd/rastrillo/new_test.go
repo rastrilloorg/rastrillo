@@ -901,8 +901,8 @@ func TestDevLoopDoesNotStrip(t *testing.T) {
 // re-review's point: SKILL.md's checklist said it, but the scaffold's
 // router had no r.Use at all, so a builder had to remember. Now every
 // state-changing route an app grows is born covered, the origin rides
-// in from <APP>_ORIGIN with the loud dev default, and the scaffolded
-// test harness presents the same-origin evidence its POSTs need.
+// in through rastrillo.Origin, and the scaffolded test harness presents
+// the same-origin evidence its POSTs need.
 func TestNewWiresCSRFProtection(t *testing.T) {
 	t.Chdir(t.TempDir())
 	if err := runNew([]string{"blogapp"}); err != nil {
@@ -920,8 +920,7 @@ func TestNewWiresCSRFProtection(t *testing.T) {
 	}
 	mainGo := readScaffold(t, "blogapp", "cmd", "blogapp", "main.go")
 	for _, want := range []string{
-		`const variable = "BLOGAPP_ORIGIN"`,
-		`origin = "http://localhost:8080"`,
+		`origin := rastrillo.Origin("BLOGAPP_ORIGIN", logger)`,
 		"New(\n\t\tdatabase, origin, logger)",
 	} {
 		if !strings.Contains(mainGo, want) {
