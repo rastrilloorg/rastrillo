@@ -961,7 +961,7 @@ func menuPage(t *testing.T) http.Handler {
 		writer http.ResponseWriter, _ *http.Request,
 	) {
 		writer.Header().Set("Content-Type", "text/javascript")
-		writer.Write(FiestaJS())
+		writer.Write(fiestaScript("fiesta.js"))
 	})
 	mux.HandleFunc("GET /busy.js", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/javascript")

@@ -25581,7 +25581,7 @@ columns ui/ui.go c3c63127b8fa 1
 columns ui/ui.go c3c8287e95c6 1
 columns ui/ui.go d1dbb090f535 1
 columns ui/ui.go d912663cc928 1
-file ui/ui.go - 470 raised from 460 by Fiesta part 2: FiestaJS joins the script accessors, and the docs say fiesta.js does what rastrillo.js no longer does
+file ui/ui.go - 462 raised from 460 by Fiesta part 2: the docs say fiesta.js does what rastrillo.js no longer does
 names ui/ui.go Layout/b 1
 columns ui/ui_test.go 03fc6982a9d4 1
 columns ui/ui_test.go 0417a973a256 1

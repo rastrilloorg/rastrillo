@@ -347,14 +347,6 @@ func ShimJS() []byte { return shimJS }
 // comment is its contract.
 func LiveJS() []byte { return liveJS }
 
-// FiestaJS returns Fiesta's fiesta.js: light dismiss for the menus, the
-// switch's drag, the touch listener that gives a tap its pressed state,
-// and the scheme menu's in-place apply. Every page loads it beside
-// rastrillo.js, which writes the scheme cookie from its rst-scheme
-// event. Delivered once by rastrillo new, like ShimJS, and app-owned
-// from then on; its header comment is its contract.
-func FiestaJS() []byte { return fiestaScript("fiesta.js") }
-
 // BusyJS returns Fiesta's busy.js — the busy rule: every submit button
 // shows a spinner in place of its label for at least 650ms, goes
 // disabled, and its form refuses a second submit; Back hands it back.

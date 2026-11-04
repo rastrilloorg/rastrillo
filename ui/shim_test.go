@@ -84,7 +84,7 @@ func TestRastrilloJSHoldsOnlyTheShim(t *testing.T) {
 // menu's apply. These are the parts of that contract a Rastrillo page
 // relies on.
 func TestFiestaJSKeepsTheOldShimsContract(t *testing.T) {
-	js := string(FiestaJS())
+	js := string(fiestaScript("fiesta.js"))
 	for _, want := range []string{
 		// Light dismiss: the menu classes it answers to — the nested
 		// rst-menu-group among them, so a submenu is never left open
@@ -168,7 +168,7 @@ func lightDismissReach(js string) ([]string, error) {
 // and the functions' own text would never say so. The shipped fiesta.js
 // is the control.
 func TestTheLightDismissGateReadsTheMenuList(t *testing.T) {
-	js := string(FiestaJS())
+	js := string(fiestaScript("fiesta.js"))
 	if reach, err := lightDismissReach(js); err != nil || len(reach) != 0 {
 		t.Fatalf("the shipped fiesta.js: reach %v, err %v; want none",
 			reach, err)

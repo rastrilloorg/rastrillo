@@ -275,11 +275,11 @@ func App(d *db.DB, origin, instanceKey string, bg *background.Group, logger *slo
 	// fiesta.js the language menu's light dismiss, busy.js the busy
 	// rule, and live.js opens the stream the layout's meta tag names
 	// and swaps the regions and forms that ask for it.
-	scripts := map[string][]byte{
-		"rastrillo.js": ui.ShimJS(), "fiesta.js": ui.FiestaJS(),
-		"busy.js": ui.BusyJS(), "live.js": ui.LiveJS(),
-	}
-	for name, script := range scripts {
+	vendored, _ := ui.VendoredAssets("day")
+	for _, name := range []string{
+		"rastrillo.js", "fiesta.js", "busy.js", "live.js",
+	} {
+		script := vendored[name]
 		r.Get("/static/"+name, func(
 			writer http.ResponseWriter, _ *http.Request,
 		) {
