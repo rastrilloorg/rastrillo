@@ -21,6 +21,70 @@ The page then asks for the part that changed, from its own URL, as its
 own viewer. Your handler answers with the same template and the same
 checks it uses for the whole page. That part is called a region.
 
+## In a new app
+
+An app made with `rastrillo new` is already wired for live pages.
+`Router` in `app.go` builds the hub, with no topics yet. The stream is
+mounted at `/live`, the hub's middleware runs first, every page is drawn through
+`pages.Render`, and the layout has the head tag and the notice. A page
+with no region opens no stream, so an app that hibernates still sleeps.
+
+What is left is the part only your app knows. Here a list of messages
+updates in every open tab when someone posts one.
+
+Declare the topic where `Router` builds the hub:
+
+```go
+app.live, err = live.New(live.Config{
+	Path: string(livePage),
+	Topics: map[string]live.Allow{
+		"messages": func(*http.Request, string) bool { return true },
+	},
+})
+```
+
+Mark the region in the page's template, and use it where the list goes:
+
+```html
+{{define "region:messages"}}<ul id="messages" {{.Live.Attrs "messages"}}>
+  {{range .Messages}}<li>{{.}}</li>{{end}}
+</ul>{{end}}
+```
+
+```html
+{{template "region:messages" .}}
+```
+
+Tell the hub after the write, in the handler that saves:
+
+```go
+app.live.Notify("messages")
+visit.Flash("Sent.")
+visit.Redirect("/")
+```
+
+Let the form swap in place:
+
+```html
+<form method="post" action="{{path $ "/messages"}}" data-live-form="messages">
+```
+
+The form sits outside the region, so `data-live-form` names it: the
+answer swaps the list and the notice in place. The form keeps what was
+typed; to clear it after sending, put the form in a region of its own
+that follows the same topic, since the form's own region is swapped
+too. Every page's data gets
+`Live` and `Notice` from `render.go`, so the region can call
+`.Live.Attrs` and the flash shows in the notice.
+
+In an app made with `-auth magic`, the stream sits behind sign-in, so
+a topic's check can ask `auth.From(request)` who is watching.
+
+The rest of this page is how each piece works, and what to do in an
+app that `rastrillo new` did not make. Here everyone may follow
+`messages`. When a topic belongs to one person, put them in the key, as
+the next section explains.
+
 ## Declare your topics
 
 Make the hub once, at boot:

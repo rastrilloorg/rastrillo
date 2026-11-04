@@ -268,12 +268,19 @@ func TestTheBudgetCoversEveryFileAndShell(t *testing.T) {
 	if frameworkBudget.unsliced != 40000 {
 		t.Error("an unsliced page's limit is not 40000")
 	}
+	ceiling := 0
+	for name, reference := range frameworkBudget.references {
+		if name != liveScript &&
+			!slices.Contains(vendored.ComponentScripts(), name) {
+			ceiling += reference
+		}
+	}
+	ceiling = (ceiling*11/10 + 99) / 100 * 100
 	for _, shell := range ui.LayoutNames() {
-		live := frameworkBudget.live[shell]
-		sliced := frameworkBudget.shells[shell]
-		if live < sliced {
-			t.Errorf("the %s shell's live limit, %d, is under its "+
-				"sliced limit, %d", shell, live, sliced)
+		if live := frameworkBudget.live[shell]; live != ceiling {
+			t.Errorf("the %s shell's live limit is %d, not %d: every "+
+				"file but live.js and the component scripts, plus 10%%",
+				shell, live, ceiling)
 		}
 	}
 }

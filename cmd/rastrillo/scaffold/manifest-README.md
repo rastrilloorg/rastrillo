@@ -104,7 +104,7 @@ manifest/ticket_types.toml:
 
        booted, err := gen.Boot(context.Background(), database.Writer())
        if err != nil {
-           return nil, err
+           return nil, nil, err
        }
        app.generated = gen.Router(booted, app.generatedContext)
 

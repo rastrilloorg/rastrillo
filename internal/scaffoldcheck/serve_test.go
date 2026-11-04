@@ -90,7 +90,7 @@ func TestABearerTokenNeedsNoOrigin(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer database.Close()
-	handler, err := apiapp.New(database, testOrigin, logger)
+	handler, _, err := apiapp.New(database, testOrigin, logger)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -214,7 +214,7 @@ func TestTheHomePageIsInTheRequestsLanguage(t *testing.T) {
 		BasePath: basepath.Config{Origin: "http://localhost:8080",
 			Slug: "acme"},
 	}
-	langapp.Configure(&options, newApp(t).(*http.ServeMux), time.Now())
+	langapp.Configure(&options, newApp(t).(*http.ServeMux), nil, time.Now())
 	handler, closeAll, err := rastrillo.Handler(options)
 	if err != nil {
 		t.Fatal(err)

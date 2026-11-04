@@ -1,6 +1,6 @@
 ---
 name: rastrillo
-description: "Build a multi-user CARLOS app: GORM models or plain SQL, chi routes, sessions, owner-scoped queries."
+description: "Build a multi-user CARLOS app, or port one to it: GORM models or plain SQL, chi routes, sessions, owner-scoped queries."
 ---
 
 # Rastrillo
@@ -24,10 +24,12 @@ Read the topic before you start work it covers, not after the source:
 
 | Before you... | read |
 |---|---|
+| port an app here, or answer doubts about the move: tenancy, lock-in, rich UI | `skill/port.md` |
+| write your own JavaScript: drag and drop, a library, a build step | `skill/scripts.md` |
 | write or change any Go code: names, function and file size, comments, an action's shape | `skill/code.md` |
 | add password sign-in to an app that has none | `skill/add-signin.md` |
 | use the session, magic links, a sign-in screen, 2FA | `skill/signin.md` |
-| add a page or route, a flow, a test, or meet a perf/budget failure | `skill/screens.md` |
+| build a first slice, add a page or route, a flow, a test, or meet a perf/budget failure | `skill/screens.md` |
 | call a `ui` partial: its keys, at a glance | `skill/partials.md` |
 | style a page, format numbers, add a locale, a menu, a picture grid | `skill/design.md` |
 | take money, dates, URLs or uploads in a form, or protect a public form | `skill/forms.md` |
@@ -72,7 +74,7 @@ error pages. Check the index first.
 `main.go`, in order: `rastrillo.Resolve(rastrillo.Options{DBPath:
 "notes.db", ...})`; `db.Open(options.DBPath, logger)` (deferred
 `Close`); `notes.New(database, origin, logger)`;
-`notes.Configure(&options, mux, started)`; `options.DBPath = ""`;
+`notes.Configure(&options, mux, hub, started)`; `options.DBPath = ""`;
 `rastrillo.Serve(options)`. **Use `Resolve` + `Serve`, never `Run`,
 when the app opens its own database:** `Run` re-parses argv and
 repopulates `Options.DBPath`, so `Serve` opens a second connection to
@@ -168,8 +170,8 @@ The other seven, an action's shape and what each gate message means:
   them silently), hand-roll a labelled control (use `field-*` partials
   in `<form rst-form>` closed by `form-foot`), an error page, a colour
   toggle or an image grid: they ship (`skill/design.md`).
-- Never add a `<script>` tag for a framework component: the `field-*`
-  partials load their own; markup built in Go asks with
+- Never add a `<script>` tag for a framework component (your own are
+  welcome: `skill/scripts.md`): the `field-*` partials load their own; markup built in Go asks with
   `{{needs "select.js"}}` or `{{needs "rst-card"}}`.
 - Never save bytes to disk or a column: the filesystem is ephemeral
   (`skill/data.md`).

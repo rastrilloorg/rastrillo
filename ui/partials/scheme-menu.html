@@ -1,8 +1,6 @@
-{{/* scheme-menu — the colour-scheme switch, built the way locale-menu
-     is: a details/summary dropdown of one-field POST forms to /_theme,
-     one each for Light, Dark and System, so the choice lands in the
-     scheme cookie and the reader comes back to the same page. No
-     JavaScript; rastrillo.js applies a choice in place when it is
+{{/* scheme-menu — the colour-scheme switch, built as locale-menu is:
+     POST forms to /_theme for Light, Dark and System, storing the
+     choice in a cookie and returning to the same page. No JavaScript; rastrillo.js applies a choice in place when it is
      there, and writes the same cookie.
 
      Unlike locale-menu it always renders — there are always three

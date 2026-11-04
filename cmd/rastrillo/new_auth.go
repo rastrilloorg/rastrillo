@@ -130,9 +130,9 @@ func (edit *magicAuth) schema() {
 // environment, a test's outbox. Owned pages sit behind the session.
 func (edit *magicAuth) app() {
 	app := filepath.Join(edit.appDir, "app.go")
-	edit.swap(app, "ServeMux that rastrillo.Options.Mux takes.\n",
-		"ServeMux that rastrillo.Options.Mux takes. Stop group before\n"+
-			"// closing the database: sign-in's sweeps run on it.\n")
+	hub := "ServeMux that rastrillo.Options.Mux takes.\n"
+	edit.swap(app, hub, hub+"// Stop group before closing the database: "+
+		"sign-in's sweeps run on it.\n")
 	for _, function := range []string{"New", "Router"} {
 		edit.swap(app, "func "+function+"(\n"+
 			"\tdatabase *db.DB, origin string, logger *slog.Logger,\n",
@@ -145,9 +145,9 @@ func (edit *magicAuth) app() {
 		"Router(database, origin, group, mailer, logger)")
 	edit.swap(app, "mcp: mcp}\n", "mcp: mcp}\n"+
 		"\tif err := app.startAuth(group, mailer); err != nil {\n"+
-		"\t\treturn nil, err\n\t}\n")
-	edit.swap(app, "\tmcp      http.Handler\n}",
-		"\tmcp      http.Handler\n\tauth     *auth.Auth\n}")
+		"\t\treturn nil, nil, err\n\t}\n")
+	edit.swap(app, "\tlive     *live.Hub\n}",
+		"\tlive     *live.Hub\n\tauth     *auth.Auth\n}")
 	edit.importAfter(app, `"amadan.net/rastrillo/rastrillo/action"`,
 		"auth", "background", "mail")
 	routes := filepath.Join(edit.appDir, "routes.go")
@@ -157,11 +157,16 @@ func (edit *magicAuth) app() {
 	edit.swap(routes, "pages.Middleware)\n", "pages.Middleware)\n"+
 		"\t\tguarded.Guard(\"signedIn\", app.signedIn)\n"+
 		"\t\tapp.mountAuth(guarded)\n")
+	stream := "\t\tguarded.Handle(http.MethodGet, livePage, " +
+		"app.live.Handler(), \"live\")\n"
+	edit.swap(routes, stream, "")
 	edit.swap(routes, "\n\t})\n}\n", "\n"+
-		"\t\t// Owned pages: a signed-out visitor signs in first.\n"+
+		"\t\t// Owned pages and the stream: a visitor signs in first.\n"+
 		"\t\tguarded.Group(func(owned *action.Routes) {\n"+
 		"\t\t\towned.Guard(\"session\", app.auth.RequireSession)\n"+
-		"\t\t\towned.Get(accountPage, app.account)\n\t\t})\n\t})\n}\n")
+		"\t\t\towned.Get(accountPage, app.account)\n"+
+		"\t\t\towned.Handle(http.MethodGet, livePage, app.live.Handler(),\n"+
+		"\t\t\t\t\"live\")\n\t\t})\n\t})\n}\n")
 }
 
 // layout: every page offers Sign out to a signed-in visitor and Sign in
@@ -234,13 +239,13 @@ const (
 
 func (edit *magicAuth) main() {
 	main := filepath.Join(edit.name, "cmd", edit.name, "main.go")
-	edit.swap(main, edit.filled("\tmux, err := %s.New(\n"+
+	edit.swap(main, edit.filled("\tmux, hub, err := %s.New(\n"+
 		"\t\tdatabase, origin, logger)\n"),
 		fmt.Sprintf("\tmailer := mail.FromEnv(%q, logger)\n", edit.env)+
 			"\tgroup := &background.Group{}\n"+
-			edit.filled("\tmux, err := %s.New(\n"+
+			edit.filled("\tmux, hub, err := %s.New(\n"+
 				"\t\tdatabase, origin, group, mailer, logger)\n"))
-	configure := edit.filled("\t%s.Configure(&options, mux, started)\n")
+	configure := edit.filled("\t%s.Configure(&options, mux, hub, started)\n")
 	edit.swap(main, configure, configure+"\toptions.Background = group\n")
 	edit.importAfter(main, `"amadan.net/rastrillo/rastrillo/db"`,
 		"background", "mail")

@@ -1,0 +1,19 @@
+{{define "title"}}{{.Room.Name}}{{end}}
+{{define "content"}}
+{{template "back-nav" dict "Href" (path $ "/") "Label" "Rooms"}}
+{{template "page-header" dict "Title" .Room.Name}}
+{{template "region:messages" .}}
+{{template "region:compose" .}}
+{{end}}
+
+{{define "region:messages"}}<div id="messages" rst-box {{.Live.Attrs .Topic}}>
+{{range .Messages}}<p><strong>{{.Sender}}</strong> {{.Text}}</p>
+{{else}}<p>No messages yet. Say hello.</p>
+{{end}}</div>{{end}}
+
+{{define "region:compose"}}{{$L := localizer $}}<section id="compose" rst-box {{.Live.Attrs .Topic}}>
+  <form rst-form method="post" action="{{path $ (printf "/rooms/%d/messages" .Room.ID)}}" data-live-form="messages">
+    {{template "field-text" dict "Name" "Text" "Label" "Message" "Value" (index .Echo "Text") "Error" (index .Errors "Text")}}
+    {{template "form-foot" dict "L" $L "Submit" "Send"}}
+  </form>
+</section>{{end}}

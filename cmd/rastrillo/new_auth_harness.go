@@ -17,22 +17,22 @@ func (edit *magicAuth) harness() {
 		"// newAppWithMail is newApp with the outbox its links land in.\n"+
 		"func newAppWithMail(t *testing.T) (http.Handler, *outbox) {\n"+
 		"\tt.Helper()\n")
-	edit.swap(harness, edit.filled("\tmux, err := %s.New(\n"+
+	edit.swap(harness, edit.filled("\tmux, _, err := %s.New(\n"+
 		"\t\tdatabase, testOrigin, logger)\n"),
 		"\tgroup := &background.Group{}\n"+
 			"\tt.Cleanup(group.Stop) // before database.Close: "+
 			"last in, first out\n\tbox := &outbox{}\n"+
-			edit.filled("\tmux, err := %s.New(\n"+
+			edit.filled("\tmux, _, err := %s.New(\n"+
 				"\t\tdatabase, testOrigin, group, box, logger)\n"))
 	edit.swap(harness, "\treturn mux\n}", "\treturn mux, box\n}")
 	edit.importAfter(harness, `"amadan.net/rastrillo/rastrillo/db"`,
 		"background")
 	browser := filepath.Join(edit.testDir, "browser_test.go")
-	edit.swap(browser, edit.filled("\t\tmux, err := %s.New(\n"+
+	edit.swap(browser, edit.filled("\t\tmux, _, err := %s.New(\n"+
 		"\t\t\tdatabase, origin, logger)\n"),
 		"\t\tgroup := &background.Group{}\n\t\tt.Cleanup(group.Stop)\n"+
 			"\t\tmailer := mail.Logged(logger)\n"+
-			edit.filled("\t\tmux, err := %s.New(\n"+
+			edit.filled("\t\tmux, _, err := %s.New(\n"+
 				"\t\t\tdatabase, origin, group, mailer, logger)\n"))
 	edit.importAfter(browser, `"amadan.net/rastrillo/rastrillo/db"`,
 		"background", "mail")
@@ -42,14 +42,14 @@ func (edit *magicAuth) harness() {
 // pow's assets and the two link landings are not screens.
 func (edit *magicAuth) perf() {
 	perf := filepath.Join(edit.testDir, "perf_test.go")
-	edit.swap(perf, edit.filled("\trouter, err := %s.Router(\n"+
+	edit.swap(perf, edit.filled("\trouter, hub, err := %s.Router(\n"+
 		"\t\tdatabase, testOrigin, logger)\n"),
 		"\tgroup := &background.Group{}\n\tbox := &outbox{}\n"+
-			edit.filled("\trouter, err := %s.Router(\n"+
+			edit.filled("\trouter, hub, err := %s.Router(\n"+
 				"\t\tdatabase, testOrigin, group, box, logger)\n"))
 	stops := "\toptions.Background = group // closeAll stops it\n"
 	for _, started := range []string{"time.Now()", "started"} {
-		configure := edit.filled("\t%s.Configure(&options, mux, " +
+		configure := edit.filled("\t%s.Configure(&options, mux, hub, " +
 			started + ")\n")
 		edit.swap(perf, configure, configure+stops)
 	}
@@ -59,10 +59,10 @@ func (edit *magicAuth) perf() {
 		"\t\tSignin: func(client *http.Client, base string) {\n"+
 		"\t\t\tsignInOver(t, client, base, box, \"perf@example.com\")\n"+
 		"\t\t},\n\t})")
-	edit.swap(perf, edit.filled("\tmux, err := %s.New(\n"+
+	edit.swap(perf, edit.filled("\tmux, hub, err := %s.New(\n"+
 		"\t\tdatabase, testOrigin, logger)\n\tif err != nil {\n"),
 		"\tgroup := &background.Group{}\n\tmailer := mail.Logged(logger)\n"+
-			edit.filled("\tmux, err := %s.New(\n"+
+			edit.filled("\tmux, hub, err := %s.New(\n"+
 				"\t\tdatabase, testOrigin, group, mailer, logger)\n"+
 				"\tif err != nil {\n\t\tgroup.Stop()\n"))
 	edit.importAfter(perf, `"amadan.net/rastrillo/rastrillo/db"`,

@@ -27,7 +27,7 @@ func TestPerfScreens(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer database.Close()
-	router, err := %[2]s.Router(
+	router, hub, err := %[2]s.Router(
 		database, testOrigin, logger)
 	if err != nil {
 		t.Fatal(err)
@@ -35,7 +35,7 @@ func TestPerfScreens(t *testing.T) {
 	mux := http.NewServeMux()
 	mux.Handle("/", router)
 	options := servingOptions(logger)
-	%[2]s.Configure(&options, mux, time.Now())
+	%[2]s.Configure(&options, mux, hub, time.Now())
 	handler, closeAll, err := rastrillo.Handler(options)
 	if err != nil {
 		t.Fatal(err)
@@ -59,14 +59,14 @@ func boot(path string) (http.Handler, func(), error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	mux, err := %[2]s.New(
+	mux, hub, err := %[2]s.New(
 		database, testOrigin, logger)
 	if err != nil {
 		database.Close()
 		return nil, nil, err
 	}
 	options := servingOptions(logger)
-	%[2]s.Configure(&options, mux, started)
+	%[2]s.Configure(&options, mux, hub, started)
 	handler, closeAll, err := rastrillo.Handler(options)
 	if err != nil {
 		database.Close()

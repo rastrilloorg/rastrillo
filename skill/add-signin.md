@@ -123,11 +123,11 @@ email).First(&user)`, mapping `gorm.ErrRecordNotFound` to
 yet). `createUser(database)` returns `func(ctx, email, hash) (int64,
 error)`, which creates the `User` and returns its id.
 `renderSignin`/`renderSignup` are `func(response, request, data
-password.PageData)`: `renderPage(response, request, "signin",
+password.PageData)`: `renderPage(response, request, nil, "signin",
 http.StatusOK, map[string]any{"Content": data})`, and `"signup"`
 for the other (the forms' proofs are scoped, so signup's form must post
 to `/signup`). Pass `http.StatusOK`, never another status: the
-password handlers write theirs first, and `writePage` writes no 200.
+password handlers write theirs first, and `renderPage` writes no 200.
 
 **6. Pages.** Add `"signin", "signup"` to `render.go`'s page list,
 wrapped to fit 80 columns. In

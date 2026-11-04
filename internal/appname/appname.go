@@ -35,6 +35,7 @@ var taken = strings.Fields(`
 	closeAll code confirm confirmPattern context cookie csrf ctx database
 	db dbtest err error exitOnError filepath form formPattern genlocales
 	get getAs got group handler harness hashedStylesheet href html http
+	hub
 	httptest index io json len library link linkPattern logger mail
 	mailer main method migrate mux name newApp newAppWithMail nil ok
 	options origin originFrom os outbox page path perftest post postOver

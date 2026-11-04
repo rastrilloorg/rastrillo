@@ -510,6 +510,13 @@ func families() []family {
 					},
 				},
 				{
+					Name:  "region:notice",
+					Blurb: "The notice every shell keeps on the page, showing the page data's Notice, so a screen reader hears a flash and live.js can fill it in place.",
+					States: []sample{
+						{State: "A saved message", Data: map[string]any{"Notice": "Post saved."}},
+					},
+				},
+				{
 					Name:  "form-error",
 					Blurb: "A form's summary error line, role=\"alert\". Takes a plain string; renders nothing when there is no error.",
 					States: []sample{

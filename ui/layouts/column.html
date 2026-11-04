@@ -10,6 +10,7 @@
 <link rel="stylesheet" href="{{path $ pageStylesheet}}">
 <link rel="stylesheet" href="{{path $ (asset "static/theme.css")}}">
 <script defer src="{{path $ (asset "static/rastrillo.js")}}"></script>
+{{template "live-head" .}}
 {{iconAssets}}
 {{/* Loads the scripts this page uses, by what its templates show: a
      form, a menu, a field, a lit component. A live page loads them all,
@@ -27,6 +28,7 @@
 <a rst-skip href="#main">{{T $L "rastrillo.ui.shell_skip"}}</a>
 <main rst-page id="main">
 {{block "locale" .}}{{$L := localizer $}}{{template "locale-menu" dict "L" $L "Items" (opt $ "Locales") "Return" (opt $ "Return") "Action" (path $ "/_locale")}}{{end}}{{block "scheme" .}}{{$L := localizer $}}{{template "scheme-menu" dict "L" $L "Scheme" (opt $ "Scheme") "Return" (opt $ "Return") "Action" (path $ "/_theme")}}{{end}}
+{{template "region:notice" .}}
 {{template "content" .}}
 </main>
 </body>

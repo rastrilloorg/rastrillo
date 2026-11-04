@@ -182,17 +182,18 @@ with `neededScripts`, which lists only `select.js`, `calendar.js` and
 They span the list-screen, display, form and route families:
 
 ```text
-actor         error-page       field-url           notice
-api-tokens    field            form-error          page-header
-back-nav      field-check      form-foot           pagination
-badge         field-date       job-status          person
-bulk-bar      field-daterange  list-bar            row-menu
-callout       field-datetime   list-bar-search     scheme-menu
-choice-field  field-money      list-row-action     seg-tabs
-confirm-form  field-select     list-search-submit  signin
-detail-list   field-text       locale-menu         signin-title
-dropdown      field-textarea   media-grid          stat
-empty-state   field-time       meter               status-pill
+actor         field            form-foot           pagination
+api-tokens    field-check      job-status          person
+back-nav      field-date       list-bar            region:notice
+badge         field-daterange  list-bar-search     row-menu
+bulk-bar      field-datetime   list-row-action     scheme-menu
+callout       field-money      list-search-submit  seg-tabs
+choice-field  field-select     live-head           signin
+confirm-form  field-text       locale-menu         signin-title
+detail-list   field-textarea   media-grid          stat
+dropdown      field-time       meter               status-pill
+empty-state   field-url        notice
+error-page    form-error       page-header
 ```
 
 `locale-menu` is the language switcher; see

@@ -10,6 +10,50 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+## v0.31.1
+
+### Fixed: the chat tour's second step runs as shown
+
+The tour at rastrillo.org/tour showed `rastrillo new chat -auth magic`,
+which refuses the flag: Go reads flags only before the app's name. It
+now shows `rastrillo new --auth=magic chat`, and its test runs the
+command exactly as the page shows it.
+
+## v0.31.0
+
+### Changed: a new app comes ready for live pages
+
+`rastrillo new` now wires [live pages](docs/site/live.md) for you.
+`Router` builds the hub, with no topics yet, and the stream is served
+at `/live`. `render.go` draws every page through `pages.Render`, so
+`live.js` can ask for one region, and the layout carries the live head
+tag and the notice. To make part of a page live, declare a topic, mark
+a region and call `Notify` after the write: the live guide's "In a new
+app" section shows the four edits. A page with no region opens no
+stream, so an app on a route that hibernates still sleeps.
+
+A new app's `New` and `Router` now return the hub as well, and
+`Configure` takes it and sets `Options.Live`. The notice shows the
+flash, which a new app did not show before. Screens generated from a
+manifest do not get `Live` or the flash yet: they bring their own page
+data. With `-auth magic`, the stream sits behind sign-in.
+
+The five shell layouts call two new `ui` partials: `live-head` in the
+head, which writes the live meta tag when the page data carries `Live`,
+and `region:notice` just before the content, which shows the page
+data's `Notice`. An app's own define of either replaces it. An app owns
+the copy `rastrillo new` gave it, so nothing changes in an existing
+app. To wire one by hand, follow the rest of the live guide.
+
+### Changed: a live page may weigh 33 kB before its scripts
+
+A live page links the styles for every page's hooks, so it grew with
+each screen an app added and failed the first-load check once an app
+had a few forms. Its limit is now the most it could ever link, 33 kB
+gzipped in every shell, plus `live.js` and the component scripts as
+before. A `weight` record in `budgets.txt` for a live page may no
+longer be needed: `make perf` says so when it is stale.
+
 ### Fixed: no uncaught error when a form's redirect lands on a column, stage or topbar page
 
 A form's redirect to a column, stage or topbar page could log

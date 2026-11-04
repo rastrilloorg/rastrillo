@@ -59,6 +59,6 @@ func renderTokens(
 	response http.ResponseWriter, request *http.Request,
 	data apitoken.PageData,
 ) {
-	renderPage(response, request, "tokens", http.StatusOK,
+	renderPage(response, request, nil, "tokens", http.StatusOK,
 		map[string]any{"Page": data})
 }

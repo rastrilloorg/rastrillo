@@ -1,0 +1,6 @@
+{{define "title"}}{{.Room.Name}}{{end}}
+{{define "content"}}{{$L := localizer $}}
+{{template "back-nav" dict "Href" (path $ "/") "Label" "Rooms"}}
+{{template "page-header" dict "Title" .Room.Name}}
+<div rst-box><p>No messages yet.</p></div>
+{{end}}

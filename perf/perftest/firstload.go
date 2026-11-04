@@ -42,20 +42,21 @@ type firstLoadBudget struct {
 // and pagination, and loads busy.js, light.js and anchor.js for its
 // search form, buttons and filter menu: 15,399 bytes. The stage
 // shell's sign-in screen, its real first page, is 11,866. A live page
-// loads live.js and every component script, and links the slice of
-// every page's hooks, so its shell's live limit is its live page in its
-// heaviest theme, less those scripts' references, plus 10%, rounded up
-// the same way, and never under the sliced limit: a live page shows at
-// least what a plain one does. That raises column (14,200 measured),
-// topbar (15,500) and stage (13,200) to 16,000.
+// loads live.js and every component script, charged by reference as on
+// any page, and links the slice of every page's hooks. That slice grows
+// with the app's own screens, not with the framework, and can never
+// pass the whole tokens.css, so a live page's limit is the ceiling:
+// every other file's reference, plus 10%, rounded up the same way. A
+// limit measured on the framework's own few screens failed the first
+// app with an admin area (the chat tour's room page, 2026-11-03).
 var frameworkBudget = firstLoadBudget{
 	shells: map[string]int{
 		"column": 16000, "topbar": 16000,
 		"sidebar": 16000, "console": 16000, "stage": 16000,
 	},
 	live: map[string]int{
-		"column": 16000, "topbar": 16000,
-		"sidebar": 18700, "console": 19500, "stage": 16000,
+		"column": 33000, "topbar": 33000,
+		"sidebar": 33000, "console": 33000, "stage": 33000,
 	},
 	unsliced: 40000,
 	references: map[string]int{

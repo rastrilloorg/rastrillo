@@ -10,6 +10,7 @@
 <link rel="stylesheet" href="{{path $ pageStylesheet}}">
 <link rel="stylesheet" href="{{path $ (asset "static/theme.css")}}">
 <script defer src="{{path $ (asset "static/rastrillo.js")}}"></script>
+{{template "live-head" .}}
 {{iconAssets}}
 {{/* Loads the scripts this page uses, by what its templates show: a
      form, a menu, a field, a lit component. A live page loads them all,
@@ -80,6 +81,7 @@
 </div>
 </header>
 <main rst-page id="main">
+{{template "region:notice" .}}
 {{template "content" .}}
 </main>
 <footer rst-shell-foot>{{block "foot" .}}{{end}}</footer>

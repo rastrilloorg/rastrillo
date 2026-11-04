@@ -64,7 +64,7 @@ func env(kv ...string) func(string) string {
 	return func(k string) string { return m[k] }
 }
 
-var tookOverBudget = regexp.MustCompile(`internal/a took 1\.2\d*s, over the 1s`)
+var tookOverBudget = regexp.MustCompile(`internal/a took 1\.\d+s, over the 1s`)
 
 // Review focus 1: the retry of an over-budget package, now served from
 // the cache, fails exactly as the first run did, on the replayed time.

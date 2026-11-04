@@ -905,7 +905,7 @@ func testHandler(t *testing.T) http.Handler {
 	t.Helper()
 	opts := rastrillo.Options{Logger: slog.New(slog.NewTextHandler(io.Discard, nil)),
 		Locales: genlocales.Locales, DefaultLocale: genlocales.DefaultLocale}
-	%[1]s.Configure(&opts, newApp(t).(*http.ServeMux), time.Now())
+	%[1]s.Configure(&opts, newApp(t).(*http.ServeMux), nil, time.Now())
 	h, closeAll, err := rastrillo.Handler(opts)
 	if err != nil {
 		t.Fatal(err)
@@ -1031,7 +1031,7 @@ import (
 func TestRenderLeavesTheCallersMapAlone(t *testing.T) {
 	data := map[string]any{"X": 1}
 	renderPage(httptest.NewRecorder(), httptest.NewRequest("GET", "/", nil),
-		"index", 200, data)
+		nil, "index", 200, data)
 	if len(data) != 1 {
 		t.Errorf("render wrote into the caller's map: %v", data)
 	}
@@ -1088,10 +1088,10 @@ func TestBadConfig(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer d.Close()
-	if _, err := notes.New(d, testOrigin, logger); err == nil {
+	if _, _, err := notes.New(d, testOrigin, logger); err == nil {
 		t.Error("New accepted a default locale whose pack is not linked")
 	}
-	if _, err := notes.Router(d, testOrigin, logger); err == nil {
+	if _, _, err := notes.Router(d, testOrigin, logger); err == nil {
 		t.Error("Router accepted a default locale whose pack is not linked")
 	}
 	rec := httptest.NewRecorder()
@@ -1144,7 +1144,7 @@ func underAcme(t *testing.T, mux *http.ServeMux) http.Handler {
 	t.Helper()
 	opts := rastrillo.Options{Logger: slog.New(slog.NewTextHandler(io.Discard, nil)),
 		Locales: genlocales.Locales, DefaultLocale: genlocales.DefaultLocale, BasePath: acme}
-	notes.Configure(&opts, mux, time.Now())
+	notes.Configure(&opts, mux, nil, time.Now())
 	h, closeAll, err := rastrillo.Handler(opts)
 	if err != nil {
 		t.Fatal(err)
@@ -1328,7 +1328,7 @@ func TestMagicAuthSigninLinkFollowsTheBasePath(t *testing.T) {
 	opts := rastrillo.Options{Logger: slog.New(slog.NewTextHandler(io.Discard, nil)),
 		Locales: genlocales.Locales, DefaultLocale: genlocales.DefaultLocale,
 		BasePath: basepath.Config{Origin: "http://localhost:8080", Slug: "acme"}}
-	notes.Configure(&opts, newApp(t).(*http.ServeMux), time.Now())
+	notes.Configure(&opts, newApp(t).(*http.ServeMux), nil, time.Now())
 	h, closeAll, err := rastrillo.Handler(opts)
 	if err != nil {
 		t.Fatal(err)

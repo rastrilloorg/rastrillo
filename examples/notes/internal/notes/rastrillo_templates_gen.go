@@ -25,6 +25,7 @@ func init() {
 	tmplrt.Register("07a81bfa838e79f3339c7be0cfd8f604ebf46eb3264b228010e978e18d6e4400", bind_07a81bfa838e79f3)
 	tmplrt.Register("098c2934b26b7f7588f0a824b10400cc9b7babc1008d3f3465f1f2e4da31e016", bind_098c2934b26b7f75)
 	tmplrt.Register("0a71d52ec760e77e1526017446603e4b29095688ccd217a544d5bda149cd00e6", bind_0a71d52ec760e77e)
+	tmplrt.Register("0ad88b6abfe779563d028b061f9144247c2861bc3b10f5d204579defa30819ed", bind_0ad88b6abfe77956)
 	tmplrt.Register("0d12e626d91681dcdaccb7a54cb35de7faab1e5b27eba69b2ff39b9141e0395b", bind_0d12e626d91681dc)
 	tmplrt.Register("0f24630096c49b29aa43337714800bfc335d6d73609f8da91cb1893841aebf9c", bind_0f24630096c49b29)
 	tmplrt.Register("1073ec0d38c56faf597bf6b9a9656536883222dade5359abcb1a15605b60bb8f", bind_1073ec0d38c56faf)
@@ -34,7 +35,6 @@ func init() {
 	tmplrt.Register("20672c55a07cc47d202ee1213d4d35cb25fe32fb0e018b2eed5e08843edd5e2c", bind_20672c55a07cc47d)
 	tmplrt.Register("230645f10a0e84cdc4452a743369be7723735be88d54429327afcaa218275656", bind_230645f10a0e84cd)
 	tmplrt.Register("24f6f6b170dbb06f4f7b0c21005a609b6aa61e057f5d94ea548f79af94d63c96", bind_24f6f6b170dbb06f)
-	tmplrt.Register("2e7f774feda89d73aa381ff04d505c9435cc5b4079591ead0c4961c1b1afc406", bind_2e7f774feda89d73)
 	tmplrt.Register("2f7f3855654925a2d40d247610256af3182dd55ca6672d1155b21dd4f970aaff", bind_2f7f3855654925a2)
 	tmplrt.Register("312fa80235218084872af6281a3101220c4ba07a0ef248d095b9c5f5d85a1b2f", bind_312fa80235218084)
 	tmplrt.Register("31cb3007823cf32ebf79a32ce73ba3f9071eab06f9592a9b4cee6d3ad6474fc9", bind_31cb3007823cf32e)
@@ -50,6 +50,7 @@ func init() {
 	tmplrt.Register("424a3245bd39b269f9639056994307085c7e8bdec47a12806e8d8030bbf64ef9", bind_424a3245bd39b269)
 	tmplrt.Register("435d2c06aeeb6ac0b66bf0a80fb7804c454b70653ff84c6f651a7c9fa539cb23", bind_435d2c06aeeb6ac0)
 	tmplrt.Register("45292b628ffae796aa8c1f4bd72116bc305d7d84d20725c894deedf7684e087b", bind_45292b628ffae796)
+	tmplrt.Register("4707ee017ab8e9d9a4f12f8b0ea8d2837f30646d325cce7fa53f2addd821d2b4", bind_4707ee017ab8e9d9)
 	tmplrt.Register("4a20d6ebe22392e7a53adab8a7e0b53c1695b1c00653e4e277c42e3785b56e60", bind_4a20d6ebe22392e7)
 	tmplrt.Register("4ae7ea50e115a11689ff349820f0a9056836ec9b130c027c1a5e2ff909f0eb19", bind_4ae7ea50e115a116)
 	tmplrt.Register("4c0d5fef9b1484dc733a6046afd14fd78625dd8fc5feff3145a531f7eabf63e4", bind_4c0d5fef9b1484dc)
@@ -77,6 +78,7 @@ func init() {
 	tmplrt.Register("7f234292a64bfee6f72ce0036a56b83f720eeefeccc03f3273a053b74914725f", bind_7f234292a64bfee6)
 	tmplrt.Register("80ca1a638c42511a67982513b96e719be31623b8229e47de3b6f8d1e09046fa7", bind_80ca1a638c42511a)
 	tmplrt.Register("820fbab31d98272d39a826f9a04439ff402ccfaf703147e889e01fc71aa65f69", bind_820fbab31d98272d)
+	tmplrt.Register("85fd9788e2e77a6291d5e58ab176f8f6c7c99c95e8a8575f5147a50ab929aa4b", bind_85fd9788e2e77a62)
 	tmplrt.Register("898ceca0a464def416d187d44bfed74619187febc3a9c0d4573595c4052dddc0", bind_898ceca0a464def4)
 	tmplrt.Register("8a1e0ce858ec931c2a79fd688091fb897c7953c97c9cb1c91f7d9bd82eec1e50", bind_8a1e0ce858ec931c)
 	tmplrt.Register("8b4b5553e44f9bad26d236b51a122eb5e9b61b71d7da3619033df6400823f9a1", bind_8b4b5553e44f9bad)
@@ -360,6 +362,14 @@ func bind_0a71d52ec760e77e(funcs map[string]any) (tmplrt.Exec, error) {
 	}, nil
 }
 
+// bind_0ad88b6abfe77956 binds "confirm-form.html".
+func bind_0ad88b6abfe77956(map[string]any) (tmplrt.Exec, error) {
+	return func(b *bytes.Buffer, data any) (err error) {
+		defer tmplrt.Recover(&err, "confirm-form.html")
+		return exec_d14abdef8d485471(b, tmplrt.Data(data), nil, 0)
+	}, nil
+}
+
 // bind_0d12e626d91681dc binds "field-datetime.html".
 func bind_0d12e626d91681dc(map[string]any) (tmplrt.Exec, error) {
 	return func(b *bytes.Buffer, data any) (err error) {
@@ -527,14 +537,6 @@ func bind_24f6f6b170dbb06f(map[string]any) (tmplrt.Exec, error) {
 	return func(b *bytes.Buffer, data any) (err error) {
 		defer tmplrt.Recover(&err, "job-status.html")
 		return exec_ab9cf25a4bf91d21(b, tmplrt.Data(data), nil, 0)
-	}, nil
-}
-
-// bind_2e7f774feda89d73 binds "confirm-form.html".
-func bind_2e7f774feda89d73(map[string]any) (tmplrt.Exec, error) {
-	return func(b *bytes.Buffer, data any) (err error) {
-		defer tmplrt.Recover(&err, "confirm-form.html")
-		return exec_df656e6659fb2a4c(b, tmplrt.Data(data), nil, 0)
 	}, nil
 }
 
@@ -896,6 +898,28 @@ func bind_45292b628ffae796(map[string]any) (tmplrt.Exec, error) {
 			}
 		}
 		return exec_14165c3ab983d64a(b, tmplrt.Data(data), nil, 0)
+	}, nil
+}
+
+// bind_4707ee017ab8e9d9 binds "live-head".
+func bind_4707ee017ab8e9d9(funcs map[string]any) (tmplrt.Exec, error) {
+	fn := new(templateFuncs)
+	var ok bool
+	if fn.T_a3eca208, ok = funcs["T"].(func(...any) (any, error)); !ok {
+		return nil, tmplrt.BindError("T", funcs["T"])
+	}
+	if fn.localizer_634df8c4, ok = funcs["localizer"].(func(any) *ui.Localizer); !ok {
+		return nil, tmplrt.BindError("localizer", funcs["localizer"])
+	}
+	if fn.opt_08785a53, ok = funcs["opt"].(func(any, string) any); !ok {
+		return nil, tmplrt.BindError("opt", funcs["opt"])
+	}
+	if err := tmplrt.Holds(&facts_d935373bc6b1bc24); err != nil {
+		return nil, err
+	}
+	return func(b *bytes.Buffer, data any) (err error) {
+		defer tmplrt.Recover(&err, "live-head")
+		return exec_d935373bc6b1bc24(b, tmplrt.Data(data), fn, 0)
 	}, nil
 }
 
@@ -1449,6 +1473,19 @@ func bind_820fbab31d98272d(funcs map[string]any) (tmplrt.Exec, error) {
 	return func(b *bytes.Buffer, data any) (err error) {
 		defer tmplrt.Recover(&err, "list-bar")
 		return exec_bdc4404ab629ded7(b, tmplrt.Data(data), fn, 0)
+	}, nil
+}
+
+// bind_85fd9788e2e77a62 binds "region:notice".
+func bind_85fd9788e2e77a62(funcs map[string]any) (tmplrt.Exec, error) {
+	fn := new(templateFuncs)
+	var ok bool
+	if fn.opt_08785a53, ok = funcs["opt"].(func(any, string) any); !ok {
+		return nil, tmplrt.BindError("opt", funcs["opt"])
+	}
+	return func(b *bytes.Buffer, data any) (err error) {
+		defer tmplrt.Recover(&err, "region:notice")
+		return exec_66efbc25fb44ab8f(b, tmplrt.Data(data), fn, 0)
 	}, nil
 }
 
@@ -8402,6 +8439,23 @@ func exec_637456694030d26d(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs
 // exec_642de6fbf43d94e5 renders "stat.html".
 func exec_642de6fbf43d94e5(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
 	b.WriteString("\n\n")
+	return nil
+}
+
+// exec_66efbc25fb44ab8f renders "region:notice".
+func exec_66efbc25fb44ab8f(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
+	b.WriteString("<div id=\"notice\" role=\"status\">")
+	v1 := fn.opt_08785a53(tmplrt.Arg(dot), "Notice")
+	v2 := reflect.ValueOf(v1)
+	if tmplrt.Truth(v2) {
+		dot := v2
+		_ = dot
+		b.WriteString("<p rst-notice>")
+		v3 := tmplrt.Unwrap(dot)
+		b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v3)))
+		b.WriteString("</p>")
+	}
+	b.WriteString("</div>")
 	return nil
 }
 
@@ -16039,6 +16093,12 @@ var facts_d1285cef9f043c97 = tmplrt.Facts{
 	},
 }
 
+// exec_d14abdef8d485471 renders "confirm-form.html".
+func exec_d14abdef8d485471(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
+	b.WriteString("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n")
+	return nil
+}
+
 // exec_d1ac05bb489f97e4 renders "content".
 func exec_d1ac05bb489f97e4(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
 	root := dot
@@ -17074,10 +17134,63 @@ func exec_d9167099a4a33375(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs
 	return nil
 }
 
-// exec_df656e6659fb2a4c renders "confirm-form.html".
-func exec_df656e6659fb2a4c(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
-	b.WriteString("\n\n\n\n\n\n\n\n\n\n\n")
+// exec_d935373bc6b1bc24 renders "live-head".
+func exec_d935373bc6b1bc24(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
+	root := dot
+	v1 := fn.localizer_634df8c4(tmplrt.Arg(root))
+	x1 := v1
+	_ = x1
+	v2 := fn.opt_08785a53(tmplrt.Arg(dot), "Live")
+	v3 := reflect.ValueOf(v2)
+	if tmplrt.Truth(v3) {
+		dot := v3
+		_ = dot
+		var v4 reflect.Value
+		if dot.IsValid() {
+			v5, err := tmplrt.MethodOf(dot, "Head")
+			if err != nil {
+				return tmplrt.ExecError("live-head", ".Head", err)
+			}
+			c7, err := v5.Args(2)
+			if err != nil {
+				return tmplrt.ExecError("live-head", ".Head", err)
+			}
+			v8, err := fn.T_a3eca208(x1, "rastrillo.ui.live.paused")
+			if err != nil {
+				return tmplrt.ExecError("live-head", "T $L \"rastrillo.ui.live.paused\"", tmplrt.CallError("T", err))
+			}
+			v9 := reflect.ValueOf(v8)
+			if err := c7.Add(tmplrt.Val(v9)); err != nil {
+				return tmplrt.ExecError("live-head", ".Head", err)
+			}
+			v10, err := fn.T_a3eca208(x1, "rastrillo.ui.live.unconfirmed")
+			if err != nil {
+				return tmplrt.ExecError("live-head", "T $L \"rastrillo.ui.live.unconfirmed\"", tmplrt.CallError("T", err))
+			}
+			v11 := reflect.ValueOf(v10)
+			if err := c7.Add(tmplrt.Val(v11)); err != nil {
+				return tmplrt.ExecError("live-head", ".Head", err)
+			}
+			v6, err := c7.Call()
+			if err != nil {
+				return tmplrt.ExecError("live-head", ".Head", err)
+			}
+			v4 = v6
+		}
+		v12 := tmplrt.Unwrap(v4)
+		b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v12)))
+	}
 	return nil
+}
+
+// facts_d935373bc6b1bc24 is what exec_d935373bc6b1bc24 assumes of the types it reads.
+var facts_d935373bc6b1bc24 = tmplrt.Facts{
+	Funcs: map[string]reflect.Type{
+		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
+	},
+	Facts: []tmplrt.Fact{
+		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
+	},
 }
 
 // exec_ea09462fb9b75dba renders "bulk-bar.html".

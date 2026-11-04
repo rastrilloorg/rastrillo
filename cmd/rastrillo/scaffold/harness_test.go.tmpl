@@ -42,7 +42,7 @@ func newApp(t *testing.T) http.Handler {
 		t.Fatalf("db.Open: %%v", err)
 	}
 	t.Cleanup(func() { database.Close() })
-	mux, err := %[2]s.New(
+	mux, _, err := %[2]s.New(
 		database, testOrigin, logger)
 	if err != nil {
 		t.Fatalf("New: %%v", err)

@@ -1,0 +1,12 @@
+{{define "title"}}{{.Room.Name}} · Admin{{end}}
+{{define "content"}}{{$L := localizer $}}
+{{template "back-nav" dict "Href" (path $ "/admin/rooms") "Label" "Rooms"}}
+{{template "page-header" dict "Title" .Room.Name}}
+<section rst-box>
+  <form rst-form method="post" action="{{path $ (printf "/admin/rooms/%d" .Room.ID)}}">
+    {{template "field-text" dict "Name" "Name" "Label" "Name" "Value" (or (index .Echo "Name") .Room.Name) "Error" (index .Errors "Name") "Required" true}}
+    {{template "form-foot" dict "L" $L "Submit" "Rename"}}
+  </form>
+</section>
+<p><a rst-btn="danger" href="{{path $ (printf "/admin/rooms/%d/delete" .Room.ID)}}">Delete this room</a></p>
+{{end}}
