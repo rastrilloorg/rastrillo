@@ -1891,6 +1891,18 @@ const quietStateJS = `(function () {
   ].join(" ");
 })()`
 
+// recordQuietSubmitsJS keeps every submit event of the quiet form. The
+// window's capture phase is the first place a submit reaches, so it
+// sees a held submit and its later re-send alike, whoever stops them.
+const recordQuietSubmitsJS = `window.__quietSubmits = [];
+addEventListener("submit", function (e) {
+  if (e.target.id === "quiet") window.__quietSubmits.push(e);
+}, true)`
+
+// quietSubmitsJS is whether each recorded submit ended up cancelled.
+const quietSubmitsJS = `JSON.stringify(
+  window.__quietSubmits.map(function (e) { return e.defaultPrevented; }))`
+
 // shadowStateJS proves the premise of the shadowing leg before the leg
 // asserts anything: a control named "target" really has replaced
 // form.target with itself, so the property read the shim must not make
@@ -2235,9 +2247,9 @@ func TestBusyButtonDrive(t *testing.T) {
 	// The button declines the loading state; the FORM is still guarded,
 	// because the guard is the substance of the rule and is not what
 	// was opted out of.
-	var quiet string
-	quietAt := time.Now()
+	var quiet, quietSubmits string
 	fail(chromedp.Do(ctx,
+		chromedp.Evaluate[chromedp.Void](recordQuietSubmitsJS),
 		chromedp.Click(chromedp.CSS(`#quietbtn`)), at("clicked-quiet"),
 		chromedp.Sleep(300*time.Millisecond),
 		harness.Into(&quiet, chromedp.Evaluate[string](
@@ -2247,13 +2259,15 @@ func TestBusyButtonDrive(t *testing.T) {
 		t.Errorf("the form with the opted-out button sent %q, want %q", got, "action=quiet")
 	}
 	// No spinner, no hold: the 650ms minimum is for a spinner on screen,
-	// and an opted-out button shows none. The clock covers the 300ms
-	// sleep and the CDP round trips as well as the submit, so the line is
-	// drawn under the hold rather than over the sleep: at 450ms a busy
-	// CI box (31 shards and another repo's suite on one worker) read
-	// 496ms for a submit that was not held at all.
-	if waited := time.Since(quietAt); waited > 600*time.Millisecond {
-		t.Errorf("the opted-out button's submit took %v to arrive; with no spinner to show it must not be held", waited)
+	// and an opted-out button shows none. A hold cancels the submit and
+	// sends it again later, so this is read off the events rather than a
+	// clock, which a loaded CI box ran past 600ms with no hold at all.
+	fail(chromedp.Do(ctx, harness.Into(&quietSubmits,
+		chromedp.Evaluate[string](quietSubmitsJS))))
+	if quietSubmits != "[false]" {
+		t.Errorf("the opted-out button's submit events were cancelled %s, "+
+			"want [false], one submit sent at once; with no spinner to "+
+			"show it must not be held", quietSubmits)
 	}
 	const wantQuiet = "form:true btn:- btn-off:false spin:no"
 	if quiet != wantQuiet {

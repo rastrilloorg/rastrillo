@@ -47,6 +47,11 @@ func until(t *testing.T, ctx context.Context, where, expr string) {
 	galleryrig.Until(t, ctx, where, expr)
 }
 
+func leave(t *testing.T, ctx context.Context, where, script string) {
+	t.Helper()
+	galleryrig.Leave(t, ctx, where, script)
+}
+
 func phoneRig(t *testing.T) *harness.Rig {
 	t.Helper()
 	return galleryrig.PhoneRig(t, func() http.Handler { return treeHandler(t) })

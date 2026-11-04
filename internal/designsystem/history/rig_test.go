@@ -68,3 +68,13 @@ func until(t *testing.T, ctx context.Context, where, expr string) {
 	t.Helper()
 	galleryrig.Until(t, ctx, where, expr)
 }
+
+func eagerly(t *testing.T, ctx context.Context, where string) {
+	t.Helper()
+	galleryrig.Eagerly(t, ctx, where)
+}
+
+func leave(t *testing.T, ctx context.Context, where, script string) {
+	t.Helper()
+	galleryrig.Leave(t, ctx, where, script)
+}

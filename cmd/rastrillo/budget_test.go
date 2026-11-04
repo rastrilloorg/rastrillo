@@ -64,20 +64,34 @@ func env(kv ...string) func(string) string {
 	return func(k string) string { return m[k] }
 }
 
-var tookOverBudget = regexp.MustCompile(`internal/a took 1\.\d+s, over the 1s`)
+// tookOverBudget matches any time the fixture reports: its 1200ms sleep
+// is over the 1s record however slow the machine, and a loaded runner
+// once took more than 2s.
+var tookOverBudget = regexp.MustCompile(
+	`internal/a took (\S+), over the 1s`)
 
 // Review focus 1: the retry of an over-budget package, now served from
-// the cache, fails exactly as the first run did, on the replayed time.
+// the cache, fails exactly as the first run did, on the replayed time:
+// the very time the first run measured, not a new one.
 func TestBudgetTestCachedRetryStillFails(t *testing.T) {
 	if testing.Short() {
 		t.Skip("runs go test on a fixture module")
 	}
 	dir := budgetFixture(t, "1200ms", "time internal/a 1s fixture sleeps on purpose\n")
+	var firstTook string
 	for run := 1; run <= 2; run++ {
 		var out bytes.Buffer
 		err := budgetTest([]string{"./..."}, dir, &out, io.Discard, env("AMADAN_CI", "1"))
-		if exitCode(t, err) != 1 || !tookOverBudget.MatchString(out.String()) {
+		took := tookOverBudget.FindStringSubmatch(out.String())
+		if exitCode(t, err) != 1 || took == nil {
 			t.Fatalf("run %d: exit %d, want 1 with the time violation:\n%s", run, exitCode(t, err), out.String())
+		}
+		if run == 1 {
+			firstTook = took[1]
+		} else if took[1] != firstTook {
+			t.Fatalf("run 2 took %s, want the %s run 1 measured, "+
+				"replayed from the cache:\n%s",
+				took[1], firstTook, out.String())
 		}
 		wantCached := "0 cached"
 		if run == 2 {

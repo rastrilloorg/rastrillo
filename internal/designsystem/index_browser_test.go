@@ -151,10 +151,8 @@ func TestThePhoneIndexAndTheWayBack(t *testing.T) {
 
 		// A row opens its page as a content page: Back first after the
 		// skip link, and no rail, bar or switcher with a box.
-		if err := chromedp.Do(ctx, chromedp.Evaluate[chromedp.Void](
-			`document.getElementById("nav-form").click(); true`)); err != nil {
-			t.Fatalf("%s: tapping the Form row: %v", where, err)
-		}
+		leave(t, ctx, where+": tapping the Form row",
+			`document.getElementById("nav-form").click(); true`)
 		until(t, ctx, where+", Form loaded", `location.pathname.endsWith("/form.html") && document.readyState === "complete"`)
 		page, err := chromedp.Run(ctx, chromedp.Evaluate[string](`(() => {
 		  const box = `+boxOf+`;
@@ -182,11 +180,9 @@ func TestThePhoneIndexAndTheWayBack(t *testing.T) {
 
 		// Back returns to the index with the Form row focused. This is a
 		// history traversal, so the leg polls and clicks through the page.
-		if err := chromedp.Do(ctx, chromedp.Evaluate[chromedp.Void](
+		leave(t, ctx, where+": going back",
 			`document.querySelector("[rst-shell-back] a").click();
-			true`)); err != nil {
-			t.Fatalf("%s: going back: %v", where, err)
-		}
+			true`)
 		until(t, ctx, where+", back on the index", `location.pathname.endsWith("/index.html") && document.activeElement && document.activeElement.id === "nav-form"`)
 
 		// A theme link in the display settings menu lands on the other
@@ -214,12 +210,16 @@ func TestThePhoneIndexAndTheWayBack(t *testing.T) {
 		t.Fatalf("%s: loading: %v", where, err)
 	}
 	requireScriptsOff(t, off, where)
-	if err := chromedp.Do(off, chromedp.Evaluate[chromedp.Void](
+	leave(t, off, where+": going back",
 		`document.querySelector("[rst-shell-back] a").click();
-		true`)); err != nil {
-		t.Fatalf("%s: going back: %v", where, err)
-	}
-	until(t, off, where, `location.hash === "#nav-form" && document.querySelector(":target") && document.querySelector(":target").id === "nav-form"`)
+		true`)
+	// The engine focuses the row when it applies the fragment, which can
+	// come after :target matches, and a Tab before that starts from the
+	// top of the page: a loaded runner landed on the skip link.
+	until(t, off, where, `location.hash === "#nav-form" &&
+	  document.querySelector(":target") &&
+	  document.querySelector(":target").id === "nav-form" &&
+	  document.activeElement === document.querySelector(":target")`)
 	requireScriptsOff(t, off, where+", back on the index")
 	var next, after string
 	if err := chromedp.Do(off,

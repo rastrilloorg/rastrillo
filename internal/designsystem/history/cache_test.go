@@ -47,27 +47,24 @@ func TestTheSchemeFollowsAPageBackFromTheCache(t *testing.T) {
 	requireCoarse(t, ctx)
 	for _, c := range []struct{ scheme, attr string }{{"dark", "dark"}, {"system", ""}} {
 		step := where + ", " + c.scheme
-		if err := chromedp.Do(ctx, chromedp.Evaluate[chromedp.Void](
-			`document.getElementById("nav-form").click(); true`)); err != nil {
-			t.Fatalf("%s: opening Form: %v", step, err)
-		}
+		leave(t, ctx, step+": opening Form",
+			`document.getElementById("nav-form").click(); true`)
 		until(t, ctx, step+", Form", `location.pathname.endsWith("/form.html") && document.readyState === "complete"`)
+		// The previews are lazy and can start after the page is complete,
+		// and a frame still navigating when Form is left keeps Form out of
+		// the cache, so every one loads first.
+		eagerly(t, ctx, step+", Form's previews")
 		started, err := chromedp.Run(ctx, chromedp.Evaluate[float64](`performance.getEntriesByType("navigation")[0].startTime + performance.timeOrigin`))
 		if err != nil {
 			t.Fatalf("%s: reading Form's navigation: %v", step, err)
 		}
-		if err := chromedp.Do(ctx, chromedp.Evaluate[chromedp.Void](
-			`history.back(); true`)); err != nil {
-			t.Fatalf("%s: going back: %v", step, err)
-		}
+		leave(t, ctx, step+": going back", `history.back(); true`)
 		until(t, ctx, step+", the index", `location.pathname.endsWith("/index.html") && !!document.querySelector('#ds-prefs [data-ds-scheme="`+c.scheme+`"]')`)
-		if err := chromedp.Do(ctx, chromedp.Evaluate[chromedp.Void](
+		leave(t, ctx, step+": choosing "+c.scheme+" and going forward",
 			`document.getElementById("ds-prefs").open = true;
 			document.querySelector(
 			  '#ds-prefs [data-ds-scheme="`+c.scheme+`"]').click();
-			history.forward(); true`)); err != nil {
-			t.Fatalf("%s: choosing %s and going forward: %v", step, c.scheme, err)
-		}
+			history.forward(); true`)
 		until(t, ctx, step+", Form again", `location.pathname.endsWith("/form.html") && window.__restored !== undefined`)
 		raw, err := chromedp.Run(ctx, chromedp.Evaluate[string](
 			`JSON.stringify({Restored: window.__restored,
@@ -96,10 +93,7 @@ func TestTheSchemeFollowsAPageBackFromTheCache(t *testing.T) {
 		    loaded.every(f => (f.contentDocument.documentElement.getAttribute("data-theme") || "") === %q) &&
 		    [...document.querySelectorAll('[data-ds-scheme=%q]')].every(b => b.getAttribute("aria-pressed") === "true");
 		})()`, c.attr, c.attr, c.scheme))
-		if err := chromedp.Do(ctx, chromedp.Evaluate[chromedp.Void](
-			`history.back(); true`)); err != nil {
-			t.Fatalf("%s: back to the index: %v", step, err)
-		}
+		leave(t, ctx, step+": back to the index", `history.back(); true`)
 		until(t, ctx, step+", index again", `location.pathname.endsWith("/index.html")`)
 	}
 }
