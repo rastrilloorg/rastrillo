@@ -108,5 +108,39 @@ func TestAMenuClosesOnEscape(t *testing.T) {
 		"document.querySelector('"+menu+" > summary')") {
 		t.Error("Escape closed the menu but left focus off its summary")
 	}
+	loads := harness.Evaluate[map[string]int](rig, scriptLoads)
+	if loads["fiesta.js"] != 1 {
+		t.Errorf("fiesta.js loaded %d times, want once", loads["fiesta.js"])
+	}
+	for script, count := range loads {
+		if count != 1 {
+			t.Errorf("%s loaded %d times, want once", script, count)
+		}
+	}
 }
+
+// scriptLoads counts each script the page runs or fetches, by its name
+// without the fingerprint the app's asset URLs carry: a second tag for
+// the same URL is fetched once but runs twice, so tags count too.
+const scriptLoads = ` + "`" + `(() => {
+	const name = (url) => new URL(url, location.href).pathname
+		.split("/").pop().replace(/\.[0-9a-f]{8,}\.js$/, ".js");
+	const count = (urls) => {
+		const counts = {};
+		for (const url of urls) {
+			if (name(url).endsWith(".js")) {
+				counts[name(url)] = (counts[name(url)] || 0) + 1;
+			}
+		}
+		return counts;
+	};
+	const tags = count([...document.scripts].filter((script) =>
+		script.src).map((script) => script.src));
+	const fetches = count(performance.getEntriesByType("resource")
+		.map((entry) => entry.name));
+	for (const [script, times] of Object.entries(fetches)) {
+		tags[script] = Math.max(tags[script] || 0, times);
+	}
+	return tags;
+})()` + "`" + `
 `

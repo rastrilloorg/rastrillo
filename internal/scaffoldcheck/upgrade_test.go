@@ -45,20 +45,17 @@ func TestDoctorFixLeavesAnOlderAppsVendoredTestPassing(t *testing.T) {
 }
 
 // fiestaAdvice finds doctor's line for a layout that loads no fiesta.js
-// and returns the template line it says to add.
-var fiestaAdvice = regexp.MustCompile(
-	`(?m)^(\S+): layout loads no fiesta\.js: add (.+) \(CHANGELOG\)$`)
+// and the tag it says to add.
+var fiestaAdvice = regexp.MustCompile(`(?m)^(\S+): layout loads no ` +
+	`fiesta\.js: add (<script .+</script>) right after the layout's ` +
+	`rastrillo\.js tag \(CHANGELOG\)$`)
 
-// scriptTag matches a layout's line for one of the scripts that
-// pageScripts gives a page, so the CHANGELOG's upgrade step can replace
-// them with its one line.
-var scriptTag = regexp.MustCompile(`(?m)^<script defer src="\{\{path \$ ` +
-	`\(asset "static/(busy|live|light|anchor|select|calendar|datetime)` +
-	`\.js"\)\}\}"></script>\n`)
+// shimTag is the old column layout's rastrillo.js tag.
+const shimTag = `<script defer ` +
+	`src="{{path $ (asset "static/rastrillo.js")}}"></script>`
 
-// followTheFiestaAdvice makes the layout edit doctor names, as the
-// CHANGELOG's upgrade steps make it: the stylesheet line becomes
-// pageStylesheet, and the scripts pageScripts gives become its line.
+// followTheFiestaAdvice makes the one edit doctor names and nothing
+// else, so the browser drive proves the advice as printed.
 func followTheFiestaAdvice(t *testing.T, directory, advice string) {
 	t.Helper()
 	found := fiestaAdvice.FindStringSubmatch(advice)
@@ -71,11 +68,9 @@ func followTheFiestaAdvice(t *testing.T, directory, advice string) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	edited := scriptTag.ReplaceAllString(string(layout), "")
-	edited = strings.Replace(edited,
-		`{{path $ (asset "static/tokens.css")}}`,
-		`{{path $ pageStylesheet}}`, 1)
-	edited = strings.Replace(edited, "{{iconAssets}}",
-		"{{iconAssets}}\n"+found[2], 1)
-	write(t, path, edited)
+	if strings.Count(string(layout), shimTag) != 1 {
+		t.Fatalf("%s has no single rastrillo.js tag to add after", path)
+	}
+	write(t, path, strings.Replace(string(layout), shimTag,
+		shimTag+"\n"+found[2], 1))
 }
