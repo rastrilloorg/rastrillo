@@ -26,7 +26,11 @@ done and live.
   Rastrillo; a change to the look is a Fiesta release and a pin bump.
 - **No visible change.** A Rastrillo app looks and behaves the same
   after the switch, apart from the column shell's menus moving into its
-  footer row (below), which is the one intended change.
+  footer row (below), which is the one intended change, and the fixes
+  Fiesta made to its select and date scripts after the seed (a disabled
+  select or fieldset locks the box, a form reset repaints it, a
+  read-only date refuses edits, a reset no longer races a blur commit).
+  Those are fixes, taken on purpose and listed in the changelog.
 - **Everything around the files keeps working:** `rastrillo new`,
   `rastrillo doctor`, the vendored pin tests, `rastrillo markup`, the
   per-page slicing (#158: `tokens.css` sliced per page, `theme.css`
@@ -224,8 +228,99 @@ naming both.
 2. Rastrillo `fiesta-part-2`: require 1.2.0, delete the copies, split
    `rastrillo.js`, vendor `fiesta.js` and `copy.js`, the footer row,
    golden tests, docs.
-3. Next branch: rastrillo.org's gallery shrinks to the Go-call
+3. rastrillo-website: sync `docs/site` and SKILL.md to the landed sha
+   (its usual `Sync:` PR), so the corrected references are published.
+4. Next branch: rastrillo.org's gallery shrinks to the Go-call
    reference.
+
+## Decided after Astra's first review (2026-11-04)
+
+Astra's round 1 (33 findings, 4 blockers) is in the branch discussion.
+What it changed:
+
+- **Fiesta's pixel gates keep their frozen 1.0 tree.** The parity and
+  1.0 browser suites photograph frozen 1.0 CSS against current CSS, and
+  `TestTheBaselineIsOneOhOh` forbids touching the frozen tree. The ring
+  fix gets a named, scoped rendering exception in both suites (the
+  console rail's current item), not a moved baseline.
+- **The script exceptions carry their own regression tests.** Both
+  sides of Fiesta's pixel comparisons load current scripts, which is
+  why the 1.0 scripts are frozen. Each excepted script change
+  (shell.js's skipped transitions, busy.js's `data-live-form`) comes
+  with a Node or browser test of its own in Fiesta.
+- **Fiesta's `Version` moves to 1.2.0 first**, with a `-candidate`
+  build, rebuilt after later asset changes; the release command refuses
+  otherwise.
+- **The mapping API keeps `View`.** `Source` is
+  `{Kind, Source, Locale, View string; State int}`, equal to
+  `sources.json` field for field.
+- **`transition.js` keeps its place:** synchronous, before the
+  stylesheets, as today; only its bytes come from Fiesta. `pageScripts`
+  is deferred and would miss a rejection before `pagereveal`.
+- **`fiesta.js` is chosen for every page explicitly**, ahead of
+  `plannedScripts`' file-presence filter. Without `PagesConfig.Assets`
+  (and outside `ui.Pages`) `has` cannot see the app's files, so such an
+  app's pages ask for `fiesta.js` whether or not it has it: a 404 for
+  an app that never took it, which breaks nothing. The changelog says
+  so.
+- **`doctor` refreshes in pairs, and never makes a duplicate.**
+  `rastrillo.js` and `fiesta.js` move together: if the app owns an
+  edited `rastrillo.js`, `doctor --fix` leaves both and says why
+  (Fiesta's own header calls the full shim plus `fiesta.js`
+  unsupported). `calendar.js` and `datetime.js` move together for the
+  same reason (`rastrilloCalendar` became `fiestaCalendar`). `doctor`
+  decides its layout warning on the asset set the fix will leave, not
+  the one it found, so the first `doctor --fix` on an old app warns.
+- **`copy.js` loads on `rst-snippet`** through both of `scripts.go`'s
+  detectors (the hook table and the attribute pattern).
+- **Upstream script sizes are Fiesta's.** Rastrillo's raw-size gates on
+  `select.js` and `datetime.js` (56,320 and 77,824 bytes) go; Fiesta's
+  are 59,673 and 84,708. The first-load budget still weighs what a page
+  sends, with references for `fiesta.js`, `copy.js` and the slim shim.
+- **Node harnesses for Fiesta's scripts are Fiesta's.** Rastrillo's
+  `select_node.mjs`, `datetime_node.mjs`, `shell_node.mjs` and
+  `shell_transition_node.mjs` go (Fiesta has `check/node/`); what they
+  proved about Rastrillo's integration stays as Go or browser tests.
+- **The partial check sits beside the gallery's sample builders**
+  (`internal/designsystem`), where the seed rendered states, keeping
+  the seed's wrappers and picture rewriting; it enumerates its
+  categories explicitly (partials, the menu idiom, the sign-in screen)
+  and asserts it covered every partial with a Fiesta example.
+- **The gallery serves what pages load.** `galleryAssets()` and its
+  hashing gain `fiesta.js` and `copy.js`; `previewScripts` and the
+  gallery page load `fiesta.js` for menus and switches; the gallery's
+  OS-scheme isolation test targets Fiesta's listener.
+
+## References this branch corrects
+
+"Update all the references" (Paul, 2026-11-04). Historical CHANGELOG
+entries stay as written; statements that vendored files become the
+app's stay true.
+
+- Ownership of the look: `DESIGN.md` (its title section, the
+  source-of-truth line, and the shim's duties), `PRODUCT.md`,
+  `skill/design.md`, `skill/screens.md`, `skill/scripts.md`, and
+  SKILL.md's pointer to them. Fiesta (fiesta.rastrillo.org) owns the
+  look; Rastrillo owns the partials, server routes and its gallery of
+  Go calls.
+- What `rastrillo.js` does: `docs/site/templates.md`,
+  `docs/site/localization.md`, `docs/site/cli.md`,
+  `docs/site/reference/ui.md`, `docs/site/jobs.md`, `docs/site/assets.md`,
+  `ui/styleguide.go`, and the gallery's asset rows and sample labels
+  (`internal/designsystem/page.go`, `samples.go`) with their
+  translations in `prose.go`.
+- The date script: how it finds its words (attribute, then Fiesta's
+  table, then English) in `docs/site/templates.md` and `ui/ui.go`; the
+  calendar seam `fiestaCalendar` in `docs/site/reference/ui.md` and
+  the field partials' comments.
+- Inventories of vendored files: `docs/site/assets.md`,
+  `docs/site/cli.md`, `docs/site/templates.md`, `cmd/rastrillo/new.go`,
+  the gallery's downloads and its weight test lists.
+- Deleted paths in comments and tests: the `field-date`,
+  `field-datetime`, `field-time`, `field-daterange` partials,
+  `cssfloor_test.go`, `markupspelling_test.go`, generated
+  `skill/partials.md`.
+- The examples' committed `static/` files (blog, tickets), refreshed.
 
 ## Left to the builder
 
@@ -235,6 +330,4 @@ naming both.
   scripts.
 - The per-hunk record of which side was newer in step 1.
 - The exact form of the 1.x gate exceptions and the mapping's Go API.
-- Whether `transition.js` loads always (as today) or through
-  `pageScripts`.
 - Where the copy button's strings come from, within "one source".
