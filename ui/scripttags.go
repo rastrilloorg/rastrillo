@@ -157,6 +157,24 @@ func (scripts *scriptReading) readCommand(
 	}
 }
 
+// readNode reads one of the page's nodes, in the template named
+// template, for what it writes into a script tag: an action, a
+// template call, or a branch.
+func (scripts *scriptReading) readNode(template string, node parse.Node) {
+	switch concrete := node.(type) {
+	case *parse.ActionNode:
+		scripts.readAction(template, concrete.Pipe)
+	case *parse.TemplateNode:
+		scripts.readTemplateCall(template)
+	case *parse.IfNode:
+		scripts.readBranch(template, &concrete.BranchNode)
+	case *parse.RangeNode:
+		scripts.readBranch(template, &concrete.BranchNode)
+	case *parse.WithNode:
+		scripts.readBranch(template, &concrete.BranchNode)
+	}
+}
+
 // readAction reads an action that may write a pending script tag's
 // src. The tag is Rastrillo's only when every such action names one of
 // its scripts: an action in any branch that writes another, or data,

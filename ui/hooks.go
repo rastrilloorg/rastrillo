@@ -144,16 +144,6 @@ func readPage(
 		switch concrete := node.(type) {
 		case *parse.TextNode:
 			reading.readMarkup(template, concrete.Text)
-		case *parse.ActionNode:
-			reading.scripts.readAction(template, concrete.Pipe)
-		case *parse.TemplateNode:
-			reading.scripts.readTemplateCall(template)
-		case *parse.IfNode:
-			reading.scripts.readBranch(template, &concrete.BranchNode)
-		case *parse.RangeNode:
-			reading.scripts.readBranch(template, &concrete.BranchNode)
-		case *parse.WithNode:
-			reading.scripts.readBranch(template, &concrete.BranchNode)
 		case *parse.StringNode:
 			reading.addHooks([]byte(concrete.Text))
 			reading.anyValueIn([]byte(concrete.Text))
@@ -164,6 +154,7 @@ func readPage(
 				problem = err
 			}
 		}
+		reading.scripts.readNode(template, node)
 	})
 	reading.scripts.settle()
 	reading.anyClass = reading.anyClass || writesUnseenClass(roots, entry)
