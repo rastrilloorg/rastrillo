@@ -59,8 +59,9 @@ the page's slice of `tokens.css` now drops the rules for a hook's
 variants the page never writes, and the class forms, such as `.rst-btn`
 beside `[rst-btn]`, that it can never match. A page with a script that
 isn't the framework's, an inline script, an `on*` handler or a
-`javascript:` URL keeps them all, and so does a live page. A
-framework script you've edited counts as your own. Markup built
+`javascript:` URL keeps them all, and so does a live page. Treat a
+framework script you edit as your own: a page that loads it keeps
+every rule. Markup built
 in Go, a function or data value returning `template.HTML`, already asks
 for the hooks it shows with `needs`. It now asks for the hooks it writes
 as classes too: `{{needs "rst-btn"}}` keeps the rules for both

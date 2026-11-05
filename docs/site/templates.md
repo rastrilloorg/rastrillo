@@ -125,8 +125,9 @@ hook's variants the page never writes, such as `rst-btn="danger"` on a
 page with only primary buttons, and the class forms, such as
 `.rst-btn`, of hooks it writes only as attributes. A page with a script
 that isn't the framework's, an inline script, an `on*` handler or a
-`javascript:` URL keeps them all, and so does a live page. A
-framework script you've edited counts as your own. Slices
+`javascript:` URL keeps them all, and so does a live page. Treat a
+framework script you edit as your own: a page that loads it keeps
+every rule. Slices
 are minified, gzipped and cached like your other files, and pages that
 show the same hooks share one. Your `tokens.css` stays one file, and an
 edit to it reaches every slice. If it can't be read, for example
@@ -710,7 +711,7 @@ POST is byte-identical to the un-enhanced form and the server parses it
 with the same code either way. With scripts off the field is an ordinary
 date input, and the browser's own picker still opens.
 
-It reads dates in the page's language:
+It reads date words in the page's language when available:
 
 - **The relative words come from the catalog.** `{{dateWords $L}}`
   looks up all seventeen (today, tomorrow, next, in, ago, at, noon, am
