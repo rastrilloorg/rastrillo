@@ -162,16 +162,22 @@ func TestTheShellsOwnScriptsKeepTheCut(t *testing.T) {
 }
 
 // A literal src counts as Rastrillo's only where Rastrillo serves the
-// file: /static/ and its name, plain or fingerprinted.
+// file: /static/ and its name.
 func TestALiteralSrcWhereRastrilloServesItKeepsTheCut(t *testing.T) {
-	for _, source := range []string{
-		"/static/fiesta.js", "/static/fiesta.0123456789abcdef.js",
-	} {
-		body := content(`<a rst-btn="primary">New</a>` +
-			`<script defer src="` + source + `"></script>`)
-		if strings.Contains(pageSlice(t, body), ghostRule) {
-			t.Errorf("%s: the slice keeps %s", source, ghostRule)
-		}
+	body := content(`<a rst-btn="primary">New</a>` +
+		`<script defer src="/static/fiesta.js"></script>`)
+	if strings.Contains(pageSlice(t, body), ghostRule) {
+		t.Errorf("/static/fiesta.js: the slice keeps %s", ghostRule)
+	}
+}
+
+// A literal fingerprinted src is the app's: Assets serves a file of
+// that exact name ahead of the vendored one, whatever it holds.
+func TestALiteralFingerprintedSrcKeepsEveryVariant(t *testing.T) {
+	body := content(`<a rst-btn="primary">New</a>` +
+		`<script defer src="/static/fiesta.0123456789abcdef.js"></script>`)
+	if !strings.Contains(pageSlice(t, body), ghostRule) {
+		t.Errorf("the slice drops %s", ghostRule)
 	}
 }
 

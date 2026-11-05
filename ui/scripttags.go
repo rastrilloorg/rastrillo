@@ -300,18 +300,14 @@ func ourAsset(name string) bool {
 	return path.Ext(name) == ".js" && vendored.Is(name)
 }
 
-// fingerprinted is a served file's name with its 16-hex fingerprint.
-var fingerprinted = regexp.MustCompile(`^(.+)\.[0-9a-f]{16}(\.js)$`)
-
 // ourPath reports whether a script's literal src is exactly where
 // Rastrillo serves one of its scripts, /static/ and the file's name,
-// plain or fingerprinted, and names that script's static path. A file
-// of the same name anywhere else is the app's, and may hold its code.
+// and names that script's static path. A file of the same name
+// anywhere else is the app's, and may hold its code, and so is a
+// fingerprinted name, which Assets serves from a file of that exact
+// name ahead of the vendored one.
 func ourPath(source string) (string, bool) {
 	name, served := strings.CutPrefix(source, "/static/")
-	if match := fingerprinted.FindStringSubmatch(name); match != nil {
-		name = match[1] + match[2]
-	}
 	ours := served && !strings.Contains(name, "/") &&
 		ourAsset("static/"+name)
 	return "static/" + name, ours
