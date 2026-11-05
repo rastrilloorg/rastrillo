@@ -388,9 +388,8 @@ func SelectJS() []byte { return fiestaScript("select.js") }
 // It holds no month or weekday names: those come from Intl in the
 // page's own language. The words it matches on ("tomorrow", "next",
 // "in") ride out on data-rst-date-words from the request's catalog.
-// Each string, words and labels alike, is read from its attribute,
-// then Fiesta's table if the page loads one, then the English built
-// into the script.
+// Words and labels come from the attribute, then Fiesta's table if
+// the page loads one, then the English built into the script.
 func DatetimeJS() []byte { return fiestaScript("datetime.js") }
 
 // CalendarJS returns Fiesta's calendar.js — the month grid the date
