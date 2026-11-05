@@ -2719,8 +2719,7 @@ func buildAssets(mount, theme, locale string) assetsView {
 	}
 	add(&out, "shell.css", ui.ShellCSS(),
 		"The slide between pages on a phone, for the sidebar and console shells. Deletable with shell.js.")
-	add(&out, "rastrillo.js", ui.ShimJS(),
-		"The progressive-enhancement shim: polling fragments, light dismiss and the switch's drag. Every scaffolded app gets it.")
+	add(&out, "rastrillo.js", ui.ShimJS(), shimAssetBlurb)
 	add(&out, "fiesta.js", vendored["fiesta.js"], fiestaAssetBlurb)
 	add(&out, "busy.js", ui.BusyJS(),
 		"The busy rule: while a form sends, its button shows a spinner for at least 650ms and refuses a second submit, and Back hands it back. Every scaffolded app gets it.")
@@ -2968,13 +2967,13 @@ const overviewBody = `{{define "ds-body-overview"}}
 // constant, which is the only way a page about file sizes stays true
 // after somebody edits one of the files.
 const gettingStartedBody = `{{define "ds-body-getting-started"}}
-<p class="ds-lead">{{P "Rastrillo apps get all of this day one, but anyone can use the design system. Progressively enhanced with JS, but no JS required."}}</p>
+<p class="ds-lead">{{P "Rastrillo apps get all of this on day one, and anyone can take the same files from Fiesta, at fiesta.rastrillo.org. Progressively enhanced with JS, but no JS required."}}</p>
 
 <h2 class="ds-sub">{{P "The stylesheets"}}</h2>
 <p class="ds-lead">{{P "tokens.css is structure: the component classes, the layout, and the scales for type, spacing and radius. Values are references, set elsewhere. themes/<name>.css is colour, type family and shape: one :root block where every colour is declared once as a light-dark() pair."}}</p>
 
 <h2 class="ds-sub">{{P "The scripts"}}</h2>
-<p class="ds-lead">{{P "rastrillo.js is the progressive-enhancement shim: polling fragments, light dismiss, the switch's drag. busy.js is the busy rule. anchor.js keeps dropdown menus on the screen where CSS cannot. select.js and datetime.js are enhancements, each inert until a control opts in and each deletable on its own."}}</p>
+<p class="ds-lead">{{P "fiesta.js closes menus, lets a switch be dragged and applies a colour-scheme choice in place. rastrillo.js polls fragments and keeps that choice in a cookie. busy.js is the busy rule. anchor.js keeps dropdown menus on the screen where CSS cannot. copy.js, select.js and datetime.js are enhancements, each inert until a control opts in and each deletable on its own."}}</p>
 
 <h2 class="ds-sub">{{P "What each file weighs"}}</h2>
 <p class="ds-note">{{P "Sizes in KiB. Gzipped is what a visitor downloads."}}</p>

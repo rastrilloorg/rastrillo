@@ -4032,7 +4032,7 @@ columns cmd/rastrillo/new.go eb033c9e15ad 1
 columns cmd/rastrillo/new.go ef2901dc0d45 1
 columns cmd/rastrillo/new.go f2045c11abc8 1
 columns cmd/rastrillo/new.go f9075270659b 1
-file cmd/rastrillo/new.go - 543
+file cmd/rastrillo/new.go - 546 raised from 543 by Fiesta part 2 Task 6: the vendored inventory comment names fiesta.js and copy.js and which files are Fiesta's
 func cmd/rastrillo/new.go runNew 235
 names cmd/rastrillo/new.go scaffoldFile/b 1
 columns cmd/rastrillo/new_scaffold_test.go 021618c81aba 1
@@ -4470,7 +4470,6 @@ names csrf/csrf_test.go exemptPost/r 2
 names csrf/csrf_test.go exemptPost/v 1
 names csrf/csrf_test.go exemptPost/w 2
 columns cssfloor_test.go 6a236dcdd4f5 1
-columns cssfloor_test.go 802ccec463c3 1
 columns cssfloor_test.go 9a79f1694794 1
 columns cssfloor_test.go ac1cfbde30d4 1
 columns cssfloor_test.go dc4d1046a39c 1
@@ -8623,13 +8622,13 @@ columns internal/designsystem/page.go 14ada14533c8 1
 columns internal/designsystem/page.go 15ed7f7da435 1
 columns internal/designsystem/page.go 16221dc07386 1
 columns internal/designsystem/page.go 177f444dc672 1
-columns internal/designsystem/page.go 18184cfdeade 1
 columns internal/designsystem/page.go 185bc28ec351 1
 columns internal/designsystem/page.go 1a8c619ad6c5 1
 columns internal/designsystem/page.go 1e7f789b6f41 1
 columns internal/designsystem/page.go 1ee3fc4cad69 1
 columns internal/designsystem/page.go 1f5da6a0912f 1
 columns internal/designsystem/page.go 210e21883be8 1
+columns internal/designsystem/page.go 2211b0c0ed04 1 Fiesta part 2 Task 6: gallery prose inside the page template, one {{P}} sentence per line like its neighbours
 columns internal/designsystem/page.go 22cf89764b0a 1
 columns internal/designsystem/page.go 23707b485a3c 1
 columns internal/designsystem/page.go 23ce9ad502e4 1
@@ -8640,7 +8639,6 @@ columns internal/designsystem/page.go 279a4d6cc32e 1
 columns internal/designsystem/page.go 2990aa9fc5ad 1
 columns internal/designsystem/page.go 2a77f4ac5987 1
 columns internal/designsystem/page.go 2ab51afc54d5 1
-columns internal/designsystem/page.go 2af416f3a7de 1
 columns internal/designsystem/page.go 2b9b8fcaa700 1
 columns internal/designsystem/page.go 2ba6808b3000 1
 columns internal/designsystem/page.go 2bab4a80c384 1
@@ -8748,7 +8746,6 @@ columns internal/designsystem/page.go 9f3996842b4c 1
 columns internal/designsystem/page.go 9f9df3712e90 1
 columns internal/designsystem/page.go a1c3889a838f 1
 columns internal/designsystem/page.go a455efbed538 1
-columns internal/designsystem/page.go a5523f5e07ca 1
 columns internal/designsystem/page.go a5c0e778b349 1
 columns internal/designsystem/page.go a6e6589e71b2 1
 columns internal/designsystem/page.go a73733abba5f 1
@@ -8804,6 +8801,7 @@ columns internal/designsystem/page.go df4e1bc5fb6c 1
 columns internal/designsystem/page.go e04c170bba07 1
 columns internal/designsystem/page.go e0eb00d74a70 1
 columns internal/designsystem/page.go e1b66500d280 1
+columns internal/designsystem/page.go e5dee63e72df 1 Fiesta part 2 Task 6: gallery prose inside the page template, one {{P}} sentence per line like its neighbours
 columns internal/designsystem/page.go e6c3ed4d5849 1
 columns internal/designsystem/page.go e848a009830c 1
 columns internal/designsystem/page.go e92385512b07 1
@@ -8831,8 +8829,8 @@ columns internal/designsystem/page.go fc4875c5d5a3 1
 columns internal/designsystem/page.go fc67331745a3 1
 columns internal/designsystem/page.go fe44bdea88a0 1
 columns internal/designsystem/page.go ffcdcfbc1ea4 1
-file internal/designsystem/page.go - 3230 raised from 3228 by Fiesta part 2 Task 4: the Russian and Irish shell-column previews get their own Mobile heights, since the column shell's footer row makes them taller at 320px
-func internal/designsystem/page.go buildAssets 61
+file internal/designsystem/page.go - 3229 raised from 3228 by Fiesta part 2 Task 4: the Russian and Irish shell-column previews get their own Mobile heights, since the column shell's footer row makes them taller at 320px
+func internal/designsystem/page.go buildAssets 60
 func internal/designsystem/page.go buildFamilies 96
 func internal/designsystem/page.go previewDocStyled 49
 func internal/designsystem/page.go renderDemo 54
@@ -9012,7 +9010,6 @@ columns internal/designsystem/samples.go 011ceeb853c0 1
 columns internal/designsystem/samples.go 01f846e0af9e 1
 columns internal/designsystem/samples.go 01fb4e8edab1 1
 columns internal/designsystem/samples.go 02b64ae8672d 1
-columns internal/designsystem/samples.go 02f95c72c32b 1
 columns internal/designsystem/samples.go 030ed11d5e7b 1
 columns internal/designsystem/samples.go 039795849557 1
 columns internal/designsystem/samples.go 039a3bddf7c6 1
@@ -9239,7 +9236,6 @@ columns internal/designsystem/samples.go e9857a3820a3 1
 columns internal/designsystem/samples.go e99a7b35a968 1
 columns internal/designsystem/samples.go ea5b62eedefb 1
 columns internal/designsystem/samples.go ec1110a8e4b4 1
-columns internal/designsystem/samples.go edbb69b6fd0e 1
 columns internal/designsystem/samples.go ee72bba86029 1
 columns internal/designsystem/samples.go eed0ec00ed22 1
 columns internal/designsystem/samples.go f165aea03ed1 1
@@ -9468,16 +9464,12 @@ names internal/designsystem/weight.go weightIn/w 1
 columns internal/designsystem/weight_test.go 01bd913129d8 1
 columns internal/designsystem/weight_test.go 1236cb78e96b 1
 columns internal/designsystem/weight_test.go 16bc9ab0c813 1
-columns internal/designsystem/weight_test.go 1f1b420a9714 1
-columns internal/designsystem/weight_test.go 2f1dd543beb8 1
 columns internal/designsystem/weight_test.go 2f212c826ad1 1
 columns internal/designsystem/weight_test.go 2f507cf2d6a6 1
 columns internal/designsystem/weight_test.go 3f775028f548 1
 columns internal/designsystem/weight_test.go 576123e52a69 1
-columns internal/designsystem/weight_test.go 5c852c8a3842 1
 columns internal/designsystem/weight_test.go 5f8f7a250914 1
 columns internal/designsystem/weight_test.go 7ed00b9073bf 1
-columns internal/designsystem/weight_test.go 87f2adea2fbd 1
 columns internal/designsystem/weight_test.go 8fee99d7d303 1
 columns internal/designsystem/weight_test.go 971a9360c2ff 1
 columns internal/designsystem/weight_test.go 9d5dafa23e41 1
@@ -25538,7 +25530,7 @@ columns ui/ui.go c3c63127b8fa 1
 columns ui/ui.go c3c8287e95c6 1
 columns ui/ui.go d1dbb090f535 1
 columns ui/ui.go d912663cc928 1
-file ui/ui.go - 462 raised from 460 by Fiesta part 2: the docs say fiesta.js does what rastrillo.js no longer does
+file ui/ui.go - 465 raised from 460 by Fiesta part 2: the docs say fiesta.js does what rastrillo.js no longer does, that the stylesheets are Fiesta's, and where the date script's words come from
 names ui/ui.go Layout/b 1
 columns ui/ui_test.go 03fc6982a9d4 1
 columns ui/ui_test.go 0417a973a256 1
