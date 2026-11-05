@@ -95,6 +95,29 @@ func requireScripts(t *testing.T, body string, want []string) {
 	}
 }
 
+// Fiesta's copy.js finds a snippet by its attribute or its class, so
+// either spelling loads it through pageScripts, and a class that only
+// starts with the name does not.
+func TestASnippetOfEitherSpellingLoadsCopyJS(t *testing.T) {
+	layout, _ := Layout("column")
+	copyTag := `<script defer src="/static/copy.js">`
+	for body, loads := range map[string]bool{
+		`<div rst-snippet><code>go get</code></div>`:              true,
+		`<div class="rst-snippet"><code>go get</code></div>`:      true,
+		`<div class="lead rst-snippet"><code>go get</code></div>`: true,
+		`<div class=rst-snippet><code>go get</code></div>`:        true,
+		`<div class="rst-snippet {{.Base}}"><code>x</code></div>`: true,
+		`<div class="rst-snippet-copy"><code>go get</code></div>`: false,
+		`<div title="rst-snippet"><code>go get</code></div>`:      false,
+	} {
+		page := renderPagesWith(t, layout,
+			map[string]string{"page": content(body)}, shellSetup{})["page"]
+		if strings.Contains(page, copyTag) != loads {
+			t.Errorf("%s loads copy.js: %v, want %v", body, !loads, loads)
+		}
+	}
+}
+
 func TestAPlainPageNeedsNoComponentScript(t *testing.T) {
 	requireScripts(t, content(`<h1>Orders</h1>`), nil)
 }

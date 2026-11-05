@@ -193,10 +193,11 @@ func plannedScripts(reading pageReading) []string {
 
 // hookScripts maps each attribute that arms a component script to that
 // script: a field's data-rst- attribute, or the snippet's box, whose
-// Copy button copy.js shows. A page's markup carrying one loads its
-// script with no needs, so an app's own field markup, or its own
-// definition of a field partial, keeps its enhancement when the layout
-// stops loading every script.
+// Copy button copy.js shows, and which may be a class instead
+// (snippetClass). A page's markup carrying one loads its script with no
+// needs, so an app's own field markup, or its own definition of a
+// field partial, keeps its enhancement when the layout stops loading
+// every script.
 var hookScripts = map[string]string{
 	"data-rst-select": "select.js",
 	"data-rst-date":   "datetime.js",
@@ -212,6 +213,7 @@ func markupNeeds(text []byte, wanted map[string]bool) (polls bool) {
 	for _, match := range hookAttribute.FindAllSubmatch(text, -1) {
 		wanted[hookScripts[strings.ToLower(string(match[1]))]] = true
 	}
+	wanted["copy.js"] = wanted["copy.js"] || snippetClass.Match(text)
 	return bytes.Contains(bytes.ToLower(text), []byte("data-poll"))
 }
 
@@ -222,6 +224,12 @@ func markupNeeds(text []byte, wanted map[string]bool) (polls bool) {
 var hookAttribute = regexp.MustCompile(
 	`(?i)\s(data-rst-select|data-rst-date|data-rst-time|data-rst-range|` +
 		`rst-snippet)(?:[\s=/>]|$)`)
+
+// snippetClass is a class attribute holding the rst-snippet token,
+// quoted or not, among other classes or alone. The token may come
+// before an action that writes more classes, so the value may run on.
+var snippetClass = regexp.MustCompile(
+	`\s(?i:class)\s*=\s*["']?(?:[^"'>]*\s)?rst-snippet(?:[\s"'>]|$)`)
 
 // neededName is the script or hook a {{needs}} command names, "" for
 // any other command.
