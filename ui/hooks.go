@@ -144,20 +144,19 @@ func readPage(
 		switch concrete := node.(type) {
 		case *parse.TextNode:
 			reading.readMarkup(template, concrete.Text)
+		case *parse.ActionNode:
+			reading.scripts.readAction(template, concrete.Pipe)
+		case *parse.TemplateNode:
+			reading.scripts.readTemplateCall(template)
 		case *parse.StringNode:
 			reading.addHooks([]byte(concrete.Text))
 			reading.anyValueIn([]byte(concrete.Text))
 			reading.anyClassIn([]byte(concrete.Text))
 		case *parse.CommandNode:
-			needed, err := neededName(name, concrete)
+			err := reading.readCommand(name, template, concrete)
 			if problem == nil {
 				problem = err
 			}
-			if needed != "" && !vendored.IsHook(needed) {
-				reading.wanted[needed] = true
-			}
-			reading.addWrittenHooks(concrete)
-			reading.scripts.readCommand(template, concrete)
 		}
 	})
 	reading.scripts.settle()
@@ -167,6 +166,21 @@ func readPage(
 	}
 	reading.live = reading.live || hasLiveRegion(page)
 	return reading, nil
+}
+
+// readCommand reads one of the page's commands, in the template named
+// template: a script it needs, the hooks a framework function writes,
+// and a range over the scripts it loads.
+func (reading *pageReading) readCommand(
+	page, template string, command *parse.CommandNode,
+) error {
+	needed, err := neededName(page, command)
+	if needed != "" && !vendored.IsHook(needed) {
+		reading.wanted[needed] = true
+	}
+	reading.addWrittenHooks(command)
+	reading.scripts.readCommand(template, command)
+	return err
 }
 
 // menuTemplates hold the layout's language and scheme menus, whose

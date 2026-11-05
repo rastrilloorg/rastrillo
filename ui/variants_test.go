@@ -216,3 +216,43 @@ func TestAPageLoadingAnEditedScriptKeepsEveryVariant(t *testing.T) {
 		}
 	}
 }
+
+// A src that actions write is the framework's only when every action
+// that may write it names one of the framework's scripts: an app
+// script in any branch runs whenever that branch is taken.
+func TestEveryPossibleSrcMustBeOursToKeepTheCut(t *testing.T) {
+	primary := `<a rst-btn="primary">New</a>`
+	for name, test := range map[string]struct {
+		source string
+		keeps  bool
+	}{
+		"the app's script in the if branch": {`{{if .UseApp}}` +
+			`{{asset "static/app.js"}}{{else}}` +
+			`{{asset "static/fiesta.js"}}{{end}}`, true},
+		"the app's script in the else branch": {`{{if .UseFiesta}}` +
+			`{{asset "static/fiesta.js"}}{{else}}` +
+			`{{asset "static/app.js"}}{{end}}`, true},
+		"a prefix from data": {`{{.Base}}{{asset "static/fiesta.js"}}`,
+			true},
+		"a branch from data": {`{{if .A}}{{asset "static/fiesta.js"}}` +
+			`{{else}}{{.Script}}{{end}}`, true},
+		"text, then the app's script, in a branch": {`{{if .A}}` +
+			`{{asset "static/fiesta.js"}}{{else}}/v2` +
+			`{{asset "static/app.js"}}{{end}}`, true},
+		"a template's output": {`{{asset "static/fiesta.js"}}` +
+			`{{template "suffix"}}`, true},
+		"ours in every branch": {`{{if .A}}{{asset "static/fiesta.js"}}` +
+			`{{else}}{{asset "static/copy.js"}}{{end}}`, false},
+		"ours through path": {`{{path $ (asset "static/fiesta.js")}}`,
+			false},
+		"ours piped through path": {`{{asset "static/fiesta.js" | ` +
+			`path $}}`, false},
+	} {
+		body := content(primary+`<script defer src="`+test.source+
+			`"></script>`) + `{{define "suffix"}}?v=2{{end}}`
+		if strings.Contains(pageSlice(t, body), ghostRule) != test.keeps {
+			t.Errorf("%s: the slice keeps %s: %v, want %v", name,
+				ghostRule, !test.keeps, test.keeps)
+		}
+	}
+}

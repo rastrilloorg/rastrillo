@@ -16,8 +16,10 @@ import (
 type scriptReading struct {
 	own      bool            // a script not Rastrillo's, code or a handler
 	named    map[string]bool // Rastrillo's scripts it loads by name
-	pending  bool            // a script tag whose src an action writes
-	ours     bool            // that action names one of Rastrillo's scripts
+	pending  bool            // a script tag whose src actions write
+	quote    string          // the quote that src's value opened with
+	ours     bool            // an action names one of Rastrillo's scripts
+	foreign  bool            // one may write any other src
 	inRange  bool            // in a range over pageScripts or neededScripts
 	template string          // the template the last node was in
 }
@@ -27,7 +29,7 @@ var (
 	// handler is an event handler attribute or a javascript: URL. Text
 	// that only looks like one costs the cut, never a rule.
 	handler   = regexp.MustCompile(`(?i)(\son[a-z]+\s*=|javascript:)`)
-	srcOpen   = regexp.MustCompile(`(?i)\ssrc\s*=\s*["']?$`)
+	srcOpen   = regexp.MustCompile(`(?i)\ssrc\s*=\s*(["']?)$`)
 	srcValue  = regexp.MustCompile(`(?i)\ssrc\s*=\s*["']?([^"'\s>]+)`)
 	typeValue = regexp.MustCompile(`(?i)\stype\s*=\s*["']?([^"'\s>]+)`)
 )
@@ -38,18 +40,22 @@ var dataTypes = map[string]bool{
 	"importmap": true, "speculationrules": true,
 }
 
-// readText reads a run of markup in the named template: a script tag a
-// previous action finished, and the script tags and handlers in text.
+// readText reads a run of markup in the named template: the end of a
+// script tag's src that actions wrote, and the script tags and handlers
+// in text. Text that goes on with the src, rather than closing it, is
+// a src the actions do not name whole.
 func (scripts *scriptReading) readText(template string, text []byte) {
 	scripts.enter(template)
+	scripts.foreign = scripts.foreign || !scripts.closesSource(text)
 	scripts.settle()
 	scripts.own = scripts.own || handler.Match(text)
 	for _, at := range scriptTag.FindAllIndex(text, -1) {
 		tag := text[at[1]:]
 		end := bytes.IndexByte(tag, '>')
+		opening := srcOpen.FindSubmatch(tag)
 		switch {
-		case end < 0 && srcOpen.Match(tag):
-			scripts.pending = true
+		case end < 0 && opening != nil:
+			scripts.pending, scripts.quote = true, string(opening[1])
 		case end < 0:
 			scripts.own = true
 		default:
@@ -58,56 +64,137 @@ func (scripts *scriptReading) readText(template string, text []byte) {
 	}
 }
 
-// readCommand reads an action's command: a range over the scripts a
-// page loads, or asset naming one of Rastrillo's scripts, or the
-// range's own element, with asset or as it is.
+// closesSource reports whether text, after an action, ends the src
+// value the pending tag's actions write: its closing quote, or for an
+// unquoted value, a space or the tag's end.
+func (scripts *scriptReading) closesSource(text []byte) bool {
+	if !scripts.pending {
+		return true
+	}
+	if scripts.quote != "" {
+		return bytes.HasPrefix(text, []byte(scripts.quote))
+	}
+	return bytes.ContainsAny(text[:1], htmlSpaces+">")
+}
+
+// readCommand reads an action's command for a range over the scripts a
+// page loads, whose element a script tag's src may name.
 func (scripts *scriptReading) readCommand(
 	template string, command *parse.CommandNode,
 ) {
 	scripts.enter(template)
-	if _, dot := command.Args[0].(*parse.DotNode); dot && scripts.pending {
-		scripts.ours = scripts.ours || scripts.inRange
-	}
 	first, ok := command.Args[0].(*parse.IdentifierNode)
-	if !ok {
+	if ok && (first.Ident == "pageScripts" || first.Ident == "neededScripts") {
+		scripts.inRange = true
+	}
+}
+
+// readAction reads an action that may write a pending script tag's
+// src. The tag is Rastrillo's only when every such action names one of
+// its scripts: an action in any branch that writes another, or data,
+// runs the app's script whenever that branch is taken.
+func (scripts *scriptReading) readAction(
+	template string, pipe *parse.PipeNode,
+) {
+	scripts.enter(template)
+	if !scripts.pending {
 		return
 	}
-	switch first.Ident {
-	case "pageScripts", "neededScripts":
-		scripts.inRange = true
-	case "asset":
-		if len(command.Args) != 2 || !scripts.pending {
-			return
+	name, ours := scripts.sourceOf(pipe)
+	scripts.ours = scripts.ours || ours
+	scripts.foreign = scripts.foreign || !ours
+	if ours && name != "" {
+		scripts.load(name)
+	}
+}
+
+// readTemplateCall reads a {{template}} call, which writes what the
+// walk reads in another template: inside a src, a source it cannot
+// name.
+func (scripts *scriptReading) readTemplateCall(template string) {
+	scripts.enter(template)
+	scripts.foreign = scripts.foreign || scripts.pending
+}
+
+// sourceOf reads a pipeline that writes a script's src for one of
+// Rastrillo's scripts: asset naming one, or the element of a range
+// over the scripts a page loads, as it is or through asset, any of
+// them through path, as an argument or piped. name is the script's
+// static path, "" for the range's element, which planPage counts among
+// the page's scripts.
+func (scripts *scriptReading) sourceOf(
+	pipe *parse.PipeNode,
+) (name string, ours bool) {
+	commands := pipe.Cmds
+	if len(pipe.Decl) > 0 || len(commands) == 0 || len(commands) > 2 {
+		return "", false
+	}
+	if len(commands) == 2 && !throughPath(commands[1], 2) {
+		return "", false
+	}
+	command := commands[0]
+	if len(commands) == 1 && throughPath(command, 3) {
+		inner, ok := command.Args[2].(*parse.PipeNode)
+		if !ok || len(inner.Decl) > 0 || len(inner.Cmds) != 1 {
+			return "", false
+		}
+		command = inner.Cmds[0]
+	}
+	return scripts.scriptOf(command)
+}
+
+// throughPath reports whether command is path $, with arguments in all
+// counting path's own name: 3 with the source as an argument, 2 with
+// it piped in.
+func throughPath(command *parse.CommandNode, arguments int) bool {
+	function, ok := command.Args[0].(*parse.IdentifierNode)
+	if !ok || function.Ident != "path" || len(command.Args) != arguments {
+		return false
+	}
+	root, ok := command.Args[1].(*parse.VariableNode)
+	return ok && len(root.Ident) == 1 && root.Ident[0] == "$"
+}
+
+// scriptOf reads a command that names a script: asset with one of
+// Rastrillo's, or the range's element, as it is or through asset.
+func (scripts *scriptReading) scriptOf(
+	command *parse.CommandNode,
+) (name string, ours bool) {
+	switch first := command.Args[0].(type) {
+	case *parse.DotNode:
+		return "", len(command.Args) == 1 && scripts.inRange
+	case *parse.IdentifierNode:
+		if first.Ident != "asset" || len(command.Args) != 2 {
+			return "", false
 		}
 		switch argument := command.Args[1].(type) {
 		case *parse.StringNode:
-			if ourAsset(argument.Text) {
-				scripts.ours = true
-				scripts.load(argument.Text)
-			}
+			return argument.Text, ourAsset(argument.Text)
 		case *parse.DotNode:
-			scripts.ours = scripts.ours || scripts.inRange
+			return "", scripts.inRange
 		}
 	}
+	return "", false
 }
 
 // enter settles a script tag left open when the walk moves to another
 // template.
 func (scripts *scriptReading) enter(template string) {
 	if template != scripts.template {
+		scripts.foreign = scripts.foreign || scripts.pending
 		scripts.settle()
 		scripts.template = template
 	}
 }
 
-// settle decides a script tag an action finished: Rastrillo's only
-// when that action named one of its scripts.
+// settle decides a script tag whose src actions wrote: Rastrillo's only
+// when they named its scripts and nothing else.
 func (scripts *scriptReading) settle() {
 	if scripts.pending {
-		scripts.own = scripts.own || !scripts.ours
+		scripts.own = scripts.own || scripts.foreign || !scripts.ours
 		scripts.inRange = false
 	}
-	scripts.pending, scripts.ours = false, false
+	scripts.pending, scripts.ours, scripts.foreign = false, false, false
 }
 
 // readWholeTag reads a script tag whose attributes the text holds
