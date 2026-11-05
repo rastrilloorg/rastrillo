@@ -10,6 +10,122 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+### Changed: the look comes from Fiesta 1.2.0
+
+Rastrillo's stylesheets, themes and most of its scripts now come from
+[Fiesta](https://fiesta.rastrillo.org) 1.2.0, the design system that
+began as Rastrillo's `ui/`. Rastrillo no longer keeps its own
+`tokens.css`, `shell.css`, themes or the scripts Fiesta ships:
+`rastrillo new`, `doctor` and the gallery use Fiesta's files. A change
+to the look is now a Fiesta release and a new pin in `go.mod`. Pages
+look the same, apart from the column shell's menus, below.
+
+Rastrillo keeps two scripts of its own. `live.js` is unchanged.
+`rastrillo.js` is now the fragment shim behind `data-poll`, and it
+writes the `rastrillo_scheme` cookie when someone picks a colour scheme.
+Closing menus on Escape or a click elsewhere, dragging a switch, the
+pressed state on iOS and applying a scheme without a reload move to
+Fiesta's `fiesta.js`. If you delete `rastrillo.js`, menus and the
+scheme menu still work, but the scheme choice is lost on the next
+reload.
+
+Fiesta's scripts bring these fixes:
+
+- A select that is disabled, or sits in a disabled fieldset, now
+  disables its searchable box too.
+- Resetting a form redraws its selects' boxes.
+- A read-only date field refuses edits.
+- Resetting a form no longer races a date field saving its value as it
+  loses focus.
+- The select and date scripts read each string from its attribute,
+  then from Fiesta's table for the page's language if the page loads
+  one, then, for the labels they show, from English.
+
+Two files join the ones `rastrillo new` copies into `static/`:
+
+- `fiesta.js` loads first on every page, through `pageScripts`. An app
+  without `PagesConfig.Assets`, or a page rendered outside `ui.Pages`,
+  asks for `static/fiesta.js` whether the app has it or not. If it
+  doesn't, that request is a 404, which breaks nothing.
+- `copy.js` runs the Copy button on `rst-snippet`, and loads only on a
+  page that shows one. No partial writes a snippet yet.
+
+The calendar is now `window.fiestaCalendar`; it was
+`window.rastrilloCalendar`. If your own script calls it, rename the
+call.
+
+Each page's CSS is smaller. On a page that runs no script of its own,
+the page's slice of `tokens.css` now drops the rules for a hook's
+variants the page never writes, and the class forms, such as `.rst-btn`
+beside `[rst-btn]`, that it can never match. A page with a script that
+isn't the framework's, an inline script, an `on*` handler or a
+`javascript:` URL keeps them all, and so does a live page. Markup built
+in Go, a function or data value returning `template.HTML`, already asks
+for the hooks it shows with `needs`. It now asks for the hooks it writes
+as classes too: `{{needs "rst-btn"}}` keeps the rules for both
+spellings. `make perf` names any hook a page is missing.
+
+A live page may now weigh 34.7 kB before its scripts, up from 33 kB:
+its limit counts every framework file, and that now includes
+`fiesta.js`.
+
+The column shell's language and scheme menus move from the top of
+`<main rst-page>` to a footer row after the content, because a dropdown
+belongs in a row beside what it acts on, not on a line of its own. The
+other shells don't change. A new app gets the new column layout. Your
+app's own copy keeps its menus where they are. To move them, make this
+edit to `templates/layout.html`, after `doctor --fix` (the footer row's
+style is in the new `tokens.css`):
+
+```diff
+ <main rst-page id="main">
+-{{block "locale" .}}{{$L := localizer $}}{{template "locale-menu" dict "L" $L "Items" (opt $ "Locales") "Return" (opt $ "Return") "Action" (path $ "/_locale")}}{{end}}{{block "scheme" .}}{{$L := localizer $}}{{template "scheme-menu" dict "L" $L "Scheme" (opt $ "Scheme") "Return" (opt $ "Return") "Action" (path $ "/_theme")}}{{end}}
+ {{template "region:notice" .}}
+ {{template "content" .}}
++<footer rst-page-foot>
++{{block "locale" .}}{{$L := localizer $}}{{template "locale-menu" dict "L" $L "Items" (opt $ "Locales") "Return" (opt $ "Return") "Action" (path $ "/_locale")}}{{end}}{{block "scheme" .}}{{$L := localizer $}}{{template "scheme-menu" dict "L" $L "Scheme" (opt $ "Scheme") "Return" (opt $ "Return") "Action" (path $ "/_theme")}}{{end}}
++</footer>
+ </main>
+```
+
+If your line differs, move the one you have.
+
+To upgrade:
+
+1. After upgrading, run `go mod tidy`. Fiesta's module brings small
+   bumps to `golang.org/x/text`, `x/mod`, `x/tools`, `x/sync` and
+   `x/crypto`.
+2. Run `rastrillo doctor --fix` to take the new files. Until you do,
+   the app's vendored-files test fails.
+
+   `doctor` refreshes two pairs together: `rastrillo.js` with
+   `fiesta.js`, and `datetime.js` with `calendar.js`. Running the old
+   `rastrillo.js` beside `fiesta.js` isn't supported, and the old
+   `datetime.js` looks for `rastrilloCalendar`. If you own one file of
+   a pair, `--fix` leaves both and says why. Add the other to
+   `vendoredIsMine` too, or pass `--force` to refresh both.
+3. If a layout links each script by hand and has no
+   `{{range pageScripts}}`, add this line right after its
+   `rastrillo.js` tag:
+
+   ```html
+   <script defer src="{{path $ (asset "static/fiesta.js")}}"></script>
+   ```
+
+   `doctor` names each layout that needs it. Without it, menus stop
+   closing on Escape and switches can't be dragged. A layout with
+   `{{range pageScripts}}` already loads `fiesta.js`. You can instead
+   replace the layout's script tags with `{{range pageScripts}}`, as
+   v0.31.0's "each page sends only the CSS it can show" explains.
+4. Optionally, move the column menus as above.
+
+Also changed:
+
+- The gallery at rastrillo.org/design-system offers `fiesta.js` and
+  `copy.js` for download.
+- Rastrillo's own size checks on `select.js` and `datetime.js` are
+  gone. Fiesta owns and checks those files.
+
 ## v0.33.0
 
 ### Changed: live pages let a hibernating instance sleep
