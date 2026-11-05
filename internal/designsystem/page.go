@@ -2967,7 +2967,7 @@ const overviewBody = `{{define "ds-body-overview"}}
 // constant, which is the only way a page about file sizes stays true
 // after somebody edits one of the files.
 const gettingStartedBody = `{{define "ds-body-getting-started"}}
-<p class="ds-lead">{{P "Rastrillo apps get all of this on day one, and anyone can take the same files from Fiesta, at fiesta.rastrillo.org. Progressively enhanced with JS, but no JS required."}}</p>
+<p class="ds-lead">{{P "Rastrillo apps get all of this on day one. Anyone can take these stylesheets and scripts from Fiesta, at fiesta.rastrillo.org. Pages work without JavaScript and gain enhancements when it is available."}}</p>
 
 <h2 class="ds-sub">{{P "The stylesheets"}}</h2>
 <p class="ds-lead">{{P "tokens.css is structure: the component classes, the layout, and the scales for type, spacing and radius. Values are references, set elsewhere. themes/<name>.css is colour, type family and shape: one :root block where every colour is declared once as a light-dark() pair."}}</p>

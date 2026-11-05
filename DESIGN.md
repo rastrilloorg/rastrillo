@@ -128,8 +128,8 @@ components:
 
 Rastrillo's look comes from Fiesta (fiesta.rastrillo.org), at the
 version `go.mod` pins. Fiesta owns the stylesheets, the themes, the
-icons and the client scripts, and its own DESIGN.md is where this one
-comes from. Rastrillo owns the `ui` partials that write the markup, the
+Lucide icons and most of the client scripts. Fiesta's DESIGN.md is the
+source for this one. Rastrillo owns the `ui` partials that write the markup, the
 routes behind the language and colour-scheme menus, `rastrillo.js` and
 `live.js`, and the gallery of its Go calls at
 rastrillo.org/design-system. To change the look, change Fiesta, release

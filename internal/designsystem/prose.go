@@ -177,9 +177,9 @@ const transitionAssetBlurb = "Stops a skipped page transition logging an " +
 	"error on column, stage and topbar pages. " +
 	"Sidebar and console pages don't need it."
 
-const shimAssetBlurb = "Rastrillo's fragment shim: polling fragments, " +
-	"and the cookie that keeps a colour-scheme choice. Every scaffolded " +
-	"app gets it."
+const shimAssetBlurb = "Rastrillo's fragment shim polls fragments and " +
+	"writes the cookie that keeps a colour-scheme choice. Every " +
+	"scaffolded app gets it."
 
 const busyRuleNote = "A button that CHANGES something gets a loading " +
 	"state; a button that only reveals something, e.g. a disclosure, a " +
@@ -4523,18 +4523,18 @@ var prose = map[string]map[string]string{
 		`vi`:      `Mọi slug biểu tượng, ở kích thước các component vẽ nó, kèm lệnh gọi để sao chép và tên của nó trên lucide.dev.`,
 		`ar`:      `كل slug أيقونة، بالحجم الذي ترسمه به المكوّنات، مع الاستدعاء الجاهز للنسخ واسمه على lucide.dev.`,
 	},
-	`Rastrillo apps get all of this on day one, and anyone can take the same files from Fiesta, at fiesta.rastrillo.org. Progressively enhanced with JS, but no JS required.`: {
-		`ga`:      `Faigheann aipeanna rastrillo é seo ar fad ón gcéad lá, agus is féidir le haon duine na comhaid chéanna a fháil ó Fiesta, ag fiesta.rastrillo.org. Feabhsaithe go céimnitheach le JavaScript, ach níl JavaScript riachtanach.`,
-		`zh-Hans`: `rastrillo 应用第一天就拿到全部，任何人也都可以从 Fiesta（fiesta.rastrillo.org）拿到同样的文件。用 JavaScript 渐进增强，但不需要 JavaScript。`,
-		`es`:      `Las apps de rastrillo reciben todo esto desde el primer día, y cualquiera puede tomar los mismos archivos de Fiesta, en fiesta.rastrillo.org. Mejorado progresivamente con JavaScript, aunque no hace falta JavaScript.`,
-		`hi`:      `rastrillo ऐप्स को यह सब पहले ही दिन मिल जाता है, और वही फ़ाइलें कोई भी Fiesta से, fiesta.rastrillo.org पर, ले सकता है। JavaScript से प्रोग्रेसिव एन्हांसमेंट, पर JavaScript ज़रूरी नहीं।`,
-		`pt-PT`:   `As apps rastrillo recebem tudo isto no primeiro dia, e qualquer pessoa pode obter os mesmos ficheiros do Fiesta, em fiesta.rastrillo.org. Melhorado progressivamente com JavaScript, mas sem exigir JavaScript.`,
-		`bn`:      `rastrillo অ্যাপ প্রথম দিনেই এই সবটা পায়, আর একই ফাইলগুলো যে কেউ Fiesta থেকে, fiesta.rastrillo.org-এ, নিতে পারে। JavaScript দিয়ে ক্রমান্বয়ে উন্নত, কিন্তু JavaScript লাগে না।`,
-		`ru`:      `Приложения rastrillo получают всё это с первого дня, а те же файлы любой может взять у Fiesta, на fiesta.rastrillo.org. Прогрессивное улучшение на JavaScript, но JavaScript не нужен.`,
-		`ja`:      `rastrillo のアプリは初日にこれを全部受け取ります。同じファイルは誰でも Fiesta（fiesta.rastrillo.org）から入手できます。JavaScript でプログレッシブに拡張しますが、JavaScript は必須ではありません。`,
-		`yue`:     `rastrillo 應用第一日就攞齊晒呢啲，而同樣嘅檔案邊個都可以喺 Fiesta（fiesta.rastrillo.org）度攞到。用 JavaScript 漸進增強，但唔需要 JavaScript。`,
-		`vi`:      `Ứng dụng rastrillo nhận hết những thứ này ngay ngày đầu, và ai cũng lấy được các tệp y như vậy từ Fiesta, tại fiesta.rastrillo.org. Được tăng cường dần bằng JavaScript, nhưng không bắt buộc JavaScript.`,
-		`ar`:      `تحصل تطبيقات rastrillo على هذا كله من اليوم الأول، ويستطيع أي أحد أخذ الملفات نفسها من Fiesta على fiesta.rastrillo.org. تحسين تدريجي بـ JavaScript، دون اشتراط JavaScript.`,
+	`Rastrillo apps get all of this on day one. Anyone can take these stylesheets and scripts from Fiesta, at fiesta.rastrillo.org. Pages work without JavaScript and gain enhancements when it is available.`: {
+		`ga`:      `Faigheann aipeanna rastrillo é seo ar fad ón gcéad lá. Is féidir le haon duine na stílbhileoga agus na scripteanna seo a fháil ó Fiesta, ag fiesta.rastrillo.org. Oibríonn na leathanaigh gan JavaScript agus faigheann siad feabhsúcháin nuair a bhíonn sé ar fáil.`,
+		`zh-Hans`: `rastrillo 应用第一天就拿到全部。任何人都可以从 Fiesta（fiesta.rastrillo.org）拿到这些样式表和脚本。页面不用 JavaScript 也能用，有 JavaScript 时还会得到增强。`,
+		`es`:      `Las apps de rastrillo reciben todo esto desde el primer día. Cualquiera puede tomar estas hojas de estilo y scripts de Fiesta, en fiesta.rastrillo.org. Las páginas funcionan sin JavaScript y ganan mejoras cuando está disponible.`,
+		`hi`:      `rastrillo ऐप्स को यह सब पहले ही दिन मिल जाता है। ये स्टाइलशीट और स्क्रिप्ट कोई भी Fiesta से, fiesta.rastrillo.org पर, ले सकता है। पेज JavaScript के बिना काम करते हैं, और उसके उपलब्ध होने पर उनमें एन्हांसमेंट जुड़ जाते हैं।`,
+		`pt-PT`:   `As apps rastrillo recebem tudo isto no primeiro dia. Qualquer pessoa pode obter estas folhas de estilo e scripts do Fiesta, em fiesta.rastrillo.org. As páginas funcionam sem JavaScript e ganham melhorias quando ele está disponível.`,
+		`bn`:      `rastrillo অ্যাপ প্রথম দিনেই এই সবটা পায়। এই স্টাইলশিট আর স্ক্রিপ্টগুলো যে কেউ Fiesta থেকে, fiesta.rastrillo.org-এ, নিতে পারে। পেজগুলো JavaScript ছাড়াই কাজ করে, আর JavaScript থাকলে বাড়তি সুবিধা পায়।`,
+		`ru`:      `Приложения rastrillo получают всё это с первого дня. Эти таблицы стилей и скрипты любой может взять у Fiesta, на fiesta.rastrillo.org. Страницы работают без JavaScript, а когда он доступен, получают улучшения.`,
+		`ja`:      `rastrillo のアプリは初日にこれを全部受け取ります。これらのスタイルシートとスクリプトは、誰でも Fiesta（fiesta.rastrillo.org）から入手できます。ページは JavaScript なしで動き、JavaScript が使えるときは拡張が加わります。`,
+		`yue`:     `rastrillo 應用第一日就攞齊晒呢啲。呢啲樣式表同腳本，邊個都可以喺 Fiesta（fiesta.rastrillo.org）度攞到。頁面冇 JavaScript 都用得，有 JavaScript 嘅時候仲會有增強。`,
+		`vi`:      `Ứng dụng rastrillo nhận hết những thứ này ngay ngày đầu. Ai cũng lấy được các bảng kiểu và script này từ Fiesta, tại fiesta.rastrillo.org. Các trang chạy được khi không có JavaScript và được cải tiến thêm khi có JavaScript.`,
+		`ar`:      `تحصل تطبيقات rastrillo على هذا كله من اليوم الأول. ويستطيع أي أحد أخذ أوراق الأنماط والسكربتات هذه من Fiesta على fiesta.rastrillo.org. تعمل الصفحات دون JavaScript، وتكتسب تحسينات حين يكون متاحًا.`,
 	},
 	`The stylesheets`: {
 		`ga`:      `Na stílbhileoga`,
@@ -4667,17 +4667,17 @@ var prose = map[string]map[string]string{
 		`ar`:      `يشغّل زر النسخ في rst-snippet. يبقى الزر مخفيًا حين يتعذّر الوصول إلى الحافظة. يُحذف وحده: بدونه تبقى الشيفرة متاحة لتحديدها ونسخها يدويًا.`,
 	},
 	shimAssetBlurb: {
-		`ga`:      `Seim blúirí Rastrillo: blúirí á vótáil, agus an fianán a choinníonn rogha scéime dathanna. Faigheann gach aip scafallaithe é.`,
-		`zh-Hans`: `Rastrillo 的片段垫片：片段轮询，以及保存配色方案选择的 cookie。每个脚手架生成的应用都会拿到它。`,
-		`es`:      `La capa de fragmentos de Rastrillo: sondeo de fragmentos y la cookie que guarda la elección de esquema de color. La recibe toda app generada.`,
-		`hi`:      `Rastrillo का फ़्रैगमेंट शिम: फ़्रैगमेंट पोलिंग, और वह कुकी जो चुनी गई कलर स्कीम याद रखती है। हर स्कैफ़ोल्ड की गई ऐप को यह मिलती है।`,
-		`pt-PT`:   `A camada de fragmentos do Rastrillo: sondagem de fragmentos e o cookie que guarda a escolha de esquema de cores. Toda app gerada a recebe.`,
-		`bn`:      `Rastrillo-র ফ্র্যাগমেন্ট শিম: ফ্র্যাগমেন্ট পোলিং, আর সেই কুকি যা বেছে নেওয়া রঙের স্কিম মনে রাখে। প্রতিটি স্ক্যাফোল্ড করা অ্যাপ এটি পায়।`,
-		`ru`:      `Слой фрагментов Rastrillo: опрос фрагментов и cookie, в которой хранится выбранная цветовая схема. Его получает каждое сгенерированное приложение.`,
-		`ja`:      `Rastrillo のフラグメント用シム。フラグメントのポーリングと、選んだ配色を覚えておく Cookie。足場を組んだアプリはすべて受け取ります。`,
-		`yue`:     `Rastrillo 嘅片段墊片：片段輪詢，同埋記住揀咗邊個配色嘅 cookie。每個搭骨架生成嘅應用都會攞到。`,
-		`vi`:      `Lớp fragment của Rastrillo: hỏi vòng fragment, và cookie giữ lựa chọn bảng màu. Mọi ứng dụng được tạo khung đều nhận nó.`,
-		`ar`:      `طبقة الأجزاء في Rastrillo: استقصاء الأجزاء، وملفّ تعريف الارتباط الذي يحفظ اختيار نظام الألوان. يتسلّمها كل تطبيق مولَّد.`,
+		`ga`:      `Vótálann seim blúirí Rastrillo blúirí agus scríobhann sé an fianán a choinníonn rogha scéime dathanna. Faigheann gach aip scafallaithe é.`,
+		`zh-Hans`: `Rastrillo 的片段垫片会轮询片段，并写入保存配色方案选择的 cookie。每个脚手架生成的应用都会拿到它。`,
+		`es`:      `La capa de fragmentos de Rastrillo sondea fragmentos y escribe la cookie que guarda la elección de esquema de color. La recibe toda app generada.`,
+		`hi`:      `Rastrillo का फ़्रैगमेंट शिम फ़्रैगमेंट पोल करता है और वह कुकी लिखता है जो चुनी गई कलर स्कीम याद रखती है। हर स्कैफ़ोल्ड की गई ऐप को यह मिलती है।`,
+		`pt-PT`:   `A camada de fragmentos do Rastrillo sonda fragmentos e escreve o cookie que guarda a escolha de esquema de cores. Toda app gerada a recebe.`,
+		`bn`:      `Rastrillo-র ফ্র্যাগমেন্ট শিম ফ্র্যাগমেন্ট পোল করে আর সেই কুকি লেখে যা বেছে নেওয়া রঙের স্কিম মনে রাখে। প্রতিটি স্ক্যাফোল্ড করা অ্যাপ এটি পায়।`,
+		`ru`:      `Слой фрагментов Rastrillo опрашивает фрагменты и записывает cookie, в которой хранится выбранная цветовая схема. Его получает каждое сгенерированное приложение.`,
+		`ja`:      `Rastrillo のフラグメント用シムは、フラグメントをポーリングし、選んだ配色を覚えておく Cookie を書き込みます。足場を組んだアプリはすべて受け取ります。`,
+		`yue`:     `Rastrillo 嘅片段墊片會輪詢片段，再寫入記住揀咗邊個配色嘅 cookie。每個搭骨架生成嘅應用都會攞到。`,
+		`vi`:      `Lớp fragment của Rastrillo hỏi vòng các fragment và ghi cookie giữ lựa chọn bảng màu. Mọi ứng dụng được tạo khung đều nhận nó.`,
+		`ar`:      `طبقة الأجزاء في Rastrillo تستقصي الأجزاء وتكتب ملفّ تعريف الارتباط الذي يحفظ اختيار نظام الألوان. يتسلّمها كل تطبيق مولَّد.`,
 	},
 	`The busy rule: while a form sends, its button shows a spinner for at least 650ms and refuses a second submit, and Back hands it back. Every scaffolded app gets it.`: {
 		`ga`:      `An riail ghnóthach: fad a sheolann foirm, taispeánann a cnaipe roth casta ar feadh 650ms ar a laghad agus diúltaíonn sé don dara seoladh, agus tugann Siar ar ais é. Faigheann gach aip scafallaithe é.`,

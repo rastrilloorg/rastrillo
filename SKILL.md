@@ -165,7 +165,7 @@ The other seven, an action's shape and what each gate message means:
   toggle or an image grid: they ship (`skill/design.md`).
 - Never add a `<script>` tag for a framework component (your own are
   welcome: `skill/scripts.md`): the `field-*` partials load their own; markup built in Go asks with
-  `{{needs "select.js"}}`, and `{{needs "rst-card"}}` per hook or class it shows.
+  `{{needs "select.js"}}` for the script, and `{{needs "rst-card"}}` for each hook it writes, whether as an attribute or a class.
 - Never put a dropdown on its own line or above a page title: it sits in a row beside what it acts on (a page header, section head, bar, toolbar or footer row).
 - Never save bytes to disk or a column: the filesystem is ephemeral
   (`skill/data.md`).

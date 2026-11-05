@@ -8628,7 +8628,6 @@ columns internal/designsystem/page.go 1e7f789b6f41 1
 columns internal/designsystem/page.go 1ee3fc4cad69 1
 columns internal/designsystem/page.go 1f5da6a0912f 1
 columns internal/designsystem/page.go 210e21883be8 1
-columns internal/designsystem/page.go 2211b0c0ed04 1 Fiesta part 2 Task 6: gallery prose inside the page template, one {{P}} sentence per line like its neighbours
 columns internal/designsystem/page.go 22cf89764b0a 1
 columns internal/designsystem/page.go 23707b485a3c 1
 columns internal/designsystem/page.go 23ce9ad502e4 1
@@ -8717,6 +8716,7 @@ columns internal/designsystem/page.go 7cddec91a13f 1
 columns internal/designsystem/page.go 7d1ae3e0db8b 1
 columns internal/designsystem/page.go 7e971c320959 1
 columns internal/designsystem/page.go 7e9c0c0074fc 1
+columns internal/designsystem/page.go 7f37b8446284 1 Fiesta part 2 Task 6: gallery prose inside the page template, one {{P}} sentence per line like its neighbours
 columns internal/designsystem/page.go 7ffb793379f5 1
 columns internal/designsystem/page.go 83f75710b672 1
 columns internal/designsystem/page.go 86a2e6fd8e6f 1

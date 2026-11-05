@@ -65,8 +65,8 @@ for the hooks it shows with `needs`. It now asks for the hooks it writes
 as classes too: `{{needs "rst-btn"}}` keeps the rules for both
 spellings. `make perf` names any hook a page is missing.
 
-A live page may now weigh 34.7 kB before its scripts, up from 33 kB:
-its limit counts every framework file, and that now includes
+A live page may now weigh 34.7 kB before its component scripts, up
+from 33 kB: its limit counts every framework file, including
 `fiesta.js`.
 
 The column shell's language and scheme menus move from the top of

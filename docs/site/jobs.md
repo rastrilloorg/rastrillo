@@ -128,8 +128,8 @@ state by default and the attribute is only ever an opt-out — see
 [Templates](/docs/templates/#a-button-that-changes-something-says-so)
 for the rule and [Forms](/docs/forms/#the-busy-button-is-not-a-guarantee)
 for what it does not promise. The shim has two jobs: polling, which you
-opt into with the attributes above, and saving a colour-scheme choice
-in its cookie. The busy rule is Fiesta's `busy.js`, and light dismiss
+opt into with the attributes above, and writing the `rastrillo_scheme`
+cookie when a colour-scheme choice is made. The busy rule is Fiesta's `busy.js`, and light dismiss
 for menus is Fiesta's `fiesta.js`.
 
 Polling repeats while the new fragment still carries `data-poll`. The

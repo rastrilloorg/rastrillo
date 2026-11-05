@@ -24,9 +24,9 @@ exist so an agent cannot quietly get it wrong. Where the two audiences
 conflict, the person wins.
 
 **The design system alone has its own audience, and its own project.**
-People who want quality markup and a baseline visual aesthetic without
-the Go framework take Fiesta (fiesta.rastrillo.org), the design system
-Rastrillo's look comes from. Fiesta has its own site, gallery and
+People who want a baseline visual aesthetic without the Go framework
+can use Fiesta, the design system behind Rastrillo's look
+([fiesta.rastrillo.org](https://fiesta.rastrillo.org)). Fiesta has its own site, gallery and
 releases; Rastrillo pins one release and serves its files.
 
 ## Product Purpose
@@ -34,8 +34,8 @@ releases; Rastrillo pins one release and serves its files.
 Rastrillo is the CARLOS web framework — the shape of a CARLOS app, as
 `carlosframework/platform` is the shape of the deployment substrate.
 It supplies the parts of a web application that are tedious to get right
-twice, and, through Fiesta, a design system that gives an app correct,
-accessible markup and a working visual aesthetic on day one.
+twice, and, through Fiesta, a design system for an app's look, with
+Rastrillo's partials writing correct, accessible markup.
 
 Success is an app that is scaffolded, correct and accessible without its
 author having to make the same twenty decisions every other author
@@ -57,8 +57,8 @@ doing the same work:
 - **The scriptless path is the real one.** Menus, tabs, the preview
   widget, the modal, the demo application's view switching — all work
   with scripts disabled. `fiesta.js`, `select.js` and `datetime.js`
-  are enhancements, each inert until a control opts in and each
-  deletable on its own.
+  enhance pages when loaded; `select.js` and `datetime.js` act on
+  controls that opt in. Each file can be deleted on its own.
 - **The claims are gated rather than asserted.** WCAG 2.2 AA is held by
   an axe scan with zero exemptions and a contrast gate over documented
   token pairs in every theme and both schemes; twelve languages are held
@@ -70,12 +70,13 @@ doing the same work:
 - `rastrillo new` scaffolds an app that builds and passes its own tests
   immediately, with flags for icon set, icon delivery and UX
   conventions.
-- Delivered-once-then-yours: `tokens.css`, the theme, the scripts and the
-  icon package, from the Fiesta release the module pins, are copied into
-  the app at scaffold time and are app-owned from that moment. The known
-  cost is drift — an app can run new markup against frozen old CSS — and
-  `rastrillo doctor` compares an app's frozen files against the module's
-  and offers to re-copy.
+- Delivered-once-then-yours: the stylesheets and scripts from the Fiesta
+  release the module pins, along with Rastrillo's `rastrillo.js` and
+  `live.js` and the icon package, are copied into the app at scaffold
+  time and are app-owned from that moment. The known cost is drift — an
+  app can run new markup against frozen old CSS — and `rastrillo doctor`
+  compares an app's frozen files against the module's and offers to
+  re-copy.
 - One gate definition, run before pushing and by CI: `make ci`. It sets `GOFLAGS`, `CGO_ENABLED` and the Go release (`GOTOOLCHAIN`) itself, so running it by hand and running it on a runner are the same thing. A scaffolded app's own gate is its `Makefile`'s `ci` target.
 - Every change lands on its own branch and is squashed into main as one commit with `amadan branch merge -squash`; nothing is pushed to main directly. On the amadan hub the branch *is* the pull request. The GitHub remote is a mirror; `make mirror` and `make mirror-check` keep it one, and work carried across from the mirror is the one ordinary merge.
 - Rastrillo's gallery, of its partials and the Go calls that render
