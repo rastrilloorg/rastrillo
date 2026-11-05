@@ -769,12 +769,12 @@ turns an input carrying `data-rst-date` or `data-rst-time` into a
 combobox that reads "tomorrow", "next fri 9am" or "in 2 weeks" and
 writes the result back to the native input, which stays in the form as
 the value carrier. It holds no month or weekday names: those come from
-`Intl` in the page's language. Rastrillo fills `data-rst-date-words`
-from the request's catalog. The words it matches and the on-screen
-labels are read from that attribute first, then from Fiesta's table
-for the page's language if the page loads one, then from the English
-built into the script. The partials
-always write the attributes.
+`Intl` in the page's language. Rastrillo fills `data-rst-date-words`,
+and each on-screen label's own `data-rst-date-*` attribute, from the
+request's catalog. The words it matches and the labels are read from
+their own attributes first, then from Fiesta's table for the page's
+language if the page loads one, then from the English built into the
+script. The partials always write the attributes.
 
 A select added after the page loads stays native until you ask: dispatch
 `rst:select-scan` on `document`, with `{detail: {root}}` to look only
