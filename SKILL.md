@@ -31,7 +31,7 @@ Read the topic before you start work it covers, not after the source:
 | use the session, magic links, a sign-in screen, 2FA | `skill/signin.md` |
 | build a first slice, add a page or route, a flow, a test, or meet a perf/budget failure | `skill/screens.md` |
 | call a `ui` partial: its keys, at a glance | `skill/partials.md` |
-| style a page, format numbers, add a locale, a menu, a picture grid | `skill/design.md` |
+| style a page (the look is Fiesta's), format numbers, add a locale, a menu, a picture grid | `skill/design.md` |
 | take money, dates, URLs or uploads in a form, or protect a public form | `skill/forms.md` |
 | choose GORM or SQL, store files, write a migration, add teams or roles, serve a tenant under `/<slug>` | `skill/data.md` |
 | run work in the background, poll for progress, schedule | `skill/background.md` |
@@ -165,7 +165,7 @@ The other seven, an action's shape and what each gate message means:
   toggle or an image grid: they ship (`skill/design.md`).
 - Never add a `<script>` tag for a framework component (your own are
   welcome: `skill/scripts.md`): the `field-*` partials load their own; markup built in Go asks with
-  `{{needs "select.js"}}` or `{{needs "rst-card"}}`.
+  `{{needs "select.js"}}`, and `{{needs "rst-card"}}` per hook or class it shows.
 - Never put a dropdown on its own line or above a page title: it sits in a row beside what it acts on (a page header, section head, bar, toolbar or footer row).
 - Never save bytes to disk or a column: the filesystem is ephemeral
   (`skill/data.md`).

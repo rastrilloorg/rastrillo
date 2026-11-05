@@ -23,20 +23,19 @@ reading the source, and the markup grammar and machine-checkable gates
 exist so an agent cannot quietly get it wrong. Where the two audiences
 conflict, the person wins.
 
-**A third, distinct audience for the design system alone:** people who
-want quality markup and a baseline visual aesthetic and are not using
-the Go framework at all. Confirmed by the shipped Getting started page:
-*"Rastrillo apps get all of this day one, but anyone can use the design
-system"* and *"Take tokens.css and one theme and you have the whole
-visual system: plain classes, ordinary HTML, no build step."*
+**The design system alone has its own audience, and its own project.**
+People who want quality markup and a baseline visual aesthetic without
+the Go framework take Fiesta (fiesta.rastrillo.org), the design system
+Rastrillo's look comes from. Fiesta has its own site, gallery and
+releases; Rastrillo pins one release and serves its files.
 
 ## Product Purpose
 
 Rastrillo is the CARLOS web framework — the shape of a CARLOS app, as
 `carlosframework/platform` is the shape of the deployment substrate.
 It supplies the parts of a web application that are tedious to get right
-twice, and a design system that gives an app correct, accessible markup
-and a working visual aesthetic on day one.
+twice, and, through Fiesta, a design system that gives an app correct,
+accessible markup and a working visual aesthetic on day one.
 
 Success is an app that is scaffolded, correct and accessible without its
 author having to make the same twenty decisions every other author
@@ -50,13 +49,14 @@ Adoptable by anyone: **public, MPL 2.0, `go get`-able**, at module path
 Three things a neighbouring framework could not truthfully copy without
 doing the same work:
 
-- **The design system stands alone.** `tokens.css` plus one theme is the
-  whole visual system, in plain classes and ordinary HTML with no build
-  step and no second origin. You do not have to adopt the Go framework
-  to take it.
+- **The design system stands alone.** It is Fiesta, a project of its
+  own: `tokens.css` plus one theme is the whole visual system, in plain
+  classes and ordinary HTML with no build step and no second origin.
+  You do not have to adopt the Go framework to take it. Rastrillo
+  writes Fiesta's markup from Go and serves the routes behind it.
 - **The scriptless path is the real one.** Menus, tabs, the preview
   widget, the modal, the demo application's view switching — all work
-  with scripts disabled. `rastrillo.js`, `select.js` and `datetime.js`
+  with scripts disabled. `fiesta.js`, `select.js` and `datetime.js`
   are enhancements, each inert until a control opts in and each
   deletable on its own.
 - **The claims are gated rather than asserted.** WCAG 2.2 AA is held by
@@ -71,15 +71,17 @@ doing the same work:
   immediately, with flags for icon set, icon delivery and UX
   conventions.
 - Delivered-once-then-yours: `tokens.css`, the theme, the scripts and the
-  icon package are copied into the app at scaffold time and are
-  app-owned from that moment. The known cost is drift — an app can run
-  new markup against frozen old CSS — and `rastrillo doctor` compares an
-  app's frozen files against the module's and offers to re-copy.
+  icon package, from the Fiesta release the module pins, are copied into
+  the app at scaffold time and are app-owned from that moment. The known
+  cost is drift — an app can run new markup against frozen old CSS — and
+  `rastrillo doctor` compares an app's frozen files against the module's
+  and offers to re-copy.
 - One gate definition, run before pushing and by CI: `make ci`. It sets `GOFLAGS`, `CGO_ENABLED` and the Go release (`GOTOOLCHAIN`) itself, so running it by hand and running it on a runner are the same thing. A scaffolded app's own gate is its `Makefile`'s `ci` target.
 - Every change lands on its own branch and is squashed into main as one commit with `amadan branch merge -squash`; nothing is pushed to main directly. On the amadan hub the branch *is* the pull request. The GitHub remote is a mirror; `make mirror` and `make mirror-check` keep it one, and work carried across from the mirror is the one ordinary merge.
-- The design system gallery is generated at build time by the public
-  `cmd/dsgen` and is not committed; it is published at
-  rastrillo.org/design-system.
+- Rastrillo's gallery, of its partials and the Go calls that render
+  them, is generated at build time by the public `cmd/dsgen` and is not
+  committed; it is published at rastrillo.org/design-system. Fiesta's
+  own gallery, of the markup alone, is at fiesta.rastrillo.org.
 
 ## Capabilities and Constraints
 
@@ -88,11 +90,12 @@ doing the same work:
   OAuth ceremony, passwords, passkeys, recovery codes), CSRF, owner
   scoping, form helpers, background jobs, migrations, manifests, mail,
   keyring, blobs, event log, vault client, scheduled ticks.
-- **UI vocabulary:** `tokens.css`, three themes (`day`, `plain`,
-  `signal`), four page-frame shells (`column`, `topbar`, `sidebar`,
-  `console`), a partial library, and eleven-plus icon slugs vendored as
-  inline SVG. Icon slugs are rastrillo's own names, not a vendor's, so
-  `{{icon "search"}}` means the same thing whichever set an app chose.
+- **UI vocabulary:** Fiesta's `tokens.css`, three themes (`day`,
+  `plain`, `signal`) and four page-frame shells (`column`, `topbar`,
+  `sidebar`, `console`); Rastrillo's partial library; and eleven-plus
+  icon slugs vendored as inline SVG. Icon slugs are rastrillo's own
+  names, not a vendor's, so `{{icon "search"}}` means the same thing
+  whichever set an app chose.
 - **Twelve shipped locales:** en, ga, zh-Hans, es, hi, pt-PT, bn, ru, ja,
   yue, vi, ar. Arabic makes right-to-left a shipped requirement, not a
   hypothetical.
@@ -127,7 +130,7 @@ doing the same work:
 
 ## Evidence on Hand
 
-- **The design system gallery** — every partial, idiom, token and icon,
+- **Rastrillo's gallery** — every partial, idiom, token and icon,
   in three themes and twelve languages, generated by `cmd/dsgen`.
 - **The demo application** on the gallery's Overview: a dashboard, a
   list and one record open, built only from the shipped vocabulary,

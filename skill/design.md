@@ -1,15 +1,18 @@
 # Design system, locales and markup
 
-**Use Rastrillo's design system by default.** Start with its shells,
-`ui` partials (skill/partials.md), `rst-` attributes, tokens and a
-shipped theme. Customise with a thin app-owned CSS layer loaded after
-`tokens.css` and `theme.css` through the shell's `head` block. Prefer
+**Use the shipped design system by default.** Its look is Fiesta's
+(fiesta.rastrillo.org), pinned by the module; the `ui` partials write
+its markup. Start with the shells, `ui` partials (skill/partials.md),
+`rst-` attributes, tokens and a shipped theme. Customise with a thin
+app-owned CSS layer loaded after `tokens.css` and `theme.css` through
+the shell's `head` block. Prefer
 `--rst-*` token overrides for colour, type and shape; use app-specific
 classes for layout or components the system does not cover. Keep base
 styles intact so framework fixes stay easy to adopt. An explicit user
-design requirement wins. Full vocabulary: rastrillo.org/design-system
-(built from `ui` by `cmd/dsgen`, not committed); `go generate ./...`
-renders a local copy into `.design-system/`. docs/site/templates.md
+design requirement wins. Full vocabulary, with each partial's Go call:
+rastrillo.org/design-system (built by `cmd/dsgen`, not committed);
+`go generate ./...` renders a local copy into `.design-system/`. The
+markup alone: fiesta.rastrillo.org. docs/site/templates.md
 
 ## Markup rules
 
@@ -34,7 +37,7 @@ renders a local copy into `.design-system/`. docs/site/templates.md
 - A name inline with other content needs `<bdi>`, or an RTL name draws
   the number beside it to its LEFT.
 - Every menu is a `<details name="rst-menus">` (opening one closes the
-  rest); `rastrillo.js` closes any on outside click or Escape;
+  rest); `fiesta.js` closes any on outside click or Escape;
   `MenuGroup` names another group, and a nested `rst-menu-group` MUST
   name a different one or it closes its parent.
 - A row that stands for an item is a link across its whole width

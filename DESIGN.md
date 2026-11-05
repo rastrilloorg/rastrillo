@@ -121,9 +121,19 @@ components:
   holding a light-dark() pair, so a single-value frontmatter slot cannot
   hold it; .impeccable/design.json carries both halves per token under
   extensions.colorMeta. Do not treat a hex here as the only value.
-  Source of truth: ui/tokens.css (structure) and ui/themes/*.css (colour,
-  type family, shape).
+  Source of truth: Fiesta's css/tokens.css (structure) and
+  css/themes/*.css (colour, type family, shape), at the version go.mod
+  pins. Rastrillo keeps no copy of them.
 -->
+
+Rastrillo's look comes from Fiesta (fiesta.rastrillo.org), at the
+version `go.mod` pins. Fiesta owns the stylesheets, the themes, the
+icons and the client scripts, and its own DESIGN.md is where this one
+comes from. Rastrillo owns the `ui` partials that write the markup, the
+routes behind the language and colour-scheme menus, `rastrillo.js` and
+`live.js`, and the gallery of its Go calls at
+rastrillo.org/design-system. To change the look, change Fiesta, release
+it and bump the pin.
 
 ## Overview
 
@@ -160,6 +170,8 @@ is the one thing this system exists not to do.
   four-tone palette.
 - Every colour is a `light-dark()` pair, so light and dark are one
   declaration rather than two stylesheets.
+- The CSS floor is Chrome 123, Safari 17.5, Firefox 121, set by
+  `light-dark()`; anything at or below it is used with no fallback.
 - Works with JavaScript off. Scripts are enhancement and each is
   deletable on its own.
 
@@ -345,6 +357,10 @@ A single centred content column, capped at **64rem** with `1.5rem 1rem
 2.5rem` of padding, holding every screen. The column is markup an app
 emits (`rst-page`); no partial brings its own.
 
+The column ends with a footer row (`rst-page-foot`) for the language and
+colour-scheme menus: muted, under a hairline, with the menus at the
+inline end. The page header stays the first thing on screen.
+
 **Spacing** is a six-step rem scale — 0.25 / 0.5 / 0.75 / 1 / 1.5 /
 2.5rem — and screens stack vertically in reading order: page header,
 then section head plus card, then the next. Horizontal arrangement is
@@ -514,7 +530,12 @@ by `aria-current` in the markup; a hovered item is the thumb's
 half-raised preview. Below 800px the rail collapses into a
 `<details>` disclosure with a menu icon. Menus are
 `<details name="rst-menus">`, so opening one closes the rest with no
-script; `rastrillo.js` adds outside-click and Escape as enhancement.
+script; `fiesta.js` adds outside-click and Escape as enhancement.
+
+**The Row Rule.** A dropdown never sits on a line of its own. Put it in
+a row, beside what it acts on: a page header, a section head, a list's
+toolbar, a bar, or the footer row. A menu above a page's title pushes
+the title down and reads as the page's first action.
 
 ### Status Pill
 
@@ -574,3 +595,5 @@ because a falling number is good about as often as it is bad.
 - **Don't** compose a heading, a paragraph and a button side by side in a
   flex row. Screens stack vertically; horizontal arrangement is reserved
   for the idioms that ship it.
+- **Don't** put a dropdown on a line of its own, or above a page's title.
+  Put it in a row beside what it acts on.

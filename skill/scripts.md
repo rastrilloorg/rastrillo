@@ -13,9 +13,11 @@ feature or tell the operator it is unsupported.
 Scaffolded into `static/`, app-owned, inert until markup opts in:
 `select.js` (a `field-select` past ten options becomes a searchable
 combobox; `data-rst-select` on any `<select>`), `datetime.js` and
-`calendar.js` (date fields), `live.js` (skill/live.md), `rastrillo.js`
-(polling, menus), `busy.js` (submit feedback), `shell.js` and
-`transition.js` (view transitions between pages).
+`calendar.js` (date fields), `copy.js` (a snippet's Copy button),
+`live.js` (skill/live.md), `rastrillo.js` (polling, the scheme cookie),
+`fiesta.js` (menus, switches), `busy.js` (submit feedback), `shell.js`
+and `transition.js` (view transitions between pages). All but
+`rastrillo.js` and `live.js` are Fiesta's (fiesta.rastrillo.org).
 
 ## Write your own
 

@@ -17,7 +17,7 @@ first screen of a new app or a port, send them one message that asks:
 4. **With no screenshot, a base to start from.** A shipped theme
    (`day`, `plain`, `signal`) and shell (`column`, `topbar`, `sidebar`,
    `console`, `stage`), with a link to see them,
-   rastrillo.org/design-system, and the practices you will apply, all
+   fiesta.rastrillo.org, and the practices you will apply, all
    of which ship: a dashboard opening with stat cells; empty states
    that say what a screen is for; whole-row links with row menus; hints
    and inline errors on fields; searchable selects and natural-language
