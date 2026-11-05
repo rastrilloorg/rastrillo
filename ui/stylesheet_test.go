@@ -22,14 +22,9 @@ import (
 // sliced and which no test here reads, less each of deleted.
 func appAssets(deleted ...string) *rastrillo.Assets {
 	files := fstest.MapFS{}
-	for name, body := range map[string][]byte{
-		"tokens.css": TokensCSS(), "shell.css": ShellCSS(),
-		"rastrillo.js": ShimJS(), "busy.js": BusyJS(), "live.js": LiveJS(),
-		"light.js": LightJS(), "anchor.js": AnchorJS(),
-		"select.js": SelectJS(), "calendar.js": CalendarJS(),
-		"datetime.js": DatetimeJS(), "shell.js": ShellJS(),
-	} {
-		if !slices.Contains(deleted, name) {
+	vendoredFiles, _ := VendoredAssets("day")
+	for name, body := range vendoredFiles {
+		if name != "theme.css" && !slices.Contains(deleted, name) {
 			files["static/"+name] = &fstest.MapFile{Data: body}
 		}
 	}
@@ -187,6 +182,12 @@ func TestOlderLayoutsLoadEachScriptOnce(t *testing.T) {
 			}
 		}
 		for _, script := range every {
+			// A layout with every tag fixed predates copy.js, so it
+			// never links it, and its snippets stay selectable by hand.
+			fixed := file == "fixed-tags.html"
+			if fixed && script == assets.Path("static/copy.js") {
+				continue
+			}
 			if !slices.Contains(deferredScripts(pages["live"]), script) {
 				t.Errorf("%s: the live page does not load %s", file, script)
 			}

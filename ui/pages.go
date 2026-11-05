@@ -57,7 +57,7 @@ type PagesConfig struct {
 	Funcs    template.FuncMap    // the app's request-independent functions (icon, iconAssets, asset)
 	// Assets are the app's static files. With them, each page links
 	// a slice of static/tokens.css for its hooks (pageStylesheet),
-	// and pageScripts omits optional scripts the app has deleted; nil
+	// and pageScripts omits scripts the app has deleted; nil
 	// links the whole stylesheet, as every page did before slicing.
 	Assets *rastrillo.Assets
 	// Compat renders legacy-form calls and missing localizers with the

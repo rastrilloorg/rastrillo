@@ -3,14 +3,15 @@
      2006-01-02 either way, and the browser's own picker still opens.
 
      Unless Plain, the input also carries the enhancement's contract:
-     data-rst-date arms ui/datetime.js, data-rst-date-words hands it the
+     data-rst-date arms Fiesta's datetime.js, data-rst-date-words hands it the
      parser vocabulary as one JSON object ({{dateWords}}, resolved
      through the bound T so it localises per request), and the remaining
      data-rst-date-* attributes are the strings it puts on screen. Every
      one of them comes from the catalog — datetime.js matches on no
-     English word of its own, which is the point of the split. (It does
-     keep English fallbacks for these labels, the way select.js does,
-     for a field that arrives without them.)
+     English word of its own, which is the point of the split. (Without
+     an attribute, it reads Fiesta's table for the page's language if
+     the page loads one; only the labels fall back to English written
+     into the script, the way select.js does.)
 
      The hint travels as its RAW template, {example} and all:
      datetime.js substitutes an example date it formatted itself, in

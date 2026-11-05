@@ -436,7 +436,7 @@ func TestTheKnobIsLitAndTheTrackSheenFollowsIt(t *testing.T) {
 // TestTheSheenFollowsADraggedKnob (C13): with a finger (touch
 // emulation on the mouse rig, as TestASwitchSlidesAndSnaps drags; no
 // hover rig, so nothing hovers), the knob is dragged part way and the
-// sheen sits over it, written by rastrillo.js on the track and read by
+// sheen sits over it, written by fiesta.js on the track and read by
 // the gradient; the drag is cancelled and the knob snaps back with no
 // sheen; a second drag loses its capture (a lostpointercapture with
 // the drag's own pointer id, which the shim checks) and the knob snaps
@@ -444,7 +444,7 @@ func TestTheKnobIsLitAndTheTrackSheenFollowsIt(t *testing.T) {
 // with light.js linked, where an observer on the switch records every
 // style write during the drags: each must be the shim's own
 // --rst-switch-p and --rst-switch-on (or their removal) and nothing else, because light.js
-// writes nothing on a switch while rastrillo.js owns the drag (C13).
+// writes nothing on a switch while fiesta.js owns the drag (C13).
 // The fixture initialises the counters switchJS reads, as the other
 // switch fixtures do.
 func TestTheSheenFollowsADraggedKnob(t *testing.T) {

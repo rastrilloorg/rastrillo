@@ -9,12 +9,14 @@ import (
 	"amadan.net/rastrillo/rastrillo"
 )
 
-// sizingExtras is what no partial and no sample renders: text controls
-// in a parent that is really small, a bare input with no rst- attribute
-// (the zero-weight floor's case), and the primary field (the 1em trap's
-// case). A bulk bar and a menu panel set no font-size of their own, so
-// on touch they are 16px and `font: inherit` alone would pass every
-// floor test with the floors deleted. The .sizing-small wrapper is an
+// sizingExtras is what no partial and no sample renders: Fiesta's
+// controls Rastrillo has no partial for (the segmented tabs' buttons
+// and the side nav), text controls in a parent that is really small, a
+// bare input with no rst- attribute (the zero-weight floor's case), and
+// the primary field (the 1em trap's case). A bulk bar and a menu panel
+// set no font-size of their own, so on touch they are 16px and
+// `font: inherit` alone would pass every floor test with the floors
+// deleted. The .sizing-small wrapper is an
 // app's own small parent, xs (13px on touch): there 1em is under the
 // floor and each component floor is the only thing lifting its field.
 // The menu that holds a field is opened by the drives that measure it;
@@ -29,6 +31,14 @@ const sizingExtras = `<style>.sizing-small { font-size: var(--rst-fs-xs); }</sty
 <div rst-field><label rst-field-label for="sizing-primary">Title</label><input rst-input="primary" type="text" id="sizing-primary" name="sizing_primary"></div>
 <p data-extra="buttons"><button rst-btn="sm" type="button" id="sizing-btn-sm">Small</button> <button rst-btn type="button" id="sizing-btn">Default</button> <button rst-btn="lg" type="button" id="sizing-btn-lg">Large</button></p>
 <div data-extra="signin-providers"><div rst-signin-providers><form method="post" action="/auth/google"><button rst-btn="block" type="submit">Continue with Google</button></form><a href="/signin">Use your email instead</a></div></div>
+<div data-extra="fiesta-controls">
+<div rst-seg-tabs role="group" aria-label="View">
+<button type="button" aria-pressed="true">List</button>
+<button type="button" aria-pressed="false">Grid</button></div>
+<div rst-side><nav rst-side-nav aria-label="Settings">
+<a href="#side-general" aria-current="page">General</a>
+<a href="#side-members">Members</a></nav>
+<div><p>The workspace's name.</p></div></div></div>
 <div rst-shell-sidebar data-extra="legacy-drawer"><details rst-shell-chrome><summary>Menu</summary></details><aside rst-shell-rail><nav rst-shell-nav><a href="#legacy-one">Legacy one</a><a href="#legacy-two">Legacy two</a></nav></aside><main rst-shell-main><p>The legacy sidebar, which tokens.css keeps working for old layouts.</p></main></div>
 </div>`
 

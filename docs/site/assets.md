@@ -20,11 +20,16 @@ Mount at `GET /static/` with no `StripPrefix`.
 
 ## Delivered once, yours afterwards
 
-Two files arrive in your `static/` directory from `rastrillo new`
-rather than from an import: `tokens.css`
-([the design tokens](/docs/templates)) and `rastrillo.js`
-([the progressive-enhancement shim](/docs/jobs)). The scaffolded icons
-package works the same way.
+The framework's stylesheets and scripts arrive in your `static/`
+directory from `rastrillo new` rather than from an import:
+`tokens.css` ([the design tokens](/docs/templates)), `theme.css`,
+`shell.css`, Rastrillo's own `rastrillo.js`
+([the fragment shim](/docs/jobs)) and `live.js`, and Fiesta's
+scripts: `fiesta.js`, `busy.js`, `light.js`, `anchor.js`, `shell.js`,
+`transition.js`, `copy.js`, `select.js`, `datetime.js` and
+`calendar.js`. The stylesheets and Fiesta's scripts are the bytes of
+the [Fiesta](https://fiesta.rastrillo.org) release Rastrillo pins. The
+scaffolded icons package works the same way.
 
 Edit them freely. Nothing in the framework will overwrite them, and no
 upgrade will change them under you.

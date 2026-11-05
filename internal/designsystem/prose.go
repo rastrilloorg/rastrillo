@@ -177,6 +177,25 @@ const transitionAssetBlurb = "Stops a skipped page transition logging an " +
 	"error on column, stage and topbar pages. " +
 	"Sidebar and console pages don't need it."
 
+const shimAssetBlurb = "Rastrillo's fragment shim polls fragments and " +
+	"writes the cookie that keeps a colour-scheme choice. Every " +
+	"scaffolded app gets it."
+
+const busyRuleNote = "A button that CHANGES something gets a loading " +
+	"state; a button that only reveals something, e.g. a disclosure, a " +
+	"dropdown, a tab, does not. busy.js applies that rule to every " +
+	"submit button in every form, with nothing to opt into."
+
+const fiestaAssetBlurb = "Closes menus on Escape or an outside click, " +
+	"lets users drag a switch, gives iOS a pressed state on touch, and " +
+	"applies a colour-scheme choice without a reload. rastrillo new " +
+	"copies it into every new app."
+
+const copyAssetBlurb = "Powers the Copy button on rst-snippet. The " +
+	"button stays hidden when clipboard access is unavailable. Deletable " +
+	"on its own: without it, the code remains available to select and " +
+	"copy by hand."
+
 // prose is the table: English source → locale code → translation. See
 // the file comment above for why the key is the English sentence and
 // why en is absent from every row.
@@ -422,18 +441,18 @@ var prose = map[string]map[string]string{
 		`vi`:      `Một dấu hỏi có viền, dẫn tới bài trợ giúp. Chú giải CSS của nó chỉ là trang trí; bản thân liên kết mang nhãn là một câu đầy đủ.`,
 		`ar`:      `علامة استفهام محاطة بإطار تصل إلى مقالة مساعدة. تلميح CSS زينة فقط، أما الرابط فيحمل تسميته الكاملة بجملة تامة.`,
 	},
-	`A button that CHANGES something gets a loading state; a button that only reveals something, e.g. a disclosure, a dropdown, a tab, does not. rastrillo.js applies that rule to every submit button in every form, with nothing to opt into.`: {
-		`ga`:      `Faigheann cnaipe a ATHRAÍONN rud éigin staid luchtaithe; ní fhaigheann cnaipe nach nochtann ach rud éigin — nochtadh, anuas-roghchlár, cluaisín, mar shampla — a leithéid. Cuireann rastrillo.js an riail sin i bhfeidhm ar gach cnaipe seolta i ngach foirm, gan aon rud le rogha isteach ann.`,
-		`zh-Hans`: `会改变什么的按钮有加载状态；只是展开什么的按钮（例如折叠、下拉、标签页）没有。rastrillo.js 对每个表单里的每个提交按钮都套用这条规则，无需选择启用。`,
-		`es`:      `Un botón que CAMBIA algo recibe un estado de carga; un botón que solo revela algo —una divulgación, un desplegable, una pestaña— no. rastrillo.js aplica esa regla a todos los botones de envío de todos los formularios, sin nada que activar.`,
-		`hi`:      `जो बटन कुछ बदलता है, उसे लोडिंग स्थिति मिलती है; जो बटन सिर्फ़ कुछ दिखाता है — जैसे डिस्क्लोज़र, ड्रॉपडाउन, टैब — उसे नहीं। rastrillo.js यह नियम हर फ़ॉर्म के हर सबमिट बटन पर लगाता है, कुछ भी चालू करने की ज़रूरत नहीं।`,
-		`pt-PT`:   `Um botão que MUDA alguma coisa recebe um estado de carregamento; um botão que apenas revela alguma coisa — uma divulgação, um menu pendente, um separador — não. O rastrillo.js aplica essa regra a todos os botões de envio de todos os formulários, sem nada para ativar.`,
-		`bn`:      `যে বোতাম কিছু বদলায় সেটি লোডিং অবস্থা পায়; যে বোতাম শুধু কিছু দেখায় — যেমন ডিসক্লোজার, ড্রপডাউন, ট্যাব — সেটি পায় না। rastrillo.js এই নিয়ম প্রতিটি ফর্মের প্রতিটি সাবমিট বোতামে প্রয়োগ করে, আলাদা করে চালু করার কিছু নেই।`,
-		`ru`:      `Кнопка, которая ЧТО-ТО МЕНЯЕТ, получает состояние загрузки; кнопка, которая лишь что-то раскрывает — раскрывающийся блок, выпадающее меню, вкладка, — нет. rastrillo.js применяет это правило к каждой кнопке отправки в каждой форме, включать ничего не нужно.`,
-		`ja`:      `何かを変えるボタンには読み込み状態が付き、何かを開くだけのボタン（開閉、ドロップダウン、タブなど）には付きません。rastrillo.js はこの規則をすべてのフォームのすべての送信ボタンに適用します。有効にする設定はありません。`,
-		`yue`:     `會改變啲乜嘅按鈕會有載入狀態；淨係展開啲乜嘅按鈕（例如摺疊、下拉、分頁）就冇。rastrillo.js 會將呢條規則套落每個表單嘅每個提交按鈕，唔使開啟任何嘢。`,
-		`vi`:      `Nút LÀM THAY ĐỔI điều gì đó sẽ có trạng thái đang tải; nút chỉ mở ra điều gì đó — một khối bung, một menu thả xuống, một tab — thì không. rastrillo.js áp dụng quy tắc đó cho mọi nút gửi trong mọi biểu mẫu, không có gì phải bật lên.`,
-		`ar`:      `الزر الذي يُغيّر شيئًا يحصل على حالة تحميل، أما الزر الذي يكشف شيئًا فقط — كطيّ أو قائمة منسدلة أو تبويب — فلا. يطبّق rastrillo.js هذه القاعدة على كل زر إرسال في كل نموذج، دون أي شيء تفعّله.`,
+	busyRuleNote: {
+		`ga`:      `Faigheann cnaipe a ATHRAÍONN rud éigin staid luchtaithe; ní fhaigheann cnaipe nach nochtann ach rud éigin — nochtadh, anuas-roghchlár, cluaisín, mar shampla — a leithéid. Cuireann busy.js an riail sin i bhfeidhm ar gach cnaipe seolta i ngach foirm, gan aon rud le rogha isteach ann.`,
+		`zh-Hans`: `会改变什么的按钮有加载状态；只是展开什么的按钮（例如折叠、下拉、标签页）没有。busy.js 对每个表单里的每个提交按钮都套用这条规则，无需选择启用。`,
+		`es`:      `Un botón que CAMBIA algo recibe un estado de carga; un botón que solo revela algo —una divulgación, un desplegable, una pestaña— no. busy.js aplica esa regla a todos los botones de envío de todos los formularios, sin nada que activar.`,
+		`hi`:      `जो बटन कुछ बदलता है, उसे लोडिंग स्थिति मिलती है; जो बटन सिर्फ़ कुछ दिखाता है — जैसे डिस्क्लोज़र, ड्रॉपडाउन, टैब — उसे नहीं। busy.js यह नियम हर फ़ॉर्म के हर सबमिट बटन पर लगाता है, कुछ भी चालू करने की ज़रूरत नहीं।`,
+		`pt-PT`:   `Um botão que MUDA alguma coisa recebe um estado de carregamento; um botão que apenas revela alguma coisa — uma divulgação, um menu pendente, um separador — não. O busy.js aplica essa regra a todos os botões de envio de todos os formulários, sem nada para ativar.`,
+		`bn`:      `যে বোতাম কিছু বদলায় সেটি লোডিং অবস্থা পায়; যে বোতাম শুধু কিছু দেখায় — যেমন ডিসক্লোজার, ড্রপডাউন, ট্যাব — সেটি পায় না। busy.js এই নিয়ম প্রতিটি ফর্মের প্রতিটি সাবমিট বোতামে প্রয়োগ করে, আলাদা করে চালু করার কিছু নেই।`,
+		`ru`:      `Кнопка, которая ЧТО-ТО МЕНЯЕТ, получает состояние загрузки; кнопка, которая лишь что-то раскрывает — раскрывающийся блок, выпадающее меню, вкладка, — нет. busy.js применяет это правило к каждой кнопке отправки в каждой форме, включать ничего не нужно.`,
+		`ja`:      `何かを変えるボタンには読み込み状態が付き、何かを開くだけのボタン（開閉、ドロップダウン、タブなど）には付きません。busy.js はこの規則をすべてのフォームのすべての送信ボタンに適用します。有効にする設定はありません。`,
+		`yue`:     `會改變啲乜嘅按鈕會有載入狀態；淨係展開啲乜嘅按鈕（例如摺疊、下拉、分頁）就冇。busy.js 會將呢條規則套落每個表單嘅每個提交按鈕，唔使開啟任何嘢。`,
+		`vi`:      `Nút LÀM THAY ĐỔI điều gì đó sẽ có trạng thái đang tải; nút chỉ mở ra điều gì đó — một khối bung, một menu thả xuống, một tab — thì không. busy.js áp dụng quy tắc đó cho mọi nút gửi trong mọi biểu mẫu, không có gì phải bật lên.`,
+		`ar`:      `الزر الذي يُغيّر شيئًا يحصل على حالة تحميل، أما الزر الذي يكشف شيئًا فقط — كطيّ أو قائمة منسدلة أو تبويب — فلا. يطبّق busy.js هذه القاعدة على كل زر إرسال في كل نموذج، دون أي شيء تفعّله.`,
 	},
 	`A capacity bar with its number.`: {
 		`ga`:      `Barra acmhainne agus a uimhir leis.`,
@@ -4504,18 +4523,18 @@ var prose = map[string]map[string]string{
 		`vi`:      `Mọi slug biểu tượng, ở kích thước các component vẽ nó, kèm lệnh gọi để sao chép và tên của nó trên lucide.dev.`,
 		`ar`:      `كل slug أيقونة، بالحجم الذي ترسمه به المكوّنات، مع الاستدعاء الجاهز للنسخ واسمه على lucide.dev.`,
 	},
-	`Rastrillo apps get all of this day one, but anyone can use the design system. Progressively enhanced with JS, but no JS required.`: {
-		`ga`:      `Faigheann aipeanna rastrillo é seo ar fad ón gcéad lá, ach is féidir le haon duine an córas dearaidh a úsáid. Feabhsaithe go céimnitheach le JavaScript, ach níl JavaScript riachtanach.`,
-		`zh-Hans`: `rastrillo 应用第一天就拿到全部，但任何人都可以使用这套设计系统。用 JavaScript 渐进增强，但不需要 JavaScript。`,
-		`es`:      `Las apps de rastrillo reciben todo esto desde el primer día, pero cualquiera puede usar el sistema de diseño. Mejorado progresivamente con JavaScript, aunque no hace falta JavaScript.`,
-		`hi`:      `rastrillo ऐप्स को यह सब पहले ही दिन मिल जाता है, पर डिज़ाइन सिस्टम कोई भी इस्तेमाल कर सकता है। JavaScript से प्रोग्रेसिव एन्हांसमेंट, पर JavaScript ज़रूरी नहीं।`,
-		`pt-PT`:   `As apps rastrillo recebem tudo isto no primeiro dia, mas qualquer pessoa pode usar o sistema de design. Melhorado progressivamente com JavaScript, mas sem exigir JavaScript.`,
-		`bn`:      `rastrillo অ্যাপ প্রথম দিনেই এই সবটা পায়, তবে ডিজাইন সিস্টেম যে কেউ ব্যবহার করতে পারে। JavaScript দিয়ে ক্রমান্বয়ে উন্নত, কিন্তু JavaScript লাগে না।`,
-		`ru`:      `Приложения rastrillo получают всё это с первого дня, но дизайн-системой может пользоваться кто угодно. Прогрессивное улучшение на JavaScript, но JavaScript не нужен.`,
-		`ja`:      `rastrillo のアプリは初日にこれを全部受け取りますが、デザインシステムは誰でも使えます。JavaScript でプログレッシブに拡張しますが、JavaScript は必須ではありません。`,
-		`yue`:     `rastrillo 應用第一日就攞齊晒呢啲，但設計系統邊個都用得。用 JavaScript 漸進增強，但唔需要 JavaScript。`,
-		`vi`:      `Ứng dụng rastrillo nhận hết những thứ này ngay ngày đầu, nhưng ai cũng dùng được hệ thống thiết kế. Được tăng cường dần bằng JavaScript, nhưng không bắt buộc JavaScript.`,
-		`ar`:      `تحصل تطبيقات rastrillo على هذا كله من اليوم الأول، لكن نظام التصميم متاح للجميع. تحسين تدريجي بـ JavaScript، دون اشتراط JavaScript.`,
+	`Rastrillo apps get all of this on day one. Anyone can take these stylesheets and scripts from Fiesta, at fiesta.rastrillo.org. Pages work without JavaScript and gain enhancements when it is available.`: {
+		`ga`:      `Faigheann aipeanna rastrillo é seo ar fad ón gcéad lá. Is féidir le haon duine na stílbhileoga agus na scripteanna seo a fháil ó Fiesta, ag fiesta.rastrillo.org. Oibríonn na leathanaigh gan JavaScript agus faigheann siad feabhsúcháin nuair a bhíonn sé ar fáil.`,
+		`zh-Hans`: `rastrillo 应用第一天就拿到全部。任何人都可以从 Fiesta（fiesta.rastrillo.org）拿到这些样式表和脚本。页面不用 JavaScript 也能用，有 JavaScript 时还会得到增强。`,
+		`es`:      `Las apps de rastrillo reciben todo esto desde el primer día. Cualquiera puede tomar estas hojas de estilo y scripts de Fiesta, en fiesta.rastrillo.org. Las páginas funcionan sin JavaScript y ganan mejoras cuando está disponible.`,
+		`hi`:      `rastrillo ऐप्स को यह सब पहले ही दिन मिल जाता है। ये स्टाइलशीट और स्क्रिप्ट कोई भी Fiesta से, fiesta.rastrillo.org पर, ले सकता है। पेज JavaScript के बिना काम करते हैं, और उसके उपलब्ध होने पर उनमें एन्हांसमेंट जुड़ जाते हैं।`,
+		`pt-PT`:   `As apps rastrillo recebem tudo isto no primeiro dia. Qualquer pessoa pode obter estas folhas de estilo e scripts do Fiesta, em fiesta.rastrillo.org. As páginas funcionam sem JavaScript e ganham melhorias quando ele está disponível.`,
+		`bn`:      `rastrillo অ্যাপ প্রথম দিনেই এই সবটা পায়। এই স্টাইলশিট আর স্ক্রিপ্টগুলো যে কেউ Fiesta থেকে, fiesta.rastrillo.org-এ, নিতে পারে। পেজগুলো JavaScript ছাড়াই কাজ করে, আর JavaScript থাকলে বাড়তি সুবিধা পায়।`,
+		`ru`:      `Приложения rastrillo получают всё это с первого дня. Эти таблицы стилей и скрипты любой может взять у Fiesta, на fiesta.rastrillo.org. Страницы работают без JavaScript, а когда он доступен, получают улучшения.`,
+		`ja`:      `rastrillo のアプリは初日にこれを全部受け取ります。これらのスタイルシートとスクリプトは、誰でも Fiesta（fiesta.rastrillo.org）から入手できます。ページは JavaScript なしで動き、JavaScript が使えるときは拡張が加わります。`,
+		`yue`:     `rastrillo 應用第一日就攞齊晒呢啲。呢啲樣式表同腳本，邊個都可以喺 Fiesta（fiesta.rastrillo.org）度攞到。頁面冇 JavaScript 都用得，有 JavaScript 嘅時候仲會有增強。`,
+		`vi`:      `Ứng dụng rastrillo nhận hết những thứ này ngay ngày đầu. Ai cũng lấy được các bảng kiểu và script này từ Fiesta, tại fiesta.rastrillo.org. Các trang chạy được khi không có JavaScript và được cải tiến thêm khi có JavaScript.`,
+		`ar`:      `تحصل تطبيقات rastrillo على هذا كله من اليوم الأول. ويستطيع أي أحد أخذ أوراق الأنماط والسكربتات هذه من Fiesta على fiesta.rastrillo.org. تعمل الصفحات دون JavaScript، وتكتسب تحسينات حين يكون متاحًا.`,
 	},
 	`The stylesheets`: {
 		`ga`:      `Na stílbhileoga`,
@@ -4556,18 +4575,18 @@ var prose = map[string]map[string]string{
 		`vi`:      `Các tệp script`,
 		`ar`:      `النصوص البرمجية`,
 	},
-	`rastrillo.js is the progressive-enhancement shim: polling fragments, light dismiss, the switch's drag. busy.js is the busy rule. anchor.js keeps dropdown menus on the screen where CSS cannot. select.js and datetime.js are enhancements, each inert until a control opts in and each deletable on its own.`: {
-		`ga`:      `Is é rastrillo.js an seim feabhsúcháin de réir a chéile: blúirí á vótáil, díbhe éadrom, tarraingt an lasc. Is é busy.js an riail ghnóthach. Coinníonn anchor.js roghchláir anuas ar an scáileán áit nach féidir le CSS. Is feabhsúcháin iad select.js agus datetime.js, gach ceann acu marbh go dtí go roghnaíonn rialtán isteach, agus gach ceann acu inscriosta leis féin.`,
-		`zh-Hans`: `rastrillo.js 是渐进增强的垫片：片段轮询、轻量关闭、开关的拖动。busy.js 是忙碌规则。anchor.js 在 CSS 做不到的地方让下拉菜单留在屏幕内。select.js 和 datetime.js 是增强，各自在控件主动启用前都是惰性的，也都可以单独删除。`,
-		`es`:      `rastrillo.js es la capa de mejora progresiva: sondeo de fragmentos, cierre ligero y el arrastre del interruptor. busy.js es la regla de ocupado. anchor.js mantiene los menús desplegables dentro de la pantalla donde CSS no puede. select.js y datetime.js son mejoras: cada una inerte hasta que un control se apunta, cada una borrable por separado.`,
-		`hi`:      `rastrillo.js प्रोग्रेसिव-एन्हांसमेंट शिम है: फ़्रैगमेंट पोलिंग, लाइट डिसमिस, स्विच को खींचना। busy.js बिज़ी नियम है। जहाँ CSS नहीं कर सकता, वहाँ anchor.js ड्रॉपडाउन मेन्यू को स्क्रीन पर रखता है। select.js और datetime.js एन्हांसमेंट हैं, जब तक कोई कंट्रोल खुद न चुने तब तक हर एक निष्क्रिय, और हर एक अलग से मिटाया जा सकता है।`,
-		`pt-PT`:   `rastrillo.js é a camada de melhoria progressiva: sondagem de fragmentos, fecho leve e o arrastar do interruptor. busy.js é a regra de ocupado. anchor.js mantém os menus suspensos dentro do ecrã onde o CSS não consegue. select.js e datetime.js são melhorias, cada uma inerte até um controlo aderir, cada uma apagável por si só.`,
-		`bn`:      `rastrillo.js হল প্রোগ্রেসিভ-এনহ্যান্সমেন্ট শিম: ফ্র্যাগমেন্ট পোলিং, লাইট ডিসমিস, সুইচ টেনে সরানো। busy.js হল বিজি নিয়ম। যেখানে CSS পারে না, সেখানে anchor.js ড্রপডাউন মেনু স্ক্রিনের ভেতরে রাখে। select.js আর datetime.js হল এনহ্যান্সমেন্ট, কোনও কন্ট্রোল নিজে থেকে না চাওয়া পর্যন্ত প্রতিটিই নিষ্ক্রিয়, আর প্রতিটিই আলাদা করে মুছে ফেলা যায়।`,
-		`ru`:      `rastrillo.js является слоем прогрессивного улучшения: опрос фрагментов, лёгкое закрытие, перетаскивание переключателя. busy.js задаёт правило занятости. anchor.js удерживает выпадающие меню на экране там, где CSS не может. select.js и datetime.js служат улучшениями: каждое бездействует, пока элемент управления сам не подключится, и каждое удаляется отдельно.`,
-		`ja`:      `rastrillo.js はプログレッシブ・エンハンスメントのシムです。フラグメントのポーリング、ライトディスミス、スイッチのドラッグ。busy.js はビジールールです。anchor.js は CSS にできない場所でドロップダウンのメニューを画面内に収めます。select.js と datetime.js は拡張で、コントロールが自分から名乗り出るまで何もせず、どちらも単独で削除できます。`,
-		`yue`:     `rastrillo.js 係漸進增強嘅墊片：片段輪詢、輕量關閉、開關嘅拖動。busy.js 係忙碌規則。anchor.js 喺 CSS 做唔到嘅地方令下拉選單留喺畫面入面。select.js 同 datetime.js 係增強，喺控件自己啟用之前都係唔郁嘅，而且可以逐個刪走。`,
-		`vi`:      `rastrillo.js là lớp cải tiến tăng dần: hỏi vòng các fragment, đóng nhẹ, kéo công tắc. busy.js là quy tắc bận. anchor.js giữ menu thả xuống trong màn hình ở nơi CSS không làm được. select.js và datetime.js là các phần cải tiến, mỗi phần nằm im cho tới khi một control tự đăng ký, và mỗi phần đều xoá riêng được.`,
-		`ar`:      `‏rastrillo.js هو طبقة التحسين التدريجي: استقصاء الأجزاء، والإغلاق الخفيف، وسحب المفتاح. وbusy.js هو قاعدة الانشغال. وanchor.js يُبقي القوائم المنسدلة داخل الشاشة حيث لا يستطيع CSS ذلك. أما select.js وdatetime.js فتحسينان، كلٌّ منهما خامل حتى ينضمّ إليه عنصر تحكّم، وكلٌّ منهما يُحذف وحده.`,
+	`fiesta.js closes menus, lets a switch be dragged and applies a colour-scheme choice in place. rastrillo.js polls fragments and keeps that choice in a cookie. busy.js is the busy rule. anchor.js keeps dropdown menus on the screen where CSS cannot. copy.js, select.js and datetime.js are enhancements, each inert until a control opts in and each deletable on its own.`: {
+		`ga`:      `Dúnann fiesta.js roghchláir, ligeann sé lasc a tharraingt, agus cuireann sé rogha scéime dathanna i bhfeidhm san áit. Vótálann rastrillo.js blúirí agus coinníonn sé an rogha sin i bhfianán. Is é busy.js an riail ghnóthach. Coinníonn anchor.js roghchláir anuas ar an scáileán áit nach féidir le CSS. Is feabhsúcháin iad copy.js, select.js agus datetime.js, gach ceann acu marbh go dtí go roghnaíonn rialtán isteach, agus gach ceann acu inscriosta leis féin.`,
+		`zh-Hans`: `fiesta.js 关闭菜单、让开关可以拖动，并就地应用所选的配色方案。rastrillo.js 轮询片段，并把这个选择存进 cookie。busy.js 是忙碌规则。anchor.js 在 CSS 做不到的地方让下拉菜单留在屏幕内。copy.js、select.js 和 datetime.js 是增强，各自在控件主动启用前都是惰性的，也都可以单独删除。`,
+		`es`:      `fiesta.js cierra los menús, permite arrastrar un interruptor y aplica en el sitio la elección de esquema de color. rastrillo.js sondea fragmentos y guarda esa elección en una cookie. busy.js es la regla de ocupado. anchor.js mantiene los menús desplegables dentro de la pantalla donde CSS no puede. copy.js, select.js y datetime.js son mejoras: cada una inerte hasta que un control se apunta, cada una borrable por separado.`,
+		`hi`:      `fiesta.js मेन्यू बंद करता है, स्विच खींचने देता है और चुनी गई कलर स्कीम उसी जगह लागू करता है। rastrillo.js फ़्रैगमेंट पोल करता है और वह चुनाव एक कुकी में रखता है। busy.js बिज़ी नियम है। जहाँ CSS नहीं कर सकता, वहाँ anchor.js ड्रॉपडाउन मेन्यू को स्क्रीन पर रखता है। copy.js, select.js और datetime.js एन्हांसमेंट हैं, जब तक कोई कंट्रोल खुद न चुने तब तक हर एक निष्क्रिय, और हर एक अलग से मिटाया जा सकता है।`,
+		`pt-PT`:   `O fiesta.js fecha os menus, deixa arrastar um interruptor e aplica no local a escolha de esquema de cores. O rastrillo.js sonda fragmentos e guarda essa escolha num cookie. busy.js é a regra de ocupado. anchor.js mantém os menus suspensos dentro do ecrã onde o CSS não consegue. copy.js, select.js e datetime.js são melhorias, cada uma inerte até um controlo aderir, cada uma apagável por si só.`,
+		`bn`:      `fiesta.js মেনু বন্ধ করে, সুইচ টেনে সরাতে দেয় আর বেছে নেওয়া রঙের স্কিম সেখানেই প্রয়োগ করে। rastrillo.js ফ্র্যাগমেন্ট পোল করে আর সেই বাছাই একটি কুকিতে রাখে। busy.js হল বিজি নিয়ম। যেখানে CSS পারে না, সেখানে anchor.js ড্রপডাউন মেনু স্ক্রিনের ভেতরে রাখে। copy.js, select.js আর datetime.js হল এনহ্যান্সমেন্ট, কোনও কন্ট্রোল নিজে থেকে না চাওয়া পর্যন্ত প্রতিটিই নিষ্ক্রিয়, আর প্রতিটিই আলাদা করে মুছে ফেলা যায়।`,
+		`ru`:      `fiesta.js закрывает меню, позволяет перетаскивать переключатель и применяет выбранную цветовую схему на месте. rastrillo.js опрашивает фрагменты и хранит этот выбор в cookie. busy.js задаёт правило занятости. anchor.js удерживает выпадающие меню на экране там, где CSS не может. copy.js, select.js и datetime.js служат улучшениями: каждое бездействует, пока элемент управления сам не подключится, и каждое удаляется отдельно.`,
+		`ja`:      `fiesta.js はメニューを閉じ、スイッチをドラッグできるようにし、選んだ配色をその場で適用します。rastrillo.js はフラグメントをポーリングし、その選択を Cookie に保存します。busy.js はビジールールです。anchor.js は CSS にできない場所でドロップダウンのメニューを画面内に収めます。copy.js、select.js、datetime.js は拡張で、コントロールが自分から名乗り出るまで何もせず、どれも単独で削除できます。`,
+		`yue`:     `fiesta.js 會閂選單、等開關可以拖，仲會即場套用揀咗嘅配色。rastrillo.js 輪詢片段，再將呢個選擇存落 cookie。busy.js 係忙碌規則。anchor.js 喺 CSS 做唔到嘅地方令下拉選單留喺畫面入面。copy.js、select.js 同 datetime.js 係增強，喺控件自己啟用之前都係唔郁嘅，而且可以逐個刪走。`,
+		`vi`:      `fiesta.js đóng menu, cho kéo công tắc và áp dụng lựa chọn bảng màu ngay tại chỗ. rastrillo.js hỏi vòng các fragment và giữ lựa chọn đó trong một cookie. busy.js là quy tắc bận. anchor.js giữ menu thả xuống trong màn hình ở nơi CSS không làm được. copy.js, select.js và datetime.js là các phần cải tiến, mỗi phần nằm im cho tới khi một control tự đăng ký, và mỗi phần đều xoá riêng được.`,
+		`ar`:      `‏fiesta.js يغلق القوائم، ويتيح سحب المفتاح، ويطبّق اختيار نظام الألوان في مكانه. وrastrillo.js يستقصي الأجزاء ويحفظ ذلك الاختيار في ملفّ تعريف ارتباط. وbusy.js هو قاعدة الانشغال. وanchor.js يُبقي القوائم المنسدلة داخل الشاشة حيث لا يستطيع CSS ذلك. أما copy.js وselect.js وdatetime.js فتحسينات، كلٌّ منها خامل حتى ينضمّ إليه عنصر تحكّم، وكلٌّ منها يُحذف وحده.`,
 	},
 	`What each file weighs`: {
 		`ga`:      `Meáchan gach comhaid`,
@@ -4621,18 +4640,44 @@ var prose = map[string]map[string]string{
 		`vi`:      `Màu sắc, họ chữ và hình khối cho chủ đề {theme}: một khối :root duy nhất, mỗi màu khai báo một lần dưới dạng cặp light-dark().`,
 		`ar`:      `اللون وعائلة الخط والشكل لسمة {theme}: كتلة :root واحدة يُعلَن فيها كل لون مرة واحدة كزوج light-dark().`,
 	},
-	`The progressive-enhancement shim: polling fragments, light dismiss and the switch's drag. Every scaffolded app gets it.`: {
-		`ga`:      `An seim feabhsúcháin de réir a chéile: blúirí á vótáil, díbhe éadrom agus tarraingt an lasc. Faigheann gach aip scafallaithe é.`,
-		`zh-Hans`: `渐进增强的垫片：片段轮询、轻量关闭和开关的拖动。每个脚手架生成的应用都会拿到它。`,
-		`es`:      `La capa de mejora progresiva: sondeo de fragmentos, cierre ligero y el arrastre del interruptor. La recibe toda app generada.`,
-		`hi`:      `प्रोग्रेसिव-एन्हांसमेंट शिम: फ़्रैगमेंट पोलिंग, लाइट डिसमिस और स्विच को खींचना। हर स्कैफ़ोल्ड की गई ऐप को यह मिलती है।`,
-		`pt-PT`:   `A camada de melhoria progressiva: sondagem de fragmentos, fecho leve e o arrastar do interruptor. Toda app gerada a recebe.`,
-		`bn`:      `প্রোগ্রেসিভ-এনহ্যান্সমেন্ট শিম: ফ্র্যাগমেন্ট পোলিং, লাইট ডিসমিস আর সুইচ টেনে সরানো। প্রতিটি স্ক্যাফোল্ড করা অ্যাপ এটি পায়।`,
-		`ru`:      `Слой прогрессивного улучшения: опрос фрагментов, лёгкое закрытие и перетаскивание переключателя. Его получает каждое сгенерированное приложение.`,
-		`ja`:      `プログレッシブ・エンハンスメントのシム。フラグメントのポーリング、ライトディスミス、スイッチのドラッグ。足場を組んだアプリはすべて受け取ります。`,
-		`yue`:     `漸進增強嘅墊片：片段輪詢、輕量關閉同開關嘅拖動。每個搭骨架生成嘅應用都會攞到。`,
-		`vi`:      `Lớp cải tiến tăng dần: hỏi vòng fragment, đóng nhẹ và kéo công tắc. Mọi ứng dụng được tạo khung đều nhận nó.`,
-		`ar`:      `طبقة التحسين التدريجي: استقصاء الأجزاء والإغلاق الخفيف وسحب المفتاح. يتسلّمها كل تطبيق مولَّد.`,
+	fiestaAssetBlurb: {
+		`ga`:      `Dúnann sé roghchláir le Escape nó le cliceáil lasmuigh díobh, ligeann sé d'úsáideoirí lasc a tharraingt, tugann sé staid bhrúite do iOS ar theagmháil, agus cuireann sé rogha scéime dathanna i bhfeidhm gan athlódáil. Cóipeálann rastrillo new isteach i ngach aip nua é.`,
+		`zh-Hans`: `按 Escape 或在外面点击即可关闭菜单，让用户拖动开关，在 iOS 上为触摸提供按下状态，并且无需重新加载即可应用所选的配色方案。rastrillo new 会把它复制到每个新应用中。`,
+		`es`:      `Cierra los menús con Escape o con un clic fuera, permite arrastrar un interruptor, da a iOS un estado pulsado al tocar y aplica la elección de esquema de color sin recargar. rastrillo new la copia en cada app nueva.`,
+		`hi`:      `Escape दबाने या बाहर क्लिक करने पर मेन्यू बंद करती है, उपयोगकर्ताओं को स्विच खींचने देती है, iOS पर छूने पर दबी हुई स्थिति दिखाती है, और बिना रीलोड के चुनी गई कलर स्कीम लागू करती है। rastrillo new इसे हर नई ऐप में कॉपी करता है।`,
+		`pt-PT`:   `Fecha os menus com Escape ou com um clique fora, deixa arrastar um interruptor, dá ao iOS um estado premido ao toque e aplica a escolha de esquema de cores sem recarregar. O rastrillo new copia-o para cada app nova.`,
+		`bn`:      `Escape চাপলে বা বাইরে ক্লিক করলে মেনু বন্ধ করে, ব্যবহারকারীদের সুইচ টেনে সরাতে দেয়, iOS-এ ছোঁয়ার সময় চাপা অবস্থা দেখায়, আর রিলোড ছাড়াই বেছে নেওয়া রঙের স্কিম প্রয়োগ করে। rastrillo new এটি প্রতিটি নতুন অ্যাপে কপি করে।`,
+		`ru`:      `Закрывает меню по Escape или щелчку снаружи, позволяет перетаскивать переключатель, даёт iOS нажатое состояние при касании и применяет выбранную цветовую схему без перезагрузки. rastrillo new копирует его в каждое новое приложение.`,
+		`ja`:      `Escape キーや外側のクリックでメニューを閉じ、スイッチをドラッグできるようにし、iOS のタッチに押下状態を与え、選んだ配色を再読み込みなしで適用します。rastrillo new が新しいアプリすべてにコピーします。`,
+		`yue`:     `撳 Escape 或者喺外面撳一下就會閂選單，等用戶可以拖開關，喺 iOS 上面掂嘅時候有撳落嘅狀態，仲可以唔使重新載入就套用揀咗嘅配色。rastrillo new 會將佢複製落每個新應用度。`,
+		`vi`:      `Đóng menu khi nhấn Escape hoặc nhấp ra ngoài, cho người dùng kéo công tắc, cho iOS trạng thái được nhấn khi chạm, và áp dụng lựa chọn bảng màu mà không cần tải lại. rastrillo new sao chép nó vào mọi ứng dụng mới.`,
+		`ar`:      `يغلق القوائم بمفتاح Escape أو بنقرة خارجها، ويتيح للمستخدمين سحب المفتاح، ويمنح iOS حالة الضغط عند اللمس، ويطبّق اختيار نظام الألوان دون إعادة تحميل. ينسخه rastrillo new إلى كل تطبيق جديد.`,
+	},
+	copyAssetBlurb: {
+		`ga`:      `Cumhachtaíonn sé an cnaipe Cóipeáil ar rst-snippet. Fanann an cnaipe i bhfolach nuair nach bhfuil rochtain ar an ghearrthaisce ar fáil. Inscriosta leis féin: gan é, tá an cód ar fáil fós le roghnú agus le cóipeáil de láimh.`,
+		`zh-Hans`: `为 rst-snippet 上的“复制”按钮提供支持。无法使用剪贴板时，按钮保持隐藏。可以单独删除：没有它，代码仍然可以手动选中和复制。`,
+		`es`:      `Hace funcionar el botón Copiar de rst-snippet. El botón sigue oculto cuando no hay acceso al portapapeles. Borrable por separado: sin él, el código sigue disponible para seleccionarlo y copiarlo a mano.`,
+		`hi`:      `rst-snippet पर कॉपी बटन चलाती है। क्लिपबोर्ड तक पहुँच न होने पर बटन छिपा रहता है। अलग से हटाया जा सकता है: इसके बिना भी कोड हाथ से चुनने और कॉपी करने के लिए उपलब्ध रहता है।`,
+		`pt-PT`:   `Faz funcionar o botão Copiar do rst-snippet. O botão fica oculto quando não há acesso à área de transferência. Apagável por si só: sem ele, o código continua disponível para selecionar e copiar à mão.`,
+		`bn`:      `rst-snippet-এর কপি বোতাম চালায়। ক্লিপবোর্ডে প্রবেশাধিকার না থাকলে বোতামটি লুকানো থাকে। আলাদা করে মুছে ফেলা যায়: এটি ছাড়াও কোড হাতে বেছে নেওয়া আর কপি করার জন্য থেকে যায়।`,
+		`ru`:      `Обеспечивает работу кнопки «Копировать» у rst-snippet. Кнопка остаётся скрытой, когда буфер обмена недоступен. Удаляется отдельно: без него код по-прежнему можно выделить и скопировать вручную.`,
+		`ja`:      `rst-snippet のコピーボタンを動かします。クリップボードにアクセスできないときはボタンを隠したままにします。単独で削除できます。無くてもコードは手で選択してコピーできます。`,
+		`yue`:     `負責 rst-snippet 上面嘅「複製」掣。用唔到剪貼簿嘅時候，個掣會一直收埋。可以單獨刪走：冇咗佢，代碼都仲可以自己揀同複製。`,
+		`vi`:      `Vận hành nút Sao chép trên rst-snippet. Nút vẫn ẩn khi không truy cập được bộ nhớ tạm. Xoá riêng được: thiếu nó, mã vẫn còn đó để chọn và sao chép bằng tay.`,
+		`ar`:      `يشغّل زر النسخ في rst-snippet. يبقى الزر مخفيًا حين يتعذّر الوصول إلى الحافظة. يُحذف وحده: بدونه تبقى الشيفرة متاحة لتحديدها ونسخها يدويًا.`,
+	},
+	shimAssetBlurb: {
+		`ga`:      `Vótálann seim blúirí Rastrillo blúirí agus scríobhann sé an fianán a choinníonn rogha scéime dathanna. Faigheann gach aip scafallaithe é.`,
+		`zh-Hans`: `Rastrillo 的片段垫片会轮询片段，并写入保存配色方案选择的 cookie。每个脚手架生成的应用都会拿到它。`,
+		`es`:      `La capa de fragmentos de Rastrillo sondea fragmentos y escribe la cookie que guarda la elección de esquema de color. La recibe toda app generada.`,
+		`hi`:      `Rastrillo का फ़्रैगमेंट शिम फ़्रैगमेंट पोल करता है और वह कुकी लिखता है जो चुनी गई कलर स्कीम याद रखती है। हर स्कैफ़ोल्ड की गई ऐप को यह मिलती है।`,
+		`pt-PT`:   `A camada de fragmentos do Rastrillo sonda fragmentos e escreve o cookie que guarda a escolha de esquema de cores. Toda app gerada a recebe.`,
+		`bn`:      `Rastrillo-র ফ্র্যাগমেন্ট শিম ফ্র্যাগমেন্ট পোল করে আর সেই কুকি লেখে যা বেছে নেওয়া রঙের স্কিম মনে রাখে। প্রতিটি স্ক্যাফোল্ড করা অ্যাপ এটি পায়।`,
+		`ru`:      `Слой фрагментов Rastrillo опрашивает фрагменты и записывает cookie, в которой хранится выбранная цветовая схема. Его получает каждое сгенерированное приложение.`,
+		`ja`:      `Rastrillo のフラグメント用シムは、フラグメントをポーリングし、選んだ配色を覚えておく Cookie を書き込みます。足場を組んだアプリはすべて受け取ります。`,
+		`yue`:     `Rastrillo 嘅片段墊片會輪詢片段，再寫入記住揀咗邊個配色嘅 cookie。每個搭骨架生成嘅應用都會攞到。`,
+		`vi`:      `Lớp fragment của Rastrillo hỏi vòng các fragment và ghi cookie giữ lựa chọn bảng màu. Mọi ứng dụng được tạo khung đều nhận nó.`,
+		`ar`:      `طبقة الأجزاء في Rastrillo تستقصي الأجزاء وتكتب ملفّ تعريف الارتباط الذي يحفظ اختيار نظام الألوان. يتسلّمها كل تطبيق مولَّد.`,
 	},
 	`The busy rule: while a form sends, its button shows a spinner for at least 650ms and refuses a second submit, and Back hands it back. Every scaffolded app gets it.`: {
 		`ga`:      `An riail ghnóthach: fad a sheolann foirm, taispeánann a cnaipe roth casta ar feadh 650ms ar a laghad agus diúltaíonn sé don dara seoladh, agus tugann Siar ar ais é. Faigheann gach aip scafallaithe é.`,
@@ -5154,18 +5199,18 @@ var prose = map[string]map[string]string{
 		`vi`:      `Nghỉ: nút trước khi có chuyện gì xảy ra`,
 		`ar`:      `في السكون: الزر قبل أن يحدث أي شيء`,
 	},
-	`Working: what rastrillo.js writes on the way out`: {
-		`ga`:      `Ag obair: an rud a scríobhann rastrillo.js agus an fhoirm ag imeacht`,
-		`zh-Hans`: `工作中：表单送出时 rastrillo.js 写下的样子`,
-		`es`:      `Trabajando: lo que rastrillo.js escribe al salir el formulario`,
-		`hi`:      `काम चल रहा है: फ़ॉर्म जाते समय rastrillo.js जो लिखता है`,
-		`pt-PT`:   `A trabalhar: o que o rastrillo.js escreve quando o formulário sai`,
-		`bn`:      `কাজ চলছে: ফর্ম বেরোনোর সময় rastrillo.js যা লেখে`,
-		`ru`:      `В работе: то, что rastrillo.js пишет на выходе`,
-		`ja`:      `処理中：フォームが出ていくときに rastrillo.js が書くもの`,
-		`yue`:     `處理緊：表單送出嗰陣 rastrillo.js 寫低嘅嘢`,
-		`vi`:      `Đang xử lý: thứ rastrillo.js viết ra khi biểu mẫu rời đi`,
-		`ar`:      `قيد العمل: ما يكتبه rastrillo.js عند خروج النموذج`,
+	`Working: what busy.js writes on the way out`: {
+		`ga`:      `Ag obair: an rud a scríobhann busy.js agus an fhoirm ag imeacht`,
+		`zh-Hans`: `工作中：表单送出时 busy.js 写下的样子`,
+		`es`:      `Trabajando: lo que busy.js escribe al salir el formulario`,
+		`hi`:      `काम चल रहा है: फ़ॉर्म जाते समय busy.js जो लिखता है`,
+		`pt-PT`:   `A trabalhar: o que o busy.js escreve quando o formulário sai`,
+		`bn`:      `কাজ চলছে: ফর্ম বেরোনোর সময় busy.js যা লেখে`,
+		`ru`:      `В работе: то, что busy.js пишет на выходе`,
+		`ja`:      `処理中：フォームが出ていくときに busy.js が書くもの`,
+		`yue`:     `處理緊：表單送出嗰陣 busy.js 寫低嘅嘢`,
+		`vi`:      `Đang xử lý: thứ busy.js viết ra khi biểu mẫu rời đi`,
+		`ar`:      `قيد العمل: ما يكتبه busy.js عند خروج النموذج`,
 	},
 	`Twelve options, Plain: the enhancement opted out`: {
 		`ga`:      `Dhá rogha dhéag, Plain: diúltaíodh don fheabhsú`,

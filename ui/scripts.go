@@ -48,8 +48,8 @@ func needable(name string) bool {
 // optionalScripts are the vendored scripts a page loads only where it
 // uses them, in the order the layouts load them: live.js after busy.js,
 // which hands it a live form, and the component scripts last, in their
-// own order. rastrillo.js and shell.js load on every page whose layout
-// links them.
+// own order. fiesta.js loads on every page, through pageScripts;
+// rastrillo.js and shell.js on every page whose layout links them.
 func optionalScripts() []string {
 	return append([]string{"busy.js", "live.js", "light.js", "anchor.js"},
 		vendored.ComponentScripts()...)
@@ -66,10 +66,21 @@ func allComponentScripts() []string {
 	return paths
 }
 
-// allOptionalScripts is every optional script, as static paths, in load
-// order: what a render outside ui.Pages loads.
-func allOptionalScripts() []string {
-	var paths []string
+// everyPageScript is Fiesta's fiesta.js: light dismiss, the switch's
+// drag and the scheme menu's in-place apply. Any page can show a menu
+// or a switch, so every page loads it, ahead of its optional scripts.
+const everyPageScript = "fiesta.js"
+
+// pageScriptNames is everyPageScript, then the optional scripts a
+// page's templates show, in load order.
+func pageScriptNames(reading pageReading) []string {
+	return append([]string{everyPageScript}, plannedScripts(reading)...)
+}
+
+// allPageScripts is everyPageScript and every optional script, as
+// static paths, in load order: what a render outside ui.Pages loads.
+func allPageScripts() []string {
+	paths := []string{"static/" + everyPageScript}
 	for _, name := range optionalScripts() {
 		paths = append(paths, "static/"+name)
 	}
@@ -84,22 +95,30 @@ func scriptFuncs() template.FuncMap {
 	return template.FuncMap{
 		"needs":          needs,
 		"neededScripts":  allComponentScripts,
-		"pageScripts":    allOptionalScripts,
+		"pageScripts":    allPageScripts,
 		"pageStylesheet": func() string { return "/" + stylesheet },
 	}
 }
 
 // addPages adds each of the app's pages. With the app's assets, a page
 // links only the scripts the app still has, and its stylesheet's slice
-// once every page's hooks are known.
+// once every page's hooks are known. Without them every page links the
+// whole stylesheet, so no script is taken to be unchanged: none could
+// be checked, and nothing is cut on the strength of it.
 func (pages *Pages) addPages(base *tmpl.Template, config PagesConfig) error {
-	has := func(string) bool { return true }
+	files := appFiles{
+		has:       func(string) bool { return true },
+		unchanged: func(string) bool { return false },
+	}
 	if config.Assets != nil {
-		has = config.Assets.Has
+		files = appFiles{
+			has:       config.Assets.Has,
+			unchanged: unchangedScripts(config.Assets),
+		}
 	}
 	plans := map[string]pagePlan{}
 	for name, file := range config.Pages {
-		plan, err := pages.addPage(base, name, file, config.App, has)
+		plan, err := pages.addPage(base, name, file, config.App, files)
 		if err != nil {
 			return err
 		}
@@ -113,10 +132,10 @@ func (pages *Pages) addPages(base *tmpl.Template, config PagesConfig) error {
 
 // addPage parses the page's file into its own clone of base, binds
 // pageScripts and neededScripts there to the scripts that page needs,
-// and returns its plan. has reports whether the app has a file.
+// and returns its plan.
 func (pages *Pages) addPage(
 	base *tmpl.Template, name string, file PageFile, app fs.FS,
-	has func(string) bool,
+	files appFiles,
 ) (pagePlan, error) {
 	fsys := file.FS
 	if fsys == nil {
@@ -129,7 +148,7 @@ func (pages *Pages) addPage(
 	if err != nil {
 		return pagePlan{}, fmt.Errorf(pageParseMsg, name, err)
 	}
-	plan, err := planPage(name, page, pages.entry, has)
+	plan, err := planPage(name, page, pages.entry, files)
 	if err != nil {
 		return pagePlan{}, err
 	}
@@ -147,8 +166,8 @@ func (pages *Pages) addPage(
 //   - busy.js with a form of the page's own;
 //   - light.js with a hook it lights;
 //   - anchor.js with a menu;
-//   - a component script where a field arms it, and calendar.js with
-//     datetime.js, which draws its month grid with it;
+//   - a component script where a field or a snippet arms it, and
+//     calendar.js with datetime.js, which draws its month grid with it;
 //   - each the page asks for with needs;
 //   - live.js on a live or polling page, which loads every other one
 //     too, since a fragment it swaps in later may carry a form, a field
@@ -173,15 +192,18 @@ func plannedScripts(reading pageReading) []string {
 }
 
 // hookScripts maps each attribute that arms a component script to that
-// script. A page's markup carrying one loads its script with no needs,
-// so an app's own field markup, or its own definition of a field
-// partial, keeps its enhancement when the layout stops loading every
-// script.
+// script: a field's data-rst- attribute, or the snippet's box, whose
+// Copy button copy.js shows, and which may be a class instead
+// (snippetClass). A page's markup carrying one loads its script with no
+// needs, so an app's own field markup, or its own definition of a
+// field partial, keeps its enhancement when the layout stops loading
+// every script.
 var hookScripts = map[string]string{
 	"data-rst-select": "select.js",
 	"data-rst-date":   "datetime.js",
 	"data-rst-time":   "datetime.js",
 	"data-rst-range":  "datetime.js",
+	"rst-snippet":     "copy.js",
 }
 
 // markupNeeds marks in wanted the script each hook in text arms, and
@@ -191,6 +213,7 @@ func markupNeeds(text []byte, wanted map[string]bool) (polls bool) {
 	for _, match := range hookAttribute.FindAllSubmatch(text, -1) {
 		wanted[hookScripts[strings.ToLower(string(match[1]))]] = true
 	}
+	wanted["copy.js"] = wanted["copy.js"] || snippetClass.Match(text)
 	return bytes.Contains(bytes.ToLower(text), []byte("data-poll"))
 }
 
@@ -199,8 +222,14 @@ func markupNeeds(text []byte, wanted map[string]bool) (polls bool) {
 // a longer attribute such as data-rst-select-ceiling, is not one. A
 // name at the end of the text is one, since an action may follow it.
 var hookAttribute = regexp.MustCompile(
-	`(?i)\s(data-rst-select|data-rst-date|data-rst-time|data-rst-range)` +
-		`(?:[\s=/>]|$)`)
+	`(?i)\s(data-rst-select|data-rst-date|data-rst-time|data-rst-range|` +
+		`rst-snippet)(?:[\s=/>]|$)`)
+
+// snippetClass is a class attribute holding the rst-snippet token,
+// quoted or not, among other classes or alone. The token may come
+// before an action that writes more classes, so the value may run on.
+var snippetClass = regexp.MustCompile(
+	`\s(?i:class)\s*=\s*["']?(?:[^"'>]*\s)?rst-snippet(?:[\s"'>]|$)`)
 
 // neededName is the script or hook a {{needs}} command names, "" for
 // any other command.

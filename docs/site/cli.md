@@ -237,9 +237,10 @@ rastrillo doctor [--fix] [--force] [--theme <name>] [--probe] [dir]
 ```
 
 Compares the files `rastrillo new` copied into the app's `static/`
-directory (`tokens.css`, `theme.css`, `rastrillo.js`, `select.js`,
-`datetime.js` and `light.js`) against the copies this binary carries,
-and says which ones differ and how.
+directory (`tokens.css`, `theme.css`, `shell.css`, `rastrillo.js`,
+`live.js` and the scripts from Fiesta, such as `fiesta.js`, `select.js`
+and `datetime.js`) against the copies this binary carries, and says
+which ones differ and how.
 
 It is a convenience and an upgrade tool, not the thing standing between
 your app and silent drift. That is the `vendored_test.go` the scaffold
@@ -308,6 +309,27 @@ with no big selects is a supported choice, so an absent file is reported
 as **absent**, not as drift, and does not fail the exit code — you get a
 line saying what the library ships and how big it is. `--fix` will still
 add it, because asking for `--fix` is asking.
+
+### Files that move in pairs
+
+Two pairs of files are refreshed together or not at all: `rastrillo.js`
+with `fiesta.js`, and `datetime.js` with `calendar.js`. An older
+`rastrillo.js` closes menus itself, and running it beside `fiesta.js`
+isn't supported. An older `datetime.js` looks for `rastrilloCalendar`,
+which the current `calendar.js` calls `fiestaCalendar`, so either file
+alone breaks the date field's calendar. If you own one file of a pair,
+`--fix` leaves both and says why. Add the other to `vendoredIsMine`
+too, or pass `--force` to refresh both.
+
+`doctor` also checks your layouts. A layout that links `rastrillo.js`
+by hand and has no `{{range pageScripts}}` gets no `fiesta.js`, so its
+menus stop closing on Escape and its switches can't be dragged once
+`rastrillo.js` is the current one. `doctor` names each such layout and
+the line to add, right after its `rastrillo.js` tag:
+
+```html
+<script defer src="{{path $ (asset "static/fiesta.js")}}"></script>
+```
 
 ### An app on the old module path
 
@@ -475,7 +497,7 @@ failure this staged migration exists to avoid.
 Rewriting is idempotent, so running it twice, or over a tree half of
 which is already done, changes nothing the second time. Nothing breaks
 if you stop between steps 1 and 3, either: `tokens.css` styles both
-spellings until stage 3, and `rastrillo.js` dismisses menus written in
+spellings until stage 3, and `fiesta.js` dismisses menus written in
 either one. Step 3 is what you owe stage 3, not what you owe today.
 
 ### One name changed meaning
@@ -500,12 +522,11 @@ every run that changes anything.
 
 ### The vendored files
 
-It never touches `static/tokens.css`, `static/theme.css`,
-`static/rastrillo.js`, `static/select.js`, `static/datetime.js` or
-`static/light.js`. Those
-are copies of the library's, and `doctor` is what refreshes them;
-rewriting one here would make your copy differ from the library's for
-good.
+It never touches the files `rastrillo new` copied into `static/`, such
+as `static/tokens.css`, `static/theme.css`, `static/rastrillo.js` and
+`static/fiesta.js`. Those are copies of the library's, and `doctor`
+is what refreshes them; rewriting one here would make your copy differ
+from the library's for good.
 
 ### The one opt-out
 

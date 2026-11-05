@@ -16,13 +16,13 @@ first screen of a new app or a port, send them one message that asks:
    screen when porting, or any product they admire.
 4. **With no screenshot, a base to start from.** A shipped theme
    (`day`, `plain`, `signal`) and shell (`column`, `topbar`, `sidebar`,
-   `console`, `stage`), with a link to see them,
-   rastrillo.org/design-system, and the practices you will apply, all
-   of which ship: a dashboard opening with stat cells; empty states
-   that say what a screen is for; whole-row links with row menus; hints
-   and inline errors on fields; searchable selects and natural-language
-   dates; busy buttons, flash notices and confirm pages; live regions;
-   view transitions between pages.
+   `console`, `stage`), with a link to the
+   [Fiesta gallery](https://fiesta.rastrillo.org) and the practices you
+   will apply, all of which ship: a dashboard opening with stat cells;
+   empty states that say what a screen is for; whole-row links with row
+   menus; hints and inline errors on fields; searchable selects and
+   natural-language dates; busy buttons, flash notices and confirm
+   pages; live regions; view transitions between pages.
 5. **An offer of quick mockups**: two or three takes on the key screen,
    each wearing the personality, as a real page with fixed data in a
    throwaway `rastrillo new --theme=... --shell=...` scaffold, real

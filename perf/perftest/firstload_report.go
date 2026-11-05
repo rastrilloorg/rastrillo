@@ -38,13 +38,6 @@ const (
 		"{{range pageScripts}}, keeping rastrillo.js and shell.js"
 	unreadableMsg = "; it links the whole tokens.css because " +
 		"static/tokens.css cannot be sliced: %v"
-	unstyledMsg = "%s: shows %s, but its slice of tokens.css lacks a " +
-		"rule for it that the whole file has, so it can render " +
-		"unstyled. A page's slice holds the hooks its templates name, " +
-		"not markup built in Go or by a script: ask for this hook in " +
-		"the page's template with {{needs \"%s\"}}"
-	unstyledReadMsg = "%s: its tokens.css cannot be read to check " +
-		"the hooks it shows against its slice: %v"
 	recordLimitMsg = "its record, %s line %d"
 	recordHintMsg  = "; if it cannot be lighter, record " +
 		"`weight %s %d <reason>` in %s: " + plusTenPercentMsg
@@ -212,51 +205,6 @@ func largestFiles(weights []fileWeight) string {
 		named = append(named, fmt.Sprintf("%s (%d bytes)", name, weight.size))
 	}
 	return fmt.Sprintf(largestMsg, strings.Join(named, ", "))
-}
-
-// reportUnstyled fails a sliced page for each hook it shows that is
-// named by a rule the whole tokens.css would give it and its slice
-// does not (spec 3a): the slice comes from the page's templates, so
-// markup they do not hold renders unstyled, where the whole file would
-// have styled it. Asking for every hook the failure names puts the
-// rule in the slice. A hook no rule styles is the app's own, and fine.
-func reportUnstyled(
-	t testing.TB, screen string, page []byte, sheet pageStylesheet,
-) {
-	t.Helper()
-	shown := shownHooks(page)
-	if !sheet.sliced() || len(shown) == 0 {
-		return
-	}
-	unkept, err := vendored.Unkept(sheet.whole, sheet.slice, shown)
-	if err != nil {
-		t.Errorf(unstyledReadMsg, screen, err)
-		return
-	}
-	for _, hook := range unkept {
-		t.Errorf(unstyledMsg, screen, hook, hook)
-	}
-}
-
-// shownHooks is the hooks a page's markup carries: its attribute names
-// and class names, read by the reader the slicer's hooks come from. An
-// option's data-rst-class counts as classes: select.js copies them onto
-// the row it draws.
-func shownHooks(page []byte) map[string]bool {
-	var names []byte
-	for _, tag := range pageTags(page) {
-		for name, value := range tag.attributes {
-			names = append(names, name+" "...)
-			if name == "class" || name == "data-rst-class" {
-				names = append(names, value+" "...)
-			}
-		}
-	}
-	shown := map[string]bool{}
-	for _, hook := range vendored.HooksIn(names) {
-		shown[hook] = true
-	}
-	return shown
 }
 
 // whatGrew names each file heavier than its reference, or, when none

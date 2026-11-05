@@ -137,9 +137,9 @@ func WithT(t func(key string, args ...any) string) Option {
 //
 // ui.Pages binds pageStylesheet, pageScripts and neededScripts per page.
 // Outside it, pageStylesheet is the whole /static/tokens.css, unhashed,
-// pageScripts every optional script and neededScripts the component
-// scripts; to link the hashed file or a slice (Assets.Stylesheet), bind
-// your own pageStylesheet, as internal/designsystem's shellAssets does.
+// pageScripts fiesta.js and every optional script, neededScripts the
+// component scripts. Bind your own pageStylesheet to link the hashed
+// file or a slice (Assets.Stylesheet), as designsystem's shellAssets does.
 //
 // path puts the page's base path in front of a root-absolute URL:
 // {{path $ (asset "static/tokens.css")}}, {{path $ "/"}}. The base comes

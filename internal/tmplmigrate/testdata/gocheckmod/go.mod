@@ -5,6 +5,7 @@ go 1.26.0
 require amadan.net/rastrillo/rastrillo v0.0.0
 
 require (
+	amadan.net/rastrillo/fiesta v1.2.0 // indirect
 	amadan.net/rastrillo/rastrillo/money v0.1.0 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/google/uuid v1.6.0 // indirect
@@ -14,7 +15,7 @@ require (
 	github.com/tdewolff/minify/v2 v2.24.19 // indirect
 	github.com/tdewolff/parse/v2 v2.8.16 // indirect
 	golang.org/x/sys v0.47.0 // indirect
-	golang.org/x/text v0.39.0 // indirect
+	golang.org/x/text v0.41.0 // indirect
 	modernc.org/libc v1.74.1 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.11.0 // indirect

@@ -87,17 +87,20 @@ func (assets *Assets) slicesOf(name, source string) *slicesOfFile {
 }
 
 // hookKey names a hook set the same whatever order or repeats it
-// arrives in. Only hook names are kept, since only they choose rules,
-// and none holds the space that joins them.
+// arrives in. Only hook names, the values a page writes for them and
+// the classes it writes are kept, since only they choose rules; a value
+// may hold a space, and none a newline (ShownValue quotes it), so a
+// newline joins them.
 func hookKey(hooks []string) string {
 	kept := make([]string, 0, len(hooks))
 	for _, hook := range hooks {
-		if vendored.IsHook(hook) {
+		if vendored.IsHook(hook) || vendored.IsShownValue(hook) ||
+			vendored.IsShownClass(hook) {
 			kept = append(kept, hook)
 		}
 	}
 	slices.Sort(kept)
-	return strings.Join(slices.Compact(kept), " ")
+	return strings.Join(slices.Compact(kept), "\n")
 }
 
 // sliceOf cuts the slice for the hooks in key from entry's minified
@@ -107,7 +110,7 @@ func hookKey(hooks []string) string {
 // arrives empty looks like a broken deploy.
 func sliceOf(entry assetInfo, key string) (assetInfo, error) {
 	hooks := make(map[string]bool)
-	for hook := range strings.FieldsSeq(key) {
+	for hook := range strings.SplitSeq(key, "\n") {
 		hooks[hook] = true
 	}
 	sliced, err := vendored.Slice(entry.served, hooks)

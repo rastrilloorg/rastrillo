@@ -10,6 +10,7 @@ import (
 	"sync"
 
 	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/internal/vendored"
 	"amadan.net/rastrillo/rastrillo/tmpl"
 )
 
@@ -68,16 +69,20 @@ func isAssetFunc(asset reflect.Value) bool {
 // bindStylesheets binds each page's pageStylesheet to its slice, and a
 // live page's to the slice of every page's hooks: a fragment it swaps
 // in later is drawn from the app's own templates, so their union
-// covers it, with each region's hooks as it is sent alone. Each render
-// asks assets afresh, so an app serving a live directory links the
-// slice of its stylesheet as it is now.
+// covers it, with each region's hooks as it is sent alone, and with
+// any value of each hook, and any class, rather than the values and
+// classes each page writes. Each
+// render asks assets afresh, so an app serving a live directory links
+// the slice of its stylesheet as it is now.
 func (pages *Pages) bindStylesheets(
 	plans map[string]pagePlan, assets *rastrillo.Assets,
 ) {
 	every := map[string]bool{}
 	for _, plan := range plans {
 		for _, hook := range slices.Concat(plan.hooks, plan.fragments) {
-			every[hook] = true
+			if vendored.IsHook(hook) {
+				every[hook] = true
+			}
 		}
 	}
 	union := slices.Sorted(maps.Keys(every))

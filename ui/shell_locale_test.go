@@ -63,13 +63,29 @@ func TestShellsWithoutALocalizerKeepEnglishLeftToRight(t *testing.T) {
 	}
 }
 
-// The column shell's switcher sits at the top of the page, since a
-// one-column app has no bar or rail to put it in.
-func TestTheColumnSwitcherOpensThePage(t *testing.T) {
-	two := []rastrillo.LocaleItem{{Code: "en", Name: "English", Href: "/en/"}, {Code: "es", Name: "Español", Href: "/es/", Current: true}}
+// The column shell's menus sit in a footer row after the content, as
+// Fiesta's layout-column example has them: a one-column app has no bar
+// or rail, and a dropdown on a line of its own above the title is what
+// the Row Rule forbids.
+func TestTheColumnMenusSitInTheFooterRow(t *testing.T) {
+	two := []rastrillo.LocaleItem{
+		{Code: "en", Name: "English", Href: "/en/"},
+		{Code: "es", Name: "Español", Href: "/es/", Current: true},
+	}
 	out := renderShell(t, "column", "es", map[string]any{"Locales": two})
-	if !strings.Contains(out, "<main rst-page id=\"main\">\n<details rst-dropdown rst-locale") {
-		t.Errorf("the column shell's switcher is not the first child of <main rst-page>:\n%s", out)
+	inOrder := []string{
+		`<main rst-page id="main">`, "<p>x</p>", "<footer rst-page-foot>",
+		"<details rst-dropdown rst-locale", "<details rst-dropdown rst-scheme",
+		"</footer>", "</main>",
+	}
+	from := 0
+	for _, want := range inOrder {
+		at := strings.Index(out[from:], want)
+		if at < 0 {
+			t.Fatalf("the column shell has no %q after %q:\n%s",
+				want, out[:from], out)
+		}
+		from += at + len(want)
 	}
 }
 

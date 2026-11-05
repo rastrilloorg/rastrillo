@@ -65,12 +65,8 @@ func TestTheWeightLineDropsItsLastPartCleanly(t *testing.T) {
 // its comments. The literal figures are not asserted anywhere: they are
 // the compressor's, not this package's.
 func TestEveryShippedFileWeighsLessCompressedAndLessAgainStripped(t *testing.T) {
-	files := map[string][]byte{
-		"tokens.css": ui.TokensCSS(), "shell.css": ui.ShellCSS(),
-		"rastrillo.js": ui.ShimJS(), "busy.js": ui.BusyJS(), "anchor.js": ui.AnchorJS(),
-		"shell.js": ui.ShellJS(), "select.js": ui.SelectJS(), "datetime.js": ui.DatetimeJS(),
-		"calendar.js": ui.CalendarJS(),
-	}
+	files, _ := ui.VendoredAssets(ui.ThemeNames()[0])
+	delete(files, "theme.css") // each theme joins below, by its own name
 	for _, name := range ui.ThemeNames() {
 		css, _ := ui.ThemeCSS(name)
 		files["theme-"+name+".css"] = css
@@ -211,9 +207,11 @@ process.stdout.write(JSON.stringify(srcs.map(src => {
 // same error where it reaches for a document node does not have. A
 // stripper that ate code a regex was hiding would change one of them.
 func TestEveryShippedScriptStripsToTheSameShape(t *testing.T) {
-	scripts := map[string][]byte{
-		"rastrillo.js": ui.ShimJS(), "busy.js": ui.BusyJS(), "anchor.js": ui.AnchorJS(), "shell.js": ui.ShellJS(),
-		"select.js": ui.SelectJS(), "datetime.js": ui.DatetimeJS(), "calendar.js": ui.CalendarJS(),
+	scripts, _ := ui.VendoredAssets(ui.ThemeNames()[0])
+	for name := range scripts {
+		if !strings.HasSuffix(name, ".js") {
+			delete(scripts, name)
+		}
 	}
 	names := make([]string, 0, len(scripts))
 	var srcs []string

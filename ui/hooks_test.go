@@ -18,6 +18,16 @@ func hookPages(
 	t *testing.T, layout string, contents map[string]string,
 ) (*Pages, error) {
 	t.Helper()
+	return hookPagesWith(t, layout, contents, nil)
+}
+
+// hookPagesWith is hookPages for an app with funcs beside asset and
+// iconAssets.
+func hookPagesWith(
+	t *testing.T, layout string, contents map[string]string,
+	funcs template.FuncMap,
+) (*Pages, error) {
+	t.Helper()
 	config, err := locales.CheckConfig("en", []string{"en"})
 	if err != nil {
 		t.Fatal(err)
@@ -31,26 +41,34 @@ func hookPages(
 	return NewPages(PagesConfig{
 		App: app, Layout: "layout.html", Pages: pages,
 		Locale: config, LocaleFS: app,
-		Funcs: template.FuncMap{
-			"asset":      func(name string) string { return "/" + name },
-			"iconAssets": func() template.HTML { return "" },
-		},
+		Funcs: appFuncs(funcs),
 	})
 }
 
-// everyFile is an app that has deleted no vendored file.
-func everyFile(string) bool { return true }
+func appFuncs(funcs template.FuncMap) template.FuncMap {
+	all := template.FuncMap{
+		"asset":      func(name string) string { return "/" + name },
+		"iconAssets": func() template.HTML { return "" },
+	}
+	maps.Copy(all, funcs)
+	return all
+}
+
+// everyFile is an app that has deleted and edited no vendored file.
+var everyFile = appFiles{has: always, unchanged: always}
+
+func always(string) bool { return true }
 
 // planOne plans the one page body over layout.
 func planOne(
-	t *testing.T, layout, body string, has func(string) bool,
+	t *testing.T, layout, body string, files appFiles,
 ) pagePlan {
 	t.Helper()
 	pages, err := hookPages(t, layout, map[string]string{"page": body})
 	if err != nil {
 		t.Fatal(err)
 	}
-	plan, err := planPage("page", pages.pages["page"], pages.entry, has)
+	plan, err := planPage("page", pages.pages["page"], pages.entry, files)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -191,7 +209,7 @@ func TestBusyLoadsOnlyWithTheAppsOwnForm(t *testing.T) {
 func TestLiveLoadsOnLivePages(t *testing.T) {
 	region := content(`<h1>Jobs</h1>`) + `{{define "region:items"}}{{end}}`
 	polling := content(`<div data-poll="/jobs/1"></div>`)
-	every := static(optionalScripts()...)
+	every := static(append([]string{"fiesta.js"}, optionalScripts()...)...)
 	for _, body := range []string{region, polling} {
 		plan := planOne(t, scriptsLayout, body, everyFile)
 		if !plan.live || !slices.Equal(plan.scripts, every) {
@@ -200,8 +218,8 @@ func TestLiveLoadsOnLivePages(t *testing.T) {
 		}
 	}
 	plain := planOne(t, scriptsLayout, content(`<h1>Orders</h1>`), everyFile)
-	if plain.live || len(plain.scripts) != 0 {
-		t.Errorf("a plain page: live %v, scripts %v; want neither",
+	if plain.live || !slices.Equal(plain.scripts, static("fiesta.js")) {
+		t.Errorf("a plain page: live %v, scripts %v; want fiesta.js only",
 			plain.live, plain.scripts)
 	}
 }
@@ -235,8 +253,8 @@ func TestPlannedScriptsFollowTheLayoutsOrder(t *testing.T) {
 		`{{needs "live.js"}}{{template "field-date" .}}` +
 		`{{template "field-select" .}}`)
 	got := planOne(t, columnLayout(t), body, everyFile).scripts
-	want := static("busy.js", "live.js", "light.js", "anchor.js",
-		"select.js", "calendar.js", "datetime.js")
+	want := static("fiesta.js", "busy.js", "live.js", "light.js",
+		"anchor.js", "select.js", "calendar.js", "datetime.js")
 	if !slices.Equal(got, want) {
 		t.Errorf("scripts %v, want %v", got, want)
 	}
@@ -250,7 +268,8 @@ func TestADeletedScriptIsNeverLinked(t *testing.T) {
 	}
 	body := content(`<button rst-btn>Save</button><details rst-dropdown>` +
 		`{{needs "light.js"}}{{needs "anchor.js"}}`)
-	scripts := planOne(t, columnLayout(t), body, deleted).scripts
+	files := appFiles{has: deleted, unchanged: always}
+	scripts := planOne(t, columnLayout(t), body, files).scripts
 	for _, script := range static("light.js", "anchor.js") {
 		if slices.Contains(scripts, script) {
 			t.Errorf("scripts %v link the deleted %s", scripts, script)

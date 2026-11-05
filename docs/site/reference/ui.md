@@ -373,8 +373,9 @@ rules at the foot setting nothing but `color-scheme`, so an explicit
 colour. The switch that sets it ships with the shells: the
 `scheme-menu` partial posts Light, Dark or System to `/_theme`, every
 layout writes `data-theme` on `<html>` from the cookie
-(`Localized.Scheme`) so the first paint is right, and `rastrillo.js`
-applies a choice in place. No attribute is System, the OS deciding.
+(`Localized.Scheme`) so the first paint is right, `fiesta.js` applies
+a choice in place, and `rastrillo.js` writes the cookie for it. No
+attribute is System, the OS deciding.
 The switch picks the scheme only; which theme an app wears is the
 app's choice. Each file carries its own measured WCAG 2.2 AA contrast table in
 its header comment, for both schemes; `ui`'s `contrast_test.go` splits
@@ -694,6 +695,8 @@ func TokensCSS() []byte
 func ShimJS() []byte
 func BusyJS() []byte
 func LiveJS() []byte
+func LightJS() []byte
+func AnchorJS() []byte
 func SelectJS() []byte
 func DatetimeJS() []byte
 func CalendarJS() []byte
@@ -702,12 +705,23 @@ func TransitionJS() []byte
 func ShellCSS() []byte
 ```
 
+Every file here but `rastrillo.js` and `live.js` is Fiesta's, from the
+release Rastrillo pins ([fiesta.rastrillo.org](https://fiesta.rastrillo.org)).
+
 `TokensCSS` is the design-token stylesheet `rastrillo new` writes once
-into the app's `static/`. `ShimJS` is `rastrillo.js` — the
-progressive-enhancement shim. It drives `data-poll` and
-`data-poll-push` ([Background jobs](/docs/jobs)), and it closes an open
-`<details>` menu on an outside click or Escape, which is the one part of
-the menu idiom the native element cannot express.
+into the app's `static/`. `ShimJS` is `rastrillo.js`, Rastrillo's
+fragment shim. It drives `data-poll` and `data-poll-push`
+([Background jobs](/docs/jobs)), and it writes the `rastrillo_scheme`
+cookie when `fiesta.js` applies a colour-scheme choice in place.
+
+`fiesta.js` and `copy.js` have no function of their own;
+`VendoredAssets` carries them. `fiesta.js` loads on every page. It
+closes an open `<details>` menu on an outside click or Escape, which is
+the one part of the menu idiom the native element cannot express. It
+also lets a switch's knob be dragged, gives iOS its pressed state, and
+applies the colour-scheme menu's choice without a reload. `copy.js`
+runs the Copy button on `rst-snippet`, and loads only on a page that
+shows one.
 
 `ShellJS` is `shell.js` and `ShellCSS` is `shell.css`: the sidebar and
 console shells' phone navigation, with the slide between pages, a back
@@ -754,12 +768,13 @@ marked `data-rst-select="false"`. `DatetimeJS` backs the date fields: it
 turns an input carrying `data-rst-date` or `data-rst-time` into a
 combobox that reads "tomorrow", "next fri 9am" or "in 2 weeks" and
 writes the result back to the native input, which stays in the form as
-the value carrier. It holds no month names, no weekday names and no
-English vocabulary — the calendar names come from `Intl` in the page's
-language, and the words it matches on arrive on `data-rst-date-words`
-from the request's catalog.
-Its on-screen labels have English fallbacks, the same way `select.js`
-does, for a field that reaches it without the attributes.
+the value carrier. It holds no month or weekday names: those come from
+`Intl` in the page's language. Rastrillo fills `data-rst-date-words`,
+and each on-screen label's own `data-rst-date-*` attribute, from the
+request's catalog. The words it matches and the labels are read from
+their own attributes first, then from Fiesta's table for the page's
+language if the page loads one, then from the English built into the
+script. The partials always write the attributes.
 
 A select added after the page loads stays native until you ask: dispatch
 `rst:select-scan` on `document`, with `{detail: {root}}` to look only
@@ -803,7 +818,7 @@ choose.
 
 It is a separate file from `datetime.js` because it is a separate job:
 one reads and writes dates as text, the other draws them. `datetime.js`
-looks it up at enhance time through `window.rastrilloCalendar`, so an
+looks it up at enhance time through `window.fiestaCalendar`, so an
 app that ships one and not the other still has a working field — the
 button falls back to the browser's own picker. Like the others it knows
 no month names, no weekday names and no English: the names, the digits
@@ -811,8 +826,8 @@ and the day a week starts on all come from `Intl` for the page's `lang`,
 and its three visible strings arrive on `data-rst-date-calendar`,
 `data-rst-date-prev-month` and `data-rst-date-next-month`.
 
-All five are delivered once and yours from then on. Edit them freely;
-nothing in the framework overwrites them. The scaffold's
+All of them are delivered once and yours from then on. Edit them
+freely; nothing in the framework overwrites them. The scaffold's
 `vendored_test.go` pins the delivered copies byte-identical to these, so
 drift is something you choose rather than discover — name the file in
 that test's `vendoredIsMine` in the same commit as a deliberate edit.
@@ -824,10 +839,11 @@ func VendoredAssets(theme string) (map[string][]byte, bool)
 ```
 
 `VendoredAssets` is the whole vendored set for one theme, keyed by the
-name each file takes in an app's `static/` directory: the five above
-plus `theme.css`, which is `ThemeCSS(theme)`. It reports `false` for a
-theme that is not shipped. `VendoredNames` is the same set as an ordered
-list of names, for reporting on the files one at a time.
+name each file takes in an app's `static/` directory: the files above,
+`fiesta.js` and `copy.js`, and `theme.css`, which is `ThemeCSS(theme)`.
+It reports `false` for a theme that is not shipped. `VendoredNames` is
+the same set as an ordered list of names, for reporting on the files
+one at a time.
 
 It exists so the list is written down once. `rastrillo new` writes these
 bytes, the `vendored_test.go` it generates compares the app's copies

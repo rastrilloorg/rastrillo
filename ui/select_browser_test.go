@@ -26,6 +26,58 @@ import (
 	"amadan.net/rastrillo/rastrillo/harness"
 )
 
+// A country picker is where select.js's ranking was learned (Tito Go's
+// phone field), so it is what these tests search: each row written the
+// way a phone field writes it — "Name (+code)", the ISO code and the
+// calling code as data-rst-terms, data-rst-first on the country that owns
+// a shared code. The list is curated, not complete: every country an
+// assertion names is here, and so is every country that competes with it
+// for the query (Guinea-Bissau for "guin", Oman for "man", the four +44s).
+type countryRow struct{ iso, en, de, code string }
+
+// primary marks the country that owns a calling code others share.
+var primary = map[string]bool{"GB": true, "US": true, "RU": true, "RE": true}
+
+var countries = []countryRow{
+	{"DZ", "Algeria", "Algerien", "213"},
+	{"AS", "American Samoa", "Amerikanisch-Samoa", "1684"},
+	{"AT", "Austria", "Österreich", "43"},
+	{"KH", "Cambodia", "Kambodscha", "855"},
+	{"CM", "Cameroon", "Kamerun", "237"},
+	{"CA", "Canada", "Kanada", "1"},
+	{"CI", "Côte d’Ivoire", "Côte d’Ivoire", "225"},
+	{"DK", "Denmark", "Dänemark", "45"},
+	{"GQ", "Equatorial Guinea", "Äquatorialguinea", "240"},
+	{"GE", "Georgia", "Georgien", "995"},
+	{"DE", "Germany", "Deutschland", "49"},
+	{"GG", "Guernsey", "Guernsey", "44"},
+	{"GN", "Guinea", "Guinea", "224"},
+	{"GW", "Guinea-Bissau", "Guinea-Bissau", "245"},
+	{"IN", "India", "Indien", "91"},
+	{"ID", "Indonesia", "Indonesien", "62"},
+	{"IR", "Iran", "Iran", "98"},
+	{"IE", "Ireland", "Irland", "353"},
+	{"IM", "Isle of Man", "Isle of Man", "44"},
+	{"IL", "Israel", "Israel", "972"},
+	{"JM", "Jamaica", "Jamaika", "1876"},
+	{"JP", "Japan", "Japan", "81"},
+	{"JE", "Jersey", "Jersey", "44"},
+	{"JO", "Jordan", "Jordanien", "962"},
+	{"KZ", "Kazakhstan", "Kasachstan", "7"},
+	{"YT", "Mayotte", "Mayotte", "262"},
+	{"NE", "Niger", "Niger", "227"},
+	{"NG", "Nigeria", "Nigeria", "234"},
+	{"OM", "Oman", "Oman", "968"},
+	{"PG", "Papua New Guinea", "Papua-Neuguinea", "675"},
+	{"RE", "Réunion", "Réunion", "262"},
+	{"RU", "Russia", "Russland", "7"},
+	{"SS", "South Sudan", "Südsudan", "211"},
+	{"SD", "Sudan", "Sudan", "249"},
+	{"AE", "United Arab Emirates", "Vereinigte Arabische Emirate", "971"},
+	{"GB", "United Kingdom", "Vereinigtes Königreich", "44"},
+	{"US", "United States", "Vereinigte Staaten", "1"},
+}
+
 // afterFrame resolves once the next frame has been drawn and the task
 // after it has run: where a keystroke's deferred search has landed.
 const afterFrame = `new Promise((r) => requestAnimationFrame(() => setTimeout(() => r(0), 0)))`

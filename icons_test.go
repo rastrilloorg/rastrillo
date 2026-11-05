@@ -2,8 +2,12 @@ package rastrillo
 
 import (
 	"html/template"
+	"os"
+	"slices"
 	"strings"
 	"testing"
+
+	"amadan.net/rastrillo/fiesta"
 )
 
 // Every vendored icon is one self-contained, colour-inheriting,
@@ -142,4 +146,32 @@ func TestIconSlugsMatchesTheMap(t *testing.T) {
 			t.Errorf("IconSlugs() is not sorted: %q before %q", got[i-1], got[i])
 		}
 	}
+}
+
+// The icons Rastrillo inlines are Fiesta's, byte for byte, and icons.go
+// keeps no drawing of its own: a changed icon is a Fiesta release and a
+// pin bump, never an edit here.
+func TestLucideIconsComeFromFiesta(t *testing.T) {
+	if got, want := IconSlugs(), fiesta.IconSlugs(); !slices.Equal(got, want) {
+		t.Errorf("IconSlugs() is %v; Fiesta ships %v", got, want)
+	}
+	source, err := os.ReadFile("icons.go")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, slug := range fiesta.IconSlugs() {
+		svg, _ := fiesta.Icon(slug)
+		if got := string(Icon(slug)); got != string(svg) {
+			t.Errorf("Icon(%q) is %s; Fiesta's is %s", slug, got, svg)
+		}
+		if strings.Contains(string(source), drawing(string(svg))) {
+			t.Errorf("icons.go keeps a copy of %s's drawing", slug)
+		}
+	}
+}
+
+// drawing is what an <svg> holds between its tags.
+func drawing(svg string) string {
+	_, inner, _ := strings.Cut(svg, ">")
+	return strings.TrimSuffix(inner, "</svg>")
 }

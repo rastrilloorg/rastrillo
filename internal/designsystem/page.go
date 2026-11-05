@@ -1466,6 +1466,7 @@ var previewMobileLocaleHeights = map[string]map[string]int{
 		"screen-signin-continue":        589,
 		"screen-signin-problem-keymail": 722,
 		"screen-signin-social":          422,
+		"shell-column":                  1092,
 	},
 	"es": {
 		"partial-api-tokens":              2102,
@@ -1500,6 +1501,7 @@ var previewMobileLocaleHeights = map[string]map[string]int{
 		"screen-signin-continue":     589,
 		"screen-signin-sent-instead": 725,
 		"screen-signin-sent-unbound": 637,
+		"shell-column":               1101,
 	},
 	"ja": {
 		"partial-api-tokens": 2126,
@@ -1700,22 +1702,22 @@ func heightOf(id string) int {
 // script in it at all, which is both smaller and the truth about that
 // component.
 //
-// The menu classes are here because light dismiss is the one thing a
-// <details> menu cannot do by itself, and a preview that cannot do it
-// teaches the opposite of what the shim exists for: a reader who clicks
-// away from an open menu in the frame and watches it stay open has been
-// told, by the page, that menus do not close. It costs one script tag
-// in each frame that holds a menu: 20,202 bytes across the whole tree
-// when it was added, 0.13% of it, against a ceiling still 5.3 MiB away.
-// A switch is here for the same reason: its knob slides only with the
-// shim, and a preview whose knob will not drag says switches do not.
+// fiesta.js is here for the menus because light dismiss is the one
+// thing a <details> menu cannot do by itself, and a preview that cannot
+// do it teaches the opposite: a reader who clicks away from an open
+// menu in the frame and watches it stay open has been told, by the
+// page, that menus do not close. It costs one script tag in each frame
+// that holds a menu. A switch is here for the same reason: its knob
+// slides only with fiesta.js, and a preview whose knob will not drag
+// says switches do not. rastrillo.js polls, and nothing else.
 var previewScripts = []struct {
 	asset string
 	hooks []string
 }{
-	{"rastrillo.js", []string{"data-poll", "rst-dropdown", "rst-row-menu", "rst-switch"}},
+	{"fiesta.js", []string{"rst-dropdown", "rst-row-menu", "rst-switch"}},
+	{"rastrillo.js", []string{"data-poll"}},
 	{"busy.js", []string{"data-busy"}},
-	// light.js is here for the same reason as the shim: a preview whose
+	// light.js is here for the same reason as fiesta.js: a preview whose
 	// buttons never catch a sheen and whose cards never breathe says the
 	// depth design is still, which is the one thing the file exists to
 	// disprove. The hooks are the families it writes on (C16).
@@ -2711,17 +2713,14 @@ func buildAssets(mount, theme, locale string) assetsView {
 	add(&out, "tokens.css", ui.TokensCSS(),
 		"Structure: every component class, every scale, and no colour literal anywhere. The same file under every theme.")
 	for _, name := range ui.ThemeNames() {
-		css, ok := ui.ThemeCSS(name)
-		if !ok {
-			continue
-		}
+		css, _ := ui.ThemeCSS(name) // every name here is a shipped theme
 		add(&out, "theme-"+name+".css", css,
 			"Colour, type family and shape for the {theme} theme: one :root block where every colour is declared once as a light-dark() pair.", "theme", name)
 	}
 	add(&out, "shell.css", ui.ShellCSS(),
 		"The slide between pages on a phone, for the sidebar and console shells. Deletable with shell.js.")
-	add(&out, "rastrillo.js", ui.ShimJS(),
-		"The progressive-enhancement shim: polling fragments, light dismiss and the switch's drag. Every scaffolded app gets it.")
+	add(&out, "rastrillo.js", ui.ShimJS(), shimAssetBlurb)
+	add(&out, "fiesta.js", vendored["fiesta.js"], fiestaAssetBlurb)
 	add(&out, "busy.js", ui.BusyJS(),
 		"The busy rule: while a form sends, its button shows a spinner for at least 650ms and refuses a second submit, and Back hands it back. Every scaffolded app gets it.")
 	add(&out, "live.js", ui.LiveJS(),
@@ -2733,6 +2732,7 @@ func buildAssets(mount, theme, locale string) assetsView {
 	add(&out, "shell.js", ui.ShellJS(),
 		"Phone navigation for the sidebar and console shells: the slide between pages, Back that reuses history, and focus returned to the section you left. Deletable on its own.")
 	add(&out, "transition.js", ui.TransitionJS(), transitionAssetBlurb)
+	add(&out, "copy.js", vendored["copy.js"], copyAssetBlurb)
 	add(&out, "select.js", ui.SelectJS(),
 		"field-select's searchable combobox. Inert until a select opts in with data-rst-select, and deletable on its own.")
 	add(&out, "datetime.js", ui.DatetimeJS(),
@@ -2882,7 +2882,7 @@ const pageTemplate = `{{define "ds-controls"}}<nav rst-seg-tabs aria-label="{{P 
 <link rel="stylesheet" href="{{asset "shell.css"}}">
 <link rel="stylesheet" href="{{asset "gallery.css"}}">
 <script src="{{asset "gallery.js"}}"></script>
-<script defer src="{{asset "rastrillo.js"}}"></script>
+<script defer src="{{asset "fiesta.js"}}"></script>
 <script defer blocking="render" src="{{asset "shell.js"}}"></script>
 </head>
 <body>
@@ -2967,13 +2967,13 @@ const overviewBody = `{{define "ds-body-overview"}}
 // constant, which is the only way a page about file sizes stays true
 // after somebody edits one of the files.
 const gettingStartedBody = `{{define "ds-body-getting-started"}}
-<p class="ds-lead">{{P "Rastrillo apps get all of this day one, but anyone can use the design system. Progressively enhanced with JS, but no JS required."}}</p>
+<p class="ds-lead">{{P "Rastrillo apps get all of this on day one. Anyone can take these stylesheets and scripts from Fiesta, at fiesta.rastrillo.org. Pages work without JavaScript and gain enhancements when it is available."}}</p>
 
 <h2 class="ds-sub">{{P "The stylesheets"}}</h2>
 <p class="ds-lead">{{P "tokens.css is structure: the component classes, the layout, and the scales for type, spacing and radius. Values are references, set elsewhere. themes/<name>.css is colour, type family and shape: one :root block where every colour is declared once as a light-dark() pair."}}</p>
 
 <h2 class="ds-sub">{{P "The scripts"}}</h2>
-<p class="ds-lead">{{P "rastrillo.js is the progressive-enhancement shim: polling fragments, light dismiss, the switch's drag. busy.js is the busy rule. anchor.js keeps dropdown menus on the screen where CSS cannot. select.js and datetime.js are enhancements, each inert until a control opts in and each deletable on its own."}}</p>
+<p class="ds-lead">{{P "fiesta.js closes menus, lets a switch be dragged and applies a colour-scheme choice in place. rastrillo.js polls fragments and keeps that choice in a cookie. busy.js is the busy rule. anchor.js keeps dropdown menus on the screen where CSS cannot. copy.js, select.js and datetime.js are enhancements, each inert until a control opts in and each deletable on its own."}}</p>
 
 <h2 class="ds-sub">{{P "What each file weighs"}}</h2>
 <p class="ds-note">{{P "Sizes in KiB. Gzipped is what a visitor downloads."}}</p>

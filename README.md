@@ -203,7 +203,8 @@ the meantime. This list is their union. **Built:**
   screen set — with framework strings resolved through the §10 locale
   chain. An app registers `ui.Funcs()` (`dict`, `list`, `icon`, `T`) on
   its own template tree and `ParseFS`s `ui.Templates()` alongside its own
-  templates; `ui.TokensCSS()` is the design-token stylesheet
+  templates; `ui.TokensCSS()` is the design-token stylesheet, from the
+  pinned [Fiesta](https://fiesta.rastrillo.org) release, that
   `rastrillo new` writes once into a new app's `static/` directory, app-
   owned from then on. `T` resolves a partial's own hardcoded-English
   default (e.g. `pagination`'s "Pagination", `confirm-form`'s "Cancel")
@@ -301,9 +302,9 @@ the meantime. This list is their union. **Built:**
   work that must survive one belongs in `eventlog`. It is bounded, too:
   an owner holds at most four running jobs (`Start` answers
   `ErrOwnerBusy` past that), and a job still running after fifteen
-  minutes is marked failed, its context expired. The framework's
-  JavaScript is two app-owned files `rastrillo new` writes beside
-  `tokens.css`: `static/rastrillo.js` replaces an element carrying
+  minutes is marked failed, its context expired. Jobs use two of the
+  app-owned scripts `rastrillo new` writes beside `tokens.css`:
+  `static/rastrillo.js` replaces an element carrying
   `data-poll` with the HTML fragment it fetches and stops when the new
   fragment stops asking, and `static/busy.js` gives every submit button
   a spinner (for at least 650ms) and a double-submit guard while its

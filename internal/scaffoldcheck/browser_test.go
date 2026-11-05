@@ -3,6 +3,8 @@
 package scaffoldcheck
 
 import (
+	"os"
+	"path/filepath"
 	"testing"
 
 	"amadan.net/rastrillo/rastrillo/harness"
@@ -29,4 +31,32 @@ func TestTheScaffoldsBrowserDrivePasses(t *testing.T) {
 				"./internal/"+variant.name+"test/", "TestBrowserWalk")
 		})
 	}
+}
+
+// An app from before fiesta.js, upgraded as the changelog says: doctor
+// --fix, then the layout line it names. A menu left with Escape closes
+// and gives focus back to its summary, which is fiesta.js's to do now
+// that rastrillo.js is the slim shim, at the root and under a base path
+// (testdata/escape_test.go.txt).
+func TestAnUpgradedOldAppClosesMenusOnEscape(t *testing.T) {
+	t.Parallel()
+	harness.ChromePath(t)
+	directory, _ := olderApp(t, "upgradedapp")
+	older, err := os.ReadFile(filepath.Join(repositoryRoot(),
+		"ui", "testdata", "older", "fixed-tags.html"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	write(t, filepath.Join(directory, "internal", "upgradedapp",
+		"templates", "layout.html"), string(older))
+	advice := run(t, directory, rastrilloBinary, "doctor", "--fix")
+	followTheFiestaAdvice(t, directory, advice)
+	drive, err := os.ReadFile(filepath.Join("testdata", "escape_test.go.txt"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	write(t, filepath.Join(directory, "internal", "upgradedapptest",
+		"escape_extra_test.go"), string(drive))
+	runTaggedTests(t, directory, "browser", "./internal/upgradedapptest/",
+		"TestAMenuClosesOnEscape", "TestAMenuClosesOnEscapeUnderABasePath")
 }

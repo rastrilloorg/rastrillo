@@ -104,7 +104,8 @@ func goEnvironment() []string {
 //
 // GOPRIVATE and GONOPROXY are emptied because goEnvironment's
 // GOPRIVATE=* sends every module to its repository past GOPROXY=off,
-// and new cloned each dependency, 640 MB and a minute a scaffold.
+// and new cloned each dependency, 640 MB and a minute a scaffold, and
+// tidied the app again once the release new pins was published.
 func newApp(t *testing.T, name string, flags ...string) string {
 	t.Helper()
 	parent := t.TempDir()

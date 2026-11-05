@@ -14,13 +14,13 @@ import (
 
 // A pagePlan is what a page shows and loads, read off its templates at
 // boot: the hooks its stylesheet slice must keep the rules for, the
-// optional scripts it loads, as static paths, and whether it is live,
-// which links the whole app's slice in place of its own. components
-// are the component scripts among them: what neededScripts gives a
-// layout that links busy.js, live.js, light.js and anchor.js itself,
-// so it never loads one of them twice. fragments are the hooks its
-// regions show when one is sent alone, which the whole app's slice
-// keeps too.
+// scripts it loads, as static paths (fiesta.js, then its optional
+// ones), and whether it is live, which links the whole app's slice in
+// place of its own. components are the component scripts among them:
+// what neededScripts gives a layout that links busy.js, live.js,
+// light.js and anchor.js itself, so it never loads one of them twice.
+// fragments are the hooks its regions show when one is sent alone,
+// which the whole app's slice keeps too.
 type pagePlan struct {
 	hooks      []string
 	fragments  []string
@@ -29,12 +29,20 @@ type pagePlan struct {
 	live       bool
 }
 
-// planPage reads the page called name for its plan. has reports whether
-// the app still has a file, so a page never links a script the app has
-// deleted. The hooks include those rastrillo.js and the page's scripts
-// create at run time, which no template shows.
+// appFiles is what a page's plan asks of the app's static files: has
+// reports whether the app still has a file, so a page never links a
+// script the app has deleted, and unchanged whether a vendored script
+// is served as Rastrillo wrote it, rather than as the app edited it.
+type appFiles struct {
+	has, unchanged func(name string) bool
+}
+
+// planPage reads the page called name for its plan. The hooks include
+// those rastrillo.js and the page's scripts create at run time, which
+// no template shows. A page that loads a script the app has edited
+// runs code of its own.
 func planPage(
-	name string, page *tmpl.Template, entry string, has func(string) bool,
+	name string, page *tmpl.Template, entry string, files appFiles,
 ) (pagePlan, error) {
 	reading, err := readPage(name, page, entry)
 	if err != nil {
@@ -43,8 +51,8 @@ func planPage(
 	plan := pagePlan{live: reading.live}
 	hooks := maps.Clone(reading.hooks)
 	components := vendored.ComponentScripts()
-	for _, script := range plannedScripts(reading) {
-		if !has("static/" + script) {
+	for _, script := range pageScriptNames(reading) {
+		if !files.has("static/" + script) {
 			continue
 		}
 		plan.scripts = append(plan.scripts, "static/"+script)
@@ -53,12 +61,20 @@ func planPage(
 		}
 	}
 	creators := append([]string{"static/rastrillo.js"}, plan.scripts...)
+	created := map[string]bool{}
 	for _, script := range creators {
 		for _, hook := range vendored.CreatedHooks(path.Base(script)) {
-			hooks[hook] = true
+			hooks[hook], created[hook] = true, true
 		}
 	}
-	plan.hooks = slices.Sorted(maps.Keys(hooks))
+	loaded := slices.Concat(
+		slices.Sorted(maps.Keys(reading.scripts.named)), plan.scripts)
+	edited := func(script string) bool { return !files.unchanged(script) }
+	if slices.ContainsFunc(loaded, edited) {
+		reading.scripts.own = true
+	}
+	plan.hooks = slices.Concat(slices.Sorted(maps.Keys(hooks)),
+		reading.shownValues(created), reading.shownClasses(created))
 	plan.fragments, err = regionHooks(name, page)
 	if err != nil {
 		return pagePlan{}, err
@@ -97,9 +113,17 @@ func pageHooks(
 
 // A pageReading is what one walk of a page's templates finds.
 type pageReading struct {
-	hooks  map[string]bool // every hook the templates name
-	wanted map[string]bool // the scripts its markup and needs ask for
-	live   bool            // a region besides the notice, or a poll
+	hooks      map[string]bool            // every hook the templates name
+	values     map[string]map[string]bool // each hook's literal values
+	unknown    map[string]bool            // hooks written with any value
+	classes    map[string]bool            // hooks written as classes
+	anyClass   bool                       // a class it cannot read
+	open       map[string]bool            // hooks a text ends at
+	following  map[string]bool            // values after an action
+	anyFollows bool                       // one of them not whole
+	scripts    scriptReading              // the scripts it loads
+	wanted     map[string]bool            // the scripts it asks for
+	live       bool                       // a region or a poll
 }
 
 // readPage walks every template the page reaches from entry.
@@ -112,28 +136,48 @@ func readPage(
 		return reading, nil
 	}
 	var problem error
+	roots := map[string]*parse.ListNode{}
 	root.InspectNamed(func(template string, node parse.Node) {
+		if list, ok := node.(*parse.ListNode); ok && roots[template] == nil {
+			roots[template] = list
+		}
 		switch concrete := node.(type) {
 		case *parse.TextNode:
 			reading.readMarkup(template, concrete.Text)
 		case *parse.StringNode:
 			reading.addHooks([]byte(concrete.Text))
+			reading.anyValueIn([]byte(concrete.Text))
+			reading.anyClassIn([]byte(concrete.Text))
 		case *parse.CommandNode:
-			needed, err := neededName(name, concrete)
+			err := reading.readCommand(name, template, concrete)
 			if problem == nil {
 				problem = err
 			}
-			if needed != "" && !vendored.IsHook(needed) {
-				reading.wanted[needed] = true
-			}
-			reading.addWrittenHooks(concrete)
 		}
+		reading.scripts.readNode(template, node)
 	})
+	reading.scripts.settle()
+	reading.anyClass = reading.anyClass || writesUnseenClass(roots, entry)
 	if problem != nil {
 		return pageReading{}, problem
 	}
 	reading.live = reading.live || hasLiveRegion(page)
 	return reading, nil
+}
+
+// readCommand reads one of the page's commands, in the template named
+// template: a script it needs, the hooks a framework function writes,
+// and a range over the scripts it loads.
+func (reading *pageReading) readCommand(
+	page, template string, command *parse.CommandNode,
+) error {
+	needed, err := neededName(page, command)
+	if needed != "" && !vendored.IsHook(needed) {
+		reading.wanted[needed] = true
+	}
+	reading.addWrittenHooks(command)
+	reading.scripts.readCommand(template, command)
+	return err
 }
 
 // menuTemplates hold the layout's language and scheme menus, whose
@@ -145,6 +189,9 @@ var menuTemplates = map[string]bool{"locale-menu": true, "scheme-menu": true}
 // looks like one costs a script, never a feature.
 func (reading *pageReading) readMarkup(template string, text []byte) {
 	reading.addHooks(text)
+	reading.readValues(text)
+	reading.readClasses(text)
+	reading.scripts.readText(template, text)
 	reading.live = markupNeeds(text, reading.wanted) || reading.live
 	form := bytes.Contains(bytes.ToLower(text), []byte("<form"))
 	if form && !menuTemplates[template] {
@@ -171,5 +218,8 @@ func (reading *pageReading) addWrittenHooks(command *parse.CommandNode) {
 	}
 	for _, hook := range vendored.WrittenHooks(function.Ident) {
 		reading.hooks[hook] = true
+		reading.anyValue(hook)
+		reading.classes = setOf(reading.classes)
+		reading.classes[hook] = true
 	}
 }

@@ -269,6 +269,11 @@ func TestEachScriptCreatesExactlyItsListedHooks(t *testing.T) {
 // an id the script finishes at run time, never a hook.
 var readOnlyHooks = map[string][]string{
 	"rastrillo.js": {
+		"rst-scheme", // the event fiesta.js fires once a scheme is chosen
+	},
+	"fiesta.js": {
+		"rst-scheme", // SCHEME: the form that holds the scheme choice;
+		// also the name of the event it fires once one is chosen
 		"rst-dropdown",      // MENUS: an open menu to close on an outside click
 		"rst-menu-group",    // MENUS: a nested menu
 		"rst-row-menu",      // MENUS: a row's menu
@@ -285,7 +290,13 @@ var readOnlyHooks = map[string][]string{
 		"rst-switch",              // the label that holds a track
 		"rst-tblock-head",         // the toggle block's head, a track's label
 		"rst-tblock__head",        // the class form
-		"rst-scheme",              // the form that holds the scheme choice
+	},
+	"copy.js": {
+		"rst-snippet",         // BOX: the snippet whose code it copies
+		"rst-snippet-copy",    // BUTTON: the hidden button it shows
+		"rst-snippet__copy",   // BUTTON: the class form
+		"rst-snippet-status",  // STATUS: the line it speaks in
+		"rst-snippet__status", // STATUS: the class form
 	},
 	"anchor.js": {
 		"rst-dropdown",       // DROPDOWN: the menus it positions
