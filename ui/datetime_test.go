@@ -3,6 +3,8 @@ package ui
 import (
 	"bytes"
 	"encoding/json"
+	"os"
+	"slices"
 	"strings"
 	"testing"
 
@@ -156,9 +158,9 @@ func TestDatetimeContract(t *testing.T) {
 // language, so a field enhanced in Hindi reads Hindi month names with
 // nothing added here. A spelling written down would work in English and
 // silently fail everywhere else — the exact half-failure the split
-// exists to prevent. (The vocabulary keys themselves — "tomorrow",
-// "next", "ago" — do appear: they are the attribute's field names, and
-// their VALUES are what arrives translated.)
+// exists to prevent. (The relative words, "tomorrow", "next", "ago",
+// do appear: they key the attribute's JSON, and in English they are
+// the fallback when neither the attribute nor a loaded table has them.)
 func TestDatetimeDerivesItsCalendarNames(t *testing.T) {
 	body := string(DatetimeJS())
 	body = body[strings.Index(body, "(function () {"):]
@@ -168,6 +170,40 @@ func TestDatetimeDerivesItsCalendarNames(t *testing.T) {
 	} {
 		if strings.Contains(body, name) {
 			t.Errorf("datetime.js spells %s itself; month and weekday names come from Intl", name)
+		}
+	}
+}
+
+// The pinned datetime.js reads its words from the field's attribute,
+// then a loaded Fiesta table, then English it carries itself, so the
+// pages describing it must not say it holds no English vocabulary, or
+// that only its labels fall back to English.
+func TestTheDocsDescribeDatetimesEnglishWords(t *testing.T) {
+	if !strings.Contains(string(DatetimeJS()), "var ENGLISH_WORDS") {
+		t.Fatal("datetime.js no longer carries English words; " +
+			"say where its words come from in the files below")
+	}
+	for _, file := range []string{
+		"../docs/site/templates.md", "../docs/site/reference/ui.md", "ui.go",
+	} {
+		text, err := os.ReadFile(file)
+		if err != nil {
+			t.Fatal(err)
+		}
+		words := slices.DeleteFunc(strings.Fields(string(text)),
+			func(word string) bool { return word == "//" })
+		prose := strings.Join(words, " ")
+		for _, claim := range []string{
+			"no English vocabulary", "only the labels fall back",
+			"Only the on-screen labels fall back",
+		} {
+			if strings.Contains(prose, claim) {
+				t.Errorf("%s says %q", file, claim)
+			}
+		}
+		if !strings.Contains(prose, "the English built into the script") {
+			t.Errorf("%s does not say the words fall back to the "+
+				"English built into the script", file)
 		}
 	}
 }

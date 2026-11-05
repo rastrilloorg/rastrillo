@@ -710,8 +710,7 @@ POST is byte-identical to the un-enhanced form and the server parses it
 with the same code either way. With scripts off the field is an ordinary
 date input, and the browser's own picker still opens.
 
-It holds no English vocabulary. Not one word the parser matches on is
-written in the file:
+It reads dates in the page's language:
 
 - **The relative words come from the catalog.** `{{dateWords $L}}`
   looks up all seventeen (today, tomorrow, next, in, ago, at, noon, am
@@ -719,7 +718,10 @@ written in the file:
   object on `data-rst-date-words`. One attribute, not seventeen. The
   words are in the page's language, so a field enhanced in Japanese
   parses Japanese. A key may list several accepted spellings separated
-  by `|`, and matching is case- and accent-folded.
+  by `|`, and matching is case- and accent-folded. A field without the
+  attribute reads the words from Fiesta's table for the page's
+  language, if the page loads one, and otherwise uses the English
+  built into the script.
 - **Weekday and month names come from `Intl`**, in the page's own
   `lang`, along with the locale's digits folded to ASCII. So "3 mars",
   "3月3日" and "٣ مارس" all parse with no catalog entry behind them.
