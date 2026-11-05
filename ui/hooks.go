@@ -148,6 +148,12 @@ func readPage(
 			reading.scripts.readAction(template, concrete.Pipe)
 		case *parse.TemplateNode:
 			reading.scripts.readTemplateCall(template)
+		case *parse.IfNode:
+			reading.scripts.readBranch(template, &concrete.BranchNode)
+		case *parse.RangeNode:
+			reading.scripts.readBranch(template, &concrete.BranchNode)
+		case *parse.WithNode:
+			reading.scripts.readBranch(template, &concrete.BranchNode)
 		case *parse.StringNode:
 			reading.addHooks([]byte(concrete.Text))
 			reading.anyValueIn([]byte(concrete.Text))

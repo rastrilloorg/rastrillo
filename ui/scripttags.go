@@ -18,6 +18,8 @@ type scriptReading struct {
 	named    map[string]bool // Rastrillo's scripts it loads by name
 	pending  bool            // a script tag whose src actions write
 	quote    string          // the quote that src's value opened with
+	inTag    bool            // inside a script's start tag
+	tagQuote byte            // the quote open there, 0 for none
 	ours     bool            // an action names one of Rastrillo's scripts
 	foreign  bool            // one may write any other src
 	inRange  bool            // in a range over pageScripts or neededScripts
@@ -49,6 +51,8 @@ func (scripts *scriptReading) readText(template string, text []byte) {
 	scripts.foreign = scripts.foreign || !scripts.closesSource(text)
 	scripts.settle()
 	scripts.own = scripts.own || handler.Match(text)
+	scripts.inTag, scripts.tagQuote = afterText(
+		text, scripts.inTag, scripts.tagQuote)
 	for _, at := range scriptTag.FindAllIndex(text, -1) {
 		tag := text[at[1]:]
 		end := bytes.IndexByte(tag, '>')
@@ -62,6 +66,70 @@ func (scripts *scriptReading) readText(template string, text []byte) {
 			scripts.readWholeTag(tag[:end])
 		}
 	}
+}
+
+// readBranch reads an if, range or with. One that opens inside a
+// script's start tag, or whose branch ends inside one, may end the src
+// in one branch and write another in the next, so the tag is the app's.
+func (scripts *scriptReading) readBranch(
+	template string, branch *parse.BranchNode,
+) {
+	scripts.enter(template)
+	scripts.own = scripts.own || scripts.inTag ||
+		endsInScriptTag(branch.List) || endsInScriptTag(branch.ElseList)
+}
+
+// endsInScriptTag reports whether a branch's own text leaves a script's
+// start tag open. Its actions write no tag's end, and a branch nested
+// in it is read when the walk reaches it.
+func endsInScriptTag(list *parse.ListNode) bool {
+	if list == nil {
+		return false
+	}
+	open, quote := false, byte(0)
+	for _, node := range list.Nodes {
+		if text, ok := node.(*parse.TextNode); ok {
+			open, quote = afterText(text.Text, open, quote)
+		}
+	}
+	return open
+}
+
+// afterText reports whether a script's start tag is open after text,
+// given whether one was open before it, and which quote is open in it.
+func afterText(text []byte, open bool, quote byte) (bool, byte) {
+	for {
+		if open {
+			end, after := tagEnd(text, quote)
+			if end < 0 {
+				return true, after
+			}
+			text = text[end+1:]
+		}
+		at := scriptTag.FindIndex(text)
+		if at == nil {
+			return false, 0
+		}
+		text, open, quote = text[at[1]:], true, 0
+	}
+}
+
+// tagEnd is the index of the > that ends a start tag in text, outside
+// any quoted value, or -1 and the quote still open at the text's end.
+func tagEnd(text []byte, quote byte) (int, byte) {
+	for index, character := range text {
+		switch {
+		case quote != 0:
+			if character == quote {
+				quote = 0
+			}
+		case character == '"' || character == '\'':
+			quote = character
+		case character == '>':
+			return index, 0
+		}
+	}
+	return -1, quote
 }
 
 // closesSource reports whether text, after an action, ends the src
@@ -110,10 +178,11 @@ func (scripts *scriptReading) readAction(
 
 // readTemplateCall reads a {{template}} call, which writes what the
 // walk reads in another template: inside a src, a source it cannot
-// name.
+// name, and inside a script's start tag, attributes it cannot read.
 func (scripts *scriptReading) readTemplateCall(template string) {
 	scripts.enter(template)
 	scripts.foreign = scripts.foreign || scripts.pending
+	scripts.own = scripts.own || scripts.inTag
 }
 
 // sourceOf reads a pipeline that writes a script's src for one of
@@ -178,10 +247,12 @@ func (scripts *scriptReading) scriptOf(
 }
 
 // enter settles a script tag left open when the walk moves to another
-// template.
+// template, which may write the rest of it: the tag is the app's.
 func (scripts *scriptReading) enter(template string) {
 	if template != scripts.template {
 		scripts.foreign = scripts.foreign || scripts.pending
+		scripts.own = scripts.own || scripts.inTag
+		scripts.inTag, scripts.tagQuote = false, 0
 		scripts.settle()
 		scripts.template = template
 	}

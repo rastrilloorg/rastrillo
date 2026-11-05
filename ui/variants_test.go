@@ -175,6 +175,28 @@ func TestALiteralSrcWhereRastrilloServesItKeepsTheCut(t *testing.T) {
 	}
 }
 
+// A branch that opens or closes inside a script's start tag may end the
+// src in one branch and write another in the next, so the tag is the
+// app's.
+func TestABranchInsideAScriptTagKeepsEveryVariant(t *testing.T) {
+	primary := `<a rst-btn="primary">New</a>`
+	for name, tag := range map[string]string{
+		"quotes closed in each branch": `<script src="{{if .UseFiesta}}` +
+			`{{asset "static/fiesta.js"}}"{{else}}` +
+			`{{asset "static/app.js"}}"{{end}}></script>`,
+		"a branch closing in the tag": `{{if .A}}<script defer ` +
+			`src="{{asset "static/fiesta.js"}}"{{end}}></script>`,
+		"a branch opening after the src": `<script defer ` +
+			`src="{{asset "static/fiesta.js"}}" {{with .Type}}` +
+			`type="{{.}}"{{end}}></script>`,
+	} {
+		if !strings.Contains(pageSlice(t, content(primary+tag)),
+			ghostRule) {
+			t.Errorf("%s: the slice drops %s", name, ghostRule)
+		}
+	}
+}
+
 // editedAssets is appAssets with the app's own copy of one vendored
 // file in place of the framework's.
 func editedAssets(name, body string) *rastrillo.Assets {
@@ -241,8 +263,9 @@ func TestEveryPossibleSrcMustBeOursToKeepTheCut(t *testing.T) {
 			`{{asset "static/app.js"}}{{end}}`, true},
 		"a template's output": {`{{asset "static/fiesta.js"}}` +
 			`{{template "suffix"}}`, true},
-		"ours in every branch": {`{{if .A}}{{asset "static/fiesta.js"}}` +
-			`{{else}}{{asset "static/copy.js"}}{{end}}`, false},
+		"a branch inside the tag, even of ours": {`{{if .A}}` +
+			`{{asset "static/fiesta.js"}}{{else}}` +
+			`{{asset "static/copy.js"}}{{end}}`, true},
 		"ours through path": {`{{path $ (asset "static/fiesta.js")}}`,
 			false},
 		"ours piped through path": {`{{asset "static/fiesta.js" | ` +
