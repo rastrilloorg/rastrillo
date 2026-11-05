@@ -29,12 +29,20 @@ type pagePlan struct {
 	live       bool
 }
 
-// planPage reads the page called name for its plan. has reports whether
-// the app still has a file, so a page never links a script the app has
-// deleted. The hooks include those rastrillo.js and the page's scripts
-// create at run time, which no template shows.
+// appFiles is what a page's plan asks of the app's static files: has
+// reports whether the app still has a file, so a page never links a
+// script the app has deleted, and unchanged whether a vendored script
+// is served as Rastrillo wrote it, rather than as the app edited it.
+type appFiles struct {
+	has, unchanged func(name string) bool
+}
+
+// planPage reads the page called name for its plan. The hooks include
+// those rastrillo.js and the page's scripts create at run time, which
+// no template shows. A page that loads a script the app has edited
+// runs code of its own.
 func planPage(
-	name string, page *tmpl.Template, entry string, has func(string) bool,
+	name string, page *tmpl.Template, entry string, files appFiles,
 ) (pagePlan, error) {
 	reading, err := readPage(name, page, entry)
 	if err != nil {
@@ -44,7 +52,7 @@ func planPage(
 	hooks := maps.Clone(reading.hooks)
 	components := vendored.ComponentScripts()
 	for _, script := range pageScriptNames(reading) {
-		if !has("static/" + script) {
+		if !files.has("static/" + script) {
 			continue
 		}
 		plan.scripts = append(plan.scripts, "static/"+script)
@@ -58,6 +66,12 @@ func planPage(
 		for _, hook := range vendored.CreatedHooks(path.Base(script)) {
 			hooks[hook], created[hook] = true, true
 		}
+	}
+	loaded := slices.Concat(
+		slices.Sorted(maps.Keys(reading.scripts.named)), plan.scripts)
+	edited := func(script string) bool { return !files.unchanged(script) }
+	if slices.ContainsFunc(loaded, edited) {
+		reading.scripts.own = true
 	}
 	plan.hooks = slices.Concat(slices.Sorted(maps.Keys(hooks)),
 		reading.shownValues(created), reading.shownClasses(created))

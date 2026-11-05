@@ -125,7 +125,8 @@ hook's variants the page never writes, such as `rst-btn="danger"` on a
 page with only primary buttons, and the class forms, such as
 `.rst-btn`, of hooks it writes only as attributes. A page with a script
 that isn't the framework's, an inline script, an `on*` handler or a
-`javascript:` URL keeps them all, and so does a live page. Slices
+`javascript:` URL keeps them all, and so does a live page. A
+framework script you've edited counts as your own. Slices
 are minified, gzipped and cached like your other files, and pages that
 show the same hooks share one. Your `tokens.css` stays one file, and an
 edit to it reaches every slice. If it can't be read, for example

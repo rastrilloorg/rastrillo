@@ -14,11 +14,12 @@ import (
 // page that runs only Rastrillo's scripts from one that runs code of
 // its own, which may write any value of any hook.
 type scriptReading struct {
-	own      bool   // a script not Rastrillo's, inline code or a handler
-	pending  bool   // a script tag whose src an action writes
-	ours     bool   // that action names one of Rastrillo's scripts
-	inRange  bool   // inside a range over pageScripts or neededScripts
-	template string // the template the last node was in
+	own      bool            // a script not Rastrillo's, code or a handler
+	named    map[string]bool // Rastrillo's scripts it loads by name
+	pending  bool            // a script tag whose src an action writes
+	ours     bool            // that action names one of Rastrillo's scripts
+	inRange  bool            // in a range over pageScripts or neededScripts
+	template string          // the template the last node was in
 }
 
 var (
@@ -52,7 +53,7 @@ func (scripts *scriptReading) readText(template string, text []byte) {
 		case end < 0:
 			scripts.own = true
 		default:
-			scripts.own = scripts.own || !oursOrData(tag[:end])
+			scripts.readWholeTag(tag[:end])
 		}
 	}
 }
@@ -80,7 +81,10 @@ func (scripts *scriptReading) readCommand(
 		}
 		switch argument := command.Args[1].(type) {
 		case *parse.StringNode:
-			scripts.ours = scripts.ours || ourAsset(argument.Text)
+			if ourAsset(argument.Text) {
+				scripts.ours = true
+				scripts.load(argument.Text)
+			}
 		case *parse.DotNode:
 			scripts.ours = scripts.ours || scripts.inRange
 		}
@@ -106,14 +110,30 @@ func (scripts *scriptReading) settle() {
 	scripts.pending, scripts.ours = false, false
 }
 
-// oursOrData reports whether a whole script tag's attributes load one
-// of Rastrillo's scripts or hold data rather than code.
-func oursOrData(attributes []byte) bool {
+// readWholeTag reads a script tag whose attributes the text holds
+// whole: it loads one of Rastrillo's scripts, holds data rather than
+// code, or runs code of the app's own.
+func (scripts *scriptReading) readWholeTag(attributes []byte) {
 	if source := srcValue.FindSubmatch(attributes); source != nil {
-		return ourPath(string(source[1]))
+		name, ours := ourPath(string(source[1]))
+		if ours {
+			scripts.load(name)
+		}
+		scripts.own = scripts.own || !ours
+		return
 	}
 	kind := typeValue.FindSubmatch(attributes)
-	return kind != nil && dataTypes[strings.ToLower(string(kind[1]))]
+	data := kind != nil && dataTypes[strings.ToLower(string(kind[1]))]
+	scripts.own = scripts.own || !data
+}
+
+// load records that the page loads one of Rastrillo's scripts by name,
+// as its static path: an app's edit of one is the app's code.
+func (scripts *scriptReading) load(name string) {
+	if scripts.named == nil {
+		scripts.named = map[string]bool{}
+	}
+	scripts.named[name] = true
 }
 
 // ourAsset reports whether an asset name is one of the scripts
@@ -127,13 +147,14 @@ var fingerprinted = regexp.MustCompile(`^(.+)\.[0-9a-f]{16}(\.js)$`)
 
 // ourPath reports whether a script's literal src is exactly where
 // Rastrillo serves one of its scripts, /static/ and the file's name,
-// plain or fingerprinted. A file of the same name anywhere else is the
-// app's, and may hold its code.
-func ourPath(source string) bool {
+// plain or fingerprinted, and names that script's static path. A file
+// of the same name anywhere else is the app's, and may hold its code.
+func ourPath(source string) (string, bool) {
 	name, served := strings.CutPrefix(source, "/static/")
 	if match := fingerprinted.FindStringSubmatch(name); match != nil {
 		name = match[1] + match[2]
 	}
-	return served && !strings.Contains(name, "/") &&
+	ours := served && !strings.Contains(name, "/") &&
 		ourAsset("static/"+name)
+	return "static/" + name, ours
 }

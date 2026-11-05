@@ -102,15 +102,23 @@ func scriptFuncs() template.FuncMap {
 
 // addPages adds each of the app's pages. With the app's assets, a page
 // links only the scripts the app still has, and its stylesheet's slice
-// once every page's hooks are known.
+// once every page's hooks are known. Without them every page links the
+// whole stylesheet, so no script is taken to be unchanged: none could
+// be checked, and nothing is cut on the strength of it.
 func (pages *Pages) addPages(base *tmpl.Template, config PagesConfig) error {
-	has := func(string) bool { return true }
+	files := appFiles{
+		has:       func(string) bool { return true },
+		unchanged: func(string) bool { return false },
+	}
 	if config.Assets != nil {
-		has = config.Assets.Has
+		files = appFiles{
+			has:       config.Assets.Has,
+			unchanged: unchangedScripts(config.Assets),
+		}
 	}
 	plans := map[string]pagePlan{}
 	for name, file := range config.Pages {
-		plan, err := pages.addPage(base, name, file, config.App, has)
+		plan, err := pages.addPage(base, name, file, config.App, files)
 		if err != nil {
 			return err
 		}
@@ -124,10 +132,10 @@ func (pages *Pages) addPages(base *tmpl.Template, config PagesConfig) error {
 
 // addPage parses the page's file into its own clone of base, binds
 // pageScripts and neededScripts there to the scripts that page needs,
-// and returns its plan. has reports whether the app has a file.
+// and returns its plan.
 func (pages *Pages) addPage(
 	base *tmpl.Template, name string, file PageFile, app fs.FS,
-	has func(string) bool,
+	files appFiles,
 ) (pagePlan, error) {
 	fsys := file.FS
 	if fsys == nil {
@@ -140,7 +148,7 @@ func (pages *Pages) addPage(
 	if err != nil {
 		return pagePlan{}, fmt.Errorf(pageParseMsg, name, err)
 	}
-	plan, err := planPage(name, page, pages.entry, has)
+	plan, err := planPage(name, page, pages.entry, files)
 	if err != nil {
 		return pagePlan{}, err
 	}

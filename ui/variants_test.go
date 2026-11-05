@@ -5,6 +5,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"testing/fstest"
 
 	"amadan.net/rastrillo/rastrillo"
 	"amadan.net/rastrillo/rastrillo/internal/vendored"
@@ -170,6 +171,48 @@ func TestALiteralSrcWhereRastrilloServesItKeepsTheCut(t *testing.T) {
 			`<script defer src="` + source + `"></script>`)
 		if strings.Contains(pageSlice(t, body), ghostRule) {
 			t.Errorf("%s: the slice keeps %s", source, ghostRule)
+		}
+	}
+}
+
+// editedAssets is appAssets with the app's own copy of one vendored
+// file in place of the framework's.
+func editedAssets(name, body string) *rastrillo.Assets {
+	files := fstest.MapFS{}
+	vendoredFiles, _ := VendoredAssets("day")
+	vendoredFiles[name] = []byte(body)
+	for name, body := range vendoredFiles {
+		files["static/"+name] = &fstest.MapFile{Data: body}
+	}
+	return rastrillo.NewAssets(files)
+}
+
+// A vendored script the app has edited is the app's code, which may
+// write any value and add any class, so a page that loads it keeps
+// every variant and class. A page that does not load it keeps the cut.
+func TestAPageLoadingAnEditedScriptKeepsEveryVariant(t *testing.T) {
+	layout, _ := Layout("column")
+	body := content(`<a rst-btn="primary">New</a>`)
+	for name, test := range map[string]struct {
+		script string
+		keeps  bool
+	}{
+		"the shim, which every page loads":        {"rastrillo.js", true},
+		"fiesta.js, which every page loads":       {"fiesta.js", true},
+		"select.js, which the page does not load": {"select.js", false},
+	} {
+		assets := editedAssets(test.script, `document.querySelector("a")`+
+			`.setAttribute("rst-btn", "ghost")`)
+		page := renderPagesWith(t, layout, map[string]string{"page": body},
+			sliced(assets, ""))["page"]
+		served := sliceServed(t, assets, page)
+		if strings.Contains(served, ghostRule) != test.keeps {
+			t.Errorf("%s: the slice keeps %s: %v, want %v", name,
+				ghostRule, !test.keeps, test.keeps)
+		}
+		if classSelector("rst-btn").MatchString(served) != test.keeps {
+			t.Errorf("%s: the slice keeps .rst-btn: %v, want %v", name,
+				!test.keeps, test.keeps)
 		}
 	}
 }

@@ -54,19 +54,21 @@ func appFuncs(funcs template.FuncMap) template.FuncMap {
 	return all
 }
 
-// everyFile is an app that has deleted no vendored file.
-func everyFile(string) bool { return true }
+// everyFile is an app that has deleted and edited no vendored file.
+var everyFile = appFiles{has: always, unchanged: always}
+
+func always(string) bool { return true }
 
 // planOne plans the one page body over layout.
 func planOne(
-	t *testing.T, layout, body string, has func(string) bool,
+	t *testing.T, layout, body string, files appFiles,
 ) pagePlan {
 	t.Helper()
 	pages, err := hookPages(t, layout, map[string]string{"page": body})
 	if err != nil {
 		t.Fatal(err)
 	}
-	plan, err := planPage("page", pages.pages["page"], pages.entry, has)
+	plan, err := planPage("page", pages.pages["page"], pages.entry, files)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -266,7 +268,8 @@ func TestADeletedScriptIsNeverLinked(t *testing.T) {
 	}
 	body := content(`<button rst-btn>Save</button><details rst-dropdown>` +
 		`{{needs "light.js"}}{{needs "anchor.js"}}`)
-	scripts := planOne(t, columnLayout(t), body, deleted).scripts
+	files := appFiles{has: deleted, unchanged: always}
+	scripts := planOne(t, columnLayout(t), body, files).scripts
 	for _, script := range static("light.js", "anchor.js") {
 		if slices.Contains(scripts, script) {
 			t.Errorf("scripts %v link the deleted %s", scripts, script)
