@@ -101,6 +101,8 @@ func requireScripts(t *testing.T, body string, want []string) {
 func TestASnippetOfEitherSpellingLoadsCopyJS(t *testing.T) {
 	layout, _ := Layout("column")
 	copyTag := `<script defer src="/static/copy.js">`
+	// markup-spelling: old-spelling begin — the class spelling is what
+	// this test reads.
 	for body, loads := range map[string]bool{
 		`<div rst-snippet><code>go get</code></div>`:              true,
 		`<div class="rst-snippet"><code>go get</code></div>`:      true,
@@ -109,6 +111,7 @@ func TestASnippetOfEitherSpellingLoadsCopyJS(t *testing.T) {
 		`<div class="rst-snippet {{.Base}}"><code>x</code></div>`: true,
 		`<div class="rst-snippet-copy"><code>go get</code></div>`: false,
 		`<div title="rst-snippet"><code>go get</code></div>`:      false,
+		// markup-spelling: old-spelling end
 	} {
 		page := renderPagesWith(t, layout,
 			map[string]string{"page": content(body)}, shellSetup{})["page"]
