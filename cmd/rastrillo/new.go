@@ -107,7 +107,7 @@ func runNew(args []string) error {
 	if err != nil {
 		return err
 	}
-	// The vendored set — tokens.css, the chosen theme, and the three
+	// The vendored set — the stylesheets, the chosen theme and the
 	// scripts — comes from ui.VendoredAssets, which is the one place
 	// that list is written down (ui/vendored.go). The generated
 	// vendored_test.go below and `rastrillo doctor` read the same
@@ -302,6 +302,7 @@ func runNew(args []string) error {
 
 // Vendored files come from ui.VendoredAssets and become app-owned.
 // Serve never serves CSS at runtime; new/generate never touch these again.
+// All but rastrillo.js and live.js are the pinned Fiesta release's bytes.
 //
 //	tokens.css     the design-token stylesheet — structure only
 //	theme.css      the colour, type family and shape tokens
@@ -309,10 +310,11 @@ func runNew(args []string) error {
 //	               another of ui.ThemeNames() or edit it freely
 //	shell.css      the sidebar and console shells' slide between
 //	               the index and a page on a phone
-//	rastrillo.js   the fragment shim behind data-poll and menu dismiss
-//	busy.js        the busy rule: every submit button, data-busy opts out
+//	rastrillo.js   data-poll's fragment shim, and the scheme cookie
 //	live.js        live pages: inert until a page carries the
 //	               rastrillo-live meta
+//	fiesta.js      menu dismiss, switch drag, iOS press, scheme apply
+//	busy.js        the busy rule: every submit button, data-busy opts out
 //	light.js       the light the depth styles read; delete it for the
 //	               still design
 //	anchor.js      a dropdown's menu kept on the screen where CSS anchor
@@ -323,6 +325,7 @@ func runNew(args []string) error {
 //	               focus returned to the section the reader left
 //	transition.js  observes skipped incoming transitions on column, stage
 //	               and topbar pages before styles opt them out
+//	copy.js        rst-snippet's Copy button, inert without a snippet
 //	select.js      field-select's searchable enhancement, inert
 //	               until a <select> opts in with data-rst-select
 //	datetime.js    the date fields' natural-language combobox,
@@ -330,15 +333,15 @@ func runNew(args []string) error {
 //	calendar.js    the month grid that combobox's button opens,
 //	               inert until datetime.js asks it for a panel
 //
-// The layouts load the last three only on a page whose fields need
-// them, so an app with no big select or date field never sends them
-// and can delete them. The date fields are two files, and deleting one
-// of the pair is the awkward case: drop calendar.js alone and the field
-// still works, with its button falling back to the browser's own
-// picker. shell.js and shell.css are written for every shell like the
-// rest, and are deletable where the shell does not link them; the app's
-// vendoring test then needs them in vendoredIsMine, or it fails on the
-// missing files.
+// The layouts load the last four only on a page that shows what they
+// enhance, so an app with no snippet, big select or date field never
+// sends them and can delete them. The date fields are two files, and
+// deleting one of the pair is the awkward case: drop calendar.js alone
+// and the field still works, with its button falling back to the
+// browser's own picker. shell.js and shell.css are written for every
+// shell like the rest, and are deletable where the shell does not link
+// them; the app's vendoring test then needs them in vendoredIsMine, or
+// it fails on the missing files.
 
 // The scaffold's chi and gorm pins. The CLI's own build info can't
 // supply these (cmd/rastrillo imports neither), so they are constants

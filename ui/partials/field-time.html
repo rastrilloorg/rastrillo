@@ -3,7 +3,7 @@
      15:04 either way, and the browser's own picker still opens.
 
      Unless Plain, the input also carries the enhancement's contract:
-     data-rst-time arms ui/datetime.js — the time-only flag, so the
+     data-rst-time arms Fiesta's datetime.js — the time-only flag, so the
      script reads a clock rather than a calendar — data-rst-date-words
      hands it the parser vocabulary as one JSON object ({{dateWords}},
      resolved through the bound T so it localises per request), and the
@@ -11,9 +11,10 @@
      screen. They share field-date's key names because they are the same
      catalog strings; only the arming flag differs. Every one of them
      comes from the catalog — datetime.js matches on no English word
-     of its own, which is the point of the split. (It does keep English
-     fallbacks for these labels, the way select.js does, for a field
-     that arrives without them.)
+     of its own, which is the point of the split. (Without an attribute,
+     it reads Fiesta's table for the page's language if the page loads
+     one; only the labels fall back to English written into the script,
+     the way select.js does.)
 
      The hint travels as its RAW template, {example} and all:
      datetime.js substitutes an example date it formatted itself, in

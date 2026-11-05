@@ -49,7 +49,8 @@
 // rst-box. The horizontal idioms are the ones tokens.css ships:
 // rst-box-head, rst-field-row, rst-lbar, rst-lrow cells, rst-seg-tabs.
 //
-// Styling comes from two stylesheets rastrillo new writes once into a
+// Styling comes from two of Fiesta's stylesheets (fiesta.rastrillo.org,
+// at the version go.mod pins), which rastrillo new writes once into a
 // new app's static/ directory: tokens.css, which is structure — layout,
 // spacing, the type scale and the components themselves — and a theme (see
 // ThemeCSS), which is the colour, the type family and the shape (radii,
@@ -387,6 +388,8 @@ func SelectJS() []byte { return fiestaScript("select.js") }
 // It holds no month or weekday names: those come from Intl in the
 // page's own language. The words it matches on ("tomorrow", "next",
 // "in") ride out on data-rst-date-words from the request's catalog.
+// Each string is read from its attribute, then Fiesta's table if the
+// page loads one; only the labels fall back to English in the file.
 func DatetimeJS() []byte { return fiestaScript("datetime.js") }
 
 // CalendarJS returns Fiesta's calendar.js — the month grid the date

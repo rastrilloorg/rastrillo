@@ -73,9 +73,10 @@ offers Light, Dark and System in a `scheme-menu` that posts to the
 framework's `POST /_theme`; the choice is stored in the
 `rastrillo_scheme` cookie, cleared for System, and `ui.ForRequest`
 reads it as `Scheme` so the layout writes `data-theme` on `<html>`
-before the first paint. With JavaScript on, `rastrillo.js` applies the
-choice in place and writes the same cookie. The switch picks the
-scheme only; the theme (`day`, `plain`, `signal`) stays your choice.
+before the first paint. With JavaScript on, `fiesta.js` applies the
+choice in place and `rastrillo.js` writes the same cookie. The switch
+picks the scheme only; the theme (`day`, `plain`, `signal`) stays your
+choice.
 See [Themes](/docs/reference/ui#themes).
 
 ## Looking strings up

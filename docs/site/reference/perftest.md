@@ -94,7 +94,7 @@ gzipped. Your own
 stylesheets and scripts are not counted, and neither is the HTML.
 
 A page that links its slice of `tokens.css` may load 16,000 bytes.
-Each component script it loads (`select.js`, `calendar.js`,
+Each component script it loads (`copy.js`, `select.js`, `calendar.js`,
 `datetime.js`) adds its own size to that. A live or
 polling page links the slice for every page and loads every script, so
 it has its shell's own limit, never under 16,000, with `live.js` and
@@ -110,7 +110,7 @@ check pages outside that test. Unlike `Screens`, it also runs under
 When a page is over, the failure names its largest files:
 
 ```
-GET /orders: 25690 bytes of framework CSS and JS, gzipped, over its 23300-byte budget (16000 bytes for a column page, plus select.js); its largest files are tokens.css's slice (10840 bytes), select.js (7210 bytes), rastrillo.js (2350 bytes); if it cannot be lighter, record `weight GET /orders 28300 <reason>` in .rastrillo/budgets.txt: its weight plus 10%, rounded up to the next 100
+GET /orders: 25690 bytes of framework CSS and JS, gzipped, over its 23600-byte budget (16000 bytes for a column page, plus select.js); its largest files are tokens.css's slice (10840 bytes), select.js (7210 bytes), fiesta.js (1960 bytes); if it cannot be lighter, record `weight GET /orders 28300 <reason>` in .rastrillo/budgets.txt: its weight plus 10%, rounded up to the next 100
 ```
 
 For a page that links the whole `tokens.css`, it names the files that

@@ -119,7 +119,13 @@ the result with two functions:
 ```
 
 `pageStylesheet` is the page's slice of `static/tokens.css`: the rules
-for the hooks the page shows, and the rules every page needs. Slices
+for the hooks the page shows, and the rules every page needs. On a page
+that runs no script of its own, the slice also drops the rules for a
+hook's variants the page never writes, such as `rst-btn="danger"` on a
+page with only primary buttons, and the class forms, such as
+`.rst-btn`, of hooks it writes only as attributes. A page with a script
+that isn't the framework's, an inline script, an `on*` handler or a
+`javascript:` URL keeps them all, and so does a live page. Slices
 are minified, gzipped and cached like your other files, and pages that
 show the same hooks share one. Your `tokens.css` stays one file, and an
 edit to it reaches every slice. If it can't be read, for example
@@ -128,11 +134,15 @@ because it uses CSS nesting, every page links the whole file.
 
 `pageScripts` lists the scripts the page uses, in the order they load:
 
+- `fiesta.js` on every page, first: it closes menus on Escape or a
+  click elsewhere, lets a switch be dragged and applies a colour-scheme
+  choice in place.
 - `busy.js` with a form of the page's own. The layout's language and
   scheme menus don't count.
 - `light.js` with a component it lights: `rst-btn`, `rst-box`,
   `rst-card`, `rst-stats` or `rst-list`.
 - `anchor.js` with a menu.
+- `copy.js` with `rst-snippet`, for its Copy button.
 - `select.js` with `field-select`, and `datetime.js` and `calendar.js`
   with the date and time fields.
 
@@ -141,9 +151,11 @@ every page's hooks and loads every script, because the HTML it swaps
 in later may carry anything.
 
 Pass your app's `rastrillo.Assets` as `PagesConfig.Assets`. With it,
-`pageScripts` does not list an optional script you deleted from
-`static/`, such as `light.js` for the still design. Without it, every
-page links the whole `tokens.css`.
+`pageScripts` does not list a script you deleted from `static/`, such
+as `light.js` for the still design. Without it, every page links the
+whole `tokens.css`, and every page asks for `static/fiesta.js` whether
+your app has it or not. If it doesn't, that request is a 404, which
+breaks nothing.
 
 Markup you write in a template is read like a partial's. A field you
 write yourself loads its script as long as the markup carries its
@@ -163,10 +175,15 @@ Ask for what it needs in the template that shows it:
 ```
 
 `needs` takes a script or a hook, in quotes, and renders nothing. The
-scripts are `busy.js`, `live.js`, `light.js`, `anchor.js`,
+scripts are `busy.js`, `live.js`, `light.js`, `anchor.js`, `copy.js`,
 `select.js`, `calendar.js` and `datetime.js`. A hook is `rst-` and a
 component's name. Any other name makes `NewPages` return an error
 naming the page. Don't add a `<script>` tag for these scripts yourself.
+
+Ask for each hook your Go-built markup shows, whether it writes the
+hook as an attribute or as a class. `{{needs "rst-btn"}}` keeps the
+rules for `rst-btn` in both spellings and with every variant, such as
+`rst-btn="danger"`.
 
 You don't have to find every hook by hand. `make perf` fails when a
 page's slice lacks a rule for a hook that the whole `tokens.css` would
@@ -174,8 +191,15 @@ apply to it, and names the hook to ask for. See
 [Testing](/docs/testing#the-perf-lane).
 
 A layout written before `pageScripts` may load the component scripts
-with `neededScripts`, which lists only `select.js`, `calendar.js` and
-`datetime.js`. It still works.
+with `neededScripts`, which lists only `copy.js`, `select.js`,
+`calendar.js` and `datetime.js`. It still works, but it needs a line
+for `fiesta.js` right after its `rastrillo.js` tag:
+
+```html
+<script defer src="{{path $ (asset "static/fiesta.js")}}"></script>
+```
+
+`rastrillo doctor` names each layout that lacks it.
 
 ## The partials
 
@@ -330,12 +354,11 @@ button of the topbar and console on a phone: the account menu opens
 inside it, and in the same group it would close it.
 
 Closing an open menu on a click elsewhere, or on Escape, is the one part
-native `<details>` cannot express, so `rastrillo.js` does it — two
+native `<details>` cannot express, so `fiesta.js` does it — two
 delegated listeners on the document, no per-element wiring, menus that
-arrive in a polled fragment covered for free. Delete that section of the
-file to opt out; with no script at all the menus still open, still close
-on a second click of their own summary, and still keep one open at a
-time.
+arrive in a polled fragment covered for free. With no script at all the
+menus still open, still close on a second click of their own summary,
+and still keep one open at a time.
 
 ### A button that changes something says so
 
@@ -428,7 +451,7 @@ deletable. It moves the light the depth styles read: the shadows lean
 with the hour, and the sheen on a button and the rim of a card follow
 the pointer. For the still design, delete it and its tag, and name it in
 `vendoredIsMine` in `vendored_test.go`. On a phone a pressed button
-shows its press, not a sheen, and `rastrillo.js`, not `light.js`,
+shows its press, not a sheen, and `fiesta.js`, not `light.js`,
 registers the touch listener iOS needs to show pressed states, so
 deleting `light.js` loses none of them.
 
@@ -701,9 +724,11 @@ written in the file:
   "3月3日" and "٣ مارس" all parse with no catalog entry behind them.
 - **The visible strings ride out on `data-rst-date-*` attributes**, each
   resolved through `T` at render, because this markup is built in the
-  browser where the catalog is out of reach. The file keeps English
-  fallbacks for the eleven labels it puts on screen, the way `select.js`
-  does, so a field that arrives without an attribute still works.
+  browser where the catalog is out of reach. A field that arrives
+  without an attribute still works: the script reads each label from
+  the attribute first, then from Fiesta's table for the page's
+  language if the page loads one, then from the English written into
+  the file, the way `select.js` does.
 - **`{example}` and `{n}` are substituted in the browser**, not at
   render. The hint travels as its raw template so the example date is
   formatted by the locale's own formatter; the results line counts rows

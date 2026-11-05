@@ -126,10 +126,9 @@ var spellingExempt = map[string]bool{
 	// has one thing to learn and one thing to grep for. What is left is
 	// what a fence cannot say.
 	//
-	// tokens.css still carries a class selector beside every attribute
-	// one until stage 3, and the examples vendor a copy of it. Neither
-	// is markup.
-	"ui/tokens.css":                      true,
+	// Fiesta's tokens.css still carries a class selector beside every
+	// attribute one until stage 3, and the examples vendor a copy of
+	// it. Neither copy is markup.
 	"examples/blog/static/tokens.css":    true,
 	"examples/tickets/static/tokens.css": true,
 	// The historical record: plans and specs written before the flip,
