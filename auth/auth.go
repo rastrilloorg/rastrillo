@@ -102,6 +102,10 @@ type Config struct {
 	// handler runs.
 	DB *sql.DB
 
+	// Reader, if set, serves the session lookups, as sessions.Config's
+	// does. Pass db.DB's Reader. Default DB.
+	Reader *sql.DB
+
 	// Origin is the app's external origin, scheme included —
 	// "https://app.example.com". It is the OAuth client_id (keymail
 	// validates redirects against it), the base of emailed links, and
@@ -476,7 +480,7 @@ func New(cfg Config) (*Auth, error) {
 	// while the cookie was minted on another.
 	authNow := func() time.Time { return a.now() }
 	sessCfg := sessions.Config{
-		DB:         cfg.DB,
+		DB: cfg.DB, Reader: cfg.Reader,
 		Origin:     cfg.Origin,
 		TTL:        cfg.SessionTTL,
 		SigninPath: cfg.SigninPath,

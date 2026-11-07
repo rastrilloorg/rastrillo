@@ -55,8 +55,10 @@ func (s *Sessions) List(subject string) ([]Info, error) {
 		return nil, ErrSigned
 	}
 	now := s.now()
-	rows, err := s.cfg.DB.Query(`SELECT token_hash, method, auth_time, created_at, expires_at
-		FROM sessions WHERE subject = ? AND expires_at > ? ORDER BY created_at DESC, token_hash`,
+	rows, err := s.cfg.Reader.Query(`SELECT token_hash, method,
+		auth_time, created_at, expires_at FROM sessions
+		WHERE subject = ? AND expires_at > ?
+		ORDER BY created_at DESC, token_hash`,
 		subject, now.UTC().Format(time.RFC3339))
 	if err != nil {
 		return nil, err

@@ -363,3 +363,17 @@ func TestRowModeRefreshIfExpiredIsANoOp(t *testing.T) {
 		t.Fatalf("row mode answered %d %q", w.Code, w.Header().Get("Location"))
 	}
 }
+
+// Signed mode keeps no rows, so a Reader there is a wiring mistake,
+// refused as a DB is rather than silently ignored.
+func TestSignedNewRefusesAReader(t *testing.T) {
+	hubKey, _ := sessions.NewSigningKey("k1")
+	keys, _ := sessions.ParsePublicKeys(hubKey.Public())
+	_, err := sessions.New(sessions.Config{
+		Origin: origin, Reader: newDB(t),
+		Signed: &sessions.Signed{Name: "ppl", Keys: keys},
+	})
+	if err == nil {
+		t.Error("a Reader with signed mode was accepted")
+	}
+}

@@ -1047,3 +1047,13 @@ func TestNewCompilesTheAppsTemplates(t *testing.T) {
 			"want demoapp after its files", got, hadGoMod)
 	}
 }
+
+// A new app reads sessions on the reader pool: on the writer, every
+// signed-in page load waited for whatever write was in progress (#241).
+func TestAuthReadsSessionsOnTheReader(t *testing.T) {
+	auth := scaffoldFile("auth.go.tmpl")
+	if !strings.Contains(auth, "Reader: app.database.Reader(),") {
+		t.Error("newAuth does not give auth.Config the reader pool, " +
+			"so session lookups queue behind writes")
+	}
+}

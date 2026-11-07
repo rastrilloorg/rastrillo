@@ -145,6 +145,12 @@ func Open(path string, log *slog.Logger) (*DB, error) {
 // toggle it outside the transaction.
 func (d *DB) Writer() *sql.DB { return d.writer }
 
+// Reader is the read pool, for packages that take a raw *sql.DB and
+// only read (sessions.Config.Reader). A read here does not wait for a
+// write in progress on the writer's one connection (#241). Never write
+// through it: only the writer pool is serialised.
+func (pools *DB) Reader() *sql.DB { return pools.reader }
+
 func (d *DB) Close() error {
 	rerr := d.reader.Close()
 	if werr := d.writer.Close(); werr != nil {

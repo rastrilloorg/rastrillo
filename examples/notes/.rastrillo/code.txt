@@ -9,14 +9,13 @@ func cmd/notes/main.go main 84
 names cmd/notes/main.go main/d 1
 columns internal/notes/app.go 0aad4a23abde 1
 columns internal/notes/app.go 1ee737ea4d64 1
-columns internal/notes/app.go 6fb54925e1ed 1
 columns internal/notes/app.go 8fc03ed8dc14 1
 columns internal/notes/app.go ae7886e0c497 1
 columns internal/notes/app.go cbb9706f5549 1
 columns internal/notes/app.go ec3c41e34787 1
 columns internal/notes/app.go f399b1535837 1
 columns internal/notes/app.go f7b46005129f 1
-func internal/notes/app.go App 281
+func internal/notes/app.go App 282 sessions.New wraps to fit Reader in under 80 columns (#241)
 names internal/notes/app.go App/a 1
 names internal/notes/app.go App/d 1
 names internal/notes/app.go App/r 4

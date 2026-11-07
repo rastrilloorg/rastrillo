@@ -20,6 +20,7 @@ Build one `*Auth` at boot, merge its migrations, mount four handlers:
 ```go
 a, err := auth.New(auth.Config{
 	DB:          writer,
+	Reader:      d.Reader(),
 	Origin:      origin,
 	InstanceKey: instanceKey,
 	Proof:       guard, // see "The front door" below
@@ -62,6 +63,7 @@ one-tap for someone coming back.
 var signinPage http.HandlerFunc // defined below; RenderConfirm draws it too
 a, err := auth.New(auth.Config{
 	DB:           writer,
+	Reader:       d.Reader(),
 	Origin:       origin,
 	InstanceKey:  instanceKey,
 	Proof:        guard,

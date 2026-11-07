@@ -50,6 +50,10 @@ type Config struct {
 	// the app's own migration runner) before any method runs.
 	DB *sql.DB
 
+	// Reader, if set, serves lookups and List, so a page load does not
+	// wait for a write on DB. Pass db.DB's Reader. Default DB.
+	Reader *sql.DB
+
 	// Origin is the app's external origin, scheme included —
 	// "https://app.example.com". In row mode it decides the
 	// Secure/__Host- cookie attributes and nothing else: sessions does
@@ -133,6 +137,8 @@ func New(cfg Config) (*Sessions, error) {
 		}
 	} else if cfg.DB == nil {
 		return nil, errors.New("rastrillo/sessions: Config.DB is required")
+	} else if cfg.Reader == nil {
+		cfg.Reader = cfg.DB
 	}
 	if cfg.Origin == "" || (!strings.HasPrefix(cfg.Origin, "https://") && !strings.HasPrefix(cfg.Origin, "http://")) {
 		return nil, errors.New("rastrillo/sessions: Config.Origin must be an absolute origin like https://app.example.com")
@@ -238,8 +244,9 @@ func (s *Sessions) lookup(hash string, now time.Time) (Session, bool, error) {
 func (s *Sessions) lookupContext(ctx context.Context, hash string, now time.Time) (Session, bool, error) {
 	var sess Session
 	var method, authTime, created, expires string
-	err := s.cfg.DB.QueryRowContext(ctx, `SELECT subject, method, auth_time, created_at, expires_at
-		FROM sessions WHERE token_hash = ?`, hash).
+	err := s.cfg.Reader.QueryRowContext(ctx, `SELECT subject, method,
+		auth_time, created_at, expires_at FROM sessions
+		WHERE token_hash = ?`, hash).
 		Scan(&sess.Subject, &method, &authTime, &created, &expires)
 	if err == sql.ErrNoRows {
 		return Session{}, false, nil

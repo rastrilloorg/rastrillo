@@ -65,8 +65,9 @@ var signedName = regexp.MustCompile(`^[a-z0-9][a-z0-9_-]{0,31}$`)
 // so what was checked is what is used: a caller editing its map during
 // a rotation can neither race verification nor slip a key past New.
 func signedConfig(cfg Config) (*Signed, map[string][]byte, error) {
-	if cfg.DB != nil {
-		return nil, nil, errors.New("rastrillo/sessions: signed sessions keep no rows; leave DB nil")
+	if cfg.DB != nil || cfg.Reader != nil {
+		return nil, nil, errors.New("rastrillo/sessions: " +
+			"signed sessions keep no rows; leave DB and Reader nil")
 	}
 	// Signed mode redirects to Origin plus a path, so a trailing slash
 	// or a path here would send every refresh and sign-in somewhere the

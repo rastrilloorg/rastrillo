@@ -962,7 +962,7 @@ columns auth/auth.go e29553cd014f 1
 columns auth/auth.go ec14109dd65b 1
 columns auth/auth.go eda525fa5bef 1
 columns auth/auth.go edb224703a41 1
-file auth/auth.go - 684
+file auth/auth.go - 688 Config.Reader for the session lookups (#241)
 func auth/auth.go New 157
 names auth/auth.go -/d 1
 names auth/auth.go -/r 3
@@ -18649,9 +18649,7 @@ names sessions/context_test.go TestFromContextMatchesExistingReader/s 1
 names sessions/context_test.go TestFromContextMatchesExistingReader/w 1
 columns sessions/inventory.go 2594a916da75 1
 columns sessions/inventory.go 38232ee9daf7 1
-columns sessions/inventory.go 7506161aa532 1
 columns sessions/inventory.go 893d12aedc15 1
-columns sessions/inventory.go 8c68b0ac3648 1
 names sessions/inventory.go Sessions.Hash/c 1
 names sessions/inventory.go Sessions.Hash/r 1
 names sessions/inventory.go Sessions.Hash/s 1
@@ -18882,7 +18880,6 @@ columns sessions/sessions.go 9c77835c3661 1
 columns sessions/sessions.go abc1907308a7 1
 columns sessions/sessions.go abf264fe5c0f 1
 columns sessions/sessions.go bc9b6114e5cf 1
-columns sessions/sessions.go bfb5141f9081 1
 columns sessions/sessions.go c7c61bc7c5c1 1
 columns sessions/sessions.go cd80e04abdb3 1
 columns sessions/sessions.go cf41d710a66c 1
@@ -18890,7 +18887,7 @@ columns sessions/sessions.go de3f8ea45f9c 1
 columns sessions/sessions.go ef157890d65c 1
 columns sessions/sessions.go fa1ddfd40986 1
 columns sessions/sessions.go fafffb458b62 1
-file sessions/sessions.go - 640
+file sessions/sessions.go - 647 Config.Reader, its default and a wrapped lookup query (#241)
 names sessions/sessions.go Current/r 1
 names sessions/sessions.go NewToken/b 1
 names sessions/sessions.go SafeReturn/r 1
@@ -19152,7 +19149,6 @@ columns sessions/signedmode.go 0e28622aa8a9 1
 columns sessions/signedmode.go 24ce9c760a6f 1
 columns sessions/signedmode.go 36dbd5f4effb 1
 columns sessions/signedmode.go 36f806027d85 1
-columns sessions/signedmode.go 3a7d737a29e0 1
 columns sessions/signedmode.go 402945ffb370 1
 columns sessions/signedmode.go 51337de0bf2d 1
 columns sessions/signedmode.go 6818addfd83f 1
@@ -19166,7 +19162,7 @@ columns sessions/signedmode.go bd1b51278eb7 1
 columns sessions/signedmode.go c5349eed9410 1
 columns sessions/signedmode.go c817fcbd46a9 1
 columns sessions/signedmode.go d3a72e0a7091 1
-func sessions/signedmode.go signedConfig 60
+func sessions/signedmode.go signedConfig 61 refusing a Reader in signed mode wraps the DB error onto two lines (#241)
 names sessions/signedmode.go Sessions.RefreshIfExpired/r 1
 names sessions/signedmode.go Sessions.RefreshIfExpired/s 1
 names sessions/signedmode.go Sessions.RefreshIfExpired/w 1

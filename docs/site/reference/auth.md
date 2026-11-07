@@ -27,6 +27,7 @@ Build one at boot.
 ```go
 type Config struct {
 	DB               *sql.DB
+	Reader           *sql.DB
 	Origin           string
 	InstanceKey      string
 	Proof            *pow.Guard
@@ -54,6 +55,8 @@ type Config struct {
 var ErrProofUnset, ErrProofMode error // from New: neither Proof nor ProofOff; a bound Guard
 const ProofScope = "rastrillo/auth/begin"
 ```
+
+`auth` passes `Reader` to [`sessions`](/docs/reference/sessions). Set it to your `db.DB` value's `Reader()` result for session lookups.
 
 `Proof` is sign-in's front door, required unless `ProofOff`; [Magic links](/docs/magic-links#the-front-door) and [pow](/docs/reference/pow) cover it.
 
