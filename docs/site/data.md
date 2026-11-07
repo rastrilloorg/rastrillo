@@ -65,11 +65,13 @@ one.
 ### The DSN
 
 ```text
-?_pragma=busy_timeout(5000)&_pragma=journal_mode(WAL)&_pragma=foreign_keys(1)
+?_pragma=busy_timeout(5000)&_pragma=journal_mode(WAL)&_pragma=synchronous(NORMAL)&_pragma=foreign_keys(1)
 ```
 
 `busy_timeout` is set before `journal_mode=WAL`. The other order crashes
-under concurrent open. Foreign keys are on. `Open` also pings eagerly so
+under concurrent open. `synchronous` is `NORMAL`, so most commits skip
+the extra sync to disk. With WAL, a power cut can undo recent commits
+without corrupting the database. Foreign keys are on. `Open` also pings eagerly so
 the file exists on disk from boot, which is what keeps hibernation
 replication happy.
 

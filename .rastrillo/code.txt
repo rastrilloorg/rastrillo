@@ -5007,8 +5007,7 @@ names currency/sqlmoney/sqlmoney_test.go legacyDB/p 1
 names currency/sqlmoney/sqlmoney_test.go mustExec/q 1
 names currency/sqlmoney/sqlmoney_test.go rows/c 1
 names currency/sqlmoney/sqlmoney_test.go rows/m 1
-columns db/db.go 89f5a52e4c01 1
-func db/db.go Open 79
+func db/db.go Open 60
 names db/db.go DB.Close/d 1
 names db/db.go DB.Writer/d 1
 names db/db.go Open/g 1
@@ -5053,7 +5052,6 @@ names db/db_test.go TestTimesAreStoredInUTCWhateverZoneTheyArriveIn/d 1
 names db/db_test.go TestTimesInNumericZonesRoundTrip/d 1
 names db/db_test.go TestWriterSerialized/d 1
 columns dbtest/dbtest.go 45dd756f7c49 1
-columns dbtest/dbtest.go 70d940dfb052 1
 columns dbtest/dbtest.go 9baa263a9b35 1
 columns dbtest/dbtest.go a516f50a0acf 1
 columns dbtest/dbtest.go bd404a7395aa 1
@@ -18309,7 +18307,6 @@ names secondfactor/secondfactor_test.go sessionFrom/r 1
 names secondfactor/secondfactor_test.go sessionFrom/w 1
 names secondfactor/secondfactor_test.go withPending/r 1
 columns serve.go 1390d1073dea 1
-columns serve.go 179794cf6105 1
 columns serve.go 309a8d186ced 1
 columns serve.go 3a4da472b9c6 1
 columns serve.go 3cd9cfb233c9 2
@@ -18331,7 +18328,7 @@ columns serve.go f3c5ab559eef 1
 columns serve.go f5f8b0d4485b 1
 columns serve.go fe48d8bf59b6 1
 columns serve.go ff53a0259cb6 1
-file serve.go - 838
+file serve.go - 837
 func serve.go Handler 61
 func serve.go buildHandler 87
 names serve.go OpenDB/i 1

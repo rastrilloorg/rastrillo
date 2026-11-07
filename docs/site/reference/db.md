@@ -19,6 +19,9 @@ What it sets for you, and why each one is there:
 
 - **DSN pragma order.** `busy_timeout` before `journal_mode=WAL`; the
   other order crashes under concurrent open. `foreign_keys(1)` is on.
+- **`synchronous(NORMAL)`.** In WAL mode, most commits skip the extra
+  sync to disk, which can make writes faster. With WAL, a power cut can
+  undo recent commits without corrupting the database.
 - **One writer connection.** SQLite allows one writer, and queueing
   inside the pool beats getting `SQLITE_BUSY` at the call site.
 - **Several reader connections** — `runtime.NumCPU()`, floor of four.

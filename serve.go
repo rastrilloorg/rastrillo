@@ -791,18 +791,17 @@ func nextDueHandler(nextDue func() time.Time) http.HandlerFunc {
 	}
 }
 
-// OpenDB applies the SQLite convention the survey found hand-propagated,
-// with fixes, repo to repo (design doc §5): busy_timeout set *before*
-// journal_mode=WAL — the reverse order crashes with SQLITE_BUSY under
-// concurrent open, titogo's real fix — then SetMaxOpenConns(1), then an
-// eager ping so the file exists on disk from boot, then migrate.
-//
-// Exported so tests and non-Serve contexts get the corrected opener
-// instead of reproducing the DSN by hand (the blog's F4).
+// OpenDB applies the SQLite convention the survey found hand-propagated
+// repo to repo (design doc §5), with fixes: busy_timeout before WAL (the
+// reverse crashes with SQLITE_BUSY under concurrent open), NORMAL sync
+// (FULL fsyncs every commit, #234), one connection, an eager ping so the
+// file exists from boot, then migrate. Exported so tests and non-Serve
+// code need not copy the DSN by hand (the blog's F4).
 func OpenDB(path string, migrations []string) (*sql.DB, error) {
 	checkconfig.Guard("rastrillo.OpenDB")
 	path = capturemode.DBPath(path)
-	db, err := sql.Open("sqlite", path+"?_pragma=busy_timeout(5000)&_pragma=journal_mode(WAL)")
+	db, err := sql.Open("sqlite", path+"?_pragma=busy_timeout(5000)"+
+		"&_pragma=journal_mode(WAL)&_pragma=synchronous(NORMAL)")
 	if err != nil {
 		return nil, err
 	}

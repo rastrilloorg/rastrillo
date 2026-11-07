@@ -2,6 +2,7 @@ package db
 
 import (
 	"bytes"
+	"database/sql"
 	"errors"
 	"log/slog"
 	"path/filepath"
@@ -317,5 +318,29 @@ func TestTimesAreStoredInUTCWhateverZoneTheyArriveIn(t *testing.T) {
 	}
 	if !back.Equal(tokyo) || back.Location() != time.UTC {
 		t.Errorf("read back %v (%s), want %v in UTC", back, back.Location(), tokyo.UTC())
+	}
+}
+
+// Both pools share one DSN, so both connections must say NORMAL: the
+// writer because FULL makes every commit wait on an fsync (#234), the
+// reader so that no pool opens the file with a different durability
+// than the other.
+func TestBothPoolsOpenAtSynchronousNormal(t *testing.T) {
+	opened, err := Open(filepath.Join(t.TempDir(), "app.db"), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer opened.Close()
+	for name, pool := range map[string]*sql.DB{
+		"writer": opened.writer, "reader": opened.reader,
+	} {
+		var level int
+		err := pool.QueryRow("PRAGMA synchronous").Scan(&level)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if level != 1 {
+			t.Errorf("%s synchronous = %d, want 1 (NORMAL)", name, level)
+		}
 	}
 }
