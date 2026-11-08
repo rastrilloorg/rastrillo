@@ -11,8 +11,8 @@ limits, the route table, the tests, the performance lane, and whether
 the migrations and generated files are up to date. CI runs the same
 command, so passing here means passing there.
 
-The first run fails in the performance lane. It times every page, and
-the room and admin pages need a room to show and an admin to show it
-to. Give the performance test what it needs: `CHAT_ADMINS` for its
-signed-in user, a room in the database, and a real URL for each page
-with an `{id}` in it.
+The first run fails in the performance lane. That lane times every
+page, and the room and admin pages can't be timed without a room in
+the database and an admin signed in. Give the performance test what it
+needs: `CHAT_ADMINS` for its signed-in user, a room in the database,
+and a real URL for each page with an `{id}` in it.

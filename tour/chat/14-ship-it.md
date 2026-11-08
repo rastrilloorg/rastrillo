@@ -1,7 +1,7 @@
 +++
 title = "Ship it"
 commands = ["make release VERSION=v0.1.0", "carlos ship -app chat -target linux-arm64 releases/chat-linux-arm64", "carlos env set --app chat CHAT_ADMINS=you@example.com"]
-check = "Your app answers at its URL, and sign-in emails arrive."
+check = "Your app is up at its URL, and sign-in emails arrive."
 +++
 
 > This step needs a CARLOS account. If you don't have one, start at
@@ -17,7 +17,8 @@ own domain, set `CHAT_ORIGIN` to it, such as `https://chat.example.com`.
 To send real email, set `CHAT_SMTP_HOST`, `CHAT_SMTP_PORT`,
 `CHAT_SMTP_FROM`, `CHAT_SMTP_USER` and `CHAT_SMTP_PASS`.
 
-Serve it on a route that is always on. An open room page holds a stream
-to the server, which keeps a hibernating instance awake.
+Serve it on a route that is always on. While a room page is open, the
+browser keeps a stream to the server open, which keeps a hibernating
+instance awake.
 
-[Deploying](/docs/deploying) has the rest.
+The rest is in [Deploying](/docs/deploying).

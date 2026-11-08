@@ -1,7 +1,7 @@
 +++
 title = "Install Rastrillo"
 commands = ["go install amadan.net/rastrillo/rastrillo/cmd/rastrillo@{{version}}"]
-check = "Run `rastrillo` on its own. It lists its commands."
+check = "Run `rastrillo` on its own to see a list of its commands."
 +++
 
 You need Go 1.26 or newer, and a terminal on Linux or macOS. On Windows,

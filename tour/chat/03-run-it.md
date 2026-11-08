@@ -1,11 +1,10 @@
 +++
 title = "Run it"
 commands = ["rastrillo dev"]
-check = "The page at `http://localhost:8080` says *Hello*, and after signing in it offers *Sign out*."
+check = "You see *Hello* at `http://localhost:8080`, and once you've signed in, a *Sign out* button."
 +++
 
-`rastrillo dev` builds the app and serves it, then rebuilds and restarts
-it every time you save a file. If a build fails, the last good build
+`rastrillo dev` builds your app and runs a dev server. If a build fails, the last good build
 keeps serving, so a typo never takes the app down. Leave it running in
 its own terminal for the rest of the tour.
 

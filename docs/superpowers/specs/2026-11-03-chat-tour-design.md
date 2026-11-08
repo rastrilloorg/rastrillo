@@ -240,14 +240,12 @@ admin. Adding the first manifest to a scaffolded app is an eight-step
 manual recipe (`manifest/README.md` in the scaffold: sqlc, genassets.go,
 edits to render.go, migrations.go, app.go, routes.go and the perf
 test). That is plumbing a beginner should not have to type, so Paul
-chose to hand-write the admin and teach one path throughout. A
-framework issue asks for `rastrillo generate` to wire the first
-manifest itself; once it lands, the tour can gain a "declare it
-instead" step.
+chose to hand-write the admin and teach one path throughout. Manifests
+are being deprecated (Paul, 2026-11-03), so the tour will not gain a
+manifest step.
 
 ## Later
 
 - A Fiesta step, once Rastrillo vendors Fiesta.
-- A "declare it instead" step, once the first manifest wires itself.
 - Paul's feedback from working through it.
 - A second tour, if this one earns it.
