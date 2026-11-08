@@ -10,6 +10,23 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+## v0.34.0
+
+### Changed: most commits skip a disk sync
+
+`rastrillo.OpenDB`, `db.Open` and `dbtest` now open SQLite with
+`synchronous(NORMAL)`. SQLite's default, `FULL`, syncs the write-ahead
+log to disk on every commit. `NORMAL` skips that sync on most commits.
+In a one-core TodoMVC benchmark, toggles rose from about 182 to an
+average of about 5,700 per second.
+
+This changes what survives a power cut. A power cut or an operating
+system crash can now undo recent commits. `NORMAL` does not corrupt the
+database, and an app crash does not lose committed transactions. No
+setting brings back `FULL` yet. If your app needs every commit on disk
+before it returns, stay on v0.33.0 and say so on
+[#261](https://amadan.net/rastrillo/rastrillo/-/discussion/261).
+
 ### Changed: the look comes from Fiesta 1.2.0
 
 Rastrillo's stylesheets, themes and most of its scripts now come from
@@ -47,8 +64,10 @@ Two files join the ones `rastrillo new` copies into `static/`:
   without `PagesConfig.Assets`, or a page rendered outside `ui.Pages`,
   asks for `static/fiesta.js` whether the app has it or not. If it
   doesn't, that request is a 404, which breaks nothing.
-- `copy.js` runs the Copy button on `rst-snippet`, and loads only on a
-  page that shows one. No partial writes a snippet yet.
+- `copy.js` runs the Copy button on `rst-snippet` and loads on a page
+  that shows one. It also loads on every live or polling page and every
+  page rendered outside `ui.Pages`, because those pages load every
+  script. No partial writes a snippet yet.
 
 The calendar is now `window.fiestaCalendar`; it was
 `window.rastrilloCalendar`. If your own script calls it, rename the
@@ -127,6 +146,16 @@ Also changed:
   `copy.js` for download.
 - Rastrillo's own size checks on `select.js` and `datetime.js` are
   gone. Fiesta owns and checks those files.
+
+### Added: a read pool for sessions, off by default
+
+`db.DB.Reader()` returns the read pool, and `sessions.Config` and
+`auth.Config` accept an optional `Reader`. When set, session lookups and
+`sessions.List` use the read pool. Nothing sets it for you. On one core
+under heavy mixed load, writes were 2–6x slower. On four cores it helped
+both reads and writes. Leave it nil unless a mixed-load test on your
+instance shows it helps. Signed-mode `sessions` and records-mode `auth`
+refuse a `Reader`.
 
 ## v0.33.0
 
