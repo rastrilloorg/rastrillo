@@ -1048,12 +1048,12 @@ func TestNewCompilesTheAppsTemplates(t *testing.T) {
 	}
 }
 
-// A new app reads sessions on the reader pool: on the writer, every
-// signed-in page load waited for whatever write was in progress (#241).
-func TestAuthReadsSessionsOnTheReader(t *testing.T) {
+// New apps read sessions on the writer: Reader cut toggles 2-6x (#241).
+func TestAuthLeavesSessionsOnTheWriter(t *testing.T) {
 	auth := scaffoldFile("auth.go.tmpl")
-	if !strings.Contains(auth, "Reader: app.database.Reader(),") {
-		t.Error("newAuth does not give auth.Config the reader pool, " +
-			"so session lookups queue behind writes")
+	_, config, found := strings.Cut(auth, "auth.New(auth.Config{")
+	config, _, _ = strings.Cut(config, "\n\t})")
+	if !found || strings.Contains(config, "Reader:") {
+		t.Errorf("newAuth's auth.Config sets Reader or is gone:\n%s", config)
 	}
 }

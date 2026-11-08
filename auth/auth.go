@@ -103,7 +103,7 @@ type Config struct {
 	DB *sql.DB
 
 	// Reader, if set, serves the session lookups, as sessions.Config's
-	// does. Pass db.DB's Reader. Default DB.
+	// does; leave it nil on one core (#241). Default DB.
 	Reader *sql.DB
 
 	// Origin is the app's external origin, scheme included —

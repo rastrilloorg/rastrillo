@@ -74,7 +74,10 @@ func (pools *DB) Reader() *sql.DB
 
 The read pool has several connections, so reads can run while a write
 is in progress. Pass it as `Reader` to
-[`sessions`](/docs/reference/sessions) or [`auth`](/docs/reference/auth).
+[`sessions`](/docs/reference/sessions) or
+[`auth`](/docs/reference/auth) only if a mixed-load test on your
+instance shows it helps. On one core, under heavy mixed load, it slows
+writes.
 Only read through it. Writes go through `Writer`, which keeps them to
 one connection.
 

@@ -56,7 +56,7 @@ var ErrProofUnset, ErrProofMode error // from New: neither Proof nor ProofOff; a
 const ProofScope = "rastrillo/auth/begin"
 ```
 
-`auth` passes `Reader` to [`sessions`](/docs/reference/sessions). Set it to your `db.DB` value's `Reader()` result for session lookups.
+`auth` passes `Reader` to [`sessions`](/docs/reference/sessions). Leave it nil unless a mixed-load test on your instance shows it helps, as the sessions page says.
 
 `Proof` is sign-in's front door, required unless `ProofOff`; [Magic links](/docs/magic-links#the-front-door) and [pow](/docs/reference/pow) cover it.
 

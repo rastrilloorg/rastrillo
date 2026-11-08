@@ -50,8 +50,8 @@ type Config struct {
 	// the app's own migration runner) before any method runs.
 	DB *sql.DB
 
-	// Reader, if set, serves lookups and List, so a page load does not
-	// wait for a write on DB. Pass db.DB's Reader. Default DB.
+	// Reader, if set, serves lookups and List; writes stay on DB. Leave
+	// it nil on one core: there it slowed writes under load (#241).
 	Reader *sql.DB
 
 	// Origin is the app's external origin, scheme included —

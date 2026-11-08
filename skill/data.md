@@ -32,7 +32,9 @@ SQLite-wired (one file, WAL, one writer connection, several readers,
 routed per statement). `database.Close()` closes both pools;
 `database.Writer()` is the writer `*sql.DB` for database/sql packages;
 `database.Reader()` is the read pool for `sessions.Config.Reader` and
-`auth.Config.Reader`, for session lookups and listing.
+`auth.Config.Reader`. Leave both nil unless a mixed-load test on your
+instance shows it helps. On one core, under heavy mixed load, it slows
+writes.
 
 **Bytes go in the object store, never on disk or in a column.** The
 instance's filesystem is ephemeral and it hibernates, so a saved upload

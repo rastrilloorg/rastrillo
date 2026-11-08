@@ -25,7 +25,6 @@ if err != nil {
 }
 sess, err := sessions.New(sessions.Config{
 	DB:     writer,
-	Reader: d.Reader(),
 	Origin: origin,
 	Logger: logger,
 })

@@ -98,8 +98,7 @@ writer, err := d.G.DB()
 if err != nil {
 	return err
 }
-sess, err := sessions.New(sessions.Config{DB: writer, Reader: d.Reader(),
-	Origin: origin, Logger: logger})
+sess, err := sessions.New(sessions.Config{DB: writer, Origin: origin, Logger: logger})
 ```
 
 `d.Writer()` returns the same write pool directly, and it is the clearer
@@ -108,8 +107,11 @@ that way, because it pins one connection for a whole run:
 `PRAGMA foreign_keys` is per-connection, and a table rebuild has to
 toggle it outside the transaction.
 
-`d.Reader()` returns the read pool. Pass it as `Reader` to `sessions`
-for session lookups and listing. Use it only for reads.
+`d.Reader()` returns the read pool. Leave it out of `sessions` unless a
+mixed-load test on your instance shows it helps. On one core, under
+heavy mixed load, it slows writes. Where it helps, pass it as `Reader`
+for session lookups and listing.
+Use it only for reads.
 
 `d.Close()` closes both pools.
 

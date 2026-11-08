@@ -77,8 +77,7 @@ func (app *App) newAuth(mailer mail.Sender) (*auth.Auth, *pow.Guard, error) {
 		return nil, nil, err
 	}
 	signins, err := auth.New(auth.Config{
-		DB: writer, Reader: app.database.Reader(),
-		Origin: app.origin, InstanceKey: key, Proof: guard,
+		DB: writer, Origin: app.origin, InstanceKey: key, Proof: guard,
 		Mailer: mailer, SigninPath: string(signinPage), SigninScreen: true,
 		// No keymail partners: every address gets a link, and no server
 		// is dialed, such as one an anonymous visitor's domain names.

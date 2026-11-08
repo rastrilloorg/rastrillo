@@ -30,7 +30,7 @@ type Config struct {
 }
 ```
 
-`DB` is your database, and `Schema`'s migrations must already have been applied. Set `Reader` to your `db.DB` value's `Reader()` result for session lookups and listing. Writes still go through `DB`. If `Reader` is nil, `sessions` uses `DB` for reads. Leave both nil in signed mode. `Origin` is your external origin with scheme. It decides the `Secure` and `__Host-` cookie attributes. With session rows that is all it does, and `sessions` never redirects through it. In signed mode, `sessions` also redirects to `Origin` plus a path. `TTL` defaults to 30 days, `SigninPath` to `/signin`.
+`DB` is your database, and `Schema`'s migrations must already have been applied. Leave `Reader` nil unless a mixed-load test on your instance shows it helps. On one core, under heavy mixed load, it slows writes. Where it helps, set it to your `db.DB` value's `Reader()` result for session lookups and listing. Writes still go through `DB`. If `Reader` is nil, `sessions` uses `DB` for reads. Leave both nil in signed mode. `Origin` is your external origin with scheme. It decides the `Secure` and `__Host-` cookie attributes. With session rows that is all it does, and `sessions` never redirects through it. In signed mode, `sessions` also redirects to `Origin` plus a path. `TTL` defaults to 30 days, `SigninPath` to `/signin`.
 
 `Signed` turns on signed mode, described below. Leave it nil for session rows. `Now` is the clock and defaults to `time.Now`. Set it when another part of your app has its own clock, so both move together.
 

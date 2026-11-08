@@ -146,9 +146,9 @@ func Open(path string, log *slog.Logger) (*DB, error) {
 func (d *DB) Writer() *sql.DB { return d.writer }
 
 // Reader is the read pool, for packages that take a raw *sql.DB and
-// only read (sessions.Config.Reader). A read here does not wait for a
-// write in progress on the writer's one connection (#241). Never write
-// through it: only the writer pool is serialised.
+// only read (sessions.Config.Reader). Never write through it: only the
+// writer pool is serialised. On one core it sped reads but slowed
+// writes under heavy mixed load (#241), so nothing passes it by default.
 func (pools *DB) Reader() *sql.DB { return pools.reader }
 
 func (d *DB) Close() error {

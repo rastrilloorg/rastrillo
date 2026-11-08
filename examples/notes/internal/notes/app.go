@@ -58,9 +58,9 @@ func App(d *db.DB, origin, instanceKey string, bg *background.Group, logger *slo
 		return nil, nil, err
 	}
 
-	// sessions writes through the writer *sql.DB (dbresolver's Get() on
-	// the top-level handle returns it) and looks sessions up on the
-	// reader, so a page load does not wait for a write (#241).
+	// sessions wants the writer *sql.DB directly: its statements are a
+	// mix of reads and writes, and dbresolver's Get() on the top-level
+	// handle returns the source (writer) pool.
 	writer, err := d.G.DB()
 	if err != nil {
 		return nil, nil, err
@@ -74,7 +74,7 @@ func App(d *db.DB, origin, instanceKey string, bg *background.Group, logger *slo
 		return nil, nil, err
 	}
 	sess, err := sessions.New(sessions.Config{DB: writer,
-		Reader: d.Reader(), Origin: origin, Logger: logger})
+		Origin: origin, Logger: logger})
 	if err != nil {
 		return nil, nil, err
 	}

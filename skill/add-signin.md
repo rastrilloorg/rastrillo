@@ -48,8 +48,7 @@ func newSignin(
 		return nil, nil, err // ErrNoInstanceKey: on CARLOS with no key
 	}
 	signins, err := sessions.New(sessions.Config{
-		DB: database.Writer(), Reader: database.Reader(),
-		Origin: origin, Logger: logger})
+		DB: database.Writer(), Origin: origin, Logger: logger})
 	if err != nil {
 		return nil, nil, err
 	}
