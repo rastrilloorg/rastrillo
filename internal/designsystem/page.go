@@ -1787,7 +1787,7 @@ func previewDocStyled(mount, theme, locale, title, style, body string) string {
 	// rid of.
 	b.WriteString("<style>body { padding: 1rem; }\n")
 	b.WriteString("body:has(> [rst-shell-topbar], > [rst-shell-sidebar], > [rst-backdrop], > [rst-stage]) { padding: 0; }\n")
-	b.WriteString(style)
+	b.WriteString(sampleColumns(body) + style)
 	b.WriteString("</style>\n")
 	for _, s := range previewScripts {
 		for _, hook := range s.hooks {
@@ -1983,7 +1983,7 @@ func newPreview(mount, theme, locale, page, group, title, body, code, id string)
 		Title: title,
 	}
 	if code != "" {
-		view.Source = codeview.Highlight(codeview.Format(code))
+		view.Source = codeview.Highlight(codeview.Format(withColumns(code)))
 	}
 	return view, previewFile{Path: file, Doc: previewDoc(mount, theme, locale, title, deaden(mount, body))}
 }

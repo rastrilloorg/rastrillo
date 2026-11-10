@@ -35,7 +35,7 @@ var styleguideSamples = map[string]string{
   <div rst-stat><span rst-stat-label>Average basket</span><span rst-stat-num>&euro;41.20</span><span rst-stat-delta rst-tone="negative">&minus;3%</span></div>
   <div rst-stat><span rst-stat-label>Refunds</span><span rst-stat-num>7</span></div>
 </div>`,
-	"list-grid": `<div rst-card style="--rst-cols: 2fr 110px var(--rst-col-menu)">
+	"list-grid": `<div rst-card class="orders">
   <div rst-lrow="head"><span>Order</span><span class="rst-m-hide">Status</span><span></span></div>
   <div rst-lrow>
     <a class="rst-nm" href="/orders/AB3PX"><bdi>Grace Hopper</bdi><small>AB3PX · <bdi>grace@example.com</bdi></small></a>
@@ -225,6 +225,14 @@ var styleguideSamples = map[string]string{
   </aside>
   <main rst-shell-main id="main"><div rst-page>Content.</div></main>
 </div>`,
+}
+
+// StyleguideCSS is the rule the list-grid sample's card takes its
+// columns from, as an app writes it in its own stylesheet. The sample
+// cannot carry it: the CSP drops a style attribute and a <style> block
+// alike.
+func StyleguideCSS() string {
+	return ".orders { --rst-cols: 2fr 110px var(--rst-col-menu); }"
 }
 
 // Styleguide returns the canonical markup for every markup idiom —

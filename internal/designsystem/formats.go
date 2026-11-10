@@ -141,7 +141,7 @@ func formatDocs() []formatDoc {
 			Key:   "people",
 			Title: "People's names",
 			Body:  "A name can be in any language, including ones that read right to left. When a name sits in the middle of a line, wrap it in <bdi>, or it will scramble the words around it. Use person to show a name with a picture beside it.",
-			Markup: `<div rst-card style="--rst-cols: minmax(0, 1fr) 120px">
+			Markup: `<div rst-card class="people">
   <div rst-lrow>
     <a class="rst-nm" href="/people/1"><bdi>Grace Hopper</bdi><small><bdi>grace@example.com</bdi> · 09:12</small></a>
     <span class="rst-cell-mut rst-m-hide">Admin</span>

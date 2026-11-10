@@ -3830,10 +3830,14 @@ func TestTheTextOnScreenIsTheTextCopied(t *testing.T) {
 		}
 		sort.Strings(names)
 		for _, name := range names {
-			want["primitives"] = append(want["primitives"], codeview.Format(localMarkup(locale, samples[name])))
+			sample := localMarkup(locale, samples[name])
+			want["primitives"] = append(want["primitives"],
+				codeview.Format(withColumns(sample)))
 		}
 		for _, doc := range formatDocs() {
-			want["formats"] = append(want["formats"], codeview.Format(formatMarkup(doc, locale)))
+			sample := formatMarkup(doc, locale)
+			want["formats"] = append(want["formats"],
+				codeview.Format(withColumns(sample)))
 		}
 		for _, doc := range screenDocs() {
 			if doc.Signin != nil {

@@ -3185,8 +3185,6 @@ names buildhandler_test.go TestBuildHandlerRecoversPanicsWithoutAnErrorPage/h 1
 names buildhandler_test.go TestBuildHandlerRepanicsErrAbortHandler/h 1
 names buildhandler_test.go TestBuildHandlerRepanicsErrAbortHandler/v 1
 names buildhandler_test.go TestBuildHandlerSetsSecurityHeaders/h 1
-names buildhandler_test.go TestDefaultCSPStyleSrcAllowsOnlyThePowHoneypot/d 1
-names buildhandler_test.go TestDefaultCSPStyleSrcAllowsOnlyThePowHoneypot/f 1
 names buildhandler_test.go get/h 1
 names buildhandler_test.go helloMux/r 1
 names buildhandler_test.go helloMux/w 1
@@ -7772,7 +7770,6 @@ columns internal/designsystem/designsystem_test.go a0f94a4b0fba 1
 columns internal/designsystem/designsystem_test.go a10cac9b1ba9 1
 columns internal/designsystem/designsystem_test.go a16e9c8805b9 1
 columns internal/designsystem/designsystem_test.go a18d584ab3ea 1
-columns internal/designsystem/designsystem_test.go a1d94e031e13 1
 columns internal/designsystem/designsystem_test.go a3d14909da98 1
 columns internal/designsystem/designsystem_test.go a3df1b1cf4c6 1
 columns internal/designsystem/designsystem_test.go a43176b2e03f 1
@@ -7910,7 +7907,6 @@ columns internal/designsystem/designsystem_test.go ed6a4189ddac 1
 columns internal/designsystem/designsystem_test.go edf189c78538 1
 columns internal/designsystem/designsystem_test.go ee9dbf4496a0 1
 columns internal/designsystem/designsystem_test.go ef0e245db287 1
-columns internal/designsystem/designsystem_test.go ef6c27852274 1
 columns internal/designsystem/designsystem_test.go ef929011f5cc 1
 columns internal/designsystem/designsystem_test.go f01ba2cba2f8 1
 columns internal/designsystem/designsystem_test.go f03dfd4ecd55 1
@@ -18306,7 +18302,6 @@ names secondfactor/secondfactor_test.go sessionFrom/e 1
 names secondfactor/secondfactor_test.go sessionFrom/r 1
 names secondfactor/secondfactor_test.go sessionFrom/w 1
 names secondfactor/secondfactor_test.go withPending/r 1
-columns serve.go 1390d1073dea 1
 columns serve.go 309a8d186ced 1
 columns serve.go 3a4da472b9c6 1
 columns serve.go 3cd9cfb233c9 2
@@ -25205,7 +25200,6 @@ columns ui/styleguide.go 945c174eaf16 1
 columns ui/styleguide.go a1e0388293ef 1
 columns ui/styleguide.go a7cfe65b416c 1
 columns ui/styleguide.go aee01de51ca9 1
-columns ui/styleguide.go b7c13f54e59b 1
 columns ui/styleguide.go c153e29b174a 1
 columns ui/styleguide.go c3194aa1718f 1
 columns ui/styleguide.go c76d2e08048b 1

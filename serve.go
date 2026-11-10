@@ -174,9 +174,9 @@ type Options struct {
 
 	// CSP replaces the value of the Content-Security-Policy header the
 	// framework sets on every response (see the package's default
-	// below: same-origin everything, no inline styles but pow's
-	// honeypot by hash, framing denied). Empty keeps the default. The
-	// other baseline headers — nosniff, frame denial, referrer policy, a
+	// below: same-origin everything, no inline styles but two of the
+	// framework's own by hash, framing denied). Empty keeps the default.
+	// The other baseline headers — nosniff, frame denial, referrer policy, a
 	// one-year host-only HSTS — have no Options
 	// field on purpose: all of them — this one included — are set
 	// before any app code runs, so an app that wants different values
@@ -493,17 +493,17 @@ func Handler(opts Options) (http.Handler, func() error, error) {
 // images, fetches and form targets; data: images allowed for embedded
 // favicons; framing denied.
 //
-// No inline styles and no inline scripts. Inline styles are how CSS-based
-// exfiltration and UI redress work once some markup injection gets
-// through, so ui's partials emit no style attribute and the grid's
-// --rst-cols is set from the app's stylesheet (GitHub #147). The one
-// exception is pow's honeypot, which must stay hidden in apps that vendor
-// no stylesheet at all; it is admitted by its hash, which a style
-// attribute only matches alongside 'unsafe-hashes'. That constant is
-// spelled out rather than read from pow so every app binary does not
-// link pow; buildhandler_test.go keeps the two in step.
+// No inline styles and no inline scripts: inline styles are how CSS
+// exfiltration and UI redress work once markup injection gets through,
+// so ui's partials emit none and a grid's --rst-cols comes from the
+// app's stylesheet (GitHub #147). Two exceptions pass by hash: pow's
+// honeypot (an attribute, so 'unsafe-hashes' too) and auth's fallback
+// confirm page's <style>. Spelled out so apps need not link either;
+// buildhandler_test.go and auth's confirmcsp_test.go keep them in step.
 const defaultCSP = "default-src 'self'; " +
-	"style-src 'self' 'unsafe-hashes' 'sha256-yJxAE4rjdcckohdlnvecSporPcqS9xOaA4hJxi87LMc='; " +
+	"style-src 'self' 'unsafe-hashes' " +
+	"'sha256-yJxAE4rjdcckohdlnvecSporPcqS9xOaA4hJxi87LMc=' " +
+	"'sha256-81gZUb3tp60YCqhJ0dItBPh5hRQiGbfst4gpwCNPTfI='; " +
 	"img-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
 
 // securityHeaders is the outermost layer of the serving handler: the

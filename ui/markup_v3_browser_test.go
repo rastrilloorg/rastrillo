@@ -226,6 +226,8 @@ func classFixture(t *testing.T) string {
 	}
 	sort.Strings(names)
 	samples := Styleguide()
+	// The list-grid sample's columns, from where an app keeps them.
+	b.WriteString("<style>" + StyleguideCSS() + "</style>")
 	for _, name := range names {
 		tmpl, err := template.New(name).Funcs(Funcs()).Parse(samples[name])
 		if err != nil {

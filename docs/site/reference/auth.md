@@ -253,6 +253,11 @@ type ConfirmPageData struct {
 `SigninScreen` on, set it to your sign-in page's handler: `SigninState`
 answers `StepConfirm` on the request it gets. Nil gets a self-contained
 English page, so upgrading needs no code change beyond the POST route.
+The default policy allows the page's single `<style>` block by hash. If
+you set `Options.CSP`, include
+`'sha256-81gZUb3tp60YCqhJ0dItBPh5hRQiGbfst4gpwCNPTfI='` in `style-src`,
+and in `style-src-elem` if your policy has one; otherwise, the page will
+be unstyled.
 
 Before calling you, `Verify` sets `Cache-Control: no-store`,
 `Referrer-Policy: strict-origin`, `X-Robots-Tag: noindex, nofollow`,

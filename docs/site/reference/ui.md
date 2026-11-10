@@ -688,6 +688,20 @@ honest against `tokens.css` in both directions: a sample can't write an
 attribute the stylesheet doesn't style, and an idiom can't ship
 undemonstrated. The returned map is a copy, safe to mutate.
 
+## StyleguideCSS
+
+```go
+func StyleguideCSS() string
+```
+
+The `list-grid` sample gets its columns from
+`.orders { --rst-cols: 2fr 110px var(--rst-col-menu); }`. The sample
+cannot include this rule because the default CSP drops `style`
+attributes and `<style>` blocks. Add a rule like this to your app's
+stylesheet, using a selector for your list. The design-system gallery
+writes the rule into each preview document and shows it as an HTML
+comment at the top of the sample's HTML tab.
+
 ## The vendored assets
 
 ```go

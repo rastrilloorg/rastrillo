@@ -110,6 +110,8 @@ func sizingFixture(t *testing.T) string {
 		}
 	}
 	sort.Strings(names)
+	// The list-grid sample's columns, from where an app keeps them.
+	b.WriteString("<style>" + StyleguideCSS() + "</style>")
 	for _, name := range names {
 		b.WriteString(`<div rst-page data-sample="` + name + `">` + samples[name] + `</div>`)
 	}

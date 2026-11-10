@@ -72,7 +72,8 @@ keymail continues on your own page and `form-action` stays `'self'`.
 Only a hand-built sign-in page with the screen off restates
 `Options.CSP` (it replaces the policy wholesale) with the keymail
 origin appended: `default-src 'self'; style-src 'self' 'unsafe-hashes'
-'sha256-yJxAE4rjdcckohdlnvecSporPcqS9xOaA4hJxi87LMc='; img-src 'self'
+'sha256-yJxAE4rjdcckohdlnvecSporPcqS9xOaA4hJxi87LMc='
+'sha256-81gZUb3tp60YCqhJ0dItBPh5hRQiGbfst4gpwCNPTfI='; img-src 'self'
 data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
 https://keymail.dev`. `auth.Config.KeymailServers` limits which keymail
 servers are trusted; other addresses get a link.
