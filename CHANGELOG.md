@@ -10,6 +10,18 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+### Changed: a GET is no longer held for its spinner
+
+`busy.js` used to hold every submit for at least 650ms so its spinner
+could be seen, so a search answered in 10ms took about 700ms. A GET now
+goes at once, and its form still refuses a second submit. Its button
+shows the spinner only if the page is still there 500ms later; a faster
+answer shows nothing. A POST is unchanged. The submitter's `formmethod`
+beats the form's `method`, and a form with no method is a GET. The rule
+comes from Fiesta, pinned at a pre-release of its `busy-reveal` branch
+until Fiesta releases it. `busy.js` is app-owned: `rastrillo doctor
+--fix` takes the new copy.
+
 ## v0.34.0
 
 ### Changed: most commits skip a disk sync

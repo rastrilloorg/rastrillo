@@ -349,8 +349,10 @@ func ShimJS() []byte { return shimJS }
 func LiveJS() []byte { return liveJS }
 
 // BusyJS returns Fiesta's busy.js — the busy rule: every submit button
-// shows a spinner in place of its label for at least 650ms, goes
-// disabled, and its form refuses a second submit; Back hands it back.
+// shows a spinner in place of its label and goes disabled, and its form
+// refuses a second submit; Back hands it back. A POST's spinner shows
+// at once, for at least 650ms; a GET goes unheld, and its spinner shows
+// only if the page is still there 500ms later.
 // Delivered once by rastrillo new, like ShimJS, and app-owned from then
 // on. Linking it is the whole opt-in; the file's own header comment is
 // its contract.

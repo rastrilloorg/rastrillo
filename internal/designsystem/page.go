@@ -2722,7 +2722,7 @@ func buildAssets(mount, theme, locale string) assetsView {
 	add(&out, "rastrillo.js", ui.ShimJS(), shimAssetBlurb)
 	add(&out, "fiesta.js", vendored["fiesta.js"], fiestaAssetBlurb)
 	add(&out, "busy.js", ui.BusyJS(),
-		"The busy rule: while a form sends, its button shows a spinner for at least 650ms and refuses a second submit, and Back hands it back. Every scaffolded app gets it.")
+		"The busy rule: while a form sends, it refuses a second submit and its button shows a spinner: for a POST at once and for at least 650ms, for a GET only if the answer takes more than 500ms. Back hands it back. Every scaffolded app gets it.")
 	add(&out, "live.js", ui.LiveJS(),
 		"Live pages: sections that update when the server says their data changed, and forms that save in place. Inert until a page carries the rastrillo-live meta tag, and deletable on its own.")
 	add(&out, "light.js", ui.LightJS(),

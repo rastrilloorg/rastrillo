@@ -307,8 +307,9 @@ the meantime. This list is their union. **Built:**
   `static/rastrillo.js` replaces an element carrying
   `data-poll` with the HTML fragment it fetches and stops when the new
   fragment stops asking, and `static/busy.js` gives every submit button
-  a spinner (for at least 650ms) and a double-submit guard while its
-  form is out (`data-busy="false"` opts out). Status pages poll, or ride
+  a spinner (a POST's at once, for at least 650ms; a GET's only after
+  500ms) and a double-submit guard while its form is out
+  (`data-busy="false"` opts out). Status pages poll, or ride
   Server-Sent Events where the browser supports them: `Events` streams
   at `/jobs/{id}/events` (heartbeats, per-write deadlines, a bounded
   stream lifetime — the serve.go streaming recipe), and the shim's

@@ -24,9 +24,10 @@ repeating while the fragment still carries `data-poll` (ui's
 `job-status` partial drops it once done); the partial's `PushURL`
 (= `EventsPath`) emits `data-poll-push` and the shim rides SSE, falling
 back to polling. `static/busy.js`: every submit button's label gives
-way to a spinner for ≥650ms (the submit is held; beside the label under
-reduced motion or forced colours), `aria-busy` and a double-submit
-guard by DEFAULT, cleared on back; `data-busy="false"` (form or button)
+way to a spinner (POST: at once, ≥650ms, the submit held; GET: unheld,
+only after 500ms; beside the label under reduced motion or forced
+colours), `aria-busy` and a double-submit guard by DEFAULT, cleared on
+back; `data-busy="false"` (form or button)
 opts out, `data-busy-label` shows words beside the spinner. Manners, not
 idempotency — the server still refuses the second write.
 `static/light.js`: the light the depth styles read (the hour on

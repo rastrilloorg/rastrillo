@@ -749,9 +749,10 @@ would leave the screen. It does nothing where the browser has the
 feature, so an app can delete it, and its tag, once all its browsers do.
 
 `BusyJS` is `busy.js`,
-the busy rule: every submit button's label gives way to a spinner for
-at least 650ms, the button disables and the form refuses a second
-submit, and Back hands the form back — by default, with
+the busy rule: every submit button's label gives way to a spinner (a
+POST's at once, for at least 650ms; a GET's only if it takes more than
+500ms), the button disables and the form refuses a second submit, and
+Back hands the form back — by default, with
 `data-busy="false"` as the opt-out and `data-busy-label` as the label
 swap. Linking it is the whole opt-in.
 
