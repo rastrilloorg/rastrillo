@@ -186,6 +186,11 @@ const busyRuleNote = "A button that CHANGES something gets a loading " +
 	"dropdown, a tab, does not. busy.js applies that rule to every " +
 	"submit button in every form, with nothing to opt into."
 
+const busyAssetBlurb = "The busy rule: while a form sends, it refuses a " +
+	"second submit and its button shows a spinner: for a POST at once " +
+	"and for at least 650ms, for a GET only if the answer takes more " +
+	"than 500ms. Back hands it back. Every scaffolded app gets it."
+
 const fiestaAssetBlurb = "Closes menus on Escape or an outside click, " +
 	"lets users drag a switch, gives iOS a pressed state on touch, and " +
 	"applies a colour-scheme choice without a reload. rastrillo new " +
@@ -4679,7 +4684,7 @@ var prose = map[string]map[string]string{
 		`vi`:      `Lớp fragment của Rastrillo hỏi vòng các fragment và ghi cookie giữ lựa chọn bảng màu. Mọi ứng dụng được tạo khung đều nhận nó.`,
 		`ar`:      `طبقة الأجزاء في Rastrillo تستقصي الأجزاء وتكتب ملفّ تعريف الارتباط الذي يحفظ اختيار نظام الألوان. يتسلّمها كل تطبيق مولَّد.`,
 	},
-	`The busy rule: while a form sends, it refuses a second submit and its button shows a spinner: for a POST at once and for at least 650ms, for a GET only if the answer takes more than 500ms. Back hands it back. Every scaffolded app gets it.`: {
+	busyAssetBlurb: {
 		`ga`:      `An riail ghnóthach: fad a sheolann foirm, diúltaíonn sí don dara seoladh agus taispeánann a cnaipe roth casta: láithreach agus ar feadh 650ms ar a laghad do POST, agus do GET ach amháin má thógann an freagra níos mó ná 500ms. Tugann Siar ar ais é. Faigheann gach aip scafallaithe é.`,
 		`zh-Hans`: `忙碌规则：表单提交期间拒绝第二次提交，其按钮显示加载指示：POST 立即显示且至少 650 毫秒；GET 仅在响应超过 500 毫秒时显示。返回时恢复原状。每个脚手架生成的应用都会拿到它。`,
 		`es`:      `La regla de ocupado: mientras un formulario se envía, rechaza un segundo envío y su botón muestra un indicador de carga: en un POST al instante y durante al menos 650 ms, en un GET solo si la respuesta tarda más de 500 ms. Al volver atrás se restablece. La recibe toda app generada.`,

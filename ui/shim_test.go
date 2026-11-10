@@ -272,7 +272,8 @@ func TestBusyRuleIsTheDefault(t *testing.T) {
 	// and matched case-insensitively because method is an enumerated
 	// attribute.
 	for _, want := range []string{
-		`var method = btn && btn.getAttribute("formmethod") || form.getAttribute("method");`,
+		`var method = btn && btn.getAttribute("formmethod") || ` +
+			`form.getAttribute("method");`,
 		`if (/^dialog$/i.test(method)) return;`,
 	} {
 		if !strings.Contains(js, want) {
