@@ -52,6 +52,10 @@ The rest, and what each gate message means:
 
 ## Rules the family holds hard
 
+- Pages run under a strict CSP: the browser drops `style` attributes,
+  `<style>` blocks, inline `<script>`s and `on*` handlers, and only the
+  console says so. Use classes in a stylesheet in `static/`, and
+  `addEventListener` in a script there. `make csp` finds them.
 - Every query touching user-owned rows goes through `scope.Owned` —
   reads AND writes, transactions included. A row that isn't yours 404s,
   never 403s.

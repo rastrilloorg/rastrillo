@@ -113,10 +113,12 @@ budget: | $(BIN)/tmp
 # (15 for an action) and no single-letter names. Each module's
 # .rastrillo/code.txt records the offences it had when the gate began,
 # and the records only go down. Measured module by module, as budget is.
+# Agents copy the examples, so they must not teach markup the CSP drops.
 code: | $(BIN)/tmp
 	go run ./cmd/rastrillo budget code
 	go run ./cmd/rastrillo budget code money
 	@for e in $(EXAMPLES); do go run ./cmd/rastrillo budget code examples/$$e || exit 1; done
+	@for e in $(EXAMPLES); do go run ./cmd/rastrillo csp examples/$$e || exit 1; done
 
 money:
 	cd money && go build ./... && go vet ./... && go test ./... -count=1

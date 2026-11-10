@@ -27,6 +27,8 @@ markup alone: fiesta.rastrillo.org. docs/site/templates.md
 - **No `style` attributes and no `<style>` blocks:** the baseline CSP
   blocks them, and the browser drops them without an error. For a grid
   card, give `rst-card` a class and set `--rst-cols` in your stylesheet.
+  `make csp` finds them (an app made before it: add a `csp` target
+  running `rastrillo csp` to `ci`, and `.amadan/ci.d/18-csp`).
 - Screens stack vertically — never heading, paragraph and button in one
   flex row; a notice with a CTA is a `callout` ending in a link. State
   is never colour alone: a `status-pill`'s label and a `meter`'s

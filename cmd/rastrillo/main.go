@@ -64,6 +64,8 @@ func dispatch(command string, args []string) error {
 		return runBudget(args)
 	case "routes":
 		return runRoutes(args, os.Stdout)
+	case "csp":
+		return runCSP(args, os.Stdout)
 	case "session-key":
 		return runSessionKey(args, os.Stdout)
 	case "-h", "--help", "help":
@@ -130,5 +132,7 @@ Usage:
                                                 guards (default dir: .);
                                                 --check exits 1 for an
                                                 action no route mounts
+  rastrillo csp [dir]                           find markup blocked by the
+                                                default CSP (default dir: .)
   rastrillo session-key <kid>                   print a new signing key for signed sessions, and its public key
 `

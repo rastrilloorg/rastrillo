@@ -687,7 +687,8 @@ func scaffoldGate(t *testing.T, args ...string) string {
 		t.Fatalf("make ci on a fresh scaffold:\n%s", out)
 	}
 	for _, lane := range []string{"budget code: within the limits.",
-		"cmd/rastrillo routes --check\n"} {
+		"cmd/rastrillo routes --check\n",
+		"csp: nothing the CSP drops"} {
 		if !strings.Contains(string(out), lane) {
 			t.Errorf("make ci ran no %q:\n%s", lane, out)
 		}

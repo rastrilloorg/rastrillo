@@ -85,7 +85,7 @@ func TestAgentsMDKeepsTheEssentialInstructions(t *testing.T) {
 			"`BootSchema`", "never in `Schema`", owned[variant.name],
 			"rastrillo migration generate", "rastrillo migration new",
 			"Never edit a migration that has shipped",
-			"`make ci`", "`make code`", "`make routes`",
+			"`make ci`", "`make code`", "`make routes`", "`make csp`",
 			"Raise the Makefile's `GOTOOLCHAIN` with each Go security",
 		} {
 			if !strings.Contains(agents, want) {

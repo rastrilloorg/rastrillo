@@ -714,6 +714,48 @@ Exits 1 when the routes cannot be listed, or when `--check` finds an
 action no route mounts, and 2 when the arguments are wrong. Ctrl-C stops
 it and removes what it built.
 
+## rastrillo csp
+
+```sh
+rastrillo csp [dir]
+```
+
+Finds markup that the default Content-Security-Policy blocks, in the
+module at `dir` (default `.`). The browser drops each of these and
+throws no error, so the page just looks or behaves wrong:
+
+- a `style` attribute, or `setAttribute("style")` in a script
+- a `<style>` block
+- an inline `<script>`, one with no `src`
+- an `on*` handler attribute, such as `onclick`
+- a `javascript:` URL
+
+It reads templates (`.html`, `.htm`, `.gohtml`, `.tmpl`), the string
+literals in Go files, and `.js` and `.mjs` files. It skips test files, generated
+files, and the copies of the framework's files in `static/`. It also
+skips nested modules and directories named `testdata`, `vendor` or
+`node_modules`, or starting with `.` or `_`.
+
+Each line names a file and line, what is there, and what to write
+instead: a class in your own stylesheet, or a listener added with
+`addEventListener` in a script in `static/`. A script can still set
+`element.style.setProperty`, which the CSP allows.
+
+A `<script type="importmap">` passes, though the default CSP blocks it
+too: an app that needs one admits it by its hash in `Options.CSP`, and
+`csp` cannot see whether yours does. A data block such as
+`<script type="application/json">` passes because the browser never
+runs it.
+
+It reads source, not rendered pages, so it cannot see markup an
+attribute value or a template function builds at run time. The browser
+reports blocked markup only in the console and as a
+`securitypolicyviolation` event. The scaffold browser test fails on
+console errors, on the pages it visits.
+
+The scaffold's `make csp` runs it. Exits 1 when it finds something, and
+2 when the arguments are wrong.
+
 ## rastrillo session-key
 
 ```sh

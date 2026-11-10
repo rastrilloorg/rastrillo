@@ -12,6 +12,7 @@ import (
 var requiredLanes = map[string]string{
 	"code":   "$(RASTRILLO) budget code",
 	"routes": "$(RASTRILLO) routes --check",
+	"csp":    "$(RASTRILLO) csp",
 }
 
 // make ci and the runner's steps are one gate: a lane in one and not the

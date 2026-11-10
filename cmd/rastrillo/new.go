@@ -532,7 +532,7 @@ exec make ci
 // on the ci line, so a runner that reports steps runs the same gate.
 var runnerSteps = []struct{ file, target string }{
 	{"10-vet", "vet"}, {"15-budget", "budget"}, {"16-code", "code"},
-	{"17-routes", "routes"}, {"20-fmt", "fmt-check"},
+	{"17-routes", "routes"}, {"18-csp", "csp"}, {"20-fmt", "fmt-check"},
 	{"25-staticcheck", "staticcheck"}, {"26-govulncheck", "govulncheck"},
 	{"27-gitleaks", "gitleaks"}, {"30-test", "test"}, {"35-perf", "perf"},
 	{"40-migration-check", "migration-check"},

@@ -57,6 +57,10 @@ its tests; it compiles, passes and serves before you write a line, so
 never hand-write any of it. The scaffolded `AGENTS.md` is the source of
 truth for that app's code; this file stays the framework's.
 
+**Strict CSP:** browsers silently drop `style` attributes,
+`<style>` blocks, inline scripts and `on*` handlers; use classes and
+files in `static/`. `make csp` finds them.
+
 **Look before you build.** Most things an app needs already ship: a
 Light/Dark/System switch in every shell, a picture grid (`media-grid`),
 the API token page (`api-tokens`), job status pages, money fields,
@@ -159,8 +163,7 @@ The other seven, an action's shape and what each gate message means:
 
 - Never import `github.com/glebarez/*` or `gorm.io/driver/sqlite`: the
   binary panics at init or needs cgo.
-- Never write `style` attributes or `<style>` blocks (the CSP drops
-  them silently), hand-roll a labelled control (use `field-*` partials
+- Never hand-roll a labelled control (use `field-*` partials
   in `<form rst-form>` closed by `form-foot`), an error page, a colour
   toggle or an image grid: they ship (`skill/design.md`).
 - Never add a `<script>` tag for a framework component (your own are
