@@ -10,6 +10,52 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+## v0.35.0
+
+### Security: Go 1.26.11
+
+Go 1.26.11 fixes GO-2026-6859 in `net/http`. Rastrillo's gate now runs
+on it, and `rastrillo new` writes it into a new app's Makefile. Under Go
+1.26.10, `govulncheck` reports GO-2026-6859 and `make ci` fails.
+
+In an app made before this release, replace the Makefile's
+`export GOTOOLCHAIN = go1.26.10` with `export GOTOOLCHAIN = go1.26.11`,
+then run `make ci`.
+
+### Added: `rastrillo csp` finds markup the default CSP blocks
+
+Rastrillo's default Content-Security-Policy blocks `style` attributes,
+`<style>` blocks, inline scripts, `on*` handler attributes and
+`javascript:` URLs. The browser drops them without an error on the
+page, so the page just looks or behaves wrong. `rastrillo csp` reads an
+app's templates, the string literals in its Go files and its scripts,
+and names each of these with what to write instead.
+
+A new app runs it as `make csp`, which `make ci` includes. To add it to
+an app made before this release:
+
+1. Add a `csp` target to the Makefile that runs `rastrillo csp`, and add
+   `csp` to the `ci` target's list.
+2. Add an executable `.amadan/ci.d/18-csp` containing:
+
+   ```sh
+   #!/bin/sh
+   exec make csp
+   ```
+
+### Fixed: framework markup the default CSP blocked
+
+`rastrillo csp` found two places where the framework itself used markup
+the default CSP blocks.
+
+- The confirm page `auth` shows when a person opens the link from a
+  sign-in email styled itself with a `<style>` block that the default
+  CSP blocked, so it showed unstyled. The default `style-src` now allows that block by its
+  hash.
+- The gallery's list-grid and people samples set `--rst-cols` in a
+  `style` attribute. Both now use a class. If your app copied either
+  sample, `rastrillo csp` finds the copy.
+
 ### Changed: the size gate says how to split
 
 When a directory goes over 5,000 lines, `rastrillo budget size` now says
