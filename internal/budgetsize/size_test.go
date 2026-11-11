@@ -58,6 +58,25 @@ func TestOneOverSourceFails(t *testing.T) {
 	}
 }
 
+// An agent offered a split and an exemption side by side takes the
+// one-line exemption, so the message has to lead with how to split.
+func TestOverSaysHowToSplit(t *testing.T) {
+	root := module(t)
+	write(t, root, "internal/serum/a.go", 5001)
+	got := check(t, root, "")
+	if len(got) != 1 {
+		t.Fatalf("got %v", got)
+	}
+	for _, want := range []string{
+		"internal/serum/<feature>", "Mount", "internal/serum/core",
+		`"Splitting by feature"`, "Only if the split must wait",
+	} {
+		if !strings.Contains(got[0], want) {
+			t.Errorf("message lacks %q: %s", want, got[0])
+		}
+	}
+}
+
 func TestOneOverTestFails(t *testing.T) {
 	root := module(t)
 	write(t, root, "internal/app/a_test.go", 8001)

@@ -138,14 +138,27 @@ func Check(counts []Count, f *budgetfile.File) []string {
 	return msgs
 }
 
+// overDefault leads with how to split. Offered a split and an exemption
+// side by side, an agent takes the one-line exemption and the package
+// keeps growing.
+func overDefault(dir, kind string, measured, ceiling int) string {
+	return fmt.Sprintf("%s: %d %s lines, over the %d-line limit "+
+		"for this directory. Split it by feature: put each "+
+		"feature in %s/<feature> with its own Deps struct and "+
+		"Mount function, and shared code in %s/core "+
+		"(docs/site/testing.md, \"Splitting by feature\"). "+
+		"Only if the split must wait, record an exemption in %s "+
+		"and name the issue tracking the split.",
+		dir, measured, kind, ceiling, dir, dir, budgetfile.FileName)
+}
+
 // judge ratchets only a column the record states, so a directory over
 // on one count alone can carry a record without the other count tripping
 // the 60% rule.
 func judge(dir, kind string, measured, def, stated, line int) []string {
 	if stated == 0 {
 		if measured > def {
-			return []string{fmt.Sprintf("%s: %d %s lines, ceiling %d. Split it by feature (docs/site/testing.md), or record an exemption with a reason in %s",
-				dir, measured, kind, def, budgetfile.FileName)}
+			return []string{overDefault(dir, kind, measured, def)}
 		}
 		return nil
 	}

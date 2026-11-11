@@ -10,6 +10,20 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+### Changed: the size gate says how to split
+
+When a directory goes over 5,000 lines, `rastrillo budget size` now says
+where each feature goes and where shared code goes, and to record an
+exemption only if the split must wait. The old message offered the split
+and the exemption as equal choices, and agents took the exemption.
+
+"Splitting by feature" in `docs/site/testing.md` now matches the
+scaffold: a feature package has a `Deps` struct and
+`Mount(routes *action.Routes, deps *Deps)`, and shared models move to
+`internal/<app>/core`. The old page put them in the app package, which
+the features can't import without an import cycle. The scaffold's
+`AGENTS.md` and `skill/screens.md` say the same.
+
 ## v0.34.0
 
 ### Changed: most commits skip a disk sync
