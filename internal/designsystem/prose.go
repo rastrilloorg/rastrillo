@@ -186,6 +186,11 @@ const busyRuleNote = "A button that CHANGES something gets a loading " +
 	"dropdown, a tab, does not. busy.js applies that rule to every " +
 	"submit button in every form, with nothing to opt into."
 
+const busyAssetBlurb = "The busy rule: while a form sends, it refuses a " +
+	"second submit. Its button shows a spinner at once for a POST, for " +
+	"at least 650ms; for a GET only if the answer takes more than " +
+	"500ms. Back hands it back. Every scaffolded app gets it."
+
 const fiestaAssetBlurb = "Closes menus on Escape or an outside click, " +
 	"lets users drag a switch, gives iOS a pressed state on touch, and " +
 	"applies a colour-scheme choice without a reload. rastrillo new " +
@@ -4679,18 +4684,18 @@ var prose = map[string]map[string]string{
 		`vi`:      `Lớp fragment của Rastrillo hỏi vòng các fragment và ghi cookie giữ lựa chọn bảng màu. Mọi ứng dụng được tạo khung đều nhận nó.`,
 		`ar`:      `طبقة الأجزاء في Rastrillo تستقصي الأجزاء وتكتب ملفّ تعريف الارتباط الذي يحفظ اختيار نظام الألوان. يتسلّمها كل تطبيق مولَّد.`,
 	},
-	`The busy rule: while a form sends, its button shows a spinner for at least 650ms and refuses a second submit, and Back hands it back. Every scaffolded app gets it.`: {
-		`ga`:      `An riail ghnóthach: fad a sheolann foirm, taispeánann a cnaipe roth casta ar feadh 650ms ar a laghad agus diúltaíonn sé don dara seoladh, agus tugann Siar ar ais é. Faigheann gach aip scafallaithe é.`,
-		`zh-Hans`: `忙碌规则：表单提交期间，其按钮至少显示 650 毫秒的加载指示并拒绝第二次提交；返回时恢复原状。每个脚手架生成的应用都会拿到它。`,
-		`es`:      `La regla de ocupado: mientras un formulario se envía, su botón muestra un indicador de carga durante al menos 650 ms y rechaza un segundo envío; al volver atrás se restablece. La recibe toda app generada.`,
-		`hi`:      `बिज़ी नियम: फ़ॉर्म भेजे जाते समय उसका बटन कम से कम 650ms तक स्पिनर दिखाता है और दूसरा सबमिट ठुकराता है; वापस जाने पर वह फिर से तैयार हो जाता है। हर स्कैफ़ोल्ड की गई ऐप को यह मिलती है।`,
-		`pt-PT`:   `A regra de ocupado: enquanto um formulário é enviado, o seu botão mostra um indicador de carregamento durante pelo menos 650 ms e recusa um segundo envio; ao voltar atrás, é reposto. Toda app gerada a recebe.`,
-		`bn`:      `বিজি নিয়ম: ফর্ম পাঠানোর সময় তার বোতাম অন্তত 650ms স্পিনার দেখায় আর দ্বিতীয় সাবমিট ফিরিয়ে দেয়; পেছনে ফিরলে আবার আগের মতো হয়। প্রতিটি স্ক্যাফোল্ড করা অ্যাপ এটি পায়।`,
-		`ru`:      `Правило занятости: пока форма отправляется, её кнопка показывает индикатор не меньше 650 мс и отклоняет повторную отправку; при возврате назад всё восстанавливается. Его получает каждое сгенерированное приложение.`,
-		`ja`:      `ビジールール。フォームの送信中、ボタンは少なくとも650msスピナーを表示し、二度目の送信を拒否します。「戻る」で元に戻ります。足場を組んだアプリはすべて受け取ります。`,
-		`yue`:     `忙碌規則：表單提交期間，佢嘅按鈕最少顯示 650 毫秒載入指示，並且拒絕第二次提交；返回就會還原。每個搭骨架生成嘅應用都會攞到。`,
-		`vi`:      `Quy tắc bận: khi biểu mẫu đang gửi, nút của nó hiện vòng quay ít nhất 650ms và từ chối lần gửi thứ hai; quay lại thì nút trở về như cũ. Mọi ứng dụng được tạo khung đều nhận nó.`,
-		`ar`:      `قاعدة الانشغال: أثناء إرسال النموذج يُظهر زرّه مؤشر تحميل مدةً لا تقل عن 650 ملّي ثانية ويرفض إرسالًا ثانيًا، والرجوع يعيده كما كان. يتسلّمها كل تطبيق مولَّد.`,
+	busyAssetBlurb: {
+		`ga`:      `An riail ghnóthach: fad a sheolann foirm, diúltaíonn sí don dara seoladh. Taispeánann a cnaipe roth casta láithreach do POST, ar feadh 650ms ar a laghad; do GET, ach amháin má thógann an freagra níos mó ná 500ms. Tugann Siar ar ais é. Faigheann gach aip scafallaithe é.`,
+		`zh-Hans`: `忙碌规则：表单提交期间拒绝第二次提交。POST 时按钮立即显示加载指示，至少 650 毫秒；GET 时仅在响应超过 500 毫秒才显示。返回时恢复原状。每个脚手架生成的应用都会拿到它。`,
+		`es`:      `La regla de ocupado: mientras un formulario se envía, rechaza un segundo envío. Su botón muestra un indicador de carga al instante en un POST, durante al menos 650 ms; en un GET, solo si la respuesta tarda más de 500 ms. Al volver atrás se restablece. La recibe toda app generada.`,
+		`hi`:      `बिज़ी नियम: फ़ॉर्म भेजे जाते समय वह दूसरा सबमिट ठुकराता है। POST में उसका बटन तुरंत कम से कम 650ms तक स्पिनर दिखाता है; GET में सिर्फ़ तब, जब जवाब आने में 500ms से ज़्यादा लगे। वापस जाने पर वह फिर से तैयार हो जाता है। हर स्कैफ़ोल्ड की गई ऐप को यह मिलती है।`,
+		`pt-PT`:   `A regra de ocupado: enquanto um formulário é enviado, recusa um segundo envio. O seu botão mostra um indicador de carregamento de imediato num POST, durante pelo menos 650 ms; num GET, só se a resposta demorar mais de 500 ms. Ao voltar atrás, é reposto. Toda app gerada a recebe.`,
+		`bn`:      `বিজি নিয়ম: ফর্ম পাঠানোর সময় সেটি দ্বিতীয় সাবমিট ফিরিয়ে দেয়। POST-এ তার বোতাম সঙ্গে সঙ্গে অন্তত 650ms স্পিনার দেখায়; GET-এ শুধু উত্তর আসতে 500ms-এর বেশি লাগলে। পেছনে ফিরলে আবার আগের মতো হয়। প্রতিটি স্ক্যাফোল্ড করা অ্যাপ এটি পায়।`,
+		`ru`:      `Правило занятости: пока форма отправляется, она отклоняет повторную отправку. Её кнопка показывает индикатор для POST сразу и не меньше 650 мс, для GET — только если ответ идёт дольше 500 мс. При возврате назад всё восстанавливается. Его получает каждое сгенерированное приложение.`,
+		`ja`:      `ビジールール。フォームの送信中は二度目の送信を拒否します。ボタンのスピナーは、POST ではすぐに表示されて少なくとも650ms続き、GET では応答が500msを超えたときだけ表示されます。「戻る」で元に戻ります。足場を組んだアプリはすべて受け取ります。`,
+		`yue`:     `忙碌規則：表單提交期間會拒絕第二次提交。POST 嘅話，佢嘅按鈕即刻顯示載入指示，最少 650 毫秒；GET 就要回應超過 500 毫秒先會顯示。返回就會還原。每個搭骨架生成嘅應用都會攞到。`,
+		`vi`:      `Quy tắc bận: khi biểu mẫu đang gửi, nó từ chối lần gửi thứ hai. Nút của nó hiện vòng quay ngay lập tức với POST, trong ít nhất 650ms; với GET thì chỉ khi phản hồi mất hơn 500ms. Quay lại thì nút trở về như cũ. Mọi ứng dụng được tạo khung đều nhận nó.`,
+		`ar`:      `قاعدة الانشغال: أثناء إرسال النموذج يرفض إرسالًا ثانيًا. يُظهر زرّه مؤشر تحميل فورًا في POST مدةً لا تقل عن 650 ملّي ثانية، وفي GET فقط إذا تأخر الرد أكثر من 500 ملّي ثانية. والرجوع يعيده كما كان. يتسلّمها كل تطبيق مولَّد.`,
 	},
 	`Live pages: sections that update when the server says their data changed, and forms that save in place. Inert until a page carries the rastrillo-live meta tag, and deletable on its own.`: {
 		`ga`:      `Leathanaigh bheo: ranna a nuashonraíonn nuair a deir an freastalaí gur athraigh a gcuid sonraí, agus foirmeacha a shábhálann ina n-áit féin. Marbh go dtí go n-iompraíonn leathanach an meta-chlib rastrillo-live, agus inscriosta leis féin.`,

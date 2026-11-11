@@ -567,8 +567,9 @@ stylesheet after `tokens.css`.
 ## The busy button is not a guarantee
 
 `busy.js` gives every submit button a loading state while its form is
-out — a spinner in place of the label for at least 650ms, `aria-busy`,
-then `disabled` — and refuses a second submit from the same form while
+out — a spinner in place of the label, `aria-busy`, then `disabled`;
+for a POST at once and for at least 650ms, for a GET only if it takes
+more than 500ms — and refuses a second submit from the same form while
 the first is in flight. It is on by
 default; `data-busy="false"` on the form or on one button opts out, and
 `data-busy-label` replaces the text. The whole rule, including what it

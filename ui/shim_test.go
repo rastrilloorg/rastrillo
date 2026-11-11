@@ -272,8 +272,9 @@ func TestBusyRuleIsTheDefault(t *testing.T) {
 	// and matched case-insensitively because method is an enumerated
 	// attribute.
 	for _, want := range []string{
-		`if (/^dialog$/i.test(btn && btn.getAttribute("formmethod") ||`,
-		`      form.getAttribute("method"))) return;`,
+		`var method = btn && btn.getAttribute("formmethod") || ` +
+			`form.getAttribute("method");`,
+		`if (/^dialog$/i.test(method)) return;`,
 	} {
 		if !strings.Contains(js, want) {
 			t.Errorf(`the busy rule does not bail out of an effective method of "dialog" (%s missing); a dialog's close form — or a button's formmethod="dialog" — arms a guard nothing will ever clear`, want)

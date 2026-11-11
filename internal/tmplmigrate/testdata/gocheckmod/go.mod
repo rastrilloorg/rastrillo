@@ -5,7 +5,7 @@ go 1.26.0
 require amadan.net/rastrillo/rastrillo v0.0.0
 
 require (
-	amadan.net/rastrillo/fiesta v1.2.0 // indirect
+	amadan.net/rastrillo/fiesta v1.3.0 // indirect
 	amadan.net/rastrillo/rastrillo/money v0.1.0 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/google/uuid v1.6.0 // indirect

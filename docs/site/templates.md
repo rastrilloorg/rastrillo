@@ -370,11 +370,17 @@ once the submission is under way — `disabled`. `busy.js` does it by
 default, with no attribute to remember; linking the file is the whole
 opt-in.
 
-The spinner shows for at least 650ms. A response faster than that would
-make it flicker, which reads as a glitch rather than an answer, so the
-submit is held until 650ms after the click and then sent — the clicked
-button's `name` and `value` with it, exactly as the click would have
-sent them. Only a submit with a spinner on screen is held: a button that
+A POST's spinner shows at once and for at least 650ms. A response
+faster than that would make it flicker, which reads as a glitch rather
+than an answer, so the submit is held until 650ms after the click and
+then sent — the clicked button's `name` and `value` with it, exactly as
+the click would have sent them. A GET only looks something up — a
+search, a filter, a view — so it is never held: it goes at once, its
+form refuses a second submit straight away, and its button shows the
+loading state only if the page is still there 500ms later. A faster
+answer shows nothing. The submitter's `formmethod` beats the form's
+`method`, and a form with no method is a GET. Only a submit with a
+spinner on screen is held: a button that
 opted out, or a script's `requestSubmit()` with no button, goes at once
 (the form is still guarded). A script that wants the spinner passes the
 button: `form.requestSubmit(button)`. Leaving the page while a submit is held drops it, and going

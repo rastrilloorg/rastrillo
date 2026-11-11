@@ -5,7 +5,7 @@ go 1.26.0
 require amadan.net/rastrillo/rastrillo v0.1.0
 
 require (
-	amadan.net/rastrillo/fiesta v1.2.0 // indirect
+	amadan.net/rastrillo/fiesta v1.3.0 // indirect
 	amadan.net/rastrillo/rastrillo/money v0.1.0 // indirect
 	cel.dev/expr v0.25.1 // indirect
 	filippo.io/edwards25519 v1.1.1 // indirect

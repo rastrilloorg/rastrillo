@@ -3,7 +3,7 @@ module amadan.net/rastrillo/rastrillo
 go 1.26.0
 
 require (
-	amadan.net/rastrillo/fiesta v1.2.0
+	amadan.net/rastrillo/fiesta v1.3.0
 	amadan.net/rastrillo/rastrillo/money v0.1.0
 	github.com/BurntSushi/toml v1.6.0
 	github.com/chromedp/cdproto v0.158.6
