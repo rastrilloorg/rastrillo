@@ -36,7 +36,7 @@ export CGO_ENABLED = 0
 # before v0.50.0 cannot read, which breaks tmplmigrate's type-check, so
 # moving to 1.27 means moving x/tools too: its own change. Until then
 # next-go checks that apps still build on 1.27.
-export GOTOOLCHAIN = go1.26.10
+export GOTOOLCHAIN = go1.26.11
 
 BIN := $(CURDIR)/.build
 

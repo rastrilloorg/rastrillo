@@ -513,7 +513,7 @@ const staticcheckVersion = "v0.8.2"
 const (
 	govulncheckVersion = "v1.8.0"
 	gitleaksVersion    = "v8.30.1"
-	goToolchain        = "go1.26.10"
+	goToolchain        = "go1.26.11"
 )
 
 const gitignoreTemplate = `# Build output and the local database.
