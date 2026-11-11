@@ -212,22 +212,38 @@ the perf tests did not both run, so deleting them does not make it pass.
 
 ## Splitting by feature
 
-When `internal/notes` reaches 5,000 lines, split it by feature. The core
-package keeps the models, the rendering and the scoping helper; each
+When `internal/notes` exceeds 5,000 lines, split it by feature. Each
 feature becomes a package of its own with its handlers, templates and
-tests, and mounts its routes:
+tests. It says what it needs in a `Deps` struct, and its `Mount` adds
+its routes:
 
 ```go
 // internal/notes/sharing/sharing.go
-func Mount(r chi.Router, d Deps) {
-	r.Get("/notes/{id}/share", d.share)
-	r.Post("/notes/{id}/share", d.createShare)
+package sharing
+
+const sharePage action.Path = "/notes/{id}/share"
+
+// Deps is what the sharing screens need.
+type Deps struct {
+	Database *db.DB
+}
+
+// Mount adds the sharing screens.
+func Mount(routes *action.Routes, deps *Deps) {
+	routes.Get(sharePage, deps.share)
+	routes.Post(sharePage, deps.createShare)
 }
 ```
 
-`Router` in `app.go` calls each feature's `Mount`. An edit to one feature
-then rebuilds and retests only that feature, Go's cache skips the rest,
-and the packages compile and test in parallel.
+`New` builds each feature's `Deps`, and `Routes` in `internal/notes`
+calls each feature's `Mount`. So `internal/notes` imports every feature,
+and no feature can import it back: Go refuses the import cycle. Move
+what the features share, such as the models and the scoping helper, to
+`internal/notes/core`. The features import `core`, and `core` imports
+none of them.
+
+An edit to one feature then rebuilds and retests only that feature, Go's
+cache skips the rest, and the packages compile and test in parallel.
 
 Don't split by layer instead (`store/`, `web/`). Every handler change still
 rebuilds and retests the whole web layer, so it only delays the problem.

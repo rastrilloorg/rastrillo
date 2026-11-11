@@ -86,9 +86,9 @@ The rest, and what each gate message means:
 - Sign-in: `skill/signin.md`. With `*sessions.Sessions`, keep
   `NewTokenPage(database, sessions)` on `App` and call
   `app.tokens.Mount(guarded)` in `Routes`' page group.
-- Past 5,000 lines, split by feature: `internal/<app>/<feature>` with
-  `func Mount(routes *action.Routes, deps *Deps)`, called from the
-  app's `Routes`, the one function of that name.
+- Past 5,000 lines, split by feature, not an exemption:
+  `internal/<app>/<feature>` with `func Mount(routes *action.Routes,
+  deps *Deps)` called from `Routes`; shared code in `internal/<app>/core`.
 
 ## The gate
 

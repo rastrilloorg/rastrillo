@@ -108,11 +108,14 @@ package's `TestMain` calls `os.Exit(budget.Main(m))`: it prints the time
 instead of migrating. While editing, test the package you touch plus
 `internal/<app>test`; `make ci` before pushing. A test whose inputs Go
 cannot see (execs `go build`, reads outside its package, uses the
-network) gets its own `-count=1` target. Past 5,000 lines in
-`internal/<app>`, split by feature: `internal/<app>/<feature>` exposing
-`func Mount(routes *action.Routes, deps *Deps)`, called from the app's
-`Routes`, the one function of that name (`rastrillo routes` finds it);
-`make budget` enforces it. docs/site/testing.md
+network) gets its own `-count=1` target. When the Go package in
+`internal/<app>` exceeds 5,000 lines, split by feature: put each feature
+in `internal/<app>/<feature>` and expose `func Mount(routes
+*action.Routes, deps *Deps)`. The app's `Routes`, the one function of
+that name (`rastrillo routes` finds it), calls each feature's `Mount`,
+so a feature can't import the app package without an import cycle. Put
+shared models in `internal/<app>/core`. `make budget` enforces the
+limit. docs/site/testing.md
 
 ## Error pages
 
