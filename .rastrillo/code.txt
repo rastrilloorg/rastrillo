@@ -931,14 +931,11 @@ names auth/attempt.go Auth.openAttempt/r 1
 names auth/attempt.go attemptAddress/r 1
 names auth/attempt.go attemptAddress/s 1
 names auth/attempt.go newID/b 1
-columns auth/auth.go 01e5ffe34848 1
 columns auth/auth.go 2c957851faf8 1
 columns auth/auth.go 33a9aeac159d 1
 columns auth/auth.go 3953918bde6b 1
 columns auth/auth.go 43cfec074c33 1
-columns auth/auth.go 441c9d576b7e 1
 columns auth/auth.go 4b9c4f8974ca 1
-columns auth/auth.go 52253be367ef 1
 columns auth/auth.go 5f2416350249 1
 columns auth/auth.go 78196ba018dc 1
 columns auth/auth.go 7cd822abaf3a 1
@@ -946,24 +943,20 @@ columns auth/auth.go 7cf83824e75b 1
 columns auth/auth.go 8026b667d115 1
 columns auth/auth.go 8218c10169f3 1
 columns auth/auth.go 8e97c045d161 1
-columns auth/auth.go 8f385b4407f6 1
 columns auth/auth.go a1d223105114 1
 columns auth/auth.go a6e0f2f5e054 1
 columns auth/auth.go ac1527640569 1
 columns auth/auth.go b6574616d115 1
-columns auth/auth.go b90a38d618fc 1
 columns auth/auth.go c15ba895447c 1
 columns auth/auth.go c274d710231e 1
 columns auth/auth.go c8b4b30c46fc 1
-columns auth/auth.go d3051ca03235 1
-columns auth/auth.go d7d526843d43 1
 columns auth/auth.go dfd81f7191ea 1
 columns auth/auth.go e29553cd014f 1
 columns auth/auth.go ec14109dd65b 1
 columns auth/auth.go eda525fa5bef 1
 columns auth/auth.go edb224703a41 1
-file auth/auth.go - 688 Config.Reader for the session lookups (#241)
-func auth/auth.go New 157
+file auth/auth.go - 639 Config.Reader for the session lookups (#241)
+func auth/auth.go New 152
 names auth/auth.go -/d 1
 names auth/auth.go -/r 3
 names auth/auth.go -/w 3
@@ -972,7 +965,6 @@ names auth/auth.go Auth.SessionCookie/a 1
 names auth/auth.go Auth.clearCookie/a 1
 names auth/auth.go Auth.clearCookie/w 1
 names auth/auth.go Auth.cookieName/a 1
-names auth/auth.go Auth.logError/a 1
 names auth/auth.go Auth.pendingCookie/a 1
 names auth/auth.go Auth.returnCookie/a 1
 names auth/auth.go Auth.secure/a 1
@@ -1497,7 +1489,6 @@ names auth/continuation_test.go startKeymail/w 1
 names auth/csrf.go Auth.sameOrigin/a 1
 names auth/csrf.go Auth.sameOrigin/r 1
 columns auth/handlers.go 0167d0fa3acb 1
-columns auth/handlers.go 23ed83422d8c 1
 columns auth/handlers.go 456987aed287 1
 columns auth/handlers.go 4d122101ede6 1
 columns auth/handlers.go 55ee3d5f8331 1
@@ -1505,7 +1496,6 @@ columns auth/handlers.go 65b9ad82110f 1
 columns auth/handlers.go 68faa69044fe 1
 columns auth/handlers.go 78d6219a2826 1
 columns auth/handlers.go 7dd126002eb8 1
-columns auth/handlers.go 83c1a03d3eda 1
 columns auth/handlers.go 8b4ab195544a 1
 columns auth/handlers.go 8e338501af06 1
 columns auth/handlers.go aba3d494fe13 1
@@ -1518,10 +1508,10 @@ columns auth/handlers.go e2126f7ef8d1 5
 columns auth/handlers.go e6a5dac583f8 1
 columns auth/handlers.go fb732dda3cb5 1
 columns auth/handlers.go ffb560e2308f 1
-file auth/handlers.go - 707
+file auth/handlers.go - 691
 func auth/handlers.go Auth.Begin 55
 func auth/handlers.go Auth.Callback 48
-func auth/handlers.go Auth.admit 77
+func auth/handlers.go Auth.admit 61
 names auth/handlers.go Auth.AnswerAsSent/a 1
 names auth/handlers.go Auth.AnswerAsSent/r 1
 names auth/handlers.go Auth.AnswerAsSent/w 1
@@ -1558,8 +1548,6 @@ names auth/handlers.go Auth.Verify/r 1
 names auth/handlers.go Auth.Verify/w 1
 names auth/handlers.go Auth.admit/a 1
 names auth/handlers.go Auth.admit/r 1
-names auth/handlers.go Auth.admit/s 1
-names auth/handlers.go Auth.admit/u 1
 names auth/handlers.go Auth.admit/w 1
 names auth/handlers.go Auth.continueKeymail/a 1
 names auth/handlers.go Auth.continueKeymail/r 1

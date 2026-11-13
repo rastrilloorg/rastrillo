@@ -10,6 +10,32 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+### Added: blind email-link storage
+
+Set `auth.Config.BlindLinks` to use your own link store and resolve its
+opaque lookup key to a session subject after redemption. The store holds
+only token hashes, lookup keys, purposes and expiry times. This addresses
+issue #2 for apps that must never store an email address, including an
+encrypted one. Apply `sessions.Schema` and your link schema; `auth.Schema`
+is not needed.
+
+Use a mailer that delivers without keeping or logging recipients.
+`BlindLinks` disables Keymail and cookies that remember addresses. It
+omits log attributes and underlying error text. Match configuration and
+operation failures with `errors.Is` and `auth.ErrBlindConfiguration` or
+`auth.ErrBlindOperation`.
+
+Existing SQL and records sign-in behavior stays the same. Before switching
+an app, stop old writers, invalidate pending links, and migrate or revoke
+address-based sessions and their related records. This option does not
+scrub old database files, WAL files or backups. `secure_delete` cannot
+erase earlier WAL frames. Legacy `Config.Blind` still stores decryptable
+link addresses. One records-mode log label changes from “user for address”
+to “subject for address”.
+
+See the [blind auth store spec](docs/superpowers/specs/2026-11-13-blind-auth-store.md)
+for the store contract and Contra/Home setup.
+
 ### Changed: a GET is no longer held for its spinner
 
 `busy.js` used to hold every submit for at least 650ms so its spinner
