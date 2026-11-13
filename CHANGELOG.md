@@ -10,6 +10,20 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+### Added: mail through the CARLOS platform, with no credential
+
+`mail.FromCarlos(prefix, logger)` sends through the platform's mail verb
+when the CARLOS agent sets `CARLOS_MAIL=submit`. The From address is
+`<prefix>_MAIL_FROM`. Without `CARLOS_MAIL`, it uses `<prefix>_SMTP_*`,
+as `FromEnv` does. With neither, it returns an error: call it where the
+app refuses to start without mail. `FromEnv` is unchanged.
+
+A refusal is a `*mail.SubmitError` with `RetryAfter`. A 429 is never
+retried; a 503 is retried 3 times within the caller's deadline. A 200
+without a message id is `mail.ErrUnconfirmed`, and is not retried.
+Under submit, non-ASCII headers are RFC 2047 encoded, long headers are
+folded, and the body is quoted-printable.
+
 ### Added: blind email-link storage
 
 Set `auth.Config.BlindLinks` to use your own link store and resolve its

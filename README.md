@@ -366,9 +366,9 @@ the meantime. This list is their union. **Built:**
   hand-rolled SigV4 signer + presigned GET/PUT pinned against the
   official AWS vectors, `Dir` and `Inline` backends (with the 4 KiB
   rule: bigger belongs in the object store), and `Sealed()` for E2EE.
-- **`rastrillo/mail`** — the one outbound-email surface (SMTP or
-  loudly-logged fallback, header-injection refused), signature-
-  compatible with signin's Mailer.
+- **`rastrillo/mail`** — the one outbound-email surface (SMTP, CARLOS
+  mail submission, or loudly-logged fallback, header-injection
+  refused), signature-compatible with signin's Mailer.
 - **`rastrillo/carlos`** — scheduled work on a hibernating instance
   (platform spec 2026-08-23-scheduled-work §7): `Tick(r)` authenticates
   a platform tick against `$CARLOS_ADMIN_TOKEN` in constant time,
