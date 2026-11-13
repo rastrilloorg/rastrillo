@@ -105,7 +105,8 @@ func TestBlindLinksRejectUnsafeConfiguration(t *testing.T) {
 }
 
 func TestBlindLinksRejectNonOpaqueLookupKeys(t *testing.T) {
-	for _, key := range []string{"", " ", blindCanary} {
+	keys := []string{"", " ", blindCanary, strings.TrimSpace(blindCanary)}
+	for _, key := range keys {
 		t.Run(key, func(t *testing.T) {
 			harness := newBlindHarness(t, true)
 			harness.config.BlindLinks.LookupKey = func(context.Context,

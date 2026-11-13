@@ -312,7 +312,10 @@ func TestBlindLinksResolveBeforeSecondFactor(t *testing.T) {
 }
 
 func TestBlindLinksResolutionFailsClosed(t *testing.T) {
-	subjects := []string{"", " ", blindCanary, "error", "value-and-error"}
+	subjects := []string{
+		"", " ", blindCanary, strings.TrimSpace(blindCanary),
+		"error", "value-and-error",
+	}
 	for _, subject := range subjects {
 		t.Run(fmt.Sprintf("subject=%q", subject), func(t *testing.T) {
 			harness := newBlindHarness(t, true)

@@ -63,6 +63,9 @@ func TestBlindLinksRejectMalformedStoreResults(t *testing.T) {
 			link.LookupKey = blindCanary
 		},
 		"whitespace-key": func(link *BlindLink) { link.LookupKey = " " },
+		"trimmed-address": func(link *BlindLink) {
+			link.LookupKey = strings.TrimSpace(blindCanary)
+		},
 	}
 	for name, change := range changes {
 		t.Run(name, func(t *testing.T) {
