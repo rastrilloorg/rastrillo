@@ -26,6 +26,7 @@ Build one at boot.
 
 ```go
 type Config struct {
+	BlindLinks       *BlindLinks
 	DB               *sql.DB
 	Reader           *sql.DB
 	Origin           string
@@ -54,6 +55,26 @@ type Config struct {
 ```go
 var ErrProofUnset, ErrProofMode error // from New: neither Proof nor ProofOff; a bound Guard
 const ProofScope = "rastrillo/auth/begin"
+
+var ErrBlindConfiguration, ErrBlindOperation error
+
+type BlindLink struct {
+	Hash, LookupKey, Purpose string
+	Expires                  time.Time
+}
+
+type BlindLinkStore interface {
+	Put(context.Context, BlindLink) error
+	Take(context.Context, string) (BlindLink, bool, error)
+	Spend(context.Context, string) (int, error)
+	Sweep(context.Context, time.Time) error
+}
+
+type BlindLinks struct {
+	Store          BlindLinkStore
+	LookupKey      func(context.Context, string) (string, error)
+	ResolveSubject func(context.Context, string) (string, error)
+}
 ```
 
 `auth` passes `Reader` to [`sessions`](/docs/reference/sessions). Leave it nil unless a mixed-load test on your instance shows it helps, as the sessions page says.
