@@ -59,7 +59,6 @@
 package auth
 
 import (
-	"bytes"
 	"crypto/sha256"
 	"database/sql"
 	"errors"
@@ -97,6 +96,8 @@ const pendingTTL = 10 * time.Minute
 // Config configures New. Origin and InstanceKey are required; everything
 // else has a serviceable default.
 type Config struct {
+	BlindLinks *BlindLinks
+
 	// DB is the app's database. migrate.Merge(sessions.Schema,
 	// auth.Schema) must be applied (via migrate.Apply) before any
 	// handler runs.
@@ -410,27 +411,17 @@ const ProofScope = "rastrillo/auth/begin"
 // keymail's real /api/federation/lookup route, so the RoundTripper
 // rewrite this package carried since v0.6.0 is gone).
 func New(cfg Config) (*Auth, error) {
+
 	if cfg.Origin == "" || (!strings.HasPrefix(cfg.Origin, "https://") && !strings.HasPrefix(cfg.Origin, "http://")) {
 		return nil, errors.New("rastrillo/auth: Config.Origin must be an absolute origin like https://app.example.com")
 	}
 	if cfg.InstanceKey == "" {
 		return nil, ErrEmptyInstanceKey
 	}
-	if cfg.Records != nil {
-		if err := recordsConfig(cfg); err != nil {
-			return nil, err
-		}
-		cfg.Pepper = bytes.Clone(cfg.Pepper)
-	} else {
-		// Half a mode would start: a pepper nothing uses, or a blind flag
-		// over a database that stores the address anyway.
-		if cfg.Pepper != nil || cfg.Blind || cfg.Signed != nil {
-			return nil, errors.New("rastrillo/auth: Config.Pepper, Blind and Signed are records mode and need Config.Records")
-		}
-		if cfg.DB == nil {
-			return nil, errors.New("rastrillo/auth: Config.DB is required")
-		}
+	if err := configureStorage(&cfg); err != nil {
+		return nil, err
 	}
+
 	switch {
 	case cfg.Proof == nil && !cfg.ProofOff:
 		return nil, ErrProofUnset
@@ -441,6 +432,9 @@ func New(cfg Config) (*Auth, error) {
 	}
 	if cfg.Logger == nil {
 		cfg.Logger = slog.Default()
+	}
+	if cfg.BlindLinks != nil {
+		cfg.Logger = slog.New(blindLog{next: cfg.Logger.Handler()})
 	}
 	if cfg.Mailer == nil {
 		cfg.Logger.Warn("rastrillo/auth: no Mailer configured — magic links will be logged, not sent")
@@ -566,30 +560,10 @@ func New(cfg Config) (*Auth, error) {
 		// always has.
 		a.flow.Now = authNow
 	}
-	return a, nil
-}
-
-// recordsConfig refuses a records-mode Config that could not work as
-// a centre.
-func recordsConfig(cfg Config) error {
-	switch {
-	case cfg.DB != nil:
-		return errors.New("rastrillo/auth: Config.Records and Config.DB are two modes; set one")
-	case cfg.Signed == nil || cfg.Signed.Key == nil:
-		return errors.New("rastrillo/auth: Config.Records needs Config.Signed with a Key: the centre mints the session cookie")
-	case cfg.Signed.Epoch != nil:
-		return errors.New("rastrillo/auth: leave Config.Signed.Epoch nil with Records: auth reads the epoch from users/")
-	case len(cfg.Pepper) < 32:
-		return errors.New("rastrillo/auth: Config.Pepper must be at least 32 bytes")
-	case cfg.SubjectFor != nil:
-		return errors.New("rastrillo/auth: Config.SubjectFor does not apply with Records: the subject is the user id")
-	case cfg.Blind && (cfg.Mailer == nil || !mail.IsConfigured(cfg.Mailer)):
-		// The nil fallback and mail.Logged (what mail.FromEnv returns
-		// with no relay) both write the recipient and the live link to
-		// the log, which is what blind mode keeps the address out of.
-		return errors.New("rastrillo/auth: Config.Blind needs a Mailer that delivers; mail.Logged writes the address to the log. For local development, pass a Sender of your own")
+	if cfg.BlindLinks != nil {
+		a.wireBlindLinks(cfg.BlindLinks)
 	}
-	return nil
+	return a, nil
 }
 
 // logError logs a failure that may carry an error from the flow, the

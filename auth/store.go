@@ -120,6 +120,14 @@ func (l *linkStore) TakeLink(ctx context.Context, hash, purpose string) (string,
 // keep no rows. In blind mode it also removes any address a user
 // record still holds from before Blind was turned on.
 func (a *Auth) Sweep(now time.Time) error {
+	if a.cfg.BlindLinks != nil {
+		err := a.cfg.BlindLinks.Store.Sweep(context.Background(), now)
+		if err != nil {
+			return ErrBlindOperation
+		}
+		return blindError(a.sessions.Sweep(now))
+	}
+
 	if a.links != nil {
 		if err := a.links.sweep(context.Background(), now); err != nil {
 			return err
@@ -149,6 +157,10 @@ func (a *Auth) Sweep(now time.Time) error {
 // token's hash, and its callers are password and passkey sign-ins,
 // which a centre with no database does not have.
 func (a *Auth) SpendLinks(ctx context.Context, address string) (int, error) {
+	if a.cfg.BlindLinks != nil {
+		return a.spendBlindLinks(ctx, address)
+	}
+
 	if a.links != nil {
 		return 0, ErrRecords
 	}

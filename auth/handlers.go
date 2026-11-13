@@ -523,27 +523,11 @@ func (a *Auth) admit(w http.ResponseWriter, r *http.Request, id Identity) {
 		http.Error(w, "This address is verified but not admitted here.", http.StatusForbidden)
 		return
 	}
-	subject := id.Address
-	if a.users != nil {
-		// After Authorize, so an address that is refused writes no user.
-		u, err := a.users.ensure(r.Context(), id.Address)
-		if err != nil {
-			a.logError("rastrillo/auth: user for address", err)
-			http.Error(w, "sign-in failed", http.StatusInternalServerError)
-			return
-		}
-		subject = u.ID
-	} else if a.cfg.SubjectFor != nil {
-		s, err := a.cfg.SubjectFor(id.Address)
-		if err != nil {
-			// No fallback to the address: an app sets this hook
-			// precisely because writing one is the failure it cannot
-			// have.
-			a.cfg.Logger.Error("rastrillo/auth: subject for address", "err", err)
-			http.Error(w, "sign-in failed", http.StatusInternalServerError)
-			return
-		}
-		subject = s
+	subject, err := a.subjectFor(r.Context(), id.Address)
+	if err != nil {
+		a.logError("rastrillo/auth: subject for address", err)
+		http.Error(w, "sign-in failed", http.StatusInternalServerError)
+		return
 	}
 	// The address, never the subject: SubjectFor may make subjects
 	// opaque, and the screen shows this address back. Before the

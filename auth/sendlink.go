@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"errors"
 
 	"github.com/keymaildev/signin"
 )
@@ -45,5 +46,9 @@ var (
 // returns.
 func (a *Auth) SendLink(ctx context.Context, address, ipKey string) error {
 	_, err := a.flow.Begin(ctx, address, ipKey, signin.MethodMagicLink)
+	if a.cfg.BlindLinks != nil && err != nil &&
+		!errors.Is(err, ErrRateLimited) && !errors.Is(err, ErrBadAddress) {
+		return ErrBlindOperation
+	}
 	return err
 }
