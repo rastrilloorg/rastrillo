@@ -162,7 +162,7 @@ func TestBlindLinksNeverEchoBadOrRateLimitedAddresses(t *testing.T) {
 		t.Fatal("bad address accepted")
 	}
 	assertBlindBytes(t, "invalid address error", []byte(err.Error()))
-	assertBlindFailure(t, beginSignin(t, harness.auth, malformed))
+	assertNoBlindCookies(t, beginSignin(t, harness.auth, malformed))
 	for range 5 {
 		harness.send(t)
 	}
@@ -170,7 +170,7 @@ func TestBlindLinksNeverEchoBadOrRateLimitedAddresses(t *testing.T) {
 	if !strings.Contains(response.Header().Get("Location"), "err=rate") {
 		t.Fatal("sixth begin did not hit the rate limit")
 	}
-	assertBlindFailure(t, response)
+	assertNoBlindCookies(t, response)
 	harness.scan(t)
 }
 

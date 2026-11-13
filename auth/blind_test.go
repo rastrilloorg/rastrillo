@@ -236,7 +236,7 @@ func TestBlindLinksWorkWithoutTheStockAuthSchema(t *testing.T) {
 	link := harness.send(t)
 	landing := httptest.NewRecorder()
 	harness.auth.Verify(landing, httptest.NewRequest("GET", link, nil))
-	if landing.Code != http.StatusOK {
+	if landing.Code != http.StatusOK || landing.Body.Len() == 0 {
 		t.Fatal("confirm GET failed")
 	}
 	assertBlindResponse(t, landing)
@@ -330,7 +330,7 @@ func TestBlindLinksResolutionFailsClosed(t *testing.T) {
 			}
 			harness.configure(t)
 			link := harness.send(t)
-			response := redeemBlind(t, harness.auth, link)
+			assertNoBlindCookies(t, redeemBlind(t, harness.auth, link))
 			var count int
 			if err := harness.store.database.QueryRow(
 				"SELECT count(*) FROM sessions").Scan(&count); err != nil {
@@ -339,7 +339,7 @@ func TestBlindLinksResolutionFailsClosed(t *testing.T) {
 			if count != 0 {
 				t.Fatal("failed resolver minted a session")
 			}
-			response = redeemBlind(t, harness.auth, link)
+			response := redeemBlind(t, harness.auth, link)
 			location := response.Header().Get("Location")
 			if !strings.Contains(location, "err=expired") {
 				t.Fatal("failed resolver left a reusable token")
@@ -415,12 +415,12 @@ func redeemBlind(
 	return response
 }
 
-func assertBlindFailure(t *testing.T, response *httptest.ResponseRecorder) {
+func assertNoBlindCookies(t *testing.T, response *httptest.ResponseRecorder) {
 	t.Helper()
 	assertBlindResponse(t, response)
 	for _, cookie := range response.Result().Cookies() {
 		if cookie.Value != "" {
-			t.Fatal("failed sign-in retained a cookie")
+			t.Fatalf("unexpected cookie value: %s", cookie.Name)
 		}
 	}
 }
