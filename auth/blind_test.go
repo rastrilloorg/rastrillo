@@ -89,25 +89,19 @@ func newBlindHarness(t *testing.T, stock bool) *blindHarness {
 	harness := &blindHarness{mail: &captureMailer{}}
 	harness.path = filepath.Join(t.TempDir(), "blind.db")
 	database, err := db.Open(harness.path, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+	requireBlindSuccess(t, err)
 	t.Cleanup(func() { database.Close() })
 	schema := sessions.Schema
 	if stock {
 		schema = migrate.Merge(schema, Schema)
 	}
 	_, err = migrate.Apply(context.Background(), database, schema)
-	if err != nil {
-		t.Fatal(err)
-	}
+	requireBlindSuccess(t, err)
 	harness.store = &blindSQL{database.Writer()}
 	_, err = harness.store.database.Exec(`CREATE TABLE blind_links (
  hash TEXT PRIMARY KEY, lookup_key TEXT NOT NULL,
  purpose TEXT NOT NULL, expires INTEGER NOT NULL)`)
-	if err != nil {
-		t.Fatal(err)
-	}
+	requireBlindSuccess(t, err)
 	if _, err := harness.store.database.Exec(
 		"PRAGMA wal_autocheckpoint = 0"); err != nil {
 		t.Fatal(err)
@@ -142,9 +136,7 @@ func newBlindHarness(t *testing.T, stock bool) *blindHarness {
 		log.SetFlags(flags)
 	})
 	harness.auth, err = New(harness.config)
-	if err != nil {
-		t.Fatal(err)
-	}
+	requireBlindSuccess(t, err)
 	return harness
 }
 
@@ -177,9 +169,7 @@ func (harness *blindHarness) scan(t *testing.T) {
 	t.Helper()
 	for _, suffix := range []string{"", "-wal", "-shm"} {
 		data, err := os.ReadFile(harness.path + suffix)
-		if err != nil {
-			t.Fatal(err)
-		}
+		requireBlindSuccess(t, err)
 		if len(data) == 0 {
 			t.Fatalf("empty persistence artifact %s", suffix)
 		}
@@ -200,18 +190,14 @@ func TestBlindLinksNeverPersistAnAddress(t *testing.T) {
 	err := harness.store.database.QueryRow(`SELECT hash, lookup_key,
  purpose FROM blind_links`).Scan(&record.Hash, &record.LookupKey,
 		&record.Purpose)
-	if err != nil {
-		t.Fatal(err)
-	}
+	requireBlindSuccess(t, err)
 	token := redeemRequest(t, link).FormValue("token")
 	key, _ := blindKey(context.Background(), blindCanary)
 	if record.Hash != HashToken(token) || record.LookupKey != key {
 		t.Fatal("storage did not receive token hash and opaque lookup key")
 	}
 	fresh, err := New(harness.config)
-	if err != nil {
-		t.Fatal(err)
-	}
+	requireBlindSuccess(t, err)
 	response := httptest.NewRecorder()
 	fresh.Verify(response, redeemRequest(t, link))
 	requireBlindSession(t, fresh, response)
@@ -221,14 +207,6 @@ func TestBlindLinksNeverPersistAnAddress(t *testing.T) {
 		t.Fatal(err)
 	}
 	harness.scan(t)
-	var legacy int
-	if err := harness.store.database.QueryRow(
-		"SELECT count(*) FROM auth_links").Scan(&legacy); err != nil {
-		t.Fatal(err)
-	}
-	if legacy != 0 {
-		t.Fatal("stock link store was used")
-	}
 	assertBlindTables(t, harness)
 
 }
@@ -273,9 +251,7 @@ func TestBlindLinksRejectWrongPurposeExpiredAndReusedTokens(t *testing.T) {
 			case "purpose":
 				_, err := harness.store.database.Exec(
 					"UPDATE blind_links SET purpose = 'password-reset'")
-				if err != nil {
-					t.Fatal(err)
-				}
+				requireBlindSuccess(t, err)
 			case "expired", "boundary":
 				now := time.Now().Add(-time.Hour)
 				harness.auth.now = func() time.Time { return now }
@@ -285,9 +261,7 @@ func TestBlindLinksRejectWrongPurposeExpiredAndReusedTokens(t *testing.T) {
 				}
 				_, err := harness.store.database.Exec(
 					"UPDATE blind_links SET expires = ?", expiry.UnixNano())
-				if err != nil {
-					t.Fatal(err)
-				}
+				requireBlindSuccess(t, err)
 			case "reuse":
 				response := httptest.NewRecorder()
 				harness.auth.Verify(response, redeemRequest(t, link))
@@ -346,11 +320,7 @@ func TestBlindLinksResolutionFailsClosed(t *testing.T) {
 				}
 				return subject, nil
 			}
-			var err error
-			harness.auth, err = New(harness.config)
-			if err != nil {
-				t.Fatal(err)
-			}
+			harness.configure(t)
 			link := harness.send(t)
 			response := httptest.NewRecorder()
 			harness.auth.Verify(response, redeemRequest(t, link))
@@ -402,20 +372,30 @@ func assertBlindTables(t *testing.T, harness *blindHarness) {
 	err := harness.store.database.QueryRow(`SELECT
  (SELECT count(*) FROM auth_links) +
  (SELECT count(*) FROM auth_sessions)`).Scan(&legacy)
-	if err != nil {
-		t.Fatal(err)
-	}
+	requireBlindSuccess(t, err)
 	if legacy != 0 {
 		t.Fatal("stock auth tables received records")
 	}
 	var columns string
 	err = harness.store.database.QueryRow(`SELECT group_concat(name, ',')
  FROM pragma_table_info('sessions')`).Scan(&columns)
-	if err != nil {
-		t.Fatal(err)
-	}
+	requireBlindSuccess(t, err)
 	want := "token_hash,subject,method,auth_time,created_at,expires_at"
 	if columns != want {
 		t.Fatalf("unexpected session fields: %s", columns)
+	}
+}
+
+func (harness *blindHarness) configure(t *testing.T) {
+	t.Helper()
+	auth, err := New(harness.config)
+	requireBlindSuccess(t, err)
+	harness.auth = auth
+}
+
+func requireBlindSuccess(t *testing.T, err error) {
+	t.Helper()
+	if err != nil {
+		t.Fatal(err)
 	}
 }

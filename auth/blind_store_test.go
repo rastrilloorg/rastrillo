@@ -79,11 +79,7 @@ func TestBlindLinksRejectMalformedStoreResults(t *testing.T) {
 				resolved = true
 				return blindSubject, nil
 			}
-			var err error
-			harness.auth, err = New(harness.config)
-			if err != nil {
-				t.Fatal(err)
-			}
+			harness.configure(t)
 			link := harness.send(t)
 			response := httptest.NewRecorder()
 			harness.auth.Verify(response, redeemRequest(t, link))
@@ -106,11 +102,8 @@ func TestBlindLinksDoNotExposeStoreErrors(t *testing.T) {
 			harness.config.BlindLinks.Store = blindStoreFault{
 				BlindLinkStore: harness.store, failure: operation,
 			}
+			harness.configure(t)
 			var err error
-			harness.auth, err = New(harness.config)
-			if err != nil {
-				t.Fatal(err)
-			}
 			switch operation {
 			case "put":
 				err = harness.auth.SendLink(
@@ -150,16 +143,10 @@ func TestBlindLinksNormalizeOnlyBeforeTheConsumerLookup(t *testing.T) {
 		addresses = append(addresses, address)
 		return blindKey(ctx, address)
 	}
-	var err error
-	harness.auth, err = New(harness.config)
-	if err != nil {
-		t.Fatal(err)
-	}
+	harness.configure(t)
 	harness.send(t)
-	_, err = harness.auth.SpendLinks(context.Background(), blindCanary)
-	if err != nil {
-		t.Fatal(err)
-	}
+	_, err := harness.auth.SpendLinks(context.Background(), blindCanary)
+	requireBlindSuccess(t, err)
 	want := strings.ToLower(strings.TrimSpace(blindCanary))
 	if len(addresses) != 2 || addresses[0] != want || addresses[1] != want {
 		t.Fatalf("LookupKey received %q; want normalized addresses", addresses)
@@ -187,14 +174,10 @@ func TestBlindLinksKeepAddressesOutOfLimiterKeysAndObjects(t *testing.T) {
 	err := harness.store.database.QueryRow(`SELECT hash, lookup_key,
  purpose, expires FROM blind_links`).Scan(&record.Hash, &record.LookupKey,
 		&record.Purpose, &expiry)
-	if err != nil {
-		t.Fatal(err)
-	}
+	requireBlindSuccess(t, err)
 	record.Expires = time.Unix(0, expiry)
 	object, err := json.Marshal(record)
-	if err != nil {
-		t.Fatal(err)
-	}
+	requireBlindSuccess(t, err)
 	assertBlindBytes(t, "replicated link object", object)
 }
 

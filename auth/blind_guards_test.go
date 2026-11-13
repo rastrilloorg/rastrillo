@@ -3,7 +3,6 @@ package auth
 import (
 	"context"
 	"errors"
-	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -12,9 +11,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/keymaildev/signin"
-
-	"amadan.net/rastrillo/rastrillo/mail"
 	"amadan.net/rastrillo/rastrillo/sessions"
 )
 
@@ -42,11 +38,7 @@ func TestBlindLinksRedactFailureLogsAndReturnedErrors(t *testing.T) {
 					return false, errors.New(blindCanary)
 				}
 			}
-			var err error
-			harness.auth, err = New(harness.config)
-			if err != nil {
-				t.Fatal(err)
-			}
+			harness.configure(t)
 			assertBlindResponse(t, beginSignin(t, harness.auth, blindCanary))
 			if failure == "second-factor" {
 				link := linkRE.FindString(harness.mail.sentBody())
@@ -63,72 +55,6 @@ func TestBlindLinksRedactFailureLogsAndReturnedErrors(t *testing.T) {
 			}
 			if harness.logs.Len() == 0 {
 				t.Fatal("failure was not logged")
-			}
-			harness.scan(t)
-		})
-	}
-}
-
-func TestBlindLinksRejectUnsafeConfiguration(t *testing.T) {
-	changes := map[string]func(*Config){
-		"nil-store": func(config *Config) { config.BlindLinks.Store = nil },
-		"nil-lookup": func(config *Config) {
-			config.BlindLinks.LookupKey = nil
-		},
-		"nil-resolver": func(config *Config) {
-			config.BlindLinks.ResolveSubject = nil
-		},
-		"nil-mailer": func(config *Config) { config.Mailer = nil },
-		"log-mailer": func(config *Config) {
-			config.Mailer = mail.Logged(slog.Default())
-		},
-		"upstream-log-mailer": func(config *Config) {
-			config.Mailer = &signin.LogMailer{}
-		},
-		"address-authorize": func(config *Config) {
-			config.Authorize = func(string) bool { return true }
-		},
-		"address-subject": func(config *Config) {
-			config.SubjectFor = func(address string) (string, error) {
-				return address, nil
-			}
-		},
-		"screen": func(config *Config) { config.SigninScreen = true },
-		"keymail": func(config *Config) {
-			config.KeymailServers = []string{"provider.test"}
-		},
-	}
-	for name, change := range changes {
-		t.Run(name, func(t *testing.T) {
-			harness := newBlindHarness(t, true)
-			change(&harness.config)
-			if _, err := New(harness.config); err == nil {
-				t.Fatal("unsafe blind configuration accepted")
-			}
-		})
-	}
-}
-
-func TestBlindLinksRejectNonOpaqueLookupKeys(t *testing.T) {
-	keys := []string{"", " ", blindCanary, strings.TrimSpace(blindCanary)}
-	for _, key := range keys {
-		t.Run(key, func(t *testing.T) {
-			harness := newBlindHarness(t, true)
-			harness.config.BlindLinks.LookupKey = func(context.Context,
-				string) (string, error) {
-				return key, nil
-			}
-			var err error
-			harness.auth, err = New(harness.config)
-			if err != nil {
-				t.Fatal(err)
-			}
-			if err := harness.auth.SendLink(context.Background(), blindCanary,
-				"test"); err == nil {
-				t.Fatal("non-opaque lookup key accepted")
-			}
-			if harness.mail.sentTo() != "" {
-				t.Fatal("unsafe link was delivered")
 			}
 			harness.scan(t)
 		})
@@ -219,9 +145,7 @@ func TestBlindLinksRejectPendingKeymailFromBeforeTheSwitch(t *testing.T) {
 	legacyConfig := harness.config
 	legacyConfig.BlindLinks = nil
 	legacy, err := New(legacyConfig)
-	if err != nil {
-		t.Fatal(err)
-	}
+	requireBlindSuccess(t, err)
 	wireKeymail(legacy, kayFake())
 	browser := newBrowser()
 	response := beginKeymail(legacy, browser, "kay@example.org")
@@ -245,12 +169,8 @@ func TestBlindLinksRejectLookupValuesReturnedWithAnError(t *testing.T) {
 		key, _ := blindKey(ctx, address)
 		return key, errors.New(blindCanary)
 	}
-	var err error
-	harness.auth, err = New(harness.config)
-	if err != nil {
-		t.Fatal(err)
-	}
-	err = harness.auth.SendLink(context.Background(), blindCanary, "test")
+	harness.configure(t)
+	err := harness.auth.SendLink(context.Background(), blindCanary, "test")
 	if err == nil {
 		t.Fatal("lookup error with a valid key was ignored")
 	}

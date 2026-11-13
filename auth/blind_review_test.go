@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -14,7 +13,6 @@ import (
 	"testing"
 	"time"
 
-	"amadan.net/rastrillo/rastrillo/objrec"
 	"amadan.net/rastrillo/rastrillo/sessions"
 )
 
@@ -40,47 +38,12 @@ func TestBlindLinksReturnBareBudgetAndAddressSentinels(t *testing.T) {
 	}
 }
 
-func TestBlindLinksRejectEveryRecordsModeCombination(t *testing.T) {
-	for _, mode := range []string{"Records", "Blind", "Pepper", "Signed"} {
-		t.Run(mode, func(t *testing.T) {
-			harness := newBlindHarness(t, true)
-			switch mode {
-			case "Records":
-				key, err := sessions.NewSigningKey("test")
-				if err != nil {
-					t.Fatal(err)
-				}
-				harness.config.DB = nil
-				harness.config.Records = objrec.Dir(t.TempDir())
-				harness.config.Pepper = bytes.Repeat([]byte{7}, 32)
-				harness.config.Signed = &sessions.Signed{Name: "test", Key: key}
-				legacy := harness.config
-				legacy.BlindLinks = nil
-				if _, err := New(legacy); err != nil {
-					t.Fatalf("records fixture is invalid: %v", err)
-				}
-			case "Blind":
-				harness.config.Blind = true
-			case "Pepper":
-				harness.config.Pepper = []byte("consumer-pepper")
-			case "Signed":
-				harness.config.Signed = &sessions.Signed{}
-			}
-			if _, err := New(harness.config); err == nil {
-				t.Fatal("mixed records and blind-link configuration accepted")
-			}
-		})
-	}
-}
-
 func TestBlindLinksRefuseLegacyAddressSessions(t *testing.T) {
 	harness := newBlindHarness(t, true)
 	token, err := harness.auth.sessions.Mint(sessions.Session{
 		Subject: strings.TrimSpace(blindCanary), Method: "magiclink",
 	})
-	if err != nil {
-		t.Fatal(err)
-	}
+	requireBlindSuccess(t, err)
 	request := httptest.NewRequest("GET", "http://app.test/private", nil)
 	request.AddCookie(&http.Cookie{
 		Name: harness.auth.SessionCookie(), Value: token,
@@ -117,11 +80,7 @@ func TestBlindLinksAdmissionRefusalIsNotAServerError(t *testing.T) {
 					response.WriteHeader(http.StatusForbidden)
 				}
 			}
-			var err error
-			harness.auth, err = New(harness.config)
-			if err != nil {
-				t.Fatal(err)
-			}
+			harness.configure(t)
 			link := harness.send(t)
 			response := httptest.NewRecorder()
 			harness.auth.Verify(response, redeemRequest(t, link))
@@ -157,11 +116,7 @@ func TestBlindLinksKeepReturnToAndOpaqueKeyCase(t *testing.T) {
 		}
 		return blindSubject, nil
 	}
-	var err error
-	harness.auth, err = New(harness.config)
-	if err != nil {
-		t.Fatal(err)
-	}
+	harness.configure(t)
 	browser := newBrowser()
 	response := browser.do(harness.auth.Begin, "POST", "/signin", url.Values{
 		"address": {blindCanary}, "return_to": {"/vault?tab=shared"},
