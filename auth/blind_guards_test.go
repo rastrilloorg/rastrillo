@@ -47,7 +47,7 @@ func TestBlindLinksRedactFailureLogsAndReturnedErrors(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			beginSignin(t, harness.auth, blindCanary)
+			assertBlindResponse(t, beginSignin(t, harness.auth, blindCanary))
 			if failure == "second-factor" {
 				link := linkRE.FindString(harness.mail.sentBody())
 				request := redeemRequest(t, link)
@@ -182,9 +182,10 @@ func TestBlindLinksHaveOneConcurrentRedeemer(t *testing.T) {
 	var workers sync.WaitGroup
 	results := make(chan bool, 12)
 	for range 12 {
+		request := redeemRequest(t, link)
 		workers.Go(func() {
 			response := httptest.NewRecorder()
-			harness.auth.Verify(response, redeemRequest(t, link))
+			harness.auth.Verify(response, request)
 			results <- response.Header().Get("Location") == "/"
 		})
 	}

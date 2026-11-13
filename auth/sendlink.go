@@ -46,9 +46,17 @@ var (
 // returns.
 func (a *Auth) SendLink(ctx context.Context, address, ipKey string) error {
 	_, err := a.flow.Begin(ctx, address, ipKey, signin.MethodMagicLink)
-	if a.cfg.BlindLinks != nil && err != nil &&
-		!errors.Is(err, ErrRateLimited) && !errors.Is(err, ErrBadAddress) {
+	if a.cfg.BlindLinks == nil {
+		return err
+	}
+	switch {
+	case err == nil:
+		return nil
+	case errors.Is(err, ErrRateLimited):
+		return ErrRateLimited
+	case errors.Is(err, ErrBadAddress):
+		return ErrBadAddress
+	default:
 		return ErrBlindOperation
 	}
-	return err
 }

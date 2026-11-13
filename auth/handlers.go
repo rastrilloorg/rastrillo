@@ -461,7 +461,7 @@ func (a *Auth) SignoutEverywhere(w http.ResponseWriter, r *http.Request) {
 	if a.sessions.RefreshIfExpired(w, r) {
 		return
 	}
-	s, ok := a.sessions.From(r)
+	s, ok := a.sessionFrom(r)
 	if !ok {
 		a.redirect(w, r, a.cfg.SigninPath)
 		return
@@ -516,14 +516,14 @@ func (a *Auth) admit(w http.ResponseWriter, r *http.Request, id Identity) {
 		}
 	}
 	if a.cfg.Authorize != nil && !a.cfg.Authorize(id.Address) {
-		if a.cfg.Refused != nil {
-			a.cfg.Refused(w, r, id)
-			return
-		}
-		http.Error(w, "This address is verified but not admitted here.", http.StatusForbidden)
+		a.refuseAdmission(w, r, id)
 		return
 	}
 	subject, err := a.subjectFor(r.Context(), id.Address)
+	if a.cfg.BlindLinks != nil && errors.Is(err, sessions.ErrNoUser) {
+		a.refuseAdmission(w, r, id)
+		return
+	}
 	if err != nil {
 		a.logError("rastrillo/auth: subject for address", err)
 		http.Error(w, "sign-in failed", http.StatusInternalServerError)
@@ -575,7 +575,7 @@ func identityFrom(s sessions.Session) Identity {
 // the direct lookup, for handlers outside RequireSession that want to
 // know who (a public page with a signed-in header, say).
 func (a *Auth) SessionFrom(r *http.Request) (Identity, bool) {
-	s, ok := a.sessions.From(r)
+	s, ok := a.sessionFrom(r)
 	if !ok {
 		return Identity{}, false
 	}
@@ -594,7 +594,7 @@ type identityCtxKey struct{}
 // answered nothing at all — the uid-0 trap's uglier sibling.)
 func (a *Auth) RequireSession(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		s, ok := a.sessions.From(r)
+		s, ok := a.sessionFrom(r)
 		if !ok {
 			// An expired signed cookie on the centre refreshes as one on a
 			// tenant does; in row mode this does nothing.
@@ -621,7 +621,7 @@ func (a *Auth) RequireSession(next http.Handler) http.Handler {
 func (a *Auth) RequireFreshSession(maxAge time.Duration) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			s, ok := a.sessions.From(r)
+			s, ok := a.sessionFrom(r)
 			if !ok {
 				if a.sessions.RefreshIfExpired(w, r) {
 					return

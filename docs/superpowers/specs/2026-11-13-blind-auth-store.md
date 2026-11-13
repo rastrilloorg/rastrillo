@@ -40,13 +40,16 @@ It returns the consumer's existing peppered HMAC index. ResolveSubject runs
 only after consumption and validation, receives that index, enforces
 admission, and returns the opaque account/person subject. Provisioning, if
 needed, belongs there and must be idempotent across separate valid links.
+Return sessions.ErrNoUser to refuse admission with 403 or Config.Refused;
+Refused receives the verified lookup key in Identity.Address. Any wrapped
+error text is discarded. Other resolver errors remain operational failures.
 Errors never fall back to the email or lookup key as a session subject.
 The resolved subject reaches SecondFactor before session minting.
 
 The adapter checks the returned record's hash, purpose, expiry strictly
 after now, and lookup key. Invalid presented records are already spent.
-Keys and subjects must be nonempty, unchanged by trimming, and contain no
-`@`. These guards catch common accidental address returns; they cannot
+Encode HMAC indexes as hex or base64url, not raw binary strings. Keys and
+subjects must be nonempty, unchanged by trimming, and contain no `@`. These guards catch common accidental address returns; they cannot
 prove opacity. Consumers must never return encoded or encrypted addresses,
 or an unkeyed address digest susceptible to dictionary enumeration.
 
@@ -125,7 +128,10 @@ tags; this change belongs under Unreleased until he releases it.
 A previously plaintext app must stop old writers, invalidate outstanding
 links, and migrate existing subjects and every subject-keyed relationship
 before enabling blind mode. Existing sessions should be revoked if their
-subject mapping cannot be safely migrated. Switching back does not make
+subject mapping cannot be safely migrated. Auth's session lookup and guards
+refuse pre-switch address subjects without deleting or rewriting those rows;
+that prevents a blind handler from treating an address as an opaque person.
+Direct users of the shared sessions package must apply the same migration. Switching back does not make
 blind links redeemable through the old SQL store. Re-enabling old links
 or retaining historical plaintext backups defeats the new guarantee.
 
@@ -146,6 +152,8 @@ proof or CSRF check. It shares Begin's rate limits.
 Home supplies its home-held peppered email index in LookupKey and resolves
 it to an opaque person ref. Keep secure_delete enabled, omit the stock
 auth schema for a new installation, and use the same framework handlers.
+When a password or passkey flow has only an index, call the consumer store's
+Spend(ctx, index) directly; Auth.SpendLinks takes a transient address.
 It must choose the blind email-only flow for this guarantee; retaining
 Keymail's address-bearing pending ceremony would need separate design.
 
@@ -156,7 +164,11 @@ compile there; the before run must contain named assertion failures, not
 compiler errors. The leakage test scans the live database, WAL, SHM and
 captured logs before consumption, after a fresh Auth instance redeems,
 and after a checkpoint. It checks the canary's raw, trimmed, lowercase
-and lowercase-trimmed forms. Further checks inspect serialized link
+and lowercase-trimmed forms, percent/base64/hex encodings and local-part variants. The injected
+logger, slog.Default and the standard logger are captured, and HTTP headers,
+cookies, response bodies and mailed link bodies are checked too. Scanning
+cannot recognize arbitrary encryption; exact record values and the empty
+legacy tables supplement the byte checks. Further checks inspect serialized link
 objects, stored hashes, resolver failures, second-factor subjects, wrong
 purpose, expiry including the exact boundary, reuse, concurrent takers,
 maintenance, unsafe configuration and malicious store results.

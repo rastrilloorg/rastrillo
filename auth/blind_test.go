@@ -6,12 +6,15 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"database/sql"
+	"encoding/base64"
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"log"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -130,6 +133,14 @@ func newBlindHarness(t *testing.T, stock bool) *blindHarness {
 			},
 		},
 	}
+	previous := slog.Default()
+	writer, flags := log.Writer(), log.Flags()
+	slog.SetDefault(harness.config.Logger)
+	t.Cleanup(func() {
+		slog.SetDefault(previous)
+		log.SetOutput(writer)
+		log.SetFlags(flags)
+	})
 	harness.auth, err = New(harness.config)
 	if err != nil {
 		t.Fatal(err)
@@ -143,6 +154,8 @@ func (harness *blindHarness) send(t *testing.T) string {
 	if response.Header().Get("Location") != "/signin?sent=1" {
 		t.Fatalf("Begin failed: %d %s", response.Code, response.Body)
 	}
+	assertBlindResponse(t, response)
+	assertBlindBytes(t, "mailed link body", []byte(harness.mail.sentBody()))
 	link := linkRE.FindString(harness.mail.sentBody())
 	if link == "" {
 		t.Fatal("no mailed link")
@@ -152,14 +165,12 @@ func (harness *blindHarness) send(t *testing.T) string {
 
 func assertBlindBytes(t *testing.T, name string, data []byte) {
 	t.Helper()
-	for _, address := range []string{blindCanary,
-		strings.TrimSpace(blindCanary), strings.ToLower(blindCanary),
-		strings.ToLower(strings.TrimSpace(blindCanary))} {
-		needle := []byte(strings.ToLower(address))
-		if bytes.Contains(bytes.ToLower(data), needle) {
+	for _, needle := range blindNeedles() {
+		if bytes.Contains(bytes.ToLower(data), bytes.ToLower([]byte(needle))) {
 			t.Errorf("address leaked into %s", name)
 		}
 	}
+
 }
 
 func (harness *blindHarness) scan(t *testing.T) {
@@ -218,6 +229,8 @@ func TestBlindLinksNeverPersistAnAddress(t *testing.T) {
 	if legacy != 0 {
 		t.Fatal("stock link store was used")
 	}
+	assertBlindTables(t, harness)
+
 }
 
 func requireBlindSession(t *testing.T, auth *Auth,
@@ -229,7 +242,11 @@ func requireBlindSession(t *testing.T, auth *Auth,
 		t.Fatalf("no sign-in: %d %s", response.Code, response.Body)
 	}
 	request := httptest.NewRequest("GET", "/", nil)
+	assertBlindResponse(t, response)
 	for _, cookie := range response.Result().Cookies() {
+		if cookie.Name != auth.SessionCookie() && cookie.Value != "" {
+			t.Errorf("unexpected persistent cookie: %s", cookie.Name)
+		}
 		request.AddCookie(cookie)
 	}
 	identity, ok := auth.SessionFrom(request)
@@ -353,5 +370,52 @@ func TestBlindLinksResolutionFailsClosed(t *testing.T) {
 			}
 			harness.scan(t)
 		})
+	}
+}
+
+func blindNeedles() []string {
+	trimmed := strings.TrimSpace(blindCanary)
+	local, domain, _ := strings.Cut(trimmed, "@")
+	bare, _, _ := strings.Cut(local, "+")
+	variants := []string{blindCanary, trimmed, strings.ToLower(blindCanary),
+		strings.ToLower(trimmed), local, bare, bare + "@" + domain}
+	var needles []string
+	for _, variant := range variants {
+		raw := []byte(variant)
+		needles = append(needles, variant, url.QueryEscape(variant),
+			url.PathEscape(variant), hex.EncodeToString(raw),
+			base64.StdEncoding.EncodeToString(raw),
+			base64.RawURLEncoding.EncodeToString(raw))
+	}
+	return needles
+}
+
+func assertBlindResponse(t *testing.T, response *httptest.ResponseRecorder) {
+	t.Helper()
+	assertBlindBytes(t, "HTTP headers", []byte(fmt.Sprint(response.Header())))
+	assertBlindBytes(t, "HTTP body", response.Body.Bytes())
+}
+
+func assertBlindTables(t *testing.T, harness *blindHarness) {
+	t.Helper()
+	var legacy int
+	err := harness.store.database.QueryRow(`SELECT
+ (SELECT count(*) FROM auth_links) +
+ (SELECT count(*) FROM auth_sessions)`).Scan(&legacy)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if legacy != 0 {
+		t.Fatal("stock auth tables received records")
+	}
+	var columns string
+	err = harness.store.database.QueryRow(`SELECT group_concat(name, ',')
+ FROM pragma_table_info('sessions')`).Scan(&columns)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := "token_hash,subject,method,auth_time,created_at,expires_at"
+	if columns != want {
+		t.Fatalf("unexpected session fields: %s", columns)
 	}
 }

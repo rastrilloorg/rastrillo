@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"time"
 
@@ -9,6 +10,7 @@ import (
 
 	"amadan.net/rastrillo/rastrillo/crypto"
 	"amadan.net/rastrillo/rastrillo/mail"
+	"amadan.net/rastrillo/rastrillo/sessions"
 )
 
 type BlindLink struct {
@@ -142,6 +144,9 @@ func (auth *Auth) blindSubject(
 	ctx context.Context, key string,
 ) (string, error) {
 	subject, err := auth.cfg.BlindLinks.ResolveSubject(ctx, key)
+	if errors.Is(err, sessions.ErrNoUser) {
+		return "", sessions.ErrNoUser
+	}
 	if err != nil || !opaque(subject) {
 		return "", ErrBlindOperation
 	}
