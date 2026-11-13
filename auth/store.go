@@ -120,6 +120,7 @@ func (l *linkStore) TakeLink(ctx context.Context, hash, purpose string) (string,
 // keep no rows. In blind mode it also removes any address a user
 // record still holds from before Blind was turned on.
 func (a *Auth) Sweep(now time.Time) error {
+	// The consumer owns link retention; never fall back to auth_links.
 	if a.cfg.BlindLinks != nil {
 		err := a.cfg.BlindLinks.Store.Sweep(context.Background(), now)
 		if err != nil {

@@ -97,6 +97,7 @@ func (store *blindLinkAdapter) PutLink(ctx context.Context,
 func (store *blindLinkAdapter) TakeLink(ctx context.Context,
 	hash, purpose string,
 ) (string, bool, error) {
+	// Consume first so a refused credential cannot be tried again.
 	link, ok, err := store.config.Store.Take(ctx, hash)
 	if err != nil {
 		return "", false, ErrBlindOperation
@@ -119,6 +120,7 @@ func (auth *Auth) wireBlindLinks(links *BlindLinks) {
 	auth.flow.Links = &blindLinkAdapter{
 		config: *links, now: func() time.Time { return auth.now() },
 	}
+	// Keymail caches addresses and carries them in pending cookies.
 	auth.flow.Classifier = nil
 	auth.flow.Keymail = nil
 	auth.flow.Now = func() time.Time { return auth.now() }
@@ -137,6 +139,7 @@ type blindLimiter struct {
 func (limiter *blindLimiter) Allow(ctx context.Context, key string,
 	now time.Time, budget int,
 ) (bool, error) {
+	// Rate budgets must retain no address after the request ends.
 	return limiter.next.Allow(ctx, emailHash(limiter.pepper, key), now, budget)
 }
 
@@ -144,6 +147,7 @@ func (auth *Auth) blindSubject(
 	ctx context.Context, key string,
 ) (string, error) {
 	subject, err := auth.cfg.BlindLinks.ResolveSubject(ctx, key)
+	// Admission is a normal refusal; discard wrapped recipient text.
 	if errors.Is(err, sessions.ErrNoUser) {
 		return "", sessions.ErrNoUser
 	}

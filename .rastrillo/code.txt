@@ -955,8 +955,8 @@ columns auth/auth.go e29553cd014f 1
 columns auth/auth.go ec14109dd65b 1
 columns auth/auth.go eda525fa5bef 1
 columns auth/auth.go edb224703a41 1
-file auth/auth.go - 662 Config.Reader for the session lookups (#241)
-func auth/auth.go New 153
+file auth/auth.go - 661 Config.Reader for the session lookups (#241)
+func auth/auth.go New 152
 names auth/auth.go -/d 1
 names auth/auth.go -/r 3
 names auth/auth.go -/w 3

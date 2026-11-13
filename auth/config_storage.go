@@ -11,6 +11,7 @@ func configureStorage(cfg *Config) error {
 	if err := blindConfig(*cfg); err != nil {
 		return err
 	}
+	// Freeze validated hooks so caller edits cannot change a live flow.
 	if cfg.BlindLinks != nil {
 		blind := *cfg.BlindLinks
 		cfg.BlindLinks = &blind

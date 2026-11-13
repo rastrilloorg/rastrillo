@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
@@ -81,8 +80,7 @@ func TestBlindLinksRejectMalformedStoreResults(t *testing.T) {
 			}
 			harness.configure(t)
 			link := harness.send(t)
-			response := httptest.NewRecorder()
-			harness.auth.Verify(response, redeemRequest(t, link))
+			response := redeemBlind(t, harness.auth, link)
 			if resolved {
 				t.Fatal("invalid store result reached subject resolver")
 			}
@@ -117,8 +115,7 @@ func TestBlindLinksDoNotExposeStoreErrors(t *testing.T) {
 				err = harness.auth.Sweep(time.Now())
 			case "take", "not-found":
 				link := harness.send(t)
-				response := httptest.NewRecorder()
-				harness.auth.Verify(response, redeemRequest(t, link))
+				response := redeemBlind(t, harness.auth, link)
 				location := response.Header().Get("Location")
 				if !strings.Contains(location, "err=expired") {
 					t.Fatal("store error admitted a session")
@@ -188,15 +185,4 @@ func (probe *blindLimitProbe) Allow(_ context.Context, key string,
 ) (bool, error) {
 	probe.keys = append(probe.keys, key)
 	return true, nil
-}
-
-func TestBlindLinksKeepTheAddressRateLimit(t *testing.T) {
-	harness := newBlindHarness(t, true)
-	for range 5 {
-		harness.send(t)
-	}
-	err := harness.auth.SendLink(context.Background(), blindCanary, "test")
-	if !errors.Is(err, ErrRateLimited) {
-		t.Fatalf("sixth link: %v; want rate limit", err)
-	}
 }

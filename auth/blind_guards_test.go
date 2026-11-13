@@ -39,11 +39,13 @@ func TestBlindLinksRedactFailureLogsAndReturnedErrors(t *testing.T) {
 				}
 			}
 			harness.configure(t)
-			assertBlindResponse(t, beginSignin(t, harness.auth, blindCanary))
+			assertBlindFailure(t, beginSignin(t, harness.auth, blindCanary))
 			if failure == "second-factor" {
 				link := linkRE.FindString(harness.mail.sentBody())
 				request := redeemRequest(t, link)
-				harness.auth.Verify(httptest.NewRecorder(), request)
+				recorder := httptest.NewRecorder()
+				harness.auth.Verify(recorder, request)
+				assertBlindFailure(t, recorder)
 			} else {
 				err := harness.auth.SendLink(
 					context.Background(), blindCanary, "test",
@@ -67,11 +69,7 @@ func TestBlindLinksDisableKeymailAndAddressCookies(t *testing.T) {
 		t.Fatal("blind mode retained address-caching Keymail clients")
 	}
 	response := beginSignin(t, harness.auth, blindCanary)
-	for _, cookie := range response.Result().Cookies() {
-		if cookie.Value != "" {
-			t.Errorf("address attempt cookie: %s", cookie.Name)
-		}
-	}
+	assertBlindFailure(t, response)
 	response = httptest.NewRecorder()
 	request := httptest.NewRequest("GET", "/auth/callback", nil)
 	harness.auth.Callback(response, request)

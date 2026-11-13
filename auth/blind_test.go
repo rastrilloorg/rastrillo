@@ -157,12 +157,12 @@ func (harness *blindHarness) send(t *testing.T) string {
 
 func assertBlindBytes(t *testing.T, name string, data []byte) {
 	t.Helper()
+	folded := bytes.ToLower(data)
 	for _, needle := range blindNeedles() {
-		if bytes.Contains(bytes.ToLower(data), bytes.ToLower([]byte(needle))) {
+		if bytes.Contains(folded, bytes.ToLower([]byte(needle))) {
 			t.Errorf("address leaked into %s", name)
 		}
 	}
-
 }
 
 func (harness *blindHarness) scan(t *testing.T) {
@@ -198,8 +198,7 @@ func TestBlindLinksNeverPersistAnAddress(t *testing.T) {
 	}
 	fresh, err := New(harness.config)
 	requireBlindSuccess(t, err)
-	response := httptest.NewRecorder()
-	fresh.Verify(response, redeemRequest(t, link))
+	response := redeemBlind(t, fresh, link)
 	requireBlindSession(t, fresh, response)
 	harness.scan(t)
 	if _, err := harness.store.database.Exec(
@@ -208,7 +207,6 @@ func TestBlindLinksNeverPersistAnAddress(t *testing.T) {
 	}
 	harness.scan(t)
 	assertBlindTables(t, harness)
-
 }
 
 func requireBlindSession(t *testing.T, auth *Auth,
@@ -236,18 +234,31 @@ func requireBlindSession(t *testing.T, auth *Auth,
 func TestBlindLinksWorkWithoutTheStockAuthSchema(t *testing.T) {
 	harness := newBlindHarness(t, false)
 	link := harness.send(t)
-	response := httptest.NewRecorder()
-	harness.auth.Verify(response, redeemRequest(t, link))
+	landing := httptest.NewRecorder()
+	harness.auth.Verify(landing, httptest.NewRequest("GET", link, nil))
+	if landing.Code != http.StatusOK {
+		t.Fatal("confirm GET failed")
+	}
+	assertBlindResponse(t, landing)
+
+	response := redeemBlind(t, harness.auth, link)
 	requireBlindSession(t, harness.auth, response)
 	harness.scan(t)
 }
 
 func TestBlindLinksRejectWrongPurposeExpiredAndReusedTokens(t *testing.T) {
-	for _, guard := range []string{"purpose", "expired", "boundary", "reuse"} {
+	guards := []string{
+		"purpose", "expired", "boundary", "reuse", "clock",
+	}
+	for _, guard := range guards {
 		t.Run(guard, func(t *testing.T) {
 			harness := newBlindHarness(t, true)
 			link := harness.send(t)
 			switch guard {
+			case "clock":
+				harness.auth.now = func() time.Time {
+					return time.Now().Add(LinkTTL + time.Second)
+				}
 			case "purpose":
 				_, err := harness.store.database.Exec(
 					"UPDATE blind_links SET purpose = 'password-reset'")
@@ -263,12 +274,10 @@ func TestBlindLinksRejectWrongPurposeExpiredAndReusedTokens(t *testing.T) {
 					"UPDATE blind_links SET expires = ?", expiry.UnixNano())
 				requireBlindSuccess(t, err)
 			case "reuse":
-				response := httptest.NewRecorder()
-				harness.auth.Verify(response, redeemRequest(t, link))
+				response := redeemBlind(t, harness.auth, link)
 				requireBlindSession(t, harness.auth, response)
 			}
-			response := httptest.NewRecorder()
-			harness.auth.Verify(response, redeemRequest(t, link))
+			response := redeemBlind(t, harness.auth, link)
 			location := response.Header().Get("Location")
 			if !strings.Contains(location, "err=expired") {
 				t.Fatalf("%s link accepted: %d %s", guard, response.Code,
@@ -295,8 +304,7 @@ func TestBlindLinksResolveBeforeSecondFactor(t *testing.T) {
 		}
 		return true, nil
 	}
-	response := httptest.NewRecorder()
-	harness.auth.Verify(response, redeemRequest(t, harness.send(t)))
+	redeemBlind(t, harness.auth, harness.send(t))
 	if !seen {
 		t.Fatal("second factor was not reached")
 	}
@@ -322,8 +330,7 @@ func TestBlindLinksResolutionFailsClosed(t *testing.T) {
 			}
 			harness.configure(t)
 			link := harness.send(t)
-			response := httptest.NewRecorder()
-			harness.auth.Verify(response, redeemRequest(t, link))
+			response := redeemBlind(t, harness.auth, link)
 			var count int
 			if err := harness.store.database.QueryRow(
 				"SELECT count(*) FROM sessions").Scan(&count); err != nil {
@@ -332,8 +339,7 @@ func TestBlindLinksResolutionFailsClosed(t *testing.T) {
 			if count != 0 {
 				t.Fatal("failed resolver minted a session")
 			}
-			response = httptest.NewRecorder()
-			harness.auth.Verify(response, redeemRequest(t, link))
+			response = redeemBlind(t, harness.auth, link)
 			location := response.Header().Get("Location")
 			if !strings.Contains(location, "err=expired") {
 				t.Fatal("failed resolver left a reusable token")
@@ -397,5 +403,24 @@ func requireBlindSuccess(t *testing.T, err error) {
 	t.Helper()
 	if err != nil {
 		t.Fatal(err)
+	}
+}
+
+func redeemBlind(
+	t *testing.T, auth *Auth, link string,
+) *httptest.ResponseRecorder {
+	t.Helper()
+	response := httptest.NewRecorder()
+	auth.Verify(response, redeemRequest(t, link))
+	return response
+}
+
+func assertBlindFailure(t *testing.T, response *httptest.ResponseRecorder) {
+	t.Helper()
+	assertBlindResponse(t, response)
+	for _, cookie := range response.Result().Cookies() {
+		if cookie.Value != "" {
+			t.Fatal("failed sign-in retained a cookie")
+		}
 	}
 }

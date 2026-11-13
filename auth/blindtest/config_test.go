@@ -5,6 +5,7 @@ import (
 	"context"
 	"log/slog"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -15,7 +16,6 @@ import (
 	"amadan.net/rastrillo/rastrillo/objrec"
 	"amadan.net/rastrillo/rastrillo/sessions"
 	"github.com/keymaildev/signin"
-	"strings"
 )
 
 type Config = auth.Config

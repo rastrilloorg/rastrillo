@@ -411,7 +411,6 @@ const ProofScope = "rastrillo/auth/begin"
 // keymail's real /api/federation/lookup route, so the RoundTripper
 // rewrite this package carried since v0.6.0 is gone).
 func New(cfg Config) (*Auth, error) {
-
 	if cfg.Origin == "" || (!strings.HasPrefix(cfg.Origin, "https://") && !strings.HasPrefix(cfg.Origin, "http://")) {
 		return nil, errors.New("rastrillo/auth: Config.Origin must be an absolute origin like https://app.example.com")
 	}

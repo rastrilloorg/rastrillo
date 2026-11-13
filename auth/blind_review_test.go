@@ -32,7 +32,7 @@ func TestBlindLinksReturnBareBudgetAndAddressSentinels(t *testing.T) {
 		}
 		err := harness.auth.SendLink(context.Background(), blindCanary, "test")
 		if err != sentinel {
-			t.Errorf("returned a wrapped error: %v", err)
+			t.Fatalf("returned a wrapped error: %v", err)
 		}
 		assertBlindBytes(t, "safe sentinel", []byte(err.Error()))
 	}
@@ -82,8 +82,7 @@ func TestBlindLinksAdmissionRefusalIsNotAServerError(t *testing.T) {
 			}
 			harness.configure(t)
 			link := harness.send(t)
-			response := httptest.NewRecorder()
-			harness.auth.Verify(response, redeemRequest(t, link))
+			response := redeemBlind(t, harness.auth, link)
 			if response.Code != http.StatusForbidden || called != custom {
 				t.Fatalf("refusal: status=%d, callback=%v",
 					response.Code, called)
@@ -93,8 +92,7 @@ func TestBlindLinksAdmissionRefusalIsNotAServerError(t *testing.T) {
 			}
 			assertBlindResponse(t, response)
 			harness.scan(t)
-			response = httptest.NewRecorder()
-			harness.auth.Verify(response, redeemRequest(t, link))
+			response = redeemBlind(t, harness.auth, link)
 			if response.Header().Get("Location") != "/signin?err=expired" {
 				t.Error("refused admission left its token reusable")
 			}
@@ -152,8 +150,7 @@ func TestBlindLinksSnapshotConfigAndUseTheFlowClock(t *testing.T) {
 	if expiry != now.Add(LinkTTL).UnixNano() {
 		t.Fatal("flow and adapter used different clocks")
 	}
-	response := httptest.NewRecorder()
-	harness.auth.Verify(response, redeemRequest(t, link))
+	response := redeemBlind(t, harness.auth, link)
 	requireBlindSession(t, harness.auth, response)
 }
 
@@ -165,15 +162,15 @@ func TestBlindLinksNeverEchoBadOrRateLimitedAddresses(t *testing.T) {
 		t.Fatal("bad address accepted")
 	}
 	assertBlindBytes(t, "invalid address error", []byte(err.Error()))
-	assertBlindResponse(t, beginSignin(t, harness.auth, malformed))
+	assertBlindFailure(t, beginSignin(t, harness.auth, malformed))
 	for range 5 {
 		harness.send(t)
 	}
-	response := beginSignin(t, harness.auth, blindCanary)
+	response := beginSignin(t, harness.auth, strings.ToLower(blindCanary))
 	if !strings.Contains(response.Header().Get("Location"), "err=rate") {
 		t.Fatal("sixth begin did not hit the rate limit")
 	}
-	assertBlindResponse(t, response)
+	assertBlindFailure(t, response)
 	harness.scan(t)
 }
 

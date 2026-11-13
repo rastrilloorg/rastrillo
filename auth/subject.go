@@ -28,6 +28,7 @@ func (auth *Auth) subjectFor(
 
 func (auth *Auth) sessionFrom(request *http.Request) (sessions.Session, bool) {
 	session, ok := auth.sessions.From(request)
+	// Refuse old subjects without rewriting plaintext into WAL frames.
 	if auth.cfg.BlindLinks != nil && !opaque(session.Subject) {
 		return sessions.Session{}, false
 	}
