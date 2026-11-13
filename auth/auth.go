@@ -7,10 +7,10 @@
 // cookies, sessions, CSRF, admission) filled once, here, instead of
 // once per app.
 //
-// The shape: an app builds one *Auth at boot (New), merges auth.Schema
-// into its migrate.Set — migrate.Merge(sessions.Schema, auth.Schema),
-// since auth's backfill migration reads the sessions table — and
-// mounts five routes —
+// By default, build one *Auth at boot with New and apply
+// migrate.Merge(sessions.Schema, auth.Schema). With Config.BlindLinks,
+// apply sessions.Schema and your link schema instead.
+// Mount these routes:
 //
 //	POST /signin         → a.Begin
 //	GET  /auth/callback  → a.Callback   (the keymail OAuth return)
@@ -62,7 +62,6 @@ import (
 	"crypto/sha256"
 	"database/sql"
 	"errors"
-	"fmt"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -96,11 +95,14 @@ const pendingTTL = 10 * time.Minute
 // Config configures New. Origin and InstanceKey are required; everything
 // else has a serviceable default.
 type Config struct {
+	// BlindLinks enables emailed sign-in with your link store.
+	// Leave it nil to keep existing behavior. Apply sessions.Schema and
+	// your link schema; DB is still required for sessions.
 	BlindLinks *BlindLinks
 
-	// DB is the app's database. migrate.Merge(sessions.Schema,
-	// auth.Schema) must be applied (via migrate.Apply) before any
-	// handler runs.
+	// DB is the app’s database. In default SQL mode, apply
+	// migrate.Merge(sessions.Schema, auth.Schema) before serving requests.
+	// With BlindLinks, apply sessions.Schema and your own link schema.
 	DB *sql.DB
 
 	// Reader, if set, serves the session lookups, as sessions.Config's
@@ -167,10 +169,9 @@ type Config struct {
 	// Authorize is unaffected: admission answers a question about an
 	// address, and it still receives the verified address itself.
 	//
-	// It does not make the plugin server-blind on its own. The link
-	// store (auth_links) still holds the address at rest between
-	// sending a magic link and its click, because the link must
-	// survive a restart; sealing that store is separate work.
+	// The link store (auth_links) still holds the address between sending
+	// a magic link and its click. Use BlindLinks when no address, including
+	// an encrypted address, may be stored.
 	//
 	// An error refuses the sign-in — no session is minted and no
 	// address is written as a fallback.
@@ -197,6 +198,8 @@ type Config struct {
 	// the whole response; no session is minted, and the attempt is
 	// already over. Only someone who has just proved they hold the
 	// address reaches it, so saying "not admitted" here is no oracle.
+	// With BlindLinks, ResolveSubject can refuse with sessions.ErrNoUser.
+	// The identity’s Address then holds the verified lookup key.
 	Refused func(w http.ResponseWriter, r *http.Request, id Identity)
 
 	// TrustedProxyHops is how many proxies you run in front of the app,
@@ -333,7 +336,8 @@ type Config struct {
 	// address they just typed, and logs carry no error text, which can
 	// hold the recipient. Records mode only, and it needs a Mailer that
 	// delivers: mail.Logged and the nil fallback log the recipient and
-	// the live link.
+	// the live link. Waiting links still hold an encrypted address that
+	// this server can open. Use BlindLinks when no address may be stored.
 	Blind bool
 }
 
@@ -563,32 +567,6 @@ func New(cfg Config) (*Auth, error) {
 		a.wireBlindLinks(cfg.BlindLinks)
 	}
 	return a, nil
-}
-
-// logError logs a failure that may carry an error from the flow, the
-// mailer or the keymail exchange. In blind mode it logs only the
-// error's type: an SMTP error names its recipient, and the log is the
-// one place blind mode would otherwise write the address.
-func (a *Auth) logError(msg string, err error) {
-	if a.cfg.Blind {
-		a.cfg.Logger.Error(msg, "err_type", fmt.Sprintf("%T", err))
-		return
-	}
-	a.cfg.Logger.Error(msg, "err", err)
-}
-
-// rememberMode is the jar's mode, from the one switch: nothing at all
-// without the screen, whatever Remember says; with it, Remember=false
-// forgets and anything else remembers.
-func rememberMode(cfg Config) lastsignin.Mode {
-	switch {
-	case !cfg.SigninScreen:
-		return lastsignin.Off
-	case cfg.Remember != nil && !*cfg.Remember:
-		return lastsignin.Forgetting
-	default:
-		return lastsignin.On
-	}
 }
 
 // RememberJar is the jar holding this browser's remembered way in, and

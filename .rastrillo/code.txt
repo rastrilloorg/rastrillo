@@ -955,7 +955,7 @@ columns auth/auth.go e29553cd014f 1
 columns auth/auth.go ec14109dd65b 1
 columns auth/auth.go eda525fa5bef 1
 columns auth/auth.go edb224703a41 1
-file auth/auth.go - 661 Config.Reader for the session lookups (#241)
+file auth/auth.go - 639 Config.Reader for the session lookups (#241)
 func auth/auth.go New 152
 names auth/auth.go -/d 1
 names auth/auth.go -/r 3
@@ -965,7 +965,6 @@ names auth/auth.go Auth.SessionCookie/a 1
 names auth/auth.go Auth.clearCookie/a 1
 names auth/auth.go Auth.clearCookie/w 1
 names auth/auth.go Auth.cookieName/a 1
-names auth/auth.go Auth.logError/a 1
 names auth/auth.go Auth.pendingCookie/a 1
 names auth/auth.go Auth.returnCookie/a 1
 names auth/auth.go Auth.secure/a 1

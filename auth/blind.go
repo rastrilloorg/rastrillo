@@ -13,6 +13,8 @@ import (
 	"amadan.net/rastrillo/rastrillo/sessions"
 )
 
+// BlindLink keeps the pending credential separate from the delivery address.
+// Store only its token hash, opaque lookup key, purpose and expiry.
 type BlindLink struct {
 	Hash      string
 	LookupKey string
@@ -20,6 +22,14 @@ type BlindLink struct {
 	Expires   time.Time
 }
 
+// BlindLinkStore must consume each hash at most once across concurrent
+// processes and restarts. Take consumes the record atomically before auth
+// checks its hash, purpose, key and expiry. A returned record stays spent
+// when validation or subject resolution fails.
+//
+// Put must reject duplicate hashes. Spend removes links for a lookup key;
+// Sweep removes expired links. Implementations must be safe for concurrent
+// use and persist only BlindLink fields.
 type BlindLinkStore interface {
 	Put(context.Context, BlindLink) error
 	Take(context.Context, string) (BlindLink, bool, error)
@@ -27,14 +37,44 @@ type BlindLinkStore interface {
 	Sweep(context.Context, time.Time) error
 }
 
+// BlindLinks keeps addresses out of link and session storage. LookupKey
+// receives a lowercase, trimmed address before storage. Return the app’s
+// HMAC email index, encoded as hex or base64url, using a pepper the app holds.
+// ResolveSubject receives that key after consumption. Enforce admission
+// there and return an opaque account or person ref. Return sessions.ErrNoUser
+// for a 403 or Config.Refused; Refused receives the verified lookup key in
+// Identity.Address. Other errors fail the sign-in without a session.
+//
+// Both results must be nonempty, unchanged by trimming, and contain no @.
+// Do not return encoded or encrypted addresses: these checks cannot prove
+// that a value is opaque. SecondFactor receives the resolved subject.
+//
+// Use a Mailer that delivers without retaining or logging the recipient.
+// Leave Authorize, SubjectFor, SigninScreen, Records, Blind, Pepper and
+// Signed unset, and KeymailServers empty. Keymail and cookies that remember
+// an address are disabled. Keep addresses out of your hooks, middleware
+// and logger attributes too. Legacy Config.Blind still stores decryptable
+// link addresses and does not provide this guarantee.
 type BlindLinks struct {
 	Store          BlindLinkStore
 	LookupKey      func(context.Context, string) (string, error)
 	ResolveSubject func(context.Context, string) (string, error)
 }
 
-var ErrBlindConfiguration = signin.ErrLinkInvalid
-var ErrBlindOperation = signin.ErrLinkInvalid
+// ErrBlindConfiguration names the settings to change without including
+// their values. Match it with errors.Is when New refuses BlindLinks.
+var ErrBlindConfiguration = errors.New(
+	"rastrillo/auth: invalid BlindLinks configuration; " +
+		"set Store, LookupKey, ResolveSubject and a delivering Mailer; " +
+		"leave Authorize, SubjectFor, SigninScreen, Records, Blind, " +
+		"Pepper and Signed unset, and KeymailServers empty",
+)
+
+// ErrBlindOperation hides the cause because a mailer, store or hook may
+// include an address in its error. Match it with errors.Is; it wraps no cause.
+var ErrBlindOperation = errors.New(
+	"rastrillo/auth: blind sign-in operation failed",
+)
 
 func blindConfig(cfg Config) error {
 	blind := cfg.BlindLinks

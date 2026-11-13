@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 
+	"amadan.net/rastrillo/rastrillo/lastsignin"
 	"amadan.net/rastrillo/rastrillo/mail"
 )
 
@@ -76,4 +77,17 @@ func recordsConfig(cfg Config) error {
 		)
 	}
 	return nil
+}
+
+// Without the shipped screen, remembered addresses serve no UI and must
+// not be written. Remember only affects apps that enable the screen.
+func rememberMode(cfg Config) lastsignin.Mode {
+	switch {
+	case !cfg.SigninScreen:
+		return lastsignin.Off
+	case cfg.Remember != nil && !*cfg.Remember:
+		return lastsignin.Forgetting
+	default:
+		return lastsignin.On
+	}
 }

@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 )
 
@@ -22,3 +23,13 @@ func (handler blindLog) Handle(ctx context.Context, record slog.Record) error {
 // A derived logger must not bypass the same attribute boundary.
 func (handler blindLog) WithAttrs([]slog.Attr) slog.Handler { return handler }
 func (handler blindLog) WithGroup(string) slog.Handler      { return handler }
+
+// An SMTP or provider error can name its recipient. Legacy records mode
+// logs only the type when Blind is set; BlindLinks also strips attributes.
+func (auth *Auth) logError(msg string, err error) {
+	if auth.cfg.Blind {
+		auth.cfg.Logger.Error(msg, "err_type", fmt.Sprintf("%T", err))
+		return
+	}
+	auth.cfg.Logger.Error(msg, "err", err)
+}

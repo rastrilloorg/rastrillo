@@ -123,14 +123,50 @@ you set always wins, 0 included. See
 
 `KeymailServers` limits keymail to the servers you list, both when an address is checked and when a sign-in finishes; an unlisted server's addresses get a link. See [Magic links](/docs/magic-links#aside-the-keymail-upgrade).
 
+## Blind link storage
+
+Set `Config.BlindLinks` when no address, including an encrypted address,
+may enter storage. Supply a `BlindLinkStore`, `LookupKey` and
+`ResolveSubject`. `LookupKey` receives the lowercase, trimmed address;
+return your app’s HMAC email index as hex or base64url. Keep the pepper in
+your app. `ResolveSubject` receives the key after the link is consumed;
+enforce admission there and return an opaque account or person ref.
+
+`Take` must atomically consume each hash at most once across processes and
+restarts. Auth checks the returned record’s hash, purpose, key and expiry.
+Failed checks or resolution leave it spent. `Put` must reject duplicate
+hashes. Both hooks must return a nonempty string with no surrounding
+whitespace and no `@`. These checks cannot prove opacity; never return an
+encoded or encrypted address.
+
+Return `sessions.ErrNoUser` from `ResolveSubject` for a 403 or `Config.Refused`.
+That callback receives the verified lookup key in `Identity.Address`.
+Other resolver errors create no session. `SecondFactor` receives the resolved
+subject. Match `ErrBlindConfiguration` and `ErrBlindOperation` with
+`errors.Is`. They are distinct errors and do not wrap address-bearing causes.
+
+Apply `sessions.Schema` and your link schema; keep `DB` set for sessions.
+Leave `Authorize`, `SubjectFor`, `SigninScreen`, `Records`, `Blind`, `Pepper`
+and `Signed` unset, and `KeymailServers` empty. This mode disables Keymail
+and cookies that remember addresses. Use a mailer that does not retain or
+log recipients. Your hooks, middleware and logger attributes must follow
+the same rule. The older records-mode `Blind` flag still stores decryptable
+link addresses.
+
+Before switching an existing app, stop old writers, invalidate pending
+links, and migrate or revoke address-based sessions and related records.
+Neither this option nor `secure_delete` can erase earlier WAL frames or
+backups. Leave `BlindLinks` nil to keep existing sign-in behavior.
+
 ## Schema
 
 ```go
 var Schema = migrate.MustFromFS(migrationFS, "auth")
 ```
 
-Merge it **after** `sessions.Schema` — auth's backfill migration reads
-the sessions table, and `migrate.Merge`'s argument order is apply order.
+In default SQL mode, merge `auth.Schema` **after** `sessions.Schema`.
+Auth’s backfill reads the sessions table. `migrate.Merge`’s argument order
+is the apply order.
 
 ## The handlers
 
