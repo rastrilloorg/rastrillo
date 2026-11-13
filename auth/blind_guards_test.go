@@ -12,6 +12,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/keymaildev/signin"
+
 	"amadan.net/rastrillo/rastrillo/mail"
 	"amadan.net/rastrillo/rastrillo/sessions"
 )
@@ -79,6 +81,9 @@ func TestBlindLinksRejectUnsafeConfiguration(t *testing.T) {
 		"nil-mailer": func(config *Config) { config.Mailer = nil },
 		"log-mailer": func(config *Config) {
 			config.Mailer = mail.Logged(slog.Default())
+		},
+		"upstream-log-mailer": func(config *Config) {
+			config.Mailer = &signin.LogMailer{}
 		},
 		"address-authorize": func(config *Config) {
 			config.Authorize = func(string) bool { return true }

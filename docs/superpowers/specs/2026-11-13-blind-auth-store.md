@@ -75,7 +75,8 @@ attempt/remember cookies retain addresses. Nonempty KeymailServers,
 Authorize, SubjectFor, Records, legacy Blind/Pepper/Signed are rejected.
 Admission belongs in ResolveSubject. Proof and CSRF behavior are unchanged.
 
-A real mail sender is required: nil and mail.Logged fail at construction.
+A real mail sender is required: nil, mail.Logged and upstream
+signin.LogMailer fail at construction.
 The consumer must ensure its sender does not keep a database queue,
 request-body logs, recipient logs or a server-decryptable address payload.
 The framework cannot police custom hooks, middleware, log handlers, SMTP
@@ -102,6 +103,8 @@ Audited call sites:
 - sessions: adopt, lookup, signout, path-routing and refresh diagnostics
   share the wrapped logger. Signed refresh is not enabled in blind mode.
 - auth.recordlinks: unreachable in this mode; Records is rejected.
+- signin.LogMailer: logs recipients and live links through log.Printf or
+  Logf; rejected by type before the flow is wired.
 - mail.SMTP: returns recipient-bearing errors but does not log them.
   Begin logs only a sanitized event. SendLink returns a generic failure
   except the safe, existing bad-address and rate-limit sentinels.

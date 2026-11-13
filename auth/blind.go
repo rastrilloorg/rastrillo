@@ -39,7 +39,10 @@ func blindConfig(cfg Config) error {
 	if blind == nil {
 		return nil
 	}
+	_, logs := cfg.Mailer.(*signin.LogMailer)
 	switch {
+	case logs:
+		return ErrBlindConfiguration
 	case blind.Store == nil || blind.LookupKey == nil ||
 		blind.ResolveSubject == nil:
 		return ErrBlindConfiguration
