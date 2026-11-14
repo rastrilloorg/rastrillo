@@ -179,5 +179,11 @@ func NeedsRehash(encoded string) bool {
 
 // decoyHash is verified against when Lookup finds no user, so an
 // unknown email costs the same wall-clock as a wrong password — no
-// enumeration oracle by timing.
-var decoyHash, _ = Hash("rastrillo-password-decoy")
+// enumeration oracle by timing. A constant: a hash of a random string
+// nobody kept, at the parameters above. A decoy needs no secret, only
+// the cost of the real thing, and Verify reads that cost from the hash.
+// Hashing it at init instead cost every program that imports this
+// package an Argon2id derivation at startup and a 19 MiB heap the
+// runtime then kept for the process's life, used or not.
+// TestDecoyHashMatchesTheParameters holds it to the constants.
+const decoyHash = "argon2id$v=19$m=19456,t=2,p=1$Zl9iNc6nIbmjprs06Q5GZg$kBm/ISEbm3LztugC4PmafbrpIBSGpgVcs1GfGWGo0jc"
