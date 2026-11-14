@@ -12,8 +12,12 @@ func TestDecoyHashMatchesTheParameters(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	params := func(h string) string { return strings.Join(strings.SplitN(h, "$", 4)[:3], "$") }
+	params := func(encoded string) string {
+		return strings.Join(strings.SplitN(encoded, "$", 4)[:3], "$")
+	}
 	if got, want := params(decoyHash), params(fresh); got != want {
-		t.Fatalf("decoyHash is %s but Hash now makes %s: replace it with Hash of a random string nobody keeps", got, want)
+		t.Fatalf("decoyHash is %s but Hash now makes %s: "+
+			"replace it with Hash of a random string nobody keeps",
+			got, want)
 	}
 }

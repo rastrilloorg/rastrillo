@@ -186,4 +186,6 @@ func NeedsRehash(encoded string) bool {
 // package an Argon2id derivation at startup and a 19 MiB heap the
 // runtime then kept for the process's life, used or not.
 // TestDecoyHashMatchesTheParameters holds it to the constants.
-const decoyHash = "argon2id$v=19$m=19456,t=2,p=1$Zl9iNc6nIbmjprs06Q5GZg$kBm/ISEbm3LztugC4PmafbrpIBSGpgVcs1GfGWGo0jc"
+const decoyHash = "argon2id$v=19$m=19456,t=2,p=1$" +
+	"Zl9iNc6nIbmjprs06Q5GZg$" +
+	"kBm/ISEbm3LztugC4PmafbrpIBSGpgVcs1GfGWGo0jc"
