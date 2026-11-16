@@ -30,7 +30,6 @@ import (
 	"amadan.net/rastrillo/rastrillo/background"
 	"amadan.net/rastrillo/rastrillo/basepath"
 	"amadan.net/rastrillo/rastrillo/carlos"
-	"amadan.net/rastrillo/rastrillo/internal/capturemode"
 	"amadan.net/rastrillo/rastrillo/internal/checkconfig"
 	"amadan.net/rastrillo/rastrillo/live"
 	"amadan.net/rastrillo/rastrillo/locales"
@@ -139,6 +138,11 @@ type Options struct {
 	// (CREATE TABLE IF NOT EXISTS, or an ALTER whose "duplicate column"
 	// error is ignored) — additive-only, per the family's hard-won rule.
 	Migrations []string
+
+	// DurableCommits opens DBPath with synchronous(FULL), not NORMAL, so
+	// SQLite syncs the WAL after each commit. db.DurableCommits says what
+	// that protects against and what it costs.
+	DurableCommits bool
 
 	// Socket and Addr mirror the platform's activation contract (see
 	// testdata/echoapp in carlosframework/platform): a unix socket path,
@@ -448,7 +452,7 @@ func Handler(opts Options) (http.Handler, func() error, error) {
 
 	var db *sql.DB
 	if opts.DBPath != "" {
-		db, err = OpenDB(opts.DBPath, opts.Migrations)
+		db, err = openDB(opts.DBPath, opts.Migrations, opts.DurableCommits)
 		if err != nil {
 			return nil, closeNothing, fmt.Errorf("rastrillo: open database: %w", err)
 		}
@@ -789,49 +793,4 @@ func nextDueHandler(nextDue func() time.Time) http.HandlerFunc {
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]int64{"due": due})
 	}
-}
-
-// OpenDB applies the SQLite convention the survey found hand-propagated
-// repo to repo (design doc §5), with fixes: busy_timeout before WAL (the
-// reverse crashes with SQLITE_BUSY under concurrent open), NORMAL sync
-// (FULL fsyncs every commit, #234), one connection, an eager ping so the
-// file exists from boot, then migrate. Exported so tests and non-Serve
-// code need not copy the DSN by hand (the blog's F4).
-func OpenDB(path string, migrations []string) (*sql.DB, error) {
-	checkconfig.Guard("rastrillo.OpenDB")
-	path = capturemode.DBPath(path)
-	db, err := sql.Open("sqlite", path+"?_pragma=busy_timeout(5000)"+
-		"&_pragma=journal_mode(WAL)&_pragma=synchronous(NORMAL)")
-	if err != nil {
-		return nil, err
-	}
-	db.SetMaxOpenConns(1)
-
-	// database/sql's Open is lazy — it never touches the driver, so with
-	// zero migrations the file would never materialize. A hibernate
-	// route's activator starts replicating this path from boot, so a
-	// zero-migration app must still create it: Ping forces the
-	// connection open now, at boot, instead of on the first request.
-	if err := db.Ping(); err != nil {
-		db.Close()
-		return nil, fmt.Errorf("ping %s: %w", path, err)
-	}
-
-	for i, m := range migrations {
-		if _, err := db.Exec(m); err != nil {
-			if isDuplicateColumn(err) {
-				continue
-			}
-			db.Close()
-			return nil, fmt.Errorf("migration %d: %w", i, err)
-		}
-	}
-	return db, nil
-}
-
-// isDuplicateColumn matches the one class of migration error the family
-// convention treats as success: an additive ALTER TABLE ... ADD COLUMN
-// re-run against a database that already has it.
-func isDuplicateColumn(err error) bool {
-	return strings.Contains(err.Error(), "duplicate column")
 }

@@ -10,6 +10,22 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+### Added: an option to sync each commit to storage
+
+Pass `db.DurableCommits()` to `db.Open`, or set
+`Options.DurableCommits` when `Serve` opens the database, to use
+`synchronous(FULL)`. SQLite waits for a disk sync after each commit,
+helping preserve recent commits through a power loss or operating system
+crash. With the default `NORMAL` setting, an app crash does not lose
+committed data, but a power loss or operating system crash can lose
+recent commits without corrupting the database.
+
+In the v0.34.0 benchmark, the toggle rate fell from about 5,700 per
+second with `NORMAL` to about 182 with `FULL`. The default remains
+`NORMAL`. `rastrillo.OpenDB` and `dbtest` always use `NORMAL`.
+Requested in
+[discussion #261](https://amadan.net/rastrillo/rastrillo/-/discussion/261).
+
 ### Added: mail through the CARLOS platform, with no credential
 
 `mail.FromCarlos(prefix, logger)` sends through the platform's mail verb

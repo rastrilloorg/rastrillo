@@ -75,6 +75,21 @@ without corrupting the database. Foreign keys are on. `Open` also pings eagerly 
 the file exists on disk from boot, which is what keeps hibernation
 replication happy.
 
+To help preserve commits through a power loss, pass
+`db.DurableCommits()`:
+
+```go
+database, err := db.Open(options.DBPath, logger, db.DurableCommits())
+```
+
+SQLite then syncs the WAL after every commit (`synchronous(FULL)`). With
+the default `NORMAL` setting, an app crash does not lose committed data,
+but a power loss or operating system crash can lose recent commits
+without corrupting the database. In the v0.34.0 benchmark, the toggle
+rate fell from about 5,700 per second with `NORMAL` to about 182 with
+`FULL`. If `Serve` opens your database, set `Options.DurableCommits`
+instead.
+
 ### Two settings worth knowing
 
 GORM is opened with `TranslateError: true`, so driver constraint errors

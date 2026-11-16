@@ -84,6 +84,12 @@ a boot error.
 settings that have to be right. Blank it before `Serve` when your app
 opened its own handle.
 
+**`DurableCommits`** — opens `DBPath` with `synchronous(FULL)` instead
+of `NORMAL`. SQLite syncs the WAL after each commit, helping preserve
+recent commits through a power loss or operating system crash. An app
+that opens its own handle passes
+[`db.DurableCommits()`](/docs/reference/db#durablecommits) to `db.Open`.
+
 **`Migrations`** — applied in order at boot, idempotently. This is the
 older additive-only mechanism. In a new app use
 [`migrate`](/docs/reference/migrate) instead.

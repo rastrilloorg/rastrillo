@@ -11,9 +11,11 @@
 //
 // The DSN keeps OpenDB's hard-won pragma order: busy_timeout before
 // journal_mode=WAL (the reverse crashes under concurrent open), its
-// synchronous=NORMAL (FULL waits on an fsync per commit, #234), plus
-// foreign_keys(1). The eager Ping keeps hibernation replication happy:
-// the file exists on disk from boot.
+// synchronous=NORMAL (with FULL, SQLite syncs the WAL after each
+// commit, #234; an app can request it with DurableCommits, #261), plus
+// foreign_keys(1). The
+// eager Ping keeps hibernation replication happy: the file exists on
+// disk from boot.
 package db
 
 import (
@@ -49,8 +51,9 @@ type DB struct {
 	reader *sql.DB
 }
 
-// pragmas is the DSN every connection of both pools opens with; the
-// package comment says why the first four are there and in that order.
+// pragmas is the DSN every connection of both pools opens with, the
+// synchronous level filled in; the package comment says why the first
+// four are there and in that order.
 //
 // _time_format=sqlite: time.Time values are written as
 // "2006-01-02 15:04:05.999999999-07:00" rather than the driver's
@@ -72,16 +75,44 @@ type DB struct {
 // SQL comparing stored times as text (WHERE at < ?, ORDER BY at)
 // only agrees with the instants while every row is in one zone.
 const pragmas = "?_pragma=busy_timeout(5000)&_pragma=journal_mode(WAL)" +
-	"&_pragma=synchronous(NORMAL)&_pragma=foreign_keys(1)" +
+	"&_pragma=synchronous(%s)&_pragma=foreign_keys(1)" +
 	"&_time_format=sqlite&_timezone=UTC"
 
-func Open(path string, log *slog.Logger) (*DB, error) {
+// An Option changes how Open opens the database.
+type Option func(*settings)
+
+type settings struct {
+	synchronous string
+}
+
+// DurableCommits makes SQLite sync the WAL after every commit. In WAL
+// mode, this helps preserve recent commits through a power loss or
+// operating system crash. With the default NORMAL setting, an app crash
+// does not lose committed data, but a power loss or operating system
+// crash can lose recent commits without corrupting the database. In
+// #234's benchmark, the extra sync reduced the write rate from about
+// 5,700 to about 182 toggles per second.
+func DurableCommits() Option {
+	return func(chosen *settings) { chosen.synchronous = "FULL" }
+}
+
+// synchronous is the level the options choose, NORMAL unless one says
+// otherwise.
+func synchronous(options []Option) string {
+	chosen := settings{synchronous: "NORMAL"}
+	for _, option := range options {
+		option(&chosen)
+	}
+	return chosen.synchronous
+}
+
+func Open(path string, log *slog.Logger, options ...Option) (*DB, error) {
 	checkconfig.Guard("db.Open")
 	path = capturemode.DBPath(path)
 	if log == nil {
 		log = slog.Default()
 	}
-	dsn := path + pragmas
+	dsn := path + fmt.Sprintf(pragmas, synchronous(options))
 
 	w, err := sql.Open("sqlite", dsn)
 	if err != nil {

@@ -9,11 +9,12 @@ Opens your SQLite database the way a CARLOS app needs it, as one
 ## Open
 
 ```go
-func Open(path string, log *slog.Logger) (*DB, error)
+func Open(path string, log *slog.Logger, options ...Option) (*DB, error)
 ```
 
 Opens one file as two pools and returns a handle wrapping both. A nil
-logger defaults to `slog.Default()`.
+logger defaults to `slog.Default()`. The only option is
+[`DurableCommits`](#durablecommits).
 
 What it sets for you, and why each one is there:
 
@@ -22,6 +23,7 @@ What it sets for you, and why each one is there:
 - **`synchronous(NORMAL)`.** In WAL mode, most commits skip the extra
   sync to disk, which can make writes faster. With WAL, a power cut can
   undo recent commits without corrupting the database.
+  `DurableCommits()` switches the `synchronous` setting to `FULL`.
 - **One writer connection.** SQLite allows one writer, and queueing
   inside the pool beats getting `SQLITE_BUSY` at the call site.
 - **Several reader connections** — `runtime.NumCPU()`, floor of four.
@@ -38,6 +40,21 @@ What it sets for you, and why each one is there:
   a 200ms slow-query threshold and `ErrRecordNotFound` ignored — a
   scoped by-id miss is the ordinary 404 path and happens on every
   not-yours URL.
+
+## DurableCommits
+
+```go
+func DurableCommits() Option
+```
+
+Opens both pools with `synchronous(FULL)` instead of `NORMAL`. SQLite
+syncs the WAL after every commit, helping preserve recent commits
+through a power loss or operating system crash. With `NORMAL`, an app
+crash does not lose committed data, but a power loss or operating system
+crash can lose recent commits without corrupting the database. In the
+v0.34.0 benchmark, the toggle rate fell from about 5,700 per second to
+about 182. Use this option when preserving recent commits through a
+machine crash matters more than write speed.
 
 ## DB
 

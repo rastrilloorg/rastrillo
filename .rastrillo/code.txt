@@ -18309,11 +18309,9 @@ columns serve.go f3c5ab559eef 1
 columns serve.go f5f8b0d4485b 1
 columns serve.go fe48d8bf59b6 1
 columns serve.go ff53a0259cb6 1
-file serve.go - 837
+file serve.go - 796
 func serve.go Handler 61
 func serve.go buildHandler 87
-names serve.go OpenDB/i 1
-names serve.go OpenDB/m 1
 names serve.go buildHandler/h 1
 names serve.go buildHandler/k 1
 names serve.go buildHandler/v 1

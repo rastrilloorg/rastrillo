@@ -1,6 +1,7 @@
 package rastrillo
 
 import (
+	"database/sql"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -149,5 +150,26 @@ func TestOpenDBOpensAtSynchronousNormal(t *testing.T) {
 	}
 	if level != 1 {
 		t.Fatalf("synchronous = %d, want 1 (NORMAL)", level)
+	}
+}
+
+// DurableCommits reaches the database Serve opens, so an app on DBPath
+// can ask for FULL without opening its own handle (#261).
+func TestDurableCommitsOpensAtSynchronousFull(t *testing.T) {
+	var level int
+	_, closeDB, err := Handler(Options{
+		DBPath:         filepath.Join(t.TempDir(), "app.db"),
+		DurableCommits: true,
+		Router: func(db *sql.DB) (*http.ServeMux, error) {
+			err := db.QueryRow("PRAGMA synchronous").Scan(&level)
+			return http.NewServeMux(), err
+		},
+	})
+	if err != nil {
+		t.Fatalf("Handler: %v", err)
+	}
+	defer closeDB()
+	if level != 2 {
+		t.Fatalf("synchronous = %d, want 2 (FULL)", level)
 	}
 }
