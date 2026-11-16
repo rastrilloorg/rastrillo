@@ -10,6 +10,19 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+## v0.36.0
+
+### Changed: a GET is no longer held for its spinner
+
+`busy.js` used to hold every submit for at least 650ms so its spinner
+could be seen, so a search answered in 10ms took about 700ms. A GET now
+goes at once, and its form still refuses a second submit. Its button
+shows the spinner only if the page is still there 500ms later; a faster
+answer shows nothing. A POST is unchanged. The submitter's `formmethod`
+beats the form's `method`, and a form with no method is a GET. The rule
+comes from Fiesta 1.3.0. `busy.js` is app-owned: `rastrillo doctor
+--fix` takes the new copy.
+
 ### Added: an option to sync each commit to storage
 
 Pass `db.DurableCommits()` to `db.Open`, or set
@@ -66,16 +79,15 @@ to “subject for address”.
 See the [blind auth store spec](docs/superpowers/specs/2026-11-13-blind-auth-store.md)
 for the store contract and Contra/Home setup.
 
-### Changed: a GET is no longer held for its spinner
+### Fixed: importing `password` no longer leaves about 19 MB of idle heap
 
-`busy.js` used to hold every submit for at least 650ms so its spinner
-could be seen, so a search answered in 10ms took about 700ms. A GET now
-goes at once, and its form still refuses a second submit. Its button
-shows the spinner only if the page is still there 500ms later; a faster
-answer shows nothing. A POST is unchanged. The submitter's `formmethod`
-beats the form's `method`, and a form with no method is a GET. The rule
-comes from Fiesta 1.3.0. `busy.js` is app-owned: `rastrillo doctor
---fix` takes the new copy.
+`password` used to compute its decoy hash, which sign-in checks for an
+unknown email, when a program started. Every program that imported
+`password` ran a full Argon2id hash, even if it never served sign-in,
+and kept about 19 MB of heap while idle. The decoy is now a precomputed
+constant. Unknown emails still take as long to check as known ones. A
+test fails if the Argon2id parameters change without updating the
+decoy.
 
 ## v0.35.0
 
