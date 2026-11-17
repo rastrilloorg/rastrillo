@@ -4,8 +4,8 @@
 // SHA-256 in hack/moneycldr/sources/inputs.sha256. Data from the Unicode CLDR,
 // © Unicode, Inc., under the Unicode License v3 (locales/LICENSE-UNICODE).
 
-// Package ko links CLDR money-formatting data for every modern "ko"
-// locale. Import it for its side effect.
+// Package ko links CLDR number- and money-formatting data for every
+// modern "ko" locale. Import it for its side effect.
 package ko
 
 import "amadan.net/rastrillo/rastrillo/locales"

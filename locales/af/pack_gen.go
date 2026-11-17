@@ -4,8 +4,8 @@
 // SHA-256 in hack/moneycldr/sources/inputs.sha256. Data from the Unicode CLDR,
 // © Unicode, Inc., under the Unicode License v3 (locales/LICENSE-UNICODE).
 
-// Package af links CLDR money-formatting data for every modern "af"
-// locale. Import it for its side effect.
+// Package af links CLDR number- and money-formatting data for every
+// modern "af" locale. Import it for its side effect.
 package af
 
 import "amadan.net/rastrillo/rastrillo/locales"
@@ -13,6 +13,6 @@ import "amadan.net/rastrillo/rastrillo/locales"
 func init() { locales.Register("af", data) }
 
 var data = map[string]locales.Locale{
-	"af":    {Parent: "root", CurrencyDecimal: ",", CurrencyGroup: "\u00a0", Decimal: ",", Standard: "¤#,##0.00", Symbols: map[string]string{"CAD": "CAD", "MXN": "MXN", "PHP": "PHP", "THB": "฿", "USD": "USD", "ZAR": "R"}, Narrow: map[string]string{"BYN": "р.", "RON": "leu", "TWD": "NT$"}},
+	"af":    {Parent: "root", CurrencyDecimal: ",", CurrencyGroup: "\u00a0", Decimal: ",", Group: "\u00a0", Standard: "¤#,##0.00", Symbols: map[string]string{"CAD": "CAD", "MXN": "MXN", "PHP": "PHP", "THB": "฿", "USD": "USD", "ZAR": "R"}, Narrow: map[string]string{"BYN": "р.", "RON": "leu", "TWD": "NT$"}},
 	"af-NA": {Parent: "af", Symbols: map[string]string{"NAD": "$"}},
 }

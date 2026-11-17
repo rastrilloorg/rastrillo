@@ -4,8 +4,8 @@
 // SHA-256 in hack/moneycldr/sources/inputs.sha256. Data from the Unicode CLDR,
 // © Unicode, Inc., under the Unicode License v3 (locales/LICENSE-UNICODE).
 
-// Package yue links CLDR money-formatting data for every modern "yue"
-// locale. Import it for its side effect.
+// Package yue links CLDR number- and money-formatting data for every
+// modern "yue" locale. Import it for its side effect.
 package yue
 
 import "amadan.net/rastrillo/rastrillo/locales"
@@ -13,8 +13,8 @@ import "amadan.net/rastrillo/rastrillo/locales"
 func init() { locales.Register("yue", data) }
 
 var data = map[string]locales.Locale{
-	"yue":         {Parent: "root", Standard: "¤#,##0.00", Symbols: map[string]string{"AUD": "AU$", "JPY": "¥", "KRW": "￦", "PHP": "PHP"}, Narrow: map[string]string{"BYN": "р."}},
-	"yue-Hans":    {Parent: "root", Standard: "¤#,##0.00", Symbols: map[string]string{"AUD": "AU$", "JPY": "¥", "KRW": "￦", "PHP": "PHP"}, Narrow: map[string]string{"BYN": "р."}},
+	"yue":         {Parent: "root", NaN: "非數值", Standard: "¤#,##0.00", Symbols: map[string]string{"AUD": "AU$", "JPY": "¥", "KRW": "￦", "PHP": "PHP"}, Narrow: map[string]string{"BYN": "р."}},
+	"yue-Hans":    {Parent: "root", NaN: "非数值", Standard: "¤#,##0.00", Symbols: map[string]string{"AUD": "AU$", "JPY": "¥", "KRW": "￦", "PHP": "PHP"}, Narrow: map[string]string{"BYN": "р."}},
 	"yue-Hant":    {Parent: "yue"},
 	"yue-Hant-CN": {Parent: "yue-Hant"},
 	"yue-Hant-MO": {Parent: "yue-Hant"},

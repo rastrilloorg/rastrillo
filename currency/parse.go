@@ -5,39 +5,14 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"amadan.net/rastrillo/rastrillo/locales"
+	"amadan.net/rastrillo/rastrillo/internal/numeral"
 	"amadan.net/rastrillo/rastrillo/money"
 )
-
-// bidi are the marks a pasted, displayed amount carries.
-func bidi(r rune) bool {
-	return r == '\u200e' || r == '\u200f' || r == '\u061c' ||
-		('‪' <= r && r <= '‮') || ('⁦' <= r && r <= '⁩')
-}
 
 // Clean removes bidi marks and folds every space separator to U+0020,
 // then trims. Required checks in the new path run on this, so a value
 // of only spaces or U+200F is blank.
-func Clean(s string) string {
-	var b strings.Builder
-	for _, r := range s {
-		switch {
-		case bidi(r):
-		case unicode.IsSpace(r) || unicode.In(r, unicode.Zs):
-			b.WriteByte(' ')
-		default:
-			b.WriteRune(r)
-		}
-	}
-	return strings.TrimSpace(b.String())
-}
-
-func foldSpace(s string) string {
-	if strings.TrimFunc(s, func(r rune) bool { return unicode.IsSpace(r) || unicode.In(r, unicode.Zs) }) == "" {
-		return " "
-	}
-	return s
-}
+func Clean(s string) string { return numeral.Clean(s) }
 
 // Parse reads what a person typed into a minor-unit count. It accepts a
 // sign; whether a negative is allowed is the field's policy, not the
@@ -92,7 +67,7 @@ func Parse(locale, s, code string) (int64, error) {
 	}
 
 	mf := l.forCurrency(code)
-	g := foldSpace(mf.group)
+	g := numeral.FoldSpace(mf.group)
 	decimals := map[string]bool{mf.decimal: true, l.Decimal: true}
 	if g != "." {
 		decimals["."] = true
@@ -102,8 +77,8 @@ func Parse(locale, s, code string) (int64, error) {
 	var b strings.Builder
 	for _, r := range s {
 		switch {
-		case digitValue[r] > 0:
-			b.WriteByte(byte('0' + digitValue[r] - 1))
+		case isDigit(r):
+			b.WriteByte(asciiDigit(r))
 		case r == ' ' || string(r) == g || decimals[string(r)] || r == '.' || r == ',' || r == '\'' || r == '\u2019':
 			sep := string(r)
 			if r == '\'' && g == "\u2019" {
@@ -186,42 +161,18 @@ func hasSuffixMarker(s, m, code string) bool {
 	return strings.HasSuffix(s, m)
 }
 
-func validGroups(groups []string, primary, secondary int) bool {
-	if primary == 0 {
-		return false
-	}
-	n := len(groups)
-	if len(groups[n-1]) != primary {
-		return false
-	}
-	for i := 1; i < n-1; i++ {
-		if len(groups[i]) != secondary {
-			return false
-		}
-	}
-	size := secondary
-	if n == 2 {
-		size = primary
-	}
-	return len(groups[0]) >= 1 && len(groups[0]) <= size
+func isDigit(char rune) bool {
+	_, ok := numeral.Digit(char)
+	return ok
 }
 
-// digitValue maps every digit of every shipped numbering system, plus
-// ASCII, to its value plus one (zero means "not a digit"). Restricting
-// input to these is deliberate: Unicode has other decimal-digit runs
-// (mathematical bold, for one) that nobody types into a price.
-var digitValue = func() map[rune]int {
-	m := map[rune]int{}
-	for i := 0; i < 10; i++ {
-		m[rune('0'+i)] = i + 1
-	}
-	// Every numbering system any shipped locale uses, linked or not:
-	// the set of digits a person can type does not depend on which
-	// packs an app links.
-	for _, d := range locales.DigitSets() {
-		for i, r := range []rune(d) {
-			m[r] = i + 1
-		}
-	}
-	return m
-}()
+// validGroups is numeral's, for the strict reading above.
+func validGroups(groups []string, primary, secondary int) bool {
+	return numeral.ValidGroups(groups, primary, secondary)
+}
+
+// asciiDigit is a digit of any shipped numbering system in ASCII.
+func asciiDigit(char rune) byte {
+	value, _ := numeral.Digit(char)
+	return byte('0' + value)
+}

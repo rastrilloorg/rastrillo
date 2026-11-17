@@ -6,6 +6,8 @@ import (
 	"math"
 	"strings"
 	"testing"
+
+	"amadan.net/rastrillo/rastrillo/number"
 )
 
 func TestNumberLocalesAndPrecision(t *testing.T) {
@@ -18,7 +20,14 @@ func TestNumberLocalesAndPrecision(t *testing.T) {
 		{"", 1169772, "1,169,772"},
 		{"en-IE", "1169772", "1,169,772"},
 		{"de", 1169772, "1.169.772"},
-		{"fr", 1169772, "1\u00a0169\u00a0772"},
+		// CLDR 48, from the fr pack: a narrow no-break space. x/text
+		// wrote U+00A0.
+		{"fr", 1169772, "1\u202f169\u202f772"},
+		// CLDR 48 groups Spanish only from five digits (minimum
+		// grouping 2). x/text wrote 1.234.
+		{"es", 1234, "1234"},
+		{"es", 12345, "12.345"},
+		{"es", "1234", "1234"},
 		{"hi", 1169772, "11,69,772"},
 		{"invalid_locale_!", 1169772, "1,169,772"},
 		{"en", count(-1169772), "-1,169,772"},
@@ -98,5 +107,54 @@ func TestNumericComponentValues(t *testing.T) {
 				t.Fatalf("missing %s in %s", tc.want, out.String())
 			}
 		})
+	}
+}
+
+// A number.Decimal is written exactly, with the options a template
+// names; a plain string that only looks like a decimal (a version) is
+// left alone.
+func TestNumberWritesDecimalsWithOptions(t *testing.T) {
+	german := NewLocalizer("de", "de", func(key string, _ ...any) string {
+		return key
+	})
+	data := map[string]any{"L": german,
+		"D": number.Decimal("1234567.5"), "S": "1.10",
+		"Places": int64(2), "Blank": number.Decimal(""),
+		"None": (*number.Decimal)(nil)}
+	for src, want := range map[string]string{
+		`{{number $L .D}}`:                   "1.234.567,5",
+		`{{number $L .D "plain"}}`:           "1234567,5",
+		`{{number $L .D "places" 2}}`:        "1.234.567,50",
+		`{{number $L .D "percent"}}`:         "1.234.567,5\u00a0%",
+		`{{number $L .D "plain" "grouped"}}`: "1.234.567,5",
+		`{{number $L .D "places" .Places}}`:  "1.234.567,50",
+		`{{number $L .Blank}}`:               "",
+		`{{number $L .None}}`:                "",
+		`{{number $L .S}}`:                   "1.10",
+	} {
+		got := execTmpl(t, Funcs(), `{{$L := localizer $}}`+src, data)
+		if got != want {
+			t.Errorf("%s = %q, want %q", src, got, want)
+		}
+	}
+}
+
+// NaN and the infinities follow the page's locale too, through
+// number.FormatFloat, as ICU writes them; x/text wrote them in English.
+func TestNumberWritesNonFiniteFloatsInTheLocale(t *testing.T) {
+	for _, each := range []struct{ locale, src, want string }{
+		{"ar", `{{number $L .NaN}}`, "ليس\u00a0رقمًا"},
+		{"de", `{{number $L .Inf "percent"}}`, "∞\u00a0%"},
+		{"en", `{{number $L .Minus}}`, "-∞"},
+	} {
+		localizer := NewLocalizer(each.locale, each.locale,
+			func(key string, _ ...any) string { return key })
+		data := map[string]any{"L": localizer, "NaN": math.NaN(),
+			"Inf": math.Inf(1), "Minus": math.Inf(-1)}
+		got := execTmpl(t, Funcs(), `{{$L := localizer $}}`+each.src, data)
+		if got != each.want {
+			t.Errorf("%s %s = %q, want %q", each.locale, each.src, got,
+				each.want)
+		}
 	}
 }

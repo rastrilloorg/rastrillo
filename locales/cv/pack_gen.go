@@ -4,8 +4,8 @@
 // SHA-256 in hack/moneycldr/sources/inputs.sha256. Data from the Unicode CLDR,
 // © Unicode, Inc., under the Unicode License v3 (locales/LICENSE-UNICODE).
 
-// Package cv links CLDR money-formatting data for every modern "cv"
-// locale. Import it for its side effect.
+// Package cv links CLDR number- and money-formatting data for every
+// modern "cv" locale. Import it for its side effect.
 package cv
 
 import "amadan.net/rastrillo/rastrillo/locales"
@@ -13,5 +13,5 @@ import "amadan.net/rastrillo/rastrillo/locales"
 func init() { locales.Register("cv", data) }
 
 var data = map[string]locales.Locale{
-	"cv": {Parent: "root", CurrencyDecimal: ",", CurrencyGroup: "\u00a0", Decimal: ",", Standard: "#,##0.00\u00a0¤", Alpha: "#,##0.00\u00a0¤", Symbols: map[string]string{"RUB": "₽", "USD": "$"}},
+	"cv": {Parent: "root", CurrencyDecimal: ",", CurrencyGroup: "\u00a0", Decimal: ",", Group: "\u00a0", Percent: "#,##0\u00a0%", NaN: "хисеп\u00a0мар", Standard: "#,##0.00\u00a0¤", Alpha: "#,##0.00\u00a0¤", Symbols: map[string]string{"RUB": "₽", "USD": "$"}},
 }

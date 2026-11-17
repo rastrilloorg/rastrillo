@@ -4,8 +4,8 @@
 // SHA-256 in hack/moneycldr/sources/inputs.sha256. Data from the Unicode CLDR,
 // © Unicode, Inc., under the Unicode License v3 (locales/LICENSE-UNICODE).
 
-// Package ms links CLDR money-formatting data for every modern "ms"
-// locale. Import it for its side effect.
+// Package ms links CLDR number- and money-formatting data for every
+// modern "ms" locale. Import it for its side effect.
 package ms
 
 import "amadan.net/rastrillo/rastrillo/locales"
@@ -14,7 +14,7 @@ func init() { locales.Register("ms", data) }
 
 var data = map[string]locales.Locale{
 	"ms":    {Parent: "root", Standard: "¤#,##0.00", Symbols: map[string]string{"CAD": "CAD", "MXN": "MXN", "MYR": "RM", "PHP": "PHP", "USD": "USD"}, Narrow: map[string]string{"BYN": "р.", "TWD": "NT$"}},
-	"ms-BN": {Parent: "ms", CurrencyDecimal: ",", CurrencyGroup: ".", Decimal: ",", Standard: "¤\u00a0#,##0.00", Symbols: map[string]string{"BND": "$"}},
-	"ms-ID": {Parent: "ms", CurrencyDecimal: ",", CurrencyGroup: ".", Decimal: ",", Symbols: map[string]string{"IDR": "Rp"}},
+	"ms-BN": {Parent: "ms", CurrencyDecimal: ",", CurrencyGroup: ".", Decimal: ",", Group: ".", Standard: "¤\u00a0#,##0.00", Symbols: map[string]string{"BND": "$"}},
+	"ms-ID": {Parent: "ms", CurrencyDecimal: ",", CurrencyGroup: ".", Decimal: ",", Group: ".", Symbols: map[string]string{"IDR": "Rp"}},
 	"ms-SG": {Parent: "ms", Symbols: map[string]string{"SGD": "$"}},
 }

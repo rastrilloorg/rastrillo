@@ -231,6 +231,7 @@ const SchemeSwitchPath = "/_theme"
 ```go
 func FormatLocale(r *http.Request) string
 func (l *Locales) Negotiate(r *http.Request) string
+func (set *Locales) NegotiateHeader(header string) string
 func RetagOf(code string) (string, bool)
 func Retagged() map[string]string
 ```
@@ -245,6 +246,12 @@ default.
 request (path prefix, cookie, `Accept-Language`, default) without
 changing it. Use it where the middleware has not run, such as an error
 page after a panic.
+
+`Locales.NegotiateHeader` is the language an `Accept-Language` header
+asks for, or the default, ignoring the path prefix and the cookie. A
+one-language app that writes numbers and dates in each reader's own
+formats reads the browser's locale with it; see
+[Localization](/docs/localization#formats-for-the-browser-with-no-prefix-or-cookie).
 
 `RetagOf` and `Retagged` are the codes the framework moved: today only
 `pt`, now `pt-PT`. They are exported for the framework's own tools; see

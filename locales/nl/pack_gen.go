@@ -4,8 +4,8 @@
 // SHA-256 in hack/moneycldr/sources/inputs.sha256. Data from the Unicode CLDR,
 // © Unicode, Inc., under the Unicode License v3 (locales/LICENSE-UNICODE).
 
-// Package nl links CLDR money-formatting data for every modern "nl"
-// locale. Import it for its side effect.
+// Package nl links CLDR number- and money-formatting data for every
+// modern "nl" locale. Import it for its side effect.
 package nl
 
 import "amadan.net/rastrillo/rastrillo/locales"
@@ -13,7 +13,7 @@ import "amadan.net/rastrillo/rastrillo/locales"
 func init() { locales.Register("nl", data) }
 
 var data = map[string]locales.Locale{
-	"nl":    {Parent: "root", CurrencyDecimal: ",", CurrencyGroup: ".", Decimal: ",", Standard: "¤\u00a0#,##0.00;¤\u00a0-#,##0.00", Alpha: "¤\u00a0#,##0.00;¤\u00a0-#,##0.00", Symbols: map[string]string{"AUD": "AU$", "CAD": "C$", "FJD": "FJ$", "PHP": "PHP", "SBD": "SI$", "THB": "฿", "XPF": "XPF", "ZWG": "ZiG"}, Narrow: map[string]string{"BYN": "р.", "TWD": "NT$", "XCG": "Cg"}},
+	"nl":    {Parent: "root", CurrencyDecimal: ",", CurrencyGroup: ".", Decimal: ",", Group: ".", Standard: "¤\u00a0#,##0.00;¤\u00a0-#,##0.00", Alpha: "¤\u00a0#,##0.00;¤\u00a0-#,##0.00", Symbols: map[string]string{"AUD": "AU$", "CAD": "C$", "FJD": "FJ$", "PHP": "PHP", "SBD": "SI$", "THB": "฿", "XPF": "XPF", "ZWG": "ZiG"}, Narrow: map[string]string{"BYN": "р.", "TWD": "NT$", "XCG": "Cg"}},
 	"nl-AW": {Parent: "nl", Symbols: map[string]string{"AWG": "Afl."}},
 	"nl-BE": {Parent: "nl"},
 	"nl-BQ": {Parent: "nl", Symbols: map[string]string{"USD": "$"}},

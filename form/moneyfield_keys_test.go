@@ -19,6 +19,8 @@ func TestMoneyFieldKeysAreInTheCatalog(t *testing.T) {
 		moneyDecimalCommaKey, moneyDecimalPointKey, moneyCurrencyKey, moneyNegativeKey,
 		moneyReenterKey, moneyCurrencyChangedKey, moneyWrongCurrencyKey, moneyAmbiguousKey,
 		moneyAmbiguousPrecisionKey, fieldRequiredKey,
+		numberInvalidKey, numberAmbiguousKey, numberTooLongKey,
+		numberNegativeKey, numberReenterKey,
 	} {
 		if !strings.Contains(string(data), "\n"+key+" = ") {
 			t.Errorf("en.toml has no %s", key)

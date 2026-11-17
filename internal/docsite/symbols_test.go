@@ -77,6 +77,8 @@ var referencePages = map[string]string{
 	"apitoken":      "reference/apitoken",
 	"mcp":           "reference/mcp",
 	"currency":      "reference/currency",
+	"number":        "reference/number",
+	"dates":         "reference/dates",
 	"locales":       "reference/locales",
 	".":             "reference/rastrillo",
 

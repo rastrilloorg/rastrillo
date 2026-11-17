@@ -4548,7 +4548,6 @@ names currency/format.go resolved.forCurrency/l 1
 names currency/format.go resolved.forCurrency/m 1
 names currency/format.go resolved.forCurrency/o 1
 names currency/format.go resolved.localDigits/l 1
-names currency/format.go resolved.localDigits/r 1
 names currency/format.go resolved.localDigits/s 1
 names currency/format.go splitDigits/s 1
 names currency/format.go symbol/l 1
@@ -4565,27 +4564,15 @@ names currency/format_test.go TestFormatExpected/c 1
 names currency/format_test.go TestFormatHasNoMarkup/s 1
 names currency/format_test.go TestInputValueExpected/c 1
 columns currency/normalize.go 0cd8a362c86c 1
-columns currency/normalize.go 21a766e5543b 1
-columns currency/normalize.go 3e8d4ed5ded7 1
 columns currency/normalize.go 4219c2d35aa4 1
-columns currency/normalize.go 475abc666348 1
 columns currency/normalize.go 4d3c7ee07d40 1
 columns currency/normalize.go 516ab8d80e57 1
-columns currency/normalize.go 5d23070845da 1
 columns currency/normalize.go 5defbab2394a 1
 columns currency/normalize.go 5e023f3072ec 1
 columns currency/normalize.go 68c25c2a7f77 1
-columns currency/normalize.go 7f2723ce6b1c 1
-columns currency/normalize.go 923535f3d1bd 1
 columns currency/normalize.go 970cbe5c534d 1
-columns currency/normalize.go b81ce67e55a5 1
-columns currency/normalize.go e3a92f93ec9d 1
-columns currency/normalize.go f55dff8138b4 1
 columns currency/normalize.go fb44e9faee52 1
-file currency/normalize.go - 503
 func currency/normalize.go ParseNormalized 42
-func currency/normalize.go interpret 41
-func currency/normalize.go strip 44
 names currency/normalize.go -/l 1
 names currency/normalize.go AmbiguousError.Choices/a 1
 names currency/normalize.go AmbiguousError.Choices/b 1
@@ -4594,28 +4581,17 @@ names currency/normalize.go AmbiguousError.Error/e 1
 names currency/normalize.go ParseNormalized/l 1
 names currency/normalize.go ParseNormalized/r 1
 names currency/normalize.go ParseNormalized/s 1
-names currency/normalize.go allGroups/t 1
-names currency/normalize.go conventions/c 1
-names currency/normalize.go conventions/d 2
-names currency/normalize.go conventions/g 1
 names currency/normalize.go conventions/l 1
 names currency/normalize.go conventionsFor/c 2
 names currency/normalize.go conventionsFor/l 1
-names currency/normalize.go decimalLess/a 1
-names currency/normalize.go decimalLess/b 1
-names currency/normalize.go decimalLess/x 1
-names currency/normalize.go decimalLess/y 1
-names currency/normalize.go groupings/g 1
 names currency/normalize.go interpret/i 1
 names currency/normalize.go interpret/j 1
 names currency/normalize.go interpret/l 1
 names currency/normalize.go interpret/o 1
-names currency/normalize.go interpret/r 2
+names currency/normalize.go interpret/r 1
 names currency/normalize.go interpret/s 1
 names currency/normalize.go makeReading/r 1
 names currency/normalize.go makeReading/v 1
-names currency/normalize.go reading/c 1
-names currency/normalize.go reading/t 1
 names currency/normalize.go spellingIndex/a 1
 names currency/normalize.go spellingIndex/b 1
 names currency/normalize.go spellingIndex/f 1
@@ -4629,10 +4605,6 @@ names currency/normalize.go spellings.match/n 1
 names currency/normalize.go spellings.match/r 1
 names currency/normalize.go spellings.match/s 1
 names currency/normalize.go spellings.match/t 1
-names currency/normalize.go strip/s 1
-names currency/normalize.go strip/t 1
-names currency/normalize.go tokenize/r 1
-names currency/normalize.go tokenize/s 1
 names currency/normalize.go writeChoice/l 1
 names currency/normalize.go writeChoice/r 1
 columns currency/normalize_test.go 0f5d413bb58d 1
@@ -4706,15 +4678,8 @@ names currency/normalizeprop/props_test.go moneyGroup/r 1
 names currency/normalizeprop/props_test.go readsBackOrRefuses/v 1
 names currency/normalizeprop/props_test.go readsOnlyAs/v 1
 names currency/normalizeprop/props_test.go unchanged/v 1
-columns currency/parse.go 4203661c20ea 1
 columns currency/parse.go ec2a8e452acf 1
 func currency/parse.go Parse 127
-names currency/parse.go -/d 1
-names currency/parse.go -/i 2
-names currency/parse.go -/m 1
-names currency/parse.go -/r 1
-names currency/parse.go Clean/b 1
-names currency/parse.go Clean/r 1
 names currency/parse.go Clean/s 1
 names currency/parse.go Parse/b 1
 names currency/parse.go Parse/g 1
@@ -4725,15 +4690,10 @@ names currency/parse.go Parse/n 2
 names currency/parse.go Parse/r 1
 names currency/parse.go Parse/s 1
 names currency/parse.go Parse/v 1
-names currency/parse.go bidi/r 1
-names currency/parse.go foldSpace/r 1
-names currency/parse.go foldSpace/s 1
 names currency/parse.go hasPrefixMarker/m 1
 names currency/parse.go hasPrefixMarker/s 1
 names currency/parse.go hasSuffixMarker/m 1
 names currency/parse.go hasSuffixMarker/s 1
-names currency/parse.go validGroups/i 1
-names currency/parse.go validGroups/n 1
 columns currency/parse_test.go 24322298251f 1
 columns currency/parse_test.go 5533644d7d7e 1
 columns currency/parse_test.go 9752e41cf649 1
@@ -5358,7 +5318,7 @@ names form/datetime_test.go TestRange/p 1
 names form/errors.go Errors.Any/e 1
 columns form/fields.go b225ce79194d 1
 columns form/fields.go c0a2b44ed92c 1
-func form/fields.go Parse 106
+func form/fields.go Parse 93
 names form/fields.go Humanize/c 1
 names form/fields.go Humanize/i 1
 names form/fields.go Parse/f 1
@@ -8809,7 +8769,7 @@ columns internal/designsystem/page.go fc4875c5d5a3 1
 columns internal/designsystem/page.go fc67331745a3 1
 columns internal/designsystem/page.go fe44bdea88a0 1
 columns internal/designsystem/page.go ffcdcfbc1ea4 1
-file internal/designsystem/page.go - 3228 was 3229, raised from 3228 by Fiesta part 2 Task 4: the Russian and Irish shell-column previews get their own Mobile heights, since the column shell's footer row makes them taller at 320px. Lowered back to 3228 by busy-reveal, which moved the busy.js blurb into prose.go as busyAssetBlurb.
+file internal/designsystem/page.go - 3229 field-number joins the gallery (Fichas level-up rev 4, R2): its preview height is one line in previewHeights, beside field-money's
 func internal/designsystem/page.go buildAssets 59
 func internal/designsystem/page.go buildFamilies 96
 func internal/designsystem/page.go previewDocStyled 49
@@ -9231,8 +9191,8 @@ columns internal/designsystem/samples.go fd98e40afc7e 1
 columns internal/designsystem/samples.go feec4eaa9f02 1
 columns internal/designsystem/samples.go ff2adab2a4c3 1
 columns internal/designsystem/samples.go ff64de57216c 1
-file internal/designsystem/samples.go - 1161 region:notice joins the notice family: its blurb, its sample and the entry around them
-func internal/designsystem/samples.go families 594 region:notice joins the notice family: its blurb, its sample and the entry around them
+file internal/designsystem/samples.go - 1162 field-number joins the Form family as one call, fieldNumberDoc(), its sample in fieldnumber.go
+func internal/designsystem/samples.go families 595 field-number joins the Form family as one call, fieldNumberDoc(), its sample in fieldnumber.go
 names internal/designsystem/samples.go calloutStates/b 1
 names internal/designsystem/samples.go errorPageStates/s 1
 names internal/designsystem/samples.go mediaSelectable/t 1
@@ -9399,7 +9359,6 @@ columns internal/designsystem/sweep/rig_test.go 75b562021c75 1
 columns internal/designsystem/sweep/rig_test.go ba023e492184 1
 names internal/designsystem/sweep/rig_test.go sweepFull/v 1
 columns internal/designsystem/weight.go 31c147b8160b 1
-columns internal/designsystem/weight.go 43330a62c8f5 1
 columns internal/designsystem/weight.go 66908dabf8d9 1
 columns internal/designsystem/weight.go 6ce8b9510093 1
 columns internal/designsystem/weight.go 7710afa8eb06 1
@@ -9425,8 +9384,6 @@ names internal/designsystem/weight.go gzipped/b 1
 names internal/designsystem/weight.go isSpaceByte/c 1
 names internal/designsystem/weight.go isWordByte/c 1
 names internal/designsystem/weight.go kib/n 1
-names internal/designsystem/weight.go kib/p 1
-names internal/designsystem/weight.go kib/v 1
 names internal/designsystem/weight.go kibUnit/n 1
 names internal/designsystem/weight.go lastWord/b 1
 names internal/designsystem/weight.go lastWord/j 1
@@ -13688,13 +13645,10 @@ columns locales/config_test.go c02d038bb09b 1
 columns locales/config_test.go da3acfdee0e2 1
 columns locales/config_test.go e3126df43e86 1
 names locales/config_test.go TestCheckConfig/c 1
-func locales/data.go Merge 55
 names locales/data.go Data/l 1
 names locales/data.go Data/p 1
 names locales/data.go LinkedPacks/p 1
-names locales/data.go Merge/c 1
 names locales/data.go Merge/k 6
-names locales/data.go Merge/p 1
 names locales/data.go Merge/v 6
 names locales/data.go PackOf/p 1
 names locales/data.go Parent/p 1
@@ -22453,14 +22407,13 @@ columns ui/localefuncs.go 2e307b1681ad 1
 columns ui/localefuncs.go 409afc134bb3 1
 columns ui/localefuncs.go b30db35026d3 1
 columns ui/localefuncs.go cf2285feaf92 1
-columns ui/localefuncs.go f5564996504a 1
-func ui/localefuncs.go localeFuncs 109
+func ui/localefuncs.go localeFuncs 104
 names ui/localefuncs.go localeCall.arity/c 1
 names ui/localefuncs.go localeCall.arity/n 1
 names ui/localefuncs.go localeCall.key/c 1
 names ui/localefuncs.go localeCall.key/k 1
 names ui/localefuncs.go localeFuncs/a 1
-names ui/localefuncs.go localeFuncs/c 9
+names ui/localefuncs.go localeFuncs/c 8
 names ui/localefuncs.go localeFuncs/k 3
 names ui/localefuncs.go localeFuncs/o 1
 names ui/localefuncs.go localeFuncs/t 1
@@ -22492,7 +22445,6 @@ columns ui/localefuncs_test.go 88b457216d2a 1
 columns ui/localefuncs_test.go 88c516977b7c 1
 columns ui/localefuncs_test.go 93010051b8db 1
 columns ui/localefuncs_test.go 98616f4b0c34 1
-columns ui/localefuncs_test.go 9a10e1fa6a53 1
 columns ui/localefuncs_test.go a49f67bc6460 1
 columns ui/localefuncs_test.go a5fcde1de3f6 1
 columns ui/localefuncs_test.go ab28596357db 1
@@ -22942,17 +22894,7 @@ names ui/mediagrid_test.go TestMediaGridSelectFollowsTheBulkBarsForm/k 1
 names ui/mediagrid_test.go TestMediaGridSelectFollowsTheBulkBarsForm/m 1
 names ui/mediagrid_test.go TestMediaGridSelectFollowsTheBulkBarsForm/v 1
 names ui/mediagrid_test.go TestMediaGridWritesTheImageSizeOnlyWhenBothAreGiven/c 1
-columns ui/number.go 13ecf53d2a08 1
-columns ui/number.go 6d0f9469cc6e 1
-columns ui/number.go 739635833435 1
-columns ui/number.go a0fa41e07e8e 1
-columns ui/number.go c206d832c939 1
 names ui/number.go WithLocale/c 1
-names ui/number.go formatNumber/i 1
-names ui/number.go formatNumber/n 1
-names ui/number.go formatNumber/s 1
-names ui/number.go formatNumber/u 1
-names ui/number.go formatNumber/v 1
 columns ui/number_test.go 2b34159851fc 1
 columns ui/number_test.go 3a9ad58bb9b9 1
 columns ui/number_test.go 48369f7df120 1

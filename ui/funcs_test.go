@@ -847,5 +847,5 @@ var documentedFuncs = []string{
 	"T", "Tf", "dateWords", "opt", "Tbdi", "stageArt", "displayURL",
 	"safeHref", "number", "displayValue", "rowMenuItems", "paginationItems",
 	"localizer", "withL", "money", "actor", "strong", "path",
-	"needs", "neededScripts", "pageStylesheet", "pageScripts",
+	"needs", "neededScripts", "pageStylesheet", "pageScripts", "date",
 }

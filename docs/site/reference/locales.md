@@ -207,13 +207,23 @@ type Override struct{ Pattern, Decimal, Group string }
 func Data(id string) (Locale, bool)
 func Merge(child, parent Locale) Locale
 func Register(pack string, locs map[string]Locale)
+func RegisterDates(pack string, records map[string]string)
+func Dates(id string) (record string, ok bool)
 ```
 
-`Locale` is one locale's money data, stored in its pack as what differs
-from its parent. `Override` is a pattern or mark that applies to one
-currency only. `Data` merges a locale with its parents, and `Merge`
-merges one pair. `Register` is how a pack adds its locales when it is
-imported; you never call it.
+`Locale` is one locale's number and money data, stored in its pack as
+what differs from its parent: the marks money uses and the ordinary
+ones plain numbers use (`Group` differs from `CurrencyGroup` in de-AT),
+the decimal and percent patterns, the infinity and NaN symbols, and the
+currency symbols. `Override`
+is a pattern or mark that applies to one currency only. `Data` merges a
+locale with its parents, and `Merge` merges one pair. `Register` is how
+a pack adds its locales when it is imported; you never call it.
+
+A pack also carries its locales' date patterns, as JSON the
+[dates](/docs/reference/dates) package reads. `RegisterDates` adds them
+when the pack is imported, and `Dates` gives one locale's; you call
+neither.
 
 Two test packages sit under `locales/localestest`. `gallery` links only
 the twelve languages the framework's strings ship in. `crosspack` links

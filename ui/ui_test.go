@@ -1292,6 +1292,12 @@ func allPartials() []struct {
 			"Name": "ticket_price", "Label": "Ticket price", "Value": "12,.50", "Locale": "en", "Currency": "EUR", "Seed": "",
 			"Required": true, "Hint": "For example, 12.50 or €12.50.", "Error": "Use a point for decimals, like 12.50.",
 		}},
+		{"field-number", map[string]any{
+			// The re-render of a refused POST, as field-money's above.
+			"Name": "seats", "Label": "Seats", "Value": "1.500", "Locale": "en",
+			"Required": true, "Hint": "For example, 1200.5.",
+			"Error": "This could be 1.5 or 1500. Enter the one you mean.",
+		}},
 		{"signin", map[string]any{
 			"State": auth.SigninState{Step: auth.StepAsk, BeginPath: "/signin", ForgetPath: "/signin/forget", Address: "grace@example.com"},
 			"Brand": map[string]any{
@@ -1402,6 +1408,7 @@ func TestAllPartialsAreDefined(t *testing.T) {
 		"locale-menu", "scheme-menu", "error-page",
 		"field-date", "field-time", "field-datetime", "field-daterange",
 		"field-url", "signin", "signin-title", "row-menu", "field-money",
+		"field-number",
 		"media-grid", "stat", "actor", "api-tokens",
 	}
 	for _, name := range want {
@@ -1409,8 +1416,8 @@ func TestAllPartialsAreDefined(t *testing.T) {
 			t.Errorf("partial %q is not defined", name)
 		}
 	}
-	if len(want) != 44 {
-		t.Fatalf("the shipped set is 44 partials, this list has %d", len(want))
+	if len(want) != 45 {
+		t.Fatalf("the shipped set is 45 partials, this list has %d", len(want))
 	}
 }
 
@@ -4237,6 +4244,32 @@ func TestFieldMoneyPartial(t *testing.T) {
 	}
 	if strings.Contains(bare, "aria-describedby") || strings.Contains(bare, "aria-invalid") || strings.Contains(bare, " required") || strings.Contains(bare, `name="Price" type="text" inputmode="decimal" value`) {
 		t.Errorf("a bare field-money carries state it was not given:\n%s", bare)
+	}
+}
+
+// field-number posts the locale its text is written in beside the
+// text, and nothing else: its unchanged-seed check is the server's.
+func TestFieldNumberPartial(t *testing.T) {
+	got := render(t, "field-number", map[string]any{"Name": "Seats",
+		"Label": "Seats", "Value": "1200,5", "Locale": "de",
+		"Required": true, "Error": "Enter a number, like 1200,5."})
+	for _, want := range []string{
+		`<input type="hidden" name="Seats.locale" value="de">`,
+		`id="Seats" name="Seats" type="text" inputmode="decimal"`,
+		`value="1200,5" required`, `aria-invalid="true"`,
+		`aria-describedby="Seats-error"`,
+	} {
+		if !strings.Contains(got, want) {
+			t.Errorf("field-number is missing %q:\n%s", want, got)
+		}
+	}
+	bare := render(t, "field-number", map[string]any{"Name": "Seats",
+		"Label": "Seats", "Locale": "de"})
+	for _, unwanted := range []string{"aria-describedby", "aria-invalid",
+		" required", " value=\"\"", ".seed"} {
+		if strings.Contains(bare, unwanted) {
+			t.Errorf("a bare field-number carries %q:\n%s", unwanted, bare)
+		}
 	}
 }
 

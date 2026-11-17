@@ -4,8 +4,8 @@
 // SHA-256 in hack/moneycldr/sources/inputs.sha256. Data from the Unicode CLDR,
 // © Unicode, Inc., under the Unicode License v3 (locales/LICENSE-UNICODE).
 
-// Package ba links CLDR money-formatting data for every modern "ba"
-// locale. Import it for its side effect.
+// Package ba links CLDR number- and money-formatting data for every
+// modern "ba" locale. Import it for its side effect.
 package ba
 
 import "amadan.net/rastrillo/rastrillo/locales"
@@ -13,5 +13,5 @@ import "amadan.net/rastrillo/rastrillo/locales"
 func init() { locales.Register("ba", data) }
 
 var data = map[string]locales.Locale{
-	"ba": {Parent: "root", CurrencyGroup: "\u00a0", Standard: "#,##0.00\u00a0¤", Alpha: "#,##0.00\u00a0¤", Symbols: map[string]string{"USD": "$", "XOF": "F CFA"}},
+	"ba": {Parent: "root", CurrencyGroup: "\u00a0", Group: "\u00a0", Standard: "#,##0.00\u00a0¤", Alpha: "#,##0.00\u00a0¤", Symbols: map[string]string{"USD": "$", "XOF": "F CFA"}},
 }

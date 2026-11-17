@@ -4,8 +4,8 @@
 // SHA-256 in hack/moneycldr/sources/inputs.sha256. Data from the Unicode CLDR,
 // © Unicode, Inc., under the Unicode License v3 (locales/LICENSE-UNICODE).
 
-// Package zh links CLDR money-formatting data for every modern "zh"
-// locale. Import it for its side effect.
+// Package zh links CLDR number- and money-formatting data for every
+// modern "zh" locale. Import it for its side effect.
 package zh
 
 import "amadan.net/rastrillo/rastrillo/locales"
@@ -19,7 +19,7 @@ var data = map[string]locales.Locale{
 	"zh-Hans-MO": {Parent: "zh-Hans", Symbols: map[string]string{"CNY": "CN¥", "MOP": "MOP$"}},
 	"zh-Hans-MY": {Parent: "zh-Hans"},
 	"zh-Hans-SG": {Parent: "zh-Hans", Symbols: map[string]string{"CNY": "CN¥", "SGD": "$"}},
-	"zh-Hant":    {Parent: "root", Standard: "¤#,##0.00", Symbols: map[string]string{"AUD": "AU$", "JPY": "¥", "KRW": "￦", "PHP": "PHP", "TWD": "$"}, Narrow: map[string]string{"BYN": "р.", "RON": "L"}},
+	"zh-Hant":    {Parent: "root", NaN: "非數值", Standard: "¤#,##0.00", Symbols: map[string]string{"AUD": "AU$", "JPY": "¥", "KRW": "￦", "PHP": "PHP", "TWD": "$"}, Narrow: map[string]string{"BYN": "р.", "RON": "L"}},
 	"zh-Hant-HK": {Parent: "zh-Hant", Symbols: map[string]string{"KRW": "₩", "TWD": "NT$"}},
 	"zh-Hant-MO": {Parent: "zh-Hant-HK", Symbols: map[string]string{"MOP": "MOP$"}},
 	"zh-Hant-MY": {Parent: "zh-Hant"},

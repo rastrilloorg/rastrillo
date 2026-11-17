@@ -64,7 +64,7 @@ layout can show a notice. See [Forms](/docs/forms).
 `safeHref`, `rowMenuItems`, `paginationItems`, `localizer`, `withL`,
 `path`, `needs`, `pageStylesheet`, `pageScripts` and `neededScripts`.
 It also registers the locale functions `T`, `Tf`, `Tbdi`, `number`,
-`displayValue`, `dateWords`, `money` and `actor`.
+`displayValue`, `dateWords`, `money`, `actor` and `date`.
 
 Write a link to one of your own pages with `path`: `{{path $ "/orders"}}`. At the root it changes nothing. Under a [base path](/docs/reference/basepath) it adds the base, so the link stays in your app.
 
@@ -214,12 +214,13 @@ back-nav      field-date       list-bar            region:notice
 badge         field-daterange  list-bar-search     row-menu
 bulk-bar      field-datetime   list-row-action     scheme-menu
 callout       field-money      list-search-submit  seg-tabs
-choice-field  field-select     live-head           signin
-confirm-form  field-text       locale-menu         signin-title
-detail-list   field-textarea   media-grid          stat
-dropdown      field-time       meter               status-pill
-empty-state   field-url        notice
-error-page    form-error       page-header
+choice-field  field-number     live-head           signin
+confirm-form  field-select     locale-menu         signin-title
+detail-list   field-text       media-grid          stat
+dropdown      field-textarea   meter               status-pill
+empty-state   field-time       notice
+error-page    field-url        page-header
+              form-error
 ```
 
 `locale-menu` is the language switcher; see
@@ -577,7 +578,10 @@ order 4,471.
 
 Use `{{number $L .Count}}` for a quantity and
 `{{money $L .Price .Currency}}` for money. Both write the reader's
-language's digits and marks. `money` takes the amount in the currency's
+language's digits and marks, from the same CLDR data. For an exact
+decimal, pass a `number.Decimal`; `"plain"`, `"places" 2` and
+`"percent"` after the value set the format. See
+[Localization](/docs/localization#numbers). `money` takes the amount in the currency's
 smallest unit, or a pointer to it, and the ISO code as a string. A nil
 amount writes nothing.
 
@@ -596,9 +600,10 @@ item a `DateTime` alongside its `Value`:
 ```
 
 `Value` stays whatever you formatted for a person to read; `DateTime`
-carries the same moment in the one syntax a machine can parse. The
-framework does not format dates — a locale decides that and you have the
-locale — so the two are supplied together.
+carries the same moment in the one syntax a machine can parse. Format
+the `Value` with `{{date $L .Published "dateYear"}}`, which writes the
+reader's language's pattern (`2 August 2026`, `August 2, 2026`,
+`2. August 2026`); see [Localization](/docs/localization#dates).
 
 Only for moments and durations. An identifier, a quantity or a reference
 number is not a time however numeric it looks; `Mono` is what marks

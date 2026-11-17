@@ -4,8 +4,8 @@
 // SHA-256 in hack/moneycldr/sources/inputs.sha256. Data from the Unicode CLDR,
 // © Unicode, Inc., under the Unicode License v3 (locales/LICENSE-UNICODE).
 
-// Package or links CLDR money-formatting data for every modern "or"
-// locale. Import it for its side effect.
+// Package or links CLDR number- and money-formatting data for every
+// modern "or" locale. Import it for its side effect.
 package or
 
 import "amadan.net/rastrillo/rastrillo/locales"
@@ -13,5 +13,5 @@ import "amadan.net/rastrillo/rastrillo/locales"
 func init() { locales.Register("or", data) }
 
 var data = map[string]locales.Locale{
-	"or": {Parent: "root", Standard: "¤#,##0.00", Symbols: map[string]string{"JPY": "¥", "PHP": "PHP", "USD": "$"}, Narrow: map[string]string{"BYN": "р."}},
+	"or": {Parent: "root", Number: "#,##,##0.###", Standard: "¤#,##0.00", Symbols: map[string]string{"JPY": "¥", "PHP": "PHP", "USD": "$"}, Narrow: map[string]string{"BYN": "р."}},
 }

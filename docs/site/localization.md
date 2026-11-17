@@ -68,6 +68,23 @@ so there is nothing to wire. A one-locale app has no items, and the
 switcher renders nothing. Each item lands on the same path under the new
 prefix, and the cookie makes the choice stick on unprefixed paths too.
 
+### Formats for the browser, with no prefix or cookie
+
+An app with one language and readers in many countries writes numbers,
+money and dates in each reader's own formats, and writes no `/xx/`
+prefix and no cookie. Ask for the header's locale alone:
+
+```go
+code := locales.NegotiateHeader(r.Header.Get("Accept-Language"))
+```
+
+Build `locales` with `rastrillo.NewLocales` over the formats you offer,
+your default first. `NegotiateHeader` matches the header as the
+middleware does, region to language included (`de-AT` finds `de`), and
+returns the default when nothing matches. It ignores the path and the
+`rastrillo_locale` cookie, so a stale cookie cannot put half a page in
+another locale. `Middleware` and `Negotiate` keep their precedence.
+
 The colour scheme has the same kind of switch beside it. Every shell
 offers Light, Dark and System in a `scheme-menu` that posts to the
 framework's `POST /_theme`; the choice is stored in the
@@ -94,6 +111,113 @@ In a template, pass the page's localizer first:
 A missing translation stays visible on the page as `orders.title` —
 never blank, never a crash. Lookup falls back through five levels,
 listed in the next section.
+
+## Numbers
+
+`{{number $L .Count}}` writes a quantity in the page's locale, from the
+same CLDR pack money uses: its digits, decimal mark, group mark and
+grouping, and its minus sign. Spanish leaves four digits ungrouped
+(`1234`, `12.345`); French groups with a narrow no-break space;
+Hindi groups in lakhs (`12,34,567`).
+
+Integers and floats are written exactly, as are integer strings such as
+`"1234567"`. Any other string is shown as given, so a version like
+`"1.10"` is never regrouped. For an exact decimal, pass a
+`number.Decimal`:
+
+```go
+data["Total"] = number.Decimal("1200.5") // {{number $L .Total}}: 1.200,5 in German
+```
+
+Words after the value set the format:
+
+| Template | German |
+|---|---|
+| `{{number $L .Total}}` | `1.200,5` |
+| `{{number $L .Total "plain"}}` | `1200,5` |
+| `{{number $L .Total "places" 2}}` | `1.200,50` |
+| `{{number $L .Share "percent"}}` | `50 %`, for a `.Share` of 50 |
+
+Nothing is rounded: `"places" 2` pads a shorter fraction and leaves a
+longer one whole. A percent writes the value as shown, so store 50 for
+50 %. In Go, `number.Format(locale, value, number.Options{...})` does the
+same, and `number.InputValue` is the text an input starts from: no group
+marks, so no reading in the page's locale takes it for a thousand
+times more. A seed such as
+German `1,234` (one point two three four) still reads two ways when
+read fresh, so a `form.Number` field keeps an unchanged seed unread.
+
+### Reading a number someone typed
+
+`number.ParseNormalized(locale, text)` reads a number the way a money
+field reads an amount, with no currency. Text with one plausible
+reading is taken, in the locale's marks or the other common ones:
+
+| Locale | Text | Reads as |
+|---|---|---|
+| `en` | `1,200.5`, `1200,5` | 1200.5 |
+| `de` | `1.200,5`, `1200,5` | 1200.5 |
+| `fr` | `1 200,5` | 1200.5 |
+| any | `1,20,000` | 120000 |
+| `en` | `1,500` | 1500: the page's own group mark wins |
+| `de` | `1.500` | 1500 |
+| `en` | `1.500` | refused: 1.5 or 1500 |
+| `de`, `fr` | `1,500` | refused: 1,5 or 1500 |
+
+A refusal is a `*number.AmbiguousError`; its `Choices(locale)` writes
+both readings so neither can be misread. A leading `+`, `-` or `−`, a
+trailing `-`, and parentheses are signs. Exponents, `NaN`, letters and
+malformed groups are `number.ErrInvalid`; more than 30 digits as typed,
+zeros included, is
+`number.ErrTooLong`. `number.Parse` is the strict reading: the locale's
+own marks only.
+
+In a form, declare the field and draw `field-number`:
+
+```go
+parsed := form.Parse(r, form.Field{Name: "Seats", Kind: form.Number,
+	LocaleEcho: true, Required: true})
+seats, present := parsed.Number("Seats") // number.Decimal
+```
+
+```html
+{{template "field-number" dict "L" $L "Name" "Seats" "Label" "Seats"
+  "Value" .Seats.Value "Locale" .Seats.Locale}}
+```
+
+Fill `.Seats` from `form.SeedNumber(locale, &value)`, or after a refusal
+from `parsed.NumberInput("Seats", locale)`. The field posts the locale
+it was drawn in, so `1.500` is never read the other way. On an edit
+form, set `StoredNumber` to the value drawn: text left as it was keeps
+that value unread, even when it reads two ways.
+
+## Dates
+
+`{{date $L .At "kind"}}` writes a `time.Time` in the page's language,
+from CLDR's patterns, which each pack carries beside its number data.
+It writes the moment in its own zone, so convert it with `In` first.
+
+| Template | `en-GB` | `en-US` | `de` |
+|---|---|---|---|
+| `{{date $L .At "dayYear"}}` | `Friday, 20 November 2026` | `Friday, November 20, 2026` | `Freitag, 20. November 2026` |
+| `{{date $L .At "short"}}` | `Fri 20 Nov` | `Fri, Nov 20` | `Fr., 20. Nov.` |
+| `{{date $L .At "time"}}` | `21:09` | `9:09 PM` | `21:09` |
+
+The kinds are `day`, `dayYear`, `short`, `date`, `dateYear`,
+`monthYear`, `month`, `year`, `time` and `stamp`. A nil `*time.Time`
+writes nothing. The words around a date stay in your app's language;
+only the date's own form follows the locale.
+
+In Go, `dates.For(locale)` gives the same: `Format(kind, t)`, the first
+day of the week (`FirstDay`, `WeekStart`, `Heads` for a calendar's
+columns), and how a date typed in numbers is ordered and separated
+(`Order` and `Separator`: `dmy` and `/` in `en-GB`, `mdy` in `en-US`,
+`.` in German). For a locale whose dates are not drawn, such as Thai,
+whose calendar is the Buddhist one, it writes ISO dates.
+
+The browser writes the same dates with `dates.mjs`, served from the
+module by `dates.Assets()`. Give it `dates.For(locale).Client()` as
+JSON. See [dates](/docs/reference/dates).
 
 ## The framework base catalog
 

@@ -278,15 +278,29 @@ import (
 // screens row "build a first slice" so the polish questions in
 // skill/screens.md are read before the first screen. The file lands at
 // 9,572; the ceiling is the next hundred.
+//
+// Raised 9,600 -> 9,700 on 2026-11-17 for two index words: "or dates"
+// in the design row and "numbers" in the forms row, where the number
+// field and the date formatter are now documented (Paul's ruling that
+// localised numbers, money and dates are in every app from day one).
+// An agent asked to take a number in a form, or to write a date, finds
+// its topic by those words; the file lands at 9,617.
 const (
 	// skillCoreBudget holds SKILL.md near its 2026-10-22 size (6,660
 	// bytes) with room for the index to grow by a few topics. Raising
 	// it means moving something into a topic, which is almost always
 	// the right answer, so raise it only for a rule every task needs.
-	skillCoreBudget = 9_600
+	skillCoreBudget = 9_700
 	// skillTopicBudget is per topic file. A topic that outgrows it
 	// splits in two, each with its own index line.
 	skillTopicBudget = 9_000
+	// skillPartialsBudget is skill/partials.md's own. It is generated,
+	// one line per partial, so it grows by a line whenever a partial
+	// ships and cannot be trimmed by hand; splitting it would send an
+	// agent to two lists for one lookup. Set on 2026-11-17 for
+	// field-number (the Fichas level-up spec rev 4, R2), which took it
+	// to 9,107; the ceiling is the next hundred.
+	skillPartialsBudget = 9_200
 )
 
 // skillFiles are SKILL.md and every topic, by path.
@@ -313,8 +327,11 @@ func skillFiles(t *testing.T) map[string]string {
 func TestSkillStaysWithinBudget(t *testing.T) {
 	for p, s := range skillFiles(t) {
 		budget := skillTopicBudget
-		if p == "SKILL.md" {
+		switch p {
+		case "SKILL.md":
 			budget = skillCoreBudget
+		case partialsPath:
+			budget = skillPartialsBudget
 		}
 		if len(s) > budget {
 			t.Errorf("%s is %d bytes, %d over its %d budget: move detail into a topic, or split the topic",

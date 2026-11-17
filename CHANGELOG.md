@@ -10,6 +10,78 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+### Added: dates in the reader's language
+
+`{{date $L .At "dayYear"}}` writes a `time.Time` in the locale's CLDR
+48 pattern: "Friday, 20 November 2026", "Freitag, 20. November 2026",
+"9:09 PM". The kinds are `day`, `dayYear`, `short`, `date`, `dateYear`,
+`monthYear`, `month`, `year`, `time` and `stamp`. The new `dates`
+package gives the same in Go (`dates.For(locale).Format`), with the
+first day of the week, a calendar's column heads, and how a date typed
+in numbers is ordered and separated. `dates.Assets()` serves
+`dates.mjs`, which draws the same patterns in the browser, byte for
+byte. The patterns are in the language packs, so linking a language
+links its dates; 418 of the 429 shipped locales have them, and
+`hack/cldrdates/coverage.tsv` says why the other eleven do not (another
+calendar, chiefly). Those write ISO dates; among them is `zh-Hant`, so
+`zh-TW` readers too. Moved from Mapa, whose semantics are kept. Each
+pack's binary grows by its dates (en, the largest, by about 75 KB of
+source). `date` is a new locale function, so an app that defines its
+own `date` template function must rename it. Years 1 to 9999 are
+drawn (`dates.FirstYear`, `dates.LastYear`); outside them, and for a
+locale with no dates, Go and `dates.mjs` both write ISO 8601, and
+`dates.mjs`'s `order()` falls back to `ymd` as Go does (Mapa's copy
+said `dmy`).
+
+### Changed: `{{number}}` writes CLDR 48, from the packs
+
+`{{number}}` and `displayValue` now format from the same CLDR packs as
+`money`, instead of `golang.org/x/text`, whose data was older. Some
+figures change, toward what CLDR 48 and browsers write: `es` and
+`pt-PT` leave four digits ungrouped (`1234`, was `1.234`); French
+groups with U+202F (was U+00A0); Swedish writes U+2212 for minus. A
+locale whose pack is not linked formats in the app's default locale, as
+money does, not in English, and logs once which pack to import. NaN and
+the infinities are written in the locale's symbols and pattern, as ICU
+writes them (`−∞` in Swedish, `epäluku` in Finnish; English is
+unchanged). Check any test that pins a formatted number.
+
+### Added: exact decimals, places and percent in `{{number}}`
+
+`{{number $L v}}` takes a `number.Decimal` ("1200.5") and writes it
+exactly, never rounding. Words after the value set the format:
+`"plain"` (no group marks), `"places" 2`, `"percent"`. A plain string
+is still formatted only when it is an integer. In Go, the new `number`
+package has `Format`, `FormatFloat` and `InputValue`. `make money-cldr` now holds
+`number.Format` to ICU in every shipped locale.
+
+### Added: a number field that reads as money does
+
+`form.Number` reads a plain number in the page's locale, exactly, by
+money's rules: one plausible reading is taken, the page's own group
+mark wins (`1,500` is 1500 in English, `1.500` in German), and text
+with two readings (`1.500` in English) is refused with both named.
+Read it with `parsed.Number`, a `number.Decimal`; seed it with
+`form.SeedNumber`; draw it with the new `field-number` partial.
+`LocaleEcho`, `Strict` and `Negative` work as for money, and
+`StoredNumber`, the value the form was drawn with, keeps an unchanged
+seed. The readings are
+`number.ParseNormalized` and `number.Parse`. Five new keys,
+`rastrillo.ui.number_*`, are translated in the twelve shipped
+catalogs: an app with its own catalog for another language must add
+them, or `generate --check` fails. Money's reading moved into a shared
+internal package so the two cannot drift; money reads exactly as
+before.
+
+### Added: the browser's locale from the header alone
+
+`Locales.NegotiateHeader(header)` is the declared locale an
+`Accept-Language` header asks for, or the default. It ignores the
+`/xx/` prefix and the `rastrillo_locale` cookie that `Middleware` and
+`Negotiate` honour first, for an app with one language that formats
+for each reader's browser. Apps no longer build a bare request to get
+this.
+
 ## v0.36.0
 
 ### Changed: a GET is no longer held for its spinner

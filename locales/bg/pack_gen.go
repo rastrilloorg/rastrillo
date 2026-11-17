@@ -4,8 +4,8 @@
 // SHA-256 in hack/moneycldr/sources/inputs.sha256. Data from the Unicode CLDR,
 // © Unicode, Inc., under the Unicode License v3 (locales/LICENSE-UNICODE).
 
-// Package bg links CLDR money-formatting data for every modern "bg"
-// locale. Import it for its side effect.
+// Package bg links CLDR number- and money-formatting data for every
+// modern "bg" locale. Import it for its side effect.
 package bg
 
 import "amadan.net/rastrillo/rastrillo/locales"
@@ -13,5 +13,5 @@ import "amadan.net/rastrillo/rastrillo/locales"
 func init() { locales.Register("bg", data) }
 
 var data = map[string]locales.Locale{
-	"bg": {Parent: "root", CurrencyDecimal: ",", CurrencyGroup: "\u00a0", Decimal: ",", MinGrouping: "2", Standard: "#,##0.00\u00a0¤", Alpha: "#,##0.00\u00a0¤", Symbols: map[string]string{"AUD": "AUD", "BGN": "лв.", "BRL": "BRL", "CAD": "CAD", "CNY": "CNY", "GBP": "GBP", "HKD": "HKD", "ILS": "ILS", "INR": "INR", "JPY": "JPY", "KRW": "KRW", "MXN": "MXN", "NZD": "NZD", "PHP": "PHP", "TWD": "TWD", "USD": "щ.д.", "VND": "VND", "XCD": "XCD"}, Narrow: map[string]string{"AFN": "Af", "AMD": "AMD", "ARS": "ARS", "AUD": "AUD", "AZN": "AZN", "BBD": "BBD", "BDT": "BDT", "BMD": "BMD", "BND": "BND", "BRL": "BRL", "BSD": "BSD", "BZD": "BZD", "CAD": "CAD", "CLP": "CLP", "CNY": "CNY", "COP": "COP", "CRC": "CRC", "CUP": "CUP", "DOP": "DOP", "FJD": "FJD", "FKP": "FKP", "GHS": "GHS", "GIP": "GIP", "GYD": "GYD", "HKD": "HKD", "ILS": "ILS", "INR": "INR", "JMD": "JMD", "KHR": "KHR", "KRW": "KRW", "KYD": "KYD", "KZT": "KZT", "LAK": "LAK", "LRD": "LRD", "MNT": "MNT", "MXN": "MXN", "NAD": "NAD", "NGN": "NGN", "NZD": "NZD", "PHP": "PHP", "PYG": "PYG", "RON": "RON", "SBD": "SBD", "SGD": "SGD", "SRD": "SRD", "SSP": "SSP", "TRY": "TRY", "TTD": "TTD", "TWD": "TWD", "UAH": "UAH", "UYU": "UYU", "VND": "VND"}},
+	"bg": {Parent: "root", CurrencyDecimal: ",", CurrencyGroup: "\u00a0", Decimal: ",", Group: "\u00a0", MinGrouping: "2", Standard: "#,##0.00\u00a0¤", Alpha: "#,##0.00\u00a0¤", Symbols: map[string]string{"AUD": "AUD", "BGN": "лв.", "BRL": "BRL", "CAD": "CAD", "CNY": "CNY", "GBP": "GBP", "HKD": "HKD", "ILS": "ILS", "INR": "INR", "JPY": "JPY", "KRW": "KRW", "MXN": "MXN", "NZD": "NZD", "PHP": "PHP", "TWD": "TWD", "USD": "щ.д.", "VND": "VND", "XCD": "XCD"}, Narrow: map[string]string{"AFN": "Af", "AMD": "AMD", "ARS": "ARS", "AUD": "AUD", "AZN": "AZN", "BBD": "BBD", "BDT": "BDT", "BMD": "BMD", "BND": "BND", "BRL": "BRL", "BSD": "BSD", "BZD": "BZD", "CAD": "CAD", "CLP": "CLP", "CNY": "CNY", "COP": "COP", "CRC": "CRC", "CUP": "CUP", "DOP": "DOP", "FJD": "FJD", "FKP": "FKP", "GHS": "GHS", "GIP": "GIP", "GYD": "GYD", "HKD": "HKD", "ILS": "ILS", "INR": "INR", "JMD": "JMD", "KHR": "KHR", "KRW": "KRW", "KYD": "KYD", "KZT": "KZT", "LAK": "LAK", "LRD": "LRD", "MNT": "MNT", "MXN": "MXN", "NAD": "NAD", "NGN": "NGN", "NZD": "NZD", "PHP": "PHP", "PYG": "PYG", "RON": "RON", "SBD": "SBD", "SGD": "SGD", "SRD": "SRD", "SSP": "SSP", "TRY": "TRY", "TTD": "TTD", "TWD": "TWD", "UAH": "UAH", "UYU": "UYU", "VND": "VND"}},
 }

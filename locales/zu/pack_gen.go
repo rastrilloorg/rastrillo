@@ -4,8 +4,8 @@
 // SHA-256 in hack/moneycldr/sources/inputs.sha256. Data from the Unicode CLDR,
 // © Unicode, Inc., under the Unicode License v3 (locales/LICENSE-UNICODE).
 
-// Package zu links CLDR money-formatting data for every modern "zu"
-// locale. Import it for its side effect.
+// Package zu links CLDR number- and money-formatting data for every
+// modern "zu" locale. Import it for its side effect.
 package zu
 
 import "amadan.net/rastrillo/rastrillo/locales"

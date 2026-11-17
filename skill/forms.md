@@ -23,6 +23,14 @@ an ambiguous seed saves. No `Currency`: legacy USD cents (`parsed.Cents`,
 `""` = 0, seed `FormatCentsPlain`, show `FormatCents`). A manifest
 field of kind `money` does all of this for you (SKILL.md).
 
+**Numbers:** `form.Field{Kind: form.Number, LocaleEcho: true}`; read
+`parsed.Number` (a `number.Decimal`, exact, never a float); seed
+`form.SeedNumber`, draw `field-number`, show `{{number $L .Value}}`. It
+reads as money does: one reading is taken, the page's own group mark
+wins, two readings are refused with both named. `Strict`, `Negative`
+as for money. On edit set `StoredNumber`: an unchanged seed keeps it.
+Errors are `rastrillo.ui.number_*` keys with `ErrorArgs`.
+
 **Dates:** `form.Date` and `DateTime` parse fixed layouts only, in
 `Field.Location`; `form.Range(parsed, "starts", "ends")` checks
 end-before-start for those two only. `form.Time` reads back as

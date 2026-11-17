@@ -4,8 +4,8 @@
 // SHA-256 in hack/moneycldr/sources/inputs.sha256. Data from the Unicode CLDR,
 // © Unicode, Inc., under the Unicode License v3 (locales/LICENSE-UNICODE).
 
-// Package gd links CLDR money-formatting data for every modern "gd"
-// locale. Import it for its side effect.
+// Package gd links CLDR number- and money-formatting data for every
+// modern "gd" locale. Import it for its side effect.
 package gd
 
 import "amadan.net/rastrillo/rastrillo/locales"

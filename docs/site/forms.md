@@ -70,6 +70,7 @@ the common thing.
 | `Time` | `p.Time` | `15:04`, a clock reading, no location |
 | `DateTime` | `p.DateTime` | `2006-01-02T15:04`, parsed in `Location` |
 | `URL` | `p.String` | A web address, scheme optional; stored as an http(s) URL |
+| `Number` | `p.Number` | An exact `number.Decimal`, read in the page's language as money is; see [Localization](/docs/localization#reading-a-number-someone-typed) |
 
 `Required` on a blank `Text` or `Textarea` reports "<Field name> is
 required", humanized from the field name.

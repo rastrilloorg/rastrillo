@@ -6,7 +6,8 @@ package designsystem
 // rastrillo.BaseLocales() directly, and CheckConfig fails closed on an
 // offered locale whose pack is not linked (locales/config.go) — so
 // without these imports the gallery itself would fail to build its
-// own Money sample.
+// own Money sample. Its numbers, the KiB figures among them, are
+// formatted from the same packs.
 import (
 	_ "amadan.net/rastrillo/rastrillo/locales/ar"
 	_ "amadan.net/rastrillo/rastrillo/locales/bn"

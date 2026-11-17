@@ -5,7 +5,7 @@
 # runs. None of the four names a real file, so the pattern rule already
 # reruns unconditionally without needing .PHONY's safety here.
 .PHONY: ci suite suite-roles gofmt budget code root next-go perf staticcheck govulncheck gitleaks chromedp-graph gorm-free race generate-check scaffold-smoke browser \
-        browser-sweep mirror mirror-check money money-cldr bench
+        browser-sweep mirror mirror-check money money-cldr bench locale-dates
 
 # The READMEs' documented sweeps all run with GOFLAGS=-mod=mod: the tests
 # that build scratch modules (replace => this repo) rely on it to resolve
@@ -138,9 +138,9 @@ bench: | $(BIN)/tmp
 # generated one is untracked: git diff cannot see a new pack, and the
 # generator deletes the pack of a language CLDR dropped so that git diff
 # sees that. It runs the offline tests, compares the shipped currency
-# package with ICU through Node in every shipped locale, measures each
-# pack's binary cost, and re-measures the rejected golang.org/x/text
-# route. It is not in ci: it needs the network, and Node's CLDR must
+# and number packages with ICU through Node in every shipped locale,
+# measures each pack's binary cost, and re-measures the rejected
+# golang.org/x/text route. It is not in ci: it needs the network, and Node's CLDR must
 # match the data's. The offline half alone is
 # `cd hack/moneycldr && go test ./...`.
 MONEY_CLDR_DIR ?= $(BIN)/cldr
@@ -154,6 +154,17 @@ money-cldr: | $(BIN)/tmp
 		go run ./cmd/check -compare $(BIN)/tmp/money-intl.tsv && \
 		go run ./cmd/packsize && \
 		go run ./cmd/xtext $(BIN)/tmp/money-intl.tsv
+	cd hack/moneycldr && go run ./cmd/numcheck > $(BIN)/tmp/numbers.tsv && \
+		node oracle/numbers.js < $(BIN)/tmp/numbers.tsv
+
+# locale-dates rewrites locales/<pack>/dates_gen.go, the CLDR date
+# patterns and names the dates package writes with, from the ICU the
+# node on PATH links (it must carry the packs' CLDR, or gen.mjs stops),
+# then dates/testdata/date_labels.json, the cases Go and dates.mjs are
+# held to. Commit them with hack/cldrdates/coverage.tsv.
+locale-dates:
+	node hack/cldrdates/gen.mjs
+	go test ./dates/ -run 'TestDateLabelsAreCurrent$$' -count=1 -update
 
 # RASTRILLO_TEST_REQUIRE_NODE turns every nodetest skip into a failure
 # here: on a laptop without Node a skip is honest, but a gate that lost
@@ -276,7 +287,7 @@ GORM_FREE = ./migrate ./pow ./sessions ./blobs ./jobs ./eventlog ./auth \
             ./mail ./carlos ./crypto ./flash ./form ./dbtest ./clientip ./nodetest ./background \
             ./xlsx ./table \
             ./perf ./lastsignin ./budget ./perf/perftest ./locales ./currency \
-            ./currency/replay ./currency/sqlmoney
+            ./currency/replay ./currency/sqlmoney ./number ./dates
 # go list runs on its own line so its failure fails the target: piped
 # straight into grep, a path that stopped resolving printed nothing and
 # the fence passed without checking anything.

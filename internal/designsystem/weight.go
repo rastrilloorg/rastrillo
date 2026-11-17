@@ -3,11 +3,10 @@ package designsystem
 import (
 	"bytes"
 	"compress/gzip"
+	"strconv"
 	"strings"
 
-	"golang.org/x/text/language"
-	"golang.org/x/text/message"
-	"golang.org/x/text/number"
+	"amadan.net/rastrillo/rastrillo/number"
 )
 
 // ── What a file weighs ───────────────────────────────────────────────
@@ -86,16 +85,18 @@ func gzipped(b []byte) int {
 // 10 KiB, where rounding to a whole number would turn a 634-byte theme
 // into "1" or "0", and whole numbers above, where a decimal is noise.
 func kib(locale string, n int) string {
-	tag, err := language.Parse(locale)
-	if err != nil {
-		tag = language.English
-	}
-	p := message.NewPrinter(tag)
-	v := float64(n) / 1024
+	text := strconv.Itoa((n + 512) / 1024)
 	if n < 10*1024 {
-		return p.Sprint(number.Decimal(v, number.MinFractionDigits(1), number.MaxFractionDigits(1)))
+		tenths := (n*10 + 512) / 1024
+		text = strconv.Itoa(tenths/10) + "." + strconv.Itoa(tenths%10)
 	}
-	return p.Sprint(number.Decimal(v, number.MaxFractionDigits(0)))
+	written, err := number.Format(locale, number.Decimal(text),
+		number.Options{})
+	if err != nil {
+		// text is built from digits above, so it is always a decimal.
+		panic("designsystem: " + err.Error())
+	}
+	return written
 }
 
 // appTotalLine is the key for what a new app is handed in all. Unlike a

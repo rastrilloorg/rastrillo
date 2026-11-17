@@ -123,7 +123,7 @@ func WithT(t func(key string, args ...any) string) Option {
 //
 //	{{with safeHref .Site}}<a href="{{.}}" rel="noopener noreferrer">{{displayURL .}}</a>{{end}}
 //
-// T, Tf, Tbdi, number, displayValue, dateWords, money and actor
+// T, Tf, Tbdi, number, displayValue, dateWords, money, actor and date
 // (LocaleFuncs) take an optional leading $L, the request's *Localizer:
 // {{T $L "key"}} uses that localizer's catalog and formatting locale.
 // The form is decided by the first argument's type, so the legacy
@@ -133,7 +133,7 @@ func WithT(t func(key string, args ...any) string) Option {
 // finds $L in the data ({{$L := localizer $}}), and withL adds it to a
 // map passed to a partial. actor is rastrillo.ActorPhrase in the
 // page's language, naming people through ActorName:
-// {{actor $L .Actor}} is "Claude for Paul".
+// {{actor $L .Actor}} is "Claude for Paul"; {{date $L .At "time"}} 9:09 PM.
 //
 // ui.Pages binds pageStylesheet, pageScripts and neededScripts per page.
 // Outside it, pageStylesheet is the whole /static/tokens.css, unhashed,

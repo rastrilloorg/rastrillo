@@ -4,8 +4,8 @@
 // SHA-256 in hack/moneycldr/sources/inputs.sha256. Data from the Unicode CLDR,
 // © Unicode, Inc., under the Unicode License v3 (locales/LICENSE-UNICODE).
 
-// Package fa links CLDR money-formatting data for every modern "fa"
-// locale. Import it for its side effect.
+// Package fa links CLDR number- and money-formatting data for every
+// modern "fa" locale. Import it for its side effect.
 package fa
 
 import "amadan.net/rastrillo/rastrillo/locales"
@@ -13,6 +13,6 @@ import "amadan.net/rastrillo/rastrillo/locales"
 func init() { locales.Register("fa", data) }
 
 var data = map[string]locales.Locale{
-	"fa":    {Parent: "root", CurrencyDecimal: "٫", CurrencyGroup: "٬", Decimal: "٫", Minus: "\u200e−", Digits: "۰۱۲۳۴۵۶۷۸۹", Standard: "\u200e¤#,##0.00", Alpha: "\u200e¤\u00a0#,##0.00", Symbols: map[string]string{"AFN": "؋", "CAD": "$CA", "CNY": "¥CN", "HKD": "$HK", "IRR": "ریال", "JPY": "¥", "MXN": "$MX", "NZD": "$NZ", "PHP": "PHP", "THB": "฿", "USD": "$", "XCD": "$EC", "XOF": "فرانک\u202fCFA"}, Narrow: map[string]string{"BYN": "Br"}},
+	"fa":    {Parent: "root", CurrencyDecimal: "٫", CurrencyGroup: "٬", Decimal: "٫", Group: "٬", Minus: "\u200e−", Digits: "۰۱۲۳۴۵۶۷۸۹", PercentSign: "٪", NaN: "ناعدد", Standard: "\u200e¤#,##0.00", Alpha: "\u200e¤\u00a0#,##0.00", Symbols: map[string]string{"AFN": "؋", "CAD": "$CA", "CNY": "¥CN", "HKD": "$HK", "IRR": "ریال", "JPY": "¥", "MXN": "$MX", "NZD": "$NZ", "PHP": "PHP", "THB": "฿", "USD": "$", "XCD": "$EC", "XOF": "فرانک\u202fCFA"}, Narrow: map[string]string{"BYN": "Br"}},
 	"fa-AF": {Parent: "fa", Standard: "¤\u00a0#,##0.00", Alpha: "¤\u00a0#,##0.00"},
 }

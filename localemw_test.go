@@ -84,6 +84,33 @@ func TestResolutionPrecedence(t *testing.T) {
 	}
 }
 
+// A one-language app formats for the browser and writes no prefix and
+// no cookie, so neither may outrank the header it reads.
+func TestNegotiateHeaderReadsOnlyTheHeader(t *testing.T) {
+	locales := mwLocales(t)
+	for _, each := range []struct{ header, want string }{
+		{"fr-CA, en;q=0.5", "fr"},
+		{"de-informal;q=0.4, fr;q=0.9", "fr"},
+		{"es, pt", "en"},
+		{"", "en"},
+	} {
+		if got := locales.NegotiateHeader(each.header); got != each.want {
+			t.Errorf("NegotiateHeader(%q) = %q, want %q", each.header,
+				got, each.want)
+		}
+	}
+	request := httptest.NewRequest("GET", "/de-informal/orders", nil)
+	request.Header.Set("Accept-Language", "fr")
+	request.AddCookie(&http.Cookie{Name: LocaleCookie, Value: "en"})
+	if got := locales.Negotiate(request); got != "de-informal" {
+		t.Errorf("Negotiate = %q: the middleware's precedence changed", got)
+	}
+	header := request.Header.Get("Accept-Language")
+	if got := locales.NegotiateHeader(header); got != "fr" {
+		t.Errorf("NegotiateHeader = %q; the prefix or cookie won", got)
+	}
+}
+
 func TestMiddlewareBindsTranslation(t *testing.T) {
 	l := mwLocales(t)
 	_, _, fr := seen(t, l, httptest.NewRequest("GET", "/fr/orders", nil))

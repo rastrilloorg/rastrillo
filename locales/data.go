@@ -10,8 +10,9 @@ import "sort"
 // mean "absent" and be mistaken for "inherit".
 //
 // The fields are grouped by what reads them, so a later pack can carry
-// {{number}} and date data beside money without a second registry:
-// Decimal, Minus, Digits and MinGrouping are plain-number data already.
+// date data beside money without a second registry: Decimal, Group,
+// Minus, Digits, MinGrouping, Number, Percent and PercentSign are what
+// {{number}} reads, and money shares the first four.
 type Locale struct {
 	Parent string // a locale id in the same pack, or "root"
 	// CurrencyDecimal and CurrencyGroup are the marks money uses. They
@@ -21,14 +22,28 @@ type Locale struct {
 	CurrencyGroup   string
 	// Decimal is the ordinary decimal mark, which the parser also reads
 	// as a decimal mark when it is not the group mark.
-	Decimal     string
+	Decimal string
+	// Group is the ordinary group mark, which plain numbers use. It is
+	// not always CurrencyGroup: de-AT groups numbers with a no-break
+	// space and money with ".".
+	Group       string
 	Minus       string
 	Digits      string // the default numbering system's ten digits
 	MinGrouping string // CLDR minimumGroupingDigits, "1" to "3"
-	Standard    string // currency pattern
-	Alpha       string // pattern when the symbol's touching rune is a letter
-	Spacing     string // currency-spacing insert
-	Symbols     map[string]string
+	// Number and Percent are CLDR's standard decimal and percent
+	// patterns ("#,##,##0.###" in hi), read for their group sizes and
+	// for where the percent sign goes; PercentSign is the sign itself.
+	Number      string
+	Percent     string
+	PercentSign string
+	// Infinity and NaN are what a float that is no number is written
+	// as: "∞", and "NaN" or Finnish "epäluku".
+	Infinity string
+	NaN      string
+	Standard string // currency pattern
+	Alpha    string // pattern when the symbol's touching rune is a letter
+	Spacing  string // currency-spacing insert
+	Symbols  map[string]string
 	// Narrow are CLDR's narrow symbols ("$" for USD where the standard
 	// symbol is "US$"). Formatting never uses them; the normalising
 	// parser accepts them as spellings of the field's own currency.
@@ -131,27 +146,10 @@ func Data(id string) (Locale, bool) {
 // Merge fills child's empty fields from parent and overlays its symbols
 // and overrides.
 func Merge(child, parent Locale) Locale {
-	pick := func(c, p string) string {
-		if c != "" {
-			return c
-		}
-		return p
-	}
-	out := Locale{
-		Parent:          child.Parent,
-		CurrencyDecimal: pick(child.CurrencyDecimal, parent.CurrencyDecimal),
-		CurrencyGroup:   pick(child.CurrencyGroup, parent.CurrencyGroup),
-		Decimal:         pick(child.Decimal, parent.Decimal),
-		Minus:           pick(child.Minus, parent.Minus),
-		Digits:          pick(child.Digits, parent.Digits),
-		MinGrouping:     pick(child.MinGrouping, parent.MinGrouping),
-		Standard:        pick(child.Standard, parent.Standard),
-		Alpha:           pick(child.Alpha, parent.Alpha),
-		Spacing:         pick(child.Spacing, parent.Spacing),
-		Symbols:         map[string]string{},
-		Narrow:          map[string]string{},
-		Overrides:       map[string]Override{},
-	}
+	out := mergeMarks(child, parent)
+	out.Symbols = map[string]string{}
+	out.Narrow = map[string]string{}
+	out.Overrides = map[string]Override{}
 	for k, v := range parent.Narrow {
 		out.Narrow[k] = v
 	}
@@ -186,6 +184,35 @@ func Merge(child, parent Locale) Locale {
 		}
 	}
 	return out
+}
+
+// mergeMarks is Merge's string fields: the child's, or else the
+// parent's.
+func mergeMarks(child, parent Locale) Locale {
+	pick := func(own, inherited string) string {
+		if own != "" {
+			return own
+		}
+		return inherited
+	}
+	return Locale{
+		Parent:          child.Parent,
+		CurrencyDecimal: pick(child.CurrencyDecimal, parent.CurrencyDecimal),
+		CurrencyGroup:   pick(child.CurrencyGroup, parent.CurrencyGroup),
+		Decimal:         pick(child.Decimal, parent.Decimal),
+		Group:           pick(child.Group, parent.Group),
+		Minus:           pick(child.Minus, parent.Minus),
+		Digits:          pick(child.Digits, parent.Digits),
+		MinGrouping:     pick(child.MinGrouping, parent.MinGrouping),
+		Number:          pick(child.Number, parent.Number),
+		Percent:         pick(child.Percent, parent.Percent),
+		PercentSign:     pick(child.PercentSign, parent.PercentSign),
+		Infinity:        pick(child.Infinity, parent.Infinity),
+		NaN:             pick(child.NaN, parent.NaN),
+		Standard:        pick(child.Standard, parent.Standard),
+		Alpha:           pick(child.Alpha, parent.Alpha),
+		Spacing:         pick(child.Spacing, parent.Spacing),
+	}
 }
 
 // Storage reports the storage set's entry for code, which must already

@@ -4,8 +4,8 @@
 // SHA-256 in hack/moneycldr/sources/inputs.sha256. Data from the Unicode CLDR,
 // © Unicode, Inc., under the Unicode License v3 (locales/LICENSE-UNICODE).
 
-// Package yo links CLDR money-formatting data for every modern "yo"
-// locale. Import it for its side effect.
+// Package yo links CLDR number- and money-formatting data for every
+// modern "yo" locale. Import it for its side effect.
 package yo
 
 import "amadan.net/rastrillo/rastrillo/locales"

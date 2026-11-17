@@ -44,6 +44,7 @@ func init() {
 	tmplrt.Register("435d2c06aeeb6ac0b66bf0a80fb7804c454b70653ff84c6f651a7c9fa539cb23", bind_435d2c06aeeb6ac0)
 	tmplrt.Register("4707ee017ab8e9d9a4f12f8b0ea8d2837f30646d325cce7fa53f2addd821d2b4", bind_4707ee017ab8e9d9)
 	tmplrt.Register("4a20d6ebe22392e7a53adab8a7e0b53c1695b1c00653e4e277c42e3785b56e60", bind_4a20d6ebe22392e7)
+	tmplrt.Register("4b52b3aa55899ae9f6ab5a5e6cd5e6e543f5e729ea2cae5329892634eaadc09a", bind_4b52b3aa55899ae9)
 	tmplrt.Register("4c0d5fef9b1484dc733a6046afd14fd78625dd8fc5feff3145a531f7eabf63e4", bind_4c0d5fef9b1484dc)
 	tmplrt.Register("4ebde68bde398efe2c4de4bd7d4029757e95597493d2407196bca60ae2b6f29d", bind_4ebde68bde398efe)
 	tmplrt.Register("4fbe4210f13670b00c478b18a4442e57de99d0d964d3c2659fd16d3f1e33e91e", bind_4fbe4210f13670b0)
@@ -90,6 +91,7 @@ func init() {
 	tmplrt.Register("ac4bdab505507c3314b0dc2d069cc22bf0ac018939c26a583a5362e840c6a070", bind_ac4bdab505507c33)
 	tmplrt.Register("acfa9226edf3c947b7c7f3e391fc4f0e4319d8827565024d69d29820d75c2dc6", bind_acfa9226edf3c947)
 	tmplrt.Register("af0bfa10c74d24770384578acb8ddfacf0cf64555a5b1633c4201a6015f83312", bind_af0bfa10c74d2477)
+	tmplrt.Register("b13f1c3cea61de72aaa11afe3b6f862351dd70ef7f5672876fd30a7dfd59dbb2", bind_b13f1c3cea61de72)
 	tmplrt.Register("b4906f50c2d0358f8909e030a3e44d8c6421db062e8073a99bd2124bb833cb22", bind_b4906f50c2d0358f)
 	tmplrt.Register("b54587d2f0c705db02b119671ab47a778b83b317ae8b02fe187eb3642ceb5294", bind_b54587d2f0c705db)
 	tmplrt.Register("b66284b6c15b99f0d4178d4a21ead61a3cbe850f7b5d34237ff179ab867e20b4", bind_b66284b6c15b99f0)
@@ -704,6 +706,14 @@ func bind_4a20d6ebe22392e7(map[string]any) (tmplrt.Exec, error) {
 	return func(b *bytes.Buffer, data any) (err error) {
 		defer tmplrt.Recover(&err, "error-page.html")
 		return exec_883a45166e779d36(b, tmplrt.Data(data), nil, 0)
+	}, nil
+}
+
+// bind_4b52b3aa55899ae9 binds "field-number".
+func bind_4b52b3aa55899ae9(map[string]any) (tmplrt.Exec, error) {
+	return func(b *bytes.Buffer, data any) (err error) {
+		defer tmplrt.Recover(&err, "field-number")
+		return exec_dbab6dd6360e276b(b, tmplrt.Data(data), nil, 0)
 	}, nil
 }
 
@@ -1662,6 +1672,14 @@ func bind_af0bfa10c74d2477(map[string]any) (tmplrt.Exec, error) {
 	return func(b *bytes.Buffer, data any) (err error) {
 		defer tmplrt.Recover(&err, "pagination.html")
 		return exec_97b24b851f428451(b, tmplrt.Data(data), nil, 0)
+	}, nil
+}
+
+// bind_b13f1c3cea61de72 binds "field-number.html".
+func bind_b13f1c3cea61de72(map[string]any) (tmplrt.Exec, error) {
+	return func(b *bytes.Buffer, data any) (err error) {
+		defer tmplrt.Recover(&err, "field-number.html")
+		return exec_b8e843c64bed1b73(b, tmplrt.Data(data), nil, 0)
 	}, nil
 }
 
@@ -11557,6 +11575,12 @@ var facts_b8a1185de3a06193 = tmplrt.Facts{
 	},
 }
 
+// exec_b8e843c64bed1b73 renders "field-number.html".
+func exec_b8e843c64bed1b73(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
+	b.WriteString("\n\n")
+	return nil
+}
+
 // exec_bdc4404ab629ded7 renders "list-bar".
 func exec_bdc4404ab629ded7(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
 	root := dot
@@ -12813,6 +12837,200 @@ var facts_dad56189c82f12c1_b6cf1f3e = tmplrt.Facts{
 		{Path: []string{".Return"}, Type: "string"},
 		{Path: []string{".Data"}, Type: "interface {}"},
 	},
+}
+
+// exec_dbab6dd6360e276b renders "field-number".
+func exec_dbab6dd6360e276b(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
+	b.WriteString("<div rst-field>\n  <label rst-field-label for=\"")
+	v1, err := tmplrt.Field(dot, "Name")
+	if err != nil {
+		return tmplrt.ExecError("field-number", ".Name", err)
+	}
+	v2 := tmplrt.Unwrap(v1)
+	b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v2)))
+	b.WriteString("\">")
+	v3, err := tmplrt.Field(dot, "Label")
+	if err != nil {
+		return tmplrt.ExecError("field-number", ".Label", err)
+	}
+	v4 := tmplrt.Unwrap(v3)
+	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v4)))
+	v5, err := tmplrt.Field(dot, "Required")
+	if err != nil {
+		return tmplrt.ExecError("field-number", ".Required", err)
+	}
+	v6 := tmplrt.Unwrap(v5)
+	if tmplrt.Truth(v6) {
+		b.WriteString(" <span rst-field-required aria-hidden=\"true\">*</span>")
+	}
+	b.WriteString("</label>\n  <input rst-input id=\"")
+	v7, err := tmplrt.Field(dot, "Name")
+	if err != nil {
+		return tmplrt.ExecError("field-number", ".Name", err)
+	}
+	v8 := tmplrt.Unwrap(v7)
+	b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v8)))
+	b.WriteString("\" name=\"")
+	v9, err := tmplrt.Field(dot, "Name")
+	if err != nil {
+		return tmplrt.ExecError("field-number", ".Name", err)
+	}
+	v10 := tmplrt.Unwrap(v9)
+	b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v10)))
+	b.WriteString("\" type=\"text\" inputmode=\"decimal\"")
+	v11, err := tmplrt.Field(dot, "Value")
+	if err != nil {
+		return tmplrt.ExecError("field-number", ".Value", err)
+	}
+	v12 := tmplrt.Unwrap(v11)
+	if tmplrt.Truth(v12) {
+		b.WriteString(" value=\"")
+		v13, err := tmplrt.Field(dot, "Value")
+		if err != nil {
+			return tmplrt.ExecError("field-number", ".Value", err)
+		}
+		v14 := tmplrt.Unwrap(v13)
+		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v14)))
+		b.WriteString("\"")
+	}
+	v15, err := tmplrt.Field(dot, "Required")
+	if err != nil {
+		return tmplrt.ExecError("field-number", ".Required", err)
+	}
+	v16 := tmplrt.Unwrap(v15)
+	if tmplrt.Truth(v16) {
+		b.WriteString(" required")
+	}
+	v17, err := tmplrt.Field(dot, "Error")
+	if err != nil {
+		return tmplrt.ExecError("field-number", ".Error", err)
+	}
+	v18 := tmplrt.Unwrap(v17)
+	if tmplrt.Truth(v18) {
+		b.WriteString(" aria-invalid=\"true\"")
+	}
+	v20, err := tmplrt.Field(dot, "Hint")
+	if err != nil {
+		return tmplrt.ExecError("field-number", ".Hint", err)
+	}
+	v19 := tmplrt.ValueArg(v20)
+	if !tmplrt.Truth(v19) {
+		v21, err := tmplrt.Field(dot, "Error")
+		if err != nil {
+			return tmplrt.ExecError("field-number", ".Error", err)
+		}
+		v19 = tmplrt.ValueArg(v21)
+	}
+	v22 := tmplrt.Unwrap(v19)
+	if tmplrt.Truth(v22) {
+		b.WriteString(" aria-describedby=\"")
+		v23, err := tmplrt.Field(dot, "Hint")
+		if err != nil {
+			return tmplrt.ExecError("field-number", ".Hint", err)
+		}
+		v24 := tmplrt.Unwrap(v23)
+		if tmplrt.Truth(v24) {
+			v25, err := tmplrt.Field(dot, "Name")
+			if err != nil {
+				return tmplrt.ExecError("field-number", ".Name", err)
+			}
+			v26 := tmplrt.Unwrap(v25)
+			b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v26)))
+			b.WriteString("-hint")
+		}
+		v28, err := tmplrt.Field(dot, "Hint")
+		if err != nil {
+			return tmplrt.ExecError("field-number", ".Hint", err)
+		}
+		v27 := tmplrt.ValueArg(v28)
+		if tmplrt.Truth(v27) {
+			v29, err := tmplrt.Field(dot, "Error")
+			if err != nil {
+				return tmplrt.ExecError("field-number", ".Error", err)
+			}
+			v27 = tmplrt.ValueArg(v29)
+		}
+		v30 := tmplrt.Unwrap(v27)
+		if tmplrt.Truth(v30) {
+			b.WriteString(" ")
+		}
+		v31, err := tmplrt.Field(dot, "Error")
+		if err != nil {
+			return tmplrt.ExecError("field-number", ".Error", err)
+		}
+		v32 := tmplrt.Unwrap(v31)
+		if tmplrt.Truth(v32) {
+			v33, err := tmplrt.Field(dot, "Name")
+			if err != nil {
+				return tmplrt.ExecError("field-number", ".Name", err)
+			}
+			v34 := tmplrt.Unwrap(v33)
+			b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v34)))
+			b.WriteString("-error")
+		}
+		b.WriteString("\"")
+	}
+	b.WriteString(">\n  <input type=\"hidden\" name=\"")
+	v35, err := tmplrt.Field(dot, "Name")
+	if err != nil {
+		return tmplrt.ExecError("field-number", ".Name", err)
+	}
+	v36 := tmplrt.Unwrap(v35)
+	b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v36)))
+	b.WriteString(".locale\" value=\"")
+	v37, err := tmplrt.Field(dot, "Locale")
+	if err != nil {
+		return tmplrt.ExecError("field-number", ".Locale", err)
+	}
+	v38 := tmplrt.Unwrap(v37)
+	b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v38)))
+	b.WriteString("\">")
+	v39, err := tmplrt.Field(dot, "Hint")
+	if err != nil {
+		return tmplrt.ExecError("field-number", ".Hint", err)
+	}
+	v40 := tmplrt.Unwrap(v39)
+	if tmplrt.Truth(v40) {
+		b.WriteString("\n  <small rst-field-hint id=\"")
+		v41, err := tmplrt.Field(dot, "Name")
+		if err != nil {
+			return tmplrt.ExecError("field-number", ".Name", err)
+		}
+		v42 := tmplrt.Unwrap(v41)
+		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v42)))
+		b.WriteString("-hint\">")
+		v43, err := tmplrt.Field(dot, "Hint")
+		if err != nil {
+			return tmplrt.ExecError("field-number", ".Hint", err)
+		}
+		v44 := tmplrt.Unwrap(v43)
+		b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v44)))
+		b.WriteString("</small>")
+	}
+	v45, err := tmplrt.Field(dot, "Error")
+	if err != nil {
+		return tmplrt.ExecError("field-number", ".Error", err)
+	}
+	v46 := tmplrt.Unwrap(v45)
+	if tmplrt.Truth(v46) {
+		b.WriteString("\n  <small rst-field-error id=\"")
+		v47, err := tmplrt.Field(dot, "Name")
+		if err != nil {
+			return tmplrt.ExecError("field-number", ".Name", err)
+		}
+		v48 := tmplrt.Unwrap(v47)
+		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v48)))
+		b.WriteString("-error\">")
+		v49, err := tmplrt.Field(dot, "Error")
+		if err != nil {
+			return tmplrt.ExecError("field-number", ".Error", err)
+		}
+		v50 := tmplrt.Unwrap(v49)
+		b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v50)))
+		b.WriteString("</small>")
+	}
+	b.WriteString("\n</div>")
+	return nil
 }
 
 // exec_e68f82bd5b53faee renders "content".

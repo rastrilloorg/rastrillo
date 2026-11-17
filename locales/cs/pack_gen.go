@@ -4,8 +4,8 @@
 // SHA-256 in hack/moneycldr/sources/inputs.sha256. Data from the Unicode CLDR,
 // © Unicode, Inc., under the Unicode License v3 (locales/LICENSE-UNICODE).
 
-// Package cs links CLDR money-formatting data for every modern "cs"
-// locale. Import it for its side effect.
+// Package cs links CLDR number- and money-formatting data for every
+// modern "cs" locale. Import it for its side effect.
 package cs
 
 import "amadan.net/rastrillo/rastrillo/locales"
@@ -13,5 +13,5 @@ import "amadan.net/rastrillo/rastrillo/locales"
 func init() { locales.Register("cs", data) }
 
 var data = map[string]locales.Locale{
-	"cs": {Parent: "root", CurrencyDecimal: ",", CurrencyGroup: "\u00a0", Decimal: ",", Standard: "#,##0.00\u00a0¤", Alpha: "#,##0.00\u00a0¤", Symbols: map[string]string{"AUD": "AU$", "CZK": "Kč", "ILS": "ILS", "INR": "INR", "PHP": "PHP", "VND": "VND"}, Narrow: map[string]string{"BYN": "р.", "RON": "L", "TWD": "NT$"}},
+	"cs": {Parent: "root", CurrencyDecimal: ",", CurrencyGroup: "\u00a0", Decimal: ",", Group: "\u00a0", Percent: "#,##0\u00a0%", Standard: "#,##0.00\u00a0¤", Alpha: "#,##0.00\u00a0¤", Symbols: map[string]string{"AUD": "AU$", "CZK": "Kč", "ILS": "ILS", "INR": "INR", "PHP": "PHP", "VND": "VND"}, Narrow: map[string]string{"BYN": "р.", "RON": "L", "TWD": "NT$"}},
 }

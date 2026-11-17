@@ -1621,6 +1621,7 @@ var previewHeights = map[string]int{
 	"partial-field-textarea":  260,
 	"partial-field-url":       210,
 	"partial-field-money":     210,
+	"partial-field-number":    210,
 	"partial-field-select":    300,
 	"partial-field-check":     140,
 	"partial-choice-field":    280,

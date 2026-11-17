@@ -259,6 +259,11 @@
           "blurb": "Format, seed and parse an amount in any currency, in the reader's language."
         },
         {
+          "slug": "reference/dates",
+          "label": "dates",
+          "blurb": "Dates and times in the reader's language, from CLDR, in Go and in the browser."
+        },
+        {
           "slug": "reference/db",
           "label": "db",
           "blurb": "One SQLite file as two pools, and the pragma order that has to be right."
@@ -337,6 +342,11 @@
           "slug": "reference/nodetest",
           "label": "nodetest",
           "blurb": "Run a Node script from a Go test, and fail on CI when node is missing."
+        },
+        {
+          "slug": "reference/number",
+          "label": "number",
+          "blurb": "Write and read plain numbers in the reader's language, exactly."
         },
         {
           "slug": "reference/op",

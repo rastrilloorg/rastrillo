@@ -4,8 +4,8 @@
 // SHA-256 in hack/moneycldr/sources/inputs.sha256. Data from the Unicode CLDR,
 // © Unicode, Inc., under the Unicode License v3 (locales/LICENSE-UNICODE).
 
-// Package eu links CLDR money-formatting data for every modern "eu"
-// locale. Import it for its side effect.
+// Package eu links CLDR number- and money-formatting data for every
+// modern "eu" locale. Import it for its side effect.
 package eu
 
 import "amadan.net/rastrillo/rastrillo/locales"
@@ -13,5 +13,5 @@ import "amadan.net/rastrillo/rastrillo/locales"
 func init() { locales.Register("eu", data) }
 
 var data = map[string]locales.Locale{
-	"eu": {Parent: "root", CurrencyDecimal: ",", CurrencyGroup: ".", Decimal: ",", Minus: "−", Standard: "#,##0.00\u00a0¤", Alpha: "#,##0.00\u00a0¤", Symbols: map[string]string{"PHP": "PHP", "THB": "฿"}, Narrow: map[string]string{"BYN": "р.", "TWD": "NT$"}},
+	"eu": {Parent: "root", CurrencyDecimal: ",", CurrencyGroup: ".", Decimal: ",", Group: ".", Minus: "−", Percent: "%\u00a0#,##0", Standard: "#,##0.00\u00a0¤", Alpha: "#,##0.00\u00a0¤", Symbols: map[string]string{"PHP": "PHP", "THB": "฿"}, Narrow: map[string]string{"BYN": "р.", "TWD": "NT$"}},
 }

@@ -17,9 +17,15 @@ import (
 // Recorded from ui.Funcs before the locale entries became dispatchers,
 // by executing legacySrc over edgeData: "unchanged" is checked against
 // what the old function map really rendered, not a re-derivation of it.
+// One figure has moved since, on purpose: Spanish 1234.5 is 1234,5,
+// because CLDR 48 groups Spanish only from five digits and {{number}}
+// now formats from the packs (x/text wrote 1.234,5).
 const (
 	wantLegacyEN = "[][][&lt;nil&gt;][1,234,567][1,234.5][1,234,567][1234567][18,446,744,073,709,551,615][Cancel][Reference: &lt;b&gt;x&lt;/b&gt;][Reference: <bdi>&lt;b&gt;x&lt;/b&gt;</bdi>]"
-	wantLegacyES = "[][][&lt;nil&gt;][1.234.567][1.234,5][1.234.567][1234567][18.446.744.073.709.551.615][Cancel][Reference: &lt;b&gt;x&lt;/b&gt;][Reference: <bdi>&lt;b&gt;x&lt;/b&gt;</bdi>]"
+	wantLegacyES = "[][][&lt;nil&gt;][1.234.567][1234,5][1.234.567]" +
+		"[1234567][18.446.744.073.709.551.615][Cancel]" +
+		"[Reference: &lt;b&gt;x&lt;/b&gt;]" +
+		"[Reference: <bdi>&lt;b&gt;x&lt;/b&gt;</bdi>]"
 )
 
 const legacySrc = `[{{number .Nil}}][{{displayValue .Nil}}][{{number .NilP}}][{{number .N}}][{{number .F}}][{{number .S}}][{{displayValue .S}}][{{number .U}}][{{T "rastrillo.ui.cancel"}}][{{Tf "rastrillo.ui.error_ref" "ref" .Evil}}][{{Tbdi "rastrillo.ui.error_ref" "ref" .Evil}}]`
@@ -98,7 +104,7 @@ func TestEveryLocaleFuncUsesTheLocalizer(t *testing.T) {
 		{"Tf", `{{Tf $L "app.ref" "ref" .Evil}}`, "Referencia: &lt;b&gt;x&lt;/b&gt;"},
 		{"Tbdi", `{{Tbdi $L "app.ref" "ref" .Evil}}`, "Referencia: <bdi>&lt;b&gt;x&lt;/b&gt;</bdi>"},
 		{"number", `{{number $L .N}}`, "1.234.567"},
-		{"displayValue", `{{displayValue $L .F}}`, "1.234,5"},
+		{"displayValue", `{{displayValue $L .F}}`, "1234,5"},
 		{"dateWords", `{{dateWords $L}}`, `&#34;today&#34;:&#34;hoy&#34;`},
 		{"money", `{{money $L .P .C}}`, "1284,50\u00a0€"},
 	} {
@@ -181,7 +187,8 @@ func TestLocaleFuncArgumentErrorsNameTheFunction(t *testing.T) {
 		`{{$L := localizer $}}{{Tf $L 5}}`:   "Tf: argument 2 is int, want string",
 		`{{Tbdi .Nil}}`:                      "Tbdi: argument 1 is <nil>, want string",
 		`{{number}}`:                         "number: 0 arguments, want 1",
-		`{{number 1 2}}`:                     "number: 2 arguments, want 1",
+		`{{number 1 2}}`:                     "number: 2 is not an option",
+		`{{number 1 "places"}}`:              `number: "places" needs a count`,
 		`{{$L := localizer $}}{{number $L}}`: "number: 1 arguments, want 2",
 		`{{$L := localizer $}}{{displayValue $L 1 2}}`: "displayValue: 3 arguments, want 2",
 		`{{dateWords 1}}`:                              "dateWords: 1 arguments, want 0",

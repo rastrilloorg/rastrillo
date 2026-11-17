@@ -431,7 +431,9 @@ func readLocale(dir, id string, currencies map[string]locales.Currency) locales.
 	ns, _ := n["defaultNumberingSystem"].(string)
 	sym, _ := n["symbols-numberSystem-"+ns].(map[string]any)
 	cf, _ := n["currencyFormats-numberSystem-"+ns].(map[string]any)
-	if sym == nil || cf == nil {
+	df, _ := n["decimalFormats-numberSystem-"+ns].(map[string]any)
+	pf, _ := n["percentFormats-numberSystem-"+ns].(map[string]any)
+	if sym == nil || cf == nil || df == nil || pf == nil {
 		fail(fmt.Errorf("%s: no symbols or currency formats for numbering system %q", id, ns))
 	}
 	var nsys struct {
@@ -461,9 +463,15 @@ func readLocale(dir, id string, currencies map[string]locales.Currency) locales.
 		CurrencyDecimal: str(sym, "decimal"),
 		CurrencyGroup:   str(sym, "group"),
 		Decimal:         str(sym, "decimal"),
+		Group:           str(sym, "group"),
 		Minus:           str(sym, "minusSign"),
 		Digits:          d["_digits"],
 		MinGrouping:     str(n, "minimumGroupingDigits"),
+		Number:          str(df, "standard"),
+		Percent:         str(pf, "standard"),
+		PercentSign:     str(sym, "percentSign"),
+		Infinity:        str(sym, "infinity"),
+		NaN:             str(sym, "nan"),
 		Standard:        str(cf, "standard"),
 		Alpha:           str(cf, "standard-alphaNextToNumber"),
 		Spacing:         str(before, "insertBetween"),
@@ -480,7 +488,9 @@ func readLocale(dir, id string, currencies map[string]locales.Currency) locales.
 	if l.Alpha == "" {
 		l.Alpha = l.Standard
 	}
-	if l.MinGrouping == "" || l.Standard == "" || l.Minus == "" || l.CurrencyGroup == "" {
+	if l.MinGrouping == "" || l.Standard == "" || l.Minus == "" || l.CurrencyGroup == "" ||
+		l.Group == "" || l.Number == "" || l.Percent == "" || l.PercentSign == "" ||
+		l.Infinity == "" || l.NaN == "" {
 		fail(fmt.Errorf("%s: missing a required number field", id))
 	}
 	var curs map[string]map[string]struct {
@@ -522,9 +532,15 @@ func diff(l locales.Locale, parent string, resolved map[string]locales.Locale) l
 		CurrencyDecimal: keep(l.CurrencyDecimal, p.CurrencyDecimal),
 		CurrencyGroup:   keep(l.CurrencyGroup, p.CurrencyGroup),
 		Decimal:         keep(l.Decimal, p.Decimal),
+		Group:           keep(l.Group, p.Group),
 		Minus:           keep(l.Minus, p.Minus),
 		Digits:          keep(l.Digits, p.Digits),
 		MinGrouping:     keep(l.MinGrouping, p.MinGrouping),
+		Number:          keep(l.Number, p.Number),
+		Percent:         keep(l.Percent, p.Percent),
+		PercentSign:     keep(l.PercentSign, p.PercentSign),
+		Infinity:        keep(l.Infinity, p.Infinity),
+		NaN:             keep(l.NaN, p.NaN),
 		Standard:        keep(l.Standard, p.Standard),
 		Alpha:           keep(l.Alpha, p.Alpha),
 		Spacing:         keep(l.Spacing, p.Spacing),
@@ -657,9 +673,15 @@ func localeLiteral(b *strings.Builder, d locales.Locale) {
 	field("CurrencyDecimal", d.CurrencyDecimal)
 	field("CurrencyGroup", d.CurrencyGroup)
 	field("Decimal", d.Decimal)
+	field("Group", d.Group)
 	field("Minus", d.Minus)
 	field("Digits", d.Digits)
 	field("MinGrouping", d.MinGrouping)
+	field("Number", d.Number)
+	field("Percent", d.Percent)
+	field("PercentSign", d.PercentSign)
+	field("Infinity", d.Infinity)
+	field("NaN", d.NaN)
 	field("Standard", d.Standard)
 	field("Alpha", d.Alpha)
 	field("Spacing", d.Spacing)
@@ -730,7 +752,7 @@ func emitCore(rootData locales.Locale, index, parents map[string]string, cur map
 
 func emitPack(pack string, locs map[string]locales.Locale) []byte {
 	var b strings.Builder
-	header(&b, pack, fmt.Sprintf("// Package %s links CLDR money-formatting data for every modern %q\n// locale. Import it for its side effect.\n", pack, pack))
+	header(&b, pack, fmt.Sprintf("// Package %s links CLDR number- and money-formatting data for every\n// modern %q locale. Import it for its side effect.\n", pack, pack))
 	b.WriteString("import \"amadan.net/rastrillo/rastrillo/locales\"\n\n")
 	fmt.Fprintf(&b, "func init() { locales.Register(%q, data) }\n\n", pack)
 	b.WriteString("var data = map[string]locales.Locale{\n")

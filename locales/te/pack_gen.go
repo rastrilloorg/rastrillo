@@ -4,8 +4,8 @@
 // SHA-256 in hack/moneycldr/sources/inputs.sha256. Data from the Unicode CLDR,
 // © Unicode, Inc., under the Unicode License v3 (locales/LICENSE-UNICODE).
 
-// Package te links CLDR money-formatting data for every modern "te"
-// locale. Import it for its side effect.
+// Package te links CLDR number- and money-formatting data for every
+// modern "te" locale. Import it for its side effect.
 package te
 
 import "amadan.net/rastrillo/rastrillo/locales"
@@ -13,5 +13,5 @@ import "amadan.net/rastrillo/rastrillo/locales"
 func init() { locales.Register("te", data) }
 
 var data = map[string]locales.Locale{
-	"te": {Parent: "root", Standard: "¤#,##,##0.00", Alpha: "¤\u00a0#,##,##0.00", Symbols: map[string]string{"PHP": "PHP", "THB": "฿", "USD": "$"}, Narrow: map[string]string{"BYN": "р.", "TWD": "NT$"}},
+	"te": {Parent: "root", Number: "#,##,##0.###", Standard: "¤#,##,##0.00", Alpha: "¤\u00a0#,##,##0.00", Symbols: map[string]string{"PHP": "PHP", "THB": "฿", "USD": "$"}, Narrow: map[string]string{"BYN": "р.", "TWD": "NT$"}},
 }

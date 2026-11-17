@@ -4,8 +4,8 @@
 // SHA-256 in hack/moneycldr/sources/inputs.sha256. Data from the Unicode CLDR,
 // © Unicode, Inc., under the Unicode License v3 (locales/LICENSE-UNICODE).
 
-// Package ca links CLDR money-formatting data for every modern "ca"
-// locale. Import it for its side effect.
+// Package ca links CLDR number- and money-formatting data for every
+// modern "ca" locale. Import it for its side effect.
 package ca
 
 import "amadan.net/rastrillo/rastrillo/locales"
@@ -13,7 +13,7 @@ import "amadan.net/rastrillo/rastrillo/locales"
 func init() { locales.Register("ca", data) }
 
 var data = map[string]locales.Locale{
-	"ca":             {Parent: "root", CurrencyDecimal: ",", CurrencyGroup: ".", Decimal: ",", Standard: "#,##0.00\u00a0¤", Alpha: "#,##0.00\u00a0¤", Symbols: map[string]string{"AUD": "AU$", "BRL": "BRL", "CAD": "CAD", "CNY": "CNY", "JPY": "¥", "MXN": "MXN", "PHP": "PHP", "THB": "฿", "USD": "USD", "XCD": "XCD", "XCG": "XCG"}, Narrow: map[string]string{"BYN": "р.", "VEF": "Bs F"}},
+	"ca":             {Parent: "root", CurrencyDecimal: ",", CurrencyGroup: ".", Decimal: ",", Group: ".", Percent: "#,##0\u00a0%", Standard: "#,##0.00\u00a0¤", Alpha: "#,##0.00\u00a0¤", Symbols: map[string]string{"AUD": "AU$", "BRL": "BRL", "CAD": "CAD", "CNY": "CNY", "JPY": "¥", "MXN": "MXN", "PHP": "PHP", "THB": "฿", "USD": "USD", "XCD": "XCD", "XCG": "XCG"}, Narrow: map[string]string{"BYN": "р.", "VEF": "Bs F"}},
 	"ca-AD":          {Parent: "ca"},
 	"ca-ES-valencia": {Parent: "ca"},
 	"ca-FR":          {Parent: "ca"},

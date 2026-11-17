@@ -4,8 +4,8 @@
 // SHA-256 in hack/moneycldr/sources/inputs.sha256. Data from the Unicode CLDR,
 // © Unicode, Inc., under the Unicode License v3 (locales/LICENSE-UNICODE).
 
-// Package be links CLDR money-formatting data for every modern "be"
-// locale. Import it for its side effect.
+// Package be links CLDR number- and money-formatting data for every
+// modern "be" locale. Import it for its side effect.
 package be
 
 import "amadan.net/rastrillo/rastrillo/locales"
@@ -13,6 +13,6 @@ import "amadan.net/rastrillo/rastrillo/locales"
 func init() { locales.Register("be", data) }
 
 var data = map[string]locales.Locale{
-	"be":        {Parent: "root", CurrencyDecimal: ",", CurrencyGroup: "\u00a0", Decimal: ",", MinGrouping: "2", Standard: "#,##0.00\u00a0¤", Alpha: "#,##0.00\u00a0¤", Symbols: map[string]string{"BRL": "BRL", "BYN": "Br", "CAD": "CAD", "JPY": "¥", "NZD": "NZD", "PHP": "PHP", "RUB": "₽", "USD": "$"}, Narrow: map[string]string{"AUD": "A$", "BBD": "Bds$", "BMD": "BD$", "BSD": "B$", "BZD": "BZ$", "CAD": "CA$", "CUC": "CUC$", "CUP": "$MN", "DOP": "RD$", "FJD": "FJ$", "FKP": "FK£", "GYD": "G$", "ISK": "Íkr", "JMD": "J$", "KYD": "CI$", "LRD": "L$", "MXN": "MX$", "NAD": "N$", "NZD": "NZ$", "RUB": "руб.", "SBD": "SI$", "SGD": "S$", "TTD": "TT$", "UYU": "$U", "XCD": "EC$"}},
+	"be":        {Parent: "root", CurrencyDecimal: ",", CurrencyGroup: "\u00a0", Decimal: ",", Group: "\u00a0", MinGrouping: "2", Percent: "#,##0\u00a0%", Standard: "#,##0.00\u00a0¤", Alpha: "#,##0.00\u00a0¤", Symbols: map[string]string{"BRL": "BRL", "BYN": "Br", "CAD": "CAD", "JPY": "¥", "NZD": "NZD", "PHP": "PHP", "RUB": "₽", "USD": "$"}, Narrow: map[string]string{"AUD": "A$", "BBD": "Bds$", "BMD": "BD$", "BSD": "B$", "BZD": "BZ$", "CAD": "CA$", "CUC": "CUC$", "CUP": "$MN", "DOP": "RD$", "FJD": "FJ$", "FKP": "FK£", "GYD": "G$", "ISK": "Íkr", "JMD": "J$", "KYD": "CI$", "LRD": "L$", "MXN": "MX$", "NAD": "N$", "NZD": "NZ$", "RUB": "руб.", "SBD": "SI$", "SGD": "S$", "TTD": "TT$", "UYU": "$U", "XCD": "EC$"}},
 	"be-tarask": {Parent: "be"},
 }

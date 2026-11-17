@@ -4,8 +4,8 @@
 // SHA-256 in hack/moneycldr/sources/inputs.sha256. Data from the Unicode CLDR,
 // © Unicode, Inc., under the Unicode License v3 (locales/LICENSE-UNICODE).
 
-// Package pa links CLDR money-formatting data for every modern "pa"
-// locale. Import it for its side effect.
+// Package pa links CLDR number- and money-formatting data for every
+// modern "pa" locale. Import it for its side effect.
 package pa
 
 import "amadan.net/rastrillo/rastrillo/locales"
@@ -13,6 +13,6 @@ import "amadan.net/rastrillo/rastrillo/locales"
 func init() { locales.Register("pa", data) }
 
 var data = map[string]locales.Locale{
-	"pa":      {Parent: "root", Standard: "¤#,##,##0.00", Alpha: "¤\u00a0#,##,##0.00", Symbols: map[string]string{"PHP": "PHP", "THB": "฿"}, Narrow: map[string]string{"BYN": "р.", "TWD": "NT$"}},
+	"pa":      {Parent: "root", Number: "#,##,##0.###", Percent: "#,##,##0%", Standard: "¤#,##,##0.00", Alpha: "¤\u00a0#,##,##0.00", Symbols: map[string]string{"PHP": "PHP", "THB": "฿"}, Narrow: map[string]string{"BYN": "р.", "TWD": "NT$"}},
 	"pa-Guru": {Parent: "pa"},
 }

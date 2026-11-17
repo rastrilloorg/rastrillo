@@ -4,8 +4,8 @@
 // SHA-256 in hack/moneycldr/sources/inputs.sha256. Data from the Unicode CLDR,
 // © Unicode, Inc., under the Unicode License v3 (locales/LICENSE-UNICODE).
 
-// Package fr links CLDR money-formatting data for every modern "fr"
-// locale. Import it for its side effect.
+// Package fr links CLDR number- and money-formatting data for every
+// modern "fr" locale. Import it for its side effect.
 package fr
 
 import "amadan.net/rastrillo/rastrillo/locales"
@@ -13,17 +13,17 @@ import "amadan.net/rastrillo/rastrillo/locales"
 func init() { locales.Register("fr", data) }
 
 var data = map[string]locales.Locale{
-	"fr":    {Parent: "root", CurrencyDecimal: ",", CurrencyGroup: "\u202f", Decimal: ",", Standard: "#,##0.00\u00a0¤", Alpha: "#,##0.00\u00a0¤", Symbols: map[string]string{"ARS": "$AR", "AUD": "$AU", "BMD": "$BM", "BND": "$BN", "BZD": "$BZ", "CAD": "$CA", "CLP": "$CL", "CNY": "CNY", "COP": "$CO", "FJD": "$FJ", "FKP": "£FK", "GBP": "£GB", "GIP": "£GI", "HKD": "HKD", "JPY": "JPY", "LBP": "£LB", "MXN": "$MX", "NAD": "$NA", "NZD": "$NZ", "PHP": "PHP", "SBD": "$SB", "SGD": "$SG", "SRD": "$SR", "TTD": "$TT", "TWD": "TWD", "USD": "$US", "UYU": "$UY", "WST": "$WS", "XCD": "XCD", "XPF": "FCFP"}, Narrow: map[string]string{"BYN": "р.", "EGP": "£E", "KMF": "FC", "LBP": "£L", "NIO": "$C", "RON": "L", "RWF": "FR", "TOP": "$T", "TWD": "NT$", "ZMW": "Kw"}},
+	"fr":    {Parent: "root", CurrencyDecimal: ",", CurrencyGroup: "\u202f", Decimal: ",", Group: "\u202f", Percent: "#,##0\u00a0%", Standard: "#,##0.00\u00a0¤", Alpha: "#,##0.00\u00a0¤", Symbols: map[string]string{"ARS": "$AR", "AUD": "$AU", "BMD": "$BM", "BND": "$BN", "BZD": "$BZ", "CAD": "$CA", "CLP": "$CL", "CNY": "CNY", "COP": "$CO", "FJD": "$FJ", "FKP": "£FK", "GBP": "£GB", "GIP": "£GI", "HKD": "HKD", "JPY": "JPY", "LBP": "£LB", "MXN": "$MX", "NAD": "$NA", "NZD": "$NZ", "PHP": "PHP", "SBD": "$SB", "SGD": "$SG", "SRD": "$SR", "TTD": "$TT", "TWD": "TWD", "USD": "$US", "UYU": "$UY", "WST": "$WS", "XCD": "XCD", "XPF": "FCFP"}, Narrow: map[string]string{"BYN": "р.", "EGP": "£E", "KMF": "FC", "LBP": "£L", "NIO": "$C", "RON": "L", "RWF": "FR", "TOP": "$T", "TWD": "NT$", "ZMW": "Kw"}},
 	"fr-BE": {Parent: "fr"},
 	"fr-BF": {Parent: "fr"},
 	"fr-BI": {Parent: "fr", Symbols: map[string]string{"BIF": "FBu"}},
 	"fr-BJ": {Parent: "fr"},
 	"fr-BL": {Parent: "fr"},
-	"fr-CA": {Parent: "fr", CurrencyGroup: "\u00a0", Symbols: map[string]string{"ARS": "ARS", "AUD": "$\u00a0AU", "BMD": "BMD", "BND": "BND", "BZD": "BZD", "CAD": "$", "CLP": "CLP", "CNY": "CN¥", "COP": "COP", "FJD": "FJD", "FKP": "FKP", "GBP": "£", "GIP": "GIP", "HKD": "$\u00a0HK", "ILS": "ILS", "INR": "INR", "JPY": "¥", "KRW": "KRW", "LBP": "LBP", "MXN": "MXN", "NAD": "NAD", "NZD": "$\u00a0NZ", "SBD": "SBD", "SGD": "$\u00a0SG", "SRD": "SRD", "TTD": "TTD", "USD": "$\u00a0US", "UYU": "UYU", "VND": "VND", "WST": "WST", "XAF": "XAF", "XOF": "XOF", "XPF": "XPF"}, Narrow: map[string]string{"BYN": "Br", "GEL": "GEL", "KMF": "CF", "NIO": "C$", "ZMW": "ZK"}},
+	"fr-CA": {Parent: "fr", CurrencyGroup: "\u00a0", Group: "\u00a0", Symbols: map[string]string{"ARS": "ARS", "AUD": "$\u00a0AU", "BMD": "BMD", "BND": "BND", "BZD": "BZD", "CAD": "$", "CLP": "CLP", "CNY": "CN¥", "COP": "COP", "FJD": "FJD", "FKP": "FKP", "GBP": "£", "GIP": "GIP", "HKD": "$\u00a0HK", "ILS": "ILS", "INR": "INR", "JPY": "¥", "KRW": "KRW", "LBP": "LBP", "MXN": "MXN", "NAD": "NAD", "NZD": "$\u00a0NZ", "SBD": "SBD", "SGD": "$\u00a0SG", "SRD": "SRD", "TTD": "TTD", "USD": "$\u00a0US", "UYU": "UYU", "VND": "VND", "WST": "WST", "XAF": "XAF", "XOF": "XOF", "XPF": "XPF"}, Narrow: map[string]string{"BYN": "Br", "GEL": "GEL", "KMF": "CF", "NIO": "C$", "ZMW": "ZK"}},
 	"fr-CD": {Parent: "fr", Symbols: map[string]string{"CDF": "FC"}},
 	"fr-CF": {Parent: "fr"},
 	"fr-CG": {Parent: "fr"},
-	"fr-CH": {Parent: "fr", CurrencyDecimal: "."},
+	"fr-CH": {Parent: "fr", CurrencyDecimal: ".", Percent: "#,##0%"},
 	"fr-CI": {Parent: "fr"},
 	"fr-CM": {Parent: "fr"},
 	"fr-DJ": {Parent: "fr", Symbols: map[string]string{"DJF": "Fdj"}},
@@ -35,8 +35,8 @@ var data = map[string]locales.Locale{
 	"fr-GQ": {Parent: "fr"},
 	"fr-HT": {Parent: "fr", Symbols: map[string]string{"HTG": "G"}},
 	"fr-KM": {Parent: "fr", Symbols: map[string]string{"KMF": "CF"}},
-	"fr-LU": {Parent: "fr", CurrencyGroup: "."},
-	"fr-MA": {Parent: "fr", CurrencyGroup: "."},
+	"fr-LU": {Parent: "fr", CurrencyGroup: ".", Group: "."},
+	"fr-MA": {Parent: "fr", CurrencyGroup: ".", Group: "."},
 	"fr-MC": {Parent: "fr"},
 	"fr-MF": {Parent: "fr"},
 	"fr-MG": {Parent: "fr", Symbols: map[string]string{"MGA": "Ar"}},

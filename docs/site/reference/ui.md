@@ -42,7 +42,7 @@ checkbox and kebab a list row carries. See
 func Funcs(opts ...Option) template.FuncMap
 ```
 
-The function map the partials need, for an app that renders through its own template tree instead of [`ui.Pages`](#pages). It holds twenty-eight: `dict`, `list`, `menuGroup`, `searchClear`, `icon`, `iconAssets`, `opt`, `stageArt`, `displayURL`, `safeHref`, `rowMenuItems`, `paginationItems`, `localizer`, `withL`, `strong`, `path`, `needs`, `neededScripts`, `pageStylesheet`, `pageScripts`, and the locale functions `T`, `Tf`, `Tbdi`, `number`, `displayValue`, `dateWords`, `money` and `actor`. Add your own on top; do not drop any. `rowMenuItems` checks `row-menu`'s items and stops the render on one it cannot show. Outside `ui.Pages`, `pageStylesheet` links the whole `tokens.css` at `/static/tokens.css`, without a hash, `pageScripts` gives every optional script, and `neededScripts` gives the three component scripts; bind your own `pageStylesheet` to link the hashed file or a slice from `Assets.Stylesheet`.
+The function map the partials need, for an app that renders through its own template tree instead of [`ui.Pages`](#pages). It holds twenty-nine: `dict`, `list`, `menuGroup`, `searchClear`, `icon`, `iconAssets`, `opt`, `stageArt`, `displayURL`, `safeHref`, `rowMenuItems`, `paginationItems`, `localizer`, `withL`, `strong`, `path`, `needs`, `neededScripts`, `pageStylesheet`, `pageScripts`, and the locale functions `T`, `Tf`, `Tbdi`, `number`, `displayValue`, `dateWords`, `money`, `actor` and `date`. Add your own on top; do not drop any. `rowMenuItems` checks `row-menu`'s items and stops the render on one it cannot show. Outside `ui.Pages`, `pageStylesheet` links the whole `tokens.css` at `/static/tokens.css`, without a hash, `pageScripts` gives every optional script, and `neededScripts` gives the three component scripts; bind your own `pageStylesheet` to link the hashed file or a slice from `Assets.Stylesheet`.
 
 `opt` reads an optional key off a partial's data, whether it is a map or
 a struct, and gives nil when it is missing. `Tbdi` is `Tf` for a
@@ -202,13 +202,13 @@ func ForRequest(r *http.Request) Localized
 func (l Localized) Localizer() *Localizer
 func (l Localized) Request() Localized
 
-var LocaleFuncs = []string{"T", "Tf", "Tbdi", "number", "displayValue", "dateWords", "money", "actor"}
+var LocaleFuncs = []string{"T", "Tf", "Tbdi", "number", "displayValue", "dateWords", "money", "actor", "date"}
 var ErrNoLocalizer = errors.New(noLocalizerMsg)
 var ErrLegacyCall = errors.New(legacyCallMsg)
 ```
 
 A `Localizer` is one language: its catalog, and the CLDR locale its
-numbers and money are written in. `Identity` is the language code your
+numbers, money and dates are written in. `Identity` is the language code your
 app offers (`zh-TW`), `Format` the locale that formats it (`zh-Hant`),
 and `Dir` the page's `dir`, `rtl` or `ltr`. `Pages` makes one for each
 language you offer; `NewLocalizer` is for a test or your own rendering.
@@ -226,10 +226,11 @@ functions that take `$L` first:
 | `{{T $L "key" args…}}` | `*Localizer`, key, optional name and value pairs | |
 | `{{Tf $L "key" "name" v …}}` | the same | |
 | `{{Tbdi $L "key" "name" v …}}` | the same | the values are escaped and wrapped in `<bdi>` |
-| `{{number $L v}}`, `{{displayValue $L v}}` | `*Localizer`, any value | a nil value renders as before |
+| `{{number $L v}}`, `{{displayValue $L v}}` | `*Localizer`, any value | a nil value renders as before; `number` also takes `"plain"`, `"grouped"`, `"percent"` and `"places" n` after the value, and writes a `number.Decimal` exactly |
 | `{{dateWords $L}}` | `*Localizer` | |
 | `{{money $L amount code}}` | `*Localizer`, an integer amount or a pointer to one, an ISO code | a nil amount writes nothing; there is no form without `$L` |
 | `{{actor $L a}}` | `*Localizer`, a `rastrillo.Actor` | see [actor](#actor) |
+| `{{date $L t "kind"}}` | `*Localizer`, a `time.Time` or a pointer to one, a kind of [dates](/docs/reference/dates) | in `t`'s own zone; a nil pointer writes nothing |
 
 `ErrNoLocalizer` is a locale call whose `$L` is nil, or page data with
 no `L`. `ErrLegacyCall` is a locale call without `$L`. Under `ui.Pages`

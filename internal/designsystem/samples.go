@@ -587,6 +587,7 @@ func families() []family {
 						}},
 					},
 				},
+				fieldNumberDoc(),
 				{
 					Name:  "field-textarea",
 					Blurb: "field-text's wrapper around a textarea.",

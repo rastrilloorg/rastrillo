@@ -4,8 +4,8 @@
 // SHA-256 in hack/moneycldr/sources/inputs.sha256. Data from the Unicode CLDR,
 // © Unicode, Inc., under the Unicode License v3 (locales/LICENSE-UNICODE).
 
-// Package sq links CLDR money-formatting data for every modern "sq"
-// locale. Import it for its side effect.
+// Package sq links CLDR number- and money-formatting data for every
+// modern "sq" locale. Import it for its side effect.
 package sq
 
 import "amadan.net/rastrillo/rastrillo/locales"
@@ -13,7 +13,7 @@ import "amadan.net/rastrillo/rastrillo/locales"
 func init() { locales.Register("sq", data) }
 
 var data = map[string]locales.Locale{
-	"sq":    {Parent: "root", CurrencyDecimal: ",", CurrencyGroup: "\u00a0", Decimal: ",", MinGrouping: "2", Standard: "#,##0.00\u00a0¤", Alpha: "#,##0.00\u00a0¤", Symbols: map[string]string{"ALL": "Lekë", "BRL": "BRL", "PHP": "PHP", "THB": "฿", "XCG": "ANG"}, Narrow: map[string]string{"AFN": "AFN", "AMD": "AMD", "AOA": "AOA", "ARS": "ARS", "AUD": "AUD", "AZN": "AZN", "BAM": "BAM", "BBD": "BBD", "BDT": "BDT", "BMD": "BMD", "BND": "BND", "BOB": "BOB", "BRL": "BRL", "BSD": "BSD", "BWP": "BWP", "BZD": "BZD", "CAD": "CAD", "CLP": "CLP", "CNY": "CNY", "COP": "COP", "CRC": "CRC", "CUC": "CUC", "CUP": "CUP", "CZK": "CZK", "DKK": "DKK", "DOP": "DOP", "EGP": "EGP", "FJD": "FJD", "FKP": "FKP", "GBP": "GBP", "GEL": "GEL", "GIP": "GIP", "GNF": "GNF", "GTQ": "GTQ", "GYD": "GYD", "HKD": "HKS", "HNL": "HNL", "HRK": "HRK", "HUF": "HUF", "IDR": "IDR", "ILS": "ILS", "INR": "INR", "ISK": "ISK", "JMD": "JMD", "JPY": "JPY", "KHR": "KHR", "KMF": "KMF", "KPW": "KPW", "KRW": "KRW", "KYD": "KYD", "KZT": "KZT", "LAK": "LAK", "LBP": "LBP", "LKR": "LKR", "LRD": "LRD", "MGA": "MGA", "MMK": "MMK", "MNT": "MNT", "MUR": "MUR", "MXN": "MXN", "MYR": "MYR", "NAD": "NAD", "NGN": "NGN", "NIO": "NIO", "NOK": "NOK", "NPR": "NPR", "NZD": "NZD", "PHP": "PHP", "PKR": "PKR", "PLN": "PLN", "PYG": "PYG", "RON": "RON", "RUB": "RUB", "RWF": "RWF", "SBD": "SBD", "SEK": "SEK", "SGD": "SGD", "SHP": "SHP", "SRD": "SRD", "SSP": "SSP", "STN": "STN", "SYP": "SYP", "THB": "THB", "TOP": "TOP", "TRY": "TRY", "TTD": "TTD", "TWD": "TWD", "UAH": "UAH", "USD": "USD", "UYU": "UYU", "VND": "VND", "XCD": "XCD", "ZAR": "ZAR", "ZMW": "ZMW"}},
+	"sq":    {Parent: "root", CurrencyDecimal: ",", CurrencyGroup: "\u00a0", Decimal: ",", Group: "\u00a0", MinGrouping: "2", Standard: "#,##0.00\u00a0¤", Alpha: "#,##0.00\u00a0¤", Symbols: map[string]string{"ALL": "Lekë", "BRL": "BRL", "PHP": "PHP", "THB": "฿", "XCG": "ANG"}, Narrow: map[string]string{"AFN": "AFN", "AMD": "AMD", "AOA": "AOA", "ARS": "ARS", "AUD": "AUD", "AZN": "AZN", "BAM": "BAM", "BBD": "BBD", "BDT": "BDT", "BMD": "BMD", "BND": "BND", "BOB": "BOB", "BRL": "BRL", "BSD": "BSD", "BWP": "BWP", "BZD": "BZD", "CAD": "CAD", "CLP": "CLP", "CNY": "CNY", "COP": "COP", "CRC": "CRC", "CUC": "CUC", "CUP": "CUP", "CZK": "CZK", "DKK": "DKK", "DOP": "DOP", "EGP": "EGP", "FJD": "FJD", "FKP": "FKP", "GBP": "GBP", "GEL": "GEL", "GIP": "GIP", "GNF": "GNF", "GTQ": "GTQ", "GYD": "GYD", "HKD": "HKS", "HNL": "HNL", "HRK": "HRK", "HUF": "HUF", "IDR": "IDR", "ILS": "ILS", "INR": "INR", "ISK": "ISK", "JMD": "JMD", "JPY": "JPY", "KHR": "KHR", "KMF": "KMF", "KPW": "KPW", "KRW": "KRW", "KYD": "KYD", "KZT": "KZT", "LAK": "LAK", "LBP": "LBP", "LKR": "LKR", "LRD": "LRD", "MGA": "MGA", "MMK": "MMK", "MNT": "MNT", "MUR": "MUR", "MXN": "MXN", "MYR": "MYR", "NAD": "NAD", "NGN": "NGN", "NIO": "NIO", "NOK": "NOK", "NPR": "NPR", "NZD": "NZD", "PHP": "PHP", "PKR": "PKR", "PLN": "PLN", "PYG": "PYG", "RON": "RON", "RUB": "RUB", "RWF": "RWF", "SBD": "SBD", "SEK": "SEK", "SGD": "SGD", "SHP": "SHP", "SRD": "SRD", "SSP": "SSP", "STN": "STN", "SYP": "SYP", "THB": "THB", "TOP": "TOP", "TRY": "TRY", "TTD": "TTD", "TWD": "TWD", "UAH": "UAH", "USD": "USD", "UYU": "UYU", "VND": "VND", "XCD": "XCD", "ZAR": "ZAR", "ZMW": "ZMW"}},
 	"sq-MK": {Parent: "sq", Symbols: map[string]string{"MKD": "den"}},
 	"sq-XK": {Parent: "sq"},
 }

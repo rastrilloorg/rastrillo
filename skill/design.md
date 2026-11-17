@@ -61,8 +61,17 @@ from `ui.ForRequest(r)`. Format every displayed quantity with
 labels. `stat.Value` formats numbers and plain integer strings
 automatically; `detail-list.Value` formats numeric types. Pass
 quantities as numbers, identifiers/years/versions as strings; never
-group IDs, input values, URLs or machine attributes. Keep percent
-formatting explicit and locale-aware. Write an app's own text as
+group IDs, input values, URLs or machine attributes. `number` writes
+from the locale's CLDR pack, exactly, never rounding: a decimal goes in
+as `number.Decimal("1200.5")` (a plain string stays as given), and
+words after it set the format: `"plain"` (no group marks), `"places" 2`
+(pad the fraction), `"percent"` (50 is 50 %). In Go, `number.Format`.
+Dates: `{{date $L .At "dayYear"}}` writes CLDR's pattern for the locale
+(kinds `day`, `dayYear`, `short`, `date`, `dateYear`, `monthYear`,
+`month`, `year`, `time`, `stamp`), in `.At`'s own zone. In Go,
+`dates.For(locale)`: `Format`, `FirstDay`, `Heads`, `Order`; the browser
+twin is `dates.Assets()`'s `dates.mjs`, fed `Client()` as JSON.
+Write an app's own text as
 English literals in the template; `{{T $L "key"}}` looks a catalog key
 up (the `rastrillo.ui.*` keys a form error carries, say) and
 `{{Tf $L "key" "name" .Name}}` fills `{name}` in it from name/value

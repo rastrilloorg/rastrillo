@@ -4,8 +4,8 @@
 // SHA-256 in hack/moneycldr/sources/inputs.sha256. Data from the Unicode CLDR,
 // © Unicode, Inc., under the Unicode License v3 (locales/LICENSE-UNICODE).
 
-// Package ps links CLDR money-formatting data for every modern "ps"
-// locale. Import it for its side effect.
+// Package ps links CLDR number- and money-formatting data for every
+// modern "ps" locale. Import it for its side effect.
 package ps
 
 import "amadan.net/rastrillo/rastrillo/locales"
@@ -13,6 +13,6 @@ import "amadan.net/rastrillo/rastrillo/locales"
 func init() { locales.Register("ps", data) }
 
 var data = map[string]locales.Locale{
-	"ps":    {Parent: "root", CurrencyDecimal: "٫", CurrencyGroup: "٬", Decimal: "٫", Minus: "\u200e-\u200e", Digits: "۰۱۲۳۴۵۶۷۸۹", Symbols: map[string]string{"AFN": "؋", "USD": "$"}, Narrow: map[string]string{"BYN": "р."}},
+	"ps":    {Parent: "root", CurrencyDecimal: "٫", CurrencyGroup: "٬", Decimal: "٫", Group: "٬", Minus: "\u200e-\u200e", Digits: "۰۱۲۳۴۵۶۷۸۹", PercentSign: "٪", Symbols: map[string]string{"AFN": "؋", "USD": "$"}, Narrow: map[string]string{"BYN": "р."}},
 	"ps-PK": {Parent: "ps", Symbols: map[string]string{"PKR": "Rs"}},
 }
