@@ -10,6 +10,32 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+## v0.37.0
+
+Numbers and dates in the reader's language. Two changes alter what an
+existing app does without a compile error, so read them before you
+upgrade. First, `{{number}}` and `displayValue` now draw from the CLDR 48
+packs, and some figures change: Spanish and European Portuguese no
+longer group four digits, French groups with U+202F, Swedish writes
+U+2212, and NaN and the infinities are localised. Second, `date` is a
+new locale template function, so an app that defines its own `date`
+must rename it. An app with its own catalog for a language rastrillo
+does not ship must also add the five `rastrillo.ui.number_*` keys, or
+`generate --check` fails.
+
+### Changed: `{{number}}` writes CLDR 48, from the packs
+
+`{{number}}` and `displayValue` now format from the same CLDR packs as
+`money`, instead of `golang.org/x/text`, whose data was older. Some
+figures change, toward what CLDR 48 and browsers write: `es` and
+`pt-PT` leave four digits ungrouped (`1234`, was `1.234`); French
+groups with U+202F (was U+00A0); Swedish writes U+2212 for minus. A
+locale whose pack is not linked formats in the app's default locale, as
+money does, not in English, and logs once which pack to import. NaN and
+the infinities are written in the locale's symbols and pattern, as ICU
+writes them (`−∞` in Swedish, `epäluku` in Finnish; English is
+unchanged). Check any test that pins a formatted number.
+
 ### Added: dates in the reader's language
 
 `{{date $L .At "dayYear"}}` writes a `time.Time` in the locale's CLDR
@@ -32,19 +58,6 @@ drawn (`dates.FirstYear`, `dates.LastYear`); outside them, and for a
 locale with no dates, Go and `dates.mjs` both write ISO 8601, and
 `dates.mjs`'s `order()` falls back to `ymd` as Go does (Mapa's copy
 said `dmy`).
-
-### Changed: `{{number}}` writes CLDR 48, from the packs
-
-`{{number}}` and `displayValue` now format from the same CLDR packs as
-`money`, instead of `golang.org/x/text`, whose data was older. Some
-figures change, toward what CLDR 48 and browsers write: `es` and
-`pt-PT` leave four digits ungrouped (`1234`, was `1.234`); French
-groups with U+202F (was U+00A0); Swedish writes U+2212 for minus. A
-locale whose pack is not linked formats in the app's default locale, as
-money does, not in English, and logs once which pack to import. NaN and
-the infinities are written in the locale's symbols and pattern, as ICU
-writes them (`−∞` in Swedish, `epäluku` in Finnish; English is
-unchanged). Check any test that pins a formatted number.
 
 ### Added: exact decimals, places and percent in `{{number}}`
 
