@@ -8,7 +8,34 @@ This file starts at v0.23.0. Earlier releases are in the git history and their
 tags; nothing has been reconstructed for them, because a changelog written
 backwards from commits is a guess wearing a date.
 
-## Unreleased
+## v0.27.1
+
+A patch for apps pinned to
+`v0.27.1-0.20261006204347-fb806a287060`, which is main at fb806a28. This
+release is that commit plus mail through the CARLOS platform, the same code
+as v0.36.0, and nothing else. Such an app moves to v0.27.1 and can call
+`mail.FromCarlos` with no other change.
+
+fb806a28 is not v0.27.0: it also carries the changes listed below under
+"Main at fb806a28", which v0.28.0 released. Nothing else from v0.28.0 or
+later is in v0.27.1. This line is cut from fb806a28 and does not merge into
+main.
+
+### Added: mail through the CARLOS platform, with no credential
+
+`mail.FromCarlos(prefix, logger)` sends through the platform's mail verb
+when the CARLOS agent sets `CARLOS_MAIL=submit`. The From address is
+`<prefix>_MAIL_FROM`. Without `CARLOS_MAIL`, it uses `<prefix>_SMTP_*`,
+as `FromEnv` does. With neither, it returns an error: call it where the
+app refuses to start without mail. `FromEnv` is unchanged.
+
+A refusal is a `*mail.SubmitError` with `RetryAfter`. A 429 is never
+retried; a 503 is retried 3 times within the caller's deadline. A 200
+without a message id is `mail.ErrUnconfirmed`, and is not retried.
+Under submit, non-ASCII headers are RFC 2047 encoded, long headers are
+folded, and the body is quoted-printable.
+
+## Main at fb806a28: also in v0.27.1, released in v0.28.0
 
 ### Added: `auth.Config.Refused`, so a verified-but-not-admitted address gets your page
 
