@@ -10,6 +10,28 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+## v0.30.3
+
+A patch for apps on v0.30.1 or v0.30.2. This release is v0.30.2 plus mail
+through the CARLOS platform, the same code as v0.36.0, and nothing else.
+Such an app moves to v0.30.3 and can call `mail.FromCarlos` with no other
+change. Nothing from v0.31.0 or later is in v0.30.3. This line is cut
+from v0.30.2 and does not merge into main.
+
+### Added: mail through the CARLOS platform, with no credential
+
+`mail.FromCarlos(prefix, logger)` sends through the platform's mail verb
+when the CARLOS agent sets `CARLOS_MAIL=submit`. The From address is
+`<prefix>_MAIL_FROM`. Without `CARLOS_MAIL`, it uses `<prefix>_SMTP_*`,
+as `FromEnv` does. With neither, it returns an error: call it where the
+app refuses to start without mail. `FromEnv` is unchanged.
+
+A refusal is a `*mail.SubmitError` with `RetryAfter`. A 429 is never
+retried; a 503 is retried 3 times within the caller's deadline. A 200
+without a message id is `mail.ErrUnconfirmed`, and is not retried.
+Under submit, non-ASCII headers are RFC 2047 encoded, long headers are
+folded, and the body is quoted-printable.
+
 ## v0.30.2
 
 ### Fixed: the console rail's current item draws its ring and shadow whole
