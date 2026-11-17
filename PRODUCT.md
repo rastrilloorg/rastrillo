@@ -108,7 +108,7 @@ doing the same work:
   have landed; every `tokens.css` rule currently carries both spellings
   and a gate enforces the pairing. Stage 3 drops the class selectors
   before 1.0.
-- **Released:** v0.24.0. `main` regularly runs ahead of the latest tag,
+- **Released:** v0.26.1. `main` regularly runs ahead of the latest tag,
   and the spec's own §0 warns that the gap between RELEASED and ON MAIN
   is the one that bites.
 - **Undecided, recorded rather than invented:** whether sign-in screens
