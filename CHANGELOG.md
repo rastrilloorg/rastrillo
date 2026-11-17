@@ -8,7 +8,39 @@ This file starts at v0.23.0. Earlier releases are in the git history and their
 tags; nothing has been reconstructed for them, because a changelog written
 backwards from commits is a guess wearing a date.
 
-## Unreleased
+## v0.29.2
+
+A patch for apps pinned to
+`v0.29.1-0.20261027164201-054787952dd2`, which is main at 05478795. This
+release is that commit plus mail through the CARLOS platform, the same code
+as v0.36.0, and nothing else. Such an app moves to v0.29.2 and can call
+`mail.FromCarlos` with no other change.
+
+05478795 is not v0.29.0: it also carries the changes listed below under
+"Main at 05478795", which v0.30.0 released. Nothing else from v0.30.0 or
+later is in v0.29.2. This line is cut from 05478795 and does not merge into
+main.
+
+v0.29.2 does not contain v0.29.1. v0.29.1 was cut from v0.29.0 on a line
+of its own, and its fix, `migrate` ignoring Litestream's
+`_litestream_seq` and `_litestream_lock` tables, is not here. v0.30.0
+and later carry it. An app on v0.29.1 should not move to v0.29.2.
+
+### Added: mail through the CARLOS platform, with no credential
+
+`mail.FromCarlos(prefix, logger)` sends through the platform's mail verb
+when the CARLOS agent sets `CARLOS_MAIL=submit`. The From address is
+`<prefix>_MAIL_FROM`. Without `CARLOS_MAIL`, it uses `<prefix>_SMTP_*`,
+as `FromEnv` does. With neither, it returns an error: call it where the
+app refuses to start without mail. `FromEnv` is unchanged.
+
+A refusal is a `*mail.SubmitError` with `RetryAfter`. A 429 is never
+retried; a 503 is retried 3 times within the caller's deadline. A 200
+without a message id is `mail.ErrUnconfirmed`, and is not retried.
+Under submit, non-ASCII headers are RFC 2047 encoded, long headers are
+folded, and the body is quoted-printable.
+
+## Main at 05478795: also in v0.29.2, released in v0.30.0
 
 **Serve an app under a path on a hub's domain (breaking for code that calls `flash.Set`).** Set `Options.BasePath` and the whole app answers under `/<slug>` on another app's origin, such as `https://example.com/acme`. Redirects get the base added for you. Links in a page go through the new `path` template function, or `basepath.Path` in Go. The instance's own hostname sends visitors to the product path, or shows a read-only view with `basepath.ServeDirect`. Sign-in does not run under a base path: the hub signs people in. An app that does not set `BasePath` works as before. See [basepath](/docs/reference/basepath).
 
