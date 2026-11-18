@@ -23,8 +23,8 @@
 //     not a certificate.
 //   - axe checks what is on the screen, so this file scans a sample:
 //     three themes, two schemes, an RTL page, the modal, a shell, and
-//     eight preview documents — one per family, plus the first four
-//     idioms. 180 pages × 2 schemes in a browser is a CI budget nobody
+//     the preview documents — one per family, plus every sign-in
+//     screen. 180 pages × 2 schemes in a browser is a CI budget nobody
 //     would pay twice, and a sample chosen for what it would catch is
 //     worth more than a sweep chosen for its size.
 //   - Two criteria axe cannot see at all get their own drives below:
@@ -338,8 +338,10 @@ func a11yTargets() []a11yTarget {
 		// landmark or a duplicate id can only be wrong on the page it
 		// is on.
 		{"day/en overview", page("day", "en", "overview"), "the root page: the pinned bar with its brand and switchers, the rail's tree, and the page's own header, paragraph, routes and framed demo application"},
-		{"day/en getting started", page("day", "en", "getting-started"), "a page of prose, a list of links out to the assets and two source blocks: the plainest document in the tree, and the one where a heading level or a list semantic has nothing else to hide behind"},
-		{"day/en tokens", page("day", "en", "tokens"), "the swatch grid — every palette token painted at once, in the theme's own colours"},
+		{"day/en getting started", page("day", "en", "getting-started"),
+			"a page of prose, a link out to Fiesta and two source blocks: " +
+				"the plainest document in the tree, and the one where a " +
+				"heading level has nothing else to hide behind"},
 		{"day/en icons", page("day", "en", "icons"), "one inline SVG per slug the framework answers, each aria-hidden beside its own name: the one page in the tree where an icon is the content rather than furniture, and where an accessible name accidentally coming off a decorative glyph would show"},
 		// The six component pages. Since the split they are one
 		// template with a different family in it, so the furniture this
@@ -355,16 +357,17 @@ func a11yTargets() []a11yTarget {
 		{"day/en choices and actions", page("day", "en", "choices-and-actions"), "the choosers and closing rows: a select that becomes a combobox with a listbox, a checkbox skinned as a switch, radio and checkbox groups under a legend, and the busy button's aria-busy illustration: the most ARIA of any page, and the one place a role or a name lost in the skinning would show"},
 		{"day/en date and time", page("day", "en", "date-and-time"), "the heaviest page in the tree and the one nearest the byte budget: whatever is added to the gallery next is most likely to be added here"},
 		{"day/en route", page("day", "en", "route"), "the shortest of the six, and the only one whose samples are whole responses rather than pieces of one"},
-		{"day/en primitives", page("day", "en", "primitives"), "the markup idioms, the callouts they carry, and the sample whose structure is a dialog"},
 		{"day/en formats", page("day", "en", "formats"), "the eleven data-format samples: the only page carrying <address>, <abbr>, <data> and <output>, four elements no partial emits and none of the other pages can scan"},
 		{"day/en screens", page("day", "en", "screens"), "the sign-in screens: the shipped partial in ten states in stage frames, and the two examples it does not ship — the only page carrying a password field"},
 		{"day/en shells", page("day", "en", "shells"), "the five page frames, each framed at full page size"},
-		// The two colour ends, on the two pages that carry colour: the
-		// palette itself and the display vocabulary painted in it.
-		{"plain/en tokens", page("plain", "en", "tokens"), "the theme with the least colour — where a contrast floor is closest to the line"},
-		{"plain/en display", page("plain", "en", "display"), "the same theme in the page that carries the most tinted markup of its own"},
-		{"signal/en tokens", page("signal", "en", "tokens"), "the theme with the most colour — the other end of the same risk"},
-		{"signal/en display", page("signal", "en", "display"), "and the same page at the other end of the same risk"},
+		// The two colour ends, on the page that carries the most colour:
+		// the display vocabulary, painted in the theme.
+		{"plain/en display", page("plain", "en", "display"),
+			"the theme with the least colour, where a contrast floor is " +
+				"closest to the line, in the page that carries the most " +
+				"tinted markup of its own"},
+		{"signal/en display", page("signal", "en", "display"),
+			"the theme with the most colour: the other end of the same risk"},
 		{"day/ar form", page("day", "ar", "form"), "RTL: dir=rtl reverses every logical property, and a landmark or a label lost in the mirror is invisible in en"},
 		{"day/en modal", modalHref(mountPath, "day", "en"), "the one page in the tree with no JavaScript at all, and the one whose structure is a dialog"},
 		{"day/en sidebar shell", shellHref(mountPath, "day", "en", "sidebar"), "the richest shell: a skip link, a rail, a back control and a main column"},
@@ -738,7 +741,7 @@ var everyState = map[string]string{
 //
 // It is a REPRESENTATIVE sample with a written reason: one frame per
 // component page — which is one per family, because a family is a page
-// — plus the first four idioms. Scanning all hundred and ten in six
+// — plus every sign-in screen. Scanning all hundred in six
 // theme-scheme combinations would say very little the sample does not
 // and cost hours.
 //
@@ -788,18 +791,6 @@ func pickPreviewFrames(t *testing.T, bctx context.Context, kind string) []previe
 		}
 		return got.Frames
 	}
-	if kind == "primitives" {
-		var first []previewFrame
-		for _, f := range got.Frames {
-			if f.State == 0 {
-				first = append(first, f)
-			}
-		}
-		if len(first) < 4 {
-			t.Fatalf("expected four idiom previews, picked %d of %d idiom articles", len(first), got.Articles)
-		}
-		return first[:4]
-	}
 	// A component page. Every partial on it gave up a frame, and the
 	// first of them is the one that gets scanned.
 	if got.Articles == 0 {
@@ -828,13 +819,13 @@ func pickPreviewFrames(t *testing.T, bctx context.Context, kind string) []previe
 // previewPageKinds is every page kind that frames a sample worth
 // scanning: the component pages, read off componentPages() so a family
 // added to samples.go is scanned the day its row lands, and the
-// primitives page, which is where the markup idioms are.
+// screens page, which is where the sign-in states are.
 func previewPageKinds() []string {
 	out := make([]string, 0, len(families())+1)
 	for _, pk := range componentPages() {
 		out = append(out, pk.Kind)
 	}
-	return append(out, "primitives", "screens")
+	return append(out, "screens")
 }
 
 // TestA11yScansThePreviewDocuments scans inside the frames.
@@ -1034,17 +1025,17 @@ func TestA11yReflowsAt320(t *testing.T) {
 	// a zoomed desktop leaves the page 305px to reflow into, the harder
 	// of the two.
 	// Every page kind, because reflow is a property of the content: the
-	// token grid, the sample frames, the class-idiom callouts and the
-	// shell sections each lay themselves out differently, and a split
-	// that put them on separate pages put them in separate documents to
-	// measure.
+	// icon grid, the sample frames and the shell sections each lay
+	// themselves out differently, and a split that put them on separate
+	// pages put them in separate documents to measure.
 	pages := []struct{ name, href string }{}
 	for _, pk := range pageKinds() {
 		pages = append(pages, struct{ name, href string }{"day/en " + pk.Kind, pageHref(mountPath, "day", "en", pk.File)})
 	}
 	pages = append(pages,
 		struct{ name, href string }{"day/ar form", pageHref(mountPath, "day", "ar", fileOf("form"))},
-		struct{ name, href string }{"day/ar tokens", pageHref(mountPath, "day", "ar", fileOf("tokens"))},
+		struct{ name, href string }{"day/ar icons",
+			pageHref(mountPath, "day", "ar", fileOf("icons"))},
 		struct{ name, href string }{"day/en modal", modalHref(mountPath, "day", "en")},
 		struct{ name, href string }{"day/en sidebar shell", shellHref(mountPath, "day", "en", "sidebar")},
 		struct{ name, href string }{"day/en sidebar content page", shellPageHref(mountPath, "day", "en", "sidebar")},

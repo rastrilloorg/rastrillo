@@ -441,15 +441,15 @@ func TestTheSidebarFilterDrivesTheWholeJourney(t *testing.T) {
 
 		// The Spanish page, for the half of the fold a monolingual
 		// journey can never reach. "Presentación" is a section heading
-		// there and "Superficies y líneas" a token group; a reader
-		// typing them off an English keyboard types neither accent, and
-		// with the fold replaced by a plain toLowerCase both queries
-		// find nothing at all.
+		// there and "Tamaños de archivo" an entry under Dates, numbers
+		// and names; a reader typing them off an English keyboard types
+		// neither mark, and with the fold replaced by a plain
+		// toLowerCase both queries find nothing at all.
 		chromedp.Navigate(rig.Origin+pageHref(mountPath, RootTheme(), "es", fileOf("display"))), at("navigated-es"),
 		chromedp.WaitVisible(chromedp.CSS(`#ds-filter`)), at("es-filter-visible"),
 		typing("presentacion"), at("typed-unaccented-family"),
 		harness.Into(&accented, chromedp.Evaluate[railState](railProbe)),
-		typing("lineas"), at("typed-unaccented-group"),
+		typing("tamanos"), at("typed-unaccented-group"),
 		harness.Into(&unaccented, chromedp.Evaluate[railState](railProbe)),
 		at("done"),
 	); err != nil {
@@ -499,11 +499,12 @@ func TestTheSidebarFilterDrivesTheWholeJourney(t *testing.T) {
 	if showing(badge, on("en", "display", "partial-meter")) {
 		t.Error(`typing "badge" left the meter partial on screen`)
 	}
-	if showing(badge, on("en", "tokens", "tokens-accent")) {
-		t.Error(`typing "badge" left a token group on screen`)
+	if showing(badge, on("en", "formats", "format-money")) {
+		t.Error(`typing "badge" left a format section on screen`)
 	}
 	if badge.Folded == 0 {
-		t.Error(`typing "badge" folded no section away; Tokens, Shells and Demos have nothing in them that matches`)
+		t.Error(`typing "badge" folded no section away; Dates, numbers ` +
+			`and names, Shells and Demos have nothing in them that matches`)
 	}
 	if badge.Empty {
 		t.Error(`typing "badge" said there were no matches`)
@@ -588,8 +589,9 @@ func TestTheSidebarFilterDrivesTheWholeJourney(t *testing.T) {
 	if showing(accented, section("es", "form")) {
 		t.Error(`"presentacion" left another section on screen`)
 	}
-	if !showing(unaccented, on("es", "tokens", "tokens-surfaces-and-lines")) {
-		t.Errorf(`on the Spanish page, "lineas" did not find "Superficies y líneas": %v`, unaccented.Shown)
+	if !showing(unaccented, on("es", "formats", "format-filesizes")) {
+		t.Errorf(`on the Spanish page, "tamanos" did not find `+
+			`"Tamaños de archivo": %v`, unaccented.Shown)
 	}
 
 	if at := discloseIndex("display"); len(restored.Open) <= at || restored.Open[at] {
@@ -948,13 +950,11 @@ func TestPreviewFrameHeightsFitTheirContent(t *testing.T) {
 
 	// Every page that frames anything, because previewHeights is one
 	// table over the whole tree: the partial samples are spread over
-	// the five component pages, the markup idioms are on primitives.html
-	// and the shells on shells.html, and a height measured on one
-	// of them says nothing about the others.
+	// the component pages and the shells are on shells.html, and a
+	// height measured on one of them says nothing about the others.
 	// The floor per page is derived, not guessed: every partial in a
-	// family has a section on that family's page, every idiom
-	// ui.Styleguide ships has one on the primitives page, and every
-	// shell has one on the shells page. The component rows are read off
+	// family has a section on that family's page, and every shell has
+	// one on the shells page. The component rows are read off
 	// componentPages(), so a family added to samples.go is measured the
 	// day its row lands.
 	//
@@ -1030,7 +1030,7 @@ func TestPreviewFrameHeightsFitTheirContent(t *testing.T) {
 			if n := len(galleryrig.Measured(t, kind+" "+tab.name, tab.raw, false)); n < row.Least {
 				t.Errorf("%s %s: %d sections have a rendered example, want at least %d — %s. "+
 					"Either something ui ships is documented with nothing to look at (a partial with no sample "+
-					"state, an idiom with no styleguide entry, a shell with no demo), or the frames on this "+
+					"state, a shell with no demo), or the frames on this "+
 					"page did not all load", kind, tab.name, n, row.Least, row.Owed)
 			}
 		}

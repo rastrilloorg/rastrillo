@@ -222,7 +222,8 @@ func TestNoCodeBlockScrollsSidewaysOnAPhone(t *testing.T) {
 // tab is chosen. Each leg first asserts which highlight elements are
 // on the page, so the coverage cannot quietly shrink: Form's HTML tags,
 // attributes and values, its calls' actions and strings, and the three
-// markup ones on UI primitives, whose samples hold no template action.
+// markup ones on Dates, numbers and names, whose samples are markup
+// written out rather than a partial's.
 func TestA11yScansTheCodePanels(t *testing.T) {
 	rig := harness.New(t, func(string) http.Handler { return treeHandler(t) })
 	ctx, cancel := context.WithTimeout(rig.Context(), 600*time.Second)
@@ -232,7 +233,11 @@ func TestA11yScansTheCodePanels(t *testing.T) {
 	for _, c := range []struct {
 		kind, tab string
 		want      []string
-	}{{"form", "h", []string{"ds-t", "ds-a", "ds-v"}}, {"form", "t", []string{"ds-x", "ds-s"}}, {"primitives", "h", []string{"ds-t", "ds-a", "ds-v"}}} {
+	}{
+		{"form", "h", []string{"ds-t", "ds-a", "ds-v"}},
+		{"form", "t", []string{"ds-x", "ds-s"}},
+		{"formats", "h", []string{"ds-t", "ds-a", "ds-v"}},
+	} {
 		for _, theme := range ui.ThemeNames() {
 			for _, scheme := range a11ySchemes {
 				where := fmt.Sprintf("%s/en %s, ds-view__tab--%s chosen (%s)", theme, c.kind, c.tab, scheme)
@@ -262,7 +267,8 @@ func TestA11yScansTheCodePanels(t *testing.T) {
 		}
 	}
 	if total == 0 {
-		t.Log("clean: the HTML and Template panels on Form and UI primitives in every theme and scheme")
+		t.Log("clean: the HTML and Template panels on Form and on Dates, " +
+			"numbers and names in every theme and scheme")
 	}
 }
 

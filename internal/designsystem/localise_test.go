@@ -183,8 +183,10 @@ var englishSampleLabels = []string{
 	"Save", "Cancel", "Edit", "Publish", "Settings",
 	"Email me about replies", "Save post", "Back to posts", "Revenue this month",
 	"Search posts", "Publish on", "Doors open", "Release notes, August",
-	"Changes save immediately.", "Continue with Google", "Invoice #4471 never arrived",
-	"Everything on a screen sits inside boxes.", "Moorings and berths, booked in a minute.",
+	"Everything you have written, newest first.", "Continue with Google",
+	"Invoice #4471 never arrived",
+	"No posts yet. Your first one is a good place to start.",
+	"Moorings and berths, booked in a minute.",
 }
 
 // The samples speak the page's language. Every document a translated

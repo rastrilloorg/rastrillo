@@ -58,7 +58,8 @@ func TestTheGallerysOwnControlsAreExactlyTheFloor(t *testing.T) {
 		ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
 		var raw string
 		if err := chromedp.Do(ctx, chromedp.EmulateViewport(c.w, c.h),
-			chromedp.Navigate(rig.Origin+pageHref(mountPath, RootTheme(), "en", "primitives.html")),
+			chromedp.Navigate(rig.Origin+pageHref(mountPath, RootTheme(),
+				"en", fileOf("display"))),
 			chromedp.WaitReady("body"),
 			harness.Into(&raw, chromedp.Evaluate[string](read))); err != nil {
 			cancel()

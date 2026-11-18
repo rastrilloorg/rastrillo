@@ -83,23 +83,6 @@ type familyView struct {
 	Partials []partialView
 }
 
-type idiomView struct {
-	Name    string
-	ID      string
-	Marker  template.HTML
-	Rule    template.HTML // the #98 callout this idiom carries, if any
-	Blurb   string
-	Preview previewView
-
-	// DemoLabel and DemoHref are the three idioms that also exist as a
-	// page of this tree: the modal route and the two shells. Their
-	// preview frames the sample like every other one does, and the link
-	// goes to the same idiom at a URL of its own, in a new tab — which
-	// is the whole demonstration in the modal's case. See demoIdioms.
-	DemoLabel string // the link's own words
-	DemoHref  string
-}
-
 type shellView struct {
 	Name    string
 	ID      string
@@ -125,9 +108,9 @@ type pageView struct {
 	LocaleName string
 	Dir        string
 
-	// Kind is which of the five pages this is ("overview", "tokens",
-	// "components", "primitives", "shells"), and Title is that page's
-	// own name in this locale. Both come off one row of pageKinds().
+	// Kind is which page this is ("overview", "icons", a family's key,
+	// "shells"), and Title is that page's own name in this locale. Both
+	// come off one row of pageKinds().
 	Kind  string
 	Title string
 
@@ -171,11 +154,8 @@ type pageView struct {
 	// cannot list different things.
 	Bar controls
 
-	Colours   []tokenGroup
-	Structure []tokenGroup
-	Families  []familyView
-	Idioms    []idiomView
-	Shells    []shellView
+	Families []familyView
+	Shells   []shellView
 
 	// Family is the one family this page IS, where the page is a
 	// component family, and nil on every other page. Families beside
@@ -201,13 +181,12 @@ type pageView struct {
 	Demo     previewView
 	DemoHref string
 
-	// Icons is the Icons page's whole content and Assets is the Getting
-	// started page's. Both are read off the framework rather than
-	// written out — IconSlugs() and the embedded asset bytes — so
-	// neither page has a list in it to go stale. See iconsView and
-	// assetsView.
-	Icons  iconsView
-	Assets assetsView
+	// Icons is the Icons page's whole content, read off IconSlugs()
+	// rather than written out so the page has no list in it to go
+	// stale. See iconsView. Started is the Getting started page's: the
+	// commands for this theme and its link to Fiesta's file details.
+	Icons   iconsView
+	Started startedView
 
 	// Screens is the Screens page: whole compositions rather than
 	// components, and ScreenPartials the partials it documents. See
@@ -231,11 +210,11 @@ type pageView struct {
 // ── The sidebar ──────────────────────────────────────────────────────
 //
 // The rail is a second view of the page, not a second copy of it. Every
-// entry in it is read off the same slices the body renders — the token
-// groups, the families and their partials, the idioms, the shells — so
-// a partial added to ui, a family added to samples.go or a token added
-// to a theme appears in the sidebar the same day it appears in the
-// page, with no list to remember to update.
+// entry in it is read off the same slices the body renders — the
+// families and their partials, the icons, the shells — so a partial
+// added to ui or a family added to samples.go appears in the sidebar
+// the same day it appears in the page, with no list to remember to
+// update.
 //
 // That is a gate as much as a design. TestTheSidebarLinksEverythingOnThePageExactlyOnce
 // holds the two sides to one sequence — the fragments the rail links,
@@ -244,9 +223,9 @@ type pageView struct {
 // way to reach it, are both build failures.
 
 // navItem is one line in the rail. Code is set for the entries whose
-// label is an identifier — a partial's template name, an idiom's class
-// family, a shell's name — which the rail draws in the mono face for
-// the same reason the headings on the page do.
+// label is an identifier — a partial's template name, an icon's slug, a
+// shell's name — which the rail draws in the mono face for the same
+// reason the headings on the page do.
 //
 // Blank marks the entries that leave this document — the demo pages,
 // the only off-page links the rail has. They open in a new tab for the
@@ -262,7 +241,7 @@ type navItem struct {
 	// Aria is the accessible name, where it has to differ from the
 	// visible label. Exactly one entry uses it: the section overview
 	// link, whose visible word is "Overview" on every section and whose
-	// accessible name carries the section — "Tokens overview" — so a
+	// accessible name carries the section — "Icons overview" — so a
 	// screen reader does not hear the same word four times in one
 	// navigation landmark. It CONTAINS the visible label, which is what
 	// WCAG 2.2 SC 2.5.3 Label in Name asks for; disambiguating by
@@ -274,21 +253,23 @@ type navItem struct {
 	Terms string
 }
 
-// navSection is one group in the rail: a page of this directory, or —
-// for Demos, the only one that is not — the run of links that leave
-// the gallery altogether.
+// navSection is one group in the rail: a page of this directory, a
+// page of Fiesta's, or — for Demos — the run of links that leave the
+// gallery for the demo pages.
 //
 // Href is the section's own page, and Current says whether that page is
 // the one being rendered. A section with items renders as a <details>,
 // open and aria-current when it is the current one; a section with none
 // yet renders as a plain link, because a disclosure over an empty box
-// is a control that does nothing.
+// is a control that does nothing. External marks the plain link to a
+// Fiesta page, which carries rel="external" and no Kind.
 type navSection struct {
-	Title   string
-	Href    string
-	Kind    string // the page kind; "" for Demos
-	Current bool
-	Items   []navItem
+	Title    string
+	Href     string
+	Kind     string // the page kind; "" for Demos and a Fiesta page
+	Current  bool
+	External bool
+	Items    []navItem
 }
 
 // ── The page kinds ───────────────────────────────────────────────────
@@ -334,18 +315,16 @@ type pageKind struct {
 func pageKinds() []pageKind {
 	kinds := []pageKind{
 		{Kind: "overview", File: "index.html", Title: "Overview"},
-		{Kind: "getting-started", File: "getting-started.html", Title: "Getting started", Nav: assetNav,
-			Blurb: "Details about the stylesheets and scripts that ship with the Rastrillo design system."},
-		{Kind: "tokens", File: "tokens.html", Title: "Tokens", Nav: tokenNav,
-			Blurb: "Every custom property the system is built out of: the theme's colour and type, and the scales for size, spacing and radius."},
+		{Kind: "getting-started", File: "getting-started.html",
+			Title: "Getting started",
+			Blurb: "How a new app gets Fiesta's stylesheets and scripts, " +
+				"and how it keeps them current."},
 		{Kind: "icons", File: "icons.html", Title: "Icons", Nav: iconNav,
 			Blurb: "Every icon slug, at the size components draw it, with the call to copy and its lucide.dev name."},
 	}
 	// The component families, where the one components page used to be.
 	kinds = append(kinds, componentPages()...)
 	return append(kinds,
-		pageKind{Kind: "primitives", File: "primitives.html", Title: "UI primitives", Nav: primitiveNav,
-			Blurb: "The shapes a component cannot be, because they wrap a body only the caller knows: cards, data grids, menus and the shells' own chrome."},
 		pageKind{Kind: "formats", File: "formats.html", Title: "Dates, numbers and names", Nav: formatNav,
 			Blurb: "How to show dates, numbers, money, names and addresses, and which ones people mix up."},
 		pageKind{Kind: "screens", File: "screens.html", Title: "Screens", Nav: screenNav,
@@ -409,18 +388,6 @@ func anchorHrefIn(mount, theme, locale, file, id string) string {
 	return pageHref(mount, theme, locale, file) + "#" + id
 }
 
-func tokenNav(mount, theme, locale string, view pageView) []navItem {
-	file := fileOf("tokens")
-	var items []navItem
-	for _, g := range view.Colours {
-		items = append(items, navItem{Label: g.Title, Href: anchorHrefIn(mount, theme, locale, file, g.ID)})
-	}
-	for _, g := range view.Structure {
-		items = append(items, navItem{Label: g.Title, Href: anchorHrefIn(mount, theme, locale, file, g.ID)})
-	}
-	return items
-}
-
 // familyNav is one family page's rail entries: its own partials, by
 // name, on its own page.
 //
@@ -446,15 +413,6 @@ func familyNav(key string) func(mount, theme, locale string, view pageView) []na
 	}
 }
 
-func primitiveNav(mount, theme, locale string, view pageView) []navItem {
-	file := fileOf("primitives")
-	var items []navItem
-	for _, idiom := range view.Idioms {
-		items = append(items, navItem{Label: idiom.Name, Href: anchorHrefIn(mount, theme, locale, file, idiom.ID), Code: true})
-	}
-	return items
-}
-
 // iconNav is one rail entry per slug, in IconSlugs() order — which is
 // the order the page draws them in, because both read the same call.
 // Code because a slug is an identifier, the same as a partial's name.
@@ -463,19 +421,6 @@ func iconNav(mount, theme, locale string, view pageView) []navItem {
 	var items []navItem
 	for _, ic := range view.Icons.List {
 		items = append(items, navItem{Label: ic.Slug, Href: anchorHrefIn(mount, theme, locale, file, ic.ID), Code: true})
-	}
-	return items
-}
-
-// assetNav is one rail entry per shipped file, in the order the page
-// lists them. Derived from assetViews for the same reason iconNav is
-// derived from IconSlugs(): a fourth script joins both lists on the day
-// it ships, or neither.
-func assetNav(mount, theme, locale string, view pageView) []navItem {
-	file := fileOf("getting-started")
-	var items []navItem
-	for _, a := range view.Assets.List {
-		items = append(items, navItem{Label: a.Name, Href: anchorHrefIn(mount, theme, locale, file, a.ID), Code: true})
 	}
 	return items
 }
@@ -490,18 +435,20 @@ func shellNav(mount, theme, locale string, view pageView) []navItem {
 }
 
 // galleryNav builds the rail from a finished view: one section per page
-// kind, in the order the pages themselves are in, and last the demo
-// pages — the only entries in the rail that leave this tree's gallery
-// altogether, and the reason the modal demo is not reachable only from
-// a sentence halfway down the primitives.
+// kind, in the order the pages themselves are in, each Fiesta page in
+// the place the page it replaced had, and last the demo pages, the
+// entries that leave the gallery for a page of their own.
 //
-// The rail is identical on all five pages apart from which section
-// carries `open aria-current="page"`, which is what makes it a rail
-// rather than five tables of contents. TestTheRailIsTheSameOnEveryPage
-// holds that literally.
+// The rail is identical on every page apart from which section carries
+// `open aria-current="page"`, which is what makes it a rail rather than
+// a table of contents per page. TestTheRailIsTheSameOnEveryPage holds
+// that literally.
 func galleryNav(mount, theme, locale, kind string, view pageView) []navSection {
-	out := make([]navSection, 0, len(pageKinds())+1)
+	out := make([]navSection, 0, len(pageKinds())+len(fiestaEntries)+1)
 	for _, pk := range pageKinds() {
+		if away, ok := fiestaEntries[pk.Kind]; ok {
+			out = append(out, fiestaSection(theme, locale, away))
+		}
 		section := navSection{
 			Title:   proseIn(locale, pk.Title),
 			Href:    pageHref(mount, theme, locale, pk.File),
@@ -512,8 +459,8 @@ func galleryNav(mount, theme, locale, kind string, view pageView) []navSection {
 			// The section overview link, first, before the anchors.
 			// A section that lists anything draws its title as a
 			// <summary>, which discloses rather than navigates — so
-			// without this, expanding TOKENS showed nine fragments of
-			// tokens.html and no way to tokens.html itself. A section
+			// without this, expanding ICONS showed every slug on
+			// icons.html and no way to icons.html itself. A section
 			// with nothing to list is already a plain link to its own
 			// page, so it does not need a second one under it.
 			section.Items = append([]navItem{sectionOverview(locale, section)}, pk.Nav(mount, theme, locale, view)...)
@@ -544,7 +491,7 @@ func galleryNav(mount, theme, locale, kind string, view pageView) []navSection {
 // accessible name deliberately is not. Four links reading "Overview" in
 // one navigation landmark are unambiguous nested under their headings
 // and ambiguous read out in a list, so the accessible name carries the
-// section: "Tokens overview". It contains the visible label, so WCAG
+// section: "Icons overview". It contains the visible label, so WCAG
 // 2.2 SC 2.5.3 Label in Name is satisfied without changing the word a
 // sighted reader sees or types into the filter.
 func sectionOverview(locale string, section navSection) navItem {
@@ -594,25 +541,31 @@ func pageSteps(mount, theme, locale, kind string) (prev, next *navLink) {
 }
 
 // routeView is one entry in the Overview's route list: another page of
-// this gallery, its name, and the one sentence saying what is on it.
+// this gallery or of Fiesta's, its name, and the one sentence saying
+// what is on it. External marks a Fiesta page.
 type routeView struct {
-	Label string
-	Blurb string
-	Href  string
+	Label    string
+	Blurb    string
+	Href     string
+	External bool
 }
 
 // pageRoutes is the Overview's routes into the rest of the gallery: one
 // per page kind that is not the page being rendered, in table order,
-// each carrying that row's own Blurb. Read off pageKinds() rather than
-// written out, so a sixth page kind appears here the day its row lands
-// — and its Blurb is the only new thing anybody has to write.
+// each carrying that row's own Blurb, with each Fiesta page in the rail's
+// place for it. Read off pageKinds() rather than written out, so a new
+// page kind appears here the day its row lands — and its Blurb is the
+// only new thing anybody has to write.
 //
 // It is built for every page and rendered only by the Overview, which
 // is why the Overview's own row carries no Blurb: a page never routes
 // to itself.
 func pageRoutes(mount, theme, locale, kind string) []routeView {
-	out := make([]routeView, 0, len(pageKinds())-1)
+	out := make([]routeView, 0, len(pageKinds())+len(fiestaEntries)-1)
 	for _, pk := range pageKinds() {
+		if away, ok := fiestaEntries[pk.Kind]; ok {
+			out = append(out, fiestaRoute(theme, locale, away))
+		}
 		if pk.Kind == kind {
 			continue
 		}
@@ -665,13 +618,12 @@ func slug(s string) string {
 
 // ── Building one page ────────────────────────────────────────────────
 
-// renderGallery builds all five pages of one theme × locale directory,
+// renderGallery builds every page of one theme × locale directory,
 // keyed by path under the directory: the pages, and the preview files
-// their frames load. One call rather than five because everything
+// their frames load. One call rather than one a page because everything
 // expensive about a page — parsing ui's whole partial set, rendering a
-// hundred and ten samples into their preview documents, parsing the
-// theme's stylesheet — is shared by all five, and doing it per page
-// would be five times the work for the same bytes.
+// hundred samples into their preview documents — is shared by all of
+// them, and doing it per page would be that work again for each page.
 //
 // Where a page ends up in the tree does not change a byte of it: every
 // link it carries is absolute. Theme, locale and kind are the whole of
@@ -703,20 +655,8 @@ func renderGallery(mount, theme, locale string) (map[string][]byte, error) {
 		return nil, fmt.Errorf("parsing the screen frame: %w", err)
 	}
 
-	colours, err := themePalette(theme)
-	if err != nil {
-		return nil, err
-	}
-	structure, err := structuralGroups()
-	if err != nil {
-		return nil, err
-	}
 	files := previewSet{}
 	families, err := buildFamilies(mount, tmpl, theme, locale, files)
-	if err != nil {
-		return nil, err
-	}
-	idioms, err := buildIdioms(mount, tmpl, theme, locale, files)
 	if err != nil {
 		return nil, err
 	}
@@ -735,16 +675,13 @@ func renderGallery(mount, theme, locale string) (map[string][]byte, error) {
 		LocaleName:     localeName,
 		Mount:          mount,
 		Home:           indexHref(mount, theme, locale),
-		Colours:        localiseGroups(locale, colours),
-		Structure:      localiseGroups(locale, structure),
 		Families:       families,
-		Idioms:         idioms,
 		Formats:        formats,
 		Screens:        screens,
 		ScreenPartials: screenPartialViews(),
 		Shells:         shellViews(mount, theme, locale),
 		Icons:          buildIcons(locale),
-		Assets:         buildAssets(mount, theme, locale),
+		Started:        buildStarted(theme, locale),
 		CopyJoin:       copyJoin,
 	}
 
@@ -804,9 +741,7 @@ func bodyTemplates() []struct{ kind, src string } {
 	out := []struct{ kind, src string }{
 		{"overview", overviewBody},
 		{"getting-started", gettingStartedBody},
-		{"tokens", tokensBody},
 		{"icons", iconsBody},
-		{"primitives", primitivesBody},
 		{"formats", formatsBody},
 		{"screens", screensBody},
 		{"shells", shellsBody},
@@ -905,14 +840,17 @@ func newControls(mount, theme, locale, file, localeName string) controls {
 }
 
 // indexRow is one row of the phone index: a section's page, by title,
-// carrying the id its pages' back controls name.
+// carrying the id its pages' back controls name. A Fiesta page has no
+// back control coming to it, so its row has no id and is External.
 type indexRow struct {
 	ID, Title, Href string
+	External        bool
 }
 
 // indexRows reads the phone index off the rail, so the rows and the
 // tree cannot list different sections: one row per page kind but the
-// Overview, which is the index itself, and the Demos section as is.
+// Overview, which is the index itself, one per Fiesta page, and the
+// Demos section as is.
 // Rows are plain links, not the tree's disclosures, because shell.js
 // returns focus to the first nav link whose path is the page just
 // left, and in the tree that link is inside a closed <details> that
@@ -924,22 +862,13 @@ func indexRows(nav []navSection) ([]indexRow, navSection) {
 		if s.Kind == "overview" {
 			continue
 		}
-		rows = append(rows, indexRow{ID: "nav-" + s.Kind, Title: s.Title, Href: s.Href})
+		row := indexRow{Title: s.Title, Href: s.Href, External: s.External}
+		if s.Kind != "" {
+			row.ID = "nav-" + s.Kind
+		}
+		rows = append(rows, row)
 	}
 	return rows, nav[len(nav)-1]
-}
-
-// localiseGroups translates the token headings. The groups are built by
-// designsystem.go, which reads a stylesheet and knows nothing about
-// what language anybody is reading in; translating the titles on the
-// way into the view keeps the parser and the page's words apart.
-func localiseGroups(locale string, groups []tokenGroup) []tokenGroup {
-	out := make([]tokenGroup, len(groups))
-	for i, g := range groups {
-		g.Title = proseIn(locale, g.Title)
-		out[i] = g
-	}
-	return out
 }
 
 // indexHref is one theme × locale page's canonical address. Every
@@ -1011,8 +940,8 @@ func shellViews(mount, theme, locale string) []shellView {
 			// exist, at their own URLs, and framing the real file is
 			// both smaller and more honest than copying it. No HTML or
 			// Template tab either — a shell's source is a Go template with
-			// {{block}} in it, not markup to copy, and the two shell
-			// chrome idioms above show the markup it produces.
+			// {{block}} in it, not markup to copy, and Fiesta's UI
+			// primitives page shows the markup it produces.
 			Preview: previewView{
 				Group: id + "-0",
 				Style: previewStyle(locale, id, heightOf(id)),
@@ -1271,7 +1200,7 @@ type previewView struct {
 	Src   string
 	// Call is the template call the Template tab shows, highlighted;
 	// empty where the markup is not a partial's (a hand-written sample,
-	// an idiom, a format). Wrapper is the one line above the code, in
+	// a format). Wrapper is the one line above the code, in
 	// both tabs, naming the container a wrapped sample needs: the frame
 	// wears that container, the code does not, so the reader is told
 	// rather than handed a placeholder form to delete.
@@ -1376,20 +1305,16 @@ func (s previewSet) add(f previewFile) error {
 //
 // Matched on the anchor id's prefix rather than listed, so the set
 // tracks ui rather than being a copy of it. A fifth shell in
-// ui.LayoutNames() arrives as shell-<name> and a matching idiom as
-// idiom-shell-<name>, and both land here with no edit. The two names
-// written out are the two that no rule could derive: the demo
-// application, which is this package's own page, and the modal, whose
-// whole claim is that it is a page — its backdrop is position: fixed,
-// so it is fixed to the frame's viewport and wants a window-sized one.
+// ui.LayoutNames() arrives as shell-<name> and lands here with no edit.
+// The name written out is the one no rule could derive: the demo
+// application, which is this package's own page.
 //
 // Getting this wrong costs a rendering, never a broken page: a page
 // example sorted as a component is a shell squeezed into 900px, and a
 // component sorted as a page is the four-fifths scaling this class
 // split exists to remove.
 func pageFrame(id string) bool {
-	return id == "demo-app" || id == "idiom-modal" ||
-		strings.HasPrefix(id, "shell-") || strings.HasPrefix(id, "idiom-shell-")
+	return id == "demo-app" || strings.HasPrefix(id, "shell-")
 }
 
 // previewClass is pageFrame as the template writes it.
@@ -1413,15 +1338,14 @@ func previewClass(id string) string {
 // title and action stack — and most grow not at all, because a
 // component this small has one column either way.
 //
-// previewMobileHeights is the exception, and the stat band is what
-// earned it. The factor holds for components that have one column at
-// both widths; it cannot hold for one whose whole shape is a ROW that
-// becomes a COLUMN. A four-cell band is 170px of strip on a desktop
-// and 439px of stack on a phone — 2.6×, not 1.25 — and there is no
-// single factor that fits both that and a status pill. Raising the
-// desktop number until the derived mobile one fitted would have put
-// 180px of empty box under every desktop rendering of the band, which
-// is paying for the phone with the page most readers are on.
+// previewMobileHeights is the exception, and a row of status pills is
+// what earns it. The factor holds for components that have one column
+// at both widths; it cannot hold for one whose whole shape is a ROW
+// that becomes a COLUMN, and there is no single factor that fits both
+// that and a callout. Raising the desktop number until the derived
+// mobile one fitted would put empty box under every desktop rendering
+// of the row, which is paying for the phone with the page most readers
+// are on.
 //
 // Add an entry here only for an example whose layout genuinely changes
 // axis. An entry is not a place to absorb a desktop height that was
@@ -1457,8 +1381,6 @@ var previewMobileLocaleHeights = map[string]map[string]int{
 	"ga": {
 		"partial-api-tokens":            2287,
 		"format-addresses":              319,
-		"idiom-box":                     318,
-		"idiom-button":                  449,
 		"partial-callout":               260,
 		"partial-empty-state":           343,
 		"partial-stat":                  219,
@@ -1470,8 +1392,6 @@ var previewMobileLocaleHeights = map[string]map[string]int{
 	},
 	"es": {
 		"partial-api-tokens":              2102,
-		"idiom-box":                       307,
-		"idiom-form-layout":               565,
 		"partial-callout":                 260,
 		"partial-empty-state":             343,
 		"screen-signin-ask":               678,
@@ -1481,9 +1401,6 @@ var previewMobileLocaleHeights = map[string]map[string]int{
 	},
 	"pt-PT": {
 		"partial-api-tokens":            2126,
-		"idiom-button":                  449,
-		"idiom-form-layout":             565,
-		"idiom-tblock":                  358,
 		"partial-callout":               284,
 		"partial-empty-state":           343,
 		"screen-signin-ask":             678,
@@ -1494,7 +1411,6 @@ var previewMobileLocaleHeights = map[string]map[string]int{
 	"ru": {
 		"partial-api-tokens":         2270,
 		"format-addresses":           343,
-		"idiom-button":               449,
 		"partial-callout":            284,
 		"partial-seg-tabs":           162,
 		"partial-status-pill":        308,
@@ -1505,7 +1421,6 @@ var previewMobileLocaleHeights = map[string]map[string]int{
 	},
 	"ja": {
 		"partial-api-tokens": 2126,
-		"idiom-form-layout":  523,
 	},
 	"ar": {
 		"screen-signin-social": 399,
@@ -1522,7 +1437,6 @@ var previewMobileLocaleHeights = map[string]map[string]int{
 var previewMobileHeights = map[string]int{
 	// Reflows onto a different axis: a row at 900px becomes a column,
 	// or several, below 390px.
-	"idiom-stat-band":     450, // a four-cell strip becomes three stacked rows
 	"partial-status-pill": 170, // the row of four wraps into rows
 
 	// Both axis-reflow AND the worst of the twelve locales wraps taller
@@ -1533,7 +1447,6 @@ var previewMobileHeights = map[string]int{
 	// Wraps taller at the narrowest phone frame (320px), measured by
 	// TestPreviewFrameHeightsFitAtThePhonesNarrowest across all twelve
 	// locales.
-	"idiom-button":                    399,
 	"partial-callout":                 236,
 	"partial-error-page":              543,
 	"partial-job-status":              113,
@@ -1584,10 +1497,10 @@ var previewMobileHeights = map[string]int{
 // menu, and no frame can show more than 20rem of one. Size a menu's box
 // for the state a reader opens, not for the closed one.
 //
-// The key is the anchor id, not the name, because "dropdown" is both a
-// partial and a markup idiom and they are not the same height. Being
-// wrong here costs a scrollbar or some white space, never a broken
-// page.
+// The key is the anchor id, not the name, because the id says which
+// kind of example it is: a partial, a format, a screen or a shell.
+// Being wrong here costs a scrollbar or some white space, never a
+// broken page.
 var previewHeights = map[string]int{
 	// The list screen.
 	"partial-page-header":        140,
@@ -1636,19 +1549,6 @@ var previewHeights = map[string]int{
 	"partial-back-nav":    80,
 	"partial-locale-menu": 420,  // the open menu at its full 20rem cap; twelve languages scroll inside it
 	"partial-api-tokens":  1000, // the reveal, a four-field form in its box, four list rows and the revoke buttons
-	// The markup idioms.
-	"idiom-button":        240, // four rows: the variants, the sizes and a link, full width, disabled
-	"idiom-box":           220,
-	"idiom-list-grid":     280,
-	"idiom-stat-band":     170,
-	"idiom-dropdown":      220,
-	"idiom-form-layout":   390,
-	"idiom-tblock":        270,
-	"idiom-modal":         620, // a modal wants a window to be modal over
-	"idiom-help":          100,
-	"idiom-selbox":        70,
-	"idiom-shell-topbar":  250,
-	"idiom-shell-sidebar": 400,
 	// The shell demos, which are whole pages.
 	// One height for them all, because they sit under one another and
 	// the sidebar's rail is the tallest of them.
@@ -1943,12 +1843,11 @@ func docTitle(page, site, theme string) string {
 // prove it.
 //
 // Uniqueness comes from what already distinguishes one preview from
-// another: which state of the partial this is, and — for the one name
-// that is both a partial and an idiom, dropdown — which section it is
-// in. Both halves are existing prose keys, translated in all twelve
-// locales like everything else the page says. No new key was invented
-// for this, deliberately: a frame title is not the place to spend
-// eleven translations.
+// another: which state of the partial this is, and — for a format or
+// a screen — which page it is on. Both halves are existing prose keys,
+// translated in all twelve locales like everything else the page says.
+// No new key was invented for this, deliberately: a frame title is not
+// the place to spend eleven translations.
 //
 // TestEveryFrameTitleIsUniqueOnThePage holds the result.
 func previewTitle(locale, name, qualifier string) string {
@@ -2025,126 +1924,6 @@ func wrap(w wrapper, html string) string {
 		return `<div rst-stats>` + html + `</div>`
 	}
 	return html
-}
-
-// ── Class idioms ─────────────────────────────────────────────────────
-
-// idiomBlurbs is one English sentence per markup idiom, in the page's own
-// voice. A missing entry renders no blurb rather than an empty one.
-//
-// English here is the source AND the prose.go key, exactly as in
-// samples.go: adding an idiom means adding its eleven translations, and
-// the parity gate says so.
-var idiomBlurbs = map[string]string{
-	"button":        "Buttons come in four variants and three sizes, and a link can look like one. For the spinner a form shows while it submits, see form-foot.",
-	"box":           "The padded section card, and the heading that sits outside it.",
-	"list-grid":     "The real data-table vocabulary: the card sets its columns once, rows only choose cells.",
-	"stat-band":     "A row of stats across the top of a dashboard.",
-	"dropdown":      "The details/summary menu behind header overflow menus and a list bar's filter, plus an applied filter as a removable chip.",
-	"form-layout":   "The attributes that give a form its rhythm and its save bar. No partial emits these; they wrap a run of fields you compose yourself.",
-	"tblock":        "A bordered card whose body reveals only while its switch is on, via :has(). The switch is authoritative; the reveal is a display convenience.",
-	"modal":         "A modal is its own URL, not client state: the page underneath, marked inert, with the panel over it and a plain link to close.",
-	"help":          "A bordered question mark linking to a help article. Its CSS tooltip is decoration; the link carries its own full-sentence label.",
-	"selbox":        "The selection checkbox a list row wears in select mode. Its label restates the row's identity.",
-	"shell-topbar":  "The topbar shell's own chrome, as markup. Layout ships it as a whole template.",
-	"shell-sidebar": "The sidebar shell's chrome on a content page: on a phone, a back control to the index.",
-}
-
-// idiomRules attaches the two rules from docs/site/templates.md to the
-// idioms they govern, quoted rather than paraphrased: they are the rules
-// people get wrong, and the wording is the part that has been argued
-// over.
-var idiomRules = map[string]struct{ Title, Body string }{
-	"box": {
-		"Which card is which",
-		"rst-list and rst-card have no padding by design: they hold a run of rows, and each row pads itself. " +
-			"Put a form, a paragraph, a strip of links or anything else that is not a row straight into one and it renders flush against the border; the text touching the edge is the tell. " +
-			"The padded card for arbitrary content is rst-box, with its heading as a sibling rst-box-head before it.",
-	},
-	"list-grid": {
-		"Screens stack vertically",
-		"A screen is a column: page-header, then section-header + card, then the next section-header + card, in reading order. " +
-			"Horizontal arrangement is reserved for the idioms that ship it: rst-box-head, rst-field-row, rst-lbar, rst-lrow cells, rst-seg-tabs.",
-	},
-}
-
-// demoIdiom is one idiom that is also a page of this tree: the words
-// its link wears, and the address it goes to.
-type demoIdiom struct {
-	Label string
-	Href  func(mount, theme, locale string) string
-}
-
-// demoIdioms are the three idioms whose preview is not the last word on
-// them. The two shells are whole page frames, and a frame is better
-// seen at the size of a window than at the size of a paragraph; the
-// modal's whole claim is that it is a URL, so the demonstration is not
-// complete until you have been to it. Each link opens in a new tab —
-// the reader is in the middle of a page, and losing their place in it
-// is a poor trade for a look at a demo.
-var demoIdioms = map[string]demoIdiom{
-	"shell-topbar": {
-		Label: "Open the topbar shell demo, a dedicated preview.",
-		Href:  func(mount, theme, locale string) string { return shellHref(mount, theme, locale, "topbar") },
-	},
-	"shell-sidebar": {
-		Label: "Open the sidebar shell demo, a standalone preview.",
-		Href:  func(mount, theme, locale string) string { return shellHref(mount, theme, locale, "sidebar") },
-	},
-	"modal": {
-		Label: "See it live at the URL it belongs to",
-		Href:  modalHref,
-	},
-}
-
-// buildIdioms renders ui.Styleguide in sorted order. The samples are
-// complete HTML with no template actions, so they go onto the page as
-// they are — the point is that the page shows the same bytes the ui
-// tests hold against tokens.css.
-//
-// An idiom's heading is an <h2> under the page's <h1>, with nothing
-// between: a deeper level there would skip one, which is WCAG 1.3.1
-// and what the accessibility gate found the first time it ran.
-func buildIdioms(mount string, tmpl *template.Template, theme, locale string, files previewSet) ([]idiomView, error) {
-	samples := ui.Styleguide()
-	names := make([]string, 0, len(samples))
-	for name := range samples {
-		names = append(names, name)
-	}
-	sort.Strings(names)
-	out := make([]idiomView, 0, len(names))
-	for _, name := range names {
-		view := idiomView{
-			Name:   name,
-			ID:     anchorID("idiom", name),
-			Marker: marker("idiom", name),
-			Blurb:  proseIn(locale, idiomBlurbs[name]),
-		}
-		markup := localMarkup(locale, samples[name])
-		preview, file := newPreview(mount, theme, locale, "primitives", view.ID+"-0",
-			previewTitle(locale, name, "UI primitives"),
-			markup, markup, view.ID)
-		if err := files.add(file); err != nil {
-			return nil, err
-		}
-		view.Preview = preview
-		if demo, ok := demoIdioms[name]; ok {
-			view.DemoLabel = proseIn(locale, demo.Label)
-			view.DemoHref = demo.Href(mount, theme, locale)
-		}
-		if rule, ok := idiomRules[name]; ok {
-			var buf strings.Builder
-			err := tmpl.ExecuteTemplate(&buf, "callout", map[string]any{
-				"Tone": "info", "Title": proseIn(locale, rule.Title), "Body": proseIn(locale, rule.Body),
-			})
-			if err != nil {
-				return nil, fmt.Errorf("idiom %s rule: %w", name, err)
-			}
-			view.Rule = template.HTML(buf.String())
-		}
-		out = append(out, view)
-	}
-	return out, nil
 }
 
 // ── Shell demos ──────────────────────────────────────────────────────
@@ -2631,116 +2410,39 @@ func buildIcons(locale string) iconsView {
 
 // ── Getting started ──────────────────────────────────────────────────
 //
-// Every weight on that page is len() of the bytes the page was rendered
-// from. Not one of them is written down, here or in prose.go, which is
-// the whole point: a number in a sentence is wrong the first time
-// somebody edits the file it describes, and this project has corrected
-// five of those in three days.
+// The Rastrillo half of getting the files: how a new app is handed
+// them and how it keeps them. What each file is for and what it weighs
+// is Fiesta's to say, so the page links Fiesta's own getting started
+// page in this theme and language rather than describing the files a
+// second time.
 
-// assetView is one shipped file: what it is called, where this tree
-// serves it, what it weighs and what it is for. Weight is the finished
-// line in the page's language; see weight.go for the three figures.
-type assetView struct {
-	ID     string
-	Name   string
-	Href   string
-	Weight string
-	Blurb  string
+// startedView is the Getting started page's data: the scaffold command
+// and the pinned constant for this theme, and the sentence that links
+// Fiesta's file details.
+type startedView struct {
+	Scaffold   string
+	Pin        string
+	FiestaLine template.HTML
 }
 
-// assetsView is the Getting started page's data. AppRaw is what a
-// scaffolded app is actually handed — tokens.css, ONE theme and the
-// three scripts — which is not the sum of the list, because the list
-// carries every theme and an app receives one.
-//
-// What the list does NOT carry is this gallery's own furniture:
-// gallery.js and gallery.css are the page's plumbing, no scaffold
-// writes them, no app is ever handed them, and a reader of a page
-// about what an app ships has no use for either. They were on the list
-// once, each with a sentence saying it did not count — which is a row
-// whose whole content is that it should not be there.
-// TestTheGettingStartedPageWeighsTheRealAssets holds the absence.
-type assetsView struct {
-	List []assetView
-	// AppRaw and AppGzip are the app's total, as written and gzipped a
-	// file at a time, the way a visitor downloads them. AppTotal is the
-	// sentence that says both.
-	AppRaw, AppGzip int
-	AppTotal        string
-	Scaffold        string
-	Pin             string
-	// Links is the two <link> tags a page outside the framework needs,
-	// highlighted: the order is the point, tokens.css then the theme,
-	// because the theme's values fill the references tokens.css makes.
-	Links template.HTML
-}
-
-// buildAssets reads the shipped assets out of ui, in the order the page
-// lists them. The theme rows come off ui.ThemeNames(), so a fourth
-// theme appears here and in the rail with no edit, and the getters are
-// the same ones Render writes the tree's copies from — the file a
-// reader downloads and the number beside it cannot disagree.
-func buildAssets(mount, theme, locale string) assetsView {
-	// Read the scaffold's vendored set so the total includes every file
-	// a new app ships.
-	vendored, ok := ui.VendoredAssets(theme)
-	if !ok {
-		// Render has already failed on an unknown theme by the time
-		// anything calls this; an empty row would be a silent lie.
-		panic("designsystem: no theme " + theme)
-	}
-	appRaw, appGzip := 0, 0
-	for name, body := range vendored {
-		w := weigh(name, body)
-		appRaw, appGzip = appRaw+w.Raw, appGzip+w.Gzip
-	}
-	add := func(out *assetsView, name string, body []byte, blurb string, args ...any) {
-		out.List = append(out.List, assetView{
-			ID:     anchorID("asset", name),
-			Name:   name,
-			Href:   assetURL(mount, name),
-			Weight: weightIn(locale, weigh(name, body)),
-			Blurb:  proseIn(locale, blurb, args...),
-		})
-	}
-	out := assetsView{
-		AppRaw:   appRaw,
-		AppGzip:  appGzip,
-		AppTotal: proseIn(locale, appTotalLine, "raw", kibUnit(locale, appRaw), "gzip", kibUnit(locale, appGzip)),
+func buildStarted(theme, locale string) startedView {
+	link := `<a href="` + FiestaPage(theme, locale, FiestaFilesPage) +
+		`" rel="external">` +
+		template.HTMLEscapeString(
+			proseIn(locale, "Fiesta's getting started page")) + `</a>`
+	return startedView{
 		Scaffold: "rastrillo new --theme=" + theme + " myapp",
 		Pin:      `const vendoredTheme = "` + theme + `"`,
-		Links:    codeview.Highlight(`<link rel="stylesheet" href="tokens.css">` + "\n" + `<link rel="stylesheet" href="theme-` + theme + `.css">`),
+		FiestaLine: proseMarkup(locale, startedLead,
+			"link", template.HTML(link)),
 	}
-	add(&out, "tokens.css", ui.TokensCSS(),
-		"Structure: every component class, every scale, and no colour literal anywhere. The same file under every theme.")
-	for _, name := range ui.ThemeNames() {
-		css, _ := ui.ThemeCSS(name) // every name here is a shipped theme
-		add(&out, "theme-"+name+".css", css,
-			"Colour, type family and shape for the {theme} theme: one :root block where every colour is declared once as a light-dark() pair.", "theme", name)
-	}
-	add(&out, "shell.css", ui.ShellCSS(),
-		"The slide between pages on a phone, for the sidebar and console shells. Deletable with shell.js.")
-	add(&out, "rastrillo.js", ui.ShimJS(), shimAssetBlurb)
-	add(&out, "fiesta.js", vendored["fiesta.js"], fiestaAssetBlurb)
-	add(&out, "busy.js", ui.BusyJS(), busyAssetBlurb)
-	add(&out, "live.js", ui.LiveJS(),
-		"Live pages: sections that update when the server says their data changed, and forms that save in place. Inert until a page carries the rastrillo-live meta tag, and deletable on its own.")
-	add(&out, "light.js", ui.LightJS(),
-		"The light the depth styles read: shadows lit by the hour, and a sheen on the button under the pointer. Delete it for the still design.")
-	add(&out, "anchor.js", ui.AnchorJS(),
-		"Keeps a dropdown's menu on the screen in browsers without CSS anchor positioning. It does nothing where they have it: delete it once every browser you support does.")
-	add(&out, "shell.js", ui.ShellJS(),
-		"Phone navigation for the sidebar and console shells: the slide between pages, Back that reuses history, and focus returned to the section you left. Deletable on its own.")
-	add(&out, "transition.js", ui.TransitionJS(), transitionAssetBlurb)
-	add(&out, "copy.js", vendored["copy.js"], copyAssetBlurb)
-	add(&out, "select.js", ui.SelectJS(),
-		"field-select's searchable combobox. Inert until a select opts in with data-rst-select, and deletable on its own.")
-	add(&out, "datetime.js", ui.DatetimeJS(),
-		"The date fields' natural-language input. Inert until a field opts in with data-rst-date or data-rst-time, and deletable on its own.")
-	add(&out, "calendar.js", ui.CalendarJS(),
-		"The month grid that field's calendar button opens. Inert until datetime.js asks it for a panel, and deletable on its own: without it the button falls back to the browser's own picker.")
-	return out
 }
+
+// startedLead opens the Getting started page; {link} is Fiesta's own
+// getting started page.
+const startedLead = "Rastrillo apps get Fiesta's stylesheets and " +
+	"scripts on day one. What each file is for and what it weighs is " +
+	"on {link}."
 
 // ── The page itself ──────────────────────────────────────────────────
 
@@ -2898,10 +2600,10 @@ const pageTemplate = `{{define "ds-controls"}}<nav rst-seg-tabs aria-label="{{P 
     {{icon "search"}}<input id="ds-filter" type="search" placeholder="{{P "Filter"}}" autocomplete="off" aria-controls="ds-nav" data-ds-filter>
   </search>
   <p class="ds-nav__empty" data-ds-filter-empty role="status" hidden>{{P "No matches"}}</p>
-{{if .Rows}}  <nav class="ds-index" rst-shell-nav aria-label="{{T "rastrillo.ui.shell_up_label"}}">{{range .Rows}}<a id="{{.ID}}" href="{{.Href}}">{{.Title}}</a>{{end}}<p rst-shell-group>{{.Demos.Title}}</p>{{range .Demos.Items}}<a href="{{.Href}}" target="_blank" rel="noopener">{{.Label}}<span class="rst-sr-only"> ({{P "opens in a new tab"}})</span></a>{{end}}</nav>
+{{if .Rows}}  <nav class="ds-index" rst-shell-nav aria-label="{{T "rastrillo.ui.shell_up_label"}}">{{range .Rows}}<a{{with .ID}} id="{{.}}"{{end}} href="{{.Href}}"{{if .External}} rel="external"{{end}}>{{.Title}}</a>{{end}}<p rst-shell-group>{{.Demos.Title}}</p>{{range .Demos.Items}}<a href="{{.Href}}" target="_blank" rel="noopener">{{.Label}}<span class="rst-sr-only"> ({{P "opens in a new tab"}})</span></a>{{end}}</nav>
 {{end}}  <nav class="ds-nav" rst-shell-nav id="ds-nav" aria-label="{{P "Sections and demos"}}">
 {{range .Nav}}{{if .Items}}    <details{{if .Current}} open aria-current="page"{{end}}><summary><span rst-caret aria-hidden="true">{{icon "chevron-down"}}</span>{{.Title}}</summary>{{range .Items}}<a href="{{.Href}}"{{if .Aria}} aria-label="{{.Aria}}"{{end}}{{if .Code}} class="rst-mono"{{end}}{{if .Blank}} target="_blank" rel="noopener"{{end}}{{if .Terms}} data-ds-terms="{{.Terms}}"{{end}}>{{.Label}}</a>{{end}}</details>
-{{else}}    <a class="ds-nav__page" href="{{.Href}}"{{if .Current}} aria-current="page"{{end}}>{{.Title}}</a>
+{{else}}    <a class="ds-nav__page" href="{{.Href}}"{{if .Current}} aria-current="page"{{end}}{{if .External}} rel="external"{{end}}>{{.Title}}</a>
 {{end}}{{end}}  </nav>
 </aside>
 <header class="ds-top">
@@ -2954,44 +2656,22 @@ const overviewBody = `{{define "ds-body-overview"}}
 </section>
 <h2 class="ds-sub">{{P "Where to go next"}}</h2>
 <ul class="ds-routes">{{range .Routes}}
-<li><a href="{{.Href}}">{{.Label}}</a><span>{{.Blurb}}</span></li>{{end}}
+<li><a href="{{.Href}}"{{if .External}} rel="external"{{end}}>{{.Label}}</a><span>{{.Blurb}}</span></li>{{end}}
 </ul>
 {{end}}`
 
 // gettingStartedBody is the page a reader meets before any of the
-// vocabulary: what the framework actually ships as CSS and JavaScript,
-// and what it costs.
-//
-// Every weight on it is len() of the embedded bytes, taken while the
-// page renders. There is no number in prose.go and none in this
-// constant, which is the only way a page about file sizes stays true
-// after somebody edits one of the files.
+// vocabulary: how a new app is handed Fiesta's stylesheets and scripts,
+// and how it keeps them current. The files themselves, one by one, are
+// on Fiesta's own getting started page, which the first line links.
 const gettingStartedBody = `{{define "ds-body-getting-started"}}
-<p class="ds-lead">{{P "Rastrillo apps get all of this on day one. Anyone can take these stylesheets and scripts from Fiesta, at fiesta.rastrillo.org. Pages work without JavaScript and gain enhancements when it is available."}}</p>
-
-<h2 class="ds-sub">{{P "The stylesheets"}}</h2>
-<p class="ds-lead">{{P "tokens.css is structure: the component classes, the layout, and the scales for type, spacing and radius. Values are references, set elsewhere. themes/<name>.css is colour, type family and shape: one :root block where every colour is declared once as a light-dark() pair."}}</p>
-
-<h2 class="ds-sub">{{P "The scripts"}}</h2>
-<p class="ds-lead">{{P "fiesta.js closes menus, lets a switch be dragged and applies a colour-scheme choice in place. rastrillo.js polls fragments and keeps that choice in a cookie. busy.js is the busy rule. anchor.js keeps dropdown menus on the screen where CSS cannot. copy.js, select.js and datetime.js are enhancements, each inert until a control opts in and each deletable on its own."}}</p>
-
-<h2 class="ds-sub">{{P "What each file weighs"}}</h2>
-<p class="ds-note">{{P "Sizes in KiB. Gzipped is what a visitor downloads."}}</p>
-<ul class="ds-files">{{range .Assets.List}}
-<li id="{{.ID}}" data-ds-anchor><a class="rst-mono" href="{{.Href}}" download="{{.Name}}">{{.Name}}</a><span>{{.Blurb}}</span><span class="rst-mono">{{.Weight}}</span></li>{{end}}
-</ul>
-<p class="ds-lead">{{.Assets.AppTotal}}</p>
+<p class="ds-lead">{{.Started.FiestaLine}}</p>
 
 <h2 class="ds-sub">{{P "In a new rastrillo app"}}</h2>
-<p class="ds-lead">{{P "rastrillo new writes these into the app's static directory and links them from the layout, tokens.css first. They're yours from then on: edit them, or delete what you don't use."}}</p>
-<pre class="ds-src rst-mono" tabindex="0"><code>{{.Assets.Scaffold}}</code></pre>
+<p class="ds-lead">{{P "rastrillo new writes the stylesheets and scripts into the app's static directory and links them from the layout, tokens.css first. They're yours from then on: edit them, or delete what you don't use."}}</p>
+<pre class="ds-src rst-mono" tabindex="0"><code>{{.Started.Scaffold}}</code></pre>
 <p class="ds-lead">{{P "The theme is pinned twice. --theme decides which shipped theme is copied to static/theme.css, and logged at app generation time."}}</p>
-<pre class="ds-src rst-mono" tabindex="0"><code>{{.Assets.Pin}}</code></pre>
-
-<h2 class="ds-sub">{{P "Using it without the framework"}}</h2>
-<p class="ds-lead">{{P "The names above are links. Take tokens.css and one theme and you have the whole visual system: attributes on ordinary HTML, no build step."}}</p>
-<p class="ds-lead">{{P "Link them in this order, tokens.css first:"}}</p>
-<pre class="ds-src rst-mono" tabindex="0"><code>{{.Assets.Links}}</code></pre>
+<pre class="ds-src rst-mono" tabindex="0"><code>{{.Started.Pin}}</code></pre>
 
 <h2 class="ds-sub">{{P "Upgrading"}}</h2>
 <p class="ds-lead">{{P "The trap worth knowing before it costs you an afternoon: tokens.css is copied into the app's static directory at scaffold time and frozen there, while the partials it styles keep upgrading with the module. An app can quietly run new markup against old CSS. Re-copy tokens.css when you upgrade, and the theme and the scripts with it."}}</p>
@@ -3025,19 +2705,6 @@ const iconsBody = `{{define "ds-body-icons"}}
 <p class="ds-lead">{{P "Pass both, always. With only icon, iconAssets stays on the framework's default, and cdn or js delivery breaks with no error."}}</p>
 {{end}}`
 
-const tokensBody = `{{define "ds-body-tokens"}}
-<p class="ds-lead">{{P "Shared custom properties for all components. Colour and the type are part of the theme (themes/{theme}.css). Type scale and the spacing steps are structure and come from tokens.css." "theme" .Theme}}</p>
-<p class="ds-swatch-note">{{P "Light mode shown here, light-dark for all values. WCAG 2.2 AA floors: 4.5:1 for text, 3:1 for control borders. All colours in chips etc pull from the variables."}}</p>
-{{range .Colours}}
-<h2 class="ds-sub" id="{{.ID}}" data-ds-anchor>{{.Title}}</h2>
-<ul class="ds-toks">{{range .Rows}}<li class="ds-tok">{{if .Preview}}<span class="ds-chip" style="{{.Preview}}"></span>{{end}}<span class="ds-tok__text rst-mono"><span class="ds-tok__name">{{.Name}}</span><span class="ds-tok__value">{{.Value}}</span></span></li>{{end}}</ul>
-{{end}}
-{{range .Structure}}
-<h2 class="ds-sub" id="{{.ID}}" data-ds-anchor>{{.Title}}</h2>
-<ul class="ds-toks">{{$kind := .Kind}}{{range .Rows}}<li class="ds-tok">{{if eq $kind "type"}}<span class="ds-type" style="{{.Preview}}">Ag</span>{{else if eq $kind "space"}}<span class="ds-bar" style="{{.Preview}}"></span>{{else}}<span class="ds-chip ds-chip--fill" style="{{.Preview}}"></span>{{end}}<span class="ds-tok__text rst-mono"><span class="ds-tok__name">{{.Name}}</span><span class="ds-tok__value">{{.Value}}</span></span></li>{{end}}</ul>
-{{end}}
-{{end}}`
-
 // familyBody is every component page: the family whose page this is,
 // its partials, and the two sentences true of all of them.
 //
@@ -3065,21 +2732,6 @@ const familyBody = `{{define "ds-family"}}{{with .Family}}
 {{end}}
 {{range .Notes}}<p class="ds-note"><b class="ds-note__state">{{.State}}</b>
 {{.Note}}</p>{{end}}
-</article>
-{{end}}
-{{end}}`
-
-const primitivesBody = `{{define "ds-body-primitives"}}
-<p class="ds-lead">{{P "The shapes a component cannot be, because they wrap a body only the caller knows: the section card, the data grid, the disclosure menu, the shells' own chrome. tokens.css ships the classes and an app writes the markup. Everything below is the markup ui.Styleguide returns, with its words in your language, and ui's tests hold that markup against tokens.css."}}</p>
-<p class="ds-lead">{{P "Each example is live, but its links go nowhere."}}</p>
-{{range .Idioms}}
-{{.Marker}}
-<article class="ds-partial" id="{{.ID}}" data-ds-anchor>
-<h2 class="ds-partial__name rst-mono">{{.Name}}</h2>
-{{if .Blurb}}<p class="ds-lead">{{.Blurb}}</p>{{end}}
-{{.Rule}}
-<div class="ds-sample">{{template "ds-view" .Preview}}
-{{if .DemoHref}}<p class="ds-note"><a href="{{.DemoHref}}" target="_blank" rel="noopener">{{.DemoLabel}}</a><span class="rst-sr-only"> ({{P "opens in a new tab"}})</span>.</p>{{end}}</div>
 </article>
 {{end}}
 {{end}}`

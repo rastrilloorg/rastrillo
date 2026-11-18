@@ -147,13 +147,12 @@ var tones = []string{"neutral", "positive", "warning", "negative"}
 // measured instead and would have put 11 KB of Hindi into every rail.
 // TestEverySearchTermNamesAnAnchor fails on an id that no longer exists.
 var searchTerms = map[string]string{
-	"partial-field-check":  "checkbox toggle switch",
-	"idiom-modal":          "dialog popup",
-	"partial-choice-field": "radio",
-	"idiom-list-grid":      "table",
-	"idiom-box":            "card panel",
-	"partial-person":       "avatar user",
-	"idiom-button":         "button submit cta",
+	"partial-field-check":     "checkbox toggle switch",
+	"partial-confirm-form":    "dialog popup",
+	"partial-choice-field":    "radio",
+	"partial-list-row-action": "table",
+	"partial-person":          "avatar user",
+	"partial-form-foot":       "button submit cta",
 }
 
 // selectOptions builds an n-option list for field-select. Past ten
@@ -895,8 +894,9 @@ func meterStates() []sample {
 	}
 }
 
-// statStates is one cell at a time, because the band around them is a
-// class idiom and has its own example under UI primitives. What each
+// statStates is one cell at a time, in the band the wrapper draws
+// round them; the band alone, with no Go call, is Fiesta's UI
+// primitives page's to show. What each
 // state is here to show is a decision the component makes rather than
 // a shape it can take: which is why there is no "with everything set"
 // sample and no tour of the three tones.
