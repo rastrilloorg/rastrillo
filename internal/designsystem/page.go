@@ -1424,6 +1424,7 @@ var previewMobileLocaleHeights = map[string]map[string]int{
 		"screen-signin-sent-instead": 725,
 		"screen-signin-sent-unbound": 637,
 		"shell-column":               1101,
+		"shell-topbar":               1156,
 	},
 	"ja": {
 		"partial-api-tokens": 2126,
