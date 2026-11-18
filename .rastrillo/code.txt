@@ -8496,7 +8496,7 @@ columns internal/designsystem/page.go 514c677e880b 1
 columns internal/designsystem/page.go 527ef624df18 1
 columns internal/designsystem/page.go 5732a36cdea7 1
 columns internal/designsystem/page.go 5790aca32693 1
-columns internal/designsystem/page.go 582127f5ec2b 1 the Overview's lead, reworded in place for the gallery's name (rastrillo-components Task 2); a prose key is one string the template writes whole
+columns internal/designsystem/page.go 609739ea2db1 1 the Overview's lead, Paul's paragraph with the gallery's name in place (rastrillo-components Task 2); a prose key is one string the template writes whole
 columns internal/designsystem/page.go 58b9917d3769 1 a shell's back-link, renamed in place to Rastrillo components (rastrillo-components Task 2); a template line is written whole like its neighbours
 columns internal/designsystem/page.go 59c2726a21de 1
 columns internal/designsystem/page.go 5afde98229ce 1
@@ -8543,7 +8543,7 @@ columns internal/designsystem/page.go 95c9831606c7 1
 columns internal/designsystem/page.go 9683574db32d 1
 columns internal/designsystem/page.go 974ab570f662 1
 columns internal/designsystem/page.go 97d129ba4be2 1
-columns internal/designsystem/page.go 98b8828e2fb2 1 the phone index lead, reworded in place for the gallery's name (rastrillo-components Task 2); a prose key is one string the template writes whole
+columns internal/designsystem/page.go 97fef6f81796 1 the phone index lead, Paul's paragraph with the gallery's name in place (rastrillo-components Task 2); a prose key is one string the template writes whole
 columns internal/designsystem/page.go 9b7feb362fae 1
 columns internal/designsystem/page.go 9ca6df81967b 1
 columns internal/designsystem/page.go 9cc0c8c51b7d 1 Getting started's scaffold paragraph, reworded in place (rastrillo-components Task 1, copy review); a prose key is one string the template writes whole

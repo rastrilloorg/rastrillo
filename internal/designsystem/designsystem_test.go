@@ -2959,7 +2959,7 @@ func TestTheOverviewRoutesIntoEveryOtherPage(t *testing.T) {
 
 // iconsLeadProse and iconsVocabProse are the two sentences on the Icons
 // page that state a number. They are held here as literals for the same
-// reason the Overview's lead is: the gate below re-renders each of them
+// reason Paul's paragraph is: the gate below re-renders each of them
 // from rastrillo.IconSlugs() and compares, so a page that had started
 // counting its own icons wrong — or writing a number down — fails
 // against the set rather than against a second guess.
@@ -3094,20 +3094,23 @@ func TestTheIconsPageIsAReadingOfIconSlugs(t *testing.T) {
 	t.Logf("%d slugs, %d of them renamed from Lucide's own", len(slugs), renamed)
 }
 
-// The Overview opens by saying what Rastrillo components are, word
-// for word, in every theme in English, and translated everywhere else.
-// It is the sentence that replaced Paul's design-system paragraph when
-// the gallery took his name for it, so it is asserted as a literal
-// here rather than left to the generic prose gates.
-func TestTheOverviewOpensBySayingWhatTheComponentsAre(t *testing.T) {
-	const lead = "Rastrillo components are what your Go templates call " +
-		"to draw an app's UI: partials, icons and format functions. " +
-		"Each one is shown here with the call you write beside what it " +
-		"renders. The look comes from Fiesta, which has its own design " +
-		"system."
+// Paul's paragraph, with the gallery's name in place and the look sent
+// to Fiesta, is on the Overview word for word in every theme in
+// English, and translated everywhere else. It is the copy on this site
+// a person wrote and reviewed rather than derived from the code, so it
+// is asserted as a literal rather than left to the generic prose gates.
+func TestPaulsParagraphOpensTheOverview(t *testing.T) {
+	const lead = "Rastrillo components aim to be a starter framework for " +
+		"any app to get a consistent, polished, accessible UI with no or " +
+		"minimal JavaScript dependence, available in multiple languages, " +
+		"and using clean, modern HTML and CSS. They're designed to be " +
+		"delightful to use with or without LLM assistance, and easily " +
+		"remixable. Each one is shown here with the call you write beside " +
+		"what it renders; the look comes from Fiesta, which has its own " +
+		"design system."
 	files := render(t)
 	if len(prose[lead]) != len(rastrillo.BaseLocales())-1 {
-		t.Fatalf("prose.go does not translate the Overview's lead into " +
+		t.Fatalf("prose.go does not translate Paul's paragraph into " +
 			"every locale; it has been reworded, or a locale is missing")
 	}
 	for _, theme := range ui.ThemeNames() {
@@ -3115,7 +3118,7 @@ func TestTheOverviewOpensBySayingWhatTheComponentsAre(t *testing.T) {
 		want := `<p class="ds-intro">` + template.HTMLEscapeString(lead) +
 			`</p>`
 		if !strings.Contains(string(files[name]), want) {
-			t.Errorf("%s does not open with its lead, verbatim", name)
+			t.Errorf("%s does not open with Paul's paragraph, verbatim", name)
 		}
 	}
 }

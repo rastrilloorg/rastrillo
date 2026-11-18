@@ -2610,7 +2610,7 @@ const pageTemplate = `{{define "ds-controls"}}<nav rst-seg-tabs aria-label="{{P 
 {{end}}<aside class="ds-rail" rst-shell-rail>
 {{if .Rows}}<h1 rst-shell-title><span></span><span>{{P "Rastrillo components"}}</span></h1>
 {{template "ds-prefs" .Bar}}
-<p class="ds-index-lead">{{P "Rastrillo components are what your Go templates call to draw an app's UI: partials, icons and format functions. Each one is shown here with the call you write beside what it renders. The look comes from Fiesta, which has its own design system."}}</p>
+<p class="ds-index-lead">{{P "Rastrillo components aim to be a starter framework for any app to get a consistent, polished, accessible UI with no or minimal JavaScript dependence, available in multiple languages, and using clean, modern HTML and CSS. They're designed to be delightful to use with or without LLM assistance, and easily remixable. Each one is shown here with the call you write beside what it renders; the look comes from Fiesta, which has its own design system."}}</p>
 {{end}}  <search class="ds-search">
     <label class="rst-sr-only" for="ds-filter">{{P "Filter"}}</label>
     {{icon "search"}}<input id="ds-filter" type="search" placeholder="{{P "Filter"}}" autocomplete="off" aria-controls="ds-nav" data-ds-filter>
@@ -2651,19 +2651,19 @@ const pageTemplate = `{{define "ds-controls"}}<nav rst-seg-tabs aria-label="{{P 
 // first, and the reason this file's history has a note in the spec about
 // shipping a heading with nothing under it.
 //
-// Things on it. The lead, which says what Rastrillo components are
-// and sends the look to Fiesta; it replaced Paul's design-system
-// paragraph when the gallery took his name for it. The demo app. Then a
-// route into each of the other pages, read off pageKinds() with each
-// row's own Blurb, so a new page kind appears here the day its row
-// lands.
+// Things on it. Paul's paragraph, word for word, with the gallery's
+// name in place and a last sentence sending the look to Fiesta; the
+// translations in prose.go are of it, not of an improvement on it. The
+// demo app. Then a route into each of the other pages, read off
+// pageKinds() with each row's own Blurb, so a new page kind appears
+// here the day its row lands.
 //
 // A page kind with nothing anchored on it yet renders no rail entries,
 // which is why galleryNav draws a section with no items as a plain link
 // to its page — and why the Overview is the one section of the rail that
 // does not carry an overview link of its own: it already is one.
 const overviewBody = `{{define "ds-body-overview"}}
-<p class="ds-intro">{{P "Rastrillo components are what your Go templates call to draw an app's UI: partials, icons and format functions. Each one is shown here with the call you write beside what it renders. The look comes from Fiesta, which has its own design system."}}</p>
+<p class="ds-intro">{{P "Rastrillo components aim to be a starter framework for any app to get a consistent, polished, accessible UI with no or minimal JavaScript dependence, available in multiple languages, and using clean, modern HTML and CSS. They're designed to be delightful to use with or without LLM assistance, and easily remixable. Each one is shown here with the call you write beside what it renders; the look comes from Fiesta, which has its own design system."}}</p>
 <section class="ds-demo" id="demo-app">
 <h2 class="ds-sub">{{P "The demo application"}}</h2>
 <p class="ds-lead">{{P "A working app built only from these components: a dashboard, a list, one record open. Each has its own address. No JavaScript."}}</p>
