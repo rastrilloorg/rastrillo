@@ -63,15 +63,15 @@ type offsite struct{ Title, Blurb, Page string }
 var fiestaEntries = map[string]offsite{
 	"icons": {
 		Title: "Tokens on Fiesta",
-		Blurb: "Every custom property behind the look, in Fiesta's " +
-			"design system: the theme's colour and type, and the " +
-			"scales for size, spacing and radius.",
+		Blurb: "Every custom property in Fiesta's design system: the " +
+			"theme's colour and type, and the scales for size, " +
+			"spacing and radius.",
 		Page: FiestaTokensPage,
 	},
 	"formats": {
 		Title: "UI primitives on Fiesta",
-		Blurb: "The markup with no Go call behind it, in Fiesta's " +
-			"design system: buttons, cards, data grids, the modal and " +
+		Blurb: "Fiesta's UI primitives, the markup you write by hand " +
+			"in a template: buttons, cards, data grids, the modal and " +
 			"the shells' own chrome.",
 		Page: FiestaPrimitivesPage,
 	},

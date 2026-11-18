@@ -84,6 +84,17 @@ type sample struct {
 	// its call reads .Locales. The rest of the data stays literal.
 	Bind map[string]string
 
+	// Calls is a state made of several calls to the partial, one per
+	// value, in order, the way a page writes a run of them: the stat
+	// band is four stat calls. The Template tab shows every call, and
+	// the HTML tab every piece they write.
+	Calls []any
+
+	// Frame names the state's own row in the preview height tables,
+	// for a state whose frame cannot share its section's height: the
+	// stat band is a row on a desktop and a column on a phone.
+	Frame string
+
 	// Illustration marks a state that pictures what a script writes at
 	// run time (form-foot's Working state, busy.js mid-submit), not
 	// markup an app pastes. Its block gets no copy button; its State
@@ -895,11 +906,11 @@ func meterStates() []sample {
 }
 
 // statStates is one cell at a time, in the band the wrapper draws
-// round them; the band alone, with no Go call, is Fiesta's UI
-// primitives page's to show. What each
-// state is here to show is a decision the component makes rather than
-// a shape it can take: which is why there is no "with everything set"
-// sample and no tour of the three tones.
+// round them, and last the band itself: four stat calls, as a
+// dashboard writes them. What each single state is here to show is a
+// decision the component makes rather than a shape it can take: which
+// is why there is no "with everything set" sample and no tour of the
+// three tones.
 func statStates() []sample {
 	return []sample{
 		{State: "The big number", Data: map[string]any{
@@ -928,6 +939,28 @@ func statStates() []sample {
 		{State: "A shortened number", Data: map[string]any{
 			"Label": "Messages sent", "Value": "4.1k", "Exact": "4120",
 		}, Note: "Showing 4.1k instead of 4120? Put the full number in Exact. Screen readers only read what is on screen, so keep anything a person needs in the number itself."},
+		statBand(),
+	}
+}
+
+// statBand is the stat states' last: a dashboard's band of four, one
+// of them Lead, written as the four stat calls a page makes.
+func statBand() sample {
+	return sample{
+		State: "Four in a row, as a dashboard shows them", Frame: "stat-band",
+		Calls: []any{
+			map[string]any{
+				"Label": "Revenue this month", "Value": "€48,210",
+				"Lead": true, "Delta": "+12%", "Tone": "positive",
+				"Note": "vs. last month",
+			},
+			map[string]any{"Label": "Orders today", "Value": "318"},
+			map[string]any{
+				"Label": "Average basket", "Value": "€41.20",
+				"Delta": "−3%", "Tone": "negative",
+			},
+			map[string]any{"Label": "Refunds", "Value": "7"},
+		},
 	}
 }
 

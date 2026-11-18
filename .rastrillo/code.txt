@@ -8553,6 +8553,7 @@ columns internal/designsystem/page.go 97d129ba4be2 1
 columns internal/designsystem/page.go 99a8bd10b150 1
 columns internal/designsystem/page.go 9b7feb362fae 1
 columns internal/designsystem/page.go 9ca6df81967b 1
+columns internal/designsystem/page.go 9cc0c8c51b7d 1 Getting started's scaffold paragraph, reworded in place (rastrillo-components Task 1, copy review); a prose key is one string the template writes whole
 columns internal/designsystem/page.go 9cf7e1c08f11 1
 columns internal/designsystem/page.go 9e99d4fe3252 1
 columns internal/designsystem/page.go 9f3996842b4c 1
@@ -8606,7 +8607,6 @@ columns internal/designsystem/page.go df4e1bc5fb6c 1
 columns internal/designsystem/page.go e04c170bba07 1
 columns internal/designsystem/page.go e0eb00d74a70 1
 columns internal/designsystem/page.go e1b66500d280 1
-columns internal/designsystem/page.go e248c8740616 1 Getting started's scaffold paragraph, reworded in place (rastrillo-components Task 1); a prose key is one string the template writes whole
 columns internal/designsystem/page.go e4db994c1927 1 the phone index template line, edited in place for Fiesta's rows (rastrillo-components Task 1); a template line is written whole like its neighbours
 columns internal/designsystem/page.go e6c3ed4d5849 1
 columns internal/designsystem/page.go e848a009830c 1
@@ -8629,8 +8629,8 @@ columns internal/designsystem/page.go fc67331745a3 1
 columns internal/designsystem/page.go fdc97acb2e04 1 the rail template line, edited in place for Fiesta's links (rastrillo-components Task 1); a template line is written whole like its neighbours
 columns internal/designsystem/page.go fe44bdea88a0 1
 columns internal/designsystem/page.go ffcdcfbc1ea4 1
-file internal/designsystem/page.go - 2881 field-number joins the gallery (Fichas level-up rev 4, R2): its preview height is one line in previewHeights, beside field-money's
-func internal/designsystem/page.go buildFamilies 96
+file internal/designsystem/page.go - 2889 the stat band stays on Display as four stat calls, a sample of its own (rastrillo-components Task 1, review fix)
+func internal/designsystem/page.go buildFamilies 97 the stat band stays on Display as four stat calls, a sample of its own (rastrillo-components Task 1, review fix)
 func internal/designsystem/page.go previewDocStyled 49
 func internal/designsystem/page.go renderDemo 54
 func internal/designsystem/page.go renderGallery 101
@@ -9045,7 +9045,7 @@ columns internal/designsystem/samples.go fd98e40afc7e 1
 columns internal/designsystem/samples.go feec4eaa9f02 1
 columns internal/designsystem/samples.go ff2adab2a4c3 1
 columns internal/designsystem/samples.go ff64de57216c 1
-file internal/designsystem/samples.go - 1162 field-number joins the Form family as one call, fieldNumberDoc(), its sample in fieldnumber.go
+file internal/designsystem/samples.go - 1195 the stat band stays on Display as four stat calls, a sample of its own (rastrillo-components Task 1, review fix)
 func internal/designsystem/samples.go families 595 field-number joins the Form family as one call, fieldNumberDoc(), its sample in fieldnumber.go
 names internal/designsystem/samples.go calloutStates/b 1
 names internal/designsystem/samples.go errorPageStates/s 1

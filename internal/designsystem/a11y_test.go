@@ -806,10 +806,15 @@ func pickPreviewFrames(t *testing.T, bctx context.Context, kind string) []previe
 	// The first frame; the row menu's wherever it is, because it is a
 	// shipped control with a name built from a catalog pattern and not
 	// first on its page, so the first-frame rule alone would never scan
-	// it; and every state of the partials everyState names.
+	// it; every state of the partials everyState names; and the stat
+	// band, the one stat state whose cells sit side by side.
+	band, _ := statBandState(t)
 	picked := got.Frames[:1]
 	for _, f := range got.Frames[1:] {
 		if (f.Of == anchorID("partial", "row-menu") && f.State == 0) || everyState[f.Of] != "" {
+			picked = append(picked, f)
+		}
+		if f.Of == anchorID("partial", "stat") && f.State == band {
 			picked = append(picked, f)
 		}
 	}

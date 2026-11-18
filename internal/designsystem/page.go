@@ -1,6 +1,7 @@
 package designsystem
 
 import (
+	"cmp"
 	"fmt"
 	"html/template"
 	"regexp"
@@ -318,7 +319,7 @@ func pageKinds() []pageKind {
 		{Kind: "getting-started", File: "getting-started.html",
 			Title: "Getting started",
 			Blurb: "How a new app gets Fiesta's stylesheets and scripts, " +
-				"and how it keeps them current."},
+				"and how to update them."},
 		{Kind: "icons", File: "icons.html", Title: "Icons", Nav: iconNav,
 			Blurb: "Every icon slug, at the size components draw it, with the call to copy and its lucide.dev name."},
 	}
@@ -1032,7 +1033,8 @@ func buildFamilies(mount string, tmpl *template.Template, theme, locale string, 
 				preview, file := newPreview(mount, theme, locale, fam.Key,
 					fmt.Sprintf("%s-%d", pv.ID, i),
 					previewTitle(locale, doc.Name, s.State),
-					wrap(doc.Wrap, string(html)), string(html), pv.ID)
+					wrap(doc.Wrap, string(html)), string(html),
+					cmp.Or(s.Frame, pv.ID))
 				preview.NoCopy = s.Illustration
 				if s.Raw == "" {
 					c, err := callFor(doc.Name, s, locale)
@@ -1136,6 +1138,9 @@ func parseRawSamples(tmpl *template.Template) error {
 // renderSample executes one state — the partial itself, or, for a
 // hand-written sample, the template parseRawSamples put in the tree.
 func renderSample(tmpl *template.Template, name string, state int, s sample, locale string) (template.HTML, error) {
+	if len(s.Calls) > 0 {
+		return renderCalls(tmpl, name, s, locale)
+	}
 	var buf strings.Builder
 	which, data := name, localData(locale, s.Data)
 	if s.Raw != "" {
@@ -1338,14 +1343,15 @@ func previewClass(id string) string {
 // title and action stack — and most grow not at all, because a
 // component this small has one column either way.
 //
-// previewMobileHeights is the exception, and a row of status pills is
-// what earns it. The factor holds for components that have one column
-// at both widths; it cannot hold for one whose whole shape is a ROW
-// that becomes a COLUMN, and there is no single factor that fits both
-// that and a callout. Raising the desktop number until the derived
-// mobile one fitted would put empty box under every desktop rendering
-// of the row, which is paying for the phone with the page most readers
-// are on.
+// previewMobileHeights is the exception, and the stat band is what
+// earned it. The factor holds for components that have one column at
+// both widths; it cannot hold for one whose whole shape is a ROW that
+// becomes a COLUMN. A four-cell band is 170px of strip on a desktop
+// and 439px of stack on a phone — 2.6×, not 1.25 — and there is no
+// single factor that fits both that and a status pill. Raising the
+// desktop number until the derived mobile one fitted would have put
+// 180px of empty box under every desktop rendering of the band, which
+// is paying for the phone with the page most readers are on.
 //
 // Add an entry here only for an example whose layout genuinely changes
 // axis. An entry is not a place to absorb a desktop height that was
@@ -1438,6 +1444,7 @@ var previewMobileHeights = map[string]int{
 	// Reflows onto a different axis: a row at 900px becomes a column,
 	// or several, below 390px.
 	"partial-status-pill": 170, // the row of four wraps into rows
+	"stat-band":           450, // stat's band of four becomes stacked rows
 
 	// Both axis-reflow AND the worst of the twelve locales wraps taller
 	// still at 320px than the factor derived from the 390px reading.
@@ -1519,6 +1526,7 @@ var previewHeights = map[string]int{
 	"partial-badge":       100, // grouped: five labelled badges in one row
 	"partial-meter":       100, // grouped: five labelled meters in one row
 	"partial-stat":        150, // a lead cell is label, number, delta and note stacked
+	"stat-band":           170, // stat's band of four, in one row
 
 	"partial-person":      95,
 	"partial-actor":       70, // one line of words
@@ -2441,7 +2449,7 @@ func buildStarted(theme, locale string) startedView {
 // startedLead opens the Getting started page; {link} is Fiesta's own
 // getting started page.
 const startedLead = "Rastrillo apps get Fiesta's stylesheets and " +
-	"scripts on day one. What each file is for and what it weighs is " +
+	"scripts on day one. See what each file does and how large it is " +
 	"on {link}."
 
 // ── The page itself ──────────────────────────────────────────────────
@@ -2668,7 +2676,7 @@ const gettingStartedBody = `{{define "ds-body-getting-started"}}
 <p class="ds-lead">{{.Started.FiestaLine}}</p>
 
 <h2 class="ds-sub">{{P "In a new rastrillo app"}}</h2>
-<p class="ds-lead">{{P "rastrillo new writes the stylesheets and scripts into the app's static directory and links them from the layout, tokens.css first. They're yours from then on: edit them, or delete what you don't use."}}</p>
+<p class="ds-lead">{{P "rastrillo new writes the stylesheets and scripts into the app's static directory and links them from the layout, with tokens.css first. They're yours from then on: edit them, or delete what you don't use."}}</p>
 <pre class="ds-src rst-mono" tabindex="0"><code>{{.Started.Scaffold}}</code></pre>
 <p class="ds-lead">{{P "The theme is pinned twice. --theme decides which shipped theme is copied to static/theme.css, and logged at app generation time."}}</p>
 <pre class="ds-src rst-mono" tabindex="0"><code>{{.Started.Pin}}</code></pre>
