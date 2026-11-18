@@ -2959,7 +2959,7 @@ func TestTheOverviewRoutesIntoEveryOtherPage(t *testing.T) {
 
 // iconsLeadProse and iconsVocabProse are the two sentences on the Icons
 // page that state a number. They are held here as literals for the same
-// reason Paul's paragraph is: the gate below re-renders each of them
+// reason the Overview's lead is: the gate below re-renders each of them
 // from rastrillo.IconSlugs() and compares, so a page that had started
 // counting its own icons wrong — or writing a number down — fails
 // against the set rather than against a second guess.
@@ -3094,23 +3094,28 @@ func TestTheIconsPageIsAReadingOfIconSlugs(t *testing.T) {
 	t.Logf("%d slugs, %d of them renamed from Lucide's own", len(slugs), renamed)
 }
 
-// Paul's paragraph is on the Overview, word for word, in every theme
-// and in English — and translated, not left in English, everywhere
-// else. It is the one piece of copy on this site that was written by a
-// person rather than derived from the code, and the one that went
-// through his review, so it is asserted as a literal here rather than
-// left to the generic prose gates.
-func TestPaulsParagraphOpensTheOverview(t *testing.T) {
-	const paragraph = `The Rastrillo design system aims to be a starter framework for any app to get a consistent, polished, accessible UI with no or minimal JavaScript dependence, available in multiple languages, and using clean, modern HTML and CSS. It's designed to be delightful to use with or without LLM assistance, and easily remixable.`
+// The Overview opens by saying what Rastrillo components are, word
+// for word, in every theme in English, and translated everywhere else.
+// It is the sentence that replaced Paul's design-system paragraph when
+// the gallery took his name for it, so it is asserted as a literal
+// here rather than left to the generic prose gates.
+func TestTheOverviewOpensBySayingWhatTheComponentsAre(t *testing.T) {
+	const lead = "Rastrillo components are what your Go templates call " +
+		"to draw an app's UI: partials, icons and format functions. " +
+		"Each one is shown here with the call you write beside what it " +
+		"renders. The look comes from Fiesta, which has its own design " +
+		"system."
 	files := render(t)
-	if _, ok := prose[paragraph]; !ok {
-		t.Fatalf("prose.go has no entry for Paul's paragraph — it has been reworded, and every translation of it is now of something else")
+	if len(prose[lead]) != len(rastrillo.BaseLocales())-1 {
+		t.Fatalf("prose.go does not translate the Overview's lead into " +
+			"every locale; it has been reworded, or a locale is missing")
 	}
 	for _, theme := range ui.ThemeNames() {
 		name := theme + "/en/" + fileOf("overview")
-		want := `<p class="ds-intro">` + template.HTMLEscapeString(paragraph) + `</p>`
+		want := `<p class="ds-intro">` + template.HTMLEscapeString(lead) +
+			`</p>`
 		if !strings.Contains(string(files[name]), want) {
-			t.Errorf("%s does not open with Paul's paragraph, verbatim", name)
+			t.Errorf("%s does not open with its lead, verbatim", name)
 		}
 	}
 }
@@ -4062,14 +4067,18 @@ func TestTitlesUseTheApprovedSeparators(t *testing.T) {
 	for _, pk := range pageKinds() {
 		name := RootTheme() + "/en/" + pk.File
 		m := titleTag.FindStringSubmatch(string(files[name]))
-		if want := template.HTMLEscapeString(docTitle(proseIn("en", pk.Title), "Rastrillo Design System", RootTheme())); m == nil || m[1] != want {
+		want := template.HTMLEscapeString(docTitle(
+			proseIn("en", pk.Title), galleryName, RootTheme()))
+		if m == nil || m[1] != want {
 			t.Errorf("%s: <title> %v, want %q", name, m, want)
 		}
 	}
-	if got := docTitle("Form", "Rastrillo Design System", "day"); got != "Form · Rastrillo Design System · day" {
+	got := docTitle("Form", galleryName, "day")
+	if got != "Form · Rastrillo components · day" {
 		t.Errorf("docTitle gives %q", got)
 	}
-	if got := docTitle("The modal route", "Rastrillo Design System", ""); got != "The modal route · Rastrillo Design System" {
+	got = docTitle("The modal route", galleryName, "")
+	if got != "The modal route · Rastrillo components" {
 		t.Errorf("docTitle with no theme gives %q", got)
 	}
 	if got := previewTitle("en", "field-text", "Required"); got != "field-text sample standalone preview, Required" {
@@ -4171,7 +4180,11 @@ func TestTheGalleryIsTheShippedShell(t *testing.T) {
 				}
 				where := `<div rst-shell-back><a `
 				if index {
-					where = `<h1 rst-shell-title><span></span><span>` + template.HTMLEscapeString(proseIn(locale, "Rastrillo Design System")) + `</span></h1>` + "\n" + `<details rst-dropdown class="ds-prefs"`
+					heading := template.HTMLEscapeString(
+						proseIn(locale, galleryName))
+					where = `<h1 rst-shell-title><span></span><span>` +
+						heading + `</span></h1>` + "\n" +
+						`<details rst-dropdown class="ds-prefs"`
 				}
 				if !strings.Contains(page, where) {
 					t.Errorf("%s: the display settings menu is not where a phone looks for it (%s)", name, where)

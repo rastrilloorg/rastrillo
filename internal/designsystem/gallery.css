@@ -204,7 +204,7 @@ ds-s { color: var(--rst-tone-warning-fg); }
    958/1200 = 0.798 on every desktop, forever, and every component on
    the site was rendered at four-fifths size with its 12.5px type at
    10px. Nothing was broken and nothing looked broken; it just looked
-   small, which is a thing a gallery of a design system must not do.
+   small, which is a thing a gallery of components must not do.
    At 900px the same stage gives --ds-k = 1 and a field is a field.
 
    900px, and not the 958px that would fill the column: tokens.css

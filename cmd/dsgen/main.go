@@ -1,6 +1,6 @@
-// Command dsgen writes rastrillo's design-system gallery — every
-// partial, every class idiom, every token, in three themes and twelve
-// languages — to a directory of static files.
+// Command dsgen writes the Rastrillo components gallery, every partial
+// and icon in three themes and twelve languages, to a directory of
+// static files.
 //
 // The gallery is not committed to the rastrillo repository. It is 20 MB
 // of machine output that changes whole on every change to ui, and the
@@ -227,7 +227,8 @@ func claim(root string) error {
 }
 
 func usage() {
-	fmt.Fprint(flag.CommandLine.Output(), `dsgen writes rastrillo's design-system gallery to a directory.
+	fmt.Fprint(flag.CommandLine.Output(),
+		`dsgen writes the Rastrillo components gallery to a directory.
 
 Usage:
 	dsgen -out DIR [-mount PATH]

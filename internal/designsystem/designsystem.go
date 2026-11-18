@@ -1,9 +1,10 @@
-// Package designsystem renders rastrillo.org/design-system: one static
-// page per theme × locale showing every partial and icon the framework
-// ships, plus a full-page demo of each of the five shells and one of the
-// modal route. The tokens, the markup with no Go call and each
-// stylesheet and script are Fiesta's, and the pages link Fiesta's
-// design system for them (fiesta_links.go).
+// Package designsystem renders Rastrillo components, the gallery at
+// rastrillo.org/design-system: one static page per theme × locale
+// showing every partial and icon the framework ships, plus a full-page
+// demo of each of the five shells and one of the modal route. The
+// tokens, the markup with no Go call and each stylesheet and script are
+// Fiesta's, and the pages link Fiesta's design system for them
+// (fiesta_links.go).
 //
 // It exists because a component library nobody can look at is a
 // specification, not a library. The page is the only place the whole
@@ -99,7 +100,7 @@ func GalleryCSS() []byte { return append([]byte(nil), galleryCSS...) }
 // publishes the tree says where it is publishing it.
 const DefaultMount = "/design-system"
 
-// Render builds the whole design-system tree in memory: path relative to
+// Render builds the whole gallery tree in memory: path relative to
 // the tree root → file content.
 //
 //	index.html                            day, en, assets at the tree root

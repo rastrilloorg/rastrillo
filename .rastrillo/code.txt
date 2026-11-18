@@ -3268,7 +3268,6 @@ names clientip/clientip_test.go TestFromTrustsOnlyTheTrailingHops/r 1
 columns cmd/dsgen/main.go 0a39221365f1 1
 columns cmd/dsgen/main.go 0bc299680c4d 1
 columns cmd/dsgen/main.go 21fdc21b70bd 1
-columns cmd/dsgen/main.go 37918b4e7efd 1
 columns cmd/dsgen/main.go 5794d4dd749b 1
 columns cmd/dsgen/main.go 5ad0996e1391 1
 columns cmd/dsgen/main.go 7725275996be 1
@@ -7524,7 +7523,6 @@ columns internal/designsystem/designsystem_test.go 522b419c3b21 1
 columns internal/designsystem/designsystem_test.go 5352d3d464cf 1
 columns internal/designsystem/designsystem_test.go 5417a922e8f1 1
 columns internal/designsystem/designsystem_test.go 541d1a924b92 1
-columns internal/designsystem/designsystem_test.go 54677cee2941 1
 columns internal/designsystem/designsystem_test.go 54f0061ff25d 1
 columns internal/designsystem/designsystem_test.go 55baca23b4fb 1
 columns internal/designsystem/designsystem_test.go 56114aee7790 1
@@ -7610,7 +7608,6 @@ columns internal/designsystem/designsystem_test.go 8349fec727a5 1
 columns internal/designsystem/designsystem_test.go 83862a922a2f 1
 columns internal/designsystem/designsystem_test.go 838aa02d284e 1
 columns internal/designsystem/designsystem_test.go 83bb45fea8bb 1
-columns internal/designsystem/designsystem_test.go 83c8c1d6dcde 1
 columns internal/designsystem/designsystem_test.go 8428cfadebfb 1
 columns internal/designsystem/designsystem_test.go 8433058efde4 1
 columns internal/designsystem/designsystem_test.go 858f94194811 1
@@ -7679,7 +7676,6 @@ columns internal/designsystem/designsystem_test.go aaeb02399f5b 1
 columns internal/designsystem/designsystem_test.go abb42d17897a 1
 columns internal/designsystem/designsystem_test.go abfafc2d9de9 1
 columns internal/designsystem/designsystem_test.go ac0eb78e427e 1
-columns internal/designsystem/designsystem_test.go ac7fc4c2cb1b 1
 columns internal/designsystem/designsystem_test.go acda356c3719 1
 columns internal/designsystem/designsystem_test.go acdd19463d67 1
 columns internal/designsystem/designsystem_test.go ae7312be6f40 1
@@ -7705,7 +7701,6 @@ columns internal/designsystem/designsystem_test.go bbb37c7920fa 1
 columns internal/designsystem/designsystem_test.go bbec2a3ab228 1
 columns internal/designsystem/designsystem_test.go bc25fa6f79d5 1
 columns internal/designsystem/designsystem_test.go bc4bb39ce240 1
-columns internal/designsystem/designsystem_test.go bc867ab624be 1
 columns internal/designsystem/designsystem_test.go bd4e4a821d0a 1
 columns internal/designsystem/designsystem_test.go be2c6d7354c3 1
 columns internal/designsystem/designsystem_test.go be46ea7372b3 1
@@ -7768,7 +7763,6 @@ columns internal/designsystem/designsystem_test.go e1447d40d060 1
 columns internal/designsystem/designsystem_test.go e37acb03a2bc 1
 columns internal/designsystem/designsystem_test.go e391b930bef1 1
 columns internal/designsystem/designsystem_test.go e431849b7390 1
-columns internal/designsystem/designsystem_test.go e63b54fbb4ab 1
 columns internal/designsystem/designsystem_test.go e6537324024d 1
 columns internal/designsystem/designsystem_test.go e6633e678310 1
 columns internal/designsystem/designsystem_test.go e71d4e90bd2f 1
@@ -7779,7 +7773,6 @@ columns internal/designsystem/designsystem_test.go ea869cfc4bcc 1
 columns internal/designsystem/designsystem_test.go eab116d97562 1
 columns internal/designsystem/designsystem_test.go eacdbe85eae3 1
 columns internal/designsystem/designsystem_test.go eb64f1bcbee1 1
-columns internal/designsystem/designsystem_test.go ec21c66ed7f0 1
 columns internal/designsystem/designsystem_test.go ec29c295a935 1
 columns internal/designsystem/designsystem_test.go ec3bfdcddf51 1
 columns internal/designsystem/designsystem_test.go ecbcbe3c91f9 1
@@ -7802,7 +7795,6 @@ columns internal/designsystem/designsystem_test.go f5cb7b66f8d4 1
 columns internal/designsystem/designsystem_test.go f7aa635aea11 1
 columns internal/designsystem/designsystem_test.go f8d19677cd44 1
 columns internal/designsystem/designsystem_test.go f9af2601b7d0 1
-columns internal/designsystem/designsystem_test.go fa350734eaf6 1
 columns internal/designsystem/designsystem_test.go fa43c3b092c9 1
 columns internal/designsystem/designsystem_test.go fb0e13e72e0a 1
 columns internal/designsystem/designsystem_test.go fc0dcaf071c0 2
@@ -8360,7 +8352,6 @@ columns internal/designsystem/index_browser_test.go ed2d7fc398a3 1
 columns internal/designsystem/index_browser_test.go f875f6eb5695 1 rewritten by the chromedp v0.21 port, no wider than the recorded line it replaced
 columns internal/designsystem/index_browser_test.go fb92e733845e 1 rewritten by the chromedp v0.21 port, no wider than the recorded line it replaced
 columns internal/designsystem/index_browser_test.go fd68b9a89e8d 1 rewritten by the chromedp v0.21 port, no wider than the recorded line it replaced
-columns internal/designsystem/index_browser_test.go fe1fbe045c1c 1
 names internal/designsystem/index_browser_test.go TestSearchFindsWhatPeopleCallThings/q 2
 names internal/designsystem/index_browser_test.go TestTheIndexTitleIsVisible/c 1
 names internal/designsystem/index_browser_test.go TestThePhoneIndexAndTheWayBack/i 1
@@ -8466,9 +8457,9 @@ columns internal/designsystem/page.go 0e031bf35fd8 1
 columns internal/designsystem/page.go 0e4c8d97a6d1 1
 columns internal/designsystem/page.go 0f1099eadd0e 1
 columns internal/designsystem/page.go 1040f66fbc4e 1
-columns internal/designsystem/page.go 1403854c9374 1
 columns internal/designsystem/page.go 177f444dc672 1
 columns internal/designsystem/page.go 185bc28ec351 1
+columns internal/designsystem/page.go 1d5923a689aa 1 the demo app's lead, reworded in place for the gallery's name (rastrillo-components Task 2); a prose key is one string the template writes whole
 columns internal/designsystem/page.go 1ee3fc4cad69 1
 columns internal/designsystem/page.go 1f5da6a0912f 1
 columns internal/designsystem/page.go 210e21883be8 1
@@ -8476,7 +8467,6 @@ columns internal/designsystem/page.go 22cf89764b0a 1
 columns internal/designsystem/page.go 23ce9ad502e4 1
 columns internal/designsystem/page.go 25f6c2f01bb2 1
 columns internal/designsystem/page.go 2662267a4133 1
-columns internal/designsystem/page.go 279a4d6cc32e 1
 columns internal/designsystem/page.go 2990aa9fc5ad 1
 columns internal/designsystem/page.go 2a77f4ac5987 1
 columns internal/designsystem/page.go 2ab51afc54d5 1
@@ -8503,10 +8493,11 @@ columns internal/designsystem/page.go 464cd0575cc6 1
 columns internal/designsystem/page.go 4bda04d5443d 2
 columns internal/designsystem/page.go 503caff12364 1
 columns internal/designsystem/page.go 514c677e880b 1
-columns internal/designsystem/page.go 5262238c0de3 1
 columns internal/designsystem/page.go 527ef624df18 1
 columns internal/designsystem/page.go 5732a36cdea7 1
 columns internal/designsystem/page.go 5790aca32693 1
+columns internal/designsystem/page.go 582127f5ec2b 1 the Overview's lead, reworded in place for the gallery's name (rastrillo-components Task 2); a prose key is one string the template writes whole
+columns internal/designsystem/page.go 58b9917d3769 1 a shell's back-link, renamed in place to Rastrillo components (rastrillo-components Task 2); a template line is written whole like its neighbours
 columns internal/designsystem/page.go 59c2726a21de 1
 columns internal/designsystem/page.go 5afde98229ce 1
 columns internal/designsystem/page.go 5b77d9f5d56a 1
@@ -8523,8 +8514,10 @@ columns internal/designsystem/page.go 64b0cdadbc2a 1
 columns internal/designsystem/page.go 64b71728ecc6 1
 columns internal/designsystem/page.go 66f53dfc18be 1
 columns internal/designsystem/page.go 68483e19b361 1
+columns internal/designsystem/page.go 6b06cde8f463 1 a shell's back-link, renamed in place to Rastrillo components (rastrillo-components Task 2); a template line is written whole like its neighbours
 columns internal/designsystem/page.go 6c184dcf16b4 1
 columns internal/designsystem/page.go 6c917805bc2c 1
+columns internal/designsystem/page.go 6d38acb8003c 1 the stage shell's back-link, renamed in place to Rastrillo components (rastrillo-components Task 2); a template line is written whole like its neighbours
 columns internal/designsystem/page.go 6f50baff79c1 1
 columns internal/designsystem/page.go 7007627220ff 1
 columns internal/designsystem/page.go 704ac67b2c32 1
@@ -8550,11 +8543,11 @@ columns internal/designsystem/page.go 95c9831606c7 1
 columns internal/designsystem/page.go 9683574db32d 1
 columns internal/designsystem/page.go 974ab570f662 1
 columns internal/designsystem/page.go 97d129ba4be2 1
-columns internal/designsystem/page.go 99a8bd10b150 1
+columns internal/designsystem/page.go 98b8828e2fb2 1 the phone index lead, reworded in place for the gallery's name (rastrillo-components Task 2); a prose key is one string the template writes whole
 columns internal/designsystem/page.go 9b7feb362fae 1
 columns internal/designsystem/page.go 9ca6df81967b 1
 columns internal/designsystem/page.go 9cc0c8c51b7d 1 Getting started's scaffold paragraph, reworded in place (rastrillo-components Task 1, copy review); a prose key is one string the template writes whole
-columns internal/designsystem/page.go 9cf7e1c08f11 1
+columns internal/designsystem/page.go 9ceba7fd8d5d 1 the Screens blurb, reworded in place for the gallery's name (rastrillo-components Task 2); a prose key is one string the code writes whole
 columns internal/designsystem/page.go 9e99d4fe3252 1
 columns internal/designsystem/page.go 9f3996842b4c 1
 columns internal/designsystem/page.go 9f9df3712e90 1
@@ -8567,9 +8560,7 @@ columns internal/designsystem/page.go a979742123de 1
 columns internal/designsystem/page.go aa7a59fbd292 1
 columns internal/designsystem/page.go ab23dcd26361 1
 columns internal/designsystem/page.go afeb67bdc5e1 1
-columns internal/designsystem/page.go b136aaf9bbb5 1
 columns internal/designsystem/page.go b263c27ecb35 1
-columns internal/designsystem/page.go b34205002e71 1
 columns internal/designsystem/page.go b36f5d66e6fe 1
 columns internal/designsystem/page.go b8d6cac556ae 1
 columns internal/designsystem/page.go b983a183f535 1
@@ -8580,31 +8571,29 @@ columns internal/designsystem/page.go bc959af342db 1
 columns internal/designsystem/page.go bcffabc3fb85 1
 columns internal/designsystem/page.go beea51e9aae9 1
 columns internal/designsystem/page.go bffe9f69589c 1
-columns internal/designsystem/page.go c01bae5389c3 1
 columns internal/designsystem/page.go c094b74cf274 1
 columns internal/designsystem/page.go c1d3ace23cc8 1
 columns internal/designsystem/page.go c1e5ea987ae1 1
 columns internal/designsystem/page.go c2c74a95bf0a 1
 columns internal/designsystem/page.go c4cf6a86dcc1 1
-columns internal/designsystem/page.go c5546c81337a 1
 columns internal/designsystem/page.go c6ecd1d7d8db 1
 columns internal/designsystem/page.go c7f2fbb07a22 1
 columns internal/designsystem/page.go ca60c7a6df07 1
 columns internal/designsystem/page.go cc8a91bf4132 1
+columns internal/designsystem/page.go ce8af0def8cd 1 the Overview's h1, renamed in place to Rastrillo components (rastrillo-components Task 2); a template line is written whole like its neighbours
 columns internal/designsystem/page.go d060c5ca1803 1
 columns internal/designsystem/page.go d0758d574356 1
 columns internal/designsystem/page.go d130e930f7d3 1
 columns internal/designsystem/page.go d31f678fe47e 1
 columns internal/designsystem/page.go d47bd5341caf 1
 columns internal/designsystem/page.go d69f518dc5a7 1
-columns internal/designsystem/page.go d94014afe8f4 1
 columns internal/designsystem/page.go db584701c50b 1
 columns internal/designsystem/page.go dbc00f4ba8e8 1
 columns internal/designsystem/page.go de5ee1df988a 1
 columns internal/designsystem/page.go de9d6b0b4dd3 1
-columns internal/designsystem/page.go dee8a3861ce6 1
 columns internal/designsystem/page.go df4e1bc5fb6c 1
 columns internal/designsystem/page.go e04c170bba07 1
+columns internal/designsystem/page.go e0e0f833608d 1 the modal demo's back-link, renamed in place to Rastrillo components (rastrillo-components Task 2); a template line is written whole like its neighbours
 columns internal/designsystem/page.go e0eb00d74a70 1
 columns internal/designsystem/page.go e1b66500d280 1
 columns internal/designsystem/page.go e4db994c1927 1 the phone index template line, edited in place for Fiesta's rows (rastrillo-components Task 1); a template line is written whole like its neighbours
@@ -8625,11 +8614,10 @@ columns internal/designsystem/page.go f7278a3f053b 1
 columns internal/designsystem/page.go f7414b5dbad0 1
 columns internal/designsystem/page.go fa7c5352e30d 1
 columns internal/designsystem/page.go fc4875c5d5a3 1
-columns internal/designsystem/page.go fc67331745a3 1
 columns internal/designsystem/page.go fdc97acb2e04 1 the rail template line, edited in place for Fiesta's links (rastrillo-components Task 1); a template line is written whole like its neighbours
 columns internal/designsystem/page.go fe44bdea88a0 1
 columns internal/designsystem/page.go ffcdcfbc1ea4 1
-file internal/designsystem/page.go - 2889 the stat band stays on Display as four stat calls, a sample of its own (rastrillo-components Task 1, review fix)
+file internal/designsystem/page.go - 2896 galleryTitle, one call for the gallery's name in every document title (rastrillo-components Task 2)
 func internal/designsystem/page.go buildFamilies 97 the stat band stays on Display as four stat calls, a sample of its own (rastrillo-components Task 1, review fix)
 func internal/designsystem/page.go previewDocStyled 49
 func internal/designsystem/page.go renderDemo 54

@@ -1,6 +1,6 @@
 //go:build browser
 
-// Package galleryrig is the design-system gallery's shared drive
+// Package galleryrig is the Rastrillo components gallery's shared drive
 // equipment: the rendered tree served at its mount, frames waited on
 // until each shows its own document, and the other conditions that
 // internal/designsystem's browser tests and its sweep package both

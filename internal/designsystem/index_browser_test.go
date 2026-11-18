@@ -73,7 +73,7 @@ func TestThePhoneIndexAndTheWayBack(t *testing.T) {
 		if !ix.Rail || ix.Main || ix.Bar || !ix.Lead {
 			t.Errorf("%s: rail %v, main %v, bar %v, lead %v; the index is the rail and its lead alone", where, ix.Rail, ix.Main, ix.Bar, ix.Lead)
 		}
-		if len(ix.H1) != 1 || ix.H1[0] != proseIn(locale, "Rastrillo Design System") {
+		if len(ix.H1) != 1 || ix.H1[0] != proseIn(locale, galleryName) {
 			t.Errorf("%s: visible h1s %q, want exactly the index title", where, ix.H1)
 		}
 		var want []string
@@ -256,7 +256,7 @@ func TestTheIndexTitleIsVisible(t *testing.T) {
 	  return box.width > 0 && box.height > 0 ? e.innerText.trim() : "";
 	}).filter(Boolean))`
 	for _, locale := range []string{"en", "ar"} {
-		want := proseIn(locale, "Rastrillo Design System")
+		want := proseIn(locale, galleryName)
 		for _, c := range []struct {
 			w, h int
 			sel  string

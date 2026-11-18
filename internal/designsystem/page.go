@@ -329,7 +329,7 @@ func pageKinds() []pageKind {
 		pageKind{Kind: "formats", File: "formats.html", Title: "Dates, numbers and names", Nav: formatNav,
 			Blurb: "How to show dates, numbers, money, names and addresses, and which ones people mix up."},
 		pageKind{Kind: "screens", File: "screens.html", Title: "Screens", Nav: screenNav,
-			Blurb: "Examples of screens using the design system. You can use these as starter templates for your own apps."},
+			Blurb: "Examples of screens built from Rastrillo components. You can use these as starter templates for your own apps."},
 		pageKind{Kind: "shells", File: "shells.html", Title: "Shells", Nav: shellNav,
 			Blurb: "The page frames rastrillo new can scaffold. Each opens full width."},
 	)
@@ -692,7 +692,7 @@ func renderGallery(mount, theme, locale string) (map[string][]byte, error) {
 		view.Kind = pk.Kind
 		view.Title = proseIn(locale, pk.Title)
 		view.Family = familyOf(families, pk.Kind)
-		view.DocTitle = docTitle(view.Title, proseIn(locale, "Rastrillo Design System"), theme)
+		view.DocTitle = galleryTitle(locale, theme, pk.Title)
 		if view.Family == nil {
 			view.TitleID = pk.Kind
 		}
@@ -1821,7 +1821,7 @@ const copyJoin = ", "
 
 // titleSep and frameSep are the separators copy review approved for
 // titles: " · " between a page, the site and the theme ("Form ·
-// Rastrillo Design System · day"), and ", " before a preview frame's
+// Rastrillo components · day"), and ", " before a preview frame's
 // state ("field-text sample standalone preview, Required"). They
 // replaced an em dash, which a screen reader announces or swallows
 // depending on its settings. Separators, not words, so not translated.
@@ -1839,6 +1839,13 @@ func docTitle(page, site, theme string) string {
 		t += titleSep + theme
 	}
 	return t
+}
+
+// galleryTitle is docTitle for a page of this gallery: the page's
+// English prose key and the gallery's own name, both in the locale.
+func galleryTitle(locale, theme, page string, args ...any) string {
+	return docTitle(proseIn(locale, page, args...),
+		proseIn(locale, "Rastrillo components"), theme)
 }
 
 // previewTitle names one preview frame, and the name has to be unique
@@ -2014,7 +2021,7 @@ func renderShell(mount, theme, locale, shell string) (map[string][]byte, error) 
 		Locale:   locale,
 		Dir:      rastrillo.Dir(locale),
 		Name:     shell,
-		Title:    docTitle(proseIn(locale, "The {shell} shell", "shell", shell), proseIn(locale, "Rastrillo Design System"), ""),
+		Title:    galleryTitle(locale, "", "The {shell} shell", "shell", shell),
 		Mount:    mount,
 		Index:    indexHref(mount, theme, locale),
 		Locales:  localeLinks(mount, theme, locale, "index.html"),
@@ -2094,7 +2101,7 @@ func renderModal(mount, theme, locale string) ([]byte, error) {
 	}
 	var buf strings.Builder
 	err = tmpl.ExecuteTemplate(&buf, "ds-modal", modalData{
-		Title:  docTitle(proseIn(locale, "The modal route"), proseIn(locale, "Rastrillo Design System"), ""),
+		Title:  galleryTitle(locale, "", "The modal route"),
 		Theme:  theme,
 		Locale: locale,
 		Dir:    rastrillo.Dir(locale),
@@ -2220,7 +2227,7 @@ func renderDemo(mount, theme, locale string) (map[string][]byte, error) {
 			Locale:    locale,
 			Dir:       rastrillo.Dir(locale),
 			Mount:     mount,
-			Title:     docTitle(proseIn(locale, "The demo application"), proseIn(locale, "Rastrillo Design System"), ""),
+			Title:     galleryTitle(locale, "", "The demo application"),
 			Index:     indexHref(mount, theme, locale),
 			Self:      self,
 			Locales:   localeLinks(mount, theme, locale, file),
@@ -2272,8 +2279,8 @@ const demoCSS = `
 // addresses, the app's own brand and a reference like REQ-4471. The rows
 // were English fixtures once, on the argument that a database's content
 // is not the framework's to translate; it put English sentences in the
-// middle of the frame that is a Japanese reader's first sight of this
-// system.
+// middle of the frame that is a Japanese reader's first sight of these
+// components.
 const demoTemplate = `
 {{define "head"}}<script src="{{asset "gallery.js"}}"></script>
 <style>` + demoCSS + `</style>{{end}}
@@ -2600,9 +2607,9 @@ const pageTemplate = `{{define "ds-controls"}}<nav rst-seg-tabs aria-label="{{P 
 <a rst-skip href="#main">{{T "rastrillo.ui.shell_skip"}}</a>
 {{with .Up}}<div rst-shell-back><a href="{{.}}" rel="up" aria-label="{{Tf "rastrillo.ui.shell_up" "name" (T "rastrillo.ui.shell_up_label")}}">{{T "rastrillo.ui.shell_up_label"}}</a>{{template "ds-prefs" $.Bar}}</div>
 {{end}}<aside class="ds-rail" rst-shell-rail>
-{{if .Rows}}<h1 rst-shell-title><span></span><span>{{P "Rastrillo Design System"}}</span></h1>
+{{if .Rows}}<h1 rst-shell-title><span></span><span>{{P "Rastrillo components"}}</span></h1>
 {{template "ds-prefs" .Bar}}
-<p class="ds-index-lead">{{P "The Rastrillo design system aims to be a starter framework for any app to get a consistent, polished, accessible UI with no or minimal JavaScript dependence, available in multiple languages, and using clean, modern HTML and CSS. It's designed to be delightful to use with or without LLM assistance, and easily remixable."}}</p>
+<p class="ds-index-lead">{{P "Rastrillo components are what your Go templates call to draw an app's UI: partials, icons and format functions. Each one is shown here with the call you write beside what it renders. The look comes from Fiesta, which has its own design system."}}</p>
 {{end}}  <search class="ds-search">
     <label class="rst-sr-only" for="ds-filter">{{P "Filter"}}</label>
     {{icon "search"}}<input id="ds-filter" type="search" placeholder="{{P "Filter"}}" autocomplete="off" aria-controls="ds-nav" data-ds-filter>
@@ -2615,7 +2622,7 @@ const pageTemplate = `{{define "ds-controls"}}<nav rst-seg-tabs aria-label="{{P 
 {{end}}{{end}}  </nav>
 </aside>
 <header class="ds-top">
-<a class="ds-top__brand" href="{{.Home}}">{{P "Rastrillo Design System"}}</a>
+<a class="ds-top__brand" href="{{.Home}}">{{P "Rastrillo components"}}</a>
 <div class="ds-top__controls">{{template "ds-controls" .Bar}}</div>
 </header>
 <main rst-shell-main id="main">
@@ -2643,22 +2650,22 @@ const pageTemplate = `{{define "ds-controls"}}<nav rst-seg-tabs aria-label="{{P 
 // first, and the reason this file's history has a note in the spec about
 // shipping a heading with nothing under it.
 //
-// Two things on it. Paul's paragraph, which is the whole of what this
-// system claims to be, applied word for word — it is his copy, and the
-// eleven translations in prose.go are of that sentence and not of an
-// improvement on it. Then a route into each of the other pages, read off
-// pageKinds() with each row's own Blurb, so a sixth page kind appears
-// here the day its row lands.
+// Things on it. The lead, which says what Rastrillo components are
+// and sends the look to Fiesta; it replaced Paul's design-system
+// paragraph when the gallery took his name for it. The demo app. Then a
+// route into each of the other pages, read off pageKinds() with each
+// row's own Blurb, so a new page kind appears here the day its row
+// lands.
 //
 // A page kind with nothing anchored on it yet renders no rail entries,
 // which is why galleryNav draws a section with no items as a plain link
 // to its page — and why the Overview is the one section of the rail that
 // does not carry an overview link of its own: it already is one.
 const overviewBody = `{{define "ds-body-overview"}}
-<p class="ds-intro">{{P "The Rastrillo design system aims to be a starter framework for any app to get a consistent, polished, accessible UI with no or minimal JavaScript dependence, available in multiple languages, and using clean, modern HTML and CSS. It's designed to be delightful to use with or without LLM assistance, and easily remixable."}}</p>
+<p class="ds-intro">{{P "Rastrillo components are what your Go templates call to draw an app's UI: partials, icons and format functions. Each one is shown here with the call you write beside what it renders. The look comes from Fiesta, which has its own design system."}}</p>
 <section class="ds-demo" id="demo-app">
 <h2 class="ds-sub">{{P "The demo application"}}</h2>
-<p class="ds-lead">{{P "A working app built only from this system: a dashboard, a list, one record open. Each has its own address. No JavaScript."}}</p>
+<p class="ds-lead">{{P "A working app built only from these components: a dashboard, a list, one record open. Each has its own address. No JavaScript."}}</p>
 {{template "ds-view" .Demo}}
 <p class="ds-note"><a href="{{.DemoHref}}" target="_blank" rel="noopener">{{P "Open the demo application"}}<span class="rst-sr-only"> ({{P "opens in a new tab"}})</span></a>.</p>
 </section>
@@ -2688,8 +2695,8 @@ const gettingStartedBody = `{{define "ds-body-getting-started"}}
 
 // iconsBody is every slug rastrillo.IconSlugs() answers, drawn at 1em —
 // the size tokens.css gives .icon, which is the size a component draws
-// it at. The grid is the token page's own, because an icon in this
-// system is a token-shaped thing: a name, a value and a call.
+// it at. The grid is shaped like a token list, because an icon here is
+// a token-shaped thing: a name, a value and a call.
 //
 // Nothing in this constant names an icon or counts them. Both numbers
 // in the sentence under the grid are interpolated from the set.
@@ -2802,10 +2809,10 @@ const shellTemplate = `
 {{define "profile"}}{{.Profile}}{{end}}
 {{define "locale"}}<details rst-dropdown rst-locale name="rst-menus"><summary>{{T "rastrillo.ui.shell_language"}}<span rst-caret aria-hidden="true">{{icon "chevron-down"}}</span></summary><div rst-dropdown-menu>{{range .Locales}}<a href="{{.Href}}" lang="{{.Code}}" dir="{{.Dir}}"{{if .Current}} aria-current="true"{{end}}>{{.Name}}</a>{{end}}</div></details>{{end}}
 {{/* The scheme block renders nothing here on purpose: the shipped default posts to /_theme, and this tree is static. The gallery's own toggle in the bar paints every frame instead. The body is an if-false action and not empty because text/template ignores an empty redefinition of a block that has a body. */}}{{define "scheme"}}{{if false}}{{.}}{{end}}{{end}}
-{{define "foot"}}<a style="` + backLinkStyle + `" href="{{.Index}}">{{P "Back to the design system"}}</a>{{end}}
+{{define "foot"}}<a style="` + backLinkStyle + `" href="{{.Index}}">{{P "Back to Rastrillo components"}}</a>{{end}}
 {{define "content"}}
 {{template "page-header" dict "Title" (P "Posts") "Sub" (P "A representative screen, so the chrome around it has something to frame.") "ActionHref" "#" "ActionLabel" (P "Write a post") "ActionIcon" "plus"}}
-<div rst-box-head><h2>{{P "This page"}}</h2><a rst-btn href="{{.Index}}">{{P "Back to the design system"}}</a></div>
+<div rst-box-head><h2>{{P "This page"}}</h2><a rst-btn href="{{.Index}}">{{P "Back to Rastrillo components"}}</a></div>
 <section rst-box><p>{{P "This is the {shell} shell, one of the shells ui.Layout ships. A screen is a column: a page header, then a section heading and its card, then the next one. Everything you see here is the shell, tokens.css and two partials." "shell" .Name}}</p></section>
 <div rst-box-head><h2>{{P "Recent"}}</h2></div>
 <div rst-card style="--rst-cols: 2fr 110px 32px">
@@ -2824,7 +2831,7 @@ const shellTemplate = `
 // styling. The backdrop block is left alone, so the demo shows the
 // default art.
 const stageShellTemplate = `
-{{define "foot"}}<footer rst-stage-foot><a style="` + backLinkStyle + `" href="{{.Index}}">{{P "Back to the design system"}}</a></footer>{{end}}
+{{define "foot"}}<footer rst-stage-foot><a style="` + backLinkStyle + `" href="{{.Index}}">{{P "Back to Rastrillo components"}}</a></footer>{{end}}
 {{define "content"}}{{template "signin" (dict "State" .Signin "Brand" .Brand "Preview" true)}}{{end}}
 `
 
@@ -2880,7 +2887,7 @@ const modalTemplate = `{{define "ds-modal"}}<!doctype html>
       <p>{{P "Update the name and photo shown across the account."}}</p>
       <p>{{P "Close link designed to work without JS."}}</p>
       <p>{{P "In an application the ✕ would return you to the screen in the backdrop."}}</p>
-      <p><a rst-btn href="{{.Index}}">{{P "Back to the design system"}}</a></p>
+      <p><a rst-btn href="{{.Index}}">{{P "Back to Rastrillo components"}}</a></p>
     </section>
   </dialog>
 </div>
