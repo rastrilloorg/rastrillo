@@ -1,6 +1,6 @@
 # Rastrillo components (the gallery after Fiesta)
 
-Status: design, 2026-11-18. Branch `components` (rastrillo). Follows
+Status: design, 2026-11-18; approved by Paul the same day. Branch `components` (rastrillo). Follows
 Fiesta part 2 (main 6b19df5, released in v0.34.0), and the original
 Fiesta design's decision that "rastrillo.org's gallery shrinks to a
 reference for the Go calls (which partial, which arguments, what it
@@ -34,10 +34,16 @@ live previews. What changes is what it is about: the Go side.
 - **Fiesta owns the look, and the gallery says so.** What Fiesta
   documents leaves the gallery, each replaced by a link to the
   matching Fiesta page.
-- **Nothing breaks for people with old links:** the address stays
-  `rastrillo.org/design-system/` (Paul, 2026-11-18), so existing
-  links, the website's build (`dsgen -mount /design-system`) and the
-  homepage's use of the unhashed stylesheet aliases keep working.
+- **The address matches the name: `rastrillo.org/components/`**
+  (Paul asked whether it should move; my call, which he left to me).
+  A URL saying `design-system` would keep claiming Rastrillo has one,
+  beside Fiesta's real `/design-system/`.
+- **Nothing breaks for people with old links:** every
+  `/design-system/...` address answers with a one-hop 301 to its
+  `/components/...` equivalent (or, for a page that left, to its
+  Fiesta page), through `_redirects`, which rastrillo.org's CARLOS
+  static hosting honours (Fiesta's site uses it for its own moved
+  addresses).
 
 ## What stays (it is Rastrillo's)
 
@@ -89,9 +95,14 @@ live previews. What changes is what it is about: the Go side.
 - No visible change to what any component renders. The previews,
   their markup and their scripts are untouched; only the gallery's
   chrome, page set and prose change.
-- The stylesheet and script files the gallery publishes (hashed, plus
-  the unhashed `tokens.css`, `theme-<name>.css`, `shell.css` aliases
-  the rastrillo-website homepage loads) keep their addresses.
+- The gallery's default mount (`designsystem.DefaultMount`, `dsgen`'s
+  documented `-mount`) becomes `/components`. dsgen also writes the
+  redirect rules for the old mount (a `_redirects` fragment the
+  website places at its root), covering every page, every theme and
+  locale, the stylesheet and script files, and the unhashed aliases
+  (`tokens.css`, `theme-<name>.css`, `shell.css`) that the
+  rastrillo-website homepage loads today. Until the website syncs, it
+  keeps passing `-mount /design-system` and nothing changes there.
 - Old page addresses (`tokens.html`, `primitives.html` under every
   theme and locale) do not 404: they redirect in one hop to the
   matching Fiesta page, using the gallery's existing `_redirects`
@@ -116,10 +127,14 @@ live previews. What changes is what it is about: the Go side.
 ## Non-goals
 
 - Changing any component, partial or the look.
-- Moving the address to `/components/`.
-- The rastrillo-website change (its top-bar label for the gallery, if
-  it says "Design system", and the docs sync): that is the next
-  release's `Sync:` PR on the website repo, noted in the CHANGELOG.
+- The rastrillo-website change: the next release's `Sync:` PR on the
+  website repo switches `hack/gen-design-system.mjs` to `-mount
+  /components`, includes dsgen's redirect fragment in the site's
+  root `_redirects`, points the homepage's stylesheet links and any
+  top-bar label at the new address and name, and is checked live
+  from the flagship (old addresses 301 once, new ones 200). The
+  CHANGELOG's upgrade notes say so; this branch makes it possible
+  and tests the fragment, but does not edit the website.
 - Fixing Fiesta's stale `ui/calendar.js` comment (fiesta #41) or the
   flaky bar test (rastrillo #233).
 
