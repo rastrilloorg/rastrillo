@@ -80,7 +80,7 @@ live previews. What changes is what it is about: the Go side.
 - **Getting started's stylesheet and script details:** the per-file
   descriptions, weights and download rows. Replaced by one link to
   Fiesta's getting started page. The files themselves are still
-  served under `/design-system/` (the previews and the website
+  served under the gallery's mount (the previews and the website
   homepage need them; see Constraints).
 - **UI primitives** (`primitives.html`): the hand-written shapes with
   no Go call (cards, data grids, menus, the shells' chrome). Linked to
