@@ -11,12 +11,8 @@ import (
 // nothing the default CSP drops.
 func TestFormatSamplesWriteNothingTheCSPDrops(t *testing.T) {
 	for _, doc := range formatDocs() {
-		markup := doc.Markup
-		if doc.MarkupFor != nil {
-			markup = doc.MarkupFor("en")
-		}
 		for _, finding := range cspcheck.Inspect(doc.Key+".html",
-			[]byte(markup)) {
+			[]byte(formatMarkup(doc, "en"))) {
 			t.Errorf("the %s sample, line %d: %s", doc.Key, finding.Line,
 				finding.Problem)
 		}

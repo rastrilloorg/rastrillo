@@ -3638,7 +3638,8 @@ func codePanels(page string) []string { return codePanel.FindAllString(page, -1)
 // the highlighting removed, are exactly the source they stand for, in
 // order. That is the formatted rendering, then the call's Source, for a
 // partial sample; the formatted markup for a hand-written sample, a
-// screen or a format; signinSource for a sign-in screen.
+// screen or a format, then a templated format's template;
+// signinSource for a sign-in screen.
 func TestTheTextOnScreenIsTheTextCopied(t *testing.T) {
 	files := render(t)
 	for _, locale := range []string{"en", "ar"} {
@@ -3679,6 +3680,10 @@ func TestTheTextOnScreenIsTheTextCopied(t *testing.T) {
 			sample := formatMarkup(doc, locale)
 			want["formats"] = append(want["formats"],
 				codeview.Format(withColumns(sample)))
+			if doc.Data != nil {
+				want["formats"] = append(want["formats"],
+					formatSource(doc, locale))
+			}
 		}
 		for _, doc := range screenDocs() {
 			if doc.Signin != nil {

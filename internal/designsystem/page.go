@@ -1204,11 +1204,11 @@ type previewView struct {
 	Class string
 	Src   string
 	// Call is the template call the Template tab shows, highlighted;
-	// empty where the markup is not a partial's (a hand-written sample,
-	// a format). Wrapper is the one line above the code, in
-	// both tabs, naming the container a wrapped sample needs: the frame
-	// wears that container, the code does not, so the reader is told
-	// rather than handed a placeholder form to delete.
+	// empty where no partial or helper writes the markup (a hand-written
+	// sample, a format with no helper). Wrapper is the one line above
+	// the code, in both tabs, naming the container a wrapped sample
+	// needs: the frame wears that container, the code does not, so the
+	// reader is told rather than handed a placeholder form to delete.
 	Call    template.HTML
 	Wrapper template.HTML
 	// Source is the markup the HTML tab shows, formatted and

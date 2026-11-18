@@ -8046,31 +8046,30 @@ names internal/designsystem/format_browser_test.go sameReadings/s 1
 columns internal/designsystem/formats.go 023236738cb3 1
 columns internal/designsystem/formats.go 07ecc5849255 1
 columns internal/designsystem/formats.go 0ead14ac4be7 1
+columns internal/designsystem/formats.go 128d54ac328f 1 a templated format sample, its value now the ui helper call (rastrillo-components Task 3); a sample line is markup the Template tab shows as written
 columns internal/designsystem/formats.go 1391baf38a06 1
+columns internal/designsystem/formats.go 21ebc00317a2 1 a templated format sample, its value now the ui helper call (rastrillo-components Task 3); a sample line is markup the Template tab shows as written
 columns internal/designsystem/formats.go 35e2002507ee 1
 columns internal/designsystem/formats.go 372e82ac1861 1
 columns internal/designsystem/formats.go 37e12888bda4 1
 columns internal/designsystem/formats.go 3a9688a90c45 1
-columns internal/designsystem/formats.go 522b01097f63 1
+columns internal/designsystem/formats.go 496819e5b0f2 1 a section body, rewritten to name its ui helper (rastrillo-components Task 3); a prose key is one string the page writes whole
 columns internal/designsystem/formats.go 56e30245ad8f 1
-columns internal/designsystem/formats.go 62cfbe0b06c3 1
 columns internal/designsystem/formats.go 7a594e7c3f5f 1
-columns internal/designsystem/formats.go 88f3aedf4ca0 1
+columns internal/designsystem/formats.go 7e8acdf69bf7 1 a section body, rewritten to name its ui helper (rastrillo-components Task 3); a prose key is one string the page writes whole
 columns internal/designsystem/formats.go 8c4a5a1703d8 1
-columns internal/designsystem/formats.go 9a4117ff9bf2 1
-columns internal/designsystem/formats.go a235ce485c59 1
 columns internal/designsystem/formats.go a4f8a462b24d 1
 columns internal/designsystem/formats.go a8e9a071c255 1
-columns internal/designsystem/formats.go abae5f158e7b 1
+columns internal/designsystem/formats.go aa504ab2ca22 1 a templated format sample, its value now the ui helper call (rastrillo-components Task 3); a sample line is markup the Template tab shows as written
 columns internal/designsystem/formats.go b51f52f9ba23 1
 columns internal/designsystem/formats.go ba7b916cfa4c 1
 columns internal/designsystem/formats.go bf0038bcca20 1
 columns internal/designsystem/formats.go c1170b5c171f 1
+columns internal/designsystem/formats.go c88671d49505 1 the Money body, unchanged but re-aligned when MarkupFor left (rastrillo-components Task 3); a prose key is one string the page writes whole
 columns internal/designsystem/formats.go cb23b3c3b8e3 1
-func internal/designsystem/formats.go formatDocs 123
+columns internal/designsystem/formats.go f4556d4db975 1 a templated format sample, its value now the ui helper call (rastrillo-components Task 3); a sample line is markup the Template tab shows as written
+func internal/designsystem/formats.go formatDocs 137 four samples became templates with their data beside them (rastrillo-components Task 3); the page is one table of sections
 names internal/designsystem/formats.go formatNav/f 1
-names internal/designsystem/formats.go moneySampleMarkup/a 1
-names internal/designsystem/formats.go moneySampleMarkup/b 1
 columns internal/designsystem/formats_test.go 6dc9cd18f533 1
 columns internal/designsystem/formats_test.go a3329c91c6a6 1
 columns internal/designsystem/formats_test.go eb071357d94b 1
@@ -8370,7 +8369,7 @@ columns internal/designsystem/localise.go cf078ce37f5b 1
 columns internal/designsystem/localise.go d85ebbc4e85d 1
 columns internal/designsystem/localise.go f25049d060e9 1
 columns internal/designsystem/localise.go f8b98d47a05a 1
-file internal/designsystem/localise.go - 419
+file internal/designsystem/localise.go - 422 hasWords skips a format sample's template actions as code (rastrillo-components Task 3)
 names internal/designsystem/localise.go closing/i 1
 names internal/designsystem/localise.go closing/j 1
 names internal/designsystem/localise.go closing/t 1
@@ -8404,7 +8403,6 @@ names internal/designsystem/localise.go tokenise/t 1
 columns internal/designsystem/localise_test.go 054c87017914 1
 columns internal/designsystem/localise_test.go 11aa19c9ab27 1
 columns internal/designsystem/localise_test.go 127eb6ce1c36 1
-columns internal/designsystem/localise_test.go 24f3e1d6071f 1
 columns internal/designsystem/localise_test.go 42c35d63c440 1
 columns internal/designsystem/localise_test.go 45c75b71bed2 1
 columns internal/designsystem/localise_test.go 51a887dbd4e2 1
@@ -8496,7 +8494,6 @@ columns internal/designsystem/page.go 514c677e880b 1
 columns internal/designsystem/page.go 527ef624df18 1
 columns internal/designsystem/page.go 5732a36cdea7 1
 columns internal/designsystem/page.go 5790aca32693 1
-columns internal/designsystem/page.go 609739ea2db1 1 the Overview's lead, Paul's paragraph with the gallery's name in place (rastrillo-components Task 2); a prose key is one string the template writes whole
 columns internal/designsystem/page.go 58b9917d3769 1 a shell's back-link, renamed in place to Rastrillo components (rastrillo-components Task 2); a template line is written whole like its neighbours
 columns internal/designsystem/page.go 59c2726a21de 1
 columns internal/designsystem/page.go 5afde98229ce 1
@@ -8507,6 +8504,7 @@ columns internal/designsystem/page.go 5ee7a4ff533f 1
 columns internal/designsystem/page.go 5fd1cc1c384a 1
 columns internal/designsystem/page.go 5fe7fcc11693 1
 columns internal/designsystem/page.go 6025c56c39c7 1
+columns internal/designsystem/page.go 609739ea2db1 1 the Overview's lead, Paul's paragraph with the gallery's name in place (rastrillo-components Task 2); a prose key is one string the template writes whole
 columns internal/designsystem/page.go 61497abf891f 1
 columns internal/designsystem/page.go 61d1d86e27d8 1
 columns internal/designsystem/page.go 6419ae3a7d03 1

@@ -77,6 +77,8 @@ func TestTheWalkersTranslateWordsAndKeepStandIns(t *testing.T) {
 		"Grace Hopper": true, "grace@example.com": true, "AB3PX": true, "/orders/1": true,
 		"notify_on": true, "€48,210": true, "D02 XY45": true, "4.1k": true, "#nav": true,
 		"Order AB3PX": false, "Actions for Grace Hopper": false, "Save": false, "1h 12m": false,
+		"{{number $L .Members}}":              true,
+		"Total {{money $L .Total .Currency}}": false,
 	} {
 		if got := keepsAsWritten(s); got != keep {
 			t.Errorf("keepsAsWritten(%q) = %v, want %v", s, got, keep)
@@ -108,9 +110,11 @@ func TestTheWalkersTranslateWordsAndKeepStandIns(t *testing.T) {
 }
 
 // standInRun is what a translation must carry over from its key: the
-// names and brands, every email address, and every code that mixes
-// letters and digits.
-var standInRun = regexp.MustCompile(`\S+@\S+\.\w+|#\d+|\b[A-Z]+[0-9][A-Z0-9]*\b`)
+// names and brands, every email address, every code that mixes
+// letters and digits, and every template action, which a format
+// sample runs after translating.
+var standInRun = regexp.MustCompile(`\{\{.*?\}\}|` +
+	`\S+@\S+\.\w+|#\d+|\b[A-Z]+[0-9][A-Z0-9]*\b`)
 
 func TestSampleTranslationsKeepTheirStandIns(t *testing.T) {
 	for key, row := range sampleProse {
