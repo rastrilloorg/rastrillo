@@ -17,9 +17,10 @@
 - Fiesta links: `https://fiesta.rastrillo.org/design-system/<theme>/<locale>/<page>`; destinations are checked against a pinned manifest of Fiesta's published pages for the Fiesta version in go.mod (Task 1), and live at the website sync (Task 5).
 - `_redirects` format and limits are CARLOS's edge (`internal/edge/redirects.go` in the CARLOS repo; copy at `/home/paulca/.cache/carlos-console-release/worktree/internal/edge/redirects.go`): `source destination [status]`, `:name` one segment, final `*` as `:splat`, first match wins, a file at the path wins, characters it rejects listed there; ≤ 2,000 rules, ≤ 256 KiB, ≤ 2,048 bytes a line; the edge itself sends an existing `.../index.html` to its directory, so an Overview rule must target the directory. 301 throughout.
 - Page-weight budgets are not raised; size and line records may move with a reason.
-- Copy: each task drafts its English and translations; the controller runs Luna inside that task's review, and the fix round applies the approved English and retranslates. No em dashes as separators. Code reads like a sentence: spelled-out names (`err`, `ctx` fine), 80 columns, why-only comments.
+- Copy: each task drafts its English and translations; the controller runs Luna inside that task's review, and the fix round applies the approved English and retranslates. A task is not complete until its copy is approved. No em dashes as separators. Code reads like a sentence: spelled-out names (`err`, `ctx` fine), 80 columns, why-only comments.
 - `tokensPageData` in `samples.go` is the API-token sample's data, not the Tokens page: it stays.
 - The local, git-ignored render directory stays `.design-system/` (my call: a developer artefact; renaming it would make `rastrillo markup`'s skip list miss existing local copies).
+- The redirect test's edge matcher implements the documented subset; the real parser gate is `carlos ship` (PackDir refuses a line it cannot use) at the website sync, where a refused ship is a failed sync, not a workaround.
 - Hashed asset names from earlier deploys are not preserved (they never were across syncs; only old pages linked them, and those redirect). The plain aliases (`tokens.css`, `theme-<name>.css`, `shell.css`, and the rest `Render` writes unhashed) redirect to the new mount.
 - Tests run as separate `go test` commands per package (a package after `-run` is a test-binary argument). Locally, targeted `-run` tests only; full suites on the fleet: `amadan ci status rastrillo/rastrillo -branch components`.
 
@@ -51,7 +52,7 @@
   - `TestTheOverviewAndRailLinkToFiesta`; `TestGettingStartedKeepsTheRastrilloHalf` (covers `rastrillo new`, `doctor`, upgrading; no per-file download or weight rows); search finds no leaving anchor on desktop or phone (`index_browser_test.go`).
 - [ ] **Step 3: Run** `go test ./internal/designsystem -run 'FiestaLinks|NoTokens|LinkInTheTree|LinkToFiesta|GettingStarted|Search|Frame'` — FAIL.
 - [ ] **Step 4: Implement**; draft English and translations for the off-site entries and changed Getting started prose; list every new or changed English string (before → after) in the report for copy review.
-- [ ] **Step 5: Run** the Step 3 command; `go test ./internal/designsystem -run 'Prose|Translation|Weight|Budget|Page|Nav|Route|Header|Outbound'`; `go test -tags browser ./internal/designsystem -run 'Index|Search|ChromeTarget|Code|Prefs' -count=1` (sandbox off); `make code`; `make budget` — PASS.
+- [ ] **Step 5: Run** the Step 3 command; `go test ./internal/designsystem -run 'Prose|Translation|Weight|Budget|Page|Nav|Route|Header|Outbound'`; `go test -tags browser ./internal/designsystem -run 'Index|Search|Prefs|<the test functions in chrometarget_browser_test.go and code_browser_test.go, by name>' -count=1` (sandbox off); `make code`; `make budget` — PASS.
 - [ ] **Step 6: Commit** `designsystem: tokens, primitives and file details link to Fiesta`.
 
 ### Task 2: The gallery is called Rastrillo components
@@ -83,20 +84,20 @@
 
 **Files:**
 - Modify: `internal/designsystem/designsystem.go` (`DefaultMount`, `CleanMount` rejects characters the edge's rule parser rejects), `cmd/dsgen/main.go` (`-redirect-from`, usage, header comment), every literal of the old mount meant to follow the default (search the substring `design-system` repository-wide, quoted or not, e.g. `browser_test.go` ~735; keep fixtures that deliberately use a custom mount, e.g. `flipevidence_test.go` ~57, and say which)
-- Create: `internal/designsystem/redirects.go`, `redirects_test.go`, `testdata/published-design-system.txt` (the inventory: every file path `go run ./cmd/dsgen -mount /design-system` writes at this branch's base, including the `/pt/` compatibility stubs, generated once and committed)
+- Create: `internal/designsystem/redirects.go`, `redirects_test.go`, `testdata/published-design-system.txt` (the inventory of what rastrillo.org publishes today: every public path `dsgen -mount /design-system` writes at tag v0.35.0, the version the site is synced to, run from a detached worktree of that tag; it includes every HTML page, preview frame, the `/pt/` compatibility stubs and the unhashed asset aliases, and excludes dsgen's bookkeeping file `.dsgen` and hashed asset names; generated once and committed with the command in a header comment)
 
 **Interfaces:**
 - Consumes: `FiestaPage` and the replacement-page constants (Task 1).
 - Produces: `const DefaultMount = "/components"`; `func Redirects(from, to string) ([]string, error)` (errors when `from` and `to` overlap or contain a character the edge rejects); dsgen `-redirect-from MOUNT` writes `Redirects(MOUNT, mount)` to `<out>/_redirects`, one rule a line.
 
 - [ ] **Step 1: Failing tests** in `redirects_test.go`, using a test matcher that implements the edge subset in the Global Constraints (first match, `:name`, final `*`, a file at the path wins, `.../index.html` → directory):
-  - `TestEveryPublishedAddressLandsInOneHop`: for every path in the inventory (old tree, `/pt/` stubs included), the old URL resolves in one hop to a file of `Render(DefaultMount)` (or its directory, for an index), or to a manifest Fiesta page for a page that left; the destination matches no rule (Review Focus 1–3, 5).
+  - `TestEveryPublishedAddressLandsInOneHop`: for every path in the inventory (old tree, `/pt/` stubs included), the old URL resolves in one hop to a file of `Render(DefaultMount)` (or its directory, for an index), or to a manifest Fiesta page for a page that left (a preview frame of a primitive that left goes to Fiesta's primitives page); the destination matches no rule (Review Focus 1–3, 5).
   - `TestNoRuleShadowsTheNewTree`: no source matches a path of the new tree.
   - `TestRedirectsRefuseOverlappingOrBadMounts`: `Redirects("/components", "/components")`, `("/a", "/a/b")`, and a mount with `?` or `#` error.
   - `TestTheRulesStayWithinTheEdgeLimits`: ≤ 2,000 rules, ≤ 256 KiB, every line ≤ 2,048 bytes and three fields ending `301`.
   - `TestDsgenWritesTheRedirects` (in `cmd/dsgen`): with `-redirect-from /design-system` the file equals `Redirects("/design-system", mount)` for the `-mount` given; without it, no `_redirects`.
 - [ ] **Step 2: Run** `go test ./internal/designsystem -run 'OneHop|Shadows|BadMounts|EdgeLimits'` and `go test ./cmd/dsgen -run Redirect` — FAIL.
-- [ ] **Step 3: Implement.** Rule order: Overview directories and `index.html` (root and per theme/locale) to the new directory URLs; `/pt/` stubs to `pt-PT` destinations; the leaving pages to Fiesta; then the catch-all `<from>/*  <to>/:splat  301`.
+- [ ] **Step 3: Implement.** Rule order: `/pt/` stubs to their final `pt-PT` destinations (Overview directories included); then Overview directories and `index.html` (root and per theme/locale) to the new directory URLs; the leaving pages to Fiesta; then the catch-all `<from>/*  <to>/:splat  301`.
 - [ ] **Step 4: Run** Step 2's commands, `go test ./internal/designsystem -run 'Mount|Render|Alias'`, `go test ./cmd/dsgen`, `go vet ./internal/designsystem ./cmd/dsgen` — PASS.
 - [ ] **Step 5: Commit** `designsystem: mount at /components; redirect the old addresses`.
 

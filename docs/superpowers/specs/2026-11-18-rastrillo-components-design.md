@@ -59,8 +59,9 @@ live previews. What changes is what it is about: the Go side.
   helper for it (the `date` helper and the number and money functions
   from v0.37.0's localised formats), and prose that says Rastrillo
   cannot do something it now does is corrected. A section with no
-  helper stays as guidance. Its previews keep their markup except
-  where an example claims a limitation that no longer exists.
+  helper stays as guidance. Its samples keep their structure; where a
+  helper now produces a value, the sample shows the helper's output
+  for the page's locale.
 - **Shells:** the frames `rastrillo new` scaffolds.
 - **Screens:** starter templates built from partials.
 - **Getting started's Rastrillo half:** how an app gets and keeps the
@@ -94,7 +95,8 @@ live previews. What changes is what it is about: the Go side.
 
 - No visible change to what any component renders. The previews,
   their markup and their scripts are untouched; only the gallery's
-  chrome, page set and prose change.
+  chrome, page set and prose change. The one exception is Formats' helper-driven
+  values (above).
 - The gallery's default mount (`designsystem.DefaultMount`, `dsgen`'s
   documented `-mount`) becomes `/components`. dsgen also writes the
   redirect rules for the old mount (a `_redirects` fragment the
