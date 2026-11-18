@@ -1339,7 +1339,15 @@ func TestEveryExampleIsFramedDesktopMobileHTMLAndTemplate(t *testing.T) {
 				t.Errorf("%s widget %d: tabs %q but HTML panel %v and Template panel %v; a tab with no panel shows nothing, a panel with no tab is unreachable", name, i, order, html != "", tpl != "")
 				continue
 			}
-			calls := strings.Count(tpl, `<code><ds-x>{{</ds-x><ds-x>`)
+			// A call is a Template block with an action in it: a
+			// partial's call opens with one, a format's template has its
+			// helper's call inside its markup.
+			var calls int
+			for _, block := range strings.Split(tpl, `<pre class="ds-src`)[1:] {
+				if strings.Contains(block, `<ds-x>{{</ds-x>`) {
+					calls++
+				}
+			}
 			switch order {
 			case "dm":
 				// A framed page of the tree: nothing to copy.
@@ -1357,8 +1365,9 @@ func TestEveryExampleIsFramedDesktopMobileHTMLAndTemplate(t *testing.T) {
 				}
 			case "dmht":
 				withSource++
-				// A partial sample's call beside its rendering; a grouped
-				// row's calls and renderings, one of each per state.
+				// A partial sample's call beside its rendering, or a
+				// format's template beside its output; a grouped row's
+				// calls and renderings, one of each per state.
 				withCall += strings.Count(tpl, `<code><ds-x>{{</ds-x><ds-x>template</ds-x>`)
 				if pres := strings.Count(html, `<pre class="ds-src`); calls == 0 || pres != calls {
 					t.Errorf("%s widget %d: %d calls and %d renderings; each call has its rendering in the HTML panel", name, i, calls, pres)
