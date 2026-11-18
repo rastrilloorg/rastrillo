@@ -1,6 +1,6 @@
 # Rastrillo components (the gallery after Fiesta)
 
-Status: design, 2026-11-18; approved by Paul the same day. Branch `components` (rastrillo). Follows
+Status: design, 2026-11-18; approved by Paul the same day. Hashed asset names from earlier deploys are not preserved (they never were across syncs). Branch `components` (rastrillo). Follows
 Fiesta part 2 (main 6b19df5, released in v0.34.0), and the original
 Fiesta design's decision that "rastrillo.org's gallery shrinks to a
 reference for the Go calls (which partial, which arguments, what it
@@ -99,7 +99,7 @@ live previews. What changes is what it is about: the Go side.
   documented `-mount`) becomes `/components`. dsgen also writes the
   redirect rules for the old mount (a `_redirects` fragment the
   website places at its root), covering every page, every theme and
-  locale, the stylesheet and script files, and the unhashed aliases
+  locale, the `/pt/` compatibility stubs, and the unhashed aliases
   (`tokens.css`, `theme-<name>.css`, `shell.css`) that the
   rastrillo-website homepage loads today. Until the website syncs, it
   keeps passing `-mount /design-system` and nothing changes there.
