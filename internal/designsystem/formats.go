@@ -69,7 +69,7 @@ func formatDocs() []formatDoc {
 		{
 			Key:   "dates",
 			Title: "Dates and times",
-			Body:  "Put a date in a <time> tag, with a version of the date a computer can read. Show the date itself with `date`, which writes it the way the reader's language does.",
+			Body:  "Put a date in a `<time>` tag, with a version of the date a computer can read. Use `date` to show it in the format used by the reader's language.",
 			Markup: `<section rst-box>
   <dl rst-detail>
     <dt>Published</dt>
@@ -95,7 +95,7 @@ func formatDocs() []formatDoc {
 		{
 			Key:   "numbers",
 			Title: "Numbers",
-			Body:  "Break up long numbers so they can be read at a glance: 54,173 in English, 54.173 in German, ৫৪,১৭৩ in Bengali. Show them with `number`, which groups the digits the way the reader's language does. In a table, use digits that are all the same width, so the columns line up.",
+			Body:  "Break up long numbers so they can be read at a glance: 54,173 in English, 54.173 in German, ৫৪,১৭৩ in Bengali. Show them with `number`, which groups the digits according to the reader's language. In a table, use digits that are all the same width, so the columns line up.",
 			Markup: `<div rst-stats>
   <div rst-stat><span rst-stat-label>Members</span><span rst-stat-num>{{number $L .Members}}</span></div>
   <div rst-stat><span rst-stat-label>Messages</span><span rst-stat-num>{{number $L .Messages}}</span></div>
@@ -122,12 +122,15 @@ func formatDocs() []formatDoc {
 			Body:  "Use <meter> to show how full something is. Use <progress> to show how far a job has got. Always print the number beside the bar. A bar on its own tells a blind reader nothing.",
 			Markup: `<div rst-box-head><h2>Photo storage</h2></div>
 <section rst-box>
-  <span rst-meter><meter rst-meter-bar value="82" min="0" max="100" aria-hidden="true"></meter><span rst-meter-num>412 / 500</span></span>
+  <span rst-meter><meter rst-meter-bar value="82" min="0" max="100" aria-hidden="true"></meter><span rst-meter-num>{{number $L .Used}} / {{number $L .Limit}}</span></span>
 </section>
 <div rst-box-head><h2>Import</h2></div>
 <section rst-box>
-  <div rst-job><span rst-spin aria-hidden="true"></span> <strong>Import</strong> is running: 128 of 400…<progress rst-job-bar value="32" min="0" max="100" aria-hidden="true"></progress></div>
+  <div rst-job><span rst-spin aria-hidden="true"></span> <strong>Import</strong> is running: {{number $L .Done}} of {{number $L .Total}}…<progress rst-job-bar value="32" min="0" max="100" aria-hidden="true"></progress></div>
 </section>`,
+			Data: map[string]any{
+				"Used": 412, "Limit": 500, "Done": 128, "Total": 400,
+			},
 		},
 		{
 			Key:   "filesizes",

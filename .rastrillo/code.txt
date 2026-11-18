@@ -8049,26 +8049,26 @@ columns internal/designsystem/formats.go 0ead14ac4be7 1
 columns internal/designsystem/formats.go 128d54ac328f 1 a templated format sample, its value now the ui helper call (rastrillo-components Task 3); a sample line is markup the Template tab shows as written
 columns internal/designsystem/formats.go 1391baf38a06 1
 columns internal/designsystem/formats.go 21ebc00317a2 1 a templated format sample, its value now the ui helper call (rastrillo-components Task 3); a sample line is markup the Template tab shows as written
+columns internal/designsystem/formats.go 35876e82d9b4 1 a templated format sample, its value now the ui helper call (rastrillo-components Task 3); a sample line is markup the Template tab shows as written
 columns internal/designsystem/formats.go 35e2002507ee 1
 columns internal/designsystem/formats.go 372e82ac1861 1
 columns internal/designsystem/formats.go 37e12888bda4 1
 columns internal/designsystem/formats.go 3a9688a90c45 1
-columns internal/designsystem/formats.go 496819e5b0f2 1 a section body, rewritten to name its ui helper (rastrillo-components Task 3); a prose key is one string the page writes whole
 columns internal/designsystem/formats.go 56e30245ad8f 1
+columns internal/designsystem/formats.go 68366ddbdbff 1 a section body in the wording copy review approved, naming its ui helper (rastrillo-components Task 3); a prose key is one string the page writes whole
 columns internal/designsystem/formats.go 7a594e7c3f5f 1
-columns internal/designsystem/formats.go 7e8acdf69bf7 1 a section body, rewritten to name its ui helper (rastrillo-components Task 3); a prose key is one string the page writes whole
 columns internal/designsystem/formats.go 8c4a5a1703d8 1
-columns internal/designsystem/formats.go a4f8a462b24d 1
 columns internal/designsystem/formats.go a8e9a071c255 1
 columns internal/designsystem/formats.go aa504ab2ca22 1 a templated format sample, its value now the ui helper call (rastrillo-components Task 3); a sample line is markup the Template tab shows as written
 columns internal/designsystem/formats.go b51f52f9ba23 1
 columns internal/designsystem/formats.go ba7b916cfa4c 1
 columns internal/designsystem/formats.go bf0038bcca20 1
-columns internal/designsystem/formats.go c1170b5c171f 1
 columns internal/designsystem/formats.go c88671d49505 1 the Money body, unchanged but re-aligned when MarkupFor left (rastrillo-components Task 3); a prose key is one string the page writes whole
 columns internal/designsystem/formats.go cb23b3c3b8e3 1
+columns internal/designsystem/formats.go e325d83e33f8 1 a section body in the wording copy review approved, naming its ui helper (rastrillo-components Task 3); a prose key is one string the page writes whole
+columns internal/designsystem/formats.go ec793592970d 1 a templated format sample, its value now the ui helper call (rastrillo-components Task 3); a sample line is markup the Template tab shows as written
 columns internal/designsystem/formats.go f4556d4db975 1 a templated format sample, its value now the ui helper call (rastrillo-components Task 3); a sample line is markup the Template tab shows as written
-func internal/designsystem/formats.go formatDocs 137 four samples became templates with their data beside them (rastrillo-components Task 3); the page is one table of sections
+func internal/designsystem/formats.go formatDocs 140 five samples became templates with their data beside them (rastrillo-components Task 3); the page is one table of sections
 names internal/designsystem/formats.go formatNav/f 1
 columns internal/designsystem/formats_test.go 6dc9cd18f533 1
 columns internal/designsystem/formats_test.go a3329c91c6a6 1

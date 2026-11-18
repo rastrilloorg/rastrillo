@@ -39,6 +39,12 @@ var formatHelpers = map[string]formatHelper{
 			moneyIn(t, format, 1284500, "KWD"),
 		}
 	}},
+	"ratios": {"number", func(t *testing.T, format string) []string {
+		return []string{
+			numberIn(t, format, "412"), numberIn(t, format, "500"),
+			numberIn(t, format, "128"), numberIn(t, format, "400"),
+		}
+	}},
 	"output": {"money", func(t *testing.T, format string) []string {
 		return []string{moneyIn(t, format, 14400, "USD")}
 	}},
