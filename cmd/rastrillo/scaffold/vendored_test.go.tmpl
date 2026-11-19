@@ -1,4 +1,4 @@
-package %[1]stest
+package %[1]s_test
 
 import (
 	"bytes"
@@ -13,7 +13,7 @@ import (
 // when you swap static/theme.css for another of ui.ThemeNames().
 const vendoredTheme = "%[2]s"
 
-var staticDir = filepath.Join("..", "%[1]s", "static")
+var staticDir = "static"
 
 // vendoredIsMine names the vendored files this app edited or deleted on
 // purpose: this test and rastrillo doctor then leave them alone.

@@ -437,12 +437,13 @@ func TestNewScaffoldsTestHarness(t *testing.T) {
 	if err := runNew([]string{"my-blog"}); err != nil {
 		t.Fatalf("runNew: %v", err)
 	}
-	harness, err := os.ReadFile(filepath.Join("my-blog", "internal", "myblogtest", "harness_test.go"))
+	harness, err := os.ReadFile(filepath.Join("my-blog", "internal",
+		"myblog", "harness_test.go"))
 	if err != nil {
 		t.Fatalf("expected a scaffolded harness: %v", err)
 	}
 	for _, want := range []string{
-		"package myblogtest",
+		"package myblog_test",
 		"func newApp(t *testing.T) http.Handler",
 		`"my-blog/internal/myblog"`,
 		"var schema = dbtest.FromSet(myblog.BootSchema)",
@@ -455,7 +456,8 @@ func TestNewScaffoldsTestHarness(t *testing.T) {
 			t.Errorf("harness_test.go missing %q:\n%s", want, harness)
 		}
 	}
-	index, err := os.ReadFile(filepath.Join("my-blog", "internal", "myblogtest", "index_test.go"))
+	index, err := os.ReadFile(filepath.Join("my-blog", "internal",
+		"myblog", "index_test.go"))
 	if err != nil {
 		t.Fatalf("expected scaffolded example tests: %v", err)
 	}
@@ -475,7 +477,8 @@ func TestNewScaffoldsTestHarness(t *testing.T) {
 	if n, tests := strings.Count(string(index), "\n\tt.Parallel()\n"), strings.Count(string(index), "\nfunc Test"); n != tests {
 		t.Errorf("index_test.go: %d of %d tests start with t.Parallel()", n, tests)
 	}
-	perf, err := os.ReadFile(filepath.Join("my-blog", "internal", "myblogtest", "perf_test.go"))
+	perf, err := os.ReadFile(filepath.Join("my-blog", "internal",
+		"myblog", "perf_test.go"))
 	if err != nil {
 		t.Fatalf("expected a scaffolded perf test: %v", err)
 	}
@@ -927,7 +930,8 @@ func TestNewWiresCSRFProtection(t *testing.T) {
 			t.Errorf("scaffolded main.go does not contain %q", want)
 		}
 	}
-	harness := readScaffold(t, "blogapp", "internal", "blogapptest", "harness_test.go")
+	harness := readScaffold(t, "blogapp", "internal", "blogapp",
+		"harness_test.go")
 	for _, want := range []string{
 		`request.Header.Set("Origin", testOrigin)`,
 		"New(\n\t\tdatabase, testOrigin, logger)",
@@ -958,10 +962,11 @@ func TestNewScaffoldsBrowserDrive(t *testing.T) {
 	if err := runNew([]string{"my-blog"}); err != nil {
 		t.Fatalf("runNew: %v", err)
 	}
-	src := readScaffold(t, "my-blog", "internal", "myblogtest", "browser_test.go")
+	src := readScaffold(t, "my-blog", "internal", "myblog",
+		"browser_test.go")
 	for _, want := range []string{
 		"//go:build browser",
-		"package myblogtest",
+		"package myblog_test",
 		"amadan.net/rastrillo/rastrillo/harness",
 		"harness.New(t, func(origin string) http.Handler {",
 		"myblog.New(\n\t\t\tdatabase, origin, logger)",
@@ -1002,7 +1007,8 @@ func TestNewScaffoldsVendoredPinTest(t *testing.T) {
 	if err := runNew([]string{"blogapp"}); err != nil {
 		t.Fatalf("runNew: %v", err)
 	}
-	src := readScaffold(t, "blogapp", "internal", "blogapptest", "vendored_test.go")
+	src := readScaffold(t, "blogapp", "internal", "blogapp",
+		"vendored_test.go")
 	for _, want := range []string{
 		// The pin reads the library's own list rather than repeating
 		// it: one definition of the vendored set, shared with the
@@ -1015,7 +1021,7 @@ func TestNewScaffoldsVendoredPinTest(t *testing.T) {
 		// too — without it, an app that meant to diverge has no way to
 		// say so except deleting the whole test.
 		"vendoredIsMine",
-		`filepath.Join("..", "blogapp", "static")`,
+		`staticDir = "static"`,
 	} {
 		if !strings.Contains(src, want) {
 			t.Errorf("scaffolded vendored_test.go does not contain %q", want)

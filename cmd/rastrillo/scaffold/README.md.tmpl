@@ -10,7 +10,7 @@ Start each template body with `{{$L := localizer $}}`. Pass `$L` first to `T`, `
 
 ## Browser drive
 
-`internal/%[2]stest/browser_test.go` walks the app in a real Chromium. It fails on any console error, failed request, or JS value shown on the page:
+`internal/%[2]s/browser_test.go` walks the app in a real Chromium. It fails on any console error, failed request, or JS value shown on the page:
 
 ```sh
 go test -tags browser ./...

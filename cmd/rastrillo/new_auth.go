@@ -29,7 +29,6 @@ type magicAuth struct {
 	pkg      string
 	env      string
 	appDir   string
-	testDir  string
 	problems []string
 }
 
@@ -38,8 +37,7 @@ func applyMagicAuth(
 ) error {
 	edit := &magicAuth{
 		files: files, name: name, pkg: pkg, appDir: appDir,
-		env:     strings.ToUpper(pkg),
-		testDir: filepath.Join(name, "internal", pkg+"test"),
+		env: strings.ToUpper(pkg),
 	}
 	edit.schema()
 	edit.app()
@@ -187,7 +185,7 @@ func (edit *magicAuth) layout() {
 	// The stage shell has no header chrome to sit in: an app built on
 	// it reaches the sign-in screen through its own links.
 	case end < 0 && strings.Contains(source, `{{block "backdrop"`):
-		edit.swap(filepath.Join(edit.testDir, "signin_test.go"),
+		edit.swap(filepath.Join(edit.appDir, "signin_test.go"),
 			signoutCheck, stageSignoutCheck)
 	case end < 0:
 		edit.problems = append(edit.problems,
@@ -263,7 +261,7 @@ func (edit *magicAuth) newFiles() {
 	edit.files[filepath.Join(templates, "signin.html")] =
 		scaffoldFile("signin.html")
 	edit.files[filepath.Join(templates, "stage.html")] = string(stage)
-	edit.files[filepath.Join(edit.testDir, "signin_test.go")] =
+	edit.files[filepath.Join(edit.appDir, "signin_test.go")] =
 		edit.fill(scaffoldFile("signin_test.go.tmpl"))
 }
 

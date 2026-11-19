@@ -131,9 +131,6 @@ func writeSingle(options newOpts) error {
 	inApp := func(parts ...string) string {
 		return filepath.Join(append([]string{appDir}, parts...)...)
 	}
-	inTests := func(file string) string {
-		return filepath.Join(name, "internal", pkg+"test", file)
-	}
 	atRoot := func(parts ...string) string {
 		return filepath.Join(append([]string{name}, parts...)...)
 	}
@@ -172,16 +169,16 @@ func writeSingle(options newOpts) error {
 	files[inApp("migrations", "0001_init.sql")] = initMigrationTemplate
 	files[inApp("migrations", "schema.sql")] = schemaSQLTemplate
 	files[inApp("icons", "icons.go")] = string(rendered.Source)
-	files[inTests("api_test.go")] = fmt.Sprintf(apiTestTemplate,
+	files[inApp("api_test.go")] = fmt.Sprintf(apiTestTemplate,
 		name, pkg, prefix)
-	files[inTests("harness_test.go")] = fmt.Sprintf(harnessTemplate, name, pkg)
-	files[inTests("vendored_test.go")] = fmt.Sprintf(vendoredTestTemplate,
+	files[inApp("harness_test.go")] = fmt.Sprintf(harnessTemplate, name, pkg)
+	files[inApp("vendored_test.go")] = fmt.Sprintf(vendoredTestTemplate,
 		pkg, options.Theme)
-	files[inTests("index_test.go")] = fmt.Sprintf(indexTestTemplate,
+	files[inApp("index_test.go")] = fmt.Sprintf(indexTestTemplate,
 		name, pkg, extraTests)
-	files[inTests("browser_test.go")] = fmt.Sprintf(browserTestTemplate,
+	files[inApp("browser_test.go")] = fmt.Sprintf(browserTestTemplate,
 		name, pkg)
-	files[inTests("perf_test.go")] = fmt.Sprintf(perfTestTemplate, name, pkg)
+	files[inApp("perf_test.go")] = fmt.Sprintf(perfTestTemplate, name, pkg)
 	files[atRoot(".gitleaks.toml")] = scaffoldFile("gitleaks.toml")
 	files[atRoot(".rastrillo", "budgets.txt")] = budgetsTxtTemplate
 	files[atRoot("README.md")] = fmt.Sprintf(readmeTemplate, name, pkg, env)
@@ -263,7 +260,8 @@ func writeSingle(options newOpts) error {
 		name)
 	fmt.Printf("  internal/%s/         (app, routes, handlers, models, "+
 		"migrations, render, templates, static)\n", pkg)
-	fmt.Printf("  internal/%stest/     (harness + example tests, passing out of the box;\n", pkg)
+	fmt.Printf("  internal/%s/*_test.go (harness + example tests, "+
+		"passing out of the box;\n", pkg)
 	fmt.Println("                        browser_test.go = the browser drive, go test -tags browser ./...)")
 	fmt.Println("  manifest/            (the declarative path: drop a <name>.toml here, see its README)")
 	fmt.Println("  Makefile             (make ci = vet + fmt + staticcheck + " +

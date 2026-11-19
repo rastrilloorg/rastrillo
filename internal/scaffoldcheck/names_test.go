@@ -44,19 +44,19 @@ func TestNewRefusesEveryNameTheScaffoldUses(t *testing.T) {
 }
 
 // namesBesideTheApp is every identifier in the packages that import the
-// app's package, cmd/<name> and internal/<name>test, in the scaffold
-// at directory. Those are the files where a name can shadow the
-// package, or clash with its import.
+// app's package, cmd/<name> and internal/<name>'s <name>_test, in the
+// scaffold at directory. Those are the files where a name can shadow
+// the package, or clash with its import.
 func namesBesideTheApp(t *testing.T, directory, pkg string) []string {
 	t.Helper()
 	var names []string
-	for _, importer := range []string{
-		filepath.Join(directory, "cmd", pkg),
-		filepath.Join(directory, "internal", pkg+"test"),
+	for _, importers := range []string{
+		filepath.Join(directory, "cmd", pkg, "*.go"),
+		filepath.Join(directory, "internal", pkg, "*_test.go"),
 	} {
-		paths, err := filepath.Glob(filepath.Join(importer, "*.go"))
+		paths, err := filepath.Glob(importers)
 		if err != nil || len(paths) == 0 {
-			t.Fatalf("no Go files in %s: %v", importer, err)
+			t.Fatalf("no Go files match %s: %v", importers, err)
 		}
 		for _, path := range paths {
 			names = append(names, namesIn(t, path)...)

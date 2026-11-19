@@ -9,7 +9,7 @@ import "path/filepath"
 // mailer: the harness an outbox a test can open links from, the rest
 // the logger.
 func (edit *magicAuth) harness() {
-	harness := filepath.Join(edit.testDir, "harness_test.go")
+	harness := filepath.Join(edit.appDir, "harness_test.go")
 	edit.swap(harness, "func newApp(t *testing.T) http.Handler {\n"+
 		"\tt.Helper()\n", "func newApp(t *testing.T) http.Handler {\n"+
 		"\tt.Helper()\n\thandler, _ := newAppWithMail(t)\n"+
@@ -27,7 +27,7 @@ func (edit *magicAuth) harness() {
 	edit.swap(harness, "\treturn mux\n}", "\treturn mux, box\n}")
 	edit.importAfter(harness, `"amadan.net/rastrillo/rastrillo/db"`,
 		"background")
-	browser := filepath.Join(edit.testDir, "browser_test.go")
+	browser := filepath.Join(edit.appDir, "browser_test.go")
 	edit.swap(browser, edit.filled("\t\tmux, _, err := %s.New(\n"+
 		"\t\t\tdatabase, origin, logger)\n"),
 		"\t\tgroup := &background.Group{}\n\t\tt.Cleanup(group.Stop)\n"+
@@ -41,7 +41,7 @@ func (edit *magicAuth) harness() {
 // perf: /account is measured behind the perf test's own sign-in, and
 // pow's assets and the two link landings are not screens.
 func (edit *magicAuth) perf() {
-	perf := filepath.Join(edit.testDir, "perf_test.go")
+	perf := filepath.Join(edit.appDir, "perf_test.go")
 	edit.swap(perf, edit.filled("\trouter, hub, err := %s.Router(\n"+
 		"\t\tdatabase, testOrigin, logger)\n"),
 		"\tgroup := &background.Group{}\n\tbox := &outbox{}\n"+

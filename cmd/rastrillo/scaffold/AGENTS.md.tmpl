@@ -16,8 +16,8 @@ describes a framework this app is not built on.
   route), `handlers.go` (actions), `models.go`, `migrations.go`,
   `render.go`, `api.go` (`/api/v1` and `/api/v1/mcp`), and `static/`,
   served by the app.
-- `internal/<app>test/`: tests through the real handler. Write the
-  failing test here first.
+- `internal/<app>/*_test.go`: tests through the real handler, in
+  package `<app>_test`. Write the failing test here first.
 - `manifest/`: optional, a screen set per manifest, generated into
   `gen/` (never edit; run `rastrillo generate`). manifest/README.md
   mounts the first.

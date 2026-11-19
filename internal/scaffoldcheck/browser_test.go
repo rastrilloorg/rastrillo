@@ -28,7 +28,7 @@ func TestTheScaffoldsBrowserDrivePasses(t *testing.T) {
 			t.Parallel()
 			directory := buildableApp(t, variant.name, variant.flags...)
 			runTaggedTests(t, directory, "browser",
-				"./internal/"+variant.name+"test/", "TestBrowserWalk")
+				"./internal/"+variant.name+"/", "TestBrowserWalk")
 		})
 	}
 }
@@ -55,8 +55,8 @@ func TestAnUpgradedOldAppClosesMenusOnEscape(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	write(t, filepath.Join(directory, "internal", "upgradedapptest",
+	write(t, filepath.Join(directory, "internal", "upgradedapp",
 		"escape_extra_test.go"), string(drive))
-	runTaggedTests(t, directory, "browser", "./internal/upgradedapptest/",
+	runTaggedTests(t, directory, "browser", "./internal/upgradedapp/",
 		"TestAMenuClosesOnEscape", "TestAMenuClosesOnEscapeUnderABasePath")
 }

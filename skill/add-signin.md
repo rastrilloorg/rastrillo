@@ -22,7 +22,7 @@ var BootSchema = migrate.Merge(
 take `group *background.Group` after `origin`. Five callers change:
 `cmd/<app>/main.go` (`group := &background.Group{}`, and after
 `Configure`, `options.Background = group`, which shutdown stops); in
-`internal/<app>test`, `newApp` and the browser test (`group :=
+`internal/<app>/*_test.go`, `newApp` and the browser test (`group :=
 &background.Group{}; t.Cleanup(group.Stop)` after the `database.Close`
 cleanup, so it runs first) and both perf tests (`options.Background =
 group` after `Configure`; `closeAll` stops it).

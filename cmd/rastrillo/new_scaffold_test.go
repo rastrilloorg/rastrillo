@@ -879,13 +879,13 @@ func TestNewWithLocale(t *testing.T) {
 	}
 }
 
-// localeExtraTest is written into a scaffolded app's own test package
+// localeExtraTest is written beside a scaffolded app's code
 // and run by its go test: the page's language, direction and switcher,
 // and the error page's language, as the app really serves them, through
 // rastrillo.Handler with the Options main.go builds. %[1]s is the app
 // package, %[2]s the module, %[3]s the assertions, %[4]s any imports
 // only those assertions use.
-const localeExtraTest = `package %[1]stest
+const localeExtraTest = `package %[1]s_test
 
 import (%[4]s
 	"io"
@@ -1018,7 +1018,9 @@ func TestScaffoldServesItsLocales(t *testing.T) {
 					t.Fatalf("rastrillo generate: %v", err)
 				}
 			}
-			mustWrite(t, filepath.Join(app, "internal", "notestest", "locale_extra_test.go"), fmt.Sprintf(localeExtraTest, "notes", "notes", c.body, c.imports))
+			mustWrite(t, filepath.Join(app, "internal", "notes",
+				"locale_extra_test.go"), fmt.Sprintf(localeExtraTest,
+				"notes", "notes", c.body, c.imports))
 			// render's request values go in a copy: a map the caller
 			// reuses would otherwise carry one request's localizer into
 			// the next, and race when two requests share it.
@@ -1068,7 +1070,8 @@ func TestScaffoldWithABadLocaleConfigFailsSafely(t *testing.T) {
 		t.Fatalf("packs.go has no English default to break:\n%s", src)
 	}
 	mustWrite(t, packsGo, bad)
-	mustWrite(t, filepath.Join(app, "internal", "notestest", "badconfig_test.go"), `package notestest
+	mustWrite(t, filepath.Join(app, "internal", "notes",
+		"badconfig_test.go"), `package notes_test
 
 import (
 	"io"
@@ -1102,16 +1105,17 @@ func TestBadConfig(t *testing.T) {
 	}
 }
 `)
-	if out, err := goTestIn(app, "-run", "^TestBadConfig$", "./internal/notestest/"); err != nil {
+	if out, err := goTestIn(app, "-run", "^TestBadConfig$",
+		"./internal/notes/"); err != nil {
 		t.Fatalf("%s", out)
 	}
 }
 
 // basepathExtraTest is written into a scaffolded two-locale sidebar app
-// as package notestest, and serves the app as main.go does with a base
+// as package notes_test, and serves the app as main.go does with a base
 // path set. A root-absolute link left in one of the scaffold's own pages
 // would take a tenant's reader to the hub's page of the same name.
-const basepathExtraTest = `package notestest
+const basepathExtraTest = `package notes_test
 
 import (
 	"context"
@@ -1292,17 +1296,20 @@ func TestScaffoldServesUnderABasePath(t *testing.T) {
 	if err := runGenerate([]string{app}); err != nil {
 		t.Fatalf("rastrillo generate: %v", err)
 	}
-	mustWrite(t, filepath.Join(app, "internal", "notestest", "basepath_extra_test.go"), basepathExtraTest)
-	if out, err := goTestIn(app, "-v", "-run", "TestUnderABasePath", "./internal/notestest/"); err != nil || !strings.Contains(out, "--- PASS: TestUnderABasePath") {
+	mustWrite(t, filepath.Join(app, "internal", "notes",
+		"basepath_extra_test.go"), basepathExtraTest)
+	out, err := goTestIn(app, "-v", "-run", "TestUnderABasePath",
+		"./internal/notes/")
+	if err != nil || !strings.Contains(out, "--- PASS: TestUnderABasePath") {
 		t.Fatalf("the scaffolded app under /acme:\n%s", out)
 	}
 }
 
 // magicBasePathTest is written into a --auth=magic scaffold as package
-// notestest. A tenant under a base path has no sign-in of its own (the
+// notes_test. A tenant under a base path has no sign-in of its own (the
 // hub signs people in), so its pages must not offer one: a /signin link
 // there leaves the tenant for the product's own /signin.
-const magicBasePathTest = `package notestest
+const magicBasePathTest = `package notes_test
 
 import (
 	"io"
@@ -1358,8 +1365,11 @@ func TestScaffoldMagicAuthOffersNoSigninUnderABasePath(t *testing.T) {
 		t.Skip("scaffolds, tidies and tests a whole app")
 	}
 	app := scaffoldApp(t, "notes", "--auth=magic")
-	mustWrite(t, filepath.Join(app, "internal", "notestest", "basepath_magic_test.go"), magicBasePathTest)
-	if out, err := goTestIn(app, "-v", "-run", "TestMagicAuthSigninLinkFollowsTheBasePath", "./internal/notestest/"); err != nil || !strings.Contains(out, "--- PASS: TestMagicAuthSigninLinkFollowsTheBasePath") {
+	mustWrite(t, filepath.Join(app, "internal", "notes",
+		"basepath_magic_test.go"), magicBasePathTest)
+	const magicTest = "TestMagicAuthSigninLinkFollowsTheBasePath"
+	out, err := goTestIn(app, "-v", "-run", magicTest, "./internal/notes/")
+	if err != nil || !strings.Contains(out, "--- PASS: "+magicTest) {
 		t.Fatalf("the magic-auth scaffold under /acme:\n%s", out)
 	}
 }
@@ -1478,5 +1488,63 @@ func TestNewAgentsMDStatesTheMoneyRule(t *testing.T) {
 	want := "Money is a whole number of the currency's smallest unit, stored with its ISO 4217 code beside it, and shown with `money`. A float never touches a value a person will be held to."
 	if !strings.Contains(string(agents), want) || strings.Contains(string(agents), "integer cents") {
 		t.Errorf("AGENTS.md does not state the money rule as approved:\n%s", agents)
+	}
+}
+
+// Go's own idiom is a _test.go file beside the code, as package
+// <pkg>_test. A second internal/<pkg>test directory made every app a
+// two-package module whose tests sat away from what they test.
+func TestNewPutsTestsBesideTheCode(t *testing.T) {
+	for _, flags := range [][]string{nil, {"--auth=magic"}} {
+		dir, err := runNewInTemp(t, append(flags, "my-blog")...)
+		if err != nil {
+			t.Fatalf("runNew %v: %v", flags, err)
+		}
+		internal := filepath.Join(dir, "my-blog", "internal")
+		_, err = os.Stat(filepath.Join(internal, "myblogtest"))
+		if err == nil {
+			t.Errorf("%v: internal/myblogtest is still written", flags)
+		}
+		tests := strings.Fields("harness vendored index browser perf api")
+		if len(flags) > 0 {
+			tests = append(tests, "signin")
+		}
+		for _, name := range tests {
+			source := readScaffold(t, internal, "myblog", name+"_test.go")
+			// A build tag sits above the package clause.
+			if !strings.HasPrefix(source, "package myblog_test\n") &&
+				!strings.Contains(source, "\npackage myblog_test\n") {
+				t.Errorf("%v: %s_test.go is not package myblog_test:\n%.300s",
+					flags, name, source)
+			}
+		}
+		for _, file := range []string{"AGENTS.md", "README.md",
+			filepath.Join("manifest", "README.md")} {
+			text := readScaffold(t, dir, "my-blog", file)
+			if strings.Contains(text, "myblogtest") ||
+				strings.Contains(text, "<app>test") {
+				t.Errorf("%v: %s still names the separate test package",
+					flags, file)
+			}
+		}
+	}
+}
+
+// The tests import the app under its package name, from package
+// <pkg>_test: a hyphenated name and a Go keyword are the two names that
+// reach it through packageName, so each must build and pass.
+func TestHyphenAndKeywordAppsPassTheirOwnTests(t *testing.T) {
+	if testing.Short() {
+		t.Skip("scaffolds, tidies and tests whole apps")
+	}
+	setSandboxGoEnv(t)
+	for _, name := range []string{"my-app", "func"} {
+		t.Run(name, func(t *testing.T) {
+			t.Chdir(t.TempDir())
+			dir := scaffoldWithReplace(t, name)
+			if out, err := goTestIn(dir, "./..."); err != nil {
+				t.Fatalf("%s: the scaffold's own tests fail:\n%s", name, out)
+			}
+		})
 	}
 }

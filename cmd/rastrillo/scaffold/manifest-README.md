@@ -134,7 +134,7 @@ manifest/ticket_types.toml:
    contextFor panics: a logged 500 with its cause. Generated screens do
    not show sign-in state yet.
 
-   In internal/%[2]stest/perf_test.go, add to its perftest.ScreenConfig,
+   In internal/%[2]s/perf_test.go, add to its perftest.ScreenConfig,
    with a screen for each resource's list:
 
        Opaque: []perftest.Opaque{{

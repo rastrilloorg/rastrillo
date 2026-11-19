@@ -23,7 +23,7 @@ const (
 )
 
 // taken is every name the scaffold's Go uses in cmd/<name> and the
-// <pkg>test package, the two that import the app's package. There a
+// <pkg>_test package, the two that import the app's package. There a
 // variable of the same name shadows the package (main.go's database
 // made database.New a method call on *db.DB), and an import or a
 // declaration of it clashes with the package's own import.
