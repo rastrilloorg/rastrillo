@@ -10,6 +10,35 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+### Changed: the gallery is Rastrillo components, at `/components/`
+
+The gallery at rastrillo.org/design-system is now called Rastrillo
+components and moves to rastrillo.org/components/. Each partial is
+shown there beside the Go call that renders it. The look is Fiesta's,
+so the parts Fiesta owns are now documented only on Fiesta's design
+system: the tokens, the UI primitives (markup you write by hand, such
+as cards, data grids and menus), and what each stylesheet and script is
+for. Each is linked from the gallery, in the theme and language you are
+reading.
+
+On "Dates, numbers and names", the `date`, `number` and `money` calls
+are now shown beside the examples, and each example is that call's
+output for the page's language. No other sample renders differently.
+
+Old addresses keep working. `dsgen -redirect-from /design-system` adds
+a `_redirects` file that answers every address the gallery published
+there with one 301: to the same page under `/components/`, or to
+Fiesta's page for the tokens and UI primitives. dsgen's default
+`-mount` is now `/components`, so if you run dsgen without `-mount`,
+your tree moves there too. Pass `-mount /design-system` to keep it
+where it was.
+
+rastrillo.org switches at its next sync. Its build runs dsgen with
+`-mount /components -redirect-from /design-system` and publishes
+`_redirects` at the site root. The homepage's links and labels change
+to the new name and address. Until that sync, the site still serves the
+gallery at `/design-system/`.
+
 ## v0.37.0
 
 Numbers and dates in the reader's language. Two changes alter what an
