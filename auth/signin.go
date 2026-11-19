@@ -110,6 +110,9 @@ type SigninState struct {
 	OneWay     bool
 	Way        SigninWay
 	SigninPath string
+	// Reauth is a step-up, kept apart from Problem because an error
+	// replaces the reauth problem; ChooseWay reads it.
+	Reauth bool
 	// Federated is set by the page, like Passkey: nil means no
 	// federated door. Only the one-way screen draws it.
 	Federated *FederatedDoor

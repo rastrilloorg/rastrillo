@@ -48,13 +48,14 @@ export function safeNext(to, loc) {
 
 // postJSON is a same-origin POST, so csrf.Protect sees
 // Sec-Fetch-Site: same-origin. A non-2xx answer is an error, never a
-// body to act on.
-export async function postJSON(url, body) {
+// body to act on. signal, when given, aborts the request in flight.
+export async function postJSON(url, body, signal) {
   const res = await fetch(url, {
     method: "POST",
     credentials: "same-origin",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body || {}),
+    signal,
   });
   if (!res.ok) throw new Error("status " + res.status);
   return res.json();
@@ -117,28 +118,37 @@ function busy(btn, on) {
 // The autofill request can outlive the challenge begin minted (five
 // minutes, or another tab's begin replacing it), so a refused finish
 // begins again and retries once, with a new challenge and a new pick.
+//
+// Sending the form cancels it (signal), and a cancelled attempt sends
+// nothing more: it checks before each request and after the
+// authenticator answers, and hands the signal to each request, because
+// a finish that lands after the form was sent would set a session or
+// end the attempt while the person signs in with what they typed.
 export async function conditional({ post, authenticate, begin, finish, rpId, loc, signal }) {
+  const stopped = () => !!(signal && signal.aborted);
   for (let tries = 0; tries < 2; tries++) {
     let a;
     try {
-      const b = await post(begin, {});
-      if (!b || typeof b.challenge !== "string") return {};
+      if (stopped()) return {};
+      const b = await post(begin, {}, signal);
+      if (stopped() || !b || typeof b.challenge !== "string") return {};
       a = await authenticate({ challenge: b.challenge, rpId, mediation: "conditional", signal });
     } catch (err) {
       return {};
     }
+    if (stopped()) return {};
     try {
       const done = await post(finish, {
         id: a.credentialId,
         clientDataJSON: a.clientDataJSON,
         authenticatorData: a.authenticatorData,
         signature: a.signature,
-      });
+      }, signal);
+      if (stopped()) return {};
       if (done && done.ok === true) return { navigate: safeNext(done.to, loc) };
     } catch (err) {
       // A refused finish answers non-2xx: try once more below.
     }
-    if (signal && signal.aborted) return {};
   }
   return {};
 }

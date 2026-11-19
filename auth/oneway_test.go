@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"net/url"
 	"reflect"
+	"strings"
 	"testing"
 
 	"amadan.net/rastrillo/rastrillo/lastsignin"
@@ -334,5 +335,82 @@ func TestForgetOpensTheEmailWay(t *testing.T) {
 	want = "/signin?return_to=%2Fdocs%2F7"
 	if got := res.Header().Get("Location"); got != want {
 		t.Errorf("Forget with the option off went to %q, want %q", got, want)
+	}
+}
+
+// A step-up survives an error: the error replaces the reauth problem,
+// but the page still offers local ways only, and every link and the
+// Begin form's post keep reauth=1.
+func TestReauthSurvivesAnError(t *testing.T) {
+	auth, _ := newScreenAuth(t, func(cfg *Config) { cfg.SigninOneWay = true })
+	for _, query := range []string{
+		"?reauth=1&err=rate", "?reauth=1&err=address",
+		"?reauth=1&err=unknown", "?reauth=1&err=rate&ways=1",
+	} {
+		browser := newBrowser()
+		rememberAs(auth, browser, lastsignin.MethodMagicLink,
+			"ada@example.com")
+		st := stateAt(auth, browser, "/signin"+query)
+		st.Federated, st.Passkey = oficinaDoor, &PasskeyDoor{}
+		if !st.Reauth || st.Door() != "ask" {
+			t.Errorf("%s: Reauth %v, door %q; want a step-up on the field",
+				query, st.Reauth, st.Door())
+		}
+		for _, row := range st.Ways() {
+			if row.Way == "oficina" {
+				t.Errorf("%s: the chooser offers Oficina ID", query)
+			}
+			if !strings.Contains(row.Href, "reauth=1") {
+				t.Errorf("%s: %s drops reauth", query, row.Href)
+			}
+		}
+		if !strings.Contains(st.WaysHref(), "reauth=1") {
+			t.Errorf("%s: Other ways drops reauth", query)
+		}
+	}
+}
+
+// Begin's problem redirect keeps a posted step-up on the one-way
+// screen, and only there.
+func TestAProblemRedirectKeepsTheStepUp(t *testing.T) {
+	form := url.Values{"address": {"not-an-address"}, "reauth": {"1"}}
+	on, _ := newScreenAuth(t, func(cfg *Config) {
+		cfg.SigninOneWay, cfg.ProofOff, cfg.Proof = true, true, nil
+	})
+	res := newBrowser().do(on.Begin, http.MethodPost, "/signin", form)
+	if got := res.Header().Get("Location"); !strings.Contains(got,
+		"reauth=1") || !strings.Contains(got, "err=address") {
+		t.Errorf("one-way Begin's problem went to %q, want reauth kept", got)
+	}
+	off, _ := newScreenAuth(t, func(cfg *Config) {
+		cfg.ProofOff, cfg.Proof = true, nil
+	})
+	res = newBrowser().do(off.Begin, http.MethodPost, "/signin", form)
+	if got := res.Header().Get("Location"); strings.Contains(got, "reauth") {
+		t.Errorf("with the option off Begin's problem went to %q", got)
+	}
+}
+
+// An err the screen does not know is still a problem on the one-way
+// screen: the email field, never the chooser or a remembered door.
+// With the option off it is no problem at all, as it always was.
+func TestAnUnknownErrorFallsToTheField(t *testing.T) {
+	on, _ := newScreenAuth(t, func(cfg *Config) { cfg.SigninOneWay = true })
+	for _, query := range []string{"?err=unknown", "?err=unknown&ways=1",
+		"?err=x&way=oficina"} {
+		browser := newBrowser()
+		rememberAs(on, browser, lastsignin.MethodMagicLink,
+			"ada@example.com")
+		st := stateAt(on, browser, "/signin"+query)
+		st.Federated = oficinaDoor
+		if st.Problem != ProblemGeneric || st.Door() != "ask" {
+			t.Errorf("%s: problem %q, door %q; want generic on the field",
+				query, st.Problem, st.Door())
+		}
+	}
+	off, _ := newScreenAuth(t, nil)
+	if st := stateAt(off, newBrowser(), "/signin?err=unknown"); st.Problem !=
+		ProblemNone {
+		t.Errorf("with the option off ?err=unknown is %q", st.Problem)
 	}
 }

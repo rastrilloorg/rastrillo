@@ -4,6 +4,7 @@ import (
 	"html/template"
 	"net/http"
 	"net/url"
+	"strings"
 
 	"amadan.net/rastrillo/rastrillo/lastsignin"
 )
@@ -71,18 +72,27 @@ type SigninWayRow struct {
 	Icon  template.HTML
 }
 
-// ChooseWay reads the one-way screen's query: ?ways=1 for the chooser
-// and ?way= for one way's own page. It sets nothing unless OneWay is
-// set, and never turns a problem, Sent or Continue into the chooser:
-// problems are drawn on the email door, and those steps have no
-// chooser. Home, which fills a SigninState without auth, calls it too.
+// ChooseWay reads the one-way screen's query: ?ways=1 for the chooser,
+// ?way= for one way's own page, and ?reauth=1, which is kept apart from
+// Problem because an error replaces the reauth problem and a step-up
+// must still offer local ways only. An err the screen does not know is
+// the generic problem here, so it too falls to the email field. It sets
+// nothing unless OneWay is set, and never turns a problem, Sent or
+// Continue into the chooser: problems are drawn on the email door, and
+// those steps have no chooser. Home, which fills a SigninState without
+// auth, calls it too.
 func (st *SigninState) ChooseWay(query url.Values) {
 	if !st.OneWay {
 		return
 	}
+	st.Reauth = st.Problem == ProblemReauth || query.Get("reauth") == "1"
+	asking := st.Step == StepAsk || st.Step == StepReturning
+	unknown := st.Problem == ProblemNone || st.Problem == ProblemReauth
+	if asking && unknown && query.Get("err") != "" {
+		st.Step, st.Problem = StepAsk, ProblemGeneric
+	}
 	st.Way = ParseWay(query.Get("way"))
 	quiet := st.Problem == ProblemNone || st.Problem == ProblemReauth
-	asking := st.Step == StepAsk || st.Step == StepReturning
 	if query.Get("ways") == "1" && quiet && asking {
 		st.Step = StepWays
 	}
@@ -110,8 +120,14 @@ func (st SigninState) offers(way SigninWay) bool {
 	case WayPasskey:
 		return st.Passkey != nil
 	}
-	return st.Federated != nil && st.Problem != ProblemReauth &&
+	return st.Federated != nil && !st.reauth() &&
 		string(way) == st.Federated.Provider
+}
+
+// reauth is whether this page is a step-up: the Reauth ChooseWay read,
+// or the reauth problem on a state filled without it.
+func (st SigninState) reauth() bool {
+	return st.Reauth || st.Problem == ProblemReauth
 }
 
 // rememberedWay is the way the page offers when the visitor picked
@@ -271,7 +287,7 @@ func (st SigninState) signinHref(pairs ...string) string {
 	if st.ReturnTo != "" {
 		query.Set("return_to", st.ReturnTo)
 	}
-	if st.Problem == ProblemReauth {
+	if st.reauth() {
 		query.Set("reauth", "1")
 	}
 	if len(query) == 0 {
@@ -349,4 +365,23 @@ func (auth *Auth) afterForget(request *http.Request) string {
 		return auth.cfg.SigninPath
 	}
 	return auth.cfg.SigninPath + "?" + query.Encode()
+}
+
+// keepReauth carries a posted step-up onto the sign-in page a one-way
+// form's post is sent back to, so a problem (a rate limit, a bad
+// address) does not turn a step-up into an ordinary sign-in that offers
+// the federated door. Every other redirect is returned as it is.
+func (auth *Auth) keepReauth(request *http.Request, to string) string {
+	prefix := auth.cfg.SigninPath + "?"
+	if !auth.cfg.SigninOneWay || request.Method != http.MethodPost ||
+		request.PostFormValue("reauth") != "1" ||
+		!strings.HasPrefix(to, prefix) {
+		return to
+	}
+	query, err := url.ParseQuery(strings.TrimPrefix(to, prefix))
+	if err != nil || query.Has("reauth") {
+		return to
+	}
+	query.Set("reauth", "1")
+	return prefix + query.Encode()
 }

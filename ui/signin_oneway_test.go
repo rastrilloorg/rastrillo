@@ -368,3 +368,22 @@ func TestAnAppProblemIsShownAndEscaped(t *testing.T) {
 		}
 	}
 }
+
+// A step-up behind an error posts reauth=1 with the field, so Begin's
+// problem redirect can keep it.
+func TestAStepUpFormPostsReauth(t *testing.T) {
+	st := oneWayState(func(st *auth.SigninState) {
+		st.Problem, st.Reauth = auth.ProblemRate, true
+	})
+	out := render(t, "signin", signinData(st))
+	form := beginForm.FindString(out)
+	reauth := `<input type="hidden" name="reauth" value="1">`
+	if !strings.Contains(form, reauth) {
+		t.Errorf("the step-up's field does not post reauth:\n%s", out)
+	}
+	plain := render(t, "signin", signinData(oneWayState(
+		func(st *auth.SigninState) { st.Problem = auth.ProblemRate })))
+	if strings.Contains(plain, `name="reauth"`) {
+		t.Errorf("an ordinary sign-in posts reauth:\n%s", plain)
+	}
+}

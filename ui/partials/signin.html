@@ -140,6 +140,7 @@
 <script type="module" src="{{$s.Passkey.ScriptURL}}"></script>
 {{end}}{{else if eq $door "keymail"}}<form rst-signin-form method="post" action="{{$s.BeginPath}}"{{with $proof}} {{.Attrs}}{{end}}>{{with $proof}}{{.Fields}}{{end}}
 {{with $s.ReturnTo}}<input type="hidden" name="return_to" value="{{.}}">
+{{end}}{{if or $s.Reauth (eq $s.Problem "reauth")}}<input type="hidden" name="reauth" value="1">
 {{end}}<input type="hidden" name="address" value="{{$s.Remembered.Address}}">
 <input type="hidden" name="expect" value="keymail">
 <button rst-btn="primary block" type="submit" aria-describedby="rst-signin-remembered"{{if eq $focus "onetap"}} autofocus{{end}}{{if $gated}} disabled data-pow-submit{{end}}>{{T $L "rastrillo.ui.signin_to_keymail"}}</button>
@@ -148,6 +149,7 @@
 </form>
 {{else if eq $door "link"}}<form rst-signin-form method="post" action="{{$s.BeginPath}}"{{with $proof}} {{.Attrs}}{{end}}>{{with $proof}}{{.Fields}}{{end}}
 {{with $s.ReturnTo}}<input type="hidden" name="return_to" value="{{.}}">
+{{end}}{{if or $s.Reauth (eq $s.Problem "reauth")}}<input type="hidden" name="reauth" value="1">
 {{end}}<input type="hidden" name="address" value="{{$s.Remembered.Address}}">
 <button rst-btn="primary block" type="submit"{{if eq $focus "onetap"}} autofocus{{end}}{{if $gated}} disabled data-pow-submit{{end}}>{{template "signin-glyph" (dict "L" $L "Glyph" "mail")}}<span>{{Tbdi $L "rastrillo.ui.signin_continue_as" "address" $s.Remembered.Address}}</span></button>
 {{if $gated}}{{$proof.StatusLine (T $L "rastrillo.ui.pow_status")}}<noscript><p>{{T $L "rastrillo.ui.pow_noscript"}}</p></noscript>
@@ -157,6 +159,7 @@
      the door's script runs that request and aborts it when the form is
      sent. */}}{{$conditional := and $s.ConditionalUI (not $preview)}}{{$fieldErr := ""}}{{if eq $s.Problem "address"}}{{$fieldErr = T $L "rastrillo.ui.signin_problem_address"}}{{end}}<form rst-signin-form method="post" action="{{$s.BeginPath}}"{{with $proof}} {{.Attrs}}{{end}}{{if $conditional}} data-rst-passkey-conditional data-rst-passkey-begin="{{$s.Passkey.BeginPath}}" data-rst-passkey-finish="{{$s.PasskeyFinish}}" data-rst-passkey-module="{{$s.Passkey.ModuleURL}}"{{end}}>{{with $proof}}{{.Fields}}{{end}}
 {{with $s.ReturnTo}}<input type="hidden" name="return_to" value="{{.}}">
+{{end}}{{if or $s.Reauth (eq $s.Problem "reauth")}}<input type="hidden" name="reauth" value="1">
 {{end}}{{template "field" (dict "L" $L "ID" "rst-signin-email" "Name" "address" "Label" (T $L "rastrillo.ui.signin_email") "Type" "email" "Autocomplete" (or (and $s.ConditionalUI "username webauthn") "email") "Required" true "Value" $s.Address "Autofocus" (eq $focus "field") "Error" $fieldErr "QuietError" true)}}
 {{if or $s.Force (eq $s.Problem "keymail")}}<input type="hidden" name="force" value="1">
 {{end}}<button rst-btn="primary block" type="submit"{{if $gated}} disabled data-pow-submit{{end}}>{{if eq $s.Problem "keymail"}}{{T $L "rastrillo.ui.signin_send_link_instead"}}{{else}}{{T $L "rastrillo.ui.signin_submit"}}{{end}}</button>
@@ -176,7 +179,7 @@
      form posts beside return_to: open the email way after forgetting,
      and keep a step-up. */}}
 {{define "signin-forget-way"}}<input type="hidden" name="way" value="email">
-{{if eq .State.Problem "reauth"}}<input type="hidden" name="reauth" value="1">
+{{if or .State.Reauth (eq .State.Problem "reauth")}}<input type="hidden" name="reauth" value="1">
 {{end}}{{end}}
 {{/* signin-glyph — part of signin. It draws one of the door's
      one-colour glyphs ("next", "back", "mail", "key" or "at") in

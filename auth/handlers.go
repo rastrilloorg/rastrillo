@@ -687,5 +687,5 @@ func From(r *http.Request) (Identity, bool) {
 }
 
 func (a *Auth) redirect(w http.ResponseWriter, r *http.Request, to string) {
-	http.Redirect(w, r, to, http.StatusSeeOther)
+	http.Redirect(w, r, a.keepReauth(r, to), http.StatusSeeOther)
 }
