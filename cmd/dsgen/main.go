@@ -7,14 +7,14 @@
 // site that publishes it builds it instead:
 //
 //	go run amadan.net/rastrillo/rastrillo/cmd/dsgen@<version> \
-//	    -out ./src/design-system -mount /design-system
+//	    -out ./src/components -mount /components
 //
 // Pin a version. The gallery documents the framework at that version,
 // so the sha or tag you generate from should be the one your prose was
 // vendored from; anything else documents a library your reader is not
 // using.
 //
-// # The two arguments, and why there are only two
+// # The three arguments, and why there are only three
 //
 // -out is where the files go. -mount is the URL path they will be
 // served from, and it has to be right: every link, stylesheet and frame
@@ -23,6 +23,15 @@
 // without redirecting, and a relative href resolves against a different
 // base on those two URLs. A tree generated for one mount cannot be
 // served at another.
+//
+// -redirect-from names a mount the site used to serve the gallery at,
+// and adds a _redirects file to -out: rules in the format of CARLOS's
+// static edge (and Netlify's, and Cloudflare Pages') that send every
+// address the gallery published there to the same file under -mount,
+// or to Fiesta for a page that left. The rules match whole site paths,
+// so the site publishes the file at its root, not inside the gallery.
+// rastrillo.org passes /design-system, where the gallery lived until it
+// became Rastrillo components.
 //
 // There is deliberately nothing else. This command is published surface
 // — an outside caller runs it with `go run …@version` and expects it to
@@ -79,6 +88,9 @@ func main() {
 func run() error {
 	out := flag.String("out", "", "directory to write the gallery into (required; created if missing)")
 	mount := flag.String("mount", designsystem.DefaultMount, "URL path the gallery will be served from")
+	redirectFrom := flag.String("redirect-from", "",
+		"URL path the gallery used to be served from; "+
+			"writes a _redirects file sending it to -mount")
 	flag.Usage = usage
 	flag.Parse()
 
@@ -89,7 +101,7 @@ func run() error {
 		return fmt.Errorf("-out is required (a directory to write the gallery into)")
 	}
 
-	root, n, total, err := write(*out, *mount)
+	root, n, total, err := write(*out, *mount, *redirectFrom)
 	if err != nil {
 		return err
 	}
@@ -99,17 +111,15 @@ func run() error {
 }
 
 // write renders the gallery at mount and puts it under out, returning
-// the absolute directory it wrote and what it wrote there. Separate from
-// run so the flags and the work can be tested apart.
-func write(out, mount string) (root string, files, bytes int, err error) {
-	rendered, err := designsystem.Render(mount)
+// the absolute directory it wrote and what it wrote there. With
+// redirectFrom, it adds the rules from that mount as _redirects.
+// Separate from run so the flags and the work can be tested apart.
+func write(out, mount, redirectFrom string) (
+	root string, files, bytes int, err error,
+) {
+	rendered, err := render(mount, redirectFrom)
 	if err != nil {
 		return "", 0, 0, err
-	}
-	// Render has already refused a mount CleanMount refuses.
-	clean, _ := designsystem.CleanMount(mount)
-	for name, body := range retagStubs(rendered, clean) {
-		rendered[name] = body
 	}
 
 	root, err = filepath.Abs(out)
@@ -137,6 +147,29 @@ func write(out, mount string) (root string, files, bytes int, err error) {
 		bytes += len(rendered[name])
 	}
 	return root, len(rendered), bytes, nil
+}
+
+// render is every file dsgen writes: the gallery at mount, the pt/
+// stubs and, with redirectFrom, the rules sending that mount to this
+// one.
+func render(mount, redirectFrom string) (map[string][]byte, error) {
+	rendered, err := designsystem.Render(mount)
+	if err != nil {
+		return nil, err
+	}
+	// Render has already refused a mount CleanMount refuses.
+	clean, _ := designsystem.CleanMount(mount)
+	for name, body := range retagStubs(rendered, clean) {
+		rendered[name] = body
+	}
+	if redirectFrom != "" {
+		rules, err := designsystem.Redirects(redirectFrom, clean)
+		if err != nil {
+			return nil, fmt.Errorf("-redirect-from: %w", err)
+		}
+		rendered[redirectsName] = []byte(strings.Join(rules, "\n") + "\n")
+	}
+	return rendered, nil
 }
 
 // retagStubs is a page at every address the gallery's Portuguese had
@@ -168,6 +201,10 @@ func retagStubs(rendered map[string][]byte, mount string) map[string][]byte {
 	}
 	return out
 }
+
+// redirectsName is the rules file's name: the one CARLOS's edge, Netlify
+// and Cloudflare Pages all read at the root of a site.
+const redirectsName = "_redirects"
 
 // stampName is the file dsgen leaves in a directory to say the
 // directory is its own. Dotted so it stays out of the way of whatever
@@ -231,11 +268,15 @@ func usage() {
 		`dsgen writes the Rastrillo components gallery to a directory.
 
 Usage:
-	dsgen -out DIR [-mount PATH]
+	dsgen -out DIR [-mount PATH] [-redirect-from PATH]
 
 Every URL in the output is an absolute path under -mount, so generate
 with the path the site will serve the files from. The default is the
 path rastrillo.org uses.
+
+With -redirect-from, DIR also gets a _redirects file that sends every
+address the gallery had under that path on to where it is now. Publish
+it at the site's root.
 
 Flags:
 `)

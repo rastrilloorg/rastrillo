@@ -478,7 +478,7 @@ var (
 
 // chromeLinks finds the URLs the renderer itself emits into a page's
 // chrome: the stylesheets, the scripts and the shell iframes. Every one
-// of them has to be an absolute path under /design-system/, because the
+// of them has to be an absolute path under the mount, because the
 // static edge serves this tree's directory indexes at their slash-less
 // URL without redirecting and a relative path resolves against the
 // wrong base there.
@@ -499,7 +499,7 @@ var chromeLinks = []struct {
 // must resolve, while the hrefs inside the samples are content —
 // /orders/AB3PX and friends, sample data pointing at routes no static
 // site serves. The rule that separates them without marking up either
-// is the mount prefix: an href under /design-system/ is a link into
+// is the mount prefix: an href under /components/ is a link into
 // this tree and must hit a file, and an href that is not is a sample.
 var anchorHref = regexp.MustCompile(`<a[^>]*\shref="([^"]*)"`)
 
@@ -850,7 +850,7 @@ func resolves(files map[string][]byte, href string) bool {
 
 // Every page is a whole document in the right language, with no
 // unresolved catalog key; every asset it loads and every link it makes
-// into this tree is an absolute path under /design-system/ that names a
+// into this tree is an absolute path under /components/ that names a
 // file the tree contains.
 //
 // The absolute half of that is the fix for the live bug: rastrillo.org

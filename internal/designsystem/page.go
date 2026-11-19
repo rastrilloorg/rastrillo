@@ -18,8 +18,8 @@ import (
 // ── The page model ───────────────────────────────────────────────────
 //
 // Every URL on a page is an absolute path under mount: an asset is
-// /design-system/tokens.<hash>.css (hashed.go), a shell demo is
-// /design-system/day/en/shells/topbar.html, wherever the page holding
+// /components/tokens.<hash>.css (hashed.go), a shell demo is
+// /components/day/en/shells/topbar.html, wherever the page holding
 // the link sits in the tree. There used to be a pair of "../../" depth
 // prefixes here instead; designsystem.go's mount comment has the
 // edge behaviour that made them wrong.

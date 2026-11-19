@@ -1,5 +1,5 @@
 // Package designsystem renders Rastrillo components, the gallery at
-// rastrillo.org/design-system: one static page per theme × locale
+// rastrillo.org/components: one static page per theme × locale
 // showing every partial and icon the framework ships, plus a full-page
 // demo of each of the five shells and one of the modal route. The
 // tokens, the markup with no Go call and each stylesheet and script are
@@ -91,14 +91,17 @@ func GalleryCSS() []byte { return append([]byte(nil), galleryCSS...) }
 //
 // Absolute rather than relative because the CARLOS static edge serves a
 // directory index at its slash-less URL as a 200 with no redirect:
-// /design-system and /design-system/ both return the same document, but
+// /components and /components/ both return the same document, but
 // a relative href in it resolves against a different base on each, so
 // the slash-less visit loaded no stylesheet and every link pointed one
 // directory too high. That was the live bug. The cost is that a rendered
 // tree only works at the mount path it was rendered for, which is why
 // the mount is an argument rather than a constant: the site that
 // publishes the tree says where it is publishing it.
-const DefaultMount = "/design-system"
+//
+// rastrillo.org published the tree at /design-system until the gallery
+// became Rastrillo components; Redirects sends those addresses here.
+const DefaultMount = "/components"
 
 // Render builds the whole gallery tree in memory: path relative to
 // the tree root → file content.
@@ -233,15 +236,19 @@ func Render(mount string) (map[string][]byte, error) {
 // collide with whatever the site already keeps there.
 //
 // It exists because dsgen is published surface and the mount reaches it
-// from a command line: a caller who passes "design-system/" or
-// "/design-system/" gets the tree they meant rather than 189 pages of
-// broken links.
+// from a command line: a caller who passes "components/" or
+// "/components/" gets the tree they meant rather than 189 pages of
+// broken links. It refuses a mount Redirects could not write a rule
+// for (refuseRuleSyntax).
 func CleanMount(mount string) (string, error) {
 	if mount == "" {
 		return "", fmt.Errorf("designsystem: empty mount path (want something like %q)", DefaultMount)
 	}
 	if !strings.HasPrefix(mount, "/") {
 		mount = "/" + mount
+	}
+	if err := refuseRuleSyntax(mount); err != nil {
+		return "", err
 	}
 	// path.Clean on a rooted path never leaves a "..": a climb past the
 	// root collapses to "/", which the next line refuses. So there is no

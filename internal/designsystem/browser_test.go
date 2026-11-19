@@ -734,7 +734,8 @@ func TestPreviewWidgetDrivesTheWholeJourney(t *testing.T) {
 		    if (!d) continue;
 		    for (const a of d.querySelectorAll("a[href]")) {
 		      const href = a.getAttribute("href");
-		      if (href !== "#" && !href.startsWith("#") && !href.startsWith("/design-system/")) bad++;
+		      if (href !== "#" && !href.startsWith("#") &&
+		          !href.startsWith("`+mountPath+`/")) bad++;
 		    }
 		  }
 		  return bad;

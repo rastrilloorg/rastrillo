@@ -7123,7 +7123,6 @@ columns internal/designsystem/browser_test.go 3968032f9283 1
 columns internal/designsystem/browser_test.go 3a1fce36c207 1
 columns internal/designsystem/browser_test.go 3f69a7255433 1
 columns internal/designsystem/browser_test.go 41d7ac99da99 1
-columns internal/designsystem/browser_test.go 42b0d46c6ad2 1
 columns internal/designsystem/browser_test.go 45e3a9423e38 1
 columns internal/designsystem/browser_test.go 4728e58357b7 1
 columns internal/designsystem/browser_test.go 4794824a4867 1
