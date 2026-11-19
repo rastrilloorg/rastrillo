@@ -1,6 +1,6 @@
 //go:build browser
 
-// Package galleryrig is the design-system gallery's shared drive
+// Package galleryrig is the Rastrillo components gallery's shared drive
 // equipment: the rendered tree served at its mount, frames waited on
 // until each shows its own document, and the other conditions that
 // internal/designsystem's browser tests and its sweep package both
@@ -404,11 +404,10 @@ type HeightRow struct {
 
 // owed says why each page that is not a family page owes its sections.
 var owed = map[string]string{
-	"overview":   "the demo application is framed here",
-	"primitives": "every sample ui.Styleguide() ships has a section here",
-	"shells":     "every shell ui.LayoutNames() reports has a section here",
-	"screens":    "every screen screenDocs() ships has a section here",
-	"formats":    "every section formatDocs() ships has a sample here",
+	"overview": "the demo application is framed here",
+	"shells":   "every shell ui.LayoutNames() reports has a section here",
+	"screens":  "every screen screenDocs() ships has a section here",
+	"formats":  "every section formatDocs() ships has a sample here",
 }
 
 // HeightRows is the height drives' coverage table: each page kind in
@@ -433,7 +432,6 @@ func HeightRows(kinds []string, counts map[string]int) []HeightRow {
 // why, so a page kind that grows frames cannot go unmeasured: a kind in
 // neither table fails both height drives.
 var FramesNothing = map[string]string{
-	"tokens":          "a swatch grid and two scale tables; no preview frames",
 	"icons":           "inline SVG drawn directly on the page, not framed",
-	"getting-started": "prose, links and two source blocks",
+	"getting-started": "prose, a link to Fiesta and two source blocks",
 }

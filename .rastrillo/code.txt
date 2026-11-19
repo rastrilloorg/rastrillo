@@ -3268,7 +3268,6 @@ names clientip/clientip_test.go TestFromTrustsOnlyTheTrailingHops/r 1
 columns cmd/dsgen/main.go 0a39221365f1 1
 columns cmd/dsgen/main.go 0bc299680c4d 1
 columns cmd/dsgen/main.go 21fdc21b70bd 1
-columns cmd/dsgen/main.go 37918b4e7efd 1
 columns cmd/dsgen/main.go 5794d4dd749b 1
 columns cmd/dsgen/main.go 5ad0996e1391 1
 columns cmd/dsgen/main.go 7725275996be 1
@@ -6889,7 +6888,6 @@ columns internal/designsystem/a11y_test.go 24f08c5b94a8 1
 columns internal/designsystem/a11y_test.go 26864c7e6f36 1
 columns internal/designsystem/a11y_test.go 272c6fcebd80 1
 columns internal/designsystem/a11y_test.go 27dfdbac5f55 1
-columns internal/designsystem/a11y_test.go 28ef212b09bc 1
 columns internal/designsystem/a11y_test.go 293233efe125 1 rewritten by the chromedp v0.21 port, no wider than the recorded line it replaced
 columns internal/designsystem/a11y_test.go 2c0c33e7cbb3 1
 columns internal/designsystem/a11y_test.go 2d285e8a0c95 1
@@ -6908,7 +6906,6 @@ columns internal/designsystem/a11y_test.go 3e4d3a796541 1 rewritten by the chrom
 columns internal/designsystem/a11y_test.go 3f8bde5dc80e 1
 columns internal/designsystem/a11y_test.go 4020f622210c 1
 columns internal/designsystem/a11y_test.go 433c5a943ec4 1
-columns internal/designsystem/a11y_test.go 4434570ea674 1
 columns internal/designsystem/a11y_test.go 448844374ba6 1
 columns internal/designsystem/a11y_test.go 451d5ff66e86 1
 columns internal/designsystem/a11y_test.go 4824752e4b84 1
@@ -6923,11 +6920,9 @@ columns internal/designsystem/a11y_test.go 528cb8037a0b 1
 columns internal/designsystem/a11y_test.go 54945f51bfd7 1
 columns internal/designsystem/a11y_test.go 55bdbc10e1aa 1
 columns internal/designsystem/a11y_test.go 56aec43047c6 1
-columns internal/designsystem/a11y_test.go 601c80132590 1
 columns internal/designsystem/a11y_test.go 63676ea6a55f 1
 columns internal/designsystem/a11y_test.go 643a6eee207d 1
 columns internal/designsystem/a11y_test.go 6459617431de 1
-columns internal/designsystem/a11y_test.go 6720b09a0dbf 1
 columns internal/designsystem/a11y_test.go 679699b63d18 1
 columns internal/designsystem/a11y_test.go 68d21e04fee0 1
 columns internal/designsystem/a11y_test.go 68ef211aa4d0 1
@@ -6946,7 +6941,6 @@ columns internal/designsystem/a11y_test.go 7f6a09750c59 1
 columns internal/designsystem/a11y_test.go 8046d8968a72 1
 columns internal/designsystem/a11y_test.go 84061370b74e 1
 columns internal/designsystem/a11y_test.go 870c8c425756 1
-columns internal/designsystem/a11y_test.go 88c135069306 1
 columns internal/designsystem/a11y_test.go 8998aca6c1ce 1
 columns internal/designsystem/a11y_test.go 89e8d7886e05 1
 columns internal/designsystem/a11y_test.go 8ce8d3981a9c 1
@@ -6965,13 +6959,11 @@ columns internal/designsystem/a11y_test.go 9cd17901b067 1
 columns internal/designsystem/a11y_test.go 9f6d92374958 1
 columns internal/designsystem/a11y_test.go a00370b3366c 1
 columns internal/designsystem/a11y_test.go a273ae51af23 1
-columns internal/designsystem/a11y_test.go a5ee70bc6c5f 1
 columns internal/designsystem/a11y_test.go a69a9ba7b5dc 1
 columns internal/designsystem/a11y_test.go a7234cd8f697 1
 columns internal/designsystem/a11y_test.go a80135a74efc 1 rewritten by the chromedp v0.21 port, no wider than the recorded line it replaced
 columns internal/designsystem/a11y_test.go a8def32a5a47 1
 columns internal/designsystem/a11y_test.go ab0c625ce38e 1
-columns internal/designsystem/a11y_test.go aca2cf4c3938 1
 columns internal/designsystem/a11y_test.go ad6ccec727a4 1
 columns internal/designsystem/a11y_test.go ad780b9bc17f 1
 columns internal/designsystem/a11y_test.go ae0d2e261720 1
@@ -7009,7 +7001,6 @@ columns internal/designsystem/a11y_test.go cd517309a9f3 1
 columns internal/designsystem/a11y_test.go cdfc0eef59f3 1
 columns internal/designsystem/a11y_test.go ce05124658a5 1
 columns internal/designsystem/a11y_test.go cfe13247ec5e 1
-columns internal/designsystem/a11y_test.go d2b290429378 1
 columns internal/designsystem/a11y_test.go db2eb5506f1b 1
 columns internal/designsystem/a11y_test.go dcc7dd1dd97d 1
 columns internal/designsystem/a11y_test.go debdd5bdc209 1
@@ -7023,7 +7014,6 @@ columns internal/designsystem/a11y_test.go eb054d98dd38 1
 columns internal/designsystem/a11y_test.go eb45e0d572e7 1
 columns internal/designsystem/a11y_test.go ec108c978b33 1
 columns internal/designsystem/a11y_test.go ed6a78d6e444 1
-columns internal/designsystem/a11y_test.go f432c302cc2c 1
 columns internal/designsystem/a11y_test.go f4484fff7922 1
 columns internal/designsystem/a11y_test.go f547e9e33857 1
 columns internal/designsystem/a11y_test.go f58c6553661f 1
@@ -7052,7 +7042,7 @@ names internal/designsystem/a11y_test.go TestA11yWalksTheStageShell/s 1
 names internal/designsystem/a11y_test.go axeSource/b 1
 names internal/designsystem/a11y_test.go mustJSON/b 1
 names internal/designsystem/a11y_test.go mustJSON/s 1
-names internal/designsystem/a11y_test.go pickPreviewFrames/f 3
+names internal/designsystem/a11y_test.go pickPreviewFrames/f 2
 names internal/designsystem/a11y_test.go report/b 1
 names internal/designsystem/a11y_test.go report/i 1
 names internal/designsystem/a11y_test.go report/n 1
@@ -7104,7 +7094,6 @@ columns internal/designsystem/browser_test.go 078c0169b616 1
 columns internal/designsystem/browser_test.go 08e14ce98800 1
 columns internal/designsystem/browser_test.go 0cb80fa4b365 1
 columns internal/designsystem/browser_test.go 0cd89743c733 1 rewritten by the chromedp v0.21 port, no wider than the recorded line it replaced
-columns internal/designsystem/browser_test.go 0d9c662f1b32 1
 columns internal/designsystem/browser_test.go 0edf8e07d19c 1
 columns internal/designsystem/browser_test.go 10d44f519eb1 1
 columns internal/designsystem/browser_test.go 110ef71e3420 1
@@ -7134,7 +7123,6 @@ columns internal/designsystem/browser_test.go 3968032f9283 1
 columns internal/designsystem/browser_test.go 3a1fce36c207 1
 columns internal/designsystem/browser_test.go 3f69a7255433 1
 columns internal/designsystem/browser_test.go 41d7ac99da99 1
-columns internal/designsystem/browser_test.go 42b0d46c6ad2 1
 columns internal/designsystem/browser_test.go 45e3a9423e38 1
 columns internal/designsystem/browser_test.go 4728e58357b7 1
 columns internal/designsystem/browser_test.go 4794824a4867 1
@@ -7205,7 +7193,6 @@ columns internal/designsystem/browser_test.go a8fc3327715f 1
 columns internal/designsystem/browser_test.go a8fe5405cf56 1
 columns internal/designsystem/browser_test.go ab72a12bac01 1
 columns internal/designsystem/browser_test.go aedcb2f7eaf8 1
-columns internal/designsystem/browser_test.go b05f9f1e65c7 1
 columns internal/designsystem/browser_test.go b0f409184f04 1
 columns internal/designsystem/browser_test.go b25d87604486 1
 columns internal/designsystem/browser_test.go b44f46ff49d4 1
@@ -7248,7 +7235,6 @@ columns internal/designsystem/browser_test.go dc7528ab4284 1
 columns internal/designsystem/browser_test.go de7970d06cf6 1
 columns internal/designsystem/browser_test.go e198095524e2 1
 columns internal/designsystem/browser_test.go e1a9adeb531c 1
-columns internal/designsystem/browser_test.go e31e0affeb60 1
 columns internal/designsystem/browser_test.go e3c3a4ead70a 1
 columns internal/designsystem/browser_test.go e3de50403a48 1
 columns internal/designsystem/browser_test.go e41ddff0c99f 1
@@ -7343,7 +7329,6 @@ columns internal/designsystem/chrometarget_browser_test.go 83091ac64a39 1
 columns internal/designsystem/chrometarget_browser_test.go 833c77c68b95 1
 columns internal/designsystem/chrometarget_browser_test.go 8f7679fda73e 1
 columns internal/designsystem/chrometarget_browser_test.go 9809e19fc570 1
-columns internal/designsystem/chrometarget_browser_test.go a2d00a9a47f4 1
 columns internal/designsystem/chrometarget_browser_test.go d73663f1d1bb 1
 columns internal/designsystem/chrometarget_browser_test.go fd64740d1336 1
 columns internal/designsystem/chrometarget_browser_test.go fef4f0c94587 1
@@ -7354,13 +7339,11 @@ columns internal/designsystem/code_browser_test.go 040872092a1c 1
 columns internal/designsystem/code_browser_test.go 083ac46b25c6 1
 columns internal/designsystem/code_browser_test.go 1ffe19340170 1
 columns internal/designsystem/code_browser_test.go 299d09b79879 1
-columns internal/designsystem/code_browser_test.go 2c6a552e3889 1
 columns internal/designsystem/code_browser_test.go 2df0662f4702 1
 columns internal/designsystem/code_browser_test.go 2ffbb7ba92fb 1
 columns internal/designsystem/code_browser_test.go 37730c45bf7e 1
 columns internal/designsystem/code_browser_test.go 394d63fa9939 1
 columns internal/designsystem/code_browser_test.go 3a920329f331 1
-columns internal/designsystem/code_browser_test.go 44ebcef1b2d6 1
 columns internal/designsystem/code_browser_test.go 4f2df2fde265 1
 columns internal/designsystem/code_browser_test.go 568bc825c416 1
 columns internal/designsystem/code_browser_test.go 6239f030a4df 1
@@ -7393,37 +7376,22 @@ columns internal/designsystem/code_browser_test.go ff5a30b09978 1
 names internal/designsystem/code_browser_test.go TestA11yScansTheCodePanels/c 1
 names internal/designsystem/code_browser_test.go TestA11yScansTheCodePanels/w 1
 names internal/designsystem/code_browser_test.go assertNames/n 1
-columns internal/designsystem/designsystem.go 01cb8a9b0677 1
 columns internal/designsystem/designsystem.go 0989b18c0446 1
 columns internal/designsystem/designsystem.go 0c65c34c9189 1
 columns internal/designsystem/designsystem.go 0e4bbaf95fa2 1
-columns internal/designsystem/designsystem.go 2879ea7751c8 1
 columns internal/designsystem/designsystem.go 357b8612b707 1
 columns internal/designsystem/designsystem.go 6cc5a87c1963 1
-columns internal/designsystem/designsystem.go 707889c173e0 1
 columns internal/designsystem/designsystem.go 7645c75220f0 1
 columns internal/designsystem/designsystem.go 9177233023c6 1
 columns internal/designsystem/designsystem.go 99314bce34f9 1
 columns internal/designsystem/designsystem.go bc96bdc26d57 1
 columns internal/designsystem/designsystem.go beb3e1826879 1
-columns internal/designsystem/designsystem.go e59e3be9eee9 1
-columns internal/designsystem/designsystem.go ed06d261d4eb 1
-file internal/designsystem/designsystem.go - 706
 func internal/designsystem/designsystem.go Render 79
-func internal/designsystem/designsystem.go colourGroups 47
-names internal/designsystem/designsystem.go blockBody/i 1
-names internal/designsystem/designsystem.go blockBody/j 1
-names internal/designsystem/designsystem.go colourGroups/g 1
 names internal/designsystem/designsystem.go interpolate/b 1
 names internal/designsystem/designsystem.go interpolate/i 1
 names internal/designsystem/designsystem.go interpolate/s 1
 names internal/designsystem/designsystem.go interpolate/v 1
-names internal/designsystem/designsystem.go lightHalf/i 1
-names internal/designsystem/designsystem.go lightHalf/v 1
-names internal/designsystem/designsystem.go parseTokens/m 1
-names internal/designsystem/designsystem.go parseTokens/v 1
 names internal/designsystem/designsystem.go partialNames/t 1
-names internal/designsystem/designsystem.go structuralGroups/r 1
 names internal/designsystem/designsystem.go translator/s 1
 columns internal/designsystem/designsystem_test.go 000f7ec71af5 1
 columns internal/designsystem/designsystem_test.go 001f8fb3a972 1
@@ -7440,11 +7408,9 @@ columns internal/designsystem/designsystem_test.go 04cb5c23983f 1
 columns internal/designsystem/designsystem_test.go 056aa540f8c5 1
 columns internal/designsystem/designsystem_test.go 057aa4f912db 1
 columns internal/designsystem/designsystem_test.go 05ac8ddfe470 1
-columns internal/designsystem/designsystem_test.go 05c135fba744 1
 columns internal/designsystem/designsystem_test.go 069a957e7bad 1
 columns internal/designsystem/designsystem_test.go 07152cffe100 1
 columns internal/designsystem/designsystem_test.go 0716e1b4019a 1
-columns internal/designsystem/designsystem_test.go 0767bf37896d 1
 columns internal/designsystem/designsystem_test.go 07e186b3948e 1
 columns internal/designsystem/designsystem_test.go 0a742bc768a3 1
 columns internal/designsystem/designsystem_test.go 0a96950bdbb4 1
@@ -7457,7 +7423,6 @@ columns internal/designsystem/designsystem_test.go 0e39e593f8cf 1
 columns internal/designsystem/designsystem_test.go 0eede775d71c 1
 columns internal/designsystem/designsystem_test.go 0fce2e38dfd4 1
 columns internal/designsystem/designsystem_test.go 10079406a560 1
-columns internal/designsystem/designsystem_test.go 119d2ac6d899 1
 columns internal/designsystem/designsystem_test.go 1219e5981ee7 1
 columns internal/designsystem/designsystem_test.go 13082d1e58c3 1
 columns internal/designsystem/designsystem_test.go 1388ac683e7e 1
@@ -7469,14 +7434,11 @@ columns internal/designsystem/designsystem_test.go 1878c676eca3 1
 columns internal/designsystem/designsystem_test.go 18915bdd3fee 1
 columns internal/designsystem/designsystem_test.go 18f0050c5926 1
 columns internal/designsystem/designsystem_test.go 18fddc2639f2 1
-columns internal/designsystem/designsystem_test.go 19e8f582088e 1
 columns internal/designsystem/designsystem_test.go 1a0108ebdaae 1
-columns internal/designsystem/designsystem_test.go 1a222fb44246 1
 columns internal/designsystem/designsystem_test.go 1a6e0fd28f29 1
 columns internal/designsystem/designsystem_test.go 1ad87c7ac524 1
 columns internal/designsystem/designsystem_test.go 1b01749335c2 1
 columns internal/designsystem/designsystem_test.go 1c835ca902ff 1
-columns internal/designsystem/designsystem_test.go 1de5c73fe936 1
 columns internal/designsystem/designsystem_test.go 1e4c2439f134 1
 columns internal/designsystem/designsystem_test.go 1ea16942a1e8 1
 columns internal/designsystem/designsystem_test.go 1ee8fb9c45bc 1
@@ -7504,13 +7466,11 @@ columns internal/designsystem/designsystem_test.go 28c3e9438a80 1
 columns internal/designsystem/designsystem_test.go 290c20b193fb 1
 columns internal/designsystem/designsystem_test.go 29421c8d99b5 1
 columns internal/designsystem/designsystem_test.go 294addaacc61 1
-columns internal/designsystem/designsystem_test.go 294c1b02f8f7 1
 columns internal/designsystem/designsystem_test.go 29a73c0ce5c7 1
 columns internal/designsystem/designsystem_test.go 2a5e8da8966c 1
 columns internal/designsystem/designsystem_test.go 2b0689278c55 1
 columns internal/designsystem/designsystem_test.go 2b34043451c6 1
 columns internal/designsystem/designsystem_test.go 2cad67ce306c 1
-columns internal/designsystem/designsystem_test.go 2ce73de2735b 1
 columns internal/designsystem/designsystem_test.go 2d42c83a98fc 1
 columns internal/designsystem/designsystem_test.go 2dcbd47b5041 1
 columns internal/designsystem/designsystem_test.go 2f140602f82f 1
@@ -7542,7 +7502,6 @@ columns internal/designsystem/designsystem_test.go 3feb86c3d25b 1
 columns internal/designsystem/designsystem_test.go 408e4b218b97 1
 columns internal/designsystem/designsystem_test.go 408f86c62d57 1
 columns internal/designsystem/designsystem_test.go 427d8ed1b68a 1
-columns internal/designsystem/designsystem_test.go 438db574ea1f 1
 columns internal/designsystem/designsystem_test.go 43a3baf45389 1
 columns internal/designsystem/designsystem_test.go 443fb57d17a0 1
 columns internal/designsystem/designsystem_test.go 45504d30dac6 1
@@ -7551,7 +7510,6 @@ columns internal/designsystem/designsystem_test.go 4814de16838a 1
 columns internal/designsystem/designsystem_test.go 48560d168f09 1
 columns internal/designsystem/designsystem_test.go 488dc767956e 1
 columns internal/designsystem/designsystem_test.go 48d5dbfe182e 1
-columns internal/designsystem/designsystem_test.go 4986bcce9faa 1
 columns internal/designsystem/designsystem_test.go 4bc8c68f7fc0 1
 columns internal/designsystem/designsystem_test.go 4e918c3cfb99 1
 columns internal/designsystem/designsystem_test.go 4ec1c2e3cd7e 1
@@ -7564,14 +7522,11 @@ columns internal/designsystem/designsystem_test.go 522b419c3b21 1
 columns internal/designsystem/designsystem_test.go 5352d3d464cf 1
 columns internal/designsystem/designsystem_test.go 5417a922e8f1 1
 columns internal/designsystem/designsystem_test.go 541d1a924b92 1
-columns internal/designsystem/designsystem_test.go 54677cee2941 1
 columns internal/designsystem/designsystem_test.go 54f0061ff25d 1
 columns internal/designsystem/designsystem_test.go 55baca23b4fb 1
 columns internal/designsystem/designsystem_test.go 56114aee7790 1
 columns internal/designsystem/designsystem_test.go 56870fb5feff 1
-columns internal/designsystem/designsystem_test.go 593bb6a69f0a 1
 columns internal/designsystem/designsystem_test.go 5a27f4b496f7 1
-columns internal/designsystem/designsystem_test.go 5a8985742338 1
 columns internal/designsystem/designsystem_test.go 5ab968dbe0b8 1
 columns internal/designsystem/designsystem_test.go 5b389e4c2d20 1
 columns internal/designsystem/designsystem_test.go 5c5f5fbc577f 1
@@ -7602,7 +7557,6 @@ columns internal/designsystem/designsystem_test.go 6b78696f6478 1
 columns internal/designsystem/designsystem_test.go 6bd5d6cdbf69 1
 columns internal/designsystem/designsystem_test.go 6bede9483f10 1
 columns internal/designsystem/designsystem_test.go 6bf5107827d9 1
-columns internal/designsystem/designsystem_test.go 6c0772c1ea2d 1
 columns internal/designsystem/designsystem_test.go 6c1006661643 1
 columns internal/designsystem/designsystem_test.go 6d653681c23d 1
 columns internal/designsystem/designsystem_test.go 6d910e6e8af2 1
@@ -7628,17 +7582,14 @@ columns internal/designsystem/designsystem_test.go 7686a066383d 1
 columns internal/designsystem/designsystem_test.go 7775f1001a42 1
 columns internal/designsystem/designsystem_test.go 77d48ee3fef6 1
 columns internal/designsystem/designsystem_test.go 78083bd54906 1
-columns internal/designsystem/designsystem_test.go 7842c150dd81 1
 columns internal/designsystem/designsystem_test.go 78430a3b1730 1
 columns internal/designsystem/designsystem_test.go 788bbf68f58c 1
-columns internal/designsystem/designsystem_test.go 78ceb713c5f5 1
 columns internal/designsystem/designsystem_test.go 7a1994a625e6 1
 columns internal/designsystem/designsystem_test.go 7a375cad181d 1
 columns internal/designsystem/designsystem_test.go 7a5d6473584f 1
 columns internal/designsystem/designsystem_test.go 7aa42cca192d 1
 columns internal/designsystem/designsystem_test.go 7ac392ca9af7 1
 columns internal/designsystem/designsystem_test.go 7bbec06be454 1
-columns internal/designsystem/designsystem_test.go 7c03b50b79a0 1
 columns internal/designsystem/designsystem_test.go 7c97d4298baa 1
 columns internal/designsystem/designsystem_test.go 7ce27f8b7a1c 1
 columns internal/designsystem/designsystem_test.go 7d25d79fd3c8 1
@@ -7646,7 +7597,6 @@ columns internal/designsystem/designsystem_test.go 7da9165cb8de 1
 columns internal/designsystem/designsystem_test.go 7e06c26170dc 1
 columns internal/designsystem/designsystem_test.go 7e8784efa605 1
 columns internal/designsystem/designsystem_test.go 7eca3096ec18 1
-columns internal/designsystem/designsystem_test.go 7ecb101465f0 1
 columns internal/designsystem/designsystem_test.go 7f104a6d9406 1
 columns internal/designsystem/designsystem_test.go 7f211dde46eb 1
 columns internal/designsystem/designsystem_test.go 7f233e30286a 1
@@ -7657,11 +7607,9 @@ columns internal/designsystem/designsystem_test.go 8349fec727a5 1
 columns internal/designsystem/designsystem_test.go 83862a922a2f 1
 columns internal/designsystem/designsystem_test.go 838aa02d284e 1
 columns internal/designsystem/designsystem_test.go 83bb45fea8bb 1
-columns internal/designsystem/designsystem_test.go 83c8c1d6dcde 1
 columns internal/designsystem/designsystem_test.go 8428cfadebfb 1
 columns internal/designsystem/designsystem_test.go 8433058efde4 1
 columns internal/designsystem/designsystem_test.go 858f94194811 1
-columns internal/designsystem/designsystem_test.go 85d35a3a7d26 1
 columns internal/designsystem/designsystem_test.go 862a0d2ad8d2 1
 columns internal/designsystem/designsystem_test.go 866fe078a618 1
 columns internal/designsystem/designsystem_test.go 870dc48ffa56 1
@@ -7683,14 +7631,10 @@ columns internal/designsystem/designsystem_test.go 8d70dffbdf25 1
 columns internal/designsystem/designsystem_test.go 8d84534818e2 1
 columns internal/designsystem/designsystem_test.go 8e1ed111ea5b 1
 columns internal/designsystem/designsystem_test.go 905825e96a0e 1
-columns internal/designsystem/designsystem_test.go 90a483c8ccc5 1
 columns internal/designsystem/designsystem_test.go 90ac460df22c 1
 columns internal/designsystem/designsystem_test.go 90e5d5b5eae8 1
 columns internal/designsystem/designsystem_test.go 911289173cc5 1
-columns internal/designsystem/designsystem_test.go 9117bfe407af 1
-columns internal/designsystem/designsystem_test.go 912d3657e499 1
 columns internal/designsystem/designsystem_test.go 91b48ff19db1 1
-columns internal/designsystem/designsystem_test.go 91e073a04c6e 1
 columns internal/designsystem/designsystem_test.go 94321b9824f5 1
 columns internal/designsystem/designsystem_test.go 94f1a88af290 1
 columns internal/designsystem/designsystem_test.go 94ff83f9e2be 1
@@ -7712,18 +7656,14 @@ columns internal/designsystem/designsystem_test.go 9efa258cc6ac 1
 columns internal/designsystem/designsystem_test.go 9f69059b6022 1
 columns internal/designsystem/designsystem_test.go 9fbfe16d36b2 1
 columns internal/designsystem/designsystem_test.go a00b90e829d1 1
-columns internal/designsystem/designsystem_test.go a07e8beacdd6 1
 columns internal/designsystem/designsystem_test.go a0f94a4b0fba 1
-columns internal/designsystem/designsystem_test.go a10cac9b1ba9 1
 columns internal/designsystem/designsystem_test.go a16e9c8805b9 1
-columns internal/designsystem/designsystem_test.go a18d584ab3ea 1
 columns internal/designsystem/designsystem_test.go a3d14909da98 1
 columns internal/designsystem/designsystem_test.go a3df1b1cf4c6 1
 columns internal/designsystem/designsystem_test.go a43176b2e03f 1
 columns internal/designsystem/designsystem_test.go a43fa3f274e5 1
 columns internal/designsystem/designsystem_test.go a55b9cbc59a6 1
 columns internal/designsystem/designsystem_test.go a5d796129ec8 1
-columns internal/designsystem/designsystem_test.go a734e57a87d6 1
 columns internal/designsystem/designsystem_test.go a795754b254f 1
 columns internal/designsystem/designsystem_test.go a79e6dd7acec 1
 columns internal/designsystem/designsystem_test.go a7abd6dd13a4 1
@@ -7735,16 +7675,13 @@ columns internal/designsystem/designsystem_test.go aaeb02399f5b 1
 columns internal/designsystem/designsystem_test.go abb42d17897a 1
 columns internal/designsystem/designsystem_test.go abfafc2d9de9 1
 columns internal/designsystem/designsystem_test.go ac0eb78e427e 1
-columns internal/designsystem/designsystem_test.go ac7fc4c2cb1b 1
 columns internal/designsystem/designsystem_test.go acda356c3719 1
 columns internal/designsystem/designsystem_test.go acdd19463d67 1
 columns internal/designsystem/designsystem_test.go ae7312be6f40 1
 columns internal/designsystem/designsystem_test.go af6cff13d536 1
-columns internal/designsystem/designsystem_test.go afbb89370e26 1
 columns internal/designsystem/designsystem_test.go b217a4e8187d 1
 columns internal/designsystem/designsystem_test.go b24f1bcdc9cd 1
 columns internal/designsystem/designsystem_test.go b25739762b54 1
-columns internal/designsystem/designsystem_test.go b32169a8eee5 1
 columns internal/designsystem/designsystem_test.go b3b34d80b9ac 1
 columns internal/designsystem/designsystem_test.go b4f9244aafbe 1
 columns internal/designsystem/designsystem_test.go b5ae64a24384 1
@@ -7763,13 +7700,10 @@ columns internal/designsystem/designsystem_test.go bbb37c7920fa 1
 columns internal/designsystem/designsystem_test.go bbec2a3ab228 1
 columns internal/designsystem/designsystem_test.go bc25fa6f79d5 1
 columns internal/designsystem/designsystem_test.go bc4bb39ce240 1
-columns internal/designsystem/designsystem_test.go bc867ab624be 1
 columns internal/designsystem/designsystem_test.go bd4e4a821d0a 1
-columns internal/designsystem/designsystem_test.go bd7c2ec612fb 1
 columns internal/designsystem/designsystem_test.go be2c6d7354c3 1
 columns internal/designsystem/designsystem_test.go be46ea7372b3 1
 columns internal/designsystem/designsystem_test.go be6b8379ac4d 1
-columns internal/designsystem/designsystem_test.go becc785f2532 1
 columns internal/designsystem/designsystem_test.go beefe66f9212 1
 columns internal/designsystem/designsystem_test.go bf3a9b9a095a 1
 columns internal/designsystem/designsystem_test.go bf64ca77efa1 1
@@ -7789,17 +7723,14 @@ columns internal/designsystem/designsystem_test.go ca26014190f6 1
 columns internal/designsystem/designsystem_test.go cbbe49f4b5be 1
 columns internal/designsystem/designsystem_test.go cc78ddcae0b5 1
 columns internal/designsystem/designsystem_test.go cd347b9cc394 1
-columns internal/designsystem/designsystem_test.go cd7a1d653105 1
 columns internal/designsystem/designsystem_test.go cdc3c9861a18 1
 columns internal/designsystem/designsystem_test.go ce8f6c8ca22d 1
-columns internal/designsystem/designsystem_test.go cf9a477fa76b 1
 columns internal/designsystem/designsystem_test.go cff49a051407 1
 columns internal/designsystem/designsystem_test.go d03eb36ba05f 1
 columns internal/designsystem/designsystem_test.go d12a99d6b260 1
 columns internal/designsystem/designsystem_test.go d196c64401a7 1
 columns internal/designsystem/designsystem_test.go d1c4de812c76 1
 columns internal/designsystem/designsystem_test.go d244afc8e9ea 1
-columns internal/designsystem/designsystem_test.go d2e8bffe1c08 1
 columns internal/designsystem/designsystem_test.go d323d87135f1 1
 columns internal/designsystem/designsystem_test.go d3f10d9a76af 1
 columns internal/designsystem/designsystem_test.go d46ea2cd6cfd 1
@@ -7810,8 +7741,6 @@ columns internal/designsystem/designsystem_test.go d62617f5aa75 1
 columns internal/designsystem/designsystem_test.go d66c752f0da6 1
 columns internal/designsystem/designsystem_test.go d73e69d1a813 1
 columns internal/designsystem/designsystem_test.go d7605ad43826 1
-columns internal/designsystem/designsystem_test.go d77fa102811e 1
-columns internal/designsystem/designsystem_test.go d7f53cb1044b 1
 columns internal/designsystem/designsystem_test.go d8110d4ab53f 1
 columns internal/designsystem/designsystem_test.go d842dd1c9de8 1
 columns internal/designsystem/designsystem_test.go d86315407463 1
@@ -7823,7 +7752,6 @@ columns internal/designsystem/designsystem_test.go dcdacf93dc13 1
 columns internal/designsystem/designsystem_test.go dcf1582b8a76 1
 columns internal/designsystem/designsystem_test.go dcf6d2d394a8 1
 columns internal/designsystem/designsystem_test.go dd6bd612a27f 1
-columns internal/designsystem/designsystem_test.go de3c28ed2d8b 1
 columns internal/designsystem/designsystem_test.go de588c21382b 1
 columns internal/designsystem/designsystem_test.go de5ee07a915b 1
 columns internal/designsystem/designsystem_test.go df1273d4284f 1
@@ -7834,7 +7762,6 @@ columns internal/designsystem/designsystem_test.go e1447d40d060 1
 columns internal/designsystem/designsystem_test.go e37acb03a2bc 1
 columns internal/designsystem/designsystem_test.go e391b930bef1 1
 columns internal/designsystem/designsystem_test.go e431849b7390 1
-columns internal/designsystem/designsystem_test.go e63b54fbb4ab 1
 columns internal/designsystem/designsystem_test.go e6537324024d 1
 columns internal/designsystem/designsystem_test.go e6633e678310 1
 columns internal/designsystem/designsystem_test.go e71d4e90bd2f 1
@@ -7845,9 +7772,7 @@ columns internal/designsystem/designsystem_test.go ea869cfc4bcc 1
 columns internal/designsystem/designsystem_test.go eab116d97562 1
 columns internal/designsystem/designsystem_test.go eacdbe85eae3 1
 columns internal/designsystem/designsystem_test.go eb64f1bcbee1 1
-columns internal/designsystem/designsystem_test.go ec21c66ed7f0 1
 columns internal/designsystem/designsystem_test.go ec29c295a935 1
-columns internal/designsystem/designsystem_test.go ec33d30e1032 1
 columns internal/designsystem/designsystem_test.go ec3bfdcddf51 1
 columns internal/designsystem/designsystem_test.go ecbcbe3c91f9 1
 columns internal/designsystem/designsystem_test.go ed6a4189ddac 1
@@ -7860,11 +7785,8 @@ columns internal/designsystem/designsystem_test.go f03dfd4ecd55 1
 columns internal/designsystem/designsystem_test.go f0c5f865e02c 1
 columns internal/designsystem/designsystem_test.go f17398d1660b 1
 columns internal/designsystem/designsystem_test.go f1ccd9c551b3 1
-columns internal/designsystem/designsystem_test.go f213c94f009c 1
-columns internal/designsystem/designsystem_test.go f3b6ff4b8364 1
 columns internal/designsystem/designsystem_test.go f409836fbb46 1
 columns internal/designsystem/designsystem_test.go f47565e73579 1
-columns internal/designsystem/designsystem_test.go f543047cbc44 1
 columns internal/designsystem/designsystem_test.go f580c0e878a0 1
 columns internal/designsystem/designsystem_test.go f59a8190fb15 1
 columns internal/designsystem/designsystem_test.go f59ad1a3992e 1
@@ -7872,7 +7794,6 @@ columns internal/designsystem/designsystem_test.go f5cb7b66f8d4 1
 columns internal/designsystem/designsystem_test.go f7aa635aea11 1
 columns internal/designsystem/designsystem_test.go f8d19677cd44 1
 columns internal/designsystem/designsystem_test.go f9af2601b7d0 1
-columns internal/designsystem/designsystem_test.go fa350734eaf6 1
 columns internal/designsystem/designsystem_test.go fa43c3b092c9 1
 columns internal/designsystem/designsystem_test.go fb0e13e72e0a 1
 columns internal/designsystem/designsystem_test.go fc0dcaf071c0 2
@@ -7945,9 +7866,6 @@ names internal/designsystem/designsystem_test.go TestTheChromeCarriesTheThreeSwi
 names internal/designsystem/designsystem_test.go TestTheFilterBoxCarriesTheSearchIcon/m 1
 names internal/designsystem/designsystem_test.go TestTheGalleryIsTheShippedShell/m 1
 names internal/designsystem/designsystem_test.go TestTheGalleryIsTheShippedShell/n 2
-names internal/designsystem/designsystem_test.go TestTheGettingStartedPageWeighsTheRealAssets/a 1
-names internal/designsystem/designsystem_test.go TestTheGettingStartedPageWeighsTheRealAssets/n 1
-names internal/designsystem/designsystem_test.go TestTheGettingStartedPageWeighsTheRealAssets/w 3
 names internal/designsystem/designsystem_test.go TestTheHTMLTabNeverCarriesTheDemoWrapper/i 2
 names internal/designsystem/designsystem_test.go TestTheHTMLTabNeverCarriesTheDemoWrapper/n 1
 names internal/designsystem/designsystem_test.go TestTheHTMLTabNeverCarriesTheDemoWrapper/p 1
@@ -7960,13 +7878,13 @@ names internal/designsystem/designsystem_test.go TestTheRailSaysWhichPageYouAreO
 names internal/designsystem/designsystem_test.go TestTheSidebarIsTheShellTheGalleryDocuments/n 3
 names internal/designsystem/designsystem_test.go TestTheSidebarLinksEverythingOnThePageExactlyOnce/f 1
 names internal/designsystem/designsystem_test.go TestTheSidebarLinksEverythingOnThePageExactlyOnce/i 1
-names internal/designsystem/designsystem_test.go TestTheSidebarLinksEverythingOnThePageExactlyOnce/m 4
+names internal/designsystem/designsystem_test.go TestTheSidebarLinksEverythingOnThePageExactlyOnce/m 3
 names internal/designsystem/designsystem_test.go TestTheSidebarLinksEverythingOnThePageExactlyOnce/p 1
 names internal/designsystem/designsystem_test.go TestTheSigninScreensAreThePartial/f 1
 names internal/designsystem/designsystem_test.go TestTheSigninScreensAreThePartial/i 1
 names internal/designsystem/designsystem_test.go TestTheTextOnScreenIsTheTextCopied/c 1
 names internal/designsystem/designsystem_test.go TestTheTextOnScreenIsTheTextCopied/i 2
-names internal/designsystem/designsystem_test.go TestTheTextOnScreenIsTheTextCopied/s 2
+names internal/designsystem/designsystem_test.go TestTheTextOnScreenIsTheTextCopied/s 1
 names internal/designsystem/designsystem_test.go TestTheTwoCopiesOfTheControlsAgree/a 1
 names internal/designsystem/designsystem_test.go TestTheTwoCopiesOfTheControlsAgree/b 1
 names internal/designsystem/designsystem_test.go TestTheTwoCopiesOfTheControlsAgree/i 1
@@ -8127,31 +8045,30 @@ names internal/designsystem/format_browser_test.go sameReadings/s 1
 columns internal/designsystem/formats.go 023236738cb3 1
 columns internal/designsystem/formats.go 07ecc5849255 1
 columns internal/designsystem/formats.go 0ead14ac4be7 1
+columns internal/designsystem/formats.go 128d54ac328f 1 a templated format sample, its value now the ui helper call (rastrillo-components Task 3); a sample line is markup the Template tab shows as written
 columns internal/designsystem/formats.go 1391baf38a06 1
+columns internal/designsystem/formats.go 21ebc00317a2 1 a templated format sample, its value now the ui helper call (rastrillo-components Task 3); a sample line is markup the Template tab shows as written
+columns internal/designsystem/formats.go 35876e82d9b4 1 a templated format sample, its value now the ui helper call (rastrillo-components Task 3); a sample line is markup the Template tab shows as written
 columns internal/designsystem/formats.go 35e2002507ee 1
 columns internal/designsystem/formats.go 372e82ac1861 1
 columns internal/designsystem/formats.go 37e12888bda4 1
 columns internal/designsystem/formats.go 3a9688a90c45 1
-columns internal/designsystem/formats.go 522b01097f63 1
 columns internal/designsystem/formats.go 56e30245ad8f 1
-columns internal/designsystem/formats.go 62cfbe0b06c3 1
+columns internal/designsystem/formats.go 68366ddbdbff 1 a section body in the wording copy review approved, naming its ui helper (rastrillo-components Task 3); a prose key is one string the page writes whole
 columns internal/designsystem/formats.go 7a594e7c3f5f 1
-columns internal/designsystem/formats.go 88f3aedf4ca0 1
 columns internal/designsystem/formats.go 8c4a5a1703d8 1
-columns internal/designsystem/formats.go 9a4117ff9bf2 1
-columns internal/designsystem/formats.go a235ce485c59 1
-columns internal/designsystem/formats.go a4f8a462b24d 1
 columns internal/designsystem/formats.go a8e9a071c255 1
-columns internal/designsystem/formats.go abae5f158e7b 1
+columns internal/designsystem/formats.go aa504ab2ca22 1 a templated format sample, its value now the ui helper call (rastrillo-components Task 3); a sample line is markup the Template tab shows as written
 columns internal/designsystem/formats.go b51f52f9ba23 1
 columns internal/designsystem/formats.go ba7b916cfa4c 1
 columns internal/designsystem/formats.go bf0038bcca20 1
-columns internal/designsystem/formats.go c1170b5c171f 1
+columns internal/designsystem/formats.go c88671d49505 1 the Money body, unchanged but re-aligned when MarkupFor left (rastrillo-components Task 3); a prose key is one string the page writes whole
 columns internal/designsystem/formats.go cb23b3c3b8e3 1
-func internal/designsystem/formats.go formatDocs 123
+columns internal/designsystem/formats.go e325d83e33f8 1 a section body in the wording copy review approved, naming its ui helper (rastrillo-components Task 3); a prose key is one string the page writes whole
+columns internal/designsystem/formats.go ec793592970d 1 a templated format sample, its value now the ui helper call (rastrillo-components Task 3); a sample line is markup the Template tab shows as written
+columns internal/designsystem/formats.go f4556d4db975 1 a templated format sample, its value now the ui helper call (rastrillo-components Task 3); a sample line is markup the Template tab shows as written
+func internal/designsystem/formats.go formatDocs 140 five samples became templates with their data beside them (rastrillo-components Task 3); the page is one table of sections
 names internal/designsystem/formats.go formatNav/f 1
-names internal/designsystem/formats.go moneySampleMarkup/a 1
-names internal/designsystem/formats.go moneySampleMarkup/b 1
 columns internal/designsystem/formats_test.go 6dc9cd18f533 1
 columns internal/designsystem/formats_test.go a3329c91c6a6 1
 columns internal/designsystem/formats_test.go eb071357d94b 1
@@ -8265,7 +8182,7 @@ columns internal/designsystem/galleryrig/rig.go e9685b3469ec 1
 columns internal/designsystem/galleryrig/rig.go f1e187a5d187 1
 columns internal/designsystem/galleryrig/rig.go f23951389c43 1
 columns internal/designsystem/galleryrig/rig.go f53643dc87f1 1 rewritten by the chromedp v0.21 port, no wider than the recorded line it replaced
-file internal/designsystem/galleryrig/rig.go - 439
+file internal/designsystem/galleryrig/rig.go - 437
 func internal/designsystem/galleryrig/rig.go Eagerly 56
 names internal/designsystem/galleryrig/rig.go Eagerly/i 3
 names internal/designsystem/galleryrig/rig.go Eagerly/p 3
@@ -8308,19 +8225,10 @@ names internal/designsystem/header_rule_browser_test.go rakeLineHandler/k 1
 names internal/designsystem/header_rule_browser_test.go rakeLineHandler/r 1
 names internal/designsystem/header_rule_browser_test.go rakeLineHandler/v 1
 names internal/designsystem/header_rule_browser_test.go rakeLineHandler/w 1
-columns internal/designsystem/header_rule_test.go 11013623233e 1
-columns internal/designsystem/header_rule_test.go 18f773a7a68d 1
-columns internal/designsystem/header_rule_test.go 1b05e9c2638a 1
 columns internal/designsystem/header_rule_test.go 2ab5d21157ff 1
-columns internal/designsystem/header_rule_test.go 3f7d9ce6a8ac 1
 columns internal/designsystem/header_rule_test.go 551cc8a3e100 1
-columns internal/designsystem/header_rule_test.go 6b68ced0fb8d 1
-columns internal/designsystem/header_rule_test.go 95a2da5b328d 1
 columns internal/designsystem/header_rule_test.go c626fad5ea20 1
 columns internal/designsystem/header_rule_test.go d8579b287e6e 1
-columns internal/designsystem/header_rule_test.go f83acea0bc08 1
-columns internal/designsystem/header_rule_test.go fd5d16569032 1
-names internal/designsystem/header_rule_test.go TestColourValueRecognisesADerivedColour/v 2
 columns internal/designsystem/history/cache_test.go 12133667c999 1 rewritten by the chromedp v0.21 port, no wider than the recorded line it replaced
 columns internal/designsystem/history/cache_test.go 513d43eb9995 1
 columns internal/designsystem/history/cache_test.go 6dacab89a988 1
@@ -8400,7 +8308,6 @@ columns internal/designsystem/hooks.go 16a11d104e4f 1
 columns internal/designsystem/index_browser_test.go 04bdaf2d7671 1
 columns internal/designsystem/index_browser_test.go 05620cb08c0b 1
 columns internal/designsystem/index_browser_test.go 05ec1d4ef564 1
-columns internal/designsystem/index_browser_test.go 0655ca4037ab 1
 columns internal/designsystem/index_browser_test.go 0816dc795213 1 rewritten by the chromedp v0.21 port, no wider than the recorded line it replaced
 columns internal/designsystem/index_browser_test.go 083ac46b25c6 1
 columns internal/designsystem/index_browser_test.go 0fc265671e1b 1
@@ -8443,7 +8350,6 @@ columns internal/designsystem/index_browser_test.go ed2d7fc398a3 1
 columns internal/designsystem/index_browser_test.go f875f6eb5695 1 rewritten by the chromedp v0.21 port, no wider than the recorded line it replaced
 columns internal/designsystem/index_browser_test.go fb92e733845e 1 rewritten by the chromedp v0.21 port, no wider than the recorded line it replaced
 columns internal/designsystem/index_browser_test.go fd68b9a89e8d 1 rewritten by the chromedp v0.21 port, no wider than the recorded line it replaced
-columns internal/designsystem/index_browser_test.go fe1fbe045c1c 1
 names internal/designsystem/index_browser_test.go TestSearchFindsWhatPeopleCallThings/q 2
 names internal/designsystem/index_browser_test.go TestTheIndexTitleIsVisible/c 1
 names internal/designsystem/index_browser_test.go TestThePhoneIndexAndTheWayBack/i 1
@@ -8462,7 +8368,7 @@ columns internal/designsystem/localise.go cf078ce37f5b 1
 columns internal/designsystem/localise.go d85ebbc4e85d 1
 columns internal/designsystem/localise.go f25049d060e9 1
 columns internal/designsystem/localise.go f8b98d47a05a 1
-file internal/designsystem/localise.go - 419
+file internal/designsystem/localise.go - 422 hasWords skips a format sample's template actions as code (rastrillo-components Task 3)
 names internal/designsystem/localise.go closing/i 1
 names internal/designsystem/localise.go closing/j 1
 names internal/designsystem/localise.go closing/t 1
@@ -8496,7 +8402,6 @@ names internal/designsystem/localise.go tokenise/t 1
 columns internal/designsystem/localise_test.go 054c87017914 1
 columns internal/designsystem/localise_test.go 11aa19c9ab27 1
 columns internal/designsystem/localise_test.go 127eb6ce1c36 1
-columns internal/designsystem/localise_test.go 24f3e1d6071f 1
 columns internal/designsystem/localise_test.go 42c35d63c440 1
 columns internal/designsystem/localise_test.go 45c75b71bed2 1
 columns internal/designsystem/localise_test.go 51a887dbd4e2 1
@@ -8504,14 +8409,12 @@ columns internal/designsystem/localise_test.go 532515c613b3 1
 columns internal/designsystem/localise_test.go 72a2c3235ec9 1
 columns internal/designsystem/localise_test.go 882d410410da 1
 columns internal/designsystem/localise_test.go 8ad447576201 1
-columns internal/designsystem/localise_test.go a39261cd5e56 1
 columns internal/designsystem/localise_test.go b86b825bee0c 1
 columns internal/designsystem/localise_test.go c3ca3b272d5c 1
 columns internal/designsystem/localise_test.go ce5780b2e237 1
 columns internal/designsystem/localise_test.go d1cb13c72cf9 1
 columns internal/designsystem/localise_test.go d4c6f5f91621 1
 columns internal/designsystem/localise_test.go dac6585dbf4b 1
-columns internal/designsystem/localise_test.go dbf66b33ed47 1
 columns internal/designsystem/localise_test.go ddccd7d5bdec 1
 columns internal/designsystem/localise_test.go e25e2295e0a3 1
 columns internal/designsystem/localise_test.go f2ab79de58cf 1
@@ -8539,11 +8442,7 @@ columns internal/designsystem/page.go 020a7511a3b6 1
 columns internal/designsystem/page.go 03626d2d9917 1
 columns internal/designsystem/page.go 03ac001bf97b 1
 columns internal/designsystem/page.go 045d1a085abe 2
-columns internal/designsystem/page.go 05d4abd45c20 1
-columns internal/designsystem/page.go 06287be30ab3 1
-columns internal/designsystem/page.go 066aae2b334d 1
 columns internal/designsystem/page.go 0795c514a31d 1
-columns internal/designsystem/page.go 09172238fd36 1
 columns internal/designsystem/page.go 0ac98ed1ad9b 1
 columns internal/designsystem/page.go 0b0ad6c3fbcb 1
 columns internal/designsystem/page.go 0b180f435ac9 1
@@ -8554,230 +8453,173 @@ columns internal/designsystem/page.go 0dd87fcbee28 1
 columns internal/designsystem/page.go 0e031bf35fd8 1
 columns internal/designsystem/page.go 0e4c8d97a6d1 1
 columns internal/designsystem/page.go 0f1099eadd0e 1
-columns internal/designsystem/page.go 0fa51f5e19d4 1
-columns internal/designsystem/page.go 0fa69f5dd64d 1
 columns internal/designsystem/page.go 1040f66fbc4e 1
-columns internal/designsystem/page.go 1403854c9374 1
-columns internal/designsystem/page.go 14ad6d3ce059 2
-columns internal/designsystem/page.go 14ada14533c8 1
-columns internal/designsystem/page.go 15ed7f7da435 1
-columns internal/designsystem/page.go 16221dc07386 1
 columns internal/designsystem/page.go 177f444dc672 1
 columns internal/designsystem/page.go 185bc28ec351 1
-columns internal/designsystem/page.go 1a8c619ad6c5 1
-columns internal/designsystem/page.go 1e7f789b6f41 1
+columns internal/designsystem/page.go 1d5923a689aa 1 the demo app's lead, reworded in place for the gallery's name (rastrillo-components Task 2); a prose key is one string the template writes whole
 columns internal/designsystem/page.go 1ee3fc4cad69 1
 columns internal/designsystem/page.go 1f5da6a0912f 1
 columns internal/designsystem/page.go 210e21883be8 1
 columns internal/designsystem/page.go 22cf89764b0a 1
-columns internal/designsystem/page.go 23707b485a3c 1
 columns internal/designsystem/page.go 23ce9ad502e4 1
 columns internal/designsystem/page.go 25f6c2f01bb2 1
 columns internal/designsystem/page.go 2662267a4133 1
-columns internal/designsystem/page.go 26e4961b2688 1
-columns internal/designsystem/page.go 279a4d6cc32e 1
 columns internal/designsystem/page.go 2990aa9fc5ad 1
 columns internal/designsystem/page.go 2a77f4ac5987 1
 columns internal/designsystem/page.go 2ab51afc54d5 1
 columns internal/designsystem/page.go 2b9b8fcaa700 1
-columns internal/designsystem/page.go 2ba6808b3000 1
 columns internal/designsystem/page.go 2bab4a80c384 1
-columns internal/designsystem/page.go 2bb133f415a0 1
 columns internal/designsystem/page.go 2c179192fddd 1
-columns internal/designsystem/page.go 2ede1183b770 1
-columns internal/designsystem/page.go 2fc3e1b73e5f 1
 columns internal/designsystem/page.go 2ff3d8f2884e 1
 columns internal/designsystem/page.go 3263bb41019f 1
 columns internal/designsystem/page.go 33b9d8bc3964 1
 columns internal/designsystem/page.go 357eba521c72 1
-columns internal/designsystem/page.go 36abd800f817 1
 columns internal/designsystem/page.go 377e007dab8a 1
 columns internal/designsystem/page.go 3898daf15d29 1
 columns internal/designsystem/page.go 3bd0137037a6 1
 columns internal/designsystem/page.go 3c97d4d6ade2 1
 columns internal/designsystem/page.go 3d85f3f48952 1
+columns internal/designsystem/page.go 3db17687eb56 1 the Overview routes template line, edited in place for Fiesta's routes (rastrillo-components Task 1); a template line is written whole like its neighbours
 columns internal/designsystem/page.go 3e03796aa474 1
 columns internal/designsystem/page.go 3e9c1932a86f 1
 columns internal/designsystem/page.go 3ee65f61ced9 1
 columns internal/designsystem/page.go 4390e9ce507c 1
 columns internal/designsystem/page.go 43a8f6b13f5a 1
 columns internal/designsystem/page.go 4450933107c0 1
-columns internal/designsystem/page.go 44f254b5d0c7 1
-columns internal/designsystem/page.go 45bd7536e858 1
 columns internal/designsystem/page.go 464cd0575cc6 1
-columns internal/designsystem/page.go 4885ef5f87b9 1
 columns internal/designsystem/page.go 4bda04d5443d 2
 columns internal/designsystem/page.go 503caff12364 1
-columns internal/designsystem/page.go 509af5fd93e3 1
 columns internal/designsystem/page.go 514c677e880b 1
-columns internal/designsystem/page.go 5262238c0de3 1
 columns internal/designsystem/page.go 527ef624df18 1
-columns internal/designsystem/page.go 567880e5c861 1
 columns internal/designsystem/page.go 5732a36cdea7 1
 columns internal/designsystem/page.go 5790aca32693 1
+columns internal/designsystem/page.go 58b9917d3769 1 a shell's back-link, renamed in place to Rastrillo components (rastrillo-components Task 2); a template line is written whole like its neighbours
 columns internal/designsystem/page.go 59c2726a21de 1
 columns internal/designsystem/page.go 5afde98229ce 1
 columns internal/designsystem/page.go 5b77d9f5d56a 1
-columns internal/designsystem/page.go 5cb73a1dbb99 1
 columns internal/designsystem/page.go 5d954d3efe33 1
 columns internal/designsystem/page.go 5e480806449e 1
 columns internal/designsystem/page.go 5ee7a4ff533f 1
 columns internal/designsystem/page.go 5fd1cc1c384a 1
-columns internal/designsystem/page.go 5fe64a04462d 1
 columns internal/designsystem/page.go 5fe7fcc11693 1
 columns internal/designsystem/page.go 6025c56c39c7 1
-columns internal/designsystem/page.go 612b1f91091f 1
+columns internal/designsystem/page.go 609739ea2db1 1 the Overview's lead, Paul's paragraph with the gallery's name in place (rastrillo-components Task 2); a prose key is one string the template writes whole
 columns internal/designsystem/page.go 61497abf891f 1
-columns internal/designsystem/page.go 61874cac458b 1
-columns internal/designsystem/page.go 61d1c6d26c12 1
 columns internal/designsystem/page.go 61d1d86e27d8 1
 columns internal/designsystem/page.go 6419ae3a7d03 1
 columns internal/designsystem/page.go 64b0cdadbc2a 1
 columns internal/designsystem/page.go 64b71728ecc6 1
-columns internal/designsystem/page.go 65a852c8adaa 1
-columns internal/designsystem/page.go 66a6e9abddfd 1
 columns internal/designsystem/page.go 66f53dfc18be 1
 columns internal/designsystem/page.go 68483e19b361 1
-columns internal/designsystem/page.go 69873e09083e 1
+columns internal/designsystem/page.go 6b06cde8f463 1 a shell's back-link, renamed in place to Rastrillo components (rastrillo-components Task 2); a template line is written whole like its neighbours
 columns internal/designsystem/page.go 6c184dcf16b4 1
 columns internal/designsystem/page.go 6c917805bc2c 1
+columns internal/designsystem/page.go 6d38acb8003c 1 the stage shell's back-link, renamed in place to Rastrillo components (rastrillo-components Task 2); a template line is written whole like its neighbours
 columns internal/designsystem/page.go 6f50baff79c1 1
 columns internal/designsystem/page.go 7007627220ff 1
 columns internal/designsystem/page.go 704ac67b2c32 1
 columns internal/designsystem/page.go 714cf3f9288e 1
 columns internal/designsystem/page.go 7239aec27492 1
 columns internal/designsystem/page.go 7575cdc34d6f 1
+columns internal/designsystem/page.go 75d72660bd37 1 Getting started's scaffold block, now read off startedView (rastrillo-components Task 1); a template line is written whole like its neighbours
 columns internal/designsystem/page.go 760e15106d0e 1
 columns internal/designsystem/page.go 76d824455736 1
 columns internal/designsystem/page.go 76ebc77189b1 1
 columns internal/designsystem/page.go 77174996904f 1
 columns internal/designsystem/page.go 77d6e0aee020 1
-columns internal/designsystem/page.go 791c67c0dec8 1
-columns internal/designsystem/page.go 7cddec91a13f 1
-columns internal/designsystem/page.go 7d1ae3e0db8b 1
-columns internal/designsystem/page.go 7e971c320959 1
 columns internal/designsystem/page.go 7e9c0c0074fc 1
-columns internal/designsystem/page.go 7f37b8446284 1 Fiesta part 2 Task 6: gallery prose inside the page template, one {{P}} sentence per line like its neighbours
 columns internal/designsystem/page.go 7ffb793379f5 1
-columns internal/designsystem/page.go 83f75710b672 1
-columns internal/designsystem/page.go 86a2e6fd8e6f 1
-columns internal/designsystem/page.go 88dfd807d7a0 1
 columns internal/designsystem/page.go 89addb10a119 1
 columns internal/designsystem/page.go 8b8603be085a 1
 columns internal/designsystem/page.go 8c81830bf62b 1
-columns internal/designsystem/page.go 8cc4288c9f91 1
 columns internal/designsystem/page.go 8f36ffaed816 1
 columns internal/designsystem/page.go 9166ac781f2c 1
-columns internal/designsystem/page.go 9202c670be9e 1
 columns internal/designsystem/page.go 938fe07239b6 1
 columns internal/designsystem/page.go 957c2fd815f0 1
 columns internal/designsystem/page.go 95c9831606c7 1
-columns internal/designsystem/page.go 9610a0b4ff12 1
 columns internal/designsystem/page.go 9683574db32d 1
 columns internal/designsystem/page.go 974ab570f662 1
 columns internal/designsystem/page.go 97d129ba4be2 1
-columns internal/designsystem/page.go 98647645da0d 1
-columns internal/designsystem/page.go 99a8bd10b150 1
+columns internal/designsystem/page.go 97fef6f81796 1 the phone index lead, Paul's paragraph with the gallery's name in place (rastrillo-components Task 2); a prose key is one string the template writes whole
 columns internal/designsystem/page.go 9b7feb362fae 1
 columns internal/designsystem/page.go 9ca6df81967b 1
-columns internal/designsystem/page.go 9cf7e1c08f11 1
+columns internal/designsystem/page.go 9cc0c8c51b7d 1 Getting started's scaffold paragraph, reworded in place (rastrillo-components Task 1, copy review); a prose key is one string the template writes whole
+columns internal/designsystem/page.go 9ceba7fd8d5d 1 the Screens blurb, reworded in place for the gallery's name (rastrillo-components Task 2); a prose key is one string the code writes whole
 columns internal/designsystem/page.go 9e99d4fe3252 1
 columns internal/designsystem/page.go 9f3996842b4c 1
 columns internal/designsystem/page.go 9f9df3712e90 1
 columns internal/designsystem/page.go a1c3889a838f 1
-columns internal/designsystem/page.go a455efbed538 1
 columns internal/designsystem/page.go a5c0e778b349 1
 columns internal/designsystem/page.go a6e6589e71b2 1
 columns internal/designsystem/page.go a73733abba5f 1
 columns internal/designsystem/page.go a9323e22c59a 1
 columns internal/designsystem/page.go a979742123de 1
-columns internal/designsystem/page.go aa382ae83c32 1
 columns internal/designsystem/page.go aa7a59fbd292 1
 columns internal/designsystem/page.go ab23dcd26361 1
 columns internal/designsystem/page.go afeb67bdc5e1 1
-columns internal/designsystem/page.go b136aaf9bbb5 1
 columns internal/designsystem/page.go b263c27ecb35 1
-columns internal/designsystem/page.go b34205002e71 1
 columns internal/designsystem/page.go b36f5d66e6fe 1
-columns internal/designsystem/page.go b49847b70474 1
-columns internal/designsystem/page.go b4a1910eab40 1
 columns internal/designsystem/page.go b8d6cac556ae 1
 columns internal/designsystem/page.go b983a183f535 1
 columns internal/designsystem/page.go b99fdb939e80 1
 columns internal/designsystem/page.go ba160b734b6a 2
-columns internal/designsystem/page.go ba902a85e252 1
 columns internal/designsystem/page.go bb2bf662a103 1
 columns internal/designsystem/page.go bc959af342db 1
 columns internal/designsystem/page.go bcffabc3fb85 1
-columns internal/designsystem/page.go bd196a592759 1
 columns internal/designsystem/page.go beea51e9aae9 1
 columns internal/designsystem/page.go bffe9f69589c 1
-columns internal/designsystem/page.go c01bae5389c3 1
 columns internal/designsystem/page.go c094b74cf274 1
-columns internal/designsystem/page.go c10ad6ae74f0 1
 columns internal/designsystem/page.go c1d3ace23cc8 1
 columns internal/designsystem/page.go c1e5ea987ae1 1
 columns internal/designsystem/page.go c2c74a95bf0a 1
-columns internal/designsystem/page.go c3a9441b5ce7 1
 columns internal/designsystem/page.go c4cf6a86dcc1 1
-columns internal/designsystem/page.go c5546c81337a 1
 columns internal/designsystem/page.go c6ecd1d7d8db 1
 columns internal/designsystem/page.go c7f2fbb07a22 1
 columns internal/designsystem/page.go ca60c7a6df07 1
 columns internal/designsystem/page.go cc8a91bf4132 1
+columns internal/designsystem/page.go ce8af0def8cd 1 the Overview's h1, renamed in place to Rastrillo components (rastrillo-components Task 2); a template line is written whole like its neighbours
 columns internal/designsystem/page.go d060c5ca1803 1
 columns internal/designsystem/page.go d0758d574356 1
 columns internal/designsystem/page.go d130e930f7d3 1
 columns internal/designsystem/page.go d31f678fe47e 1
 columns internal/designsystem/page.go d47bd5341caf 1
 columns internal/designsystem/page.go d69f518dc5a7 1
-columns internal/designsystem/page.go d94014afe8f4 1
 columns internal/designsystem/page.go db584701c50b 1
 columns internal/designsystem/page.go dbc00f4ba8e8 1
 columns internal/designsystem/page.go de5ee1df988a 1
 columns internal/designsystem/page.go de9d6b0b4dd3 1
-columns internal/designsystem/page.go dee8a3861ce6 1
 columns internal/designsystem/page.go df4e1bc5fb6c 1
 columns internal/designsystem/page.go e04c170bba07 1
+columns internal/designsystem/page.go e0e0f833608d 1 the modal demo's back-link, renamed in place to Rastrillo components (rastrillo-components Task 2); a template line is written whole like its neighbours
 columns internal/designsystem/page.go e0eb00d74a70 1
 columns internal/designsystem/page.go e1b66500d280 1
-columns internal/designsystem/page.go e5dee63e72df 1 Fiesta part 2 Task 6: gallery prose inside the page template, one {{P}} sentence per line like its neighbours
+columns internal/designsystem/page.go e4db994c1927 1 the phone index template line, edited in place for Fiesta's rows (rastrillo-components Task 1); a template line is written whole like its neighbours
 columns internal/designsystem/page.go e6c3ed4d5849 1
 columns internal/designsystem/page.go e848a009830c 1
 columns internal/designsystem/page.go e92385512b07 1
-columns internal/designsystem/page.go e9b221c6e367 1
 columns internal/designsystem/page.go ea2dd86812bb 1
 columns internal/designsystem/page.go ebc7bd1f9177 1
 columns internal/designsystem/page.go ed83e807ca13 1
-columns internal/designsystem/page.go ee94dad91d4a 1
-columns internal/designsystem/page.go efca67251b7e 1
 columns internal/designsystem/page.go f068ed1fa8e2 1
 columns internal/designsystem/page.go f26ff20c3dde 1
 columns internal/designsystem/page.go f3ca933c03bd 1
-columns internal/designsystem/page.go f43d970359e8 1
 columns internal/designsystem/page.go f470ea9db753 1
 columns internal/designsystem/page.go f558152b8da1 1
 columns internal/designsystem/page.go f651fb73d409 1
 columns internal/designsystem/page.go f6c42b07043d 1
 columns internal/designsystem/page.go f7278a3f053b 1
 columns internal/designsystem/page.go f7414b5dbad0 1
-columns internal/designsystem/page.go f9807df50e76 1
 columns internal/designsystem/page.go fa7c5352e30d 1
-columns internal/designsystem/page.go fb1076934a76 1
-columns internal/designsystem/page.go fbed3cdcbee2 1
 columns internal/designsystem/page.go fc4875c5d5a3 1
-columns internal/designsystem/page.go fc67331745a3 1
+columns internal/designsystem/page.go fdc97acb2e04 1 the rail template line, edited in place for Fiesta's links (rastrillo-components Task 1); a template line is written whole like its neighbours
 columns internal/designsystem/page.go fe44bdea88a0 1
 columns internal/designsystem/page.go ffcdcfbc1ea4 1
-file internal/designsystem/page.go - 3229 field-number joins the gallery (Fichas level-up rev 4, R2): its preview height is one line in previewHeights, beside field-money's
-func internal/designsystem/page.go buildAssets 59
-func internal/designsystem/page.go buildFamilies 96
+file internal/designsystem/page.go - 2897 galleryTitle, one call for the gallery's name in every document title, and the Russian topbar shell's Mobile height for its longer back-link (rastrillo-components Task 2)
+func internal/designsystem/page.go buildFamilies 97 the stat band stays on Display as four stat calls, a sample of its own (rastrillo-components Task 1, review fix)
 func internal/designsystem/page.go previewDocStyled 49
 func internal/designsystem/page.go renderDemo 54
-func internal/designsystem/page.go renderGallery 116
+func internal/designsystem/page.go renderGallery 101
 func internal/designsystem/page.go renderShell 65
-names internal/designsystem/page.go assetNav/a 1
-names internal/designsystem/page.go buildAssets/w 1
 names internal/designsystem/page.go buildFamilies/c 1
 names internal/designsystem/page.go buildFamilies/i 1
 names internal/designsystem/page.go buildFamilies/s 2
@@ -8793,8 +8635,6 @@ names internal/designsystem/page.go groupedPreview/i 1
 names internal/designsystem/page.go groupedPreview/s 1
 names internal/designsystem/page.go heightOf/h 1
 names internal/designsystem/page.go indexRows/s 1
-names internal/designsystem/page.go localiseGroups/g 1
-names internal/designsystem/page.go localiseGroups/i 1
 names internal/designsystem/page.go pageSteps/i 2
 names internal/designsystem/page.go parseRawSamples/i 1
 names internal/designsystem/page.go parseRawSamples/s 1
@@ -8813,7 +8653,6 @@ names internal/designsystem/page.go renderShell/d 1
 names internal/designsystem/page.go slug/b 1
 names internal/designsystem/page.go slug/r 1
 names internal/designsystem/page.go slug/s 1
-names internal/designsystem/page.go tokenNav/g 2
 names internal/designsystem/page.go wrap/w 1
 names internal/designsystem/page.go wrapperMarkup/w 1
 columns internal/designsystem/prefs_browser_test.go 0d497174031e 1
@@ -9191,7 +9030,7 @@ columns internal/designsystem/samples.go fd98e40afc7e 1
 columns internal/designsystem/samples.go feec4eaa9f02 1
 columns internal/designsystem/samples.go ff2adab2a4c3 1
 columns internal/designsystem/samples.go ff64de57216c 1
-file internal/designsystem/samples.go - 1162 field-number joins the Form family as one call, fieldNumberDoc(), its sample in fieldnumber.go
+file internal/designsystem/samples.go - 1195 the stat band stays on Display as four stat calls, a sample of its own (rastrillo-components Task 1, review fix)
 func internal/designsystem/samples.go families 595 field-number joins the Form family as one call, fieldNumberDoc(), its sample in fieldnumber.go
 names internal/designsystem/samples.go calloutStates/b 1
 names internal/designsystem/samples.go errorPageStates/s 1
@@ -9358,74 +9197,6 @@ columns internal/designsystem/sweep/rig_test.go 4c2ef5508acf 1
 columns internal/designsystem/sweep/rig_test.go 75b562021c75 1
 columns internal/designsystem/sweep/rig_test.go ba023e492184 1
 names internal/designsystem/sweep/rig_test.go sweepFull/v 1
-columns internal/designsystem/weight.go 31c147b8160b 1
-columns internal/designsystem/weight.go 66908dabf8d9 1
-columns internal/designsystem/weight.go 6ce8b9510093 1
-columns internal/designsystem/weight.go 7710afa8eb06 1
-columns internal/designsystem/weight.go cee15150a1ce 1
-columns internal/designsystem/weight.go cfff7d71ec88 1
-columns internal/designsystem/weight.go e660b3c1e6e5 1
-columns internal/designsystem/weight.go fc30a893c9b1 1
-func internal/designsystem/weight.go stripJSComments 74
-names internal/designsystem/weight.go blockCommentEnd/i 1
-names internal/designsystem/weight.go blockCommentEnd/j 1
-names internal/designsystem/weight.go controlHead/b 1
-names internal/designsystem/weight.go controlHead/w 1
-names internal/designsystem/weight.go dropComment/b 1
-names internal/designsystem/weight.go endOfQuoted/i 1
-names internal/designsystem/weight.go endOfQuoted/j 1
-names internal/designsystem/weight.go endOfQuoted/q 1
-names internal/designsystem/weight.go endOfRegex/c 1
-names internal/designsystem/weight.go endOfRegex/i 1
-names internal/designsystem/weight.go endOfRegex/j 1
-names internal/designsystem/weight.go endOfTemplate/i 1
-names internal/designsystem/weight.go endOfTemplate/j 1
-names internal/designsystem/weight.go gzipped/b 1
-names internal/designsystem/weight.go isSpaceByte/c 1
-names internal/designsystem/weight.go isWordByte/c 1
-names internal/designsystem/weight.go kib/n 1
-names internal/designsystem/weight.go kibUnit/n 1
-names internal/designsystem/weight.go lastWord/b 1
-names internal/designsystem/weight.go lastWord/j 1
-names internal/designsystem/weight.go regexAllowed/b 1
-names internal/designsystem/weight.go stripCSSComments/c 1
-names internal/designsystem/weight.go stripCSSComments/i 1
-names internal/designsystem/weight.go stripCSSComments/j 1
-names internal/designsystem/weight.go stripJSComments/c 1
-names internal/designsystem/weight.go stripJSComments/i 1
-names internal/designsystem/weight.go stripJSComments/j 4
-names internal/designsystem/weight.go stripJSComments/n 1
-names internal/designsystem/weight.go weigh/w 1
-names internal/designsystem/weight.go weightIn/i 1
-names internal/designsystem/weight.go weightIn/w 1
-columns internal/designsystem/weight_test.go 01bd913129d8 1
-columns internal/designsystem/weight_test.go 1236cb78e96b 1
-columns internal/designsystem/weight_test.go 16bc9ab0c813 1
-columns internal/designsystem/weight_test.go 2f212c826ad1 1
-columns internal/designsystem/weight_test.go 2f507cf2d6a6 1
-columns internal/designsystem/weight_test.go 3f775028f548 1
-columns internal/designsystem/weight_test.go 576123e52a69 1
-columns internal/designsystem/weight_test.go 5f8f7a250914 1
-columns internal/designsystem/weight_test.go 7ed00b9073bf 1
-columns internal/designsystem/weight_test.go 8fee99d7d303 1
-columns internal/designsystem/weight_test.go 971a9360c2ff 1
-columns internal/designsystem/weight_test.go 9d5dafa23e41 1
-columns internal/designsystem/weight_test.go 9eb03a62d3c8 1
-columns internal/designsystem/weight_test.go a2753e59d698 1
-columns internal/designsystem/weight_test.go c1126c9f24dd 1
-columns internal/designsystem/weight_test.go c52b80bc0ec6 1
-columns internal/designsystem/weight_test.go d0984b72a38f 1
-columns internal/designsystem/weight_test.go d5731a58d62b 1
-columns internal/designsystem/weight_test.go e56fd533fabc 1
-columns internal/designsystem/weight_test.go f1e9b3aee4d9 1
-columns internal/designsystem/weight_test.go f3d1ded19b21 1
-names internal/designsystem/weight_test.go TestEveryShippedFileWeighsLessCompressedAndLessAgainStripped/w 1
-names internal/designsystem/weight_test.go TestEveryShippedScriptStripsToTheSameShape/i 1
-names internal/designsystem/weight_test.go TestKiBIsOneDecimalBelowTenAndWholeAbove/c 1
-names internal/designsystem/weight_test.go TestStripCSSCommentsLeavesStringsAlone/c 1
-names internal/designsystem/weight_test.go TestStripJSCommentsLeavesWhatOnlyLooksLikeAComment/c 1
-names internal/designsystem/weight_test.go TestStrippedScriptsEvaluateAsWritten/c 2
-names internal/designsystem/weight_test.go TestStrippedScriptsEvaluateAsWritten/i 1
 columns internal/devloop/watch.go 253167c43794 1
 columns internal/devloop/watch.go 590e4c4d07c5 1
 names internal/devloop/watch.go Diff/p 3

@@ -26,7 +26,7 @@ func TestWriteIsTheWholeRender(t *testing.T) {
 	}
 
 	dir := t.TempDir()
-	root, n, bytes, err := write(dir, mount)
+	root, n, bytes, err := write(dir, mount, "")
 	if err != nil {
 		t.Fatalf("write: %v", err)
 	}
@@ -109,7 +109,7 @@ func TestWriteLeavesAPTStubForEveryPTPTPage(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Render: %v", err)
 	}
-	root, _, _, err := write(t.TempDir(), mount)
+	root, _, _, err := write(t.TempDir(), mount, "")
 	if err != nil {
 		t.Fatalf("write: %v", err)
 	}
@@ -147,6 +147,40 @@ func TestWriteLeavesAPTStubForEveryPTPTPage(t *testing.T) {
 	}
 }
 
+// The website publishes dsgen's _redirects at its root, so with
+// -redirect-from the file is exactly the package's rules from that
+// mount to -mount, one a line; without it there is no file, since a
+// site that never served the gallery anywhere else has nothing to send
+// on.
+func TestDsgenWritesTheRedirects(t *testing.T) {
+	const from, mount = "/design-system", "/ui/gallery"
+	want, err := designsystem.Redirects(from, mount)
+	if err != nil {
+		t.Fatalf("Redirects: %v", err)
+	}
+	root, _, _, err := write(t.TempDir(), mount, from)
+	if err != nil {
+		t.Fatalf("write: %v", err)
+	}
+	got, err := os.ReadFile(filepath.Join(root, "_redirects"))
+	if err != nil {
+		t.Fatalf("no _redirects with -redirect-from: %v", err)
+	}
+	if string(got) != strings.Join(want, "\n")+"\n" {
+		t.Errorf("_redirects is not Redirects(%q, %q), one rule a line:"+
+			"\n%s", from, mount, got)
+	}
+
+	root, _, _, err = write(t.TempDir(), mount, "")
+	if err != nil {
+		t.Fatalf("write: %v", err)
+	}
+	_, err = os.Stat(filepath.Join(root, "_redirects"))
+	if !os.IsNotExist(err) {
+		t.Errorf("a _redirects without -redirect-from (%v)", err)
+	}
+}
+
 // A build directory that persists between runs is the case this has to
 // get right, and the case the first version of this command got wrong.
 //
@@ -163,7 +197,7 @@ func TestWriteLeavesAPTStubForEveryPTPTPage(t *testing.T) {
 // and the seeded residue below is the exact shape of the rename.
 func TestWriteLeavesNoTraceOfAnEarlierRender(t *testing.T) {
 	dir := t.TempDir()
-	if _, _, _, err := write(dir, designsystem.DefaultMount); err != nil {
+	if _, _, _, err := write(dir, designsystem.DefaultMount, ""); err != nil {
 		t.Fatalf("first write: %v", err)
 	}
 
@@ -192,7 +226,7 @@ func TestWriteLeavesNoTraceOfAnEarlierRender(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Render: %v", err)
 	}
-	if _, _, _, err := write(dir, designsystem.DefaultMount); err != nil {
+	if _, _, _, err := write(dir, designsystem.DefaultMount, ""); err != nil {
 		t.Fatalf("second write: %v", err)
 	}
 
@@ -246,7 +280,7 @@ func TestWriteRefusesADirectoryItDoesNotOwn(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, _, _, err := write(dir, designsystem.DefaultMount); err == nil {
+	if _, _, _, err := write(dir, designsystem.DefaultMount, ""); err == nil {
 		t.Fatal("dsgen emptied a directory it had never written: -out is not a directory it may take on faith")
 	}
 	for _, keep := range []string{theirs, sub} {
@@ -263,7 +297,7 @@ func TestWriteRefusesADirectoryItDoesNotOwn(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(dir, stampName), []byte(stampBody), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	if _, _, _, err := write(dir, designsystem.DefaultMount); err != nil {
+	if _, _, _, err := write(dir, designsystem.DefaultMount, ""); err != nil {
 		t.Fatalf("write into a stamped directory: %v", err)
 	}
 	if _, err := os.Stat(theirs); !os.IsNotExist(err) {
@@ -272,21 +306,29 @@ func TestWriteRefusesADirectoryItDoesNotOwn(t *testing.T) {
 }
 
 // The mount reaches dsgen from a command line, so it takes the shapes a
-// person types. Each of these is either normalised or refused, and the
-// one that is refused is refused because the tree writes tokens.css
-// beside its theme directories: mounted at the site root it would land
-// on whatever the site already keeps there.
+// person types. Each of these is either normalised or refused. The
+// site root is refused because the tree writes tokens.css beside its
+// theme directories, where it would land on whatever the site already
+// keeps there; the rest because the mount is a field of each
+// _redirects rule, and CARLOS's edge reads those characters as syntax.
 func TestMountShapes(t *testing.T) {
 	for _, tc := range []struct {
 		in, want string
 		ok       bool
 	}{
-		{"/design-system", "/design-system", true},
-		{"/design-system/", "/design-system", true},
-		{"design-system", "/design-system", true},
+		{"/components", "/components", true},
+		{"/components/", "/components", true},
+		{"components", "/components", true},
 		{"/ui/gallery/", "/ui/gallery", true},
 		{"/", "", false},
 		{"", "", false},
+		{"/ui gallery", "", false},
+		{"/ui/gallery?x", "", false},
+		{"/ui/gallery#x", "", false},
+		{"/ui/*", "", false},
+		{"/ui/:gallery", "", false},
+		{"/ui%2Fgallery", "", false},
+		{"/\\ui", "", false},
 	} {
 		got, err := designsystem.CleanMount(tc.in)
 		if tc.ok && (err != nil || got != tc.want) {

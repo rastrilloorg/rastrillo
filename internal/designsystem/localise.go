@@ -101,6 +101,8 @@ var (
 	// or a one- or two-letter initial.
 	sampleCode = regexp.MustCompile(`#?\b(?:[A-Z]*[0-9][A-Z0-9]*|[A-Z]{1,2})\b`)
 	sampleMail = regexp.MustCompile(`\S+@\S*`)
+	// sampleAction is a format sample's template action: code.
+	sampleAction = regexp.MustCompile(`\{\{.*?\}\}`)
 )
 
 // keepsAsWritten says whether a sample string stays as it is in every
@@ -125,6 +127,7 @@ func hasWords(s string) bool {
 		s = strings.ReplaceAll(s, k, "")
 	}
 	s = sampleMail.ReplaceAllString(s, "")
+	s = sampleAction.ReplaceAllString(s, "")
 	s = sampleCode.ReplaceAllString(s, "")
 	return strings.IndexFunc(s, unicode.IsLetter) >= 0
 }

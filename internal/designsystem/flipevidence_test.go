@@ -12,8 +12,8 @@ package designsystem
 // its two pseudo-elements. Only the markup should have changed, so
 // every digest should match.
 //
-//	go run ./cmd/dsgen -out $BEFORE     (from the pre-flip checkout)
-//	go run ./cmd/dsgen -out $AFTER
+//	go run ./cmd/dsgen -out $BEFORE -mount /design-system  (pre-flip)
+//	go run ./cmd/dsgen -out $AFTER -mount /design-system
 //	RST_BEFORE=$BEFORE RST_AFTER=$AFTER \
 //	  go test -tags "browser flipevidence" ./internal/designsystem/ -run TestTheFlipDidNotMoveAPixel -v
 //
@@ -23,7 +23,9 @@ package designsystem
 // loading a file of its own, and a drive that reads one before it has
 // settled reports a difference between a tree and itself.
 // RST_PAGES=day/en,signal/ar narrows it to a theme and locale while
-// iterating.
+// iterating. Both trees are served at /design-system, so both are
+// generated for it: the mount every checkout wrote by default before
+// the gallery moved to /components.
 
 import (
 	"context"

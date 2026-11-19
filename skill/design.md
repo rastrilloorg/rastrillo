@@ -9,10 +9,11 @@ the shell's `head` block. Prefer
 `--rst-*` token overrides for colour, type and shape; use app-specific
 classes for layout or components the system does not cover. Keep base
 styles intact so framework fixes stay easy to adopt. An explicit user
-design requirement wins. Full vocabulary, with each partial's Go call:
-rastrillo.org/design-system (built by `cmd/dsgen`, not committed);
-`go generate ./...` renders a local copy into `.design-system/`. The
-markup alone: fiesta.rastrillo.org. docs/site/templates.md
+design requirement wins. Every partial with its Go call: Rastrillo
+components, rastrillo.org/components (built by `cmd/dsgen`, not
+committed); `go generate ./...` renders a local copy into
+`.design-system/`. Tokens and hand-written markup:
+fiesta.rastrillo.org/design-system. docs/site/templates.md
 
 ## Markup rules
 

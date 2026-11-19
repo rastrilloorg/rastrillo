@@ -59,7 +59,7 @@ func formatPairs(t *testing.T, locale string) []formatPair {
 		add("idiom "+name, wrapBare, localMarkup(locale, idioms[name]))
 	}
 	for _, d := range formatDocs() {
-		add("format "+d.Key, wrapBare, localMarkup(locale, d.Markup))
+		add("format "+d.Key, wrapBare, formatMarkup(d, locale))
 	}
 	for _, d := range screenDocs() {
 		if d.Markup != "" {

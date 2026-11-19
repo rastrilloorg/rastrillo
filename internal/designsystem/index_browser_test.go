@@ -46,7 +46,8 @@ func TestThePhoneIndexAndTheWayBack(t *testing.T) {
 
 		// The Overview is the index: the rail is the page, main and the
 		// bar have no box, the one visible h1 is the index title, and the
-		// rows are the page kinds in table order, then Demos.
+		// rows are the page kinds in table order, each Fiesta page in
+		// front of the kind it is keyed to, then Demos.
 		raw, err := chromedp.Run(ctx, chromedp.Evaluate[string](`(() => {
 		  const box = `+boxOf+`;
 		  const h1s = [...document.querySelectorAll("h1")].filter(h => h.getBoundingClientRect().height > 0).map(h => h.textContent.trim());
@@ -72,11 +73,14 @@ func TestThePhoneIndexAndTheWayBack(t *testing.T) {
 		if !ix.Rail || ix.Main || ix.Bar || !ix.Lead {
 			t.Errorf("%s: rail %v, main %v, bar %v, lead %v; the index is the rail and its lead alone", where, ix.Rail, ix.Main, ix.Bar, ix.Lead)
 		}
-		if len(ix.H1) != 1 || ix.H1[0] != proseIn(locale, "Rastrillo Design System") {
+		if len(ix.H1) != 1 || ix.H1[0] != proseIn(locale, galleryName) {
 			t.Errorf("%s: visible h1s %q, want exactly the index title", where, ix.H1)
 		}
 		var want []string
 		for _, pk := range pageKinds() {
+			if away, ok := fiestaEntries[pk.Kind]; ok {
+				want = append(want, proseIn(locale, away.Title))
+			}
 			if pk.Kind != "overview" {
 				want = append(want, proseIn(locale, pk.Title))
 			}
@@ -252,7 +256,7 @@ func TestTheIndexTitleIsVisible(t *testing.T) {
 	  return box.width > 0 && box.height > 0 ? e.innerText.trim() : "";
 	}).filter(Boolean))`
 	for _, locale := range []string{"en", "ar"} {
-		want := proseIn(locale, "Rastrillo Design System")
+		want := proseIn(locale, galleryName)
 		for _, c := range []struct {
 			w, h int
 			sel  string
@@ -319,10 +323,12 @@ func TestA11yScansThePhoneViews(t *testing.T) {
 
 // The filter finds a component by what a reader calls it, on desktop
 // and on the phone index: "checkbox" finds field-check, "dialog" the
-// modal, "button" the Buttons entry, and junk says No matches with no
-// page link left showing beside it. On the index, a query swaps the
-// rows for the tree it filters, and a result opens its section with
-// the partial in view.
+// confirm page that stands in for one, "button" form-foot's submit, and
+// junk says No matches with no page link left showing beside it. On
+// the index, a query swaps the rows for the tree it filters, and a
+// result opens its section with the partial in view. Nothing it finds
+// is an anchor on a page that left for Fiesta: "tokens" and "modal"
+// find the Fiesta link and the demo, not tokens.html or an idiom.
 func TestSearchFindsWhatPeopleCallThings(t *testing.T) {
 	rig := harness.New(t, func(string) http.Handler { return treeHandler(t) })
 	ctx, cancel := context.WithTimeout(rig.Context(), 120*time.Second)
@@ -343,11 +349,23 @@ func TestSearchFindsWhatPeopleCallThings(t *testing.T) {
 		chromedp.WaitVisible(chromedp.CSS(`#ds-filter`))); err != nil {
 		t.Fatalf("loading Form: %v", err)
 	}
-	for q, id := range map[string]string{"checkbox": "partial-field-check", "dialog": "idiom-modal", "button": "idiom-button", "CHECKBOX": "partial-field-check"} {
+	for q, id := range map[string]string{
+		"checkbox": "partial-field-check",
+		"dialog":   "partial-confirm-form",
+		"button":   "partial-form-foot",
+		"CHECKBOX": "partial-field-check",
+	} {
 		where := "desktop, " + q
 		typeInto(where, q)
 		until(t, ctx, where, visible(`#ds-nav a[href$="#`+id+`"]`))
 	}
+	for _, query := range leavingQueries {
+		noneLeft(t, ctx, "desktop, "+query, query)
+	}
+	typeInto("desktop, tokens", "tokens")
+	fiestaTokens := FiestaPage("day", "en", FiestaTokensPage)
+	until(t, ctx, "desktop, tokens",
+		visible(`#ds-nav a[href="`+fiestaTokens+`"]`))
 	typeInto("desktop, junk", "zzqxv")
 	until(t, ctx, "desktop, junk", visible(`[data-ds-filter-empty]`)+` && ![...document.querySelectorAll("#ds-nav a")].some(a => a.getBoundingClientRect().height > 0)`)
 
@@ -363,6 +381,9 @@ func TestSearchFindsWhatPeopleCallThings(t *testing.T) {
 	}
 	requireCoarse(t, pctx)
 	until(t, pctx, where+", rows swapped for the tree", `document.querySelector(".ds-index").getBoundingClientRect().height === 0 && `+visible(`#ds-nav a[href$="#partial-field-check"]`))
+	for _, query := range leavingQueries {
+		noneLeft(t, pctx, where+", "+query, query)
+	}
 	if err := chromedp.Do(pctx, chromedp.Evaluate[chromedp.Void](`(() => {
 	  const i = document.getElementById("ds-filter"); i.value = "";
 	  i.dispatchEvent(new Event("input")); return true; })()`)); err != nil {
@@ -379,4 +400,38 @@ func TestSearchFindsWhatPeopleCallThings(t *testing.T) {
 	// the page is read off the table so the leg follows the partial if
 	// it moves again, rather than passing on a stale file name.
 	until(t, pctx, where+", Choices and actions at the partial", `location.pathname.endsWith("/`+fileOf("choices-and-actions")+`") && location.hash === "#partial-field-check" && (() => { const r = document.getElementById("partial-field-check").getBoundingClientRect(); return r.top >= 0 && r.top < innerHeight; })()`)
+}
+
+// leavingQueries are words a reader might type for something that
+// left for Fiesta: a page, an idiom or a token group.
+var leavingQueries = []string{"tokens", "primitives", "modal", "card"}
+
+// noneLeftJS lists the links the rail shows that point at a page that
+// left for Fiesta: tokens.html or primitives.html under the mount, an
+// idiom, a token group or a Getting started file row.
+const noneLeftJS = `[...document.querySelectorAll("#ds-nav a")]
+  .filter(a => a.getBoundingClientRect().height > 0)
+  .map(a => a.getAttribute("href"))
+  .filter(h => /#(idiom|tokens|asset)-/.test(h) ||
+    (h.startsWith("` + mountPrefix + `") &&
+      /\/(tokens|primitives)\.html/.test(h)))`
+
+// noneLeft types query into the filter, which runs on each key, and
+// fails if any link it leaves on screen is on a page that left.
+func noneLeft(t *testing.T, ctx context.Context, where, query string) {
+	t.Helper()
+	empty := chromedp.Evaluate[chromedp.Void](`(() => {
+	  const i = document.getElementById("ds-filter"); i.value = "";
+	  i.dispatchEvent(new Event("input")); return true; })()`)
+	var left []string
+	err := chromedp.Do(ctx, empty,
+		chromedp.SendKeys(chromedp.CSS(`#ds-filter`), query),
+		harness.Into(&left, chromedp.Evaluate[[]string](noneLeftJS)))
+	if err != nil {
+		t.Fatalf("%s: reading the rail: %v", where, err)
+	}
+	if len(left) > 0 {
+		t.Errorf("%s: the filter shows links to pages that left: %v",
+			where, left)
+	}
 }

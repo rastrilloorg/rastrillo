@@ -683,9 +683,10 @@ can't wrap because it doesn't know that body's shape in advance.
 `tokens.css` ships the vocabulary; `Styleguide` is the exercised markup
 that goes with it, keyed by idiom name (`box`, `button`, `stat-band`,
 `list-grid`, `dropdown`, `form-layout`, `tblock`, `modal`, `help`,
-`selbox`, `shell-topbar`, `shell-sidebar`). The design-system page renders every sample it
-returns, and `ui_test.go`'s `TestIdiomClassesAreStyled` holds them
-honest against `tokens.css` in both directions: a sample can't write an
+`selbox`, `shell-topbar`, `shell-sidebar`). The same shapes are on
+the UI primitives page of Fiesta's design system, and `ui_test.go`'s
+`TestIdiomClassesAreStyled` holds them honest against `tokens.css` in
+both directions: a sample can't write an
 attribute the stylesheet doesn't style, and an idiom can't ship
 undemonstrated. The returned map is a copy, safe to mutate.
 
@@ -699,9 +700,10 @@ The `list-grid` sample gets its columns from
 `.orders { --rst-cols: 2fr 110px var(--rst-col-menu); }`. The sample
 cannot include this rule because the default CSP drops `style`
 attributes and `<style>` blocks. Add a rule like this to your app's
-stylesheet, using a selector for your list. The design-system gallery
-writes the rule into each preview document and shows it as an HTML
-comment at the top of the sample's HTML tab.
+stylesheet, using a selector for your list. Rastrillo components does
+the same for its own grid samples: the rule is written into each preview
+document and shown as an HTML comment at the top of the sample's HTML
+tab.
 
 ## The vendored assets
 
