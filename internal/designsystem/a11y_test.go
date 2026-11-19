@@ -1393,7 +1393,7 @@ func signinMatrix() map[string]auth.SigninState {
 	ada := &auth.Remembered{Method: "magiclink", Address: graceAddress}
 	pk := &auth.Remembered{Method: "passkey"}
 	s := func(mut func(*auth.SigninState)) auth.SigninState { return *signinScreen(mut) }
-	return map[string]auth.SigninState{
+	states := map[string]auth.SigninState{
 		"ask":                       s(func(st *auth.SigninState) {}),
 		"ask-door":                  s(func(st *auth.SigninState) { st.Passkey = door }),
 		"returning-keymail":         s(func(st *auth.SigninState) { st.Step, st.Remembered = auth.StepReturning, kay }),
@@ -1427,6 +1427,62 @@ func signinMatrix() map[string]auth.SigninState {
 		}),
 		"reauth-returning-passkey-no-door": s(func(st *auth.SigninState) {
 			st.Step, st.Problem, st.Remembered = auth.StepReturning, auth.ProblemReauth, pk
+		}),
+	}
+	for name, st := range oneWayMatrix() {
+		states["one-way-"+name] = st
+	}
+	return states
+}
+
+// oneWayMatrix is every door of the one-way screen (auth's
+// Config.SigninOneWay): an app's, with a federated door, and one with
+// passkeys and none, as id.oficina.works draws it.
+func oneWayMatrix() map[string]auth.SigninState {
+	fed := &auth.FederatedDoor{Provider: "oficina", Href: "/signin/oficina",
+		Label: "Oficina ID"}
+	oficina := &auth.Remembered{Method: "federated", Provider: "oficina",
+		Address: graceAddress}
+	link := &auth.Remembered{Method: "magiclink", Address: graceAddress}
+	pk := &auth.Remembered{Method: "passkey"}
+	app := func(mut func(*auth.SigninState)) auth.SigninState {
+		return *signinScreen(func(st *auth.SigninState) {
+			st.OneWay, st.SigninPath, st.Federated = true, "/signin", fed
+			mut(st)
+		})
+	}
+	id := func(mut func(*auth.SigninState)) auth.SigninState {
+		return app(func(st *auth.SigninState) {
+			st.Federated, st.Passkey = nil, galleryPasskey
+			mut(st)
+		})
+	}
+	return map[string]auth.SigninState{
+		"app-nothing": app(func(st *auth.SigninState) {}),
+		"app-oficina": app(func(st *auth.SigninState) {
+			st.Step, st.Remembered = auth.StepReturning, oficina
+		}),
+		"app-link": app(func(st *auth.SigninState) {
+			st.Step, st.Remembered = auth.StepReturning, link
+		}),
+		"app-chooser": app(func(st *auth.SigninState) {
+			st.Step, st.Remembered = auth.StepWays, oficina
+		}),
+		"app-email": app(func(st *auth.SigninState) { st.Way = "email" }),
+		"app-refused": app(func(st *auth.SigninState) {
+			st.Step, st.Remembered = auth.StepReturning, link
+			st.AppProblem = &auth.AppProblem{Text: "Not here.", Ask: true}
+		}),
+		"app-sent": app(func(st *auth.SigninState) {
+			st.Step, st.SentTo, st.Remembered = auth.StepSent,
+				graceAddress, link
+		}),
+		"id-nothing": id(func(st *auth.SigninState) {}),
+		"id-passkey": id(func(st *auth.SigninState) {
+			st.Step, st.Remembered = auth.StepReturning, pk
+		}),
+		"id-chooser": id(func(st *auth.SigninState) {
+			st.Step, st.Remembered = auth.StepWays, link
 		}),
 	}
 }

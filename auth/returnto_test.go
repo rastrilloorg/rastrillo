@@ -176,8 +176,8 @@ func TestThePasskeyDoorFinishesAtReturnTo(t *testing.T) {
 // Every form on a page with a destination posts it: the three Begin
 // doors and the way out of a remembered address.
 func TestEveryFormPostsReturnTo(t *testing.T) {
-	ada := &Remembered{"magiclink", "ada@example.com"}
-	kay := &Remembered{"keymail", "kay@example.org"}
+	ada := &Remembered{Method: "magiclink", Address: "ada@example.com"}
+	kay := &Remembered{Method: "keymail", Address: "kay@example.org"}
 	for name, c := range map[string]struct {
 		st    SigninState
 		forms int

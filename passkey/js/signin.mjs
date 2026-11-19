@@ -9,6 +9,14 @@
 // cannot work is a dead end on the one screen that must never have one.
 // The email form beside it works with or without any of this.
 //
+// On the one-way screen the door is the page's only way in, so it ships
+// visible and disabled instead, keeping its place, and is enabled where
+// a ceremony can run. Where one cannot, it says so and opens the email
+// way (data-rst-passkey-fallback): there is no form beside it to fall
+// back on. The same screen's email field may offer passkeys in its
+// autofill (data-rst-passkey-conditional), which fails silently: the
+// field works without it.
+//
 // Busy is drawn as rastrillo.js's busy rule draws it (aria-busy and an
 // rst-spin child, which tokens.css keys the spinner on) plus
 // aria-disabled, and never with disabled: a disabled button drops
@@ -103,16 +111,63 @@ function busy(btn, on) {
   }
 }
 
+// conditional runs one autofill sign-in with its effects passed in, so
+// Node can drive every branch. It never throws and never has a message:
+// it resolves to {navigate} after an ok:true finish, and to {} otherwise.
+// The autofill request can outlive the challenge begin minted (five
+// minutes, or another tab's begin replacing it), so a refused finish
+// begins again and retries once, with a new challenge and a new pick.
+export async function conditional({ post, authenticate, begin, finish, rpId, loc, signal }) {
+  for (let tries = 0; tries < 2; tries++) {
+    let a;
+    try {
+      const b = await post(begin, {});
+      if (!b || typeof b.challenge !== "string") return {};
+      a = await authenticate({ challenge: b.challenge, rpId, mediation: "conditional", signal });
+    } catch (err) {
+      return {};
+    }
+    try {
+      const done = await post(finish, {
+        id: a.credentialId,
+        clientDataJSON: a.clientDataJSON,
+        authenticatorData: a.authenticatorData,
+        signature: a.signature,
+      });
+      if (done && done.ok === true) return { navigate: safeNext(done.to, loc) };
+    } catch (err) {
+      // A refused finish answers non-2xx: try once more below.
+    }
+    if (signal && signal.aborted) return {};
+  }
+  return {};
+}
+
+// unavailable is the one-way door's way out when no ceremony can run:
+// the status line says why, and the page moves to the email way.
+function unavailable(btn, msg) {
+  const to = btn.getAttribute("data-rst-passkey-fallback");
+  if (!to) return;
+  if (msg) msg.textContent = btn.getAttribute("data-rst-passkey-unavailable") || "";
+  if (localPath(to)) location.replace(to);
+}
+
 function door(btn) {
-  if (!window.PublicKeyCredential) return;
   const msg = document.getElementById(btn.getAttribute("aria-describedby") || "");
+  if (!window.PublicKeyCredential) {
+    unavailable(btn, msg);
+    return;
+  }
   let mod = null;
   import(btn.getAttribute("data-rst-passkey-module")).then((m) => {
     if (m && m.available && m.available()) {
       mod = m;
       btn.hidden = false; // revealing never moves focus
+      btn.disabled = false; // the one-way door's state before this
+    } else {
+      unavailable(btn, msg);
     }
-  }, () => {});
+  }, () => unavailable(btn, msg));
   btn.addEventListener("click", async () => {
     // A second click while one ceremony runs would start another, and
     // the first one's answer would land on a page that has moved on.
@@ -137,10 +192,33 @@ function door(btn) {
   });
 }
 
+// autofill offers passkeys in the email field's autofill. It is aborted
+// the moment the form is sent, so a typed address never races a passkey
+// picked a moment earlier. Every failure is silent.
+function autofill(form) {
+  if (!window.PublicKeyCredential || typeof AbortController === "undefined") return;
+  const ctl = new AbortController();
+  form.addEventListener("submit", () => ctl.abort(), { once: true });
+  import(form.getAttribute("data-rst-passkey-module")).then(async (m) => {
+    if (!m || !m.conditionalAvailable || !(await m.conditionalAvailable())) return;
+    const out = await conditional({
+      post: postJSON,
+      authenticate: m.authenticate,
+      begin: form.getAttribute("data-rst-passkey-begin"),
+      finish: form.getAttribute("data-rst-passkey-finish"),
+      rpId: location.hostname,
+      loc: location,
+      signal: ctl.signal,
+    });
+    if (out.navigate && !ctl.signal.aborted) location.assign(out.navigate);
+  }, () => {});
+}
+
 // A module runs after the document is parsed, so the door is already
 // there. Node has no document and stops here.
 if (typeof document !== "undefined") {
   document.querySelectorAll("[data-rst-passkey]").forEach(door);
+  document.querySelectorAll("form[data-rst-passkey-conditional]").forEach(autofill);
   // A sign-in navigates away mid-busy; the back-forward cache restores
   // the page exactly as it was left, spinner and all.
   window.addEventListener("pageshow", (e) => {

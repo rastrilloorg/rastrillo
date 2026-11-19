@@ -955,7 +955,7 @@ columns auth/auth.go e29553cd014f 1
 columns auth/auth.go ec14109dd65b 1
 columns auth/auth.go eda525fa5bef 1
 columns auth/auth.go edb224703a41 1
-file auth/auth.go - 639 Config.Reader for the session lookups (#241)
+file auth/auth.go - 646 Config.Reader for the session lookups (#241); Config.SigninOneWay, the smart door
 func auth/auth.go New 152
 names auth/auth.go -/d 1
 names auth/auth.go -/r 3
@@ -2314,7 +2314,7 @@ columns auth/signin.go 17f62687bdae 1
 columns auth/signin.go 7fc54d021782 1
 columns auth/signin.go 93cf87bcbeff 1
 columns auth/signin.go e2126f7ef8d1 1
-func auth/signin.go Auth.SigninState 67
+func auth/signin.go Auth.SigninState 63
 names auth/signin.go Auth.Forget/a 1
 names auth/signin.go Auth.Forget/r 1
 names auth/signin.go Auth.Forget/w 1
@@ -2438,7 +2438,6 @@ columns auth/signinscreen_browser_test.go edcccf1b4179 1
 columns auth/signinscreen_browser_test.go ef6efbcc4c6a 1
 columns auth/signinscreen_browser_test.go f22fdb59a2f0 1
 columns auth/signinscreen_browser_test.go f392a1c099a8 1
-columns auth/signinscreen_browser_test.go f562236ed12a 1
 columns auth/signinscreen_browser_test.go f9869cadfd00 1
 columns auth/signinscreen_browser_test.go f98d5ce31a2e 1
 columns auth/signinscreen_browser_test.go f9b3be2461a6 1
@@ -2507,7 +2506,6 @@ columns auth/signinstate_test.go 4562fbdd1c70 1
 columns auth/signinstate_test.go 45b473ad3f56 1
 columns auth/signinstate_test.go 492c9c0071ed 1
 columns auth/signinstate_test.go 4b7a6284fb9c 1
-columns auth/signinstate_test.go 4bc426b8146f 1
 columns auth/signinstate_test.go 4cc4e1924c4c 1
 columns auth/signinstate_test.go 4d992fac24c4 1
 columns auth/signinstate_test.go 520ee93d38dc 1
@@ -2540,7 +2538,6 @@ columns auth/signinstate_test.go a1f874957664 1
 columns auth/signinstate_test.go a71722aceff4 1
 columns auth/signinstate_test.go abbde959fb47 1
 columns auth/signinstate_test.go ae4b6d740224 1
-columns auth/signinstate_test.go ae59efb0ce93 1
 columns auth/signinstate_test.go af3cb960d531 1
 columns auth/signinstate_test.go af951c6c7d71 1
 columns auth/signinstate_test.go be8fe602960d 1

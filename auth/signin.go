@@ -104,16 +104,31 @@ type SigninState struct {
 	// in. The state is otherwise empty, and the partial renders nothing.
 	Unavailable bool
 
+	// OneWay draws one way in per page, with the others on a chooser
+	// (Config.SigninOneWay; oneway.go). Way is the way picked from it,
+	// read by ChooseWay, and SigninPath is the page its links go to.
+	OneWay     bool
+	Way        SigninWay
+	SigninPath string
+	// Federated is set by the page, like Passkey: nil means no
+	// federated door. Only the one-way screen draws it.
+	Federated *FederatedDoor
+	// AppProblem is set by the page for a problem only the app can
+	// name, such as its refusal of a verified address.
+	AppProblem *AppProblem
+
 	// clear names cookies SigninState found present and unbelievable:
 	// how the read-only half tells PrepareSigninResponse what to delete.
 	clear []string
 }
 
-// Remembered is the way in this browser used last. Address is "" for a
-// passkey.
+// Remembered is the way in this browser used last. Address is "" when
+// the sign-in had none to remember, as a passkey's usually has not.
+// Provider is set for a federated sign-in only.
 type Remembered struct {
-	Method  string
-	Address string
+	Method   string
+	Address  string
+	Provider string
 }
 
 // PasskeyDoor is where the app mounted passkey discovery (BeginPath,
@@ -187,13 +202,7 @@ func (a *Auth) SigninState(r *http.Request) SigninState {
 		return st
 	}
 
-	rec, res := a.jar.Read(r)
-	switch res {
-	case lastsignin.Valid:
-		st.Remembered = &Remembered{Method: rec.Method, Address: rec.Address}
-	case lastsignin.Invalid:
-		st.clear = append(st.clear, a.jar.CookieName())
-	}
+	st.Remembered = a.remembered(r, &st)
 	at, atState := a.openAttempt(r)
 	if atState == cookieInvalid {
 		st.clear = append(st.clear, a.attemptCookie())
@@ -209,6 +218,8 @@ func (a *Auth) SigninState(r *http.Request) SigninState {
 		}
 	}
 	st.Step, st.Problem = outcome(q, st.Remembered != nil)
+	st.OneWay, st.SigninPath = a.cfg.SigninOneWay, a.oneWayPath()
+	st.ChooseWay(q)
 
 	// A prefill is the visitor's own input and stays editable, so the
 	// latest attempt wins even if another tab made it.
@@ -299,12 +310,7 @@ func (a *Auth) Forget(w http.ResponseWriter, r *http.Request) {
 	}
 	a.jar.Clear(w)
 	a.jar.EndAttempt(w)
-	// A different address is still going to the same page.
-	to := a.cfg.SigninPath
-	if dest := postedReturnTo(r); dest != "" {
-		to += "?return_to=" + url.QueryEscape(dest)
-	}
-	a.redirect(w, r, to)
+	a.redirect(w, r, a.afterForget(r))
 }
 
 // PasskeyFinish is the passkey door's finish URL, with ReturnTo on its
@@ -341,8 +347,12 @@ func (s SigninState) Door() string {
 	case StepConfirm:
 		return "confirm"
 	}
-	if s.Problem != ProblemNone && s.Problem != ProblemReauth {
+	if s.Problem != ProblemNone && s.Problem != ProblemReauth ||
+		s.AppProblem != nil && s.AppProblem.Ask {
 		return "ask"
+	}
+	if s.OneWay {
+		return s.oneWayDoor()
 	}
 	if s.Step == StepReturning && s.Remembered != nil {
 		switch s.Remembered.Method {
@@ -371,11 +381,12 @@ func (s SigninState) Focus() string {
 	switch {
 	case s.Problem == ProblemAddress:
 		return "field"
-	case s.Problem != ProblemNone && s.Problem != ProblemReauth:
+	case s.Problem != ProblemNone && s.Problem != ProblemReauth,
+		s.AppProblem != nil:
 		return "callout"
 	}
 	switch s.Door() {
-	case "keymail", "link", "confirm":
+	case "keymail", "link", "confirm", "federated":
 		return "onetap"
 	case "ask":
 		return "field"
