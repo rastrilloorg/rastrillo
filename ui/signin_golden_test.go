@@ -1,7 +1,7 @@
 package ui
 
 import (
-	"flag"
+	flags "flag"
 	"fmt"
 	"os"
 	"regexp"
@@ -12,7 +12,8 @@ import (
 	"amadan.net/rastrillo/rastrillo/auth"
 )
 
-var updateSigninGolden = flag.Bool("update-signin-golden", false,
+// flags, not flag: the browser build has a func named flag.
+var updateSigninGolden = flags.Bool("update-signin-golden", false,
 	"rewrite testdata/signin-golden.html from the signin partial")
 
 // signinGolden is every sign-in state the partial drew before the
