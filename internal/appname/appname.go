@@ -22,7 +22,7 @@ const (
 		"line %d of %s %d columns wide, and the app's make code allows %d."
 )
 
-// taken is every name the scaffold's Go uses in cmd/<name> and the
+// taken is every name a scaffold's Go uses in cmd/<name> and the
 // <pkg>_test package, the two that import the app's package. There a
 // variable of the same name shadows the package (main.go's database
 // made database.New a method call on *db.DB), and an import or a
@@ -50,8 +50,9 @@ var taken = strings.Fields(`
 	TestMain TestModelsMatchMigrations testOrigin TestOverviewRenders
 	TestPerfBoot TestPerfScreens
 	TestSignInByEmailedLink TestTokenPageShowsANewTokenOnce
-	TestVendoredAssetsMatchTheLibrary time title token tokenPattern ui
-	url variable vendored vendoredIsMine vendoredTheme year
+	TestUnknownPathIs404 TestVendoredAssetsMatchTheLibrary time title
+	token tokenPattern ui url variable vendored vendoredIsMine
+	vendoredTheme year
 `)
 
 // CheckPackage refuses the app called name if its package name, pkg,

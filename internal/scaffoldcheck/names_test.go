@@ -15,12 +15,24 @@ import (
 // package the scaffold's own code already uses as a name.
 const clashRefusal = "choose another name"
 
-// shadowedAfterUse are locals the migration check declares after its
-// last use of the app's package, so they hide it only where nothing reads
-// it. They are plausible app names, so they are not refused.
-var shadowedAfterUse = []string{"changes", "change", "message"}
+// shadowedAfterUse are locals declared after their function's last use
+// of the app's package, so they hide it only where nothing reads it, with
+// the flags of the scaffold that declares each: the migration check's in
+// single, and bare plain's index test's. They are plausible app names,
+// so they are not refused.
+var shadowedAfterUse = map[string][]string{
+	"changes": nil, "change": nil, "message": nil,
+	"lang": bareShapes[1].flags, "want": bareShapes[1].flags,
+}
 
-// Every name the scaffold's Go uses where the app's package is in scope
+// bareShapes are the two bare apps, with and without the design system,
+// whose tests import the app's package just as single's do.
+var bareShapes = []variant{
+	{"bareapp", []string{"--scaffold=bare"}},
+	{"bareplainapp", []string{"--scaffold=bare", "--design-system=false"}},
+}
+
+// Every name a scaffold's Go uses where the app's package is in scope
 // is refused as an app's package name: main.go's `database` variable
 // shadowed a package called database, and its `database.New` did not
 // build. A name added to a template and not to the refusal list fails
@@ -28,11 +40,11 @@ var shadowedAfterUse = []string{"changes", "change", "message"}
 func TestNewRefusesEveryNameTheScaffoldUses(t *testing.T) {
 	t.Parallel()
 	used := map[string]bool{}
-	for _, variant := range everyShell() {
+	for _, variant := range append(everyShell(), bareShapes...) {
 		directory := newApp(t, variant.name, variant.flags...)
 		for _, identifier := range namesBesideTheApp(t, directory,
 			variant.name) {
-			if !slices.Contains(shadowedAfterUse, identifier) {
+			if _, shadowed := shadowedAfterUse[identifier]; !shadowed {
 				used[identifier] = true
 			}
 		}
@@ -50,13 +62,14 @@ func TestNewRefusesEveryNameTheScaffoldUses(t *testing.T) {
 	}
 }
 
-// An app named like one of those locals builds, and its own tests pass.
+// An app named like one of those locals, in the scaffold that declares
+// it, builds, and its own tests pass.
 func TestAppsNamedLikeAShadowedLocalPassTheirTests(t *testing.T) {
 	t.Parallel()
-	for _, name := range shadowedAfterUse {
+	for name, flags := range shadowedAfterUse {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
-			directory := buildableApp(t, name)
+			directory := buildableApp(t, name, flags...)
 			run(t, directory, "go", "test", "-count=1",
 				"./internal/"+name+"/")
 		})
