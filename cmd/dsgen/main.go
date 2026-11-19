@@ -90,7 +90,7 @@ func run() error {
 	mount := flag.String("mount", designsystem.DefaultMount, "URL path the gallery will be served from")
 	redirectFrom := flag.String("redirect-from", "",
 		"URL path the gallery used to be served from; "+
-			"writes a _redirects file sending it to -mount")
+			"writes a _redirects file that redirects every URL under it")
 	flag.Usage = usage
 	flag.Parse()
 
@@ -274,9 +274,10 @@ Every URL in the output is an absolute path under -mount, so generate
 with the path the site will serve the files from. The default is the
 path rastrillo.org uses.
 
-With -redirect-from, DIR also gets a _redirects file that sends every
-address the gallery had under that path on to where it is now. Publish
-it at the site's root.
+With -redirect-from, DIR also gets a _redirects file that redirects
+every URL under that path to where it is now: the same page under
+-mount, or Fiesta's page for one that moved there. Publish the file at
+the site's root.
 
 Flags:
 `)

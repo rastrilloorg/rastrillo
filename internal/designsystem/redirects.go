@@ -56,7 +56,7 @@ func Redirects(from, to string) ([]string, error) {
 	if from == to || strings.HasPrefix(from, to+"/") ||
 		strings.HasPrefix(to, from+"/") {
 		return nil, fmt.Errorf("designsystem: redirecting %s to %s: "+
-			"one mount is inside the other", from, to)
+			"mount paths must not be equal or nested", from, to)
 	}
 
 	rules := &ruleWriter{from: from, to: to}
@@ -84,7 +84,6 @@ func Redirects(from, to string) ([]string, error) {
 	return rules.lines, nil
 }
 
-// ruleWriter collects the rules from one mount to another, in order.
 type ruleWriter struct {
 	from, to string
 	lines    []string
@@ -94,8 +93,6 @@ func (rules *ruleWriter) redirect(source, destination string) {
 	rules.lines = append(rules.lines, source+" "+destination+" 301")
 }
 
-// overview sends an Overview, asked for as its directory or its
-// index.html, to its directory under the new mount.
 func (rules *ruleWriter) overview(theme, oldLocale, locale string) {
 	old := rules.from + "/" + theme + "/" + oldLocale
 	directory := rules.to + "/" + theme + "/" + locale + "/"
@@ -103,8 +100,6 @@ func (rules *ruleWriter) overview(theme, oldLocale, locale string) {
 	rules.redirect(old, directory)
 }
 
-// toFiesta sends each page that left, and its preview frames, to the
-// Fiesta page that says what it said.
 func (rules *ruleWriter) toFiesta(theme, oldLocale, locale string) {
 	old := rules.from + "/" + theme + "/" + oldLocale + "/"
 	for _, left := range leftForFiesta {
@@ -113,8 +108,6 @@ func (rules *ruleWriter) toFiesta(theme, oldLocale, locale string) {
 	}
 }
 
-// retagged sends everything under a locale's old directory to its
-// final address under the new code's.
 func (rules *ruleWriter) retagged(theme, oldLocale, locale string) {
 	rules.overview(theme, oldLocale, locale)
 	rules.toFiesta(theme, oldLocale, locale)
@@ -132,8 +125,8 @@ func refuseRuleSyntax(mount string) error {
 	for _, character := range mount {
 		if unicode.IsSpace(character) || unicode.IsControl(character) ||
 			strings.ContainsRune(`#?*:%\`, character) {
-			return fmt.Errorf("designsystem: mount path %q holds %q, "+
-				"which a _redirects rule cannot carry", mount, character)
+			return fmt.Errorf("designsystem: mount path %q contains %q, "+
+				"which a _redirects rule cannot represent", mount, character)
 		}
 	}
 	return nil
