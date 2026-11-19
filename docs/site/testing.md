@@ -68,10 +68,9 @@ make ci
 
 runs vet, gofmt, staticcheck, govulncheck, gitleaks, `budget`, `code`,
 `routes`, `csp`, `test`, `perf` and `rastrillo generate --check`, in that
-order and one at a time. It is the one gate
-definition: `.amadan/ci` and `.amadan/ci.d/` are executable steps that
-call the same Makefile targets, so the CI runner and your terminal cannot
-disagree about what passing means.
+order. It is the one gate definition: `.amadan/ci` and `.amadan/ci.d/`
+are executable steps that call the same Makefile targets, so the CI
+runner and your terminal cannot disagree about what passing means.
 
 staticcheck runs at a pinned version through `go run`, so there is nothing
 to install. Raise that version in the Makefile when you raise the `go`

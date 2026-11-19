@@ -1,6 +1,6 @@
 ---
 name: rastrillo
-description: "Build a CARLOS app, or port one to it: GORM models or plain SQL, chi routes, sessions, owner-scoped queries."
+description: "Build a CARLOS app or port one: GORM models or plain SQL, chi routes, sessions, owner-scoped queries."
 ---
 
 # Rastrillo

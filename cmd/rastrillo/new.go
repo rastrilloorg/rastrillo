@@ -263,9 +263,9 @@ func writeSingle(options newOpts) error {
 	fmt.Printf("  internal/%s/          (app, routes, handlers, models, "+
 		"migrations, render, templates, static)\n", pkg)
 	tests := "internal/" + pkg + "/*_test.go"
-	fmt.Printf("  %s (harness + example tests, passing out of the box;\n"+
-		"  %*s browser_test.go = the browser drive, go test -tags "+
-		"browser ./...)\n", tests, len(tests)+1, "")
+	fmt.Printf("  %s (harness and example tests pass out of the box;\n"+
+		"  %*s browser_test.go runs with go test -tags browser ./...)\n",
+		tests, len(tests)+1, "")
 	fmt.Println("  manifest/            (the declarative path: drop a <name>.toml here, see its README)")
 	fmt.Println("  Makefile             (make ci = vet + fmt + staticcheck + " +
 		"govulncheck + gitleaks + budget + code + routes + csp + test + " +

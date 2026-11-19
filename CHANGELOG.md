@@ -49,7 +49,7 @@ gallery at `/design-system/`.
 
 ### Added: `rastrillo new --scaffold` picks the app's shape
 
-`single`, the default, is the app `rastrillo new` wrote before, with
+`single`, the default, is the app `rastrillo new` used to write, with
 two changes:
 
 - Its tests sit beside the code in `internal/<app>/`, as package
@@ -62,8 +62,8 @@ two changes:
 `--auth=magic` writes. `bare` is a page and a route on Go's
 `http.ServeMux`, with no database, no sign-in and no `Makefile`: its
 gate is `go test ./...`, and `--design-system=false` leaves out its
-templates and static files. `home` and `hub` are planned and refused for
-now. Apps you already have change nothing.
+templates and static files. `home` and `hub` are not built yet. Apps you
+already have change nothing.
 
 Two commands now work on a `bare` app:
 
@@ -79,6 +79,11 @@ Set `ScreenConfig.Patterns` to your `http.ServeMux` routes instead of
 `"/{$}"` is the screen `GET /`. A subtree pattern such as `"/admin/"` is
 a mount and fails, like chi's `/*`, until an `Opaque` group lists its
 screens or a record skips it. Apps that set `Routes` change nothing.
+
+### Fixed
+
+- `rastrillo migration` finds an app whose name ends in `test`. It used
+  to skip that package as if it were the old test directory.
 
 ## v0.37.0
 

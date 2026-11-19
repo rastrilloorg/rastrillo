@@ -690,9 +690,9 @@ Three packages carry the tag:
   because the CDP authenticator cannot withhold PRF at creation on its
   own.
 
-`rastrillo new` scaffolds `internal/<pkg>/browser_test.go` on the
-same tag — the minimal loud walk, boots the whole app through
-`harness.New` and grows with it.
+`rastrillo new` scaffolds `internal/<pkg>/browser_test.go` with the
+same tag. It boots the whole app through `harness.New` and can grow
+with it.
 
 ## Parity vectors
 

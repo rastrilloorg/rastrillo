@@ -3,7 +3,7 @@
 A new app with sign-in starts from `rastrillo new --scaffold accounts`,
 which signs people in by emailed link. These steps add password sign-in
 to an existing `single` app (`rastrillo new` alone, which has no
-accounts); applied to a fresh one, they pass its `make ci` (`<app>` is
+sign-in); applied to a fresh one, they pass its `make ci` (`<app>` is
 the app's name). Sessions, traps and other plugins: skill/signin.md.
 
 **1. Model.** In `models.go`, add `&User{}` to `Models` and

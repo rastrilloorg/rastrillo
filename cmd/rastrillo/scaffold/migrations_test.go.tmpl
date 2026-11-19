@@ -9,7 +9,7 @@ import (
 	"%[1]s/internal/%[2]s"
 )
 
-// Schema, not BootSchema: Models has no subsystem's tables.
+// Schema, not BootSchema: Models has no subsystem tables.
 func TestModelsMatchMigrations(t *testing.T) {
 	t.Parallel()
 	changes, err := modeldiff.Generate(t.Context(),
