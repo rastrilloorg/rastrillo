@@ -219,6 +219,15 @@ func TestOtherWaysOrADifferentEmail(t *testing.T) {
 
 // Every link off the screen keeps where the visitor was going.
 func TestOneWayLinksCarryReturnTo(t *testing.T) {
+	checked := 0
+	defer func() {
+		// Every door but Sent links on, so a screen with no links at all
+		// would pass the loop with nothing checked.
+		if checked < len(oneWayStates()) {
+			t.Errorf("%d links checked across %d states", checked,
+				len(oneWayStates()))
+		}
+	}()
 	for _, state := range oneWayStates() {
 		st := state.st
 		st.ReturnTo = "/docs/7?tab=a"
@@ -229,6 +238,7 @@ func TestOneWayLinksCarryReturnTo(t *testing.T) {
 			if href == nil {
 				continue
 			}
+			checked++
 			parsed, err := url.Parse(html.UnescapeString(href[1]))
 			if err != nil ||
 				parsed.Query().Get("return_to") != "/docs/7?tab=a" {

@@ -39,11 +39,17 @@ var (
 	byPasskey = &Remembered{Method: lastsignin.MethodPasskey}
 )
 
+// A config New would otherwise accept, so the refusal is the option's.
 func TestTheOneWayOptionNeedsTheScreen(t *testing.T) {
-	cfg := Config{Origin: "https://app.test", InstanceKey: "k",
-		ProofOff: true, SigninOneWay: true}
-	if _, err := New(cfg); err == nil {
-		t.Fatal("New accepted SigninOneWay without SigninScreen")
+	cfg := Config{DB: newTestAuthDB(t), Origin: "https://app.test",
+		InstanceKey: "k", ProofOff: true, Mailer: &captureMailer{}}
+	if _, err := New(cfg); err != nil {
+		t.Fatalf("the control config is refused: %v", err)
+	}
+	cfg.SigninOneWay = true
+	_, err := New(cfg)
+	if err == nil || !strings.Contains(err.Error(), "SigninOneWay") {
+		t.Fatalf("New with SigninOneWay and no screen: %v", err)
 	}
 }
 
@@ -217,6 +223,9 @@ func TestReauthOffersLocalWaysOnly(t *testing.T) {
 	} {
 		if door := st.Door(); door == "federated" {
 			t.Errorf("%s: a step-up offers the federated door", name)
+		}
+		if len(st.Ways()) == 0 {
+			t.Errorf("%s: the chooser offers no local way", name)
 		}
 		for _, way := range st.Ways() {
 			if way.Way == "oficina" {
