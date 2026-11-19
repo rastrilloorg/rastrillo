@@ -299,8 +299,10 @@ const (
 	// ships and cannot be trimmed by hand; splitting it would send an
 	// agent to two lists for one lookup. Set on 2026-11-17 for
 	// field-number (the Fichas level-up spec rev 4, R2), which took it
-	// to 9,107; the ceiling is the next hundred.
-	skillPartialsBudget = 9_200
+	// to 9,107; the ceiling is the next hundred. Raised on 2026-11-19
+	// for the smart door's four signin parts, each a one-line "Part of
+	// signin" entry, which took it to 9,441.
+	skillPartialsBudget = 9_500
 )
 
 // skillFiles are SKILL.md and every topic, by path.

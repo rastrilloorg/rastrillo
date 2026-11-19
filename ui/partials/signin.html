@@ -107,7 +107,7 @@
      where the field already is the different email, not on Continue,
      which has no controls but its link, and not on Confirm, whose link
      may have been sent to anyone. */}}{{if and (ne $door "ask") (ne $door "continue") (ne $door "confirm") (or (not $s.OneWay) (eq $door "sent"))}}<form rst-signin-form method="post" action="{{$s.ForgetPath}}">{{with $s.ReturnTo}}<input type="hidden" name="return_to" value="{{.}}">
-{{end}}{{if $s.OneWay}}{{template "signin-forget-way" $s}}{{end}}<button rst-btn="ghost block" type="submit">{{T $L "rastrillo.ui.signin_different"}}</button></form>
+{{end}}{{if $s.OneWay}}{{template "signin-forget-way" (dict "L" $L "State" $s)}}{{end}}<button rst-btn="ghost block" type="submit">{{T $L "rastrillo.ui.signin_different"}}</button></form>
 {{end}}{{if and $gated (ne $door "sent") (ne $door "continue") (ne $door "confirm") (not $preview) (not $s.OneWay)}}{{$proof.Script}}{{end}}</div>
 </section>{{end}}{{end}}
 {{/* signin-title — the document title for the same state, for the
@@ -115,25 +115,25 @@
      that says the same thing, so a screen-reader user who lands on the
      page hears where they are. Keys: State, Brand (as signin). */}}
 {{define "signin-title"}}{{$L := localizer $}}{{$s := .State}}{{$n := .Brand.Name}}{{if eq $s.Step "sent"}}{{Tf $L "rastrillo.ui.signin_sent_title" "name" $n}}{{else if eq $s.Step "continue"}}{{Tf $L "rastrillo.ui.signin_continue_title" "name" $n}}{{else if and $s.Problem (ne $s.Problem "reauth")}}{{Tf $L "rastrillo.ui.signin_problem_title" "name" $n}}{{else if $s.AppProblem}}{{Tf $L "rastrillo.ui.signin_problem_title" "name" $n}}{{else if eq $s.Step "ways"}}{{Tf $L "rastrillo.ui.signin_ways_title" "name" $n}}{{else}}{{Tf $L "rastrillo.ui.signin_title" "name" $n}}{{end}}{{end}}
-{{/* signin-one-way — the door on the one-way screen, below the steps
-     (Sent, Continue, Confirm) that are drawn as they always were. Called
-     by signin only. auth's Door and Ways decide what is offered; this
+{{/* signin-one-way — part of signin. It draws the door on the one-way
+     screen, below the steps (Sent, Continue, Confirm) that are drawn as
+     they always were. auth's Door and Ways decide what is offered; this
      draws it: one way in, then "Other ways to sign in", or, with no
      other way, "Use a different email". The chooser is a page of links,
      so it needs no script. */}}
-{{define "signin-one-way"}}{{$L := .L}}{{$s := .State}}{{$door := .Door}}{{$focus := .Focus}}{{$preview := .Preview}}{{$proof := .Proof}}{{$gated := .Gated}}{{if eq $door "ways"}}<h1 id="rst-signin-heading">{{T $L "rastrillo.ui.signin_ways"}}</h1>
+{{define "signin-one-way"}}{{$L := localizer $}}{{$s := .State}}{{$door := .Door}}{{$focus := .Focus}}{{$preview := .Preview}}{{$proof := .Proof}}{{$gated := .Gated}}{{if eq $door "ways"}}<h1 id="rst-signin-heading">{{T $L "rastrillo.ui.signin_ways"}}</h1>
 {{else}}<h1 id="rst-signin-heading">{{Tf $L "rastrillo.ui.signin_heading" "name" .Name}}</h1>
 {{end}}{{if and $s.Problem (ne $s.Problem "address")}}{{$tone := "negative"}}{{if eq $s.Problem "reauth"}}{{$tone = "info"}}{{end}}{{template "callout" (dict "L" $L "ID" "rst-signin-problem" "Tone" $tone "Body" (T $L (printf "rastrillo.ui.signin_problem_%s" $s.Problem)) "Focus" (and (eq $focus "callout") (ne $s.Problem "reauth")))}}
-{{end}}{{template "signin-app-problem" (dict "L" $L "State" $s "Focus" $focus)}}{{if eq $door "ways"}}{{range $s.Ways}}<a rst-btn="block" href="{{.Href}}">{{if eq .Way "email"}}{{template "signin-glyph" "mail"}}<span>{{T $L "rastrillo.ui.signin_way_email"}}{{with .Detail}} <bdi>{{.}}</bdi>{{end}}</span>{{else if eq .Way "passkey"}}{{template "signin-glyph" "key"}}<span>{{T $L "rastrillo.ui.signin_passkey"}}</span>{{else}}{{.Icon}}<span>{{.Label}}</span>{{end}}{{template "signin-glyph" "next"}}</a>
+{{end}}{{template "signin-app-problem" (dict "L" $L "State" $s "Focus" $focus)}}{{if eq $door "ways"}}{{range $s.Ways}}<a rst-btn="block" href="{{.Href}}">{{if eq .Way "email"}}{{template "signin-glyph" (dict "L" $L "Glyph" "mail")}}<span>{{T $L "rastrillo.ui.signin_way_email"}}{{with .Detail}} <bdi>{{.}}</bdi>{{end}}</span>{{else if eq .Way "passkey"}}{{template "signin-glyph" (dict "L" $L "Glyph" "key")}}<span>{{T $L "rastrillo.ui.signin_passkey"}}</span>{{else}}{{.Icon}}<span>{{.Label}}</span>{{end}}{{template "signin-glyph" (dict "L" $L "Glyph" "next")}}</a>
 {{end}}{{if $s.Remembered}}<form rst-signin-form method="post" action="{{$s.ForgetPath}}">{{with $s.ReturnTo}}<input type="hidden" name="return_to" value="{{.}}">
-{{end}}{{template "signin-forget-way" $s}}<button rst-btn="block" type="submit">{{template "signin-glyph" "at"}}<span>{{T $L "rastrillo.ui.signin_different"}}</span>{{template "signin-glyph" "next"}}</button></form>
-{{end}}<a rst-btn="ghost" href="{{$s.BackHref}}">{{template "signin-glyph" "back"}}<span>{{T $L "rastrillo.ui.signin_back"}}</span></a>
+{{end}}{{template "signin-forget-way" (dict "L" $L "State" $s)}}<button rst-btn="block" type="submit">{{template "signin-glyph" (dict "L" $L "Glyph" "at")}}<span>{{T $L "rastrillo.ui.signin_different"}}</span>{{template "signin-glyph" (dict "L" $L "Glyph" "next")}}</button></form>
+{{end}}<a rst-btn="ghost" href="{{$s.BackHref}}">{{template "signin-glyph" (dict "L" $L "Glyph" "back")}}<span>{{T $L "rastrillo.ui.signin_back"}}</span></a>
 {{else if eq $door "federated"}}<a rst-btn="primary block" href="{{$s.FederatedHref}}"{{if eq $focus "onetap"}} autofocus{{end}}>{{$s.Federated.Icon}}<span>{{Tf $L "rastrillo.ui.signin_federated" "name" $s.Federated.Label}}</span></a>
 {{else if eq $door "passkey"}}{{/* Drawn visible and disabled, so the page does not move when the
      script enables it. If the script finds no way to use a passkey it
      says so and opens the email way: a disabled button is a dead end.
      disabled is only ever the state before the script; busy is
-     aria-busy, which keeps focus. */}}<div rst-signin-passkey><button rst-btn="primary block" type="button"{{if not $preview}} disabled data-rst-passkey data-rst-passkey-begin="{{$s.Passkey.BeginPath}}" data-rst-passkey-finish="{{$s.PasskeyFinish}}" data-rst-passkey-module="{{$s.Passkey.ModuleURL}}"{{with $s.Passkey.LegacyRPID}} data-rst-passkey-legacy-rpid="{{.}}"{{end}} data-rst-passkey-cancelled="{{T $L "rastrillo.ui.signin_passkey_cancelled"}}" data-rst-passkey-failed="{{T $L "rastrillo.ui.signin_passkey_failed"}}" data-rst-passkey-unavailable="{{T $L "rastrillo.ui.signin_passkey_unavailable"}}" data-rst-passkey-fallback="{{$s.EmailHref}}"{{end}} aria-describedby="rst-signin-passkey-msg">{{template "signin-glyph" "key"}}<span>{{if and $s.Remembered (eq $s.Remembered.Method "passkey")}}{{T $L "rastrillo.ui.signin_passkey_remembered"}}{{else}}{{T $L "rastrillo.ui.signin_passkey"}}{{end}}</span></button>
+     aria-busy, which keeps focus. */}}<div rst-signin-passkey><button rst-btn="primary block" type="button"{{if not $preview}} disabled data-rst-passkey data-rst-passkey-begin="{{$s.Passkey.BeginPath}}" data-rst-passkey-finish="{{$s.PasskeyFinish}}" data-rst-passkey-module="{{$s.Passkey.ModuleURL}}"{{with $s.Passkey.LegacyRPID}} data-rst-passkey-legacy-rpid="{{.}}"{{end}} data-rst-passkey-cancelled="{{T $L "rastrillo.ui.signin_passkey_cancelled"}}" data-rst-passkey-failed="{{T $L "rastrillo.ui.signin_passkey_failed"}}" data-rst-passkey-unavailable="{{T $L "rastrillo.ui.signin_passkey_unavailable"}}" data-rst-passkey-fallback="{{$s.EmailHref}}"{{end}} aria-describedby="rst-signin-passkey-msg">{{template "signin-glyph" (dict "L" $L "Glyph" "key")}}<span>{{if and $s.Remembered (eq $s.Remembered.Method "passkey")}}{{T $L "rastrillo.ui.signin_passkey_remembered"}}{{else}}{{T $L "rastrillo.ui.signin_passkey"}}{{end}}</span></button>
 <p rst-signin-passkey-msg id="rst-signin-passkey-msg" aria-live="polite"></p>
 </div>
 {{if not $preview}}<noscript><p>{{T $L "rastrillo.ui.signin_passkey_noscript"}}</p></noscript>
@@ -149,7 +149,7 @@
 {{else if eq $door "link"}}<form rst-signin-form method="post" action="{{$s.BeginPath}}"{{with $proof}} {{.Attrs}}{{end}}>{{with $proof}}{{.Fields}}{{end}}
 {{with $s.ReturnTo}}<input type="hidden" name="return_to" value="{{.}}">
 {{end}}<input type="hidden" name="address" value="{{$s.Remembered.Address}}">
-<button rst-btn="primary block" type="submit"{{if eq $focus "onetap"}} autofocus{{end}}{{if $gated}} disabled data-pow-submit{{end}}>{{template "signin-glyph" "mail"}}<span>{{Tbdi $L "rastrillo.ui.signin_continue_as" "address" $s.Remembered.Address}}</span></button>
+<button rst-btn="primary block" type="submit"{{if eq $focus "onetap"}} autofocus{{end}}{{if $gated}} disabled data-pow-submit{{end}}>{{template "signin-glyph" (dict "L" $L "Glyph" "mail")}}<span>{{Tbdi $L "rastrillo.ui.signin_continue_as" "address" $s.Remembered.Address}}</span></button>
 {{if $gated}}{{$proof.StatusLine (T $L "rastrillo.ui.pow_status")}}<noscript><p>{{T $L "rastrillo.ui.pow_noscript"}}</p></noscript>
 {{end}}</form>
 {{else}}{{/* The email field. With a passkey door and no legacy relying party
@@ -163,25 +163,25 @@
 {{if $gated}}{{$proof.StatusLine (T $L "rastrillo.ui.pow_status")}}<noscript><p>{{T $L "rastrillo.ui.pow_noscript"}}</p></noscript>
 {{end}}</form>
 {{if $conditional}}<script type="module" src="{{$s.Passkey.ScriptURL}}"></script>
-{{end}}{{end}}{{if ne $door "ways"}}{{if $s.Ways}}<a rst-btn="ghost" href="{{$s.WaysHref}}"><span>{{T $L "rastrillo.ui.signin_ways"}}</span>{{template "signin-glyph" "next"}}</a>
+{{end}}{{end}}{{if ne $door "ways"}}{{if $s.Ways}}<a rst-btn="ghost" href="{{$s.WaysHref}}"><span>{{T $L "rastrillo.ui.signin_ways"}}</span>{{template "signin-glyph" (dict "L" $L "Glyph" "next")}}</a>
 {{else if or (eq $door "keymail") (eq $door "link")}}<form rst-signin-form method="post" action="{{$s.ForgetPath}}">{{with $s.ReturnTo}}<input type="hidden" name="return_to" value="{{.}}">
-{{end}}{{template "signin-forget-way" $s}}<button rst-btn="ghost block" type="submit">{{T $L "rastrillo.ui.signin_different"}}</button></form>
+{{end}}{{template "signin-forget-way" (dict "L" $L "State" $s)}}<button rst-btn="ghost block" type="submit">{{T $L "rastrillo.ui.signin_different"}}</button></form>
 {{end}}{{end}}{{if and $gated (or (eq $door "ask") (eq $door "keymail") (eq $door "link")) (not $preview)}}{{$proof.Script}}{{end}}{{end}}
-{{/* signin-app-problem — State.AppProblem as the page's problem, where
-     auth's own problem does not already take the place. Called by
-     signin only. */}}
-{{define "signin-app-problem"}}{{$s := .State}}{{with $s.AppProblem}}{{if or (not $s.Problem) (eq $s.Problem "reauth")}}{{template "callout" (dict "L" $.L "ID" "rst-signin-app-problem" "Tone" "negative" "Body" .Text "Focus" (eq $.Focus "callout"))}}
+{{/* signin-app-problem — part of signin. It draws State.AppProblem as
+     the page's problem, where auth's own problem does not already take
+     the place. */}}
+{{define "signin-app-problem"}}{{$L := localizer $}}{{$s := .State}}{{with $s.AppProblem}}{{if or (not $s.Problem) (eq $s.Problem "reauth")}}{{template "callout" (dict "L" $L "ID" "rst-signin-app-problem" "Tone" "negative" "Body" .Text "Focus" (eq $.Focus "callout"))}}
 {{end}}{{end}}{{end}}
-{{/* signin-forget-way — what a one-way Forget form posts beside
-     return_to: open the email way after forgetting, and keep a step-up.
-     Called by signin only, with the State. */}}
+{{/* signin-forget-way — part of signin. It is what a one-way Forget
+     form posts beside return_to: open the email way after forgetting,
+     and keep a step-up. */}}
 {{define "signin-forget-way"}}<input type="hidden" name="way" value="email">
-{{if eq .Problem "reauth"}}<input type="hidden" name="reauth" value="1">
+{{if eq .State.Problem "reauth"}}<input type="hidden" name="reauth" value="1">
 {{end}}{{end}}
-{{/* signin-glyph — one of the door's one-colour glyphs, drawn in
-     currentColor and hidden from assistive technology, because the text
-     beside each says what it is: "next", "back", "mail", "key" or "at".
-     Inline, so the door makes no request and draws no late icon. They
-     are Lucide's (ISC), as the shipped icon set is. Called by signin
-     only. */}}
-{{define "signin-glyph"}}<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">{{if eq . "next"}}<path d="m9 18 6-6-6-6"/>{{else if eq . "back"}}<path d="m15 18-6-6 6-6"/>{{else if eq . "mail"}}<rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>{{else if eq . "key"}}<path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"/><circle cx="16.5" cy="7.5" r=".5" fill="currentColor"/>{{else if eq . "at"}}<circle cx="12" cy="12" r="4"/><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-4 8"/>{{end}}</svg>{{end}}
+{{/* signin-glyph — part of signin. It draws one of the door's
+     one-colour glyphs ("next", "back", "mail", "key" or "at") in
+     currentColor, hidden from assistive technology because the text
+     beside each says what it is. Inline, so the door makes no request
+     and draws no late icon. They are Lucide's (ISC), as the shipped
+     icon set is. */}}
+{{define "signin-glyph"}}<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">{{$glyph := .Glyph}}{{if eq $glyph "next"}}<path d="m9 18 6-6-6-6"/>{{else if eq $glyph "back"}}<path d="m15 18-6-6 6-6"/>{{else if eq $glyph "mail"}}<rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>{{else if eq $glyph "key"}}<path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"/><circle cx="16.5" cy="7.5" r=".5" fill="currentColor"/>{{else if eq $glyph "at"}}<circle cx="12" cy="12" r="4"/><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-4 8"/>{{end}}</svg>{{end}}

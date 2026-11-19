@@ -47,10 +47,10 @@ Call one as `{{template "name" dict "L" $L "Key" value ...}}`; `L` is the locali
 - **scheme-menu**: The colour-scheme switch, built as locale-menu is: POST forms to /_theme for Light, Dark and System, storing the choice in a cookie and returning to the same page. Keys: `Action`, `Return`, `Scheme`.
 - **seg-tabs**: A segmented control of server-rendered links: edit-form Basics/Advanced (each tab its own form, so one tab's save can never clobber the other's fields) and list scope-switching. Keys: `Items[]` (Current, Href, Label), `Label`.
 - **signin**: The shipped sign-in screen: one card, brand at the start and the way in at the end. Keys: `Brand`, `Preview`, `State`.
-- **signin-app-problem**: State.AppProblem as the page's problem, where auth's own problem does not already take the place. Keys: `Focus`, `L`, `State`.
-- **signin-forget-way**: What a one-way Forget form posts beside return_to: open the email way after forgetting, and keep a step-up. Keys: `Problem`.
-- **signin-glyph**: One of the door's one-colour glyphs, drawn in currentColor and hidden from assistive technology, because the text beside each says what it is: "next", "back", "mail", "key" or "at". Takes a value, not a dict: `{{template "signin-glyph" .Message}}`.
-- **signin-one-way**: The door on the one-way screen, below the steps (Sent, Continue, Confirm) that are drawn as they always were. Keys: `Door`, `Focus`, `Gated`, `L`, `Name`, `Preview`, `Proof`, `State`.
+- **signin-app-problem**: Part of signin. Keys: `Focus`, `State`.
+- **signin-forget-way**: Part of signin. Keys: `State`.
+- **signin-glyph**: Part of signin. Keys: `Glyph`.
+- **signin-one-way**: Part of signin. Keys: `Door`, `Focus`, `Gated`, `Name`, `Preview`, `Proof`, `State`.
 - **signin-title**: The document title for the same state, for the page's title block: every state has one heading and a title that says the same thing, so a screen-reader user who lands on the page hears where they are. Keys: `Brand`, `State`.
 - **stat**: One reading in a stat band: a label over a number, with an optional change under it. Keys: `Delta`, `Exact`, `Label`, `Lead`, `Note`, `Tone`, `Value`.
 - **status-pill**: A status as a tinted pill. Keys: `Label`, `Tone`.
