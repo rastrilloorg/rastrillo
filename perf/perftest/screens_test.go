@@ -418,3 +418,38 @@ func TestScreensPatternMountMustBeGroupedOrSkipped(t *testing.T) {
 		t.Fatalf("/admin/{$} is one page: %v", errs(ft))
 	}
 }
+
+// On a ServeMux, "/" and a terminal "{name...}" match a whole subtree, so
+// a handler behind either serves screens the table cannot list. They are
+// mounts like "/admin/": the reviewer's case served "/slow" behind "/"
+// and passed having measured only "/".
+func TestScreensPatternWholeSubtreesAreMounts(t *testing.T) {
+	t.Parallel()
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /", ok)
+	mux.HandleFunc("GET /files/{rest...}", ok)
+	for _, pattern := range []string{"/", "/files/{rest...}"} {
+		config := ScreenConfig{Patterns: []string{pattern}, Handler: mux}
+		want := "GET " + pattern + " is a mounted handler"
+		if ft := run(config, "", true); !ft.failed ||
+			!strings.Contains(errs(ft), want) {
+			t.Errorf("an ungrouped %s: %v", pattern, errs(ft))
+		}
+		skipped := "perf GET " + pattern + " skip measured elsewhere\n"
+		if ft := run(config, skipped, true); ft.failed {
+			t.Errorf("a skipped %s: %v", pattern, errs(ft))
+		}
+	}
+	grouped := ScreenConfig{
+		Patterns: []string{"/files/{rest...}"}, Handler: mux,
+		Opaque: []Opaque{{
+			Patterns: []string{"/files/{rest...}"},
+			Screens: []OpaqueScreen{
+				{Key: "GET /files/{rest...}", Path: "/files/a.txt"},
+			},
+		}},
+	}
+	if ft := run(grouped, "", true); ft.failed {
+		t.Fatalf("a grouped wildcard: %v", errs(ft))
+	}
+}

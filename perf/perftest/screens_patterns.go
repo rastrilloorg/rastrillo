@@ -38,9 +38,7 @@ func listRoutes(cfg ScreenConfig) (
 	}
 	if cfg.Patterns != nil {
 		for _, pattern := range cfg.Patterns {
-			// "/" is the root page here, and "/admin/{$}" one page, not
-			// a subtree.
-			if pattern != "/" && strings.HasSuffix(pattern, "/") {
+			if isSubtree(pattern) {
 				mounts[pattern] = true
 			}
 			// "/{$}" matches only the root, but requested literally it
@@ -58,6 +56,14 @@ func listRoutes(cfg ScreenConfig) (
 	}
 	sort.Strings(routes)
 	return routes, walked, mounts, err
+}
+
+// A ServeMux hands a whole subtree to "/", "/admin/" and a terminal
+// wildcard such as "/files/{rest...}", so the handler behind one serves
+// screens no table lists. "/{$}" and "/admin/{$}" are one page each.
+func isSubtree(pattern string) bool {
+	return strings.HasSuffix(pattern, "/") ||
+		strings.HasSuffix(pattern, "...}")
 }
 
 // unseenMount is the problem for a mount with no Opaque group and no

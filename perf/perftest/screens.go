@@ -34,8 +34,9 @@ type ScreenConfig struct {
 	// the mux from it, and hands the same table here; the inventory then
 	// cannot drift from the router. A trailing {$} is dropped from the
 	// screen name and the requested path, so "/{$}" is screen "GET /", the
-	// name a chi app's root has. A subtree pattern ("/admin/") is a mount,
-	// like chi's "/*": it needs an Opaque group or a skip record.
+	// name a chi app's root has. A subtree pattern ("/", "/admin/",
+	// "/files/{rest...}") is a mount, like chi's "/*": it needs an Opaque
+	// group or a skip record.
 	Patterns []string
 	// Handler is what requests go through: rastrillo.Handler over the
 	// app's options, so the measurement includes production's chrome.
