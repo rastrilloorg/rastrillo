@@ -17,8 +17,8 @@ components and moves to rastrillo.org/components/. Each partial is
 shown there beside the Go call that renders it. The look is Fiesta's,
 so the parts Fiesta owns are now documented only on Fiesta's design
 system: the tokens, the UI primitives (markup you write by hand, such
-as cards, data grids and menus), and what each stylesheet and script is
-for. Each is linked from the gallery, in the theme and language you are
+as buttons, cards, data grids and the modal), and what each stylesheet
+and script is for. Each is linked from the gallery, in the theme and language you are
 reading.
 
 On "Dates, numbers and names", the `date`, `number` and `money` calls
@@ -30,8 +30,9 @@ a `_redirects` file that answers every address the gallery published
 there with one 301: to the same page under `/components/`, or to
 Fiesta's page for the tokens and UI primitives. dsgen's default
 `-mount` is now `/components`, so if you run dsgen without `-mount`,
-your tree moves there too. Pass `-mount /design-system` to keep it
-where it was.
+your tree moves there too. Passing `-mount /design-system` keeps that
+address, but the tokens and UI primitives pages are gone either way:
+without `-redirect-from`, their old addresses answer 404.
 
 rastrillo.org switches at its next sync. Its build runs dsgen with
 `-mount /components -redirect-from /design-system` and publishes
