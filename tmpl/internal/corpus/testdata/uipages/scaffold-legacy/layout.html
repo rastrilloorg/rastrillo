@@ -1,0 +1,106 @@
+{{define "layout"}}<!doctype html>
+<html lang="{{block "lang" .}}en{{end}}" dir="{{block "dir" .}}ltr{{end}}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<title>{{block "title" .}}Hello{{end}}</title>
+<link rel="stylesheet" href="{{asset "static/tokens.css"}}">
+<link rel="stylesheet" href="{{asset "static/theme.css"}}">
+{{/* shell.css is the slide between the index and a page on a phone;
+     only the two shells that have an index link it, because the opt-in
+     it holds cannot be scoped from tokens.css. */}}
+<link rel="stylesheet" href="{{asset "static/shell.css"}}">
+<script defer src="{{asset "static/rastrillo.js"}}"></script>
+<script defer src="{{asset "static/busy.js"}}"></script>
+{{/* blocking="render": shell.js types the slide in pagereveal, at the
+     first render, and a plain deferred script can run after it. An
+     engine that ignores the attribute gets an untyped cross-fade. */}}
+<script defer blocking="render" src="{{asset "static/shell.js"}}"></script>
+{{iconAssets}}
+<script defer src="{{asset "static/select.js"}}"></script>
+<script defer src="{{asset "static/calendar.js"}}"></script>
+<script defer src="{{asset "static/datetime.js"}}"></script>
+{{/* head is the app's own slot in <head>: a favicon, a meta tag, one
+     more stylesheet. Empty by default, last in the head so an app's
+     own CSS wins over the framework's, and the only block in the
+     shells that is not chrome. */}}
+{{block "head" .}}{{end}}
+</head>
+<body>
+{{/* Below 800px this shell is two views of every URL, and the page says
+     which. The index page defines the view block as index: the rail is
+     then the whole page, a list of sections at a real URL, and there is
+     no hamburger. Every other page is a content page (the default, so a
+     page that forgets is content with a way back, never a hidden page)
+     and names its way back in the up block, normally the index with the
+     page's own nav link as the fragment, /#nav-invoices, so focus comes
+     back to where the reader was even with scripts off.
+
+     Two blocks and not one: a template cannot capture a block's output
+     to branch on it, so "an empty up means index" would have to be read
+     by CSS, through :has(), and without :has() the index would render as
+     a content page with a back link to itself and no navigation.
+
+     An app with its own template called view renames it: the name is
+     generic, and this one is now the shell's. At 800px and up both views
+     are the rail beside the page. */}}
+<div rst-shell-sidebar="{{block "view" .}}page{{end}}">
+<a rst-skip href="#main">{{T "rastrillo.ui.shell_skip"}}</a>
+{{/* The back control: first after the skip link, so focus order is what
+     is seen; a link, not a script; its visible word inside its
+     accessible name (WCAG 2.5.3); rel="up" for tools that read it. An
+     app that wants its name on it ("‹ Ledger") edits this line, which is
+     the app's own from the moment it is scaffolded. */}}
+<div rst-shell-back><a href="{{block "up" .}}/{{end}}" rel="up" aria-label="{{Tf "rastrillo.ui.shell_up" "name" (T "rastrillo.ui.shell_up_label")}}">{{T "rastrillo.ui.shell_up_label"}}</a></div>
+<aside rst-shell-rail>
+{{/* The index's heading is the app's name: the brand, in a span of its
+     own, then the page's title for an app whose brand renders nothing
+     (one drawn from data that has none). tokens.css shows the title
+     only when the brand's span is blank, so the heading is never empty
+     and needs no new string. Both are executed again here rather than
+     redefined (a second definition would replace the app's), so an id
+     inside the brand would appear twice. tokens.css shows the heading
+     only on the phone index, so no page ever exposes two h1s. */}}
+<h1 rst-shell-title><span>{{template "brand" .}}</span><span>{{template "title" .}}</span></h1>
+{{block "brand" .}}<a rst-shell-brand href="/">{{T "rastrillo.ui.shell_home"}}</a>{{end}}
+<nav rst-shell-nav>{{block "nav" .}}{{end}}</nav>
+{{/* The rail's foot: one profile menu, an avatar that opens a card with
+     the person's name, the language switcher and the account's links.
+     At the foot of the rail on a desktop it opens upward; on the phone
+     index tokens.css lifts the same element to the top of the index,
+     beside the heading, because the foot of a long index is out of a
+     thumb's reach. One element in two places, never two copies: the
+     blocks inside are the app's markup, and a second copy would
+     duplicate every id in them.
+
+     profile is the person, as the avatar and the name: an
+     [rst-person-av] and an [rst-person-name] (and an [rst-person-email]
+     if there is one), the inside of the person partial without its
+     link, since a link cannot sit in a summary. The summary shows the
+     avatar and keeps the name for the accessible name only; the card's
+     head shows the name and the email. The default is the empty avatar
+     named Account, so an app with no profile still gets a named button.
+
+     account is the menu body here, the links, as in topbar and
+     console; it used to be a bare slot holding the whole person.
+
+     name="rst-shell-menu", NOT rst-menus: exclusivity by a details
+     element's name is document-wide, and the language menu inside the
+     card is in rst-menus, so sharing its group would close the card the
+     moment it opened.
+
+     The default avatar is marked placeholder. tokens.css hides the
+     whole foot when the card's head is its only child AND the head is
+     the placeholder: no profile, no account, no language, so a button
+     would open an empty card. A real person is never hidden. */}}
+<div rst-shell-rail-foot><details rst-dropdown rst-shell-profile name="rst-shell-menu"><summary><span rst-shell-avatar>{{block "profile" .}}<span rst-person-av="empty placeholder" aria-hidden="true"></span><span rst-person-name>{{T "rastrillo.ui.shell_account"}}</span>{{end}}</span></summary><div rst-dropdown-menu><div rst-shell-who>{{template "profile" .}}</div>{{block "locale" .}}{{end}}{{block "account" .}}{{end}}</div></details></div>
+</aside>
+<main rst-shell-main id="main">
+<div rst-page>
+{{template "content" .}}
+</div>
+</main>
+</div>
+</body>
+</html>
+{{end}}

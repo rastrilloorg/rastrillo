@@ -4,8 +4,8 @@
 // SHA-256 in hack/moneycldr/sources/inputs.sha256. Data from the Unicode CLDR,
 // © Unicode, Inc., under the Unicode License v3 (locales/LICENSE-UNICODE).
 
-// Package ti links CLDR money-formatting data for every modern "ti"
-// locale. Import it for its side effect.
+// Package ti links CLDR number- and money-formatting data for every
+// modern "ti" locale. Import it for its side effect.
 package ti
 
 import "amadan.net/rastrillo/rastrillo/locales"

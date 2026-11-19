@@ -31,6 +31,13 @@ type pair struct {
 
 func newPair(t *testing.T) *pair {
 	t.Helper()
+	return newPairOn(t, origin)
+}
+
+// newPairOn is newPair on another origin, for a test whose redirects
+// must name the product origin a base path is served on.
+func newPairOn(t *testing.T, origin string) *pair {
+	t.Helper()
 	p := &pair{now: time.Date(2026, 10, 17, 12, 0, 0, 0, time.UTC), epoch: 1}
 	k, _ := sessions.NewSigningKey("k1")
 	p.hubKey = k
@@ -354,5 +361,19 @@ func TestRowModeRefreshIfExpiredIsANoOp(t *testing.T) {
 	w := httptest.NewRecorder()
 	if s.RefreshIfExpired(w, r) || w.Code != http.StatusOK || w.Header().Get("Location") != "" || len(w.Result().Cookies()) != 0 {
 		t.Fatalf("row mode answered %d %q", w.Code, w.Header().Get("Location"))
+	}
+}
+
+// Signed mode keeps no rows, so a Reader there is a wiring mistake,
+// refused as a DB is rather than silently ignored.
+func TestSignedNewRefusesAReader(t *testing.T) {
+	hubKey, _ := sessions.NewSigningKey("k1")
+	keys, _ := sessions.ParsePublicKeys(hubKey.Public())
+	_, err := sessions.New(sessions.Config{
+		Origin: origin, Reader: newDB(t),
+		Signed: &sessions.Signed{Name: "ppl", Keys: keys},
+	})
+	if err == nil {
+		t.Error("a Reader with signed mode was accepted")
 	}
 }

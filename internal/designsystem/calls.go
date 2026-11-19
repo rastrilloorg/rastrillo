@@ -2,6 +2,7 @@ package designsystem
 
 import (
 	"fmt"
+	"html/template"
 	"io/fs"
 	"regexp"
 	"strings"
@@ -27,6 +28,9 @@ type call struct {
 // number. An error names the partial, the state and the value's type,
 // and fails the build.
 func callFor(partial string, s sample, locale string) (call, error) {
+	if len(s.Calls) > 0 {
+		return callsFor(partial, s, locale)
+	}
 	data := localData(locale, s.Data)
 	if s.Build != nil {
 		data = s.Build(locale)
@@ -36,6 +40,39 @@ func callFor(partial string, s sample, locale string) (call, error) {
 		return call{}, fmt.Errorf("%s (%s): %w", partial, s.State, err)
 	}
 	return call{Source: src, Dot: dot}, nil
+}
+
+// callsFor is a composed state's calls, one a line, in the order the
+// page writes them.
+func callsFor(partial string, state sample, locale string) (call, error) {
+	sources := make([]string, 0, len(state.Calls))
+	for _, value := range state.Calls {
+		one := state
+		one.Calls, one.Data = nil, value
+		each, err := callFor(partial, one, locale)
+		if err != nil {
+			return call{}, err
+		}
+		sources = append(sources, each.Source)
+	}
+	return call{Source: strings.Join(sources, "\n")}, nil
+}
+
+// renderCalls executes a composed state: the partial once per value,
+// one a line, as the page writes them.
+func renderCalls(
+	tmpl *template.Template, name string, state sample, locale string,
+) (template.HTML, error) {
+	pieces := make([]string, 0, len(state.Calls))
+	for _, value := range state.Calls {
+		var buf strings.Builder
+		err := tmpl.ExecuteTemplate(&buf, name, localData(locale, value))
+		if err != nil {
+			return "", err
+		}
+		pieces = append(pieces, buf.String())
+	}
+	return template.HTML(strings.Join(pieces, "\n")), nil
 }
 
 var (

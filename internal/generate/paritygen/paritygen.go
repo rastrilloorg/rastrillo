@@ -129,10 +129,8 @@ func fixtureGo(rs []rastrillo.Resource) string {
 	b.WriteString(header)
 	b.WriteString(fixtureDoc)
 	b.WriteString("import (\n\t\"bytes\"\n\t\"database/sql\"\n\t\"encoding/json\"\n")
-	if needRefused {
-		b.WriteString("\t\"fmt\"\n")
-	}
-	b.WriteString("\t\"io\"\n\t\"net/http\"\n\t\"net/http/httptest\"\n\t\"net/url\"\n\t\"path\"\n")
+	b.WriteString("\t\"fmt\"\n\t\"io\"\n\t\"net/http\"\n")
+	b.WriteString("\t\"net/http/httptest\"\n\t\"net/url\"\n\t\"path\"\n")
 	if needRefused {
 		b.WriteString("\t\"sort\"\n")
 	}
@@ -148,7 +146,7 @@ func fixtureGo(rs []rastrillo.Resource) string {
 		b.WriteString("\t_ \"amadan.net/rastrillo/rastrillo/locales/en\"\n")
 	}
 	b.WriteString(")\n\n")
-	b.WriteString(fixtureBody)
+	b.WriteString(fixtureBody + fixtureMCP)
 	if needRefused {
 		b.WriteString(fixtureRefused)
 	}
@@ -219,7 +217,7 @@ func resourceGo(r rastrillo.Resource) (string, error) {
 	b.WriteString("package paritytest\n\nimport (\n\t\"fmt\"\n\t\"net/url\"\n\t\"testing\"\n)\n\n")
 	fmt.Fprintf(&b, "// Run%[1]s runs the parity scenario for %[2]s.\nfunc Run%[1]s(t *testing.T, f Fixture) {\n", plural, r.Name)
 	fmt.Fprintf(&b, "\tvalues := f.ValidCreate(%q)\n\tif values == nil {\n\t\tvalues = map[string]string{%s}\n\t}\n", r.Name, strings.Join(defaults, ", "))
-	fmt.Fprintf(&b, "\tcompare(t, %[1]sPages(t, f, values), %[1]sAPI(t, f, values))\n}\n\n", fn)
+	b.WriteString(runCompares(fn))
 
 	// The page door. Rows are read through the API in this app too, so
 	// both halves compare the same JSON.
@@ -283,15 +281,8 @@ func resourceGo(r rastrillo.Resource) (string, error) {
 	// The API door.
 	fmt.Fprintf(&b, "func %sAPI(t *testing.T, f Fixture, values map[string]string) []step {\n", fn)
 	b.WriteString("\th, db := f.New(t)\n\tf.Prepare(t, db, \"a\")\n\ttoken := f.Token(t, db, \"a\")\n\tvar steps []step\n\n")
-	fmt.Fprintf(&b, "\tk, body := call(t, h, token, \"POST\", %q, map[string]any{\n", api)
-	for _, f := range fields {
-		if f.Kind == rastrillo.Money {
-			fmt.Fprintf(&b, "\t\t%q: money(t, values[%q], %q),\n", wirename.Name(f.Name), f.Name, r.Currency)
-		} else {
-			fmt.Fprintf(&b, "\t\t%q: values[%q],\n", wirename.Name(f.Name), f.Name)
-		}
-	}
-	b.WriteString("\t})\n\tid := fmt.Sprint(body[\"id\"])\n")
+	b.WriteString(apiCreateLine(api, fn))
+	b.WriteString("\tid := fmt.Sprint(body[\"id\"])\n")
 	b.WriteString("\tsteps = append(steps, step{\"create\", k, \"\"})\n")
 	fmt.Fprintf(&b, "\tsteps = append(steps, step{\"row after create\", \"ok\", row(t, h, token, %q+id)})\n\n", api+"/")
 	if len(req) > 0 {
@@ -320,6 +311,6 @@ func resourceGo(r rastrillo.Resource) (string, error) {
 	b.WriteString("\tsteps = append(steps, step{\"row after delete\", k, \"\"})\n")
 	fmt.Fprintf(&b, "\tk, _ = call(t, h, token, \"GET\", %q, nil)\n", api+"/999999")
 	b.WriteString("\tsteps = append(steps, step{\"missing row\", k, \"\"})\n")
-	b.WriteString("\treturn steps\n}\n")
+	b.WriteString("\treturn steps\n}\n" + mcpDoors(r))
 	return b.String(), nil
 }

@@ -65,6 +65,7 @@ import (
 	"net/url"
 	"time"
 
+	"amadan.net/rastrillo/rastrillo/basepath"
 	"amadan.net/rastrillo/rastrillo/lastsignin"
 	"amadan.net/rastrillo/rastrillo/migrate"
 	"amadan.net/rastrillo/rastrillo/secondfactor"
@@ -206,11 +207,30 @@ func (h *Handlers) pending(r *http.Request) (secondfactor.Pending, bool) {
 	return h.cfg.Gate.Pending(r)
 }
 
+// pathRouted answers 404 under a base path or on its direct host, and
+// logs it. Every tenant on a shared origin shares one relying party ID
+// and would set the same root __Host- cookies, so a passkey ceremony
+// here would sign the reader out of the hub and every other tenant
+// (spec §6.3: tenants verify, never mint; see sessions.ErrPathRouted).
+// A tenant signs people in through its hub. It runs before any
+// challenge, row or cookie.
+func (h *Handlers) pathRouted(w http.ResponseWriter, r *http.Request) bool {
+	if !basepath.PathRouted(r) {
+		return false
+	}
+	h.cfg.Logger.Error("rastrillo/passkey: sign-in refused under a base path; sign in at the hub", "path", basepath.Path(r, r.URL.Path))
+	http.NotFound(w, r)
+	return true
+}
+
 // SignInBegin is POST /passkey/signin/begin: mint an assertion
 // challenge for the pending half-session's subject — the Gate flow's
 // counterpart of StepUpBegin, keyed on the pending cookie instead of a
 // session (there is no session yet; that is the point).
 func (h *Handlers) SignInBegin(w http.ResponseWriter, r *http.Request) {
+	if h.pathRouted(w, r) {
+		return
+	}
 	if r.Method != http.MethodPost {
 		writeJSON(w, http.StatusMethodNotAllowed, map[string]string{"error": "method not allowed"})
 		return
@@ -231,6 +251,9 @@ func (h *Handlers) SignInBegin(w http.ResponseWriter, r *http.Request) {
 // carries "to" — the return_to the Gate stored — for the confirm
 // page's JS to navigate.
 func (h *Handlers) SignInFinish(w http.ResponseWriter, r *http.Request) {
+	if h.pathRouted(w, r) {
+		return
+	}
 	p, ok := h.pending(r)
 	if !ok {
 		h.refuse(w)
@@ -422,6 +445,9 @@ func boolInt(b bool) int {
 // holds for this relying party (allowCredentials empty), and the
 // credential it answers with says who.
 func (h *Handlers) DiscoverBegin(w http.ResponseWriter, r *http.Request) {
+	if h.pathRouted(w, r) {
+		return
+	}
 	if r.Method != http.MethodPost {
 		writeJSON(w, http.StatusMethodNotAllowed, map[string]string{"error": "method not allowed"})
 		return
@@ -440,6 +466,9 @@ func (h *Handlers) DiscoverBegin(w http.ResponseWriter, r *http.Request) {
 // is where the page's JS should go next: the return_to, or the Gate's
 // confirm page.
 func (h *Handlers) DiscoverFinish(w http.ResponseWriter, r *http.Request) {
+	if h.pathRouted(w, r) {
+		return
+	}
 	subject, a, ok := h.assert(w, r, "", "discover")
 	if !ok {
 		return
@@ -564,6 +593,9 @@ func (h *Handlers) takeChallenge(clientDataJSON []byte, subject, purpose string)
 // RegisterBegin is POST /passkey/register/begin: mint an enrollment
 // challenge for the signed-in caller.
 func (h *Handlers) RegisterBegin(w http.ResponseWriter, r *http.Request) {
+	if h.pathRouted(w, r) {
+		return
+	}
 	if r.Method != http.MethodPost {
 		writeJSON(w, http.StatusMethodNotAllowed, map[string]string{"error": "method not allowed"})
 		return
@@ -580,6 +612,9 @@ func (h *Handlers) RegisterBegin(w http.ResponseWriter, r *http.Request) {
 // ceremony (webauthn.mjs register()'s JSON, base64url fields) and
 // store the credential for the signed-in caller.
 func (h *Handlers) RegisterFinish(w http.ResponseWriter, r *http.Request) {
+	if h.pathRouted(w, r) {
+		return
+	}
 	sess, ok := h.current(r)
 	if !ok {
 		h.refuse(w)
@@ -656,6 +691,9 @@ func (h *Handlers) RegisterFinish(w http.ResponseWriter, r *http.Request) {
 // challenge for the caller — whose session may be stale; that is the
 // point — provided they have a passkey to assert with.
 func (h *Handlers) StepUpBegin(w http.ResponseWriter, r *http.Request) {
+	if h.pathRouted(w, r) {
+		return
+	}
 	if r.Method != http.MethodPost {
 		writeJSON(w, http.StatusMethodNotAllowed, map[string]string{"error": "method not allowed"})
 		return
@@ -683,6 +721,9 @@ func (h *Handlers) StepUpBegin(w http.ResponseWriter, r *http.Request) {
 // "passkey", AuthTime now — which is what satisfies
 // sessions.RequireFresh again.
 func (h *Handlers) StepUpFinish(w http.ResponseWriter, r *http.Request) {
+	if h.pathRouted(w, r) {
+		return
+	}
 	sess, ok := h.current(r)
 	if !ok {
 		h.refuse(w)

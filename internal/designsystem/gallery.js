@@ -1,4 +1,4 @@
-/* gallery.js — the design-system gallery's own script, and the only one
+/* gallery.js — the components gallery's own script, and the only one
    in the tree that is not part of the framework. rastrillo.js, select.js
    and datetime.js are shipped to apps; this file is furniture for the
    page that shows them off, so it lives beside the renderer rather than

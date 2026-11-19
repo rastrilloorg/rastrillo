@@ -1,0 +1,7 @@
+{{define "title"}}Delete {{.Room.Name}} · Admin{{end}}
+{{define "content"}}{{$L := localizer $}}
+{{template "back-nav" dict "Href" (path $ (printf "/admin/rooms/%d" .Room.ID)) "Label" .Room.Name}}
+{{template "page-header" dict "Title" (printf "Delete %s?" .Room.Name)}}
+<p>Its messages go with it. This cannot be undone.</p>
+{{template "confirm-form" dict "L" $L "Action" (path $ (printf "/admin/rooms/%d/delete" .Room.ID)) "Label" "Delete room" "Danger" true "CancelHref" (path $ (printf "/admin/rooms/%d" .Room.ID))}}
+{{end}}

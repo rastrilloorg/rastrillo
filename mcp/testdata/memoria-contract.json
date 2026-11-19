@@ -1,0 +1,131 @@
+[
+  {
+    "name": "notes_create",
+    "description": "Create a team-shared note. Reuse client_id only to retry the same title and body.",
+    "scope": "notes:write",
+    "read_only": false,
+    "destructive": false,
+    "idempotent": true,
+    "input_schema": {
+      "type": "object",
+      "required": [
+        "team",
+        "title",
+        "body",
+        "client_id"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "team": {
+          "type": "string",
+          "minLength": 1
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "body": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1048576
+        },
+        "client_id": {
+          "type": "string",
+          "minLength": 36,
+          "maxLength": 36
+        }
+      }
+    },
+    "output_schema": {
+      "type": "object",
+      "required": [
+        "id",
+        "indexed"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "indexed": {
+          "type": "boolean"
+        }
+      }
+    }
+  },
+  {
+    "name": "notes_search",
+    "description": "Search currently visible Memoria passages for a team. Sibling apps check access on every query.",
+    "scope": "notes:read",
+    "read_only": true,
+    "destructive": false,
+    "idempotent": true,
+    "input_schema": {
+      "type": "object",
+      "required": [
+        "team",
+        "query"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "team": {
+          "type": "string",
+          "minLength": 1
+        },
+        "query": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2048
+        }
+      }
+    },
+    "output_schema": {
+      "type": "object",
+      "required": [
+        "results",
+        "notices"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "results": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "document_id",
+              "title",
+              "text",
+              "source"
+            ],
+            "properties": {
+              "id": {
+                "type": "integer"
+              },
+              "document_id": {
+                "type": "integer"
+              },
+              "title": {
+                "type": "string"
+              },
+              "text": {
+                "type": "string"
+              },
+              "source": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "notices": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+]

@@ -4,8 +4,8 @@
 // SHA-256 in hack/moneycldr/sources/inputs.sha256. Data from the Unicode CLDR,
 // © Unicode, Inc., under the Unicode License v3 (locales/LICENSE-UNICODE).
 
-// Package he links CLDR money-formatting data for every modern "he"
-// locale. Import it for its side effect.
+// Package he links CLDR number- and money-formatting data for every
+// modern "he" locale. Import it for its side effect.
 package he
 
 import "amadan.net/rastrillo/rastrillo/locales"

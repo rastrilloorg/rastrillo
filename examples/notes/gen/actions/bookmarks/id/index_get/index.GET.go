@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/basepath"
 	"amadan.net/rastrillo/rastrillo/ui"
 	"amadan.net/rastrillo/rastrillo/view"
 	ops_bookmarks "notes/gen/ops/bookmarks"
@@ -28,7 +29,7 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 	view.Render(ctx, w, "bookmarks/show", http.StatusOK, showView{
 		Localized: ui.ForRequest(r),
 		Title:     n.Title,
-		EditHref:  fmt.Sprintf("/bookmarks/%d/edit", id),
+		EditHref:  basepath.Path(r, fmt.Sprintf("/bookmarks/%d/edit", id)),
 		Fields: map[string]string{
 			"Title": n.Title,
 			"Link":  n.Link,

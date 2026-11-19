@@ -13,3 +13,7 @@ func APIRoutes() []api.Route { return nil }
 
 // Operations is every resource's operations. This app has none.
 func Operations() []op.Descriptor { return nil }
+
+// ExposedOperations is the operations on the API, for mcp.New. This app
+// exposes none.
+func ExposedOperations() []op.Descriptor { return nil }

@@ -4,8 +4,8 @@
 // SHA-256 in hack/moneycldr/sources/inputs.sha256. Data from the Unicode CLDR,
 // © Unicode, Inc., under the Unicode License v3 (locales/LICENSE-UNICODE).
 
-// Package kok links CLDR money-formatting data for every modern "kok"
-// locale. Import it for its side effect.
+// Package kok links CLDR number- and money-formatting data for every
+// modern "kok" locale. Import it for its side effect.
 package kok
 
 import "amadan.net/rastrillo/rastrillo/locales"
@@ -13,6 +13,6 @@ import "amadan.net/rastrillo/rastrillo/locales"
 func init() { locales.Register("kok", data) }
 
 var data = map[string]locales.Locale{
-	"kok":      {Parent: "root", Standard: "¤#,##,##0.00", Alpha: "¤\u00a0#,##,##0.00", Symbols: map[string]string{"PHP": "PHP", "RON": "रॉन"}, Narrow: map[string]string{"BYN": "р.", "RON": "लेई"}},
+	"kok":      {Parent: "root", Number: "#,##,##0.###", Standard: "¤#,##,##0.00", Alpha: "¤\u00a0#,##,##0.00", Symbols: map[string]string{"PHP": "PHP", "RON": "रॉन"}, Narrow: map[string]string{"BYN": "р.", "RON": "लेई"}},
 	"kok-Deva": {Parent: "kok"},
 }

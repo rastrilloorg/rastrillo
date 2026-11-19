@@ -107,7 +107,13 @@ func App(t *testing.T, files map[string]string) string {
 		t.Skip("builds a scratch app")
 	}
 	app := Module(t, true)
-	get := exec.Command("go", "get", "-tool", "github.com/sqlc-dev/sqlc/cmd/sqlc")
+	// The root package is fetched with the tool, so the versions the
+	// tool's go.sum entries are for are the ones the app's own build
+	// selects: Fiesta's requirements raise golang.org/x/net, which sqlc
+	// imports, only once a package that imports Fiesta is loaded.
+	get := exec.Command("go", "get", "-tool",
+		"github.com/sqlc-dev/sqlc/cmd/sqlc",
+		"amadan.net/rastrillo/rastrillo@v0.0.0")
 	get.Dir = app
 	get.Env = Env()
 	if out, err := get.CombinedOutput(); err != nil {

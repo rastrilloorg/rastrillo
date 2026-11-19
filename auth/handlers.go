@@ -9,11 +9,28 @@ import (
 
 	"github.com/keymaildev/signin"
 
+	"amadan.net/rastrillo/rastrillo/basepath"
 	"amadan.net/rastrillo/rastrillo/clientip"
 	"amadan.net/rastrillo/rastrillo/lastsignin"
 	"amadan.net/rastrillo/rastrillo/pow"
 	"amadan.net/rastrillo/rastrillo/sessions"
 )
+
+// pathRouted answers 404 under a base path or on its direct host, and
+// logs it. Every tenant on a shared origin would set the same root
+// __Host- cookies and mail links built for the bare origin, so a sign-in
+// started here would sign the reader out of the hub and every other
+// tenant (spec §6.3: tenants verify, never mint; see
+// sessions.ErrPathRouted). A tenant signs people in through its hub. It
+// runs before anything is read, mailed or set.
+func (a *Auth) pathRouted(w http.ResponseWriter, r *http.Request) bool {
+	if !basepath.PathRouted(r) {
+		return false
+	}
+	a.cfg.Logger.Error("rastrillo/auth: sign-in refused under a base path; sign in at the hub", "path", basepath.Path(r, r.URL.Path))
+	http.NotFound(w, r)
+	return true
+}
 
 // Begin is POST /signin: classify the submitted address and start
 // whichever ceremony it gets. CSRF-checked here, not left to the app —
@@ -45,6 +62,9 @@ import (
 // the authorize URL but to SigninPath?continue=<id>, the URL kept in a
 // sealed continuation cookie (continueKeymail says why).
 func (a *Auth) Begin(w http.ResponseWriter, r *http.Request) {
+	if a.pathRouted(w, r) {
+		return
+	}
 	if !a.sameOrigin(r) {
 		http.Error(w, "cross-origin form submission refused", http.StatusForbidden)
 		return
@@ -264,6 +284,9 @@ func (a *Auth) continueKeymail(w http.ResponseWriter, r *http.Request, address s
 // It does not hide what classification and the per-address rate limit
 // reveal; docs/site/magic-links.md says what does.
 func (a *Auth) AnswerAsSent(w http.ResponseWriter, r *http.Request) {
+	if a.pathRouted(w, r) {
+		return
+	}
 	if !a.sameOrigin(r) {
 		http.Error(w, "cross-origin form submission refused", http.StatusForbidden)
 		return
@@ -284,6 +307,9 @@ func (a *Auth) AnswerAsSent(w http.ResponseWriter, r *http.Request) {
 // browser's continuation describes answers Expired without clearing
 // anything (see the comment inside).
 func (a *Auth) Callback(w http.ResponseWriter, r *http.Request) {
+	if a.pathRouted(w, r) {
+		return
+	}
 	pending, ok := a.pendingValue(r)
 	if !ok {
 		a.redirect(w, r, a.signinAgain(r, "?err=expired"))
@@ -351,6 +377,9 @@ func (a *Auth) Callback(w http.ResponseWriter, r *http.Request) {
 // One error for unknown, used and expired alike — signin refuses to be
 // an oracle, and so does this handler.
 func (a *Auth) Verify(w http.ResponseWriter, r *http.Request) {
+	if a.pathRouted(w, r) {
+		return
+	}
 	switch r.Method {
 	case http.MethodGet, http.MethodHead:
 		a.confirm(w, r)
@@ -384,6 +413,9 @@ func (a *Auth) redeem(w http.ResponseWriter, r *http.Request) {
 // the cookie alone dying would leave the token valid) and clear the
 // cookie.
 func (a *Auth) Signout(w http.ResponseWriter, r *http.Request) {
+	if a.pathRouted(w, r) {
+		return
+	}
 	if !a.sameOrigin(r) {
 		http.Error(w, "cross-origin form submission refused", http.StatusForbidden)
 		return
@@ -410,6 +442,9 @@ func (a *Auth) Signout(w http.ResponseWriter, r *http.Request) {
 // cookie kept: answering success for a revocation that did not happen
 // would leave a stolen copy working while the person believes it dead.
 func (a *Auth) SignoutEverywhere(w http.ResponseWriter, r *http.Request) {
+	if a.pathRouted(w, r) {
+		return
+	}
 	if a.users == nil {
 		http.NotFound(w, r)
 		return
@@ -426,7 +461,7 @@ func (a *Auth) SignoutEverywhere(w http.ResponseWriter, r *http.Request) {
 	if a.sessions.RefreshIfExpired(w, r) {
 		return
 	}
-	s, ok := a.sessions.From(r)
+	s, ok := a.sessionFrom(r)
 	if !ok {
 		a.redirect(w, r, a.cfg.SigninPath)
 		return
@@ -449,7 +484,12 @@ func (a *Auth) SignoutEverywhere(w http.ResponseWriter, r *http.Request) {
 // every method at Signed.RefreshPath (default /_carlos/refresh). An
 // expired cookie, here or on a tenant, is sent there to be reissued.
 // With a database it answers 404.
-func (a *Auth) Refresh(w http.ResponseWriter, r *http.Request) { a.sessions.Refresh(w, r) }
+func (a *Auth) Refresh(w http.ResponseWriter, r *http.Request) {
+	if a.pathRouted(w, r) {
+		return
+	}
+	a.sessions.Refresh(w, r)
+}
 
 // admit runs the admission gate, offers the session to the
 // SecondFactor hook (which may trade it for a pending half-session
@@ -476,34 +516,18 @@ func (a *Auth) admit(w http.ResponseWriter, r *http.Request, id Identity) {
 		}
 	}
 	if a.cfg.Authorize != nil && !a.cfg.Authorize(id.Address) {
-		if a.cfg.Refused != nil {
-			a.cfg.Refused(w, r, id)
-			return
-		}
-		http.Error(w, "This address is verified but not admitted here.", http.StatusForbidden)
+		a.refuseAdmission(w, r, id)
 		return
 	}
-	subject := id.Address
-	if a.users != nil {
-		// After Authorize, so an address that is refused writes no user.
-		u, err := a.users.ensure(r.Context(), id.Address)
-		if err != nil {
-			a.logError("rastrillo/auth: user for address", err)
-			http.Error(w, "sign-in failed", http.StatusInternalServerError)
-			return
-		}
-		subject = u.ID
-	} else if a.cfg.SubjectFor != nil {
-		s, err := a.cfg.SubjectFor(id.Address)
-		if err != nil {
-			// No fallback to the address: an app sets this hook
-			// precisely because writing one is the failure it cannot
-			// have.
-			a.cfg.Logger.Error("rastrillo/auth: subject for address", "err", err)
-			http.Error(w, "sign-in failed", http.StatusInternalServerError)
-			return
-		}
-		subject = s
+	subject, err := a.subjectFor(r.Context(), id.Address)
+	if a.cfg.BlindLinks != nil && errors.Is(err, sessions.ErrNoUser) {
+		a.refuseAdmission(w, r, id)
+		return
+	}
+	if err != nil {
+		a.logError("rastrillo/auth: subject for address", err)
+		http.Error(w, "sign-in failed", http.StatusInternalServerError)
+		return
 	}
 	// The address, never the subject: SubjectFor may make subjects
 	// opaque, and the screen shows this address back. Before the
@@ -551,7 +575,7 @@ func identityFrom(s sessions.Session) Identity {
 // the direct lookup, for handlers outside RequireSession that want to
 // know who (a public page with a signed-in header, say).
 func (a *Auth) SessionFrom(r *http.Request) (Identity, bool) {
-	s, ok := a.sessions.From(r)
+	s, ok := a.sessionFrom(r)
 	if !ok {
 		return Identity{}, false
 	}
@@ -570,7 +594,7 @@ type identityCtxKey struct{}
 // answered nothing at all — the uid-0 trap's uglier sibling.)
 func (a *Auth) RequireSession(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		s, ok := a.sessions.From(r)
+		s, ok := a.sessionFrom(r)
 		if !ok {
 			// An expired signed cookie on the centre refreshes as one on a
 			// tenant does; in row mode this does nothing.
@@ -597,7 +621,7 @@ func (a *Auth) RequireSession(next http.Handler) http.Handler {
 func (a *Auth) RequireFreshSession(maxAge time.Duration) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			s, ok := a.sessions.From(r)
+			s, ok := a.sessionFrom(r)
 			if !ok {
 				if a.sessions.RefreshIfExpired(w, r) {
 					return
@@ -627,7 +651,21 @@ func (a *Auth) RequireFreshSession(maxAge time.Duration) func(http.Handler) http
 // shape as sessions.refuse, so a page guarded through auth and one
 // guarded through sessions send a visitor back the same way.
 func (a *Auth) refuseSession(w http.ResponseWriter, r *http.Request, reauth bool) {
-	if r.Method == http.MethodGet || r.Method == http.MethodHead {
+	page := r.Method == http.MethodGet || r.Method == http.MethodHead
+	if page && basepath.OnDirectHost(r) {
+		// As sessions.refuse does: the direct host carries no session
+		// (spec §7.3) and SigninPath answers 404 there, so the reader
+		// goes to the product path, where the hub's session lives.
+		if basepath.PlatformCall(r) {
+			// The wake check's client follows redirects, and an https
+			// product URL on a plain socket fails the wake.
+			http.Error(w, "signed out", http.StatusForbidden)
+			return
+		}
+		a.redirect(w, r, basepath.ProductURL(r))
+		return
+	}
+	if page {
 		to := a.cfg.SigninPath + "?return_to=" + url.QueryEscape(r.URL.RequestURI())
 		if reauth {
 			to += "&reauth=1"

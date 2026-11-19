@@ -182,6 +182,34 @@ const extraFixture = `
        sign-in screen is the only markup that uses it. -->
   <div class="rst-signin__providers"><form><button class="rst-btn rst-btn--block" type="submit">Google</button></form><form><button class="rst-btn rst-btn--block" type="submit">Apple</button></form><a href="#">Use your email instead</a></div>
   <div class="rst-stage"><div class="rst-stage__scene"><svg class="rst-stage-art" viewBox="0 0 10 10"><g class="rst-stage-art__glow"><circle cx="5" cy="5" r="3"></circle></g><g class="rst-stage-art__lines"><path d="M0 5h10"></path></g></svg></div><div class="rst-page">Card</div><footer class="rst-stage__foot">Foot</footer></div>
+  <!-- Fiesta's pieces no Rastrillo partial renders yet: the column's
+       footer row, the side nav, a snippet, a stat band in pairs and a
+       row whose status sits inline. -->
+  <footer class="rst-page__foot">
+    <details class="rst-dropdown" name="rst-fixture-menus12">
+      <summary>Language</summary>
+      <div class="rst-dropdown__menu"><a href="#a">English</a></div>
+    </details></footer>
+  <div class="rst-side"><nav class="rst-side__nav">
+    <a href="#a" aria-current="page">General</a><a href="#a">Members</a>
+  </nav><div>Body</div></div>
+  <div class="rst-snippet"><code>go get example.com/app</code>
+    <button class="rst-btn rst-btn--sm rst-snippet__copy"
+      type="button">Copy</button>
+    <span class="rst-snippet__status" role="status"></span></div>
+  <div class="rst-stats rst-stats--pairs">
+    <div class="rst-stat"><span class="rst-stat__label">Open</span>
+      <span class="rst-stat__num">12</span></div>
+    <div class="rst-stat"><span class="rst-stat__label">Closed</span>
+      <span class="rst-stat__num">30</span></div>
+    <div class="rst-stat"><span class="rst-stat__label">Late</span>
+      <span class="rst-stat__num">2</span></div>
+    <div class="rst-stat"><span class="rst-stat__label">New</span>
+      <span class="rst-stat__num">5</span></div></div>
+  <div class="rst-row"><div class="rst-row__main"><a href="#a">Name</a></div>
+    <span class="rst-status rst-status--inline"
+      data-tone="positive">Live</span>
+    <a class="rst-row__action" href="#a">Edit</a></div>
 </div>`
 
 // classFixture is the whole fixture in the class spelling: the extras
@@ -198,6 +226,8 @@ func classFixture(t *testing.T) string {
 	}
 	sort.Strings(names)
 	samples := Styleguide()
+	// The list-grid sample's columns, from where an app keeps them.
+	b.WriteString("<style>" + StyleguideCSS() + "</style>")
 	for _, name := range names {
 		tmpl, err := template.New(name).Funcs(Funcs()).Parse(samples[name])
 		if err != nil {
@@ -374,11 +404,12 @@ func TestBothSpellingsComputeTheSameStyles(t *testing.T) {
 	read := func(spelling string, width int64) []string {
 		t.Helper()
 		var got []string
-		if err := chromedp.Run(ctx,
+		if err := chromedp.Do(ctx,
 			chromedp.EmulateViewport(width, 900),
 			chromedp.Navigate(rig.Origin+"/?spelling="+spelling),
-			chromedp.WaitVisible("#fixture", chromedp.ByQuery),
-			chromedp.Evaluate(fmt.Sprintf(digestJS, propsJSON), &got),
+			chromedp.WaitVisible(chromedp.CSS("#fixture")),
+			harness.Into(&got, chromedp.Evaluate[[]string](
+				fmt.Sprintf(digestJS, propsJSON))),
 		); err != nil {
 			t.Fatalf("reading the %s pass at %dpx: %v", spelling, width, err)
 		}
@@ -440,11 +471,12 @@ func TestBothSpellingsComputeTheSameStyles(t *testing.T) {
 		}
 		detail := func(spelling string) map[string]styleDetail {
 			var got map[string]styleDetail
-			if err := chromedp.Run(ctx,
+			if err := chromedp.Do(ctx,
 				chromedp.EmulateViewport(width, 900),
 				chromedp.Navigate(rig.Origin+"/?spelling="+spelling),
-				chromedp.WaitVisible("#fixture", chromedp.ByQuery),
-				chromedp.Evaluate(fmt.Sprintf(detailJS, propsJSON, wantJSON), &got),
+				chromedp.WaitVisible(chromedp.CSS("#fixture")),
+				harness.Into(&got, chromedp.Evaluate[map[string]styleDetail](
+					fmt.Sprintf(detailJS, propsJSON, wantJSON))),
 			); err != nil {
 				t.Fatalf("reading the %s detail at %dpx: %v", spelling, width, err)
 			}

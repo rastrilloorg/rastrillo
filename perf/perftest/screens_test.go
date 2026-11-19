@@ -333,8 +333,11 @@ func TestScreensMeasuresStdlibPatterns(t *testing.T) {
 	mux.HandleFunc("GET /about", ok)
 	// A record on each key proves the names: a stale-record problem
 	// would fail the run if either screen were named differently.
-	c := ScreenConfig{Patterns: []string{"/{$}", "/about"}, Handler: mux}
-	ft := run(c, "perf GET / 300ms the root\nperf GET /about 300ms about\n", true)
+	config := ScreenConfig{
+		Patterns: []string{"/{$}", "/about"}, Handler: mux,
+	}
+	ft := run(config,
+		"perf GET / 300ms the root\nperf GET /about 300ms about\n", true)
 	if ft.failed {
 		t.Fatalf("stdlib patterns: %v", errs(ft))
 	}
@@ -342,10 +345,11 @@ func TestScreensMeasuresStdlibPatterns(t *testing.T) {
 
 func TestScreensRefusesBothRoutesAndPatterns(t *testing.T) {
 	t.Parallel()
-	c := cfg(router(map[string]http.HandlerFunc{"/": ok}))
-	c.Patterns = []string{"/{$}"}
-	ft := run(c, "", true)
-	if !ft.failed || !strings.Contains(errs(ft), "set Routes or Patterns, not both") {
+	config := cfg(router(map[string]http.HandlerFunc{"/": ok}))
+	config.Patterns = []string{"/{$}"}
+	ft := run(config, "", true)
+	if !ft.failed ||
+		!strings.Contains(errs(ft), "set Routes or Patterns, not both") {
 		t.Fatalf("both set: %v", errs(ft))
 	}
 }
@@ -353,7 +357,9 @@ func TestScreensRefusesBothRoutesAndPatterns(t *testing.T) {
 func TestScreensRefusesNeitherRoutesNorPatterns(t *testing.T) {
 	t.Parallel()
 	ft := run(ScreenConfig{Handler: http.NewServeMux()}, "", true)
-	if !ft.failed || !strings.Contains(errs(ft), "set Routes (a chi router) or Patterns (a stdlib mux's GET routes)") {
+	want := "set Routes (a chi router) or Patterns " +
+		"(a stdlib mux's GET routes)"
+	if !ft.failed || !strings.Contains(errs(ft), want) {
 		t.Fatalf("neither set: %v", errs(ft))
 	}
 }
@@ -362,13 +368,14 @@ func TestScreensPatternParamNeedsPaths(t *testing.T) {
 	t.Parallel()
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /notes/{id}", ok)
-	c := ScreenConfig{Patterns: []string{"/notes/{id}"}, Handler: mux}
-	ft := run(c, "", true)
-	if !ft.failed || !strings.Contains(errs(ft), "has a parameter and no Paths entry") {
+	config := ScreenConfig{Patterns: []string{"/notes/{id}"}, Handler: mux}
+	ft := run(config, "", true)
+	if !ft.failed ||
+		!strings.Contains(errs(ft), "has a parameter and no Paths entry") {
 		t.Fatalf("param without a path: %v", errs(ft))
 	}
-	c.Paths = map[string]string{"/notes/{id}": "/notes/1"}
-	if ft := run(c, "", true); ft.failed {
+	config.Paths = map[string]string{"/notes/{id}": "/notes/1"}
+	if ft := run(config, "", true); ft.failed {
 		t.Fatalf("param with a path: %v", errs(ft))
 	}
 }
@@ -383,19 +390,30 @@ func TestScreensPatternMountMustBeGroupedOrSkipped(t *testing.T) {
 	mux.HandleFunc("GET /{$}", ok)
 	mux.HandleFunc("GET /admin/", ok)
 	mux.HandleFunc("GET /admin/{$}", ok)
-	c := ScreenConfig{Patterns: []string{"/{$}", "/admin/"}, Handler: mux}
-	if ft := run(c, "", true); !ft.failed || !strings.Contains(errs(ft), "GET /admin/ is a mounted handler") {
+	config := ScreenConfig{
+		Patterns: []string{"/{$}", "/admin/"}, Handler: mux,
+	}
+	if ft := run(config, "", true); !ft.failed ||
+		!strings.Contains(errs(ft), "GET /admin/ is a mounted handler") {
 		t.Fatalf("an ungrouped subtree pattern: %v", errs(ft))
 	}
-	g := c
-	g.Opaque = []Opaque{{Patterns: []string{"/admin/"}, Screens: []OpaqueScreen{{Key: "GET /admin/notes", Path: "/admin/notes"}}}}
-	if ft := run(g, "", true); ft.failed {
+	grouped := config
+	grouped.Opaque = []Opaque{{
+		Patterns: []string{"/admin/"},
+		Screens: []OpaqueScreen{
+			{Key: "GET /admin/notes", Path: "/admin/notes"},
+		},
+	}}
+	if ft := run(grouped, "", true); ft.failed {
 		t.Fatalf("grouped subtree pattern: %v", errs(ft))
 	}
-	if ft := run(c, "perf GET /admin/ skip generated, measured elsewhere\n", true); ft.failed {
+	skipped := "perf GET /admin/ skip generated, measured elsewhere\n"
+	if ft := run(config, skipped, true); ft.failed {
 		t.Fatalf("skipped subtree pattern: %v", errs(ft))
 	}
-	page := ScreenConfig{Patterns: []string{"/{$}", "/admin/{$}"}, Handler: mux}
+	page := ScreenConfig{
+		Patterns: []string{"/{$}", "/admin/{$}"}, Handler: mux,
+	}
 	if ft := run(page, "", true); ft.failed {
 		t.Fatalf("/admin/{$} is one page: %v", errs(ft))
 	}

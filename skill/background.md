@@ -10,8 +10,8 @@ caller to `/jobs/`+job.ID. Owner is the session **Subject**, not
 the owner. `j.Get(id, owner)` 404s a foreign or unknown id.
 
 `jobs.NewHandlers(jobs.Config{Jobs, Render, RenderFragment})` returns
-`StatusPage`/`Fragment`/`Events` (SSE); mount all three in the
-`sess.Require` group under `/jobs/{id}`. Two traps: `Render` draws the
+`StatusPage`/`Fragment`/`Events` (SSE); mount all three with
+`Handle` under `/jobs/{id}`, in the group behind the session guard. Two traps: `Render` draws the
 whole page and `RenderFragment` the partial alone, or the layout nests
 on the next poll; and it must work with scripts off — a `<noscript>`
 meta refresh only while Running, or a failed page refreshes forever.
@@ -24,9 +24,10 @@ repeating while the fragment still carries `data-poll` (ui's
 `job-status` partial drops it once done); the partial's `PushURL`
 (= `EventsPath`) emits `data-poll-push` and the shim rides SSE, falling
 back to polling. `static/busy.js`: every submit button's label gives
-way to a spinner for ≥650ms (the submit is held; beside the label under
-reduced motion or forced colours), `aria-busy` and a double-submit
-guard by DEFAULT, cleared on back; `data-busy="false"` (form or button)
+way to a spinner (POST: at once, ≥650ms, the submit held; GET: unheld,
+only after 500ms; beside the label under reduced motion or forced
+colours), `aria-busy` and a double-submit guard by DEFAULT, cleared on
+back; `data-busy="false"` (form or button)
 opts out, `data-busy-label` shows words beside the spinner. Manners, not
 idempotency — the server still refuses the second write.
 `static/light.js`: the light the depth styles read (the hour on

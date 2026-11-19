@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -227,15 +228,79 @@ import (
 // by exactly the addition. The sentence now lives in
 // skill/background.md, 2,921 bytes against the topic ceiling, so no
 // ceiling moves: that is the split doing what it was for.
+//
+// Core raised 8,000 -> 9,100 on 2026-10-30 for "Write code that reads
+// like a sentence" (Design: 2026-10-29-readable-code), the rule the
+// skillCoreBudget comment reserves a raise for: every task writes Go.
+// An agent that never loads skill/code.md still writes `w` and `r` and
+// a 60-line handler, and an app's gate does not run the limits yet, so
+// nothing would tell it. The section is the four limits and rules 1 to
+// 7, a line each; the other seven rules, the action shape and the gate
+// messages went to skill/code.md. Trimming paid 120 bytes (the intro's
+// restated topic pointer, a sess.Require line the App shape and the
+// checklist both carry, the index pointer's preamble); the rest of the
+// core is facts, and the 1,461 bytes added land the file at 9,084.
+// The ceiling is the next hundred above that: slack for a one-line
+// correction from review, not room to fill.
+//
+// Held at 9,100 on 2026-10-31, when step 4 rewrote the App shape and
+// Owner scoping for the scaffold's App, New and Routes. The longer
+// names were paid for without cutting a fact: the file list moved to
+// the app's AGENTS.md, which lists it, the session cookie facts to
+// skill/signin.md, and the body-binding rule is said once here, its
+// detail in skill/forms.md. Review's fixes (map gorm.ErrRecordNotFound
+// to op.NotFound; mount gen.Router in Routes) took it to 9,100, with
+// "the scaffold's *gorm.DB" cut to "a *gorm.DB": no slack is left.
+//
+// Raised 9,100 -> 9,200 on 2026-11-02 for MCP: every new app mounts
+// /api/v1/mcp beside the API. An agent that copies Routes from the
+// App shape without that line would leave MCP unmounted. The mount and
+// the index row's "or MCP" account for the growth; the ceiling is the
+// next hundred.
+//
+// Raised 9,200 -> 9,300 on 2026-11-02 for the Never bullet on
+// component scripts (#158, docs/superpowers/specs/2026-10-31-page-
+// weight-design.md, change 4). Every page an agent writes is where it
+// would add a <script> tag for select.js by hand, and the layouts now
+// load a component's script only where a field names it, so the bullet
+// is a rule every page task needs. Trimming paid 66 bytes (why Go
+// leaves examples out of the module zip, and "correct by
+// construction"); the 155-byte bullet lands the file at 9,269
+// beside MCP's lines.
+//
+// Raised 9,300 -> 9,600 on 2026-11-04 for two index rows, port.md and
+// scripts.md, and a pointer from the component-script bullet. Beta
+// testers' agents argued operators out of the ports they asked for and
+// read the framework's scripts-off floor as a ban on app JavaScript; a
+// topic the index does not name is never read, so the rows are the
+// rule every port and every rich screen needs. The description gains
+// "or port one to it" so the skill loads for a port at all, and the
+// screens row "build a first slice" so the polish questions in
+// skill/screens.md are read before the first screen. The file lands at
+// 9,572; the ceiling is the next hundred.
+//
+// Raised 9,600 -> 9,700 on 2026-11-17 for two index words: "or dates"
+// in the design row and "numbers" in the forms row, where the number
+// field and the date formatter are now documented (Paul's ruling that
+// localised numbers, money and dates are in every app from day one).
+// An agent asked to take a number in a form, or to write a date, finds
+// its topic by those words; the file lands at 9,617.
 const (
 	// skillCoreBudget holds SKILL.md near its 2026-10-22 size (6,660
 	// bytes) with room for the index to grow by a few topics. Raising
 	// it means moving something into a topic, which is almost always
 	// the right answer, so raise it only for a rule every task needs.
-	skillCoreBudget = 8_000
+	skillCoreBudget = 9_700
 	// skillTopicBudget is per topic file. A topic that outgrows it
 	// splits in two, each with its own index line.
 	skillTopicBudget = 9_000
+	// skillPartialsBudget is skill/partials.md's own. It is generated,
+	// one line per partial, so it grows by a line whenever a partial
+	// ships and cannot be trimmed by hand; splitting it would send an
+	// agent to two lists for one lookup. Set on 2026-11-17 for
+	// field-number (the Fichas level-up spec rev 4, R2), which took it
+	// to 9,107; the ceiling is the next hundred.
+	skillPartialsBudget = 9_200
 )
 
 // skillFiles are SKILL.md and every topic, by path.
@@ -262,8 +327,11 @@ func skillFiles(t *testing.T) map[string]string {
 func TestSkillStaysWithinBudget(t *testing.T) {
 	for p, s := range skillFiles(t) {
 		budget := skillTopicBudget
-		if p == "SKILL.md" {
+		switch p {
+		case "SKILL.md":
 			budget = skillCoreBudget
+		case partialsPath:
+			budget = skillPartialsBudget
 		}
 		if len(s) > budget {
 			t.Errorf("%s is %d bytes, %d over its %d budget: move detail into a topic, or split the topic",
@@ -358,4 +426,83 @@ func TestSkillTeachesTheLocalizerAndCurrencyContract(t *testing.T) {
 			t.Errorf("the skill does not mention %q", want)
 		}
 	}
+}
+
+// The skill teaches the shape rastrillo new writes (readable-code step
+// 4): an agent copies the nearest example, so a line still showing the
+// old chi wiring or a one-letter handler is the code it writes next.
+func TestSkillTeachesTheScaffoldsShape(t *testing.T) {
+	files := skillFiles(t)
+	files["docs/site/app-shape.md"] = readSkillPage(t,
+		"docs/site/app-shape.md")
+	for path, text := range files {
+		joined := strings.Join(strings.Fields(text), " ")
+		gones := obsoleteShape
+		if path != "skill/live.md" {
+			gones = slices.Concat(obsoleteShape, netHTTPShape)
+		}
+		for _, gone := range gones {
+			if strings.Contains(joined, gone) {
+				t.Errorf("%s still says %q", path, gone)
+			}
+		}
+	}
+	core := strings.Join(strings.Fields(files["SKILL.md"]), " ")
+	for _, want := range []string{
+		"`func Routes(routes *action.Routes, app *App)`",
+		"`routes.Mount(\"/api/v1\", app.api, \"api\")`",
+		"`visit.Render(", "`app.owned(request).",
+		"`app.auth.RequireSession`", "`make code`", "`make routes`",
+	} {
+		if !strings.Contains(core, want) {
+			t.Errorf("SKILL.md does not say %q", want)
+		}
+	}
+	screens := strings.Join(strings.Fields(files["skill/screens.md"]), " ")
+	if want := "`func Mount(routes *action.Routes, deps *Deps)`"; !strings.
+		Contains(screens, want) {
+		t.Errorf("skill/screens.md does not say %q", want)
+	}
+	// v0.30.0 brought the scaffold, so its own section says how to
+	// adopt the gates: from its heading to the next release's.
+	_, release, found := strings.Cut(readSkillPage(t, "CHANGELOG.md"),
+		"\n## v0.30.0\n")
+	if !found {
+		t.Fatal("CHANGELOG.md has no `## v0.30.0` heading")
+	}
+	release, _, _ = strings.Cut(release, "\n## v")
+	release = strings.Join(strings.Fields(release), " ")
+	if strings.Contains(release, "Nothing runs it in an app") ||
+		!strings.Contains(release, "rastrillo budget code --init") ||
+		!strings.Contains(release,
+			"only once the app has a `Routes` function") {
+		t.Errorf("CHANGELOG.md's v0.30.0 section does not say how " +
+			"an existing app adopts the gates, the routes lane last")
+	}
+}
+
+// obsoleteShape is what the skill said before the scaffold moved to App,
+// New, Routes and actions, and what said an app does not run the gates.
+var obsoleteShape = []string{
+	"does not run it yet", "The scaffold still writes", "being renamed",
+	"Mount(r chi.Router, deps)", "owned(r)", "(a *app)", "notes.App(",
+	"func App(", "r.Use(csrf.Protect(origin))", "r.Use(sess.Require)",
+	"`sess.Require` group", "render(w, r", "`Router` (`app.go`)",
+	"called from `Router`", "`render.go`'s `render`",
+	"the render helper writes none", "everything `App()` applies",
+	"r.Use(sess.Middleware)", "mux.Handle(\"/api/v1\"", "`d.G",
+}
+
+// netHTTPShape is a handler written on net/http and chi. skill/live.md is
+// exempt until step 6 or 7 moves it: its render path cannot go through
+// visit.Render yet (the design's order of work says why).
+var netHTTPShape = []string{"(w, r", "r.Use(", "pages.Render(w, r"}
+
+func readSkillPage(t *testing.T, path string) string {
+	t.Helper()
+	text, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return string(text)
 }

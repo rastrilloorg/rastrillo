@@ -12,7 +12,10 @@ one.
 ## Refusals
 
 ```go
-type Invalid struct{ Fields map[string]string }
+type Invalid struct {
+	Fields map[string]string
+	AsSent bool
+}
 type NotFound struct{}
 type Forbidden struct{ Reason string }
 type Conflict struct{ Message string }
@@ -30,10 +33,11 @@ if errors.As(err, &inv) {
 
 `Invalid.Fields` is keyed by manifest field name, such as `Title`. The
 page door puts each message beside its field, and the API door turns the
-key into its wire name. `NotFound` is the answer both for a row that does
-not exist and for one that is not the caller's. `Forbidden.Reason` is for
-your logs and never reaches the response. `Conflict.Message` is safe to
-show.
+key into its wire name. When `AsSent` is true, the API and MCP report
+the keys under the names the client sent. `NotFound` is the answer both
+for a row that does not exist and for one that is not the caller's.
+`Forbidden.Reason` is for your logs and never reaches the response.
+`Conflict.Message` is safe to show.
 
 `Invalid.Error`, `NotFound.Error`, `Forbidden.Error` and `Conflict.Error`
 are for log lines: `invalid: Amount, Title` (the field names, sorted,
@@ -136,10 +140,10 @@ func DecodeInput(data []byte, dst any) error
 with the rules both doors share. `api.Decode` calls it on the body it
 read, and every generated `Descriptor.Invoke` calls it on its
 arguments, so the two cannot drift. It refuses an unknown member, a
-member sent twice, a wrong type, and `null` anywhere but a `Nullable`
-field, each as an `Invalid` keyed by the member's name as sent. A value
-that is not one JSON object is an `Invalid` with no fields; the door
-says what to send instead.
+member sent twice, a wrong type, or `null` outside a `Nullable` field.
+It returns each as an `Invalid` keyed by the member's name as sent,
+with `AsSent` set. A value that is not one JSON object is an `Invalid`
+with no fields; the door says what to send instead.
 
 ## EncodeCursor and DecodeCursor
 
@@ -162,6 +166,8 @@ type Descriptor struct {
 	Exposed     bool
 	Description string
 	Confirm     string
+	Destructive bool
+	Idempotent  bool
 	Input       json.RawMessage
 	Result      json.RawMessage
 	Invoke      func(ctx context.Context, rc *rastrillo.Ctx, input json.RawMessage) (any, error)
@@ -174,3 +180,46 @@ says whether the resource is on the API. `Confirm` is the sentence an
 agent shows before a write. `Input` and `Result` are JSON Schema, and
 both are required. `Invoke` decodes `input` with the API door's rules and
 calls the operation.
+
+`Destructive` means a call may change or remove what is already there;
+false means it does not. `Idempotent` means two calls with the same
+input leave the state one call would. MCP sends both to clients as
+hints, and `rastrillo generate` sets them: see
+[MCP](/docs/mcp#the-flags).
+
+## CheckFlags and FenceVerbs
+
+```go
+func CheckFlags(descriptor Descriptor) error
+
+var FenceVerbs = []string{
+	"cancel", "refund", "revoke", "reject", "remove", "withdraw",
+	"discard", "disconnect", "rotate", "regenerate", "replace", "delete",
+	"send", "resend", "purge",
+}
+```
+
+`CheckFlags` refuses a read marked `Destructive`, and a write whose ID,
+after its last `.`, starts with one of `FenceVerbs` but isn't
+`Destructive`. So a verb that undoes or sends something can't be marked
+safe by forgetting the flag. `mcp.New` runs it on every descriptor, and
+the generator's tests run it on every generated one.
+
+## ResponseGuard
+
+```go
+type ResponseGuard func(ctx context.Context, actor rastrillo.Actor, descriptor *Descriptor, input json.RawMessage, result any) error
+```
+
+A `ResponseGuard` checks whether the actor may still see the result,
+such as whether each note in a search result is still in a team they
+belong to. `mcp.Config.Guard` runs it with the fresh actor before the
+headers and before each 64 KiB of an answer. `descriptor` is the
+operation that ran, `input` the arguments as sent, and `result` the
+value `Invoke` returned. For the tool list, `descriptor` and `input` are
+nil and `result` is the `[]Descriptor` that was listed.
+
+A guard must have no side effects: it must never run the operation
+again or change state. It runs last, so put a slow check against
+another service before your own revision and link checks. Check the
+revision and links closest to the bytes going out.

@@ -9,55 +9,58 @@ import (
 	"testing"
 	"time"
 
-	"github.com/chromedp/cdproto/emulation"
-	"github.com/chromedp/cdproto/input"
 	"github.com/chromedp/chromedp"
 
 	"amadan.net/rastrillo/rastrillo/harness"
 	"amadan.net/rastrillo/rastrillo/internal/designsystem/galleryrig"
 )
 
-// shimOSListener is the line of rastrillo.js that lands an OS scheme
+// fiestaOSListener is the line of fiesta.js that lands an OS scheme
 // flip in its own document. The gallery has a listener of its own,
 // which also lands every preview frame, and on a page that links both
-// the shim's masks it: TestTheGallerySwitchLandsOnTheNextFrame passed
+// fiesta.js's masks it: TestTheGallerySwitchLandsOnTheNextFrame passed
 // with the gallery's deleted (#104 item 6).
-const shimOSListener = `if (osScheme) osScheme.onchange = function () { if (!document.documentElement.hasAttribute("data-theme")) land(); };`
+const fiestaOSListener = `if (osScheme) osScheme.onchange = ` +
+	`function () { if (!root.hasAttribute("data-theme")) land(); };`
 
-// treeWithoutTheShimsListener is the gallery tree with that line cut
-// out of the served rastrillo.js, so whatever lands an OS flip on the
-// page is the gallery's own code.
-func treeWithoutTheShimsListener(t *testing.T) http.Handler {
+// treeWithoutFiestasListener is the gallery tree with that line cut out
+// of the served fiesta.js, so whatever lands an OS flip on the page is
+// the gallery's own code.
+func treeWithoutFiestasListener(t *testing.T) http.Handler {
 	t.Helper()
 	files, err := Render(mountPath)
 	if err != nil {
 		t.Fatalf("Render: %v", err)
 	}
-	var shim []string
+	var fiesta []string
 	for name := range files {
 		base := name[strings.LastIndex(name, "/")+1:]
-		if strings.HasPrefix(base, "rastrillo.") && strings.HasSuffix(base, ".js") {
-			shim = append(shim, name)
+		if strings.HasPrefix(base, "fiesta.") &&
+			strings.HasSuffix(base, ".js") {
+			fiesta = append(fiesta, name)
 		}
 	}
-	// The tree writes the shim under its plain name and its hashed one;
-	// the pages link the hashed one, and both are cut so the choice
-	// cannot matter.
-	if len(shim) == 0 {
-		t.Fatal("the tree carries no rastrillo.js")
+	// The tree writes fiesta.js under its plain name and its hashed
+	// one; the pages link the hashed one, and both are cut so the
+	// choice cannot matter.
+	if len(fiesta) == 0 {
+		t.Fatal("the tree carries no fiesta.js")
 	}
-	for _, name := range shim {
+	for _, name := range fiesta {
 		src := string(files[name])
-		if strings.Count(src, shimOSListener) != 1 {
-			t.Fatalf("%s no longer carries its OS listener as this test knows it; update shimOSListener:\n%s", name, shimOSListener)
+		if strings.Count(src, fiestaOSListener) != 1 {
+			t.Fatalf("%s no longer carries its OS listener as this "+
+				"test knows it; update fiestaOSListener:\n%s",
+				name, fiestaOSListener)
 		}
-		files[name] = []byte(strings.Replace(src, shimOSListener, "/* OS listener removed by the test */", 1))
+		files[name] = []byte(strings.Replace(src, fiestaOSListener,
+			"/* OS listener removed by the test */", 1))
 	}
 	return galleryrig.Tree(t, files, mountPrefix)
 }
 
 // The gallery's own OS listener lands a flip under System while a rail
-// item is hovered, with the shim's listener out of the way: the item's
+// item is hovered, with fiesta.js's listener out of the way: the item's
 // text colour read a frame after the flip is already the value it
 // settles to. The listener's job is to land every transition running
 // in the page and its frames; the framework's own hover tints no
@@ -69,48 +72,75 @@ func treeWithoutTheShimsListener(t *testing.T) http.Handler {
 // is test-only and carries !important, because the hovered item's
 // transition list is tokens.css's own; nothing shipped carries one.
 func TestTheGalleryLandsAnOSFlipWithItsOwnListener(t *testing.T) {
-	rig := harness.New(t, func(string) http.Handler { return treeWithoutTheShimsListener(t) }, harness.WithHover())
+	rig := harness.New(t, func(string) http.Handler {
+		return treeWithoutFiestasListener(t)
+	}, harness.WithHover())
 	ctx, cancel := context.WithTimeout(rig.Context(), 90*time.Second)
 	defer cancel()
-	where := "the overview at 1280px, shim listener removed"
-	os := func(scheme string) chromedp.Action {
-		return emulation.SetEmulatedMedia().WithFeatures([]*emulation.MediaFeature{{Name: "prefers-color-scheme", Value: scheme}})
+	where := "the overview at 1280px, fiesta.js listener removed"
+	os := func(scheme string) chromedp.Action[chromedp.Void] {
+		return prefersColorScheme(scheme)
 	}
-	if err := chromedp.Run(ctx, os("light"), chromedp.EmulateViewport(1280, 900),
+	if err := chromedp.Do(ctx, os("light"), chromedp.EmulateViewport(1280, 900),
 		chromedp.Navigate(rig.Origin+indexHref(mountPath, RootTheme(), "en")),
-		chromedp.WaitReady(`body`, chromedp.ByQuery)); err != nil {
+		chromedp.WaitReady(chromedp.CSS(`body`))); err != nil {
 		t.Fatalf("%s: loading: %v", where, err)
 	}
 	until(t, ctx, where, `document.readyState === "complete" && !document.documentElement.hasAttribute("data-theme") && matchMedia("(hover: hover)").matches`)
-	// The control: the page really did lose the shim's listener, or
+	// The control: the page really did lose fiesta.js's listener, or
 	// the drive proves nothing about the gallery's.
-	var shimHasListener bool
-	if err := chromedp.Run(ctx, chromedp.Evaluate(`(async () => { const s = [...document.scripts].find(s => /rastrillo\.[0-9a-f]+\.js$/.test(s.src)); const body = await (await fetch(s.src)).text(); return body.includes("osScheme.onchange"); })()`, &shimHasListener, awaitPromise)); err != nil {
-		t.Fatalf("%s: reading the served shim: %v", where, err)
+	fiestaHasListener, err := chromedp.Run(ctx, chromedp.Evaluate[bool](
+		`(async () => {
+		  const s = [...document.scripts]
+		    .find(s => /fiesta\.[0-9a-f]+\.js$/.test(s.src));
+		  const body = await (await fetch(s.src)).text();
+		  return body.includes("osScheme.onchange"); })()`,
+		chromedp.EvalAwaitPromise))
+	if err != nil {
+		t.Fatalf("%s: reading the served fiesta.js: %v", where, err)
 	}
-	if shimHasListener {
-		t.Fatalf("%s: the served rastrillo.js still carries its OS listener", where)
+	if fiestaHasListener {
+		t.Fatalf("%s: the served fiesta.js still carries its OS "+
+			"listener", where)
 	}
 	// A rail item that is not the current one, hovered by the mouse,
 	// and its colour allowed to settle. The overview shows only its own
 	// link; the rest sit in closed sections, so the first is opened.
-	var r struct{ X, Y float64 }
-	if err := chromedp.Run(ctx, chromedp.Evaluate(`(() => { const s = document.createElement("style"); s.textContent = "[rst-shell-nav] a, [rst-shell-nav] a:hover { transition: color 0.25s ease !important; }"; document.head.append(s); document.querySelector('.ds-nav details').open = true; const a = [...document.querySelectorAll('[rst-shell-nav] a:not([aria-current])')].find(a => a.checkVisibility()); window.__hov = a; const b = a.getBoundingClientRect(); return {X: b.left + b.width / 2, Y: b.top + b.height / 2}; })()`, &r)); err != nil {
+	slowFade := `"[rst-shell-nav] a, [rst-shell-nav] a:hover {` +
+		` transition: color 0.25s ease !important; }"`
+	r, err := chromedp.Run(ctx, chromedp.Evaluate[struct{ X, Y float64 }](
+		`(() => {
+		  const s = document.createElement("style");
+		  s.textContent = `+slowFade+`;
+		  document.head.append(s);
+		  document.querySelector('.ds-nav details').open = true;
+		  const a = [...document.querySelectorAll(
+		    '[rst-shell-nav] a:not([aria-current])')]
+		    .find(a => a.checkVisibility());
+		  window.__hov = a;
+		  const b = a.getBoundingClientRect();
+		  return {X: b.left + b.width / 2, Y: b.top + b.height / 2}; })()`))
+	if err != nil {
 		t.Fatalf("%s: finding a rail item: %v", where, err)
 	}
 	settled := func(leg string) string {
 		t.Helper()
-		var bg string
-		if err := chromedp.Run(ctx, chromedp.Evaluate(`(async () => { await Promise.all(window.__hov.getAnimations().map(a => a.finished.catch(() => null))); return getComputedStyle(window.__hov).color; })()`, &bg, awaitPromise)); err != nil {
+		bg, err := chromedp.Run(ctx, chromedp.Evaluate[string](`(async () => {
+		  await Promise.all(window.__hov.getAnimations()
+		    .map(a => a.finished.catch(() => null)));
+		  return getComputedStyle(window.__hov).color; })()`,
+			chromedp.EvalAwaitPromise))
+		if err != nil {
 			t.Fatalf("%s, %s: %v", where, leg, err)
 		}
 		return bg
 	}
-	var rest string
-	if err := chromedp.Run(ctx, chromedp.Evaluate(`getComputedStyle(window.__hov).color`, &rest)); err != nil {
+	rest, err := chromedp.Run(ctx, chromedp.Evaluate[string](`getComputedStyle(window.__hov).color`))
+	if err != nil {
 		t.Fatal(err)
 	}
-	if err := chromedp.Run(ctx, chromedp.MouseEvent(input.MouseMoved, r.X, r.Y)); err != nil {
+	if err := chromedp.Do(ctx,
+		chromedp.MouseEvent(chromedp.MouseMoved, r.X, r.Y)); err != nil {
 		t.Fatalf("%s: hovering: %v", where, err)
 	}
 	hoverLight := settled("hovered, OS light")
@@ -120,7 +150,12 @@ func TestTheGalleryLandsAnOSFlipWithItsOwnListener(t *testing.T) {
 	// The flip, read a frame later: the change event reaches script a
 	// frame after the style update that starts the fade.
 	var next string
-	if err := chromedp.Run(ctx, os("dark"), chromedp.Evaluate(`new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(getComputedStyle(window.__hov).color))))`, &next, awaitPromise)); err != nil {
+	if err := chromedp.Do(ctx, os("dark"), harness.Into(&next,
+		chromedp.Evaluate[string](
+			`new Promise(r => requestAnimationFrame(() =>
+			  requestAnimationFrame(() =>
+			    r(getComputedStyle(window.__hov).color))))`,
+			chromedp.EvalAwaitPromise))); err != nil {
 		t.Fatalf("%s: flipping the OS: %v", where, err)
 	}
 	hoverDark := settled("hovered, OS dark")

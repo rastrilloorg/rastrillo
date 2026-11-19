@@ -59,11 +59,14 @@ layout can show a notice. See [Forms](/docs/forms).
 
 ## Template functions
 
-`ui.Pages` registers `dict`, `list`, `menuGroup`, `searchClear`, `icon`,
-`iconAssets`, `opt`, `stageArt`, `displayURL`, `safeHref`,
-`rowMenuItems`, `paginationItems`, `localizer` and `withL`, and the
-locale functions `T`, `Tf`, `Tbdi`, `number`, `displayValue`,
-`dateWords`, `money` and `actor`.
+`ui.Pages` registers the template functions `dict`, `list`, `menuGroup`,
+`searchClear`, `icon`, `iconAssets`, `opt`, `stageArt`, `displayURL`,
+`safeHref`, `rowMenuItems`, `paginationItems`, `localizer`, `withL`,
+`path`, `needs`, `pageStylesheet`, `pageScripts` and `neededScripts`.
+It also registers the locale functions `T`, `Tf`, `Tbdi`, `number`,
+`displayValue`, `dateWords`, `money`, `actor` and `date`.
+
+Write a link to one of your own pages with `path`: `{{path $ "/orders"}}`. At the root it changes nothing. Under a [base path](/docs/reference/basepath) it adds the base, so the link stays in your app.
 
 Start each template body with `{{$L := localizer $}}`. Pass `$L` first
 to every locale function, and to every partial as `"L" $L`:
@@ -75,9 +78,9 @@ to every locale function, and to every partial as `"L" $L`:
 <form rst-form method="post">
 {{template "field-text" dict "L" $L "Name" "name" "Label" "Name" "Value" .Name "Required" true}}
 {{template "field-daterange" dict "L" $L "Label" "When" "Start" (dict "Name" "s" "Label" "From") "End" (dict "Name" "e" "Label" "To")}}
-{{template "form-foot" dict "L" $L "Submit" "Save" "CancelHref" "/" "CancelLabel" "Cancel"}}
+{{template "form-foot" dict "L" $L "Submit" "Save" "CancelHref" (path $ "/") "CancelLabel" "Cancel"}}
 </form>
-{{template "pagination" dict "L" $L "Prev" "/p/1" "Next" "/p/3"}}
+{{template "pagination" dict "L" $L "Prev" (path $ "/p/1") "Next" (path $ "/p/3")}}
 {{end}}
 ```
 
@@ -103,22 +106,121 @@ layout's `<head>`. It renders empty for the vendored-inline default, so
 you can call it unconditionally and never edit the layout when the
 delivery mode changes. See [Icons](/docs/icons).
 
+### The page's stylesheet and scripts
+
+Each page sends only the CSS and JS it can use. When `ui.Pages` starts,
+it reads each page's templates for the hooks they show, such as
+`rst-card` and `rst-btn`, and the scripts they need. The layout links
+the result with two functions:
+
+```html
+<link rel="stylesheet" href="{{path $ pageStylesheet}}">
+{{range pageScripts}}<script defer src="{{path $ (asset .)}}"></script>{{end}}
+```
+
+`pageStylesheet` is the page's slice of `static/tokens.css`: the rules
+for the hooks the page shows, and the rules every page needs. On a page
+that runs no script of its own, the slice also drops the rules for a
+hook's variants the page never writes, such as `rst-btn="danger"` on a
+page with only primary buttons, and the class forms, such as
+`.rst-btn`, of hooks it writes only as attributes. A page with a script
+that isn't the framework's, an inline script, an `on*` handler or a
+`javascript:` URL keeps them all, and so does a live page. Treat a
+framework script you edit as your own: a page that loads it keeps
+every rule. Slices
+are minified, gzipped and cached like your other files, and pages that
+show the same hooks share one. Your `tokens.css` stays one file, and an
+edit to it reaches every slice. If it can't be read, for example
+because it uses CSS nesting, every page links the whole file.
+`theme.css` is never sliced.
+
+`pageScripts` lists the scripts the page uses, in the order they load:
+
+- `fiesta.js` on every page, first: it closes menus on Escape or a
+  click elsewhere, lets a switch be dragged and applies a colour-scheme
+  choice in place.
+- `busy.js` with a form of the page's own. The layout's language and
+  scheme menus don't count.
+- `light.js` with a component it lights: `rst-btn`, `rst-box`,
+  `rst-card`, `rst-stats` or `rst-list`.
+- `anchor.js` with a menu.
+- `copy.js` with `rst-snippet`, for its Copy button.
+- `select.js` with `field-select`, and `datetime.js` and `calendar.js`
+  with the date and time fields.
+
+A page with a live region or a polling fragment links the slice for
+every page's hooks and loads every script, because the HTML it swaps
+in later may carry anything.
+
+Pass your app's `rastrillo.Assets` as `PagesConfig.Assets`. With it,
+`pageScripts` does not list a script you deleted from `static/`, such
+as `light.js` for the still design. Without it, every page links the
+whole `tokens.css`, and every page asks for `static/fiesta.js` whether
+your app has it or not. If it doesn't, that request is a 404, which
+breaks nothing.
+
+Markup you write in a template is read like a partial's. A field you
+write yourself loads its script as long as the markup carries its
+attribute: `data-rst-select` loads `select.js`, and `data-rst-date`,
+`data-rst-time` or `data-rst-range` load `datetime.js` and
+`calendar.js`.
+
+### Asking with needs
+
+Some markup is not in the templates: HTML your Go code builds, an
+attribute that comes from your data, or markup your own script adds.
+Ask for what it needs in the template that shows it:
+
+```html
+{{needs "select.js"}}<select {{.Hook}}>
+{{needs "rst-card"}}{{.Summary}}
+```
+
+`needs` takes a script or a hook, in quotes, and renders nothing. The
+scripts are `busy.js`, `live.js`, `light.js`, `anchor.js`, `copy.js`,
+`select.js`, `calendar.js` and `datetime.js`. A hook is `rst-` and a
+component's name. Any other name makes `NewPages` return an error
+naming the page. Don't add a `<script>` tag for these scripts yourself.
+
+Ask for each hook your Go-built markup shows, whether it writes the
+hook as an attribute or as a class. `{{needs "rst-btn"}}` keeps the
+rules for `rst-btn` in both spellings and with every variant, such as
+`rst-btn="danger"`.
+
+You don't have to find every hook by hand. `make perf` fails when a
+page's slice lacks a rule for a hook that the whole `tokens.css` would
+apply to it, and names the hook to ask for. See
+[Testing](/docs/testing#the-perf-lane).
+
+A layout written before `pageScripts` may load the component scripts
+with `neededScripts`, which lists only `copy.js`, `select.js`,
+`calendar.js` and `datetime.js`. It still works, but it needs a line
+for `fiesta.js` right after its `rastrillo.js` tag:
+
+```html
+<script defer src="{{path $ (asset "static/fiesta.js")}}"></script>
+```
+
+`rastrillo doctor` names each layout that lacks it.
+
 ## The partials
 
 They span the list-screen, display, form and route families:
 
 ```text
-actor         error-page       field-url           notice
-api-tokens    field            form-error          page-header
-back-nav      field-check      form-foot           pagination
-badge         field-date       job-status          person
-bulk-bar      field-daterange  list-bar            row-menu
-callout       field-datetime   list-bar-search     scheme-menu
-choice-field  field-money      list-row-action     seg-tabs
-confirm-form  field-select     list-search-submit  signin
-detail-list   field-text       locale-menu         signin-title
-dropdown      field-textarea   media-grid          stat
-empty-state   field-time       meter               status-pill
+actor         field            form-foot           pagination
+api-tokens    field-check      job-status          person
+back-nav      field-date       list-bar            region:notice
+badge         field-daterange  list-bar-search     row-menu
+bulk-bar      field-datetime   list-row-action     scheme-menu
+callout       field-money      list-search-submit  seg-tabs
+choice-field  field-number     live-head           signin
+confirm-form  field-select     locale-menu         signin-title
+detail-list   field-text       media-grid          stat
+dropdown      field-textarea   meter               status-pill
+empty-state   field-time       notice
+error-page    field-url        page-header
+              form-error
 ```
 
 `locale-menu` is the language switcher; see
@@ -177,8 +279,8 @@ gone. `ClearHref` is the hook, on both `list-bar-search` and `list-bar`:
 
 ```html
 {{template "list-bar" dict "L" $L
-    "SearchAction" "/posts" "Query" .Query "Hidden" .Carry
-    "ClearHref" "/posts"}}
+    "SearchAction" (path $ "/posts") "Query" .Query "Hidden" .Carry
+    "ClearHref" (path $ "/posts")}}
 ```
 
 Anything you pass wins over the computed default.
@@ -255,12 +357,11 @@ button of the topbar and console on a phone: the account menu opens
 inside it, and in the same group it would close it.
 
 Closing an open menu on a click elsewhere, or on Escape, is the one part
-native `<details>` cannot express, so `rastrillo.js` does it — two
+native `<details>` cannot express, so `fiesta.js` does it — two
 delegated listeners on the document, no per-element wiring, menus that
-arrive in a polled fragment covered for free. Delete that section of the
-file to opt out; with no script at all the menus still open, still close
-on a second click of their own summary, and still keep one open at a
-time.
+arrive in a polled fragment covered for free. With no script at all the
+menus still open, still close on a second click of their own summary,
+and still keep one open at a time.
 
 ### A button that changes something says so
 
@@ -270,11 +371,17 @@ once the submission is under way — `disabled`. `busy.js` does it by
 default, with no attribute to remember; linking the file is the whole
 opt-in.
 
-The spinner shows for at least 650ms. A response faster than that would
-make it flicker, which reads as a glitch rather than an answer, so the
-submit is held until 650ms after the click and then sent — the clicked
-button's `name` and `value` with it, exactly as the click would have
-sent them. Only a submit with a spinner on screen is held: a button that
+A POST's spinner shows at once and for at least 650ms. A response
+faster than that would make it flicker, which reads as a glitch rather
+than an answer, so the submit is held until 650ms after the click and
+then sent — the clicked button's `name` and `value` with it, exactly as
+the click would have sent them. A GET only looks something up — a
+search, a filter, a view — so it is never held: it goes at once, its
+form refuses a second submit straight away, and its button shows the
+loading state only if the page is still there 500ms later. A faster
+answer shows nothing. The submitter's `formmethod` beats the form's
+`method`, and a form with no method is a GET. Only a submit with a
+spinner on screen is held: a button that
 opted out, or a script's `requestSubmit()` with no button, goes at once
 (the form is still guarded). A script that wants the spinner passes the
 button: `form.requestSubmit(button)`. Leaving the page while a submit is held drops it, and going
@@ -353,7 +460,7 @@ deletable. It moves the light the depth styles read: the shadows lean
 with the hour, and the sheen on a button and the rim of a card follow
 the pointer. For the still design, delete it and its tag, and name it in
 `vendoredIsMine` in `vendored_test.go`. On a phone a pressed button
-shows its press, not a sheen, and `rastrillo.js`, not `light.js`,
+shows its press, not a sheen, and `fiesta.js`, not `light.js`,
 registers the touch listener iOS needs to show pressed states, so
 deleting `light.js` loses none of them.
 
@@ -471,7 +578,10 @@ order 4,471.
 
 Use `{{number $L .Count}}` for a quantity and
 `{{money $L .Price .Currency}}` for money. Both write the reader's
-language's digits and marks. `money` takes the amount in the currency's
+language's digits and marks, from the same CLDR data. For an exact
+decimal, pass a `number.Decimal`; `"plain"`, `"places" 2` and
+`"percent"` after the value set the format. See
+[Localization](/docs/localization#numbers). `money` takes the amount in the currency's
 smallest unit, or a pointer to it, and the ISO code as a string. A nil
 amount writes nothing.
 
@@ -490,9 +600,10 @@ item a `DateTime` alongside its `Value`:
 ```
 
 `Value` stays whatever you formatted for a person to read; `DateTime`
-carries the same moment in the one syntax a machine can parse. The
-framework does not format dates — a locale decides that and you have the
-locale — so the two are supplied together.
+carries the same moment in the one syntax a machine can parse. Format
+the `Value` with `{{date $L .Published "dateYear"}}`, which writes the
+reader's language's pattern (`2 August 2026`, `August 2, 2026`,
+`2. August 2026`); see [Localization](/docs/localization#dates).
 
 Only for moments and durations. An identifier, a quantity or a reference
 number is not a time however numeric it looks; `Mono` is what marks
@@ -611,8 +722,7 @@ POST is byte-identical to the un-enhanced form and the server parses it
 with the same code either way. With scripts off the field is an ordinary
 date input, and the browser's own picker still opens.
 
-It holds no English vocabulary. Not one word the parser matches on is
-written in the file:
+It reads date words in the page's language when available:
 
 - **The relative words come from the catalog.** `{{dateWords $L}}`
   looks up all seventeen (today, tomorrow, next, in, ago, at, noon, am
@@ -620,15 +730,20 @@ written in the file:
   object on `data-rst-date-words`. One attribute, not seventeen. The
   words are in the page's language, so a field enhanced in Japanese
   parses Japanese. A key may list several accepted spellings separated
-  by `|`, and matching is case- and accent-folded.
+  by `|`, and matching is case- and accent-folded. A field without the
+  attribute reads the words from Fiesta's table for the page's
+  language, if the page loads one, and otherwise uses the English
+  built into the script.
 - **Weekday and month names come from `Intl`**, in the page's own
   `lang`, along with the locale's digits folded to ASCII. So "3 mars",
   "3月3日" and "٣ مارس" all parse with no catalog entry behind them.
 - **The visible strings ride out on `data-rst-date-*` attributes**, each
   resolved through `T` at render, because this markup is built in the
-  browser where the catalog is out of reach. The file keeps English
-  fallbacks for the eleven labels it puts on screen, the way `select.js`
-  does, so a field that arrives without an attribute still works.
+  browser where the catalog is out of reach. A field that arrives
+  without an attribute still works: the script reads each label from
+  the attribute first, then from Fiesta's table for the page's
+  language if the page loads one, then from the English written into
+  the file, the way `select.js` does.
 - **`{example}` and `{n}` are substituted in the browser**, not at
   render. The hint travels as its raw template so the example date is
   formatted by the locale's own formatter; the results line counts rows
@@ -721,16 +836,22 @@ A hand-written select opts out from the markup side with
 This partial never emits it — `Plain` simply emits nothing — but
 `select.js` honours it, so a select you wrote yourself can say no.
 
-## The design system
+## Rastrillo components
 
-Every partial, every state, every markup idiom and all five shells,
-rendered live for all three themes and all twelve base locales: one
-page per section for each theme and locale, plus a full-page demo for
-each shell and one for the modal route. It is live at
-rastrillo.org/design-system.
+Rastrillo components is the gallery of every partial, every state and
+all five shells, rendered live for all three themes and all twelve base
+locales, with the template call beside each sample: one page per section
+for each theme and locale, plus a full-page demo for each shell and one
+for the modal route. The site publishes it at rastrillo.org/components.
+
+The look is Fiesta's, so the gallery leaves Fiesta's parts to Fiesta's
+own design system at fiesta.rastrillo.org/design-system: the tokens, the
+markup you write by hand, and what each stylesheet and script is for.
+Each is linked from the gallery's rail and Overview, in the theme and
+language you are reading.
 
 The gallery is generated by `internal/designsystem` and is not kept in
-the repository: it is about 33 MB of machine output in some 5,700 files,
+the repository: it is about 38 MB of machine output in some 6,300 files,
 rewritten whole every time a `ui` template changes. The site builds it
 at deploy time by running `cmd/dsgen` against the version of the
 framework the docs were vendored from, so the gallery documents the
@@ -738,13 +859,21 @@ version the prose describes:
 
 ```
 go run amadan.net/rastrillo/rastrillo/cmd/dsgen@<version> \
-    -out src/design-system -mount /design-system
+    -out src/components -mount /components -redirect-from /design-system
 ```
 
-Two arguments and no others, deliberately: `-out` is where the files go,
-`-mount` is the URL path they will be served from. Every link and asset
-URL in the output is an absolute path under `-mount`, so a tree
+Three arguments and no others, deliberately: `-out` is where the files
+go, `-mount` is the URL path they will be served from. Every link and
+asset URL in the output is an absolute path under `-mount`, so a tree
 generated for one path cannot be served at another.
+
+`-redirect-from` names a path the site used to serve the gallery from.
+With it, dsgen adds a `_redirects` file to `-out` that sends every
+address the gallery published there to its new place in one hop, with a
+301: the same page under `-mount`, or Fiesta's page for one that moved
+to Fiesta. The rules match whole site paths, so publish the file at the
+site's root. rastrillo.org passes `/design-system`, where the gallery
+lived until it became Rastrillo components.
 
 To read the rendered pages yourself, `go generate ./...` writes the same
 tree into `.design-system/`, which is git-ignored. Nothing reads that
@@ -754,21 +883,23 @@ freshness gate to run.
 
 Every page is laid out in the `sidebar` shell, because that shell is one
 of the things the gallery exists to show. On a desktop the rail is the
-same on every page: a search box over a nav that links every section,
-every partial and every markup idiom in the whole gallery, with the
-section you are reading expanded and the rest folded away.
+same on every page: a search box over a nav that links every section
+and every partial in the whole gallery, with the section you are reading
+expanded and the rest folded away.
 `TestTheSidebarLinksEverythingOnThePageExactlyOnce` derives that list
 from the same markers the coverage gates read, so a new partial shows up
 there without anyone touching it. Typing in the box hides the entries
 that do not match, and it also finds things by the names people call
-them: "checkbox", "dialog", "card". Below 800px the gallery works the
+them: "checkbox", "dialog", "avatar". Below 800px the gallery works the
 way a sidebar app does on a phone: the Overview is an index of every
 section, and every other page has a back control that returns you to the
 row you left.
 
-The reader-facing names for two of those sections are not the code's.
-The gallery calls them **Components** and **UI primitives**; `ui`
-returns partials, and this page calls them partials.
+The gallery calls the partials components, as its name does; `ui`
+returns partials, and this page calls them partials. Markup with no call
+to write it, such as cards, data grids and menus, is Fiesta's: look for
+it on Fiesta's UI primitives page, linked from the rail as **UI
+primitives on Fiesta**, not in the search box.
 
 **Every word on the page is translated**, not only the components. The
 gallery's headings, leads and notes come from a catalog of its own, in
@@ -837,9 +968,9 @@ and the tabs, rather than controls that cannot do anything.
 
 Every link in that tree — stylesheets, scripts, the theme and language
 switchers, the shell and modal demos — is an absolute path under
-`/design-system/`, so the tree is served from that path and no other.
+`/components/`, so the tree is served from that path and no other.
 Relative links looked more portable and were wrong: the static edge
-serves `/design-system` and `/design-system/` as the same page without
+serves `/components` and `/components/` as the same page without
 redirecting between them, and a relative href resolves differently on
 each.
 
@@ -1210,7 +1341,11 @@ pages, an index and an Overview section, to show the shape.
 
 An app on `topbar`, `column` or `stage` can delete `shell.js` and
 `shell.css`. Add both to `vendoredIsMine` in `vendored_test.go`, or
-that test fails on the missing files.
+that test fails on the missing files. These apps need `transition.js`
+before the first stylesheet to handle skipped page transitions.
+Sidebar and console apps can delete `transition.js`. Add
+`"transition.js": true` to `vendoredIsMine` in `vendored_test.go` so the
+test allows the missing file.
 
 ### Upgrading: the topbar's tail is a level deeper
 

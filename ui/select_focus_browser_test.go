@@ -46,17 +46,23 @@ func TestSelectFocusSelectsThePick(t *testing.T) {
 			rig := harness.New(t, func(string) http.Handler { return mux })
 			ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
 			defer cancel()
-			mustRun(t, ctx, emulation.SetFocusEmulationEnabled(true), chromedp.EmulateViewport(1000, 900), chromedp.Navigate(rig.Origin+"/"),
-				chromedp.WaitVisible(`#colour-combo`, chromedp.ByQuery),
-				chromedp.Evaluate(`document.documentElement.dir = "`+dir+`"; document.getElementById("colour-combo").scrollIntoView({block: "center"}); true`, nil))
+			focus := emulation.SetFocusEmulationEnabledParams{Enabled: true}
+			mustRun(t, ctx, send(emulation.SetFocusEmulationEnabled, focus),
+				chromedp.EmulateViewport(1000, 900),
+				chromedp.Navigate(rig.Origin+"/"),
+				chromedp.WaitVisible(chromedp.CSS(`#colour-combo`)),
+				chromedp.Evaluate[chromedp.Void](
+					`document.documentElement.dir = "`+dir+`";
+					document.getElementById("colour-combo")
+						.scrollIntoView({block: "center"}); true`))
 			var box struct{ L, R, Y, PadL, PadR, Gr float64 }
 			at(t, ctx, `(() => { const i = document.getElementById("colour-combo"), r = i.getBoundingClientRect(), s = getComputedStyle(i);
 			  return JSON.stringify({L: r.left, R: r.right, Y: r.top + r.height / 2, PadL: parseFloat(s.paddingLeft) + parseFloat(s.borderLeftWidth), PadR: parseFloat(s.paddingRight) + parseFloat(s.borderRightWidth),
 			    Gr: Object.assign(document.createElement("canvas").getContext("2d"), {font: s.font}).measureText("Gr").width}); })()`, &box)
 			// After a frame: the focusing click selects in the next one.
 			read := func() comboSelection {
-				var raw string
-				mustRun(t, ctx, chromedp.Evaluate(afterFrame, nil, awaitPromise), chromedp.Evaluate(selectionJS, &raw))
+				mustRun(t, ctx, chromedp.Evaluate[chromedp.Void](afterFrame, awaitPromise))
+				raw := mustRead(t, ctx, chromedp.Evaluate[string](selectionJS))
 				var s comboSelection
 				if err := json.Unmarshal([]byte(raw), &s); err != nil {
 					t.Fatal(err)
@@ -67,7 +73,10 @@ func TestSelectFocusSelectsThePick(t *testing.T) {
 			// of the way in from either end.
 			x1, x2 := box.L+(box.R-box.L)/3, box.L+2*(box.R-box.L)/3
 			blur := func() {
-				mustRun(t, ctx, chromedp.Evaluate(`document.activeElement.blur(); document.querySelectorAll("[rst-combo] [role=listbox]").forEach(l => l.hidden = true); true`, nil))
+				mustRun(t, ctx, chromedp.Evaluate[chromedp.Void](
+					`document.activeElement.blur();
+					document.querySelectorAll("[rst-combo] [role=listbox]")
+						.forEach(l => l.hidden = true); true`))
 			}
 
 			mustRun(t, ctx, chromedp.MouseClickXY(x1, box.Y))
@@ -80,7 +89,7 @@ func TestSelectFocusSelectsThePick(t *testing.T) {
 			}
 
 			blur()
-			mustRun(t, ctx, chromedp.Focus(`#dept-combo`, chromedp.ByQuery), chromedp.KeyEvent(kb.Tab))
+			mustRun(t, ctx, chromedp.Focus(chromedp.CSS(`#dept-combo`)), chromedp.KeyEvent(kb.Tab))
 			if s := read(); !s.Focused || s.Start != 0 || s.End != len(s.Value) {
 				t.Errorf("Tab into the box left %d–%d selected (focused %v); want the whole pick", s.Start, s.End, s.Focused)
 			}
@@ -93,20 +102,21 @@ func TestSelectFocusSelectsThePick(t *testing.T) {
 			// its "Gr" to well past its end, which selects "een".
 			// Whatever the drag selected stays.
 			blur()
-			mustRun(t, ctx, chromedp.Evaluate(`document.getElementById("colour").value = "green"; document.getElementById("colour").dispatchEvent(new Event("change")); true`, nil))
+			mustRun(t, ctx, chromedp.Evaluate[chromedp.Void](
+				`document.getElementById("colour").value = "green";
+				document.getElementById("colour")
+					.dispatchEvent(new Event("change")); true`))
 			from, to := box.L+box.PadL+box.Gr+1, x2
 			if dir == "rtl" {
 				from, to = box.R-box.PadR-box.Gr-1, x1
 			}
-			mustRun(t, ctx, chromedp.ActionFunc(func(ctx context.Context) error {
-				if err := input.DispatchMouseEvent(input.MousePressed, from, box.Y).WithButton(input.Left).WithClickCount(1).Do(ctx); err != nil {
-					return err
-				}
-				if err := input.DispatchMouseEvent(input.MouseMoved, to, box.Y).WithButton(input.Left).Do(ctx); err != nil {
-					return err
-				}
-				return input.DispatchMouseEvent(input.MouseReleased, to, box.Y).WithButton(input.Left).WithClickCount(1).Do(ctx)
-			}))
+			mustRun(t, ctx,
+				chromedp.MouseEvent(chromedp.MousePressed, from, box.Y,
+					chromedp.ButtonLeft, chromedp.ClickCount(1)),
+				chromedp.MouseEvent(chromedp.MouseMoved, to, box.Y,
+					chromedp.ButtonLeft),
+				chromedp.MouseEvent(chromedp.MouseReleased, to, box.Y,
+					chromedp.ButtonLeft, chromedp.ClickCount(1)))
 			if s := read(); !s.Focused || s.Start == 0 && s.End == len(s.Value) {
 				t.Errorf("a drag as the box was focused ended with %d–%d of %q selected (focused %v); the drag's own selection should stay", s.Start, s.End, s.Value, s.Focused)
 			}
@@ -118,15 +128,20 @@ func TestSelectFocusSelectsThePick(t *testing.T) {
 			// handlers, so it would fence the emulation, not select.js.
 			blur()
 			tap := func(x float64) {
-				mustRun(t, ctx, chromedp.ActionFunc(func(ctx context.Context) error {
-					pt := []*input.TouchPoint{{X: x, Y: box.Y}}
-					if err := input.DispatchTouchEvent(input.TouchStart, pt).Do(ctx); err != nil {
-						return err
-					}
-					return input.DispatchTouchEvent(input.TouchEnd, []*input.TouchPoint{}).Do(ctx)
-				}), chromedp.Evaluate(afterFrame, nil, awaitPromise))
+				touchStart := input.DispatchTouchEventParams{
+					Type:        input.DispatchTouchEventTypeTouchStart,
+					TouchPoints: []*input.TouchPoint{{X: x, Y: box.Y}},
+				}
+				touchEnd := input.DispatchTouchEventParams{
+					Type:        input.DispatchTouchEventTypeTouchEnd,
+					TouchPoints: []*input.TouchPoint{},
+				}
+				mustRun(t, ctx, send(input.DispatchTouchEvent, touchStart),
+					send(input.DispatchTouchEvent, touchEnd),
+					chromedp.Evaluate[chromedp.Void](afterFrame, awaitPromise))
 			}
-			mustRun(t, ctx, emulation.SetTouchEmulationEnabled(true))
+			touch := emulation.SetTouchEmulationEnabledParams{Enabled: true}
+			mustRun(t, ctx, send(emulation.SetTouchEmulationEnabled, touch))
 			tap(x1)
 			if s := read(); !s.Focused || s.Start != 0 || s.End != len(s.Value) {
 				t.Errorf("a tap into the box showing %q left %d–%d selected (focused %v); want the whole pick", s.Value, s.Start, s.End, s.Focused)

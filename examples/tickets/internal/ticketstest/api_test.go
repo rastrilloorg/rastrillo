@@ -61,10 +61,7 @@ func TestExposingAnUnscopedResourceNeedsAPolicy(t *testing.T) {
 	}
 	t.Parallel()
 	src := appRoot(t)
-	root, err := filepath.Abs(filepath.Join(src, "..", ".."))
-	if err != nil {
-		t.Fatal(err)
-	}
+	root := rastrilloDir(t, src)
 	dst := filepath.Join(t.TempDir(), "tickets")
 	copyApp(t, src, dst)
 
@@ -100,6 +97,27 @@ func TestExposingAnUnscopedResourceNeedsAPolicy(t *testing.T) {
 	run("mod", "edit", "-replace", "amadan.net/rastrillo/rastrillo="+root)
 	run("run", "amadan.net/rastrillo/rastrillo/cmd/rastrillo", "generate", ".")
 	run("test", "-count=1", "./internal/exposedtest/")
+}
+
+// rastrilloDir is the directory the app at src builds rastrillo from,
+// as its go.mod's replace resolves it there. The copy needs it as an
+// absolute path, and the app need not sit in a checkout's examples
+// directory for that to be two levels up.
+func rastrilloDir(t *testing.T, src string) string {
+	t.Helper()
+	cmd := exec.Command("go", "list", "-m", "-f", "{{.Dir}}",
+		"amadan.net/rastrillo/rastrillo")
+	cmd.Dir = src
+	cmd.Env = withModMode(os.Environ())
+	out, err := cmd.Output()
+	if err != nil {
+		t.Fatalf("go list -m amadan.net/rastrillo/rastrillo: %v", err)
+	}
+	dir := strings.TrimSpace(string(out))
+	if dir == "" {
+		t.Fatal("go list -m amadan.net/rastrillo/rastrillo gave no directory")
+	}
+	return dir
 }
 
 // copyApp copies the app's source to dst, leaving out what .gitignore
@@ -140,6 +158,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
@@ -150,6 +169,8 @@ import (
 	"amadan.net/rastrillo/rastrillo"
 	"amadan.net/rastrillo/rastrillo/api"
 	"amadan.net/rastrillo/rastrillo/apitoken"
+	"amadan.net/rastrillo/rastrillo/basepath"
+	"amadan.net/rastrillo/rastrillo/mcp"
 	"amadan.net/rastrillo/rastrillo/migrate"
 	"amadan.net/rastrillo/rastrillo/op"
 
@@ -159,6 +180,14 @@ import (
 )
 
 type writer struct{ *sql.DB }
+
+type answer struct {
+	Code           int
+	Location, Body string
+}
+
+const payload = ` + "`" + `{"name": "General",
+	"price": {"amount": 2500, "currency": "USD"}}` + "`" + `
 
 func (w writer) Writer() *sql.DB { return w.DB }
 
@@ -190,31 +219,113 @@ func TestExposedUnscopedNeedsAPolicy(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	create := func(authorize func(context.Context, rastrillo.Actor, rastrillo.Operation) error) *httptest.ResponseRecorder {
-		h, err := api.New(api.Config{
+	handler := func(authorize func(context.Context, rastrillo.Actor, rastrillo.Operation) error) http.Handler {
+		config := api.Config{
 			Verify:    tokens,
 			Ctx:       func(*http.Request) *rastrillo.Ctx { return &rastrillo.Ctx{DB: d} },
 			Authorize: authorize,
-		}, gen.APIRoutes()...)
+		}
+		tree, err := api.New(config, gen.APIRoutes()...)
 		if err != nil {
 			t.Fatal(err)
 		}
-		req := httptest.NewRequest(http.MethodPost, "/api/v1/ticket_types", strings.NewReader(` + "`" + `{"name": "General", "price": {"amount": 2500, "currency": "USD"}}` + "`" + `))
+		// MCP beside the tree, on the tree's gate and the same policy,
+		// as the scaffold mounts it. tickets' own app mounts neither.
+		endpoint, err := mcp.New(mcp.Config{
+			Gate:      config.Gate(),
+			Ctx:       config.Ctx,
+			Authorize: authorize,
+			Name:      "tickets",
+			Version:   "test",
+		}, gen.ExposedOperations()...)
+		if err != nil {
+			t.Fatal(err)
+		}
+		mux := http.NewServeMux()
+		mux.Handle("/api/v1", tree)
+		mux.Handle("/api/v1/", tree)
+		mux.Handle("/api/v1/mcp", endpoint)
+		return mux
+	}
+	// A real server, not a recorder: the API checks the token again as
+	// each answer is sent, which needs a transport with write deadlines.
+	send := func(h http.Handler, target, content string) answer {
+		server := httptest.NewServer(h)
+		defer server.Close()
+		req, err := http.NewRequest(http.MethodPost, server.URL+target,
+			strings.NewReader(content))
+		if err != nil {
+			t.Fatal(err)
+		}
+		req.Host = "example.com"
 		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Accept", "application/json, text/event-stream")
 		req.Header.Set("Authorization", "Bearer "+token)
-		rec := httptest.NewRecorder()
-		h.ServeHTTP(rec, req)
-		return rec
+		client := *server.Client()
+		client.CheckRedirect = func(*http.Request, []*http.Request) error {
+			return http.ErrUseLastResponse
+		}
+		res, err := client.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer res.Body.Close()
+		body, err := io.ReadAll(res.Body)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return answer{res.StatusCode, res.Header.Get("Location"), string(body)}
+	}
+	create := func(h http.Handler, target string) answer {
+		return send(h, target, payload)
+	}
+	// callTool is one MCP tools/call, which needs no initialize first.
+	callTool := func(h http.Handler, name, arguments string) answer {
+		return send(h, "/api/v1/mcp", fmt.Sprintf(
+			"{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"tools/call\", "+
+				"\"params\": {\"name\": %q, \"arguments\": %s}}",
+			name, arguments))
 	}
 
 	// api.New refuses a nil Authorize, so the default is named: it is
 	// what an app that says nothing more gets.
-	if rec := create(op.DefaultPolicy); rec.Code != http.StatusForbidden {
+	if rec := create(handler(op.DefaultPolicy), "/api/v1/ticket_types"); rec.Code != http.StatusForbidden {
 		t.Errorf("POST /api/v1/ticket_types under op.DefaultPolicy: %d, want 403\n%s", rec.Code, rec.Body)
 	}
-	allow := func(context.Context, rastrillo.Actor, rastrillo.Operation) error { return nil }
-	if rec := create(allow); rec.Code != http.StatusCreated {
+	allow := handler(func(context.Context, rastrillo.Actor, rastrillo.Operation) error { return nil })
+	if rec := create(allow, "/api/v1/ticket_types"); rec.Code != http.StatusCreated {
 		t.Errorf("POST /api/v1/ticket_types under an Authorize that allows it: %d, want 201\n%s", rec.Code, rec.Body)
+	}
+
+	// Under a base path the create's Location is a header, which the
+	// middleware prefixes once: the client finds the record at /acme,
+	// not at the hub's /api/v1, and not at /acme/acme.
+	acme := basepath.Config{Origin: "https://example.com", Slug: "acme"}.Handler(allow)
+	rec := create(acme, "/acme/api/v1/ticket_types")
+	const want = "/acme/api/v1/ticket_types/2"
+	if rec.Code != http.StatusCreated || rec.Location != want {
+		t.Errorf("POST /acme/api/v1/ticket_types: %d, Location %q; "+
+			"want 201, %s\n%s", rec.Code, rec.Location, want, rec.Body)
+	}
+
+	// MCP is mounted beside the tree and answers to the same policy:
+	// the tool is refused as the API's 403 was, and under an Authorize
+	// that allows it the tool lists the rows the API created.
+	refusedTool := callTool(handler(op.DefaultPolicy), "ticket_types_create",
+		payload)
+	if !strings.Contains(refusedTool.Body, "\"isError\":true") ||
+		!strings.Contains(refusedTool.Body, "forbidden") {
+		t.Errorf("tools/call ticket_types_create under op.DefaultPolicy: "+
+			"%d, want a forbidden tool error\n%s", refusedTool.Code,
+			refusedTool.Body)
+	}
+	listed := callTool(allow, "ticket_types_list", "{}")
+	if listed.Code != http.StatusOK ||
+		strings.Contains(listed.Body, "\"isError\":true") ||
+		!strings.Contains(listed.Body, "General") {
+		t.Errorf("tools/call ticket_types_list under an Authorize that "+
+			"allows it: %d, want the rows made above\n%s", listed.Code,
+			listed.Body)
 	}
 }
 `

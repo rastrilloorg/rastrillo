@@ -16,6 +16,7 @@ import (
 	"testing"
 	"time"
 
+	"amadan.net/rastrillo/fiesta"
 	"amadan.net/rastrillo/rastrillo"
 	"amadan.net/rastrillo/rastrillo/auth"
 )
@@ -1291,6 +1292,12 @@ func allPartials() []struct {
 			"Name": "ticket_price", "Label": "Ticket price", "Value": "12,.50", "Locale": "en", "Currency": "EUR", "Seed": "",
 			"Required": true, "Hint": "For example, 12.50 or €12.50.", "Error": "Use a point for decimals, like 12.50.",
 		}},
+		{"field-number", map[string]any{
+			// The re-render of a refused POST, as field-money's above.
+			"Name": "seats", "Label": "Seats", "Value": "1.500", "Locale": "en",
+			"Required": true, "Hint": "For example, 1200.5.",
+			"Error": "This could be 1.5 or 1500. Enter the one you mean.",
+		}},
 		{"signin", map[string]any{
 			"State": auth.SigninState{Step: auth.StepAsk, BeginPath: "/signin", ForgetPath: "/signin/forget", Address: "grace@example.com"},
 			"Brand": map[string]any{
@@ -1401,6 +1408,7 @@ func TestAllPartialsAreDefined(t *testing.T) {
 		"locale-menu", "scheme-menu", "error-page",
 		"field-date", "field-time", "field-datetime", "field-daterange",
 		"field-url", "signin", "signin-title", "row-menu", "field-money",
+		"field-number",
 		"media-grid", "stat", "actor", "api-tokens",
 	}
 	for _, name := range want {
@@ -1408,8 +1416,8 @@ func TestAllPartialsAreDefined(t *testing.T) {
 			t.Errorf("partial %q is not defined", name)
 		}
 	}
-	if len(want) != 44 {
-		t.Fatalf("the shipped set is 44 partials, this list has %d", len(want))
+	if len(want) != 45 {
+		t.Fatalf("the shipped set is 45 partials, this list has %d", len(want))
 	}
 }
 
@@ -2079,10 +2087,11 @@ func TestIdiomClassesAreStyled(t *testing.T) {
 // ThemeCSS and Layout read the embedded FS by filename, but every gate
 // that checks a theme or a shell — the token-set parity check, the WCAG
 // contrast sweep, TestLayoutsParseAndRender — iterates ThemeNames() and
-// LayoutNames() instead. So a themes/foo.css added without its slice
-// entry is scaffoldable (rastrillo new --theme=foo finds the file) while
-// no gate ever looks at it. This test is the one place the directory
-// itself is read, so the file set and the name list cannot drift apart.
+// LayoutNames() instead. So a theme Fiesta adds under css/themes/
+// without its name is scaffoldable (rastrillo new --theme=foo finds the
+// file) while no gate ever looks at it. This test is the one place the
+// directory itself is read, so the file set and the name list cannot
+// drift apart.
 func TestEveryEmbeddedThemeAndLayoutIsNamed(t *testing.T) {
 	for _, tc := range []struct {
 		dir   string
@@ -2090,7 +2099,7 @@ func TestEveryEmbeddedThemeAndLayoutIsNamed(t *testing.T) {
 		fsys  fs.FS
 		names []string
 	}{
-		{"themes", ".css", themesFS, ThemeNames()},
+		{"css/themes", ".css", fiesta.FS(), ThemeNames()},
 		{"layouts", ".html", layoutsFS, LayoutNames()},
 	} {
 		t.Run(tc.dir, func(t *testing.T) {
@@ -2484,18 +2493,22 @@ func detailsOpenTags(src string) []string {
 // {{define "nav"}} simply stops being called, and the page renders with
 // an empty bar rather than an error.
 func TestTheShellsKeepTheirOverridableBlockNames(t *testing.T) {
+	// live-head (the stream's meta tag) and region:notice (the flash, and
+	// the live notice) are in every shell; an app may redefine either.
 	want := map[string][]string{
 		// locale-menu is the locale block's default body, the switcher
-		// partial; column has a locale block too, at the top of its page.
-		// scheme-menu is the scheme block's default body, beside the
-		// locale block in every shell that has one.
-		"column": {"lang", "dir", "title", "head", "locale", "locale-menu", "scheme", "scheme-menu", "content"},
-		"topbar": {"lang", "dir", "title", "head", "brand", "nav", "account", "locale", "locale-menu", "scheme", "scheme-menu", "content", "foot"},
+		// partial; column has a locale block too, in the footer row after
+		// its content. scheme-menu is the scheme block's default body,
+		// beside the locale block in every shell that has one.
+		"column": {"lang", "dir", "title", "live-head", "head",
+			"region:notice", "content",
+			"locale", "locale-menu", "scheme", "scheme-menu"},
+		"topbar": {"lang", "dir", "title", "live-head", "head", "brand", "nav", "account", "locale", "locale-menu", "scheme", "scheme-menu", "region:notice", "content", "foot"},
 		// brand and title appear first as the phone index's <h1>, the
 		// app's name with the page's title as its fallback, reused
 		// rather than redefined; profile twice, as the avatar that opens
 		// the rail's one menu and as the name heading the card.
-		"sidebar": {"lang", "dir", "title", "head", "view", "up", "brand", "title", "brand", "nav", "profile", "profile", "locale", "locale-menu", "scheme", "scheme-menu", "account", "content"},
+		"sidebar": {"lang", "dir", "title", "live-head", "head", "view", "up", "brand", "title", "brand", "nav", "profile", "profile", "locale", "locale-menu", "scheme", "scheme-menu", "account", "region:notice", "content"},
 		// console offers topbar's SET, plus the phone index's blocks
 		// (view, up, profile), which a topbar screen can define and the
 		// topbar simply never calls. So a screen moves from console to
@@ -2516,10 +2529,10 @@ func TestTheShellsKeepTheirOverridableBlockNames(t *testing.T) {
 		// page's title as its fallback, so brand and title come before
 		// the brand block itself; profile twice, as the avatar the
 		// Menu becomes on the index and the name heading its card.
-		"console": {"lang", "dir", "title", "head", "view", "brand", "title", "brand", "profile", "profile", "locale", "locale-menu", "scheme", "scheme-menu", "account", "up", "nav", "content", "foot"},
+		"console": {"lang", "dir", "title", "live-head", "head", "view", "brand", "title", "brand", "profile", "profile", "locale", "locale-menu", "scheme", "scheme-menu", "account", "up", "nav", "region:notice", "content", "foot"},
 		// stage has no chrome to override. backdrop is the picture
 		// behind the card, foot an optional line under it.
-		"stage": {"lang", "dir", "title", "head", "backdrop", "content", "foot"},
+		"stage": {"lang", "dir", "title", "live-head", "head", "backdrop", "region:notice", "content", "foot"},
 	}
 	blockName := regexp.MustCompile(`{{block "([^"]+)"|{{template "([^"]+)"`)
 	for _, name := range LayoutNames() {
@@ -4108,9 +4121,7 @@ func renderShellLayout(t *testing.T, name string, defs ...string) string {
 // rel="up" says the relationship, the index's <h1> is the app's name
 // (the brand, with the page's title after it for an app whose brand
 // renders nothing; tokens.css shows the title only then), the drawer
-// is gone, and only these two shells link shell.js and shell.css, the
-// script with blocking="render" so it is there for the first
-// pagereveal.
+// is gone, and only these two shells link shell.css to opt into slides.
 func TestTheSidebarAndConsoleNameTheirViewAndTheirWayBack(t *testing.T) {
 	label := defaultT("rastrillo.ui.shell_up_label")
 	name := defaultTf("rastrillo.ui.shell_up", "name", label)
@@ -4151,8 +4162,9 @@ func TestTheSidebarAndConsoleNameTheirViewAndTheirWayBack(t *testing.T) {
 		}
 	}
 	for _, shell := range []string{"column", "topbar", "stage"} {
-		if src, _ := Layout(shell); strings.Contains(string(src), "shell.js") || strings.Contains(string(src), "shell.css") {
-			t.Errorf("%s links shell.js or shell.css; only the sidebar and console need them", shell)
+		src, _ := Layout(shell)
+		if strings.Contains(string(src), "static/shell.css") {
+			t.Errorf("%s links shell.css; only phone shells opt in", shell)
 		}
 	}
 }
@@ -4232,6 +4244,32 @@ func TestFieldMoneyPartial(t *testing.T) {
 	}
 	if strings.Contains(bare, "aria-describedby") || strings.Contains(bare, "aria-invalid") || strings.Contains(bare, " required") || strings.Contains(bare, `name="Price" type="text" inputmode="decimal" value`) {
 		t.Errorf("a bare field-money carries state it was not given:\n%s", bare)
+	}
+}
+
+// field-number posts the locale its text is written in beside the
+// text, and nothing else: its unchanged-seed check is the server's.
+func TestFieldNumberPartial(t *testing.T) {
+	got := render(t, "field-number", map[string]any{"Name": "Seats",
+		"Label": "Seats", "Value": "1200,5", "Locale": "de",
+		"Required": true, "Error": "Enter a number, like 1200,5."})
+	for _, want := range []string{
+		`<input type="hidden" name="Seats.locale" value="de">`,
+		`id="Seats" name="Seats" type="text" inputmode="decimal"`,
+		`value="1200,5" required`, `aria-invalid="true"`,
+		`aria-describedby="Seats-error"`,
+	} {
+		if !strings.Contains(got, want) {
+			t.Errorf("field-number is missing %q:\n%s", want, got)
+		}
+	}
+	bare := render(t, "field-number", map[string]any{"Name": "Seats",
+		"Label": "Seats", "Locale": "de"})
+	for _, unwanted := range []string{"aria-describedby", "aria-invalid",
+		" required", " value=\"\"", ".seed"} {
+		if strings.Contains(bare, unwanted) {
+			t.Errorf("a bare field-number carries %q:\n%s", unwanted, bare)
+		}
 	}
 }
 

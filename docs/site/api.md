@@ -7,6 +7,10 @@ with it. Every call acts for that person and says so: "Claude for Paul".
 The pages and the API call the same operation for each action, so they
 accept the same values and follow the same rules.
 
+The same operations are MCP tools at `/api/v1/mcp`, for Claude Code,
+Codex and other agents that connect over MCP. [MCP](/docs/mcp) covers
+that door.
+
 ## What you get
 
 A resource with `scope = "user"` is on the API by default. For a
@@ -65,6 +69,9 @@ write that has no browser headers, and an API client has none. Do not
 use `csrf.Exempt` for it either. `Exempt` matches exact paths, not
 everything under `/api/v1/`, and the router's session middleware would
 still run. The API takes a token and nothing else.
+
+To serve MCP as well, build it from the same `api.Config`, as
+[MCP](/docs/mcp#mounting) shows. A new app does this in `newDoors`.
 
 `api.New` fails at boot if `Verify`, `Ctx` or `Authorize` is missing.
 The [api reference](/docs/reference/api) has every option.
@@ -188,6 +195,53 @@ they were sent. The actor reads like
 `agent:Claude for user:42 token:k3Jx9QpL2mWa`. See
 [Agents](/docs/agents) for what each part means.
 
+An app served under a base path, as a hub's tenant is, has its API there too: `https://example.com/acme/api/v1`, and the `Location` a create answers with carries the base. Give clients that URL, not the instance's own hostname. There, a write gets a 307 to the product URL, and clients do not send `Authorization` on to another host, so the token is lost; with `basepath.ServeDirect` it gets a 405. See [basepath](/docs/reference/basepath).
+
+## Checking again as the answer goes out
+
+A token can be revoked while a request is running. When your `Verify`
+is also an `api.Rechecker`, the API checks again as the answer goes
+out. `apitoken`'s store is one. Before the headers, and again before
+each 64 KiB of the body, the API:
+
+1. calls `Recheck`, which repeats `Verify`'s checks without writing
+   anything;
+2. refuses the answer if the token now names another person, agent,
+   credential or grant;
+3. runs the read-only check and your `Authorize` again for the route's
+   operation.
+
+If a check fails before the headers go, the answer becomes the refusal:
+401 when the token is gone, 403 when it may no longer do this. If it
+fails later, the connection is cut. Every answer carries a
+`Content-Length`, so a client can tell a cut-off answer from a whole
+one.
+
+A write has already happened when its answer is refused. A client
+should read the row back before it tries again.
+
+To check an answer before sending it, the API holds the whole answer
+first. That is why an answer is at most 2 MiB, with or without a
+`Rechecker`.
+
+Each check, and the write of the chunk after it, has 5 seconds, or
+less when the request's own deadline is sooner. A check that runs past
+that answers 503 `unavailable`, whatever it returned. Because each
+chunk gets its own write deadline, your server's `WriteTimeout` no
+longer bounds a rechecked answer as a whole: a client that reads
+slowly can keep a 2 MiB answer going for 32 rounds of 5 seconds.
+
+A `Before` middleware that wraps the response writer still works. The
+API sets deadlines and flushes through its own writer, underneath
+yours. A wrapper that keeps bytes in a buffer of its own, such as a
+gzip writer, sends them when it closes, after the last check, rather
+than chunk by chunk.
+
+If middleware outside the API wraps `http.ResponseWriter`, give the
+wrapper an `Unwrap() http.ResponseWriter` method. Otherwise, the API
+cannot set a write deadline and returns 503 `unavailable` for every
+rechecked answer. The server logs the cause at Warn.
+
 ## Requests and answers
 
 **Answers.** A single row is a bare JSON object. A list puts the rows
@@ -231,6 +285,10 @@ answers the row as it is.
 
 Rows come newest first.
 
+An answer is at most 2 MiB. A bigger one is refused with 422
+`response_too_large`, whose message tells the client to ask for a
+smaller result, such as with a smaller `limit`.
+
 **Errors** all have one shape:
 
 ```json
@@ -249,6 +307,7 @@ Branch on `code`, never on `message`. Each code has one status:
 | `too_large` | 413 | the body is over the limit |
 | `unsupported_media_type` | 415 | a body without `Content-Type: application/json` |
 | `invalid` | 422 | `fields` names what to fix |
+| `response_too_large` | 422 | the answer would be over 2 MiB; ask for less |
 | `rate_limited` | 429 | a rate limiter in `Config.Before` said no |
 | `internal` | 500 | something broke; quote `ref` when you report it |
 | `unavailable` | 503 | the token store did not answer; try again |
@@ -388,3 +447,26 @@ The fixture has five methods:
   generated values.
 
 `examples/notes/internal/notestest/fixture_test.go` is a complete one.
+
+## Testing the API
+
+Test the API through a real server. With a `Rechecker` such as
+`apitoken`'s store, the API needs to set a write deadline on the
+connection, and `httptest.ResponseRecorder` can't take one, so every API
+answer through a recorder is 503 `unavailable`. Start the app with
+`httptest.NewServer`, and use a client that doesn't follow redirects,
+so a test sees a 303 or 307 as the API's answer:
+
+```go
+server := httptest.NewServer(handler)
+defer server.Close()
+client := &http.Client{
+	CheckRedirect: func(*http.Request, []*http.Request) error {
+		return http.ErrUseLastResponse
+	},
+}
+```
+
+Don't use `server.Client()` here: it follows redirects. Tests of your
+pages can keep their recorders. The generated parity test already sends
+its API calls through a server.

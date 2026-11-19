@@ -4,8 +4,8 @@
 // SHA-256 in hack/moneycldr/sources/inputs.sha256. Data from the Unicode CLDR,
 // © Unicode, Inc., under the Unicode License v3 (locales/LICENSE-UNICODE).
 
-// Package ru links CLDR money-formatting data for every modern "ru"
-// locale. Import it for its side effect.
+// Package ru links CLDR number- and money-formatting data for every
+// modern "ru" locale. Import it for its side effect.
 package ru
 
 import "amadan.net/rastrillo/rastrillo/locales"
@@ -13,7 +13,7 @@ import "amadan.net/rastrillo/rastrillo/locales"
 func init() { locales.Register("ru", data) }
 
 var data = map[string]locales.Locale{
-	"ru":    {Parent: "root", CurrencyDecimal: ",", CurrencyGroup: "\u00a0", Decimal: ",", Standard: "#,##0.00\u00a0¤", Alpha: "#,##0.00\u00a0¤", Symbols: map[string]string{"JPY": "¥", "PHP": "PHP", "RUB": "₽", "THB": "฿", "TMT": "ТМТ", "UAH": "₴", "USD": "$", "XCG": "Cg"}, Narrow: map[string]string{"BYN": "р.", "GEL": "ლ", "RON": "L", "TWD": "NT$"}},
+	"ru":    {Parent: "root", CurrencyDecimal: ",", CurrencyGroup: "\u00a0", Decimal: ",", Group: "\u00a0", Percent: "#,##0\u00a0%", NaN: "не\u00a0число", Standard: "#,##0.00\u00a0¤", Alpha: "#,##0.00\u00a0¤", Symbols: map[string]string{"JPY": "¥", "PHP": "PHP", "RUB": "₽", "THB": "฿", "TMT": "ТМТ", "UAH": "₴", "USD": "$", "XCG": "Cg"}, Narrow: map[string]string{"BYN": "р.", "GEL": "ლ", "RON": "L", "TWD": "NT$"}},
 	"ru-BY": {Parent: "ru", Symbols: map[string]string{"BYN": "Br"}, Narrow: map[string]string{"BYN": "Br"}},
 	"ru-KG": {Parent: "ru", Symbols: map[string]string{"KGS": "сом"}},
 	"ru-KZ": {Parent: "ru", Symbols: map[string]string{"KZT": "₸"}},

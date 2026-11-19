@@ -7,8 +7,8 @@ About 12–16% less CRUD code. Costs ~2× read time (1.7–1.9× the
 allocations), +4.8 MB of binary, a hidden `BEGIN`/`COMMIT` around every
 standalone write, and silent traps: `Updates(struct)` skips zero fields
 (always `Select`); int64 `CreatedAt`/`UpdatedAt` get the wall clock;
-`Session` shares its parent's statement; a `d.G` statement inside a
-transaction deadlocks; `Model(&T{ID: 0})` refuses the update.
+`Session` shares its parent's statement; a `database.G` statement
+inside a transaction deadlocks; `Model(&T{ID: 0})` refuses the update.
 Upserts, `RETURNING` and locking writes need escape hatches.
 (b) **Plain `database/sql`**, as Tito Go does: open your own
 one-connection writer (db.Open's DSN) and readers;
@@ -28,8 +28,12 @@ Models: no base type, no embedding. Owner column `UserID int64` tagged
 
 `db.Open(path, logger)` returns `*db.DB`: `.G` is the `*gorm.DB`,
 SQLite-wired (one file, WAL, one writer connection, several readers,
-routed per statement). `d.Close()` closes both pools; `d.G.DB()` returns
-the writer `*sql.DB` for database/sql packages.
+routed per statement). `database.Close()` closes both pools;
+`database.Writer()` is the writer `*sql.DB` for database/sql packages;
+`database.Reader()` is the read pool for `sessions.Config.Reader` and
+`auth.Config.Reader`. Leave both nil unless a mixed-load test on your
+instance shows it helps. On one core, under heavy mixed load, it slows
+writes.
 
 **Bytes go in the object store, never on disk or in a column.** The
 instance's filesystem is ephemeral and it hibernates, so a saved upload
@@ -51,14 +55,18 @@ version, `Mutate` retries. docs/site/reference/objrec.md
 A home or hub that creates tenant instances on CARLOS uses `provision`;
 test it with `provisiontest`. docs/site/reference/provision.md
 
+A tenant served under `/<slug>` on a hub's origin sets `Options.BasePath` from `basepath.FromEnv`. Links in a body go through `{{path $ "/x"}}` or `basepath.Path`; redirect plain paths. No sign-in runs there. docs/site/reference/basepath.md
+
+For an instance under a root app, call `instance.FromEnv`, use `handoff` to sign members in, and use `roster` to keep the member list in sync. Test with `handofftest`. docs/site/reference/instance.md, handoff.md, roster.md, handofftest.md
+
 ## Migrations
 
 Schema changes: edit a model, `rastrillo migration generate`, read the
 SQL before committing. Migrations apply once at boot, ledgered — never
 re-run, never reversed. `migrations.go` declares two `*migrate.Set`:
 `Schema` (the app's own; `generate`/`check` diff it against `Models`)
-and `BootSchema = migrate.Merge(sessions.Schema, Schema)` (argument
-order = apply order) — everything `App()` applies. Subsystems go in
+and `BootSchema = migrate.Merge(apitoken.Schema, Schema)` (argument
+order = apply order) — everything boot applies. Subsystems go in
 `BootSchema`, never `Schema`, or `check` proposes dropping their
 tables. Never edit a shipped migration; add a new one. Renames are
 hand-written (`rastrillo migration new rename_x`); destructive changes
@@ -87,9 +95,9 @@ by digest.
 
 ## Roles and teams
 
-Scoping separates users, never tenants: a CARLOS app serves one team; a
-multi-team product runs an instance per team (idle instances hibernate
-free). Roles/membership are the `amadan.net/rastrillo/idear` addon
+Scoping separates users, never tenants: one instance serves one tenant
+unit, usually a team; a multi-team product runs an instance per tenant
+(idle instances hibernate and add no instance-hours). Roles/membership are the `amadan.net/rastrillo/idear` addon
 (Owner/Admin/Member, invitations, a membership gate that mints no
 session) — never core, never a subpath of this repository.
 docs/site/addons.md

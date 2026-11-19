@@ -312,3 +312,19 @@ func BenchmarkCopy(b *testing.B) {
 		d.Close()
 	}
 }
+
+// The copy commits at synchronous=NORMAL, as db.Open's writer does
+// (#234), so a test sees the durability and the speed production has.
+func TestOpenedCopyCommitsAtNormal(t *testing.T) {
+	t.Parallel()
+	tpl := FromSet(schema(t))
+	defer tpl.Remove()
+	var level int
+	err := tpl.Open(t).QueryRow(`PRAGMA synchronous`).Scan(&level)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if level != 1 {
+		t.Fatalf("synchronous = %d, want 1 (NORMAL)", level)
+	}
+}

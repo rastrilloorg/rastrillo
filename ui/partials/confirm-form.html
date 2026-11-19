@@ -50,6 +50,11 @@
 
 {{/* notice — a one-line calm confirmation; renders nothing when empty. */}}
 {{define "notice"}}{{if .}}<p rst-notice role="status">{{.}}</p>{{end}}{{end}}
+{{/* live-head — the live meta tag; nothing without Live. */}}
+{{define "live-head"}}{{$L := localizer $}}{{with opt . "Live"}}{{.Head (T $L "rastrillo.ui.live.paused") (T $L "rastrillo.ui.live.unconfirmed")}}{{end}}{{end}}
+{{/* region:notice — the flash, always on the page for live.js to
+     fill. */}}
+{{define "region:notice"}}<div id="notice" role="status">{{with opt . "Notice"}}<p rst-notice>{{.}}</p>{{end}}</div>{{end}}
 
 {{/* form-error — a one-line validation failure; renders nothing when empty. */}}
 {{define "form-error"}}{{if .}}<p rst-form-error role="alert">{{.}}</p>{{end}}{{end}}

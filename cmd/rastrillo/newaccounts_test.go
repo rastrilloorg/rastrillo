@@ -10,10 +10,13 @@ import (
 // is a fork someone has to keep in step by hand.
 func TestAccountsIsSingleWithMagicAuth(t *testing.T) {
 	t.Chdir(t.TempDir())
-	if err := runNew([]string{"--scaffold", "accounts", "plumbus"}); err != nil {
+	err := runNew([]string{"--scaffold", "accounts", "plumbus"})
+	if err != nil {
 		t.Fatal(err)
 	}
-	if err := runNew([]string{"--scaffold", "single", "--auth=magic", "frobnitz"}); err != nil {
+	err = runNew([]string{"--scaffold", "single", "--auth=magic",
+		"frobnitz"})
+	if err != nil {
 		t.Fatal(err)
 	}
 	sameScaffold(t, "plumbus", "frobnitz")
@@ -35,7 +38,8 @@ func TestAccountsPassesItsOwnTests(t *testing.T) {
 	if !strings.Contains(out, "--- PASS: TestSignInByEmailedLink") {
 		t.Errorf("TestSignInByEmailedLink did not run and pass:\n%s", out)
 	}
-	if vet, err := goIn(dir, "vet", "-tags", "browser,perf", "./..."); err != nil {
+	vet, err := goIn(dir, "vet", "-tags", "browser,perf", "./...")
+	if err != nil {
 		t.Fatalf("go vet -tags browser,perf ./...:\n%s", vet)
 	}
 }
@@ -43,12 +47,15 @@ func TestAccountsPassesItsOwnTests(t *testing.T) {
 // Typed out, --auth=none asks accounts for the app it is not; left out,
 // --auth means magic there (TestAccountsIsSingleWithMagicAuth).
 func TestAccountsRefusesAuthNone(t *testing.T) {
-	refusedBeforeWriting(t, "--auth=none does nothing with --scaffold accounts, which is the app with sign-in: use --scaffold single for an app without it",
+	refusedBeforeWriting(t, "--auth=none does nothing with --scaffold "+
+		"accounts, which is the app with sign-in: use --scaffold single "+
+		"for an app without it",
 		"--scaffold", "accounts", "--auth=none")
 }
 
 // Sign-in keeps its sessions and links in the database bare does not have.
 func TestBareRefusesAuth(t *testing.T) {
-	refusedBeforeWriting(t, "--auth=magic needs a database: use --scaffold single or accounts",
+	refusedBeforeWriting(t, "--auth=magic needs a database: use "+
+		"--scaffold single or accounts",
 		"--scaffold", "bare", "--auth=magic")
 }

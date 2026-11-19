@@ -2,6 +2,7 @@ package rastrillo
 
 import (
 	"log/slog"
+	"slices"
 	"testing"
 )
 
@@ -87,4 +88,58 @@ func TestActorLogAttrsCarrySessionAndHarness(t *testing.T) {
 		}
 	}
 	_ = slog.Attr{}
+}
+
+func TestActorStringWithGrant(t *testing.T) {
+	actor := Actor{
+		Subject: "u1", Agent: "Claude", Credential: "tok",
+		Grant: &Grant{ID: "g7"},
+	}
+	want := "agent:Claude for user:u1 token:tok grant:g7"
+	if got := actor.String(); got != want {
+		t.Errorf("String() = %q, want %q", got, want)
+	}
+	actor.Grant = nil
+	want = "agent:Claude for user:u1 token:tok"
+	if got := actor.String(); got != want {
+		t.Errorf("String() with a nil Grant = %q, want %q", got, want)
+	}
+}
+
+func TestActorLogAttrsWithGrant(t *testing.T) {
+	keys := func(actor Actor) []string {
+		var got []string
+		for _, attr := range actor.LogAttrs() {
+			got = append(got, attr.Key)
+		}
+		return got
+	}
+	actor := Actor{Subject: "u1", Session: "s-1", Grant: &Grant{
+		ID:             "g7",
+		Issuer:         "https://connect.example",
+		IdentityIssuer: "https://id.example",
+		Audience:       "https://app.example",
+	}}
+	wantKeys := []string{
+		"actor", "grant_issuer", "identity_issuer", "grant_audience",
+		"agent_session",
+	}
+	if got := keys(actor); !slices.Equal(got, wantKeys) {
+		t.Fatalf("keys = %v, want %v", got, wantKeys)
+	}
+	wantValues := []string{
+		actor.String(), "https://connect.example", "https://id.example",
+		"https://app.example",
+	}
+	for position, want := range wantValues {
+		attr := actor.LogAttrs()[position]
+		if got := attr.Value.String(); got != want {
+			t.Errorf("%s = %q, want %q", attr.Key, got, want)
+		}
+	}
+	actor.Grant = nil
+	want := []string{"actor", "agent_session"}
+	if got := keys(actor); !slices.Equal(got, want) {
+		t.Errorf("keys with a nil Grant = %v, want %v", got, want)
+	}
 }

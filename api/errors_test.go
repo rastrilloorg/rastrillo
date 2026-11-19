@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -216,5 +217,68 @@ func TestWriteErrorWrapsInEnvelope(t *testing.T) {
 	want := `{"error":{"code":"too_large","message":"The request body is too large."}}`
 	if got := strings.TrimSpace(rec.Body.String()); got != want {
 		t.Errorf("body = %s, want %s", got, want)
+	}
+}
+
+// Refusal is what MCP answers with, so it must say exactly what Refuse
+// writes for the same error, the codes Refuse alone used to know too.
+func TestRefusalIsRefuseWithoutTheWrite(t *testing.T) {
+	cases := []struct {
+		name    string
+		err     error
+		status  int
+		code    string
+		message string
+	}{
+		{"a response over the cap", errResponseTooLarge, 422,
+			"response_too_large", msgResponseTooLarge},
+		{"an agent's write with no session", errAgentSession, 422,
+			"invalid", msgAgentSession},
+		{"forbidden", op.Forbidden{}, 403, "forbidden",
+			codes["forbidden"].message},
+		{"unauthorized", ErrUnauthorized, 401, "unauthorized",
+			codes["unauthorized"].message},
+		{"invalid", op.Invalid{Fields: map[string]string{"Title": "Required."}},
+			422, "invalid", codes["invalid"].message},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			request := WithLogger(
+				httptest.NewRequest(http.MethodGet, "/api/v1/things", nil),
+				slog.New(slog.DiscardHandler))
+			status, refused := Refusal(request, tc.err)
+			if status != tc.status || refused.Code != tc.code ||
+				refused.Message != tc.message {
+				t.Fatalf("Refusal = %d %+v, want %d %s %q",
+					status, refused, tc.status, tc.code, tc.message)
+			}
+			recorder := refuse(tc.err)
+			if recorder.Code != status {
+				t.Fatalf("Refuse wrote %d, Refusal said %d",
+					recorder.Code, status)
+			}
+			if written := decodeError(t, recorder); !reflect.DeepEqual(
+				written, refused) {
+				t.Fatalf("Refuse wrote %+v, Refusal said %+v",
+					written, refused)
+			}
+		})
+	}
+}
+
+// An internal error's ref is logged by Refusal itself, so a caller that
+// writes the envelope its own way still leaves the line to look up.
+func TestRefusalLogsTheInternalRef(t *testing.T) {
+	var logs bytes.Buffer
+	request := WithLogger(
+		httptest.NewRequest(http.MethodGet, "/api/v1/things", nil),
+		slog.New(slog.NewTextHandler(&logs, nil)))
+	status, refused := Refusal(request, errors.New("store fell over"))
+	if status != http.StatusInternalServerError || refused.Ref == "" {
+		t.Fatalf("Refusal = %d %+v, want a 500 with a ref", status, refused)
+	}
+	if line := logs.String(); !strings.Contains(line, "ref="+refused.Ref) ||
+		!strings.Contains(line, "store fell over") {
+		t.Fatalf("log %q lacks the ref %s and the cause", line, refused.Ref)
 	}
 }

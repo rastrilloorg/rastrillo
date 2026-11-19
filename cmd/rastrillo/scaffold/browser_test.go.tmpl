@@ -1,17 +1,9 @@
 //go:build browser
 
-// The browser drive: the whole app in a real Chromium, wired exactly
-// as cmd/%[1]s/main.go wires it — loud on any console error, failed
-// request, 4xx/5xx, or JS value that leaked to the screen unrendered.
-// Not part of the plain suite:
-//
-//	go test -tags browser ./...
-//
-// It needs a Chromium: on PATH, via RASTRILLO_CHROME, or in a
-// Playwright cache. A skip is not a pass — with no browser this fails,
-// unless RASTRILLO_BROWSER_OPTIONAL is set, which makes the skip a
-// deliberate visible choice rather than an accident.
-package %[2]s_test
+// The browser drive: the whole app in a real Chromium, loud on any
+// console error or failed request. With no browser it fails, unless
+// RASTRILLO_BROWSER_OPTIONAL is set. README.md says how to run it.
+package %[2]stest
 
 import (
 	"io"
@@ -24,27 +16,24 @@ import (
 	"amadan.net/rastrillo/rastrillo/harness"
 	"github.com/chromedp/chromedp"
 
-	%[2]s "%[1]s/internal/%[2]s"
+	"%[1]s/internal/%[2]s"
 )
 
-// TestBrowserWalk is the minimal loud walk: the home screen arrives
-// with nothing wrong anywhere the rig watches. Grow it with the app —
-// each screen a flow reaches earns a Screen() line, and an expected
-// probe (a signed-out 401, say) earns a rig.Allow.
+// TestBrowserWalk opens the home screen. Each screen a flow reaches gets
+// a Screen line, and each expected probe, such as a 401, a rig.Allow.
 func TestBrowserWalk(t *testing.T) {
 	rig := harness.New(t, func(origin string) http.Handler {
-		// The scaffold's own wiring, origin included: the rig hands
-		// the app its localhost origin before serving — the same seam
-		// main.go fills from %[3]s_ORIGIN.
 		logger := slog.New(slog.NewTextHandler(io.Discard, nil))
-		d, err := db.Open(filepath.Join(t.TempDir(), "app.db"), logger)
+		path := filepath.Join(t.TempDir(), "app.db")
+		database, err := db.Open(path, logger)
 		if err != nil {
 			t.Fatalf("db.Open: %%v", err)
 		}
-		t.Cleanup(func() { d.Close() })
-		mux, err := %[2]s.App(d, origin, logger)
+		t.Cleanup(func() { database.Close() })
+		mux, _, err := %[2]s.New(
+			database, origin, logger)
 		if err != nil {
-			t.Fatalf("App: %%v", err)
+			t.Fatalf("New: %%v", err)
 		}
 		return mux
 	})

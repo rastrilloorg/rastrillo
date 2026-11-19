@@ -13,7 +13,8 @@ import (
 
 // LocaleFuncs are the template functions whose output depends on the
 // locale, and so take the request's localizer first.
-var LocaleFuncs = []string{"T", "Tf", "Tbdi", "number", "displayValue", "dateWords", "money", "actor"}
+var LocaleFuncs = []string{"T", "Tf", "Tbdi", "number", "displayValue",
+	"dateWords", "money", "actor", "date"}
 
 // Appendix C.2 of the multi-currency money spec, verbatim: op.funcs.arity,
 // op.funcs.arg_type, op.money.first_arg and op.money.arity.
@@ -102,13 +103,7 @@ func localeFuncs(o config) template.FuncMap {
 		return o.locale
 	}
 	number := func(name string, integerStrings bool) func(...any) (any, error) {
-		return func(args ...any) (any, error) {
-			c := newCall(name, args)
-			if err := c.arity(1, false); err != nil {
-				return nil, err
-			}
-			return formatNumber(c.rest[0], format(c), integerStrings), nil
-		}
+		return localeCallOf(name, format, numberCallFor(integerStrings))
 	}
 	return template.FuncMap{
 		"T": func(args ...any) (any, error) {
@@ -141,6 +136,7 @@ func localeFuncs(o config) template.FuncMap {
 			}
 			return tbdi(t(c))(k, c.rest[1:]...), nil
 		},
+		"date":         localeCallOf("date", format, dateCall),
 		"number":       number("number", true),
 		"displayValue": number("displayValue", false),
 		"dateWords": func(args ...any) (any, error) {
@@ -197,5 +193,41 @@ func localeFuncs(o config) template.FuncMap {
 			}
 			return currency.Format(loc, minor, code)
 		},
+	}
+}
+
+// numberCallFor is numberCall for one of the two functions.
+func numberCallFor(
+	integerStrings bool,
+) func(localeCall, string) (any, error) {
+	return func(call localeCall, locale string) (any, error) {
+		return numberCall(call, locale, integerStrings)
+	}
+}
+
+// numberCall is {{number}} and {{displayValue}} after the localizer:
+// the value, then, for number only, its options.
+func numberCall(
+	call localeCall, locale string, integerStrings bool,
+) (any, error) {
+	if err := call.arity(1, integerStrings); err != nil {
+		return nil, err
+	}
+	options, err := numberOptions(call.rest[1:])
+	if err != nil {
+		return nil, err
+	}
+	return formatNumber(call.rest[0], locale, integerStrings, options)
+}
+
+// localeCallOf is a locale function whose implementation takes the
+// call and the locale it formats in.
+func localeCallOf(
+	name string, format func(localeCall) string,
+	implement func(localeCall, string) (any, error),
+) func(...any) (any, error) {
+	return func(args ...any) (any, error) {
+		call := newCall(name, args)
+		return implement(call, format(call))
 	}
 }

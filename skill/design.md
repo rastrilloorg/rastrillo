@@ -1,15 +1,19 @@
 # Design system, locales and markup
 
-**Use Rastrillo's design system by default.** Start with its shells,
-`ui` partials (skill/partials.md), `rst-` attributes, tokens and a
-shipped theme. Customise with a thin app-owned CSS layer loaded after
-`tokens.css` and `theme.css` through the shell's `head` block. Prefer
+**Use the shipped design system by default.** Its look is Fiesta's
+(fiesta.rastrillo.org), pinned by the module; the `ui` partials write
+its markup. Start with the shells, `ui` partials (skill/partials.md),
+`rst-` attributes, tokens and a shipped theme. Customise with a thin
+app-owned CSS layer loaded after `tokens.css` and `theme.css` through
+the shell's `head` block. Prefer
 `--rst-*` token overrides for colour, type and shape; use app-specific
 classes for layout or components the system does not cover. Keep base
 styles intact so framework fixes stay easy to adopt. An explicit user
-design requirement wins. Full vocabulary: rastrillo.org/design-system
-(built from `ui` by `cmd/dsgen`, not committed); `go generate ./...`
-renders a local copy into `.design-system/`. docs/site/templates.md
+design requirement wins. Every partial with its Go call: Rastrillo
+components, rastrillo.org/components (built by `cmd/dsgen`, not
+committed); `go generate ./...` renders a local copy into
+`.design-system/`. Tokens and hand-written markup:
+fiesta.rastrillo.org/design-system. docs/site/templates.md
 
 ## Markup rules
 
@@ -24,6 +28,8 @@ renders a local copy into `.design-system/`. docs/site/templates.md
 - **No `style` attributes and no `<style>` blocks:** the baseline CSP
   blocks them, and the browser drops them without an error. For a grid
   card, give `rst-card` a class and set `--rst-cols` in your stylesheet.
+  `make csp` finds them (an app made before it: add a `csp` target
+  running `rastrillo csp` to `ci`, and `.amadan/ci.d/18-csp`).
 - Screens stack vertically — never heading, paragraph and button in one
   flex row; a notice with a CTA is a `callout` ending in a link. State
   is never colour alone: a `status-pill`'s label and a `meter`'s
@@ -34,7 +40,7 @@ renders a local copy into `.design-system/`. docs/site/templates.md
 - A name inline with other content needs `<bdi>`, or an RTL name draws
   the number beside it to its LEFT.
 - Every menu is a `<details name="rst-menus">` (opening one closes the
-  rest); `rastrillo.js` closes any on outside click or Escape;
+  rest); `fiesta.js` closes any on outside click or Escape;
   `MenuGroup` names another group, and a nested `rst-menu-group` MUST
   name a different one or it closes its parent.
 - A row that stands for an item is a link across its whole width
@@ -56,8 +62,17 @@ from `ui.ForRequest(r)`. Format every displayed quantity with
 labels. `stat.Value` formats numbers and plain integer strings
 automatically; `detail-list.Value` formats numeric types. Pass
 quantities as numbers, identifiers/years/versions as strings; never
-group IDs, input values, URLs or machine attributes. Keep percent
-formatting explicit and locale-aware. Write an app's own text as
+group IDs, input values, URLs or machine attributes. `number` writes
+from the locale's CLDR pack, exactly, never rounding: a decimal goes in
+as `number.Decimal("1200.5")` (a plain string stays as given), and
+words after it set the format: `"plain"` (no group marks), `"places" 2`
+(pad the fraction), `"percent"` (50 is 50 %). In Go, `number.Format`.
+Dates: `{{date $L .At "dayYear"}}` writes CLDR's pattern for the locale
+(kinds `day`, `dayYear`, `short`, `date`, `dateYear`, `monthYear`,
+`month`, `year`, `time`, `stamp`), in `.At`'s own zone. In Go,
+`dates.For(locale)`: `Format`, `FirstDay`, `Heads`, `Order`; the browser
+twin is `dates.Assets()`'s `dates.mjs`, fed `Client()` as JSON.
+Write an app's own text as
 English literals in the template; `{{T $L "key"}}` looks a catalog key
 up (the `rastrillo.ui.*` keys a form error carries, say) and
 `{{Tf $L "key" "name" .Name}}` fills `{name}` in it from name/value

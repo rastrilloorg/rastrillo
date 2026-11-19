@@ -140,40 +140,38 @@ func TestVectorsInitUsesTheAppsTestLayout(t *testing.T) {
 		t.Skip("tidies and vets two modules")
 	}
 	setSandboxGoEnv(t)
-	for _, c := range []struct {
+	for _, layout := range []struct {
 		name, testDir, pkgClause string
 		oldLayout                bool
 	}{
 		{"beside the code", "demo", "package demo_test", false},
 		{"own test package", "demotest", "package demotest", true},
 	} {
-		t.Run(c.name, func(t *testing.T) {
+		t.Run(layout.name, func(t *testing.T) {
 			files := map[string]string{
 				"go.mod": fmt.Sprintf("module demo\n\ngo 1.25.0\n\n"+
 					"require amadan.net/rastrillo/rastrillo v0.0.0\n\n"+
-					"replace amadan.net/rastrillo/rastrillo => %s\n", repoRoot(t)),
+					"replace amadan.net/rastrillo/rastrillo => %s\n",
+					repoRoot(t)),
 				"internal/demo/demo.go": "package demo\n",
 			}
-			if c.oldLayout {
-				files["internal/demotest/harness_test.go"] = "package demotest\n"
+			if layout.oldLayout {
+				files["internal/demotest/harness_test.go"] =
+					"package demotest\n"
 			}
 			dir := scaffold(t, files)
 			if err := runVectors([]string{"-init", dir}); err != nil {
 				t.Fatalf("vectors -init: %v", err)
 			}
-			for _, name := range []string{"parity_test.go", "vectors_vendored_test.go"} {
-				src := readInit(t, dir, "internal", c.testDir, name)
-				if !strings.HasPrefix(src, c.pkgClause+"\n") {
-					t.Errorf("%s in internal/%s should start %q:\n%s", name, c.testDir, c.pkgClause, src)
+			for _, name := range []string{"parity_test.go",
+				"vectors_vendored_test.go"} {
+				src := readInit(t, dir, "internal", layout.testDir, name)
+				if !strings.HasPrefix(src, layout.pkgClause+"\n") {
+					t.Errorf("%s in internal/%s should start %q:\n%s",
+						name, layout.testDir, layout.pkgClause, src)
 				}
 			}
-			if c.oldLayout {
-				if _, err := os.Stat(filepath.Join(dir, "internal", "demo", "parity_test.go")); err == nil {
-					t.Error("an app with internal/demotest got its belt in internal/demo as well")
-				}
-			} else if _, err := os.Stat(filepath.Join(dir, "internal", "demotest")); err == nil {
-				t.Error("a new-layout app got an internal/demotest directory")
-			}
+			checkOneTestLayout(t, dir, layout.oldLayout)
 			tidy := exec.Command("go", "mod", "tidy")
 			tidy.Dir = dir
 			if out, err := tidy.CombinedOutput(); err != nil {
@@ -185,5 +183,22 @@ func TestVectorsInitUsesTheAppsTestLayout(t *testing.T) {
 				t.Errorf("go vet on the scaffolded belt:\n%s", out)
 			}
 		})
+	}
+}
+
+// checkOneTestLayout fails if vectors -init wrote its belt into both
+// test directories, or made the old one in a new-layout app.
+func checkOneTestLayout(t *testing.T, dir string, oldLayout bool) {
+	t.Helper()
+	exists := func(parts ...string) bool {
+		_, err := os.Stat(filepath.Join(append([]string{dir}, parts...)...))
+		return err == nil
+	}
+	switch {
+	case oldLayout && exists("internal", "demo", "parity_test.go"):
+		t.Error("an app with internal/demotest got its belt in " +
+			"internal/demo as well")
+	case !oldLayout && exists("internal", "demotest"):
+		t.Error("a new-layout app got an internal/demotest directory")
 	}
 }

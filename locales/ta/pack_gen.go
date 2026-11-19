@@ -4,8 +4,8 @@
 // SHA-256 in hack/moneycldr/sources/inputs.sha256. Data from the Unicode CLDR,
 // © Unicode, Inc., under the Unicode License v3 (locales/LICENSE-UNICODE).
 
-// Package ta links CLDR money-formatting data for every modern "ta"
-// locale. Import it for its side effect.
+// Package ta links CLDR number- and money-formatting data for every
+// modern "ta" locale. Import it for its side effect.
 package ta
 
 import "amadan.net/rastrillo/rastrillo/locales"
@@ -13,8 +13,8 @@ import "amadan.net/rastrillo/rastrillo/locales"
 func init() { locales.Register("ta", data) }
 
 var data = map[string]locales.Locale{
-	"ta":    {Parent: "root", Standard: "¤#,##,##0.00", Alpha: "¤\u00a0#,##,##0.00", Symbols: map[string]string{"JPY": "¥", "PHP": "PHP", "THB": "฿", "USD": "$"}, Narrow: map[string]string{"BYN": "р.", "TWD": "NT$"}},
+	"ta":    {Parent: "root", Number: "#,##,##0.###", Percent: "#,##,##0%", Standard: "¤#,##,##0.00", Alpha: "¤\u00a0#,##,##0.00", Symbols: map[string]string{"JPY": "¥", "PHP": "PHP", "THB": "฿", "USD": "$"}, Narrow: map[string]string{"BYN": "р.", "TWD": "NT$"}},
 	"ta-LK": {Parent: "ta", Symbols: map[string]string{"LKR": "Rs."}},
-	"ta-MY": {Parent: "ta", Standard: "¤\u00a0#,##0.00", Alpha: "¤\u00a0#,##0.00", Symbols: map[string]string{"MYR": "RM", "SGD": "S$"}},
-	"ta-SG": {Parent: "ta", Standard: "¤\u00a0#,##0.00", Alpha: "¤\u00a0#,##0.00", Symbols: map[string]string{"MYR": "RM", "SGD": "$", "USD": "US$"}},
+	"ta-MY": {Parent: "ta", Number: "#,##0.###", Percent: "#,##0%", Standard: "¤\u00a0#,##0.00", Alpha: "¤\u00a0#,##0.00", Symbols: map[string]string{"MYR": "RM", "SGD": "S$"}},
+	"ta-SG": {Parent: "ta", Number: "#,##0.###", Percent: "#,##0%", Standard: "¤\u00a0#,##0.00", Alpha: "¤\u00a0#,##0.00", Symbols: map[string]string{"MYR": "RM", "SGD": "$", "USD": "US$"}},
 }

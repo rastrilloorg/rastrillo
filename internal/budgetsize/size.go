@@ -5,11 +5,19 @@
 // a deterministic proxy for how much an edit there makes the toolchain
 // reread, and Tito Go's internal/instance (957k lines, 72s to link its
 // test binary after a one-line edit) is what it is a proxy against.
+//
+// A generated file does not count. The budget's answer to a directory
+// over it is to split it by feature, and nothing an author splits
+// shrinks a file a tool writes: compiled templates put ui's partials,
+// thousands of lines, beside every package's pages.
 package budgetsize
 
 import (
 	"bytes"
 	"fmt"
+	"go/ast"
+	"go/parser"
+	"go/token"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -51,13 +59,9 @@ func Measure(root string) ([]Count, error) {
 		if !strings.HasSuffix(p, ".go") {
 			return nil
 		}
-		b, err := os.ReadFile(p)
-		if err != nil {
+		lines, generated, err := countLines(p)
+		if err != nil || generated {
 			return err
-		}
-		lines := bytes.Count(b, []byte("\n"))
-		if len(b) > 0 && b[len(b)-1] != '\n' {
-			lines++
 		}
 		rel, err := filepath.Rel(root, filepath.Dir(p))
 		if err != nil {
@@ -87,6 +91,32 @@ func Measure(root string) ([]Count, error) {
 	return out, nil
 }
 
+// countLines counts the file at path's lines, or reports that a tool
+// wrote it, which leaves it out.
+func countLines(path string) (lines int, generated bool, err error) {
+	source, err := os.ReadFile(path)
+	if err != nil || isGenerated(source) {
+		return 0, err == nil, err
+	}
+	lines = bytes.Count(source, []byte("\n"))
+	if len(source) > 0 && source[len(source)-1] != '\n' {
+		lines++
+	}
+	return lines, false, nil
+}
+
+// isGenerated reports whether src carries the generated-code comment
+// `go help generate` describes before its package clause. It asks
+// go/parser and go/ast, whose rule it is, rather than matching lines:
+// a "package" opening a line of a block comment is not the clause, and
+// "package\tapp" is, so a header below it does not exempt the file.
+// A file whose clause does not parse counts.
+func isGenerated(src []byte) bool {
+	file, err := parser.ParseFile(token.NewFileSet(), "", src,
+		parser.PackageClauseOnly|parser.ParseComments)
+	return err == nil && ast.IsGenerated(file)
+}
+
 // Check returns one message per violation. A record for a directory
 // with no Go files is stale and fails here, the one place that sees the
 // whole module.
@@ -108,14 +138,27 @@ func Check(counts []Count, f *budgetfile.File) []string {
 	return msgs
 }
 
+// overDefault leads with how to split. Offered a split and an exemption
+// side by side, an agent takes the one-line exemption and the package
+// keeps growing.
+func overDefault(dir, kind string, measured, ceiling int) string {
+	return fmt.Sprintf("%s: %d %s lines, over the %d-line limit "+
+		"for this directory. Split it by feature: put each "+
+		"feature in %s/<feature> with its own Deps struct and "+
+		"Mount function, and shared code in %s/core "+
+		"(docs/site/testing.md, \"Splitting by feature\"). "+
+		"Only if the split must wait, record an exemption in %s "+
+		"and name the issue tracking the split.",
+		dir, measured, kind, ceiling, dir, dir, budgetfile.FileName)
+}
+
 // judge ratchets only a column the record states, so a directory over
 // on one count alone can carry a record without the other count tripping
 // the 60% rule.
 func judge(dir, kind string, measured, def, stated, line int) []string {
 	if stated == 0 {
 		if measured > def {
-			return []string{fmt.Sprintf("%s: %d %s lines, ceiling %d. Split it by feature (docs/site/testing.md), or record an exemption with a reason in %s",
-				dir, measured, kind, def, budgetfile.FileName)}
+			return []string{overDefault(dir, kind, measured, def)}
 		}
 		return nil
 	}

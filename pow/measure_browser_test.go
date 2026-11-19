@@ -3,14 +3,18 @@
 package pow_test
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"sort"
 	"testing"
 	"time"
 
+	"github.com/chromedp/cdproto/cdp"
 	"github.com/chromedp/cdproto/emulation"
 	"github.com/chromedp/chromedp"
+
+	"amadan.net/rastrillo/rastrillo/harness"
 )
 
 // TestMeasureSolveTimes times the shipped solver in Chromium with the
@@ -27,7 +31,12 @@ func TestMeasureSolveTimes(t *testing.T) {
 	rig := powRig(t)
 	rig.Run(chromedp.Navigate(rig.Origin + "/"))
 	for _, rate := range []float64{1, 4, 6} {
-		rig.Run(emulation.SetCPUThrottlingRate(rate))
+		rig.Run(chromedp.Func(
+			func(ctx context.Context, target *chromedp.Target) error {
+				_, err := cdp.Call(ctx, target, emulation.SetCPUThrottlingRate,
+					emulation.SetCPUThrottlingRateParams{Rate: rate})
+				return err
+			}))
 		for bits := 12; bits <= 18; bits++ {
 			samples := 60
 			if bits >= 17 {
@@ -35,14 +44,16 @@ func TestMeasureSolveTimes(t *testing.T) {
 			}
 			var ms []float64
 			for i := 0; i < samples; i++ {
-				nonce := fmt.Sprintf("%032x", time.Now().UnixNano()+int64(i))
-				var took float64
-				rig.Run(chromedp.Evaluate(fmt.Sprintf(`(async () => {
+				nonce := fmt.Sprintf("%032x",
+					time.Now().UnixNano()+int64(i))
+				solveScript := fmt.Sprintf(`(async () => {
 					const m = await import("/pow/powcore.js");
 					const t0 = performance.now();
 					m.solve(%q, "", %d, null);
 					return performance.now() - t0;
-				})()`, nonce, bits), &took, awaitPromise))
+				})()`, nonce, bits)
+				took := harness.Evaluate[float64](rig, solveScript,
+					chromedp.EvalAwaitPromise)
 				ms = append(ms, took)
 			}
 			sort.Float64s(ms)

@@ -3,7 +3,10 @@ package pow
 import (
 	"fmt"
 	"html/template"
+	"net/http"
 	"time"
+
+	"amadan.net/rastrillo/rastrillo/basepath"
 )
 
 // Form is what a template renders: a challenge plus how the browser
@@ -52,6 +55,18 @@ func (g *Guard) form(now, issued time.Time, scope string, flags uint8) Form {
 		left = 0
 	}
 	return Form{Challenge: c, scriptURL: g.scriptURL, workerURL: g.workerURL, bound: g.bind, minAgeLeft: left}
+}
+
+// At is f for the page r renders: a copy whose script and worker URLs
+// went through basepath.Path. The guard's URLs are process-wide config,
+// and one process answers both at /acme and, on a served direct host,
+// at the root, so only the request knows which the page needs. Call it
+// on every Form a page under a base path renders, or the browser asks
+// the hub for the module and the worker.
+func (f Form) At(r *http.Request) Form {
+	f.scriptURL = basepath.Path(r, f.scriptURL)
+	f.workerURL = basepath.Path(r, f.workerURL)
+	return f
 }
 
 // NeedsScript is false under NoProof: render the submit enabled, and

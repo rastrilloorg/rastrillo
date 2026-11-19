@@ -1,0 +1,273 @@
+{
+  "Label": "0",
+  "Date": "2026-10-30",
+  "Model": "claude-opus-5-5",
+  "ClaudeVersion": "2.1.312",
+  "Rastrillo": "v0.29.0",
+  "Platform": "none (the control did not deploy)",
+  "Poll": "",
+  "GettingStartedCommit": "",
+  "PolicyHash": "",
+  "Config": "",
+  "ControlConfig": "",
+  "Notes": [
+    "Imported from the 2026-10-30 transcripts: one run per arm, groomer only.",
+    "Both arms ran on the operator's own Claude Code config, with eight plugins, the Concise output style and a personal CLAUDE.md.",
+    "The control was asked to get ready to deploy, not to deploy; only the Rastrillo arm deployed.",
+    "Nothing was measured live, so this round has costs only.",
+    "The prompts differ from later rounds: the framework sentences were part of the brief."
+  ],
+  "Runs": [
+    {
+      "Brief": "groomer",
+      "Arm": "carlos",
+      "N": 1,
+      "App": "",
+      "RastrilloVersion": "v0.29.0",
+      "Build": {
+        "Complete": true,
+        "Messages": 98,
+        "ToolCalls": 102,
+        "NumTurns": 103,
+        "Output": 80297,
+        "CacheRead": 17219736,
+        "CacheWrite": 248381,
+        "CostUSD": 7.037719199999998,
+        "DurationS": 894,
+        "FirstWriteContext": 150949,
+        "DeployMessages": 16,
+        "Stages": {
+          "app-read": {
+            "Messages": 8,
+            "ToolCalls": 9,
+            "Context": 1379934
+          },
+          "build-test": {
+            "Messages": 7,
+            "ToolCalls": 7,
+            "Context": 1467429
+          },
+          "deploy": {
+            "Messages": 13,
+            "ToolCalls": 14,
+            "Context": 2506031
+          },
+          "framework-read": {
+            "Messages": 23,
+            "ToolCalls": 23,
+            "Context": 2996934
+          },
+          "gates": {
+            "Messages": 4,
+            "ToolCalls": 4,
+            "Context": 949968
+          },
+          "live-check": {
+            "Messages": 3,
+            "ToolCalls": 3,
+            "Context": 731700
+          },
+          "other": {
+            "Messages": 16,
+            "ToolCalls": 15,
+            "Context": 3151142
+          },
+          "scaffold": {
+            "Messages": 2,
+            "ToolCalls": 2,
+            "Context": 214119
+          },
+          "screenshots": {
+            "Messages": 3,
+            "ToolCalls": 6,
+            "Context": 652589
+          },
+          "write": {
+            "Messages": 19,
+            "ToolCalls": 19,
+            "Context": 3418467
+          }
+        }
+      },
+      "Followup": {
+        "Complete": true,
+        "Messages": 26,
+        "ToolCalls": 28,
+        "NumTurns": 30,
+        "Output": 24358,
+        "CacheRead": 7288956,
+        "CacheWrite": 54198,
+        "CostUSD": 2.3787431999999997,
+        "DurationS": 309,
+        "FirstWriteContext": 268825,
+        "DeployMessages": 1,
+        "Stages": {
+          "app-read": {
+            "Messages": 4,
+            "ToolCalls": 4,
+            "Context": 1064579
+          },
+          "build-test": {
+            "Messages": 2,
+            "ToolCalls": 2,
+            "Context": 569769
+          },
+          "deploy": {
+            "Messages": 1,
+            "ToolCalls": 1,
+            "Context": 301813
+          },
+          "framework-read": {
+            "Messages": 1,
+            "ToolCalls": 1,
+            "Context": 253010
+          },
+          "gates": {
+            "Messages": 2,
+            "ToolCalls": 2,
+            "Context": 598840
+          },
+          "other": {
+            "Messages": 6,
+            "ToolCalls": 5,
+            "Context": 1714103
+          },
+          "screenshots": {
+            "Messages": 5,
+            "ToolCalls": 8,
+            "Context": 1433886
+          },
+          "write": {
+            "Messages": 5,
+            "ToolCalls": 5,
+            "Context": 1407206
+          }
+        }
+      },
+      "Measured": [
+        {
+          "Pages": null,
+          "Headers": null,
+          "DeployOK": false,
+          "Failures": null
+        },
+        {
+          "Pages": null,
+          "Headers": null,
+          "DeployOK": false,
+          "Failures": null
+        }
+      ],
+      "AgentFailures": null,
+      "ReusedFrom": ""
+    },
+    {
+      "Brief": "groomer",
+      "Arm": "control",
+      "N": 1,
+      "App": "",
+      "RastrilloVersion": "",
+      "Build": {
+        "Complete": true,
+        "Messages": 41,
+        "ToolCalls": 44,
+        "NumTurns": 45,
+        "Output": 65797,
+        "CacheRead": 2932771,
+        "CacheWrite": 108069,
+        "CostUSD": 2.7673742,
+        "DurationS": 585,
+        "FirstWriteContext": 33949,
+        "DeployMessages": 1,
+        "Stages": {
+          "app-read": {
+            "Messages": 2,
+            "ToolCalls": 2,
+            "Context": 118598
+          },
+          "build-test": {
+            "Messages": 4,
+            "ToolCalls": 4,
+            "Context": 326713
+          },
+          "deploy": {
+            "Messages": 1,
+            "ToolCalls": 1,
+            "Context": 104420
+          },
+          "other": {
+            "Messages": 13,
+            "ToolCalls": 13,
+            "Context": 1083076
+          },
+          "screenshots": {
+            "Messages": 7,
+            "ToolCalls": 10,
+            "Context": 618779
+          },
+          "write": {
+            "Messages": 14,
+            "ToolCalls": 14,
+            "Context": 789336
+          }
+        }
+      },
+      "Followup": {
+        "Complete": true,
+        "Messages": 26,
+        "ToolCalls": 30,
+        "NumTurns": 34,
+        "Output": 36935,
+        "CacheRead": 3637452,
+        "CacheWrite": 64818,
+        "CostUSD": 1.9849424,
+        "DurationS": 344,
+        "FirstWriteContext": 110528,
+        "DeployMessages": 0,
+        "Stages": {
+          "app-read": {
+            "Messages": 2,
+            "ToolCalls": 2,
+            "Context": 248153
+          },
+          "build-test": {
+            "Messages": 5,
+            "ToolCalls": 5,
+            "Context": 811212
+          },
+          "other": {
+            "Messages": 2,
+            "ToolCalls": 1,
+            "Context": 283219
+          },
+          "screenshots": {
+            "Messages": 8,
+            "ToolCalls": 13,
+            "Context": 1154586
+          },
+          "write": {
+            "Messages": 9,
+            "ToolCalls": 9,
+            "Context": 1205152
+          }
+        }
+      },
+      "Measured": [
+        {
+          "Pages": null,
+          "Headers": null,
+          "DeployOK": false,
+          "Failures": null
+        },
+        {
+          "Pages": null,
+          "Headers": null,
+          "DeployOK": false,
+          "Failures": null
+        }
+      ],
+      "AgentFailures": null,
+      "ReusedFrom": ""
+    }
+  ]
+}

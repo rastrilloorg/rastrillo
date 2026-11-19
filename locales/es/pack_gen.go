@@ -4,8 +4,8 @@
 // SHA-256 in hack/moneycldr/sources/inputs.sha256. Data from the Unicode CLDR,
 // © Unicode, Inc., under the Unicode License v3 (locales/LICENSE-UNICODE).
 
-// Package es links CLDR money-formatting data for every modern "es"
-// locale. Import it for its side effect.
+// Package es links CLDR number- and money-formatting data for every
+// modern "es" locale. Import it for its side effect.
 package es
 
 import "amadan.net/rastrillo/rastrillo/locales"
@@ -13,19 +13,19 @@ import "amadan.net/rastrillo/rastrillo/locales"
 func init() { locales.Register("es", data) }
 
 var data = map[string]locales.Locale{
-	"es":     {Parent: "root", CurrencyDecimal: ",", CurrencyGroup: ".", Decimal: ",", MinGrouping: "2", Standard: "#,##0.00\u00a0¤", Alpha: "#,##0.00\u00a0¤", Symbols: map[string]string{"AUD": "AUD", "BRL": "BRL", "CAD": "CAD", "CNY": "CNY", "GBP": "GBP", "HKD": "HKD", "ILS": "ILS", "INR": "INR", "JPY": "JPY", "KRW": "KRW", "MXN": "MXN", "NZD": "NZD", "PHP": "PHP", "THB": "฿", "TWD": "TWD", "XAF": "XAF", "XCD": "XCD", "XOF": "XOF"}, Narrow: map[string]string{"BYN": "р.", "EGP": "EGP", "RON": "L", "TWD": "NT$"}},
-	"es-419": {Parent: "es", CurrencyDecimal: ".", CurrencyGroup: ",", Decimal: ".", MinGrouping: "1", Standard: "¤#,##0.00", Alpha: "¤\u00a0#,##0.00", Symbols: map[string]string{"EUR": "EUR", "THB": "THB", "USD": "USD", "VND": "VND"}, Narrow: map[string]string{"EGP": "E£", "FKP": "FK£", "SSP": "SD£", "SYP": "S£", "VEF": "BsF"}},
-	"es-AR":  {Parent: "es-419", CurrencyDecimal: ",", CurrencyGroup: ".", Decimal: ",", Standard: "¤\u00a0#,##0.00", Symbols: map[string]string{"ARS": "$", "USD": "US$"}},
-	"es-BO":  {Parent: "es-419", CurrencyDecimal: ",", CurrencyGroup: ".", Decimal: ",", Symbols: map[string]string{"BOB": "Bs"}},
+	"es":     {Parent: "root", CurrencyDecimal: ",", CurrencyGroup: ".", Decimal: ",", Group: ".", MinGrouping: "2", Percent: "#,##0\u00a0%", Standard: "#,##0.00\u00a0¤", Alpha: "#,##0.00\u00a0¤", Symbols: map[string]string{"AUD": "AUD", "BRL": "BRL", "CAD": "CAD", "CNY": "CNY", "GBP": "GBP", "HKD": "HKD", "ILS": "ILS", "INR": "INR", "JPY": "JPY", "KRW": "KRW", "MXN": "MXN", "NZD": "NZD", "PHP": "PHP", "THB": "฿", "TWD": "TWD", "XAF": "XAF", "XCD": "XCD", "XOF": "XOF"}, Narrow: map[string]string{"BYN": "р.", "EGP": "EGP", "RON": "L", "TWD": "NT$"}},
+	"es-419": {Parent: "es", CurrencyDecimal: ".", CurrencyGroup: ",", Decimal: ".", Group: ",", MinGrouping: "1", Percent: "#,##0%", Standard: "¤#,##0.00", Alpha: "¤\u00a0#,##0.00", Symbols: map[string]string{"EUR": "EUR", "THB": "THB", "USD": "USD", "VND": "VND"}, Narrow: map[string]string{"EGP": "E£", "FKP": "FK£", "SSP": "SD£", "SYP": "S£", "VEF": "BsF"}},
+	"es-AR":  {Parent: "es-419", CurrencyDecimal: ",", CurrencyGroup: ".", Decimal: ",", Group: ".", Standard: "¤\u00a0#,##0.00", Symbols: map[string]string{"ARS": "$", "USD": "US$"}},
+	"es-BO":  {Parent: "es-419", CurrencyDecimal: ",", CurrencyGroup: ".", Decimal: ",", Group: ".", Symbols: map[string]string{"BOB": "Bs"}},
 	"es-BR":  {Parent: "es-419", Symbols: map[string]string{"BRL": "R$"}},
 	"es-BZ":  {Parent: "es-419", Symbols: map[string]string{"BZD": "$"}},
-	"es-CL":  {Parent: "es-419", CurrencyDecimal: ",", CurrencyGroup: ".", Decimal: ",", Standard: "¤#,##0.00;¤-#,##0.00", Alpha: "¤\u00a0#,##0.00;¤-#,##0.00", Symbols: map[string]string{"CLP": "$", "USD": "US$"}},
-	"es-CO":  {Parent: "es-419", CurrencyDecimal: ",", CurrencyGroup: ".", Decimal: ",", Standard: "¤\u00a0#,##0.00", Symbols: map[string]string{"COP": "$", "USD": "US$"}},
-	"es-CR":  {Parent: "es-419", CurrencyDecimal: ",", CurrencyGroup: "\u00a0", Decimal: ",", Symbols: map[string]string{"CRC": "₡"}},
+	"es-CL":  {Parent: "es-419", CurrencyDecimal: ",", CurrencyGroup: ".", Decimal: ",", Group: ".", Standard: "¤#,##0.00;¤-#,##0.00", Alpha: "¤\u00a0#,##0.00;¤-#,##0.00", Symbols: map[string]string{"CLP": "$", "USD": "US$"}},
+	"es-CO":  {Parent: "es-419", CurrencyDecimal: ",", CurrencyGroup: ".", Decimal: ",", Group: ".", Standard: "¤\u00a0#,##0.00", Symbols: map[string]string{"COP": "$", "USD": "US$"}},
+	"es-CR":  {Parent: "es-419", CurrencyDecimal: ",", CurrencyGroup: "\u00a0", Decimal: ",", Group: "\u00a0", Symbols: map[string]string{"CRC": "₡"}},
 	"es-CU":  {Parent: "es-419", Symbols: map[string]string{"CUP": "$", "USD": "US$"}},
 	"es-DO":  {Parent: "es-419", Symbols: map[string]string{"DOP": "RD$", "USD": "US$"}},
 	"es-EA":  {Parent: "es"},
-	"es-EC":  {Parent: "es-419", CurrencyDecimal: ",", CurrencyGroup: ".", Decimal: ",", Standard: "¤#,##0.00;¤-#,##0.00", Alpha: "¤\u00a0#,##0.00;¤-#,##0.00", Symbols: map[string]string{"USD": "$"}},
+	"es-EC":  {Parent: "es-419", CurrencyDecimal: ",", CurrencyGroup: ".", Decimal: ",", Group: ".", Standard: "¤#,##0.00;¤-#,##0.00", Alpha: "¤\u00a0#,##0.00;¤-#,##0.00", Symbols: map[string]string{"USD": "$"}},
 	"es-GQ":  {Parent: "es", Standard: "¤#,##0.00", Alpha: "¤\u00a0#,##0.00", Symbols: map[string]string{"XAF": "FCFA"}},
 	"es-GT":  {Parent: "es-419", Symbols: map[string]string{"GTQ": "Q"}},
 	"es-HN":  {Parent: "es-419", Symbols: map[string]string{"HNL": "L"}},
@@ -36,9 +36,9 @@ var data = map[string]locales.Locale{
 	"es-PE":  {Parent: "es-419", Standard: "¤\u00a0#,##0.00", Symbols: map[string]string{"PEN": "S/"}},
 	"es-PH":  {Parent: "es", Symbols: map[string]string{"PHP": "₱"}},
 	"es-PR":  {Parent: "es-419", Symbols: map[string]string{"USD": "$"}},
-	"es-PY":  {Parent: "es-419", CurrencyDecimal: ",", CurrencyGroup: ".", Decimal: ",", Standard: "¤\u00a0#,##0.00;¤\u00a0-#,##0.00", Alpha: "¤\u00a0#,##0.00;¤\u00a0-#,##0.00", Symbols: map[string]string{"PYG": "Gs."}},
+	"es-PY":  {Parent: "es-419", CurrencyDecimal: ",", CurrencyGroup: ".", Decimal: ",", Group: ".", Standard: "¤\u00a0#,##0.00;¤\u00a0-#,##0.00", Alpha: "¤\u00a0#,##0.00;¤\u00a0-#,##0.00", Symbols: map[string]string{"PYG": "Gs."}},
 	"es-SV":  {Parent: "es-419", Symbols: map[string]string{"USD": "$"}},
 	"es-US":  {Parent: "es-419", Symbols: map[string]string{"JPY": "¥", "USD": "$"}, Narrow: map[string]string{"FKP": "£", "RON": "lei", "SSP": "£", "SYP": "£", "VEF": "Bs"}},
-	"es-UY":  {Parent: "es-419", CurrencyDecimal: ",", CurrencyGroup: ".", Decimal: ",", Standard: "¤\u00a0#,##0.00", Symbols: map[string]string{"USD": "US$", "UYU": "$"}},
-	"es-VE":  {Parent: "es-419", CurrencyDecimal: ",", CurrencyGroup: ".", Decimal: ",", Standard: "¤#,##0.00;¤-#,##0.00", Alpha: "¤\u00a0#,##0.00;¤-#,##0.00", Symbols: map[string]string{"VEF": "Bs.", "VES": "Bs.S"}, Narrow: map[string]string{"VEF": "Bs."}},
+	"es-UY":  {Parent: "es-419", CurrencyDecimal: ",", CurrencyGroup: ".", Decimal: ",", Group: ".", Standard: "¤\u00a0#,##0.00", Symbols: map[string]string{"USD": "US$", "UYU": "$"}},
+	"es-VE":  {Parent: "es-419", CurrencyDecimal: ",", CurrencyGroup: ".", Decimal: ",", Group: ".", Standard: "¤#,##0.00;¤-#,##0.00", Alpha: "¤\u00a0#,##0.00;¤-#,##0.00", Symbols: map[string]string{"VEF": "Bs.", "VES": "Bs.S"}, Narrow: map[string]string{"VEF": "Bs."}},
 }

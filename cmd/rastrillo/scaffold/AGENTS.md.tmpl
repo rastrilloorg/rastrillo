@@ -1,4 +1,4 @@
-# %s
+# %[1]s
 
 A [rastrillo](https://amadan.net/rastrillo/rastrillo) app. Before
 writing app code, read the framework's skill at the version this app
@@ -8,84 +8,113 @@ builds against:
 
 then, before each piece of work, the `skill/` topic its index names for
 it. Never another copy from the module cache: an older SKILL.md
-describes a framework this app is not built on. The conventions below
-are load-bearing; the framework enforces most of them mechanically.
+describes a framework this app is not built on.
 
 ## Layout
 
-- `internal/<app>/` — the app: `models.go` (plain GORM structs
-  + Models), `migrations.go` + `migrations/` (Schema, BootSchema),
-  `app.go` (migrate.Apply + the route table on a ServeMux), `handlers.go`,
-  `render.go` + `templates/`. This is SKILL.md's five-file shape. Its
-  tests sit beside it as `package <app>_test`.
-- `manifest/` — the declarative path, optional and equal: TOML or .go
-  Resource manifests, each generating a full screen set under `gen/`
-  (see manifest/README.md for the mounting recipe). A hand-written
-  action file at a generated path (carrying `//go:build rastrillo_actions`)
-  takes that one screen over, by existence.
-- `gen/` — generated when manifests are used; never edit. Regenerate
-  with `rastrillo generate`.
+- `internal/<app>/`: `app.go` (`App`, `New`), `routes.go` (every
+  route), `handlers.go` (actions), `models.go`, `migrations.go`,
+  `render.go`, `api.go` (`/api/v1` and `/api/v1/mcp`), and `static/`,
+  served by the app.
+- `internal/<app>test/`: tests through the real handler. Write the
+  failing test here first.
+- `manifest/`: optional, a screen set per manifest, generated into
+  `gen/` (never edit; run `rastrillo generate`). manifest/README.md
+  mounts the first.
+
+## Code
+
+`make code` (`rastrillo budget code`) holds Go to four limits:
+
+- lines at most 80 columns, a tab reaching the next stop of 4;
+- non-test files at most 400 lines;
+- non-test functions at most 40 lines; an action,
+  `func(*action.Visit)`, 15;
+- no one-letter names but a capital type parameter and the testing
+  types' `t`, `b`, `f`.
+
+1. Spell names out, except those, `err` and `ctx`: `request`, not `r`.
+2. Name things for what the person is doing (`entries.Publish`), not
+   how the code does it (`saveEntry`).
+3. One route, one intent: two buttons that mean two things post to two
+   routes.
+4. An action has four beats: read the input, run one operation, answer
+   a refusal, say what success looks like.
+5. Operations hold the rules and the database work, return `op`
+   refusals and never touch HTTP.
+6. A helper answers refusals; success stays written out in the action.
+7. Comments say why, in one or two full sentences, never what the code
+   does.
+
+The rest, and what each gate message means:
+
+    cat "$(go list -m -f '{{.Dir}}' amadan.net/rastrillo/rastrillo)/skill/code.md"
 
 ## Rules the family holds hard
 
+- Pages run under a strict CSP: the browser drops `style` attributes,
+  `<style>` blocks, inline `<script>`s and `on*` handlers, and only the
+  console says so. Use classes in a stylesheet in `static/`, and
+  `addEventListener` in a script there. `make csp` finds them.
 - Every query touching user-owned rows goes through `scope.Owned` —
   reads AND writes, transactions included. A row that isn't yours 404s,
   never 403s.
 - Never bind a request body onto a GORM model: explicit
   `map[string]any` + `.Select` allowlist.
-- The API cannot see page middleware. When a page gains a rule beyond
-  ownership (admins only, no writes while suspended), add it to
-  `authorize` in `api.go` too, or a token gets around it.
-- Migrations apply at boot, once each, and are never re-run or reversed.
-- Schema changes: edit models.go, then run `rastrillo migration generate`
-  and read the SQL it writes — it may be a full table rebuild, not just
-  an `ADD COLUMN`. Never edit a migration that has shipped.
-  Renames are hand-written (`rastrillo migration new rename_x`) because
-  a rename is indistinguishable from a drop plus an add.
+- Every page and form goes in `Routes`' guarded group, which checks
+  CSRF by origin. The API sits outside it: a bearer token is its only
+  credential.
+- The API cannot see page middleware: a page's rule beyond ownership
+  (admins only, say) goes in `api.go`'s `authorize` too, or a token
+  gets around it.
 - Money is a whole number of the currency's smallest unit, stored with its ISO 4217 code beside it, and shown with `money`. A float never touches a value a person will be held to.
 - Screens work with JavaScript disabled; destructive actions get their
   own confirm-page URL.
-- The gate is `make ci` (vet, gofmt, staticcheck, govulncheck, gitleaks, budgets, tests (the migration check is one), the perf lane and the generate check), the same definition CI runs. Run it before every push. `CGO_ENABLED=0` throughout: the stack is cgo-free by design. The Makefile names the Go release the gate and `make release` use (`GOTOOLCHAIN`); raise it with each Go security release.
-- Two of the scaffolded tests are about the **placeholder index page**
-  and are yours to rewrite: `TestIndexRenders` and
-  `TestIndexLinksFingerprintedStylesheet`. Putting `/` behind sign-in
-  turns a signed-out GET into a 303 and both fail — that is the app
-  working, not the gate finding a fault. Repoint them at a page that
-  is public in your app, or delete them. The gate is a definition of
-  done for *your* tests; it does not promise the ones you were handed
-  are still describing your app. `TestPerfScreens` will then want
-  `Signin` in its config, so it measures the page rather than the redirect.
 
-## Testing and budgets
+## Schema
 
-- While editing: `go test -short ./...`.
-  Before pushing: `make ci`. If it is too slow to run before every
-  push, a budget has already failed: fix that, never skip the gate.
-- Budgets: 5,000 source and 8,000 test lines per directory (`make budget`),
-  10s per test package (`make test`), 150ms to first byte per GET
-  screen and 500ms cold boot (`make perf`). Timing fails only on CI.
-  Exceptions go in `.rastrillo/budgets.txt`, each with a reason.
-- Past 5,000 lines, split `internal/<app>` by feature:
-  `internal/<app>/<feature>` with `Mount(r, deps)`, called from `Router`
-  with its `*Routes`, registering through `r.Handle` and never a ServeMux
-  of its own, which the perf lane cannot see. The feature package takes
-  `r` as `interface{ Handle(string, http.Handler) }`: it cannot import
-  the app package that calls it.
-- Every test binary has one `TestMain` that calls `budget.Main`. In
-  `internal/<app>/` it is in `harness_test.go`, shared by the
-  `package <app>` and `package <app>_test` files, so new test files there
-  add none. A new package under `internal/` needs its own:
-  `func TestMain(m *testing.M) { os.Exit(budget.Main(m)) }`. Every test
-  starts with `t.Parallel()` (perf tests excepted), and tests copy the
-  `dbtest` template rather than migrating.
-- A test whose inputs Go cannot see (it execs `go build`, reads files
-  outside its package, or uses the network) gets its own make target
-  with `-count=1`, or Go's test cache will replay a stale pass.
+- Edit models.go, run `rastrillo migration generate`, and read the SQL:
+  it may rebuild a table. Write a rename by hand with
+  `rastrillo migration new rename_x`: generate sees a drop and an add.
+  Never edit a migration that has shipped; they apply at boot, once.
+- A subsystem's schema goes in `BootSchema`, in the order it applies,
+  `migrate.Merge(sessions.Schema, apitoken.Schema, Schema)`, and never
+  in `Schema`, which generate and check diff against the models.
+
+## Growing
+
+- Sign-in: `skill/signin.md`. With `*sessions.Sessions`, keep
+  `NewTokenPage(database, sessions)` on `App` and call
+  `app.tokens.Mount(guarded)` in `Routes`' page group.
+- Past 5,000 lines, split by feature, not an exemption:
+  `internal/<app>/<feature>` with `func Mount(routes *action.Routes,
+  deps *Deps)` called from `Routes`; shared code in `internal/<app>/core`.
+
+## The gate
+
+- `make ci` runs vet, gofmt, staticcheck, govulncheck, gitleaks, the
+  budgets, `make code`, `make routes` (every action is mounted), the
+  tests, perf, and the migration and generate checks, as CI does. Run
+  it before every push. If that is too slow, a budget has failed: fix
+  it, never skip the gate. While editing: `go test -short ./...`.
+- Budgets: 5,000 source and 8,000 test lines per directory, 10s per
+  test package, 150ms to first byte per GET screen, 500ms cold boot
+  (timing fails only on CI). An exception goes in
+  `.rastrillo/budgets.txt` or `code.txt`, with its reason.
+- `TestMain` calls `budget.Main`; each test starts with `t.Parallel()`
+  (perf excepted) and copies the `dbtest` template.
+- The two `TestIndex` tests check the placeholder index: behind sign-in
+  they get a 303, so repoint or delete them. `TestPerfScreens` then
+  needs `Signin`, and a `{param}` route a `Paths` entry it seeds.
+- A test whose inputs Go cannot see (it runs `go build`, reads outside
+  its package, uses the network) gets its own target with `-count=1`.
+- `CGO_ENABLED=0` throughout: the stack is cgo-free.
+- Raise the Makefile's `GOTOOLCHAIN` with each Go security release.
 
 ## Serving
 
-`rastrillo.Resolve` + `Serve` speak the CARLOS activation contract
-(socket/addr/db argv, LISTEN_FDS, $STATE_DIRECTORY, `sidecar run`) —
-the golden deployment target, not a requirement: `./app -addr :8080`
-serves anywhere. `GET /healthz` and `GET /api/version` are answered
-by the framework, outside app middleware.
+`rastrillo.Resolve` + `Serve` speak the CARLOS activation contract;
+`./app -addr :8080` serves anywhere. The framework answers `/healthz`
+and `/api/version`. The CSRF check and, with accounts, the cookies go
+by `<APP>_ORIGIN`, else on CARLOS the instance's own host. Under a
+hub's `/<slug>`: README.md's Deploy and `skill/data.md`.

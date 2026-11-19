@@ -7,16 +7,17 @@ import (
 	"time"
 )
 
-// cssFloor is the engine floor rastrillo's own stylesheets impose on
-// every app that ships them. It is derived, not chosen: take the
-// features tokens.css and the three themes actually use, and keep the
-// highest engine version among them. light-dark() sets it everywhere
-// except Firefox, where :has() does. docs/site/templates.md shows that
-// derivation; skill/design.md states the result, because an agent that
-// cannot find the floor invents one — an agent building on rastrillo
-// refused oklch() as "a 2023-era browser feature" and reached for hex
-// twins, which protect nobody, since an engine too old for oklch()
-// dropped the whole light-dark() palette several declarations earlier.
+// cssFloor is the engine floor the stylesheets rastrillo vendors from
+// Fiesta impose on every app that ships them. It is derived, not
+// chosen: take the features tokens.css and the three themes actually
+// use, and keep the highest engine version among them. light-dark()
+// sets it everywhere except Firefox, where :has() does.
+// docs/site/templates.md shows that derivation; skill/design.md states
+// the result, because an agent that cannot find the floor invents one
+// — an agent building on rastrillo refused oklch() as "a 2023-era
+// browser feature" and reached for hex twins, which protect nobody,
+// since an engine too old for oklch() dropped the whole light-dark()
+// palette several declarations earlier.
 //
 // Two files stating one fact can drift into two facts.
 // TestCSSFloorIsStatedTheSameInBothFiles holds them equal. Both hard-wrap
@@ -44,10 +45,11 @@ const cssFloor = "Chrome 123, Safari 17.5, Firefox 121"
 // still lands inside the year the policy names.
 //
 // Answering the failure means re-deriving, not bumping the date: list
-// the features tokens.css and ui/themes/*.css use, take the highest
-// engine version among them, and if it differs from cssFloor change it
-// here, in skill/design.md and in docs/site/templates.md together. Then set
-// floorReviewed to the day you did it.
+// the features Fiesta's css/tokens.css and css/themes/*.css use, at the
+// pinned release, take the highest engine version among them, and if
+// it differs from cssFloor change it here, in skill/design.md and in
+// docs/site/templates.md together. Then set floorReviewed to the day
+// you did it.
 const (
 	floorReviewed     = "2026-09-01"
 	floorReviewMonths = 9
@@ -90,7 +92,8 @@ func TestCSSFloorHasBeenReviewedRecently(t *testing.T) {
 	due := reviewed.AddDate(0, floorReviewMonths, 0)
 	if time.Now().After(due) {
 		t.Fatalf("the CSS floor was last reviewed %s and was due %s.\n"+
-			"Re-derive it — the features tokens.css and ui/themes/*.css use, highest engine "+
+			"Re-derive it — the features Fiesta's css/tokens.css "+
+			"and css/themes/*.css use, highest engine "+
 			"version among them — then update cssFloor, skill/design.md and docs/site/templates.md "+
 			"if it moved, and set floorReviewed to today. Do not bump the date alone; the date "+
 			"is the record that somebody looked.",

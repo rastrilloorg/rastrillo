@@ -493,6 +493,15 @@ type formView struct {
 // (displayHelper) adds to actionImportLines'.
 const currencyImport = "\t\"amadan.net/rastrillo/rastrillo/currency\"\n"
 
+// basepathImport is the import an action that hands its view a link
+// takes. Every link and form action a view renders goes through
+// basepath.Path, or a resource served under /acme links to the hub's
+// page of the same name. Headers stay app paths: the redirects after a
+// save and the JSON API's create Location (apigen's create) are
+// prefixed once by the base-path middleware, and wrapping them as well
+// would send the reader to /acme/acme/….
+const basepathImport = "\t\"amadan.net/rastrillo/rastrillo/basepath\"\n"
+
 // ── index.GET (List) ────────────────────────────────────────────────
 
 func actionIndexGET(r rastrillo.Resource, module string) string {
@@ -533,6 +542,7 @@ func actionIndexGET(r rastrillo.Resource, module string) string {
 	b.WriteString("\t\"strconv\"\n")
 	b.WriteString("\t\"strings\"\n\n")
 	b.WriteString(actionImportLines(r, false, showsMoney, true))
+	b.WriteString(basepathImport)
 	if showsMoney {
 		b.WriteString(currencyImport)
 	}
@@ -591,7 +601,7 @@ const pageSize = 10
 		subExpr = displayStmts(&b, "n", sub, "n.ID")
 	}
 	fmt.Fprintf(&b, `items = append(items, listRow{
-		Href: fmt.Sprintf(%q, n.ID),
+		Href: basepath.Path(r, fmt.Sprintf(%q, n.ID)),
 		Main: %s,
 		Sub:  %s,
 	})
@@ -605,19 +615,19 @@ var pageItems []listPageItem
 if show {
 	prev := listPageItem{Label: "Previous", Rel: "prev", Disabled: true}
 	if page > 1 {
-		prev = listPageItem{Label: "Previous", Rel: "prev", Href: href(` + searchExprForHref(searchDeclared) + `, carry, page-1)}
+		prev = listPageItem{Label: "Previous", Rel: "prev", Href: basepath.Path(r, href(` + searchExprForHref(searchDeclared) + `, carry, page-1))}
 	}
 	pageItems = append(pageItems, prev)
 	for n := 1; n <= totalPages; n++ {
 		if n == page {
 			pageItems = append(pageItems, listPageItem{Label: strconv.Itoa(n), Current: true})
 		} else {
-			pageItems = append(pageItems, listPageItem{Label: strconv.Itoa(n), Href: href(` + searchExprForHref(searchDeclared) + `, carry, n)})
+			pageItems = append(pageItems, listPageItem{Label: strconv.Itoa(n), Href: basepath.Path(r, href(` + searchExprForHref(searchDeclared) + `, carry, n))})
 		}
 	}
 	next := listPageItem{Label: "Next", Rel: "next", Disabled: true}
 	if page < totalPages {
-		next = listPageItem{Label: "Next", Rel: "next", Href: href(` + searchExprForHref(searchDeclared) + `, carry, page+1)}
+		next = listPageItem{Label: "Next", Rel: "next", Href: basepath.Path(r, href(` + searchExprForHref(searchDeclared) + `, carry, page+1))}
 	}
 	pageItems = append(pageItems, next)
 }
@@ -692,10 +702,10 @@ func filterViewStmts(r rastrillo.Resource, fv filterVar, values []string, search
 	fmt.Fprintf(&b, "SummaryKey: filter%sLabelKey(%s),\n", fv.Field, fv.Var)
 	fmt.Fprintf(&b, "AriaField:  %q,\n", resourceKey(r.Name, "field."+fv.Query))
 	b.WriteString("Items: []filterItem{\n")
-	fmt.Fprintf(&b, "{Href: filter%sHref(%s, \"\"), LabelKey: filter%sLabelKey(\"\"), Current: %s == \"\"},\n",
+	fmt.Fprintf(&b, "{Href: basepath.Path(r, filter%sHref(%s, \"\")), LabelKey: filter%sLabelKey(\"\"), Current: %s == \"\"},\n",
 		fv.Field, searchExpr, fv.Field, fv.Var)
 	for _, v := range values {
-		fmt.Fprintf(&b, "{Href: filter%sHref(%s, %q), LabelKey: filter%sLabelKey(%q), Current: %s == %q},\n",
+		fmt.Fprintf(&b, "{Href: basepath.Path(r, filter%sHref(%s, %q)), LabelKey: filter%sLabelKey(%q), Current: %s == %q},\n",
 			fv.Field, searchExpr, v, fv.Field, v, fv.Var, v)
 	}
 	b.WriteString("},\n}\n")
@@ -905,6 +915,7 @@ func actionShowGET(r rastrillo.Resource, module string) string {
 	b.WriteString("\t\"fmt\"\n")
 	b.WriteString("\t\"net/http\"\n\n")
 	b.WriteString(actionImportLines(r, false, showsMoney, true))
+	b.WriteString(basepathImport)
 	if showsMoney {
 		b.WriteString(currencyImport)
 	}
@@ -924,7 +935,7 @@ func actionShowGET(r rastrillo.Resource, module string) string {
 	fmt.Fprintf(&b, `
 view.Render(ctx, w, %q, http.StatusOK, showView{
 	%sTitle:    %s,
-	EditHref: fmt.Sprintf(%q, id),
+	EditHref: basepath.Path(r, fmt.Sprintf(%q, id)),
 	Fields:   %s,
 })
 }
@@ -949,6 +960,7 @@ func actionEditGET(r rastrillo.Resource, module string) string {
 	b.WriteString("\t\"fmt\"\n")
 	b.WriteString("\t\"net/http\"\n\n")
 	b.WriteString(actionImportLines(r, r.HasMoney(), len(money) > 0, true))
+	b.WriteString(basepathImport)
 	fmt.Fprintf(&b, "\t%s %q\n", ops, path)
 	b.WriteString(")\n")
 
@@ -965,9 +977,9 @@ view.Render(ctx, w, %q, http.StatusOK, formView{
 	if r.HasMoney() {
 		b.WriteString("Money: " + moneyMapLiteral(money) + ",\n")
 	}
-	fmt.Fprintf(&b, "BasicsAction: fmt.Sprintf(%q, id),\n", r.Route+"/%d/edit-basics")
+	fmt.Fprintf(&b, "BasicsAction: basepath.Path(r, fmt.Sprintf(%q, id)),\n", r.Route+"/%d/edit-basics")
 	if hasAdvanced {
-		fmt.Fprintf(&b, "AdvancedAction: fmt.Sprintf(%q, id),\n", r.Route+"/%d/edit-advanced")
+		fmt.Fprintf(&b, "AdvancedAction: basepath.Path(r, fmt.Sprintf(%q, id)),\n", r.Route+"/%d/edit-advanced")
 	}
 	b.WriteString("})\n}\n")
 
@@ -1035,6 +1047,9 @@ func updatePOST(r rastrillo.Resource, module string, group, other []rastrillo.Fi
 	// re-parse makes of a record that moved.
 	retries := len(money) > 0
 	b.WriteString(actionImportLines(r, needsForm, len(group) > 0 || groupHasValidation, groupHasValidation))
+	if groupHasValidation {
+		b.WriteString(basepathImport)
+	}
 	fmt.Fprintf(&b, "\t%s %q\n", ops, path)
 	b.WriteString(")\n")
 
@@ -1090,9 +1105,9 @@ func updatePOST(r rastrillo.Resource, module string, group, other []rastrillo.Fi
 		if r.HasMoney() {
 			b.WriteString("Money: " + moneyMapLiteral(formFields(r)) + ",\n")
 		}
-		fmt.Fprintf(&b, "BasicsAction: fmt.Sprintf(%q, id),\n", r.Route+"/%d/edit-basics")
+		fmt.Fprintf(&b, "BasicsAction: basepath.Path(r, fmt.Sprintf(%q, id)),\n", r.Route+"/%d/edit-basics")
 		if hasAdvanced {
-			fmt.Fprintf(&b, "AdvancedAction: fmt.Sprintf(%q, id),\n", r.Route+"/%d/edit-advanced")
+			fmt.Fprintf(&b, "AdvancedAction: basepath.Path(r, fmt.Sprintf(%q, id)),\n", r.Route+"/%d/edit-advanced")
 		}
 		b.WriteString("})\n}\n")
 	}
@@ -1203,6 +1218,7 @@ func actionDeleteGET(r rastrillo.Resource, module string) string {
 	b.WriteString("\t\"fmt\"\n")
 	b.WriteString("\t\"net/http\"\n\n")
 	b.WriteString(actionImportLines(r, false, showsMoney, true))
+	b.WriteString(basepathImport)
 	if showsMoney {
 		b.WriteString(currencyImport)
 	}
@@ -1218,8 +1234,8 @@ func actionDeleteGET(r rastrillo.Resource, module string) string {
 	fmt.Fprintf(&b, `
 view.Render(ctx, w, %q, http.StatusOK, confirmView{
 	%sTitle:      %s,
-	DeleteHref: fmt.Sprintf(%q, id),
-	CancelHref: fmt.Sprintf(%q, id),
+	DeleteHref: basepath.Path(r, fmt.Sprintf(%q, id)),
+	CancelHref: basepath.Path(r, fmt.Sprintf(%q, id)),
 })
 }
 `, r.Name+"/confirm", localizedField, title, r.Route+"/%d/delete", r.Route+"/%d")

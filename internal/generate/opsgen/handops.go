@@ -88,6 +88,37 @@ func HandFiles(appRoot string, rs []rastrillo.Resource) ([]Hand, error) {
 	return out, nil
 }
 
+// replacedActions is the actions of resource that have a hand-written
+// file under appRoot, found as HandFiles finds them, by listing the
+// directory, so that the descriptors Emit writes and the contract
+// agree on a file a stat would miss, such as a dangling symlink. The
+// files are not read, so Emit can say what types.go promises before
+// it writes anything.
+func replacedActions(appRoot, resource string) map[string]bool {
+	replaced := map[string]bool{}
+	dir := filepath.Join(appRoot, "ops", resource)
+	entries, _ := os.ReadDir(dir)
+	for _, entry := range entries {
+		if action, ok := opOf(entry.Name()); ok {
+			replaced[action] = true
+		}
+	}
+	return replaced
+}
+
+// Replaced is the actions of resource that hand lists, in the shape
+// Effects wants them: what the API contract needs to agree with the
+// descriptors Emit wrote.
+func Replaced(hand []Hand, resource string) map[string]bool {
+	replaced := map[string]bool{}
+	for _, file := range hand {
+		if file.Resource == resource {
+			replaced[file.Op] = true
+		}
+	}
+	return replaced
+}
+
 // opOf is the operation a filename replaces, by exact name: a
 // "create" or "create.go.bak" is refused rather than passed on, because
 // the copy reads create.go, and a file discovery accepted but the copy

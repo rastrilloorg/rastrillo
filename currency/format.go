@@ -9,6 +9,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
+	"amadan.net/rastrillo/rastrillo/internal/numeral"
 	"amadan.net/rastrillo/rastrillo/locales"
 )
 
@@ -81,7 +82,7 @@ func (l resolved) forCurrency(code string) moneyFmt {
 			m.group = o.Group
 		}
 	}
-	m.primary, m.secondary = grouping(m.standard)
+	m.primary, m.secondary = numeral.Grouping(m.standard)
 	return m
 }
 
@@ -101,25 +102,6 @@ func (m moneyFmt) pattern(sym string) string {
 		return m.alpha
 	}
 	return m.standard
-}
-
-// grouping reads the primary and secondary group sizes from a pattern's
-// integer part: "#,##,##0.00" is 3 then 2 (lakh).
-func grouping(pattern string) (int, int) {
-	pos, _, _ := strings.Cut(pattern, ";")
-	start := strings.IndexAny(pos, "#0,.")
-	end := strings.LastIndexAny(pos, "#0,.") + 1
-	intPart, _, _ := strings.Cut(pos[start:end], ".")
-	groups := strings.Split(intPart, ",")
-	if len(groups) < 2 {
-		return 0, 0
-	}
-	primary := len(groups[len(groups)-1])
-	secondary := primary
-	if len(groups) > 2 {
-		secondary = len(groups[len(groups)-2])
-	}
-	return primary, secondary
 }
 
 func symbol(l resolved, code string) string {
@@ -149,12 +131,7 @@ func splitDigits(minor int64, exp int) (string, string) {
 }
 
 func (l resolved) localDigits(s string) string {
-	return strings.Map(func(r rune) rune {
-		if r >= '0' && r <= '9' {
-			return l.digits[r-'0']
-		}
-		return r
-	}, s)
+	return numeral.LocalDigits(s, l.digits)
 }
 
 func isSZ(r rune) bool { return unicode.IsSymbol(r) || unicode.In(r, unicode.Z) }
@@ -187,7 +164,8 @@ func Format(locale string, minor int64, code string) (string, error) {
 	prefix, suffix := sub[:start], sub[end:]
 
 	whole, frac := splitDigits(minor, exp)
-	body := group(whole, mf.primary, mf.secondary, l.minGroup, mf.group)
+	sizes := [2]int{mf.primary, mf.secondary}
+	body := numeral.Group(whole, sizes, l.minGroup, mf.group)
 	if exp > 0 {
 		body += mf.decimal + frac
 	}
@@ -200,22 +178,6 @@ func Format(locale string, minor int64, code string) (string, error) {
 	}
 	repl := strings.NewReplacer("¤", sym, "-", l.Minus)
 	return repl.Replace(prefix) + body + repl.Replace(suffix), nil
-}
-
-func group(whole string, primary, secondary, minGroup int, sep string) string {
-	if primary == 0 || len(whole) < primary+minGroup {
-		return whole
-	}
-	parts := []string{whole[len(whole)-primary:]}
-	whole = whole[:len(whole)-primary]
-	for len(whole) > secondary {
-		parts = append([]string{whole[len(whole)-secondary:]}, parts...)
-		whole = whole[:len(whole)-secondary]
-	}
-	if whole != "" {
-		parts = append([]string{whole}, parts...)
-	}
-	return strings.Join(parts, sep)
 }
 
 // InputValue is the seed for an input: the locale's digits and currency

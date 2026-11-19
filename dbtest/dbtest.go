@@ -175,7 +175,9 @@ func (tp *Template) Remove() {
 // It is repeated rather than imported because db links GORM, and this
 // package is for apps that do not.
 func open(path string) (*sql.DB, error) {
-	d, err := sql.Open("sqlite", path+"?_pragma=busy_timeout(5000)&_pragma=journal_mode(WAL)&_pragma=foreign_keys(1)")
+	d, err := sql.Open("sqlite", path+"?_pragma=busy_timeout(5000)"+
+		"&_pragma=journal_mode(WAL)&_pragma=synchronous(NORMAL)"+
+		"&_pragma=foreign_keys(1)")
 	if err != nil {
 		return nil, err
 	}

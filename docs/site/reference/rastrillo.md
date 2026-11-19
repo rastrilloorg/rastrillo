@@ -48,6 +48,18 @@ app this way.
 app use [`db.Open`](/docs/reference/db), which returns the two-pool
 handle.
 
+```go
+func Origin(variable string, logger *slog.Logger) string
+```
+
+`Origin` is your app's external origin, which the CSRF check compares
+with and emailed links start with. It is the environment variable named
+`variable`, such as `NOTES_ORIGIN`. When that is unset on CARLOS, it is
+`https://$CARLOS_HOST`, the instance's own hostname, and the app logs at
+info level that it used it. Elsewhere it is `http://localhost:8080`,
+with a warning. Behind a custom domain or under a hub's `/<slug>`, set
+the variable: people reach the app at another host.
+
 `BuildVersion` is the version string `GET /api/version` reports,
 overridden at build time; it defaults to `"dev"`.
 
@@ -72,13 +84,22 @@ a boot error.
 settings that have to be right. Blank it before `Serve` when your app
 opened its own handle.
 
+**`DurableCommits`** — opens `DBPath` with `synchronous(FULL)` instead
+of `NORMAL`. SQLite syncs the WAL after each commit, helping preserve
+recent commits through a power loss or operating system crash. An app
+that opens its own handle passes
+[`db.DurableCommits()`](/docs/reference/db#durablecommits) to `db.Open`.
+
 **`Migrations`** — applied in order at boot, idempotently. This is the
 older additive-only mechanism. In a new app use
 [`migrate`](/docs/reference/migrate) instead.
 
-**`Socket`** and **`Addr`** — the platform's activation contract. Both
-empty, `Serve` checks for a systemd-activated listener (`LISTEN_FDS`)
-before falling back to `:8080`.
+**`Socket`** and **`Addr`** — the platform's activation contract. A
+systemd-activated listener (`LISTEN_FDS`) wins over both. Both empty,
+`Serve` listens on `:$PORT` when `PORT` is set, and refuses to start
+when it is not a port; otherwise on `:8080`.
+[Hosting elsewhere](/docs/hosting-elsewhere#where-the-app-listens) has
+the order.
 
 **`Locales`**, **`DefaultLocale`**, **`LocaleFS`** — the locale set and
 its catalogs.
@@ -98,13 +119,7 @@ spawns `<binary> sidecar run`. See [Agents](/docs/agents).
 the last request finishes and before the database closes, so work still
 running does not lose its database.
 
-**`ErrorPage`** — your own error page, for a failure your app never saw.
-The framework recovers a panicking handler outermost of all — outside
-the security headers, so outside your middleware too — logs the stack
-with a reference, and calls this to render the body at 500. Unset, the
-response is a plain "Something went wrong.". `http.ErrAbortHandler`
-goes straight back up, and a panic *after* the first byte still leaves a
-broken page: the status is long gone by then, exactly as in `net/http`.
+**`ErrorPage`**: your own error page, for a failure your app never saw. The framework recovers a panicking handler outside the security headers, so outside your middleware too. Only `BasePath` sits further out, so the error page still gets the request's base. It logs the stack with a reference and calls this to render the body at 500. Unset, the response is a plain "Something went wrong.". `http.ErrAbortHandler` goes straight back up, and a panic *after* the first byte still leaves a broken page: the status is long gone by then, exactly as in `net/http`.
 
 ```go
 type ErrorPageFunc func(w http.ResponseWriter, r *http.Request, status int, ref string)
@@ -124,11 +139,7 @@ the user saw to what you grep for. The alphabet has no `0`, `1`, `8` or
 `l` or a `B`. `view.Fail` mints one too; `NewRef` is exported for a
 hand-written handler doing the same job.
 
-**`NoSpeculationRules`**: turns off prerendering. By default every
-response names `SpeculationRulesPath`, where `Serve` answers with rules
-that prerender the navigation in this release's sidebar and console
-layouts. A content-security policy does not turn it off; this field
-does, or deleting the `Speculation-Rules` header in a handler.
+**`NoSpeculationRules`**: turns off prerendering. By default every response names `SpeculationRulesPath`, under the base path when there is one, where `Serve` answers with rules that prerender the navigation in this release's sidebar and console layouts. A content-security policy does not turn it off; this field does, or deleting the `Speculation-Rules` header in a handler.
 
 ```go
 const SpeculationRulesPath = "/_speculation-rules"
@@ -144,6 +155,12 @@ under `/` cannot be seen through the mux, so an app that routes
 
 ```go
 NameInstance bool
+```
+
+**`BasePath`**: serves your whole app under `/<slug>` on a shared product origin, such as `https://example.com/acme`. The framework's own routes, `/healthz` and `/api/version` among them, answer under it too. The zero value is off and costs nothing. Fill it with `basepath.FromEnv`, and set `DirectHost` in code: it is your app's choice. With `ServeDirect`, the instance's own hostname is read-only. `Handler` refuses a value `basepath` cannot serve. See [`basepath`](/docs/reference/basepath).
+
+```go
+BasePath basepath.Config
 ```
 
 ## Ctx and RenderFunc
@@ -214,6 +231,7 @@ const SchemeSwitchPath = "/_theme"
 ```go
 func FormatLocale(r *http.Request) string
 func (l *Locales) Negotiate(r *http.Request) string
+func (set *Locales) NegotiateHeader(header string) string
 func RetagOf(code string) (string, bool)
 func Retagged() map[string]string
 ```
@@ -228,6 +246,12 @@ default.
 request (path prefix, cookie, `Accept-Language`, default) without
 changing it. Use it where the middleware has not run, such as an error
 page after a panic.
+
+`Locales.NegotiateHeader` is the language an `Accept-Language` header
+asks for, or the default, ignoring the path prefix and the cookie. A
+one-language app that writes numbers and dates in each reader's own
+formats reads the browser's locale with it; see
+[Localization](/docs/localization#formats-for-the-browser-with-no-prefix-or-cookie).
 
 `RetagOf` and `Retagged` are the codes the framework moved: today only
 `pt`, now `pt-PT`. They are exported for the framework's own tools; see
@@ -280,6 +304,8 @@ caveats.
 ```go
 func NewAssets(fsys fs.FS) *Assets
 func (a *Assets) Path(name string) string
+func (a *Assets) Stylesheet(name string, hooks []string) string
+func (a *Assets) Has(name string) bool
 func (a *Assets) Handler() http.Handler
 ```
 
@@ -287,6 +313,13 @@ Fingerprints static files so they cache forever and still update on an
 ordinary reload. `Path` maps a file to a URL carrying its content hash;
 `Handler` serves it with an immutable `Cache-Control`. Mount at
 `GET /static/` with no `StripPrefix`. See [Assets](/docs/assets).
+
+`Stylesheet` returns the URL of a slice of a framework stylesheet, such
+as `static/tokens.css`: only the rules a page showing `hooks` can use,
+fingerprinted like `Path`'s URLs and served by `Handler`. For any other
+file, or one it cannot slice, it returns `Path(name)`. `Has` reports
+whether the app has the file. `ui.Pages` calls both when
+`PagesConfig.Assets` is set.
 
 ## Icons
 
@@ -325,6 +358,11 @@ type Actor struct {
 	Subject, Agent, Credential string
 	Access                     Access
 	Session, Harness           string
+	Grant                      *Grant
+}
+type Grant struct {
+	ID, Issuer, IdentityIssuer, Audience string
+	Teams, Scopes                        []string
 }
 func (a Actor) String() string
 func (a Actor) LogAttrs() []slog.Attr
@@ -340,11 +378,23 @@ acting for them (empty when they act directly), and `Credential` is the
 token's public ID (empty for a browser session). The zero `Actor` is the
 app itself. `Actor.String` is the audit form: `app`, `user:<subject>`,
 `user:<subject> token:<id>` or `agent:<name> for user:<subject>
-token:<id>`. It is what `eventlog` stores on every appended event, so a
-stream says who did what without importing this package.
-`Actor.LogAttrs` returns the same as `slog` attributes, plus
-`agent_session` and `agent_harness` when the client sent them.
-`Actor.IsToken` is true when `Credential` is set.
+token:<id>`, with ` grant:<id>` at the end when there is a grant. It is
+what `eventlog` stores on every appended event, so event readers can
+identify the actor without importing this package. `Actor.LogAttrs`
+returns the same as `slog` attributes, plus `agent_session` and
+`agent_harness` when the client sent them, and `grant_issuer`,
+`identity_issuer` and `grant_audience` for a grant. `Actor.IsToken` is
+true when `Credential` is set.
+
+`Grant` is nil for a browser session and a personal token. A verifier
+for a connection service's tokens sets it, and nothing else does. `ID`
+is the grant the token belongs to: revoking the grant ends every token
+under it. `Issuer` is the connection service that issued it,
+`IdentityIssuer` the identity provider that says who `Subject` is, and
+`Audience` the app the token is for. An empty `Teams` or `Scopes` means
+the grant names none. The framework records a grant and never reads
+`Teams` or `Scopes`; your `Authorize` does. [MCP](/docs/mcp) says what
+such a verifier must check.
 
 `ActorPhrase` is the words a page shows for an actor: nothing for the
 app, the person's name, or `Claude for Paul` for an agent. `name` turns

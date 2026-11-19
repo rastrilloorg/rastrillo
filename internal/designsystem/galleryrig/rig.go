@@ -1,10 +1,10 @@
 //go:build browser
 
-// Package galleryrig is the design-system gallery's shared drive
+// Package galleryrig is the Rastrillo components gallery's shared drive
 // equipment: the rendered tree served at its mount, frames waited on
 // until each shows its own document, and the other conditions that
 // internal/designsystem's browser tests and its sweep package both
-// need. A package rather than test files because two test packages use
+// need. A package rather than test files because several test packages use
 // it; browser-tagged like harness, so chromedp stays out of the
 // ordinary build graph. It imports nothing of the gallery's: the
 // gallery's own tests import it, and an import back would be a cycle,
@@ -15,79 +15,17 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
-	"path"
 	"sort"
-	"strings"
-	"sync"
 	"testing"
 	"time"
 
+	"github.com/chromedp/cdproto/cdp"
 	"github.com/chromedp/cdproto/emulation"
 	"github.com/chromedp/cdproto/page"
-	"github.com/chromedp/cdproto/runtime"
 	"github.com/chromedp/chromedp"
 
 	"amadan.net/rastrillo/rastrillo/harness"
 )
-
-// Tree serves a rendered tree at the mount its pages expect, and fails
-// the test that uses it if anything asked for a file the tree does not
-// have. Every URL in a page is absolute under the mount, so serving the
-// tree anywhere else would 404 the stylesheet and a drive would measure
-// an unstyled page; and a preview frame naming a missing file loads a
-// 404 page that settles, measures and scans like any other document, so
-// the miss has to be counted here.
-//
-// The failure is reported from t.Cleanup rather than from the request:
-// lazy frames can still be loading after the test function returns,
-// and t.Errorf from a server goroutine after that panics.
-func Tree(t *testing.T, files map[string][]byte, mountPrefix string) http.Handler {
-	t.Helper()
-	var mu sync.Mutex
-	var missing []string
-	t.Cleanup(func() {
-		mu.Lock()
-		defer mu.Unlock()
-		if len(missing) > 0 {
-			t.Errorf("the tree was asked for %d file(s) it does not have: %v", len(missing), missing)
-		}
-	})
-	return TreeRecording(t, files, mountPrefix, func(p string) {
-		mu.Lock()
-		missing = append(missing, p)
-		mu.Unlock()
-	})
-}
-
-// TreeRecording is Tree with each miss handed to the caller, so the
-// recording itself can be tested.
-func TreeRecording(t *testing.T, files map[string][]byte, mountPrefix string, miss func(path string)) http.Handler {
-	t.Helper()
-	types := map[string]string{
-		".html": "text/html; charset=utf-8",
-		".css":  "text/css; charset=utf-8",
-		".js":   "text/javascript; charset=utf-8",
-	}
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// The browser asks for /favicon.ico on its own; nothing outside
-		// the mount is the tree's to answer.
-		if !strings.HasPrefix(r.URL.Path, mountPrefix) {
-			http.NotFound(w, r)
-			return
-		}
-		name := strings.TrimPrefix(r.URL.Path, mountPrefix)
-		body, ok := files[name]
-		if !ok {
-			miss(r.URL.Path)
-			http.NotFound(w, r)
-			return
-		}
-		if ct, ok := types[path.Ext(name)]; ok {
-			w.Header().Set("Content-Type", ct)
-		}
-		w.Write(body)
-	})
-}
 
 // SettleFrames turns every preview frame eager and reports, for each
 // one, the address its src names (a fresh frame is about:blank for a
@@ -132,8 +70,8 @@ func Eagerly(t *testing.T, ctx context.Context, where string) {
 	}
 	read := func() reading {
 		t.Helper()
-		var raw string
-		if err := chromedp.Run(ctx, chromedp.Evaluate(SettleFrames, &raw)); err != nil {
+		raw, err := chromedp.Run(ctx, chromedp.Evaluate[string](SettleFrames))
+		if err != nil {
 			t.Fatalf("%s: loading the framed documents: %v", where, err)
 		}
 		var got reading
@@ -204,9 +142,9 @@ const SettleMobile = `(async () => {
 // MobileSettle runs SettleMobile and fails the leg if it times out.
 func MobileSettle(t *testing.T, ctx context.Context, where string) {
 	t.Helper()
-	var state string
-	if err := chromedp.Run(ctx, chromedp.Evaluate(SettleMobile, &state,
-		func(p *runtime.EvaluateParams) *runtime.EvaluateParams { return p.WithAwaitPromise(true) })); err != nil {
+	state, err := chromedp.Run(ctx, chromedp.Evaluate[string](SettleMobile,
+		chromedp.EvalAwaitPromise))
+	if err != nil {
 		t.Fatalf("%s: waiting for the Mobile layout: %v", where, err)
 	}
 	if state != "ok" {
@@ -217,9 +155,10 @@ func MobileSettle(t *testing.T, ctx context.Context, where string) {
 // AddInit runs js in every document the tab loads, before the page's
 // own scripts: the only way to stand in for an API a script reads at
 // DOMContentLoaded, such as the clipboard or a storage that throws.
-func AddInit(js string) chromedp.Action {
-	return chromedp.ActionFunc(func(ctx context.Context) error {
-		_, err := page.AddScriptToEvaluateOnNewDocument(js).Do(ctx)
+func AddInit(js string) chromedp.Action[chromedp.Void] {
+	return chromedp.Func(func(ctx context.Context, tab *chromedp.Target) error {
+		_, err := cdp.Call(ctx, tab, page.AddScriptToEvaluateOnNewDocument,
+			page.AddScriptToEvaluateOnNewDocumentParams{Source: js})
 		return err
 	})
 }
@@ -237,8 +176,7 @@ func Until(t *testing.T, ctx context.Context, where, expr string) {
 	deadline := time.Now().Add(10 * time.Second)
 	var last error
 	for {
-		var ok bool
-		err := chromedp.Run(ctx, chromedp.Evaluate(expr, &ok))
+		ok, err := chromedp.Run(ctx, chromedp.Evaluate[bool](expr))
 		if err == nil && ok {
 			return
 		}
@@ -276,7 +214,8 @@ func NoScripts(t *testing.T, parent context.Context) context.Context {
 	t.Helper()
 	ctx, cancel := chromedp.NewContext(parent)
 	t.Cleanup(cancel)
-	if err := chromedp.Run(ctx, emulation.SetScriptExecutionDisabled(true)); err != nil {
+	if _, err := chromedp.Call(ctx, emulation.SetScriptExecutionDisabled,
+		emulation.SetScriptExecutionDisabledParams{Value: true}); err != nil {
 		t.Fatalf("switching scripts off: %v", err)
 	}
 	return ctx
@@ -289,27 +228,14 @@ func NoScripts(t *testing.T, parent context.Context) context.Context {
 // a reading of the scripted page.
 func RequireScriptsOff(t *testing.T, ctx context.Context, where string) {
 	t.Helper()
-	var on bool
-	if err := chromedp.Run(ctx, chromedp.Evaluate(`document.documentElement.hasAttribute("data-rst-js")`, &on)); err != nil {
+	on, err := chromedp.Run(ctx, chromedp.Evaluate[bool](`document.documentElement.hasAttribute("data-rst-js")`))
+	if err != nil {
 		t.Fatalf("%s: reading data-rst-js: %v", where, err)
 	}
 	if on {
 		t.Fatalf("%s: data-rst-js is set; gallery.js ran even though this leg switched scripts off", where)
 	}
 }
-
-// WithoutAnchorPositioning replaces the page's tokens.css with a copy
-// whose anchor-positioning @supports condition can never hold, which is
-// what an engine without the feature gets: the menu panel positioned
-// absolutely under its summary instead of fixed against it.
-const WithoutAnchorPositioning = `(async () => {
-  const link = document.querySelector('link[href*="/tokens."][href$=".css"]');
-  const css = await (await fetch(link.href)).text();
-  const style = document.createElement("style");
-  style.textContent = css.replaceAll("@supports (position-area: block-end) and (position-try-fallbacks: flip-block)", "@supports (position-area: rastrillo-no-such-value)");
-  link.replaceWith(style);
-  return true;
-})()`
 
 // RequireAnchorPositioning is the control for every leg that runs with
 // and without the feature: the named menu panel computes position:
@@ -321,8 +247,8 @@ const WithoutAnchorPositioning = `(async () => {
 // not necessarily the one the leg is driving.
 func RequireAnchorPositioning(t *testing.T, ctx context.Context, where, selector string, want bool) {
 	t.Helper()
-	var pos string
-	if err := chromedp.Run(ctx, chromedp.Evaluate(`getComputedStyle(document.querySelector(`+jsString(selector)+`)).position`, &pos)); err != nil {
+	pos, err := chromedp.Run(ctx, chromedp.Evaluate[string](`getComputedStyle(document.querySelector(`+jsString(selector)+`)).position`))
+	if err != nil {
 		t.Fatalf("%s: reading the menu panel's position: %v", where, err)
 	}
 	if (pos == "fixed") != want {
@@ -358,8 +284,8 @@ func PhoneRig(t *testing.T, tree func() http.Handler, opts ...harness.Option) *h
 // clientWidth and layout agree.
 func RequireDrawnScrollbar(t *testing.T, ctx context.Context, where string) {
 	t.Helper()
-	var gutter float64
-	if err := chromedp.Run(ctx, chromedp.Evaluate(`innerWidth - document.documentElement.clientWidth`, &gutter)); err != nil {
+	gutter, err := chromedp.Run(ctx, chromedp.Evaluate[float64](`innerWidth - document.documentElement.clientWidth`))
+	if err != nil {
 		t.Fatalf("%s: measuring the scrollbar: %v", where, err)
 	}
 	if gutter <= 0 {
@@ -371,8 +297,8 @@ func RequireDrawnScrollbar(t *testing.T, ctx context.Context, where string) {
 // pointer would measure desktop sizes and pass.
 func RequireCoarse(t *testing.T, ctx context.Context) {
 	t.Helper()
-	var coarse bool
-	if err := chromedp.Run(ctx, chromedp.Evaluate(`matchMedia("(pointer: coarse)").matches`, &coarse)); err != nil {
+	coarse, err := chromedp.Run(ctx, chromedp.Evaluate[bool](`matchMedia("(pointer: coarse)").matches`))
+	if err != nil {
 		t.Fatalf("reading the pointer: %v", err)
 	}
 	if !coarse {
@@ -380,20 +306,19 @@ func RequireCoarse(t *testing.T, ctx context.Context) {
 	}
 }
 
-// SettleMotion waits out every finite animation and any view
-// transition: the shell slides between the index and a page, and the
-// row the reader came back to flashes. axe reading either mid-flight
-// measures colours at partial opacity that no reader sees once it has
-// landed.
+// SettleMotion waits out every finite animation and any view transition:
+// the shell slides between the index and a page, and the row the reader
+// came back to flashes. axe reading either mid-flight measures colours at
+// partial opacity that no reader sees once it has landed.
 func SettleMotion(t *testing.T, ctx context.Context, where string) {
 	t.Helper()
-	if err := chromedp.Run(ctx, chromedp.Evaluate(`(async () => {
+	if err := chromedp.Do(ctx, chromedp.Evaluate[chromedp.Void](`(async () => {
 	  if (document.activeViewTransition) await document.activeViewTransition.finished.catch(() => null);
 	  await Promise.all(document.getAnimations()
 	    .filter(a => a.effect && a.effect.getComputedTiming().endTime !== Infinity)
 	    .map(a => a.finished.catch(() => null)));
 	  return true;
-	})()`, nil, func(p *runtime.EvaluateParams) *runtime.EvaluateParams { return p.WithAwaitPromise(true) })); err != nil {
+	})()`, chromedp.EvalAwaitPromise)); err != nil {
 		t.Fatalf("%s: waiting for motion to end: %v", where, err)
 	}
 }
@@ -479,11 +404,10 @@ type HeightRow struct {
 
 // owed says why each page that is not a family page owes its sections.
 var owed = map[string]string{
-	"overview":   "the demo application is framed here",
-	"primitives": "every sample ui.Styleguide() ships has a section here",
-	"shells":     "every shell ui.LayoutNames() reports has a section here",
-	"screens":    "every screen screenDocs() ships has a section here",
-	"formats":    "every section formatDocs() ships has a sample here",
+	"overview": "the demo application is framed here",
+	"shells":   "every shell ui.LayoutNames() reports has a section here",
+	"screens":  "every screen screenDocs() ships has a section here",
+	"formats":  "every section formatDocs() ships has a sample here",
 }
 
 // HeightRows is the height drives' coverage table: each page kind in
@@ -508,7 +432,6 @@ func HeightRows(kinds []string, counts map[string]int) []HeightRow {
 // why, so a page kind that grows frames cannot go unmeasured: a kind in
 // neither table fails both height drives.
 var FramesNothing = map[string]string{
-	"tokens":          "a swatch grid and two scale tables; no preview frames",
 	"icons":           "inline SVG drawn directly on the page, not framed",
-	"getting-started": "prose, links and two source blocks",
+	"getting-started": "prose, a link to Fiesta and two source blocks",
 }

@@ -33,7 +33,17 @@ func swapTheme(t *testing.T, ctx context.Context, name string) {
 	if !ok {
 		t.Fatalf("no theme %q", name)
 	}
-	mustRun(t, ctx, chromedp.Evaluate(`(() => { const l = document.querySelector('link[href="/theme.css"]'); if (l) l.remove(); for (const s of document.querySelectorAll("style[data-swap]")) s.remove(); const s = document.createElement("style"); s.dataset.swap = "1"; s.textContent = `+jsStr(string(css))+`; document.head.append(s); return true; })()`, nil))
+	mustRun(t, ctx, chromedp.Evaluate[chromedp.Void](`(() => {
+		const l = document.querySelector('link[href="/theme.css"]');
+		if (l) l.remove();
+		for (const s of document.querySelectorAll("style[data-swap]"))
+			s.remove();
+		const s = document.createElement("style");
+		s.dataset.swap = "1";
+		s.textContent = `+jsStr(string(css))+`;
+		document.head.append(s);
+		return true;
+	})()`))
 }
 
 // daySwitchBody is a page with an on switch, an off switch and a
@@ -66,7 +76,7 @@ func TestTheSwitchTakesItsSizeFromTheTheme(t *testing.T) {
 			rig := sizingRig(t, coarse, map[string]string{"/": sizingDoc("switch size", daySwitchBody)})
 			ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
 			defer cancel()
-			mustRun(t, ctx, chromedp.EmulateViewport(800, 600), chromedp.Navigate(rig.Origin+"/"), chromedp.WaitVisible("#tb", chromedp.ByQuery))
+			mustRun(t, ctx, chromedp.EmulateViewport(800, 600), chromedp.Navigate(rig.Origin+"/"), chromedp.WaitVisible(chromedp.CSS("#tb")))
 			requirePointer(t, ctx, coarse)
 			still(t, ctx)
 			floor := computed(t, ctx, "#on", "min-block-size")
@@ -138,7 +148,7 @@ func TestTheTrackSitsInAndTheKnobLiftsOnHover(t *testing.T) {
 	rig := sizingRig(t, false, map[string]string{"/": sizingDoc("switch depth", daySwitchBody)}, harness.WithHover())
 	ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
 	defer cancel()
-	mustRun(t, ctx, chromedp.EmulateViewport(800, 600), chromedp.Navigate(rig.Origin+"/"), chromedp.WaitVisible("#tb", chromedp.ByQuery))
+	mustRun(t, ctx, chromedp.EmulateViewport(800, 600), chromedp.Navigate(rig.Origin+"/"), chromedp.WaitVisible(chromedp.CSS("#tb")))
 	still(t, ctx)
 	knob := func(sel string) string { return knobStyleOf(t, ctx, sel+" [rst-switch-track]", "box-shadow") }
 	track := func(sel string) string { return computed(t, ctx, sel+" [rst-switch-track]", "box-shadow") }
@@ -224,9 +234,13 @@ func TestTheTrackColourFollowsTheKnob(t *testing.T) {
 			rig := sizingRig(t, false, pages)
 			ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
 			defer cancel()
-			mustRun(t, ctx, chromedp.EmulateViewport(800, 600), chromedp.Navigate(rig.Origin+path), chromedp.WaitVisible("#tb", chromedp.ByQuery),
-				chromedp.Evaluate(`new Promise(r => document.readyState === "complete" ? r() : addEventListener("load", r, {once: true}))`, nil, awaitPromise),
-				emulation.SetTouchEmulationEnabled(true))
+			mustRun(t, ctx, chromedp.EmulateViewport(800, 600), chromedp.Navigate(rig.Origin+path), chromedp.WaitVisible(chromedp.CSS("#tb")),
+				chromedp.Evaluate[chromedp.Void](`new Promise(r =>
+					document.readyState === "complete" ? r()
+						: addEventListener("load", r, {once: true}))`,
+					awaitPromise),
+				send(emulation.SetTouchEmulationEnabled,
+					emulation.SetTouchEmulationEnabledParams{Enabled: true}))
 			sign := 1.0
 			if path == "/rtl" {
 				sign = -1
@@ -247,9 +261,13 @@ func TestTheTrackColourFollowsTheKnob(t *testing.T) {
 			// steps (the shim needs 4px before it takes the drag) and
 			// holds it there.
 			x := thumbAt(off, sign)
-			mustRun(t, ctx, input.DispatchTouchEvent(input.TouchStart, []*input.TouchPoint{{X: x, Y: off.Y}}))
+			mustRun(t, ctx, touchEvent(
+				input.DispatchTouchEventTypeTouchStart,
+				[]*input.TouchPoint{{X: x, Y: off.Y}}))
 			for _, o := range []float64{0.2, 0.4, 0.6} {
-				mustRun(t, ctx, input.DispatchTouchEvent(input.TouchMove, []*input.TouchPoint{{X: x + sign*o*off.Run, Y: off.Y}}))
+				mustRun(t, ctx, touchEvent(
+					input.DispatchTouchEventTypeTouchMove,
+					[]*input.TouchPoint{{X: x + sign*o*off.Run, Y: off.Y}}))
 			}
 			mustRun(t, ctx, chromedp.Sleep(100*time.Millisecond))
 			mid := read(t, ctx, "off")
@@ -263,7 +281,9 @@ func TestTheTrackColourFollowsTheKnob(t *testing.T) {
 			if want := mixed(t, offColour, onColour, share); !near(t, mid.Bg, want, 2) {
 				t.Errorf("mid-drag, knob %.2f across, the track is %s; want %s, that share of the way from %s to %s", share, canonColours(mid.Bg), want, offColour, onColour)
 			}
-			mustRun(t, ctx, input.DispatchTouchEvent(input.TouchEnd, nil), chromedp.Sleep(400*time.Millisecond))
+			mustRun(t, ctx,
+				touchEvent(input.DispatchTouchEventTypeTouchEnd, nil),
+				chromedp.Sleep(400*time.Millisecond))
 			if s := read(t, ctx, "off"); !s.Checked || canonColours(s.Bg) != onColour || math.Abs(s.X-sign*s.Run) > 0.5 {
 				t.Errorf("released at 60%%: checked %v, track %s, knob at %.1f; want on, %s, %.1f", s.Checked, canonColours(s.Bg), s.X, onColour, sign*s.Run)
 			}
@@ -274,8 +294,12 @@ func TestTheTrackColourFollowsTheKnob(t *testing.T) {
 			var pausedProps string
 			for _, id := range []string{"on", "head"} {
 				before := read(t, ctx, id)
-				mustRun(t, ctx, chromedp.Evaluate(`(() => { const l = document.getElementById(`+jsStr(id)+`), tr = l.querySelector("[rst-switch-track]"); l.querySelector("input").click();
-				  const as = document.getAnimations().filter(a => a.effect && a.effect.target === tr); as.forEach(a => { a.pause(); a.currentTime = 100; }); return as.map(a => a.transitionProperty).sort().join(" "); })()`, &pausedProps))
+				mustRun(t, ctx, harness.Into(&pausedProps,
+					chromedp.Evaluate[string](`(() => {
+						const l = document.getElementById(`+jsStr(id)+`),
+							tr = l.querySelector("[rst-switch-track]");
+						l.querySelector("input").click();
+				  const as = document.getAnimations().filter(a => a.effect && a.effect.target === tr); as.forEach(a => { a.pause(); a.currentTime = 100; }); return as.map(a => a.transitionProperty).sort().join(" "); })()`)))
 				if pausedProps != "--rst-switch-on --rst-switch-p" {
 					t.Errorf("#%s clicked: the track's running transitions are %q; want --rst-switch-on and --rst-switch-p", id, pausedProps)
 				}
@@ -287,7 +311,8 @@ func TestTheTrackColourFollowsTheKnob(t *testing.T) {
 				if want := mixed(t, offColour, onColour, share); !near(t, s.Bg, want, 2) {
 					t.Errorf("#%s paused 100ms into its toggle, knob %.2f across, the track is %s; want %s", id, share, canonColours(s.Bg), want)
 				}
-				mustRun(t, ctx, chromedp.Evaluate(`document.getAnimations().forEach(a => a.finish()), true`, nil))
+				mustRun(t, ctx, chromedp.Evaluate[chromedp.Void](
+					`document.getAnimations().forEach(a => a.finish()), true`))
 			}
 		})
 	}
@@ -316,16 +341,25 @@ func TestAReleasedKnobSettlesWithAFirmCurve(t *testing.T) {
 			ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
 			defer cancel()
 			if leg.reduce {
-				mustRun(t, ctx, emulation.SetEmulatedMedia().WithFeatures([]*emulation.MediaFeature{{Name: "prefers-reduced-motion", Value: "reduce"}}))
+				features := []*emulation.MediaFeature{
+					{Name: "prefers-reduced-motion", Value: "reduce"},
+				}
+				mustRun(t, ctx, send(emulation.SetEmulatedMedia,
+					emulation.SetEmulatedMediaParams{Features: features}))
 			}
-			mustRun(t, ctx, chromedp.EmulateViewport(800, 600), chromedp.Navigate(rig.Origin+leg.path), chromedp.WaitVisible("#tb", chromedp.ByQuery),
-				chromedp.Evaluate(`new Promise(r => document.readyState === "complete" ? r() : addEventListener("load", r, {once: true}))`, nil, awaitPromise))
+			mustRun(t, ctx, chromedp.EmulateViewport(800, 600), chromedp.Navigate(rig.Origin+leg.path), chromedp.WaitVisible(chromedp.CSS("#tb")),
+				chromedp.Evaluate[chromedp.Void](`new Promise(r =>
+					document.readyState === "complete" ? r()
+						: addEventListener("load", r, {once: true}))`,
+					awaitPromise))
 			sign := 1.0
 			if leg.path == "/rtl" {
 				sign = -1
 			}
-			mouse := func(typ input.MouseType, x, y float64) chromedp.Action {
-				return input.DispatchMouseEvent(typ, x, y).WithButton(input.Left).WithClickCount(1)
+			mouse := func(
+				typ input.DispatchMouseEventType, x, y float64,
+			) chromedp.Action[chromedp.Void] {
+				return chromedp.MouseEvent(typ, x, y, chromedp.ButtonLeft, chromedp.ClickCount(1))
 			}
 			// drag presses the knob where it rests, moves it through the
 			// shares of the travel given (toward on), reads the switch at
@@ -336,12 +370,15 @@ func TestAReleasedKnobSettlesWithAFirmCurve(t *testing.T) {
 				if s.Checked {
 					x += sign * s.Run
 				}
-				mustRun(t, ctx, mouse(input.MousePressed, x, s.Y))
+				mustRun(t, ctx, mouse(chromedp.MousePressed, x, s.Y))
 				for _, o := range shares {
-					mustRun(t, ctx, mouse(input.MouseMoved, thumbAt(s, sign)+sign*o*s.Run, s.Y))
+					mustRun(t, ctx, mouse(chromedp.MouseMoved,
+						thumbAt(s, sign)+sign*o*s.Run, s.Y))
 				}
 				mid = read(t, ctx, id)
-				mustRun(t, ctx, mouse(input.MouseReleased, thumbAt(s, sign)+sign*shares[len(shares)-1]*s.Run, s.Y))
+				last := shares[len(shares)-1]
+				mustRun(t, ctx, mouse(chromedp.MouseReleased,
+					thumbAt(s, sign)+sign*last*s.Run, s.Y))
 				dropped = read(t, ctx, id)
 				return
 			}
@@ -394,10 +431,35 @@ func TestAReleasedKnobSettlesWithAFirmCurve(t *testing.T) {
 			var props string
 			s := read(t, ctx, "off")
 			x := thumbAt(s, sign) + sign*s.Run
-			mustRun(t, ctx, mouse(input.MousePressed, x, s.Y), mouse(input.MouseMoved, thumbAt(s, sign)+sign*0.6*s.Run, s.Y), mouse(input.MouseMoved, thumbAt(s, sign)+sign*0.3*s.Run, s.Y))
-			mustRun(t, ctx, chromedp.Evaluate(`(() => { const tr = document.querySelector("#off [rst-switch-track]"); return new Promise(done => { document.addEventListener("pointerup", () => { requestAnimationFrame(() => { const as = document.getAnimations().filter(a => a.effect && a.effect.target === tr); as.forEach(a => { a.pause(); a.currentTime = 60; }); done(as.map(a => a.transitionProperty).sort().join(" ")); }); }, {once: true}); }); })()`, nil))
-			mustRun(t, ctx, mouse(input.MouseReleased, thumbAt(s, sign)+sign*0.3*s.Run, s.Y))
-			mustRun(t, ctx, chromedp.Evaluate(`(() => { const tr = document.querySelector("#off [rst-switch-track]"); const as = document.getAnimations().filter(a => a.effect && a.effect.target === tr); as.forEach(a => { a.pause(); a.currentTime = 60; }); return as.map(a => a.transitionProperty).sort().join(" "); })()`, &props))
+			trackStart := thumbAt(s, sign)
+			mustRun(t, ctx,
+				mouse(chromedp.MousePressed, x, s.Y),
+				mouse(chromedp.MouseMoved, trackStart+sign*0.6*s.Run, s.Y),
+				mouse(chromedp.MouseMoved, trackStart+sign*0.3*s.Run, s.Y))
+			mustRun(t, ctx, chromedp.Evaluate[chromedp.Void](`(() => {
+				const tr = document.querySelector("#off [rst-switch-track]");
+				return new Promise(done => {
+					document.addEventListener("pointerup", () => {
+						requestAnimationFrame(() => {
+							const as = document.getAnimations().filter(a =>
+								a.effect && a.effect.target === tr);
+							as.forEach(a => { a.pause(); a.currentTime = 60; });
+							done(as.map(a => a.transitionProperty)
+								.sort().join(" "));
+						});
+					}, {once: true});
+				});
+			})()`))
+			mustRun(t, ctx, mouse(chromedp.MouseReleased,
+				trackStart+sign*0.3*s.Run, s.Y))
+			mustRun(t, ctx, harness.Into(&props, chromedp.Evaluate[string](
+				`(() => {
+				const tr = document.querySelector("#off [rst-switch-track]");
+				const as = document.getAnimations()
+					.filter(a => a.effect && a.effect.target === tr);
+				as.forEach(a => { a.pause(); a.currentTime = 60; });
+				return as.map(a => a.transitionProperty).sort().join(" ");
+			})()`)))
 			if props != "--rst-switch-on --rst-switch-p" {
 				t.Errorf("released at 0.3 from on, the track's running transitions are %q; want --rst-switch-on and --rst-switch-p", props)
 			}
@@ -408,7 +470,8 @@ func TestAReleasedKnobSettlesWithAFirmCurve(t *testing.T) {
 			} else if want := mixed(t, offColour, onColour, share); !near(t, s.Bg, want, 2) {
 				t.Errorf("paused 60ms into the settle, knob %.2f across, the track is %s; want %s", share, canonColours(s.Bg), want)
 			}
-			mustRun(t, ctx, chromedp.Evaluate(`document.getAnimations().forEach(a => a.finish()), true`, nil))
+			mustRun(t, ctx, chromedp.Evaluate[chromedp.Void](
+				`document.getAnimations().forEach(a => a.finish()), true`))
 		})
 	}
 }
@@ -425,10 +488,19 @@ func TestAHoveredKnobPrintsNoShadow(t *testing.T) {
 	rig := sizingRig(t, false, map[string]string{"/": sizingDoc("switch print", daySwitchBody)}, harness.WithHover())
 	ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
 	defer cancel()
-	mustRun(t, ctx, emulation.SetEmulatedMedia().WithMedia("print"), chromedp.EmulateViewport(800, 600), chromedp.Navigate(rig.Origin+"/"), chromedp.WaitVisible("#tb", chromedp.ByQuery))
+	mustRun(t, ctx,
+		send(emulation.SetEmulatedMedia,
+			emulation.SetEmulatedMediaParams{Media: "print"}),
+		chromedp.EmulateViewport(800, 600),
+		chromedp.Navigate(rig.Origin+"/"),
+		chromedp.WaitVisible(chromedp.CSS("#tb")))
 	still(t, ctx)
 	var hov, print bool
-	mustRun(t, ctx, chromedp.Evaluate(`matchMedia("(hover: hover)").matches`, &hov), chromedp.Evaluate(`matchMedia("print").matches`, &print))
+	mustRun(t, ctx,
+		harness.Into(&hov,
+			chromedp.Evaluate[bool](`matchMedia("(hover: hover)").matches`)),
+		harness.Into(&print,
+			chromedp.Evaluate[bool](`matchMedia("print").matches`)))
 	if !hov || !print {
 		t.Fatalf("(hover: hover) %v, print %v; the hover rule would not apply and the drive would prove nothing", hov, print)
 	}
@@ -466,14 +538,19 @@ func TestATblockHeadDragsLikeASwitch(t *testing.T) {
 			rig := sizingRig(t, false, pages)
 			ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
 			defer cancel()
-			mustRun(t, ctx, chromedp.EmulateViewport(800, 600), chromedp.Navigate(rig.Origin+path), chromedp.WaitVisible("#tb", chromedp.ByQuery),
-				chromedp.Evaluate(`new Promise(r => document.readyState === "complete" ? r() : addEventListener("load", r, {once: true}))`, nil, awaitPromise))
+			mustRun(t, ctx, chromedp.EmulateViewport(800, 600), chromedp.Navigate(rig.Origin+path), chromedp.WaitVisible(chromedp.CSS("#tb")),
+				chromedp.Evaluate[chromedp.Void](`new Promise(r =>
+					document.readyState === "complete" ? r()
+						: addEventListener("load", r, {once: true}))`,
+					awaitPromise))
 			sign := 1.0
 			if path == "/rtl" {
 				sign = -1
 			}
-			mouse := func(typ input.MouseType, x, y float64) chromedp.Action {
-				return input.DispatchMouseEvent(typ, x, y).WithButton(input.Left).WithClickCount(1)
+			mouse := func(
+				typ input.DispatchMouseEventType, x, y float64,
+			) chromedp.Action[chromedp.Void] {
+				return chromedp.MouseEvent(typ, x, y, chromedp.ButtonLeft, chromedp.ClickCount(1))
 			}
 			offColour, onColour := canonColours(read(t, ctx, "off").Bg), canonColours(read(t, ctx, "on").Bg)
 			body := func() string { return computed(t, ctx, "#tb > [rst-tblock-body]", "display") }
@@ -487,12 +564,15 @@ func TestATblockHeadDragsLikeASwitch(t *testing.T) {
 				if s.Checked {
 					x += sign * s.Run
 				}
-				mustRun(t, ctx, mouse(input.MousePressed, x, s.Y))
+				mustRun(t, ctx, mouse(chromedp.MousePressed, x, s.Y))
 				for _, o := range shares {
-					mustRun(t, ctx, mouse(input.MouseMoved, thumbAt(s, sign)+sign*o*s.Run, s.Y))
+					mustRun(t, ctx, mouse(chromedp.MouseMoved,
+						thumbAt(s, sign)+sign*o*s.Run, s.Y))
 				}
 				mid = read(t, ctx, "head")
-				mustRun(t, ctx, mouse(input.MouseReleased, thumbAt(s, sign)+sign*shares[len(shares)-1]*s.Run, s.Y))
+				last := shares[len(shares)-1]
+				mustRun(t, ctx, mouse(chromedp.MouseReleased,
+					thumbAt(s, sign)+sign*last*s.Run, s.Y))
 				dropped = read(t, ctx, "head")
 				trans = computed(t, ctx, "#head [rst-switch-track]", "transition")
 				mustRun(t, ctx, chromedp.Sleep(400*time.Millisecond))
@@ -520,7 +600,10 @@ func TestATblockHeadDragsLikeASwitch(t *testing.T) {
 			}
 			s := read(t, ctx, "head")
 			x := thumbAt(s, sign) + sign*s.Run
-			mustRun(t, ctx, mouse(input.MousePressed, x, s.Y), mouse(input.MouseReleased, x, s.Y), chromedp.Sleep(400*time.Millisecond))
+			mustRun(t, ctx,
+				mouse(chromedp.MousePressed, x, s.Y),
+				mouse(chromedp.MouseReleased, x, s.Y),
+				chromedp.Sleep(400*time.Millisecond))
 			if s := read(t, ctx, "head"); s.Checked || s.Changes != 3 {
 				t.Errorf("%s: a tap on the head: checked %v, %d change events; want off, three", path, s.Checked, s.Changes)
 			}
@@ -541,11 +624,16 @@ func TestAToggleDuringASettleTakesItsOwnCurve(t *testing.T) {
 	rig := sizingRig(t, false, map[string]string{"/": sizingDoc("settle leak", daySwitchBody)})
 	ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
 	defer cancel()
-	mustRun(t, ctx, chromedp.EmulateViewport(800, 600), chromedp.Navigate(rig.Origin+"/"), chromedp.WaitVisible("#tb", chromedp.ByQuery),
-		chromedp.Evaluate(`new Promise(r => document.readyState === "complete" ? r() : addEventListener("load", r, {once: true}))`, nil, awaitPromise))
+	mustRun(t, ctx, chromedp.EmulateViewport(800, 600), chromedp.Navigate(rig.Origin+"/"), chromedp.WaitVisible(chromedp.CSS("#tb")),
+		chromedp.Evaluate[chromedp.Void](`new Promise(r =>
+			document.readyState === "complete" ? r()
+				: addEventListener("load", r, {once: true}))`,
+			awaitPromise))
 	const firm, toggle = "0.18s cubic-bezier(0.3, 0.9, 0.4, 1)", "0.24s cubic-bezier(0.22, 1, 0.36, 1)"
-	mouse := func(typ input.MouseType, x, y float64) chromedp.Action {
-		return input.DispatchMouseEvent(typ, x, y).WithButton(input.Left).WithClickCount(1)
+	mouse := func(
+		typ input.DispatchMouseEventType, x, y float64,
+	) chromedp.Action[chromedp.Void] {
+		return chromedp.MouseEvent(typ, x, y, chromedp.ButtonLeft, chromedp.ClickCount(1))
 	}
 	trans := func(id string) string { return computed(t, ctx, "#"+id+" [rst-switch-track]", "transition") }
 	// release drags the knob to share and lets go, reading at once.
@@ -555,15 +643,19 @@ func TestAToggleDuringASettleTakesItsOwnCurve(t *testing.T) {
 		if s.Checked {
 			x += s.Run
 		}
-		mustRun(t, ctx, mouse(input.MousePressed, x, s.Y), mouse(input.MouseMoved, thumbAt(s, 1)+0.5*s.Run, s.Y), mouse(input.MouseMoved, thumbAt(s, 1)+share*s.Run, s.Y),
-			mouse(input.MouseReleased, thumbAt(s, 1)+share*s.Run, s.Y))
+		mustRun(t, ctx,
+			mouse(chromedp.MousePressed, x, s.Y),
+			mouse(chromedp.MouseMoved, thumbAt(s, 1)+0.5*s.Run, s.Y),
+			mouse(chromedp.MouseMoved, thumbAt(s, 1)+share*s.Run, s.Y),
+			mouse(chromedp.MouseReleased, thumbAt(s, 1)+share*s.Run, s.Y))
 		return read(t, ctx, id)
 	}
 
 	if s := release("off", 0.4); !s.Settling || s.Checked || !strings.Contains(trans("off"), firm) {
 		t.Fatalf("released at 0.4: settling %v, checked %v, transition %q; want the mark, off, and the firm curve: the drive's premise", s.Settling, s.Checked, trans("off"))
 	}
-	mustRun(t, ctx, chromedp.Evaluate(`document.querySelector("#off input").click(), true`, nil))
+	mustRun(t, ctx, chromedp.Evaluate[chromedp.Void](
+		`document.querySelector("#off input").click(), true`))
 	if s := read(t, ctx, "off"); s.Settling || !s.Checked || !strings.Contains(trans("off"), toggle) {
 		t.Errorf("clicked while settling: settling %v, checked %v, transition %q; want the mark gone, on, and a toggle's %s", s.Settling, s.Checked, trans("off"), toggle)
 	}
@@ -582,7 +674,10 @@ func TestAToggleDuringASettleTakesItsOwnCurve(t *testing.T) {
 	if s := release("off", 0.8); !s.Settling || !s.Checked {
 		t.Fatalf("released at 0.8 from on: settling %v, checked %v; want the mark and still on", s.Settling, s.Checked)
 	}
-	mustRun(t, ctx, chromedp.Evaluate(`document.querySelector("#off input").focus(), true`, nil), chromedp.KeyEvent(" "))
+	mustRun(t, ctx,
+		chromedp.Evaluate[chromedp.Void](
+			`document.querySelector("#off input").focus(), true`),
+		chromedp.KeyEvent(" "))
 	if s := read(t, ctx, "off"); s.Settling || s.Checked || !strings.Contains(trans("off"), toggle) {
 		t.Errorf("Space while settling: settling %v, checked %v, transition %q; want the mark gone, off, and a toggle's %s", s.Settling, s.Checked, trans("off"), toggle)
 	}

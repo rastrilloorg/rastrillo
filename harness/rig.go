@@ -11,6 +11,7 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/chromedp/cdproto/cdp"
 	"github.com/chromedp/cdproto/network"
 	"github.com/chromedp/cdproto/page"
 	"github.com/chromedp/cdproto/webauthn"
@@ -44,6 +45,8 @@ type Rig struct {
 	allows      []allowance
 	allowedText []string
 	requests    map[network.RequestID]requestInfo
+
+	tap *protocolTap
 }
 
 // requestInfo is what a later network event cannot tell us about
@@ -149,7 +152,9 @@ func New(t *testing.T, build func(origin string) http.Handler, opts ...Option) *
 			"primaryPointerType=2,availablePointerTypes=2,primaryHoverType=1,availableHoverTypes=1"))
 	}
 	allocCtx, cancelAlloc := chromedp.NewExecAllocator(context.Background(), allocOpts...)
-	ctx, cancelCtx := chromedp.NewContext(allocCtx)
+	tap := &protocolTap{}
+	ctx, cancelCtx := chromedp.NewContext(allocCtx,
+		chromedp.WithDebugf(tap.read))
 	t.Cleanup(func() {
 		// Graceful browser shutdown first, then the contexts.
 		_ = chromedp.Cancel(ctx)
@@ -157,77 +162,139 @@ func New(t *testing.T, build func(origin string) http.Handler, opts ...Option) *
 		cancelAlloc()
 	})
 
-	r := &Rig{
+	rig := &Rig{
 		Origin:   origin,
 		t:        t,
 		ctx:      ctx,
 		requests: map[network.RequestID]requestInfo{},
+		tap:      tap,
 	}
 
 	// The browser probes /favicon.ico on its own; pre-allowed so every
 	// app doesn't rediscover it as a mysterious 404.
-	r.Allow(http.MethodGet, "/favicon.ico", http.StatusNotFound)
-	r.watch()
+	rig.Allow(http.MethodGet, "/favicon.ico", http.StatusNotFound)
+	rig.watch()
 
-	var boot []chromedp.Action
+	var boot []chromedp.Action[chromedp.Void]
 	if cfg.withoutPRFAtCreation {
 		// Registered before Navigate ever runs, in the main world —
 		// see WithoutPRFAtCreation for why this exact shape.
-		boot = append(boot, chromedp.ActionFunc(func(ctx context.Context) error {
-			_, err := page.AddScriptToEvaluateOnNewDocument(prfShimJS).Do(ctx)
-			return err
-		}))
+		boot = append(boot, chromedp.Func(addPRFShim))
 	}
-	boot = append(boot, chromedp.ActionFunc(func(ctx context.Context) error {
-		if err := webauthn.Enable().Do(ctx); err != nil {
-			return err
-		}
-		_, err := webauthn.AddVirtualAuthenticator(&webauthn.VirtualAuthenticatorOptions{
-			Protocol:            webauthn.AuthenticatorProtocolCtap2,
-			Ctap2version:        webauthn.Ctap2versionCtap21,
-			Transport:           webauthn.AuthenticatorTransportInternal,
-			HasResidentKey:      true,
-			HasUserVerification: true,
-			HasPrf:              true,
-			IsUserVerified:      true,
-			// The CDP default is true — but the Go zero value would
-			// silently send false, and every ceremony would hang
-			// waiting for a presence that never comes. Explicit,
-			// always: the one trap in an otherwise clean cdproto
-			// mapping.
-			AutomaticPresenceSimulation: true,
-		}).Do(ctx)
-		return err
-	}))
-	if err := chromedp.Run(r.ctx, boot...); err != nil {
+	boot = append(boot, chromedp.Func(addVirtualAuthenticator))
+	if err := chromedp.Do(rig.ctx, boot...); err != nil {
 		t.Fatalf("harness: browser boot: %v", err)
 	}
-	return r
+	return rig
+}
+
+func addPRFShim(ctx context.Context, target *chromedp.Target) error {
+	_, err := cdp.Call(ctx, target, page.AddScriptToEvaluateOnNewDocument,
+		page.AddScriptToEvaluateOnNewDocumentParams{Source: prfShimJS})
+	return err
+}
+
+func addVirtualAuthenticator(
+	ctx context.Context, target *chromedp.Target,
+) error {
+	_, err := cdp.Call(ctx, target, webauthn.Enable, webauthn.EnableParams{})
+	if err != nil {
+		return err
+	}
+	_, err = cdp.Call(ctx, target, webauthn.AddVirtualAuthenticator,
+		webauthn.AddVirtualAuthenticatorParams{
+			Options: &webauthn.VirtualAuthenticatorOptions{
+				Protocol:            webauthn.AuthenticatorProtocolCtap2,
+				Ctap2version:        webauthn.Ctap2versionCtap21,
+				Transport:           webauthn.AuthenticatorTransportInternal,
+				HasResidentKey:      true,
+				HasUserVerification: true,
+				HasPrf:              true,
+				IsUserVerified:      true,
+				// The CDP default is true — but the Go zero value would
+				// silently send false, and every ceremony would hang
+				// waiting for a presence that never comes. Explicit,
+				// always: the one trap in an otherwise clean cdproto
+				// mapping.
+				AutomaticPresenceSimulation: true,
+			},
+		})
+	return err
 }
 
 // Context is the rig's chromedp context — derive a deadline from it
 // when a drive wants a tighter budget than the test binary's own
 // timeout (ui/browser_test.go does exactly that).
-func (r *Rig) Context() context.Context { return r.ctx }
+func (rig *Rig) Context() context.Context { return rig.ctx }
 
-// Run drives the browser: plain chromedp actions, no DSL — kass's
+// Run drives the browser: plain chromedp steps, no DSL — kass's
 // drive is a top-to-bottom script and that is the right amount of
 // framework. On failure it fails the test with whatever was on
 // screen: a failure report always includes what a person would have
 // seen.
-func (r *Rig) Run(actions ...chromedp.Action) {
-	r.t.Helper()
-	if err := chromedp.Run(r.ctx, actions...); err != nil {
-		r.t.Fatalf("harness: drive failed: %v\non screen:\n%s", err, r.onScreen("body"))
+func (rig *Rig) Run(steps ...chromedp.Action[chromedp.Void]) {
+	rig.t.Helper()
+	if err := chromedp.Do(rig.ctx, steps...); err != nil {
+		rig.failDrive(err)
 	}
+}
+
+// Read runs one action that returns a value, such as chromedp.Text or
+// chromedp.Title, and returns the value. It fails the test the way
+// Run does.
+func Read[T any](rig *Rig, action chromedp.Action[T]) T {
+	rig.t.Helper()
+	value, err := chromedp.Run(rig.ctx, action)
+	if err != nil {
+		rig.failDrive(err)
+	}
+	return value
+}
+
+// Evaluate runs a JavaScript expression in the page and returns its
+// result decoded as T. It fails the test the way Run does.
+func Evaluate[T any](
+	rig *Rig, expression string, options ...chromedp.EvaluateOption,
+) T {
+	rig.t.Helper()
+	return Read(rig, chromedp.Evaluate[T](expression, options...))
+}
+
+// Into is a step that runs a value action and keeps what it returns in
+// out, so a script can read the page between its steps and still stop
+// at, and report, the first one that fails:
+//
+//	var count int
+//	rig.Run(
+//		chromedp.Click(chromedp.CSS("#more")),
+//		harness.Into(&count, chromedp.Evaluate[int](`rows.length`)),
+//		chromedp.Click(chromedp.CSS("#less")),
+//	)
+func Into[T any](
+	out *T, action chromedp.Action[T],
+) chromedp.Action[chromedp.Void] {
+	keep := func(ctx context.Context, target *chromedp.Target) error {
+		value, err := action(ctx, target)
+		if err != nil {
+			return err
+		}
+		*out = value
+		return nil
+	}
+	return chromedp.Func(keep)
+}
+
+func (rig *Rig) failDrive(err error) {
+	rig.t.Helper()
+	rig.t.Fatalf("harness: drive failed: %v\non screen:\n%s",
+		err, rig.onScreen("body"))
 }
 
 // onScreen reads sel's innerText (falling back to the whole body)
 // best-effort — it feeds failure reports, so its own errors are
 // swallowed rather than masking the real one.
-func (r *Rig) onScreen(sel string) string {
-	var text string
+func (rig *Rig) onScreen(sel string) string {
 	expr := fmt.Sprintf(`((document.querySelector(%q) ?? document.body)?.innerText ?? "")`, sel)
-	_ = chromedp.Run(r.ctx, chromedp.Evaluate(expr, &text))
+	text, _ := chromedp.Run(rig.ctx, chromedp.Evaluate[string](expr))
 	return text
 }

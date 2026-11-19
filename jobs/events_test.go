@@ -317,7 +317,7 @@ func TestEventsWithoutFlusherIs500(t *testing.T) {
 // a renderer can hand the partial its PushURL without building URLs of
 // its own.
 func TestPageDataCarriesEventsPath(t *testing.T) {
-	d := pageData(Job{ID: "abc"})
+	d := pageData(httptest.NewRequest("GET", "/jobs/abc", nil), Job{ID: "abc"})
 	if d.EventsPath != "/jobs/abc/events" {
 		t.Fatalf("EventsPath = %q, want /jobs/abc/events", d.EventsPath)
 	}

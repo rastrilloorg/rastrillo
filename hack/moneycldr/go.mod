@@ -1,6 +1,6 @@
 module amadan.net/rastrillo/rastrillo/hack/moneycldr
 
-go 1.25.0
+go 1.26.0
 
 require (
 	amadan.net/rastrillo/rastrillo v0.0.0
@@ -12,4 +12,4 @@ replace (
 	amadan.net/rastrillo/rastrillo/money => ../../money
 )
 
-require golang.org/x/text v0.39.0
+require golang.org/x/text v0.41.0

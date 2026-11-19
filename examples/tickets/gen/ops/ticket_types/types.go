@@ -251,6 +251,8 @@ func Descriptors() []op.Descriptor {
 			Operation:   ListOp,
 			Exposed:     false,
 			Description: "List ticket types, newest first.",
+			Destructive: false,
+			Idempotent:  true,
 			Input:       json.RawMessage(listArgsSchema),
 			Result:      json.RawMessage(listResultSchema),
 			Invoke: func(ctx context.Context, rc *rastrillo.Ctx, args json.RawMessage) (any, error) {
@@ -269,6 +271,8 @@ func Descriptors() []op.Descriptor {
 			Operation:   GetOp,
 			Exposed:     false,
 			Description: "Get one ticket type by id.",
+			Destructive: false,
+			Idempotent:  true,
 			Input:       json.RawMessage(idArgsSchema),
 			Result:      json.RawMessage(resultSchema),
 			Invoke: func(ctx context.Context, rc *rastrillo.Ctx, args json.RawMessage) (any, error) {
@@ -283,6 +287,8 @@ func Descriptors() []op.Descriptor {
 			Operation:   CreateOp,
 			Exposed:     false,
 			Description: "Create a ticket type.",
+			Destructive: false,
+			Idempotent:  false,
 			Input:       json.RawMessage(createArgsSchema),
 			Result:      json.RawMessage(resultSchema),
 			Invoke: func(ctx context.Context, rc *rastrillo.Ctx, args json.RawMessage) (any, error) {
@@ -298,6 +304,8 @@ func Descriptors() []op.Descriptor {
 			Exposed:     false,
 			Description: "Change a ticket type. Send only the fields to change.",
 			Confirm:     "Change ticket type {id}?",
+			Destructive: true,
+			Idempotent:  false,
 			Input:       json.RawMessage(updateArgsSchema),
 			Result:      json.RawMessage(resultSchema),
 			Invoke: func(ctx context.Context, rc *rastrillo.Ctx, args json.RawMessage) (any, error) {
@@ -313,6 +321,8 @@ func Descriptors() []op.Descriptor {
 			Exposed:     false,
 			Description: "Delete a ticket type.",
 			Confirm:     "Delete ticket type {id}?",
+			Destructive: true,
+			Idempotent:  true,
 			Input:       json.RawMessage(idArgsSchema),
 			Result:      json.RawMessage(noResultSchema),
 			Invoke: func(ctx context.Context, rc *rastrillo.Ctx, args json.RawMessage) (any, error) {

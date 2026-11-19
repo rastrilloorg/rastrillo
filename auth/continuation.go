@@ -77,6 +77,11 @@ func (a *Auth) pendingCookieValue(blob string) (string, error) {
 // alike. Callback and continuationFor both compare through this, so
 // both hash the same bytes sealContinuation did.
 func (a *Auth) pendingValue(r *http.Request) (string, bool) {
+	// A cookie issued before switching modes still holds an address.
+	if a.cfg.BlindLinks != nil {
+		return "", false
+	}
+
 	c, err := r.Cookie(a.pendingCookie())
 	if err != nil {
 		return "", false

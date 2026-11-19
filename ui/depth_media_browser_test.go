@@ -54,8 +54,9 @@ func knobStyle(t *testing.T, ctx context.Context, prop string) string {
 // knobStyleOf is knobStyle for the track the selector names.
 func knobStyleOf(t *testing.T, ctx context.Context, track, prop string) string {
 	t.Helper()
-	var out string
-	mustRun(t, ctx, chromedp.Evaluate(`getComputedStyle(document.querySelector(`+jsStr(track)+`), "::after").getPropertyValue(`+jsStr(prop)+`)`, &out))
+	out := mustRead(t, ctx, chromedp.Evaluate[string](
+		`getComputedStyle(document.querySelector(`+jsStr(track)+`), "::after")
+			.getPropertyValue(`+jsStr(prop)+`)`))
 	return strings.TrimSpace(out)
 }
 
@@ -64,8 +65,14 @@ func knobStyleOf(t *testing.T, ctx context.Context, track, prop string) string {
 // value rather than by a guess at the emulated palette.
 func systemColour(t *testing.T, ctx context.Context, name string) string {
 	t.Helper()
-	var out string
-	mustRun(t, ctx, chromedp.Evaluate(`(() => { const e = document.createElement("span"); e.style.backgroundColor = `+jsStr(name)+`; document.body.append(e); const v = getComputedStyle(e).backgroundColor; e.remove(); return v; })()`, &out))
+	out := mustRead(t, ctx, chromedp.Evaluate[string](`(() => {
+		const e = document.createElement("span");
+		e.style.backgroundColor = `+jsStr(name)+`;
+		document.body.append(e);
+		const v = getComputedStyle(e).backgroundColor;
+		e.remove();
+		return v;
+	})()`))
 	return strings.TrimSpace(out)
 }
 
@@ -75,23 +82,32 @@ func systemColour(t *testing.T, ctx context.Context, name string) string {
 // navigation, so a hover cell read after a resize sees no rule inside
 // a hover query and tests nothing; the query is checked here so that
 // cannot happen quietly.
-func emulatedRig(t *testing.T, media *emulation.SetEmulatedMediaParams, width, height int64) (*harness.Rig, context.Context) {
+func emulatedRig(t *testing.T, media emulation.SetEmulatedMediaParams, width, height int64) (*harness.Rig, context.Context) {
 	t.Helper()
 	rig := sizingRig(t, false, depthDoc(t), harness.WithHover())
 	ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
 	t.Cleanup(cancel)
-	mustRun(t, ctx, media, chromedp.EmulateViewport(width, height), chromedp.Navigate(rig.Origin+"/"), chromedp.WaitVisible("#field", chromedp.ByQuery))
+	mustRun(t, ctx, send(emulation.SetEmulatedMedia, media),
+		chromedp.EmulateViewport(width, height),
+		chromedp.Navigate(rig.Origin+"/"),
+		chromedp.WaitVisible(chromedp.CSS("#field")))
 	still(t, ctx)
-	var hov bool
-	mustRun(t, ctx, chromedp.Evaluate(`matchMedia("(hover: hover)").matches`, &hov))
+	hov := mustRead(t, ctx, chromedp.Evaluate[bool](
+		`matchMedia("(hover: hover)").matches`))
 	if !hov {
 		t.Fatalf("(hover: hover) is false at %dx%d; the hover cells would read nothing", width, height)
 	}
-	mustRun(t, ctx, chromedp.Evaluate(`document.getElementById("dd").open = true, true`, nil))
+	mustRun(t, ctx, chromedp.Evaluate[chromedp.Void](
+		`document.getElementById("dd").open = true, true`))
 	return rig, ctx
 }
 
-var forcedMedia = emulation.SetEmulatedMedia().WithFeatures([]*emulation.MediaFeature{{Name: "forced-colors", Value: "active"}, {Name: "prefers-color-scheme", Value: "light"}})
+var forcedMedia = emulation.SetEmulatedMediaParams{
+	Features: []*emulation.MediaFeature{
+		{Name: "forced-colors", Value: "active"},
+		{Name: "prefers-color-scheme", Value: "light"},
+	},
+}
 
 // TestForcedColoursKeepBordersAndSelection emulates forced colours
 // (C6): cards, buttons, fields and summaries have a visible border and
@@ -106,8 +122,8 @@ var forcedMedia = emulation.SetEmulatedMedia().WithFeatures([]*emulation.MediaFe
 // and left the text HighlightText, white on white.
 func TestForcedColoursKeepBordersAndSelection(t *testing.T) {
 	_, ctx := emulatedRig(t, forcedMedia, 1280, 900)
-	var active bool
-	mustRun(t, ctx, chromedp.Evaluate(`matchMedia("(forced-colors: active)").matches`, &active))
+	active := mustRead(t, ctx, chromedp.Evaluate[bool](
+		`matchMedia("(forced-colors: active)").matches`))
 	if !active {
 		t.Fatal("forced colours are not emulated; the leg would prove nothing")
 	}
@@ -204,7 +220,7 @@ func TestForcedColoursKeepBordersAndSelection(t *testing.T) {
 // page opened again, because day's dark press numbers sit in
 // :root[data-theme] blocks that outrank html:root.
 func TestPrintDrawsBordersAndNoDepth(t *testing.T) {
-	printMedia := emulation.SetEmulatedMedia().WithMedia("print")
+	printMedia := emulation.SetEmulatedMediaParams{Media: "print"}
 	rig, ctx := emulatedRig(t, printMedia, 1280, 900)
 	flat := func(ctx context.Context, sel string, states ...string) {
 		t.Helper()
@@ -275,12 +291,13 @@ func TestPrintDrawsBordersAndNoDepth(t *testing.T) {
 	// before it navigates, so the hover query is on again.
 	open(t, ctx, rig, "/", false)
 	still(t, ctx)
-	var hov bool
-	mustRun(t, ctx, chromedp.Evaluate(`matchMedia("(hover: hover)").matches`, &hov))
+	hov := mustRead(t, ctx, chromedp.Evaluate[bool](
+		`matchMedia("(hover: hover)").matches`))
 	if !hov {
 		t.Fatal("(hover: hover) is false after the second navigation; the dark press would be the tap rule alone")
 	}
-	mustRun(t, ctx, chromedp.Evaluate(`document.documentElement.dataset.theme = "dark", true`, nil))
+	mustRun(t, ctx, chromedp.Evaluate[chromedp.Void](
+		`document.documentElement.dataset.theme = "dark", true`))
 	flat(ctx, "#b-primary", "hover", "active")
 	flat(ctx, "#b-plain", "active")
 }

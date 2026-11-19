@@ -1,0 +1,6153 @@
+{
+  "Label": "1",
+  "Date": "2026-10-30",
+  "Model": "claude-opus-5-5",
+  "ClaudeVersion": "2.1.312",
+  "Rastrillo": "b79c48634fea (v0.30.0-bench.gb79c48634fea)",
+  "Platform": "Fly.io",
+  "Poll": "poll-2026-10-30.json",
+  "GettingStartedCommit": "e92307c11f5b",
+  "PolicyHash": "47433b0aa1a2018a",
+  "Config": "6f83fe9065e997ef",
+  "ControlConfig": "467c563229547d9d",
+  "Notes": [
+    "groomer control 1 was rerun: on its first attempt the model answered the bench's mapping question with no visible text, twice, so nothing was measured. That is the bench's question failing, not the agent's app. The first attempt deployed as groomer-r1-1; the rerun deploys as groomer-r1-1-a2.",
+    "The round was paused once between runs to fix that; the lending carlos 1 run it interrupted had only read documentation, and was rerun from the start.",
+    "lending control 1 and 2 and noticeboard control 2 were rerun after two bench faults: the mapping question, asked with no tools, came back empty three times running in two sessions; and a signed-in page with a #fragment on the URL sign-in had landed on was never reloaded, so nothing was measured. Both fixed in the bench; the reruns deploy under -a2 names.",
+    "lending control 2 was rerun a second time: its admin page has a password field for adding a member, and the bench judged sign-in by whether a password field was still in sight, so a working sign-in read as a failed one. Sign-in is now judged by the URL leaving the sign-in page; the rerun deploys as -a3."
+  ],
+  "Runs": [
+    {
+      "Brief": "groomer",
+      "Arm": "carlos",
+      "N": 1,
+      "App": "groomer-r1-1",
+      "RastrilloVersion": "v0.30.0-bench.gb79c48634fea",
+      "Build": {
+        "Complete": true,
+        "Messages": 131,
+        "ToolCalls": 136,
+        "NumTurns": 137,
+        "Output": 110278,
+        "CacheRead": 25104664,
+        "CacheWrite": 276708,
+        "CostUSD": 9.441204799999998,
+        "DurationS": 1156,
+        "FirstWriteContext": 139931,
+        "DeployMessages": 16,
+        "Stages": {
+          "app-read": {
+            "Messages": 15,
+            "ToolCalls": 16,
+            "Context": 2867922
+          },
+          "build-test": {
+            "Messages": 25,
+            "ToolCalls": 26,
+            "Context": 5587857
+          },
+          "deploy": {
+            "Messages": 14,
+            "ToolCalls": 14,
+            "Context": 3348241
+          },
+          "framework-read": {
+            "Messages": 24,
+            "ToolCalls": 24,
+            "Context": 2859483
+          },
+          "gates": {
+            "Messages": 2,
+            "ToolCalls": 2,
+            "Context": 542059
+          },
+          "live-check": {
+            "Messages": 2,
+            "ToolCalls": 2,
+            "Context": 572213
+          },
+          "other": {
+            "Messages": 14,
+            "ToolCalls": 13,
+            "Context": 3243176
+          },
+          "scaffold": {
+            "Messages": 4,
+            "ToolCalls": 4,
+            "Context": 410634
+          },
+          "screenshots": {
+            "Messages": 6,
+            "ToolCalls": 8,
+            "Context": 1471900
+          },
+          "write": {
+            "Messages": 25,
+            "ToolCalls": 27,
+            "Context": 4478149
+          }
+        }
+      },
+      "Followup": {
+        "Complete": true,
+        "Messages": 29,
+        "ToolCalls": 31,
+        "NumTurns": 34,
+        "Output": 35404,
+        "CacheRead": 9709412,
+        "CacheWrite": 65828,
+        "CostUSD": 3.1768184,
+        "DurationS": 402,
+        "FirstWriteContext": 313375,
+        "DeployMessages": 2,
+        "Stages": {
+          "app-read": {
+            "Messages": 5,
+            "ToolCalls": 5,
+            "Context": 1634527
+          },
+          "build-test": {
+            "Messages": 2,
+            "ToolCalls": 2,
+            "Context": 629960
+          },
+          "deploy": {
+            "Messages": 2,
+            "ToolCalls": 2,
+            "Context": 699047
+          },
+          "framework-read": {
+            "Messages": 2,
+            "ToolCalls": 3,
+            "Context": 622975
+          },
+          "gates": {
+            "Messages": 1,
+            "ToolCalls": 1,
+            "Context": 357252
+          },
+          "other": {
+            "Messages": 4,
+            "ToolCalls": 3,
+            "Context": 1382976
+          },
+          "screenshots": {
+            "Messages": 7,
+            "ToolCalls": 9,
+            "Context": 2437775
+          },
+          "write": {
+            "Messages": 6,
+            "ToolCalls": 6,
+            "Context": 2010786
+          }
+        }
+      },
+      "Measured": [
+        {
+          "Pages": [
+            {
+              "Role": "home",
+              "URL": "https://groomer-r1-1.bdf.oncarlos.com/",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 83592,
+                  "html": 2199,
+                  "js": 79201,
+                  "other": 565
+                },
+                "Decoded": {
+                  "css": 316818,
+                  "html": 5524,
+                  "js": 235607,
+                  "other": 402
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 96,
+                "performance": 100,
+                "seo": 90
+              }
+            },
+            {
+              "Role": "book",
+              "URL": "https://groomer-r1-1.bdf.oncarlos.com/book/2",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 83615,
+                  "html": 1835,
+                  "js": 79201,
+                  "other": 542
+                },
+                "Decoded": {
+                  "css": 316818,
+                  "html": 4873,
+                  "js": 235607,
+                  "other": 402
+                }
+              },
+              "Axe": {
+                "moderate": 1
+              },
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 96,
+                "performance": 100,
+                "seo": 90
+              }
+            },
+            {
+              "Role": "signin",
+              "URL": "https://groomer-r1-1.bdf.oncarlos.com/signin",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 83560,
+                  "html": 2444,
+                  "js": 87885,
+                  "other": 542
+                },
+                "Decoded": {
+                  "css": 316818,
+                  "html": 5998,
+                  "js": 256384,
+                  "other": 402
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 96,
+                "performance": 100,
+                "seo": 90
+              }
+            },
+            {
+              "Role": "owner",
+              "URL": "https://groomer-r1-1.bdf.oncarlos.com/owner/bookings",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 83487,
+                  "html": 1607,
+                  "js": 79039,
+                  "other": 413
+                },
+                "Decoded": {
+                  "css": 316818,
+                  "html": 4937,
+                  "js": 235607,
+                  "other": 383
+                }
+              },
+              "Axe": {},
+              "Lighthouse": null
+            }
+          ],
+          "Headers": {
+            "content-security-policy": "default-src 'self'; style-src 'self' 'unsafe-hashes' 'sha256-yJxAE4rjdcckohdlnvecSporPcqS9xOaA4hJxi87LMc='; img-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
+            "frame-ancestors": "frame-ancestors 'none'",
+            "referrer-policy": "strict-origin-when-cross-origin",
+            "strict-transport-security": "max-age=31536000",
+            "x-content-type-options": "nosniff",
+            "x-frame-options": "DENY"
+          },
+          "DeployOK": true,
+          "Failures": [
+            "signin: requests still open after 30s; weight counts what finished"
+          ]
+        },
+        {
+          "Pages": [
+            {
+              "Role": "home",
+              "URL": "https://groomer-r1-1.bdf.oncarlos.com/",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 86150,
+                  "html": 4336,
+                  "js": 79201,
+                  "other": 565
+                },
+                "Decoded": {
+                  "css": 329422,
+                  "html": 15118,
+                  "js": 235607,
+                  "other": 402
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 96,
+                "performance": 100,
+                "seo": 100
+              }
+            },
+            {
+              "Role": "book",
+              "URL": "https://groomer-r1-1.bdf.oncarlos.com/book/1",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 86173,
+                  "html": 2141,
+                  "js": 79201,
+                  "other": 542
+                },
+                "Decoded": {
+                  "css": 329422,
+                  "html": 6021,
+                  "js": 235607,
+                  "other": 402
+                }
+              },
+              "Axe": {
+                "moderate": 1
+              },
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 96,
+                "performance": 100,
+                "seo": 100
+              }
+            },
+            {
+              "Role": "signin",
+              "URL": "https://groomer-r1-1.bdf.oncarlos.com/signin",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 86173,
+                  "html": 2685,
+                  "js": 87830,
+                  "other": 542
+                },
+                "Decoded": {
+                  "css": 329422,
+                  "html": 6994,
+                  "js": 256384,
+                  "other": 402
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 96,
+                "performance": 99,
+                "seo": 100
+              }
+            },
+            {
+              "Role": "owner",
+              "URL": "https://groomer-r1-1.bdf.oncarlos.com/owner/bookings",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 85936,
+                  "html": 1888,
+                  "js": 78985,
+                  "other": 413
+                },
+                "Decoded": {
+                  "css": 329422,
+                  "html": 5933,
+                  "js": 235607,
+                  "other": 383
+                }
+              },
+              "Axe": {},
+              "Lighthouse": null
+            }
+          ],
+          "Headers": {
+            "content-security-policy": "default-src 'self'; style-src 'self' 'unsafe-hashes' 'sha256-yJxAE4rjdcckohdlnvecSporPcqS9xOaA4hJxi87LMc='; img-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
+            "frame-ancestors": "frame-ancestors 'none'",
+            "referrer-policy": "strict-origin-when-cross-origin",
+            "strict-transport-security": "max-age=31536000",
+            "x-content-type-options": "nosniff",
+            "x-frame-options": "DENY"
+          },
+          "DeployOK": true,
+          "Failures": [
+            "signin: requests still open after 30s; weight counts what finished"
+          ]
+        }
+      ],
+      "AgentFailures": null,
+      "ReusedFrom": ""
+    },
+    {
+      "Brief": "groomer",
+      "Arm": "carlos",
+      "N": 2,
+      "App": "groomer-r1-2",
+      "RastrilloVersion": "v0.30.0-bench.gb79c48634fea",
+      "Build": {
+        "Complete": true,
+        "Messages": 106,
+        "ToolCalls": 114,
+        "NumTurns": 115,
+        "Output": 89384,
+        "CacheRead": 20330534,
+        "CacheWrite": 268953,
+        "CostUSD": 8.0062588,
+        "DurationS": 1154,
+        "FirstWriteContext": 148365,
+        "DeployMessages": 14,
+        "Stages": {
+          "app-read": {
+            "Messages": 7,
+            "ToolCalls": 7,
+            "Context": 1313770
+          },
+          "build-test": {
+            "Messages": 17,
+            "ToolCalls": 17,
+            "Context": 3360480
+          },
+          "deploy": {
+            "Messages": 11,
+            "ToolCalls": 11,
+            "Context": 2792950
+          },
+          "framework-read": {
+            "Messages": 26,
+            "ToolCalls": 27,
+            "Context": 3596901
+          },
+          "gates": {
+            "Messages": 6,
+            "ToolCalls": 6,
+            "Context": 1575985
+          },
+          "live-check": {
+            "Messages": 3,
+            "ToolCalls": 3,
+            "Context": 832636
+          },
+          "other": {
+            "Messages": 11,
+            "ToolCalls": 11,
+            "Context": 2491697
+          },
+          "scaffold": {
+            "Messages": 2,
+            "ToolCalls": 2,
+            "Context": 107842
+          },
+          "screenshots": {
+            "Messages": 2,
+            "ToolCalls": 5,
+            "Context": 510533
+          },
+          "write": {
+            "Messages": 21,
+            "ToolCalls": 25,
+            "Context": 4016905
+          }
+        }
+      },
+      "Followup": {
+        "Complete": true,
+        "Messages": 32,
+        "ToolCalls": 33,
+        "NumTurns": 36,
+        "Output": 24087,
+        "CacheRead": 10336174,
+        "CacheWrite": 57296,
+        "CostUSD": 3.0075988000000002,
+        "DurationS": 311,
+        "FirstWriteContext": 300663,
+        "DeployMessages": 1,
+        "Stages": {
+          "app-read": {
+            "Messages": 3,
+            "ToolCalls": 3,
+            "Context": 939506
+          },
+          "build-test": {
+            "Messages": 6,
+            "ToolCalls": 6,
+            "Context": 1985763
+          },
+          "deploy": {
+            "Messages": 1,
+            "ToolCalls": 1,
+            "Context": 341583
+          },
+          "framework-read": {
+            "Messages": 5,
+            "ToolCalls": 5,
+            "Context": 1616244
+          },
+          "gates": {
+            "Messages": 2,
+            "ToolCalls": 2,
+            "Context": 677778
+          },
+          "other": {
+            "Messages": 5,
+            "ToolCalls": 4,
+            "Context": 1631322
+          },
+          "screenshots": {
+            "Messages": 3,
+            "ToolCalls": 4,
+            "Context": 980170
+          },
+          "write": {
+            "Messages": 7,
+            "ToolCalls": 8,
+            "Context": 2221168
+          }
+        }
+      },
+      "Measured": [
+        {
+          "Pages": [
+            {
+              "Role": "home",
+              "URL": "https://groomer-r1-2.bdf.oncarlos.com/",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 83290,
+                  "html": 1824,
+                  "js": 79147,
+                  "other": 542
+                },
+                "Decoded": {
+                  "css": 315851,
+                  "html": 4187,
+                  "js": 235607,
+                  "other": 402
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 96,
+                "performance": 100,
+                "seo": 90
+              }
+            },
+            {
+              "Role": "book",
+              "URL": "https://groomer-r1-2.bdf.oncarlos.com/book/1",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 83313,
+                  "html": 1836,
+                  "js": 79147,
+                  "other": 542
+                },
+                "Decoded": {
+                  "css": 315851,
+                  "html": 4352,
+                  "js": 235607,
+                  "other": 402
+                }
+              },
+              "Axe": {
+                "moderate": 1
+              },
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 96,
+                "performance": 100,
+                "seo": 90
+              }
+            },
+            {
+              "Role": "signin",
+              "URL": "https://groomer-r1-2.bdf.oncarlos.com/signin",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 83290,
+                  "html": 2100,
+                  "js": 79147,
+                  "other": 565
+                },
+                "Decoded": {
+                  "css": 315851,
+                  "html": 5092,
+                  "js": 235607,
+                  "other": 402
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 96,
+                "performance": 100,
+                "seo": 90
+              }
+            },
+            {
+              "Role": "owner",
+              "URL": "https://groomer-r1-2.bdf.oncarlos.com/admin/bookings",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 83187,
+                  "html": 1607,
+                  "js": 78985,
+                  "other": 413
+                },
+                "Decoded": {
+                  "css": 315851,
+                  "html": 5016,
+                  "js": 235607,
+                  "other": 383
+                }
+              },
+              "Axe": {},
+              "Lighthouse": null
+            }
+          ],
+          "Headers": {
+            "content-security-policy": "default-src 'self'; style-src 'self' 'unsafe-hashes' 'sha256-yJxAE4rjdcckohdlnvecSporPcqS9xOaA4hJxi87LMc='; img-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
+            "frame-ancestors": "frame-ancestors 'none'",
+            "referrer-policy": "strict-origin-when-cross-origin",
+            "strict-transport-security": "max-age=31536000",
+            "x-content-type-options": "nosniff",
+            "x-frame-options": "DENY"
+          },
+          "DeployOK": true,
+          "Failures": null
+        },
+        {
+          "Pages": [
+            {
+              "Role": "home",
+              "URL": "https://groomer-r1-2.bdf.oncarlos.com/",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 85640,
+                  "html": 4143,
+                  "js": 79201,
+                  "other": 881
+                },
+                "Decoded": {
+                  "css": 325472,
+                  "html": 13653,
+                  "js": 235607,
+                  "other": 742
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 100,
+                "performance": 100,
+                "seo": 100
+              }
+            },
+            {
+              "Role": "book",
+              "URL": "https://groomer-r1-2.bdf.oncarlos.com/book/1",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 85640,
+                  "html": 2125,
+                  "js": 79224,
+                  "other": 881
+                },
+                "Decoded": {
+                  "css": 325472,
+                  "html": 5525,
+                  "js": 235607,
+                  "other": 742
+                }
+              },
+              "Axe": {
+                "moderate": 1
+              },
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 100,
+                "performance": 100,
+                "seo": 100
+              }
+            },
+            {
+              "Role": "signin",
+              "URL": "https://groomer-r1-2.bdf.oncarlos.com/signin",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 85640,
+                  "html": 2388,
+                  "js": 79224,
+                  "other": 881
+                },
+                "Decoded": {
+                  "css": 325472,
+                  "html": 6256,
+                  "js": 235607,
+                  "other": 742
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 100,
+                "performance": 100,
+                "seo": 100
+              }
+            },
+            {
+              "Role": "owner",
+              "URL": "https://groomer-r1-2.bdf.oncarlos.com/admin/bookings",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 85512,
+                  "html": 1899,
+                  "js": 79039,
+                  "other": 804
+                },
+                "Decoded": {
+                  "css": 325472,
+                  "html": 6180,
+                  "js": 235607,
+                  "other": 742
+                }
+              },
+              "Axe": {},
+              "Lighthouse": null
+            }
+          ],
+          "Headers": {
+            "content-security-policy": "default-src 'self'; style-src 'self' 'unsafe-hashes' 'sha256-yJxAE4rjdcckohdlnvecSporPcqS9xOaA4hJxi87LMc='; img-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
+            "frame-ancestors": "frame-ancestors 'none'",
+            "referrer-policy": "strict-origin-when-cross-origin",
+            "strict-transport-security": "max-age=31536000",
+            "x-content-type-options": "nosniff",
+            "x-frame-options": "DENY"
+          },
+          "DeployOK": true,
+          "Failures": null
+        }
+      ],
+      "AgentFailures": null,
+      "ReusedFrom": ""
+    },
+    {
+      "Brief": "groomer",
+      "Arm": "carlos",
+      "N": 3,
+      "App": "groomer-r1-3",
+      "RastrilloVersion": "v0.30.0-bench.gb79c48634fea",
+      "Build": {
+        "Complete": true,
+        "Messages": 110,
+        "ToolCalls": 111,
+        "NumTurns": 112,
+        "Output": 103697,
+        "CacheRead": 21354551,
+        "CacheWrite": 274820,
+        "CostUSD": 8.5442902,
+        "DurationS": 1021,
+        "FirstWriteContext": 177555,
+        "DeployMessages": 15,
+        "Stages": {
+          "app-read": {
+            "Messages": 7,
+            "ToolCalls": 7,
+            "Context": 963096
+          },
+          "build-test": {
+            "Messages": 14,
+            "ToolCalls": 14,
+            "Context": 3217062
+          },
+          "deploy": {
+            "Messages": 12,
+            "ToolCalls": 12,
+            "Context": 2368824
+          },
+          "framework-read": {
+            "Messages": 22,
+            "ToolCalls": 23,
+            "Context": 2947076
+          },
+          "gates": {
+            "Messages": 6,
+            "ToolCalls": 6,
+            "Context": 1344213
+          },
+          "live-check": {
+            "Messages": 3,
+            "ToolCalls": 3,
+            "Context": 865087
+          },
+          "other": {
+            "Messages": 17,
+            "ToolCalls": 17,
+            "Context": 3851761
+          },
+          "scaffold": {
+            "Messages": 2,
+            "ToolCalls": 2,
+            "Context": 91151
+          },
+          "write": {
+            "Messages": 27,
+            "ToolCalls": 27,
+            "Context": 5981321
+          }
+        }
+      },
+      "Followup": {
+        "Complete": true,
+        "Messages": 26,
+        "ToolCalls": 26,
+        "NumTurns": 29,
+        "Output": 27090,
+        "CacheRead": 8402902,
+        "CacheWrite": 52809,
+        "CostUSD": 2.6450603999999998,
+        "DurationS": 322,
+        "FirstWriteContext": 311080,
+        "DeployMessages": 2,
+        "Stages": {
+          "app-read": {
+            "Messages": 6,
+            "ToolCalls": 6,
+            "Context": 1855795
+          },
+          "build-test": {
+            "Messages": 5,
+            "ToolCalls": 5,
+            "Context": 1639616
+          },
+          "deploy": {
+            "Messages": 2,
+            "ToolCalls": 2,
+            "Context": 687461
+          },
+          "gates": {
+            "Messages": 1,
+            "ToolCalls": 1,
+            "Context": 342479
+          },
+          "other": {
+            "Messages": 2,
+            "ToolCalls": 1,
+            "Context": 643646
+          },
+          "screenshots": {
+            "Messages": 4,
+            "ToolCalls": 5,
+            "Context": 1345365
+          },
+          "write": {
+            "Messages": 6,
+            "ToolCalls": 6,
+            "Context": 1941401
+          }
+        }
+      },
+      "Measured": [
+        {
+          "Pages": [
+            {
+              "Role": "home",
+              "URL": "https://groomer-r1-3.bdf.oncarlos.com/",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 83427,
+                  "html": 1971,
+                  "js": 79201,
+                  "other": 542
+                },
+                "Decoded": {
+                  "css": 315872,
+                  "html": 4814,
+                  "js": 235607,
+                  "other": 402
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 96,
+                "performance": 100,
+                "seo": 90
+              }
+            },
+            {
+              "Role": "book",
+              "URL": "https://groomer-r1-3.bdf.oncarlos.com/book/1",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 83450,
+                  "html": 1726,
+                  "js": 79201,
+                  "other": 542
+                },
+                "Decoded": {
+                  "css": 315872,
+                  "html": 4032,
+                  "js": 235607,
+                  "other": 402
+                }
+              },
+              "Axe": {
+                "moderate": 1
+              },
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 96,
+                "performance": 100,
+                "seo": 90
+              }
+            },
+            {
+              "Role": "signin",
+              "URL": "https://groomer-r1-3.bdf.oncarlos.com/signin",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 83395,
+                  "html": 2292,
+                  "js": 87885,
+                  "other": 542
+                },
+                "Decoded": {
+                  "css": 315872,
+                  "html": 5498,
+                  "js": 256384,
+                  "other": 402
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 96,
+                "performance": 100,
+                "seo": 90
+              }
+            },
+            {
+              "Role": "owner",
+              "URL": "https://groomer-r1-3.bdf.oncarlos.com/bookings",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 83325,
+                  "html": 1522,
+                  "js": 79039,
+                  "other": 413
+                },
+                "Decoded": {
+                  "css": 315872,
+                  "html": 4493,
+                  "js": 235607,
+                  "other": 383
+                }
+              },
+              "Axe": {},
+              "Lighthouse": null
+            }
+          ],
+          "Headers": {
+            "content-security-policy": "default-src 'self'; style-src 'self' 'unsafe-hashes' 'sha256-yJxAE4rjdcckohdlnvecSporPcqS9xOaA4hJxi87LMc='; img-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
+            "frame-ancestors": "frame-ancestors 'none'",
+            "referrer-policy": "strict-origin-when-cross-origin",
+            "strict-transport-security": "max-age=31536000",
+            "x-content-type-options": "nosniff",
+            "x-frame-options": "DENY"
+          },
+          "DeployOK": true,
+          "Failures": [
+            "signin: requests still open after 30s; weight counts what finished"
+          ]
+        },
+        {
+          "Pages": [
+            {
+              "Role": "home",
+              "URL": "https://groomer-r1-3.bdf.oncarlos.com/",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 85548,
+                  "html": 4005,
+                  "js": 79147,
+                  "other": 542
+                },
+                "Decoded": {
+                  "css": 325301,
+                  "html": 16012,
+                  "js": 235607,
+                  "other": 402
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 96,
+                "performance": 100,
+                "seo": 100
+              }
+            },
+            {
+              "Role": "book",
+              "URL": "https://groomer-r1-3.bdf.oncarlos.com/book/1",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 85548,
+                  "html": 2022,
+                  "js": 79147,
+                  "other": 565
+                },
+                "Decoded": {
+                  "css": 325301,
+                  "html": 5229,
+                  "js": 235607,
+                  "other": 402
+                }
+              },
+              "Axe": {
+                "moderate": 1
+              },
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 96,
+                "performance": 100,
+                "seo": 100
+              }
+            },
+            {
+              "Role": "signin",
+              "URL": "https://groomer-r1-3.bdf.oncarlos.com/signin",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 85571,
+                  "html": 2546,
+                  "js": 87780,
+                  "other": 542
+                },
+                "Decoded": {
+                  "css": 325301,
+                  "html": 6628,
+                  "js": 256384,
+                  "other": 402
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 96,
+                "performance": 99,
+                "seo": 100
+              }
+            },
+            {
+              "Role": "owner",
+              "URL": "https://groomer-r1-3.bdf.oncarlos.com/bookings",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 85533,
+                  "html": 1790,
+                  "js": 79039,
+                  "other": 413
+                },
+                "Decoded": {
+                  "css": 325301,
+                  "html": 5623,
+                  "js": 235607,
+                  "other": 383
+                }
+              },
+              "Axe": {},
+              "Lighthouse": null
+            }
+          ],
+          "Headers": {
+            "content-security-policy": "default-src 'self'; style-src 'self' 'unsafe-hashes' 'sha256-yJxAE4rjdcckohdlnvecSporPcqS9xOaA4hJxi87LMc='; img-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
+            "frame-ancestors": "frame-ancestors 'none'",
+            "referrer-policy": "strict-origin-when-cross-origin",
+            "strict-transport-security": "max-age=31536000",
+            "x-content-type-options": "nosniff",
+            "x-frame-options": "DENY"
+          },
+          "DeployOK": true,
+          "Failures": [
+            "signin: requests still open after 30s; weight counts what finished"
+          ]
+        }
+      ],
+      "AgentFailures": null,
+      "ReusedFrom": ""
+    },
+    {
+      "Brief": "groomer",
+      "Arm": "control",
+      "N": 1,
+      "App": "groomer-r1-1-a2",
+      "RastrilloVersion": "",
+      "Build": {
+        "Complete": true,
+        "Messages": 29,
+        "ToolCalls": 29,
+        "NumTurns": 30,
+        "Output": 47776,
+        "CacheRead": 1644377,
+        "CacheWrite": 61735,
+        "CostUSD": 1.7785074,
+        "DurationS": 497,
+        "FirstWriteContext": 31002,
+        "DeployMessages": 6,
+        "Stages": {
+          "app-read": {
+            "Messages": 2,
+            "ToolCalls": 2,
+            "Context": 99988
+          },
+          "build-test": {
+            "Messages": 7,
+            "ToolCalls": 7,
+            "Context": 496702
+          },
+          "deploy": {
+            "Messages": 6,
+            "ToolCalls": 6,
+            "Context": 364344
+          },
+          "other": {
+            "Messages": 4,
+            "ToolCalls": 3,
+            "Context": 314035
+          },
+          "scaffold": {
+            "Messages": 1,
+            "ToolCalls": 1,
+            "Context": 30441
+          },
+          "write": {
+            "Messages": 9,
+            "ToolCalls": 10,
+            "Context": 400660
+          }
+        }
+      },
+      "Followup": {
+        "Complete": true,
+        "Messages": 27,
+        "ToolCalls": 33,
+        "NumTurns": 37,
+        "Output": 40825,
+        "CacheRead": 3218273,
+        "CacheWrite": 79400,
+        "CostUSD": 2.0955706000000007,
+        "DurationS": 461,
+        "FirstWriteContext": 86355,
+        "DeployMessages": 1,
+        "Stages": {
+          "app-read": {
+            "Messages": 2,
+            "ToolCalls": 2,
+            "Context": 202484
+          },
+          "build-test": {
+            "Messages": 5,
+            "ToolCalls": 5,
+            "Context": 601181
+          },
+          "deploy": {
+            "Messages": 1,
+            "ToolCalls": 1,
+            "Context": 158704
+          },
+          "other": {
+            "Messages": 4,
+            "ToolCalls": 3,
+            "Context": 520979
+          },
+          "screenshots": {
+            "Messages": 7,
+            "ToolCalls": 13,
+            "Context": 986937
+          },
+          "write": {
+            "Messages": 8,
+            "ToolCalls": 9,
+            "Context": 827442
+          }
+        }
+      },
+      "Measured": [
+        {
+          "Pages": [
+            {
+              "Role": "home",
+              "URL": "https://groomer-r1-1-a2.fly.dev/",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 2002,
+                  "html": 1597
+                },
+                "Decoded": {
+                  "css": 5821,
+                  "html": 2797
+                }
+              },
+              "Axe": {
+                "moderate": 1
+              },
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 100,
+                "performance": 100,
+                "seo": 90
+              }
+            },
+            {
+              "Role": "book",
+              "URL": "https://groomer-r1-1-a2.fly.dev/book?service=1",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 2001,
+                  "html": 1997
+                },
+                "Decoded": {
+                  "css": 5821,
+                  "html": 5890
+                }
+              },
+              "Axe": {
+                "moderate": 1,
+                "serious": 1
+              },
+              "Lighthouse": {
+                "accessibility": 94,
+                "best-practices": 100,
+                "performance": 100,
+                "seo": 90
+              }
+            },
+            {
+              "Role": "signin",
+              "URL": "https://groomer-r1-1-a2.fly.dev/admin/login",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 2002,
+                  "html": 1146
+                },
+                "Decoded": {
+                  "css": 5821,
+                  "html": 1383
+                }
+              },
+              "Axe": {
+                "moderate": 1
+              },
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 100,
+                "performance": 100,
+                "seo": 90
+              }
+            },
+            {
+              "Role": "owner",
+              "URL": "https://groomer-r1-1-a2.fly.dev/admin/bookings",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 1928,
+                  "html": 1751,
+                  "image": 0
+                },
+                "Decoded": {
+                  "css": 5821,
+                  "html": 4617,
+                  "image": 266
+                }
+              },
+              "Axe": {
+                "critical": 1,
+                "minor": 1,
+                "moderate": 2,
+                "serious": 1
+              },
+              "Lighthouse": null
+            }
+          ],
+          "Headers": {
+            "content-security-policy": "default-src 'self'; style-src 'self'; img-src 'self' data:; form-action 'self'; frame-ancestors 'none'",
+            "frame-ancestors": "frame-ancestors 'none'",
+            "referrer-policy": "same-origin",
+            "x-content-type-options": "nosniff"
+          },
+          "DeployOK": true,
+          "Failures": null
+        },
+        {
+          "Pages": [
+            {
+              "Role": "home",
+              "URL": "https://groomer-r1-1-a2.fly.dev/",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 4916,
+                  "html": 3989,
+                  "other": 365
+                },
+                "Decoded": {
+                  "css": 19139,
+                  "html": 12530,
+                  "other": 700
+                }
+              },
+              "Axe": {
+                "moderate": 1
+              },
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 100,
+                "performance": 100,
+                "seo": 100
+              }
+            },
+            {
+              "Role": "book",
+              "URL": "https://groomer-r1-1-a2.fly.dev/book?service=1",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 4906,
+                  "html": 3035,
+                  "other": 365
+                },
+                "Decoded": {
+                  "css": 19139,
+                  "html": 14442,
+                  "other": 700
+                }
+              },
+              "Axe": {
+                "moderate": 1,
+                "serious": 1
+              },
+              "Lighthouse": {
+                "accessibility": 96,
+                "best-practices": 100,
+                "performance": 100,
+                "seo": 100
+              }
+            },
+            {
+              "Role": "signin",
+              "URL": "https://groomer-r1-1-a2.fly.dev/admin/login",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 4906,
+                  "html": 1722,
+                  "other": 365
+                },
+                "Decoded": {
+                  "css": 19139,
+                  "html": 4131,
+                  "other": 700
+                }
+              },
+              "Axe": {
+                "moderate": 1
+              },
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 100,
+                "performance": 100,
+                "seo": 100
+              }
+            },
+            {
+              "Role": "owner",
+              "URL": "https://groomer-r1-1-a2.fly.dev/admin/bookings",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 4861,
+                  "html": 2119,
+                  "image": 0,
+                  "other": 353
+                },
+                "Decoded": {
+                  "css": 19139,
+                  "html": 7190,
+                  "image": 266,
+                  "other": 700
+                }
+              },
+              "Axe": {
+                "critical": 1,
+                "minor": 1,
+                "moderate": 1
+              },
+              "Lighthouse": null
+            }
+          ],
+          "Headers": {
+            "content-security-policy": "default-src 'self'; style-src 'self'; img-src 'self' data:; form-action 'self'; frame-ancestors 'none'",
+            "frame-ancestors": "frame-ancestors 'none'",
+            "referrer-policy": "same-origin",
+            "x-content-type-options": "nosniff"
+          },
+          "DeployOK": true,
+          "Failures": null
+        }
+      ],
+      "AgentFailures": null,
+      "ReusedFrom": ""
+    },
+    {
+      "Brief": "groomer",
+      "Arm": "control",
+      "N": 2,
+      "App": "groomer-r1-2",
+      "RastrilloVersion": "",
+      "Build": {
+        "Complete": true,
+        "Messages": 23,
+        "ToolCalls": 23,
+        "NumTurns": 24,
+        "Output": 44312,
+        "CacheRead": 1283745,
+        "CacheWrite": 61164,
+        "CostUSD": 1.6324849999999995,
+        "DurationS": 470,
+        "FirstWriteContext": 30163,
+        "DeployMessages": 5,
+        "Stages": {
+          "build-test": {
+            "Messages": 6,
+            "ToolCalls": 6,
+            "Context": 403785
+          },
+          "deploy": {
+            "Messages": 5,
+            "ToolCalls": 5,
+            "Context": 279066
+          },
+          "other": {
+            "Messages": 4,
+            "ToolCalls": 3,
+            "Context": 258954
+          },
+          "screenshots": {
+            "Messages": 1,
+            "ToolCalls": 1,
+            "Context": 73926
+          },
+          "write": {
+            "Messages": 7,
+            "ToolCalls": 8,
+            "Context": 329224
+          }
+        }
+      },
+      "Followup": {
+        "Complete": true,
+        "Messages": 22,
+        "ToolCalls": 26,
+        "NumTurns": 29,
+        "Output": 52650,
+        "CacheRead": 2661707,
+        "CacheWrite": 72698,
+        "CostUSD": 2.1671014000000004,
+        "DurationS": 531,
+        "FirstWriteContext": 79936,
+        "DeployMessages": 1,
+        "Stages": {
+          "app-read": {
+            "Messages": 1,
+            "ToolCalls": 1,
+            "Context": 101207
+          },
+          "build-test": {
+            "Messages": 2,
+            "ToolCalls": 2,
+            "Context": 266444
+          },
+          "deploy": {
+            "Messages": 1,
+            "ToolCalls": 1,
+            "Context": 150216
+          },
+          "other": {
+            "Messages": 4,
+            "ToolCalls": 3,
+            "Context": 530777
+          },
+          "screenshots": {
+            "Messages": 5,
+            "ToolCalls": 10,
+            "Context": 650402
+          },
+          "write": {
+            "Messages": 9,
+            "ToolCalls": 9,
+            "Context": 1035403
+          }
+        }
+      },
+      "Measured": [
+        {
+          "Pages": [
+            {
+              "Role": "home",
+              "URL": "https://groomer-r1-2.fly.dev/",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "html": 3136,
+                  "other": 2226
+                },
+                "Decoded": {
+                  "html": 6621,
+                  "other": 4688
+                }
+              },
+              "Axe": {
+                "moderate": 1,
+                "serious": 1
+              },
+              "Lighthouse": {
+                "accessibility": 86,
+                "best-practices": 96,
+                "performance": 100,
+                "seo": 82
+              }
+            },
+            {
+              "Role": "book",
+              "URL": "https://groomer-r1-2.fly.dev/book?service=1",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "html": 3040,
+                  "other": 2233
+                },
+                "Decoded": {
+                  "html": 9257,
+                  "other": 4688
+                }
+              },
+              "Axe": {
+                "serious": 1
+              },
+              "Lighthouse": {
+                "accessibility": 89,
+                "best-practices": 96,
+                "performance": 100,
+                "seo": 82
+              }
+            },
+            {
+              "Role": "signin",
+              "URL": "https://groomer-r1-2.fly.dev/signin",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "html": 2774,
+                  "other": 2249
+                },
+                "Decoded": {
+                  "html": 5329,
+                  "other": 4688
+                }
+              },
+              "Axe": {
+                "serious": 1
+              },
+              "Lighthouse": {
+                "accessibility": 91,
+                "best-practices": 96,
+                "performance": 100,
+                "seo": 82
+              }
+            },
+            {
+              "Role": "owner",
+              "URL": "https://groomer-r1-2.fly.dev/admin",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "html": 3514
+                },
+                "Decoded": {
+                  "html": 13201
+                }
+              },
+              "Axe": {
+                "minor": 1,
+                "serious": 1
+              },
+              "Lighthouse": null
+            }
+          ],
+          "Headers": {
+            "content-security-policy": "default-src 'none'; style-src 'unsafe-inline'; img-src 'self' data:; form-action 'self'; frame-ancestors 'none'; base-uri 'none'",
+            "frame-ancestors": "frame-ancestors 'none'",
+            "referrer-policy": "same-origin",
+            "x-content-type-options": "nosniff",
+            "x-frame-options": "DENY"
+          },
+          "DeployOK": true,
+          "Failures": null
+        },
+        {
+          "Pages": [
+            {
+              "Role": "home",
+              "URL": "https://groomer-r1-2.fly.dev/",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 4647,
+                  "html": 4758,
+                  "other": 649
+                },
+                "Decoded": {
+                  "css": 17595,
+                  "html": 18071,
+                  "other": 1359
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 100,
+                "performance": 100,
+                "seo": 91
+              }
+            },
+            {
+              "Role": "book",
+              "URL": "https://groomer-r1-2.fly.dev/book?service=1",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 4646,
+                  "html": 2753,
+                  "other": 649
+                },
+                "Decoded": {
+                  "css": 17595,
+                  "html": 10188,
+                  "other": 1359
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 100,
+                "performance": 100,
+                "seo": 91
+              }
+            },
+            {
+              "Role": "signin",
+              "URL": "https://groomer-r1-2.fly.dev/signin",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 4647,
+                  "html": 1917,
+                  "other": 650
+                },
+                "Decoded": {
+                  "css": 17595,
+                  "html": 3836,
+                  "other": 1359
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 100,
+                "performance": 100,
+                "seo": 91
+              }
+            },
+            {
+              "Role": "owner",
+              "URL": "https://groomer-r1-2.fly.dev/admin",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 4600,
+                  "html": 2704,
+                  "other": 632
+                },
+                "Decoded": {
+                  "css": 17595,
+                  "html": 13213,
+                  "other": 1359
+                }
+              },
+              "Axe": {
+                "moderate": 1
+              },
+              "Lighthouse": null
+            }
+          ],
+          "Headers": {
+            "content-security-policy": "default-src 'none'; style-src 'self'; img-src 'self' data:; form-action 'self'; frame-ancestors 'none'; base-uri 'none'",
+            "frame-ancestors": "frame-ancestors 'none'",
+            "referrer-policy": "same-origin",
+            "x-content-type-options": "nosniff",
+            "x-frame-options": "DENY"
+          },
+          "DeployOK": true,
+          "Failures": null
+        }
+      ],
+      "AgentFailures": null,
+      "ReusedFrom": ""
+    },
+    {
+      "Brief": "groomer",
+      "Arm": "control",
+      "N": 3,
+      "App": "groomer-r1-3",
+      "RastrilloVersion": "",
+      "Build": {
+        "Complete": true,
+        "Messages": 38,
+        "ToolCalls": 38,
+        "NumTurns": 39,
+        "Output": 46740,
+        "CacheRead": 2370823,
+        "CacheWrite": 73617,
+        "CostUSD": 1.9982046000000002,
+        "DurationS": 483,
+        "FirstWriteContext": 29252,
+        "DeployMessages": 7,
+        "Stages": {
+          "app-read": {
+            "Messages": 1,
+            "ToolCalls": 1,
+            "Context": 57801
+          },
+          "build-test": {
+            "Messages": 5,
+            "ToolCalls": 5,
+            "Context": 351973
+          },
+          "deploy": {
+            "Messages": 5,
+            "ToolCalls": 5,
+            "Context": 313431
+          },
+          "live-check": {
+            "Messages": 2,
+            "ToolCalls": 2,
+            "Context": 178303
+          },
+          "other": {
+            "Messages": 7,
+            "ToolCalls": 6,
+            "Context": 485330
+          },
+          "screenshots": {
+            "Messages": 8,
+            "ToolCalls": 9,
+            "Context": 628659
+          },
+          "write": {
+            "Messages": 10,
+            "ToolCalls": 10,
+            "Context": 429019
+          }
+        }
+      },
+      "Followup": {
+        "Complete": true,
+        "Messages": 22,
+        "ToolCalls": 27,
+        "NumTurns": 30,
+        "Output": 40299,
+        "CacheRead": 2777950,
+        "CacheWrite": 61965,
+        "CostUSD": 1.8574660000000003,
+        "DurationS": 429,
+        "FirstWriteContext": 95522,
+        "DeployMessages": 2,
+        "Stages": {
+          "app-read": {
+            "Messages": 2,
+            "ToolCalls": 2,
+            "Context": 218425
+          },
+          "build-test": {
+            "Messages": 2,
+            "ToolCalls": 2,
+            "Context": 248986
+          },
+          "deploy": {
+            "Messages": 2,
+            "ToolCalls": 2,
+            "Context": 302786
+          },
+          "other": {
+            "Messages": 2,
+            "ToolCalls": 1,
+            "Context": 304868
+          },
+          "screenshots": {
+            "Messages": 10,
+            "ToolCalls": 16,
+            "Context": 1345317
+          },
+          "write": {
+            "Messages": 4,
+            "ToolCalls": 4,
+            "Context": 419577
+          }
+        }
+      },
+      "Measured": [
+        {
+          "Pages": [
+            {
+              "Role": "home",
+              "URL": "https://groomer-r1-3.fly.dev/",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 2340,
+                  "html": 1257,
+                  "other": 462
+                },
+                "Decoded": {
+                  "css": 6589,
+                  "html": 2401,
+                  "other": 602
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 96,
+                "performance": 100,
+                "seo": 82
+              }
+            },
+            {
+              "Role": "book",
+              "URL": "https://groomer-r1-3.fly.dev/book/1",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 2361,
+                  "html": 1601,
+                  "other": 462
+                },
+                "Decoded": {
+                  "css": 6589,
+                  "html": 4033,
+                  "other": 602
+                }
+              },
+              "Axe": {
+                "serious": 1
+              },
+              "Lighthouse": {
+                "accessibility": 94,
+                "best-practices": 96,
+                "performance": 100,
+                "seo": 82
+              }
+            },
+            {
+              "Role": "signin",
+              "URL": "https://groomer-r1-3.fly.dev/admin/login",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 2340,
+                  "html": 973,
+                  "other": 463
+                },
+                "Decoded": {
+                  "css": 6589,
+                  "html": 1137,
+                  "other": 602
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 96,
+                "performance": 100,
+                "seo": 82
+              }
+            },
+            {
+              "Role": "owner",
+              "URL": "https://groomer-r1-3.fly.dev/admin",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 2305,
+                  "html": 1546
+                },
+                "Decoded": {
+                  "css": 6589,
+                  "html": 7733
+                }
+              },
+              "Axe": {
+                "minor": 1,
+                "moderate": 1
+              },
+              "Lighthouse": null
+            }
+          ],
+          "Headers": {
+            "content-security-policy": "default-src 'none'; style-src 'self'; img-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'",
+            "frame-ancestors": "frame-ancestors 'none'",
+            "referrer-policy": "same-origin",
+            "x-content-type-options": "nosniff"
+          },
+          "DeployOK": true,
+          "Failures": null
+        },
+        {
+          "Pages": [
+            {
+              "Role": "home",
+              "URL": "https://groomer-r1-3.fly.dev/",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 5595,
+                  "html": 4990,
+                  "other": 373
+                },
+                "Decoded": {
+                  "css": 22871,
+                  "html": 18267,
+                  "other": 456
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 100,
+                "performance": 100,
+                "seo": 91
+              }
+            },
+            {
+              "Role": "book",
+              "URL": "https://groomer-r1-3.fly.dev/book/1",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 5595,
+                  "html": 3994,
+                  "other": 396
+                },
+                "Decoded": {
+                  "css": 22871,
+                  "html": 15857,
+                  "other": 456
+                }
+              },
+              "Axe": {
+                "serious": 1
+              },
+              "Lighthouse": {
+                "accessibility": 96,
+                "best-practices": 100,
+                "performance": 100,
+                "seo": 91
+              }
+            },
+            {
+              "Role": "signin",
+              "URL": "https://groomer-r1-3.fly.dev/admin/login",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 5595,
+                  "html": 2537,
+                  "other": 374
+                },
+                "Decoded": {
+                  "css": 22871,
+                  "html": 6764,
+                  "other": 456
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 100,
+                "performance": 100,
+                "seo": 91
+              }
+            },
+            {
+              "Role": "owner",
+              "URL": "https://groomer-r1-3.fly.dev/admin",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 5548,
+                  "html": 3244,
+                  "other": 339
+                },
+                "Decoded": {
+                  "css": 22871,
+                  "html": 14478,
+                  "other": 456
+                }
+              },
+              "Axe": {},
+              "Lighthouse": null
+            }
+          ],
+          "Headers": {
+            "content-security-policy": "default-src 'none'; style-src 'self'; img-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'",
+            "frame-ancestors": "frame-ancestors 'none'",
+            "referrer-policy": "same-origin",
+            "x-content-type-options": "nosniff"
+          },
+          "DeployOK": true,
+          "Failures": null
+        }
+      ],
+      "AgentFailures": null,
+      "ReusedFrom": ""
+    },
+    {
+      "Brief": "lending",
+      "Arm": "carlos",
+      "N": 1,
+      "App": "lending-r1-1-a2",
+      "RastrilloVersion": "v0.30.0-bench.gb79c48634fea",
+      "Build": {
+        "Complete": true,
+        "Messages": 102,
+        "ToolCalls": 104,
+        "NumTurns": 105,
+        "Output": 88158,
+        "CacheRead": 15675548,
+        "CacheWrite": 217075,
+        "CostUSD": 6.6356856,
+        "DurationS": 1211,
+        "FirstWriteContext": 114394,
+        "DeployMessages": 14,
+        "Stages": {
+          "app-read": {
+            "Messages": 9,
+            "ToolCalls": 11,
+            "Context": 1006325
+          },
+          "build-test": {
+            "Messages": 17,
+            "ToolCalls": 17,
+            "Context": 3107891
+          },
+          "deploy": {
+            "Messages": 11,
+            "ToolCalls": 11,
+            "Context": 1870233
+          },
+          "framework-read": {
+            "Messages": 3,
+            "ToolCalls": 3,
+            "Context": 126002
+          },
+          "gates": {
+            "Messages": 4,
+            "ToolCalls": 4,
+            "Context": 832802
+          },
+          "live-check": {
+            "Messages": 3,
+            "ToolCalls": 3,
+            "Context": 683887
+          },
+          "other": {
+            "Messages": 32,
+            "ToolCalls": 31,
+            "Context": 5095500
+          },
+          "scaffold": {
+            "Messages": 2,
+            "ToolCalls": 2,
+            "Context": 86832
+          },
+          "write": {
+            "Messages": 21,
+            "ToolCalls": 22,
+            "Context": 3083355
+          }
+        }
+      },
+      "Followup": {
+        "Complete": true,
+        "Messages": 74,
+        "ToolCalls": 84,
+        "NumTurns": 88,
+        "Output": 56225,
+        "CacheRead": 22826977,
+        "CacheWrite": 120004,
+        "CostUSD": 6.650519400000002,
+        "DurationS": 1789,
+        "FirstWriteContext": 259852,
+        "DeployMessages": 2,
+        "Stages": {
+          "app-read": {
+            "Messages": 12,
+            "ToolCalls": 12,
+            "Context": 3471814
+          },
+          "build-test": {
+            "Messages": 21,
+            "ToolCalls": 24,
+            "Context": 6889444
+          },
+          "deploy": {
+            "Messages": 1,
+            "ToolCalls": 1,
+            "Context": 352429
+          },
+          "framework-read": {
+            "Messages": 1,
+            "ToolCalls": 1,
+            "Context": 242311
+          },
+          "gates": {
+            "Messages": 3,
+            "ToolCalls": 3,
+            "Context": 1021742
+          },
+          "live-check": {
+            "Messages": 1,
+            "ToolCalls": 1,
+            "Context": 353494
+          },
+          "other": {
+            "Messages": 12,
+            "ToolCalls": 11,
+            "Context": 3592751
+          },
+          "scaffold": {
+            "Messages": 2,
+            "ToolCalls": 2,
+            "Context": 543985
+          },
+          "screenshots": {
+            "Messages": 2,
+            "ToolCalls": 2,
+            "Context": 693850
+          },
+          "write": {
+            "Messages": 19,
+            "ToolCalls": 27,
+            "Context": 5785309
+          }
+        }
+      },
+      "Measured": [
+        {
+          "Pages": [
+            {
+              "Role": "home",
+              "URL": "https://lending-r1-1-a2.bdf.oncarlos.com/",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 83269,
+                  "html": 2281,
+                  "js": 87780,
+                  "other": 542
+                },
+                "Decoded": {
+                  "css": 316434,
+                  "html": 4712,
+                  "js": 256384,
+                  "other": 402
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 96,
+                "performance": 99,
+                "seo": 90
+              }
+            },
+            {
+              "Role": "signin",
+              "URL": "https://lending-r1-1-a2.bdf.oncarlos.com/signin",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 83292,
+                  "html": 2214,
+                  "js": 87780,
+                  "other": 542
+                },
+                "Decoded": {
+                  "css": 316434,
+                  "html": 4669,
+                  "js": 256384,
+                  "other": 402
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 96,
+                "performance": 100,
+                "seo": 90
+              }
+            },
+            {
+              "Role": "borrow",
+              "URL": "https://lending-r1-1-a2.bdf.oncarlos.com/",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 83281,
+                  "html": 1536,
+                  "js": 79039,
+                  "other": 413
+                },
+                "Decoded": {
+                  "css": 316434,
+                  "html": 5567,
+                  "js": 235607,
+                  "other": 383
+                }
+              },
+              "Axe": {},
+              "Lighthouse": null
+            },
+            {
+              "Role": "overdue",
+              "URL": "https://lending-r1-1-a2.bdf.oncarlos.com/admin",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 83281,
+                  "html": 1549,
+                  "js": 79039,
+                  "other": 413
+                },
+                "Decoded": {
+                  "css": 316434,
+                  "html": 4710,
+                  "js": 235607,
+                  "other": 383
+                }
+              },
+              "Axe": {},
+              "Lighthouse": null
+            }
+          ],
+          "Headers": {
+            "content-security-policy": "default-src 'self'; style-src 'self' 'unsafe-hashes' 'sha256-yJxAE4rjdcckohdlnvecSporPcqS9xOaA4hJxi87LMc='; img-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
+            "frame-ancestors": "frame-ancestors 'none'",
+            "referrer-policy": "strict-origin-when-cross-origin",
+            "strict-transport-security": "max-age=31536000",
+            "x-content-type-options": "nosniff",
+            "x-frame-options": "DENY"
+          },
+          "DeployOK": true,
+          "Failures": [
+            "home: requests still open after 30s; weight counts what finished",
+            "signin: requests still open after 30s; weight counts what finished"
+          ]
+        },
+        {
+          "Pages": [
+            {
+              "Role": "home",
+              "URL": "https://lending-r1-1-a2.bdf.oncarlos.com/",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 85563,
+                  "html": 2828,
+                  "js": 87830,
+                  "other": 933
+                },
+                "Decoded": {
+                  "css": 324222,
+                  "html": 6526,
+                  "js": 256384,
+                  "other": 795
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 100,
+                "performance": 99,
+                "seo": 100
+              }
+            },
+            {
+              "Role": "signin",
+              "URL": "https://lending-r1-1-a2.bdf.oncarlos.com/signin",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 85473,
+                  "html": 2770,
+                  "js": 87803,
+                  "other": 933
+                },
+                "Decoded": {
+                  "css": 324222,
+                  "html": 6483,
+                  "js": 256384,
+                  "other": 795
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 100,
+                "performance": 100,
+                "seo": 100
+              }
+            },
+            {
+              "Role": "borrow",
+              "URL": "https://lending-r1-1-a2.bdf.oncarlos.com/",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 85326,
+                  "html": 3026,
+                  "js": 78985,
+                  "other": 857
+                },
+                "Decoded": {
+                  "css": 324222,
+                  "html": 12553,
+                  "js": 235607,
+                  "other": 795
+                }
+              },
+              "Axe": {},
+              "Lighthouse": null
+            },
+            {
+              "Role": "overdue",
+              "URL": "https://lending-r1-1-a2.bdf.oncarlos.com/admin",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 85326,
+                  "html": 1975,
+                  "js": 78985,
+                  "other": 413
+                },
+                "Decoded": {
+                  "css": 324222,
+                  "html": 6411,
+                  "js": 235607,
+                  "other": 795
+                }
+              },
+              "Axe": {},
+              "Lighthouse": null
+            }
+          ],
+          "Headers": {
+            "content-security-policy": "default-src 'self'; style-src 'self' 'unsafe-hashes' 'sha256-yJxAE4rjdcckohdlnvecSporPcqS9xOaA4hJxi87LMc='; img-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
+            "frame-ancestors": "frame-ancestors 'none'",
+            "referrer-policy": "strict-origin-when-cross-origin",
+            "strict-transport-security": "max-age=31536000",
+            "x-content-type-options": "nosniff",
+            "x-frame-options": "DENY"
+          },
+          "DeployOK": true,
+          "Failures": [
+            "home: requests still open after 30s; weight counts what finished",
+            "signin: requests still open after 30s; weight counts what finished",
+            "overdue: requests still open after 30s; weight counts what finished"
+          ]
+        }
+      ],
+      "AgentFailures": null,
+      "ReusedFrom": ""
+    },
+    {
+      "Brief": "lending",
+      "Arm": "carlos",
+      "N": 2,
+      "App": "lending-r1-2",
+      "RastrilloVersion": "v0.30.0-bench.gb79c48634fea",
+      "Build": {
+        "Complete": true,
+        "Messages": 90,
+        "ToolCalls": 98,
+        "NumTurns": 99,
+        "Output": 91302,
+        "CacheRead": 15129704,
+        "CacheWrite": 238004,
+        "CostUSD": 6.756732799999999,
+        "DurationS": 1650,
+        "FirstWriteContext": 132316,
+        "DeployMessages": 13,
+        "Stages": {
+          "app-read": {
+            "Messages": 7,
+            "ToolCalls": 7,
+            "Context": 876389
+          },
+          "build-test": {
+            "Messages": 15,
+            "ToolCalls": 15,
+            "Context": 2860197
+          },
+          "deploy": {
+            "Messages": 10,
+            "ToolCalls": 10,
+            "Context": 1835226
+          },
+          "framework-read": {
+            "Messages": 23,
+            "ToolCalls": 24,
+            "Context": 3303880
+          },
+          "gates": {
+            "Messages": 3,
+            "ToolCalls": 3,
+            "Context": 681975
+          },
+          "live-check": {
+            "Messages": 3,
+            "ToolCalls": 3,
+            "Context": 755223
+          },
+          "other": {
+            "Messages": 7,
+            "ToolCalls": 7,
+            "Context": 1503286
+          },
+          "scaffold": {
+            "Messages": 3,
+            "ToolCalls": 3,
+            "Context": 234208
+          },
+          "screenshots": {
+            "Messages": 3,
+            "ToolCalls": 5,
+            "Context": 714674
+          },
+          "write": {
+            "Messages": 16,
+            "ToolCalls": 21,
+            "Context": 2602830
+          }
+        }
+      },
+      "Followup": {
+        "Complete": true,
+        "Messages": 54,
+        "ToolCalls": 59,
+        "NumTurns": 60,
+        "Output": 45810,
+        "CacheRead": 16424379,
+        "CacheWrite": 91377,
+        "CostUSD": 4.9325238,
+        "DurationS": 507,
+        "FirstWriteContext": 273841,
+        "DeployMessages": 2,
+        "Stages": {
+          "app-read": {
+            "Messages": 6,
+            "ToolCalls": 7,
+            "Context": 1708624
+          },
+          "build-test": {
+            "Messages": 15,
+            "ToolCalls": 15,
+            "Context": 4549150
+          },
+          "deploy": {
+            "Messages": 2,
+            "ToolCalls": 2,
+            "Context": 688183
+          },
+          "framework-read": {
+            "Messages": 7,
+            "ToolCalls": 7,
+            "Context": 2081656
+          },
+          "gates": {
+            "Messages": 3,
+            "ToolCalls": 3,
+            "Context": 1003517
+          },
+          "other": {
+            "Messages": 8,
+            "ToolCalls": 7,
+            "Context": 2517863
+          },
+          "screenshots": {
+            "Messages": 5,
+            "ToolCalls": 10,
+            "Context": 1599136
+          },
+          "write": {
+            "Messages": 8,
+            "ToolCalls": 8,
+            "Context": 2367735
+          }
+        }
+      },
+      "Measured": [
+        {
+          "Pages": [
+            {
+              "Role": "home",
+              "URL": "https://lending-r1-2.bdf.oncarlos.com/",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 83484,
+                  "html": 2361,
+                  "js": 87768,
+                  "other": 542
+                },
+                "Decoded": {
+                  "css": 316045,
+                  "html": 5203,
+                  "js": 256384,
+                  "other": 402
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 96,
+                "performance": 99,
+                "seo": 90
+              }
+            },
+            {
+              "Role": "signin",
+              "URL": "https://lending-r1-2.bdf.oncarlos.com/signin",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 83507,
+                  "html": 2297,
+                  "js": 87803,
+                  "other": 542
+                },
+                "Decoded": {
+                  "css": 316045,
+                  "html": 5160,
+                  "js": 256384,
+                  "other": 402
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 96,
+                "performance": 100,
+                "seo": 90
+              }
+            },
+            {
+              "Role": "borrow",
+              "URL": "https://lending-r1-2.bdf.oncarlos.com/",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 83498,
+                  "html": 1588,
+                  "js": 79039,
+                  "other": 413
+                },
+                "Decoded": {
+                  "css": 316045,
+                  "html": 5571,
+                  "js": 235607,
+                  "other": 383
+                }
+              },
+              "Axe": {},
+              "Lighthouse": null
+            },
+            {
+              "Role": "overdue",
+              "URL": "https://lending-r1-2.bdf.oncarlos.com/admin/overdue",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 83498,
+                  "html": 1457,
+                  "js": 79039,
+                  "other": 413
+                },
+                "Decoded": {
+                  "css": 316045,
+                  "html": 4398,
+                  "js": 235607,
+                  "other": 383
+                }
+              },
+              "Axe": {
+                "moderate": 1
+              },
+              "Lighthouse": null
+            }
+          ],
+          "Headers": {
+            "content-security-policy": "default-src 'self'; style-src 'self' 'unsafe-hashes' 'sha256-yJxAE4rjdcckohdlnvecSporPcqS9xOaA4hJxi87LMc='; img-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
+            "frame-ancestors": "frame-ancestors 'none'",
+            "referrer-policy": "strict-origin-when-cross-origin",
+            "strict-transport-security": "max-age=31536000",
+            "x-content-type-options": "nosniff",
+            "x-frame-options": "DENY"
+          },
+          "DeployOK": true,
+          "Failures": [
+            "home: requests still open after 30s; weight counts what finished",
+            "signin: requests still open after 30s; weight counts what finished"
+          ]
+        },
+        {
+          "Pages": [
+            {
+              "Role": "home",
+              "URL": "https://lending-r1-2.bdf.oncarlos.com/",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 85448,
+                  "html": 2610,
+                  "js": 87830,
+                  "other": 542
+                },
+                "Decoded": {
+                  "css": 323877,
+                  "html": 6060,
+                  "js": 256384,
+                  "other": 402
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 96,
+                "performance": 100,
+                "seo": 90
+              }
+            },
+            {
+              "Role": "signin",
+              "URL": "https://lending-r1-2.bdf.oncarlos.com/signin",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 85471,
+                  "html": 2543,
+                  "js": 87830,
+                  "other": 542
+                },
+                "Decoded": {
+                  "css": 323877,
+                  "html": 6017,
+                  "js": 256384,
+                  "other": 402
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 96,
+                "performance": 100,
+                "seo": 90
+              }
+            },
+            {
+              "Role": "borrow",
+              "URL": "https://lending-r1-2.bdf.oncarlos.com/",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 85343,
+                  "html": 2459,
+                  "js": 79039,
+                  "other": 413
+                },
+                "Decoded": {
+                  "css": 323877,
+                  "html": 10249,
+                  "js": 235607,
+                  "other": 383
+                }
+              },
+              "Axe": {},
+              "Lighthouse": null
+            },
+            {
+              "Role": "overdue",
+              "URL": "https://lending-r1-2.bdf.oncarlos.com/admin/overdue",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 85343,
+                  "html": 1652,
+                  "js": 79039,
+                  "other": 413
+                },
+                "Decoded": {
+                  "css": 323877,
+                  "html": 5011,
+                  "js": 235607,
+                  "other": 383
+                }
+              },
+              "Axe": {
+                "moderate": 1
+              },
+              "Lighthouse": null
+            }
+          ],
+          "Headers": {
+            "content-security-policy": "default-src 'self'; style-src 'self' 'unsafe-hashes' 'sha256-yJxAE4rjdcckohdlnvecSporPcqS9xOaA4hJxi87LMc='; img-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
+            "frame-ancestors": "frame-ancestors 'none'",
+            "referrer-policy": "strict-origin-when-cross-origin",
+            "strict-transport-security": "max-age=31536000",
+            "x-content-type-options": "nosniff",
+            "x-frame-options": "DENY"
+          },
+          "DeployOK": true,
+          "Failures": [
+            "home: requests still open after 30s; weight counts what finished",
+            "signin: requests still open after 30s; weight counts what finished"
+          ]
+        }
+      ],
+      "AgentFailures": null,
+      "ReusedFrom": ""
+    },
+    {
+      "Brief": "lending",
+      "Arm": "carlos",
+      "N": 3,
+      "App": "lending-r1-3",
+      "RastrilloVersion": "v0.30.0-bench.gb79c48634fea",
+      "Build": {
+        "Complete": true,
+        "Messages": 88,
+        "ToolCalls": 91,
+        "NumTurns": 92,
+        "Output": 77769,
+        "CacheRead": 13559310,
+        "CacheWrite": 203344,
+        "CostUSD": 5.894698,
+        "DurationS": 748,
+        "FirstWriteContext": 128482,
+        "DeployMessages": 15,
+        "Stages": {
+          "app-read": {
+            "Messages": 8,
+            "ToolCalls": 9,
+            "Context": 927455
+          },
+          "build-test": {
+            "Messages": 16,
+            "ToolCalls": 16,
+            "Context": 2991194
+          },
+          "deploy": {
+            "Messages": 11,
+            "ToolCalls": 11,
+            "Context": 1986056
+          },
+          "framework-read": {
+            "Messages": 3,
+            "ToolCalls": 3,
+            "Context": 121735
+          },
+          "gates": {
+            "Messages": 5,
+            "ToolCalls": 5,
+            "Context": 1012919
+          },
+          "live-check": {
+            "Messages": 4,
+            "ToolCalls": 4,
+            "Context": 849178
+          },
+          "other": {
+            "Messages": 18,
+            "ToolCalls": 17,
+            "Context": 2429833
+          },
+          "scaffold": {
+            "Messages": 3,
+            "ToolCalls": 3,
+            "Context": 229086
+          },
+          "write": {
+            "Messages": 20,
+            "ToolCalls": 23,
+            "Context": 3215374
+          }
+        }
+      },
+      "Followup": {
+        "Complete": true,
+        "Messages": 51,
+        "ToolCalls": 52,
+        "NumTurns": 56,
+        "Output": 45494,
+        "CacheRead": 14126284,
+        "CacheWrite": 93543,
+        "CostUSD": 4.4838888,
+        "DurationS": 553,
+        "FirstWriteContext": 251744,
+        "DeployMessages": 1,
+        "Stages": {
+          "app-read": {
+            "Messages": 13,
+            "ToolCalls": 14,
+            "Context": 3591146
+          },
+          "build-test": {
+            "Messages": 9,
+            "ToolCalls": 9,
+            "Context": 2572441
+          },
+          "deploy": {
+            "Messages": 1,
+            "ToolCalls": 1,
+            "Context": 311793
+          },
+          "framework-read": {
+            "Messages": 1,
+            "ToolCalls": 1,
+            "Context": 227225
+          },
+          "gates": {
+            "Messages": 1,
+            "ToolCalls": 1,
+            "Context": 309869
+          },
+          "other": {
+            "Messages": 17,
+            "ToolCalls": 17,
+            "Context": 4795827
+          },
+          "write": {
+            "Messages": 9,
+            "ToolCalls": 9,
+            "Context": 2411628
+          }
+        }
+      },
+      "Measured": [
+        {
+          "Pages": [
+            {
+              "Role": "home",
+              "URL": "https://lending-r1-3.bdf.oncarlos.com/",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 82825,
+                  "html": 2437,
+                  "js": 87862,
+                  "other": 542
+                },
+                "Decoded": {
+                  "css": 315352,
+                  "html": 5822,
+                  "js": 256384,
+                  "other": 402
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 96,
+                "performance": 100,
+                "seo": 90
+              }
+            },
+            {
+              "Role": "signin",
+              "URL": "https://lending-r1-3.bdf.oncarlos.com/signin",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 82880,
+                  "html": 2375,
+                  "js": 87830,
+                  "other": 542
+                },
+                "Decoded": {
+                  "css": 315352,
+                  "html": 5779,
+                  "js": 256384,
+                  "other": 402
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 96,
+                "performance": 100,
+                "seo": 90
+              }
+            },
+            {
+              "Role": "borrow",
+              "URL": "https://lending-r1-3.bdf.oncarlos.com/",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 82773,
+                  "html": 1577,
+                  "js": 79039,
+                  "other": 413
+                },
+                "Decoded": {
+                  "css": 315352,
+                  "html": 4930,
+                  "js": 235607,
+                  "other": 383
+                }
+              },
+              "Axe": {},
+              "Lighthouse": null
+            },
+            {
+              "Role": "overdue",
+              "URL": "https://lending-r1-3.bdf.oncarlos.com/admin",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 82773,
+                  "html": 1721,
+                  "js": 79039,
+                  "other": 413
+                },
+                "Decoded": {
+                  "css": 315352,
+                  "html": 6013,
+                  "js": 235607,
+                  "other": 383
+                }
+              },
+              "Axe": {},
+              "Lighthouse": null
+            }
+          ],
+          "Headers": {
+            "content-security-policy": "default-src 'self'; style-src 'self' 'unsafe-hashes' 'sha256-yJxAE4rjdcckohdlnvecSporPcqS9xOaA4hJxi87LMc='; img-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
+            "frame-ancestors": "frame-ancestors 'none'",
+            "referrer-policy": "strict-origin-when-cross-origin",
+            "strict-transport-security": "max-age=31536000",
+            "x-content-type-options": "nosniff",
+            "x-frame-options": "DENY"
+          },
+          "DeployOK": true,
+          "Failures": [
+            "home: requests still open after 30s; weight counts what finished",
+            "signin: requests still open after 30s; weight counts what finished"
+          ]
+        },
+        {
+          "Pages": [
+            {
+              "Role": "home",
+              "URL": "https://lending-r1-3.bdf.oncarlos.com/",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 85893,
+                  "html": 2721,
+                  "js": 87803,
+                  "other": 542
+                },
+                "Decoded": {
+                  "css": 325425,
+                  "html": 6728,
+                  "js": 256384,
+                  "other": 402
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 96,
+                "performance": 99,
+                "seo": 100
+              }
+            },
+            {
+              "Role": "signin",
+              "URL": "https://lending-r1-3.bdf.oncarlos.com/signin",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 86006,
+                  "html": 2642,
+                  "js": 87818,
+                  "other": 542
+                },
+                "Decoded": {
+                  "css": 325425,
+                  "html": 6685,
+                  "js": 256384,
+                  "other": 402
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 96,
+                "performance": 99,
+                "seo": 100
+              }
+            },
+            {
+              "Role": "borrow",
+              "URL": "https://lending-r1-3.bdf.oncarlos.com/",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 85878,
+                  "html": 2686,
+                  "js": 79039,
+                  "other": 413
+                },
+                "Decoded": {
+                  "css": 325425,
+                  "html": 13332,
+                  "js": 235607,
+                  "other": 383
+                }
+              },
+              "Axe": {},
+              "Lighthouse": null
+            },
+            {
+              "Role": "overdue",
+              "URL": "https://lending-r1-3.bdf.oncarlos.com/admin",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 85878,
+                  "html": 1986,
+                  "js": 79039,
+                  "other": 413
+                },
+                "Decoded": {
+                  "css": 325425,
+                  "html": 6786,
+                  "js": 235607,
+                  "other": 383
+                }
+              },
+              "Axe": {},
+              "Lighthouse": null
+            }
+          ],
+          "Headers": {
+            "content-security-policy": "default-src 'self'; style-src 'self' 'unsafe-hashes' 'sha256-yJxAE4rjdcckohdlnvecSporPcqS9xOaA4hJxi87LMc='; img-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
+            "frame-ancestors": "frame-ancestors 'none'",
+            "referrer-policy": "strict-origin-when-cross-origin",
+            "strict-transport-security": "max-age=31536000",
+            "x-content-type-options": "nosniff",
+            "x-frame-options": "DENY"
+          },
+          "DeployOK": true,
+          "Failures": [
+            "home: requests still open after 30s; weight counts what finished",
+            "signin: requests still open after 30s; weight counts what finished"
+          ]
+        }
+      ],
+      "AgentFailures": null,
+      "ReusedFrom": ""
+    },
+    {
+      "Brief": "lending",
+      "Arm": "control",
+      "N": 1,
+      "App": "lending-r1-1-a2",
+      "RastrilloVersion": "",
+      "Build": {
+        "Complete": true,
+        "Messages": 38,
+        "ToolCalls": 43,
+        "NumTurns": 48,
+        "Output": 52562,
+        "CacheRead": 2440747,
+        "CacheWrite": 77295,
+        "CostUSD": 2.1580534,
+        "DurationS": 611,
+        "FirstWriteContext": 30347,
+        "DeployMessages": 8,
+        "Stages": {
+          "build-test": {
+            "Messages": 9,
+            "ToolCalls": 12,
+            "Context": 654496
+          },
+          "deploy": {
+            "Messages": 7,
+            "ToolCalls": 7,
+            "Context": 379307
+          },
+          "live-check": {
+            "Messages": 1,
+            "ToolCalls": 1,
+            "Context": 94020
+          },
+          "other": {
+            "Messages": 6,
+            "ToolCalls": 5,
+            "Context": 514917
+          },
+          "scaffold": {
+            "Messages": 1,
+            "ToolCalls": 1,
+            "Context": 27376
+          },
+          "screenshots": {
+            "Messages": 5,
+            "ToolCalls": 8,
+            "Context": 408716
+          },
+          "write": {
+            "Messages": 9,
+            "ToolCalls": 9,
+            "Context": 439286
+          }
+        }
+      },
+      "Followup": {
+        "Complete": true,
+        "Messages": 36,
+        "ToolCalls": 44,
+        "NumTurns": 50,
+        "Output": 52841,
+        "CacheRead": 5247474,
+        "CacheWrite": 80646,
+        "CostUSD": 2.7517707999999996,
+        "DurationS": 647,
+        "FirstWriteContext": 105392,
+        "DeployMessages": 1,
+        "Stages": {
+          "app-read": {
+            "Messages": 4,
+            "ToolCalls": 5,
+            "Context": 497459
+          },
+          "build-test": {
+            "Messages": 4,
+            "ToolCalls": 4,
+            "Context": 524644
+          },
+          "deploy": {
+            "Messages": 1,
+            "ToolCalls": 1,
+            "Context": 173696
+          },
+          "gates": {
+            "Messages": 2,
+            "ToolCalls": 2,
+            "Context": 338983
+          },
+          "other": {
+            "Messages": 6,
+            "ToolCalls": 7,
+            "Context": 953091
+          },
+          "screenshots": {
+            "Messages": 13,
+            "ToolCalls": 18,
+            "Context": 2014592
+          },
+          "write": {
+            "Messages": 6,
+            "ToolCalls": 7,
+            "Context": 825727
+          }
+        }
+      },
+      "Measured": [
+        {
+          "Pages": [
+            {
+              "Role": "home",
+              "URL": "https://lending-r1-1-a2.fly.dev/",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 1838,
+                  "html": 1109,
+                  "js": 303,
+                  "other": 487
+                },
+                "Decoded": {
+                  "css": 4439,
+                  "html": 1453,
+                  "js": 275,
+                  "other": 654
+                }
+              },
+              "Axe": {
+                "minor": 1
+              },
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 96,
+                "performance": 100,
+                "seo": 90
+              }
+            },
+            {
+              "Role": "signin",
+              "URL": "https://lending-r1-1-a2.fly.dev/login",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 1870,
+                  "html": 1104,
+                  "js": 303,
+                  "other": 486
+                },
+                "Decoded": {
+                  "css": 4439,
+                  "html": 1453,
+                  "js": 275,
+                  "other": 654
+                }
+              },
+              "Axe": {
+                "minor": 1
+              },
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 96,
+                "performance": 100,
+                "seo": 90
+              }
+            },
+            {
+              "Role": "borrow",
+              "URL": "https://lending-r1-1-a2.fly.dev/",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 1814,
+                  "html": 2446,
+                  "js": 280
+                },
+                "Decoded": {
+                  "css": 4439,
+                  "html": 12562,
+                  "js": 275
+                }
+              },
+              "Axe": {
+                "minor": 1,
+                "serious": 1
+              },
+              "Lighthouse": null
+            },
+            {
+              "Role": "overdue",
+              "URL": "https://lending-r1-1-a2.fly.dev/admin",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 1840,
+                  "html": 2676,
+                  "js": 280
+                },
+                "Decoded": {
+                  "css": 4439,
+                  "html": 11665,
+                  "js": 275
+                }
+              },
+              "Axe": {
+                "minor": 1,
+                "serious": 1
+              },
+              "Lighthouse": null
+            }
+          ],
+          "Headers": {
+            "content-security-policy": "default-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'",
+            "frame-ancestors": "frame-ancestors 'none'",
+            "referrer-policy": "same-origin",
+            "x-content-type-options": "nosniff",
+            "x-frame-options": "DENY"
+          },
+          "DeployOK": true,
+          "Failures": null
+        },
+        {
+          "Pages": [
+            {
+              "Role": "home",
+              "URL": "https://lending-r1-1-a2.fly.dev/",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 4210,
+                  "html": 2313,
+                  "js": 835,
+                  "other": 277
+                },
+                "Decoded": {
+                  "css": 15057,
+                  "html": 5042,
+                  "js": 1614,
+                  "other": 250
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 100,
+                "performance": 100,
+                "seo": 100
+              }
+            },
+            {
+              "Role": "signin",
+              "URL": "https://lending-r1-1-a2.fly.dev/login",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 4169,
+                  "html": 2239,
+                  "js": 867,
+                  "other": 277
+                },
+                "Decoded": {
+                  "css": 15057,
+                  "html": 5042,
+                  "js": 1614,
+                  "other": 250
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 100,
+                "performance": 100,
+                "seo": 100
+              }
+            },
+            {
+              "Role": "borrow",
+              "URL": "https://lending-r1-1-a2.fly.dev/",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 4168,
+                  "html": 3502,
+                  "js": 811,
+                  "other": 265
+                },
+                "Decoded": {
+                  "css": 15057,
+                  "html": 19721,
+                  "js": 1614,
+                  "other": 250
+                }
+              },
+              "Axe": {},
+              "Lighthouse": null
+            },
+            {
+              "Role": "overdue",
+              "URL": "https://lending-r1-1-a2.fly.dev/admin",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 4160,
+                  "html": 3953,
+                  "js": 811,
+                  "other": 264
+                },
+                "Decoded": {
+                  "css": 15057,
+                  "html": 21595,
+                  "js": 1614,
+                  "other": 250
+                }
+              },
+              "Axe": {},
+              "Lighthouse": null
+            }
+          ],
+          "Headers": {
+            "content-security-policy": "default-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'",
+            "frame-ancestors": "frame-ancestors 'none'",
+            "referrer-policy": "same-origin",
+            "x-content-type-options": "nosniff",
+            "x-frame-options": "DENY"
+          },
+          "DeployOK": true,
+          "Failures": null
+        }
+      ],
+      "AgentFailures": null,
+      "ReusedFrom": ""
+    },
+    {
+      "Brief": "lending",
+      "Arm": "control",
+      "N": 2,
+      "App": "lending-r1-2-a3",
+      "RastrilloVersion": "",
+      "Build": {
+        "Complete": true,
+        "Messages": 24,
+        "ToolCalls": 23,
+        "NumTurns": 24,
+        "Output": 39275,
+        "CacheRead": 1150357,
+        "CacheWrite": 49531,
+        "CostUSD": 1.4120114000000004,
+        "DurationS": 442,
+        "FirstWriteContext": 29531,
+        "DeployMessages": 5,
+        "Stages": {
+          "app-read": {
+            "Messages": 1,
+            "ToolCalls": 1,
+            "Context": 26967
+          },
+          "build-test": {
+            "Messages": 8,
+            "ToolCalls": 8,
+            "Context": 477990
+          },
+          "deploy": {
+            "Messages": 5,
+            "ToolCalls": 5,
+            "Context": 252522
+          },
+          "other": {
+            "Messages": 2,
+            "ToolCalls": 1,
+            "Context": 135755
+          },
+          "scaffold": {
+            "Messages": 2,
+            "ToolCalls": 2,
+            "Context": 55262
+          },
+          "write": {
+            "Messages": 6,
+            "ToolCalls": 6,
+            "Context": 251440
+          }
+        }
+      },
+      "Followup": {
+        "Complete": true,
+        "Messages": 26,
+        "ToolCalls": 28,
+        "NumTurns": 32,
+        "Output": 27312,
+        "CacheRead": 2343071,
+        "CacheWrite": 41381,
+        "CostUSD": 1.3461102,
+        "DurationS": 373,
+        "FirstWriteContext": 72459,
+        "DeployMessages": 2,
+        "Stages": {
+          "app-read": {
+            "Messages": 4,
+            "ToolCalls": 4,
+            "Context": 352503
+          },
+          "build-test": {
+            "Messages": 5,
+            "ToolCalls": 5,
+            "Context": 431969
+          },
+          "deploy": {
+            "Messages": 2,
+            "ToolCalls": 2,
+            "Context": 215049
+          },
+          "other": {
+            "Messages": 3,
+            "ToolCalls": 2,
+            "Context": 273442
+          },
+          "scaffold": {
+            "Messages": 1,
+            "ToolCalls": 1,
+            "Context": 93753
+          },
+          "screenshots": {
+            "Messages": 7,
+            "ToolCalls": 10,
+            "Context": 690448
+          },
+          "write": {
+            "Messages": 4,
+            "ToolCalls": 4,
+            "Context": 327340
+          }
+        }
+      },
+      "Measured": [
+        {
+          "Pages": [
+            {
+              "Role": "home",
+              "URL": "https://lending-r1-2-a3.fly.dev/",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "html": 2475
+                },
+                "Decoded": {
+                  "html": 4428
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 100,
+                "performance": 100,
+                "seo": 82
+              }
+            },
+            {
+              "Role": "signin",
+              "URL": "https://lending-r1-2-a3.fly.dev/login",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "html": 2416
+                },
+                "Decoded": {
+                  "html": 4428
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 100,
+                "performance": 100,
+                "seo": 82
+              }
+            },
+            {
+              "Role": "borrow",
+              "URL": "https://lending-r1-2-a3.fly.dev/",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "html": 3418
+                },
+                "Decoded": {
+                  "html": 16913
+                }
+              },
+              "Axe": {},
+              "Lighthouse": null
+            },
+            {
+              "Role": "overdue",
+              "URL": "https://lending-r1-2-a3.fly.dev/admin#overdue",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "html": 3957
+                },
+                "Decoded": {
+                  "html": 19611
+                }
+              },
+              "Axe": {},
+              "Lighthouse": null
+            }
+          ],
+          "Headers": {
+            "content-security-policy": "default-src 'none'; style-src 'self' 'unsafe-inline'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'",
+            "frame-ancestors": "frame-ancestors 'none'",
+            "referrer-policy": "same-origin",
+            "x-content-type-options": "nosniff",
+            "x-frame-options": "DENY"
+          },
+          "DeployOK": true,
+          "Failures": null
+        },
+        {
+          "Pages": [
+            {
+              "Role": "home",
+              "URL": "https://lending-r1-2-a3.fly.dev/",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 3967,
+                  "html": 1823,
+                  "other": 293
+                },
+                "Decoded": {
+                  "css": 11126,
+                  "html": 2794,
+                  "other": 329
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 100,
+                "performance": 100,
+                "seo": 91
+              }
+            },
+            {
+              "Role": "signin",
+              "URL": "https://lending-r1-2-a3.fly.dev/login",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 4001,
+                  "html": 1710,
+                  "other": 292
+                },
+                "Decoded": {
+                  "css": 11126,
+                  "html": 2794,
+                  "other": 329
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 100,
+                "performance": 100,
+                "seo": 91
+              }
+            },
+            {
+              "Role": "borrow",
+              "URL": "https://lending-r1-2-a3.fly.dev/",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 3949,
+                  "html": 3075,
+                  "other": 280
+                },
+                "Decoded": {
+                  "css": 11126,
+                  "html": 18933,
+                  "other": 329
+                }
+              },
+              "Axe": {},
+              "Lighthouse": null
+            },
+            {
+              "Role": "overdue",
+              "URL": "https://lending-r1-2-a3.fly.dev/admin#overdue-h",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 3950,
+                  "html": 3533,
+                  "other": 280
+                },
+                "Decoded": {
+                  "css": 11126,
+                  "html": 20402,
+                  "other": 329
+                }
+              },
+              "Axe": {},
+              "Lighthouse": null
+            }
+          ],
+          "Headers": {
+            "content-security-policy": "default-src 'none'; style-src 'self'; img-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'",
+            "frame-ancestors": "frame-ancestors 'none'",
+            "referrer-policy": "same-origin",
+            "x-content-type-options": "nosniff",
+            "x-frame-options": "DENY"
+          },
+          "DeployOK": true,
+          "Failures": null
+        }
+      ],
+      "AgentFailures": null,
+      "ReusedFrom": ""
+    },
+    {
+      "Brief": "lending",
+      "Arm": "control",
+      "N": 3,
+      "App": "lending-r1-3",
+      "RastrilloVersion": "",
+      "Build": {
+        "Complete": true,
+        "Messages": 22,
+        "ToolCalls": 21,
+        "NumTurns": 22,
+        "Output": 27174,
+        "CacheRead": 953795,
+        "CacheWrite": 39793,
+        "CostUSD": 1.052759,
+        "DurationS": 300,
+        "FirstWriteContext": 27656,
+        "DeployMessages": 6,
+        "Stages": {
+          "build-test": {
+            "Messages": 4,
+            "ToolCalls": 4,
+            "Context": 177215
+          },
+          "deploy": {
+            "Messages": 5,
+            "ToolCalls": 5,
+            "Context": 243930
+          },
+          "live-check": {
+            "Messages": 1,
+            "ToolCalls": 1,
+            "Context": 56495
+          },
+          "other": {
+            "Messages": 4,
+            "ToolCalls": 3,
+            "Context": 187793
+          },
+          "write": {
+            "Messages": 8,
+            "ToolCalls": 8,
+            "Context": 328199
+          }
+        }
+      },
+      "Followup": {
+        "Complete": true,
+        "Messages": 21,
+        "ToolCalls": 23,
+        "NumTurns": 26,
+        "Output": 27761,
+        "CacheRead": 1893692,
+        "CacheWrite": 54915,
+        "CostUSD": 1.3734463999999997,
+        "DurationS": 326,
+        "FirstWriteContext": 68998,
+        "DeployMessages": 2,
+        "Stages": {
+          "app-read": {
+            "Messages": 1,
+            "ToolCalls": 1,
+            "Context": 58383
+          },
+          "build-test": {
+            "Messages": 4,
+            "ToolCalls": 4,
+            "Context": 390229
+          },
+          "deploy": {
+            "Messages": 2,
+            "ToolCalls": 2,
+            "Context": 221608
+          },
+          "other": {
+            "Messages": 5,
+            "ToolCalls": 5,
+            "Context": 478726
+          },
+          "screenshots": {
+            "Messages": 5,
+            "ToolCalls": 7,
+            "Context": 502709
+          },
+          "write": {
+            "Messages": 4,
+            "ToolCalls": 4,
+            "Context": 296994
+          }
+        }
+      },
+      "Measured": [
+        {
+          "Pages": [
+            {
+              "Role": "home",
+              "URL": "https://lending-r1-3.fly.dev/",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 1390,
+                  "html": 1098,
+                  "other": 728
+                },
+                "Decoded": {
+                  "css": 2957,
+                  "html": 1255,
+                  "other": 1255
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 100,
+                "performance": 100,
+                "seo": 82
+              }
+            },
+            {
+              "Role": "signin",
+              "URL": "https://lending-r1-3.fly.dev/login",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 1390,
+                  "html": 1048,
+                  "other": 752
+                },
+                "Decoded": {
+                  "css": 2957,
+                  "html": 1255,
+                  "other": 1255
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 100,
+                "performance": 100,
+                "seo": 82
+              }
+            },
+            {
+              "Role": "borrow",
+              "URL": "https://lending-r1-3.fly.dev/equipment",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 1337,
+                  "html": 1756
+                },
+                "Decoded": {
+                  "css": 2957,
+                  "html": 9839
+                }
+              },
+              "Axe": {
+                "serious": 1
+              },
+              "Lighthouse": null
+            },
+            {
+              "Role": "overdue",
+              "URL": "https://lending-r1-3.fly.dev/admin",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 1355,
+                  "html": 1831
+                },
+                "Decoded": {
+                  "css": 2957,
+                  "html": 9121
+                }
+              },
+              "Axe": {
+                "minor": 1,
+                "serious": 1
+              },
+              "Lighthouse": null
+            }
+          ],
+          "Headers": {
+            "content-security-policy": "default-src 'none'; style-src 'self'; img-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'",
+            "frame-ancestors": "frame-ancestors 'none'",
+            "referrer-policy": "same-origin",
+            "x-content-type-options": "nosniff",
+            "x-frame-options": "DENY"
+          },
+          "DeployOK": true,
+          "Failures": null
+        },
+        {
+          "Pages": [
+            {
+              "Role": "home",
+              "URL": "https://lending-r1-3.fly.dev/",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 3519,
+                  "html": 1921,
+                  "other": 250
+                },
+                "Decoded": {
+                  "css": 13127,
+                  "html": 4569,
+                  "other": 171
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 100,
+                "performance": 100,
+                "seo": 91
+              }
+            },
+            {
+              "Role": "signin",
+              "URL": "https://lending-r1-3.fly.dev/login",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 3518,
+                  "html": 1863,
+                  "other": 248
+                },
+                "Decoded": {
+                  "css": 13127,
+                  "html": 4569,
+                  "other": 171
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 100,
+                "performance": 100,
+                "seo": 91
+              }
+            },
+            {
+              "Role": "borrow",
+              "URL": "https://lending-r1-3.fly.dev/",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 3472,
+                  "html": 2828,
+                  "other": 215
+                },
+                "Decoded": {
+                  "css": 13127,
+                  "html": 18161,
+                  "other": 171
+                }
+              },
+              "Axe": {},
+              "Lighthouse": null
+            },
+            {
+              "Role": "overdue",
+              "URL": "https://lending-r1-3.fly.dev/admin",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 3472,
+                  "html": 2860,
+                  "other": 216
+                },
+                "Decoded": {
+                  "css": 13127,
+                  "html": 18447,
+                  "other": 171
+                }
+              },
+              "Axe": {},
+              "Lighthouse": null
+            }
+          ],
+          "Headers": {
+            "content-security-policy": "default-src 'none'; style-src 'self'; img-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'",
+            "frame-ancestors": "frame-ancestors 'none'",
+            "referrer-policy": "same-origin",
+            "x-content-type-options": "nosniff",
+            "x-frame-options": "DENY"
+          },
+          "DeployOK": true,
+          "Failures": null
+        }
+      ],
+      "AgentFailures": null,
+      "ReusedFrom": ""
+    },
+    {
+      "Brief": "noticeboard",
+      "Arm": "carlos",
+      "N": 1,
+      "App": "noticeboard-r1-1",
+      "RastrilloVersion": "v0.30.0-bench.gb79c48634fea",
+      "Build": {
+        "Complete": true,
+        "Messages": 98,
+        "ToolCalls": 102,
+        "NumTurns": 103,
+        "Output": 77446,
+        "CacheRead": 17206015,
+        "CacheWrite": 243875,
+        "CostUSD": 6.943442400000004,
+        "DurationS": 921,
+        "FirstWriteContext": 144150,
+        "DeployMessages": 14,
+        "Stages": {
+          "app-read": {
+            "Messages": 6,
+            "ToolCalls": 6,
+            "Context": 936549
+          },
+          "build-test": {
+            "Messages": 11,
+            "ToolCalls": 11,
+            "Context": 2365618
+          },
+          "deploy": {
+            "Messages": 11,
+            "ToolCalls": 11,
+            "Context": 2273649
+          },
+          "framework-read": {
+            "Messages": 24,
+            "ToolCalls": 24,
+            "Context": 2871271
+          },
+          "gates": {
+            "Messages": 6,
+            "ToolCalls": 6,
+            "Context": 1457319
+          },
+          "live-check": {
+            "Messages": 3,
+            "ToolCalls": 3,
+            "Context": 767259
+          },
+          "other": {
+            "Messages": 12,
+            "ToolCalls": 12,
+            "Context": 2247137
+          },
+          "scaffold": {
+            "Messages": 3,
+            "ToolCalls": 3,
+            "Context": 280887
+          },
+          "screenshots": {
+            "Messages": 4,
+            "ToolCalls": 6,
+            "Context": 940108
+          },
+          "write": {
+            "Messages": 18,
+            "ToolCalls": 20,
+            "Context": 3310289
+          }
+        }
+      },
+      "Followup": {
+        "Complete": true,
+        "Messages": 43,
+        "ToolCalls": 47,
+        "NumTurns": 50,
+        "Output": 39787,
+        "CacheRead": 13393778,
+        "CacheWrite": 84870,
+        "CostUSD": 4.1537996,
+        "DurationS": 458,
+        "FirstWriteContext": 284828,
+        "DeployMessages": 2,
+        "Stages": {
+          "app-read": {
+            "Messages": 8,
+            "ToolCalls": 8,
+            "Context": 2442927
+          },
+          "build-test": {
+            "Messages": 12,
+            "ToolCalls": 12,
+            "Context": 3774543
+          },
+          "deploy": {
+            "Messages": 1,
+            "ToolCalls": 1,
+            "Context": 344222
+          },
+          "framework-read": {
+            "Messages": 2,
+            "ToolCalls": 2,
+            "Context": 545964
+          },
+          "gates": {
+            "Messages": 1,
+            "ToolCalls": 1,
+            "Context": 342081
+          },
+          "live-check": {
+            "Messages": 1,
+            "ToolCalls": 1,
+            "Context": 344947
+          },
+          "other": {
+            "Messages": 5,
+            "ToolCalls": 4,
+            "Context": 1647276
+          },
+          "screenshots": {
+            "Messages": 5,
+            "ToolCalls": 8,
+            "Context": 1619066
+          },
+          "write": {
+            "Messages": 8,
+            "ToolCalls": 10,
+            "Context": 2417708
+          }
+        }
+      },
+      "Measured": [
+        {
+          "Pages": [
+            {
+              "Role": "home",
+              "URL": "https://noticeboard-r1-1.bdf.oncarlos.com/",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 83227,
+                  "html": 2204,
+                  "js": 79201,
+                  "other": 542
+                },
+                "Decoded": {
+                  "css": 315671,
+                  "html": 6075,
+                  "js": 235607,
+                  "other": 402
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 96,
+                "performance": 100,
+                "seo": 90
+              }
+            },
+            {
+              "Role": "search",
+              "URL": "https://noticeboard-r1-1.bdf.oncarlos.com/?q=tabby",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 83250,
+                  "html": 1967,
+                  "js": 79201,
+                  "other": 542
+                },
+                "Decoded": {
+                  "css": 315671,
+                  "html": 4737,
+                  "js": 235607,
+                  "other": 402
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 96,
+                "performance": 100,
+                "seo": 90
+              }
+            },
+            {
+              "Role": "listing",
+              "URL": "https://noticeboard-r1-1.bdf.oncarlos.com/notices/3",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 83250,
+                  "html": 2591,
+                  "js": 87830,
+                  "other": 542
+                },
+                "Decoded": {
+                  "css": 315671,
+                  "html": 5988,
+                  "js": 256384,
+                  "other": 402
+                }
+              },
+              "Axe": {
+                "moderate": 1
+              },
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 96,
+                "performance": 100,
+                "seo": 90
+              }
+            },
+            {
+              "Role": "contact",
+              "URL": "https://noticeboard-r1-1.bdf.oncarlos.com/notices/3#reply-heading",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 83250,
+                  "html": 2595,
+                  "js": 87853,
+                  "other": 542
+                },
+                "Decoded": {
+                  "css": 315671,
+                  "html": 5988,
+                  "js": 256384,
+                  "other": 402
+                }
+              },
+              "Axe": {
+                "moderate": 1
+              },
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 96,
+                "performance": 100,
+                "seo": 90
+              }
+            }
+          ],
+          "Headers": {
+            "content-security-policy": "default-src 'self'; style-src 'self' 'unsafe-hashes' 'sha256-yJxAE4rjdcckohdlnvecSporPcqS9xOaA4hJxi87LMc='; img-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
+            "frame-ancestors": "frame-ancestors 'none'",
+            "referrer-policy": "strict-origin-when-cross-origin",
+            "strict-transport-security": "max-age=31536000",
+            "x-content-type-options": "nosniff",
+            "x-frame-options": "DENY"
+          },
+          "DeployOK": true,
+          "Failures": [
+            "listing: requests still open after 30s; weight counts what finished",
+            "contact: requests still open after 30s; weight counts what finished"
+          ]
+        },
+        {
+          "Pages": [
+            {
+              "Role": "home",
+              "URL": "https://noticeboard-r1-1.bdf.oncarlos.com/",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 86407,
+                  "html": 3725,
+                  "js": 79201,
+                  "other": 542
+                },
+                "Decoded": {
+                  "css": 327866,
+                  "html": 14332,
+                  "js": 235607,
+                  "other": 402
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 96,
+                "performance": 100,
+                "seo": 100
+              }
+            },
+            {
+              "Role": "search",
+              "URL": "https://noticeboard-r1-1.bdf.oncarlos.com/notices?q=bike",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 86430,
+                  "html": 2457,
+                  "js": 79201,
+                  "other": 542
+                },
+                "Decoded": {
+                  "css": 327866,
+                  "html": 6525,
+                  "js": 235607,
+                  "other": 402
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 96,
+                "performance": 100,
+                "seo": 100
+              }
+            },
+            {
+              "Role": "listing",
+              "URL": "https://noticeboard-r1-1.bdf.oncarlos.com/notices/3",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 86430,
+                  "html": 2965,
+                  "js": 79201,
+                  "other": 542
+                },
+                "Decoded": {
+                  "css": 327866,
+                  "html": 8192,
+                  "js": 235607,
+                  "other": 402
+                }
+              },
+              "Axe": {
+                "moderate": 1
+              },
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 96,
+                "performance": 99,
+                "seo": 100
+              }
+            },
+            {
+              "Role": "contact",
+              "URL": "https://noticeboard-r1-1.bdf.oncarlos.com/notices/3#reply-heading",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 86262,
+                  "html": 2974,
+                  "js": 79179,
+                  "other": 565
+                },
+                "Decoded": {
+                  "css": 327866,
+                  "html": 8192,
+                  "js": 235607,
+                  "other": 402
+                }
+              },
+              "Axe": {
+                "moderate": 1
+              },
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 96,
+                "performance": 100,
+                "seo": 100
+              }
+            }
+          ],
+          "Headers": {
+            "content-security-policy": "default-src 'self'; style-src 'self' 'unsafe-hashes' 'sha256-yJxAE4rjdcckohdlnvecSporPcqS9xOaA4hJxi87LMc='; img-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
+            "frame-ancestors": "frame-ancestors 'none'",
+            "referrer-policy": "strict-origin-when-cross-origin",
+            "strict-transport-security": "max-age=31536000",
+            "x-content-type-options": "nosniff",
+            "x-frame-options": "DENY"
+          },
+          "DeployOK": true,
+          "Failures": null
+        }
+      ],
+      "AgentFailures": null,
+      "ReusedFrom": ""
+    },
+    {
+      "Brief": "noticeboard",
+      "Arm": "carlos",
+      "N": 2,
+      "App": "noticeboard-r1-2",
+      "RastrilloVersion": "v0.30.0-bench.gb79c48634fea",
+      "Build": {
+        "Complete": true,
+        "Messages": 107,
+        "ToolCalls": 114,
+        "NumTurns": 115,
+        "Output": 80648,
+        "CacheRead": 17413603,
+        "CacheWrite": 240598,
+        "CostUSD": 7.021320599999997,
+        "DurationS": 1630,
+        "FirstWriteContext": 124988,
+        "DeployMessages": 14,
+        "Stages": {
+          "app-read": {
+            "Messages": 5,
+            "ToolCalls": 5,
+            "Context": 641271
+          },
+          "build-test": {
+            "Messages": 15,
+            "ToolCalls": 15,
+            "Context": 2999043
+          },
+          "deploy": {
+            "Messages": 10,
+            "ToolCalls": 10,
+            "Context": 1771964
+          },
+          "framework-read": {
+            "Messages": 30,
+            "ToolCalls": 30,
+            "Context": 3868156
+          },
+          "gates": {
+            "Messages": 4,
+            "ToolCalls": 4,
+            "Context": 844487
+          },
+          "live-check": {
+            "Messages": 4,
+            "ToolCalls": 4,
+            "Context": 1003690
+          },
+          "other": {
+            "Messages": 11,
+            "ToolCalls": 12,
+            "Context": 2076373
+          },
+          "scaffold": {
+            "Messages": 3,
+            "ToolCalls": 3,
+            "Context": 217813
+          },
+          "screenshots": {
+            "Messages": 3,
+            "ToolCalls": 4,
+            "Context": 717785
+          },
+          "write": {
+            "Messages": 22,
+            "ToolCalls": 27,
+            "Context": 3513833
+          }
+        }
+      },
+      "Followup": {
+        "Complete": true,
+        "Messages": 47,
+        "ToolCalls": 54,
+        "NumTurns": 56,
+        "Output": 50783,
+        "CacheRead": 14750703,
+        "CacheWrite": 99499,
+        "CostUSD": 4.7621686,
+        "DurationS": 570,
+        "FirstWriteContext": 279944,
+        "DeployMessages": 1,
+        "Stages": {
+          "app-read": {
+            "Messages": 13,
+            "ToolCalls": 14,
+            "Context": 3974494
+          },
+          "build-test": {
+            "Messages": 5,
+            "ToolCalls": 5,
+            "Context": 1583464
+          },
+          "deploy": {
+            "Messages": 1,
+            "ToolCalls": 1,
+            "Context": 355892
+          },
+          "gates": {
+            "Messages": 2,
+            "ToolCalls": 2,
+            "Context": 676140
+          },
+          "other": {
+            "Messages": 8,
+            "ToolCalls": 7,
+            "Context": 2549156
+          },
+          "screenshots": {
+            "Messages": 6,
+            "ToolCalls": 11,
+            "Context": 2017412
+          },
+          "write": {
+            "Messages": 12,
+            "ToolCalls": 14,
+            "Context": 3693738
+          }
+        }
+      },
+      "Measured": [
+        {
+          "Pages": [
+            {
+              "Role": "home",
+              "URL": "https://noticeboard-r1-2.bdf.oncarlos.com/",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 83864,
+                  "html": 3158,
+                  "js": 79233,
+                  "other": 542
+                },
+                "Decoded": {
+                  "css": 317634,
+                  "html": 8867,
+                  "js": 235607,
+                  "other": 402
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 96,
+                "performance": 100,
+                "seo": 90
+              }
+            },
+            {
+              "Role": "search",
+              "URL": "https://noticeboard-r1-2.bdf.oncarlos.com/?q=library",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 83919,
+                  "html": 2191,
+                  "js": 79201,
+                  "other": 542
+                },
+                "Decoded": {
+                  "css": 317634,
+                  "html": 5245,
+                  "js": 235607,
+                  "other": 402
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 96,
+                "performance": 100,
+                "seo": 90
+              }
+            },
+            {
+              "Role": "listing",
+              "URL": "https://noticeboard-r1-2.bdf.oncarlos.com/notices/8",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 83919,
+                  "html": 2575,
+                  "js": 87830,
+                  "other": 542
+                },
+                "Decoded": {
+                  "css": 317634,
+                  "html": 6017,
+                  "js": 256384,
+                  "other": 402
+                }
+              },
+              "Axe": {
+                "moderate": 1
+              },
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 96,
+                "performance": 100,
+                "seo": 90
+              }
+            },
+            {
+              "Role": "contact",
+              "URL": "https://noticeboard-r1-2.bdf.oncarlos.com/notices/8#reply",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 83919,
+                  "html": 2579,
+                  "js": 87853,
+                  "other": 542
+                },
+                "Decoded": {
+                  "css": 317634,
+                  "html": 6017,
+                  "js": 256384,
+                  "other": 402
+                }
+              },
+              "Axe": {
+                "moderate": 1
+              },
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 96,
+                "performance": 99,
+                "seo": 90
+              }
+            }
+          ],
+          "Headers": {
+            "content-security-policy": "default-src 'self'; style-src 'self' 'unsafe-hashes' 'sha256-yJxAE4rjdcckohdlnvecSporPcqS9xOaA4hJxi87LMc='; img-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
+            "frame-ancestors": "frame-ancestors 'none'",
+            "referrer-policy": "strict-origin-when-cross-origin",
+            "strict-transport-security": "max-age=31536000",
+            "x-content-type-options": "nosniff",
+            "x-frame-options": "DENY"
+          },
+          "DeployOK": true,
+          "Failures": [
+            "listing: requests still open after 30s; weight counts what finished",
+            "contact: requests still open after 30s; weight counts what finished"
+          ]
+        },
+        {
+          "Pages": [
+            {
+              "Role": "home",
+              "URL": "https://noticeboard-r1-2.bdf.oncarlos.com/",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 87139,
+                  "html": 3886,
+                  "js": 79201,
+                  "other": 951
+                },
+                "Decoded": {
+                  "css": 330775,
+                  "html": 17575,
+                  "js": 235607,
+                  "other": 812
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 100,
+                "performance": 100,
+                "seo": 100
+              }
+            },
+            {
+              "Role": "search",
+              "URL": "https://noticeboard-r1-2.bdf.oncarlos.com/notices?q=library",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 87139,
+                  "html": 2732,
+                  "js": 79201,
+                  "other": 974
+                },
+                "Decoded": {
+                  "css": 330775,
+                  "html": 8309,
+                  "js": 235607,
+                  "other": 812
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 100,
+                "performance": 100,
+                "seo": 100
+              }
+            },
+            {
+              "Role": "listing",
+              "URL": "https://noticeboard-r1-2.bdf.oncarlos.com/notices/8",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 87162,
+                  "html": 3559,
+                  "js": 87818,
+                  "other": 951
+                },
+                "Decoded": {
+                  "css": 330775,
+                  "html": 11597,
+                  "js": 256384,
+                  "other": 812
+                }
+              },
+              "Axe": {
+                "moderate": 1
+              },
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 100,
+                "performance": 99,
+                "seo": 100
+              }
+            },
+            {
+              "Role": "contact",
+              "URL": "https://noticeboard-r1-2.bdf.oncarlos.com/notices/8#reply",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 87022,
+                  "html": 3568,
+                  "js": 87826,
+                  "other": 974
+                },
+                "Decoded": {
+                  "css": 330775,
+                  "html": 11597,
+                  "js": 256384,
+                  "other": 812
+                }
+              },
+              "Axe": {
+                "moderate": 1
+              },
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 100,
+                "performance": 99,
+                "seo": 100
+              }
+            }
+          ],
+          "Headers": {
+            "content-security-policy": "default-src 'self'; style-src 'self' 'unsafe-hashes' 'sha256-yJxAE4rjdcckohdlnvecSporPcqS9xOaA4hJxi87LMc='; img-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
+            "frame-ancestors": "frame-ancestors 'none'",
+            "referrer-policy": "strict-origin-when-cross-origin",
+            "strict-transport-security": "max-age=31536000",
+            "x-content-type-options": "nosniff",
+            "x-frame-options": "DENY"
+          },
+          "DeployOK": true,
+          "Failures": [
+            "listing: requests still open after 30s; weight counts what finished",
+            "contact: requests still open after 30s; weight counts what finished"
+          ]
+        }
+      ],
+      "AgentFailures": null,
+      "ReusedFrom": ""
+    },
+    {
+      "Brief": "noticeboard",
+      "Arm": "carlos",
+      "N": 3,
+      "App": "noticeboard-r1-3",
+      "RastrilloVersion": "v0.30.0-bench.gb79c48634fea",
+      "Build": {
+        "Complete": true,
+        "Messages": 107,
+        "ToolCalls": 110,
+        "NumTurns": 111,
+        "Output": 85312,
+        "CacheRead": 19094231,
+        "CacheWrite": 246929,
+        "CostUSD": 7.501374199999999,
+        "DurationS": 975,
+        "FirstWriteContext": 153114,
+        "DeployMessages": 19,
+        "Stages": {
+          "app-read": {
+            "Messages": 11,
+            "ToolCalls": 11,
+            "Context": 1713164
+          },
+          "build-test": {
+            "Messages": 11,
+            "ToolCalls": 11,
+            "Context": 2105971
+          },
+          "deploy": {
+            "Messages": 16,
+            "ToolCalls": 16,
+            "Context": 3755306
+          },
+          "framework-read": {
+            "Messages": 1,
+            "ToolCalls": 1,
+            "Context": 26676
+          },
+          "gates": {
+            "Messages": 4,
+            "ToolCalls": 4,
+            "Context": 954876
+          },
+          "live-check": {
+            "Messages": 3,
+            "ToolCalls": 3,
+            "Context": 756034
+          },
+          "other": {
+            "Messages": 32,
+            "ToolCalls": 32,
+            "Context": 4856453
+          },
+          "scaffold": {
+            "Messages": 2,
+            "ToolCalls": 2,
+            "Context": 89292
+          },
+          "screenshots": {
+            "Messages": 3,
+            "ToolCalls": 4,
+            "Context": 743712
+          },
+          "write": {
+            "Messages": 24,
+            "ToolCalls": 26,
+            "Context": 4339890
+          }
+        }
+      },
+      "Followup": {
+        "Complete": true,
+        "Messages": 36,
+        "ToolCalls": 39,
+        "NumTurns": 40,
+        "Output": 35273,
+        "CacheRead": 11096663,
+        "CacheWrite": 77211,
+        "CostUSD": 3.5427686000000005,
+        "DurationS": 456,
+        "FirstWriteContext": 286921,
+        "DeployMessages": 1,
+        "Stages": {
+          "app-read": {
+            "Messages": 7,
+            "ToolCalls": 7,
+            "Context": 2047442
+          },
+          "build-test": {
+            "Messages": 5,
+            "ToolCalls": 5,
+            "Context": 1534215
+          },
+          "deploy": {
+            "Messages": 1,
+            "ToolCalls": 1,
+            "Context": 340699
+          },
+          "gates": {
+            "Messages": 3,
+            "ToolCalls": 3,
+            "Context": 1013082
+          },
+          "other": {
+            "Messages": 7,
+            "ToolCalls": 6,
+            "Context": 2228150
+          },
+          "screenshots": {
+            "Messages": 5,
+            "ToolCalls": 9,
+            "Context": 1613621
+          },
+          "write": {
+            "Messages": 8,
+            "ToolCalls": 8,
+            "Context": 2396737
+          }
+        }
+      },
+      "Measured": [
+        {
+          "Pages": [
+            {
+              "Role": "home",
+              "URL": "https://noticeboard-r1-3.bdf.oncarlos.com/",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 83129,
+                  "html": 2193,
+                  "js": 79147,
+                  "other": 542
+                },
+                "Decoded": {
+                  "css": 315690,
+                  "html": 5939,
+                  "js": 235607,
+                  "other": 402
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 96,
+                "performance": 100,
+                "seo": 90
+              }
+            },
+            {
+              "Role": "search",
+              "URL": "https://noticeboard-r1-3.bdf.oncarlos.com/?q=tabby",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 83097,
+                  "html": 1895,
+                  "js": 79202,
+                  "other": 542
+                },
+                "Decoded": {
+                  "css": 315690,
+                  "html": 4533,
+                  "js": 235607,
+                  "other": 402
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 96,
+                "performance": 100,
+                "seo": 90
+              }
+            },
+            {
+              "Role": "listing",
+              "URL": "https://noticeboard-r1-3.bdf.oncarlos.com/notices/2",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 83152,
+                  "html": 2610,
+                  "js": 87780,
+                  "other": 542
+                },
+                "Decoded": {
+                  "css": 315690,
+                  "html": 6119,
+                  "js": 256384,
+                  "other": 402
+                }
+              },
+              "Axe": {
+                "moderate": 1
+              },
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 96,
+                "performance": 100,
+                "seo": 90
+              }
+            },
+            {
+              "Role": "contact",
+              "URL": "https://noticeboard-r1-3.bdf.oncarlos.com/notices/1",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 83152,
+                  "html": 2637,
+                  "js": 87803,
+                  "other": 542
+                },
+                "Decoded": {
+                  "css": 315690,
+                  "html": 6133,
+                  "js": 256384,
+                  "other": 402
+                }
+              },
+              "Axe": {
+                "moderate": 1
+              },
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 96,
+                "performance": 100,
+                "seo": 90
+              }
+            }
+          ],
+          "Headers": {
+            "content-security-policy": "default-src 'self'; style-src 'self' 'unsafe-hashes' 'sha256-yJxAE4rjdcckohdlnvecSporPcqS9xOaA4hJxi87LMc='; img-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
+            "frame-ancestors": "frame-ancestors 'none'",
+            "referrer-policy": "strict-origin-when-cross-origin",
+            "strict-transport-security": "max-age=31536000",
+            "x-content-type-options": "nosniff",
+            "x-frame-options": "DENY"
+          },
+          "DeployOK": true,
+          "Failures": [
+            "listing: requests still open after 30s; weight counts what finished",
+            "contact: requests still open after 30s; weight counts what finished"
+          ]
+        },
+        {
+          "Pages": [
+            {
+              "Role": "home",
+              "URL": "https://noticeboard-r1-3.bdf.oncarlos.com/",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 86959,
+                  "html": 4351,
+                  "js": 79201,
+                  "other": 1004
+                },
+                "Decoded": {
+                  "css": 331184,
+                  "html": 22320,
+                  "js": 235607,
+                  "other": 865
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 100,
+                "performance": 100,
+                "seo": 100
+              }
+            },
+            {
+              "Role": "search",
+              "URL": "https://noticeboard-r1-3.bdf.oncarlos.com/?q=bike",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 86927,
+                  "html": 2562,
+                  "js": 79256,
+                  "other": 1004
+                },
+                "Decoded": {
+                  "css": 331184,
+                  "html": 6547,
+                  "js": 235607,
+                  "other": 865
+                }
+              },
+              "Axe": {
+                "moderate": 2
+              },
+              "Lighthouse": {
+                "accessibility": 98,
+                "best-practices": 100,
+                "performance": 100,
+                "seo": 100
+              }
+            },
+            {
+              "Role": "listing",
+              "URL": "https://noticeboard-r1-3.bdf.oncarlos.com/notices/1",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 86927,
+                  "html": 3248,
+                  "js": 87885,
+                  "other": 1004
+                },
+                "Decoded": {
+                  "css": 331184,
+                  "html": 8509,
+                  "js": 256384,
+                  "other": 865
+                }
+              },
+              "Axe": {
+                "moderate": 1
+              },
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 100,
+                "performance": 100,
+                "seo": 100
+              }
+            },
+            {
+              "Role": "contact",
+              "URL": "https://noticeboard-r1-3.bdf.oncarlos.com/notices/1#reply-heading",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 86982,
+                  "html": 3252,
+                  "js": 87853,
+                  "other": 1004
+                },
+                "Decoded": {
+                  "css": 331184,
+                  "html": 8509,
+                  "js": 256384,
+                  "other": 865
+                }
+              },
+              "Axe": {
+                "moderate": 1
+              },
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 100,
+                "performance": 100,
+                "seo": 100
+              }
+            }
+          ],
+          "Headers": {
+            "content-security-policy": "default-src 'self'; style-src 'self' 'unsafe-hashes' 'sha256-yJxAE4rjdcckohdlnvecSporPcqS9xOaA4hJxi87LMc='; img-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
+            "frame-ancestors": "frame-ancestors 'none'",
+            "referrer-policy": "strict-origin-when-cross-origin",
+            "strict-transport-security": "max-age=31536000",
+            "x-content-type-options": "nosniff",
+            "x-frame-options": "DENY"
+          },
+          "DeployOK": true,
+          "Failures": [
+            "listing: requests still open after 30s; weight counts what finished",
+            "contact: requests still open after 30s; weight counts what finished"
+          ]
+        }
+      ],
+      "AgentFailures": null,
+      "ReusedFrom": ""
+    },
+    {
+      "Brief": "noticeboard",
+      "Arm": "control",
+      "N": 1,
+      "App": "noticeboard-r1-1",
+      "RastrilloVersion": "",
+      "Build": {
+        "Complete": true,
+        "Messages": 30,
+        "ToolCalls": 29,
+        "NumTurns": 30,
+        "Output": 55783,
+        "CacheRead": 1846223,
+        "CacheWrite": 68601,
+        "CostUSD": 2.0339525999999997,
+        "DurationS": 538,
+        "FirstWriteContext": 35003,
+        "DeployMessages": 8,
+        "Stages": {
+          "app-read": {
+            "Messages": 1,
+            "ToolCalls": 1,
+            "Context": 77797
+          },
+          "build-test": {
+            "Messages": 7,
+            "ToolCalls": 7,
+            "Context": 525216
+          },
+          "deploy": {
+            "Messages": 5,
+            "ToolCalls": 5,
+            "Context": 242178
+          },
+          "live-check": {
+            "Messages": 3,
+            "ToolCalls": 3,
+            "Context": 251520
+          },
+          "other": {
+            "Messages": 4,
+            "ToolCalls": 3,
+            "Context": 322008
+          },
+          "scaffold": {
+            "Messages": 1,
+            "ToolCalls": 1,
+            "Context": 27242
+          },
+          "write": {
+            "Messages": 9,
+            "ToolCalls": 9,
+            "Context": 468923
+          }
+        }
+      },
+      "Followup": {
+        "Complete": true,
+        "Messages": 33,
+        "ToolCalls": 35,
+        "NumTurns": 38,
+        "Output": 46416,
+        "CacheRead": 4107940,
+        "CacheWrite": 65243,
+        "CostUSD": 2.272116,
+        "DurationS": 546,
+        "FirstWriteContext": 87479,
+        "DeployMessages": 3,
+        "Stages": {
+          "app-read": {
+            "Messages": 2,
+            "ToolCalls": 2,
+            "Context": 256831
+          },
+          "build-test": {
+            "Messages": 5,
+            "ToolCalls": 5,
+            "Context": 672071
+          },
+          "deploy": {
+            "Messages": 3,
+            "ToolCalls": 3,
+            "Context": 449263
+          },
+          "other": {
+            "Messages": 6,
+            "ToolCalls": 5,
+            "Context": 826230
+          },
+          "screenshots": {
+            "Messages": 5,
+            "ToolCalls": 7,
+            "Context": 668718
+          },
+          "write": {
+            "Messages": 12,
+            "ToolCalls": 13,
+            "Context": 1300136
+          }
+        }
+      },
+      "Measured": [
+        {
+          "Pages": [
+            {
+              "Role": "home",
+              "URL": "https://noticeboard-r1-1.fly.dev/",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 2848,
+                  "html": 2932,
+                  "other": 672
+                },
+                "Decoded": {
+                  "css": 7776,
+                  "html": 5876,
+                  "other": 1027
+                }
+              },
+              "Axe": {
+                "serious": 1
+              },
+              "Lighthouse": {
+                "accessibility": 96,
+                "best-practices": 96,
+                "performance": 100,
+                "seo": 90
+              }
+            },
+            {
+              "Role": "search",
+              "URL": "https://noticeboard-r1-1.fly.dev/?q=tabby",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 2872,
+                  "html": 1656,
+                  "other": 672
+                },
+                "Decoded": {
+                  "css": 7776,
+                  "html": 2282,
+                  "other": 1027
+                }
+              },
+              "Axe": {
+                "serious": 1
+              },
+              "Lighthouse": {
+                "accessibility": 96,
+                "best-practices": 96,
+                "performance": 100,
+                "seo": 90
+              }
+            },
+            {
+              "Role": "listing",
+              "URL": "https://noticeboard-r1-1.fly.dev/notices/1",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 2881,
+                  "html": 1860,
+                  "other": 671
+                },
+                "Decoded": {
+                  "css": 7776,
+                  "html": 2806,
+                  "other": 1027
+                }
+              },
+              "Axe": {
+                "serious": 1
+              },
+              "Lighthouse": {
+                "accessibility": 95,
+                "best-practices": 96,
+                "performance": 100,
+                "seo": 90
+              }
+            },
+            {
+              "Role": "contact",
+              "URL": "https://noticeboard-r1-1.fly.dev/notices/1#reply",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 2847,
+                  "html": 1891,
+                  "other": 671
+                },
+                "Decoded": {
+                  "css": 7776,
+                  "html": 2806,
+                  "other": 1027
+                }
+              },
+              "Axe": {
+                "serious": 1
+              },
+              "Lighthouse": {
+                "accessibility": 95,
+                "best-practices": 96,
+                "performance": 100,
+                "seo": 90
+              }
+            }
+          ],
+          "Headers": {
+            "content-security-policy": "default-src 'self'; img-src 'self' data:; form-action 'self'; frame-ancestors 'none'; base-uri 'none'; object-src 'none'",
+            "frame-ancestors": "frame-ancestors 'none'",
+            "referrer-policy": "same-origin",
+            "x-content-type-options": "nosniff",
+            "x-frame-options": "DENY"
+          },
+          "DeployOK": true,
+          "Failures": null
+        },
+        {
+          "Pages": [
+            {
+              "Role": "home",
+              "URL": "https://noticeboard-r1-1.fly.dev/",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 6263,
+                  "html": 4690,
+                  "image": 1903,
+                  "other": 0
+                },
+                "Decoded": {
+                  "css": 18009,
+                  "html": 22123,
+                  "image": 4403,
+                  "other": 630
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 100,
+                "performance": 100,
+                "seo": 100
+              }
+            },
+            {
+              "Role": "search",
+              "URL": "https://noticeboard-r1-1.fly.dev/?q=tabby",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 6239,
+                  "html": 2531,
+                  "image": 469,
+                  "other": 0
+                },
+                "Decoded": {
+                  "css": 18009,
+                  "html": 6240,
+                  "image": 630,
+                  "other": 630
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 100,
+                "performance": 100,
+                "seo": 100
+              }
+            },
+            {
+              "Role": "listing",
+              "URL": "https://noticeboard-r1-1.fly.dev/notices/7",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 6230,
+                  "html": 3102,
+                  "image": 469,
+                  "other": 0
+                },
+                "Decoded": {
+                  "css": 18009,
+                  "html": 8018,
+                  "image": 630,
+                  "other": 630
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 100,
+                "performance": 100,
+                "seo": 100
+              }
+            },
+            {
+              "Role": "contact",
+              "URL": "https://noticeboard-r1-1.fly.dev/notices/7#reply",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 6231,
+                  "html": 3094,
+                  "image": 469,
+                  "other": 0
+                },
+                "Decoded": {
+                  "css": 18009,
+                  "html": 8018,
+                  "image": 630,
+                  "other": 630
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 100,
+                "performance": 100,
+                "seo": 100
+              }
+            }
+          ],
+          "Headers": {
+            "content-security-policy": "default-src 'self'; img-src 'self' data:; form-action 'self'; frame-ancestors 'none'; base-uri 'none'; object-src 'none'",
+            "frame-ancestors": "frame-ancestors 'none'",
+            "referrer-policy": "same-origin",
+            "x-content-type-options": "nosniff",
+            "x-frame-options": "DENY"
+          },
+          "DeployOK": true,
+          "Failures": null
+        }
+      ],
+      "AgentFailures": null,
+      "ReusedFrom": ""
+    },
+    {
+      "Brief": "noticeboard",
+      "Arm": "control",
+      "N": 2,
+      "App": "noticeboard-r1-2-a2",
+      "RastrilloVersion": "",
+      "Build": {
+        "Complete": true,
+        "Messages": 21,
+        "ToolCalls": 21,
+        "NumTurns": 22,
+        "Output": 35611,
+        "CacheRead": 981475,
+        "CacheWrite": 45905,
+        "CostUSD": 1.2759229999999995,
+        "DurationS": 358,
+        "FirstWriteContext": 27241,
+        "DeployMessages": 5,
+        "Stages": {
+          "build-test": {
+            "Messages": 4,
+            "ToolCalls": 4,
+            "Context": 207808
+          },
+          "deploy": {
+            "Messages": 5,
+            "ToolCalls": 5,
+            "Context": 203222
+          },
+          "other": {
+            "Messages": 5,
+            "ToolCalls": 4,
+            "Context": 318180
+          },
+          "write": {
+            "Messages": 7,
+            "ToolCalls": 8,
+            "Context": 298212
+          }
+        }
+      },
+      "Followup": {
+        "Complete": true,
+        "Messages": 41,
+        "ToolCalls": 49,
+        "NumTurns": 51,
+        "Output": 38690,
+        "CacheRead": 4169282,
+        "CacheWrite": 67113,
+        "CostUSD": 2.1448884,
+        "DurationS": 436,
+        "FirstWriteContext": 72009,
+        "DeployMessages": 1,
+        "Stages": {
+          "app-read": {
+            "Messages": 5,
+            "ToolCalls": 5,
+            "Context": 416226
+          },
+          "build-test": {
+            "Messages": 6,
+            "ToolCalls": 7,
+            "Context": 685117
+          },
+          "live-check": {
+            "Messages": 1,
+            "ToolCalls": 1,
+            "Context": 131237
+          },
+          "other": {
+            "Messages": 8,
+            "ToolCalls": 8,
+            "Context": 920103
+          },
+          "screenshots": {
+            "Messages": 14,
+            "ToolCalls": 21,
+            "Context": 1504573
+          },
+          "write": {
+            "Messages": 7,
+            "ToolCalls": 7,
+            "Context": 579221
+          }
+        }
+      },
+      "Measured": [
+        {
+          "Pages": [
+            {
+              "Role": "home",
+              "URL": "https://noticeboard-r1-2-a2.fly.dev/",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 2414,
+                  "html": 2848,
+                  "other": 536
+                },
+                "Decoded": {
+                  "css": 6205,
+                  "html": 6393,
+                  "other": 788
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 96,
+                "performance": 100,
+                "seo": 82
+              }
+            },
+            {
+              "Role": "search",
+              "URL": "https://noticeboard-r1-2-a2.fly.dev/?q=bike",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 2408,
+                  "html": 1521,
+                  "other": 535
+                },
+                "Decoded": {
+                  "css": 6205,
+                  "html": 2076,
+                  "other": 788
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 96,
+                "performance": 100,
+                "seo": 82
+              }
+            },
+            {
+              "Role": "listing",
+              "URL": "https://noticeboard-r1-2-a2.fly.dev/notices/4",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 2412,
+                  "html": 1692,
+                  "other": 535
+                },
+                "Decoded": {
+                  "css": 6205,
+                  "html": 2265,
+                  "other": 788
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 96,
+                "performance": 100,
+                "seo": 82
+              }
+            },
+            {
+              "Role": "contact",
+              "URL": "https://noticeboard-r1-2-a2.fly.dev/notices/4#reply",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 2388,
+                  "html": 1703,
+                  "other": 535
+                },
+                "Decoded": {
+                  "css": 6205,
+                  "html": 2265,
+                  "other": 788
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 96,
+                "performance": 100,
+                "seo": 82
+              }
+            }
+          ],
+          "Headers": {
+            "content-security-policy": "default-src 'none'; style-src 'self'; img-src 'self'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'",
+            "frame-ancestors": "frame-ancestors 'none'",
+            "referrer-policy": "same-origin",
+            "strict-transport-security": "max-age=31536000",
+            "x-content-type-options": "nosniff"
+          },
+          "DeployOK": true,
+          "Failures": null
+        },
+        {
+          "Pages": [
+            {
+              "Role": "home",
+              "URL": "https://noticeboard-r1-2-a2.fly.dev/",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 5023,
+                  "html": 3699,
+                  "other": 328
+                },
+                "Decoded": {
+                  "css": 19144,
+                  "html": 12392,
+                  "other": 413
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 100,
+                "performance": 100,
+                "seo": 91
+              }
+            },
+            {
+              "Role": "search",
+              "URL": "https://noticeboard-r1-2-a2.fly.dev/notices?q=cat",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 5023,
+                  "html": 2255,
+                  "other": 327
+                },
+                "Decoded": {
+                  "css": 19144,
+                  "html": 5340,
+                  "other": 413
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 100,
+                "performance": 100,
+                "seo": 91
+              }
+            },
+            {
+              "Role": "listing",
+              "URL": "https://noticeboard-r1-2-a2.fly.dev/notices/8",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 5024,
+                  "html": 2704,
+                  "other": 327
+                },
+                "Decoded": {
+                  "css": 19144,
+                  "html": 5790,
+                  "other": 413
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 100,
+                "performance": 100,
+                "seo": 91
+              }
+            },
+            {
+              "Role": "contact",
+              "URL": "https://noticeboard-r1-2-a2.fly.dev/notices/8#reply",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 5024,
+                  "html": 2694,
+                  "other": 327
+                },
+                "Decoded": {
+                  "css": 19144,
+                  "html": 5790,
+                  "other": 413
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 100,
+                "performance": 100,
+                "seo": 91
+              }
+            }
+          ],
+          "Headers": {
+            "content-security-policy": "default-src 'none'; style-src 'self'; img-src 'self'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'",
+            "frame-ancestors": "frame-ancestors 'none'",
+            "referrer-policy": "same-origin",
+            "strict-transport-security": "max-age=31536000",
+            "x-content-type-options": "nosniff"
+          },
+          "DeployOK": true,
+          "Failures": null
+        }
+      ],
+      "AgentFailures": null,
+      "ReusedFrom": ""
+    },
+    {
+      "Brief": "noticeboard",
+      "Arm": "control",
+      "N": 3,
+      "App": "noticeboard-r1-3",
+      "RastrilloVersion": "",
+      "Build": {
+        "Complete": true,
+        "Messages": 20,
+        "ToolCalls": 21,
+        "NumTurns": 22,
+        "Output": 37641,
+        "CacheRead": 981782,
+        "CacheWrite": 49558,
+        "CostUSD": 1.3458003999999997,
+        "DurationS": 360,
+        "FirstWriteContext": 29438,
+        "DeployMessages": 4,
+        "Stages": {
+          "app-read": {
+            "Messages": 1,
+            "ToolCalls": 1,
+            "Context": 26134
+          },
+          "build-test": {
+            "Messages": 3,
+            "ToolCalls": 3,
+            "Context": 181426
+          },
+          "deploy": {
+            "Messages": 4,
+            "ToolCalls": 4,
+            "Context": 215954
+          },
+          "other": {
+            "Messages": 4,
+            "ToolCalls": 3,
+            "Context": 262897
+          },
+          "write": {
+            "Messages": 8,
+            "ToolCalls": 10,
+            "Context": 344969
+          }
+        }
+      },
+      "Followup": {
+        "Complete": true,
+        "Messages": 40,
+        "ToolCalls": 47,
+        "NumTurns": 51,
+        "Output": 41565,
+        "CacheRead": 4365569,
+        "CacheWrite": 72408,
+        "CostUSD": 2.2839977999999994,
+        "DurationS": 432,
+        "FirstWriteContext": 71099,
+        "DeployMessages": 2,
+        "Stages": {
+          "app-read": {
+            "Messages": 2,
+            "ToolCalls": 2,
+            "Context": 148532
+          },
+          "build-test": {
+            "Messages": 7,
+            "ToolCalls": 7,
+            "Context": 852281
+          },
+          "deploy": {
+            "Messages": 1,
+            "ToolCalls": 1,
+            "Context": 138299
+          },
+          "live-check": {
+            "Messages": 1,
+            "ToolCalls": 1,
+            "Context": 138630
+          },
+          "other": {
+            "Messages": 6,
+            "ToolCalls": 5,
+            "Context": 647864
+          },
+          "screenshots": {
+            "Messages": 17,
+            "ToolCalls": 25,
+            "Context": 1923026
+          },
+          "write": {
+            "Messages": 6,
+            "ToolCalls": 6,
+            "Context": 589425
+          }
+        }
+      },
+      "Measured": [
+        {
+          "Pages": [
+            {
+              "Role": "home",
+              "URL": "https://noticeboard-r1-3.fly.dev/",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 2230,
+                  "html": 2622,
+                  "other": 627
+                },
+                "Decoded": {
+                  "css": 5961,
+                  "html": 5555,
+                  "other": 917
+                }
+              },
+              "Axe": {
+                "moderate": 1
+              },
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 96,
+                "performance": 100,
+                "seo": 82
+              }
+            },
+            {
+              "Role": "search",
+              "URL": "https://noticeboard-r1-3.fly.dev/?q=bike",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 2229,
+                  "html": 1408,
+                  "other": 627
+                },
+                "Decoded": {
+                  "css": 5961,
+                  "html": 1946,
+                  "other": 917
+                }
+              },
+              "Axe": {
+                "moderate": 1
+              },
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 96,
+                "performance": 100,
+                "seo": 82
+              }
+            },
+            {
+              "Role": "listing",
+              "URL": "https://noticeboard-r1-3.fly.dev/notices/4",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 2213,
+                  "html": 1606,
+                  "other": 628
+                },
+                "Decoded": {
+                  "css": 5961,
+                  "html": 2377,
+                  "other": 917
+                }
+              },
+              "Axe": {
+                "moderate": 1
+              },
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 96,
+                "performance": 100,
+                "seo": 82
+              }
+            },
+            {
+              "Role": "contact",
+              "URL": "https://noticeboard-r1-3.fly.dev/notices/1",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 2214,
+                  "html": 1714,
+                  "other": 627
+                },
+                "Decoded": {
+                  "css": 5961,
+                  "html": 2560,
+                  "other": 917
+                }
+              },
+              "Axe": {
+                "moderate": 1
+              },
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 96,
+                "performance": 100,
+                "seo": 82
+              }
+            }
+          ],
+          "Headers": {
+            "content-security-policy": "default-src 'none'; style-src 'self'; img-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'",
+            "frame-ancestors": "frame-ancestors 'none'",
+            "referrer-policy": "same-origin",
+            "x-content-type-options": "nosniff",
+            "x-frame-options": "DENY"
+          },
+          "DeployOK": true,
+          "Failures": null
+        },
+        {
+          "Pages": [
+            {
+              "Role": "home",
+              "URL": "https://noticeboard-r1-3.fly.dev/",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 6167,
+                  "html": 4072,
+                  "image": 542,
+                  "other": 353
+                },
+                "Decoded": {
+                  "css": 20475,
+                  "html": 12874,
+                  "image": 901,
+                  "other": 406
+                }
+              },
+              "Axe": {
+                "moderate": 1
+              },
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 100,
+                "performance": 100,
+                "seo": 91
+              }
+            },
+            {
+              "Role": "search",
+              "URL": "https://noticeboard-r1-3.fly.dev/browse?q=bike",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 6184,
+                  "html": 2499,
+                  "image": 542,
+                  "other": 353
+                },
+                "Decoded": {
+                  "css": 20475,
+                  "html": 5897,
+                  "image": 901,
+                  "other": 406
+                }
+              },
+              "Axe": {
+                "moderate": 1
+              },
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 100,
+                "performance": 100,
+                "seo": 91
+              }
+            },
+            {
+              "Role": "listing",
+              "URL": "https://noticeboard-r1-3.fly.dev/notices/4",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 6185,
+                  "html": 2969,
+                  "image": 541,
+                  "other": 353
+                },
+                "Decoded": {
+                  "css": 20475,
+                  "html": 7429,
+                  "image": 901,
+                  "other": 406
+                }
+              },
+              "Axe": {
+                "moderate": 1
+              },
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 100,
+                "performance": 100,
+                "seo": 91
+              }
+            },
+            {
+              "Role": "contact",
+              "URL": "https://noticeboard-r1-3.fly.dev/notices/1",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 6166,
+                  "html": 3114,
+                  "image": 541,
+                  "other": 353
+                },
+                "Decoded": {
+                  "css": 20475,
+                  "html": 8008,
+                  "image": 901,
+                  "other": 406
+                }
+              },
+              "Axe": {
+                "moderate": 1
+              },
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 100,
+                "performance": 100,
+                "seo": 91
+              }
+            }
+          ],
+          "Headers": {
+            "content-security-policy": "default-src 'none'; style-src 'self'; img-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'",
+            "frame-ancestors": "frame-ancestors 'none'",
+            "referrer-policy": "same-origin",
+            "x-content-type-options": "nosniff",
+            "x-frame-options": "DENY"
+          },
+          "DeployOK": true,
+          "Failures": null
+        }
+      ],
+      "AgentFailures": null,
+      "ReusedFrom": ""
+    }
+  ]
+}

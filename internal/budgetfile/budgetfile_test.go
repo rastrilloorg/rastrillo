@@ -16,6 +16,7 @@ size ui                    -    20500 one test per component, by design
 time internal/importer     25s        replays a 40MB fixture
 perf GET /notes/export     1200ms     streams every row
 perf GET /jobs/{id}/events skip       server-sent events, never finishes
+weight GET /jobs           26000      the board shows every widget
 boot                       800ms      parses 12 locales at start
 `
 	f, err := Parse(strings.NewReader(src))
@@ -36,6 +37,11 @@ boot                       800ms      parses 12 locales at start
 	}
 	if p := f.Perfs["GET /jobs/{id}/events"]; !p.Skip {
 		t.Errorf("events perf = %+v, want skip", p)
+	}
+	weight := f.Weights["GET /jobs"]
+	if weight.Limit != 26000 || weight.Line != 8 ||
+		weight.Reason != "the board shows every widget" {
+		t.Errorf("jobs weight = %+v", weight)
 	}
 	if f.Boot == nil || f.Boot.Limit != 800*time.Millisecond {
 		t.Errorf("boot = %+v", f.Boot)
@@ -64,6 +70,14 @@ func TestParseRefusals(t *testing.T) {
 		"lower-case method":        "perf get /x 1s why",
 		"perf missing pattern":     "perf GET 1s why",
 		"boot missing reason":      "boot 900ms",
+		"weight missing reason":    "weight GET /jobs 26000",
+		"weight not a number":      "weight GET /jobs heavy why",
+		"weight zero":              "weight GET /jobs 0 why",
+		"weight with a unit":       "weight GET /jobs 26kB why",
+		"weight lower-case method": "weight get /jobs 26000 why",
+		"weight missing pattern":   "weight GET 26000 why",
+		"weight duplicate": "weight GET /jobs 26000 why\n" +
+			"weight GET /jobs 27000 why",
 	}
 	for name, src := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -83,7 +97,8 @@ func TestLoadMissingFileIsEmpty(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(f.Sizes)+len(f.Times)+len(f.Perfs) != 0 || f.Boot != nil {
+	if len(f.Sizes)+len(f.Times)+len(f.Perfs)+len(f.Weights) != 0 ||
+		f.Boot != nil {
 		t.Fatalf("missing file should mean no exemptions, got %+v", f)
 	}
 }

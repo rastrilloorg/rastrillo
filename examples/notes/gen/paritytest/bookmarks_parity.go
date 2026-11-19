@@ -14,7 +14,11 @@ func RunBookmarks(t *testing.T, f Fixture) {
 	if values == nil {
 		values = map[string]string{"Title": "Parity title", "Link": "Parity link", "Notes": "Parity notes"}
 	}
-	compare(t, bookmarksPages(t, f, values), bookmarksAPI(t, f, values))
+	api := bookmarksAPI(t, f, values)
+	compare(t, bookmarksPages(t, f, values), api)
+	compareDoors(t, "API", "MCP", api, bookmarksMCP(t, f, values))
+	compareDoors(t, "API", "MCP",
+		bookmarksAPILimits(t, f, values), bookmarksMCPLimits(t, f, values))
 }
 
 func bookmarksPages(t *testing.T, f Fixture, values map[string]string) []step {
@@ -60,11 +64,7 @@ func bookmarksAPI(t *testing.T, f Fixture, values map[string]string) []step {
 	token := f.Token(t, db, "a")
 	var steps []step
 
-	k, body := call(t, h, token, "POST", "/api/v1/bookmarks", map[string]any{
-		"title": values["Title"],
-		"link":  values["Link"],
-		"notes": values["Notes"],
-	})
+	k, body := call(t, h, token, "POST", "/api/v1/bookmarks", bookmarksBody(t, values))
 	id := fmt.Sprint(body["id"])
 	steps = append(steps, step{"create", k, ""})
 	steps = append(steps, step{"row after create", "ok", row(t, h, token, "/api/v1/bookmarks/"+id)})
@@ -88,5 +88,78 @@ func bookmarksAPI(t *testing.T, f Fixture, values map[string]string) []step {
 	steps = append(steps, step{"row after delete", k, ""})
 	k, _ = call(t, h, token, "GET", "/api/v1/bookmarks/999999", nil)
 	steps = append(steps, step{"missing row", k, ""})
+	return steps
+}
+
+func bookmarksMCP(t *testing.T, f Fixture, values map[string]string) []step {
+	h, db := f.New(t)
+	f.Prepare(t, db, "a")
+	token := f.Token(t, db, "a")
+	var steps []step
+
+	k, body := tool(t, h, token, "bookmarks_create", bookmarksBody(t, values))
+	id := fmt.Sprint(body["id"])
+	steps = append(steps, step{"create", k, ""})
+	steps = append(steps, step{"row after create", "ok", toolRow(t, h, token, "bookmarks_get", id)})
+
+	k, body = tool(t, h, token, "bookmarks_create", map[string]any{})
+	refused(t, body, "title")
+	steps = append(steps, step{"invalid create", k, ""})
+
+	k, _ = tool(t, h, token, "bookmarks_update", withID(id, map[string]any{"title": "Changed by parity"}))
+	steps = append(steps, step{"update", k, ""})
+	steps = append(steps, step{"row after update", "ok", toolRow(t, h, token, "bookmarks_get", id)})
+
+	other := f.Token(t, db, "b")
+	k, _ = tool(t, h, other, "bookmarks_get", withID(id, nil))
+	hidden(t, "MCP", k)
+	steps = append(steps, step{"another person's row", k, ""})
+
+	k, _ = tool(t, h, token, "bookmarks_delete", withID(id, nil))
+	steps = append(steps, step{"delete", k, ""})
+	k, _ = tool(t, h, token, "bookmarks_get", withID(id, nil))
+	steps = append(steps, step{"row after delete", k, ""})
+	k, _ = tool(t, h, token, "bookmarks_get", withID("999999", nil))
+	steps = append(steps, step{"missing row", k, ""})
+	return steps
+}
+
+// bookmarksBody is a valid create as the API and MCP both take it.
+func bookmarksBody(t *testing.T, values map[string]string) map[string]any {
+	t.Helper()
+	return map[string]any{
+		"title": values["Title"],
+		"link":  values["Link"],
+		"notes": values["Notes"],
+	}
+}
+
+func bookmarksAPILimits(t *testing.T, f Fixture, values map[string]string) []step {
+	h, db := f.New(t)
+	f.Prepare(t, db, "a")
+	token := f.Token(t, db, "a")
+	if k, _ := call(t, h, token, "POST", "/api/v1/bookmarks", bookmarksBody(t, values)); k != "ok" {
+		t.Fatalf("the API door answered %s to a valid create", k)
+	}
+	var steps []step
+	for _, limit := range []int{0, 201} {
+		k, body := call(t, h, token, "GET", fmt.Sprintf("/api/v1/bookmarks?limit=%d", limit), nil)
+		steps = append(steps, step{fmt.Sprintf("list with limit %d", limit), k, items(body, "bookmarks")})
+	}
+	return steps
+}
+
+func bookmarksMCPLimits(t *testing.T, f Fixture, values map[string]string) []step {
+	h, db := f.New(t)
+	f.Prepare(t, db, "a")
+	token := f.Token(t, db, "a")
+	if k, _ := tool(t, h, token, "bookmarks_create", bookmarksBody(t, values)); k != "ok" {
+		t.Fatalf("the MCP door answered %s to a valid create", k)
+	}
+	var steps []step
+	for _, limit := range []int{0, 201} {
+		k, body := tool(t, h, token, "bookmarks_list", map[string]any{"limit": limit})
+		steps = append(steps, step{fmt.Sprintf("list with limit %d", limit), k, items(body, "bookmarks")})
+	}
 	return steps
 }

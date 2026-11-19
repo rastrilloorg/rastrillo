@@ -4,8 +4,8 @@
 // SHA-256 in hack/moneycldr/sources/inputs.sha256. Data from the Unicode CLDR,
 // © Unicode, Inc., under the Unicode License v3 (locales/LICENSE-UNICODE).
 
-// Package cy links CLDR money-formatting data for every modern "cy"
-// locale. Import it for its side effect.
+// Package cy links CLDR number- and money-formatting data for every
+// modern "cy" locale. Import it for its side effect.
 package cy
 
 import "amadan.net/rastrillo/rastrillo/locales"

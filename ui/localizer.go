@@ -6,6 +6,7 @@ import (
 	"reflect"
 
 	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/basepath"
 )
 
 // Localizer is what a template receives as $L: one locale's translator
@@ -52,6 +53,11 @@ type Localized struct {
 	// so the first paint is already in it, and the scheme menu marks
 	// it current.
 	Scheme string
+	// Base is the base path the request was served under, such as
+	// /acme, or "" at the root: what the path template func puts in
+	// front of every root-absolute URL a shell emits. It rides the data
+	// because the function map is shared by every request.
+	Base string
 }
 
 // Localizer is the localizer the data carries.
@@ -64,8 +70,8 @@ func (l Localized) Localizer() *Localizer { return l.L }
 func (l Localized) Request() Localized { return l }
 
 // ForRequest is the Localized for r: the localizer WithLocalizer put
-// there, the switcher's items, the URL to come back to, and the colour
-// scheme the cookie chose.
+// there, the switcher's items, the URL to come back to, the colour
+// scheme the cookie chose, and the base path r was served under.
 //
 // Return is the page's real address, locale prefix included: the
 // locale middleware strips /fr before the app sees the path, and
@@ -73,12 +79,15 @@ func (l Localized) Request() Localized { return l }
 // Return as given, so without the prefix a reader on /fr/orders would
 // come back to /orders; the language switch strips any prefix it is
 // given and re-adds the chosen one, so it lands where it always did.
+// Return is an app path, without the base: the switches redirect to it,
+// and the base-path middleware adds the base to that Location itself.
 func ForRequest(r *http.Request) Localized {
 	return Localized{
 		L:       LocalizerFrom(r),
 		Locales: rastrillo.LocaleItems(r),
 		Return:  rastrillo.LocalePrefix(r) + r.URL.RequestURI(),
 		Scheme:  rastrillo.SchemeFrom(r),
+		Base:    basepath.Base(r),
 	}
 }
 

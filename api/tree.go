@@ -7,9 +7,7 @@ import (
 	"log/slog"
 	"net/http"
 	stdpath "path"
-	"runtime/debug"
 	"strings"
-	"unicode"
 
 	rastrillo "amadan.net/rastrillo/rastrillo"
 	"amadan.net/rastrillo/rastrillo/op"
@@ -40,7 +38,7 @@ type Config struct {
 	Authorize func(ctx context.Context, a rastrillo.Actor, o rastrillo.Operation) error
 	// Logger receives refusals and panics. Nil means slog.Default().
 	Logger *slog.Logger
-	// MaxBody caps a request body for Decode. Zero or less means 1 MiB.
+	// MaxBody caps a request body. Zero or less means 1 MiB.
 	MaxBody int64
 	// Before runs on every matched request before the credential
 	// check, first element outermost. A rate limiter goes here, so it
@@ -57,6 +55,21 @@ type Config struct {
 	Redact func(string) string
 }
 
+// Gate returns the pipeline half of the tree's Config. Config keeps its
+// own fields, because embedding Gate would break every existing
+// api.Config{Verify: ...} literal: Go takes no promoted field as a key.
+func (configuration Config) Gate() Gate {
+	return Gate{
+		Verify:              configuration.Verify,
+		Logger:              configuration.Logger,
+		MaxBody:             configuration.MaxBody,
+		Before:              configuration.Before,
+		After:               configuration.After,
+		RequireAgentSession: configuration.RequireAgentSession,
+		Redact:              configuration.Redact,
+	}
+}
+
 // Route is one operation on the tree. Pattern is the full path as
 // net/http.ServeMux reads it, such as "/api/v1/bookmarks/{id}".
 type Route struct {
@@ -66,18 +79,6 @@ type Route struct {
 	Op     op.Descriptor
 	Handle func(ctx context.Context, rc *rastrillo.Ctx, w http.ResponseWriter, r *http.Request)
 }
-
-// The 422 messages for the agent headers. They are not body members,
-// so they carry no fields and the message names the header instead.
-const (
-	msgAgentHeader  = "Send %s as 200 bytes or fewer, with no control characters."
-	msgAgentSession = "Send an Agent-Session header with every write."
-)
-
-// maxAgentHeader caps Agent-Session and Agent-Harness. They are the
-// client's own claims and go into every log line for the request, so
-// an unbounded one would let a client write as much as it likes there.
-const maxAgentHeader = 200
 
 // methodAccess is the access each method must declare. GET and HEAD
 // must be Read so a read-only token can use them; every other method
@@ -96,8 +97,9 @@ var methodAccess = map[string]rastrillo.Access{
 var allowOrder = []string{http.MethodGet, http.MethodHead, http.MethodPost, http.MethodPut, http.MethodPatch, http.MethodDelete}
 
 type tree struct {
-	cfg Config
-	mux *http.ServeMux
+	cfg  Config
+	gate Gate
+	mux  *http.ServeMux
 	// patterns is every pattern string the tree registered. The inner
 	// mux can match a request and still hand back something that is not
 	// one of them (a redirect it made up); only a registered pattern
@@ -112,29 +114,24 @@ type tree struct {
 // Every request gets Cache-Control: no-store and a JSON answer, in this
 // order, each step's refusal winning over every later one: routing (404,
 // 405), Config.Before, the credential (401, 503), the agent headers
-// (422), the read-only check (403), Config.After, then the handler. A
-// panic is a JSON 500 with a ref, or an aborted connection when the
-// response had already started.
+// (422), the agent session and read-only checks (422, 403), Config.After,
+// then the handler. Its answer is held, up to 2 MiB, and goes out only
+// once whole; when Config.Verify is a Rechecker, only while the
+// credential and the route's checks still pass. A panic is a JSON 500
+// with a ref, or an aborted connection when the answer had started.
 func New(cfg Config, routes ...Route) (http.Handler, error) {
+	gate := cfg.Gate()
+	if err := gate.Validate(); err != nil {
+		return nil, err
+	}
 	switch {
-	case cfg.Verify == nil:
-		return nil, errors.New("api: Config.Verify is required")
 	case cfg.Ctx == nil:
 		return nil, errors.New("api: Config.Ctx is required")
 	case cfg.Authorize == nil:
 		return nil, errors.New("api: Config.Authorize is required; name op.DefaultPolicy to keep the default")
 	}
-	for i, m := range cfg.Before {
-		if m == nil {
-			return nil, fmt.Errorf("api: Config.Before[%d] is nil", i)
-		}
-	}
-	for i, m := range cfg.After {
-		if m == nil {
-			return nil, fmt.Errorf("api: Config.After[%d] is nil", i)
-		}
-	}
-	t := &tree{cfg: cfg, mux: http.NewServeMux(), patterns: make(map[string]bool, len(routes))}
+	t := &tree{cfg: cfg, gate: gate, mux: http.NewServeMux(),
+		patterns: make(map[string]bool, len(routes))}
 	for _, rt := range routes {
 		if err := t.add(rt); err != nil {
 			return nil, err
@@ -166,12 +163,11 @@ func (t *tree) add(rt Route) error {
 	}
 
 	h := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { t.handle(rt, w, r) }))
-	h, err := wrap(h, t.cfg.After, "After")
-	if err != nil {
-		return err
+	admit := func(actor rastrillo.Actor) error {
+		return t.gate.Admit(actor, rt.Op.Operation)
 	}
-	h = t.gate(rt, h)
-	if h, err = wrap(h, t.cfg.Before, "Before"); err != nil {
+	h, err := t.gate.compose(admit, h)
+	if err != nil {
 		return err
 	}
 	// ServeMux.Handle panics on a malformed pattern or one that
@@ -181,15 +177,6 @@ func (t *tree) add(rt Route) error {
 	}
 	t.patterns[name] = true
 	return nil
-}
-
-func wrap(h http.Handler, mw []func(http.Handler) http.Handler, field string) (http.Handler, error) {
-	for i := len(mw) - 1; i >= 0; i-- {
-		if h = mw[i](h); h == nil {
-			return nil, fmt.Errorf("api: Config.%s[%d] returned a nil handler", field, i)
-		}
-	}
-	return h, nil
 }
 
 func register(mux *http.ServeMux, pattern string, h http.Handler) (err error) {
@@ -203,40 +190,26 @@ func register(mux *http.ServeMux, pattern string, h http.Handler) (err error) {
 }
 
 func (t *tree) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Cache-Control", "no-store")
-	// The default, not only what Write sets: a handler or middleware
-	// that writes bytes itself would otherwise get net/http's sniffed
-	// text/plain, and one that writes only a status would get no type.
-	// A handler that answers something else sets its own over this.
-	w.Header().Set("Content-Type", "application/json")
-	// Stamped before anything can refuse, so Refuse and Decode, and a
-	// Before middleware calling WriteError, all see this tree's settings
-	// rather than slog.Default and the 1 MiB default.
-	r = WithLogger(r, t.cfg.Logger)
-	r = WithRedact(r, t.cfg.Redact)
-	r = WithMaxBody(r, t.cfg.MaxBody)
+	t.gate.serve(w, r, http.HandlerFunc(t.route))
+}
 
-	rw := &startedWriter{ResponseWriter: w}
-	// Outermost, so a panic in a Before or After middleware is answered
-	// as one in a handler is: in JSON, with a ref.
-	defer func() {
-		if v := recover(); v != nil {
-			t.recovered(rw, r, v)
-		}
-	}()
-
-	if !t.matches(r) {
-		if allow := t.allowed(r); allow != "" {
-			rw.Header().Set("Allow", allow)
-			answer(rw, "method_not_allowed")
+// route answers 404 and 405 itself, before Before runs: with no route
+// there is no operation, and no actor yet to recheck an answer for.
+func (tree *tree) route(
+	response http.ResponseWriter, request *http.Request,
+) {
+	if !tree.matches(request) {
+		if allow := tree.allowed(request); allow != "" {
+			response.Header().Set("Allow", allow)
+			answer(response, "method_not_allowed")
 			return
 		}
-		answer(rw, "not_found")
+		answer(response, "not_found")
 		return
 	}
 	// ServeHTTP, not the handler mux.Handler returned: only ServeHTTP
 	// fills r.PathValue.
-	t.mux.ServeHTTP(rw, r)
+	tree.mux.ServeHTTP(response, request)
 }
 
 // matches reports whether r reaches a registered route. It never lets
@@ -284,73 +257,6 @@ func cleanPath(p string) string {
 	return np
 }
 
-// gate is steps 4 to 6: the credential, the agent headers and the
-// read-only check, in that order, then the verified actor stamped on
-// the request for After and the handler.
-func (t *tree) gate(rt Route, next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		a, err := t.cfg.Verify.Verify(r.Context(), r)
-		if err != nil {
-			Refuse(w, r, err)
-			return
-		}
-		// The actor a Verifier returns is all the API knows about who is
-		// calling. With no credential, op.Check and DefaultPolicy would
-		// treat it as the app itself and allow everything; with no
-		// access, the read-only check below would have nothing to go on.
-		// Either is a Verifier bug, so it is a 500, not a guess.
-		if a.Credential == "" || !a.Access.Valid() {
-			Refuse(w, r, fmt.Errorf("api: Verify returned %s with no error but no credential or access", a))
-			return
-		}
-		// Agent-Session and Agent-Harness are only an agent's to send. A
-		// person's own token could otherwise pose as an agent in the log,
-		// so for anyone else they are dropped unread, and whatever the
-		// Verifier put in Session and Harness is dropped too: those two
-		// come from the request or not at all.
-		a.Session, a.Harness = "", ""
-		if a.Agent != "" {
-			var ok bool
-			if a.Session, ok = agentHeader(w, r, "Agent-Session"); !ok {
-				return
-			}
-			if a.Harness, ok = agentHeader(w, r, "Agent-Harness"); !ok {
-				return
-			}
-			if t.cfg.RequireAgentSession && rt.Op.Access == rastrillo.Write && a.Session == "" {
-				invalid(w, msgAgentSession, nil)
-				return
-			}
-		}
-		// Not "== Read": an Access added later would otherwise pass as a
-		// writer. Only Write may write.
-		if rt.Op.Access == rastrillo.Write && a.Access != rastrillo.Write {
-			Refuse(w, r, op.Forbidden{Reason: "read-only credential"})
-			return
-		}
-		next.ServeHTTP(w, rastrillo.WithActor(r, a))
-	})
-}
-
-// agentHeader reads one agent header, or answers 422 and returns false.
-// Control characters are refused rather than stripped: these values go
-// into log lines, and a newline in one could forge a line of its own.
-func agentHeader(w http.ResponseWriter, r *http.Request, name string) (string, bool) {
-	v := r.Header.Get(name)
-	bad := len(v) > maxAgentHeader
-	for _, c := range v {
-		if unicode.IsControl(c) {
-			bad = true
-			break
-		}
-	}
-	if bad {
-		invalid(w, fmt.Sprintf(msgAgentHeader, name), nil)
-		return "", false
-	}
-	return v, true
-}
-
 // handle is step 7's end: the route's handler, with the app's Ctx.
 func (t *tree) handle(rt Route, w http.ResponseWriter, r *http.Request) {
 	c := t.cfg.Ctx(r)
@@ -366,6 +272,7 @@ func (t *tree) handle(rt Route, w http.ResponseWriter, r *http.Request) {
 	// it, which is After's to do.
 	rc.Actor, _ = rastrillo.ActorFromContext(r.Context())
 	rc.Authorize = t.cfg.Authorize
+	t.disclose(r.Context(), rt, rc)
 	// One line per request that reaches a handler, with the actor's
 	// audit string and the agent's own session and harness claims. An
 	// app with no eventlog has nothing else that says which token made
@@ -384,60 +291,18 @@ func (t *tree) handle(rt Route, w http.ResponseWriter, r *http.Request) {
 	rt.Handle(r.Context(), &rc, w, r)
 }
 
-// recovered answers a panic. Before the first byte, that is a JSON 500
-// with a ref the log line shares. After it, appending JSON would corrupt
-// a body the client is already reading, so the connection is aborted
-// and the client sees a truncated response, not a wrong one. Either way
-// the value is logged here first: net/http logs nothing for
-// http.ErrAbortHandler, so without this line the panic would vanish.
-func (t *tree) recovered(w *startedWriter, r *http.Request, v any) {
-	if v == http.ErrAbortHandler {
-		// A handler that aborted on purpose has nothing to report.
-		panic(v)
-	}
-	// Every free-text field goes through the redactor, the path too: a
-	// client that pastes its token into a path segment would otherwise
-	// put the secret in the log line beside the redacted value.
-	redact := redactorFrom(r)
-	ref := rastrillo.NewRef()
-	loggerFrom(r).Error("api: panic",
-		"err", redact(fmt.Sprint(v)), "ref", ref, "method", r.Method, "path", redact(r.URL.Path),
-		"stack", redact(string(debug.Stack())))
-	if w.started {
-		panic(http.ErrAbortHandler)
-	}
-	WriteError(w, codes["internal"].status, Error{Code: "internal", Message: codes["internal"].message, Ref: ref})
+// disclose registers the route's own checks for the gate to run again,
+// with the fresh actor, while the answer goes out: the read-only check
+// and the app's policy, for the operation that ran.
+func (tree *tree) disclose(
+	ctx context.Context, route Route, rc rastrillo.Ctx,
+) {
+	Disclosed(ctx, func(ctx context.Context, fresh rastrillo.Actor) error {
+		if err := tree.gate.Admit(fresh, route.Op.Operation); err != nil {
+			return err
+		}
+		checked := rc
+		checked.Actor = fresh
+		return op.Check(ctx, &checked, route.Op.Operation)
+	})
 }
-
-// startedWriter records whether the response has started, which decides
-// what a panic can still do about it.
-type startedWriter struct {
-	http.ResponseWriter
-	started bool
-}
-
-func (w *startedWriter) WriteHeader(status int) {
-	w.started = true
-	w.ResponseWriter.WriteHeader(status)
-}
-
-func (w *startedWriter) Write(b []byte) (int, error) {
-	w.started = true
-	return w.ResponseWriter.Write(b)
-}
-
-// FlushError is here, not left to Unwrap, because a flush sends the
-// status line: a handler that flushed before writing has started the
-// response as surely as one that wrote.
-func (w *startedWriter) FlushError() error {
-	w.started = true
-	return http.NewResponseController(w.ResponseWriter).Flush()
-}
-
-// Flush keeps the wrapper an http.Flusher for a handler that asserts
-// the interface rather than using http.ResponseController.
-func (w *startedWriter) Flush() { _ = w.FlushError() }
-
-// Unwrap lets http.ResponseController reach the real writer for
-// everything else, such as deadlines.
-func (w *startedWriter) Unwrap() http.ResponseWriter { return w.ResponseWriter }

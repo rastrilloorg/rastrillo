@@ -1,0 +1,19 @@
+package %[1]s
+
+import (
+	"embed"
+
+	"amadan.net/rastrillo/rastrillo/apitoken"
+	"amadan.net/rastrillo/rastrillo/migrate"
+)
+
+//go:embed migrations/*.sql
+var migrationFS embed.FS
+
+// Schema is this app's own migrations, which migration generate and
+// check diff against Models. Never edit one that has shipped.
+var Schema = migrate.MustFromFS(migrationFS, %[1]q)
+
+// BootSchema is what boot applies. A subsystem's schema goes here, in the
+// order it applies, and never in Schema: check would drop its tables.
+var BootSchema = migrate.Merge(apitoken.Schema, Schema)

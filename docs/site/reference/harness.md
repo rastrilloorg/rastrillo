@@ -122,20 +122,42 @@ this behavior for free.
 
 ```go
 func (r *Rig) Context() context.Context
-func (r *Rig) Run(actions ...chromedp.Action)
+func (r *Rig) Run(steps ...chromedp.Action[chromedp.Void])
+func Read[T any](rig *Rig, action chromedp.Action[T]) T
+func Evaluate[T any](rig *Rig, expression string, options ...chromedp.EvaluateOption) T
+func Into[T any](out *T, action chromedp.Action[T]) chromedp.Action[chromedp.Void]
 ```
 
-`Run` executes a script of plain `chromedp` actions against the rig's
-browser. There is no extra DSL on top of chromedp's own.
+`Run` executes a script of plain `chromedp` steps against the rig's browser. There is no extra DSL on top of chromedp's own.
 
-On failure it fails the test immediately, and the message includes
-whatever was on screen at the time. A failing drive reports what a
-person looking at the browser would have seen, which is usually more
-useful than the error chromedp returned.
+`Read` runs one action that returns a value, such as `chromedp.Text` or `chromedp.Title`, and returns it. `Evaluate` runs JavaScript in the page and returns its result as `T`. `Into` keeps a value read in the middle of a `Run` script, for a drive that has to look at the page between its steps:
+
+```go
+rig.Run(chromedp.Navigate(rig.Origin + "/"))
+title := harness.Read(rig, chromedp.Title())
+
+rowCount := `document.querySelectorAll("tr").length`
+var before int
+rig.Run(
+	harness.Into(&before, chromedp.Evaluate[int](rowCount)),
+	chromedp.Click(chromedp.CSS("#more")),
+)
+after := harness.Evaluate[int](rig, rowCount)
+```
+
+`Evaluate` fails when the script returns `null` and `T` is a string, number, boolean or struct. Return a fallback from the script, such as `?? ""`, or ask for a pointer type to get `nil`.
+
+On failure each of them fails the test immediately, and the message includes whatever was on screen at the time. A failing drive reports what a person looking at the browser would have seen, which is usually more useful than the error chromedp returned.
 
 `Context` exposes the rig's underlying `chromedp` context directly, for
 the rare drive that needs a tighter deadline than the test binary's
 own timeout affords.
+
+```go
+func Listen[E any](rig *Rig, ctx context.Context, event cdp.Event[E], handle func(*E)) (stop func())
+```
+
+`Listen` calls a function with every event of one kind that the browser sends to a tab, in the order the browser sent them. It handles each event before the reply to the next command comes back, so once a step returns, every event sent before it has been handled, and a drive can check that something did not happen without waiting. The function runs on chromedp's reader, so keep it short and never send a command from it.
 
 ## The loud-failure watchers
 

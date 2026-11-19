@@ -12,8 +12,8 @@ package designsystem
 // its two pseudo-elements. Only the markup should have changed, so
 // every digest should match.
 //
-//	go run ./cmd/dsgen -out $BEFORE     (from the pre-flip checkout)
-//	go run ./cmd/dsgen -out $AFTER
+//	go run ./cmd/dsgen -out $BEFORE -mount /design-system  (pre-flip)
+//	go run ./cmd/dsgen -out $AFTER -mount /design-system
 //	RST_BEFORE=$BEFORE RST_AFTER=$AFTER \
 //	  go test -tags "browser flipevidence" ./internal/designsystem/ -run TestTheFlipDidNotMoveAPixel -v
 //
@@ -23,7 +23,9 @@ package designsystem
 // loading a file of its own, and a drive that reads one before it has
 // settled reports a difference between a tree and itself.
 // RST_PAGES=day/en,signal/ar narrows it to a theme and locale while
-// iterating.
+// iterating. Both trees are served at /design-system, so both are
+// generated for it: the mount every checkout wrote by default before
+// the gallery moved to /components.
 
 import (
 	"context"
@@ -39,7 +41,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/chromedp/cdproto/runtime"
 	"github.com/chromedp/chromedp"
 
 	"amadan.net/rastrillo/rastrillo/harness"
@@ -163,7 +164,7 @@ func readTwiceUntilStable(ctx context.Context, t *testing.T, url string) ([]stri
 	var last []string
 	for attempt := 0; attempt < 4; attempt++ {
 		var raw string
-		actions := []chromedp.Action{
+		actions := []chromedp.Action[chromedp.Void]{
 			chromedp.EmulateViewport(1280, 900),
 		}
 		if attempt == 0 {
@@ -171,9 +172,9 @@ func readTwiceUntilStable(ctx context.Context, t *testing.T, url string) ([]stri
 		} else {
 			actions = append(actions, chromedp.Sleep(250*time.Millisecond))
 		}
-		actions = append(actions, chromedp.Evaluate(digest, &raw,
-			func(p *runtime.EvaluateParams) *runtime.EvaluateParams { return p.WithAwaitPromise(true) }))
-		if err := chromedp.Run(ctx, actions...); err != nil {
+		actions = append(actions, harness.Into(&raw,
+			chromedp.Evaluate[string](digest, chromedp.EvalAwaitPromise)))
+		if err := chromedp.Do(ctx, actions...); err != nil {
 			t.Fatalf("%s: %v", url, err)
 		}
 		var got []string

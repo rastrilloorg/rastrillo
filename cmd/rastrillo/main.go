@@ -19,38 +19,7 @@ func main() {
 		usage()
 		os.Exit(2)
 	}
-	var err error
-	switch os.Args[1] {
-	case "new":
-		err = runNew(os.Args[2:])
-	case "generate":
-		err = runGenerate(os.Args[2:])
-	case "dev":
-		err = runDev(os.Args[2:])
-	case "migration":
-		err = runMigration(os.Args[2:])
-	case "vectors":
-		err = runVectors(os.Args[2:])
-	case "doctor":
-		err = runDoctor(os.Args[2:])
-	case "migrate-templates":
-		if code := tmplmigrate.Run(os.Args[2:], os.Stdout, os.Stderr); code != 0 {
-			err = exitError{code: code}
-		}
-	case "markup":
-		err = runMarkup(os.Args[2:])
-	case "budget":
-		err = runBudget(os.Args[2:])
-	case "session-key":
-		err = runSessionKey(os.Args[2:], os.Stdout)
-	case "-h", "--help", "help":
-		usage()
-		return
-	default:
-		fmt.Fprintf(os.Stderr, "rastrillo: unknown command %q\n\n", os.Args[1])
-		usage()
-		os.Exit(2)
-	}
+	err := dispatch(os.Args[1], os.Args[2:])
 	if err != nil {
 		// A subcommand with findings rather than a failure — doctor —
 		// returns its own exit code, and has already printed its
@@ -68,8 +37,54 @@ func main() {
 	}
 }
 
+// dispatch runs the command named. An unknown one prints the usage and
+// returns status 2 with no message, so main adds no second line.
+func dispatch(command string, args []string) error {
+	switch command {
+	case "new":
+		return runNew(args)
+	case "generate":
+		return runGenerate(args)
+	case "dev":
+		return runDev(args)
+	case "migration":
+		return runMigration(args)
+	case "vectors":
+		return runVectors(args)
+	case "doctor":
+		return runDoctor(args)
+	case "migrate-templates":
+		if code := tmplmigrate.Run(args, os.Stdout, os.Stderr); code != 0 {
+			return exitError{code: code}
+		}
+		return nil
+	case "markup":
+		return runMarkup(args)
+	case "budget":
+		return runBudget(args)
+	case "routes":
+		return runRoutes(args, os.Stdout)
+	case "csp":
+		return runCSP(args, os.Stdout)
+	case "session-key":
+		return runSessionKey(args, os.Stdout)
+	case "-h", "--help", "help":
+		usage()
+		return nil
+	}
+	fmt.Fprintf(os.Stderr, "rastrillo: unknown command %q\n\n", command)
+	usage()
+	return exitError{code: 2}
+}
+
 func usage() {
-	fmt.Fprint(os.Stderr, `rastrillo — the CARLOS web framework CLI
+	fmt.Fprint(os.Stderr, usageText)
+}
+
+// usageText is a constant rather than usage's body so that the help can
+// grow a line per command without making usage a function too long to
+// read: it is a table, not code.
+const usageText = `rastrillo — the CARLOS web framework CLI
 
 Usage:
   rastrillo new [--locale=<code>] <name>        scaffold a new app in ./<name>, offering one language (default en)
@@ -84,7 +99,7 @@ Usage:
   rastrillo doctor [flags] [dir]                compare the app's vendored static/ files with this binary's (default dir: .)
        --fix [--force]                          re-copy what drifted (--force overrides its two refusals)
        --theme <name>                           which theme static/theme.css should be, for an app with no pin
-       --probe                                  `+localecheck.ProbeFlag+`
+       --probe                                  ` + localecheck.ProbeFlag + `
                                                 exits 0 clean, 3 drift, 4 the app is on a different rastrillo version,
                                                 5 it imports rastrillo's old module path.
                                                 6  templates still use the old syntax: run rastrillo migrate-templates
@@ -102,8 +117,22 @@ Usage:
        -check                                    pre-ship gate: regenerate + byte-compare, then node --test test/parity.test.mjs
   rastrillo budget size [dir]                   hold each directory to 5,000 source and 8,000 test lines (default dir: .)
                                                 exits 1 over budget, 2 for a malformed .rastrillo/budgets.txt
+  rastrillo budget code [--init | --lower] [dir]
+                                                hold Go code to 80 columns,
+                                                400-line files, 40-line
+                                                functions, no single-letter
+                                                names; exits 1 over a limit, 2
+                                                for a malformed
+                                                .rastrillo/code.txt or when
+                                                --init finds one already there
   rastrillo budget test [-no-time] [-require T,...] [go test args]
                                                 run go test -json, judge each package's time, print a receipt
+  rastrillo routes [--package path] [--check] [dir]
+                                                print each route and its
+                                                guards (default dir: .);
+                                                --check exits 1 for an
+                                                action no route mounts
+  rastrillo csp [dir]                           find markup blocked by the
+                                                default CSP (default dir: .)
   rastrillo session-key <kid>                   print a new signing key for signed sessions, and its public key
-`)
-}
+`

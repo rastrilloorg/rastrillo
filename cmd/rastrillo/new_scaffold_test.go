@@ -11,6 +11,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"slices"
 	"strings"
@@ -61,9 +62,6 @@ func TestNewScaffoldsCIAndManifest(t *testing.T) {
 	}
 
 	mk, _ := os.ReadFile(filepath.Join("demoapp", "Makefile"))
-	if !strings.Contains(string(mk), "ci: vet fmt-check staticcheck govulncheck gitleaks budget test perf generate-check") {
-		t.Fatalf("Makefile must define the one ci gate:\n%s", mk)
-	}
 	for _, want := range []string{
 		".NOTPARALLEL:",
 		"$(RASTRILLO) budget size",
@@ -163,7 +161,7 @@ func TestNewScaffoldsTwoMigrationSets(t *testing.T) {
 	if strings.Contains(string(app), "AutoMigrate") {
 		t.Fatal("app.go still calls AutoMigrate; boot must go through migrate.Apply")
 	}
-	if !strings.Contains(string(app), "migrate.Apply(context.Background(), d, BootSchema)") {
+	if !strings.Contains(string(app), ", database, BootSchema)") {
 		t.Errorf("app.go must apply BootSchema (the composed set), not Schema alone:\n%s", app)
 	}
 }
@@ -234,38 +232,33 @@ func TestNewScaffoldsRealModel(t *testing.T) {
 	}
 }
 
-// The drift check is the app's own test, so go test ./... runs it and
-// make ci needs no step of its own for it: a second, Makefile-only copy
-// would be the check an agent running go test never sees fail.
-func TestNewScaffoldsMigrationCheckTest(t *testing.T) {
-	dir, err := runNewInTemp(t, "blogapp")
-	if err != nil {
+// make ci must run the drift gate, or the gate is only decorative:
+// a scaffold that never wires `rastrillo migration check` into CI
+// lets models.go and the migrations directory drift silently.
+func TestNewScaffoldsMakefileMigrationCheck(t *testing.T) {
+	t.Chdir(t.TempDir())
+	if err := runNew([]string{"blogapp"}); err != nil {
 		t.Fatalf("runNew: %v", err)
 	}
-	if mk := readScaffold(t, dir, "blogapp", "Makefile"); strings.Contains(mk, "migration-check") {
-		t.Errorf("the Makefile still has a migration-check step:\n%s", mk)
+	mk, err := os.ReadFile(filepath.Join("blogapp", "Makefile"))
+	if err != nil {
+		t.Fatal(err)
 	}
-	if _, err := os.Stat(filepath.Join(dir, "blogapp", ".amadan", "ci.d", "40-migration-check")); err == nil {
-		t.Error(".amadan/ci.d/40-migration-check is still written")
+	if !strings.Contains(string(mk), "rastrillo migration check") {
+		t.Errorf("Makefile's ci target is missing rastrillo migration check:\n%s", mk)
 	}
-	src := readScaffold(t, dir, "blogapp", "internal", "blogapp", "migrations_test.go")
-	for _, want := range []string{
-		"package blogapp_test",
-		"func TestModelsMatchMigrations(t *testing.T)",
-		"modeldiff.Generate(context.Background(), blogapp.Schema.All(), blogapp.Models)",
-		`"models and migrations disagree:\n"`,
-		`"\nrun: rastrillo migration generate"`,
-	} {
-		if !strings.Contains(src, want) {
-			t.Errorf("migrations_test.go missing %q:\n%s", want, src)
-		}
+	// Before this branch, `make ci` needed only the Go toolchain. A
+	// bare `rastrillo migration check` broke that on the first CI run
+	// of a fresh clone — "make: rastrillo: Command not found", with
+	// nothing in the scaffold naming what to install.
+	if !strings.Contains(string(mk), "go run amadan.net/rastrillo/rastrillo/cmd/rastrillo migration check") {
+		t.Errorf("migration-check must go through `go run` so the gate stays toolchain-only:\n%s", mk)
 	}
 }
 
-// The gate's go run of the CLI (make budget, test, perf and
-// generate-check) only resolves because go.mod declares the CLI as a
-// tool, which is what makes go mod tidy record the CLI's own build
-// dependencies in the app's go.sum. The app
+// The other half of that gate: the go run above only resolves because
+// go.mod declares the CLI as a tool, which is what makes go mod tidy
+// record the CLI's own build dependencies in the app's go.sum. The app
 // imports nothing that reaches them — internal/manifest's TOML parser
 // is the one that bites — so tidy prunes them without this line and a
 // clean scaffold fails its very first make ci with "missing go.sum
@@ -280,7 +273,7 @@ func TestNewScaffoldsCLIToolDirective(t *testing.T) {
 		t.Fatal(err)
 	}
 	if !strings.Contains(string(gomod), "\ntool amadan.net/rastrillo/rastrillo/cmd/rastrillo\n") {
-		t.Errorf("scaffolded go.mod must declare the CLI as a tool, or `make generate-check` "+
+		t.Errorf("scaffolded go.mod must declare the CLI as a tool, or `make migration-check` "+
 			"fails on a clean scaffold with a missing go.sum entry:\n%s", gomod)
 	}
 }
@@ -317,8 +310,7 @@ func TestNewScaffoldsAgentsMDMigrationRules(t *testing.T) {
 // TestScaffoldMigratesAndPassesCheck is the backstop for the whole
 // design: it proves the static 0001_init.sql this package ships
 // actually matches the Note model new also ships, by running the real
-// CLI's `migration check`, and then the app's own TestModelsMatchMigrations,
-// against a freshly scaffolded app. The CLI's
+// CLI's `migration check` against a freshly scaffolded app. The CLI's
 // own generate/check tests (migration_test.go) run against a
 // hand-built fixture rather than the real scaffold, precisely so they
 // don't depend on Task 12 — this is the test that would catch the two
@@ -387,12 +379,13 @@ func TestScaffoldMigratesAndPassesCheck(t *testing.T) {
 		t.Fatalf("a fresh scaffold must pass check: %v", err)
 	}
 
-	// And the same check as the scaffold's own test, with no rastrillo
-	// binary on PATH: the app's go test must need only the Go toolchain,
-	// never a second install step that a fresh clone's first CI run
-	// discovers as "rastrillo: command not found".
-	test := exec.Command("go", "test", "-count=1", "-run", "^TestModelsMatchMigrations$", "./internal/freshapp/")
-	test.Dir = "freshapp"
+	// And the same check through the scaffold's own gate, with no
+	// rastrillo binary on PATH. Before this branch `make ci` needed
+	// only the Go toolchain; the migration-check step must not have
+	// quietly added a second install step that a fresh clone's first
+	// CI run discovers as "make: rastrillo: Command not found".
+	mk := exec.Command("make", "migration-check")
+	mk.Dir = "freshapp"
 	// A PATH holding the toolchain and the usual system directories,
 	// and demonstrably no rastrillo: this is a CI runner that cloned
 	// the app and nothing else.
@@ -403,17 +396,17 @@ func TestScaffoldMigratesAndPassesCheck(t *testing.T) {
 	// -mod=readonly, overriding the -mod=mod this test's sandbox env
 	// sets: readonly is what an app's CI actually runs under, and the
 	// difference is the whole bug this guards. Under -mod=mod a
-	// missing go.sum entry is not an error — go just writes the
+	// missing go.sum entry is not an error — go run just writes the
 	// requirement into go.mod and carries on — so this step passed
 	// here for as long as it failed for everyone else, who saw
 	// "missing go.sum entry for github.com/BurntSushi/toml" on the
 	// very first make ci of a clean scaffold. Keep it readonly.
-	test.Env = append(os.Environ(),
+	mk.Env = append(os.Environ(),
 		"PATH="+filepath.Dir(goBin)+":/usr/bin:/bin",
 		"GOFLAGS=-mod=readonly",
 	)
-	if out, err := test.CombinedOutput(); err != nil {
-		t.Fatalf("TestModelsMatchMigrations must pass with only the Go toolchain on PATH:\n%s", out)
+	if out, err := mk.CombinedOutput(); err != nil {
+		t.Fatalf("make migration-check must pass with only the Go toolchain on PATH:\n%s", out)
 	}
 }
 
@@ -615,7 +608,7 @@ func TestGatePinsMatchRastrillosGate(t *testing.T) {
 
 // TestScaffoldWholeGatePassesOffline is the end-to-end proof the budgets
 // spec asks for: a fresh app's entire make ci (vet, fmt, staticcheck,
-// budget, test, perf, generate-check) passes with only the Go toolchain
+// budget, test, perf, migration-check) passes with only the Go toolchain
 // on PATH, a readonly module graph, and no network. Anything a step
 // fetched at run time, or a step that quietly did nothing, fails here.
 //
@@ -644,6 +637,9 @@ func scaffoldGate(t *testing.T, args ...string) string {
 	if out, err := tidy.CombinedOutput(); err != nil {
 		t.Fatalf("go mod tidy: %v\n%s", err, out)
 	}
+	// The template step rastrillo new runs, here where the app resolves
+	// against this checkout (see scaffoldWithReplace).
+	compileNewTemplates(app)
 	goBin, err := exec.LookPath("go")
 	if err != nil {
 		t.Fatal(err)
@@ -690,7 +686,36 @@ func scaffoldGate(t *testing.T, args ...string) string {
 	if err != nil {
 		t.Fatalf("make ci on a fresh scaffold:\n%s", out)
 	}
+	for _, lane := range []string{"budget code: within the limits.",
+		"cmd/rastrillo routes --check\n",
+		"csp: nothing the CSP drops"} {
+		if !strings.Contains(string(out), lane) {
+			t.Errorf("make ci ran no %q:\n%s", lane, out)
+		}
+	}
 	return string(out)
+}
+
+// A new app mounts MCP beside its API, and the route table shows it. The
+// table is the only place a person sees that a door is open.
+func TestScaffoldRoutesListsTheMCPMount(t *testing.T) {
+	if testing.Short() {
+		t.Skip("compiles and runs a scaffolded app")
+	}
+	binary := buildRastrillo(t)
+	app := scaffoldApp(t, "mcproutes")
+	// A .git above $TMPDIR would otherwise fail the VCS stamping.
+	t.Setenv("GOFLAGS", "-mod=mod -buildvcs=false")
+	status, stdout, stderr := routesRun(t, binary, app)
+	row := regexp.MustCompile(`(?m)^\*\s+/api/v1/mcp/\*\s+mcp\s*$`)
+	if status != 0 || !row.MatchString(stdout) {
+		t.Errorf("routes: exit %d, want 0 and a row for /api/v1/mcp/* mcp:"+
+			"\n%s\nstderr:\n%s", status, stdout, stderr)
+	}
+	status, _, stderr = routesRun(t, binary, "--check", app)
+	if status != 0 {
+		t.Errorf("routes --check: exit %d, want 0:\n%s", status, stderr)
+	}
 }
 
 func TestScaffoldWholeGatePassesOffline(t *testing.T) {
@@ -780,7 +805,8 @@ func TestNewDeclaresOneLocaleAndLinksItsPack(t *testing.T) {
 		t.Errorf("app.go must link gen/locales so the app's tests link the packs:\n%s", src)
 	}
 	mainSrc, _ := os.ReadFile(filepath.Join("demoapp", "cmd", "demoapp", "main.go"))
-	for _, want := range []string{"Locales:       genlocales.Locales,", "DefaultLocale: genlocales.DefaultLocale,"} {
+	for _, want := range []string{"Locales:       genlocales.Locales,",
+		"DefaultLocale: genlocales.DefaultLocale,"} {
 		if !strings.Contains(string(mainSrc), want) {
 			t.Errorf("main.go lacks %q", want)
 		}
@@ -853,13 +879,13 @@ func TestNewWithLocale(t *testing.T) {
 	}
 }
 
-// localeExtraTest is written beside a scaffolded app's code
+// localeExtraTest is written into a scaffolded app's own test package
 // and run by its go test: the page's language, direction and switcher,
 // and the error page's language, as the app really serves them, through
 // rastrillo.Handler with the Options main.go builds. %[1]s is the app
 // package, %[2]s the module, %[3]s the assertions, %[4]s any imports
 // only those assertions use.
-const localeExtraTest = `package %[1]s_test
+const localeExtraTest = `package %[1]stest
 
 import (%[4]s
 	"io"
@@ -880,7 +906,7 @@ func testHandler(t *testing.T) http.Handler {
 	t.Helper()
 	opts := rastrillo.Options{Logger: slog.New(slog.NewTextHandler(io.Discard, nil)),
 		Locales: genlocales.Locales, DefaultLocale: genlocales.DefaultLocale}
-	%[1]s.Configure(&opts, newApp(t).(*http.ServeMux), time.Now())
+	%[1]s.Configure(&opts, newApp(t).(*http.ServeMux), nil, time.Now())
 	h, closeAll, err := rastrillo.Handler(opts)
 	if err != nil {
 		t.Fatal(err)
@@ -992,7 +1018,7 @@ func TestScaffoldServesItsLocales(t *testing.T) {
 					t.Fatalf("rastrillo generate: %v", err)
 				}
 			}
-			mustWrite(t, filepath.Join(app, "internal", "notes", "locale_extra_test.go"), fmt.Sprintf(localeExtraTest, "notes", "notes", c.body, c.imports))
+			mustWrite(t, filepath.Join(app, "internal", "notestest", "locale_extra_test.go"), fmt.Sprintf(localeExtraTest, "notes", "notes", c.body, c.imports))
 			// render's request values go in a copy: a map the caller
 			// reuses would otherwise carry one request's localizer into
 			// the next, and race when two requests share it.
@@ -1005,7 +1031,8 @@ import (
 
 func TestRenderLeavesTheCallersMapAlone(t *testing.T) {
 	data := map[string]any{"X": 1}
-	render(httptest.NewRecorder(), httptest.NewRequest("GET", "/", nil), "index", data)
+	renderPage(httptest.NewRecorder(), httptest.NewRequest("GET", "/", nil),
+		nil, "index", 200, data)
 	if len(data) != 1 {
 		t.Errorf("render wrote into the caller's map: %v", data)
 	}
@@ -1027,8 +1054,8 @@ func TestRenderLeavesTheCallersMapAlone(t *testing.T) {
 }
 
 // A locale configuration boot refuses never panics the app's own entry
-// points: App refuses, and Mux and ErrorPage, reached without App by
-// Options.ErrorPage and the perf lane, answer a plain 500.
+// points: New and Router (the perf lane's) refuse, and ErrorPage, reached
+// without New by Options.ErrorPage, answers a plain 500.
 func TestScaffoldWithABadLocaleConfigFailsSafely(t *testing.T) {
 	if testing.Short() {
 		t.Skip("scaffolds, tidies and tests a whole app")
@@ -1041,7 +1068,7 @@ func TestScaffoldWithABadLocaleConfigFailsSafely(t *testing.T) {
 		t.Fatalf("packs.go has no English default to break:\n%s", src)
 	}
 	mustWrite(t, packsGo, bad)
-	mustWrite(t, filepath.Join(app, "internal", "notes", "badconfig_test.go"), `package notes_test
+	mustWrite(t, filepath.Join(app, "internal", "notestest", "badconfig_test.go"), `package notestest
 
 import (
 	"io"
@@ -1062,23 +1089,380 @@ func TestBadConfig(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer d.Close()
-	if _, err := notes.App(d, testOrigin, logger); err == nil {
-		t.Error("App accepted a default locale whose pack is not linked")
+	if _, _, err := notes.New(d, testOrigin, logger); err == nil {
+		t.Error("New accepted a default locale whose pack is not linked")
+	}
+	if _, _, err := notes.Router(d, testOrigin, logger); err == nil {
+		t.Error("Router accepted a default locale whose pack is not linked")
 	}
 	rec := httptest.NewRecorder()
-	notes.Mux(http.NotFoundHandler(), http.NotFoundHandler()).ServeHTTP(rec, httptest.NewRequest("GET", "/", nil))
-	if rec.Code != http.StatusInternalServerError {
-		t.Errorf("Mux: %d, want 500", rec.Code)
-	}
-	rec = httptest.NewRecorder()
 	notes.ErrorPage(rec, httptest.NewRequest("GET", "/", nil), http.StatusNotFound, "")
 	if rec.Code != http.StatusInternalServerError {
 		t.Errorf("ErrorPage: %d, want 500", rec.Code)
 	}
 }
 `)
-	if out, err := goTestIn(app, "-run", "^TestBadConfig$", "./internal/notes/"); err != nil {
+	if out, err := goTestIn(app, "-run", "^TestBadConfig$", "./internal/notestest/"); err != nil {
 		t.Fatalf("%s", out)
+	}
+}
+
+// basepathExtraTest is written into a scaffolded two-locale sidebar app
+// as package notestest, and serves the app as main.go does with a base
+// path set. A root-absolute link left in one of the scaffold's own pages
+// would take a tenant's reader to the hub's page of the same name.
+const basepathExtraTest = `package notestest
+
+import (
+	"context"
+	"io"
+	"log/slog"
+	"net/http"
+	"net/http/httptest"
+	"net/url"
+	"regexp"
+	"strings"
+	"testing"
+	"time"
+
+	"github.com/go-chi/chi/v5"
+
+	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/action"
+	"amadan.net/rastrillo/rastrillo/basepath"
+	"amadan.net/rastrillo/rastrillo/basepath/basepathtest"
+	"amadan.net/rastrillo/rastrillo/csrf"
+	"amadan.net/rastrillo/rastrillo/db"
+	"amadan.net/rastrillo/rastrillo/sessions"
+
+	genlocales "notes/gen/locales"
+	"notes/internal/notes"
+)
+
+var acme = basepath.Config{Origin: "http://localhost:8080", Slug: "acme"}
+
+func underAcme(t *testing.T, mux *http.ServeMux) http.Handler {
+	t.Helper()
+	opts := rastrillo.Options{Logger: slog.New(slog.NewTextHandler(io.Discard, nil)),
+		Locales: genlocales.Locales, DefaultLocale: genlocales.DefaultLocale, BasePath: acme}
+	notes.Configure(&opts, mux, nil, time.Now())
+	h, closeAll, err := rastrillo.Handler(opts)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { closeAll() })
+	return h
+}
+
+func send(h http.Handler, method, host, target string, form url.Values, cookies ...*http.Cookie) *httptest.ResponseRecorder {
+	r := httptest.NewRequest(method, target, strings.NewReader(form.Encode()))
+	r.Host = host
+	if form != nil {
+		r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		r.Header.Set("Sec-Fetch-Site", "same-origin")
+	}
+	for _, c := range cookies {
+		r.AddCookie(c)
+	}
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, r)
+	return rec
+}
+
+func leaks(t *testing.T, what string, rec *httptest.ResponseRecorder) {
+	t.Helper()
+	if l := basepathtest.Leaks(rec.Body.Bytes(), "/acme"); len(l) > 0 {
+		t.Errorf("%s links outside /acme: %q\n%s", what, l, rec.Body.String())
+	}
+}
+
+var stylesheet = regexp.MustCompile("<link rel=\"stylesheet\" href=\"([^\"]+)\"")
+
+const product, direct = "localhost:8080", "127.0.0.1:8080"
+
+func TestUnderABasePath(t *testing.T) {
+	h := underAcme(t, newApp(t).(*http.ServeMux))
+	if rec := send(h, "GET", product, "/acme?x=1", nil); rec.Code != http.StatusPermanentRedirect || rec.Header().Get("Location") != "/acme/?x=1" {
+		t.Errorf("GET /acme: %d to %q, want 308 to /acme/?x=1, the tenant's root", rec.Code, rec.Header().Get("Location"))
+	}
+	for _, p := range []string{"/acme/", "/acme/overview", "/acme/es/overview"} {
+		rec := send(h, "GET", product, p, nil)
+		if rec.Code != http.StatusOK {
+			t.Errorf("GET %s: %d, want 200:\n%s", p, rec.Code, rec.Body.String())
+			continue
+		}
+		leaks(t, "GET "+p, rec)
+		m := stylesheet.FindStringSubmatch(rec.Body.String())
+		if m == nil {
+			t.Errorf("GET %s links no stylesheet:\n%s", p, rec.Body.String())
+		} else if css := send(h, "GET", product, m[1], nil); css.Code != http.StatusOK {
+			t.Errorf("GET %s's stylesheet %s: %d, want 200", p, m[1], css.Code)
+		}
+	}
+	if rec := send(h, "GET", product, "/static/tokens.css", nil); rec.Code != http.StatusNotFound {
+		t.Errorf("GET /static/tokens.css outside the base: %d, want 404", rec.Code)
+	}
+
+	for _, c := range []struct{ target, field, value, want string }{
+		{"/acme/_theme", "scheme", "dark", "/acme/overview"},
+		{"/acme/_locale", "locale", "es", "/acme/es/overview"},
+	} {
+		rec := send(h, "POST", product, c.target, url.Values{c.field: {c.value}, "return": {"/overview"}})
+		if rec.Code != http.StatusSeeOther || rec.Header().Get("Location") != c.want {
+			t.Errorf("POST %s: %d to %q, want 303 to %q", c.target, rec.Code, rec.Header().Get("Location"), c.want)
+		}
+	}
+
+	// Through the middleware, but outside rastrillo.Handler: a recovered
+	// panic reaches ErrorPage the same way.
+	errPage := acme.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		notes.ErrorPage(w, r, http.StatusInternalServerError, "r1")
+	}))
+	rec := send(errPage, "GET", product, "/acme/x", nil)
+	if !strings.Contains(rec.Body.String(), "href=\"/acme/\"") {
+		t.Errorf("the error page's home link is not /acme/:\n%s", rec.Body.String())
+	}
+	leaks(t, "the error page", rec)
+
+	rec = tokenPage(t)
+	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), "<form rst-form method=\"post\" action=\"/acme/tokens\">") {
+		t.Errorf("GET /acme/tokens: %d, want 200 and a form that posts to /acme/tokens:\n%s", rec.Code, rec.Body.String())
+	}
+	leaks(t, "the token page", rec)
+
+	rec = send(h, "GET", direct, "/overview", nil)
+	if rec.Code != http.StatusTemporaryRedirect || rec.Header().Get("Location") != "http://localhost:8080/acme/overview" {
+		t.Errorf("GET /overview on the direct host: %d to %q, want 307 to the product path", rec.Code, rec.Header().Get("Location"))
+	}
+	if rec := send(h, "GET", direct, "/healthz", nil); rec.Code != http.StatusOK {
+		t.Errorf("GET /healthz on the direct host: %d, want 200", rec.Code)
+	}
+}
+
+// tokenPage is GET /acme/tokens, with TokenPage mounted. The row
+// store is inert under a base path (a tenant verifies the hub's session
+// and never mints one), so this signs in the way a path-routed tenant
+// is signed in: a signed session, minted here at the root as the hub
+// would.
+func tokenPage(t *testing.T) *httptest.ResponseRecorder {
+	t.Helper()
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	key, err := sessions.NewSigningKey("k1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	sess, err := sessions.New(sessions.Config{Origin: acme.Origin, Logger: logger, Signed: &sessions.Signed{Name: "notes", Key: key,
+		Epoch: func(context.Context, string) (int64, error) { return 1, nil }}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	signin := httptest.NewRecorder()
+	if err := sess.SignIn(signin, httptest.NewRequest("POST", "/signin", nil), sessions.Session{Subject: "1", Method: "test"}); err != nil {
+		t.Fatal(err)
+	}
+	d, err := db.Open(schema.Path(t), logger)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { d.Close() })
+	page, err := notes.NewTokenPage(d, sess)
+	if err != nil {
+		t.Fatal(err)
+	}
+	r := chi.NewRouter()
+	routes := action.NewRoutes(r, nil)
+	routes.Guard("csrf", csrf.Protect(testOrigin))
+	page.Mount(routes)
+	mux := http.NewServeMux()
+	mux.Handle("/", r)
+	return send(underAcme(t, mux), "GET", product, "/acme/tokens", nil,
+		signin.Result().Cookies()...)
+}
+`
+
+// A scaffolded app serves its own pages, the framework's switches, its
+// token page and its error page under a base path with no link outside
+// it, and its direct host sends a reader to the product path.
+func TestScaffoldServesUnderABasePath(t *testing.T) {
+	if testing.Short() {
+		t.Skip("scaffolds, tidies and tests a whole app")
+	}
+	app := scaffoldApp(t, "notes", "--shell=sidebar")
+	mustWrite(t, filepath.Join(app, "manifest", "app.toml"), "locales = [\"en\", \"es\"]\ndefault_locale = \"en\"\n")
+	if err := runGenerate([]string{app}); err != nil {
+		t.Fatalf("rastrillo generate: %v", err)
+	}
+	mustWrite(t, filepath.Join(app, "internal", "notestest", "basepath_extra_test.go"), basepathExtraTest)
+	if out, err := goTestIn(app, "-v", "-run", "TestUnderABasePath", "./internal/notestest/"); err != nil || !strings.Contains(out, "--- PASS: TestUnderABasePath") {
+		t.Fatalf("the scaffolded app under /acme:\n%s", out)
+	}
+}
+
+// magicBasePathTest is written into a --auth=magic scaffold as package
+// notestest. A tenant under a base path has no sign-in of its own (the
+// hub signs people in), so its pages must not offer one: a /signin link
+// there leaves the tenant for the product's own /signin.
+const magicBasePathTest = `package notestest
+
+import (
+	"io"
+	"log/slog"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
+	"time"
+
+	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/basepath"
+	"amadan.net/rastrillo/rastrillo/basepath/basepathtest"
+
+	genlocales "notes/gen/locales"
+	"notes/internal/notes"
+)
+
+func TestMagicAuthSigninLinkFollowsTheBasePath(t *testing.T) {
+	if rec := get(t, newApp(t), "/"); rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), "href=\"/signin\"") {
+		t.Errorf("GET / with no base path: %d, want 200 with a /signin link:\n%s", rec.Code, rec.Body)
+	}
+
+	opts := rastrillo.Options{Logger: slog.New(slog.NewTextHandler(io.Discard, nil)),
+		Locales: genlocales.Locales, DefaultLocale: genlocales.DefaultLocale,
+		BasePath: basepath.Config{Origin: "http://localhost:8080", Slug: "acme"}}
+	notes.Configure(&opts, newApp(t).(*http.ServeMux), nil, time.Now())
+	h, closeAll, err := rastrillo.Handler(opts)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { closeAll() })
+	req := httptest.NewRequest("GET", "/acme/", nil)
+	req.Host = "localhost:8080"
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("GET /acme/: %d, want 200:\n%s", rec.Code, rec.Body)
+	}
+	if strings.Contains(rec.Body.String(), "/signin") || strings.Contains(rec.Body.String(), "/signout") {
+		t.Errorf("GET /acme/ offers sign-in or sign-out, which the hub does:\n%s", rec.Body)
+	}
+	if l := basepathtest.Leaks(rec.Body.Bytes(), "/acme"); len(l) > 0 {
+		t.Errorf("GET /acme/ links outside /acme: %q\n%s", l, rec.Body)
+	}
+}
+`
+
+// A --auth=magic scaffold shows Sign in at the root and none under a
+// base path, where the hub signs people in.
+func TestScaffoldMagicAuthOffersNoSigninUnderABasePath(t *testing.T) {
+	if testing.Short() {
+		t.Skip("scaffolds, tidies and tests a whole app")
+	}
+	app := scaffoldApp(t, "notes", "--auth=magic")
+	mustWrite(t, filepath.Join(app, "internal", "notestest", "basepath_magic_test.go"), magicBasePathTest)
+	if out, err := goTestIn(app, "-v", "-run", "TestMagicAuthSigninLinkFollowsTheBasePath", "./internal/notestest/"); err != nil || !strings.Contains(out, "--- PASS: TestMagicAuthSigninLinkFollowsTheBasePath") {
+		t.Fatalf("the magic-auth scaffold under /acme:\n%s", out)
+	}
+}
+
+// The scaffold's main.go reads the base path from the environment the
+// platform gives a path-routed tenant, and refuses a slug it cannot
+// serve rather than serving at the root.
+func TestScaffoldBinaryReadsTheBasePathFromItsEnvironment(t *testing.T) {
+	if testing.Short() {
+		t.Skip("scaffolds and builds a whole app")
+	}
+	app := scaffoldApp(t, "notes")
+	build := exec.Command("go", "build", "-buildvcs=false", "-o", "notes.bin", "./cmd/notes")
+	build.Dir = app
+	if out, err := build.CombinedOutput(); err != nil {
+		t.Fatalf("go build:\n%s", out)
+	}
+	// A listener handed over as fd 3, as apiVersion does, rather than a
+	// port picked and then bound by the app, which another process can
+	// take in between.
+	l, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer l.Close()
+	lf, err := l.(*net.TCPListener).File()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer lf.Close()
+	origin := "http://" + l.Addr().String()
+	// stderr is read only after the child has exited (stop waits for
+	// it), because exec's copying goroutine writes the buffer until then.
+	// Cleanup kills each child even when a check stops the test early.
+	type proc struct {
+		cmd    *exec.Cmd
+		stderr bytes.Buffer
+		done   chan struct{}
+		err    error
+	}
+	stop := func(p *proc) string {
+		_ = p.cmd.Process.Kill()
+		<-p.done
+		return p.stderr.String()
+	}
+	start := func(slug string) *proc {
+		p := &proc{cmd: exec.Command(filepath.Join(app, "notes.bin")), done: make(chan struct{})}
+		p.cmd.Dir = app
+		p.cmd.Env = append(os.Environ(), "LISTEN_FDS=1", "STATE_DIRECTORY="+t.TempDir(),
+			"NOTES_ORIGIN="+origin, "RASTRILLO_SLUG="+slug, "RASTRILLO_SLUG_FROM_HOST=")
+		p.cmd.ExtraFiles = []*os.File{lf}
+		p.cmd.Stderr = &p.stderr
+		if err := p.cmd.Start(); err != nil {
+			t.Fatal(err)
+		}
+		go func() { p.err = p.cmd.Wait(); close(p.done) }()
+		t.Cleanup(func() { stop(p) })
+		return p
+	}
+	// Bounded: this process holds the listener too, so once the child
+	// has gone a connection is accepted by the kernel and never answered.
+	client := &http.Client{Timeout: 5 * time.Second}
+	get := func(path string) (int, string, error) {
+		resp, err := client.Get(origin + path)
+		if err != nil {
+			return 0, "", err
+		}
+		defer resp.Body.Close()
+		body, _ := io.ReadAll(resp.Body)
+		return resp.StatusCode, string(body), nil
+	}
+
+	p := start("acme")
+	for deadline := time.Now().Add(30 * time.Second); ; time.Sleep(50 * time.Millisecond) {
+		select {
+		case <-p.done:
+			t.Fatalf("the app exited before it answered: %v\n%s", p.err, stop(p))
+		default:
+		}
+		if _, _, err := get("/acme/healthz"); err == nil {
+			break
+		} else if time.Now().After(deadline) {
+			t.Fatalf("the app never answered: %v\n%s", err, stop(p))
+		}
+	}
+	code, body, err := get("/acme/healthz")
+	rootCode, _, rootErr := get("/healthz")
+	logs := stop(p)
+	if err != nil || code != http.StatusOK || body != "ok" {
+		t.Errorf("GET /acme/healthz: %d %q %v, want 200 ok\n%s", code, body, err, logs)
+	}
+	if rootErr != nil || rootCode != http.StatusNotFound {
+		t.Errorf("GET /healthz on the product host: %d %v, want 404 outside the base\n%s", rootCode, rootErr, logs)
+	}
+
+	p = start("Bad/slug")
+	select {
+	case <-p.done:
+		if logs := stop(p); p.err == nil || !strings.Contains(logs, "RASTRILLO_SLUG") {
+			t.Errorf("RASTRILLO_SLUG=Bad/slug: exit %v, want a refusal naming RASTRILLO_SLUG:\n%s", p.err, logs)
+		}
+	case <-time.After(30 * time.Second):
+		t.Errorf("RASTRILLO_SLUG=Bad/slug: still serving after 30s, want a refusal:\n%s", stop(p))
 	}
 }
 
@@ -1094,55 +1478,5 @@ func TestNewAgentsMDStatesTheMoneyRule(t *testing.T) {
 	want := "Money is a whole number of the currency's smallest unit, stored with its ISO 4217 code beside it, and shown with `money`. A float never touches a value a person will be held to."
 	if !strings.Contains(string(agents), want) || strings.Contains(string(agents), "integer cents") {
 		t.Errorf("AGENTS.md does not state the money rule as approved:\n%s", agents)
-	}
-}
-
-// Go's own idiom is a _test.go file beside the code, as package
-// <pkg>_test. A second internal/<pkg>test directory made every app a
-// two-package module whose tests sat away from what they test.
-func TestNewPutsTestsBesideTheCode(t *testing.T) {
-	dir, err := runNewInTemp(t, "my-blog")
-	if err != nil {
-		t.Fatalf("runNew: %v", err)
-	}
-	if _, err := os.Stat(filepath.Join(dir, "my-blog", "internal", "myblogtest")); err == nil {
-		t.Error("internal/myblogtest is still written; the tests belong in internal/myblog")
-	}
-	for _, f := range []string{"harness", "vendored", "index", "browser", "perf", "api"} {
-		src := readScaffold(t, dir, "my-blog", "internal", "myblog", f+"_test.go")
-		// A build tag sits above the package clause, so look for the
-		// clause as a line of its own.
-		if !strings.Contains(src, "\npackage myblog_test\n") && !strings.HasPrefix(src, "package myblog_test\n") {
-			t.Errorf("%s_test.go is not in package myblog_test:\n%.300s", f, src)
-		}
-	}
-	agents := readScaffold(t, dir, "my-blog", "AGENTS.md")
-	if strings.Contains(agents, "myblogtest") || strings.Contains(agents, "<app>test") {
-		t.Error("AGENTS.md still names the separate test package")
-	}
-	if !strings.Contains(agents, "go test -short ./...") {
-		t.Error("AGENTS.md does not tell the agent to run go test -short ./...")
-	}
-	if readme := readScaffold(t, dir, "my-blog", "README.md"); strings.Contains(readme, "myblogtest") {
-		t.Error("README.md still points at internal/myblogtest/browser_test.go")
-	}
-}
-
-// The test package is named <pkg>_test with the app imported under its
-// own name. A hyphenated name and a Go keyword are the two that reach
-// that through packageName, so each must still build and pass.
-func TestHyphenAndKeywordAppsPassTheirOwnTests(t *testing.T) {
-	if testing.Short() {
-		t.Skip("scaffolds, tidies and tests whole apps")
-	}
-	setSandboxGoEnv(t)
-	for _, name := range []string{"my-app", "func"} {
-		t.Run(name, func(t *testing.T) {
-			t.Chdir(t.TempDir())
-			dir := scaffoldWithReplace(t, name)
-			if out, err := goTestIn(dir, "./..."); err != nil {
-				t.Fatalf("%s: the scaffold's own tests fail:\n%s", name, out)
-			}
-		})
 	}
 }

@@ -11,6 +11,8 @@ import (
 	"time"
 
 	"github.com/chromedp/chromedp"
+
+	"amadan.net/rastrillo/rastrillo/harness"
 )
 
 // ftokJS reads the filter chip's × against the chip's inner edges (its
@@ -53,12 +55,17 @@ func TestTheFilterChipsRemoveFillsItsEnd(t *testing.T) {
 			rig := sizingRig(t, leg.coarse, pages)
 			ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
 			defer cancel()
-			if err := chromedp.Run(ctx, chromedp.EmulateViewport(leg.w, leg.h)); err != nil {
+			if err := chromedp.Do(ctx, chromedp.EmulateViewport(leg.w, leg.h)); err != nil {
 				t.Fatal(err)
 			}
 			for _, path := range []string{"/", "/rtl"} {
 				var raw string
-				if err := chromedp.Run(ctx, chromedp.Navigate(rig.Origin+path), chromedp.WaitReady("[rst-ftok] a", chromedp.ByQuery), chromedp.Evaluate(ftokJS, &raw)); err != nil {
+				tokens := chromedp.Evaluate[string](ftokJS)
+				err := chromedp.Do(ctx,
+					chromedp.Navigate(rig.Origin+path),
+					chromedp.WaitReady(chromedp.CSS("[rst-ftok] a")),
+					harness.Into(&raw, tokens))
+				if err != nil {
 					t.Fatal(err)
 				}
 				var got struct {

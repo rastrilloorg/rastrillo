@@ -1,0 +1,68 @@
+{{define "index"}}{{template "head"}}		<section class="todoapp">{{template "app" .}}</section>
+{{template "foot"}}{{end}}
+
+{{/* app is section.todoapp's contents: the whole page body, and what
+     a fragment request gets back. Forms are display: contents (app.css),
+     so the markup lays out exactly as TodoMVC's template. */}}
+{{define "app"}}{{$f := .Filter}}
+			<header class="header">
+				<h1>todos</h1>
+				<form method="post" action="/todos">
+					<input type="hidden" name="filter" value="{{$f}}">
+					<input class="new-todo" name="title" placeholder="What needs to be done?" autocomplete="off"{{if not .Editing}} autofocus{{end}}>
+				</form>
+			</header>
+{{- if .Total}}
+			<section class="main">
+				<form method="post" action="/todos/toggle-all">
+					<input type="hidden" name="filter" value="{{$f}}">
+					<input id="toggle-all" class="toggle-all" type="checkbox"{{if .AllCompleted}} checked{{end}}>
+					<label for="toggle-all">Mark all as complete</label>
+					<button class="nojs toggle-all-submit" data-action="toggle-all"><span>Mark all as complete</span></button>
+				</form>
+				<ul class="todo-list">
+{{- range .Items}}
+					<li data-id="{{.ID}}"{{with .Class}} class="{{.}}"{{end}}>
+						<div class="view">
+							<form method="post" action="/todos/{{.ID}}/toggle">
+								<input type="hidden" name="filter" value="{{$f}}">
+								<input class="toggle" type="checkbox"{{if .Completed}} checked{{end}}>
+								<label>{{.Title}}</label>
+								<button class="nojs toggle-submit" data-action="toggle"><span>Toggle</span></button>
+							</form>
+							<a class="nojs edit-link" data-action="edit" href="{{.EditHref}}"><span>Edit</span></a>
+							<form method="post" action="/todos/{{.ID}}/destroy">
+								<input type="hidden" name="filter" value="{{$f}}">
+								<button class="destroy"></button>
+							</form>
+						</div>
+						<form method="post" action="/todos/{{.ID}}/edit">
+							<input type="hidden" name="filter" value="{{$f}}">
+							<input class="edit" name="title" value="{{.Title}}"{{if .Editing}} autofocus{{end}}>
+						</form>
+					</li>
+{{- end}}
+				</ul>
+			</section>
+			<footer class="footer">
+				<span class="todo-count"><strong>{{.Left}}</strong> {{plural .Left}} left</span>
+				<ul class="filters">
+					<li>
+						<a{{if eq $f "all"}} class="selected"{{end}} href="/">All</a>
+					</li>
+					<li>
+						<a{{if eq $f "active"}} class="selected"{{end}} href="/active">Active</a>
+					</li>
+					<li>
+						<a{{if eq $f "completed"}} class="selected"{{end}} href="/completed">Completed</a>
+					</li>
+				</ul>
+{{- if .Completed}}
+				<form method="post" action="/todos/clear-completed">
+					<input type="hidden" name="filter" value="{{$f}}">
+					<button class="clear-completed">Clear completed</button>
+				</form>
+{{- end}}
+			</footer>
+{{- end}}
+		{{end}}

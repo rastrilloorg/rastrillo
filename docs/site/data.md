@@ -65,13 +65,30 @@ one.
 ### The DSN
 
 ```text
-?_pragma=busy_timeout(5000)&_pragma=journal_mode(WAL)&_pragma=foreign_keys(1)
+?_pragma=busy_timeout(5000)&_pragma=journal_mode(WAL)&_pragma=synchronous(NORMAL)&_pragma=foreign_keys(1)
 ```
 
 `busy_timeout` is set before `journal_mode=WAL`. The other order crashes
-under concurrent open. Foreign keys are on. `Open` also pings eagerly so
+under concurrent open. `synchronous` is `NORMAL`, so most commits skip
+the extra sync to disk. With WAL, a power cut can undo recent commits
+without corrupting the database. Foreign keys are on. `Open` also pings eagerly so
 the file exists on disk from boot, which is what keeps hibernation
 replication happy.
+
+To help preserve commits through a power loss, pass
+`db.DurableCommits()`:
+
+```go
+database, err := db.Open(options.DBPath, logger, db.DurableCommits())
+```
+
+SQLite then syncs the WAL after every commit (`synchronous(FULL)`). With
+the default `NORMAL` setting, an app crash does not lose committed data,
+but a power loss or operating system crash can lose recent commits
+without corrupting the database. In the v0.34.0 benchmark, the toggle
+rate fell from about 5,700 per second with `NORMAL` to about 182 with
+`FULL`. If `Serve` opens your database, set `Options.DurableCommits`
+instead.
 
 ### Two settings worth knowing
 
@@ -104,6 +121,12 @@ call when you specifically need the writer. `migrate.Apply` takes it
 that way, because it pins one connection for a whole run:
 `PRAGMA foreign_keys` is per-connection, and a table rebuild has to
 toggle it outside the transaction.
+
+`d.Reader()` returns the read pool. Leave it out of `sessions` unless a
+mixed-load test on your instance shows it helps. On one core, under
+heavy mixed load, it slows writes. Where it helps, pass it as `Reader`
+for session lookups and listing.
+Use it only for reads.
 
 `d.Close()` closes both pools.
 

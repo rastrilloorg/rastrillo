@@ -739,3 +739,15 @@ func TestSigninForceComesFromState(t *testing.T) {
 		t.Fatal("a check refusal after a keymail failure dropped the send-a-link-instead choice")
 	}
 }
+
+// Under a base path the tenant has no sign-in: every door would post to
+// a path that answers 404, and with empty paths the ask form would post
+// to the page itself.
+func TestTheSigninPartialRendersNothingWhenUnavailable(t *testing.T) {
+	out := render(t, "signin", map[string]any{"State": auth.SigninState{Unavailable: true}, "Brand": map[string]any{"Name": "Harbour"}})
+	for _, s := range []string{"<form", "<button", "action="} {
+		if strings.Contains(out, s) {
+			t.Errorf("an unavailable state rendered %s:\n%s", s, out)
+		}
+	}
+}

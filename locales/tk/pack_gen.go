@@ -4,8 +4,8 @@
 // SHA-256 in hack/moneycldr/sources/inputs.sha256. Data from the Unicode CLDR,
 // © Unicode, Inc., under the Unicode License v3 (locales/LICENSE-UNICODE).
 
-// Package tk links CLDR money-formatting data for every modern "tk"
-// locale. Import it for its side effect.
+// Package tk links CLDR number- and money-formatting data for every
+// modern "tk" locale. Import it for its side effect.
 package tk
 
 import "amadan.net/rastrillo/rastrillo/locales"
@@ -13,5 +13,5 @@ import "amadan.net/rastrillo/rastrillo/locales"
 func init() { locales.Register("tk", data) }
 
 var data = map[string]locales.Locale{
-	"tk": {Parent: "root", CurrencyDecimal: ",", CurrencyGroup: "\u00a0", Decimal: ",", Standard: "#,##0.00\u00a0¤", Alpha: "#,##0.00\u00a0¤", Symbols: map[string]string{"EUR": "EUR", "GBP": "GBP", "PHP": "PHP", "XCG": "Kg."}, Narrow: map[string]string{"BYN": "р."}},
+	"tk": {Parent: "root", CurrencyDecimal: ",", CurrencyGroup: "\u00a0", Decimal: ",", Group: "\u00a0", Percent: "#,##0\u00a0%", NaN: "san\u00a0däl", Standard: "#,##0.00\u00a0¤", Alpha: "#,##0.00\u00a0¤", Symbols: map[string]string{"EUR": "EUR", "GBP": "GBP", "PHP": "PHP", "XCG": "Kg."}, Narrow: map[string]string{"BYN": "р."}},
 }

@@ -4,8 +4,8 @@
 // SHA-256 in hack/moneycldr/sources/inputs.sha256. Data from the Unicode CLDR,
 // © Unicode, Inc., under the Unicode License v3 (locales/LICENSE-UNICODE).
 
-// Package sr links CLDR money-formatting data for every modern "sr"
-// locale. Import it for its side effect.
+// Package sr links CLDR number- and money-formatting data for every
+// modern "sr" locale. Import it for its side effect.
 package sr
 
 import "amadan.net/rastrillo/rastrillo/locales"
@@ -13,12 +13,12 @@ import "amadan.net/rastrillo/rastrillo/locales"
 func init() { locales.Register("sr", data) }
 
 var data = map[string]locales.Locale{
-	"sr":         {Parent: "root", CurrencyDecimal: ",", CurrencyGroup: ".", Decimal: ",", Standard: "#,##0.00\u00a0¤", Alpha: "#,##0.00\u00a0¤", Symbols: map[string]string{"AUD": "AUD", "BAM": "КМ", "JPY": "¥", "KRW": "KRW", "NZD": "NZD", "PHP": "PHP", "VND": "VND"}, Narrow: map[string]string{"BYN": "р.", "GEL": "ლ", "TWD": "NT$"}},
+	"sr":         {Parent: "root", CurrencyDecimal: ",", CurrencyGroup: ".", Decimal: ",", Group: ".", Standard: "#,##0.00\u00a0¤", Alpha: "#,##0.00\u00a0¤", Symbols: map[string]string{"AUD": "AUD", "BAM": "КМ", "JPY": "¥", "KRW": "KRW", "NZD": "NZD", "PHP": "PHP", "VND": "VND"}, Narrow: map[string]string{"BYN": "р.", "GEL": "ლ", "TWD": "NT$"}},
 	"sr-Cyrl":    {Parent: "sr"},
 	"sr-Cyrl-BA": {Parent: "sr-Cyrl"},
 	"sr-Cyrl-ME": {Parent: "sr-Cyrl"},
 	"sr-Cyrl-XK": {Parent: "sr-Cyrl"},
-	"sr-Latn":    {Parent: "root", CurrencyDecimal: ",", CurrencyGroup: ".", Decimal: ",", Standard: "#,##0.00\u00a0¤", Alpha: "#,##0.00\u00a0¤", Symbols: map[string]string{"AUD": "AUD", "BAM": "KM", "JPY": "¥", "KRW": "KRW", "NZD": "NZD", "PHP": "PHP", "VND": "VND"}, Narrow: map[string]string{"BYN": "r.", "GEL": "ლ", "TWD": "NT$"}},
+	"sr-Latn":    {Parent: "root", CurrencyDecimal: ",", CurrencyGroup: ".", Decimal: ",", Group: ".", Standard: "#,##0.00\u00a0¤", Alpha: "#,##0.00\u00a0¤", Symbols: map[string]string{"AUD": "AUD", "BAM": "KM", "JPY": "¥", "KRW": "KRW", "NZD": "NZD", "PHP": "PHP", "VND": "VND"}, Narrow: map[string]string{"BYN": "r.", "GEL": "ლ", "TWD": "NT$"}},
 	"sr-Latn-BA": {Parent: "sr-Latn"},
 	"sr-Latn-ME": {Parent: "sr-Latn"},
 	"sr-Latn-XK": {Parent: "sr-Latn"},

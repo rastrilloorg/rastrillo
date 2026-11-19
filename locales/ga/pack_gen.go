@@ -4,8 +4,8 @@
 // SHA-256 in hack/moneycldr/sources/inputs.sha256. Data from the Unicode CLDR,
 // © Unicode, Inc., under the Unicode License v3 (locales/LICENSE-UNICODE).
 
-// Package ga links CLDR money-formatting data for every modern "ga"
-// locale. Import it for its side effect.
+// Package ga links CLDR number- and money-formatting data for every
+// modern "ga" locale. Import it for its side effect.
 package ga
 
 import "amadan.net/rastrillo/rastrillo/locales"
@@ -13,6 +13,6 @@ import "amadan.net/rastrillo/rastrillo/locales"
 func init() { locales.Register("ga", data) }
 
 var data = map[string]locales.Locale{
-	"ga":    {Parent: "root", Standard: "¤#,##0.00", Symbols: map[string]string{"JPY": "¥", "THB": "฿", "USD": "$"}, Narrow: map[string]string{"TWD": "NT$"}},
+	"ga":    {Parent: "root", NaN: "Nuimh", Standard: "¤#,##0.00", Symbols: map[string]string{"JPY": "¥", "THB": "฿", "USD": "$"}, Narrow: map[string]string{"TWD": "NT$"}},
 	"ga-GB": {Parent: "ga"},
 }

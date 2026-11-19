@@ -135,7 +135,7 @@ func TestTheBulkBarNeverWrapsItsText(t *testing.T) {
 			rig := sizingRig(t, true, map[string]string{"/": bulkBarPage(t, leg.dir)})
 			ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
 			defer cancel()
-			mustRun(t, ctx, chromedp.EmulateViewport(leg.w, 844), chromedp.Navigate(rig.Origin+"/"), chromedp.WaitVisible("#bulk-ar", chromedp.ByQuery))
+			mustRun(t, ctx, chromedp.EmulateViewport(leg.w, 844), chromedp.Navigate(rig.Origin+"/"), chromedp.WaitVisible(chromedp.CSS("#bulk-ar")))
 			requirePointer(t, ctx, true)
 			bars := readBulkBars(t, ctx)
 			for _, c := range bulkBarCases {
@@ -234,7 +234,7 @@ func TestTheBulkBarIsUnchangedOnADesktop(t *testing.T) {
 	rig := sizingRig(t, false, map[string]string{"/": bulkBarPage(t, "ltr")})
 	ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
 	defer cancel()
-	mustRun(t, ctx, chromedp.EmulateViewport(1280, 844), chromedp.Navigate(rig.Origin+"/"), chromedp.WaitVisible("#bulk-en", chromedp.ByQuery))
+	mustRun(t, ctx, chromedp.EmulateViewport(1280, 844), chromedp.Navigate(rig.Origin+"/"), chromedp.WaitVisible(chromedp.CSS("#bulk-en")))
 	requirePointer(t, ctx, false)
 	var got map[string]box
 	at(t, ctx, `(() => { const bar = document.querySelector("#bulk-en [rst-bulkbar]"), o = bar.getBoundingClientRect();

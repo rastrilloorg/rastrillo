@@ -7,9 +7,11 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
+	"github.com/chromedp/cdproto/cdp"
 	"github.com/chromedp/cdproto/emulation"
 	cdppage "github.com/chromedp/cdproto/page"
 	"github.com/chromedp/cdproto/runtime"
@@ -92,27 +94,44 @@ func shellSite(t *testing.T) func(origin string) http.Handler {
 // tab opens a fresh tab (a fresh session history, so "what is behind
 // this entry" is only what the leg put there) at 390 wide, with an
 // optional script run in every document before the page's own.
-func tab(t *testing.T, rig *harness.Rig, init string, media ...*emulation.MediaFeature) (context.Context, func(), *[]string) {
+func tab(
+	t *testing.T, rig *harness.Rig, init string,
+	media ...*emulation.MediaFeature,
+) (context.Context, func(), func() []string) {
 	t.Helper()
 	ctx, cancel := chromedp.NewContext(rig.Context())
 	ctx, stop := context.WithTimeout(ctx, 90*time.Second)
-	thrown := &[]string{}
-	chromedp.ListenTarget(ctx, func(ev any) {
-		if e, ok := ev.(*runtime.EventExceptionThrown); ok {
-			*thrown = append(*thrown, e.ExceptionDetails.Error())
-		}
-	})
-	acts := []chromedp.Action{chromedp.EmulateViewport(390, 844)}
+	var mu sync.Mutex
+	var exceptions []string
+	harness.Listen(rig, ctx, runtime.ExceptionThrown,
+		func(e *runtime.EventExceptionThrown) {
+			details := &chromedp.ExceptionError{
+				ExceptionDetails: e.ExceptionDetails,
+			}
+			mu.Lock()
+			defer mu.Unlock()
+			exceptions = append(exceptions, details.Error())
+		})
+	thrown := func() []string {
+		mu.Lock()
+		defer mu.Unlock()
+		return append([]string(nil), exceptions...)
+	}
+	acts := []chromedp.Action[chromedp.Void]{chromedp.EmulateViewport(390, 844)}
 	if len(media) > 0 {
-		acts = append(acts, emulation.SetEmulatedMedia().WithFeatures(media))
+		acts = append(acts, send(emulation.SetEmulatedMedia,
+			emulation.SetEmulatedMediaParams{Features: media}))
 	}
 	if init != "" {
-		acts = append(acts, chromedp.ActionFunc(func(c context.Context) error {
-			_, err := cdppage.AddScriptToEvaluateOnNewDocument(init).Do(c)
+		addInit := func(c context.Context, target *chromedp.Target) error {
+			_, err := cdp.Call(c, target,
+				cdppage.AddScriptToEvaluateOnNewDocument,
+				cdppage.AddScriptToEvaluateOnNewDocumentParams{Source: init})
 			return err
-		}))
+		}
+		acts = append(acts, chromedp.Func(addInit))
 	}
-	if err := chromedp.Run(ctx, acts...); err != nil {
+	if err := chromedp.Do(ctx, acts...); err != nil {
 		t.Fatal(err)
 	}
 	return ctx, func() { stop(); cancel() }, thrown
@@ -138,7 +157,7 @@ func state(t *testing.T, ctx context.Context) shellState {
 // fires there, so chromedp's own waits would hang).
 func visit(t *testing.T, ctx context.Context, url string) {
 	t.Helper()
-	if err := chromedp.Run(ctx, chromedp.Navigate(url)); err != nil {
+	if err := chromedp.Do(ctx, chromedp.Navigate(url)); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -148,7 +167,9 @@ func visit(t *testing.T, ctx context.Context, url string) {
 // own marker holds and the destination has loaded.
 func follow(t *testing.T, ctx context.Context, sel, until string) {
 	t.Helper()
-	if err := chromedp.Run(ctx, chromedp.Evaluate(fmt.Sprintf(`setTimeout(() => document.querySelector(%q).click(), 0), true`, sel), nil)); err != nil {
+	click := chromedp.Evaluate[chromedp.Void](fmt.Sprintf(
+		`setTimeout(() => document.querySelector(%q).click(), 0), true`, sel))
+	if err := chromedp.Do(ctx, click); err != nil {
 		t.Fatal(err)
 	}
 	settleUntil(t, ctx, loaded(until))
@@ -174,8 +195,10 @@ func loaded(until string) string {
 func revealed(t *testing.T, ctx context.Context) {
 	t.Helper()
 	settleUntil(t, ctx, `document.readyState === "complete"`)
-	if err := chromedp.Run(ctx, chromedp.Evaluate(`new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true))))`, nil,
-		func(p *runtime.EvaluateParams) *runtime.EvaluateParams { return p.WithAwaitPromise(true) })); err != nil {
+	if err := chromedp.Do(ctx, chromedp.Evaluate[chromedp.Void](
+		`new Promise(r => requestAnimationFrame(() =>
+			requestAnimationFrame(() => r(true))))`,
+		chromedp.EvalAwaitPromise)); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -197,8 +220,8 @@ func TestTheBackControlReusesHistoryWhenItCanProveWhatIsBehind(t *testing.T) {
 		if after := state(t, ctx); after.Len != before.Len || after.Path != "/" || after.Focus != "nav-invoices" {
 			t.Errorf("after the back control: %+v (before it %+v); want history unchanged, at /, focus on nav-invoices", after, before)
 		}
-		if len(*thrown) > 0 {
-			t.Errorf("uncaught: %v", *thrown)
+		if seen := thrown(); len(seen) > 0 {
+			t.Errorf("uncaught: %v", seen)
 		}
 	})
 
@@ -245,8 +268,8 @@ func TestTheBackControlReusesHistoryWhenItCanProveWhatIsBehind(t *testing.T) {
 		follow(t, ctx, "#nav-orders", `location.pathname === "/orders"`)
 		back(t, ctx, `location.pathname === "/"`)
 		settleUntil(t, ctx, `document.activeElement.id === "nav-invoices"`)
-		if len(*thrown) > 0 {
-			t.Errorf("storage that throws broke the script: %v", *thrown)
+		if seen := thrown(); len(seen) > 0 {
+			t.Errorf("storage that throws broke the script: %v", seen)
 		}
 	})
 
@@ -259,8 +282,8 @@ func TestTheBackControlReusesHistoryWhenItCanProveWhatIsBehind(t *testing.T) {
 		if s := state(t, ctx); s.Focus != "BODY" {
 			t.Errorf("with no record and no fragment, focus is on %q, want the browser's default", s.Focus)
 		}
-		if len(*thrown) > 0 {
-			t.Errorf("uncaught: %v", *thrown)
+		if seen := thrown(); len(seen) > 0 {
+			t.Errorf("uncaught: %v", seen)
 		}
 	})
 
@@ -276,8 +299,9 @@ func TestTheBackControlReusesHistoryWhenItCanProveWhatIsBehind(t *testing.T) {
 			// navigation so the next click starts from the same page.
 			js := `(() => { let seen = null; addEventListener("click", e => { seen = e.defaultPrevented; e.preventDefault(); }, {once: true});
 			  document.getElementById("back").dispatchEvent(new MouseEvent("click", Object.assign({bubbles: true, cancelable: true, button: 0}, ` + init + `)));
-			  return seen; })()`
-			if err := chromedp.Run(ctx, chromedp.Evaluate(js, &prevented)); err != nil {
+			  return seen ?? false; })()`
+			read := harness.Into(&prevented, chromedp.Evaluate[bool](js))
+			if err := chromedp.Do(ctx, read); err != nil {
 				t.Fatal(err)
 			}
 			if prevented {
@@ -285,9 +309,12 @@ func TestTheBackControlReusesHistoryWhenItCanProveWhatIsBehind(t *testing.T) {
 			}
 		}
 		// The control: a plain click IS intercepted here.
-		var plain bool
-		if err := chromedp.Run(ctx, chromedp.Evaluate(`(() => { let seen = null; addEventListener("click", e => { seen = e.defaultPrevented; }, {once: true});
-		  document.getElementById("back").dispatchEvent(new MouseEvent("click", {bubbles: true, cancelable: true, button: 0})); return seen; })()`, &plain)); err != nil {
+		plain, err := chromedp.Run(ctx, chromedp.Evaluate[bool](`(() => {
+		  let seen = null;
+		  addEventListener("click", e => { seen = e.defaultPrevented; },
+		    {once: true});
+		  document.getElementById("back").dispatchEvent(new MouseEvent("click", {bubbles: true, cancelable: true, button: 0})); return seen ?? false; })()`))
+		if err != nil {
 			t.Fatal(err)
 		}
 		if !plain {
@@ -350,8 +377,8 @@ func TestTheBackControlReusesHistoryWhenItCanProveWhatIsBehind(t *testing.T) {
 		follow(t, ctx, "#nav-invoices", `location.pathname === "/invoices"`)
 		follow(t, ctx, "#back", `location.pathname === "/"`)
 		settleUntil(t, ctx, `document.activeElement.id === "nav-invoices"`)
-		if len(*thrown) > 0 {
-			t.Errorf("a transition without types broke the script: %v", *thrown)
+		if seen := thrown(); len(seen) > 0 {
+			t.Errorf("a transition without types broke the script: %v", seen)
 		}
 	})
 
@@ -362,13 +389,13 @@ func TestTheBackControlReusesHistoryWhenItCanProveWhatIsBehind(t *testing.T) {
 	t.Run("a wide reveal consumes the record", func(t *testing.T) {
 		ctx, done, _ := tab(t, rig, "")
 		defer done()
-		if err := chromedp.Run(ctx, chromedp.EmulateViewport(1280, 800)); err != nil {
+		if err := chromedp.Do(ctx, chromedp.EmulateViewport(1280, 800)); err != nil {
 			t.Fatal(err)
 		}
 		visit(t, ctx, rig.Origin+"/b/invoices")
 		follow(t, ctx, "#back", `location.pathname === "/b/"`)
 		revealed(t, ctx)
-		if err := chromedp.Run(ctx, chromedp.EmulateViewport(390, 844)); err != nil {
+		if err := chromedp.Do(ctx, chromedp.EmulateViewport(390, 844)); err != nil {
 			t.Fatal(err)
 		}
 		visit(t, ctx, rig.Origin+"/b/")
@@ -402,7 +429,9 @@ func TestTheBackControlReusesHistoryWhenItCanProveWhatIsBehind(t *testing.T) {
 // page put there and not what the page kept from before it was left.
 func back(t *testing.T, ctx context.Context, until string) {
 	t.Helper()
-	if err := chromedp.Run(ctx, chromedp.Evaluate(`document.activeElement && document.activeElement.blur(), setTimeout(() => history.back(), 0), true`, nil)); err != nil {
+	if err := chromedp.Do(ctx, chromedp.Evaluate[chromedp.Void](
+		`document.activeElement && document.activeElement.blur(),
+		setTimeout(() => history.back(), 0), true`)); err != nil {
 		t.Fatal(err)
 	}
 	settleUntil(t, ctx, loaded(until))
@@ -454,8 +483,8 @@ func TestTheSlideKnowsWhichWayItIsGoing(t *testing.T) {
 			follow(t, ctx, "#nav-invoices", `location.pathname === "/invoices" && `+logged(6))
 			follow(t, ctx, "#section-link", `location.hash === "#part"`)
 			follow(t, ctx, "#back", `location.pathname === "/" && `+logged(7))
-			var log string
-			if err := chromedp.Run(ctx, chromedp.Evaluate(`sessionStorage.getItem("reveal-log")`, &log)); err != nil {
+			log, err := chromedp.Run(ctx, chromedp.Evaluate[string](`sessionStorage.getItem("reveal-log") ?? ""`))
+			if err != nil {
 				t.Fatal(err)
 			}
 			if log != want {
@@ -496,7 +525,7 @@ func TestALinkBesideTheBackControlIsNotTheBackControl(t *testing.T) {
 	if after.Len != before.Len+1 {
 		t.Errorf("history %d -> %d after the menu link; want it followed (+1)", before.Len, after.Len)
 	}
-	if errs, _ := scriptErrors(t, *thrown); len(errs) > 0 {
+	if errs, _ := scriptErrors(t, thrown()); len(errs) > 0 {
 		t.Errorf("uncaught: %v", errs)
 	}
 }

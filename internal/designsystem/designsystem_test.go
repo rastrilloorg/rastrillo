@@ -380,37 +380,6 @@ func TestTheStaticDemosCarryNoSchemeMenu(t *testing.T) {
 	}
 }
 
-// Every markup idiom ui.Styleguide ships is rendered somewhere in each
-// gallery, same marker mechanism and the same union.
-func TestEveryStyleguideSampleAppearsAcrossThePages(t *testing.T) {
-	files := render(t)
-	want := make([]string, 0, len(ui.Styleguide()))
-	for name := range ui.Styleguide() {
-		want = append(want, name)
-	}
-	sort.Strings(want)
-	for _, theme := range ui.ThemeNames() {
-		for _, locale := range rastrillo.BaseLocales() {
-			where := theme + "/" + locale
-			found := markerCounts(files, galleryFiles(theme, locale), idiomMarker)
-			for _, name := range want {
-				switch found[name] {
-				case 1:
-				case 0:
-					t.Errorf("%s: markup idiom %q is on none of the %d pages (no marker comment anywhere in the directory)", where, name, len(pageKinds()))
-				default:
-					t.Errorf("%s: markup idiom %q is marked on %d pages; a section is being rendered twice", where, name, found[name])
-				}
-			}
-			for name := range found {
-				if !slices.Contains(want, name) {
-					t.Errorf("%s: a page marks markup idiom %q, which ui.Styleguide does not ship", where, name)
-				}
-			}
-		}
-	}
-}
-
 // budgetFor is the ceiling one page is held to, and whether reaching it
 // needed an entry from pageBudgetDebt.
 //
@@ -509,7 +478,7 @@ var (
 
 // chromeLinks finds the URLs the renderer itself emits into a page's
 // chrome: the stylesheets, the scripts and the shell iframes. Every one
-// of them has to be an absolute path under /design-system/, because the
+// of them has to be an absolute path under the mount, because the
 // static edge serves this tree's directory indexes at their slash-less
 // URL without redirecting and a relative path resolves against the
 // wrong base there.
@@ -530,7 +499,7 @@ var chromeLinks = []struct {
 // must resolve, while the hrefs inside the samples are content —
 // /orders/AB3PX and friends, sample data pointing at routes no static
 // site serves. The rule that separates them without marking up either
-// is the mount prefix: an href under /design-system/ is a link into
+// is the mount prefix: an href under /components/ is a link into
 // this tree and must hit a file, and an href that is not is a sample.
 var anchorHref = regexp.MustCompile(`<a[^>]*\shref="([^"]*)"`)
 
@@ -559,10 +528,26 @@ func assetHref(name string) string { return mountPrefix + hashedNames()[name] }
 // The table is exact strings, not prefixes, and every entry has to be
 // used — TestEveryOutboundLinkIsAllowedAndUsed holds both halves — so it
 // cannot become a licence for the next link somebody feels like adding.
-var outboundLinks = map[string]string{
-	"https://lucide.dev": "the Icons page's provenance: the set the framework vendors, " +
-		"under the ISC licence, and the only place a reader can see the rest of it",
-}
+var outboundLinks = func() map[string]string {
+	out := map[string]string{
+		"https://lucide.dev": "the Icons page's provenance: the set " +
+			"the framework vendors, under the ISC licence, and the " +
+			"only place a reader can see the rest of it",
+	}
+	// Each Fiesta page that replaced something this gallery documented,
+	// in every theme and locale: testdata/fiesta-pages.txt, spelled out
+	// exactly so an entry is a page and not a prefix.
+	for _, theme := range ui.ThemeNames() {
+		for _, locale := range rastrillo.BaseLocales() {
+			for _, page := range fiestaPages {
+				out[FiestaPage(theme, locale, page)] = "Fiesta's design " +
+					"system, which documents the tokens, the markup with " +
+					"no Go call and the files that left this gallery"
+			}
+		}
+	}
+	return out
+}()
 
 // srcdocAttr finds a frame that still carries its document inline. No
 // frame in the tree may: the previews are files, and an escaped second
@@ -865,7 +850,7 @@ func resolves(files map[string][]byte, href string) bool {
 
 // Every page is a whole document in the right language, with no
 // unresolved catalog key; every asset it loads and every link it makes
-// into this tree is an absolute path under /design-system/ that names a
+// into this tree is an absolute path under /components/ that names a
 // file the tree contains.
 //
 // The absolute half of that is the fix for the live bug: rastrillo.org
@@ -1008,15 +993,12 @@ func localeOfPath(p string) string {
 // stylesheet and any of them could grow a sample that laid an overlay
 // over it.
 //
-// The cure is the shells': the source in a <pre>, highlighted and
-// therefore escaped, with the markup live at its own URL. In a source
-// block the < that opens the tag is &lt;, so <div rst-modal-overlay
-// occurs only where a browser would lay the overlay out.
-//
-// The second half of the gate is the one that matters a year from now:
-// the source and the demo link have to be there. A gate that only
-// forbade the live markup would pass just as happily on a page that had
-// dropped the modal idiom altogether.
+// The cure is the shells': the markup live at its own URL, the modal
+// demo the rail links from every page, and a source block's < written
+// as &lt;, so <div rst-modal-overlay occurs only where a browser would
+// lay the overlay out. The modal's markup itself is Fiesta's UI
+// primitives page's to show now; TestEveryDemoLinkOpensInANewTab holds
+// the demo link.
 func TestNoGalleryPageOpensAModalOverTheGallery(t *testing.T) {
 	files := render(t)
 	for _, theme := range ui.ThemeNames() {
@@ -1033,18 +1015,6 @@ func TestNoGalleryPageOpensAModalOverTheGallery(t *testing.T) {
 					}
 				}
 			}
-			// The second half, on the one page that owes it. The modal
-			// idiom lives under UI primitives since the split, so that
-			// is where the escaped source and the demo link have to be
-			// — and naming the page rather than sweeping for it is what
-			// makes this fail if the idiom is dropped altogether.
-			page := galleryPage(t, files, theme, locale, "primitives")
-			if !strings.Contains(strings.Join(sourceTexts(page), "\n"), `<div rst-modal-overlay>`) {
-				t.Errorf("%s/%s/%s does not show the modal sample as source", theme, locale, fileOf("primitives"))
-			}
-			if href := modalHref(mountPath, theme, locale); !strings.Contains(page, `href="`+href+`"`) {
-				t.Errorf("%s/%s/%s does not link its modal demo (%s)", theme, locale, fileOf("primitives"), href)
-			}
 		}
 	}
 }
@@ -1058,7 +1028,8 @@ func TestNoGalleryPageOpensAModalOverTheGallery(t *testing.T) {
 func TestTreeShapeIsComplete(t *testing.T) {
 	files := render(t)
 	want := []string{"index.html"}
-	for _, name := range []string{"tokens.css", "rastrillo.js", "busy.js", "light.js", "anchor.js", "shell.js", "shell.css", "select.js", "datetime.js", "calendar.js", "gallery.js", "gallery.css",
+	for _, name := range []string{"tokens.css", "rastrillo.js", "busy.js", "live.js", "light.js", "anchor.js", "shell.js", "shell.css", "select.js", "datetime.js", "calendar.js", "gallery.js", "gallery.css",
+		"transition.js", "fiesta.js", "copy.js",
 		"sample-checkout.svg", "sample-pricing.svg", "sample-logo.svg", "sample-banner.svg"} {
 		want = append(want, hashedNames()[name], name)
 	}
@@ -1368,7 +1339,15 @@ func TestEveryExampleIsFramedDesktopMobileHTMLAndTemplate(t *testing.T) {
 				t.Errorf("%s widget %d: tabs %q but HTML panel %v and Template panel %v; a tab with no panel shows nothing, a panel with no tab is unreachable", name, i, order, html != "", tpl != "")
 				continue
 			}
-			calls := strings.Count(tpl, `<code><ds-x>{{</ds-x><ds-x>`)
+			// A call is a Template block with an action in it: a
+			// partial's call opens with one, a format's template has its
+			// helper's call inside its markup.
+			var calls int
+			for _, block := range strings.Split(tpl, `<pre class="ds-src`)[1:] {
+				if strings.Contains(block, `<ds-x>{{</ds-x>`) {
+					calls++
+				}
+			}
 			switch order {
 			case "dm":
 				// A framed page of the tree: nothing to copy.
@@ -1386,8 +1365,9 @@ func TestEveryExampleIsFramedDesktopMobileHTMLAndTemplate(t *testing.T) {
 				}
 			case "dmht":
 				withSource++
-				// A partial sample's call beside its rendering; a grouped
-				// row's calls and renderings, one of each per state.
+				// A partial sample's call beside its rendering, or a
+				// format's template beside its output; a grouped row's
+				// calls and renderings, one of each per state.
 				withCall += strings.Count(tpl, `<code><ds-x>{{</ds-x><ds-x>template</ds-x>`)
 				if pres := strings.Count(html, `<pre class="ds-src`); calls == 0 || pres != calls {
 					t.Errorf("%s widget %d: %d calls and %d renderings; each call has its rendering in the HTML panel", name, i, calls, pres)
@@ -1421,19 +1401,17 @@ func TestEveryExampleIsFramedDesktopMobileHTMLAndTemplate(t *testing.T) {
 	// The width class, counted off the render and held against the set
 	// ui itself defines. pageFrame() sorts by anchor-id prefix, which
 	// is what lets a fifth shell arrive with no edit and is also the
-	// thing that can go quietly wrong — a rename in ui.LayoutNames() or
-	// ui.Styleguide() that stops matching leaves a 1200px page frame
-	// squeezed into a 900px box, which renders and reads perfectly.
-	// Derived here from the same two sources rather than written down,
-	// so the arithmetic moves with them.
-	wantPageWidth := len(ui.LayoutNames()) + 2 // the shell demos, plus the demo application and the modal
-	for name := range ui.Styleguide() {
-		if strings.HasPrefix(name, "shell-") {
-			wantPageWidth++
-		}
-	}
+	// thing that can go quietly wrong — a rename in ui.LayoutNames()
+	// that stops matching leaves a 1200px page frame squeezed into a
+	// 900px box, which renders and reads perfectly. Derived here from
+	// the same source rather than written down, so the arithmetic moves
+	// with it.
+	// The shell demos, plus the demo application.
+	wantPageWidth := len(ui.LayoutNames()) + 1
 	if pageWidth != wantPageWidth {
-		t.Errorf("%d widgets take the page width class across the English tree, want %d — every shell demo, every shell idiom, the modal and the demo application, and nothing else", pageWidth, wantPageWidth)
+		t.Errorf("%d widgets take the page width class across the "+
+			"English tree, want %d: every shell demo and the demo "+
+			"application, and nothing else", pageWidth, wantPageWidth)
 	}
 
 	// The mechanism, asserted where it lives — which is gallery.css,
@@ -1815,9 +1793,9 @@ func escapedSource(page string) string {
 // — drop a key from prose.go and it stops being checked — and these
 // three cannot be: the gate asserts they are present in English first.
 var proseSentinels = []string{
-	"Buttons come in four variants and three sizes, and a link can look like one.",
+	"One number on a dashboard, with a label and how much it changed.",
 	"Each example is live, but its links go nowhere.",
-	"Screens stack vertically",
+	"UI primitives on Fiesta",
 }
 
 // No English the page says in its own voice reaches a translated page.
@@ -1834,11 +1812,11 @@ func TestNoEnglishProseReachesATranslatedPage(t *testing.T) {
 	files := render(t)
 	keys := proseKeysRendered(t)
 	// Every English page of the root theme, joined: the three
-	// sentinels are on three different pages since the split — the
-	// Buttons blurb under UI primitives, the live-examples sentence
-	// on the pages that frame samples, and the list-grid rule under UI
-	// primitives — and the point of a sentinel is that it is somewhere
-	// in English, not that it is on one named file.
+	// sentinels are on different pages — the stat blurb on Display,
+	// the live-examples sentence on the pages that frame samples, and
+	// the Fiesta link in every rail — and the point of a sentinel is
+	// that it is somewhere in English, not that it is on one named
+	// file.
 	var en string
 	for _, name := range galleryFiles(RootTheme(), "en") {
 		if files[name] == nil {
@@ -1948,22 +1926,17 @@ var renderedText = template.Must(template.New("").Parse("{{.}}"))
 
 // leakRegressionKeys are the keys the raw sweep, and then the
 // hand-listed escaping, could not see: the two media-grid notes with
-// their quotes and apostrophe, and the screens-are-columns rule with
-// its plus signs.
+// their quotes and apostrophe.
 func leakRegressionKeys(t *testing.T) []string {
 	t.Helper()
-	keys := mediaGridNotes(t)
-	const plus = "section-header + card"
-	for key := range prose {
-		if strings.Contains(key, plus) {
-			keys = append(keys, key)
-		}
-	}
-	if len(keys) != 3 {
-		t.Fatalf("found %d keys for the regression, want the two notes and the one carrying %q", len(keys), plus)
-	}
-	return keys
+	return mediaGridNotes(t)
 }
+
+// plusSignKey stands for the third case, a key with a plus sign, which
+// html/template writes as &#43;. The key that carried it, a rule on the
+// UI primitives page, left with that page, and no sentence the tree
+// still says has one, so the sweep is held to it on its own.
+const plusSignKey = "page-header, then section-header + card"
 
 // mediaGridNotes are the two notes beside the media-grid sample, both
 // of which carry a quote or an apostrophe: the keys the sweep could
@@ -2000,6 +1973,16 @@ func mediaGridNotes(t *testing.T) []string {
 // where it is written with &#34;, &#39; or &#43; and neither the raw
 // key nor its HTMLEscapeString form appears.
 func TestTheLeakSweepSeesEscapedPunctuation(t *testing.T) {
+	rendered := asRendered(plusSignKey)
+	if !strings.Contains(rendered, "&#43;") {
+		t.Errorf("%q renders as %q, with no &#43; to prove",
+			plusSignKey, rendered)
+	}
+	leaks := englishLeaks("<p>"+rendered+"</p>", []string{plusSignKey})
+	if len(leaks) != 1 {
+		t.Errorf("the rendered form of %q is not reported as a leak",
+			plusSignKey)
+	}
 	for _, key := range leakRegressionKeys(t) {
 		if got := englishLeaks("<p>"+asRendered(key)+"</p>", []string{key}); len(got) != 1 {
 			t.Errorf("the rendered form of %q is not reported as a leak", key)
@@ -2350,7 +2333,6 @@ var (
 	navHref       = regexp.MustCompile(`<a[^>]*\shref="([^"]*)"`)
 	elementID     = regexp.MustCompile(`\bid="([^"]*)"`)
 	partialMarker = regexp.MustCompile(`<!-- partial: (\S+) -->`)
-	idiomMarker   = regexp.MustCompile(`<!-- idiom: (\S+) -->`)
 )
 
 // railOf cuts the sidebar's nav out of a page. Everything below reads
@@ -2430,33 +2412,36 @@ func TestTheSidebarLinksEverythingOnThePageExactlyOnce(t *testing.T) {
 				}
 
 				// The anchors are the marker comments' own names, so the
-				// two coverage gates and this one are looking at one list.
+				// coverage gate and this one are looking at one list.
 				linked := map[string]bool{}
 				for _, f := range fragments {
 					linked[f] = true
 				}
-				for _, kind := range []struct {
-					prefix string
-					re     *regexp.Regexp
-				}{{"partial", partialMarker}, {"idiom", idiomMarker}} {
-					for _, m := range kind.re.FindAllStringSubmatch(page, -1) {
-						if want := anchorID(kind.prefix, m[1]); !linked[want] {
-							t.Errorf("%s: %s %q is on this page and not in the sidebar (no %s%s)", name, kind.prefix, m[1], prefix, want)
-						}
+				markers := partialMarker.FindAllStringSubmatch(page, -1)
+				for _, marker := range markers {
+					want := anchorID("partial", marker[1])
+					if !linked[want] {
+						t.Errorf("%s: partial %q is on this page and not "+
+							"in the sidebar (no %s%s)",
+							name, marker[1], prefix, want)
 					}
 				}
 
 				// Everything the rail links is a page of this tree — the
-				// other four galleries, the demos, and this page itself.
-				// Exactly one link per shell demo plus the modal leaves
-				// the gallery altogether; they are the only entries in
-				// the rail that do.
+				// other galleries, the demos, and this page itself — or
+				// one of the Fiesta pages that replaced a page of it.
+				// Exactly one link per shell demo plus the modal and the
+				// demo application leaves the gallery for a demo.
 				gallery := map[string]bool{}
 				for _, p := range galleryFiles(theme, locale) {
 					gallery[mountPrefix+p] = true
 				}
-				var away int
+				var away, fiesta int
 				for _, m := range navHref.FindAllStringSubmatch(rail, -1) {
+					if strings.HasPrefix(m[1], fiestaDesignSystem) {
+						fiesta++
+						continue
+					}
 					if !strings.HasPrefix(m[1], mountPrefix) || !resolves(files, m[1]) {
 						t.Errorf("%s: the sidebar links %q, which is not a page of this tree", name, m[1])
 						continue
@@ -2469,24 +2454,28 @@ func TestTheSidebarLinksEverythingOnThePageExactlyOnce(t *testing.T) {
 				if want := len(ui.LayoutNames()) + 2; away != want {
 					t.Errorf("%s: the sidebar has %d links out of the gallery, want %d (one per shell demo, plus the modal and the demo application)", name, away, want)
 				}
+				if fiesta != len(fiestaEntries) {
+					t.Errorf("%s: the sidebar has %d links to Fiesta, "+
+						"want %d", name, fiesta, len(fiestaEntries))
+				}
 			}
 			// The union, which is the half a per-page reading cannot
 			// see: every marker in the whole directory has a rail entry
 			// somewhere, so a partial that landed on no page at all
-			// fails here as well as in the coverage gates.
+			// fails here as well as in the coverage gate.
 			rail := railOf(t, theme+"/"+locale, string(files[theme+"/"+locale+"/"+fileOf("overview")]))
-			for _, kind := range []struct {
-				prefix string
-				re     *regexp.Regexp
-			}{{"partial", partialMarker}, {"idiom", idiomMarker}} {
-				found := markerCounts(files, galleryFiles(theme, locale), kind.re)
-				if len(found) == 0 {
-					t.Errorf("%s/%s: no %s markers anywhere in the directory", theme, locale, kind.prefix)
-				}
-				for marked := range found {
-					if want := "#" + anchorID(kind.prefix, marked); !strings.Contains(rail, want) {
-						t.Errorf("%s/%s: %s %q is somewhere in the directory and nowhere in the rail (no %s)", theme, locale, kind.prefix, marked, want)
-					}
+			directory := galleryFiles(theme, locale)
+			found := markerCounts(files, directory, partialMarker)
+			if len(found) == 0 {
+				t.Errorf("%s/%s: no partial markers anywhere in the "+
+					"directory", theme, locale)
+			}
+			for marked := range found {
+				want := "#" + anchorID("partial", marked)
+				if !strings.Contains(rail, want) {
+					t.Errorf("%s/%s: partial %q is somewhere in the "+
+						"directory and nowhere in the rail (no %s)",
+						theme, locale, marked, want)
 				}
 			}
 		}
@@ -2745,13 +2734,31 @@ func TestEverySectionOfTheRailRoutesToItsOwnPage(t *testing.T) {
 					continue
 				}
 				groups := railSections(rail)
-				// The page kinds, in table order, and Demos last.
-				if want := len(pageKinds()) + 1; len(groups) != want {
-					t.Errorf("%s: the rail has %d sections, want %d (one per page kind, plus Demos)", name, len(groups), want)
+				// The page kinds, in table order, each Fiesta page in
+				// front of the kind it is keyed to, and Demos last.
+				want := len(pageKinds()) + len(fiestaEntries) + 1
+				if len(groups) != want {
+					t.Errorf("%s: the rail has %d sections, want %d (one "+
+						"per page kind and Fiesta page, plus Demos)",
+						name, len(groups), want)
 					continue
 				}
-				overviews := 0
-				for i, pk2 := range pageKinds() {
+				overviews, i := 0, -1
+				for _, pk2 := range pageKinds() {
+					i++
+					if away, ok := fiestaEntries[pk2.Kind]; ok {
+						section := groups[i]
+						href := FiestaPage(theme, locale, away.Page)
+						title := template.HTMLEscapeString(
+							proseIn(locale, away.Title))
+						if section.Title != title || section.Open ||
+							section.Href != href {
+							t.Errorf("%s: rail section %d is %q at %q, "+
+								"want the plain link %q at %q", name, i,
+								section.Title, section.Href, title, href)
+						}
+						i++
+					}
 					g := groups[i]
 					want := pageHref(mountPath, theme, locale, pk2.File)
 					title := template.HTMLEscapeString(proseIn(locale, pk2.Title))
@@ -3096,172 +3103,29 @@ func TestTheIconsPageIsAReadingOfIconSlugs(t *testing.T) {
 	t.Logf("%d slugs, %d of them renamed from Lucide's own", len(slugs), renamed)
 }
 
-// The Getting started page's weights are len() of the assets the tree
-// actually serves, not numbers anybody wrote down.
-//
-// Three separate things, and the third is the one that makes the other
-// two worth having:
-//
-//   - every shipped file has a row, with its own anchor and a link to
-//     the copy of it in this tree;
-//   - the weight on that row is the length of THAT file, re-measured
-//     here off the rendered tree, so the number beside a download and
-//     the download itself cannot disagree;
-//   - the total the page gives for a scaffolded app is the arithmetic
-//     over the files rastrillo new actually writes — tokens.css, one
-//     theme, three scripts — and not the sum of the list, which
-//     includes two themes the app did not choose.
-//
-// And a fourth, which is an absence: this gallery's own furniture is
-// not on the page at all. gallery.js used to have a row, and gallery.css
-// would have got one when it stopped being inlined. Neither is anything
-// an app is handed, so neither belongs on a page an app author reads to
-// find out what they are handed — not as a row, not as a weight, not as
-// a parenthesis in the total saying it does not count. A row whose own
-// blurb explains that it should not be there is one to delete, not to
-// caveat. Asserted by name rather than left to the row count below,
-// because the count would also pass on a list that dropped tokens.css
-// and gained gallery.css.
-//
-// There used to be a third assertion here, on the page's PROSE: the
-// lead counted the files out loud — "two stylesheets and three
-// scripts" — so a fourth script had to fail somewhere. The reviewed
-// copy dropped the count, and a canary guarding a sentence nobody says
-// any more is a canary that can only mislead, so it went with it.
-func TestTheGettingStartedPageWeighsTheRealAssets(t *testing.T) {
-	files := render(t)
-	row := regexp.MustCompile(`<li id="asset-`)
-	for _, theme := range ui.ThemeNames() {
-		vendored, ok := ui.VendoredAssets(theme)
-		if !ok {
-			t.Fatalf("no theme %q", theme)
-		}
-		// The files the page lists, in the order it lists them, built
-		// from ui.VendoredAssets — the one definition of the vendored
-		// set, shared with the scaffold, the generated pin and
-		// rastrillo doctor. Written out here instead, this test would
-		// be a second copy of the page's own list agreeing with itself,
-		// and a sixth vendored file would reach every app while this
-		// page and this gate stayed quiet.
-		//
-		// One expansion: theme.css is ONE file in an app and one row
-		// PER shipped theme here, because a reader choosing a theme to
-		// download needs to see all of them.
-		var want []struct {
-			file string
-			body []byte
-		}
-		for _, n := range ui.VendoredNames() {
-			if n == "theme.css" {
-				for _, tn := range ui.ThemeNames() {
-					css, _ := ui.ThemeCSS(tn)
-					want = append(want, struct {
-						file string
-						body []byte
-					}{"theme-" + tn + ".css", css})
-				}
-				continue
-			}
-			want = append(want, struct {
-				file string
-				body []byte
-			}{n, vendored[n]})
-		}
-		// The app's total, summed here from the figures each file's own
-		// row is built from: what the scaffold writes, a file at a time,
-		// gzipped one file at a time as a visitor fetches them.
-		appRaw, appGzip := 0, 0
-		for name, body := range vendored {
-			w := weigh(name, body)
-			appRaw, appGzip = appRaw+w.Raw, appGzip+w.Gzip
-		}
-		if appGzip >= appRaw {
-			t.Errorf("%s: the app's gzipped total %d is not below its raw %d", theme, appGzip, appRaw)
-		}
-		for _, locale := range rastrillo.BaseLocales() {
-			name := theme + "/" + locale + "/" + fileOf("getting-started")
-			page := string(files[name])
-			if page == "" {
-				t.Errorf("%s is missing", name)
-				continue
-			}
-			for _, a := range want {
-				served, ok := files[hashedNames()[a.file]]
-				if !ok {
-					t.Errorf("%s: the page lists %s and the tree does not serve it", name, a.file)
-					continue
-				}
-				if len(served) != len(a.body) {
-					t.Errorf("%s: the tree serves %d bytes of %s and the library holds %d — the download and the number beside it are different files", name, len(served), a.file, len(a.body))
-				}
-				// The figures are recomputed from the served bytes rather
-				// than written down: compressed sizes move between Go
-				// releases (spec §6-v2.9), so the gate holds the page to
-				// the file and weight_test.go holds the arithmetic.
-				w := weigh(a.file, served)
-				if w.Gzip >= w.Raw || w.Stripped > w.Gzip {
-					t.Errorf("%s: %s weighs %d raw, %d gzipped, %d stripped; gzip must shrink it and stripping must not grow it", name, a.file, w.Raw, w.Gzip, w.Stripped)
-				}
-				weight := template.HTMLEscapeString(weightIn(locale, w))
-				for _, w := range []string{
-					`id="` + anchorID("asset", a.file) + `" data-ds-anchor`,
-					// The hashed address, saved under the plain name: a reader
-					// downloading tokens.css should not get a file called
-					// tokens.<hash>.css to vendor and rename.
-					`href="` + assetHref(a.file) + `" download="` + a.file + `"`,
-					weight,
-				} {
-					if !strings.Contains(page, w) {
-						t.Errorf("%s: no %q for %s — the weight on this page is not len() of the file it names", name, w, a.file)
-					}
-				}
-			}
-			if got := len(row.FindAllString(page, -1)); got != len(want) {
-				t.Errorf("%s lists %d files, the framework ships %d", name, got, len(want))
-			}
-			// The gallery's own furniture, nowhere a reader can see
-			// it: not a row, not a weight, not an anchor in the rail,
-			// not a sentence about it. Read below the <head>, which is
-			// where every page in this tree loads both files and has
-			// to — the assertion is about what the page SAYS, and the
-			// two names are code, so they are the same string in all
-			// twelve locales.
-			_, read, ok := strings.Cut(page, "</head>")
-			if !ok {
-				t.Errorf("%s: no </head>", name)
-				continue
-			}
-			for _, own := range []string{"gallery.js", "gallery.css", anchorID("asset", "gallery.js"), anchorID("asset", "gallery.css")} {
-				if strings.Contains(read, own) {
-					t.Errorf("%s mentions %s below the head. That file is this gallery's own plumbing: no scaffold writes it and no app receives it, so a page about what an app ships has nothing to say about it", name, own)
-				}
-			}
-			total := proseIn(locale, appTotalLine, "raw", kibUnit(locale, appRaw), "gzip", kibUnit(locale, appGzip))
-			if !strings.Contains(page, template.HTMLEscapeString(total)) {
-				t.Errorf("%s: the page does not say %q — the app total is not the arithmetic over what rastrillo new writes", name, total)
-			}
-			if strings.Contains(total, "{") || strings.Count(total, " KiB") != 2 {
-				t.Errorf("%s: the app total should carry two KiB figures and no placeholder: %q", name, total)
-			}
-		}
-	}
-}
-
-// Paul's paragraph is on the Overview, word for word, in every theme
-// and in English — and translated, not left in English, everywhere
-// else. It is the one piece of copy on this site that was written by a
-// person rather than derived from the code, and the one that went
-// through his review, so it is asserted as a literal here rather than
-// left to the generic prose gates.
+// Paul's paragraph, with the gallery's name in place and the look sent
+// to Fiesta, is on the Overview word for word in every theme in
+// English, and translated everywhere else. It is the copy on this site
+// a person wrote and reviewed rather than derived from the code, so it
+// is asserted as a literal rather than left to the generic prose gates.
 func TestPaulsParagraphOpensTheOverview(t *testing.T) {
-	const paragraph = `The Rastrillo design system aims to be a starter framework for any app to get a consistent, polished, accessible UI with no or minimal JavaScript dependence, available in multiple languages, and using clean, modern HTML and CSS. It's designed to be delightful to use with or without LLM assistance, and easily remixable.`
+	const lead = "Rastrillo components aim to be a starter framework for " +
+		"any app to get a consistent, polished, accessible UI with no or " +
+		"minimal JavaScript dependence, available in multiple languages, " +
+		"and using clean, modern HTML and CSS. They're designed to be " +
+		"delightful to use with or without LLM assistance, and easily " +
+		"remixable. Each one is shown here with the call you write beside " +
+		"what it renders; the look comes from Fiesta, which has its own " +
+		"design system."
 	files := render(t)
-	if _, ok := prose[paragraph]; !ok {
-		t.Fatalf("prose.go has no entry for Paul's paragraph — it has been reworded, and every translation of it is now of something else")
+	if len(prose[lead]) != len(rastrillo.BaseLocales())-1 {
+		t.Fatalf("prose.go does not translate Paul's paragraph into " +
+			"every locale; it has been reworded, or a locale is missing")
 	}
 	for _, theme := range ui.ThemeNames() {
 		name := theme + "/en/" + fileOf("overview")
-		want := `<p class="ds-intro">` + template.HTMLEscapeString(paragraph) + `</p>`
+		want := `<p class="ds-intro">` + template.HTMLEscapeString(lead) +
+			`</p>`
 		if !strings.Contains(string(files[name]), want) {
 			t.Errorf("%s does not open with Paul's paragraph, verbatim", name)
 		}
@@ -3782,10 +3646,9 @@ func codePanels(page string) []string { return codePanel.FindAllString(page, -1)
 // The text on screen is the text copied: every panel's blocks, with
 // the highlighting removed, are exactly the source they stand for, in
 // order. That is the formatted rendering, then the call's Source, for a
-// partial sample; the formatted markup for a hand-written sample, an
-// idiom, a screen or a format; signinSource for a sign-in screen.
-// Entities in a sample (the stat band's &euro;) must survive as
-// written.
+// partial sample; the formatted markup for a hand-written sample, a
+// screen or a format, then a templated format's template;
+// signinSource for a sign-in screen.
 func TestTheTextOnScreenIsTheTextCopied(t *testing.T) {
 	files := render(t)
 	for _, locale := range []string{"en", "ar"} {
@@ -3822,17 +3685,14 @@ func TestTheTextOnScreenIsTheTextCopied(t *testing.T) {
 				want[fam.Key] = append(want[fam.Key], calls...)
 			}
 		}
-		samples := ui.Styleguide()
-		names := make([]string, 0, len(samples))
-		for name := range samples {
-			names = append(names, name)
-		}
-		sort.Strings(names)
-		for _, name := range names {
-			want["primitives"] = append(want["primitives"], codeview.Format(localMarkup(locale, samples[name])))
-		}
 		for _, doc := range formatDocs() {
-			want["formats"] = append(want["formats"], codeview.Format(formatMarkup(doc, locale)))
+			sample := formatMarkup(doc, locale)
+			want["formats"] = append(want["formats"],
+				codeview.Format(withColumns(sample)))
+			if doc.Data != nil {
+				want["formats"] = append(want["formats"],
+					formatSource(doc, locale))
+			}
 		}
 		for _, doc := range screenDocs() {
 			if doc.Signin != nil {
@@ -3855,11 +3715,6 @@ func TestTheTextOnScreenIsTheTextCopied(t *testing.T) {
 				if got[i] != blocks[i] {
 					t.Errorf("%s/%s block %d: on screen\n%s\nwant\n%s", locale, kind, i, got[i], blocks[i])
 				}
-			}
-		}
-		if locale == "en" {
-			if s := strings.Join(sourceTexts(galleryPage(t, files, RootTheme(), "en", "primitives")), "\n"); !strings.Contains(s, "&euro;48,210") {
-				t.Error("the stat band's &euro; did not survive as written in its source block")
 			}
 		}
 	}
@@ -3967,6 +3822,64 @@ func TestAGroupedNoteNamesItsStateApart(t *testing.T) {
 	if notes == 0 {
 		t.Fatal("no grouped partial carries a note, so this checked nothing")
 	}
+}
+
+// declPattern finds every --rst-* declaration in a block, the same
+// regex family ui/contrast_test.go uses: test code is not importable,
+// and a parser this small is cheaper read twice than shared.
+var declPattern = regexp.MustCompile(`(--rst-[a-z0-9-]+)\s*:\s*([^;]+);`)
+
+// blockBody returns the brace-matched contents following header (which
+// must end in "{"). Theme files nest at most one level and no value in
+// them contains a brace, so depth counting is enough.
+func blockBody(css, header string) (string, error) {
+	at := strings.Index(css, header)
+	if at < 0 {
+		return "", fmt.Errorf("no %q block", header)
+	}
+	start := at + len(header)
+	depth := 1
+	for end := start; end < len(css); end++ {
+		switch css[end] {
+		case '{':
+			depth++
+		case '}':
+			depth--
+			if depth == 0 {
+				return css[start:end], nil
+			}
+		}
+	}
+	return "", fmt.Errorf("unterminated %q block", header)
+}
+
+// lightHalf resolves a theme value for the light scheme: the first
+// argument of a whole-value light-dark(<light>, <dark>) call, or the
+// value unchanged when it is not one. The split is paren-aware, because
+// both halves are usually rgba() calls carrying commas of their own.
+func lightHalf(value string) string {
+	const prefix = "light-dark("
+	if !strings.HasPrefix(value, prefix) || !strings.HasSuffix(value, ")") {
+		return value
+	}
+	inner := value[len(prefix) : len(value)-1]
+	depth := 0
+	for at := 0; at < len(inner); at++ {
+		switch inner[at] {
+		case '(':
+			depth++
+		case ')':
+			depth--
+			if depth < 0 {
+				return value
+			}
+		case ',':
+			if depth == 0 {
+				return strings.TrimSpace(inner[:at])
+			}
+		}
+	}
+	return value
 }
 
 // darkHalf is lightHalf's other side: the second argument of a
@@ -4099,19 +4012,15 @@ func TestTheFramedPagesOpenWithThePlainSentence(t *testing.T) {
 	}
 	for _, pk := range pageKinds() {
 		page := galleryPage(t, files, RootTheme(), "en", pk.Kind)
-		framed := components[pk.Kind] || pk.Kind == "primitives" || pk.Kind == "formats" || pk.Kind == "screens"
+		framed := components[pk.Kind] ||
+			pk.Kind == "formats" || pk.Kind == "screens"
 		if got := strings.Count(page, live); framed != (got == 1) || got > 1 {
 			t.Errorf("%s says %q %d times, want %d", pk.Kind, live, got, map[bool]int{true: 1}[framed])
 		}
 		// <div rst-callout is a live callout: in a source block the < is &lt;.
-		if strings.Contains(page, `<div rst-callout`) && pk.Kind != "primitives" && pk.Kind != "screens" {
+		if strings.Contains(page, `<div rst-callout`) && pk.Kind != "screens" {
 			t.Errorf("%s still opens with a callout", pk.Kind)
 		}
-	}
-	gs := galleryPage(t, files, RootTheme(), "en", "getting-started")
-	snippet := `<link rel="stylesheet" href="tokens.css">` + "\n" + `<link rel="stylesheet" href="theme-` + RootTheme() + `.css">`
-	if texts := sourceTexts(gs); !slices.Contains(texts, snippet) {
-		t.Errorf("Getting started has no copyable link snippet %q; its source blocks are %q", snippet, texts)
 	}
 }
 
@@ -4175,14 +4084,18 @@ func TestTitlesUseTheApprovedSeparators(t *testing.T) {
 	for _, pk := range pageKinds() {
 		name := RootTheme() + "/en/" + pk.File
 		m := titleTag.FindStringSubmatch(string(files[name]))
-		if want := template.HTMLEscapeString(docTitle(proseIn("en", pk.Title), "Rastrillo Design System", RootTheme())); m == nil || m[1] != want {
+		want := template.HTMLEscapeString(docTitle(
+			proseIn("en", pk.Title), galleryName, RootTheme()))
+		if m == nil || m[1] != want {
 			t.Errorf("%s: <title> %v, want %q", name, m, want)
 		}
 	}
-	if got := docTitle("Form", "Rastrillo Design System", "day"); got != "Form · Rastrillo Design System · day" {
+	got := docTitle("Form", galleryName, "day")
+	if got != "Form · Rastrillo components · day" {
 		t.Errorf("docTitle gives %q", got)
 	}
-	if got := docTitle("The modal route", "Rastrillo Design System", ""); got != "The modal route · Rastrillo Design System" {
+	got = docTitle("The modal route", galleryName, "")
+	if got != "The modal route · Rastrillo components" {
 		t.Errorf("docTitle with no theme gives %q", got)
 	}
 	if got := previewTitle("en", "field-text", "Required"); got != "field-text sample standalone preview, Required" {
@@ -4284,7 +4197,11 @@ func TestTheGalleryIsTheShippedShell(t *testing.T) {
 				}
 				where := `<div rst-shell-back><a `
 				if index {
-					where = `<h1 rst-shell-title><span></span><span>` + template.HTMLEscapeString(proseIn(locale, "Rastrillo Design System")) + `</span></h1>` + "\n" + `<details rst-dropdown class="ds-prefs"`
+					heading := template.HTMLEscapeString(
+						proseIn(locale, galleryName))
+					where = `<h1 rst-shell-title><span></span><span>` +
+						heading + `</span></h1>` + "\n" +
+						`<details rst-dropdown class="ds-prefs"`
 				}
 				if !strings.Contains(page, where) {
 					t.Errorf("%s: the display settings menu is not where a phone looks for it (%s)", name, where)
@@ -4311,7 +4228,8 @@ func TestTheGalleryIsTheShippedShell(t *testing.T) {
 // Every content page's back control returns to its own row on the
 // index: index.html#nav-<kind>, a fragment naming a link inside the
 // rows nav whose href is that very page. The rows are the sections
-// the tree lists, in its order, then Demos and the tree's demo links.
+// the tree lists, Fiesta's pages among them, in its order, then Demos
+// and the tree's demo links.
 func TestEveryWayUpNamesItsRow(t *testing.T) {
 	files := render(t)
 	for _, theme := range ui.ThemeNames() {
@@ -4344,7 +4262,11 @@ func TestEveryWayUpNamesItsRow(t *testing.T) {
 			for _, g := range railSections(railOf(t, "overview", overview)) {
 				tree = append(tree, g.Title)
 			}
-			for _, r := range regexp.MustCompile(`<a id="nav-[^"]+" href="[^"]*">([^<]*)</a>`).FindAllStringSubmatch(rows, -1) {
+			// A Fiesta page's row has no id, since no back control
+			// comes to it, and is marked rel="external".
+			row := regexp.MustCompile(`<a(?: id="nav-[^"]+")? ` +
+				`href="[^"]*"(?: rel="external")?>([^<]*)</a>`)
+			for _, r := range row.FindAllStringSubmatch(rows, -1) {
 				listed = append(listed, r[1])
 			}
 			if want := tree[1 : len(tree)-1]; strings.Join(listed, "|") != strings.Join(want, "|") {

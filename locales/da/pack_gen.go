@@ -4,8 +4,8 @@
 // SHA-256 in hack/moneycldr/sources/inputs.sha256. Data from the Unicode CLDR,
 // © Unicode, Inc., under the Unicode License v3 (locales/LICENSE-UNICODE).
 
-// Package da links CLDR money-formatting data for every modern "da"
-// locale. Import it for its side effect.
+// Package da links CLDR number- and money-formatting data for every
+// modern "da" locale. Import it for its side effect.
 package da
 
 import "amadan.net/rastrillo/rastrillo/locales"
@@ -13,6 +13,6 @@ import "amadan.net/rastrillo/rastrillo/locales"
 func init() { locales.Register("da", data) }
 
 var data = map[string]locales.Locale{
-	"da":    {Parent: "root", CurrencyDecimal: ",", CurrencyGroup: ".", Decimal: ",", Standard: "#,##0.00\u00a0¤", Alpha: "#,##0.00\u00a0¤", Symbols: map[string]string{"AUD": "AU$", "DKK": "kr.", "PHP": "PHP", "THB": "฿"}, Narrow: map[string]string{"BYN": "Br.", "DKK": "kr.", "ISK": "kr.", "NOK": "kr.", "RON": "L", "SEK": "kr.", "TWD": "NT$"}},
+	"da":    {Parent: "root", CurrencyDecimal: ",", CurrencyGroup: ".", Decimal: ",", Group: ".", Percent: "#,##0\u00a0%", Standard: "#,##0.00\u00a0¤", Alpha: "#,##0.00\u00a0¤", Symbols: map[string]string{"AUD": "AU$", "DKK": "kr.", "PHP": "PHP", "THB": "฿"}, Narrow: map[string]string{"BYN": "Br.", "DKK": "kr.", "ISK": "kr.", "NOK": "kr.", "RON": "L", "SEK": "kr.", "TWD": "NT$"}},
 	"da-GL": {Parent: "da"},
 }

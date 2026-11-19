@@ -4,15 +4,22 @@
 <form method="post" action="/export" data-busy data-busy-label="Exporting…">
 <button type="submit">Export notes</button>
 </form>
+{{template "region:notes-list" .}}
+{{end}}
+{{/* The list is the page's live region: the stream refetches it when
+this owner's notes change, and each row's delete form swaps it in place.
+Without scripts the form posts and the redirect reloads the page. */}}
+{{define "region:notes-list"}}<div id="notes-list" {{.Live.Attrs .Content.Topic}}>
 {{with .Content}}
 {{if .Notes}}
 <ul>
 {{range .Notes}}
-<li><a href="/notes/{{.ID}}">{{.Title}}</a></li>
+<li><a href="/notes/{{.ID}}">{{.Title}}</a>
+<form method="post" action="/notes/{{.ID}}/delete" data-live-form><button type="submit">Delete</button></form></li>
 {{end}}
 </ul>
 {{else}}
 <p>No notes yet.</p>
 {{end}}
 {{end}}
-{{end}}
+</div>{{end}}

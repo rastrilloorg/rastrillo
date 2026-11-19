@@ -37,6 +37,98 @@ Header injection is refused: a `to` or `subject` containing a newline is
 rejected instead of sent. That is the whole CRLF injection class, and
 refusing at the boundary means no caller has to remember to sanitise.
 
+## On CARLOS: FromCarlos and Submit
+
+```go
+func FromCarlos(prefix string, logger *slog.Logger) (Sender, error)
+func Submit(socket, token, from string) Sender
+```
+
+Use `FromCarlos` where your app refuses to start without mail. It picks
+the transport:
+
+- `CARLOS_MAIL=submit`: the platform sends for you, and the app holds no
+  mail credential. The From address is `<prefix>_MAIL_FROM`.
+- Otherwise: SMTP from `<prefix>_SMTP_*`, exactly as `FromEnv`.
+- Neither: an error. There is no `Logged` fallback.
+
+Under submit it is also an error when `CARLOS_CONTROL_SOCKET`,
+`CARLOS_ADMIN_TOKEN` or `<prefix>_MAIL_FROM` is missing. The CARLOS agent
+sets `CARLOS_MAIL` itself; do not set it in your environment. The
+platform delivers `<prefix>_MAIL_FROM` once `carlos email submission on`
+has run for your app.
+
+```go
+mailer, err := mail.FromCarlos("CARLOS", logger)
+if err != nil {
+	return err // refuse to start
+}
+```
+
+Submit sends one message to `POST /v1/mail` on the control socket. A
+refusal is a `*mail.SubmitError` with the platform's status, code and
+`RetryAfter`:
+
+```go
+type SubmitError struct {
+	Status     int
+	Code       string
+	RetryAfter time.Duration
+}
+
+func (refusal *SubmitError) Error() string
+func (refusal *SubmitError) Temporary() bool
+```
+
+| Status | Code | What to do |
+|---|---|---|
+| 400 | `CodeBadRequest`, `CodeRejected` | Fix the message. |
+| 403 | `CodeFromNotAllowed`, `CodeRouteNotOnBox`, `CodeSubmissionOff` | Fix the configuration. Retrying will not help. |
+| 429 | `CodeCapReached`, `CodePaused`, `CodeRate` | Try again after `RetryAfter`, from your own queue. |
+| 503 | `CodeMailerUnavailable` | Already retried 3 times, after 1, 2 and 2 seconds, within your deadline. |
+
+Each constant is the platform's code, so `CodeCapReached` is
+`"CAP_REACHED"`. A 401 means the platform refused `CARLOS_ADMIN_TOKEN`;
+its `Code` is empty.
+
+A 429 is returned at once and never retried, because the platform is
+asking you to slow down. rastrillo has no mail queue, so an app that
+must not lose a message keeps its own. `Temporary()` is true for 429 and
+503.
+
+```go
+var refusal *mail.SubmitError
+if errors.As(err, &refusal) && refusal.Temporary() {
+	retryAt := time.Now().Add(refusal.RetryAfter)
+	// queue it for retryAt
+}
+```
+
+A 200 that does not name the sent message is `mail.ErrUnconfirmed`.
+The message may have gone, so it is not retried. Check the mail log
+before you send it again.
+
+Submit encodes the message as SES expects: a Subject or display name
+that is not ASCII is RFC 2047 encoded, and the body is quoted-printable.
+Pass the Subject as plain text. Encoded words you pass are decoded and
+checked like any other text, then encoded again. It refuses, before
+sending:
+
+- a recipient with a display name;
+- a recipient, List-Id, Message-Id or unsubscribe URL that is not ASCII;
+- a control character or line break in any header value, written out
+  or inside an encoded word;
+- text that is not UTF-8;
+- a header line over 998 characters that is not encoded text, such as
+  a very long unsubscribe URL;
+- a message over 10 MiB once encoded.
+
+Encoded headers are folded between encoded words. Plain text, addresses
+and URLs are never folded, because folding can change their spaces.
+
+It sends at most two messages at once per process, because the platform
+answers a third with 429.
+
 ## Logged
 
 ```go

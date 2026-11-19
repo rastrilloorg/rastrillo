@@ -26,12 +26,64 @@ import (
 	"amadan.net/rastrillo/rastrillo/harness"
 )
 
+// A country picker is where select.js's ranking was learned (Tito Go's
+// phone field), so it is what these tests search: each row written the
+// way a phone field writes it — "Name (+code)", the ISO code and the
+// calling code as data-rst-terms, data-rst-first on the country that owns
+// a shared code. The list is curated, not complete: every country an
+// assertion names is here, and so is every country that competes with it
+// for the query (Guinea-Bissau for "guin", Oman for "man", the four +44s).
+type countryRow struct{ iso, en, de, code string }
+
+// primary marks the country that owns a calling code others share.
+var primary = map[string]bool{"GB": true, "US": true, "RU": true, "RE": true}
+
+var countries = []countryRow{
+	{"DZ", "Algeria", "Algerien", "213"},
+	{"AS", "American Samoa", "Amerikanisch-Samoa", "1684"},
+	{"AT", "Austria", "Österreich", "43"},
+	{"KH", "Cambodia", "Kambodscha", "855"},
+	{"CM", "Cameroon", "Kamerun", "237"},
+	{"CA", "Canada", "Kanada", "1"},
+	{"CI", "Côte d’Ivoire", "Côte d’Ivoire", "225"},
+	{"DK", "Denmark", "Dänemark", "45"},
+	{"GQ", "Equatorial Guinea", "Äquatorialguinea", "240"},
+	{"GE", "Georgia", "Georgien", "995"},
+	{"DE", "Germany", "Deutschland", "49"},
+	{"GG", "Guernsey", "Guernsey", "44"},
+	{"GN", "Guinea", "Guinea", "224"},
+	{"GW", "Guinea-Bissau", "Guinea-Bissau", "245"},
+	{"IN", "India", "Indien", "91"},
+	{"ID", "Indonesia", "Indonesien", "62"},
+	{"IR", "Iran", "Iran", "98"},
+	{"IE", "Ireland", "Irland", "353"},
+	{"IM", "Isle of Man", "Isle of Man", "44"},
+	{"IL", "Israel", "Israel", "972"},
+	{"JM", "Jamaica", "Jamaika", "1876"},
+	{"JP", "Japan", "Japan", "81"},
+	{"JE", "Jersey", "Jersey", "44"},
+	{"JO", "Jordan", "Jordanien", "962"},
+	{"KZ", "Kazakhstan", "Kasachstan", "7"},
+	{"YT", "Mayotte", "Mayotte", "262"},
+	{"NE", "Niger", "Niger", "227"},
+	{"NG", "Nigeria", "Nigeria", "234"},
+	{"OM", "Oman", "Oman", "968"},
+	{"PG", "Papua New Guinea", "Papua-Neuguinea", "675"},
+	{"RE", "Réunion", "Réunion", "262"},
+	{"RU", "Russia", "Russland", "7"},
+	{"SS", "South Sudan", "Südsudan", "211"},
+	{"SD", "Sudan", "Sudan", "249"},
+	{"AE", "United Arab Emirates", "Vereinigte Arabische Emirate", "971"},
+	{"GB", "United Kingdom", "Vereinigtes Königreich", "44"},
+	{"US", "United States", "Vereinigte Staaten", "1"},
+}
+
 // afterFrame resolves once the next frame has been drawn and the task
 // after it has run: where a keystroke's deferred search has landed.
 const afterFrame = `new Promise((r) => requestAnimationFrame(() => setTimeout(() => r(0), 0)))`
 
-func awaitPromise(p *runtime.EvaluateParams) *runtime.EvaluateParams {
-	return p.WithAwaitPromise(true)
+func awaitPromise(p *runtime.EvaluateParams) {
+	p.AwaitPromise = ptr(true)
 }
 
 // zones is a time-zone list long enough (over fifty rows) that a
@@ -177,15 +229,20 @@ func drive(t *testing.T, script string, out any) {
 	rig := harness.New(t, func(string) http.Handler { return mux })
 	ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
 	defer cancel()
-	var raw string
-	if err := chromedp.Run(ctx,
+	focus := emulation.SetFocusEmulationEnabledParams{Enabled: true}
+	if err := chromedp.Do(ctx,
 		// A page in a background tab gets no focus events from focus(),
 		// so a handler that reacts to focus could not be observed at all.
-		emulation.SetFocusEmulationEnabled(true),
+		send(emulation.SetFocusEmulationEnabled, focus),
 		chromedp.Navigate(rig.Origin+"/"),
-		chromedp.WaitVisible(`#tz-combo`, chromedp.ByQuery),
-		chromedp.Evaluate(`(async () => JSON.stringify(await (async () => {`+script+`})()))()`, &raw, awaitPromise),
+		chromedp.WaitVisible(chromedp.CSS(`#tz-combo`)),
 	); err != nil {
+		t.Fatalf("drive failed: %v", err)
+	}
+	raw, err := chromedp.Run(ctx, chromedp.Evaluate[string](
+		`(async () => JSON.stringify(await (async () => {`+script+`})()))()`,
+		awaitPromise))
+	if err != nil {
 		t.Fatalf("drive failed: %v", err)
 	}
 	if err := json.Unmarshal([]byte(raw), out); err != nil {
@@ -1531,6 +1588,11 @@ func TestSelectPlacement(t *testing.T) {
 		ClampTop      float64 `json:"clampTop"`
 		BandTop       float64 `json:"bandTop"`
 		TieUp         bool    `json:"tieUp"`
+		CeilingUp     bool    `json:"ceilingUp"`
+		CeilingTop    float64 `json:"ceilingTop"`
+		CeilingEnd    float64 `json:"ceilingEnd"`
+		NoCeilingUp   bool    `json:"noCeilingUp"`
+		BelowCeilUp   bool    `json:"belowCeilUp"`
 	}
 	drive(t, `
 		const frame = () => `+afterFrame+`;
@@ -1620,6 +1682,31 @@ func TestSelectPlacement(t *testing.T) {
 		await open();
 		out.tieUp = wrap.hasAttribute('rst-combo-up');
 		close();
+
+		// A header pinned above the box (data-rst-select-ceiling) is not
+		// room either: with 70px below and the header over all but 6px
+		// above, the list opens down. Without the header it opens up, and
+		// one marked below the box is ignored.
+		at(150);
+		document.dispatchEvent(new CustomEvent('rst:select-viewport', { detail: { top: 0, bottom: 150 + h + 70 } }));
+		await open();
+		out.noCeilingUp = wrap.hasAttribute('rst-combo-up');
+		close();
+		const header = document.createElement('div');
+		header.setAttribute('data-rst-select-ceiling', '');
+		header.style.cssText = 'position:fixed;left:0;right:0;top:0;height:140px';
+		document.body.append(header);
+		await open();
+		out.ceilingUp = wrap.hasAttribute('rst-combo-up');
+		out.ceilingTop = list.getBoundingClientRect().top;
+		out.ceilingEnd = header.getBoundingClientRect().bottom;
+		close();
+		header.style.top = (150 + h + 10) + 'px';
+		header.style.height = '5px';
+		await open();
+		out.belowCeilUp = wrap.hasAttribute('rst-combo-up');
+		close();
+		header.remove();
 		document.dispatchEvent(new CustomEvent('rst:select-viewport', { detail: null }));
 		wrap.removeAttribute('style');
 		return out;
@@ -1641,6 +1728,218 @@ func TestSelectPlacement(t *testing.T) {
 	}
 	if got.TieUp {
 		t.Error("equal room above and below opened upward: a tie goes down")
+	}
+	if !got.NoCeilingUp || got.CeilingUp || got.CeilingTop < got.CeilingEnd || !got.BelowCeilUp {
+		t.Errorf("70px below the box and 146px above it: up %v with no header; under a header ending at %.0f, up %v starting at %.0f; with the header marked below the box, up %v. Want up, then down below the header, then up: a ceiling is not room, and one below the box is ignored", got.NoCeilingUp, got.CeilingEnd, got.CeilingUp, got.CeilingTop, got.BelowCeilUp)
+	}
+}
+
+// The room is cut only by the ancestors that really clip the list, by
+// CSS's rules, row by row. A bar that scrolls sideways (overflow-x: auto,
+// so its overflow-y computes to auto too) clips a list it is the
+// containing block of, and not one fixed or anchored out of it: Docs'
+// phone toolbar is such a bar, and its lists opened 0px tall. "clip" rows
+// are a box that holds the list, so the list must end inside it; "escape"
+// rows are one that does not, so the list keeps its own height. Either
+// way the list is scrolled to its end and its last row must be the thing
+// at its centre: a list taller than what really shows it fails there,
+// which is how the review on #136 found content-visibility and the
+// will-change triggers missed, and its re-review containment on a box
+// that is not there (display: contents, a plain inline), preserve-3d,
+// and will-change written in capitals or with -webkit-; and its third,
+// containment on table rows and ruby, a boxless ancestor's position,
+// will-change: filter on an inline, motion paths, and an alias the
+// engine lacks.
+func TestSelectRoomIsCutOnlyByWhatClipsTheList(t *testing.T) {
+	t.Parallel()
+	type row struct {
+		Name      string  `json:"name"`
+		Want      string  `json:"want"`
+		Height    float64 `json:"height"`
+		Bottom    float64 `json:"bottom"`
+		BarBottom float64 `json:"barBottom"`
+		Last      bool    `json:"last"`
+		Err       string  `json:"err"`
+	}
+	var got struct {
+		Preferred float64 `json:"preferred"`
+		Rows      []row   `json:"rows"`
+	}
+	drive(t, `
+		const frame = () => `+afterFrame+`;
+		const input = document.querySelector('#tz-combo');
+		const wrap = input.closest('[rst-combo]');
+		const list = document.querySelector('#tz-listbox');
+		const native = document.querySelector('#tz');
+		const home = wrap.parentNode, next = native.nextSibling;
+		const open = async () => { input.blur(); input.focus(); input.click(); await frame(); await frame(); };
+		const close = () => input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+		await open();
+		const preferred = list.getBoundingClientRect().height;
+		close();
+
+		// Each row: the bar's own style, the list's position, and how the
+		// bar is built. The list is anchored under its box, as Docs anchors
+		// it, so it sits there whichever box holds it.
+		const bar = 'width:300px;height:200px;overflow-x:auto;';
+		const rows = [
+			['fixed, plain bar', 'escape', 'fixed', bar],
+			['fixed, transform', 'clip', 'fixed', bar + 'transform:translateX(0)'],
+			['fixed, translate', 'clip', 'fixed', bar + 'translate:0px'],
+			['fixed, rotate', 'clip', 'fixed', bar + 'rotate:0deg'],
+			['fixed, scale', 'clip', 'fixed', bar + 'scale:1'],
+			['fixed, perspective', 'clip', 'fixed', bar + 'perspective:100px'],
+			['fixed, filter', 'clip', 'fixed', bar + 'filter:blur(0)'],
+			['fixed, backdrop-filter', 'clip', 'fixed', bar + 'backdrop-filter:blur(0)'],
+			['fixed, contain: layout', 'clip', 'fixed', bar + 'contain:layout'],
+			['fixed, contain: paint', 'clip', 'fixed', bar + 'contain:paint'],
+			['fixed, contain: strict', 'clip', 'fixed', bar + 'contain:strict'],
+			['fixed, contain: content', 'clip', 'fixed', bar + 'contain:content'],
+			['fixed, content-visibility: auto', 'clip', 'fixed', bar + 'content-visibility:auto'],
+			['fixed, will-change: transform', 'clip', 'fixed', bar + 'will-change:transform'],
+			['fixed, will-change: translate', 'clip', 'fixed', bar + 'will-change:translate'],
+			['fixed, will-change: rotate', 'clip', 'fixed', bar + 'will-change:rotate'],
+			['fixed, will-change: scale', 'clip', 'fixed', bar + 'will-change:scale'],
+			['fixed, will-change: perspective', 'clip', 'fixed', bar + 'will-change:perspective'],
+			['fixed, will-change: filter', 'clip', 'fixed', bar + 'will-change:filter'],
+			['fixed, will-change: backdrop-filter', 'clip', 'fixed', bar + 'will-change:backdrop-filter'],
+			['fixed, will-change: contain', 'clip', 'fixed', bar + 'will-change:contain'],
+			['fixed, will-change: position', 'escape', 'fixed', bar + 'will-change:position'],
+			['fixed, will-change: scroll-position', 'escape', 'fixed', bar + 'will-change:scroll-position'],
+			['fixed, container-type: inline-size', 'escape', 'fixed', bar + 'container-type:inline-size'],
+			['fixed, container-type: size', 'escape', 'fixed', bar + 'container-type:size'],
+			['fixed, contain: paint, overflow visible', 'clip', 'fixed', 'width:300px;height:200px;contain:paint'],
+			['fixed, content-visibility: auto, overflow visible', 'clip', 'fixed', 'width:300px;height:200px;content-visibility:auto'],
+			['absolute, held by its own box', 'clip', 'absolute', bar],
+			['absolute, held outside the bar', 'escape', 'absolute static', bar],
+			['absolute, bar positioned', 'clip', 'absolute static', bar + 'position:relative'],
+			['absolute, will-change: position', 'clip', 'absolute static', bar + 'will-change:position'],
+			['fixed, display: contents with contain: paint', 'escape', 'fixed', 'display:contents;contain:paint'],
+			['fixed, display: contents with content-visibility: auto', 'escape', 'fixed', 'display:contents;content-visibility:auto'],
+			['absolute, held by its own box, in display: contents with contain: paint', 'escape', 'absolute', 'display:contents;contain:paint'],
+			['fixed, display: inline with contain: paint', 'escape', 'fixed', 'display:inline;contain:paint'],
+			// inline flow-root list-item is an inline-block with a marker:
+			// atomic, so all of it applies; inline list-item is not (Astra
+			// on #136, round 4). WebKit has neither and draws a block.
+			['fixed, display: inline list-item with contain: paint', 'escape', 'fixed', 'display:inline list-item;contain:paint'],
+			['fixed, display: inline flow-root list-item with contain: paint', 'clip', 'fixed', 'width:300px;height:200px;display:inline flow-root list-item;contain:paint'],
+			['fixed, display: inline flow-root list-item with transform', 'clip', 'fixed', bar + 'display:inline flow-root list-item;transform:translateX(0)'],
+			['absolute, held by its own box, in display: inline flow-root list-item', 'clip', 'absolute', bar + 'display:inline flow-root list-item'],
+			['fixed, transform-style: preserve-3d', 'clip', 'fixed', bar + 'transform-style:preserve-3d'],
+			['fixed, transform-style: preserve-3d, overflow: clip', 'clip', 'fixed', 'width:300px;height:200px;overflow:clip;transform-style:preserve-3d'],
+			['fixed, will-change: transform-style', 'clip', 'fixed', bar + 'will-change:transform-style'],
+			['fixed, will-change: TrAnSfOrM', 'clip', 'fixed', bar + 'will-change:TrAnSfOrM'],
+			['fixed, will-change: -webkit-transform', 'clip', 'fixed', bar + 'will-change:-webkit-transform'],
+			['fixed, will-change: -webkit-perspective', 'clip', 'fixed', bar + 'will-change:-webkit-perspective'],
+			['fixed, will-change: -webkit-filter', 'clip', 'fixed', bar + 'will-change:-webkit-filter'],
+			// Only an alias the engine has: Chromium has no -webkit-backdrop-filter.
+			['fixed, will-change: -webkit-backdrop-filter', CSS.supports('-webkit-backdrop-filter', 'initial') ? 'clip' : 'escape', 'fixed', bar + 'will-change:-webkit-backdrop-filter'],
+			['fixed, in a modal dialog in a transformed clip', 'escape', 'fixed', 'dialog'],
+			['fixed, in a popover in a transformed clip', 'escape', 'fixed', 'popover'],
+			['absolute, slotted into a shadow scroller', 'clip', 'absolute', 'shadow'],
+			// Markup rows: the box goes in [data-in]; [data-held], or else the
+			// first element, is what must hold a "clip" list.
+			// Containment skips table rows, row groups and non-atomic ruby;
+			// a cell keeps it.
+			['fixed, table row with contain: paint', 'escape', 'fixed', '<table><tbody><tr style="contain:paint"><td data-in></td></tr></tbody></table>'],
+			['absolute, held by its own box, in a table row with contain: paint', 'escape', 'absolute', '<table><tbody><tr style="contain:paint"><td data-in></td></tr></tbody></table>'],
+			['fixed, row group with content-visibility: auto', 'escape', 'fixed', '<table><tbody style="content-visibility:auto"><tr><td data-in></td></tr></tbody></table>'],
+			['fixed, table row with contain: layout, in a scroller', 'escape', 'fixed', '<div style="' + bar + '"><table><tbody><tr style="contain:layout"><td data-in></td></tr></tbody></table></div>'],
+			['fixed, table cell with contain: paint', 'clip', 'fixed', '<table><tbody><tr><td data-in data-held style="contain:paint;height:200px;vertical-align:top"></td></tr></tbody></table>'],
+			['fixed, display: ruby with contain: paint', 'escape', 'fixed', '<div style="display:ruby;contain:paint" data-in></div>'],
+			['fixed, display: ruby-text with contain: paint', 'escape', 'fixed', '<div style="display:ruby-text;contain:paint" data-in></div>'],
+			// A boxless ancestor's position is not the chain's.
+			['absolute, held by its own box, in display: contents with position: fixed, in a scroller', 'clip', 'absolute', '<div style="' + bar + 'overflow:hidden"><div style="display:contents;position:fixed" data-in></div></div>'],
+			['absolute, held by its own box, in display: contents with position: absolute, in a scroller', 'clip', 'absolute', '<div style="' + bar + 'overflow:hidden"><div style="display:contents;position:absolute" data-in></div></div>'],
+			// will-change: filter applies where filter does, inlines too.
+			['fixed, inline with will-change: filter, in a scroller', 'clip', 'fixed', '<div style="' + bar + 'overflow:hidden"><span style="will-change:filter" data-in></span></div>'],
+			['fixed, inline with will-change: backdrop-filter, in a scroller', 'clip', 'fixed', '<div style="' + bar + 'overflow:hidden"><span style="will-change:backdrop-filter" data-in></span></div>'],
+			// A motion path transforms, and its will-change names, the
+			// offset shorthand among them, hold.
+			['fixed, offset-path', 'clip', 'fixed', bar + 'offset-path:path("M 0 0 L 100 0");offset-position:auto;offset-anchor:0 0'],
+			['fixed, will-change: offset-path', 'clip', 'fixed', bar + 'will-change:offset-path'],
+			['fixed, will-change: offset', 'clip', 'fixed', bar + 'will-change:offset'],
+		];
+		const out = [];
+		for (const [name, want, position, style] of rows) {
+			const r = { name, want };
+			try {
+				// Positioned and outside every bar: what an absolute list with a
+				// static box is held by when the bar does not hold it.
+				const outer = document.createElement('div');
+				outer.style.cssText = 'position:absolute;left:0;top:100px;width:320px;height:600px';
+				document.body.append(outer);
+				let held, closeTop = () => {};
+				if (style === 'dialog' || style === 'popover') {
+					const clipper = document.createElement('div');
+					clipper.style.cssText = 'transform:translateX(0);overflow:hidden;width:300px;height:60px';
+					held = document.createElement(style === 'dialog' ? 'dialog' : 'div');
+					held.style.cssText = 'margin:0;padding:0;border:0;inset:auto;left:0;top:100px;width:300px;height:200px;overflow:auto';
+					clipper.append(held);
+					outer.append(clipper);
+					held.append(wrap, native);
+					if (style === 'dialog') { held.showModal(); closeTop = () => held.close(); }
+					else { held.setAttribute('popover', 'manual'); held.showPopover(); closeTop = () => held.hidePopover(); }
+				} else if (style === 'shadow') {
+					const host = document.createElement('div');
+					outer.append(host);
+					host.attachShadow({ mode: 'open' }).innerHTML = '<div style="width:300px;height:200px;overflow:auto"><slot></slot></div>';
+					host.append(wrap, native);
+					held = host.shadowRoot.firstChild;
+				} else if (style[0] === '<') {
+					outer.insertAdjacentHTML('beforeend', style);
+					held = outer.querySelector('[data-held]') || outer.firstElementChild;
+					outer.querySelector('[data-in]').append(wrap, native);
+				} else {
+					held = document.createElement('div');
+					held.style.cssText = style;
+					outer.append(held);
+					held.append(wrap, native);
+				}
+				wrap.style.cssText = 'display:block;width:200px;anchor-name:--rst-room' + (position.endsWith('static') ? ';position:static' : '');
+				list.style.cssText = 'position:' + position.split(' ')[0] + ';inset:auto;position-anchor:--rst-room;top:anchor(bottom);left:anchor(left);width:200px';
+				await open();
+				const lr = list.getBoundingClientRect();
+				r.height = lr.height;
+				r.bottom = lr.bottom;
+				r.barBottom = held.getBoundingClientRect().bottom;
+				list.scrollTop = list.scrollHeight;
+				await frame();
+				const lis = [...list.querySelectorAll('[rst-combo-option]')].filter((li) => !li.hidden);
+				const last = lis[lis.length - 1].getBoundingClientRect();
+				const hit = document.elementFromPoint(last.left + last.width / 2, last.top + last.height / 2);
+				r.last = !!hit && lis[lis.length - 1].contains(hit);
+				close();
+				closeTop();
+				outer.remove();
+			} catch (e) {
+				r.err = String(e);
+			}
+			list.removeAttribute('style');
+			wrap.removeAttribute('style');
+			home.insertBefore(wrap, next);
+			home.insertBefore(native, next);
+			out.push(r);
+		}
+		return { preferred, rows: out };
+	`, &got)
+	if got.Preferred < 100 {
+		t.Fatalf("the list opened %.0fpx tall on its own, too short to tell anything apart", got.Preferred)
+	}
+	for _, r := range got.Rows {
+		switch {
+		case r.Err != "":
+			t.Errorf("%s: %s", r.Name, r.Err)
+		case r.Want == "escape" && r.Height < got.Preferred-1:
+			t.Errorf("%s: the list opened %.0fpx tall, want its own %.0fpx: nothing here clips it", r.Name, r.Height, got.Preferred)
+		case r.Want == "clip" && r.Bottom > r.BarBottom+1:
+			t.Errorf("%s: the list ends at %.0f, past the end of the box that clips it at %.0f", r.Name, r.Bottom, r.BarBottom)
+		case !r.Last:
+			t.Errorf("%s: scrolled to its end, the list's last row is not what shows at its place: the list is taller than what shows it", r.Name)
+		}
+	}
+	if len(got.Rows) != 64 {
+		t.Errorf("ran %d rows, want 64", len(got.Rows))
 	}
 }
 

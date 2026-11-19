@@ -78,7 +78,7 @@ func valid(t *testing.T, r rastrillo.Resource, edit ...func(*rastrillo.Resource)
 
 func contract(t *testing.T, rs ...rastrillo.Resource) []byte {
 	t.Helper()
-	out, err := Contract(rs)
+	out, err := Contract(rs, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

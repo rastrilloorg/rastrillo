@@ -1,6 +1,6 @@
 # 🤖 The CLI
 
-One binary, ten commands. Install it with:
+One binary, eleven commands. Install it with:
 
 ```sh
 go install amadan.net/rastrillo/rastrillo/cmd/rastrillo@latest
@@ -18,7 +18,11 @@ rastrillo new [--scaffold=<shape>] [--design-system=false] [--icons=<set>]
 
 Scaffolds a complete app in `./<name>` — one that compiles, passes its
 own tests, and serves, before you have written anything. It runs
-`generate` once on the way out so `go build` works immediately.
+`generate` once on the way out so `go build` works immediately. Then it
+runs `go mod tidy` in the app and compiles its templates, so the app
+starts with its `rastrillo_templates_gen.go`. If that cannot run, for
+example offline, `new` still succeeds and prints a line telling you to
+run `rastrillo generate` after `go mod tidy`.
 
 | Flag | Values | Default |
 |---|---|---|
@@ -85,7 +89,7 @@ switcher. Add more later; see [Localization](/docs/localization#declaring).
 ## rastrillo generate
 
 ```sh
-rastrillo generate [--check] [--accept-breaking] [dir]
+rastrillo generate [--check] [--accept-breaking] [--templates=false] [dir]
 ```
 
 Walks `actions/` and `manifest/` and emits `gen/`: the router on a Go
@@ -124,6 +128,24 @@ over a break on purpose, run `rastrillo generate --accept-breaking`; the
 diff shows the break in review. `--check` fails if the file is missing
 or stale, and never writes it.
 
+Last, `generate` compiles your templates to Go, manifests or not. It
+starts each program under `cmd/` whose `func main` calls `rastrillo.Run`
+or `rastrillo.Serve`, records the template sets it builds, and writes
+`rastrillo_templates_gen.go` into each package that builds one. Commit
+those files. Anything your program does before that call still runs during `generate`. Nothing after it does: capture mode exits the process after `rastrillo.Serve` writes the capture. `generate` never starts any
+other program, so a migration or a mail-out under `cmd/` does not run.
+A template it cannot compile, a
+program that cannot start this way, and a program it does not start get
+one line each, and those templates render through `html/template` as
+before. See [tmpl](/docs/reference/tmpl). Pass `--templates=false` to
+skip this step.
+
+`--check` fails when a `rastrillo_templates_gen.go` is missing or out of
+date with your templates. It also fails when a program cannot start
+this way and imports a package with a `rastrillo_templates_gen.go`,
+because it cannot check that file. Fix what stops the program, or run
+`--check` where it can start.
+
 ## rastrillo dev
 
 ```sh
@@ -136,6 +158,13 @@ rebuilds `./cmd/<name>` to a temporary binary, and restarts the process
 with a graceful SIGTERM. Anything after `--` is passed to your app.
 An app with no `manifest/`, `actions/` or `gen/`, such as a `bare` one,
 has nothing to generate, so `dev` skips `generate` and only rebuilds.
+
+`dev` leaves compiled templates out. It runs
+`generate --templates=false` and builds with `-tags rastrillo_dev`, so
+every page renders through `html/template` from the files on disk, and
+a compiled file that no longer fits your code cannot break the build.
+Run `rastrillo generate` before you commit: `generate --check` fails
+until you do.
 
 A failed generate or rebuild keeps the previous build serving, and a
 failed restart keeps the loop watching — either way the next save
@@ -231,9 +260,10 @@ rastrillo doctor [--fix] [--force] [--theme <name>] [--probe] [dir]
 ```
 
 Compares the files `rastrillo new` copied into the app's `static/`
-directory (`tokens.css`, `theme.css`, `rastrillo.js`, `select.js`,
-`datetime.js` and `light.js`) against the copies this binary carries,
-and says which ones differ and how.
+directory (`tokens.css`, `theme.css`, `shell.css`, `rastrillo.js`,
+`live.js` and the scripts from Fiesta, such as `fiesta.js`, `select.js`
+and `datetime.js`) against the copies this binary carries, and says
+which ones differ and how.
 
 It is a convenience and an upgrade tool, not the thing standing between
 your app and silent drift. That is the `vendored_test.go` the scaffold
@@ -302,6 +332,27 @@ with no big selects is a supported choice, so an absent file is reported
 as **absent**, not as drift, and does not fail the exit code — you get a
 line saying what the library ships and how big it is. `--fix` will still
 add it, because asking for `--fix` is asking.
+
+### Files that move in pairs
+
+Two pairs of files are refreshed together or not at all: `rastrillo.js`
+with `fiesta.js`, and `datetime.js` with `calendar.js`. An older
+`rastrillo.js` closes menus itself, and running it beside `fiesta.js`
+isn't supported. An older `datetime.js` looks for `rastrilloCalendar`,
+which the current `calendar.js` calls `fiestaCalendar`, so either file
+alone breaks the date field's calendar. If you own one file of a pair,
+`--fix` leaves both and says why. Add the other to `vendoredIsMine`
+too, or pass `--force` to refresh both.
+
+`doctor` also checks your layouts. A layout that links `rastrillo.js`
+by hand and has no `{{range pageScripts}}` gets no `fiesta.js`, so its
+menus stop closing on Escape and its switches can't be dragged once
+`rastrillo.js` is the current one. `doctor` names each such layout and
+the line to add, right after its `rastrillo.js` tag:
+
+```html
+<script defer src="{{path $ (asset "static/fiesta.js")}}"></script>
+```
 
 ### An app on the old module path
 
@@ -469,7 +520,7 @@ failure this staged migration exists to avoid.
 Rewriting is idempotent, so running it twice, or over a tree half of
 which is already done, changes nothing the second time. Nothing breaks
 if you stop between steps 1 and 3, either: `tokens.css` styles both
-spellings until stage 3, and `rastrillo.js` dismisses menus written in
+spellings until stage 3, and `fiesta.js` dismisses menus written in
 either one. Step 3 is what you owe stage 3, not what you owe today.
 
 ### One name changed meaning
@@ -494,12 +545,11 @@ every run that changes anything.
 
 ### The vendored files
 
-It never touches `static/tokens.css`, `static/theme.css`,
-`static/rastrillo.js`, `static/select.js`, `static/datetime.js` or
-`static/light.js`. Those
-are copies of the library's, and `doctor` is what refreshes them;
-rewriting one here would make your copy differ from the library's for
-good.
+It never touches the files `rastrillo new` copied into `static/`, such
+as `static/tokens.css`, `static/theme.css`, `static/rastrillo.js` and
+`static/fiesta.js`. Those are copies of the library's, and `doctor`
+is what refreshes them; rewriting one here would make your copy differ
+from the library's for good.
 
 ### The one opt-out
 
@@ -575,14 +625,38 @@ that already runs `generate --check` needs no extra step.
 
 ```sh
 rastrillo budget size [dir]
+rastrillo budget code [--init | --lower] [dir]
 rastrillo budget test [-no-time] [-require TestA,TestB] [go test arguments]
 ```
 
 `budget size` counts the lines in each directory of the module at `dir`
 (default `.`) and holds them to 5,000 lines of code and 8,000 of tests,
-minus the exceptions in `.rastrillo/budgets.txt`. It stops at a nested
-module, which has its own budget. It exits 1 when something is over and 2
+minus the exceptions in `.rastrillo/budgets.txt`. It leaves out generated
+files, the ones whose first lines say `// Code generated ... DO NOT EDIT.`.
+It stops at a nested module, which has its own budget. It exits 1 when something is over and 2
 when `budgets.txt` cannot be read.
+
+`budget code` holds the Go code of the module at `dir` (default `.`) to
+four limits. A line is at most 80 columns, counting a tab as up to 4. A
+file is at most 400 lines, and a function at most 40, or 15 for an action.
+No name is a single letter, except `t`, `b` and `f` with their testing
+types, and a one-capital-letter type parameter. Tests are held to the
+columns and names limits only. Generated files are skipped, and a file
+marked `//rastrillo:data <reason>` above its package clause is a table, so
+it is not held to columns or length.
+A file marked `//rastrillo:vendored <source>`, a copy of code from
+elsewhere, is skipped like a generated one.
+
+`.rastrillo/code.txt` records the offences the code already had. A new
+offence fails, and so does a record that is looser than the code: lower
+it, or delete it when the offence is gone. `--init` writes the file with a
+record for every offence, and refuses if the file exists. `--lower` lowers
+and deletes records to match the code, and never adds or raises one. To
+add or raise a record by hand, write a reason after its count. The check
+compares the file with the copy where your branch left `origin/main`, and
+fails a new or higher record with no reason. It exits 1 when something is
+over a limit and 2 when `code.txt` cannot be read or `--init` finds one
+already there.
 
 `budget test` runs `go test -json` with your arguments (`./...` if you give
 none), and exits with `go test`'s own status. It holds each package to its
@@ -591,8 +665,119 @@ tests without printing it, and ends with a receipt. `-no-time` turns the
 time budget off, for the perf lane. `-require` names tests that must pass
 in the run, so a lane cannot go green having run nothing.
 
-The scaffold's `make budget`, `make test` and `make perf` call these.
+The scaffold's `make budget`, `make test` and `make perf` call `budget size`
+and `budget test`.
 [Testing](/docs/testing) explains the budgets.
+
+## rastrillo routes
+
+```sh
+rastrillo routes [--package path] [--check] [dir]
+```
+
+Prints the routes of the app at `dir` (default `.`), one a line, in the
+order they are registered: the method, the full path, the action and the
+guards. The last line is a reminder of what guards do not decide.
+
+```
+GET   /           app.(*App).index
+GET   /tags       app.(*App).tagList
+POST  /tags/{id}  app.(*App).tagRename  signedIn
+GET   /admin      app.(*App).adminHome  admin
+*     /api/*      api
+
+Guards are page middleware. An operation's Authorize can still refuse a request that passes them.
+```
+
+It does not start the app. It calls the app's `Routes` function with an
+empty `App` and a table that only records. Write the function in a
+package under `internal/`:
+
+```go
+func Routes(routes *action.Routes, app *App)
+```
+
+`App` can be any exported type in that package, or a pointer to one.
+`Routes` must only register routes: no queries, no network calls,
+nothing built. See [action](/docs/reference/action#registering-every-route).
+
+To call it, `routes` builds a small program inside your module with the
+go command's `-overlay`, and runs it. Nothing is written into the app,
+and `go.mod` and `go.sum` stay as they are. What the app prints while it
+starts goes to standard error, so the table on standard output stays
+clean.
+
+If your module has `vendor/modules.txt`, `routes` builds with your
+vendored code, as `go build` does, and needs no network. Otherwise it
+uses the module cache and changes neither `go.mod` nor `go.sum`.
+
+| Flag | Purpose |
+|---|---|
+| `--package` | The import path of the package whose `Routes` to call, when more than one package has one |
+| `--check` | Also fail for each action no route mounts |
+
+`--check` finds every action in the module: each function or method that
+takes one `*action.Visit` and returns nothing. It names each one that no
+route mounts. Mount it in `Routes`, or delete it. An action mounted
+through an interface value counts as not mounted: mount the method on
+its type instead.
+
+`routes` refuses to run, and exits 1, in three cases:
+
+- In a Go workspace, because Go may write `go.work.sum` there. Run it
+  with `GOWORK=off`, or outside the workspace.
+- On a system other than Linux and macOS, where it cannot promise to
+  stop and clean up what it starts.
+- When `Routes` is in a package below a second `internal` directory,
+  such as `internal/feature/internal/web`. The program it builds cannot
+  import that package. Move `Routes` to a package under the top-level
+  `internal/`.
+
+Exits 1 when the routes cannot be listed, or when `--check` finds an
+action no route mounts, and 2 when the arguments are wrong. Ctrl-C stops
+it and removes what it built.
+
+## rastrillo csp
+
+```sh
+rastrillo csp [dir]
+```
+
+Finds markup that the default Content-Security-Policy blocks, in the
+module at `dir` (default `.`). The browser drops each of these and
+throws no error, so the page just looks or behaves wrong:
+
+- a `style` attribute, or `setAttribute("style")` in a script
+- a `<style>` block
+- an inline `<script>`, one with no `src`
+- an `on*` handler attribute, such as `onclick`
+- a `javascript:` URL
+
+It reads templates (`.html`, `.htm`, `.gohtml`, `.tmpl`), the string
+literals in Go files, and `.js` and `.mjs` files. It skips test files, generated
+files, and the copies of the framework's files in `static/`. It also
+skips nested modules and directories named `testdata`, `vendor` or
+`node_modules`, or starting with `.` or `_`.
+
+Each line names a file and line, what is there, and what to write
+instead: a class in your own stylesheet, or a listener added with
+`addEventListener` in a script in `static/`. A script can still set
+`element.style.setProperty`, which the CSP allows.
+
+A `<script type="importmap">` passes, though the default CSP blocks it
+too: an app that needs one admits it by its hash in `Options.CSP`, and
+`csp` cannot see whether yours does. A data block such as
+`<script type="application/json">` passes because the browser never
+runs it.
+
+It reads source, not rendered pages, so it cannot see markup an
+attribute value or a template function builds at run time. The browser
+reports blocked markup only in the console and as a
+`securitypolicyviolation` event. The scaffold browser test fails on
+console errors, on the pages it visits.
+
+The scaffold's `make csp` runs it. Exits 1 when it finds something, and
+2 when the arguments are wrong.
 
 ## rastrillo session-key
 

@@ -24,7 +24,10 @@ func TestEveryLinkedLocaleRebuilds(t *testing.T) {
 		}
 		for name, v := range map[string]string{"CurrencyDecimal": l.CurrencyDecimal, "CurrencyGroup": l.CurrencyGroup,
 			"Decimal": l.Decimal, "Minus": l.Minus, "Digits": l.Digits, "MinGrouping": l.MinGrouping,
-			"Standard": l.Standard, "Alpha": l.Alpha, "Spacing": l.Spacing} {
+			"Standard": l.Standard, "Alpha": l.Alpha, "Spacing": l.Spacing,
+			"Group": l.Group, "Number": l.Number, "Percent": l.Percent,
+			"PercentSign": l.PercentSign, "Infinity": l.Infinity,
+			"NaN": l.NaN} {
 			if v == "" {
 				t.Errorf("%s: %s is empty after merging", id, name)
 			}
@@ -32,6 +35,13 @@ func TestEveryLinkedLocaleRebuilds(t *testing.T) {
 	}
 	if got := len(locales.LinkedPacks()); got != 101 {
 		t.Errorf("modern links %d packs, want 101", got)
+	}
+	// Plain numbers have their own group mark: de-AT groups money with
+	// "." and numbers with a no-break space.
+	austrian, _ := locales.Data("de-AT")
+	if austrian.Group != "\u00a0" || austrian.CurrencyGroup != "." {
+		t.Errorf("de-AT groups numbers with %q and money with %q",
+			austrian.Group, austrian.CurrencyGroup)
 	}
 	if p, ok := locales.PackOf("de-CH"); !ok || p != "de" {
 		t.Errorf("PackOf(de-CH) = %q, %v", p, ok)

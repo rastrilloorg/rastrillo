@@ -1,6 +1,7 @@
 package rastrillo
 
 import (
+	"database/sql"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -130,5 +131,45 @@ func TestHandlerRefusesBeforeOpeningTheDatabase(t *testing.T) {
 	}
 	if _, err := os.Stat(path); !os.IsNotExist(err) {
 		t.Errorf("a refused configuration touched %s: %v", path, err)
+	}
+}
+
+// Under SQLite's default, synchronous=FULL, every commit waits for an
+// fsync of the WAL, and on an EBS volume that capped the TodoMVC
+// bakeoff at 297 toggles a second (#234). NORMAL is still crash-safe
+// in WAL mode: a power loss can drop the last commits, never corrupt.
+func TestOpenDBOpensAtSynchronousNormal(t *testing.T) {
+	db, err := OpenDB(filepath.Join(t.TempDir(), "app.db"), nil)
+	if err != nil {
+		t.Fatalf("OpenDB: %v", err)
+	}
+	defer db.Close()
+	var level int
+	if err := db.QueryRow("PRAGMA synchronous").Scan(&level); err != nil {
+		t.Fatal(err)
+	}
+	if level != 1 {
+		t.Fatalf("synchronous = %d, want 1 (NORMAL)", level)
+	}
+}
+
+// DurableCommits reaches the database Serve opens, so an app on DBPath
+// can ask for FULL without opening its own handle (#261).
+func TestDurableCommitsOpensAtSynchronousFull(t *testing.T) {
+	var level int
+	_, closeDB, err := Handler(Options{
+		DBPath:         filepath.Join(t.TempDir(), "app.db"),
+		DurableCommits: true,
+		Router: func(db *sql.DB) (*http.ServeMux, error) {
+			err := db.QueryRow("PRAGMA synchronous").Scan(&level)
+			return http.NewServeMux(), err
+		},
+	})
+	if err != nil {
+		t.Fatalf("Handler: %v", err)
+	}
+	defer closeDB()
+	if level != 2 {
+		t.Fatalf("synchronous = %d, want 2 (FULL)", level)
 	}
 }

@@ -32,12 +32,11 @@ func TestNewHandsBuildTheOriginBeforeServing(t *testing.T) {
 	if gotOrigin != r.Origin {
 		t.Fatalf("build was handed %q, the rig navigates %q", gotOrigin, r.Origin)
 	}
-	var onPage string
 	r.Run(
 		chromedp.Navigate(r.Origin+"/"),
-		chromedp.WaitVisible("#origin", chromedp.ByQuery),
-		chromedp.Text("#origin", &onPage, chromedp.ByQuery),
+		chromedp.WaitVisible(chromedp.CSS("#origin")),
 	)
+	onPage := Read(r, chromedp.Text(chromedp.CSS("#origin")))
 	if onPage != r.Origin {
 		t.Fatalf("page shows %q, want %q", onPage, r.Origin)
 	}
@@ -57,11 +56,9 @@ func TestWithCoarsePointerMakesThePrimaryPointerCoarse(t *testing.T) {
 		return mux
 	}
 	read := func(r *Rig) (coarse, hover bool) {
-		r.Run(
-			chromedp.Navigate(r.Origin+"/"),
-			chromedp.Evaluate(`matchMedia("(pointer: coarse)").matches`, &coarse),
-			chromedp.Evaluate(`matchMedia("(hover: hover)").matches`, &hover),
-		)
+		r.Run(chromedp.Navigate(r.Origin + "/"))
+		coarse = Evaluate[bool](r, `matchMedia("(pointer: coarse)").matches`)
+		hover = Evaluate[bool](r, `matchMedia("(hover: hover)").matches`)
 		return coarse, hover
 	}
 	if coarse, _ := read(New(t, build)); coarse {
@@ -75,3 +72,46 @@ func TestWithCoarsePointerMakesThePrimaryPointerCoarse(t *testing.T) {
 		t.Error("WithCoarsePointer: (hover: hover) is true; a phone's primary pointer cannot hover")
 	}
 }
+
+// Into reads the page between two steps of one script: the count it
+// keeps is the one before the second click, not after it.
+func TestIntoKeepsAValueReadBetweenSteps(t *testing.T) {
+	page := `<!doctype html><html lang="en"><head><meta charset="utf-8">` +
+		`<title>count</title></head><body><button id="add" ` +
+		`onclick="this.dataset.n = +(this.dataset.n ?? 0) + 1">` +
+		`add</button></body></html>`
+	rig := New(t, servePage(page))
+	count := `+(document.querySelector("#add").dataset.n ?? 0)`
+	var between int
+	rig.Run(
+		chromedp.Navigate(rig.Origin+"/"),
+		chromedp.Click(chromedp.CSS("#add")),
+		Into(&between, chromedp.Evaluate[int](count)),
+		chromedp.Click(chromedp.CSS("#add")),
+	)
+	if between != 1 {
+		t.Errorf("Into kept %d, want 1, the count between the clicks", between)
+	}
+	if after := Evaluate[int](rig, count); after != 2 {
+		t.Errorf("after both clicks the count is %d, want 2", after)
+	}
+}
+
+// servePage serves one page at the root.
+func servePage(page string) func(origin string) http.Handler {
+	return func(string) http.Handler {
+		mux := http.NewServeMux()
+		mux.HandleFunc("GET /{$}",
+			func(response http.ResponseWriter, _ *http.Request) {
+				response.Header().Set("Content-Type",
+					"text/html; charset=utf-8")
+				fmt.Fprint(response, page)
+			})
+		return mux
+	}
+}
+
+// plainPage is a page that does nothing on its own.
+const plainPage = `<!doctype html><html lang="en"><head>` +
+	`<meta charset="utf-8"><title>plain</title></head>` +
+	`<body><p>plain</p></body></html>`

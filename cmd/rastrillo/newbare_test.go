@@ -17,11 +17,12 @@ import (
 func walkFiles(t *testing.T, dir string) []string {
 	t.Helper()
 	var got []string
-	err := filepath.WalkDir(dir, func(p string, d fs.DirEntry, err error) error {
-		if err != nil || d.IsDir() {
+	err := filepath.WalkDir(dir, func(path string, entry fs.DirEntry,
+		err error) error {
+		if err != nil || entry.IsDir() {
 			return err
 		}
-		rel, err := filepath.Rel(dir, p)
+		rel, err := filepath.Rel(dir, path)
 		got = append(got, filepath.ToSlash(rel))
 		return err
 	})
@@ -61,28 +62,41 @@ func TestBareWritesOnlyItsFiles(t *testing.T) {
 		"internal/dash/static/anchor.js",
 		"internal/dash/static/busy.js",
 		"internal/dash/static/calendar.js",
+		"internal/dash/static/copy.js",
 		"internal/dash/static/datetime.js",
+		"internal/dash/static/fiesta.js",
 		"internal/dash/static/light.js",
+		"internal/dash/static/live.js",
 		"internal/dash/static/rastrillo.js",
 		"internal/dash/static/select.js",
 		"internal/dash/static/shell.css",
 		"internal/dash/static/shell.js",
 		"internal/dash/static/theme.css",
 		"internal/dash/static/tokens.css",
+		"internal/dash/static/transition.js",
 		"internal/dash/templates/errors.html",
 		"internal/dash/templates/index.html",
 		"internal/dash/templates/layout.html",
 	}
 	if got := walkFiles(t, "dash"); !slices.Equal(got, want) {
-		t.Errorf("bare wrote\n%s\nwant\n%s", strings.Join(got, "\n"), strings.Join(want, "\n"))
+		t.Errorf("bare wrote\n%s\nwant\n%s", strings.Join(got, "\n"),
+			strings.Join(want, "\n"))
 	}
 	// The scaffold's own Go has to be what gofmt would write, or the
 	// first gofmt -l in someone's editor flags a file they never touched.
-	for _, rel := range []string{"cmd/dash/main.go", "internal/dash/app.go", "internal/dash/app_test.go", "internal/dash/locale.go", "internal/dash/render.go"} {
-		src := readScaffold(t, "dash", rel)
-		if out, err := format.Source([]byte(src)); err != nil || string(out) != src {
-			t.Errorf("%s is not gofmt-clean (err %v)", rel, err)
-		}
+	for _, rel := range []string{"cmd/dash/main.go", "internal/dash/app.go",
+		"internal/dash/app_test.go", "internal/dash/locale.go",
+		"internal/dash/render.go"} {
+		checkGofmt(t, rel, readScaffold(t, "dash", rel))
+	}
+}
+
+// checkGofmt fails unless src is what gofmt would write.
+func checkGofmt(t *testing.T, rel, src string) {
+	t.Helper()
+	out, err := format.Source([]byte(src))
+	if err != nil || string(out) != src {
+		t.Errorf("%s is not gofmt-clean (err %v)", rel, err)
 	}
 }
 
@@ -90,17 +104,21 @@ func TestBareWritesOnlyItsFiles(t *testing.T) {
 // that does not brings none.
 func TestBareWritesTheIconAttribution(t *testing.T) {
 	t.Chdir(t.TempDir())
-	if err := runNew([]string{"--scaffold", "bare", "--icons=font-awesome", "dash"}); err != nil {
+	err := runNew([]string{"--scaffold", "bare", "--icons=font-awesome",
+		"dash"})
+	if err != nil {
 		t.Fatal(err)
 	}
+	usual := []string{".gitignore", "README.md", "go.mod"}
 	var extra []string
-	for _, f := range walkFiles(t, "dash") {
-		if !strings.Contains(f, "/") && f != ".gitignore" && f != "README.md" && f != "go.mod" {
-			extra = append(extra, f)
+	for _, file := range walkFiles(t, "dash") {
+		if !strings.Contains(file, "/") && !slices.Contains(usual, file) {
+			extra = append(extra, file)
 		}
 	}
 	if len(extra) != 1 {
-		t.Errorf("font-awesome bare app has root files %v besides the usual three, want exactly its attribution file", extra)
+		t.Errorf("font-awesome bare app has root files %v besides the "+
+			"usual three, want exactly its attribution file", extra)
 	}
 }
 
@@ -156,7 +174,8 @@ func TestBareSidebarShellHasItsSection(t *testing.T) {
 	}
 	setSandboxGoEnv(t)
 	t.Chdir(t.TempDir())
-	dir := scaffoldWithReplace(t, "dash", "--scaffold", "bare", "--shell=sidebar")
+	dir := scaffoldWithReplace(t, "dash", "--scaffold", "bare",
+		"--shell=sidebar")
 	out, err := goTestIn(dir, "-v", "./...")
 	if err != nil {
 		t.Fatalf("go test ./...:\n%s", out)
@@ -176,7 +195,8 @@ func TestBareWithLocale(t *testing.T) {
 		t.Run(code, func(t *testing.T) {
 			setSandboxGoEnv(t)
 			t.Chdir(t.TempDir())
-			dir := scaffoldWithReplace(t, "dash", "--scaffold", "bare", "--locale="+code)
+			dir := scaffoldWithReplace(t, "dash", "--scaffold", "bare",
+				"--locale="+code)
 			src := readScaffold(t, dir, "internal", "dash", "locale.go")
 			if !strings.Contains(src, `const Locale = "`+code+`"`) {
 				t.Errorf("locale.go does not set Locale to %q:\n%s", code, src)
@@ -185,9 +205,12 @@ func TestBareWithLocale(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			for _, p := range packs {
-				if !strings.Contains(src, `_ "amadan.net/rastrillo/rastrillo/locales/`+p+`"`) {
-					t.Errorf("locale.go does not import the %s pack:\n%s", p, src)
+			for _, pack := range packs {
+				line := `_ "amadan.net/rastrillo/rastrillo/locales/` +
+					pack + `"`
+				if !strings.Contains(src, line) {
+					t.Errorf("locale.go does not import the %s pack:\n%s",
+						pack, src)
 				}
 			}
 			if out, err := goTestIn(dir, "./..."); err != nil {
@@ -202,7 +225,8 @@ func TestBareWithLocale(t *testing.T) {
 func TestBareRefusesUX(t *testing.T) {
 	for _, args := range [][]string{{"--ux", "standard"}, {"--ux=considered"}} {
 		t.Run(strings.Join(args, " "), func(t *testing.T) {
-			refusedBeforeWriting(t, "--ux does nothing with --scaffold bare, which writes no AGENTS.md: leave it out",
+			refusedBeforeWriting(t, "--ux does nothing with --scaffold "+
+				"bare, which writes no AGENTS.md: leave it out",
 				append([]string{"--scaffold", "bare"}, args...)...)
 		})
 	}
@@ -231,7 +255,8 @@ func TestBareSaysWhatItScaffolded(t *testing.T) {
 			t.Fatal(err)
 		}
 	})
-	if first, _, _ := strings.Cut(out, "\n"); first != "rastrillo new: scaffolded dash/ (bare: a page and a route)" {
+	first, _, _ := strings.Cut(out, "\n")
+	if first != "rastrillo new: scaffolded dash/ (bare: a page and a route)" {
 		t.Errorf("first line = %q", first)
 	}
 	if !strings.Contains(out, "go test ./...") {
@@ -254,7 +279,8 @@ func TestDevLeavesABareAppBare(t *testing.T) {
 	t.Chdir(t.TempDir())
 	build := func(dir, name string) {
 		t.Helper()
-		if err := rebuildApp(dir, "./cmd/"+name, filepath.Join(t.TempDir(), name)); err != nil {
+		bin := filepath.Join(t.TempDir(), name)
+		if err := rebuildApp(dir, "./cmd/"+name, bin); err != nil {
 			t.Fatalf("rebuild %s: %v", name, err)
 		}
 	}
@@ -270,13 +296,12 @@ func TestDevLeavesABareAppBare(t *testing.T) {
 	}
 
 	// actions/ and no manifest/: generate copies the actions, so it runs.
-	actions := "//go:build rastrillo_actions\n\npackage actions\n\nimport (\n\t\"net/http\"\n\n\t\"amadan.net/rastrillo/rastrillo\"\n)\n\nfunc Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {}\n"
-	if err := os.MkdirAll(filepath.Join(bare, "actions"), 0o755); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(filepath.Join(bare, "actions", "index.GET.go"), []byte(actions), 0o644); err != nil {
-		t.Fatal(err)
-	}
+	actions := "//go:build rastrillo_actions\n\npackage actions\n\n" +
+		"import (\n\t\"net/http\"\n\n" +
+		"\t\"amadan.net/rastrillo/rastrillo\"\n)\n\n" +
+		"func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, " +
+		"r *http.Request) {}\n"
+	mustWrite(t, filepath.Join(bare, "actions", "index.GET.go"), actions)
 	build(bare, "plain")
 	if !exists(bare, "gen", "router.go") {
 		t.Error("a rebuild with actions/ and no manifest/ did not run generate")
@@ -299,7 +324,9 @@ func TestDevLeavesABareAppBare(t *testing.T) {
 // and has to find and delete by hand.
 func TestBarePlainWritesNoDesignSystem(t *testing.T) {
 	t.Chdir(t.TempDir())
-	if err := runNew([]string{"--scaffold", "bare", "--design-system=false", "dash"}); err != nil {
+	err := runNew([]string{"--scaffold", "bare", "--design-system=false",
+		"dash"})
+	if err != nil {
 		t.Fatal(err)
 	}
 	want := []string{
@@ -312,23 +339,28 @@ func TestBarePlainWritesNoDesignSystem(t *testing.T) {
 		"internal/dash/locale.go",
 	}
 	if got := walkFiles(t, "dash"); !slices.Equal(got, want) {
-		t.Errorf("plain bare wrote\n%s\nwant\n%s", strings.Join(got, "\n"), strings.Join(want, "\n"))
+		t.Errorf("plain bare wrote\n%s\nwant\n%s",
+			strings.Join(got, "\n"), strings.Join(want, "\n"))
 	}
-	for _, rel := range []string{"cmd/dash/main.go", "internal/dash/app.go", "internal/dash/app_test.go", "internal/dash/locale.go"} {
+	// Each of these names something only the design system defines: the
+	// app would not compile.
+	designOnly := []string{"ErrorPage", "pages.", "render(", "assets.",
+		"templates/"}
+	for _, rel := range []string{"cmd/dash/main.go", "internal/dash/app.go",
+		"internal/dash/app_test.go", "internal/dash/locale.go"} {
 		src := readScaffold(t, "dash", rel)
-		if out, err := format.Source([]byte(src)); err != nil || string(out) != src {
-			t.Errorf("%s is not gofmt-clean (err %v)", rel, err)
-		}
-		// Each of these names something only the design system defines:
-		// the app would not compile.
-		for _, gone := range []string{"ErrorPage", "pages.", "render(", "assets.", "templates/"} {
+		checkGofmt(t, rel, src)
+		for _, gone := range designOnly {
 			if strings.Contains(src, gone) {
-				t.Errorf("%s mentions %q, which a plain app does not have:\n%s", rel, gone, src)
+				t.Errorf("%s mentions %q, which a plain app does not "+
+					"have:\n%s", rel, gone, src)
 			}
 		}
 	}
-	if readme := readScaffold(t, "dash", "README.md"); strings.Contains(readme, "templates/") {
-		t.Errorf("README.md points at a templates/ the app does not have:\n%s", readme)
+	readme := readScaffold(t, "dash", "README.md")
+	if strings.Contains(readme, "templates/") {
+		t.Errorf("README.md points at a templates/ the app does not "+
+			"have:\n%s", readme)
 	}
 }
 
@@ -341,7 +373,8 @@ func TestBarePlainPassesItsOwnTests(t *testing.T) {
 	}
 	setSandboxGoEnv(t)
 	t.Chdir(t.TempDir())
-	dir := scaffoldWithReplace(t, "dash", "--scaffold", "bare", "--design-system=false", "--locale=es")
+	dir := scaffoldWithReplace(t, "dash", "--scaffold", "bare",
+		"--design-system=false", "--locale=es")
 	out, err := goTestIn(dir, "-v", "./...")
 	if err != nil {
 		t.Fatalf("go test ./...:\n%s", out)
@@ -351,7 +384,8 @@ func TestBarePlainPassesItsOwnTests(t *testing.T) {
 			t.Errorf("%s did not run and pass:\n%s", name, out)
 		}
 	}
-	if vet, err := goIn(dir, "vet", "-tags", "browser,perf", "./..."); err != nil {
+	vet, err := goIn(dir, "vet", "-tags", "browser,perf", "./...")
+	if err != nil {
 		t.Fatalf("go vet -tags browser,perf ./...:\n%s", vet)
 	}
 }
@@ -360,10 +394,12 @@ func TestBarePlainPassesItsOwnTests(t *testing.T) {
 // it off, so each is refused by name, even typed at its default value,
 // and before the app's directory exists.
 func TestDesignFlagsRefusedWithoutDesignSystem(t *testing.T) {
-	for _, flag := range []string{"icons=lucide", "icon-delivery=inline", "theme=day", "shell=column"} {
+	for _, flag := range []string{"icons=lucide", "icon-delivery=inline",
+		"theme=day", "shell=column"} {
 		name, _, _ := strings.Cut(flag, "=")
 		t.Run(name, func(t *testing.T) {
-			refusedBeforeWriting(t, "--"+name+" does nothing with --design-system=false: leave it out",
+			refusedBeforeWriting(t, "--"+name+" does nothing with "+
+				"--design-system=false: leave it out",
 				"--scaffold", "bare", "--design-system=false", "--"+flag)
 		})
 	}
@@ -372,14 +408,20 @@ func TestDesignFlagsRefusedWithoutDesignSystem(t *testing.T) {
 // single and accounts build their pages from the design system, so
 // only bare may leave it out. Typed --design-system=true is fine.
 func TestDesignSystemOffRefusedForSingleAndAccounts(t *testing.T) {
-	for _, args := range [][]string{{"--scaffold", "single"}, {"--scaffold", "accounts"}, nil} {
+	for _, args := range [][]string{
+		{"--scaffold", "single"}, {"--scaffold", "accounts"}, nil,
+	} {
 		t.Run(strings.Join(args, " "), func(t *testing.T) {
-			refusedBeforeWriting(t, "--design-system=false works with --scaffold bare only: single and accounts build their pages from the design system",
+			refusedBeforeWriting(t, "--design-system=false works with "+
+				"--scaffold bare only: single and accounts build their "+
+				"pages from the design system",
 				append(args, "--design-system=false")...)
 		})
 	}
 	t.Chdir(t.TempDir())
-	if err := runNew([]string{"--scaffold", "bare", "--design-system=true", "--theme=plain", "x"}); err != nil {
+	err := runNew([]string{"--scaffold", "bare", "--design-system=true",
+		"--theme=plain", "x"})
+	if err != nil {
 		t.Errorf("bare with the design system typed on: %v", err)
 	}
 }
@@ -400,7 +442,8 @@ func TestDoctorChecksAPlainBareApp(t *testing.T) {
 			t.Fatalf("doctor %v: %v\n%s", args, err, out)
 		}
 		if !strings.Contains(out, doctorNoDesignMsg) {
-			t.Errorf("doctor %v does not say the design system is absent:\n%s", args, out)
+			t.Errorf("doctor %v does not say the design system is "+
+				"absent:\n%s", args, out)
 		}
 		if args[0] == "--fix" {
 			continue
@@ -411,11 +454,14 @@ func TestDoctorChecksAPlainBareApp(t *testing.T) {
 			}
 		}
 		if args[0] == "--probe" && !strings.Contains(out, `"ok":true`) {
-			t.Errorf("doctor --probe did not run the app's locale check:\n%s", out)
+			t.Errorf("doctor --probe did not run the app's locale "+
+				"check:\n%s", out)
 		}
 	}
 	// No comparison, so no version to be skewed against.
-	if err := (&report{noDesign: true, appVersion: "v0.1.0", cliVersion: "v9.9.9"}).exit(); err != nil {
+	plain := &report{noDesign: true, appVersion: "v0.1.0",
+		cliVersion: "v9.9.9"}
+	if err := plain.exit(); err != nil {
 		t.Errorf("a plain app on another version: exit %v, want none", err)
 	}
 }

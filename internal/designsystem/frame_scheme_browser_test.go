@@ -17,9 +17,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/chromedp/cdproto/emulation"
 	"github.com/chromedp/cdproto/page"
-	"github.com/chromedp/cdproto/runtime"
 	"github.com/chromedp/chromedp"
 
 	"amadan.net/rastrillo/rastrillo/harness"
@@ -146,28 +144,34 @@ func heldFrames(t *testing.T, target string, h *holds) (*harness.Rig, string) {
 // holds back.
 func openChosen(t *testing.T, ctx context.Context, rig *harness.Rig, os, chosen, target string) {
 	t.Helper()
-	if err := chromedp.Run(ctx,
-		emulation.SetEmulatedMedia().WithFeatures([]*emulation.MediaFeature{{Name: "prefers-color-scheme", Value: os}}),
+	if err := chromedp.Do(ctx,
+		prefersColorScheme(os),
 		chromedp.EmulateViewport(1280, 900),
 		chromedp.Navigate(rig.Origin+indexHref(mountPath, RootTheme(), "en")),
-		chromedp.Evaluate(`localStorage.setItem("rst-ds-scheme", "`+chosen+`"); if ("`+chosen+`" === "system") localStorage.removeItem("rst-ds-scheme"); true`, nil),
+		chromedp.Evaluate[chromedp.Void](
+			`localStorage.setItem("rst-ds-scheme", "`+chosen+`");
+			if ("`+chosen+`" === "system")
+			  localStorage.removeItem("rst-ds-scheme");
+			true`),
 		chromedp.Navigate("about:blank"),
 	); err != nil {
 		t.Fatalf("setting the scheme: %v", err)
 	}
 	// page.Navigate rather than chromedp.Navigate: the page's load
 	// event waits on the held frame, which is the point.
-	if err := chromedp.Run(ctx, chromedp.ActionFunc(func(ctx context.Context) error {
-		_, _, _, _, err := page.Navigate(rig.Origin + target).Do(ctx)
-		return err
-	})); err != nil {
+	_, err := chromedp.Call(ctx, page.Navigate,
+		page.NavigateParams{URL: rig.Origin + target})
+	if err != nil {
 		t.Fatalf("opening the page: %v", err)
 	}
 }
 
 func twoFrames(t *testing.T, ctx context.Context, where string) {
 	t.Helper()
-	if err := chromedp.Run(ctx, chromedp.Evaluate(`new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true))))`, nil, awaitPromise)); err != nil {
+	if err := chromedp.Do(ctx, chromedp.Evaluate[chromedp.Void](
+		`new Promise(r => requestAnimationFrame(() =>
+		  requestAnimationFrame(() => r(true))))`,
+		chromedp.EvalAwaitPromise)); err != nil {
 		t.Fatalf("%s: waiting for a paint: %v", where, err)
 	}
 }
@@ -341,12 +345,15 @@ func TestAFrameNeverMovesTheReader(t *testing.T) {
 	target := pageHref(mountPath, RootTheme(), "en", fileOf("shells"))
 	stage := `document.querySelector('.ds-view__frame[src=` + strconv.Quote(shellHref(mountPath, RootTheme(), "en", "stage")) + `]')`
 	var at float64
-	if err := chromedp.Run(ctx,
+	if err := chromedp.Do(ctx,
 		chromedp.EmulateViewport(1280, 900),
 		chromedp.Navigate(rig.Origin+target),
 		// The frame just under the fold: near enough to load, far enough
 		// that focusing anything in it has to scroll the page.
-		chromedp.Evaluate(`(() => { const b = `+stage+`.parentElement.getBoundingClientRect(); scrollTo(0, scrollY + b.top - innerHeight - 100); return scrollY; })()`, &at),
+		harness.Into(&at, chromedp.Evaluate[float64](`(() => {
+		  const b = `+stage+`.parentElement.getBoundingClientRect();
+		  scrollTo(0, scrollY + b.top - innerHeight - 100);
+		  return scrollY; })()`)),
 	); err != nil {
 		t.Fatalf("opening the shells page: %v", err)
 	}
@@ -359,13 +366,19 @@ func TestAFrameNeverMovesTheReader(t *testing.T) {
 		Active           string
 	}
 	var raw string
-	if err := chromedp.Run(ctx,
+	if err := chromedp.Do(ctx,
 		chromedp.Sleep(200*time.Millisecond),
 		// The control reads the file as served: in the frame the
 		// attribute is gone, which is the fix.
-		chromedp.Evaluate(`(async () => JSON.stringify({Autofocus: (await (await fetch(`+stage+`.src)).text()).includes(" autofocus"), Y: scrollY,
+		harness.Into(&raw, chromedp.Evaluate[string](
+			`(async () => JSON.stringify({
+		  Autofocus: (await (await fetch(`+stage+`.src)).text())
+		    .includes(" autofocus"),
+		  Y: scrollY,
 		  Inert: `+stage+`.contentDocument.querySelector("input[type=email]").inert,
-		  Active: document.activeElement === document.body ? "body" : document.activeElement.outerHTML.slice(0, 120)}))()`, &raw, awaitPromise),
+		  Active: document.activeElement === document.body
+		    ? "body" : document.activeElement.outerHTML.slice(0, 120)}))()`,
+			chromedp.EvalAwaitPromise)),
 	); err != nil {
 		t.Fatalf("reading the page: %v", err)
 	}
@@ -420,7 +433,10 @@ func TestAFrameHidesWhileItNavigates(t *testing.T) {
 			until(t, ctx, c.name+": the first document shown",
 				`!!`+first+`.contentDocument && `+first+`.contentDocument.URL.endsWith(`+strconv.Quote(frameSrc)+`) && `+first+ready+` && `+first+`.hasAttribute("data-ds-painted")`)
 
-			if err := chromedp.Run(ctx, chromedp.Evaluate(first+`.contentWindow.location.href = `+strconv.Quote(frameSrc+"?next")+`, true`, nil)); err != nil {
+			navigate := first + `.contentWindow.location.href = ` +
+				strconv.Quote(frameSrc+"?next") + `, true`
+			if err := chromedp.Do(ctx,
+				chromedp.Evaluate[chromedp.Void](navigate)); err != nil {
 				t.Fatalf("%s: navigating the frame: %v", c.name, err)
 			}
 			until(t, ctx, c.name+": the next document half-parsed",
@@ -490,7 +506,7 @@ func TestAFrameStopsLookingForItsNextDocument(t *testing.T) {
 			rig, frameSrc := heldFrames(t, target, h)
 			ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
 			defer cancel()
-			if err := chromedp.Run(ctx, addInit(count)); err != nil {
+			if err := chromedp.Do(ctx, addInit(count)); err != nil {
 				t.Fatalf("%s: counting the looks: %v", c.name, err)
 			}
 			openChosen(t, ctx, rig, os, chosen, target)
@@ -501,14 +517,18 @@ func TestAFrameStopsLookingForItsNextDocument(t *testing.T) {
 			// Unreadable from the gallery, and its image waits on nextLoad,
 			// which stays shut: the frame's load never fires.
 			elsewhere := `<!doctype html><p>Elsewhere.</p><img src="` + rig.Origin + heldNext + `" alt="" width="1" height="1">`
-			if err := chromedp.Run(ctx, chromedp.Evaluate(first+`.src = "data:text/html," + encodeURIComponent(`+strconv.Quote(elsewhere)+`), true`, nil)); err != nil {
+			swap := first + `.src = "data:text/html," + encodeURIComponent(` +
+				strconv.Quote(elsewhere) + `), true`
+			if err := chromedp.Do(ctx,
+				chromedp.Evaluate[chromedp.Void](swap)); err != nil {
 				t.Fatalf("%s: navigating the frame: %v", c.name, err)
 			}
 			until(t, ctx, c.name+": looking for the next document",
 				`window.dsLooks > 3 && !`+first+`.hasAttribute("data-ds-painted")`)
 
 			if c.remove {
-				if err := chromedp.Run(ctx, chromedp.Evaluate(first+`.remove(), true`, nil)); err != nil {
+				if err := chromedp.Do(ctx, chromedp.Evaluate[chromedp.Void](
+					first+`.remove(), true`)); err != nil {
 					t.Fatalf("%s: removing the frame: %v", c.name, err)
 				}
 			} else {
@@ -516,11 +536,11 @@ func TestAFrameStopsLookingForItsNextDocument(t *testing.T) {
 					first+`.hasAttribute("data-ds-painted") && getComputedStyle(`+first+`).visibility === "visible"`)
 			}
 			var before, after int
-			if err := chromedp.Run(ctx,
+			if err := chromedp.Do(ctx,
 				chromedp.Sleep(100*time.Millisecond),
-				chromedp.Evaluate(`window.dsLooks`, &before),
+				harness.Into(&before, chromedp.Evaluate[int](`window.dsLooks`)),
 				chromedp.Sleep(500*time.Millisecond),
-				chromedp.Evaluate(`window.dsLooks`, &after),
+				harness.Into(&after, chromedp.Evaluate[int](`window.dsLooks`)),
 			); err != nil {
 				t.Fatalf("%s: reading the looks: %v", c.name, err)
 			}
@@ -530,8 +550,6 @@ func TestAFrameStopsLookingForItsNextDocument(t *testing.T) {
 		})
 	}
 }
-
-func awaitPromise(p *runtime.EvaluateParams) *runtime.EvaluateParams { return p.WithAwaitPromise(true) }
 
 // frameReading is one look at the first frame: the background its own
 // document paints, the page's, whether the frame is visible, its own
@@ -550,16 +568,16 @@ func readFrame(t *testing.T, ctx context.Context, where string, r *frameReading)
 	t.Helper()
 	var raw string
 	var shot []byte
-	if err := chromedp.Run(ctx,
-		chromedp.Evaluate(`(() => {
+	if err := chromedp.Do(ctx,
+		harness.Into(&raw, chromedp.Evaluate[string](`(() => {
 		  const f = document.querySelector(".ds-view__frame"), b = f.getBoundingClientRect(), x = f.parentElement.getBoundingClientRect();
 		  const rgb = s => s.replace(/\s+/g, "");
 		  return JSON.stringify({Frame: rgb(getComputedStyle(f.contentDocument.body).backgroundColor),
 		    Page: rgb(getComputedStyle(document.body).backgroundColor), Shown: getComputedStyle(f).visibility,
 		    Scheme: getComputedStyle(f).colorScheme, X: b.left + b.width / 2, Y: b.top + 8,
 		    Box: [x.left, x.top, x.right, Math.min(x.bottom, innerHeight)]});
-		})()`, &raw),
-		chromedp.CaptureScreenshot(&shot),
+		})()`)),
+		harness.Into(&shot, chromedp.CaptureScreenshot()),
 	); err != nil {
 		t.Fatalf("%s: reading the frame: %v", where, err)
 	}
@@ -616,12 +634,12 @@ func TestTheGallerySwitchLandsOnTheNextFrame(t *testing.T) {
 	ctx, cancel := context.WithTimeout(rig.Context(), 90*time.Second)
 	defer cancel()
 	where := "the overview at 1280px"
-	os := func(scheme string) chromedp.Action {
-		return emulation.SetEmulatedMedia().WithFeatures([]*emulation.MediaFeature{{Name: "prefers-color-scheme", Value: scheme}})
+	os := func(scheme string) chromedp.Action[chromedp.Void] {
+		return prefersColorScheme(scheme)
 	}
-	if err := chromedp.Run(ctx, os("light"), chromedp.EmulateViewport(1280, 900),
+	if err := chromedp.Do(ctx, os("light"), chromedp.EmulateViewport(1280, 900),
 		chromedp.Navigate(rig.Origin+indexHref(mountPath, RootTheme(), "en")),
-		chromedp.WaitReady(`body`, chromedp.ByQuery)); err != nil {
+		chromedp.WaitReady(chromedp.CSS(`body`))); err != nil {
 		t.Fatalf("%s: loading: %v", where, err)
 	}
 	// The bar's buttons, not the phone menu's copy of them, which is
@@ -630,8 +648,9 @@ func TestTheGallerySwitchLandsOnTheNextFrame(t *testing.T) {
 	type state struct{ Theme, Nav string }
 	read := func(leg, js string) state {
 		t.Helper()
-		var raw string
-		if err := chromedp.Run(ctx, chromedp.Evaluate(js, &raw, awaitPromise)); err != nil {
+		raw, err := chromedp.Run(ctx,
+			chromedp.Evaluate[string](js, chromedp.EvalAwaitPromise))
+		if err != nil {
 			t.Fatalf("%s, %s: %v", where, leg, err)
 		}
 		var got state
@@ -672,12 +691,12 @@ func TestTheGallerySwitchLandsOnTheNextFrame(t *testing.T) {
 	landed("after Light")
 	check("System chosen", choose("system"), "", light.Nav)
 	landed("System, OS light")
-	if err := chromedp.Run(ctx, os("dark")); err != nil {
+	if err := chromedp.Do(ctx, os("dark")); err != nil {
 		t.Fatalf("%s: flipping the OS: %v", where, err)
 	}
 	check("System, OS light to dark", read("OS dark", galleryFlipReadJS(true)), "", dark.Nav)
 	landed("System, OS dark")
-	if err := chromedp.Run(ctx, os("light")); err != nil {
+	if err := chromedp.Do(ctx, os("light")); err != nil {
 		t.Fatalf("%s: flipping the OS back: %v", where, err)
 	}
 	check("System, OS dark to light", read("OS light", galleryFlipReadJS(true)), "", light.Nav)

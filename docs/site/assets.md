@@ -20,14 +20,36 @@ Mount at `GET /static/` with no `StripPrefix`.
 
 ## Delivered once, yours afterwards
 
-Two files arrive in your `static/` directory from `rastrillo new`
-rather than from an import: `tokens.css`
-([the design tokens](/docs/templates)) and `rastrillo.js`
-([the progressive-enhancement shim](/docs/jobs)). The scaffolded icons
-package works the same way.
+The framework's stylesheets and scripts arrive in your `static/`
+directory from `rastrillo new` rather than from an import:
+`tokens.css` ([the design tokens](/docs/templates)), `theme.css`,
+`shell.css`, Rastrillo's own `rastrillo.js`
+([the fragment shim](/docs/jobs)) and `live.js`, and Fiesta's
+scripts: `fiesta.js`, `busy.js`, `light.js`, `anchor.js`, `shell.js`,
+`transition.js`, `copy.js`, `select.js`, `datetime.js` and
+`calendar.js`. The stylesheets and Fiesta's scripts are the bytes of
+the [Fiesta](https://fiesta.rastrillo.org) release Rastrillo pins. The
+scaffolded icons package works the same way.
 
 Edit them freely. Nothing in the framework will overwrite them, and no
 upgrade will change them under you.
+
+## The framework's files are served minified
+
+`Assets` serves the files `rastrillo new` put in `static/`
+(`tokens.css`, `theme.css`, `shell.css` and the framework's scripts)
+without their comments and extra whitespace, and gzipped for a browser
+that accepts it. A page downloads about a third of what the commented
+files weigh. No change to your app is needed.
+
+Your copies in `static/` keep their comments, so you can still read
+them. `Path` puts the hash of the bytes actually sent in the URL, so an
+edit to your copy still reaches every browser on the next load.
+
+Your own files, and anything outside `static/`'s top level, are served
+exactly as written. If the minifier cannot read a framework file, such
+as a script you edited into invalid JavaScript, `Assets` serves it as
+written. It does not serve an empty file or an error.
 
 ## The pin test
 

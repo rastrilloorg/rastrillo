@@ -22,16 +22,7 @@ func vectorsInit(dir string) error {
 	if err != nil {
 		return err
 	}
-	pkg := packageName(path.Base(module))
-	tests, pkgClause := testDir(dir, pkg)
-
-	files := map[string]string{
-		filepath.Join(dir, "cmd", "genvectors", "main.go"): genvectorsTemplate,
-		filepath.Join(dir, "test", "parity.test.mjs"):      parityTestTemplate,
-		filepath.Join(dir, "test", "vectors.mjs"):          string(vectors.JS()),
-		filepath.Join(tests, "parity_test.go"):             fmt.Sprintf(parityGoTemplate, pkgClause),
-		filepath.Join(tests, "vectors_vendored_test.go"):   fmt.Sprintf(vectorsVendoredTemplate, pkgClause),
-	}
+	files := vectorsFiles(dir, packageName(path.Base(module)))
 
 	paths := make([]string, 0, len(files))
 	for p := range files {
@@ -64,6 +55,24 @@ func vectorsInit(dir string) error {
 	}
 	fmt.Println("next: replace the example fold in cmd/genvectors/main.go and test/parity.test.mjs with your app's own (both sides, same commit), then run `rastrillo vectors`")
 	return nil
+}
+
+// vectorsFiles is what vectors -init writes into the app at dir, whose
+// package is pkg.
+func vectorsFiles(dir, pkg string) map[string]string {
+	tests, pkgClause := testDir(dir, pkg)
+	atRoot := func(parts ...string) string {
+		return filepath.Join(append([]string{dir}, parts...)...)
+	}
+	return map[string]string{
+		atRoot("cmd", "genvectors", "main.go"): genvectorsTemplate,
+		atRoot("test", "parity.test.mjs"):      parityTestTemplate,
+		atRoot("test", "vectors.mjs"):          string(vectors.JS()),
+		filepath.Join(tests, "parity_test.go"): fmt.Sprintf(
+			parityGoTemplate, pkgClause),
+		filepath.Join(tests, "vectors_vendored_test.go"): fmt.Sprintf(
+			vectorsVendoredTemplate, pkgClause),
+	}
 }
 
 // genvectorsTemplate is the worked generator, anchored on

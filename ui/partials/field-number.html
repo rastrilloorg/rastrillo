@@ -1,0 +1,41 @@
+{{/* field-number: one labelled number input, read in its locale.
+     Hint and error lines are wired as field-text wires them. Pair it with a form.Field of Kind
+     form.Number on the server, and fill it from form.SeedNumber (a
+     stored number, or none) or Parsed.NumberInput (a failed POST's
+     echo): both return the Value and Locale this partial takes.
+
+     One hidden input travels with the text:
+       <Name>.locale    the locale the text is written in. Read in any
+                        other, 1.500 can mean fifteen hundred instead of
+                        one and a half.
+
+     inputmode="decimal" brings up a number keyboard with a decimal
+     mark. It is type="text", not type="number": a number input refuses
+     grouping and the other locale's decimal mark, both of which the
+     server reads.
+
+     The wrapper repeats field-text's rather than composing it, for the
+     reason field-text's own comment gives.
+
+     Keys:
+       Name      string, required: the input's name and id, the prefix
+                 of the hidden input's name, and of the hint/error ids
+       Label     string, required: the visible label
+       Value     string, optional: the text to show, SeedNumber's or
+                 NumberInput's Value
+       Locale    string, required: the locale Value is written in
+       Required  bool, optional: required attribute + visible *
+       Hint      string, optional: muted guidance under the input
+       Error     string, optional: validation message; also sets
+                 aria-invalid */}}
+{{define "field-number"}}<div rst-field>
+  <label rst-field-label for="{{.Name}}">{{.Label}}{{if .Required}} <span rst-field-required aria-hidden="true">*</span>{{end}}</label>
+  <input rst-input id="{{.Name}}" name="{{.Name}}" type="text" inputmode="decimal"{{if .Value}} value="{{.Value}}"{{end}}{{if .Required}} required{{end}}{{if .Error}} aria-invalid="true"{{end}}{{if or .Hint .Error}} aria-describedby="{{if .Hint}}{{.Name}}-hint{{end}}{{if and .Hint .Error}} {{end}}{{if .Error}}{{.Name}}-error{{end}}"{{end}}>
+  <input type="hidden" name="{{.Name}}.locale" value="{{.Locale}}">
+  {{- if .Hint}}
+  <small rst-field-hint id="{{.Name}}-hint">{{.Hint}}</small>
+  {{- end}}
+  {{- if .Error}}
+  <small rst-field-error id="{{.Name}}-error">{{.Error}}</small>
+  {{- end}}
+</div>{{end}}

@@ -2,6 +2,8 @@ package db
 
 import (
 	"bytes"
+	"context"
+	"database/sql"
 	"errors"
 	"log/slog"
 	"path/filepath"
@@ -317,5 +319,61 @@ func TestTimesAreStoredInUTCWhateverZoneTheyArriveIn(t *testing.T) {
 	}
 	if !back.Equal(tokyo) || back.Location() != time.UTC {
 		t.Errorf("read back %v (%s), want %v in UTC", back, back.Location(), tokyo.UTC())
+	}
+}
+
+// Both pools share one DSN, so both connections must say NORMAL: the
+// writer because FULL makes every commit wait on an fsync (#234), the
+// reader so that no pool opens the file with a different durability
+// than the other.
+func TestBothPoolsOpenAtSynchronousNormal(t *testing.T) {
+	opened, err := Open(filepath.Join(t.TempDir(), "app.db"), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer opened.Close()
+	assertSynchronous(t, opened, 1)
+}
+
+// An app that must not lose a commit to a power cut asks for FULL, and
+// gets it on both pools (#261).
+func TestDurableCommitsOpensBothPoolsAtSynchronousFull(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "app.db")
+	opened, err := Open(path, nil, DurableCommits())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer opened.Close()
+	assertSynchronous(t, opened, 2)
+}
+
+// assertSynchronous holds several reader connections at once, so the
+// pool must open new ones, and each must carry the level from the DSN.
+func assertSynchronous(t *testing.T, opened *DB, want int) {
+	t.Helper()
+	ctx := context.Background()
+	connections := map[string]*sql.Conn{}
+	names := []string{"writer", "reader 1", "reader 2", "reader 3"}
+	for _, name := range names {
+		pool := opened.reader
+		if name == "writer" {
+			pool = opened.writer
+		}
+		connection, err := pool.Conn(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer connection.Close()
+		connections[name] = connection
+	}
+	for name, connection := range connections {
+		var level int
+		row := connection.QueryRowContext(ctx, "PRAGMA synchronous")
+		if err := row.Scan(&level); err != nil {
+			t.Fatal(err)
+		}
+		if level != want {
+			t.Errorf("%s synchronous = %d, want %d", name, level, want)
+		}
 	}
 }

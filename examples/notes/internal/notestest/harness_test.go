@@ -97,13 +97,14 @@ func newHandler(t *testing.T, origin, def string, offered []string, logs io.Writ
 	if err != nil {
 		t.Fatalf("locale config: %v", err)
 	}
-	mux, err := notes.App(d, origin, "notes-test-instance-key", bg, logger, cfg)
+	mux, hub, err := notes.App(d, origin, "notes-test-instance-key", bg, logger, cfg)
 	if err != nil {
 		t.Fatalf("notes.App: %v", err)
 	}
 	handler, closeApp, err := rastrillo.Handler(rastrillo.Options{
 		Mux:           mux,
 		Background:    bg,
+		Live:          hub,
 		Locales:       offered,
 		DefaultLocale: def,
 		BaseCatalog:   genlocales.BaseCatalog,

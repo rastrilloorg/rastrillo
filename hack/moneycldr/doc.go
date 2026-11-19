@@ -26,6 +26,9 @@
 //     row must be explained by an executable check
 //     (cmd/check/exemptions.go), and the oracle must have answered
 //     exactly the grid.
+//   - cmd/numcheck writes number.Format's grid for every shipped
+//     locale, and oracle/numbers.js holds each row to ICU's
+//     Intl.NumberFormat, grouped, plain, with places and as a percent.
 //   - cmd/packsize measures each pack's binary cost; cmd/xtext
 //     re-measures the rejected golang.org/x/text route.
 //

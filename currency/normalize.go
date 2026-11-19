@@ -2,7 +2,6 @@ package currency
 
 import (
 	"errors"
-	"math/big"
 	"slices"
 	"sort"
 	"strings"
@@ -10,6 +9,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
+	"amadan.net/rastrillo/rastrillo/internal/numeral"
 	"amadan.net/rastrillo/rastrillo/locales"
 	"amadan.net/rastrillo/rastrillo/money"
 )
@@ -131,74 +131,73 @@ func ParseNormalized(locale, s, code string) (int64, error) {
 // reports a reading dropped because it does not fit in int64.
 func interpret(l resolved, s, code string) (rs []Reading, grouped *Reading, overflowed bool, err error) {
 	convs := conventionsFor(l, code)
-	body, negative, err := strip(s, spellingIndex(l), code, convs[0]) // step 2
+	body, negative, err := numeral.Strip(s,
+		ownSpelling(spellingIndex(l), code, convs[0])) // step 2
 	if err != nil {
-		return nil, nil, false, err
+		return nil, nil, false, moneyError(err)
 	}
 	if body == "" {
 		// A sign or parentheses with no amount, such as "()": nothing to
 		// read, so no decimal mark to advise on.
 		return nil, nil, false, ErrInvalid
 	}
-	toks, err := tokenize(body, convs[0]) // step 3
+	toks, err := numeral.Tokenize(body, convs[0]) // step 3
 	if err != nil {
-		return nil, nil, false, err
+		return nil, nil, false, ErrInvalid
 	}
-	exp := exponentOf(code)
 	mf := l.forCurrency(code)
-	var out []Reading
-	if allGroups(toks, convs[0]) {
-		if whole, frac, ok := reading(toks, convs[0], [2]int{mf.primary, mf.secondary}); ok {
-			if r, ok := makeReading(whole, frac, negative, exp, code); ok {
-				grouped = &r
-			} else {
-				overflowed = true
-			}
-		}
+	sizes := [2]int{mf.primary, mf.secondary}
+	read := func(whole, frac string) (Reading, bool) {
+		return makeReading(whole, frac, negative, exponentOf(code), code)
 	}
+	grouped, overflowed = groupedReading(toks, convs[0], sizes, read)
+	var out []Reading
 	for _, conv := range convs { // step 4
-		for _, gr := range groupings(mf) {
-			whole, frac, ok := reading(toks, conv, gr)
+		for _, gr := range numeral.Groupings(sizes[0], sizes[1]) {
+			whole, frac, ok := numeral.Read(toks, conv, gr)
 			if !ok {
 				continue
 			}
-			r, ok := makeReading(whole, frac, negative, exp, code)
+			r, ok := read(whole, frac)
 			overflowed = overflowed || !ok
 			if ok && !slices.ContainsFunc(out, func(o Reading) bool { return o.Decimal == r.Decimal }) {
 				out = append(out, r)
 			}
 		}
 	}
-	sort.Slice(out, func(i, j int) bool { return decimalLess(out[i].Decimal, out[j].Decimal) })
+	sort.Slice(out, func(i, j int) bool {
+		return numeral.Less(out[i].Decimal, out[j].Decimal)
+	})
 	return out, grouped, overflowed, nil
 }
 
-// allGroups reports whether the input has separators and the locale's
-// own convention takes every one of them for a group mark.
-func allGroups(toks []tok, local convention) bool {
-	seps := 0
-	for _, t := range toks {
-		if t.sep != 0 {
-			if !local.group[t.sep] {
-				return false
-			}
-			seps++
-		}
+// groupedReading is the reading in which the page's own locale, with
+// its own grouping, takes every mark for a group mark, if there is
+// one; overflowed says that reading was too large to store.
+func groupedReading(
+	tokens []numeral.Token, local numeral.Convention, sizes [2]int,
+	read func(whole, fraction string) (Reading, bool),
+) (grouped *Reading, overflowed bool) {
+	if !numeral.AllGroups(tokens, local) {
+		return nil, false
 	}
-	return seps > 0
+	whole, fraction, ok := numeral.Read(tokens, local, sizes)
+	if !ok {
+		return nil, false
+	}
+	reading, ok := read(whole, fraction)
+	if !ok {
+		return nil, true
+	}
+	return &reading, false
 }
 
-// groupings are the locale's own and the two people type anywhere:
-// thousands (3 and 3) and Indian (3, then 2). Equal values from
-// different groupings are one reading.
-func groupings(mf moneyFmt) [][2]int {
-	out := [][2]int{{mf.primary, mf.secondary}}
-	for _, g := range [][2]int{{3, 3}, {3, 2}} {
-		if !slices.Contains(out, g) {
-			out = append(out, g)
-		}
+// moneyError is a numeral error as money reports it.
+func moneyError(err error) error {
+	if errors.Is(err, numeral.ErrInvalid) {
+		return ErrInvalid
 	}
-	return out
+	return err
 }
 
 func makeReading(whole, frac string, negative bool, exp int, code string) (Reading, bool) {
@@ -223,12 +222,6 @@ func makeReading(whole, frac string, negative bool, exp int, code string) (Readi
 		r.Minor = v
 	}
 	return r, true
-}
-
-func decimalLess(a, b string) bool {
-	x, _ := new(big.Rat).SetString(a)
-	y, _ := new(big.Rat).SetString(b)
-	return x.Cmp(y) < 0
 }
 
 // spellings maps every currency spelling known in a locale (each code,
@@ -293,7 +286,9 @@ var rootLocale = sync.OnceValue(func() locales.Locale {
 // "5 dollars" is not "5 doll" plus ARS. A spelling that is one of the
 // locale's own separator marks is a separator there, not a currency
 // (pt-CV's "$" decimal).
-func (idx *spellings) match(s string, prefix bool, local convention) (string, bool) {
+func (idx *spellings) match(
+	s string, prefix bool, local numeral.Convention,
+) (string, bool) {
 	edge, _ := utf8.DecodeLastRuneInString(s)
 	candidates := idx.byLast
 	if prefix {
@@ -304,7 +299,8 @@ func (idx *spellings) match(s string, prefix bool, local convention) (string, bo
 		if len(s) < len(t) {
 			continue
 		}
-		if r, n := utf8.DecodeRuneInString(t); n == len(t) && (local.decimal[r] || local.group[r]) {
+		r, n := utf8.DecodeRuneInString(t)
+		if n == len(t) && (local.Decimal[r] || local.Group[r]) {
 			continue
 		}
 		part, rest := s[len(s)-len(t):], s[:len(s)-len(t)]
@@ -326,178 +322,41 @@ func (idx *spellings) match(s string, prefix bool, local convention) (string, bo
 	return "", false
 }
 
-// strip removes, in any order, at most one sign or one pair of
-// parentheses, and at most one spelling of the field's own currency at
-// either end. The longest spelling at an end decides: one the field's
-// own currency uses here or in root is stripped, even when other
-// currencies share it ("$" in a CAD field); any other is
-// ErrWrongCurrency ("US$" in a CAD field). A second sign, a sign with
-// parentheses, or a second own spelling is ErrInvalid.
-func strip(s string, idx *spellings, code string, local convention) (body string, negative bool, err error) {
-	signed, spelled := false, false
-	if strings.HasPrefix(s, "(") && strings.HasSuffix(s, ")") {
-		s, negative, signed = s[1:len(s)-1], true, true
-	}
-	for changed := true; changed; {
-		changed = false
-		s = strings.TrimSpace(s)
-		for _, sign := range []string{"-", "\u2212", "+"} {
-			lead := strings.HasPrefix(s, sign)
-			if !lead && (sign == "+" || !strings.HasSuffix(s, sign)) {
-				continue
-			}
-			if signed {
-				return "", false, ErrInvalid
-			}
-			signed, negative, changed = true, sign != "+", true
-			if lead {
-				s = s[len(sign):]
-			} else {
-				s = s[:len(s)-len(sign)]
-			}
-			break
+// ownSpelling finds a currency spelling at one end of the text. The
+// longest spelling at an end decides: one the field's own currency
+// uses here or in root is stripped, even when other currencies share
+// it ("$" in a CAD field); any other is ErrWrongCurrency ("US$" in a
+// CAD field).
+func ownSpelling(
+	idx *spellings, code string, local numeral.Convention,
+) numeral.Spelling {
+	return func(text string, prefix bool) (int, error) {
+		spelled, ok := idx.match(text, prefix, local)
+		if !ok {
+			return 0, nil
 		}
-		for _, prefix := range []bool{true, false} {
-			t, ok := idx.match(s, prefix, local)
-			if !ok {
-				continue
-			}
-			if !slices.Contains(idx.owners[t], code) {
-				return "", false, ErrWrongCurrency
-			}
-			if spelled {
-				return "", false, ErrInvalid
-			}
-			if prefix {
-				s = s[len(t):]
-			} else {
-				s = s[:len(s)-len(t)]
-			}
-			spelled, changed = true, true
-			break
+		if !slices.Contains(idx.owners[spelled], code) {
+			return 0, ErrWrongCurrency
 		}
+		return len(spelled), nil
 	}
-	return strings.TrimSpace(s), negative, nil
-}
-
-type tok struct {
-	digits string // ASCII digits; "" for a separator
-	sep    rune
-}
-
-// tokenize splits the body into digit runs and single separators and
-// refuses anything else as junk. The locale's own marks are separators
-// too, so pt-CV's "$" decimal (1284$50) is not junk.
-func tokenize(s string, local convention) ([]tok, error) {
-	var out []tok
-	var run strings.Builder
-	flush := func() {
-		if run.Len() > 0 {
-			out = append(out, tok{digits: run.String()})
-			run.Reset()
-		}
-	}
-	for _, r := range s {
-		switch {
-		case digitValue[r] > 0:
-			run.WriteByte(byte('0' + digitValue[r] - 1))
-		case strings.ContainsRune(".,' \u2019\u066b\u066c", r) || local.decimal[r] || local.group[r]:
-			flush()
-			out = append(out, tok{sep: r})
-		default:
-			return nil, ErrInvalid
-		}
-	}
-	flush()
-	return out, nil
 }
 
 var conventionCache sync.Map
 
 // conventionsFor caches conventions by locale and currency: a
 // currency's override can change the marks (pt-CV's CVE).
-func conventionsFor(l resolved, code string) []convention {
+func conventionsFor(l resolved, code string) []numeral.Convention {
 	key := l.id + "\x00" + code
 	if c, ok := conventionCache.Load(key); ok {
-		return c.([]convention)
+		return c.([]numeral.Convention)
 	}
 	c, _ := conventionCache.LoadOrStore(key, conventions(l, l.forCurrency(code)))
-	return c.([]convention)
+	return c.([]numeral.Convention)
 }
 
-// convention says which characters mark decimals and groups.
-type convention struct{ decimal, group map[rune]bool }
-
-// conventions are the readings of §5.1's decision table: the locale's
-// own (exactly the strict parser's), point-decimal and comma-decimal. In
-// all of them a space, an apostrophe and the Arabic thousands mark
-// group, and the Arabic decimal mark is a decimal.
-func conventions(l resolved, mf moneyFmt) []convention {
-	base := func(dec ...rune) convention {
-		c := convention{decimal: map[rune]bool{'\u066b': true}, group: map[rune]bool{' ': true, '\'': true, '\u2019': true, '\u066c': true}}
-		for _, d := range dec {
-			c.decimal[d] = true
-		}
-		return c
-	}
-	g, _ := utf8.DecodeRuneInString(foldSpace(mf.group))
-	d, _ := utf8.DecodeRuneInString(mf.decimal)
-	od, _ := utf8.DecodeRuneInString(l.Decimal)
-	local := base(d, od)
-	if g != '.' {
-		local.decimal['.'] = true
-	}
-	delete(local.decimal, g)
-	local.group[g] = true
-	point := base('.')
-	point.group[','] = true
-	comma := base(',')
-	comma.group['.'] = true
-	return []convention{local, point, comma}
-}
-
-// reading reads the tokens under one convention and grouping, or
-// reports that it cannot. A group mark must follow digits and be
-// followed by digits, so "12,.50" and "1,,2" have no reading; a decimal
-// mark may come first (".50") or after digits, once, after every group
-// mark. All group marks are one character, at the grouping's positions.
-func reading(toks []tok, c convention, gr [2]int) (whole, frac string, ok bool) {
-	var groups []string
-	var groupMark rune
-	const start, digits, group, decimal = 0, 1, 2, 3
-	prev, sawDecimal := start, false
-	for _, t := range toks {
-		switch {
-		case t.sep == 0:
-			if sawDecimal {
-				frac = t.digits
-			} else {
-				groups = append(groups, t.digits)
-			}
-			prev = digits
-		case c.decimal[t.sep]:
-			if sawDecimal || prev == group {
-				return "", "", false
-			}
-			sawDecimal, prev = true, decimal
-		case c.group[t.sep]:
-			if prev != digits || sawDecimal || groupMark != 0 && groupMark != t.sep {
-				return "", "", false
-			}
-			groupMark, prev = t.sep, group
-		default:
-			return "", "", false
-		}
-	}
-	if prev == group || prev == start {
-		return "", "", false
-	}
-	if len(groups) > 1 && !validGroups(groups, gr[0], gr[1]) {
-		return "", "", false
-	}
-	whole = strings.Join(groups, "")
-	if whole == "" && frac == "" {
-		return "", "", false
-	}
-	return whole, frac, true
+// conventions are numeral's three readings for a currency in a
+// locale: its own marks, point-decimal and comma-decimal.
+func conventions(l resolved, mf moneyFmt) []numeral.Convention {
+	return numeral.Conventions(mf.group, mf.decimal, l.Decimal)
 }

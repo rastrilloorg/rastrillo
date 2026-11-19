@@ -26,21 +26,21 @@
                        edit-advanced POST target */}}
 {{define "content"}}{{$L := localizer $}}
 {{if .IsNew}}
-<form rst-form method="post" action="/bookmarks">
+<form rst-form method="post" action="{{path $ "/bookmarks"}}">
 {{template "field-text" dict "L" $L "Name" "Title" "Label" (T $L "resource.bookmarks.field.title") "Value" .Fields.Title "Error" (Tf $L (index .Errors "Title") (index .ErrorArgs "Title")) "Required" true}}
 {{template "field-text" dict "L" $L "Name" "Link" "Label" (T $L "resource.bookmarks.field.link") "Value" .Fields.Link "Error" (Tf $L (index .Errors "Link") (index .ErrorArgs "Link"))}}
 {{template "field-textarea" dict "L" $L "Name" "Notes" "Label" (T $L "resource.bookmarks.field.notes") "Value" .Fields.Notes "Error" (Tf $L (index .Errors "Notes") (index .ErrorArgs "Notes"))}}
-{{template "form-foot" dict "L" $L "Submit" (T $L "ui.save") "CancelHref" "/bookmarks" "CancelLabel" (T $L "ui.cancel")}}
+{{template "form-foot" dict "L" $L "Submit" (T $L "ui.save") "CancelHref" (path $ "/bookmarks") "CancelLabel" (T $L "ui.cancel")}}
 </form>
 {{else}}
 <form rst-form method="post" action="{{.BasicsAction}}">
 {{template "field-text" dict "L" $L "Name" "Title" "Label" (T $L "resource.bookmarks.field.title") "Value" .Fields.Title "Error" (Tf $L (index .Errors "Title") (index .ErrorArgs "Title")) "Required" true}}
 {{template "field-text" dict "L" $L "Name" "Link" "Label" (T $L "resource.bookmarks.field.link") "Value" .Fields.Link "Error" (Tf $L (index .Errors "Link") (index .ErrorArgs "Link"))}}
-{{template "form-foot" dict "L" $L "Submit" (T $L "ui.save") "CancelHref" "/bookmarks" "CancelLabel" (T $L "ui.cancel")}}
+{{template "form-foot" dict "L" $L "Submit" (T $L "ui.save") "CancelHref" (path $ "/bookmarks") "CancelLabel" (T $L "ui.cancel")}}
 </form>
 <form rst-form method="post" action="{{.AdvancedAction}}">
 {{template "field-textarea" dict "L" $L "Name" "Notes" "Label" (T $L "resource.bookmarks.field.notes") "Value" .Fields.Notes "Error" (Tf $L (index .Errors "Notes") (index .ErrorArgs "Notes"))}}
-{{template "form-foot" dict "L" $L "Submit" (T $L "ui.save") "CancelHref" "/bookmarks" "CancelLabel" (T $L "ui.cancel")}}
+{{template "form-foot" dict "L" $L "Submit" (T $L "ui.save") "CancelHref" (path $ "/bookmarks") "CancelLabel" (T $L "ui.cancel")}}
 </form>
 {{end}}
 {{end}}

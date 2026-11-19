@@ -4,8 +4,8 @@
 // SHA-256 in hack/moneycldr/sources/inputs.sha256. Data from the Unicode CLDR,
 // © Unicode, Inc., under the Unicode License v3 (locales/LICENSE-UNICODE).
 
-// Package uz links CLDR money-formatting data for every modern "uz"
-// locale. Import it for its side effect.
+// Package uz links CLDR number- and money-formatting data for every
+// modern "uz" locale. Import it for its side effect.
 package uz
 
 import "amadan.net/rastrillo/rastrillo/locales"
@@ -13,6 +13,6 @@ import "amadan.net/rastrillo/rastrillo/locales"
 func init() { locales.Register("uz", data) }
 
 var data = map[string]locales.Locale{
-	"uz":      {Parent: "root", CurrencyDecimal: ",", CurrencyGroup: "\u00a0", Decimal: ",", Standard: "#,##0.00\u00a0¤", Alpha: "#,##0.00\u00a0¤", Symbols: map[string]string{"PHP": "PHP", "UZS": "soʻm"}, Narrow: map[string]string{"BYN": "р."}},
+	"uz":      {Parent: "root", CurrencyDecimal: ",", CurrencyGroup: "\u00a0", Decimal: ",", Group: "\u00a0", NaN: "son\u00a0emas", Standard: "#,##0.00\u00a0¤", Alpha: "#,##0.00\u00a0¤", Symbols: map[string]string{"PHP": "PHP", "UZS": "soʻm"}, Narrow: map[string]string{"BYN": "р."}},
 	"uz-Latn": {Parent: "uz"},
 }

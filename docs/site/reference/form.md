@@ -252,12 +252,35 @@ When `reseed` is true the text could not be trusted, so fill the field
 with `SeedMoney` instead.
 
 ```go
+const Number Kind = "number"
+
+type NumberInput struct {
+	Value, Locale string
+}
+
+func SeedNumber(renderLocale string, value *number.Decimal) (NumberInput, error)
+func (parsed *Parsed) Number(name string) (value number.Decimal, present bool)
+func (parsed *Parsed) NumberInput(name, renderLocale string) (in NumberInput, reseed bool)
+```
+
+A `Number` field reads a plain number in a language, exactly, the way a
+money field reads an amount: see [Localization](/docs/localization#reading-a-number-someone-typed).
+`Locale` or `LocaleEcho` names the language, and `Strict` and
+`Negative` work as for money. `Parsed.Number` is the value as a
+`number.Decimal`, and whether there is one. `NumberInput` is what the
+`field-number` partial draws; `SeedNumber` fills it from a stored value
+or none, and `Parsed.NumberInput` is the person's own text after a
+failed POST. On an edit form, set the field's `StoredNumber` to the
+value drawn: text left as it was keeps that value unread.
+
+```go
 func (p *Parsed) ErrorArgs() map[string]map[string]any
 ```
 
 Per field, the values its error message takes: `{currency}` for
 `money_wrong_currency`, `{a}` and `{b}` for `money_ambiguous`, and all
-three for `money_ambiguous_precision`. A field whose message takes none
+three for `money_ambiguous_precision`; `{example}` for `number_invalid`,
+and `{a}` and `{b}` for `number_ambiguous`. A field whose message takes none
 is absent.
 
 ### The cents path

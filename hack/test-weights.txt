@@ -10,9 +10,13 @@
 # 2026-10-21 on docs-t1 at load 2 to 4, one full ui run (#104 item 4).
 # The switch rework's drives were measured 2026-10-24 on docs-t1, at load
 # 2 to 4, from their own runs.
+# The slice look-alike drives were measured 2026-11-03 on docs-t1 at
+# load 17: ui's from one whole run, the gallery's from sixteen of its
+# 864 documents, scaled.
 browser ui TestEveryThemeRendersAsItDidExceptDay 41
 browser ui TestBusyButtonDrive 24
 browser ui TestTheLightStaysWithinItsFrameBudget 18
+browser ui TestEveryShellPageLooksTheSameOnItsSlice 15
 browser ui TestFlatThemesFollowAnAppsOverrides 13
 browser ui TestShellNavigationIsPrerendered 13
 browser ui TestAnyAccentKeepsTheFillLabelReadable 12
@@ -67,6 +71,7 @@ browser ui TestTheConsoleDegradesTheWayItSaysItDoesWithoutHas 2
 browser ui TestTheTrackColourFollowsTheKnob 2
 browser internal/designsystem TestPreviewFrameHeightsFitTheirContent 134
 browser internal/designsystem TestA11yScansThePreviewDocuments 130
+browser internal/designsystem TestEveryPreviewLooksTheSameOnItsSlice 120
 browser internal/designsystem TestThePreviewWidgetIsUsableOnAPhone 53
 browser internal/designsystem TestA11yScansTheGallery 50
 browser internal/designsystem TestA11yReflowsAt320 41

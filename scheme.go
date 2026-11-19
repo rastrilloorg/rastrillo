@@ -9,9 +9,9 @@ import "net/http"
 // spell the default. It is a display preference and nothing else reads
 // it: not the session, not the event log, not a handler.
 //
-// Unlike LocaleCookie it is not HttpOnly, on purpose. rastrillo.js
-// applies a choice in place and writes this same cookie so the next
-// server render paints the same scheme first; a browser refuses a
+// Unlike LocaleCookie it is not HttpOnly, on purpose. fiesta.js
+// applies a choice in place and rastrillo.js writes this same cookie
+// so the next server render paints the same scheme first; a browser refuses a
 // script's write over an HttpOnly cookie, and the page would snap back
 // on reload.
 const SchemeCookie = "rastrillo_scheme"

@@ -62,8 +62,8 @@ type prefsReading struct {
 
 func readPrefs(t *testing.T, ctx context.Context, where string) prefsReading {
 	t.Helper()
-	var raw string
-	if err := chromedp.Run(ctx, chromedp.Evaluate(prefsJS, &raw)); err != nil {
+	raw, err := chromedp.Run(ctx, chromedp.Evaluate[string](prefsJS))
+	if err != nil {
 		t.Fatalf("%s: reading the display settings: %v", where, err)
 	}
 	var p prefsReading
@@ -81,11 +81,11 @@ func readPrefs(t *testing.T, ctx context.Context, where string) prefsReading {
 // reading position these legs measure.
 func tapAt(t *testing.T, ctx context.Context, where, sel string) {
 	t.Helper()
-	var xy []float64
-	if err := chromedp.Run(ctx, chromedp.Evaluate(`(() => { const el = document.querySelector(`+"`"+sel+"`"+`); const o = el.getBoundingClientRect(); if (o.top < 0 || o.bottom > innerHeight) el.scrollIntoView({block: "nearest"}); const r = el.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; })()`, &xy)); err != nil || len(xy) != 2 {
+	xy, err := chromedp.Run(ctx, chromedp.Evaluate[[]float64](`(() => { const el = document.querySelector(`+"`"+sel+"`"+`); const o = el.getBoundingClientRect(); if (o.top < 0 || o.bottom > innerHeight) el.scrollIntoView({block: "nearest"}); const r = el.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; })()`))
+	if err != nil || len(xy) != 2 {
 		t.Fatalf("%s: finding %s: %v", where, sel, err)
 	}
-	if err := chromedp.Run(ctx, chromedp.MouseClickXY(xy[0], xy[1])); err != nil {
+	if err := chromedp.Do(ctx, chromedp.MouseClickXY(xy[0], xy[1])); err != nil {
 		t.Fatalf("%s: tapping %s: %v", where, sel, err)
 	}
 }
@@ -95,13 +95,20 @@ func tapAt(t *testing.T, ctx context.Context, where, sel string) {
 // than off an attribute that could be overridden.
 func axNameOf(t *testing.T, ctx context.Context, where, sel string) string {
 	t.Helper()
-	var nodes []*cdp.Node
-	if err := chromedp.Run(ctx, chromedp.Nodes(sel, &nodes, chromedp.ByQuery)); err != nil || len(nodes) == 0 {
+	nodes, err := chromedp.Run(ctx, chromedp.Nodes(chromedp.CSS(sel)))
+	if err != nil || len(nodes) == 0 {
 		t.Fatalf("%s: no node for %s: %v", where, sel, err)
 	}
 	var name string
-	if err := chromedp.Run(ctx, chromedp.ActionFunc(func(c context.Context) error {
-		ax, err := accessibility.GetPartialAXTree().WithBackendNodeID(nodes[0].BackendNodeID).WithFetchRelatives(false).Do(c)
+	if err := chromedp.Do(ctx, chromedp.Func(func(
+		c context.Context, target *chromedp.Target,
+	) error {
+		tree, err := cdp.Call(c, target, accessibility.GetPartialAXTree,
+			accessibility.GetPartialAXTreeParams{
+				BackendNodeID:  nodes[0].BackendNodeID,
+				FetchRelatives: ptr(false),
+			})
+		ax := tree.Nodes
 		if err == nil && len(ax) > 0 && ax[0].Name != nil {
 			_ = json.Unmarshal(ax[0].Name.Value, &name)
 		}
@@ -138,7 +145,7 @@ func TestTheDisplaySettingsMenuOnAPhone(t *testing.T) {
 			for _, file := range []string{"index.html", fileOf("form")} {
 				where := fmt.Sprintf("day/%s/%s at 390px, scripts %v", locale, file, scripts)
 				url := rig.Origin + pageHref(mountPath, "day", locale, file)
-				if err := chromedp.Run(c, chromedp.EmulateViewport(390, 844), chromedp.Navigate(url), chromedp.WaitVisible(".ds-prefs > summary", chromedp.ByQuery)); err != nil {
+				if err := chromedp.Do(c, chromedp.EmulateViewport(390, 844), chromedp.Navigate(url), chromedp.WaitVisible(chromedp.CSS(".ds-prefs > summary"))); err != nil {
 					t.Fatalf("%s: loading: %v", where, err)
 				}
 				requireCoarse(t, c)
@@ -163,14 +170,14 @@ func TestTheDisplaySettingsMenuOnAPhone(t *testing.T) {
 					t.Errorf("%s: the button is named %q, want %q", where, name, want)
 				}
 
-				mustRun := func(acts ...chromedp.Action) {
+				mustRun := func(acts ...chromedp.Action[chromedp.Void]) {
 					t.Helper()
-					if err := chromedp.Run(c, acts...); err != nil {
+					if err := chromedp.Do(c, acts...); err != nil {
 						t.Fatalf("%s: %v", where, err)
 					}
 				}
-				mustRun(chromedp.Click(".ds-prefs > summary", chromedp.ByQuery), chromedp.WaitVisible(".ds-prefs [rst-locale] > summary", chromedp.ByQuery),
-					chromedp.Click(".ds-prefs [rst-locale] > summary", chromedp.ByQuery), chromedp.WaitVisible(".ds-prefs [rst-locale] [rst-dropdown-menu] a", chromedp.ByQuery))
+				mustRun(chromedp.Click(chromedp.CSS(".ds-prefs > summary")), chromedp.WaitVisible(chromedp.CSS(".ds-prefs [rst-locale] > summary")),
+					chromedp.Click(chromedp.CSS(".ds-prefs [rst-locale] > summary")), chromedp.WaitVisible(chromedp.CSS(".ds-prefs [rst-locale] [rst-dropdown-menu] a")))
 				settleMotion(t, c, where)
 				open := readPrefs(t, c, where)
 				wantControls := open.Themes + 1 + open.Locales
@@ -201,14 +208,14 @@ func TestTheDisplaySettingsMenuOnAPhone(t *testing.T) {
 				}
 
 				if scripts {
-					mustRun(chromedp.Click(".ds-prefs > summary", chromedp.ByQuery), chromedp.WaitVisible(".ds-prefs [rst-seg-tabs] a", chromedp.ByQuery),
-						chromedp.Focus(".ds-prefs [rst-seg-tabs] a", chromedp.ByQuery), chromedp.KeyEvent(kb.Escape))
+					mustRun(chromedp.Click(chromedp.CSS(".ds-prefs > summary")), chromedp.WaitVisible(chromedp.CSS(".ds-prefs [rst-seg-tabs] a")),
+						chromedp.Focus(chromedp.CSS(".ds-prefs [rst-seg-tabs] a")), chromedp.KeyEvent(kb.Escape))
 					if p := readPrefs(t, c, where); p.Open || !p.Focus {
 						t.Errorf("%s: Escape from a theme link: open %v, focus on the button %v", where, p.Open, p.Focus)
 					}
 				} else {
-					mustRun(chromedp.Click(".ds-prefs > summary", chromedp.ByQuery), chromedp.WaitVisible(".ds-prefs [rst-seg-tabs] a", chromedp.ByQuery),
-						chromedp.Click(".ds-prefs > summary", chromedp.ByQuery))
+					mustRun(chromedp.Click(chromedp.CSS(".ds-prefs > summary")), chromedp.WaitVisible(chromedp.CSS(".ds-prefs [rst-seg-tabs] a")),
+						chromedp.Click(chromedp.CSS(".ds-prefs > summary")))
 					until(t, c, where+", toggled shut", `!document.querySelector(".ds-prefs").open`)
 				}
 			}
@@ -230,16 +237,18 @@ func TestTheDisplaySettingsKeepYourPlace(t *testing.T) {
 	// the fold of Form, and field-check left for Choices and actions
 	// when the page split.
 	const at = "partial-field-money"
-	if err := chromedp.Run(ctx, chromedp.EmulateViewport(390, 844),
+	if err := chromedp.Do(ctx, chromedp.EmulateViewport(390, 844),
 		chromedp.Navigate(rig.Origin+pageHref(mountPath, "day", "en", fileOf("form"))+"#"+at),
-		chromedp.WaitVisible(".ds-prefs > summary", chromedp.ByQuery)); err != nil {
+		chromedp.WaitVisible(chromedp.CSS(".ds-prefs > summary"))); err != nil {
 		t.Fatalf("%s: loading: %v", where, err)
 	}
 	until(t, ctx, where+", at the partial", `document.readyState === "complete" && Math.abs(document.getElementById("`+at+`").getBoundingClientRect().top - parseFloat(getComputedStyle(document.documentElement).scrollPaddingBlockStart)) < 4`)
 	settleMotion(t, ctx, where)
 	// The previews finish loading after the jump and move the partial;
 	// put it back on the reading line, where a reader would be.
-	if err := chromedp.Run(ctx, chromedp.Evaluate(`document.getElementById("`+at+`").scrollIntoView({block: "start"}); true`, nil)); err != nil {
+	if err := chromedp.Do(ctx, chromedp.Evaluate[chromedp.Void](
+		`document.getElementById("`+at+`").scrollIntoView({block: "start"});
+		true`)); err != nil {
 		t.Fatalf("%s: scrolling to the partial: %v", where, err)
 	}
 	settleMotion(t, ctx, where)
@@ -257,7 +266,8 @@ func TestTheDisplaySettingsKeepYourPlace(t *testing.T) {
 	settleMotion(t, ctx, where+", the menu open on signal")
 	tapAt(t, ctx, where, `.ds-prefs [data-ds-scheme="dark"]`)
 	until(t, ctx, where+", Dark chosen", `document.documentElement.getAttribute("data-theme") === "dark"`)
-	if err := chromedp.Run(ctx, chromedp.Evaluate(`history.back(); true`, nil)); err != nil {
+	if err := chromedp.Do(ctx, chromedp.Evaluate[chromedp.Void](
+		`history.back(); true`)); err != nil {
 		t.Fatalf("%s: going back: %v", where, err)
 	}
 	until(t, ctx, where+", back in Dark", `location.pathname.includes("/day/") && document.documentElement.getAttribute("data-theme") === "dark" && [...document.querySelectorAll('[data-ds-scheme="dark"]')].every(b => b.getAttribute("aria-pressed") === "true")`)
@@ -276,13 +286,18 @@ func TestTheThemeTabsSitInLineWithTheOtherControls(t *testing.T) {
 		defer cancel()
 		for _, locale := range []string{"en", "ar"} {
 			where := "day/" + locale + "/index.html at 1280"
-			if err := chromedp.Run(ctx, chromedp.EmulateViewport(1280, 900), chromedp.Navigate(rig.Origin+pageHref(mountPath, "day", locale, "index.html")),
-				chromedp.WaitVisible(".ds-top__controls .ds-scheme", chromedp.ByQuery)); err != nil {
+			if err := chromedp.Do(ctx, chromedp.EmulateViewport(1280, 900), chromedp.Navigate(rig.Origin+pageHref(mountPath, "day", locale, "index.html")),
+				chromedp.WaitVisible(chromedp.CSS(".ds-top__controls .ds-scheme"))); err != nil {
 				t.Fatalf("%s: loading: %v", where, err)
 			}
-			var mid [2]float64
-			if err := chromedp.Run(ctx, chromedp.Evaluate(`(() => { const m = s => { const r = document.querySelector(".ds-top__controls " + s).getBoundingClientRect(); return r.top + r.height / 2; };
-			  return [m("[rst-seg-tabs]"), m(".ds-scheme")]; })()`, &mid)); err != nil {
+			mid, err := chromedp.Run(ctx, chromedp.Evaluate[[2]float64](
+				`(() => {
+			  const m = s => {
+			    const r = document.querySelector(".ds-top__controls " + s)
+			      .getBoundingClientRect();
+			    return r.top + r.height / 2; };
+			  return [m("[rst-seg-tabs]"), m(".ds-scheme")]; })()`))
+			if err != nil {
 				t.Fatalf("%s: measuring: %v", where, err)
 			}
 			if math.Abs(mid[0]-mid[1]) > 1 {
@@ -296,16 +311,21 @@ func TestTheThemeTabsSitInLineWithTheOtherControls(t *testing.T) {
 		defer cancel()
 		for _, locale := range []string{"en", "ar"} {
 			where := "day/" + locale + "/index.html at 390"
-			if err := chromedp.Run(ctx, chromedp.EmulateViewport(390, 844), chromedp.Navigate(rig.Origin+pageHref(mountPath, "day", locale, "index.html")),
-				chromedp.WaitVisible(".ds-prefs > summary", chromedp.ByQuery), chromedp.Click(".ds-prefs > summary", chromedp.ByQuery),
-				chromedp.WaitVisible(".ds-prefs [rst-seg-tabs]", chromedp.ByQuery)); err != nil {
+			if err := chromedp.Do(ctx, chromedp.EmulateViewport(390, 844), chromedp.Navigate(rig.Origin+pageHref(mountPath, "day", locale, "index.html")),
+				chromedp.WaitVisible(chromedp.CSS(".ds-prefs > summary")), chromedp.Click(chromedp.CSS(".ds-prefs > summary")),
+				chromedp.WaitVisible(chromedp.CSS(".ds-prefs [rst-seg-tabs]"))); err != nil {
 				t.Fatalf("%s: loading and opening: %v", where, err)
 			}
 			requireCoarse(t, ctx)
 			settleMotion(t, ctx, where)
-			var gaps []float64
-			if err := chromedp.Run(ctx, chromedp.Evaluate(`(() => { const kids = [...document.querySelector(".ds-prefs > [rst-dropdown-menu]").children].filter(k => k.checkVisibility()).map(k => k.getBoundingClientRect());
-			  return kids.slice(1).map((r, i) => r.top - kids[i].bottom); })()`, &gaps)); err != nil {
+			gaps, err := chromedp.Run(ctx, chromedp.Evaluate[[]float64](
+				`(() => {
+			  const kids = [...document.querySelector(
+			      ".ds-prefs > [rst-dropdown-menu]").children]
+			    .filter(k => k.checkVisibility())
+			    .map(k => k.getBoundingClientRect());
+			  return kids.slice(1).map((r, i) => r.top - kids[i].bottom); })()`))
+			if err != nil {
 				t.Fatalf("%s: measuring: %v", where, err)
 			}
 			if len(gaps) < 2 {

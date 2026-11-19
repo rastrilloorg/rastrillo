@@ -26,17 +26,16 @@ func PageHref(mount, theme, locale, file string) string { return pageHref(mount,
 
 // ExampleCounts is, per page kind that frames examples, the least number
 // of its sections with an example to measure: every partial of a
-// family, every Styleguide sample, every shell, screen and format, and
+// family, every shell, screen and format, and
 // the Overview's demo application. The height drives read it, so a
 // component documented with nothing to look at fails there rather than
 // only on a reader's screen.
 func ExampleCounts() map[string]int {
 	out := map[string]int{
-		"overview":   1,
-		"primitives": len(ui.Styleguide()),
-		"shells":     len(ui.LayoutNames()),
-		"screens":    len(screenDocs()),
-		"formats":    len(formatDocs()),
+		"overview": 1,
+		"shells":   len(ui.LayoutNames()),
+		"screens":  len(screenDocs()),
+		"formats":  len(formatDocs()),
 	}
 	for _, fam := range families() {
 		out[fam.Key] = len(fam.Partials)

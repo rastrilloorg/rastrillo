@@ -10,9 +10,1052 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
-**A JSON API for every app, and agents that act for a person (breaking
-upgrade for generated apps and for code that reads `Actor`).** A
-manifest resource can now be served as JSON at `/api/v1`. A person
+### Added: instances under a root app
+
+- `instance` reads from the environment whether an app runs under a root app or standalone, and refuses to start if neither or both are set.
+- `handoff` signs members in from the root: `Enter`, `Consume`, `Renew` and `Sweep`, with a refusal page the app can brand.
+- `roster` receives signed snapshots of the full roster from the root. A database lease coordinates applies across processes, and `Suspended` reports the instance's state.
+- `handoff/handofftest` is a fake root for tests.
+
+### Changed: the gallery is Rastrillo components, at `/components/`
+
+The gallery at rastrillo.org/design-system is now called Rastrillo
+components and moves to rastrillo.org/components/. Each partial is
+shown there beside the Go call that renders it. The look is Fiesta's,
+so the parts Fiesta owns are now documented only on Fiesta's design
+system: the tokens, the UI primitives (markup you write by hand, such
+as buttons, cards, data grids and the modal), and what each stylesheet
+and script is for. Each is linked from the gallery, in the theme and language you are
+reading.
+
+On "Dates, numbers and names", the `date`, `number` and `money` calls
+are now shown beside the examples, and each example is that call's
+output for the page's language. No other sample renders differently.
+
+Old addresses keep working. `dsgen -redirect-from /design-system` adds
+a `_redirects` file that answers every address the gallery published
+there with one 301: to the same page under `/components/`, or to
+Fiesta's page for the tokens and UI primitives. dsgen's default
+`-mount` is now `/components`, so if you run dsgen without `-mount`,
+your tree moves there too. Passing `-mount /design-system` keeps that
+address, but the tokens and UI primitives pages are gone either way:
+without `-redirect-from`, their old addresses answer 404.
+
+rastrillo.org switches at its next sync. Its build runs dsgen with
+`-mount /components -redirect-from /design-system` and publishes
+`_redirects` at the site root. The homepage's links and labels change
+to the new name and address. Until that sync, the site still serves the
+gallery at `/design-system/`.
+
+### Added: `rastrillo new --scaffold` picks the app's shape
+
+`bare` is a page and a route with no database, no sign-in and no
+`Makefile`: its gate is `go test ./...`, and `--design-system=false`
+leaves out its templates and static files. `single`, the default, is the
+app `rastrillo new` wrote before, with the changes below. `accounts` is
+`single` with sign-in by emailed link, the app `--auth=magic` writes.
+`home` and `hub` are planned and refused for now. Apps you already have
+change nothing.
+
+- `rastrillo dev` skips `generate` in an app with no `manifest/`,
+  `actions/` or `gen/`, and only rebuilds.
+- `rastrillo doctor` on an app with no design system says there is
+  nothing to compare and runs its other checks.
+
+### Added: `perftest.Screens` takes a list of routes
+
+Set `ScreenConfig.Patterns` to your `http.ServeMux` routes instead of
+`Routes`, which needs a chi router. A trailing `{$}` is dropped, so
+`"/{$}"` is the screen `GET /`. A subtree pattern such as `"/admin/"` is
+a mount and fails, like chi's `/*`, until an `Opaque` group lists its
+screens or a record skips it. Apps that set `Routes` change nothing.
+
+## v0.37.0
+
+Numbers and dates in the reader's language. Two changes alter what an
+existing app does without a compile error, so read them before you
+upgrade. First, `{{number}}` and `displayValue` now draw from the CLDR 48
+packs, and some figures change: Spanish and European Portuguese no
+longer group four digits, French groups with U+202F, Swedish writes
+U+2212, and NaN and the infinities are localised. Second, `date` is a
+new locale template function, so an app that defines its own `date`
+must rename it. An app with its own catalog for a language rastrillo
+does not ship must also add the five `rastrillo.ui.number_*` keys, or
+`generate --check` fails.
+
+### Changed: `{{number}}` writes CLDR 48, from the packs
+
+`{{number}}` and `displayValue` now format from the same CLDR packs as
+`money`, instead of `golang.org/x/text`, whose data was older. Some
+figures change, toward what CLDR 48 and browsers write: `es` and
+`pt-PT` leave four digits ungrouped (`1234`, was `1.234`); French
+groups with U+202F (was U+00A0); Swedish writes U+2212 for minus. A
+locale whose pack is not linked formats in the app's default locale, as
+money does, not in English, and logs once which pack to import. NaN and
+the infinities are written in the locale's symbols and pattern, as ICU
+writes them (`−∞` in Swedish, `epäluku` in Finnish; English is
+unchanged). Check any test that pins a formatted number.
+
+### Added: dates in the reader's language
+
+`{{date $L .At "dayYear"}}` writes a `time.Time` in the locale's CLDR
+48 pattern: "Friday, 20 November 2026", "Freitag, 20. November 2026",
+"9:09 PM". The kinds are `day`, `dayYear`, `short`, `date`, `dateYear`,
+`monthYear`, `month`, `year`, `time` and `stamp`. The new `dates`
+package gives the same in Go (`dates.For(locale).Format`), with the
+first day of the week, a calendar's column heads, and how a date typed
+in numbers is ordered and separated. `dates.Assets()` serves
+`dates.mjs`, which draws the same patterns in the browser, byte for
+byte. The patterns are in the language packs, so linking a language
+links its dates; 418 of the 429 shipped locales have them, and
+`hack/cldrdates/coverage.tsv` says why the other eleven do not (another
+calendar, chiefly). Those write ISO dates; among them is `zh-Hant`, so
+`zh-TW` readers too. Moved from Mapa, whose semantics are kept. Each
+pack's binary grows by its dates (en, the largest, by about 75 KB of
+source). `date` is a new locale function, so an app that defines its
+own `date` template function must rename it. Years 1 to 9999 are
+drawn (`dates.FirstYear`, `dates.LastYear`); outside them, and for a
+locale with no dates, Go and `dates.mjs` both write ISO 8601, and
+`dates.mjs`'s `order()` falls back to `ymd` as Go does (Mapa's copy
+said `dmy`).
+
+### Added: exact decimals, places and percent in `{{number}}`
+
+`{{number $L v}}` takes a `number.Decimal` ("1200.5") and writes it
+exactly, never rounding. Words after the value set the format:
+`"plain"` (no group marks), `"places" 2`, `"percent"`. A plain string
+is still formatted only when it is an integer. In Go, the new `number`
+package has `Format`, `FormatFloat` and `InputValue`. `make money-cldr` now holds
+`number.Format` to ICU in every shipped locale.
+
+### Added: a number field that reads as money does
+
+`form.Number` reads a plain number in the page's locale, exactly, by
+money's rules: one plausible reading is taken, the page's own group
+mark wins (`1,500` is 1500 in English, `1.500` in German), and text
+with two readings (`1.500` in English) is refused with both named.
+Read it with `parsed.Number`, a `number.Decimal`; seed it with
+`form.SeedNumber`; draw it with the new `field-number` partial.
+`LocaleEcho`, `Strict` and `Negative` work as for money, and
+`StoredNumber`, the value the form was drawn with, keeps an unchanged
+seed. The readings are
+`number.ParseNormalized` and `number.Parse`. Five new keys,
+`rastrillo.ui.number_*`, are translated in the twelve shipped
+catalogs: an app with its own catalog for another language must add
+them, or `generate --check` fails. Money's reading moved into a shared
+internal package so the two cannot drift; money reads exactly as
+before.
+
+### Added: the browser's locale from the header alone
+
+`Locales.NegotiateHeader(header)` is the declared locale an
+`Accept-Language` header asks for, or the default. It ignores the
+`/xx/` prefix and the `rastrillo_locale` cookie that `Middleware` and
+`Negotiate` honour first, for an app with one language that formats
+for each reader's browser. Apps no longer build a bare request to get
+this.
+
+## v0.36.0
+
+### Changed: a GET is no longer held for its spinner
+
+`busy.js` used to hold every submit for at least 650ms so its spinner
+could be seen, so a search answered in 10ms took about 700ms. A GET now
+goes at once, and its form still refuses a second submit. Its button
+shows the spinner only if the page is still there 500ms later; a faster
+answer shows nothing. A POST is unchanged. The submitter's `formmethod`
+beats the form's `method`, and a form with no method is a GET. The rule
+comes from Fiesta 1.3.0. `busy.js` is app-owned: `rastrillo doctor
+--fix` takes the new copy.
+
+### Added: an option to sync each commit to storage
+
+Pass `db.DurableCommits()` to `db.Open`, or set
+`Options.DurableCommits` when `Serve` opens the database, to use
+`synchronous(FULL)`. SQLite waits for a disk sync after each commit,
+helping preserve recent commits through a power loss or operating system
+crash. With the default `NORMAL` setting, an app crash does not lose
+committed data, but a power loss or operating system crash can lose
+recent commits without corrupting the database.
+
+In the v0.34.0 benchmark, the toggle rate fell from about 5,700 per
+second with `NORMAL` to about 182 with `FULL`. The default remains
+`NORMAL`. `rastrillo.OpenDB` and `dbtest` always use `NORMAL`.
+Requested in
+[discussion #261](https://amadan.net/rastrillo/rastrillo/-/discussion/261).
+
+### Added: mail through the CARLOS platform, with no credential
+
+`mail.FromCarlos(prefix, logger)` sends through the platform's mail verb
+when the CARLOS agent sets `CARLOS_MAIL=submit`. The From address is
+`<prefix>_MAIL_FROM`. Without `CARLOS_MAIL`, it uses `<prefix>_SMTP_*`,
+as `FromEnv` does. With neither, it returns an error: call it where the
+app refuses to start without mail. `FromEnv` is unchanged.
+
+A refusal is a `*mail.SubmitError` with `RetryAfter`. A 429 is never
+retried; a 503 is retried 3 times within the caller's deadline. A 200
+without a message id is `mail.ErrUnconfirmed`, and is not retried.
+Under submit, non-ASCII headers are RFC 2047 encoded, long headers are
+folded, and the body is quoted-printable.
+
+### Added: blind email-link storage
+
+Set `auth.Config.BlindLinks` to use your own link store and resolve its
+opaque lookup key to a session subject after redemption. The store holds
+only token hashes, lookup keys, purposes and expiry times. This addresses
+issue #2 for apps that must never store an email address, including an
+encrypted one. Apply `sessions.Schema` and your link schema; `auth.Schema`
+is not needed.
+
+Use a mailer that delivers without keeping or logging recipients.
+`BlindLinks` disables Keymail and cookies that remember addresses. It
+omits log attributes and underlying error text. Match configuration and
+operation failures with `errors.Is` and `auth.ErrBlindConfiguration` or
+`auth.ErrBlindOperation`.
+
+Existing SQL and records sign-in behavior stays the same. Before switching
+an app, stop old writers, invalidate pending links, and migrate or revoke
+address-based sessions and their related records. This option does not
+scrub old database files, WAL files or backups. `secure_delete` cannot
+erase earlier WAL frames. Legacy `Config.Blind` still stores decryptable
+link addresses. One records-mode log label changes from “user for address”
+to “subject for address”.
+
+See the [blind auth store spec](docs/superpowers/specs/2026-11-13-blind-auth-store.md)
+for the store contract and Contra/Home setup.
+
+### Fixed: importing `password` no longer leaves about 19 MB of idle heap
+
+`password` used to compute its decoy hash, which sign-in checks for an
+unknown email, when a program started. Every program that imported
+`password` ran a full Argon2id hash, even if it never served sign-in,
+and kept about 19 MB of heap while idle. The decoy is now a precomputed
+constant. Unknown emails still take as long to check as known ones. A
+test fails if the Argon2id parameters change without updating the
+decoy.
+
+## v0.35.0
+
+### Security: Go 1.26.11
+
+Go 1.26.11 fixes GO-2026-6859 in `net/http`. Rastrillo's gate now runs
+on it, and `rastrillo new` writes it into a new app's Makefile. Under Go
+1.26.10, `govulncheck` reports GO-2026-6859 and `make ci` fails.
+
+In an app made before this release, replace the Makefile's
+`export GOTOOLCHAIN = go1.26.10` with `export GOTOOLCHAIN = go1.26.11`,
+then run `make ci`.
+
+### Added: `rastrillo csp` finds markup the default CSP blocks
+
+Rastrillo's default Content-Security-Policy blocks `style` attributes,
+`<style>` blocks, inline scripts, `on*` handler attributes and
+`javascript:` URLs. The browser drops them without an error on the
+page, so the page just looks or behaves wrong. `rastrillo csp` reads an
+app's templates, the string literals in its Go files and its scripts,
+and names each of these with what to write instead.
+
+A new app runs it as `make csp`, which `make ci` includes. To add it to
+an app made before this release:
+
+1. Add a `csp` target to the Makefile that runs `rastrillo csp`, and add
+   `csp` to the `ci` target's list.
+2. Add an executable `.amadan/ci.d/18-csp` containing:
+
+   ```sh
+   #!/bin/sh
+   exec make csp
+   ```
+
+### Fixed: framework markup the default CSP blocked
+
+`rastrillo csp` found two places where the framework itself used markup
+the default CSP blocks.
+
+- The confirm page `auth` shows when a person opens the link from a
+  sign-in email styled itself with a `<style>` block that the default
+  CSP blocked, so it showed unstyled. The default `style-src` now allows that block by its
+  hash.
+- The gallery's list-grid and people samples set `--rst-cols` in a
+  `style` attribute. Both now use a class. If your app copied either
+  sample, `rastrillo csp` finds the copy.
+
+### Changed: the size gate says how to split
+
+When a directory goes over 5,000 lines, `rastrillo budget size` now says
+where each feature goes and where shared code goes, and to record an
+exemption only if the split must wait. The old message offered the split
+and the exemption as equal choices, and agents took the exemption.
+
+"Splitting by feature" in `docs/site/testing.md` now matches the
+scaffold: a feature package has a `Deps` struct and
+`Mount(routes *action.Routes, deps *Deps)`, and shared models move to
+`internal/<app>/core`. The old page put them in the app package, which
+the features can't import without an import cycle. The scaffold's
+`AGENTS.md` and `skill/screens.md` say the same.
+
+## v0.34.0
+
+### Changed: most commits skip a disk sync
+
+`rastrillo.OpenDB`, `db.Open` and `dbtest` now open SQLite with
+`synchronous(NORMAL)`. SQLite's default, `FULL`, syncs the write-ahead
+log to disk on every commit. `NORMAL` skips that sync on most commits.
+In a one-core TodoMVC benchmark, toggles rose from about 182 to an
+average of about 5,700 per second.
+
+This changes what survives a power cut. A power cut or an operating
+system crash can now undo recent commits. `NORMAL` does not corrupt the
+database, and an app crash does not lose committed transactions. No
+setting brings back `FULL` yet. If your app needs every commit on disk
+before it returns, stay on v0.33.0 and say so on
+[#261](https://amadan.net/rastrillo/rastrillo/-/discussion/261).
+
+### Changed: the look comes from Fiesta 1.2.0
+
+Rastrillo's stylesheets, themes and most of its scripts now come from
+[Fiesta](https://fiesta.rastrillo.org) 1.2.0, the design system that
+began as Rastrillo's `ui/`. Rastrillo no longer keeps its own
+`tokens.css`, `shell.css`, themes or the scripts Fiesta ships:
+`rastrillo new`, `doctor` and the gallery use Fiesta's files. A change
+to the look is now a Fiesta release and a new pin in `go.mod`. Pages
+look the same, apart from the column shell's menus, below.
+
+Rastrillo keeps two scripts of its own. `live.js` is unchanged.
+`rastrillo.js` is now the fragment shim behind `data-poll`, and it
+writes the `rastrillo_scheme` cookie when someone picks a colour scheme.
+Closing menus on Escape or a click elsewhere, dragging a switch, the
+pressed state on iOS and applying a scheme without a reload move to
+Fiesta's `fiesta.js`. If you delete `rastrillo.js`, menus and the
+scheme menu still work, but the scheme choice is lost on the next
+reload.
+
+Fiesta's scripts bring these fixes:
+
+- A select that is disabled, or sits in a disabled fieldset, now
+  disables its searchable box too.
+- Resetting a form redraws its selects' boxes.
+- A read-only date field refuses edits.
+- Resetting a form no longer races a date field saving its value as it
+  loses focus.
+- The select and date scripts read each string from its attribute,
+  then from Fiesta's table for the page's language if the page loads
+  one, then, for the labels they show, from English.
+
+Two files join the ones `rastrillo new` copies into `static/`:
+
+- `fiesta.js` loads first on every page, through `pageScripts`. An app
+  without `PagesConfig.Assets`, or a page rendered outside `ui.Pages`,
+  asks for `static/fiesta.js` whether the app has it or not. If it
+  doesn't, that request is a 404, which breaks nothing.
+- `copy.js` runs the Copy button on `rst-snippet` and loads on a page
+  that shows one. It also loads on every live or polling page and every
+  page rendered outside `ui.Pages`, because those pages load every
+  script. No partial writes a snippet yet.
+
+The calendar is now `window.fiestaCalendar`; it was
+`window.rastrilloCalendar`. If your own script calls it, rename the
+call.
+
+Each page's CSS is smaller. On a page that runs no script of its own,
+the page's slice of `tokens.css` now drops the rules for a hook's
+variants the page never writes, and the class forms, such as `.rst-btn`
+beside `[rst-btn]`, that it can never match. A page with a script that
+isn't the framework's, an inline script, an `on*` handler or a
+`javascript:` URL keeps them all, and so does a live page. Treat a
+framework script you edit as your own: a page that loads it keeps
+every rule. Markup built
+in Go, a function or data value returning `template.HTML`, already asks
+for the hooks it shows with `needs`. It now asks for the hooks it writes
+as classes too: `{{needs "rst-btn"}}` keeps the rules for both
+spellings. `make perf` names any hook a page is missing.
+
+A live page may now weigh 34.7 kB before its component scripts, up
+from 33 kB: its limit counts every framework file, including
+`fiesta.js`.
+
+The column shell's language and scheme menus move from the top of
+`<main rst-page>` to a footer row after the content, because a dropdown
+belongs in a row beside what it acts on, not on a line of its own. The
+other shells don't change. A new app gets the new column layout. Your
+app's own copy keeps its menus where they are. To move them, make this
+edit to `templates/layout.html`, after `doctor --fix` (the footer row's
+style is in the new `tokens.css`):
+
+```diff
+ <main rst-page id="main">
+-{{block "locale" .}}{{$L := localizer $}}{{template "locale-menu" dict "L" $L "Items" (opt $ "Locales") "Return" (opt $ "Return") "Action" (path $ "/_locale")}}{{end}}{{block "scheme" .}}{{$L := localizer $}}{{template "scheme-menu" dict "L" $L "Scheme" (opt $ "Scheme") "Return" (opt $ "Return") "Action" (path $ "/_theme")}}{{end}}
+ {{template "region:notice" .}}
+ {{template "content" .}}
++<footer rst-page-foot>
++{{block "locale" .}}{{$L := localizer $}}{{template "locale-menu" dict "L" $L "Items" (opt $ "Locales") "Return" (opt $ "Return") "Action" (path $ "/_locale")}}{{end}}{{block "scheme" .}}{{$L := localizer $}}{{template "scheme-menu" dict "L" $L "Scheme" (opt $ "Scheme") "Return" (opt $ "Return") "Action" (path $ "/_theme")}}{{end}}
++</footer>
+ </main>
+```
+
+If your line differs, move the one you have.
+
+To upgrade:
+
+1. After upgrading, run `go mod tidy`. Fiesta's module brings small
+   bumps to `golang.org/x/text`, `x/mod`, `x/tools`, `x/sync` and
+   `x/crypto`.
+2. Run `rastrillo doctor --fix` to take the new files. Until you do,
+   the app's vendored-files test fails.
+
+   `doctor` refreshes two pairs together: `rastrillo.js` with
+   `fiesta.js`, and `datetime.js` with `calendar.js`. Running the old
+   `rastrillo.js` beside `fiesta.js` isn't supported, and the old
+   `datetime.js` looks for `rastrilloCalendar`. If you own one file of
+   a pair, `--fix` leaves both and says why. Add the other to
+   `vendoredIsMine` too, or pass `--force` to refresh both.
+3. If a layout links each script by hand and has no
+   `{{range pageScripts}}`, add this line right after its
+   `rastrillo.js` tag:
+
+   ```html
+   <script defer src="{{path $ (asset "static/fiesta.js")}}"></script>
+   ```
+
+   `doctor` names each layout that needs it. Without it, menus stop
+   closing on Escape and switches can't be dragged. A layout with
+   `{{range pageScripts}}` already loads `fiesta.js`. You can instead
+   replace the layout's script tags with `{{range pageScripts}}`, as
+   v0.31.0's "each page sends only the CSS it can show" explains.
+4. Optionally, move the column menus as above.
+
+Also changed:
+
+- The gallery at rastrillo.org/design-system offers `fiesta.js` and
+  `copy.js` for download.
+- Rastrillo's own size checks on `select.js` and `datetime.js` are
+  gone. Fiesta owns and checks those files.
+
+### Added: a read pool for sessions, off by default
+
+`db.DB.Reader()` returns the read pool, and `sessions.Config` and
+`auth.Config` accept an optional `Reader`. When set, session lookups and
+`sessions.List` use the read pool. Nothing sets it for you. On one core
+under heavy mixed load, writes were 2–6x slower. On four cores it helped
+both reads and writes. Leave it nil unless a mixed-load test on your
+instance shows it helps. Signed-mode `sessions` and records-mode `auth`
+refuse a `Reader`.
+
+## v0.33.0
+
+### Changed: live pages let a hibernating instance sleep
+
+`live.js` now opens its stream with `carlos_hold=1`. On a CARLOS route
+that hibernates, the edge holds a marked stream while the instance
+sleeps (carlos/platform#432, platform v0.33.7), so an open live page no
+longer keeps the instance awake, and live pages can go on any route.
+The edge strips the marker; off CARLOS the stream handler ignores it.
+When the instance wakes, each open page fetches its regions once.
+
+`live.js` also waits longer between reconnects when a stream ends as
+soon as it opens, which is how the edge answers once its stream limit
+is reached. Before, it reconnected every second.
+
+After upgrading, run `rastrillo doctor --fix` to re-copy `live.js`.
+Until you do, the app's vendored-files test fails, and a hibernating
+instance with an open live page stays awake. If you set
+`live.Config.Lifetime`, keep it at 30 seconds or more.
+
+### Changed: an app with no `-addr` listens on `$PORT`
+
+`rastrillo.Serve` now reads the `PORT` variable that Render, Railway,
+Heroku-like hosts and Cloud Run set. It listens on the first of: a
+socket systemd hands over (`LISTEN_FDS`), `-socket`, `-addr` or
+`Options.Addr`, `:$PORT`, then `:8080` as before. On CARLOS nothing
+changes: the platform hands the app its listener, which comes first.
+
+Two cases behave differently. An app started without `-addr` from a
+shell or host that sets `PORT` now listens there instead of on 8080.
+And a `PORT` that is not a number from 1 to 65535 stops the app with an
+error naming the value, where it used to be ignored. Pass `-addr` to
+keep the old address either way.
+
+### Added: hosting elsewhere
+
+[Hosting elsewhere](docs/site/hosting-elsewhere.md) covers running an
+app off CARLOS: what the platform did that you then provide, a systemd
+unit with Caddy and Litestream, a container image, container platforms
+and Kubernetes.
+
+## v0.32.0
+
+### Changed: a base path refuses the instance's own host as its origin
+
+`basepath.FromEnv` now returns an error when the origin is
+`CARLOS_HOST`, the instance's own hostname, because that hostname never
+points at the hub. A path-routed tenant whose `<APP>_ORIGIN` names its
+own host now stops at start and says to set the hub's origin instead:
+the `https://` host the hub is served at.
+
+### Changed: a new app finds its address on CARLOS
+
+A new app's `main.go` gets its origin from the new `rastrillo.Origin`,
+which reads `<APP>_ORIGIN` when it is set. When that is unset on CARLOS,
+the origin is now `https://$CARLOS_HOST`, the instance's own hostname,
+and the app logs that it used it. It used to be `http://localhost:8080`,
+so the CSRF check refused every form post and sign-in emails linked to
+localhost until someone set the variable. Off CARLOS nothing changes:
+the origin is `http://localhost:8080`, with the warning.
+
+Behind a custom domain, set `<APP>_ORIGIN` to it: `CARLOS_HOST` is still
+the platform hostname there. Under a hub's `/<slug>`, set it to the
+hub's origin. A unit tenant (`carlos-app@`) gets no `CARLOS_HOST` from
+the platform and keeps the localhost default.
+
+`rastrillo doctor` never edits the `main.go` that `rastrillo new` wrote,
+so an existing app changes it by hand. To pick this up in an existing
+app, replace `originFrom(logger)` in `cmd/<app>/main.go` with
+`rastrillo.Origin("<APP>_ORIGIN", logger)`, using your app's variable,
+and delete `originFrom`. An app that already sets `<APP>_ORIGIN`
+everywhere it runs needs nothing.
+
+### Changed: the agent skill plans ports, enhances pages and asks first
+
+The skill an agent reads gains three topics. `skill/port.md`: asked to
+port an app, the agent takes the operator's reason as given, lists the
+gains they may not have counted, maps each feature, then names the
+costs, the plan and the questions. `skill/scripts.md`: pages are links
+and forms first, enhanced with vanilla scripts as richly as the product
+needs, through ES modules, an import map under a CSP hash, and esbuild
+when the code outgrows that. `skill/screens.md` opens with what to ask
+before the first screen: how polished, the personality (a logo,
+colours, typefaces, three words for the feel), a screenshot of a key
+flow, and an offer of mockups. `SKILL.md` no longer tells new work to
+reach for a manifest first.
+
+## v0.31.1
+
+### Fixed: the chat tour's second step runs as shown
+
+The tour at rastrillo.org/tour showed `rastrillo new chat -auth magic`,
+which refuses the flag: Go reads flags only before the app's name. It
+now shows `rastrillo new --auth=magic chat`, and its test runs the
+command exactly as the page shows it.
+
+## v0.31.0
+
+### Changed: a new app comes ready for live pages
+
+`rastrillo new` now wires [live pages](docs/site/live.md) for you.
+`Router` builds the hub, with no topics yet, and the stream is served
+at `/live`. `render.go` draws every page through `pages.Render`, so
+`live.js` can ask for one region, and the layout carries the live head
+tag and the notice. To make part of a page live, declare a topic, mark
+a region and call `Notify` after the write: the live guide's "In a new
+app" section shows the four edits. A page with no region opens no
+stream, so an app on a route that hibernates still sleeps.
+
+A new app's `New` and `Router` now return the hub as well, and
+`Configure` takes it and sets `Options.Live`. The notice shows the
+flash, which a new app did not show before. Screens generated from a
+manifest do not get `Live` or the flash yet: they bring their own page
+data. With `-auth magic`, the stream sits behind sign-in.
+
+The five shell layouts call two new `ui` partials: `live-head` in the
+head, which writes the live meta tag when the page data carries `Live`,
+and `region:notice` just before the content, which shows the page
+data's `Notice`. An app's own define of either replaces it. An app owns
+the copy `rastrillo new` gave it, so nothing changes in an existing
+app. To wire one by hand, follow the rest of the live guide.
+
+### Changed: a live page may weigh 33 kB before its scripts
+
+A live page links the styles for every page's hooks, so it grew with
+each screen an app added and failed the first-load check once an app
+had a few forms. Its limit is now the most it could ever link, 33 kB
+gzipped in every shell, plus `live.js` and the component scripts as
+before. A `weight` record in `budgets.txt` for a live page may no
+longer be needed: `make perf` says so when it is stale.
+
+### Fixed: no uncaught error when a form's redirect lands on a column, stage or topbar page
+
+A form's redirect to a column, stage or topbar page could log
+`AbortError: Transition was skipped` as an uncaught error. These layouts
+now load `transition.js` before styles to handle the skipped transition.
+
+After upgrading, run `rastrillo doctor --fix`. It adds `transition.js`
+and re-copies `shell.js`. In each column, stage and topbar layout your
+app copied, add this before the first stylesheet:
+
+```html
+<script src="{{path $ (asset "static/transition.js")}}"></script>
+```
+
+Sidebar and console apps may delete `transition.js`. Add
+`"transition.js": true` to `vendoredIsMine` in `vendored_test.go` so the
+test allows the missing file.
+
+Chromium versions without `document.activeViewTransition` still log the
+error. It is harmless and your app remains safe to use.
+
+### Changed: each page sends only the CSS it can show
+
+Each page now links a slice of your `static/tokens.css` with the
+rules for the hooks its templates show, plus the rules every page
+needs. It also loads `busy.js`, `live.js`, `light.js` and `anchor.js`
+only where it uses them. A page looks the same and downloads only the
+CSS and scripts its templates call for. Your `tokens.css` stays one
+commented file, and an edit to it reaches every slice.
+
+To upgrade:
+
+1. In `render.go`, add `Assets: assets` to the `ui.PagesConfig` that
+   `newPages` builds. If your app signs people in, add it to the one
+   in `auth.go`'s `newSigninPages` too.
+2. In each layout in `templates/`, replace the `static/tokens.css`
+   line with:
+
+   ```html
+   <link rel="stylesheet" href="{{path $ pageStylesheet}}">
+   ```
+
+   Then replace the `<script>` lines for `busy.js`, `live.js`,
+   `light.js` and `anchor.js`, and the `neededScripts` line (or the
+   `select.js`, `calendar.js` and `datetime.js` lines), with one:
+
+   ```html
+   {{range pageScripts}}<script defer src="{{path $ (asset .)}}"></script>{{end}}
+   ```
+
+   Keep the `rastrillo.js` and `shell.js` lines. Make both edits
+   together: a page that links its slice expects the scripts
+   `pageScripts` gives it.
+3. Run `rastrillo generate` and commit the result.
+4. Run `make perf`. A hook in HTML your Go code builds, or in markup
+   your own script adds, may be missing a rule from the page's slice.
+   `make perf` fails such a page and names the hook. Ask for it in the
+   page's template with `{{needs "rst-card"}}`.
+
+An app that makes neither edit keeps working. Its pages link the whole
+`tokens.css`, and `make perf` keeps holding them to 40 kB.
+
+What changed:
+
+- New field `ui.PagesConfig.Assets`. With it, `ui.Pages` reads each
+  page's templates when it starts for the hooks they show, adds the
+  hooks the page's scripts create, and links the slice for them. Pages
+  with the same hooks share a slice. A live or polling page links the
+  slice for every page's hooks, because HTML it swaps in later may
+  carry any of them. `pageScripts` never lists an optional script the
+  app has deleted.
+- New template functions `pageStylesheet` and `pageScripts`, which the
+  five shells' layouts use. Outside `ui.Pages`, `pageStylesheet` is the
+  whole `tokens.css` and `pageScripts` is every script. See
+  [Templates](/docs/templates#the-page-s-stylesheet-and-scripts).
+- `needs` also takes a hook, such as `{{needs "rst-card"}}`, and the
+  scripts `busy.js`, `live.js`, `light.js` and `anchor.js`.
+- New `rastrillo.Assets.Stylesheet`, which slices a framework
+  stylesheet to a set of hooks and serves the slice fingerprinted and
+  immutable, and `Assets.Has`.
+- A `tokens.css` the slicer cannot read, such as one that uses CSS
+  nesting, is linked whole on every page, and `Assets` logs a warning.
+  `theme.css` is never sliced.
+- `perftest.FirstLoad` holds a page that links its slice to 16,000
+  bytes, plus each component script it loads. A live page has its
+  shell's own limit, never under 16,000, with `live.js` on top. A page
+  that links the whole `tokens.css` keeps 40,000, and its report names
+  the two edits above, or says why the file can't be sliced. A page that
+  shows a hook whose rule is in the whole `tokens.css` but missing from
+  its slice fails, naming the hook and the `needs` to add. See
+  [perftest](/docs/reference/perftest#firstload).
+- `.rastrillo/budgets.txt` takes `weight GET /path <bytes> <reason>`
+  for a page that can't be lighter.
+- New apps pass `Assets` in `render.go` and to the sign-in pages.
+- New `tmpl.Template.InspectNamed`, which also says which template each
+  node is in.
+
+### Changed: API answers are held and checked again as they go out; test the API through a server
+
+The JSON API now holds each answer until the handler has finished, then
+sends it. An answer is at most 2 MiB. A bigger one is refused with 422
+`response_too_large`, whose message tells the client to ask for a
+smaller result, such as with a smaller `limit`. When `api.Config.Verify`
+is also an `api.Rechecker`, as `apitoken`'s store now is, the API checks
+the token, gate and route checks again before the headers and before
+each 64 KiB of the body. A token revoked while an answer is going out
+turns the answer into a 401, or cuts the connection once the headers
+have gone. See [JSON API](/docs/api#checking-again-as-the-answer-goes-out).
+
+To upgrade:
+
+1. Move tests that send API requests through `httptest.ResponseRecorder`
+   onto `httptest.NewServer`. With `apitoken`'s store, every API answer
+   through a recorder is now 503 `unavailable`, because a recorder can't
+   take a write deadline. Use a client that doesn't follow redirects,
+   not `server.Client()`, so a test still sees a 303 or 307 as the
+   answer. Tests of your pages can keep their recorders. See
+   [Testing the API](/docs/api#testing-the-api).
+2. If one of your API handlers answers more than 2 MiB, make it page
+   its results.
+3. If one of your API handlers writes an `encoding/json` `json.Number`,
+   clients now get a JSON number where they got a string. Make sure
+   they expect one. An empty `json.Number`, or one that isn't a number,
+   now gets a 500.
+4. A test that compares an `op.DecodeInput` error with
+   `reflect.DeepEqual` against `op.Invalid{Fields: ...}` must add
+   `AsSent: true`.
+
+What changed:
+
+- New in `api`: `Gate`, the request pipeline the tree and MCP share,
+  with `Validate`, `Wrap` and `Admit`; `Config.Gate`; `Rechecker`;
+  `Disclosed`; `Refusal`; and `IsAgentSessionRefusal`. The tree now
+  runs on `Gate`.
+- New error code `response_too_large`, 422.
+- `apitoken.Store` gains `Recheck`, a lookup that writes nothing, and
+  is an `api.Rechecker`.
+- Each 64 KiB chunk of a rechecked answer gets its own write deadline
+  of at most 5 seconds, so your server's `WriteTimeout` no longer bounds
+  the whole answer.
+- `api.Write` writes an `encoding/json` `json.Number` as the number it
+  holds, not as a string.
+- New `api.Encode` returns the bytes `Write` sends. MCP uses it to
+  encode each tool result.
+- New field `op.Invalid.AsSent`. `op.DecodeInput` sets it, and the API
+  and MCP keep field names as the client sent them.
+- When the API answers 503 `unavailable` while an answer is going out,
+  it logs `api: answer withheld` at Warn, with the cause. Middleware
+  outside the API that wraps the response writer needs an
+  `Unwrap() http.ResponseWriter` method. Without it, every rechecked
+  answer is 503.
+
+### Added: MCP for every app, at `/api/v1/mcp`
+
+New package `mcp` serves an app's operations as MCP tools, behind the
+JSON API's token check and policy. Claude Code and Codex connect with a
+personal token. See [MCP](/docs/mcp).
+
+To add it to an existing app:
+
+1. Run `rastrillo generate`, and commit `gen/` and `api/v1.json`.
+2. Build MCP from your API's config and mount it at `/api/v1/mcp`, as
+   [MCP](/docs/mcp#mounting) shows.
+3. Add `perf  GET /api/v1/mcp/*  skip  the MCP endpoint` to
+   `.rastrillo/budgets.txt`.
+4. Run `go mod tidy`.
+
+What changed:
+
+- New package `mcp`: `New`, `Config` and `ToolName`.
+- A tool call checks your policy with `Admit` and `op.Check` before
+  `Invoke` runs. The endpoint refuses a JSON-RPC `id` it can't keep
+  exact: a number that isn't a plain integer, or is outside
+  ±(2^53−1). A result that isn't an object, when the tool's `Result` is
+  an object schema, is an `internal` tool error.
+- `op.Descriptor` gains `Destructive` and `Idempotent`, which MCP sends
+  to clients as hints. New `op.CheckFlags` and `op.FenceVerbs`, which
+  require writes named for undoing or sending something to be
+  `Destructive`, and `op.ResponseGuard`, the app's check of what an
+  answer discloses.
+- `rastrillo.Actor` gains `Grant`, a connection service's grant, and
+  there is a new type `rastrillo.Grant`. With a grant, `Actor.String`
+  ends in `grant:<id>`, and `LogAttrs` adds `grant_issuer`,
+  `identity_issuer` and `grant_audience`.
+- `rastrillo generate` sets `Destructive` and `Idempotent` on every
+  generated descriptor, and writes `gen.ExposedOperations()`.
+- `api/v1.json` gains `destructive` and `idempotent` for each
+  operation. The first regeneration of an older file only adds them,
+  with no notes. After that, `generate` notes an operation that turns
+  destructive. A flag change is never a breaking change.
+- New apps serve MCP: `newDoors` builds the API and MCP from one
+  config, `Routes` mounts `/api/v1/mcp`, and the README gives the
+  Claude Code command. The scaffold's comments that restated the code
+  were cut.
+- New dependency: `github.com/modelcontextprotocol/go-sdk` v1.8.0. It
+  brings `github.com/google/jsonschema-go`,
+  `github.com/segmentio/encoding` and `github.com/segmentio/asm`,
+  `github.com/yosida95/uritemplate/v3`, `golang.org/x/oauth2` and
+  `golang.org/x/time`.
+
+### Changed: pages download less
+
+`rastrillo.Assets` now serves the framework's files in `static/`
+minified and gzipped, so every page is lighter with no change to your
+app. Your copies keep their comments. Your own files are served as
+written.
+
+To upgrade:
+
+1. No action is needed for the smaller files.
+2. To load `select.js`, `calendar.js` and `datetime.js` only on pages
+   that use them, replace their three `<script>` lines in
+   `templates/layout.html` with one:
+
+   ```html
+   {{range neededScripts}}<script defer src="{{path $ (asset .)}}"></script>{{end}}
+   ```
+
+   A layout that keeps the three lines still works and loads all
+   three on every page. Fields you wrote yourself, or field partials
+   you redefined, load their scripts if their markup carries the
+   `data-rst-*` attribute; if the attribute comes from your data, add
+   `{{needs "select.js"}}` (or `"datetime.js"`) to that template.
+3. Run `rastrillo generate` and commit the result. The field partials
+   changed, so their compiled code changed too.
+4. `make perf` now checks how much framework CSS and JS each page
+   loads, and fails on every machine, not only on CI. If it fails, it
+   lists files that grew, if any. `rastrillo doctor --fix` puts back a
+   file you did not mean to change.
+
+What changed:
+
+- `Assets` serves each vendored file under `static/` minified, with
+  gzip for a browser that accepts it. Its URL hash is of the bytes
+  sent. A file the minifier cannot read is served as written.
+- New template functions `needs` and `neededScripts`. The field
+  partials call `needs`, and `ui.Pages` works out each page's scripts
+  when it starts, from those calls and from the `data-rst-*`
+  attributes in the page's markup. A page with a live region or a
+  polling fragment loads all three scripts. See
+  [Templates](/docs/templates).
+- The four shells' layouts load component scripts with
+  `neededScripts`.
+- New `perftest.FirstLoad`, which `perftest.Screens` also runs: 40 kB
+  of framework CSS and JS, gzipped, for a column or topbar page, plus
+  each component script it loads. See
+  [perftest](/docs/reference/perftest).
+- New `tmpl.Template.Inspect`, which visits each template and its
+  nodes.
+- New dependency: `github.com/tdewolff/minify/v2` v2.24.19.
+
+## v0.30.2
+
+### Fixed: the console rail's current item draws its ring and shadow whole
+
+The console rail's current item draws its ring and shadow whole. Before, the rail cut them off at its edges. Apps own their tokens.css, so copy it again to get the fix.
+
+## v0.30.1
+
+### Fixed: no uncaught error when the browser skips a page transition
+
+Navigating with motion on could log `AbortError: Transition was skipped` as an uncaught error in the browser console, and browser tests built on the harness failed on it. The browser skips a page transition in some cases and rejects its promises, and the shell never handled them. The shell now handles them and ignores only that skip. Other errors still show. Upgrade and run `go mod tidy`, then follow the asset and layout upgrade steps in the release above that fixes skipped transitions on column, stage and topbar pages.
+
+## v0.30.0
+
+Compiled templates, serving an app under a path on a hub's domain, live pages, routes you can list and check, sign-in with Microsoft Entra ID or Google Workspace, a PDF writer, and builds on Go 1.27. Rastrillo now needs Go 1.26. The first four sections include upgrade steps for existing apps. Read them before you upgrade. If you build browser tests with `-tags browser`, port them for chromedp v0.21.
+
+### Changed: Go 1.27 builds; run `go mod tidy` after upgrading
+
+Apps that use rastrillo failed to build with Go 1.27. Go 1.27 enables the `jsonv2` experiment by default. The pinned `github.com/go-json-experiment/json` version did not compile with it. Rastrillo now pins a version that compiles with Go 1.27 and requires Go 1.26. After upgrading rastrillo, run `go mod tidy`. It updates the `go` line in your `go.mod` to at least `1.26.0`.
+
+The new version handles several JSON tag options differently. Check types used by `op.DecodeInput` or `api.Write`. A named field tagged `,inline` or `,unknown` is now nested under its field name. Embed the field to keep its members flat. A `format:` tag makes input decoding refuse the member and makes `api.Write` panic. Remove the `format:` tag. Implement the formatting in JSON methods on the field's type. `,string` now works only on fields encoded as numbers. Remove it from slices, maps, and structs.
+
+### Changed: compile templates; `rastrillo generate` runs your app to capture them
+
+`rastrillo generate` now compiles your templates to Go. A compiled page
+renders the same bytes as `html/template`, faster. It writes
+`rastrillo_templates_gen.go` into each package that builds a template
+set; commit those files. A template it cannot compile renders through
+`html/template` as before, and `generate` prints a line naming it. A
+template you changed since the last `generate` renders through
+`html/template` too, and the app logs a warning, so a page never shows
+old HTML. See [tmpl](/docs/reference/tmpl).
+
+`generate` now starts your app to find its templates. It builds each
+program under `cmd/` whose `func main` calls `rastrillo.Run` or
+`rastrillo.Serve` and runs it in a scratch directory, where
+`rastrillo.Serve` builds the app and exits before it listens. Anything
+its `main` does before that call runs too, such as writing a file or
+calling another service. It never starts any other program, so a
+migration or a mail-out under `cmd/` does not run; `generate` names it
+on one line, and its templates render through `html/template`. The
+program it starts gets only `PATH`, `HOME`, `TMPDIR` and `LANG` from
+your environment. A database it opens through `rastrillo.OpenDB` or
+`db.Open` is a new file in the scratch directory, whatever path is
+configured, so capture never opens a real one.
+
+To upgrade:
+
+1. An app on `ui.Pages` changes nothing. An app that parses its own
+   templates imports `tmpl` under the old name:
+   `template "amadan.net/rastrillo/rastrillo/tmpl"`. `tmpl` has the
+   part of `html/template` that Rastrillo apps use. It has no
+   `AddParseTree`, no `Tree` field and no package helpers such as
+   `HTMLEscapeString`, so keep `html/template` for code that needs them.
+2. Run `rastrillo generate` once after upgrading and commit the new
+   files. Until you do, `generate --check` fails and names each one.
+3. Set `RASTRILLO_TEMPLATE_SHADOW=1` in your tests. Each compiled page
+   then renders through `html/template` too, and fails on any
+   difference.
+
+What changed:
+
+- New package `tmpl`: a template set with the part of
+  `*html/template.Template`'s API that Rastrillo apps use, plus `IsCompiled`, `ShadowEnv` and `DevEnv`,
+  and the capture types `rastrillo generate` reads.
+- `ui.Pages` builds its pages with `tmpl`.
+- `live.Render`, `Has`, `ExecuteRegions` and `WriteRegions` take
+  `live.Templates`, which a `*template.Template` and a `*tmpl.Template`
+  both satisfy.
+- `rastrillo generate` compiles templates for every app, manifests or
+  not. `--templates=false` skips that step. `--check` fails when a
+  compiled file is missing or out of date with its templates.
+- `rastrillo new` runs `go mod tidy` and compiles the new app's
+  templates, so a new app passes `generate --check` from the start.
+- `rastrillo dev` leaves compiled templates out: it skips the step and
+  builds with `-tags rastrillo_dev`, so pages render from the files on
+  disk and a stale compiled file cannot break the build. It sets
+  `RASTRILLO_DEV=1` for your app.
+
+### Changed: serve an app under a path on a hub's domain; update `flash.Set` calls and add `path` to custom FuncMaps
+
+Set `Options.BasePath` and the whole app answers under `/<slug>` on another app's origin, such as `https://example.com/acme`. Redirects get the base added for you. Links in a page go through the new `path` template function, or `basepath.Path` in Go. The instance's own hostname sends visitors to the product path, or shows a read-only view with `basepath.ServeDirect`. Sign-in does not run under a base path: the hub signs people in. An app that does not set `BasePath` works as before. See [basepath](/docs/reference/basepath).
+
+To upgrade:
+
+1. Change every `flash.Set(w, kind, message)` to `flash.Set(w, r, kind, message)`.
+2. The screens `rastrillo generate` writes, and a new app's token page, call a new template function, `path`. `ui.Funcs` includes it. If you build your own FuncMap without `ui.Funcs`, add it, or the templates fail to parse.
+3. To serve an existing app under a base path, copy the `basepath.FromEnv` lines from a new app's `cmd/<app>/main.go` into yours, add `Base` to the page data in `render.go`'s `render` and to your error page's data, run `rastrillo generate`, and write each root-absolute URL in your own templates and layouts through `path`. On the token page, pass `Path` through `path`, as in `"Path" (path $ "/tokens")`, and any `RevokePath`, `RevokeAgentPath` or `RevokeAllPath` you set. Check the pages with `basepathtest.Leaks`. Copied layouts keep working at the root without this.
+
+What changed:
+
+- New package `basepath`: `Config` with `Handler`, `Enabled` and `Validate`; `FromEnv` and `SlugFromHost`; `Join`, `Path`, `Base` and `Original`; `OnDirectHost`, `PathRouted`, `PlatformCall` and `ProductURL`; and `RedirectDirect` and `ServeDirect`.
+- New package `basepath/basepathtest`: `Leaks` finds links in a page that would break under a base path.
+- New option `Options.BasePath`. `Handler` refuses to start with a value `basepath` cannot serve. The framework's own routes, `/healthz` and `/api/version` among them, answer under the base.
+- New template function `path`, in `ui.Funcs` and `ui.Pages`, and new field `ui.Localized.Base`, which `ui.ForRequest` fills.
+- New method `pow.Form.At` gives a form whose script and worker URLs carry the request's base.
+- New error `sessions.ErrPathRouted`. Under a base path, and on the direct host, the row-backed store signs nobody in and never clears the cookie.
+- `flash.Set` takes the request. Under a base path the cookie is `rastrillo_flash_<slug>` at `Path=/<slug>`; at the root it is still `rastrillo_flash` at `Path=/`.
+- The shells, generated screens, job pages, pow forms and the language and scheme switchers link through `path`.
+- `auth`, `password`, `passkey`, `secondfactor`, `totp` and `vault` answer 404 under a base path and on the direct host, and log an error. `auth.SigninState` gains `Unavailable`, and the `signin` partial renders nothing for it.
+- New apps read `RASTRILLO_SLUG` or `RASTRILLO_SLUG_FROM_HOST` at boot, and their README says how to deploy one as a tenant.
+
+### Changed: `rastrillo budget size` skips generated Go files; lower or remove exemptions that no longer apply
+
+`rastrillo budget size` skips Go files marked as generated, including `rastrillo_templates_gen.go` and generated files under `gen/`. A directory's count can fall, so an exemption in `.rastrillo/budgets.txt` can now fail the gate because it is too high, no longer needed, or for a directory with no Go files left to count. Run `rastrillo budget size` after upgrading, and lower or delete each exemption it names.
+
+### Changed: `rastrillo new` writes actions on a route table, and its `make ci` runs `make code` and `make routes`
+
+New apps get an exported `App`, a `New` constructor, and one `Routes` function in `routes.go`. Pages are actions, such as `func (app *App) home(visit *action.Visit)`, and answer with `visit.Render`. The `AGENTS.md` file lists the code rules. The `make ci` gate runs two new lanes: `make code` (`rastrillo budget code`) and `make routes` (`rastrillo routes --check`). Static files and the JSON API are mounted outside the page group, so the API gets no CSRF check or page middleware.
+
+Existing apps do not change, and upgrading adds nothing to `make ci`. Follow these rules for new code. Leave working code as it is. To add the gates:
+
+1. Run `rastrillo budget code --init` and commit `.rastrillo/code.txt`. It records the offences the code has today, so the gate fails only on new ones.
+2. Add a `code` lane that runs `rastrillo budget code` to `make ci`, and a step for it if your CI runs steps.
+3. Add a `routes` lane that runs `rastrillo routes --check` only once the app has a `Routes` function. Until then, `routes --check` fails because it cannot find one. It runs only on Linux and macOS, and refuses an app inside a Go workspace. Run it as `GOWORK=off rastrillo routes --check`.
+
+What changed:
+
+- `rastrillo new` writes `routes.go`. `New` takes the place of `App(...)`, with the same arguments in the same order.
+- An `--auth=magic` app keeps its owned pages in a group behind `app.auth.RequireSession`, and its rows go through `app.owned(request)`.
+- `manifest/README.md` mounts a manifest's generated screens in `Routes`.
+- `SKILL.md` and `skill/` teach this shape.
+
+### Changed: browser tests move to chromedp v0.21; port code built with `-tags browser`
+
+chromedp rewrote its API around generics between v0.15 and v0.21, and `harness` follows it. An app's ordinary build and tests are unaffected; only its browser tests change.
+
+To upgrade:
+
+1. Update rastrillo. It requires chromedp v0.21.0 and cdproto v0.158.6. Run `go mod tidy` to update your app's dependency versions, including the newer `go-json-experiment/json` they need.
+2. Port your browser tests with chromedp's [migration guide](https://github.com/chromedp/chromedp/blob/v0.21.0/docs/MIGRATION.md). Most changes take one of two shapes. A selector names its kind, so `chromedp.WaitVisible("#save", chromedp.ByQuery)` becomes `chromedp.WaitVisible(chromedp.CSS("#save"))`. An action returns its value, so `chromedp.Evaluate(script, &count)` becomes `count := harness.Evaluate[int](rig, script)`, or `harness.Into(&count, chromedp.Evaluate[int](script))` inside a longer `rig.Run`.
+3. A new app's browser test needs no change: `rig.Run(chromedp.Navigate(rig.Origin + "/"))` still compiles.
+
+What changed:
+
+- `harness.Rig.Run` takes `chromedp.Action[chromedp.Void]` steps.
+- New functions `harness.Read`, `harness.Evaluate` and `harness.Into` read values from the page. `Read` and `Evaluate` fail the test the way `Run` does.
+- New function `harness.Listen` hands a tab's events over in the order the browser sent them, before the next command returns. chromedp's own `chromedp.Events` hands them over on another goroutine, often later, so use `Listen` to check that something did not happen.
+- `chromedp.Evaluate` fails when a script returns `null` where Go expects a string, number, boolean or struct. It used to give the zero value. Return a fallback from the script, or ask for a pointer.
+- chromedp starts Chromium over a pipe instead of a websocket, and needs only the standard library and cdproto, so `gobwas/ws`, `gobwas/httphead`, `gobwas/pool` and `chromedp/sysutil` leave your module.
+
+### Added: `rastrillo routes` lists an app's routes, and `--check` finds an action no route mounts
+
+New command `rastrillo routes` prints every route of the app: the method, the full path, the action and the guards, in the order they are registered. It does not start the app. It calls the app's `Routes` function with an empty `App` and a table that only records. Nothing is written into the app, and `go.mod` and `go.sum` stay as they are. With `--check` it also fails for each action no route mounts. A new app's `make ci` runs it as `make routes`. See [CLI](/docs/cli#rastrillo-routes).
+
+It reads routes registered with the `action` package, which is new in this release. How `action` registers routes:
+
+- Register every route in one function, `func Routes(routes *action.Routes, app *App)`, in a package under `internal/`. It must only register routes.
+- Every path is the full path, inside a `Route` too. Inside `Route("/admin", ...)`, write `"/admin/tags"`, not `"/tags"`. A path that does not start with the prefix panics, and the message gives the full path to write.
+- New type `action.Path`. Name a path once, register the route with it, and fill it with `For` to redirect: `visit.Redirect(tagPage.For(id))`.
+- New function `action.NewRecorder`: a route table that records what you register and serves nothing.
+- `action.Route` gains `Action`, the action's full name, such as `example.com/app/internal/app.(*App).tagRename`.
+- `PathValue` gives back a value that `For` filled as it was given, even one with `/` or `%` in it.
+
+You don't need to rewrite existing handlers: write new routes this way, and move old ones when you change them.
+
+See [action](/docs/reference/action).
+
+### Added: sign in with Microsoft Entra ID or Google Workspace
+
+New package `oidc` signs people in through OpenID Connect into the same `sessions` as `password` and `auth`. The app lists the tenants and Workspace domains it accepts, and maps each verified identity to one of its own users with `Config.Admit`, which has no default. ID tokens are checked with the standard library alone: RS256 only, https only, and no refresh token is kept. It has not yet been tried against real Entra and Google tenants; `oidc/INTEROP.md` is the checklist for doing that. Under a base path it answers 404, like the other sign-in packages. See [oidc](/docs/reference/oidc).
+
+- New method `sessions.Sessions.Signed` reports whether sessions run in Signed (hub) mode.
+
+### Added: live pages; vendor `live.js` and re-copy `busy.js`
+
+A live page updates when its data changes. After a write, call `Notify` with a topic. Each open page showing that topic fetches the changed part through its own URL, as that viewer. A form marked `data-live-form` updates the regions in the response without reloading the page. With scripts off, pages and forms work as before. Keep live pages off CARLOS routes that hibernate: an open stream keeps the instance awake. See [Live pages](/docs/live).
+
+Run `rastrillo doctor --fix` to vendor `live.js` and re-copy `busy.js`. Every layout now links `live.js` after `busy.js`; add the tag to yours. It does nothing until a page opts in.
+
+New catalog keys `rastrillo.ui.live.paused` and `rastrillo.ui.live.unconfirmed`. If you ship your own locale, add translations for them.
+
+### Added: one call to render a live page, and updates at a time
+
+`ui.Pages.Render` answers a page whole or as the regions a live page
+asks for, in the order that keeps a flash message from being lost.
+Your function builds the page data and is told whether to take the
+flash. `live.Render` does the same for an app with its own template
+map. The functions it is built from stay as they are.
+
+`Hub.NotifyAt` updates open pages at a time rather than after a write,
+for a post that goes live at its time. Call it at boot for each stored
+future time and whenever a schedule changes.
+
+### Added: `rastrillo/pdf`, a dependency-free PDF writer
+
+Flow headings, paragraphs, field lists, tables and callouts onto a page and get deterministic bytes back. No sidecar, no headless browser, no system font: CARLOS ships an app as one binary, and there is nowhere on the platform to run any of those.
+
+Tables paginate on their own and repeat their column headings on each page. `KeepTogether` keeps a heading on the same page as what follows it. `Produced` draws a closing line into the last page's footer, so it never ends up alone on a page of its own. An optional stamp overlays an approval mark on every page.
+
+`Options.Size` sets the page size: `A4` (the default), `A3`, `A5`, `Letter`, `Legal`, `Tabloid`, or your own dimensions. `Options.Landscape` turns the page on its side, for a wide table. `Measure`, `Wrap` and `Encode` are exported for drawing onto something this package does not lay out, such as a blank form.
+
+See [pdf](/docs/reference/pdf).
+
+### Added: `money.Amount`, currency-checked arithmetic and `AllocateProRata`, in `money/v0.2.0`
+
+`Amount` is a count of minor units in one currency. `Add`, `Sub` and `Cmp` refuse to mix currencies (`ErrCurrencyMismatch`). `Add`, `Sub` and `MulInt` return `ErrOverflow` instead of wrapping. `AllocateProRata` splits an amount by integer weights, such as share counts, into parts that always add up to the total: each part is rounded down, and the minor units left over go to the parts that lost most to rounding. See [money](/docs/reference/money).
+
+### Fixed: a select list fixed or anchored out of a scrolling bar opens full height; re-vendor `select.js`
+
+A searchable select in a toolbar that scrolls sideways opened to a list 10px tall when your stylesheet fixed the list to the screen or anchored it to its box. `select.js` took the toolbar for the edge of the room, although the toolbar does not cut such a list off. It now counts only the boxes that really cut the list off. A list positioned inside a scrolling box, as `tokens.css` places it, is still held to that box.
+
+### Fixed: `crypto.MarshalKeypair` refuses a keypair it cannot store
+
+`MarshalKeypair` now returns an error if a key is missing, the signing key is incomplete, or either key is not P-256. It used to panic or return data that `UnmarshalKeypair` rejected or read as a different key.
+
+### Added: `data-rst-select-ceiling` keeps a select list out from under a sticky header; re-vendor `select.js`
+
+Mark a header that stays pinned above your form with `data-rst-select-ceiling`, as you mark a bar below it with `data-rst-select-floor`. A list then never opens upward behind the header: when the header leaves less room above the field than there is below, the list opens down.
+
+### Added: `rastrillo budget code` holds Go code to readable limits
+
+New command `rastrillo budget code` holds a module's Go code to 80 columns, 400-line files, 40-line functions (15 for an action) and no single-letter names. Run it with `--init` once to record the offences the code already has in `.rastrillo/code.txt`. From then on a new offence fails, and records only go down: run it with `--lower` as the code improves. A record you add or raise on a branch needs a reason after its count. Rastrillo's own gate runs it as `make code`, and so does a new app's `make ci`. See [CLI](/docs/cli).
+
+### Added: write an action as one function, with `action`
+
+New package `action`. An action takes one `*action.Visit` and does four things with it: read the input, run one operation, answer a refusal, say what success looks like. `Visit` has a method for each step: `ReadForm`, `PathID`, `Render`, `Flash`, `Redirect`, and `Refused` or `RefusedShowing` to answer an error. `action.NewRoutes` mounts your actions on a chi router, and `List` returns the routes it mounted, with their guards, so a test can check them without serving a request. Nothing existing changes. See [action](/docs/reference/action).
+
+## v0.29.1
+
+Apps can now start on first boot with migrations, even when Litestream replicates their database.
+
+### Fixed: migrations run on databases replicated by Litestream
+
+Litestream adds `_litestream_seq` and `_litestream_lock` tables to databases it replicates. On an app's first boot, `migrate` treated those tables as extras during adoption and refused to start. A new database containing only Litestream's tables was also treated as non-empty, so its migrations did not run. The `migrate` package now ignores tables whose names start with `_litestream_`, as it already does for SQLite's `sqlite_` tables. Apps can now adopt existing databases and run migrations on new ones.
+
+## v0.29.0
+
+A JSON API with agents that act for a person, money in any currency, a colour-scheme switch, a new look for `day`, and sign-in without a database. The first seven sections change what an existing app does without a compile error: the JSON API, the colour-scheme switch, money, sign-in's return to the page, pagination, hand-edited migrations and `job-status`. Read them before you upgrade.
+
+### Changed: a JSON API for every app, and agents that act for a person; run `rastrillo generate` and change code that reads `Actor`
+
+A manifest resource can now be served as JSON at `/api/v1`. A person
 makes a token for an agent on the app's token page, the agent calls the
 API with it, and every call is recorded as "Claude for Paul". The pages
 and the API call the same generated operation for each action, so both
@@ -55,7 +1098,7 @@ What changed:
 - New package `api`: the `/api/v1` handler tree, its error shape, and `Decode`, `Write` and `Refuse` for a handler you write yourself.
 - New package `apitoken`: personal tokens for a named agent, verified by SHA-256, and the token page's handlers. Add `apitoken.Schema` to `BootSchema`.
 - New function `sessions.ActorFrom` gives the signed-in person as an `Actor`.
-- New function `view.Refuse` answers an operation's refusal on a page: 404 or 403.
+- New function `view.Refuse` answers an operation's refusal on a page: 404 for `op.NotFound` and 403 for `op.Forbidden`. Anything else is a 500, `op.Invalid` and `op.Conflict` included, so handle those before you call it.
 - New template function `actor` and variable `ui.ActorName`, and new function `rastrillo.ActorPhrase`, write "Claude for Paul".
 - New partials `actor`, which writes the same words in a span for a list cell or a detail row, and `api-tokens`, the token page's body from `apitoken.PageData`; see [Templates](/docs/templates#the-partials). `apitoken.Row` gains `Revoked` and `Expired`, `PageData` gains `Agents`, and `Token` gains `Actor()`.
 - New catalog keys `rastrillo.ui.agent_for` and `rastrillo.ui.api_tokens_*`; a locale you ship yourself must translate them.
@@ -68,94 +1111,9 @@ What changed:
 - The API logs one line for every request that reaches a handler, with the actor and the agent's session and harness.
 - New apps get `internal/<app>/api.go`, which mounts the API, `tokens.go` and `templates/tokens.html` for the token page, and a `.gitleaks.toml` rule that finds the app's tokens in a commit.
 
-**`rastrillo new --scaffold` picks the app's shape.** `bare` is a page
-and a route with no database, no sign-in and no `Makefile`: its gate is
-`go test ./...`, and `--design-system=false` leaves out its templates
-and static files. `single`, the default, is the app `rastrillo new`
-wrote before, with the changes below. `accounts` is `single` with
-sign-in by emailed link, the app `--auth=magic` writes. `home` and
-`hub` are planned and refused for now. Apps you already have change
-nothing.
+### Changed: a colour-scheme switch in every shell, at `POST /_theme`; copy the `scheme` block into your layout to show it
 
-- `single` serves its routes from an `http.ServeMux` instead of chi,
-  through `*Routes`, which records every GET route for the perf lane.
-  Register routes only through it. An `accounts` app is still on chi.
-- Tests sit beside the code in `internal/<app>/`, as package
-  `<app>_test`, instead of in `internal/<app>test/`.
-- The migration check is a test, `TestModelsMatchMigrations`, so
-  `go test ./...` runs it. `make ci` has no `migration-check` step.
-- `rastrillo dev` skips `generate` in an app with no `manifest/`,
-  `actions/` or `gen/`, and only rebuilds.
-- `rastrillo doctor` on an app with no design system says there is
-  nothing to compare and runs its other checks.
-
-**`perftest.Screens` takes a list of routes.** Set `ScreenConfig.Patterns`
-to your `http.ServeMux` routes instead of `Routes`, which needs a chi
-router. A trailing `{$}` is dropped, so `"/{$}"` is the screen `GET /`.
-A subtree pattern such as `"/admin/"` is a mount and fails, like chi's
-`/*`, until an `Opaque` group lists its screens or a record skips it.
-Apps that set `Routes` change nothing.
-
-**`csrf.Exempt` lets a machine POST to a named path.** A payment provider's webhook and a `carlos schedule` tick are POSTs with no `Sec-Fetch-Site`, `Origin` or `Referer`, so `csrf.Protect` refused them. `csrf.Protect(origin, csrf.Exempt("/stripe/webhook"))` now lets those exact paths through. The middleware checks nothing on an exempt path, so its handler must check its own credential, such as a webhook signature or `carlos.Tick`. A path matches only when it is exactly `r.URL.Path`, and `Exempt` panics on an empty or relative path. `Protect(origin)` calls compile and behave as before. See [csrf](/docs/reference/csrf#exempt).
-
-**`day` looks different; your app's copy does not change until you
-re-copy it.** The default theme now has a point of view: near-greyscale
-neutrals with hairline borders, cobalt for anything that acts, 6px and
-4px corners, and natural depth lit from above. Buttons are a touch proud
-of the page and press in, then slowly lift; cards rest on the page; the
-switch's knob is lit in both schemes; rows and menu items lift quietly
-on hover. A new vendored script, `light.js`, lights the page from the
-hour, puts a sheen under the pointer, and can be deleted for the still
-design. `plain` and `signal` render as they did. An existing app keeps
-its copies until `rastrillo doctor --fix` re-copies `tokens.css`,
-`theme.css` and `rastrillo.js` and writes `light.js`; a theme of your
-own keeps rendering as it did, because every new token is read through
-a fallback that is today's value.
-
-- New vendored file `light.js`, optional. `rastrillo doctor --fix` writes it; link it after `busy.js` in your layout, as the shipped shells do. To turn it off, delete the file, delete its tag, and name it in `vendoredIsMine` in the scaffold's `vendored_test.go`; `doctor` then lists it as yours, removed on purpose, and `--fix` leaves it alone. See [Templates](/docs/templates#the-light).
-- New theme tokens, declared by every theme: the fills and their edges, the control face and borders, the depth tokens (`--rst-depth-hl`, `-contact`, `-ambient`, `-face`, `--rst-press-drop`), the switch's knob and track, the tints and the focus pair, the light's colours, the press strengths, and the title, heading, label and rail choices. See [Your app's design system](/docs/design-system).
-- `tokens.css` registers `--rst-press` and reads every new token with a fallback to the old behaviour.
-- `rastrillo.js` registers a passive `touchstart` listener so iOS applies `:active` on tap.
-- In `day` the switch is larger: a 40×23 track with a 19px knob under a mouse, 51×31 with a 27px knob on a touch screen or in a narrow window, as six theme tokens (`--rst-switch-w`, `-h`, `-knob` and their `-touch-` set). The track sits in, the knob stands on a deeper dome that lifts on hover (`--rst-shadow-knob-hover`), and the on colour follows the knob, dragged or clicked. A released knob settles at the nearer end, on from half way. `plain` and `signal` keep their switch; a theme of your own keeps today's size and depth until it declares the tokens. `tokens.css` registers `--rst-switch-p` and `--rst-switch-on`, and `rastrillo.js` writes those instead of `--rst-switch-x`.
-- A switch inside a toggle block's body now draws its own state, and a toggle block nested inside another no longer switches the outer one on or opens its body. Only pages with a switch or a block inside a block's body look different.
-- A hovered row, media tile or rail item takes a scheme change on the next frame, as everything at rest already did. The hover tint rides two registered percentages, `--rst-hover` and `--rst-pressed`, instead of a background-colour transition; a theme of your own needs nothing.
-- Hover tints and lifts on buttons, dropdown summaries, menu rows, options, locale and scheme buttons, linked rows, media tiles and the desktop rail items now sit behind `(hover: hover)`, in every theme, so a tap no longer leaves a tint behind on a touch screen. The phone index rows keep their tap tint on purpose.
-- Sidebar and console rail items fade their hover over 0.2s, and linked rows and media tiles over 0.25s, in every theme.
-- In `day`, overriding `--rst-accent` alone recolours everything: the primary button's fill, its hover and edges, the link hover, the soft ground, the hover and press tints, the focus edge and halo, a plain button's sheen and a card's lit rim are all derived from it in `day.css`. The fills take the accent's hue at day's own lightness, with the accent's chroma scaled and capped (`oklch(from var(--rst-accent) L C h)`): a grey accent gives a grey button, and the white label clears 4.5:1 for every hue, measured at twelve hues and three greys in both schemes. The rest are `color-mix()` shares of the accent. With the default accent each derived value lands within two units per channel of the hex it replaced, and the contrast rows that name them are recomputed. Relative colour needs Firefox 128, above the floor, so the fills and the soft ground are declared as day's cobalt and derived inside `@supports (color: oklch(from red l c h))`: an older engine keeps the cobalt button and loses only its following of the accent. `plain` and `signal` work as before: their fills (`--rst-accent-fill` and its `-hover`, `-edge` and `-edge-hover`) read `--rst-accent` and `--rst-accent-strong`, and every other new token reads the semantic token `tokens.css` read in its place before (`--rst-accent-soft` for the tints and the current nav item, `--rst-surface-2` for linked rows, `--rst-line-strong` for control borders, `--rst-tone-negative-fg` for the danger button, and so on), so an app that overrides those on `:root` still reaches what it reached before.
-- A card's hairline is painted as a background layer. An app stylesheet that sets `background` on a card loses the hairline, and one that sets `background-color` paints under the face and shows nothing; set `--rst-surface` on the card instead, which also recolours the surfaces inside it.
-- Dropdowns in a shell's tail, meaning the locale and scheme menus and any app dropdown placed there, wear no button face in `day`.
-- The colour-scheme switch lands in one frame: `rastrillo.js` cancels running CSS transitions on a flip, so text and ground change together.
-- Forced colours and print get their own blocks, in every theme: real borders, no shadows, filled buttons as outlined text.
-
-**An image grid for an app's Images page.** `media-grid` draws one tile
-per picture in an even 4:3 frame, so a tall screenshot and a wide
-banner sit in one grid without stretching their tiles; a tall picture
-shows its top, and `Fit "contain"` letterboxes a logo or a banner. The
-name, a two-line description and a meta line sit under the frame. A
-tile can link, carry the select checkbox a `bulk-bar` form collects,
-and a `row-menu` kebab. One column on a phone; no JavaScript. Take the
-new `tokens.css`.
-
-- New partial `media-grid`; see [Templates](/docs/templates#the-partials).
-- New catalog keys `rastrillo.ui.media_select` and `rastrillo.ui.no_description`; a locale you ship yourself must translate them.
-
-**Create tenant instances from your own app.** The new `provision` package lets a home or a hub create instances through the CARLOS console, tell when each one is serving, publish a hub's path map, and check that each tenant's path reaches it. It keeps no records: your app writes them, following the rules on its reference page. Every tenant it creates must set `Options.NameInstance`.
-
-- New package `provision`: `Console` with `Create`, `Instance` and `PublishPaths`; `NewLabel`; the probes `Ready`, `WaitReady`, `CheckRoute` and `WaitRouted`; and the errors to branch on, among them `ErrHostTaken`, `RetryError` and `ErrEmptyMap`.
-- New package `provision/provisiontest`, a fake console and edge with the platform's own answers, for testing code that uses `provision`.
-- New option `Options.NameInstance` names the instance on `GET /api/version` in the `Rastrillo-Host` header. It is off by default, because anyone can read the header.
-- New function `carlos.Host`, the instance's platform hostname, and constant `carlos.HostHeader`, the header `NameInstance` names it in.
-
-**Sign-in without a database.** Set `auth.Config.Records` to keep users and sign-in links in an `objrec` store instead of SQLite. The session becomes a signed cookie that lasts 15 minutes, renewed at `/_carlos/refresh` until the 30-day session ends. Apps on the same origin check it with the hub's public key and keep no sessions. Set `Blind` to store only a hash of each address. This mode has no second factors. Nothing changes for an app that does not set it.
-
-- New in `sessions`: `Config.Signed` and `Config.Now`; the `Signed` and `SigningKey` types; `NewSigningKey`, `ParseSigningKey` and `ParsePublicKeys`; `Sessions.Refresh` and `RefreshIfExpired`; `SignedLifetime` and `DefaultRefreshPath`; and `ErrSigned`, `ErrVerifyOnly` and `ErrNoUser`.
-- New in `auth`: `Config.Records`, `Signed`, `Pepper` and `Blind`; the `User` type; `Auth.User`, `EndSessions`, `SignoutEverywhere` and `Refresh`; and `ErrRecords`.
-
-**A nonce store with no database.** `pow.RecordNonces` keeps spent nonces in an `objrec` store, for a hub with no database. Pass the same store on every instance. Nothing changes for an app that does not set it.
-
-**`rastrillo session-key`.** `rastrillo session-key <kid>` prints a new signing key for signed sessions: a `secret` line for the hub and a `public` line for its tenants. Nothing changes for an app that does not use it.
-
-**A colour-scheme switch in every shell.** Readers get Light, Dark and
+Readers get Light, Dark and
 System beside the language menu, with or without JavaScript. The
 framework mounts `POST /_theme`, which stores the choice in the
 `rastrillo_scheme` cookie and clears it for System; the layouts write
@@ -174,11 +1132,12 @@ yours (it sits beside the `locale` block) and take the new
 - New option `Options.NoSchemeSwitch`, for an app whose router (chi, say) handles `/_theme` where the mux cannot see it.
 - Both switchers now refuse a return path with a backslash or a control character anywhere, not only at its start; before, `/a/../\evil.example/` and a tab reached `Location` and left the site.
 - New function `rastrillo.LocalePrefix`, the locale segment the middleware stripped from the path.
-- `rastrillo.js` grew a section for the switch and its cap rose from 16KB to 17KB.
+- `rastrillo.js` grew a section for the switch. With the rest of this release, its size cap rose from 16 KiB to 19 KiB.
 - New catalog keys `rastrillo.ui.shell_scheme`, `scheme_light`, `scheme_dark` and `scheme_system`; a locale you ship yourself must translate them.
 
-**Multi-currency money (breaking upgrade for apps with money).** Money
-is now stored with its currency, and the locale data that formats it
+### Changed: money in any currency; run `rastrillo doctor`, and take a backup first if your app stores money
+
+Money is now stored with its currency, and the locale data that formats it
 comes from language packs.
 1. Run `rastrillo doctor`. It lists every template and Go file the new
    template calls affect, and what to change in each. Run
@@ -236,20 +1195,143 @@ To keep the old, exact format for a field, set `Strict: true`.
 - New method `(*rastrillo.Locales).Negotiate` picks a request's language without the middleware, for an error page.
 - New functions `rastrillo.RetagOf` and `rastrillo.Retagged` list the codes the framework moved: Portuguese is now `pt-PT`, and `pt` addresses, cookies and catalogs keep working.
 - New command `rastrillo migrate-templates` adds `$L` to an app's templates and lists what is left to do by hand.
+- `rastrillo migrate-templates -write` changes a template only when the result is the original with the localizer added. If a rewrite would move or swap anything, such as two partial calls trading their data, it leaves the file as it was and says so.
 - New flag `rastrillo new --locale` picks the one language a new app starts with.
 - `rastrillo doctor` now checks templates and locales too, and exits 6 for templates in the old syntax and 7 for a locale configuration that would stop the app starting. It does not run your app. `rastrillo doctor --probe` also builds the app and runs it with `RASTRILLO_CHECK_CONFIG=1`, which runs your app's own code.
 - Removed: `rastrillo generate --default-locale`. The default now comes from `default_locale` in `manifest/app.toml`.
 - `rastrillo generate` now deletes files in `gen/` that an earlier run generated and this run does not. Keep files you edit by hand outside `gen/`. `rastrillo generate --check` names what a run would delete.
 - `rastrillo generate` refuses a filter on a money field, because an amount means nothing without its currency. Remove the filter.
 - `rastrillo generate` refuses a field named like a money field's generated fields, such as `PriceCurrency` beside a money field `Price`, and a field named `EventVersion` or `Now`. Rename the field.
-
-### Fixed: `rastrillo generate` finds the sqlc tool under Go 1.27
-
-Under Go 1.27, `rastrillo generate` said the sqlc tool directive was missing from `go.mod` even when it was there, and stopped. Go 1.27 changed how `go tool` lists tools. Update rastrillo before you build an app with Go 1.27.
+- `rastrillo generate` refuses `currency` or `[legacy]` on a resource with no money field. Give a field `kind = "money"`, or remove the setting.
+- `manifest/app.toml` must list the app's languages. `rastrillo generate` and `rastrillo doctor` refuse a file with no `locales` and say what to add. For an English-only app, delete the file instead.
 
 ### Changed: sign-in lands back on the page that asked for it; post `return_to` from your own sign-in page
 
 `RequireSession` and `RequireFreshSession` now send a signed-out visitor to `SigninPath?return_to=<the page>`, and once they sign in they land back on that page. Before, they always landed on `SignedInPath`. The shipped sign-in screen carries the destination for you. If you render your own sign-in page, add a hidden `return_to` field set to `SigninState(r).ReturnTo` to each form, and use `SigninState(r).PasskeyFinish()` as the passkey button's finish URL. Without them, your visitors still land on `SignedInPath`.
+
+### Changed: pagination fits one line on a phone; mark Previous and Next with `Rel`, and add `paginationItems` if you build your own FuncMap
+
+Give the Previous item `"Rel" "prev"` and the Next item `"Rel" "next"`. On a phone or touch screen, those two become chevron buttons that still say Previous and Next to a screen reader, and the strip shows only the first page, the current page and the last, spread across one line: ‹ 1 … 4 … 9 ›. A strip without `Rel` renders as it did before. Apps made with `rastrillo new` get `Rel` when they regenerate their list pages.
+
+The partial now calls a new template function, `paginationItems`. `ui.Funcs` includes it. If you build your own FuncMap without `ui.Funcs`, add it, or the partial fails to parse.
+
+Chip styles in `tokens.css` now apply only to the strip's direct children. If your own markup nests a link deeper, move it up a level. Re-vendor `tokens.css`.
+
+### Changed: `rastrillo generate` refuses a hand-edited `gen/store/<name>/migrations.go`; restore it, or write each statement as a string literal
+
+`rastrillo generate` reads the statements a store has already released from its `gen/store/<name>/migrations.go`. If `Migrations` there is not a list of string literals, it cannot read them, so it stops and names the file. Restore the generated file, or write each statement as a string literal, then run `rastrillo generate` again. A mergeable store's file is read as before.
+
+### Changed: `job-status` speaks the page's language; add `strong` if you build your own FuncMap
+
+The partial's five sentences now come from the catalog, in the page's language. The job's name is still bold. In English, the progress after a running job's name now follows a colon instead of a dash.
+
+The partial calls a new template function, `strong`. `ui.Funcs` includes it. If you build your own FuncMap without `ui.Funcs`, add it, or the partial fails to parse.
+
+- New catalog keys `rastrillo.ui.job_running`, `job_running_progress`, `job_failed`, `job_failed_error` and `job_finished`; a locale you ship yourself must translate them.
+
+### Added: `csrf.Exempt` lets a machine POST to a named path
+
+A payment provider's webhook and a `carlos schedule` tick are POSTs with no `Sec-Fetch-Site`, `Origin` or `Referer`, so `csrf.Protect` refused them. `csrf.Protect(origin, csrf.Exempt("/stripe/webhook"))` now lets those exact paths through. The middleware checks nothing on an exempt path, so its handler must check its own credential, such as a webhook signature or `carlos.Tick`. A path matches only when it is exactly `r.URL.Path`, and `Exempt` panics on an empty or relative path. `Protect(origin)` calls compile and behave as before. See [csrf](/docs/reference/csrf#exempt).
+
+### Changed: `day` looks different; run `rastrillo doctor --fix` to take the new look
+
+The default theme now has a point of view: near-greyscale
+neutrals with hairline borders, cobalt for anything that acts, 6px and
+4px corners, and natural depth lit from above. Buttons are a touch proud
+of the page and press in, then slowly lift; cards rest on the page; the
+switch's knob is lit in both schemes; rows and menu items lift quietly
+on hover. A new vendored script, `light.js`, lights the page from the
+hour, puts a sheen under the pointer, and can be deleted for the still
+design. `plain` and `signal` render as they did. An existing app keeps
+its copies until `rastrillo doctor --fix` re-copies `tokens.css`,
+`theme.css` and `rastrillo.js` and writes `light.js`; a theme of your
+own keeps rendering as it did, because every new token is read through
+a fallback that is today's value.
+
+- New vendored file `light.js`, optional. `rastrillo doctor --fix` writes it; link it after `busy.js` in your layout, as the shipped shells do. To turn it off, delete the file, delete its tag, and name it in `vendoredIsMine` in the scaffold's `vendored_test.go`; `doctor` then lists it as yours, removed on purpose, and `--fix` leaves it alone. See [Templates](/docs/templates#the-light).
+- New theme tokens, declared by every theme: the fills and their edges, the control face and borders, the depth tokens (`--rst-depth-hl`, `-contact`, `-ambient`, `-face`, `--rst-press-drop`), the switch's knob and track, the tints and the focus pair, the light's colours, the press strengths, and the title, heading, label and rail choices. See [Your app's design system](/docs/design-system).
+- `tokens.css` registers `--rst-press` and reads every new token with a fallback to the old behaviour.
+- `rastrillo.js` registers a passive `touchstart` listener so iOS applies `:active` on tap.
+- A switch inside a toggle block's body now draws its own state, and a toggle block nested inside another no longer switches the outer one on or opens its body. Only pages with a switch or a block inside a block's body look different.
+- A hovered row, media tile or rail item takes a scheme change on the next frame, as everything at rest already did. The hover tint rides two registered percentages, `--rst-hover` and `--rst-pressed`, instead of a background-colour transition; a theme of your own needs nothing.
+- Hover tints and lifts on buttons, dropdown summaries, menu rows, options, locale and scheme buttons, linked rows, media tiles and the desktop rail items now sit behind `(hover: hover)`, in every theme, so a tap no longer leaves a tint behind on a touch screen. The phone index rows keep their tap tint on purpose.
+- Sidebar and console rail items fade their hover over 0.2s, and linked rows and media tiles over 0.25s, in every theme.
+- In `day`, overriding `--rst-accent` alone recolours everything: the primary button's fill, its hover and edges, the link hover, the soft ground, the hover and press tints, the focus edge and halo, a plain button's sheen and a card's lit rim are all derived from it in `day.css`. The fills take the accent's hue at day's own lightness, with the accent's chroma scaled and capped (`oklch(from var(--rst-accent) L C h)`): a grey accent gives a grey button, and the white label clears 4.5:1 for every hue, measured at twelve hues and three greys in both schemes. The rest are `color-mix()` shares of the accent. With the default accent each derived value lands within two units per channel of the hex it replaced, and the contrast rows that name them are recomputed. Relative colour needs Firefox 128, above the floor, so the fills and the soft ground are declared as day's cobalt and derived inside `@supports (color: oklch(from red l c h))`: an older engine keeps the cobalt button and loses only its following of the accent. `plain` and `signal` work as before: their fills (`--rst-accent-fill` and its `-hover`, `-edge` and `-edge-hover`) read `--rst-accent` and `--rst-accent-strong`, and every other new token reads the semantic token `tokens.css` read in its place before (`--rst-accent-soft` for the tints and the current nav item, `--rst-surface-2` for linked rows, `--rst-line-strong` for control borders, `--rst-tone-negative-fg` for the danger button, and so on), so an app that overrides those on `:root` still reaches what it reached before.
+- A card's hairline is painted as a background layer. An app stylesheet that sets `background` on a card loses the hairline, and one that sets `background-color` paints under the face and shows nothing; set `--rst-surface` on the card instead, which also recolours the surfaces inside it.
+- Dropdowns in a shell's tail, meaning the locale and scheme menus and any app dropdown placed there, wear no button face in `day`.
+- The colour-scheme switch lands in one frame: `rastrillo.js` cancels running CSS transitions on a flip, so text and ground change together.
+- Forced colours and print get their own blocks, in every theme: real borders, no shadows, filled buttons as outlined text.
+
+### Added: `media-grid`, an image grid for an app's Images page; re-vendor `tokens.css`
+
+`media-grid` draws one tile
+per picture in an even 4:3 frame, so a tall screenshot and a wide
+banner sit in one grid without stretching their tiles; a tall picture
+shows its top, and `Fit "contain"` letterboxes a logo or a banner. The
+name, a two-line description and a meta line sit under the frame. A
+tile can link, carry the select checkbox a `bulk-bar` form collects,
+and a `row-menu` kebab. One column on a phone; no JavaScript. Take the
+new `tokens.css`.
+
+- New partial `media-grid`; see [Templates](/docs/templates#the-partials).
+- New catalog keys `rastrillo.ui.media_select` and `rastrillo.ui.no_description`; a locale you ship yourself must translate them.
+
+### Added: `provision` creates tenant instances from your own app
+
+The new `provision` package lets a home or a hub create instances through the CARLOS console, tell when each one is serving, publish a hub's path map, and check that each tenant's path reaches it. It keeps no records: your app writes them, following the rules on its reference page. Every tenant it creates must set `Options.NameInstance`.
+
+- New package `provision`: `Console` with `Create`, `Instance` and `PublishPaths`; `NewLabel`; the probes `Ready`, `WaitReady`, `CheckRoute` and `WaitRouted`; and the errors to branch on, among them `ErrHostTaken`, `RetryError` and `ErrEmptyMap`.
+- New package `provision/provisiontest`, a fake console and edge with the platform's own answers, for testing code that uses `provision`.
+- New option `Options.NameInstance` names the instance on `GET /api/version` in the `Rastrillo-Host` header. It is off by default, because anyone can read the header.
+- New function `carlos.Host`, the instance's platform hostname, and constant `carlos.HostHeader`, the header `NameInstance` names it in.
+
+### Added: `rastrillo/objrec` keeps records in the object store
+
+A central app can now keep its records in its object store instead of a
+database. `Create` succeeds once per key, `Update` succeeds only against
+the version you read, and `Mutate` re-reads and retries. It reads the same
+`CARLOS_STORE_*` variables as `blobs`, under its own `records/` prefix.
+`objrec.Dir` is the local stand-in for tests and development.
+
+The SigV4 signer `blobs` used moved to `internal/sigv4` so both packages
+share one copy. Nothing changes for an app that uses `blobs`.
+
+### Added: sign-in without a database, with `auth.Config.Records`
+
+Set `auth.Config.Records` to keep users and sign-in links in an `objrec` store instead of SQLite. The session becomes a signed cookie that lasts 15 minutes, renewed at `/_carlos/refresh` until the 30-day session ends. Apps on the same origin check it with the hub's public key and keep no sessions. Set `Blind` to store only a hash of each address in user records. A pending sign-in link still stores its address, encrypted with a key made from the instance key. This mode has no second factors. Nothing changes for an app that does not set it.
+
+- New in `sessions`: `Config.Signed` and `Config.Now`; the `Signed` and `SigningKey` types; `NewSigningKey`, `ParseSigningKey` and `ParsePublicKeys`; `Sessions.Refresh` and `RefreshIfExpired`; `SignedLifetime` and `DefaultRefreshPath`; and `ErrSigned`, `ErrVerifyOnly` and `ErrNoUser`.
+- New in `auth`: `Config.Records`, `Signed`, `Pepper` and `Blind`; the `User` type; `Auth.User`, `EndSessions`, `SignoutEverywhere` and `Refresh`; and `ErrRecords`.
+
+### Added: `pow.RecordNonces`, a nonce store with no database
+
+`pow.RecordNonces` keeps spent nonces in an `objrec` store, for a hub with no database. Pass the same store on every instance. Nothing changes for an app that does not set it.
+
+### Added: `rastrillo session-key` prints a key for signed sessions
+
+`rastrillo session-key <kid>` prints a new signing key for signed sessions: a `secret` line for the hub and a `public` line for its tenants. Nothing changes for an app that does not use it.
+
+### Added: `auth.SendLink` sends a sign-in link from your code
+
+`Begin` sends a sign-in link only from its form, and refuses a POST from a server. `SendLink(ctx, address, ipKey)` sends the same link from code, for a caller your app already trusts, such as another service passing on a sign-in request. It uses the same link, the same email and the same limits as the form. It checks no proof of work. Pass a fixed name for the channel as `ipKey`, such as `"relay"`, never an IP address the caller reports. The whole channel then shares one limit of 20 links per 15 minutes. A refusal comes back as `auth.ErrRateLimited` or `auth.ErrBadAddress`. Log it, and give the caller the same answer either way, so the answer says nothing about the address. See [Magic links](/docs/magic-links#sending-a-link-from-code).
+
+### Added: `rastrillo new --auth=magic` starts an app with sign-in by email
+
+`rastrillo new --auth=magic <name>` makes an app that signs people in with a link sent by email. You get the magic links plugin and its sign-in screen, with proof of work in front of it, a Sign in and Sign out control in the header, and an example page only a signed-in person can open. Rows belong to the signed-in address, through the `owned` seam in `auth.go`. Until you set `<APP>_SMTP_HOST` and `<APP>_SMTP_FROM`, each link is written to the log instead of sent. The app's own tests sign in through the emailed link, so `make ci` passes from the first commit. Without `--auth`, `rastrillo new` makes the same app as before. See [CLI](/docs/cli).
+
+- New catalog keys `rastrillo.ui.account_signin` and `rastrillo.ui.account_signout`; a locale you ship yourself must translate them.
+
+### Fixed: `rastrillo generate` finds the sqlc tool under Go 1.27
+
+Under Go 1.27, `rastrillo generate` said the sqlc tool directive was missing from `go.mod` even when it was there, and stopped. Go 1.27 changed how `go tool` lists tools. Update rastrillo before you build an app with Go 1.27. Staticcheck v0.7.0 cannot read Go 1.27's packages and fails on every one, so a new app's Makefile now pins v0.8.2. In an app made earlier, change the `STATICCHECK` line in its Makefile to `honnef.co/go/tools/cmd/staticcheck@v0.8.2` before you move it to Go 1.27.
+
+### Added: `rastrillo generate` warns when a resource becomes `scope = "user"`
+
+Rows and records saved before the change have no owner, so once the app runs they are shown to nobody. `rastrillo generate` now says so, once, on the run that first sees the change. For a SQL store, give the rows owners in a migration of your own, made with `rastrillo migration new`. For a mergeable store, append an updated event that carries `owner` to each record's stream.
+
+### Changed: a new app's `make ci` runs on Go 1.26.10; move your app's pin to match
+
+`rastrillo new` now writes `export GOTOOLCHAIN = go1.26.10` in the Makefile, up from `go1.26.6`. Go 1.26.9 fixes advisories in `net/http`, `crypto/tls`, `html/template` and `net/textproto`, which govulncheck reports under `go1.26.6`. Go 1.26.10 stops trusting eight eMudhra intermediate certificates whose private keys were compromised. In an app made earlier, change the `GOTOOLCHAIN` line in its Makefile to `go1.26.10`.
 
 ### Changed: buttons come in an even scale, and Small is drawn smaller than its tap area; re-vendor `tokens.css`
 
@@ -267,15 +1349,21 @@ A dropdown is now as wide as its button, and its menu opens under it. Where neit
 
 In browsers that support `field-sizing`, a textarea grows as you type, up to half the screen, then scrolls. There, `Rows` no longer sets its height. Elsewhere it stays a fixed box you can resize.
 
-### Changed: a switch can be dragged; re-copy `rastrillo.js`
+### Changed: a switch can be dragged, and `day` draws it larger; re-copy `rastrillo.js` and re-vendor `tokens.css`
 
-Drag a switch's knob and it follows, then snaps to the nearer end. A tap still toggles it, and a vertical swipe still scrolls the page. In a right-to-left page the switch now mirrors.
+Drag a switch's knob and it follows. Let go and it settles at the nearer end; from half way, it is on. A tap still toggles it, and a vertical swipe still scrolls the page. A toggle block's head drags the same way. In a right-to-left page the switch now mirrors. A disabled switch does not move, nor does one in a disabled fieldset.
+
+In `day` the switch is larger: a 40×23 track with a 19px knob under a mouse, and 51×31 with a 27px knob on a touch screen or in a narrow window. The track sits in, the knob stands on a deeper dome that lifts on hover, and the on colour follows the knob as it moves. Six theme tokens set the sizes: `--rst-switch-w`, `-h`, `-knob` and their `-touch-` set. `--rst-shadow-knob-hover` sets the lift. `plain` and `signal` keep their switch, and a theme of your own keeps today's size and depth until it declares the tokens.
+
+`tokens.css` registers `--rst-switch-p` and `--rst-switch-on`, which `rastrillo.js` writes as the knob moves. `rastrillo doctor --fix` re-copies both files, and `theme.css` with them.
 
 ### Changed: clicking into a combobox selects its value; re-copy `select.js`
 
 Typing or Delete then replaces the whole value. A second click places the cursor.
 
 ### Fixed: a filter chip's remove link fills the chip's end; re-vendor `tokens.css`
+
+The × now runs to the chip's edge, so its hover colour fills the end of the chip. Before, a gap after it made it look like a second, smaller button.
 
 ### Changed: a row menu sits at the trailing edge of whatever holds it
 
@@ -292,14 +1380,6 @@ On a phone, the back strip, the index page's header and the topbar and console b
 ### Changed: put "Use your email instead" inside `rst-signin-providers`
 
 Make the link back to the email form the last child of `rst-signin-providers`. There it is as easy to tap as the provider buttons. An app that keeps the link after the list looks as it did before, with a link 19px tall.
-
-### Changed: pagination fits one line on a phone; mark Previous and Next with `Rel`, and add `paginationItems` if you build your own FuncMap
-
-Give the Previous item `"Rel" "prev"` and the Next item `"Rel" "next"`. On a phone or touch screen, those two become chevron buttons that still say Previous and Next to a screen reader, and the strip shows only the first page, the current page and the last, spread across one line: ‹ 1 … 4 … 9 ›. A strip without `Rel` renders as it did before. Apps made with `rastrillo new` get `Rel` when they regenerate their list pages.
-
-The partial now calls a new template function, `paginationItems`. `ui.Funcs` includes it. If you build your own FuncMap without `ui.Funcs`, add it, or the partial fails to parse.
-
-Chip styles in `tokens.css` now apply only to the strip's direct children. If your own markup nests a link deeper, move it up a level. Re-vendor `tokens.css`.
 
 ### Fixed: the bulk bar's text stays on one line on a phone; re-vendor `tokens.css`
 
@@ -321,7 +1401,13 @@ On CARLOS, the platform will make an instance key before your app first starts a
 
 `carlos.InstanceKey(own)` returns your app's own key if it has one, then `$CARLOS_INSTANCE_KEY`. On CARLOS with neither, it returns `ErrNoInstanceKey`: don't start. Off CARLOS it returns `ErrNotOnCarlos`: load or make a key as before. Nothing changes until you call it.
 
-**The skill is now a short core and topic files.** `SKILL.md` is 7 KB, down from 32 KB. It covers what every task needs and names the file in `skill/` to read before each kind of work: sign-in, screens, partials, design, forms, data, background work and the CLI. `skill/partials.md` lists every partial and the keys its template reads; keys a Go helper reads for it are in the template's own comment. A new app's `AGENTS.md` gives the exact command for its own copy of the skill. An app made earlier still points at the module cache, where an older copy can wait: replace everything above `## Layout` in its `AGENTS.md` with what `rastrillo new` writes now.
+### Added: a guide to writing an addon
+
+[Writing an addon](/docs/writing-addons) helps you decide whether shared code belongs in rastrillo or in an addon. It says what an addon costs to keep, how to ask for a hook in rastrillo first, and what an addon's repository, gate, `SKILL.md`, module path and releases need. Read it before you start one. The old advice to serve an addon's `SKILL.md` at a URL is gone.
+
+### Changed: the skill is a short core and topic files; update `AGENTS.md` in an app made earlier
+
+`SKILL.md` is 7 KB, down from 32 KB. It covers what every task needs and names the file in `skill/` to read before each kind of work: sign-in, screens, partials, design, forms, data, background work and the CLI. `skill/partials.md` lists every partial and the keys its template reads; keys a Go helper reads for it are in the template's own comment. A new app's `AGENTS.md` gives the exact command for its own copy of the skill. An app made earlier still points at the module cache, where an older copy can wait: replace everything above `## Layout` in its `AGENTS.md` with what `rastrillo new` writes now.
 
 ## v0.28.0
 
@@ -518,17 +1604,6 @@ staticcheck:
 ```
 
 A first run on an older app may report findings its gate never looked for. Rastrillo's own `make ci` runs staticcheck too.
-
-### Added: `rastrillo/objrec` keeps records in the object store
-
-A central app can now keep its records in its object store instead of a
-database. `Create` succeeds once per key, `Update` succeeds only against
-the version you read, and `Mutate` re-reads and retries. It reads the same
-`CARLOS_STORE_*` variables as `blobs`, under its own `records/` prefix.
-`objrec.Dir` is the local stand-in for tests and development.
-
-The SigV4 signer `blobs` used moved to `internal/sigv4` so both packages
-share one copy. Nothing changes for an app that uses `blobs`.
 
 ### Fixed: a date button that opens the browser's panel claims no popup
 

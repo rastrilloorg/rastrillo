@@ -124,6 +124,8 @@ failed restore is a sign-in prompt, never an error page. The instance
 and the home never speak: everything secret rides URL fragments
 through the person's browser.
 
+Under a [`basepath`](/docs/reference/basepath), and on the app's direct host, both answer 404 and log an error to the default logger, because a tenant there signs people in through its hub.
+
 ```go
 type EnrolAnswer struct {
 	EnrolURL string

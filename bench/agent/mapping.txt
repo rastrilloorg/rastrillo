@@ -1,0 +1,11 @@
+Answer with JSON only, and no other text. Give the full live URL, as deployed, of each of these pages:
+{{range .Pages}}- {{.Role}}: {{.Description}}{{if .SignedIn}} (needs sign-in){{end}}
+{{end}}
+{{- if .NeedsSignIn}}
+Also give the sign-in page's URL, a demo username and password, and CSS selectors for the username field, the password field and the submit button. If no one account can open every page marked "needs sign-in", put the account for each page that needs a different one under "signin_by_role", keyed by the page's name, in the same shape as "signin".
+{{- else}}
+No page needs sign-in, so leave every "signin" field empty.
+{{- end}}
+
+Use exactly this shape:
+{"pages":{"<role>":"<absolute https URL>"},"signin":{"url":"","username":"","password":"","username_selector":"","password_selector":"","submit_selector":""},"signin_by_role":{}}

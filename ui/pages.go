@@ -2,6 +2,7 @@ package ui
 
 import (
 	"bytes"
+	"cmp"
 	"errors"
 	"fmt"
 	"html/template"
@@ -13,7 +14,9 @@ import (
 	"sync"
 
 	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/live"
 	"amadan.net/rastrillo/rastrillo/locales"
+	"amadan.net/rastrillo/rastrillo/tmpl"
 )
 
 // Appendix C.2 of the multi-currency money spec, verbatim: op.pages.*.
@@ -52,6 +55,11 @@ type PagesConfig struct {
 	Catalog  rastrillo.Catalog   // Options.BaseCatalog
 	LocaleFS fs.FS               // Options.LocaleFS: locales/<code>.toml
 	Funcs    template.FuncMap    // the app's request-independent functions (icon, iconAssets, asset)
+	// Assets are the app's static files. With them, each page links
+	// a slice of static/tokens.css for its hooks (pageStylesheet),
+	// and pageScripts omits scripts the app has deleted; nil
+	// links the whole stylesheet, as every page did before slicing.
+	Assets *rastrillo.Assets
 	// Compat renders legacy-form calls and missing localizers with the
 	// default identity's localizer instead of failing. For apps
 	// mid-migration only; it is logged at NewPages and on each
@@ -95,7 +103,7 @@ type PageFile struct {
 // render in the wrong language. PagesConfig.Compat relaxes that for
 // apps mid-migration.
 type Pages struct {
-	pages      map[string]*template.Template
+	pages      map[string]*tmpl.Template
 	localizers map[string]*Localizer // fixed at NewPages
 	def        *Localizer
 	locales    *rastrillo.Locales
@@ -108,11 +116,10 @@ type Pages struct {
 // NewPages builds one localizer per offered identity, parses the base
 // once, and makes one clone per page.
 func NewPages(cfg PagesConfig) (*Pages, error) {
-	p := &Pages{pages: map[string]*template.Template{}, localizers: map[string]*Localizer{},
+	p := &Pages{
+		pages: map[string]*tmpl.Template{}, localizers: map[string]*Localizer{},
 		entry: cfg.Entry, compat: cfg.Compat, logger: cfg.Logger}
-	if p.entry == "" {
-		p.entry = "layout"
-	}
+	p.entry = cmp.Or(p.entry, "layout")
 	if p.logger == nil {
 		p.logger = slog.Default()
 	}
@@ -153,41 +160,31 @@ func NewPages(cfg PagesConfig) (*Pages, error) {
 
 	funcs := p.funcs()
 	for name := range cfg.Funcs {
-		if slices.Contains(LocaleFuncs, name) || name == "localizer" || name == "withL" {
+		if reservedFunc(name) {
 			return nil, fmt.Errorf(reservedFuncMsg, name)
 		}
 		funcs[name] = cfg.Funcs[name]
 	}
+	funcs["pageStylesheet"] = wholeStylesheet(cfg.Funcs, p.logger)
 	if p.compat {
 		p.logger.Warn(fmt.Sprintf(compatOnMsg, cfg.Locale.Default))
 	}
 
 	// ui's partials parse first, so an app's {{define}} of a partial
 	// wins, as it does on an app's own tree.
-	tmpl, err := template.New(p.entry).Funcs(funcs).ParseFS(Templates(), "*.html")
+	set, err := tmpl.New(p.entry).Funcs(funcs).ParseFS(Templates(), "*.html")
 	var shared []string
 	if cfg.Layout != "" {
 		shared = append(shared, cfg.Layout)
 	}
 	if shared = append(shared, cfg.Shared...); err == nil && len(shared) > 0 {
-		tmpl, err = tmpl.ParseFS(cfg.App, shared...)
+		set, err = set.ParseFS(cfg.App, shared...)
 	}
 	if err != nil {
 		return nil, fmt.Errorf(baseParseMsg, err)
 	}
-	for name, file := range cfg.Pages {
-		fsys := file.FS
-		if fsys == nil {
-			fsys = cfg.App
-		}
-		c, err := tmpl.Clone() // at boot, once per page; never per language or request
-		if err == nil {
-			c, err = c.ParseFS(fsys, file.Path)
-		}
-		if err != nil {
-			return nil, fmt.Errorf(pageParseMsg, name, err)
-		}
-		p.pages[name] = c
+	if err := p.addPages(set, cfg); err != nil {
+		return nil, err
 	}
 	return p, nil
 }
@@ -242,8 +239,8 @@ const maxPooledBuffer = 1 << 20
 // failure halfway down would otherwise leave half a page on the wire
 // under a 200, with no way for the caller to send its 500.
 func (p *Pages) Execute(w io.Writer, page string, data any) error {
-	if localizer(data) == nil {
-		return fmt.Errorf("%w "+pageDataMsg, ErrNoLocalizer, page)
+	if err := checkData(page, data); err != nil {
+		return err
 	}
 	t, ok := p.pages[page]
 	if !ok {
@@ -262,6 +259,85 @@ func (p *Pages) Execute(w io.Writer, page string, data any) error {
 	}
 	_, err := b.WriteTo(w)
 	return err
+}
+
+// ExecuteRegions renders the named regions of page: each name for which
+// the page defines a region:<name> template, in order, skipping the
+// rest (live.ExecuteRegions). The localizer check and page lookup are
+// Execute's, and like Execute it writes nothing unless every region
+// succeeded. The result names what was rendered, for live.Answer.
+func (p *Pages) ExecuteRegions(w io.Writer, page string, names []string, data any) ([]string, error) {
+	if err := checkData(page, data); err != nil {
+		return nil, err
+	}
+	t, ok := p.pages[page]
+	if !ok {
+		return nil, fmt.Errorf(noPageMsg, page)
+	}
+	return live.ExecuteRegions(w, t, names, data)
+}
+
+// WriteRegions answers a fragment request with page's regions: it
+// renders them (ExecuteRegions), sets Rastrillo-Regions, and then writes
+// the body, or answers 204 and Rastrillo-Location for a GET or HEAD
+// that rendered nothing (live.Respond). Pass it the ResponseWriter, not
+// ExecuteRegions: writing the body first would commit the headers and
+// lose Rastrillo-Regions. Nothing is sent on error.
+func (p *Pages) WriteRegions(w http.ResponseWriter, r *http.Request, page string, names []string, data any) error {
+	var b bytes.Buffer
+	rendered, err := p.ExecuteRegions(&b, page, names, data)
+	if err != nil {
+		return err
+	}
+	return live.Respond(w, r, rendered, b.Bytes())
+}
+
+// Render answers a request for page, whole or as the regions a
+// fragment request names, in live's render order (live.Render), and is
+// the call a handler should make. status 0 means 200; a fragment
+// answer keeps it. data builds the page data, called once with whether
+// this render may take the flash, and not at all when the answer is a
+// navigation. The data must carry L, as for Execute. An error from
+// data, the localizer check or a template comes back with nothing
+// written, so the caller can send its 500. An error writing the
+// response can come after it is committed, when a 500 is too late.
+func (p *Pages) Render(w http.ResponseWriter, r *http.Request, status int, page string, data func(takeFlash bool) (any, error)) error {
+	t, ok := p.pages[page]
+	if !ok {
+		return fmt.Errorf(noPageMsg, page)
+	}
+	// The render order is live.Render's, run on the page's own set and
+	// entry, so the two cannot drift. The data checks are checkData,
+	// which Execute and ExecuteRegions run too, so a check added there
+	// reaches Render; it runs on what data built, inside the callback,
+	// since the data does not exist before live.Render asks for it.
+	return live.Render(w, r, status, t, p.entry, func(takeFlash bool) (any, error) {
+		d, err := data(takeFlash)
+		if err != nil {
+			return nil, err
+		}
+		if err := checkData(page, d); err != nil {
+			return nil, err
+		}
+		return d, nil
+	})
+}
+
+// checkData is every Pages render's check on the page data: it must
+// carry a non-nil localizer as L.
+func checkData(page string, data any) error {
+	if localizer(data) == nil {
+		return fmt.Errorf("%w "+pageDataMsg, ErrNoLocalizer, page)
+	}
+	return nil
+}
+
+// HasRegions reports whether page defines a region for any of names
+// other than the notice, which every layout has (see live.Has). Ask it
+// before taking the flash; a page that does not exist has none.
+func (p *Pages) HasRegions(page string, names []string) bool {
+	t, ok := p.pages[page]
+	return ok && live.Has(t, names)
 }
 
 // resolve applies the strict or compat policy to one locale call and

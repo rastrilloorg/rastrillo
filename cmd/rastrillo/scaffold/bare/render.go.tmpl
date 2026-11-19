@@ -1,0 +1,86 @@
+package __PKG__
+
+import (
+	"bytes"
+	"embed"
+	"html/template"
+	"maps"
+	"net/http"
+
+	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/locales"
+	"amadan.net/rastrillo/rastrillo/ui"
+
+	"__NAME__/internal/__PKG__/icons"
+)
+
+//go:embed templates static
+var appFS embed.FS
+
+// assets fingerprints static/: {{asset "static/tokens.css"}} is a URL
+// with the content's hash in it, so it is cached for a year.
+var assets = rastrillo.NewAssets(appFS)
+
+// pages is built once at boot; the localizer in each page's data
+// decides the language.
+var pages, pagesErr = newPages()
+
+func newPages() (*ui.Pages, error) {
+	config, err := locales.CheckConfig(Locale, nil)
+	if err != nil {
+		return nil, err
+	}
+	files := map[string]ui.PageFile{}
+	for _, name := range []string{__PAGES__} {
+		files[name] = ui.PageFile{Path: "templates/" + name + ".html"}
+	}
+	return ui.NewPages(ui.PagesConfig{
+		App: appFS, Layout: "templates/layout.html",
+		Pages: files, Locale: config,
+		// Both icon seams, always: icon alone breaks cdn and js icons.
+		Funcs: template.FuncMap{"icon": icons.Icon,
+			"iconAssets": icons.Assets, "asset": assets.Path},
+	})
+}
+
+// render executes the page into a buffer before anything touches the
+// wire, so a template error is a clean 500 rather than half a page.
+// Scheme is what the layout writes as data-theme: without it a chosen
+// Dark would paint System on every reload.
+func render(
+	response http.ResponseWriter, request *http.Request, name string,
+	data map[string]any,
+) {
+	localized := ui.ForRequest(request)
+	page := map[string]any{}
+	maps.Copy(page, data)
+	page["L"], page["Locales"] = localized.L, localized.Locales
+	page["Return"], page["Scheme"] = localized.Return, localized.Scheme
+	page["Base"] = localized.Base
+	if err := pages.Execute(response, name, page); err != nil {
+		http.Error(response, "Something went wrong.",
+			http.StatusInternalServerError)
+	}
+}
+
+// ErrorPage draws templates/errors.html for a refusal and, through
+// Options.ErrorPage, for a panic. It finds the language with
+// LocalizerFor, because a recovered panic reaches it outside the
+// middleware that puts the localizer on the request.
+func ErrorPage(
+	response http.ResponseWriter, request *http.Request, status int,
+	ref string,
+) {
+	var page bytes.Buffer
+	if pagesErr != nil || pages.Execute(&page, "errors", map[string]any{
+		"L":      pages.LocalizerFor(request),
+		"Scheme": rastrillo.SchemeFrom(request), "Status": status,
+		"Ref": ref,
+	}) != nil {
+		http.Error(response, "Something went wrong.",
+			http.StatusInternalServerError)
+		return
+	}
+	response.WriteHeader(status)
+	page.WriteTo(response)
+}

@@ -9,16 +9,21 @@ Opens your SQLite database the way a CARLOS app needs it, as one
 ## Open
 
 ```go
-func Open(path string, log *slog.Logger) (*DB, error)
+func Open(path string, log *slog.Logger, options ...Option) (*DB, error)
 ```
 
 Opens one file as two pools and returns a handle wrapping both. A nil
-logger defaults to `slog.Default()`.
+logger defaults to `slog.Default()`. The only option is
+[`DurableCommits`](#durablecommits).
 
 What it sets for you, and why each one is there:
 
 - **DSN pragma order.** `busy_timeout` before `journal_mode=WAL`; the
   other order crashes under concurrent open. `foreign_keys(1)` is on.
+- **`synchronous(NORMAL)`.** In WAL mode, most commits skip the extra
+  sync to disk, which can make writes faster. With WAL, a power cut can
+  undo recent commits without corrupting the database.
+  `DurableCommits()` switches the `synchronous` setting to `FULL`.
 - **One writer connection.** SQLite allows one writer, and queueing
   inside the pool beats getting `SQLITE_BUSY` at the call site.
 - **Several reader connections** — `runtime.NumCPU()`, floor of four.
@@ -36,6 +41,21 @@ What it sets for you, and why each one is there:
   scoped by-id miss is the ordinary 404 path and happens on every
   not-yours URL.
 
+## DurableCommits
+
+```go
+func DurableCommits() Option
+```
+
+Opens both pools with `synchronous(FULL)` instead of `NORMAL`. SQLite
+syncs the WAL after every commit, helping preserve recent commits
+through a power loss or operating system crash. With `NORMAL`, an app
+crash does not lose committed data, but a power loss or operating system
+crash can lose recent commits without corrupting the database. In the
+v0.34.0 benchmark, the toggle rate fell from about 5,700 per second to
+about 182. Use this option when preserving recent commits through a
+machine crash matters more than write speed.
+
 ## DB
 
 ```go
@@ -44,8 +64,8 @@ type DB struct {
 }
 ```
 
-`G` is the handle your models and handlers use. The two `*sql.DB` pools
-behind it are unexported.
+`G` is the handle your models and handlers use. `Writer` and `Reader`
+return the two `*sql.DB` pools behind it.
 
 ## DB.Writer
 
@@ -62,6 +82,21 @@ transaction.
 `d.G.DB()` gets you the same pool through GORM, and is what most code
 uses when handing a `*sql.DB` to a `database/sql` package like
 [`sessions`](/docs/reference/sessions).
+
+## DB.Reader
+
+```go
+func (pools *DB) Reader() *sql.DB
+```
+
+The read pool has several connections, so reads can run while a write
+is in progress. Pass it as `Reader` to
+[`sessions`](/docs/reference/sessions) or
+[`auth`](/docs/reference/auth) only if a mixed-load test on your
+instance shows it helps. On one core, under heavy mixed load, it slows
+writes.
+Only read through it. Writes go through `Writer`, which keeps them to
+one connection.
 
 ## DB.Close
 

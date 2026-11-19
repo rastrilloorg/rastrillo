@@ -53,6 +53,15 @@ type Perf struct {
 	Reason string
 }
 
+// Weight raises one page's first-load limit to Limit gzipped bytes of
+// framework CSS and JS, everything it loads included.
+type Weight struct {
+	Screen string // "GET /jobs", as a perf record names it
+	Limit  int
+	Line   int
+	Reason string
+}
+
 type Boot struct {
 	Limit  time.Duration
 	Line   int
@@ -60,14 +69,18 @@ type Boot struct {
 }
 
 type File struct {
-	Sizes map[string]Size
-	Times map[string]Time
-	Perfs map[string]Perf
-	Boot  *Boot
+	Sizes   map[string]Size
+	Times   map[string]Time
+	Perfs   map[string]Perf
+	Weights map[string]Weight
+	Boot    *Boot
 }
 
 func empty() *File {
-	return &File{Sizes: map[string]Size{}, Times: map[string]Time{}, Perfs: map[string]Perf{}}
+	return &File{
+		Sizes: map[string]Size{}, Times: map[string]Time{},
+		Perfs: map[string]Perf{}, Weights: map[string]Weight{},
+	}
 }
 
 // Parse refuses rather than guesses: every malformed line is reported
@@ -156,32 +169,9 @@ func (f *File) add(n int, fields []string) error {
 		}
 		f.Times[dir] = Time{Dir: dir, Limit: d, Line: n, Reason: why}
 	case "perf":
-		if len(fields) < 4 || !strings.HasPrefix(fields[2], "/") {
-			return errors.New("want: perf <METHOD> <pattern> <duration>|skip <reason>")
-		}
-		method := fields[1]
-		if method != strings.ToUpper(method) {
-			return fmt.Errorf("method %q must be upper case, as perf names it", method)
-		}
-		p := Perf{Screen: method + " " + fields[2], Line: n}
-		if fields[3] == "skip" {
-			p.Skip = true
-		} else {
-			d, err := duration(fields[3])
-			if err != nil {
-				return err
-			}
-			p.Limit = d
-		}
-		why, err := reason(4)
-		if err != nil {
-			return err
-		}
-		p.Reason = why
-		if _, dup := f.Perfs[p.Screen]; dup {
-			return fmt.Errorf("second perf record for %s", p.Screen)
-		}
-		f.Perfs[p.Screen] = p
+		return f.addPerf(n, fields, reason)
+	case "weight":
+		return f.addWeight(n, fields, reason)
 	case "boot":
 		if len(fields) < 2 {
 			return errors.New("want: boot <duration> <reason>")
@@ -199,8 +189,71 @@ func (f *File) add(n int, fields []string) error {
 		}
 		f.Boot = &Boot{Limit: d, Line: n, Reason: why}
 	default:
-		return fmt.Errorf("unknown record %q (size, time, perf, boot)", fields[0])
+		return fmt.Errorf(
+			"unknown record %q (size, time, perf, weight, boot)", fields[0])
 	}
+	return nil
+}
+
+// screenName reads a record's <METHOD> <pattern> as the screen name perf
+// gives the route, "GET /notes/{id}", or refuses it with want.
+func screenName(fields []string, want string) (string, error) {
+	if len(fields) < 4 || !strings.HasPrefix(fields[2], "/") {
+		return "", errors.New(want)
+	}
+	method := fields[1]
+	if method != strings.ToUpper(method) {
+		return "", fmt.Errorf(
+			"method %q must be upper case, as perf names it", method)
+	}
+	return method + " " + fields[2], nil
+}
+
+func (file *File) addPerf(
+	line int, fields []string, reason func(int) (string, error),
+) error {
+	screen, err := screenName(fields,
+		"want: perf <METHOD> <pattern> <duration>|skip <reason>")
+	if err != nil {
+		return err
+	}
+	record := Perf{Screen: screen, Line: line}
+	if fields[3] == "skip" {
+		record.Skip = true
+	} else if record.Limit, err = duration(fields[3]); err != nil {
+		return err
+	}
+	if record.Reason, err = reason(4); err != nil {
+		return err
+	}
+	if _, dup := file.Perfs[screen]; dup {
+		return fmt.Errorf("second perf record for %s", screen)
+	}
+	file.Perfs[screen] = record
+	return nil
+}
+
+func (file *File) addWeight(
+	line int, fields []string, reason func(int) (string, error),
+) error {
+	screen, err := screenName(fields,
+		"want: weight <METHOD> <pattern> <bytes> <reason>")
+	if err != nil {
+		return err
+	}
+	record := Weight{Screen: screen, Line: line}
+	record.Limit, err = strconv.Atoi(fields[3])
+	if err != nil || record.Limit <= 0 {
+		return fmt.Errorf("weight %q: want a positive number of "+
+			"gzipped bytes, such as 26000", fields[3])
+	}
+	if record.Reason, err = reason(4); err != nil {
+		return err
+	}
+	if _, dup := file.Weights[screen]; dup {
+		return fmt.Errorf("second weight record for %s", screen)
+	}
+	file.Weights[screen] = record
 	return nil
 }
 

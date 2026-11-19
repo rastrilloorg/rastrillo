@@ -33,6 +33,8 @@ type Route struct {
 type Verifier interface {
 	Verify(ctx context.Context, r *http.Request) (rastrillo.Actor, error)
 }
+
+func (c Config) Gate() Gate
 ```
 
 `New` builds the `/api/v1` handler. Mount it at both `/api/v1` and
@@ -55,8 +57,13 @@ through these steps in order, and the first one that refuses answers:
 2. `Config.Before`, such as a rate limiter.
 3. `Verify`: 401 or 503.
 4. The agent headers: 422.
-5. A read-only token on a `Write` route: 403.
-6. `Config.After`, then the route's `Handle`.
+5. With `RequireAgentSession`, an agent's write with no
+   `Agent-Session`: 422.
+6. A read-only token on a `Write` route: 403.
+7. `Config.After`, then the route's `Handle`.
+
+The answer is held until `Handle` returns, then sent, and with a
+`Rechecker` it is checked again on the way out. See [Gate](#gate).
 
 `Handle` gets the `Ctx` that `Config.Ctx` builds, with `Actor` set to
 the verified caller and `Authorize` set to `Config.Authorize`. `Pattern`
@@ -107,6 +114,7 @@ not on `Message`: each code maps to one status, and the prose may change.
 | `too_large` | 413 | the body is over the cap |
 | `unsupported_media_type` | 415 | a write body without `Content-Type: application/json` |
 | `invalid` | 422 | a field was refused, and `fields` says which; or the body is not one JSON object |
+| `response_too_large` | 422 | the answer would be over the cap, 2 MiB on the tree |
 | `rate_limited` | 429 | a `Config.Before` limiter said no |
 | `internal` | 500 | something else went wrong; `ref` is in the log |
 | `unavailable` | 503 | the token store could not be asked |
@@ -115,24 +123,141 @@ not on `Message`: each code maps to one status, and the prose may change.
 500. Quote it when you report the failure: the log line carries the same
 one.
 
-## Write, WriteError and Refuse
+## Gate
+
+```go
+type Gate struct {
+	Verify              Verifier
+	Logger              *slog.Logger
+	MaxBody             int64
+	MaxResponse         int64
+	Before, After       []func(http.Handler) http.Handler
+	RequireAgentSession bool
+	Redact              func(string) string
+}
+
+func (g Gate) Validate() error
+func (g Gate) Wrap(handler http.Handler) http.Handler
+func (g Gate) Admit(actor rastrillo.Actor, operation rastrillo.Operation) error
+```
+
+`Gate` is the request pipeline the tree and [mcp](/docs/reference/mcp)
+share. `Config.Gate` copies it out of a tree's `Config`. `Config` has no
+`MaxResponse`, so the tree's answers are capped at 2 MiB.
+
+`Validate` reports a gate that would fail on its first request: no
+`Verify`, or a nil `Before` or `After`. `New` and `mcp.New` call it.
+Call it yourself before `Wrap`, which doesn't.
+
+`Wrap` runs a handler behind the gate: `Before`, `Verify`, the agent
+headers, `After`, panic recovery, redacted logging, and the answer held
+and checked, with the actor on the request's context. It panics if a
+`Before` or `After` returns nil. It doesn't call `Admit`; the handler
+calls it once it knows the operation.
+
+`Admit` is the per-operation half, in the tree's order. With
+`RequireAgentSession` set, it refuses an agent's write that came with
+no `Agent-Session`. Then it refuses a read-only token on anything but a
+`Read` operation, as `op.Forbidden`.
+
+`MaxBody` caps a request body, and zero or less means 1 MiB.
+`MaxResponse` caps an answer, which is held whole until it has been
+checked, and zero or less means 2 MiB. An answer over the cap is 422
+`response_too_large`, refused before any recheck.
+
+### Rechecker and Disclosed
+
+```go
+type Rechecker interface {
+	Recheck(ctx context.Context, request *http.Request, was rastrillo.Actor) (rastrillo.Actor, error)
+}
+
+func Disclosed(ctx context.Context, check func(ctx context.Context, fresh rastrillo.Actor) error)
+```
+
+When `Verify` is also a `Rechecker`, the gate sends each answer in
+64 KiB chunks. Before the headers, and before each chunk, it:
+
+1. calls `Recheck`, which must make `Verify`'s checks with no side
+   effects: no quota charged, no last-used time written;
+2. refuses the answer as `ErrUnauthorized` if the fresh actor's
+   `Subject`, `Agent`, `Credential` or `Grant` differs from the
+   original's. A grant is compared by its ID, issuers and audience, so
+   its `Teams` and `Scopes` may change;
+3. copies the original's `Session` and `Harness` onto the fresh actor,
+   because they come from the request's headers and a `Recheck`
+   returns them empty;
+4. runs every check registered with `Disclosed`, in order, with the
+   fresh actor. The tree registers `Admit` and `op.Check` for the
+   route's operation.
+
+Each round, and the write of the chunk after it, share one deadline: 5
+seconds, or the request's own deadline if that is sooner. A callback
+that returns after the deadline fails the round as `ErrUnavailable`,
+whatever it returned. Each chunk's write deadline is set from its own
+round, so the server's `WriteTimeout` doesn't bound a rechecked answer
+as a whole. A client that reads slowly can hold a 2 MiB answer for 32
+rounds.
+
+A round that fails before the headers turns the answer into the
+refusal: 401, 403 or 503. One that fails later cuts the connection, and
+logs `api: answer cut off`. The answer carries a `Content-Length`, so
+the client sees a short body. A transport that can't set a write
+deadline, such as `httptest.ResponseRecorder`, gets 503 before anything
+is sent, so test through `httptest.NewServer`.
+
+The gate sets deadlines and flushes through its own writer, beneath any
+`Before` middleware, so a `Before` that wraps the writer still works. A
+wrapper that keeps bytes in its own buffer sends them when it closes,
+after the last round.
+
+`Disclosed` registers a check on this request's answer. Outside the
+tree and `Wrap` it does nothing, and a nil check panics. Without a
+`Rechecker` no check runs, but answers are still held and capped.
+
+### Refusal and IsAgentSessionRefusal
+
+```go
+func Refusal(request *http.Request, err error) (int, Error)
+func IsAgentSessionRefusal(err error) bool
+```
+
+`Refusal` is `Refuse` without the write: it logs the way `Refuse` does
+and returns the status and the envelope. MCP puts the envelope in a
+tool error, so both doors say the same thing about the same failure.
+`Admit`'s agent-session refusal is 422 `invalid`, with a message saying
+to send `Agent-Session` with every write.
+
+`IsAgentSessionRefusal` reports whether `err` is that refusal. MCP lists
+such a write tool anyway, so the call itself tells the agent which
+header to send.
+
+## Write, Encode, WriteError and Refuse
 
 ```go
 func Write(w http.ResponseWriter, status int, v any)
+func Encode(value any) ([]byte, error)
 func WriteError(w http.ResponseWriter, status int, e Error)
 func Refuse(w http.ResponseWriter, r *http.Request, err error)
 ```
 
 `Write` answers with `v` as JSON, with `Content-Type: application/json`
 and `Cache-Control: no-store`. An empty list encodes as `[]`, never
-`null`. `WriteError` puts `e` under `"error"` and writes it. Use it for a
-code `Refuse` cannot derive from an error, such as `rate_limited` from a
-rate limiter.
+`null`. An `encoding/json` `json.Number` is written as the number it
+holds, not as a string. `Encode` returns the bytes `Write` sends; MCP
+encodes each tool result with it, so both endpoints write the same
+value the same way. An empty `json.Number`, or one that isn't a JSON
+number, can't be encoded. `Encode` returns an error. `Write` panics,
+and the tree answers with a 500 and a ref. `WriteError` puts `e` under
+`"error"` and writes it. Use it for a code `Refuse` cannot derive from
+an error, such as `rate_limited` from a rate limiter.
 
 `Refuse` answers an error. An `op` refusal gets its code and status:
 `op.Invalid` is 422 with its fields re-keyed by `FieldName`,
 `op.NotFound` 404, `op.Forbidden` 403, `op.Conflict` 409 with
-`Conflict.Message` as the message. `ErrUnauthorized` is 401 with
+`Conflict.Message` as the message. An `op.Invalid` with `AsSent` set
+keeps its field names as the client sent them; `op.DecodeInput` sets
+it. `ErrUnauthorized` is 401 with
 `WWW-Authenticate: Bearer`, and `ErrUnavailable` is 503. Any other error
 is a 500: the error text goes to the log under a fresh ref, and the
 response carries only the ref. `op.Forbidden.Reason` is logged and never

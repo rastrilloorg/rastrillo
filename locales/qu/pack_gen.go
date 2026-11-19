@@ -4,8 +4,8 @@
 // SHA-256 in hack/moneycldr/sources/inputs.sha256. Data from the Unicode CLDR,
 // © Unicode, Inc., under the Unicode License v3 (locales/LICENSE-UNICODE).
 
-// Package qu links CLDR money-formatting data for every modern "qu"
-// locale. Import it for its side effect.
+// Package qu links CLDR number- and money-formatting data for every
+// modern "qu" locale. Import it for its side effect.
 package qu
 
 import "amadan.net/rastrillo/rastrillo/locales"
@@ -13,7 +13,7 @@ import "amadan.net/rastrillo/rastrillo/locales"
 func init() { locales.Register("qu", data) }
 
 var data = map[string]locales.Locale{
-	"qu":    {Parent: "root", Symbols: map[string]string{"BBD": "BBG", "BMD": "DBM", "BZD": "DBZ", "CAD": "$CA", "PEN": "S/", "PHP": "PHP", "USD": "$US"}, Narrow: map[string]string{"GHS": "GHC"}},
-	"qu-BO": {Parent: "qu", CurrencyDecimal: ",", CurrencyGroup: ".", Decimal: ",", Symbols: map[string]string{"BOB": "Bs", "PEN": "PEN"}},
+	"qu":    {Parent: "root", Percent: "#,##0\u00a0%", Symbols: map[string]string{"BBD": "BBG", "BMD": "DBM", "BZD": "DBZ", "CAD": "$CA", "PEN": "S/", "PHP": "PHP", "USD": "$US"}, Narrow: map[string]string{"GHS": "GHC"}},
+	"qu-BO": {Parent: "qu", CurrencyDecimal: ",", CurrencyGroup: ".", Decimal: ",", Group: ".", Symbols: map[string]string{"BOB": "Bs", "PEN": "PEN"}},
 	"qu-EC": {Parent: "qu", Symbols: map[string]string{"PEN": "PEN", "USD": "$"}},
 }

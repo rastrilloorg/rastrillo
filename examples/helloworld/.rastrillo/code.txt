@@ -1,0 +1,10 @@
+# Offences against the code limits that already existed when the
+# gate began. Records only go down: lower or delete a record when the
+# code improves, and give a reason after the count on any record you add
+# or raise.
+#
+# <kind> <path> <key, or -> <count> [reason]
+names actions/index.GET.go Handle/r 1
+names actions/index.GET.go Handle/w 1
+names gen/actions/index_get/index.GET.go Handle/r 1
+names gen/actions/index_get/index.GET.go Handle/w 1

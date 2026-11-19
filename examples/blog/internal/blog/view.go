@@ -149,6 +149,7 @@ func NewApp(cfg locales.Config) (*App, error) {
 		Locale:  cfg,
 		Catalog: genlocales.BaseCatalog,
 		Funcs:   template.FuncMap{"asset": Assets.Path},
+		Assets:  Assets,
 	})
 	if err != nil {
 		return nil, err

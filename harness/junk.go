@@ -21,10 +21,10 @@ var junkValues = []string{"undefined", "null", "[object Object]", "NaN"}
 // screen whose legitimate prose contains a junk substring ("null and
 // void"). The allowance is the surrounding string, not the junk value:
 // everything else on the screen is still scanned.
-func (r *Rig) AllowText(s string) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	r.allowedText = append(r.allowedText, s)
+func (rig *Rig) AllowText(s string) {
+	rig.mu.Lock()
+	defer rig.mu.Unlock()
+	rig.allowedText = append(rig.allowedText, s)
 }
 
 // junkScanJS reads the screen the way a person would, plus the places
@@ -52,11 +52,11 @@ const junkScanJS = `((sel, junk, allowed) => {
 })`
 
 // junkHits runs the scan rooted at selector and returns what it found.
-func (r *Rig) junkHits(selector string) []string {
-	r.t.Helper()
-	r.mu.Lock()
-	allowed := append([]string(nil), r.allowedText...)
-	r.mu.Unlock()
+func (rig *Rig) junkHits(selector string) []string {
+	rig.t.Helper()
+	rig.mu.Lock()
+	allowed := append([]string(nil), rig.allowedText...)
+	rig.mu.Unlock()
 	if allowed == nil {
 		allowed = []string{} // marshal as [], never null — JS iterates it
 	}
@@ -64,14 +64,14 @@ func (r *Rig) junkHits(selector string) []string {
 	for _, v := range []any{selector, junkValues, allowed} {
 		b, err := json.Marshal(v)
 		if err != nil {
-			r.t.Fatalf("harness: junk scan args: %v", err)
+			rig.t.Fatalf("harness: junk scan args: %v", err)
 		}
 		args = append(args, string(b))
 	}
-	var hits []string
 	expr := fmt.Sprintf("%s(%s, %s, %s)", junkScanJS, args[0], args[1], args[2])
-	if err := chromedp.Run(r.ctx, chromedp.Evaluate(expr, &hits)); err != nil {
-		r.t.Fatalf("harness: junk scan: %v", err)
+	hits, err := chromedp.Run(rig.ctx, chromedp.Evaluate[[]string](expr))
+	if err != nil {
+		rig.t.Fatalf("harness: junk scan: %v", err)
 	}
 	return hits
 }

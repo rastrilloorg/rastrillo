@@ -95,6 +95,7 @@ type target struct {
 func screens(t testing.TB, cfg ScreenConfig, f *budgetfile.File, enforce bool) {
 	t.Helper()
 	targets, problems := inventory(cfg, f)
+	problems = append(problems, staleWeights(f, targets)...)
 	for _, p := range problems {
 		t.Errorf("%s", p)
 	}
@@ -102,36 +103,12 @@ func screens(t testing.TB, cfg ScreenConfig, f *budgetfile.File, enforce bool) {
 		t.FailNow()
 	}
 
-	// Count handlers still running, so one that outlives its request (a
-	// stream ignoring cancellation, a handler past its deadline) is caught
-	// before anything else is measured beside it.
-	var inflight atomic.Int32
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		inflight.Add(1)
-		defer inflight.Add(-1)
-		cfg.Handler.ServeHTTP(w, r)
-	}))
+	client, srv, inflight := startServer(t, cfg)
 	defer closeBounded(srv)
-	jar, _ := cookiejar.New(nil)
-	client := &http.Client{Jar: jar, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
-	if cfg.Signin != nil {
-		client.Timeout = signinBound
-		done := make(chan struct{})
-		go func() { defer close(done); cfg.Signin(client, srv.URL) }()
-		select {
-		case <-done:
-		case <-time.After(signinBound + time.Second):
-		}
-		client.Timeout = 0
-		if !idle(&inflight, time.Second) {
-			srv.CloseClientConnections()
-			t.Errorf("Signin did not finish within %s, or left a handler running: nothing can be measured behind it", signinBound)
-			t.FailNow()
-		}
-	}
-
+	var measured []target
 	for _, tg := range targets {
-		med, worst, err := measure(client, srv.URL+tg.path, tg.expect, tg.limit, &inflight)
+		med, worst, err := measure(
+			client, srv.URL+tg.path, tg.expect, tg.limit, inflight)
 		if errors.Is(err, errHung) {
 			// The handler is still running and nothing can stop it; every
 			// number after this one would include its goroutine.
@@ -143,19 +120,85 @@ func screens(t testing.TB, cfg ScreenConfig, f *budgetfile.File, enforce bool) {
 			t.Errorf("%s: %v", tg.screen, err)
 			continue
 		}
-		over := med > tg.limit || worst > 3*tg.limit
-		msg := fmt.Sprintf("%s: median %s, worst %s, budget %s", tg.screen, med.Round(time.Microsecond), worst.Round(time.Microsecond), tg.limit)
-		switch {
-		case over && enforce:
-			say("%s: over budget", msg)
-			t.Errorf("%s: over budget", msg)
-		case over:
-			say("%s: over budget (reported only; timing fails on CI)", msg)
-		case tg.exempt && med*10 < tg.limit*6:
-			say("%s: under 60%% of its record, consider lowering it", msg)
-		default:
-			say("%s", msg)
-		}
+		reportTiming(t, tg, med, worst, enforce)
+		measured = append(measured, tg)
+	}
+	// Only the screens that answered as they must are weighed: the rest
+	// have failed above, and once is enough.
+	checkFirstLoad(t, client, srv.URL, measured,
+		withRecords(frameworkBudget, f))
+}
+
+// reportTiming says a screen's timing, failing it when it is over its
+// budget and enforce is set.
+func reportTiming(
+	t testing.TB, tg target, med, worst time.Duration, enforce bool,
+) {
+	t.Helper()
+	over := med > tg.limit || worst > 3*tg.limit
+	msg := fmt.Sprintf("%s: median %s, worst %s, budget %s", tg.screen,
+		med.Round(time.Microsecond), worst.Round(time.Microsecond), tg.limit)
+	switch {
+	case over && enforce:
+		say("%s: over budget", msg)
+		t.Errorf("%s: over budget", msg)
+	case over:
+		say("%s: over budget (reported only; timing fails on CI)", msg)
+	case tg.exempt && med*10 < tg.limit*6:
+		say("%s: under 60%% of its record, consider lowering it", msg)
+	default:
+		say("%s", msg)
+	}
+}
+
+// startServer serves cfg.Handler over real HTTP, counting the handlers
+// still running, and returns a client that keeps cookies, does not
+// follow redirects, and is signed in when cfg.Signin is set. The caller
+// closes the server with closeBounded.
+func startServer(
+	t testing.TB, cfg ScreenConfig,
+) (*http.Client, *httptest.Server, *atomic.Int32) {
+	t.Helper()
+	// Count handlers still running, so one that outlives its request (a
+	// stream ignoring cancellation, a handler past its deadline) is caught
+	// before anything else is measured beside it.
+	inflight := &atomic.Int32{}
+	srv := httptest.NewServer(http.HandlerFunc(func(
+		writer http.ResponseWriter, request *http.Request,
+	) {
+		inflight.Add(1)
+		defer inflight.Add(-1)
+		cfg.Handler.ServeHTTP(writer, request)
+	}))
+	jar, _ := cookiejar.New(nil)
+	client := &http.Client{Jar: jar, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
+	if cfg.Signin != nil && !signIn(cfg, client, srv.URL, inflight) {
+		srv.CloseClientConnections()
+		closeBounded(srv)
+		t.Errorf("Signin did not finish within %s, or left a handler "+
+			"running: nothing can be measured behind it", signinBound)
+		t.FailNow()
+	}
+	return client, srv, inflight
+}
+
+// signIn runs cfg.Signin on a client of its own that shares client's
+// cookies, so a callback still running past its bound never shares a
+// client with the measurements, and reports whether it finished in
+// time and left no handler running.
+func signIn(
+	cfg ScreenConfig, client *http.Client, base string,
+	inflight *atomic.Int32,
+) bool {
+	signer := *client
+	signer.Timeout = signinBound
+	done := make(chan struct{})
+	go func() { defer close(done); cfg.Signin(&signer, base) }()
+	select {
+	case <-done:
+		return idle(inflight, time.Second)
+	case <-time.After(signinBound + time.Second):
+		return false
 	}
 }
 
@@ -184,48 +227,15 @@ func inventory(cfg ScreenConfig, f *budgetfile.File) ([]target, []string) {
 		}
 	}
 
-	if (cfg.Routes == nil) == (cfg.Patterns == nil) {
-		// Without exactly one source of routes every record below would also
-		// be reported stale, burying the one problem that matters.
-		msg := "ScreenConfig: set Routes or Patterns, not both"
-		if cfg.Routes == nil {
-			msg = "ScreenConfig: set Routes (a chi router) or Patterns (a stdlib mux's GET routes)"
-		}
-		problems = append(problems, msg)
+	if problem := routeSourceProblem(cfg); problem != "" {
+		problems = append(problems, problem)
 		sort.Strings(problems)
 		return nil, problems
 	}
-
-	walked := map[string]bool{}
-	mounts := map[string]bool{}
-	var routes []string
-	add := func(route string) {
-		if !walked[route] {
-			walked[route] = true
-			routes = append(routes, route)
-		}
-	}
-	if cfg.Patterns != nil {
-		for _, p := range cfg.Patterns {
-			// A subtree pattern ("/admin/") is the stdlib's mount, chi's
-			// "/*": whatever serves it has screens no table lists. "/" is
-			// the root page here, and "/admin/{$}" one page, not a subtree.
-			if p != "/" && strings.HasSuffix(p, "/") {
-				mounts[p] = true
-			}
-			// "/{$}" matches only the root, but requested literally it is a
-			// 404 (the wildcard is not a path), so the screen is "/".
-			add(strings.TrimSuffix(p, "{$}"))
-		}
-	} else if err := chi.Walk(cfg.Routes, func(method, route string, _ http.Handler, _ ...func(http.Handler) http.Handler) error {
-		if method == http.MethodGet {
-			add(route)
-		}
-		return nil
-	}); err != nil {
+	routes, walked, mounts, err := listRoutes(cfg)
+	if err != nil {
 		problems = append(problems, "chi.Walk: "+err.Error())
 	}
-	sort.Strings(routes)
 
 	known := map[string]bool{}
 	limit := func(screen string) (time.Duration, bool, bool) {
@@ -245,11 +255,8 @@ func inventory(cfg ScreenConfig, f *budgetfile.File) ([]target, []string) {
 		}
 		if strings.HasSuffix(route, "/*") || mounts[route] || grouped {
 			if !grouped {
-				who := "chi"
-				if mounts[route] {
-					who = "the route table"
-				}
-				problems = append(problems, fmt.Sprintf("%s is a mounted handler %s cannot see inside: list its screens in an Opaque group, or record `perf %s skip <reason>`", screen, who, screen))
+				problems = append(problems,
+					unseenMount(screen, mounts[route]))
 			}
 			continue
 		}
@@ -297,9 +304,14 @@ func inventory(cfg ScreenConfig, f *budgetfile.File) ([]target, []string) {
 
 var errHung = errors.New("handler did not finish")
 
+// wrongStatusMsg is a screen that answered another status than the
+// one it must, which is never measured or weighed.
+const wrongStatusMsg = "answered %d, want %d: not measuring an error " +
+	"page (seed its rows, sign in with Signin, or set Expect)"
+
 // signinBound caps ScreenConfig.Signin: a sign-in handler that never
 // answers would otherwise hang the lane until go test's own timeout.
-const signinBound = 10 * time.Second
+var signinBound = 10 * time.Second
 
 // measure makes 10 requests, discards 2, and returns the median and the
 // worst of the other 8. TTFB is httptrace's GotFirstResponseByte: what a
@@ -343,7 +355,7 @@ func once(c *http.Client, url string, expect int, deadline time.Duration) (time.
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != expect {
-		return 0, fmt.Errorf("answered %d, want %d: not measuring an error page (seed its rows, sign in with Signin, or set Expect)", resp.StatusCode, expect)
+		return 0, fmt.Errorf(wrongStatusMsg, resp.StatusCode, expect)
 	}
 	// A stream is measured to its first byte and then let go; anything
 	// else is read to the end, so a handler that stalls mid-body is

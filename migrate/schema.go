@@ -39,10 +39,17 @@ type Table struct {
 // equal Snapshots.
 type Snapshot struct{ Tables []Table }
 
+// appTables restricts sqlite_master to the app's own tables: not
+// SQLite's (sqlite_sequence) and not litestream's (_litestream_seq,
+// _litestream_lock), which CARLOS's activator adds to every database
+// it replicates. GLOB, because LIKE's _ matches any character.
+const appTables = `type = 'table' AND name NOT LIKE 'sqlite_%'
+	  AND name NOT GLOB '_litestream_*'`
+
 func Read(ctx context.Context, q Querier) (Snapshot, error) {
 	var snap Snapshot
 	rows, err := q.QueryContext(ctx, `SELECT name FROM sqlite_master
-	  WHERE type = 'table' AND name NOT LIKE 'sqlite_%' ORDER BY name`)
+	  WHERE `+appTables+` ORDER BY name`)
 	if err != nil {
 		return snap, err
 	}

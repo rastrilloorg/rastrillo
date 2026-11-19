@@ -193,40 +193,10 @@ func (d *driftChecker) close() {
 	}
 }
 
-// rebuildApp is one turn of dev's loop: generate when the app has
-// anything to generate, then build appPkg into bin.
-func rebuildApp(dir, appPkg, bin string) error {
-	if generates(dir) {
-		if err := runGenerate([]string{dir}); err != nil {
-			return err
-		}
-	}
-	cmd := exec.Command("go", "build", "-o", bin, appPkg)
-	cmd.Dir = dir
-	cmd.Stdout, cmd.Stderr = os.Stdout, os.Stderr
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("go build: %w", err)
-	}
-	return nil
-}
-
-// generates reports whether dir has generation input (manifest/,
-// actions/) or output (gen/). A bare app has none, and generating
-// anyway would write it a gen/ it never imports; an app with any of
-// them must generate, or it builds against stale generated code.
-func generates(dir string) bool {
-	for _, d := range []string{"manifest", "actions", "gen"} {
-		if _, err := os.Stat(filepath.Join(dir, d)); err == nil {
-			return true
-		}
-	}
-	return false
-}
-
 // runDev implements `rastrillo dev [dir] [-- app args...]` (design doc
 // §11): watch, and on any change regenerate → rebuild → restart. It
-// calls the same runGenerate that CI calls — one code path, not two.
-// Everything after -- is passed to the app verbatim (e.g. -addr :9000).
+// calls CI's runGenerate, one code path not two, less the template
+// step (devGenerateArgs). Everything after -- goes to the app verbatim.
 func runDev(args []string) error {
 	dir, appArgs, help, err := parseDevArgs(args)
 	if err != nil {
@@ -264,7 +234,7 @@ func runDev(args []string) error {
 	var exitCh chan error
 	start := func() error {
 		c := exec.Command(bin, appArgs...)
-		c.Dir = dir
+		c.Dir, c.Env = dir, devChildEnv()
 		c.Stdout, c.Stderr = os.Stdout, os.Stderr
 		if err := c.Start(); err != nil {
 			return err

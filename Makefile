@@ -4,8 +4,8 @@
 # silently no-op with "Nothing to be done" - exit 0, and the sweep never
 # runs. None of the four names a real file, so the pattern rule already
 # reruns unconditionally without needing .PHONY's safety here.
-.PHONY: ci suite suite-roles gofmt budget root perf staticcheck govulncheck gitleaks chromedp-graph gorm-free race generate-check scaffold-smoke browser \
-        browser-sweep mirror mirror-check money money-cldr
+.PHONY: ci suite suite-roles gofmt budget code root next-go perf staticcheck govulncheck gitleaks chromedp-graph gorm-free race generate-check scaffold-smoke browser \
+        browser-sweep mirror mirror-check money money-cldr bench locale-dates
 
 # The READMEs' documented sweeps all run with GOFLAGS=-mod=mod: the tests
 # that build scratch modules (replace => this repo) rely on it to resolve
@@ -33,10 +33,10 @@ export CGO_ENABLED = 0
 # version is the signal.
 #
 # Held on 1.26 deliberately. Go 1.27 writes export data that x/tools
-# before v0.50.0 cannot read, which breaks tmplmigrate's type-check, and
-# v0.50.0 needs go 1.26 in go.mod: moving to 1.27 raises the Go floor
-# for every app that imports rastrillo, so it is its own change.
-export GOTOOLCHAIN = go1.26.10
+# before v0.50.0 cannot read, which breaks tmplmigrate's type-check, so
+# moving to 1.27 means moving x/tools too: its own change. Until then
+# next-go checks that apps still build on 1.27.
+export GOTOOLCHAIN = go1.26.11
 
 BIN := $(CURDIR)/.build
 
@@ -69,13 +69,13 @@ ci: gofmt chromedp-graph gorm-free generate-check suite
 # by hack/gotest.sh. In a role's name a / in the path is a . so
 # internal/designsystem@6 becomes browser.internal.designsystem~1of6
 # to ~6of6.
-BROWSER_PKGS := harness webauthn ui@2 pow internal/designsystem@6 internal/designsystem/sweep internal/designsystem/history auth
-ROOT_SPLIT := internal/designsystem@4 cmd/rastrillo@2 cmd/dsgen
+BROWSER_PKGS := harness webauthn ui@2 pow internal/designsystem@6 internal/designsystem/sweep internal/designsystem/history auth internal/basepathe2e internal/scaffoldcheck
+ROOT_SPLIT := internal/designsystem@4 cmd/rastrillo@2 cmd/dsgen internal/scaffoldcheck
 go-roles = $(foreach p,$(2),$(if $(findstring @,$(p)),$(call go-slices,$(1),$(subst /,.,$(word 1,$(subst @, ,$(p)))),$(word 2,$(subst @, ,$(p)))),$(1).$(subst /,.,$(p))))
 go-slices = $(foreach k,$(shell seq 1 $(3)),$(1).$(2)~$(k)of$(3))
 BROWSER_ROLES := $(call go-roles,browser,$(BROWSER_PKGS))
 TEST_ROLES := $(call go-roles,test,$(ROOT_SPLIT))
-SUITE := root $(TEST_ROLES) staticcheck govulncheck gitleaks money budget race \
+SUITE := root $(TEST_ROLES) next-go staticcheck govulncheck gitleaks money bench budget code race \
          $(addprefix example-,$(EXAMPLES)) scaffold-smoke $(BROWSER_ROLES)
 
 suite:
@@ -106,10 +106,29 @@ gofmt:
 budget: | $(BIN)/tmp
 	go run ./cmd/rastrillo budget size
 	go run ./cmd/rastrillo budget size money
+	go run ./cmd/rastrillo budget size bench/agent
 	@for e in $(EXAMPLES); do go run ./cmd/rastrillo budget size examples/$$e || exit 1; done
+
+# The readable-code limits: 80 columns, 400-line files, 40-line functions
+# (15 for an action) and no single-letter names. Each module's
+# .rastrillo/code.txt records the offences it had when the gate began,
+# and the records only go down. Measured module by module, as budget is.
+# Agents copy the examples, so they must not teach markup the CSP drops.
+code: | $(BIN)/tmp
+	go run ./cmd/rastrillo budget code
+	go run ./cmd/rastrillo budget code money
+	@for e in $(EXAMPLES); do go run ./cmd/rastrillo budget code examples/$$e || exit 1; done
+	@for e in $(EXAMPLES); do go run ./cmd/rastrillo csp examples/$$e || exit 1; done
 
 money:
 	cd money && go build ./... && go vet ./... && go test ./... -count=1
+
+# bench/agent is the agent benchmark (docs/superpowers/specs/
+# 2026-10-30-agent-benchmark-design.md), a separate module so chromedp's
+# measuring code never joins the framework's build graph. Only its
+# offline tests run here; a round spends money and needs a token.
+bench: | $(BIN)/tmp
+	cd bench/agent && go build ./... && go vet ./... && go test ./... -count=1
 
 # money-cldr is the evidence behind the multi-currency money spec
 # (docs/superpowers/specs/2026-10-09-multi-currency-money-design.md). It
@@ -119,9 +138,9 @@ money:
 # generated one is untracked: git diff cannot see a new pack, and the
 # generator deletes the pack of a language CLDR dropped so that git diff
 # sees that. It runs the offline tests, compares the shipped currency
-# package with ICU through Node in every shipped locale, measures each
-# pack's binary cost, and re-measures the rejected golang.org/x/text
-# route. It is not in ci: it needs the network, and Node's CLDR must
+# and number packages with ICU through Node in every shipped locale,
+# measures each pack's binary cost, and re-measures the rejected
+# golang.org/x/text route. It is not in ci: it needs the network, and Node's CLDR must
 # match the data's. The offline half alone is
 # `cd hack/moneycldr && go test ./...`.
 MONEY_CLDR_DIR ?= $(BIN)/cldr
@@ -135,6 +154,17 @@ money-cldr: | $(BIN)/tmp
 		go run ./cmd/check -compare $(BIN)/tmp/money-intl.tsv && \
 		go run ./cmd/packsize && \
 		go run ./cmd/xtext $(BIN)/tmp/money-intl.tsv
+	cd hack/moneycldr && go run ./cmd/numcheck > $(BIN)/tmp/numbers.tsv && \
+		node oracle/numbers.js < $(BIN)/tmp/numbers.tsv
+
+# locale-dates rewrites locales/<pack>/dates_gen.go, the CLDR date
+# patterns and names the dates package writes with, from the ICU the
+# node on PATH links (it must carry the packs' CLDR, or gen.mjs stops),
+# then dates/testdata/date_labels.json, the cases Go and dates.mjs are
+# held to. Commit them with hack/cldrdates/coverage.tsv.
+locale-dates:
+	node hack/cldrdates/gen.mjs
+	go test ./dates/ -run 'TestDateLabelsAreCurrent$$' -count=1 -update
 
 # RASTRILLO_TEST_REQUIRE_NODE turns every nodetest skip into a failure
 # here: on a laptop without Node a skip is honest, but a gate that lost
@@ -150,6 +180,25 @@ root:
 
 test.%: | $(BIN)/tmp
 	RASTRILLO_TEST_REQUIRE_NODE=$(RASTRILLO_TEST_REQUIRE_NODE) ./hack/gotest.sh test '$*'
+
+# An app builds with whatever Go its machine has, not with GOTOOLCHAIN
+# above, so the gate builds with the next release too. Go 1.27 turned
+# the jsonv2 experiment on, which makes go-json-experiment an alias of
+# the standard library's encoding/json/v2, and the version pinned then
+# did not compile against 1.27's: every app broke while this gate, on
+# 1.26, stayed green. op hooks into json's decoding, and api and mcp
+# write json, so their tests run on the next Go and on this one with the
+# experiment on; with root's plain run, those are the three ways
+# op/decode_pass*.go is built and the three json v2s apps meet. go
+# fetches NEXT_GO through the module proxy on first use, as it does
+# GOTOOLCHAIN, and the runner's module cache keeps it. When GOTOOLCHAIN
+# moves to 1.27, NEXT_GO moves to 1.28.
+NEXT_GO := go1.27.3
+next-go: | $(BIN)/tmp
+	GOTOOLCHAIN=$(NEXT_GO) go build ./...
+	GOTOOLCHAIN=$(NEXT_GO) go vet ./op/...
+	GOTOOLCHAIN=$(NEXT_GO) go test -count=1 ./op/... ./api/... ./mcp/...
+	GOEXPERIMENT=jsonv2 go test -count=1 ./op/... ./api/... ./mcp/...
 
 # staticcheck catches what vet does not: deprecated APIs, values that are
 # never read, and the &*x that looks like a copy and is not (SA4001 found
@@ -183,6 +232,7 @@ endif
 staticcheck:
 	go run $(STATICCHECK) -tags browser ./...
 	cd money && go run $(STATICCHECK) ./...
+	cd bench/agent && go run $(STATICCHECK) ./...
 	@for e in $(EXAMPLES); do echo "staticcheck examples/$$e"; (cd examples/$$e && go run $(STATICCHECK) ./...) || exit 1; done
 
 # govulncheck reports only vulnerabilities this code can reach, so a
@@ -195,6 +245,7 @@ GOVULNCHECK := golang.org/x/vuln/cmd/govulncheck@v1.8.0
 govulncheck:
 	go run $(GOVULNCHECK) ./...
 	cd money && go run $(GOVULNCHECK) ./...
+	cd bench/agent && go run $(GOVULNCHECK) ./...
 	@for e in $(EXAMPLES); do echo "govulncheck examples/$$e"; (cd examples/$$e && go run $(GOVULNCHECK) ./...) || exit 1; done
 
 # The whole git history, not only the tree: a key committed and deleted
@@ -236,7 +287,7 @@ GORM_FREE = ./migrate ./pow ./sessions ./blobs ./jobs ./eventlog ./auth \
             ./mail ./carlos ./crypto ./flash ./form ./dbtest ./clientip ./nodetest ./background \
             ./xlsx ./table \
             ./perf ./lastsignin ./budget ./perf/perftest ./locales ./currency \
-            ./currency/replay ./currency/sqlmoney
+            ./currency/replay ./currency/sqlmoney ./number ./dates
 # go list runs on its own line so its failure fails the target: piped
 # straight into grep, a path that stopped resolving printed nothing and
 # the fence passed without checking anything.
@@ -254,9 +305,10 @@ gorm-free:
 # Get reads the same map) sessions and assertion verification; provision,
 # whose publishers on one hostname must serialize; and
 # ui.Pages alone in ui, whose isolation test runs 200 executions in two
-# languages at once.
+# languages at once; and tmpl, whose sets are prepared by whichever of
+# many concurrent first executions gets there first.
 race:
-	CGO_ENABLED=1 go test -race -count=1 ./jobs/ ./sessions/ ./assertion/ ./locales/ ./provision/
+	CGO_ENABLED=1 go test -race -count=1 ./jobs/ ./live/ ./sessions/ ./assertion/ ./locales/ ./provision/ ./tmpl/
 	CGO_ENABLED=1 go test -race -count=1 -run '^TestPages' ./ui/
 
 # The examples are separate modules with a replace back to this
@@ -265,8 +317,12 @@ race:
 # their first run fetches sqlc through the module proxy; that network
 # access is load-bearing - do not cache it away without keeping the
 # module download path working.
+#
+# The examples are where generated template code meets real pages, so
+# their tests run in shadow mode, as hack/gotest.sh runs the root's: a
+# compiled page whose bytes differ from html/template's fails the test.
 example-%: | $(BIN)/tmp
-	cd examples/$* && go build ./... && go vet ./... && go test ./... -count=1
+	cd examples/$* && go build ./... && go vet ./... && RASTRILLO_TEMPLATE_SHADOW=1 go test ./... -count=1
 
 # Not a file target, deliberately. A stale binary from an earlier
 # checkout would let generate-check and scaffold-smoke pass against a
@@ -296,8 +352,10 @@ generate-check: build-cli
 	# matches nothing below gen/ - only 'examples/*/gen/**' recurses into it.
 	# api/v1.json is the one file generate writes outside gen/ (the committed API
 	# contract, JSON API spec section 6); --check above already fails when it is
-	# stale, so this only catches a generator that writes it differently.
-	git diff --exit-code -- 'examples/*/gen/**' 'examples/*/api/v1.json'
+	# stale, so this only catches a generator that writes it differently. The
+	# compiled templates are the other: each goes in the package that builds the
+	# set, anywhere under the example, so its pathspec is a recursive glob.
+	git diff --exit-code -- 'examples/*/gen/**' 'examples/*/api/v1.json' 'examples/*/**/rastrillo_templates_gen.go'
 
 # Depends on the binary, NOT on generate-check: sharing that prerequisite
 # would make step 95 re-run step 90's work and fail for step 90's reasons,
@@ -307,7 +365,8 @@ scaffold-smoke: build-cli
 
 # The browser drive: the ui select journey, the harness's own checks,
 # the design system's, webauthn's PRF ceremonies including the
-# prfByAssertion fallback, and the sign-in screen's whole journey, one
+# prfByAssertion fallback, the sign-in screen's whole journey, and a new
+# app's own drive on a plain and a sign-in scaffold, one
 # package or slice per browser.<pkg>[~<k>of<n>] target (a / in the path
 # is a . in the name). `make browser` runs them one after another, as
 # the old -p 1 did; the suite runs each as its own shard. RASTRILLO_BROWSER_OPTIONAL

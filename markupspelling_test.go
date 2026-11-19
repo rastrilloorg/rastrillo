@@ -31,7 +31,11 @@ import (
 // come out of tokens.css, anything this test would have caught renders
 // unstyled with nothing to say why.
 func TestNoClassSpellingSurvives(t *testing.T) {
-	classAttr := regexp.MustCompile(`class=\\?"([^"]*)"`)
+	// Inside a Go interpreted string both quotes are escaped, and the
+	// value ends at \", not ". Taking it to the bare " kept the backslash
+	// on the last class, so the generated templates' rst-sr-only\ read as
+	// an old spelling rather than the utility it is.
+	classAttr := regexp.MustCompile(`class=\\"([^"\\]*)\\"|class="([^"]*)"`)
 	root := repoRoot(t)
 	var found []string
 	err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
@@ -78,7 +82,7 @@ func TestNoClassSpellingSurvives(t *testing.T) {
 				continue
 			}
 			for _, m := range classAttr.FindAllStringSubmatch(line, -1) {
-				for _, token := range strings.Fields(m[1]) {
+				for _, token := range strings.Fields(m[1] + " " + m[2]) {
 					if !strings.HasPrefix(token, "rst-") {
 						continue
 					}
@@ -122,10 +126,9 @@ var spellingExempt = map[string]bool{
 	// has one thing to learn and one thing to grep for. What is left is
 	// what a fence cannot say.
 	//
-	// tokens.css still carries a class selector beside every attribute
-	// one until stage 3, and the examples vendor a copy of it. Neither
-	// is markup.
-	"ui/tokens.css":                      true,
+	// Fiesta's tokens.css still carries a class selector beside every
+	// attribute one until stage 3, and the examples vendor a copy of
+	// it. Neither copy is markup.
 	"examples/blog/static/tokens.css":    true,
 	"examples/tickets/static/tokens.css": true,
 	// The historical record: plans and specs written before the flip,

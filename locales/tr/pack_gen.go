@@ -4,8 +4,8 @@
 // SHA-256 in hack/moneycldr/sources/inputs.sha256. Data from the Unicode CLDR,
 // © Unicode, Inc., under the Unicode License v3 (locales/LICENSE-UNICODE).
 
-// Package tr links CLDR money-formatting data for every modern "tr"
-// locale. Import it for its side effect.
+// Package tr links CLDR number- and money-formatting data for every
+// modern "tr" locale. Import it for its side effect.
 package tr
 
 import "amadan.net/rastrillo/rastrillo/locales"
@@ -13,6 +13,6 @@ import "amadan.net/rastrillo/rastrillo/locales"
 func init() { locales.Register("tr", data) }
 
 var data = map[string]locales.Locale{
-	"tr":    {Parent: "root", CurrencyDecimal: ",", CurrencyGroup: ".", Decimal: ",", Standard: "¤#,##0.00", Symbols: map[string]string{"AUD": "AU$", "JPY": "¥", "PHP": "PHP", "THB": "฿", "TRY": "₺", "USD": "$"}, Narrow: map[string]string{"BYN": "р.", "RON": "L", "TWD": "NT$"}, Overrides: map[string]locales.Override{"TRY": {Pattern: "¤#,##0.00"}}},
+	"tr":    {Parent: "root", CurrencyDecimal: ",", CurrencyGroup: ".", Decimal: ",", Group: ".", Percent: "%#,##0", Standard: "¤#,##0.00", Symbols: map[string]string{"AUD": "AU$", "JPY": "¥", "PHP": "PHP", "THB": "฿", "TRY": "₺", "USD": "$"}, Narrow: map[string]string{"BYN": "р.", "RON": "L", "TWD": "NT$"}, Overrides: map[string]locales.Override{"TRY": {Pattern: "¤#,##0.00"}}},
 	"tr-CY": {Parent: "tr"},
 }

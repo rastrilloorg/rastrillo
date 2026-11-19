@@ -4,8 +4,8 @@
 // SHA-256 in hack/moneycldr/sources/inputs.sha256. Data from the Unicode CLDR,
 // © Unicode, Inc., under the Unicode License v3 (locales/LICENSE-UNICODE).
 
-// Package kk links CLDR money-formatting data for every modern "kk"
-// locale. Import it for its side effect.
+// Package kk links CLDR number- and money-formatting data for every
+// modern "kk" locale. Import it for its side effect.
 package kk
 
 import "amadan.net/rastrillo/rastrillo/locales"
@@ -13,8 +13,8 @@ import "amadan.net/rastrillo/rastrillo/locales"
 func init() { locales.Register("kk", data) }
 
 var data = map[string]locales.Locale{
-	"kk":      {Parent: "root", CurrencyDecimal: ",", CurrencyGroup: "\u00a0", Decimal: ",", Standard: "#,##0.00\u00a0¤", Alpha: "#,##0.00\u00a0¤", Symbols: map[string]string{"KZT": "₸", "LSL": "ЛСЛ", "PHP": "PHP", "RUB": "₽", "THB": "฿", "USD": "$"}, Narrow: map[string]string{"BYN": "р.", "TWD": "NT$"}},
-	"kk-Arab": {Parent: "root", Symbols: map[string]string{"KZT": "₸"}},
+	"kk":      {Parent: "root", CurrencyDecimal: ",", CurrencyGroup: "\u00a0", Decimal: ",", Group: "\u00a0", NaN: "сан\u00a0емес", Standard: "#,##0.00\u00a0¤", Alpha: "#,##0.00\u00a0¤", Symbols: map[string]string{"KZT": "₸", "LSL": "ЛСЛ", "PHP": "PHP", "RUB": "₽", "THB": "฿", "USD": "$"}, Narrow: map[string]string{"BYN": "р.", "TWD": "NT$"}},
+	"kk-Arab": {Parent: "root", NaN: "سان\u00a0ەمەس", Symbols: map[string]string{"KZT": "₸"}},
 	"kk-Cyrl": {Parent: "kk"},
 	"kk-KZ":   {Parent: "kk"},
 }

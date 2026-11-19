@@ -1,8 +1,7 @@
-{{/* locale-menu — the language switcher (design spec 2026-08-28 §2.4):
-     a details/summary dropdown listing the app's declared locales,
-     each item a one-field POST form to /_locale so the choice is stored
-     in the locale cookie and the user lands on the same path under the
-     new prefix. No JavaScript. Renders nothing for an empty Items, so
+{{/* locale-menu — the language switcher: a dropdown of the app's
+     locales, each a POST form to /_locale that stores the choice in a
+     cookie and returns to the same path under the new prefix. Design
+     spec 2026-08-28 §2.4. No JavaScript. Renders nothing for an empty Items, so
      a one-locale app calls it unconditionally.
 
      Each item's autonym is marked with its own lang so a screen reader

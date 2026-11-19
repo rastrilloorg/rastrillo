@@ -5,11 +5,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
+	"maps"
 	"net/url"
 	"reflect"
 	"strings"
 
 	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/basepath"
 	"amadan.net/rastrillo/rastrillo/form"
 )
 
@@ -121,7 +123,7 @@ func WithT(t func(key string, args ...any) string) Option {
 //
 //	{{with safeHref .Site}}<a href="{{.}}" rel="noopener noreferrer">{{displayURL .}}</a>{{end}}
 //
-// T, Tf, Tbdi, number, displayValue, dateWords, money and actor
+// T, Tf, Tbdi, number, displayValue, dateWords, money, actor and date
 // (LocaleFuncs) take an optional leading $L, the request's *Localizer:
 // {{T $L "key"}} uses that localizer's catalog and formatting locale.
 // The form is decided by the first argument's type, so the legacy
@@ -131,11 +133,24 @@ func WithT(t func(key string, args ...any) string) Option {
 // finds $L in the data ({{$L := localizer $}}), and withL adds it to a
 // map passed to a partial. actor is rastrillo.ActorPhrase in the
 // page's language, naming people through ActorName:
-// {{actor $L .Actor}} is "Claude for Paul".
+// {{actor $L .Actor}} is "Claude for Paul"; {{date $L .At "time"}} 9:09 PM.
+//
+// ui.Pages binds pageStylesheet, pageScripts and neededScripts per page.
+// Outside it, pageStylesheet is the whole /static/tokens.css, unhashed,
+// pageScripts fiesta.js and every optional script, neededScripts the
+// component scripts. Bind your own pageStylesheet to link the hashed
+// file or a slice (Assets.Stylesheet), as designsystem's shellAssets does.
+//
+// path puts the page's base path in front of a root-absolute URL:
+// {{path $ (asset "static/tokens.css")}}, {{path $ "/"}}. The base comes
+// from the data's Base (ui.Localized carries it), not from a func bound
+// per request, because this map is built once and shared by every
+// request (see Localizer). With no Base, path returns its argument, so
+// a page at the root renders as it always did.
 //
 // An app is free to add its own entries on top; it must not drop these
-// twenty-two. The shipped partials and shells stop parsing without most
-// of them, and the docs promise the rest.
+// twenty-eight. The shipped partials and shells stop parsing without
+// most of them, and the docs promise the rest.
 func Funcs(opts ...Option) template.FuncMap {
 	c := config{
 		icon:   rastrillo.Icon,
@@ -155,10 +170,10 @@ func Funcs(opts ...Option) template.FuncMap {
 		"rowMenuItems": rowMenuItems, "paginationItems": paginationItems,
 		"localizer": localizer, "withL": withL,
 		"strong": strong,
+		"path":   pathFunc,
 	}
-	for name, fn := range localeFuncs(c) {
-		m[name] = fn
-	}
+	maps.Copy(m, localeFuncs(c))
+	maps.Copy(m, scriptFuncs())
 	return m
 }
 
@@ -422,6 +437,15 @@ func optPairs(data any, key string) [][2]string {
 		pairs = append(pairs, [2]string{name.String(), value.String()})
 	}
 	return pairs
+}
+
+// pathFunc is the path template func: basepath.Join with the Base the
+// data carries, read the way opt reads a key (a struct field, embedded
+// included, or a map key). It calls Join rather than restating the rule,
+// because a second copy would drift, and one that prefixed //host/x
+// would turn a link to another site into a path on the hub.
+func pathFunc(data any, p string) string {
+	return basepath.Join(optString(data, "Base"), p)
 }
 
 // opt is optKey for templates: the value, or nil for an absent key, an

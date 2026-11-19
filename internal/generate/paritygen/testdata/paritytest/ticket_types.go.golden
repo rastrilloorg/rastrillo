@@ -14,7 +14,11 @@ func RunTicketTypes(t *testing.T, f Fixture) {
 	if values == nil {
 		values = map[string]string{"Name": "Parity name", "Price": "12.50", "Status": "Parity status", "MaxPerOrder": "Parity max per order"}
 	}
-	compare(t, ticketTypesPages(t, f, values), ticketTypesAPI(t, f, values))
+	api := ticketTypesAPI(t, f, values)
+	compare(t, ticketTypesPages(t, f, values), api)
+	compareDoors(t, "API", "MCP", api, ticketTypesMCP(t, f, values))
+	compareDoors(t, "API", "MCP",
+		ticketTypesAPILimits(t, f, values), ticketTypesMCPLimits(t, f, values))
 }
 
 func ticketTypesPages(t *testing.T, f Fixture, values map[string]string) []step {
@@ -59,12 +63,7 @@ func ticketTypesAPI(t *testing.T, f Fixture, values map[string]string) []step {
 	token := f.Token(t, db, "a")
 	var steps []step
 
-	k, body := call(t, h, token, "POST", "/api/v1/ticket_types", map[string]any{
-		"name":          values["Name"],
-		"price":         money(t, values["Price"], "USD"),
-		"status":        values["Status"],
-		"max_per_order": values["MaxPerOrder"],
-	})
+	k, body := call(t, h, token, "POST", "/api/v1/ticket_types", ticketTypesBody(t, values))
 	id := fmt.Sprint(body["id"])
 	steps = append(steps, step{"create", k, ""})
 	steps = append(steps, step{"row after create", "ok", row(t, h, token, "/api/v1/ticket_types/"+id)})
@@ -83,5 +82,74 @@ func ticketTypesAPI(t *testing.T, f Fixture, values map[string]string) []step {
 	steps = append(steps, step{"row after delete", k, ""})
 	k, _ = call(t, h, token, "GET", "/api/v1/ticket_types/999999", nil)
 	steps = append(steps, step{"missing row", k, ""})
+	return steps
+}
+
+func ticketTypesMCP(t *testing.T, f Fixture, values map[string]string) []step {
+	h, db := f.New(t)
+	f.Prepare(t, db, "a")
+	token := f.Token(t, db, "a")
+	var steps []step
+
+	k, body := tool(t, h, token, "ticket_types_create", ticketTypesBody(t, values))
+	id := fmt.Sprint(body["id"])
+	steps = append(steps, step{"create", k, ""})
+	steps = append(steps, step{"row after create", "ok", toolRow(t, h, token, "ticket_types_get", id)})
+
+	k, body = tool(t, h, token, "ticket_types_create", map[string]any{})
+	refused(t, body, "name", "price")
+	steps = append(steps, step{"invalid create", k, ""})
+
+	k, _ = tool(t, h, token, "ticket_types_update", withID(id, map[string]any{"name": "Changed by parity"}))
+	steps = append(steps, step{"update", k, ""})
+	steps = append(steps, step{"row after update", "ok", toolRow(t, h, token, "ticket_types_get", id)})
+
+	k, _ = tool(t, h, token, "ticket_types_delete", withID(id, nil))
+	steps = append(steps, step{"delete", k, ""})
+	k, _ = tool(t, h, token, "ticket_types_get", withID(id, nil))
+	steps = append(steps, step{"row after delete", k, ""})
+	k, _ = tool(t, h, token, "ticket_types_get", withID("999999", nil))
+	steps = append(steps, step{"missing row", k, ""})
+	return steps
+}
+
+// ticketTypesBody is a valid create as the API and MCP both take it.
+func ticketTypesBody(t *testing.T, values map[string]string) map[string]any {
+	t.Helper()
+	return map[string]any{
+		"name":          values["Name"],
+		"price":         money(t, values["Price"], "USD"),
+		"status":        values["Status"],
+		"max_per_order": values["MaxPerOrder"],
+	}
+}
+
+func ticketTypesAPILimits(t *testing.T, f Fixture, values map[string]string) []step {
+	h, db := f.New(t)
+	f.Prepare(t, db, "a")
+	token := f.Token(t, db, "a")
+	if k, _ := call(t, h, token, "POST", "/api/v1/ticket_types", ticketTypesBody(t, values)); k != "ok" {
+		t.Fatalf("the API door answered %s to a valid create", k)
+	}
+	var steps []step
+	for _, limit := range []int{0, 201} {
+		k, body := call(t, h, token, "GET", fmt.Sprintf("/api/v1/ticket_types?limit=%d", limit), nil)
+		steps = append(steps, step{fmt.Sprintf("list with limit %d", limit), k, items(body, "ticket_types")})
+	}
+	return steps
+}
+
+func ticketTypesMCPLimits(t *testing.T, f Fixture, values map[string]string) []step {
+	h, db := f.New(t)
+	f.Prepare(t, db, "a")
+	token := f.Token(t, db, "a")
+	if k, _ := tool(t, h, token, "ticket_types_create", ticketTypesBody(t, values)); k != "ok" {
+		t.Fatalf("the MCP door answered %s to a valid create", k)
+	}
+	var steps []step
+	for _, limit := range []int{0, 201} {
+		k, body := tool(t, h, token, "ticket_types_list", map[string]any{"limit": limit})
+		steps = append(steps, step{fmt.Sprintf("list with limit %d", limit), k, items(body, "ticket_types")})
+	}
 	return steps
 }

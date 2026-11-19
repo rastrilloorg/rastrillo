@@ -6,9 +6,13 @@ package ui
 // linked for the locale functions' tests, which format Spanish money
 // and Arabic money with its bidi marks; without their packs both would
 // quietly fall back to the default's conventions and prove nothing.
-// No build tag, so the browser build links them too.
+// de, fr and hi are linked for {{number}}'s, which formats from the
+// packs too. No build tag, so the browser build links them too.
 import (
 	_ "amadan.net/rastrillo/rastrillo/locales/ar"
+	_ "amadan.net/rastrillo/rastrillo/locales/de"
 	_ "amadan.net/rastrillo/rastrillo/locales/en"
 	_ "amadan.net/rastrillo/rastrillo/locales/es"
+	_ "amadan.net/rastrillo/rastrillo/locales/fr"
+	_ "amadan.net/rastrillo/rastrillo/locales/hi"
 )

@@ -101,8 +101,9 @@ binary. The budgets stop that early, while fixing it is still cheap.
 | Test package time | 10 seconds | `make test` |
 | Screen | 150ms to first byte, for every GET route | `make perf` |
 | Cold start | 500ms from starting the process to the first byte | `make perf` |
+| First load | 16 kB gzipped per sliced page, plus each component script it loads; live pages 34.7 kB, including the other framework files, plus `live.js` and component scripts; pages linking the whole file use 40 kB | `make perf` |
 
-The size budget always fails the gate. The timing budgets fail it only on
+The size and first-load budgets always fail the gate. The timing budgets fail it only on
 CI, where `AMADAN_CI` or `CI` is set. On your laptop they print the same
 numbers and pass, because a busy laptop says nothing reliable about speed.
 
@@ -121,19 +122,24 @@ size  internal/notes          7200 -     billing split owed, see #41
 time  internal/notes/import   25s        replays a 40MB fixture
 perf  GET /notes/export       1200ms     streams every row
 perf  GET /jobs/{id}/events   skip       server-sent events never finish
+weight GET /reports            18000      draws every chart on one page
 boot                          800ms      loads twelve locales at start
 ```
 
 A size record states the source and test ceilings, with `-` for a column
-that keeps its default. Every record needs a reason. The file is read
-strictly: a line it cannot parse, a directory spelled two ways, or a
-second record for the same thing is an error, with its line number.
+that keeps its default. A weight record is a page's first-load limit in
+gzipped bytes, in place of its shell's. Every record needs a reason.
+The file is read strictly: a line it cannot parse, a directory spelled
+two ways, or a second record for the same thing is an error, with its
+line number.
 
 Records cannot go stale quietly. One naming a directory, package or screen
 that no longer exists fails the gate. A size record also has to shrink as
 its directory does: once the code is under 60% of the recorded ceiling,
 the gate asks you to lower the number, and once it is back under the
-default, to remove the record.
+default, to remove the record. A weight record works the same way: under
+60% of the record, the gate asks you to lower it to the page's weight
+plus 10%, rounded up to the next 100.
 
 ## Test time and Go's cache
 
@@ -172,6 +178,29 @@ one to 150ms to first byte. It also starts the app in a fresh process
 three times and holds the cold start to 500ms. These are the same numbers
 the [`perf`](/docs/reference/perf) middleware logs in production.
 
+The same walk weighs each page: the framework CSS and JS it makes a
+browser download, gzipped. A page may load 16 kB, plus the size of each
+component script it loads. A live or polling page, which links the CSS
+for every page, has its shell's own limit, never under 16 kB, with
+`live.js` on top. A page whose layout still links the whole `tokens.css`
+may load 40 kB, and its report says how to link the page's slice
+instead; see
+[Templates](/docs/templates#the-page-s-stylesheet-and-scripts).
+
+When a page is over budget, the failure names its three largest files.
+For a page linking the whole `tokens.css`, it lists the files that grew
+instead, or every framework file the page loads if none grew. A file
+that grew is usually your copy in `static/`; `rastrillo doctor` shows
+what changed. If the page can't be lighter, record a weight for it in
+`.rastrillo/budgets.txt`, as below.
+
+The walk also checks each page's hooks against its slice. A hook in
+HTML your Go code builds, or in markup your script adds, may be missing
+a rule from the slice and could render unstyled. The failure names the
+page and the hook. Ask for it in the page's template with
+`{{needs "rst-card"}}`; see
+[Asking with needs](/docs/templates#asking-with-needs).
+
 A route you add fails here until it is measured. Most routes need nothing
 from you. A route with a parameter needs a real path to request, whose row
 the test creates first; a route behind sign-in needs the test to sign in.
@@ -185,37 +214,47 @@ the perf tests did not both run, so deleting them does not make it pass.
 
 ## Splitting by feature
 
-When `internal/notes` reaches 5,000 lines, split it by feature. The core
-package keeps the models, the rendering and the scoping helper; each
+When `internal/notes` exceeds 5,000 lines, split it by feature. Each
 feature becomes a package of its own with its handlers, templates and
-tests, and mounts its routes:
+tests. It says what it needs in a `Deps` struct, and its `Mount` adds
+its routes:
 
 ```go
 // internal/notes/sharing/sharing.go
+package sharing
 
-// Router is the app's *notes.Routes, which records each GET route for
-// the perf lane. This package cannot import notes, which imports it.
-type Router interface{ Handle(pattern string, h http.Handler) }
+const sharePage action.Path = "/notes/{id}/share"
 
-func Mount(r Router, d Deps) {
-	r.Handle("GET /notes/{id}/share", http.HandlerFunc(d.share))
-	r.Handle("POST /notes/{id}/share", http.HandlerFunc(d.createShare))
+// Deps is what the sharing screens need.
+type Deps struct {
+	Database *db.DB
+}
+
+// Mount adds the sharing screens.
+func Mount(routes *action.Routes, deps *Deps) {
+	routes.Get(sharePage, deps.share)
+	routes.Post(sharePage, deps.createShare)
 }
 ```
 
-`Router` in `app.go` calls each feature's `Mount`. Register through it,
-never on a ServeMux of your own: the perf lane cannot see one. In an app
-on chi (`accounts`), `Mount` takes a `chi.Router` and registers with
-`r.Get` and `r.Post`. An edit to one feature
-then rebuilds and retests only that feature, Go's cache skips the rest,
-and the packages compile and test in parallel.
+`New` builds each feature's `Deps`, and `Routes` in `internal/notes`
+calls each feature's `Mount`. So `internal/notes` imports every feature,
+and no feature can import it back: Go refuses the import cycle. Move
+what the features share, such as the models and the scoping helper, to
+`internal/notes/core`. The features import `core`, and `core` imports
+none of them.
+
+An edit to one feature then rebuilds and retests only that feature, Go's
+cache skips the rest, and the packages compile and test in parallel.
 
 Don't split by layer instead (`store/`, `web/`). Every handler change still
 rebuilds and retests the whole web layer, so it only delays the problem.
 
-Generated code counts toward the budget, since it costs compile time like
-anything else. If a manifest's generated screens push a directory over,
-split the manifest, or record an exception that says so.
+Generated files don't count. A Go file whose first lines say
+`// Code generated ... DO NOT EDIT.`, as `go help generate` asks, is left
+out, because splitting your code by feature cannot make it smaller. That
+covers what `rastrillo generate` writes: `gen/` and each
+`rastrillo_templates_gen.go`.
 
 ## Keeping tests fast
 

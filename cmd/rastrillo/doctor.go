@@ -210,6 +210,13 @@ type report struct {
 	layoutAdvice  string // relative path of an old shell layout, if the app has one
 	profileAdvice string // relative path of a layout whose app keeps the person in account
 	noDesign      bool   // no vendored files and no layout: nothing to compare
+
+	// fiestaAdvice lists the layouts that load rastrillo.js and no
+	// fiesta.js, relative to dir.
+	fiestaAdvice []string
+	// rename stands in for os.Rename when a test needs a swap to fail
+	// part way through a pair.
+	rename func(from, to string) error
 }
 
 // skewed reports whether the CLI and the app are on different rastrillo
@@ -273,10 +280,6 @@ func (r *report) status(checks int) error {
 // "Upgrading" is the section of docs/site/templates.md that gives the
 // edit.
 const doctorLayoutAdvisory = `This layout still has the old mobile menu. See "Upgrading" in the templates guide.`
-
-// doctorNoDesignMsg is the line doctor prints for an app with no
-// design system, such as a bare app scaffolded without it.
-const doctorNoDesignMsg = "No design system here (no static files or templates), so there is nothing to compare."
 
 // templateCommentRE matches a Go template comment action, including its
 // trim forms ({{- /* ... */ -}}), so oldShellLayout can strip one before
@@ -388,20 +391,16 @@ func diagnose(dir, themeFlag string) (*report, error) {
 	pkg := packageName(filepath.Base(module))
 	staticDir, err := findStaticDir(dir, pkg)
 	if err != nil {
-		// No static files and no layout is an app without a design
-		// system (bare's --design-system=false), not a broken one, and
-		// failing here stopped even --probe's locale check. A layout
-		// with nothing vendored is still the error: its pages link
-		// files that are gone.
-		if layouts, _ := filepath.Glob(filepath.Join(dir, "internal", "*", "templates", "layout.html")); layouts == nil {
-			r.noDesign = true
-			return r, nil
+		if !withoutDesignSystem(dir) {
+			return nil, err
 		}
-		return nil, err
+		r.noDesign = true
+		return r, nil
 	}
 	r.staticDir = rel(dir, staticDir)
 
 	layout := filepath.Join(filepath.Dir(staticDir), "templates", "layout.html")
+	r.fiestaAdvice = layoutsWithoutFiestaJS(dir, filepath.Dir(layout))
 	if b, err := os.ReadFile(layout); err == nil && oldShellLayout(string(b)) {
 		r.layoutAdvice = rel(dir, layout)
 	} else if err == nil {
@@ -677,7 +676,7 @@ func (r *report) print(w io.Writer, fixing bool) {
 		return
 	}
 	if r.noDesign {
-		fmt.Fprintf(w, "rastrillo doctor: %s\n  %s\n", r.module, doctorNoDesignMsg)
+		printNoDesign(w, r.module)
 		return
 	}
 	fmt.Fprintf(w, "rastrillo doctor: %s (%s)\n", r.module, r.staticDir)
@@ -705,27 +704,8 @@ func (r *report) print(w io.Writer, fixing bool) {
 	}
 	fmt.Fprintln(w)
 
-	for _, f := range r.files {
-		switch f.state {
-		case fileOK:
-			fmt.Fprintf(w, "  ok       %s\n", f.name)
-		case fileMine:
-			fmt.Fprintf(w, "  yours    %s (recorded as a deliberate edit in %s)\n", f.name, r.pinFile)
-		case fileRemoved:
-			fmt.Fprintf(w, "  yours    %s (removed on purpose, recorded in %s)\n", f.name, r.pinFile)
-		case fileUnknownTheme:
-			fmt.Fprintf(w, "  yours    %s (%s — a theme of your own is supported, so nothing is compared)\n", f.name, r.themeFrom)
-		case fileAbsent:
-			fmt.Fprintf(w, "  absent   %s (the library ships %s; deleting one you do not use is supported)\n",
-				f.name, size(len(f.lib)))
-		case fileUnreadable:
-			fmt.Fprintf(w, "  error    %s: %v\n", f.name, f.err)
-		case fileDiffers:
-			fmt.Fprintf(w, "  drift    %s\n", f.name)
-			for _, line := range describeDiff(f.app, f.lib) {
-				fmt.Fprintf(w, "             %s\n", line)
-			}
-		}
+	for _, file := range r.files {
+		r.printFile(w, file)
 	}
 	fmt.Fprintln(w)
 
@@ -734,6 +714,9 @@ func (r *report) print(w io.Writer, fixing bool) {
 	}
 	if r.profileAdvice != "" {
 		fmt.Fprintf(w, "%s: %s\n\n", r.profileAdvice, doctorProfileAdvisory)
+	}
+	if !fixing {
+		r.adviseFiestaJS(w, false)
 	}
 
 	// The summary counts what was compared, not what exists: a file the
@@ -749,7 +732,9 @@ func (r *report) print(w io.Writer, fixing bool) {
 		case fileOK:
 			compared++
 		case fileAbsent:
-			absent++
+			if r.heldBy(f, false) == "" {
+				absent++
+			}
 		}
 	}
 	left := len(r.files) - compared - absent
@@ -916,7 +901,7 @@ func (r *report) applyFix(w io.Writer, force bool) error {
 		fmt.Fprintf(w, "Copying %s files into it would put new CSS against old markup. Move it first, as above.\n", r.cliVersion)
 		return exitError{code: exitPreMove}
 	}
-	if r.noDesign { // nothing to re-copy, and skew's refusal would say there was
+	if r.noDesign { // nothing to re-copy, so no skew to refuse on
 		return nil
 	}
 	if r.skewed() && !force {
@@ -929,8 +914,13 @@ func (r *report) applyFix(w io.Writer, force bool) error {
 	}
 
 	fmt.Fprintln(w)
-	wrote, skipped := 0, 0
+	var refresh []vendoredFile
+	skipped := 0
 	for _, f := range r.files {
+		if r.leavesForItsPair(w, f, force) {
+			skipped++
+			continue
+		}
 		switch f.state {
 		case fileMine:
 			if !force {
@@ -957,33 +947,12 @@ func (r *report) applyFix(w io.Writer, force bool) error {
 			skipped++
 			continue
 		}
-		if err := os.MkdirAll(filepath.Dir(f.path), 0o755); err != nil {
-			return err
-		}
-		if err := os.WriteFile(f.path, f.lib, 0o644); err != nil {
-			return fmt.Errorf("write %s: %w", f.name, err)
-		}
-		switch {
-		case f.state == fileAbsent:
-			fmt.Fprintf(w, "  wrote       %s (%s, was missing)\n", rel(r.dir, f.path), size(len(f.lib)))
-		case f.state == fileRemoved:
-			fmt.Fprintf(w, "  wrote       %s (%s, was removed)\n", rel(r.dir, f.path), size(len(f.lib)))
-		default:
-			fmt.Fprintf(w, "  re-copied   %s (%s -> %s)\n", rel(r.dir, f.path), size(len(f.app)), size(len(f.lib)))
-		}
-		wrote++
+		refresh = append(refresh, f)
 	}
-	fmt.Fprintln(w)
-	if wrote == 0 {
-		fmt.Fprintf(w, "Nothing re-copied (%s left alone).\n", plural(skipped, "file"))
-		if skipped > 0 {
-			return nil
-		}
-		return r.exit()
+	if err := r.refresh(w, refresh); err != nil {
+		return err
 	}
-	fmt.Fprintf(w, "Re-copied %s from %s — still yours, so read the diff before you commit it.\n",
-		plural(wrote, "file"), r.cliVersion)
-	return nil
+	return r.fixSummary(w, force, len(refresh), skipped)
 }
 
 // describeDiff says HOW two files differ, in the few lines a person can

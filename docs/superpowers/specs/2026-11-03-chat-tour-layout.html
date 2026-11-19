@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Tour layout v3</title>
+<style>
+@font-face { font-family: "Ibarra Real Nova"; font-weight: 400 700; src: url(https://rastrillo.org/fonts/ibarra-real-nova.woff2) format("woff2"); }
+@font-face { font-family: "Chivo"; font-weight: 100 900; src: url(https://rastrillo.org/fonts/chivo.woff2) format("woff2"); }
+@font-face { font-family: "Chivo Mono"; font-weight: 100 900; src: url(https://rastrillo.org/fonts/chivo-mono.woff2) format("woff2"); }
+:root {
+  --plaster:#F2EADB; --plaster-2:#E8DDC8; --bed:#D6C7AA; --edge:#FBF7EE; --ink:#1E2629; --muted:#4F5A5B;
+  --acequia:#2F6F78; --chan:#2F6F78; --almagra:#A4442C; --cempa:#D9951A; --on-almagra:#FBF7EE;
+  --f0:#C81D6A; --f1:#E09A16; --f2:#1C9C9A; --f3:#4C9A35; --f4:#7B4BB3; --f5:#C8452B; --f6:#2C50B4; --cobalt:#2C50B4;
+  --serif:"Ibarra Real Nova","Iowan Old Style",Georgia,serif; --sans:"Chivo","Segoe UI",system-ui,sans-serif; --mono:"Chivo Mono",ui-monospace,Menlo,monospace;
+}
+* { box-sizing:border-box; }
+body { margin:0; background:#cfc6b4; font:400 1rem/1.6 var(--sans); color:var(--ink); padding:2rem; }
+.intro { max-width:70rem; margin:0 auto 1.25rem; }
+.intro h2 { font:600 1.6rem/1.2 var(--serif); margin:0 0 .3rem; }
+.intro p { margin:0; color:var(--muted); }
+.label { max-width:84rem; margin:2.2rem auto .6rem; font:600 .8rem var(--sans); letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+svg.i { width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; flex:none; }
+code, pre { font-family:var(--mono); font-variant-ligatures:none; }
+p code, li code, .done code { background:var(--plaster-2); padding:.1em .35em; border-radius:2px; font-size:.84em; }
+
+/* one browser window */
+.win { max-width:84rem; margin:0 auto; height:640px; background:var(--plaster); border-radius:8px; overflow:hidden; display:flex; flex-direction:column; box-shadow:0 10px 30px rgba(30,38,41,.25); }
+.flagrow { height:14px; display:flex; gap:20px; padding:0 30px; background:var(--plaster); }
+.flagrow i { width:14px; height:12px; clip-path:polygon(0 0,100% 0,50% 100%); display:block; }
+.top { display:flex; align-items:center; gap:.7rem; padding:.5rem 1.5rem .6rem; border-bottom:1.5px solid var(--bed); }
+.top svg.mark { width:28px; height:28px; }
+.brandline { display:flex; gap:.5rem; align-items:baseline; font-size:1rem; }
+.brandline a { color:var(--ink); text-decoration:none; }
+.brandline .carlos { font-weight:600; letter-spacing:.06em; font-size:.9rem; }
+.brandline .here { font:600 1.35rem/1 var(--serif); letter-spacing:-.01em; }
+.brandline .sep { color:var(--muted); }
+.brandline .now { color:var(--acequia); font-weight:600; }
+.prog { margin-left:auto; display:flex; align-items:center; gap:.6rem; font:500 .8rem var(--mono); color:var(--muted); }
+.prog .bar { display:flex; gap:3px; }
+.prog .bar b { width:16px; height:6px; border-radius:3px; background:var(--bed); }
+.prog .bar b.on { background:var(--chan); }
+
+.main { flex:1; min-height:0; display:grid; }
+.main.a { grid-template-columns: minmax(0,1fr) minmax(0,1.25fr); }
+.main.b { grid-template-columns: 15rem minmax(0,1fr) minmax(0,1.2fr); }
+
+/* lesson pane: scrolls, nav pinned at its foot */
+.lesson { display:flex; flex-direction:column; min-height:0; border-right:1.5px solid var(--bed); }
+.lesson .scroll { flex:1; overflow:auto; padding:1.8rem 2rem 1rem; }
+.kicker { font:600 .78rem var(--mono); color:var(--almagra); letter-spacing:.04em; }
+.lesson h1 { font:600 2.3rem/1.08 var(--serif); letter-spacing:-.015em; margin:.3rem 0 1rem; }
+.lesson p { margin:0 0 .9rem; }
+.done { margin-top:1.2rem; padding:.8rem 1rem; background:var(--edge); border-left:3px solid var(--chan); border-radius:2px; }
+.done strong { display:flex; gap:.4rem; align-items:center; font-size:.9rem; color:var(--acequia); margin-bottom:.25rem; }
+.navbar { display:flex; justify-content:space-between; gap:.75rem; padding:.9rem 2rem; border-top:1.5px solid var(--bed); background:var(--plaster); }
+.btn { display:inline-flex; align-items:center; gap:.55rem; min-height:2.75rem; padding:.6rem 1.1rem; border-radius:3px; border:1.5px solid var(--ink); font:600 .95rem/1 var(--sans); color:var(--ink); background:var(--plaster); text-decoration:none; }
+.btn.primary { background:var(--almagra); border-color:var(--almagra); color:var(--on-almagra); }
+
+/* code pane: the homepage's markup-window grammar */
+.codepane { display:flex; flex-direction:column; min-height:0; padding:1.25rem 1.5rem; gap:1rem; background:var(--plaster-2); }
+.mk { display:flex; flex-direction:column; min-height:0; border:1.5px solid var(--ink); border-radius:4px; background:var(--edge); overflow:hidden; }
+.mk.grow { flex:1; }
+.mk-tabs { display:flex; border-bottom:1.5px solid var(--ink); background:var(--plaster-2); }
+.mk-tab { display:flex; align-items:center; gap:.45rem; padding:.5rem .9rem; font:500 .78rem var(--mono); color:var(--muted); border-right:1.5px solid var(--bed); }
+.mk-tab.on { background:var(--edge); color:var(--ink); font-weight:600; margin-bottom:-1.5px; border-bottom:1.5px solid var(--edge); }
+.tag { font:700 .62rem var(--sans); letter-spacing:.06em; padding:.1rem .35rem; border-radius:2px; }
+.tag.new { background:var(--cempa); color:var(--ink); }
+.tag.edit { background:var(--bed); color:var(--ink); }
+.mk-bar { display:flex; align-items:center; justify-content:space-between; gap:1rem; min-height:2.2rem; padding:.25rem .5rem .25rem .9rem; background:var(--plaster-2); border-bottom:1.5px solid var(--ink); font:500 .74rem var(--mono); color:var(--muted); }
+.mk-bar span { display:flex; align-items:center; gap:.45rem; }
+.copy { display:inline-flex; gap:.4rem; align-items:center; font:600 .74rem var(--sans); color:var(--ink); border:1.5px solid var(--ink); border-radius:3px; padding:.25rem .6rem; background:var(--edge); }
+.copy svg.i { width:14px; height:14px; }
+pre { tab-size:4; margin:0; padding:.9rem 1rem; font-size:.82rem; line-height:1.65; overflow:auto; flex:1; color:var(--ink); }
+pre .k { color:var(--cobalt); font-weight:500; }
+pre .s { color:var(--f3); }
+pre .c { color:var(--muted); font-style:italic; }
+pre .hl { display:block; margin:0 -1rem; padding:0 1rem 0 calc(1rem - 3px); background:rgba(217,149,26,.14); border-left:3px solid var(--cempa); }
+pre.cmd { flex:none; }
+pre.cmd .p { color:var(--acequia); user-select:none; }
+
+/* B: step list + file tree */
+.steplist { padding:1.4rem 1rem; background:var(--plaster-2); border-right:1.5px solid var(--bed); overflow:auto; }
+.steplist h4 { margin:0 .5rem .6rem; font:600 .74rem var(--sans); letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+.steplist ol { list-style:none; margin:0; padding:0; }
+.steplist li { display:flex; gap:.6rem; align-items:center; padding:.42rem .5rem; border-radius:3px; font-size:.9rem; color:var(--muted); }
+.steplist li .n { width:1.6rem; height:1.6rem; border-radius:50%; display:grid; place-items:center; font:600 .72rem var(--mono); background:var(--plaster); box-shadow:inset 0 0 0 2px var(--bed); color:var(--acequia); flex:none; }
+.steplist li.ok { color:var(--ink); }
+.steplist li.ok .n { background:var(--chan); color:var(--edge); box-shadow:none; }
+.steplist li.cur { background:var(--edge); color:var(--ink); font-weight:600; box-shadow:inset 3px 0 0 var(--almagra); }
+.steplist li.cur .n { box-shadow:inset 0 0 0 2px var(--almagra); color:var(--almagra); }
+.split { display:grid; grid-template-columns: 11rem minmax(0,1fr); flex:1; min-height:0; }
+.tree { border-right:1.5px solid var(--bed); padding:.7rem .6rem; font:500 .74rem/2 var(--mono); color:var(--muted); background:var(--plaster); overflow:auto; }
+.tree div { white-space:nowrap; }
+.tree .ind { padding-left:1rem; }
+.tree .on { color:var(--ink); background:var(--edge); box-shadow:inset 3px 0 0 var(--cempa); padding-left:calc(1rem - 3px); }
+.tree .nw { color:var(--almagra); }
+</style>
+</head>
+<style>
+.main.m { grid-template-columns: auto minmax(0,1fr) minmax(0,1.25fr); }
+.steplist { width:15rem; display:flex; flex-direction:column; padding:0; transition:width .18s ease; }
+.steplist .head { display:flex; align-items:center; justify-content:space-between; padding:1rem 1rem .4rem 1.5rem; }
+.steplist h4 { margin:0; }
+.steplist ol { padding:0 .5rem 1rem; overflow:auto; }
+.tgl { display:grid; place-items:center; width:2rem; height:2rem; border:1.5px solid var(--bed); border-radius:3px; background:var(--plaster); color:var(--ink); cursor:pointer; padding:0; }
+.tgl:hover { border-color:var(--ink); }
+.win.collapsed .steplist { width:3.6rem; }
+.win.collapsed .steplist h4, .win.collapsed .steplist .t { display:none; }
+.win.collapsed .steplist .head { justify-content:center; padding:1rem 0 .4rem; }
+.win.collapsed .steplist ol { padding:0 .45rem 1rem; }
+.win.collapsed .steplist li { justify-content:center; padding:.35rem 0; }
+.win.collapsed .steplist li.cur { box-shadow:none; background:none; }
+.win .ico-open { display:none; } .win.collapsed .ico-open { display:block; } .win.collapsed .ico-close { display:none; }
+.hint { max-width:84rem; margin:.6rem auto 0; color:#3d4648; font-size:.9rem; }
+.dl-top { margin-left:auto; } .dl-top .copy { white-space:nowrap; } .prog { margin-left:1.2rem; }
+</style>
+<body>
+
+<div class="intro">
+  <h2>Tour layout, round three: the mix</h2>
+  <p>B's step list on the left, collapsible to a rail of numbers (try the button at its top). A's lesson and code panes: one tab per file the step touches, then the commands to run. Prev/next stay pinned under the lesson. B's file tree is gone; the path bar above the code says where the file lives.</p>
+</div>
+
+<div class="label">Open</div>
+<div class="win" id="w1">
+  <div class="flagrow"><i style="background:var(--f0)"></i><i style="background:var(--f1)"></i><i style="background:var(--f2)"></i><i style="background:var(--f3)"></i><i style="background:var(--f4)"></i><i style="background:var(--f5)"></i><i style="background:var(--f6)"></i><i style="background:var(--f1)"></i><i style="background:var(--f2)"></i><i style="background:var(--f0)"></i></div>
+  <header class="top">
+    <svg class="mark" viewBox="0 0 32 32" fill="none" stroke-width="3.4" stroke-linecap="round"><path stroke="var(--chan)" d="M16 9V16A2.5 2.5 0 0 0 18.5 18.5H30M10.5 9V16A8 8 0 0 0 18.5 24H30M5 9V16A13.5 13.5 0 0 0 18.5 29.5H30"/><path stroke="var(--almagra)" d="M5 9H16M10.5 9V2"/></svg>
+    <nav class="brandline"><a class="carlos" href="#">CARLOS</a><span class="sep">/</span><a class="here" href="#">rastrillo</a><span class="sep">/</span><a class="now" href="#">tour</a></nav>
+    <span class="dl-top"><span class="mk-dl"><span class="copy" title="The whole app as it stands at the end of this step"><svg class="i" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></svg>Project at step 5 (.zip)</span></span></span><div class="prog">5 / 12 <span class="bar"><b class="on"></b><b class="on"></b><b class="on"></b><b class="on"></b><b class="on"></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b></span></div>
+  </header>
+  <div class="main m">
+    <aside class="steplist">
+      <div class="head">
+        <h4>Build a blog</h4>
+        <button class="tgl" onclick="this.closest('.win').classList.toggle('collapsed')" aria-label="Collapse steps">
+          <svg class="i ico-close" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/><path d="m16 15-3-3 3-3"/></svg>
+          <svg class="i ico-open" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/><path d="m14 9 3 3-3 3"/></svg>
+        </button>
+      </div>
+      <ol>
+        <li class="ok"><span class="n">1</span><span class="t">Install Go</span></li>
+        <li class="ok"><span class="n">2</span><span class="t">Scaffold the app</span></li>
+        <li class="ok"><span class="n">3</span><span class="t">Run it</span></li>
+        <li class="ok"><span class="n">4</span><span class="t">Run the tests</span></li>
+        <li class="cur"><span class="n">5</span><span class="t">Give posts a table</span></li>
+        <li><span class="n">6</span><span class="t">Show the feed</span></li>
+        <li><span class="n">7</span><span class="t">Style it with Fiesta</span></li>
+        <li><span class="n">8</span><span class="t">Add an admin</span></li>
+        <li><span class="n">9</span><span class="t">Write a post</span></li>
+        <li><span class="n">10</span><span class="t">Test it</span></li>
+        <li><span class="n">11</span><span class="t">Run the checks</span></li>
+        <li><span class="n">12</span><span class="t">Ship it</span></li>
+      </ol>
+    </aside>
+    <section class="lesson">
+      <div class="scroll">
+        <div class="kicker">Step 5 · Build a blog</div>
+        <h1>Give posts a table</h1>
+        <p>A post needs somewhere to live. Add a model and a migration that creates its table. Migrations run once, in order, when the app boots.</p>
+        <p>Open <code>internal/blog/models.go</code> and add the <code>Post</code> type shown on the right. Then add migration <code>0002</code> in <code>migrations.go</code>.</p>
+        <p>The dev server notices the save, rebuilds, and applies the migration as it restarts.</p>
+        <div class="done"><strong><svg class="i" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>Check it worked</strong>The dev server's log says <code>applied 0002_posts</code>.</div>
+      </div>
+      <nav class="navbar">
+        <a class="btn" href="#"><svg class="i" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg>Run the tests</a>
+        <a class="btn primary" href="#">Show the feed<svg class="i" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg></a>
+      </nav>
+    </section>
+    <section class="codepane">
+      <div class="mk grow">
+        <div class="mk-tabs">
+          <span class="mk-tab on">models.go <span class="tag edit">EDIT</span></span>
+          <span class="mk-tab">migrations.go <span class="tag edit">EDIT</span></span>
+          <span class="mk-tab">posts_test.go <span class="tag new">NEW</span></span>
+        </div>
+        <div class="mk-bar"><span><svg class="i" viewBox="0 0 24 24" style="width:14px;height:14px"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/></svg>internal/blog/models.go</span><span class="copy"><svg class="i" viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>Copy file</span></div>
+<pre><span class="k">package</span> blog
+
+<span class="k">import</span> <span class="s">"time"</span>
+
+<span class="hl"><span class="c">// Post is one entry on the blog.</span></span><span class="hl"><span class="k">type</span> Post <span class="k">struct</span> {</span><span class="hl">	ID        <span class="k">uint</span></span><span class="hl">	Title     <span class="k">string</span></span><span class="hl">	Body      <span class="k">string</span></span><span class="hl">	Published <span class="k">bool</span></span><span class="hl">	CreatedAt time.Time</span><span class="hl">}</span></pre>
+      </div>
+      <div class="mk">
+        <div class="mk-bar"><span><svg class="i" viewBox="0 0 24 24" style="width:14px;height:14px"><path d="m4 17 6-6-6-6"/><path d="M12 19h8"/></svg>Terminal</span><span class="copy"><svg class="i" viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>Copy</span></div>
+<pre class="cmd"><span class="p">$ </span>go test ./internal/blogtest/ -run TestPosts</pre>
+      </div>
+    </section>
+  </div>
+</div>
+<p class="hint">Below: the same window with the steps collapsed.</p>
+<div class="label">Collapsed</div>
+<div class="win collapsed" id="w2">
+  <div class="flagrow"><i style="background:var(--f0)"></i><i style="background:var(--f1)"></i><i style="background:var(--f2)"></i><i style="background:var(--f3)"></i><i style="background:var(--f4)"></i><i style="background:var(--f5)"></i><i style="background:var(--f6)"></i><i style="background:var(--f1)"></i><i style="background:var(--f2)"></i><i style="background:var(--f0)"></i></div>
+  <header class="top">
+    <svg class="mark" viewBox="0 0 32 32" fill="none" stroke-width="3.4" stroke-linecap="round"><path stroke="var(--chan)" d="M16 9V16A2.5 2.5 0 0 0 18.5 18.5H30M10.5 9V16A8 8 0 0 0 18.5 24H30M5 9V16A13.5 13.5 0 0 0 18.5 29.5H30"/><path stroke="var(--almagra)" d="M5 9H16M10.5 9V2"/></svg>
+    <nav class="brandline"><a class="carlos" href="#">CARLOS</a><span class="sep">/</span><a class="here" href="#">rastrillo</a><span class="sep">/</span><a class="now" href="#">tour</a></nav>
+    <span class="dl-top"><span class="mk-dl"><span class="copy" title="The whole app as it stands at the end of this step"><svg class="i" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></svg>Project at step 5 (.zip)</span></span></span><div class="prog">5 / 12 <span class="bar"><b class="on"></b><b class="on"></b><b class="on"></b><b class="on"></b><b class="on"></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b></span></div>
+  </header>
+  <div class="main m">
+    <aside class="steplist">
+      <div class="head">
+        <h4>Build a blog</h4>
+        <button class="tgl" onclick="this.closest('.win').classList.toggle('collapsed')" aria-label="Collapse steps">
+          <svg class="i ico-close" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/><path d="m16 15-3-3 3-3"/></svg>
+          <svg class="i ico-open" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/><path d="m14 9 3 3-3 3"/></svg>
+        </button>
+      </div>
+      <ol>
+        <li class="ok"><span class="n">1</span><span class="t">Install Go</span></li>
+        <li class="ok"><span class="n">2</span><span class="t">Scaffold the app</span></li>
+        <li class="ok"><span class="n">3</span><span class="t">Run it</span></li>
+        <li class="ok"><span class="n">4</span><span class="t">Run the tests</span></li>
+        <li class="cur"><span class="n">5</span><span class="t">Give posts a table</span></li>
+        <li><span class="n">6</span><span class="t">Show the feed</span></li>
+        <li><span class="n">7</span><span class="t">Style it with Fiesta</span></li>
+        <li><span class="n">8</span><span class="t">Add an admin</span></li>
+        <li><span class="n">9</span><span class="t">Write a post</span></li>
+        <li><span class="n">10</span><span class="t">Test it</span></li>
+        <li><span class="n">11</span><span class="t">Run the checks</span></li>
+        <li><span class="n">12</span><span class="t">Ship it</span></li>
+      </ol>
+    </aside>
+    <section class="lesson">
+      <div class="scroll">
+        <div class="kicker">Step 5 · Build a blog</div>
+        <h1>Give posts a table</h1>
+        <p>A post needs somewhere to live. Add a model and a migration that creates its table. Migrations run once, in order, when the app boots.</p>
+        <p>Open <code>internal/blog/models.go</code> and add the <code>Post</code> type shown on the right. Then add migration <code>0002</code> in <code>migrations.go</code>.</p>
+        <p>The dev server notices the save, rebuilds, and applies the migration as it restarts.</p>
+        <div class="done"><strong><svg class="i" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>Check it worked</strong>The dev server's log says <code>applied 0002_posts</code>.</div>
+      </div>
+      <nav class="navbar">
+        <a class="btn" href="#"><svg class="i" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg>Run the tests</a>
+        <a class="btn primary" href="#">Show the feed<svg class="i" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg></a>
+      </nav>
+    </section>
+    <section class="codepane">
+      <div class="mk grow">
+        <div class="mk-tabs">
+          <span class="mk-tab on">models.go <span class="tag edit">EDIT</span></span>
+          <span class="mk-tab">migrations.go <span class="tag edit">EDIT</span></span>
+          <span class="mk-tab">posts_test.go <span class="tag new">NEW</span></span>
+        </div>
+        <div class="mk-bar"><span><svg class="i" viewBox="0 0 24 24" style="width:14px;height:14px"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/></svg>internal/blog/models.go</span><span class="copy"><svg class="i" viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>Copy file</span></div>
+<pre><span class="k">package</span> blog
+
+<span class="k">import</span> <span class="s">"time"</span>
+
+<span class="hl"><span class="c">// Post is one entry on the blog.</span></span><span class="hl"><span class="k">type</span> Post <span class="k">struct</span> {</span><span class="hl">	ID        <span class="k">uint</span></span><span class="hl">	Title     <span class="k">string</span></span><span class="hl">	Body      <span class="k">string</span></span><span class="hl">	Published <span class="k">bool</span></span><span class="hl">	CreatedAt time.Time</span><span class="hl">}</span></pre>
+      </div>
+      <div class="mk">
+        <div class="mk-bar"><span><svg class="i" viewBox="0 0 24 24" style="width:14px;height:14px"><path d="m4 17 6-6-6-6"/><path d="M12 19h8"/></svg>Terminal</span><span class="copy"><svg class="i" viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>Copy</span></div>
+<pre class="cmd"><span class="p">$ </span>go test ./internal/blogtest/ -run TestPosts</pre>
+      </div>
+    </section>
+  </div>
+</div>
+
+</body>
+</html>

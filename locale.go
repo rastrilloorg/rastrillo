@@ -163,6 +163,19 @@ func (l *Locales) T(locale, key string) string {
 	return key
 }
 
+// NegotiateHeader is the declared locale an Accept-Language header asks
+// for, or the default: Negotiate with no path prefix and no cookie. An
+// app with one language and readers in many countries formats for the
+// browser and writes neither, and a /de/ prefix or a stale
+// rastrillo_locale cookie that outranked the header would leave half a
+// page in another locale. Pass request.Header.Get("Accept-Language").
+func (set *Locales) NegotiateHeader(header string) string {
+	if code := set.acceptLanguage(header); code != "" {
+		return code
+	}
+	return set.def
+}
+
 // FrameworkHas reports whether the framework ships a base catalog for
 // a declared code — matched exactly, so "zh" never finds "zh-Hans"
 // (spec §3.3).

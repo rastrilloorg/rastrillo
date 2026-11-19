@@ -17,6 +17,7 @@ import (
 	"amadan.net/rastrillo/rastrillo/flash"
 	"amadan.net/rastrillo/rastrillo/form"
 	"amadan.net/rastrillo/rastrillo/jobs"
+	"amadan.net/rastrillo/rastrillo/live"
 	"amadan.net/rastrillo/rastrillo/scope"
 	"amadan.net/rastrillo/rastrillo/sessions"
 	"amadan.net/rastrillo/rastrillo/ui"
@@ -33,9 +34,13 @@ import (
 // screens (templates/genlayout.html), and fragPages the one-page,
 // no-layout set renderJobFragment executes "job-status" against
 // directly.
+//
+// live is the hub every committed note write notifies (notifyNotes)
+// and every hand page renders its View from (renderStatus).
 type app struct {
 	db        *gorm.DB
 	jobs      *jobs.Jobs
+	live      *live.Hub
 	pages     *ui.Pages
 	genPages  *ui.Pages
 	fragPages *ui.Pages
@@ -63,13 +68,27 @@ func (a *app) find(r *http.Request) (Note, error) {
 	return n, err
 }
 
+// notesTopic is the signed-in caller's notes topic: the key is their
+// user id, which the hub's Allow (app.go) checks against the session.
+func notesTopic(r *http.Request) string {
+	uid, _ := sessions.UserID(r)
+	return "notes/" + strconv.FormatInt(uid, 10)
+}
+
+// notifyNotes tells the caller's open lists that their notes changed.
+// It runs only after the write has committed: notified before, a list
+// refetching at once would read the old rows and settle on them.
+func (a *app) notifyNotes(r *http.Request) {
+	a.live.Notify(notesTopic(r))
+}
+
 func (a *app) listNotes(w http.ResponseWriter, r *http.Request) {
 	var notes []Note
 	if err := a.owned(r).Order("created_at desc").Find(&notes).Error; err != nil {
 		http.Error(w, "could not load notes", http.StatusInternalServerError)
 		return
 	}
-	a.renderContent(w, r, "index", indexView{Notes: notes})
+	a.renderContent(w, r, "index", indexView{Notes: notes, Topic: notesTopic(r)})
 }
 
 func (a *app) newNote(w http.ResponseWriter, r *http.Request) {
@@ -91,7 +110,8 @@ func (a *app) createNote(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "could not save note", http.StatusInternalServerError)
 		return
 	}
-	flash.Set(w, "notice", "Note created.")
+	a.notifyNotes(r)
+	flash.Set(w, r, "notice", "Note created.")
 	http.Redirect(w, r, fmt.Sprintf("/notes/%d", n.ID), http.StatusSeeOther)
 }
 
@@ -137,7 +157,8 @@ func (a *app) updateNote(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "could not save note", http.StatusInternalServerError)
 		return
 	}
-	flash.Set(w, "notice", "Note updated.")
+	a.notifyNotes(r)
+	flash.Set(w, r, "notice", "Note updated.")
 	http.Redirect(w, r, fmt.Sprintf("/notes/%d", n.ID), http.StatusSeeOther)
 }
 
@@ -154,7 +175,8 @@ func (a *app) deleteNote(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "could not delete note", http.StatusInternalServerError)
 		return
 	}
-	flash.Set(w, "notice", "Note deleted.")
+	a.notifyNotes(r)
+	flash.Set(w, r, "notice", "Note deleted.")
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
@@ -202,7 +224,7 @@ func (a *app) startExport(w http.ResponseWriter, r *http.Request) {
 	// ErrOwnerBusy in our own words, not err.Error(): the refusal is
 	// per owner (four running jobs), so waiting genuinely clears it.
 	if err != nil {
-		flash.Set(w, "error", "You already have exports running — wait for one to finish.")
+		flash.Set(w, r, "error", "You already have exports running — wait for one to finish.")
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}

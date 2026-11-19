@@ -24,6 +24,19 @@
 # checks is a partition without compiling anything.
 set -eu
 
+# The plain roles run in shadow mode: every render that has compiled
+# code also runs html/template and fails on a byte of difference, the
+# strongest check that generated code is right. Not for perf or
+# budget, which measure renders and do not come through here, and not
+# for the browser roles, which wait on pages in a real browser against
+# timeouts; their packages' plain tests run here, in shadow mode.
+case "${1:-}" in
+root | test)
+	RASTRILLO_TEMPLATE_SHADOW=1
+	export RASTRILLO_TEMPLATE_SHADOW
+	;;
+esac
+
 weights=$(dirname "$0")/test-weights.txt
 
 # deal <mode> <pkg> <n>: names on stdin, "<k> <name>" out. Ties sort by
@@ -133,8 +146,14 @@ fi
 # runner's HOME is read-only, so there it gets a scratch one.
 # Which browser a role drove is the first question a red browser role
 # raises, and nothing else in the log answers it.
+# The fallback is built first: macOS's bash 3.2 reads an apostrophe inside a
+# quoted ${var:-word} as the start of a quote, and then cannot parse the file.
 if [ "$mode" = browser ]; then
-	echo "gotest: on $(uname -n), driving ${RASTRILLO_CHROME:-the harness's own choice ($(command -v chromium 2>/dev/null || echo none on PATH))}"
+	driving=${RASTRILLO_CHROME:-}
+	if [ -z "$driving" ]; then
+		driving="the harness's own choice ($(command -v chromium 2>/dev/null || echo none on PATH))"
+	fi
+	echo "gotest: on $(uname -n), driving $driving"
 fi
 
 scratch=

@@ -1,0 +1,6722 @@
+[
+ {
+  "locale": "en-IE",
+  "kind": "day",
+  "at": "2024-02-29T00:00",
+  "want": "Thursday, 29 February"
+ },
+ {
+  "locale": "en-IE",
+  "kind": "day",
+  "at": "2025-01-01T09:07",
+  "want": "Wednesday, 1 January"
+ },
+ {
+  "locale": "en-IE",
+  "kind": "day",
+  "at": "2026-11-17T12:00",
+  "want": "Tuesday, 17 November"
+ },
+ {
+  "locale": "en-IE",
+  "kind": "day",
+  "at": "2026-11-22T21:09",
+  "want": "Sunday, 22 November"
+ },
+ {
+  "locale": "en-IE",
+  "kind": "day",
+  "at": "2026-12-31T23:59",
+  "want": "Thursday, 31 December"
+ },
+ {
+  "locale": "en-IE",
+  "kind": "day",
+  "at": "2027-06-06T00:30",
+  "want": "Sunday, 6 June"
+ },
+ {
+  "locale": "en-IE",
+  "kind": "day",
+  "at": "0001-01-01T00:00",
+  "want": "Monday, 1 January"
+ },
+ {
+  "locale": "en-IE",
+  "kind": "day",
+  "at": "9999-12-31T23:59",
+  "want": "Friday, 31 December"
+ },
+ {
+  "locale": "en-IE",
+  "kind": "dayYear",
+  "at": "2024-02-29T00:00",
+  "want": "Thursday 29 February 2024"
+ },
+ {
+  "locale": "en-IE",
+  "kind": "dayYear",
+  "at": "2025-01-01T09:07",
+  "want": "Wednesday 1 January 2025"
+ },
+ {
+  "locale": "en-IE",
+  "kind": "dayYear",
+  "at": "2026-11-17T12:00",
+  "want": "Tuesday 17 November 2026"
+ },
+ {
+  "locale": "en-IE",
+  "kind": "dayYear",
+  "at": "2026-11-22T21:09",
+  "want": "Sunday 22 November 2026"
+ },
+ {
+  "locale": "en-IE",
+  "kind": "dayYear",
+  "at": "2026-12-31T23:59",
+  "want": "Thursday 31 December 2026"
+ },
+ {
+  "locale": "en-IE",
+  "kind": "dayYear",
+  "at": "2027-06-06T00:30",
+  "want": "Sunday 6 June 2027"
+ },
+ {
+  "locale": "en-IE",
+  "kind": "dayYear",
+  "at": "0001-01-01T00:00",
+  "want": "Monday 1 January 1"
+ },
+ {
+  "locale": "en-IE",
+  "kind": "dayYear",
+  "at": "9999-12-31T23:59",
+  "want": "Friday 31 December 9999"
+ },
+ {
+  "locale": "en-IE",
+  "kind": "short",
+  "at": "2024-02-29T00:00",
+  "want": "Thu, 29 Feb"
+ },
+ {
+  "locale": "en-IE",
+  "kind": "short",
+  "at": "2025-01-01T09:07",
+  "want": "Wed, 1 Jan"
+ },
+ {
+  "locale": "en-IE",
+  "kind": "short",
+  "at": "2026-11-17T12:00",
+  "want": "Tue, 17 Nov"
+ },
+ {
+  "locale": "en-IE",
+  "kind": "short",
+  "at": "2026-11-22T21:09",
+  "want": "Sun, 22 Nov"
+ },
+ {
+  "locale": "en-IE",
+  "kind": "short",
+  "at": "2026-12-31T23:59",
+  "want": "Thu, 31 Dec"
+ },
+ {
+  "locale": "en-IE",
+  "kind": "short",
+  "at": "2027-06-06T00:30",
+  "want": "Sun, 6 Jun"
+ },
+ {
+  "locale": "en-IE",
+  "kind": "short",
+  "at": "0001-01-01T00:00",
+  "want": "Mon, 1 Jan"
+ },
+ {
+  "locale": "en-IE",
+  "kind": "short",
+  "at": "9999-12-31T23:59",
+  "want": "Fri, 31 Dec"
+ },
+ {
+  "locale": "en-IE",
+  "kind": "date",
+  "at": "2024-02-29T00:00",
+  "want": "29 February"
+ },
+ {
+  "locale": "en-IE",
+  "kind": "date",
+  "at": "2025-01-01T09:07",
+  "want": "1 January"
+ },
+ {
+  "locale": "en-IE",
+  "kind": "date",
+  "at": "2026-11-17T12:00",
+  "want": "17 November"
+ },
+ {
+  "locale": "en-IE",
+  "kind": "date",
+  "at": "2026-11-22T21:09",
+  "want": "22 November"
+ },
+ {
+  "locale": "en-IE",
+  "kind": "date",
+  "at": "2026-12-31T23:59",
+  "want": "31 December"
+ },
+ {
+  "locale": "en-IE",
+  "kind": "date",
+  "at": "2027-06-06T00:30",
+  "want": "6 June"
+ },
+ {
+  "locale": "en-IE",
+  "kind": "date",
+  "at": "0001-01-01T00:00",
+  "want": "1 January"
+ },
+ {
+  "locale": "en-IE",
+  "kind": "date",
+  "at": "9999-12-31T23:59",
+  "want": "31 December"
+ },
+ {
+  "locale": "en-IE",
+  "kind": "dateYear",
+  "at": "2024-02-29T00:00",
+  "want": "29 February 2024"
+ },
+ {
+  "locale": "en-IE",
+  "kind": "dateYear",
+  "at": "2025-01-01T09:07",
+  "want": "1 January 2025"
+ },
+ {
+  "locale": "en-IE",
+  "kind": "dateYear",
+  "at": "2026-11-17T12:00",
+  "want": "17 November 2026"
+ },
+ {
+  "locale": "en-IE",
+  "kind": "dateYear",
+  "at": "2026-11-22T21:09",
+  "want": "22 November 2026"
+ },
+ {
+  "locale": "en-IE",
+  "kind": "dateYear",
+  "at": "2026-12-31T23:59",
+  "want": "31 December 2026"
+ },
+ {
+  "locale": "en-IE",
+  "kind": "dateYear",
+  "at": "2027-06-06T00:30",
+  "want": "6 June 2027"
+ },
+ {
+  "locale": "en-IE",
+  "kind": "dateYear",
+  "at": "0001-01-01T00:00",
+  "want": "1 January 1"
+ },
+ {
+  "locale": "en-IE",
+  "kind": "dateYear",
+  "at": "9999-12-31T23:59",
+  "want": "31 December 9999"
+ },
+ {
+  "locale": "en-IE",
+  "kind": "monthYear",
+  "at": "2024-02-29T00:00",
+  "want": "February 2024"
+ },
+ {
+  "locale": "en-IE",
+  "kind": "monthYear",
+  "at": "2025-01-01T09:07",
+  "want": "January 2025"
+ },
+ {
+  "locale": "en-IE",
+  "kind": "monthYear",
+  "at": "2026-11-17T12:00",
+  "want": "November 2026"
+ },
+ {
+  "locale": "en-IE",
+  "kind": "monthYear",
+  "at": "2026-11-22T21:09",
+  "want": "November 2026"
+ },
+ {
+  "locale": "en-IE",
+  "kind": "monthYear",
+  "at": "2026-12-31T23:59",
+  "want": "December 2026"
+ },
+ {
+  "locale": "en-IE",
+  "kind": "monthYear",
+  "at": "2027-06-06T00:30",
+  "want": "June 2027"
+ },
+ {
+  "locale": "en-IE",
+  "kind": "monthYear",
+  "at": "0001-01-01T00:00",
+  "want": "January 1"
+ },
+ {
+  "locale": "en-IE",
+  "kind": "monthYear",
+  "at": "9999-12-31T23:59",
+  "want": "December 9999"
+ },
+ {
+  "locale": "en-IE",
+  "kind": "month",
+  "at": "2024-02-29T00:00",
+  "want": "February"
+ },
+ {
+  "locale": "en-IE",
+  "kind": "month",
+  "at": "2025-01-01T09:07",
+  "want": "January"
+ },
+ {
+  "locale": "en-IE",
+  "kind": "month",
+  "at": "2026-11-17T12:00",
+  "want": "November"
+ },
+ {
+  "locale": "en-IE",
+  "kind": "month",
+  "at": "2026-11-22T21:09",
+  "want": "November"
+ },
+ {
+  "locale": "en-IE",
+  "kind": "month",
+  "at": "2026-12-31T23:59",
+  "want": "December"
+ },
+ {
+  "locale": "en-IE",
+  "kind": "month",
+  "at": "2027-06-06T00:30",
+  "want": "June"
+ },
+ {
+  "locale": "en-IE",
+  "kind": "month",
+  "at": "0001-01-01T00:00",
+  "want": "January"
+ },
+ {
+  "locale": "en-IE",
+  "kind": "month",
+  "at": "9999-12-31T23:59",
+  "want": "December"
+ },
+ {
+  "locale": "en-IE",
+  "kind": "year",
+  "at": "2024-02-29T00:00",
+  "want": "2024"
+ },
+ {
+  "locale": "en-IE",
+  "kind": "year",
+  "at": "2025-01-01T09:07",
+  "want": "2025"
+ },
+ {
+  "locale": "en-IE",
+  "kind": "year",
+  "at": "2026-11-17T12:00",
+  "want": "2026"
+ },
+ {
+  "locale": "en-IE",
+  "kind": "year",
+  "at": "2026-11-22T21:09",
+  "want": "2026"
+ },
+ {
+  "locale": "en-IE",
+  "kind": "year",
+  "at": "2026-12-31T23:59",
+  "want": "2026"
+ },
+ {
+  "locale": "en-IE",
+  "kind": "year",
+  "at": "2027-06-06T00:30",
+  "want": "2027"
+ },
+ {
+  "locale": "en-IE",
+  "kind": "year",
+  "at": "0001-01-01T00:00",
+  "want": "1"
+ },
+ {
+  "locale": "en-IE",
+  "kind": "year",
+  "at": "9999-12-31T23:59",
+  "want": "9999"
+ },
+ {
+  "locale": "en-IE",
+  "kind": "time",
+  "at": "2024-02-29T00:00",
+  "want": "00:00"
+ },
+ {
+  "locale": "en-IE",
+  "kind": "time",
+  "at": "2025-01-01T09:07",
+  "want": "09:07"
+ },
+ {
+  "locale": "en-IE",
+  "kind": "time",
+  "at": "2026-11-17T12:00",
+  "want": "12:00"
+ },
+ {
+  "locale": "en-IE",
+  "kind": "time",
+  "at": "2026-11-22T21:09",
+  "want": "21:09"
+ },
+ {
+  "locale": "en-IE",
+  "kind": "time",
+  "at": "2026-12-31T23:59",
+  "want": "23:59"
+ },
+ {
+  "locale": "en-IE",
+  "kind": "time",
+  "at": "2027-06-06T00:30",
+  "want": "00:30"
+ },
+ {
+  "locale": "en-IE",
+  "kind": "time",
+  "at": "0001-01-01T00:00",
+  "want": "00:00"
+ },
+ {
+  "locale": "en-IE",
+  "kind": "time",
+  "at": "9999-12-31T23:59",
+  "want": "23:59"
+ },
+ {
+  "locale": "en-IE",
+  "kind": "stamp",
+  "at": "2024-02-29T00:00",
+  "want": "29 February 2024 at 00:00"
+ },
+ {
+  "locale": "en-IE",
+  "kind": "stamp",
+  "at": "2025-01-01T09:07",
+  "want": "1 January 2025 at 09:07"
+ },
+ {
+  "locale": "en-IE",
+  "kind": "stamp",
+  "at": "2026-11-17T12:00",
+  "want": "17 November 2026 at 12:00"
+ },
+ {
+  "locale": "en-IE",
+  "kind": "stamp",
+  "at": "2026-11-22T21:09",
+  "want": "22 November 2026 at 21:09"
+ },
+ {
+  "locale": "en-IE",
+  "kind": "stamp",
+  "at": "2026-12-31T23:59",
+  "want": "31 December 2026 at 23:59"
+ },
+ {
+  "locale": "en-IE",
+  "kind": "stamp",
+  "at": "2027-06-06T00:30",
+  "want": "6 June 2027 at 00:30"
+ },
+ {
+  "locale": "en-IE",
+  "kind": "stamp",
+  "at": "0001-01-01T00:00",
+  "want": "1 January 1 at 00:00"
+ },
+ {
+  "locale": "en-IE",
+  "kind": "stamp",
+  "at": "9999-12-31T23:59",
+  "want": "31 December 9999 at 23:59"
+ },
+ {
+  "locale": "en-GB",
+  "kind": "day",
+  "at": "2024-02-29T00:00",
+  "want": "Thursday 29 February"
+ },
+ {
+  "locale": "en-GB",
+  "kind": "day",
+  "at": "2025-01-01T09:07",
+  "want": "Wednesday 1 January"
+ },
+ {
+  "locale": "en-GB",
+  "kind": "day",
+  "at": "2026-11-17T12:00",
+  "want": "Tuesday 17 November"
+ },
+ {
+  "locale": "en-GB",
+  "kind": "day",
+  "at": "2026-11-22T21:09",
+  "want": "Sunday 22 November"
+ },
+ {
+  "locale": "en-GB",
+  "kind": "day",
+  "at": "2026-12-31T23:59",
+  "want": "Thursday 31 December"
+ },
+ {
+  "locale": "en-GB",
+  "kind": "day",
+  "at": "2027-06-06T00:30",
+  "want": "Sunday 6 June"
+ },
+ {
+  "locale": "en-GB",
+  "kind": "day",
+  "at": "0001-01-01T00:00",
+  "want": "Monday 1 January"
+ },
+ {
+  "locale": "en-GB",
+  "kind": "day",
+  "at": "9999-12-31T23:59",
+  "want": "Friday 31 December"
+ },
+ {
+  "locale": "en-GB",
+  "kind": "dayYear",
+  "at": "2024-02-29T00:00",
+  "want": "Thursday, 29 February 2024"
+ },
+ {
+  "locale": "en-GB",
+  "kind": "dayYear",
+  "at": "2025-01-01T09:07",
+  "want": "Wednesday, 1 January 2025"
+ },
+ {
+  "locale": "en-GB",
+  "kind": "dayYear",
+  "at": "2026-11-17T12:00",
+  "want": "Tuesday, 17 November 2026"
+ },
+ {
+  "locale": "en-GB",
+  "kind": "dayYear",
+  "at": "2026-11-22T21:09",
+  "want": "Sunday, 22 November 2026"
+ },
+ {
+  "locale": "en-GB",
+  "kind": "dayYear",
+  "at": "2026-12-31T23:59",
+  "want": "Thursday, 31 December 2026"
+ },
+ {
+  "locale": "en-GB",
+  "kind": "dayYear",
+  "at": "2027-06-06T00:30",
+  "want": "Sunday, 6 June 2027"
+ },
+ {
+  "locale": "en-GB",
+  "kind": "dayYear",
+  "at": "0001-01-01T00:00",
+  "want": "Monday, 1 January 1"
+ },
+ {
+  "locale": "en-GB",
+  "kind": "dayYear",
+  "at": "9999-12-31T23:59",
+  "want": "Friday, 31 December 9999"
+ },
+ {
+  "locale": "en-GB",
+  "kind": "short",
+  "at": "2024-02-29T00:00",
+  "want": "Thu 29 Feb"
+ },
+ {
+  "locale": "en-GB",
+  "kind": "short",
+  "at": "2025-01-01T09:07",
+  "want": "Wed 1 Jan"
+ },
+ {
+  "locale": "en-GB",
+  "kind": "short",
+  "at": "2026-11-17T12:00",
+  "want": "Tue 17 Nov"
+ },
+ {
+  "locale": "en-GB",
+  "kind": "short",
+  "at": "2026-11-22T21:09",
+  "want": "Sun 22 Nov"
+ },
+ {
+  "locale": "en-GB",
+  "kind": "short",
+  "at": "2026-12-31T23:59",
+  "want": "Thu 31 Dec"
+ },
+ {
+  "locale": "en-GB",
+  "kind": "short",
+  "at": "2027-06-06T00:30",
+  "want": "Sun 6 Jun"
+ },
+ {
+  "locale": "en-GB",
+  "kind": "short",
+  "at": "0001-01-01T00:00",
+  "want": "Mon 1 Jan"
+ },
+ {
+  "locale": "en-GB",
+  "kind": "short",
+  "at": "9999-12-31T23:59",
+  "want": "Fri 31 Dec"
+ },
+ {
+  "locale": "en-GB",
+  "kind": "date",
+  "at": "2024-02-29T00:00",
+  "want": "29 February"
+ },
+ {
+  "locale": "en-GB",
+  "kind": "date",
+  "at": "2025-01-01T09:07",
+  "want": "1 January"
+ },
+ {
+  "locale": "en-GB",
+  "kind": "date",
+  "at": "2026-11-17T12:00",
+  "want": "17 November"
+ },
+ {
+  "locale": "en-GB",
+  "kind": "date",
+  "at": "2026-11-22T21:09",
+  "want": "22 November"
+ },
+ {
+  "locale": "en-GB",
+  "kind": "date",
+  "at": "2026-12-31T23:59",
+  "want": "31 December"
+ },
+ {
+  "locale": "en-GB",
+  "kind": "date",
+  "at": "2027-06-06T00:30",
+  "want": "6 June"
+ },
+ {
+  "locale": "en-GB",
+  "kind": "date",
+  "at": "0001-01-01T00:00",
+  "want": "1 January"
+ },
+ {
+  "locale": "en-GB",
+  "kind": "date",
+  "at": "9999-12-31T23:59",
+  "want": "31 December"
+ },
+ {
+  "locale": "en-GB",
+  "kind": "dateYear",
+  "at": "2024-02-29T00:00",
+  "want": "29 February 2024"
+ },
+ {
+  "locale": "en-GB",
+  "kind": "dateYear",
+  "at": "2025-01-01T09:07",
+  "want": "1 January 2025"
+ },
+ {
+  "locale": "en-GB",
+  "kind": "dateYear",
+  "at": "2026-11-17T12:00",
+  "want": "17 November 2026"
+ },
+ {
+  "locale": "en-GB",
+  "kind": "dateYear",
+  "at": "2026-11-22T21:09",
+  "want": "22 November 2026"
+ },
+ {
+  "locale": "en-GB",
+  "kind": "dateYear",
+  "at": "2026-12-31T23:59",
+  "want": "31 December 2026"
+ },
+ {
+  "locale": "en-GB",
+  "kind": "dateYear",
+  "at": "2027-06-06T00:30",
+  "want": "6 June 2027"
+ },
+ {
+  "locale": "en-GB",
+  "kind": "dateYear",
+  "at": "0001-01-01T00:00",
+  "want": "1 January 1"
+ },
+ {
+  "locale": "en-GB",
+  "kind": "dateYear",
+  "at": "9999-12-31T23:59",
+  "want": "31 December 9999"
+ },
+ {
+  "locale": "en-GB",
+  "kind": "monthYear",
+  "at": "2024-02-29T00:00",
+  "want": "February 2024"
+ },
+ {
+  "locale": "en-GB",
+  "kind": "monthYear",
+  "at": "2025-01-01T09:07",
+  "want": "January 2025"
+ },
+ {
+  "locale": "en-GB",
+  "kind": "monthYear",
+  "at": "2026-11-17T12:00",
+  "want": "November 2026"
+ },
+ {
+  "locale": "en-GB",
+  "kind": "monthYear",
+  "at": "2026-11-22T21:09",
+  "want": "November 2026"
+ },
+ {
+  "locale": "en-GB",
+  "kind": "monthYear",
+  "at": "2026-12-31T23:59",
+  "want": "December 2026"
+ },
+ {
+  "locale": "en-GB",
+  "kind": "monthYear",
+  "at": "2027-06-06T00:30",
+  "want": "June 2027"
+ },
+ {
+  "locale": "en-GB",
+  "kind": "monthYear",
+  "at": "0001-01-01T00:00",
+  "want": "January 1"
+ },
+ {
+  "locale": "en-GB",
+  "kind": "monthYear",
+  "at": "9999-12-31T23:59",
+  "want": "December 9999"
+ },
+ {
+  "locale": "en-GB",
+  "kind": "month",
+  "at": "2024-02-29T00:00",
+  "want": "February"
+ },
+ {
+  "locale": "en-GB",
+  "kind": "month",
+  "at": "2025-01-01T09:07",
+  "want": "January"
+ },
+ {
+  "locale": "en-GB",
+  "kind": "month",
+  "at": "2026-11-17T12:00",
+  "want": "November"
+ },
+ {
+  "locale": "en-GB",
+  "kind": "month",
+  "at": "2026-11-22T21:09",
+  "want": "November"
+ },
+ {
+  "locale": "en-GB",
+  "kind": "month",
+  "at": "2026-12-31T23:59",
+  "want": "December"
+ },
+ {
+  "locale": "en-GB",
+  "kind": "month",
+  "at": "2027-06-06T00:30",
+  "want": "June"
+ },
+ {
+  "locale": "en-GB",
+  "kind": "month",
+  "at": "0001-01-01T00:00",
+  "want": "January"
+ },
+ {
+  "locale": "en-GB",
+  "kind": "month",
+  "at": "9999-12-31T23:59",
+  "want": "December"
+ },
+ {
+  "locale": "en-GB",
+  "kind": "year",
+  "at": "2024-02-29T00:00",
+  "want": "2024"
+ },
+ {
+  "locale": "en-GB",
+  "kind": "year",
+  "at": "2025-01-01T09:07",
+  "want": "2025"
+ },
+ {
+  "locale": "en-GB",
+  "kind": "year",
+  "at": "2026-11-17T12:00",
+  "want": "2026"
+ },
+ {
+  "locale": "en-GB",
+  "kind": "year",
+  "at": "2026-11-22T21:09",
+  "want": "2026"
+ },
+ {
+  "locale": "en-GB",
+  "kind": "year",
+  "at": "2026-12-31T23:59",
+  "want": "2026"
+ },
+ {
+  "locale": "en-GB",
+  "kind": "year",
+  "at": "2027-06-06T00:30",
+  "want": "2027"
+ },
+ {
+  "locale": "en-GB",
+  "kind": "year",
+  "at": "0001-01-01T00:00",
+  "want": "1"
+ },
+ {
+  "locale": "en-GB",
+  "kind": "year",
+  "at": "9999-12-31T23:59",
+  "want": "9999"
+ },
+ {
+  "locale": "en-GB",
+  "kind": "time",
+  "at": "2024-02-29T00:00",
+  "want": "00:00"
+ },
+ {
+  "locale": "en-GB",
+  "kind": "time",
+  "at": "2025-01-01T09:07",
+  "want": "09:07"
+ },
+ {
+  "locale": "en-GB",
+  "kind": "time",
+  "at": "2026-11-17T12:00",
+  "want": "12:00"
+ },
+ {
+  "locale": "en-GB",
+  "kind": "time",
+  "at": "2026-11-22T21:09",
+  "want": "21:09"
+ },
+ {
+  "locale": "en-GB",
+  "kind": "time",
+  "at": "2026-12-31T23:59",
+  "want": "23:59"
+ },
+ {
+  "locale": "en-GB",
+  "kind": "time",
+  "at": "2027-06-06T00:30",
+  "want": "00:30"
+ },
+ {
+  "locale": "en-GB",
+  "kind": "time",
+  "at": "0001-01-01T00:00",
+  "want": "00:00"
+ },
+ {
+  "locale": "en-GB",
+  "kind": "time",
+  "at": "9999-12-31T23:59",
+  "want": "23:59"
+ },
+ {
+  "locale": "en-GB",
+  "kind": "stamp",
+  "at": "2024-02-29T00:00",
+  "want": "29 February 2024 at 00:00"
+ },
+ {
+  "locale": "en-GB",
+  "kind": "stamp",
+  "at": "2025-01-01T09:07",
+  "want": "1 January 2025 at 09:07"
+ },
+ {
+  "locale": "en-GB",
+  "kind": "stamp",
+  "at": "2026-11-17T12:00",
+  "want": "17 November 2026 at 12:00"
+ },
+ {
+  "locale": "en-GB",
+  "kind": "stamp",
+  "at": "2026-11-22T21:09",
+  "want": "22 November 2026 at 21:09"
+ },
+ {
+  "locale": "en-GB",
+  "kind": "stamp",
+  "at": "2026-12-31T23:59",
+  "want": "31 December 2026 at 23:59"
+ },
+ {
+  "locale": "en-GB",
+  "kind": "stamp",
+  "at": "2027-06-06T00:30",
+  "want": "6 June 2027 at 00:30"
+ },
+ {
+  "locale": "en-GB",
+  "kind": "stamp",
+  "at": "0001-01-01T00:00",
+  "want": "1 January 1 at 00:00"
+ },
+ {
+  "locale": "en-GB",
+  "kind": "stamp",
+  "at": "9999-12-31T23:59",
+  "want": "31 December 9999 at 23:59"
+ },
+ {
+  "locale": "en-US",
+  "kind": "day",
+  "at": "2024-02-29T00:00",
+  "want": "Thursday, February 29"
+ },
+ {
+  "locale": "en-US",
+  "kind": "day",
+  "at": "2025-01-01T09:07",
+  "want": "Wednesday, January 1"
+ },
+ {
+  "locale": "en-US",
+  "kind": "day",
+  "at": "2026-11-17T12:00",
+  "want": "Tuesday, November 17"
+ },
+ {
+  "locale": "en-US",
+  "kind": "day",
+  "at": "2026-11-22T21:09",
+  "want": "Sunday, November 22"
+ },
+ {
+  "locale": "en-US",
+  "kind": "day",
+  "at": "2026-12-31T23:59",
+  "want": "Thursday, December 31"
+ },
+ {
+  "locale": "en-US",
+  "kind": "day",
+  "at": "2027-06-06T00:30",
+  "want": "Sunday, June 6"
+ },
+ {
+  "locale": "en-US",
+  "kind": "day",
+  "at": "0001-01-01T00:00",
+  "want": "Monday, January 1"
+ },
+ {
+  "locale": "en-US",
+  "kind": "day",
+  "at": "9999-12-31T23:59",
+  "want": "Friday, December 31"
+ },
+ {
+  "locale": "en-US",
+  "kind": "dayYear",
+  "at": "2024-02-29T00:00",
+  "want": "Thursday, February 29, 2024"
+ },
+ {
+  "locale": "en-US",
+  "kind": "dayYear",
+  "at": "2025-01-01T09:07",
+  "want": "Wednesday, January 1, 2025"
+ },
+ {
+  "locale": "en-US",
+  "kind": "dayYear",
+  "at": "2026-11-17T12:00",
+  "want": "Tuesday, November 17, 2026"
+ },
+ {
+  "locale": "en-US",
+  "kind": "dayYear",
+  "at": "2026-11-22T21:09",
+  "want": "Sunday, November 22, 2026"
+ },
+ {
+  "locale": "en-US",
+  "kind": "dayYear",
+  "at": "2026-12-31T23:59",
+  "want": "Thursday, December 31, 2026"
+ },
+ {
+  "locale": "en-US",
+  "kind": "dayYear",
+  "at": "2027-06-06T00:30",
+  "want": "Sunday, June 6, 2027"
+ },
+ {
+  "locale": "en-US",
+  "kind": "dayYear",
+  "at": "0001-01-01T00:00",
+  "want": "Monday, January 1, 1"
+ },
+ {
+  "locale": "en-US",
+  "kind": "dayYear",
+  "at": "9999-12-31T23:59",
+  "want": "Friday, December 31, 9999"
+ },
+ {
+  "locale": "en-US",
+  "kind": "short",
+  "at": "2024-02-29T00:00",
+  "want": "Thu, Feb 29"
+ },
+ {
+  "locale": "en-US",
+  "kind": "short",
+  "at": "2025-01-01T09:07",
+  "want": "Wed, Jan 1"
+ },
+ {
+  "locale": "en-US",
+  "kind": "short",
+  "at": "2026-11-17T12:00",
+  "want": "Tue, Nov 17"
+ },
+ {
+  "locale": "en-US",
+  "kind": "short",
+  "at": "2026-11-22T21:09",
+  "want": "Sun, Nov 22"
+ },
+ {
+  "locale": "en-US",
+  "kind": "short",
+  "at": "2026-12-31T23:59",
+  "want": "Thu, Dec 31"
+ },
+ {
+  "locale": "en-US",
+  "kind": "short",
+  "at": "2027-06-06T00:30",
+  "want": "Sun, Jun 6"
+ },
+ {
+  "locale": "en-US",
+  "kind": "short",
+  "at": "0001-01-01T00:00",
+  "want": "Mon, Jan 1"
+ },
+ {
+  "locale": "en-US",
+  "kind": "short",
+  "at": "9999-12-31T23:59",
+  "want": "Fri, Dec 31"
+ },
+ {
+  "locale": "en-US",
+  "kind": "date",
+  "at": "2024-02-29T00:00",
+  "want": "February 29"
+ },
+ {
+  "locale": "en-US",
+  "kind": "date",
+  "at": "2025-01-01T09:07",
+  "want": "January 1"
+ },
+ {
+  "locale": "en-US",
+  "kind": "date",
+  "at": "2026-11-17T12:00",
+  "want": "November 17"
+ },
+ {
+  "locale": "en-US",
+  "kind": "date",
+  "at": "2026-11-22T21:09",
+  "want": "November 22"
+ },
+ {
+  "locale": "en-US",
+  "kind": "date",
+  "at": "2026-12-31T23:59",
+  "want": "December 31"
+ },
+ {
+  "locale": "en-US",
+  "kind": "date",
+  "at": "2027-06-06T00:30",
+  "want": "June 6"
+ },
+ {
+  "locale": "en-US",
+  "kind": "date",
+  "at": "0001-01-01T00:00",
+  "want": "January 1"
+ },
+ {
+  "locale": "en-US",
+  "kind": "date",
+  "at": "9999-12-31T23:59",
+  "want": "December 31"
+ },
+ {
+  "locale": "en-US",
+  "kind": "dateYear",
+  "at": "2024-02-29T00:00",
+  "want": "February 29, 2024"
+ },
+ {
+  "locale": "en-US",
+  "kind": "dateYear",
+  "at": "2025-01-01T09:07",
+  "want": "January 1, 2025"
+ },
+ {
+  "locale": "en-US",
+  "kind": "dateYear",
+  "at": "2026-11-17T12:00",
+  "want": "November 17, 2026"
+ },
+ {
+  "locale": "en-US",
+  "kind": "dateYear",
+  "at": "2026-11-22T21:09",
+  "want": "November 22, 2026"
+ },
+ {
+  "locale": "en-US",
+  "kind": "dateYear",
+  "at": "2026-12-31T23:59",
+  "want": "December 31, 2026"
+ },
+ {
+  "locale": "en-US",
+  "kind": "dateYear",
+  "at": "2027-06-06T00:30",
+  "want": "June 6, 2027"
+ },
+ {
+  "locale": "en-US",
+  "kind": "dateYear",
+  "at": "0001-01-01T00:00",
+  "want": "January 1, 1"
+ },
+ {
+  "locale": "en-US",
+  "kind": "dateYear",
+  "at": "9999-12-31T23:59",
+  "want": "December 31, 9999"
+ },
+ {
+  "locale": "en-US",
+  "kind": "monthYear",
+  "at": "2024-02-29T00:00",
+  "want": "February 2024"
+ },
+ {
+  "locale": "en-US",
+  "kind": "monthYear",
+  "at": "2025-01-01T09:07",
+  "want": "January 2025"
+ },
+ {
+  "locale": "en-US",
+  "kind": "monthYear",
+  "at": "2026-11-17T12:00",
+  "want": "November 2026"
+ },
+ {
+  "locale": "en-US",
+  "kind": "monthYear",
+  "at": "2026-11-22T21:09",
+  "want": "November 2026"
+ },
+ {
+  "locale": "en-US",
+  "kind": "monthYear",
+  "at": "2026-12-31T23:59",
+  "want": "December 2026"
+ },
+ {
+  "locale": "en-US",
+  "kind": "monthYear",
+  "at": "2027-06-06T00:30",
+  "want": "June 2027"
+ },
+ {
+  "locale": "en-US",
+  "kind": "monthYear",
+  "at": "0001-01-01T00:00",
+  "want": "January 1"
+ },
+ {
+  "locale": "en-US",
+  "kind": "monthYear",
+  "at": "9999-12-31T23:59",
+  "want": "December 9999"
+ },
+ {
+  "locale": "en-US",
+  "kind": "month",
+  "at": "2024-02-29T00:00",
+  "want": "February"
+ },
+ {
+  "locale": "en-US",
+  "kind": "month",
+  "at": "2025-01-01T09:07",
+  "want": "January"
+ },
+ {
+  "locale": "en-US",
+  "kind": "month",
+  "at": "2026-11-17T12:00",
+  "want": "November"
+ },
+ {
+  "locale": "en-US",
+  "kind": "month",
+  "at": "2026-11-22T21:09",
+  "want": "November"
+ },
+ {
+  "locale": "en-US",
+  "kind": "month",
+  "at": "2026-12-31T23:59",
+  "want": "December"
+ },
+ {
+  "locale": "en-US",
+  "kind": "month",
+  "at": "2027-06-06T00:30",
+  "want": "June"
+ },
+ {
+  "locale": "en-US",
+  "kind": "month",
+  "at": "0001-01-01T00:00",
+  "want": "January"
+ },
+ {
+  "locale": "en-US",
+  "kind": "month",
+  "at": "9999-12-31T23:59",
+  "want": "December"
+ },
+ {
+  "locale": "en-US",
+  "kind": "year",
+  "at": "2024-02-29T00:00",
+  "want": "2024"
+ },
+ {
+  "locale": "en-US",
+  "kind": "year",
+  "at": "2025-01-01T09:07",
+  "want": "2025"
+ },
+ {
+  "locale": "en-US",
+  "kind": "year",
+  "at": "2026-11-17T12:00",
+  "want": "2026"
+ },
+ {
+  "locale": "en-US",
+  "kind": "year",
+  "at": "2026-11-22T21:09",
+  "want": "2026"
+ },
+ {
+  "locale": "en-US",
+  "kind": "year",
+  "at": "2026-12-31T23:59",
+  "want": "2026"
+ },
+ {
+  "locale": "en-US",
+  "kind": "year",
+  "at": "2027-06-06T00:30",
+  "want": "2027"
+ },
+ {
+  "locale": "en-US",
+  "kind": "year",
+  "at": "0001-01-01T00:00",
+  "want": "1"
+ },
+ {
+  "locale": "en-US",
+  "kind": "year",
+  "at": "9999-12-31T23:59",
+  "want": "9999"
+ },
+ {
+  "locale": "en-US",
+  "kind": "time",
+  "at": "2024-02-29T00:00",
+  "want": "12:00 AM"
+ },
+ {
+  "locale": "en-US",
+  "kind": "time",
+  "at": "2025-01-01T09:07",
+  "want": "9:07 AM"
+ },
+ {
+  "locale": "en-US",
+  "kind": "time",
+  "at": "2026-11-17T12:00",
+  "want": "12:00 PM"
+ },
+ {
+  "locale": "en-US",
+  "kind": "time",
+  "at": "2026-11-22T21:09",
+  "want": "9:09 PM"
+ },
+ {
+  "locale": "en-US",
+  "kind": "time",
+  "at": "2026-12-31T23:59",
+  "want": "11:59 PM"
+ },
+ {
+  "locale": "en-US",
+  "kind": "time",
+  "at": "2027-06-06T00:30",
+  "want": "12:30 AM"
+ },
+ {
+  "locale": "en-US",
+  "kind": "time",
+  "at": "0001-01-01T00:00",
+  "want": "12:00 AM"
+ },
+ {
+  "locale": "en-US",
+  "kind": "time",
+  "at": "9999-12-31T23:59",
+  "want": "11:59 PM"
+ },
+ {
+  "locale": "en-US",
+  "kind": "stamp",
+  "at": "2024-02-29T00:00",
+  "want": "February 29, 2024 at 12:00 AM"
+ },
+ {
+  "locale": "en-US",
+  "kind": "stamp",
+  "at": "2025-01-01T09:07",
+  "want": "January 1, 2025 at 9:07 AM"
+ },
+ {
+  "locale": "en-US",
+  "kind": "stamp",
+  "at": "2026-11-17T12:00",
+  "want": "November 17, 2026 at 12:00 PM"
+ },
+ {
+  "locale": "en-US",
+  "kind": "stamp",
+  "at": "2026-11-22T21:09",
+  "want": "November 22, 2026 at 9:09 PM"
+ },
+ {
+  "locale": "en-US",
+  "kind": "stamp",
+  "at": "2026-12-31T23:59",
+  "want": "December 31, 2026 at 11:59 PM"
+ },
+ {
+  "locale": "en-US",
+  "kind": "stamp",
+  "at": "2027-06-06T00:30",
+  "want": "June 6, 2027 at 12:30 AM"
+ },
+ {
+  "locale": "en-US",
+  "kind": "stamp",
+  "at": "0001-01-01T00:00",
+  "want": "January 1, 1 at 12:00 AM"
+ },
+ {
+  "locale": "en-US",
+  "kind": "stamp",
+  "at": "9999-12-31T23:59",
+  "want": "December 31, 9999 at 11:59 PM"
+ },
+ {
+  "locale": "de",
+  "kind": "day",
+  "at": "2024-02-29T00:00",
+  "want": "Donnerstag, 29. Februar"
+ },
+ {
+  "locale": "de",
+  "kind": "day",
+  "at": "2025-01-01T09:07",
+  "want": "Mittwoch, 1. Januar"
+ },
+ {
+  "locale": "de",
+  "kind": "day",
+  "at": "2026-11-17T12:00",
+  "want": "Dienstag, 17. November"
+ },
+ {
+  "locale": "de",
+  "kind": "day",
+  "at": "2026-11-22T21:09",
+  "want": "Sonntag, 22. November"
+ },
+ {
+  "locale": "de",
+  "kind": "day",
+  "at": "2026-12-31T23:59",
+  "want": "Donnerstag, 31. Dezember"
+ },
+ {
+  "locale": "de",
+  "kind": "day",
+  "at": "2027-06-06T00:30",
+  "want": "Sonntag, 6. Juni"
+ },
+ {
+  "locale": "de",
+  "kind": "day",
+  "at": "0001-01-01T00:00",
+  "want": "Montag, 1. Januar"
+ },
+ {
+  "locale": "de",
+  "kind": "day",
+  "at": "9999-12-31T23:59",
+  "want": "Freitag, 31. Dezember"
+ },
+ {
+  "locale": "de",
+  "kind": "dayYear",
+  "at": "2024-02-29T00:00",
+  "want": "Donnerstag, 29. Februar 2024"
+ },
+ {
+  "locale": "de",
+  "kind": "dayYear",
+  "at": "2025-01-01T09:07",
+  "want": "Mittwoch, 1. Januar 2025"
+ },
+ {
+  "locale": "de",
+  "kind": "dayYear",
+  "at": "2026-11-17T12:00",
+  "want": "Dienstag, 17. November 2026"
+ },
+ {
+  "locale": "de",
+  "kind": "dayYear",
+  "at": "2026-11-22T21:09",
+  "want": "Sonntag, 22. November 2026"
+ },
+ {
+  "locale": "de",
+  "kind": "dayYear",
+  "at": "2026-12-31T23:59",
+  "want": "Donnerstag, 31. Dezember 2026"
+ },
+ {
+  "locale": "de",
+  "kind": "dayYear",
+  "at": "2027-06-06T00:30",
+  "want": "Sonntag, 6. Juni 2027"
+ },
+ {
+  "locale": "de",
+  "kind": "dayYear",
+  "at": "0001-01-01T00:00",
+  "want": "Montag, 1. Januar 1"
+ },
+ {
+  "locale": "de",
+  "kind": "dayYear",
+  "at": "9999-12-31T23:59",
+  "want": "Freitag, 31. Dezember 9999"
+ },
+ {
+  "locale": "de",
+  "kind": "short",
+  "at": "2024-02-29T00:00",
+  "want": "Do., 29. Feb."
+ },
+ {
+  "locale": "de",
+  "kind": "short",
+  "at": "2025-01-01T09:07",
+  "want": "Mi., 1. Jan."
+ },
+ {
+  "locale": "de",
+  "kind": "short",
+  "at": "2026-11-17T12:00",
+  "want": "Di., 17. Nov."
+ },
+ {
+  "locale": "de",
+  "kind": "short",
+  "at": "2026-11-22T21:09",
+  "want": "So., 22. Nov."
+ },
+ {
+  "locale": "de",
+  "kind": "short",
+  "at": "2026-12-31T23:59",
+  "want": "Do., 31. Dez."
+ },
+ {
+  "locale": "de",
+  "kind": "short",
+  "at": "2027-06-06T00:30",
+  "want": "So., 6. Juni"
+ },
+ {
+  "locale": "de",
+  "kind": "short",
+  "at": "0001-01-01T00:00",
+  "want": "Mo., 1. Jan."
+ },
+ {
+  "locale": "de",
+  "kind": "short",
+  "at": "9999-12-31T23:59",
+  "want": "Fr., 31. Dez."
+ },
+ {
+  "locale": "de",
+  "kind": "date",
+  "at": "2024-02-29T00:00",
+  "want": "29. Februar"
+ },
+ {
+  "locale": "de",
+  "kind": "date",
+  "at": "2025-01-01T09:07",
+  "want": "1. Januar"
+ },
+ {
+  "locale": "de",
+  "kind": "date",
+  "at": "2026-11-17T12:00",
+  "want": "17. November"
+ },
+ {
+  "locale": "de",
+  "kind": "date",
+  "at": "2026-11-22T21:09",
+  "want": "22. November"
+ },
+ {
+  "locale": "de",
+  "kind": "date",
+  "at": "2026-12-31T23:59",
+  "want": "31. Dezember"
+ },
+ {
+  "locale": "de",
+  "kind": "date",
+  "at": "2027-06-06T00:30",
+  "want": "6. Juni"
+ },
+ {
+  "locale": "de",
+  "kind": "date",
+  "at": "0001-01-01T00:00",
+  "want": "1. Januar"
+ },
+ {
+  "locale": "de",
+  "kind": "date",
+  "at": "9999-12-31T23:59",
+  "want": "31. Dezember"
+ },
+ {
+  "locale": "de",
+  "kind": "dateYear",
+  "at": "2024-02-29T00:00",
+  "want": "29. Februar 2024"
+ },
+ {
+  "locale": "de",
+  "kind": "dateYear",
+  "at": "2025-01-01T09:07",
+  "want": "1. Januar 2025"
+ },
+ {
+  "locale": "de",
+  "kind": "dateYear",
+  "at": "2026-11-17T12:00",
+  "want": "17. November 2026"
+ },
+ {
+  "locale": "de",
+  "kind": "dateYear",
+  "at": "2026-11-22T21:09",
+  "want": "22. November 2026"
+ },
+ {
+  "locale": "de",
+  "kind": "dateYear",
+  "at": "2026-12-31T23:59",
+  "want": "31. Dezember 2026"
+ },
+ {
+  "locale": "de",
+  "kind": "dateYear",
+  "at": "2027-06-06T00:30",
+  "want": "6. Juni 2027"
+ },
+ {
+  "locale": "de",
+  "kind": "dateYear",
+  "at": "0001-01-01T00:00",
+  "want": "1. Januar 1"
+ },
+ {
+  "locale": "de",
+  "kind": "dateYear",
+  "at": "9999-12-31T23:59",
+  "want": "31. Dezember 9999"
+ },
+ {
+  "locale": "de",
+  "kind": "monthYear",
+  "at": "2024-02-29T00:00",
+  "want": "Februar 2024"
+ },
+ {
+  "locale": "de",
+  "kind": "monthYear",
+  "at": "2025-01-01T09:07",
+  "want": "Januar 2025"
+ },
+ {
+  "locale": "de",
+  "kind": "monthYear",
+  "at": "2026-11-17T12:00",
+  "want": "November 2026"
+ },
+ {
+  "locale": "de",
+  "kind": "monthYear",
+  "at": "2026-11-22T21:09",
+  "want": "November 2026"
+ },
+ {
+  "locale": "de",
+  "kind": "monthYear",
+  "at": "2026-12-31T23:59",
+  "want": "Dezember 2026"
+ },
+ {
+  "locale": "de",
+  "kind": "monthYear",
+  "at": "2027-06-06T00:30",
+  "want": "Juni 2027"
+ },
+ {
+  "locale": "de",
+  "kind": "monthYear",
+  "at": "0001-01-01T00:00",
+  "want": "Januar 1"
+ },
+ {
+  "locale": "de",
+  "kind": "monthYear",
+  "at": "9999-12-31T23:59",
+  "want": "Dezember 9999"
+ },
+ {
+  "locale": "de",
+  "kind": "month",
+  "at": "2024-02-29T00:00",
+  "want": "Februar"
+ },
+ {
+  "locale": "de",
+  "kind": "month",
+  "at": "2025-01-01T09:07",
+  "want": "Januar"
+ },
+ {
+  "locale": "de",
+  "kind": "month",
+  "at": "2026-11-17T12:00",
+  "want": "November"
+ },
+ {
+  "locale": "de",
+  "kind": "month",
+  "at": "2026-11-22T21:09",
+  "want": "November"
+ },
+ {
+  "locale": "de",
+  "kind": "month",
+  "at": "2026-12-31T23:59",
+  "want": "Dezember"
+ },
+ {
+  "locale": "de",
+  "kind": "month",
+  "at": "2027-06-06T00:30",
+  "want": "Juni"
+ },
+ {
+  "locale": "de",
+  "kind": "month",
+  "at": "0001-01-01T00:00",
+  "want": "Januar"
+ },
+ {
+  "locale": "de",
+  "kind": "month",
+  "at": "9999-12-31T23:59",
+  "want": "Dezember"
+ },
+ {
+  "locale": "de",
+  "kind": "year",
+  "at": "2024-02-29T00:00",
+  "want": "2024"
+ },
+ {
+  "locale": "de",
+  "kind": "year",
+  "at": "2025-01-01T09:07",
+  "want": "2025"
+ },
+ {
+  "locale": "de",
+  "kind": "year",
+  "at": "2026-11-17T12:00",
+  "want": "2026"
+ },
+ {
+  "locale": "de",
+  "kind": "year",
+  "at": "2026-11-22T21:09",
+  "want": "2026"
+ },
+ {
+  "locale": "de",
+  "kind": "year",
+  "at": "2026-12-31T23:59",
+  "want": "2026"
+ },
+ {
+  "locale": "de",
+  "kind": "year",
+  "at": "2027-06-06T00:30",
+  "want": "2027"
+ },
+ {
+  "locale": "de",
+  "kind": "year",
+  "at": "0001-01-01T00:00",
+  "want": "1"
+ },
+ {
+  "locale": "de",
+  "kind": "year",
+  "at": "9999-12-31T23:59",
+  "want": "9999"
+ },
+ {
+  "locale": "de",
+  "kind": "time",
+  "at": "2024-02-29T00:00",
+  "want": "00:00"
+ },
+ {
+  "locale": "de",
+  "kind": "time",
+  "at": "2025-01-01T09:07",
+  "want": "09:07"
+ },
+ {
+  "locale": "de",
+  "kind": "time",
+  "at": "2026-11-17T12:00",
+  "want": "12:00"
+ },
+ {
+  "locale": "de",
+  "kind": "time",
+  "at": "2026-11-22T21:09",
+  "want": "21:09"
+ },
+ {
+  "locale": "de",
+  "kind": "time",
+  "at": "2026-12-31T23:59",
+  "want": "23:59"
+ },
+ {
+  "locale": "de",
+  "kind": "time",
+  "at": "2027-06-06T00:30",
+  "want": "00:30"
+ },
+ {
+  "locale": "de",
+  "kind": "time",
+  "at": "0001-01-01T00:00",
+  "want": "00:00"
+ },
+ {
+  "locale": "de",
+  "kind": "time",
+  "at": "9999-12-31T23:59",
+  "want": "23:59"
+ },
+ {
+  "locale": "de",
+  "kind": "stamp",
+  "at": "2024-02-29T00:00",
+  "want": "29. Februar 2024 um 00:00"
+ },
+ {
+  "locale": "de",
+  "kind": "stamp",
+  "at": "2025-01-01T09:07",
+  "want": "1. Januar 2025 um 09:07"
+ },
+ {
+  "locale": "de",
+  "kind": "stamp",
+  "at": "2026-11-17T12:00",
+  "want": "17. November 2026 um 12:00"
+ },
+ {
+  "locale": "de",
+  "kind": "stamp",
+  "at": "2026-11-22T21:09",
+  "want": "22. November 2026 um 21:09"
+ },
+ {
+  "locale": "de",
+  "kind": "stamp",
+  "at": "2026-12-31T23:59",
+  "want": "31. Dezember 2026 um 23:59"
+ },
+ {
+  "locale": "de",
+  "kind": "stamp",
+  "at": "2027-06-06T00:30",
+  "want": "6. Juni 2027 um 00:30"
+ },
+ {
+  "locale": "de",
+  "kind": "stamp",
+  "at": "0001-01-01T00:00",
+  "want": "1. Januar 1 um 00:00"
+ },
+ {
+  "locale": "de",
+  "kind": "stamp",
+  "at": "9999-12-31T23:59",
+  "want": "31. Dezember 9999 um 23:59"
+ },
+ {
+  "locale": "fr",
+  "kind": "day",
+  "at": "2024-02-29T00:00",
+  "want": "jeudi 29 février"
+ },
+ {
+  "locale": "fr",
+  "kind": "day",
+  "at": "2025-01-01T09:07",
+  "want": "mercredi 1 janvier"
+ },
+ {
+  "locale": "fr",
+  "kind": "day",
+  "at": "2026-11-17T12:00",
+  "want": "mardi 17 novembre"
+ },
+ {
+  "locale": "fr",
+  "kind": "day",
+  "at": "2026-11-22T21:09",
+  "want": "dimanche 22 novembre"
+ },
+ {
+  "locale": "fr",
+  "kind": "day",
+  "at": "2026-12-31T23:59",
+  "want": "jeudi 31 décembre"
+ },
+ {
+  "locale": "fr",
+  "kind": "day",
+  "at": "2027-06-06T00:30",
+  "want": "dimanche 6 juin"
+ },
+ {
+  "locale": "fr",
+  "kind": "day",
+  "at": "0001-01-01T00:00",
+  "want": "lundi 1 janvier"
+ },
+ {
+  "locale": "fr",
+  "kind": "day",
+  "at": "9999-12-31T23:59",
+  "want": "vendredi 31 décembre"
+ },
+ {
+  "locale": "fr",
+  "kind": "dayYear",
+  "at": "2024-02-29T00:00",
+  "want": "jeudi 29 février 2024"
+ },
+ {
+  "locale": "fr",
+  "kind": "dayYear",
+  "at": "2025-01-01T09:07",
+  "want": "mercredi 1 janvier 2025"
+ },
+ {
+  "locale": "fr",
+  "kind": "dayYear",
+  "at": "2026-11-17T12:00",
+  "want": "mardi 17 novembre 2026"
+ },
+ {
+  "locale": "fr",
+  "kind": "dayYear",
+  "at": "2026-11-22T21:09",
+  "want": "dimanche 22 novembre 2026"
+ },
+ {
+  "locale": "fr",
+  "kind": "dayYear",
+  "at": "2026-12-31T23:59",
+  "want": "jeudi 31 décembre 2026"
+ },
+ {
+  "locale": "fr",
+  "kind": "dayYear",
+  "at": "2027-06-06T00:30",
+  "want": "dimanche 6 juin 2027"
+ },
+ {
+  "locale": "fr",
+  "kind": "dayYear",
+  "at": "0001-01-01T00:00",
+  "want": "lundi 1 janvier 1"
+ },
+ {
+  "locale": "fr",
+  "kind": "dayYear",
+  "at": "9999-12-31T23:59",
+  "want": "vendredi 31 décembre 9999"
+ },
+ {
+  "locale": "fr",
+  "kind": "short",
+  "at": "2024-02-29T00:00",
+  "want": "jeu. 29 févr."
+ },
+ {
+  "locale": "fr",
+  "kind": "short",
+  "at": "2025-01-01T09:07",
+  "want": "mer. 1 janv."
+ },
+ {
+  "locale": "fr",
+  "kind": "short",
+  "at": "2026-11-17T12:00",
+  "want": "mar. 17 nov."
+ },
+ {
+  "locale": "fr",
+  "kind": "short",
+  "at": "2026-11-22T21:09",
+  "want": "dim. 22 nov."
+ },
+ {
+  "locale": "fr",
+  "kind": "short",
+  "at": "2026-12-31T23:59",
+  "want": "jeu. 31 déc."
+ },
+ {
+  "locale": "fr",
+  "kind": "short",
+  "at": "2027-06-06T00:30",
+  "want": "dim. 6 juin"
+ },
+ {
+  "locale": "fr",
+  "kind": "short",
+  "at": "0001-01-01T00:00",
+  "want": "lun. 1 janv."
+ },
+ {
+  "locale": "fr",
+  "kind": "short",
+  "at": "9999-12-31T23:59",
+  "want": "ven. 31 déc."
+ },
+ {
+  "locale": "fr",
+  "kind": "date",
+  "at": "2024-02-29T00:00",
+  "want": "29 février"
+ },
+ {
+  "locale": "fr",
+  "kind": "date",
+  "at": "2025-01-01T09:07",
+  "want": "1 janvier"
+ },
+ {
+  "locale": "fr",
+  "kind": "date",
+  "at": "2026-11-17T12:00",
+  "want": "17 novembre"
+ },
+ {
+  "locale": "fr",
+  "kind": "date",
+  "at": "2026-11-22T21:09",
+  "want": "22 novembre"
+ },
+ {
+  "locale": "fr",
+  "kind": "date",
+  "at": "2026-12-31T23:59",
+  "want": "31 décembre"
+ },
+ {
+  "locale": "fr",
+  "kind": "date",
+  "at": "2027-06-06T00:30",
+  "want": "6 juin"
+ },
+ {
+  "locale": "fr",
+  "kind": "date",
+  "at": "0001-01-01T00:00",
+  "want": "1 janvier"
+ },
+ {
+  "locale": "fr",
+  "kind": "date",
+  "at": "9999-12-31T23:59",
+  "want": "31 décembre"
+ },
+ {
+  "locale": "fr",
+  "kind": "dateYear",
+  "at": "2024-02-29T00:00",
+  "want": "29 février 2024"
+ },
+ {
+  "locale": "fr",
+  "kind": "dateYear",
+  "at": "2025-01-01T09:07",
+  "want": "1 janvier 2025"
+ },
+ {
+  "locale": "fr",
+  "kind": "dateYear",
+  "at": "2026-11-17T12:00",
+  "want": "17 novembre 2026"
+ },
+ {
+  "locale": "fr",
+  "kind": "dateYear",
+  "at": "2026-11-22T21:09",
+  "want": "22 novembre 2026"
+ },
+ {
+  "locale": "fr",
+  "kind": "dateYear",
+  "at": "2026-12-31T23:59",
+  "want": "31 décembre 2026"
+ },
+ {
+  "locale": "fr",
+  "kind": "dateYear",
+  "at": "2027-06-06T00:30",
+  "want": "6 juin 2027"
+ },
+ {
+  "locale": "fr",
+  "kind": "dateYear",
+  "at": "0001-01-01T00:00",
+  "want": "1 janvier 1"
+ },
+ {
+  "locale": "fr",
+  "kind": "dateYear",
+  "at": "9999-12-31T23:59",
+  "want": "31 décembre 9999"
+ },
+ {
+  "locale": "fr",
+  "kind": "monthYear",
+  "at": "2024-02-29T00:00",
+  "want": "février 2024"
+ },
+ {
+  "locale": "fr",
+  "kind": "monthYear",
+  "at": "2025-01-01T09:07",
+  "want": "janvier 2025"
+ },
+ {
+  "locale": "fr",
+  "kind": "monthYear",
+  "at": "2026-11-17T12:00",
+  "want": "novembre 2026"
+ },
+ {
+  "locale": "fr",
+  "kind": "monthYear",
+  "at": "2026-11-22T21:09",
+  "want": "novembre 2026"
+ },
+ {
+  "locale": "fr",
+  "kind": "monthYear",
+  "at": "2026-12-31T23:59",
+  "want": "décembre 2026"
+ },
+ {
+  "locale": "fr",
+  "kind": "monthYear",
+  "at": "2027-06-06T00:30",
+  "want": "juin 2027"
+ },
+ {
+  "locale": "fr",
+  "kind": "monthYear",
+  "at": "0001-01-01T00:00",
+  "want": "janvier 1"
+ },
+ {
+  "locale": "fr",
+  "kind": "monthYear",
+  "at": "9999-12-31T23:59",
+  "want": "décembre 9999"
+ },
+ {
+  "locale": "fr",
+  "kind": "month",
+  "at": "2024-02-29T00:00",
+  "want": "février"
+ },
+ {
+  "locale": "fr",
+  "kind": "month",
+  "at": "2025-01-01T09:07",
+  "want": "janvier"
+ },
+ {
+  "locale": "fr",
+  "kind": "month",
+  "at": "2026-11-17T12:00",
+  "want": "novembre"
+ },
+ {
+  "locale": "fr",
+  "kind": "month",
+  "at": "2026-11-22T21:09",
+  "want": "novembre"
+ },
+ {
+  "locale": "fr",
+  "kind": "month",
+  "at": "2026-12-31T23:59",
+  "want": "décembre"
+ },
+ {
+  "locale": "fr",
+  "kind": "month",
+  "at": "2027-06-06T00:30",
+  "want": "juin"
+ },
+ {
+  "locale": "fr",
+  "kind": "month",
+  "at": "0001-01-01T00:00",
+  "want": "janvier"
+ },
+ {
+  "locale": "fr",
+  "kind": "month",
+  "at": "9999-12-31T23:59",
+  "want": "décembre"
+ },
+ {
+  "locale": "fr",
+  "kind": "year",
+  "at": "2024-02-29T00:00",
+  "want": "2024"
+ },
+ {
+  "locale": "fr",
+  "kind": "year",
+  "at": "2025-01-01T09:07",
+  "want": "2025"
+ },
+ {
+  "locale": "fr",
+  "kind": "year",
+  "at": "2026-11-17T12:00",
+  "want": "2026"
+ },
+ {
+  "locale": "fr",
+  "kind": "year",
+  "at": "2026-11-22T21:09",
+  "want": "2026"
+ },
+ {
+  "locale": "fr",
+  "kind": "year",
+  "at": "2026-12-31T23:59",
+  "want": "2026"
+ },
+ {
+  "locale": "fr",
+  "kind": "year",
+  "at": "2027-06-06T00:30",
+  "want": "2027"
+ },
+ {
+  "locale": "fr",
+  "kind": "year",
+  "at": "0001-01-01T00:00",
+  "want": "1"
+ },
+ {
+  "locale": "fr",
+  "kind": "year",
+  "at": "9999-12-31T23:59",
+  "want": "9999"
+ },
+ {
+  "locale": "fr",
+  "kind": "time",
+  "at": "2024-02-29T00:00",
+  "want": "00:00"
+ },
+ {
+  "locale": "fr",
+  "kind": "time",
+  "at": "2025-01-01T09:07",
+  "want": "09:07"
+ },
+ {
+  "locale": "fr",
+  "kind": "time",
+  "at": "2026-11-17T12:00",
+  "want": "12:00"
+ },
+ {
+  "locale": "fr",
+  "kind": "time",
+  "at": "2026-11-22T21:09",
+  "want": "21:09"
+ },
+ {
+  "locale": "fr",
+  "kind": "time",
+  "at": "2026-12-31T23:59",
+  "want": "23:59"
+ },
+ {
+  "locale": "fr",
+  "kind": "time",
+  "at": "2027-06-06T00:30",
+  "want": "00:30"
+ },
+ {
+  "locale": "fr",
+  "kind": "time",
+  "at": "0001-01-01T00:00",
+  "want": "00:00"
+ },
+ {
+  "locale": "fr",
+  "kind": "time",
+  "at": "9999-12-31T23:59",
+  "want": "23:59"
+ },
+ {
+  "locale": "fr",
+  "kind": "stamp",
+  "at": "2024-02-29T00:00",
+  "want": "29 février 2024 à 00:00"
+ },
+ {
+  "locale": "fr",
+  "kind": "stamp",
+  "at": "2025-01-01T09:07",
+  "want": "1 janvier 2025 à 09:07"
+ },
+ {
+  "locale": "fr",
+  "kind": "stamp",
+  "at": "2026-11-17T12:00",
+  "want": "17 novembre 2026 à 12:00"
+ },
+ {
+  "locale": "fr",
+  "kind": "stamp",
+  "at": "2026-11-22T21:09",
+  "want": "22 novembre 2026 à 21:09"
+ },
+ {
+  "locale": "fr",
+  "kind": "stamp",
+  "at": "2026-12-31T23:59",
+  "want": "31 décembre 2026 à 23:59"
+ },
+ {
+  "locale": "fr",
+  "kind": "stamp",
+  "at": "2027-06-06T00:30",
+  "want": "6 juin 2027 à 00:30"
+ },
+ {
+  "locale": "fr",
+  "kind": "stamp",
+  "at": "0001-01-01T00:00",
+  "want": "1 janvier 1 à 00:00"
+ },
+ {
+  "locale": "fr",
+  "kind": "stamp",
+  "at": "9999-12-31T23:59",
+  "want": "31 décembre 9999 à 23:59"
+ },
+ {
+  "locale": "es",
+  "kind": "day",
+  "at": "2024-02-29T00:00",
+  "want": "jueves, 29 de febrero"
+ },
+ {
+  "locale": "es",
+  "kind": "day",
+  "at": "2025-01-01T09:07",
+  "want": "miércoles, 1 de enero"
+ },
+ {
+  "locale": "es",
+  "kind": "day",
+  "at": "2026-11-17T12:00",
+  "want": "martes, 17 de noviembre"
+ },
+ {
+  "locale": "es",
+  "kind": "day",
+  "at": "2026-11-22T21:09",
+  "want": "domingo, 22 de noviembre"
+ },
+ {
+  "locale": "es",
+  "kind": "day",
+  "at": "2026-12-31T23:59",
+  "want": "jueves, 31 de diciembre"
+ },
+ {
+  "locale": "es",
+  "kind": "day",
+  "at": "2027-06-06T00:30",
+  "want": "domingo, 6 de junio"
+ },
+ {
+  "locale": "es",
+  "kind": "day",
+  "at": "0001-01-01T00:00",
+  "want": "lunes, 1 de enero"
+ },
+ {
+  "locale": "es",
+  "kind": "day",
+  "at": "9999-12-31T23:59",
+  "want": "viernes, 31 de diciembre"
+ },
+ {
+  "locale": "es",
+  "kind": "dayYear",
+  "at": "2024-02-29T00:00",
+  "want": "jueves, 29 de febrero de 2024"
+ },
+ {
+  "locale": "es",
+  "kind": "dayYear",
+  "at": "2025-01-01T09:07",
+  "want": "miércoles, 1 de enero de 2025"
+ },
+ {
+  "locale": "es",
+  "kind": "dayYear",
+  "at": "2026-11-17T12:00",
+  "want": "martes, 17 de noviembre de 2026"
+ },
+ {
+  "locale": "es",
+  "kind": "dayYear",
+  "at": "2026-11-22T21:09",
+  "want": "domingo, 22 de noviembre de 2026"
+ },
+ {
+  "locale": "es",
+  "kind": "dayYear",
+  "at": "2026-12-31T23:59",
+  "want": "jueves, 31 de diciembre de 2026"
+ },
+ {
+  "locale": "es",
+  "kind": "dayYear",
+  "at": "2027-06-06T00:30",
+  "want": "domingo, 6 de junio de 2027"
+ },
+ {
+  "locale": "es",
+  "kind": "dayYear",
+  "at": "0001-01-01T00:00",
+  "want": "lunes, 1 de enero de 1"
+ },
+ {
+  "locale": "es",
+  "kind": "dayYear",
+  "at": "9999-12-31T23:59",
+  "want": "viernes, 31 de diciembre de 9999"
+ },
+ {
+  "locale": "es",
+  "kind": "short",
+  "at": "2024-02-29T00:00",
+  "want": "jue, 29 feb"
+ },
+ {
+  "locale": "es",
+  "kind": "short",
+  "at": "2025-01-01T09:07",
+  "want": "mié, 1 ene"
+ },
+ {
+  "locale": "es",
+  "kind": "short",
+  "at": "2026-11-17T12:00",
+  "want": "mar, 17 nov"
+ },
+ {
+  "locale": "es",
+  "kind": "short",
+  "at": "2026-11-22T21:09",
+  "want": "dom, 22 nov"
+ },
+ {
+  "locale": "es",
+  "kind": "short",
+  "at": "2026-12-31T23:59",
+  "want": "jue, 31 dic"
+ },
+ {
+  "locale": "es",
+  "kind": "short",
+  "at": "2027-06-06T00:30",
+  "want": "dom, 6 jun"
+ },
+ {
+  "locale": "es",
+  "kind": "short",
+  "at": "0001-01-01T00:00",
+  "want": "lun, 1 ene"
+ },
+ {
+  "locale": "es",
+  "kind": "short",
+  "at": "9999-12-31T23:59",
+  "want": "vie, 31 dic"
+ },
+ {
+  "locale": "es",
+  "kind": "date",
+  "at": "2024-02-29T00:00",
+  "want": "29 de febrero"
+ },
+ {
+  "locale": "es",
+  "kind": "date",
+  "at": "2025-01-01T09:07",
+  "want": "1 de enero"
+ },
+ {
+  "locale": "es",
+  "kind": "date",
+  "at": "2026-11-17T12:00",
+  "want": "17 de noviembre"
+ },
+ {
+  "locale": "es",
+  "kind": "date",
+  "at": "2026-11-22T21:09",
+  "want": "22 de noviembre"
+ },
+ {
+  "locale": "es",
+  "kind": "date",
+  "at": "2026-12-31T23:59",
+  "want": "31 de diciembre"
+ },
+ {
+  "locale": "es",
+  "kind": "date",
+  "at": "2027-06-06T00:30",
+  "want": "6 de junio"
+ },
+ {
+  "locale": "es",
+  "kind": "date",
+  "at": "0001-01-01T00:00",
+  "want": "1 de enero"
+ },
+ {
+  "locale": "es",
+  "kind": "date",
+  "at": "9999-12-31T23:59",
+  "want": "31 de diciembre"
+ },
+ {
+  "locale": "es",
+  "kind": "dateYear",
+  "at": "2024-02-29T00:00",
+  "want": "29 de febrero de 2024"
+ },
+ {
+  "locale": "es",
+  "kind": "dateYear",
+  "at": "2025-01-01T09:07",
+  "want": "1 de enero de 2025"
+ },
+ {
+  "locale": "es",
+  "kind": "dateYear",
+  "at": "2026-11-17T12:00",
+  "want": "17 de noviembre de 2026"
+ },
+ {
+  "locale": "es",
+  "kind": "dateYear",
+  "at": "2026-11-22T21:09",
+  "want": "22 de noviembre de 2026"
+ },
+ {
+  "locale": "es",
+  "kind": "dateYear",
+  "at": "2026-12-31T23:59",
+  "want": "31 de diciembre de 2026"
+ },
+ {
+  "locale": "es",
+  "kind": "dateYear",
+  "at": "2027-06-06T00:30",
+  "want": "6 de junio de 2027"
+ },
+ {
+  "locale": "es",
+  "kind": "dateYear",
+  "at": "0001-01-01T00:00",
+  "want": "1 de enero de 1"
+ },
+ {
+  "locale": "es",
+  "kind": "dateYear",
+  "at": "9999-12-31T23:59",
+  "want": "31 de diciembre de 9999"
+ },
+ {
+  "locale": "es",
+  "kind": "monthYear",
+  "at": "2024-02-29T00:00",
+  "want": "febrero de 2024"
+ },
+ {
+  "locale": "es",
+  "kind": "monthYear",
+  "at": "2025-01-01T09:07",
+  "want": "enero de 2025"
+ },
+ {
+  "locale": "es",
+  "kind": "monthYear",
+  "at": "2026-11-17T12:00",
+  "want": "noviembre de 2026"
+ },
+ {
+  "locale": "es",
+  "kind": "monthYear",
+  "at": "2026-11-22T21:09",
+  "want": "noviembre de 2026"
+ },
+ {
+  "locale": "es",
+  "kind": "monthYear",
+  "at": "2026-12-31T23:59",
+  "want": "diciembre de 2026"
+ },
+ {
+  "locale": "es",
+  "kind": "monthYear",
+  "at": "2027-06-06T00:30",
+  "want": "junio de 2027"
+ },
+ {
+  "locale": "es",
+  "kind": "monthYear",
+  "at": "0001-01-01T00:00",
+  "want": "enero de 1"
+ },
+ {
+  "locale": "es",
+  "kind": "monthYear",
+  "at": "9999-12-31T23:59",
+  "want": "diciembre de 9999"
+ },
+ {
+  "locale": "es",
+  "kind": "month",
+  "at": "2024-02-29T00:00",
+  "want": "febrero"
+ },
+ {
+  "locale": "es",
+  "kind": "month",
+  "at": "2025-01-01T09:07",
+  "want": "enero"
+ },
+ {
+  "locale": "es",
+  "kind": "month",
+  "at": "2026-11-17T12:00",
+  "want": "noviembre"
+ },
+ {
+  "locale": "es",
+  "kind": "month",
+  "at": "2026-11-22T21:09",
+  "want": "noviembre"
+ },
+ {
+  "locale": "es",
+  "kind": "month",
+  "at": "2026-12-31T23:59",
+  "want": "diciembre"
+ },
+ {
+  "locale": "es",
+  "kind": "month",
+  "at": "2027-06-06T00:30",
+  "want": "junio"
+ },
+ {
+  "locale": "es",
+  "kind": "month",
+  "at": "0001-01-01T00:00",
+  "want": "enero"
+ },
+ {
+  "locale": "es",
+  "kind": "month",
+  "at": "9999-12-31T23:59",
+  "want": "diciembre"
+ },
+ {
+  "locale": "es",
+  "kind": "year",
+  "at": "2024-02-29T00:00",
+  "want": "2024"
+ },
+ {
+  "locale": "es",
+  "kind": "year",
+  "at": "2025-01-01T09:07",
+  "want": "2025"
+ },
+ {
+  "locale": "es",
+  "kind": "year",
+  "at": "2026-11-17T12:00",
+  "want": "2026"
+ },
+ {
+  "locale": "es",
+  "kind": "year",
+  "at": "2026-11-22T21:09",
+  "want": "2026"
+ },
+ {
+  "locale": "es",
+  "kind": "year",
+  "at": "2026-12-31T23:59",
+  "want": "2026"
+ },
+ {
+  "locale": "es",
+  "kind": "year",
+  "at": "2027-06-06T00:30",
+  "want": "2027"
+ },
+ {
+  "locale": "es",
+  "kind": "year",
+  "at": "0001-01-01T00:00",
+  "want": "1"
+ },
+ {
+  "locale": "es",
+  "kind": "year",
+  "at": "9999-12-31T23:59",
+  "want": "9999"
+ },
+ {
+  "locale": "es",
+  "kind": "time",
+  "at": "2024-02-29T00:00",
+  "want": "0:00"
+ },
+ {
+  "locale": "es",
+  "kind": "time",
+  "at": "2025-01-01T09:07",
+  "want": "9:07"
+ },
+ {
+  "locale": "es",
+  "kind": "time",
+  "at": "2026-11-17T12:00",
+  "want": "12:00"
+ },
+ {
+  "locale": "es",
+  "kind": "time",
+  "at": "2026-11-22T21:09",
+  "want": "21:09"
+ },
+ {
+  "locale": "es",
+  "kind": "time",
+  "at": "2026-12-31T23:59",
+  "want": "23:59"
+ },
+ {
+  "locale": "es",
+  "kind": "time",
+  "at": "2027-06-06T00:30",
+  "want": "0:30"
+ },
+ {
+  "locale": "es",
+  "kind": "time",
+  "at": "0001-01-01T00:00",
+  "want": "0:00"
+ },
+ {
+  "locale": "es",
+  "kind": "time",
+  "at": "9999-12-31T23:59",
+  "want": "23:59"
+ },
+ {
+  "locale": "es",
+  "kind": "stamp",
+  "at": "2024-02-29T00:00",
+  "want": "29 de febrero de 2024 a las 0:00"
+ },
+ {
+  "locale": "es",
+  "kind": "stamp",
+  "at": "2025-01-01T09:07",
+  "want": "1 de enero de 2025 a las 9:07"
+ },
+ {
+  "locale": "es",
+  "kind": "stamp",
+  "at": "2026-11-17T12:00",
+  "want": "17 de noviembre de 2026 a las 12:00"
+ },
+ {
+  "locale": "es",
+  "kind": "stamp",
+  "at": "2026-11-22T21:09",
+  "want": "22 de noviembre de 2026 a las 21:09"
+ },
+ {
+  "locale": "es",
+  "kind": "stamp",
+  "at": "2026-12-31T23:59",
+  "want": "31 de diciembre de 2026 a las 23:59"
+ },
+ {
+  "locale": "es",
+  "kind": "stamp",
+  "at": "2027-06-06T00:30",
+  "want": "6 de junio de 2027 a las 0:30"
+ },
+ {
+  "locale": "es",
+  "kind": "stamp",
+  "at": "0001-01-01T00:00",
+  "want": "1 de enero de 1 a las 0:00"
+ },
+ {
+  "locale": "es",
+  "kind": "stamp",
+  "at": "9999-12-31T23:59",
+  "want": "31 de diciembre de 9999 a las 23:59"
+ },
+ {
+  "locale": "ar-EG",
+  "kind": "day",
+  "at": "2024-02-29T00:00",
+  "want": "الخميس، ٢٩ فبراير"
+ },
+ {
+  "locale": "ar-EG",
+  "kind": "day",
+  "at": "2025-01-01T09:07",
+  "want": "الأربعاء، ١ يناير"
+ },
+ {
+  "locale": "ar-EG",
+  "kind": "day",
+  "at": "2026-11-17T12:00",
+  "want": "الثلاثاء، ١٧ نوفمبر"
+ },
+ {
+  "locale": "ar-EG",
+  "kind": "day",
+  "at": "2026-11-22T21:09",
+  "want": "الأحد، ٢٢ نوفمبر"
+ },
+ {
+  "locale": "ar-EG",
+  "kind": "day",
+  "at": "2026-12-31T23:59",
+  "want": "الخميس، ٣١ ديسمبر"
+ },
+ {
+  "locale": "ar-EG",
+  "kind": "day",
+  "at": "2027-06-06T00:30",
+  "want": "الأحد، ٦ يونيو"
+ },
+ {
+  "locale": "ar-EG",
+  "kind": "day",
+  "at": "0001-01-01T00:00",
+  "want": "الاثنين، ١ يناير"
+ },
+ {
+  "locale": "ar-EG",
+  "kind": "day",
+  "at": "9999-12-31T23:59",
+  "want": "الجمعة، ٣١ ديسمبر"
+ },
+ {
+  "locale": "ar-EG",
+  "kind": "dayYear",
+  "at": "2024-02-29T00:00",
+  "want": "الخميس، ٢٩ فبراير ٢٠٢٤"
+ },
+ {
+  "locale": "ar-EG",
+  "kind": "dayYear",
+  "at": "2025-01-01T09:07",
+  "want": "الأربعاء، ١ يناير ٢٠٢٥"
+ },
+ {
+  "locale": "ar-EG",
+  "kind": "dayYear",
+  "at": "2026-11-17T12:00",
+  "want": "الثلاثاء، ١٧ نوفمبر ٢٠٢٦"
+ },
+ {
+  "locale": "ar-EG",
+  "kind": "dayYear",
+  "at": "2026-11-22T21:09",
+  "want": "الأحد، ٢٢ نوفمبر ٢٠٢٦"
+ },
+ {
+  "locale": "ar-EG",
+  "kind": "dayYear",
+  "at": "2026-12-31T23:59",
+  "want": "الخميس، ٣١ ديسمبر ٢٠٢٦"
+ },
+ {
+  "locale": "ar-EG",
+  "kind": "dayYear",
+  "at": "2027-06-06T00:30",
+  "want": "الأحد، ٦ يونيو ٢٠٢٧"
+ },
+ {
+  "locale": "ar-EG",
+  "kind": "dayYear",
+  "at": "0001-01-01T00:00",
+  "want": "الاثنين، ١ يناير ١"
+ },
+ {
+  "locale": "ar-EG",
+  "kind": "dayYear",
+  "at": "9999-12-31T23:59",
+  "want": "الجمعة، ٣١ ديسمبر ٩٩٩٩"
+ },
+ {
+  "locale": "ar-EG",
+  "kind": "short",
+  "at": "2024-02-29T00:00",
+  "want": "الخميس، ٢٩ فبراير"
+ },
+ {
+  "locale": "ar-EG",
+  "kind": "short",
+  "at": "2025-01-01T09:07",
+  "want": "الأربعاء، ١ يناير"
+ },
+ {
+  "locale": "ar-EG",
+  "kind": "short",
+  "at": "2026-11-17T12:00",
+  "want": "الثلاثاء، ١٧ نوفمبر"
+ },
+ {
+  "locale": "ar-EG",
+  "kind": "short",
+  "at": "2026-11-22T21:09",
+  "want": "الأحد، ٢٢ نوفمبر"
+ },
+ {
+  "locale": "ar-EG",
+  "kind": "short",
+  "at": "2026-12-31T23:59",
+  "want": "الخميس، ٣١ ديسمبر"
+ },
+ {
+  "locale": "ar-EG",
+  "kind": "short",
+  "at": "2027-06-06T00:30",
+  "want": "الأحد، ٦ يونيو"
+ },
+ {
+  "locale": "ar-EG",
+  "kind": "short",
+  "at": "0001-01-01T00:00",
+  "want": "الاثنين، ١ يناير"
+ },
+ {
+  "locale": "ar-EG",
+  "kind": "short",
+  "at": "9999-12-31T23:59",
+  "want": "الجمعة، ٣١ ديسمبر"
+ },
+ {
+  "locale": "ar-EG",
+  "kind": "date",
+  "at": "2024-02-29T00:00",
+  "want": "٢٩ فبراير"
+ },
+ {
+  "locale": "ar-EG",
+  "kind": "date",
+  "at": "2025-01-01T09:07",
+  "want": "١ يناير"
+ },
+ {
+  "locale": "ar-EG",
+  "kind": "date",
+  "at": "2026-11-17T12:00",
+  "want": "١٧ نوفمبر"
+ },
+ {
+  "locale": "ar-EG",
+  "kind": "date",
+  "at": "2026-11-22T21:09",
+  "want": "٢٢ نوفمبر"
+ },
+ {
+  "locale": "ar-EG",
+  "kind": "date",
+  "at": "2026-12-31T23:59",
+  "want": "٣١ ديسمبر"
+ },
+ {
+  "locale": "ar-EG",
+  "kind": "date",
+  "at": "2027-06-06T00:30",
+  "want": "٦ يونيو"
+ },
+ {
+  "locale": "ar-EG",
+  "kind": "date",
+  "at": "0001-01-01T00:00",
+  "want": "١ يناير"
+ },
+ {
+  "locale": "ar-EG",
+  "kind": "date",
+  "at": "9999-12-31T23:59",
+  "want": "٣١ ديسمبر"
+ },
+ {
+  "locale": "ar-EG",
+  "kind": "dateYear",
+  "at": "2024-02-29T00:00",
+  "want": "٢٩ فبراير ٢٠٢٤"
+ },
+ {
+  "locale": "ar-EG",
+  "kind": "dateYear",
+  "at": "2025-01-01T09:07",
+  "want": "١ يناير ٢٠٢٥"
+ },
+ {
+  "locale": "ar-EG",
+  "kind": "dateYear",
+  "at": "2026-11-17T12:00",
+  "want": "١٧ نوفمبر ٢٠٢٦"
+ },
+ {
+  "locale": "ar-EG",
+  "kind": "dateYear",
+  "at": "2026-11-22T21:09",
+  "want": "٢٢ نوفمبر ٢٠٢٦"
+ },
+ {
+  "locale": "ar-EG",
+  "kind": "dateYear",
+  "at": "2026-12-31T23:59",
+  "want": "٣١ ديسمبر ٢٠٢٦"
+ },
+ {
+  "locale": "ar-EG",
+  "kind": "dateYear",
+  "at": "2027-06-06T00:30",
+  "want": "٦ يونيو ٢٠٢٧"
+ },
+ {
+  "locale": "ar-EG",
+  "kind": "dateYear",
+  "at": "0001-01-01T00:00",
+  "want": "١ يناير ١"
+ },
+ {
+  "locale": "ar-EG",
+  "kind": "dateYear",
+  "at": "9999-12-31T23:59",
+  "want": "٣١ ديسمبر ٩٩٩٩"
+ },
+ {
+  "locale": "ar-EG",
+  "kind": "monthYear",
+  "at": "2024-02-29T00:00",
+  "want": "فبراير ٢٠٢٤"
+ },
+ {
+  "locale": "ar-EG",
+  "kind": "monthYear",
+  "at": "2025-01-01T09:07",
+  "want": "يناير ٢٠٢٥"
+ },
+ {
+  "locale": "ar-EG",
+  "kind": "monthYear",
+  "at": "2026-11-17T12:00",
+  "want": "نوفمبر ٢٠٢٦"
+ },
+ {
+  "locale": "ar-EG",
+  "kind": "monthYear",
+  "at": "2026-11-22T21:09",
+  "want": "نوفمبر ٢٠٢٦"
+ },
+ {
+  "locale": "ar-EG",
+  "kind": "monthYear",
+  "at": "2026-12-31T23:59",
+  "want": "ديسمبر ٢٠٢٦"
+ },
+ {
+  "locale": "ar-EG",
+  "kind": "monthYear",
+  "at": "2027-06-06T00:30",
+  "want": "يونيو ٢٠٢٧"
+ },
+ {
+  "locale": "ar-EG",
+  "kind": "monthYear",
+  "at": "0001-01-01T00:00",
+  "want": "يناير ١"
+ },
+ {
+  "locale": "ar-EG",
+  "kind": "monthYear",
+  "at": "9999-12-31T23:59",
+  "want": "ديسمبر ٩٩٩٩"
+ },
+ {
+  "locale": "ar-EG",
+  "kind": "month",
+  "at": "2024-02-29T00:00",
+  "want": "فبراير"
+ },
+ {
+  "locale": "ar-EG",
+  "kind": "month",
+  "at": "2025-01-01T09:07",
+  "want": "يناير"
+ },
+ {
+  "locale": "ar-EG",
+  "kind": "month",
+  "at": "2026-11-17T12:00",
+  "want": "نوفمبر"
+ },
+ {
+  "locale": "ar-EG",
+  "kind": "month",
+  "at": "2026-11-22T21:09",
+  "want": "نوفمبر"
+ },
+ {
+  "locale": "ar-EG",
+  "kind": "month",
+  "at": "2026-12-31T23:59",
+  "want": "ديسمبر"
+ },
+ {
+  "locale": "ar-EG",
+  "kind": "month",
+  "at": "2027-06-06T00:30",
+  "want": "يونيو"
+ },
+ {
+  "locale": "ar-EG",
+  "kind": "month",
+  "at": "0001-01-01T00:00",
+  "want": "يناير"
+ },
+ {
+  "locale": "ar-EG",
+  "kind": "month",
+  "at": "9999-12-31T23:59",
+  "want": "ديسمبر"
+ },
+ {
+  "locale": "ar-EG",
+  "kind": "year",
+  "at": "2024-02-29T00:00",
+  "want": "٢٠٢٤"
+ },
+ {
+  "locale": "ar-EG",
+  "kind": "year",
+  "at": "2025-01-01T09:07",
+  "want": "٢٠٢٥"
+ },
+ {
+  "locale": "ar-EG",
+  "kind": "year",
+  "at": "2026-11-17T12:00",
+  "want": "٢٠٢٦"
+ },
+ {
+  "locale": "ar-EG",
+  "kind": "year",
+  "at": "2026-11-22T21:09",
+  "want": "٢٠٢٦"
+ },
+ {
+  "locale": "ar-EG",
+  "kind": "year",
+  "at": "2026-12-31T23:59",
+  "want": "٢٠٢٦"
+ },
+ {
+  "locale": "ar-EG",
+  "kind": "year",
+  "at": "2027-06-06T00:30",
+  "want": "٢٠٢٧"
+ },
+ {
+  "locale": "ar-EG",
+  "kind": "year",
+  "at": "0001-01-01T00:00",
+  "want": "١"
+ },
+ {
+  "locale": "ar-EG",
+  "kind": "year",
+  "at": "9999-12-31T23:59",
+  "want": "٩٩٩٩"
+ },
+ {
+  "locale": "ar-EG",
+  "kind": "time",
+  "at": "2024-02-29T00:00",
+  "want": "١٢:٠٠ ص"
+ },
+ {
+  "locale": "ar-EG",
+  "kind": "time",
+  "at": "2025-01-01T09:07",
+  "want": "٩:٠٧ ص"
+ },
+ {
+  "locale": "ar-EG",
+  "kind": "time",
+  "at": "2026-11-17T12:00",
+  "want": "١٢:٠٠ م"
+ },
+ {
+  "locale": "ar-EG",
+  "kind": "time",
+  "at": "2026-11-22T21:09",
+  "want": "٩:٠٩ م"
+ },
+ {
+  "locale": "ar-EG",
+  "kind": "time",
+  "at": "2026-12-31T23:59",
+  "want": "١١:٥٩ م"
+ },
+ {
+  "locale": "ar-EG",
+  "kind": "time",
+  "at": "2027-06-06T00:30",
+  "want": "١٢:٣٠ ص"
+ },
+ {
+  "locale": "ar-EG",
+  "kind": "time",
+  "at": "0001-01-01T00:00",
+  "want": "١٢:٠٠ ص"
+ },
+ {
+  "locale": "ar-EG",
+  "kind": "time",
+  "at": "9999-12-31T23:59",
+  "want": "١١:٥٩ م"
+ },
+ {
+  "locale": "ar-EG",
+  "kind": "stamp",
+  "at": "2024-02-29T00:00",
+  "want": "٢٩ فبراير ٢٠٢٤ في ١٢:٠٠ ص"
+ },
+ {
+  "locale": "ar-EG",
+  "kind": "stamp",
+  "at": "2025-01-01T09:07",
+  "want": "١ يناير ٢٠٢٥ في ٩:٠٧ ص"
+ },
+ {
+  "locale": "ar-EG",
+  "kind": "stamp",
+  "at": "2026-11-17T12:00",
+  "want": "١٧ نوفمبر ٢٠٢٦ في ١٢:٠٠ م"
+ },
+ {
+  "locale": "ar-EG",
+  "kind": "stamp",
+  "at": "2026-11-22T21:09",
+  "want": "٢٢ نوفمبر ٢٠٢٦ في ٩:٠٩ م"
+ },
+ {
+  "locale": "ar-EG",
+  "kind": "stamp",
+  "at": "2026-12-31T23:59",
+  "want": "٣١ ديسمبر ٢٠٢٦ في ١١:٥٩ م"
+ },
+ {
+  "locale": "ar-EG",
+  "kind": "stamp",
+  "at": "2027-06-06T00:30",
+  "want": "٦ يونيو ٢٠٢٧ في ١٢:٣٠ ص"
+ },
+ {
+  "locale": "ar-EG",
+  "kind": "stamp",
+  "at": "0001-01-01T00:00",
+  "want": "١ يناير ١ في ١٢:٠٠ ص"
+ },
+ {
+  "locale": "ar-EG",
+  "kind": "stamp",
+  "at": "9999-12-31T23:59",
+  "want": "٣١ ديسمبر ٩٩٩٩ في ١١:٥٩ م"
+ },
+ {
+  "locale": "hi",
+  "kind": "day",
+  "at": "2024-02-29T00:00",
+  "want": "गुरुवार, 29 फ़रवरी"
+ },
+ {
+  "locale": "hi",
+  "kind": "day",
+  "at": "2025-01-01T09:07",
+  "want": "बुधवार, 1 जनवरी"
+ },
+ {
+  "locale": "hi",
+  "kind": "day",
+  "at": "2026-11-17T12:00",
+  "want": "मंगलवार, 17 नवंबर"
+ },
+ {
+  "locale": "hi",
+  "kind": "day",
+  "at": "2026-11-22T21:09",
+  "want": "रविवार, 22 नवंबर"
+ },
+ {
+  "locale": "hi",
+  "kind": "day",
+  "at": "2026-12-31T23:59",
+  "want": "गुरुवार, 31 दिसंबर"
+ },
+ {
+  "locale": "hi",
+  "kind": "day",
+  "at": "2027-06-06T00:30",
+  "want": "रविवार, 6 जून"
+ },
+ {
+  "locale": "hi",
+  "kind": "day",
+  "at": "0001-01-01T00:00",
+  "want": "सोमवार, 1 जनवरी"
+ },
+ {
+  "locale": "hi",
+  "kind": "day",
+  "at": "9999-12-31T23:59",
+  "want": "शुक्रवार, 31 दिसंबर"
+ },
+ {
+  "locale": "hi",
+  "kind": "dayYear",
+  "at": "2024-02-29T00:00",
+  "want": "गुरुवार, 29 फ़रवरी 2024"
+ },
+ {
+  "locale": "hi",
+  "kind": "dayYear",
+  "at": "2025-01-01T09:07",
+  "want": "बुधवार, 1 जनवरी 2025"
+ },
+ {
+  "locale": "hi",
+  "kind": "dayYear",
+  "at": "2026-11-17T12:00",
+  "want": "मंगलवार, 17 नवंबर 2026"
+ },
+ {
+  "locale": "hi",
+  "kind": "dayYear",
+  "at": "2026-11-22T21:09",
+  "want": "रविवार, 22 नवंबर 2026"
+ },
+ {
+  "locale": "hi",
+  "kind": "dayYear",
+  "at": "2026-12-31T23:59",
+  "want": "गुरुवार, 31 दिसंबर 2026"
+ },
+ {
+  "locale": "hi",
+  "kind": "dayYear",
+  "at": "2027-06-06T00:30",
+  "want": "रविवार, 6 जून 2027"
+ },
+ {
+  "locale": "hi",
+  "kind": "dayYear",
+  "at": "0001-01-01T00:00",
+  "want": "सोमवार, 1 जनवरी 1"
+ },
+ {
+  "locale": "hi",
+  "kind": "dayYear",
+  "at": "9999-12-31T23:59",
+  "want": "शुक्रवार, 31 दिसंबर 9999"
+ },
+ {
+  "locale": "hi",
+  "kind": "short",
+  "at": "2024-02-29T00:00",
+  "want": "गुरु, 29 फ़र॰"
+ },
+ {
+  "locale": "hi",
+  "kind": "short",
+  "at": "2025-01-01T09:07",
+  "want": "बुध, 1 जन॰"
+ },
+ {
+  "locale": "hi",
+  "kind": "short",
+  "at": "2026-11-17T12:00",
+  "want": "मंगल, 17 नव॰"
+ },
+ {
+  "locale": "hi",
+  "kind": "short",
+  "at": "2026-11-22T21:09",
+  "want": "रवि, 22 नव॰"
+ },
+ {
+  "locale": "hi",
+  "kind": "short",
+  "at": "2026-12-31T23:59",
+  "want": "गुरु, 31 दिस॰"
+ },
+ {
+  "locale": "hi",
+  "kind": "short",
+  "at": "2027-06-06T00:30",
+  "want": "रवि, 6 जून"
+ },
+ {
+  "locale": "hi",
+  "kind": "short",
+  "at": "0001-01-01T00:00",
+  "want": "सोम, 1 जन॰"
+ },
+ {
+  "locale": "hi",
+  "kind": "short",
+  "at": "9999-12-31T23:59",
+  "want": "शुक्र, 31 दिस॰"
+ },
+ {
+  "locale": "hi",
+  "kind": "date",
+  "at": "2024-02-29T00:00",
+  "want": "29 फ़रवरी"
+ },
+ {
+  "locale": "hi",
+  "kind": "date",
+  "at": "2025-01-01T09:07",
+  "want": "1 जनवरी"
+ },
+ {
+  "locale": "hi",
+  "kind": "date",
+  "at": "2026-11-17T12:00",
+  "want": "17 नवंबर"
+ },
+ {
+  "locale": "hi",
+  "kind": "date",
+  "at": "2026-11-22T21:09",
+  "want": "22 नवंबर"
+ },
+ {
+  "locale": "hi",
+  "kind": "date",
+  "at": "2026-12-31T23:59",
+  "want": "31 दिसंबर"
+ },
+ {
+  "locale": "hi",
+  "kind": "date",
+  "at": "2027-06-06T00:30",
+  "want": "6 जून"
+ },
+ {
+  "locale": "hi",
+  "kind": "date",
+  "at": "0001-01-01T00:00",
+  "want": "1 जनवरी"
+ },
+ {
+  "locale": "hi",
+  "kind": "date",
+  "at": "9999-12-31T23:59",
+  "want": "31 दिसंबर"
+ },
+ {
+  "locale": "hi",
+  "kind": "dateYear",
+  "at": "2024-02-29T00:00",
+  "want": "29 फ़रवरी 2024"
+ },
+ {
+  "locale": "hi",
+  "kind": "dateYear",
+  "at": "2025-01-01T09:07",
+  "want": "1 जनवरी 2025"
+ },
+ {
+  "locale": "hi",
+  "kind": "dateYear",
+  "at": "2026-11-17T12:00",
+  "want": "17 नवंबर 2026"
+ },
+ {
+  "locale": "hi",
+  "kind": "dateYear",
+  "at": "2026-11-22T21:09",
+  "want": "22 नवंबर 2026"
+ },
+ {
+  "locale": "hi",
+  "kind": "dateYear",
+  "at": "2026-12-31T23:59",
+  "want": "31 दिसंबर 2026"
+ },
+ {
+  "locale": "hi",
+  "kind": "dateYear",
+  "at": "2027-06-06T00:30",
+  "want": "6 जून 2027"
+ },
+ {
+  "locale": "hi",
+  "kind": "dateYear",
+  "at": "0001-01-01T00:00",
+  "want": "1 जनवरी 1"
+ },
+ {
+  "locale": "hi",
+  "kind": "dateYear",
+  "at": "9999-12-31T23:59",
+  "want": "31 दिसंबर 9999"
+ },
+ {
+  "locale": "hi",
+  "kind": "monthYear",
+  "at": "2024-02-29T00:00",
+  "want": "फ़रवरी 2024"
+ },
+ {
+  "locale": "hi",
+  "kind": "monthYear",
+  "at": "2025-01-01T09:07",
+  "want": "जनवरी 2025"
+ },
+ {
+  "locale": "hi",
+  "kind": "monthYear",
+  "at": "2026-11-17T12:00",
+  "want": "नवंबर 2026"
+ },
+ {
+  "locale": "hi",
+  "kind": "monthYear",
+  "at": "2026-11-22T21:09",
+  "want": "नवंबर 2026"
+ },
+ {
+  "locale": "hi",
+  "kind": "monthYear",
+  "at": "2026-12-31T23:59",
+  "want": "दिसंबर 2026"
+ },
+ {
+  "locale": "hi",
+  "kind": "monthYear",
+  "at": "2027-06-06T00:30",
+  "want": "जून 2027"
+ },
+ {
+  "locale": "hi",
+  "kind": "monthYear",
+  "at": "0001-01-01T00:00",
+  "want": "जनवरी 1"
+ },
+ {
+  "locale": "hi",
+  "kind": "monthYear",
+  "at": "9999-12-31T23:59",
+  "want": "दिसंबर 9999"
+ },
+ {
+  "locale": "hi",
+  "kind": "month",
+  "at": "2024-02-29T00:00",
+  "want": "फ़रवरी"
+ },
+ {
+  "locale": "hi",
+  "kind": "month",
+  "at": "2025-01-01T09:07",
+  "want": "जनवरी"
+ },
+ {
+  "locale": "hi",
+  "kind": "month",
+  "at": "2026-11-17T12:00",
+  "want": "नवंबर"
+ },
+ {
+  "locale": "hi",
+  "kind": "month",
+  "at": "2026-11-22T21:09",
+  "want": "नवंबर"
+ },
+ {
+  "locale": "hi",
+  "kind": "month",
+  "at": "2026-12-31T23:59",
+  "want": "दिसंबर"
+ },
+ {
+  "locale": "hi",
+  "kind": "month",
+  "at": "2027-06-06T00:30",
+  "want": "जून"
+ },
+ {
+  "locale": "hi",
+  "kind": "month",
+  "at": "0001-01-01T00:00",
+  "want": "जनवरी"
+ },
+ {
+  "locale": "hi",
+  "kind": "month",
+  "at": "9999-12-31T23:59",
+  "want": "दिसंबर"
+ },
+ {
+  "locale": "hi",
+  "kind": "year",
+  "at": "2024-02-29T00:00",
+  "want": "2024"
+ },
+ {
+  "locale": "hi",
+  "kind": "year",
+  "at": "2025-01-01T09:07",
+  "want": "2025"
+ },
+ {
+  "locale": "hi",
+  "kind": "year",
+  "at": "2026-11-17T12:00",
+  "want": "2026"
+ },
+ {
+  "locale": "hi",
+  "kind": "year",
+  "at": "2026-11-22T21:09",
+  "want": "2026"
+ },
+ {
+  "locale": "hi",
+  "kind": "year",
+  "at": "2026-12-31T23:59",
+  "want": "2026"
+ },
+ {
+  "locale": "hi",
+  "kind": "year",
+  "at": "2027-06-06T00:30",
+  "want": "2027"
+ },
+ {
+  "locale": "hi",
+  "kind": "year",
+  "at": "0001-01-01T00:00",
+  "want": "1"
+ },
+ {
+  "locale": "hi",
+  "kind": "year",
+  "at": "9999-12-31T23:59",
+  "want": "9999"
+ },
+ {
+  "locale": "hi",
+  "kind": "time",
+  "at": "2024-02-29T00:00",
+  "want": "12:00 am"
+ },
+ {
+  "locale": "hi",
+  "kind": "time",
+  "at": "2025-01-01T09:07",
+  "want": "9:07 am"
+ },
+ {
+  "locale": "hi",
+  "kind": "time",
+  "at": "2026-11-17T12:00",
+  "want": "12:00 pm"
+ },
+ {
+  "locale": "hi",
+  "kind": "time",
+  "at": "2026-11-22T21:09",
+  "want": "9:09 pm"
+ },
+ {
+  "locale": "hi",
+  "kind": "time",
+  "at": "2026-12-31T23:59",
+  "want": "11:59 pm"
+ },
+ {
+  "locale": "hi",
+  "kind": "time",
+  "at": "2027-06-06T00:30",
+  "want": "12:30 am"
+ },
+ {
+  "locale": "hi",
+  "kind": "time",
+  "at": "0001-01-01T00:00",
+  "want": "12:00 am"
+ },
+ {
+  "locale": "hi",
+  "kind": "time",
+  "at": "9999-12-31T23:59",
+  "want": "11:59 pm"
+ },
+ {
+  "locale": "hi",
+  "kind": "stamp",
+  "at": "2024-02-29T00:00",
+  "want": "29 फ़रवरी 2024 को 12:00 am बजे"
+ },
+ {
+  "locale": "hi",
+  "kind": "stamp",
+  "at": "2025-01-01T09:07",
+  "want": "1 जनवरी 2025 को 9:07 am बजे"
+ },
+ {
+  "locale": "hi",
+  "kind": "stamp",
+  "at": "2026-11-17T12:00",
+  "want": "17 नवंबर 2026 को 12:00 pm बजे"
+ },
+ {
+  "locale": "hi",
+  "kind": "stamp",
+  "at": "2026-11-22T21:09",
+  "want": "22 नवंबर 2026 को 9:09 pm बजे"
+ },
+ {
+  "locale": "hi",
+  "kind": "stamp",
+  "at": "2026-12-31T23:59",
+  "want": "31 दिसंबर 2026 को 11:59 pm बजे"
+ },
+ {
+  "locale": "hi",
+  "kind": "stamp",
+  "at": "2027-06-06T00:30",
+  "want": "6 जून 2027 को 12:30 am बजे"
+ },
+ {
+  "locale": "hi",
+  "kind": "stamp",
+  "at": "0001-01-01T00:00",
+  "want": "1 जनवरी 1 को 12:00 am बजे"
+ },
+ {
+  "locale": "hi",
+  "kind": "stamp",
+  "at": "9999-12-31T23:59",
+  "want": "31 दिसंबर 9999 को 11:59 pm बजे"
+ },
+ {
+  "locale": "ja",
+  "kind": "day",
+  "at": "2024-02-29T00:00",
+  "want": "2月29日木曜日"
+ },
+ {
+  "locale": "ja",
+  "kind": "day",
+  "at": "2025-01-01T09:07",
+  "want": "1月1日水曜日"
+ },
+ {
+  "locale": "ja",
+  "kind": "day",
+  "at": "2026-11-17T12:00",
+  "want": "11月17日火曜日"
+ },
+ {
+  "locale": "ja",
+  "kind": "day",
+  "at": "2026-11-22T21:09",
+  "want": "11月22日日曜日"
+ },
+ {
+  "locale": "ja",
+  "kind": "day",
+  "at": "2026-12-31T23:59",
+  "want": "12月31日木曜日"
+ },
+ {
+  "locale": "ja",
+  "kind": "day",
+  "at": "2027-06-06T00:30",
+  "want": "6月6日日曜日"
+ },
+ {
+  "locale": "ja",
+  "kind": "day",
+  "at": "0001-01-01T00:00",
+  "want": "1月1日月曜日"
+ },
+ {
+  "locale": "ja",
+  "kind": "day",
+  "at": "9999-12-31T23:59",
+  "want": "12月31日金曜日"
+ },
+ {
+  "locale": "ja",
+  "kind": "dayYear",
+  "at": "2024-02-29T00:00",
+  "want": "2024年2月29日木曜日"
+ },
+ {
+  "locale": "ja",
+  "kind": "dayYear",
+  "at": "2025-01-01T09:07",
+  "want": "2025年1月1日水曜日"
+ },
+ {
+  "locale": "ja",
+  "kind": "dayYear",
+  "at": "2026-11-17T12:00",
+  "want": "2026年11月17日火曜日"
+ },
+ {
+  "locale": "ja",
+  "kind": "dayYear",
+  "at": "2026-11-22T21:09",
+  "want": "2026年11月22日日曜日"
+ },
+ {
+  "locale": "ja",
+  "kind": "dayYear",
+  "at": "2026-12-31T23:59",
+  "want": "2026年12月31日木曜日"
+ },
+ {
+  "locale": "ja",
+  "kind": "dayYear",
+  "at": "2027-06-06T00:30",
+  "want": "2027年6月6日日曜日"
+ },
+ {
+  "locale": "ja",
+  "kind": "dayYear",
+  "at": "0001-01-01T00:00",
+  "want": "1年1月1日月曜日"
+ },
+ {
+  "locale": "ja",
+  "kind": "dayYear",
+  "at": "9999-12-31T23:59",
+  "want": "9999年12月31日金曜日"
+ },
+ {
+  "locale": "ja",
+  "kind": "short",
+  "at": "2024-02-29T00:00",
+  "want": "2月29日(木)"
+ },
+ {
+  "locale": "ja",
+  "kind": "short",
+  "at": "2025-01-01T09:07",
+  "want": "1月1日(水)"
+ },
+ {
+  "locale": "ja",
+  "kind": "short",
+  "at": "2026-11-17T12:00",
+  "want": "11月17日(火)"
+ },
+ {
+  "locale": "ja",
+  "kind": "short",
+  "at": "2026-11-22T21:09",
+  "want": "11月22日(日)"
+ },
+ {
+  "locale": "ja",
+  "kind": "short",
+  "at": "2026-12-31T23:59",
+  "want": "12月31日(木)"
+ },
+ {
+  "locale": "ja",
+  "kind": "short",
+  "at": "2027-06-06T00:30",
+  "want": "6月6日(日)"
+ },
+ {
+  "locale": "ja",
+  "kind": "short",
+  "at": "0001-01-01T00:00",
+  "want": "1月1日(月)"
+ },
+ {
+  "locale": "ja",
+  "kind": "short",
+  "at": "9999-12-31T23:59",
+  "want": "12月31日(金)"
+ },
+ {
+  "locale": "ja",
+  "kind": "date",
+  "at": "2024-02-29T00:00",
+  "want": "2月29日"
+ },
+ {
+  "locale": "ja",
+  "kind": "date",
+  "at": "2025-01-01T09:07",
+  "want": "1月1日"
+ },
+ {
+  "locale": "ja",
+  "kind": "date",
+  "at": "2026-11-17T12:00",
+  "want": "11月17日"
+ },
+ {
+  "locale": "ja",
+  "kind": "date",
+  "at": "2026-11-22T21:09",
+  "want": "11月22日"
+ },
+ {
+  "locale": "ja",
+  "kind": "date",
+  "at": "2026-12-31T23:59",
+  "want": "12月31日"
+ },
+ {
+  "locale": "ja",
+  "kind": "date",
+  "at": "2027-06-06T00:30",
+  "want": "6月6日"
+ },
+ {
+  "locale": "ja",
+  "kind": "date",
+  "at": "0001-01-01T00:00",
+  "want": "1月1日"
+ },
+ {
+  "locale": "ja",
+  "kind": "date",
+  "at": "9999-12-31T23:59",
+  "want": "12月31日"
+ },
+ {
+  "locale": "ja",
+  "kind": "dateYear",
+  "at": "2024-02-29T00:00",
+  "want": "2024年2月29日"
+ },
+ {
+  "locale": "ja",
+  "kind": "dateYear",
+  "at": "2025-01-01T09:07",
+  "want": "2025年1月1日"
+ },
+ {
+  "locale": "ja",
+  "kind": "dateYear",
+  "at": "2026-11-17T12:00",
+  "want": "2026年11月17日"
+ },
+ {
+  "locale": "ja",
+  "kind": "dateYear",
+  "at": "2026-11-22T21:09",
+  "want": "2026年11月22日"
+ },
+ {
+  "locale": "ja",
+  "kind": "dateYear",
+  "at": "2026-12-31T23:59",
+  "want": "2026年12月31日"
+ },
+ {
+  "locale": "ja",
+  "kind": "dateYear",
+  "at": "2027-06-06T00:30",
+  "want": "2027年6月6日"
+ },
+ {
+  "locale": "ja",
+  "kind": "dateYear",
+  "at": "0001-01-01T00:00",
+  "want": "1年1月1日"
+ },
+ {
+  "locale": "ja",
+  "kind": "dateYear",
+  "at": "9999-12-31T23:59",
+  "want": "9999年12月31日"
+ },
+ {
+  "locale": "ja",
+  "kind": "monthYear",
+  "at": "2024-02-29T00:00",
+  "want": "2024年2月"
+ },
+ {
+  "locale": "ja",
+  "kind": "monthYear",
+  "at": "2025-01-01T09:07",
+  "want": "2025年1月"
+ },
+ {
+  "locale": "ja",
+  "kind": "monthYear",
+  "at": "2026-11-17T12:00",
+  "want": "2026年11月"
+ },
+ {
+  "locale": "ja",
+  "kind": "monthYear",
+  "at": "2026-11-22T21:09",
+  "want": "2026年11月"
+ },
+ {
+  "locale": "ja",
+  "kind": "monthYear",
+  "at": "2026-12-31T23:59",
+  "want": "2026年12月"
+ },
+ {
+  "locale": "ja",
+  "kind": "monthYear",
+  "at": "2027-06-06T00:30",
+  "want": "2027年6月"
+ },
+ {
+  "locale": "ja",
+  "kind": "monthYear",
+  "at": "0001-01-01T00:00",
+  "want": "1年1月"
+ },
+ {
+  "locale": "ja",
+  "kind": "monthYear",
+  "at": "9999-12-31T23:59",
+  "want": "9999年12月"
+ },
+ {
+  "locale": "ja",
+  "kind": "month",
+  "at": "2024-02-29T00:00",
+  "want": "2月"
+ },
+ {
+  "locale": "ja",
+  "kind": "month",
+  "at": "2025-01-01T09:07",
+  "want": "1月"
+ },
+ {
+  "locale": "ja",
+  "kind": "month",
+  "at": "2026-11-17T12:00",
+  "want": "11月"
+ },
+ {
+  "locale": "ja",
+  "kind": "month",
+  "at": "2026-11-22T21:09",
+  "want": "11月"
+ },
+ {
+  "locale": "ja",
+  "kind": "month",
+  "at": "2026-12-31T23:59",
+  "want": "12月"
+ },
+ {
+  "locale": "ja",
+  "kind": "month",
+  "at": "2027-06-06T00:30",
+  "want": "6月"
+ },
+ {
+  "locale": "ja",
+  "kind": "month",
+  "at": "0001-01-01T00:00",
+  "want": "1月"
+ },
+ {
+  "locale": "ja",
+  "kind": "month",
+  "at": "9999-12-31T23:59",
+  "want": "12月"
+ },
+ {
+  "locale": "ja",
+  "kind": "year",
+  "at": "2024-02-29T00:00",
+  "want": "2024年"
+ },
+ {
+  "locale": "ja",
+  "kind": "year",
+  "at": "2025-01-01T09:07",
+  "want": "2025年"
+ },
+ {
+  "locale": "ja",
+  "kind": "year",
+  "at": "2026-11-17T12:00",
+  "want": "2026年"
+ },
+ {
+  "locale": "ja",
+  "kind": "year",
+  "at": "2026-11-22T21:09",
+  "want": "2026年"
+ },
+ {
+  "locale": "ja",
+  "kind": "year",
+  "at": "2026-12-31T23:59",
+  "want": "2026年"
+ },
+ {
+  "locale": "ja",
+  "kind": "year",
+  "at": "2027-06-06T00:30",
+  "want": "2027年"
+ },
+ {
+  "locale": "ja",
+  "kind": "year",
+  "at": "0001-01-01T00:00",
+  "want": "1年"
+ },
+ {
+  "locale": "ja",
+  "kind": "year",
+  "at": "9999-12-31T23:59",
+  "want": "9999年"
+ },
+ {
+  "locale": "ja",
+  "kind": "time",
+  "at": "2024-02-29T00:00",
+  "want": "0:00"
+ },
+ {
+  "locale": "ja",
+  "kind": "time",
+  "at": "2025-01-01T09:07",
+  "want": "9:07"
+ },
+ {
+  "locale": "ja",
+  "kind": "time",
+  "at": "2026-11-17T12:00",
+  "want": "12:00"
+ },
+ {
+  "locale": "ja",
+  "kind": "time",
+  "at": "2026-11-22T21:09",
+  "want": "21:09"
+ },
+ {
+  "locale": "ja",
+  "kind": "time",
+  "at": "2026-12-31T23:59",
+  "want": "23:59"
+ },
+ {
+  "locale": "ja",
+  "kind": "time",
+  "at": "2027-06-06T00:30",
+  "want": "0:30"
+ },
+ {
+  "locale": "ja",
+  "kind": "time",
+  "at": "0001-01-01T00:00",
+  "want": "0:00"
+ },
+ {
+  "locale": "ja",
+  "kind": "time",
+  "at": "9999-12-31T23:59",
+  "want": "23:59"
+ },
+ {
+  "locale": "ja",
+  "kind": "stamp",
+  "at": "2024-02-29T00:00",
+  "want": "2024年2月29日 0:00"
+ },
+ {
+  "locale": "ja",
+  "kind": "stamp",
+  "at": "2025-01-01T09:07",
+  "want": "2025年1月1日 9:07"
+ },
+ {
+  "locale": "ja",
+  "kind": "stamp",
+  "at": "2026-11-17T12:00",
+  "want": "2026年11月17日 12:00"
+ },
+ {
+  "locale": "ja",
+  "kind": "stamp",
+  "at": "2026-11-22T21:09",
+  "want": "2026年11月22日 21:09"
+ },
+ {
+  "locale": "ja",
+  "kind": "stamp",
+  "at": "2026-12-31T23:59",
+  "want": "2026年12月31日 23:59"
+ },
+ {
+  "locale": "ja",
+  "kind": "stamp",
+  "at": "2027-06-06T00:30",
+  "want": "2027年6月6日 0:30"
+ },
+ {
+  "locale": "ja",
+  "kind": "stamp",
+  "at": "0001-01-01T00:00",
+  "want": "1年1月1日 0:00"
+ },
+ {
+  "locale": "ja",
+  "kind": "stamp",
+  "at": "9999-12-31T23:59",
+  "want": "9999年12月31日 23:59"
+ },
+ {
+  "locale": "zh-Hans",
+  "kind": "day",
+  "at": "2024-02-29T00:00",
+  "want": "2月29日星期四"
+ },
+ {
+  "locale": "zh-Hans",
+  "kind": "day",
+  "at": "2025-01-01T09:07",
+  "want": "1月1日星期三"
+ },
+ {
+  "locale": "zh-Hans",
+  "kind": "day",
+  "at": "2026-11-17T12:00",
+  "want": "11月17日星期二"
+ },
+ {
+  "locale": "zh-Hans",
+  "kind": "day",
+  "at": "2026-11-22T21:09",
+  "want": "11月22日星期日"
+ },
+ {
+  "locale": "zh-Hans",
+  "kind": "day",
+  "at": "2026-12-31T23:59",
+  "want": "12月31日星期四"
+ },
+ {
+  "locale": "zh-Hans",
+  "kind": "day",
+  "at": "2027-06-06T00:30",
+  "want": "6月6日星期日"
+ },
+ {
+  "locale": "zh-Hans",
+  "kind": "day",
+  "at": "0001-01-01T00:00",
+  "want": "1月1日星期一"
+ },
+ {
+  "locale": "zh-Hans",
+  "kind": "day",
+  "at": "9999-12-31T23:59",
+  "want": "12月31日星期五"
+ },
+ {
+  "locale": "zh-Hans",
+  "kind": "dayYear",
+  "at": "2024-02-29T00:00",
+  "want": "2024年2月29日星期四"
+ },
+ {
+  "locale": "zh-Hans",
+  "kind": "dayYear",
+  "at": "2025-01-01T09:07",
+  "want": "2025年1月1日星期三"
+ },
+ {
+  "locale": "zh-Hans",
+  "kind": "dayYear",
+  "at": "2026-11-17T12:00",
+  "want": "2026年11月17日星期二"
+ },
+ {
+  "locale": "zh-Hans",
+  "kind": "dayYear",
+  "at": "2026-11-22T21:09",
+  "want": "2026年11月22日星期日"
+ },
+ {
+  "locale": "zh-Hans",
+  "kind": "dayYear",
+  "at": "2026-12-31T23:59",
+  "want": "2026年12月31日星期四"
+ },
+ {
+  "locale": "zh-Hans",
+  "kind": "dayYear",
+  "at": "2027-06-06T00:30",
+  "want": "2027年6月6日星期日"
+ },
+ {
+  "locale": "zh-Hans",
+  "kind": "dayYear",
+  "at": "0001-01-01T00:00",
+  "want": "1年1月1日星期一"
+ },
+ {
+  "locale": "zh-Hans",
+  "kind": "dayYear",
+  "at": "9999-12-31T23:59",
+  "want": "9999年12月31日星期五"
+ },
+ {
+  "locale": "zh-Hans",
+  "kind": "short",
+  "at": "2024-02-29T00:00",
+  "want": "2月29日周四"
+ },
+ {
+  "locale": "zh-Hans",
+  "kind": "short",
+  "at": "2025-01-01T09:07",
+  "want": "1月1日周三"
+ },
+ {
+  "locale": "zh-Hans",
+  "kind": "short",
+  "at": "2026-11-17T12:00",
+  "want": "11月17日周二"
+ },
+ {
+  "locale": "zh-Hans",
+  "kind": "short",
+  "at": "2026-11-22T21:09",
+  "want": "11月22日周日"
+ },
+ {
+  "locale": "zh-Hans",
+  "kind": "short",
+  "at": "2026-12-31T23:59",
+  "want": "12月31日周四"
+ },
+ {
+  "locale": "zh-Hans",
+  "kind": "short",
+  "at": "2027-06-06T00:30",
+  "want": "6月6日周日"
+ },
+ {
+  "locale": "zh-Hans",
+  "kind": "short",
+  "at": "0001-01-01T00:00",
+  "want": "1月1日周一"
+ },
+ {
+  "locale": "zh-Hans",
+  "kind": "short",
+  "at": "9999-12-31T23:59",
+  "want": "12月31日周五"
+ },
+ {
+  "locale": "zh-Hans",
+  "kind": "date",
+  "at": "2024-02-29T00:00",
+  "want": "2月29日"
+ },
+ {
+  "locale": "zh-Hans",
+  "kind": "date",
+  "at": "2025-01-01T09:07",
+  "want": "1月1日"
+ },
+ {
+  "locale": "zh-Hans",
+  "kind": "date",
+  "at": "2026-11-17T12:00",
+  "want": "11月17日"
+ },
+ {
+  "locale": "zh-Hans",
+  "kind": "date",
+  "at": "2026-11-22T21:09",
+  "want": "11月22日"
+ },
+ {
+  "locale": "zh-Hans",
+  "kind": "date",
+  "at": "2026-12-31T23:59",
+  "want": "12月31日"
+ },
+ {
+  "locale": "zh-Hans",
+  "kind": "date",
+  "at": "2027-06-06T00:30",
+  "want": "6月6日"
+ },
+ {
+  "locale": "zh-Hans",
+  "kind": "date",
+  "at": "0001-01-01T00:00",
+  "want": "1月1日"
+ },
+ {
+  "locale": "zh-Hans",
+  "kind": "date",
+  "at": "9999-12-31T23:59",
+  "want": "12月31日"
+ },
+ {
+  "locale": "zh-Hans",
+  "kind": "dateYear",
+  "at": "2024-02-29T00:00",
+  "want": "2024年2月29日"
+ },
+ {
+  "locale": "zh-Hans",
+  "kind": "dateYear",
+  "at": "2025-01-01T09:07",
+  "want": "2025年1月1日"
+ },
+ {
+  "locale": "zh-Hans",
+  "kind": "dateYear",
+  "at": "2026-11-17T12:00",
+  "want": "2026年11月17日"
+ },
+ {
+  "locale": "zh-Hans",
+  "kind": "dateYear",
+  "at": "2026-11-22T21:09",
+  "want": "2026年11月22日"
+ },
+ {
+  "locale": "zh-Hans",
+  "kind": "dateYear",
+  "at": "2026-12-31T23:59",
+  "want": "2026年12月31日"
+ },
+ {
+  "locale": "zh-Hans",
+  "kind": "dateYear",
+  "at": "2027-06-06T00:30",
+  "want": "2027年6月6日"
+ },
+ {
+  "locale": "zh-Hans",
+  "kind": "dateYear",
+  "at": "0001-01-01T00:00",
+  "want": "1年1月1日"
+ },
+ {
+  "locale": "zh-Hans",
+  "kind": "dateYear",
+  "at": "9999-12-31T23:59",
+  "want": "9999年12月31日"
+ },
+ {
+  "locale": "zh-Hans",
+  "kind": "monthYear",
+  "at": "2024-02-29T00:00",
+  "want": "2024年2月"
+ },
+ {
+  "locale": "zh-Hans",
+  "kind": "monthYear",
+  "at": "2025-01-01T09:07",
+  "want": "2025年1月"
+ },
+ {
+  "locale": "zh-Hans",
+  "kind": "monthYear",
+  "at": "2026-11-17T12:00",
+  "want": "2026年11月"
+ },
+ {
+  "locale": "zh-Hans",
+  "kind": "monthYear",
+  "at": "2026-11-22T21:09",
+  "want": "2026年11月"
+ },
+ {
+  "locale": "zh-Hans",
+  "kind": "monthYear",
+  "at": "2026-12-31T23:59",
+  "want": "2026年12月"
+ },
+ {
+  "locale": "zh-Hans",
+  "kind": "monthYear",
+  "at": "2027-06-06T00:30",
+  "want": "2027年6月"
+ },
+ {
+  "locale": "zh-Hans",
+  "kind": "monthYear",
+  "at": "0001-01-01T00:00",
+  "want": "1年1月"
+ },
+ {
+  "locale": "zh-Hans",
+  "kind": "monthYear",
+  "at": "9999-12-31T23:59",
+  "want": "9999年12月"
+ },
+ {
+  "locale": "zh-Hans",
+  "kind": "month",
+  "at": "2024-02-29T00:00",
+  "want": "二月"
+ },
+ {
+  "locale": "zh-Hans",
+  "kind": "month",
+  "at": "2025-01-01T09:07",
+  "want": "一月"
+ },
+ {
+  "locale": "zh-Hans",
+  "kind": "month",
+  "at": "2026-11-17T12:00",
+  "want": "十一月"
+ },
+ {
+  "locale": "zh-Hans",
+  "kind": "month",
+  "at": "2026-11-22T21:09",
+  "want": "十一月"
+ },
+ {
+  "locale": "zh-Hans",
+  "kind": "month",
+  "at": "2026-12-31T23:59",
+  "want": "十二月"
+ },
+ {
+  "locale": "zh-Hans",
+  "kind": "month",
+  "at": "2027-06-06T00:30",
+  "want": "六月"
+ },
+ {
+  "locale": "zh-Hans",
+  "kind": "month",
+  "at": "0001-01-01T00:00",
+  "want": "一月"
+ },
+ {
+  "locale": "zh-Hans",
+  "kind": "month",
+  "at": "9999-12-31T23:59",
+  "want": "十二月"
+ },
+ {
+  "locale": "zh-Hans",
+  "kind": "year",
+  "at": "2024-02-29T00:00",
+  "want": "2024年"
+ },
+ {
+  "locale": "zh-Hans",
+  "kind": "year",
+  "at": "2025-01-01T09:07",
+  "want": "2025年"
+ },
+ {
+  "locale": "zh-Hans",
+  "kind": "year",
+  "at": "2026-11-17T12:00",
+  "want": "2026年"
+ },
+ {
+  "locale": "zh-Hans",
+  "kind": "year",
+  "at": "2026-11-22T21:09",
+  "want": "2026年"
+ },
+ {
+  "locale": "zh-Hans",
+  "kind": "year",
+  "at": "2026-12-31T23:59",
+  "want": "2026年"
+ },
+ {
+  "locale": "zh-Hans",
+  "kind": "year",
+  "at": "2027-06-06T00:30",
+  "want": "2027年"
+ },
+ {
+  "locale": "zh-Hans",
+  "kind": "year",
+  "at": "0001-01-01T00:00",
+  "want": "1年"
+ },
+ {
+  "locale": "zh-Hans",
+  "kind": "year",
+  "at": "9999-12-31T23:59",
+  "want": "9999年"
+ },
+ {
+  "locale": "zh-Hans",
+  "kind": "time",
+  "at": "2024-02-29T00:00",
+  "want": "00:00"
+ },
+ {
+  "locale": "zh-Hans",
+  "kind": "time",
+  "at": "2025-01-01T09:07",
+  "want": "09:07"
+ },
+ {
+  "locale": "zh-Hans",
+  "kind": "time",
+  "at": "2026-11-17T12:00",
+  "want": "12:00"
+ },
+ {
+  "locale": "zh-Hans",
+  "kind": "time",
+  "at": "2026-11-22T21:09",
+  "want": "21:09"
+ },
+ {
+  "locale": "zh-Hans",
+  "kind": "time",
+  "at": "2026-12-31T23:59",
+  "want": "23:59"
+ },
+ {
+  "locale": "zh-Hans",
+  "kind": "time",
+  "at": "2027-06-06T00:30",
+  "want": "00:30"
+ },
+ {
+  "locale": "zh-Hans",
+  "kind": "time",
+  "at": "0001-01-01T00:00",
+  "want": "00:00"
+ },
+ {
+  "locale": "zh-Hans",
+  "kind": "time",
+  "at": "9999-12-31T23:59",
+  "want": "23:59"
+ },
+ {
+  "locale": "zh-Hans",
+  "kind": "stamp",
+  "at": "2024-02-29T00:00",
+  "want": "2024年2月29日 00:00"
+ },
+ {
+  "locale": "zh-Hans",
+  "kind": "stamp",
+  "at": "2025-01-01T09:07",
+  "want": "2025年1月1日 09:07"
+ },
+ {
+  "locale": "zh-Hans",
+  "kind": "stamp",
+  "at": "2026-11-17T12:00",
+  "want": "2026年11月17日 12:00"
+ },
+ {
+  "locale": "zh-Hans",
+  "kind": "stamp",
+  "at": "2026-11-22T21:09",
+  "want": "2026年11月22日 21:09"
+ },
+ {
+  "locale": "zh-Hans",
+  "kind": "stamp",
+  "at": "2026-12-31T23:59",
+  "want": "2026年12月31日 23:59"
+ },
+ {
+  "locale": "zh-Hans",
+  "kind": "stamp",
+  "at": "2027-06-06T00:30",
+  "want": "2027年6月6日 00:30"
+ },
+ {
+  "locale": "zh-Hans",
+  "kind": "stamp",
+  "at": "0001-01-01T00:00",
+  "want": "1年1月1日 00:00"
+ },
+ {
+  "locale": "zh-Hans",
+  "kind": "stamp",
+  "at": "9999-12-31T23:59",
+  "want": "9999年12月31日 23:59"
+ },
+ {
+  "locale": "ru",
+  "kind": "day",
+  "at": "2024-02-29T00:00",
+  "want": "четверг, 29 февраля"
+ },
+ {
+  "locale": "ru",
+  "kind": "day",
+  "at": "2025-01-01T09:07",
+  "want": "среда, 1 января"
+ },
+ {
+  "locale": "ru",
+  "kind": "day",
+  "at": "2026-11-17T12:00",
+  "want": "вторник, 17 ноября"
+ },
+ {
+  "locale": "ru",
+  "kind": "day",
+  "at": "2026-11-22T21:09",
+  "want": "воскресенье, 22 ноября"
+ },
+ {
+  "locale": "ru",
+  "kind": "day",
+  "at": "2026-12-31T23:59",
+  "want": "четверг, 31 декабря"
+ },
+ {
+  "locale": "ru",
+  "kind": "day",
+  "at": "2027-06-06T00:30",
+  "want": "воскресенье, 6 июня"
+ },
+ {
+  "locale": "ru",
+  "kind": "day",
+  "at": "0001-01-01T00:00",
+  "want": "понедельник, 1 января"
+ },
+ {
+  "locale": "ru",
+  "kind": "day",
+  "at": "9999-12-31T23:59",
+  "want": "пятница, 31 декабря"
+ },
+ {
+  "locale": "ru",
+  "kind": "dayYear",
+  "at": "2024-02-29T00:00",
+  "want": "четверг, 29 февраля 2024 г."
+ },
+ {
+  "locale": "ru",
+  "kind": "dayYear",
+  "at": "2025-01-01T09:07",
+  "want": "среда, 1 января 2025 г."
+ },
+ {
+  "locale": "ru",
+  "kind": "dayYear",
+  "at": "2026-11-17T12:00",
+  "want": "вторник, 17 ноября 2026 г."
+ },
+ {
+  "locale": "ru",
+  "kind": "dayYear",
+  "at": "2026-11-22T21:09",
+  "want": "воскресенье, 22 ноября 2026 г."
+ },
+ {
+  "locale": "ru",
+  "kind": "dayYear",
+  "at": "2026-12-31T23:59",
+  "want": "четверг, 31 декабря 2026 г."
+ },
+ {
+  "locale": "ru",
+  "kind": "dayYear",
+  "at": "2027-06-06T00:30",
+  "want": "воскресенье, 6 июня 2027 г."
+ },
+ {
+  "locale": "ru",
+  "kind": "dayYear",
+  "at": "0001-01-01T00:00",
+  "want": "понедельник, 1 января 1 г."
+ },
+ {
+  "locale": "ru",
+  "kind": "dayYear",
+  "at": "9999-12-31T23:59",
+  "want": "пятница, 31 декабря 9999 г."
+ },
+ {
+  "locale": "ru",
+  "kind": "short",
+  "at": "2024-02-29T00:00",
+  "want": "чт, 29 февр."
+ },
+ {
+  "locale": "ru",
+  "kind": "short",
+  "at": "2025-01-01T09:07",
+  "want": "ср, 1 янв."
+ },
+ {
+  "locale": "ru",
+  "kind": "short",
+  "at": "2026-11-17T12:00",
+  "want": "вт, 17 нояб."
+ },
+ {
+  "locale": "ru",
+  "kind": "short",
+  "at": "2026-11-22T21:09",
+  "want": "вс, 22 нояб."
+ },
+ {
+  "locale": "ru",
+  "kind": "short",
+  "at": "2026-12-31T23:59",
+  "want": "чт, 31 дек."
+ },
+ {
+  "locale": "ru",
+  "kind": "short",
+  "at": "2027-06-06T00:30",
+  "want": "вс, 6 июн."
+ },
+ {
+  "locale": "ru",
+  "kind": "short",
+  "at": "0001-01-01T00:00",
+  "want": "пн, 1 янв."
+ },
+ {
+  "locale": "ru",
+  "kind": "short",
+  "at": "9999-12-31T23:59",
+  "want": "пт, 31 дек."
+ },
+ {
+  "locale": "ru",
+  "kind": "date",
+  "at": "2024-02-29T00:00",
+  "want": "29 февраля"
+ },
+ {
+  "locale": "ru",
+  "kind": "date",
+  "at": "2025-01-01T09:07",
+  "want": "1 января"
+ },
+ {
+  "locale": "ru",
+  "kind": "date",
+  "at": "2026-11-17T12:00",
+  "want": "17 ноября"
+ },
+ {
+  "locale": "ru",
+  "kind": "date",
+  "at": "2026-11-22T21:09",
+  "want": "22 ноября"
+ },
+ {
+  "locale": "ru",
+  "kind": "date",
+  "at": "2026-12-31T23:59",
+  "want": "31 декабря"
+ },
+ {
+  "locale": "ru",
+  "kind": "date",
+  "at": "2027-06-06T00:30",
+  "want": "6 июня"
+ },
+ {
+  "locale": "ru",
+  "kind": "date",
+  "at": "0001-01-01T00:00",
+  "want": "1 января"
+ },
+ {
+  "locale": "ru",
+  "kind": "date",
+  "at": "9999-12-31T23:59",
+  "want": "31 декабря"
+ },
+ {
+  "locale": "ru",
+  "kind": "dateYear",
+  "at": "2024-02-29T00:00",
+  "want": "29 февраля 2024 г."
+ },
+ {
+  "locale": "ru",
+  "kind": "dateYear",
+  "at": "2025-01-01T09:07",
+  "want": "1 января 2025 г."
+ },
+ {
+  "locale": "ru",
+  "kind": "dateYear",
+  "at": "2026-11-17T12:00",
+  "want": "17 ноября 2026 г."
+ },
+ {
+  "locale": "ru",
+  "kind": "dateYear",
+  "at": "2026-11-22T21:09",
+  "want": "22 ноября 2026 г."
+ },
+ {
+  "locale": "ru",
+  "kind": "dateYear",
+  "at": "2026-12-31T23:59",
+  "want": "31 декабря 2026 г."
+ },
+ {
+  "locale": "ru",
+  "kind": "dateYear",
+  "at": "2027-06-06T00:30",
+  "want": "6 июня 2027 г."
+ },
+ {
+  "locale": "ru",
+  "kind": "dateYear",
+  "at": "0001-01-01T00:00",
+  "want": "1 января 1 г."
+ },
+ {
+  "locale": "ru",
+  "kind": "dateYear",
+  "at": "9999-12-31T23:59",
+  "want": "31 декабря 9999 г."
+ },
+ {
+  "locale": "ru",
+  "kind": "monthYear",
+  "at": "2024-02-29T00:00",
+  "want": "февраль 2024 г."
+ },
+ {
+  "locale": "ru",
+  "kind": "monthYear",
+  "at": "2025-01-01T09:07",
+  "want": "январь 2025 г."
+ },
+ {
+  "locale": "ru",
+  "kind": "monthYear",
+  "at": "2026-11-17T12:00",
+  "want": "ноябрь 2026 г."
+ },
+ {
+  "locale": "ru",
+  "kind": "monthYear",
+  "at": "2026-11-22T21:09",
+  "want": "ноябрь 2026 г."
+ },
+ {
+  "locale": "ru",
+  "kind": "monthYear",
+  "at": "2026-12-31T23:59",
+  "want": "декабрь 2026 г."
+ },
+ {
+  "locale": "ru",
+  "kind": "monthYear",
+  "at": "2027-06-06T00:30",
+  "want": "июнь 2027 г."
+ },
+ {
+  "locale": "ru",
+  "kind": "monthYear",
+  "at": "0001-01-01T00:00",
+  "want": "январь 1 г."
+ },
+ {
+  "locale": "ru",
+  "kind": "monthYear",
+  "at": "9999-12-31T23:59",
+  "want": "декабрь 9999 г."
+ },
+ {
+  "locale": "ru",
+  "kind": "month",
+  "at": "2024-02-29T00:00",
+  "want": "февраль"
+ },
+ {
+  "locale": "ru",
+  "kind": "month",
+  "at": "2025-01-01T09:07",
+  "want": "январь"
+ },
+ {
+  "locale": "ru",
+  "kind": "month",
+  "at": "2026-11-17T12:00",
+  "want": "ноябрь"
+ },
+ {
+  "locale": "ru",
+  "kind": "month",
+  "at": "2026-11-22T21:09",
+  "want": "ноябрь"
+ },
+ {
+  "locale": "ru",
+  "kind": "month",
+  "at": "2026-12-31T23:59",
+  "want": "декабрь"
+ },
+ {
+  "locale": "ru",
+  "kind": "month",
+  "at": "2027-06-06T00:30",
+  "want": "июнь"
+ },
+ {
+  "locale": "ru",
+  "kind": "month",
+  "at": "0001-01-01T00:00",
+  "want": "январь"
+ },
+ {
+  "locale": "ru",
+  "kind": "month",
+  "at": "9999-12-31T23:59",
+  "want": "декабрь"
+ },
+ {
+  "locale": "ru",
+  "kind": "year",
+  "at": "2024-02-29T00:00",
+  "want": "2024"
+ },
+ {
+  "locale": "ru",
+  "kind": "year",
+  "at": "2025-01-01T09:07",
+  "want": "2025"
+ },
+ {
+  "locale": "ru",
+  "kind": "year",
+  "at": "2026-11-17T12:00",
+  "want": "2026"
+ },
+ {
+  "locale": "ru",
+  "kind": "year",
+  "at": "2026-11-22T21:09",
+  "want": "2026"
+ },
+ {
+  "locale": "ru",
+  "kind": "year",
+  "at": "2026-12-31T23:59",
+  "want": "2026"
+ },
+ {
+  "locale": "ru",
+  "kind": "year",
+  "at": "2027-06-06T00:30",
+  "want": "2027"
+ },
+ {
+  "locale": "ru",
+  "kind": "year",
+  "at": "0001-01-01T00:00",
+  "want": "1"
+ },
+ {
+  "locale": "ru",
+  "kind": "year",
+  "at": "9999-12-31T23:59",
+  "want": "9999"
+ },
+ {
+  "locale": "ru",
+  "kind": "time",
+  "at": "2024-02-29T00:00",
+  "want": "00:00"
+ },
+ {
+  "locale": "ru",
+  "kind": "time",
+  "at": "2025-01-01T09:07",
+  "want": "09:07"
+ },
+ {
+  "locale": "ru",
+  "kind": "time",
+  "at": "2026-11-17T12:00",
+  "want": "12:00"
+ },
+ {
+  "locale": "ru",
+  "kind": "time",
+  "at": "2026-11-22T21:09",
+  "want": "21:09"
+ },
+ {
+  "locale": "ru",
+  "kind": "time",
+  "at": "2026-12-31T23:59",
+  "want": "23:59"
+ },
+ {
+  "locale": "ru",
+  "kind": "time",
+  "at": "2027-06-06T00:30",
+  "want": "00:30"
+ },
+ {
+  "locale": "ru",
+  "kind": "time",
+  "at": "0001-01-01T00:00",
+  "want": "00:00"
+ },
+ {
+  "locale": "ru",
+  "kind": "time",
+  "at": "9999-12-31T23:59",
+  "want": "23:59"
+ },
+ {
+  "locale": "ru",
+  "kind": "stamp",
+  "at": "2024-02-29T00:00",
+  "want": "29 февраля 2024 г. в 00:00"
+ },
+ {
+  "locale": "ru",
+  "kind": "stamp",
+  "at": "2025-01-01T09:07",
+  "want": "1 января 2025 г. в 09:07"
+ },
+ {
+  "locale": "ru",
+  "kind": "stamp",
+  "at": "2026-11-17T12:00",
+  "want": "17 ноября 2026 г. в 12:00"
+ },
+ {
+  "locale": "ru",
+  "kind": "stamp",
+  "at": "2026-11-22T21:09",
+  "want": "22 ноября 2026 г. в 21:09"
+ },
+ {
+  "locale": "ru",
+  "kind": "stamp",
+  "at": "2026-12-31T23:59",
+  "want": "31 декабря 2026 г. в 23:59"
+ },
+ {
+  "locale": "ru",
+  "kind": "stamp",
+  "at": "2027-06-06T00:30",
+  "want": "6 июня 2027 г. в 00:30"
+ },
+ {
+  "locale": "ru",
+  "kind": "stamp",
+  "at": "0001-01-01T00:00",
+  "want": "1 января 1 г. в 00:00"
+ },
+ {
+  "locale": "ru",
+  "kind": "stamp",
+  "at": "9999-12-31T23:59",
+  "want": "31 декабря 9999 г. в 23:59"
+ },
+ {
+  "locale": "ga",
+  "kind": "day",
+  "at": "2024-02-29T00:00",
+  "want": "Déardaoin 29 Feabhra"
+ },
+ {
+  "locale": "ga",
+  "kind": "day",
+  "at": "2025-01-01T09:07",
+  "want": "Dé Céadaoin 1 Eanáir"
+ },
+ {
+  "locale": "ga",
+  "kind": "day",
+  "at": "2026-11-17T12:00",
+  "want": "Dé Máirt 17 Samhain"
+ },
+ {
+  "locale": "ga",
+  "kind": "day",
+  "at": "2026-11-22T21:09",
+  "want": "Dé Domhnaigh 22 Samhain"
+ },
+ {
+  "locale": "ga",
+  "kind": "day",
+  "at": "2026-12-31T23:59",
+  "want": "Déardaoin 31 Nollaig"
+ },
+ {
+  "locale": "ga",
+  "kind": "day",
+  "at": "2027-06-06T00:30",
+  "want": "Dé Domhnaigh 6 Meitheamh"
+ },
+ {
+  "locale": "ga",
+  "kind": "day",
+  "at": "0001-01-01T00:00",
+  "want": "Dé Luain 1 Eanáir"
+ },
+ {
+  "locale": "ga",
+  "kind": "day",
+  "at": "9999-12-31T23:59",
+  "want": "Dé hAoine 31 Nollaig"
+ },
+ {
+  "locale": "ga",
+  "kind": "dayYear",
+  "at": "2024-02-29T00:00",
+  "want": "Déardaoin 29 Feabhra 2024"
+ },
+ {
+  "locale": "ga",
+  "kind": "dayYear",
+  "at": "2025-01-01T09:07",
+  "want": "Dé Céadaoin 1 Eanáir 2025"
+ },
+ {
+  "locale": "ga",
+  "kind": "dayYear",
+  "at": "2026-11-17T12:00",
+  "want": "Dé Máirt 17 Samhain 2026"
+ },
+ {
+  "locale": "ga",
+  "kind": "dayYear",
+  "at": "2026-11-22T21:09",
+  "want": "Dé Domhnaigh 22 Samhain 2026"
+ },
+ {
+  "locale": "ga",
+  "kind": "dayYear",
+  "at": "2026-12-31T23:59",
+  "want": "Déardaoin 31 Nollaig 2026"
+ },
+ {
+  "locale": "ga",
+  "kind": "dayYear",
+  "at": "2027-06-06T00:30",
+  "want": "Dé Domhnaigh 6 Meitheamh 2027"
+ },
+ {
+  "locale": "ga",
+  "kind": "dayYear",
+  "at": "0001-01-01T00:00",
+  "want": "Dé Luain 1 Eanáir 1"
+ },
+ {
+  "locale": "ga",
+  "kind": "dayYear",
+  "at": "9999-12-31T23:59",
+  "want": "Dé hAoine 31 Nollaig 9999"
+ },
+ {
+  "locale": "ga",
+  "kind": "short",
+  "at": "2024-02-29T00:00",
+  "want": "Déar 29 Feabh"
+ },
+ {
+  "locale": "ga",
+  "kind": "short",
+  "at": "2025-01-01T09:07",
+  "want": "Céad 1 Ean"
+ },
+ {
+  "locale": "ga",
+  "kind": "short",
+  "at": "2026-11-17T12:00",
+  "want": "Máirt 17 Samh"
+ },
+ {
+  "locale": "ga",
+  "kind": "short",
+  "at": "2026-11-22T21:09",
+  "want": "Domh 22 Samh"
+ },
+ {
+  "locale": "ga",
+  "kind": "short",
+  "at": "2026-12-31T23:59",
+  "want": "Déar 31 Noll"
+ },
+ {
+  "locale": "ga",
+  "kind": "short",
+  "at": "2027-06-06T00:30",
+  "want": "Domh 6 Meith"
+ },
+ {
+  "locale": "ga",
+  "kind": "short",
+  "at": "0001-01-01T00:00",
+  "want": "Luan 1 Ean"
+ },
+ {
+  "locale": "ga",
+  "kind": "short",
+  "at": "9999-12-31T23:59",
+  "want": "Aoine 31 Noll"
+ },
+ {
+  "locale": "ga",
+  "kind": "date",
+  "at": "2024-02-29T00:00",
+  "want": "29 Feabhra"
+ },
+ {
+  "locale": "ga",
+  "kind": "date",
+  "at": "2025-01-01T09:07",
+  "want": "1 Eanáir"
+ },
+ {
+  "locale": "ga",
+  "kind": "date",
+  "at": "2026-11-17T12:00",
+  "want": "17 Samhain"
+ },
+ {
+  "locale": "ga",
+  "kind": "date",
+  "at": "2026-11-22T21:09",
+  "want": "22 Samhain"
+ },
+ {
+  "locale": "ga",
+  "kind": "date",
+  "at": "2026-12-31T23:59",
+  "want": "31 Nollaig"
+ },
+ {
+  "locale": "ga",
+  "kind": "date",
+  "at": "2027-06-06T00:30",
+  "want": "6 Meitheamh"
+ },
+ {
+  "locale": "ga",
+  "kind": "date",
+  "at": "0001-01-01T00:00",
+  "want": "1 Eanáir"
+ },
+ {
+  "locale": "ga",
+  "kind": "date",
+  "at": "9999-12-31T23:59",
+  "want": "31 Nollaig"
+ },
+ {
+  "locale": "ga",
+  "kind": "dateYear",
+  "at": "2024-02-29T00:00",
+  "want": "29 Feabhra 2024"
+ },
+ {
+  "locale": "ga",
+  "kind": "dateYear",
+  "at": "2025-01-01T09:07",
+  "want": "1 Eanáir 2025"
+ },
+ {
+  "locale": "ga",
+  "kind": "dateYear",
+  "at": "2026-11-17T12:00",
+  "want": "17 Samhain 2026"
+ },
+ {
+  "locale": "ga",
+  "kind": "dateYear",
+  "at": "2026-11-22T21:09",
+  "want": "22 Samhain 2026"
+ },
+ {
+  "locale": "ga",
+  "kind": "dateYear",
+  "at": "2026-12-31T23:59",
+  "want": "31 Nollaig 2026"
+ },
+ {
+  "locale": "ga",
+  "kind": "dateYear",
+  "at": "2027-06-06T00:30",
+  "want": "6 Meitheamh 2027"
+ },
+ {
+  "locale": "ga",
+  "kind": "dateYear",
+  "at": "0001-01-01T00:00",
+  "want": "1 Eanáir 1"
+ },
+ {
+  "locale": "ga",
+  "kind": "dateYear",
+  "at": "9999-12-31T23:59",
+  "want": "31 Nollaig 9999"
+ },
+ {
+  "locale": "ga",
+  "kind": "monthYear",
+  "at": "2024-02-29T00:00",
+  "want": "Feabhra 2024"
+ },
+ {
+  "locale": "ga",
+  "kind": "monthYear",
+  "at": "2025-01-01T09:07",
+  "want": "Eanáir 2025"
+ },
+ {
+  "locale": "ga",
+  "kind": "monthYear",
+  "at": "2026-11-17T12:00",
+  "want": "Samhain 2026"
+ },
+ {
+  "locale": "ga",
+  "kind": "monthYear",
+  "at": "2026-11-22T21:09",
+  "want": "Samhain 2026"
+ },
+ {
+  "locale": "ga",
+  "kind": "monthYear",
+  "at": "2026-12-31T23:59",
+  "want": "Nollaig 2026"
+ },
+ {
+  "locale": "ga",
+  "kind": "monthYear",
+  "at": "2027-06-06T00:30",
+  "want": "Meitheamh 2027"
+ },
+ {
+  "locale": "ga",
+  "kind": "monthYear",
+  "at": "0001-01-01T00:00",
+  "want": "Eanáir 1"
+ },
+ {
+  "locale": "ga",
+  "kind": "monthYear",
+  "at": "9999-12-31T23:59",
+  "want": "Nollaig 9999"
+ },
+ {
+  "locale": "ga",
+  "kind": "month",
+  "at": "2024-02-29T00:00",
+  "want": "Feabhra"
+ },
+ {
+  "locale": "ga",
+  "kind": "month",
+  "at": "2025-01-01T09:07",
+  "want": "Eanáir"
+ },
+ {
+  "locale": "ga",
+  "kind": "month",
+  "at": "2026-11-17T12:00",
+  "want": "Samhain"
+ },
+ {
+  "locale": "ga",
+  "kind": "month",
+  "at": "2026-11-22T21:09",
+  "want": "Samhain"
+ },
+ {
+  "locale": "ga",
+  "kind": "month",
+  "at": "2026-12-31T23:59",
+  "want": "Nollaig"
+ },
+ {
+  "locale": "ga",
+  "kind": "month",
+  "at": "2027-06-06T00:30",
+  "want": "Meitheamh"
+ },
+ {
+  "locale": "ga",
+  "kind": "month",
+  "at": "0001-01-01T00:00",
+  "want": "Eanáir"
+ },
+ {
+  "locale": "ga",
+  "kind": "month",
+  "at": "9999-12-31T23:59",
+  "want": "Nollaig"
+ },
+ {
+  "locale": "ga",
+  "kind": "year",
+  "at": "2024-02-29T00:00",
+  "want": "2024"
+ },
+ {
+  "locale": "ga",
+  "kind": "year",
+  "at": "2025-01-01T09:07",
+  "want": "2025"
+ },
+ {
+  "locale": "ga",
+  "kind": "year",
+  "at": "2026-11-17T12:00",
+  "want": "2026"
+ },
+ {
+  "locale": "ga",
+  "kind": "year",
+  "at": "2026-11-22T21:09",
+  "want": "2026"
+ },
+ {
+  "locale": "ga",
+  "kind": "year",
+  "at": "2026-12-31T23:59",
+  "want": "2026"
+ },
+ {
+  "locale": "ga",
+  "kind": "year",
+  "at": "2027-06-06T00:30",
+  "want": "2027"
+ },
+ {
+  "locale": "ga",
+  "kind": "year",
+  "at": "0001-01-01T00:00",
+  "want": "1"
+ },
+ {
+  "locale": "ga",
+  "kind": "year",
+  "at": "9999-12-31T23:59",
+  "want": "9999"
+ },
+ {
+  "locale": "ga",
+  "kind": "time",
+  "at": "2024-02-29T00:00",
+  "want": "00:00"
+ },
+ {
+  "locale": "ga",
+  "kind": "time",
+  "at": "2025-01-01T09:07",
+  "want": "09:07"
+ },
+ {
+  "locale": "ga",
+  "kind": "time",
+  "at": "2026-11-17T12:00",
+  "want": "12:00"
+ },
+ {
+  "locale": "ga",
+  "kind": "time",
+  "at": "2026-11-22T21:09",
+  "want": "21:09"
+ },
+ {
+  "locale": "ga",
+  "kind": "time",
+  "at": "2026-12-31T23:59",
+  "want": "23:59"
+ },
+ {
+  "locale": "ga",
+  "kind": "time",
+  "at": "2027-06-06T00:30",
+  "want": "00:30"
+ },
+ {
+  "locale": "ga",
+  "kind": "time",
+  "at": "0001-01-01T00:00",
+  "want": "00:00"
+ },
+ {
+  "locale": "ga",
+  "kind": "time",
+  "at": "9999-12-31T23:59",
+  "want": "23:59"
+ },
+ {
+  "locale": "ga",
+  "kind": "stamp",
+  "at": "2024-02-29T00:00",
+  "want": "29 Feabhra 2024 ag 00:00"
+ },
+ {
+  "locale": "ga",
+  "kind": "stamp",
+  "at": "2025-01-01T09:07",
+  "want": "1 Eanáir 2025 ag 09:07"
+ },
+ {
+  "locale": "ga",
+  "kind": "stamp",
+  "at": "2026-11-17T12:00",
+  "want": "17 Samhain 2026 ag 12:00"
+ },
+ {
+  "locale": "ga",
+  "kind": "stamp",
+  "at": "2026-11-22T21:09",
+  "want": "22 Samhain 2026 ag 21:09"
+ },
+ {
+  "locale": "ga",
+  "kind": "stamp",
+  "at": "2026-12-31T23:59",
+  "want": "31 Nollaig 2026 ag 23:59"
+ },
+ {
+  "locale": "ga",
+  "kind": "stamp",
+  "at": "2027-06-06T00:30",
+  "want": "6 Meitheamh 2027 ag 00:30"
+ },
+ {
+  "locale": "ga",
+  "kind": "stamp",
+  "at": "0001-01-01T00:00",
+  "want": "1 Eanáir 1 ag 00:00"
+ },
+ {
+  "locale": "ga",
+  "kind": "stamp",
+  "at": "9999-12-31T23:59",
+  "want": "31 Nollaig 9999 ag 23:59"
+ },
+ {
+  "locale": "pt-PT",
+  "kind": "day",
+  "at": "2024-02-29T00:00",
+  "want": "quinta-feira, 29 de fevereiro"
+ },
+ {
+  "locale": "pt-PT",
+  "kind": "day",
+  "at": "2025-01-01T09:07",
+  "want": "quarta-feira, 1 de janeiro"
+ },
+ {
+  "locale": "pt-PT",
+  "kind": "day",
+  "at": "2026-11-17T12:00",
+  "want": "terça-feira, 17 de novembro"
+ },
+ {
+  "locale": "pt-PT",
+  "kind": "day",
+  "at": "2026-11-22T21:09",
+  "want": "domingo, 22 de novembro"
+ },
+ {
+  "locale": "pt-PT",
+  "kind": "day",
+  "at": "2026-12-31T23:59",
+  "want": "quinta-feira, 31 de dezembro"
+ },
+ {
+  "locale": "pt-PT",
+  "kind": "day",
+  "at": "2027-06-06T00:30",
+  "want": "domingo, 6 de junho"
+ },
+ {
+  "locale": "pt-PT",
+  "kind": "day",
+  "at": "0001-01-01T00:00",
+  "want": "segunda-feira, 1 de janeiro"
+ },
+ {
+  "locale": "pt-PT",
+  "kind": "day",
+  "at": "9999-12-31T23:59",
+  "want": "sexta-feira, 31 de dezembro"
+ },
+ {
+  "locale": "pt-PT",
+  "kind": "dayYear",
+  "at": "2024-02-29T00:00",
+  "want": "quinta-feira, 29 de fevereiro de 2024"
+ },
+ {
+  "locale": "pt-PT",
+  "kind": "dayYear",
+  "at": "2025-01-01T09:07",
+  "want": "quarta-feira, 1 de janeiro de 2025"
+ },
+ {
+  "locale": "pt-PT",
+  "kind": "dayYear",
+  "at": "2026-11-17T12:00",
+  "want": "terça-feira, 17 de novembro de 2026"
+ },
+ {
+  "locale": "pt-PT",
+  "kind": "dayYear",
+  "at": "2026-11-22T21:09",
+  "want": "domingo, 22 de novembro de 2026"
+ },
+ {
+  "locale": "pt-PT",
+  "kind": "dayYear",
+  "at": "2026-12-31T23:59",
+  "want": "quinta-feira, 31 de dezembro de 2026"
+ },
+ {
+  "locale": "pt-PT",
+  "kind": "dayYear",
+  "at": "2027-06-06T00:30",
+  "want": "domingo, 6 de junho de 2027"
+ },
+ {
+  "locale": "pt-PT",
+  "kind": "dayYear",
+  "at": "0001-01-01T00:00",
+  "want": "segunda-feira, 1 de janeiro de 1"
+ },
+ {
+  "locale": "pt-PT",
+  "kind": "dayYear",
+  "at": "9999-12-31T23:59",
+  "want": "sexta-feira, 31 de dezembro de 9999"
+ },
+ {
+  "locale": "pt-PT",
+  "kind": "short",
+  "at": "2024-02-29T00:00",
+  "want": "quinta, 29/02"
+ },
+ {
+  "locale": "pt-PT",
+  "kind": "short",
+  "at": "2025-01-01T09:07",
+  "want": "quarta, 1/01"
+ },
+ {
+  "locale": "pt-PT",
+  "kind": "short",
+  "at": "2026-11-17T12:00",
+  "want": "terça, 17/11"
+ },
+ {
+  "locale": "pt-PT",
+  "kind": "short",
+  "at": "2026-11-22T21:09",
+  "want": "domingo, 22/11"
+ },
+ {
+  "locale": "pt-PT",
+  "kind": "short",
+  "at": "2026-12-31T23:59",
+  "want": "quinta, 31/12"
+ },
+ {
+  "locale": "pt-PT",
+  "kind": "short",
+  "at": "2027-06-06T00:30",
+  "want": "domingo, 6/06"
+ },
+ {
+  "locale": "pt-PT",
+  "kind": "short",
+  "at": "0001-01-01T00:00",
+  "want": "segunda, 1/01"
+ },
+ {
+  "locale": "pt-PT",
+  "kind": "short",
+  "at": "9999-12-31T23:59",
+  "want": "sexta, 31/12"
+ },
+ {
+  "locale": "pt-PT",
+  "kind": "date",
+  "at": "2024-02-29T00:00",
+  "want": "29 de fevereiro"
+ },
+ {
+  "locale": "pt-PT",
+  "kind": "date",
+  "at": "2025-01-01T09:07",
+  "want": "1 de janeiro"
+ },
+ {
+  "locale": "pt-PT",
+  "kind": "date",
+  "at": "2026-11-17T12:00",
+  "want": "17 de novembro"
+ },
+ {
+  "locale": "pt-PT",
+  "kind": "date",
+  "at": "2026-11-22T21:09",
+  "want": "22 de novembro"
+ },
+ {
+  "locale": "pt-PT",
+  "kind": "date",
+  "at": "2026-12-31T23:59",
+  "want": "31 de dezembro"
+ },
+ {
+  "locale": "pt-PT",
+  "kind": "date",
+  "at": "2027-06-06T00:30",
+  "want": "6 de junho"
+ },
+ {
+  "locale": "pt-PT",
+  "kind": "date",
+  "at": "0001-01-01T00:00",
+  "want": "1 de janeiro"
+ },
+ {
+  "locale": "pt-PT",
+  "kind": "date",
+  "at": "9999-12-31T23:59",
+  "want": "31 de dezembro"
+ },
+ {
+  "locale": "pt-PT",
+  "kind": "dateYear",
+  "at": "2024-02-29T00:00",
+  "want": "29 de fevereiro de 2024"
+ },
+ {
+  "locale": "pt-PT",
+  "kind": "dateYear",
+  "at": "2025-01-01T09:07",
+  "want": "1 de janeiro de 2025"
+ },
+ {
+  "locale": "pt-PT",
+  "kind": "dateYear",
+  "at": "2026-11-17T12:00",
+  "want": "17 de novembro de 2026"
+ },
+ {
+  "locale": "pt-PT",
+  "kind": "dateYear",
+  "at": "2026-11-22T21:09",
+  "want": "22 de novembro de 2026"
+ },
+ {
+  "locale": "pt-PT",
+  "kind": "dateYear",
+  "at": "2026-12-31T23:59",
+  "want": "31 de dezembro de 2026"
+ },
+ {
+  "locale": "pt-PT",
+  "kind": "dateYear",
+  "at": "2027-06-06T00:30",
+  "want": "6 de junho de 2027"
+ },
+ {
+  "locale": "pt-PT",
+  "kind": "dateYear",
+  "at": "0001-01-01T00:00",
+  "want": "1 de janeiro de 1"
+ },
+ {
+  "locale": "pt-PT",
+  "kind": "dateYear",
+  "at": "9999-12-31T23:59",
+  "want": "31 de dezembro de 9999"
+ },
+ {
+  "locale": "pt-PT",
+  "kind": "monthYear",
+  "at": "2024-02-29T00:00",
+  "want": "fevereiro de 2024"
+ },
+ {
+  "locale": "pt-PT",
+  "kind": "monthYear",
+  "at": "2025-01-01T09:07",
+  "want": "janeiro de 2025"
+ },
+ {
+  "locale": "pt-PT",
+  "kind": "monthYear",
+  "at": "2026-11-17T12:00",
+  "want": "novembro de 2026"
+ },
+ {
+  "locale": "pt-PT",
+  "kind": "monthYear",
+  "at": "2026-11-22T21:09",
+  "want": "novembro de 2026"
+ },
+ {
+  "locale": "pt-PT",
+  "kind": "monthYear",
+  "at": "2026-12-31T23:59",
+  "want": "dezembro de 2026"
+ },
+ {
+  "locale": "pt-PT",
+  "kind": "monthYear",
+  "at": "2027-06-06T00:30",
+  "want": "junho de 2027"
+ },
+ {
+  "locale": "pt-PT",
+  "kind": "monthYear",
+  "at": "0001-01-01T00:00",
+  "want": "janeiro de 1"
+ },
+ {
+  "locale": "pt-PT",
+  "kind": "monthYear",
+  "at": "9999-12-31T23:59",
+  "want": "dezembro de 9999"
+ },
+ {
+  "locale": "pt-PT",
+  "kind": "month",
+  "at": "2024-02-29T00:00",
+  "want": "fevereiro"
+ },
+ {
+  "locale": "pt-PT",
+  "kind": "month",
+  "at": "2025-01-01T09:07",
+  "want": "janeiro"
+ },
+ {
+  "locale": "pt-PT",
+  "kind": "month",
+  "at": "2026-11-17T12:00",
+  "want": "novembro"
+ },
+ {
+  "locale": "pt-PT",
+  "kind": "month",
+  "at": "2026-11-22T21:09",
+  "want": "novembro"
+ },
+ {
+  "locale": "pt-PT",
+  "kind": "month",
+  "at": "2026-12-31T23:59",
+  "want": "dezembro"
+ },
+ {
+  "locale": "pt-PT",
+  "kind": "month",
+  "at": "2027-06-06T00:30",
+  "want": "junho"
+ },
+ {
+  "locale": "pt-PT",
+  "kind": "month",
+  "at": "0001-01-01T00:00",
+  "want": "janeiro"
+ },
+ {
+  "locale": "pt-PT",
+  "kind": "month",
+  "at": "9999-12-31T23:59",
+  "want": "dezembro"
+ },
+ {
+  "locale": "pt-PT",
+  "kind": "year",
+  "at": "2024-02-29T00:00",
+  "want": "2024"
+ },
+ {
+  "locale": "pt-PT",
+  "kind": "year",
+  "at": "2025-01-01T09:07",
+  "want": "2025"
+ },
+ {
+  "locale": "pt-PT",
+  "kind": "year",
+  "at": "2026-11-17T12:00",
+  "want": "2026"
+ },
+ {
+  "locale": "pt-PT",
+  "kind": "year",
+  "at": "2026-11-22T21:09",
+  "want": "2026"
+ },
+ {
+  "locale": "pt-PT",
+  "kind": "year",
+  "at": "2026-12-31T23:59",
+  "want": "2026"
+ },
+ {
+  "locale": "pt-PT",
+  "kind": "year",
+  "at": "2027-06-06T00:30",
+  "want": "2027"
+ },
+ {
+  "locale": "pt-PT",
+  "kind": "year",
+  "at": "0001-01-01T00:00",
+  "want": "1"
+ },
+ {
+  "locale": "pt-PT",
+  "kind": "year",
+  "at": "9999-12-31T23:59",
+  "want": "9999"
+ },
+ {
+  "locale": "pt-PT",
+  "kind": "time",
+  "at": "2024-02-29T00:00",
+  "want": "00:00"
+ },
+ {
+  "locale": "pt-PT",
+  "kind": "time",
+  "at": "2025-01-01T09:07",
+  "want": "09:07"
+ },
+ {
+  "locale": "pt-PT",
+  "kind": "time",
+  "at": "2026-11-17T12:00",
+  "want": "12:00"
+ },
+ {
+  "locale": "pt-PT",
+  "kind": "time",
+  "at": "2026-11-22T21:09",
+  "want": "21:09"
+ },
+ {
+  "locale": "pt-PT",
+  "kind": "time",
+  "at": "2026-12-31T23:59",
+  "want": "23:59"
+ },
+ {
+  "locale": "pt-PT",
+  "kind": "time",
+  "at": "2027-06-06T00:30",
+  "want": "00:30"
+ },
+ {
+  "locale": "pt-PT",
+  "kind": "time",
+  "at": "0001-01-01T00:00",
+  "want": "00:00"
+ },
+ {
+  "locale": "pt-PT",
+  "kind": "time",
+  "at": "9999-12-31T23:59",
+  "want": "23:59"
+ },
+ {
+  "locale": "pt-PT",
+  "kind": "stamp",
+  "at": "2024-02-29T00:00",
+  "want": "29 de fevereiro de 2024 às 00:00"
+ },
+ {
+  "locale": "pt-PT",
+  "kind": "stamp",
+  "at": "2025-01-01T09:07",
+  "want": "1 de janeiro de 2025 às 09:07"
+ },
+ {
+  "locale": "pt-PT",
+  "kind": "stamp",
+  "at": "2026-11-17T12:00",
+  "want": "17 de novembro de 2026 às 12:00"
+ },
+ {
+  "locale": "pt-PT",
+  "kind": "stamp",
+  "at": "2026-11-22T21:09",
+  "want": "22 de novembro de 2026 às 21:09"
+ },
+ {
+  "locale": "pt-PT",
+  "kind": "stamp",
+  "at": "2026-12-31T23:59",
+  "want": "31 de dezembro de 2026 às 23:59"
+ },
+ {
+  "locale": "pt-PT",
+  "kind": "stamp",
+  "at": "2027-06-06T00:30",
+  "want": "6 de junho de 2027 às 00:30"
+ },
+ {
+  "locale": "pt-PT",
+  "kind": "stamp",
+  "at": "0001-01-01T00:00",
+  "want": "1 de janeiro de 1 às 00:00"
+ },
+ {
+  "locale": "pt-PT",
+  "kind": "stamp",
+  "at": "9999-12-31T23:59",
+  "want": "31 de dezembro de 9999 às 23:59"
+ },
+ {
+  "locale": "bn",
+  "kind": "day",
+  "at": "2024-02-29T00:00",
+  "want": "বৃহস্পতিবার ২৯ ফেব্রুয়ারি"
+ },
+ {
+  "locale": "bn",
+  "kind": "day",
+  "at": "2025-01-01T09:07",
+  "want": "বুধবার ১ জানুয়ারি"
+ },
+ {
+  "locale": "bn",
+  "kind": "day",
+  "at": "2026-11-17T12:00",
+  "want": "মঙ্গলবার ১৭ নভেম্বর"
+ },
+ {
+  "locale": "bn",
+  "kind": "day",
+  "at": "2026-11-22T21:09",
+  "want": "রবিবার ২২ নভেম্বর"
+ },
+ {
+  "locale": "bn",
+  "kind": "day",
+  "at": "2026-12-31T23:59",
+  "want": "বৃহস্পতিবার ৩১ ডিসেম্বর"
+ },
+ {
+  "locale": "bn",
+  "kind": "day",
+  "at": "2027-06-06T00:30",
+  "want": "রবিবার ৬ জুন"
+ },
+ {
+  "locale": "bn",
+  "kind": "day",
+  "at": "0001-01-01T00:00",
+  "want": "সোমবার ১ জানুয়ারি"
+ },
+ {
+  "locale": "bn",
+  "kind": "day",
+  "at": "9999-12-31T23:59",
+  "want": "শুক্রবার ৩১ ডিসেম্বর"
+ },
+ {
+  "locale": "bn",
+  "kind": "dayYear",
+  "at": "2024-02-29T00:00",
+  "want": "বৃহস্পতিবার, ২৯ ফেব্রুয়ারি, ২০২৪"
+ },
+ {
+  "locale": "bn",
+  "kind": "dayYear",
+  "at": "2025-01-01T09:07",
+  "want": "বুধবার, ১ জানুয়ারি, ২০২৫"
+ },
+ {
+  "locale": "bn",
+  "kind": "dayYear",
+  "at": "2026-11-17T12:00",
+  "want": "মঙ্গলবার, ১৭ নভেম্বর, ২০২৬"
+ },
+ {
+  "locale": "bn",
+  "kind": "dayYear",
+  "at": "2026-11-22T21:09",
+  "want": "রবিবার, ২২ নভেম্বর, ২০২৬"
+ },
+ {
+  "locale": "bn",
+  "kind": "dayYear",
+  "at": "2026-12-31T23:59",
+  "want": "বৃহস্পতিবার, ৩১ ডিসেম্বর, ২০২৬"
+ },
+ {
+  "locale": "bn",
+  "kind": "dayYear",
+  "at": "2027-06-06T00:30",
+  "want": "রবিবার, ৬ জুন, ২০২৭"
+ },
+ {
+  "locale": "bn",
+  "kind": "dayYear",
+  "at": "0001-01-01T00:00",
+  "want": "সোমবার, ১ জানুয়ারি, ১"
+ },
+ {
+  "locale": "bn",
+  "kind": "dayYear",
+  "at": "9999-12-31T23:59",
+  "want": "শুক্রবার, ৩১ ডিসেম্বর, ৯৯৯৯"
+ },
+ {
+  "locale": "bn",
+  "kind": "short",
+  "at": "2024-02-29T00:00",
+  "want": "বৃহস্পতি ২৯ ফেব"
+ },
+ {
+  "locale": "bn",
+  "kind": "short",
+  "at": "2025-01-01T09:07",
+  "want": "বুধ ১ জানু"
+ },
+ {
+  "locale": "bn",
+  "kind": "short",
+  "at": "2026-11-17T12:00",
+  "want": "মঙ্গল ১৭ নভে"
+ },
+ {
+  "locale": "bn",
+  "kind": "short",
+  "at": "2026-11-22T21:09",
+  "want": "রবি ২২ নভে"
+ },
+ {
+  "locale": "bn",
+  "kind": "short",
+  "at": "2026-12-31T23:59",
+  "want": "বৃহস্পতি ৩১ ডিসে"
+ },
+ {
+  "locale": "bn",
+  "kind": "short",
+  "at": "2027-06-06T00:30",
+  "want": "রবি ৬ জুন"
+ },
+ {
+  "locale": "bn",
+  "kind": "short",
+  "at": "0001-01-01T00:00",
+  "want": "সোম ১ জানু"
+ },
+ {
+  "locale": "bn",
+  "kind": "short",
+  "at": "9999-12-31T23:59",
+  "want": "শুক্র ৩১ ডিসে"
+ },
+ {
+  "locale": "bn",
+  "kind": "date",
+  "at": "2024-02-29T00:00",
+  "want": "২৯ ফেব্রুয়ারি"
+ },
+ {
+  "locale": "bn",
+  "kind": "date",
+  "at": "2025-01-01T09:07",
+  "want": "১ জানুয়ারি"
+ },
+ {
+  "locale": "bn",
+  "kind": "date",
+  "at": "2026-11-17T12:00",
+  "want": "১৭ নভেম্বর"
+ },
+ {
+  "locale": "bn",
+  "kind": "date",
+  "at": "2026-11-22T21:09",
+  "want": "২২ নভেম্বর"
+ },
+ {
+  "locale": "bn",
+  "kind": "date",
+  "at": "2026-12-31T23:59",
+  "want": "৩১ ডিসেম্বর"
+ },
+ {
+  "locale": "bn",
+  "kind": "date",
+  "at": "2027-06-06T00:30",
+  "want": "৬ জুন"
+ },
+ {
+  "locale": "bn",
+  "kind": "date",
+  "at": "0001-01-01T00:00",
+  "want": "১ জানুয়ারি"
+ },
+ {
+  "locale": "bn",
+  "kind": "date",
+  "at": "9999-12-31T23:59",
+  "want": "৩১ ডিসেম্বর"
+ },
+ {
+  "locale": "bn",
+  "kind": "dateYear",
+  "at": "2024-02-29T00:00",
+  "want": "২৯ ফেব্রুয়ারি, ২০২৪"
+ },
+ {
+  "locale": "bn",
+  "kind": "dateYear",
+  "at": "2025-01-01T09:07",
+  "want": "১ জানুয়ারি, ২০২৫"
+ },
+ {
+  "locale": "bn",
+  "kind": "dateYear",
+  "at": "2026-11-17T12:00",
+  "want": "১৭ নভেম্বর, ২০২৬"
+ },
+ {
+  "locale": "bn",
+  "kind": "dateYear",
+  "at": "2026-11-22T21:09",
+  "want": "২২ নভেম্বর, ২০২৬"
+ },
+ {
+  "locale": "bn",
+  "kind": "dateYear",
+  "at": "2026-12-31T23:59",
+  "want": "৩১ ডিসেম্বর, ২০২৬"
+ },
+ {
+  "locale": "bn",
+  "kind": "dateYear",
+  "at": "2027-06-06T00:30",
+  "want": "৬ জুন, ২০২৭"
+ },
+ {
+  "locale": "bn",
+  "kind": "dateYear",
+  "at": "0001-01-01T00:00",
+  "want": "১ জানুয়ারি, ১"
+ },
+ {
+  "locale": "bn",
+  "kind": "dateYear",
+  "at": "9999-12-31T23:59",
+  "want": "৩১ ডিসেম্বর, ৯৯৯৯"
+ },
+ {
+  "locale": "bn",
+  "kind": "monthYear",
+  "at": "2024-02-29T00:00",
+  "want": "ফেব্রুয়ারি ২০২৪"
+ },
+ {
+  "locale": "bn",
+  "kind": "monthYear",
+  "at": "2025-01-01T09:07",
+  "want": "জানুয়ারি ২০২৫"
+ },
+ {
+  "locale": "bn",
+  "kind": "monthYear",
+  "at": "2026-11-17T12:00",
+  "want": "নভেম্বর ২০২৬"
+ },
+ {
+  "locale": "bn",
+  "kind": "monthYear",
+  "at": "2026-11-22T21:09",
+  "want": "নভেম্বর ২০২৬"
+ },
+ {
+  "locale": "bn",
+  "kind": "monthYear",
+  "at": "2026-12-31T23:59",
+  "want": "ডিসেম্বর ২০২৬"
+ },
+ {
+  "locale": "bn",
+  "kind": "monthYear",
+  "at": "2027-06-06T00:30",
+  "want": "জুন ২০২৭"
+ },
+ {
+  "locale": "bn",
+  "kind": "monthYear",
+  "at": "0001-01-01T00:00",
+  "want": "জানুয়ারি ১"
+ },
+ {
+  "locale": "bn",
+  "kind": "monthYear",
+  "at": "9999-12-31T23:59",
+  "want": "ডিসেম্বর ৯৯৯৯"
+ },
+ {
+  "locale": "bn",
+  "kind": "month",
+  "at": "2024-02-29T00:00",
+  "want": "ফেব্রুয়ারি"
+ },
+ {
+  "locale": "bn",
+  "kind": "month",
+  "at": "2025-01-01T09:07",
+  "want": "জানুয়ারি"
+ },
+ {
+  "locale": "bn",
+  "kind": "month",
+  "at": "2026-11-17T12:00",
+  "want": "নভেম্বর"
+ },
+ {
+  "locale": "bn",
+  "kind": "month",
+  "at": "2026-11-22T21:09",
+  "want": "নভেম্বর"
+ },
+ {
+  "locale": "bn",
+  "kind": "month",
+  "at": "2026-12-31T23:59",
+  "want": "ডিসেম্বর"
+ },
+ {
+  "locale": "bn",
+  "kind": "month",
+  "at": "2027-06-06T00:30",
+  "want": "জুন"
+ },
+ {
+  "locale": "bn",
+  "kind": "month",
+  "at": "0001-01-01T00:00",
+  "want": "জানুয়ারি"
+ },
+ {
+  "locale": "bn",
+  "kind": "month",
+  "at": "9999-12-31T23:59",
+  "want": "ডিসেম্বর"
+ },
+ {
+  "locale": "bn",
+  "kind": "year",
+  "at": "2024-02-29T00:00",
+  "want": "২০২৪"
+ },
+ {
+  "locale": "bn",
+  "kind": "year",
+  "at": "2025-01-01T09:07",
+  "want": "২০২৫"
+ },
+ {
+  "locale": "bn",
+  "kind": "year",
+  "at": "2026-11-17T12:00",
+  "want": "২০২৬"
+ },
+ {
+  "locale": "bn",
+  "kind": "year",
+  "at": "2026-11-22T21:09",
+  "want": "২০২৬"
+ },
+ {
+  "locale": "bn",
+  "kind": "year",
+  "at": "2026-12-31T23:59",
+  "want": "২০২৬"
+ },
+ {
+  "locale": "bn",
+  "kind": "year",
+  "at": "2027-06-06T00:30",
+  "want": "২০২৭"
+ },
+ {
+  "locale": "bn",
+  "kind": "year",
+  "at": "0001-01-01T00:00",
+  "want": "১"
+ },
+ {
+  "locale": "bn",
+  "kind": "year",
+  "at": "9999-12-31T23:59",
+  "want": "৯৯৯৯"
+ },
+ {
+  "locale": "bn",
+  "kind": "time",
+  "at": "2024-02-29T00:00",
+  "want": "১২:০০ AM"
+ },
+ {
+  "locale": "bn",
+  "kind": "time",
+  "at": "2025-01-01T09:07",
+  "want": "৯:০৭ AM"
+ },
+ {
+  "locale": "bn",
+  "kind": "time",
+  "at": "2026-11-17T12:00",
+  "want": "১২:০০ PM"
+ },
+ {
+  "locale": "bn",
+  "kind": "time",
+  "at": "2026-11-22T21:09",
+  "want": "৯:০৯ PM"
+ },
+ {
+  "locale": "bn",
+  "kind": "time",
+  "at": "2026-12-31T23:59",
+  "want": "১১:৫৯ PM"
+ },
+ {
+  "locale": "bn",
+  "kind": "time",
+  "at": "2027-06-06T00:30",
+  "want": "১২:৩০ AM"
+ },
+ {
+  "locale": "bn",
+  "kind": "time",
+  "at": "0001-01-01T00:00",
+  "want": "১২:০০ AM"
+ },
+ {
+  "locale": "bn",
+  "kind": "time",
+  "at": "9999-12-31T23:59",
+  "want": "১১:৫৯ PM"
+ },
+ {
+  "locale": "bn",
+  "kind": "stamp",
+  "at": "2024-02-29T00:00",
+  "want": "২৯ ফেব্রুয়ারি, ২০২৪ এ ১২:০০ AM"
+ },
+ {
+  "locale": "bn",
+  "kind": "stamp",
+  "at": "2025-01-01T09:07",
+  "want": "১ জানুয়ারি, ২০২৫ এ ৯:০৭ AM"
+ },
+ {
+  "locale": "bn",
+  "kind": "stamp",
+  "at": "2026-11-17T12:00",
+  "want": "১৭ নভেম্বর, ২০২৬ এ ১২:০০ PM"
+ },
+ {
+  "locale": "bn",
+  "kind": "stamp",
+  "at": "2026-11-22T21:09",
+  "want": "২২ নভেম্বর, ২০২৬ এ ৯:০৯ PM"
+ },
+ {
+  "locale": "bn",
+  "kind": "stamp",
+  "at": "2026-12-31T23:59",
+  "want": "৩১ ডিসেম্বর, ২০২৬ এ ১১:৫৯ PM"
+ },
+ {
+  "locale": "bn",
+  "kind": "stamp",
+  "at": "2027-06-06T00:30",
+  "want": "৬ জুন, ২০২৭ এ ১২:৩০ AM"
+ },
+ {
+  "locale": "bn",
+  "kind": "stamp",
+  "at": "0001-01-01T00:00",
+  "want": "১ জানুয়ারি, ১ এ ১২:০০ AM"
+ },
+ {
+  "locale": "bn",
+  "kind": "stamp",
+  "at": "9999-12-31T23:59",
+  "want": "৩১ ডিসেম্বর, ৯৯৯৯ এ ১১:৫৯ PM"
+ }
+]

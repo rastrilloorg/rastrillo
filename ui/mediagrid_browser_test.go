@@ -13,7 +13,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/chromedp/cdproto/emulation"
 	"github.com/chromedp/chromedp"
 
 	"amadan.net/rastrillo/rastrillo/harness"
@@ -175,8 +174,8 @@ func readMedia(t *testing.T, ctx context.Context) mediaPageReading {
 	// reading: complete is true for a decode and for a failure alike,
 	// and naturalWidth tells them apart.
 	settleUntil(t, ctx, `[...document.images].every(i => i.complete)`)
-	var raw string
-	if err := chromedp.Run(ctx, chromedp.Evaluate(mediaJS, &raw)); err != nil {
+	raw, err := chromedp.Run(ctx, chromedp.Evaluate[string](mediaJS))
+	if err != nil {
 		t.Fatalf("reading the grid: %v", err)
 	}
 	var got mediaPageReading
@@ -224,7 +223,7 @@ func TestMediaGridFramesAreEvenAndCaptionsStayInTheTile(t *testing.T) {
 			if leg.dir == "rtl" {
 				path = "/rtl"
 			}
-			if err := chromedp.Run(ctx, chromedp.EmulateViewport(leg.w, leg.h), chromedp.Navigate(rig.Origin+path), chromedp.WaitVisible("[rst-media]", chromedp.ByQuery)); err != nil {
+			if err := chromedp.Do(ctx, chromedp.EmulateViewport(leg.w, leg.h), chromedp.Navigate(rig.Origin+path), chromedp.WaitVisible(chromedp.CSS("[rst-media]"))); err != nil {
 				t.Fatal(err)
 			}
 			requirePointer(t, ctx, leg.coarse)
@@ -370,12 +369,12 @@ func TestMediaGridTileIsTheTarget(t *testing.T) {
 			rig := mediaRig(t, leg.coarse, mediaMux(t, make(chan url.Values, 4)))
 			ctx, cancel := context.WithTimeout(rig.Context(), 180*time.Second)
 			defer cancel()
-			if err := chromedp.Run(ctx, chromedp.EmulateViewport(leg.w, leg.h)); err != nil {
+			if err := chromedp.Do(ctx, chromedp.EmulateViewport(leg.w, leg.h)); err != nil {
 				t.Fatal(err)
 			}
 			load := func() {
 				t.Helper()
-				if err := chromedp.Run(ctx, chromedp.Navigate(rig.Origin+"/"), chromedp.WaitVisible("[rst-media]", chromedp.ByQuery)); err != nil {
+				if err := chromedp.Do(ctx, chromedp.Navigate(rig.Origin+"/"), chromedp.WaitVisible(chromedp.CSS("[rst-media]"))); err != nil {
 					t.Fatal(err)
 				}
 			}
@@ -383,11 +382,13 @@ func TestMediaGridTileIsTheTarget(t *testing.T) {
 			requirePointer(t, ctx, leg.coarse)
 			// The ids the probes read back: the first tile's link, box
 			// and kebab, by position in the DOM.
-			if err := chromedp.Run(ctx, chromedp.Evaluate(`(() => { const tile = document.querySelector("[rst-media-tile]");
+			if err := chromedp.Do(ctx,
+				chromedp.Evaluate[chromedp.Void](`(() => {
+			  const tile = document.querySelector("[rst-media-tile]");
 			  tile.id = "tile"; tile.querySelector("[rst-media-frame]").id = "frame"; tile.querySelector("img").id = "img";
 			  tile.querySelector("[rst-media-name] > a").id = "link"; tile.querySelector("[rst-selbox] input").id = "check";
 			  tile.querySelector("[rst-row-menu]").id = "menu"; tile.querySelector("[rst-row-menu] > summary").id = "kebab";
-			  tile.querySelector("[rst-media-desc]").id = "desc"; return true; })()`, nil)); err != nil {
+			  tile.querySelector("[rst-media-desc]").id = "desc"; return true; })()`)); err != nil {
 				t.Fatal(err)
 			}
 			for _, c := range []struct {
@@ -404,10 +405,12 @@ func TestMediaGridTileIsTheTarget(t *testing.T) {
 				}
 				clickAndLand(t, ctx, p, "/go/tall")
 				load()
-				if err := chromedp.Run(ctx, chromedp.Evaluate(`(() => { const tile = document.querySelector("[rst-media-tile]");
+				if err := chromedp.Do(ctx,
+					chromedp.Evaluate[chromedp.Void](`(() => {
+				  const tile = document.querySelector("[rst-media-tile]");
 				  tile.id = "tile"; tile.querySelector("[rst-media-frame]").id = "frame"; tile.querySelector("[rst-media-name] > a").id = "link";
 				  tile.querySelector("[rst-selbox] input").id = "check"; tile.querySelector("[rst-row-menu]").id = "menu";
-				  tile.querySelector("[rst-row-menu] > summary").id = "kebab"; tile.querySelector("[rst-media-desc]").id = "desc"; return true; })()`, nil)); err != nil {
+				  tile.querySelector("[rst-row-menu] > summary").id = "kebab"; tile.querySelector("[rst-media-desc]").id = "desc"; return true; })()`)); err != nil {
 					t.Fatal(err)
 				}
 			}
@@ -415,19 +418,21 @@ func TestMediaGridTileIsTheTarget(t *testing.T) {
 			if box.Hit != "check" {
 				t.Errorf("%s: over the checkbox the element under the pointer is %s", leg.name, box.Hit)
 			}
-			clickAndStay(t, ctx, box, "", `document.getElementById("check").checked`)
+			clickAndStay(t, rig, ctx, box, "",
+				`document.getElementById("check").checked`)
 			settleUntil(t, ctx, `getComputedStyle(document.getElementById("tile")).outlineStyle === "solid"`)
 			// The pointer lands on the icon inside the summary, so the hit
 			// is read as the control it is inside rather than by its id.
 			kebab := probe(t, ctx, "#kebab", 0.5, 0.5, 0, 0)
-			var onKebab bool
-			if err := chromedp.Run(ctx, chromedp.Evaluate(fmt.Sprintf(`!!document.elementFromPoint(%v, %v).closest("#kebab")`, kebab.X, kebab.Y), &onKebab)); err != nil {
+			onKebab, err := chromedp.Run(ctx, chromedp.Evaluate[bool](fmt.Sprintf(`!!document.elementFromPoint(%v, %v).closest("#kebab")`, kebab.X, kebab.Y)))
+			if err != nil {
 				t.Fatal(err)
 			}
 			if !onKebab {
 				t.Errorf("%s: over the kebab the element under the pointer is %s, outside the summary", leg.name, kebab.Hit)
 			}
-			clickAndStay(t, ctx, kebab, "", `document.getElementById("menu").open`)
+			clickAndStay(t, rig, ctx, kebab, "",
+				`document.getElementById("menu").open`)
 		})
 	}
 }
@@ -442,8 +447,8 @@ func TestMediaGridSelectionReachesTheBulkBarsForm(t *testing.T) {
 	rig := mediaRig(t, true, mediaMux(t, posted))
 	ctx, cancel := context.WithTimeout(rig.Context(), 120*time.Second)
 	defer cancel()
-	if err := chromedp.Run(ctx, emulation.SetScriptExecutionDisabled(true), chromedp.EmulateViewport(390, 844),
-		chromedp.Navigate(rig.Origin+"/"), chromedp.WaitVisible("[rst-media]", chromedp.ByQuery)); err != nil {
+	if err := chromedp.Do(ctx, scriptsOff(), chromedp.EmulateViewport(390, 844),
+		chromedp.Navigate(rig.Origin+"/"), chromedp.WaitVisible(chromedp.CSS("[rst-media]"))); err != nil {
 		t.Fatal(err)
 	}
 	// The page's own inline script marks the document when it runs;
@@ -456,7 +461,7 @@ func TestMediaGridSelectionReachesTheBulkBarsForm(t *testing.T) {
 	click := func(sel string) {
 		t.Helper()
 		p := probeScripted(t, ctx, false, sel, 0.5, 0.5, 0, 0)
-		if err := chromedp.Run(ctx, chromedp.MouseClickXY(p.X, p.Y)); err != nil {
+		if err := chromedp.Do(ctx, chromedp.MouseClickXY(p.X, p.Y)); err != nil {
 			t.Fatal(err)
 		}
 	}

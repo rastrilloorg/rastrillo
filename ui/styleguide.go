@@ -2,10 +2,9 @@ package ui
 
 // styleguideSamples are the canonical markup samples for the class
 // idioms — structural components with arbitrary bodies that a Go
-// template partial cannot wrap. Styleguide returns them; the
-// design-system page renders every one so each documented class is
-// exercised, and ui_test.go's TestIdiomClassesAreStyled keeps them
-// honest against tokens.css (the F10 lesson, generalized). ui.go's
+// template partial cannot wrap. Styleguide returns them, and
+// ui_test.go's TestIdiomClassesAreStyled keeps them honest against
+// tokens.css (the F10 lesson, generalized). ui.go's
 // package doc references Styleguide by name rather than duplicating the
 // markup, so the two cannot drift.
 //
@@ -35,7 +34,7 @@ var styleguideSamples = map[string]string{
   <div rst-stat><span rst-stat-label>Average basket</span><span rst-stat-num>&euro;41.20</span><span rst-stat-delta rst-tone="negative">&minus;3%</span></div>
   <div rst-stat><span rst-stat-label>Refunds</span><span rst-stat-num>7</span></div>
 </div>`,
-	"list-grid": `<div rst-card style="--rst-cols: 2fr 110px var(--rst-col-menu)">
+	"list-grid": `<div rst-card class="orders">
   <div rst-lrow="head"><span>Order</span><span class="rst-m-hide">Status</span><span></span></div>
   <div rst-lrow>
     <a class="rst-nm" href="/orders/AB3PX"><bdi>Grace Hopper</bdi><small>AB3PX · <bdi>grace@example.com</bdi></small></a>
@@ -56,7 +55,7 @@ var styleguideSamples = map[string]string{
 	// sharing its parent's group would close the parent the instant it
 	// opened — the submenu would flash and vanish. The toggle-block
 	// stays out of the group because it is not a menu. The topbar's and
-	// console's Menu on a phone is one (rastrillo.js light-dismisses it
+	// console's Menu on a phone is one (fiesta.js light-dismisses it
 	// with the rest) but stays out too: the account menu opens inside
 	// it, and in the same group opening the account menu would close it.
 	"dropdown": `<details rst-dropdown name="rst-menus">
@@ -227,11 +226,18 @@ var styleguideSamples = map[string]string{
 </div>`,
 }
 
+// StyleguideCSS is the rule the list-grid sample's card takes its
+// columns from, as an app writes it in its own stylesheet. The sample
+// cannot carry it: the CSP drops a style attribute and a <style> block
+// alike.
+func StyleguideCSS() string {
+	return ".orders { --rst-cols: 2fr 110px var(--rst-col-menu); }"
+}
+
 // Styleguide returns the canonical markup for every markup idiom —
 // structural components with arbitrary bodies that a template partial
 // cannot wrap, such as the section box, the list-grid card and the page
-// shells. It is the source the design-system page renders and the
-// source ui_test.go's TestStyleguideSamplesRender and
+// shells. It is the source ui_test.go's TestStyleguideSamplesRender and
 // TestIdiomClassesAreStyled hold honest against tokens.css: a sample
 // cannot use a class tokens.css doesn't style, and every idiom class
 // tokens.css ships must appear in some sample.

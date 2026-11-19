@@ -295,18 +295,22 @@ func TestBuildHandlerSetsSecurityHeaders(t *testing.T) {
 }
 
 // The default style-src admits the framework's own stylesheets and the
-// one inline style the framework emits — pow's honeypot, by hash — and
-// nothing else. 'unsafe-inline' there is what surface scanners flag, and
-// it is the gap CSS-based exfiltration uses when markup injection gets
-// through (GitHub #147).
-func TestDefaultCSPStyleSrcAllowsOnlyThePowHoneypot(t *testing.T) {
+// two inline styles the framework emits, by hash: pow's honeypot and
+// auth's fallback confirm page, whose served page auth's
+// confirmcsp_test.go hashes. Nothing else. 'unsafe-inline' there is what
+// surface scanners flag, and it is the gap CSS-based exfiltration uses
+// when markup injection gets through (GitHub #147).
+func TestDefaultCSPStyleSrcAllowsOnlyTheFrameworksHashes(t *testing.T) {
 	var styleSrc string
-	for _, d := range strings.Split(defaultCSP, ";") {
-		if f := strings.Fields(d); len(f) > 0 && f[0] == "style-src" {
-			styleSrc = strings.Join(f[1:], " ")
+	for _, directive := range strings.Split(defaultCSP, ";") {
+		fields := strings.Fields(directive)
+		if len(fields) > 0 && fields[0] == "style-src" {
+			styleSrc = strings.Join(fields[1:], " ")
 		}
 	}
-	want := "'self' 'unsafe-hashes' " + pow.HoneypotStyleHash
+	confirmPage := "'sha256-81gZUb3tp60YCqhJ0dItBPh5hRQiGbfst4gpwCNPTfI='"
+	want := "'self' 'unsafe-hashes' " + pow.HoneypotStyleHash + " " +
+		confirmPage
 	if styleSrc != want {
 		t.Errorf("default style-src = %q, want %q", styleSrc, want)
 	}

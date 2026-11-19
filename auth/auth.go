@@ -7,10 +7,10 @@
 // cookies, sessions, CSRF, admission) filled once, here, instead of
 // once per app.
 //
-// The shape: an app builds one *Auth at boot (New), merges auth.Schema
-// into its migrate.Set — migrate.Merge(sessions.Schema, auth.Schema),
-// since auth's backfill migration reads the sessions table — and
-// mounts five routes —
+// By default, build one *Auth at boot with New and apply
+// migrate.Merge(sessions.Schema, auth.Schema). With Config.BlindLinks,
+// apply sessions.Schema and your link schema instead.
+// Mount these routes:
 //
 //	POST /signin         → a.Begin
 //	GET  /auth/callback  → a.Callback   (the keymail OAuth return)
@@ -59,11 +59,9 @@
 package auth
 
 import (
-	"bytes"
 	"crypto/sha256"
 	"database/sql"
 	"errors"
-	"fmt"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -97,10 +95,19 @@ const pendingTTL = 10 * time.Minute
 // Config configures New. Origin and InstanceKey are required; everything
 // else has a serviceable default.
 type Config struct {
-	// DB is the app's database. migrate.Merge(sessions.Schema,
-	// auth.Schema) must be applied (via migrate.Apply) before any
-	// handler runs.
+	// BlindLinks enables emailed sign-in with your link store.
+	// Leave it nil to keep existing behavior. Apply sessions.Schema and
+	// your link schema; DB is still required for sessions.
+	BlindLinks *BlindLinks
+
+	// DB is the app’s database. In default SQL mode, apply
+	// migrate.Merge(sessions.Schema, auth.Schema) before serving requests.
+	// With BlindLinks, apply sessions.Schema and your own link schema.
 	DB *sql.DB
+
+	// Reader, if set, serves the session lookups, as sessions.Config's
+	// does; leave it nil on one core (#241). Default DB.
+	Reader *sql.DB
 
 	// Origin is the app's external origin, scheme included —
 	// "https://app.example.com". It is the OAuth client_id (keymail
@@ -162,10 +169,9 @@ type Config struct {
 	// Authorize is unaffected: admission answers a question about an
 	// address, and it still receives the verified address itself.
 	//
-	// It does not make the plugin server-blind on its own. The link
-	// store (auth_links) still holds the address at rest between
-	// sending a magic link and its click, because the link must
-	// survive a restart; sealing that store is separate work.
+	// The link store (auth_links) still holds the address between sending
+	// a magic link and its click. Use BlindLinks when no address, including
+	// an encrypted address, may be stored.
 	//
 	// An error refuses the sign-in — no session is minted and no
 	// address is written as a fallback.
@@ -192,6 +198,8 @@ type Config struct {
 	// the whole response; no session is minted, and the attempt is
 	// already over. Only someone who has just proved they hold the
 	// address reaches it, so saying "not admitted" here is no oracle.
+	// With BlindLinks, ResolveSubject can refuse with sessions.ErrNoUser.
+	// The identity’s Address then holds the verified lookup key.
 	Refused func(w http.ResponseWriter, r *http.Request, id Identity)
 
 	// TrustedProxyHops is how many proxies you run in front of the app,
@@ -328,7 +336,8 @@ type Config struct {
 	// address they just typed, and logs carry no error text, which can
 	// hold the recipient. Records mode only, and it needs a Mailer that
 	// delivers: mail.Logged and the nil fallback log the recipient and
-	// the live link.
+	// the live link. Waiting links still hold an encrypted address that
+	// this server can open. Use BlindLinks when no address may be stored.
 	Blind bool
 }
 
@@ -412,21 +421,10 @@ func New(cfg Config) (*Auth, error) {
 	if cfg.InstanceKey == "" {
 		return nil, ErrEmptyInstanceKey
 	}
-	if cfg.Records != nil {
-		if err := recordsConfig(cfg); err != nil {
-			return nil, err
-		}
-		cfg.Pepper = bytes.Clone(cfg.Pepper)
-	} else {
-		// Half a mode would start: a pepper nothing uses, or a blind flag
-		// over a database that stores the address anyway.
-		if cfg.Pepper != nil || cfg.Blind || cfg.Signed != nil {
-			return nil, errors.New("rastrillo/auth: Config.Pepper, Blind and Signed are records mode and need Config.Records")
-		}
-		if cfg.DB == nil {
-			return nil, errors.New("rastrillo/auth: Config.DB is required")
-		}
+	if err := configureStorage(&cfg); err != nil {
+		return nil, err
 	}
+
 	switch {
 	case cfg.Proof == nil && !cfg.ProofOff:
 		return nil, ErrProofUnset
@@ -437,6 +435,9 @@ func New(cfg Config) (*Auth, error) {
 	}
 	if cfg.Logger == nil {
 		cfg.Logger = slog.Default()
+	}
+	if cfg.BlindLinks != nil {
+		cfg.Logger = slog.New(blindLog{next: cfg.Logger.Handler()})
 	}
 	if cfg.Mailer == nil {
 		cfg.Logger.Warn("rastrillo/auth: no Mailer configured — magic links will be logged, not sent")
@@ -476,7 +477,7 @@ func New(cfg Config) (*Auth, error) {
 	// while the cookie was minted on another.
 	authNow := func() time.Time { return a.now() }
 	sessCfg := sessions.Config{
-		DB:         cfg.DB,
+		DB: cfg.DB, Reader: cfg.Reader,
 		Origin:     cfg.Origin,
 		TTL:        cfg.SessionTTL,
 		SigninPath: cfg.SigninPath,
@@ -562,56 +563,10 @@ func New(cfg Config) (*Auth, error) {
 		// always has.
 		a.flow.Now = authNow
 	}
+	if cfg.BlindLinks != nil {
+		a.wireBlindLinks(cfg.BlindLinks)
+	}
 	return a, nil
-}
-
-// recordsConfig refuses a records-mode Config that could not work as
-// a centre.
-func recordsConfig(cfg Config) error {
-	switch {
-	case cfg.DB != nil:
-		return errors.New("rastrillo/auth: Config.Records and Config.DB are two modes; set one")
-	case cfg.Signed == nil || cfg.Signed.Key == nil:
-		return errors.New("rastrillo/auth: Config.Records needs Config.Signed with a Key: the centre mints the session cookie")
-	case cfg.Signed.Epoch != nil:
-		return errors.New("rastrillo/auth: leave Config.Signed.Epoch nil with Records: auth reads the epoch from users/")
-	case len(cfg.Pepper) < 32:
-		return errors.New("rastrillo/auth: Config.Pepper must be at least 32 bytes")
-	case cfg.SubjectFor != nil:
-		return errors.New("rastrillo/auth: Config.SubjectFor does not apply with Records: the subject is the user id")
-	case cfg.Blind && (cfg.Mailer == nil || !mail.IsConfigured(cfg.Mailer)):
-		// The nil fallback and mail.Logged (what mail.FromEnv returns
-		// with no relay) both write the recipient and the live link to
-		// the log, which is what blind mode keeps the address out of.
-		return errors.New("rastrillo/auth: Config.Blind needs a Mailer that delivers; mail.Logged writes the address to the log. For local development, pass a Sender of your own")
-	}
-	return nil
-}
-
-// logError logs a failure that may carry an error from the flow, the
-// mailer or the keymail exchange. In blind mode it logs only the
-// error's type: an SMTP error names its recipient, and the log is the
-// one place blind mode would otherwise write the address.
-func (a *Auth) logError(msg string, err error) {
-	if a.cfg.Blind {
-		a.cfg.Logger.Error(msg, "err_type", fmt.Sprintf("%T", err))
-		return
-	}
-	a.cfg.Logger.Error(msg, "err", err)
-}
-
-// rememberMode is the jar's mode, from the one switch: nothing at all
-// without the screen, whatever Remember says; with it, Remember=false
-// forgets and anything else remembers.
-func rememberMode(cfg Config) lastsignin.Mode {
-	switch {
-	case !cfg.SigninScreen:
-		return lastsignin.Off
-	case cfg.Remember != nil && !*cfg.Remember:
-		return lastsignin.Forgetting
-	default:
-		return lastsignin.On
-	}
 }
 
 // RememberJar is the jar holding this browser's remembered way in, and

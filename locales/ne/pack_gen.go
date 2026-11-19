@@ -4,8 +4,8 @@
 // SHA-256 in hack/moneycldr/sources/inputs.sha256. Data from the Unicode CLDR,
 // © Unicode, Inc., under the Unicode License v3 (locales/LICENSE-UNICODE).
 
-// Package ne links CLDR money-formatting data for every modern "ne"
-// locale. Import it for its side effect.
+// Package ne links CLDR number- and money-formatting data for every
+// modern "ne" locale. Import it for its side effect.
 package ne
 
 import "amadan.net/rastrillo/rastrillo/locales"
@@ -13,6 +13,6 @@ import "amadan.net/rastrillo/rastrillo/locales"
 func init() { locales.Register("ne", data) }
 
 var data = map[string]locales.Locale{
-	"ne":    {Parent: "root", Digits: "०१२३४५६७८९", Standard: "¤\u00a0#,##,##0.00", Alpha: "¤\u00a0#,##,##0.00", Symbols: map[string]string{"NPR": "नेरू", "PHP": "PHP", "THB": "฿"}, Narrow: map[string]string{"BYN": "р.", "NPR": "रू"}},
+	"ne":    {Parent: "root", Digits: "०१२३४५६७८९", Number: "#,##,##0.###", Percent: "#,##,##0%", Standard: "¤\u00a0#,##,##0.00", Alpha: "¤\u00a0#,##,##0.00", Symbols: map[string]string{"NPR": "नेरू", "PHP": "PHP", "THB": "฿"}, Narrow: map[string]string{"BYN": "р.", "NPR": "रू"}},
 	"ne-IN": {Parent: "ne"},
 }

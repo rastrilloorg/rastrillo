@@ -24,3 +24,15 @@ func Operations() []op.Descriptor {
 	ops = append(ops, ops_bookmarks.Descriptors()...)
 	return ops
 }
+
+// ExposedOperations is Operations without the ones whose resource is not on
+// the API, in the same order, for mcp.New.
+func ExposedOperations() []op.Descriptor {
+	var exposed []op.Descriptor
+	for _, descriptor := range Operations() {
+		if descriptor.Exposed {
+			exposed = append(exposed, descriptor)
+		}
+	}
+	return exposed
+}

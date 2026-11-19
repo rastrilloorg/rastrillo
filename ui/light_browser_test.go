@@ -9,12 +9,13 @@ import (
 	"math"
 	"strconv"
 	"strings"
-	"sync"
 	"testing"
 	"time"
 
+	"github.com/chromedp/cdproto/cdp"
 	"github.com/chromedp/cdproto/emulation"
 	"github.com/chromedp/cdproto/input"
+	"github.com/chromedp/cdproto/io"
 	"github.com/chromedp/cdproto/tracing"
 	"github.com/chromedp/chromedp"
 
@@ -60,7 +61,8 @@ func lightModeDoc(t *testing.T, follow bool) map[string]string {
 func hourLight(t *testing.T, ctx context.Context) (x, y float64) {
 	t.Helper()
 	var hour float64
-	mustRun(t, ctx, chromedp.Evaluate(`new Date().getHours() + new Date().getMinutes() / 60`, &hour))
+	mustRun(t, ctx, harness.Into(&hour, chromedp.Evaluate[float64](
+		`new Date().getHours() + new Date().getMinutes() / 60`)))
 	tt := min(1, max(-1, (hour-12)/6))
 	return tt * 0.8, -1 + math.Abs(tt)*0.35
 }
@@ -89,13 +91,19 @@ func lightNum(t *testing.T, ctx context.Context, selector, prop string) float64 
 // has happened.
 func move(t *testing.T, ctx context.Context, x, y float64) {
 	t.Helper()
-	mustRun(t, ctx, chromedp.MouseEvent(input.MouseMoved, x, y), chromedp.Evaluate(`new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))`, nil, awaitPromise))
+	mustRun(t, ctx, chromedp.MouseEvent(chromedp.MouseMoved, x, y),
+		chromedp.Evaluate[chromedp.Void](`new Promise(r =>
+			requestAnimationFrame(() => requestAnimationFrame(r)))`,
+			awaitPromise))
 }
 
 func openLight(t *testing.T, ctx context.Context, rig *harness.Rig, reduce bool) {
 	t.Helper()
 	open(t, ctx, rig, "/", reduce)
-	mustRun(t, ctx, chromedp.Evaluate(`new Promise(r => addEventListener("load", r, {once: true}) || document.readyState === "complete" && r())`, nil, awaitPromise))
+	mustRun(t, ctx, chromedp.Evaluate[chromedp.Void](`new Promise(r =>
+		addEventListener("load", r, {once: true})
+		|| document.readyState === "complete" && r())`,
+		awaitPromise))
 }
 
 // TestTheLightFollowsThePointerAndSettles (spec §4, C9, A2): in FOLLOW
@@ -132,15 +140,34 @@ func TestTheLightFollowsThePointerAndSettles(t *testing.T) {
 			// drive sent: the browser rounds synthetic coordinates and
 			// the box sits at a fraction, so the page records the offset
 			// from the event and the rectangle it had at that moment.
-			mustRun(t, ctx, chromedp.Evaluate(`(() => { const at = e => { const r = e.target.closest("[rst-btn]").getBoundingClientRect(); return (e.clientX - r.left).toFixed(0) + "px/" + (e.clientY - r.top).toFixed(0) + "px"; }; addEventListener("pointermove", e => { if (e.target.closest("[rst-btn]")) window.__move = at(e); }, true); addEventListener("pointerdown", e => { if (e.target.closest("[rst-btn]")) window.__down = at(e); }, true); return true; })()`, nil))
+			mustRun(t, ctx, chromedp.Evaluate[chromedp.Void](`(() => {
+				const at = e => {
+					const r = e.target.closest("[rst-btn]")
+						.getBoundingClientRect();
+					return (e.clientX - r.left).toFixed(0) + "px/"
+						+ (e.clientY - r.top).toFixed(0) + "px";
+				};
+				addEventListener("pointermove", e => {
+					if (e.target.closest("[rst-btn]")) window.__move = at(e);
+				}, true);
+				addEventListener("pointerdown", e => {
+					if (e.target.closest("[rst-btn]")) window.__down = at(e);
+				}, true);
+				return true;
+			})()`))
 			move(t, ctx, x+10, y+5)
 			var seen string
-			mustRun(t, ctx, chromedp.Evaluate(`window.__move`, &seen))
+			mustRun(t, ctx, harness.Into(&seen,
+				chromedp.Evaluate[string](`window.__move`)))
 			if got := computed(t, ctx, "#b-primary", "--rst-mx") + "/" + computed(t, ctx, "#b-primary", "--rst-my"); got != seen {
 				t.Errorf("--rst-mx/--rst-my are %s, the page saw the pointer at %s", got, seen)
 			}
-			mustRun(t, ctx, chromedp.MouseEvent(input.MousePressed, x+12, y+8, chromedp.ButtonLeft, chromedp.ClickCount(1)), chromedp.MouseEvent(input.MouseReleased, x+12, y+8, chromedp.ButtonLeft, chromedp.ClickCount(1)),
-				chromedp.Evaluate(`window.__down`, &seen))
+			mustRun(t, ctx,
+				chromedp.MouseEvent(chromedp.MousePressed, x+12, y+8,
+					chromedp.ButtonLeft, chromedp.ClickCount(1)),
+				chromedp.MouseEvent(chromedp.MouseReleased, x+12, y+8,
+					chromedp.ButtonLeft, chromedp.ClickCount(1)),
+				harness.Into(&seen, chromedp.Evaluate[string](`window.__down`)))
 			if got := computed(t, ctx, "#b-primary", "--rst-px") + "/" + computed(t, ctx, "#b-primary", "--rst-py"); got != seen {
 				t.Errorf("press point %s, the page saw the press at %s", got, seen)
 			}
@@ -154,7 +181,14 @@ func TestTheLightFollowsThePointerAndSettles(t *testing.T) {
 				assertHourLight(t, ctx, "in hour mode, after a pointer move,")
 			}
 			var writes int
-			mustRun(t, ctx, chromedp.Evaluate(`new Promise(r => { let n = 0; const o = new MutationObserver(m => n += m.length); o.observe(document.documentElement, {attributes: true, attributeFilter: ["style"]}); setTimeout(() => { o.disconnect(); r(n); }, 400); })`, &writes, awaitPromise))
+			mustRun(t, ctx, harness.Into(&writes, chromedp.Evaluate[int](
+				`new Promise(r => {
+					let n = 0;
+					const o = new MutationObserver(m => n += m.length);
+					o.observe(document.documentElement,
+						{attributes: true, attributeFilter: ["style"]});
+					setTimeout(() => { o.disconnect(); r(n); }, 400);
+				})`, awaitPromise)))
 			if writes != 0 {
 				t.Errorf("the loop wrote <html> style %d times after settling; it must stop (C9)", writes)
 			}
@@ -179,14 +213,19 @@ func TestReducedMotionIsTotal(t *testing.T) {
 		t.Errorf("under reduced motion: light-x %s card-lit %s mx %s; want 0, 0, 50%%", x, lit, mx)
 	}
 	setMedia := func(name, value string) {
-		mustRun(t, ctx, emulation.SetEmulatedMedia().WithFeatures([]*emulation.MediaFeature{{Name: name, Value: value}}))
+		features := []*emulation.MediaFeature{{Name: name, Value: value}}
+		mustRun(t, ctx, send(emulation.SetEmulatedMedia,
+			emulation.SetEmulatedMediaParams{Features: features}))
 		time.Sleep(100 * time.Millisecond)
 	}
 	setMedia("prefers-reduced-motion", "no-preference")
 	move(t, ctx, 1270, 400)
 	move(t, ctx, 100, 150)
 	bx, by, _, _ := rect(t, ctx, "#box")
-	mustRun(t, ctx, input.DispatchTouchEvent(input.TouchStart, []*input.TouchPoint{{X: bx + 20, Y: by + 10}}), input.DispatchTouchEvent(input.TouchEnd, nil))
+	mustRun(t, ctx,
+		touchEvent(input.DispatchTouchEventTypeTouchStart,
+			[]*input.TouchPoint{{X: bx + 20, Y: by + 10}}),
+		touchEvent(input.DispatchTouchEventTypeTouchEnd, nil))
 	time.Sleep(300 * time.Millisecond)
 	if lit := lightNum(t, ctx, "#box", "--rst-card-lit"); lit == 0 {
 		t.Fatal("with reduced motion off a tapped card did not light; the change listener did not start the script")
@@ -199,7 +238,14 @@ func TestReducedMotionIsTotal(t *testing.T) {
 		}
 	}
 	var writes int
-	mustRun(t, ctx, chromedp.Evaluate(`new Promise(r => { let n = 0; const o = new MutationObserver(m => n += m.length); o.observe(document.documentElement, {attributes: true, subtree: true, attributeFilter: ["style"]}); setTimeout(() => { o.disconnect(); r(n); }, 400); })`, &writes, awaitPromise))
+	mustRun(t, ctx, harness.Into(&writes, chromedp.Evaluate[int](
+		`new Promise(r => {
+			let n = 0;
+			const o = new MutationObserver(m => n += m.length);
+			o.observe(document.documentElement,
+				{attributes: true, subtree: true, attributeFilter: ["style"]});
+			setTimeout(() => { o.disconnect(); r(n); }, 400);
+		})`, awaitPromise)))
 	if writes != 0 {
 		t.Errorf("%d style writes after reduced motion turned on; the loop restarted", writes)
 	}
@@ -246,7 +292,8 @@ func TestACardBreathes(t *testing.T) {
 		t.Errorf("card lit %v 1.5s after the pointer left; want it faded out", lit)
 	}
 	move(t, ctx, bx+40, by+20)
-	mustRun(t, ctx, chromedp.Evaluate(`document.getElementById("box").remove(), true`, nil))
+	mustRun(t, ctx, chromedp.Evaluate[chromedp.Void](
+		`document.getElementById("box").remove(), true`))
 	time.Sleep(300 * time.Millisecond)
 	move(t, ctx, 1270, 890)
 }
@@ -272,7 +319,10 @@ func TestKeysAndTouchLeavePointerMode(t *testing.T) {
 				mustRun(t, ctx, chromedp.KeyEvent("\t"))
 				time.Sleep(300 * time.Millisecond)
 				assertHourLight(t, ctx, "after a key")
-				mustRun(t, ctx, input.DispatchTouchEvent(input.TouchStart, []*input.TouchPoint{{X: 50, Y: 850}}), input.DispatchTouchEvent(input.TouchEnd, nil))
+				mustRun(t, ctx,
+					touchEvent(input.DispatchTouchEventTypeTouchStart,
+						[]*input.TouchPoint{{X: 50, Y: 850}}),
+					touchEvent(input.DispatchTouchEventTypeTouchEnd, nil))
 				time.Sleep(300 * time.Millisecond)
 				assertHourLight(t, ctx, "after a touch")
 				return
@@ -292,14 +342,24 @@ func TestKeysAndTouchLeavePointerMode(t *testing.T) {
 				// before light.js's bubble listener on the same target
 				// and stops the event there; what moves the light back
 				// after the touch is then onDown alone.
-				mustRun(t, ctx, chromedp.Evaluate(`window.__leaves = 0; document.addEventListener("pointerleave", e => { window.__leaves++; e.stopImmediatePropagation(); }, true); true`, nil))
-				mustRun(t, ctx, input.DispatchTouchEvent(input.TouchStart, []*input.TouchPoint{{X: 50, Y: 850}}), input.DispatchTouchEvent(input.TouchEnd, nil))
+				mustRun(t, ctx, chromedp.Evaluate[chromedp.Void](
+					`window.__leaves = 0;
+					document.addEventListener("pointerleave", e => {
+						window.__leaves++;
+						e.stopImmediatePropagation();
+					}, true);
+					true`))
+				mustRun(t, ctx,
+					touchEvent(input.DispatchTouchEventTypeTouchStart,
+						[]*input.TouchPoint{{X: 50, Y: 850}}),
+					touchEvent(input.DispatchTouchEventTypeTouchEnd, nil))
 			}
 			time.Sleep(800 * time.Millisecond)
 			assertHourLight(t, ctx, "after a "+leave)
 			if leave == "touch" {
 				var leaves int
-				mustRun(t, ctx, chromedp.Evaluate(`window.__leaves`, &leaves))
+				mustRun(t, ctx, harness.Into(&leaves,
+					chromedp.Evaluate[int](`window.__leaves`)))
 				t.Logf("%d pointerleave event(s) held back from light.js during the touch", leaves)
 			}
 		})
@@ -313,8 +373,13 @@ func TestTheHookFreezesTheLight(t *testing.T) {
 	ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
 	defer cancel()
 	openLight(t, ctx, rig, false)
-	mustRun(t, ctx, chromedp.Evaluate(`document.dispatchEvent(new CustomEvent("rst:light", {detail: {x: 0.4, y: -0.8, hold: true}})), true`, nil),
-		chromedp.Evaluate(`new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))`, nil, awaitPromise))
+	mustRun(t, ctx,
+		chromedp.Evaluate[chromedp.Void](`document.dispatchEvent(
+			new CustomEvent("rst:light",
+				{detail: {x: 0.4, y: -0.8, hold: true}})), true`),
+		chromedp.Evaluate[chromedp.Void](`new Promise(r =>
+			requestAnimationFrame(() => requestAnimationFrame(r)))`,
+			awaitPromise))
 	if x, y := computed(t, ctx, ":root", "--rst-light-x"), computed(t, ctx, ":root", "--rst-light-y"); x != "0.400" || y != "-0.800" {
 		t.Errorf("hooked light is %s,%s; want 0.400,-0.800", x, y)
 	}
@@ -334,17 +399,28 @@ func TestATouchPressShowsNoSheen(t *testing.T) {
 	openLight(t, ctx, rig, false)
 	requirePointer(t, ctx, true)
 	x, y, _, _ := rect(t, ctx, "#b-primary")
-	mustRun(t, ctx, chromedp.Evaluate(`(() => { addEventListener("pointerdown", e => { const b = e.target.closest("[rst-btn]"); if (!b) return; const r = b.getBoundingClientRect(); window.__down = (e.clientX - r.left).toFixed(0) + "px/" + (e.clientY - r.top).toFixed(0) + "px"; }, true); return true; })()`, nil),
-		input.DispatchTouchEvent(input.TouchStart, []*input.TouchPoint{{X: x + 12, Y: y + 8}}))
+	mustRun(t, ctx, chromedp.Evaluate[chromedp.Void](`(() => {
+		addEventListener("pointerdown", e => {
+			const b = e.target.closest("[rst-btn]");
+			if (!b) return;
+			const r = b.getBoundingClientRect();
+			window.__down = (e.clientX - r.left).toFixed(0) + "px/"
+				+ (e.clientY - r.top).toFixed(0) + "px";
+		}, true);
+		return true;
+	})()`),
+		touchEvent(input.DispatchTouchEventTypeTouchStart,
+			[]*input.TouchPoint{{X: x + 12, Y: y + 8}}))
 	var seen string
-	mustRun(t, ctx, chromedp.Evaluate(`window.__down`, &seen))
+	mustRun(t, ctx, harness.Into(&seen,
+		chromedp.Evaluate[string](`window.__down`)))
 	if got := computed(t, ctx, "#b-primary", "--rst-px") + "/" + computed(t, ctx, "#b-primary", "--rst-py"); got != seen {
 		t.Errorf("press point %s, the page saw the press at %s", got, seen)
 	}
 	if img := computed(t, ctx, "#b-primary", "background-image"); strings.Contains(img, "radial-gradient(120px") {
 		t.Errorf("a touch press shows the sheen: %q", img)
 	}
-	mustRun(t, ctx, input.DispatchTouchEvent(input.TouchEnd, nil))
+	mustRun(t, ctx, touchEvent(input.DispatchTouchEventTypeTouchEnd, nil))
 }
 
 // lightFrameBudgetMS is C9's budget on what light.js adds: style
@@ -450,56 +526,97 @@ func TestTheLightStaysWithinItsFrameBudget(t *testing.T) {
 	rig := sizingRig(t, false, map[string]string{"/": lit, "/bare": bare}, harness.WithHover())
 	ctx, cancel := context.WithTimeout(rig.Context(), 180*time.Second)
 	defer cancel()
-	var (
-		mu     sync.Mutex
-		events []json.RawMessage
-		done   chan struct{}
-	)
-	chromedp.ListenTarget(ctx, func(ev interface{}) {
-		mu.Lock()
-		defer mu.Unlock()
-		switch e := ev.(type) {
-		case *tracing.EventDataCollected:
-			for _, v := range e.Value {
-				events = append(events, json.RawMessage(v))
+	// endTrace ends the trace and reads it back from the stream the
+	// browser wrote it to, so every event is in before the figure is
+	// summed.
+	endTrace := func() []json.RawMessage {
+		wait, stop := context.WithTimeout(ctx, 20*time.Second)
+		defer stop()
+		complete, err := chromedp.Run(wait, chromedp.WaitEvent(
+			tracing.TracingComplete, nil, send(tracing.End, cdp.Empty{})))
+		if err != nil {
+			t.Fatalf("the trace never completed: %v", err)
+		}
+		var trace []byte
+		for {
+			chunk, err := chromedp.Call(ctx, io.Read,
+				io.ReadParams{Handle: complete.Stream})
+			if err != nil {
+				t.Fatalf("reading the trace: %v", err)
 			}
-		case *tracing.EventTracingComplete:
-			if done != nil {
-				close(done)
-				done = nil
+			trace = append(trace, chunk.Data...)
+			if chunk.EOF {
+				break
 			}
 		}
-	})
+		mustRun(t, ctx, send(io.Close, io.CloseParams{Handle: complete.Stream}))
+		var file struct {
+			TraceEvents []json.RawMessage `json:"traceEvents"`
+		}
+		if err := json.Unmarshal(trace, &file); err != nil {
+			t.Fatalf("decoding the trace: %v", err)
+		}
+		return file.TraceEvents
+	}
 	// One window: the page loaded fresh, quiet (no root write for 300ms
 	// and no transition still running from the load, which would
 	// otherwise be restyles inside the window that the pointer did not
 	// cause), then two seconds of pointer movement under a trace.
 	window := func(path string) (perFrame, wallPerFrame float64, frames, writes int, w traceWindow) {
-		mustRun(t, ctx, chromedp.EmulateViewport(1280, 800), chromedp.Navigate(rig.Origin+path), chromedp.WaitVisible("#big", chromedp.ByQuery),
-			chromedp.Evaluate(`window.__frames = 0; (function f() { window.__frames++; requestAnimationFrame(f); })(); window.__rootWrites = 0; new MutationObserver(m => window.__rootWrites += m.length).observe(document.documentElement, {attributes: true, attributeFilter: ["style"]}); true`, nil),
-			chromedp.Evaluate(`new Promise(r => { let q; const arm = () => { clearTimeout(q); q = setTimeout(() => document.getAnimations().length ? arm() : r(), 300); }; new MutationObserver(arm).observe(document.documentElement, {attributes: true, attributeFilter: ["style"]}); arm(); })`, nil, awaitPromise))
-		finished := make(chan struct{})
-		mu.Lock()
-		events, done = nil, finished
-		mu.Unlock()
+		mustRun(t, ctx, chromedp.EmulateViewport(1280, 800), chromedp.Navigate(rig.Origin+path), chromedp.WaitVisible(chromedp.CSS("#big")),
+			chromedp.Evaluate[chromedp.Void](`window.__frames = 0;
+				(function f() {
+					window.__frames++;
+					requestAnimationFrame(f);
+				})();
+				window.__rootWrites = 0;
+				new MutationObserver(m => window.__rootWrites += m.length)
+					.observe(document.documentElement,
+						{attributes: true, attributeFilter: ["style"]});
+				true`),
+			chromedp.Evaluate[chromedp.Void](`new Promise(r => {
+				let q;
+				const arm = () => {
+					clearTimeout(q);
+					q = setTimeout(() =>
+						document.getAnimations().length ? arm() : r(), 300);
+				};
+				new MutationObserver(arm).observe(document.documentElement,
+					{attributes: true, attributeFilter: ["style"]});
+				arm();
+			})`, awaitPromise))
 		var frames0, writes0 int
-		mustRun(t, ctx, chromedp.Evaluate(`window.__frames`, &frames0), chromedp.Evaluate(`window.__rootWrites`, &writes0),
-			chromedp.ActionFunc(func(c context.Context) error {
-				return tracing.Start().WithTransferMode(tracing.TransferModeReportEvents).WithTraceConfig(&tracing.TraceConfig{IncludedCategories: traceCategories}).Do(c)
-			}), chromedp.Evaluate(`console.timeStamp("rst-budget-start"), true`, nil))
+		mustRun(t, ctx,
+			harness.Into(&frames0, chromedp.Evaluate[int](`window.__frames`)),
+			harness.Into(&writes0,
+				chromedp.Evaluate[int](`window.__rootWrites`)),
+			send(tracing.Start, tracing.StartParams{
+				TransferMode: tracing.StartTransferModeReturnAsStream,
+				StreamFormat: tracing.StreamFormatJSON,
+				TraceConfig: &tracing.TraceConfig{
+					IncludedCategories: traceCategories,
+				},
+			}),
+			chromedp.Evaluate[chromedp.Void](
+				`console.timeStamp("rst-budget-start"), true`))
 		start := time.Now()
 		for i := 0; time.Since(start) < 2*time.Second; i++ {
-			mustRun(t, ctx, chromedp.MouseEvent(input.MouseMoved, 200+float64(i%60)*15, 100+float64(i%40)*16), chromedp.Sleep(16*time.Millisecond))
+			mustRun(t, ctx,
+				chromedp.MouseEvent(chromedp.MouseMoved,
+					200+float64(i%60)*15, 100+float64(i%40)*16),
+				chromedp.Sleep(16*time.Millisecond))
 		}
 		var frames1, writes1 int
-		mustRun(t, ctx, chromedp.Evaluate(`console.timeStamp("rst-budget-end"), window.__frames`, &frames1), chromedp.Evaluate(`window.__rootWrites`, &writes1),
-			chromedp.Evaluate(`new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(r, 150))))`, nil, awaitPromise),
-			chromedp.ActionFunc(func(c context.Context) error { return tracing.End().Do(c) }))
-		select {
-		case <-finished:
-		case <-time.After(20 * time.Second):
-			t.Fatal("the trace never completed")
-		}
+		mustRun(t, ctx,
+			harness.Into(&frames1, chromedp.Evaluate[int](
+				`console.timeStamp("rst-budget-end"), window.__frames`)),
+			harness.Into(&writes1,
+				chromedp.Evaluate[int](`window.__rootWrites`)),
+			chromedp.Evaluate[chromedp.Void](`new Promise(r =>
+				requestAnimationFrame(() =>
+					requestAnimationFrame(() => setTimeout(r, 150))))`,
+				awaitPromise))
+		evs := endTrace()
 		frames, writes = frames1-frames0, writes1-writes0
 		// A page that is not animating (a hidden or throttled tab) counts
 		// a frame or two in 2s. A loaded runner lowers the rate without
@@ -509,9 +626,6 @@ func TestTheLightStaysWithinItsFrameBudget(t *testing.T) {
 		if frames < 20 {
 			t.Fatalf("%s: only %d frames in 2s; the page is not animating, the figure would prove nothing", path, frames)
 		}
-		mu.Lock()
-		evs := events
-		mu.Unlock()
 		w, err := traceTotals(evs, "rst-budget-start", "rst-budget-end", "UpdateLayoutTree", "Layout", "PrePaint", "Paint")
 		if err != nil {
 			t.Fatalf("%s: the trace's accounting does not close, so the figure would undercount: %v", path, err)
@@ -594,12 +708,15 @@ func TestALeaveAfterAQueuedMoveNeverRelightsACard(t *testing.T) {
 	openLight(t, ctx, rig, false)
 	bx, by, _, _ := rect(t, ctx, "#box")
 	moveJS := fmt.Sprintf(`document.getElementById("box").dispatchEvent(new PointerEvent("pointermove", {pointerType: "mouse", clientX: %.0f, clientY: %.0f, bubbles: true}))`, bx+40, by+20)
-	mustRun(t, ctx, chromedp.Evaluate(moveJS+`, document.dispatchEvent(new PointerEvent("pointerleave", {pointerType: "mouse"})), true`, nil))
+	mustRun(t, ctx, chromedp.Evaluate[chromedp.Void](moveJS+`,
+		document.dispatchEvent(
+			new PointerEvent("pointerleave", {pointerType: "mouse"})),
+		true`))
 	time.Sleep(1500 * time.Millisecond)
 	if lit := lightNum(t, ctx, "#box", "--rst-card-lit"); lit > 0.05 {
 		t.Errorf("card lit %v 1.5s after a move queued before the pointer left the document; the leave must drop the queued move", lit)
 	}
-	mustRun(t, ctx, chromedp.Evaluate(moveJS+`, true`, nil))
+	mustRun(t, ctx, chromedp.Evaluate[chromedp.Void](moveJS+`, true`))
 	time.Sleep(1500 * time.Millisecond)
 	if lit := lightNum(t, ctx, "#box", "--rst-card-lit"); lit < 0.9 {
 		t.Fatalf("control: card lit %v 1.5s after the same move with no leave; the synthetic move does not reach the script, so the quiet card proves nothing", lit)
@@ -621,8 +738,12 @@ func TestAPreferenceToggleForgetsSettledCards(t *testing.T) {
 	ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
 	defer cancel()
 	openLight(t, ctx, rig, false)
-	reduce := func(value string) chromedp.Action {
-		return emulation.SetEmulatedMedia().WithFeatures([]*emulation.MediaFeature{{Name: "prefers-reduced-motion", Value: value}})
+	reduce := func(value string) chromedp.Action[chromedp.Void] {
+		features := []*emulation.MediaFeature{
+			{Name: "prefers-reduced-motion", Value: value},
+		}
+		return send(emulation.SetEmulatedMedia,
+			emulation.SetEmulatedMediaParams{Features: features})
 	}
 	bx, by, _, _ := rect(t, ctx, "#box")
 	move(t, ctx, bx+40, by+20)

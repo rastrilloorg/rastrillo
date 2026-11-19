@@ -20,3 +20,7 @@ func Operations() []op.Descriptor {
 	ops = append(ops, ops_posts.Descriptors()...)
 	return ops
 }
+
+// ExposedOperations is the operations on the API, for mcp.New. This app
+// exposes none.
+func ExposedOperations() []op.Descriptor { return nil }

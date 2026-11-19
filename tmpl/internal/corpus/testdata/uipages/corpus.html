@@ -1,0 +1,11 @@
+{{define "content"}}{{$L := localizer $}}
+<p id="html">{{.Evil}}</p>
+<a id="attr" title="{{.Evil}}" href="{{.URL}}">x</a>
+<script>var v = {{.Evil}};</script>
+<p id="bdi">{{Tbdi $L "app.delete" "name" .Evil}}</p>
+<p id="num">{{number $L .N}}</p>
+<p id="money">{{money $L .Price .Cur}}</p>
+<p id="user">{{.User}}</p>
+{{template "field-daterange" dict "L" $L "Label" "When" "Start" (dict "Name" "s" "Label" "From") "End" (dict "Name" "e" "Label" "To")}}
+{{template "who" (withL (.Person) $L)}}
+{{end}}

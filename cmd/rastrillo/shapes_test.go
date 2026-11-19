@@ -13,8 +13,10 @@ import (
 // the next, correct, attempt fail with "already exists".
 func TestNewRefusesReservedShapes(t *testing.T) {
 	want := map[string]string{
-		"home": "--scaffold home is not built yet: it is Plan 6 of the user-models roadmap. Use bare, single or accounts for now",
-		"hub":  "--scaffold hub is not built yet: it is Plan 7 of the user-models roadmap. Use bare, single or accounts for now",
+		"home": "--scaffold home is not built yet: it is Plan 6 of the " +
+			"user-models roadmap. Use bare, single or accounts for now",
+		"hub": "--scaffold hub is not built yet: it is Plan 7 of the " +
+			"user-models roadmap. Use bare, single or accounts for now",
 	}
 	for name, msg := range want {
 		t.Run(name, func(t *testing.T) {
@@ -56,45 +58,55 @@ func TestDefaultShapeIsSingle(t *testing.T) {
 	sameScaffold(t, "plumbus", "frobnitz")
 }
 
-// sameScaffold fails unless apps a and b hold the same files with the
-// same contents once each one's name is substituted out.
-func sameScaffold(t *testing.T, a, b string) {
+// sameScaffold fails unless apps one and other hold the same files with
+// the same contents once each one's name is substituted out.
+func sameScaffold(t *testing.T, one, other string) {
 	t.Helper()
-	read := func(app string) map[string]string {
-		got := map[string]string{}
-		err := filepath.WalkDir(app, func(p string, d fs.DirEntry, err error) error {
-			if err != nil || d.IsDir() {
-				return err
-			}
-			b, err := os.ReadFile(p)
-			rel, _ := filepath.Rel(app, p)
-			got[strings.ReplaceAll(rel, app, "APP")] = strings.ReplaceAll(strings.ReplaceAll(string(b), strings.ToUpper(app), "APP"), app, "app")
-			return err
-		})
-		if err != nil {
-			t.Fatal(err)
-		}
-		return got
-	}
-	first, second := read(a), read(b)
+	first, second := appFiles(t, one), appFiles(t, other)
 	if len(first) != len(second) {
-		t.Errorf("%s has %d files, %s %d", a, len(first), b, len(second))
+		t.Errorf("%s has %d files, %s %d", one, len(first), other,
+			len(second))
 	}
 	for path, content := range first {
-		other, ok := second[path]
+		otherContent, ok := second[path]
 		switch {
 		case !ok:
-			t.Errorf("%s: in %s, not in %s", path, a, b)
-		case other != content:
-			t.Errorf("%s: differs between %s and %s", path, a, b)
+			t.Errorf("%s: in %s, not in %s", path, one, other)
+		case otherContent != content:
+			t.Errorf("%s: differs between %s and %s", path, one, other)
 		}
 	}
 }
 
+// appFiles is every file in app by its path, with the app's name in
+// paths and contents replaced by APP or app.
+func appFiles(t *testing.T, app string) map[string]string {
+	t.Helper()
+	got := map[string]string{}
+	err := filepath.WalkDir(app, func(path string, entry fs.DirEntry,
+		err error) error {
+		if err != nil || entry.IsDir() {
+			return err
+		}
+		body, err := os.ReadFile(path)
+		rel, _ := filepath.Rel(app, path)
+		content := strings.ReplaceAll(string(body), strings.ToUpper(app),
+			"APP")
+		got[strings.ReplaceAll(rel, app, "APP")] = strings.ReplaceAll(
+			content, app, "app")
+		return err
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return got
+}
+
 func TestUsageListsTheScaffoldFlag(t *testing.T) {
 	err := runNew(nil)
-	if err == nil || !strings.Contains(err.Error(), "--scaffold=bare|single|accounts") {
-		t.Fatalf("usage = %v, want it to list --scaffold=bare|single|accounts", err)
+	want := "--scaffold=bare|single|accounts"
+	if err == nil || !strings.Contains(err.Error(), want) {
+		t.Fatalf("usage = %v, want it to list %s", err, want)
 	}
 }
 
@@ -104,8 +116,10 @@ func TestNewChecksChoicesBeforeAnyShapeWrites(t *testing.T) {
 	for _, shape := range []string{"bare", "single", "accounts"} {
 		t.Run(shape, func(t *testing.T) {
 			t.Chdir(t.TempDir())
-			err := runNew([]string{"--scaffold", shape, "--theme=nope", "x"})
-			if err == nil || !strings.Contains(err.Error(), `unknown theme "nope"`) {
+			err := runNew([]string{"--scaffold", shape, "--theme=nope",
+				"x"})
+			want := `unknown theme "nope"`
+			if err == nil || !strings.Contains(err.Error(), want) {
 				t.Fatalf("error = %v, want the unknown theme refusal", err)
 			}
 			if _, statErr := os.Stat("x"); statErr == nil {

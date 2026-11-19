@@ -6,6 +6,8 @@
       "method": "POST",
       "path": "/api/v1/bookmarks",
       "access": "write",
+      "destructive": false,
+      "idempotent": false,
       "input": {
         "link": {"kind": "text", "required": false},
         "notes": {"kind": "textarea", "required": false},
@@ -25,6 +27,8 @@
       "method": "DELETE",
       "path": "/api/v1/bookmarks/{id}",
       "access": "write",
+      "destructive": true,
+      "idempotent": true,
       "input": {
         "id": {"kind": "integer", "required": true}
       },
@@ -35,6 +39,8 @@
       "method": "GET",
       "path": "/api/v1/bookmarks/{id}",
       "access": "read",
+      "destructive": false,
+      "idempotent": true,
       "input": {
         "id": {"kind": "integer", "required": true}
       },
@@ -52,6 +58,8 @@
       "method": "GET",
       "path": "/api/v1/bookmarks",
       "access": "read",
+      "destructive": false,
+      "idempotent": true,
       "input": {
         "after": {"kind": "cursor", "required": false},
         "limit": {"kind": "integer", "required": false},
@@ -67,6 +75,8 @@
       "method": "PATCH",
       "path": "/api/v1/bookmarks/{id}",
       "access": "write",
+      "destructive": true,
+      "idempotent": false,
       "input": {
         "id": {"kind": "integer", "required": true},
         "link": {"kind": "text", "required": false},

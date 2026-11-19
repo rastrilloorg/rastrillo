@@ -81,17 +81,19 @@ func cliSurface(dir string) (commands, flags []string, err error) {
 			ast.Inspect(file, func(n ast.Node) bool {
 				switch node := n.(type) {
 				case *ast.SwitchStmt:
-					// Only the two dispatch switches name subcommands.
-					// main.go's cases are commands; migration.go's are
-					// subcommands of one, and documenting them as
-					// "rastrillo check" rather than "rastrillo
-					// migration check" would be wrong in a way a reader
-					// would trip over.
+					// Only the dispatch switches name subcommands.
+					// main.go's cases are commands; migration.go's and
+					// budget.go's are subcommands of one, and
+					// documenting them as "rastrillo check" rather than
+					// "rastrillo migration check" would be wrong in a
+					// way a reader would trip over.
 					var prefix string
 					switch base {
 					case "main.go":
 					case "migration.go":
 						prefix = "migration "
+					case "budget.go":
+						prefix = "budget "
 					default:
 						return true
 					}

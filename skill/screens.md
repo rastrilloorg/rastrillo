@@ -1,19 +1,57 @@
 # Screens, flows and the gate
 
+## Before the first screen: polish and personality
+
+A first slice built without a target comes out plain. The design system
+is the base the app's personality goes on, not the finished look, and
+the personality comes from the operator, at the start. Before the
+first screen of a new app or a port, send them one message that asks:
+
+1. **How polished?** A working draft to click through, ready for
+   customers, or a showcase that has to impress.
+2. **Its personality.** A logo, brand colours and typefaces if they
+   have them, and three words for how it should feel ("calm, warm,
+   local"; "bold, fast, playful").
+3. **A screenshot of one key flow** as it should work: the old app's
+   screen when porting, or any product they admire.
+4. **With no screenshot, a base to start from.** A shipped theme
+   (`day`, `plain`, `signal`) and shell (`column`, `topbar`, `sidebar`,
+   `console`, `stage`), with a link to the
+   [Fiesta gallery](https://fiesta.rastrillo.org) and the practices you
+   will apply, all of which ship: a dashboard opening with stat cells;
+   empty states that say what a screen is for; whole-row links with row
+   menus; hints and inline errors on fields; searchable selects and
+   natural-language dates; busy buttons, flash notices and confirm
+   pages; live regions; view transitions between pages.
+5. **An offer of quick mockups**: two or three takes on the key screen,
+   each wearing the personality, as a real page with fixed data in a
+   throwaway `rastrillo new --theme=... --shell=...` scaffold, real
+   partials and icons, sent as screenshots or a link to pick from.
+
+Then build to the answer: the base as `rastrillo new --theme --shell`
+flags, the personality as `--rst-*` overrides for colour, type and
+shape in the app's own stylesheet (skill/design.md), and the practices
+above. Until an answer arrives, propose a personality from what the
+product is for, apply it the same way and tell the operator, rather
+than shipping the stock theme.
+
 ## Add a screen
 
-1. **Route** in `routes()` (`app.go`): `{"GET /sheets/new", a.newSheet}`.
-   On chi an owned screen goes in `Router`'s `RequireSession` (or
-   `sess.Require`) group instead, `r.Get("/sheets/new", a.newSheet)`;
-   after skill/add-signin.md every route is in `Router`.
-2. **Handler** in `handlers.go`: load through the `owned(r)` seam, 404
-   on a miss, then `render(w, r, "sheet-new", map[string]any{...})`.
-   On a failed POST write `422` before rendering; after a mutation
-   `flash.Set(w, "notice", "...")` and 303 (showing it: skill/forms.md).
+1. **Route** in `Routes` (`routes.go`): name the path,
+   `const newSheetPage action.Path = "/sheets/new"`, and mount it in
+   the page group, `guarded.Get(newSheetPage, app.newSheet)`; an owned
+   screen goes in the `Group` behind the session guard.
+2. **Action** in `handlers.go`, `func (app *App) newSheet(visit
+   *action.Visit)` (its shape: skill/code.md): load through
+   `app.owned(visit.Request())`, `op.NotFound{}` on a miss, then
+   `visit.Render("sheet-new", http.StatusOK, map[string]any{...})`. A
+   failed POST shows the form again with `visit.RefusedShowing` (422);
+   after a mutation, `visit.Flash("...")` and `visit.Redirect(path)`,
+   a 303 (showing the flash: skill/forms.md).
 3. **Template** `templates/sheet-new.html` defining `"content"`, its
    body starting `{{$L := localizer $}}`, built from `ui` partials
    (skill/partials.md). **Add its name to the page list in
-   `render.go`'s `newPages`**, or `render` fails on it.
+   `render.go`'s `newPages`**, or rendering it fails.
 4. **Perf:** `make perf` measures every GET route the router serves.
    A route with a parameter needs `ScreenConfig.Paths["/sheets/{id}"] =
    "/sheets/1"` with that row seeded first; a screen behind sign-in
@@ -56,27 +94,35 @@ navigation, on a phone before it is tapped (turn it off with
 `make ci` holds each directory to 5,000 source and 8,000 test lines,
 each test package to 10s, each GET screen to 150ms to first byte and a
 cold boot to 500ms; exceptions go in `.rastrillo/budgets.txt`, each with
-a reason. Timing fails only on CI (`AMADAN_CI`/`CI` set). Every test
+a reason. Timing fails only on CI (`AMADAN_CI`/`CI` set). `make perf`
+also holds each page's framework CSS and JS to 16 kB gzipped, plus each
+component script it loads, on every machine (a live page has its
+shell's own limit; one whose layout links the whole `tokens.css`,
+40 kB); a failure names the file that grew (`rastrillo doctor`). It
+also fails a page when its slice lacks a rule for a hook that the whole
+`tokens.css` would apply to the page, such as one in HTML built in Go:
+add `{{needs "rst-card"}}` to the page's template. Every test
 package's `TestMain` calls `os.Exit(budget.Main(m))`: it prints the time
 `rastrillo budget test` judges, cached runs included. Tests start with
 `t.Parallel()` (perf tests never) and open a copy of a `dbtest` template
 instead of migrating. While editing, run `go test -short ./...`;
 `make ci` before pushing. A test whose inputs Go
 cannot see (execs `go build`, reads outside its package, uses the
-network) gets its own `-count=1` target. Past 5,000 lines in
-`internal/<app>`, split by feature: `internal/<app>/<feature>` exposing
-`Mount(r, deps)`, called from `Router` with its `*Routes`, registering
-through `r.Handle` and never a ServeMux of its own, which the perf lane
-cannot see. The feature package takes `r` as
-`interface{ Handle(string, http.Handler) }`: it cannot import the app
-package that calls it. On chi, `Mount(r chi.Router, deps)`. `make budget`
-enforces the split. docs/site/testing.md
+network) gets its own `-count=1` target. When the Go package in
+`internal/<app>` exceeds 5,000 lines, split by feature: put each feature
+in `internal/<app>/<feature>` and expose `func Mount(routes
+*action.Routes, deps *Deps)`. The app's `Routes`, the one function of
+that name (`rastrillo routes` finds it), calls each feature's `Mount`,
+so a feature can't import the app package without an import cycle. Put
+shared models in `internal/<app>/core`. `make budget` enforces the
+limit. docs/site/testing.md
 
 ## Error pages
 
-**Never hand-roll an error page.** `view.Fail`/`NotFound`/`Forbidden`
-render styled pages inside the shell; a 500 shows a ref matching the
-log line's `ref`. Wire `opts.ErrorPage` (and `Ctx.ErrorPage`) to a
+**Never hand-roll an error page.** `visit.Refused(err)`, over
+`view.Fail`/`NotFound`/`Forbidden`, renders styled pages inside the
+shell; a 500 shows a ref matching the log line's `ref`. Wire
+`options.ErrorPage` (and `Ctx.ErrorPage`) to a
 `rastrillo.ErrorPageFunc` — `rastrillo new` scaffolds it as
 `render.go`'s `ErrorPage` over `templates/errors.html`; panics recover
 there. Unwired, errors are bare text. docs/site/templates.md

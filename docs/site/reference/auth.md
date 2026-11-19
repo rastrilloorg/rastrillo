@@ -26,7 +26,9 @@ Build one at boot.
 
 ```go
 type Config struct {
+	BlindLinks       *BlindLinks
 	DB               *sql.DB
+	Reader           *sql.DB
 	Origin           string
 	InstanceKey      string
 	Proof            *pow.Guard
@@ -53,7 +55,29 @@ type Config struct {
 ```go
 var ErrProofUnset, ErrProofMode error // from New: neither Proof nor ProofOff; a bound Guard
 const ProofScope = "rastrillo/auth/begin"
+
+var ErrBlindConfiguration, ErrBlindOperation error
+
+type BlindLink struct {
+	Hash, LookupKey, Purpose string
+	Expires                  time.Time
+}
+
+type BlindLinkStore interface {
+	Put(context.Context, BlindLink) error
+	Take(context.Context, string) (BlindLink, bool, error)
+	Spend(context.Context, string) (int, error)
+	Sweep(context.Context, time.Time) error
+}
+
+type BlindLinks struct {
+	Store          BlindLinkStore
+	LookupKey      func(context.Context, string) (string, error)
+	ResolveSubject func(context.Context, string) (string, error)
+}
 ```
+
+`auth` passes `Reader` to [`sessions`](/docs/reference/sessions). Leave it nil unless a mixed-load test on your instance shows it helps, as the sessions page says.
 
 `Proof` is sign-in's front door, required unless `ProofOff`; [Magic links](/docs/magic-links#the-front-door) and [pow](/docs/reference/pow) cover it.
 
@@ -99,14 +123,50 @@ you set always wins, 0 included. See
 
 `KeymailServers` limits keymail to the servers you list, both when an address is checked and when a sign-in finishes; an unlisted server's addresses get a link. See [Magic links](/docs/magic-links#aside-the-keymail-upgrade).
 
+## Blind link storage
+
+Set `Config.BlindLinks` when no address, including an encrypted address,
+may enter storage. Supply a `BlindLinkStore`, `LookupKey` and
+`ResolveSubject`. `LookupKey` receives the lowercase, trimmed address;
+return your app’s HMAC email index as hex or base64url. Keep the pepper in
+your app. `ResolveSubject` receives the key after the link is consumed;
+enforce admission there and return an opaque account or person ref.
+
+`Take` must atomically consume each hash at most once across processes and
+restarts. Auth checks the returned record’s hash, purpose, key and expiry.
+Failed checks or resolution leave it spent. `Put` must reject duplicate
+hashes. Both hooks must return a nonempty string with no surrounding
+whitespace and no `@`. These checks cannot prove opacity; never return an
+encoded or encrypted address.
+
+Return `sessions.ErrNoUser` from `ResolveSubject` for a 403 or `Config.Refused`.
+That callback receives the verified lookup key in `Identity.Address`.
+Other resolver errors create no session. `SecondFactor` receives the resolved
+subject. Match `ErrBlindConfiguration` and `ErrBlindOperation` with
+`errors.Is`. They are distinct errors and do not wrap address-bearing causes.
+
+Apply `sessions.Schema` and your link schema; keep `DB` set for sessions.
+Leave `Authorize`, `SubjectFor`, `SigninScreen`, `Records`, `Blind`, `Pepper`
+and `Signed` unset, and `KeymailServers` empty. This mode disables Keymail
+and cookies that remember addresses. Use a mailer that does not retain or
+log recipients. Your hooks, middleware and logger attributes must follow
+the same rule. The older records-mode `Blind` flag still stores decryptable
+link addresses.
+
+Before switching an existing app, stop old writers, invalidate pending
+links, and migrate or revoke address-based sessions and related records.
+Neither this option nor `secure_delete` can erase earlier WAL frames or
+backups. Leave `BlindLinks` nil to keep existing sign-in behavior.
+
 ## Schema
 
 ```go
 var Schema = migrate.MustFromFS(migrationFS, "auth")
 ```
 
-Merge it **after** `sessions.Schema` — auth's backfill migration reads
-the sessions table, and `migrate.Merge`'s argument order is apply order.
+In default SQL mode, merge `auth.Schema` **after** `sessions.Schema`.
+Auth’s backfill reads the sessions table. `migrate.Merge`’s argument order
+is the apply order.
 
 ## The handlers
 
@@ -160,6 +220,7 @@ type SigninState struct {
 	ReturnTo    string
 	Proof       *pow.Form
 	Passkey     *PasskeyDoor
+	Unavailable bool
 }
 func (s SigninState) Door() string
 func (s SigninState) Focus() string
@@ -208,7 +269,7 @@ func From(r *http.Request) (Identity, bool)
 func (a *Auth) SessionFrom(r *http.Request) (Identity, bool)
 ```
 
-A signed-out page request goes to `SigninPath?return_to=<the page>`, plus `reauth=1` when `RequireFreshSession` wants a fresh sign-in. After signing in, the visitor lands back on that page. Anything else gets a 403.
+A signed-out page request goes to `SigninPath?return_to=<the page>`, plus `reauth=1` when `RequireFreshSession` wants a fresh sign-in. After signing in, the visitor lands back on that page. Anything else gets a 403. On a tenant's direct host, a page request goes to the same page on the product path instead; see [Under a base path](#under-a-base-path).
 
 `RequireSession` stashes both the `Identity` and the underlying
 `sessions.Session`, so `From` and `sessions.Current` both work
@@ -222,6 +283,10 @@ viewer with `From` and map the address to your user row's id first.
 
 `Identity` is an alias for `signin.Identity`, the same value the
 upstream ceremony produces, so it cannot drift from it.
+
+## Under a base path
+
+Under a [`basepath`](/docs/reference/basepath), and on the app's direct host, a tenant has no sign-in of its own: the hub signs people in. Every handler above answers 404 there, and logs an error, before it reads a cookie, writes a row or sends a link. `SendLink` takes no request, so it is not refused. `SigninState` returns a state with `Unavailable` set and nothing else, and the `signin` partial renders nothing for it; a page of your own should draw no form. On the direct host, `RequireSession` and `RequireFreshSession` send a signed-out `GET` or `HEAD` to the same page under the product path, `basepath.ProductURL`, and answer the platform's own calls 403. Under the base path they still send it to `SigninPath`, which answers 404 there, as does the sign-in page a row-store tenant's `sessions.Require` sends readers to: such a tenant has no sign-in under a base path, by design.
 
 ## Odds and ends
 
@@ -245,6 +310,11 @@ type ConfirmPageData struct {
 `SigninScreen` on, set it to your sign-in page's handler: `SigninState`
 answers `StepConfirm` on the request it gets. Nil gets a self-contained
 English page, so upgrading needs no code change beyond the POST route.
+The default policy allows the page's single `<style>` block by hash. If
+you set `Options.CSP`, include
+`'sha256-81gZUb3tp60YCqhJ0dItBPh5hRQiGbfst4gpwCNPTfI='` in `style-src`,
+and in `style-src-elem` if your policy has one; otherwise, the page will
+be unstyled.
 
 Before calling you, `Verify` sets `Cache-Control: no-store`,
 `Referrer-Policy: strict-origin`, `X-Robots-Tag: noindex, nofollow`,

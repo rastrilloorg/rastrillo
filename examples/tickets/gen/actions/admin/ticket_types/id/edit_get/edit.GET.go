@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/basepath"
 	"amadan.net/rastrillo/rastrillo/form"
 	"amadan.net/rastrillo/rastrillo/op"
 	"amadan.net/rastrillo/rastrillo/ui"
@@ -42,8 +43,8 @@ func Handle(ctx *rastrillo.Ctx, w http.ResponseWriter, r *http.Request) {
 		Money: map[string]form.MoneyInput{
 			"Price": priceInput,
 		},
-		BasicsAction:   fmt.Sprintf("/admin/ticket_types/%d/edit-basics", id),
-		AdvancedAction: fmt.Sprintf("/admin/ticket_types/%d/edit-advanced", id),
+		BasicsAction:   basepath.Path(r, fmt.Sprintf("/admin/ticket_types/%d/edit-basics", id)),
+		AdvancedAction: basepath.Path(r, fmt.Sprintf("/admin/ticket_types/%d/edit-advanced", id)),
 	})
 }
 

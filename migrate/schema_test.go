@@ -66,6 +66,26 @@ func TestReadSkipsSQLiteInternalTables(t *testing.T) {
 	}
 }
 
+func TestReadSkipsLitestreamTables(t *testing.T) {
+	database := memDB(t)
+	mustExec(t, database, litestream)
+	// Near misses are the app's: LIKE's _ would have matched any
+	// character and hidden them.
+	mustExec(t, database, `CREATE TABLE xlitestream_seq (id INTEGER);`)
+	mustExec(t, database, `CREATE TABLE _litestreamXseq (id INTEGER);`)
+	snap, err := Read(context.Background(), database)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var names []string
+	for _, table := range snap.Tables {
+		names = append(names, table.Name)
+	}
+	if strings.Join(names, " ") != "_litestreamXseq xlitestream_seq" {
+		t.Fatalf("tables = %v, want only the two near misses", names)
+	}
+}
+
 func TestEqualIgnoresDDLFormatting(t *testing.T) {
 	a, b := memDB(t), memDB(t)
 	mustExec(t, a, "CREATE TABLE t (id INTEGER PRIMARY KEY, n TEXT NOT NULL);")

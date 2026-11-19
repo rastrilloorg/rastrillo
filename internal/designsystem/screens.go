@@ -68,8 +68,9 @@ type screenDoc struct {
 // screenPartials are the partials the Screens page documents. A family
 // IS a page and buildFamilies refuses a partial no page claims; the
 // sign-in partials belong here, on the page about whole screens, and
-// this is that claim.
-var screenPartials = []string{"signin", "signin-title"}
+// this is that claim. live-head is here too: every shell calls it in its
+// head, and a meta tag has nothing a preview could show.
+var screenPartials = []string{"signin", "signin-title", "live-head"}
 
 // screenPartialView is one of screenPartials as the page shows it: its
 // name under the page's lead, carrying the marker the coverage gates

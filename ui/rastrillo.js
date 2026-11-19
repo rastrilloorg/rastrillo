@@ -1,19 +1,13 @@
 /* rastrillo.js — the fragment shim. First-party, dependency-free, and
-   almost entirely inert: the polling section answers only to an opt-in
-   data attribute, and everything it enhances also works with scripts
-   disabled (a status page's <noscript> meta refresh). This file is
-   app-owned from the moment it is scaffolded — edit it like any other
-   static file.
+   inert: the polling section answers only to an opt-in data attribute,
+   and everything it enhances also works with scripts disabled (a
+   status page's <noscript> meta refresh). This file is app-owned from
+   the moment it is scaffolded — edit it like any other static file.
 
-   One section is on by default instead, because it has no per-instance
-   decision to make: light dismiss for the menu idioms, keyed off the
-   rst-dropdown / rst-row-menu attributes — a menu that closes on an
-   outside click on one screen and not the next is worse than either
-   rule applied everywhere. Delete it to opt the whole app out.
-
-   The busy rule, which used to live here too, is busy.js: link it and
-   every submit button in every form is covered; leave it out and none
-   is.
+   Menu dismiss, the switch's drag, the touch listener and the colour
+   scheme menu's in-place apply are Fiesta's fiesta.js, which every
+   page loads beside this file. An older rastrillo.js held them too;
+   running that one beside fiesta.js is not supported.
 
    Vocabulary:
      data-poll="URL"       fetch URL for an HTML fragment, replace this
@@ -28,32 +22,22 @@
                            no flapping); a browser without EventSource
                            never leaves the timer path
 
-   select.js is a sibling file following exactly these rules, kept
-   separate so this one stays small enough to read in one sitting. It
-   answers data-rst-select on a <select>, which field-select emits past
-   ten options.
-
    Every poll carries the request header Rastrillo-Fragment: 1, which
    marks the request as a shim poll so a handler can tell it apart from
    direct navigation. Reserved: the framework's own handlers do not
    read it today.
 
-   Menus: an open <details rst-dropdown>, <details rst-row-menu>, a
-   nested <details rst-menu-group>, or the topbar's and console's narrow
-   <details rst-shell-menu> card (whose content is its next sibling, the
-   tail) closes on an outside click and on Escape, in EITHER spelling,
-   so upgrading this file before running `rastrillo markup` leaves no
-   dead menus. Exclusivity stays native. (anchor.js, beside this file,
-   keeps a dropdown's menu on the screen where CSS anchor positioning
-   is missing.) A switch's knob can be dragged along its track, and
-   snaps to the nearer end. The colour-scheme menu's forms apply in
-   place and write the server's cookie, instead of posting.
-
    A polled response may answer 204 with a Rastrillo-Location header
    instead of a fragment; the shim navigates there, but only to a local
    path. 403 and 404 end the poll for good — the job was swept, or was
    never yours. Any other fetch error backs off (doubling to a 30s cap)
-   and keeps trying — a network blip must not strand a status page. */
+   and keeps trying — a network blip must not strand a status page.
+
+   The scheme cookie. fiesta.js applies a choice from the colour-scheme
+   menu in place, so its form never reaches the server; this file
+   writes the cookie that form would have set, from the rst-scheme
+   event fiesta.js dispatches, so the next render paints the same
+   scheme first. */
 (function () {
   "use strict";
 
@@ -135,235 +119,13 @@
     schedule();
   }
 
-  // Light dismiss — the one behaviour the native disclosure genuinely
-  // cannot do, which is the shim's whole admission rule. A <details>
-  // menu closes on a second click of its own summary and on nothing
-  // else: not on a click elsewhere on the page, not on Escape. Both are
-  // what every menu anywhere else does, and neither is expressible in
-  // HTML or CSS.
-  //
-  // Two delegated listeners on the document, never one per element, so a
-  // dropdown that arrives inside a polled fragment is covered the moment
-  // it lands and re-scanning can never double-bind. Capture phase, so a
-  // page whose own handler stops propagation cannot leave a menu stuck
-  // open.
-  //
-  // The scriptless baseline is untouched: with this file removed, the
-  // menus still toggle and the native <details name> group still keeps
-  // one open at a time.
-  //
-  // The nested rst-menu-group is in MENUS even though it is never in the
-  // <details name> group with its parent — the two mechanisms answer
-  // different questions. The name group decides which menus may be open
-  // at once, and a submenu must be exempt from it or opening one would
-  // close the menu around it. Dismissal is not exclusivity: a submenu
-  // left open behind its closing parent is still open the next time the
-  // parent opens, which is a menu remembering a state the user has no
-  // way to see. Listing it here also gives the natural behaviour of
-  // clicking elsewhere INSIDE the parent closing the submenu — the
-  // contains(except) test below already draws that line for free.
-  //
-  // The old sidebar drawer and the toggle-block are deliberately absent
-  // from MENUS: neither is a menu, and closing one because a click
-  // landed elsewhere would fight the user. The topbar's and console's
-  // narrow Menu IS in, since it became a floating card: an overlay, which
-  // is what this list is for. It is not in the rst-menus name group,
-  // which is document-wide; there, opening the account menu inside the
-  // card would close the card around it.
-  var MENUS = "[rst-dropdown][open],[rst-menu-group][open],[rst-row-menu][open]";
-  MENUS += "," + MENUS.replace(/\[(rst[-\w]+)\]/g, ".$1");
-  // Written out rather than derived: the class spelling of rst-shell-menu
-  // is .rst-shell__menu, which the rewrite above would spell wrong. Only
-  // in a topbar, or a console whose root names its view: a console
-  // layout from before the phone index gates its RAIL on this [open],
-  // and dismissing it there closed the whole navigation on a tap at a
-  // group label. No :is(), so an older engine still parses the list.
-  MENUS += ",[rst-shell-topbar] [rst-shell-menu][open],[rst-shell-console~=page] [rst-shell-menu][open],[rst-shell-console~=index] [rst-shell-menu][open]";
-  MENUS += ",.rst-shell-topbar .rst-shell__menu[open],.rst-shell-console--page .rst-shell__menu[open],.rst-shell-console--index .rst-shell__menu[open]";
-  var TAIL = "[rst-shell-tail],.rst-shell__tail";
-
-  // menuAround is closest(MENUS) plus one logical parent. The card's
-  // content (the tail) is the shell menu's next SIBLING, not its child,
-  // so without this a click on the account menu inside the card would
-  // close the card, and Escape from a plain nav link in it would find no
-  // menu at all. Only while the Menu summary is rendered: at 800px and
-  // up it is display: none, while a <details> opened at 390 and then
-  // widened keeps [open], and climbing to it would hand focus to a
-  // summary nobody can see.
-  function menuAround(node) {
-    var d = node.closest(MENUS), t, s;
-    if (d) return d;
-    t = node.closest(TAIL);
-    d = t && t.previousElementSibling;
-    s = d && d.matches(MENUS) && d.querySelector("summary");
-    return s && s.getClientRects().length ? d : null;
-  }
-
-  // except is the clicked node: every menu around it, directly or through
-  // menuAround's climb, stays open, which is what keeps a click on a menu
-  // item, or on the summary of a menu being opened right now, from
-  // closing the thing being used.
-  function closeMenus(except) {
-    var keep = [], m;
-    for (m = except && except.closest && menuAround(except); m; m = m.parentElement && menuAround(m.parentElement)) keep.push(m);
-    document.querySelectorAll(MENUS).forEach(function (d) {
-      if (keep.indexOf(d) < 0 && !(except && d.contains(except))) d.open = false;
-    });
-  }
-
-  function dismissMenus(e) {
-    if (e.type === "click") { closeMenus(e.target); return; }
-    if (e.key !== "Escape") return;
-    // Focus is about to be inside a subtree that is no longer rendered,
-    // which strands a keyboard user at the top of the document. Hand it
-    // back to the summary that opened the menu.
-    var el = document.activeElement;
-    var host = el && el.closest ? menuAround(el) : null;
-    // Climb to the OUTERMOST open menu around the focus. menuAround
-    // finds the innermost, which for focus inside a submenu is the
-    // submenu, and for focus in the account menu inside the card is the
-    // account menu: their summaries are inside the thing about to close,
-    // so focusing one would hand focus to something no longer rendered.
-    while (host && host.parentElement && menuAround(host.parentElement)) {
-      host = menuAround(host.parentElement);
-    }
-    closeMenus(null);
-    if (host) {
-      var summary = host.querySelector("summary");
-      if (summary) summary.focus();
-    }
-  }
-
-  document.addEventListener("click", dismissMenus, true);
-  document.addEventListener("keydown", dismissMenus, true);
-
-  // A switch slides. A press on its track that moves 4px drags the knob
-  // (the CSS reads its share of the travel, --rst-switch-p, and the on
-  // colour's share, --rst-switch-on, off the track) and on release the
-  // knob goes to the nearer end (half way is on) with the firm release
-  // curve, which the CSS keys off data-rst-settle on the label for the
-  // 0.18s it takes and a little slack; if that end is the other state,
-  // the checkbox is clicked, so input and change fire as for a tap. A
-  // press that does not move is the label's, which toggles as it always
-  // has; after a drag the label's own click is cancelled (never the
-  // checkbox's, which Space and the drop above send), so nothing
-  // toggles twice. The checkbox stays the state.
-  var TRACK = "[rst-switch-track],.rst-switch__track", drag = null, after = null, settling = null, settleT = 0, releasing = false;
-  function unsettle() {
-    if (settling) settling.removeAttribute("data-rst-settle");
-    settling = null;
-    clearTimeout(settleT);
-  }
-  function settle(l) {
-    unsettle();
-    settling = l;
-    l.setAttribute("data-rst-settle", "");
-    settleT = setTimeout(unsettle, 300);
-  }
-  // A toggle while a switch settles takes a toggle's own curve: the
-  // mark goes on change, bar the release's own click.
-  document.addEventListener("change", function (e) { if (settling && !releasing && settling.contains(e.target)) unsettle(); }, true);
-  // One drag at a time: a second finger is ignored until the first
-  // lifts, and a drag ends (cleaned up, committed only on pointerup)
-  // however its pointer goes. A press by the same pointer means its
-  // release was missed, so that drag is over.
-  document.addEventListener("pointerdown", function (e) {
-    if (drag && e.pointerId !== drag.id) return;
-    // A toggle block's head is a switch too; its own input is first.
-    var t = e.target.closest && e.target.closest(TRACK), l = t && t.closest("[rst-switch],.rst-switch,[rst-tblock-head],.rst-tblock__head"), box = l && l.querySelector("input");
-    if (drag) drop({ type: "lost", pointerId: drag.id });
-    after = null;
-    // :disabled, not .disabled: a disabled fieldset disables the box
-    // without setting its property, and a click on it does nothing.
-    if (!box || box.matches(":disabled") || e.button) return;
-    var r = t.getBoundingClientRect(), max = r.width - r.height;
-    drag = { l: l, t: t, box: box, id: e.pointerId, x: e.clientX, max: max, at: box.checked ? max : 0, pos: -1,
-      dir: getComputedStyle(t).direction === "rtl" ? -1 : 1 };
-  });
-  document.addEventListener("pointermove", function (e) {
-    var g = drag, d;
-    if (!g || e.pointerId !== g.id) return;
-    d = (e.clientX - g.x) * g.dir;
-    if (g.pos < 0) {
-      if (Math.abs(d) < 4) return;
-      // A drag on a settling switch takes over: no mark.
-      if (settling === g.l) unsettle();
-      g.l.setAttribute("data-rst-drag", "");
-      g.t.setPointerCapture(e.pointerId);
-    }
-    g.pos = Math.min(g.max, Math.max(0, g.at + d));
-    d = g.pos / g.max;
-    g.t.style.setProperty("--rst-switch-p", d);
-    g.t.style.setProperty("--rst-switch-on", d * 100 + "%");
-  });
-  function drop(e) {
-    var g = drag;
-    if (!g || e.pointerId !== g.id) return;
-    drag = null;
-    if (g.pos < 0) return;
-    g.l.removeAttribute("data-rst-drag");
-    settle(g.l);
-    g.t.style.removeProperty("--rst-switch-p");
-    g.t.style.removeProperty("--rst-switch-on");
-    after = g.l;
-    releasing = true;
-    if (e.type === "pointerup" && !g.box.matches(":disabled") && g.pos >= g.max / 2 !== g.box.checked) g.box.click();
-    releasing = false;
-  }
-  document.addEventListener("pointerup", drop);
-  document.addEventListener("pointercancel", drop);
-  document.addEventListener("lostpointercapture", drop);
-  document.addEventListener("click", function (e) {
-    if (after && after.contains(e.target) && e.target.tagName !== "INPUT") {
-      e.preventDefault();
-      after = null;
-    }
-  }, true);
-
-  // iOS applies :active on a tap only when a touch listener exists. This
-  // file owns the listener, not light.js, so an app that deletes
-  // light.js keeps its pressed states.
-  document.addEventListener("touchstart", function () {}, { passive: true });
-
-  // The colour-scheme switch's forms ([rst-scheme], POST /_theme) apply
-  // here instead of round-tripping: data-theme on <html> is what the
-  // themes read, and the cookie is the server's own (name, path, age,
-  // SameSite), so the next render paints the same scheme first. System
-  // is no attribute and no cookie, as on the server.
-  document.addEventListener("submit", function (e) {
-    var f = e.target, m = f.closest("[rst-scheme],.rst-scheme"), s = m && f.elements.scheme && f.elements.scheme.value, on = s === "light" || s === "dark";
-    if (!s) return;
-    e.preventDefault();
-    if (on) document.documentElement.setAttribute("data-theme", s); else document.documentElement.removeAttribute("data-theme");
-    land();
+  // The cookie is the server's own (name, path, age, SameSite; see
+  // scheme.go), or a reload paints the scheme the reader just left.
+  // System is no cookie, as on the server.
+  document.addEventListener("rst-scheme", function (e) {
+    var s = e.detail && e.detail.scheme, on = s === "light" || s === "dark";
     document.cookie = "rastrillo_scheme=" + (on ? s + "; Max-Age=31536000" : "; Max-Age=0") + "; Path=/; SameSite=Lax" + (location.protocol === "https:" ? "; Secure" : "");
-    // Not toggleAttribute: aria-current="" reads as false.
-    m.querySelectorAll("button").forEach(function (b) { if (b.form === f) b.setAttribute("aria-current", "true"); else b.removeAttribute("aria-current"); });
-    m.open = false;
-  }, true);
-
-  // A scheme change lands in the frame it happens in. The shipped
-  // tints need no help: at rest nothing fades its background, and a
-  // hovered row's, tile's or rail item's tint rides a registered
-  // percentage, so a change of scheme re-resolves its colour at once.
-  // What this lands is everything else still running: an app's own
-  // colour transitions, or a switch track mid-toggle, which a change
-  // of scheme would otherwise retarget while the text changes at
-  // once. getAnimations() flushes style, which starts the transitions,
-  // and cancelling one lands it on its end value. Transitions only,
-  // told by transitionProperty: cancelling an animation would stop a
-  // spinner for good.
-  function land() {
-    if (!document.getAnimations) return;
-    document.getAnimations().forEach(function (a) { if (typeof a.transitionProperty === "string") a.cancel(); });
-  }
-
-  // The OS flipping under a page on System is the same change with no
-  // click: light-dark() repaints with no script involved. The change
-  // event reaches script a frame after the style update that started
-  // the fade, so this lands it a frame late rather than 200ms late.
-  var osScheme = window.matchMedia && matchMedia("(prefers-color-scheme: dark)");
-  if (osScheme) osScheme.onchange = function () { if (!document.documentElement.hasAttribute("data-theme")) land(); };
+  });
 
   function scan() {
     document.querySelectorAll("[data-poll]").forEach(poll);

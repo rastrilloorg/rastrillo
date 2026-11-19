@@ -84,10 +84,10 @@ type nullable interface{ IsNullable() bool }
 // json's name rules, and would miss a null nested inside a value.
 var refuseNull = json.WithUnmarshalers(json.UnmarshalFromFunc(func(dec *jsontext.Decoder, v any) error {
 	if dec.PeekKind() != 'n' {
-		return json.SkipFunc
+		return errPassOn
 	}
 	if n, ok := v.(nullable); ok && n.IsNullable() {
-		return json.SkipFunc
+		return errPassOn
 	}
 	return errNull
 }))
@@ -128,7 +128,7 @@ func fieldInvalid(name string, nested bool, message string) error {
 	if nested {
 		message = msgNested
 	}
-	return Invalid{Fields: map[string]string{name: message}}
+	return Invalid{Fields: map[string]string{name: message}, AsSent: true}
 }
 
 // member is the first token of p, unescaped, and whether p goes deeper.

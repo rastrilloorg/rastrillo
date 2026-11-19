@@ -12,9 +12,10 @@ copy-review/
 # scaffold-smoke.sh runs it against a throwaway app. Disposable output.
 .build/
 
-# `go generate ./...` renders the design-system gallery here so it can be
-# looked at locally. The gallery is not committed — the website builds it
-# with cmd/dsgen at a pinned version — and this copy is disposable.
+# `go generate ./...` renders the Rastrillo components gallery here so it
+# can be looked at locally. The gallery is not committed — the website
+# builds it with cmd/dsgen at a pinned version — and this copy is
+# disposable.
 .design-system/
 
 # The gallery used to be committed here: 369 files, 20 MB, rewritten

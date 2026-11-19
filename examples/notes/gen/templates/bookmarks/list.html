@@ -13,12 +13,12 @@
        Rows        required: Href, Main and Sub per row
        Pagination  required: Show, and Items in ui/partials/pagination.html's shape */}}
 {{define "content"}}{{$L := localizer $}}
-{{template "page-header" dict "L" $L "Title" (T $L "resource.bookmarks.name") "ActionHref" "/bookmarks/new" "ActionLabel" (T $L "ui.new")}}
+{{template "page-header" dict "L" $L "Title" (T $L "resource.bookmarks.name") "ActionHref" (path $ "/bookmarks/new") "ActionLabel" (T $L "ui.new")}}
 {{if .Empty}}
-{{template "empty-state" dict "L" $L "Title" (T $L "resource.bookmarks.empty.title") "Body" (T $L "resource.bookmarks.empty.body") "ActionHref" "/bookmarks/new" "ActionLabel" (T $L "ui.new")}}
+{{template "empty-state" dict "L" $L "Title" (T $L "resource.bookmarks.empty.title") "Body" (T $L "resource.bookmarks.empty.body") "ActionHref" (path $ "/bookmarks/new") "ActionLabel" (T $L "ui.new")}}
 {{else}}
 <div rst-list>
-{{template "list-bar" dict "L" $L "SearchAction" "/bookmarks" "Query" .Query "Placeholder" (T $L "ui.search") "Hidden" .Carry}}
+{{template "list-bar" dict "L" $L "SearchAction" (path $ "/bookmarks") "Query" .Query "Placeholder" (T $L "ui.search") "Hidden" .Carry}}
 {{range .Rows}}{{template "list-row-action" dict "L" $L "Href" .Href "Main" .Main "Sub" .Sub}}
 {{end}}
 </div>

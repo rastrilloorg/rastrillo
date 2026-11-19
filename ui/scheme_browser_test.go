@@ -17,8 +17,6 @@ import (
 	"time"
 
 	"github.com/chromedp/cdproto/emulation"
-	"github.com/chromedp/cdproto/input"
-	"github.com/chromedp/cdproto/runtime"
 	"github.com/chromedp/chromedp"
 
 	"amadan.net/rastrillo/rastrillo"
@@ -55,13 +53,7 @@ func schemeApp(t *testing.T) http.Handler {
 	}
 	mux := http.NewServeMux()
 	stylesheets(t, mux)
-	for name, body := range map[string][]byte{"rastrillo.js": ShimJS(), "busy.js": BusyJS(), "anchor.js": AnchorJS(), "select.js": SelectJS(), "datetime.js": DatetimeJS(), "calendar.js": CalendarJS()} {
-		body := body
-		mux.HandleFunc("GET /"+name, func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("Content-Type", "text/javascript")
-			w.Write(body)
-		})
-	}
+	vendoredScripts(t, mux)
 	mux.Handle("POST "+rastrillo.SchemeSwitchPath, rastrillo.SchemeSwitchHandler())
 	mux.Handle("GET /", p.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -80,6 +72,7 @@ type schemeState struct {
 	Open    bool   // the menu is still open
 	Mark    bool   // window.__mark survived: no navigation happened
 	Navs    int    // navigation entries: 1 means this page load only
+	Fiesta  bool   // fiesta.js ran: the apply is Fiesta's
 }
 
 const schemeStateJS = `(() => {
@@ -91,17 +84,18 @@ const schemeStateJS = `(() => {
     Current: cur ? cur.form.elements.scheme.value : "",
     Open: m.open,
     Mark: window.__mark === 1,
-    Navs: performance.getEntriesByType("navigation").length
+    Navs: performance.getEntriesByType("navigation").length,
+    Fiesta: window.fiestaShim === true
   });
 })()`
 
-// With scripts on, a choice applies in place: the attribute changes,
-// the cookie is written, the menu closes, and nothing navigates. A
-// reload then shows the server painted the same scheme from the
-// cookie — the shim never applies the cookie on load, so after a reload
-// the attribute can only have come from the server. System undoes all
-// of it.
-func TestTheSchemeSwitchAppliesInPlaceAndSurvivesAReload(t *testing.T) {
+// With scripts on, a choice applies in place: fiesta.js changes the
+// attribute, closes the menu and navigates nowhere, and rastrillo.js
+// writes the cookie from its rst-scheme event. A reload then shows the
+// server painted the same scheme from the cookie — neither script
+// applies the cookie on load, so after a reload the attribute can only
+// have come from the server. System undoes all of it.
+func TestTheSchemeChoicePersistsWithFiestaJS(t *testing.T) {
 	rig := harness.New(t, func(string) http.Handler { return schemeApp(t) })
 	ctx, cancel := context.WithTimeout(rig.Context(), 90*time.Second)
 	defer cancel()
@@ -109,17 +103,18 @@ func TestTheSchemeSwitchAppliesInPlaceAndSurvivesAReload(t *testing.T) {
 	choose := func(scheme string) {
 		t.Helper()
 		mustRun(t, ctx,
-			chromedp.Evaluate(`window.__mark = 1; true`, nil),
-			chromedp.Click(`[rst-scheme] > summary`, chromedp.ByQuery),
-			chromedp.WaitVisible(fmt.Sprintf(`[rst-scheme] input[value=%q] ~ button`, scheme), chromedp.ByQuery),
-			chromedp.Click(fmt.Sprintf(`[rst-scheme] input[value=%q] ~ button`, scheme), chromedp.ByQuery),
+			chromedp.Evaluate[chromedp.Void](`window.__mark = 1; true`),
+			chromedp.Click(chromedp.CSS(`[rst-scheme] > summary`)),
+			chromedp.WaitVisible(chromedp.CSS(fmt.Sprintf(`[rst-scheme] input[value=%q] ~ button`, scheme))),
+			chromedp.Click(chromedp.CSS(fmt.Sprintf(`[rst-scheme] input[value=%q] ~ button`, scheme))),
 			chromedp.Sleep(150*time.Millisecond),
 		)
 	}
 	var got schemeState
-	mustRun(t, ctx, chromedp.EmulateViewport(1280, 900), chromedp.Navigate(rig.Origin+"/orders?page=2"), chromedp.WaitVisible(`[rst-scheme]`, chromedp.ByQuery))
+	mustRun(t, ctx, chromedp.EmulateViewport(1280, 900), chromedp.Navigate(rig.Origin+"/orders?page=2"), chromedp.WaitVisible(chromedp.CSS(`[rst-scheme]`)))
 	at(t, ctx, schemeStateJS, &got)
-	if got.Theme != "" || got.Current != "system" || got.Cookie != "" {
+	if got.Theme != "" || got.Current != "system" || got.Cookie != "" ||
+		!got.Fiesta {
 		t.Fatalf("first visit: %+v", got)
 	}
 
@@ -129,13 +124,14 @@ func TestTheSchemeSwitchAppliesInPlaceAndSurvivesAReload(t *testing.T) {
 		t.Fatalf("after choosing Dark in place: %+v", got)
 	}
 
-	mustRun(t, ctx, chromedp.Reload(), chromedp.WaitVisible(`[rst-scheme]`, chromedp.ByQuery))
+	mustRun(t, ctx, chromedp.Reload(), chromedp.WaitVisible(chromedp.CSS(`[rst-scheme]`)))
 	at(t, ctx, schemeStateJS, &got)
 	if got.Theme != "dark" || got.Current != "dark" || got.Mark {
 		t.Fatalf("after a reload the server did not paint the chosen scheme: %+v", got)
 	}
 	var path string
-	mustRun(t, ctx, chromedp.Evaluate(`location.pathname + location.search`, &path))
+	mustRun(t, ctx, harness.Into(&path, chromedp.Evaluate[string](
+		`location.pathname + location.search`)))
 	if path != "/orders?page=2" {
 		t.Errorf("the reader moved to %s", path)
 	}
@@ -145,7 +141,7 @@ func TestTheSchemeSwitchAppliesInPlaceAndSurvivesAReload(t *testing.T) {
 	if got.Theme != "" || got.Current != "system" || strings.Contains(got.Cookie, "rastrillo_scheme") || !got.Mark {
 		t.Fatalf("after choosing System in place: %+v", got)
 	}
-	mustRun(t, ctx, chromedp.Reload(), chromedp.WaitVisible(`[rst-scheme]`, chromedp.ByQuery))
+	mustRun(t, ctx, chromedp.Reload(), chromedp.WaitVisible(chromedp.CSS(`[rst-scheme]`)))
 	at(t, ctx, schemeStateJS, &got)
 	if got.Theme != "" || got.Current != "system" {
 		t.Fatalf("after a reload System did not hold: %+v", got)
@@ -163,8 +159,8 @@ func TestTheSchemeSwitchPassesAxeInBothSchemes(t *testing.T) {
 	rig := harness.New(t, func(string) http.Handler { return schemeApp(t) })
 	ctx, cancel := context.WithTimeout(rig.Context(), 120*time.Second)
 	defer cancel()
-	mustRun(t, ctx, chromedp.EmulateViewport(1280, 900), chromedp.Navigate(rig.Origin+"/"), chromedp.WaitVisible(`[rst-scheme]`, chromedp.ByQuery),
-		chromedp.Evaluate(string(engine), nil))
+	mustRun(t, ctx, chromedp.EmulateViewport(1280, 900), chromedp.Navigate(rig.Origin+"/"), chromedp.WaitVisible(chromedp.CSS(`[rst-scheme]`)),
+		chromedp.Evaluate[chromedp.Void](string(engine)))
 
 	tags, _ := json.Marshal([]string{"wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"})
 	run := fmt.Sprintf(`(async () => {
@@ -178,11 +174,15 @@ func TestTheSchemeSwitchPassesAxeInBothSchemes(t *testing.T) {
 
 	for _, scheme := range []string{"light", "dark"} {
 		mustRun(t, ctx,
-			chromedp.Evaluate(fmt.Sprintf(`document.documentElement.setAttribute("data-theme", %q); document.querySelector("[rst-scheme]").open = true; true`, scheme), nil),
-			chromedp.WaitVisible(`[rst-scheme] button`, chromedp.ByQuery),
+			chromedp.Evaluate[chromedp.Void](fmt.Sprintf(
+				`document.documentElement.setAttribute("data-theme", %q);
+				document.querySelector("[rst-scheme]").open = true; true`,
+				scheme)),
+			chromedp.WaitVisible(chromedp.CSS(`[rst-scheme] button`)),
 		)
-		var raw string
-		if err := chromedp.Run(ctx, chromedp.Evaluate(run, &raw, func(p *runtime.EvaluateParams) *runtime.EvaluateParams { return p.WithAwaitPromise(true) })); err != nil {
+		raw, err := chromedp.Run(ctx,
+			chromedp.Evaluate[string](run, chromedp.EvalAwaitPromise))
+		if err != nil {
 			t.Fatalf("%s: axe.run: %v", scheme, err)
 		}
 		var out struct {
@@ -257,12 +257,17 @@ func TestASchemeFlipLandsOnTheNextFrame(t *testing.T) {
 	rig := sizingRig(t, false, map[string]string{"/": sizingDoc("scheme flip", schemeFlipBody)})
 	ctx, cancel := context.WithTimeout(rig.Context(), 90*time.Second)
 	defer cancel()
-	awaitPromise := func(p *runtime.EvaluateParams) *runtime.EvaluateParams { return p.WithAwaitPromise(true) }
-	os := func(scheme string) chromedp.Action {
-		return emulation.SetEmulatedMedia().WithFeatures([]*emulation.MediaFeature{{Name: "prefers-color-scheme", Value: scheme}})
+	awaitPromise := chromedp.EvalAwaitPromise
+	os := func(scheme string) chromedp.Action[chromedp.Void] {
+		return send(emulation.SetEmulatedMedia,
+			emulation.SetEmulatedMediaParams{
+				Features: []*emulation.MediaFeature{
+					{Name: "prefers-color-scheme", Value: scheme},
+				},
+			})
 	}
 	mustRun(t, ctx, os("light"), chromedp.EmulateViewport(1280, 900), chromedp.Navigate(rig.Origin+"/"),
-		chromedp.WaitVisible(`[rst-scheme]`, chromedp.ByQuery), chromedp.WaitReady(`body`, chromedp.ByQuery))
+		chromedp.WaitVisible(chromedp.CSS(`[rst-scheme]`)), chromedp.WaitReady(chromedp.CSS(`body`)))
 	// choose submits one of the switch's forms the way a click does,
 	// and reads the state on the next frame, in one script so no
 	// round trip sits between the two.
@@ -341,30 +346,53 @@ func TestASchemeFlipLandsWhileHovered(t *testing.T) {
 	rig := sizingRig(t, false, map[string]string{"/": sizingDoc("hovered scheme flip", body)}, harness.WithHover())
 	ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
 	defer cancel()
-	mustRun(t, ctx, emulation.SetEmulatedMedia().WithFeatures([]*emulation.MediaFeature{{Name: "prefers-color-scheme", Value: "light"}}),
-		chromedp.EmulateViewport(1280, 900), chromedp.Navigate(rig.Origin+"/"), chromedp.WaitVisible(`[rst-scheme]`, chromedp.ByQuery), chromedp.WaitReady(`body`, chromedp.ByQuery))
+	mustRun(t, ctx, send(emulation.SetEmulatedMedia,
+		emulation.SetEmulatedMediaParams{
+			Features: []*emulation.MediaFeature{
+				{Name: "prefers-color-scheme", Value: "light"},
+			},
+		}),
+		chromedp.EmulateViewport(1280, 900), chromedp.Navigate(rig.Origin+"/"), chromedp.WaitVisible(chromedp.CSS(`[rst-scheme]`)), chromedp.WaitReady(chromedp.CSS(`body`)))
 	bg := func(id string) string {
 		t.Helper()
 		var got string
-		mustRun(t, ctx, chromedp.Evaluate(`getComputedStyle(document.getElementById(`+jsStr(id)+`)).backgroundColor`, &got))
+		mustRun(t, ctx, harness.Into(&got, chromedp.Evaluate[string](
+			`getComputedStyle(document.getElementById(`+jsStr(id)+`))
+				.backgroundColor`)))
 		return got
 	}
 	settled := func(id string) string {
 		t.Helper()
 		var got string
-		mustRun(t, ctx, chromedp.Evaluate(`(async () => { await Promise.all(document.getAnimations().filter(a => a.effect && a.effect.getComputedTiming().endTime !== Infinity).map(a => a.finished.catch(() => null))); return getComputedStyle(document.getElementById(`+jsStr(id)+`)).backgroundColor; })()`, &got, awaitPromise))
+		afterAnimations := chromedp.Evaluate[string](`(async () => {
+			await Promise.all(document.getAnimations()
+				.filter(a => a.effect &&
+					a.effect.getComputedTiming().endTime !== Infinity)
+				.map(a => a.finished.catch(() => null)));
+			return getComputedStyle(document.getElementById(`+jsStr(id)+`))
+				.backgroundColor;
+		})()`, awaitPromise)
+		mustRun(t, ctx, harness.Into(&got, afterAnimations))
 		return got
 	}
 	for _, c := range []struct{ id, from, to string }{{"tile", "light", "dark"}, {"nav-x", "dark", "light"}} {
-		mustRun(t, ctx, chromedp.Evaluate(`document.documentElement.setAttribute("data-theme", `+jsStr(c.from)+`), true`, nil))
+		mustRun(t, ctx, chromedp.Evaluate[chromedp.Void](
+			`document.documentElement
+				.setAttribute("data-theme", `+jsStr(c.from)+`), true`))
 		settled(c.id)
 		rest := bg(c.id)
 		// The shell fills the viewport and the tile sits below it.
-		mustRun(t, ctx, chromedp.Evaluate(`document.getElementById(`+jsStr(c.id)+`).scrollIntoView({block: "center"}), true`, nil))
+		mustRun(t, ctx, chromedp.Evaluate[chromedp.Void](
+			`document.getElementById(`+jsStr(c.id)+`)
+				.scrollIntoView({block: "center"}), true`))
 		x, y, w, h := rect(t, ctx, "#"+c.id)
 		// Two frames after the move, so the hover's transition exists
 		// before settled waits on it.
-		mustRun(t, ctx, chromedp.MouseEvent(input.MouseMoved, x+w/2, y+h/2), chromedp.Evaluate(`new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))`, nil, awaitPromise))
+		mustRun(t, ctx, chromedp.MouseEvent(chromedp.MouseMoved, x+w/2, y+h/2),
+			chromedp.Evaluate[chromedp.Void](
+				`new Promise(r =>
+					requestAnimationFrame(() => requestAnimationFrame(r)))`,
+				awaitPromise))
 		hovered := settled(c.id)
 		if hovered == rest {
 			t.Fatalf("#%s in %s: hovered it is %s, as at rest; the hover did not take, so the drive would prove nothing", c.id, c.from, rest)
@@ -372,7 +400,14 @@ func TestASchemeFlipLandsWhileHovered(t *testing.T) {
 		// The app's flip and the next frame's read in one script, so no
 		// round trip sits between the write and the read.
 		var next string
-		mustRun(t, ctx, chromedp.Evaluate(`(() => { document.documentElement.setAttribute("data-theme", `+jsStr(c.to)+`); return new Promise(r => requestAnimationFrame(() => r(getComputedStyle(document.getElementById(`+jsStr(c.id)+`)).backgroundColor))); })()`, &next, awaitPromise))
+		flip := chromedp.Evaluate[string](`(() => {
+			document.documentElement
+				.setAttribute("data-theme", `+jsStr(c.to)+`);
+			return new Promise(r => requestAnimationFrame(() =>
+				r(getComputedStyle(document.getElementById(`+jsStr(c.id)+`))
+					.backgroundColor)));
+		})()`, awaitPromise)
+		mustRun(t, ctx, harness.Into(&next, flip))
 		want := settled(c.id)
 		t.Logf("#%s hovered: %s in %s, %s a frame after the app set %s, settled %s", c.id, hovered, c.from, next, c.to, want)
 		if want == hovered {
@@ -381,7 +416,8 @@ func TestASchemeFlipLandsWhileHovered(t *testing.T) {
 		if next != want {
 			t.Errorf("#%s hovered, app script sets data-theme=%s: on the next frame it is %s; settled it is %s. The flip faded instead of landing.", c.id, c.to, next, want)
 		}
-		mustRun(t, ctx, chromedp.MouseEvent(input.MouseMoved, 5, 5), chromedp.Sleep(300*time.Millisecond))
+		mustRun(t, ctx, chromedp.MouseEvent(chromedp.MouseMoved, 5, 5),
+			chromedp.Sleep(300*time.Millisecond))
 	}
 }
 
@@ -392,7 +428,7 @@ const schemeFlipSecondFrameJS = `new Promise(r => requestAnimationFrame(() => r(
 // TestAnAppsOwnSchemeSwitchLandsAtRest is Astra A3: the shipped switch
 // lands a flip by cancelling the running transitions (land(), above),
 // but an app that sets data-theme from its own script, or that took
-// the new stylesheets with an old rastrillo.js, never calls it. The
+// the new stylesheets without fiesta.js, never calls it. The
 // nav items', linked rows' and tiles' background transitions sit on
 // their :hover and :active rules only, not at rest, so at rest a
 // scheme change has no transition to start and lands on the next
@@ -404,9 +440,14 @@ func TestAnAppsOwnSchemeSwitchLandsAtRest(t *testing.T) {
 	rig := sizingRig(t, false, map[string]string{"/": sizingDoc("app scheme flip", schemeFlipBody)})
 	ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
 	defer cancel()
-	awaitPromise := func(p *runtime.EvaluateParams) *runtime.EvaluateParams { return p.WithAwaitPromise(true) }
-	mustRun(t, ctx, emulation.SetEmulatedMedia().WithFeatures([]*emulation.MediaFeature{{Name: "prefers-color-scheme", Value: "light"}}),
-		chromedp.EmulateViewport(1280, 900), chromedp.Navigate(rig.Origin+"/"), chromedp.WaitVisible(`[rst-scheme]`, chromedp.ByQuery), chromedp.WaitReady(`body`, chromedp.ByQuery))
+	awaitPromise := chromedp.EvalAwaitPromise
+	mustRun(t, ctx, send(emulation.SetEmulatedMedia,
+		emulation.SetEmulatedMediaParams{
+			Features: []*emulation.MediaFeature{
+				{Name: "prefers-color-scheme", Value: "light"},
+			},
+		}),
+		chromedp.EmulateViewport(1280, 900), chromedp.Navigate(rig.Origin+"/"), chromedp.WaitVisible(chromedp.CSS(`[rst-scheme]`)), chromedp.WaitReady(chromedp.CSS(`body`)))
 	// set writes the attribute the way an app's own switch does and
 	// reads the next frame, in one script so no round trip sits
 	// between the write and the read.

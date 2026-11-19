@@ -89,6 +89,68 @@ var cfg = perftest.ScreenConfig{
 `Key` is the screen's name, the one `perf` logs and a `budgets.txt` record
 uses.
 
+## FirstLoad
+
+```go
+func FirstLoad(t testing.TB, cfg ScreenConfig)
+```
+
+`FirstLoad` checks how much framework CSS and JS each page makes a
+browser download. It requests the same routes as `Screens`, with the
+same `ScreenConfig`. For each page that answers 200 with HTML, it
+fetches every framework file the page links (`tokens.css`, `theme.css`,
+`shell.css` and the scripts in `static/`) and adds up their sizes,
+gzipped. Your own
+stylesheets and scripts are not counted, and neither is the HTML.
+
+A page that links its slice of `tokens.css` may load 16,000 bytes.
+Each component script it loads (`copy.js`, `select.js`, `calendar.js`,
+`datetime.js`) adds its own size to that. A live or
+polling page links the slice for every page and loads every script, so
+it has its shell's own limit, never under 16,000, with `live.js` and
+the component scripts on top. A page that links the whole `tokens.css`
+may load 40,000 bytes, and its report names the two edits that would
+link its slice instead, or says why the file can't be sliced.
+
+`Screens` runs the same check after it times the screens, so the
+scaffold's perf test already does this. Call `FirstLoad` yourself to
+check pages outside that test. Unlike `Screens`, it also runs under
+`-short` and can be called more than once.
+
+When a page is over, the failure names its largest files:
+
+```
+GET /orders: 25690 bytes of framework CSS and JS, gzipped, over its 23600-byte budget (16000 bytes for a column page, plus select.js); its largest files are tokens.css's slice (10840 bytes), select.js (7210 bytes), fiesta.js (1960 bytes); if it cannot be lighter, record `weight GET /orders 28300 <reason>` in .rastrillo/budgets.txt: its weight plus 10%, rounded up to the next 100
+```
+
+For a page that links the whole `tokens.css`, it names the files that
+grew instead. A file grows when you edit your copy in `static/`. Run
+`rastrillo doctor` to see what changed, and `rastrillo doctor --fix` to
+put the shipped file back. If no file grew, the failure lists every
+framework file the page loads, so you can see which it should not.
+
+A page that can't be lighter gets a weight record in `budgets.txt`, its
+whole limit in gzipped bytes, with a reason:
+
+```
+weight GET /reports  18000  draws every chart on one page
+```
+
+A page over its record is told to raise it the same way. Like a size
+record, it fails once the page is back within its usual limit, and
+asks to be lowered once the page weighs under 60% of it.
+
+`FirstLoad` also checks each sliced page's hooks. When the slice lacks
+a rule for a hook that the whole `tokens.css` would apply to the page,
+the hook can render unstyled. That happens when the hook is in HTML
+built in Go or by a script, which the page's templates don't show.
+The check reads the classes in an option's `data-rst-class` too, since
+`select.js` puts them on the row it draws for that option:
+
+```
+GET /orders: shows rst-card, but its slice of tokens.css lacks a rule for it that the whole file has, so it can render unstyled. A page's slice holds the hooks its templates name, not markup built in Go or by a script: ask for this hook in the page's template with {{needs "rst-card"}}
+```
+
 ## Boot
 
 ```go
@@ -122,6 +184,9 @@ top-level test. Redirects are not followed: `Path` must answer `Expect`
 
 ## When it fails
 
-Both functions fail the test only when `AMADAN_CI` or `CI` is set. Locally
-they print every measurement and pass, because a busy laptop says nothing
-reliable about speed. `make perf` shows each measurement either way.
+`Screens` and `Boot` fail their timing checks only when `AMADAN_CI` or
+`CI` is set. Locally, they print every measurement and pass the timing
+checks, because a busy laptop says nothing reliable about speed.
+`Screens` also checks first-load weight, which fails on every machine
+when a page is over budget, because a file's size is the same
+everywhere. `make perf` shows each measurement either way.

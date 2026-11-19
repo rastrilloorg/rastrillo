@@ -37,6 +37,11 @@ func (s *Sessions) Hash(r *http.Request) (string, bool) {
 		// hand out a handle that names nothing.
 		return "", false
 	}
+	if s.rowsOff(r) {
+		// The cookie may be the hub's or a sibling tenant's (see
+		// rowsOff): its hash names no row of this store.
+		return "", false
+	}
 	c, err := r.Cookie(s.CookieName())
 	if err != nil || c.Value == "" {
 		return "", false
@@ -50,8 +55,10 @@ func (s *Sessions) List(subject string) ([]Info, error) {
 		return nil, ErrSigned
 	}
 	now := s.now()
-	rows, err := s.cfg.DB.Query(`SELECT token_hash, method, auth_time, created_at, expires_at
-		FROM sessions WHERE subject = ? AND expires_at > ? ORDER BY created_at DESC, token_hash`,
+	rows, err := s.cfg.Reader.Query(`SELECT token_hash, method,
+		auth_time, created_at, expires_at FROM sessions
+		WHERE subject = ? AND expires_at > ?
+		ORDER BY created_at DESC, token_hash`,
 		subject, now.UTC().Format(time.RFC3339))
 	if err != nil {
 		return nil, err
@@ -105,6 +112,11 @@ func (s *Sessions) Revoke(subject, hash string) error {
 func (s *Sessions) RevokeOthers(r *http.Request, subject string) (int, error) {
 	if s.cfg.Signed != nil {
 		return 0, ErrSigned
+	}
+	if s.rowsOff(r) {
+		// Hash finds nothing to keep here, and going on would end every
+		// session the subject holds, the one in use included.
+		return 0, ErrPathRouted
 	}
 	keep, _ := s.Hash(r)
 	return s.revokeWhere(`subject = ? AND token_hash <> ?`, subject, keep)

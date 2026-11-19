@@ -54,9 +54,10 @@ type resource struct {
 	Fields     []field
 	Filters    []shape.FilterVar
 	SearchBind bool
-	HumanOne   string // "ticket type", for sentences
-	HumanMany  string // "ticket types"
-	Article    string // "a" or "an" before HumanOne
+	HumanOne   string          // "ticket type", for sentences
+	HumanMany  string          // "ticket types"
+	Article    string          // "a" or "an" before HumanOne
+	replaced   map[string]bool // actions a hand-written file replaces
 }
 
 func describe(r rastrillo.Resource, module string) resource {
@@ -223,6 +224,7 @@ func Emit(appRoot, genDir string, r rastrillo.Resource) (written, skipped []stri
 		return nil, nil, fmt.Errorf("ops/%s: its type %s is a name every operations package declares", r.Name, taken)
 	}
 	res := describe(r, module)
+	res.replaced = replacedActions(appRoot, r.Name)
 	builders := map[string]func(resource) string{
 		"types": typesGo, "list": listGo, "get": getGo, "create": createGo, "update": updateGo, "delete": deleteGo,
 	}

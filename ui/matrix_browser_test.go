@@ -111,7 +111,7 @@ func snap(t *testing.T, ctx context.Context, selector string, states ...string) 
 	forceState(t, ctx, selector, states...)
 	x, y, w, h := rect(t, ctx, selector)
 	var buf []byte
-	mustRun(t, ctx, chromedp.FullScreenshot(&buf, 100))
+	mustRun(t, ctx, harness.Into(&buf, chromedp.FullScreenshot(100)))
 	forceState(t, ctx, selector)
 	return cropPNG(t, decodePNG(t, buf), x, y, w, h, 0)
 }
@@ -276,8 +276,10 @@ func matrixKey(scheme string, states []string, selector string) string {
 // by one so the 1% allowance is a component's, not the page's.
 func matrixShots(t *testing.T, ctx context.Context, origin, dir, scheme string) map[string][]byte {
 	t.Helper()
-	mustRun(t, ctx, chromedp.EmulateViewport(1280, 1600), chromedp.Navigate(origin+dir), chromedp.WaitVisible("#field", chromedp.ByQuery),
-		chromedp.Evaluate(`document.documentElement.setAttribute("data-theme", "`+scheme+`"), document.getElementById("dd").open = true, true`, nil))
+	mustRun(t, ctx, chromedp.EmulateViewport(1280, 1600), chromedp.Navigate(origin+dir), chromedp.WaitVisible(chromedp.CSS("#field")),
+		chromedp.Evaluate[chromedp.Void](
+			`document.documentElement.setAttribute("data-theme", "`+scheme+`"),
+			document.getElementById("dd").open = true, true`))
 	still(t, ctx)
 	out := map[string][]byte{}
 	for _, states := range matrixStates {
@@ -304,7 +306,7 @@ func matrixShots(t *testing.T, ctx context.Context, origin, dir, scheme string) 
 			}
 		}
 		var buf []byte
-		mustRun(t, ctx, chromedp.FullScreenshot(&buf, 100))
+		mustRun(t, ctx, harness.Into(&buf, chromedp.FullScreenshot(100)))
 		img := decodePNG(t, buf)
 		for _, b := range boxes {
 			out[b.key] = cropPNG(t, img, b.x, b.y, b.w, b.h, matrixMargin)

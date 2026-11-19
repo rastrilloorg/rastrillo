@@ -31,7 +31,7 @@ func TestJunkScanReadsTextInputsAndARIA(t *testing.T) {
 <input value="[object Object]">
 <button aria-label="null">x</button>
 </main>`))
-	r.Run(chromedp.Navigate(r.Origin+"/"), chromedp.WaitVisible("#app", chromedp.ByQuery))
+	r.Run(chromedp.Navigate(r.Origin+"/"), chromedp.WaitVisible(chromedp.CSS("#app")))
 	hits := r.junkHits("#app")
 	joined := strings.Join(hits, "\n")
 	for _, want := range []string{
@@ -53,7 +53,7 @@ func TestJunkScanReadsTextInputsAndARIA(t *testing.T) {
 func TestAllowTextSparesDeliberateProse(t *testing.T) {
 	r := New(t, staticPage(`<main id="app"><p>this contract is null and void</p></main>`))
 	r.AllowText("null and void")
-	r.Run(chromedp.Navigate(r.Origin+"/"), chromedp.WaitVisible("#app", chromedp.ByQuery))
+	r.Run(chromedp.Navigate(r.Origin+"/"), chromedp.WaitVisible(chromedp.CSS("#app")))
 	if hits := r.junkHits("#app"); len(hits) > 0 {
 		t.Errorf("allowed prose still hit: %v", hits)
 	}
@@ -63,7 +63,7 @@ func TestAllowTextSparesDeliberateProse(t *testing.T) {
 // A missing scan root is itself a finding, never a silent pass.
 func TestJunkScanReportsAMissingRoot(t *testing.T) {
 	r := New(t, staticPage(`<p id="up">no app root here</p>`))
-	r.Run(chromedp.Navigate(r.Origin+"/"), chromedp.WaitVisible("#up", chromedp.ByQuery))
+	r.Run(chromedp.Navigate(r.Origin+"/"), chromedp.WaitVisible(chromedp.CSS("#up")))
 	hits := r.junkHits("#app")
 	if len(hits) != 1 || !strings.Contains(hits[0], "#app") {
 		t.Errorf("missing root not reported: %v", hits)

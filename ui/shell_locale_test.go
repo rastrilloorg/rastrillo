@@ -11,12 +11,13 @@ import (
 )
 
 // localeBlock is the locale block every shell but stage declares: its
-// default is the switcher over the page data's Locales and Return.
-const localeBlock = `{{block "locale" .}}{{$L := localizer $}}{{template "locale-menu" dict "L" $L "Items" (opt $ "Locales") "Return" (opt $ "Return")}}{{end}}`
+// default is the switcher over the page data's Locales and Return,
+// posting under the base path.
+const localeBlock = `{{block "locale" .}}{{$L := localizer $}}{{template "locale-menu" dict "L" $L "Items" (opt $ "Locales") "Return" (opt $ "Return") "Action" (path $ "/_locale")}}{{end}}`
 
 // schemeBlock follows it in the same shells: the colour-scheme switch
-// over the page data's Scheme and Return.
-const schemeBlock = `{{block "scheme" .}}{{$L := localizer $}}{{template "scheme-menu" dict "L" $L "Scheme" (opt $ "Scheme") "Return" (opt $ "Return")}}{{end}}`
+// over the page data's Scheme and Return, posting under the base path.
+const schemeBlock = `{{block "scheme" .}}{{$L := localizer $}}{{template "scheme-menu" dict "L" $L "Scheme" (opt $ "Scheme") "Return" (opt $ "Return") "Action" (path $ "/_theme")}}{{end}}`
 
 // A second locale turns on the /xx/ prefixes, so a shell that still
 // said lang="en" dir="ltr" and rendered no switcher would leave a
@@ -62,13 +63,29 @@ func TestShellsWithoutALocalizerKeepEnglishLeftToRight(t *testing.T) {
 	}
 }
 
-// The column shell's switcher sits at the top of the page, since a
-// one-column app has no bar or rail to put it in.
-func TestTheColumnSwitcherOpensThePage(t *testing.T) {
-	two := []rastrillo.LocaleItem{{Code: "en", Name: "English", Href: "/en/"}, {Code: "es", Name: "Español", Href: "/es/", Current: true}}
+// The column shell's menus sit in a footer row after the content, as
+// Fiesta's layout-column example has them: a one-column app has no bar
+// or rail, and a dropdown on a line of its own above the title is what
+// the Row Rule forbids.
+func TestTheColumnMenusSitInTheFooterRow(t *testing.T) {
+	two := []rastrillo.LocaleItem{
+		{Code: "en", Name: "English", Href: "/en/"},
+		{Code: "es", Name: "Español", Href: "/es/", Current: true},
+	}
 	out := renderShell(t, "column", "es", map[string]any{"Locales": two})
-	if !strings.Contains(out, "<main rst-page id=\"main\">\n<details rst-dropdown rst-locale") {
-		t.Errorf("the column shell's switcher is not the first child of <main rst-page>:\n%s", out)
+	inOrder := []string{
+		`<main rst-page id="main">`, "<p>x</p>", "<footer rst-page-foot>",
+		"<details rst-dropdown rst-locale", "<details rst-dropdown rst-scheme",
+		"</footer>", "</main>",
+	}
+	from := 0
+	for _, want := range inOrder {
+		at := strings.Index(out[from:], want)
+		if at < 0 {
+			t.Fatalf("the column shell has no %q after %q:\n%s",
+				want, out[:from], out)
+		}
+		from += at + len(want)
 	}
 }
 

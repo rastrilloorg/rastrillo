@@ -109,14 +109,12 @@ var conventionsTmpl = template.Must(template.New("conventions").Parse(
 {{if .Component}}- [x] {{.Name}} — {{.Rule}} — ` + "`{{.Component}}`" + `{{else}}- [ ] {{.Name}} — {{.Rule}}{{end}}
 {{- end}}
 
-` + "`[x]`" + ` is enforced by a vendored component: use it, do not hand-roll an
-equivalent. ` + "`[ ]`" + ` is guidance to apply by hand. A convention absent from
-this list is one rastrillo has no opinion about.
+` + "`[x]`" + `: use the vendored component, never a hand-rolled equivalent.
+` + "`[ ]`" + `: apply it by hand. Rastrillo has no opinion on what is not
+listed.
 
 Edit any line. **This file is the source of truth, not the profile name.**
-The profile only seeded this list at scaffold time; nothing re-reads it, so
-changing a line here changes what the app does. A convention deleted from
-this file is not a convention to reinstate.
+Nothing re-reads the profile, and a convention deleted here stays deleted.
 `))
 
 // claudeMDPointer is the whole of CLAUDE.md. The conventions live in
@@ -124,7 +122,6 @@ this file is not a convention to reinstate.
 // duplicated here on purpose: two copies drift, and the drift is silent.
 const claudeMDPointer = `@AGENTS.md
 
-This project keeps its instructions in AGENTS.md so they apply to every
-agent, not just Claude Code. Nothing is duplicated here on purpose: two
-copies drift, and the drift is silent.
+Every agent's instructions are in AGENTS.md. Add nothing here: two
+copies drift.
 `

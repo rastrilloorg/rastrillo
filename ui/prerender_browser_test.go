@@ -9,7 +9,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/chromedp/cdproto/input"
 	"github.com/chromedp/chromedp"
 
 	"amadan.net/rastrillo/rastrillo"
@@ -123,12 +122,12 @@ func TestShellNavigationIsPrerendered(t *testing.T) {
 	rig.Screen("[rst-shell-nav]", "the index, served with the framework's CSP")
 	drain(hits)
 	x, y := centre(t, ctx, "#nav-invoices")
-	mustRun(t, ctx, chromedp.MouseEvent(input.MouseMoved, x, y))
+	mustRun(t, ctx, chromedp.MouseEvent(chromedp.MouseMoved, x, y))
 	if h := waitFor(hits, "/invoices", 4*time.Second); !strings.Contains(h, "prerender") {
 		t.Errorf("a hover on a nav link started no prerender (got %q)", h)
 	}
 	x, y = landsOn(t, ctx, "#plain", "plain")
-	mustRun(t, ctx, chromedp.MouseEvent(input.MouseMoved, x, y))
+	mustRun(t, ctx, chromedp.MouseEvent(chromedp.MouseMoved, x, y))
 	if h := waitFor(hits, "/plain", 2*time.Second); h != "" {
 		t.Errorf("a link outside the shell's navigation was prerendered: %q", h)
 	}
@@ -136,7 +135,7 @@ func TestShellNavigationIsPrerendered(t *testing.T) {
 	rig.Screen("#stage-link", "the stage page")
 	drain(hits)
 	x, y = landsOn(t, ctx, "#stage-link", "stage-link")
-	mustRun(t, ctx, chromedp.MouseEvent(input.MouseMoved, x, y))
+	mustRun(t, ctx, chromedp.MouseEvent(chromedp.MouseMoved, x, y))
 	if h := waitFor(hits, "/orders", 2*time.Second); h != "" {
 		t.Errorf("a stage page prerendered %q; the rules match nothing outside the sidebar and console", h)
 	}
@@ -148,7 +147,7 @@ func TestShellNavigationIsPrerendered(t *testing.T) {
 	rig.Screen("[rst-shell-nav]", "a sidebar layout copied before the phone index")
 	drain(hits)
 	x, y = landsOn(t, ctx, "#nav-team", "nav-team")
-	mustRun(t, ctx, chromedp.MouseEvent(input.MouseMoved, x, y))
+	mustRun(t, ctx, chromedp.MouseEvent(chromedp.MouseMoved, x, y))
 	if h := waitFor(hits, "/team", 3*time.Second); h != "" {
 		t.Errorf("a layout copied before the phone index prerendered %q; only a root that names its view may", h)
 	}
@@ -162,11 +161,13 @@ func TestShellNavigationIsPrerendered(t *testing.T) {
 	requirePointer(t, tctx, true)
 	drain(touchHits)
 	x, y = centre(t, tctx, "#nav-orders")
-	mustRun(t, tctx, chromedp.MouseEvent(input.MousePressed, x, y, chromedp.ButtonLeft, chromedp.ClickCount(1)))
+	mustRun(t, tctx, chromedp.MouseEvent(chromedp.MousePressed, x, y,
+		chromedp.ButtonLeft, chromedp.ClickCount(1)))
 	if h := waitFor(touchHits, "/orders", 4*time.Second); !strings.Contains(h, "prerender") {
 		t.Errorf("a pointer-down on a nav row on a phone started no prerender (got %q)", h)
 	}
-	mustRun(t, tctx, chromedp.MouseEvent(input.MouseReleased, x, y, chromedp.ButtonLeft, chromedp.ClickCount(1)))
+	mustRun(t, tctx, chromedp.MouseEvent(chromedp.MouseReleased, x, y,
+		chromedp.ButtonLeft, chromedp.ClickCount(1)))
 
 	offHits := make(chan string, 64)
 	off := harness.New(t, prerenderSite(t, true, offHits))
@@ -175,7 +176,7 @@ func TestShellNavigationIsPrerendered(t *testing.T) {
 	off.Run(chromedp.EmulateViewport(1280, 900), chromedp.Navigate(off.Origin+"/"))
 	drain(offHits)
 	x, y = landsOn(t, octx, "#nav-invoices", "nav-invoices")
-	mustRun(t, octx, chromedp.MouseEvent(input.MouseMoved, x, y))
+	mustRun(t, octx, chromedp.MouseEvent(chromedp.MouseMoved, x, y))
 	if h := waitFor(offHits, "/invoices", 3*time.Second); h != "" {
 		t.Errorf("CONTROL: with NoSpeculationRules a hover still fetched %q, so the header is not what the legs above measured", h)
 	}
@@ -197,14 +198,17 @@ func TestAPrefetchedIndexStillReturnsFocus(t *testing.T) {
 	visit(t, ctx, rig.Origin+"/invoices")
 	settleUntil(t, ctx, `!!document.querySelector("[rst-shell-back] a")`)
 	x, y := centre(t, ctx, "[rst-shell-back] a")
-	mustRun(t, ctx, chromedp.MouseEvent(input.MousePressed, x, y, chromedp.ButtonLeft, chromedp.ClickCount(1)))
+	mustRun(t, ctx, chromedp.MouseEvent(chromedp.MousePressed, x, y,
+		chromedp.ButtonLeft, chromedp.ClickCount(1)))
 	if h := waitFor(hits, "/", 4*time.Second); !strings.Contains(h, "prerender") {
 		t.Fatalf("pressing the back control fetched no speculation of the index (got %q); the leg has not arisen", h)
 	}
-	mustRun(t, ctx, chromedp.MouseEvent(input.MouseReleased, x, y, chromedp.ButtonLeft, chromedp.ClickCount(1)))
+	mustRun(t, ctx, chromedp.MouseEvent(chromedp.MouseReleased, x, y,
+		chromedp.ButtonLeft, chromedp.ClickCount(1)))
 	settleUntil(t, ctx, `location.pathname === "/"`)
 	var delivery string
-	mustRun(t, ctx, chromedp.Evaluate(`performance.getEntriesByType("navigation")[0].deliveryType`, &delivery))
+	mustRun(t, ctx, harness.Into(&delivery, chromedp.Evaluate[string](
+		`performance.getEntriesByType("navigation")[0].deliveryType`)))
 	if delivery != "navigational-prefetch" {
 		t.Fatalf("the index was delivered as %q, not from the speculation; the leg has not arisen", delivery)
 	}
@@ -214,7 +218,7 @@ func TestAPrefetchedIndexStillReturnsFocus(t *testing.T) {
 	// headless Chromium itself skips the incoming transition for on
 	// roughly one navigation in five (see scriptErrors's comment) —
 	// an unfiltered check would flake on exactly that.
-	errs, _ := scriptErrors(t, *thrown)
+	errs, _ := scriptErrors(t, thrown())
 	if len(errs) > 0 {
 		t.Errorf("uncaught: %v", errs)
 	}

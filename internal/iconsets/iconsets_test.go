@@ -10,6 +10,7 @@ import (
 	"strings"
 	"testing"
 
+	"amadan.net/rastrillo/fiesta"
 	"amadan.net/rastrillo/rastrillo"
 )
 
@@ -368,5 +369,35 @@ func TestFontAwesomeCreditTravelsWithTheSource(t *testing.T) {
 	got, _ := Render("lucide", Inline)
 	if strings.Contains(string(got.Source), "fontawesome") {
 		t.Error("lucide source mentions font-awesome")
+	}
+}
+
+// Inline Lucide is Fiesta's drawing on Fiesta's grid, and iconsets.go
+// keeps no copy of it. The open tag stays this package's: it is the
+// scaffolded source's, with the viewBox written per glyph.
+func TestInlineLucideIsFiestas(t *testing.T) {
+	source, err := os.ReadFile("iconsets.go")
+	if err != nil {
+		t.Fatal(err)
+	}
+	lucide := sets["lucide"]
+	viewBox := regexp.MustCompile(`viewBox="([^"]*)"`)
+	for _, slug := range fiesta.IconSlugs() {
+		svg, _ := fiesta.Icon(slug)
+		_, inner, _ := strings.Cut(string(svg), ">")
+		inner = strings.TrimSuffix(inner, "</svg>")
+		glyph := lucide.glyphs[slug]
+		if glyph.Body != inner {
+			t.Errorf("Lucide %s draws %s; Fiesta draws %s",
+				slug, glyph.Body, inner)
+		}
+		grid := viewBox.FindStringSubmatch(string(svg))[1]
+		if glyph.ViewBox != grid {
+			t.Errorf("Lucide %s sits on %q; Fiesta's on %q",
+				slug, glyph.ViewBox, grid)
+		}
+		if strings.Contains(string(source), inner) {
+			t.Errorf("iconsets.go keeps a copy of Lucide %s's drawing", slug)
+		}
 	}
 }

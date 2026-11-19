@@ -183,6 +183,8 @@ func Descriptors() []op.Descriptor {
 			Operation:   ListOp,
 			Exposed:     true,
 			Description: "List your bookmarks, newest first.",
+			Destructive: false,
+			Idempotent:  true,
 			Input:       json.RawMessage(listArgsSchema),
 			Result:      json.RawMessage(listResultSchema),
 			Invoke: func(ctx context.Context, rc *rastrillo.Ctx, args json.RawMessage) (any, error) {
@@ -201,6 +203,8 @@ func Descriptors() []op.Descriptor {
 			Operation:   GetOp,
 			Exposed:     true,
 			Description: "Get one bookmark by id.",
+			Destructive: false,
+			Idempotent:  true,
 			Input:       json.RawMessage(idArgsSchema),
 			Result:      json.RawMessage(resultSchema),
 			Invoke: func(ctx context.Context, rc *rastrillo.Ctx, args json.RawMessage) (any, error) {
@@ -215,6 +219,8 @@ func Descriptors() []op.Descriptor {
 			Operation:   CreateOp,
 			Exposed:     true,
 			Description: "Create a bookmark.",
+			Destructive: false,
+			Idempotent:  false,
 			Input:       json.RawMessage(createArgsSchema),
 			Result:      json.RawMessage(resultSchema),
 			Invoke: func(ctx context.Context, rc *rastrillo.Ctx, args json.RawMessage) (any, error) {
@@ -230,6 +236,8 @@ func Descriptors() []op.Descriptor {
 			Exposed:     true,
 			Description: "Change a bookmark. Send only the fields to change.",
 			Confirm:     "Change bookmark {id}?",
+			Destructive: true,
+			Idempotent:  false,
 			Input:       json.RawMessage(updateArgsSchema),
 			Result:      json.RawMessage(resultSchema),
 			Invoke: func(ctx context.Context, rc *rastrillo.Ctx, args json.RawMessage) (any, error) {
@@ -245,6 +253,8 @@ func Descriptors() []op.Descriptor {
 			Exposed:     true,
 			Description: "Delete a bookmark.",
 			Confirm:     "Delete bookmark {id}?",
+			Destructive: true,
+			Idempotent:  true,
 			Input:       json.RawMessage(idArgsSchema),
 			Result:      json.RawMessage(noResultSchema),
 			Invoke: func(ctx context.Context, rc *rastrillo.Ctx, args json.RawMessage) (any, error) {

@@ -1,4 +1,4 @@
-package %[1]s_test
+package %[1]stest
 
 import (
 	"bytes"
@@ -10,53 +10,40 @@ import (
 )
 
 // vendoredTheme is the theme this app was scaffolded with. Change it
-// here when you swap static/theme.css for another of ui.ThemeNames().
+// when you swap static/theme.css for another of ui.ThemeNames().
 const vendoredTheme = "%[2]s"
 
-// vendoredIsMine names the vendored files this app has edited or
-// deleted DELIBERATELY. Add one here when you mean to diverge: this
-// test stops pinning it, and rastrillo doctor leaves it alone too. The
-// file was yours from the moment the scaffold wrote it; this is only
-// where you record that the edit, or the deletion, was on purpose, so
-// the next reader (and the next upgrade) can tell it from drift.
+var staticDir = filepath.Join("..", "%[1]s", "static")
+
+// vendoredIsMine names the vendored files this app edited or deleted on
+// purpose: this test and rastrillo doctor then leave them alone.
 var vendoredIsMine = map[string]bool{
-	// "tokens.css": true,
-	//
-	// A file you deleted goes here too, or this test fails on the
-	// missing file. light.js is deletable on any shell (the still
-	// design); only the sidebar and console shells link shell.js and
-	// shell.css:
-	// "light.js": true,
-	// "shell.js": true, "shell.css": true,
+	// "light.js": true, // deleted for the still design
+	// "shell.js": true, "shell.css": true, // sidebar and console only
 }
 
-// The scaffold delivered these files once; they are app-owned from
-// then on. This test pins each vendored copy byte-identical to the
-// library it came from: a reviewer runs the suite instead of reading
-// ~56KB of assets as app diff, and a framework upgrade that forgets
-// to re-copy is caught instead of drifting silently.
-//
-// The list is ui.VendoredAssets — the same function rastrillo new
-// wrote these files from and rastrillo doctor compares them against —
-// so a file added to the library's vendored set is pinned here without
-// this file changing.
+// Each vendored file is byte for byte the library's, so a reviewer need
+// not read it and an upgrade that forgets to re-copy one is caught.
 func TestVendoredAssetsMatchTheLibrary(t *testing.T) {
 	t.Parallel()
 	assets, ok := ui.VendoredAssets(vendoredTheme)
 	if !ok {
 		t.Fatalf("unknown theme %%q", vendoredTheme)
 	}
-	for name, lib := range assets {
+	for name, library := range assets {
 		if vendoredIsMine[name] {
 			continue
 		}
-		vendored, err := os.ReadFile(filepath.Join("static", name))
+		vendored, err := os.ReadFile(filepath.Join(staticDir, name))
 		if err != nil {
-			t.Errorf("read vendored %%s: %%v; if you deleted it on purpose, add it to vendoredIsMine", name, err)
+			t.Errorf("read vendored %%s: %%v; if you deleted it on "+
+				"purpose, add it to vendoredIsMine", name, err)
 			continue
 		}
-		if !bytes.Equal(vendored, lib) {
-			t.Errorf("static/%%s differs from the library copy; re-copy it with rastrillo doctor --fix (or add it to vendoredIsMine if the edit was deliberate)", name)
+		if !bytes.Equal(vendored, library) {
+			t.Errorf("static/%%s differs from the library copy; re-copy it "+
+				"with rastrillo doctor --fix, or add it to vendoredIsMine "+
+				"if the edit was deliberate", name)
 		}
 	}
 }

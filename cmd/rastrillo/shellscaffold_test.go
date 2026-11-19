@@ -38,6 +38,10 @@ func scaffoldWithReplace(t *testing.T, name string, args ...string) string {
 	if err != nil {
 		t.Fatal(err)
 	}
+	// What rastrillo new does once the app resolves, so the app is the
+	// one new leaves: TestMain turned the step off inside runNew, where
+	// it would have tidied against the published module.
+	compileNewTemplates(dir)
 	return dir
 }
 
@@ -64,7 +68,7 @@ func TestAnAppMissingTheShellFilesIsToldAndFixed(t *testing.T) {
 	t.Chdir(t.TempDir())
 	dir := scaffoldWithReplace(t, "upapp", "--shell=topbar")
 	static := filepath.Join(dir, "internal", "upapp", "static")
-	pin := filepath.Join(dir, "internal", "upapp", "vendored_test.go")
+	pin := filepath.Join(dir, "internal", "upapptest", "vendored_test.go")
 	remove := func() {
 		for _, n := range []string{"shell.js", "shell.css"} {
 			if err := os.Remove(filepath.Join(static, n)); err != nil {
@@ -73,7 +77,7 @@ func TestAnAppMissingTheShellFilesIsToldAndFixed(t *testing.T) {
 		}
 	}
 	run := func() (string, error) {
-		return goTestIn(dir, "./internal/upapp/", "-run", "TestVendoredAssetsMatchTheLibrary")
+		return goTestIn(dir, "./internal/upapptest/", "-run", "TestVendoredAssetsMatchTheLibrary")
 	}
 
 	if out, err := run(); err != nil {
@@ -109,12 +113,12 @@ func TestAnAppMissingTheShellFilesIsToldAndFixed(t *testing.T) {
 }
 
 // TestDeletingLightJSIsRecordedWhereTheFailureSays: every scaffolded
-// layout says "Delete it and its tag for the still design", and an app
+// layout says "Delete static/light.js for the still design", and an app
 // that did exactly that failed its own pin test with a message that
 // named no way out (Task 10 review, I1). The failure has to say where
 // the deletion is recorded, the map's comment has to say the same, and
-// an app that records it there passes its whole suite with the file and
-// its tag gone.
+// an app that records it there passes its whole suite with the file
+// gone, which no page then links.
 func TestDeletingLightJSIsRecordedWhereTheFailureSays(t *testing.T) {
 	if testing.Short() {
 		t.Skip("scaffolds, tidies and tests a whole app")
@@ -122,8 +126,7 @@ func TestDeletingLightJSIsRecordedWhereTheFailureSays(t *testing.T) {
 	setSandboxGoEnv(t)
 	t.Chdir(t.TempDir())
 	dir := scaffoldWithReplace(t, "stillapp")
-	pin := filepath.Join(dir, "internal", "stillapp", "vendored_test.go")
-	layout := filepath.Join(dir, "internal", "stillapp", "templates", "layout.html")
+	pin := filepath.Join(dir, "internal", "stillapptest", "vendored_test.go")
 
 	src, err := os.ReadFile(pin)
 	if err != nil {
@@ -133,23 +136,12 @@ func TestDeletingLightJSIsRecordedWhereTheFailureSays(t *testing.T) {
 		t.Errorf("the pin's vendoredIsMine comment never shows light.js as a file an app deletes:\n%s", src)
 	}
 
-	// The opt-out as the layout comment gives it: the file and its tag.
+	// The opt-out as the layout comment gives it: the file alone.
 	if err := os.Remove(filepath.Join(dir, "internal", "stillapp", "static", "light.js")); err != nil {
 		t.Fatal(err)
 	}
-	const tag = `<script defer src="{{asset "static/light.js"}}"></script>` + "\n"
-	page, err := os.ReadFile(layout)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !strings.Contains(string(page), tag) {
-		t.Fatalf("the scaffolded layout has no light.js tag to delete:\n%s", page)
-	}
-	if err := os.WriteFile(layout, []byte(strings.Replace(string(page), tag, "", 1)), 0o644); err != nil {
-		t.Fatal(err)
-	}
 
-	out, err := goTestIn(dir, "./internal/stillapp/", "-run", "TestVendoredAssetsMatchTheLibrary")
+	out, err := goTestIn(dir, "./internal/stillapptest/", "-run", "TestVendoredAssetsMatchTheLibrary")
 	if err == nil {
 		t.Fatalf("an app missing light.js passed its pin test without recording the deletion:\n%s", out)
 	}
@@ -167,7 +159,8 @@ func TestDeletingLightJSIsRecordedWhereTheFailureSays(t *testing.T) {
 		t.Fatal(err)
 	}
 	if out, err := goTestIn(dir, "./..."); err != nil {
-		t.Fatalf("with light.js and its tag deleted and the deletion recorded in vendoredIsMine, the app's suite fails:\n%s", out)
+		t.Fatalf("with light.js deleted and the deletion recorded in "+
+			"vendoredIsMine, the app's suite fails:\n%s", out)
 	}
 }
 
@@ -184,7 +177,7 @@ func TestNewWritesAnIndexAndASectionForTheShellsThatHaveOne(t *testing.T) {
 		}
 		dir := filepath.Join(name, "internal", name)
 		index := readScaffold(t, dir, "templates", "index.html")
-		app := readScaffold(t, dir, "app.go")
+		app := readScaffold(t, dir, "routes.go")
 		handlers := readScaffold(t, dir, "handlers.go")
 		render := readScaffold(t, dir, "render.go")
 		overview, err := os.ReadFile(filepath.Join(dir, "templates", "overview.html"))
@@ -198,13 +191,13 @@ func TestNewWritesAnIndexAndASectionForTheShellsThatHaveOne(t *testing.T) {
 			{"index.html", index, `{{define "view"}}index{{end}}`},
 			// The phone index's heading is the brand, so a new app's
 			// index shows the app's own name, not the layout's Home.
-			{"index.html", index, `{{define "brand"}}<a rst-shell-brand href="/">` + name + `</a>{{end}}`},
-			{"overview.html", string(overview), `{{define "brand"}}<a rst-shell-brand href="/">` + name + `</a>{{end}}`},
-			{"index.html", index, `<a id="nav-overview" href="/overview">` + scaffoldOverview + `</a>`},
-			{"overview.html", string(overview), `{{define "up"}}/#nav-overview{{end}}`},
-			{"overview.html", string(overview), `<a id="nav-overview" href="/overview" aria-current="page">` + scaffoldOverview + `</a>`},
-			{"app.go", app, `{"GET /overview", a.overview},`},
-			{"handlers.go", handlers, `func (a *app) overview(w http.ResponseWriter, r *http.Request) {`},
+			{"index.html", index, `{{define "brand"}}<a rst-shell-brand href="{{path $ "/"}}">` + name + `</a>{{end}}`},
+			{"overview.html", string(overview), `{{define "brand"}}<a rst-shell-brand href="{{path $ "/"}}">` + name + `</a>{{end}}`},
+			{"index.html", index, `<a id="nav-overview" href="{{path $ "/overview"}}">` + scaffoldOverview + `</a>`},
+			{"overview.html", string(overview), `{{define "up"}}{{path $ "/#nav-overview"}}{{end}}`},
+			{"overview.html", string(overview), `<a id="nav-overview" href="{{path $ "/overview"}}" aria-current="page">` + scaffoldOverview + `</a>`},
+			{"routes.go", app, `guarded.Get(overviewPage, app.overview)`},
+			{"handlers.go", handlers, "overview(visit *action.Visit) {"},
 			{"render.go", render, `[]string{"index", "overview", "errors", "tokens"}`},
 		} {
 			if !strings.Contains(c.got, c.want) {

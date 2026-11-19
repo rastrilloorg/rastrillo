@@ -67,7 +67,8 @@ func TestStageShellCarriesTheBackdropSlot(t *testing.T) {
 	tmpl := template.Must(template.New("layout").Funcs(Funcs()).Funcs(template.FuncMap{
 		"asset": func(p string) string { return "/" + p },
 	}).Parse(string(src)))
-	template.Must(tmpl.Parse(`{{define "content"}}CONTENT-SENTINEL{{end}}`))
+	template.Must(tmpl.Parse(`{{define "content"}}CONTENT-SENTINEL{{end}}` +
+		`{{define "region:notice"}}{{end}}{{define "live-head"}}{{end}}`))
 	var b strings.Builder
 	if err := tmpl.ExecuteTemplate(&b, "layout", nil); err != nil {
 		t.Fatal(err)

@@ -21,20 +21,19 @@ import (
 	"fmt"
 	"io/fs"
 	"log/slog"
-	"net"
 	"net/http"
 	"os"
-	"os/signal"
 	"runtime/debug"
-	"strconv"
 	"strings"
-	"syscall"
 	"time"
 
 	"amadan.net/rastrillo/rastrillo/background"
+	"amadan.net/rastrillo/rastrillo/basepath"
 	"amadan.net/rastrillo/rastrillo/carlos"
 	"amadan.net/rastrillo/rastrillo/internal/checkconfig"
+	"amadan.net/rastrillo/rastrillo/live"
 	"amadan.net/rastrillo/rastrillo/locales"
+	"amadan.net/rastrillo/rastrillo/tmpl"
 
 	_ "modernc.org/sqlite"
 )
@@ -42,7 +41,7 @@ import (
 // BuildVersion is what GET /api/version reports. The scaffolded
 // Makefile's release target stamps it with -X from git describe, and
 // refuses to build rather than stamping an empty string or a dirty
-// tree — see makefileTemplate in cmd/rastrillo/new.go.
+// tree — see cmd/rastrillo/scaffold/Makefile.tmpl.
 //
 // The platform's deploy verification polls GET /api/version on every
 // instance socket — see blueprint.md, "The carlos core": "every
@@ -103,6 +102,20 @@ type Options struct {
 	// platform's build probe reads it.
 	NameInstance bool
 
+	// BasePath serves the whole app under /<slug> on another app's
+	// origin, such as https://example.com/acme, the way a hub product
+	// puts each tenant instance under its own path. Everything the
+	// framework answers itself (/healthz, /api/version, the switches,
+	// the speculation rules) answers under the base too, so a hub's poll
+	// of /<slug>/api/version reaches this instance's own handler. The
+	// zero value is off: no middleware is installed and requests pay
+	// nothing. Apps fill Origin and Slug with basepath.FromEnv. DirectHost
+	// is set in code, because whether the instance's own hostname
+	// redirects to the product path or serves a read-only view is the
+	// app's choice, not the deploy's. Handler refuses a Config that
+	// basepath's Validate refuses.
+	BasePath basepath.Config
+
 	// Wrap, if set, wraps the app's mux — the one seam for app
 	// middleware: sessions, CSRF, panic pages, authorization
 	// (gleester's friction, James 2026-08-04; also the friction behind
@@ -126,11 +139,17 @@ type Options struct {
 	// error is ignored) — additive-only, per the family's hard-won rule.
 	Migrations []string
 
+	// DurableCommits opens DBPath with synchronous(FULL), not NORMAL, so
+	// SQLite syncs the WAL after each commit. db.DurableCommits says what
+	// that protects against and what it costs.
+	DurableCommits bool
+
 	// Socket and Addr mirror the platform's activation contract (see
 	// testdata/echoapp in carlosframework/platform): a unix socket path,
-	// or a TCP host:port for local dev. If both are empty, Serve checks
-	// for a systemd-activated listener (LISTEN_FDS) before falling back
-	// to Addr ":8080".
+	// or a TCP host:port for local dev. A systemd-activated listener
+	// (LISTEN_FDS) wins over both. If both are empty, Serve listens on
+	// ":$PORT" when PORT is set, as Render, Railway and Cloud Run set
+	// it, and refuses a PORT that is not a port; else on ":8080".
 	Socket string
 	Addr   string
 
@@ -159,9 +178,9 @@ type Options struct {
 
 	// CSP replaces the value of the Content-Security-Policy header the
 	// framework sets on every response (see the package's default
-	// below: same-origin everything, no inline styles but pow's
-	// honeypot by hash, framing denied). Empty keeps the default. The
-	// other baseline headers — nosniff, frame denial, referrer policy, a
+	// below: same-origin everything, no inline styles but two of the
+	// framework's own by hash, framing denied). Empty keeps the default.
+	// The other baseline headers — nosniff, frame denial, referrer policy, a
 	// one-year host-only HSTS — have no Options
 	// field on purpose: all of them — this one included — are set
 	// before any app code runs, so an app that wants different values
@@ -225,6 +244,16 @@ type Options struct {
 	// does the same, so a test harness tears down in the same order.
 	// Nil means the app tracks nothing.
 	Background *background.Group
+
+	// Live is the app's live-update hub, if it has one. Serve ends its
+	// streams the moment shutdown starts: net/http's Shutdown waits for
+	// in-flight requests without cancelling their contexts, so an open
+	// stream would otherwise hold the 10-second drain until it ran out.
+	// Handler's close func also closes it, but that runs after the
+	// drain, so a host that embeds Handler under its own server must
+	// call Live.Close() before its own Shutdown. Nil means no live
+	// streams.
+	Live *live.Hub
 
 	// Logger defaults to slog.Default() if nil.
 	Logger *slog.Logger
@@ -306,13 +335,22 @@ func newServer(opts Options, handler http.Handler) *http.Server {
 	if idle == 0 {
 		idle = defaultIdleTimeout
 	}
-	return &http.Server{
+	srv := &http.Server{
 		Handler:           handler,
 		ReadHeaderTimeout: readHeader,
 		IdleTimeout:       idle,
 		ReadTimeout:       opts.ReadTimeout,
 		WriteTimeout:      opts.WriteTimeout,
 	}
+	// Registered here, with the server it belongs to, so Serve and the
+	// tests that drive its shutdown cannot differ. Shutdown runs this
+	// before it starts waiting, which is what keeps open streams from
+	// eating the drain. Skipped without a hub: an app without live
+	// pays nothing.
+	if opts.Live != nil {
+		srv.RegisterOnShutdown(opts.Live.Close)
+	}
+	return srv
 }
 
 // Serve opens the database (if configured), applies migrations, resolves
@@ -358,6 +396,11 @@ func Serve(opts Options) error {
 	if err != nil {
 		return err
 	}
+	// Capture mode is rastrillo generate asking what sets the app builds.
+	// Building the handler built them. Nothing listens, and nothing runs.
+	if path := os.Getenv(tmpl.CaptureEnv); path != "" {
+		return captureAndExit(path, closeDB)
+	}
 	defer closeDB()
 
 	ln, err := listen(opts.Socket, opts.Addr)
@@ -366,38 +409,19 @@ func Serve(opts Options) error {
 	}
 	logger.Info("rastrillo: serving", "addr", ln.Addr().String(), "version", BuildVersion)
 
-	srv := newServer(opts, handler)
-	errCh := make(chan error, 1)
-	go func() { errCh <- srv.Serve(ln) }()
-
-	sigCh := make(chan os.Signal, 1)
-	signal.Notify(sigCh, syscall.SIGTERM, syscall.SIGINT)
-	select {
-	case err := <-errCh:
-		if err != nil && !errors.Is(err, http.ErrServerClosed) {
-			return err
-		}
-	case <-sigCh:
-		logger.Info("rastrillo: shutting down")
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
-		if err := srv.Shutdown(ctx); err != nil {
-			return err
-		}
-	}
-	return nil
+	return serveUntilStopped(newServer(opts, handler), ln, logger)
 }
 
 // Handler is everything Serve builds short of the listener and the
 // signal handling: it opens the database (if configured), applies
 // migrations, resolves the Mux/Router choice, and assembles the full
 // serving handler — framework endpoints, Wrap, locales and all. The
-// returned close func stops Options.Background and then releases the
+// returned close func closes Options.Live, stops Options.Background and then releases the
 // database handle (each a no-op without one).
 //
-// It refuses a locale configuration locales.CheckConfig rejects, before
-// opening anything, and installs the accepted one for request-time
-// formatting.
+// It refuses a locale configuration locales.CheckConfig rejects, and a
+// BasePath basepath's Validate rejects, before opening anything, and
+// installs the accepted locales for request-time formatting.
 //
 // Exported for test harnesses: before this seam, every app's harness
 // hand-duplicated /healthz, /api/version and the DSN pragma ordering
@@ -418,11 +442,17 @@ func Handler(opts Options) (http.Handler, func() error, error) {
 	if err != nil {
 		return nil, closeNothing, fmt.Errorf("rastrillo: refusing to start: %v", err)
 	}
+	// Beside the locale check, and before its Install, for the same
+	// reason: a deploy with a bad slug or origin changes nothing, rather
+	// than serving at the wrong path or answering every request with 404.
+	if err := opts.BasePath.Validate(); err != nil {
+		return nil, closeNothing, fmt.Errorf("rastrillo: refusing to start: %v", err)
+	}
 	locales.Install(cfg)
 
 	var db *sql.DB
 	if opts.DBPath != "" {
-		db, err = OpenDB(opts.DBPath, opts.Migrations)
+		db, err = openDB(opts.DBPath, opts.Migrations, opts.DurableCommits)
 		if err != nil {
 			return nil, closeNothing, fmt.Errorf("rastrillo: open database: %w", err)
 		}
@@ -431,6 +461,12 @@ func Handler(opts Options) (http.Handler, func() error, error) {
 	// may already have started background work on db by the time
 	// buildHandler fails.
 	closeDB := func() error {
+		// Before Background.Stop, so a test harness that tears down with
+		// this func alone ends its streams first; Serve has already
+		// closed the hub when shutdown began, and Close is idempotent.
+		if opts.Live != nil {
+			opts.Live.Close()
+		}
 		if opts.Background != nil {
 			opts.Background.Stop()
 		}
@@ -461,17 +497,17 @@ func Handler(opts Options) (http.Handler, func() error, error) {
 // images, fetches and form targets; data: images allowed for embedded
 // favicons; framing denied.
 //
-// No inline styles and no inline scripts. Inline styles are how CSS-based
-// exfiltration and UI redress work once some markup injection gets
-// through, so ui's partials emit no style attribute and the grid's
-// --rst-cols is set from the app's stylesheet (GitHub #147). The one
-// exception is pow's honeypot, which must stay hidden in apps that vendor
-// no stylesheet at all; it is admitted by its hash, which a style
-// attribute only matches alongside 'unsafe-hashes'. That constant is
-// spelled out rather than read from pow so every app binary does not
-// link pow; buildhandler_test.go keeps the two in step.
+// No inline styles and no inline scripts: inline styles are how CSS
+// exfiltration and UI redress work once markup injection gets through,
+// so ui's partials emit none and a grid's --rst-cols comes from the
+// app's stylesheet (GitHub #147). Two exceptions pass by hash: pow's
+// honeypot (an attribute, so 'unsafe-hashes' too) and auth's fallback
+// confirm page's <style>. Spelled out so apps need not link either;
+// buildhandler_test.go and auth's confirmcsp_test.go keep them in step.
 const defaultCSP = "default-src 'self'; " +
-	"style-src 'self' 'unsafe-hashes' 'sha256-yJxAE4rjdcckohdlnvecSporPcqS9xOaA4hJxi87LMc='; " +
+	"style-src 'self' 'unsafe-hashes' " +
+	"'sha256-yJxAE4rjdcckohdlnvecSporPcqS9xOaA4hJxi87LMc=' " +
+	"'sha256-81gZUb3tp60YCqhJ0dItBPh5hRQiGbfst4gpwCNPTfI='; " +
 	"img-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
 
 // securityHeaders is the outermost layer of the serving handler: the
@@ -502,15 +538,17 @@ func securityHeaders(csp string, speculate bool, next http.Handler) http.Handler
 		// on it for documents and ignore it elsewhere. A structured-field
 		// list of one string, which is the header's form.
 		if speculate {
-			h.Set("Speculation-Rules", `"`+SpeculationRulesPath+`"`)
+			// Through Path, so under a base the browser fetches this
+			// tenant's ruleset, not a path on the hub.
+			h.Set("Speculation-Rules", `"`+basepath.Path(r, SpeculationRulesPath)+`"`)
 		}
 		next.ServeHTTP(w, r)
 	})
 }
 
 // recoverPanics turns a panicking handler into a logged 500. It is the
-// OUTERMOST wrapper — outside securityHeaders, and so outside the locale
-// middleware and Options.Wrap too — because a panic in a middleware is
+// outermost wrapper but Options.BasePath's: outside securityHeaders,
+// and so outside the locale middleware and Options.Wrap too, because a panic in a middleware is
 // exactly as fatal to the connection as a panic in a handler, and the
 // only wrapper that can catch one is the one above it. Headers that the
 // inner wrappers already set on the ResponseWriter are still there when
@@ -559,8 +597,9 @@ func recoverPanics(errorPage ErrorPageFunc, logger *slog.Logger, next http.Handl
 // — when Options.Locales is set — the locale middleware wrapped around
 // the whole thing, so a locale prefix strips before routing and the
 // translator rides the request context (§10). The security-header
-// wrapper goes around all of it, and panic recovery around that. Split
-// from Handler so the assembly is testable without a database.
+// wrapper goes around all of it, panic recovery around that, and
+// Options.BasePath, when set, around everything. Split from Handler so
+// the assembly is testable without a database.
 func buildHandler(opts Options) (http.Handler, error) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
@@ -589,6 +628,13 @@ func buildHandler(opts Options) (http.Handler, error) {
 			return nil, errors.New("rastrillo: Options.Wrap returned a nil handler")
 		}
 	}
+	if opts.BasePath.Enabled() && opts.BasePath.DirectHost == basepath.ServeDirect {
+		// The app, not the mux: the framework's own switches stay
+		// writable, so a reader can still choose a language and colours,
+		// while every app route (an app's own /_theme included) is
+		// read-only on the direct host.
+		app = readOnlyDirect(app)
+	}
 	mux.Handle("/", app)
 	// Before the no-locales return, unlike /_locale: a one-language
 	// app has a colour scheme to choose. And unlike /_locale, the app's
@@ -602,8 +648,21 @@ func buildHandler(opts Options) (http.Handler, error) {
 		mux.Handle("POST "+SchemeSwitchPath, schemeSwitchUnlessApp(opts.Mux, app))
 	}
 
+	// outer is the chrome around the routed handler. The base path goes
+	// outside panic recovery: its own 404, 301/308 and 307 carry no page
+	// worth hardening; inside it, the panic page and the
+	// Speculation-Rules header see the base, so a panic page links into
+	// the tenant and the browser fetches the tenant's ruleset; and a
+	// panic in its few lines still reaches net/http's own recovery.
+	outer := func(h http.Handler) http.Handler {
+		h = recoverPanics(opts.ErrorPage, opts.Logger, securityHeaders(opts.CSP, !opts.NoSpeculationRules, h))
+		if opts.BasePath.Enabled() {
+			h = opts.BasePath.Handler(liveBase(h))
+		}
+		return h
+	}
 	if len(opts.Locales) == 0 {
-		return recoverPanics(opts.ErrorPage, opts.Logger, securityHeaders(opts.CSP, !opts.NoSpeculationRules, mux)), nil
+		return outer(mux), nil
 	}
 	def := opts.DefaultLocale
 	if def == "" {
@@ -628,7 +687,48 @@ func buildHandler(opts Options) (http.Handler, error) {
 	// Registered after mux.Handle("/", app) only for readability:
 	// ServeMux prefers the more specific pattern whatever the order.
 	mux.Handle("POST "+LocaleSwitchPath, loc.SwitchHandler())
-	return recoverPanics(opts.ErrorPage, opts.Logger, securityHeaders(opts.CSP, !opts.NoSpeculationRules, loc.Middleware(mux))), nil
+	return outer(loc.Middleware(mux)), nil
+}
+
+// liveBase hands the base the request was served under to live, so a
+// live page's meta points EventSource at /acme/live rather than /live,
+// the hub's path or another tenant's. live imports only the standard
+// library and cannot ask basepath itself. On the direct host there is
+// no base, and the request passes unchanged.
+func liveBase(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		next.ServeHTTP(w, live.WithBase(r, basepath.Base(r)))
+	})
+}
+
+// readOnlyDirect refuses writes on a served direct host
+// (basepath.ServeDirect): a method other than GET, HEAD or OPTIONS
+// answers 405, unless it is a basepath.PlatformCall, such as a
+// scheduled tick or a socket call on Host carlos.
+//
+// Having no session there is not enough to make the view read-only. An
+// unscoped generated action writes with no session at all
+// (op.DefaultPolicy allows an unscoped op for any caller without a
+// credential, op/check.go:41-44), and csrf passes a same-origin POST
+// from the direct host, so a visitor to the instance's own hostname
+// could write. It wraps the app rather than matching paths because an
+// app may own /_theme itself (schemeSwitchUnlessApp), and that handler
+// must be refused too. The scaffold mounts /api/v1 inside the app mux,
+// so an API client's bearer write gets the same 405: the served view
+// is read-only for everyone, and its writes belong on the product path.
+func readOnlyDirect(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodGet, http.MethodHead, http.MethodOptions:
+		default:
+			if basepath.OnDirectHost(r) && !basepath.PlatformCall(r) {
+				w.Header().Set("Allow", "GET, HEAD")
+				http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+				return
+			}
+		}
+		next.ServeHTTP(w, r)
+	})
 }
 
 // schemeSwitchUnlessApp serves the framework's scheme switch unless
@@ -693,69 +793,4 @@ func nextDueHandler(nextDue func() time.Time) http.HandlerFunc {
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]int64{"due": due})
 	}
-}
-
-// listen resolves the platform's activation contract, exactly matching
-// carlosframework/platform's testdata/echoapp: a systemd-activated
-// listener (LISTEN_FDS=1, fd 3 — the carlos-app@.socket contract) takes
-// priority; otherwise Socket (unix) or Addr (TCP).
-func listen(socket, addr string) (net.Listener, error) {
-	if n, _ := strconv.Atoi(os.Getenv("LISTEN_FDS")); n >= 1 {
-		if pid := os.Getenv("LISTEN_PID"); pid == "" || pid == strconv.Itoa(os.Getpid()) {
-			return net.FileListener(os.NewFile(3, "listen-fd"))
-		}
-	}
-	if socket != "" {
-		os.Remove(socket)
-		return net.Listen("unix", socket)
-	}
-	if addr == "" {
-		addr = ":8080"
-	}
-	return net.Listen("tcp", addr)
-}
-
-// OpenDB applies the SQLite convention the survey found hand-propagated,
-// with fixes, repo to repo (design doc §5): busy_timeout set *before*
-// journal_mode=WAL — the reverse order crashes with SQLITE_BUSY under
-// concurrent open, titogo's real fix — then SetMaxOpenConns(1), then an
-// eager ping so the file exists on disk from boot, then migrate.
-//
-// Exported so tests and non-Serve contexts get the corrected opener
-// instead of reproducing the DSN by hand (the blog's F4).
-func OpenDB(path string, migrations []string) (*sql.DB, error) {
-	checkconfig.Guard("rastrillo.OpenDB")
-	db, err := sql.Open("sqlite", path+"?_pragma=busy_timeout(5000)&_pragma=journal_mode(WAL)")
-	if err != nil {
-		return nil, err
-	}
-	db.SetMaxOpenConns(1)
-
-	// database/sql's Open is lazy — it never touches the driver, so with
-	// zero migrations the file would never materialize. A hibernate
-	// route's activator starts replicating this path from boot, so a
-	// zero-migration app must still create it: Ping forces the
-	// connection open now, at boot, instead of on the first request.
-	if err := db.Ping(); err != nil {
-		db.Close()
-		return nil, fmt.Errorf("ping %s: %w", path, err)
-	}
-
-	for i, m := range migrations {
-		if _, err := db.Exec(m); err != nil {
-			if isDuplicateColumn(err) {
-				continue
-			}
-			db.Close()
-			return nil, fmt.Errorf("migration %d: %w", i, err)
-		}
-	}
-	return db, nil
-}
-
-// isDuplicateColumn matches the one class of migration error the family
-// convention treats as success: an additive ALTER TABLE ... ADD COLUMN
-// re-run against a database that already has it.
-func isDuplicateColumn(err error) bool {
-	return strings.Contains(err.Error(), "duplicate column")
 }

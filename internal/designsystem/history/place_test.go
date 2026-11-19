@@ -13,8 +13,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/chromedp/cdproto/input"
-	"github.com/chromedp/cdproto/runtime"
 	"github.com/chromedp/cdproto/target"
 	"github.com/chromedp/chromedp"
 
@@ -57,11 +55,24 @@ type place struct {
 	ctx context.Context
 }
 
-func (p *place) run(where string, actions ...chromedp.Action) {
+func (p *place) run(
+	where string, actions ...chromedp.Action[chromedp.Void],
+) {
 	p.t.Helper()
-	if err := chromedp.Run(p.ctx, actions...); err != nil {
+	if err := chromedp.Do(p.ctx, actions...); err != nil {
 		p.t.Fatalf("%s: %v", where, err)
 	}
+}
+
+// evaluate runs expression on tab and returns its result, failing the
+// test the way run does.
+func evaluate[T any](tab *place, where, expression string) T {
+	tab.t.Helper()
+	value, err := chromedp.Run(tab.ctx, chromedp.Evaluate[T](expression))
+	if err != nil {
+		tab.t.Fatalf("%s: %v", where, err)
+	}
+	return value
 }
 
 // clickWith is a real mouse click on the first match, with a modifier
@@ -73,10 +84,11 @@ func (p *place) run(where string, actions ...chromedp.Action) {
 // viewport, a rail link, is brought to its nearest edge first.
 func (p *place) clickWith(where, sel string, opts ...chromedp.MouseOption) {
 	p.t.Helper()
-	var at []float64
-	p.run(where, chromedp.Evaluate(`(() => { const el = document.querySelector(`+strconv.Quote(sel)+`), r0 = el.getBoundingClientRect();
+	at := evaluate[[]float64](p, where, `(() => {
+	  const el = document.querySelector(`+strconv.Quote(sel)+`),
+	    r0 = el.getBoundingClientRect();
 	  if (r0.top < 0 || r0.bottom > innerHeight) el.scrollIntoView({block: "nearest"});
-	  const r = el.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; })()`, &at))
+	  const r = el.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; })()`)
 	p.run(where, chromedp.MouseClickXY(at[0], at[1], opts...))
 }
 
@@ -84,8 +96,10 @@ func (p *place) clickWith(where, sel string, opts ...chromedp.MouseOption) {
 // after this document puts a target in place.
 func (p *place) frames(where string) {
 	p.t.Helper()
-	p.run(where, chromedp.Evaluate(`new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true))))`, nil,
-		func(e *runtime.EvaluateParams) *runtime.EvaluateParams { return e.WithAwaitPromise(true) }))
+	p.run(where, chromedp.Evaluate[chromedp.Void](
+		`new Promise(r => requestAnimationFrame(() =>
+		  requestAnimationFrame(() => r(true))))`,
+		chromedp.EvalAwaitPromise))
 }
 
 // open loads url as a document of its own. It goes by about:blank
@@ -94,23 +108,23 @@ func (p *place) frames(where string) {
 // load at a fragment are about what a fresh load does.
 func (p *place) open(where, url string) {
 	p.t.Helper()
-	p.run(where, chromedp.EmulateViewport(1280, 900), chromedp.Navigate("about:blank"), chromedp.Navigate(url), chromedp.WaitReady(`.ds-top`, chromedp.ByQuery))
+	p.run(where, chromedp.EmulateViewport(1280, 900), chromedp.Navigate("about:blank"), chromedp.Navigate(url), chromedp.WaitReady(chromedp.CSS(`.ds-top`)))
 	until(p.t, p.ctx, where, `document.readyState === "complete"`)
 	p.frames(where)
 }
 
 func (p *place) geometry(where string) string {
 	p.t.Helper()
-	var id string
-	p.run(where, chromedp.Evaluate(geometryJS, &id))
-	return id
+	return evaluate[string](p, where, geometryJS)
 }
 
 // follow clicks a rail link to an anchor on this page, a real followed
 // fragment.
 func (p *place) follow(where, id string) {
 	p.t.Helper()
-	p.run(where, chromedp.Evaluate(fmt.Sprintf(`document.querySelector('#ds-nav a[href$="#%s"]').click(); true`, id), nil))
+	click := fmt.Sprintf(
+		`document.querySelector('#ds-nav a[href$="#%s"]').click(); true`, id)
+	p.run(where, chromedp.Evaluate[chromedp.Void](click))
 	p.frames(where)
 }
 
@@ -119,24 +133,27 @@ func (p *place) follow(where, id string) {
 // menu. Both report where the new page landed.
 func (p *place) switchTheme(where string) landing {
 	p.t.Helper()
-	var next string
-	p.run(where, chromedp.Evaluate(`(() => { const a = document.querySelector('.ds-top__controls [rst-seg-tabs] a:not([aria-current])'); a.click(); return a.textContent; })()`, &next))
-	p.run(where, chromedp.WaitReady(`link[href*="/theme-`+next+`."][href$=".css"]`, chromedp.ByQuery))
+	next := evaluate[string](p, where, `(() => { const a = document.querySelector('.ds-top__controls [rst-seg-tabs] a:not([aria-current])'); a.click(); return a.textContent; })()`)
+	p.run(where, chromedp.WaitReady(chromedp.CSS(`link[href*="/theme-`+next+`."][href$=".css"]`)))
 	return p.landed(where)
 }
 
 func (p *place) switchLanguage(where, code string) landing {
 	p.t.Helper()
-	p.run(where, chromedp.Evaluate(`(() => { const d = document.querySelector(".ds-top__controls [rst-locale]"); d.open = true; d.querySelector('a[lang="`+code+`"]').click(); return true; })()`, nil))
-	p.run(where, chromedp.WaitReady(`html[lang="`+code+`"]`, chromedp.ByQuery))
+	p.run(where, chromedp.Evaluate[chromedp.Void](
+		`(() => {
+		  const d = document.querySelector(".ds-top__controls [rst-locale]");
+		  d.open = true;
+		  d.querySelector('a[lang="`+code+`"]').click();
+		  return true; })()`))
+	p.run(where, chromedp.WaitReady(chromedp.CSS(`html[lang="`+code+`"]`)))
 	return p.landed(where)
 }
 
 func (p *place) landed(where string) landing {
 	p.t.Helper()
 	until(p.t, p.ctx, where, `document.readyState === "complete"`)
-	var raw string
-	p.run(where, chromedp.Evaluate(landingJS, &raw))
+	raw := evaluate[string](p, where, landingJS)
 	var l landing
 	if err := json.Unmarshal([]byte(raw), &l); err != nil {
 		p.t.Fatalf("%s: decoding %q: %v", where, raw, err)
@@ -165,17 +182,21 @@ func (p *place) lands(where string, l landing, id string) {
 func newTab(ctx context.Context, url func(string) bool) <-chan target.ID {
 	ch := make(chan target.ID, 1)
 	lctx, cancel := context.WithCancel(ctx)
-	chromedp.ListenTarget(lctx, func(ev any) {
-		e, ok := ev.(*target.EventTargetCreated)
-		if !ok || e.TargetInfo.Type != "page" || e.TargetInfo.Attached || !url(e.TargetInfo.URL) {
+	created := chromedp.Events(lctx, target.TargetCreated)
+	go func() {
+		defer cancel()
+		for event, err := range created {
+			if err != nil {
+				return
+			}
+			info := event.TargetInfo
+			if info.Type != "page" || info.Attached || !url(info.URL) {
+				continue
+			}
+			ch <- info.TargetID
 			return
 		}
-		select {
-		case ch <- e.TargetInfo.TargetID:
-		default:
-		}
-		cancel()
-	})
+	}()
 	return ch
 }
 
@@ -203,14 +224,15 @@ func TestPositionSurvivesASwitch(t *testing.T) {
 	}
 	// The page's last partial, read off it: the case where the page
 	// clamps before the target reaches the reading line.
-	var last string
 	p.open("finding the last partial", page("day", "en"))
-	p.run("finding the last partial", chromedp.Evaluate(`[...document.querySelectorAll("article.ds-partial[data-ds-anchor]")].pop().id`, &last))
+	last := evaluate[string](p, "finding the last partial", `[...document.querySelectorAll("article.ds-partial[data-ds-anchor]")].pop().id`)
 
 	// A section on the reading line survives a theme switch and then a
 	// language switch.
 	p.open("scrolled", page("day", "en"))
-	p.run("scrolled", chromedp.Evaluate(`document.getElementById("partial-field-select").scrollIntoView({block: "start"}); true`, nil))
+	p.run("scrolled", chromedp.Evaluate[chromedp.Void](
+		`document.getElementById("partial-field-select")
+		  .scrollIntoView({block: "start"}); true`))
 	p.lands("scrolled, then theme", p.switchTheme("scrolled, then theme"), "partial-field-select")
 	p.lands("scrolled, then language", p.switchLanguage("scrolled, then language", "ja"), "partial-field-select")
 
@@ -230,7 +252,8 @@ func TestPositionSurvivesASwitch(t *testing.T) {
 	// And rule 1 lets go: a screen's scroll later the id is geometry's.
 	p.open("last, scrolled", page("day", "en"))
 	p.follow("last, scrolled", last)
-	p.run("last, scrolled", chromedp.Evaluate(`scrollBy(0, -innerHeight); true`, nil))
+	p.run("last, scrolled", chromedp.Evaluate[chromedp.Void](
+		`scrollBy(0, -innerHeight); true`))
 	want := p.geometry("last, scrolled")
 	p.lands("last, scrolled, then theme", p.switchTheme("last, scrolled, then theme"), want)
 
@@ -238,9 +261,10 @@ func TestPositionSurvivesASwitch(t *testing.T) {
 	// of the second row lands on it, not on the row's last.
 	icons := rig.Origin + pageHref(mountPath, "day", "en", fileOf("icons"))
 	p.open("icons", icons)
-	var glyph string
-	p.run("icons", chromedp.Evaluate(`(() => { const all = [...document.querySelectorAll(".ds-icons > [data-ds-anchor]")];
-	  const firstTop = all[0].getBoundingClientRect().top; return all.find(a => a.getBoundingClientRect().top > firstTop + 1).id; })()`, &glyph))
+	glyph := evaluate[string](p, "icons", `(() => {
+	  const all = [
+	    ...document.querySelectorAll(".ds-icons > [data-ds-anchor]")];
+	  const firstTop = all[0].getBoundingClientRect().top; return all.find(a => a.getBoundingClientRect().top > firstTop + 1).id; })()`)
 	p.follow("icons", glyph)
 	p.lands("icons, a row's first glyph", p.switchTheme("icons, a row's first glyph"), glyph)
 
@@ -255,7 +279,9 @@ func TestPositionSurvivesASwitch(t *testing.T) {
 	// restored scroll is not a fragment the reader is on, so geometry
 	// decides.
 	p.open("reloaded", page("day", "en")+"#"+last)
-	p.run("reloaded", chromedp.Evaluate(`scrollBy(0, -innerHeight); true`, nil), chromedp.Reload(), chromedp.WaitReady(`.ds-top`, chromedp.ByQuery))
+	p.run("reloaded",
+		chromedp.Evaluate[chromedp.Void](`scrollBy(0, -innerHeight); true`),
+		chromedp.Reload(), chromedp.WaitReady(chromedp.CSS(`.ds-top`)))
 	until(t, ctx, "reloaded", `document.readyState === "complete"`)
 	p.frames("reloaded")
 	want = p.geometry("reloaded")
@@ -265,7 +291,8 @@ func TestPositionSurvivesASwitch(t *testing.T) {
 	// layout change above it (no hashchange fires) puts it back.
 	p.open("renewed", page("day", "en"))
 	p.follow("renewed", last)
-	p.run("renewed", chromedp.Evaluate(`document.querySelector(".ds-view__tab--m input").click(); true`, nil))
+	p.run("renewed", chromedp.Evaluate[chromedp.Void](
+		`document.querySelector(".ds-view__tab--m input").click(); true`))
 	p.follow("renewed", last)
 	p.lands("renewed, then theme", p.switchTheme("renewed, then theme"), last)
 
@@ -274,9 +301,10 @@ func TestPositionSurvivesASwitch(t *testing.T) {
 	// does not make it the place.
 	p.open("history", page("day", "en"))
 	p.follow("history", last)
-	p.run("history", chromedp.Evaluate(`scrollBy(0, -innerHeight); true`, nil))
+	p.run("history", chromedp.Evaluate[chromedp.Void](
+		`scrollBy(0, -innerHeight); true`))
 	p.follow("history", "partial-choice-field")
-	p.run("history", chromedp.Evaluate(`history.back(); true`, nil))
+	p.run("history", chromedp.Evaluate[chromedp.Void](`history.back(); true`))
 	until(t, ctx, "history, back", `location.hash === "#`+last+`"`)
 	p.frames("history, back")
 	want = p.geometry("history, back")
@@ -289,11 +317,14 @@ func TestPositionSurvivesASwitch(t *testing.T) {
 	// all within one document, then switch.
 	p.open("history, forward", page("day", "en"))
 	p.follow("history, forward", last)
-	p.run("history, forward", chromedp.Evaluate(`scrollBy(0, -innerHeight); true`, nil))
+	p.run("history, forward", chromedp.Evaluate[chromedp.Void](
+		`scrollBy(0, -innerHeight); true`))
 	p.follow("history, forward", "partial-choice-field")
-	p.run("history, forward", chromedp.Evaluate(`scrollBy(0, innerHeight); history.back(); true`, nil))
+	p.run("history, forward", chromedp.Evaluate[chromedp.Void](
+		`scrollBy(0, innerHeight); history.back(); true`))
 	until(t, ctx, "history, forward, back", `location.hash === "#`+last+`"`)
-	p.run("history, forward", chromedp.Evaluate(`history.forward(); true`, nil))
+	p.run("history, forward", chromedp.Evaluate[chromedp.Void](
+		`history.forward(); true`))
 	until(t, ctx, "history, forward", `location.hash === "#partial-choice-field"`)
 	p.frames("history, forward")
 	want = p.geometry("history, forward")
@@ -305,9 +336,11 @@ func TestPositionSurvivesASwitch(t *testing.T) {
 	// and still the place is geometry's.
 	p.open("history, round trip", page("day", "en"))
 	p.follow("history, round trip", last)
-	p.run("history, round trip", chromedp.Evaluate(`history.back(); true`, nil))
+	p.run("history, round trip", chromedp.Evaluate[chromedp.Void](
+		`history.back(); true`))
 	until(t, ctx, "history, round trip, back", `location.hash === ""`)
-	p.run("history, round trip", chromedp.Evaluate(`history.forward(); true`, nil))
+	p.run("history, round trip", chromedp.Evaluate[chromedp.Void](
+		`history.forward(); true`))
 	until(t, ctx, "history, round trip, forward", `location.hash === "#`+last+`"`)
 	p.frames("history, round trip, forward")
 	want = p.geometry("history, round trip, forward")
@@ -322,13 +355,20 @@ func TestPositionSurvivesASwitch(t *testing.T) {
 		where := "only a followed link, " + how
 		p.open(where, page("day", "en"))
 		p.follow(where, last)
-		p.run(where, chromedp.Evaluate(`scrollBy(0, -innerHeight); true`, nil))
+		p.run(where, chromedp.Evaluate[chromedp.Void](
+			`scrollBy(0, -innerHeight); true`))
 		sel := `#ds-nav a[href$="#` + last + `"]`
 		if how == "ctrl-click" {
-			p.run(where, chromedp.Evaluate(`document.querySelector('`+sel+`').closest("details").open = true; true`, nil))
-			p.clickWith(where, sel, chromedp.ButtonModifiers(input.ModifierCtrl))
+			p.run(where, chromedp.Evaluate[chromedp.Void](
+				`document.querySelector('`+sel+`').closest("details")
+				  .open = true; true`))
+			p.clickWith(where, sel,
+				chromedp.ButtonModifiers(chromedp.ModifierCtrl))
 		} else {
-			p.run(where, chromedp.Evaluate(`document.addEventListener("click", e => e.preventDefault(), {once: true}); document.querySelector('`+sel+`').click(); true`, nil))
+			p.run(where, chromedp.Evaluate[chromedp.Void](
+				`document.addEventListener("click", e => e.preventDefault(),
+				  {once: true});
+				document.querySelector('`+sel+`').click(); true`))
 		}
 		p.frames(where)
 		want := p.geometry(where)
@@ -373,8 +413,8 @@ func TestPositionSurvivesASwitch(t *testing.T) {
 			// page that never loaded. Wait for the destination, then
 			// require it.
 			until(t, tab, where+", the "+how+" tab", `location.href.includes("/`+fileOf("choices-and-actions")+`") && !location.href.includes("/day/")`)
-			var url string
-			if err := chromedp.Run(tab, chromedp.Location(&url)); err != nil {
+			url, err := chromedp.Run(tab, chromedp.Location())
+			if err != nil {
 				t.Fatalf("%s: reading the %s tab: %v", where, how, err)
 			}
 			if !other(url) {
@@ -389,41 +429,39 @@ func TestPositionSurvivesASwitch(t *testing.T) {
 	deep := `document.getElementById("partial-field-select").scrollIntoView({block: "start"}); true`
 	canonical := `![...document.querySelectorAll(".ds-top__controls a")].some(a => a.getAttribute("href").includes("#"))`
 	p.open(where, page("day", "en"))
-	p.run(where, chromedp.Evaluate(deep, nil))
+	p.run(where, chromedp.Evaluate[chromedp.Void](deep))
 	opened := newTab(ctx, other)
-	p.clickWith(where, theme, chromedp.ButtonModifiers(input.ModifierCtrl))
+	p.clickWith(where, theme, chromedp.ButtonModifiers(chromedp.ModifierCtrl))
 	if url := tabURL("Ctrl-clicking", opened); !strings.HasSuffix(url, "#partial-field-select") {
 		t.Errorf("%s: the Ctrl-clicked tab opened %s, want the computed place #partial-field-select", where, url)
 	}
 	until(t, ctx, where+", restored", canonical)
-	p.run(where, chromedp.Evaluate(deep, nil))
+	p.run(where, chromedp.Evaluate[chromedp.Void](deep))
 	middle := newTab(ctx, other)
 	p.clickWith(where, theme, chromedp.ButtonMiddle)
 	if url := tabURL("middle-clicking", middle); strings.Contains(url, "#") {
 		t.Errorf("%s: a middle-click opened %s; it reads the link as rendered, the top of the page", where, url)
 	}
-	p.run(where, chromedp.Evaluate(`scrollTo(0, 0); true`, nil))
+	p.run(where, chromedp.Evaluate[chromedp.Void](`scrollTo(0, 0); true`))
 	top := p.switchTheme(where + ", from the top")
 	if top.Hash != "" || top.Y != 0 {
 		t.Errorf("%s: a plain click from above every anchor landed at %q, scrolled %.0fpx; want the other page's top", where, top.Hash, top.Y)
 	}
-	p.run(where, chromedp.Evaluate(`history.back(); true`, nil))
+	p.run(where, chromedp.Evaluate[chromedp.Void](`history.back(); true`))
 	until(t, ctx, where+", back", `location.pathname.includes("/day/") && document.readyState === "complete"`)
 	// A freshly loaded page renders canonical links whatever the
 	// switcher does, so the last Back has to be a cache restore or its
 	// check passes on nothing. A restored document keeps its navigation
 	// entry; a reload starts a new one.
 	const started = `performance.getEntriesByType("navigation")[0].startTime + performance.timeOrigin`
-	var left float64
-	p.run(where, chromedp.Evaluate(started, &left))
-	p.run(where, chromedp.Evaluate(deep, nil))
+	left := evaluate[float64](p, where, started)
+	p.run(where, chromedp.Evaluate[chromedp.Void](deep))
 	if l := p.switchTheme(where + ", deep"); l.Hash != "#partial-field-select" {
 		t.Errorf("%s: a plain click from #partial-field-select landed at %q", where, l.Hash)
 	}
-	p.run(where, chromedp.Evaluate(`history.back(); true`, nil))
+	p.run(where, chromedp.Evaluate[chromedp.Void](`history.back(); true`))
 	until(t, ctx, where+", back again", `location.pathname.includes("/day/") && `+canonical)
-	var back float64
-	p.run(where, chromedp.Evaluate(started, &back))
+	back := evaluate[float64](p, where, started)
 	if back != left {
 		t.Fatalf("%s: the last Back was not a back/forward cache restore (navigation %s then %s), so its canonical links prove nothing. The tree handler must not send Cache-Control: no-store", where, strconv.FormatFloat(left, 'f', 0, 64), strconv.FormatFloat(back, 'f', 0, 64))
 	}

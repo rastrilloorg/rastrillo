@@ -8,7 +8,7 @@ This page takes you from nothing to an app serving on your machine.
 go install amadan.net/rastrillo/rastrillo/cmd/rastrillo@latest
 ```
 
-You need Go 1.25 or newer. [The CLI reference](/docs/cli) has every
+You need Go 1.26 or newer. [The CLI reference](/docs/cli) has every
 command; you will mostly use three of them.
 
 ## Scaffold an app

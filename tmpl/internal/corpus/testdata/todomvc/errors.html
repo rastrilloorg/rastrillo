@@ -1,0 +1,13 @@
+{{define "errors"}}{{template "head"}}		<section class="todoapp">
+			<header class="header">
+				<h1>todos</h1>
+			</header>
+			<section class="main error">
+				<p>{{.Title}}</p>
+{{- if .Ref}}
+				<p>Reference: <code>{{.Ref}}</code></p>
+{{- end}}
+				<p><a href="/">Back to your list</a></p>
+			</section>
+		</section>
+{{template "foot"}}{{end}}

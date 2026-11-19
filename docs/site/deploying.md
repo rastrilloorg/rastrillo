@@ -2,14 +2,15 @@
 
 Rastrillo builds apps; the CARLOS platform runs them. The contract
 between the two is what `rastrillo.Resolve` and `rastrillo.Serve`
-implement, and none of it is yours to hand-roll.
+implement, and none of it is yours to hand-roll. To run the same
+binary somewhere else, see [Hosting elsewhere](/docs/hosting-elsewhere).
 
 ## What the framework answers
 
 Activation argv in both shapes the platform uses: `-socket`/`-addr`/`-db`
 flags for an agent exec child on a hibernating route, or a bare `serve`
 subcommand for a `carlos-app@.service` unit tenant. `LISTEN_FDS` socket
-activation, before falling back to `Addr`. `$STATE_DIRECTORY`, so a
+activation, before falling back to `Addr`, then `$PORT`. `$STATE_DIRECTORY`, so a
 relative `-db` resolves inside it when systemd provides one — a unit
 tenant's working directory is not its state directory. `GET /healthz`
 and `GET /api/version`. The SIGTERM drain, which fits inside the
@@ -20,6 +21,26 @@ framework-owned and outermost, with your own `Set` or `Del` winning and
 Between `Serve` and `Run`, every route kind the platform runs —
 always-on instance, hibernating exec child, unit tenant — boots the same
 scaffolded app.
+
+## Your app's address
+
+The CSRF check compares each form post with your app's origin, and
+emailed sign-in links point at it. A new app reads it with
+[`rastrillo.Origin`](/docs/reference/rastrillo), which checks
+`<APP>_ORIGIN` first. When that is unset on CARLOS, the origin is
+`https://$CARLOS_HOST`, the instance's own hostname as `carlos instances
+list` shows it. Off CARLOS it is `http://localhost:8080`, with a warning
+in the log.
+
+Set `<APP>_ORIGIN` when people reach the app at another address:
+
+- **A custom domain.** `CARLOS_HOST` stays the platform hostname after
+  `carlos domains attach`, so set `<APP>_ORIGIN=https://<your domain>`.
+- **A hub's `/<slug>`.** Set it to the hub's origin.
+  [basepath](/docs/reference/basepath) refuses to start with the
+  instance's own hostname.
+- **A unit tenant** (`carlos-app@`). The platform does not give it
+  `CARLOS_HOST`.
 
 ## Hibernation needs nothing from you
 

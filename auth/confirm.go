@@ -117,6 +117,10 @@ func (a *Auth) host() string {
 // likes, the same shape jobs and password use for their pages. Unlike
 // those, this one has a default, because making it required would
 // break every app that upgrades without noticing.
+//
+// Its <style> block is admitted by its hash in rastrillo's default CSP
+// (serve.go's defaultCSP). Change one byte of it and the page renders
+// unstyled until the hash there follows: confirmcsp_test.go says so.
 var confirmTmpl = template.Must(template.New("confirm").Parse(`<!doctype html>
 <html lang="en">
 <head>

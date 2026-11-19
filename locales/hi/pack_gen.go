@@ -4,8 +4,8 @@
 // SHA-256 in hack/moneycldr/sources/inputs.sha256. Data from the Unicode CLDR,
 // © Unicode, Inc., under the Unicode License v3 (locales/LICENSE-UNICODE).
 
-// Package hi links CLDR money-formatting data for every modern "hi"
-// locale. Import it for its side effect.
+// Package hi links CLDR number- and money-formatting data for every
+// modern "hi" locale. Import it for its side effect.
 package hi
 
 import "amadan.net/rastrillo/rastrillo/locales"
@@ -13,6 +13,6 @@ import "amadan.net/rastrillo/rastrillo/locales"
 func init() { locales.Register("hi", data) }
 
 var data = map[string]locales.Locale{
-	"hi":      {Parent: "root", Standard: "¤#,##,##0.00", Alpha: "¤\u00a0#,##,##0.00", Symbols: map[string]string{"PHP": "PHP", "THB": "฿", "USD": "$"}, Narrow: map[string]string{"BYN": "р.", "RON": "लेई", "TWD": "NT$"}},
-	"hi-Latn": {Parent: "root", Standard: "¤#,##,##0.00", Alpha: "¤\u00a0#,##,##0.00", Symbols: map[string]string{"USD": "$"}},
+	"hi":      {Parent: "root", Number: "#,##,##0.###", Percent: "#,##,##0%", Standard: "¤#,##,##0.00", Alpha: "¤\u00a0#,##,##0.00", Symbols: map[string]string{"PHP": "PHP", "THB": "฿", "USD": "$"}, Narrow: map[string]string{"BYN": "р.", "RON": "लेई", "TWD": "NT$"}},
+	"hi-Latn": {Parent: "root", Number: "#,##,##0.###", Percent: "#,##,##0%", Standard: "¤#,##,##0.00", Alpha: "¤\u00a0#,##,##0.00", Symbols: map[string]string{"USD": "$"}},
 }

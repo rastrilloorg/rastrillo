@@ -296,6 +296,29 @@ func TestParityFailsWhenBothDoorsShowAnotherPersonsRow(t *testing.T) {
 	}
 }
 
+// TestParityFailsWhenMCPIsNotMounted: the MCP leg goes through the
+// endpoint, so an app that forgot to mount it fails the scenario at the
+// first tool call, for the scoped resource and the unscoped one.
+func TestParityFailsWhenMCPIsNotMounted(t *testing.T) {
+	app := parityApp(t)
+	env := append(scratch.Env(), "PARITY_NO_MCP=1")
+	out, err := scratch.RunWith(app, env,
+		"go", "test", "-count=1", "./paritycheck")
+	if err == nil {
+		t.Fatalf("the parity scenario passed with no MCP endpoint:\n%s", out)
+	}
+	if want := "tools/call"; !strings.Contains(out, want) {
+		t.Errorf("the failure is not at an MCP call; want %q in:\n%s",
+			want, out)
+	}
+	for _, name := range []string{"Bookmarks", "TicketTypes"} {
+		want := "--- FAIL: Test" + name + "Parity"
+		if !strings.Contains(out, want) {
+			t.Errorf("%s passed without the MCP mount:\n%s", name, out)
+		}
+	}
+}
+
 // TestParityKeepsLargeNumbersExact runs the helpers against answers
 // past 2^53, where a float64 holds only even integers: two adjacent
 // amounts must not compare equal, an id must not print as 9.007e+15,
@@ -460,6 +483,7 @@ import (
 
 	"amadan.net/rastrillo/rastrillo"
 	"amadan.net/rastrillo/rastrillo/api"
+	"amadan.net/rastrillo/rastrillo/mcp"
 	"amadan.net/rastrillo/rastrillo/sessions"
 
 	"scratch/gen"
@@ -489,17 +513,33 @@ func (fixture) New(t *testing.T) (http.Handler, *sql.DB) {
 			w.WriteHeader(status)
 		}}
 	})
-	tree, err := api.New(api.Config{
+	config := api.Config{
 		Verify:    verifier{},
 		Ctx:       func(*http.Request) *rastrillo.Ctx { return &rastrillo.Ctx{DB: db} },
 		Authorize: allow,
-	}, gen.APIRoutes()...)
+	}
+	tree, err := api.New(config, gen.APIRoutes()...)
 	if err != nil {
 		t.Fatal(err)
 	}
 	mux := http.NewServeMux()
 	mux.Handle("/api/v1", tree)
 	mux.Handle("/api/v1/", tree)
+	// PARITY_NO_MCP leaves the endpoint unmounted, to show the MCP leg
+	// fails on a missing mount and not only on a wrong answer.
+	if os.Getenv("PARITY_NO_MCP") == "" {
+		endpoint, err := mcp.New(mcp.Config{
+			Gate:      config.Gate(),
+			Ctx:       config.Ctx,
+			Authorize: allow,
+			Name:      "parity",
+			Version:   "v0",
+		}, gen.ExposedOperations()...)
+		if err != nil {
+			t.Fatal(err)
+		}
+		mux.Handle("/api/v1/mcp", endpoint)
+	}
 	mux.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if s := r.Header.Get("X-Parity-Subject"); s != "" {
 			r = sessions.WithSession(r, sessions.Session{Subject: s})

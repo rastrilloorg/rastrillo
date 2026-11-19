@@ -155,7 +155,8 @@ the meantime. This list is their union. **Built:**
   pragma-ordering fix, `SetMaxOpenConns(1)`, additive migrations; the
   platform's activation contract (`Options.Socket`/`Options.Addr`/systemd
   `LISTEN_FDS`, matching `carlosframework/platform`'s `testdata/echoapp`
-  exactly); `GET /healthz` and `GET /api/version` answered automatically.
+  exactly), then `$PORT` off the platform, then `:8080`
+  ([hosting elsewhere](docs/site/hosting-elsewhere.md)); `GET /healthz` and `GET /api/version` answered automatically.
   An app that keeps its database in `Ctx` sets `Options.Router` instead
   of `Options.Mux` and is handed the `*sql.DB` Serve opened;
   `rastrillo.OpenDB` is the same corrected opener exported for tests.
@@ -206,7 +207,8 @@ the meantime. This list is their union. **Built:**
   screen set — with framework strings resolved through the §10 locale
   chain. An app registers `ui.Funcs()` (`dict`, `list`, `icon`, `T`) on
   its own template tree and `ParseFS`s `ui.Templates()` alongside its own
-  templates; `ui.TokensCSS()` is the design-token stylesheet
+  templates; `ui.TokensCSS()` is the design-token stylesheet, from the
+  pinned [Fiesta](https://fiesta.rastrillo.org) release, that
   `rastrillo new` writes once into a new app's `static/` directory, app-
   owned from then on. `T` resolves a partial's own hardcoded-English
   default (e.g. `pagination`'s "Pagination", `confirm-form`'s "Cancel")
@@ -304,19 +306,21 @@ the meantime. This list is their union. **Built:**
   work that must survive one belongs in `eventlog`. It is bounded, too:
   an owner holds at most four running jobs (`Start` answers
   `ErrOwnerBusy` past that), and a job still running after fifteen
-  minutes is marked failed, its context expired. The framework's
-  JavaScript is two app-owned files `rastrillo new` writes beside
-  `tokens.css`: `static/rastrillo.js` replaces an element carrying
+  minutes is marked failed, its context expired. Jobs use two of the
+  app-owned scripts `rastrillo new` writes beside `tokens.css`:
+  `static/rastrillo.js` replaces an element carrying
   `data-poll` with the HTML fragment it fetches and stops when the new
   fragment stops asking, and `static/busy.js` gives every submit button
-  a spinner (for at least 650ms) and a double-submit guard while its
-  form is out (`data-busy="false"` opts out). Status pages poll, or ride
+  a spinner (a POST's at once, for at least 650ms; a GET's only after
+  500ms) and a double-submit guard while its form is out
+  (`data-busy="false"` opts out). Status pages poll, or ride
   Server-Sent Events where the browser supports them: `Events` streams
   at `/jobs/{id}/events` (heartbeats, per-write deadlines, a bounded
   stream lifetime — the serve.go streaming recipe), and the shim's
   `data-poll-push` upgrades to an EventSource that falls back to plain
   polling on its own. htmx remains a choice, not a dependency —
   `examples/notes` demonstrates the whole loop with an Export flow.
+- **`rastrillo/live`**: pages that update themselves, and still work with scripts off. The app declares topics (`notes/7`, checked per viewer), calls `Notify` after a write commits, and marks regions of a page with `View.Attrs`. An open page holds one Server-Sent Events stream that says which topics moved, never what changed, and fetches only the regions that did, from its own URL and as its own viewer, through the same handler and permission checks as the full page. A form with `data-live-form` swaps in place and, with scripts off, posts and redirects as before. `live.js` leaves a region alone while someone is editing in it. With the current `live.js`, the CARLOS edge holds the stream while the instance sleeps, so a live page never keeps a hibernating instance awake. `examples/notes` shows a live list with delete in place.
 - **`rastrillo/password`** — an email+password identity plugin on the
   sessions core, the same one-call `SignIn` contract auth's keymail
   flow honors, leaving storage, rendering, and CSRF to the app.
@@ -366,9 +370,9 @@ the meantime. This list is their union. **Built:**
   hand-rolled SigV4 signer + presigned GET/PUT pinned against the
   official AWS vectors, `Dir` and `Inline` backends (with the 4 KiB
   rule: bigger belongs in the object store), and `Sealed()` for E2EE.
-- **`rastrillo/mail`** — the one outbound-email surface (SMTP or
-  loudly-logged fallback, header-injection refused), signature-
-  compatible with signin's Mailer.
+- **`rastrillo/mail`** — the one outbound-email surface (SMTP, CARLOS
+  mail submission, or loudly-logged fallback, header-injection
+  refused), signature-compatible with signin's Mailer.
 - **`rastrillo/carlos`** — scheduled work on a hibernating instance
   (platform spec 2026-08-23-scheduled-work §7): `Tick(r)` authenticates
   a platform tick against `$CARLOS_ADMIN_TOKEN` in constant time,
@@ -689,10 +693,6 @@ Three packages carry the tag:
 `rastrillo new` scaffolds `internal/<pkg>/browser_test.go` on the
 same tag — the minimal loud walk, boots the whole app through
 `harness.New` and grows with it.
-
-`chromedp` is pinned to v0.14.2 rather than the latest: newer releases
-require Go 1.26, and a test-only dependency should not raise the module's
-Go floor for everyone who imports rastrillo.
 
 ## Parity vectors
 

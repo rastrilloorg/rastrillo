@@ -4,8 +4,8 @@
 // SHA-256 in hack/moneycldr/sources/inputs.sha256. Data from the Unicode CLDR,
 // © Unicode, Inc., under the Unicode License v3 (locales/LICENSE-UNICODE).
 
-// Package hsb links CLDR money-formatting data for every modern "hsb"
-// locale. Import it for its side effect.
+// Package hsb links CLDR number- and money-formatting data for every
+// modern "hsb" locale. Import it for its side effect.
 package hsb
 
 import "amadan.net/rastrillo/rastrillo/locales"
@@ -13,5 +13,5 @@ import "amadan.net/rastrillo/rastrillo/locales"
 func init() { locales.Register("hsb", data) }
 
 var data = map[string]locales.Locale{
-	"hsb": {Parent: "root", CurrencyDecimal: ",", CurrencyGroup: ".", Decimal: ",", Standard: "#,##0.00\u00a0¤", Alpha: "#,##0.00\u00a0¤", Symbols: map[string]string{"AUD": "AUD", "JPY": "¥", "PLN": "zł", "THB": "฿", "USD": "$"}},
+	"hsb": {Parent: "root", CurrencyDecimal: ",", CurrencyGroup: ".", Decimal: ",", Group: ".", Percent: "#,##0\u00a0%", Standard: "#,##0.00\u00a0¤", Alpha: "#,##0.00\u00a0¤", Symbols: map[string]string{"AUD": "AUD", "JPY": "¥", "PLN": "zł", "THB": "฿", "USD": "$"}},
 }

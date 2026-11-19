@@ -3,12 +3,15 @@ package designsystem
 import (
 	"fmt"
 	"html/template"
+	"maps"
 	"strings"
 	"sync"
+	"time"
 
 	"amadan.net/rastrillo/rastrillo"
-	"amadan.net/rastrillo/rastrillo/currency"
+	"amadan.net/rastrillo/rastrillo/internal/codeview"
 	"amadan.net/rastrillo/rastrillo/locales"
+	"amadan.net/rastrillo/rastrillo/ui"
 )
 
 // The Dates, numbers and names page: which tag carries which kind of
@@ -35,14 +38,14 @@ type formatDoc struct {
 	// Title and Body are English, and therefore prose keys.
 	Title string
 	Body  string
-	// Markup is the sample, complete HTML with no template actions.
-	// Empty means a section with nothing to show, which none has yet.
+	// Markup is the sample. Where a ui helper writes one of its values,
+	// Markup is a template with the helper's call in place of the
+	// value, and the Template tab shows it: the call is the advice, and
+	// the value it writes differs from one page's locale to the next.
 	Markup string
-	// MarkupFor replaces Markup when a sample's content depends on the
-	// page's locale rather than being the same HTML on every page. Nil
-	// for every section but money, whose three amounts are written in
-	// the reader's own conventions (spec §9).
-	MarkupFor func(locale string) string
+	// Data is what a templated Markup reads, and nil for a sample that
+	// is plain HTML.
+	Data map[string]any
 }
 
 // formatView is one section as the page renders it.
@@ -66,13 +69,17 @@ func formatDocs() []formatDoc {
 		{
 			Key:   "dates",
 			Title: "Dates and times",
-			Body:  "Put a date in a <time> tag, with a version of the date a computer can read. Write the date itself however your readers expect to see it. Rastrillo will not format it for you.",
+			Body:  "Put a date in a `<time>` tag, with a version of the date a computer can read. Use `date` to show it in the format used by the reader's language.",
 			Markup: `<section rst-box>
   <dl rst-detail>
     <dt>Published</dt>
-    <dd><time datetime="2026-08-02">2 August 2026</time></dd>
+    <dd><time datetime="{{.Published.Format "2006-01-02"}}">{{date $L .Published "dateYear"}}</time></dd>
   </dl>
 </section>`,
+			Data: map[string]any{
+				"Published": time.Date(2026, time.August, 2, 0, 0, 0, 0,
+					time.UTC),
+			},
 		},
 		{
 			Key:   "durations",
@@ -88,17 +95,26 @@ func formatDocs() []formatDoc {
 		{
 			Key:   "numbers",
 			Title: "Numbers",
-			Body:  "Break up long numbers so they can be read at a glance: 54,173 in English, 54.173 in German, ٥٤٬١٧٣ in Arabic. Never show a long number as plain digits. In a table, use digits that are all the same width, so the columns line up.",
+			Body:  "Break up long numbers so they can be read at a glance: 54,173 in English, 54.173 in German, ৫৪,১৭৩ in Bengali. Show them with `number`, which groups the digits according to the reader's language. In a table, use digits that are all the same width, so the columns line up.",
 			Markup: `<div rst-stats>
-  <div rst-stat><span rst-stat-label>Members</span><span rst-stat-num>54,173</span></div>
-  <div rst-stat><span rst-stat-label>Messages</span><span rst-stat-num>1,284,902</span></div>
+  <div rst-stat><span rst-stat-label>Members</span><span rst-stat-num>{{number $L .Members}}</span></div>
+  <div rst-stat><span rst-stat-label>Messages</span><span rst-stat-num>{{number $L .Messages}}</span></div>
 </div>`,
+			Data: map[string]any{"Members": 54173, "Messages": 1284902},
 		},
 		{
-			Key:       "money",
-			Title:     "Money",
-			Body:      "Store each amount as a whole number of the currency's smallest unit, such as cents, with its currency code beside it. Show it with `money`, which writes it the way the reader's language does. The currency always comes from your data, never from the reader.",
-			MarkupFor: moneySampleMarkup,
+			Key:   "money",
+			Title: "Money",
+			Body:  "Store each amount as a whole number of the currency's smallest unit, such as cents, with its currency code beside it. Show it with `money`, which writes it the way the reader's language does. The currency always comes from your data, never from the reader.",
+			Markup: `<section rst-box>
+  <dl rst-detail>
+{{- range .Amounts}}
+    <dt>{{.Currency}}</dt>
+    <dd>{{money $L .Minor .Currency}}</dd>
+{{- end}}
+  </dl>
+</section>`,
+			Data: map[string]any{"Amounts": moneyAmounts},
 		},
 		{
 			Key:   "ratios",
@@ -106,12 +122,15 @@ func formatDocs() []formatDoc {
 			Body:  "Use <meter> to show how full something is. Use <progress> to show how far a job has got. Always print the number beside the bar. A bar on its own tells a blind reader nothing.",
 			Markup: `<div rst-box-head><h2>Photo storage</h2></div>
 <section rst-box>
-  <span rst-meter><meter rst-meter-bar value="82" min="0" max="100" aria-hidden="true"></meter><span rst-meter-num>412 / 500</span></span>
+  <span rst-meter><meter rst-meter-bar value="82" min="0" max="100" aria-hidden="true"></meter><span rst-meter-num>{{number $L .Used}} / {{number $L .Limit}}</span></span>
 </section>
 <div rst-box-head><h2>Import</h2></div>
 <section rst-box>
-  <div rst-job><span rst-spin aria-hidden="true"></span> <strong>Import</strong> is running: 128 of 400…<progress rst-job-bar value="32" min="0" max="100" aria-hidden="true"></progress></div>
+  <div rst-job><span rst-spin aria-hidden="true"></span> <strong>Import</strong> is running: {{number $L .Done}} of {{number $L .Total}}…<progress rst-job-bar value="32" min="0" max="100" aria-hidden="true"></progress></div>
 </section>`,
+			Data: map[string]any{
+				"Used": 412, "Limit": 500, "Done": 128, "Total": 400,
+			},
 		},
 		{
 			Key:   "filesizes",
@@ -141,7 +160,7 @@ func formatDocs() []formatDoc {
 			Key:   "people",
 			Title: "People's names",
 			Body:  "A name can be in any language, including ones that read right to left. When a name sits in the middle of a line, wrap it in <bdi>, or it will scramble the words around it. Use person to show a name with a picture beside it.",
-			Markup: `<div rst-card style="--rst-cols: minmax(0, 1fr) 120px">
+			Markup: `<div rst-card class="people">
   <div rst-lrow>
     <a class="rst-nm" href="/people/1"><bdi>Grace Hopper</bdi><small><bdi>grace@example.com</bdi> · 09:12</small></a>
     <span class="rst-cell-mut rst-m-hide">Admin</span>
@@ -180,28 +199,50 @@ func formatDocs() []formatDoc {
       <label rst-field-label for="seats">Seats</label>
       <input rst-input="short" id="seats" name="seats" type="number" value="12">
     </div>
-    <p>Total <output for="seats" name="total">$144.00</output></p>
+    <p>Total <output for="seats" name="total">{{money $L .Total .Currency}}</output></p>
   </form>
 </section>`,
+			Data: map[string]any{"Total": 14400, "Currency": "USD"},
 		},
 	}
 }
 
-// formatMarkup resolves one section's sample markup for a locale.
-// MarkupFor overrides Markup, because money's content depends on the
-// locale the page is in and Markup alone cannot say that; every other
-// section leaves MarkupFor nil and gets its one Markup back, its words
-// translated by localMarkup. MarkupFor's output skips localMarkup: it
-// is already written for the locale, and its ISO codes (EUR, KWD) read
-// as words to hasWords, so the parity gate would demand eleven
-// translations of a code that must never change.
-// Shared by buildFormats and TestTheTextOnScreenIsTheTextCopied, so the
-// two cannot read the money sample's code tab differently.
-func formatMarkup(doc formatDoc, locale string) string {
-	if doc.MarkupFor != nil {
-		return doc.MarkupFor(locale)
-	}
+// formatSource is one section's sample in a locale as its source: the
+// markup, or for a templated sample the template the Template tab
+// shows, with its words translated by localMarkup. Translating before
+// the template runs keeps what the helpers write out of the parity
+// gate: "August" and "KWD" read as words to hasWords, and a value a
+// helper wrote for a locale is not English to translate.
+func formatSource(doc formatDoc, locale string) string {
 	return localMarkup(locale, doc.Markup)
+}
+
+// formatMarkup is one section's sample as a reader sees it in a
+// locale: formatSource, run for a templated sample, so each helper
+// writes its value the way an app's page in that locale would.
+// Shared by buildFormats and TestTheTextOnScreenIsTheTextCopied, so the
+// two cannot read a sample differently.
+func formatMarkup(doc formatDoc, locale string) string {
+	source := formatSource(doc, locale)
+	if doc.Data == nil {
+		return source
+	}
+	tmpl, err := template.New(doc.Key).Funcs(ui.Funcs()).
+		Parse(`{{$L := localizer $}}` + source)
+	if err != nil {
+		// The samples are fixed and their translations carry each call
+		// as written (TestSampleTranslationsKeepTheirStandIns), so a
+		// failure here is a bug in this file, not a request to handle.
+		panic(fmt.Sprintf("designsystem: the %s sample: %v", doc.Key, err))
+	}
+	data := maps.Clone(doc.Data)
+	data["L"] = ui.NewLocalizer(locale, formatLocale(locale),
+		translator(locale))
+	var written strings.Builder
+	if err := tmpl.Execute(&written, data); err != nil {
+		panic(fmt.Sprintf("designsystem: the %s sample: %v", doc.Key, err))
+	}
+	return written.String()
 }
 
 // buildFormats renders every section for one theme and locale.
@@ -215,6 +256,9 @@ func buildFormats(mount, theme, locale string, files previewSet) ([]formatView, 
 			previewTitle(locale, doc.Key, "Dates, numbers and names"), markup, markup, id)
 		if err := files.add(file); err != nil {
 			return nil, err
+		}
+		if doc.Data != nil {
+			preview.Call = codeview.Highlight(formatSource(doc, locale))
 		}
 		out = append(out, formatView{
 			Title:   proseIn(locale, doc.Title),
@@ -234,21 +278,24 @@ func buildFormats(mount, theme, locale string, files previewSet) ([]formatView, 
 // reader — has nothing to show against a single currency: the euro
 // must stay a euro on the Japanese page for the rule to be visible at
 // all.
-var moneyAmounts = []struct {
-	minor int64
-	code  string
-}{
+var moneyAmounts = []storedAmount{
 	{128450, "EUR"},
 	{1285, "JPY"},
 	{1284500, "KWD"},
 }
 
-// moneyFormats is the gallery's offered locale codes mapped to the
-// CLDR locale currency.Format writes in, per CheckConfig
+// storedAmount is one amount as an app stores it.
+type storedAmount struct {
+	Minor    int64
+	Currency string
+}
+
+// formatLocales is the gallery's offered locale codes mapped to the
+// CLDR locale the helpers write values in, per CheckConfig
 // (locales/config.go). It is computed once rather than per page: the
 // mapping is fixed for the life of the binary, and CheckConfig walks
 // every shipped pack to build it.
-var moneyFormats = sync.OnceValue(func() map[string]string {
+var formatLocales = sync.OnceValue(func() map[string]string {
 	cfg, err := locales.CheckConfig("en", rastrillo.BaseLocales())
 	if err != nil {
 		// Every base locale's pack is blank-imported in packs.go
@@ -260,32 +307,13 @@ var moneyFormats = sync.OnceValue(func() map[string]string {
 	return cfg.Formats
 })
 
-// moneySampleMarkup renders the Money sample for one gallery locale:
-// three ISO codes and their amounts, each run through currency.Format
-// in the page's own formatting locale rather than the currency's home
-// locale. That is the whole demonstration — the same three stored
-// amounts come out written three different ways as the locale switcher
-// changes, while the currencies themselves never change, because they
-// are read off the data and the switcher does not touch the data.
-func moneySampleMarkup(locale string) string {
-	fl, ok := moneyFormats()[locale]
-	if !ok {
-		fl = locale
+// formatLocale is the CLDR locale a gallery locale's values are
+// written in.
+func formatLocale(locale string) string {
+	if format, ok := formatLocales()[locale]; ok {
+		return format
 	}
-	var b strings.Builder
-	b.WriteString("<section rst-box>\n  <dl rst-detail>\n")
-	for _, a := range moneyAmounts {
-		amount, err := currency.Format(fl, a.minor, a.code)
-		if err != nil {
-			// The three currencies above are fixed and real; an error
-			// here means one of them stopped being formattable, which
-			// is a bug in the sample's data, not a request to handle.
-			panic(fmt.Sprintf("designsystem: money sample: %v", err))
-		}
-		fmt.Fprintf(&b, "    <dt>%s</dt>\n    <dd>%s</dd>\n", template.HTMLEscapeString(a.code), template.HTMLEscapeString(amount))
-	}
-	b.WriteString("  </dl>\n</section>")
-	return b.String()
+	return locale
 }
 
 // formatNav is this page's rail entries.

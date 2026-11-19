@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"strings"
 	"time"
+
+	"amadan.net/rastrillo/rastrillo/number"
 )
 
 // Kind is how a Field's submitted text is read. The zero value is
@@ -44,6 +46,12 @@ const (
 	// never an error. A refused value reads back as "", so nothing that
 	// failed validation can reach storage by a handler forgetting OK.
 	URL Kind = "url"
+	// Number reads a plain number in a locale, exactly, as a money
+	// field reads an amount (numberfield.go), read back with
+	// Parsed.Number as a number.Decimal. Field.Locale or LocaleEcho
+	// names the locale; Strict, Negative and StoredNumber work as
+	// they do for money. Its errors are rastrillo.ui.number_* keys.
+	Number Kind = "number"
 )
 
 // Field declares one form field for Parse.
@@ -88,6 +96,11 @@ type Field struct {
 	// record's fresh rendering, so the seed is never trusted as a value:
 	// it can only keep what the record still holds.
 	Stored *int64
+	// StoredNumber is a Number field's value as the form was drawn
+	// with it; nil on create and for an empty field. Text that is
+	// exactly its seed (SeedNumber's Value) keeps it unread, so an
+	// unchanged ambiguous seed, German "1,234", saves as it was.
+	StoredNumber *number.Decimal
 }
 
 // Parsed is Parse's result: the per-field values, the echo map for a
@@ -113,6 +126,7 @@ type Parsed struct {
 	moneyCurrency map[string]string
 	args          map[string]map[string]any
 	verifiedSeed  map[string]string
+	numbers       map[string]number.Decimal // Number fields
 }
 
 // Parse reads and validates r's submitted fields in one pass — the
@@ -155,22 +169,7 @@ type Parsed struct {
 // body wrap r.Body and call r.ParseForm first, as the generated
 // actions do.
 func Parse(r *http.Request, fields ...Field) *Parsed {
-	p := &Parsed{
-		strings: map[string]string{},
-		cents:   map[string]int64{},
-		dates:   map[string]time.Time{},
-		times:   map[string][2]int{},
-		echo:    map[string]string{},
-		errs:    Errors{},
-
-		minor:         map[string]int64{},
-		present:       map[string]bool{},
-		echoLocale:    map[string]string{},
-		reseed:        map[string]bool{},
-		moneyCurrency: map[string]string{},
-		args:          map[string]map[string]any{},
-		verifiedSeed:  map[string]string{},
-	}
+	p := newParsed()
 	for _, f := range fields {
 		raw := r.PostFormValue(f.Name)
 		switch f.Kind {
@@ -187,6 +186,8 @@ func Parse(r *http.Request, fields ...Field) *Parsed {
 			} else if err != nil {
 				p.errs[f.Name] = err.Error()
 			}
+		case Number:
+			p.parseNumber(r, f)
 		case Date:
 			p.echo[f.Name] = raw
 			if raw == "" {
@@ -261,6 +262,28 @@ func Parse(r *http.Request, fields ...Field) *Parsed {
 		}
 	}
 	return p
+}
+
+// newParsed is a Parsed with every map made, so a field's result is
+// written without a nil check.
+func newParsed() *Parsed {
+	return &Parsed{
+		strings: map[string]string{},
+		cents:   map[string]int64{},
+		dates:   map[string]time.Time{},
+		times:   map[string][2]int{},
+		echo:    map[string]string{},
+		errs:    Errors{},
+
+		minor:         map[string]int64{},
+		present:       map[string]bool{},
+		echoLocale:    map[string]string{},
+		reseed:        map[string]bool{},
+		moneyCurrency: map[string]string{},
+		args:          map[string]map[string]any{},
+		verifiedSeed:  map[string]string{},
+		numbers:       map[string]number.Decimal{},
+	}
 }
 
 // OK reports whether every field validated.
