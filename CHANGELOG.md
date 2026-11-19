@@ -10,6 +10,65 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+Two changes can break a build. `lastsignin.Record` and `auth.Remembered`
+gain a field, so a positional literal such as `Record{method, address}`
+no longer compiles: name the fields. And a passkey record may now carry
+an address, so code that took "passkey" to mean "no address" should
+read `Address` instead.
+
+### Added: one way in per screen, behind `auth.Config.SigninOneWay`
+
+The shipped sign-in screen can now offer one way in per page: the way
+this browser used last, with **Other ways to sign in** below it. That
+opens a chooser page (`?ways=1`), whose rows each open one way's own
+page (`?way=email`, `?way=passkey`, or `?way=` a federated provider).
+The option is off by default, and off, the screen is byte for byte what
+it was. It needs `SigninScreen`.
+
+On that screen:
+
+- `SigninState.Federated` (an `auth.FederatedDoor`) is a sign-in another
+  service runs, such as Oficina ID. The page sets it, as it sets
+  `Passkey`.
+- `SigninState.AppProblem` shows a problem only your app can name, such
+  as a refusal, and can draw the email field instead of a one-tap. It
+  works with the option off too.
+- A problem, `force=1` or a refusal draws the email field. Sent,
+  Continue and Confirm are unchanged, and Sent keeps **Use a different
+  email**.
+- A step-up offers only ways that sign in here, never the federated one.
+- Every chooser link, **Back** and **Use a different email** keep
+  `return_to`.
+- The passkey button is drawn disabled until its script enables it, so
+  the page does not move. Where a passkey can't work, the script opens
+  the email way.
+- With a passkey door, the email field offers saved passkeys in its
+  autofill.
+
+Seven new strings, `rastrillo.ui.signin_ways`, `signin_ways_title`,
+`signin_way_email`, `signin_back`, `signin_federated`,
+`signin_passkey_noscript` and `signin_passkey_unavailable`, are in all
+twelve catalogs. An app with its own catalog for a language rastrillo
+does not ship must add them, or `generate --check` fails.
+
+### Added: `lastsignin` remembers a federated sign-in
+
+`lastsignin.MethodFederated` records a sign-in another service vouched
+for, with a `Provider` from a closed set (`lastsignin.ProviderOficina`).
+A passkey or federated record may carry the address of the person who
+just signed in, when the caller has resolved it. `Remember` still writes
+only what it is given. `Config.AttemptCookie` is now optional. An older
+build reads the new records as invalid and clears them.
+
+### Added: conditional mediation in `webauthn.mjs`
+
+`authenticate()` takes `mediation` and `signal`. With `mediation:
+"conditional"` it offers passkeys in the autofill of a field marked
+`autocomplete="username webauthn"`. It refuses to run where the browser
+lacks conditional mediation (`conditionalAvailable()`) or when a
+`legacyRpId` is set. A call without either is the same request as
+before.
+
 ### Changed: the gallery is Rastrillo components, at `/components/`
 
 The gallery at rastrillo.org/design-system is now called Rastrillo

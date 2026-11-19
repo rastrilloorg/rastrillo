@@ -108,6 +108,15 @@ The browser half as an embedded ES module. Serve it as a static asset.
 It exposes `register()` and `authenticate()`, which produce exactly the
 payloads `Register` and `Verify` expect.
 
+To offer passkeys in an email field's autofill, mark the field
+`autocomplete="username webauthn"` and call
+`authenticate({challenge, rpId, mediation: "conditional", signal})`
+with an `AbortSignal` you abort when the form is sent.
+`conditionalAvailable()` says whether the browser supports it.
+`authenticate` throws without asking anything when it does not, or when
+you also pass `legacyRpId`. The shipped sign-in screen does all this
+for you.
+
 ## authtest
 
 `webauthn/authtest` is a fake authenticator, public precisely so your
