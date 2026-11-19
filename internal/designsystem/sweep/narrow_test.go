@@ -85,11 +85,9 @@ func TestPreviewFrameHeightsFitAtThePhonesNarrowest(t *testing.T) {
 	}
 	// The exemptions, held to their reason: no visible preview at 320px.
 	for kind := range narrowExempt {
-		if err := chromedp.Do(ctx, chromedp.EmulateViewport(320, 844),
-			chromedp.Navigate(rig.Origin+pageHref(mountPath, root, "en", fileOf(kind))),
-			chromedp.WaitReady(chromedp.CSS(`body`))); err != nil {
-			t.Fatalf("exempt %s at 320px: %v", kind, err)
-		}
+		galleryrig.Load(t, ctx, fmt.Sprintf("exempt %s at 320px", kind),
+			320, 844, rig.Origin+pageHref(mountPath, root, "en", fileOf(kind)),
+			chromedp.WaitReady(chromedp.CSS(`body`)))
 		shown, err := chromedp.Run(ctx, chromedp.Evaluate[int](
 			`[...document.querySelectorAll(".ds-view__frame")]
 			  .filter(f => f.getBoundingClientRect().height > 0).length`))
@@ -112,11 +110,9 @@ func TestPreviewFrameHeightsFitAtThePhonesNarrowest(t *testing.T) {
 				continue
 			}
 			where := fmt.Sprintf("%s/%s at 320px", locale, row.Kind)
-			if err := chromedp.Do(ctx, chromedp.EmulateViewport(320, 844),
-				chromedp.Navigate(rig.Origin+pageHref(mountPath, root, locale, fileOf(row.Kind))),
-				chromedp.WaitVisible(chromedp.CSS(`.ds-view__frame`))); err != nil {
-				t.Fatalf("%s: loading: %v", where, err)
-			}
+			galleryrig.Load(t, ctx, where, 320, 844,
+				rig.Origin+pageHref(mountPath, root, locale, fileOf(row.Kind)),
+				chromedp.WaitVisible(chromedp.CSS(`.ds-view__frame`)))
 			eagerly(t, ctx, where)
 			if err := chromedp.Do(ctx,
 				chromedp.Evaluate[chromedp.Void](clickedMobile)); err != nil {

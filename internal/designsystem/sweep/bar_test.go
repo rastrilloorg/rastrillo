@@ -15,6 +15,7 @@ import (
 
 	"amadan.net/rastrillo/rastrillo"
 	"amadan.net/rastrillo/rastrillo/harness"
+	"amadan.net/rastrillo/rastrillo/internal/designsystem/galleryrig"
 	"amadan.net/rastrillo/rastrillo/ui"
 )
 
@@ -82,9 +83,9 @@ func TestThePinnedBarFitsItsReservation(t *testing.T) {
 		for _, theme := range ui.ThemeNames() {
 			for _, locale := range sweepLocales() {
 				url := rig.Origin + pageHref(mountPath, theme, locale, fileOf("form"))
-				if err := chromedp.Do(tab, chromedp.EmulateViewport(1440, 900), chromedp.Navigate(url), chromedp.WaitReady(chromedp.CSS(`.ds-top`))); err != nil {
-					t.Fatalf("%s/%s scripts=%v: loading: %v", theme, locale, scripts, err)
-				}
+				galleryrig.Load(t, tab,
+					fmt.Sprintf("%s/%s scripts=%v", theme, locale, scripts),
+					1440, 900, url, chromedp.WaitReady(chromedp.CSS(`.ds-top`)))
 				if !scripts {
 					requireScriptsOff(t, tab, fmt.Sprintf("%s/%s scripts off", theme, locale))
 				}
@@ -164,11 +165,10 @@ func TestTheBarsLanguageMenuStaysOnScreen(t *testing.T) {
 			for _, anchored := range []bool{true, false} {
 				for _, w := range []int64{1440, 1024, 1023, 800} {
 					where := fmt.Sprintf("day/%s at %dpx, scripts %v, anchor positioning %v", locale, w, scripts, anchored)
-					if err := chromedp.Do(tab, chromedp.EmulateViewport(w, 900),
-						chromedp.Navigate(rig.Origin+pageHref(mountPath, "day", locale, fileOf("form"))),
-						chromedp.WaitReady(chromedp.CSS(`.ds-top__controls [rst-locale]`))); err != nil {
-						t.Fatalf("%s: loading: %v", where, err)
-					}
+					form := pageHref(mountPath, "day", locale, fileOf("form"))
+					menu := chromedp.CSS(`.ds-top__controls [rst-locale]`)
+					galleryrig.Load(t, tab, where, w, 900, rig.Origin+form,
+						chromedp.WaitReady(menu))
 					if !scripts {
 						requireScriptsOff(t, tab, where)
 					}

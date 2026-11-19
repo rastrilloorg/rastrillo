@@ -9116,7 +9116,6 @@ names internal/designsystem/signin_social_browser_test.go TestTheSocialSignInBut
 names internal/designsystem/signin_social_browser_test.go TestTheSocialSignInButtonsStackAndCarryTheirMarks/m 1
 names internal/designsystem/signin_social_browser_test.go TestTheSocialSignInButtonsStackAndCarryTheirMarks/w 1
 columns internal/designsystem/sweep/bar_test.go 03d1fa206121 1 rewritten by the chromedp v0.21 port, no wider than the recorded line it replaced
-columns internal/designsystem/sweep/bar_test.go 13dbff454bd4 1
 columns internal/designsystem/sweep/bar_test.go 15376966ae7d 1
 columns internal/designsystem/sweep/bar_test.go 17aad1a9a38b 1
 columns internal/designsystem/sweep/bar_test.go 1806720aecd8 1
@@ -9127,14 +9126,12 @@ columns internal/designsystem/sweep/bar_test.go 2a27f95d24ab 1
 columns internal/designsystem/sweep/bar_test.go 2b91444762ce 1
 columns internal/designsystem/sweep/bar_test.go 2e9fd72deedf 1
 columns internal/designsystem/sweep/bar_test.go 39a1bcad335f 1
-columns internal/designsystem/sweep/bar_test.go 3bcb4c1cd04f 1 rewritten by the chromedp v0.21 port, no wider than the recorded line it replaced
 columns internal/designsystem/sweep/bar_test.go 422a95157ca7 1
 columns internal/designsystem/sweep/bar_test.go 4408b463c535 1
 columns internal/designsystem/sweep/bar_test.go 4df612dded08 1
 columns internal/designsystem/sweep/bar_test.go 505291760fef 1
 columns internal/designsystem/sweep/bar_test.go 56770ee3d119 1
 columns internal/designsystem/sweep/bar_test.go 61151c6a79a9 1
-columns internal/designsystem/sweep/bar_test.go 6941bd8b517c 1
 columns internal/designsystem/sweep/bar_test.go 77647b566433 1
 columns internal/designsystem/sweep/bar_test.go 791bd6ad90eb 1
 columns internal/designsystem/sweep/bar_test.go 798a862f48b9 1
@@ -9146,7 +9143,6 @@ columns internal/designsystem/sweep/bar_test.go a468c6d6f723 1
 columns internal/designsystem/sweep/bar_test.go a4d7a3e496b5 1
 columns internal/designsystem/sweep/bar_test.go a59c84a748af 1 rewritten by the chromedp v0.21 port, no wider than the recorded line it replaced
 columns internal/designsystem/sweep/bar_test.go bd24abd114bf 1
-columns internal/designsystem/sweep/bar_test.go c1a5648cee0f 1 rewritten by the chromedp v0.21 port, no wider than the recorded line it replaced
 columns internal/designsystem/sweep/bar_test.go c593ac42cd32 1
 columns internal/designsystem/sweep/bar_test.go d0f26a79bcbf 1
 columns internal/designsystem/sweep/bar_test.go eef9a530eda8 1
@@ -9161,25 +9157,21 @@ columns internal/designsystem/sweep/languages_test.go 134c6ae5f044 1
 columns internal/designsystem/sweep/languages_test.go 18d2fdfa7328 1
 columns internal/designsystem/sweep/languages_test.go 349bc7cc09b9 1 rewritten by the chromedp v0.21 port, no wider than the recorded line it replaced
 columns internal/designsystem/sweep/languages_test.go 52cf1ad6e5fb 1 rewritten by the chromedp v0.21 port, no wider than the recorded line it replaced
-columns internal/designsystem/sweep/languages_test.go 555962b51d64 1
 columns internal/designsystem/sweep/languages_test.go 6279033e8479 1
 columns internal/designsystem/sweep/languages_test.go 68236ab2d0fa 1
 columns internal/designsystem/sweep/languages_test.go 78b5a1b4b6d3 1
 columns internal/designsystem/sweep/languages_test.go 87bac93c7cf3 1
-columns internal/designsystem/sweep/languages_test.go 87f4adea4371 1
 columns internal/designsystem/sweep/languages_test.go 9b8e6fbae8a5 1
 columns internal/designsystem/sweep/languages_test.go a50dc9ea9995 1 rewritten by the chromedp v0.21 port, no wider than the recorded line it replaced
 columns internal/designsystem/sweep/languages_test.go b4b8c81ac79f 1
 columns internal/designsystem/sweep/languages_test.go b97f7c71d3db 1
 columns internal/designsystem/sweep/languages_test.go c6c1eb7a8ee8 1
-columns internal/designsystem/sweep/languages_test.go c81f8d2a1ebd 1 rewritten by the chromedp v0.21 port, no wider than the recorded line it replaced
 columns internal/designsystem/sweep/languages_test.go e79aa48df610 1
 columns internal/designsystem/sweep/languages_test.go eee5b899dfd8 1
 names internal/designsystem/sweep/languages_test.go TestEveryLanguageIsReachableFromThePhoneIndex/i 1
 names internal/designsystem/sweep/languages_test.go TestEveryLanguageIsReachableFromThePhoneIndex/w 1
 columns internal/designsystem/sweep/narrow_test.go 058b1641bb60 1
 columns internal/designsystem/sweep/narrow_test.go 0e17e7b107ea 1
-columns internal/designsystem/sweep/narrow_test.go 1493e42ba1e3 1
 columns internal/designsystem/sweep/narrow_test.go 17ca252898bc 1 rewritten by the chromedp v0.21 port, no wider than the recorded line it replaced
 columns internal/designsystem/sweep/narrow_test.go 25f2abf6d9f0 1
 columns internal/designsystem/sweep/narrow_test.go 4522d3c598ef 1
@@ -9187,9 +9179,7 @@ columns internal/designsystem/sweep/narrow_test.go 4f9b53a580fc 1
 columns internal/designsystem/sweep/narrow_test.go 56f855966a71 1 rewritten by the chromedp v0.21 port, no wider than the recorded line it replaced
 columns internal/designsystem/sweep/narrow_test.go 67810767d08b 1
 columns internal/designsystem/sweep/narrow_test.go a1d5fe4b71a9 1
-columns internal/designsystem/sweep/narrow_test.go b91c276fe80f 1 rewritten by the chromedp v0.21 port, no wider than the recorded line it replaced
 columns internal/designsystem/sweep/narrow_test.go c57d0ec47b06 1
-columns internal/designsystem/sweep/narrow_test.go d3006bb441ac 1
 columns internal/designsystem/sweep/narrow_test.go ff60e64e06ac 1
 names internal/designsystem/sweep/narrow_test.go TestPreviewFrameHeightsFitAtThePhonesNarrowest/d 1
 names internal/designsystem/sweep/narrow_test.go TestPreviewFrameHeightsFitAtThePhonesNarrowest/r 1

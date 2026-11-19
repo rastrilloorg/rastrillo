@@ -13,6 +13,7 @@ import (
 
 	"amadan.net/rastrillo/rastrillo"
 	"amadan.net/rastrillo/rastrillo/harness"
+	"amadan.net/rastrillo/rastrillo/internal/designsystem/galleryrig"
 )
 
 // Every language in the phone index's display settings menu can be
@@ -40,11 +41,9 @@ func TestEveryLanguageIsReachableFromThePhoneIndex(t *testing.T) {
 			for _, locale := range []string{"en", "ar"} {
 				for _, anchored := range []bool{true, false} {
 					where := fmt.Sprintf("day/%s index at %dpx, scripts %v, anchor positioning %v", locale, w, scripts, anchored)
-					if err := chromedp.Do(tab, chromedp.EmulateViewport(w, 700),
-						chromedp.Navigate(rig.Origin+indexHref(mountPath, "day", locale)),
-						chromedp.WaitVisible(chromedp.CSS(`#ds-prefs`))); err != nil {
-						t.Fatalf("%s: loading: %v", where, err)
-					}
+					galleryrig.Load(t, tab, where, w, 700,
+						rig.Origin+indexHref(mountPath, "day", locale),
+						chromedp.WaitVisible(chromedp.CSS(`#ds-prefs`)))
 					if !scripts {
 						requireScriptsOff(t, tab, where)
 					}
@@ -114,14 +113,17 @@ func TestEveryLanguageIsReachableFromThePhoneIndex(t *testing.T) {
 		// The viewport is set on every pass: the matrix above leaves this
 		// target at whichever width it drove last, and the leg must be
 		// the 390px combination it names whatever order that loop runs in.
-		if err := chromedp.Do(ctx, chromedp.EmulateViewport(390, 700),
-			chromedp.Navigate(rig.Origin+indexHref(mountPath, "day", "en")),
-			chromedp.WaitVisible(chromedp.CSS(`#ds-prefs`)),
+		galleryrig.Load(t, ctx,
+			fmt.Sprintf("%s: returning to day/en to activate %s", where, code),
+			390, 700, rig.Origin+indexHref(mountPath, "day", "en"),
+			chromedp.WaitVisible(chromedp.CSS(`#ds-prefs`)))
+		if err := chromedp.Do(ctx,
 			chromedp.Evaluate[chromedp.Void](
 				`document.getElementById("ds-prefs").open = true;
 				document.querySelector("#ds-prefs [rst-locale]").open = true;
 				true`)); err != nil {
-			t.Fatalf("%s: returning to day/en to activate %s: %v", where, code, err)
+			t.Fatalf("%s: opening the menu to activate %s: %v",
+				where, code, err)
 		}
 		want := indexHref(mountPath, "day", code)
 		click := fmt.Sprintf(
@@ -139,11 +141,9 @@ func TestEveryLanguageIsReachableFromThePhoneIndex(t *testing.T) {
 	// element sits where a tap or a Tab would land.
 	offWhere := "day/en index at 390px, scripts off"
 	off := noScripts(t, ctx)
-	if err := chromedp.Do(off, chromedp.EmulateViewport(390, 700),
-		chromedp.Navigate(rig.Origin+indexHref(mountPath, "day", "en")),
-		chromedp.WaitVisible(chromedp.CSS(`#ds-prefs`))); err != nil {
-		t.Fatalf("%s: loading: %v", offWhere, err)
-	}
+	galleryrig.Load(t, off, offWhere, 390, 700,
+		rig.Origin+indexHref(mountPath, "day", "en"),
+		chromedp.WaitVisible(chromedp.CSS(`#ds-prefs`)))
 	requireScriptsOff(t, off, offWhere)
 	wantAr := indexHref(mountPath, "day", "ar")
 	if err := chromedp.Do(off,
