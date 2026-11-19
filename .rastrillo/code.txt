@@ -6292,12 +6292,10 @@ columns icons_test.go e9344ffc1f33 1
 names icons_test.go TestIconSlugsMatchesTheMap/i 1
 names icons_test.go TestMenuAndKebabAreDifferentGlyphs/n 1
 names icons_test.go TestVendoredIconsAreSelfContained/s 1
-columns internal/basepathe2e/walk_browser_test.go 202b3e41a764 1
 columns internal/basepathe2e/walk_browser_test.go 28456b0e5871 1
 columns internal/basepathe2e/walk_browser_test.go 3f929834224a 1
 columns internal/basepathe2e/walk_browser_test.go 5bf0833ca88b 1
 columns internal/basepathe2e/walk_browser_test.go 6a756db2d169 1
-columns internal/basepathe2e/walk_browser_test.go 85810546e53c 1
 columns internal/basepathe2e/walk_browser_test.go 8e885a2a9247 1
 columns internal/basepathe2e/walk_browser_test.go d767a285a43f 1
 columns internal/basepathe2e/walk_browser_test.go fd23d1bb3170 1

@@ -30,7 +30,8 @@ func TestAScaffoldedAppWorksUnderABasePath(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	write(t, filepath.Join(app, "internal", "walkapptest", "basepath_browser_test.go"), string(drive))
+	write(t, filepath.Join(app, "internal", "walkapp",
+		"basepath_browser_test.go"), string(drive))
 	// This checkout, not the published module: the drive tests the
 	// framework as it is on this branch.
 	f, err := os.OpenFile(filepath.Join(app, "go.mod"), os.O_APPEND|os.O_WRONLY, 0o644)
@@ -47,7 +48,8 @@ func TestAScaffoldedAppWorksUnderABasePath(t *testing.T) {
 
 	// The environment passes through, RASTRILLO_CHROME included, so the
 	// drive finds the browser this role was given.
-	cmd := exec.Command("go", "test", "-count=1", "-v", "-tags", "browser", "-run", "^TestBasePath", "./internal/walkapptest/")
+	cmd := exec.Command("go", "test", "-count=1", "-v", "-tags", "browser",
+		"-run", "^TestBasePath", "./internal/walkapp/")
 	cmd.Dir = app
 	out, err := cmd.CombinedOutput()
 	// Every name, so a -run that matched nothing, or a drive renamed,

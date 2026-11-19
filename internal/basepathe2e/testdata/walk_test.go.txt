@@ -6,7 +6,7 @@
 // and runs this file. A root-absolute URL left on a page works when the
 // app is served at the root and, under a base path, asks the hub
 // instead; the rig fails on the hub's 404, and the hub records the path.
-package walkapptest
+package walkapp_test
 
 import (
 	"context"
