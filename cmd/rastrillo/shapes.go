@@ -20,8 +20,8 @@ const (
 		"or accounts"
 	newReservedShapeMsg = "--scaffold %s is not built yet: it is %s. " +
 		"Use bare, single or accounts for now"
-	newReservedHomeMsg = "Plan 6 of the user-models roadmap"
-	newReservedHubMsg  = "Plan 7 of the user-models roadmap"
+	newReservedHomeMsg = "Plan 4 of the multi-instance apps roadmap"
+	newReservedHubMsg  = "Plan 6 of the multi-instance apps roadmap"
 
 	newAuthFlagMsg         = "sign-in the app starts with: "
 	newAuthFlagAccountsMsg = "; accounts starts with magic"

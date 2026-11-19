@@ -81,7 +81,7 @@ if err != nil {
 }
 ```
 
-Not `r`: that name is the app's router everywhere else, including
+Not `r`: that name is the chi router everywhere else, including
 [Passwords](/docs/passwords), and shadowing it here would cost you the
 router for the rest of the function.
 

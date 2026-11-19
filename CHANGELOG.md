@@ -49,13 +49,23 @@ gallery at `/design-system/`.
 
 ### Added: `rastrillo new --scaffold` picks the app's shape
 
-`bare` is a page and a route with no database, no sign-in and no
-`Makefile`: its gate is `go test ./...`, and `--design-system=false`
-leaves out its templates and static files. `single`, the default, is the
-app `rastrillo new` wrote before, with the changes below. `accounts` is
-`single` with sign-in by emailed link, the app `--auth=magic` writes.
-`home` and `hub` are planned and refused for now. Apps you already have
-change nothing.
+`single`, the default, is the app `rastrillo new` wrote before, with
+two changes:
+
+- Its tests sit beside the code in `internal/<app>/`, as package
+  `<app>_test`, instead of in `internal/<app>test/`.
+- The migration check is a test, `TestModelsMatchMigrations`, so
+  `go test ./...` runs it. `make ci` has no `migration-check` step, and
+  `modeldiff` and `TestModelsMatchMigrations` are refused as app names.
+
+`accounts` is `single` with sign-in by emailed link, the app
+`--auth=magic` writes. `bare` is a page and a route on Go's
+`http.ServeMux`, with no database, no sign-in and no `Makefile`: its
+gate is `go test ./...`, and `--design-system=false` leaves out its
+templates and static files. `home` and `hub` are planned and refused for
+now. Apps you already have change nothing.
+
+Two commands now work on a `bare` app:
 
 - `rastrillo dev` skips `generate` in an app with no `manifest/`,
   `actions/` or `gen/`, and only rebuilds.

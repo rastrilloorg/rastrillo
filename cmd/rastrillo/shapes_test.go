@@ -12,16 +12,16 @@ import (
 // refused before anything is written: a half-made directory would make
 // the next, correct, attempt fail with "already exists".
 func TestNewRefusesReservedShapes(t *testing.T) {
-	want := map[string]string{
-		"home": "--scaffold home is not built yet: it is Plan 6 of the " +
-			"user-models roadmap. Use bare, single or accounts for now",
-		"hub": "--scaffold hub is not built yet: it is Plan 7 of the " +
-			"user-models roadmap. Use bare, single or accounts for now",
+	plans := map[string]string{
+		"home": "Plan 4 of the multi-instance apps roadmap",
+		"hub":  "Plan 6 of the multi-instance apps roadmap",
 	}
-	for name, msg := range want {
+	for name, plan := range plans {
 		t.Run(name, func(t *testing.T) {
 			t.Chdir(t.TempDir())
 			err := runNew([]string{"--scaffold", name, "x"})
+			msg := "--scaffold " + name + " is not built yet: it is " +
+				plan + ". Use bare, single or accounts for now"
 			if err == nil || err.Error() != msg {
 				t.Fatalf("error = %v, want %q", err, msg)
 			}

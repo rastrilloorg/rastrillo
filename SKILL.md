@@ -1,6 +1,6 @@
 ---
 name: rastrillo
-description: "Build a CARLOS app, or port one to it: pick a shape (bare, single, accounts), then GORM models or plain SQL, chi routes, sessions, owner-scoped queries."
+description: "Build a CARLOS app, or port one to it: GORM models or plain SQL, chi routes, sessions, owner-scoped queries."
 ---
 
 # Rastrillo
@@ -41,15 +41,13 @@ Read the topic before you start work it covers, not after the source:
 
 ## Pick a shape
 
-Choose by who the users are and where they live:
+| `--scaffold` | For |
+|---|---|
+| `bare` | a page or a dashboard: no data, no sign-in |
+| `single` (default) | one instance and its data in SQLite |
+| `accounts` | sign-in by emailed link; each person sees only their rows |
 
-| Shape | For | Command |
-|---|---|---|
-| bare | a page or a dashboard: no data of its own, no sign-in | `rastrillo new --scaffold bare <name>` |
-| single (default) | one instance and its data in SQLite; add sign-in later (skill/add-signin.md) | `rastrillo new <name>` |
-| accounts | people sign in by emailed link; each sees only their own rows | `rastrillo new --scaffold accounts <name>` |
-
-home and hub (a home that provisions an instance per team) are not built yet.
+`home` and `hub` are not built yet.
 
 ```sh
 go install amadan.net/rastrillo/rastrillo/cmd/rastrillo@latest
@@ -58,7 +56,8 @@ rastrillo new notes && cd notes && go mod tidy && go test ./...
 
 `rastrillo new` writes the whole app shape, its gate (`make ci`; in
 `bare`, `go test ./...`) and its tests, which sign in for you in
-`accounts`; it compiles, passes and serves before you write a line, so
+`accounts` (its `AGENTS.md` says where each piece is); it compiles,
+passes and serves before you write a line, so
 never hand-write any of it. The scaffolded `AGENTS.md` is the source of
 truth for that app's code; this file stays the framework's.
 

@@ -268,8 +268,8 @@ func writeSingle(options newOpts) error {
 		"browser ./...)\n", tests, len(tests)+1, "")
 	fmt.Println("  manifest/            (the declarative path: drop a <name>.toml here, see its README)")
 	fmt.Println("  Makefile             (make ci = vet + fmt + staticcheck + " +
-		"govulncheck + gitleaks + budget + code + routes + test + perf + " +
-		"generate check, the one gate definition;")
+		"govulncheck + gitleaks + budget + code + routes + csp + test + " +
+		"perf + generate check, the one gate definition;")
 	fmt.Println("                        make release = the stripped binary)")
 	fmt.Println("  .gitignore           (build output and the local database)")
 	fmt.Println("  .amadan/ci, ci.d/    (amadan runner CI, executable, delegating to make)")

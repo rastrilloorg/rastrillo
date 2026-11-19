@@ -66,8 +66,9 @@ Tito Go a fresh database took 207ms and a copy took 2.5ms, and a package of
 make ci
 ```
 
-runs vet, gofmt, staticcheck, govulncheck, gitleaks, `budget`, `test`, `perf` and
-`rastrillo generate --check`, in that order and one at a time. It is the one gate
+runs vet, gofmt, staticcheck, govulncheck, gitleaks, `budget`, `code`,
+`routes`, `csp`, `test`, `perf` and `rastrillo generate --check`, in that
+order and one at a time. It is the one gate
 definition: `.amadan/ci` and `.amadan/ci.d/` are executable steps that
 call the same Makefile targets, so the CI runner and your terminal cannot
 disagree about what passing means.

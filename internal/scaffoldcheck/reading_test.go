@@ -16,13 +16,18 @@ import (
 // prose. Neither total may grow again: Task 4's manifest recipe pays for
 // any bytes it adds by trimming elsewhere.
 //
-// migrationCheck is the one allowance on top of the cut, its measured
-// cost and no more: the migration check moved from the Makefile into the
-// app's own test, migrations_test.go (scaffold-shapes spec §4.2 item 3).
+// migrationCheck is the one allowance on top of the cut: the migration
+// check moved from the Makefile into the app's own test,
+// migrations_test.go (scaffold-shapes spec §4.2 item 3), which adds 549
+// bytes to either app. Each allowance is the part of those 549 that did
+// not fit under the old limit, and no more.
 var before = map[string]struct {
 	total, agents, cutPercent, migrationCheck int
 }{
+	// plainapp was 41 bytes under its limit, so 508 of the 549 went over.
 	"plainapp": {73438, 6536, 25, 508},
+	// magicapp was already 495 bytes under its limit, so only 54 of the
+	// 549 went over.
 	"magicapp": {91400, 7360, 19, 54},
 }
 

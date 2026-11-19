@@ -25,10 +25,9 @@ type ScreenConfig struct {
 }
 ```
 
-`Screens` walks `Routes`, a chi router such as an `accounts` app's, and
-requests every GET route through `Handler`, which should be the handler
-production serves: `rastrillo.Handler` over your app's options. Each
-route gets ten requests.
+`Screens` walks `Routes`, your chi router, and requests every GET route
+through `Handler`, which should be the handler production serves:
+`rastrillo.Handler` over your app's options. Each route gets ten requests.
 The first two are discarded, the median of the rest must be within
 budget, and no single one may take more than three times the budget.
 

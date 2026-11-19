@@ -13,10 +13,10 @@ internal/<app>/models.go       plain GORM structs
 internal/<app>/migrations.go   Schema and BootSchema
 ```
 
-An app made with `--auth=magic` also has `auth.go`, which signs people
-in by emailed link and holds the `owned` seam.
-`--scaffold accounts` adds sign-in by emailed link on chi, and
-`--scaffold bare` writes a page and a route with no database.
+An `accounts` app (`--scaffold accounts`, the same as `--auth=magic`)
+also has `auth.go`, which signs people in by emailed link and holds the
+`owned` seam. A `bare` app is smaller: a page and a route on Go's
+`http.ServeMux`, with no database.
 
 ## main.go
 

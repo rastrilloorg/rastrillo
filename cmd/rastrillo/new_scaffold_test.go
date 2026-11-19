@@ -654,7 +654,7 @@ func TestGatePinsMatchRastrillosGate(t *testing.T) {
 
 // TestScaffoldWholeGatePassesOffline is the end-to-end proof the budgets
 // spec asks for: a fresh app's entire make ci (vet, fmt, staticcheck,
-// budget, test, perf, migration-check) passes with only the Go toolchain
+// budget, test, perf, generate-check) passes with only the Go toolchain
 // on PATH, a readonly module graph, and no network. Anything a step
 // fetched at run time, or a step that quietly did nothing, fails here.
 //
