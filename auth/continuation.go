@@ -88,29 +88,38 @@ func (auth *Auth) sealRoundTrip(
 // case (no continuation, or one left from an earlier attempt or a
 // screen-off Begin) clears the continuation and goes on as today.
 func (auth *Auth) otherAttempt(
-	response http.ResponseWriter, request *http.Request, pending string,
+	response http.ResponseWriter, request *http.Request,
+	pending, again string,
 ) bool {
 	cont, st := auth.openContinuation(request)
 	if st == cookieValid && cont.PH == digest(pending) &&
 		cont.ST != digest(request.URL.Query().Get("state")) {
 		auth.redirect(response, request,
-			auth.signinAgain(request, "?err=expired"))
+			auth.signinAgain(request, "?err=expired"+again))
 		return true
 	}
 	auth.clearCookie(response, auth.continueCookie())
 	return false
 }
 
-// roundTripReauth is "&reauth=1" for a callback whose round trip was
-// a step-up on the one-way screen, read from the continuation bound to
-// this pending cookie and state; "" otherwise.
+// roundTripReauth is what a failed callback on the one-way screen adds
+// to its redirect: "&reauth=1" when the continuation bound to this
+// pending cookie and state says the round trip was a step-up, "" when it
+// says it was not, and "&reauth=1" again when it cannot say (expired,
+// deleted by the browser, unreadable, or another attempt's). Assuming a
+// step-up costs that one recovery page its federated door; assuming the
+// opposite would offer a step-up a live federated session, which the
+// local-only rule forbids. No expired state is believed either way.
+// Off the one-way screen it is always "".
 func (auth *Auth) roundTripReauth(
 	request *http.Request, pending string,
 ) string {
+	if !auth.cfg.SigninOneWay {
+		return ""
+	}
 	cont, st := auth.openContinuation(request)
-	if !auth.cfg.SigninOneWay || st != cookieValid || !cont.RA ||
-		cont.PH != digest(pending) ||
-		cont.ST != digest(request.URL.Query().Get("state")) {
+	if st == cookieValid && !cont.RA && cont.PH == digest(pending) &&
+		cont.ST == digest(request.URL.Query().Get("state")) {
 		return ""
 	}
 	return "&reauth=1"

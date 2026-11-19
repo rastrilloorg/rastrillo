@@ -306,18 +306,18 @@ func (a *Auth) AnswerAsSent(w http.ResponseWriter, r *http.Request) {
 // ?force=1&err=keymail so the page can offer the plain-email path.
 // With SigninScreen on, a callback whose state is not the attempt the
 // browser's continuation describes answers Expired without clearing
-// anything (see the comment inside).
+// anything (otherAttempt), keeping a step-up as roundTripReauth says.
 func (a *Auth) Callback(w http.ResponseWriter, r *http.Request) {
 	if a.pathRouted(w, r) {
 		return
 	}
 	pending, ok := a.pendingValue(r)
+	again := a.roundTripReauth(r, pending)
 	if !ok {
-		a.redirect(w, r, a.signinAgain(r, "?err=expired"))
+		a.redirect(w, r, a.signinAgain(r, "?err=expired"+again))
 		return
 	}
-	again := a.roundTripReauth(r, pending)
-	if a.cfg.SigninScreen && a.otherAttempt(w, r, pending) {
+	if a.cfg.SigninScreen && a.otherAttempt(w, r, pending, again) {
 		return
 	}
 	a.clearCookie(w, a.pendingCookie())

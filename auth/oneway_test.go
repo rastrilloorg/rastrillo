@@ -427,36 +427,25 @@ func TestAnUnknownErrorFallsToTheField(t *testing.T) {
 
 // A step-up through Keymail stays a step-up when the round trip fails:
 // the callback's failure redirects restore reauth from the continuation
-// bound to this round trip, so the page that follows offers local ways
-// only. A link sent from the same browser in between replaces the
-// attempt cookie, not the continuation, and changes nothing.
+// bound to this round trip, and when that cannot be read (expired by
+// both clocks, or deleted by the browser) they assume a step-up, so the
+// page that follows offers local ways only. A link sent from the same
+// browser in between replaces the attempt cookie, not the continuation,
+// and changes nothing.
 func TestAFailedKeymailStepUpStaysAStepUp(t *testing.T) {
-	oneWayOn := func(cfg *Config) { cfg.SigninOneWay = true }
-	for name, fail := range map[string]func(*Auth, *keymailFake){
-		"err=keymail": func(_ *Auth, fake *keymailFake) {
-			fake.servers["keymail.test"] = false
-		},
-		"err=expired": func(auth *Auth, _ *keymailFake) {
-			auth.flow.Now = func() time.Time {
-				return time.Now().Add(time.Hour)
-			}
-		},
-	} {
-		auth, fake := newKeymailScreen(t, oneWayOn)
+	for name, fail := range keymailFailures() {
+		auth, fake := newKeymailScreen(t, func(cfg *Config) {
+			cfg.SigninOneWay = true
+		})
 		browser := newBrowser()
-		begun := browser.do(auth.Begin, http.MethodPost, "/signin",
-			url.Values{"address": {"kay@example.org"}, "reauth": {"1"}})
-		continued := auth.SigninState(browser.request(http.MethodGet,
-			begun.Header().Get("Location"), nil))
-		state := stateOf(t, continued.ContinueURL)
+		state := beginOneWayKeymail(t, auth, browser, "1")
 		browser.do(auth.Begin, http.MethodPost, "/signin",
 			url.Values{"address": {"ada@example.com"}})
-		fail(auth, fake)
+		fail(auth, fake, browser)
 		back := callback(auth, browser, state).Header().Get("Location")
 		st := stateAt(auth, browser, back)
 		st.Federated = oficinaDoor
-		if !strings.Contains(back, name) || !strings.Contains(back,
-			"reauth=1") || !st.Reauth {
+		if !strings.Contains(back, "reauth=1") || !st.Reauth {
 			t.Errorf("%s: the callback went to %q, which drops reauth",
 				name, back)
 		}
@@ -467,6 +456,61 @@ func TestAFailedKeymailStepUpStaysAStepUp(t *testing.T) {
 			}
 		}
 	}
+}
+
+// An ordinary round trip is not made a step-up when its state can be
+// read; when it cannot, the recovery page is local-only too.
+func TestAFailedKeymailSignInAssumesAStepUpOnlyWhenItCannotTell(
+	t *testing.T,
+) {
+	for name, fail := range keymailFailures() {
+		auth, fake := newKeymailScreen(t, func(cfg *Config) {
+			cfg.SigninOneWay = true
+		})
+		browser := newBrowser()
+		state := beginOneWayKeymail(t, auth, browser, "")
+		fail(auth, fake, browser)
+		back := callback(auth, browser, state).Header().Get("Location")
+		readable := name == "a failed exchange"
+		if strings.Contains(back, "reauth=1") == readable {
+			t.Errorf("%s: an ordinary round trip went to %q", name, back)
+		}
+	}
+}
+
+// keymailFailures are the ways a Keymail round trip fails: the exchange
+// refused while the state is fresh, the round trip expired on every
+// clock, and the browser having dropped both cookies.
+func keymailFailures() map[string]func(*Auth, *keymailFake, *browser) {
+	later := func() time.Time { return time.Now().Add(time.Hour) }
+	return map[string]func(*Auth, *keymailFake, *browser){
+		"a failed exchange": func(_ *Auth, fake *keymailFake, _ *browser) {
+			fake.servers["keymail.test"] = false
+		},
+		"expired": func(auth *Auth, _ *keymailFake, _ *browser) {
+			auth.now, auth.flow.Now = later, later
+		},
+		"cookies dropped": func(_ *Auth, _ *keymailFake, browser *browser) {
+			delete(browser.jar, "rastrillo_pending")
+			delete(browser.jar, "rastrillo_continue")
+		},
+	}
+}
+
+// beginOneWayKeymail begins kay's Keymail sign-in from a one-way form,
+// posting reauth as given, and returns the authorize URL's state.
+func beginOneWayKeymail(
+	t *testing.T, auth *Auth, browser *browser, reauth string,
+) string {
+	t.Helper()
+	form := url.Values{"address": {"kay@example.org"}}
+	if reauth != "" {
+		form.Set("reauth", reauth)
+	}
+	begun := browser.do(auth.Begin, http.MethodPost, "/signin", form)
+	continued := auth.SigninState(browser.request(http.MethodGet,
+		begun.Header().Get("Location"), nil))
+	return stateOf(t, continued.ContinueURL)
 }
 
 // Without the one-way option a failed callback answers as it always did.
