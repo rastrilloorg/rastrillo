@@ -5,6 +5,7 @@ A small Rastrillo app: one page, no database, no sign-in.
     go run ./cmd/__NAME__ -addr 127.0.0.1:8080
     go test ./...
 
-Add a page: a route in internal/__PKG__/app.go, a template in
-internal/__PKG__/templates/. When the app needs to store data, start
-again with `rastrillo new --scaffold single` and move your pages across.
+Add a page: add a route and handler in internal/__PKG__/app.go, create a
+template in internal/__PKG__/templates/, and add its name to `newPages`
+in internal/__PKG__/render.go. To store data, create an app with
+`rastrillo new --scaffold single` and move your pages into it.
