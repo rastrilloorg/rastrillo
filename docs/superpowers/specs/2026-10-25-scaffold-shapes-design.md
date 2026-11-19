@@ -9,6 +9,20 @@ examples; Tito Go (`~/github.com/tito/titogo`) and Eleven
 (`carlos/pegamento`, branch `design-user-models`,
 `docs/superpowers/plans/2026-09-28-user-models-roadmap.md`).
 
+**Amended 2026-11-19 (ruling R9):**
+
+- Main's readable-code scaffold (f673728f, 0fef47c6) registers every
+  route through `action.Routes` on chi, with `rastrillo routes --check`
+  in the app's gate. So `single` stays on chi, and spec §4.2 item 1
+  (stdlib mux) and the plan's Task 4 router work, `GETPatterns`, the
+  stdlib `tokens.go` and Task 8's chi-switch step in add-signin are
+  superseded.
+- `bare` is the only stdlib shape.
+- `perftest.Patterns` stays for stdlib apps.
+- home and hub are Plans 4 and 6 of the multi-instance apps roadmap.
+- Decided in discussion 308
+  ([https://amadan.net/rastrillo/rastrillo/-/discussion/308](https://amadan.net/rastrillo/rastrillo/-/discussion/308)).
+
 ## 1. Why
 
 `rastrillo new` writes one app shape for everyone: about 40 files with
@@ -114,7 +128,8 @@ locale; either is fine as long as the result is the smaller app.
 
 Today's scaffold, with three changes that apply to every shape:
 
-1. **stdlib mux, not chi (my call).** `single` has no sign-in, so it has
+1. **stdlib mux, not chi (my call).** *Superseded: see the 2026-11-19
+   amendment at the top.* `single` has no sign-in, so it has
    no route groups; a whole-app guard added later wraps the whole mux.
 2. **Tests beside the code.** `internal/<app>test/` goes; its files move
    into `internal/<app>/` as `package <app>_test`, which is Go's own way

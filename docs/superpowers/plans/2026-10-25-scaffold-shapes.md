@@ -10,6 +10,20 @@
 
 **Spec:** `docs/superpowers/specs/2026-10-25-scaffold-shapes-design.md`
 
+**Amended 2026-11-19 (ruling R9):**
+
+- Main's readable-code scaffold (f673728f, 0fef47c6) registers every
+  route through `action.Routes` on chi, with `rastrillo routes --check`
+  in the app's gate. So `single` stays on chi, and spec §4.2 item 1
+  (stdlib mux) and the plan's Task 4 router work, `GETPatterns`, the
+  stdlib `tokens.go` and Task 8's chi-switch step in add-signin are
+  superseded.
+- `bare` is the only stdlib shape.
+- `perftest.Patterns` stays for stdlib apps.
+- home and hub are Plans 4 and 6 of the multi-instance apps roadmap.
+- Decided in discussion 308
+  ([https://amadan.net/rastrillo/rastrillo/-/discussion/308](https://amadan.net/rastrillo/rastrillo/-/discussion/308)).
+
 ## Global Constraints
 
 - One flag, `--scaffold`; values `bare`, `single` (default), `accounts`; `home` and `hub` refused as reserved.
@@ -166,6 +180,9 @@ Expected: PASS, including `TestScaffoldedAppTestsPass`.
 - [ ] **Step 5: Docs, then commit** `new: write an app's tests beside its code`. The docs say `internal/<app>/*_test.go`; skill files stay within budget (`go test -run TestSkillStaysWithinBudget .`).
 
 ### Task 4: `single` on a stdlib mux, and the migration check as a test
+
+*The router work here is superseded: see the 2026-11-19 amendment under
+the header. `single` stays on chi.*
 
 **Files:**
 - Modify: `cmd/rastrillo/new.go`: `goModTemplate` (chi require only for accounts: take the require block as an argument), `appTemplate`, `handlersTemplate`, `overviewHandler`, `makefileTemplate` (drop `migration-check` from the target list and `ci`), the `ciScripts` map (drop `40-migration-check`), `agentsMDTemplate` (the app.go line and the `Mount(r chi.Router, deps)` advice become `Mount(mux *http.ServeMux, deps)`), the printed summary's Makefile line
