@@ -25,8 +25,8 @@ func routes() []route {
 // reads it.
 func Mux() *http.ServeMux {
 	pageMux := http.NewServeMux()
-	for _, rt := range routes() {
-		pageMux.HandleFunc(rt.Pattern, rt.Handler)
+	for _, entry := range routes() {
+		pageMux.HandleFunc(entry.Pattern, entry.Handler)
 	}
 	mux := http.NewServeMux()
 	// The app serves its own static files; the framework never does.
@@ -34,18 +34,22 @@ func Mux() *http.ServeMux {
 	// them via {{asset ...}}, which returns a content-hashed URL the
 	// handler serves cacheable-forever.
 	mux.Handle("GET /static/", assets.Handler())
-	h := pages.Middleware(pageMux)
+	handler := pages.Middleware(pageMux)
 	// pagesErr is render.go's: a template that does not parse, or a
 	// locale boot refuses. Without pages, every request gets
 	// ErrorPage's plain 500 instead of a panic in the middleware.
 	if pagesErr != nil {
-		h = http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) { ErrorPage(w, req, http.StatusInternalServerError, "") })
+		handler = http.HandlerFunc(failedBoot)
 	}
-	mux.Handle("/", h)
+	mux.Handle("/", handler)
 	return mux
 }
 
-func index(w http.ResponseWriter, r *http.Request) {
-	render(w, r, "index", nil)
+func failedBoot(response http.ResponseWriter, request *http.Request) {
+	ErrorPage(response, request, http.StatusInternalServerError, "")
+}
+
+func index(response http.ResponseWriter, request *http.Request) {
+	render(response, request, "index", nil)
 }
 __HANDLERS__

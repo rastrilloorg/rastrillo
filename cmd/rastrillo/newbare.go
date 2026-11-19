@@ -183,8 +183,8 @@ func bareDesignSystem(
 const (
 	bareOverviewRoute   = "\n\t\t{\"GET /overview\", overview},"
 	bareOverviewHandler = `
-func overview(w http.ResponseWriter, r *http.Request) {
-	render(w, r, "overview", nil)
+func overview(response http.ResponseWriter, request *http.Request) {
+	render(response, request, "overview", nil)
 }
 `
 )

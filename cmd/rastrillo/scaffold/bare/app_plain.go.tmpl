@@ -26,8 +26,8 @@ func routes() []route {
 // Mux is the whole app: the route table on a ServeMux.
 func Mux() *http.ServeMux {
 	mux := http.NewServeMux()
-	for _, rt := range routes() {
-		mux.HandleFunc(rt.Pattern, rt.Handler)
+	for _, entry := range routes() {
+		mux.HandleFunc(entry.Pattern, entry.Handler)
 	}
 	return mux
 }
@@ -47,7 +47,7 @@ const indexPage = `<!doctype html>
 </html>
 `
 
-func index(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	fmt.Fprintf(w, indexPage, Locale)
+func index(response http.ResponseWriter, request *http.Request) {
+	response.Header().Set("Content-Type", "text/html; charset=utf-8")
+	fmt.Fprintf(response, indexPage, Locale)
 }

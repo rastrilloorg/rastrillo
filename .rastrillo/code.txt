@@ -3986,7 +3986,7 @@ columns cmd/rastrillo/new.go e9429fea88d9 1
 columns cmd/rastrillo/new.go ef2901dc0d45 1
 columns cmd/rastrillo/new.go f2045c11abc8 1
 columns cmd/rastrillo/new.go f9075270659b 1
-file cmd/rastrillo/new.go - 543 raised from 543 by Fiesta part 2 Task 6: the vendored inventory comment names fiesta.js and copy.js and which files are Fiesta's
+file cmd/rastrillo/new.go - 543 lowered from 546 by scaffold shapes, which moved new.go's flag usage line to shapes.go
 func cmd/rastrillo/new.go runNew 49 lowered from 235 by scaffold shapes, which moved its writing into writeSingle; it reads the flags every shape shares
 func cmd/rastrillo/new.go writeSingle 177 main's runNew body, moved unchanged by scaffold shapes so that bare and accounts share runNew's flags and refusals; owed the same split runNew was
 names cmd/rastrillo/new.go scaffoldFile/b 1
