@@ -17,5 +17,5 @@ The files you will edit live in `internal/chat/`:
 - `render.go` draws pages from `templates/`.
 - `app.go` builds the app when it starts.
 
-Tests live in `internal/chattest/`. Everything in the app is yours to
+Tests live in `internal/chat/*_test.go`. Everything in the app is yours to
 edit from now on.
