@@ -260,7 +260,9 @@ func validRecord(rec Record) bool {
 	return false
 }
 
-func optionalAddress(a string) bool { return a == "" || validAddress(a) }
+func optionalAddress(address string) bool {
+	return address == "" || validAddress(address)
+}
 
 // validAddress is the shape a remembered address must have: at most 254
 // bytes (the longest address SMTP carries), exactly one @, and no

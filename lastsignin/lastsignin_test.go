@@ -14,6 +14,12 @@ import (
 
 const origin = "https://app.test"
 
+// adaLink is the record most tests write: a magic link, with its address.
+var adaLink = Record{Method: MethodMagicLink, Address: "ada@example.com"}
+
+// oficina is a federated record with no address.
+var oficina = Record{Method: MethodFederated, Provider: ProviderOficina}
+
 func newJar(t *testing.T, mode Mode, now func() time.Time) *Jar {
 	t.Helper()
 	j, err := New(Config{Origin: origin, InstanceKey: "k", AttemptCookie: "__Host-rastrillo_attempt", Mode: mode, Now: now})
@@ -42,8 +48,9 @@ func TestRememberThenReadRoundTrips(t *testing.T) {
 		{Method: MethodMagicLink, Address: "ada@example.com"},
 		{Method: MethodPasskey, Address: ""},
 		{Method: MethodPasskey, Address: "ada@example.com"},
-		{Method: MethodFederated, Provider: ProviderOficina},
-		{Method: MethodFederated, Provider: ProviderOficina, Address: "ada@example.com"},
+		oficina,
+		{Method: MethodFederated, Provider: ProviderOficina,
+			Address: "ada@example.com"},
 	} {
 		w := httptest.NewRecorder()
 		j.Remember(w, rec)
@@ -55,7 +62,7 @@ func TestRememberThenReadRoundTrips(t *testing.T) {
 
 func TestTheCookieIsHostOnlyHttpOnlyAndLastsFourHundredDays(t *testing.T) {
 	w := httptest.NewRecorder()
-	newJar(t, On, nil).Remember(w, Record{Method: MethodMagicLink, Address: "ada@example.com"})
+	newJar(t, On, nil).Remember(w, adaLink)
 	cs := w.Result().Cookies()
 	if len(cs) != 1 {
 		t.Fatalf("%d cookies, want 1", len(cs))
@@ -83,13 +90,13 @@ func TestAPlainHTTPOriginGetsTheUnprefixedName(t *testing.T) {
 
 func TestOffWritesReadsAndDeletesNothing(t *testing.T) {
 	w := httptest.NewRecorder()
-	newJar(t, On, nil).Remember(w, Record{Method: MethodMagicLink, Address: "ada@example.com"})
+	newJar(t, On, nil).Remember(w, adaLink)
 	r := carrying(w)
 	r.AddCookie(&http.Cookie{Name: "__Host-rastrillo_attempt", Value: "x"})
 
 	off := newJar(t, Off, nil)
 	w = httptest.NewRecorder()
-	off.Remember(w, Record{Method: MethodMagicLink, Address: "ada@example.com"})
+	off.Remember(w, adaLink)
 	off.EndAttempt(w)
 	off.Clear(w)
 	if h := w.Header().Values("Set-Cookie"); len(h) != 0 {
@@ -102,7 +109,7 @@ func TestOffWritesReadsAndDeletesNothing(t *testing.T) {
 
 func TestForgettingDeletesAndNeverReads(t *testing.T) {
 	w := httptest.NewRecorder()
-	newJar(t, On, nil).Remember(w, Record{Method: MethodMagicLink, Address: "ada@example.com"})
+	newJar(t, On, nil).Remember(w, adaLink)
 	r := carrying(w)
 
 	j := newJar(t, Forgetting, nil)
@@ -110,7 +117,7 @@ func TestForgettingDeletesAndNeverReads(t *testing.T) {
 		t.Fatalf("Forgetting read %v, want Invalid so the screen clears it", res)
 	}
 	w = httptest.NewRecorder()
-	j.Remember(w, Record{Method: MethodMagicLink, Address: "ada@example.com"})
+	j.Remember(w, adaLink)
 	j.EndAttempt(w)
 	got := map[string]int{}
 	for _, c := range w.Result().Cookies() {
@@ -127,13 +134,16 @@ func TestRememberRefusesARecordItCouldNotReadBack(t *testing.T) {
 		{Method: MethodPasskey, Address: "no-at-sign"},
 		{Method: MethodPasskey, Provider: ProviderOficina},
 		{Method: MethodKeymail, Address: ""},
-		{Method: MethodKeymail, Address: "kay@example.org", Provider: ProviderOficina},
+		{Method: MethodKeymail, Address: "kay@example.org",
+			Provider: ProviderOficina},
 		{Method: MethodFederated},
 		{Method: MethodFederated, Provider: "google"},
-		{Method: MethodFederated, Provider: ProviderOficina, Address: "ada\r@example.com"},
+		{Method: MethodFederated, Provider: ProviderOficina,
+			Address: "ada\r@example.com"},
 		{Method: MethodMagicLink, Address: "no-at-sign"},
 		{Method: MethodMagicLink, Address: "a@b@c.example"},
-		{Method: MethodMagicLink, Address: strings.Repeat("a", 250) + "@x.example"},
+		{Method: MethodMagicLink,
+			Address: strings.Repeat("a", 250) + "@x.example"},
 		{Method: MethodMagicLink, Address: "ada\n@example.com"},
 		{Method: "password", Address: "ada@example.com"},
 	} {
@@ -150,7 +160,7 @@ func TestReadRefusesWhatWasNotSealedForThisOriginAndTime(t *testing.T) {
 	at := func(d time.Duration) func() time.Time { return func() time.Time { return clock.Add(d) } }
 	j := newJar(t, On, at(0))
 	w := httptest.NewRecorder()
-	j.Remember(w, Record{Method: MethodMagicLink, Address: "ada@example.com"})
+	j.Remember(w, adaLink)
 	r := carrying(w)
 
 	other, _ := New(Config{Origin: "https://other.test", InstanceKey: "k", AttemptCookie: "a", Mode: On, Now: at(0)})
@@ -169,10 +179,14 @@ func TestReadRefusesWhatWasNotSealedForThisOriginAndTime(t *testing.T) {
 
 	now := clock.Unix()
 	for name, p := range map[string]payload{
-		"an unknown method":         {O: origin, M: "password", A: "ada@example.com", IAT: now, EXP: now + 3600},
-		"a passkey with a provider": {O: origin, M: MethodPasskey, P: ProviderOficina, IAT: now, EXP: now + 3600},
-		"an unknown provider":       {O: origin, M: MethodFederated, P: "google", IAT: now, EXP: now + 3600},
-		"longer than 400 days":      {O: origin, M: MethodPasskey, IAT: now, EXP: now + 401*24*3600},
+		"an unknown method": {O: origin, M: "password",
+			A: "ada@example.com", IAT: now, EXP: now + 3600},
+		"a passkey with a provider": {O: origin, M: MethodPasskey,
+			P: ProviderOficina, IAT: now, EXP: now + 3600},
+		"an unknown provider": {O: origin, M: MethodFederated,
+			P: "google", IAT: now, EXP: now + 3600},
+		"longer than 400 days": {O: origin, M: MethodPasskey,
+			IAT: now, EXP: now + 401*24*3600},
 	} {
 		v, err := sealedcookie.Seal(j.key, p)
 		if err != nil {
@@ -188,8 +202,9 @@ func TestReadRefusesWhatWasNotSealedForThisOriginAndTime(t *testing.T) {
 
 func TestNewRefusesAConfigItCannotHonour(t *testing.T) {
 	for name, cfg := range map[string]Config{
-		"a relative origin":       {Origin: "app.test", InstanceKey: "k", AttemptCookie: "a", Mode: On},
-		"no instance key":         {Origin: origin, AttemptCookie: "a", Mode: On},
+		"a relative origin": {Origin: "app.test", InstanceKey: "k",
+			AttemptCookie: "a", Mode: On},
+		"no instance key": {Origin: origin, AttemptCookie: "a", Mode: On},
 	} {
 		if _, err := New(cfg); err == nil {
 			t.Errorf("New(%s) succeeded", name)
@@ -200,29 +215,28 @@ func TestNewRefusesAConfigItCannotHonour(t *testing.T) {
 // Home signs people in without auth, so it has no attempt cookie to
 // end: its jar is built with none, and ending an attempt writes nothing.
 func TestAJarWithNoAttemptCookieEndsNothing(t *testing.T) {
-	j, err := New(Config{Origin: origin, InstanceKey: "k", Mode: On})
+	jar, err := New(Config{Origin: origin, InstanceKey: "k", Mode: On})
 	if err != nil {
 		t.Fatalf("New with no attempt cookie: %v", err)
 	}
-	w := httptest.NewRecorder()
-	j.EndAttempt(w)
-	if h := w.Header().Values("Set-Cookie"); len(h) != 0 {
-		t.Fatalf("EndAttempt wrote %v with no attempt cookie named", h)
+	rec := httptest.NewRecorder()
+	jar.EndAttempt(rec)
+	if set := rec.Header().Values("Set-Cookie"); len(set) != 0 {
+		t.Fatalf("EndAttempt wrote %v with no attempt cookie named", set)
 	}
 }
 
 // Remember writes what its caller says and nothing of the record it
-// replaces: a passkey sign-in after a remembered link, with no address
+// replaces: a federated sign-in after a remembered link, with no address
 // from the caller, must not keep the link's address.
 func TestRememberCarriesNoAddressOver(t *testing.T) {
-	j := newJar(t, On, nil)
-	w := httptest.NewRecorder()
-	j.Remember(w, Record{Method: MethodMagicLink, Address: "ada@example.com"})
-	w = httptest.NewRecorder()
-	j.Remember(w, Record{Method: MethodFederated, Provider: ProviderOficina})
-	got, res := j.Read(carrying(w))
-	want := Record{Method: MethodFederated, Provider: ProviderOficina}
-	if res != Valid || got != want {
-		t.Fatalf("after a federated sign-in the jar reads %+v, %v; want %+v", got, res, want)
+	jar := newJar(t, On, nil)
+	jar.Remember(httptest.NewRecorder(), adaLink)
+	rec := httptest.NewRecorder()
+	jar.Remember(rec, oficina)
+	got, res := jar.Read(carrying(rec))
+	if res != Valid || got != oficina {
+		t.Fatalf("after a federated sign-in the jar reads %+v, %v; want %+v",
+			got, res, oficina)
 	}
 }
