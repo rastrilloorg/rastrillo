@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 
 	"amadan.net/rastrillo/rastrillo/lastsignin"
 )
@@ -421,5 +422,65 @@ func TestAnUnknownErrorFallsToTheField(t *testing.T) {
 	if st := stateAt(off, newBrowser(), "/signin?err=unknown"); st.Problem !=
 		ProblemNone {
 		t.Errorf("with the option off ?err=unknown is %q", st.Problem)
+	}
+}
+
+// A step-up through Keymail stays a step-up when the round trip fails:
+// the callback's failure redirects restore reauth from the continuation
+// bound to this round trip, so the page that follows offers local ways
+// only. A link sent from the same browser in between replaces the
+// attempt cookie, not the continuation, and changes nothing.
+func TestAFailedKeymailStepUpStaysAStepUp(t *testing.T) {
+	oneWayOn := func(cfg *Config) { cfg.SigninOneWay = true }
+	for name, fail := range map[string]func(*Auth, *keymailFake){
+		"err=keymail": func(_ *Auth, fake *keymailFake) {
+			fake.servers["keymail.test"] = false
+		},
+		"err=expired": func(auth *Auth, _ *keymailFake) {
+			auth.flow.Now = func() time.Time {
+				return time.Now().Add(time.Hour)
+			}
+		},
+	} {
+		auth, fake := newKeymailScreen(t, oneWayOn)
+		browser := newBrowser()
+		begun := browser.do(auth.Begin, http.MethodPost, "/signin",
+			url.Values{"address": {"kay@example.org"}, "reauth": {"1"}})
+		continued := auth.SigninState(browser.request(http.MethodGet,
+			begun.Header().Get("Location"), nil))
+		state := stateOf(t, continued.ContinueURL)
+		browser.do(auth.Begin, http.MethodPost, "/signin",
+			url.Values{"address": {"ada@example.com"}})
+		fail(auth, fake)
+		back := callback(auth, browser, state).Header().Get("Location")
+		st := stateAt(auth, browser, back)
+		st.Federated = oficinaDoor
+		if !strings.Contains(back, name) || !strings.Contains(back,
+			"reauth=1") || !st.Reauth {
+			t.Errorf("%s: the callback went to %q, which drops reauth",
+				name, back)
+		}
+		for _, row := range st.Ways() {
+			if row.Way == "oficina" {
+				t.Errorf("%s: after %q the chooser offers Oficina ID",
+					name, back)
+			}
+		}
+	}
+}
+
+// Without the one-way option a failed callback answers as it always did.
+func TestAFailedKeymailCallbackIsUnchangedWithTheOptionOff(t *testing.T) {
+	auth, fake := newKeymailScreen(t, nil)
+	browser := newBrowser()
+	begun := browser.do(auth.Begin, http.MethodPost, "/signin",
+		url.Values{"address": {"kay@example.org"}, "reauth": {"1"}})
+	continued := auth.SigninState(browser.request(http.MethodGet,
+		begun.Header().Get("Location"), nil))
+	fake.servers["keymail.test"] = false
+	back := callback(auth, browser, stateOf(t, continued.ContinueURL))
+	got := back.Header().Get("Location")
+	if got != "/signin?force=1&err=keymail" {
+		t.Errorf("with the option off the callback went to %q", got)
 	}
 }

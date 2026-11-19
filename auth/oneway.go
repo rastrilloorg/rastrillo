@@ -373,9 +373,7 @@ func (auth *Auth) afterForget(request *http.Request) string {
 // the federated door. Every other redirect is returned as it is.
 func (auth *Auth) keepReauth(request *http.Request, to string) string {
 	prefix := auth.cfg.SigninPath + "?"
-	if !auth.cfg.SigninOneWay || request.Method != http.MethodPost ||
-		request.PostFormValue("reauth") != "1" ||
-		!strings.HasPrefix(to, prefix) {
+	if !auth.postedReauth(request) || !strings.HasPrefix(to, prefix) {
 		return to
 	}
 	query, err := url.ParseQuery(strings.TrimPrefix(to, prefix))
@@ -384,4 +382,10 @@ func (auth *Auth) keepReauth(request *http.Request, to string) string {
 	}
 	query.Set("reauth", "1")
 	return prefix + query.Encode()
+}
+
+// postedReauth is whether a one-way form posted a step-up.
+func (auth *Auth) postedReauth(request *http.Request) bool {
+	return auth.cfg.SigninOneWay && request.Method == http.MethodPost &&
+		request.PostFormValue("reauth") == "1"
 }

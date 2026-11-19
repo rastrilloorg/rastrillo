@@ -1327,13 +1327,11 @@ names auth/confirm_test.go hasSession/c 1
 names auth/confirm_test.go hasSession/w 1
 columns auth/continuation.go 1c9d55b33fca 1
 columns auth/continuation.go 1da9154a29bd 1
-columns auth/continuation.go 1f2492499618 1
 columns auth/continuation.go 406ff4c01e55 1
 columns auth/continuation.go 61d5121801a6 1
 columns auth/continuation.go 6e887753c758 1
 columns auth/continuation.go 994113687fe9 1
 columns auth/continuation.go 999fff80d380 1
-columns auth/continuation.go 9a767931da85 1
 names auth/continuation.go Auth.continuationFor/a 1
 names auth/continuation.go Auth.continuationFor/p 1
 names auth/continuation.go Auth.continuationFor/r 1
@@ -1347,7 +1345,6 @@ names auth/continuation.go Auth.pendingValue/a 1
 names auth/continuation.go Auth.pendingValue/c 1
 names auth/continuation.go Auth.pendingValue/r 1
 names auth/continuation.go Auth.sealContinuation/a 1
-names auth/continuation.go Auth.sealContinuation/u 1
 names auth/continuation.go Auth.validAuthorizeURL/a 1
 names auth/continuation.go Auth.validAuthorizeURL/k 1
 names auth/continuation.go Auth.validAuthorizeURL/p 1
@@ -1491,7 +1488,6 @@ names auth/csrf.go Auth.sameOrigin/r 1
 columns auth/handlers.go 0167d0fa3acb 1
 columns auth/handlers.go 456987aed287 1
 columns auth/handlers.go 4d122101ede6 1
-columns auth/handlers.go 55ee3d5f8331 1
 columns auth/handlers.go 65b9ad82110f 1
 columns auth/handlers.go 68faa69044fe 1
 columns auth/handlers.go 78d6219a2826 1
@@ -1508,9 +1504,8 @@ columns auth/handlers.go e2126f7ef8d1 5
 columns auth/handlers.go e6a5dac583f8 1
 columns auth/handlers.go fb732dda3cb5 1
 columns auth/handlers.go ffb560e2308f 1
-file auth/handlers.go - 691
+file auth/handlers.go - 678
 func auth/handlers.go Auth.Begin 55
-func auth/handlers.go Auth.Callback 48
 func auth/handlers.go Auth.admit 61
 names auth/handlers.go Auth.AnswerAsSent/a 1
 names auth/handlers.go Auth.AnswerAsSent/r 1
@@ -1519,7 +1514,6 @@ names auth/handlers.go Auth.Begin/a 1
 names auth/handlers.go Auth.Begin/r 1
 names auth/handlers.go Auth.Begin/w 1
 names auth/handlers.go Auth.Callback/a 1
-names auth/handlers.go Auth.Callback/p 1
 names auth/handlers.go Auth.Callback/r 1
 names auth/handlers.go Auth.Callback/w 1
 names auth/handlers.go Auth.Refresh/a 1

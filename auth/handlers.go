@@ -249,7 +249,8 @@ func (a *Auth) continueKeymail(w http.ResponseWriter, r *http.Request, address s
 		a.redirect(w, r, a.problemURL("1", recovered, false, postedReturnTo(r)))
 		return
 	}
-	id, value, err := a.sealContinuation(next.Redirect, next.Pending)
+	id, value, err := a.sealRoundTrip(next.Redirect, next.Pending,
+		a.postedReauth(r))
 	if err != nil {
 		a.cfg.Logger.Error("rastrillo/auth: seal continuation", "err", err)
 		a.redirect(w, r, a.problemURL("1", recovered, false, postedReturnTo(r)))
@@ -315,23 +316,9 @@ func (a *Auth) Callback(w http.ResponseWriter, r *http.Request) {
 		a.redirect(w, r, a.signinAgain(r, "?err=expired"))
 		return
 	}
-	if a.cfg.SigninScreen {
-		// Today the pending cookie is cleared the moment it is read and
-		// the library then finds a state mismatch — so a late callback
-		// from tab A, or a callback URL a third party makes the browser
-		// open, throws away tab B's newer attempt. When the continuation
-		// describes the pending cookie just read and this callback's
-		// state is not that attempt's, the callback belongs to some other
-		// attempt: answer Expired and leave the pair alone. The pending
-		// blob's own authenticated expiry still bounds it; nothing is
-		// refreshed. Any other case — no continuation, or one left from
-		// an earlier attempt or a screen-off Begin — is today's path.
-		if p, st := a.openContinuation(r); st == cookieValid && p.PH == digest(pending) &&
-			p.ST != digest(r.URL.Query().Get("state")) {
-			a.redirect(w, r, a.signinAgain(r, "?err=expired"))
-			return
-		}
-		a.clearCookie(w, a.continueCookie())
+	again := a.roundTripReauth(r, pending)
+	if a.cfg.SigninScreen && a.otherAttempt(w, r, pending) {
+		return
 	}
 	a.clearCookie(w, a.pendingCookie())
 
@@ -340,7 +327,7 @@ func (a *Auth) Callback(w http.ResponseWriter, r *http.Request) {
 	switch {
 	case errors.Is(err, signin.ErrPendingInvalid):
 		// Expired, tampered with, or a state mismatch — all "start again".
-		a.redirect(w, r, a.signinAgain(r, "?err=expired"))
+		a.redirect(w, r, a.signinAgain(r, "?err=expired"+again))
 		return
 	case errors.Is(err, signin.ErrAddressMismatch):
 		// Keymail's identity service is deliberately anonymous: the
@@ -351,7 +338,7 @@ func (a *Auth) Callback(w http.ResponseWriter, r *http.Request) {
 		return
 	case err != nil:
 		a.logError("rastrillo/auth: keymail callback", err)
-		a.redirect(w, r, a.signinAgain(r, "?force=1&err=keymail"))
+		a.redirect(w, r, a.signinAgain(r, "?force=1&err=keymail"+again))
 		return
 	}
 	a.admit(w, r, id)
