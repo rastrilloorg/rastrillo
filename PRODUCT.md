@@ -82,8 +82,9 @@ doing the same work:
 - Rastrillo's gallery, Rastrillo components, of its partials and the
   Go calls that render them, is generated at build time by the public
   `cmd/dsgen` and is not committed; it is published at
-  rastrillo.org/components. Fiesta's own gallery, of the markup alone,
-  is at fiesta.rastrillo.org.
+  rastrillo.org/components. Fiesta's design system, with its tokens, UI
+  primitives, and stylesheet and script details, is at
+  fiesta.rastrillo.org/design-system.
 
 ## Capabilities and Constraints
 

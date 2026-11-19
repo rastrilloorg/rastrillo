@@ -842,7 +842,7 @@ Rastrillo components is the gallery of every partial, every state and
 all five shells, rendered live for all three themes and all twelve base
 locales, with the template call beside each sample: one page per section
 for each theme and locale, plus a full-page demo for each shell and one
-for the modal route. It is live at rastrillo.org/components.
+for the modal route. The site publishes it at rastrillo.org/components.
 
 The look is Fiesta's, so the gallery leaves Fiesta's parts to Fiesta's
 own design system at fiesta.rastrillo.org/design-system: the tokens, the
