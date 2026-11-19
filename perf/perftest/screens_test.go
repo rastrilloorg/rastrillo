@@ -453,3 +453,16 @@ func TestScreensPatternWholeSubtreesAreMounts(t *testing.T) {
 		t.Fatalf("a grouped wildcard: %v", errs(ft))
 	}
 }
+
+// ServeMux reads a final segment as a wildcard only when the whole
+// segment is one: "/literal...}" is a literal path, one page, and must
+// be measured rather than held for an Opaque group or a skip.
+func TestScreensPatternLiteralEllipsisIsOnePage(t *testing.T) {
+	t.Parallel()
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /literal...}", ok)
+	config := ScreenConfig{Patterns: []string{"/literal...}"}, Handler: mux}
+	if ft := run(config, "", true); ft.failed {
+		t.Fatalf("a literal pattern ending in ...}: %v", errs(ft))
+	}
+}

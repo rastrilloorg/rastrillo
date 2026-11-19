@@ -71,10 +71,9 @@ Under `Routes`, chi cannot list the routes inside a handler that is not
 a chi router, such as a generated `http.ServeMux` mounted at
 `/bookmarks/*`. Such a mount fails until you either list its screens in
 an `Opaque` group, or record `perf GET /bookmarks/* skip` with a reason.
-In `Patterns`, a subtree pattern is the same kind of mount and fails
-the same way: `"/"`, `"/admin/"`, and a pattern ending in a wildcard
-such as `"/files/{rest...}"`. `"/{$}"` and `"/admin/{$}"` are single
-pages:
+In `Patterns`, subtree patterns fail like mounts: `"/"`, `"/admin/"`,
+and patterns ending in a wildcard such as `"/files/{rest...}"`.
+`"/{$}"` and `"/admin/{$}"` match single pages:
 
 ```go
 var cfg = perftest.ScreenConfig{

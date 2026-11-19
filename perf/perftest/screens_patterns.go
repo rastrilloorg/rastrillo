@@ -60,10 +60,12 @@ func listRoutes(cfg ScreenConfig) (
 
 // A ServeMux hands a whole subtree to "/", "/admin/" and a terminal
 // wildcard such as "/files/{rest...}", so the handler behind one serves
-// screens no table lists. "/{$}" and "/admin/{$}" are one page each.
+// screens no table lists. "/{$}" and "/admin/{$}" are one page each, and
+// so is "/literal...}": a segment is a wildcard only if it is one whole.
 func isSubtree(pattern string) bool {
-	return strings.HasSuffix(pattern, "/") ||
-		strings.HasSuffix(pattern, "...}")
+	last := pattern[strings.LastIndex(pattern, "/")+1:]
+	return last == "" || strings.HasPrefix(last, "{") &&
+		strings.HasSuffix(last, "...}")
 }
 
 // unseenMount is the problem for a mount with no Opaque group and no
