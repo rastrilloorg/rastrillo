@@ -759,6 +759,23 @@ func TestDoctorSaysWhatIsTrueOfAnAppWithNothingVendored(t *testing.T) {
 	}
 }
 
+// An older app keeps static/ and templates/ at the root, which
+// findStaticDir also looks in. Its layout with the vendored files gone
+// is a broken app, not one without a design system, so it stays the
+// error and --fix does not quietly succeed.
+func TestDoctorRootLayoutWithNothingVendoredIsAnError(t *testing.T) {
+	dir := t.TempDir()
+	mustWrite(t, filepath.Join(dir, "go.mod"), "module older\n\ngo 1.24\n")
+	mustWrite(t, filepath.Join(dir, "templates", "layout.html"),
+		"<!doctype html>")
+	rep, err := diagnose(dir, "")
+	if err == nil || !strings.Contains(err.Error(),
+		"nothing vendored to check") {
+		t.Fatalf("diagnose on a root layout with nothing vendored: %v, %+v",
+			err, rep)
+	}
+}
+
 // TestDoctorReplaceDirectiveIsNotSkew: a replace points the app at a
 // checkout, so there is no second version to disagree with. Treating it
 // as skew would refuse --fix for everyone developing against a local

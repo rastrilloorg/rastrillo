@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"io"
+	"os"
 	"path/filepath"
 )
 
@@ -16,10 +17,13 @@ const doctorNoDesignMsg = "No design system here (no static files or " +
 // system (bare's --design-system=false), not a broken one, and failing
 // on it stopped even --probe's locale check. A layout with nothing
 // vendored is still the error: its pages link files that are gone.
+// The root templates/ is looked in too, as findStaticDir looks in the
+// root static/ that older apps keep beside it.
 func withoutDesignSystem(dir string) bool {
 	layouts, _ := filepath.Glob(filepath.Join(dir, "internal", "*",
 		"templates", "layout.html"))
-	return layouts == nil
+	_, err := os.Stat(filepath.Join(dir, "templates", "layout.html"))
+	return layouts == nil && err != nil
 }
 
 func printNoDesign(output io.Writer, module string) {
