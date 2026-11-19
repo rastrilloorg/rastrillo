@@ -186,7 +186,7 @@ The other seven, an action's shape and what each gate message means:
 2. Every update names its columns in `.Select(...)`.
 3. Pages and forms only inside `Routes`' `csrf.Protect` group.
 4. Signed-in routes, jobs' included, behind the session guard.
-5. One `migrate.Apply` at boot; `make ci` runs `rastrillo migration check`.
+5. One `migrate.Apply` at boot; `TestModelsMatchMigrations` passes.
 6. `options.DBPath` blanked before `Serve` when the app opened its own handle.
 7. Not-found and not-yours both answer 404.
 8. No screen carries two ways to start work; each action has its own page.

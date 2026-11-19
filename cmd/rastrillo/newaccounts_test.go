@@ -35,8 +35,12 @@ func TestAccountsPassesItsOwnTests(t *testing.T) {
 	if err != nil {
 		t.Fatalf("go test ./...:\n%s", out)
 	}
-	if !strings.Contains(out, "--- PASS: TestSignInByEmailedLink") {
-		t.Errorf("TestSignInByEmailedLink did not run and pass:\n%s", out)
+	// Sign-in adds an owner column: the migration check sees it.
+	for _, test := range []string{"TestSignInByEmailedLink",
+		"TestModelsMatchMigrations"} {
+		if !strings.Contains(out, "--- PASS: "+test) {
+			t.Errorf("%s did not run and pass:\n%s", test, out)
+		}
 	}
 	vet, err := goIn(dir, "vet", "-tags", "browser,perf", "./...")
 	if err != nil {

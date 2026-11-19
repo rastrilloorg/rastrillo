@@ -37,7 +37,8 @@ var taken = strings.Fields(`
 	get getAs got group handler harness hashedStylesheet href html http
 	hub
 	httptest index io json len library link linkPattern logger mail
-	mailer main method migrate mux name newApp newAppWithMail nil ok
+	mailer main method migrate modeldiff mux name newApp newAppWithMail
+	nil ok
 	options origin originFrom os outbox page path perftest post postOver
 	powtest rastrillo recorder regexp request response rig router routes
 	schema send servingOptions sessions signedInTokenPage signIn
@@ -46,7 +47,8 @@ var taken = strings.Fields(`
 	TestBareAssetNameStaysFresh TestBrowserWalk
 	TestErrorPageRendersFrameworkPartial
 	TestIndexLinksFingerprintedStylesheet TestIndexRenders testing
-	TestMain testOrigin TestOverviewRenders TestPerfBoot TestPerfScreens
+	TestMain TestModelsMatchMigrations testOrigin TestOverviewRenders
+	TestPerfBoot TestPerfScreens
 	TestSignInByEmailedLink TestTokenPageShowsANewTokenOnce
 	TestVendoredAssetsMatchTheLibrary time title token tokenPattern ui
 	url variable vendored vendoredIsMine vendoredTheme year

@@ -194,8 +194,8 @@ and [MCP](/docs/mcp) cover the rest.
 2. Every update names its columns in `.Select(...)`.
 3. Every page and form is in the guarded group in `Routes`.
 4. Signed-in pages are behind the session guard.
-5. One `migrate.Apply` runs at boot, and `make ci` runs
-   `rastrillo migration check`.
+5. One `migrate.Apply` runs at boot, and `TestModelsMatchMigrations`
+   passes.
 6. `options.DBPath` is blanked before `Serve`.
 7. Not-found and not-yours both answer 404.
 8. `make ci` passes, `make code` and `make routes` included.

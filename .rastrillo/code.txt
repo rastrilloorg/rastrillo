@@ -3954,7 +3954,6 @@ names cmd/rastrillo/modpath.go modulePath/f 1
 names cmd/rastrillo/modpath.go readRequirement/f 1
 names cmd/rastrillo/modpath.go readRequirement/r 2
 columns cmd/rastrillo/new.go 0c3864afdb72 1
-columns cmd/rastrillo/new.go 1c2b5ecf0485 1
 columns cmd/rastrillo/new.go 1cd9dc90d329 1
 columns cmd/rastrillo/new.go 21c6c423daf7 1
 columns cmd/rastrillo/new.go 2cc2d87269d3 1
@@ -3980,9 +3979,9 @@ columns cmd/rastrillo/new.go e9429fea88d9 1
 columns cmd/rastrillo/new.go ef2901dc0d45 1
 columns cmd/rastrillo/new.go f2045c11abc8 1
 columns cmd/rastrillo/new.go f9075270659b 1
-file cmd/rastrillo/new.go - 541 lowered from 546 by scaffold shapes, which moved new.go's flag usage line to shapes.go and writes the tests into the app's own directory
+file cmd/rastrillo/new.go - 543 lowered from 546 by scaffold shapes, which moved new.go's flag usage line to shapes.go and writes the tests into the app's own directory; raised from 541 by 2 when the migration check became the app's migrations_test.go, which writeSingle writes in place of the Makefile step
 func cmd/rastrillo/new.go runNew 49 lowered from 235 by scaffold shapes, which moved its writing into writeSingle; it reads the flags every shape shares
-func cmd/rastrillo/new.go writeSingle 175 main's runNew body, moved by scaffold shapes so that bare and accounts share runNew's flags and refusals, less its separate test directory; owed the same split runNew was
+func cmd/rastrillo/new.go writeSingle 178 main's runNew body, moved by scaffold shapes so that bare and accounts share runNew's flags and refusals, less its separate test directory; owed the same split runNew was. Raised from 175 by 3: it writes migrations_test.go (2 lines), and the summary's test-files line pads its continuation to the package name's width (1 line)
 names cmd/rastrillo/new.go scaffoldFile/b 1
 columns cmd/rastrillo/new_scaffold_test.go 021618c81aba 1
 columns cmd/rastrillo/new_scaffold_test.go 031c8d38c56a 1
@@ -3990,7 +3989,6 @@ columns cmd/rastrillo/new_scaffold_test.go 045867e037f3 1
 columns cmd/rastrillo/new_scaffold_test.go 07043a6cd6e4 1
 columns cmd/rastrillo/new_scaffold_test.go 07a8d4c95295 1
 columns cmd/rastrillo/new_scaffold_test.go 0b3e06f82169 1
-columns cmd/rastrillo/new_scaffold_test.go 0b8dc1310ab6 1
 columns cmd/rastrillo/new_scaffold_test.go 0d56bd5f1bc5 1
 columns cmd/rastrillo/new_scaffold_test.go 0ecd732d0565 1
 columns cmd/rastrillo/new_scaffold_test.go 0fd0a6ec8135 1
@@ -4057,19 +4055,15 @@ columns cmd/rastrillo/new_scaffold_test.go 9529b36dd4e2 1
 columns cmd/rastrillo/new_scaffold_test.go 95cfa5abf2e6 1
 columns cmd/rastrillo/new_scaffold_test.go 979544f7f3e0 1
 columns cmd/rastrillo/new_scaffold_test.go 98347e84a473 1
-columns cmd/rastrillo/new_scaffold_test.go 9a6dc4b29822 1
 columns cmd/rastrillo/new_scaffold_test.go 9b313b3084f2 2
-columns cmd/rastrillo/new_scaffold_test.go 9c0f07e01957 1
 columns cmd/rastrillo/new_scaffold_test.go 9d5652eb6d66 1
 columns cmd/rastrillo/new_scaffold_test.go 9f7402d856f4 1
 columns cmd/rastrillo/new_scaffold_test.go a1af8016ce2b 1
 columns cmd/rastrillo/new_scaffold_test.go a1c56ced3527 1
 columns cmd/rastrillo/new_scaffold_test.go a3ea6d6a7b6f 1
 columns cmd/rastrillo/new_scaffold_test.go a9ff3729e9c9 1
-columns cmd/rastrillo/new_scaffold_test.go ad7f10f6f083 1
 columns cmd/rastrillo/new_scaffold_test.go b0492b62d174 1
 columns cmd/rastrillo/new_scaffold_test.go b3595ad15f7a 1
-columns cmd/rastrillo/new_scaffold_test.go b47ee26a3335 1
 columns cmd/rastrillo/new_scaffold_test.go b4a1037c41e2 1
 columns cmd/rastrillo/new_scaffold_test.go b4a335e84425 1
 columns cmd/rastrillo/new_scaffold_test.go b50c1e61c1d6 1

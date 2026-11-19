@@ -179,6 +179,8 @@ func writeSingle(options newOpts) error {
 	files[inApp("browser_test.go")] = fmt.Sprintf(browserTestTemplate,
 		name, pkg)
 	files[inApp("perf_test.go")] = fmt.Sprintf(perfTestTemplate, name, pkg)
+	files[inApp("migrations_test.go")] = fmt.Sprintf(
+		scaffoldFile("migrations_test.go.tmpl"), name, pkg)
 	files[atRoot(".gitleaks.toml")] = scaffoldFile("gitleaks.toml")
 	files[atRoot(".rastrillo", "budgets.txt")] = budgetsTxtTemplate
 	files[atRoot("README.md")] = fmt.Sprintf(readmeTemplate, name, pkg, env)
@@ -256,17 +258,18 @@ func writeSingle(options newOpts) error {
 	}
 
 	fmt.Printf("rastrillo new: scaffolded %s/\n", name)
-	fmt.Printf("  cmd/%s/main.go       (Resolve -> db.Open -> New -> Serve)\n",
+	fmt.Printf("  cmd/%s/main.go        (Resolve -> db.Open -> New -> Serve)\n",
 		name)
-	fmt.Printf("  internal/%s/         (app, routes, handlers, models, "+
+	fmt.Printf("  internal/%s/          (app, routes, handlers, models, "+
 		"migrations, render, templates, static)\n", pkg)
-	fmt.Printf("  internal/%s/*_test.go (harness + example tests, "+
-		"passing out of the box;\n", pkg)
-	fmt.Println("                        browser_test.go = the browser drive, go test -tags browser ./...)")
+	tests := "internal/" + pkg + "/*_test.go"
+	fmt.Printf("  %s (harness + example tests, passing out of the box;\n"+
+		"  %*s browser_test.go = the browser drive, go test -tags "+
+		"browser ./...)\n", tests, len(tests)+1, "")
 	fmt.Println("  manifest/            (the declarative path: drop a <name>.toml here, see its README)")
 	fmt.Println("  Makefile             (make ci = vet + fmt + staticcheck + " +
 		"govulncheck + gitleaks + budget + code + routes + test + perf + " +
-		"migration check + generate check, the one gate definition;")
+		"generate check, the one gate definition;")
 	fmt.Println("                        make release = the stripped binary)")
 	fmt.Println("  .gitignore           (build output and the local database)")
 	fmt.Println("  .amadan/ci, ci.d/    (amadan runner CI, executable, delegating to make)")
@@ -530,7 +533,6 @@ var runnerSteps = []struct{ file, target string }{
 	{"17-routes", "routes"}, {"18-csp", "csp"}, {"20-fmt", "fmt-check"},
 	{"25-staticcheck", "staticcheck"}, {"26-govulncheck", "govulncheck"},
 	{"27-gitleaks", "gitleaks"}, {"30-test", "test"}, {"35-perf", "perf"},
-	{"40-migration-check", "migration-check"},
 	{"45-generate-check", "generate-check"},
 }
 
