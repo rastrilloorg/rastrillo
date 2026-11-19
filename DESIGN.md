@@ -131,8 +131,8 @@ version `go.mod` pins. Fiesta owns the stylesheets, the themes, the
 Lucide icons and most of the client scripts. Fiesta's DESIGN.md is the
 source for this one. Rastrillo owns the `ui` partials that write the markup, the
 routes behind the language and colour-scheme menus, `rastrillo.js` and
-`live.js`, and the gallery of its Go calls at
-rastrillo.org/design-system. To change the look, change Fiesta, release
+`live.js`, and Rastrillo components, the gallery of its Go calls at
+rastrillo.org/components. To change the look, change Fiesta, release
 it and bump the pin.
 
 ## Overview

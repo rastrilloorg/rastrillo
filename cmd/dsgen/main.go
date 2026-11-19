@@ -2,7 +2,7 @@
 // and icon in three themes and twelve languages, to a directory of
 // static files.
 //
-// The gallery is not committed to the rastrillo repository. It is 20 MB
+// The gallery is not committed to the rastrillo repository. It is 38 MB
 // of machine output that changes whole on every change to ui, and the
 // site that publishes it builds it instead:
 //

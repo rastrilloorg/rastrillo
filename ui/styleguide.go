@@ -2,10 +2,9 @@ package ui
 
 // styleguideSamples are the canonical markup samples for the class
 // idioms — structural components with arbitrary bodies that a Go
-// template partial cannot wrap. Styleguide returns them; the
-// design-system page renders every one so each documented class is
-// exercised, and ui_test.go's TestIdiomClassesAreStyled keeps them
-// honest against tokens.css (the F10 lesson, generalized). ui.go's
+// template partial cannot wrap. Styleguide returns them, and
+// ui_test.go's TestIdiomClassesAreStyled keeps them honest against
+// tokens.css (the F10 lesson, generalized). ui.go's
 // package doc references Styleguide by name rather than duplicating the
 // markup, so the two cannot drift.
 //
@@ -238,8 +237,7 @@ func StyleguideCSS() string {
 // Styleguide returns the canonical markup for every markup idiom —
 // structural components with arbitrary bodies that a template partial
 // cannot wrap, such as the section box, the list-grid card and the page
-// shells. It is the source the design-system page renders and the
-// source ui_test.go's TestStyleguideSamplesRender and
+// shells. It is the source ui_test.go's TestStyleguideSamplesRender and
 // TestIdiomClassesAreStyled hold honest against tokens.css: a sample
 // cannot use a class tokens.css doesn't style, and every idiom class
 // tokens.css ships must appear in some sample.

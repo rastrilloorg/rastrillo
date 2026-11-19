@@ -1,5 +1,5 @@
-// The design-system gallery is generated and is not committed: it is
-// 20 MB of machine output, rewritten whole every time a ui partial
+// The Rastrillo components gallery is generated and is not committed:
+// it is 38 MB of machine output, rewritten whole every time a ui partial
 // changes, and the website that publishes it builds it instead by
 // running cmd/dsgen against a pinned version of this module.
 //
