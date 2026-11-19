@@ -44,7 +44,7 @@ Read the topic before you start work it covers, not after the source:
 | `--scaffold` | For |
 |---|---|
 | `bare` | a page or a dashboard: no data, no sign-in |
-| `single` (default) | one instance and its data in SQLite |
+| `single` (default) | one instance and its data in SQLite; no sign-in |
 | `accounts` | sign-in by emailed link; each person sees only their rows |
 
 `home` and `hub` are not built yet.
