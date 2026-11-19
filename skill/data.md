@@ -58,6 +58,8 @@ test it with `provisiontest`. docs/site/reference/provision.md
 
 A tenant served under `/<slug>` on a hub's origin sets `Options.BasePath` from `basepath.FromEnv`. Links in a body go through `{{path $ "/x"}}` or `basepath.Path`; redirect plain paths. No sign-in runs there. docs/site/reference/basepath.md
 
+For an instance under a root app, call `instance.FromEnv`, use `handoff` to sign members in, and use `roster` to keep the member list in sync. Test with `handofftest`. docs/site/reference/instance.md, handoff.md, roster.md, handofftest.md
+
 ## Migrations
 
 Schema changes: edit a model, `rastrillo migration generate`, read the

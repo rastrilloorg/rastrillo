@@ -745,20 +745,14 @@ names apitoken/token_test.go TestMain/m 1
 names apitoken/token_test.go TestNewRefusesBadConfig/d 1
 names apitoken/token_test.go TestNewRefusesBadConfig/p 1
 names apitoken/token_test.go TestRedact/s 1
-columns assertion/assertion.go 0011b93b376f 1
-columns assertion/assertion.go 0a8acff18d09 1
-columns assertion/assertion.go 339e50d76548 1
-columns assertion/assertion.go 5f94d3a22f9a 1
 columns assertion/assertion.go 62d13060dd2d 1
 columns assertion/assertion.go 9d8624c0a5f5 1
 columns assertion/assertion.go a3b6b0102139 1
-columns assertion/assertion.go c1a831b3d0e4 1
 columns assertion/assertion.go d363d7c04437 1
 columns assertion/assertion.go e7fc511b7cc8 1
 columns assertion/assertion.go f42a441dae75 1
 columns assertion/assertion.go ffe0b7f8313a 1
 func assertion/assertion.go Verifier.Verify 49
-func assertion/assertion.go origin 51
 func assertion/assertion.go parse 64
 names assertion/assertion.go NewVerifier/v 1
 names assertion/assertion.go RandomID/b 1
@@ -766,18 +760,6 @@ names assertion/assertion.go Verifier.Verify/c 1
 names assertion/assertion.go Verifier.Verify/p 1
 names assertion/assertion.go Verifier.Verify/s 1
 names assertion/assertion.go Verifier.Verify/v 1
-names assertion/assertion.go alphaNum/b 1
-names assertion/assertion.go decode/b 1
-names assertion/assertion.go decode/s 1
-names assertion/assertion.go identifier/b 1
-names assertion/assertion.go identifier/i 1
-names assertion/assertion.go identifier/s 1
-names assertion/assertion.go object/b 1
-names assertion/assertion.go origin/b 2
-names assertion/assertion.go origin/h 1
-names assertion/assertion.go origin/i 1
-names assertion/assertion.go origin/p 1
-names assertion/assertion.go origin/s 1
 names assertion/assertion.go parse/c 1
 names assertion/assertion.go parse/n 1
 names assertion/assertion.go randomID/b 1
@@ -2824,7 +2806,6 @@ names basepath/basepath.go from/s 1
 names basepath/basepath.go originAuthority/a 1
 names basepath/basepath.go originAuthority/u 1
 names basepath/basepath.go originForm/u 1
-names basepath/basepath.go sameHost/o 1
 names basepath/basepath.go validOrigin/u 1
 columns basepath/basepath_test.go 0b4b664d3917 1
 columns basepath/basepath_test.go 0b78b73d9579 1
@@ -3041,7 +3022,6 @@ names basepath/handler_test.go live/h 1
 names basepath/handler_test.go pageSeen/r 1
 names basepath/handler_test.go serve/c 1
 names basepath/handler_test.go serve/h 1
-columns basepath/samehost_internal_test.go 596afc0fad2e 1
 names basepath/samehost_internal_test.go TestProductHostIsMatchedTheWayBrowsersSendIt/c 1
 columns blobs/blobs.go 20080331dba9 1
 columns blobs/blobs.go 51728ea1589f 1
@@ -12419,6 +12399,7 @@ columns internal/tmplmigrate/run_test.go e845dd2a4e96 1
 columns internal/tmplmigrate/run_test.go e8a5efc1cd45 1
 names internal/tmplmigrate/run_test.go TestDryRunFailsWhileEditsArePending/b 2
 names internal/tmplmigrate/run_test.go TestRunSkipsStaticAndReportsABadFileWithoutStopping/b 2
+func internal/wire/wire.go Origin 54 moved unchanged from assertion.origin, a security check reviewed line for line; splitting it would only invite drift
 names internal/wirename/wirename.go Name/b 1
 names internal/wirename/wirename.go Name/c 1
 names internal/wirename/wirename.go Name/i 1

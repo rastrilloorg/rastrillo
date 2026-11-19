@@ -10,6 +10,13 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+### Added: instances under a root app
+
+- `instance` reads from the environment whether an app runs under a root app or standalone, and refuses to start if neither or both are set.
+- `handoff` signs members in from the root: `Enter`, `Consume`, `Renew` and `Sweep`, with a refusal page the app can brand.
+- `roster` receives signed snapshots of the full roster from the root. A database lease coordinates applies across processes, and `Suspended` reports the instance's state.
+- `handoff/handofftest` is a fake root for tests.
+
 ### Changed: the gallery is Rastrillo components, at `/components/`
 
 The gallery at rastrillo.org/design-system is now called Rastrillo

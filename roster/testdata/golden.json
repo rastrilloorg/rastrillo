@@ -1,0 +1,29 @@
+{
+  "now": 1700000000,
+  "publicKey": "BNKPKyWiLX9g9s5PM5oxmE2dJiI6Ss9XDcVjVFrBOL4DWOiaU035m2clczoVCGUVZvckkCtOy6qXhrIiLhoFbIg",
+  "snapshot": {
+    "v": 1,
+    "iss": "https://root.example.com",
+    "aud": "https://acme.example.com",
+    "kid": "key_1",
+    "seq": 7,
+    "iat": 1700000000,
+    "exp": 1700000300,
+    "state": "active",
+    "members": [
+      {
+        "sub": "person_1",
+        "email": "ada@example.com",
+        "name": "Ada Lovelace",
+        "role": "owner"
+      },
+      {
+        "sub": "person_2",
+        "email": "",
+        "name": "",
+        "role": "member"
+      }
+    ]
+  },
+  "token": "eyJ2IjoxLCJpc3MiOiJodHRwczovL3Jvb3QuZXhhbXBsZS5jb20iLCJhdWQiOiJodHRwczovL2FjbWUuZXhhbXBsZS5jb20iLCJraWQiOiJrZXlfMSIsInNlcSI6NywiaWF0IjoxNzAwMDAwMDAwLCJleHAiOjE3MDAwMDAzMDAsInN0YXRlIjoiYWN0aXZlIiwibWVtYmVycyI6W3sic3ViIjoicGVyc29uXzEiLCJlbWFpbCI6ImFkYUBleGFtcGxlLmNvbSIsIm5hbWUiOiJBZGEgTG92ZWxhY2UiLCJyb2xlIjoib3duZXIifSx7InN1YiI6InBlcnNvbl8yIiwiZW1haWwiOiIiLCJuYW1lIjoiIiwicm9sZSI6Im1lbWJlciJ9XX0.fU0znm4pkcZVO26Z13T-Fkd69fBDNJSkzMUFrJYqxikjR4p9oIRr7MSIrmkP8QUW9M5kw788zViAk2spZ7ORkg"
+}

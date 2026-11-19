@@ -20,8 +20,9 @@ func TestProductHostIsMatchedTheWayBrowsersSendIt(t *testing.T) {
 		{"localhost", "http://localhost:8080", false},
 		{"example.com", "https://Example.com:443", true},
 	} {
-		if got := sameHost(c.received, c.origin); got != c.want {
-			t.Errorf("sameHost(%q, %q) = %v, want %v", c.received, c.origin, got, c.want)
+		if got := SameHost(c.received, c.origin); got != c.want {
+			t.Errorf("SameHost(%q, %q) = %v, want %v",
+				c.received, c.origin, got, c.want)
 		}
 	}
 }

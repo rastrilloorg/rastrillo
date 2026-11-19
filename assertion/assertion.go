@@ -4,19 +4,17 @@
 package assertion
 
 import (
-	"bytes"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
 	"encoding/base64"
 	"errors"
-	"net"
 	"strconv"
 	"strings"
 	"time"
-	"unicode/utf8"
 
 	"amadan.net/rastrillo/rastrillo/crypto"
+	"amadan.net/rastrillo/rastrillo/internal/wire"
 	json "github.com/go-json-experiment/json"
 	"github.com/go-json-experiment/json/jsontext"
 )
@@ -75,7 +73,7 @@ func Sign(key *crypto.Keypair, claims Claims) (string, error) {
 	if err := validate(claims); err != nil {
 		return "", err
 	}
-	if !validSigningKey(key) {
+	if !wire.ValidSigningKey(key) {
 		return "", ErrSigning
 	}
 	payload, err := json.Marshal(claims)
@@ -94,41 +92,6 @@ func Sign(key *crypto.Keypair, claims Claims) (string, error) {
 	return base64.RawURLEncoding.EncodeToString(payload) + "." + base64.RawURLEncoding.EncodeToString(sig), nil
 }
 
-func validSigningKey(key *crypto.Keypair) bool {
-	if key == nil || key.SignPriv == nil {
-		return false
-	}
-	private := key.SignPriv
-	curve := elliptic.P256()
-	//lint:ignore SA1019 Bytes would panic on a nil field
-	unset := private.D == nil || private.X == nil || private.Y == nil
-	if private.Curve != curve || unset {
-		return false
-	}
-	// PrivateKey.Bytes refuses a scalar outside 1..N-1 and PublicKey.Bytes
-	// a point that is not on the curve, and ParseRawPrivateKey re-derives
-	// the public half from the scalar. Comparing the two encodings is the
-	// on-curve check and the private/public consistency check at once -
-	// what IsOnCurve plus ScalarBaseMult did.
-	scalar, err := private.Bytes()
-	if err != nil {
-		return false
-	}
-	declared, err := private.PublicKey.Bytes()
-	if err != nil {
-		return false
-	}
-	derived, err := ecdsa.ParseRawPrivateKey(curve, scalar)
-	if err != nil {
-		return false
-	}
-	actual, err := derived.PublicKey.Bytes()
-	if err != nil {
-		return false
-	}
-	return bytes.Equal(declared, actual)
-}
-
 // Verifier holds a copied trust set for one audience. It is safe for concurrent
 // use. To rotate keys, construct a replacement and swap it at the caller.
 type Verifier struct {
@@ -136,13 +99,16 @@ type Verifier struct {
 	keys             map[string][]byte
 }
 
-func NewVerifier(issuer, audience string, keys map[string][]byte) (*Verifier, error) {
-	if !origin(issuer) || !origin(audience) || issuer == audience || len(keys) < 1 || len(keys) > 8 {
+func NewVerifier(
+	issuer, audience string, keys map[string][]byte,
+) (*Verifier, error) {
+	if !wire.Origin(issuer) || !wire.Origin(audience) ||
+		issuer == audience || len(keys) < 1 || len(keys) > 8 {
 		return nil, ErrConfig
 	}
 	v := &Verifier{issuer: issuer, audience: audience, keys: make(map[string][]byte, len(keys))}
 	for kid, pub := range keys {
-		if !identifier(kid, 64) || len(pub) != 65 {
+		if !wire.Identifier(kid, 64) || len(pub) != 65 {
 			return nil, ErrConfig
 		}
 		if _, err := ecdsa.ParseUncompressedPublicKey(elliptic.P256(), pub); err != nil {
@@ -169,11 +135,11 @@ func (v *Verifier) Verify(token string, now time.Time) (Claims, error) {
 	if len(p) > base64.RawURLEncoding.EncodedLen(maxPayload) || len(s) != 86 {
 		return Claims{}, ErrMalformed
 	}
-	payload, ok := decode(p)
+	payload, ok := wire.Decode(p, 8192)
 	if !ok {
 		return Claims{}, ErrMalformed
 	}
-	sig, ok := decode(s)
+	sig, ok := wire.Decode(s, 8192)
 	if !ok || len(sig) != 64 {
 		return Claims{}, ErrMalformed
 	}
@@ -211,7 +177,7 @@ func (v *Verifier) Verify(token string, now time.Time) (Claims, error) {
 }
 
 func parse(payload []byte) (Claims, error) {
-	if len(payload) > maxPayload || !object(payload) {
+	if len(payload) > maxPayload || !wire.StrictObject(payload) {
 		return Claims{}, ErrMalformed
 	}
 	var fields map[string]jsontext.Value
@@ -251,7 +217,7 @@ func parse(payload []byte) (Claims, error) {
 		case "nonce":
 			str = &c.Nonce
 		case "ext":
-			if len(value) > 1024 || !object(value) {
+			if len(value) > 1024 || !wire.StrictObject(value) {
 				return Claims{}, ErrClaims
 			}
 			c.Ext = append(jsontext.Value(nil), value...)
@@ -277,113 +243,29 @@ func parse(payload []byte) (Claims, error) {
 	return c, nil
 }
 
-// Strict v2 parsing rejects duplicate names (including escaped spellings) and
-// invalid Unicode recursively. Keep this separate from raw-value extraction so
-// changing that extraction cannot accidentally skip validation of extensions.
-func object(b []byte) bool {
-	if len(b) < 2 || b[0] != '{' || b[len(b)-1] != '}' || !utf8.Valid(b) {
-		return false
-	}
-	var value any
-	return json.Unmarshal(b, &value) == nil
-}
-
 func validate(c Claims) error {
 	if c.Version != 1 {
 		return ErrVersion
 	}
-	if !origin(c.Issuer) || !origin(c.Audience) || c.Issuer == c.Audience || !identifier(c.Subject, 128) || !identifier(c.KeyID, 64) || !randomID(c.ID) || !randomID(c.Nonce) || c.ID == c.Nonce {
+	if !wire.Origin(c.Issuer) || !wire.Origin(c.Audience) ||
+		c.Issuer == c.Audience || !wire.Identifier(c.Subject, 128) ||
+		!wire.Identifier(c.KeyID, 64) || !randomID(c.ID) ||
+		!randomID(c.Nonce) || c.ID == c.Nonce {
 		return ErrClaims
 	}
 	if c.IssuedAt <= 0 || c.AuthTime <= 0 || c.AuthTime > c.IssuedAt || c.ExpiresAt <= c.IssuedAt || c.ExpiresAt-c.IssuedAt > 120 {
 		return ErrLifetime
 	}
-	if c.Ext != nil && (len(c.Ext) > 1024 || !object(c.Ext)) {
+	if c.Ext != nil && (len(c.Ext) > 1024 || !wire.StrictObject(c.Ext)) {
 		return ErrClaims
 	}
 	return nil
 }
 
-func identifier(s string, max int) bool {
-	if len(s) == 0 || len(s) > max {
-		return false
-	}
-	for i := 0; i < len(s); i++ {
-		b := s[i]
-		if !alphaNum(b) && b != '-' && b != '_' {
-			return false
-		}
-	}
-	return true
-}
-func alphaNum(b byte) bool {
-	return b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || b >= '0' && b <= '9'
-}
-func decode(s string) ([]byte, bool) {
-	if !identifier(s, 8192) {
-		return nil, false
-	}
-	b, err := base64.RawURLEncoding.Strict().DecodeString(s)
-	return b, err == nil && base64.RawURLEncoding.EncodeToString(b) == s
-}
 func randomID(s string) bool {
 	if len(s) != 22 {
 		return false
 	}
-	b, ok := decode(s)
+	b, ok := wire.Decode(s, 8192)
 	return ok && len(b) == 16
-}
-
-func origin(s string) bool {
-	if !strings.HasPrefix(s, "https://") {
-		return false
-	}
-	host := strings.TrimPrefix(s, "https://")
-	if h, p, found := strings.Cut(host, ":"); found {
-		if p == "" || p[0] == '0' || p == "443" {
-			return false
-		}
-		for i := 0; i < len(p); i++ {
-			if p[i] < '0' || p[i] > '9' {
-				return false
-			}
-		}
-		port, err := strconv.ParseUint(p, 10, 16)
-		if err != nil || port == 0 {
-			return false
-		}
-		host = h
-	}
-	if len(host) == 0 || len(host) > 253 || net.ParseIP(host) != nil {
-		return false
-	}
-	// Numeric final labels can be interpreted as noncanonical IPv4 by browser
-	// URL parsers (for example 127.1); require a DNS suffix with a letter.
-	labels := strings.Split(host, ".")
-	last := labels[len(labels)-1]
-	hasLetter := false
-	for _, b := range []byte(last) {
-		if b >= 'a' && b <= 'z' {
-			hasLetter = true
-		}
-	}
-	if strings.HasPrefix(last, "0x") {
-		if _, err := strconv.ParseUint(last[2:], 16, 64); last == "0x" || err == nil {
-			return false
-		}
-	}
-	if !hasLetter {
-		return false
-	}
-	for _, label := range labels {
-		if len(label) == 0 || len(label) > 63 || label[0] == '-' || label[len(label)-1] == '-' {
-			return false
-		}
-		for _, b := range []byte(label) {
-			if !(b >= 'a' && b <= 'z' || b >= '0' && b <= '9' || b == '-') {
-				return false
-			}
-		}
-	}
-	return true
 }

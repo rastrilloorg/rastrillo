@@ -34,7 +34,7 @@ func (c Config) Handler(next http.Handler) http.Handler {
 	}
 	base := "/" + c.Slug
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if !sameHost(r.Host, c.Origin) {
+		if !SameHost(r.Host, c.Origin) {
 			serveDirect(w, r, c, next)
 			return
 		}
