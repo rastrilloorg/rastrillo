@@ -893,26 +893,45 @@ func TestEveryNavSurfaceHasItsStates(t *testing.T) {
 
 // TestFieldsSitIntoThePageAndFocusKeepsTheOutline (spec §3, C5, C14):
 // an input has a 1px inset ambient shadow and a --rst-line-strong
-// border at rest; focused, its border is the accent, it gains the 3px
-// halo, and the solid 2px outline is still there. The textarea does
-// the same, and the search box does it on :focus-within, the field
-// box carrying the indicator for its input.
+// border at rest; focused, its border is the accent and the solid 2px
+// outline is still there, with a 3px halo past it. Since Fiesta 1.5 a
+// field draws one ring: the outline sits flush on the accent edge
+// (offset 0) and the halo is a 5px spread, 3px past the outline, where
+// the outline used to stand 2px off a grey edge. The textarea does the
+// same. The search box does it on :focus-within, the field box carrying
+// the indicator for its input, and keeps its 3px halo and 1px offset.
 func TestFieldsSitIntoThePageAndFocusKeepsTheOutline(t *testing.T) {
 	rig := sizingRig(t, false, depthDoc(t), harness.WithHover())
 	ctx, cancel := context.WithTimeout(rig.Context(), 60*time.Second)
 	defer cancel()
 	open(t, ctx, rig, "/", false)
 	still(t, ctx)
-	for _, f := range []struct{ box, focus string }{{"#field", "#field"}, {"#area", "#area"}, {"#search", "#search-in"}} {
+	for _, f := range []struct{ box, focus, halo, offset string }{
+		{"#field", "#field", "0px 0px 0px 5px", "0px"},
+		{"#area", "#area", "0px 0px 0px 5px", "0px"},
+		{"#search", "#search-in", "0px 0px 0px 3px", "1px"},
+	} {
 		// day's light --rst-line-strong is #868691 (Task 2's ruling: the
 		// sign-in border needed it darker than the brief's #8a8a95).
 		if sh, border := computed(t, ctx, f.box, "box-shadow"), computed(t, ctx, f.box, "border-top-color"); !strings.HasPrefix(sh, "rgba(16, 24, 40, 0.06) 0px 1px 1px 0px inset") || border != "rgb(134, 134, 145)" {
 			t.Errorf("%s at rest: box-shadow %q border %s; want the inset ambient shadow and --rst-line-strong", f.box, sh, border)
 		}
 		forceState(t, ctx, f.focus, "focus", "focus-visible")
-		sh, border, outline := computed(t, ctx, f.box, "box-shadow"), computed(t, ctx, f.box, "border-top-color"), computed(t, ctx, f.box, "outline-style")+" "+computed(t, ctx, f.box, "outline-width")
-		if border != "rgb(31, 86, 214)" || !strings.Contains(sh, "0px 0px 0px 3px") || outline != "solid 2px" {
-			t.Errorf("focused %s: border %s box-shadow %q outline %s; want the accent border, the 3px halo and the solid 2px outline", f.box, border, sh, outline)
+		sh, border := computed(t, ctx, f.box, "box-shadow"),
+			computed(t, ctx, f.box, "border-top-color")
+		outline := computed(t, ctx, f.box, "outline-style") + " " +
+			computed(t, ctx, f.box, "outline-width") + " " +
+			computed(t, ctx, f.box, "outline-color")
+		offset := computed(t, ctx, f.box, "outline-offset")
+		const accent = "rgb(31, 86, 214)"
+		halo := "rgba(31, 86, 214, 0.22) " + f.halo
+		if border != accent || !strings.Contains(sh, halo) ||
+			outline != "solid 2px "+accent || offset != f.offset {
+			t.Errorf("focused %s: border %s box-shadow %q outline %s "+
+				"offset %s; "+
+				"want the accent border, the solid 2px accent outline at %s "+
+				"and the accent halo %q", f.box, border, sh, outline, offset,
+				f.offset, halo)
 		}
 		forceState(t, ctx, f.focus)
 	}
