@@ -8,13 +8,95 @@ This file starts at v0.23.0. Earlier releases are in the git history and their
 tags; nothing has been reconstructed for them, because a changelog written
 backwards from commits is a guess wearing a date.
 
-## Unreleased
+## v0.38.0
 
-Two changes can break a build. `lastsignin.Record` and `auth.Remembered`
-gain a field, so a positional literal such as `Record{method, address}`
-no longer compiles: name the fields. And a passkey record may now carry
-an address, so code that took "passkey" to mean "no address" should
-read `Address` instead.
+One way in on the sign-in screen, one header row on a phone, and
+Fiesta 1.5.0. Three changes need you before you upgrade. First, the
+phone shells draw one header row, and `scheme-menu` is three icon
+buttons instead of a dropdown that no longer takes `MenuGroup`. Second,
+`Taround` is a new locale template function, so an app that defines its
+own must rename it. Third, `lastsignin.Record` and `auth.Remembered` gain
+a field, so a positional literal such as `Record{method, address}` no
+longer compiles: name the fields. A passkey record may now carry an
+address, so code that took "passkey" to mean "no address" should read
+`Address` instead. Fiesta 1.5.0 also draws one focus ring on every field
+and no box around an empty state. An app with its own catalog for a
+language rastrillo does not ship must add the seven new
+`rastrillo.ui.signin_*` keys, or `generate --check` fails.
+
+### Changed: one header row on a phone, and an icon scheme control
+
+`scheme-menu` is now three icon buttons, Light (sun), Dark (moon) and
+System (monitor), instead of a dropdown of words. A layout from an
+earlier release shows the icons where its dropdown was. It no longer
+takes `MenuGroup`; callers that pass it have that argument ignored.
+`Taround` is a new locale template function. An app that defines its
+own `Taround` must rename it.
+
+On a phone, the `topbar`, `console` and `sidebar` layouts now show one
+header row: the way back, the app's name and the person's avatar. All
+three show the sections as an index page, so no section sits behind a
+Menu button. The avatar opens the account card, which holds who is
+signed in, Appearance, Language and the account links, in that order. An
+app's own `layout.html` does not change. To adopt the new one, follow
+"Upgrading to one header row" in the templates guide.
+
+- In `topbar`, the index is a Menu page at `/menu`, marked with
+  `view`, and every other page goes up to it. `rastrillo new --shell=topbar` writes `templates/menu.html`, the
+  `/menu` route and its action.
+- A new `upLabel` block names a page's parent when it is not the
+  index. `topbar` gains `profile`, `view` and `up`, so the three
+  shells now share one set of blocks.
+- `topbar` loads `shell.js` and `shell.css` instead of `transition.js`,
+  and `Serve`'s speculation rules prerender its navigation as they do
+  for `sidebar` and `console`.
+- `locale-menu` takes `Card`: inside the account card it is a Language
+  row whose list opens as a sheet on a phone.
+- `rastrillo doctor` names a layout that still has the old phone menu
+  card or back strip.
+- Under `--auth=magic`, Sign in and Sign out are the account card's
+  last item. The card's Sign out form opts out of `busy.js` with
+  `data-busy="false"`. A page whose only form opts out of `busy.js` no
+  longer loads it.
+- `ui.Attributes` reads the attributes of every start tag in a
+  template, with comments left out.
+- Rastrillo pins Fiesta 1.4.0.
+- The components gallery and its shell demos use the one header row,
+  and the `topbar` demo has a Menu page. `ui.Styleguide`'s shell
+  samples are Fiesta 1.4.0's.
+- `examples/blog` is a `topbar` app with a Menu page, written without
+  scripts. Its `go.mod` has `ignore ./actions`, because `go mod tidy`
+  cannot read an action directory named `[id]` as a package.
+
+### Changed: the gallery is Rastrillo components, at `/components/`
+
+The gallery at rastrillo.org/design-system is now called Rastrillo
+components and moves to rastrillo.org/components/. Each partial is
+shown there beside the Go call that renders it. The look is Fiesta's,
+so the parts Fiesta owns are now documented only on Fiesta's design
+system: the tokens, the UI primitives (markup you write by hand, such
+as buttons, cards, data grids and the modal), and what each stylesheet
+and script is for. Each is linked from the gallery, in the theme and language you are
+reading.
+
+On "Dates, numbers and names", the `date`, `number` and `money` calls
+are now shown beside the examples, and each example is that call's
+output for the page's language. No other sample renders differently.
+
+Old addresses keep working. `dsgen -redirect-from /design-system` adds
+a `_redirects` file that answers every address the gallery published
+there with one 301: to the same page under `/components/`, or to
+Fiesta's page for the tokens and UI primitives. dsgen's default
+`-mount` is now `/components`, so if you run dsgen without `-mount`,
+your tree moves there too. Passing `-mount /design-system` keeps that
+address, but the tokens and UI primitives pages are gone either way:
+without `-redirect-from`, their old addresses answer 404.
+
+rastrillo.org switches at its next sync. Its build runs dsgen with
+`-mount /components -redirect-from /design-system` and publishes
+`_redirects` at the site root. The homepage's links and labels change
+to the new name and address. Until that sync, the site still serves the
+gallery at `/design-system/`.
 
 ### Added: one way in per screen, behind `auth.Config.SigninOneWay`
 
@@ -76,86 +158,12 @@ lacks conditional mediation (`conditionalAvailable()`) or when a
 `legacyRpId` is set. A call without either is the same request as
 before.
 
-### Changed: one header row on a phone, and an icon scheme control
-
-`scheme-menu` is now three icon buttons, Light (sun), Dark (moon) and
-System (monitor), instead of a dropdown of words. A layout from an
-earlier release shows the icons where its dropdown was. It no longer
-takes `MenuGroup`; callers that pass it have that argument ignored.
-`Taround` is a new locale template function. An app that defines its
-own `Taround` must rename it.
-
-On a phone, the `topbar`, `console` and `sidebar` layouts now show one
-header row: the way back, the app's name and the person's avatar. All
-three show the sections as an index page, so no section sits behind a
-Menu button. The avatar opens the account card, which holds who is
-signed in, Appearance, Language and the account links, in that order. An
-app's own `layout.html` does not change. To adopt the new one, follow
-"Upgrading to one header row" in the templates guide.
-
-- In `topbar`, the index is a Menu page at `/menu`, marked with
-  `view`, and every other page goes up to it. `rastrillo new --shell=topbar` writes `templates/menu.html`, the
-  `/menu` route and its action.
-- A new `upLabel` block names a page's parent when it is not the
-  index. `topbar` gains `profile`, `view` and `up`, so the three
-  shells now share one set of blocks.
-- `topbar` loads `shell.js` and `shell.css` instead of `transition.js`,
-  and `Serve`'s speculation rules prerender its navigation as they do
-  for `sidebar` and `console`.
-- `locale-menu` takes `Card`: inside the account card it is a Language
-  row whose list opens as a sheet on a phone.
-- `rastrillo doctor` names a layout that still has the old phone menu
-  card or back strip.
-- Under `--auth=magic`, Sign in and Sign out are the account card's
-  last item. The card's Sign out form opts out of `busy.js` with
-  `data-busy="false"`. A page whose only form opts out of `busy.js` no
-  longer loads it.
-- `ui.Attributes` reads the attributes of every start tag in a
-  template, with comments left out.
-- Rastrillo pins Fiesta 1.4.0.
-- The components gallery and its shell demos use the one header row,
-  and the `topbar` demo has a Menu page. `ui.Styleguide`'s shell
-  samples are Fiesta 1.4.0's.
-- `examples/blog` is a `topbar` app with a Menu page, written without
-  scripts. Its `go.mod` has `ignore ./actions`, because `go mod tidy`
-  cannot read an action directory named `[id]` as a package.
-
 ### Added: instances under a root app
 
 - `instance` reads from the environment whether an app runs under a root app or standalone, and refuses to start if neither or both are set.
 - `handoff` signs members in from the root: `Enter`, `Consume`, `Renew` and `Sweep`, with a refusal page the app can brand.
 - `roster` receives signed snapshots of the full roster from the root. A database lease coordinates applies across processes, and `Suspended` reports the instance's state.
 - `handoff/handofftest` is a fake root for tests.
-
-### Changed: the gallery is Rastrillo components, at `/components/`
-
-The gallery at rastrillo.org/design-system is now called Rastrillo
-components and moves to rastrillo.org/components/. Each partial is
-shown there beside the Go call that renders it. The look is Fiesta's,
-so the parts Fiesta owns are now documented only on Fiesta's design
-system: the tokens, the UI primitives (markup you write by hand, such
-as buttons, cards, data grids and the modal), and what each stylesheet
-and script is for. Each is linked from the gallery, in the theme and language you are
-reading.
-
-On "Dates, numbers and names", the `date`, `number` and `money` calls
-are now shown beside the examples, and each example is that call's
-output for the page's language. No other sample renders differently.
-
-Old addresses keep working. `dsgen -redirect-from /design-system` adds
-a `_redirects` file that answers every address the gallery published
-there with one 301: to the same page under `/components/`, or to
-Fiesta's page for the tokens and UI primitives. dsgen's default
-`-mount` is now `/components`, so if you run dsgen without `-mount`,
-your tree moves there too. Passing `-mount /design-system` keeps that
-address, but the tokens and UI primitives pages are gone either way:
-without `-redirect-from`, their old addresses answer 404.
-
-rastrillo.org switches at its next sync. Its build runs dsgen with
-`-mount /components -redirect-from /design-system` and publishes
-`_redirects` at the site root. The homepage's links and labels change
-to the new name and address. Until that sync, the site still serves the
-gallery at `/design-system/`.
 
 ### Added: `rastrillo new --scaffold` picks the app's shape
 
