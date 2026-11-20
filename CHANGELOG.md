@@ -19,8 +19,8 @@ own must rename it. Third, `lastsignin.Record` and `auth.Remembered` gain
 a field, so a positional literal such as `Record{method, address}` no
 longer compiles: name the fields. A passkey record may now carry an
 address, so code that took "passkey" to mean "no address" should read
-`Address` instead. Fiesta 1.5.0 also draws one focus ring on every field
-and no box around an empty state. An app with its own catalog for a
+`Address` instead. Fiesta 1.5.0 also draws one focus ring on every field.
+An app with its own catalog for a
 language rastrillo does not ship must add the seven new
 `rastrillo.ui.signin_*` keys, or `generate --check` fails.
 
@@ -138,7 +138,6 @@ every button on it is a pill, its small controls are quiet text
 buttons with a chevron, the chooser is a box of compact rows, and every
 field has one focus ring instead of two. The door carries
 `rst-signin-door="one-way"` and its rows sit in `rst-signin-ways`.
-Fiesta 1.5.0 also draws an empty state with no box.
 
 ### Added: `lastsignin` remembers a federated sign-in
 
