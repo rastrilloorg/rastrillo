@@ -231,6 +231,47 @@ func TestCreateOther5xxIsUnknown(t *testing.T) {
 	}
 }
 
+// A post with no answer may still land after the GET that followed it
+// found nothing, so a refusal of the second post must not read as "never
+// created": the caller keeps the host and resumes.
+func TestCreateRefusalAfterALostAnswerMayHaveLanded(t *testing.T) {
+	platform, console, instances := newTenant(t)
+	platform.Script(provisiontest.Reply{Hang: true},
+		provisiontest.Reply{Status: http.StatusForbidden})
+	created, err := console.Create(context.Background(),
+		provision.CreateRequest{Host: "acme." + instances})
+	if !errors.Is(err, provision.ErrForbidden) || !created.MayHaveLanded {
+		t.Fatalf("Create = %+v, %v; want ErrForbidden with MayHaveLanded",
+			created, err)
+	}
+	if count := posts(platform); count != 2 {
+		t.Errorf("%d POSTs, want 2", count)
+	}
+}
+
+func TestCreateRefusalOfTheOnlyPostHasNotLanded(t *testing.T) {
+	platform, console, instances := newTenant(t)
+	platform.Script(provisiontest.Reply{Status: http.StatusForbidden})
+	created, err := console.Create(context.Background(),
+		provision.CreateRequest{Host: "acme." + instances})
+	if !errors.Is(err, provision.ErrForbidden) || created.MayHaveLanded {
+		t.Fatalf("Create = %+v, %v; want ErrForbidden, not MayHaveLanded",
+			created, err)
+	}
+}
+
+func TestCreateRetryAfterALostAnswerMayHaveLanded(t *testing.T) {
+	platform, console, instances := newTenant(t)
+	platform.Script(provisiontest.Reply{Status: http.StatusBadGateway},
+		provisiontest.Reply{Status: http.StatusBadGateway})
+	created, err := console.Create(context.Background(),
+		provision.CreateRequest{Host: "acme." + instances})
+	wantRetry(t, err)
+	if !created.MayHaveLanded {
+		t.Errorf("Create = %+v; want MayHaveLanded", created)
+	}
+}
+
 func TestCreateRetriesOnceOnly(t *testing.T) {
 	p, c, d := newTenant(t)
 	p.Script(provisiontest.Reply{Status: http.StatusBadGateway}, provisiontest.Reply{Status: http.StatusBadGateway})
@@ -352,8 +393,13 @@ func TestCreateResumeWhenTheGetFails(t *testing.T) {
 	cfg := tenantConfig(p)
 	cfg.HTTP = failing(p, http.MethodGet, io.ErrUnexpectedEOF)
 	c := newConsole(t, cfg)
-	_, err := c.Create(context.Background(), provision.CreateRequest{Host: "acme." + domain, Resume: true})
+	created, err := c.Create(context.Background(),
+		provision.CreateRequest{Host: "acme." + domain, Resume: true})
 	wantRetry(t, err)
+	if created.MayHaveLanded {
+		t.Errorf("Create = %+v; want no MayHaveLanded: nothing was posted",
+			created)
+	}
 	if n := posts(p); n != 0 {
 		t.Errorf("%d POSTs, want 0", n)
 	}
@@ -459,10 +505,15 @@ func TestCreateStopsWhenTheCallerGivesUp(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	time.AfterFunc(50*time.Millisecond, cancel)
-	_, err := c.Create(ctx, provision.CreateRequest{Host: "acme." + d})
+	created, err := c.Create(ctx,
+		provision.CreateRequest{Host: "acme." + d})
 	var re *provision.RetryError
 	if !errors.Is(err, context.Canceled) || errors.As(err, &re) {
 		t.Fatalf("got %v (%T), want context.Canceled: only the attempt's own deadline earns the retry", err, err)
+	}
+	if !created.MayHaveLanded {
+		t.Errorf("Create = %+v; want MayHaveLanded: the post was sent",
+			created)
 	}
 	if n := posts(p); n != 1 {
 		t.Errorf("%d POSTs, want 1", n)

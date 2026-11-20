@@ -98,6 +98,8 @@ type fixture struct {
 	receiver *roster.Receiver
 	now      time.Time
 	log      *bytes.Buffer
+	// onOrigin, when set, is what every process's OnOrigin calls.
+	onOrigin func(previous, next string)
 }
 
 func newFixture(t *testing.T, members ...roster.Member) *fixture {
@@ -126,6 +128,11 @@ func (fix *fixture) process(t *testing.T) *roster.Receiver {
 		Verifier: fix.verifier, Store: fix.store, DB: fix.db,
 		Roles: []string{"owner", "editor", "member"},
 		Now:   func() time.Time { return fix.now },
+		OnOrigin: func(previous, next string) {
+			if fix.onOrigin != nil {
+				fix.onOrigin(previous, next)
+			}
+		},
 		Logger: slog.New(slog.NewTextHandler(
 			io.MultiWriter(fix.log, testWriter{t}), &slog.HandlerOptions{})),
 	})

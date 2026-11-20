@@ -7,13 +7,16 @@ Use `roster` to keep an instance's member list in step with the root app. The ro
 ## Mount it
 
 ```go
-verifier, err := roster.NewVerifier(setup.Root, origin, setup.Keys)
+// The platform host, even when the instance serves on a custom domain.
+platformHost := "https://" + carlos.Host()
+verifier, err := roster.NewVerifier(setup.Root, platformHost, setup.Keys)
 // ...
 receiver, err := roster.New(roster.Config{
 	Verifier: verifier,
 	Store:    store,
 	DB:       db,
 	Roles:    []string{"owner", "member"},
+	OnOrigin: func(previous, next string) { go shutdown() },
 })
 // ...
 mux.Handle(roster.Path, receiver)
@@ -29,6 +32,8 @@ const Path = "/_carlos/roster"
 func New(config Config) (*Receiver, error)
 func (r *Receiver) ServeHTTP(w http.ResponseWriter, req *http.Request)
 func (r *Receiver) Suspended(ctx context.Context) (bool, error)
+func (r *Receiver) Origin(ctx context.Context) (string, error)
+func StoredOrigin(ctx context.Context, db *sql.DB) (string, error)
 ```
 
 The receiver takes POST only, with the token as the body. It answers 204 when the snapshot is applied. It answers only on the verifier's audience origin, which is the instance's own host even for a hub tenant. On any other host it answers 404 without reading the body.
@@ -49,6 +54,16 @@ Each snapshot contains the whole roster, so the next snapshot recovers any one t
 A time-limited database lock allows only one apply at a time, even when several processes share the database. A busy lease answers 503 with `Retry-After`. `Config.Roles` lists the app's roles, highest first.
 
 `Suspended` reports whether the last applied snapshot suspended the instance. Before any snapshot it is false. Pass it as `handoff.Config.Suspended`.
+
+## Custom origin
+
+A snapshot can carry the account's custom origin, such as `https://blog.example.org`. The receiver stores it with the sequence. `Origin` returns the stored origin, or `""` when the instance serves on its own host. `StoredOrigin` reads the same value from the database before any receiver exists, which is what boot needs: see [`instance.ServingOrigin`](/docs/reference/instance).
+
+The app fixes its origin at boot, so a change needs a restart. Set `Config.OnOrigin`, which receives the previous and next origin. The receiver calls it after it has applied a snapshot that changes the origin and sent the 204. A snapshot that repeats the origin does not call it, and neither does the root's retry. `OnOrigin` runs inside the roster request. Start a graceful shutdown from it in a goroutine; waiting for the server to stop would wait for this request.
+
+Make the verifier's audience the instance's platform host, `https://` and `carlos.Host()`, not the custom origin. The root always delivers to the platform host, so a custom domain that stops working cannot cut the root off.
+
+When several processes share the database, only the one that applied the snapshot calls `OnOrigin`.
 
 ## Store
 
@@ -85,6 +100,7 @@ type Snapshot struct {
 	Issuer, Audience, KeyID                string
 	State                                  State
 	Members                                []Member
+	Origin                                 string
 }
 
 func Sign(key *crypto.Keypair, snapshot Snapshot) (string, error)
@@ -93,6 +109,8 @@ func (v *Verifier) Verify(token string, now time.Time) (Snapshot, error)
 ```
 
 `Sign` is for the root, and for tests. The snapshot is signed under the context `rastrillo/roster/v1`, so an assertion signed by the same key cannot be used as a roster, nor the reverse. `Version` is `1`. A snapshot lives at most 300 seconds, and a token is at most 1 MiB. `Sequence` starts at 1 and rises with every snapshot for one instance. An empty `Members` list is valid.
+
+`Origin` is empty, or `https://` and a lower-case host with no port, path, query or user info. It cannot be the issuer's origin. `Sign` and `Verify` refuse anything else with `ErrClaims`. An empty `Origin` is left out of the token, so a snapshot without one has the same bytes as before. `Verify` refuses fields it does not know, so a receiver older than this field refuses a snapshot that sets it. Upgrade every instance before the root sends an origin.
 
 `Verify` checks the signature, issuer, audience and lifetime. It does not compare sequences; the receiver does.
 

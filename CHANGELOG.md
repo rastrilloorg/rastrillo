@@ -10,6 +10,20 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+### Added: custom domains for instances
+
+- Upgrade order: deploy this to every instance before any root sends a custom origin. An older receiver's `Verify` refuses a field it does not know, so it answers 403 to a snapshot that sets `Origin`. A snapshot without one has the same bytes as before.
+- `roster.Snapshot.Origin` carries the account's custom origin. `Sign` and `Verify` refuse anything but `https://` and a lower-case host with no port, and the issuer's own origin.
+- The receiver stores the origin with the sequence, in a new column (`roster` migration 0002). `Receiver.Origin` reads it, and `roster.StoredOrigin` reads it at boot. `Config.OnOrigin` runs after a snapshot that changes the origin has been applied and answered, so the app can shut down and restart on it.
+- `instance.ServingOrigin` returns the stored origin or a fallback, and `instance.RedirectToOrigin` (which returns an error for an origin that is not `https://` and a host) sends every other host there with a 307, except `/_carlos/*`, `/api/version` and `/healthz`. Keep the roster verifier's audience on the platform host.
+- `provision.Console` gains `AttachDomain`, `Domain` and `DetachDomain`, with `DNSRecord`, `Attached`, `Domain` and the `Domain*` state words. Verifying a domain is a repeated attach.
+- `provisiontest` serves the three domain doors, with `DomainProof`, `ProveDomain`, `DNSReady` and `CertLive`. Its edge serves a verified domain as the instance it names.
+- `handofftest.Root.RosterOrigin` signs a snapshot with an origin.
+
+### Added: `Created.MayHaveLanded`
+
+- `provision.Console.Create` sets `Created.MayHaveLanded` beside an error when the call sent a create it never had an answer to. A refusal of the post that followed (a 4xx after the reconciling GET found nothing yet) no longer reads as "never created": keep the host and call again with `Resume: true`.
+
 ## v0.39.0
 
 Records mode can suspend people, `provision` can list an app's instances

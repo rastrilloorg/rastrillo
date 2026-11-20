@@ -1,6 +1,6 @@
 // Package provision is a client for the Carlos console that a central app
-// (a home or a hub) uses to create a tenant instance, read it back, and
-// publish the hub's path map.
+// (a home or a hub) uses to create a tenant instance, read it back,
+// attach an account's custom domain, and publish the hub's path map.
 //
 // One Console holds one app-bound service credential. The package writes
 // no records: it turns the console's answers into typed outcomes, and the

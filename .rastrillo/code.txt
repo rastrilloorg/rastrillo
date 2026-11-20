@@ -16785,7 +16785,7 @@ columns provision/create_test.go ae89fd8c3b70 1
 columns provision/create_test.go b2a4053216f5 1
 columns provision/create_test.go b812d325291e 1
 columns provision/create_test.go c442c7742f81 1
-columns provision/create_test.go c9c49f10da72 2
+columns provision/create_test.go c9c49f10da72 1
 columns provision/create_test.go ca717e5c5356 1
 columns provision/create_test.go ccd33b46313d 1
 columns provision/create_test.go cfe5412fe5a1 1
@@ -17161,7 +17161,6 @@ columns provision/provisiontest/platform.go 0d840d9afd35 1
 columns provision/provisiontest/platform.go 11e80406bb3e 1
 columns provision/provisiontest/platform.go 125997b89110 1
 columns provision/provisiontest/platform.go 2683a2eb75ad 1
-columns provision/provisiontest/platform.go 3e1d76923343 1
 columns provision/provisiontest/platform.go 4337dc78467b 1
 columns provision/provisiontest/platform.go 4c6c88a9c6d6 1
 columns provision/provisiontest/platform.go 56aa7e0bf7bb 1
@@ -17182,7 +17181,7 @@ columns provision/provisiontest/platform.go d8a848a269dd 1
 columns provision/provisiontest/platform.go e3f298c5e9a9 1
 columns provision/provisiontest/platform.go eb36905a73e0 1
 columns provision/provisiontest/platform.go f2574c1472ec 1
-file provision/provisiontest/platform.go - 836 the list, catch-all and failure rules live in list.go; this is the citation table and the edge hooks
+file provision/provisiontest/platform.go - 834 the list, catch-all and failure rules live in list.go; this is the citation table and the edge hooks
 func provision/provisiontest/platform.go Platform.create 46
 func provision/provisiontest/platform.go Platform.putPaths 53
 names provision/provisiontest/platform.go New/p 1
@@ -17232,9 +17231,7 @@ names provision/provisiontest/platform.go Platform.putPaths/w 1
 names provision/provisiontest/platform.go Platform.reply/p 1
 names provision/provisiontest/platform.go Platform.reply/r 1
 names provision/provisiontest/platform.go Platform.reply/w 1
-names provision/provisiontest/platform.go Platform.resolve/c 1
 names provision/provisiontest/platform.go Platform.resolve/p 1
-names provision/provisiontest/platform.go Platform.resolve/t 1
 names provision/provisiontest/platform.go Platform.roundTripConsole/p 1
 names provision/provisiontest/platform.go Platform.roundTripEdge/h 1
 names provision/provisiontest/platform.go Platform.roundTripEdge/p 1

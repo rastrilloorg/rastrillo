@@ -30,6 +30,8 @@ What to do with each result:
 | `ErrUnauthorized`, `ErrForbidden` or `ErrNotFound` | The credential is wrong, lacks the role, or belongs to another app. Fix the credential. Retrying will not help. |
 | `ErrBadRequest` | The platform refuses this host or message. `Create` checks both first and sends nothing when it can tell. Fix the request. |
 
+Any error can come with `Created.MayHaveLanded` set. It means this call sent a create and never got its answer, so the instance may exist even when a later post was refused. Keep the host and call again with `Resume: true`, whatever the error says.
+
 Every refusal is an `*APIError` with the platform's status and sentence, and matches one of the errors above with `errors.Is`. The errors are for logs and records. Show people your own sentences.
 
 `Instance` reads the platform's record of a host. A host that does not exist is `ErrNotFound`. An answer that does not name the host is a `*RetryError`: ask again later.
@@ -98,6 +100,35 @@ Your app writes one record per tenant. Follow these rules, so that a crash, a re
 9. Count new labels in the record, and stop at `MaxRelabels`. A count kept in memory starts again on every refresh.
 10. Keep the record `creating` until `Ready` is true, then mark it `live`. A hub also keeps `routed`, false until `CheckRoute` returns `Routed`, and sends people only to a routed tenant. A tenant still not routed at your deadline becomes `failed`, with the error's text.
 
+## Custom domains
+
+`AttachDomain(ctx, host, route)` claims a hostname, such as `blog.example.org`, and serves it as `route`, one of the tenant app's instance hosts. The credential needs the `instance` or `publish` role.
+
+```go
+attached, err := console.AttachDomain(ctx, "blog.example.org", instanceHost)
+```
+
+On a platform that asks for proof of ownership, `attached.Verified` is false and `attached.Verify` is the TXT record the owner publishes at `_carlos-challenge.<host>`. There is no separate verify call: attach again once the record is published. Attaching a hostname the app already holds is safe to repeat, and moves it to the new `route`. A hostname another app or account holds is `ErrConflict`, and the platform never says who holds it.
+
+`Domain(ctx, host)` reads one hostname. `State` is the platform's word for it, with a machine-readable `Reason`:
+
+| `State` | Meaning |
+| --- | --- |
+| `DomainUnverified` | The TXT record is not published yet. Nothing is served. |
+| `DomainChecking` | No edge has checked the name yet. It settles within minutes. |
+| `DomainPendingDNS`, `DomainMisdirected` | DNS has no record, or points elsewhere. |
+| `DomainIssuingCert` | DNS points here, and a certificate is on its way. |
+| `DomainFailed` | The platform cannot get a certificate. Nothing for the owner to change. |
+| `DomainLive` | DNS points here, and a current certificate covers it. |
+| `DomainUnknown` | The platform could not check. Not the owner's fault. |
+| `DomainRegional` | Served per region; not something an instance sets up. |
+
+The platform adds words over time, so treat one you do not know as `DomainUnknown`. `Records` and `Guidance` say what to publish, and are empty once DNS points here. Records that share a `Set` are one choice, such as one CNAME or a set of A records: publish every record of one set. A `Required` record is needed whichever set is chosen. `DNS` is the platform's `dns_status`, `CNAMETarget` is the name a CNAME points at, `CheckedAt` is when an edge last looked, and `CertExpiry` is zero until there is a certificate. A hostname the app does not hold is `ErrNotFound`, even when someone else holds it.
+
+`DetachDomain(ctx, host)` releases a hostname. Releasing one the app does not hold succeeds and changes nothing, so a retry is safe.
+
+The three calls classify errors as `List` does. A 429, a 5xx or no answer is a `*RetryError`, and a 200 that cannot be read is one too, since it may be a proxy's page. Every attach and detach counts against the credential's limit for domain changes, so do not call them in a tight loop. A domain read is limited to 8 MiB, because it carries the hostname's whole path map.
+
 ## Credentials
 
 Make one `Console` per credential, and use credentials bound to one app. An account-wide credential reaches every app in the account. A home needs an `instance` credential for the tenant app. A hub needs that one, and a `publish` or `instance` credential for the hub app to publish paths. Keep both in the central app; a tenant needs neither. An `instance` credential deletes as well as creates: it reaches every instance of the tenant app, with their domains and logs, and the platform has no create-only role yet. List that in the leak profile too.
@@ -114,6 +145,18 @@ const MaxSlug = 25
 const MaxRelabels = 2
 const MaxPaths = 10000
 const ProbeTimeout = 5 * time.Second
+
+const (
+	DomainUnverified  = "unverified"
+	DomainChecking    = "checking"
+	DomainPendingDNS  = "pending-dns"
+	DomainMisdirected = "misdirected"
+	DomainIssuingCert = "issuing-cert"
+	DomainFailed      = "failed"
+	DomainLive        = "live"
+	DomainUnknown     = "unknown"
+	DomainRegional    = "regional"
+)
 
 const (
 	HealthSettingUp     = "Setting up"
@@ -149,9 +192,9 @@ type CreateRequest struct {
 	Resume                bool
 }
 type Created struct {
-	Host             string
-	Landed, Accepted bool
-	Operation, Phase string
+	Host                            string
+	Landed, Accepted, MayHaveLanded bool
+	Operation, Phase                string
 }
 type Box struct{ Box, Region string }
 type Instance struct {
@@ -173,6 +216,22 @@ type ListPage struct {
 	Total     int
 	Next      string
 	Truncated bool
+}
+type DNSRecord struct {
+	Type, Name, Value, Set string
+	TTL                    int
+	Required               bool
+}
+type Attached struct {
+	Host     string
+	Verified bool
+	Verify   *DNSRecord
+}
+type Domain struct {
+	Host, Route, State, Reason, DNS, CNAMETarget, Guidance string
+	Verified                                               bool
+	Records                                                []DNSRecord
+	CheckedAt, CertExpiry                                  time.Time
 }
 type Published struct {
 	Prefixes int
@@ -210,6 +269,9 @@ func WaitRouted(ctx context.Context, hc *http.Client, product, slug, host string
 func (c *Console) Create(ctx context.Context, req CreateRequest) (Created, error)
 func (c *Console) Instance(ctx context.Context, host string) (Instance, error)
 func (c *Console) List(ctx context.Context, request ListRequest) (ListPage, error)
+func (c *Console) AttachDomain(ctx context.Context, host, route string) (Attached, error)
+func (c *Console) Domain(ctx context.Context, host string) (Domain, error)
+func (c *Console) DetachDomain(ctx context.Context, host string) error
 func (c *Console) PublishPaths(ctx context.Context, product string,
 	build func(context.Context) (map[string]string, error)) (Published, error)
 func (s RouteState) String() string

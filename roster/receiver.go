@@ -45,6 +45,10 @@ type Config struct {
 	Roles    []string // the app's roles, highest first
 	Now      func() time.Time
 	Logger   *slog.Logger
+
+	// OnOrigin runs after a snapshot that changes the origin has been
+	// applied and answered (origin.go).
+	OnOrigin func(previous, next string)
 }
 
 // Receiver applies signed snapshots to the app's Store.
@@ -55,6 +59,7 @@ type Receiver struct {
 	roles    map[string]bool
 	now      func() time.Time
 	logger   *slog.Logger
+	onOrigin func(previous, next string)
 
 	// One apply at a time in this process. A lease row serialises other
 	// processes, and an apply that lost its lease repairs what it wrote.
@@ -100,6 +105,7 @@ func New(config Config) (*Receiver, error) {
 		roles:    roles,
 		now:      config.Now,
 		logger:   config.Logger,
+		onOrigin: config.OnOrigin,
 	}
 	if receiver.now == nil {
 		receiver.now = time.Now
@@ -141,7 +147,11 @@ func (receiver *Receiver) ServeHTTP(
 		http.Error(response, "forbidden", http.StatusForbidden)
 		return
 	}
-	receiver.answer(response, receiver.apply(request.Context(), snapshot))
+	previous, err := receiver.apply(request.Context(), snapshot)
+	receiver.answer(response, err)
+	if err == nil {
+		receiver.announce(response, previous, snapshot.Origin)
+	}
 }
 
 func (receiver *Receiver) answer(response http.ResponseWriter, err error) {
@@ -170,23 +180,25 @@ var ErrUnknownRole = errors.New("roster: unknown role")
 // means other processes are busy applying, so the root's retry does better.
 const maxAttempts = 3
 
+// apply returns the origin recorded before snapshot, so the caller can
+// tell whether it changed.
 func (receiver *Receiver) apply(
 	parent context.Context, snapshot Snapshot,
-) error {
+) (previous string, err error) {
 	for _, member := range snapshot.Members {
 		if !receiver.roles[member.Role] {
-			return ErrUnknownRole
+			return "", ErrUnknownRole
 		}
 	}
 	receiver.applying.Lock()
 	defer receiver.applying.Unlock()
 	for range maxAttempts {
-		err := receiver.attempt(parent, snapshot)
+		previous, err = receiver.attempt(parent, snapshot)
 		if !errors.Is(err, errLeaseLost) {
-			return err
+			return previous, err
 		}
 	}
-	return errLeaseHeld
+	return "", errLeaseHeld
 }
 
 // attempt applies snapshot under a fresh lease. When snapshot is older than
@@ -194,7 +206,7 @@ func (receiver *Receiver) apply(
 // write a stale apply landed after the newer roster, and answers 409.
 func (receiver *Receiver) attempt(
 	parent context.Context, snapshot Snapshot,
-) error {
+) (previous string, err error) {
 	// Detached from the request so a dropped connection cannot stop an
 	// apply halfway; the timeout bounds it instead.
 	ctx, cancel := context.WithTimeout(
@@ -202,12 +214,12 @@ func (receiver *Receiver) attempt(
 	defer cancel()
 	lease, err := receiver.takeLease(ctx)
 	if err != nil {
-		return err
+		return "", err
 	}
 	defer receiver.releaseLease(parent, lease)
 	newest, err := receiver.lastApplied(ctx)
 	if err != nil {
-		return err
+		return "", err
 	}
 	target, outcome := snapshot, error(nil)
 	if snapshot.Sequence < newest.Sequence {
@@ -217,15 +229,15 @@ func (receiver *Receiver) attempt(
 	if err != nil {
 		// Even a failed sync may have written over a newer apply.
 		if lost := receiver.confirmLease(parent, lease); lost != nil {
-			return lost
+			return "", lost
 		}
-		return err
+		return "", err
 	}
 	err = receiver.record(parent, lease, target)
 	if err != nil {
-		return err
+		return "", err
 	}
-	return outcome
+	return newest.Origin, outcome
 }
 
 // record writes the snapshot last, so a failure before it leaves the old
@@ -242,10 +254,11 @@ func (receiver *Receiver) record(
 	ctx, cancel := bookkeeping(parent)
 	defer cancel()
 	result, err := receiver.db.ExecContext(ctx,
-		`UPDATE roster_state SET sequence = ?, state = ?, members = ?
+		`UPDATE roster_state
+		 SET sequence = ?, state = ?, members = ?, origin = ?
 		 WHERE id = 1 AND lease_until = ? AND sequence <= ?`,
 		snapshot.Sequence, string(snapshot.State), string(members),
-		lease, snapshot.Sequence)
+		snapshot.Origin, lease, snapshot.Sequence)
 	if err != nil {
 		return err
 	}
@@ -261,32 +274,6 @@ func (receiver *Receiver) record(
 		return err
 	}
 	return errSequenceMoved
-}
-
-// confirmLease reports errLeaseLost once another process has taken the
-// lease. A lapsed lease that no one took is still ours: nothing else ran.
-func (receiver *Receiver) confirmLease(
-	parent context.Context, lease int64,
-) error {
-	ctx, cancel := bookkeeping(parent)
-	defer cancel()
-	var until int64
-	err := receiver.db.QueryRowContext(ctx,
-		`SELECT lease_until FROM roster_state WHERE id = 1`).Scan(&until)
-	if err != nil {
-		return err
-	}
-	if until != lease {
-		return errLeaseLost
-	}
-	return nil
-}
-
-// bookkeeping is the context for lease and state writes after the Store's.
-// It is not the apply's, which a slow Store may have used up, and without
-// these writes a lost lease would go unnoticed.
-func bookkeeping(parent context.Context) (context.Context, func()) {
-	return context.WithTimeout(context.WithoutCancel(parent), 5*time.Second)
 }
 
 func (receiver *Receiver) syncMembers(
@@ -322,63 +309,24 @@ func (receiver *Receiver) syncMembers(
 	return nil
 }
 
-// takeLease serialises applies across processes sharing the database. It
-// returns the lease's expiry, which also names it: a process that takes a
-// lapsed lease writes a later one.
-func (receiver *Receiver) takeLease(ctx context.Context) (int64, error) {
-	_, err := receiver.db.ExecContext(ctx,
-		`INSERT OR IGNORE INTO roster_state
-		   (id, sequence, state, lease_until) VALUES (1, 0, 'active', 0)`)
-	if err != nil {
-		return 0, err
-	}
-	now := receiver.now()
-	lease := now.Add(leaseLife).Unix()
-	result, err := receiver.db.ExecContext(ctx,
-		`UPDATE roster_state SET lease_until = ?
-		 WHERE id = 1 AND lease_until < ?`,
-		lease, now.Unix())
-	if err != nil {
-		return 0, err
-	}
-	taken, err := result.RowsAffected()
-	if err != nil {
-		return 0, err
-	}
-	if taken == 0 {
-		return 0, errLeaseHeld
-	}
-	return lease, nil
-}
-
-// releaseLease clears only our own value, because a lapsed lease may
-// already belong to another process.
-func (receiver *Receiver) releaseLease(parent context.Context, lease int64) {
-	ctx, cancel := bookkeeping(parent)
-	defer cancel()
-	_, err := receiver.db.ExecContext(ctx,
-		`UPDATE roster_state SET lease_until = 0
-		 WHERE id = 1 AND lease_until = ?`, lease)
-	if err != nil {
-		receiver.logger.Error("roster lease not released", "error", err)
-	}
-}
-
-// lastApplied is the recorded snapshot's sequence, state and members, or
-// sequence 0 and no members before the first.
+// lastApplied is the recorded snapshot's sequence, state, members and
+// origin, or sequence 0 and no members before the first.
 func (receiver *Receiver) lastApplied(ctx context.Context) (Snapshot, error) {
 	var sequence int64
-	var state, members string
+	var state, members, origin string
 	err := receiver.db.QueryRowContext(ctx,
-		`SELECT sequence, state, members FROM roster_state WHERE id = 1`,
-	).Scan(&sequence, &state, &members)
+		`SELECT sequence, state, members, origin
+		 FROM roster_state WHERE id = 1`,
+	).Scan(&sequence, &state, &members, &origin)
 	if errors.Is(err, sql.ErrNoRows) {
 		return Snapshot{State: Active, Members: []Member{}}, nil
 	}
 	if err != nil {
 		return Snapshot{}, err
 	}
-	applied := Snapshot{Sequence: sequence, State: State(state)}
+	applied := Snapshot{
+		Sequence: sequence, State: State(state), Origin: origin,
+	}
 	err = json.Unmarshal([]byte(members), &applied.Members)
 	if err != nil {
 		return Snapshot{}, err

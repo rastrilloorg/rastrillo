@@ -94,6 +94,17 @@ func (root *Root) Roster(
 	state roster.State, members ...roster.Member,
 ) string {
 	t.Helper()
+	return root.RosterOrigin(t, audience, sequence, state, "", members...)
+}
+
+// RosterOrigin is Roster with the account's custom origin, which the
+// instance serves on once it applies the snapshot. The audience stays
+// the instance's platform host.
+func (root *Root) RosterOrigin(
+	t testing.TB, audience string, sequence int64,
+	state roster.State, origin string, members ...roster.Member,
+) string {
+	t.Helper()
 	now := root.now().Unix()
 	token, err := roster.Sign(root.Key, roster.Snapshot{
 		Version:   1,
@@ -105,6 +116,7 @@ func (root *Root) Roster(
 		ExpiresAt: now + int64(lifetime/time.Second),
 		State:     state,
 		Members:   members,
+		Origin:    origin,
 	})
 	if err != nil {
 		t.Fatalf("handofftest: sign roster: %v", err)

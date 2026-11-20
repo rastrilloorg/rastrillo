@@ -64,6 +64,10 @@ type Member struct {
 // Snapshot is the complete roster, not a change to it, so a receiver that
 // missed one snapshot recovers from the next. Sequence rises with every
 // snapshot the root sends for one instance. An empty Members list is valid.
+//
+// Origin is the account's custom origin, or empty for the instance's own
+// host. It is left out of the token when empty, because an older
+// receiver refuses a field it does not know.
 type Snapshot struct {
 	Version   int64    `json:"v"`
 	Issuer    string   `json:"iss"`
@@ -74,6 +78,7 @@ type Snapshot struct {
 	ExpiresAt int64    `json:"exp"`
 	State     State    `json:"state"`
 	Members   []Member `json:"members"`
+	Origin    string   `json:"origin,omitempty"`
 }
 
 // Sign refuses a snapshot that would not verify, without consulting a clock.
@@ -263,6 +268,9 @@ func validate(snapshot Snapshot) error {
 	if snapshot.State != Active && snapshot.State != Suspended {
 		return ErrClaims
 	}
+	if !validOrigin(snapshot.Origin, snapshot.Issuer) {
+		return ErrClaims
+	}
 	lifetime := snapshot.ExpiresAt - snapshot.IssuedAt
 	if snapshot.IssuedAt <= 0 || lifetime <= 0 || lifetime > maxLifetime {
 		return ErrLifetime
@@ -278,4 +286,15 @@ func validate(snapshot Snapshot) error {
 		seen[member.Subject] = true
 	}
 	return nil
+}
+
+// validOrigin is an empty origin, or https:// and a host with no port. A
+// browser reaches a custom domain on 443 only, and an instance on the
+// root's own origin would share its cookies.
+func validOrigin(origin, issuer string) bool {
+	if origin == "" {
+		return true
+	}
+	return wire.Origin(origin) && origin != issuer &&
+		!strings.Contains(strings.TrimPrefix(origin, "https://"), ":")
 }

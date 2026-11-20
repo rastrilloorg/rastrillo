@@ -68,6 +68,9 @@ type Platform struct {
 	createReply []Reply
 	pathsReply  []Reply
 	calls       []string
+	domainProof bool
+	proven      map[string]bool
+	readings    map[string]*reading
 }
 
 type appKey struct{ account, app string }
@@ -92,9 +95,12 @@ type instance struct {
 	failed  bool
 }
 
+// claim is an attached hostname (domains.go).
 type claim struct {
-	key   appKey
-	paths map[string]string
+	key     appKey
+	paths   map[string]string
+	route   string
+	pending bool
 }
 
 // New returns an empty platform.
@@ -106,6 +112,8 @@ func New() *Platform {
 		claims:    map[string]*claim{},
 		otherBox:  map[string]bool{},
 		catchAlls: map[string]appKey{},
+		proven:    map[string]bool{},
+		readings:  map[string]*reading{},
 	}
 	// The platform's own patterns (authcli.go:696-697, 826), and its own
 	// roles at each door: a publish credential cannot create.
@@ -118,6 +126,7 @@ func New() *Platform {
 		p.door([]string{"instance"}, nil, p.get))
 	p.mux.HandleFunc("PUT /api/cli/apps/{account}/{app}/domains/{host}/paths",
 		p.door([]string{"publish", "instance"}, &p.pathsReply, p.putPaths))
+	p.handleDomains()
 	return p
 }
 
@@ -720,19 +729,8 @@ func (p *Platform) resolve(host, urlPath string) route {
 		// reachable by the product path" that a caller's routing check reads.
 		return p.instanceRoute(in, host)
 	}
-	if c, ok := p.claims[host]; ok {
-		// Path routing (edge.go:1281-1371, aliases.go:395-408): the target
-		// must be a ready route of the same account on this box. Every
-		// other case, an unlisted prefix included, serves the hostname's
-		// own route, so a migration in progress falls back to the old app
-		// rather than failing.
-		if target, ok := pathTarget(c.paths, urlPath); ok {
-			if t := p.instances[target]; t != nil && t.key.account == c.key.account &&
-				!p.otherBox[target] && t.pending == 0 {
-				return p.routeOf(t.key, target)
-			}
-		}
-		return p.routeOf(c.key, host)
+	if found, ok := p.claims[host]; ok {
+		return p.claimRoute(found, host, urlPath)
 	}
 	// A catch-all answers only a name nothing else holds.
 	if in, ok := p.catchAllInstance(host); ok {

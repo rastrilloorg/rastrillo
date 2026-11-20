@@ -42,6 +42,11 @@ type Created struct {
 	// instance is not serving yet.
 	Accepted         bool
 	Operation, Phase string
+	// MayHaveLanded comes with an error: this call sent a create it never
+	// had an answer to, so an instance may exist at the host whatever the
+	// error says, even a refusal of a later post. Keep the host and call
+	// again with Resume.
+	MayHaveLanded bool
 }
 
 // Box is one box serving an instance.
@@ -92,16 +97,25 @@ func (req CreateRequest) check() error {
 // It posts at most twice. An attempt with no answer, or a 5xx other than
 // 503, may have landed, so before posting again it asks the platform with a GET.
 // When the caller's own ctx ends, Create returns ctx's error, and a post
-// may have been sent: keep the host and call again with Resume.
+// may have been sent: keep the host and call again with Resume. Any error
+// after such an attempt sets Created.MayHaveLanded, because a GET that
+// found nothing yet does not prove the unanswered post never lands.
 func (c *Console) Create(ctx context.Context, req CreateRequest) (Created, error) {
 	if err := req.check(); err != nil {
 		return Created{}, err
 	}
 	cr := &creation{c: c, req: req}
+	var created Created
+	var err error
 	if req.Resume {
-		return cr.reconcile(ctx)
+		created, err = cr.reconcile(ctx)
+	} else {
+		created, err = cr.post(ctx)
 	}
-	return cr.post(ctx)
+	if err != nil {
+		created.MayHaveLanded = cr.unknown
+	}
+	return created, err
 }
 
 // creation is one Create call's state.
@@ -141,16 +155,16 @@ func (cr *creation) post(ctx context.Context) (Created, error) {
 	status, hdr, msg, raw, err := cr.c.call(ctx, http.MethodPost, cr.c.appPath("instances"), body)
 
 	if err != nil || unknownOutcome(status) {
-		// The caller gave up: its deadline, not the attempt's, so no
-		// retry is earned, and the post may still have landed.
-		if cerr := ctx.Err(); cerr != nil {
-			return Created{}, cerr
-		}
 		// The platform writes before it answers, so a lost answer, a late
 		// one or a 5xx after the write has often landed. Posting again
 		// blind would meet "already exists" and read our own instance as
 		// someone else's, and giving up would drop a host that may be live.
 		cr.unknown = true
+		// The caller gave up: its deadline, not the attempt's, so no
+		// retry is earned, and the post may still have landed.
+		if cerr := ctx.Err(); cerr != nil {
+			return Created{}, cerr
+		}
 		if cr.posts == 1 {
 			return cr.reconcile(ctx)
 		}
