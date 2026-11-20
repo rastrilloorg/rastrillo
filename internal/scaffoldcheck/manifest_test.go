@@ -40,7 +40,7 @@ func followTheRecipe(t *testing.T, variant variant) {
 	if !listed || !slices.Contains(mount.guards, "csrf") {
 		t.Errorf("routes lists no /admin/* mount behind csrf:\n%s", routes)
 	}
-	runTaggedTests(t, directory, "perf", "./internal/recipeapptest/",
+	runTaggedTests(t, directory, "perf", "./internal/recipeapp/",
 		"TestPerfScreens")
 	refuseOneOperation(t, filepath.Join(directory,
 		"internal", "recipeapp", "api.go"))
@@ -157,7 +157,7 @@ func follow(t *testing.T, directory string, steps recipe) {
 	runCommandsOf(t, directory, steps.step(t, 8, 0))
 	formatEvery(t, app("render.go"), app("migrations.go"), app("app.go"),
 		app("routes.go"), filepath.Join(directory, "genassets.go"),
-		filepath.Join(directory, "internal", "recipeapptest", "perf_test.go"))
+		filepath.Join(directory, "internal", "recipeapp", "perf_test.go"))
 }
 
 // step is step number, failing unless it has blocks pieces of code and
@@ -228,7 +228,7 @@ func followTheBootStep(t *testing.T, directory string, step step) {
 	appendTo(t, app, "\n"+step.blocks[2])
 	insertAfter(t, filepath.Join(directory, "internal", "recipeapp",
 		"routes.go"), "guarded.Get(homePage, app.home)", step.blocks[3])
-	insertAfter(t, filepath.Join(directory, "internal", "recipeapptest",
+	insertAfter(t, filepath.Join(directory, "internal", "recipeapp",
 		"perf_test.go"), "perftest.ScreenConfig{", step.blocks[4])
 }
 

@@ -325,3 +325,144 @@ func TestStreamIgnoringCancellationStopsTheSweep(t *testing.T) {
 		t.Fatalf("measured %d request(s) beside a stream still running", n)
 	}
 }
+
+func TestScreensMeasuresStdlibPatterns(t *testing.T) {
+	t.Parallel()
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /{$}", ok)
+	mux.HandleFunc("GET /about", ok)
+	// A record on each key proves the names: a stale-record problem
+	// would fail the run if either screen were named differently.
+	config := ScreenConfig{
+		Patterns: []string{"/{$}", "/about"}, Handler: mux,
+	}
+	ft := run(config,
+		"perf GET / 300ms the root\nperf GET /about 300ms about\n", true)
+	if ft.failed {
+		t.Fatalf("stdlib patterns: %v", errs(ft))
+	}
+}
+
+func TestScreensRefusesBothRoutesAndPatterns(t *testing.T) {
+	t.Parallel()
+	config := cfg(router(map[string]http.HandlerFunc{"/": ok}))
+	config.Patterns = []string{"/{$}"}
+	ft := run(config, "", true)
+	if !ft.failed ||
+		!strings.Contains(errs(ft), "set Routes or Patterns, not both") {
+		t.Fatalf("both set: %v", errs(ft))
+	}
+}
+
+func TestScreensRefusesNeitherRoutesNorPatterns(t *testing.T) {
+	t.Parallel()
+	ft := run(ScreenConfig{Handler: http.NewServeMux()}, "", true)
+	want := "set Routes (a chi router) or Patterns " +
+		"(a stdlib mux's GET routes)"
+	if !ft.failed || !strings.Contains(errs(ft), want) {
+		t.Fatalf("neither set: %v", errs(ft))
+	}
+}
+
+func TestScreensPatternParamNeedsPaths(t *testing.T) {
+	t.Parallel()
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /notes/{id}", ok)
+	config := ScreenConfig{Patterns: []string{"/notes/{id}"}, Handler: mux}
+	ft := run(config, "", true)
+	if !ft.failed ||
+		!strings.Contains(errs(ft), "has a parameter and no Paths entry") {
+		t.Fatalf("param without a path: %v", errs(ft))
+	}
+	config.Paths = map[string]string{"/notes/{id}": "/notes/1"}
+	if ft := run(config, "", true); ft.failed {
+		t.Fatalf("param with a path: %v", errs(ft))
+	}
+}
+
+// A subtree pattern ("/admin/") is a stdlib mux's mount, chi's "/*": the
+// handler behind it serves screens the table cannot list, so it fails as
+// loudly as a chi mount until a group names it or a record skips it.
+// "/admin/{$}" is one page, not a subtree, and is measured.
+func TestScreensPatternMountMustBeGroupedOrSkipped(t *testing.T) {
+	t.Parallel()
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /{$}", ok)
+	mux.HandleFunc("GET /admin/", ok)
+	mux.HandleFunc("GET /admin/{$}", ok)
+	config := ScreenConfig{
+		Patterns: []string{"/{$}", "/admin/"}, Handler: mux,
+	}
+	if ft := run(config, "", true); !ft.failed ||
+		!strings.Contains(errs(ft), "GET /admin/ is a mounted handler") {
+		t.Fatalf("an ungrouped subtree pattern: %v", errs(ft))
+	}
+	grouped := config
+	grouped.Opaque = []Opaque{{
+		Patterns: []string{"/admin/"},
+		Screens: []OpaqueScreen{
+			{Key: "GET /admin/notes", Path: "/admin/notes"},
+		},
+	}}
+	if ft := run(grouped, "", true); ft.failed {
+		t.Fatalf("grouped subtree pattern: %v", errs(ft))
+	}
+	skipped := "perf GET /admin/ skip generated, measured elsewhere\n"
+	if ft := run(config, skipped, true); ft.failed {
+		t.Fatalf("skipped subtree pattern: %v", errs(ft))
+	}
+	page := ScreenConfig{
+		Patterns: []string{"/{$}", "/admin/{$}"}, Handler: mux,
+	}
+	if ft := run(page, "", true); ft.failed {
+		t.Fatalf("/admin/{$} is one page: %v", errs(ft))
+	}
+}
+
+// On a ServeMux, "/" and a terminal "{name...}" match a whole subtree, so
+// a handler behind either serves screens the table cannot list. They are
+// mounts like "/admin/": the reviewer's case served "/slow" behind "/"
+// and passed having measured only "/".
+func TestScreensPatternWholeSubtreesAreMounts(t *testing.T) {
+	t.Parallel()
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /", ok)
+	mux.HandleFunc("GET /files/{rest...}", ok)
+	for _, pattern := range []string{"/", "/files/{rest...}"} {
+		config := ScreenConfig{Patterns: []string{pattern}, Handler: mux}
+		want := "GET " + pattern + " is a mounted handler"
+		if ft := run(config, "", true); !ft.failed ||
+			!strings.Contains(errs(ft), want) {
+			t.Errorf("an ungrouped %s: %v", pattern, errs(ft))
+		}
+		skipped := "perf GET " + pattern + " skip measured elsewhere\n"
+		if ft := run(config, skipped, true); ft.failed {
+			t.Errorf("a skipped %s: %v", pattern, errs(ft))
+		}
+	}
+	grouped := ScreenConfig{
+		Patterns: []string{"/files/{rest...}"}, Handler: mux,
+		Opaque: []Opaque{{
+			Patterns: []string{"/files/{rest...}"},
+			Screens: []OpaqueScreen{
+				{Key: "GET /files/{rest...}", Path: "/files/a.txt"},
+			},
+		}},
+	}
+	if ft := run(grouped, "", true); ft.failed {
+		t.Fatalf("a grouped wildcard: %v", errs(ft))
+	}
+}
+
+// ServeMux reads a final segment as a wildcard only when the whole
+// segment is one: "/literal...}" is a literal path, one page, and must
+// be measured rather than held for an Opaque group or a skip.
+func TestScreensPatternLiteralEllipsisIsOnePage(t *testing.T) {
+	t.Parallel()
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /literal...}", ok)
+	config := ScreenConfig{Patterns: []string{"/literal...}"}, Handler: mux}
+	if ft := run(config, "", true); ft.failed {
+		t.Fatalf("a literal pattern ending in ...}: %v", errs(ft))
+	}
+}

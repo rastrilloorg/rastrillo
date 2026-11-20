@@ -106,6 +106,27 @@ func TestDescribeFallsBackToSchema(t *testing.T) {
 	}
 }
 
+// The migration commands find the app beside an older app's separate
+// internal/<pkg>test, and find an app whose own name ends in test,
+// which keeps its tests beside the code.
+func TestAppPackageSkipsOnlyAnOlderAppsTests(t *testing.T) {
+	for _, internal := range [][]string{
+		{"notes"}, {"notes", "notestest"}, {"contest"},
+		{"contest", "contesttest"},
+	} {
+		dir := t.TempDir()
+		mustWrite(t, filepath.Join(dir, "go.mod"), "module demo\n")
+		for _, name := range internal {
+			mustWrite(t, filepath.Join(dir, "internal", name, "a.go"), "")
+		}
+		_, pkg, err := appPackage(dir)
+		if err != nil || pkg != internal[0] {
+			t.Errorf("internal/%v: found %q, %v; want %s", internal, pkg,
+				err, internal[0])
+		}
+	}
+}
+
 // --- fixture: a minimal app module, built by hand rather than via
 // runNew (rastrillo new's scaffold doesn't grow a Models var, a
 // migrations.go or a Schema until Task 12 — using it here would be

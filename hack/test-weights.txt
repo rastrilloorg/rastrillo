@@ -163,6 +163,7 @@ test cmd/rastrillo TestScaffoldWholeGatePassesOffline 13
 test cmd/rastrillo TestAnAppMissingTheShellFilesIsToldAndFixed 8
 test cmd/rastrillo TestScaffoldedReleaseStampsAVersionTheBinaryReports 7
 test cmd/rastrillo TestBudgetTestReportsRealFailures 6
+test cmd/rastrillo TestMigrationCheckTestCatchesDrift 6
 test cmd/rastrillo TestAScaffoldedSidebarAppPassesItsOwnTests 4
 test cmd/rastrillo TestScaffoldedAppTestsPass 4
 test cmd/rastrillo TestVectorsEndToEndOnAFixtureApp 4

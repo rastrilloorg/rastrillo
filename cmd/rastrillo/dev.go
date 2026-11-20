@@ -223,18 +223,7 @@ func runDev(args []string) error {
 	defer os.RemoveAll(binDir)
 	bin := filepath.Join(binDir, appName)
 
-	rebuild := func() error {
-		if err := runGenerate(devGenerateArgs(dir)); err != nil {
-			return err
-		}
-		cmd := exec.Command("go", devBuildArgs(bin, appPkg)...)
-		cmd.Dir = dir
-		cmd.Stdout, cmd.Stderr = os.Stdout, os.Stderr
-		if err := cmd.Run(); err != nil {
-			return fmt.Errorf("go build: %w", err)
-		}
-		return nil
-	}
+	rebuild := func() error { return rebuildApp(dir, appPkg, bin) }
 
 	// child and exitCh are only ever touched from the main loop's
 	// goroutine (the exit-watcher goroutine below only writes to its own

@@ -52,8 +52,11 @@ new numbered file. Read the SQL before you commit it. `generate` may
 emit a full table rebuild instead of an `ALTER TABLE`, which is correct
 — SQLite's `ALTER` is limited — but you want to have seen it.
 
-Then keep `rastrillo migration check` in CI so the two cannot drift.
-`make ci` in a scaffolded app already runs it.
+Then keep the migration check in CI so the two cannot drift. A
+scaffolded app runs it as a test, `TestModelsMatchMigrations` in
+`internal/<app>/migrations_test.go`, so `go test ./...` and `make ci`
+both run it. `rastrillo migration check` is the same check from outside
+the app.
 
 ### Things generate cannot work out
 

@@ -1,0 +1,11 @@
+# __NAME__
+
+A small Rastrillo app: one page, no database, no sign-in, and no design
+system, for an app that writes its own HTML or JSON.
+
+    go run ./cmd/__NAME__ -addr 127.0.0.1:8080
+    go test ./...
+
+Add a page: a route and its handler in internal/__PKG__/app.go. When
+the app needs to store data, start again with
+`rastrillo new --scaffold single` and move your pages across.

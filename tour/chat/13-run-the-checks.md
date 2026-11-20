@@ -1,6 +1,6 @@
 +++
 title = "Run the whole gate"
-files = ["internal/chattest/perf_test.go"]
+files = ["internal/chat/perf_test.go"]
 commands = ["make ci"]
 check = "`make ci` finishes without an error."
 +++

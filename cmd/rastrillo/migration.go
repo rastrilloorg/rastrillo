@@ -49,9 +49,9 @@ func runMigration(args []string) error {
 }
 
 // appPackage locates the app's package: the single directory under
-// internal/ that is not the <name>test harness. rastrillo new
-// scaffolds exactly one, and dev.go already assumes the same
-// single-app shape for cmd/.
+// internal/ that is not an older app's separate <name>test package.
+// rastrillo new scaffolds exactly one, and dev.go already assumes the
+// same single-app shape for cmd/.
 func appPackage(dir string) (importPath, pkgName string, err error) {
 	mod, err := modulePath(dir)
 	if err != nil {
@@ -61,10 +61,15 @@ func appPackage(dir string) (importPath, pkgName string, err error) {
 	if err != nil {
 		return "", "", fmt.Errorf("no internal/ directory in %s: %w", dir, err)
 	}
+	directories := map[string]bool{}
+	for _, entry := range entries {
+		directories[entry.Name()] = entry.IsDir()
+	}
 	var found []string
-	for _, e := range entries {
-		if e.IsDir() && !strings.HasSuffix(e.Name(), "test") {
-			found = append(found, e.Name())
+	for name, isDirectory := range directories {
+		tested, isTests := strings.CutSuffix(name, "test")
+		if isDirectory && !(isTests && directories[tested]) {
+			found = append(found, name)
 		}
 	}
 	sort.Strings(found)

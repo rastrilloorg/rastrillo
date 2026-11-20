@@ -1,6 +1,6 @@
 +++
 title = "Test two people chatting"
-files = ["internal/chattest/chat_test.go"]
+files = ["internal/chat/chat_test.go"]
 commands = ["go test ./..."]
 check = "`go test ./...` passes, three new tests included."
 +++

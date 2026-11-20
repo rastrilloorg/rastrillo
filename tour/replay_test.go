@@ -44,7 +44,7 @@ func TestEveryStepOfTheChatTourBuildsAndPasses(t *testing.T) {
 	for _, command := range []string{
 		"rastrillo routes --check", "rastrillo migration check",
 		"rastrillo generate --check", "rastrillo budget code",
-		"go test -tags perf ./internal/chattest/",
+		"go test -tags perf ./internal/chat/",
 	} {
 		if err := toolchain.command(app, command); err != nil {
 			t.Errorf("the finished app: %v", err)

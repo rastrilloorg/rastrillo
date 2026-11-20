@@ -5,11 +5,10 @@ anything, and a `make ci` that defines the gate once.
 
 ## Running tests while you work
 
-While you edit, test the package you are changing and the harness
-package that drives it:
+While you edit, run the short tests:
 
 ```sh
-go test -short ./internal/notes/... ./internal/notestest/
+go test -short ./...
 ```
 
 Before you push, run `make ci`. It is the same gate CI runs, and the
@@ -19,8 +18,9 @@ already failed, and that is the thing to fix.
 
 ## The harness
 
-The scaffold writes `internal/<app>test/` — a harness plus example
-tests. It builds your app the way `main.go` does and drives it over
+The scaffold writes a harness plus example tests in
+`internal/<app>/*_test.go`, beside the code, as package `<app>_test`. It
+builds your app the way `main.go` does and drives it over
 HTTP, so what a test exercises is what a request exercises: the router,
 the middleware, the session store, CSRF.
 
@@ -66,11 +66,11 @@ Tito Go a fresh database took 207ms and a copy took 2.5ms, and a package of
 make ci
 ```
 
-runs vet, gofmt, staticcheck, govulncheck, gitleaks, `budget`, `test`, `perf` and `rastrillo
-migration check`, in that order and one at a time. It is the one gate
-definition: `.amadan/ci` and `.amadan/ci.d/` are executable steps that
-call the same Makefile targets, so the CI runner and your terminal cannot
-disagree about what passing means.
+runs vet, gofmt, staticcheck, govulncheck, gitleaks, `budget`, `code`,
+`routes`, `csp`, `test`, `perf` and `rastrillo generate --check`, in that
+order. It is the one gate definition: `.amadan/ci` and `.amadan/ci.d/`
+are executable steps that call the same Makefile targets, so the CI
+runner and your terminal cannot disagree about what passing means.
 
 staticcheck runs at a pinned version through `go run`, so there is nothing
 to install. Raise that version in the Makefile when you raise the `go`
@@ -81,9 +81,11 @@ govulncheck reports only the vulnerabilities your code can reach, and it reads a
 
 gitleaks scans every commit for keys and tokens, because a secret you deleted is still in every clone. Until the app is the root of its own git repository there is nothing committed, and it says so instead of failing.
 
-Keeping [`migration check`](/docs/migrations) in the gate is what stops
-models and migrations drifting apart between deploys. It touches no
-database, so it runs anywhere.
+The [migration check](/docs/migrations) is one of the app's tests,
+`TestModelsMatchMigrations`, so `make test` runs it and so does a plain
+`go test ./...`. It is what stops models and migrations drifting apart
+between deploys. It replays the migrations into an in-memory database,
+never one of yours, so it runs anywhere.
 
 ## The budgets
 
@@ -169,7 +171,7 @@ target of its own with `-count=1`, which turns the cache off for it.
 
 ## The perf lane
 
-`make perf` runs the tests in `internal/notestest/perf_test.go`, which the
+`make perf` runs the tests in `internal/notes/perf_test.go`, which the
 scaffold writes for you. It walks your router and requests every GET route
 over real HTTP, through the same handler production serves, and holds each
 one to 150ms to first byte. It also starts the app in a fresh process

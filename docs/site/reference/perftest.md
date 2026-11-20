@@ -6,7 +6,7 @@ Fails the build when a screen or a cold start is slower than
 [`perf`](/docs/reference/perf)'s budgets: 150ms to first byte for a
 screen, 500ms for a cold start. `perf` reports these numbers in
 production; `perftest` checks them in CI. The scaffold's
-`internal/<app>test/perf_test.go` calls both functions, and `make perf`
+`internal/<app>/perf_test.go` calls both functions, and `make perf`
 runs it.
 
 ## Screens
@@ -15,12 +15,13 @@ runs it.
 func Screens(t testing.TB, cfg ScreenConfig)
 
 type ScreenConfig struct {
-	Routes  chi.Routes
-	Handler http.Handler
-	Paths   map[string]string
-	Expect  map[string]int
-	Signin  func(c *http.Client, base string)
-	Opaque  []Opaque
+	Routes   chi.Routes
+	Patterns []string
+	Handler  http.Handler
+	Paths    map[string]string
+	Expect   map[string]int
+	Signin   func(c *http.Client, base string)
+	Opaque   []Opaque
 }
 ```
 
@@ -41,6 +42,12 @@ A redirect to sign-in or a 404 fails rather than being timed, so set
 parameter a real path in `Paths` (`"/notes/{id}": "/notes/1"`), whose row
 your test creates first. A route with a parameter and no path fails.
 
+An app on a standard `http.ServeMux` sets `Patterns` instead, because a
+mux cannot list its routes. Give it the GET routes without the method:
+`[]string{"/{$}", "/notes/{id}"}`. A trailing `{$}` is dropped, so `"/{$}"`
+is the screen `GET /` and is requested at `/`. Set `Routes` or
+`Patterns`, not both and not neither.
+
 A route given `skip` in `budgets.txt` is not requested. A `perf` record
 that names no route fails, since `Screens` sees every route there is. Call
 it once per test binary, from a test that is not parallel.
@@ -60,10 +67,13 @@ type OpaqueScreen struct {
 }
 ```
 
-chi cannot list the routes inside a handler that is not a chi router,
-such as a generated `http.ServeMux` mounted at `/bookmarks/*`. Such a
-mount fails until you either list its screens in an `Opaque` group, or
-record `perf GET /bookmarks/* skip` with a reason:
+Under `Routes`, chi cannot list the routes inside a handler that is not
+a chi router, such as a generated `http.ServeMux` mounted at
+`/bookmarks/*`. Such a mount fails until you either list its screens in
+an `Opaque` group, or record `perf GET /bookmarks/* skip` with a reason.
+In `Patterns`, subtree patterns fail like mounts: `"/"`, `"/admin/"`,
+and patterns ending in a wildcard such as `"/files/{rest...}"`.
+`"/{$}"` and `"/admin/{$}"` match single pages:
 
 ```go
 var cfg = perftest.ScreenConfig{

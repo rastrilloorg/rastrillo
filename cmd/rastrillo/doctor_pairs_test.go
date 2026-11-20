@@ -43,7 +43,7 @@ func layoutPath(dir string) string {
 // recordAsMine names files in the app's vendoredIsMine.
 func recordAsMine(t *testing.T, dir string, names ...string) {
 	t.Helper()
-	pin := filepath.Join(dir, "internal", "demoapptest", "vendored_test.go")
+	pin := demoPin(dir)
 	source, err := os.ReadFile(pin)
 	if err != nil {
 		t.Fatal(err)
@@ -209,8 +209,7 @@ func TestDoctorMovesTheDateFilesTogether(t *testing.T) {
 	})
 	t.Run("an older pin leaves out an edited datetime.js", func(t *testing.T) {
 		dir, static := oldDates(t)
-		mustWrite(t, filepath.Join(dir, "internal", "demoapptest",
-			"vendored_test.go"), olderPinWithout("datetime.js"))
+		mustWrite(t, olderPin(t, dir), olderPinWithout("datetime.js"))
 		output := fixed(t, dir, false)
 		holds(t, static, "calendar.js", []byte("// old calendar\n"))
 		if !strings.Contains(output, "left alone  calendar.js (paired "+

@@ -1,0 +1,12 @@
+package __PKG__
+
+// The formatting pack Locale needs, linked here in the app's package
+// rather than in main: render.go checks the locale when this package
+// loads, so without the pack the app's own tests fail before one runs.
+import (
+__PACKS__
+)
+
+// Locale is the one language the app starts with: its pages are in it,
+// and main.go serves it as the default.
+const Locale = "__CODE__"

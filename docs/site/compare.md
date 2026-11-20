@@ -18,8 +18,9 @@ Simple frameworks for routing and middleware. All four MIT licensed.
 
 Rastrillo's middleware is `func(http.Handler) http.Handler` and its
 handlers take `(w, r)`, so chi drops straight in. The other three need
-adapters. Scaffolded apps use chi for its route groups, though the
-framework itself imports no router at all.
+adapters. Scaffolded apps use chi for its route groups, except a
+`bare` one, which uses Go's `http.ServeMux`. The framework itself
+imports no router at all.
 
 Fiber is built on `fasthttp` instead of `net/http`. That buys speed.
 stdlib middleware no longer usable.

@@ -31,7 +31,7 @@ operations.
 
 ## Mounting the API
 
-A new app from `rastrillo new` already has this in
+A `single` or `accounts` app from `rastrillo new` already has this in
 `internal/<app>/api.go`, and its `Mux` mounts it. To add it to an
 existing app:
 

@@ -1,10 +1,10 @@
-# Add email-and-password sign-in to a fresh scaffold
+# Add email-and-password sign-in to a single app
 
-For a new app, `rastrillo new --auth=magic` already signs people in by
-emailed link. This page is for password sign-in, or for an app made
-without `--auth`: `rastrillo new` alone scaffolds no accounts. These
-steps, applied to one, pass its `make ci` (`<app>` is the app's name).
-Sessions, traps and other plugins: skill/signin.md.
+A new app with sign-in starts from `rastrillo new --scaffold accounts`,
+which signs people in by emailed link. These steps add password sign-in
+to an existing `single` app (`rastrillo new` alone, which has no
+sign-in); applied to a fresh one, they pass its `make ci` (`<app>` is
+the app's name). Sessions, traps and other plugins: skill/signin.md.
 
 **1. Model.** In `models.go`, add `&User{}` to `Models` and
 `type User struct { ID int64; Email string \`gorm:"uniqueIndex"\`;
@@ -22,7 +22,7 @@ var BootSchema = migrate.Merge(
 take `group *background.Group` after `origin`. Five callers change:
 `cmd/<app>/main.go` (`group := &background.Group{}`, and after
 `Configure`, `options.Background = group`, which shutdown stops); in
-`internal/<app>test`, `newApp` and the browser test (`group :=
+`internal/<app>/*_test.go`, `newApp` and the browser test (`group :=
 &background.Group{}; t.Cleanup(group.Stop)` after the `database.Close`
 cleanup, so it runs first) and both perf tests (`options.Background =
 group` after `Configure`; `closeAll` stops it).

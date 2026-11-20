@@ -1,4 +1,4 @@
-package chattest
+package chat_test
 
 import (
 	"net/http"

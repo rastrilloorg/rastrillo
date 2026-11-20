@@ -11,9 +11,9 @@ Every command except `session-key` takes an optional directory as its last argum
 ## rastrillo new
 
 ```sh
-rastrillo new [--icons=<set>] [--icon-delivery=<mode>] [--ux=<profile>]
-              [--theme=<name>] [--shell=<name>] [--locale=<code>]
-              [--auth=<kind>] <name>
+rastrillo new [--scaffold=<shape>] [--design-system=false] [--icons=<set>]
+              [--icon-delivery=<mode>] [--ux=<profile>] [--theme=<name>]
+              [--shell=<name>] [--locale=<code>] [--auth=<kind>] <name>
 ```
 
 Scaffolds a complete app in `./<name>` — one that compiles, passes its
@@ -26,13 +26,32 @@ run `rastrillo generate` after `go mod tidy`.
 
 | Flag | Values | Default |
 |---|---|---|
+| `--scaffold` | `bare`, `single`, `accounts` | `single` |
+| `--design-system` | `true`, `false` | `true` |
 | `--icons` | `lucide`, `font-awesome` | `lucide` |
 | `--icon-delivery` | `inline`, `cdn`, `js` | `inline` |
 | `--ux` | `considered`, `standard` | `considered` |
 | `--theme` | `day`, `plain`, `signal` | `day` |
-| `--shell` | `column`, `topbar`, `sidebar`, `console` | `column` |
-| `--auth` | `none`, `magic` | `none` |
+| `--shell` | `column`, `topbar`, `sidebar`, `console`, `stage` | `column` |
+| `--auth` | `none`, `magic` | `none`; `accounts` starts with `magic` |
 | `--locale` | `en`, `ga`, `zh-Hans`, `es`, `hi`, `pt-PT`, `bn`, `ru`, `ja`, `yue`, `vi`, `ar` | `en` |
+
+`--scaffold` picks what to scaffold. `bare` is a page with no database,
+`single` is one app and its SQLite data, and `accounts` is `single` with
+sign-in by emailed link: it writes what `single --auth=magic` writes, so
+`--auth` means `magic` there and `--auth=none` is refused.
+`home` and `hub` are planned and not built yet.
+`bare` writes no `manifest/`, `gen/`, `Makefile` or `AGENTS.md` and runs
+no `generate`: its gate is `go test ./...`. It refuses `--ux`, which
+only chooses what goes in `AGENTS.md`, and `--auth=magic`, whose sign-in
+keeps its sessions and links in a database `bare` does not have.
+
+`--design-system=false` leaves out the templates, static files, icons
+and `render.go`, for a `bare` app that writes its own HTML or JSON. Its
+page is a short HTML string in `app.go`. Only `bare` accepts it, and it
+refuses `--icons`, `--icon-delivery`, `--theme` and `--shell`, which
+choose files it does not write. `rastrillo doctor` on such an app says
+there is nothing to compare and runs its other checks.
 
 All six set × delivery combinations scaffold, compile and pass
 `generate --check`. The icon set becomes an ordinary app-owned package
@@ -48,13 +67,13 @@ icons do not render at all without JavaScript.
 that moment — the theme like `tokens.css`, the layout like every other
 template. Every value is checked before a single file is created, so a
 typo fails with your working directory still clean.
-[Templates](/docs/templates) describes the three of each.
+[Templates](/docs/templates) describes each one.
 
 `--icons=font-awesome` also writes the CC BY 4.0 attribution the licence
 requires, because that obligation is the app's and has to travel with
 the code.
 
-`--auth=magic` starts the app with sign-in by emailed link: the [magic links](/docs/magic-links) plugin with its sign-in screen, a Sign in and Sign out control in the header, and an example page only a signed-in person can open. Rows belong to the signed-in address, read and written through the `owned` seam in `auth.go`. Until you set `<APP>_SMTP_HOST` and `<APP>_SMTP_FROM`, each link is written to the log instead of sent. The app's own tests sign in through the emailed link, so `make ci` passes from the first commit.
+`--scaffold accounts`, which is `single --auth=magic`, starts the app with sign-in by emailed link: the [magic links](/docs/magic-links) plugin with its sign-in screen, a Sign in and Sign out control in the header, and an example page only a signed-in person can open. Rows belong to the signed-in address, read and written through the `owned` seam in `auth.go`. Until you set `<APP>_SMTP_HOST` and `<APP>_SMTP_FROM`, each link is written to the log instead of sent. The app's own tests sign in through the emailed link, so `make ci` passes from the first commit.
 
 `--locale` picks the one language the app starts with, written to
 `manifest/app.toml`. It must be one the framework's own strings ship in,
@@ -137,6 +156,8 @@ The watch loop: polls `app/`, `actions/`, `manifest/`, `cmd/`,
 `locales/` and `templates/`, and on any change reruns `generate`,
 rebuilds `./cmd/<name>` to a temporary binary, and restarts the process
 with a graceful SIGTERM. Anything after `--` is passed to your app.
+An app with no `manifest/`, `actions/` or `gen/`, such as a `bare` one,
+has nothing to generate, so `dev` skips `generate` and only rebuilds.
 
 `dev` leaves compiled templates out. It runs
 `generate --templates=false` and builds with `-tags rastrillo_dev`, so
@@ -183,9 +204,11 @@ from a drop plus an add to any tool — write those by hand with
 rastrillo migration check [dir]
 ```
 
-The CI gate: exits non-zero when models and migrations disagree, listing
-the SQL that would close the gap. Touches no database, so it runs
-anywhere. `make ci` in a scaffolded app runs it for you.
+Exits non-zero when models and migrations disagree, listing the SQL
+that would close the gap. It replays the migrations into an in-memory
+database, never one of yours, so it runs anywhere. A scaffolded app
+runs the same check as a test, `TestModelsMatchMigrations`, so
+`go test ./...` and `make ci` run it without this command.
 
 ### migration new
 

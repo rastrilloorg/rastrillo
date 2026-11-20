@@ -16,8 +16,8 @@ describes a framework this app is not built on.
   route), `handlers.go` (actions), `models.go`, `migrations.go`,
   `render.go`, `api.go` (`/api/v1` and `/api/v1/mcp`), and `static/`,
   served by the app.
-- `internal/<app>test/`: tests through the real handler. Write the
-  failing test here first.
+- `internal/<app>/*_test.go`: tests through the real handler, in
+  package `<app>_test`. Write the failing test here first.
 - `manifest/`: optional, a screen set per manifest, generated into
   `gen/` (never edit; run `rastrillo generate`). manifest/README.md
   mounts the first.
@@ -94,9 +94,10 @@ The rest, and what each gate message means:
 
 - `make ci` runs vet, gofmt, staticcheck, govulncheck, gitleaks, the
   budgets, `make code`, `make routes` (every action is mounted), the
-  tests, perf, and the migration and generate checks, as CI does. Run
-  it before every push. If that is too slow, a budget has failed: fix
-  it, never skip the gate. While editing: `go test -short ./...`.
+  tests (`TestModelsMatchMigrations` is the migration check), perf and
+  the generate check, as CI does. Run it before every push. If that is
+  too slow, a budget has failed: fix it, never skip the gate. While
+  editing: `go test -short ./...`.
 - Budgets: 5,000 source and 8,000 test lines per directory, 10s per
   test package, 150ms to first byte per GET screen, 500ms cold boot
   (timing fails only on CI). An exception goes in

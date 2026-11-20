@@ -98,34 +98,41 @@ func TestNewRefusesANameTooLongForItsImportLines(t *testing.T) {
 
 // Punctuation is kept in the module path and dropped from the package
 // name, so a name's lines are not all as long as one sum says. Each of
-// these is the longest of its kind that fits: the first fills a comment
-// in harness_test.go that holds the name alone, the second an import
-// line in render.go that holds the name and its package name. Each
-// builds and passes budget code, plain and signing people in.
+// these is the longest of its kind that fits. The first fills a line
+// that holds the name alone, auth.go's Brand under --auth=magic: only
+// a name this heavily punctuated reaches it before render.go's icons
+// import. The second fills that import, which holds the name and its
+// package name. Each builds and passes budget code, plain and signing
+// people in.
 var namesThatJustFit = []string{
-	"my-shop.stock-and.orders-v2.eu",
+	"a-b-c.d-e-f.g-h-i.j-k-l.m-n-o.p-q-r",
 	"warehouseinventory-trackingap",
 }
 
-// One character more than each, and the name the review found
-// overflowing harness_test.go, are refused before anything is written.
-var namesJustTooLong = []string{
-	"my-shop.stock-and.orders-v2.eux",
-	"warehouseinventory-trackingapp",
-	"warehouse-inventory-track-app-x",
+// One character more than each is refused before anything is written,
+// in the variant whose line it overflows. The review's
+// warehouse-inventory-track-app-x now fits: the harness_test.go comment
+// it overflowed was rewrapped with 9 more columns for the name, and its
+// name and package name, 58 characters together, fill render.go's
+// import exactly.
+var namesJustTooLong = []variant{
+	{"a-b-c.d-e-f.g-h-i.j-k-l.m-n-o.p-q-rs", []string{"--auth=magic"}},
+	{"warehouseinventory-trackingapp", nil},
 }
 
 func TestNewMeasuresEveryLineOfAPunctuatedName(t *testing.T) {
 	t.Parallel()
-	for _, name := range namesJustTooLong {
+	for _, each := range namesJustTooLong {
 		parent := t.TempDir()
-		output, err := runIn(parent, rastrilloBinary, "new", name)
+		arguments := append(append([]string{"new"}, each.flags...),
+			each.name)
+		output, err := runIn(parent, rastrilloBinary, arguments...)
 		if err == nil || !strings.Contains(output, "choose a shorter name") {
-			t.Errorf("rastrillo new %s: %v, want a refusal:\n%s", name, err,
-				output)
+			t.Errorf("rastrillo %s: %v, want a refusal:\n%s",
+				strings.Join(arguments, " "), err, output)
 		}
 		if entries, _ := os.ReadDir(parent); len(entries) != 0 {
-			t.Errorf("refusing %s left %v behind", name, entries)
+			t.Errorf("refusing %s left %v behind", each.name, entries)
 		}
 	}
 	for _, name := range namesThatJustFit {

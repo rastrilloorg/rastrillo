@@ -209,6 +209,7 @@ type report struct {
 	files         []vendoredFile
 	layoutAdvice  string // relative path of an old shell layout, if the app has one
 	profileAdvice string // relative path of a layout whose app keeps the person in account
+	noDesign      bool   // no vendored files and no layout: nothing to compare
 
 	// fiestaAdvice lists the layouts that load rastrillo.js and no
 	// fiesta.js, relative to dir.
@@ -255,6 +256,8 @@ func (r *report) exit() error {
 	switch {
 	case r.preMove != "":
 		return exitError{code: exitPreMove}
+	case r.noDesign: // skew and drift are findings about vendored files
+		return nil
 	case r.skewed():
 		return exitError{code: exitSkew}
 	case r.drifted():
@@ -388,7 +391,11 @@ func diagnose(dir, themeFlag string) (*report, error) {
 	pkg := packageName(filepath.Base(module))
 	staticDir, err := findStaticDir(dir, pkg)
 	if err != nil {
-		return nil, err
+		if !withoutDesignSystem(dir) {
+			return nil, err
+		}
+		r.noDesign = true
+		return r, nil
 	}
 	r.staticDir = rel(dir, staticDir)
 
@@ -668,6 +675,10 @@ func (r *report) print(w io.Writer, fixing bool) {
 		r.printPreMove(w)
 		return
 	}
+	if r.noDesign {
+		printNoDesign(w, r.module)
+		return
+	}
 	fmt.Fprintf(w, "rastrillo doctor: %s (%s)\n", r.module, r.staticDir)
 
 	switch {
@@ -889,6 +900,9 @@ func (r *report) applyFix(w io.Writer, force bool) error {
 		fmt.Fprintf(w, "Refusing to --fix: this app builds its ui from %s %s.\n", preMoveModule, r.preMove)
 		fmt.Fprintf(w, "Copying %s files into it would put new CSS against old markup. Move it first, as above.\n", r.cliVersion)
 		return exitError{code: exitPreMove}
+	}
+	if r.noDesign { // nothing to re-copy, so no skew to refuse on
+		return nil
 	}
 	if r.skewed() && !force {
 		fmt.Fprintln(w)

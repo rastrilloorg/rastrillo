@@ -47,6 +47,44 @@ rastrillo.org switches at its next sync. Its build runs dsgen with
 to the new name and address. Until that sync, the site still serves the
 gallery at `/design-system/`.
 
+### Added: `rastrillo new --scaffold` picks the app's shape
+
+`single`, the default, is the app `rastrillo new` used to write, with
+two changes:
+
+- Its tests sit beside the code in `internal/<app>/`, as package
+  `<app>_test`, instead of in `internal/<app>test/`.
+- The migration check is a test, `TestModelsMatchMigrations`, so
+  `go test ./...` runs it. `make ci` has no `migration-check` step, and
+  `modeldiff` and `TestModelsMatchMigrations` are refused as app names.
+
+`accounts` is `single` with sign-in by emailed link, the app
+`--auth=magic` writes. `bare` is a page and a route on Go's
+`http.ServeMux`, with no database, no sign-in and no `Makefile`: its
+gate is `go test ./...`, and `--design-system=false` leaves out its
+templates and static files. `home` and `hub` are not built yet. Apps you
+already have change nothing.
+
+Two commands now work on a `bare` app:
+
+- `rastrillo dev` skips `generate` in an app with no `manifest/`,
+  `actions/` or `gen/`, and only rebuilds.
+- `rastrillo doctor` on an app with no design system says there is
+  nothing to compare and runs its other checks.
+
+### Added: `perftest.Screens` takes a list of routes
+
+Set `ScreenConfig.Patterns` to your `http.ServeMux` routes instead of
+`Routes`, which needs a chi router. A trailing `{$}` is dropped, so
+`"/{$}"` is the screen `GET /`. A subtree pattern such as `"/admin/"` is
+a mount and fails, like chi's `/*`, until an `Opaque` group lists its
+screens or a record skips it. Apps that set `Routes` change nothing.
+
+### Fixed
+
+- `rastrillo migration` finds an app whose name ends in `test`. It used
+  to skip that package as if it were the old test directory.
+
 ## v0.37.0
 
 Numbers and dates in the reader's language. Two changes alter what an

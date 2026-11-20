@@ -1,0 +1,62 @@
+package __PKG___test
+
+import (
+	"net/http"
+	"net/http/httptest"
+	"regexp"
+__STRINGS__	"testing"
+
+	__PKG__ "__NAME__/internal/__PKG__"
+)
+
+// newApp is the app as cmd/__NAME__/main.go serves it.
+func newApp(t *testing.T) http.Handler {
+	t.Helper()
+	return __PKG__.Mux()
+}
+
+func get(
+	t *testing.T, handler http.Handler, target string,
+) *httptest.ResponseRecorder {
+	t.Helper()
+	recorder := httptest.NewRecorder()
+	handler.ServeHTTP(recorder,
+		httptest.NewRequest(http.MethodGet, target, nil))
+	return recorder
+}
+
+// hashedStylesheet is the fingerprinted URL shape the index page
+// links: /static/tokens.<16 hex>.css.
+var hashedStylesheet = regexp.MustCompile(
+	`/static/tokens\.[0-9a-f]{16}\.css`)
+
+// The index renders through the layout, and links its stylesheet by
+// the fingerprinted URL, which the app serves. A page whose stylesheet
+// 404s still answers 200, unstyled, so this follows the link too.
+func TestIndexRenders(t *testing.T) {
+	t.Parallel()
+	handler := newApp(t)
+	recorder := get(t, handler, "/")
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("GET /: status %d, want 200", recorder.Code)
+	}
+	body := recorder.Body.String()
+	href := hashedStylesheet.FindString(body)
+	if href == "" {
+		t.Fatalf("GET /: no fingerprinted stylesheet link:\n%s", body)
+	}
+	if recorder := get(t, handler, href); recorder.Code != http.StatusOK {
+		t.Errorf("GET %s: status %d, want 200", href, recorder.Code)
+	}
+}
+
+// The index is served at "GET /{$}" because a bare "GET /" matches
+// every path: an unknown URL would get the home page, not a 404.
+func TestUnknownPathIs404(t *testing.T) {
+	t.Parallel()
+	recorder := get(t, newApp(t), "/nope")
+	if recorder.Code != http.StatusNotFound {
+		t.Errorf("GET /nope: status %d, want 404", recorder.Code)
+	}
+}
+__TESTS__

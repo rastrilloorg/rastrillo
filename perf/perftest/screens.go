@@ -25,8 +25,19 @@ import (
 
 // ScreenConfig is what Screens measures and how to reach it.
 type ScreenConfig struct {
-	// Routes is the app's chi router, walked for the inventory.
+	// Routes is the app's chi router, walked for the inventory. Set it or
+	// Patterns, not both.
 	Routes chi.Routes
+	// Patterns is the app's GET routes as http.ServeMux patterns without
+	// the method: "/{$}", "/notes/{id}". A ServeMux cannot list what it
+	// serves, so an app on one keeps a single table of its routes, builds
+	// the mux from it, and hands the same table here; the inventory then
+	// cannot drift from the router. A trailing {$} is dropped from the
+	// screen name and the requested path, so "/{$}" is screen "GET /", the
+	// name a chi app's root has. A subtree pattern ("/", "/admin/",
+	// "/files/{rest...}") is a mount, like chi's "/*": it needs an Opaque
+	// group or a skip record.
+	Patterns []string
 	// Handler is what requests go through: rastrillo.Handler over the
 	// app's options, so the measurement includes production's chrome.
 	Handler http.Handler
@@ -217,19 +228,15 @@ func inventory(cfg ScreenConfig, f *budgetfile.File) ([]target, []string) {
 		}
 	}
 
-	walked := map[string]bool{}
-	var routes []string
-	err := chi.Walk(cfg.Routes, func(method, route string, _ http.Handler, _ ...func(http.Handler) http.Handler) error {
-		if method == http.MethodGet && !walked[route] {
-			walked[route] = true
-			routes = append(routes, route)
-		}
-		return nil
-	})
+	if problem := routeSourceProblem(cfg); problem != "" {
+		problems = append(problems, problem)
+		sort.Strings(problems)
+		return nil, problems
+	}
+	routes, walked, mounts, err := listRoutes(cfg)
 	if err != nil {
 		problems = append(problems, "chi.Walk: "+err.Error())
 	}
-	sort.Strings(routes)
 
 	known := map[string]bool{}
 	limit := func(screen string) (time.Duration, bool, bool) {
@@ -247,9 +254,10 @@ func inventory(cfg ScreenConfig, f *budgetfile.File) ([]target, []string) {
 		if skip {
 			continue
 		}
-		if strings.HasSuffix(route, "/*") || grouped {
+		if strings.HasSuffix(route, "/*") || mounts[route] || grouped {
 			if !grouped {
-				problems = append(problems, fmt.Sprintf("%s is a mounted handler chi cannot see inside: list its screens in an Opaque group, or record `perf %s skip <reason>`", screen, screen))
+				problems = append(problems,
+					unseenMount(screen, mounts[route]))
 			}
 			continue
 		}

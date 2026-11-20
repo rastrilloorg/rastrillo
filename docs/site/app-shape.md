@@ -13,8 +13,10 @@ internal/<app>/models.go       plain GORM structs
 internal/<app>/migrations.go   Schema and BootSchema
 ```
 
-An app made with `--auth=magic` also has `auth.go`, which signs people
-in by emailed link and holds the `owned` seam.
+An `accounts` app (`--scaffold accounts`, the same as `--auth=magic`)
+also has `auth.go`, which signs people in by emailed link and holds the
+`owned` seam. A `bare` app is smaller: a page and a route on Go's
+`http.ServeMux`, with no database.
 
 ## main.go
 
@@ -192,8 +194,8 @@ and [MCP](/docs/mcp) cover the rest.
 2. Every update names its columns in `.Select(...)`.
 3. Every page and form is in the guarded group in `Routes`.
 4. Signed-in pages are behind the session guard.
-5. One `migrate.Apply` runs at boot, and `make ci` runs
-   `rastrillo migration check`.
+5. One `migrate.Apply` runs at boot, and `TestModelsMatchMigrations`
+   passes.
 6. `options.DBPath` is blanked before `Serve`.
 7. Not-found and not-yours both answer 404.
 8. `make ci` passes, `make code` and `make routes` included.

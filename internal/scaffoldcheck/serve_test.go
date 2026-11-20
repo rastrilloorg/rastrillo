@@ -22,10 +22,10 @@ columns = [{ field = "Title" }]
 basics = [{ name = "Title", required = true }]
 `
 
-// bearerTest is written into the app's test package. The API needs no
+// bearerTest is written beside the app's code. The API needs no
 // Origin, because the token is its only credential, and refuses a
 // request without one.
-const bearerTest = `package apiapptest
+const bearerTest = `package apiapp_test
 
 import (
 	"context"
@@ -138,9 +138,9 @@ func TestTheAPIAnswersABearerTokenWithoutAnOrigin(t *testing.T) {
 	run(t, directory, rastrilloBinary, "generate")
 	bootWithTheEventLog(t, filepath.Join(directory,
 		"internal", "apiapp", "migrations.go"))
-	write(t, filepath.Join(directory, "internal", "apiapptest",
+	write(t, filepath.Join(directory, "internal", "apiapp",
 		"bearer_extra_test.go"), bearerTest)
-	runTests(t, directory, "./internal/apiapptest/",
+	runTests(t, directory, "./internal/apiapp/",
 		"TestABearerTokenNeedsNoOrigin")
 }
 
@@ -186,9 +186,9 @@ func bootWithTheEventLog(t *testing.T, path string) {
 	write(t, path, edited)
 }
 
-// languageTest is written into the app's test package. It serves the app
+// languageTest is written beside the app's code. It serves the app
 // as main.go does, under a base path, and asks for the Spanish home.
-const languageTest = `package langapptest
+const languageTest = `package langapp_test
 
 import (
 	"html/template"
@@ -289,7 +289,7 @@ func TestPagesRenderInTheRequestsLanguage(t *testing.T) {
 	write(t, filepath.Join(directory, "manifest", "app.toml"),
 		"locales = [\"en\", \"es\"]\ndefault_locale = \"en\"\n")
 	run(t, directory, rastrilloBinary, "generate")
-	write(t, filepath.Join(directory, "internal", "langapptest",
+	write(t, filepath.Join(directory, "internal", "langapp",
 		"language_extra_test.go"), languageTest)
 	write(t, filepath.Join(directory, "internal", "langapp",
 		"refusal_extra_test.go"), refusalTest)
@@ -298,9 +298,9 @@ func TestPagesRenderInTheRequestsLanguage(t *testing.T) {
 		"TestARefusalRendersTheErrorPage")
 }
 
-// csrfTest is written into the app's test package: a form POST from
+// csrfTest is written beside the app's code: a form POST from
 // another origin to a page is refused, and one from the app's own is not.
-const csrfTest = `package %[1]stest
+const csrfTest = `package %[1]s_test
 
 import (
 	"net/http"
@@ -341,10 +341,10 @@ func TestPagesRefuseACrossOriginForm(t *testing.T) {
 			addHomeForm(t, filepath.Join(directory,
 				"internal", variant.name, "routes.go"))
 		}
-		write(t, filepath.Join(directory, "internal", variant.name+"test",
+		write(t, filepath.Join(directory, "internal", variant.name,
 			"csrf_extra_test.go"),
 			fmt.Sprintf(csrfTest, variant.name, variant.path))
-		runTests(t, directory, "./internal/"+variant.name+"test/",
+		runTests(t, directory, "./internal/"+variant.name+"/",
 			"TestACrossOriginFormIsRefused")
 	}
 }
