@@ -47,8 +47,8 @@ var taken = strings.Fields(`
 	TestBareAssetNameStaysFresh TestBrowserWalk
 	TestErrorPageRendersFrameworkPartial
 	TestIndexLinksFingerprintedStylesheet TestIndexRenders testing
-	TestMain TestModelsMatchMigrations testOrigin TestOverviewRenders
-	TestPerfBoot TestPerfScreens
+	TestMain TestMenuRenders TestModelsMatchMigrations testOrigin
+	TestOverviewRenders TestPerfBoot TestPerfScreens
 	TestSignInByEmailedLink TestTokenPageShowsANewTokenOnce
 	TestUnknownPathIs404 TestVendoredAssetsMatchTheLibrary time title
 	token tokenPattern ui url variable vendored vendoredIsMine

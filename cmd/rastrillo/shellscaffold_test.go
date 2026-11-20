@@ -168,11 +168,15 @@ func TestDeletingLightJSIsRecordedWhereTheFailureSays(t *testing.T) {
 
 // A sidebar or console app opens on a phone to its index, whose content
 // is hidden there, so the scaffold writes an index with one section in
-// its nav and the section page it opens, with its way back. The other
+// its nav and the section page it opens, with its way back. The topbar's
+// second page is its Menu page (TestNewTopbarWritesAMenuPage). The other
 // shells keep today's one page.
 func TestNewWritesAnIndexAndASectionForTheShellsThatHaveOne(t *testing.T) {
 	t.Chdir(t.TempDir())
 	for _, shell := range ui.LayoutNames() {
+		if shell == "topbar" {
+			continue
+		}
 		name := "app" + shell
 		if err := runNew([]string{"--shell=" + shell, name}); err != nil {
 			t.Fatalf("%s: runNew: %v", shell, err)
@@ -183,7 +187,7 @@ func TestNewWritesAnIndexAndASectionForTheShellsThatHaveOne(t *testing.T) {
 		handlers := readScaffold(t, dir, "handlers.go")
 		render := readScaffold(t, dir, "render.go")
 		overview, err := os.ReadFile(filepath.Join(dir, "templates", "overview.html"))
-		if !twoPageShells[shell] {
+		if _, twoPages := twoPageShells[shell]; !twoPages {
 			if err == nil || strings.Contains(app, "/overview") || index != indexTemplate {
 				t.Errorf("%s: the one-page shells keep today's single page", shell)
 			}

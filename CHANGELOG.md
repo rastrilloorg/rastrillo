@@ -69,6 +69,50 @@ lacks conditional mediation (`conditionalAvailable()`) or when a
 `legacyRpId` is set. A call without either is the same request as
 before.
 
+### Changed: one header row on a phone, and an icon scheme control
+
+`scheme-menu` is now three icon buttons, Light (sun), Dark (moon) and
+System (monitor), instead of a dropdown of words. A layout from an
+earlier release shows the icons where its dropdown was. It no longer
+takes `MenuGroup`; callers that pass it have that argument ignored.
+`Taround` is a new locale template function. An app that defines its
+own `Taround` must rename it.
+
+On a phone, the `topbar`, `console` and `sidebar` layouts now show one
+header row: the way back, the app's name and the person's avatar. All
+three show the sections as an index page, so no section sits behind a
+Menu button. The avatar opens the account card, which holds who is
+signed in, Appearance, Language and the account links, in that order. An
+app's own `layout.html` does not change. To adopt the new one, follow
+"Upgrading to one header row" in the templates guide.
+
+- In `topbar`, the index is a Menu page at `/menu`, marked with
+  `view`, and every other page goes up to it. `rastrillo new --shell=topbar` writes `templates/menu.html`, the
+  `/menu` route and its action.
+- A new `upLabel` block names a page's parent when it is not the
+  index. `topbar` gains `profile`, `view` and `up`, so the three
+  shells now share one set of blocks.
+- `topbar` loads `shell.js` and `shell.css` instead of `transition.js`,
+  and `Serve`'s speculation rules prerender its navigation as they do
+  for `sidebar` and `console`.
+- `locale-menu` takes `Card`: inside the account card it is a Language
+  row whose list opens as a sheet on a phone.
+- `rastrillo doctor` names a layout that still has the old phone menu
+  card or back strip.
+- Under `--auth=magic`, Sign in and Sign out are the account card's
+  last item. The card's Sign out form opts out of `busy.js` with
+  `data-busy="false"`. A page whose only form opts out of `busy.js` no
+  longer loads it.
+- `ui.Attributes` reads the attributes of every start tag in a
+  template, with comments left out.
+- Rastrillo pins Fiesta 1.4.0.
+- The components gallery and its shell demos use the one header row,
+  and the `topbar` demo has a Menu page. `ui.Styleguide`'s shell
+  samples are Fiesta 1.4.0's.
+- `examples/blog` is a `topbar` app with a Menu page, written without
+  scripts. Its `go.mod` has `ignore ./actions`, because `go mod tidy`
+  cannot read an action directory named `[id]` as a package.
+
 ### Added: instances under a root app
 
 - `instance` reads from the environment whether an app runs under a root app or standalone, and refuses to start if neither or both are set.

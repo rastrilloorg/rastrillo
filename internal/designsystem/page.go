@@ -920,13 +920,6 @@ func localeLinks(mount, theme, locale, file string) []localeLink {
 }
 
 func shellViews(mount, theme, locale string) []shellView {
-	blurbs := map[string]string{
-		"column":  "The plain centred page every scaffolded app starts on: a skip link, a title, and the content column.",
-		"topbar":  "Brand, navigation and an account menu across the top, with a footer under the page.",
-		"sidebar": "A navigation rail beside the page. On a phone, the rail is an index page and every other page has a back control. No JavaScript needed.",
-		"console": "A bar across the top and a navigation rail down the side at once, the shape most admin consoles are. On a phone, the bar's menu opens as a card and the rail is an index page. No JavaScript needed.",
-		"stage":   "One card in the middle of a full-page backdrop, for a screen that stands alone. The sign-in screen is what it is for.",
-	}
 	out := make([]shellView, 0, len(ui.LayoutNames()))
 	for _, name := range ui.LayoutNames() {
 		id := anchorID("shell", name)
@@ -935,7 +928,7 @@ func shellViews(mount, theme, locale string) []shellView {
 			Name:  name,
 			ID:    id,
 			Href:  href,
-			Blurb: proseIn(locale, blurbs[name]),
+			Blurb: proseIn(locale, shellBlurbs[name]),
 			// The one preview that frames a page of this tree rather
 			// than a document written for it: the shell demos already
 			// exist, at their own URLs, and framing the real file is
@@ -960,17 +953,12 @@ func shellHref(mount, theme, locale, shell string) string {
 	return mount + "/" + theme + "/" + locale + "/shells/" + shell + ".html"
 }
 
-// shellPageHref is the content page of a shell demo that has an index
-// (sidebar and console): shells/<shell>.html is the index, the address
-// the gallery has always linked, and this is the page its nav opens.
+// shellPageHref is the content page of the sidebar and console demos:
+// shells/<shell>.html is the index, the address the gallery has always
+// linked, and this is the page its nav opens.
 func shellPageHref(mount, theme, locale, shell string) string {
 	return mount + "/" + theme + "/" + locale + "/shells/" + shell + "-page.html"
 }
-
-// shellHasIndex is the shells whose layout has a view block: their demo
-// is two documents, the index and a content page, because a phone shows
-// one or the other and one document cannot be both.
-func shellHasIndex(shell string) bool { return shell == "sidebar" || shell == "console" }
 
 // modalHref is the modal demo's address — which is the whole point of
 // the demo. A modal is its own URL, so the sample that shows one open
@@ -1991,9 +1979,7 @@ const profileMarkup template.HTML = `<span rst-person-av aria-hidden="true">G</s
 // renderShell builds one shell's full-page demo: ui.Layout's own
 // template, its chrome blocks filled with sample links so the frame is
 // visible, and a small representative screen in the content hole. The
-// result is keyed by file name under shells/: <shell>.html, and for a
-// shell with an index also <shell>-page.html, the content page its nav
-// opens, whose back control returns to <shell>.html#nav-posts.
+// result is keyed by file name under shells/, as shellDocs names them.
 func renderShell(mount, theme, locale, shell string) (map[string][]byte, error) {
 	src, ok := ui.Layout(shell)
 	if !ok {
@@ -2032,19 +2018,7 @@ func renderShell(mount, theme, locale, shell string) (map[string][]byte, error) 
 		Brand:    localData(locale, galleryBrand).(map[string]any),
 		PageHref: "#",
 	}
-	type doc struct {
-		file string
-		data shellData
-	}
-	docs := []doc{{shell + ".html", data}}
-	if shellHasIndex(shell) {
-		index, page := data, data
-		index.View, index.Up = "index", shellHref(mount, theme, locale, shell)
-		page.View, page.Up = "page", shellHref(mount, theme, locale, shell)+"#nav-posts"
-		index.PageHref = shellPageHref(mount, theme, locale, shell)
-		page.PageHref = index.PageHref
-		docs = []doc{{shell + ".html", index}, {shell + "-page.html", page}}
-	}
+	docs := shellDocs(data, mount, theme, locale, shell)
 	out := make(map[string][]byte, len(docs))
 	for _, d := range docs {
 		// A clone per document: html/template refuses to clone a tree
@@ -2292,8 +2266,7 @@ const demoTemplate = `
 {{define "up"}}{{.Up}}{{end}}
 {{define "brand"}}<a rst-shell-brand href="{{.Home}}">Harbour</a>{{end}}
 {{define "nav"}}<a id="nav-dashboard" href="{{.Dashboard}}"{{if or (eq .View "index") (eq .View "dashboard")}} aria-current="page"{{end}}>{{P "Dashboard"}}</a><a id="nav-requests" href="{{.Requests}}"{{if or (eq .View "requests") (eq .View "request")}} aria-current="page"{{end}}>{{P "Requests"}}</a>{{end}}
-{{define "locale"}}<details rst-dropdown rst-locale name="rst-menus"><summary>{{T "rastrillo.ui.shell_language"}}<span rst-caret aria-hidden="true">{{icon "chevron-down"}}</span></summary><div rst-dropdown-menu>{{range .Locales}}<a href="{{.Href}}" lang="{{.Code}}" dir="{{.Dir}}"{{if .Current}} aria-current="true"{{end}}>{{.Name}}</a>{{end}}</div></details>{{end}}
-{{/* The scheme block renders nothing here on purpose: the shipped default posts to /_theme, and this tree is static. The gallery's own toggle in the bar paints every frame instead. The body is an if-false action and not empty because text/template ignores an empty redefinition of a block that has a body. */}}{{define "scheme"}}{{if false}}{{.}}{{end}}{{end}}
+{{define "locale"}}` + languageRow + noScheme + `{{end}}
 {{define "profile"}}<span rst-person-av aria-hidden="true">A</span><span rst-person-name>Ada Lovelace</span><span rst-person-email>ada@example.com</span>{{end}}
 {{define "content"}}
 {{if or (eq .View "index") (eq .View "dashboard")}}
@@ -2505,14 +2478,14 @@ const startedLead = "Rastrillo apps get Fiesta's stylesheets and " +
 // The frame is the sidebar layout an app is scaffolded with
 // (ui/layouts/sidebar.html), attribute for attribute: below 800px the
 // Overview is the index and every other page a content page with the
-// shell's back control, and shell.js and shell.css give the slide, Back
+// shell's up link, and shell.js and shell.css give the slide, Back
 // through history and the focus return with nothing written here. Two
 // departures, each for a reason: the index's pieces are on the Overview
 // only, and the controls live in a bar pinned over main on a wide
-// screen and, on a phone, in a display settings menu at the top of
-// every page (the index's header row, a content page's back strip), so
-// every page writes them twice. That is dogfooding with a point: the
-// shell is one of the things this page documents.
+// screen and, on a phone, in a display settings menu at the end of
+// every page's header row, so every page writes them twice. That is
+// dogfooding with a point: the shell is one of the things this page
+// documents.
 // viewTemplate is the preview widget, once, used by every example on
 // the page. The tabs run Desktop, Mobile, HTML, Template: from the
 // picture to the markup it is, to the call that writes it. A source tab
@@ -2575,13 +2548,24 @@ const viewTemplate = `{{define "ds-view"}}<div class="ds-view{{.Class}}" style="
 const cogIcon = `<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">` +
 	`<path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/></svg>`
 
-// pageTemplate is every gallery page. The Overview's phone heading
-// leaves the shell's brand span empty and puts the gallery's name in
-// the title span after it. The shell hides a brand span with no element
-// in it, as a blank brand, and shows the title instead; the name written
-// as bare text in the brand span was hidden that way, and the phone
-// index had no visible heading. A brand link would add a tab stop that
-// goes to the page it is on.
+// pageTemplate is every gallery page, the sidebar shell in its one-row
+// shape. On a phone every page has one header row, as the layouts do:
+// the up link at the inline start (written on the Overview too, where
+// the shell hides it), the gallery's name in the middle and the display
+// settings menu at the inline end, where an app's avatar sits. The bar
+// holds only the up link; the name and the menu are the rail's, and
+// the shell's layout and gallery.css place them in the row.
+//
+// The Overview's name is its heading, which leaves the shell's brand
+// span empty and puts the gallery's name in the title span after it.
+// The shell hides a brand span with no element in it, as a blank
+// brand, and shows the title instead; the name written as bare text in
+// the brand span was hidden that way, and the phone index had no
+// visible heading. A brand link would add a tab stop that goes to the
+// page it is on. A content page's name is the brand link to the
+// Overview, which the desktop's rail does not show (the pinned bar has
+// it). The menu comes straight after the name, so a keyboard reads the
+// row in the order it is drawn.
 const pageTemplate = `{{define "ds-controls"}}<nav rst-seg-tabs aria-label="{{P "Theme"}}">{{range .Themes}}<a href="{{.Href}}"{{if .Current}} aria-current="page"{{end}}>{{.Label}}</a>{{end}}</nav>
 <div class="ds-scheme" role="group" aria-label="{{P "Colour scheme"}}">{{range .Schemes}}<button type="button" data-ds-scheme="{{.Value}}" aria-pressed="{{.Pressed}}">{{.Label}}</button>{{end}}</div>
 <details rst-dropdown rst-locale name="rst-menus">
@@ -2606,11 +2590,12 @@ const pageTemplate = `{{define "ds-controls"}}<nav rst-seg-tabs aria-label="{{P 
 <body>
 <div rst-shell-sidebar="{{if .Rows}}index{{else}}page{{end}}">
 <a rst-skip href="#main">{{T "rastrillo.ui.shell_skip"}}</a>
-{{with .Up}}<div rst-shell-back><a href="{{.}}" rel="up" aria-label="{{Tf "rastrillo.ui.shell_up" "name" (T "rastrillo.ui.shell_up_label")}}">{{T "rastrillo.ui.shell_up_label"}}</a>{{template "ds-prefs" $.Bar}}</div>
-{{end}}<aside class="ds-rail" rst-shell-rail>
+<header rst-shell-bar><a rst-shell-up href="{{or .Up .Home}}" rel="up" aria-label="{{Tf "rastrillo.ui.shell_up" "name" (T "rastrillo.ui.shell_up_label")}}">{{icon "chevron-left"}}{{T "rastrillo.ui.shell_up_label"}}</a></header>
+<aside class="ds-rail" rst-shell-rail>
 {{if .Rows}}<h1 rst-shell-title><span></span><span>{{P "Rastrillo components"}}</span></h1>
-{{template "ds-prefs" .Bar}}
-<p class="ds-index-lead">{{P "Rastrillo components aim to be a starter framework for any app to get a consistent, polished, accessible UI with no or minimal JavaScript dependence, available in multiple languages, and using clean, modern HTML and CSS. They're designed to be delightful to use with or without LLM assistance, and easily remixable. Each one is shown here with the call you write beside what it renders; the look comes from Fiesta, which has its own design system."}}</p>
+{{else}}<a rst-shell-brand href="{{.Home}}">{{P "Rastrillo components"}}</a>
+{{end}}{{template "ds-prefs" .Bar}}
+{{if .Rows}}<p class="ds-index-lead">{{P "Rastrillo components aim to be a starter framework for any app to get a consistent, polished, accessible UI with no or minimal JavaScript dependence, available in multiple languages, and using clean, modern HTML and CSS. They're designed to be delightful to use with or without LLM assistance, and easily remixable. Each one is shown here with the call you write beside what it renders; the look comes from Fiesta, which has its own design system."}}</p>
 {{end}}  <search class="ds-search">
     <label class="rst-sr-only" for="ds-filter">{{P "Filter"}}</label>
     {{icon "search"}}<input id="ds-filter" type="search" placeholder="{{P "Filter"}}" autocomplete="off" aria-controls="ds-nav" data-ds-filter>
@@ -2803,15 +2788,15 @@ const backLinkStyle = `align-items: center; display: inline-flex; min-block-size
 // own, below.
 const shellTemplate = `
 {{define "view"}}{{if eq .View "index"}}index{{else}}page{{end}}{{end}}
-{{define "up"}}{{.Up}}{{end}}
+{{define "up"}}{{with .Up}}{{.}}{{else}}{{$.Index}}{{end}}{{end}}
 {{define "brand"}}<a rst-shell-brand href="{{.Index}}">rastrillo</a>{{end}}
-{{define "nav"}}<a id="nav-posts" href="{{.PageHref}}" aria-current="page">{{P "Posts"}}</a><a id="nav-comments" href="{{.PageHref}}">{{P "Comments"}}</a><a id="nav-settings" href="{{.PageHref}}">{{P "Settings"}}</a>{{end}}
+{{define "nav"}}<a id="nav-posts" href="{{.PageHref}}"{{if not (and (eq .Name "topbar") (eq .View "index"))}} aria-current="page"{{end}}>{{P "Posts"}}</a><a id="nav-comments" href="{{.PageHref}}">{{P "Comments"}}</a><a id="nav-settings" href="{{.PageHref}}">{{P "Settings"}}</a>{{end}}
 {{define "account"}}{{.Account}}{{end}}
 {{define "profile"}}{{.Profile}}{{end}}
-{{define "locale"}}<details rst-dropdown rst-locale name="rst-menus"><summary>{{T "rastrillo.ui.shell_language"}}<span rst-caret aria-hidden="true">{{icon "chevron-down"}}</span></summary><div rst-dropdown-menu>{{range .Locales}}<a href="{{.Href}}" lang="{{.Code}}" dir="{{.Dir}}"{{if .Current}} aria-current="true"{{end}}>{{.Name}}</a>{{end}}</div></details>{{end}}
-{{/* The scheme block renders nothing here on purpose: the shipped default posts to /_theme, and this tree is static. The gallery's own toggle in the bar paints every frame instead. The body is an if-false action and not empty because text/template ignores an empty redefinition of a block that has a body. */}}{{define "scheme"}}{{if false}}{{.}}{{end}}{{end}}
+{{define "locale"}}` + shellLocale + noScheme + `{{end}}
 {{define "foot"}}<a style="` + backLinkStyle + `" href="{{.Index}}">{{P "Back to Rastrillo components"}}</a>{{end}}
-{{define "content"}}
+{{define "content"}}{{if and (eq .Name "topbar") (eq .View "index")}}` +
+	topbarMenuContent + `{{else}}
 {{template "page-header" dict "Title" (P "Posts") "Sub" (P "A representative screen, so the chrome around it has something to frame.") "ActionHref" "#" "ActionLabel" (P "Write a post") "ActionIcon" "plus"}}
 <div rst-box-head><h2>{{P "This page"}}</h2><a rst-btn href="{{.Index}}">{{P "Back to Rastrillo components"}}</a></div>
 <section rst-box><p>{{P "This is the {shell} shell, one of the shells ui.Layout ships. A screen is a column: a page header, then a section heading and its card, then the next one. Everything you see here is the shell, tokens.css and two partials." "shell" .Name}}</p></section>
@@ -2822,7 +2807,7 @@ const shellTemplate = `
 <div rst-lrow><a class="rst-nm" href="#">{{P "Why we moved off the old runner"}}<small>{{P "Draft"}}</small></a><span class="rst-m-hide">{{template "status-pill" dict "Label" (P "Draft")}}</span><span></span></div>
 </div>
 {{sample "<p rst-count-line>Displaying <strong>1–2</strong> of <strong>412</strong></p>"}}
-{{end}}
+{{end}}{{end}}
 `
 
 // stageShellTemplate fills the stage shell's blocks for its demo: the

@@ -90,7 +90,8 @@ const schemeStateJS = `(() => {
 })()`
 
 // With scripts on, a choice applies in place: fiesta.js changes the
-// attribute, closes the menu and navigates nowhere, and rastrillo.js
+// attribute and navigates nowhere (the control is three buttons in the
+// footer, with no menu to close), and rastrillo.js
 // writes the cookie from its rst-scheme event. A reload then shows the
 // server painted the same scheme from the cookie — neither script
 // applies the cookie on load, so after a reload the attribute can only
@@ -104,7 +105,6 @@ func TestTheSchemeChoicePersistsWithFiestaJS(t *testing.T) {
 		t.Helper()
 		mustRun(t, ctx,
 			chromedp.Evaluate[chromedp.Void](`window.__mark = 1; true`),
-			chromedp.Click(chromedp.CSS(`[rst-scheme] > summary`)),
 			chromedp.WaitVisible(chromedp.CSS(fmt.Sprintf(`[rst-scheme] input[value=%q] ~ button`, scheme))),
 			chromedp.Click(chromedp.CSS(fmt.Sprintf(`[rst-scheme] input[value=%q] ~ button`, scheme))),
 			chromedp.Sleep(150*time.Millisecond),
@@ -148,7 +148,7 @@ func TestTheSchemeChoicePersistsWithFiestaJS(t *testing.T) {
 	}
 }
 
-// axe over the page with the switch open, in both schemes, held to
+// axe over the page with the switch showing, in both schemes, held to
 // WCAG 2.2 AA the way internal/designsystem's gate holds the gallery.
 // The engine is the vendored copy in testdata; it is never shipped.
 func TestTheSchemeSwitchPassesAxeInBothSchemes(t *testing.T) {

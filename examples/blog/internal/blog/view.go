@@ -179,8 +179,9 @@ func (a *App) Middleware(next http.Handler) http.Handler {
 // page-name default for those.
 type pageData struct {
 	ui.Localized
-	Head Head
-	Data any
+	Head   Head
+	Chrome Chrome
+	Data   any
 }
 
 // notAViewMsg is Appendix C.2's op.render.not_a_view, verbatim: data
@@ -215,7 +216,8 @@ func (a *App) Render(ctx *rastrillo.Ctx, w http.ResponseWriter, page string, sta
 	if page == "posts/form" {
 		data = formStripData(ctx, data, loc)
 	}
-	pd := pageData{Localized: loc, Head: headFor(page, data), Data: data}
+	pd := pageData{Localized: loc, Head: headFor(page, data),
+		Chrome: chromeFor(page), Data: data}
 	var buf bytes.Buffer
 	if err := a.pages.Execute(&buf, page, pd); err != nil {
 		Fail(ctx, w, "rendering "+page, err)

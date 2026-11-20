@@ -8,6 +8,7 @@ refuse "no hand-rolled scheme toggle" 'prefers-color-scheme' 'localStorage' 'mat
 # itself proves nothing about the renderer.
 present "the shell's scheme-menu is still there" 'scheme-menu' internal
 # Without Scheme in the page data the layout cannot write data-theme,
-# and a chosen Dark paints System on every reload.
-present "render still passes Scheme to the layout" 'page\[["`]Scheme["`]\]|["`]Scheme["`]\]? *=|["`]?Scheme["`]? *:' internal
+# and a chosen Dark paints System on every reload. Any map indexed by
+# Scheme counts: the scaffold writes values["Scheme"], values["Base"] =.
+present "render still passes Scheme to the layout" '\[["`]Scheme["`]\]|["`]?Scheme["`]? *:' internal
 exit $status

@@ -165,23 +165,29 @@ func TestBarePassesItsOwnTests(t *testing.T) {
 	}
 }
 
-// The sidebar and console shells hide the index's content on a phone, so
-// bare gives them the same second page single does; its route, handler
-// and test come with it.
-func TestBareSidebarShellHasItsSection(t *testing.T) {
+// The sidebar, console and topbar shells have a phone index, so bare
+// gives them the same second page single does, the section or the
+// Menu page; its route, handler and test come with it.
+func TestBareTwoPageShellsHaveTheirSecondPage(t *testing.T) {
 	if testing.Short() {
 		t.Skip("scaffolds, tidies and tests a whole app")
 	}
-	setSandboxGoEnv(t)
-	t.Chdir(t.TempDir())
-	dir := scaffoldWithReplace(t, "dash", "--scaffold", "bare",
-		"--shell=sidebar")
-	out, err := goTestIn(dir, "-v", "./...")
-	if err != nil {
-		t.Fatalf("go test ./...:\n%s", out)
-	}
-	if !strings.Contains(out, "--- PASS: TestOverviewRenders") {
-		t.Errorf("TestOverviewRenders did not run and pass:\n%s", out)
+	for shell, test := range map[string]string{
+		"sidebar": "TestOverviewRenders", "topbar": "TestMenuRenders",
+	} {
+		t.Run(shell, func(t *testing.T) {
+			setSandboxGoEnv(t)
+			t.Chdir(t.TempDir())
+			dir := scaffoldWithReplace(t, "dash", "--scaffold", "bare",
+				"--shell="+shell)
+			out, err := goTestIn(dir, "-v", "./...")
+			if err != nil {
+				t.Fatalf("go test ./...:\n%s", out)
+			}
+			if !strings.Contains(out, "--- PASS: "+test) {
+				t.Errorf("%s did not run and pass:\n%s", test, out)
+			}
+		})
 	}
 }
 

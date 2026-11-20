@@ -49,12 +49,14 @@
      are the rail beside the page. */}}
 <div rst-shell-sidebar="{{block "view" .}}page{{end}}">
 <a rst-skip href="#main">{{T $L "rastrillo.ui.shell_skip"}}</a>
-{{/* The back control: first after the skip link, so focus order is what
-     is seen; a link, not a script; its visible word inside its
-     accessible name (WCAG 2.5.3); rel="up" for tools that read it. An
-     app that wants its name on it ("‹ Ledger") edits this line, which is
-     the app's own from the moment it is scaffolded. */}}
-<div rst-shell-back><a href="{{block "up" .}}/{{end}}" rel="up" aria-label="{{Tf $L "rastrillo.ui.shell_up" "name" (T $L "rastrillo.ui.shell_up_label")}}">{{T $L "rastrillo.ui.shell_up_label"}}</a></div>
+{{/* The header row on a phone, holding only the up link: first after
+     the skip link, so focus order is what is seen; a link, not a
+     script; its visible word inside its accessible name (WCAG 2.5.3);
+     rel="up" for tools that read it. tokens.css places the rail's name
+     and the rail foot's avatar into the same row. An app that wants its
+     name on it ("‹ Ledger") edits this line, which is the app's own
+     from the moment it is scaffolded. */}}
+<header rst-shell-bar><a rst-shell-up href="{{block "up" .}}/{{end}}" rel="up" aria-label="{{Tf $L "rastrillo.ui.shell_up" "name" (T $L "rastrillo.ui.shell_up_label")}}">{{icon "chevron-left"}}{{T $L "rastrillo.ui.shell_up_label"}}</a></header>
 <aside rst-shell-rail>
 {{/* The index's heading is the app's name: the brand, in a span of its
      own, then the page's title for an app whose brand renders nothing

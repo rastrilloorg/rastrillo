@@ -1047,6 +1047,8 @@ func TestTreeShapeIsComplete(t *testing.T) {
 			for _, shell := range []string{"sidebar", "console"} {
 				want = append(want, fmt.Sprintf("%s/%s/shells/%s-page.html", theme, locale, shell))
 			}
+			want = append(want, fmt.Sprintf(
+				"%s/%s/shells/topbar-menu.html", theme, locale))
 			// Every preview file a page's frames name: the shape of the
 			// tree includes them, and the count below stays exact.
 			for _, page := range galleryFiles(theme, locale) {
@@ -1847,8 +1849,8 @@ func TestNoEnglishProseReachesATranslatedPage(t *testing.T) {
 	// is the failure mode it was once extended to fix. Per theme, per
 	// non-English locale: one page per kind, a modal demo, the demo
 	// application's four documents (1 + 3: the 2 counts the modal and
-	// the demo's index), one page per shell and the content pages of
-	// the two shells with an index.
+	// the demo's index), one page per shell, the content pages of the
+	// sidebar and the console and the topbar's Menu page.
 	// The preview files are documents in every language too: one per
 	// preview frame on the English root theme's pages, in every theme
 	// and translated locale.
@@ -1860,7 +1862,11 @@ func TestNoEnglishProseReachesATranslatedPage(t *testing.T) {
 			}
 		}
 	}
-	if want := len(ui.ThemeNames()) * (len(rastrillo.BaseLocales()) - 1) * (len(pageKinds()) + 2 + 3 + len(ui.LayoutNames()) + 2 + perDir); len(names) != want {
+	perLocale := len(pageKinds()) + 2 + 3 + len(ui.LayoutNames()) + 3 +
+		perDir
+	want := len(ui.ThemeNames()) * (len(rastrillo.BaseLocales()) - 1) *
+		perLocale
+	if len(names) != want {
 		t.Errorf("sweeping %d translated pages, want %d", len(names), want)
 	}
 
@@ -4139,7 +4145,10 @@ func TestNoTitleOrStateLabelCarriesAnEmDash(t *testing.T) {
 
 var (
 	shellRoot = regexp.MustCompile(`<div rst-shell-sidebar="([a-z]+)">`)
-	backLink  = regexp.MustCompile(`<a rst-skip href="#main">[^<]*</a>\n<div rst-shell-back><a href="([^"]*)" rel="up" aria-label="([^"]*)">([^<]*)</a>`)
+	backLink  = regexp.MustCompile(`(?s)<a rst-skip href="#main">[^<]*</a>\n` +
+		`<header rst-shell-bar><a rst-shell-up href="([^"]*)" rel="up" ` +
+		`aria-label="([^"]*)">(<svg class="icon".*?</svg>)([^<]*)</a>` +
+		`</header>`)
 	prefsCard = regexp.MustCompile(`(?s)<details rst-dropdown class="ds-prefs" id="ds-prefs" name="ds-prefs"><summary aria-label="([^"]*)">(.*?)</summary><div rst-dropdown-menu>(.*?)</div></details>`)
 	barCtl    = regexp.MustCompile(`(?s)<div class="ds-top__controls">(.*?)</header>`)
 	indexNav  = regexp.MustCompile(`(?s)<nav class="ds-index" rst-shell-nav aria-label="([^"]*)">(.*?)</nav>`)
@@ -4150,7 +4159,13 @@ var (
 // attribute for attribute, so every shell rule in tokens.css and
 // shell.css applies to it and the gallery re-implements none of the
 // phone navigation: the Overview is the index, every other page a
-// content page whose back control comes first after the skip link.
+// content page. Every page is in the one-row shape: right after the
+// skip link, a bar holding only the up link, in the page's language,
+// with the icon set's chevron (on the Overview too, where the shell
+// hides it, and where it goes to the Overview); then the rail opens
+// with the row's name, the Overview's heading on the index and a brand
+// link to the Overview on a content page, and the display settings
+// menu straight after it, so the row reads in the order it is drawn.
 // The index's own pieces are on the Overview alone, because on any
 // other page they would show at no width.
 func TestTheGalleryIsTheShippedShell(t *testing.T) {
@@ -4173,11 +4188,25 @@ func TestTheGalleryIsTheShippedShell(t *testing.T) {
 					t.Errorf("%s: shell root %v, want one rst-shell-sidebar=%q", name, m, want)
 				}
 				backs := backLink.FindAllStringSubmatch(page, -1)
-				if n := strings.Count(page, "<div rst-shell-back>"); index && n != 0 || !index && (n != 1 || len(backs) != 1) {
-					t.Errorf("%s: %d back controls (%d right after the skip link), want %d", name, n, len(backs), map[bool]int{false: 1}[index])
-				} else if !index {
-					if aria := template.HTMLEscapeString(tr("rastrillo.ui.shell_up", "name", label)); backs[0][2] != aria || backs[0][3] != template.HTMLEscapeString(label) {
-						t.Errorf("%s: the back control reads %q named %q, want %q named %q", name, backs[0][3], backs[0][2], label, aria)
+				home := indexHref(mountPath, theme, locale)
+				bars := strings.Count(page, "<header rst-shell-bar>")
+				if bars != 1 || len(backs) != 1 {
+					t.Errorf("%s: %d bars (%d holding the up link right "+
+						"after the skip link), want one",
+						name, bars, len(backs))
+				} else {
+					up := backs[0]
+					aria := template.HTMLEscapeString(
+						tr("rastrillo.ui.shell_up", "name", label))
+					if up[2] != aria ||
+						up[4] != template.HTMLEscapeString(label) {
+						t.Errorf("%s: the up link reads %q named %q, "+
+							"want %q named %q",
+							name, up[4], up[2], label, aria)
+					}
+					if index && up[1] != home {
+						t.Errorf("%s: the Overview's (hidden) up link goes "+
+							"to %q, want the Overview, %q", name, up[1], home)
 					}
 				}
 				for _, piece := range []string{`<h1 rst-shell-title>`, `<p class="ds-index-lead">`, `<nav class="ds-index"`} {
@@ -4185,32 +4214,29 @@ func TestTheGalleryIsTheShippedShell(t *testing.T) {
 						t.Errorf("%s: %s present=%v; it belongs on the Overview and nowhere else", name, piece, !index)
 					}
 				}
-				// The phone's display settings: one menu on every page, in
-				// the index's header row beside the heading, and at the
-				// inline end of a content page's back strip. The foot that
-				// used to hold them on the index is gone.
+				// The phone's display settings: one menu on every page, at
+				// the end of the header row, straight after the row's name.
+				// The foot that used to hold them on the index is gone.
 				if strings.Contains(page, "<div rst-shell-rail-foot") {
 					t.Errorf("%s: the rail still has a foot; the controls are in the display settings menu", name)
 				}
 				if n := strings.Count(page, `class="ds-prefs"`); n != 1 {
 					t.Errorf("%s: %d display settings menus, want one", name, n)
 				}
-				where := `<div rst-shell-back><a `
+				heading := template.HTMLEscapeString(
+					proseIn(locale, galleryName))
+				row := `<aside class="ds-rail" rst-shell-rail>` + "\n"
 				if index {
-					heading := template.HTMLEscapeString(
-						proseIn(locale, galleryName))
-					where = `<h1 rst-shell-title><span></span><span>` +
-						heading + `</span></h1>` + "\n" +
-						`<details rst-dropdown class="ds-prefs"`
+					row += `<h1 rst-shell-title><span></span><span>` +
+						heading + `</span></h1>`
+				} else {
+					row += `<a rst-shell-brand href="` + home + `">` +
+						heading + `</a>`
 				}
-				if !strings.Contains(page, where) {
-					t.Errorf("%s: the display settings menu is not where a phone looks for it (%s)", name, where)
-				}
-				if !index {
-					strip := page[strings.Index(page, "<div rst-shell-back>"):]
-					if strings.Index(strip, `class="ds-prefs"`) > strings.Index(strip, "</div>\n") {
-						t.Errorf("%s: the display settings menu is not inside the back strip", name)
-					}
+				row += "\n" + `<details rst-dropdown class="ds-prefs"`
+				if !strings.Contains(page, row) {
+					t.Errorf("%s: the rail does not open with the row's "+
+						"name and the display settings menu (%s)", name, row)
 				}
 				for _, want := range []string{
 					`<link rel="stylesheet" href="` + assetHref("shell.css") + `">`,

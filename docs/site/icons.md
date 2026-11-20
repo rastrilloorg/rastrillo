@@ -14,17 +14,18 @@ is the reasons.
 
 ## The slugs are Rastrillo's, not a vendor's
 
-Twelve slugs, and they mean the same thing in every app whatever set
+Sixteen slugs, and they mean the same thing in every app whatever set
 backs them:
 
 ```text
-alert-triangle  check  check-circle  chevron-down  help-circle
-info  kebab  menu  plus  search  x  x-circle
+alert-triangle  check  check-circle  chevron-down  chevron-left
+help-circle  info  kebab  menu  monitor  moon  plus  search  sun  x
+x-circle
 ```
 
 `rastrillo.IconSlugs()` is the list.
 
-This matters more than it sounds. Five of the twelve differ from
+This matters more than it sounds. Five of the sixteen differ from
 Lucide's canonical names — `kebab` is Lucide's `ellipsis-vertical`, and
 v1 renamed `check-circle`, `alert-triangle`, `x-circle` and
 `help-circle` — so even the Lucide set carries a translation table.

@@ -788,7 +788,7 @@ func families() []family {
 				},
 				{
 					Name:  "scheme-menu",
-					Blurb: "The colour-scheme switch: a details menu of one-field POST forms to /_theme for Light, Dark and System, so the choice lands in the scheme cookie and the reader stays on the same page.",
+					Blurb: "The colour-scheme switch: three icon buttons for Light, Dark and System, each a one-field POST form to /_theme, so the choice lands in the scheme cookie and the reader stays on the same page.",
 					States: []sample{
 						{State: "Three choices, Dark current.", Data: map[string]any{"Scheme": "dark", "Return": "/"},
 							Note: "This one posts to /_theme, so it needs a server. Its Scheme comes from rastrillo.SchemeFrom(r); ui.ForRequest carries it. The switch in this page's own bar is the gallery's own."},

@@ -35,7 +35,7 @@ Call one as `{{template "name" dict "L" $L "Key" value ...}}`; `L` is the locali
 - **list-row-action**: One list row: the record's name as the primary link, an optional meta line under it, and one secondary action pill on the right. Keys: `ActionAria`, `ActionHref`, `ActionLabel`, `Href`, `LeadInitial`, `Lead`, `Main`, `Menu`, `StatusLabel`, `StatusTone`, `Sub`.
 - **list-search-submit**: The search form's real submit control. Keys: `Label`.
 - **live-head**: The live meta tag; nothing without Live. Keys: `Live`.
-- **locale-menu**: The language switcher: a dropdown of the app's locales, each a POST form to /_locale that stores the choice in a cookie and returns to the same path under the new prefix. Keys: `Action`, `Items[]` (Code, Current, Name), `Return`.
+- **locale-menu**: The language switcher: the app's locales, each a POST form to /_locale that stores the choice in a cookie and returns to the same path under the new prefix. Keys: `Action`, `Card`, `Items[]` (Code, Current, Name), `Return`.
 - **media-grid**: A grid of image tiles, for an app's Images page: an even 4:3 frame on every tile, the name under it on one line, the description under that on two, and one line of facts the caller formats. Keys: `Items[]` (Alt, Desc, Fit, Height, Href, Menu, Meta, Name, Select, Selected, Src, Width), `SelectName`.
 - **meter**: A capacity bar with its number: 412/500 next to a 4px fill. Keys: `Percent`, `Text`.
 - **notice**: A one-line calm confirmation; renders nothing when empty. Takes a value, not a dict: `{{template "notice" .Message}}`.
@@ -44,7 +44,7 @@ Call one as `{{template "name" dict "L" $L "Key" value ...}}`; `L` is the locali
 - **person**: Initials avatar + name + email, the identity cell for record types that are people; Large is the Show-header size. Keys: `Email`, `Href`, `Initial`, `Large`, `Name`.
 - **region:notice**: Notice — the flash, always on the page for live.js to fill. Keys: `Notice`.
 - **row-menu**: A row's secondary actions behind a kebab, in a native <details> in the shared menu group, so opening one closes any other menu, with no script. Keys: `Name`.
-- **scheme-menu**: The colour-scheme switch, built as locale-menu is: POST forms to /_theme for Light, Dark and System, storing the choice in a cookie and returning to the same page. Keys: `Action`, `Return`, `Scheme`.
+- **scheme-menu**: The colour-scheme control: three icon buttons, Light (sun), Dark (moon) and System (monitor), each a one-field POST form to /_theme that stores the choice in a cookie and returns to the same page. Keys: `Action`, `Card`, `Return`, `Scheme`.
 - **seg-tabs**: A segmented control of server-rendered links: edit-form Basics/Advanced (each tab its own form, so one tab's save can never clobber the other's fields) and list scope-switching. Keys: `Items[]` (Current, Href, Label), `Label`.
 - **signin**: The shipped sign-in screen: one card, brand at the start and the way in at the end. Keys: `Brand`, `Preview`, `State`.
 - **signin-app-problem**: Part of signin. Keys: `Focus`, `State`.

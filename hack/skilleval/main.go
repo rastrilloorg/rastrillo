@@ -316,7 +316,8 @@ func preflight(ctx context.Context, c config, bin, export, vdir string) error {
 // to the zero pseudo-version because the scaffold's own version names
 // a module-cache copy: a baseline agent read go.mod, opened that older
 // copy, and followed a SKILL.md that predated the feature it was asked
-// to build.
+// to build. new compiled the templates against the version it resolved,
+// not the export, so they are compiled again once the export is in.
 func scaffold(ctx context.Context, bin, export, dir, appName string, newArgs []string, logf *os.File) (string, error) {
 	app := filepath.Join(dir, appName)
 	for _, step := range [][]string{
@@ -324,6 +325,7 @@ func scaffold(ctx context.Context, bin, export, dir, appName string, newArgs []s
 		{app, "go", "mod", "edit", "-replace", "amadan.net/rastrillo/rastrillo=" + export,
 			"-require", "amadan.net/rastrillo/rastrillo@v0.0.0-00010101000000-000000000000"},
 		{app, "go", "mod", "tidy"},
+		{app, bin, "generate"},
 		{app, "git", "init", "-q"},
 		{app, "git", "add", "-A"},
 		{app, "git", "-c", "user.name=skilleval", "-c", "user.email=skilleval@localhost", "-c", "core.hooksPath=/dev/null", "-c", "commit.gpgsign=false", "commit", "-qm", "scaffold"},

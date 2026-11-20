@@ -279,6 +279,9 @@ var floorElsewhere = map[string]string{
 	"[rst-shell-profile][open] > summary": "the same avatar, open",
 	"[rst-shell-nav] > a":                 "the phone index's rows are 3rem, over the floor, in their own query",
 	"[rst-shell-back] > a":                "its own 2.75rem height is over the floor; only its width reads the token",
+	`[rst-scheme~="icons"] button`: "drawn small, a segment of a menu " +
+		"row's control; its tap is its ::after, inset by " +
+		"(100% - var(--rst-target)) / 2 each way",
 }
 
 // withoutTouchQueries is css with every touch query, header, braces and
@@ -359,6 +362,8 @@ var tapInventory = []tapEntry{
 	{"[rst-shell-profile] > summary", "Shell: the profile menu's avatar", "rst-shell-profile", "elsewhere:TestTheProfileMenuOnThePhoneIndex"},
 	{"[rst-shell-profile][open] > summary", "Shell: the open profile menu's avatar", "rst-shell-profile", "elsewhere:TestTheProfileMenuOnThePhoneIndex"},
 	{"[rst-shell-back] > a", "Shell: the back control", "rst-shell-back", "narrow:[rst-shell-back] > a"},
+	{`[rst-scheme~="icons"] button`, "Scheme control: the icon buttons",
+		`rst-scheme="icons"`, `[rst-scheme~="icons"] button`},
 	{"[rst-shell-nav] > a", "Shell: the index rows (3rem)", "rst-shell-nav", "elsewhere:TestTheIndexRowsRoundEachRunOfLinks"},
 }
 
@@ -387,6 +392,9 @@ var iconFree = map[string]string{
 	"[rst-shell-profile][open] > summary": "an avatar, which is not an icon",
 	"[rst-shell-menu][open] > summary":    "the same summary as [rst-shell-menu] > summary, open",
 	"[rst-shell-nav] > a":                 "the index rows, which [rst-shell-nav] a names",
+	`[rst-scheme~="icons"] button`: "its icon is sized by " +
+		"[rst-scheme] button, which the icon rule names and these " +
+		"buttons match",
 }
 
 // TestEveryControlSizesTheIconInIt holds the two lists together: an

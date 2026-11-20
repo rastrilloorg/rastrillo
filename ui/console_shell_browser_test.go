@@ -170,16 +170,14 @@ const consoleControlCSS = `
   }
 }`
 
-// consolePage renders the console shell with a given nav, direction
-// and extra defines (the view, say), and returns the page and its
-// control twin.
+// consolePage renders the console shell as 0.37 shipped it (oldLayout:
+// the Menu card and the back strip, which an app's own layout.html
+// still has and Fiesta still draws) with a given nav, direction and
+// extra defines (the view, say), and returns the page and its control
+// twin. The one-row console is phone_shells_browser_test.go's.
 func consolePage(t *testing.T, nav, dir string, defs ...string) (page, control string) {
 	t.Helper()
-	src, ok := Layout("console")
-	if !ok {
-		t.Fatal("no console layout")
-	}
-	return consolePageFrom(t, src, nav, dir, defs...)
+	return consolePageFrom(t, oldLayout(t, "console"), nav, dir, defs...)
 }
 
 // legacyConsolePage is consolePage through the console layout as it was

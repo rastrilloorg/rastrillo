@@ -31,16 +31,17 @@ func profileDefs(brand string) []string {
 
 // profileShell is where each shell keeps the profile menu: the sidebar's
 // own <details rst-shell-profile> in the rail's foot, and the console's
-// Menu, whose summary shows the avatar on the index and whose card is
-// the tail beside it. The two cards read the same: the name and email,
-// the Language menu, then the account's links laid out flat.
+// account card in its bar, whose summary shows the avatar on a phone.
+// The two cards read the same: the name and email, the scheme, the
+// language, then the account's links laid out flat.
 type profileShell struct {
 	trigger, card, account string
 }
 
 var profileShells = map[string]profileShell{
 	"sidebar": {"[rst-shell-profile] > summary", "[rst-shell-profile] > [rst-dropdown-menu]", ""},
-	"console": {"[rst-shell-menu] > summary", "[rst-shell-tail]", ""},
+	"console": {"[rst-shell-account] > summary",
+		"[rst-shell-account] > [rst-dropdown-menu]", ""},
 }
 
 // profileJS reads the index's header row and the card: the heading's
@@ -160,8 +161,19 @@ func TestTheProfileMenuOnThePhoneIndex(t *testing.T) {
 					mustRun(t, ctx, append(acts, chromedp.Navigate(rig.Origin+"/long"), chromedp.WaitVisible(chromedp.CSS(p.trigger)))...)
 					requirePointer(t, ctx, true)
 					lr := readProfile(t, ctx, p)
-					if lr.Title != long || lr.TitleH > 56 || lr.TitleOverflow > 0 {
-						t.Errorf("a long brand: heading %q, %dpx tall, the page %dpx wider than the screen; want the whole name, on one line, eliding inside the screen", lr.Title, lr.TitleH, lr.TitleOverflow)
+					// In the one header row a name that does not fit is
+					// hidden whole by shell.js, or with scripts off cut
+					// with an ellipsis inside the row (Fiesta's
+					// TestALongNameHidesBeforeAnythingElseMoves).
+					hidden := lr.TitleH == 0
+					whole := lr.Title == long && lr.TitleH <= 56
+					if (!hidden && !whole) || (hidden && !scripts) ||
+						lr.TitleOverflow > 0 {
+						t.Errorf("a long brand: heading %q, %dpx tall, the "+
+							"page %dpx wider than the screen; want the whole "+
+							"name on one line eliding inside the row, or "+
+							"hidden whole by shell.js",
+							lr.Title, lr.TitleH, lr.TitleOverflow)
 					}
 
 					mustRun(t, ctx, chromedp.Navigate(rig.Origin+"/"), chromedp.WaitVisible(chromedp.CSS(p.trigger)))
@@ -194,14 +206,21 @@ func TestTheProfileMenuOnThePhoneIndex(t *testing.T) {
 					if got := strings.Join(order, " "); got != "name email language acct-profile acct-out" {
 						t.Errorf("the open card reads %q, top to bottom; want the name, the email, the language, then the account's links, flat", got)
 					}
+					// The card's own items are read before the language
+					// menu opens, and the languages after: the open list
+					// sits over the links below it in the card.
 					var items []profileItem
 					if p.account != "" {
 						mustRun(t, ctx, chromedp.Click(chromedp.CSS(p.account)), chromedp.WaitVisible(chromedp.CSS("#acct-out")))
-						items = append(items, readProfile(t, ctx, p).Items...)
 					}
+					items = append(items, readProfile(t, ctx, p).Items...)
 					mustRun(t, ctx, chromedp.Click(chromedp.CSS("#rail-locale > summary")), chromedp.WaitVisible(chromedp.CSS("#rail-locale [rst-dropdown-menu] a")))
 					open := readProfile(t, ctx, p)
-					items = append(items, open.Items...)
+					for _, it := range open.Items {
+						if it.Sel == "#rail-locale [rst-dropdown-menu] a" {
+							items = append(items, it)
+						}
+					}
 					if !open.Open || !open.CardShown || open.CardTop < open.AvBottom {
 						t.Errorf("opened: open %v, card shown %v, card top %d under an avatar ending at %d; want a card dropping from the avatar", open.Open, open.CardShown, open.CardTop, open.AvBottom)
 					}

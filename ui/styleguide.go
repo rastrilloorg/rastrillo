@@ -180,47 +180,50 @@ var styleguideSamples = map[string]string{
 	// "checkbox 3 of 12".
 	"selbox": `<label rst-selbox><input type="checkbox" aria-label="Select order AB3PX"></label>`,
 	// shell-topbar — one of the two page frames a shell puts around
-	// [rst-page]: a skip link first in the DOM, a bar carrying brand, nav
-	// and an account dropdown pushed to the inline end, then the page
-	// column and a footer. Below 800px the tail (nav, account, locale)
-	// goes behind the [rst-shell-menu] disclosure, which is a SIBLING of
-	// the tail rather than its parent — a closed <details> hides its own
-	// content, and the account menu must not sit inside a disclosure it
-	// would close by opening. Its name is rst-shell-menu for exactly
-	// that reason: <details name> exclusivity is document-wide. No partial emits
-	// any of this — an app's layout template owns its own shell — so
-	// this sample is the only exercise these attributes get. The nav's
-	// current item is aria-current, the same signal the dropdown and
-	// seg-tabs idioms already use.
-	"shell-topbar": `<div rst-shell-topbar>
+	// [rst-page], as a content page: a skip link first in the DOM, then
+	// one bar holding the up link, the title the Menu page shows on a
+	// phone, the brand, the nav and the account card, then the page
+	// column and a footer. Below 800px the bar is one row: the up link
+	// to the Menu page (/menu, with this page's nav link as the
+	// fragment), the app's name and the avatar. The nav is not shown
+	// there; on the Menu page, whose view is index, it is the page's
+	// rows. The account card holds the person, the colour scheme
+	// (Appearance), the language and the account's links. Its name is
+	// rst-shell-menu, not rst-menus, because the Language row's fallback
+	// inside it is in rst-menus and <details name> exclusivity is
+	// document-wide. No partial emits the frame — an app's layout
+	// template owns its own shell — so this sample is the only exercise
+	// these attributes get. The nav's current item is aria-current, the
+	// same signal the dropdown and seg-tabs idioms already use.
+	"shell-topbar": `<div rst-shell-topbar="page">
   <a rst-skip href="#main">Skip to content</a>
-  <header rst-shell-bar><a rst-shell-brand href="/">Notes</a>
-    <details rst-shell-menu name="rst-shell-menu"><summary><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h16"/><path d="M4 6h16"/><path d="M4 18h16"/></svg>Menu</summary></details>
-    <div rst-shell-tail>
-    <nav rst-shell-nav><a href="/" aria-current="page">Home</a><a href="/archive">Archive</a></nav>
-    <details rst-dropdown rst-shell-account name="rst-menus"><summary>Account<span rst-caret aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span></summary>
-      <div rst-dropdown-menu><a href="/settings">Settings</a></div></details>
-    </div>
+  <header rst-shell-bar><a rst-shell-up href="/menu#nav-home" rel="up" aria-label="Back to Menu"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>Menu</a>
+    <h1 rst-shell-title><span><a rst-shell-brand href="/">Notes</a></span><span>Home</span></h1><a rst-shell-brand href="/">Notes</a>
+    <nav rst-shell-nav><a id="nav-home" href="/" aria-current="page">Home</a><a id="nav-archive" href="/archive">Archive</a></nav>
+    <details rst-dropdown rst-shell-account name="rst-shell-menu"><summary><span rst-shell-avatar><span rst-person-av aria-hidden="true">A</span><span rst-person-name>Ada Lovelace</span></span><span rst-shell-account-label>Account</span><span rst-caret aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span></summary><div rst-dropdown-menu><div rst-shell-who><span rst-person-av aria-hidden="true">A</span><span rst-person-name>Ada Lovelace</span><span rst-person-email>ada@example.com</span></div><div rst-menu-row><span rst-menu-row-label>Appearance</span><div rst-scheme="icons" role="group" aria-label="Appearance"><form method="post" action="/_theme"><input type="hidden" name="scheme" value="light"><input type="hidden" name="return" value="/"><button type="submit" aria-label="Light"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg></button></form><form method="post" action="/_theme"><input type="hidden" name="scheme" value="dark"><input type="hidden" name="return" value="/"><button type="submit" aria-label="Dark" aria-current="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg></button></form><form method="post" action="/_theme"><input type="hidden" name="scheme" value="system"><input type="hidden" name="return" value="/"><button type="submit" aria-label="System"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></svg></button></form></div></div>
+<div rst-menu-row><span rst-menu-row-label>Language</span><button type="button" popovertarget="rst-language"><span lang="en">English</span><span rst-caret aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span></button><details rst-dropdown name="rst-menus"><summary><span lang="en">English</span><span rst-caret aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span></summary></details><div rst-locale popover id="rst-language"><div rst-menu-row><h2>Language</h2><button type="button" popovertarget="rst-language" popovertargetaction="hide">Close</button></div><a href="/en/" lang="en" dir="ltr" aria-current="true">English</a><a href="/ga/" lang="ga" dir="ltr">Gaeilge</a><a href="/zh-Hans/" lang="zh-Hans" dir="ltr">简体中文</a><a href="/es/" lang="es" dir="ltr">Español</a><a href="/hi/" lang="hi" dir="ltr">हिन्दी</a><a href="/pt-PT/" lang="pt-PT" dir="ltr">Português</a><a href="/bn/" lang="bn" dir="ltr">বাংলা</a><a href="/ru/" lang="ru" dir="ltr">Русский</a><a href="/ja/" lang="ja" dir="ltr">日本語</a><a href="/yue/" lang="yue" dir="ltr">廣東話</a><a href="/vi/" lang="vi" dir="ltr">Tiếng Việt</a><a href="/ar/" lang="ar" dir="rtl">العربية</a></div></div><a href="/settings">Settings</a></div></details>
   </header>
   <main rst-page id="main">Content.</main>
   <footer rst-shell-foot>Made with rastrillo</footer>
 </div>`,
 	// shell-sidebar — the same frame with a rail instead of a bar, as a
-	// content page: below 800px the rail is not shown and the back link
-	// at the top returns to the index, the page whose view block says
-	// index, where the rail is the whole page. The back link's href is
-	// the page's up block, the index with this page's nav link as the
-	// fragment. The index's heading is the brand, with the page's title
-	// as its fallback. The rail's foot is the profile menu: the avatar,
-	// and a card with the name, the language and the account's links,
-	// which the phone index shows at its top instead. No JavaScript:
-	// every view is a server-rendered page.
+	// content page: below 800px the rail is not shown, and the header
+	// row is the up link back to the index (the page whose view block
+	// says index, where the rail is the whole page), the app's name and
+	// the avatar. The bar holds only the up link; the shell places the
+	// rail's name and the rail foot's avatar into the same row. The up
+	// link's href is the page's up block, the index with this page's nav
+	// link as the fragment. The index's heading is the brand, with the
+	// page's title as its fallback. The rail's foot is the profile card:
+	// the person, the colour scheme, the language and the account's
+	// links. No JavaScript: every view is a server-rendered page.
 	"shell-sidebar": `<div rst-shell-sidebar="page">
   <a rst-skip href="#main">Skip to content</a>
-  <div rst-shell-back><a href="/#nav-reports" rel="up" aria-label="Back to Sections">Sections</a></div>
+  <header rst-shell-bar><a rst-shell-up href="/#nav-reports" rel="up" aria-label="Back to Sections"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>Sections</a></header>
   <aside rst-shell-rail><h1 rst-shell-title><span><a rst-shell-brand href="/">Notes</a></span><span>Reports</span></h1><a rst-shell-brand href="/">Notes</a>
     <nav rst-shell-nav><span rst-shell-group>Work</span><a id="nav-dashboard" href="/dashboard">Dashboard</a><a id="nav-reports" href="/reports" aria-current="page">Reports</a></nav>
-    <div rst-shell-rail-foot><details rst-dropdown rst-shell-profile name="rst-shell-menu"><summary><span rst-shell-avatar><span rst-person-av aria-hidden="true">A</span><span rst-person-name>Ada Lovelace</span></span></summary><div rst-dropdown-menu><div rst-shell-who><span rst-person-av aria-hidden="true">A</span><span rst-person-name>Ada Lovelace</span><span rst-person-email>ada@example.com</span></div><a href="/settings">Settings</a></div></details></div>
+    <div rst-shell-rail-foot><details rst-dropdown rst-shell-profile name="rst-shell-menu"><summary><span rst-shell-avatar><span rst-person-av aria-hidden="true">A</span><span rst-person-name>Ada Lovelace</span></span></summary><div rst-dropdown-menu><div rst-shell-who><span rst-person-av aria-hidden="true">A</span><span rst-person-name>Ada Lovelace</span><span rst-person-email>ada@example.com</span></div><div rst-menu-row><span rst-menu-row-label>Appearance</span><div rst-scheme="icons" role="group" aria-label="Appearance"><form method="post" action="/_theme"><input type="hidden" name="scheme" value="light"><input type="hidden" name="return" value="/reports"><button type="submit" aria-label="Light"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg></button></form><form method="post" action="/_theme"><input type="hidden" name="scheme" value="dark"><input type="hidden" name="return" value="/reports"><button type="submit" aria-label="Dark" aria-current="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg></button></form><form method="post" action="/_theme"><input type="hidden" name="scheme" value="system"><input type="hidden" name="return" value="/reports"><button type="submit" aria-label="System"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></svg></button></form></div></div>
+<div rst-menu-row><span rst-menu-row-label>Language</span><button type="button" popovertarget="rst-language"><span lang="en">English</span><span rst-caret aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span></button><details rst-dropdown name="rst-menus"><summary><span lang="en">English</span><span rst-caret aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span></summary></details><div rst-locale popover id="rst-language"><div rst-menu-row><h2>Language</h2><button type="button" popovertarget="rst-language" popovertargetaction="hide">Close</button></div><a href="/en/" lang="en" dir="ltr" aria-current="true">English</a><a href="/ga/" lang="ga" dir="ltr">Gaeilge</a><a href="/zh-Hans/" lang="zh-Hans" dir="ltr">简体中文</a><a href="/es/" lang="es" dir="ltr">Español</a><a href="/hi/" lang="hi" dir="ltr">हिन्दी</a><a href="/pt-PT/" lang="pt-PT" dir="ltr">Português</a><a href="/bn/" lang="bn" dir="ltr">বাংলা</a><a href="/ru/" lang="ru" dir="ltr">Русский</a><a href="/ja/" lang="ja" dir="ltr">日本語</a><a href="/yue/" lang="yue" dir="ltr">廣東話</a><a href="/vi/" lang="vi" dir="ltr">Tiếng Việt</a><a href="/ar/" lang="ar" dir="rtl">العربية</a></div></div><a href="/settings">Settings</a></div></details></div>
   </aside>
   <main rst-shell-main id="main"><div rst-page>Content.</div></main>
 </div>`,

@@ -2069,13 +2069,18 @@ func TestIdiomClassesAreStyled(t *testing.T) {
 	// The shell selectors: same rule again for the page frames. A shell
 	// is markup an app's own layout template writes, so no partial and
 	// no other sample can carry these — the two shell samples above are
-	// their only exercise, in both directions.
+	// their only exercise, in both directions. The 0.37 phone chrome
+	// (rst-shell-menu, rst-shell-tail, rst-shell-back) is no sample's:
+	// tokens.css keeps drawing it for old layouts, and
+	// testdata/layouts/*-0.37.html is where it is exercised.
 	for _, name := range []string{
 		"rst-skip",
 		"rst-shell-topbar", "rst-shell-bar", "rst-shell-brand", "rst-shell-nav",
-		"rst-shell-account", "rst-shell-foot",
-		"rst-shell-menu", "rst-shell-tail",
-		"rst-shell-sidebar", "rst-shell-back", "rst-shell-title", "rst-shell-rail", "rst-shell-group", "rst-shell-main",
+		"rst-shell-up", "rst-shell-account", "rst-shell-avatar",
+		"rst-shell-account-label", "rst-shell-who", "rst-shell-foot",
+		"rst-shell-sidebar", "rst-shell-title", "rst-shell-rail",
+		"rst-shell-group", "rst-shell-main", "rst-shell-rail-foot",
+		"rst-shell-profile",
 	} {
 		if !seen[name] {
 			t.Errorf("selector %q was added to tokens.css in the shells task but no styleguide sample uses it", name)
@@ -2316,7 +2321,6 @@ func TestEveryMenuDefaultsToTheSharedExclusivityGroup(t *testing.T) {
 		{"dropdown", map[string]any{"Label": "Sort", "Items": []any{
 			map[string]any{"Href": "/x", "Label": "Newest"}}}},
 		{"locale-menu", map[string]any{"Items": []rastrillo.LocaleItem{{Code: "ga", Name: "Gaeilge", Href: "/ga"}}}},
-		{"scheme-menu", map[string]any{"Scheme": "dark"}},
 		{"bulk-bar", map[string]any{
 			"DoneHref": "/x", "Count": "3 selected", "MenuLabel": "Actions",
 			"Actions": []any{map[string]any{"Value": "archive", "Label": "Archive"}}}},
@@ -2327,23 +2331,11 @@ func TestEveryMenuDefaultsToTheSharedExclusivityGroup(t *testing.T) {
 		}
 	}
 
-	// The topbar shell's account menu is a dropdown the layout owns
-	// rather than a partial, so it needs the same default written into
-	// the layout — otherwise the one menu a user meets on every screen is
-	// the one that never closes.
-	layout, ok := Layout("topbar")
-	if !ok {
-		t.Fatal(`Layout("topbar") reports no such layout`)
-	}
-	if !strings.Contains(string(layout), `rst-shell-account `+group) {
-		t.Errorf("the topbar shell's account dropdown is outside the exclusivity group:\n%s", layout)
-	}
-	console, ok := Layout("console")
-	if !ok {
-		t.Fatal(`Layout("console") reports no such layout`)
-	}
-	if !strings.Contains(string(console), `rst-shell-account `+group) {
-		t.Errorf("the console shell's account dropdown is outside the exclusivity group:\n%s", console)
+	// scheme-menu is no menu: it is three buttons, in a card's row or a
+	// footer, with no <details> to be in a group at all.
+	scheme := render(t, "scheme-menu", map[string]any{"Scheme": "dark"})
+	if got := scheme; strings.Contains(got, "<details") {
+		t.Errorf("scheme-menu renders a <details>: %s", got)
 	}
 
 	// The markup idioms carry it in their canonical samples, which is the
@@ -2364,118 +2356,82 @@ func TestEveryMenuDefaultsToTheSharedExclusivityGroup(t *testing.T) {
 	if strings.Contains(string(sidebar), group) {
 		t.Errorf("the sidebar shell's chrome strip joined the menu exclusivity group:\n%s", sidebar)
 	}
-	if strings.Contains(Styleguide()["shell-sidebar"], group) ||
+	// The sidebar sample's one menu in the group is the Language row's
+	// fallback inside its profile card, which is the card's row and not
+	// the shell's chrome.
+	sidebarSample := strings.Replace(Styleguide()["shell-sidebar"],
+		`</button><details rst-dropdown `+group, "", 1)
+	if strings.Contains(sidebarSample, group) ||
 		strings.Contains(Styleguide()["tblock"], group) {
 		t.Error("shell chrome or the toggle-block joined the menu exclusivity group")
 	}
 
-	// The topbar's narrow-screen disclosure is the same kind of
-	// <details> as the sidebar's chrome strip — navigation, not a menu —
-	// but it cannot be checked the same way, because the layout it lives
-	// in legitimately carries rst-menus on the account dropdown a few
-	// lines below it. So read its own name attribute.
-	//
-	// This is the trap the rst-menu-group rule already names, met for
-	// the first time in the framework's own shells: <details name>
-	// exclusivity is document-wide rather than sibling-scoped, so a
-	// disclosure sharing the menus' group is closed by the very account
-	// menu it reveals. The tail is a sibling rather than the
-	// disclosure's content, which keeps the account menu out of it
-	// altogether — but a name in the shared group would break it even
-	// so, because the exclusivity does not care about nesting.
-	//
-	// console is read the same way: its Menu opens the bar's tail as a
-	// card, and a disclosure in the menus' group would close that card
-	// under the reader's finger.
-	for _, shell := range []string{"topbar", "console"} {
+	// The account card is the one <details> each phone shell owns, and
+	// it is NOT in the menus' group: the Language row inside it has a
+	// <details> fallback in rst-menus, and <details name> exclusivity is
+	// document-wide rather than sibling-scoped, so a card in that group
+	// would be closed by the row it holds, under the reader's finger.
+	// Its group is rst-shell-menu, as in Fiesta's card.
+	for shell, card := range map[string]string{
+		"topbar": "rst-shell-account", "console": "rst-shell-account",
+		"sidebar": "rst-shell-profile",
+	} {
 		src, ok := Layout(shell)
 		if !ok {
 			t.Fatalf("Layout(%q) reports no such layout", shell)
 		}
 		found := false
 		for _, tag := range detailsOpenTags(string(src)) {
-			if !strings.Contains(tag, `rst-shell-menu`) {
+			if !strings.Contains(tag, card) {
 				continue
 			}
 			found = true
-			m := detailsNamePattern.FindStringSubmatch(tag)
-			if m == nil {
-				t.Errorf("the %s's narrow-screen disclosure carries no name at all: %s", shell, tag)
-				continue
-			}
-			if m[1] == MenuGroupDefault {
-				t.Errorf("the %s's narrow-screen disclosure joined %q; opening the account menu would close the navigation it was opened from: %s", shell, MenuGroupDefault, tag)
+			name := detailsNamePattern.FindStringSubmatch(tag)
+			if name == nil || name[1] != "rst-shell-menu" {
+				t.Errorf("the %s's account card is not in rst-shell-menu: %s",
+					shell, tag)
 			}
 		}
 		if !found {
-			t.Errorf("the %s shell has no narrow-screen disclosure; below 800px its chrome has nowhere to go", shell)
+			t.Errorf("the %s shell has no [%s] card", shell, card)
 		}
 	}
 }
 
-// Every chrome shell collapses behind the same disclosure and the same icon.
-// A text-only summary was the state §8 was filed against — "Menu" as a
-// bare word, with nothing to find it by at a glance — and `kebab` was
-// the cheap way to fix it, ruled out because kebab already means "more
-// actions on this row". aria-hidden throughout: the visible label
-// beside the glyph is the accessible name, and a second one would be
-// read out twice.
-func TestTheBarShellsCollapseBehindTheMenuIconAndTheSidebarHasNoDrawer(t *testing.T) {
-	if rastrillo.Icon("menu") == "" {
-		t.Fatal(`rastrillo.Icon("menu") is empty: the shells' collapse has no icon to draw`)
-	}
-	for _, c := range []struct{ layout, class string }{
-		{"topbar", "rst-shell-menu"},
-		// console reuses the topbar's control for its bar; its rail is an
-		// index page, like the sidebar's.
-		{"console", "rst-shell-menu"},
+// No shell has a Menu. On a phone each shell with chrome shows one
+// header row, the up link, the app's name and the account's avatar, and
+// its navigation is an index page one level up, so there is no
+// disclosure to collapse the bar behind and no hamburger: Fiesta keeps
+// the menu icon for navigation, and a Menu that opened the account was
+// not navigation. Each layout's one <details> is its account card, and
+// each writes the up link.
+func TestNoShellHasAMenuOrAHamburger(t *testing.T) {
+	for shell, card := range map[string]string{
+		"topbar": "rst-shell-account", "console": "rst-shell-account",
+		"sidebar": "rst-shell-profile",
 	} {
-		src, ok := Layout(c.layout)
+		src, ok := Layout(shell)
 		if !ok {
-			t.Fatalf("Layout(%q) missing", c.layout)
+			t.Fatalf("Layout(%q) missing", shell)
 		}
-		i := strings.Index(string(src), `<details `+c.class)
-		if i < 0 {
-			t.Errorf("layouts/%s.html has no [%s] disclosure", c.layout, c.class)
-			continue
+		source := string(src)
+		tags := detailsOpenTags(source)
+		if len(tags) != 1 || !strings.Contains(tags[0], card) {
+			t.Errorf("layouts/%s.html's disclosures are %q; "+
+				"want only the account card", shell, tags)
 		}
-		rest := string(src)[i:]
-		end := strings.Index(rest, "</summary>")
-		if end < 0 {
-			t.Errorf("layouts/%s.html's [%s] disclosure has no summary", c.layout, c.class)
-			continue
+		for _, gone := range []string{
+			`{{icon "menu"}}`, `{{icon "kebab"}}`, "<details rst-shell-menu",
+			"rst-shell-tail", "rst-shell-back", "rst-shell-chrome",
+			"rst-shell-menu-label",
+		} {
+			if strings.Contains(source, gone) {
+				t.Errorf("layouts/%s.html still has %s", shell, gone)
+			}
 		}
-		summary := rest[:end]
-		if !strings.Contains(summary, `{{icon "menu"}}`) {
-			t.Errorf("layouts/%s.html's collapse summary is text-only; it needs the menu icon: %s", c.layout, summary)
+		if strings.Count(source, "<a rst-shell-up ") != 1 {
+			t.Errorf("layouts/%s.html does not write one up link", shell)
 		}
-		if strings.Contains(summary, `{{icon "kebab"}}`) {
-			t.Errorf(`layouts/%s.html spends "kebab" on navigation; kebab means "more actions on this row"`, c.layout)
-		}
-	}
-	// The sidebar has no navigation disclosure: on a phone its
-	// navigation is an index page, and every other page carries a back
-	// link to it. A drawer control here would be the hamburger the
-	// guidance now discourages. Its one <details> is the profile menu
-	// in the rail's foot, which holds the person and the language,
-	// never the nav.
-	sidebar, _ := Layout("sidebar")
-	if tags := detailsOpenTags(string(sidebar)); len(tags) != 1 || !strings.Contains(tags[0], "rst-shell-profile") {
-		t.Errorf("layouts/sidebar.html's disclosures are %q; want only the profile menu, its phone navigation is the index page", tags)
-	}
-	if strings.Contains(string(sidebar), "rst-shell-chrome") {
-		t.Error("layouts/sidebar.html still has the drawer")
-	}
-	if !strings.Contains(string(sidebar), `<div rst-shell-back><a href=`) {
-		t.Error("layouts/sidebar.html has no back link")
-	}
-	// And the styleguide samples, which are the markup an app copying by
-	// hand reads — they inline the SVG rather than calling {{icon}}.
-	if !strings.Contains(Styleguide()["shell-topbar"], `<path d="M4 12h16"/>`) {
-		t.Error(`styleguide sample "shell-topbar" shows a collapse summary with no menu icon in it`)
-	}
-	if s := Styleguide()["shell-sidebar"]; strings.Contains(s, "rst-shell-chrome") || len(detailsOpenTags(s)) != 1 || !strings.Contains(s, "rst-shell-back") {
-		t.Error(`styleguide sample "shell-sidebar" should show the back link and no drawer`)
 	}
 }
 
@@ -2503,33 +2459,37 @@ func TestTheShellsKeepTheirOverridableBlockNames(t *testing.T) {
 		"column": {"lang", "dir", "title", "live-head", "head",
 			"region:notice", "content",
 			"locale", "locale-menu", "scheme", "scheme-menu"},
-		"topbar": {"lang", "dir", "title", "live-head", "head", "brand", "nav", "account", "locale", "locale-menu", "scheme", "scheme-menu", "region:notice", "content", "foot"},
-		// brand and title appear first as the phone index's <h1>, the
-		// app's name with the page's title as its fallback, reused
-		// rather than redefined; profile twice, as the avatar that opens
-		// the rail's one menu and as the name heading the card.
-		"sidebar": {"lang", "dir", "title", "live-head", "head", "view", "up", "brand", "title", "brand", "nav", "profile", "profile", "locale", "locale-menu", "scheme", "scheme-menu", "account", "region:notice", "content"},
-		// console offers topbar's SET, plus the phone index's blocks
-		// (view, up, profile), which a topbar screen can define and the
-		// topbar simply never calls. So a screen moves from console to
-		// topbar unedited, which is the whole claim of a fourth shell
-		// that is the other two at once.
+		// The three shells with chrome offer one SET, so a screen moves
+		// between them unedited: the bar's blocks, the phone index's view,
+		// up and upLabel, and the account card's profile, scheme, locale
+		// and account. upLabel comes twice, in the up link's accessible
+		// name and as its text; brand and title first as the index's
+		// <h1>, the app's name with the page's title as its fallback,
+		// reused rather than redefined; profile twice, as the avatar
+		// that opens the card and as the name heading it.
 		//
 		// The ORDER differs, and must: this list is source order, and
-		// console's nav lives in the rail, which comes after the bar.
-		// topbar reads brand, nav, account, locale; console reads
-		// brand, locale, account, nav. Do not "fix" that to match
-		// topbar — moving nav up the list means moving it into the
-		// bar, which is the sidebar's rail deleted and this shell with
-		// it. Order is irrelevant to the contract anyway: a block is
-		// found by name.
-		//
-		// view and up are the phone index's two blocks, as in sidebar.
-		// The index's <h1> is in the bar, the app's name with the
-		// page's title as its fallback, so brand and title come before
-		// the brand block itself; profile twice, as the avatar the
-		// Menu becomes on the index and the name heading its card.
-		"console": {"lang", "dir", "title", "live-head", "head", "view", "brand", "title", "brand", "profile", "profile", "locale", "locale-menu", "scheme", "scheme-menu", "account", "up", "nav", "region:notice", "content", "foot"},
+		// the console's nav lives in the rail, which comes after the bar,
+		// and the sidebar's bar holds only the up link. Do not "fix" the
+		// console to match the topbar: moving nav up the list means
+		// moving it into the bar, which is the rail deleted and this
+		// shell with it. Order is irrelevant to the contract anyway: a
+		// block is found by name.
+		"topbar": {"lang", "dir", "title", "live-head", "head",
+			"view", "up", "upLabel", "upLabel", "brand", "title", "brand",
+			"nav", "profile", "profile", "scheme", "scheme-menu",
+			"locale", "locale-menu", "account",
+			"region:notice", "content", "foot"},
+		"sidebar": {"lang", "dir", "title", "live-head", "head",
+			"view", "up", "upLabel", "upLabel", "brand", "title", "brand",
+			"nav", "profile", "profile", "scheme", "scheme-menu",
+			"locale", "locale-menu", "account",
+			"region:notice", "content"},
+		"console": {"lang", "dir", "title", "live-head", "head",
+			"view", "up", "upLabel", "upLabel", "brand", "title", "brand",
+			"profile", "profile", "scheme", "scheme-menu",
+			"locale", "locale-menu", "account", "nav",
+			"region:notice", "content", "foot"},
 		// stage has no chrome to override. backdrop is the picture
 		// behind the card, foot an optional line under it.
 		"stage": {"lang", "dir", "title", "live-head", "head", "backdrop", "region:notice", "content", "foot"},
@@ -2644,9 +2604,16 @@ func TestModalPanelIsARenderedOpenDialog(t *testing.T) {
 	}
 	// ::backdrop belongs to the top layer, which a rendered-open dialog
 	// never reaches. Styling it would be dead CSS that reads as if the
-	// scrim came from the element.
-	if strings.Contains(css, "::backdrop") {
-		t.Error("tokens.css styles ::backdrop; a rendered-open dialog never paints one — the overlay div is the scrim")
+	// scrim came from the element. An open popover is in the top layer
+	// (the account card's language sheet), so its backdrop is real.
+	for _, rule := range leafRules(css) {
+		for _, sel := range splitSelectorList(rule.selector) {
+			if strings.Contains(sel, "::backdrop") &&
+				!strings.Contains(sel, ":popover-open::backdrop") {
+				t.Errorf("tokens.css styles %s; a rendered-open dialog "+
+					"never paints one — the overlay div is the scrim", sel)
+			}
+		}
 	}
 }
 
@@ -3098,12 +3065,12 @@ func drawsARule(val string) bool {
 }
 
 // The sidebar rail's foot is one profile menu: an avatar button that
-// opens a card holding the person's name, the language switcher and the
-// account's links, in a wrapper the LAYOUT owns, because the blocks
+// opens a card holding the person's name, the scheme, the language and
+// the account's links, in a wrapper the LAYOUT owns, because the blocks
 // inside it are app-supplied markup the shell cannot style by class. It
-// is a menu rather than the two blocks laid out flat because on a phone
-// the same control sits at the top of the index, and the foot of a long
-// index is out of reach. The geometry (a drop-up at the foot, a dropdown
+// is a menu rather than the blocks laid out flat because on a phone the
+// same control sits at the end of the header row, and the foot of a
+// long index is out of reach. The geometry (a drop-up at the foot, a dropdown
 // at the top on a phone) is measured in profile_browser_test.go; this
 // pins the markup it needs.
 func TestTheSidebarRailFootIsOneProfileMenu(t *testing.T) {
@@ -3121,16 +3088,21 @@ func TestTheSidebarRailFootIsOneProfileMenu(t *testing.T) {
 		t.Error("the rail's nav does not come before its foot: focus order on a desktop must match the rail, top to bottom")
 	}
 	// rst-shell-menu, NOT rst-menus: <details name> exclusivity is
-	// document-wide, and the language menu inside the card is in
-	// rst-menus, so sharing that group would close the card the moment
-	// the language menu opened.
+	// document-wide, and the Language row's fallback inside the card is
+	// in rst-menus, so sharing that group would close the card the
+	// moment the row opened.
 	const open = `<div rst-shell-rail-foot><details rst-dropdown rst-shell-profile name="rst-shell-menu"><summary><span rst-shell-avatar>{{block "profile" .}}`
 	if !strings.HasPrefix(s[foot:], open) {
 		t.Errorf("the rail foot does not open with the profile menu and its avatar summary; it reads %.200q", s[foot:])
 	}
-	card := strings.Index(s, `<div rst-dropdown-menu><div rst-shell-who>{{template "profile" .}}</div>`+localeBlock+schemeBlock+`{{block "account" .}}{{end}}</div></details></div>`)
-	if card < foot {
-		t.Error("the profile card does not hold the person, then the language, then the colour scheme, then the account's links, in that order and inside the rail foot")
+	inside := `<div rst-dropdown-menu><div rst-shell-who>` +
+		`{{template "profile" .}}</div>` + cardSchemeBlock +
+		cardLocaleBlock + `{{block "account" .}}{{end}}` +
+		`</div></details></div>`
+	if card := strings.Index(s, inside); card < foot {
+		t.Error("the profile card does not hold the person, then the " +
+			"colour scheme, then the language, then the account's " +
+			"links, in that order and inside the rail foot")
 	}
 	// The default avatar, for an app with no profile block: the empty
 	// avatar circle, named with the shell's existing Account string, so
@@ -3141,36 +3113,62 @@ func TestTheSidebarRailFootIsOneProfileMenu(t *testing.T) {
 	}
 	css := string(TokensCSS())
 	if !strings.Contains(css, `[rst-shell-rail-foot]:has([rst-shell-who]:only-child [rst-person-av~="placeholder"])`) {
-		t.Error("tokens.css does not hide the placeholder profile with nothing to choose: an app with no profile, no account and no language would get a button opening an empty card")
+		t.Error("tokens.css does not hide the placeholder profile with " +
+			"nothing to choose: a layout whose card holds no scheme, " +
+			"language or account would get a button opening an empty card")
+	}
+	// The card always holds the scheme control, so that rule never hides
+	// a signed-out reader's way to the scheme and the language.
+	signedOut := `<div rst-shell-who>` +
+		`<span rst-person-av="empty placeholder" aria-hidden="true"></span>` +
+		`<span rst-person-name>` + defaultT("rastrillo.ui.shell_account") +
+		`</span></div><div rst-menu-row>`
+	if !strings.Contains(out, signedOut) {
+		t.Errorf("the signed-out card's head is not followed by the "+
+			"Appearance row:\n%s", out)
 	}
 }
 
-// The console keeps its account and language in the bar, behind its
-// Menu, so its phone index needs no second menu: on the index the Menu
-// summary shows the person's avatar instead of its label, and the card
-// it opens is headed by the person's name. Both are in every view's
-// markup, and tokens.css shows one or the other, so a content page and
-// a desktop render exactly as before.
-func TestTheConsoleMenuCarriesTheProfileForItsIndex(t *testing.T) {
-	src, ok := Layout("console")
-	if !ok {
-		t.Fatal("no console layout")
-	}
-	s := string(src)
-	for _, want := range []string{
-		`<summary><span rst-shell-menu-label>{{icon "menu"}}{{T $L "rastrillo.ui.shell_menu"}}</span><span rst-shell-avatar>{{block "profile" .}}`,
-		`<div rst-shell-tail>
-<div rst-shell-who>{{template "profile" .}}</div>
-` + localeBlock + schemeBlock + `
-<details rst-dropdown rst-shell-account`,
-	} {
-		if !strings.Contains(s, want) {
-			t.Errorf("layouts/console.html is missing %q", want)
+// The console's and the topbar's account card is in the bar: its
+// summary is the person's avatar on a phone and "Account" with a caret
+// at 800px and up (both are in the markup and tokens.css shows one),
+// and the card it opens is headed by the person's name, then the
+// scheme, the language and the account's links.
+func TestTheBarShellsAccountCardCarriesTheProfile(t *testing.T) {
+	for _, shell := range []string{"console", "topbar"} {
+		src, ok := Layout(shell)
+		if !ok {
+			t.Fatalf("no %s layout", shell)
 		}
-	}
-	bar, h1, rail := strings.Index(s, "<header rst-shell-bar>"), strings.Index(s, "<h1 rst-shell-title>"), strings.Index(s, "<aside rst-shell-rail>")
-	if !(bar >= 0 && bar < h1 && h1 < rail) {
-		t.Error("the console's index <h1> is not in the bar: on the index the bar is the header row, the app's name at the start and the avatar at the end")
+		source := string(src)
+		for _, want := range []string{
+			`<details rst-dropdown rst-shell-account name="rst-shell-menu">
+<summary><span rst-shell-avatar>{{block "profile" .}}`,
+			`<span rst-shell-account-label>` +
+				`{{T $L "rastrillo.ui.shell_account"}}</span>` +
+				`<span rst-caret aria-hidden="true">` +
+				`{{icon "chevron-down"}}</span></summary>
+<div rst-dropdown-menu>
+<div rst-shell-who>{{template "profile" .}}</div>
+` + cardSchemeBlock + `
+` + cardLocaleBlock + `
+{{block "account" .}}{{end}}
+</div>
+</details>
+</header>`,
+		} {
+			if !strings.Contains(source, want) {
+				t.Errorf("layouts/%s.html is missing %q", shell, want)
+			}
+		}
+		bar := strings.Index(source, "<header rst-shell-bar>")
+		heading := strings.Index(source, "<h1 rst-shell-title>")
+		card := strings.Index(source, "<details rst-dropdown rst-shell-account")
+		if !(bar >= 0 && bar < heading && heading < card) {
+			t.Errorf("the %s's index <h1> is not in the bar before the "+
+				"card: on the index the bar is the header row, the app's "+
+				"name at the centre and the avatar at the end", shell)
+		}
 	}
 }
 
@@ -4116,23 +4114,27 @@ func renderShellLayout(t *testing.T, name string, defs ...string) string {
 }
 
 // A page says which view it is with the view block (default page), and
-// names its way back with up (default "/", the brand's href). The back
-// control's visible label is inside its accessible name (WCAG 2.5.3),
-// rel="up" says the relationship, the index's <h1> is the app's name
-// (the brand, with the page's title after it for an app whose brand
-// renders nothing; tokens.css shows the title only then), the drawer
-// is gone, and only these two shells link shell.css to opt into slides.
-func TestTheSidebarAndConsoleNameTheirViewAndTheirWayBack(t *testing.T) {
-	label := defaultT("rastrillo.ui.shell_up_label")
-	name := defaultTf("rastrillo.ui.shell_up", "name", label)
-	if !strings.Contains(name, label) {
-		t.Fatalf("the back control's name %q does not contain its visible label %q", name, label)
-	}
-	for _, shell := range []string{"sidebar", "console"} {
+// names its way back with up and upLabel. In the sidebar and the
+// console up defaults to "/", the brand's href, and the label to
+// Sections; in the topbar to its Menu page, /menu, and Menu. The up
+// link is the header row's first stop after the skip link, its
+// visible label is inside its accessible name (WCAG 2.5.3), rel="up"
+// says the relationship, the index's <h1> is the app's name (the
+// brand, with the page's title after it for an app whose brand renders
+// nothing; tokens.css shows the title only then), the drawer is gone,
+// and only these three shells link shell.css to opt into slides.
+func TestThePhoneShellsNameTheirViewAndTheirWayUp(t *testing.T) {
+	chevron := string(rastrillo.Icon("chevron-left"))
+	for shell, way := range map[string]struct{ href, label string }{
+		"topbar":  {"/menu", defaultT("rastrillo.ui.shell_menu")},
+		"sidebar": {"/", defaultT("rastrillo.ui.shell_up_label")},
+		"console": {"/", defaultT("rastrillo.ui.shell_up_label")},
+	} {
+		name := defaultTf("rastrillo.ui.shell_up", "name", way.label)
 		page := renderShellLayout(t, shell)
 		for _, want := range []string{
 			`<div rst-shell-` + shell + `="page">`,
-			`<div rst-shell-back><a href="/" rel="up" aria-label="` + template.HTMLEscapeString(name) + `">` + template.HTMLEscapeString(label) + `</a></div>`,
+			upLinkMarkup(way.href, name, chevron, way.label),
 			`<h1 rst-shell-title><span><a rst-shell-brand href="/">` + template.HTMLEscapeString(defaultT("rastrillo.ui.shell_home")) + `</a></span><span>Hello</span></h1>`,
 			`<link rel="stylesheet" href="/static/shell.css">`,
 			`<script defer blocking="render" src="/static/shell.js"></script>`,
@@ -4144,9 +4146,13 @@ func TestTheSidebarAndConsoleNameTheirViewAndTheirWayBack(t *testing.T) {
 		if strings.Contains(page, "rst-shell-chrome") {
 			t.Errorf("%s: the drawer is still in the layout", shell)
 		}
-		skip, back, rail := strings.Index(page, "rst-skip"), strings.Index(page, "rst-shell-back"), strings.Index(page, "<aside rst-shell-rail>")
-		if !(skip >= 0 && skip < back && back < rail) {
-			t.Errorf("%s: the back control is not after the skip link and before the rail (focus order must match what is seen)", shell)
+		skip := strings.Index(page, "rst-skip")
+		up := strings.Index(page, "<a rst-shell-up")
+		heading := strings.Index(page, "<h1 rst-shell-title>")
+		if !(skip >= 0 && skip < up && up < heading) {
+			t.Errorf("%s: the up link is not after the skip link and "+
+				"before the app's name (focus order must match what is "+
+				"seen)", shell)
 		}
 		// A brand that renders nothing. Not {{define "brand"}}{{end}}:
 		// text/template ignores an empty redefinition and keeps the
@@ -4157,16 +4163,30 @@ func TestTheSidebarAndConsoleNameTheirViewAndTheirWayBack(t *testing.T) {
 		if index := renderShellLayout(t, shell, `{{define "view"}}index{{end}}`); !strings.Contains(index, `<div rst-shell-`+shell+`="index">`) {
 			t.Errorf("%s: the view block does not reach the root", shell)
 		}
-		if up := renderShellLayout(t, shell, `{{define "up"}}/#nav-invoices{{end}}`); !strings.Contains(up, `<a href="/#nav-invoices" rel="up"`) {
-			t.Errorf("%s: the up block does not reach the back link", shell)
+		way := renderShellLayout(t, shell,
+			`{{define "up"}}/#nav-invoices{{end}}`+
+				`{{define "upLabel"}}Invoices{{end}}`)
+		invoices := defaultTf("rastrillo.ui.shell_up", "name", "Invoices")
+		want := upLinkMarkup("/#nav-invoices", invoices, chevron, "Invoices")
+		if !strings.Contains(way, want) {
+			t.Errorf("%s: the up and upLabel blocks do not reach the up "+
+				"link", shell)
 		}
 	}
-	for _, shell := range []string{"column", "topbar", "stage"} {
+	for _, shell := range []string{"column", "stage"} {
 		src, _ := Layout(shell)
 		if strings.Contains(string(src), "static/shell.css") {
 			t.Errorf("%s links shell.css; only phone shells opt in", shell)
 		}
 	}
+}
+
+// upLinkMarkup is a layout's up link as it renders: the chevron, then
+// the label, inside a link named by the whole sentence.
+func upLinkMarkup(href, name, chevron, label string) string {
+	return `<a rst-shell-up href="` + href + `" rel="up" aria-label="` +
+		template.HTMLEscapeString(name) + `">` + chevron +
+		template.HTMLEscapeString(label) + `</a>`
 }
 
 // A view block written the way a template author writes a multi-line

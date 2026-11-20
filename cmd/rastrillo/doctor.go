@@ -209,6 +209,7 @@ type report struct {
 	files         []vendoredFile
 	layoutAdvice  string // relative path of an old shell layout, if the app has one
 	profileAdvice string // relative path of a layout whose app keeps the person in account
+	phoneAdvice   string // relative path of a layout with the old phone menu
 	noDesign      bool   // no vendored files and no layout: nothing to compare
 
 	// fiestaAdvice lists the layouts that load rastrillo.js and no
@@ -401,24 +402,7 @@ func diagnose(dir, themeFlag string) (*report, error) {
 
 	layout := filepath.Join(filepath.Dir(staticDir), "templates", "layout.html")
 	r.fiestaAdvice = layoutsWithoutFiestaJS(dir, filepath.Dir(layout))
-	if b, err := os.ReadFile(layout); err == nil && oldShellLayout(string(b)) {
-		r.layoutAdvice = rel(dir, layout)
-	} else if err == nil {
-		pages := map[string]string{}
-		if names, _ := filepath.Glob(filepath.Join(filepath.Dir(layout), "*.html")); names != nil {
-			for _, n := range names {
-				if n == layout {
-					continue
-				}
-				if body, err := os.ReadFile(n); err == nil {
-					pages[n] = string(body)
-				}
-			}
-		}
-		if profileAdvisory(string(b), pages) {
-			r.profileAdvice = rel(dir, layout)
-		}
-	}
+	r.adviseOnLayout(dir, layout)
 
 	pinPath, pin := readPin(dir, pkg)
 	r.pinFile, r.pinLegacy = rel(dir, pinPath), pin.legacy
@@ -709,12 +693,7 @@ func (r *report) print(w io.Writer, fixing bool) {
 	}
 	fmt.Fprintln(w)
 
-	if r.layoutAdvice != "" {
-		fmt.Fprintf(w, "%s: %s\n\n", r.layoutAdvice, doctorLayoutAdvisory)
-	}
-	if r.profileAdvice != "" {
-		fmt.Fprintf(w, "%s: %s\n\n", r.profileAdvice, doctorProfileAdvisory)
-	}
+	r.printLayoutAdvice(w)
 	if !fixing {
 		r.adviseFiestaJS(w, false)
 	}

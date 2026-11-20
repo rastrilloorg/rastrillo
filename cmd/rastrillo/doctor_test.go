@@ -1468,3 +1468,100 @@ func TestDoctorExitPrecedence(t *testing.T) {
 		}
 	}
 }
+
+// A layout written before the one-header-row shell still has the phone
+// Menu card or the back strip: rst-shell-menu, rst-shell-tail or
+// rst-shell-back as an attribute, or the class forms rst-shell__menu
+// and rst-shell__back, and no rst-shell-up. Doctor names the file in
+// one line and the exit code does not change. A current layout gets
+// none, though it too says rst-shell-menu as a details group name, and
+// so does a comment about the old markup.
+func TestDoctorNamesAnOldPhoneMenu(t *testing.T) {
+	sidebar, _ := ui.Layout("sidebar")
+	topbar, _ := ui.Layout("topbar")
+	console, _ := ui.Layout("console")
+	const oldCard = `<div rst-shell-menu><a rst-shell-back href="/">B</a></div>`
+	const upLink = `<a rst-shell-up href="/">Up</a>`
+	old := map[string]string{
+		"menu attribute": oldCard,
+		"menu alone":     `<nav rst-shell-menu>x</nav>`,
+		"tail attribute": `<div rst-shell-tail>x</div>`,
+		"back attribute": `<a rst-shell-back href="/">Back</a>`,
+		// markup-spelling: old-spelling begin — doctor reads the class
+		// spelling of the old menu too, so the fixtures are written in it.
+		"menu class": `<div class="rst-shell__menu">x</div>`,
+		"back class": `<a class="foo rst-shell__back" href="/">B</a>`,
+		// markup-spelling: old-spelling end
+		"up in a comment": `<!-- migrate to rst-shell-up later -->` +
+			`<nav rst-shell-menu>x</nav>`,
+		"up in a value": `<a title="rst-shell-up"></a>` +
+			`<nav rst-shell-menu>x</nav>`,
+	}
+	current := map[string]string{
+		"sidebar":            string(sidebar),
+		"topbar":             string(topbar),
+		"console":            string(console),
+		"group name":         upLink + `<details name="rst-shell-menu">`,
+		"group name, no up":  `<details name="rst-shell-menu"></details>`,
+		"old and new":        upLink + `<div rst-shell-menu>x</div>`,
+		"comment only":       `{{/* old rst-shell-menu is gone */}}` + upLink,
+		"HTML comment only":  `<!-- old rst-shell-menu -->` + upLink,
+		"title value":        upLink + `<div title="old rst-shell-menu e.g.">`,
+		"title value, no up": `<div title="old rst-shell-menu example">x</div>`,
+		// markup-spelling: old-spelling begin — a class value that names
+		// the attribute is not the attribute.
+		"class value, other": `<div class="rst-shell-menu">x</div>`,
+		// markup-spelling: old-spelling end
+	}
+	for name, src := range old {
+		if !oldPhoneMenu(src) {
+			t.Errorf("%s: not read as an old phone menu", name)
+		}
+	}
+	for name, src := range current {
+		if oldPhoneMenu(src) {
+			t.Errorf("%s: read as an old phone menu", name)
+		}
+	}
+
+	file := filepath.Join("internal", "demoapp", "templates", "layout.html")
+	want := file + ": " + doctorPhoneMenuAdvisory
+	for _, layout := range []struct {
+		src    string
+		advise bool
+	}{
+		{oldCard, true},
+		{string(sidebar), false},
+	} {
+		dir := doctorApp(t, rastrilloVersion(), "day")
+		mustWrite(t, filepath.Join(dir, file), layout.src)
+		rep, err := diagnose(dir, "")
+		if err != nil {
+			t.Fatal(err)
+		}
+		out := printed(rep, false)
+		if got := strings.Contains(out, want); got != layout.advise {
+			t.Errorf("printed %v, want %v:\n%s", got, layout.advise, out)
+		}
+		if code := exitCode(t, rep.exit()); code != 0 {
+			t.Errorf("exit %d; the advisory must not change it", code)
+		}
+	}
+	const section = `"Upgrading to one header row"`
+	if !strings.Contains(doctorPhoneMenuAdvisory, section) {
+		t.Error("the advisory does not name the docs section")
+	}
+	// The section must exist, or the line sends a reader nowhere.
+	guide, err := os.ReadFile(filepath.Join("..", "..", "docs", "site",
+		"templates.md"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if heading := "\n### " + strings.Trim(section, `"`) + "\n"; !strings.
+		Contains(string(guide), heading) {
+		t.Errorf("docs/site/templates.md has no heading %q", heading)
+	}
+	if strings.Contains(doctorPhoneMenuAdvisory, "\u2014") {
+		t.Error("the advisory carries an em dash")
+	}
+}

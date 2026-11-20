@@ -15,7 +15,7 @@ import (
 )
 
 func init() {
-	tmplrt.RegisterOwner("amadan.net/rastrillo/rastrillo/tmpl/internal/corpus", []string{"01ba455af24cf346405ba9b52308bcf52f25ed3bc643ac366bc14a76b97e9f50"})
+	tmplrt.RegisterOwner("amadan.net/rastrillo/rastrillo/tmpl/internal/corpus", []string{"619110da6e7d7c9b8bfc133ee9377a7f41e5e269b3049342493613074d7e2182"})
 	tmplrt.Register("0077180a39eb872699817523e6eebb57f6d853ccf2a0e66444f17930b6e409be", bind_0077180a39eb8726)
 	tmplrt.Register("010432692e6514ea0e18269d4abeb833102cdbb33e9aee89760d24e876617cb1", bind_010432692e6514ea)
 	tmplrt.Register("0134fea7b535131c849015a622c7cc8ac6d822db735b0d0a01e556b31cda1bcc", bind_0134fea7b535131c)
@@ -78,11 +78,12 @@ func init() {
 	tmplrt.Register("3253d392e2d886f590e7b3917c3a81ff3a69e16db87fcb64a599273168487ca6", bind_3253d392e2d886f5)
 	tmplrt.Register("3306b61f80da4095ea6bfc3b8eb304d6d125c99853d4a4b608f5ea2d83ade116", bind_3306b61f80da4095)
 	tmplrt.Register("3328140930329e9a6d4b0298f63bb7132eb95b42c0c92bb26f3377a8d76351f4", bind_3328140930329e9a)
+	tmplrt.Register("335bcd1bc854f5646194ba284a23f75aeebd5ba7fe35e9fbe8ca4b002d8beb20", bind_335bcd1bc854f564)
 	tmplrt.Register("342f5d9dc0cfc75084b56450808e18b37443abd9be8b96b884a9f51487851c87", bind_342f5d9dc0cfc750)
 	tmplrt.Register("34af662da54673dbfb113f296827af95ebf7c0055c3c8cf760fec07f0c0463e3", bind_34af662da54673db)
 	tmplrt.Register("351c6c485791cfb6456c4e3d66c0540fb8afd4677efcb67442963b1478672132", bind_351c6c485791cfb6)
-	tmplrt.Register("362ef1b99b90e07b8074ffbdc6619bb68c0ac82d2e6c1fa5c3533cbd3dfeb053", bind_362ef1b99b90e07b)
 	tmplrt.Register("38bf6520640d9dfc17d40e99b67f9e087e9a53e3a64cd878dbd4f93610e1070f", bind_38bf6520640d9dfc)
+	tmplrt.Register("3a9518734f7f277def4322e99b285f3ff7a9c9e2c077b632a52f64a950b8e4c5", bind_3a9518734f7f277d)
 	tmplrt.Register("3bd4f0eff420cb0a24997b169d45f486107bec60a328c49f65d04b547e613fe8", bind_3bd4f0eff420cb0a)
 	tmplrt.Register("3ce9f273a11f7061056d368b7d481ae3b0801e8005552e8da5ed604d714d0115", bind_3ce9f273a11f7061)
 	tmplrt.Register("3d2317151106ff48a0c4645e14ed1d14952b53af7d18637d4f387c6631dd62d3", bind_3d2317151106ff48)
@@ -100,7 +101,6 @@ func init() {
 	tmplrt.Register("48c564081fe116c921682d1a6a1e3d2e04ad915c9a38c185d565ea2edce2d2b8", bind_48c564081fe116c9)
 	tmplrt.Register("49ab2ef8115dd289338f1ee01035d6eba70deb82c926b8d5a9ee094435d37453", bind_49ab2ef8115dd289)
 	tmplrt.Register("4a20d6ebe22392e7a53adab8a7e0b53c1695b1c00653e4e277c42e3785b56e60", bind_4a20d6ebe22392e7)
-	tmplrt.Register("4a808282c304673bc8b8aa6011d68790f12f8da0564b64d08d559675f384ef89", bind_4a808282c304673b)
 	tmplrt.Register("4b52b3aa55899ae9f6ab5a5e6cd5e6e543f5e729ea2cae5329892634eaadc09a", bind_4b52b3aa55899ae9)
 	tmplrt.Register("4bcba1ab71da8be0093e16a55c15e70891973c261ff1f6e5c518faff077d8360", bind_4bcba1ab71da8be0)
 	tmplrt.Register("4c0d5fef9b1484dc733a6046afd14fd78625dd8fc5feff3145a531f7eabf63e4", bind_4c0d5fef9b1484dc)
@@ -113,7 +113,7 @@ func init() {
 	tmplrt.Register("5205ef9d285e6c157787c7247e152ea75eac67bd332e0d61b76f86bce445f315", bind_5205ef9d285e6c15)
 	tmplrt.Register("544c0052ef331808a679d75cc0e2cf1d54a4d2a4ebd55802c723c14fcca45380", bind_544c0052ef331808)
 	tmplrt.Register("54b124cdd6a98cce86883730328ab491b83b08b1b55d31f0426a58e440ab07f6", bind_54b124cdd6a98cce)
-	tmplrt.Register("5652ba27bec8e7fbbef4cb173d0ab00ff6e8aa07751432b523808dc6a017a434", bind_5652ba27bec8e7fb)
+	tmplrt.Register("56e2feb118f223de2952f473b04cbcc807f3ab464d5798645440eeecaa85eb59", bind_56e2feb118f223de)
 	tmplrt.Register("573e8f2e557e2b8976e53525454fb11ea9962f1b7b1a737fde4f4ea94aaabab1", bind_573e8f2e557e2b89)
 	tmplrt.Register("574acc82a070a9fadb83577384d3621a0fbc5fa5a97a64df0725ae2fd7da92f9", bind_574acc82a070a9fa)
 	tmplrt.Register("579d9adc06e450e7f66583abd867d3eb673b7366db332b7151f9acbdc3859ec0", bind_579d9adc06e450e7)
@@ -135,6 +135,7 @@ func init() {
 	tmplrt.Register("66ddd414a9fac665748c1127c4b72094b9e5a7acaa87a6483619e06b68a85089", bind_66ddd414a9fac665)
 	tmplrt.Register("69e588b94527a276db8276d52e1fe3c4b419b12eb644010575de2c96a0d62e24", bind_69e588b94527a276)
 	tmplrt.Register("6b8bb6f9fd493a40db5de5b348324c22a70a64e90db847a7516adbae2f02a999", bind_6b8bb6f9fd493a40)
+	tmplrt.Register("6c1785d5d15f1b3e662d9eba0a35c2f05aa34cd34f8bfc8230d106b2229d48a5", bind_6c1785d5d15f1b3e)
 	tmplrt.Register("6dc89d70a55cc0422bf7c3e2a4f0132b0c245e306ca0b9b69a645ebd039f5558", bind_6dc89d70a55cc042)
 	tmplrt.Register("6e82fdca2d140db158a4ee1fef6fa55019ac1770e9e8cfb7193c51eda17ccfdd", bind_6e82fdca2d140db1)
 	tmplrt.Register("6e9f4e3ec657a71a90bad68c8ec63ffb78e16af350b46f19717ac8b8c6df7698", bind_6e9f4e3ec657a71a)
@@ -142,7 +143,6 @@ func init() {
 	tmplrt.Register("6fb14d7537c17c7df4eab7418a1513d0bd8b6d5fb3e99ef320cc2e8c05225aa6", bind_6fb14d7537c17c7d)
 	tmplrt.Register("72b422679a4342f496f63c9cc999719a3336e6123b6ad1fcc1f33861e44339f4", bind_72b422679a4342f4)
 	tmplrt.Register("73030a9d262d2f0fa618c0a23384400b185b8337b9feb5216e5cb9390222d9e4", bind_73030a9d262d2f0f)
-	tmplrt.Register("73ad288ebf4fcb27b1ff1c3a23ea46f71ac543058a12064e7428aad3ef18f964", bind_73ad288ebf4fcb27)
 	tmplrt.Register("73be4435ec3dff1f35071c5907093f9a41d481414958a55b1614a6b3ebfbd36d", bind_73be4435ec3dff1f)
 	tmplrt.Register("74dcb7c9cc20a8cd0db1ff57ef9ff9b5de6e9d6b9e546e0dd431e4361def5615", bind_74dcb7c9cc20a8cd)
 	tmplrt.Register("77a6c5a9629ee6608daf795e3e1c40cfd1517ee5a532914a97c5459da9a069d0", bind_77a6c5a9629ee660)
@@ -156,13 +156,11 @@ func init() {
 	tmplrt.Register("7c6069a7ca48a6125c093fb303a12d3354781ead0768c1a08a63b39bb5fb4859", bind_7c6069a7ca48a612)
 	tmplrt.Register("7dc9c440a62d2ec19f638ca387c852dbd3b0cfe9b65af340ae99d93744662af5", bind_7dc9c440a62d2ec1)
 	tmplrt.Register("7f234292a64bfee6f72ce0036a56b83f720eeefeccc03f3273a053b74914725f", bind_7f234292a64bfee6)
-	tmplrt.Register("800761ae37adf7cab52257238d00ec443e0d64a0143de98069b8b783c34ddabe", bind_800761ae37adf7ca)
 	tmplrt.Register("80f75a13dbe0048fed0584c1497aae25bbf1cd894335acc1592ecd6818801b44", bind_80f75a13dbe0048f)
 	tmplrt.Register("820fbab31d98272d39a826f9a04439ff402ccfaf703147e889e01fc71aa65f69", bind_820fbab31d98272d)
 	tmplrt.Register("82413fa8764dd967c01df14cc544116111186db494b8fac2c4f7d785cf3d181d", bind_82413fa8764dd967)
 	tmplrt.Register("83182793320cda1e227738432a7277e1a0fc1007180565868508e897cdd9c62d", bind_83182793320cda1e)
 	tmplrt.Register("834594040203eb89489e03e67337e8cae2bac600ddd9730c151a4f27d7807899", bind_834594040203eb89)
-	tmplrt.Register("851d093aa6d57f65e6c03ad0337c808454494cd3c9377c12e4d5ccdb78c149be", bind_851d093aa6d57f65)
 	tmplrt.Register("85fd9788e2e77a6291d5e58ab176f8f6c7c99c95e8a8575f5147a50ab929aa4b", bind_85fd9788e2e77a62)
 	tmplrt.Register("866f808ef07e787f408a16283a280be7e47bae1d0469c569510b2900ab5f0464", bind_866f808ef07e787f)
 	tmplrt.Register("878e75ac00afa496cb8e82dcfdf0fc8fe0dd9b2767239743fdcba5f3824737f5", bind_878e75ac00afa496)
@@ -187,6 +185,7 @@ func init() {
 	tmplrt.Register("956ab2a6759efa3f881037757bf879323e71e8a5262597710e17dc8e81e1f363", bind_956ab2a6759efa3f)
 	tmplrt.Register("95bab0a4f3436e81bd0b1ec1d26a3a05b05d213bdf37fab4b715dfc9c25298c7", bind_95bab0a4f3436e81)
 	tmplrt.Register("96bdf2b5ade56abd7d3c23c6009db9dcd0a958a7d8407737b376b9144576dadb", bind_96bdf2b5ade56abd)
+	tmplrt.Register("9749100c548b7478f5265cbdbf6c84203cd5d651f436f50aaab4d49d61f489bf", bind_9749100c548b7478)
 	tmplrt.Register("98717b1a252f93a754ea23790c256a594cc9c817de9dd75668a50d6923fa46b0", bind_98717b1a252f93a7)
 	tmplrt.Register("98773ee572dc4a68e04ae14301eeab9adf4f08096896b4ca8a1c246a1c1c3eaa", bind_98773ee572dc4a68)
 	tmplrt.Register("9a60a63d4f0c687726bcc93de4f034585d1b03866c014a9cc4f86da6937f89fb", bind_9a60a63d4f0c6877)
@@ -199,7 +198,6 @@ func init() {
 	tmplrt.Register("9d604f3a6db1a39bfb0e395e186dc25e037106b87d69153b7e1d31732cdc9ec8", bind_9d604f3a6db1a39b)
 	tmplrt.Register("9e100ffd78fb1c628521c11d1f558158b4144e8e98ae08547477f1961d5ebd9b", bind_9e100ffd78fb1c62)
 	tmplrt.Register("9e5bc7e2ce1ae81e2e307a552342ae175bbdd9f52ea47ca7d0d8a078ebf4145d", bind_9e5bc7e2ce1ae81e)
-	tmplrt.Register("a1dda2a7ab396ae3c88b792452a33f72b88a0ef3763004cb71bb8af83478ca72", bind_a1dda2a7ab396ae3)
 	tmplrt.Register("a32cb92d490bc3e1338a443e36213d2356f4910b3b48200cb27f4751d9f2804b", bind_a32cb92d490bc3e1)
 	tmplrt.Register("a4d97cd89a7b24a3b1ed14aea647deb1cb4672dde66f54435fda8859037180a0", bind_a4d97cd89a7b24a3)
 	tmplrt.Register("a714e4edf28ff57ef1ab8350c1a7cf5d3c2736967ea6493a102b4179a149ddc3", bind_a714e4edf28ff57e)
@@ -213,6 +211,7 @@ func init() {
 	tmplrt.Register("add2ee8877791f2d669c29956649a2cc2acf0bef7f7cb8bfda87a782f2b81b96", bind_add2ee8877791f2d)
 	tmplrt.Register("adea08a180bb196115c1355334bdd38206a1152fecb12aa58c68ad0f36d6f8a0", bind_adea08a180bb1961)
 	tmplrt.Register("af0bfa10c74d24770384578acb8ddfacf0cf64555a5b1633c4201a6015f83312", bind_af0bfa10c74d2477)
+	tmplrt.Register("af78fe356a31eae2cc5219fe4a41164f49506c78bfde781f160d5125f98a3ec8", bind_af78fe356a31eae2)
 	tmplrt.Register("b0b0737614a3832108d50bcaa7e2f4bbcc63de0fc5a316ab735681a030ecff42", bind_b0b0737614a38321)
 	tmplrt.Register("b0d8bf1f33e06ac968964de5970078cb62107f8cdc6f92e6560773e7a385d744", bind_b0d8bf1f33e06ac9)
 	tmplrt.Register("b0f5fe2497a537919f377109636bec75fa70dc86cfd2bd316597ebd09ae933af", bind_b0f5fe2497a53791)
@@ -257,7 +256,6 @@ func init() {
 	tmplrt.Register("da9dba49a0194ca14f1fc73ada3c197ebcd7a6c10b65dd47a548c5b0955049f5", bind_da9dba49a0194ca1)
 	tmplrt.Register("dfd040481258584bf7b64102a580a8dd7f8223f4abfeb37bc9a7a2e3dc10d262", bind_dfd040481258584b)
 	tmplrt.Register("e071ec706a9a8b5188a23ba19d697dda3a196bb7b5b4275e187500dfd6d8a334", bind_e071ec706a9a8b51)
-	tmplrt.Register("e2f80bfe26154f51cfa59019ba442d7a7c002405ded7f87e0e728b02fe03d0e3", bind_e2f80bfe26154f51)
 	tmplrt.Register("e3191d7d0c5b6e81b44ac0a92e68b905b44da425a13ea8a020fe6ef41df18356", bind_e3191d7d0c5b6e81)
 	tmplrt.Register("e324aeeb413a781420ae73d97a4293b8623afd9f124651a433f6a0d3b6ebcbff", bind_e324aeeb413a7814)
 	tmplrt.Register("e38d9af5e5da0244e90ceb381fe387a8bd67cc99083e3cac5e798276232fce27", bind_e38d9af5e5da0244)
@@ -268,10 +266,12 @@ func init() {
 	tmplrt.Register("e94926873d514e0fe3555cefad12972caa8bc975388e18954c96d532f98c4128", bind_e94926873d514e0f)
 	tmplrt.Register("ea74909bda48941f7c1c965d87eed5f17f7105162f973e0a9ff30913b8ef4817", bind_ea74909bda48941f)
 	tmplrt.Register("ece6b55e1c87c97d73d951b694449ac6e052a6d577f84e8f49bf5eb506435469", bind_ece6b55e1c87c97d)
+	tmplrt.Register("efa378e4a9ef8982b85dccb27a1b0c48df703228d1165d3fd4fd9579d176f795", bind_efa378e4a9ef8982)
 	tmplrt.Register("efc3ca6a7d991a5a3e0344b6b586b62955a2b76451f291544745544de9424621", bind_efc3ca6a7d991a5a)
 	tmplrt.Register("f1188bf49758034a28c4b9c3cc141d81efd2592acf5c01e9ddaa1878496600dd", bind_f1188bf49758034a)
 	tmplrt.Register("f15bb5bc1089c7069bcc926fe7146e043cff29917373780d0affb54002ab8ef9", bind_f15bb5bc1089c706)
 	tmplrt.Register("f18630ad0e31afe76b5e0991cb8cdb5652cc9a02de06151825182fbb2642e852", bind_f18630ad0e31afe7)
+	tmplrt.Register("f2e39a43ec0cca52d4ccc01bb8a86f4504c4cc0d911f6d38f23d75fc12373d68", bind_f2e39a43ec0cca52)
 	tmplrt.Register("f311244df7ec109c2ef07e5c7032e6d7a513cac8e204435b16a73c003536b666", bind_f311244df7ec109c)
 	tmplrt.Register("f34a6492e5b362674dbe0f7ed7edbac753542b116ce368533801dcd986c306d7", bind_f34a6492e5b36267)
 	tmplrt.Register("f45d32329a48ff9e80ee420937a31a22556cec97361674ccd5854b73a94177b9", bind_f45d32329a48ff9e)
@@ -1745,6 +1745,43 @@ func bind_3328140930329e9a(map[string]any) (tmplrt.Exec, error) {
 	}, nil
 }
 
+// bind_335bcd1bc854f564 binds "layout".
+func bind_335bcd1bc854f564(funcs map[string]any) (tmplrt.Exec, error) {
+	fn := new(templateFuncs)
+	var ok bool
+	if fn.T_a3eca208, ok = funcs["T"].(func(...any) (any, error)); !ok {
+		return nil, tmplrt.BindError("T", funcs["T"])
+	}
+	if fn.Tf_a3eca208, ok = funcs["Tf"].(func(...any) (any, error)); !ok {
+		return nil, tmplrt.BindError("Tf", funcs["Tf"])
+	}
+	if fn.asset_0e0a6fbe, ok = funcs["asset"].(func(string) string); !ok {
+		return nil, tmplrt.BindError("asset", funcs["asset"])
+	}
+	if fn.dict_72aa8d8f, ok = funcs["dict"].(func(...any) (map[string]any, error)); !ok {
+		return nil, tmplrt.BindError("dict", funcs["dict"])
+	}
+	if fn.iconAssets_e8f4e4f5, ok = funcs["iconAssets"].(func() template.HTML); !ok {
+		return nil, tmplrt.BindError("iconAssets", funcs["iconAssets"])
+	}
+	if fn.icon_bd1e407c, ok = funcs["icon"].(func(string) template.HTML); !ok {
+		return nil, tmplrt.BindError("icon", funcs["icon"])
+	}
+	if fn.localizer_634df8c4, ok = funcs["localizer"].(func(any) *ui.Localizer); !ok {
+		return nil, tmplrt.BindError("localizer", funcs["localizer"])
+	}
+	if fn.path_c02006f6, ok = funcs["path"].(func(any, string) string); !ok {
+		return nil, tmplrt.BindError("path", funcs["path"])
+	}
+	if err := tmplrt.Holds(&facts_606dc54973cc1911, &facts_83f48c879de37375, &facts_a712dfb3c50f8922, &facts_f7d9a038afc9082e, &facts_fed7be9f579c4244); err != nil {
+		return nil, err
+	}
+	return func(b *bytes.Buffer, data any) (err error) {
+		defer tmplrt.Recover(&err, "layout")
+		return exec_f7d9a038afc9082e(b, tmplrt.Data(data), fn, 0)
+	}, nil
+}
+
 // bind_342f5d9dc0cfc750 binds "actor.html".
 func bind_342f5d9dc0cfc750(map[string]any) (tmplrt.Exec, error) {
 	return func(b *bytes.Buffer, data any) (err error) {
@@ -1811,12 +1848,23 @@ func bind_351c6c485791cfb6(map[string]any) (tmplrt.Exec, error) {
 	}, nil
 }
 
-// bind_362ef1b99b90e07b binds "layout".
-func bind_362ef1b99b90e07b(funcs map[string]any) (tmplrt.Exec, error) {
+// bind_38bf6520640d9dfc binds "list-bar.html".
+func bind_38bf6520640d9dfc(map[string]any) (tmplrt.Exec, error) {
+	return func(b *bytes.Buffer, data any) (err error) {
+		defer tmplrt.Recover(&err, "list-bar.html")
+		return exec_b835b92adda3d868(b, tmplrt.Data(data), nil, 0)
+	}, nil
+}
+
+// bind_3a9518734f7f277d binds "layout".
+func bind_3a9518734f7f277d(funcs map[string]any) (tmplrt.Exec, error) {
 	fn := new(templateFuncs)
 	var ok bool
 	if fn.T_a3eca208, ok = funcs["T"].(func(...any) (any, error)); !ok {
 		return nil, tmplrt.BindError("T", funcs["T"])
+	}
+	if fn.Tbdi_a3eca208, ok = funcs["Tbdi"].(func(...any) (any, error)); !ok {
+		return nil, tmplrt.BindError("Tbdi", funcs["Tbdi"])
 	}
 	if fn.Tf_a3eca208, ok = funcs["Tf"].(func(...any) (any, error)); !ok {
 		return nil, tmplrt.BindError("Tf", funcs["Tf"])
@@ -1824,32 +1872,51 @@ func bind_362ef1b99b90e07b(funcs map[string]any) (tmplrt.Exec, error) {
 	if fn.asset_0e0a6fbe, ok = funcs["asset"].(func(string) string); !ok {
 		return nil, tmplrt.BindError("asset", funcs["asset"])
 	}
+	if fn.dateWords_a3eca208, ok = funcs["dateWords"].(func(...any) (any, error)); !ok {
+		return nil, tmplrt.BindError("dateWords", funcs["dateWords"])
+	}
 	if fn.dict_72aa8d8f, ok = funcs["dict"].(func(...any) (map[string]any, error)); !ok {
 		return nil, tmplrt.BindError("dict", funcs["dict"])
 	}
 	if fn.iconAssets_e8f4e4f5, ok = funcs["iconAssets"].(func() template.HTML); !ok {
 		return nil, tmplrt.BindError("iconAssets", funcs["iconAssets"])
 	}
+	if fn.icon_bd1e407c, ok = funcs["icon"].(func(string) template.HTML); !ok {
+		return nil, tmplrt.BindError("icon", funcs["icon"])
+	}
 	if fn.localizer_634df8c4, ok = funcs["localizer"].(func(any) *ui.Localizer); !ok {
 		return nil, tmplrt.BindError("localizer", funcs["localizer"])
 	}
-	if fn.path_c02006f6, ok = funcs["path"].(func(any, string) string); !ok {
-		return nil, tmplrt.BindError("path", funcs["path"])
+	if fn.money_a3eca208, ok = funcs["money"].(func(...any) (any, error)); !ok {
+		return nil, tmplrt.BindError("money", funcs["money"])
 	}
-	if err := tmplrt.Holds(&facts_606dc54973cc1911, &facts_7b0e433294ed26d2, &facts_83f48c879de37375, &facts_a712dfb3c50f8922, &facts_fed7be9f579c4244); err != nil {
+	if fn.needs_e5e4fd6b, ok = funcs["needs"].(func(string) (string, error)); !ok {
+		return nil, tmplrt.BindError("needs", funcs["needs"])
+	}
+	if fn.number_a3eca208, ok = funcs["number"].(func(...any) (any, error)); !ok {
+		return nil, tmplrt.BindError("number", funcs["number"])
+	}
+	if fn.withL_2f8846c9, ok = funcs["withL"].(func(any, *ui.Localizer) any); !ok {
+		return nil, tmplrt.BindError("withL", funcs["withL"])
+	}
+	if err := tmplrt.Holds(&facts_272d2811cfeb689e, &facts_4976ad99edc8a465, &facts_4d367691bf74e3e0, &facts_606dc54973cc1911, &facts_7a3721439f7d75a7, &facts_83f48c879de37375, &facts_ac8dc6c53b50082b, &facts_ae0db17aab33c528); err != nil {
 		return nil, err
 	}
+	typed0 := tmplrt.Holds(&facts_2dc89848829575fb_0a42071c, &facts_30bfb3ff0d39cc14_0a42071c, &facts_31ad09fd84c8ecff_0a42071c, &facts_35c32244d2e12608_0a42071c, &facts_43ebd9331896345f_0a42071c, &facts_606dc54973cc1911_0a42071c, &facts_705d1f1c72ed2826_0a42071c, &facts_7a3721439f7d75a7_0a42071c, &facts_83f48c879de37375_0a42071c, &facts_9742e4153b2cd941_0a42071c, &facts_a0bbdd679bf279f3_0a42071c, &facts_abae878773236025_0a42071c, &facts_ac8dc6c53b50082b_0a42071c, &facts_dd9a8f29d7f092e6_0a42071c) == nil
+	typed1 := tmplrt.Holds(&facts_2dc89848829575fb_b6cf1f3e, &facts_30bfb3ff0d39cc14_b6cf1f3e, &facts_31ad09fd84c8ecff_b6cf1f3e, &facts_35c32244d2e12608_b6cf1f3e, &facts_43ebd9331896345f_b6cf1f3e, &facts_606dc54973cc1911_b6cf1f3e, &facts_705d1f1c72ed2826_b6cf1f3e, &facts_7a3721439f7d75a7_b6cf1f3e, &facts_83f48c879de37375_b6cf1f3e, &facts_9742e4153b2cd941_b6cf1f3e, &facts_a0bbdd679bf279f3_b6cf1f3e, &facts_abae878773236025_b6cf1f3e, &facts_ac8dc6c53b50082b_b6cf1f3e, &facts_dd9a8f29d7f092e6_b6cf1f3e) == nil
 	return func(b *bytes.Buffer, data any) (err error) {
 		defer tmplrt.Recover(&err, "layout")
-		return exec_7b0e433294ed26d2(b, tmplrt.Data(data), fn, 0)
-	}, nil
-}
-
-// bind_38bf6520640d9dfc binds "list-bar.html".
-func bind_38bf6520640d9dfc(map[string]any) (tmplrt.Exec, error) {
-	return func(b *bytes.Buffer, data any) (err error) {
-		defer tmplrt.Recover(&err, "list-bar.html")
-		return exec_b835b92adda3d868(b, tmplrt.Data(data), nil, 0)
+		switch data := data.(type) {
+		case pageData:
+			if typed0 {
+				return exec_ac8dc6c53b50082b_0a42071c(b, data, fn, 0)
+			}
+		case *pageData:
+			if typed1 {
+				return exec_ac8dc6c53b50082b_b6cf1f3e(b, data, fn, 0)
+			}
+		}
+		return exec_ac8dc6c53b50082b(b, tmplrt.Data(data), fn, 0)
 	}, nil
 }
 
@@ -2161,61 +2228,6 @@ func bind_4a20d6ebe22392e7(map[string]any) (tmplrt.Exec, error) {
 	}, nil
 }
 
-// bind_4a808282c304673b binds "layout".
-func bind_4a808282c304673b(funcs map[string]any) (tmplrt.Exec, error) {
-	fn := new(templateFuncs)
-	var ok bool
-	if fn.T_a3eca208, ok = funcs["T"].(func(...any) (any, error)); !ok {
-		return nil, tmplrt.BindError("T", funcs["T"])
-	}
-	if fn.Tf_a3eca208, ok = funcs["Tf"].(func(...any) (any, error)); !ok {
-		return nil, tmplrt.BindError("Tf", funcs["Tf"])
-	}
-	if fn.asset_0e0a6fbe, ok = funcs["asset"].(func(string) string); !ok {
-		return nil, tmplrt.BindError("asset", funcs["asset"])
-	}
-	if fn.dateWords_a3eca208, ok = funcs["dateWords"].(func(...any) (any, error)); !ok {
-		return nil, tmplrt.BindError("dateWords", funcs["dateWords"])
-	}
-	if fn.dict_72aa8d8f, ok = funcs["dict"].(func(...any) (map[string]any, error)); !ok {
-		return nil, tmplrt.BindError("dict", funcs["dict"])
-	}
-	if fn.iconAssets_e8f4e4f5, ok = funcs["iconAssets"].(func() template.HTML); !ok {
-		return nil, tmplrt.BindError("iconAssets", funcs["iconAssets"])
-	}
-	if fn.icon_bd1e407c, ok = funcs["icon"].(func(string) template.HTML); !ok {
-		return nil, tmplrt.BindError("icon", funcs["icon"])
-	}
-	if fn.localizer_634df8c4, ok = funcs["localizer"].(func(any) *ui.Localizer); !ok {
-		return nil, tmplrt.BindError("localizer", funcs["localizer"])
-	}
-	if fn.money_a3eca208, ok = funcs["money"].(func(...any) (any, error)); !ok {
-		return nil, tmplrt.BindError("money", funcs["money"])
-	}
-	if fn.needs_e5e4fd6b, ok = funcs["needs"].(func(string) (string, error)); !ok {
-		return nil, tmplrt.BindError("needs", funcs["needs"])
-	}
-	if fn.number_a3eca208, ok = funcs["number"].(func(...any) (any, error)); !ok {
-		return nil, tmplrt.BindError("number", funcs["number"])
-	}
-	if fn.opt_08785a53, ok = funcs["opt"].(func(any, string) any); !ok {
-		return nil, tmplrt.BindError("opt", funcs["opt"])
-	}
-	if fn.paginationItems_r = reflect.ValueOf(funcs["paginationItems"]); fn.paginationItems_r.Kind() != reflect.Func {
-		return nil, tmplrt.BindError("paginationItems", funcs["paginationItems"])
-	}
-	if fn.withL_2f8846c9, ok = funcs["withL"].(func(any, *ui.Localizer) any); !ok {
-		return nil, tmplrt.BindError("withL", funcs["withL"])
-	}
-	if err := tmplrt.Holds(&facts_4976ad99edc8a465, &facts_4d367691bf74e3e0, &facts_606dc54973cc1911, &facts_83f48c879de37375, &facts_8a9ef95630f15137, &facts_9489de95f137ad07, &facts_ae0db17aab33c528, &facts_d1285cef9f043c97, &facts_d4bb90fc7ac76d9c); err != nil {
-		return nil, err
-	}
-	return func(b *bytes.Buffer, data any) (err error) {
-		defer tmplrt.Recover(&err, "layout")
-		return exec_9489de95f137ad07(b, tmplrt.Data(data), fn, 0)
-	}, nil
-}
-
 // bind_4b52b3aa55899ae9 binds "field-number".
 func bind_4b52b3aa55899ae9(map[string]any) (tmplrt.Exec, error) {
 	return func(b *bytes.Buffer, data any) (err error) {
@@ -2475,28 +2487,28 @@ func bind_54b124cdd6a98cce(map[string]any) (tmplrt.Exec, error) {
 	}, nil
 }
 
-// bind_5652ba27bec8e7fb binds "layout".
-func bind_5652ba27bec8e7fb(funcs map[string]any) (tmplrt.Exec, error) {
+// bind_56e2feb118f223de binds "scheme-menu".
+func bind_56e2feb118f223de(funcs map[string]any) (tmplrt.Exec, error) {
 	fn := new(templateFuncs)
 	var ok bool
 	if fn.T_a3eca208, ok = funcs["T"].(func(...any) (any, error)); !ok {
 		return nil, tmplrt.BindError("T", funcs["T"])
 	}
-	if fn.Tf_a3eca208, ok = funcs["Tf"].(func(...any) (any, error)); !ok {
-		return nil, tmplrt.BindError("Tf", funcs["Tf"])
+	if fn.icon_bd1e407c, ok = funcs["icon"].(func(string) template.HTML); !ok {
+		return nil, tmplrt.BindError("icon", funcs["icon"])
 	}
-	if fn.asset_0e0a6fbe, ok = funcs["asset"].(func(string) string); !ok {
-		return nil, tmplrt.BindError("asset", funcs["asset"])
+	if fn.localizer_634df8c4, ok = funcs["localizer"].(func(any) *ui.Localizer); !ok {
+		return nil, tmplrt.BindError("localizer", funcs["localizer"])
 	}
-	if fn.iconAssets_e8f4e4f5, ok = funcs["iconAssets"].(func() template.HTML); !ok {
-		return nil, tmplrt.BindError("iconAssets", funcs["iconAssets"])
+	if fn.opt_08785a53, ok = funcs["opt"].(func(any, string) any); !ok {
+		return nil, tmplrt.BindError("opt", funcs["opt"])
 	}
-	if err := tmplrt.Holds(&facts_8f464eded44e6274); err != nil {
+	if err := tmplrt.Holds(&facts_d76cb551e53a87b8); err != nil {
 		return nil, err
 	}
 	return func(b *bytes.Buffer, data any) (err error) {
-		defer tmplrt.Recover(&err, "layout")
-		return exec_8f464eded44e6274(b, tmplrt.Data(data), fn, 0)
+		defer tmplrt.Recover(&err, "scheme-menu")
+		return exec_d76cb551e53a87b8(b, tmplrt.Data(data), fn, 0)
 	}, nil
 }
 
@@ -2864,6 +2876,34 @@ func bind_6b8bb6f9fd493a40(map[string]any) (tmplrt.Exec, error) {
 	}, nil
 }
 
+// bind_6c1785d5d15f1b3e binds "locale-menu".
+func bind_6c1785d5d15f1b3e(funcs map[string]any) (tmplrt.Exec, error) {
+	fn := new(templateFuncs)
+	var ok bool
+	if fn.T_a3eca208, ok = funcs["T"].(func(...any) (any, error)); !ok {
+		return nil, tmplrt.BindError("T", funcs["T"])
+	}
+	if fn.icon_bd1e407c, ok = funcs["icon"].(func(string) template.HTML); !ok {
+		return nil, tmplrt.BindError("icon", funcs["icon"])
+	}
+	if fn.localizer_634df8c4, ok = funcs["localizer"].(func(any) *ui.Localizer); !ok {
+		return nil, tmplrt.BindError("localizer", funcs["localizer"])
+	}
+	if fn.menuGroup_fbb579ee, ok = funcs["menuGroup"].(func(any) string); !ok {
+		return nil, tmplrt.BindError("menuGroup", funcs["menuGroup"])
+	}
+	if fn.opt_08785a53, ok = funcs["opt"].(func(any, string) any); !ok {
+		return nil, tmplrt.BindError("opt", funcs["opt"])
+	}
+	if err := tmplrt.Holds(&facts_ef9ecb83020e9024); err != nil {
+		return nil, err
+	}
+	return func(b *bytes.Buffer, data any) (err error) {
+		defer tmplrt.Recover(&err, "locale-menu")
+		return exec_ef9ecb83020e9024(b, tmplrt.Data(data), fn, 0)
+	}, nil
+}
+
 // bind_6dc89d70a55cc042 binds "signin".
 func bind_6dc89d70a55cc042(funcs map[string]any) (tmplrt.Exec, error) {
 	fn := new(templateFuncs)
@@ -3069,37 +3109,6 @@ func bind_73030a9d262d2f0f(map[string]any) (tmplrt.Exec, error) {
 			}
 		}
 		return exec_78f6dc18d3c206d6(b, tmplrt.Data(data), nil, 0)
-	}, nil
-}
-
-// bind_73ad288ebf4fcb27 binds "layout".
-func bind_73ad288ebf4fcb27(funcs map[string]any) (tmplrt.Exec, error) {
-	fn := new(templateFuncs)
-	var ok bool
-	if fn.T_a3eca208, ok = funcs["T"].(func(...any) (any, error)); !ok {
-		return nil, tmplrt.BindError("T", funcs["T"])
-	}
-	if fn.Tf_a3eca208, ok = funcs["Tf"].(func(...any) (any, error)); !ok {
-		return nil, tmplrt.BindError("Tf", funcs["Tf"])
-	}
-	if fn.asset_0e0a6fbe, ok = funcs["asset"].(func(string) string); !ok {
-		return nil, tmplrt.BindError("asset", funcs["asset"])
-	}
-	if fn.iconAssets_e8f4e4f5, ok = funcs["iconAssets"].(func() template.HTML); !ok {
-		return nil, tmplrt.BindError("iconAssets", funcs["iconAssets"])
-	}
-	if fn.localizer_634df8c4, ok = funcs["localizer"].(func(any) *ui.Localizer); !ok {
-		return nil, tmplrt.BindError("localizer", funcs["localizer"])
-	}
-	if fn.path_c02006f6, ok = funcs["path"].(func(any, string) string); !ok {
-		return nil, tmplrt.BindError("path", funcs["path"])
-	}
-	if err := tmplrt.Holds(&facts_265c759d769737b8, &facts_606dc54973cc1911); err != nil {
-		return nil, err
-	}
-	return func(b *bytes.Buffer, data any) (err error) {
-		defer tmplrt.Recover(&err, "layout")
-		return exec_265c759d769737b8(b, tmplrt.Data(data), fn, 0)
 	}, nil
 }
 
@@ -3368,67 +3377,6 @@ func bind_7f234292a64bfee6(funcs map[string]any) (tmplrt.Exec, error) {
 	}, nil
 }
 
-// bind_800761ae37adf7ca binds "layout".
-func bind_800761ae37adf7ca(funcs map[string]any) (tmplrt.Exec, error) {
-	fn := new(templateFuncs)
-	var ok bool
-	if fn.T_a3eca208, ok = funcs["T"].(func(...any) (any, error)); !ok {
-		return nil, tmplrt.BindError("T", funcs["T"])
-	}
-	if fn.Tbdi_a3eca208, ok = funcs["Tbdi"].(func(...any) (any, error)); !ok {
-		return nil, tmplrt.BindError("Tbdi", funcs["Tbdi"])
-	}
-	if fn.Tf_a3eca208, ok = funcs["Tf"].(func(...any) (any, error)); !ok {
-		return nil, tmplrt.BindError("Tf", funcs["Tf"])
-	}
-	if fn.asset_0e0a6fbe, ok = funcs["asset"].(func(string) string); !ok {
-		return nil, tmplrt.BindError("asset", funcs["asset"])
-	}
-	if fn.dateWords_a3eca208, ok = funcs["dateWords"].(func(...any) (any, error)); !ok {
-		return nil, tmplrt.BindError("dateWords", funcs["dateWords"])
-	}
-	if fn.dict_72aa8d8f, ok = funcs["dict"].(func(...any) (map[string]any, error)); !ok {
-		return nil, tmplrt.BindError("dict", funcs["dict"])
-	}
-	if fn.iconAssets_e8f4e4f5, ok = funcs["iconAssets"].(func() template.HTML); !ok {
-		return nil, tmplrt.BindError("iconAssets", funcs["iconAssets"])
-	}
-	if fn.localizer_634df8c4, ok = funcs["localizer"].(func(any) *ui.Localizer); !ok {
-		return nil, tmplrt.BindError("localizer", funcs["localizer"])
-	}
-	if fn.money_a3eca208, ok = funcs["money"].(func(...any) (any, error)); !ok {
-		return nil, tmplrt.BindError("money", funcs["money"])
-	}
-	if fn.needs_e5e4fd6b, ok = funcs["needs"].(func(string) (string, error)); !ok {
-		return nil, tmplrt.BindError("needs", funcs["needs"])
-	}
-	if fn.number_a3eca208, ok = funcs["number"].(func(...any) (any, error)); !ok {
-		return nil, tmplrt.BindError("number", funcs["number"])
-	}
-	if fn.withL_2f8846c9, ok = funcs["withL"].(func(any, *ui.Localizer) any); !ok {
-		return nil, tmplrt.BindError("withL", funcs["withL"])
-	}
-	if err := tmplrt.Holds(&facts_272d2811cfeb689e, &facts_4976ad99edc8a465, &facts_4d367691bf74e3e0, &facts_5b4f8a7e7806ae5a, &facts_606dc54973cc1911, &facts_7a3721439f7d75a7, &facts_83f48c879de37375, &facts_ae0db17aab33c528); err != nil {
-		return nil, err
-	}
-	typed0 := tmplrt.Holds(&facts_2dc89848829575fb_0a42071c, &facts_30bfb3ff0d39cc14_0a42071c, &facts_31ad09fd84c8ecff_0a42071c, &facts_35c32244d2e12608_0a42071c, &facts_43ebd9331896345f_0a42071c, &facts_5b4f8a7e7806ae5a_0a42071c, &facts_606dc54973cc1911_0a42071c, &facts_705d1f1c72ed2826_0a42071c, &facts_7a3721439f7d75a7_0a42071c, &facts_83f48c879de37375_0a42071c, &facts_9742e4153b2cd941_0a42071c, &facts_a0bbdd679bf279f3_0a42071c, &facts_abae878773236025_0a42071c, &facts_dd9a8f29d7f092e6_0a42071c) == nil
-	typed1 := tmplrt.Holds(&facts_2dc89848829575fb_b6cf1f3e, &facts_30bfb3ff0d39cc14_b6cf1f3e, &facts_31ad09fd84c8ecff_b6cf1f3e, &facts_35c32244d2e12608_b6cf1f3e, &facts_43ebd9331896345f_b6cf1f3e, &facts_5b4f8a7e7806ae5a_b6cf1f3e, &facts_606dc54973cc1911_b6cf1f3e, &facts_705d1f1c72ed2826_b6cf1f3e, &facts_7a3721439f7d75a7_b6cf1f3e, &facts_83f48c879de37375_b6cf1f3e, &facts_9742e4153b2cd941_b6cf1f3e, &facts_a0bbdd679bf279f3_b6cf1f3e, &facts_abae878773236025_b6cf1f3e, &facts_dd9a8f29d7f092e6_b6cf1f3e) == nil
-	return func(b *bytes.Buffer, data any) (err error) {
-		defer tmplrt.Recover(&err, "layout")
-		switch data := data.(type) {
-		case pageData:
-			if typed0 {
-				return exec_5b4f8a7e7806ae5a_0a42071c(b, data, fn, 0)
-			}
-		case *pageData:
-			if typed1 {
-				return exec_5b4f8a7e7806ae5a_b6cf1f3e(b, data, fn, 0)
-			}
-		}
-		return exec_5b4f8a7e7806ae5a(b, tmplrt.Data(data), fn, 0)
-	}, nil
-}
-
 // bind_80f75a13dbe0048f binds "signin-app-problem".
 func bind_80f75a13dbe0048f(funcs map[string]any) (tmplrt.Exec, error) {
 	fn := new(templateFuncs)
@@ -3538,37 +3486,6 @@ func bind_834594040203eb89(map[string]any) (tmplrt.Exec, error) {
 			}
 		}
 		return exec_b696e3a233e70993(b, tmplrt.Data(data), nil, 0)
-	}, nil
-}
-
-// bind_851d093aa6d57f65 binds "layout".
-func bind_851d093aa6d57f65(funcs map[string]any) (tmplrt.Exec, error) {
-	fn := new(templateFuncs)
-	var ok bool
-	if fn.T_a3eca208, ok = funcs["T"].(func(...any) (any, error)); !ok {
-		return nil, tmplrt.BindError("T", funcs["T"])
-	}
-	if fn.Tf_a3eca208, ok = funcs["Tf"].(func(...any) (any, error)); !ok {
-		return nil, tmplrt.BindError("Tf", funcs["Tf"])
-	}
-	if fn.asset_0e0a6fbe, ok = funcs["asset"].(func(string) string); !ok {
-		return nil, tmplrt.BindError("asset", funcs["asset"])
-	}
-	if fn.iconAssets_e8f4e4f5, ok = funcs["iconAssets"].(func() template.HTML); !ok {
-		return nil, tmplrt.BindError("iconAssets", funcs["iconAssets"])
-	}
-	if fn.localizer_634df8c4, ok = funcs["localizer"].(func(any) *ui.Localizer); !ok {
-		return nil, tmplrt.BindError("localizer", funcs["localizer"])
-	}
-	if fn.path_c02006f6, ok = funcs["path"].(func(any, string) string); !ok {
-		return nil, tmplrt.BindError("path", funcs["path"])
-	}
-	if err := tmplrt.Holds(&facts_606dc54973cc1911, &facts_8307ff0728154912); err != nil {
-		return nil, err
-	}
-	return func(b *bytes.Buffer, data any) (err error) {
-		defer tmplrt.Recover(&err, "layout")
-		return exec_8307ff0728154912(b, tmplrt.Data(data), fn, 0)
 	}, nil
 }
 
@@ -4165,6 +4082,61 @@ func bind_96bdf2b5ade56abd(map[string]any) (tmplrt.Exec, error) {
 	}, nil
 }
 
+// bind_9749100c548b7478 binds "layout".
+func bind_9749100c548b7478(funcs map[string]any) (tmplrt.Exec, error) {
+	fn := new(templateFuncs)
+	var ok bool
+	if fn.T_a3eca208, ok = funcs["T"].(func(...any) (any, error)); !ok {
+		return nil, tmplrt.BindError("T", funcs["T"])
+	}
+	if fn.Tf_a3eca208, ok = funcs["Tf"].(func(...any) (any, error)); !ok {
+		return nil, tmplrt.BindError("Tf", funcs["Tf"])
+	}
+	if fn.asset_0e0a6fbe, ok = funcs["asset"].(func(string) string); !ok {
+		return nil, tmplrt.BindError("asset", funcs["asset"])
+	}
+	if fn.dateWords_a3eca208, ok = funcs["dateWords"].(func(...any) (any, error)); !ok {
+		return nil, tmplrt.BindError("dateWords", funcs["dateWords"])
+	}
+	if fn.dict_72aa8d8f, ok = funcs["dict"].(func(...any) (map[string]any, error)); !ok {
+		return nil, tmplrt.BindError("dict", funcs["dict"])
+	}
+	if fn.iconAssets_e8f4e4f5, ok = funcs["iconAssets"].(func() template.HTML); !ok {
+		return nil, tmplrt.BindError("iconAssets", funcs["iconAssets"])
+	}
+	if fn.icon_bd1e407c, ok = funcs["icon"].(func(string) template.HTML); !ok {
+		return nil, tmplrt.BindError("icon", funcs["icon"])
+	}
+	if fn.localizer_634df8c4, ok = funcs["localizer"].(func(any) *ui.Localizer); !ok {
+		return nil, tmplrt.BindError("localizer", funcs["localizer"])
+	}
+	if fn.money_a3eca208, ok = funcs["money"].(func(...any) (any, error)); !ok {
+		return nil, tmplrt.BindError("money", funcs["money"])
+	}
+	if fn.needs_e5e4fd6b, ok = funcs["needs"].(func(string) (string, error)); !ok {
+		return nil, tmplrt.BindError("needs", funcs["needs"])
+	}
+	if fn.number_a3eca208, ok = funcs["number"].(func(...any) (any, error)); !ok {
+		return nil, tmplrt.BindError("number", funcs["number"])
+	}
+	if fn.opt_08785a53, ok = funcs["opt"].(func(any, string) any); !ok {
+		return nil, tmplrt.BindError("opt", funcs["opt"])
+	}
+	if fn.paginationItems_r = reflect.ValueOf(funcs["paginationItems"]); fn.paginationItems_r.Kind() != reflect.Func {
+		return nil, tmplrt.BindError("paginationItems", funcs["paginationItems"])
+	}
+	if fn.withL_2f8846c9, ok = funcs["withL"].(func(any, *ui.Localizer) any); !ok {
+		return nil, tmplrt.BindError("withL", funcs["withL"])
+	}
+	if err := tmplrt.Holds(&facts_4976ad99edc8a465, &facts_4d367691bf74e3e0, &facts_606dc54973cc1911, &facts_83f48c879de37375, &facts_8a9ef95630f15137, &facts_98e6f1840c0bce9a, &facts_ae0db17aab33c528, &facts_d1285cef9f043c97, &facts_d4bb90fc7ac76d9c); err != nil {
+		return nil, err
+	}
+	return func(b *bytes.Buffer, data any) (err error) {
+		defer tmplrt.Recover(&err, "layout")
+		return exec_98e6f1840c0bce9a(b, tmplrt.Data(data), fn, 0)
+	}, nil
+}
+
 // bind_98717b1a252f93a7 binds "stat.html".
 func bind_98717b1a252f93a7(map[string]any) (tmplrt.Exec, error) {
 	return func(b *bytes.Buffer, data any) (err error) {
@@ -4417,31 +4389,6 @@ func bind_9e5bc7e2ce1ae81e(map[string]any) (tmplrt.Exec, error) {
 			}
 		}
 		return exec_2f4d379194c1d896(b, tmplrt.Data(data), nil, 0)
-	}, nil
-}
-
-// bind_a1dda2a7ab396ae3 binds "locale-menu".
-func bind_a1dda2a7ab396ae3(funcs map[string]any) (tmplrt.Exec, error) {
-	fn := new(templateFuncs)
-	var ok bool
-	if fn.T_a3eca208, ok = funcs["T"].(func(...any) (any, error)); !ok {
-		return nil, tmplrt.BindError("T", funcs["T"])
-	}
-	if fn.icon_bd1e407c, ok = funcs["icon"].(func(string) template.HTML); !ok {
-		return nil, tmplrt.BindError("icon", funcs["icon"])
-	}
-	if fn.localizer_634df8c4, ok = funcs["localizer"].(func(any) *ui.Localizer); !ok {
-		return nil, tmplrt.BindError("localizer", funcs["localizer"])
-	}
-	if fn.menuGroup_fbb579ee, ok = funcs["menuGroup"].(func(any) string); !ok {
-		return nil, tmplrt.BindError("menuGroup", funcs["menuGroup"])
-	}
-	if err := tmplrt.Holds(&facts_f605c207f3e121d6); err != nil {
-		return nil, err
-	}
-	return func(b *bytes.Buffer, data any) (err error) {
-		defer tmplrt.Recover(&err, "locale-menu")
-		return exec_f605c207f3e121d6(b, tmplrt.Data(data), fn, 0)
 	}, nil
 }
 
@@ -4709,6 +4656,34 @@ func bind_af0bfa10c74d2477(map[string]any) (tmplrt.Exec, error) {
 	return func(b *bytes.Buffer, data any) (err error) {
 		defer tmplrt.Recover(&err, "pagination.html")
 		return exec_97b24b851f428451(b, tmplrt.Data(data), nil, 0)
+	}, nil
+}
+
+// bind_af78fe356a31eae2 binds "layout".
+func bind_af78fe356a31eae2(funcs map[string]any) (tmplrt.Exec, error) {
+	fn := new(templateFuncs)
+	var ok bool
+	if fn.T_a3eca208, ok = funcs["T"].(func(...any) (any, error)); !ok {
+		return nil, tmplrt.BindError("T", funcs["T"])
+	}
+	if fn.Tf_a3eca208, ok = funcs["Tf"].(func(...any) (any, error)); !ok {
+		return nil, tmplrt.BindError("Tf", funcs["Tf"])
+	}
+	if fn.asset_0e0a6fbe, ok = funcs["asset"].(func(string) string); !ok {
+		return nil, tmplrt.BindError("asset", funcs["asset"])
+	}
+	if fn.iconAssets_e8f4e4f5, ok = funcs["iconAssets"].(func() template.HTML); !ok {
+		return nil, tmplrt.BindError("iconAssets", funcs["iconAssets"])
+	}
+	if fn.icon_bd1e407c, ok = funcs["icon"].(func(string) template.HTML); !ok {
+		return nil, tmplrt.BindError("icon", funcs["icon"])
+	}
+	if err := tmplrt.Holds(&facts_9bcd488c5e660ab7); err != nil {
+		return nil, err
+	}
+	return func(b *bytes.Buffer, data any) (err error) {
+		defer tmplrt.Recover(&err, "layout")
+		return exec_9bcd488c5e660ab7(b, tmplrt.Data(data), fn, 0)
 	}, nil
 }
 
@@ -5607,31 +5582,6 @@ func bind_e071ec706a9a8b51(map[string]any) (tmplrt.Exec, error) {
 	}, nil
 }
 
-// bind_e2f80bfe26154f51 binds "scheme-menu".
-func bind_e2f80bfe26154f51(funcs map[string]any) (tmplrt.Exec, error) {
-	fn := new(templateFuncs)
-	var ok bool
-	if fn.T_a3eca208, ok = funcs["T"].(func(...any) (any, error)); !ok {
-		return nil, tmplrt.BindError("T", funcs["T"])
-	}
-	if fn.icon_bd1e407c, ok = funcs["icon"].(func(string) template.HTML); !ok {
-		return nil, tmplrt.BindError("icon", funcs["icon"])
-	}
-	if fn.localizer_634df8c4, ok = funcs["localizer"].(func(any) *ui.Localizer); !ok {
-		return nil, tmplrt.BindError("localizer", funcs["localizer"])
-	}
-	if fn.menuGroup_fbb579ee, ok = funcs["menuGroup"].(func(any) string); !ok {
-		return nil, tmplrt.BindError("menuGroup", funcs["menuGroup"])
-	}
-	if err := tmplrt.Holds(&facts_175d21768bd32c22); err != nil {
-		return nil, err
-	}
-	return func(b *bytes.Buffer, data any) (err error) {
-		defer tmplrt.Recover(&err, "scheme-menu")
-		return exec_175d21768bd32c22(b, tmplrt.Data(data), fn, 0)
-	}, nil
-}
-
 // bind_e3191d7d0c5b6e81 binds "profile".
 func bind_e3191d7d0c5b6e81(funcs map[string]any) (tmplrt.Exec, error) {
 	fn := new(templateFuncs)
@@ -5802,6 +5752,40 @@ func bind_ece6b55e1c87c97d(map[string]any) (tmplrt.Exec, error) {
 	}, nil
 }
 
+// bind_efa378e4a9ef8982 binds "layout".
+func bind_efa378e4a9ef8982(funcs map[string]any) (tmplrt.Exec, error) {
+	fn := new(templateFuncs)
+	var ok bool
+	if fn.T_a3eca208, ok = funcs["T"].(func(...any) (any, error)); !ok {
+		return nil, tmplrt.BindError("T", funcs["T"])
+	}
+	if fn.Tf_a3eca208, ok = funcs["Tf"].(func(...any) (any, error)); !ok {
+		return nil, tmplrt.BindError("Tf", funcs["Tf"])
+	}
+	if fn.asset_0e0a6fbe, ok = funcs["asset"].(func(string) string); !ok {
+		return nil, tmplrt.BindError("asset", funcs["asset"])
+	}
+	if fn.iconAssets_e8f4e4f5, ok = funcs["iconAssets"].(func() template.HTML); !ok {
+		return nil, tmplrt.BindError("iconAssets", funcs["iconAssets"])
+	}
+	if fn.icon_bd1e407c, ok = funcs["icon"].(func(string) template.HTML); !ok {
+		return nil, tmplrt.BindError("icon", funcs["icon"])
+	}
+	if fn.localizer_634df8c4, ok = funcs["localizer"].(func(any) *ui.Localizer); !ok {
+		return nil, tmplrt.BindError("localizer", funcs["localizer"])
+	}
+	if fn.path_c02006f6, ok = funcs["path"].(func(any, string) string); !ok {
+		return nil, tmplrt.BindError("path", funcs["path"])
+	}
+	if err := tmplrt.Holds(&facts_1509f373436cdc75, &facts_606dc54973cc1911); err != nil {
+		return nil, err
+	}
+	return func(b *bytes.Buffer, data any) (err error) {
+		defer tmplrt.Recover(&err, "layout")
+		return exec_1509f373436cdc75(b, tmplrt.Data(data), fn, 0)
+	}, nil
+}
+
 // bind_efc3ca6a7d991a5a binds "typed-interfaces".
 func bind_efc3ca6a7d991a5a(map[string]any) (tmplrt.Exec, error) {
 	typed0 := tmplrt.Holds(&facts_9713d904801330b3_4249a1a0) == nil
@@ -5897,6 +5881,40 @@ func bind_f18630ad0e31afe7(map[string]any) (tmplrt.Exec, error) {
 			}
 		}
 		return exec_b1d36944040cac59(b, tmplrt.Data(data), nil, 0)
+	}, nil
+}
+
+// bind_f2e39a43ec0cca52 binds "layout".
+func bind_f2e39a43ec0cca52(funcs map[string]any) (tmplrt.Exec, error) {
+	fn := new(templateFuncs)
+	var ok bool
+	if fn.T_a3eca208, ok = funcs["T"].(func(...any) (any, error)); !ok {
+		return nil, tmplrt.BindError("T", funcs["T"])
+	}
+	if fn.Tf_a3eca208, ok = funcs["Tf"].(func(...any) (any, error)); !ok {
+		return nil, tmplrt.BindError("Tf", funcs["Tf"])
+	}
+	if fn.asset_0e0a6fbe, ok = funcs["asset"].(func(string) string); !ok {
+		return nil, tmplrt.BindError("asset", funcs["asset"])
+	}
+	if fn.iconAssets_e8f4e4f5, ok = funcs["iconAssets"].(func() template.HTML); !ok {
+		return nil, tmplrt.BindError("iconAssets", funcs["iconAssets"])
+	}
+	if fn.icon_bd1e407c, ok = funcs["icon"].(func(string) template.HTML); !ok {
+		return nil, tmplrt.BindError("icon", funcs["icon"])
+	}
+	if fn.localizer_634df8c4, ok = funcs["localizer"].(func(any) *ui.Localizer); !ok {
+		return nil, tmplrt.BindError("localizer", funcs["localizer"])
+	}
+	if fn.path_c02006f6, ok = funcs["path"].(func(any, string) string); !ok {
+		return nil, tmplrt.BindError("path", funcs["path"])
+	}
+	if err := tmplrt.Holds(&facts_4da8561d13e1a8a6, &facts_606dc54973cc1911); err != nil {
+		return nil, err
+	}
+	return func(b *bytes.Buffer, data any) (err error) {
+		defer tmplrt.Recover(&err, "layout")
+		return exec_4da8561d13e1a8a6(b, tmplrt.Data(data), fn, 0)
 	}, nil
 }
 
@@ -9177,6 +9195,210 @@ func exec_12aecbc69105d092(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs
 	return nil
 }
 
+// exec_1509f373436cdc75 renders "layout".
+func exec_1509f373436cdc75(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
+	root := dot
+	v1 := fn.localizer_634df8c4(tmplrt.Arg(root))
+	x1 := v1
+	_ = x1
+	b.WriteString("<!doctype html>\n<html lang=\"")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"lang$htmltemplate_stateAttr_delimDoubleQuote\" .}}", tmplrt.DepthError())
+	}
+	v2 := tmplrt.Unwrap(dot)
+	if err := exec_abae878773236025(b, v2, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\" dir=\"")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"dir$htmltemplate_stateAttr_delimDoubleQuote\" .}}", tmplrt.DepthError())
+	}
+	v3 := tmplrt.Unwrap(dot)
+	if err := exec_30bfb3ff0d39cc14(b, v3, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width\">\n<title>")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"title$htmltemplate_stateRCDATA_elementTitle\" .}}", tmplrt.DepthError())
+	}
+	v4 := tmplrt.Unwrap(dot)
+	if err := exec_dd9a8f29d7f092e6(b, v4, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("</title>\n<link rel=\"stylesheet\" href=\"")
+	v5 := fn.asset_0e0a6fbe("static/tokens.css")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v5)))
+	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
+	v6 := fn.asset_0e0a6fbe("static/theme.css")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v6)))
+	b.WriteString("\">\n\n<link rel=\"stylesheet\" href=\"")
+	v7 := fn.asset_0e0a6fbe("static/shell.css")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v7)))
+	b.WriteString("\">\n<script defer src=\"")
+	v8 := fn.asset_0e0a6fbe("static/rastrillo.js")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v8)))
+	b.WriteString("\"></script>\n<script defer src=\"")
+	v9 := fn.asset_0e0a6fbe("static/busy.js")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v9)))
+	b.WriteString("\"></script>\n\n<script defer src=\"")
+	v10 := fn.asset_0e0a6fbe("static/light.js")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v10)))
+	b.WriteString("\"></script>\n\n<script defer blocking=\"render\" src=\"")
+	v11 := fn.asset_0e0a6fbe("static/shell.js")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v11)))
+	b.WriteString("\"></script>\n")
+	v12 := fn.iconAssets_e8f4e4f5()
+	b.WriteString(tmplrt.HTMLEscaper(v12))
+	b.WriteString("\n<script defer src=\"")
+	v13 := fn.asset_0e0a6fbe("static/select.js")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v13)))
+	b.WriteString("\"></script>\n<script defer src=\"")
+	v14 := fn.asset_0e0a6fbe("static/calendar.js")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v14)))
+	b.WriteString("\"></script>\n<script defer src=\"")
+	v15 := fn.asset_0e0a6fbe("static/datetime.js")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v15)))
+	b.WriteString("\"></script>\n\n")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"head\" .}}", tmplrt.DepthError())
+	}
+	v16 := tmplrt.Unwrap(dot)
+	if err := exec_43ebd9331896345f(b, v16, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\n</head>\n<body>\n\n<div rst-shell-sidebar=\"")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"view$htmltemplate_stateAttr_delimDoubleQuote\" .}}", tmplrt.DepthError())
+	}
+	v17 := tmplrt.Unwrap(dot)
+	if err := exec_2dc89848829575fb(b, v17, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\">\n<a rst-skip href=\"#main\">")
+	v18, err := fn.T_a3eca208(x1, "rastrillo.ui.shell_skip")
+	if err != nil {
+		return tmplrt.ExecError("layout", "T $L \"rastrillo.ui.shell_skip\"", tmplrt.CallError("T", err))
+	}
+	v19 := reflect.ValueOf(v18)
+	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v19)))
+	b.WriteString("</a>\n\n<header rst-shell-bar><a rst-shell-up href=\"")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"up$htmltemplate_stateURL_delimDoubleQuote_attrURL\" .}}", tmplrt.DepthError())
+	}
+	v20 := tmplrt.Unwrap(dot)
+	if err := exec_3bff82986510fd21(b, v20, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\" rel=\"up\" aria-label=\"")
+	v21, err := fn.T_a3eca208(x1, "rastrillo.ui.shell_up_label")
+	if err != nil {
+		return tmplrt.ExecError("layout", "T $L \"rastrillo.ui.shell_up_label\"", tmplrt.CallError("T", err))
+	}
+	v22 := reflect.ValueOf(v21)
+	v23, err := fn.Tf_a3eca208(x1, "rastrillo.ui.shell_up", "name", tmplrt.Arg(v22))
+	if err != nil {
+		return tmplrt.ExecError("layout", "Tf $L \"rastrillo.ui.shell_up\" \"name\" (T $L \"rastrillo.ui.shell_up_label\")", tmplrt.CallError("Tf", err))
+	}
+	v24 := reflect.ValueOf(v23)
+	b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v24)))
+	b.WriteString("\">")
+	v25 := fn.icon_bd1e407c("chevron-left")
+	b.WriteString(tmplrt.HTMLEscaper(v25))
+	v26, err := fn.T_a3eca208(x1, "rastrillo.ui.shell_up_label")
+	if err != nil {
+		return tmplrt.ExecError("layout", "T $L \"rastrillo.ui.shell_up_label\"", tmplrt.CallError("T", err))
+	}
+	v27 := reflect.ValueOf(v26)
+	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v27)))
+	b.WriteString("</a></header>\n<aside rst-shell-rail>\n\n<h1 rst-shell-title><span>")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"brand\" .}}", tmplrt.DepthError())
+	}
+	v28 := tmplrt.Unwrap(dot)
+	if err := exec_b037223404942503(b, v28, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("</span><span>")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"title\" .}}", tmplrt.DepthError())
+	}
+	v29 := tmplrt.Unwrap(dot)
+	if err := exec_a0bbdd679bf279f3(b, v29, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("</span></h1>\n")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"brand\" .}}", tmplrt.DepthError())
+	}
+	v30 := tmplrt.Unwrap(dot)
+	if err := exec_b037223404942503(b, v30, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\n<nav rst-shell-nav>")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"nav\" .}}", tmplrt.DepthError())
+	}
+	v31 := tmplrt.Unwrap(dot)
+	if err := exec_71e0113efd7472ac(b, v31, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("</nav>\n\n<div rst-shell-rail-foot><details rst-dropdown rst-shell-profile name=\"rst-shell-menu\"><summary><span rst-shell-avatar>")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"profile\" .}}", tmplrt.DepthError())
+	}
+	v32 := tmplrt.Unwrap(dot)
+	if err := exec_606dc54973cc1911(b, v32, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("</span></summary><div rst-dropdown-menu><div rst-shell-who>")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"profile\" .}}", tmplrt.DepthError())
+	}
+	v33 := tmplrt.Unwrap(dot)
+	if err := exec_606dc54973cc1911(b, v33, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("</div>")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"locale\" .}}", tmplrt.DepthError())
+	}
+	v34 := tmplrt.Unwrap(dot)
+	if err := exec_705d1f1c72ed2826(b, v34, fn, depth+1); err != nil {
+		return err
+	}
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"account\" .}}", tmplrt.DepthError())
+	}
+	v35 := tmplrt.Unwrap(dot)
+	if err := exec_35c32244d2e12608(b, v35, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("</div></details></div>\n</aside>\n<main rst-shell-main id=\"main\">\n<div rst-page>\n")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"content\" .}}", tmplrt.DepthError())
+	}
+	v36 := tmplrt.Unwrap(dot)
+	if err := exec_c67a249acce6bda2(b, v36, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\n</div>\n</main>\n</div>\n</body>\n</html>\n")
+	return nil
+}
+
+// facts_1509f373436cdc75 is what exec_1509f373436cdc75 assumes of the types it reads.
+var facts_1509f373436cdc75 = tmplrt.Facts{
+	Funcs: map[string]reflect.Type{
+		"iconAssets_e8f4e4f5": reflect.TypeFor[func() template.HTML](),
+		"icon_bd1e407c":       reflect.TypeFor[func(string) template.HTML](),
+		"localizer_634df8c4":  reflect.TypeFor[func(any) *ui.Localizer](),
+	},
+	Facts: []tmplrt.Fact{
+		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
+		{Func: "iconAssets_e8f4e4f5", Type: "html/template.HTML string"},
+		{Func: "icon_bd1e407c", Type: "html/template.HTML string"},
+	},
+}
+
 // exec_15a57997361f1060 renders "call-order-convert-reflected".
 func exec_15a57997361f1060(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
 	c2, err := tmplrt.CallArgs("pair", fn.pair_r, 2)
@@ -9341,156 +9563,6 @@ var facts_16e1fced799fbbc7_19dba148 = tmplrt.Facts{
 		{Type: "*amadan.net/rastrillo/rastrillo/tmpl/internal/corpus.doc"},
 		{Path: []string{".Fn"}, Type: "func(string) string"},
 		{Path: []string{".Title"}, Type: "string"},
-	},
-}
-
-// exec_175d21768bd32c22 renders "scheme-menu".
-func exec_175d21768bd32c22(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
-	root := dot
-	v1 := fn.localizer_634df8c4(tmplrt.Arg(root))
-	x1 := v1
-	_ = x1
-	b.WriteString("<details rst-dropdown rst-scheme name=\"")
-	v2 := fn.menuGroup_fbb579ee(tmplrt.Arg(dot))
-	tmplrt.WriteAttrEscaped(b, v2)
-	b.WriteString("\">\n  <summary>")
-	v3, err := fn.T_a3eca208(x1, "rastrillo.ui.shell_scheme")
-	if err != nil {
-		return tmplrt.ExecError("scheme-menu", "T $L \"rastrillo.ui.shell_scheme\"", tmplrt.CallError("T", err))
-	}
-	v4 := reflect.ValueOf(v3)
-	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v4)))
-	b.WriteString("<span rst-caret aria-hidden=\"true\">")
-	v5 := fn.icon_bd1e407c("chevron-down")
-	b.WriteString(tmplrt.HTMLEscaper(v5))
-	b.WriteString("</span></summary>\n  <div rst-dropdown-menu role=\"group\" aria-label=\"")
-	v6, err := fn.T_a3eca208(x1, "rastrillo.ui.shell_scheme")
-	if err != nil {
-		return tmplrt.ExecError("scheme-menu", "T $L \"rastrillo.ui.shell_scheme\"", tmplrt.CallError("T", err))
-	}
-	v7 := reflect.ValueOf(v6)
-	b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v7)))
-	b.WriteString("\">")
-	v9, err := tmplrt.Field(dot, "Action")
-	if err != nil {
-		return tmplrt.ExecError("scheme-menu", ".Action", err)
-	}
-	v8 := tmplrt.ValueArg(v9)
-	if !tmplrt.Truth(v8) {
-		v8 = tmplrt.ValueArg(reflect.ValueOf("/_theme"))
-	}
-	v10 := tmplrt.Unwrap(v8)
-	x2 := v10
-	_ = x2
-	v11, err := tmplrt.Field(dot, "Return")
-	if err != nil {
-		return tmplrt.ExecError("scheme-menu", ".Return", err)
-	}
-	v12 := tmplrt.Unwrap(v11)
-	x3 := v12
-	_ = x3
-	v14, err := tmplrt.Field(dot, "Scheme")
-	if err != nil {
-		return tmplrt.ExecError("scheme-menu", ".Scheme", err)
-	}
-	v13 := tmplrt.ValueArg(v14)
-	if !tmplrt.Truth(v13) {
-		v13 = tmplrt.ValueArg(reflect.ValueOf("system"))
-	}
-	v15 := tmplrt.Unwrap(v13)
-	x4 := v15
-	_ = x4
-	b.WriteString("\n    <form method=\"post\" action=\"")
-	v16 := tmplrt.Unwrap(x2)
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilter(tmplrt.Arg(v16))))
-	b.WriteString("\"><input type=\"hidden\" name=\"scheme\" value=\"light\">")
-	v17 := tmplrt.Unwrap(x3)
-	if tmplrt.Truth(v17) {
-		b.WriteString("<input type=\"hidden\" name=\"return\" value=\"")
-		v18 := tmplrt.Unwrap(x3)
-		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v18)))
-		b.WriteString("\">")
-	}
-	b.WriteString("<button type=\"submit\"")
-	v19, err := tmplrt.Eq(x4, reflect.ValueOf("light"))
-	if err != nil {
-		return tmplrt.ExecError("scheme-menu", "eq $cur \"light\"", tmplrt.CallError("eq", err))
-	}
-	if v19 {
-		b.WriteString(" aria-current=\"true\"")
-	}
-	b.WriteString(">")
-	v20, err := fn.T_a3eca208(x1, "rastrillo.ui.scheme_light")
-	if err != nil {
-		return tmplrt.ExecError("scheme-menu", "T $L \"rastrillo.ui.scheme_light\"", tmplrt.CallError("T", err))
-	}
-	v21 := reflect.ValueOf(v20)
-	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v21)))
-	b.WriteString("</button></form>\n    <form method=\"post\" action=\"")
-	v22 := tmplrt.Unwrap(x2)
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilter(tmplrt.Arg(v22))))
-	b.WriteString("\"><input type=\"hidden\" name=\"scheme\" value=\"dark\">")
-	v23 := tmplrt.Unwrap(x3)
-	if tmplrt.Truth(v23) {
-		b.WriteString("<input type=\"hidden\" name=\"return\" value=\"")
-		v24 := tmplrt.Unwrap(x3)
-		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v24)))
-		b.WriteString("\">")
-	}
-	b.WriteString("<button type=\"submit\"")
-	v25, err := tmplrt.Eq(x4, reflect.ValueOf("dark"))
-	if err != nil {
-		return tmplrt.ExecError("scheme-menu", "eq $cur \"dark\"", tmplrt.CallError("eq", err))
-	}
-	if v25 {
-		b.WriteString(" aria-current=\"true\"")
-	}
-	b.WriteString(">")
-	v26, err := fn.T_a3eca208(x1, "rastrillo.ui.scheme_dark")
-	if err != nil {
-		return tmplrt.ExecError("scheme-menu", "T $L \"rastrillo.ui.scheme_dark\"", tmplrt.CallError("T", err))
-	}
-	v27 := reflect.ValueOf(v26)
-	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v27)))
-	b.WriteString("</button></form>\n    <form method=\"post\" action=\"")
-	v28 := tmplrt.Unwrap(x2)
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilter(tmplrt.Arg(v28))))
-	b.WriteString("\"><input type=\"hidden\" name=\"scheme\" value=\"system\">")
-	v29 := tmplrt.Unwrap(x3)
-	if tmplrt.Truth(v29) {
-		b.WriteString("<input type=\"hidden\" name=\"return\" value=\"")
-		v30 := tmplrt.Unwrap(x3)
-		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v30)))
-		b.WriteString("\">")
-	}
-	b.WriteString("<button type=\"submit\"")
-	v31, err := tmplrt.Eq(x4, reflect.ValueOf("system"))
-	if err != nil {
-		return tmplrt.ExecError("scheme-menu", "eq $cur \"system\"", tmplrt.CallError("eq", err))
-	}
-	if v31 {
-		b.WriteString(" aria-current=\"true\"")
-	}
-	b.WriteString(">")
-	v32, err := fn.T_a3eca208(x1, "rastrillo.ui.scheme_system")
-	if err != nil {
-		return tmplrt.ExecError("scheme-menu", "T $L \"rastrillo.ui.scheme_system\"", tmplrt.CallError("T", err))
-	}
-	v33 := reflect.ValueOf(v32)
-	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v33)))
-	b.WriteString("</button></form>\n  </div>\n</details>")
-	return nil
-}
-
-// facts_175d21768bd32c22 is what exec_175d21768bd32c22 assumes of the types it reads.
-var facts_175d21768bd32c22 = tmplrt.Facts{
-	Funcs: map[string]reflect.Type{
-		"icon_bd1e407c":      reflect.TypeFor[func(string) template.HTML](),
-		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
-	},
-	Facts: []tmplrt.Fact{
-		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
-		{Func: "icon_bd1e407c", Type: "html/template.HTML string"},
 	},
 }
 
@@ -10037,206 +10109,6 @@ func exec_263a4440eea983ac(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs
 	v1 := tmplrt.Unwrap(dot)
 	b.WriteString(tmplrt.JSValEscaper(tmplrt.Arg(v1)))
 	return nil
-}
-
-// exec_265c759d769737b8 renders "layout".
-func exec_265c759d769737b8(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
-	root := dot
-	v1 := fn.localizer_634df8c4(tmplrt.Arg(root))
-	x1 := v1
-	_ = x1
-	b.WriteString("<!doctype html>\n<html lang=\"")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"lang$htmltemplate_stateAttr_delimDoubleQuote\" .}}", tmplrt.DepthError())
-	}
-	v2 := tmplrt.Unwrap(dot)
-	if err := exec_abae878773236025(b, v2, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\" dir=\"")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"dir$htmltemplate_stateAttr_delimDoubleQuote\" .}}", tmplrt.DepthError())
-	}
-	v3 := tmplrt.Unwrap(dot)
-	if err := exec_30bfb3ff0d39cc14(b, v3, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width\">\n<title>")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"title$htmltemplate_stateRCDATA_elementTitle\" .}}", tmplrt.DepthError())
-	}
-	v4 := tmplrt.Unwrap(dot)
-	if err := exec_dd9a8f29d7f092e6(b, v4, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("</title>\n<link rel=\"stylesheet\" href=\"")
-	v5 := fn.asset_0e0a6fbe("static/tokens.css")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v5)))
-	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
-	v6 := fn.asset_0e0a6fbe("static/theme.css")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v6)))
-	b.WriteString("\">\n\n<link rel=\"stylesheet\" href=\"")
-	v7 := fn.asset_0e0a6fbe("static/shell.css")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v7)))
-	b.WriteString("\">\n<script defer src=\"")
-	v8 := fn.asset_0e0a6fbe("static/rastrillo.js")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v8)))
-	b.WriteString("\"></script>\n<script defer src=\"")
-	v9 := fn.asset_0e0a6fbe("static/busy.js")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v9)))
-	b.WriteString("\"></script>\n\n<script defer src=\"")
-	v10 := fn.asset_0e0a6fbe("static/light.js")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v10)))
-	b.WriteString("\"></script>\n\n<script defer blocking=\"render\" src=\"")
-	v11 := fn.asset_0e0a6fbe("static/shell.js")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v11)))
-	b.WriteString("\"></script>\n")
-	v12 := fn.iconAssets_e8f4e4f5()
-	b.WriteString(tmplrt.HTMLEscaper(v12))
-	b.WriteString("\n<script defer src=\"")
-	v13 := fn.asset_0e0a6fbe("static/select.js")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v13)))
-	b.WriteString("\"></script>\n<script defer src=\"")
-	v14 := fn.asset_0e0a6fbe("static/calendar.js")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v14)))
-	b.WriteString("\"></script>\n<script defer src=\"")
-	v15 := fn.asset_0e0a6fbe("static/datetime.js")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v15)))
-	b.WriteString("\"></script>\n\n")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"head\" .}}", tmplrt.DepthError())
-	}
-	v16 := tmplrt.Unwrap(dot)
-	if err := exec_43ebd9331896345f(b, v16, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\n</head>\n<body>\n\n<div rst-shell-sidebar=\"")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"view$htmltemplate_stateAttr_delimDoubleQuote\" .}}", tmplrt.DepthError())
-	}
-	v17 := tmplrt.Unwrap(dot)
-	if err := exec_2dc89848829575fb(b, v17, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\">\n<a rst-skip href=\"#main\">")
-	v18, err := fn.T_a3eca208(x1, "rastrillo.ui.shell_skip")
-	if err != nil {
-		return tmplrt.ExecError("layout", "T $L \"rastrillo.ui.shell_skip\"", tmplrt.CallError("T", err))
-	}
-	v19 := reflect.ValueOf(v18)
-	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v19)))
-	b.WriteString("</a>\n\n<div rst-shell-back><a href=\"")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"up$htmltemplate_stateURL_delimDoubleQuote_attrURL\" .}}", tmplrt.DepthError())
-	}
-	v20 := tmplrt.Unwrap(dot)
-	if err := exec_3bff82986510fd21(b, v20, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\" rel=\"up\" aria-label=\"")
-	v21, err := fn.T_a3eca208(x1, "rastrillo.ui.shell_up_label")
-	if err != nil {
-		return tmplrt.ExecError("layout", "T $L \"rastrillo.ui.shell_up_label\"", tmplrt.CallError("T", err))
-	}
-	v22 := reflect.ValueOf(v21)
-	v23, err := fn.Tf_a3eca208(x1, "rastrillo.ui.shell_up", "name", tmplrt.Arg(v22))
-	if err != nil {
-		return tmplrt.ExecError("layout", "Tf $L \"rastrillo.ui.shell_up\" \"name\" (T $L \"rastrillo.ui.shell_up_label\")", tmplrt.CallError("Tf", err))
-	}
-	v24 := reflect.ValueOf(v23)
-	b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v24)))
-	b.WriteString("\">")
-	v25, err := fn.T_a3eca208(x1, "rastrillo.ui.shell_up_label")
-	if err != nil {
-		return tmplrt.ExecError("layout", "T $L \"rastrillo.ui.shell_up_label\"", tmplrt.CallError("T", err))
-	}
-	v26 := reflect.ValueOf(v25)
-	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v26)))
-	b.WriteString("</a></div>\n<aside rst-shell-rail>\n\n<h1 rst-shell-title><span>")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"brand\" .}}", tmplrt.DepthError())
-	}
-	v27 := tmplrt.Unwrap(dot)
-	if err := exec_b037223404942503(b, v27, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("</span><span>")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"title\" .}}", tmplrt.DepthError())
-	}
-	v28 := tmplrt.Unwrap(dot)
-	if err := exec_a0bbdd679bf279f3(b, v28, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("</span></h1>\n")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"brand\" .}}", tmplrt.DepthError())
-	}
-	v29 := tmplrt.Unwrap(dot)
-	if err := exec_b037223404942503(b, v29, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\n<nav rst-shell-nav>")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"nav\" .}}", tmplrt.DepthError())
-	}
-	v30 := tmplrt.Unwrap(dot)
-	if err := exec_71e0113efd7472ac(b, v30, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("</nav>\n\n<div rst-shell-rail-foot><details rst-dropdown rst-shell-profile name=\"rst-shell-menu\"><summary><span rst-shell-avatar>")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"profile\" .}}", tmplrt.DepthError())
-	}
-	v31 := tmplrt.Unwrap(dot)
-	if err := exec_606dc54973cc1911(b, v31, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("</span></summary><div rst-dropdown-menu><div rst-shell-who>")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"profile\" .}}", tmplrt.DepthError())
-	}
-	v32 := tmplrt.Unwrap(dot)
-	if err := exec_606dc54973cc1911(b, v32, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("</div>")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"locale\" .}}", tmplrt.DepthError())
-	}
-	v33 := tmplrt.Unwrap(dot)
-	if err := exec_705d1f1c72ed2826(b, v33, fn, depth+1); err != nil {
-		return err
-	}
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"account\" .}}", tmplrt.DepthError())
-	}
-	v34 := tmplrt.Unwrap(dot)
-	if err := exec_35c32244d2e12608(b, v34, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("</div></details></div>\n</aside>\n<main rst-shell-main id=\"main\">\n<div rst-page>\n")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"content\" .}}", tmplrt.DepthError())
-	}
-	v35 := tmplrt.Unwrap(dot)
-	if err := exec_c67a249acce6bda2(b, v35, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\n</div>\n</main>\n</div>\n</body>\n</html>\n")
-	return nil
-}
-
-// facts_265c759d769737b8 is what exec_265c759d769737b8 assumes of the types it reads.
-var facts_265c759d769737b8 = tmplrt.Facts{
-	Funcs: map[string]reflect.Type{
-		"iconAssets_e8f4e4f5": reflect.TypeFor[func() template.HTML](),
-		"localizer_634df8c4":  reflect.TypeFor[func(any) *ui.Localizer](),
-	},
-	Facts: []tmplrt.Fact{
-		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
-		{Func: "iconAssets_e8f4e4f5", Type: "html/template.HTML string"},
-	},
 }
 
 // exec_268237b0e548d868 renders "dollar-shadow".
@@ -15321,6 +15193,210 @@ func exec_4d79b406a66c4358(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs
 	return nil
 }
 
+// exec_4da8561d13e1a8a6 renders "layout".
+func exec_4da8561d13e1a8a6(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
+	root := dot
+	v1 := fn.localizer_634df8c4(tmplrt.Arg(root))
+	x1 := v1
+	_ = x1
+	b.WriteString("<!doctype html>\n<html lang=\"")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"lang$htmltemplate_stateAttr_delimDoubleQuote\" .}}", tmplrt.DepthError())
+	}
+	v2 := tmplrt.Unwrap(dot)
+	if err := exec_abae878773236025(b, v2, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\" dir=\"")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"dir$htmltemplate_stateAttr_delimDoubleQuote\" .}}", tmplrt.DepthError())
+	}
+	v3 := tmplrt.Unwrap(dot)
+	if err := exec_30bfb3ff0d39cc14(b, v3, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width\">\n<title>")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"title$htmltemplate_stateRCDATA_elementTitle\" .}}", tmplrt.DepthError())
+	}
+	v4 := tmplrt.Unwrap(dot)
+	if err := exec_dd9a8f29d7f092e6(b, v4, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("</title>\n<link rel=\"stylesheet\" href=\"")
+	v5 := fn.asset_0e0a6fbe("static/tokens.css")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v5)))
+	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
+	v6 := fn.asset_0e0a6fbe("static/theme.css")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v6)))
+	b.WriteString("\">\n\n<link rel=\"stylesheet\" href=\"")
+	v7 := fn.asset_0e0a6fbe("static/shell.css")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v7)))
+	b.WriteString("\">\n<script defer src=\"")
+	v8 := fn.asset_0e0a6fbe("static/rastrillo.js")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v8)))
+	b.WriteString("\"></script>\n<script defer src=\"")
+	v9 := fn.asset_0e0a6fbe("static/busy.js")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v9)))
+	b.WriteString("\"></script>\n\n<script defer src=\"")
+	v10 := fn.asset_0e0a6fbe("static/light.js")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v10)))
+	b.WriteString("\"></script>\n\n<script defer blocking=\"render\" src=\"")
+	v11 := fn.asset_0e0a6fbe("static/shell.js")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v11)))
+	b.WriteString("\"></script>\n")
+	v12 := fn.iconAssets_e8f4e4f5()
+	b.WriteString(tmplrt.HTMLEscaper(v12))
+	b.WriteString("\n<script defer src=\"")
+	v13 := fn.asset_0e0a6fbe("static/select.js")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v13)))
+	b.WriteString("\"></script>\n<script defer src=\"")
+	v14 := fn.asset_0e0a6fbe("static/calendar.js")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v14)))
+	b.WriteString("\"></script>\n<script defer src=\"")
+	v15 := fn.asset_0e0a6fbe("static/datetime.js")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v15)))
+	b.WriteString("\"></script>\n\n")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"head\" .}}", tmplrt.DepthError())
+	}
+	v16 := tmplrt.Unwrap(dot)
+	if err := exec_43ebd9331896345f(b, v16, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\n</head>\n<body>\n\n<div rst-shell-sidebar=\"")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"view$htmltemplate_stateAttr_delimDoubleQuote\" .}}", tmplrt.DepthError())
+	}
+	v17 := tmplrt.Unwrap(dot)
+	if err := exec_4d79b406a66c4358(b, v17, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\">\n<a rst-skip href=\"#main\">")
+	v18, err := fn.T_a3eca208(x1, "rastrillo.ui.shell_skip")
+	if err != nil {
+		return tmplrt.ExecError("layout", "T $L \"rastrillo.ui.shell_skip\"", tmplrt.CallError("T", err))
+	}
+	v19 := reflect.ValueOf(v18)
+	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v19)))
+	b.WriteString("</a>\n\n<header rst-shell-bar><a rst-shell-up href=\"")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"up$htmltemplate_stateURL_delimDoubleQuote_attrURL\" .}}", tmplrt.DepthError())
+	}
+	v20 := tmplrt.Unwrap(dot)
+	if err := exec_31ad09fd84c8ecff(b, v20, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\" rel=\"up\" aria-label=\"")
+	v21, err := fn.T_a3eca208(x1, "rastrillo.ui.shell_up_label")
+	if err != nil {
+		return tmplrt.ExecError("layout", "T $L \"rastrillo.ui.shell_up_label\"", tmplrt.CallError("T", err))
+	}
+	v22 := reflect.ValueOf(v21)
+	v23, err := fn.Tf_a3eca208(x1, "rastrillo.ui.shell_up", "name", tmplrt.Arg(v22))
+	if err != nil {
+		return tmplrt.ExecError("layout", "Tf $L \"rastrillo.ui.shell_up\" \"name\" (T $L \"rastrillo.ui.shell_up_label\")", tmplrt.CallError("Tf", err))
+	}
+	v24 := reflect.ValueOf(v23)
+	b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v24)))
+	b.WriteString("\">")
+	v25 := fn.icon_bd1e407c("chevron-left")
+	b.WriteString(tmplrt.HTMLEscaper(v25))
+	v26, err := fn.T_a3eca208(x1, "rastrillo.ui.shell_up_label")
+	if err != nil {
+		return tmplrt.ExecError("layout", "T $L \"rastrillo.ui.shell_up_label\"", tmplrt.CallError("T", err))
+	}
+	v27 := reflect.ValueOf(v26)
+	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v27)))
+	b.WriteString("</a></header>\n<aside rst-shell-rail>\n\n<h1 rst-shell-title><span>")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"brand\" .}}", tmplrt.DepthError())
+	}
+	v28 := tmplrt.Unwrap(dot)
+	if err := exec_b037223404942503(b, v28, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("</span><span>")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"title\" .}}", tmplrt.DepthError())
+	}
+	v29 := tmplrt.Unwrap(dot)
+	if err := exec_a0bbdd679bf279f3(b, v29, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("</span></h1>\n")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"brand\" .}}", tmplrt.DepthError())
+	}
+	v30 := tmplrt.Unwrap(dot)
+	if err := exec_b037223404942503(b, v30, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\n<nav rst-shell-nav>")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"nav\" .}}", tmplrt.DepthError())
+	}
+	v31 := tmplrt.Unwrap(dot)
+	if err := exec_9e02245a512d55a1(b, v31, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("</nav>\n\n<div rst-shell-rail-foot><details rst-dropdown rst-shell-profile name=\"rst-shell-menu\"><summary><span rst-shell-avatar>")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"profile\" .}}", tmplrt.DepthError())
+	}
+	v32 := tmplrt.Unwrap(dot)
+	if err := exec_606dc54973cc1911(b, v32, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("</span></summary><div rst-dropdown-menu><div rst-shell-who>")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"profile\" .}}", tmplrt.DepthError())
+	}
+	v33 := tmplrt.Unwrap(dot)
+	if err := exec_606dc54973cc1911(b, v33, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("</div>")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"locale\" .}}", tmplrt.DepthError())
+	}
+	v34 := tmplrt.Unwrap(dot)
+	if err := exec_705d1f1c72ed2826(b, v34, fn, depth+1); err != nil {
+		return err
+	}
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"account\" .}}", tmplrt.DepthError())
+	}
+	v35 := tmplrt.Unwrap(dot)
+	if err := exec_35c32244d2e12608(b, v35, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("</div></details></div>\n</aside>\n<main rst-shell-main id=\"main\">\n<div rst-page>\n")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"content\" .}}", tmplrt.DepthError())
+	}
+	v36 := tmplrt.Unwrap(dot)
+	if err := exec_c67a249acce6bda2(b, v36, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\n</div>\n</main>\n</div>\n</body>\n</html>\n")
+	return nil
+}
+
+// facts_4da8561d13e1a8a6 is what exec_4da8561d13e1a8a6 assumes of the types it reads.
+var facts_4da8561d13e1a8a6 = tmplrt.Facts{
+	Funcs: map[string]reflect.Type{
+		"iconAssets_e8f4e4f5": reflect.TypeFor[func() template.HTML](),
+		"icon_bd1e407c":       reflect.TypeFor[func(string) template.HTML](),
+		"localizer_634df8c4":  reflect.TypeFor[func(any) *ui.Localizer](),
+	},
+	Facts: []tmplrt.Fact{
+		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
+		{Func: "iconAssets_e8f4e4f5", Type: "html/template.HTML string"},
+		{Func: "icon_bd1e407c", Type: "html/template.HTML string"},
+	},
+}
+
 // exec_4f06e107ff5efd20 renders "seg-tabs.html".
 func exec_4f06e107ff5efd20(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
 	b.WriteString("\n\n")
@@ -17546,580 +17622,6 @@ var facts_5b3abb369c9b2f9d_d5ff5190 = tmplrt.Facts{
 		{Path: []string{".Owner"}, Type: "amadan.net/rastrillo/rastrillo/tmpl/internal/corpus.namer struct"},
 		{Path: []string{".Owner", "&.Name() func() string"}, Type: "string"},
 		{Path: []string{".Items"}, Type: "[]string"},
-	},
-}
-
-// exec_5b4f8a7e7806ae5a renders "layout".
-func exec_5b4f8a7e7806ae5a(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
-	root := dot
-	v1 := fn.localizer_634df8c4(tmplrt.Arg(root))
-	x1 := v1
-	_ = x1
-	b.WriteString("<!doctype html>\n<html lang=\"")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"lang$htmltemplate_stateAttr_delimDoubleQuote\" .}}", tmplrt.DepthError())
-	}
-	v2 := tmplrt.Unwrap(dot)
-	if err := exec_abae878773236025(b, v2, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\" dir=\"")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"dir$htmltemplate_stateAttr_delimDoubleQuote\" .}}", tmplrt.DepthError())
-	}
-	v3 := tmplrt.Unwrap(dot)
-	if err := exec_30bfb3ff0d39cc14(b, v3, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width\">\n<title>")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"title$htmltemplate_stateRCDATA_elementTitle\" .}}", tmplrt.DepthError())
-	}
-	v4 := tmplrt.Unwrap(dot)
-	if err := exec_dd9a8f29d7f092e6(b, v4, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("</title>\n<link rel=\"stylesheet\" href=\"")
-	v5 := fn.asset_0e0a6fbe("static/tokens.css")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v5)))
-	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
-	v6 := fn.asset_0e0a6fbe("static/theme.css")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v6)))
-	b.WriteString("\">\n\n<link rel=\"stylesheet\" href=\"")
-	v7 := fn.asset_0e0a6fbe("static/shell.css")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v7)))
-	b.WriteString("\">\n<script defer src=\"")
-	v8 := fn.asset_0e0a6fbe("static/rastrillo.js")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v8)))
-	b.WriteString("\"></script>\n<script defer src=\"")
-	v9 := fn.asset_0e0a6fbe("static/busy.js")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v9)))
-	b.WriteString("\"></script>\n\n<script defer src=\"")
-	v10 := fn.asset_0e0a6fbe("static/light.js")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v10)))
-	b.WriteString("\"></script>\n\n<script defer blocking=\"render\" src=\"")
-	v11 := fn.asset_0e0a6fbe("static/shell.js")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v11)))
-	b.WriteString("\"></script>\n")
-	v12 := fn.iconAssets_e8f4e4f5()
-	b.WriteString(tmplrt.HTMLEscaper(v12))
-	b.WriteString("\n<script defer src=\"")
-	v13 := fn.asset_0e0a6fbe("static/select.js")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v13)))
-	b.WriteString("\"></script>\n<script defer src=\"")
-	v14 := fn.asset_0e0a6fbe("static/calendar.js")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v14)))
-	b.WriteString("\"></script>\n<script defer src=\"")
-	v15 := fn.asset_0e0a6fbe("static/datetime.js")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v15)))
-	b.WriteString("\"></script>\n\n")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"head\" .}}", tmplrt.DepthError())
-	}
-	v16 := tmplrt.Unwrap(dot)
-	if err := exec_43ebd9331896345f(b, v16, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\n</head>\n<body>\n\n<div rst-shell-sidebar=\"")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"view$htmltemplate_stateAttr_delimDoubleQuote\" .}}", tmplrt.DepthError())
-	}
-	v17 := tmplrt.Unwrap(dot)
-	if err := exec_2dc89848829575fb(b, v17, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\">\n<a rst-skip href=\"#main\">")
-	v18, err := fn.T_a3eca208(x1, "rastrillo.ui.shell_skip")
-	if err != nil {
-		return tmplrt.ExecError("layout", "T $L \"rastrillo.ui.shell_skip\"", tmplrt.CallError("T", err))
-	}
-	v19 := reflect.ValueOf(v18)
-	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v19)))
-	b.WriteString("</a>\n\n<div rst-shell-back><a href=\"")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"up$htmltemplate_stateURL_delimDoubleQuote_attrURL\" .}}", tmplrt.DepthError())
-	}
-	v20 := tmplrt.Unwrap(dot)
-	if err := exec_31ad09fd84c8ecff(b, v20, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\" rel=\"up\" aria-label=\"")
-	v21, err := fn.T_a3eca208(x1, "rastrillo.ui.shell_up_label")
-	if err != nil {
-		return tmplrt.ExecError("layout", "T $L \"rastrillo.ui.shell_up_label\"", tmplrt.CallError("T", err))
-	}
-	v22 := reflect.ValueOf(v21)
-	v23, err := fn.Tf_a3eca208(x1, "rastrillo.ui.shell_up", "name", tmplrt.Arg(v22))
-	if err != nil {
-		return tmplrt.ExecError("layout", "Tf $L \"rastrillo.ui.shell_up\" \"name\" (T $L \"rastrillo.ui.shell_up_label\")", tmplrt.CallError("Tf", err))
-	}
-	v24 := reflect.ValueOf(v23)
-	b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v24)))
-	b.WriteString("\">")
-	v25, err := fn.T_a3eca208(x1, "rastrillo.ui.shell_up_label")
-	if err != nil {
-		return tmplrt.ExecError("layout", "T $L \"rastrillo.ui.shell_up_label\"", tmplrt.CallError("T", err))
-	}
-	v26 := reflect.ValueOf(v25)
-	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v26)))
-	b.WriteString("</a></div>\n<aside rst-shell-rail>\n\n<h1 rst-shell-title><span>")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"brand\" .}}", tmplrt.DepthError())
-	}
-	v27 := tmplrt.Unwrap(dot)
-	if err := exec_83f48c879de37375(b, v27, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("</span><span>")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"title\" .}}", tmplrt.DepthError())
-	}
-	v28 := tmplrt.Unwrap(dot)
-	if err := exec_a0bbdd679bf279f3(b, v28, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("</span></h1>\n")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"brand\" .}}", tmplrt.DepthError())
-	}
-	v29 := tmplrt.Unwrap(dot)
-	if err := exec_83f48c879de37375(b, v29, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\n<nav rst-shell-nav>")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"nav\" .}}", tmplrt.DepthError())
-	}
-	v30 := tmplrt.Unwrap(dot)
-	if err := exec_9742e4153b2cd941(b, v30, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("</nav>\n\n<div rst-shell-rail-foot><details rst-dropdown rst-shell-profile name=\"rst-shell-menu\"><summary><span rst-shell-avatar>")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"profile\" .}}", tmplrt.DepthError())
-	}
-	v31 := tmplrt.Unwrap(dot)
-	if err := exec_606dc54973cc1911(b, v31, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("</span></summary><div rst-dropdown-menu><div rst-shell-who>")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"profile\" .}}", tmplrt.DepthError())
-	}
-	v32 := tmplrt.Unwrap(dot)
-	if err := exec_606dc54973cc1911(b, v32, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("</div>")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"locale\" .}}", tmplrt.DepthError())
-	}
-	v33 := tmplrt.Unwrap(dot)
-	if err := exec_705d1f1c72ed2826(b, v33, fn, depth+1); err != nil {
-		return err
-	}
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"account\" .}}", tmplrt.DepthError())
-	}
-	v34 := tmplrt.Unwrap(dot)
-	if err := exec_35c32244d2e12608(b, v34, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("</div></details></div>\n</aside>\n<main rst-shell-main id=\"main\">\n<div rst-page>\n")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"content\" .}}", tmplrt.DepthError())
-	}
-	v35 := tmplrt.Unwrap(dot)
-	if err := exec_7a3721439f7d75a7(b, v35, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\n</div>\n</main>\n</div>\n</body>\n</html>\n")
-	return nil
-}
-
-// facts_5b4f8a7e7806ae5a is what exec_5b4f8a7e7806ae5a assumes of the types it reads.
-var facts_5b4f8a7e7806ae5a = tmplrt.Facts{
-	Funcs: map[string]reflect.Type{
-		"iconAssets_e8f4e4f5": reflect.TypeFor[func() template.HTML](),
-		"localizer_634df8c4":  reflect.TypeFor[func(any) *ui.Localizer](),
-	},
-	Facts: []tmplrt.Fact{
-		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
-		{Func: "iconAssets_e8f4e4f5", Type: "html/template.HTML string"},
-	},
-}
-
-// exec_5b4f8a7e7806ae5a_0a42071c renders "layout" for a dot of type pageData.
-func exec_5b4f8a7e7806ae5a_0a42071c(b *bytes.Buffer, dot pageData, fn *templateFuncs, depth int) error {
-	root := dot
-	v1 := fn.localizer_634df8c4(root)
-	x1 := v1
-	_ = x1
-	b.WriteString("<!doctype html>\n<html lang=\"")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"lang$htmltemplate_stateAttr_delimDoubleQuote\" .}}", tmplrt.DepthError())
-	}
-	if err := exec_abae878773236025_0a42071c(b, dot, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\" dir=\"")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"dir$htmltemplate_stateAttr_delimDoubleQuote\" .}}", tmplrt.DepthError())
-	}
-	if err := exec_30bfb3ff0d39cc14_0a42071c(b, dot, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width\">\n<title>")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"title$htmltemplate_stateRCDATA_elementTitle\" .}}", tmplrt.DepthError())
-	}
-	if err := exec_dd9a8f29d7f092e6_0a42071c(b, dot, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("</title>\n<link rel=\"stylesheet\" href=\"")
-	v2 := fn.asset_0e0a6fbe("static/tokens.css")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v2)))
-	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
-	v3 := fn.asset_0e0a6fbe("static/theme.css")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v3)))
-	b.WriteString("\">\n\n<link rel=\"stylesheet\" href=\"")
-	v4 := fn.asset_0e0a6fbe("static/shell.css")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v4)))
-	b.WriteString("\">\n<script defer src=\"")
-	v5 := fn.asset_0e0a6fbe("static/rastrillo.js")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v5)))
-	b.WriteString("\"></script>\n<script defer src=\"")
-	v6 := fn.asset_0e0a6fbe("static/busy.js")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v6)))
-	b.WriteString("\"></script>\n\n<script defer src=\"")
-	v7 := fn.asset_0e0a6fbe("static/light.js")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v7)))
-	b.WriteString("\"></script>\n\n<script defer blocking=\"render\" src=\"")
-	v8 := fn.asset_0e0a6fbe("static/shell.js")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v8)))
-	b.WriteString("\"></script>\n")
-	v9 := fn.iconAssets_e8f4e4f5()
-	b.WriteString(tmplrt.HTMLEscaper(v9))
-	b.WriteString("\n<script defer src=\"")
-	v10 := fn.asset_0e0a6fbe("static/select.js")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v10)))
-	b.WriteString("\"></script>\n<script defer src=\"")
-	v11 := fn.asset_0e0a6fbe("static/calendar.js")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v11)))
-	b.WriteString("\"></script>\n<script defer src=\"")
-	v12 := fn.asset_0e0a6fbe("static/datetime.js")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v12)))
-	b.WriteString("\"></script>\n\n")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"head\" .}}", tmplrt.DepthError())
-	}
-	if err := exec_43ebd9331896345f_0a42071c(b, dot, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\n</head>\n<body>\n\n<div rst-shell-sidebar=\"")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"view$htmltemplate_stateAttr_delimDoubleQuote\" .}}", tmplrt.DepthError())
-	}
-	if err := exec_2dc89848829575fb_0a42071c(b, dot, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\">\n<a rst-skip href=\"#main\">")
-	v13, err := fn.T_a3eca208(x1, "rastrillo.ui.shell_skip")
-	if err != nil {
-		return tmplrt.ExecError("layout", "T $L \"rastrillo.ui.shell_skip\"", tmplrt.CallError("T", err))
-	}
-	v14 := reflect.ValueOf(v13)
-	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v14)))
-	b.WriteString("</a>\n\n<div rst-shell-back><a href=\"")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"up$htmltemplate_stateURL_delimDoubleQuote_attrURL\" .}}", tmplrt.DepthError())
-	}
-	if err := exec_31ad09fd84c8ecff_0a42071c(b, dot, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\" rel=\"up\" aria-label=\"")
-	v15, err := fn.T_a3eca208(x1, "rastrillo.ui.shell_up_label")
-	if err != nil {
-		return tmplrt.ExecError("layout", "T $L \"rastrillo.ui.shell_up_label\"", tmplrt.CallError("T", err))
-	}
-	v16 := reflect.ValueOf(v15)
-	v17, err := fn.Tf_a3eca208(x1, "rastrillo.ui.shell_up", "name", tmplrt.Arg(v16))
-	if err != nil {
-		return tmplrt.ExecError("layout", "Tf $L \"rastrillo.ui.shell_up\" \"name\" (T $L \"rastrillo.ui.shell_up_label\")", tmplrt.CallError("Tf", err))
-	}
-	v18 := reflect.ValueOf(v17)
-	b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v18)))
-	b.WriteString("\">")
-	v19, err := fn.T_a3eca208(x1, "rastrillo.ui.shell_up_label")
-	if err != nil {
-		return tmplrt.ExecError("layout", "T $L \"rastrillo.ui.shell_up_label\"", tmplrt.CallError("T", err))
-	}
-	v20 := reflect.ValueOf(v19)
-	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v20)))
-	b.WriteString("</a></div>\n<aside rst-shell-rail>\n\n<h1 rst-shell-title><span>")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"brand\" .}}", tmplrt.DepthError())
-	}
-	if err := exec_83f48c879de37375_0a42071c(b, dot, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("</span><span>")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"title\" .}}", tmplrt.DepthError())
-	}
-	if err := exec_a0bbdd679bf279f3_0a42071c(b, dot, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("</span></h1>\n")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"brand\" .}}", tmplrt.DepthError())
-	}
-	if err := exec_83f48c879de37375_0a42071c(b, dot, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\n<nav rst-shell-nav>")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"nav\" .}}", tmplrt.DepthError())
-	}
-	if err := exec_9742e4153b2cd941_0a42071c(b, dot, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("</nav>\n\n<div rst-shell-rail-foot><details rst-dropdown rst-shell-profile name=\"rst-shell-menu\"><summary><span rst-shell-avatar>")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"profile\" .}}", tmplrt.DepthError())
-	}
-	if err := exec_606dc54973cc1911_0a42071c(b, dot, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("</span></summary><div rst-dropdown-menu><div rst-shell-who>")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"profile\" .}}", tmplrt.DepthError())
-	}
-	if err := exec_606dc54973cc1911_0a42071c(b, dot, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("</div>")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"locale\" .}}", tmplrt.DepthError())
-	}
-	if err := exec_705d1f1c72ed2826_0a42071c(b, dot, fn, depth+1); err != nil {
-		return err
-	}
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"account\" .}}", tmplrt.DepthError())
-	}
-	if err := exec_35c32244d2e12608_0a42071c(b, dot, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("</div></details></div>\n</aside>\n<main rst-shell-main id=\"main\">\n<div rst-page>\n")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"content\" .}}", tmplrt.DepthError())
-	}
-	if err := exec_7a3721439f7d75a7_0a42071c(b, dot, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\n</div>\n</main>\n</div>\n</body>\n</html>\n")
-	return nil
-}
-
-// facts_5b4f8a7e7806ae5a_0a42071c is what exec_5b4f8a7e7806ae5a_0a42071c assumes of the types it reads.
-var facts_5b4f8a7e7806ae5a_0a42071c = tmplrt.Facts{
-	Dot: reflect.TypeFor[pageData](),
-	Funcs: map[string]reflect.Type{
-		"iconAssets_e8f4e4f5": reflect.TypeFor[func() template.HTML](),
-		"localizer_634df8c4":  reflect.TypeFor[func(any) *ui.Localizer](),
-	},
-	Facts: []tmplrt.Fact{
-		{Type: "amadan.net/rastrillo/rastrillo/tmpl/internal/corpus.pageData struct"},
-		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
-		{Func: "iconAssets_e8f4e4f5", Type: "html/template.HTML string"},
-	},
-}
-
-// exec_5b4f8a7e7806ae5a_b6cf1f3e renders "layout" for a dot of type *pageData.
-func exec_5b4f8a7e7806ae5a_b6cf1f3e(b *bytes.Buffer, dot *pageData, fn *templateFuncs, depth int) error {
-	root := dot
-	v1 := fn.localizer_634df8c4(root)
-	x1 := v1
-	_ = x1
-	b.WriteString("<!doctype html>\n<html lang=\"")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"lang$htmltemplate_stateAttr_delimDoubleQuote\" .}}", tmplrt.DepthError())
-	}
-	if err := exec_abae878773236025_b6cf1f3e(b, dot, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\" dir=\"")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"dir$htmltemplate_stateAttr_delimDoubleQuote\" .}}", tmplrt.DepthError())
-	}
-	if err := exec_30bfb3ff0d39cc14_b6cf1f3e(b, dot, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width\">\n<title>")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"title$htmltemplate_stateRCDATA_elementTitle\" .}}", tmplrt.DepthError())
-	}
-	if err := exec_dd9a8f29d7f092e6_b6cf1f3e(b, dot, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("</title>\n<link rel=\"stylesheet\" href=\"")
-	v2 := fn.asset_0e0a6fbe("static/tokens.css")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v2)))
-	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
-	v3 := fn.asset_0e0a6fbe("static/theme.css")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v3)))
-	b.WriteString("\">\n\n<link rel=\"stylesheet\" href=\"")
-	v4 := fn.asset_0e0a6fbe("static/shell.css")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v4)))
-	b.WriteString("\">\n<script defer src=\"")
-	v5 := fn.asset_0e0a6fbe("static/rastrillo.js")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v5)))
-	b.WriteString("\"></script>\n<script defer src=\"")
-	v6 := fn.asset_0e0a6fbe("static/busy.js")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v6)))
-	b.WriteString("\"></script>\n\n<script defer src=\"")
-	v7 := fn.asset_0e0a6fbe("static/light.js")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v7)))
-	b.WriteString("\"></script>\n\n<script defer blocking=\"render\" src=\"")
-	v8 := fn.asset_0e0a6fbe("static/shell.js")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v8)))
-	b.WriteString("\"></script>\n")
-	v9 := fn.iconAssets_e8f4e4f5()
-	b.WriteString(tmplrt.HTMLEscaper(v9))
-	b.WriteString("\n<script defer src=\"")
-	v10 := fn.asset_0e0a6fbe("static/select.js")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v10)))
-	b.WriteString("\"></script>\n<script defer src=\"")
-	v11 := fn.asset_0e0a6fbe("static/calendar.js")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v11)))
-	b.WriteString("\"></script>\n<script defer src=\"")
-	v12 := fn.asset_0e0a6fbe("static/datetime.js")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v12)))
-	b.WriteString("\"></script>\n\n")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"head\" .}}", tmplrt.DepthError())
-	}
-	if err := exec_43ebd9331896345f_b6cf1f3e(b, dot, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\n</head>\n<body>\n\n<div rst-shell-sidebar=\"")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"view$htmltemplate_stateAttr_delimDoubleQuote\" .}}", tmplrt.DepthError())
-	}
-	if err := exec_2dc89848829575fb_b6cf1f3e(b, dot, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\">\n<a rst-skip href=\"#main\">")
-	v13, err := fn.T_a3eca208(x1, "rastrillo.ui.shell_skip")
-	if err != nil {
-		return tmplrt.ExecError("layout", "T $L \"rastrillo.ui.shell_skip\"", tmplrt.CallError("T", err))
-	}
-	v14 := reflect.ValueOf(v13)
-	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v14)))
-	b.WriteString("</a>\n\n<div rst-shell-back><a href=\"")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"up$htmltemplate_stateURL_delimDoubleQuote_attrURL\" .}}", tmplrt.DepthError())
-	}
-	if err := exec_31ad09fd84c8ecff_b6cf1f3e(b, dot, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\" rel=\"up\" aria-label=\"")
-	v15, err := fn.T_a3eca208(x1, "rastrillo.ui.shell_up_label")
-	if err != nil {
-		return tmplrt.ExecError("layout", "T $L \"rastrillo.ui.shell_up_label\"", tmplrt.CallError("T", err))
-	}
-	v16 := reflect.ValueOf(v15)
-	v17, err := fn.Tf_a3eca208(x1, "rastrillo.ui.shell_up", "name", tmplrt.Arg(v16))
-	if err != nil {
-		return tmplrt.ExecError("layout", "Tf $L \"rastrillo.ui.shell_up\" \"name\" (T $L \"rastrillo.ui.shell_up_label\")", tmplrt.CallError("Tf", err))
-	}
-	v18 := reflect.ValueOf(v17)
-	b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v18)))
-	b.WriteString("\">")
-	v19, err := fn.T_a3eca208(x1, "rastrillo.ui.shell_up_label")
-	if err != nil {
-		return tmplrt.ExecError("layout", "T $L \"rastrillo.ui.shell_up_label\"", tmplrt.CallError("T", err))
-	}
-	v20 := reflect.ValueOf(v19)
-	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v20)))
-	b.WriteString("</a></div>\n<aside rst-shell-rail>\n\n<h1 rst-shell-title><span>")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"brand\" .}}", tmplrt.DepthError())
-	}
-	if err := exec_83f48c879de37375_b6cf1f3e(b, dot, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("</span><span>")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"title\" .}}", tmplrt.DepthError())
-	}
-	if err := exec_a0bbdd679bf279f3_b6cf1f3e(b, dot, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("</span></h1>\n")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"brand\" .}}", tmplrt.DepthError())
-	}
-	if err := exec_83f48c879de37375_b6cf1f3e(b, dot, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\n<nav rst-shell-nav>")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"nav\" .}}", tmplrt.DepthError())
-	}
-	if err := exec_9742e4153b2cd941_b6cf1f3e(b, dot, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("</nav>\n\n<div rst-shell-rail-foot><details rst-dropdown rst-shell-profile name=\"rst-shell-menu\"><summary><span rst-shell-avatar>")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"profile\" .}}", tmplrt.DepthError())
-	}
-	if err := exec_606dc54973cc1911_b6cf1f3e(b, dot, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("</span></summary><div rst-dropdown-menu><div rst-shell-who>")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"profile\" .}}", tmplrt.DepthError())
-	}
-	if err := exec_606dc54973cc1911_b6cf1f3e(b, dot, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("</div>")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"locale\" .}}", tmplrt.DepthError())
-	}
-	if err := exec_705d1f1c72ed2826_b6cf1f3e(b, dot, fn, depth+1); err != nil {
-		return err
-	}
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"account\" .}}", tmplrt.DepthError())
-	}
-	if err := exec_35c32244d2e12608_b6cf1f3e(b, dot, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("</div></details></div>\n</aside>\n<main rst-shell-main id=\"main\">\n<div rst-page>\n")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"content\" .}}", tmplrt.DepthError())
-	}
-	if err := exec_7a3721439f7d75a7_b6cf1f3e(b, dot, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\n</div>\n</main>\n</div>\n</body>\n</html>\n")
-	return nil
-}
-
-// facts_5b4f8a7e7806ae5a_b6cf1f3e is what exec_5b4f8a7e7806ae5a_b6cf1f3e assumes of the types it reads.
-var facts_5b4f8a7e7806ae5a_b6cf1f3e = tmplrt.Facts{
-	Dot: reflect.TypeFor[*pageData](),
-	Funcs: map[string]reflect.Type{
-		"iconAssets_e8f4e4f5": reflect.TypeFor[func() template.HTML](),
-		"localizer_634df8c4":  reflect.TypeFor[func(any) *ui.Localizer](),
-	},
-	Facts: []tmplrt.Fact{
-		{Type: "*amadan.net/rastrillo/rastrillo/tmpl/internal/corpus.pageData"},
-		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
-		{Func: "iconAssets_e8f4e4f5", Type: "html/template.HTML string"},
 	},
 }
 
@@ -21641,206 +21143,6 @@ var facts_7ac2ccadc4e18d40_b6cf1f3e = tmplrt.Facts{
 	},
 }
 
-// exec_7b0e433294ed26d2 renders "layout".
-func exec_7b0e433294ed26d2(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
-	root := dot
-	v1 := fn.localizer_634df8c4(tmplrt.Arg(root))
-	x1 := v1
-	_ = x1
-	b.WriteString("<!doctype html>\n<html lang=\"")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"lang$htmltemplate_stateAttr_delimDoubleQuote\" .}}", tmplrt.DepthError())
-	}
-	v2 := tmplrt.Unwrap(dot)
-	if err := exec_abae878773236025(b, v2, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\" dir=\"")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"dir$htmltemplate_stateAttr_delimDoubleQuote\" .}}", tmplrt.DepthError())
-	}
-	v3 := tmplrt.Unwrap(dot)
-	if err := exec_30bfb3ff0d39cc14(b, v3, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width\">\n<title>")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"title$htmltemplate_stateRCDATA_elementTitle\" .}}", tmplrt.DepthError())
-	}
-	v4 := tmplrt.Unwrap(dot)
-	if err := exec_dd9a8f29d7f092e6(b, v4, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("</title>\n<link rel=\"stylesheet\" href=\"")
-	v5 := fn.asset_0e0a6fbe("static/tokens.css")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v5)))
-	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
-	v6 := fn.asset_0e0a6fbe("static/theme.css")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v6)))
-	b.WriteString("\">\n\n<link rel=\"stylesheet\" href=\"")
-	v7 := fn.asset_0e0a6fbe("static/shell.css")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v7)))
-	b.WriteString("\">\n<script defer src=\"")
-	v8 := fn.asset_0e0a6fbe("static/rastrillo.js")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v8)))
-	b.WriteString("\"></script>\n<script defer src=\"")
-	v9 := fn.asset_0e0a6fbe("static/busy.js")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v9)))
-	b.WriteString("\"></script>\n\n<script defer src=\"")
-	v10 := fn.asset_0e0a6fbe("static/light.js")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v10)))
-	b.WriteString("\"></script>\n\n<script defer blocking=\"render\" src=\"")
-	v11 := fn.asset_0e0a6fbe("static/shell.js")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v11)))
-	b.WriteString("\"></script>\n")
-	v12 := fn.iconAssets_e8f4e4f5()
-	b.WriteString(tmplrt.HTMLEscaper(v12))
-	b.WriteString("\n<script defer src=\"")
-	v13 := fn.asset_0e0a6fbe("static/select.js")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v13)))
-	b.WriteString("\"></script>\n<script defer src=\"")
-	v14 := fn.asset_0e0a6fbe("static/calendar.js")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v14)))
-	b.WriteString("\"></script>\n<script defer src=\"")
-	v15 := fn.asset_0e0a6fbe("static/datetime.js")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v15)))
-	b.WriteString("\"></script>\n\n")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"head\" .}}", tmplrt.DepthError())
-	}
-	v16 := tmplrt.Unwrap(dot)
-	if err := exec_43ebd9331896345f(b, v16, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\n</head>\n<body>\n\n<div rst-shell-sidebar=\"")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"view$htmltemplate_stateAttr_delimDoubleQuote\" .}}", tmplrt.DepthError())
-	}
-	v17 := tmplrt.Unwrap(dot)
-	if err := exec_2dc89848829575fb(b, v17, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\">\n<a rst-skip href=\"#main\">")
-	v18, err := fn.T_a3eca208(x1, "rastrillo.ui.shell_skip")
-	if err != nil {
-		return tmplrt.ExecError("layout", "T $L \"rastrillo.ui.shell_skip\"", tmplrt.CallError("T", err))
-	}
-	v19 := reflect.ValueOf(v18)
-	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v19)))
-	b.WriteString("</a>\n\n<div rst-shell-back><a href=\"")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"up$htmltemplate_stateURL_delimDoubleQuote_attrURL\" .}}", tmplrt.DepthError())
-	}
-	v20 := tmplrt.Unwrap(dot)
-	if err := exec_31ad09fd84c8ecff(b, v20, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\" rel=\"up\" aria-label=\"")
-	v21, err := fn.T_a3eca208(x1, "rastrillo.ui.shell_up_label")
-	if err != nil {
-		return tmplrt.ExecError("layout", "T $L \"rastrillo.ui.shell_up_label\"", tmplrt.CallError("T", err))
-	}
-	v22 := reflect.ValueOf(v21)
-	v23, err := fn.Tf_a3eca208(x1, "rastrillo.ui.shell_up", "name", tmplrt.Arg(v22))
-	if err != nil {
-		return tmplrt.ExecError("layout", "Tf $L \"rastrillo.ui.shell_up\" \"name\" (T $L \"rastrillo.ui.shell_up_label\")", tmplrt.CallError("Tf", err))
-	}
-	v24 := reflect.ValueOf(v23)
-	b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v24)))
-	b.WriteString("\">")
-	v25, err := fn.T_a3eca208(x1, "rastrillo.ui.shell_up_label")
-	if err != nil {
-		return tmplrt.ExecError("layout", "T $L \"rastrillo.ui.shell_up_label\"", tmplrt.CallError("T", err))
-	}
-	v26 := reflect.ValueOf(v25)
-	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v26)))
-	b.WriteString("</a></div>\n<aside rst-shell-rail>\n\n<h1 rst-shell-title><span>")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"brand\" .}}", tmplrt.DepthError())
-	}
-	v27 := tmplrt.Unwrap(dot)
-	if err := exec_83f48c879de37375(b, v27, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("</span><span>")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"title\" .}}", tmplrt.DepthError())
-	}
-	v28 := tmplrt.Unwrap(dot)
-	if err := exec_a0bbdd679bf279f3(b, v28, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("</span></h1>\n")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"brand\" .}}", tmplrt.DepthError())
-	}
-	v29 := tmplrt.Unwrap(dot)
-	if err := exec_83f48c879de37375(b, v29, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\n<nav rst-shell-nav>")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"nav\" .}}", tmplrt.DepthError())
-	}
-	v30 := tmplrt.Unwrap(dot)
-	if err := exec_9742e4153b2cd941(b, v30, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("</nav>\n\n<div rst-shell-rail-foot><details rst-dropdown rst-shell-profile name=\"rst-shell-menu\"><summary><span rst-shell-avatar>")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"profile\" .}}", tmplrt.DepthError())
-	}
-	v31 := tmplrt.Unwrap(dot)
-	if err := exec_606dc54973cc1911(b, v31, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("</span></summary><div rst-dropdown-menu><div rst-shell-who>")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"profile\" .}}", tmplrt.DepthError())
-	}
-	v32 := tmplrt.Unwrap(dot)
-	if err := exec_606dc54973cc1911(b, v32, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("</div>")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"locale\" .}}", tmplrt.DepthError())
-	}
-	v33 := tmplrt.Unwrap(dot)
-	if err := exec_705d1f1c72ed2826(b, v33, fn, depth+1); err != nil {
-		return err
-	}
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"account\" .}}", tmplrt.DepthError())
-	}
-	v34 := tmplrt.Unwrap(dot)
-	if err := exec_35c32244d2e12608(b, v34, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("</div></details></div>\n</aside>\n<main rst-shell-main id=\"main\">\n<div rst-page>\n")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"content\" .}}", tmplrt.DepthError())
-	}
-	v35 := tmplrt.Unwrap(dot)
-	if err := exec_fed7be9f579c4244(b, v35, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\n</div>\n</main>\n</div>\n</body>\n</html>\n")
-	return nil
-}
-
-// facts_7b0e433294ed26d2 is what exec_7b0e433294ed26d2 assumes of the types it reads.
-var facts_7b0e433294ed26d2 = tmplrt.Facts{
-	Funcs: map[string]reflect.Type{
-		"iconAssets_e8f4e4f5": reflect.TypeFor[func() template.HTML](),
-		"localizer_634df8c4":  reflect.TypeFor[func(any) *ui.Localizer](),
-	},
-	Facts: []tmplrt.Fact{
-		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
-		{Func: "iconAssets_e8f4e4f5", Type: "html/template.HTML string"},
-	},
-}
-
 // exec_7bb131c5992c1ca6 renders "missingkey-method-error".
 func exec_7bb131c5992c1ca6(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
 	if depth == tmplrt.MaxExecDepth {
@@ -23827,206 +23129,6 @@ var facts_82b44504279134d0 = tmplrt.Facts{
 	},
 }
 
-// exec_8307ff0728154912 renders "layout".
-func exec_8307ff0728154912(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
-	root := dot
-	v1 := fn.localizer_634df8c4(tmplrt.Arg(root))
-	x1 := v1
-	_ = x1
-	b.WriteString("<!doctype html>\n<html lang=\"")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"lang$htmltemplate_stateAttr_delimDoubleQuote\" .}}", tmplrt.DepthError())
-	}
-	v2 := tmplrt.Unwrap(dot)
-	if err := exec_abae878773236025(b, v2, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\" dir=\"")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"dir$htmltemplate_stateAttr_delimDoubleQuote\" .}}", tmplrt.DepthError())
-	}
-	v3 := tmplrt.Unwrap(dot)
-	if err := exec_30bfb3ff0d39cc14(b, v3, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width\">\n<title>")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"title$htmltemplate_stateRCDATA_elementTitle\" .}}", tmplrt.DepthError())
-	}
-	v4 := tmplrt.Unwrap(dot)
-	if err := exec_dd9a8f29d7f092e6(b, v4, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("</title>\n<link rel=\"stylesheet\" href=\"")
-	v5 := fn.asset_0e0a6fbe("static/tokens.css")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v5)))
-	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
-	v6 := fn.asset_0e0a6fbe("static/theme.css")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v6)))
-	b.WriteString("\">\n\n<link rel=\"stylesheet\" href=\"")
-	v7 := fn.asset_0e0a6fbe("static/shell.css")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v7)))
-	b.WriteString("\">\n<script defer src=\"")
-	v8 := fn.asset_0e0a6fbe("static/rastrillo.js")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v8)))
-	b.WriteString("\"></script>\n<script defer src=\"")
-	v9 := fn.asset_0e0a6fbe("static/busy.js")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v9)))
-	b.WriteString("\"></script>\n\n<script defer src=\"")
-	v10 := fn.asset_0e0a6fbe("static/light.js")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v10)))
-	b.WriteString("\"></script>\n\n<script defer blocking=\"render\" src=\"")
-	v11 := fn.asset_0e0a6fbe("static/shell.js")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v11)))
-	b.WriteString("\"></script>\n")
-	v12 := fn.iconAssets_e8f4e4f5()
-	b.WriteString(tmplrt.HTMLEscaper(v12))
-	b.WriteString("\n<script defer src=\"")
-	v13 := fn.asset_0e0a6fbe("static/select.js")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v13)))
-	b.WriteString("\"></script>\n<script defer src=\"")
-	v14 := fn.asset_0e0a6fbe("static/calendar.js")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v14)))
-	b.WriteString("\"></script>\n<script defer src=\"")
-	v15 := fn.asset_0e0a6fbe("static/datetime.js")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v15)))
-	b.WriteString("\"></script>\n\n")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"head\" .}}", tmplrt.DepthError())
-	}
-	v16 := tmplrt.Unwrap(dot)
-	if err := exec_43ebd9331896345f(b, v16, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\n</head>\n<body>\n\n<div rst-shell-sidebar=\"")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"view$htmltemplate_stateAttr_delimDoubleQuote\" .}}", tmplrt.DepthError())
-	}
-	v17 := tmplrt.Unwrap(dot)
-	if err := exec_4d79b406a66c4358(b, v17, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\">\n<a rst-skip href=\"#main\">")
-	v18, err := fn.T_a3eca208(x1, "rastrillo.ui.shell_skip")
-	if err != nil {
-		return tmplrt.ExecError("layout", "T $L \"rastrillo.ui.shell_skip\"", tmplrt.CallError("T", err))
-	}
-	v19 := reflect.ValueOf(v18)
-	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v19)))
-	b.WriteString("</a>\n\n<div rst-shell-back><a href=\"")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"up$htmltemplate_stateURL_delimDoubleQuote_attrURL\" .}}", tmplrt.DepthError())
-	}
-	v20 := tmplrt.Unwrap(dot)
-	if err := exec_31ad09fd84c8ecff(b, v20, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\" rel=\"up\" aria-label=\"")
-	v21, err := fn.T_a3eca208(x1, "rastrillo.ui.shell_up_label")
-	if err != nil {
-		return tmplrt.ExecError("layout", "T $L \"rastrillo.ui.shell_up_label\"", tmplrt.CallError("T", err))
-	}
-	v22 := reflect.ValueOf(v21)
-	v23, err := fn.Tf_a3eca208(x1, "rastrillo.ui.shell_up", "name", tmplrt.Arg(v22))
-	if err != nil {
-		return tmplrt.ExecError("layout", "Tf $L \"rastrillo.ui.shell_up\" \"name\" (T $L \"rastrillo.ui.shell_up_label\")", tmplrt.CallError("Tf", err))
-	}
-	v24 := reflect.ValueOf(v23)
-	b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v24)))
-	b.WriteString("\">")
-	v25, err := fn.T_a3eca208(x1, "rastrillo.ui.shell_up_label")
-	if err != nil {
-		return tmplrt.ExecError("layout", "T $L \"rastrillo.ui.shell_up_label\"", tmplrt.CallError("T", err))
-	}
-	v26 := reflect.ValueOf(v25)
-	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v26)))
-	b.WriteString("</a></div>\n<aside rst-shell-rail>\n\n<h1 rst-shell-title><span>")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"brand\" .}}", tmplrt.DepthError())
-	}
-	v27 := tmplrt.Unwrap(dot)
-	if err := exec_b037223404942503(b, v27, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("</span><span>")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"title\" .}}", tmplrt.DepthError())
-	}
-	v28 := tmplrt.Unwrap(dot)
-	if err := exec_a0bbdd679bf279f3(b, v28, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("</span></h1>\n")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"brand\" .}}", tmplrt.DepthError())
-	}
-	v29 := tmplrt.Unwrap(dot)
-	if err := exec_b037223404942503(b, v29, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\n<nav rst-shell-nav>")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"nav\" .}}", tmplrt.DepthError())
-	}
-	v30 := tmplrt.Unwrap(dot)
-	if err := exec_9e02245a512d55a1(b, v30, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("</nav>\n\n<div rst-shell-rail-foot><details rst-dropdown rst-shell-profile name=\"rst-shell-menu\"><summary><span rst-shell-avatar>")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"profile\" .}}", tmplrt.DepthError())
-	}
-	v31 := tmplrt.Unwrap(dot)
-	if err := exec_606dc54973cc1911(b, v31, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("</span></summary><div rst-dropdown-menu><div rst-shell-who>")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"profile\" .}}", tmplrt.DepthError())
-	}
-	v32 := tmplrt.Unwrap(dot)
-	if err := exec_606dc54973cc1911(b, v32, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("</div>")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"locale\" .}}", tmplrt.DepthError())
-	}
-	v33 := tmplrt.Unwrap(dot)
-	if err := exec_705d1f1c72ed2826(b, v33, fn, depth+1); err != nil {
-		return err
-	}
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"account\" .}}", tmplrt.DepthError())
-	}
-	v34 := tmplrt.Unwrap(dot)
-	if err := exec_35c32244d2e12608(b, v34, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("</div></details></div>\n</aside>\n<main rst-shell-main id=\"main\">\n<div rst-page>\n")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"content\" .}}", tmplrt.DepthError())
-	}
-	v35 := tmplrt.Unwrap(dot)
-	if err := exec_c67a249acce6bda2(b, v35, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\n</div>\n</main>\n</div>\n</body>\n</html>\n")
-	return nil
-}
-
-// facts_8307ff0728154912 is what exec_8307ff0728154912 assumes of the types it reads.
-var facts_8307ff0728154912 = tmplrt.Facts{
-	Funcs: map[string]reflect.Type{
-		"iconAssets_e8f4e4f5": reflect.TypeFor[func() template.HTML](),
-		"localizer_634df8c4":  reflect.TypeFor[func(any) *ui.Localizer](),
-	},
-	Facts: []tmplrt.Fact{
-		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
-		{Func: "iconAssets_e8f4e4f5", Type: "html/template.HTML string"},
-	},
-}
-
 // exec_83f48c879de37375 renders "brand".
 func exec_83f48c879de37375(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
 	root := dot
@@ -25857,197 +24959,6 @@ func exec_8eba5589e2405726(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs
 	return nil
 }
 
-// exec_8f464eded44e6274 renders "layout".
-func exec_8f464eded44e6274(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
-	b.WriteString("<!doctype html>\n<html lang=\"")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"lang$htmltemplate_stateAttr_delimDoubleQuote\" .}}", tmplrt.DepthError())
-	}
-	v1 := tmplrt.Unwrap(dot)
-	if err := exec_abae878773236025(b, v1, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\" dir=\"")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"dir$htmltemplate_stateAttr_delimDoubleQuote\" .}}", tmplrt.DepthError())
-	}
-	v2 := tmplrt.Unwrap(dot)
-	if err := exec_30bfb3ff0d39cc14(b, v2, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width\">\n<title>")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"title$htmltemplate_stateRCDATA_elementTitle\" .}}", tmplrt.DepthError())
-	}
-	v3 := tmplrt.Unwrap(dot)
-	if err := exec_dd9a8f29d7f092e6(b, v3, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("</title>\n<link rel=\"stylesheet\" href=\"")
-	v4 := fn.asset_0e0a6fbe("static/tokens.css")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v4)))
-	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
-	v5 := fn.asset_0e0a6fbe("static/theme.css")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v5)))
-	b.WriteString("\">\n\n<link rel=\"stylesheet\" href=\"")
-	v6 := fn.asset_0e0a6fbe("static/shell.css")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v6)))
-	b.WriteString("\">\n<script defer src=\"")
-	v7 := fn.asset_0e0a6fbe("static/rastrillo.js")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v7)))
-	b.WriteString("\"></script>\n<script defer src=\"")
-	v8 := fn.asset_0e0a6fbe("static/busy.js")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v8)))
-	b.WriteString("\"></script>\n\n<script defer blocking=\"render\" src=\"")
-	v9 := fn.asset_0e0a6fbe("static/shell.js")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v9)))
-	b.WriteString("\"></script>\n")
-	v10 := fn.iconAssets_e8f4e4f5()
-	b.WriteString(tmplrt.HTMLEscaper(v10))
-	b.WriteString("\n<script defer src=\"")
-	v11 := fn.asset_0e0a6fbe("static/select.js")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v11)))
-	b.WriteString("\"></script>\n<script defer src=\"")
-	v12 := fn.asset_0e0a6fbe("static/calendar.js")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v12)))
-	b.WriteString("\"></script>\n<script defer src=\"")
-	v13 := fn.asset_0e0a6fbe("static/datetime.js")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v13)))
-	b.WriteString("\"></script>\n\n")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"head\" .}}", tmplrt.DepthError())
-	}
-	v14 := tmplrt.Unwrap(dot)
-	if err := exec_43ebd9331896345f(b, v14, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\n</head>\n<body>\n\n<div rst-shell-sidebar=\"")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"view$htmltemplate_stateAttr_delimDoubleQuote\" .}}", tmplrt.DepthError())
-	}
-	v15 := tmplrt.Unwrap(dot)
-	if err := exec_2dc89848829575fb(b, v15, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\">\n<a rst-skip href=\"#main\">")
-	v16, err := fn.T_a3eca208("rastrillo.ui.shell_skip")
-	if err != nil {
-		return tmplrt.ExecError("layout", "T \"rastrillo.ui.shell_skip\"", tmplrt.CallError("T", err))
-	}
-	v17 := reflect.ValueOf(v16)
-	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v17)))
-	b.WriteString("</a>\n\n<div rst-shell-back><a href=\"")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"up$htmltemplate_stateURL_delimDoubleQuote_attrURL\" .}}", tmplrt.DepthError())
-	}
-	v18 := tmplrt.Unwrap(dot)
-	if err := exec_8eba5589e2405726(b, v18, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\" rel=\"up\" aria-label=\"")
-	v19, err := fn.T_a3eca208("rastrillo.ui.shell_up_label")
-	if err != nil {
-		return tmplrt.ExecError("layout", "T \"rastrillo.ui.shell_up_label\"", tmplrt.CallError("T", err))
-	}
-	v20 := reflect.ValueOf(v19)
-	v21, err := fn.Tf_a3eca208("rastrillo.ui.shell_up", "name", tmplrt.Arg(v20))
-	if err != nil {
-		return tmplrt.ExecError("layout", "Tf \"rastrillo.ui.shell_up\" \"name\" (T \"rastrillo.ui.shell_up_label\")", tmplrt.CallError("Tf", err))
-	}
-	v22 := reflect.ValueOf(v21)
-	b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v22)))
-	b.WriteString("\">")
-	v23, err := fn.T_a3eca208("rastrillo.ui.shell_up_label")
-	if err != nil {
-		return tmplrt.ExecError("layout", "T \"rastrillo.ui.shell_up_label\"", tmplrt.CallError("T", err))
-	}
-	v24 := reflect.ValueOf(v23)
-	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v24)))
-	b.WriteString("</a></div>\n<aside rst-shell-rail>\n\n<h1 rst-shell-title><span>")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"brand\" .}}", tmplrt.DepthError())
-	}
-	v25 := tmplrt.Unwrap(dot)
-	if err := exec_e0b437f3b6465a38(b, v25, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("</span><span>")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"title\" .}}", tmplrt.DepthError())
-	}
-	v26 := tmplrt.Unwrap(dot)
-	if err := exec_a0bbdd679bf279f3(b, v26, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("</span></h1>\n")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"brand\" .}}", tmplrt.DepthError())
-	}
-	v27 := tmplrt.Unwrap(dot)
-	if err := exec_e0b437f3b6465a38(b, v27, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\n<nav rst-shell-nav>")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"nav\" .}}", tmplrt.DepthError())
-	}
-	v28 := tmplrt.Unwrap(dot)
-	if err := exec_36968f4f0b10fff2(b, v28, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("</nav>\n\n<div rst-shell-rail-foot><details rst-dropdown rst-shell-profile name=\"rst-shell-menu\"><summary><span rst-shell-avatar>")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"profile\" .}}", tmplrt.DepthError())
-	}
-	v29 := tmplrt.Unwrap(dot)
-	if err := exec_819535ef3177bb92(b, v29, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("</span></summary><div rst-dropdown-menu><div rst-shell-who>")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"profile\" .}}", tmplrt.DepthError())
-	}
-	v30 := tmplrt.Unwrap(dot)
-	if err := exec_819535ef3177bb92(b, v30, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("</div>")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"locale\" .}}", tmplrt.DepthError())
-	}
-	v31 := tmplrt.Unwrap(dot)
-	if err := exec_705d1f1c72ed2826(b, v31, fn, depth+1); err != nil {
-		return err
-	}
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"account\" .}}", tmplrt.DepthError())
-	}
-	v32 := tmplrt.Unwrap(dot)
-	if err := exec_35c32244d2e12608(b, v32, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("</div></details></div>\n</aside>\n<main rst-shell-main id=\"main\">\n<div rst-page>\n")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"content\" .}}", tmplrt.DepthError())
-	}
-	v33 := tmplrt.Unwrap(dot)
-	if err := exec_c67a249acce6bda2(b, v33, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\n</div>\n</main>\n</div>\n</body>\n</html>\n")
-	return nil
-}
-
-// facts_8f464eded44e6274 is what exec_8f464eded44e6274 assumes of the types it reads.
-var facts_8f464eded44e6274 = tmplrt.Facts{
-	Funcs: map[string]reflect.Type{
-		"iconAssets_e8f4e4f5": reflect.TypeFor[func() template.HTML](),
-	},
-	Facts: []tmplrt.Fact{
-		{Func: "iconAssets_e8f4e4f5", Type: "html/template.HTML string"},
-	},
-}
-
 // exec_8fddf8a4d28f77d8 renders "missingkey-print-zero".
 func exec_8fddf8a4d28f77d8(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
 	v1, err := tmplrt.FieldMissing(dot, "Missing", tmplrt.MissingKeyZero)
@@ -26510,206 +25421,6 @@ var facts_92de3beba99d723a = tmplrt.Facts{
 	Facts: []tmplrt.Fact{
 		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
 		{Func: "icon_bd1e407c", Type: "html/template.HTML string"},
-	},
-}
-
-// exec_9489de95f137ad07 renders "layout".
-func exec_9489de95f137ad07(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
-	root := dot
-	v1 := fn.localizer_634df8c4(tmplrt.Arg(root))
-	x1 := v1
-	_ = x1
-	b.WriteString("<!doctype html>\n<html lang=\"")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"lang$htmltemplate_stateAttr_delimDoubleQuote\" .}}", tmplrt.DepthError())
-	}
-	v2 := tmplrt.Unwrap(dot)
-	if err := exec_abae878773236025(b, v2, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\" dir=\"")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"dir$htmltemplate_stateAttr_delimDoubleQuote\" .}}", tmplrt.DepthError())
-	}
-	v3 := tmplrt.Unwrap(dot)
-	if err := exec_30bfb3ff0d39cc14(b, v3, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width\">\n<title>")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"title$htmltemplate_stateRCDATA_elementTitle\" .}}", tmplrt.DepthError())
-	}
-	v4 := tmplrt.Unwrap(dot)
-	if err := exec_dd9a8f29d7f092e6(b, v4, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("</title>\n<link rel=\"stylesheet\" href=\"")
-	v5 := fn.asset_0e0a6fbe("static/tokens.css")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v5)))
-	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
-	v6 := fn.asset_0e0a6fbe("static/theme.css")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v6)))
-	b.WriteString("\">\n\n<link rel=\"stylesheet\" href=\"")
-	v7 := fn.asset_0e0a6fbe("static/shell.css")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v7)))
-	b.WriteString("\">\n<script defer src=\"")
-	v8 := fn.asset_0e0a6fbe("static/rastrillo.js")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v8)))
-	b.WriteString("\"></script>\n<script defer src=\"")
-	v9 := fn.asset_0e0a6fbe("static/busy.js")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v9)))
-	b.WriteString("\"></script>\n\n<script defer src=\"")
-	v10 := fn.asset_0e0a6fbe("static/light.js")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v10)))
-	b.WriteString("\"></script>\n\n<script defer blocking=\"render\" src=\"")
-	v11 := fn.asset_0e0a6fbe("static/shell.js")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v11)))
-	b.WriteString("\"></script>\n")
-	v12 := fn.iconAssets_e8f4e4f5()
-	b.WriteString(tmplrt.HTMLEscaper(v12))
-	b.WriteString("\n<script defer src=\"")
-	v13 := fn.asset_0e0a6fbe("static/select.js")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v13)))
-	b.WriteString("\"></script>\n<script defer src=\"")
-	v14 := fn.asset_0e0a6fbe("static/calendar.js")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v14)))
-	b.WriteString("\"></script>\n<script defer src=\"")
-	v15 := fn.asset_0e0a6fbe("static/datetime.js")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v15)))
-	b.WriteString("\"></script>\n\n")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"head\" .}}", tmplrt.DepthError())
-	}
-	v16 := tmplrt.Unwrap(dot)
-	if err := exec_43ebd9331896345f(b, v16, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\n</head>\n<body>\n\n<div rst-shell-sidebar=\"")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"view$htmltemplate_stateAttr_delimDoubleQuote\" .}}", tmplrt.DepthError())
-	}
-	v17 := tmplrt.Unwrap(dot)
-	if err := exec_2dc89848829575fb(b, v17, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\">\n<a rst-skip href=\"#main\">")
-	v18, err := fn.T_a3eca208(x1, "rastrillo.ui.shell_skip")
-	if err != nil {
-		return tmplrt.ExecError("layout", "T $L \"rastrillo.ui.shell_skip\"", tmplrt.CallError("T", err))
-	}
-	v19 := reflect.ValueOf(v18)
-	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v19)))
-	b.WriteString("</a>\n\n<div rst-shell-back><a href=\"")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"up$htmltemplate_stateURL_delimDoubleQuote_attrURL\" .}}", tmplrt.DepthError())
-	}
-	v20 := tmplrt.Unwrap(dot)
-	if err := exec_31ad09fd84c8ecff(b, v20, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\" rel=\"up\" aria-label=\"")
-	v21, err := fn.T_a3eca208(x1, "rastrillo.ui.shell_up_label")
-	if err != nil {
-		return tmplrt.ExecError("layout", "T $L \"rastrillo.ui.shell_up_label\"", tmplrt.CallError("T", err))
-	}
-	v22 := reflect.ValueOf(v21)
-	v23, err := fn.Tf_a3eca208(x1, "rastrillo.ui.shell_up", "name", tmplrt.Arg(v22))
-	if err != nil {
-		return tmplrt.ExecError("layout", "Tf $L \"rastrillo.ui.shell_up\" \"name\" (T $L \"rastrillo.ui.shell_up_label\")", tmplrt.CallError("Tf", err))
-	}
-	v24 := reflect.ValueOf(v23)
-	b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v24)))
-	b.WriteString("\">")
-	v25, err := fn.T_a3eca208(x1, "rastrillo.ui.shell_up_label")
-	if err != nil {
-		return tmplrt.ExecError("layout", "T $L \"rastrillo.ui.shell_up_label\"", tmplrt.CallError("T", err))
-	}
-	v26 := reflect.ValueOf(v25)
-	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v26)))
-	b.WriteString("</a></div>\n<aside rst-shell-rail>\n\n<h1 rst-shell-title><span>")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"brand\" .}}", tmplrt.DepthError())
-	}
-	v27 := tmplrt.Unwrap(dot)
-	if err := exec_83f48c879de37375(b, v27, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("</span><span>")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"title\" .}}", tmplrt.DepthError())
-	}
-	v28 := tmplrt.Unwrap(dot)
-	if err := exec_a0bbdd679bf279f3(b, v28, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("</span></h1>\n")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"brand\" .}}", tmplrt.DepthError())
-	}
-	v29 := tmplrt.Unwrap(dot)
-	if err := exec_83f48c879de37375(b, v29, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\n<nav rst-shell-nav>")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"nav\" .}}", tmplrt.DepthError())
-	}
-	v30 := tmplrt.Unwrap(dot)
-	if err := exec_9742e4153b2cd941(b, v30, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("</nav>\n\n<div rst-shell-rail-foot><details rst-dropdown rst-shell-profile name=\"rst-shell-menu\"><summary><span rst-shell-avatar>")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"profile\" .}}", tmplrt.DepthError())
-	}
-	v31 := tmplrt.Unwrap(dot)
-	if err := exec_606dc54973cc1911(b, v31, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("</span></summary><div rst-dropdown-menu><div rst-shell-who>")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"profile\" .}}", tmplrt.DepthError())
-	}
-	v32 := tmplrt.Unwrap(dot)
-	if err := exec_606dc54973cc1911(b, v32, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("</div>")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"locale\" .}}", tmplrt.DepthError())
-	}
-	v33 := tmplrt.Unwrap(dot)
-	if err := exec_705d1f1c72ed2826(b, v33, fn, depth+1); err != nil {
-		return err
-	}
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"account\" .}}", tmplrt.DepthError())
-	}
-	v34 := tmplrt.Unwrap(dot)
-	if err := exec_35c32244d2e12608(b, v34, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("</div></details></div>\n</aside>\n<main rst-shell-main id=\"main\">\n<div rst-page>\n")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"content\" .}}", tmplrt.DepthError())
-	}
-	v35 := tmplrt.Unwrap(dot)
-	if err := exec_8a9ef95630f15137(b, v35, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\n</div>\n</main>\n</div>\n</body>\n</html>\n")
-	return nil
-}
-
-// facts_9489de95f137ad07 is what exec_9489de95f137ad07 assumes of the types it reads.
-var facts_9489de95f137ad07 = tmplrt.Facts{
-	Funcs: map[string]reflect.Type{
-		"iconAssets_e8f4e4f5": reflect.TypeFor[func() template.HTML](),
-		"localizer_634df8c4":  reflect.TypeFor[func(any) *ui.Localizer](),
-	},
-	Facts: []tmplrt.Fact{
-		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
-		{Func: "iconAssets_e8f4e4f5", Type: "html/template.HTML string"},
 	},
 }
 
@@ -27481,6 +26192,210 @@ var facts_9817df10d58b0edc = tmplrt.Facts{
 	},
 	Facts: []tmplrt.Fact{
 		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
+		{Func: "icon_bd1e407c", Type: "html/template.HTML string"},
+	},
+}
+
+// exec_98e6f1840c0bce9a renders "layout".
+func exec_98e6f1840c0bce9a(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
+	root := dot
+	v1 := fn.localizer_634df8c4(tmplrt.Arg(root))
+	x1 := v1
+	_ = x1
+	b.WriteString("<!doctype html>\n<html lang=\"")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"lang$htmltemplate_stateAttr_delimDoubleQuote\" .}}", tmplrt.DepthError())
+	}
+	v2 := tmplrt.Unwrap(dot)
+	if err := exec_abae878773236025(b, v2, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\" dir=\"")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"dir$htmltemplate_stateAttr_delimDoubleQuote\" .}}", tmplrt.DepthError())
+	}
+	v3 := tmplrt.Unwrap(dot)
+	if err := exec_30bfb3ff0d39cc14(b, v3, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width\">\n<title>")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"title$htmltemplate_stateRCDATA_elementTitle\" .}}", tmplrt.DepthError())
+	}
+	v4 := tmplrt.Unwrap(dot)
+	if err := exec_dd9a8f29d7f092e6(b, v4, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("</title>\n<link rel=\"stylesheet\" href=\"")
+	v5 := fn.asset_0e0a6fbe("static/tokens.css")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v5)))
+	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
+	v6 := fn.asset_0e0a6fbe("static/theme.css")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v6)))
+	b.WriteString("\">\n\n<link rel=\"stylesheet\" href=\"")
+	v7 := fn.asset_0e0a6fbe("static/shell.css")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v7)))
+	b.WriteString("\">\n<script defer src=\"")
+	v8 := fn.asset_0e0a6fbe("static/rastrillo.js")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v8)))
+	b.WriteString("\"></script>\n<script defer src=\"")
+	v9 := fn.asset_0e0a6fbe("static/busy.js")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v9)))
+	b.WriteString("\"></script>\n\n<script defer src=\"")
+	v10 := fn.asset_0e0a6fbe("static/light.js")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v10)))
+	b.WriteString("\"></script>\n\n<script defer blocking=\"render\" src=\"")
+	v11 := fn.asset_0e0a6fbe("static/shell.js")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v11)))
+	b.WriteString("\"></script>\n")
+	v12 := fn.iconAssets_e8f4e4f5()
+	b.WriteString(tmplrt.HTMLEscaper(v12))
+	b.WriteString("\n<script defer src=\"")
+	v13 := fn.asset_0e0a6fbe("static/select.js")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v13)))
+	b.WriteString("\"></script>\n<script defer src=\"")
+	v14 := fn.asset_0e0a6fbe("static/calendar.js")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v14)))
+	b.WriteString("\"></script>\n<script defer src=\"")
+	v15 := fn.asset_0e0a6fbe("static/datetime.js")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v15)))
+	b.WriteString("\"></script>\n\n")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"head\" .}}", tmplrt.DepthError())
+	}
+	v16 := tmplrt.Unwrap(dot)
+	if err := exec_43ebd9331896345f(b, v16, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\n</head>\n<body>\n\n<div rst-shell-sidebar=\"")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"view$htmltemplate_stateAttr_delimDoubleQuote\" .}}", tmplrt.DepthError())
+	}
+	v17 := tmplrt.Unwrap(dot)
+	if err := exec_2dc89848829575fb(b, v17, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\">\n<a rst-skip href=\"#main\">")
+	v18, err := fn.T_a3eca208(x1, "rastrillo.ui.shell_skip")
+	if err != nil {
+		return tmplrt.ExecError("layout", "T $L \"rastrillo.ui.shell_skip\"", tmplrt.CallError("T", err))
+	}
+	v19 := reflect.ValueOf(v18)
+	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v19)))
+	b.WriteString("</a>\n\n<header rst-shell-bar><a rst-shell-up href=\"")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"up$htmltemplate_stateURL_delimDoubleQuote_attrURL\" .}}", tmplrt.DepthError())
+	}
+	v20 := tmplrt.Unwrap(dot)
+	if err := exec_31ad09fd84c8ecff(b, v20, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\" rel=\"up\" aria-label=\"")
+	v21, err := fn.T_a3eca208(x1, "rastrillo.ui.shell_up_label")
+	if err != nil {
+		return tmplrt.ExecError("layout", "T $L \"rastrillo.ui.shell_up_label\"", tmplrt.CallError("T", err))
+	}
+	v22 := reflect.ValueOf(v21)
+	v23, err := fn.Tf_a3eca208(x1, "rastrillo.ui.shell_up", "name", tmplrt.Arg(v22))
+	if err != nil {
+		return tmplrt.ExecError("layout", "Tf $L \"rastrillo.ui.shell_up\" \"name\" (T $L \"rastrillo.ui.shell_up_label\")", tmplrt.CallError("Tf", err))
+	}
+	v24 := reflect.ValueOf(v23)
+	b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v24)))
+	b.WriteString("\">")
+	v25 := fn.icon_bd1e407c("chevron-left")
+	b.WriteString(tmplrt.HTMLEscaper(v25))
+	v26, err := fn.T_a3eca208(x1, "rastrillo.ui.shell_up_label")
+	if err != nil {
+		return tmplrt.ExecError("layout", "T $L \"rastrillo.ui.shell_up_label\"", tmplrt.CallError("T", err))
+	}
+	v27 := reflect.ValueOf(v26)
+	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v27)))
+	b.WriteString("</a></header>\n<aside rst-shell-rail>\n\n<h1 rst-shell-title><span>")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"brand\" .}}", tmplrt.DepthError())
+	}
+	v28 := tmplrt.Unwrap(dot)
+	if err := exec_83f48c879de37375(b, v28, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("</span><span>")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"title\" .}}", tmplrt.DepthError())
+	}
+	v29 := tmplrt.Unwrap(dot)
+	if err := exec_a0bbdd679bf279f3(b, v29, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("</span></h1>\n")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"brand\" .}}", tmplrt.DepthError())
+	}
+	v30 := tmplrt.Unwrap(dot)
+	if err := exec_83f48c879de37375(b, v30, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\n<nav rst-shell-nav>")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"nav\" .}}", tmplrt.DepthError())
+	}
+	v31 := tmplrt.Unwrap(dot)
+	if err := exec_9742e4153b2cd941(b, v31, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("</nav>\n\n<div rst-shell-rail-foot><details rst-dropdown rst-shell-profile name=\"rst-shell-menu\"><summary><span rst-shell-avatar>")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"profile\" .}}", tmplrt.DepthError())
+	}
+	v32 := tmplrt.Unwrap(dot)
+	if err := exec_606dc54973cc1911(b, v32, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("</span></summary><div rst-dropdown-menu><div rst-shell-who>")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"profile\" .}}", tmplrt.DepthError())
+	}
+	v33 := tmplrt.Unwrap(dot)
+	if err := exec_606dc54973cc1911(b, v33, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("</div>")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"locale\" .}}", tmplrt.DepthError())
+	}
+	v34 := tmplrt.Unwrap(dot)
+	if err := exec_705d1f1c72ed2826(b, v34, fn, depth+1); err != nil {
+		return err
+	}
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"account\" .}}", tmplrt.DepthError())
+	}
+	v35 := tmplrt.Unwrap(dot)
+	if err := exec_35c32244d2e12608(b, v35, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("</div></details></div>\n</aside>\n<main rst-shell-main id=\"main\">\n<div rst-page>\n")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"content\" .}}", tmplrt.DepthError())
+	}
+	v36 := tmplrt.Unwrap(dot)
+	if err := exec_8a9ef95630f15137(b, v36, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\n</div>\n</main>\n</div>\n</body>\n</html>\n")
+	return nil
+}
+
+// facts_98e6f1840c0bce9a is what exec_98e6f1840c0bce9a assumes of the types it reads.
+var facts_98e6f1840c0bce9a = tmplrt.Facts{
+	Funcs: map[string]reflect.Type{
+		"iconAssets_e8f4e4f5": reflect.TypeFor[func() template.HTML](),
+		"icon_bd1e407c":       reflect.TypeFor[func(string) template.HTML](),
+		"localizer_634df8c4":  reflect.TypeFor[func(any) *ui.Localizer](),
+	},
+	Facts: []tmplrt.Fact{
+		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
+		{Func: "iconAssets_e8f4e4f5", Type: "html/template.HTML string"},
 		{Func: "icon_bd1e407c", Type: "html/template.HTML string"},
 	},
 }
@@ -28268,6 +27183,201 @@ var facts_9ad0e9e086decc55_de204de4 = tmplrt.Facts{
 	Facts: []tmplrt.Fact{
 		{Type: "*amadan.net/rastrillo/rastrillo/tmpl/internal/corpus.tabs"},
 		{Path: []string{".Count"}, Type: "uint"},
+	},
+}
+
+// exec_9bcd488c5e660ab7 renders "layout".
+func exec_9bcd488c5e660ab7(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
+	b.WriteString("<!doctype html>\n<html lang=\"")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"lang$htmltemplate_stateAttr_delimDoubleQuote\" .}}", tmplrt.DepthError())
+	}
+	v1 := tmplrt.Unwrap(dot)
+	if err := exec_abae878773236025(b, v1, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\" dir=\"")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"dir$htmltemplate_stateAttr_delimDoubleQuote\" .}}", tmplrt.DepthError())
+	}
+	v2 := tmplrt.Unwrap(dot)
+	if err := exec_30bfb3ff0d39cc14(b, v2, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width\">\n<title>")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"title$htmltemplate_stateRCDATA_elementTitle\" .}}", tmplrt.DepthError())
+	}
+	v3 := tmplrt.Unwrap(dot)
+	if err := exec_dd9a8f29d7f092e6(b, v3, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("</title>\n<link rel=\"stylesheet\" href=\"")
+	v4 := fn.asset_0e0a6fbe("static/tokens.css")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v4)))
+	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
+	v5 := fn.asset_0e0a6fbe("static/theme.css")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v5)))
+	b.WriteString("\">\n\n<link rel=\"stylesheet\" href=\"")
+	v6 := fn.asset_0e0a6fbe("static/shell.css")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v6)))
+	b.WriteString("\">\n<script defer src=\"")
+	v7 := fn.asset_0e0a6fbe("static/rastrillo.js")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v7)))
+	b.WriteString("\"></script>\n<script defer src=\"")
+	v8 := fn.asset_0e0a6fbe("static/busy.js")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v8)))
+	b.WriteString("\"></script>\n\n<script defer blocking=\"render\" src=\"")
+	v9 := fn.asset_0e0a6fbe("static/shell.js")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v9)))
+	b.WriteString("\"></script>\n")
+	v10 := fn.iconAssets_e8f4e4f5()
+	b.WriteString(tmplrt.HTMLEscaper(v10))
+	b.WriteString("\n<script defer src=\"")
+	v11 := fn.asset_0e0a6fbe("static/select.js")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v11)))
+	b.WriteString("\"></script>\n<script defer src=\"")
+	v12 := fn.asset_0e0a6fbe("static/calendar.js")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v12)))
+	b.WriteString("\"></script>\n<script defer src=\"")
+	v13 := fn.asset_0e0a6fbe("static/datetime.js")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v13)))
+	b.WriteString("\"></script>\n\n")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"head\" .}}", tmplrt.DepthError())
+	}
+	v14 := tmplrt.Unwrap(dot)
+	if err := exec_43ebd9331896345f(b, v14, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\n</head>\n<body>\n\n<div rst-shell-sidebar=\"")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"view$htmltemplate_stateAttr_delimDoubleQuote\" .}}", tmplrt.DepthError())
+	}
+	v15 := tmplrt.Unwrap(dot)
+	if err := exec_2dc89848829575fb(b, v15, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\">\n<a rst-skip href=\"#main\">")
+	v16, err := fn.T_a3eca208("rastrillo.ui.shell_skip")
+	if err != nil {
+		return tmplrt.ExecError("layout", "T \"rastrillo.ui.shell_skip\"", tmplrt.CallError("T", err))
+	}
+	v17 := reflect.ValueOf(v16)
+	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v17)))
+	b.WriteString("</a>\n\n<header rst-shell-bar><a rst-shell-up href=\"")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"up$htmltemplate_stateURL_delimDoubleQuote_attrURL\" .}}", tmplrt.DepthError())
+	}
+	v18 := tmplrt.Unwrap(dot)
+	if err := exec_8eba5589e2405726(b, v18, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\" rel=\"up\" aria-label=\"")
+	v19, err := fn.T_a3eca208("rastrillo.ui.shell_up_label")
+	if err != nil {
+		return tmplrt.ExecError("layout", "T \"rastrillo.ui.shell_up_label\"", tmplrt.CallError("T", err))
+	}
+	v20 := reflect.ValueOf(v19)
+	v21, err := fn.Tf_a3eca208("rastrillo.ui.shell_up", "name", tmplrt.Arg(v20))
+	if err != nil {
+		return tmplrt.ExecError("layout", "Tf \"rastrillo.ui.shell_up\" \"name\" (T \"rastrillo.ui.shell_up_label\")", tmplrt.CallError("Tf", err))
+	}
+	v22 := reflect.ValueOf(v21)
+	b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v22)))
+	b.WriteString("\">")
+	v23 := fn.icon_bd1e407c("chevron-left")
+	b.WriteString(tmplrt.HTMLEscaper(v23))
+	v24, err := fn.T_a3eca208("rastrillo.ui.shell_up_label")
+	if err != nil {
+		return tmplrt.ExecError("layout", "T \"rastrillo.ui.shell_up_label\"", tmplrt.CallError("T", err))
+	}
+	v25 := reflect.ValueOf(v24)
+	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v25)))
+	b.WriteString("</a></header>\n<aside rst-shell-rail>\n\n<h1 rst-shell-title><span>")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"brand\" .}}", tmplrt.DepthError())
+	}
+	v26 := tmplrt.Unwrap(dot)
+	if err := exec_e0b437f3b6465a38(b, v26, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("</span><span>")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"title\" .}}", tmplrt.DepthError())
+	}
+	v27 := tmplrt.Unwrap(dot)
+	if err := exec_a0bbdd679bf279f3(b, v27, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("</span></h1>\n")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"brand\" .}}", tmplrt.DepthError())
+	}
+	v28 := tmplrt.Unwrap(dot)
+	if err := exec_e0b437f3b6465a38(b, v28, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\n<nav rst-shell-nav>")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"nav\" .}}", tmplrt.DepthError())
+	}
+	v29 := tmplrt.Unwrap(dot)
+	if err := exec_36968f4f0b10fff2(b, v29, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("</nav>\n\n<div rst-shell-rail-foot><details rst-dropdown rst-shell-profile name=\"rst-shell-menu\"><summary><span rst-shell-avatar>")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"profile\" .}}", tmplrt.DepthError())
+	}
+	v30 := tmplrt.Unwrap(dot)
+	if err := exec_819535ef3177bb92(b, v30, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("</span></summary><div rst-dropdown-menu><div rst-shell-who>")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"profile\" .}}", tmplrt.DepthError())
+	}
+	v31 := tmplrt.Unwrap(dot)
+	if err := exec_819535ef3177bb92(b, v31, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("</div>")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"locale\" .}}", tmplrt.DepthError())
+	}
+	v32 := tmplrt.Unwrap(dot)
+	if err := exec_705d1f1c72ed2826(b, v32, fn, depth+1); err != nil {
+		return err
+	}
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"account\" .}}", tmplrt.DepthError())
+	}
+	v33 := tmplrt.Unwrap(dot)
+	if err := exec_35c32244d2e12608(b, v33, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("</div></details></div>\n</aside>\n<main rst-shell-main id=\"main\">\n<div rst-page>\n")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"content\" .}}", tmplrt.DepthError())
+	}
+	v34 := tmplrt.Unwrap(dot)
+	if err := exec_c67a249acce6bda2(b, v34, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\n</div>\n</main>\n</div>\n</body>\n</html>\n")
+	return nil
+}
+
+// facts_9bcd488c5e660ab7 is what exec_9bcd488c5e660ab7 assumes of the types it reads.
+var facts_9bcd488c5e660ab7 = tmplrt.Facts{
+	Funcs: map[string]reflect.Type{
+		"iconAssets_e8f4e4f5": reflect.TypeFor[func() template.HTML](),
+		"icon_bd1e407c":       reflect.TypeFor[func(string) template.HTML](),
+	},
+	Facts: []tmplrt.Fact{
+		{Func: "iconAssets_e8f4e4f5", Type: "html/template.HTML string"},
+		{Func: "icon_bd1e407c", Type: "html/template.HTML string"},
 	},
 }
 
@@ -30866,6 +29976,592 @@ var facts_abae878773236025_b6cf1f3e = tmplrt.Facts{
 	Dot: reflect.TypeFor[*pageData](),
 	Facts: []tmplrt.Fact{
 		{Type: "*amadan.net/rastrillo/rastrillo/tmpl/internal/corpus.pageData"},
+	},
+}
+
+// exec_ac8dc6c53b50082b renders "layout".
+func exec_ac8dc6c53b50082b(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
+	root := dot
+	v1 := fn.localizer_634df8c4(tmplrt.Arg(root))
+	x1 := v1
+	_ = x1
+	b.WriteString("<!doctype html>\n<html lang=\"")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"lang$htmltemplate_stateAttr_delimDoubleQuote\" .}}", tmplrt.DepthError())
+	}
+	v2 := tmplrt.Unwrap(dot)
+	if err := exec_abae878773236025(b, v2, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\" dir=\"")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"dir$htmltemplate_stateAttr_delimDoubleQuote\" .}}", tmplrt.DepthError())
+	}
+	v3 := tmplrt.Unwrap(dot)
+	if err := exec_30bfb3ff0d39cc14(b, v3, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width\">\n<title>")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"title$htmltemplate_stateRCDATA_elementTitle\" .}}", tmplrt.DepthError())
+	}
+	v4 := tmplrt.Unwrap(dot)
+	if err := exec_dd9a8f29d7f092e6(b, v4, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("</title>\n<link rel=\"stylesheet\" href=\"")
+	v5 := fn.asset_0e0a6fbe("static/tokens.css")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v5)))
+	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
+	v6 := fn.asset_0e0a6fbe("static/theme.css")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v6)))
+	b.WriteString("\">\n\n<link rel=\"stylesheet\" href=\"")
+	v7 := fn.asset_0e0a6fbe("static/shell.css")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v7)))
+	b.WriteString("\">\n<script defer src=\"")
+	v8 := fn.asset_0e0a6fbe("static/rastrillo.js")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v8)))
+	b.WriteString("\"></script>\n<script defer src=\"")
+	v9 := fn.asset_0e0a6fbe("static/busy.js")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v9)))
+	b.WriteString("\"></script>\n\n<script defer src=\"")
+	v10 := fn.asset_0e0a6fbe("static/light.js")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v10)))
+	b.WriteString("\"></script>\n\n<script defer blocking=\"render\" src=\"")
+	v11 := fn.asset_0e0a6fbe("static/shell.js")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v11)))
+	b.WriteString("\"></script>\n")
+	v12 := fn.iconAssets_e8f4e4f5()
+	b.WriteString(tmplrt.HTMLEscaper(v12))
+	b.WriteString("\n<script defer src=\"")
+	v13 := fn.asset_0e0a6fbe("static/select.js")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v13)))
+	b.WriteString("\"></script>\n<script defer src=\"")
+	v14 := fn.asset_0e0a6fbe("static/calendar.js")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v14)))
+	b.WriteString("\"></script>\n<script defer src=\"")
+	v15 := fn.asset_0e0a6fbe("static/datetime.js")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v15)))
+	b.WriteString("\"></script>\n\n")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"head\" .}}", tmplrt.DepthError())
+	}
+	v16 := tmplrt.Unwrap(dot)
+	if err := exec_43ebd9331896345f(b, v16, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\n</head>\n<body>\n\n<div rst-shell-sidebar=\"")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"view$htmltemplate_stateAttr_delimDoubleQuote\" .}}", tmplrt.DepthError())
+	}
+	v17 := tmplrt.Unwrap(dot)
+	if err := exec_2dc89848829575fb(b, v17, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\">\n<a rst-skip href=\"#main\">")
+	v18, err := fn.T_a3eca208(x1, "rastrillo.ui.shell_skip")
+	if err != nil {
+		return tmplrt.ExecError("layout", "T $L \"rastrillo.ui.shell_skip\"", tmplrt.CallError("T", err))
+	}
+	v19 := reflect.ValueOf(v18)
+	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v19)))
+	b.WriteString("</a>\n\n<header rst-shell-bar><a rst-shell-up href=\"")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"up$htmltemplate_stateURL_delimDoubleQuote_attrURL\" .}}", tmplrt.DepthError())
+	}
+	v20 := tmplrt.Unwrap(dot)
+	if err := exec_31ad09fd84c8ecff(b, v20, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\" rel=\"up\" aria-label=\"")
+	v21, err := fn.T_a3eca208(x1, "rastrillo.ui.shell_up_label")
+	if err != nil {
+		return tmplrt.ExecError("layout", "T $L \"rastrillo.ui.shell_up_label\"", tmplrt.CallError("T", err))
+	}
+	v22 := reflect.ValueOf(v21)
+	v23, err := fn.Tf_a3eca208(x1, "rastrillo.ui.shell_up", "name", tmplrt.Arg(v22))
+	if err != nil {
+		return tmplrt.ExecError("layout", "Tf $L \"rastrillo.ui.shell_up\" \"name\" (T $L \"rastrillo.ui.shell_up_label\")", tmplrt.CallError("Tf", err))
+	}
+	v24 := reflect.ValueOf(v23)
+	b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v24)))
+	b.WriteString("\">")
+	v25 := fn.icon_bd1e407c("chevron-left")
+	b.WriteString(tmplrt.HTMLEscaper(v25))
+	v26, err := fn.T_a3eca208(x1, "rastrillo.ui.shell_up_label")
+	if err != nil {
+		return tmplrt.ExecError("layout", "T $L \"rastrillo.ui.shell_up_label\"", tmplrt.CallError("T", err))
+	}
+	v27 := reflect.ValueOf(v26)
+	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v27)))
+	b.WriteString("</a></header>\n<aside rst-shell-rail>\n\n<h1 rst-shell-title><span>")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"brand\" .}}", tmplrt.DepthError())
+	}
+	v28 := tmplrt.Unwrap(dot)
+	if err := exec_83f48c879de37375(b, v28, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("</span><span>")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"title\" .}}", tmplrt.DepthError())
+	}
+	v29 := tmplrt.Unwrap(dot)
+	if err := exec_a0bbdd679bf279f3(b, v29, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("</span></h1>\n")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"brand\" .}}", tmplrt.DepthError())
+	}
+	v30 := tmplrt.Unwrap(dot)
+	if err := exec_83f48c879de37375(b, v30, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\n<nav rst-shell-nav>")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"nav\" .}}", tmplrt.DepthError())
+	}
+	v31 := tmplrt.Unwrap(dot)
+	if err := exec_9742e4153b2cd941(b, v31, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("</nav>\n\n<div rst-shell-rail-foot><details rst-dropdown rst-shell-profile name=\"rst-shell-menu\"><summary><span rst-shell-avatar>")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"profile\" .}}", tmplrt.DepthError())
+	}
+	v32 := tmplrt.Unwrap(dot)
+	if err := exec_606dc54973cc1911(b, v32, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("</span></summary><div rst-dropdown-menu><div rst-shell-who>")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"profile\" .}}", tmplrt.DepthError())
+	}
+	v33 := tmplrt.Unwrap(dot)
+	if err := exec_606dc54973cc1911(b, v33, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("</div>")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"locale\" .}}", tmplrt.DepthError())
+	}
+	v34 := tmplrt.Unwrap(dot)
+	if err := exec_705d1f1c72ed2826(b, v34, fn, depth+1); err != nil {
+		return err
+	}
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"account\" .}}", tmplrt.DepthError())
+	}
+	v35 := tmplrt.Unwrap(dot)
+	if err := exec_35c32244d2e12608(b, v35, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("</div></details></div>\n</aside>\n<main rst-shell-main id=\"main\">\n<div rst-page>\n")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"content\" .}}", tmplrt.DepthError())
+	}
+	v36 := tmplrt.Unwrap(dot)
+	if err := exec_7a3721439f7d75a7(b, v36, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\n</div>\n</main>\n</div>\n</body>\n</html>\n")
+	return nil
+}
+
+// facts_ac8dc6c53b50082b is what exec_ac8dc6c53b50082b assumes of the types it reads.
+var facts_ac8dc6c53b50082b = tmplrt.Facts{
+	Funcs: map[string]reflect.Type{
+		"iconAssets_e8f4e4f5": reflect.TypeFor[func() template.HTML](),
+		"icon_bd1e407c":       reflect.TypeFor[func(string) template.HTML](),
+		"localizer_634df8c4":  reflect.TypeFor[func(any) *ui.Localizer](),
+	},
+	Facts: []tmplrt.Fact{
+		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
+		{Func: "iconAssets_e8f4e4f5", Type: "html/template.HTML string"},
+		{Func: "icon_bd1e407c", Type: "html/template.HTML string"},
+	},
+}
+
+// exec_ac8dc6c53b50082b_0a42071c renders "layout" for a dot of type pageData.
+func exec_ac8dc6c53b50082b_0a42071c(b *bytes.Buffer, dot pageData, fn *templateFuncs, depth int) error {
+	root := dot
+	v1 := fn.localizer_634df8c4(root)
+	x1 := v1
+	_ = x1
+	b.WriteString("<!doctype html>\n<html lang=\"")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"lang$htmltemplate_stateAttr_delimDoubleQuote\" .}}", tmplrt.DepthError())
+	}
+	if err := exec_abae878773236025_0a42071c(b, dot, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\" dir=\"")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"dir$htmltemplate_stateAttr_delimDoubleQuote\" .}}", tmplrt.DepthError())
+	}
+	if err := exec_30bfb3ff0d39cc14_0a42071c(b, dot, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width\">\n<title>")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"title$htmltemplate_stateRCDATA_elementTitle\" .}}", tmplrt.DepthError())
+	}
+	if err := exec_dd9a8f29d7f092e6_0a42071c(b, dot, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("</title>\n<link rel=\"stylesheet\" href=\"")
+	v2 := fn.asset_0e0a6fbe("static/tokens.css")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v2)))
+	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
+	v3 := fn.asset_0e0a6fbe("static/theme.css")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v3)))
+	b.WriteString("\">\n\n<link rel=\"stylesheet\" href=\"")
+	v4 := fn.asset_0e0a6fbe("static/shell.css")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v4)))
+	b.WriteString("\">\n<script defer src=\"")
+	v5 := fn.asset_0e0a6fbe("static/rastrillo.js")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v5)))
+	b.WriteString("\"></script>\n<script defer src=\"")
+	v6 := fn.asset_0e0a6fbe("static/busy.js")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v6)))
+	b.WriteString("\"></script>\n\n<script defer src=\"")
+	v7 := fn.asset_0e0a6fbe("static/light.js")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v7)))
+	b.WriteString("\"></script>\n\n<script defer blocking=\"render\" src=\"")
+	v8 := fn.asset_0e0a6fbe("static/shell.js")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v8)))
+	b.WriteString("\"></script>\n")
+	v9 := fn.iconAssets_e8f4e4f5()
+	b.WriteString(tmplrt.HTMLEscaper(v9))
+	b.WriteString("\n<script defer src=\"")
+	v10 := fn.asset_0e0a6fbe("static/select.js")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v10)))
+	b.WriteString("\"></script>\n<script defer src=\"")
+	v11 := fn.asset_0e0a6fbe("static/calendar.js")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v11)))
+	b.WriteString("\"></script>\n<script defer src=\"")
+	v12 := fn.asset_0e0a6fbe("static/datetime.js")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v12)))
+	b.WriteString("\"></script>\n\n")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"head\" .}}", tmplrt.DepthError())
+	}
+	if err := exec_43ebd9331896345f_0a42071c(b, dot, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\n</head>\n<body>\n\n<div rst-shell-sidebar=\"")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"view$htmltemplate_stateAttr_delimDoubleQuote\" .}}", tmplrt.DepthError())
+	}
+	if err := exec_2dc89848829575fb_0a42071c(b, dot, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\">\n<a rst-skip href=\"#main\">")
+	v13, err := fn.T_a3eca208(x1, "rastrillo.ui.shell_skip")
+	if err != nil {
+		return tmplrt.ExecError("layout", "T $L \"rastrillo.ui.shell_skip\"", tmplrt.CallError("T", err))
+	}
+	v14 := reflect.ValueOf(v13)
+	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v14)))
+	b.WriteString("</a>\n\n<header rst-shell-bar><a rst-shell-up href=\"")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"up$htmltemplate_stateURL_delimDoubleQuote_attrURL\" .}}", tmplrt.DepthError())
+	}
+	if err := exec_31ad09fd84c8ecff_0a42071c(b, dot, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\" rel=\"up\" aria-label=\"")
+	v15, err := fn.T_a3eca208(x1, "rastrillo.ui.shell_up_label")
+	if err != nil {
+		return tmplrt.ExecError("layout", "T $L \"rastrillo.ui.shell_up_label\"", tmplrt.CallError("T", err))
+	}
+	v16 := reflect.ValueOf(v15)
+	v17, err := fn.Tf_a3eca208(x1, "rastrillo.ui.shell_up", "name", tmplrt.Arg(v16))
+	if err != nil {
+		return tmplrt.ExecError("layout", "Tf $L \"rastrillo.ui.shell_up\" \"name\" (T $L \"rastrillo.ui.shell_up_label\")", tmplrt.CallError("Tf", err))
+	}
+	v18 := reflect.ValueOf(v17)
+	b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v18)))
+	b.WriteString("\">")
+	v19 := fn.icon_bd1e407c("chevron-left")
+	b.WriteString(tmplrt.HTMLEscaper(v19))
+	v20, err := fn.T_a3eca208(x1, "rastrillo.ui.shell_up_label")
+	if err != nil {
+		return tmplrt.ExecError("layout", "T $L \"rastrillo.ui.shell_up_label\"", tmplrt.CallError("T", err))
+	}
+	v21 := reflect.ValueOf(v20)
+	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v21)))
+	b.WriteString("</a></header>\n<aside rst-shell-rail>\n\n<h1 rst-shell-title><span>")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"brand\" .}}", tmplrt.DepthError())
+	}
+	if err := exec_83f48c879de37375_0a42071c(b, dot, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("</span><span>")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"title\" .}}", tmplrt.DepthError())
+	}
+	if err := exec_a0bbdd679bf279f3_0a42071c(b, dot, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("</span></h1>\n")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"brand\" .}}", tmplrt.DepthError())
+	}
+	if err := exec_83f48c879de37375_0a42071c(b, dot, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\n<nav rst-shell-nav>")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"nav\" .}}", tmplrt.DepthError())
+	}
+	if err := exec_9742e4153b2cd941_0a42071c(b, dot, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("</nav>\n\n<div rst-shell-rail-foot><details rst-dropdown rst-shell-profile name=\"rst-shell-menu\"><summary><span rst-shell-avatar>")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"profile\" .}}", tmplrt.DepthError())
+	}
+	if err := exec_606dc54973cc1911_0a42071c(b, dot, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("</span></summary><div rst-dropdown-menu><div rst-shell-who>")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"profile\" .}}", tmplrt.DepthError())
+	}
+	if err := exec_606dc54973cc1911_0a42071c(b, dot, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("</div>")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"locale\" .}}", tmplrt.DepthError())
+	}
+	if err := exec_705d1f1c72ed2826_0a42071c(b, dot, fn, depth+1); err != nil {
+		return err
+	}
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"account\" .}}", tmplrt.DepthError())
+	}
+	if err := exec_35c32244d2e12608_0a42071c(b, dot, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("</div></details></div>\n</aside>\n<main rst-shell-main id=\"main\">\n<div rst-page>\n")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"content\" .}}", tmplrt.DepthError())
+	}
+	if err := exec_7a3721439f7d75a7_0a42071c(b, dot, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\n</div>\n</main>\n</div>\n</body>\n</html>\n")
+	return nil
+}
+
+// facts_ac8dc6c53b50082b_0a42071c is what exec_ac8dc6c53b50082b_0a42071c assumes of the types it reads.
+var facts_ac8dc6c53b50082b_0a42071c = tmplrt.Facts{
+	Dot: reflect.TypeFor[pageData](),
+	Funcs: map[string]reflect.Type{
+		"iconAssets_e8f4e4f5": reflect.TypeFor[func() template.HTML](),
+		"icon_bd1e407c":       reflect.TypeFor[func(string) template.HTML](),
+		"localizer_634df8c4":  reflect.TypeFor[func(any) *ui.Localizer](),
+	},
+	Facts: []tmplrt.Fact{
+		{Type: "amadan.net/rastrillo/rastrillo/tmpl/internal/corpus.pageData struct"},
+		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
+		{Func: "iconAssets_e8f4e4f5", Type: "html/template.HTML string"},
+		{Func: "icon_bd1e407c", Type: "html/template.HTML string"},
+	},
+}
+
+// exec_ac8dc6c53b50082b_b6cf1f3e renders "layout" for a dot of type *pageData.
+func exec_ac8dc6c53b50082b_b6cf1f3e(b *bytes.Buffer, dot *pageData, fn *templateFuncs, depth int) error {
+	root := dot
+	v1 := fn.localizer_634df8c4(root)
+	x1 := v1
+	_ = x1
+	b.WriteString("<!doctype html>\n<html lang=\"")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"lang$htmltemplate_stateAttr_delimDoubleQuote\" .}}", tmplrt.DepthError())
+	}
+	if err := exec_abae878773236025_b6cf1f3e(b, dot, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\" dir=\"")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"dir$htmltemplate_stateAttr_delimDoubleQuote\" .}}", tmplrt.DepthError())
+	}
+	if err := exec_30bfb3ff0d39cc14_b6cf1f3e(b, dot, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width\">\n<title>")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"title$htmltemplate_stateRCDATA_elementTitle\" .}}", tmplrt.DepthError())
+	}
+	if err := exec_dd9a8f29d7f092e6_b6cf1f3e(b, dot, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("</title>\n<link rel=\"stylesheet\" href=\"")
+	v2 := fn.asset_0e0a6fbe("static/tokens.css")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v2)))
+	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
+	v3 := fn.asset_0e0a6fbe("static/theme.css")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v3)))
+	b.WriteString("\">\n\n<link rel=\"stylesheet\" href=\"")
+	v4 := fn.asset_0e0a6fbe("static/shell.css")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v4)))
+	b.WriteString("\">\n<script defer src=\"")
+	v5 := fn.asset_0e0a6fbe("static/rastrillo.js")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v5)))
+	b.WriteString("\"></script>\n<script defer src=\"")
+	v6 := fn.asset_0e0a6fbe("static/busy.js")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v6)))
+	b.WriteString("\"></script>\n\n<script defer src=\"")
+	v7 := fn.asset_0e0a6fbe("static/light.js")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v7)))
+	b.WriteString("\"></script>\n\n<script defer blocking=\"render\" src=\"")
+	v8 := fn.asset_0e0a6fbe("static/shell.js")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v8)))
+	b.WriteString("\"></script>\n")
+	v9 := fn.iconAssets_e8f4e4f5()
+	b.WriteString(tmplrt.HTMLEscaper(v9))
+	b.WriteString("\n<script defer src=\"")
+	v10 := fn.asset_0e0a6fbe("static/select.js")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v10)))
+	b.WriteString("\"></script>\n<script defer src=\"")
+	v11 := fn.asset_0e0a6fbe("static/calendar.js")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v11)))
+	b.WriteString("\"></script>\n<script defer src=\"")
+	v12 := fn.asset_0e0a6fbe("static/datetime.js")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v12)))
+	b.WriteString("\"></script>\n\n")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"head\" .}}", tmplrt.DepthError())
+	}
+	if err := exec_43ebd9331896345f_b6cf1f3e(b, dot, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\n</head>\n<body>\n\n<div rst-shell-sidebar=\"")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"view$htmltemplate_stateAttr_delimDoubleQuote\" .}}", tmplrt.DepthError())
+	}
+	if err := exec_2dc89848829575fb_b6cf1f3e(b, dot, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\">\n<a rst-skip href=\"#main\">")
+	v13, err := fn.T_a3eca208(x1, "rastrillo.ui.shell_skip")
+	if err != nil {
+		return tmplrt.ExecError("layout", "T $L \"rastrillo.ui.shell_skip\"", tmplrt.CallError("T", err))
+	}
+	v14 := reflect.ValueOf(v13)
+	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v14)))
+	b.WriteString("</a>\n\n<header rst-shell-bar><a rst-shell-up href=\"")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"up$htmltemplate_stateURL_delimDoubleQuote_attrURL\" .}}", tmplrt.DepthError())
+	}
+	if err := exec_31ad09fd84c8ecff_b6cf1f3e(b, dot, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\" rel=\"up\" aria-label=\"")
+	v15, err := fn.T_a3eca208(x1, "rastrillo.ui.shell_up_label")
+	if err != nil {
+		return tmplrt.ExecError("layout", "T $L \"rastrillo.ui.shell_up_label\"", tmplrt.CallError("T", err))
+	}
+	v16 := reflect.ValueOf(v15)
+	v17, err := fn.Tf_a3eca208(x1, "rastrillo.ui.shell_up", "name", tmplrt.Arg(v16))
+	if err != nil {
+		return tmplrt.ExecError("layout", "Tf $L \"rastrillo.ui.shell_up\" \"name\" (T $L \"rastrillo.ui.shell_up_label\")", tmplrt.CallError("Tf", err))
+	}
+	v18 := reflect.ValueOf(v17)
+	b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v18)))
+	b.WriteString("\">")
+	v19 := fn.icon_bd1e407c("chevron-left")
+	b.WriteString(tmplrt.HTMLEscaper(v19))
+	v20, err := fn.T_a3eca208(x1, "rastrillo.ui.shell_up_label")
+	if err != nil {
+		return tmplrt.ExecError("layout", "T $L \"rastrillo.ui.shell_up_label\"", tmplrt.CallError("T", err))
+	}
+	v21 := reflect.ValueOf(v20)
+	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v21)))
+	b.WriteString("</a></header>\n<aside rst-shell-rail>\n\n<h1 rst-shell-title><span>")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"brand\" .}}", tmplrt.DepthError())
+	}
+	if err := exec_83f48c879de37375_b6cf1f3e(b, dot, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("</span><span>")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"title\" .}}", tmplrt.DepthError())
+	}
+	if err := exec_a0bbdd679bf279f3_b6cf1f3e(b, dot, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("</span></h1>\n")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"brand\" .}}", tmplrt.DepthError())
+	}
+	if err := exec_83f48c879de37375_b6cf1f3e(b, dot, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\n<nav rst-shell-nav>")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"nav\" .}}", tmplrt.DepthError())
+	}
+	if err := exec_9742e4153b2cd941_b6cf1f3e(b, dot, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("</nav>\n\n<div rst-shell-rail-foot><details rst-dropdown rst-shell-profile name=\"rst-shell-menu\"><summary><span rst-shell-avatar>")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"profile\" .}}", tmplrt.DepthError())
+	}
+	if err := exec_606dc54973cc1911_b6cf1f3e(b, dot, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("</span></summary><div rst-dropdown-menu><div rst-shell-who>")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"profile\" .}}", tmplrt.DepthError())
+	}
+	if err := exec_606dc54973cc1911_b6cf1f3e(b, dot, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("</div>")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"locale\" .}}", tmplrt.DepthError())
+	}
+	if err := exec_705d1f1c72ed2826_b6cf1f3e(b, dot, fn, depth+1); err != nil {
+		return err
+	}
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"account\" .}}", tmplrt.DepthError())
+	}
+	if err := exec_35c32244d2e12608_b6cf1f3e(b, dot, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("</div></details></div>\n</aside>\n<main rst-shell-main id=\"main\">\n<div rst-page>\n")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"content\" .}}", tmplrt.DepthError())
+	}
+	if err := exec_7a3721439f7d75a7_b6cf1f3e(b, dot, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\n</div>\n</main>\n</div>\n</body>\n</html>\n")
+	return nil
+}
+
+// facts_ac8dc6c53b50082b_b6cf1f3e is what exec_ac8dc6c53b50082b_b6cf1f3e assumes of the types it reads.
+var facts_ac8dc6c53b50082b_b6cf1f3e = tmplrt.Facts{
+	Dot: reflect.TypeFor[*pageData](),
+	Funcs: map[string]reflect.Type{
+		"iconAssets_e8f4e4f5": reflect.TypeFor[func() template.HTML](),
+		"icon_bd1e407c":       reflect.TypeFor[func(string) template.HTML](),
+		"localizer_634df8c4":  reflect.TypeFor[func(any) *ui.Localizer](),
+	},
+	Facts: []tmplrt.Fact{
+		{Type: "*amadan.net/rastrillo/rastrillo/tmpl/internal/corpus.pageData"},
+		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
+		{Func: "iconAssets_e8f4e4f5", Type: "html/template.HTML string"},
+		{Func: "icon_bd1e407c", Type: "html/template.HTML string"},
 	},
 }
 
@@ -36260,6 +35956,168 @@ func exec_d6cd5d2f1a106459(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs
 	return nil
 }
 
+// exec_d76cb551e53a87b8 renders "scheme-menu".
+func exec_d76cb551e53a87b8(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
+	root := dot
+	v1 := fn.localizer_634df8c4(tmplrt.Arg(root))
+	x1 := v1
+	_ = x1
+	v2, err := fn.T_a3eca208(x1, "rastrillo.ui.shell_appearance")
+	if err != nil {
+		return tmplrt.ExecError("scheme-menu", "T $L \"rastrillo.ui.shell_appearance\"", tmplrt.CallError("T", err))
+	}
+	v3 := reflect.ValueOf(v2)
+	x2 := v3
+	_ = x2
+	v4 := fn.opt_08785a53(tmplrt.Arg(dot), "Card")
+	v5 := reflect.ValueOf(v4)
+	if tmplrt.Truth(v5) {
+		b.WriteString("<div rst-menu-row><span rst-menu-row-label>")
+		v6 := tmplrt.Unwrap(x2)
+		b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v6)))
+		b.WriteString("</span>")
+	}
+	b.WriteString("<div rst-scheme=\"icons\" role=\"group\" aria-label=\"")
+	v7 := tmplrt.Unwrap(x2)
+	b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v7)))
+	b.WriteString("\">")
+	v9, err := tmplrt.Field(dot, "Action")
+	if err != nil {
+		return tmplrt.ExecError("scheme-menu", ".Action", err)
+	}
+	v8 := tmplrt.ValueArg(v9)
+	if !tmplrt.Truth(v8) {
+		v8 = tmplrt.ValueArg(reflect.ValueOf("/_theme"))
+	}
+	v10 := tmplrt.Unwrap(v8)
+	x3 := v10
+	_ = x3
+	v11, err := tmplrt.Field(dot, "Return")
+	if err != nil {
+		return tmplrt.ExecError("scheme-menu", ".Return", err)
+	}
+	v12 := tmplrt.Unwrap(v11)
+	x4 := v12
+	_ = x4
+	v14, err := tmplrt.Field(dot, "Scheme")
+	if err != nil {
+		return tmplrt.ExecError("scheme-menu", ".Scheme", err)
+	}
+	v13 := tmplrt.ValueArg(v14)
+	if !tmplrt.Truth(v13) {
+		v13 = tmplrt.ValueArg(reflect.ValueOf("system"))
+	}
+	v15 := tmplrt.Unwrap(v13)
+	x5 := v15
+	_ = x5
+	b.WriteString("\n  <form method=\"post\" action=\"")
+	v16 := tmplrt.Unwrap(x3)
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilter(tmplrt.Arg(v16))))
+	b.WriteString("\"><input type=\"hidden\" name=\"scheme\" value=\"light\">")
+	v17 := tmplrt.Unwrap(x4)
+	if tmplrt.Truth(v17) {
+		b.WriteString("<input type=\"hidden\" name=\"return\" value=\"")
+		v18 := tmplrt.Unwrap(x4)
+		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v18)))
+		b.WriteString("\">")
+	}
+	b.WriteString("<button type=\"submit\" aria-label=\"")
+	v19, err := fn.T_a3eca208(x1, "rastrillo.ui.scheme_light")
+	if err != nil {
+		return tmplrt.ExecError("scheme-menu", "T $L \"rastrillo.ui.scheme_light\"", tmplrt.CallError("T", err))
+	}
+	v20 := reflect.ValueOf(v19)
+	b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v20)))
+	b.WriteString("\"")
+	v21, err := tmplrt.Eq(x5, reflect.ValueOf("light"))
+	if err != nil {
+		return tmplrt.ExecError("scheme-menu", "eq $cur \"light\"", tmplrt.CallError("eq", err))
+	}
+	if v21 {
+		b.WriteString(" aria-current=\"true\"")
+	}
+	b.WriteString(">")
+	v22 := fn.icon_bd1e407c("sun")
+	b.WriteString(tmplrt.HTMLEscaper(v22))
+	b.WriteString("</button></form>\n  <form method=\"post\" action=\"")
+	v23 := tmplrt.Unwrap(x3)
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilter(tmplrt.Arg(v23))))
+	b.WriteString("\"><input type=\"hidden\" name=\"scheme\" value=\"dark\">")
+	v24 := tmplrt.Unwrap(x4)
+	if tmplrt.Truth(v24) {
+		b.WriteString("<input type=\"hidden\" name=\"return\" value=\"")
+		v25 := tmplrt.Unwrap(x4)
+		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v25)))
+		b.WriteString("\">")
+	}
+	b.WriteString("<button type=\"submit\" aria-label=\"")
+	v26, err := fn.T_a3eca208(x1, "rastrillo.ui.scheme_dark")
+	if err != nil {
+		return tmplrt.ExecError("scheme-menu", "T $L \"rastrillo.ui.scheme_dark\"", tmplrt.CallError("T", err))
+	}
+	v27 := reflect.ValueOf(v26)
+	b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v27)))
+	b.WriteString("\"")
+	v28, err := tmplrt.Eq(x5, reflect.ValueOf("dark"))
+	if err != nil {
+		return tmplrt.ExecError("scheme-menu", "eq $cur \"dark\"", tmplrt.CallError("eq", err))
+	}
+	if v28 {
+		b.WriteString(" aria-current=\"true\"")
+	}
+	b.WriteString(">")
+	v29 := fn.icon_bd1e407c("moon")
+	b.WriteString(tmplrt.HTMLEscaper(v29))
+	b.WriteString("</button></form>\n  <form method=\"post\" action=\"")
+	v30 := tmplrt.Unwrap(x3)
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilter(tmplrt.Arg(v30))))
+	b.WriteString("\"><input type=\"hidden\" name=\"scheme\" value=\"system\">")
+	v31 := tmplrt.Unwrap(x4)
+	if tmplrt.Truth(v31) {
+		b.WriteString("<input type=\"hidden\" name=\"return\" value=\"")
+		v32 := tmplrt.Unwrap(x4)
+		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v32)))
+		b.WriteString("\">")
+	}
+	b.WriteString("<button type=\"submit\" aria-label=\"")
+	v33, err := fn.T_a3eca208(x1, "rastrillo.ui.scheme_system")
+	if err != nil {
+		return tmplrt.ExecError("scheme-menu", "T $L \"rastrillo.ui.scheme_system\"", tmplrt.CallError("T", err))
+	}
+	v34 := reflect.ValueOf(v33)
+	b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v34)))
+	b.WriteString("\"")
+	v35, err := tmplrt.Eq(x5, reflect.ValueOf("system"))
+	if err != nil {
+		return tmplrt.ExecError("scheme-menu", "eq $cur \"system\"", tmplrt.CallError("eq", err))
+	}
+	if v35 {
+		b.WriteString(" aria-current=\"true\"")
+	}
+	b.WriteString(">")
+	v36 := fn.icon_bd1e407c("monitor")
+	b.WriteString(tmplrt.HTMLEscaper(v36))
+	b.WriteString("</button></form>\n</div>")
+	v37 := fn.opt_08785a53(tmplrt.Arg(dot), "Card")
+	v38 := reflect.ValueOf(v37)
+	if tmplrt.Truth(v38) {
+		b.WriteString("</div>")
+	}
+	return nil
+}
+
+// facts_d76cb551e53a87b8 is what exec_d76cb551e53a87b8 assumes of the types it reads.
+var facts_d76cb551e53a87b8 = tmplrt.Facts{
+	Funcs: map[string]reflect.Type{
+		"icon_bd1e407c":      reflect.TypeFor[func(string) template.HTML](),
+		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
+	},
+	Facts: []tmplrt.Fact{
+		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
+		{Func: "icon_bd1e407c", Type: "html/template.HTML string"},
+	},
+}
+
 // exec_d81382d967d9b174 renders "func-stage-before-failure-4-reflected".
 func exec_d81382d967d9b174(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
 	v2, err := tmplrt.Field(dot, "Title")
@@ -39310,6 +39168,230 @@ var facts_ef83864bbce39cab_19dba148 = tmplrt.Facts{
 	},
 }
 
+// exec_ef9ecb83020e9024 renders "locale-menu".
+func exec_ef9ecb83020e9024(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
+	root := dot
+	v1 := fn.localizer_634df8c4(tmplrt.Arg(root))
+	x1 := v1
+	_ = x1
+	v2, err := tmplrt.Field(dot, "Items")
+	if err != nil {
+		return tmplrt.ExecError("locale-menu", ".Items", err)
+	}
+	v3 := tmplrt.Unwrap(v2)
+	if tmplrt.Truth(v3) {
+		v5, err := tmplrt.Field(dot, "Action")
+		if err != nil {
+			return tmplrt.ExecError("locale-menu", ".Action", err)
+		}
+		v4 := tmplrt.ValueArg(v5)
+		if !tmplrt.Truth(v4) {
+			v4 = tmplrt.ValueArg(reflect.ValueOf("/_locale"))
+		}
+		v6 := tmplrt.Unwrap(v4)
+		x2 := v6
+		_ = x2
+		v7, err := tmplrt.Field(dot, "Return")
+		if err != nil {
+			return tmplrt.ExecError("locale-menu", ".Return", err)
+		}
+		v8 := tmplrt.Unwrap(v7)
+		x3 := v8
+		_ = x3
+		v9 := fn.opt_08785a53(tmplrt.Arg(dot), "Card")
+		v10 := reflect.ValueOf(v9)
+		x4 := v10
+		_ = x4
+		v11 := fn.icon_bd1e407c("chevron-down")
+		x5 := v11
+		_ = x5
+		v12 := tmplrt.Unwrap(x4)
+		if tmplrt.Truth(v12) {
+			b.WriteString("<div rst-menu-row><span rst-menu-row-label>")
+			v13, err := fn.T_a3eca208(x1, "rastrillo.ui.shell_language")
+			if err != nil {
+				return tmplrt.ExecError("locale-menu", "T $L \"rastrillo.ui.shell_language\"", tmplrt.CallError("T", err))
+			}
+			v14 := reflect.ValueOf(v13)
+			b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v14)))
+			b.WriteString("</span><button type=\"button\" popovertarget=\"rst-language\">")
+			v15, err := tmplrt.Field(dot, "Items")
+			if err != nil {
+				return tmplrt.ExecError("locale-menu", ".Items", err)
+			}
+			v16 := tmplrt.Unwrap(v15)
+			if err := tmplrt.Range(v16, func(_, dot reflect.Value) error {
+				v17, err := tmplrt.Field(dot, "Current")
+				if err != nil {
+					return tmplrt.ExecError("locale-menu", ".Current", err)
+				}
+				v18 := tmplrt.Unwrap(v17)
+				if tmplrt.Truth(v18) {
+					b.WriteString("<span lang=\"")
+					v19, err := tmplrt.Field(dot, "Code")
+					if err != nil {
+						return tmplrt.ExecError("locale-menu", ".Code", err)
+					}
+					v20 := tmplrt.Unwrap(v19)
+					b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v20)))
+					b.WriteString("\">")
+					v21, err := tmplrt.Field(dot, "Name")
+					if err != nil {
+						return tmplrt.ExecError("locale-menu", ".Name", err)
+					}
+					v22 := tmplrt.Unwrap(v21)
+					b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v22)))
+					b.WriteString("</span>")
+				}
+				return nil
+			}); err != nil {
+				return tmplrt.ExecError("locale-menu", ".Items", err)
+			}
+			b.WriteString("<span rst-caret aria-hidden=\"true\">")
+			b.WriteString(tmplrt.HTMLEscaper(x5))
+			b.WriteString("</span></button><details rst-dropdown name=\"")
+			v23 := fn.menuGroup_fbb579ee(tmplrt.Arg(dot))
+			tmplrt.WriteAttrEscaped(b, v23)
+			b.WriteString("\"><summary>")
+			v24, err := tmplrt.Field(dot, "Items")
+			if err != nil {
+				return tmplrt.ExecError("locale-menu", ".Items", err)
+			}
+			v25 := tmplrt.Unwrap(v24)
+			if err := tmplrt.Range(v25, func(_, dot reflect.Value) error {
+				v26, err := tmplrt.Field(dot, "Current")
+				if err != nil {
+					return tmplrt.ExecError("locale-menu", ".Current", err)
+				}
+				v27 := tmplrt.Unwrap(v26)
+				if tmplrt.Truth(v27) {
+					b.WriteString("<span lang=\"")
+					v28, err := tmplrt.Field(dot, "Code")
+					if err != nil {
+						return tmplrt.ExecError("locale-menu", ".Code", err)
+					}
+					v29 := tmplrt.Unwrap(v28)
+					b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v29)))
+					b.WriteString("\">")
+					v30, err := tmplrt.Field(dot, "Name")
+					if err != nil {
+						return tmplrt.ExecError("locale-menu", ".Name", err)
+					}
+					v31 := tmplrt.Unwrap(v30)
+					b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v31)))
+					b.WriteString("</span>")
+				}
+				return nil
+			}); err != nil {
+				return tmplrt.ExecError("locale-menu", ".Items", err)
+			}
+			b.WriteString("<span rst-caret aria-hidden=\"true\">")
+			b.WriteString(tmplrt.HTMLEscaper(x5))
+			b.WriteString("</span></summary></details><div rst-locale popover id=\"rst-language\"><div rst-menu-row><h2>")
+			v32, err := fn.T_a3eca208(x1, "rastrillo.ui.shell_language")
+			if err != nil {
+				return tmplrt.ExecError("locale-menu", "T $L \"rastrillo.ui.shell_language\"", tmplrt.CallError("T", err))
+			}
+			v33 := reflect.ValueOf(v32)
+			b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v33)))
+			b.WriteString("</h2><button type=\"button\" popovertarget=\"rst-language\" popovertargetaction=\"hide\">")
+			v34, err := fn.T_a3eca208(x1, "rastrillo.ui.close")
+			if err != nil {
+				return tmplrt.ExecError("locale-menu", "T $L \"rastrillo.ui.close\"", tmplrt.CallError("T", err))
+			}
+			v35 := reflect.ValueOf(v34)
+			b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v35)))
+			b.WriteString("</button></div>")
+		} else {
+			b.WriteString("<details rst-dropdown rst-locale name=\"")
+			v36 := fn.menuGroup_fbb579ee(tmplrt.Arg(dot))
+			tmplrt.WriteAttrEscaped(b, v36)
+			b.WriteString("\">\n  <summary>")
+			v37, err := fn.T_a3eca208(x1, "rastrillo.ui.shell_language")
+			if err != nil {
+				return tmplrt.ExecError("locale-menu", "T $L \"rastrillo.ui.shell_language\"", tmplrt.CallError("T", err))
+			}
+			v38 := reflect.ValueOf(v37)
+			b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v38)))
+			b.WriteString("<span rst-caret aria-hidden=\"true\">")
+			b.WriteString(tmplrt.HTMLEscaper(x5))
+			b.WriteString("</span></summary>\n  <div rst-dropdown-menu>")
+		}
+		v39, err := tmplrt.Field(dot, "Items")
+		if err != nil {
+			return tmplrt.ExecError("locale-menu", ".Items", err)
+		}
+		v40 := tmplrt.Unwrap(v39)
+		if err := tmplrt.Range(v40, func(_, dot reflect.Value) error {
+			b.WriteString("\n    <form method=\"post\" action=\"")
+			v41 := tmplrt.Unwrap(x2)
+			tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilter(tmplrt.Arg(v41))))
+			b.WriteString("\"><input type=\"hidden\" name=\"locale\" value=\"")
+			v42, err := tmplrt.Field(dot, "Code")
+			if err != nil {
+				return tmplrt.ExecError("locale-menu", ".Code", err)
+			}
+			v43 := tmplrt.Unwrap(v42)
+			b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v43)))
+			b.WriteString("\">")
+			v44 := tmplrt.Unwrap(x3)
+			if tmplrt.Truth(v44) {
+				b.WriteString("<input type=\"hidden\" name=\"return\" value=\"")
+				v45 := tmplrt.Unwrap(x3)
+				b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v45)))
+				b.WriteString("\">")
+			}
+			b.WriteString("<button type=\"submit\" lang=\"")
+			v46, err := tmplrt.Field(dot, "Code")
+			if err != nil {
+				return tmplrt.ExecError("locale-menu", ".Code", err)
+			}
+			v47 := tmplrt.Unwrap(v46)
+			b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v47)))
+			b.WriteString("\"")
+			v48, err := tmplrt.Field(dot, "Current")
+			if err != nil {
+				return tmplrt.ExecError("locale-menu", ".Current", err)
+			}
+			v49 := tmplrt.Unwrap(v48)
+			if tmplrt.Truth(v49) {
+				b.WriteString(" aria-current=\"true\"")
+			}
+			b.WriteString(">")
+			v50, err := tmplrt.Field(dot, "Name")
+			if err != nil {
+				return tmplrt.ExecError("locale-menu", ".Name", err)
+			}
+			v51 := tmplrt.Unwrap(v50)
+			b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v51)))
+			b.WriteString("</button></form>")
+			return nil
+		}); err != nil {
+			return tmplrt.ExecError("locale-menu", ".Items", err)
+		}
+		b.WriteString("\n  </div>")
+		v52 := tmplrt.Unwrap(x4)
+		if tmplrt.Truth(v52) {
+			b.WriteString("</div>")
+		} else {
+			b.WriteString("\n</details>")
+		}
+	}
+	return nil
+}
+
+// facts_ef9ecb83020e9024 is what exec_ef9ecb83020e9024 assumes of the types it reads.
+var facts_ef9ecb83020e9024 = tmplrt.Facts{
+	Funcs: map[string]reflect.Type{
+		"icon_bd1e407c":      reflect.TypeFor[func(string) template.HTML](),
+		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
+	},
+	Facts: []tmplrt.Fact{
+		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
+		{Func: "icon_bd1e407c", Type: "html/template.HTML string"},
+	},
+}
+
 // exec_efd0de9d17af8e6d renders "notice".
 func exec_efd0de9d17af8e6d(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
 	v1 := tmplrt.Unwrap(dot)
@@ -39893,119 +39975,6 @@ func exec_f4a75a5b855434cb(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs
 	return nil
 }
 
-// exec_f605c207f3e121d6 renders "locale-menu".
-func exec_f605c207f3e121d6(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
-	root := dot
-	v1 := fn.localizer_634df8c4(tmplrt.Arg(root))
-	x1 := v1
-	_ = x1
-	v2, err := tmplrt.Field(dot, "Items")
-	if err != nil {
-		return tmplrt.ExecError("locale-menu", ".Items", err)
-	}
-	v3 := tmplrt.Unwrap(v2)
-	if tmplrt.Truth(v3) {
-		b.WriteString("<details rst-dropdown rst-locale name=\"")
-		v4 := fn.menuGroup_fbb579ee(tmplrt.Arg(dot))
-		tmplrt.WriteAttrEscaped(b, v4)
-		b.WriteString("\">\n  <summary>")
-		v5, err := fn.T_a3eca208(x1, "rastrillo.ui.shell_language")
-		if err != nil {
-			return tmplrt.ExecError("locale-menu", "T $L \"rastrillo.ui.shell_language\"", tmplrt.CallError("T", err))
-		}
-		v6 := reflect.ValueOf(v5)
-		b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v6)))
-		b.WriteString("<span rst-caret aria-hidden=\"true\">")
-		v7 := fn.icon_bd1e407c("chevron-down")
-		b.WriteString(tmplrt.HTMLEscaper(v7))
-		b.WriteString("</span></summary>\n  <div rst-dropdown-menu>")
-		v9, err := tmplrt.Field(dot, "Action")
-		if err != nil {
-			return tmplrt.ExecError("locale-menu", ".Action", err)
-		}
-		v8 := tmplrt.ValueArg(v9)
-		if !tmplrt.Truth(v8) {
-			v8 = tmplrt.ValueArg(reflect.ValueOf("/_locale"))
-		}
-		v10 := tmplrt.Unwrap(v8)
-		x2 := v10
-		_ = x2
-		v11, err := tmplrt.Field(dot, "Return")
-		if err != nil {
-			return tmplrt.ExecError("locale-menu", ".Return", err)
-		}
-		v12 := tmplrt.Unwrap(v11)
-		x3 := v12
-		_ = x3
-		v13, err := tmplrt.Field(dot, "Items")
-		if err != nil {
-			return tmplrt.ExecError("locale-menu", ".Items", err)
-		}
-		v14 := tmplrt.Unwrap(v13)
-		if err := tmplrt.Range(v14, func(_, dot reflect.Value) error {
-			b.WriteString("\n    <form method=\"post\" action=\"")
-			v15 := tmplrt.Unwrap(x2)
-			tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilter(tmplrt.Arg(v15))))
-			b.WriteString("\"><input type=\"hidden\" name=\"locale\" value=\"")
-			v16, err := tmplrt.Field(dot, "Code")
-			if err != nil {
-				return tmplrt.ExecError("locale-menu", ".Code", err)
-			}
-			v17 := tmplrt.Unwrap(v16)
-			b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v17)))
-			b.WriteString("\">")
-			v18 := tmplrt.Unwrap(x3)
-			if tmplrt.Truth(v18) {
-				b.WriteString("<input type=\"hidden\" name=\"return\" value=\"")
-				v19 := tmplrt.Unwrap(x3)
-				b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v19)))
-				b.WriteString("\">")
-			}
-			b.WriteString("<button type=\"submit\" lang=\"")
-			v20, err := tmplrt.Field(dot, "Code")
-			if err != nil {
-				return tmplrt.ExecError("locale-menu", ".Code", err)
-			}
-			v21 := tmplrt.Unwrap(v20)
-			b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v21)))
-			b.WriteString("\"")
-			v22, err := tmplrt.Field(dot, "Current")
-			if err != nil {
-				return tmplrt.ExecError("locale-menu", ".Current", err)
-			}
-			v23 := tmplrt.Unwrap(v22)
-			if tmplrt.Truth(v23) {
-				b.WriteString(" aria-current=\"true\"")
-			}
-			b.WriteString(">")
-			v24, err := tmplrt.Field(dot, "Name")
-			if err != nil {
-				return tmplrt.ExecError("locale-menu", ".Name", err)
-			}
-			v25 := tmplrt.Unwrap(v24)
-			b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v25)))
-			b.WriteString("</button></form>")
-			return nil
-		}); err != nil {
-			return tmplrt.ExecError("locale-menu", ".Items", err)
-		}
-		b.WriteString("\n  </div>\n</details>")
-	}
-	return nil
-}
-
-// facts_f605c207f3e121d6 is what exec_f605c207f3e121d6 assumes of the types it reads.
-var facts_f605c207f3e121d6 = tmplrt.Facts{
-	Funcs: map[string]reflect.Type{
-		"icon_bd1e407c":      reflect.TypeFor[func(string) template.HTML](),
-		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
-	},
-	Facts: []tmplrt.Fact{
-		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
-		{Func: "icon_bd1e407c", Type: "html/template.HTML string"},
-	},
-}
-
 // exec_f6803f5d526ebf0c renders "func-args-reflected".
 func exec_f6803f5d526ebf0c(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
 	v2, err := tmplrt.Field(dot, "Count")
@@ -40096,6 +40065,210 @@ var facts_f6803f5d526ebf0c_19dba148 = tmplrt.Facts{
 		{Type: "*amadan.net/rastrillo/rastrillo/tmpl/internal/corpus.doc"},
 		{Path: []string{".Count"}, Type: "int"},
 		{Path: []string{".Kind"}, Type: "amadan.net/rastrillo/rastrillo/tmpl/internal/corpus.kind string"},
+	},
+}
+
+// exec_f7d9a038afc9082e renders "layout".
+func exec_f7d9a038afc9082e(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
+	root := dot
+	v1 := fn.localizer_634df8c4(tmplrt.Arg(root))
+	x1 := v1
+	_ = x1
+	b.WriteString("<!doctype html>\n<html lang=\"")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"lang$htmltemplate_stateAttr_delimDoubleQuote\" .}}", tmplrt.DepthError())
+	}
+	v2 := tmplrt.Unwrap(dot)
+	if err := exec_abae878773236025(b, v2, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\" dir=\"")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"dir$htmltemplate_stateAttr_delimDoubleQuote\" .}}", tmplrt.DepthError())
+	}
+	v3 := tmplrt.Unwrap(dot)
+	if err := exec_30bfb3ff0d39cc14(b, v3, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width\">\n<title>")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"title$htmltemplate_stateRCDATA_elementTitle\" .}}", tmplrt.DepthError())
+	}
+	v4 := tmplrt.Unwrap(dot)
+	if err := exec_dd9a8f29d7f092e6(b, v4, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("</title>\n<link rel=\"stylesheet\" href=\"")
+	v5 := fn.asset_0e0a6fbe("static/tokens.css")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v5)))
+	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
+	v6 := fn.asset_0e0a6fbe("static/theme.css")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v6)))
+	b.WriteString("\">\n\n<link rel=\"stylesheet\" href=\"")
+	v7 := fn.asset_0e0a6fbe("static/shell.css")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v7)))
+	b.WriteString("\">\n<script defer src=\"")
+	v8 := fn.asset_0e0a6fbe("static/rastrillo.js")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v8)))
+	b.WriteString("\"></script>\n<script defer src=\"")
+	v9 := fn.asset_0e0a6fbe("static/busy.js")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v9)))
+	b.WriteString("\"></script>\n\n<script defer src=\"")
+	v10 := fn.asset_0e0a6fbe("static/light.js")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v10)))
+	b.WriteString("\"></script>\n\n<script defer blocking=\"render\" src=\"")
+	v11 := fn.asset_0e0a6fbe("static/shell.js")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v11)))
+	b.WriteString("\"></script>\n")
+	v12 := fn.iconAssets_e8f4e4f5()
+	b.WriteString(tmplrt.HTMLEscaper(v12))
+	b.WriteString("\n<script defer src=\"")
+	v13 := fn.asset_0e0a6fbe("static/select.js")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v13)))
+	b.WriteString("\"></script>\n<script defer src=\"")
+	v14 := fn.asset_0e0a6fbe("static/calendar.js")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v14)))
+	b.WriteString("\"></script>\n<script defer src=\"")
+	v15 := fn.asset_0e0a6fbe("static/datetime.js")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v15)))
+	b.WriteString("\"></script>\n\n")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"head\" .}}", tmplrt.DepthError())
+	}
+	v16 := tmplrt.Unwrap(dot)
+	if err := exec_43ebd9331896345f(b, v16, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\n</head>\n<body>\n\n<div rst-shell-sidebar=\"")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"view$htmltemplate_stateAttr_delimDoubleQuote\" .}}", tmplrt.DepthError())
+	}
+	v17 := tmplrt.Unwrap(dot)
+	if err := exec_2dc89848829575fb(b, v17, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\">\n<a rst-skip href=\"#main\">")
+	v18, err := fn.T_a3eca208(x1, "rastrillo.ui.shell_skip")
+	if err != nil {
+		return tmplrt.ExecError("layout", "T $L \"rastrillo.ui.shell_skip\"", tmplrt.CallError("T", err))
+	}
+	v19 := reflect.ValueOf(v18)
+	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v19)))
+	b.WriteString("</a>\n\n<header rst-shell-bar><a rst-shell-up href=\"")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"up$htmltemplate_stateURL_delimDoubleQuote_attrURL\" .}}", tmplrt.DepthError())
+	}
+	v20 := tmplrt.Unwrap(dot)
+	if err := exec_31ad09fd84c8ecff(b, v20, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\" rel=\"up\" aria-label=\"")
+	v21, err := fn.T_a3eca208(x1, "rastrillo.ui.shell_up_label")
+	if err != nil {
+		return tmplrt.ExecError("layout", "T $L \"rastrillo.ui.shell_up_label\"", tmplrt.CallError("T", err))
+	}
+	v22 := reflect.ValueOf(v21)
+	v23, err := fn.Tf_a3eca208(x1, "rastrillo.ui.shell_up", "name", tmplrt.Arg(v22))
+	if err != nil {
+		return tmplrt.ExecError("layout", "Tf $L \"rastrillo.ui.shell_up\" \"name\" (T $L \"rastrillo.ui.shell_up_label\")", tmplrt.CallError("Tf", err))
+	}
+	v24 := reflect.ValueOf(v23)
+	b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v24)))
+	b.WriteString("\">")
+	v25 := fn.icon_bd1e407c("chevron-left")
+	b.WriteString(tmplrt.HTMLEscaper(v25))
+	v26, err := fn.T_a3eca208(x1, "rastrillo.ui.shell_up_label")
+	if err != nil {
+		return tmplrt.ExecError("layout", "T $L \"rastrillo.ui.shell_up_label\"", tmplrt.CallError("T", err))
+	}
+	v27 := reflect.ValueOf(v26)
+	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v27)))
+	b.WriteString("</a></header>\n<aside rst-shell-rail>\n\n<h1 rst-shell-title><span>")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"brand\" .}}", tmplrt.DepthError())
+	}
+	v28 := tmplrt.Unwrap(dot)
+	if err := exec_83f48c879de37375(b, v28, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("</span><span>")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"title\" .}}", tmplrt.DepthError())
+	}
+	v29 := tmplrt.Unwrap(dot)
+	if err := exec_a0bbdd679bf279f3(b, v29, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("</span></h1>\n")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"brand\" .}}", tmplrt.DepthError())
+	}
+	v30 := tmplrt.Unwrap(dot)
+	if err := exec_83f48c879de37375(b, v30, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\n<nav rst-shell-nav>")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"nav\" .}}", tmplrt.DepthError())
+	}
+	v31 := tmplrt.Unwrap(dot)
+	if err := exec_9742e4153b2cd941(b, v31, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("</nav>\n\n<div rst-shell-rail-foot><details rst-dropdown rst-shell-profile name=\"rst-shell-menu\"><summary><span rst-shell-avatar>")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"profile\" .}}", tmplrt.DepthError())
+	}
+	v32 := tmplrt.Unwrap(dot)
+	if err := exec_606dc54973cc1911(b, v32, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("</span></summary><div rst-dropdown-menu><div rst-shell-who>")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"profile\" .}}", tmplrt.DepthError())
+	}
+	v33 := tmplrt.Unwrap(dot)
+	if err := exec_606dc54973cc1911(b, v33, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("</div>")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"locale\" .}}", tmplrt.DepthError())
+	}
+	v34 := tmplrt.Unwrap(dot)
+	if err := exec_705d1f1c72ed2826(b, v34, fn, depth+1); err != nil {
+		return err
+	}
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"account\" .}}", tmplrt.DepthError())
+	}
+	v35 := tmplrt.Unwrap(dot)
+	if err := exec_35c32244d2e12608(b, v35, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("</div></details></div>\n</aside>\n<main rst-shell-main id=\"main\">\n<div rst-page>\n")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"content\" .}}", tmplrt.DepthError())
+	}
+	v36 := tmplrt.Unwrap(dot)
+	if err := exec_fed7be9f579c4244(b, v36, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\n</div>\n</main>\n</div>\n</body>\n</html>\n")
+	return nil
+}
+
+// facts_f7d9a038afc9082e is what exec_f7d9a038afc9082e assumes of the types it reads.
+var facts_f7d9a038afc9082e = tmplrt.Facts{
+	Funcs: map[string]reflect.Type{
+		"iconAssets_e8f4e4f5": reflect.TypeFor[func() template.HTML](),
+		"icon_bd1e407c":       reflect.TypeFor[func(string) template.HTML](),
+		"localizer_634df8c4":  reflect.TypeFor[func(any) *ui.Localizer](),
+	},
+	Facts: []tmplrt.Fact{
+		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
+		{Func: "iconAssets_e8f4e4f5", Type: "html/template.HTML string"},
+		{Func: "icon_bd1e407c", Type: "html/template.HTML string"},
 	},
 }
 

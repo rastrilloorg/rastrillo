@@ -40,7 +40,20 @@ const sizingExtras = `<style>.sizing-small { font-size: var(--rst-fs-xs); }</sty
 <a href="#side-members">Members</a></nav>
 <div><p>The workspace's name.</p></div></div></div>
 <div rst-shell-sidebar data-extra="legacy-drawer"><details rst-shell-chrome><summary>Menu</summary></details><aside rst-shell-rail><nav rst-shell-nav><a href="#legacy-one">Legacy one</a><a href="#legacy-two">Legacy two</a></nav></aside><main rst-shell-main><p>The legacy sidebar, which tokens.css keeps working for old layouts.</p></main></div>
+<div rst-shell-topbar data-extra="legacy-menu"><header rst-shell-bar><a rst-shell-brand href="#legacy-brand">Legacy</a><details rst-shell-menu name="rst-sizing-legacy-menu"><summary>Menu</summary></details><div rst-shell-tail><nav rst-shell-nav><a href="#legacy-tail">Legacy tail</a></nav></div></header><main rst-page><p>The 0.37 topbar, whose Menu and tail tokens.css keeps drawing for old layouts.</p></main></div>
+<div rst-shell-sidebar="page" data-extra="legacy-back"><div rst-shell-back><a href="#legacy-up" rel="up">Sections</a></div><aside rst-shell-rail><nav rst-shell-nav><a href="#legacy-three">Legacy three</a></nav></aside><main rst-shell-main><p>The 0.37 back strip, which tokens.css keeps drawing for old layouts.</p></main></div>
 </div>`
+
+// schemeIcons is Fiesta's icon scheme control as the account card holds
+// it, with two drawn-small buttons.
+const schemeIcons = `<div rst-scheme="icons" role="group" ` +
+	`aria-label="Appearance">` +
+	`<button type="button" aria-label="Light" aria-current="true">` +
+	sizingDot + `</button>` +
+	`<button type="button" aria-label="Dark">` + sizingDot + `</button></div>`
+
+const sizingDot = `<svg class="icon" viewBox="0 0 24 24" aria-hidden="true">` +
+	`<circle cx="12" cy="12" r="4"/></svg>`
 
 // sizingIcon is an icon as rastrillo.Icon emits one.
 const sizingIcon = `<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 12h16"/></svg>`
@@ -74,6 +87,10 @@ func sizingFixture(t *testing.T) string {
 			{Code: "ja", Name: "日本語", Href: "/ja/orders"},
 		},
 	}) + `</div>`)
+	// The icon scheme control, as Fiesta's account card holds it. Its
+	// buttons are drawn small and take their tap from an ::after.
+	b.WriteString(`<div rst-page data-extra="scheme-icons">` +
+		schemeIcons + `</div>`)
 	// Controls narrower than a tap by their content or their container,
 	// which only a min-inline-size lifts: an escalate link whose label is
 	// one short word, and a person link in a column narrower than a tap

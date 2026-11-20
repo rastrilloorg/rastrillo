@@ -629,19 +629,23 @@ func TestA11yScansTheShellsCollapsed(t *testing.T) {
 		}
 	}
 
-	// The topbar: its card, open.
+	// The topbar: its home page with the account card open, then its
+	// Menu page, the index.
 	for _, scheme := range a11ySchemes {
 		where := "day/en topbar shell at 390px, card open (" + scheme + ")"
-		load(where, shellHref(mountPath, "day", "en", "topbar"), "[rst-shell-menu] > summary")
-		open(where, "[rst-shell-menu] > summary", "[rst-shell-tail] [rst-shell-nav] a")
+		card := "[rst-shell-account] > summary"
+		load(where, shellHref(mountPath, "day", "en", "topbar"), card)
+		open(where, card,
+			"[rst-shell-account] [rst-shell-who] [rst-person-name]")
 		axe(where, scheme, "window.axe")
-		w, h, text := box(where, "[rst-shell-menu] > summary")
-		if w < 24 || h < 24 {
-			t.Errorf("%s: the disclosure's target is %d×%dpx, under WCAG 2.2 SC 2.5.8's 24×24", where, w, h)
+		w, h, _ := box(where, card)
+		if w < 44 || h < 44 {
+			t.Errorf("%s: the avatar's target is %d×%dpx; the touch "+
+				"block promises 44×44", where, w, h)
 		}
-		if text == "" {
-			t.Errorf("%s: the disclosure has no visible label; the icon beside it is aria-hidden, so the control would have no accessible name at all", where)
-		}
+		where = "day/en topbar Menu page at 390px (" + scheme + ")"
+		load(where, shellMenuHref(mountPath, "day", "en"), "[rst-shell-nav] a")
+		axe(where, scheme, "window.axe")
 	}
 
 	// The sidebar and console: both documents, every theme and scheme.
@@ -649,7 +653,10 @@ func TestA11yScansTheShellsCollapsed(t *testing.T) {
 		for _, theme := range ui.ThemeNames() {
 			for _, scheme := range a11ySchemes {
 				where := theme + "/en " + shell + " index at 390px (" + scheme + ")"
-				load(where, shellHref(mountPath, theme, "en", shell), "[rst-shell-rail]")
+				// The rows, not the rail: on the one-row sidebar the
+				// rail is display: contents on a phone and has no box.
+				load(where, shellHref(mountPath, theme, "en", shell),
+					"[rst-shell-rail] [rst-shell-nav] a")
 				// Patency: the document is the index before axe reads it.
 				if !shownIn(t, ctx, where, "[rst-shell-rail] [rst-shell-nav] a") || shownIn(t, ctx, where, "[rst-shell-main]") {
 					t.Fatalf("%s: not the index (rail shown %v, main shown %v); axe would scan the wrong view", where,
@@ -670,27 +677,33 @@ func TestA11yScansTheShellsCollapsed(t *testing.T) {
 					where := theme + "/en console index at 390px, card open (" + scheme + ")"
 					// On the index the account's links are laid out flat in
 					// the card, so a link is what the click reveals.
-					open(where, "[rst-shell-menu] > summary", "[rst-shell-tail] [rst-shell-account] [rst-dropdown-menu] a")
+					// A link of the card's own, not one of the Language
+					// sheet's, which stay hidden until its popover opens.
+					open(where, "[rst-shell-account] > summary",
+						"[rst-shell-account] [rst-dropdown-menu] > a")
 					axe(where, scheme, noTargetSize)
 				} else {
 					where := theme + "/en sidebar index at 390px, profile card open (" + scheme + ")"
 					open(where, "[rst-shell-profile] > summary", "[rst-shell-profile] [rst-shell-who] [rst-person-name]")
-					open(where+", language open", "[rst-shell-profile] [rst-locale] > summary", "[rst-shell-profile] [rst-locale] [rst-dropdown-menu] a")
+					open(where+", language open", languageButton,
+						"#rst-language a")
 					axe(where, scheme, noTargetSize)
 				}
 
 				where = theme + "/en " + shell + " content page at 390px (" + scheme + ")"
-				load(where, shellPageHref(mountPath, theme, "en", shell), "[rst-shell-back] a")
+				load(where, shellPageHref(mountPath, theme, "en", shell),
+					"[rst-shell-up]")
 				if shownIn(t, ctx, where, "[rst-shell-rail] [rst-shell-nav] a") {
 					t.Fatalf("%s: the rail's nav is on screen on a content page; axe would scan the index", where)
 				}
 				axe(where, scheme, "window.axe")
-				w, h, text := box(where, "[rst-shell-back] a")
+				w, h, text := box(where, "[rst-shell-up]")
 				if w < 44 || h < 44 {
-					t.Errorf("%s: the back control is %d×%dpx; the touch block promises 44×44", where, w, h)
+					t.Errorf("%s: the up link is %d×%dpx; the touch "+
+						"block promises 44×44", where, w, h)
 				}
 				if text == "" {
-					t.Errorf("%s: the back control has no visible label", where)
+					t.Errorf("%s: the up link has no visible label", where)
 				}
 			}
 		}
@@ -707,7 +720,7 @@ func TestA11yScansTheShellsCollapsed(t *testing.T) {
 				t.Fatalf("%s: loading: %v", where, err)
 			}
 			open(where, "[rst-shell-profile] > summary", "[rst-shell-profile] [rst-shell-who] [rst-person-name]")
-			open(where+", language open", "[rst-shell-profile] [rst-locale] > summary", "[rst-shell-profile] [rst-locale] [rst-dropdown-menu] a")
+			open(where+", language open", languageButton, "#rst-language a")
 			axe(where, scheme, `{run: (target, opts) => window.axe.run(target, Object.assign(opts, {rules: {"target-size": {enabled: false}}}))}`)
 		}
 	}
@@ -715,6 +728,10 @@ func TestA11yScansTheShellsCollapsed(t *testing.T) {
 		t.Logf("clean: %d scans at 390px and the desktop profile card, %v", scans, axeTags)
 	}
 }
+
+// languageButton opens the profile card's language list, a popover
+// over the page, from its Language row.
+const languageButton = "[rst-shell-profile] [popovertarget=rst-language]"
 
 // previewFrame is one preview widget picked for scanning: its
 // selector, the section it belongs to, and which of that section's

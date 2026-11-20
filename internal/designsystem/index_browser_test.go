@@ -52,7 +52,9 @@ func TestThePhoneIndexAndTheWayBack(t *testing.T) {
 		  const box = `+boxOf+`;
 		  const h1s = [...document.querySelectorAll("h1")].filter(h => h.getBoundingClientRect().height > 0).map(h => h.textContent.trim());
 		  const rows = [...document.querySelectorAll(".ds-index > a")].map(a => ({T: a.textContent.trim(), H: a.getBoundingClientRect().height, ID: a.id}));
-		  return JSON.stringify({Rail: box("[rst-shell-rail]"), Main: box("main"), Bar: box(".ds-top"), Lead: box(".ds-index-lead"), H1: h1s,
+		  return JSON.stringify({Rail: box("[rst-shell-rail] > .ds-index"),
+		    Main: box("main"), Bar: box(".ds-top"),
+		    Lead: box(".ds-index-lead"), H1: h1s,
 		    Group: (document.querySelector(".ds-index > [rst-shell-group]") || {}).textContent || "", Rows: rows});
 		})()`))
 		if err != nil {
@@ -160,8 +162,10 @@ func TestThePhoneIndexAndTheWayBack(t *testing.T) {
 		until(t, ctx, where+", Form loaded", `location.pathname.endsWith("/form.html") && document.readyState === "complete"`)
 		page, err := chromedp.Run(ctx, chromedp.Evaluate[string](`(() => {
 		  const box = `+boxOf+`;
-		  const back = document.querySelector("[rst-skip] + [rst-shell-back] > a");
-		  return JSON.stringify({Back: !!back && box("[rst-shell-back]"), Href: back ? back.getAttribute("href") : "",
+		  const back = document.querySelector(
+		    "[rst-skip] + [rst-shell-bar] > [rst-shell-up]");
+		  return JSON.stringify({Back: !!back && box("[rst-shell-up]"),
+		    Href: back ? back.getAttribute("href") : "",
 		    Rail: box("[rst-shell-rail]"), Bar: box(".ds-top"),
 		    Switch: [...document.querySelectorAll("[data-ds-scheme], [rst-seg-tabs] a, [rst-locale]")].some(e => e.checkVisibility() && e.getBoundingClientRect().width > 0)});
 		})()`))
@@ -185,7 +189,7 @@ func TestThePhoneIndexAndTheWayBack(t *testing.T) {
 		// Back returns to the index with the Form row focused. This is a
 		// history traversal, so the leg polls and clicks through the page.
 		leave(t, ctx, where+": going back",
-			`document.querySelector("[rst-shell-back] a").click();
+			`document.querySelector("[rst-shell-up]").click();
 			true`)
 		until(t, ctx, where+", back on the index", `location.pathname.endsWith("/index.html") && document.activeElement && document.activeElement.id === "nav-form"`)
 
@@ -210,12 +214,12 @@ func TestThePhoneIndexAndTheWayBack(t *testing.T) {
 	where := "day/en at 390px, scripts off"
 	if err := chromedp.Do(off, chromedp.EmulateViewport(390, 844),
 		chromedp.Navigate(rig.Origin+pageHref(mountPath, "day", "en", fileOf("form"))),
-		chromedp.WaitVisible(chromedp.CSS(`[rst-shell-back]`))); err != nil {
+		chromedp.WaitVisible(chromedp.CSS(`[rst-shell-up]`))); err != nil {
 		t.Fatalf("%s: loading: %v", where, err)
 	}
 	requireScriptsOff(t, off, where)
 	leave(t, off, where+": going back",
-		`document.querySelector("[rst-shell-back] a").click();
+		`document.querySelector("[rst-shell-up]").click();
 		true`)
 	// The engine focuses the row when it applies the fragment, which can
 	// come after :target matches, and a Tab before that starts from the
@@ -286,7 +290,10 @@ func TestA11yScansThePhoneViews(t *testing.T) {
 	axeJS := axeSource(t)
 	total := 0
 	for _, theme := range ui.ThemeNames() {
-		for _, view := range []struct{ name, file, ready string }{{"index", "index.html", ".ds-index"}, {"content page", "form.html", "[rst-shell-back]"}} {
+		for _, view := range []struct{ name, file, ready string }{
+			{"index", "index.html", ".ds-index"},
+			{"content page", "form.html", "[rst-shell-up]"},
+		} {
 			for _, scheme := range a11ySchemes {
 				where := fmt.Sprintf("%s/en %s at 390px (%s)", theme, view.name, scheme)
 				if err := chromedp.Do(ctx, chromedp.EmulateViewport(390, 844),

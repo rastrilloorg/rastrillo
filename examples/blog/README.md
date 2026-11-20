@@ -97,12 +97,30 @@ the original finding and its resolution.
   unpublish/delete strip data from a generated `formView`-shaped value
   by reflection, since a generated action has no way to know about
   `published` at all).
-- `internal/blog/templates/` — `layout.html` and one file per hand
-  screen (`pages/index.html`, `pages/post.html`).
+- `internal/blog/templates/` — `layout.html`, the topbar shell, and
+  one file per hand screen (`pages/index.html`, `pages/post.html`,
+  `pages/menu.html`).
 - `internal/blogtest/` — the tests, a directory of `_test.go` files that
   drives the real generated mux through `httptest`.
 - `static/` — `tokens.css` (shipped by `rastrillo new`, unedited) and
   `blog.css` (the app's own).
+
+## The shell
+
+The blog is a topbar app. On a desktop, the bar shows the blog's name,
+the Blog and Posts admin links, and the account card. On a phone,
+those links move to a Menu page at `/menu`, and every other page has
+one header row: a link back up, the blog's name and the avatar. The
+home page goes up to its own row on the Menu page (`/menu#nav-blog`),
+a post goes up to Blog, and an admin screen goes up to Posts admin.
+`chrome.go`'s `chromeFor` picks the way up by page name, because the
+generated screens can't define blocks of their own.
+
+The layout is the framework's topbar layout written out without its
+scripts, so the blog still loads no JavaScript. The up link is a link,
+the account card is a `<details>`, and the scheme and language rows
+are forms and a popover. Without scripts there's no slide between
+pages, but the up link's fragment still brings you back to your row.
 
 ## Manifests
 

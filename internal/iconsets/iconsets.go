@@ -76,41 +76,35 @@ type set struct {
 // call, matching the framework's own set in icons.go. Every set answers
 // all of them.
 //
-// These are rastrillo's names, not any vendor's. Five of the twelve
-// differ from Lucide's canonical names — "kebab" is Lucide's
+// These are rastrillo's names, not any vendor's. Five of the sixteen
+// differ from Lucide's canonical names: "kebab" is Lucide's
 // ellipsis-vertical, and v1 renamed four others (check-circle,
-// alert-triangle, x-circle, help-circle). "menu" is NOT one of them:
-// it is Lucide's own slug, and it is Font Awesome that calls that glyph
-// "bars", which is a fact about the Font Awesome set below rather than
-// a divergence from Lucide. docs/site/icons.md says the same five. Each
-// set therefore carries its own translation in its glyph data, Lucide
-// included, which is exactly why the shipped partials never change when
-// the set does.
+// alert-triangle, x-circle, help-circle). "menu" is Lucide's own slug;
+// Font Awesome is what calls that glyph "bars". docs/site/icons.md says
+// the same five. Each set carries its own translation in its glyph data,
+// which is why the shipped partials never change when the set does.
 //
-// Keep this list in step with icons.go's map: a slug the framework
-// answers but a set does not is an icon that vanishes on switching sets,
-// and TestEverySetCoversEverySlug fails loudly rather than let that ship.
+// Keep this list in step with icons.go's map: a slug a set lacks is an
+// icon that vanishes on switching sets, and TestEverySetCoversEverySlug
+// fails loudly rather than let that ship.
 func Slugs() []string {
 	return []string{
 		"alert-triangle", "check", "check-circle", "chevron-down",
-		"help-circle", "info", "kebab", "menu", "plus", "search", "x",
-		"x-circle",
+		"chevron-left", "help-circle", "info", "kebab", "menu", "monitor",
+		"moon", "plus", "search", "sun", "x", "x-circle",
 	}
 }
 
 // LucideName is the name lucide.dev publishes one rastrillo slug under.
 //
-// Read off the vendored Lucide set's own CDN element rather than
-// written out in a second table beside it: the class lucide-static's
-// webfont binds to IS that icon's Lucide name, so the two cannot drift,
-// and a slug the framework grows without a Lucide glyph answers ""
-// here instead of a stale guess. TestEverySetCoversEverySlug already
+// Read off the vendored Lucide set's own CDN element rather than a
+// second table: the class lucide-static's webfont binds to IS the Lucide
+// name, so the two cannot drift, and a slug without a Lucide glyph
+// answers "" here instead of a stale guess. TestEverySetCoversEverySlug
 // fails on such a slug, so an empty answer means the build is broken
-// somewhere louder than this.
-//
-// It is what lets the design system show each icon's provenance without
-// keeping a list of twelve names anywhere: internal/designsystem calls
-// this once per rastrillo.IconSlugs() entry.
+// somewhere louder than this. It lets the design system show each
+// icon's provenance without a list of names: internal/designsystem
+// calls this once per IconSlugs() entry.
 func LucideName(slug string) string {
 	const marker = `class="icon icon-`
 	g, ok := sets["lucide"].glyphs[slug]
@@ -195,12 +189,16 @@ var sets = map[string]set{
 			"check":          "check",
 			"check-circle":   "circle-check",
 			"chevron-down":   "chevron-down",
+			"chevron-left":   "chevron-left",
 			"help-circle":    "circle-help",
 			"info":           "info",
 			"kebab":          "ellipsis-vertical",
 			"menu":           "menu",
+			"monitor":        "monitor",
+			"moon":           "moon",
 			"plus":           "plus",
 			"search":         "search",
+			"sun":            "sun",
 			"x":              "x",
 			"x-circle":       "circle-x",
 		}),
@@ -214,8 +212,8 @@ var sets = map[string]set{
 		jsInit:       "lucide.createIcons();",
 	},
 	"font-awesome": {
-		// Font Awesome is a filled set; its solid icons sit on 512-high
-		// viewBoxes that vary in width, so ViewBox is per glyph.
+		// Font Awesome is a filled set; most solid icons sit on 512-high
+		// viewBoxes of varying width, so ViewBox is per glyph.
 		credit: "Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com\n" +
 			"License - https://fontawesome.com/license/free\n" +
 			"(Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT)\n" +
@@ -226,12 +224,16 @@ var sets = map[string]set{
 			"check":          {ViewBox: "0 0 448 512", Body: `<path d="M434.8 70.1c14.3 10.4 17.5 30.4 7.1 44.7l-256 352c-5.5 7.6-14 12.3-23.4 13.1s-18.5-2.7-25.1-9.3l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l101.5 101.5 234-321.7c10.4-14.3 30.4-17.5 44.7-7.1z"/>`, Element: `<i class="icon fa-solid fa-check" aria-hidden="true"></i>`},
 			"check-circle":   {ViewBox: "0 0 512 512", Body: `<path fill="currentColor" d="M256 512a256 256 0 1 1 0-512 256 256 0 1 1 0 512zM374 145.7c-10.7-7.8-25.7-5.4-33.5 5.3L221.1 315.2 169 263.1c-9.4-9.4-24.6-9.4-33.9 0s-9.4 24.6 0 33.9l72 72c5 5 11.8 7.5 18.8 7s13.4-4.1 17.5-9.8L379.3 179.2c7.8-10.7 5.4-25.7-5.3-33.5z"/>`, Element: `<i class="icon fa-solid fa-circle-check" aria-hidden="true"></i>`},
 			"chevron-down":   {ViewBox: "0 0 448 512", Body: `<path d="M201.4 406.6c12.5 12.5 32.8 12.5 45.3 0l192-192c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L224 338.7 54.6 169.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l192 192z"/>`, Element: `<i class="icon fa-solid fa-chevron-down" aria-hidden="true"></i>`},
+			"chevron-left":   {ViewBox: "0 0 320 512", Body: `<path fill="currentColor" d="M9.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l192 192c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L77.3 256 246.6 86.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-192 192z"/>`, Element: `<i class="icon fa-solid fa-chevron-left" aria-hidden="true"></i>`},
 			"help-circle":    {ViewBox: "0 0 512 512", Body: `<path fill="currentColor" d="M256 512a256 256 0 1 0 0-512 256 256 0 1 0 0 512zm0-336c-17.7 0-32 14.3-32 32 0 13.3-10.7 24-24 24s-24-10.7-24-24c0-44.2 35.8-80 80-80s80 35.8 80 80c0 47.2-36 67.2-56 74.5l0 3.8c0 13.3-10.7 24-24 24s-24-10.7-24-24l0-8.1c0-20.5 14.8-35.2 30.1-40.2 6.4-2.1 13.2-5.5 18.2-10.3 4.3-4.2 7.7-10 7.7-19.6 0-17.7-14.3-32-32-32zM224 368a32 32 0 1 1 64 0 32 32 0 1 1 -64 0z"/>`, Element: `<i class="icon fa-solid fa-circle-question" aria-hidden="true"></i>`},
 			"info":           {ViewBox: "0 0 512 512", Body: `<path fill="currentColor" d="M256 512a256 256 0 1 0 0-512 256 256 0 1 0 0 512zM224 160a32 32 0 1 1 64 0 32 32 0 1 1 -64 0zm-8 64l48 0c13.3 0 24 10.7 24 24l0 88 8 0c13.3 0 24 10.7 24 24s-10.7 24-24 24l-80 0c-13.3 0-24-10.7-24-24s10.7-24 24-24l24 0 0-64-24 0c-13.3 0-24-10.7-24-24s10.7-24 24-24z"/>`, Element: `<i class="icon fa-solid fa-circle-info" aria-hidden="true"></i>`},
 			"kebab":          {ViewBox: "0 0 128 512", Body: `<path fill="currentColor" d="M64 144a56 56 0 1 1 0-112 56 56 0 1 1 0 112zm0 224c30.9 0 56 25.1 56 56s-25.1 56-56 56-56-25.1-56-56 25.1-56 56-56zm56-112c0 30.9-25.1 56-56 56s-56-25.1-56-56 25.1-56 56-56 56 25.1 56 56z"/>`, Element: `<i class="icon fa-solid fa-ellipsis-vertical" aria-hidden="true"></i>`},
 			"menu":           {ViewBox: "0 0 448 512", Body: `<path fill="currentColor" d="M0 96C0 78.3 14.3 64 32 64l384 0c17.7 0 32 14.3 32 32s-14.3 32-32 32L32 128C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32l384 0c17.7 0 32 14.3 32 32s-14.3 32-32 32L32 288c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32L32 448c-17.7 0-32-14.3-32-32s14.3-32 32-32l384 0c17.7 0 32 14.3 32 32z"/>`, Element: `<i class="icon fa-solid fa-bars" aria-hidden="true"></i>`},
+			"monitor":        {ViewBox: "0 0 512 512", Body: `<path fill="currentColor" d="M64 32C28.7 32 0 60.7 0 96L0 352c0 35.3 28.7 64 64 64l144 0-16 48-72 0c-13.3 0-24 10.7-24 24s10.7 24 24 24l272 0c13.3 0 24-10.7 24-24s-10.7-24-24-24l-72 0-16-48 144 0c35.3 0 64-28.7 64-64l0-256c0-35.3-28.7-64-64-64L64 32zM96 96l320 0c17.7 0 32 14.3 32 32l0 160c0 17.7-14.3 32-32 32L96 320c-17.7 0-32-14.3-32-32l0-160c0-17.7 14.3-32 32-32z"/>`, Element: `<i class="icon fa-solid fa-desktop" aria-hidden="true"></i>`},
+			"moon":           {ViewBox: "0 0 512 512", Body: `<path fill="currentColor" d="M256 0C114.6 0 0 114.6 0 256S114.6 512 256 512c68.8 0 131.3-27.2 177.3-71.4 7.3-7 9.4-17.9 5.3-27.1s-13.7-14.9-23.8-14.1c-4.9 .4-9.8 .6-14.8 .6-101.6 0-184-82.4-184-184 0-72.1 41.5-134.6 102.1-164.8 9.1-4.5 14.3-14.3 13.1-24.4S322.6 8.5 312.7 6.3C294.4 2.2 275.4 0 256 0z"/>`, Element: `<i class="icon fa-solid fa-moon" aria-hidden="true"></i>`},
 			"plus":           {ViewBox: "0 0 448 512", Body: `<path d="M256 64c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 160-160 0c-17.7 0-32 14.3-32 32s14.3 32 32 32l160 0 0 160c0 17.7 14.3 32 32 32s32-14.3 32-32l0-160 160 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-160 0 0-160z"/>`, Element: `<i class="icon fa-solid fa-plus" aria-hidden="true"></i>`},
 			"search":         {ViewBox: "0 0 512 512", Body: `<path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376C296.3 401.1 253.9 416 208 416 93.1 416 0 322.9 0 208S93.1 0 208 0 416 93.1 416 208zM208 352a144 144 0 1 0 0-288 144 144 0 1 0 0 288z"/>`, Element: `<i class="icon fa-solid fa-magnifying-glass" aria-hidden="true"></i>`},
+			"sun":            {ViewBox: "0 -32 576 576", Body: `<path fill="currentColor" d="M288-32c8.4 0 16.3 4.4 20.6 11.7L364.1 72.3 468.9 46c8.2-2 16.9 .4 22.8 6.3S500 67 498 75.1l-26.3 104.7 92.7 55.5c7.2 4.3 11.7 12.2 11.7 20.6s-4.4 16.3-11.7 20.6L471.7 332.1 498 436.8c2 8.2-.4 16.9-6.3 22.8S477 468 468.9 466l-104.7-26.3-55.5 92.7c-4.3 7.2-12.2 11.7-20.6 11.7s-16.3-4.4-20.6-11.7L211.9 439.7 107.2 466c-8.2 2-16.8-.4-22.8-6.3S76 445 78 436.8l26.2-104.7-92.6-55.5C4.4 272.2 0 264.4 0 256s4.4-16.3 11.7-20.6L104.3 179.9 78 75.1c-2-8.2 .3-16.8 6.3-22.8S99 44 107.2 46l104.7 26.2 55.5-92.6 1.8-2.6c4.5-5.7 11.4-9.1 18.8-9.1zm0 144a144 144 0 1 0 0 288 144 144 0 1 0 0-288zm0 240a96 96 0 1 1 0-192 96 96 0 1 1 0 192z"/>`, Element: `<i class="icon fa-solid fa-sun" aria-hidden="true"></i>`},
 			"x":              {ViewBox: "0 0 384 512", Body: `<path fill="currentColor" d="M55.1 73.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L147.2 256 9.9 393.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192.5 301.3 329.9 438.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.8 256 375.1 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192.5 210.7 55.1 73.4z"/>`, Element: `<i class="icon fa-solid fa-xmark" aria-hidden="true"></i>`},
 			"x-circle":       {ViewBox: "0 0 512 512", Body: `<path fill="currentColor" d="M256 512a256 256 0 1 0 0-512 256 256 0 1 0 0 512zM167 167c9.4-9.4 24.6-9.4 33.9 0l55 55 55-55c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9l-55 55 55 55c9.4 9.4 9.4 24.6 0 33.9s-24.6 9.4-33.9 0l-55-55-55 55c-9.4 9.4-24.6 9.4-33.9 0s-9.4-24.6 0-33.9l55-55-55-55c-9.4-9.4-9.4-24.6 0-33.9z"/>`, Element: `<i class="icon fa-solid fa-circle-xmark" aria-hidden="true"></i>`},
 		},

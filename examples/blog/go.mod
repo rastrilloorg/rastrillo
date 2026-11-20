@@ -5,7 +5,7 @@ go 1.26.0
 require amadan.net/rastrillo/rastrillo v0.1.0
 
 require (
-	amadan.net/rastrillo/fiesta v1.3.0 // indirect
+	amadan.net/rastrillo/fiesta v1.4.0 // indirect
 	amadan.net/rastrillo/rastrillo/money v0.1.0 // indirect
 	cel.dev/expr v0.25.1 // indirect
 	filippo.io/edwards25519 v1.1.1 // indirect
@@ -68,3 +68,9 @@ require (
 replace amadan.net/rastrillo/rastrillo => ../..
 
 tool github.com/sqlc-dev/sqlc/cmd/sqlc
+
+// actions/ is generator input, not packages: every file carries
+// //go:build rastrillo_actions, and a directory like [id] is no import
+// path. go mod tidy loads every build configuration, so without this
+// it stops on [id] and leaves go.sum stale.
+ignore ./actions

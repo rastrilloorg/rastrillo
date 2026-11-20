@@ -1058,11 +1058,16 @@ func TestTheFloorChangesNothingButSizeOnADesktop(t *testing.T) {
 	    const cs = getComputedStyle(e), out = {I: all.indexOf(e), Sel: sel, Name: e.tagName.toLowerCase() + (e.id ? "#" + e.id : "") + " “" + (e.getAttribute("aria-label") || e.textContent).trim().slice(0, 24) + "”", P: {}};
 	    for (const p of props) out.P[p] = cs.getPropertyValue(p);
 	    const box = e.getBoundingClientRect(); out.W = box.width; out.H = box.height;
+	    const drawn = n => n.nodeType === 3 ? n.textContent.trim() !== "" :
+	      n.nodeType === 1 &&
+	      !["none", "contents"].includes(getComputedStyle(n).display) &&
+	      !["absolute", "fixed"].includes(getComputedStyle(n).position);
+	    out.Items = [...e.childNodes].filter(drawn).length;
 	    return out;
 	  }));
 	})()`
 	type styled struct {
-		I         int
+		I, Items  int
 		Sel, Name string
 		P         map[string]string
 		W, H      float64
@@ -1109,7 +1114,15 @@ func TestTheFloorChangesNothingButSizeOnADesktop(t *testing.T) {
 		// A gap does nothing outside a flex or grid box; the one that
 		// puts back an icon's space applies where the floor made one,
 		// which is floorOnly's to allow.
-		if d := s.P["display"]; !strings.Contains(d, "flex") && !strings.Contains(d, "grid") || !strings.Contains(b.P["display"], "flex") {
+		// Nor between fewer than two items: the scheme control's icon
+		// buttons inside an account card are flex boxes of their own
+		// holding one icon, so the menu buttons' gap reaches them and
+		// has nothing to space.
+		display := s.P["display"]
+		boxless := !strings.Contains(display, "flex") &&
+			!strings.Contains(display, "grid")
+		if boxless || !strings.Contains(b.P["display"], "flex") ||
+			s.Items < 2 {
 			may += " column-gap row-gap"
 		}
 		for p, v := range s.P {

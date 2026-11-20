@@ -101,7 +101,7 @@ func TestThePartialKeyOrderIsReadOffTheKeysBlocks(t *testing.T) {
 	for partial, want := range map[string][]string{
 		"meter":        {"Percent", "Text"},
 		"confirm-form": {"Action", "Label", "Danger", "Hidden", "CancelHref", "CancelLabel"},
-		"locale-menu":  {"Items", "Return", "Action", "MenuGroup"},
+		"locale-menu":  {"Items", "Return", "Action", "MenuGroup", "Card"},
 	} {
 		if got := keys[partial]; strings.Join(got, ",") != strings.Join(want, ",") {
 			t.Errorf("%s: keys %v, want %v", partial, got, want)

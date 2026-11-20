@@ -31,6 +31,13 @@ var before = map[string]struct {
 	"magicapp": {91400, 7360, 19, 54},
 }
 
+// iconGrowth is the code, not prose, that Fiesta 1.4.0's icons added to
+// every app's icons/icons.go (605e2239): sun, moon and monitor for the
+// scheme control, chevron-left for the up link. Every set covers every
+// slug, so no shell drops one. plainapp went from 55,077 to 56,328
+// bytes and magicapp from 73,578 to 74,829.
+const iconGrowth = 1251
+
 // The shape is read in fewer bytes than before, and AGENTS.md grows by
 // at most 1,000 to hold the guidance that left the comments.
 func TestNewAppsReadInFewerBytes(t *testing.T) {
@@ -39,7 +46,8 @@ func TestNewAppsReadInFewerBytes(t *testing.T) {
 		directory := newApp(t, variant.name, variant.flags...)
 		was := before[variant.name]
 		total := bytesToRead(t, directory)
-		limit := was.total*(100-was.cutPercent)/100 + was.migrationCheck
+		limit := was.total*(100-was.cutPercent)/100 + iconGrowth +
+			was.migrationCheck
 		if total > limit {
 			t.Errorf("%s: %d bytes outside gen/ and static/, over %d, "+
 				"%d%% less than %d and %d for the migration check",

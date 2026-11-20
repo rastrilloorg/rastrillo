@@ -7,16 +7,18 @@ import (
 
 // SpeculationRulesPath is where Serve answers with its speculation
 // rules, and what the Speculation-Rules header on every response names.
-// The rules prerender the navigation and back control of the sidebar
-// and console layouts that mark their index, so a phone's next page is
-// ready before it is tapped; they match nothing in an older layout or
-// on any other page. Options.NoSpeculationRules turns both the header
+// The rules prerender the navigation and the up link of the sidebar,
+// console and topbar layouts that mark their index, so a phone's next
+// page is ready before it is tapped; they match nothing in an older
+// layout or on any other page. Options.NoSpeculationRules turns both the header
 // and the route off.
 const SpeculationRulesPath = "/_speculation-rules"
 
 // speculationRules is the whole ruleset: document rules scoped by a
 // selector, in both markup spellings, to shell navigation and the back
-// control inside a sidebar or console root that names its view. Only
+// control inside a sidebar, console or topbar root that names its view
+// (a topbar's /menu page is its index, and every other page its view
+// page). Only
 // the layouts that ship the phone index write a view, and they ship
 // with this ruleset; an app's own layout.html copied before them has a
 // bare root and gets no prerender at all. Its pages were written to
@@ -36,7 +38,18 @@ const SpeculationRulesPath = "/_speculation-rules"
 // CSP refuses an inline <script type="speculationrules">, and a header
 // ruleset is not a script: no CSP stops it loading. Each prerender is
 // still a same-origin navigation that carries the app's own CSP.
-const speculationRules = `{"prerender":[{"source":"document","where":{"selector_matches":":is([rst-shell-sidebar~=page],[rst-shell-sidebar~=index],[rst-shell-console~=page],[rst-shell-console~=index],.rst-shell-sidebar--page,.rst-shell-sidebar--index,.rst-shell-console--page,.rst-shell-console--index) :is([rst-shell-nav],[rst-shell-back],.rst-shell__nav,.rst-shell__back) a[href]"},"eagerness":"moderate"}]}`
+const speculationRules = `{"prerender":[{"source":"document",` +
+	`"where":{"selector_matches":":is(` +
+	`[rst-shell-sidebar~=page],[rst-shell-sidebar~=index],` +
+	`[rst-shell-console~=page],[rst-shell-console~=index],` +
+	`[rst-shell-topbar~=page],[rst-shell-topbar~=index],` +
+	`.rst-shell-sidebar--page,.rst-shell-sidebar--index,` +
+	`.rst-shell-console--page,.rst-shell-console--index,` +
+	`.rst-shell-topbar--page,.rst-shell-topbar--index) :is(` +
+	`:is([rst-shell-nav],[rst-shell-back],` +
+	`.rst-shell__nav,.rst-shell__back) a[href],` +
+	`a[href]:is([rst-shell-up],.rst-shell__up))"},` +
+	`"eagerness":"moderate"}]}`
 
 // serveSpeculationRules answers SpeculationRulesPath. The content type
 // is the one browsers accept for a ruleset: a static file would go out

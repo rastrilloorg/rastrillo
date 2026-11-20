@@ -3397,7 +3397,6 @@ columns cmd/rastrillo/doctor.go 115ed77e1b8e 1
 columns cmd/rastrillo/doctor.go 1697f43af943 1
 columns cmd/rastrillo/doctor.go 182064c62947 1
 columns cmd/rastrillo/doctor.go 1f410803136a 1
-columns cmd/rastrillo/doctor.go 29f2bd4e27be 1
 columns cmd/rastrillo/doctor.go 2e01a18e34df 1
 columns cmd/rastrillo/doctor.go 31867b4479b6 1
 columns cmd/rastrillo/doctor.go 3d4cd0d3a838 1
@@ -3457,11 +3456,11 @@ columns cmd/rastrillo/doctor.go f8a8b84c4867 1
 columns cmd/rastrillo/doctor.go fb8e8756c242 1
 columns cmd/rastrillo/doctor.go fd24af5b2925 1
 columns cmd/rastrillo/doctor.go fdab31e1ef54 1
-file cmd/rastrillo/doctor.go - 1062 raised from 1048 by scaffold shapes: an app with no design system (bare's --design-system=false) is told there is nothing to compare instead of failing
-func cmd/rastrillo/doctor.go diagnose 115 raised from 110 by Fiesta part 2 Task 4: diagnose lists the layouts that load rastrillo.js and no fiesta.js, for the advice --fix decides on the files it leaves; raised from 111 by scaffold shapes: an app with no design system (bare's --design-system=false) is told there is nothing to compare instead of failing
+file cmd/rastrillo/doctor.go - 1041 raised from 1048 by scaffold shapes: an app with no design system (bare's --design-system=false) is told there is nothing to compare instead of failing
+func cmd/rastrillo/doctor.go diagnose 98 raised from 110 by Fiesta part 2 Task 4: diagnose lists the layouts that load rastrillo.js and no fiesta.js, for the advice --fix decides on the files it leaves; raised from 111 by scaffold shapes: an app with no design system (bare's --design-system=false) is told there is nothing to compare instead of failing
 func cmd/rastrillo/doctor.go readPin 80
 func cmd/rastrillo/doctor.go report.applyFix 61 raised from 58 by scaffold shapes: an app with no design system (bare's --design-system=false) is told there is nothing to compare instead of failing
-func cmd/rastrillo/doctor.go report.print 86 raised from 82 by scaffold shapes: an app with no design system (bare's --design-system=false) is told there is nothing to compare instead of failing
+func cmd/rastrillo/doctor.go report.print 81 raised from 82 by scaffold shapes: an app with no design system (bare's --design-system=false) is told there is nothing to compare instead of failing
 names cmd/rastrillo/doctor.go clip/n 1
 names cmd/rastrillo/doctor.go clip/s 1
 names cmd/rastrillo/doctor.go count/b 1
@@ -3473,9 +3472,7 @@ names cmd/rastrillo/doctor.go describeDiff/a 1
 names cmd/rastrillo/doctor.go describeDiff/b 1
 names cmd/rastrillo/doctor.go describeDiff/p 1
 names cmd/rastrillo/doctor.go describeDiff/s 1
-names cmd/rastrillo/doctor.go diagnose/b 1
 names cmd/rastrillo/doctor.go diagnose/f 1
-names cmd/rastrillo/doctor.go diagnose/n 1
 names cmd/rastrillo/doctor.go diagnose/r 1
 names cmd/rastrillo/doctor.go exitError.Error/e 1
 names cmd/rastrillo/doctor.go findStaticDir/c 1
@@ -3968,11 +3965,10 @@ columns cmd/rastrillo/new.go e017cb3c9c1f 1
 columns cmd/rastrillo/new.go e8154254ee71 1
 columns cmd/rastrillo/new.go e9429fea88d9 1
 columns cmd/rastrillo/new.go ef2901dc0d45 1
-columns cmd/rastrillo/new.go f2045c11abc8 1
 columns cmd/rastrillo/new.go f9075270659b 1
-file cmd/rastrillo/new.go - 543 lowered from 546 by scaffold shapes, which moved new.go's flag usage line to shapes.go and writes the tests into the app's own directory; raised from 541 by 2 when the migration check became the app's migrations_test.go, which writeSingle writes in place of the Makefile step
+file cmd/rastrillo/new.go - 528 lowered from 546 by scaffold shapes, which moved new.go's flag usage line to shapes.go and writes the tests into the app's own directory; raised from 541 by 2 when the migration check became the app's migrations_test.go, which writeSingle writes in place of the Makefile step
 func cmd/rastrillo/new.go runNew 49 lowered from 235 by scaffold shapes, which moved its writing into writeSingle; it reads the flags every shape shares
-func cmd/rastrillo/new.go writeSingle 178 main's runNew body, moved by scaffold shapes so that bare and accounts share runNew's flags and refusals, less its separate test directory; owed the same split runNew was. Raised from 175 by 3: it writes migrations_test.go (2 lines), and the summary's test-files line pads its continuation to the package name's width (1 line)
+func cmd/rastrillo/new.go writeSingle 171 main's runNew body, moved by scaffold shapes so that bare and accounts share runNew's flags and refusals, less its separate test directory; owed the same split runNew was. Raised from 175 by 3: it writes migrations_test.go (2 lines), and the summary's test-files line pads its continuation to the package name's width (1 line)
 names cmd/rastrillo/new.go scaffoldFile/b 1
 columns cmd/rastrillo/new_scaffold_test.go 021618c81aba 1
 columns cmd/rastrillo/new_scaffold_test.go 031c8d38c56a 1
@@ -4002,6 +3998,7 @@ columns cmd/rastrillo/new_scaffold_test.go 3a1f462b84de 1
 columns cmd/rastrillo/new_scaffold_test.go 3af8a070427d 1
 columns cmd/rastrillo/new_scaffold_test.go 3e5b6dd7d8fc 1
 columns cmd/rastrillo/new_scaffold_test.go 3f4518b02ef1 1
+columns cmd/rastrillo/new_scaffold_test.go 424a7707fc2e 1 the scheme test literal the scaffold renders, now with its aria-label (hub CI on 90503955)
 columns cmd/rastrillo/new_scaffold_test.go 47fa62119113 1
 columns cmd/rastrillo/new_scaffold_test.go 4d6a204b309d 1
 columns cmd/rastrillo/new_scaffold_test.go 4e4f3dd93ea3 1
@@ -4016,7 +4013,6 @@ columns cmd/rastrillo/new_scaffold_test.go 5b43dbb0af9a 1
 columns cmd/rastrillo/new_scaffold_test.go 6355b65cb1d8 1
 columns cmd/rastrillo/new_scaffold_test.go 66348c8a4f43 1
 columns cmd/rastrillo/new_scaffold_test.go 6b4614214668 1
-columns cmd/rastrillo/new_scaffold_test.go 6bf749a01a62 1
 columns cmd/rastrillo/new_scaffold_test.go 6c9feb868457 1
 columns cmd/rastrillo/new_scaffold_test.go 6e4f44039e13 1
 columns cmd/rastrillo/new_scaffold_test.go 6ea40b540a56 1
@@ -6154,7 +6150,6 @@ columns hack/skilleval/run.go a5c75bf6053a 1
 columns hack/skilleval/run.go aecd81ea31c0 1
 columns hack/skilleval/run.go b07eb35eb245 1
 columns hack/skilleval/run.go b2c9f592826b 1
-columns hack/skilleval/run.go b69a1709ed73 1
 columns hack/skilleval/run.go bb3d4ea7c5f2 1
 columns hack/skilleval/run.go bd09bd69fe0e 1
 columns hack/skilleval/run.go bdb769bc7cbb 1
@@ -6267,7 +6262,6 @@ names harness/watch_test.go probeBuild/w 2
 names harness/watch_test.go waitForProblems/n 1
 names harness/watch_test.go waitForProblems/r 1
 columns icons_test.go 4f4b876bfd12 1
-columns icons_test.go 54fc34f5fac5 1
 columns icons_test.go 7e12988c9e80 1
 columns icons_test.go 8921927aca92 1
 columns icons_test.go 9cf3698b1670 1
@@ -6827,14 +6821,11 @@ columns internal/designsystem/a11y_test.go 38139a7ee506 1
 columns internal/designsystem/a11y_test.go 38e2bae465eb 1
 columns internal/designsystem/a11y_test.go 39ab7a45bdfb 1
 columns internal/designsystem/a11y_test.go 3a784b928405 1
-columns internal/designsystem/a11y_test.go 3c752cc0586c 1
 columns internal/designsystem/a11y_test.go 3e4d3a796541 1 rewritten by the chromedp v0.21 port, no wider than the recorded line it replaced
 columns internal/designsystem/a11y_test.go 3f8bde5dc80e 1
 columns internal/designsystem/a11y_test.go 4020f622210c 1
 columns internal/designsystem/a11y_test.go 433c5a943ec4 1
-columns internal/designsystem/a11y_test.go 448844374ba6 1
 columns internal/designsystem/a11y_test.go 451d5ff66e86 1
-columns internal/designsystem/a11y_test.go 4824752e4b84 1
 columns internal/designsystem/a11y_test.go 49918e29df2a 1
 columns internal/designsystem/a11y_test.go 49adc9a48d48 1
 columns internal/designsystem/a11y_test.go 49c72f1dca2f 1
@@ -6851,14 +6842,12 @@ columns internal/designsystem/a11y_test.go 643a6eee207d 1
 columns internal/designsystem/a11y_test.go 6459617431de 1
 columns internal/designsystem/a11y_test.go 679699b63d18 1
 columns internal/designsystem/a11y_test.go 68d21e04fee0 1
-columns internal/designsystem/a11y_test.go 68ef211aa4d0 1
 columns internal/designsystem/a11y_test.go 699ab81e7641 1
 columns internal/designsystem/a11y_test.go 6a48ba20a47e 1
 columns internal/designsystem/a11y_test.go 6b2474af841b 1
 columns internal/designsystem/a11y_test.go 6f045c56ce00 1
 columns internal/designsystem/a11y_test.go 733898eb988a 1
 columns internal/designsystem/a11y_test.go 7484ca57914b 1
-columns internal/designsystem/a11y_test.go 76e681425ca3 1
 columns internal/designsystem/a11y_test.go 79ad2e33fd6b 1
 columns internal/designsystem/a11y_test.go 7aeb57a0d117 1
 columns internal/designsystem/a11y_test.go 7ce1c4576006 1
@@ -6896,7 +6885,6 @@ columns internal/designsystem/a11y_test.go ae0d2e261720 1
 columns internal/designsystem/a11y_test.go ae5dd369f253 1
 columns internal/designsystem/a11y_test.go aefaa6fbb97d 1
 columns internal/designsystem/a11y_test.go afed050c5ad8 1
-columns internal/designsystem/a11y_test.go b02555e61ef1 1
 columns internal/designsystem/a11y_test.go b22ad879c32e 1
 columns internal/designsystem/a11y_test.go b52e24cc3932 1 rewritten by the chromedp v0.21 port, no wider than the recorded line it replaced
 columns internal/designsystem/a11y_test.go b6065d2c4d99 1
@@ -6912,12 +6900,9 @@ columns internal/designsystem/a11y_test.go bd2fe4c800a8 1
 columns internal/designsystem/a11y_test.go bd5431d6c8da 1
 columns internal/designsystem/a11y_test.go bf67b6795af6 1
 columns internal/designsystem/a11y_test.go c198558dc501 1
-columns internal/designsystem/a11y_test.go c21079f35bad 1
 columns internal/designsystem/a11y_test.go c23b62d8c78b 1
 columns internal/designsystem/a11y_test.go c26da4df189b 1
-columns internal/designsystem/a11y_test.go c2ebee9d246b 1
 columns internal/designsystem/a11y_test.go c4693441d73e 1
-columns internal/designsystem/a11y_test.go c473088df7c1 1
 columns internal/designsystem/a11y_test.go c4ce57ab6755 1
 columns internal/designsystem/a11y_test.go c745985bcc7d 1
 columns internal/designsystem/a11y_test.go c8677bf2afb5 1
@@ -6931,7 +6916,6 @@ columns internal/designsystem/a11y_test.go db2eb5506f1b 1
 columns internal/designsystem/a11y_test.go dcc7dd1dd97d 1
 columns internal/designsystem/a11y_test.go debdd5bdc209 1
 columns internal/designsystem/a11y_test.go dfd9b22d305a 1
-columns internal/designsystem/a11y_test.go dfef6cfe5b22 1
 columns internal/designsystem/a11y_test.go e22829b1a365 1
 columns internal/designsystem/a11y_test.go e41beffc4448 1
 columns internal/designsystem/a11y_test.go e7f5cf005dea 1
@@ -6989,7 +6973,6 @@ columns internal/designsystem/bar_browser_test.go 3ce28fddd349 1
 columns internal/designsystem/bar_browser_test.go 4054041ebf22 1
 columns internal/designsystem/bar_browser_test.go 4c8250999186 1
 columns internal/designsystem/bar_browser_test.go 58c99ae89ae6 1
-columns internal/designsystem/bar_browser_test.go 61cd5412f487 1
 columns internal/designsystem/bar_browser_test.go 70658ef0a27b 1 rewritten by the chromedp v0.21 port, no wider than the recorded line it replaced
 columns internal/designsystem/bar_browser_test.go 7e313df952ca 1
 columns internal/designsystem/bar_browser_test.go 860ba7a165f2 1
@@ -7157,7 +7140,6 @@ columns internal/designsystem/browser_test.go d203fdf739a2 1
 columns internal/designsystem/browser_test.go d6add8551c57 1
 columns internal/designsystem/browser_test.go da971d77e913 1
 columns internal/designsystem/browser_test.go daae04ce45e8 1
-columns internal/designsystem/browser_test.go dc7528ab4284 1
 columns internal/designsystem/browser_test.go de7970d06cf6 1
 columns internal/designsystem/browser_test.go e198095524e2 1
 columns internal/designsystem/browser_test.go e1a9adeb531c 1
@@ -7344,7 +7326,6 @@ columns internal/designsystem/designsystem_test.go 0aadf13efe82 1
 columns internal/designsystem/designsystem_test.go 0ae569df8f87 1
 columns internal/designsystem/designsystem_test.go 0b5986dc3bbd 1
 columns internal/designsystem/designsystem_test.go 0bd4de107d13 1
-columns internal/designsystem/designsystem_test.go 0d2b4f9b40e2 1
 columns internal/designsystem/designsystem_test.go 0e39e593f8cf 1
 columns internal/designsystem/designsystem_test.go 0eede775d71c 1
 columns internal/designsystem/designsystem_test.go 0fce2e38dfd4 1
@@ -7352,7 +7333,6 @@ columns internal/designsystem/designsystem_test.go 10079406a560 1
 columns internal/designsystem/designsystem_test.go 1219e5981ee7 1
 columns internal/designsystem/designsystem_test.go 13082d1e58c3 1
 columns internal/designsystem/designsystem_test.go 1388ac683e7e 1
-columns internal/designsystem/designsystem_test.go 14f9a344dc36 1
 columns internal/designsystem/designsystem_test.go 15215b73533d 1
 columns internal/designsystem/designsystem_test.go 15935cfe525b 1
 columns internal/designsystem/designsystem_test.go 1860e3e5d45a 1
@@ -7455,7 +7435,6 @@ columns internal/designsystem/designsystem_test.go 56870fb5feff 1
 columns internal/designsystem/designsystem_test.go 5a27f4b496f7 1
 columns internal/designsystem/designsystem_test.go 5ab968dbe0b8 1
 columns internal/designsystem/designsystem_test.go 5b389e4c2d20 1
-columns internal/designsystem/designsystem_test.go 5c5f5fbc577f 1
 columns internal/designsystem/designsystem_test.go 5cacca285199 1
 columns internal/designsystem/designsystem_test.go 5d4835386e9b 1
 columns internal/designsystem/designsystem_test.go 5d5645b59a23 2
@@ -7471,11 +7450,9 @@ columns internal/designsystem/designsystem_test.go 643333ae739f 1
 columns internal/designsystem/designsystem_test.go 64ccf4e7d9ca 1
 columns internal/designsystem/designsystem_test.go 655aaf315725 1
 columns internal/designsystem/designsystem_test.go 65d8e4598cdd 1
-columns internal/designsystem/designsystem_test.go 65e3a57edd32 1
 columns internal/designsystem/designsystem_test.go 6630d6765d09 1
 columns internal/designsystem/designsystem_test.go 66805413c3ff 1
 columns internal/designsystem/designsystem_test.go 66fc024c5718 1
-columns internal/designsystem/designsystem_test.go 68b271834a07 1
 columns internal/designsystem/designsystem_test.go 68e7b37b7bda 1
 columns internal/designsystem/designsystem_test.go 695031b6a1f5 1
 columns internal/designsystem/designsystem_test.go 69f19952e205 1
@@ -7484,7 +7461,6 @@ columns internal/designsystem/designsystem_test.go 6bd5d6cdbf69 1
 columns internal/designsystem/designsystem_test.go 6bede9483f10 1
 columns internal/designsystem/designsystem_test.go 6bf5107827d9 1
 columns internal/designsystem/designsystem_test.go 6c1006661643 1
-columns internal/designsystem/designsystem_test.go 6d653681c23d 1
 columns internal/designsystem/designsystem_test.go 6d910e6e8af2 1
 columns internal/designsystem/designsystem_test.go 6e5181f2318d 1
 columns internal/designsystem/designsystem_test.go 6f6a7398b83a 1
@@ -7542,7 +7518,6 @@ columns internal/designsystem/designsystem_test.go 870dc48ffa56 1
 columns internal/designsystem/designsystem_test.go 8754bf5182dd 1
 columns internal/designsystem/designsystem_test.go 87d8a1cd65d0 1
 columns internal/designsystem/designsystem_test.go 87defff98e78 1
-columns internal/designsystem/designsystem_test.go 8865dd49a3d5 1
 columns internal/designsystem/designsystem_test.go 8882821ed3b6 1
 columns internal/designsystem/designsystem_test.go 88efd9439682 1
 columns internal/designsystem/designsystem_test.go 89b2c3ed3f62 1
@@ -7601,7 +7576,6 @@ columns internal/designsystem/designsystem_test.go aaeb02399f5b 1
 columns internal/designsystem/designsystem_test.go abb42d17897a 1
 columns internal/designsystem/designsystem_test.go abfafc2d9de9 1
 columns internal/designsystem/designsystem_test.go ac0eb78e427e 1
-columns internal/designsystem/designsystem_test.go acda356c3719 1
 columns internal/designsystem/designsystem_test.go acdd19463d67 1
 columns internal/designsystem/designsystem_test.go ae7312be6f40 1
 columns internal/designsystem/designsystem_test.go af6cff13d536 1
@@ -7622,7 +7596,6 @@ columns internal/designsystem/designsystem_test.go ba904944e769 1
 columns internal/designsystem/designsystem_test.go bb2ea988ccfe 1
 columns internal/designsystem/designsystem_test.go bb4e3a5c0e2a 1
 columns internal/designsystem/designsystem_test.go bb97f66ce676 1
-columns internal/designsystem/designsystem_test.go bbb37c7920fa 1
 columns internal/designsystem/designsystem_test.go bbec2a3ab228 1
 columns internal/designsystem/designsystem_test.go bc25fa6f79d5 1
 columns internal/designsystem/designsystem_test.go bc4bb39ce240 1
@@ -7791,7 +7764,7 @@ names internal/designsystem/designsystem_test.go TestTheChromeCarriesTheThreeSwi
 names internal/designsystem/designsystem_test.go TestTheChromeCarriesTheThreeSwitchers/n 5
 names internal/designsystem/designsystem_test.go TestTheFilterBoxCarriesTheSearchIcon/m 1
 names internal/designsystem/designsystem_test.go TestTheGalleryIsTheShippedShell/m 1
-names internal/designsystem/designsystem_test.go TestTheGalleryIsTheShippedShell/n 2
+names internal/designsystem/designsystem_test.go TestTheGalleryIsTheShippedShell/n 1
 names internal/designsystem/designsystem_test.go TestTheHTMLTabNeverCarriesTheDemoWrapper/i 2
 names internal/designsystem/designsystem_test.go TestTheHTMLTabNeverCarriesTheDemoWrapper/n 1
 names internal/designsystem/designsystem_test.go TestTheHTMLTabNeverCarriesTheDemoWrapper/p 1
@@ -8237,7 +8210,6 @@ columns internal/designsystem/index_browser_test.go 05ec1d4ef564 1
 columns internal/designsystem/index_browser_test.go 0816dc795213 1 rewritten by the chromedp v0.21 port, no wider than the recorded line it replaced
 columns internal/designsystem/index_browser_test.go 083ac46b25c6 1
 columns internal/designsystem/index_browser_test.go 0fc265671e1b 1
-columns internal/designsystem/index_browser_test.go 1473ff587cd1 1
 columns internal/designsystem/index_browser_test.go 153709774f4b 1
 columns internal/designsystem/index_browser_test.go 2f4ab69c2908 1
 columns internal/designsystem/index_browser_test.go 476cd3c94fbb 1
@@ -8252,7 +8224,6 @@ columns internal/designsystem/index_browser_test.go 6070023c9d50 1
 columns internal/designsystem/index_browser_test.go 65d72e51a307 1
 columns internal/designsystem/index_browser_test.go 666e1e148f77 1 rewritten by the chromedp v0.21 port, no wider than the recorded line it replaced
 columns internal/designsystem/index_browser_test.go 6e24c302658a 1
-columns internal/designsystem/index_browser_test.go 707fe017cb24 1
 columns internal/designsystem/index_browser_test.go 74c3e33e2871 1 rewritten by the chromedp v0.21 port, no wider than the recorded line it replaced
 columns internal/designsystem/index_browser_test.go 762443d3cbba 1
 columns internal/designsystem/index_browser_test.go 7968090cc915 1
@@ -8264,9 +8235,7 @@ columns internal/designsystem/index_browser_test.go af5ffb21910d 1
 columns internal/designsystem/index_browser_test.go bac310bd6585 1
 columns internal/designsystem/index_browser_test.go bb8c0c86c96d 1
 columns internal/designsystem/index_browser_test.go c26da4df189b 2
-columns internal/designsystem/index_browser_test.go c4d7602f9564 1
 columns internal/designsystem/index_browser_test.go c6d600cfe224 1
-columns internal/designsystem/index_browser_test.go c8f6471b8900 1
 columns internal/designsystem/index_browser_test.go cf6b436df4f4 1
 columns internal/designsystem/index_browser_test.go d76c21c36936 1 rewritten by the chromedp v0.21 port, no wider than the recorded line it replaced
 columns internal/designsystem/index_browser_test.go e07d219b4811 1
@@ -8365,9 +8334,7 @@ columns internal/designsystem/moved_browser_test.go a1172c5ca707 1 rewritten by 
 columns internal/designsystem/moved_browser_test.go cb082740efb2 1
 names internal/designsystem/moved_browser_test.go TestAMovedSectionsOldLinkReachesIt/c 1
 columns internal/designsystem/page.go 020a7511a3b6 1
-columns internal/designsystem/page.go 03626d2d9917 1
 columns internal/designsystem/page.go 03ac001bf97b 1
-columns internal/designsystem/page.go 045d1a085abe 2
 columns internal/designsystem/page.go 0795c514a31d 1
 columns internal/designsystem/page.go 0ac98ed1ad9b 1
 columns internal/designsystem/page.go 0b0ad6c3fbcb 1
@@ -8383,9 +8350,7 @@ columns internal/designsystem/page.go 1040f66fbc4e 1
 columns internal/designsystem/page.go 177f444dc672 1
 columns internal/designsystem/page.go 185bc28ec351 1
 columns internal/designsystem/page.go 1d5923a689aa 1 the demo app's lead, reworded in place for the gallery's name (rastrillo-components Task 2); a prose key is one string the template writes whole
-columns internal/designsystem/page.go 1ee3fc4cad69 1
 columns internal/designsystem/page.go 1f5da6a0912f 1
-columns internal/designsystem/page.go 210e21883be8 1
 columns internal/designsystem/page.go 22cf89764b0a 1
 columns internal/designsystem/page.go 23ce9ad502e4 1
 columns internal/designsystem/page.go 25f6c2f01bb2 1
@@ -8396,6 +8361,7 @@ columns internal/designsystem/page.go 2ab51afc54d5 1
 columns internal/designsystem/page.go 2b9b8fcaa700 1
 columns internal/designsystem/page.go 2bab4a80c384 1
 columns internal/designsystem/page.go 2c179192fddd 1
+columns internal/designsystem/page.go 2f18360bc2c1 1 a template line written whole like its neighbours; the one-row phone chrome (phone-shells B5)
 columns internal/designsystem/page.go 2ff3d8f2884e 1
 columns internal/designsystem/page.go 3263bb41019f 1
 columns internal/designsystem/page.go 33b9d8bc3964 1
@@ -8409,13 +8375,10 @@ columns internal/designsystem/page.go 3db17687eb56 1 the Overview routes templat
 columns internal/designsystem/page.go 3e03796aa474 1
 columns internal/designsystem/page.go 3e9c1932a86f 1
 columns internal/designsystem/page.go 3ee65f61ced9 1
-columns internal/designsystem/page.go 4390e9ce507c 1
 columns internal/designsystem/page.go 43a8f6b13f5a 1
 columns internal/designsystem/page.go 4450933107c0 1
 columns internal/designsystem/page.go 464cd0575cc6 1
-columns internal/designsystem/page.go 4bda04d5443d 2
 columns internal/designsystem/page.go 503caff12364 1
-columns internal/designsystem/page.go 514c677e880b 1
 columns internal/designsystem/page.go 527ef624df18 1
 columns internal/designsystem/page.go 5732a36cdea7 1
 columns internal/designsystem/page.go 5790aca32693 1
@@ -8423,7 +8386,6 @@ columns internal/designsystem/page.go 58b9917d3769 1 a shell's back-link, rename
 columns internal/designsystem/page.go 59c2726a21de 1
 columns internal/designsystem/page.go 5afde98229ce 1
 columns internal/designsystem/page.go 5b77d9f5d56a 1
-columns internal/designsystem/page.go 5d954d3efe33 1
 columns internal/designsystem/page.go 5e480806449e 1
 columns internal/designsystem/page.go 5ee7a4ff533f 1
 columns internal/designsystem/page.go 5fd1cc1c384a 1
@@ -8455,18 +8417,18 @@ columns internal/designsystem/page.go 77174996904f 1
 columns internal/designsystem/page.go 77d6e0aee020 1
 columns internal/designsystem/page.go 7e9c0c0074fc 1
 columns internal/designsystem/page.go 7ffb793379f5 1
+columns internal/designsystem/page.go 850448267814 1 a template line written whole like its neighbours; the one-row phone chrome (phone-shells B5)
 columns internal/designsystem/page.go 89addb10a119 1
 columns internal/designsystem/page.go 8b8603be085a 1
+columns internal/designsystem/page.go 8bebd5aefb80 1 a template line written whole like its neighbours; the one-row phone chrome (phone-shells B5)
 columns internal/designsystem/page.go 8c81830bf62b 1
 columns internal/designsystem/page.go 8f36ffaed816 1
 columns internal/designsystem/page.go 9166ac781f2c 1
 columns internal/designsystem/page.go 938fe07239b6 1
 columns internal/designsystem/page.go 957c2fd815f0 1
 columns internal/designsystem/page.go 95c9831606c7 1
-columns internal/designsystem/page.go 9683574db32d 1
 columns internal/designsystem/page.go 974ab570f662 1
 columns internal/designsystem/page.go 97d129ba4be2 1
-columns internal/designsystem/page.go 97fef6f81796 1 the phone index lead, Paul's paragraph with the gallery's name in place (rastrillo-components Task 2); a prose key is one string the template writes whole
 columns internal/designsystem/page.go 9b7feb362fae 1
 columns internal/designsystem/page.go 9ca6df81967b 1
 columns internal/designsystem/page.go 9cc0c8c51b7d 1 Getting started's scaffold paragraph, reworded in place (rastrillo-components Task 1, copy review); a prose key is one string the template writes whole
@@ -8507,7 +8469,6 @@ columns internal/designsystem/page.go ce8af0def8cd 1 the Overview's h1, renamed 
 columns internal/designsystem/page.go d060c5ca1803 1
 columns internal/designsystem/page.go d0758d574356 1
 columns internal/designsystem/page.go d130e930f7d3 1
-columns internal/designsystem/page.go d31f678fe47e 1
 columns internal/designsystem/page.go d47bd5341caf 1
 columns internal/designsystem/page.go d69f518dc5a7 1
 columns internal/designsystem/page.go db584701c50b 1
@@ -8536,16 +8497,15 @@ columns internal/designsystem/page.go f6c42b07043d 1
 columns internal/designsystem/page.go f7278a3f053b 1
 columns internal/designsystem/page.go f7414b5dbad0 1
 columns internal/designsystem/page.go fa7c5352e30d 1
-columns internal/designsystem/page.go fc4875c5d5a3 1
 columns internal/designsystem/page.go fdc97acb2e04 1 the rail template line, edited in place for Fiesta's links (rastrillo-components Task 1); a template line is written whole like its neighbours
 columns internal/designsystem/page.go fe44bdea88a0 1
 columns internal/designsystem/page.go ffcdcfbc1ea4 1
-file internal/designsystem/page.go - 2897 galleryTitle, one call for the gallery's name in every document title, and the Russian topbar shell's Mobile height for its longer back-link (rastrillo-components Task 2)
+file internal/designsystem/page.go - 2882 galleryTitle, one call for the gallery's name in every document title, and the Russian topbar shell's Mobile height for its longer back-link (rastrillo-components Task 2)
 func internal/designsystem/page.go buildFamilies 97 the stat band stays on Display as four stat calls, a sample of its own (rastrillo-components Task 1, review fix)
 func internal/designsystem/page.go previewDocStyled 49
 func internal/designsystem/page.go renderDemo 54
 func internal/designsystem/page.go renderGallery 101
-func internal/designsystem/page.go renderShell 65
+func internal/designsystem/page.go renderShell 53
 names internal/designsystem/page.go buildFamilies/c 1
 names internal/designsystem/page.go buildFamilies/i 1
 names internal/designsystem/page.go buildFamilies/s 2
@@ -8582,13 +8542,10 @@ names internal/designsystem/page.go slug/s 1
 names internal/designsystem/page.go wrap/w 1
 names internal/designsystem/page.go wrapperMarkup/w 1
 columns internal/designsystem/prefs_browser_test.go 0d497174031e 1
-columns internal/designsystem/prefs_browser_test.go 11032b3c4180 1
 columns internal/designsystem/prefs_browser_test.go 1307a4c0aaf4 1
 columns internal/designsystem/prefs_browser_test.go 1cea6ae8620c 1
-columns internal/designsystem/prefs_browser_test.go 1d58e4dffdee 1
 columns internal/designsystem/prefs_browser_test.go 2057d5ac78c8 1
 columns internal/designsystem/prefs_browser_test.go 25aeff86cc0d 1
-columns internal/designsystem/prefs_browser_test.go 29f4380a1a4b 1
 columns internal/designsystem/prefs_browser_test.go 3a0f7bbb4d09 1
 columns internal/designsystem/prefs_browser_test.go 41c028aa444a 1
 columns internal/designsystem/prefs_browser_test.go 43150bee3426 1 rewritten by the chromedp v0.21 port, no wider than the recorded line it replaced
@@ -8606,10 +8563,8 @@ columns internal/designsystem/prefs_browser_test.go 6f4fd37caa4f 1
 columns internal/designsystem/prefs_browser_test.go 6fa6a33e0885 1
 columns internal/designsystem/prefs_browser_test.go 71c9dd8910ab 1 rewritten by the chromedp v0.21 port, no wider than the recorded line it replaced
 columns internal/designsystem/prefs_browser_test.go 7872fc249547 1 rewritten by the chromedp v0.21 port, no wider than the recorded line it replaced
-columns internal/designsystem/prefs_browser_test.go 7c625db5ebbe 1
 columns internal/designsystem/prefs_browser_test.go 83f65958d148 1
 columns internal/designsystem/prefs_browser_test.go 83f79c1d7b7a 1 rewritten by the chromedp v0.21 port, no wider than the recorded line it replaced
-columns internal/designsystem/prefs_browser_test.go 849efc2d0b5a 1
 columns internal/designsystem/prefs_browser_test.go 87dda0b9c6b8 1
 columns internal/designsystem/prefs_browser_test.go 8a16513f9b9a 1
 columns internal/designsystem/prefs_browser_test.go 9b199675c5ed 1
@@ -8618,7 +8573,6 @@ columns internal/designsystem/prefs_browser_test.go 9e290416c8c4 1
 columns internal/designsystem/prefs_browser_test.go 9e624b9e0854 1
 columns internal/designsystem/prefs_browser_test.go a3e5aee7d3c8 1
 columns internal/designsystem/prefs_browser_test.go a8fddf40906f 1 rewritten by the chromedp v0.21 port, no wider than the recorded line it replaced
-columns internal/designsystem/prefs_browser_test.go b7d2334c717b 1
 columns internal/designsystem/prefs_browser_test.go bb99e870283e 1
 columns internal/designsystem/prefs_browser_test.go bf3622a08010 1
 columns internal/designsystem/prefs_browser_test.go d0c638efc98d 1
@@ -8760,7 +8714,6 @@ columns internal/designsystem/samples.go 24bb26f7939a 1
 columns internal/designsystem/samples.go 24def945648e 1
 columns internal/designsystem/samples.go 255f2e64b3e7 1
 columns internal/designsystem/samples.go 257b0cc32f69 1
-columns internal/designsystem/samples.go 26980e94b348 1
 columns internal/designsystem/samples.go 277a88a47701 1
 columns internal/designsystem/samples.go 27baf5f3b9fc 1
 columns internal/designsystem/samples.go 29fa03f19993 1
@@ -8929,6 +8882,7 @@ columns internal/designsystem/samples.go dba1bb39cc51 1
 columns internal/designsystem/samples.go dc2416cac465 1
 columns internal/designsystem/samples.go ddc0c6e47f6b 1
 columns internal/designsystem/samples.go df41b104c0ab 1
+columns internal/designsystem/samples.go df9a3891c227 1 a sample blurb written whole like its neighbours (phone-shells B5)
 columns internal/designsystem/samples.go e0acf5d3dc36 1
 columns internal/designsystem/samples.go e1779c8a1d2b 1
 columns internal/designsystem/samples.go e1e472dc9b3a 1
@@ -11681,6 +11635,7 @@ columns internal/iconsets/iconsets.go 55e83cff26d5 1
 columns internal/iconsets/iconsets.go 69bd66566ccb 1
 columns internal/iconsets/iconsets.go 731efa7f1882 1
 columns internal/iconsets/iconsets.go 76c0af5a2880 1
+columns internal/iconsets/iconsets.go 77aaa0e3a905 1 Font Awesome Free 7.3.1 path data for a Fiesta 1.4.0 slug; it cannot be wrapped
 columns internal/iconsets/iconsets.go 87d31eb013f4 1
 columns internal/iconsets/iconsets.go 908381d97af8 1
 columns internal/iconsets/iconsets.go 92850212a168 1
@@ -11688,10 +11643,13 @@ columns internal/iconsets/iconsets.go 96b4914b8cc6 1
 columns internal/iconsets/iconsets.go a10f507243c3 1
 columns internal/iconsets/iconsets.go a74f8f95629d 1
 columns internal/iconsets/iconsets.go ac04f20a397d 1
+columns internal/iconsets/iconsets.go ade72e77d12f 1 Font Awesome Free 7.3.1 path data for a Fiesta 1.4.0 slug; it cannot be wrapped
 columns internal/iconsets/iconsets.go ae4da8c54204 1
 columns internal/iconsets/iconsets.go b50a30a0bccb 1
 columns internal/iconsets/iconsets.go bd6024200b4f 1
+columns internal/iconsets/iconsets.go bdbdffcfc4d8 1 Font Awesome Free 7.3.1 path data for a Fiesta 1.4.0 slug; it cannot be wrapped
 columns internal/iconsets/iconsets.go cf0d95453d1b 1
+columns internal/iconsets/iconsets.go d8338721f1ad 1 Font Awesome Free 7.3.1 path data for a Fiesta 1.4.0 slug; it cannot be wrapped
 columns internal/iconsets/iconsets.go e11abe971b33 1
 columns internal/iconsets/iconsets.go e571c820d3ff 1
 columns internal/iconsets/iconsets.go e5d2b11c250b 1
@@ -18969,17 +18927,14 @@ names skillmd_test.go TestSkillStaysWithinBudget/s 1
 names skillmd_test.go TestSkillTeachesTheLocalizerAndCurrencyContract/s 2
 names skillmd_test.go skillFiles/b 1
 names skillmd_test.go skillFiles/p 1
-columns speculation.go ff3d3add1de8 1
 names speculation.go serveSpeculationRules/h 1
 names speculation.go serveSpeculationRules/w 1
 columns speculation_test.go 0bda5ebd5e38 1
 columns speculation_test.go 25ec6eaab346 1
 columns speculation_test.go 3b3e0ea05821 1
-columns speculation_test.go 3b42c5a904fa 1
 columns speculation_test.go 3ff5a775218f 1
 columns speculation_test.go 4276268394bb 1
 columns speculation_test.go 460226611a38 1
-columns speculation_test.go 47de26aa7785 1
 columns speculation_test.go 4860d23af3e2 1
 columns speculation_test.go 604d53218cf0 1
 columns speculation_test.go 62ceb36dff93 1
@@ -19945,7 +19900,6 @@ columns ui/card_browser_test.go a02ba8c741f1 1
 columns ui/card_browser_test.go a77c97be77d1 1
 columns ui/card_browser_test.go a900cf2fa4e9 1
 columns ui/card_browser_test.go a986199c085e 1
-columns ui/card_browser_test.go ab3c04312524 1
 columns ui/card_browser_test.go aba91b864f82 1
 columns ui/card_browser_test.go b50bda3ec7f2 1
 columns ui/card_browser_test.go b7ade64e2b2b 1
@@ -21448,13 +21402,11 @@ columns ui/index_browser_test.go 1fad925c8975 1 rewritten by the chromedp v0.21 
 columns ui/index_browser_test.go 24c96156eee6 1
 columns ui/index_browser_test.go 25adbcb8cd84 1
 columns ui/index_browser_test.go 26e6119780a8 1
-columns ui/index_browser_test.go 2726dde15ea4 1
 columns ui/index_browser_test.go 2c6703fc9e90 1
 columns ui/index_browser_test.go 2c7ba0174efb 1
 columns ui/index_browser_test.go 2c8208dd2c6a 1
 columns ui/index_browser_test.go 2e7290160f20 1 rewritten by the chromedp v0.21 port, no wider than the recorded line it replaced
 columns ui/index_browser_test.go 2f4f9b489389 1
-columns ui/index_browser_test.go 30c782716c68 1
 columns ui/index_browser_test.go 31bc52df829c 1
 columns ui/index_browser_test.go 32ca432e3598 1 rewritten by the chromedp v0.21 port, no wider than the recorded line it replaced
 columns ui/index_browser_test.go 3387074c8194 1
@@ -21464,7 +21416,6 @@ columns ui/index_browser_test.go 371cd268ef3b 1
 columns ui/index_browser_test.go 38ea56f50aa8 1
 columns ui/index_browser_test.go 39fffbbdadf1 1
 columns ui/index_browser_test.go 442630836abb 1
-columns ui/index_browser_test.go 46c8b8725315 1
 columns ui/index_browser_test.go 4fc50a886cd4 1
 columns ui/index_browser_test.go 509a33a99fed 2
 columns ui/index_browser_test.go 529acb604cc0 1 rewritten by the chromedp v0.21 port, no wider than the recorded line it replaced
@@ -21480,9 +21431,7 @@ columns ui/index_browser_test.go 69698e45df54 1
 columns ui/index_browser_test.go 6af348040850 1
 columns ui/index_browser_test.go 6befe83fc76e 1 rewritten by the chromedp v0.21 port, no wider than the recorded line it replaced
 columns ui/index_browser_test.go 6facc9ec5149 1
-columns ui/index_browser_test.go 706a87689247 1
 columns ui/index_browser_test.go 73956a7c5158 1
-columns ui/index_browser_test.go 778fa3ce2609 1 rewritten by the chromedp v0.21 port, no wider than the recorded line it replaced
 columns ui/index_browser_test.go 782889150b28 1
 columns ui/index_browser_test.go 7a72e5088a1f 1
 columns ui/index_browser_test.go 7f96b63da30c 1
@@ -21492,14 +21441,10 @@ columns ui/index_browser_test.go 8775fdb4a0aa 1
 columns ui/index_browser_test.go 8940982b2582 1
 columns ui/index_browser_test.go 89d3c4c5f3cf 1
 columns ui/index_browser_test.go 8b8a95411e02 1
-columns ui/index_browser_test.go 8c0bbed4dfc1 1 rewritten by the chromedp v0.21 port, no wider than the recorded line it replaced
 columns ui/index_browser_test.go 8ca19fdc9926 3
 columns ui/index_browser_test.go 966b5eb695fb 1
-columns ui/index_browser_test.go 98d871dba32f 1
-columns ui/index_browser_test.go 98e3dccfc4b3 1
 columns ui/index_browser_test.go 99abfdc79774 1 rewritten by the chromedp v0.21 port, no wider than the recorded line it replaced
 columns ui/index_browser_test.go 9f9d4771842f 1
-columns ui/index_browser_test.go a06e696a0601 1 rewritten by the chromedp v0.21 port, no wider than the recorded line it replaced
 columns ui/index_browser_test.go a0b33765be4c 1
 columns ui/index_browser_test.go a18c09b98648 1
 columns ui/index_browser_test.go a2f195769955 1
@@ -21510,7 +21455,6 @@ columns ui/index_browser_test.go b48f1cfa8d63 1
 columns ui/index_browser_test.go b5bd72a3a4dc 1
 columns ui/index_browser_test.go b6608224e299 1
 columns ui/index_browser_test.go b73ecdd53341 1
-columns ui/index_browser_test.go b81cf2e73bda 1
 columns ui/index_browser_test.go b985564ef2db 1
 columns ui/index_browser_test.go bad837e6542c 1
 columns ui/index_browser_test.go bb1ccb41db44 1
@@ -21527,13 +21471,11 @@ columns ui/index_browser_test.go ce3382c97599 1 rewritten by the chromedp v0.21 
 columns ui/index_browser_test.go ce478aeb253d 1
 columns ui/index_browser_test.go d2bb2a8d9424 1
 columns ui/index_browser_test.go d53688b7a565 1
-columns ui/index_browser_test.go d6b2ad44eeb5 1
 columns ui/index_browser_test.go da3137ef4b8f 1
 columns ui/index_browser_test.go da6a5f1cc39c 1
 columns ui/index_browser_test.go da7d8fa22481 1
 columns ui/index_browser_test.go dcf83e440c70 1
 columns ui/index_browser_test.go df7b02fdbd71 1
-columns ui/index_browser_test.go dfb4ecc15447 1
 columns ui/index_browser_test.go dfe2a70c37cd 1
 columns ui/index_browser_test.go e1c07f161734 1
 columns ui/index_browser_test.go e1c166064e46 1
@@ -21544,7 +21486,6 @@ columns ui/index_browser_test.go e5bacfb61da8 1
 columns ui/index_browser_test.go e6c9fcf890ad 1
 columns ui/index_browser_test.go e736647edf5c 1
 columns ui/index_browser_test.go e988ec3af3fd 1
-columns ui/index_browser_test.go eae84d7ec6f3 2
 columns ui/index_browser_test.go efbd4a5402b9 1
 columns ui/index_browser_test.go f375da9dad61 1
 columns ui/index_browser_test.go f53901e35001 1
@@ -22085,13 +22026,13 @@ columns ui/localefuncs.go 2e307b1681ad 1
 columns ui/localefuncs.go 409afc134bb3 1
 columns ui/localefuncs.go b30db35026d3 1
 columns ui/localefuncs.go cf2285feaf92 1
-func ui/localefuncs.go localeFuncs 104
+func ui/localefuncs.go localeFuncs 100
 names ui/localefuncs.go localeCall.arity/c 1
 names ui/localefuncs.go localeCall.arity/n 1
 names ui/localefuncs.go localeCall.key/c 1
 names ui/localefuncs.go localeCall.key/k 1
 names ui/localefuncs.go localeFuncs/a 1
-names ui/localefuncs.go localeFuncs/c 8
+names ui/localefuncs.go localeFuncs/c 7
 names ui/localefuncs.go localeFuncs/k 3
 names ui/localefuncs.go localeFuncs/o 1
 names ui/localefuncs.go localeFuncs/t 1
@@ -22198,6 +22139,7 @@ columns ui/markup_v3_browser_test.go 0e0ccb97f153 1
 columns ui/markup_v3_browser_test.go 116303cdcd0c 1
 columns ui/markup_v3_browser_test.go 150bedfe4fe9 1
 columns ui/markup_v3_browser_test.go 163c15eb941a 1
+columns ui/markup_v3_browser_test.go 1f87c5bcf522 1 the fixture writes each shell on one line, like its neighbours; the topbar index joins them (hub CI on 90503955)
 columns ui/markup_v3_browser_test.go 2193da9418b6 1
 columns ui/markup_v3_browser_test.go 21f0083976ed 1
 columns ui/markup_v3_browser_test.go 22a5c5c66be5 1
@@ -22988,7 +22930,6 @@ columns ui/profile_browser_test.go 136f37dff3f7 1
 columns ui/profile_browser_test.go 17af9d79630b 1
 columns ui/profile_browser_test.go 19c058eaeb57 1
 columns ui/profile_browser_test.go 1a30aa84b64c 1
-columns ui/profile_browser_test.go 1b7e9d24450b 1
 columns ui/profile_browser_test.go 1d0bcd631398 1 rewritten by the chromedp v0.21 port, no wider than the recorded line it replaced
 columns ui/profile_browser_test.go 21281ec1906b 1
 columns ui/profile_browser_test.go 25811e00094d 1
@@ -23001,7 +22942,6 @@ columns ui/profile_browser_test.go 2d75ca2cff8d 1
 columns ui/profile_browser_test.go 2dce90ff09f9 1
 columns ui/profile_browser_test.go 3bff8831d7c8 1
 columns ui/profile_browser_test.go 3cd71c206f7d 1
-columns ui/profile_browser_test.go 3f97f9c2b38a 1
 columns ui/profile_browser_test.go 433ca6e068ef 1
 columns ui/profile_browser_test.go 43dccae4ca57 1
 columns ui/profile_browser_test.go 43e620727a23 1
@@ -23855,7 +23795,6 @@ columns ui/shell_browser_test.go 4ebb0439352c 1
 columns ui/shell_browser_test.go 4ec54dc1e286 1
 columns ui/shell_browser_test.go 55b006e7f620 1
 columns ui/shell_browser_test.go 57655a8f1caa 1
-columns ui/shell_browser_test.go 5aaa9a651751 1
 columns ui/shell_browser_test.go 5d2fb2c272bc 5
 columns ui/shell_browser_test.go 5d5c19030191 1
 columns ui/shell_browser_test.go 5deaa2d3ee03 1
@@ -23992,7 +23931,6 @@ names ui/shell_browser_test.go cornerReading.uniform/c 1
 names ui/shell_browser_test.go stylesheets/r 2
 names ui/shell_browser_test.go stylesheets/w 2
 names ui/shell_browser_test.go vendoredScripts/w 1
-columns ui/shell_locale_test.go 085ca5d7804f 1
 columns ui/shell_locale_test.go 199d7fc339cf 1
 columns ui/shell_locale_test.go 1dcbaa407178 1
 columns ui/shell_locale_test.go 44bd9b04cba7 1
@@ -24000,7 +23938,6 @@ columns ui/shell_locale_test.go 4743aa4a3c9f 1
 columns ui/shell_locale_test.go 5bf0e0dcd0f7 1
 columns ui/shell_locale_test.go 627cc7d377f3 1
 columns ui/shell_locale_test.go 698bce994196 1
-columns ui/shell_locale_test.go b626f7db7a0d 1
 columns ui/shell_locale_test.go bbcc574d7dd5 1
 columns ui/shell_locale_test.go c0e26d8b9229 1
 columns ui/shell_locale_test.go e6410b0c7f1f 1
@@ -24011,14 +23948,10 @@ names ui/shell_locale_test.go renderShell/k 1
 names ui/shell_locale_test.go renderShell/n 1
 names ui/shell_locale_test.go renderShell/p 2
 names ui/shell_locale_test.go renderShell/v 1
-columns ui/shell_scheme_test.go 003a9501c381 1
-columns ui/shell_scheme_test.go 015293166e2c 1
-columns ui/shell_scheme_test.go 0d3a225ae31e 1
 columns ui/shell_scheme_test.go 0e0c856466bd 1
 columns ui/shell_scheme_test.go 12d2eb9b877f 1
 columns ui/shell_scheme_test.go 19177d942248 1
 columns ui/shell_scheme_test.go 19603632dc62 1
-columns ui/shell_scheme_test.go 25211a5228e3 1
 columns ui/shell_scheme_test.go 2fd2b2966444 1
 columns ui/shell_scheme_test.go 421abdd8f341 1
 columns ui/shell_scheme_test.go 42de9c94d072 1
@@ -24026,20 +23959,11 @@ columns ui/shell_scheme_test.go 503097778bbb 1
 columns ui/shell_scheme_test.go 529cf8f43fe9 1
 columns ui/shell_scheme_test.go 5bf0e0dcd0f7 1
 columns ui/shell_scheme_test.go 632517616d19 1
-columns ui/shell_scheme_test.go 671837c16fa7 1
 columns ui/shell_scheme_test.go 6a3d932908d2 1
-columns ui/shell_scheme_test.go 6fc97c6d2bcb 1
-columns ui/shell_scheme_test.go 7b40abfd41d8 1
 columns ui/shell_scheme_test.go 7ca7953fd643 1
-columns ui/shell_scheme_test.go 84fa3277da75 1
-columns ui/shell_scheme_test.go 8de7a7aebf76 1
 columns ui/shell_scheme_test.go 962b7c20f0df 1
-columns ui/shell_scheme_test.go ab515fcf66d0 1
-columns ui/shell_scheme_test.go bb8a859884af 1
 columns ui/shell_scheme_test.go bbcc574d7dd5 1
 columns ui/shell_scheme_test.go cb92b0055cbe 1
-columns ui/shell_scheme_test.go d05e984f6a5f 1
-columns ui/shell_scheme_test.go f236780d40ba 1
 columns ui/shell_scheme_test.go fb798ae3e48f 1
 names ui/shell_scheme_test.go TestForRequestCarriesTheSchemeAndThePrefix/l 1
 names ui/shell_scheme_test.go TestForRequestCarriesTheSchemeAndThePrefix/r 2
@@ -24507,7 +24431,6 @@ columns ui/sizing_browser_test.go 8b87bc9a036e 1
 columns ui/sizing_browser_test.go 8bc1a8e7359b 1
 columns ui/sizing_browser_test.go 8ecd8466f291 1
 columns ui/sizing_browser_test.go 8f19ff24b09e 1
-columns ui/sizing_browser_test.go 90263e897369 1
 columns ui/sizing_browser_test.go 9242577335b5 1
 columns ui/sizing_browser_test.go 942d0b58ba5c 1
 columns ui/sizing_browser_test.go 9c72143a4942 1
@@ -24589,7 +24512,6 @@ names ui/sizing_browser_test.go TestTextControlsAreSixteenPixelsOnSmallOrTouchSc
 names ui/sizing_browser_test.go TestTheCalendarDocksAndItsDaysAreTaps/c 2
 names ui/sizing_browser_test.go TestTheCalendarDocksAndItsDaysAreTaps/w 1
 names ui/sizing_browser_test.go TestTheFloorChangesNothingButSizeOnADesktop/b 1
-names ui/sizing_browser_test.go TestTheFloorChangesNothingButSizeOnADesktop/d 1
 names ui/sizing_browser_test.go TestTheFloorChangesNothingButSizeOnADesktop/g 1
 names ui/sizing_browser_test.go TestTheFloorChangesNothingButSizeOnADesktop/i 1
 names ui/sizing_browser_test.go TestTheFloorChangesNothingButSizeOnADesktop/p 1
@@ -24627,8 +24549,10 @@ columns ui/sizing_fixture_test.go 58d11fea8cd1 1
 columns ui/sizing_fixture_test.go 649a988fc802 1
 columns ui/sizing_fixture_test.go 66a7f09a65c8 1
 columns ui/sizing_fixture_test.go 67d1f12739d9 1
+columns ui/sizing_fixture_test.go 6e7bcf6f478d 1 a 0.37 legacy fixture written whole like the legacy-drawer line beside it (phone-shells B5)
 columns ui/sizing_fixture_test.go 728f045f1ce9 1
 columns ui/sizing_fixture_test.go 8e27cc4585f7 1
+columns ui/sizing_fixture_test.go 9025949e3284 1 a 0.37 legacy fixture written whole like the legacy-drawer line beside it (phone-shells B5)
 columns ui/sizing_fixture_test.go 91549564fba7 1
 columns ui/sizing_fixture_test.go 956ac7d1a5d5 1
 columns ui/sizing_fixture_test.go 9aee50a67822 1
@@ -24788,33 +24712,35 @@ names ui/stageart_test.go TestStageArtIsSmallDecorativeAndPaintedOnlyByCSS/m 1
 names ui/stageart_test.go TestStageShellCarriesTheBackdropSlot/b 1
 names ui/stageart_test.go TestStageShellCarriesTheBackdropSlot/p 1
 columns ui/styleguide.go 146f71914ee8 1
+columns ui/styleguide.go 21d2f28b07fa 1 Fiesta 1.4.0's shell example markup, copied whole as the sample (phone-shells B5)
 columns ui/styleguide.go 2f936ca33f7f 1
 columns ui/styleguide.go 3ae9c1a2450a 1
+columns ui/styleguide.go 3d96ce6aa568 1 Fiesta 1.4.0's shell example markup, copied whole as the sample (phone-shells B5)
 columns ui/styleguide.go 4111e6ce1207 1
 columns ui/styleguide.go 462bb26778e8 1
 columns ui/styleguide.go 4a6d958eaff1 1
-columns ui/styleguide.go 4b790991b066 1
 columns ui/styleguide.go 520488f44dc7 1
+columns ui/styleguide.go 5478eeefd506 1 Fiesta 1.4.0's shell example markup, copied whole as the sample (phone-shells B5)
 columns ui/styleguide.go 575cd1e7126f 1
 columns ui/styleguide.go 58a2ecfc20fa 1
-columns ui/styleguide.go 7912300046ac 1
-columns ui/styleguide.go 791ef61fc89e 1
-columns ui/styleguide.go 8f6ce98d49c0 1
-columns ui/styleguide.go 945c174eaf16 1
 columns ui/styleguide.go a1e0388293ef 1
 columns ui/styleguide.go a7cfe65b416c 1
 columns ui/styleguide.go aee01de51ca9 1
+columns ui/styleguide.go b3b00fef5409 1 Fiesta 1.4.0's shell example markup, copied whole as the sample (phone-shells B5)
 columns ui/styleguide.go c153e29b174a 1
 columns ui/styleguide.go c3194aa1718f 1
 columns ui/styleguide.go c76d2e08048b 1
-columns ui/styleguide.go d93c5206b00e 1
 columns ui/styleguide.go da8acb10beb5 1
 columns ui/styleguide.go dda064bec0fa 1
 columns ui/styleguide.go e07fb1f74378 1
+columns ui/styleguide.go e2f3d24b8113 1 Fiesta 1.4.0's shell example markup, copied whole as the sample (phone-shells B5)
+columns ui/styleguide.go e3e87ef52b15 1 Fiesta 1.4.0's shell example markup, copied whole as the sample (phone-shells B5)
 columns ui/styleguide.go e7e6600a97b8 1
 columns ui/styleguide.go e8eb2ff76156 1
+columns ui/styleguide.go f0993d7b84d9 1 Fiesta 1.4.0's shell example markup, copied whole as the sample (phone-shells B5)
 columns ui/styleguide.go f4c0f107af95 1
 columns ui/styleguide.go f7f8d5f76d8b 1
+columns ui/styleguide.go fa52059a461f 1 Fiesta 1.4.0's shell example markup, copied whole as the sample (phone-shells B5)
 names ui/styleguide.go Styleguide/k 1
 names ui/styleguide.go Styleguide/v 1
 columns ui/styleguide_button_test.go 0065b463c68e 1
@@ -25121,9 +25047,8 @@ columns ui/ui.go c3c63127b8fa 1
 columns ui/ui.go c3c8287e95c6 1
 columns ui/ui.go d1dbb090f535 1
 columns ui/ui.go d912663cc928 1
-file ui/ui.go - 465 raised from 460 by Fiesta part 2: the docs say fiesta.js does what rastrillo.js no longer does, that the stylesheets are Fiesta's, and where the date script's words come from
+file ui/ui.go - 464 raised from 460 by Fiesta part 2: the docs say fiesta.js does what rastrillo.js no longer does, that the stylesheets are Fiesta's, and where the date script's words come from
 names ui/ui.go Layout/b 1
-columns ui/ui_test.go 03fc6982a9d4 1
 columns ui/ui_test.go 0417a973a256 1
 columns ui/ui_test.go 0522d17997b0 1
 columns ui/ui_test.go 053111c5bf1c 1
@@ -25154,7 +25079,6 @@ columns ui/ui_test.go 11aab907c96a 1
 columns ui/ui_test.go 11da2f28d31f 1
 columns ui/ui_test.go 12b78aa7f3df 1
 columns ui/ui_test.go 13cb081cffaa 1
-columns ui/ui_test.go 152c47a03054 1
 columns ui/ui_test.go 1741428fa1d9 1
 columns ui/ui_test.go 181ae890b578 1
 columns ui/ui_test.go 181eae1a3dfc 1
@@ -25199,12 +25123,10 @@ columns ui/ui_test.go 2db4e04ab1ca 1
 columns ui/ui_test.go 2e2dd087b2a0 1
 columns ui/ui_test.go 2e567ea4fec1 1
 columns ui/ui_test.go 2e8d797002c8 1
-columns ui/ui_test.go 2eb0319b848c 1
 columns ui/ui_test.go 2ebeb0137e43 1
 columns ui/ui_test.go 2f0d9016ec82 1
 columns ui/ui_test.go 2f32a8d0adbc 1
 columns ui/ui_test.go 30295c013a1f 1
-columns ui/ui_test.go 3067d4fb4c7f 1
 columns ui/ui_test.go 306e5e41fa49 1
 columns ui/ui_test.go 30718411f761 1
 columns ui/ui_test.go 30748a68c267 1
@@ -25225,8 +25147,6 @@ columns ui/ui_test.go 38d6c64a0c31 1
 columns ui/ui_test.go 3958942c7ad3 1
 columns ui/ui_test.go 395e184be8ed 1
 columns ui/ui_test.go 3b7a4656f98c 1
-columns ui/ui_test.go 3c1bcf6f4e76 1
-columns ui/ui_test.go 3c693671e9fa 1
 columns ui/ui_test.go 3e2a42bc8ce3 1
 columns ui/ui_test.go 3e760081026b 1
 columns ui/ui_test.go 3efb96cb765c 1
@@ -25292,10 +25212,8 @@ columns ui/ui_test.go 629f5e95d68b 1
 columns ui/ui_test.go 62d77e1a5e69 1
 columns ui/ui_test.go 642149c9cab2 1
 columns ui/ui_test.go 6450efdc2ff3 1
-columns ui/ui_test.go 64536f7a8118 1
 columns ui/ui_test.go 6455b16f4a1b 1
 columns ui/ui_test.go 646f15a39e82 1
-columns ui/ui_test.go 64ce3dd1a5cb 1 a shell's overridable block names, one list per shell, gained live-head and region:notice
 columns ui/ui_test.go 662be29079b6 1
 columns ui/ui_test.go 66448db3edb9 1
 columns ui/ui_test.go 66558c061b3e 1
@@ -25322,17 +25240,14 @@ columns ui/ui_test.go 6c32bc29c7a1 1
 columns ui/ui_test.go 6d849d95d604 1
 columns ui/ui_test.go 6e0b46f1d208 1
 columns ui/ui_test.go 6e19cc891add 1
-columns ui/ui_test.go 6e6c5640e5b5 1
 columns ui/ui_test.go 6e9b82942e42 1
 columns ui/ui_test.go 6ed58a6436ec 1
 columns ui/ui_test.go 709ccbcf3f5f 1
 columns ui/ui_test.go 713135228a74 1
-columns ui/ui_test.go 713e279f03b2 1 a shell's overridable block names, one list per shell, gained live-head and region:notice
 columns ui/ui_test.go 71402f0424cb 1
 columns ui/ui_test.go 71980589d6c4 1
 columns ui/ui_test.go 71c10818bbec 1
 columns ui/ui_test.go 71d39cd506b6 2
-columns ui/ui_test.go 71d3a470aaf9 1
 columns ui/ui_test.go 72593c00ba88 1
 columns ui/ui_test.go 72d66aec91ac 1
 columns ui/ui_test.go 73775592ae19 1
@@ -25362,7 +25277,6 @@ columns ui/ui_test.go 7e5a689cb110 1
 columns ui/ui_test.go 8015c41def65 1
 columns ui/ui_test.go 80b45f4bb52b 1
 columns ui/ui_test.go 8112586a6626 1
-columns ui/ui_test.go 81b9ef754d50 1
 columns ui/ui_test.go 81ccff2071e5 1
 columns ui/ui_test.go 82182abf7f70 1
 columns ui/ui_test.go 822751e93a3e 1
@@ -25370,11 +25284,8 @@ columns ui/ui_test.go 82439984f51a 1
 columns ui/ui_test.go 825446dc8ba5 1
 columns ui/ui_test.go 82676bf92ed9 1
 columns ui/ui_test.go 832bea504c1a 1
-columns ui/ui_test.go 8365d1df0476 1
 columns ui/ui_test.go 836a915ae3a4 1
 columns ui/ui_test.go 84c97eed2c16 1
-columns ui/ui_test.go 84d63c0c9e9a 1
-columns ui/ui_test.go 86912b4e523f 1
 columns ui/ui_test.go 8730bfa2f63f 1
 columns ui/ui_test.go 875e318af4a6 1
 columns ui/ui_test.go 87bb482517d3 1
@@ -25382,7 +25293,6 @@ columns ui/ui_test.go 87ff22a45f3e 1
 columns ui/ui_test.go 88776300b791 1
 columns ui/ui_test.go 88c23b789fc3 1
 columns ui/ui_test.go 8930075664de 1
-columns ui/ui_test.go 8a7cdb260b03 1
 columns ui/ui_test.go 8a8403cf377d 1
 columns ui/ui_test.go 8aa06d06cedf 1
 columns ui/ui_test.go 8b74c85f4832 1
@@ -25390,7 +25300,6 @@ columns ui/ui_test.go 8c9445df59a1 1
 columns ui/ui_test.go 8ca309474b2b 1
 columns ui/ui_test.go 8cda15ad3f02 1
 columns ui/ui_test.go 8ce6ea82f92a 1
-columns ui/ui_test.go 8d195f6f2f06 1
 columns ui/ui_test.go 8d957fb0b59f 1 a shell's overridable block names, one list per shell, gained live-head and region:notice
 columns ui/ui_test.go 8dd617a405cd 1
 columns ui/ui_test.go 8ddbc963793e 1
@@ -25399,7 +25308,6 @@ columns ui/ui_test.go 8f5a6dc4c4b0 1
 columns ui/ui_test.go 9098d8680ebd 1
 columns ui/ui_test.go 910ed6a47fb4 1
 columns ui/ui_test.go 9114550c9789 1
-columns ui/ui_test.go 91c5da405a71 1
 columns ui/ui_test.go 920aaef4ff0a 1
 columns ui/ui_test.go 923d5b31d599 1
 columns ui/ui_test.go 93c01130301a 1
@@ -25426,15 +25334,12 @@ columns ui/ui_test.go 9de524aa4f5f 1
 columns ui/ui_test.go 9de6b91d9941 1
 columns ui/ui_test.go 9df859c93ddf 1
 columns ui/ui_test.go 9e025a448b3a 1
-columns ui/ui_test.go 9eb818723db5 1
-columns ui/ui_test.go 9f2ad265cabf 1
 columns ui/ui_test.go a06a933f206e 1
 columns ui/ui_test.go a09b3d6a7fdb 1
 columns ui/ui_test.go a1ffcc63373a 2
 columns ui/ui_test.go a2cea0a6b300 1
 columns ui/ui_test.go a31277d20db2 1
 columns ui/ui_test.go a3b9d2d08c14 1
-columns ui/ui_test.go a46341672d93 1
 columns ui/ui_test.go a7bb571a6861 1
 columns ui/ui_test.go a7cc36d5e12b 1
 columns ui/ui_test.go a85510284fe6 2
@@ -25461,7 +25366,6 @@ columns ui/ui_test.go b322313e5b0e 1
 columns ui/ui_test.go b3aa7a13757d 1
 columns ui/ui_test.go b6902a8f5784 1
 columns ui/ui_test.go b6aa03d24d12 1
-columns ui/ui_test.go b6e8b67352dd 1
 columns ui/ui_test.go b851564dc262 1
 columns ui/ui_test.go b8dc56c786fa 1
 columns ui/ui_test.go b99287167674 1
@@ -25486,7 +25390,6 @@ columns ui/ui_test.go c261d6b9d6b4 1
 columns ui/ui_test.go c2ad30379389 1
 columns ui/ui_test.go c2fa9b55c488 1
 columns ui/ui_test.go c413c3c04ad6 1
-columns ui/ui_test.go c4a647786094 1
 columns ui/ui_test.go c51905334fed 1
 columns ui/ui_test.go c5fe9fb8e543 1
 columns ui/ui_test.go c637ca1636c0 1
@@ -25497,13 +25400,11 @@ columns ui/ui_test.go c7d4867e1333 1
 columns ui/ui_test.go c98464ab8526 1
 columns ui/ui_test.go ca084d3664ed 1
 columns ui/ui_test.go ca52b017183a 1
-columns ui/ui_test.go cc50d5da964a 1
 columns ui/ui_test.go cd3a55bcec0d 1
 columns ui/ui_test.go cda3bcdb1e0d 1
 columns ui/ui_test.go cda6f0877e10 1
 columns ui/ui_test.go ce00faee2460 1
 columns ui/ui_test.go ce773c1f5333 1
-columns ui/ui_test.go cebc617bcc23 1
 columns ui/ui_test.go cf5c4603011f 1
 columns ui/ui_test.go cfaebf8f4a7c 1
 columns ui/ui_test.go cfccabc848f7 1
@@ -25516,13 +25417,11 @@ columns ui/ui_test.go d47c1958c7fd 1
 columns ui/ui_test.go d4f69ce8bdc6 1
 columns ui/ui_test.go d50ccfeaa85f 1
 columns ui/ui_test.go d68cbc943a32 1
-columns ui/ui_test.go d74975f8ee0c 1
 columns ui/ui_test.go d79aa9b59b95 1
 columns ui/ui_test.go d8030e9803fa 1
 columns ui/ui_test.go d89a70ebb2a6 2
 columns ui/ui_test.go d983a03d468b 1
 columns ui/ui_test.go da800dce5c09 1
-columns ui/ui_test.go db87a6cb5210 1
 columns ui/ui_test.go dc3ee92c90a3 1
 columns ui/ui_test.go dc489964da6b 1
 columns ui/ui_test.go dcb6205903b7 1
@@ -25534,7 +25433,6 @@ columns ui/ui_test.go de16af963f17 1
 columns ui/ui_test.go de40407004c7 1
 columns ui/ui_test.go de54e162743e 1
 columns ui/ui_test.go df3b5c30570f 1
-columns ui/ui_test.go df803323933f 1
 columns ui/ui_test.go e02dfd860fa2 1
 columns ui/ui_test.go e05f60ffa626 1
 columns ui/ui_test.go e0a4dbf9d447 1
@@ -25543,7 +25441,6 @@ columns ui/ui_test.go e2ef3404b019 1
 columns ui/ui_test.go e2f0e000b20c 1
 columns ui/ui_test.go e31eea546798 1
 columns ui/ui_test.go e399e6fd6f9f 1
-columns ui/ui_test.go e45f45af165e 1
 columns ui/ui_test.go e46c767fcc68 2
 columns ui/ui_test.go e4c85c01a798 1
 columns ui/ui_test.go e4ccc53bf0b8 1
@@ -25557,7 +25454,6 @@ columns ui/ui_test.go ec4a94dc8410 1
 columns ui/ui_test.go ed4b4b368a05 1
 columns ui/ui_test.go ed4fcad36148 1
 columns ui/ui_test.go edb31d0bc176 1
-columns ui/ui_test.go eeaa16c33328 1
 columns ui/ui_test.go ef9f48ecb8ba 1
 columns ui/ui_test.go f00f36c26dfc 1
 columns ui/ui_test.go f09a8293e2ae 1
@@ -25570,7 +25466,6 @@ columns ui/ui_test.go f378e9db74cf 1
 columns ui/ui_test.go f3d26829bd67 1
 columns ui/ui_test.go f410618c00b2 1
 columns ui/ui_test.go f4ad03f6a0f5 1
-columns ui/ui_test.go f4efe645cde3 1 a shell's overridable block names, one list per shell, gained live-head and region:notice
 columns ui/ui_test.go f559ebf05d72 1
 columns ui/ui_test.go f5d018615d6c 1
 columns ui/ui_test.go f6296b2217ec 1
@@ -25580,7 +25475,6 @@ columns ui/ui_test.go f6d68475b8c6 1
 columns ui/ui_test.go f6e8f257e680 1
 columns ui/ui_test.go f786d0c9e07f 1
 columns ui/ui_test.go f8e255e57e68 1
-columns ui/ui_test.go f91b675b4cc2 1
 columns ui/ui_test.go f94d9f78d709 1
 columns ui/ui_test.go f9814ed76c4f 1
 columns ui/ui_test.go fa402bf196da 1
@@ -25609,7 +25503,6 @@ names ui/ui_test.go TestEveryEmbeddedThemeAndLayoutIsNamed/e 1
 names ui/ui_test.go TestEveryEmbeddedThemeAndLayoutIsNamed/f 2
 names ui/ui_test.go TestEveryEmbeddedThemeAndLayoutIsNamed/n 1
 names ui/ui_test.go TestEveryMenuDefaultsToTheSharedExclusivityGroup/c 1
-names ui/ui_test.go TestEveryMenuDefaultsToTheSharedExclusivityGroup/m 1
 names ui/ui_test.go TestEveryShellLeavesTheAppASlotInTheHead/i 1
 names ui/ui_test.go TestEveryShellLeavesTheAppASlotInTheHead/s 1
 names ui/ui_test.go TestEveryTokenReferenceIsDeclared/b 1
@@ -25640,10 +25533,6 @@ names ui/ui_test.go TestRenderedPartialsAreSelfContained/m 1
 names ui/ui_test.go TestRenderedPartialsAreSelfContained/p 1
 names ui/ui_test.go TestRenderedPartialsAreSelfContained/v 1
 names ui/ui_test.go TestTemplatesIsRootedAtPartials/e 1
-names ui/ui_test.go TestTheBarShellsCollapseBehindTheMenuIconAndTheSidebarHasNoDrawer/c 1
-names ui/ui_test.go TestTheBarShellsCollapseBehindTheMenuIconAndTheSidebarHasNoDrawer/i 1
-names ui/ui_test.go TestTheBarShellsCollapseBehindTheMenuIconAndTheSidebarHasNoDrawer/s 1
-names ui/ui_test.go TestTheConsoleMenuCarriesTheProfileForItsIndex/s 1
 names ui/ui_test.go TestTheReferenceListsEveryIdiom/k 2
 names ui/ui_test.go TestTheReferenceListsEveryIdiom/m 1
 names ui/ui_test.go TestTheShapeGateSeesInsideThePrintAndForcedBlocks/m 1

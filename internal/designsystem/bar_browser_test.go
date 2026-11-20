@@ -136,9 +136,13 @@ func TestFocusIsNeverUnderThePinnedBar(t *testing.T) {
 // own height — a gap any wider could let a strip-sized overlap fall
 // entirely between two samples — sampling roughly every 32px across the
 // strip's width at its top, middle and bottom edges. It reports every
-// sampled point where elementFromPoint lands outside the strip.
+// sampled point where elementFromPoint lands outside the strip. sel may
+// be a list: the strip is the first element it matches, and a point
+// landing in any of the others is the strip's too (the phone row's
+// name and menu are the rail's, laid over the bar).
 const stripBadJS = `((sel) => {
   const strip = document.querySelector(sel);
+  const pieces = [...document.querySelectorAll(sel)];
   const h = strip.getBoundingClientRect().height, step = Math.max(1, h / 2);
   const bad = [];
   for (let y = 0; y < document.documentElement.scrollHeight; y += step) {
@@ -147,7 +151,9 @@ const stripBadJS = `((sel) => {
     for (const yy of [r.top + 2, (r.top + r.bottom) / 2, r.bottom - 2]) {
       for (let x = r.left; x <= r.right; x += 32) {
         const hit = document.elementFromPoint(x, yy);
-        if (!hit || !strip.contains(hit)) bad.push({X: Math.round(x), Y: Math.round(yy), Hit: hit ? hit.tagName + "." + hit.className : "nothing"});
+        if (!hit || !pieces.some(p => p.contains(hit))) bad.push({
+          X: Math.round(x), Y: Math.round(yy),
+          Hit: hit ? hit.tagName + "." + hit.className : "nothing"});
       }
     }
   }
@@ -199,8 +205,9 @@ func evalStripPoints(t *testing.T, ctx context.Context, where, js, selector stri
 }
 
 // Nothing in the content paints over the pinned chrome: at 1440px the
-// bar, and at 390px the shell's back strip, are what elementFromPoint
-// finds at their top, middle and bottom edges, everywhere down a page
+// bar, and at 390px the shell's header row (its bar, and the name and
+// display settings menu laid over it), are what elementFromPoint finds
+// at their top, middle and bottom edges, everywhere down a page
 // of positioned boxes and transformed frames. A second pass raises
 // every <main> heading to z-index: 11, above the strip's 10, and
 // checks that every sampled point a heading's own box covers is now
@@ -208,13 +215,15 @@ func evalStripPoints(t *testing.T, ctx context.Context, where, js, selector stri
 // a coarser "any heading somewhere near this step" check missed a
 // heading that only grazed the strip's edge at a few scroll positions.
 func TestNothingPaintsOverTheBarOrTheBackStrip(t *testing.T) {
+	const phoneRow = "[rst-shell-bar], .ds-rail > [rst-shell-brand], " +
+		".ds-rail > .ds-prefs"
 	rig := harness.New(t, func(string) http.Handler { return treeHandler(t) })
 	ctx, cancel := context.WithTimeout(rig.Context(), 240*time.Second)
 	defer cancel()
 	for _, c := range []struct {
 		w     int64
 		strip string
-	}{{1440, ".ds-top"}, {390, "[rst-shell-back]"}} {
+	}{{1440, ".ds-top"}, {390, phoneRow}} {
 		where := fmt.Sprintf("form at %dpx", c.w)
 		if err := chromedp.Do(ctx, chromedp.EmulateViewport(c.w, 844),
 			chromedp.Navigate(rig.Origin+pageHref(mountPath, "day", "en", fileOf("form"))),

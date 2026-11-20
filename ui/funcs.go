@@ -37,11 +37,11 @@ type config struct {
 // Both functions are taken because neither can be derived from the
 // other: assets is the <head> markup cdn and js delivery need, and an app
 // that supplied only icon would leave those two modes silently broken. A
-// nil for either leaves the framework default in place.
+// nil, or a slug icon draws as "", gets the framework's (iconfallback.go).
 func WithIcons(icon func(string) template.HTML, assets func() template.HTML) Option {
 	return func(c *config) {
 		if icon != nil {
-			c.icon = icon
+			c.icon = iconOrFramework(icon)
 		}
 		if assets != nil {
 			c.assets = assets
@@ -123,8 +123,8 @@ func WithT(t func(key string, args ...any) string) Option {
 //
 //	{{with safeHref .Site}}<a href="{{.}}" rel="noopener noreferrer">{{displayURL .}}</a>{{end}}
 //
-// T, Tf, Tbdi, number, displayValue, dateWords, money, actor and date
-// (LocaleFuncs) take an optional leading $L, the request's *Localizer:
+// T, Tf, Tbdi, Taround, number, displayValue, dateWords, money, actor
+// and date (LocaleFuncs) take an optional leading $L, the request's *Localizer:
 // {{T $L "key"}} uses that localizer's catalog and formatting locale.
 // The form is decided by the first argument's type, so the legacy
 // {{T "key"}} and a $L that is nil (the data carried no L) both answer
@@ -149,7 +149,7 @@ func WithT(t func(key string, args ...any) string) Option {
 // a page at the root renders as it always did.
 //
 // An app is free to add its own entries on top; it must not drop these
-// twenty-eight. The shipped partials and shells stop parsing without
+// thirty. The shipped partials and shells stop parsing without
 // most of them, and the docs promise the rest.
 func Funcs(opts ...Option) template.FuncMap {
 	c := config{

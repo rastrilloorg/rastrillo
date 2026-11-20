@@ -126,6 +126,7 @@ const DefaultMount = "/components"
 //	<theme>/<locale>/shells/<shell>.html  one full-page demo per shell, and
 //	<theme>/<locale>/shells/<shell>-page.html  a section page for the sidebar
 //	                                      and console
+//	<theme>/<locale>/shells/topbar-menu.html  the topbar's Menu page
 //	tokens.<hash>.css theme-<theme>.<hash>.css shell.<hash>.css
 //	                                      the stylesheets, once each
 //	rastrillo.<hash>.js busy.<hash>.js shell.<hash>.js

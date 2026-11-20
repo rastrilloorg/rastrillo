@@ -87,6 +87,16 @@ func scanTreeForWords(
 	}
 }
 
+// ordinaryProse are lines in files Rastrillo copies from Fiesta, which it
+// does not edit, where a brief's word is the plain English verb or noun
+// and says nothing of the brief's app. Each key is a fragment of the line,
+// each value why the line is allowed.
+var ordinaryProse = map[string]string{
+	"width of their own to lend, and they take the row's": "" +
+		"Fiesta's tokens.css: \"lend\" the verb, in a comment about " +
+		"the up link, not the lending brief",
+}
+
 func scanForWords(t *testing.T, pattern *regexp.Regexp, path, label string) {
 	t.Helper()
 	file, err := os.Open(path)
@@ -97,7 +107,12 @@ func scanForWords(t *testing.T, pattern *regexp.Regexp, path, label string) {
 	scanner := bufio.NewScanner(file)
 	scanner.Buffer(nil, 1<<24)
 	for number := 1; scanner.Scan(); number++ {
-		if found := pattern.FindString(scanner.Text()); found != "" {
+		line := scanner.Text()
+		allowed := false
+		for fragment := range ordinaryProse {
+			allowed = allowed || strings.Contains(line, fragment)
+		}
+		if found := pattern.FindString(line); found != "" && !allowed {
 			t.Errorf("%s:%d carries the benchmark word %q",
 				label, number, found)
 		}

@@ -235,7 +235,7 @@ body {
    component that sizes its icon (the 12px caret, .rst-caret) still
    wins. Not the list grid's title: it is the row's name, text that an
    icon should follow, and the row is its target. */
-:where(.rst-btn, .rst-search, .rst-search__clear, .rst-ftok a, .rst-help, .rst-dropdown > summary, .rst-dropdown__menu a, .rst-dropdown__menu button, .rst-dropdown__menu .rst-menu-group > summary, .rst-row-menu__panel a, .rst-row-menu__panel button, .rst-locale button, .rst-scheme button, .rst-combo__option, .rst-dtp__row, .rst-dtp__pick, .rst-cal__nav, .rst-row__action, .rst-row-menu > summary, .rst-pagination > a, .rst-seg-tabs a, .rst-seg-tabs > button, .rst-side__nav a, .rst-switch, .rst-choice__cards label, .rst-tblock__head, .rst-bulkbar__close, .rst-bulkbar__escalate, .rst-modal-close, .rst-modal-panel > nav a, .rst-back-nav a, .rst-signin__providers > a, .rst-shell__brand, .rst-shell__nav a, .rst-shell__menu > summary, .rst-shell__chrome > summary, .rst-shell__account > summary, .rst-shell__back > a) .icon, :where([rst-btn], [rst-search], [rst-search-clear], [rst-ftok] a, [rst-help], [rst-dropdown] > summary, [rst-dropdown-menu] a, [rst-dropdown-menu] button, [rst-dropdown-menu] [rst-menu-group] > summary, [rst-row-menu-panel] a, [rst-row-menu-panel] button, [rst-locale] button, [rst-scheme] button, [rst-combo-option], [rst-dtp-row], [rst-dtp-pick], [rst-cal-nav], [rst-row-action], [rst-row-menu] > summary, [rst-pagination] > a, [rst-seg-tabs] a, [rst-seg-tabs] > button, [rst-side-nav] a, [rst-switch], [rst-choice-cards] label, [rst-tblock-head], [rst-bulkbar-close], [rst-bulkbar-escalate], [rst-modal-close], [rst-modal-panel] > nav a, [rst-back-nav] a, [rst-signin-providers] > a, [rst-shell-brand], [rst-shell-nav] a, [rst-shell-menu] > summary, [rst-shell-chrome] > summary, [rst-shell-account] > summary, [rst-shell-back] > a) .icon {
+:where(.rst-btn, .rst-search, .rst-search__clear, .rst-ftok a, .rst-help, .rst-dropdown > summary, .rst-dropdown__menu a, .rst-dropdown__menu button, .rst-dropdown__menu .rst-menu-group > summary, .rst-row-menu__panel a, .rst-row-menu__panel button, .rst-locale button, .rst-scheme button, .rst-combo__option, .rst-dtp__row, .rst-dtp__pick, .rst-cal__nav, .rst-row__action, .rst-row-menu > summary, .rst-pagination > a, .rst-seg-tabs a, .rst-seg-tabs > button, .rst-side__nav a, .rst-switch, .rst-choice__cards label, .rst-tblock__head, .rst-bulkbar__close, .rst-bulkbar__escalate, .rst-modal-close, .rst-modal-panel > nav a, .rst-back-nav a, .rst-signin__providers > a, .rst-shell__brand, .rst-shell__nav a, .rst-shell__menu > summary, .rst-shell__chrome > summary, .rst-shell__account > summary, .rst-shell__back > a, .rst-shell__up) .icon, :where([rst-btn], [rst-search], [rst-search-clear], [rst-ftok] a, [rst-help], [rst-dropdown] > summary, [rst-dropdown-menu] a, [rst-dropdown-menu] button, [rst-dropdown-menu] [rst-menu-group] > summary, [rst-row-menu-panel] a, [rst-row-menu-panel] button, [rst-locale] button, [rst-scheme] button, [rst-combo-option], [rst-dtp-row], [rst-dtp-pick], [rst-cal-nav], [rst-row-action], [rst-row-menu] > summary, [rst-pagination] > a, [rst-seg-tabs] a, [rst-seg-tabs] > button, [rst-side-nav] a, [rst-switch], [rst-choice-cards] label, [rst-tblock-head], [rst-bulkbar-close], [rst-bulkbar-escalate], [rst-modal-close], [rst-modal-panel] > nav a, [rst-back-nav] a, [rst-signin-providers] > a, [rst-shell-brand], [rst-shell-nav] a, [rst-shell-menu] > summary, [rst-shell-chrome] > summary, [rst-shell-account] > summary, [rst-shell-back] > a, [rst-shell-up]) .icon {
   block-size: 1rem;
   inline-size: 1rem;
 }
@@ -1792,6 +1792,76 @@ a.rst-nm:hover { color: var(--rst-accent); }
   .rst-locale button:hover:active, .rst-scheme button:hover:active, [rst-locale] button:hover:active, [rst-scheme] button:hover:active { background: var(--rst-tint-press, var(--rst-accent-soft)); }
 }
 .rst-locale button[aria-current], .rst-scheme button[aria-current], [rst-locale] button[aria-current], [rst-scheme] button[aria-current] { color: var(--rst-accent); font-weight: 600; }
+/* A row in an account card: a muted label at the start, a control at
+   the end, or under the label where the card is too narrow for both
+   (the sidebar's rail-wide card where anchors are missing). */
+.rst-menu-row, [rst-menu-row] { align-items: center; display: flex; flex-wrap: wrap; gap: var(--rst-sp-3); justify-content: space-between; min-block-size: var(--rst-target); padding-block: 0.25rem; padding-inline: 0.65rem; }
+.rst-menu-row__label, [rst-menu-row-label] { color: var(--rst-text-muted); font-size: 12.5px; }
+/* A menu in a row (the Language menu) opens IN PLACE, as the 1.3
+   card's and the sidebar profile's do: as a popover over the card it
+   covered the account's links under it. Open, the row lines up on the
+   label's and the summary's text, since the summary now has the list
+   under it. */
+.rst-menu-row:has(> .rst-dropdown[open]), [rst-menu-row]:has(> [rst-dropdown][open]) { align-items: baseline; }
+.rst-menu-row .rst-dropdown__menu, [rst-menu-row] [rst-dropdown-menu] { border: 0; box-shadow: none; inset: auto; margin: 0; max-block-size: none; min-width: 0; padding-block: 0; padding-inline: 0; position: static; }
+/* The Language row's list is a popover: a button with popovertarget
+   opens it and the browser closes it (a tap outside, Escape, or the
+   sheet's own Close), with no script. It never opens inside the card,
+   which keeps its height. The button wears the summary's face.
+
+   Below 800px the list is a sheet over the page: the fixed viewport's
+   width (a scrollbar gutter the root reserves is outside it, and would
+   clip a wider sheet), on the bottom edge, under a heading row (the
+   row's own shape: the heading at the start, Close at the end) and
+   over the overlay. No rule under the heading: a step of space, so the
+   current language's tint never touches it. From 800px it is a menu beside the card, anchored
+   to the card's box (--rst-card): at its inline start, top to top, or
+   flipped to its other side or upward where there is no room. The
+   heading row is a phone's only. Without anchor positioning the menu
+   is where the browser puts a popover, centred in the window.
+
+   An engine with no popover (Firefox 121-124) has a <details> in the
+   row too, after the button, whose summary is the same face: the
+   @supports pair shows the one mechanism the engine has, its open
+   <details> shows the list, the next sibling, in the row as the 1.3
+   card did, and every rule naming :popover-open is a rule that engine
+   drops whole. */
+.rst-menu-row > [popovertarget], [rst-menu-row] > [popovertarget] { color: var(--rst-text-muted); display: flex; font-size: 12.5px; gap: 0.3rem; inline-size: auto; padding: 0.4rem 0.6rem; white-space: nowrap; }
+.rst-dropdown__menu:has(> .rst-menu-row), [rst-dropdown-menu]:has(> [rst-menu-row]) { anchor-name: --rst-card; }
+.rst-menu-row > :popover-open, [rst-menu-row] > :popover-open { background: var(--rst-surface); border: 1px solid var(--rst-line); border-radius: 9px; box-shadow: var(--rst-shadow-pop); color: var(--rst-text); min-inline-size: 176px; padding: 0.25rem; }
+.rst-menu-row > [popover] > .rst-menu-row, [rst-menu-row] > [popover] > [rst-menu-row] { margin-block-end: var(--rst-sp-2); }
+.rst-menu-row > [popover] h2, [rst-menu-row] > [popover] h2 { font-size: var(--rst-fs-base); margin: 0; }
+.rst-menu-row [popovertargetaction=hide], [rst-menu-row] [popovertargetaction=hide] { color: var(--rst-accent); font-size: var(--rst-fs-sm); }
+@supports selector(:popover-open) {
+  .rst-menu-row > [popovertarget] + .rst-dropdown, [rst-menu-row] > [popovertarget] + [rst-dropdown] { display: none; }
+}
+@supports not selector(:popover-open) {
+  .rst-menu-row > [popovertarget], [rst-menu-row] > [popovertarget], .rst-menu-row > [popover] > .rst-menu-row, [rst-menu-row] > [popover] > [rst-menu-row], .rst-menu-row > .rst-dropdown:not([open]) + [popover], [rst-menu-row] > [rst-dropdown]:not([open]) + [popover] { display: none; }
+  .rst-menu-row > [popover], [rst-menu-row] > [popover] { flex-basis: 100%; }
+}
+@media (max-width: 799.98px) {
+  .rst-menu-row > :popover-open, [rst-menu-row] > :popover-open { border-radius: 14px 14px 0 0; border-width: 1px 0 0; inline-size: auto; inset: auto 0 0; margin: 0; max-block-size: calc(100dvh - 3rem); }
+  .rst-menu-row > :popover-open::backdrop, [rst-menu-row] > :popover-open::backdrop { background: var(--rst-overlay); }
+}
+@media (min-width: 800px) {
+  .rst-menu-row > [popover] > .rst-menu-row, [rst-menu-row] > [popover] > [rst-menu-row] { display: none; }
+  @supports (position-area: block-end) and (position-try-fallbacks: flip-block) {
+    .rst-menu-row > :popover-open, [rst-menu-row] > :popover-open { inset: auto; margin: 0 4px; position-anchor: --rst-card; position-area: inline-start span-block-end; position-try-fallbacks: flip-inline, flip-block, flip-block flip-inline; }
+  }
+}
+/* The account summary carries two faces, as the console's Menu did: the
+   avatar, and the word Account with its caret. Below 800px it is the
+   avatar alone, the end of the phone's one header row; from 800px it
+   is "Account" and the caret, the desktop bar's account menu as it
+   was. Keyed on the label, so an account menu written before it, a
+   plain "Account" summary, keeps its caret everywhere. */
+.rst-shell__account > summary .rst-shell__account-label, [rst-shell-account] > summary [rst-shell-account-label] { display: inline; }
+@media (max-width: 799.98px) {
+  .rst-shell__account > summary .rst-shell__account-label, [rst-shell-account] > summary [rst-shell-account-label], .rst-shell__account > summary:has(.rst-shell__account-label) > .rst-caret, [rst-shell-account] > summary:has([rst-shell-account-label]) > [rst-caret] { display: none; }
+}
+@media (min-width: 800px) {
+  .rst-shell__account > summary:has(.rst-shell__account-label) > .rst-shell__avatar, [rst-shell-account] > summary:has([rst-shell-account-label]) > [rst-shell-avatar] { display: none; }
+}
 /* Task 2's menu only ever held links; bulk-bar's actions menu (Task 4)
    is real submit buttons on the surrounding form, so the same panel
    needs button styling too — mirrors .rst-row-menu__panel's combined
@@ -1802,6 +1872,25 @@ a.rst-nm:hover { color: var(--rst-accent); }
   .rst-dropdown__menu button:not(.rst-danger):hover, [rst-dropdown-menu] button:not(.rst-danger):hover { background: var(--rst-tint-hover, var(--rst-accent-soft)); box-shadow: inset 0 1px 0 var(--rst-depth-hl, transparent); }
   .rst-dropdown__menu button:not(.rst-danger):hover:active, [rst-dropdown-menu] button:not(.rst-danger):hover:active { background: var(--rst-tint-press, var(--rst-accent-soft)); }
 }
+/* The icon scheme control: Light, Dark and System as three icon
+   buttons in one row, joined in a soft track with a shared edge. The
+   current one is raised the way a seg-tabs current item is. The
+   buttons are a menu row's own, not a dropdown's items, so they drop
+   the full-width block face of the scheme and menu buttons above and
+   take the icon's size. Each is drawn small, 32 by 24px, a menu row's
+   control rather than a row of buttons, and its tap is its ::after, the
+   target floor each way around its centre: the track's gap and inline
+   padding make room for those hit cells, 2px apart, so a finger's
+   44px cells never overlap and a mouse's 32px ones sit as close as the
+   segments do. The buttons name their attribute twice to outweigh the
+   floor's menu-button minimums, and the current button to outweigh the
+   card's hover and press, (0,3,1). Each selector ends in what the rules
+   above end in, so the control still answers to [rst-scheme] and to
+   the script. */
+.rst-scheme--icons, [rst-scheme~="icons"] { align-items: center; background: var(--rst-bg); border: 1px solid var(--rst-line); border-radius: 8px; display: inline-flex; flex: none; gap: calc(var(--rst-target) - 2rem + 2px); padding: 2px max(2px, (var(--rst-target) - 2rem) / 2); }
+.rst-scheme--icons.rst-scheme--icons button, [rst-scheme~="icons"][rst-scheme~="icons"] button { align-items: center; block-size: 1.5rem; color: var(--rst-text-muted); display: flex; inline-size: 2rem; justify-content: center; min-block-size: 0; min-inline-size: 0; padding: 0; position: relative; }
+.rst-scheme--icons button::after, [rst-scheme~="icons"] button::after { content: ""; inset: calc((100% - var(--rst-target)) / 2); position: absolute; }
+.rst-scheme--icons.rst-scheme--icons button[aria-current], [rst-scheme~="icons"][rst-scheme~="icons"] button[aria-current] { background: var(--rst-surface); box-shadow: inset var(--rst-hl-x) 1px 0 var(--rst-depth-hl, transparent), var(--rst-shadow-lift); color: var(--rst-text); font-weight: inherit; }
 /* The same content-box bug the inputs had, in the three menu panels:
    a full-width button inside a 0.25rem-padded panel measured 100% of
    the content box and then added its own 0.65rem of side padding, so
@@ -2015,6 +2104,25 @@ details[open] > summary > .rst-caret, details[open] > summary > [rst-caret] { tr
 @media (pointer: coarse), (max-width: 40rem) {
   .rst-input, [rst-input] { font-size: max(1rem, 1em); }
 }
+/* iOS Safari draws a date, time or datetime-local input as its own
+   native control, and while it does the control keeps a minimum width
+   of its own that width: 100% does not shrink: on a phone the field ran
+   past its column and the page scrolled sideways (discussion #46).
+   Taking the field off the native appearance gives it the width its
+   column gives every other field; a tap still opens the native picker.
+   Only the appearance: a display here would outrank the UA's [hidden]
+   and .rst-m-hide, and desktop Safari pads a block date field's inside.
+   Neither min-width: 0 nor max-width: 100% is needed: the floor block
+   below already replaces the automatic minimum, and a minimum wins over
+   a maximum anyway. Nor a height: an empty field, with no text to hold
+   it open, is held at --rst-target by the same floor.
+   check/datefield_phone_browser_test.go stands in the native minimum,
+   since no browser off an iPhone draws it. */
+input.rst-input[type="date"], input.rst-input[type="time"], input.rst-input[type="datetime-local"], input[rst-input][type="date"], input[rst-input][type="time"], input[rst-input][type="datetime-local"] { -webkit-appearance: none; appearance: none; }
+/* Off the native appearance, iOS centres the value; a field's text
+   starts at its start edge, as a text field's does. A rule of its own:
+   a browser that does not know the pseudo-element drops the rule. */
+input.rst-input::-webkit-date-and-time-value, input[rst-input]::-webkit-date-and-time-value { text-align: start; }
 /* A field sits slightly into the page: a 1px inset ambient shadow, and
    the control border, which stays --rst-line-strong at 3:1. Focus adds
    the focus edge and a 3px halo; the solid 2px outline stays, because
@@ -2929,6 +3037,9 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
 .rst-shell__profile .rst-dropdown__menu .rst-dropdown__menu, [rst-shell-profile] [rst-dropdown-menu] [rst-dropdown-menu] { border: 0; box-shadow: none; inset: auto; margin: 0; max-block-size: none; min-width: 0; padding-block: 0; padding-inline: 0.5rem 0; position: static; }
 .rst-shell__profile .rst-dropdown__menu .rst-dropdown > summary, [rst-shell-profile] [rst-dropdown-menu] [rst-dropdown] > summary { border-radius: var(--rst-radius-sm); color: var(--rst-text); font-size: var(--rst-fs-sm); justify-content: space-between; padding: 0.4rem 0.65rem; }
 .rst-shell__profile .rst-dropdown__menu .rst-dropdown > summary:hover, [rst-shell-profile] [rst-dropdown-menu] [rst-dropdown] > summary:hover { background: var(--rst-accent-soft); }
+/* In an account card's row the value (the current language) is set
+   as the row's label is; its caret is what marks it a menu. */
+.rst-dropdown__menu .rst-menu-row > .rst-dropdown > summary, [rst-dropdown-menu] [rst-menu-row] > [rst-dropdown] > summary { font-size: 12.5px; font-weight: inherit; }
 @media (min-width: 800px) {
   .rst-shell-sidebar, [rst-shell-sidebar] { display: grid; grid-template-columns: 15rem 1fr; }
   /* LEGACY: the old drawer, see above. */
@@ -3199,6 +3310,10 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
    back strip and the title are hidden by the rule just below, and
    nothing here needs undoing. ─────────────────────────────────────── */
 .rst-shell__back, [rst-shell-back], .rst-shell__title, [rst-shell-title] { display: none; }
+/* The up link, the one-row shells' way back: only a content page on a
+   phone shows it (each shell's own block). Hidden everywhere else,
+   the index included, which writes it all the same. */
+.rst-shell__up, [rst-shell-up] { display: none; }
 /* The heading's two spans: the brand, then the page's title, which
    shows only when the brand's span rendered nothing, so an app that
    blanks its brand still has a heading. Each elides on its one line.
@@ -3344,6 +3459,206 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
     .rst-shell-console--index .rst-shell__tail > .rst-shell__account::details-content, [rst-shell-console~="index"] [rst-shell-tail] > [rst-shell-account]::details-content { content-visibility: visible; }
     .rst-shell-console--index .rst-shell__tail > .rst-shell__account > .rst-dropdown__menu, [rst-shell-console~="index"] [rst-shell-tail] > [rst-shell-account] > [rst-dropdown-menu] { padding-inline: 0; }
   }
+}
+/* ── The console on one row ─────────────────────────────────────────
+   A console whose root holds [rst-shell-up] is the one-row console.
+   Below 800px its bar is the phone's one header row: the up link at
+   the inline start, the app's name at the centre, the account's avatar
+   at the inline end, and nothing else above the page. The back strip,
+   the Menu and its tail are gone: the up link is in the bar, and the
+   account card holds the person, the scheme, the language and the
+   account's links. From 800px it is the 1.3 bar less the language
+   menu, which moved into the card: the brand at the start, "Account"
+   at the end. Every rule names [rst-shell-up], in the root's :has()
+   or as the element itself, so a 1.3 console (Menu, tail, back strip)
+   matches none of them and draws as it did. The card is as tall as
+   the window less the row, as the 1.3 card was: it holds four kinds
+   of thing now, and the Language menu opens inside it.
+
+   The row is a grid of three columns, the two sides equal shares of
+   what the name leaves, each at least its own content, so the name is
+   on the row's true centre whenever it can be and moves toward the
+   shorter side only as far as it must. The name's column shrinks when
+   the three do not fit, and the name keeps to one line, cut with an
+   ellipsis, so the up link and the avatar never give up any of their
+   width to it. The up link's own label is cut with an ellipsis too,
+   at the screen's width less the avatar's column, so a long parent
+   title never pushes the avatar off the row; its aria-label keeps the
+   whole title. A name is shown whole or not at all, never cut: shell.js
+   measures it and, where it is cut, marks it hidden, which the [hidden]
+   rule takes out of the row, out of reach of a tap and of Tab. Only a
+   script can tell that a name is cut, so with scripts off the cut name
+   stays, the one place the ellipsis shows: a tap or Tab there lands on
+   a name the reader can see, never on an invisible link. */
+.rst-shell-console:has(.rst-shell__up) .rst-shell__account > .rst-dropdown__menu, [rst-shell-console]:has([rst-shell-up]) [rst-shell-account] > [rst-dropdown-menu], .rst-shell-topbar:has(.rst-shell__up) .rst-shell__account > .rst-dropdown__menu, [rst-shell-topbar]:has([rst-shell-up]) [rst-shell-account] > [rst-dropdown-menu] { box-sizing: border-box; inline-size: min(17rem, calc(100vw - 1.5rem)); max-block-size: calc(100dvh - 5rem); }
+@media (max-width: 799.98px) {
+  /* The sidebar's card only on a phone: from 800px it is the rail
+     foot's drop-up, as wide as the rail where it cannot escape it. */
+  .rst-shell-sidebar:has(.rst-shell__up) .rst-shell__profile > .rst-dropdown__menu, [rst-shell-sidebar]:has([rst-shell-up]) [rst-shell-profile] > [rst-dropdown-menu] { box-sizing: border-box; inline-size: min(17rem, calc(100vw - 1.5rem)); max-block-size: calc(100dvh - 5rem); }
+  .rst-shell-console:has(.rst-shell__up) > .rst-shell__bar, [rst-shell-console]:has([rst-shell-up]) > [rst-shell-bar], .rst-shell-topbar:has(.rst-shell__up) > .rst-shell__bar, [rst-shell-topbar]:has([rst-shell-up]) > [rst-shell-bar] { align-items: center; block-size: var(--rst-shell-strip); display: grid; gap: 0 var(--rst-sp-1); grid-template-columns: minmax(max-content, 1fr) minmax(0, max-content) minmax(max-content, 1fr); padding-inline: var(--rst-sp-1); }
+  /* A content page's row stays at the top as the back strip did,
+     above the sticky form bar (5) and below a modal's scrim (10). */
+  .rst-shell-console--page:has(.rst-shell__up) > .rst-shell__bar, [rst-shell-console~="page"]:has([rst-shell-up]) > [rst-shell-bar], .rst-shell-topbar--page:has(.rst-shell__up) > .rst-shell__bar, [rst-shell-topbar~="page"]:has([rst-shell-up]) > [rst-shell-bar] { inset-block-start: 0; position: sticky; z-index: 9; }
+  .rst-shell-console--page > .rst-shell__bar > .rst-shell__up, [rst-shell-console~="page"] > [rst-shell-bar] > [rst-shell-up], .rst-shell-sidebar--page > .rst-shell__bar > .rst-shell__up, [rst-shell-sidebar~="page"] > [rst-shell-bar] > [rst-shell-up], .rst-shell-topbar--page > .rst-shell__bar > .rst-shell__up, [rst-shell-topbar~="page"] > [rst-shell-bar] > [rst-shell-up] { border-radius: var(--rst-radius-sm); box-sizing: border-box; color: var(--rst-accent); display: block; font-size: 1rem; font-weight: 500; grid-column: 1; grid-row: 1; justify-self: start; line-height: 2.75rem; max-inline-size: calc(100vw - 5rem); min-block-size: 2.75rem; min-inline-size: var(--rst-target); overflow: hidden; padding-inline: 0.25rem 0.5rem; text-decoration: none; text-overflow: ellipsis; white-space: nowrap; }
+  .rst-shell__up > .icon, [rst-shell-up] > .icon { margin-inline-end: 0.25rem; vertical-align: middle; }
+  [dir="rtl"] .rst-shell-console--page > .rst-shell__bar > .rst-shell__up .icon, [dir="rtl"] [rst-shell-console~="page"] > [rst-shell-bar] > [rst-shell-up] .icon, [dir="rtl"] .rst-shell-sidebar--page > .rst-shell__bar > .rst-shell__up .icon, [dir="rtl"] [rst-shell-sidebar~="page"] > [rst-shell-bar] > [rst-shell-up] .icon, [dir="rtl"] .rst-shell-topbar--page > .rst-shell__bar > .rst-shell__up .icon, [dir="rtl"] [rst-shell-topbar~="page"] > [rst-shell-bar] > [rst-shell-up] .icon { transform: scaleX(-1); }
+  .rst-shell-console--page > .rst-shell__bar > .rst-shell__up:focus-visible, [rst-shell-console~="page"] > [rst-shell-bar] > [rst-shell-up]:focus-visible, .rst-shell-sidebar--page > .rst-shell__bar > .rst-shell__up:focus-visible, [rst-shell-sidebar~="page"] > [rst-shell-bar] > [rst-shell-up]:focus-visible, .rst-shell-topbar--page > .rst-shell__bar > .rst-shell__up:focus-visible, [rst-shell-topbar~="page"] > [rst-shell-bar] > [rst-shell-up]:focus-visible { outline: 2px solid var(--rst-accent); outline-offset: -2px; }
+  /* The name: the brand on a page, the title (which holds the brand)
+     on the index. One face for both, so the row does not change as the
+     slide goes between them. */
+  .rst-shell-console:has(.rst-shell__up) > .rst-shell__bar > .rst-shell__brand, [rst-shell-console]:has([rst-shell-up]) > [rst-shell-bar] > [rst-shell-brand],
+  .rst-shell-console:has(.rst-shell__up) > .rst-shell__bar > .rst-shell__title, [rst-shell-console]:has([rst-shell-up]) > [rst-shell-bar] > [rst-shell-title],
+  .rst-shell-topbar:has(.rst-shell__up) > .rst-shell__bar > .rst-shell__brand, [rst-shell-topbar]:has([rst-shell-up]) > [rst-shell-bar] > [rst-shell-brand],
+  .rst-shell-topbar:has(.rst-shell__up) > .rst-shell__bar > .rst-shell__title, [rst-shell-topbar]:has([rst-shell-up]) > [rst-shell-bar] > [rst-shell-title],
+  .rst-shell-sidebar:has(.rst-shell__up) > .rst-shell__rail > .rst-shell__brand, [rst-shell-sidebar]:has([rst-shell-up]) > [rst-shell-rail] > [rst-shell-brand],
+  .rst-shell-sidebar:has(.rst-shell__up) > .rst-shell__rail > .rst-shell__title, [rst-shell-sidebar]:has([rst-shell-up]) > [rst-shell-rail] > [rst-shell-title] { block-size: 2.75rem; color: var(--rst-text); font-size: var(--rst-fs-lg); font-weight: 650; grid-column: 2; grid-row: 1; justify-content: center; letter-spacing: normal; line-height: 2.75rem; margin: 0; min-block-size: 0; min-inline-size: 0; overflow: hidden; padding: 0; text-align: center; text-overflow: ellipsis; white-space: nowrap; }
+  .rst-shell-console--page:has(.rst-shell__up) > .rst-shell__bar > .rst-shell__brand, [rst-shell-console~="page"]:has([rst-shell-up]) > [rst-shell-bar] > [rst-shell-brand], .rst-shell-topbar--page:has(.rst-shell__up) > .rst-shell__bar > .rst-shell__brand, [rst-shell-topbar~="page"]:has([rst-shell-up]) > [rst-shell-bar] > [rst-shell-brand] { display: block; }
+  .rst-shell-console:has(.rst-shell__up) > .rst-shell__bar > .rst-shell__brand[hidden], [rst-shell-console]:has([rst-shell-up]) > [rst-shell-bar] > [rst-shell-brand][hidden],
+  .rst-shell-console:has(.rst-shell__up) > .rst-shell__bar > .rst-shell__title[hidden], [rst-shell-console]:has([rst-shell-up]) > [rst-shell-bar] > [rst-shell-title][hidden],
+  .rst-shell-topbar:has(.rst-shell__up) > .rst-shell__bar > .rst-shell__brand[hidden], [rst-shell-topbar]:has([rst-shell-up]) > [rst-shell-bar] > [rst-shell-brand][hidden],
+  .rst-shell-topbar:has(.rst-shell__up) > .rst-shell__bar > .rst-shell__title[hidden], [rst-shell-topbar]:has([rst-shell-up]) > [rst-shell-bar] > [rst-shell-title][hidden],
+  .rst-shell-sidebar:has(.rst-shell__up) > .rst-shell__rail > .rst-shell__brand[hidden], [rst-shell-sidebar]:has([rst-shell-up]) > [rst-shell-rail] > [rst-shell-brand][hidden],
+  .rst-shell-sidebar:has(.rst-shell__up) > .rst-shell__rail > .rst-shell__title[hidden], [rst-shell-sidebar]:has([rst-shell-up]) > [rst-shell-rail] > [rst-shell-title][hidden] { display: none; }
+  /* The avatar: a round 44px button, as the sidebar's profile is. */
+  .rst-shell-console:has(.rst-shell__up) > .rst-shell__bar > .rst-shell__account, [rst-shell-console]:has([rst-shell-up]) > [rst-shell-bar] > [rst-shell-account], .rst-shell-topbar:has(.rst-shell__up) > .rst-shell__bar > .rst-shell__account, [rst-shell-topbar]:has([rst-shell-up]) > [rst-shell-bar] > [rst-shell-account] { grid-column: 3; grid-row: 1; justify-self: end; margin-inline-start: 0; }
+  .rst-shell-console:has(.rst-shell__up) > .rst-shell__bar > .rst-shell__account > summary, [rst-shell-console]:has([rst-shell-up]) > [rst-shell-bar] > [rst-shell-account] > summary, .rst-shell-topbar:has(.rst-shell__up) > .rst-shell__bar > .rst-shell__account > summary, [rst-shell-topbar]:has([rst-shell-up]) > [rst-shell-bar] > [rst-shell-account] > summary { border-radius: 50%; box-sizing: border-box; color: var(--rst-text); display: inline-flex; justify-content: center; min-block-size: var(--rst-target); min-inline-size: var(--rst-target); padding: 4px; }
+  .rst-shell-console:has(.rst-shell__up) > .rst-shell__bar:has(> .rst-shell__account[open]) > .rst-shell__account > summary, [rst-shell-console]:has([rst-shell-up]) > [rst-shell-bar]:has(> [rst-shell-account][open]) > [rst-shell-account] > summary, .rst-shell-topbar:has(.rst-shell__up) > .rst-shell__bar:has(> .rst-shell__account[open]) > .rst-shell__account > summary, [rst-shell-topbar]:has([rst-shell-up]) > [rst-shell-bar]:has(> [rst-shell-account][open]) > [rst-shell-account] > summary { background: var(--rst-accent-soft); }
+  .rst-shell-console:has(.rst-shell__up) > .rst-shell__bar > .rst-shell__account > summary:focus-visible, [rst-shell-console]:has([rst-shell-up]) > [rst-shell-bar] > [rst-shell-account] > summary:focus-visible, .rst-shell-topbar:has(.rst-shell__up) > .rst-shell__bar > .rst-shell__account > summary:focus-visible, [rst-shell-topbar]:has([rst-shell-up]) > [rst-shell-bar] > [rst-shell-account] > summary:focus-visible { outline: 2px solid var(--rst-accent); outline-offset: 2px; }
+  /* CLOSING ON AN OUTSIDE TAP with scripts off, the 1.3 card's way:
+     while open the summary grows an invisible layer over the viewport,
+     under the card, and the bar is lifted above the page (45, as the
+     1.3 bar was) only while it is. The open state is read off the bar,
+     so these stay rules of the account summary the tap inventory
+     names. */
+  .rst-shell-console:has(.rst-shell__up) > .rst-shell__bar:has(> .rst-shell__account[open]) > .rst-shell__account > summary::before, [rst-shell-console]:has([rst-shell-up]) > [rst-shell-bar]:has(> [rst-shell-account][open]) > [rst-shell-account] > summary::before, .rst-shell-topbar:has(.rst-shell__up) > .rst-shell__bar:has(> .rst-shell__account[open]) > .rst-shell__account > summary::before, [rst-shell-topbar]:has([rst-shell-up]) > [rst-shell-bar]:has(> [rst-shell-account][open]) > [rst-shell-account] > summary::before { content: ""; cursor: default; inset: 0; position: fixed; z-index: 1; }
+  .rst-shell-console:has(.rst-shell__up) > .rst-shell__bar:has(> .rst-shell__account[open]), [rst-shell-console]:has([rst-shell-up]) > [rst-shell-bar]:has(> [rst-shell-account][open]), .rst-shell-topbar:has(.rst-shell__up) > .rst-shell__bar:has(> .rst-shell__account[open]), [rst-shell-topbar]:has([rst-shell-up]) > [rst-shell-bar]:has(> [rst-shell-account][open]) { z-index: 45; }
+}
+@media (max-width: 799.98px) and (hover: hover) {
+  .rst-shell-console:has(.rst-shell__up) > .rst-shell__bar > .rst-shell__account > summary:hover, [rst-shell-console]:has([rst-shell-up]) > [rst-shell-bar] > [rst-shell-account] > summary:hover, .rst-shell-topbar:has(.rst-shell__up) > .rst-shell__bar > .rst-shell__account > summary:hover, [rst-shell-topbar]:has([rst-shell-up]) > [rst-shell-bar] > [rst-shell-account] > summary:hover { background: var(--rst-accent-soft); }
+}
+/* ── The sidebar on one row ─────────────────────────────────────────
+   A sidebar whose root holds [rst-shell-up] is the one-row sidebar.
+   Below 800px it draws the console's row (above) without a bar of its
+   own to hold it: its <header rst-shell-bar> holds only the up link,
+   and the brand (the title on the index) and the rail foot's profile
+   menu are placed into the row by layout. The root is a grid of the
+   row's three columns over the page; the rail is display: contents, so
+   its children are the root's grid items; the bar spans the row as a
+   subgrid, so the up link sizes the first column as if it were one of
+   them. Nothing is copied: app blocks can carry ids.
+
+   On a content page the nav is hidden and the page is the grid's
+   second row; on the index the nav rows are, and the avatar is read
+   after them, the one recorded exception to "focus order is visual
+   order" (the rail foot is last in the rail, and moving it in the DOM
+   would change the desktop's order too). main and the index's nav span
+   all three columns, and the sides' max-content minimum would take
+   their content's least width too, so a wide table in the page would
+   widen the row past the screen: contain: inline-size leaves them no
+   width of their own to lend, and they take the row's. The up link,
+   the name's face and the hidden-name rule are the console's, above,
+   which name the sidebar too.
+
+   A content page's row stays at the top as the back strip did, and
+   since a grid item sticks only inside its grid area, each of the
+   row's three items spans every row of the grid, starts at the top
+   and is sticky there, at the strip's z-index. From 800px the bar is
+   hidden and the rail and its drop-up are 1.3's. Every rule names
+   [rst-shell-up], so a 1.3 sidebar (back strip, lifted profile) or a
+   pre-index one (drawer) matches none of them. */
+.rst-shell-sidebar > .rst-shell__bar:has(> .rst-shell__up), [rst-shell-sidebar] > [rst-shell-bar]:has(> [rst-shell-up]) { display: none; }
+@media (max-width: 799.98px) {
+  .rst-shell-sidebar:has(.rst-shell__up), [rst-shell-sidebar]:has([rst-shell-up]) { column-gap: var(--rst-sp-1); display: grid; grid-template-columns: minmax(max-content, 1fr) minmax(0, max-content) minmax(max-content, 1fr); grid-template-rows: var(--rst-shell-strip) auto; }
+  .rst-shell-sidebar > .rst-shell__bar:has(> .rst-shell__up), [rst-shell-sidebar] > [rst-shell-bar]:has(> [rst-shell-up]) { align-items: center; background: var(--rst-surface); block-size: var(--rst-shell-strip); border-block-end: 1px solid var(--rst-line); box-sizing: border-box; column-gap: var(--rst-sp-1); display: grid; grid-column: 1 / -1; grid-row: 1; grid-template-columns: subgrid; padding-inline: var(--rst-sp-1); }
+  .rst-shell-sidebar:has(.rst-shell__up) > .rst-shell__rail, [rst-shell-sidebar]:has([rst-shell-up]) > [rst-shell-rail] { display: contents; }
+  .rst-shell-sidebar:has(.rst-shell__up) > .rst-shell__rail > .rst-shell__brand, [rst-shell-sidebar]:has([rst-shell-up]) > [rst-shell-rail] > [rst-shell-brand],
+  .rst-shell-sidebar:has(.rst-shell__up) > .rst-shell__rail > .rst-shell__title, [rst-shell-sidebar]:has([rst-shell-up]) > [rst-shell-rail] > [rst-shell-title] { align-self: center; grid-column: 2; grid-row: 1; }
+  .rst-shell-sidebar--page:has(.rst-shell__up) > .rst-shell__rail > .rst-shell__brand, [rst-shell-sidebar~="page"]:has([rst-shell-up]) > [rst-shell-rail] > [rst-shell-brand] { display: block; }
+  /* The avatar at the inline end, as far in as the up link is. */
+  .rst-shell-sidebar:has(.rst-shell__up) > .rst-shell__rail > .rst-shell__rail-foot, [rst-shell-sidebar]:has([rst-shell-up]) > [rst-shell-rail] > [rst-shell-rail-foot] { align-items: center; align-self: center; block-size: auto; flex-direction: row; grid-column: 3; grid-row: 1; justify-self: end; margin: 0; margin-inline-end: var(--rst-sp-1); position: static; }
+  .rst-shell-sidebar:has(.rst-shell__up) > .rst-shell__main, [rst-shell-sidebar]:has([rst-shell-up]) > [rst-shell-main],
+  .rst-shell-sidebar--index:has(.rst-shell__up) > .rst-shell__rail > .rst-shell__nav, [rst-shell-sidebar~="index"]:has([rst-shell-up]) > [rst-shell-rail] > [rst-shell-nav] { contain: inline-size; grid-column: 1 / -1; grid-row: 2; min-inline-size: 0; }
+  /* The index's rows, where 1.3's rail padding and heading gap put
+     them. */
+  .rst-shell-sidebar--index:has(.rst-shell__up) > .rst-shell__rail > .rst-shell__nav, [rst-shell-sidebar~="index"]:has([rst-shell-up]) > [rst-shell-rail] > [rst-shell-nav] { margin: var(--rst-sp-2) var(--rst-sp-4) var(--rst-sp-5); }
+  .rst-shell-sidebar--page:has(.rst-shell__up) > .rst-shell__rail > .rst-shell__nav, [rst-shell-sidebar~="page"]:has([rst-shell-up]) > [rst-shell-rail] > [rst-shell-nav] { display: none; }
+  /* Sticky on a content page, above the sticky form bar (5) and below
+     a modal's scrim (10). The name and the avatar sit 6px down the
+     strip, centred in it, and stick there. */
+  .rst-shell-sidebar--page > .rst-shell__bar:has(> .rst-shell__up), [rst-shell-sidebar~="page"] > [rst-shell-bar]:has(> [rst-shell-up]) { align-self: start; grid-row: 1 / -1; inset-block-start: 0; position: sticky; z-index: 9; }
+  .rst-shell-sidebar--page:has(.rst-shell__up) > .rst-shell__rail > .rst-shell__brand, [rst-shell-sidebar~="page"]:has([rst-shell-up]) > [rst-shell-rail] > [rst-shell-brand],
+  .rst-shell-sidebar--page:has(.rst-shell__up) > .rst-shell__rail > .rst-shell__rail-foot, [rst-shell-sidebar~="page"]:has([rst-shell-up]) > [rst-shell-rail] > [rst-shell-rail-foot] { align-self: start; grid-row: 1 / -1; inset-block-start: calc((var(--rst-shell-strip) - 2.75rem) / 2); margin-block-start: calc((var(--rst-shell-strip) - 2.75rem) / 2); position: sticky; z-index: 9; }
+  /* Lifted while the card is open, as the console's bar is. */
+  .rst-shell-sidebar--page:has(.rst-shell__up) > .rst-shell__rail > .rst-shell__rail-foot:has(.rst-shell__profile[open]), [rst-shell-sidebar~="page"]:has([rst-shell-up]) > [rst-shell-rail] > [rst-shell-rail-foot]:has([rst-shell-profile][open]) { z-index: 45; }
+}
+/* ── The topbar on one row ──────────────────────────────────────────
+   A topbar whose root holds [rst-shell-up] is the one-row topbar, and
+   below 800px a topbar app is a tree: /menu, the index, is the nav as
+   rows; every other page is a content page one level down from its
+   row there. The row is the console's (above): its grid, its up link
+   (labelled Menu, or the page's parent), its name and its avatar are
+   the console's rules, which name the topbar too. The index rows look
+   like the sidebar's and the console's, restated below in rules of
+   their own. The nav is in the bar, between the brand and the
+   account card: on a content page it is hidden, and on the index it
+   hangs from the bar's foot, out of the row's grid, so the row stays
+   the strip's height while its nav is the page, and the shell's foot
+   is anchored under it. main and its skip link go: the page is
+   navigation. The avatar is read after the rows, the order the bar
+   writes them in, the second recorded exception to "focus order is
+   visual order". Every rule here names [rst-shell-up].
+
+   From 800px the bar is 1.3's: the brand at the start, the nav inline,
+   Account at the end. The language menu has moved into the card, and
+   the up link and the title are hidden there as everywhere else. A
+   1.3 topbar (a bare root, the Menu and its tail) has no
+   [rst-shell-up] and no view, so it matches none of these rules nor
+   the shared ones, and keeps its Menu card on a phone. */
+@media (max-width: 799.98px) {
+  .rst-shell-topbar--page:has(.rst-shell__up) > .rst-shell__bar > .rst-shell__nav, [rst-shell-topbar~="page"]:has([rst-shell-up]) > [rst-shell-bar] > [rst-shell-nav],
+  .rst-shell-topbar--index:has(.rst-shell__up) > .rst-shell__bar > .rst-shell__brand, [rst-shell-topbar~="index"]:has([rst-shell-up]) > [rst-shell-bar] > [rst-shell-brand],
+  .rst-shell-topbar--index:has(.rst-shell__up) > .rst-skip, [rst-shell-topbar~="index"]:has([rst-shell-up]) > [rst-skip],
+  .rst-shell-topbar--index:has(.rst-shell__up) > main, [rst-shell-topbar~="index"]:has([rst-shell-up]) > main { display: none; }
+  /* A content page's row is sticky, so a #fragment lands below it, as
+     the sidebar's and the console's do. html, not :root: the grammar
+     1.x's new rules are held to has none (check/selectors_test.go). */
+  html:has(.rst-shell-topbar--page .rst-shell__up), html:has([rst-shell-topbar~="page"] [rst-shell-up]) { scroll-padding-block-start: var(--rst-shell-strip); }
+  /* The index's name is its title, which holds the brand; :not([hidden])
+     so shell.js can still hide one that does not fit. */
+  .rst-shell-topbar--index:has(.rst-shell__up) > .rst-shell__bar > .rst-shell__title:not([hidden]), [rst-shell-topbar~="index"]:has([rst-shell-up]) > [rst-shell-bar] > [rst-shell-title]:not([hidden]) { align-items: center; display: flex; }
+  /* The rows hang from the bar's padding edge, so its border stays the
+     row's foot, and take the console index rail's padding. The foot is
+     anchored under them: it is the app's, and may hold links a reader
+     needs. */
+  .rst-shell-topbar--index:has(.rst-shell__up), [rst-shell-topbar~="index"]:has([rst-shell-up]) { position: relative; }
+  .rst-shell-topbar--index:has(.rst-shell__up) > .rst-shell__bar > .rst-shell__nav, [rst-shell-topbar~="index"]:has([rst-shell-up]) > [rst-shell-bar] > [rst-shell-nav] { anchor-name: --rst-topbar-rows; box-sizing: border-box; flex-direction: column; gap: 0; inset-block-start: 100%; inset-inline: 0; padding: var(--rst-sp-5) var(--rst-sp-4); position: absolute; }
+  .rst-shell-topbar--index:has(.rst-shell__up) > .rst-shell__foot, [rst-shell-topbar~="index"]:has([rst-shell-up]) > [rst-shell-foot] { inset-block-start: anchor(--rst-topbar-rows end); inset-inline: 0; position: absolute; }
+  /* The rows are the sidebar's and the console's index rows, in rules
+     of their own: theirs are 1.3's, written without :has(), and a
+     :has() selector listed beside them would take them down with it
+     where :has() is not known. */
+  .rst-shell-topbar--index:has(.rst-shell__up) > .rst-shell__bar > .rst-shell__nav > a, [rst-shell-topbar~="index"]:has([rst-shell-up]) > [rst-shell-bar] > [rst-shell-nav] > a { align-items: center; background: var(--rst-surface); border: 1px solid var(--rst-line); border-block-start-width: 0; border-radius: 0; color: var(--rst-text); display: flex; font-size: 1rem; font-weight: 450; gap: var(--rst-sp-3); min-block-size: 3rem; padding-block: 0; padding-inline: 1rem 0.75rem; }
+  .rst-shell-topbar--index:has(.rst-shell__up) > .rst-shell__bar > .rst-shell__nav > a:first-child, [rst-shell-topbar~="index"]:has([rst-shell-up]) > [rst-shell-bar] > [rst-shell-nav] > a:first-child { border-block-start-width: 1px; border-start-end-radius: var(--rst-radius); border-start-start-radius: var(--rst-radius); }
+  .rst-shell-topbar--index:has(.rst-shell__up) > .rst-shell__bar > .rst-shell__nav > a:last-child, [rst-shell-topbar~="index"]:has([rst-shell-up]) > [rst-shell-bar] > [rst-shell-nav] > a:last-child { border-end-end-radius: var(--rst-radius); border-end-start-radius: var(--rst-radius); }
+  .rst-shell-topbar--index:has(.rst-shell__up) > .rst-shell__bar > .rst-shell__nav > a::after, [rst-shell-topbar~="index"]:has([rst-shell-up]) > [rst-shell-bar] > [rst-shell-nav] > a::after { block-size: 0.5rem; border-right: 2px solid var(--rst-text-faint); border-top: 2px solid var(--rst-text-faint); content: ""; flex: none; inline-size: 0.5rem; margin-inline-start: auto; transform: rotate(45deg); }
+  [dir="rtl"] .rst-shell-topbar--index:has(.rst-shell__up) > .rst-shell__bar > .rst-shell__nav > a::after, [dir="rtl"] [rst-shell-topbar~="index"]:has([rst-shell-up]) > [rst-shell-bar] > [rst-shell-nav] > a::after { transform: rotate(-135deg); }
+  .rst-shell-topbar--index:has(.rst-shell__up) > .rst-shell__bar > .rst-shell__nav > a:hover, [rst-shell-topbar~="index"]:has([rst-shell-up]) > [rst-shell-bar] > [rst-shell-nav] > a:hover { background: var(--rst-tint-hover, var(--rst-accent-soft)); }
+  .rst-shell-topbar--index:has(.rst-shell__up) > .rst-shell__bar > .rst-shell__nav > a:active, [rst-shell-topbar~="index"]:has([rst-shell-up]) > [rst-shell-bar] > [rst-shell-nav] > a:active { background: var(--rst-tint-press, var(--rst-accent-soft)); }
+  .rst-shell-topbar--index:has(.rst-shell__up) > .rst-shell__bar > .rst-shell__nav > a:focus-visible, [rst-shell-topbar~="index"]:has([rst-shell-up]) > [rst-shell-bar] > [rst-shell-nav] > a:focus-visible { outline: 2px solid var(--rst-accent); outline-offset: -2px; }
+  .rst-shell-topbar--index:has(.rst-shell__up) > .rst-shell__bar > .rst-shell__nav > a:target, [rst-shell-topbar~="index"]:has([rst-shell-up]) > [rst-shell-bar] > [rst-shell-nav] > a:target { animation: rst-shell-flash 1.4s ease-out; }
+}
+/* An engine with no anchor positioning keeps the rows in the bar's
+   flow, under the row, and the foot under them: a taller bar, but
+   nothing out of reach. */
+@media (max-width: 799.98px) {
+  @supports not (anchor-name: --rst-topbar-rows) {
+    .rst-shell-topbar--index:has(.rst-shell__up) > .rst-shell__bar, [rst-shell-topbar~="index"]:has([rst-shell-up]) > [rst-shell-bar] { block-size: auto; grid-template-rows: var(--rst-shell-strip); }
+    .rst-shell-topbar--index:has(.rst-shell__up) > .rst-shell__bar > .rst-shell__nav, [rst-shell-topbar~="index"]:has([rst-shell-up]) > [rst-shell-bar] > [rst-shell-nav] { grid-column: 1 / -1; position: static; }
+    .rst-shell-topbar--index:has(.rst-shell__up) > .rst-shell__foot, [rst-shell-topbar~="index"]:has([rst-shell-up]) > [rst-shell-foot] { position: static; }
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rst-shell-topbar--index:has(.rst-shell__up) > .rst-shell__bar > .rst-shell__nav > a:target, [rst-shell-topbar~="index"]:has([rst-shell-up]) > [rst-shell-bar] > [rst-shell-nav] > a:target { animation: none; }
 }
 @keyframes rst-shell-flash { from { background: var(--rst-accent-soft); } }
 @media (prefers-reduced-motion: reduce) {

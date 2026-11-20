@@ -1,0 +1,142 @@
+{{define "layout"}}{{$L := localizer $}}<!doctype html>
+<html lang="{{block "lang" .}}{{$L := localizer $}}{{if $L}}{{$L.Identity}}{{else}}en{{end}}{{end}}" dir="{{block "dir" .}}{{$L := localizer $}}{{if $L}}{{$L.Dir}}{{else}}ltr{{end}}{{end}}"{{with opt $ "Scheme"}} data-theme="{{.}}"{{end}}>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<title>{{block "title" .}}Hello{{end}}</title>
+<link rel="stylesheet" href="{{path $ pageStylesheet}}">
+<link rel="stylesheet" href="{{path $ (asset "static/theme.css")}}">
+{{/* shell.css is the slide between the index and a page on a phone;
+     only the two shells that have an index link it, because the opt-in
+     it holds cannot be scoped from tokens.css. */}}
+<link rel="stylesheet" href="{{path $ (asset "static/shell.css")}}">
+<script defer src="{{path $ (asset "static/rastrillo.js")}}"></script>
+{{template "live-head" .}}
+{{/* blocking="render": shell.js types the slide in pagereveal, at the
+     first render, and a plain deferred script can run after it. An
+     engine that ignores the attribute gets an untyped cross-fade. */}}
+<script defer blocking="render" src="{{path $ (asset "static/shell.js")}}"></script>
+{{iconAssets}}
+{{/* Loads the scripts this page uses, by what its templates show: a
+     form, a menu, a field, a lit component. A live page loads them all,
+     because later content may show anything. Delete static/light.js for
+     the still design. For markup you write by hand, call needs; see
+     SKILL.md. */}}
+{{range pageScripts}}<script defer src="{{path $ (asset .)}}"></script>{{end}}
+{{/* head is the app's own slot in <head>: a favicon, a meta tag, one
+     more stylesheet. Empty by default, last in the head so an app's
+     own CSS wins over the framework's, and the only block in the
+     shells that is not chrome. */}}
+{{block "head" .}}{{end}}
+</head>
+<body>
+{{/* The console shell — a brand-and-account bar across the top AND a
+     navigation rail down the side, which is the shape most admin
+     consoles are and the one the other three shells could not make.
+     topbar is this without the rail; sidebar is this without the bar.
+
+     THE TWO CHROMES, ONE PATTERN EACH. Below 800px the bar's tail (the
+     account and language menus) folds behind the one <details
+     rst-shell-menu>, which opens as a card over the page, like the
+     topbar's. The rail is an index page, like the sidebar's: the page
+     says which view it is with the view block and names its way back
+     with up, and the back strip sits under the bar. The rail used to be
+     gated on the same [open] as the tail through :has(); tokens.css keeps
+     that rule for old layouts, scoped to a root with no view.
+
+     NOTHING MOVES. The DOM order here — bar, then back strip, then rail,
+     then main — is the order at 320px and the order at 1280px. Grid
+     places the bar across the top and the rail beside the page at
+     width; below 800px each view shows a subset of that order, never a
+     reordering of it, and the open card follows its Menu summary in
+     the bar where the tail already is. So focus order matches
+     visual order at every width and in both directions of the
+     language, which is the thing an `order` or a `grid-row` shuffle
+     would have quietly cost. */}}
+<div rst-shell-console="{{block "view" .}}page{{end}}">
+<a rst-skip href="#main">{{T $L "rastrillo.ui.shell_skip"}}</a>
+<header rst-shell-bar>
+{{/* The phone index's heading, in the bar because on the index the bar
+     is the header row: the app's name at the start, the avatar at the
+     end. The brand, then the page's title for an app that blanks its
+     brand (tokens.css shows the title only when the brand's span is
+     :empty). Executed again rather than redefined, so an id inside the
+     brand would appear twice. Shown only on the phone index, where the
+     bar's own brand gives way to it, so no page exposes two h1s. */}}
+<h1 rst-shell-title><span>{{template "brand" .}}</span><span>{{template "title" .}}</span></h1>
+{{block "brand" .}}{{$L := localizer $}}<a rst-shell-brand href="{{path $ "/"}}">{{T $L "rastrillo.ui.shell_home"}}</a>{{end}}
+{{/* name="rst-shell-menu", and NOT rst-menus — the same group the
+     topbar's disclosure is in, for the same reason. <details name>
+     exclusivity is DOCUMENT-WIDE rather than sibling-scoped: a
+     disclosure in the menus' group would be closed by the account menu
+     it just revealed, and the card would close under the reader's
+     finger. Read this as the reason for the gates rather than as advice
+     to change the line below. */}}
+{{/* On the phone index the Menu is the profile menu: its summary shows
+     the person's avatar (the profile block, the same avatar the
+     sidebar's rail foot opens) instead of its label, and its card is
+     headed by the person's name. The account and language are already
+     in this card, so the index needs no second menu. Both spans are
+     always in the markup and tokens.css shows one: the label is
+     display: contents everywhere else, so a content page and a desktop
+     lay out exactly as they did before the avatar existed. */}}
+<details rst-shell-menu name="rst-shell-menu"><summary><span rst-shell-menu-label>{{icon "menu"}}{{T $L "rastrillo.ui.shell_menu"}}</span><span rst-shell-avatar>{{block "profile" .}}{{$L := localizer $}}<span rst-person-av="empty placeholder" aria-hidden="true"></span><span rst-person-name>{{T $L "rastrillo.ui.shell_account"}}</span>{{end}}</span></summary></details>
+{{/* The tail is a SIBLING of the disclosure, not its content: a closed
+     <details> hides its own content and no CSS reliably un-hides it,
+     so the wide layout could not be recovered from inside one. Above
+     800px tokens.css gives it display: contents and the account and
+     locale menus become flex items of the bar itself.
+
+     account here is the DROPDOWN'S MENU BODY, exactly as in topbar:
+     the layout owns the details/summary and an override supplies only
+     the links inside [rst-dropdown-menu]. The sidebar's account block
+     is the same links, inside its profile card, so a screen's account
+     block moves between the three shells unedited.
+
+     rst-shell-who is the card's head on the phone index, the person's
+     name and email; tokens.css hides it everywhere else, including at
+     800px and up, where display: contents would otherwise make it a
+     flex item of the bar.
+
+     The language comes before the account, in the DOM and so in the
+     reading order, because the card reads as the sidebar's profile
+     card does: the person, the language, then the account's links,
+     which on the phone index are laid out flat. tokens.css keeps the
+     wide bar's two menus at its inline end. */}}
+<div rst-shell-tail>
+<div rst-shell-who>{{template "profile" .}}</div>
+{{block "locale" .}}{{$L := localizer $}}{{template "locale-menu" dict "L" $L "Items" (opt $ "Locales") "Return" (opt $ "Return") "Action" (path $ "/_locale")}}{{end}}{{block "scheme" .}}{{$L := localizer $}}{{template "scheme-menu" dict "L" $L "Scheme" (opt $ "Scheme") "Return" (opt $ "Return") "Action" (path $ "/_theme")}}{{end}}
+<details rst-dropdown rst-shell-account name="rst-menus">
+<summary>{{T $L "rastrillo.ui.shell_account"}}<span rst-caret aria-hidden="true">{{icon "chevron-down"}}</span></summary>
+<div rst-dropdown-menu>{{block "account" .}}{{end}}</div>
+</details>
+</div>
+</header>
+<div rst-shell-back><a href="{{block "up" .}}{{path $ "/"}}{{end}}" rel="up" aria-label="{{Tf $L "rastrillo.ui.shell_up" "name" (T $L "rastrillo.ui.shell_up_label")}}">{{T $L "rastrillo.ui.shell_up_label"}}</a></div>
+{{/* The rail carries navigation and nothing else — the language
+     switcher and the person are up on the bar, which is what makes
+     this shell a console rather than a sidebar with a strip above it.
+     So it has no rail-foot, and the bug that cost this project a
+     release — a person pinned to the bottom of a rail that hung 32px
+     under the window — has nothing here to pin. What it has instead is
+     a nav that sticks: see the max-block-size in tokens.css, which is
+     measured against the viewport and gated against the viewport. Its
+     phone index's <h1> is up in the bar. */}}
+<aside rst-shell-rail>
+<nav rst-shell-nav>{{block "nav" .}}{{end}}</nav>
+</aside>
+<main rst-shell-main id="main">
+<div rst-page>
+{{template "region:notice" .}}
+{{template "content" .}}
+</div>
+</main>
+{{/* A sibling of <main>, not a child of it: a <footer> whose nearest
+     sectioning ancestor is <body> is the contentinfo landmark, and one
+     inside <main> is a plain generic footer. Grid puts it under the
+     page column rather than under the rail. */}}
+<footer rst-shell-foot>{{block "foot" .}}{{end}}</footer>
+</div>
+</body>
+</html>
+{{end}}

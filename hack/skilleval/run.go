@@ -204,7 +204,7 @@ func runOne(ctx context.Context, c config, bin, export, vdir, tasksDir, task str
 
 	r.CI = grade(ctx, dir, graded, filepath.Join(dir, "ci.log"), 25*time.Minute, nil, "make", "-f", "Makefile", "ci")
 	reap(dir)
-	r.Check = grade(ctx, dir, graded, filepath.Join(dir, "check.log"), 5*time.Minute, []string{"SKILLEVAL_BASE_DIR=" + scaffoldCopy}, "sh", filepath.Join(tasksDir, task+".check.sh"))
+	r.Check = gradeCheck(ctx, dir, graded, tasksDir, task, scaffoldCopy)
 	return r
 }
 
