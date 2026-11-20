@@ -83,6 +83,9 @@ func TestFlatThemesFollowAnAppsOverrides(t *testing.T) {
 				// before the aliases, 70 of 95 crops failed in light.
 				var differ []string
 				for _, key := range keys {
+					if focusRingSince15(key) {
+						continue
+					}
 					if ok, why := samePixelsWithin(t, old[key], now[key], 40); !ok {
 						differ = append(differ, key+": "+why)
 					}
@@ -96,4 +99,15 @@ func TestFlatThemesFollowAnAppsOverrides(t *testing.T) {
 			mustRun(t, ctx, chromedp.Evaluate[chromedp.Void](`true`))
 		})
 	}
+}
+
+// focusRingSince15 names the crops Fiesta 1.5 changed on purpose: a
+// focused field draws one ring, its edge in the accent with a halo flush
+// against it, where v0.28 drew the line-strong edge and an accent
+// outline 2px outside it. The old pair cannot be the reference for
+// those two crops; the app's accent override still reaches the ring,
+// which the unfocused crops and the primary button prove.
+func focusRingSince15(key string) bool {
+	return strings.HasSuffix(key, "focus+focus-visible #field") ||
+		strings.HasSuffix(key, "focus+focus-visible #area")
 }
