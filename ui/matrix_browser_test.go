@@ -363,6 +363,10 @@ func TestEveryThemeRendersAsItDidExceptDay(t *testing.T) {
 				}
 				sort.Strings(keys)
 				for _, key := range keys {
+					// Fiesta 1.5's one focus ring: see focusRingSince15.
+					if focusRingSince15(key) {
+						continue
+					}
 					if ok, why := samePixels(t, old[key], now[key]); !ok {
 						t.Errorf("%s renders differently under the new tokens.css: %s", key, why)
 					}
