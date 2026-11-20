@@ -44,11 +44,66 @@ func scaffoldFile(name string) string {
 	return string(b)
 }
 
-// runNew implements `rastrillo new <name>`: the middle-layer app shape
-// (SKILL.md's app shape) — GORM models, a chi router, embedded templates, and a
-// main.go wiring Resolve → db.Open → New → Serve — plus a passing test
-// harness, so the first `go test ./...` is green before the developer
-// writes a line.
+// runNew implements `rastrillo new [--scaffold <shape>] <name>`: it reads
+// the flags, refuses what no shape can honour, and hands the rest to
+// the shape's Write (shapes.go).
+func runNew(args []string) error {
+	fset := flag.NewFlagSet("new", flag.ContinueOnError)
+	iconSet := fset.String("icons", "lucide", "icon set: "+strings.Join(iconsets.Names(), ", "))
+	iconDelivery := fset.String("icon-delivery", "inline", "how icons load: "+strings.Join(iconsets.Deliveries(), ", "))
+	uxProfile := fset.String("ux", "considered", "UX convention profile: "+strings.Join(profileNames(), ", "))
+	theme := fset.String("theme", "day", "colour, type and shape theme: "+strings.Join(ui.ThemeNames(), ", "))
+	shell := fset.String("shell", "column", "layout shell: "+strings.Join(ui.LayoutNames(), ", "))
+	// No default: flag would print (default "en") after the help's own.
+	locale := fset.String("locale", "", fmt.Sprintf(newLocaleFlagMsg, strings.Join(rastrillo.BaseLocales(), ", ")))
+	authKind := fset.String("auth", "none", newAuthFlagMsg+
+		strings.Join(authKinds, ", ")+newAuthFlagAccountsMsg)
+	// No default, like --locale: the help's own wording carries it.
+	scaffold := fset.String("scaffold", "", newScaffoldFlagMsg)
+	designOn := fset.Bool("design-system", true, newDesignSystemFlagMsg)
+	if err := fset.Parse(args); err != nil {
+		return err
+	}
+	rest := fset.Args()
+	if len(rest) != 1 {
+		return newUsage()
+	}
+	// Every refusal comes before the directory exists: a refused run must
+	// not leave a half-made app that makes the next, correct, attempt
+	// fail with "already exists".
+	chosen, err := lookupShape(cmp.Or(*scaffold, defaultShape))
+	if err != nil {
+		return err
+	}
+	if !slices.Contains(authKinds, *authKind) {
+		return fmt.Errorf("unknown --auth %q: known kinds are %s", *authKind, strings.Join(authKinds, ", "))
+	}
+	name := rest[0]
+	if err := appname.CheckPackage(name, packageName(name)); err != nil {
+		return err
+	}
+	if _, err := os.Stat(name); err == nil {
+		return fmt.Errorf("%s already exists", name)
+	}
+	set := map[string]bool{}
+	fset.Visit(func(typed *flag.Flag) { set[typed.Name] = true })
+	options := newOpts{
+		Name: name, Pkg: packageName(name), Locale: *locale,
+		IconSet: *iconSet, IconDelivery: *iconDelivery, UX: *uxProfile,
+		Theme: *theme, Shell: *shell, Auth: *authKind,
+		DesignSystem: *designOn, Set: set,
+	}
+	if err := checkShape(chosen.Name, options); err != nil {
+		return err
+	}
+	return chosen.Write(options)
+}
+
+// writeSingle is the single shape, and accounts through it: the
+// middle-layer app shape (SKILL.md's app shape) — GORM models, a chi
+// router, embedded templates, and a main.go wiring Resolve → db.Open →
+// New → Serve — plus a passing test harness, so the first
+// `go test ./...` is green before the developer writes a line.
 //
 // The declarative path stays one TOML file away: manifest/ is
 // scaffolded empty with a README carrying the mounting recipe.
@@ -62,82 +117,19 @@ func scaffoldFile(name string) string {
 // executable or the job silently resolves "skipped". CARLOS stays the
 // golden deployment target, not a requirement: Resolve/Serve speak the
 // activation contract, and `./app -addr :8080` works anywhere.
-func runNew(args []string) error {
-	fset := flag.NewFlagSet("new", flag.ContinueOnError)
-	iconSet := fset.String("icons", "lucide", "icon set: "+strings.Join(iconsets.Names(), ", "))
-	iconDelivery := fset.String("icon-delivery", "inline", "how icons load: "+strings.Join(iconsets.Deliveries(), ", "))
-	uxProfile := fset.String("ux", "considered", "UX convention profile: "+strings.Join(profileNames(), ", "))
-	theme := fset.String("theme", "day", "colour, type and shape theme: "+strings.Join(ui.ThemeNames(), ", "))
-	shell := fset.String("shell", "column", "layout shell: "+strings.Join(ui.LayoutNames(), ", "))
-	// No default: flag would print (default "en") after the help's own.
-	locale := fset.String("locale", "", fmt.Sprintf(newLocaleFlagMsg, strings.Join(rastrillo.BaseLocales(), ", ")))
-	authKind := fset.String("auth", "none", "sign-in the app starts with: "+strings.Join(authKinds, ", "))
-	if err := fset.Parse(args); err != nil {
-		return err
-	}
-	rest := fset.Args()
-	if len(rest) != 1 {
-		return fmt.Errorf("usage: rastrillo new [--icons=%s] [--icon-delivery=%s] [--ux=%s] [--theme=%s] [--shell=%s] [--locale=%s] [--auth=%s] <name>",
-			strings.Join(iconsets.Names(), "|"), strings.Join(iconsets.Deliveries(), "|"),
-			strings.Join(profileNames(), "|"), strings.Join(ui.ThemeNames(), "|"),
-			strings.Join(ui.LayoutNames(), "|"), strings.Join(rastrillo.BaseLocales(), "|"),
-			strings.Join(authKinds, "|"))
-	}
-	if !slices.Contains(authKinds, *authKind) {
-		return fmt.Errorf("unknown --auth %q: known kinds are %s", *authKind, strings.Join(authKinds, ", "))
-	}
-	name := rest[0]
-	if err := appname.CheckPackage(name, packageName(name)); err != nil {
-		return err
-	}
-	if _, err := os.Stat(name); err == nil {
-		return fmt.Errorf("%s already exists", name)
-	}
-
-	// Resolve every choice before creating anything: an unknown set,
-	// delivery or profile must fail while the working directory is still
-	// clean, never halfway through a scaffold.
-	rendered, err := iconsets.Render(*iconSet, iconsets.Delivery(*iconDelivery))
+func writeSingle(options newOpts) error {
+	choices, err := resolveChoices(options)
 	if err != nil {
 		return err
 	}
-	// The conventions record the RESOLVED choices, not the profile's
-	// defaults: the flag wins, and the file says what actually happened.
-	conventions, err := conventionsSection(*uxProfile, *iconSet, *iconDelivery)
-	if err != nil {
-		return err
-	}
-	// The vendored set — the stylesheets, the chosen theme and the
-	// scripts — comes from ui.VendoredAssets, which is the one place
-	// that list is written down (ui/vendored.go). The generated
-	// vendored_test.go below and `rastrillo doctor` read the same
-	// function, so a file added to the set reaches the scaffold, the
-	// pin and the doctor together rather than one at a time.
-	vendored, ok := ui.VendoredAssets(*theme)
-	if !ok {
-		return fmt.Errorf("unknown theme %q: known themes are %s", *theme, strings.Join(ui.ThemeNames(), ", "))
-	}
-	layoutHTML, ok := ui.Layout(*shell)
-	if !ok {
-		return fmt.Errorf("unknown shell %q: known shells are %s", *shell, strings.Join(ui.LayoutNames(), ", "))
-	}
-	// Only a language whose framework strings ship: any other fails
-	// generate --check on its missing catalog before the author writes a line.
-	code := cmp.Or(*locale, "en")
-	if to, ok := rastrillo.RetagOf(code); ok { // a code from before a retag: pt means pt-PT
-		code = to
-	}
-	if !slices.Contains(rastrillo.BaseLocales(), code) {
-		return fmt.Errorf(newLocaleUnsupportedMsg, code, strings.Join(rastrillo.BaseLocales(), ", "))
-	}
+	rendered, conventions := choices.rendered, choices.conventions
+	vendored, layoutHTML, code := choices.vendored, choices.layout,
+		choices.code
 
-	pkg := packageName(name)
+	name, pkg := options.Name, options.Pkg
 	appDir := filepath.Join(name, "internal", pkg)
 	inApp := func(parts ...string) string {
 		return filepath.Join(append([]string{appDir}, parts...)...)
-	}
-	inTests := func(file string) string {
-		return filepath.Join(name, "internal", pkg+"test", file)
 	}
 	atRoot := func(parts ...string) string {
 		return filepath.Join(append([]string{name}, parts...)...)
@@ -149,7 +141,7 @@ func runNew(args []string) error {
 	// it, with its path, route, action and test.
 	indexHTML, pages := indexTemplate, `"index", "errors", "tokens"`
 	var paths, routes, actions, extraTests string
-	if twoPageShells[*shell] {
+	if twoPageShells[options.Shell] {
 		indexHTML = fmt.Sprintf(sectionsIndexTemplate, scaffoldOverview,
 			html.EscapeString(name))
 		pages = `"index", "overview", "errors", "tokens"`
@@ -177,16 +169,18 @@ func runNew(args []string) error {
 	files[inApp("migrations", "0001_init.sql")] = initMigrationTemplate
 	files[inApp("migrations", "schema.sql")] = schemaSQLTemplate
 	files[inApp("icons", "icons.go")] = string(rendered.Source)
-	files[inTests("api_test.go")] = fmt.Sprintf(apiTestTemplate,
+	files[inApp("api_test.go")] = fmt.Sprintf(apiTestTemplate,
 		name, pkg, prefix)
-	files[inTests("harness_test.go")] = fmt.Sprintf(harnessTemplate, name, pkg)
-	files[inTests("vendored_test.go")] = fmt.Sprintf(vendoredTestTemplate,
-		pkg, *theme)
-	files[inTests("index_test.go")] = fmt.Sprintf(indexTestTemplate,
+	files[inApp("harness_test.go")] = fmt.Sprintf(harnessTemplate, name, pkg)
+	files[inApp("vendored_test.go")] = fmt.Sprintf(vendoredTestTemplate,
+		pkg, options.Theme)
+	files[inApp("index_test.go")] = fmt.Sprintf(indexTestTemplate,
 		name, pkg, extraTests)
-	files[inTests("browser_test.go")] = fmt.Sprintf(browserTestTemplate,
+	files[inApp("browser_test.go")] = fmt.Sprintf(browserTestTemplate,
 		name, pkg)
-	files[inTests("perf_test.go")] = fmt.Sprintf(perfTestTemplate, name, pkg)
+	files[inApp("perf_test.go")] = fmt.Sprintf(perfTestTemplate, name, pkg)
+	files[inApp("migrations_test.go")] = fmt.Sprintf(
+		scaffoldFile("migrations_test.go.tmpl"), name, pkg)
 	files[atRoot(".gitleaks.toml")] = scaffoldFile("gitleaks.toml")
 	files[atRoot(".rastrillo", "budgets.txt")] = budgetsTxtTemplate
 	files[atRoot("README.md")] = fmt.Sprintf(readmeTemplate, name, pkg, env)
@@ -202,8 +196,8 @@ func runNew(args []string) error {
 	files[atRoot("AGENTS.md")] = fmt.Sprintf(agentsMDTemplate, name) +
 		string(conventions)
 	files[atRoot("CLAUDE.md")] = claudeMDPointer
-	// The vendored static files: see the list below runNew.
-	if twoPageShells[*shell] {
+	// The vendored static files: see the list below writeSingle.
+	if twoPageShells[options.Shell] {
 		files[filepath.Join(appDir, "templates", "overview.html")] = fmt.Sprintf(overviewTemplate, scaffoldOverview, html.EscapeString(name))
 	}
 
@@ -211,7 +205,7 @@ func runNew(args []string) error {
 		files[filepath.Join(appDir, "static", name)] = string(content)
 	}
 
-	if *authKind == "magic" {
+	if options.Auth == "magic" {
 		if err := applyMagicAuth(files, name, pkg, appDir); err != nil {
 			return err
 		}
@@ -264,32 +258,36 @@ func runNew(args []string) error {
 	}
 
 	fmt.Printf("rastrillo new: scaffolded %s/\n", name)
-	fmt.Printf("  cmd/%s/main.go       (Resolve -> db.Open -> New -> Serve)\n",
+	fmt.Printf("  cmd/%s/main.go        (Resolve -> db.Open -> New -> Serve)\n",
 		name)
-	fmt.Printf("  internal/%s/         (app, routes, handlers, models, "+
+	fmt.Printf("  internal/%s/          (app, routes, handlers, models, "+
 		"migrations, render, templates, static)\n", pkg)
-	fmt.Printf("  internal/%stest/     (harness + example tests, passing out of the box;\n", pkg)
-	fmt.Println("                        browser_test.go = the browser drive, go test -tags browser ./...)")
+	tests := "internal/" + pkg + "/*_test.go"
+	fmt.Printf("  %s (harness and example tests pass out of the box;\n"+
+		"  %*s browser_test.go runs with go test -tags browser ./...)\n",
+		tests, len(tests)+1, "")
 	fmt.Println("  manifest/            (the declarative path: drop a <name>.toml here, see its README)")
 	fmt.Println("  Makefile             (make ci = vet + fmt + staticcheck + " +
-		"govulncheck + gitleaks + budget + code + routes + test + perf + " +
-		"migration check + generate check, the one gate definition;")
+		"govulncheck + gitleaks + budget + code + routes + csp + test + " +
+		"perf + generate check, the one gate definition;")
 	fmt.Println("                        make release = the stripped binary)")
 	fmt.Println("  .gitignore           (build output and the local database)")
 	fmt.Println("  .amadan/ci, ci.d/    (amadan runner CI, executable, delegating to make)")
-	fmt.Printf("  internal/%s/icons/   (%s, %s — app-owned, edit freely)\n", pkg, *iconSet, *iconDelivery)
+	fmt.Printf("  internal/%s/icons/   (%s, %s — app-owned, edit freely)\n",
+		pkg, options.IconSet, options.IconDelivery)
 	fmt.Printf("  internal/%s/static/theme.css (the %s theme — app-owned; --theme picks from %s)\n",
-		pkg, *theme, strings.Join(ui.ThemeNames(), ", "))
+		pkg, options.Theme, strings.Join(ui.ThemeNames(), ", "))
 	fmt.Printf("  internal/%s/templates/layout.html (the %s shell — app-owned; --shell picks from %s)\n",
-		pkg, *shell, strings.Join(ui.LayoutNames(), ", "))
+		pkg, options.Shell, strings.Join(ui.LayoutNames(), ", "))
 	fmt.Println("  AGENTS.md            (instructions + UX conventions, the source of truth)")
 	fmt.Println("  CLAUDE.md            (an @AGENTS.md import, nothing more)")
 	fmt.Println("  README.md            (what this app is, and how the browser drive runs)")
 	if rendered.AttribName != "" {
-		fmt.Printf("  %s   (%s requires attribution — keep it)\n", rendered.AttribName, *iconSet)
+		fmt.Printf("  %s   (%s requires attribution — keep it)\n",
+			rendered.AttribName, options.IconSet)
 	}
 
-	printIconNotice(rendered.Notice, *iconDelivery)
+	printIconNotice(rendered.Notice, options.IconDelivery)
 
 	newTemplates(name)
 
@@ -535,7 +533,6 @@ var runnerSteps = []struct{ file, target string }{
 	{"17-routes", "routes"}, {"18-csp", "csp"}, {"20-fmt", "fmt-check"},
 	{"25-staticcheck", "staticcheck"}, {"26-govulncheck", "govulncheck"},
 	{"27-gitleaks", "gitleaks"}, {"30-test", "test"}, {"35-perf", "perf"},
-	{"40-migration-check", "migration-check"},
 	{"45-generate-check", "generate-check"},
 }
 

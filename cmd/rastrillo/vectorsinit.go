@@ -22,15 +22,7 @@ func vectorsInit(dir string) error {
 	if err != nil {
 		return err
 	}
-	pkg := packageName(path.Base(module))
-
-	files := map[string]string{
-		filepath.Join(dir, "cmd", "genvectors", "main.go"):                     genvectorsTemplate,
-		filepath.Join(dir, "test", "parity.test.mjs"):                          parityTestTemplate,
-		filepath.Join(dir, "test", "vectors.mjs"):                              string(vectors.JS()),
-		filepath.Join(dir, "internal", pkg+"test", "parity_test.go"):           fmt.Sprintf(parityGoTemplate, pkg),
-		filepath.Join(dir, "internal", pkg+"test", "vectors_vendored_test.go"): fmt.Sprintf(vectorsVendoredTemplate, pkg),
-	}
+	files := vectorsFiles(dir, packageName(path.Base(module)))
 
 	paths := make([]string, 0, len(files))
 	for p := range files {
@@ -63,6 +55,24 @@ func vectorsInit(dir string) error {
 	}
 	fmt.Println("next: replace the example fold in cmd/genvectors/main.go and test/parity.test.mjs with your app's own (both sides, same commit), then run `rastrillo vectors`")
 	return nil
+}
+
+// vectorsFiles is what vectors -init writes into the app at dir, whose
+// package is pkg.
+func vectorsFiles(dir, pkg string) map[string]string {
+	tests, pkgClause := testDir(dir, pkg)
+	atRoot := func(parts ...string) string {
+		return filepath.Join(append([]string{dir}, parts...)...)
+	}
+	return map[string]string{
+		atRoot("cmd", "genvectors", "main.go"): genvectorsTemplate,
+		atRoot("test", "parity.test.mjs"):      parityTestTemplate,
+		atRoot("test", "vectors.mjs"):          string(vectors.JS()),
+		filepath.Join(tests, "parity_test.go"): fmt.Sprintf(
+			parityGoTemplate, pkgClause),
+		filepath.Join(tests, "vectors_vendored_test.go"): fmt.Sprintf(
+			vectorsVendoredTemplate, pkgClause),
+	}
 }
 
 // genvectorsTemplate is the worked generator, anchored on
@@ -163,6 +173,20 @@ func main() {
 }
 `
 
+// testDir says where an app keeps its tests and what package clause
+// they carry. A scaffold made now puts them beside the code, in
+// internal/<pkg> as package <pkg>_test; an older one has a separate
+// internal/<pkg>test, and writing the belt anywhere else would split
+// that app's suite across two directories. Both sit two levels under
+// the module root, which the parity shim's working directory relies on.
+func testDir(appDir, pkg string) (dir, pkgClause string) {
+	old := filepath.Join(appDir, "internal", pkg+"test")
+	if fi, err := os.Stat(old); err == nil && fi.IsDir() {
+		return old, pkg + "test"
+	}
+	return filepath.Join(appDir, "internal", pkg), pkg + "_test"
+}
+
 // parityTestTemplate is the scaffolded JS suite: the parity loop,
 // kass's sanity floor on vector count, and the marked belt section
 // that covers canonical()'s documented blind spot with explicit
@@ -173,7 +197,7 @@ const parityTestTemplate = `// The JS engine must agree with the Go engine, vect
 // Regenerate the vectors with: rastrillo vectors
 // This suite runs under:       rastrillo vectors -check
 //                              (and go test ./... via the belt in
-//                              internal/<pkg>test/parity_test.go)
+//                              the app's parity_test.go)
 //
 // TREATY: the field key names ("events", "now", "tally") are shared
 // with cmd/genvectors/main.go, which writes them. Nothing mechanical
@@ -244,7 +268,7 @@ test("belt: recent activity is not quiet, explicitly", () => {
 // parityGoTemplate is the Go-side belt (spec §1.5): the crypto
 // js_test.go exec-shim, with the working directory corrected for
 // where go test actually runs it.
-const parityGoTemplate = `package %[1]stest
+const parityGoTemplate = `package %[1]s
 
 import (
 	"os/exec"
@@ -257,9 +281,9 @@ import (
 // still gets a green, honest build; ` + "`" + `rastrillo vectors -check` + "`" + ` is
 // where a missing node turns loud.
 //
-// go test runs this file in internal/%[1]stest/, so the shim sets
-// the working directory to the module root and names the parity file
-// from there — an explicit file, never a directory, because
+// go test runs this file two directories below the module root, so
+// the shim sets the working directory to the module root and names the
+// parity file from there — an explicit file, never a directory, because
 // ` + "`" + `node --test <dir>` + "`" + ` stopped working on Node 21.
 func TestJSParity(t *testing.T) {
 	node, err := exec.LookPath("node")
@@ -280,7 +304,7 @@ func TestJSParity(t *testing.T) {
 // rooted at internal/<pkg>/static/, and this copy lives at the
 // module root's test/ — a non-static path the existing map cannot
 // hold.
-const vectorsVendoredTemplate = `package %[1]stest
+const vectorsVendoredTemplate = `package %[1]s
 
 import (
 	"bytes"

@@ -1,6 +1,6 @@
 //go:build perf
 
-package chattest
+package chat_test
 
 import (
 	"io"

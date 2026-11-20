@@ -1,13 +1,16 @@
 # The CLI and the gate
 
-`rastrillo new --theme=day|plain|signal
+`rastrillo new --scaffold=bare|single|accounts --theme=day|plain|signal
 --shell=column|topbar|sidebar|console|stage <name>` (also `--icons`,
 `--icon-delivery`, `--ux`, and `--auth=magic` for sign-in by emailed
-link) writes the whole app shape plus `go.mod`,
-migrations, templates, static assets, app-owned icons, a test harness
-including the browser drive, a `Makefile` whose `ci` target is the
-gate, and `.amadan/ci.d/` steps. It compiles, passes its tests and
-serves before you write a line; never hand-write any of it.
+link, which `accounts` starts with) writes the whole app shape plus
+`go.mod`, migrations, templates, static assets, app-owned icons, a test
+harness including the browser drive, a `Makefile` whose `ci` target is
+the gate, and `.amadan/ci.d/` steps. `bare` writes a page, a route and
+its tests, no database, `Makefile` or `AGENTS.md`;
+`--design-system=false` leaves out its templates and static files too. Every shape compiles,
+passes its tests and serves before you write a line; never hand-write
+any of it.
 docs/site/templates.md
 
 `rastrillo generate` writes `gen/` and `api/v1.json` from `manifest/`:

@@ -18,7 +18,7 @@ VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null)
 # One target at a time: the perf lane measures time.
 .NOTPARALLEL:
 
-.PHONY: build release version-check test vet fmt-check staticcheck govulncheck gitleaks budget code routes csp perf migration-check generate-check ci
+.PHONY: build release version-check test vet fmt-check staticcheck govulncheck gitleaks budget code routes csp perf generate-check ci
 
 # Needs only Go on PATH, through go.mod's tool line.
 RASTRILLO := go run amadan.net/rastrillo/rastrillo/cmd/rastrillo
@@ -104,11 +104,8 @@ gitleaks:
 		echo "gitleaks: this directory is not the root of a git repository, so there is nothing committed to scan"; \
 	fi
 
-migration-check:
-	go run amadan.net/rastrillo/rastrillo/cmd/rastrillo migration check
-
 generate-check:
 	$(RASTRILLO) generate --check
 
 # The one gate. .amadan/ci.d/ runs it a step per target: add to both.
-ci: vet fmt-check staticcheck govulncheck gitleaks budget code routes csp test perf migration-check generate-check
+ci: vet fmt-check staticcheck govulncheck gitleaks budget code routes csp test perf generate-check

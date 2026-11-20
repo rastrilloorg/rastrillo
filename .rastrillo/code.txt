@@ -745,20 +745,14 @@ names apitoken/token_test.go TestMain/m 1
 names apitoken/token_test.go TestNewRefusesBadConfig/d 1
 names apitoken/token_test.go TestNewRefusesBadConfig/p 1
 names apitoken/token_test.go TestRedact/s 1
-columns assertion/assertion.go 0011b93b376f 1
-columns assertion/assertion.go 0a8acff18d09 1
-columns assertion/assertion.go 339e50d76548 1
-columns assertion/assertion.go 5f94d3a22f9a 1
 columns assertion/assertion.go 62d13060dd2d 1
 columns assertion/assertion.go 9d8624c0a5f5 1
 columns assertion/assertion.go a3b6b0102139 1
-columns assertion/assertion.go c1a831b3d0e4 1
 columns assertion/assertion.go d363d7c04437 1
 columns assertion/assertion.go e7fc511b7cc8 1
 columns assertion/assertion.go f42a441dae75 1
 columns assertion/assertion.go ffe0b7f8313a 1
 func assertion/assertion.go Verifier.Verify 49
-func assertion/assertion.go origin 51
 func assertion/assertion.go parse 64
 names assertion/assertion.go NewVerifier/v 1
 names assertion/assertion.go RandomID/b 1
@@ -766,18 +760,6 @@ names assertion/assertion.go Verifier.Verify/c 1
 names assertion/assertion.go Verifier.Verify/p 1
 names assertion/assertion.go Verifier.Verify/s 1
 names assertion/assertion.go Verifier.Verify/v 1
-names assertion/assertion.go alphaNum/b 1
-names assertion/assertion.go decode/b 1
-names assertion/assertion.go decode/s 1
-names assertion/assertion.go identifier/b 1
-names assertion/assertion.go identifier/i 1
-names assertion/assertion.go identifier/s 1
-names assertion/assertion.go object/b 1
-names assertion/assertion.go origin/b 2
-names assertion/assertion.go origin/h 1
-names assertion/assertion.go origin/i 1
-names assertion/assertion.go origin/p 1
-names assertion/assertion.go origin/s 1
 names assertion/assertion.go parse/c 1
 names assertion/assertion.go parse/n 1
 names assertion/assertion.go randomID/b 1
@@ -2815,7 +2797,6 @@ names basepath/basepath.go from/s 1
 names basepath/basepath.go originAuthority/a 1
 names basepath/basepath.go originAuthority/u 1
 names basepath/basepath.go originForm/u 1
-names basepath/basepath.go sameHost/o 1
 names basepath/basepath.go validOrigin/u 1
 columns basepath/basepath_test.go 0b4b664d3917 1
 columns basepath/basepath_test.go 0b78b73d9579 1
@@ -3032,7 +3013,6 @@ names basepath/handler_test.go live/h 1
 names basepath/handler_test.go pageSeen/r 1
 names basepath/handler_test.go serve/c 1
 names basepath/handler_test.go serve/h 1
-columns basepath/samehost_internal_test.go 596afc0fad2e 1
 names basepath/samehost_internal_test.go TestProductHostIsMatchedTheWayBrowsersSendIt/c 1
 columns blobs/blobs.go 20080331dba9 1
 columns blobs/blobs.go 51728ea1589f 1
@@ -3383,8 +3363,8 @@ columns cmd/rastrillo/dev.go c2ffb344257d 1
 columns cmd/rastrillo/dev.go caaa149c8c6d 1
 columns cmd/rastrillo/dev.go d6e358aa2b40 1
 columns cmd/rastrillo/dev.go e57bd819d37f 1
-file cmd/rastrillo/dev.go - 428
-func cmd/rastrillo/dev.go runDev 159
+file cmd/rastrillo/dev.go - 417
+func cmd/rastrillo/dev.go runDev 148
 names cmd/rastrillo/dev.go computeDrift/c 1
 names cmd/rastrillo/dev.go computeDrift/p 1
 names cmd/rastrillo/dev.go driftChecker.close/d 1
@@ -3477,11 +3457,11 @@ columns cmd/rastrillo/doctor.go f8a8b84c4867 1
 columns cmd/rastrillo/doctor.go fb8e8756c242 1
 columns cmd/rastrillo/doctor.go fd24af5b2925 1
 columns cmd/rastrillo/doctor.go fdab31e1ef54 1
-file cmd/rastrillo/doctor.go - 1048
-func cmd/rastrillo/doctor.go diagnose 111 raised from 110 by Fiesta part 2 Task 4: diagnose lists the layouts that load rastrillo.js and no fiesta.js, for the advice --fix decides on the files it leaves
+file cmd/rastrillo/doctor.go - 1062 raised from 1048 by scaffold shapes: an app with no design system (bare's --design-system=false) is told there is nothing to compare instead of failing
+func cmd/rastrillo/doctor.go diagnose 115 raised from 110 by Fiesta part 2 Task 4: diagnose lists the layouts that load rastrillo.js and no fiesta.js, for the advice --fix decides on the files it leaves; raised from 111 by scaffold shapes: an app with no design system (bare's --design-system=false) is told there is nothing to compare instead of failing
 func cmd/rastrillo/doctor.go readPin 80
-func cmd/rastrillo/doctor.go report.applyFix 58
-func cmd/rastrillo/doctor.go report.print 82
+func cmd/rastrillo/doctor.go report.applyFix 61 raised from 58 by scaffold shapes: an app with no design system (bare's --design-system=false) is told there is nothing to compare instead of failing
+func cmd/rastrillo/doctor.go report.print 86 raised from 82 by scaffold shapes: an app with no design system (bare's --design-system=false) is told there is nothing to compare instead of failing
 names cmd/rastrillo/doctor.go clip/n 1
 names cmd/rastrillo/doctor.go clip/s 1
 names cmd/rastrillo/doctor.go count/b 1
@@ -3548,7 +3528,6 @@ columns cmd/rastrillo/doctor_test.go 1338315f95b0 1
 columns cmd/rastrillo/doctor_test.go 13b61c165a04 1
 columns cmd/rastrillo/doctor_test.go 144b5c7cf576 1
 columns cmd/rastrillo/doctor_test.go 1778ca563efa 1
-columns cmd/rastrillo/doctor_test.go 1a3babc0ef97 2
 columns cmd/rastrillo/doctor_test.go 1d79d8e06502 1
 columns cmd/rastrillo/doctor_test.go 1df97581ade9 1
 columns cmd/rastrillo/doctor_test.go 21206116ac03 1
@@ -3560,9 +3539,7 @@ columns cmd/rastrillo/doctor_test.go 3080a23f7e28 1
 columns cmd/rastrillo/doctor_test.go 33b1d3aa4a3d 1
 columns cmd/rastrillo/doctor_test.go 359b16a5bb5c 1
 columns cmd/rastrillo/doctor_test.go 3b6080c84240 1
-columns cmd/rastrillo/doctor_test.go 40d02a8c71f4 4
 columns cmd/rastrillo/doctor_test.go 41f3e2cd9cde 1
-columns cmd/rastrillo/doctor_test.go 421d9b514bc0 1
 columns cmd/rastrillo/doctor_test.go 45a51d9b992c 1
 columns cmd/rastrillo/doctor_test.go 45fa5a1bb4c6 1
 columns cmd/rastrillo/doctor_test.go 48ad86e46b98 1
@@ -3577,7 +3554,6 @@ columns cmd/rastrillo/doctor_test.go 5280186f45f3 1
 columns cmd/rastrillo/doctor_test.go 52ac65233a7e 1
 columns cmd/rastrillo/doctor_test.go 542b417bdd29 1
 columns cmd/rastrillo/doctor_test.go 546c6753730f 1
-columns cmd/rastrillo/doctor_test.go 5aeb3aa185f2 2
 columns cmd/rastrillo/doctor_test.go 5b0cdef1cf79 1
 columns cmd/rastrillo/doctor_test.go 5e066c565f40 1
 columns cmd/rastrillo/doctor_test.go 5e2bf6c5c570 1
@@ -3869,11 +3845,10 @@ columns cmd/rastrillo/migration.go a4a79e1d6b67 1
 columns cmd/rastrillo/migration.go bd801a75f715 1
 columns cmd/rastrillo/migration.go cca31be52958 1
 columns cmd/rastrillo/migration.go fafe6a1b8033 1
-file cmd/rastrillo/migration.go - 662
+file cmd/rastrillo/migration.go - 667 raised from 662 by scaffold shapes' tests beside the code: appPackage skips an internal/<x>test only when internal/<x> is beside it, so an app whose own name ends in test is still found
 func cmd/rastrillo/migration.go migrationBaseline 53
 func cmd/rastrillo/migration.go migrationGenerate 73
 func cmd/rastrillo/migration.go migrationStatus 121
-names cmd/rastrillo/migration.go appPackage/e 1
 names cmd/rastrillo/migration.go describe/c 2
 names cmd/rastrillo/migration.go describe/u 1
 names cmd/rastrillo/migration.go dirArg/a 1
@@ -3970,55 +3945,41 @@ names cmd/rastrillo/modpath.go modulePath/f 1
 names cmd/rastrillo/modpath.go readRequirement/f 1
 names cmd/rastrillo/modpath.go readRequirement/r 2
 columns cmd/rastrillo/new.go 0c3864afdb72 1
-columns cmd/rastrillo/new.go 11ed551682de 1
-columns cmd/rastrillo/new.go 1c2b5ecf0485 1
 columns cmd/rastrillo/new.go 1cd9dc90d329 1
-columns cmd/rastrillo/new.go 1e173d21e5b3 1
 columns cmd/rastrillo/new.go 21c6c423daf7 1
 columns cmd/rastrillo/new.go 2cc2d87269d3 1
-columns cmd/rastrillo/new.go 3303d18e4636 1
 columns cmd/rastrillo/new.go 33817141a1b1 1
 columns cmd/rastrillo/new.go 365b10e855d6 1
-columns cmd/rastrillo/new.go 387a39dc0c0c 1
 columns cmd/rastrillo/new.go 38c4fba23ec4 1
-columns cmd/rastrillo/new.go 3d21afcf3a28 1
 columns cmd/rastrillo/new.go 4e36fc0e446c 1
 columns cmd/rastrillo/new.go 520ca45f7c58 1
 columns cmd/rastrillo/new.go 53f601b52568 1
 columns cmd/rastrillo/new.go 5c6e0314860a 1
 columns cmd/rastrillo/new.go 69c662fb85d6 1
 columns cmd/rastrillo/new.go 69ecda12f082 1
-columns cmd/rastrillo/new.go 6b16deee9fe9 1
 columns cmd/rastrillo/new.go 6dd551a2762a 1
 columns cmd/rastrillo/new.go 75135e6bc4e3 1
-columns cmd/rastrillo/new.go 78c29acf9572 1
 columns cmd/rastrillo/new.go 7e8bfd78878c 1
 columns cmd/rastrillo/new.go 862872d9306a 1
 columns cmd/rastrillo/new.go 8796c54db7dd 1
-columns cmd/rastrillo/new.go 9c17939c9248 1
 columns cmd/rastrillo/new.go a3dcdb64b224 1
 columns cmd/rastrillo/new.go a52416144a4a 1
-columns cmd/rastrillo/new.go a8f84bd4ad5e 1
-columns cmd/rastrillo/new.go cbf360afdfeb 1
-columns cmd/rastrillo/new.go d1418e1d4c1c 1
 columns cmd/rastrillo/new.go e017cb3c9c1f 1
 columns cmd/rastrillo/new.go e8154254ee71 1
 columns cmd/rastrillo/new.go e9429fea88d9 1
-columns cmd/rastrillo/new.go eb033c9e15ad 1
 columns cmd/rastrillo/new.go ef2901dc0d45 1
 columns cmd/rastrillo/new.go f2045c11abc8 1
 columns cmd/rastrillo/new.go f9075270659b 1
-file cmd/rastrillo/new.go - 546 raised from 543 by Fiesta part 2 Task 6: the vendored inventory comment names fiesta.js and copy.js and which files are Fiesta's
-func cmd/rastrillo/new.go runNew 235
+file cmd/rastrillo/new.go - 543 lowered from 546 by scaffold shapes, which moved new.go's flag usage line to shapes.go and writes the tests into the app's own directory; raised from 541 by 2 when the migration check became the app's migrations_test.go, which writeSingle writes in place of the Makefile step
+func cmd/rastrillo/new.go runNew 49 lowered from 235 by scaffold shapes, which moved its writing into writeSingle; it reads the flags every shape shares
+func cmd/rastrillo/new.go writeSingle 178 main's runNew body, moved by scaffold shapes so that bare and accounts share runNew's flags and refusals, less its separate test directory; owed the same split runNew was. Raised from 175 by 3: it writes migrations_test.go (2 lines), and the summary's test-files line pads its continuation to the package name's width (1 line)
 names cmd/rastrillo/new.go scaffoldFile/b 1
 columns cmd/rastrillo/new_scaffold_test.go 021618c81aba 1
 columns cmd/rastrillo/new_scaffold_test.go 031c8d38c56a 1
-columns cmd/rastrillo/new_scaffold_test.go 03e5f78d4496 1
 columns cmd/rastrillo/new_scaffold_test.go 045867e037f3 1
 columns cmd/rastrillo/new_scaffold_test.go 07043a6cd6e4 1
 columns cmd/rastrillo/new_scaffold_test.go 07a8d4c95295 1
 columns cmd/rastrillo/new_scaffold_test.go 0b3e06f82169 1
-columns cmd/rastrillo/new_scaffold_test.go 0b8dc1310ab6 1
 columns cmd/rastrillo/new_scaffold_test.go 0d56bd5f1bc5 1
 columns cmd/rastrillo/new_scaffold_test.go 0ecd732d0565 1
 columns cmd/rastrillo/new_scaffold_test.go 0fd0a6ec8135 1
@@ -4041,12 +4002,10 @@ columns cmd/rastrillo/new_scaffold_test.go 3a1f462b84de 1
 columns cmd/rastrillo/new_scaffold_test.go 3af8a070427d 1
 columns cmd/rastrillo/new_scaffold_test.go 3e5b6dd7d8fc 1
 columns cmd/rastrillo/new_scaffold_test.go 3f4518b02ef1 1
-columns cmd/rastrillo/new_scaffold_test.go 42ebd0303a40 1
 columns cmd/rastrillo/new_scaffold_test.go 47fa62119113 1
 columns cmd/rastrillo/new_scaffold_test.go 4d6a204b309d 1
 columns cmd/rastrillo/new_scaffold_test.go 4e4f3dd93ea3 1
 columns cmd/rastrillo/new_scaffold_test.go 4f2f14cf6c32 1
-columns cmd/rastrillo/new_scaffold_test.go 51ee888de11e 1
 columns cmd/rastrillo/new_scaffold_test.go 540abece7bf1 1
 columns cmd/rastrillo/new_scaffold_test.go 544e177d4737 1
 columns cmd/rastrillo/new_scaffold_test.go 55a6c852a631 1
@@ -4077,7 +4036,6 @@ columns cmd/rastrillo/new_scaffold_test.go 7ffa29c2b01b 1
 columns cmd/rastrillo/new_scaffold_test.go 81b2f8fbf272 1
 columns cmd/rastrillo/new_scaffold_test.go 825d024685ae 1
 columns cmd/rastrillo/new_scaffold_test.go 830b7714f98e 1
-columns cmd/rastrillo/new_scaffold_test.go 8550cd231d9d 1
 columns cmd/rastrillo/new_scaffold_test.go 876c5dd5fb42 1
 columns cmd/rastrillo/new_scaffold_test.go 891996155b8f 1
 columns cmd/rastrillo/new_scaffold_test.go 8b7e703f5595 1
@@ -4088,20 +4046,15 @@ columns cmd/rastrillo/new_scaffold_test.go 9529b36dd4e2 1
 columns cmd/rastrillo/new_scaffold_test.go 95cfa5abf2e6 1
 columns cmd/rastrillo/new_scaffold_test.go 979544f7f3e0 1
 columns cmd/rastrillo/new_scaffold_test.go 98347e84a473 1
-columns cmd/rastrillo/new_scaffold_test.go 9a6dc4b29822 1
 columns cmd/rastrillo/new_scaffold_test.go 9b313b3084f2 2
-columns cmd/rastrillo/new_scaffold_test.go 9c0f07e01957 1
 columns cmd/rastrillo/new_scaffold_test.go 9d5652eb6d66 1
 columns cmd/rastrillo/new_scaffold_test.go 9f7402d856f4 1
 columns cmd/rastrillo/new_scaffold_test.go a1af8016ce2b 1
 columns cmd/rastrillo/new_scaffold_test.go a1c56ced3527 1
 columns cmd/rastrillo/new_scaffold_test.go a3ea6d6a7b6f 1
-columns cmd/rastrillo/new_scaffold_test.go a4730d7d8d84 1
 columns cmd/rastrillo/new_scaffold_test.go a9ff3729e9c9 1
-columns cmd/rastrillo/new_scaffold_test.go ad7f10f6f083 1
 columns cmd/rastrillo/new_scaffold_test.go b0492b62d174 1
 columns cmd/rastrillo/new_scaffold_test.go b3595ad15f7a 1
-columns cmd/rastrillo/new_scaffold_test.go b47ee26a3335 1
 columns cmd/rastrillo/new_scaffold_test.go b4a1037c41e2 1
 columns cmd/rastrillo/new_scaffold_test.go b4a335e84425 1
 columns cmd/rastrillo/new_scaffold_test.go b50c1e61c1d6 1
@@ -4111,7 +4064,6 @@ columns cmd/rastrillo/new_scaffold_test.go b8f40b1ed8c6 1
 columns cmd/rastrillo/new_scaffold_test.go b9e8873e80dd 1
 columns cmd/rastrillo/new_scaffold_test.go ba8c1509a950 1
 columns cmd/rastrillo/new_scaffold_test.go bdca25b51fe1 1
-columns cmd/rastrillo/new_scaffold_test.go be6909fbfdd7 1
 columns cmd/rastrillo/new_scaffold_test.go bf498a512ba1 1
 columns cmd/rastrillo/new_scaffold_test.go c1c54d1b3a2d 1
 columns cmd/rastrillo/new_scaffold_test.go c21de274559d 1
@@ -4130,7 +4082,6 @@ columns cmd/rastrillo/new_scaffold_test.go e5df7041b80b 1
 columns cmd/rastrillo/new_scaffold_test.go e637252688a0 1
 columns cmd/rastrillo/new_scaffold_test.go e6929ddcea20 1
 columns cmd/rastrillo/new_scaffold_test.go e7a91628635c 1
-columns cmd/rastrillo/new_scaffold_test.go e81aa7cd634b 1
 columns cmd/rastrillo/new_scaffold_test.go ed4c34282477 1
 columns cmd/rastrillo/new_scaffold_test.go eeb4e5e0ec13 1
 columns cmd/rastrillo/new_scaffold_test.go f0846a8c852f 1
@@ -4183,7 +4134,6 @@ columns cmd/rastrillo/new_test.go 49366fb007ca 1
 columns cmd/rastrillo/new_test.go 4dd255d49bcb 1
 columns cmd/rastrillo/new_test.go 5607bb442adc 1
 columns cmd/rastrillo/new_test.go 57db3998079b 1
-columns cmd/rastrillo/new_test.go 586faa547d2c 1
 columns cmd/rastrillo/new_test.go 605187712f88 1
 columns cmd/rastrillo/new_test.go 62f40574c681 1
 columns cmd/rastrillo/new_test.go 6b64f783955e 1
@@ -4196,22 +4146,18 @@ columns cmd/rastrillo/new_test.go 7a6dc0ac17ed 1
 columns cmd/rastrillo/new_test.go 7acd5fa6645e 1
 columns cmd/rastrillo/new_test.go 810c52e2ce91 1
 columns cmd/rastrillo/new_test.go 854fb7dc9fa5 1
-columns cmd/rastrillo/new_test.go 8c6620795a3a 1
 columns cmd/rastrillo/new_test.go 8c76b8f89945 1
 columns cmd/rastrillo/new_test.go 90c2f6ac3231 1
 columns cmd/rastrillo/new_test.go 93c8a4310a95 1
 columns cmd/rastrillo/new_test.go 95c04a2bac2a 1
 columns cmd/rastrillo/new_test.go 97565aaceb72 1
-columns cmd/rastrillo/new_test.go 9ae5d1595ab0 1
 columns cmd/rastrillo/new_test.go 9f53a2319807 1
-columns cmd/rastrillo/new_test.go 9fa3cc094441 1
 columns cmd/rastrillo/new_test.go a803ce07d58c 1
 columns cmd/rastrillo/new_test.go ab470ee3f508 1
 columns cmd/rastrillo/new_test.go b493fd648891 1
 columns cmd/rastrillo/new_test.go b712afcdbeee 1
 columns cmd/rastrillo/new_test.go b81f1952f5cc 1
 columns cmd/rastrillo/new_test.go bb374bdb4d54 1
-columns cmd/rastrillo/new_test.go bccbcfc8de08 1
 columns cmd/rastrillo/new_test.go bd41a352f490 1
 columns cmd/rastrillo/new_test.go c1ba8a14ca64 1
 columns cmd/rastrillo/new_test.go c40fa3f11586 1
@@ -4225,7 +4171,6 @@ columns cmd/rastrillo/new_test.go d88bb83a9a69 1
 columns cmd/rastrillo/new_test.go de58193825f5 1
 columns cmd/rastrillo/new_test.go e265723a151e 1
 columns cmd/rastrillo/new_test.go e2d015c838fc 1
-columns cmd/rastrillo/new_test.go e7078c2c6caa 1
 columns cmd/rastrillo/new_test.go eb2c9f5689f1 1
 columns cmd/rastrillo/new_test.go ec64d5524e57 1
 columns cmd/rastrillo/new_test.go edd01ac4764d 1
@@ -4278,7 +4223,6 @@ columns cmd/rastrillo/shellscaffold_test.go 3c3ff181bb14 1
 columns cmd/rastrillo/shellscaffold_test.go 3da36d143b61 1
 columns cmd/rastrillo/shellscaffold_test.go 5460234ed0fe 1
 columns cmd/rastrillo/shellscaffold_test.go 651db8a689ee 1
-columns cmd/rastrillo/shellscaffold_test.go 6d64cc1d9c0f 1
 columns cmd/rastrillo/shellscaffold_test.go 6fa76da20f0a 1
 columns cmd/rastrillo/shellscaffold_test.go 7f8d7f4947ca 1
 columns cmd/rastrillo/shellscaffold_test.go 835cf7ad1680 1
@@ -4287,7 +4231,6 @@ columns cmd/rastrillo/shellscaffold_test.go b05f10467bd3 1
 columns cmd/rastrillo/shellscaffold_test.go ccb707112e89 1
 columns cmd/rastrillo/shellscaffold_test.go d7641aa07a87 1
 columns cmd/rastrillo/shellscaffold_test.go d767a285a43f 1
-columns cmd/rastrillo/shellscaffold_test.go edfad782e3c1 1
 columns cmd/rastrillo/shellscaffold_test.go f8b357b61c59 1
 names cmd/rastrillo/shellscaffold_test.go TestAScaffoldedSidebarAppPassesItsOwnTests/b 1
 names cmd/rastrillo/shellscaffold_test.go TestAnAppMissingTheShellFilesIsToldAndFixed/n 1
@@ -4317,20 +4260,14 @@ names cmd/rastrillo/vectors_test.go TestVectorsWritesTheAppsVectors/b 1
 columns cmd/rastrillo/vectorsinit.go 00b51c38681c 1
 columns cmd/rastrillo/vectorsinit.go 09672c400f2a 1
 columns cmd/rastrillo/vectorsinit.go 2ad32692d3b2 1
-columns cmd/rastrillo/vectorsinit.go 33e350d81ed3 1
-columns cmd/rastrillo/vectorsinit.go 4cae325e542e 1
 columns cmd/rastrillo/vectorsinit.go 5920929cdd7b 1
 columns cmd/rastrillo/vectorsinit.go 5a78cc9d1729 1
-columns cmd/rastrillo/vectorsinit.go a76596076357 1
 columns cmd/rastrillo/vectorsinit.go ad56fcda9ede 1
 columns cmd/rastrillo/vectorsinit.go c3877657cd0b 1
 columns cmd/rastrillo/vectorsinit.go c66e37719332 1
-columns cmd/rastrillo/vectorsinit.go cd11b8d761ad 1
 columns cmd/rastrillo/vectorsinit.go d4711c4dbbfc 1
 columns cmd/rastrillo/vectorsinit.go e23738191ebf 1
 columns cmd/rastrillo/vectorsinit.go e43c9645f35d 1
-columns cmd/rastrillo/vectorsinit.go f97c67a326d4 1
-func cmd/rastrillo/vectorsinit.go vectorsInit 45
 names cmd/rastrillo/vectorsinit.go vectorsInit/p 4
 columns cmd/rastrillo/vectorsinit_test.go 0ba80ce0730a 1
 columns cmd/rastrillo/vectorsinit_test.go 9ebe69ae6437 1
@@ -6346,12 +6283,10 @@ columns icons_test.go e9344ffc1f33 1
 names icons_test.go TestIconSlugsMatchesTheMap/i 1
 names icons_test.go TestMenuAndKebabAreDifferentGlyphs/n 1
 names icons_test.go TestVendoredIconsAreSelfContained/s 1
-columns internal/basepathe2e/walk_browser_test.go 202b3e41a764 1
 columns internal/basepathe2e/walk_browser_test.go 28456b0e5871 1
 columns internal/basepathe2e/walk_browser_test.go 3f929834224a 1
 columns internal/basepathe2e/walk_browser_test.go 5bf0833ca88b 1
 columns internal/basepathe2e/walk_browser_test.go 6a756db2d169 1
-columns internal/basepathe2e/walk_browser_test.go 85810546e53c 1
 columns internal/basepathe2e/walk_browser_test.go 8e885a2a9247 1
 columns internal/basepathe2e/walk_browser_test.go d767a285a43f 1
 columns internal/basepathe2e/walk_browser_test.go fd23d1bb3170 1
@@ -12410,6 +12345,7 @@ columns internal/tmplmigrate/run_test.go e845dd2a4e96 1
 columns internal/tmplmigrate/run_test.go e8a5efc1cd45 1
 names internal/tmplmigrate/run_test.go TestDryRunFailsWhileEditsArePending/b 2
 names internal/tmplmigrate/run_test.go TestRunSkipsStaticAndReportsABadFileWithoutStopping/b 2
+func internal/wire/wire.go Origin 54 moved unchanged from assertion.origin, a security check reviewed line for line; splitting it would only invite drift
 names internal/wirename/wirename.go Name/b 1
 names internal/wirename/wirename.go Name/c 1
 names internal/wirename/wirename.go Name/i 1
@@ -16161,14 +16097,12 @@ columns perf/perftest/boot_unix.go a023d4332f7a 1
 names perf/perftest/file.go load/f 1
 names perf/perftest/file.go say/a 1
 columns perf/perftest/screens.go 03b768e2e0fb 1
-columns perf/perftest/screens.go 0a9ec5a33242 1
 columns perf/perftest/screens.go 0bafa5c22950 1
 columns perf/perftest/screens.go 117590858d26 1
 columns perf/perftest/screens.go 14b688141979 1
 columns perf/perftest/screens.go 1a0458af2422 1
 columns perf/perftest/screens.go 4e2a93e88b08 1
 columns perf/perftest/screens.go 5ed2e4e6c308 1
-columns perf/perftest/screens.go 61eff1226472 1
 columns perf/perftest/screens.go 7e67937111a3 1
 columns perf/perftest/screens.go b8286b635a83 1
 columns perf/perftest/screens.go bda910b9e103 1
@@ -16177,7 +16111,7 @@ columns perf/perftest/screens.go cf66e9ae638e 1
 columns perf/perftest/screens.go d5c7abed59bf 1
 columns perf/perftest/screens.go ea266c794cdc 1
 columns perf/perftest/screens.go fc5390657e3d 1
-func perf/perftest/screens.go inventory 100
+func perf/perftest/screens.go inventory 97
 names perf/perftest/screens.go -/c 1
 names perf/perftest/screens.go inventory/f 1
 names perf/perftest/screens.go inventory/g 2

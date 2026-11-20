@@ -5,7 +5,7 @@
 // names. A menu closes on Escape only if fiesta.js runs, at the root
 // and under a base path, where a script URL the line forgot to prefix
 // asks the hub and fails the rig on its 404.
-package upgradedapptest
+package upgradedapp_test
 
 import (
 	"context"

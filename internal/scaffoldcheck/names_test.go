@@ -15,7 +15,24 @@ import (
 // package the scaffold's own code already uses as a name.
 const clashRefusal = "choose another name"
 
-// Every name the scaffold's Go uses where the app's package is in scope
+// shadowedAfterUse are locals declared after their function's last use
+// of the app's package, so they hide it only where nothing reads it, with
+// the flags of the scaffold that declares each: the migration check's in
+// single, and bare plain's index test's. They are plausible app names,
+// so they are not refused.
+var shadowedAfterUse = map[string][]string{
+	"changes": nil, "change": nil, "message": nil,
+	"lang": bareShapes[1].flags, "want": bareShapes[1].flags,
+}
+
+// bareShapes are the two bare apps, with and without the design system,
+// whose tests import the app's package just as single's do.
+var bareShapes = []variant{
+	{"bareapp", []string{"--scaffold=bare"}},
+	{"bareplainapp", []string{"--scaffold=bare", "--design-system=false"}},
+}
+
+// Every name a scaffold's Go uses where the app's package is in scope
 // is refused as an app's package name: main.go's `database` variable
 // shadowed a package called database, and its `database.New` did not
 // build. A name added to a template and not to the refusal list fails
@@ -23,11 +40,13 @@ const clashRefusal = "choose another name"
 func TestNewRefusesEveryNameTheScaffoldUses(t *testing.T) {
 	t.Parallel()
 	used := map[string]bool{}
-	for _, variant := range everyShell() {
+	for _, variant := range append(everyShell(), bareShapes...) {
 		directory := newApp(t, variant.name, variant.flags...)
 		for _, identifier := range namesBesideTheApp(t, directory,
 			variant.name) {
-			used[identifier] = true
+			if _, shadowed := shadowedAfterUse[identifier]; !shadowed {
+				used[identifier] = true
+			}
 		}
 	}
 	parent := t.TempDir()
@@ -43,20 +62,34 @@ func TestNewRefusesEveryNameTheScaffoldUses(t *testing.T) {
 	}
 }
 
+// An app named like one of those locals, in the scaffold that declares
+// it, builds, and its own tests pass.
+func TestAppsNamedLikeAShadowedLocalPassTheirTests(t *testing.T) {
+	t.Parallel()
+	for name, flags := range shadowedAfterUse {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			directory := buildableApp(t, name, flags...)
+			run(t, directory, "go", "test", "-count=1",
+				"./internal/"+name+"/")
+		})
+	}
+}
+
 // namesBesideTheApp is every identifier in the packages that import the
-// app's package, cmd/<name> and internal/<name>test, in the scaffold
-// at directory. Those are the files where a name can shadow the
-// package, or clash with its import.
+// app's package, cmd/<name> and internal/<name>'s <name>_test, in the
+// scaffold at directory. Those are the files where a name can shadow
+// the package, or clash with its import.
 func namesBesideTheApp(t *testing.T, directory, pkg string) []string {
 	t.Helper()
 	var names []string
-	for _, importer := range []string{
-		filepath.Join(directory, "cmd", pkg),
-		filepath.Join(directory, "internal", pkg+"test"),
+	for _, importers := range []string{
+		filepath.Join(directory, "cmd", pkg, "*.go"),
+		filepath.Join(directory, "internal", pkg, "*_test.go"),
 	} {
-		paths, err := filepath.Glob(filepath.Join(importer, "*.go"))
+		paths, err := filepath.Glob(importers)
 		if err != nil || len(paths) == 0 {
-			t.Fatalf("no Go files in %s: %v", importer, err)
+			t.Fatalf("no Go files match %s: %v", importers, err)
 		}
 		for _, path := range paths {
 			names = append(names, namesIn(t, path)...)

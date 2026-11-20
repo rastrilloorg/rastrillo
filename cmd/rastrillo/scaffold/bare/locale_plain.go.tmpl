@@ -1,0 +1,12 @@
+package __PKG__
+
+// The formatting pack Locale needs. rastrillo.Run refuses a
+// DefaultLocale whose pack is not linked, so it is linked here, beside
+// the constant that names it.
+import (
+__PACKS__
+)
+
+// Locale is the one language the app starts with: its page is in it,
+// and main.go serves it as the default.
+const Locale = "__CODE__"

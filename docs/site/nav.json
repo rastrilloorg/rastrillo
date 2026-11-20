@@ -294,9 +294,24 @@
           "blurb": "The SQLite dialector, and the double-registration panic it avoids."
         },
         {
+          "slug": "reference/handoff",
+          "label": "handoff",
+          "blurb": "Sign members in to an instance by way of the root app."
+        },
+        {
+          "slug": "reference/handofftest",
+          "label": "handofftest",
+          "blurb": "A fake root app for testing handoff and roster."
+        },
+        {
           "slug": "reference/harness",
           "label": "harness",
           "blurb": "A browser-drive rig: localhost origin, virtual authenticator, real Chromium."
+        },
+        {
+          "slug": "reference/instance",
+          "label": "instance",
+          "blurb": "Decide at startup whether the app runs under a root app or on its own."
         },
         {
           "slug": "reference/jobs",
@@ -397,6 +412,11 @@
           "slug": "reference/rastrillo",
           "label": "rastrillo",
           "blurb": "The root package: entrypoints, Options, Ctx, locales, assets, icons, agents, manifest types."
+        },
+        {
+          "slug": "reference/roster",
+          "label": "roster",
+          "blurb": "Keep an instance's members in step with the root's signed snapshots."
         },
         {
           "slug": "reference/scope",

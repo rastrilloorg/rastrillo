@@ -80,11 +80,15 @@ var referencePages = map[string]string{
 	"number":        "reference/number",
 	"dates":         "reference/dates",
 	"locales":       "reference/locales",
+	"handoff":       "reference/handoff",
+	"instance":      "reference/instance",
+	"roster":        "reference/roster",
 	".":             "reference/rastrillo",
 
 	// Its own gofmt block: a key this long would realign every line above.
 	"provision/provisiontest": "reference/provisiontest",
 	"basepath/basepathtest":   "reference/basepathtest",
+	"handoff/handofftest":     "reference/handofftest",
 }
 
 // TestExportedSymbolsAreDocumented is the completeness gate.

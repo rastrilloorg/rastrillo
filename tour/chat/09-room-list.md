@@ -1,6 +1,6 @@
 +++
 title = "List the rooms"
-files = ["internal/chat/handlers.go", "internal/chat/templates/index.html", "internal/chat/templates/room.html", "internal/chat/render.go", "internal/chat/routes.go", "internal/chattest/index_test.go"]
+files = ["internal/chat/handlers.go", "internal/chat/templates/index.html", "internal/chat/templates/room.html", "internal/chat/render.go", "internal/chat/routes.go", "internal/chat/index_test.go"]
 commands = ["go test ./..."]
 check = "You see the rooms listed on the home page, and each one opens a page with its name."
 +++

@@ -18,15 +18,23 @@ rastrillo new notes
 cd notes
 ```
 
+`rastrillo new` writes one of three shapes, picked with `--scaffold`:
+
+- `single`, the default: one app and its data in SQLite. This page
+  follows it.
+- `accounts`: `single` with sign-in by emailed link, where each person
+  sees only their own rows.
+- `bare`: a page and a route, with no database and no sign-in.
+
 You get a complete app, not a stub. It compiles, its tests pass, and it
 serves before you have written anything:
 
 ```text
 cmd/notes/main.go       Resolve -> db.Open -> App -> Serve
-internal/notes/         models, migrations, app, handlers, render, templates, static
-internal/notestest/     harness + example tests, passing out of the box
+internal/notes/         models, migrations, app, handlers, render, templates, static,
+                        and harness + example tests, passing out of the box
 manifest/               the declarative path: drop a <name>.toml here
-Makefile                make ci = vet + fmt + staticcheck + govulncheck + gitleaks + test + migration check
+Makefile                make ci = vet + fmt + staticcheck + govulncheck + gitleaks + budget + code + routes + csp + test + perf + generate check
 .amadan/ci, ci.d/       amadan runner CI, delegating to make
 internal/notes/icons/   app-owned icons, edit freely
 AGENTS.md               instructions + UX conventions, the source of truth
@@ -35,8 +43,9 @@ CLAUDE.md               an @AGENTS.md import, nothing more
 
 Five flags shape what gets written: `--icons`, `--icon-delivery`,
 `--ux`, `--theme` (`day`, `plain`, `signal`) and `--shell` (`column`,
-`topbar`, `sidebar`, `console`). The theme lands as `static/theme.css` and the
-shell as `templates/layout.html`, both yours to edit from that moment.
+`topbar`, `sidebar`, `console`, `stage`). The theme lands as
+`static/theme.css` and the shell as `templates/layout.html`, both yours
+to edit from that moment.
 Take the defaults your first time through. [Icons](/docs/icons) and
 [Templates](/docs/templates) explain what each one costs when you care.
 
@@ -55,8 +64,9 @@ This watches your source and regenerates, rebuilds and restarts on every
 save. A failed build keeps the previous one serving, so a typo does not
 take your app down mid-thought.
 
-Visit the address it prints. You have a working app with sign-in,
-sessions, CSRF, a database and a migration ledger.
+Visit the address it prints. You have a working app with CSRF, a
+database, a migration ledger and a JSON API. An `accounts` app has
+sign-in and sessions too.
 
 ## Where to go next
 

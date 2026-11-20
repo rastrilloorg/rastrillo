@@ -1,0 +1,49 @@
+package __PKG___test
+
+import (
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
+
+	__PKG__ "__NAME__/internal/__PKG__"
+)
+
+func get(t *testing.T, target string) *httptest.ResponseRecorder {
+	t.Helper()
+	recorder := httptest.NewRecorder()
+	__PKG__.Mux().ServeHTTP(recorder,
+		httptest.NewRequest(http.MethodGet, target, nil))
+	return recorder
+}
+
+// The index is an HTML page in the app's language. Without the
+// Content-Type a browser may sniff it, and without lang a screen reader
+// guesses the language.
+func TestIndexRenders(t *testing.T) {
+	t.Parallel()
+	recorder := get(t, "/")
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("GET /: status %d, want 200", recorder.Code)
+	}
+	const html = "text/html; charset=utf-8"
+	if got := recorder.Header().Get("Content-Type"); got != html {
+		t.Errorf("GET /: Content-Type %q, want %s", got, html)
+	}
+	body := recorder.Body.String()
+	lang := `<html lang="` + __PKG__.Locale + `">`
+	for _, want := range []string{lang, "<h1>"} {
+		if !strings.Contains(body, want) {
+			t.Errorf("GET /: body lacks %q:\n%s", want, body)
+		}
+	}
+}
+
+// The index is served at "GET /{$}" because a bare "GET /" matches
+// every path: an unknown URL would get the home page, not a 404.
+func TestUnknownPathIs404(t *testing.T) {
+	t.Parallel()
+	if recorder := get(t, "/nope"); recorder.Code != http.StatusNotFound {
+		t.Errorf("GET /nope: status %d, want 404", recorder.Code)
+	}
+}

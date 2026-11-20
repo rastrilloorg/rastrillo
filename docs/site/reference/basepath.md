@@ -84,11 +84,12 @@ func Original(r *http.Request) string
 ```go
 func OnDirectHost(r *http.Request) bool
 func PathRouted(r *http.Request) bool
+func SameHost(received, origin string) bool
 func PlatformCall(r *http.Request) bool
 func ProductURL(r *http.Request) string
 ```
 
-`OnDirectHost` reports whether a request came in on a host other than the product origin's. `PathRouted` reports whether it is served under a base path or on the direct host. `PlatformCall` reports whether it is the platform's own call, such as a wake check or a health probe. `ProductURL` is the page's full URL on the product origin.
+`OnDirectHost` reports whether a request came in on a host other than the product origin's. `PathRouted` reports whether it is served under a base path or on the direct host. `PlatformCall` reports whether it is the platform's own call, such as a wake check or a health probe. `ProductURL` is the page's full URL on the product origin. `SameHost` reports whether a request's `Host` names an origin, in any case, with a trailing dot, and with the scheme's default port written or left off. It reads `Host`, never `X-Forwarded-Host`.
 
 On any host other than the product origin's, `Handler` serves the app at the root, with no base. With `RedirectDirect`, the default, it sends the visitor to the same page on the product path with a 307: `https://acme-x7k2pq.<account>.oncarlos.com/notes?x=1` goes to `https://example.com/acme/notes?x=1`. A 307 keeps the method, and browsers do not cache it, so switching to `ServeDirect` later takes effect at once. With `ServeDirect`, it serves the page there instead.
 

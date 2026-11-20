@@ -1,6 +1,6 @@
 ---
 name: rastrillo
-description: "Build a multi-user CARLOS app, or port one to it: GORM models or plain SQL, chi routes, sessions, owner-scoped queries."
+description: "Build a CARLOS app or port one: GORM models or plain SQL, chi routes, sessions, owner-scoped queries."
 ---
 
 # Rastrillo
@@ -39,21 +39,25 @@ Read the topic before you start work it covers, not after the source:
 | use the CLI beyond `new`, manifests, doctor, pins, native or PWA | `skill/tooling.md` |
 | serve JSON at `/api/v1` or MCP at `/api/v1/mcp`, mint tokens, let an agent act for a person, write `Authorize`, hand-write an operation | `skill/api.md`, `skill/mcp.md` |
 
-## Start here
+## Pick a shape
+
+| `--scaffold` | For |
+|---|---|
+| `bare` | a page or a dashboard: no data, no sign-in |
+| `single` (default) | one instance and its data in SQLite; no sign-in |
+| `accounts` | sign-in by emailed link; each person sees only their rows |
+
+`home` and `hub` are not built yet.
 
 ```sh
 go install amadan.net/rastrillo/rastrillo/cmd/rastrillo@latest
 rastrillo new notes && cd notes && go mod tidy && go test ./...
 ```
 
-**People sign in? Start with `rastrillo new --auth=magic <name>`.** The
-app then signs people in by emailed link from its first commit, scopes
-owned rows (below) and its tests sign in for you; its
-`AGENTS.md` says where each piece is. Without `--auth` the scaffold has
-no accounts.
-
-`rastrillo new` writes the whole app shape, its gate (`make ci`) and
-its tests; it compiles, passes and serves before you write a line, so
+`rastrillo new` writes the whole app shape, its gate (`make ci`; in
+`bare`, `go test ./...`) and its tests, which sign in for you in
+`accounts` (its `AGENTS.md` says where each piece is); it compiles,
+passes and serves before you write a line, so
 never hand-write any of it. The scaffolded `AGENTS.md` is the source of
 truth for that app's code; this file stays the framework's.
 
@@ -100,7 +104,7 @@ One seam, every read and write (`app.database.G` is a
 `*gorm.DB`; in an action, `request` is `visit.Request()`):
 `func (app *App) owned(request *http.Request) *gorm.DB { userID, _ :=
 sessions.UserID(request); return scope.Owned(app.database.G, userID) }`.
-An `--auth=magic` app has it already (`auth.go`), over an `Owner`
+An `accounts` app has it already (`auth.go`), over an `Owner`
 address column: create rows with `Owner: ownerOf(request)`, never
 `UserID`. `scope.Owned(g, owner)` adds `WHERE user_id = ?`; `scope.OwnedBy(g,
 column, owner)` takes another owner column, panicking unless plain
@@ -181,7 +185,7 @@ The other seven, an action's shape and what each gate message means:
 2. Every update names its columns in `.Select(...)`.
 3. Pages and forms only inside `Routes`' `csrf.Protect` group.
 4. Signed-in routes, jobs' included, behind the session guard.
-5. One `migrate.Apply` at boot; `make ci` runs `rastrillo migration check`.
+5. One `migrate.Apply` at boot; `TestModelsMatchMigrations` passes.
 6. `options.DBPath` blanked before `Serve` when the app opened its own handle.
 7. Not-found and not-yours both answer 404.
 8. No screen carries two ways to start work; each action has its own page.

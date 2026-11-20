@@ -33,8 +33,7 @@ func doctorApp(t *testing.T, version, theme string) string {
 	for name, body := range assets {
 		mustWrite(t, filepath.Join(dir, "internal", "demoapp", "static", name), string(body))
 	}
-	mustWrite(t, filepath.Join(dir, "internal", "demoapptest", "vendored_test.go"),
-		fmt.Sprintf(`package demoapptest
+	mustWrite(t, demoPin(dir), fmt.Sprintf(`package demoapp_test
 
 func TestVendoredAssetsMatchTheLibrary(t *testing.T) {}
 
@@ -45,6 +44,25 @@ var vendoredIsMine = map[string]bool{
 }
 `, theme))
 	return dir
+}
+
+// demoPin is doctorApp's pin, beside the code as rastrillo new writes it.
+func demoPin(dir string) string {
+	return filepath.Join(dir, "internal", "demoapp", "vendored_test.go")
+}
+
+// olderPin moves doctorApp's pin to internal/demoapptest, where an app
+// made before the tests moved beside the code keeps it, and returns it.
+func olderPin(t *testing.T, dir string) string {
+	t.Helper()
+	pin := filepath.Join(dir, "internal", "demoapptest", "vendored_test.go")
+	if err := os.MkdirAll(filepath.Dir(pin), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Rename(demoPin(dir), pin); err != nil {
+		t.Fatal(err)
+	}
+	return pin
 }
 
 func mustWrite(t *testing.T, path, body string) {
@@ -243,7 +261,7 @@ func TestDoctorReportsADeletedLightJSAsAbsentNotDrift(t *testing.T) {
 // the pin leaves it alone either way, and only --force writes it back.
 func TestDoctorSaysARecordedDeletionWasRemovedOnPurpose(t *testing.T) {
 	dir := doctorApp(t, rastrilloVersion(), "day")
-	pin := filepath.Join(dir, "internal", "demoapptest", "vendored_test.go")
+	pin := demoPin(dir)
 	src, _ := os.ReadFile(pin)
 	mustWrite(t, pin, strings.Replace(string(src), `// "tokens.css": true,`, `"light.js": true,`, 1))
 	path := filepath.Join(dir, "internal", "demoapp", "static", "light.js")
@@ -258,7 +276,8 @@ func TestDoctorSaysARecordedDeletionWasRemovedOnPurpose(t *testing.T) {
 		t.Fatalf("a recorded removal was reported as drift:\n%s", printed(rep, false))
 	}
 	out := printed(rep, false)
-	if !strings.Contains(out, "yours    light.js (removed on purpose, recorded in internal/demoapptest/vendored_test.go)") {
+	if !strings.Contains(out, "yours    light.js (removed on purpose, "+
+		"recorded in internal/demoapp/vendored_test.go)") {
 		t.Errorf("the report does not say light.js was removed on purpose:\n%s", out)
 	}
 	if strings.Contains(out, "deliberate edit") {
@@ -548,7 +567,7 @@ func TestDoctorReadsThePreMoveRequirementAsGoDoes(t *testing.T) {
 // vendoredIsMine exists.
 func TestDoctorLeavesADeliberateEditAlone(t *testing.T) {
 	dir := doctorApp(t, rastrilloVersion(), "day")
-	pin := filepath.Join(dir, "internal", "demoapptest", "vendored_test.go")
+	pin := demoPin(dir)
 	src, _ := os.ReadFile(pin)
 	mustWrite(t, pin, strings.Replace(string(src), `// "tokens.css": true,`, `"tokens.css": true,`, 1))
 	path := filepath.Join(dir, "internal", "demoapp", "static", "tokens.css")
@@ -581,8 +600,7 @@ func TestDoctorLeavesADeliberateEditAlone(t *testing.T) {
 // report that app's own decisions as damage.
 func TestDoctorReadsTheOlderPinShape(t *testing.T) {
 	dir := doctorApp(t, rastrilloVersion(), "day")
-	mustWrite(t, filepath.Join(dir, "internal", "demoapptest", "vendored_test.go"),
-		`package demoapptest
+	mustWrite(t, olderPin(t, dir), `package demoapptest
 
 func TestVendoredAssetsMatchTheLibrary(t *testing.T) {
 	const vendoredTheme = "day"
@@ -613,7 +631,7 @@ func TestVendoredAssetsMatchTheLibrary(t *testing.T) {
 func TestDoctorDoesNotGuessAtACustomTheme(t *testing.T) {
 	dir := doctorApp(t, rastrilloVersion(), "day")
 	// No pin file, so there is nothing to say which theme it should be.
-	if err := os.Remove(filepath.Join(dir, "internal", "demoapptest", "vendored_test.go")); err != nil {
+	if err := os.Remove(demoPin(dir)); err != nil {
 		t.Fatal(err)
 	}
 	mustWrite(t, filepath.Join(dir, "internal", "demoapp", "static", "theme.css"),
@@ -646,7 +664,7 @@ func TestDoctorDoesNotGuessAtACustomTheme(t *testing.T) {
 // "custom".
 func TestDoctorMatchesAThemeByContent(t *testing.T) {
 	dir := doctorApp(t, rastrilloVersion(), "signal")
-	if err := os.Remove(filepath.Join(dir, "internal", "demoapptest", "vendored_test.go")); err != nil {
+	if err := os.Remove(demoPin(dir)); err != nil {
 		t.Fatal(err)
 	}
 	rep, err := diagnose(dir, "")
@@ -715,6 +733,15 @@ func TestDoctorSaysWhatIsTrueOfAnAppWithNothingVendored(t *testing.T) {
 		t.Fatal("diagnose accepted a directory with no go.mod")
 	}
 	mustWrite(t, filepath.Join(dir, "go.mod"), "module bare\n\ngo 1.24\n")
+	// No templates either is an app without a design system, which is
+	// not an error (TestDoctorChecksAPlainBareApp). Templates with
+	// nothing vendored are pages linking files that are not there.
+	if rep, err := diagnose(dir, ""); err != nil || !rep.noDesign {
+		t.Fatalf("diagnose on a module with no design system: %v, %+v",
+			err, rep)
+	}
+	mustWrite(t, filepath.Join(dir, "internal", "bare", "templates",
+		"layout.html"), "<!doctype html>")
 	_, err := diagnose(dir, "")
 	if err == nil {
 		t.Fatal("diagnose accepted a module with nothing vendored in it")
@@ -729,6 +756,23 @@ func TestDoctorSaysWhatIsTrueOfAnAppWithNothingVendored(t *testing.T) {
 	}
 	if strings.Contains(err.Error(), "a rastrillo app?") {
 		t.Errorf("the error doubts the app rather than reporting the state: %v", err)
+	}
+}
+
+// An older app keeps static/ and templates/ at the root, which
+// findStaticDir also looks in. Its layout with the vendored files gone
+// is a broken app, not one without a design system, so it stays the
+// error and --fix does not quietly succeed.
+func TestDoctorRootLayoutWithNothingVendoredIsAnError(t *testing.T) {
+	dir := t.TempDir()
+	mustWrite(t, filepath.Join(dir, "go.mod"), "module older\n\ngo 1.24\n")
+	mustWrite(t, filepath.Join(dir, "templates", "layout.html"),
+		"<!doctype html>")
+	rep, err := diagnose(dir, "")
+	if err == nil || !strings.Contains(err.Error(),
+		"nothing vendored to check") {
+		t.Fatalf("diagnose on a root layout with nothing vendored: %v, %+v",
+			err, rep)
 	}
 }
 
@@ -860,7 +904,7 @@ func TestVendoredAssetsMatchTheLibrary(t *testing.T) {
 // --force, which would also flatten the theme.
 func TestDoctorOldPinPredatingAFileIsNotAClaim(t *testing.T) {
 	dir := doctorApp(t, rastrilloVersion(), "day")
-	mustWrite(t, filepath.Join(dir, "internal", "demoapptest", "vendored_test.go"), oldPinShape)
+	mustWrite(t, olderPin(t, dir), oldPinShape)
 	// The app hand-wrote its theme, and never had datetime.js.
 	mustWrite(t, filepath.Join(dir, "internal", "demoapp", "static", "theme.css"),
 		":root { --rst-bg: #fff8f0; }\n")
@@ -934,7 +978,7 @@ func TestDoctorUsageErrorsExitTwo(t *testing.T) {
 // someone looking for a thing that is not in their file.
 func TestDoctorAdviceNamesSomethingTheAppHas(t *testing.T) {
 	dir := doctorApp(t, rastrilloVersion(), "day")
-	mustWrite(t, filepath.Join(dir, "internal", "demoapptest", "vendored_test.go"), oldPinShape)
+	mustWrite(t, olderPin(t, dir), oldPinShape)
 	mustWrite(t, filepath.Join(dir, "internal", "demoapp", "static", "select.js"), "// drifted\n")
 
 	rep, err := diagnose(dir, "")
@@ -977,7 +1021,7 @@ func TestClipDoesNotSplitARune(t *testing.T) {
 // for — an edit somebody made and wanted kept. Honour it.
 func TestDoctorOldPinHonoursAnEditItCanSee(t *testing.T) {
 	dir := doctorApp(t, rastrilloVersion(), "day")
-	mustWrite(t, filepath.Join(dir, "internal", "demoapptest", "vendored_test.go"), oldPinShape)
+	mustWrite(t, olderPin(t, dir), oldPinShape)
 	path := filepath.Join(dir, "internal", "demoapp", "static", "datetime.js")
 	mustWrite(t, path, "// our own date handling, since 2025\n")
 
@@ -1015,7 +1059,7 @@ func TestDoctorOldPinHonoursAnEditItCanSee(t *testing.T) {
 // protect and every reason to stay checked.
 func TestDoctorDoesNotExemptAFileItInstalled(t *testing.T) {
 	dir := doctorApp(t, rastrilloVersion(), "day")
-	mustWrite(t, filepath.Join(dir, "internal", "demoapptest", "vendored_test.go"), oldPinShape)
+	mustWrite(t, olderPin(t, dir), oldPinShape)
 	path := filepath.Join(dir, "internal", "demoapp", "static", "datetime.js")
 	if err := os.Remove(path); err != nil {
 		t.Fatal(err)

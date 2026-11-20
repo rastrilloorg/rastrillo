@@ -36,12 +36,12 @@ func TestDoctorFixLeavesAnOlderAppsVendoredTestPassing(t *testing.T) {
 	directory, _ := olderApp(t, "olderapp")
 	vendored := "TestVendoredAssetsMatchTheLibrary"
 	if output, err := runIn(directory, "go", "test", "-count=1",
-		"-run", "^"+vendored+"$", "./internal/olderapptest/"); err == nil {
+		"-run", "^"+vendored+"$", "./internal/olderapp/"); err == nil {
 		t.Fatalf("the older app's vendored test passes before the fix, "+
 			"so it cannot show the fix:\n%s", output)
 	}
 	run(t, directory, rastrilloBinary, "doctor", "--fix")
-	runTests(t, directory, "./internal/olderapptest/", vendored)
+	runTests(t, directory, "./internal/olderapp/", vendored)
 }
 
 // fiestaAdvice finds doctor's line for a layout that loads no fiesta.js

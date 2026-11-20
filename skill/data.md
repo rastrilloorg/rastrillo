@@ -17,8 +17,7 @@ one-connection writer (db.Open's DSN) and readers;
 package, import only `make gorm-free` ones — no `db`, `scope`,
 `gormlite`. Explicit transactions and plans, smaller and faster. You
 write the scans, every migration (generate and `check` need GORM
-`Models`: drop `migration-check` from `make ci` and
-`.amadan/ci.d/40-migration-check`) and every owned query's
+`Models`: delete the app's `migrations_test.go`) and every owned query's
 `WHERE user_id = ?`. CRUD-heavy, small team: (a). Money, fulfilment,
 transaction-critical: (b). Switching is per package; schema and ledger
 are the same.
@@ -57,6 +56,8 @@ A home or hub that creates tenant instances on CARLOS uses `provision`;
 test it with `provisiontest`. docs/site/reference/provision.md
 
 A tenant served under `/<slug>` on a hub's origin sets `Options.BasePath` from `basepath.FromEnv`. Links in a body go through `{{path $ "/x"}}` or `basepath.Path`; redirect plain paths. No sign-in runs there. docs/site/reference/basepath.md
+
+For an instance under a root app, call `instance.FromEnv`, use `handoff` to sign members in, and use `roster` to keep the member list in sync. Test with `handofftest`. docs/site/reference/instance.md, handoff.md, roster.md, handofftest.md
 
 ## Migrations
 

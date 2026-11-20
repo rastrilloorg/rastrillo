@@ -22,8 +22,8 @@ const (
 		"line %d of %s %d columns wide, and the app's make code allows %d."
 )
 
-// taken is every name the scaffold's Go uses in cmd/<name> and the
-// <pkg>test package, the two that import the app's package. There a
+// taken is every name a scaffold's Go uses in cmd/<name> and the
+// <pkg>_test package, the two that import the app's package. There a
 // variable of the same name shadows the package (main.go's database
 // made database.New a method call on *db.DB), and an import or a
 // declaration of it clashes with the package's own import.
@@ -37,7 +37,8 @@ var taken = strings.Fields(`
 	get getAs got group handler harness hashedStylesheet href html http
 	hub
 	httptest index io json len library link linkPattern logger mail
-	mailer main method migrate mux name newApp newAppWithMail nil ok
+	mailer main method migrate modeldiff mux name newApp newAppWithMail
+	nil ok
 	options origin originFrom os outbox page path perftest post postOver
 	powtest rastrillo recorder regexp request response rig router routes
 	schema send servingOptions sessions signedInTokenPage signIn
@@ -46,10 +47,12 @@ var taken = strings.Fields(`
 	TestBareAssetNameStaysFresh TestBrowserWalk
 	TestErrorPageRendersFrameworkPartial
 	TestIndexLinksFingerprintedStylesheet TestIndexRenders testing
-	TestMain testOrigin TestOverviewRenders TestPerfBoot TestPerfScreens
+	TestMain TestModelsMatchMigrations testOrigin TestOverviewRenders
+	TestPerfBoot TestPerfScreens
 	TestSignInByEmailedLink TestTokenPageShowsANewTokenOnce
-	TestVendoredAssetsMatchTheLibrary time title token tokenPattern ui
-	url variable vendored vendoredIsMine vendoredTheme year
+	TestUnknownPathIs404 TestVendoredAssetsMatchTheLibrary time title
+	token tokenPattern ui url variable vendored vendoredIsMine
+	vendoredTheme year
 `)
 
 // CheckPackage refuses the app called name if its package name, pkg,

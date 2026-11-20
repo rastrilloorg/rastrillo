@@ -1,0 +1,29 @@
+package %[2]s_test
+
+import (
+	"strings"
+	"testing"
+
+	"amadan.net/rastrillo/rastrillo/migrate/modeldiff"
+
+	"%[1]s/internal/%[2]s"
+)
+
+// Schema, not BootSchema: Models has no subsystem tables.
+func TestModelsMatchMigrations(t *testing.T) {
+	t.Parallel()
+	changes, err := modeldiff.Generate(t.Context(),
+		%[2]s.Schema.All(),
+		%[2]s.Models)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(changes) == 0 {
+		return
+	}
+	message := "models and migrations disagree:\n"
+	for _, change := range changes {
+		message += "  " + strings.TrimSpace(change.SQL) + "\n"
+	}
+	t.Fatal(message + "\nrun: rastrillo migration generate")
+}

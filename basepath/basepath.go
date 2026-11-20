@@ -131,7 +131,7 @@ func FromEnv(origin string, getenv func(string) string) (Config, error) {
 	// The instance's own host is its direct host, never the hub's. An
 	// app's origin falls back to it on CARLOS, which would quietly serve
 	// the tenant on its own host instead of the hub's path.
-	if host := getenv("CARLOS_HOST"); host != "" && sameHost(host, origin) {
+	if host := getenv("CARLOS_HOST"); host != "" && SameHost(host, origin) {
 		return Config{}, fmt.Errorf("rastrillo/basepath: origin %q is "+
 			"this instance's own host, CARLOS_HOST, not the hub's; set the "+
 			"app's origin to the https://host the hub is served at", origin)
@@ -205,14 +205,16 @@ func receivedAuthority(hostport, defaultPort string) authority {
 	return authority{strings.TrimSuffix(strings.ToLower(host), "."), port}
 }
 
-// sameHost reports whether received, a request's Host, names origin.
+// SameHost reports whether received, a request's Host, names origin: any
+// case, a trailing dot, and the scheme's default port written or left off.
+// handoff and roster use it to answer only on the instance's own origin.
 //
 // It reads Host and never X-Forwarded-Host: the edge preserves Host
 // (edge.go:2402), and a header any client can send must not choose
 // whether the app strips a base.
-func sameHost(received, origin string) bool {
-	o, def, ok := originAuthority(origin)
-	return ok && receivedAuthority(received, def) == o
+func SameHost(received, origin string) bool {
+	want, defaultPort, ok := originAuthority(origin)
+	return ok && receivedAuthority(received, defaultPort) == want
 }
 
 type ctxKey struct{}
