@@ -22315,7 +22315,6 @@ columns ui/matrix_browser_test.go 4b338a876051 1
 columns ui/matrix_browser_test.go 4bf7c8d6ba8e 1
 columns ui/matrix_browser_test.go 54cf4c49cc93 1
 columns ui/matrix_browser_test.go 5603941570f5 1
-columns ui/matrix_browser_test.go 757e4c264bb8 1
 columns ui/matrix_browser_test.go 7f7c4dcb8d3a 1
 columns ui/matrix_browser_test.go 81d1b616d7d0 1
 columns ui/matrix_browser_test.go 827f16224c9a 1
@@ -22340,12 +22339,6 @@ names ui/matrix_browser_test.go decodePNG/b 1
 names ui/matrix_browser_test.go legacyFile/b 1
 names ui/matrix_browser_test.go legacyRig/r 1
 names ui/matrix_browser_test.go legacyRig/w 1
-names ui/matrix_browser_test.go matrixShots/b 1
-names ui/matrix_browser_test.go matrixShots/h 1
-names ui/matrix_browser_test.go matrixShots/s 1
-names ui/matrix_browser_test.go matrixShots/w 1
-names ui/matrix_browser_test.go matrixShots/x 1
-names ui/matrix_browser_test.go matrixShots/y 1
 names ui/matrix_browser_test.go samePixels/a 1
 names ui/matrix_browser_test.go samePixels/b 1
 names ui/matrix_browser_test.go samePixelsWithin/a 1
