@@ -1,7 +1,8 @@
 # Multi-instance apps as the easy default
 
 **Date:** 2026-11-19
-**Status:** approved by Paul 2026-11-19
+**Status:** approved by Paul 2026-11-19; amended 2026-11-20 (custom
+domains, §7.4)
 **Builds on:** the user-models design, approved 2026-09-28
 (`carlos/pegamento`, branch `design-user-models`,
 `docs/superpowers/specs/2026-09-27-user-models-design.md`, called "UM"
@@ -60,7 +61,7 @@ superadmin can see every person and account at `/fleet`.
 - Support access (a superadmin entering a customer's account). It will be
   its own add-on later, and depends on the CARLOS trust boundary
   (Paul, 2026-11-19).
-- Billing, region moves, takedowns, imports, per-account custom domains.
+- Billing, region moves, takedowns, imports.
 - Migrating Tito Go or Eleven onto it.
 - Blind (end-to-end encrypted) homes: UM model D is unchanged.
 
@@ -366,6 +367,93 @@ People   [search by email]
 
 It uses Rastrillo's design system and components, and goes through copy
 review like any user-facing text.
+
+### 7.4 Custom domains (Paul, 2026-11-20)
+
+**Ruling (Paul, 2026-11-20):** every account can use its own domain,
+for example a Patrix site at `blog.asymco.com` instead of
+`asymco.patrix.cc`. This reverses the non-goal this design first had.
+
+**What the platform gives.** The tenant app's `--role instance`
+credential may attach, read and detach hostnames
+(`POST`, `GET` and `DELETE /api/cli/apps/{account}/{app}/domains` and
+`domains/{host}`; platform `internal/console/routedecls.go:856-888`).
+- Attach takes the route to serve, here the instance's platform host.
+- On a deployment with `CONSOLE_DOMAIN_PROOF`, attach answers with a
+  TXT challenge at `_carlos-challenge.<host>`. Repeating the attach
+  verifies it; there is no separate verify door.
+- The per-host `GET` reports the records to publish, DNS state, a
+  derived `state` with its reason and check time, and certificate
+  expiry. Certificates are automatic.
+- An exact claim wins over the catch-all.
+
+**The flow.** An account's Owner adds a hostname at the root. The root
+shows the records the platform says to publish, checks on request and
+on the daily tick, and shows the state: proving, waiting for DNS,
+waiting for the certificate, live, or not working. The Owner can remove
+it, and can always go back to the default address from the root, which
+does not depend on the custom domain working.
+
+**Ownership.** The root keeps one record per hostname, naming the
+account, with an operation state (`reserving`, `attached`, `removing`)
+and a generation. Every console call is reconciled against that record,
+and an ambiguous answer is settled by reading the platform before
+anything is undone. An unproved reservation lapses after seven days,
+as the platform's does. The root refuses hostnames under the product's
+parent, the instance domain and its own host.
+
+**Ruling: the custom domain becomes the instance's origin** (my call,
+flagged to Paul). The instance must answer handoff, sessions, emailed
+links and public pages on one origin, and Rastrillo fixes an app's
+origin at boot. The other option, handoff on the platform host and
+public pages on the custom domain, still needs the instance to learn
+the domain (for its links and canonical URLs). It also gives visitors
+a sign-in on a different host from the pages they read.
+- **Delivery.** The root sends the account's custom origin in the
+  signed roster snapshot (§6.3) once the platform reports the domain
+  `live`. Roster delivery always goes to the instance's **platform
+  host**: the receiver's audience is bound to it, and it never
+  redirects. A broken custom domain therefore cannot cut the root off.
+- **The instance.** It stores the origin with the roster state, loads
+  it before building its handlers at boot, and restarts gracefully on a
+  change. Its other hosts redirect to the origin, except the platform
+  paths: `/_carlos/*`, `/api/version` and `/healthz`.
+- **Which origin is current.** It is the one in the last snapshot the
+  instance **accepted**, not the one the root intends. `/assert` signs
+  for it, and resolves a custom audience through the hostname record.
+- **Sessions do not move.** Members enter the new origin through the
+  root as usual, and visitors sign in again. Old-host links redirect
+  with their path and query. No new credential is minted, and none is
+  carried by a redirect the root makes.
+- **When a live domain stops working,** the root shows it as not
+  working (to the Owner, to members in the switcher, and on `/fleet`).
+  It does not switch back on its own, because DNS can flap. The Owner's
+  "use the default address" sends a snapshot without the origin, waits
+  for it to be accepted, then detaches.
+
+**Ships off until the platform closes two gaps** (`Config.CustomDomains`,
+default false). The platform's TXT challenge is derived from the
+platform account and the hostname (`domainpolicy.go:285`). Every plaza
+account shares one platform account, so account B could reuse a record
+account A left behind. And plaza cannot tell whether proof is on. An
+operator may turn the feature on knowing both.
+
+**Platform requests** (filed as `carlos/platform` discussions, not
+worked around):
+1. **Proof bound to the claim.** A fresh challenge per attach (per claim
+   generation), so a leftover TXT record proves nothing for the next
+   claimant.
+2. **Proof is knowable.** Report whether `CONSOLE_DOMAIN_PROOF` is on,
+   for example in the attach answer.
+3. **Conditional attach and detach.** Re-attaching a hostname the same
+   app holds moves it to the new route, and detach takes no expected
+   claim. Both should accept an expected route or claim revision and
+   refuse on a mismatch, so concurrent writers in one app cannot move or
+   remove each other's claims.
+4. **Domains for the instance role.** The `instance` role reaches the
+   domains doors "for compatibility" (`routedecls.go:850-855`). Plaza
+   depends on it, so it should be documented as part of that role, or
+   of #185's create-only role.
 
 ## 8. Testing
 
