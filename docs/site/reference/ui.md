@@ -683,8 +683,10 @@ to tell a layout with the old phone menu from a new one.
 `signin` renders the whole sign-in card from an `auth.SigninState`, and
 `signin-title` the matching tab title. Pass `Brand` with a `Name`, and
 optionally a one-line `Pitch` and a `Mark` (an `<img>` or inline SVG as
-`template.HTML`). Every string comes from the base catalogs under
-`rastrillo.ui.signin_*`, in all twelve languages. The passkey button
+`template.HTML`). Pass `HideBrand: true` to leave that brand column
+out when your page draws the app's mark and name itself; the heading
+and tab title still use `Brand.Name`. Every string comes from the base
+catalogs under `rastrillo.ui.signin_*`, in all twelve languages. The passkey button
 loads `passkey.JS()` from the `ScriptURL` you set, and only on a page
 that shows it; without that script it stays hidden, and the email form
 works as ever. See [Magic links](/docs/magic-links#use-the-shipped-screen-or-your-own).

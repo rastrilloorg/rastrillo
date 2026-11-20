@@ -8,6 +8,17 @@ This file starts at v0.23.0. Earlier releases are in the git history and their
 tags; nothing has been reconstructed for them, because a changelog written
 backwards from commits is a guess wearing a date.
 
+## Unreleased
+
+### Added: `HideBrand` on the `signin` partial
+
+Pass `HideBrand: true` to the `signin` partial to leave out its brand
+column (mark, name and pitch) when your page draws the app's mark and
+name around the card itself, as estilo's Oficina door does. Drop any CSS
+rule you used to hide `[rst-signin-brand]`. `Brand.Name` is still
+required: the heading and `signin-title` name the app with it. Without
+the key the screen is byte for byte what it was.
+
 ## v0.38.0
 
 One way in on the sign-in screen, one header row on a phone, and

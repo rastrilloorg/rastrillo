@@ -507,6 +507,34 @@ func TestSigninRendersTheBrandsOptionalParts(t *testing.T) {
 	}
 }
 
+// estilo's Oficina door draws the app's mark and name around the card,
+// so a brand column inside it names the app twice. HideBrand drops the
+// column and nothing else: the door's <div> opens the section and
+// closes as it does, and the heading and title still name the app.
+func TestHideBrandLeavesOnlyTheDoor(t *testing.T) {
+	only := regexp.MustCompile(`(?s)^\s*<section rst-signin [^>]*>\s*` +
+		`<div rst-signin-door[ =>].*</div>\s*</section>\s*$`)
+	for _, oneWay := range []bool{false, true} {
+		st := auth.SigninState{Step: auth.StepAsk, OneWay: oneWay}
+		data := signinData(st)
+		data["Brand"] = map[string]any{"Name": "Harbour", "Pitch": "Moor",
+			"Mark": template.HTML(`<svg aria-hidden="true"></svg>`)}
+		data["HideBrand"] = true
+		out := render(t, "signin", data)
+		if !only.MatchString(out) {
+			t.Errorf("one-way %v: more than the door:\n%s", oneWay, out)
+		}
+		heading := h1Pattern.FindStringSubmatch(out)
+		if heading == nil || !strings.Contains(heading[1], "Harbour") {
+			t.Errorf("one-way %v: <h1> %v lacks the name", oneWay, heading)
+		}
+		title := render(t, "signin-title", data)
+		if !strings.Contains(title, "Harbour") {
+			t.Errorf("one-way %v: title %q lacks the name", oneWay, title)
+		}
+	}
+}
+
 // [rst-btn] is an inline-flex box with a gap, so a label whose text and
 // <bdi> sit directly in the button are two flex items, and the gap
 // between them reads as a double space before the address. The label

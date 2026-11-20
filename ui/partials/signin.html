@@ -19,6 +19,10 @@
                 Continue link goes to #, and the passkey door shows as
                 the enhanced page would, with nothing for a script to find
                 and no script loaded
+       HideBrand  bool, optional — leave out the brand column (Mark,
+                Name, Pitch), for a page that draws the app's mark and
+                name around the card itself. Brand.Name still names the
+                heading and signin-title.
 
      With State.OneWay (auth's Config.SigninOneWay) the door offers one
      way in, then "Other ways to sign in", the chooser page (State.Step
@@ -40,8 +44,8 @@
      focus starts (State.Focus), and a live alert would race the focus
      announcement. The only live region is the passkey message. */}}
 {{define "signin"}}{{$L := localizer $}}{{$s := .State}}{{$door := $s.Door}}{{$focus := $s.Focus}}{{$name := .Brand.Name}}{{$preview := opt . "Preview"}}{{$proof := $s.Proof}}{{$gated := and $proof $proof.NeedsScript}}{{if not $s.Unavailable}}<section rst-signin aria-labelledby="rst-signin-heading">
-<div rst-signin-brand>{{with opt .Brand "Mark"}}<div rst-signin-mark>{{.}}</div>{{end}}<p rst-signin-name>{{$name}}</p>{{with opt .Brand "Pitch"}}<p rst-signin-pitch>{{.}}</p>{{end}}</div>
-<div rst-signin-door{{if $s.OneWay}}="one-way"{{end}}>
+{{if not (opt . "HideBrand")}}<div rst-signin-brand>{{with opt .Brand "Mark"}}<div rst-signin-mark>{{.}}</div>{{end}}<p rst-signin-name>{{$name}}</p>{{with opt .Brand "Pitch"}}<p rst-signin-pitch>{{.}}</p>{{end}}</div>
+{{end}}<div rst-signin-door{{if $s.OneWay}}="one-way"{{end}}>
 {{if eq $door "continue"}}{{/* In the card, not <head>: browsers apply a refresh wherever the element
      is, the page's layout owns <head>, and this is how fichas runs in
      production. A document navigating is not the form's redirect chain,
