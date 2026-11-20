@@ -51,6 +51,13 @@ Seven new strings, `rastrillo.ui.signin_ways`, `signin_ways_title`,
 twelve catalogs. An app with its own catalog for a language rastrillo
 does not ship must add them, or `generate --check` fails.
 
+The one-way door is styled by Fiesta 1.5.0, which Rastrillo now pins:
+every button on it is a pill, its small controls are quiet text
+buttons with a chevron, the chooser is a box of compact rows, and every
+field has one focus ring instead of two. The door carries
+`rst-signin-door="one-way"` and its rows sit in `rst-signin-ways`.
+Fiesta 1.5.0 also draws an empty state with no box.
+
 ### Added: `lastsignin` remembers a federated sign-in
 
 `lastsignin.MethodFederated` records a sign-in another service vouched

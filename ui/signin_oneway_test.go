@@ -397,3 +397,29 @@ func TestAStepUpFormPostsReauth(t *testing.T) {
 		t.Errorf("an ordinary sign-in posts reauth:\n%s", plain)
 	}
 }
+
+// Fiesta styles the one-way door by its own hooks: the door's
+// one-way token, the chooser's box of rows, and the small controls'
+// chevron, the Sent screen's Use a different email included.
+func TestTheOneWayDoorCarriesFiestasHooks(t *testing.T) {
+	byName := oneWayByName()
+	door := render(t, "signin", signinData(byName["app, a link"]))
+	if !strings.Contains(door, `<div rst-signin-door="one-way">`) {
+		t.Errorf("the one-way door lacks its token:\n%s", door)
+	}
+	chooser := render(t, "signin", signinData(byName["app, the chooser"]))
+	rows := regexp.MustCompile(`(?s)<div rst-signin-ways>\n(.*?)</div>`).
+		FindStringSubmatch(chooser)
+	if rows == nil || !strings.Contains(rows[1], `href="/signin?way=email"`) ||
+		!strings.Contains(rows[1], `action="/signin/forget"`) ||
+		strings.Contains(rows[1], defaultT("rastrillo.ui.signin_back")) {
+		t.Errorf("the chooser's rows and only they sit in rst-signin-ways:\n%s",
+			chooser)
+	}
+	sent := render(t, "signin", signinData(byName["app, sent"]))
+	button := regexp.MustCompile(`(?s)<button rst-btn="ghost"[^>]*>(.*?)` +
+		`</button>`).FindStringSubmatch(sent)
+	if button == nil || !strings.Contains(button[1], `d="m9 18 6-6-6-6"`) {
+		t.Errorf("Sent's Use a different email has no chevron:\n%s", sent)
+	}
+}

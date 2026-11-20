@@ -41,7 +41,7 @@
      announcement. The only live region is the passkey message. */}}
 {{define "signin"}}{{$L := localizer $}}{{$s := .State}}{{$door := $s.Door}}{{$focus := $s.Focus}}{{$name := .Brand.Name}}{{$preview := opt . "Preview"}}{{$proof := $s.Proof}}{{$gated := and $proof $proof.NeedsScript}}{{if not $s.Unavailable}}<section rst-signin aria-labelledby="rst-signin-heading">
 <div rst-signin-brand>{{with opt .Brand "Mark"}}<div rst-signin-mark>{{.}}</div>{{end}}<p rst-signin-name>{{$name}}</p>{{with opt .Brand "Pitch"}}<p rst-signin-pitch>{{.}}</p>{{end}}</div>
-<div rst-signin-door>
+<div rst-signin-door{{if $s.OneWay}}="one-way"{{end}}>
 {{if eq $door "continue"}}{{/* In the card, not <head>: browsers apply a refresh wherever the element
      is, the page's layout owns <head>, and this is how fichas runs in
      production. A document navigating is not the form's redirect chain,
@@ -107,7 +107,7 @@
      where the field already is the different email, not on Continue,
      which has no controls but its link, and not on Confirm, whose link
      may have been sent to anyone. */}}{{if and (ne $door "ask") (ne $door "continue") (ne $door "confirm") (or (not $s.OneWay) (eq $door "sent"))}}<form rst-signin-form method="post" action="{{$s.ForgetPath}}">{{with $s.ReturnTo}}<input type="hidden" name="return_to" value="{{.}}">
-{{end}}{{if $s.OneWay}}{{template "signin-forget-way" (dict "L" $L "State" $s)}}{{end}}<button rst-btn="ghost block" type="submit">{{T $L "rastrillo.ui.signin_different"}}</button></form>
+{{end}}{{if $s.OneWay}}{{template "signin-forget-way" (dict "L" $L "State" $s)}}<button rst-btn="ghost" type="submit"><span>{{T $L "rastrillo.ui.signin_different"}}</span>{{template "signin-glyph" (dict "L" $L "Glyph" "next")}}</button>{{else}}<button rst-btn="ghost block" type="submit">{{T $L "rastrillo.ui.signin_different"}}</button>{{end}}</form>
 {{end}}{{if and $gated (ne $door "sent") (ne $door "continue") (ne $door "confirm") (not $preview) (not $s.OneWay)}}{{$proof.Script}}{{end}}</div>
 </section>{{end}}{{end}}
 {{/* signin-title — the document title for the same state, for the
@@ -124,10 +124,12 @@
 {{define "signin-one-way"}}{{$L := localizer $}}{{$s := .State}}{{$door := .Door}}{{$focus := .Focus}}{{$preview := .Preview}}{{$proof := .Proof}}{{$gated := .Gated}}{{if eq $door "ways"}}<h1 id="rst-signin-heading">{{T $L "rastrillo.ui.signin_ways"}}</h1>
 {{else}}<h1 id="rst-signin-heading">{{Tf $L "rastrillo.ui.signin_heading" "name" .Name}}</h1>
 {{end}}{{if and $s.Problem (ne $s.Problem "address")}}{{$tone := "negative"}}{{if eq $s.Problem "reauth"}}{{$tone = "info"}}{{end}}{{template "callout" (dict "L" $L "ID" "rst-signin-problem" "Tone" $tone "Body" (T $L (printf "rastrillo.ui.signin_problem_%s" $s.Problem)) "Focus" (and (eq $focus "callout") (ne $s.Problem "reauth")))}}
-{{end}}{{template "signin-app-problem" (dict "L" $L "State" $s "Focus" $focus)}}{{if eq $door "ways"}}{{range $s.Ways}}<a rst-btn="block" href="{{.Href}}">{{if eq .Way "email"}}{{template "signin-glyph" (dict "L" $L "Glyph" "mail")}}<span>{{T $L "rastrillo.ui.signin_way_email"}}{{with .Detail}} <bdi>{{.}}</bdi>{{end}}</span>{{else if eq .Way "passkey"}}{{template "signin-glyph" (dict "L" $L "Glyph" "key")}}<span>{{T $L "rastrillo.ui.signin_passkey"}}</span>{{else}}{{.Icon}}<span>{{.Label}}</span>{{end}}{{template "signin-glyph" (dict "L" $L "Glyph" "next")}}</a>
+{{end}}{{template "signin-app-problem" (dict "L" $L "State" $s "Focus" $focus)}}{{if eq $door "ways"}}<div rst-signin-ways>
+{{range $s.Ways}}<a rst-btn="block" href="{{.Href}}">{{if eq .Way "email"}}{{template "signin-glyph" (dict "L" $L "Glyph" "mail")}}<span>{{T $L "rastrillo.ui.signin_way_email"}}{{with .Detail}} <bdi>{{.}}</bdi>{{end}}</span>{{else if eq .Way "passkey"}}{{template "signin-glyph" (dict "L" $L "Glyph" "key")}}<span>{{T $L "rastrillo.ui.signin_passkey"}}</span>{{else}}{{.Icon}}<span>{{.Label}}</span>{{end}}{{template "signin-glyph" (dict "L" $L "Glyph" "next")}}</a>
 {{end}}{{if $s.Remembered}}<form rst-signin-form method="post" action="{{$s.ForgetPath}}">{{with $s.ReturnTo}}<input type="hidden" name="return_to" value="{{.}}">
 {{end}}{{template "signin-forget-way" (dict "L" $L "State" $s)}}<button rst-btn="block" type="submit">{{template "signin-glyph" (dict "L" $L "Glyph" "at")}}<span>{{T $L "rastrillo.ui.signin_different"}}</span>{{template "signin-glyph" (dict "L" $L "Glyph" "next")}}</button></form>
-{{end}}<a rst-btn="ghost" href="{{$s.BackHref}}">{{template "signin-glyph" (dict "L" $L "Glyph" "back")}}<span>{{T $L "rastrillo.ui.signin_back"}}</span></a>
+{{end}}</div>
+<a rst-btn="ghost" href="{{$s.BackHref}}">{{template "signin-glyph" (dict "L" $L "Glyph" "back")}}<span>{{T $L "rastrillo.ui.signin_back"}}</span></a>
 {{else if eq $door "federated"}}<a rst-btn="primary block" href="{{$s.FederatedHref}}"{{if eq $focus "onetap"}} autofocus{{end}}>{{$s.Federated.Icon}}<span>{{Tf $L "rastrillo.ui.signin_federated" "name" $s.Federated.Label}}</span></a>
 {{else if eq $door "passkey"}}{{/* Drawn visible and disabled, so the page does not move when the
      script enables it. If the script finds no way to use a passkey it
@@ -168,7 +170,7 @@
 {{if $conditional}}<script type="module" src="{{$s.Passkey.ScriptURL}}"></script>
 {{end}}{{end}}{{if ne $door "ways"}}{{if $s.Ways}}<a rst-btn="ghost" href="{{$s.WaysHref}}"><span>{{T $L "rastrillo.ui.signin_ways"}}</span>{{template "signin-glyph" (dict "L" $L "Glyph" "next")}}</a>
 {{else if or (eq $door "keymail") (eq $door "link")}}<form rst-signin-form method="post" action="{{$s.ForgetPath}}">{{with $s.ReturnTo}}<input type="hidden" name="return_to" value="{{.}}">
-{{end}}{{template "signin-forget-way" (dict "L" $L "State" $s)}}<button rst-btn="ghost block" type="submit">{{T $L "rastrillo.ui.signin_different"}}</button></form>
+{{end}}{{template "signin-forget-way" (dict "L" $L "State" $s)}}<button rst-btn="ghost" type="submit"><span>{{T $L "rastrillo.ui.signin_different"}}</span>{{template "signin-glyph" (dict "L" $L "Glyph" "next")}}</button></form>
 {{end}}{{end}}{{if and $gated (or (eq $door "ask") (eq $door "keymail") (eq $door "link")) (not $preview)}}{{$proof.Script}}{{end}}{{end}}
 {{/* signin-app-problem — part of signin. It draws State.AppProblem as
      the page's problem, where auth's own problem does not already take
