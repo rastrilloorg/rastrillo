@@ -10,19 +10,23 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+## v0.40.0
+
+Instances can serve accounts on their own domains. Signed roster snapshots carry the custom origin, and `provision` can attach, verify and detach domains. Deploy this release to every instance before any root sends a custom origin: older receivers reject snapshots with `Origin`. `provision.Create` now reports when a create may have reached the platform despite an error.
+
 ### Added: custom domains for instances
 
-- Upgrade order: deploy this to every instance before any root sends a custom origin. An older receiver's `Verify` refuses a field it does not know, so it answers 403 to a snapshot that sets `Origin`. A snapshot without one has the same bytes as before.
-- `roster.Snapshot.Origin` carries the account's custom origin. `Sign` and `Verify` refuse anything but `https://` and a lower-case host with no port, and the issuer's own origin.
-- The receiver stores the origin with the sequence, in a new column (`roster` migration 0002). `Receiver.Origin` reads it, and `roster.StoredOrigin` reads it at boot. `Config.OnOrigin` runs after a snapshot that changes the origin has been applied and answered, so the app can shut down and restart on it.
-- `instance.ServingOrigin` returns the stored origin or a fallback, and `instance.RedirectToOrigin` (which returns an error for an origin that is not `https://` and a host) sends every other host there with a 307, except `/_carlos/*`, `/api/version` and `/healthz`. Keep the roster verifier's audience on the platform host.
-- `provision.Console` gains `AttachDomain`, `Domain` and `DetachDomain`, with `DNSRecord`, `Attached`, `Domain` and the `Domain*` state words. Verifying a domain is a repeated attach.
-- `provisiontest` serves the three domain doors, with `DomainProof`, `ProveDomain`, `DNSReady` and `CertLive`. Its edge serves a verified domain as the instance it names.
+- Deploy this release to every instance before any root sends a custom origin. An older receiver rejects a snapshot with `Origin` during `Verify` and returns 403. If `Origin` is absent, the snapshot has the same bytes as before.
+- `roster.Snapshot.Origin` carries the account's custom origin. `Sign` and `Verify` accept only an `https://` origin with a lower-case host and no port, and refuse the issuer's own origin.
+- The receiver stores the origin alongside the sequence in a new column, added by `roster` migration 0002. `Receiver.Origin` reads it, and `roster.StoredOrigin` reads it at boot. `Config.OnOrigin` runs after the receiver applies and answers a snapshot that changes the origin. The app can then shut down and restart on the new origin.
+- `instance.ServingOrigin` returns the stored origin or a fallback. `instance.RedirectToOrigin` returns an error unless the origin uses `https://` and has a host. It redirects requests for other hosts there with status 307, except requests to `/_carlos/*`, `/api/version` and `/healthz`. Keep the roster verifier's audience on the platform host.
+- `provision.Console` gains `AttachDomain`, `Domain` and `DetachDomain`, and uses `DNSRecord`, `Attached`, `Domain` and the `Domain*` states. Repeating an attach verifies a domain.
+- `provisiontest` serves the three domain endpoints, with `DomainProof`, `ProveDomain`, `DNSReady` and `CertLive`. Its edge serves a verified domain as the instance it names.
 - `handofftest.Root.RosterOrigin` signs a snapshot with an origin.
 
 ### Added: `Created.MayHaveLanded`
 
-- `provision.Console.Create` sets `Created.MayHaveLanded` beside an error when the call sent a create it never had an answer to. A refusal of the post that followed (a 4xx after the reconciling GET found nothing yet) no longer reads as "never created": keep the host and call again with `Resume: true`.
+- `provision.Console.Create` sets `Created.MayHaveLanded` beside an error when it sent a create request but received no answer. A 4xx from the following POST does not prove the create failed: the reconciling GET may have found nothing while the first request was still in progress. Keep the host and call again with `Resume: true`.
 
 ## v0.39.0
 
