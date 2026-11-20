@@ -181,6 +181,30 @@ const extraFixture = `
        with a message and hidden with none, and the "or" beside a shown
        pair and on each side of a hidden one, where it hides with it. -->
   <section class="rst-signin"><div class="rst-signin__door"><form class="rst-signin__form"><button class="rst-btn rst-btn--primary rst-btn--block" type="submit">Continue to Keymail</button><p class="rst-signin__remembered">as <bdi>kay@example.org</bdi></p></form><p class="rst-signin__or">or</p><div class="rst-signin__passkey"><button class="rst-btn rst-btn--block" type="button">Sign in with a passkey</button><p class="rst-signin__passkey-msg">No passkey was used.</p></div><p class="rst-signin__or">or</p><div class="rst-signin__passkey"><button class="rst-btn rst-btn--block" type="button" hidden>Hidden</button><p class="rst-signin__passkey-msg"></p></div><p class="rst-signin__or">or</p></div></section>
+  <!-- The one-way door (Fiesta 1.5), which the fixture's partials draw
+       only in the classic spelling's absence of it: a pill primary, a
+       quiet ghost control with its chevron, the remembered line, and
+       the chooser's rows, a link and a form's button. -->
+  <section class="rst-signin">
+  <div class="rst-signin__door rst-signin__door--one-way">
+  <form class="rst-signin__form">
+  <button class="rst-btn rst-btn--primary rst-btn--block" type="submit">
+  Continue to Keymail</button>
+  <p class="rst-signin__remembered">as <bdi>kay@example.org</bdi></p>
+  </form>
+  <a class="rst-btn rst-btn--ghost" href="#"><span>Other ways</span>
+  <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+  <path d="m9 18 6-6-6-6"/></svg></a>
+  <div class="rst-signin__ways">
+  <a class="rst-btn rst-btn--block" href="#">
+  <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+  <path d="M2 4h20v16H2z"/></svg>
+  <span>Email <bdi>ada@example.com</bdi></span>
+  <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+  <path d="m9 18 6-6-6-6"/></svg></a>
+  <form><button class="rst-btn rst-btn--block" type="submit">
+  <span>Use a different email</span></button></form>
+  </div></div></section>
   <!-- The provider stack no partial renders: the gallery's social
        sign-in screen is the only markup that uses it. -->
   <div class="rst-signin__providers"><form><button class="rst-btn rst-btn--block" type="submit">Google</button></form><form><button class="rst-btn rst-btn--block" type="submit">Apple</button></form><a href="#">Use your email instead</a></div>

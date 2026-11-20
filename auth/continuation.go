@@ -35,6 +35,11 @@ type continuation struct {
 	// continuation dies with its pending cookie and never outlives the
 	// attempt it describes.
 	PH string `json:"ph"`
+	// RA is a step-up on the one-way screen, kept here rather than in
+	// the attempt cookie because another tab can replace that: bound to
+	// this round trip's pending cookie and state, it is restored on the
+	// callback's failure redirects, where no form carries it.
+	RA bool `json:"ra,omitempty"`
 }
 
 func (a *Auth) continueCookie() string { return a.cookieName("rastrillo_continue") }
@@ -47,19 +52,77 @@ func digest(s string) string {
 }
 
 func (a *Auth) sealContinuation(authorizeURL, pending string) (id, value string, err error) {
-	u, err := url.Parse(authorizeURL)
+	return a.sealRoundTrip(authorizeURL, pending, false)
+}
+
+// sealRoundTrip is sealContinuation for a round trip that may be a
+// step-up (reauth).
+func (auth *Auth) sealRoundTrip(
+	authorizeURL, pending string, reauth bool,
+) (id, value string, err error) {
+	parsed, err := url.Parse(authorizeURL)
 	if err != nil {
 		return "", "", err
 	}
 	if id, err = newID(); err != nil {
 		return "", "", err
 	}
-	now := a.now().Unix()
-	value, err = sealedcookie.Seal(a.continueKey, continuation{
-		O: a.cfg.Origin, ID: id, IAT: now, EXP: now + int64(continuationTTL/time.Second),
-		U: authorizeURL, ST: digest(u.Query().Get("state")), PH: digest(pending),
+	now := auth.now().Unix()
+	value, err = sealedcookie.Seal(auth.continueKey, continuation{
+		O: auth.cfg.Origin, ID: id, IAT: now,
+		EXP: now + int64(continuationTTL/time.Second),
+		U:   authorizeURL, ST: digest(parsed.Query().Get("state")),
+		PH: digest(pending), RA: reauth,
 	})
 	return id, value, err
+}
+
+// otherAttempt answers a callback that belongs to some other attempt:
+// today the pending cookie is cleared the moment it is read and the
+// library then finds a state mismatch, so a late callback from tab A,
+// or a callback URL a third party makes the browser open, would throw
+// away tab B's newer attempt. When the continuation describes the
+// pending cookie just read and this callback's state is not that
+// attempt's, the callback is answered Expired and the pair left alone;
+// the pending blob's own authenticated expiry still bounds it. Any other
+// case (no continuation, or one left from an earlier attempt or a
+// screen-off Begin) clears the continuation and goes on as today.
+func (auth *Auth) otherAttempt(
+	response http.ResponseWriter, request *http.Request,
+	pending, again string,
+) bool {
+	cont, st := auth.openContinuation(request)
+	if st == cookieValid && cont.PH == digest(pending) &&
+		cont.ST != digest(request.URL.Query().Get("state")) {
+		auth.redirect(response, request,
+			auth.signinAgain(request, "?err=expired"+again))
+		return true
+	}
+	auth.clearCookie(response, auth.continueCookie())
+	return false
+}
+
+// roundTripReauth is what a failed callback on the one-way screen adds
+// to its redirect: "&reauth=1" when the continuation bound to this
+// pending cookie and state says the round trip was a step-up, "" when it
+// says it was not, and "&reauth=1" again when it cannot say (expired,
+// deleted by the browser, unreadable, or another attempt's). Assuming a
+// step-up costs that one recovery page its federated door; assuming the
+// opposite would offer a step-up a live federated session, which the
+// local-only rule forbids. No expired state is believed either way.
+// Off the one-way screen it is always "".
+func (auth *Auth) roundTripReauth(
+	request *http.Request, pending string,
+) string {
+	if !auth.cfg.SigninOneWay {
+		return ""
+	}
+	cont, st := auth.openContinuation(request)
+	if st == cookieValid && !cont.RA && cont.PH == digest(pending) &&
+		cont.ST == digest(request.URL.Query().Get("state")) {
+		return ""
+	}
+	return "&reauth=1"
 }
 
 // pendingCookieValue is what the pending cookie holds for signin's

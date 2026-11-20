@@ -57,6 +57,10 @@ type screenApp struct {
 	// sent, which no unit test can show.
 	mu   sync.Mutex
 	seen []seenRequest
+
+	// oneWay builds the app with Config.SigninOneWay and an Oficina ID
+	// door at /signin/oficina; set it before the rig builds the app.
+	oneWay bool
 }
 
 type seenRequest struct{ method, path, referer, origin string }
@@ -100,7 +104,9 @@ func newScreenApp(t *testing.T) (*screenApp, func(origin string) http.Handler) {
 		if err != nil {
 			t.Fatalf("pow.New: %v", err)
 		}
-		a, err := New(Config{DB: d.Writer(), Origin: origin, InstanceKey: "browser-instance-key", Mailer: app.mail, SigninScreen: true, Proof: g})
+		a, err := New(Config{DB: d.Writer(), Origin: origin,
+			InstanceKey: "browser-instance-key", Mailer: app.mail,
+			SigninScreen: true, SigninOneWay: app.oneWay, Proof: g})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -144,6 +150,9 @@ func newScreenApp(t *testing.T) (*screenApp, func(origin string) http.Handler) {
 						ModuleURL: "/static/webauthn.mjs", ScriptURL: "/static/passkey-signin.mjs",
 					}
 				}
+				if app.oneWay {
+					st.Federated = browserOficina
+				}
 				a.PrepareSigninResponse(w, st)
 				var buf bytes.Buffer
 				if err := tmpl.ExecuteTemplate(&buf, "layout", map[string]any{"Signin": st, "Brand": map[string]any{"Name": "Harbour"}}); err != nil {
@@ -164,6 +173,7 @@ func newScreenApp(t *testing.T) (*screenApp, func(origin string) http.Handler) {
 			w.Header().Set("Content-Type", "text/html; charset=utf-8")
 			fmt.Fprint(w, `<!doctype html><html lang="en"><title>About</title><main><h1 id="about">About</h1></main></html>`)
 		})
+		mux.HandleFunc("GET /signin/oficina", fakeOficina(a))
 		mux.HandleFunc("POST /signin", a.Begin)
 		mux.HandleFunc("POST /signin/forget", a.Forget)
 		mux.HandleFunc("GET /auth/callback", a.Callback)

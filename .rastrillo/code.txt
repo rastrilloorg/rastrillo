@@ -937,7 +937,7 @@ columns auth/auth.go e29553cd014f 1
 columns auth/auth.go ec14109dd65b 1
 columns auth/auth.go eda525fa5bef 1
 columns auth/auth.go edb224703a41 1
-file auth/auth.go - 639 Config.Reader for the session lookups (#241)
+file auth/auth.go - 646 Config.Reader for the session lookups (#241); Config.SigninOneWay, the smart door
 func auth/auth.go New 152
 names auth/auth.go -/d 1
 names auth/auth.go -/r 3
@@ -1309,13 +1309,11 @@ names auth/confirm_test.go hasSession/c 1
 names auth/confirm_test.go hasSession/w 1
 columns auth/continuation.go 1c9d55b33fca 1
 columns auth/continuation.go 1da9154a29bd 1
-columns auth/continuation.go 1f2492499618 1
 columns auth/continuation.go 406ff4c01e55 1
 columns auth/continuation.go 61d5121801a6 1
 columns auth/continuation.go 6e887753c758 1
 columns auth/continuation.go 994113687fe9 1
 columns auth/continuation.go 999fff80d380 1
-columns auth/continuation.go 9a767931da85 1
 names auth/continuation.go Auth.continuationFor/a 1
 names auth/continuation.go Auth.continuationFor/p 1
 names auth/continuation.go Auth.continuationFor/r 1
@@ -1329,7 +1327,6 @@ names auth/continuation.go Auth.pendingValue/a 1
 names auth/continuation.go Auth.pendingValue/c 1
 names auth/continuation.go Auth.pendingValue/r 1
 names auth/continuation.go Auth.sealContinuation/a 1
-names auth/continuation.go Auth.sealContinuation/u 1
 names auth/continuation.go Auth.validAuthorizeURL/a 1
 names auth/continuation.go Auth.validAuthorizeURL/k 1
 names auth/continuation.go Auth.validAuthorizeURL/p 1
@@ -1473,7 +1470,6 @@ names auth/csrf.go Auth.sameOrigin/r 1
 columns auth/handlers.go 0167d0fa3acb 1
 columns auth/handlers.go 456987aed287 1
 columns auth/handlers.go 4d122101ede6 1
-columns auth/handlers.go 55ee3d5f8331 1
 columns auth/handlers.go 65b9ad82110f 1
 columns auth/handlers.go 68faa69044fe 1
 columns auth/handlers.go 78d6219a2826 1
@@ -1490,9 +1486,8 @@ columns auth/handlers.go e2126f7ef8d1 5
 columns auth/handlers.go e6a5dac583f8 1
 columns auth/handlers.go fb732dda3cb5 1
 columns auth/handlers.go ffb560e2308f 1
-file auth/handlers.go - 691
+file auth/handlers.go - 678
 func auth/handlers.go Auth.Begin 55
-func auth/handlers.go Auth.Callback 48
 func auth/handlers.go Auth.admit 61
 names auth/handlers.go Auth.AnswerAsSent/a 1
 names auth/handlers.go Auth.AnswerAsSent/r 1
@@ -1501,7 +1496,6 @@ names auth/handlers.go Auth.Begin/a 1
 names auth/handlers.go Auth.Begin/r 1
 names auth/handlers.go Auth.Begin/w 1
 names auth/handlers.go Auth.Callback/a 1
-names auth/handlers.go Auth.Callback/p 1
 names auth/handlers.go Auth.Callback/r 1
 names auth/handlers.go Auth.Callback/w 1
 names auth/handlers.go Auth.Refresh/a 1
@@ -2296,7 +2290,7 @@ columns auth/signin.go 17f62687bdae 1
 columns auth/signin.go 7fc54d021782 1
 columns auth/signin.go 93cf87bcbeff 1
 columns auth/signin.go e2126f7ef8d1 1
-func auth/signin.go Auth.SigninState 67
+func auth/signin.go Auth.SigninState 63
 names auth/signin.go Auth.Forget/a 1
 names auth/signin.go Auth.Forget/r 1
 names auth/signin.go Auth.Forget/w 1
@@ -2420,7 +2414,6 @@ columns auth/signinscreen_browser_test.go edcccf1b4179 1
 columns auth/signinscreen_browser_test.go ef6efbcc4c6a 1
 columns auth/signinscreen_browser_test.go f22fdb59a2f0 1
 columns auth/signinscreen_browser_test.go f392a1c099a8 1
-columns auth/signinscreen_browser_test.go f562236ed12a 1
 columns auth/signinscreen_browser_test.go f9869cadfd00 1
 columns auth/signinscreen_browser_test.go f98d5ce31a2e 1
 columns auth/signinscreen_browser_test.go f9b3be2461a6 1
@@ -2489,7 +2482,6 @@ columns auth/signinstate_test.go 4562fbdd1c70 1
 columns auth/signinstate_test.go 45b473ad3f56 1
 columns auth/signinstate_test.go 492c9c0071ed 1
 columns auth/signinstate_test.go 4b7a6284fb9c 1
-columns auth/signinstate_test.go 4bc426b8146f 1
 columns auth/signinstate_test.go 4cc4e1924c4c 1
 columns auth/signinstate_test.go 4d992fac24c4 1
 columns auth/signinstate_test.go 520ee93d38dc 1
@@ -2522,7 +2514,6 @@ columns auth/signinstate_test.go a1f874957664 1
 columns auth/signinstate_test.go a71722aceff4 1
 columns auth/signinstate_test.go abbde959fb47 1
 columns auth/signinstate_test.go ae4b6d740224 1
-columns auth/signinstate_test.go ae59efb0ce93 1
 columns auth/signinstate_test.go af3cb960d531 1
 columns auth/signinstate_test.go af951c6c7d71 1
 columns auth/signinstate_test.go be8fe602960d 1
@@ -12536,7 +12527,6 @@ columns keyring/wraps_test.go d7ddbb026f43 1
 columns lastsignin/lastsignin.go 0847ec5ba256 1
 columns lastsignin/lastsignin.go 19c0b157d09d 1
 columns lastsignin/lastsignin.go 32832238f902 1
-columns lastsignin/lastsignin.go 5ac841208c1a 1
 columns lastsignin/lastsignin.go 6fcdafddef93 1
 columns lastsignin/lastsignin.go 8731056d32c3 1
 columns lastsignin/lastsignin.go a8cac2676090 1
@@ -12561,21 +12551,14 @@ names lastsignin/lastsignin.go validAddress/a 1
 names lastsignin/lastsignin.go validAddress/r 1
 columns lastsignin/lastsignin_test.go 071851278796 1
 columns lastsignin/lastsignin_test.go 075df20da219 1
-columns lastsignin/lastsignin_test.go 1641a568d7f8 1
 columns lastsignin/lastsignin_test.go 186b84da79c1 1
-columns lastsignin/lastsignin_test.go 32a5186ee965 1
-columns lastsignin/lastsignin_test.go 4a711e17d9b6 1
 columns lastsignin/lastsignin_test.go 5d5f86929f92 1
 columns lastsignin/lastsignin_test.go 6a77b2171d57 1
-columns lastsignin/lastsignin_test.go 7dcc26149749 1
 columns lastsignin/lastsignin_test.go 8f4a2514ec6b 1
 columns lastsignin/lastsignin_test.go 9c6282017c47 1
-columns lastsignin/lastsignin_test.go 9d55c5455fd9 1
 columns lastsignin/lastsignin_test.go b3e99c189c52 1
-columns lastsignin/lastsignin_test.go ce45d994d8ec 1
 columns lastsignin/lastsignin_test.go dab600464411 1
 columns lastsignin/lastsignin_test.go e152ca072d18 1
-columns lastsignin/lastsignin_test.go f0ad44576a3a 1
 columns lastsignin/lastsignin_test.go f7534fdb074a 1
 columns lastsignin/lastsignin_test.go ff319f531c96 1
 names lastsignin/lastsignin_test.go TestAPlainHTTPOriginGetsTheUnprefixedName/j 1
@@ -20660,7 +20643,6 @@ columns ui/depth_browser_test.go 3d62d088da5c 1
 columns ui/depth_browser_test.go 4032399b523e 1
 columns ui/depth_browser_test.go 413aaacff27b 1
 columns ui/depth_browser_test.go 42bc4133ec54 1
-columns ui/depth_browser_test.go 43c6303a98b8 1
 columns ui/depth_browser_test.go 47fd7958e4cc 1
 columns ui/depth_browser_test.go 48a7df51afeb 1
 columns ui/depth_browser_test.go 4944b25b133f 1
@@ -20669,7 +20651,6 @@ columns ui/depth_browser_test.go 4b977aadad54 1
 columns ui/depth_browser_test.go 4b986005f7f9 1
 columns ui/depth_browser_test.go 529678ad3489 1
 columns ui/depth_browser_test.go 52d7b8251b10 1
-columns ui/depth_browser_test.go 53943bd9198e 1
 columns ui/depth_browser_test.go 561a14b3dab9 1
 columns ui/depth_browser_test.go 56f690fdec40 1
 columns ui/depth_browser_test.go 57b76f512a47 1
@@ -20698,7 +20679,6 @@ columns ui/depth_browser_test.go 8032284837c8 1
 columns ui/depth_browser_test.go 8043e94c1a6c 1
 columns ui/depth_browser_test.go 8474523718fd 1
 columns ui/depth_browser_test.go 87ca5cff7fd2 1
-columns ui/depth_browser_test.go 88c447a61c70 1
 columns ui/depth_browser_test.go 8901054d5436 1
 columns ui/depth_browser_test.go 89f0869fefa2 1
 columns ui/depth_browser_test.go 8a66e5f65684 1
@@ -20749,7 +20729,6 @@ columns ui/depth_browser_test.go dab38121ed85 1
 columns ui/depth_browser_test.go db5827774f57 1
 columns ui/depth_browser_test.go db8d17f30475 1
 columns ui/depth_browser_test.go db9e4fa9bfed 1
-columns ui/depth_browser_test.go df23ed02e881 1
 columns ui/depth_browser_test.go e0410f5ecb41 1
 columns ui/depth_browser_test.go e2d1b1acc42f 1
 columns ui/depth_browser_test.go e5089a622402 1
@@ -22336,7 +22315,6 @@ columns ui/matrix_browser_test.go 4b338a876051 1
 columns ui/matrix_browser_test.go 4bf7c8d6ba8e 1
 columns ui/matrix_browser_test.go 54cf4c49cc93 1
 columns ui/matrix_browser_test.go 5603941570f5 1
-columns ui/matrix_browser_test.go 757e4c264bb8 1
 columns ui/matrix_browser_test.go 7f7c4dcb8d3a 1
 columns ui/matrix_browser_test.go 81d1b616d7d0 1
 columns ui/matrix_browser_test.go 827f16224c9a 1
@@ -22361,12 +22339,6 @@ names ui/matrix_browser_test.go decodePNG/b 1
 names ui/matrix_browser_test.go legacyFile/b 1
 names ui/matrix_browser_test.go legacyRig/r 1
 names ui/matrix_browser_test.go legacyRig/w 1
-names ui/matrix_browser_test.go matrixShots/b 1
-names ui/matrix_browser_test.go matrixShots/h 1
-names ui/matrix_browser_test.go matrixShots/s 1
-names ui/matrix_browser_test.go matrixShots/w 1
-names ui/matrix_browser_test.go matrixShots/x 1
-names ui/matrix_browser_test.go matrixShots/y 1
 names ui/matrix_browser_test.go samePixels/a 1
 names ui/matrix_browser_test.go samePixels/b 1
 names ui/matrix_browser_test.go samePixelsWithin/a 1

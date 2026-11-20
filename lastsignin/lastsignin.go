@@ -1,6 +1,7 @@
 // Package lastsignin remembers, in this browser only, which way in it
-// last used — keymail, a magic link or a passkey — and the address for
-// the two that have one, so the sign-in screen can offer a one-tap.
+// last used — keymail, a magic link, a passkey or a federated provider —
+// and the address of the person who used it, when the caller has one, so
+// the sign-in screen can offer a one-tap.
 //
 // It also owns the one seam every sign-in path calls when an attempt
 // ends, EndAttempt, so auth and passkey clear the screen's attempt
@@ -43,13 +44,24 @@ const (
 	On
 )
 
-// The methods a record may name — the Identity methods auth mints, and
-// passkey discovery's.
+// The methods a record may name — the Identity methods auth mints,
+// passkey discovery's, and a sign-in another service vouched for.
 const (
 	MethodKeymail   = "keymail"
 	MethodMagicLink = "magiclink"
 	MethodPasskey   = "passkey"
+	MethodFederated = "federated"
 )
+
+// ProviderOficina is the one federated provider a record may name:
+// Oficina ID. The set is closed, like the methods, so a record names a
+// door the screen knows how to draw and nothing about the person; a new
+// provider is a new constant here, not a string an app makes up.
+const ProviderOficina = "oficina"
+
+// Provider reports whether name is a federated provider a record may
+// carry. A page uses it to check a ?way= it was handed.
+func Provider(name string) bool { return name == ProviderOficina }
 
 // lifetime is 400 days because that is the longest Max-Age browsers
 // honour (RFC 6265bis clamps anything longer); every sign-in rewrites
@@ -66,18 +78,29 @@ type Config struct {
 	InstanceKey string
 	// AttemptCookie is the attempt cookie's resolved name. auth passes
 	// it in so EndAttempt can delete that cookie without knowing its
-	// format. Required unless Mode is Off.
+	// format. Empty means there is none, and EndAttempt does nothing: a
+	// sign-in that is not auth's (Home's) keeps no attempt cookie.
 	AttemptCookie string
 	Mode          Mode
 	// Now is the clock values are sealed and judged by; time.Now if nil.
 	Now func() time.Time
 }
 
-// Record is one remembered way in. Address is empty exactly when Method
-// is MethodPasskey: discovery knows a subject, not an address.
+// Record is one remembered way in.
+//
+// Address is the address of the person who just signed in, as the
+// caller knows it, or empty. Keymail and a magic link always have one.
+// A passkey or a federated sign-in has one only when the caller has
+// resolved it for that same person: Remember never carries an address
+// over from the record it replaces, because the old address would label
+// one person's sign-in with another's name.
+//
+// Provider names the federated provider, one Provider accepts, and is
+// empty for every other method.
 type Record struct {
-	Method  string
-	Address string
+	Method   string
+	Address  string
+	Provider string
 }
 
 // ReadResult says what Read found.
@@ -107,6 +130,7 @@ type payload struct {
 	O   string `json:"o"`
 	M   string `json:"m"`
 	A   string `json:"a,omitempty"`
+	P   string `json:"p,omitempty"`
 	IAT int64  `json:"iat"`
 	EXP int64  `json:"exp"`
 }
@@ -118,9 +142,6 @@ func New(cfg Config) (*Jar, error) {
 	}
 	if cfg.InstanceKey == "" {
 		return nil, errors.New("rastrillo/lastsignin: Config.InstanceKey must not be empty")
-	}
-	if cfg.Mode != Off && cfg.AttemptCookie == "" {
-		return nil, errors.New("rastrillo/lastsignin: Config.AttemptCookie is required unless Mode is Off")
 	}
 	if cfg.Now == nil {
 		cfg.Now = time.Now
@@ -156,14 +177,15 @@ func (j *Jar) set(w http.ResponseWriter, name, value string, maxAge int) {
 // prefilling the form with an address the visitor has already proved —
 // or, after a passkey sign-in, somebody else's.
 func (j *Jar) EndAttempt(w http.ResponseWriter) {
-	if j.cfg.Mode == Off {
+	if j.cfg.Mode == Off || j.cfg.AttemptCookie == "" {
 		return
 	}
 	j.set(w, j.cfg.AttemptCookie, "", -1)
 }
 
-// Remember records the way in this browser just used. A record Read
-// would refuse is not written at all, so a bad caller can never leave a
+// Remember records the way in this browser just used, exactly as rec
+// says: it reads nothing of the record it replaces. A record Read would
+// refuse is not written at all, so a bad caller can never leave a
 // cookie behind that only ever reads as Invalid.
 func (j *Jar) Remember(w http.ResponseWriter, rec Record) {
 	switch j.cfg.Mode {
@@ -178,7 +200,7 @@ func (j *Jar) Remember(w http.ResponseWriter, rec Record) {
 	}
 	now := j.cfg.Now().Unix()
 	v, err := sealedcookie.Seal(j.key, payload{
-		O: j.cfg.Origin, M: rec.Method, A: rec.Address,
+		O: j.cfg.Origin, M: rec.Method, A: rec.Address, P: rec.Provider,
 		IAT: now, EXP: now + int64(lifetime/time.Second),
 	})
 	if err != nil {
@@ -207,7 +229,7 @@ func (j *Jar) Read(r *http.Request) (Record, ReadResult) {
 		!sealedcookie.Fresh(p.O, j.cfg.Origin, p.IAT, p.EXP, j.cfg.Now(), lifetime) {
 		return Record{}, Invalid
 	}
-	rec := Record{Method: p.M, Address: p.A}
+	rec := Record{Method: p.M, Address: p.A, Provider: p.P}
 	if !validRecord(rec) {
 		return Record{}, Invalid
 	}
@@ -222,14 +244,24 @@ func (j *Jar) Clear(w http.ResponseWriter) {
 	j.set(w, j.CookieName(), "", -1)
 }
 
+// validRecord is the shape each method's record must have. A binary
+// from before MethodFederated, or before a passkey could carry an
+// address, reads those records as Invalid and clears them, so rolling
+// back forgets them rather than misreading them.
 func validRecord(rec Record) bool {
 	switch rec.Method {
-	case MethodPasskey:
-		return rec.Address == ""
 	case MethodKeymail, MethodMagicLink:
-		return validAddress(rec.Address)
+		return rec.Provider == "" && validAddress(rec.Address)
+	case MethodPasskey:
+		return rec.Provider == "" && optionalAddress(rec.Address)
+	case MethodFederated:
+		return Provider(rec.Provider) && optionalAddress(rec.Address)
 	}
 	return false
+}
+
+func optionalAddress(address string) bool {
+	return address == "" || validAddress(address)
 }
 
 // validAddress is the shape a remembered address must have: at most 254

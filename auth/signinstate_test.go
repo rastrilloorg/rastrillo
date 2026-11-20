@@ -85,7 +85,8 @@ func TestSigninStateMapsTheQuery(t *testing.T) {
 		{"?err=rate", StepAsk, ProblemRate},
 	} {
 		if st := stateAt(a, b, "/signin"+c.query); st.Step != c.step || st.Problem != c.problem ||
-			st.Remembered == nil || *st.Remembered != (Remembered{"magiclink", "ada@example.com"}) {
+			st.Remembered == nil || *st.Remembered != (Remembered{
+			Method: "magiclink", Address: "ada@example.com"}) {
 			t.Errorf("remembered, %q → %+v", c.query, st)
 		}
 	}
@@ -376,6 +377,8 @@ func TestABadRememberedCookieIsIgnoredAndCleared(t *testing.T) {
 	wrongOrigin.O = "http://other.test"
 	future.IAT = now.Unix() + 600
 	unknown.M = "password"
+	noProvider := good
+	noProvider.M, noProvider.A = "federated", ""
 	for name, value := range map[string]string{
 		"tampered":                     flipByte(t, seal(jarKey, good)),
 		"expired":                      seal(jarKey, expired),
@@ -386,7 +389,7 @@ func TestABadRememberedCookieIsIgnoredAndCleared(t *testing.T) {
 		"under the attempt's key":      seal(a.attemptKey, good),
 		"of an unknown version":        "v2." + strings.TrimPrefix(seal(jarKey, good), "v1."),
 		"not an envelope":              "remember-me",
-		"a passkey with an address":    seal(jarKey, payload{O: a.cfg.Origin, M: "passkey", A: "ada@example.com", IAT: now.Unix(), EXP: now.Unix() + 3600}),
+		"federated, no provider":       seal(jarKey, noProvider),
 		"a magic link with no address": seal(jarKey, payload{O: a.cfg.Origin, M: "magiclink", IAT: now.Unix(), EXP: now.Unix() + 3600}),
 	} {
 		b := newBrowser()
@@ -589,9 +592,9 @@ func TestAKeymailProblemKeepsTheAddressForTheEscapeHatch(t *testing.T) {
 
 func TestDoorAndFocusFollowTheMatrix(t *testing.T) {
 	door := &PasskeyDoor{BeginPath: "/b", FinishPath: "/f", ModuleURL: "/m.mjs"}
-	kay := &Remembered{"keymail", "kay@example.org"}
-	ada := &Remembered{"magiclink", "ada@example.com"}
-	pk := &Remembered{"passkey", ""}
+	kay := &Remembered{Method: "keymail", Address: "kay@example.org"}
+	ada := &Remembered{Method: "magiclink", Address: "ada@example.com"}
+	pk := &Remembered{Method: "passkey", Address: ""}
 	for _, c := range []struct {
 		name        string
 		st          SigninState

@@ -276,12 +276,24 @@ func matrixKey(scheme string, states []string, selector string) string {
 // by one so the 1% allowance is a component's, not the page's.
 func matrixShots(t *testing.T, ctx context.Context, origin, dir, scheme string) map[string][]byte {
 	t.Helper()
+	shots, _ := matrixShotsBoxes(t, ctx, origin, dir, scheme)
+	return shots
+}
+
+// matrixShotsBoxes is matrixShots that also returns each crop's target
+// box, keyed as the crops are, so a drive can hold a crop's geometry as
+// well as its pixels (sameExceptRing).
+func matrixShotsBoxes(
+	t *testing.T, ctx context.Context, origin, dir, scheme string,
+) (map[string][]byte, map[string]matrixBox) {
+	t.Helper()
 	mustRun(t, ctx, chromedp.EmulateViewport(1280, 1600), chromedp.Navigate(origin+dir), chromedp.WaitVisible(chromedp.CSS("#field")),
 		chromedp.Evaluate[chromedp.Void](
 			`document.documentElement.setAttribute("data-theme", "`+scheme+`"),
 			document.getElementById("dd").open = true, true`))
 	still(t, ctx)
 	out := map[string][]byte{}
+	boxesOut := map[string]matrixBox{}
 	for _, states := range matrixStates {
 		var pinned []string
 		type box struct {
@@ -290,8 +302,8 @@ func matrixShots(t *testing.T, ctx context.Context, origin, dir, scheme string) 
 		}
 		var boxes []box
 		for _, target := range matrixTargets {
-			for _, s := range target.states {
-				if strings.Join(s, "+") == strings.Join(states, "+") {
+			for _, set := range target.states {
+				if strings.Join(set, "+") == strings.Join(states, "+") {
 					force := target.force
 					if force == "" {
 						force = target.selector
@@ -300,22 +312,25 @@ func matrixShots(t *testing.T, ctx context.Context, origin, dir, scheme string) 
 					pinned = append(pinned, force)
 					// The box is read with the state pinned, so a state that
 					// moves the element (a press drop) crops where it is.
-					x, y, w, h := rect(t, ctx, target.selector)
-					boxes = append(boxes, box{matrixKey(scheme, states, target.selector), x, y, w, h})
+					left, top, width, height := rect(t, ctx, target.selector)
+					key := matrixKey(scheme, states, target.selector)
+					boxes = append(boxes,
+						box{key, left, top, width, height})
 				}
 			}
 		}
 		var buf []byte
 		mustRun(t, ctx, harness.Into(&buf, chromedp.FullScreenshot(100)))
 		img := decodePNG(t, buf)
-		for _, b := range boxes {
-			out[b.key] = cropPNG(t, img, b.x, b.y, b.w, b.h, matrixMargin)
+		for _, at := range boxes {
+			out[at.key] = cropPNG(t, img, at.x, at.y, at.w, at.h, matrixMargin)
+			boxesOut[at.key] = matrixBox{at.x, at.y, at.w, at.h}
 		}
 		for _, force := range pinned {
 			forceState(t, ctx, force)
 		}
 	}
-	return out
+	return out, boxesOut
 }
 
 // TestEveryThemeRendersAsItDidExceptDay is a preservation test: it does
@@ -355,14 +370,24 @@ func TestEveryThemeRendersAsItDidExceptDay(t *testing.T) {
 			ctx, cancel := context.WithTimeout(rig.Context(), 300*time.Second)
 			defer cancel()
 			for _, scheme := range []string{"light", "dark"} {
-				old := matrixShots(t, ctx, rig.Origin, "/old/", scheme)
-				now := matrixShots(t, ctx, rig.Origin, "/new/", scheme)
+				old, oldBoxes := matrixShotsBoxes(t, ctx, rig.Origin,
+					"/old/", scheme)
+				now, nowBoxes := matrixShotsBoxes(t, ctx, rig.Origin,
+					"/new/", scheme)
+				ringFollowsAccent(t, ctx, scheme, "")
 				keys := make([]string, 0, len(old))
 				for key := range old {
 					keys = append(keys, key)
 				}
 				sort.Strings(keys)
 				for _, key := range keys {
+					if isFocusRingCrop(key) {
+						// Fiesta 1.5's one focus ring moves these on
+						// purpose: only its band may differ, and it must.
+						holdRing(t, key, old[key], now[key], oldBoxes[key],
+							nowBoxes[key], 24)
+						continue
+					}
 					if ok, why := samePixels(t, old[key], now[key]); !ok {
 						t.Errorf("%s renders differently under the new tokens.css: %s", key, why)
 					}

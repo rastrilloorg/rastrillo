@@ -1,0 +1,1244 @@
+
+<!-- case ask, bare -->
+<section rst-signin aria-labelledby="rst-signin-heading">
+<div rst-signin-brand><p rst-signin-name>Harbour</p></div>
+<div rst-signin-door>
+<h1 id="rst-signin-heading">Sign in to Harbour</h1>
+<form rst-signin-form method="post" action="/signin">
+<div rst-field><label rst-field-label for="rst-signin-email">Email</label>
+<input rst-input type="email" id="rst-signin-email" name="address" required autofocus autocomplete="email">
+</div>
+<button rst-btn="primary block" type="submit">Continue</button>
+</form>
+</div>
+</section>
+Sign in to Harbour
+
+<!-- case ask, return -->
+<section rst-signin aria-labelledby="rst-signin-heading">
+<div rst-signin-brand><p rst-signin-name>Harbour</p></div>
+<div rst-signin-door>
+<h1 id="rst-signin-heading">Sign in to Harbour</h1>
+<form rst-signin-form method="post" action="/signin">
+<input type="hidden" name="return_to" value="/docs/7?tab=a&amp;b=c">
+<div rst-field><label rst-field-label for="rst-signin-email">Email</label>
+<input rst-input type="email" id="rst-signin-email" name="address" required autofocus autocomplete="email">
+</div>
+<button rst-btn="primary block" type="submit">Continue</button>
+</form>
+</div>
+</section>
+Sign in to Harbour
+
+<!-- case ask, proof -->
+<section rst-signin aria-labelledby="rst-signin-heading">
+<div rst-signin-brand><p rst-signin-name>Harbour</p></div>
+<div rst-signin-door>
+<h1 id="rst-signin-heading">Sign in to Harbour</h1>
+<form rst-signin-form method="post" action="/signin" data-pow-form data-pow-nonce="…" data-pow-difficulty="12" data-pow-worker="/pow/pow-worker.js" data-pow-min-age="3000"><input type="hidden" name="pow_scope" value="…">
+<input type="hidden" name="pow_nonce" value="…">
+<input type="hidden" name="pow_issued" value="…">
+<input type="hidden" name="pow_expires" value="…">
+<input type="hidden" name="pow_difficulty" value="…">
+<input type="hidden" name="pow_flags" value="…">
+<input type="hidden" name="pow_seal" value="…">
+<input type="hidden" name="pow_counter" value="…" data-pow-counter>
+<div aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden"><label for="hp">Leave this field empty</label><input type="text" id="hp" name="hp" tabindex="-1" autocomplete="off"></div>
+
+<div rst-field><label rst-field-label for="rst-signin-email">Email</label>
+<input rst-input type="email" id="rst-signin-email" name="address" required autofocus autocomplete="email">
+</div>
+<button rst-btn="primary block" type="submit" disabled data-pow-submit>Continue</button>
+<p data-pow-status>If this form doesn&#39;t respond, reload the page.</p><noscript><p>This form needs JavaScript to work.</p></noscript>
+</form>
+<script type="module" src="/pow/pow.js"></script></div>
+</section>
+Sign in to Harbour
+
+<!-- case ask, preview -->
+<section rst-signin aria-labelledby="rst-signin-heading">
+<div rst-signin-brand><p rst-signin-name>Harbour</p></div>
+<div rst-signin-door>
+<h1 id="rst-signin-heading">Sign in to Harbour</h1>
+<form rst-signin-form method="post" action="/signin">
+<div rst-field><label rst-field-label for="rst-signin-email">Email</label>
+<input rst-input type="email" id="rst-signin-email" name="address" required autofocus autocomplete="email">
+</div>
+<button rst-btn="primary block" type="submit">Continue</button>
+</form>
+</div>
+</section>
+Sign in to Harbour
+
+<!-- case ask with a passkey door, bare -->
+<section rst-signin aria-labelledby="rst-signin-heading">
+<div rst-signin-brand><p rst-signin-name>Harbour</p></div>
+<div rst-signin-door>
+<h1 id="rst-signin-heading">Sign in to Harbour</h1>
+<form rst-signin-form method="post" action="/signin">
+<div rst-field><label rst-field-label for="rst-signin-email">Email</label>
+<input rst-input type="email" id="rst-signin-email" name="address" required autofocus autocomplete="email">
+</div>
+<button rst-btn="primary block" type="submit">Continue</button>
+</form>
+<p rst-signin-or>or</p>
+<div rst-signin-passkey><button rst-btn="block" type="button" hidden data-rst-passkey data-rst-passkey-begin="/passkey/discover/begin" data-rst-passkey-finish="/passkey/discover/finish" data-rst-passkey-module="/static/webauthn.mjs" data-rst-passkey-cancelled="No passkey was used. Try again, or use your email." data-rst-passkey-failed="That didn&#39;t work. Try again, or use your email." aria-describedby="rst-signin-passkey-msg">Sign in with a passkey</button>
+<p rst-signin-passkey-msg id="rst-signin-passkey-msg" aria-live="polite"></p>
+</div>
+<script type="module" src="/static/passkey-signin.mjs"></script>
+</div>
+</section>
+Sign in to Harbour
+
+<!-- case ask with a passkey door, return -->
+<section rst-signin aria-labelledby="rst-signin-heading">
+<div rst-signin-brand><p rst-signin-name>Harbour</p></div>
+<div rst-signin-door>
+<h1 id="rst-signin-heading">Sign in to Harbour</h1>
+<form rst-signin-form method="post" action="/signin">
+<input type="hidden" name="return_to" value="/docs/7?tab=a&amp;b=c">
+<div rst-field><label rst-field-label for="rst-signin-email">Email</label>
+<input rst-input type="email" id="rst-signin-email" name="address" required autofocus autocomplete="email">
+</div>
+<button rst-btn="primary block" type="submit">Continue</button>
+</form>
+<p rst-signin-or>or</p>
+<div rst-signin-passkey><button rst-btn="block" type="button" hidden data-rst-passkey data-rst-passkey-begin="/passkey/discover/begin" data-rst-passkey-finish="/passkey/discover/finish?return_to=%2Fdocs%2F7%3Ftab%3Da%26b%3Dc" data-rst-passkey-module="/static/webauthn.mjs" data-rst-passkey-cancelled="No passkey was used. Try again, or use your email." data-rst-passkey-failed="That didn&#39;t work. Try again, or use your email." aria-describedby="rst-signin-passkey-msg">Sign in with a passkey</button>
+<p rst-signin-passkey-msg id="rst-signin-passkey-msg" aria-live="polite"></p>
+</div>
+<script type="module" src="/static/passkey-signin.mjs"></script>
+</div>
+</section>
+Sign in to Harbour
+
+<!-- case ask with a passkey door, proof -->
+<section rst-signin aria-labelledby="rst-signin-heading">
+<div rst-signin-brand><p rst-signin-name>Harbour</p></div>
+<div rst-signin-door>
+<h1 id="rst-signin-heading">Sign in to Harbour</h1>
+<form rst-signin-form method="post" action="/signin" data-pow-form data-pow-nonce="…" data-pow-difficulty="12" data-pow-worker="/pow/pow-worker.js" data-pow-min-age="3000"><input type="hidden" name="pow_scope" value="…">
+<input type="hidden" name="pow_nonce" value="…">
+<input type="hidden" name="pow_issued" value="…">
+<input type="hidden" name="pow_expires" value="…">
+<input type="hidden" name="pow_difficulty" value="…">
+<input type="hidden" name="pow_flags" value="…">
+<input type="hidden" name="pow_seal" value="…">
+<input type="hidden" name="pow_counter" value="…" data-pow-counter>
+<div aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden"><label for="hp">Leave this field empty</label><input type="text" id="hp" name="hp" tabindex="-1" autocomplete="off"></div>
+
+<div rst-field><label rst-field-label for="rst-signin-email">Email</label>
+<input rst-input type="email" id="rst-signin-email" name="address" required autofocus autocomplete="email">
+</div>
+<button rst-btn="primary block" type="submit" disabled data-pow-submit>Continue</button>
+<p data-pow-status>If this form doesn&#39;t respond, reload the page.</p><noscript><p>This form needs JavaScript to work.</p></noscript>
+</form>
+<p rst-signin-or>or</p>
+<div rst-signin-passkey><button rst-btn="block" type="button" hidden data-rst-passkey data-rst-passkey-begin="/passkey/discover/begin" data-rst-passkey-finish="/passkey/discover/finish" data-rst-passkey-module="/static/webauthn.mjs" data-rst-passkey-cancelled="No passkey was used. Try again, or use your email." data-rst-passkey-failed="That didn&#39;t work. Try again, or use your email." aria-describedby="rst-signin-passkey-msg">Sign in with a passkey</button>
+<p rst-signin-passkey-msg id="rst-signin-passkey-msg" aria-live="polite"></p>
+</div>
+<script type="module" src="/static/passkey-signin.mjs"></script>
+<script type="module" src="/pow/pow.js"></script></div>
+</section>
+Sign in to Harbour
+
+<!-- case ask with a passkey door, preview -->
+<section rst-signin aria-labelledby="rst-signin-heading">
+<div rst-signin-brand><p rst-signin-name>Harbour</p></div>
+<div rst-signin-door>
+<h1 id="rst-signin-heading">Sign in to Harbour</h1>
+<form rst-signin-form method="post" action="/signin">
+<div rst-field><label rst-field-label for="rst-signin-email">Email</label>
+<input rst-input type="email" id="rst-signin-email" name="address" required autofocus autocomplete="email">
+</div>
+<button rst-btn="primary block" type="submit">Continue</button>
+</form>
+<p rst-signin-or>or</p>
+<div rst-signin-passkey><button rst-btn="block" type="button" aria-describedby="rst-signin-passkey-msg">Sign in with a passkey</button>
+<p rst-signin-passkey-msg id="rst-signin-passkey-msg" aria-live="polite"></p>
+</div>
+</div>
+</section>
+Sign in to Harbour
+
+<!-- case returning keymail, bare -->
+<section rst-signin aria-labelledby="rst-signin-heading">
+<div rst-signin-brand><p rst-signin-name>Harbour</p></div>
+<div rst-signin-door>
+<h1 id="rst-signin-heading">Sign in to Harbour</h1>
+<form rst-signin-form method="post" action="/signin">
+<input type="hidden" name="address" value="kay@example.org">
+<input type="hidden" name="expect" value="keymail">
+<button rst-btn="primary block" type="submit" aria-describedby="rst-signin-remembered" autofocus>Continue to Keymail</button>
+<p rst-signin-remembered id="rst-signin-remembered">as <bdi>kay@example.org</bdi></p>
+</form>
+<form rst-signin-form method="post" action="/signin/forget"><button rst-btn="ghost block" type="submit">Use a different email</button></form>
+</div>
+</section>
+Sign in to Harbour
+
+<!-- case returning keymail, return -->
+<section rst-signin aria-labelledby="rst-signin-heading">
+<div rst-signin-brand><p rst-signin-name>Harbour</p></div>
+<div rst-signin-door>
+<h1 id="rst-signin-heading">Sign in to Harbour</h1>
+<form rst-signin-form method="post" action="/signin">
+<input type="hidden" name="return_to" value="/docs/7?tab=a&amp;b=c">
+<input type="hidden" name="address" value="kay@example.org">
+<input type="hidden" name="expect" value="keymail">
+<button rst-btn="primary block" type="submit" aria-describedby="rst-signin-remembered" autofocus>Continue to Keymail</button>
+<p rst-signin-remembered id="rst-signin-remembered">as <bdi>kay@example.org</bdi></p>
+</form>
+<form rst-signin-form method="post" action="/signin/forget"><input type="hidden" name="return_to" value="/docs/7?tab=a&amp;b=c">
+<button rst-btn="ghost block" type="submit">Use a different email</button></form>
+</div>
+</section>
+Sign in to Harbour
+
+<!-- case returning keymail, proof -->
+<section rst-signin aria-labelledby="rst-signin-heading">
+<div rst-signin-brand><p rst-signin-name>Harbour</p></div>
+<div rst-signin-door>
+<h1 id="rst-signin-heading">Sign in to Harbour</h1>
+<form rst-signin-form method="post" action="/signin" data-pow-form data-pow-nonce="…" data-pow-difficulty="12" data-pow-worker="/pow/pow-worker.js" data-pow-min-age="3000"><input type="hidden" name="pow_scope" value="…">
+<input type="hidden" name="pow_nonce" value="…">
+<input type="hidden" name="pow_issued" value="…">
+<input type="hidden" name="pow_expires" value="…">
+<input type="hidden" name="pow_difficulty" value="…">
+<input type="hidden" name="pow_flags" value="…">
+<input type="hidden" name="pow_seal" value="…">
+<input type="hidden" name="pow_counter" value="…" data-pow-counter>
+<div aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden"><label for="hp">Leave this field empty</label><input type="text" id="hp" name="hp" tabindex="-1" autocomplete="off"></div>
+
+<input type="hidden" name="address" value="kay@example.org">
+<input type="hidden" name="expect" value="keymail">
+<button rst-btn="primary block" type="submit" aria-describedby="rst-signin-remembered" autofocus disabled data-pow-submit>Continue to Keymail</button>
+<p data-pow-status>If this form doesn&#39;t respond, reload the page.</p><noscript><p>This form needs JavaScript to work.</p></noscript>
+<p rst-signin-remembered id="rst-signin-remembered">as <bdi>kay@example.org</bdi></p>
+</form>
+<form rst-signin-form method="post" action="/signin/forget"><button rst-btn="ghost block" type="submit">Use a different email</button></form>
+<script type="module" src="/pow/pow.js"></script></div>
+</section>
+Sign in to Harbour
+
+<!-- case returning keymail, preview -->
+<section rst-signin aria-labelledby="rst-signin-heading">
+<div rst-signin-brand><p rst-signin-name>Harbour</p></div>
+<div rst-signin-door>
+<h1 id="rst-signin-heading">Sign in to Harbour</h1>
+<form rst-signin-form method="post" action="/signin">
+<input type="hidden" name="address" value="kay@example.org">
+<input type="hidden" name="expect" value="keymail">
+<button rst-btn="primary block" type="submit" aria-describedby="rst-signin-remembered" autofocus>Continue to Keymail</button>
+<p rst-signin-remembered id="rst-signin-remembered">as <bdi>kay@example.org</bdi></p>
+</form>
+<form rst-signin-form method="post" action="/signin/forget"><button rst-btn="ghost block" type="submit">Use a different email</button></form>
+</div>
+</section>
+Sign in to Harbour
+
+<!-- case returning magic link, bare -->
+<section rst-signin aria-labelledby="rst-signin-heading">
+<div rst-signin-brand><p rst-signin-name>Harbour</p></div>
+<div rst-signin-door>
+<h1 id="rst-signin-heading">Sign in to Harbour</h1>
+<form rst-signin-form method="post" action="/signin">
+<input type="hidden" name="address" value="ada@example.com">
+<button rst-btn="primary block" type="submit" autofocus><span>Continue as <bdi>ada@example.com</bdi></span></button>
+</form>
+<form rst-signin-form method="post" action="/signin/forget"><button rst-btn="ghost block" type="submit">Use a different email</button></form>
+</div>
+</section>
+Sign in to Harbour
+
+<!-- case returning magic link, return -->
+<section rst-signin aria-labelledby="rst-signin-heading">
+<div rst-signin-brand><p rst-signin-name>Harbour</p></div>
+<div rst-signin-door>
+<h1 id="rst-signin-heading">Sign in to Harbour</h1>
+<form rst-signin-form method="post" action="/signin">
+<input type="hidden" name="return_to" value="/docs/7?tab=a&amp;b=c">
+<input type="hidden" name="address" value="ada@example.com">
+<button rst-btn="primary block" type="submit" autofocus><span>Continue as <bdi>ada@example.com</bdi></span></button>
+</form>
+<form rst-signin-form method="post" action="/signin/forget"><input type="hidden" name="return_to" value="/docs/7?tab=a&amp;b=c">
+<button rst-btn="ghost block" type="submit">Use a different email</button></form>
+</div>
+</section>
+Sign in to Harbour
+
+<!-- case returning magic link, proof -->
+<section rst-signin aria-labelledby="rst-signin-heading">
+<div rst-signin-brand><p rst-signin-name>Harbour</p></div>
+<div rst-signin-door>
+<h1 id="rst-signin-heading">Sign in to Harbour</h1>
+<form rst-signin-form method="post" action="/signin" data-pow-form data-pow-nonce="…" data-pow-difficulty="12" data-pow-worker="/pow/pow-worker.js" data-pow-min-age="3000"><input type="hidden" name="pow_scope" value="…">
+<input type="hidden" name="pow_nonce" value="…">
+<input type="hidden" name="pow_issued" value="…">
+<input type="hidden" name="pow_expires" value="…">
+<input type="hidden" name="pow_difficulty" value="…">
+<input type="hidden" name="pow_flags" value="…">
+<input type="hidden" name="pow_seal" value="…">
+<input type="hidden" name="pow_counter" value="…" data-pow-counter>
+<div aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden"><label for="hp">Leave this field empty</label><input type="text" id="hp" name="hp" tabindex="-1" autocomplete="off"></div>
+
+<input type="hidden" name="address" value="ada@example.com">
+<button rst-btn="primary block" type="submit" autofocus disabled data-pow-submit><span>Continue as <bdi>ada@example.com</bdi></span></button>
+<p data-pow-status>If this form doesn&#39;t respond, reload the page.</p><noscript><p>This form needs JavaScript to work.</p></noscript>
+</form>
+<form rst-signin-form method="post" action="/signin/forget"><button rst-btn="ghost block" type="submit">Use a different email</button></form>
+<script type="module" src="/pow/pow.js"></script></div>
+</section>
+Sign in to Harbour
+
+<!-- case returning magic link, preview -->
+<section rst-signin aria-labelledby="rst-signin-heading">
+<div rst-signin-brand><p rst-signin-name>Harbour</p></div>
+<div rst-signin-door>
+<h1 id="rst-signin-heading">Sign in to Harbour</h1>
+<form rst-signin-form method="post" action="/signin">
+<input type="hidden" name="address" value="ada@example.com">
+<button rst-btn="primary block" type="submit" autofocus><span>Continue as <bdi>ada@example.com</bdi></span></button>
+</form>
+<form rst-signin-form method="post" action="/signin/forget"><button rst-btn="ghost block" type="submit">Use a different email</button></form>
+</div>
+</section>
+Sign in to Harbour
+
+<!-- case returning passkey, bare -->
+<section rst-signin aria-labelledby="rst-signin-heading">
+<div rst-signin-brand><p rst-signin-name>Harbour</p></div>
+<div rst-signin-door>
+<h1 id="rst-signin-heading">Sign in to Harbour</h1>
+<div rst-signin-passkey><button rst-btn="primary block" type="button" hidden data-rst-passkey data-rst-passkey-begin="/passkey/discover/begin" data-rst-passkey-finish="/passkey/discover/finish" data-rst-passkey-module="/static/webauthn.mjs" data-rst-passkey-cancelled="No passkey was used. Try again, or use your email." data-rst-passkey-failed="That didn&#39;t work. Try again, or use your email." aria-describedby="rst-signin-passkey-msg">Sign in with your passkey</button>
+<p rst-signin-passkey-msg id="rst-signin-passkey-msg" aria-live="polite"></p>
+</div>
+<p rst-signin-or>or</p>
+<script type="module" src="/static/passkey-signin.mjs"></script>
+<form rst-signin-form method="post" action="/signin">
+<div rst-field><label rst-field-label for="rst-signin-email">Email</label>
+<input rst-input type="email" id="rst-signin-email" name="address" required autocomplete="email">
+</div>
+<button rst-btn="primary block" type="submit">Continue</button>
+</form>
+<form rst-signin-form method="post" action="/signin/forget"><button rst-btn="ghost block" type="submit">Use a different email</button></form>
+</div>
+</section>
+Sign in to Harbour
+
+<!-- case returning passkey, return -->
+<section rst-signin aria-labelledby="rst-signin-heading">
+<div rst-signin-brand><p rst-signin-name>Harbour</p></div>
+<div rst-signin-door>
+<h1 id="rst-signin-heading">Sign in to Harbour</h1>
+<div rst-signin-passkey><button rst-btn="primary block" type="button" hidden data-rst-passkey data-rst-passkey-begin="/passkey/discover/begin" data-rst-passkey-finish="/passkey/discover/finish?return_to=%2Fdocs%2F7%3Ftab%3Da%26b%3Dc" data-rst-passkey-module="/static/webauthn.mjs" data-rst-passkey-cancelled="No passkey was used. Try again, or use your email." data-rst-passkey-failed="That didn&#39;t work. Try again, or use your email." aria-describedby="rst-signin-passkey-msg">Sign in with your passkey</button>
+<p rst-signin-passkey-msg id="rst-signin-passkey-msg" aria-live="polite"></p>
+</div>
+<p rst-signin-or>or</p>
+<script type="module" src="/static/passkey-signin.mjs"></script>
+<form rst-signin-form method="post" action="/signin">
+<input type="hidden" name="return_to" value="/docs/7?tab=a&amp;b=c">
+<div rst-field><label rst-field-label for="rst-signin-email">Email</label>
+<input rst-input type="email" id="rst-signin-email" name="address" required autocomplete="email">
+</div>
+<button rst-btn="primary block" type="submit">Continue</button>
+</form>
+<form rst-signin-form method="post" action="/signin/forget"><input type="hidden" name="return_to" value="/docs/7?tab=a&amp;b=c">
+<button rst-btn="ghost block" type="submit">Use a different email</button></form>
+</div>
+</section>
+Sign in to Harbour
+
+<!-- case returning passkey, proof -->
+<section rst-signin aria-labelledby="rst-signin-heading">
+<div rst-signin-brand><p rst-signin-name>Harbour</p></div>
+<div rst-signin-door>
+<h1 id="rst-signin-heading">Sign in to Harbour</h1>
+<div rst-signin-passkey><button rst-btn="primary block" type="button" hidden data-rst-passkey data-rst-passkey-begin="/passkey/discover/begin" data-rst-passkey-finish="/passkey/discover/finish" data-rst-passkey-module="/static/webauthn.mjs" data-rst-passkey-cancelled="No passkey was used. Try again, or use your email." data-rst-passkey-failed="That didn&#39;t work. Try again, or use your email." aria-describedby="rst-signin-passkey-msg">Sign in with your passkey</button>
+<p rst-signin-passkey-msg id="rst-signin-passkey-msg" aria-live="polite"></p>
+</div>
+<p rst-signin-or>or</p>
+<script type="module" src="/static/passkey-signin.mjs"></script>
+<form rst-signin-form method="post" action="/signin" data-pow-form data-pow-nonce="…" data-pow-difficulty="12" data-pow-worker="/pow/pow-worker.js" data-pow-min-age="3000"><input type="hidden" name="pow_scope" value="…">
+<input type="hidden" name="pow_nonce" value="…">
+<input type="hidden" name="pow_issued" value="…">
+<input type="hidden" name="pow_expires" value="…">
+<input type="hidden" name="pow_difficulty" value="…">
+<input type="hidden" name="pow_flags" value="…">
+<input type="hidden" name="pow_seal" value="…">
+<input type="hidden" name="pow_counter" value="…" data-pow-counter>
+<div aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden"><label for="hp">Leave this field empty</label><input type="text" id="hp" name="hp" tabindex="-1" autocomplete="off"></div>
+
+<div rst-field><label rst-field-label for="rst-signin-email">Email</label>
+<input rst-input type="email" id="rst-signin-email" name="address" required autocomplete="email">
+</div>
+<button rst-btn="primary block" type="submit" disabled data-pow-submit>Continue</button>
+<p data-pow-status>If this form doesn&#39;t respond, reload the page.</p><noscript><p>This form needs JavaScript to work.</p></noscript>
+</form>
+<form rst-signin-form method="post" action="/signin/forget"><button rst-btn="ghost block" type="submit">Use a different email</button></form>
+<script type="module" src="/pow/pow.js"></script></div>
+</section>
+Sign in to Harbour
+
+<!-- case returning passkey, preview -->
+<section rst-signin aria-labelledby="rst-signin-heading">
+<div rst-signin-brand><p rst-signin-name>Harbour</p></div>
+<div rst-signin-door>
+<h1 id="rst-signin-heading">Sign in to Harbour</h1>
+<div rst-signin-passkey><button rst-btn="primary block" type="button" aria-describedby="rst-signin-passkey-msg">Sign in with your passkey</button>
+<p rst-signin-passkey-msg id="rst-signin-passkey-msg" aria-live="polite"></p>
+</div>
+<p rst-signin-or>or</p>
+<form rst-signin-form method="post" action="/signin">
+<div rst-field><label rst-field-label for="rst-signin-email">Email</label>
+<input rst-input type="email" id="rst-signin-email" name="address" required autocomplete="email">
+</div>
+<button rst-btn="primary block" type="submit">Continue</button>
+</form>
+<form rst-signin-form method="post" action="/signin/forget"><button rst-btn="ghost block" type="submit">Use a different email</button></form>
+</div>
+</section>
+Sign in to Harbour
+
+<!-- case returning passkey, no door, bare -->
+<section rst-signin aria-labelledby="rst-signin-heading">
+<div rst-signin-brand><p rst-signin-name>Harbour</p></div>
+<div rst-signin-door>
+<h1 id="rst-signin-heading">Sign in to Harbour</h1>
+<form rst-signin-form method="post" action="/signin">
+<div rst-field><label rst-field-label for="rst-signin-email">Email</label>
+<input rst-input type="email" id="rst-signin-email" name="address" required autofocus autocomplete="email">
+</div>
+<button rst-btn="primary block" type="submit">Continue</button>
+</form>
+</div>
+</section>
+Sign in to Harbour
+
+<!-- case returning passkey, no door, return -->
+<section rst-signin aria-labelledby="rst-signin-heading">
+<div rst-signin-brand><p rst-signin-name>Harbour</p></div>
+<div rst-signin-door>
+<h1 id="rst-signin-heading">Sign in to Harbour</h1>
+<form rst-signin-form method="post" action="/signin">
+<input type="hidden" name="return_to" value="/docs/7?tab=a&amp;b=c">
+<div rst-field><label rst-field-label for="rst-signin-email">Email</label>
+<input rst-input type="email" id="rst-signin-email" name="address" required autofocus autocomplete="email">
+</div>
+<button rst-btn="primary block" type="submit">Continue</button>
+</form>
+</div>
+</section>
+Sign in to Harbour
+
+<!-- case returning passkey, no door, proof -->
+<section rst-signin aria-labelledby="rst-signin-heading">
+<div rst-signin-brand><p rst-signin-name>Harbour</p></div>
+<div rst-signin-door>
+<h1 id="rst-signin-heading">Sign in to Harbour</h1>
+<form rst-signin-form method="post" action="/signin" data-pow-form data-pow-nonce="…" data-pow-difficulty="12" data-pow-worker="/pow/pow-worker.js" data-pow-min-age="3000"><input type="hidden" name="pow_scope" value="…">
+<input type="hidden" name="pow_nonce" value="…">
+<input type="hidden" name="pow_issued" value="…">
+<input type="hidden" name="pow_expires" value="…">
+<input type="hidden" name="pow_difficulty" value="…">
+<input type="hidden" name="pow_flags" value="…">
+<input type="hidden" name="pow_seal" value="…">
+<input type="hidden" name="pow_counter" value="…" data-pow-counter>
+<div aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden"><label for="hp">Leave this field empty</label><input type="text" id="hp" name="hp" tabindex="-1" autocomplete="off"></div>
+
+<div rst-field><label rst-field-label for="rst-signin-email">Email</label>
+<input rst-input type="email" id="rst-signin-email" name="address" required autofocus autocomplete="email">
+</div>
+<button rst-btn="primary block" type="submit" disabled data-pow-submit>Continue</button>
+<p data-pow-status>If this form doesn&#39;t respond, reload the page.</p><noscript><p>This form needs JavaScript to work.</p></noscript>
+</form>
+<script type="module" src="/pow/pow.js"></script></div>
+</section>
+Sign in to Harbour
+
+<!-- case returning passkey, no door, preview -->
+<section rst-signin aria-labelledby="rst-signin-heading">
+<div rst-signin-brand><p rst-signin-name>Harbour</p></div>
+<div rst-signin-door>
+<h1 id="rst-signin-heading">Sign in to Harbour</h1>
+<form rst-signin-form method="post" action="/signin">
+<div rst-field><label rst-field-label for="rst-signin-email">Email</label>
+<input rst-input type="email" id="rst-signin-email" name="address" required autofocus autocomplete="email">
+</div>
+<button rst-btn="primary block" type="submit">Continue</button>
+</form>
+</div>
+</section>
+Sign in to Harbour
+
+<!-- case sent, bound, bare -->
+<section rst-signin aria-labelledby="rst-signin-heading">
+<div rst-signin-brand><p rst-signin-name>Harbour</p></div>
+<div rst-signin-door>
+<h1 id="rst-signin-heading">Check your email</h1>
+<p>We sent a link to <bdi>ada@example.com</bdi>. The link works once and expires soon.</p>
+<form rst-signin-form method="post" action="/signin/forget"><button rst-btn="ghost block" type="submit">Use a different email</button></form>
+</div>
+</section>
+Check your email to sign in to Harbour
+
+<!-- case sent, bound, return -->
+<section rst-signin aria-labelledby="rst-signin-heading">
+<div rst-signin-brand><p rst-signin-name>Harbour</p></div>
+<div rst-signin-door>
+<h1 id="rst-signin-heading">Check your email</h1>
+<p>We sent a link to <bdi>ada@example.com</bdi>. The link works once and expires soon.</p>
+<form rst-signin-form method="post" action="/signin/forget"><input type="hidden" name="return_to" value="/docs/7?tab=a&amp;b=c">
+<button rst-btn="ghost block" type="submit">Use a different email</button></form>
+</div>
+</section>
+Check your email to sign in to Harbour
+
+<!-- case sent, bound, proof -->
+<section rst-signin aria-labelledby="rst-signin-heading">
+<div rst-signin-brand><p rst-signin-name>Harbour</p></div>
+<div rst-signin-door>
+<h1 id="rst-signin-heading">Check your email</h1>
+<p>We sent a link to <bdi>ada@example.com</bdi>. The link works once and expires soon.</p>
+<form rst-signin-form method="post" action="/signin/forget"><button rst-btn="ghost block" type="submit">Use a different email</button></form>
+</div>
+</section>
+Check your email to sign in to Harbour
+
+<!-- case sent, bound, preview -->
+<section rst-signin aria-labelledby="rst-signin-heading">
+<div rst-signin-brand><p rst-signin-name>Harbour</p></div>
+<div rst-signin-door>
+<h1 id="rst-signin-heading">Check your email</h1>
+<p>We sent a link to <bdi>ada@example.com</bdi>. The link works once and expires soon.</p>
+<form rst-signin-form method="post" action="/signin/forget"><button rst-btn="ghost block" type="submit">Use a different email</button></form>
+</div>
+</section>
+Check your email to sign in to Harbour
+
+<!-- case sent, unbound, bare -->
+<section rst-signin aria-labelledby="rst-signin-heading">
+<div rst-signin-brand><p rst-signin-name>Harbour</p></div>
+<div rst-signin-door>
+<h1 id="rst-signin-heading">Check your email</h1>
+<p>We sent a link to your inbox. The link works once and expires soon.</p>
+<form rst-signin-form method="post" action="/signin/forget"><button rst-btn="ghost block" type="submit">Use a different email</button></form>
+</div>
+</section>
+Check your email to sign in to Harbour
+
+<!-- case sent, unbound, return -->
+<section rst-signin aria-labelledby="rst-signin-heading">
+<div rst-signin-brand><p rst-signin-name>Harbour</p></div>
+<div rst-signin-door>
+<h1 id="rst-signin-heading">Check your email</h1>
+<p>We sent a link to your inbox. The link works once and expires soon.</p>
+<form rst-signin-form method="post" action="/signin/forget"><input type="hidden" name="return_to" value="/docs/7?tab=a&amp;b=c">
+<button rst-btn="ghost block" type="submit">Use a different email</button></form>
+</div>
+</section>
+Check your email to sign in to Harbour
+
+<!-- case sent, unbound, proof -->
+<section rst-signin aria-labelledby="rst-signin-heading">
+<div rst-signin-brand><p rst-signin-name>Harbour</p></div>
+<div rst-signin-door>
+<h1 id="rst-signin-heading">Check your email</h1>
+<p>We sent a link to your inbox. The link works once and expires soon.</p>
+<form rst-signin-form method="post" action="/signin/forget"><button rst-btn="ghost block" type="submit">Use a different email</button></form>
+</div>
+</section>
+Check your email to sign in to Harbour
+
+<!-- case sent, unbound, preview -->
+<section rst-signin aria-labelledby="rst-signin-heading">
+<div rst-signin-brand><p rst-signin-name>Harbour</p></div>
+<div rst-signin-door>
+<h1 id="rst-signin-heading">Check your email</h1>
+<p>We sent a link to your inbox. The link works once and expires soon.</p>
+<form rst-signin-form method="post" action="/signin/forget"><button rst-btn="ghost block" type="submit">Use a different email</button></form>
+</div>
+</section>
+Check your email to sign in to Harbour
+
+<!-- case sent instead of keymail, bare -->
+<section rst-signin aria-labelledby="rst-signin-heading">
+<div rst-signin-brand><p rst-signin-name>Harbour</p></div>
+<div rst-signin-door>
+<h1 id="rst-signin-heading">Check your email</h1>
+<p>We sent you a sign-in link this time.</p>
+<p>We sent a link to <bdi>kay@example.org</bdi>. The link works once and expires soon.</p>
+<form rst-signin-form method="post" action="/signin/forget"><button rst-btn="ghost block" type="submit">Use a different email</button></form>
+</div>
+</section>
+Check your email to sign in to Harbour
+
+<!-- case sent instead of keymail, return -->
+<section rst-signin aria-labelledby="rst-signin-heading">
+<div rst-signin-brand><p rst-signin-name>Harbour</p></div>
+<div rst-signin-door>
+<h1 id="rst-signin-heading">Check your email</h1>
+<p>We sent you a sign-in link this time.</p>
+<p>We sent a link to <bdi>kay@example.org</bdi>. The link works once and expires soon.</p>
+<form rst-signin-form method="post" action="/signin/forget"><input type="hidden" name="return_to" value="/docs/7?tab=a&amp;b=c">
+<button rst-btn="ghost block" type="submit">Use a different email</button></form>
+</div>
+</section>
+Check your email to sign in to Harbour
+
+<!-- case sent instead of keymail, proof -->
+<section rst-signin aria-labelledby="rst-signin-heading">
+<div rst-signin-brand><p rst-signin-name>Harbour</p></div>
+<div rst-signin-door>
+<h1 id="rst-signin-heading">Check your email</h1>
+<p>We sent you a sign-in link this time.</p>
+<p>We sent a link to <bdi>kay@example.org</bdi>. The link works once and expires soon.</p>
+<form rst-signin-form method="post" action="/signin/forget"><button rst-btn="ghost block" type="submit">Use a different email</button></form>
+</div>
+</section>
+Check your email to sign in to Harbour
+
+<!-- case sent instead of keymail, preview -->
+<section rst-signin aria-labelledby="rst-signin-heading">
+<div rst-signin-brand><p rst-signin-name>Harbour</p></div>
+<div rst-signin-door>
+<h1 id="rst-signin-heading">Check your email</h1>
+<p>We sent you a sign-in link this time.</p>
+<p>We sent a link to <bdi>kay@example.org</bdi>. The link works once and expires soon.</p>
+<form rst-signin-form method="post" action="/signin/forget"><button rst-btn="ghost block" type="submit">Use a different email</button></form>
+</div>
+</section>
+Check your email to sign in to Harbour
+
+<!-- case continue, bare -->
+<section rst-signin aria-labelledby="rst-signin-heading">
+<div rst-signin-brand><p rst-signin-name>Harbour</p></div>
+<div rst-signin-door>
+<meta http-equiv="refresh" content="0;url=https://keymail.test/oauth/authorize?client_id=https%3A%2F%2Fapp.test&amp;code_challenge=cccc&amp;code_challenge_method=S256&amp;redirect_uri=https%3A%2F%2Fapp.test%2Fauth%2Fcallback&amp;scope=identify&amp;state=ssss">
+<h1 id="rst-signin-heading">Taking you to Keymail</h1>
+<p>Taking you to Keymail to confirm it&#39;s you.</p>
+<a rst-btn="primary block" href="https://keymail.test/oauth/authorize?client_id=https%3A%2F%2Fapp.test&amp;code_challenge=cccc&amp;code_challenge_method=S256&amp;redirect_uri=https%3A%2F%2Fapp.test%2Fauth%2Fcallback&amp;scope=identify&amp;state=ssss">Continue to Keymail</a>
+</div>
+</section>
+Taking you to Keymail to sign in to Harbour
+
+<!-- case continue, return -->
+<section rst-signin aria-labelledby="rst-signin-heading">
+<div rst-signin-brand><p rst-signin-name>Harbour</p></div>
+<div rst-signin-door>
+<meta http-equiv="refresh" content="0;url=https://keymail.test/oauth/authorize?client_id=https%3A%2F%2Fapp.test&amp;code_challenge=cccc&amp;code_challenge_method=S256&amp;redirect_uri=https%3A%2F%2Fapp.test%2Fauth%2Fcallback&amp;scope=identify&amp;state=ssss">
+<h1 id="rst-signin-heading">Taking you to Keymail</h1>
+<p>Taking you to Keymail to confirm it&#39;s you.</p>
+<a rst-btn="primary block" href="https://keymail.test/oauth/authorize?client_id=https%3A%2F%2Fapp.test&amp;code_challenge=cccc&amp;code_challenge_method=S256&amp;redirect_uri=https%3A%2F%2Fapp.test%2Fauth%2Fcallback&amp;scope=identify&amp;state=ssss">Continue to Keymail</a>
+</div>
+</section>
+Taking you to Keymail to sign in to Harbour
+
+<!-- case continue, proof -->
+<section rst-signin aria-labelledby="rst-signin-heading">
+<div rst-signin-brand><p rst-signin-name>Harbour</p></div>
+<div rst-signin-door>
+<meta http-equiv="refresh" content="0;url=https://keymail.test/oauth/authorize?client_id=https%3A%2F%2Fapp.test&amp;code_challenge=cccc&amp;code_challenge_method=S256&amp;redirect_uri=https%3A%2F%2Fapp.test%2Fauth%2Fcallback&amp;scope=identify&amp;state=ssss">
+<h1 id="rst-signin-heading">Taking you to Keymail</h1>
+<p>Taking you to Keymail to confirm it&#39;s you.</p>
+<a rst-btn="primary block" href="https://keymail.test/oauth/authorize?client_id=https%3A%2F%2Fapp.test&amp;code_challenge=cccc&amp;code_challenge_method=S256&amp;redirect_uri=https%3A%2F%2Fapp.test%2Fauth%2Fcallback&amp;scope=identify&amp;state=ssss">Continue to Keymail</a>
+</div>
+</section>
+Taking you to Keymail to sign in to Harbour
+
+<!-- case continue, preview -->
+<section rst-signin aria-labelledby="rst-signin-heading">
+<div rst-signin-brand><p rst-signin-name>Harbour</p></div>
+<div rst-signin-door>
+
+<h1 id="rst-signin-heading">Taking you to Keymail</h1>
+<p>Taking you to Keymail to confirm it&#39;s you.</p>
+<a rst-btn="primary block" href="#">Continue to Keymail</a>
+</div>
+</section>
+Taking you to Keymail to sign in to Harbour
+
+<!-- case confirm, bare -->
+<section rst-signin aria-labelledby="rst-signin-heading">
+<div rst-signin-brand><p rst-signin-name>Harbour</p></div>
+<div rst-signin-door>
+<h1 id="rst-signin-heading">Sign in to Harbour</h1>
+<form rst-signin-form method="post" action="/auth/verify">
+<input type="hidden" name="token" value="tok">
+<button rst-btn="primary block" type="submit" autofocus>Sign in</button>
+</form>
+</div>
+</section>
+Sign in to Harbour
+
+<!-- case confirm, return -->
+<section rst-signin aria-labelledby="rst-signin-heading">
+<div rst-signin-brand><p rst-signin-name>Harbour</p></div>
+<div rst-signin-door>
+<h1 id="rst-signin-heading">Sign in to Harbour</h1>
+<form rst-signin-form method="post" action="/auth/verify">
+<input type="hidden" name="token" value="tok">
+<button rst-btn="primary block" type="submit" autofocus>Sign in</button>
+</form>
+</div>
+</section>
+Sign in to Harbour
+
+<!-- case confirm, proof -->
+<section rst-signin aria-labelledby="rst-signin-heading">
+<div rst-signin-brand><p rst-signin-name>Harbour</p></div>
+<div rst-signin-door>
+<h1 id="rst-signin-heading">Sign in to Harbour</h1>
+<form rst-signin-form method="post" action="/auth/verify">
+<input type="hidden" name="token" value="tok">
+<button rst-btn="primary block" type="submit" autofocus>Sign in</button>
+</form>
+</div>
+</section>
+Sign in to Harbour
+
+<!-- case confirm, preview -->
+<section rst-signin aria-labelledby="rst-signin-heading">
+<div rst-signin-brand><p rst-signin-name>Harbour</p></div>
+<div rst-signin-door>
+<h1 id="rst-signin-heading">Sign in to Harbour</h1>
+<form rst-signin-form method="post" action="/auth/verify">
+<input type="hidden" name="token" value="tok">
+<button rst-btn="primary block" type="submit" autofocus>Sign in</button>
+</form>
+</div>
+</section>
+Sign in to Harbour
+
+<!-- case rate, bare -->
+<section rst-signin aria-labelledby="rst-signin-heading">
+<div rst-signin-brand><p rst-signin-name>Harbour</p></div>
+<div rst-signin-door>
+<h1 id="rst-signin-heading">Sign in to Harbour</h1>
+<div rst-callout id="rst-signin-problem" rst-tone="negative" tabindex="-1" autofocus><span rst-callout-ic aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg></span><div rst-callout-body><p>Too many tries. Try again in a few minutes.</p></div></div>
+<form rst-signin-form method="post" action="/signin">
+<div rst-field><label rst-field-label for="rst-signin-email">Email</label>
+<input rst-input type="email" id="rst-signin-email" name="address" value="ada@example.com" required autocomplete="email">
+</div>
+<button rst-btn="primary block" type="submit">Continue</button>
+</form>
+</div>
+</section>
+Problem signing in to Harbour
+
+<!-- case rate, return -->
+<section rst-signin aria-labelledby="rst-signin-heading">
+<div rst-signin-brand><p rst-signin-name>Harbour</p></div>
+<div rst-signin-door>
+<h1 id="rst-signin-heading">Sign in to Harbour</h1>
+<div rst-callout id="rst-signin-problem" rst-tone="negative" tabindex="-1" autofocus><span rst-callout-ic aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg></span><div rst-callout-body><p>Too many tries. Try again in a few minutes.</p></div></div>
+<form rst-signin-form method="post" action="/signin">
+<input type="hidden" name="return_to" value="/docs/7?tab=a&amp;b=c">
+<div rst-field><label rst-field-label for="rst-signin-email">Email</label>
+<input rst-input type="email" id="rst-signin-email" name="address" value="ada@example.com" required autocomplete="email">
+</div>
+<button rst-btn="primary block" type="submit">Continue</button>
+</form>
+</div>
+</section>
+Problem signing in to Harbour
+
+<!-- case rate, proof -->
+<section rst-signin aria-labelledby="rst-signin-heading">
+<div rst-signin-brand><p rst-signin-name>Harbour</p></div>
+<div rst-signin-door>
+<h1 id="rst-signin-heading">Sign in to Harbour</h1>
+<div rst-callout id="rst-signin-problem" rst-tone="negative" tabindex="-1" autofocus><span rst-callout-ic aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg></span><div rst-callout-body><p>Too many tries. Try again in a few minutes.</p></div></div>
+<form rst-signin-form method="post" action="/signin" data-pow-form data-pow-nonce="…" data-pow-difficulty="12" data-pow-worker="/pow/pow-worker.js" data-pow-min-age="3000"><input type="hidden" name="pow_scope" value="…">
+<input type="hidden" name="pow_nonce" value="…">
+<input type="hidden" name="pow_issued" value="…">
+<input type="hidden" name="pow_expires" value="…">
+<input type="hidden" name="pow_difficulty" value="…">
+<input type="hidden" name="pow_flags" value="…">
+<input type="hidden" name="pow_seal" value="…">
+<input type="hidden" name="pow_counter" value="…" data-pow-counter>
+<div aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden"><label for="hp">Leave this field empty</label><input type="text" id="hp" name="hp" tabindex="-1" autocomplete="off"></div>
+
+<div rst-field><label rst-field-label for="rst-signin-email">Email</label>
+<input rst-input type="email" id="rst-signin-email" name="address" value="ada@example.com" required autocomplete="email">
+</div>
+<button rst-btn="primary block" type="submit" disabled data-pow-submit>Continue</button>
+<p data-pow-status>If this form doesn&#39;t respond, reload the page.</p><noscript><p>This form needs JavaScript to work.</p></noscript>
+</form>
+<script type="module" src="/pow/pow.js"></script></div>
+</section>
+Problem signing in to Harbour
+
+<!-- case rate, preview -->
+<section rst-signin aria-labelledby="rst-signin-heading">
+<div rst-signin-brand><p rst-signin-name>Harbour</p></div>
+<div rst-signin-door>
+<h1 id="rst-signin-heading">Sign in to Harbour</h1>
+<div rst-callout id="rst-signin-problem" rst-tone="negative" tabindex="-1" autofocus><span rst-callout-ic aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg></span><div rst-callout-body><p>Too many tries. Try again in a few minutes.</p></div></div>
+<form rst-signin-form method="post" action="/signin">
+<div rst-field><label rst-field-label for="rst-signin-email">Email</label>
+<input rst-input type="email" id="rst-signin-email" name="address" value="ada@example.com" required autocomplete="email">
+</div>
+<button rst-btn="primary block" type="submit">Continue</button>
+</form>
+</div>
+</section>
+Problem signing in to Harbour
+
+<!-- case address, bare -->
+<section rst-signin aria-labelledby="rst-signin-heading">
+<div rst-signin-brand><p rst-signin-name>Harbour</p></div>
+<div rst-signin-door>
+<h1 id="rst-signin-heading">Sign in to Harbour</h1>
+<form rst-signin-form method="post" action="/signin">
+<div rst-field><label rst-field-label for="rst-signin-email">Email</label>
+<input rst-input type="email" id="rst-signin-email" name="address" value="ada@example" required autofocus autocomplete="email" aria-invalid="true" aria-describedby="rst-signin-email-error">
+<p rst-field-error id="rst-signin-email-error">That doesn&#39;t look like an email address.</p>
+</div>
+<button rst-btn="primary block" type="submit">Continue</button>
+</form>
+</div>
+</section>
+Problem signing in to Harbour
+
+<!-- case address, return -->
+<section rst-signin aria-labelledby="rst-signin-heading">
+<div rst-signin-brand><p rst-signin-name>Harbour</p></div>
+<div rst-signin-door>
+<h1 id="rst-signin-heading">Sign in to Harbour</h1>
+<form rst-signin-form method="post" action="/signin">
+<input type="hidden" name="return_to" value="/docs/7?tab=a&amp;b=c">
+<div rst-field><label rst-field-label for="rst-signin-email">Email</label>
+<input rst-input type="email" id="rst-signin-email" name="address" value="ada@example" required autofocus autocomplete="email" aria-invalid="true" aria-describedby="rst-signin-email-error">
+<p rst-field-error id="rst-signin-email-error">That doesn&#39;t look like an email address.</p>
+</div>
+<button rst-btn="primary block" type="submit">Continue</button>
+</form>
+</div>
+</section>
+Problem signing in to Harbour
+
+<!-- case address, proof -->
+<section rst-signin aria-labelledby="rst-signin-heading">
+<div rst-signin-brand><p rst-signin-name>Harbour</p></div>
+<div rst-signin-door>
+<h1 id="rst-signin-heading">Sign in to Harbour</h1>
+<form rst-signin-form method="post" action="/signin" data-pow-form data-pow-nonce="…" data-pow-difficulty="12" data-pow-worker="/pow/pow-worker.js" data-pow-min-age="3000"><input type="hidden" name="pow_scope" value="…">
+<input type="hidden" name="pow_nonce" value="…">
+<input type="hidden" name="pow_issued" value="…">
+<input type="hidden" name="pow_expires" value="…">
+<input type="hidden" name="pow_difficulty" value="…">
+<input type="hidden" name="pow_flags" value="…">
+<input type="hidden" name="pow_seal" value="…">
+<input type="hidden" name="pow_counter" value="…" data-pow-counter>
+<div aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden"><label for="hp">Leave this field empty</label><input type="text" id="hp" name="hp" tabindex="-1" autocomplete="off"></div>
+
+<div rst-field><label rst-field-label for="rst-signin-email">Email</label>
+<input rst-input type="email" id="rst-signin-email" name="address" value="ada@example" required autofocus autocomplete="email" aria-invalid="true" aria-describedby="rst-signin-email-error">
+<p rst-field-error id="rst-signin-email-error">That doesn&#39;t look like an email address.</p>
+</div>
+<button rst-btn="primary block" type="submit" disabled data-pow-submit>Continue</button>
+<p data-pow-status>If this form doesn&#39;t respond, reload the page.</p><noscript><p>This form needs JavaScript to work.</p></noscript>
+</form>
+<script type="module" src="/pow/pow.js"></script></div>
+</section>
+Problem signing in to Harbour
+
+<!-- case address, preview -->
+<section rst-signin aria-labelledby="rst-signin-heading">
+<div rst-signin-brand><p rst-signin-name>Harbour</p></div>
+<div rst-signin-door>
+<h1 id="rst-signin-heading">Sign in to Harbour</h1>
+<form rst-signin-form method="post" action="/signin">
+<div rst-field><label rst-field-label for="rst-signin-email">Email</label>
+<input rst-input type="email" id="rst-signin-email" name="address" value="ada@example" required autofocus autocomplete="email" aria-invalid="true" aria-describedby="rst-signin-email-error">
+<p rst-field-error id="rst-signin-email-error">That doesn&#39;t look like an email address.</p>
+</div>
+<button rst-btn="primary block" type="submit">Continue</button>
+</form>
+</div>
+</section>
+Problem signing in to Harbour
+
+<!-- case expired, bare -->
+<section rst-signin aria-labelledby="rst-signin-heading">
+<div rst-signin-brand><p rst-signin-name>Harbour</p></div>
+<div rst-signin-door>
+<h1 id="rst-signin-heading">Sign in to Harbour</h1>
+<div rst-callout id="rst-signin-problem" rst-tone="negative" tabindex="-1" autofocus><span rst-callout-ic aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg></span><div rst-callout-body><p>That link has expired or was already used. Send a new one.</p></div></div>
+<form rst-signin-form method="post" action="/signin">
+<div rst-field><label rst-field-label for="rst-signin-email">Email</label>
+<input rst-input type="email" id="rst-signin-email" name="address" required autocomplete="email">
+</div>
+<button rst-btn="primary block" type="submit">Continue</button>
+</form>
+</div>
+</section>
+Problem signing in to Harbour
+
+<!-- case expired, return -->
+<section rst-signin aria-labelledby="rst-signin-heading">
+<div rst-signin-brand><p rst-signin-name>Harbour</p></div>
+<div rst-signin-door>
+<h1 id="rst-signin-heading">Sign in to Harbour</h1>
+<div rst-callout id="rst-signin-problem" rst-tone="negative" tabindex="-1" autofocus><span rst-callout-ic aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg></span><div rst-callout-body><p>That link has expired or was already used. Send a new one.</p></div></div>
+<form rst-signin-form method="post" action="/signin">
+<input type="hidden" name="return_to" value="/docs/7?tab=a&amp;b=c">
+<div rst-field><label rst-field-label for="rst-signin-email">Email</label>
+<input rst-input type="email" id="rst-signin-email" name="address" required autocomplete="email">
+</div>
+<button rst-btn="primary block" type="submit">Continue</button>
+</form>
+</div>
+</section>
+Problem signing in to Harbour
+
+<!-- case expired, proof -->
+<section rst-signin aria-labelledby="rst-signin-heading">
+<div rst-signin-brand><p rst-signin-name>Harbour</p></div>
+<div rst-signin-door>
+<h1 id="rst-signin-heading">Sign in to Harbour</h1>
+<div rst-callout id="rst-signin-problem" rst-tone="negative" tabindex="-1" autofocus><span rst-callout-ic aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg></span><div rst-callout-body><p>That link has expired or was already used. Send a new one.</p></div></div>
+<form rst-signin-form method="post" action="/signin" data-pow-form data-pow-nonce="…" data-pow-difficulty="12" data-pow-worker="/pow/pow-worker.js" data-pow-min-age="3000"><input type="hidden" name="pow_scope" value="…">
+<input type="hidden" name="pow_nonce" value="…">
+<input type="hidden" name="pow_issued" value="…">
+<input type="hidden" name="pow_expires" value="…">
+<input type="hidden" name="pow_difficulty" value="…">
+<input type="hidden" name="pow_flags" value="…">
+<input type="hidden" name="pow_seal" value="…">
+<input type="hidden" name="pow_counter" value="…" data-pow-counter>
+<div aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden"><label for="hp">Leave this field empty</label><input type="text" id="hp" name="hp" tabindex="-1" autocomplete="off"></div>
+
+<div rst-field><label rst-field-label for="rst-signin-email">Email</label>
+<input rst-input type="email" id="rst-signin-email" name="address" required autocomplete="email">
+</div>
+<button rst-btn="primary block" type="submit" disabled data-pow-submit>Continue</button>
+<p data-pow-status>If this form doesn&#39;t respond, reload the page.</p><noscript><p>This form needs JavaScript to work.</p></noscript>
+</form>
+<script type="module" src="/pow/pow.js"></script></div>
+</section>
+Problem signing in to Harbour
+
+<!-- case expired, preview -->
+<section rst-signin aria-labelledby="rst-signin-heading">
+<div rst-signin-brand><p rst-signin-name>Harbour</p></div>
+<div rst-signin-door>
+<h1 id="rst-signin-heading">Sign in to Harbour</h1>
+<div rst-callout id="rst-signin-problem" rst-tone="negative" tabindex="-1" autofocus><span rst-callout-ic aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg></span><div rst-callout-body><p>That link has expired or was already used. Send a new one.</p></div></div>
+<form rst-signin-form method="post" action="/signin">
+<div rst-field><label rst-field-label for="rst-signin-email">Email</label>
+<input rst-input type="email" id="rst-signin-email" name="address" required autocomplete="email">
+</div>
+<button rst-btn="primary block" type="submit">Continue</button>
+</form>
+</div>
+</section>
+Problem signing in to Harbour
+
+<!-- case keymail, bare -->
+<section rst-signin aria-labelledby="rst-signin-heading">
+<div rst-signin-brand><p rst-signin-name>Harbour</p></div>
+<div rst-signin-door>
+<h1 id="rst-signin-heading">Sign in to Harbour</h1>
+<div rst-callout id="rst-signin-problem" rst-tone="negative" tabindex="-1" autofocus><span rst-callout-ic aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg></span><div rst-callout-body><p>Keymail couldn&#39;t confirm it&#39;s you.</p></div></div>
+<form rst-signin-form method="post" action="/signin">
+<div rst-field><label rst-field-label for="rst-signin-email">Email</label>
+<input rst-input type="email" id="rst-signin-email" name="address" value="kay@example.org" required autocomplete="email">
+</div>
+<input type="hidden" name="force" value="1">
+<button rst-btn="primary block" type="submit">Send me a link instead</button>
+</form>
+</div>
+</section>
+Problem signing in to Harbour
+
+<!-- case keymail, return -->
+<section rst-signin aria-labelledby="rst-signin-heading">
+<div rst-signin-brand><p rst-signin-name>Harbour</p></div>
+<div rst-signin-door>
+<h1 id="rst-signin-heading">Sign in to Harbour</h1>
+<div rst-callout id="rst-signin-problem" rst-tone="negative" tabindex="-1" autofocus><span rst-callout-ic aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg></span><div rst-callout-body><p>Keymail couldn&#39;t confirm it&#39;s you.</p></div></div>
+<form rst-signin-form method="post" action="/signin">
+<input type="hidden" name="return_to" value="/docs/7?tab=a&amp;b=c">
+<div rst-field><label rst-field-label for="rst-signin-email">Email</label>
+<input rst-input type="email" id="rst-signin-email" name="address" value="kay@example.org" required autocomplete="email">
+</div>
+<input type="hidden" name="force" value="1">
+<button rst-btn="primary block" type="submit">Send me a link instead</button>
+</form>
+</div>
+</section>
+Problem signing in to Harbour
+
+<!-- case keymail, proof -->
+<section rst-signin aria-labelledby="rst-signin-heading">
+<div rst-signin-brand><p rst-signin-name>Harbour</p></div>
+<div rst-signin-door>
+<h1 id="rst-signin-heading">Sign in to Harbour</h1>
+<div rst-callout id="rst-signin-problem" rst-tone="negative" tabindex="-1" autofocus><span rst-callout-ic aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg></span><div rst-callout-body><p>Keymail couldn&#39;t confirm it&#39;s you.</p></div></div>
+<form rst-signin-form method="post" action="/signin" data-pow-form data-pow-nonce="…" data-pow-difficulty="12" data-pow-worker="/pow/pow-worker.js" data-pow-min-age="3000"><input type="hidden" name="pow_scope" value="…">
+<input type="hidden" name="pow_nonce" value="…">
+<input type="hidden" name="pow_issued" value="…">
+<input type="hidden" name="pow_expires" value="…">
+<input type="hidden" name="pow_difficulty" value="…">
+<input type="hidden" name="pow_flags" value="…">
+<input type="hidden" name="pow_seal" value="…">
+<input type="hidden" name="pow_counter" value="…" data-pow-counter>
+<div aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden"><label for="hp">Leave this field empty</label><input type="text" id="hp" name="hp" tabindex="-1" autocomplete="off"></div>
+
+<div rst-field><label rst-field-label for="rst-signin-email">Email</label>
+<input rst-input type="email" id="rst-signin-email" name="address" value="kay@example.org" required autocomplete="email">
+</div>
+<input type="hidden" name="force" value="1">
+<button rst-btn="primary block" type="submit" disabled data-pow-submit>Send me a link instead</button>
+<p data-pow-status>If this form doesn&#39;t respond, reload the page.</p><noscript><p>This form needs JavaScript to work.</p></noscript>
+</form>
+<script type="module" src="/pow/pow.js"></script></div>
+</section>
+Problem signing in to Harbour
+
+<!-- case keymail, preview -->
+<section rst-signin aria-labelledby="rst-signin-heading">
+<div rst-signin-brand><p rst-signin-name>Harbour</p></div>
+<div rst-signin-door>
+<h1 id="rst-signin-heading">Sign in to Harbour</h1>
+<div rst-callout id="rst-signin-problem" rst-tone="negative" tabindex="-1" autofocus><span rst-callout-ic aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg></span><div rst-callout-body><p>Keymail couldn&#39;t confirm it&#39;s you.</p></div></div>
+<form rst-signin-form method="post" action="/signin">
+<div rst-field><label rst-field-label for="rst-signin-email">Email</label>
+<input rst-input type="email" id="rst-signin-email" name="address" value="kay@example.org" required autocomplete="email">
+</div>
+<input type="hidden" name="force" value="1">
+<button rst-btn="primary block" type="submit">Send me a link instead</button>
+</form>
+</div>
+</section>
+Problem signing in to Harbour
+
+<!-- case generic, bare -->
+<section rst-signin aria-labelledby="rst-signin-heading">
+<div rst-signin-brand><p rst-signin-name>Harbour</p></div>
+<div rst-signin-door>
+<h1 id="rst-signin-heading">Sign in to Harbour</h1>
+<div rst-callout id="rst-signin-problem" rst-tone="negative" tabindex="-1" autofocus><span rst-callout-ic aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg></span><div rst-callout-body><p>Something went wrong. Try again.</p></div></div>
+<form rst-signin-form method="post" action="/signin">
+<div rst-field><label rst-field-label for="rst-signin-email">Email</label>
+<input rst-input type="email" id="rst-signin-email" name="address" required autocomplete="email">
+</div>
+<button rst-btn="primary block" type="submit">Continue</button>
+</form>
+</div>
+</section>
+Problem signing in to Harbour
+
+<!-- case generic, return -->
+<section rst-signin aria-labelledby="rst-signin-heading">
+<div rst-signin-brand><p rst-signin-name>Harbour</p></div>
+<div rst-signin-door>
+<h1 id="rst-signin-heading">Sign in to Harbour</h1>
+<div rst-callout id="rst-signin-problem" rst-tone="negative" tabindex="-1" autofocus><span rst-callout-ic aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg></span><div rst-callout-body><p>Something went wrong. Try again.</p></div></div>
+<form rst-signin-form method="post" action="/signin">
+<input type="hidden" name="return_to" value="/docs/7?tab=a&amp;b=c">
+<div rst-field><label rst-field-label for="rst-signin-email">Email</label>
+<input rst-input type="email" id="rst-signin-email" name="address" required autocomplete="email">
+</div>
+<button rst-btn="primary block" type="submit">Continue</button>
+</form>
+</div>
+</section>
+Problem signing in to Harbour
+
+<!-- case generic, proof -->
+<section rst-signin aria-labelledby="rst-signin-heading">
+<div rst-signin-brand><p rst-signin-name>Harbour</p></div>
+<div rst-signin-door>
+<h1 id="rst-signin-heading">Sign in to Harbour</h1>
+<div rst-callout id="rst-signin-problem" rst-tone="negative" tabindex="-1" autofocus><span rst-callout-ic aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg></span><div rst-callout-body><p>Something went wrong. Try again.</p></div></div>
+<form rst-signin-form method="post" action="/signin" data-pow-form data-pow-nonce="…" data-pow-difficulty="12" data-pow-worker="/pow/pow-worker.js" data-pow-min-age="3000"><input type="hidden" name="pow_scope" value="…">
+<input type="hidden" name="pow_nonce" value="…">
+<input type="hidden" name="pow_issued" value="…">
+<input type="hidden" name="pow_expires" value="…">
+<input type="hidden" name="pow_difficulty" value="…">
+<input type="hidden" name="pow_flags" value="…">
+<input type="hidden" name="pow_seal" value="…">
+<input type="hidden" name="pow_counter" value="…" data-pow-counter>
+<div aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden"><label for="hp">Leave this field empty</label><input type="text" id="hp" name="hp" tabindex="-1" autocomplete="off"></div>
+
+<div rst-field><label rst-field-label for="rst-signin-email">Email</label>
+<input rst-input type="email" id="rst-signin-email" name="address" required autocomplete="email">
+</div>
+<button rst-btn="primary block" type="submit" disabled data-pow-submit>Continue</button>
+<p data-pow-status>If this form doesn&#39;t respond, reload the page.</p><noscript><p>This form needs JavaScript to work.</p></noscript>
+</form>
+<script type="module" src="/pow/pow.js"></script></div>
+</section>
+Problem signing in to Harbour
+
+<!-- case generic, preview -->
+<section rst-signin aria-labelledby="rst-signin-heading">
+<div rst-signin-brand><p rst-signin-name>Harbour</p></div>
+<div rst-signin-door>
+<h1 id="rst-signin-heading">Sign in to Harbour</h1>
+<div rst-callout id="rst-signin-problem" rst-tone="negative" tabindex="-1" autofocus><span rst-callout-ic aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg></span><div rst-callout-body><p>Something went wrong. Try again.</p></div></div>
+<form rst-signin-form method="post" action="/signin">
+<div rst-field><label rst-field-label for="rst-signin-email">Email</label>
+<input rst-input type="email" id="rst-signin-email" name="address" required autocomplete="email">
+</div>
+<button rst-btn="primary block" type="submit">Continue</button>
+</form>
+</div>
+</section>
+Problem signing in to Harbour
+
+<!-- case reauth, ask, bare -->
+<section rst-signin aria-labelledby="rst-signin-heading">
+<div rst-signin-brand><p rst-signin-name>Harbour</p></div>
+<div rst-signin-door>
+<h1 id="rst-signin-heading">Sign in to Harbour</h1>
+<div rst-callout id="rst-signin-problem" rst-tone="info"><span rst-callout-ic aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span><div rst-callout-body><p>Sign in again to continue.</p></div></div>
+<form rst-signin-form method="post" action="/signin">
+<div rst-field><label rst-field-label for="rst-signin-email">Email</label>
+<input rst-input type="email" id="rst-signin-email" name="address" required autofocus autocomplete="email">
+</div>
+<button rst-btn="primary block" type="submit">Continue</button>
+</form>
+</div>
+</section>
+Sign in to Harbour
+
+<!-- case reauth, ask, return -->
+<section rst-signin aria-labelledby="rst-signin-heading">
+<div rst-signin-brand><p rst-signin-name>Harbour</p></div>
+<div rst-signin-door>
+<h1 id="rst-signin-heading">Sign in to Harbour</h1>
+<div rst-callout id="rst-signin-problem" rst-tone="info"><span rst-callout-ic aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span><div rst-callout-body><p>Sign in again to continue.</p></div></div>
+<form rst-signin-form method="post" action="/signin">
+<input type="hidden" name="return_to" value="/docs/7?tab=a&amp;b=c">
+<div rst-field><label rst-field-label for="rst-signin-email">Email</label>
+<input rst-input type="email" id="rst-signin-email" name="address" required autofocus autocomplete="email">
+</div>
+<button rst-btn="primary block" type="submit">Continue</button>
+</form>
+</div>
+</section>
+Sign in to Harbour
+
+<!-- case reauth, ask, proof -->
+<section rst-signin aria-labelledby="rst-signin-heading">
+<div rst-signin-brand><p rst-signin-name>Harbour</p></div>
+<div rst-signin-door>
+<h1 id="rst-signin-heading">Sign in to Harbour</h1>
+<div rst-callout id="rst-signin-problem" rst-tone="info"><span rst-callout-ic aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span><div rst-callout-body><p>Sign in again to continue.</p></div></div>
+<form rst-signin-form method="post" action="/signin" data-pow-form data-pow-nonce="…" data-pow-difficulty="12" data-pow-worker="/pow/pow-worker.js" data-pow-min-age="3000"><input type="hidden" name="pow_scope" value="…">
+<input type="hidden" name="pow_nonce" value="…">
+<input type="hidden" name="pow_issued" value="…">
+<input type="hidden" name="pow_expires" value="…">
+<input type="hidden" name="pow_difficulty" value="…">
+<input type="hidden" name="pow_flags" value="…">
+<input type="hidden" name="pow_seal" value="…">
+<input type="hidden" name="pow_counter" value="…" data-pow-counter>
+<div aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden"><label for="hp">Leave this field empty</label><input type="text" id="hp" name="hp" tabindex="-1" autocomplete="off"></div>
+
+<div rst-field><label rst-field-label for="rst-signin-email">Email</label>
+<input rst-input type="email" id="rst-signin-email" name="address" required autofocus autocomplete="email">
+</div>
+<button rst-btn="primary block" type="submit" disabled data-pow-submit>Continue</button>
+<p data-pow-status>If this form doesn&#39;t respond, reload the page.</p><noscript><p>This form needs JavaScript to work.</p></noscript>
+</form>
+<script type="module" src="/pow/pow.js"></script></div>
+</section>
+Sign in to Harbour
+
+<!-- case reauth, ask, preview -->
+<section rst-signin aria-labelledby="rst-signin-heading">
+<div rst-signin-brand><p rst-signin-name>Harbour</p></div>
+<div rst-signin-door>
+<h1 id="rst-signin-heading">Sign in to Harbour</h1>
+<div rst-callout id="rst-signin-problem" rst-tone="info"><span rst-callout-ic aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span><div rst-callout-body><p>Sign in again to continue.</p></div></div>
+<form rst-signin-form method="post" action="/signin">
+<div rst-field><label rst-field-label for="rst-signin-email">Email</label>
+<input rst-input type="email" id="rst-signin-email" name="address" required autofocus autocomplete="email">
+</div>
+<button rst-btn="primary block" type="submit">Continue</button>
+</form>
+</div>
+</section>
+Sign in to Harbour
+
+<!-- case reauth, returning keymail, bare -->
+<section rst-signin aria-labelledby="rst-signin-heading">
+<div rst-signin-brand><p rst-signin-name>Harbour</p></div>
+<div rst-signin-door>
+<h1 id="rst-signin-heading">Sign in to Harbour</h1>
+<div rst-callout id="rst-signin-problem" rst-tone="info"><span rst-callout-ic aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span><div rst-callout-body><p>Sign in again to continue.</p></div></div>
+<form rst-signin-form method="post" action="/signin">
+<input type="hidden" name="address" value="kay@example.org">
+<input type="hidden" name="expect" value="keymail">
+<button rst-btn="primary block" type="submit" aria-describedby="rst-signin-remembered" autofocus>Continue to Keymail</button>
+<p rst-signin-remembered id="rst-signin-remembered">as <bdi>kay@example.org</bdi></p>
+</form>
+<form rst-signin-form method="post" action="/signin/forget"><button rst-btn="ghost block" type="submit">Use a different email</button></form>
+</div>
+</section>
+Sign in to Harbour
+
+<!-- case reauth, returning keymail, return -->
+<section rst-signin aria-labelledby="rst-signin-heading">
+<div rst-signin-brand><p rst-signin-name>Harbour</p></div>
+<div rst-signin-door>
+<h1 id="rst-signin-heading">Sign in to Harbour</h1>
+<div rst-callout id="rst-signin-problem" rst-tone="info"><span rst-callout-ic aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span><div rst-callout-body><p>Sign in again to continue.</p></div></div>
+<form rst-signin-form method="post" action="/signin">
+<input type="hidden" name="return_to" value="/docs/7?tab=a&amp;b=c">
+<input type="hidden" name="address" value="kay@example.org">
+<input type="hidden" name="expect" value="keymail">
+<button rst-btn="primary block" type="submit" aria-describedby="rst-signin-remembered" autofocus>Continue to Keymail</button>
+<p rst-signin-remembered id="rst-signin-remembered">as <bdi>kay@example.org</bdi></p>
+</form>
+<form rst-signin-form method="post" action="/signin/forget"><input type="hidden" name="return_to" value="/docs/7?tab=a&amp;b=c">
+<button rst-btn="ghost block" type="submit">Use a different email</button></form>
+</div>
+</section>
+Sign in to Harbour
+
+<!-- case reauth, returning keymail, proof -->
+<section rst-signin aria-labelledby="rst-signin-heading">
+<div rst-signin-brand><p rst-signin-name>Harbour</p></div>
+<div rst-signin-door>
+<h1 id="rst-signin-heading">Sign in to Harbour</h1>
+<div rst-callout id="rst-signin-problem" rst-tone="info"><span rst-callout-ic aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span><div rst-callout-body><p>Sign in again to continue.</p></div></div>
+<form rst-signin-form method="post" action="/signin" data-pow-form data-pow-nonce="…" data-pow-difficulty="12" data-pow-worker="/pow/pow-worker.js" data-pow-min-age="3000"><input type="hidden" name="pow_scope" value="…">
+<input type="hidden" name="pow_nonce" value="…">
+<input type="hidden" name="pow_issued" value="…">
+<input type="hidden" name="pow_expires" value="…">
+<input type="hidden" name="pow_difficulty" value="…">
+<input type="hidden" name="pow_flags" value="…">
+<input type="hidden" name="pow_seal" value="…">
+<input type="hidden" name="pow_counter" value="…" data-pow-counter>
+<div aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden"><label for="hp">Leave this field empty</label><input type="text" id="hp" name="hp" tabindex="-1" autocomplete="off"></div>
+
+<input type="hidden" name="address" value="kay@example.org">
+<input type="hidden" name="expect" value="keymail">
+<button rst-btn="primary block" type="submit" aria-describedby="rst-signin-remembered" autofocus disabled data-pow-submit>Continue to Keymail</button>
+<p data-pow-status>If this form doesn&#39;t respond, reload the page.</p><noscript><p>This form needs JavaScript to work.</p></noscript>
+<p rst-signin-remembered id="rst-signin-remembered">as <bdi>kay@example.org</bdi></p>
+</form>
+<form rst-signin-form method="post" action="/signin/forget"><button rst-btn="ghost block" type="submit">Use a different email</button></form>
+<script type="module" src="/pow/pow.js"></script></div>
+</section>
+Sign in to Harbour
+
+<!-- case reauth, returning keymail, preview -->
+<section rst-signin aria-labelledby="rst-signin-heading">
+<div rst-signin-brand><p rst-signin-name>Harbour</p></div>
+<div rst-signin-door>
+<h1 id="rst-signin-heading">Sign in to Harbour</h1>
+<div rst-callout id="rst-signin-problem" rst-tone="info"><span rst-callout-ic aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span><div rst-callout-body><p>Sign in again to continue.</p></div></div>
+<form rst-signin-form method="post" action="/signin">
+<input type="hidden" name="address" value="kay@example.org">
+<input type="hidden" name="expect" value="keymail">
+<button rst-btn="primary block" type="submit" aria-describedby="rst-signin-remembered" autofocus>Continue to Keymail</button>
+<p rst-signin-remembered id="rst-signin-remembered">as <bdi>kay@example.org</bdi></p>
+</form>
+<form rst-signin-form method="post" action="/signin/forget"><button rst-btn="ghost block" type="submit">Use a different email</button></form>
+</div>
+</section>
+Sign in to Harbour

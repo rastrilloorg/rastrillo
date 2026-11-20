@@ -250,6 +250,13 @@ type Config struct {
 	// cookie nothing reads.
 	SigninScreen bool
 
+	// SigninOneWay draws the shipped screen one way in per page: the
+	// way this browser used last, and "Other ways to sign in" below it,
+	// a page of its own (?ways=1) that opens each way's page (?way=).
+	// It needs SigninScreen. Default false, which is the screen exactly
+	// as it was before the option, byte for byte.
+	SigninOneWay bool
+
 	// BeginPath and ForgetPath are where the app mounted Begin (POST) and
 	// Forget (POST), for the screen's form actions. auth mounts nothing
 	// itself, and neither can be inferred from SigninPath: an app may

@@ -689,6 +689,12 @@ loads `passkey.JS()` from the `ScriptURL` you set, and only on a page
 that shows it; without that script it stays hidden, and the email form
 works as ever. See [Magic links](/docs/magic-links#use-the-shipped-screen-or-your-own).
 
+With `auth.Config.SigninOneWay`, the card offers one way in, with
+**Other ways to sign in** below it. There the passkey button is the
+page's only way in. It is drawn disabled until its script enables it, so
+the page does not move. Where a passkey can't work, the script opens the
+email way. With script off, a line says a passkey needs JavaScript.
+
 ## Styleguide
 
 ```go

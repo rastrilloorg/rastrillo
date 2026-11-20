@@ -40,6 +40,7 @@ type Config struct {
 	SignedInPath     string
 	TrustedProxyHops *int
 	SigninScreen     bool
+	SigninOneWay     bool
 	BeginPath        string
 	ForgetPath       string
 	Remember         *bool
@@ -82,6 +83,12 @@ type BlindLinks struct {
 `Proof` is sign-in's front door, required unless `ProofOff`; [Magic links](/docs/magic-links#the-front-door) and [pow](/docs/reference/pow) cover it.
 
 `SigninScreen` turns on the shipped sign-in screen's side of `auth`: the attempt and continuation cookies, the keymail continuation, and remembering the way in. Off, nothing about `Begin` or `Callback` changes. `BeginPath` and `ForgetPath` (default `/signin` and `/signin/forget`) are where you mounted `Begin` and `Forget`, for the screen's forms. `Remember` set to `false` keeps the screen and stops remembering.
+
+`SigninOneWay` draws the screen one way in per page: the way this
+browser used last, then **Other ways to sign in**, a page of its own
+(`?ways=1`) that opens each way's page (`?way=email`, `?way=passkey` or
+`?way=` a federated provider). It needs `SigninScreen`. Off, the screen
+is exactly what it was.
 
 `InstanceKey` must not be empty, and `New` returns
 `ErrEmptyInstanceKey` when it is. It seals the pending blob with an
@@ -221,10 +228,23 @@ type SigninState struct {
 	Proof       *pow.Form
 	Passkey     *PasskeyDoor
 	Unavailable bool
+	OneWay      bool
+	Way         SigninWay
+	SigninPath  string
+	Federated   *FederatedDoor
+	AppProblem  *AppProblem
 }
 func (s SigninState) Door() string
 func (s SigninState) Focus() string
 func (s SigninState) PasskeyFinish() string
+func (s *SigninState) ChooseWay(query url.Values)
+func (s SigninState) Ways() []SigninWayRow
+func (s SigninState) WaysHref() string
+func (s SigninState) BackHref() string
+func (s SigninState) EmailHref() string
+func (s SigninState) FederatedHref() string
+func (s SigninState) ConditionalUI() bool
+func ParseWay(value string) SigninWay
 
 type SigninStep string
 
@@ -234,7 +254,10 @@ const (
 	StepSent      SigninStep = "sent"
 	StepContinue  SigninStep = "continue"
 	StepConfirm   SigninStep = "confirm"
+	StepWays      SigninStep = "ways" // the one-way screen's chooser
 )
+
+type SigninWay string // WayEmail, WayPasskey, or a provider's name
 
 type SigninProblem string
 
@@ -249,7 +272,23 @@ const (
 	ProblemCheck   SigninProblem = "check"
 )
 
-type Remembered struct{ Method, Address string }
+type Remembered struct{ Method, Address, Provider string }
+
+type FederatedDoor struct {
+	Provider, Href, Label string
+	Icon                  template.HTML
+}
+
+type AppProblem struct {
+	Text string
+	Ask  bool
+}
+
+type SigninWayRow struct {
+	Way                  SigninWay
+	Href, Detail, Label  string
+	Icon                 template.HTML
+}
 
 type PasskeyDoor struct {
 	BeginPath, FinishPath string
@@ -258,7 +297,24 @@ type PasskeyDoor struct {
 }
 ```
 
-`Forget` is the Use a different email button: POST only, same-origin only, it forgets the remembered way in and redirects to `SigninPath`. `AnswerAsSent` is `Begin`'s answer for a sent link, without the link, for an admission check in front of `Begin`; see [Magic links](/docs/magic-links#an-admission-check-in-front-of-begin). `RememberJar` is the jar that remembers the way in; give it to `passkey.Config.Remember`.
+On the one-way screen, set `Federated` for a sign-in another service
+runs, such as Oficina ID: `Provider` is the `lastsignin` provider you
+remember it under, `Href` where its button goes (the screen adds
+`return_to`), `Label` the provider's name, and `Icon` an optional glyph
+drawn in `currentColor`. With nothing remembered, it is the one way in.
+A step-up (`?reauth=1`) never offers it. Remember the sign-in where you
+mint the session, with the address of the account you resolved or none:
+`RememberJar().Remember(w, lastsignin.Record{Method:
+lastsignin.MethodFederated, Provider: lastsignin.ProviderOficina,
+Address: address})`.
+
+Set `AppProblem` for a problem only your app can name, such as a
+refusal from `Refused`: `Text` is shown as the page's problem, and `Ask`
+draws the email field instead of a one-tap for the refused address. It
+works with the option on or off. A page that is not `auth`'s can fill a
+`SigninState` itself and call `ChooseWay` with the query.
+
+`Forget` is the Use a different email button: POST only, same-origin only, it forgets the remembered way in and redirects to `SigninPath`. On the one-way screen it opens the email way. `AnswerAsSent` is `Begin`'s answer for a sent link, without the link, for an admission check in front of `Begin`; see [Magic links](/docs/magic-links#an-admission-check-in-front-of-begin). `RememberJar` is the jar that remembers the way in; give it to `passkey.Config.Remember`.
 
 ## Guarding and reading
 

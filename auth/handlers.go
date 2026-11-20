@@ -249,7 +249,8 @@ func (a *Auth) continueKeymail(w http.ResponseWriter, r *http.Request, address s
 		a.redirect(w, r, a.problemURL("1", recovered, false, postedReturnTo(r)))
 		return
 	}
-	id, value, err := a.sealContinuation(next.Redirect, next.Pending)
+	id, value, err := a.sealRoundTrip(next.Redirect, next.Pending,
+		a.postedReauth(r))
 	if err != nil {
 		a.cfg.Logger.Error("rastrillo/auth: seal continuation", "err", err)
 		a.redirect(w, r, a.problemURL("1", recovered, false, postedReturnTo(r)))
@@ -305,33 +306,19 @@ func (a *Auth) AnswerAsSent(w http.ResponseWriter, r *http.Request) {
 // ?force=1&err=keymail so the page can offer the plain-email path.
 // With SigninScreen on, a callback whose state is not the attempt the
 // browser's continuation describes answers Expired without clearing
-// anything (see the comment inside).
+// anything (otherAttempt), keeping a step-up as roundTripReauth says.
 func (a *Auth) Callback(w http.ResponseWriter, r *http.Request) {
 	if a.pathRouted(w, r) {
 		return
 	}
 	pending, ok := a.pendingValue(r)
+	again := a.roundTripReauth(r, pending)
 	if !ok {
-		a.redirect(w, r, a.signinAgain(r, "?err=expired"))
+		a.redirect(w, r, a.signinAgain(r, "?err=expired"+again))
 		return
 	}
-	if a.cfg.SigninScreen {
-		// Today the pending cookie is cleared the moment it is read and
-		// the library then finds a state mismatch — so a late callback
-		// from tab A, or a callback URL a third party makes the browser
-		// open, throws away tab B's newer attempt. When the continuation
-		// describes the pending cookie just read and this callback's
-		// state is not that attempt's, the callback belongs to some other
-		// attempt: answer Expired and leave the pair alone. The pending
-		// blob's own authenticated expiry still bounds it; nothing is
-		// refreshed. Any other case — no continuation, or one left from
-		// an earlier attempt or a screen-off Begin — is today's path.
-		if p, st := a.openContinuation(r); st == cookieValid && p.PH == digest(pending) &&
-			p.ST != digest(r.URL.Query().Get("state")) {
-			a.redirect(w, r, a.signinAgain(r, "?err=expired"))
-			return
-		}
-		a.clearCookie(w, a.continueCookie())
+	if a.cfg.SigninScreen && a.otherAttempt(w, r, pending, again) {
+		return
 	}
 	a.clearCookie(w, a.pendingCookie())
 
@@ -340,7 +327,7 @@ func (a *Auth) Callback(w http.ResponseWriter, r *http.Request) {
 	switch {
 	case errors.Is(err, signin.ErrPendingInvalid):
 		// Expired, tampered with, or a state mismatch — all "start again".
-		a.redirect(w, r, a.signinAgain(r, "?err=expired"))
+		a.redirect(w, r, a.signinAgain(r, "?err=expired"+again))
 		return
 	case errors.Is(err, signin.ErrAddressMismatch):
 		// Keymail's identity service is deliberately anonymous: the
@@ -351,7 +338,7 @@ func (a *Auth) Callback(w http.ResponseWriter, r *http.Request) {
 		return
 	case err != nil:
 		a.logError("rastrillo/auth: keymail callback", err)
-		a.redirect(w, r, a.signinAgain(r, "?force=1&err=keymail"))
+		a.redirect(w, r, a.signinAgain(r, "?force=1&err=keymail"+again))
 		return
 	}
 	a.admit(w, r, id)
@@ -687,5 +674,5 @@ func From(r *http.Request) (Identity, bool) {
 }
 
 func (a *Auth) redirect(w http.ResponseWriter, r *http.Request, to string) {
-	http.Redirect(w, r, to, http.StatusSeeOther)
+	http.Redirect(w, r, a.keepReauth(r, to), http.StatusSeeOther)
 }

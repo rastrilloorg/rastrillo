@@ -9,6 +9,10 @@ import (
 )
 
 func configureStorage(cfg *Config) error {
+	if cfg.SigninOneWay && !cfg.SigninScreen {
+		return errors.New(
+			"rastrillo/auth: Config.SigninOneWay needs SigninScreen")
+	}
 	if err := blindConfig(*cfg); err != nil {
 		return err
 	}

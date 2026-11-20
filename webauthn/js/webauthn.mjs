@@ -35,6 +35,19 @@ export function available() {
   return typeof PublicKeyCredential !== "undefined" && !!navigator.credentials;
 }
 
+// conditionalAvailable says whether this browser offers passkeys in a
+// field's autofill (conditional mediation). Any failure is "no": the
+// field still works, and the person can pick a passkey another way.
+export async function conditionalAvailable() {
+  try {
+    return available() &&
+      typeof PublicKeyCredential.isConditionalMediationAvailable === "function" &&
+      (await PublicKeyCredential.isConditionalMediationAvailable()) === true;
+  } catch (err) {
+    return false;
+  }
+}
+
 export class NoPRF extends Error {
   constructor() {
     super("this authenticator does not support the PRF extension");
@@ -93,10 +106,25 @@ export async function register({ challenge, rpId, rpName, userId, userName, prfS
 // old name is what keeps existing members signing in across the move —
 // the mirror of the Go Config.LegacyRPID, which accepts it for
 // assertions and never for registration.
-export async function authenticate({ challenge, rpId, legacyRpId, prfSalt }) {
-  let assertion = await getAssertion(rpId, challenge, prfSalt);
+//
+// mediation: "conditional" offers passkeys in the autofill of a field
+// marked autocomplete="username webauthn" instead of opening a prompt,
+// and signal (an AbortSignal) cancels the request, which the page must do
+// when the form is sent another way. Conditional mediation runs only
+// where conditionalAvailable() says so, and never with a legacyRpId: the
+// request waits on the person, so there is no "nothing offered" answer
+// to fall through on, and asking a second relying party would mean a
+// second request racing the first. Both refusals throw before anything
+// is asked.
+export async function authenticate({ challenge, rpId, legacyRpId, prfSalt, mediation, signal }) {
+  if (mediation === "conditional") {
+    if (legacyRpId) throw new Error("conditional mediation cannot use a legacy relying party");
+    if (!(await conditionalAvailable())) throw new Error("conditional mediation is not available");
+  }
+  const how = { mediation, signal };
+  let assertion = await getAssertion(rpId, challenge, prfSalt, how);
   if (!assertion && legacyRpId && legacyRpId !== rpId) {
-    assertion = await getAssertion(legacyRpId, challenge, prfSalt);
+    assertion = await getAssertion(legacyRpId, challenge, prfSalt, how);
   }
   if (!assertion) throw new Error("no passkey was offered");
 
@@ -116,17 +144,22 @@ export async function authenticate({ challenge, rpId, legacyRpId, prfSalt }) {
   };
 }
 
-async function getAssertion(rpId, challenge, prfSalt) {
+async function getAssertion(rpId, challenge, prfSalt, how) {
+  const options = {
+    publicKey: {
+      rpId,
+      challenge: fromB64url(challenge),
+      allowCredentials: [],
+      userVerification: "required",
+      extensions: prfExtension(prfSalt),
+    },
+  };
+  // Only when asked: a browser that predates either member must see
+  // exactly the request it always saw.
+  if (how && how.mediation) options.mediation = how.mediation;
+  if (how && how.signal) options.signal = how.signal;
   try {
-    return await navigator.credentials.get({
-      publicKey: {
-        rpId,
-        challenge: fromB64url(challenge),
-        allowCredentials: [],
-        userVerification: "required",
-        extensions: prfExtension(prfSalt),
-      },
-    });
+    return await navigator.credentials.get(options);
   } catch (err) {
     // NotAllowedError covers both "nothing here" and "the person
     // dismissed the prompt" — deliberately indistinguishable so a site

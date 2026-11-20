@@ -2124,10 +2124,19 @@ input.rst-input[type="date"], input.rst-input[type="time"], input.rst-input[type
    a browser that does not know the pseudo-element drops the rule. */
 input.rst-input::-webkit-date-and-time-value, input[rst-input]::-webkit-date-and-time-value { text-align: start; }
 /* A field sits slightly into the page: a 1px inset ambient shadow, and
-   the control border, which stays --rst-line-strong at 3:1. Focus adds
-   the focus edge and a 3px halo; the solid 2px outline stays, because
-   the halo is extra and never the indicator. */
-.rst-input:focus-visible, [rst-input]:focus-visible { border-color: var(--rst-focus-edge, var(--rst-line-strong)); box-shadow: inset 0 1px 1px var(--rst-depth-ambient, transparent), 0 0 0 3px var(--rst-focus-halo, transparent); outline: 2px solid var(--rst-accent); outline-offset: 2px; }
+   the control border, which stays --rst-line-strong at 3:1. Focus is one
+   ring, not two: the field's own edge turns to the focus edge, the 2px
+   accent outline sits flush against it, and the 3px halo flush against
+   that. The outline used to stand 2px off a grey edge, and the edge, the
+   gap and the outline read as a double border. The outline is still the
+   indicator, never the halo: the edge changes from --rst-line-strong to
+   the accent at under 3:1 in every theme (1.7:1 in Day), and the halo
+   from the surface at 1.4:1, so neither counts toward WCAG 2.4.13; the
+   outline's 2px, drawn from the surface, are 5.5:1 to 18.9:1. A halo of
+   5px is 3px past the outline. Forced colours drop the edge colour and
+   the halo and keep the outline, in the reader's own colour.
+   check/focus_ring_browser_test.go measures it. */
+.rst-input:focus-visible, [rst-input]:focus-visible { border-color: var(--rst-focus-edge, var(--rst-accent)); box-shadow: inset 0 1px 1px var(--rst-depth-ambient, transparent), 0 0 0 5px var(--rst-focus-halo, transparent); outline: 2px solid var(--rst-accent); outline-offset: 0; }
 /* short is compact, not tiny: 8rem is a border-box width, so it renders
    within a pixel or two of the old 6.5rem content box plus its padding,
    and it is wide enough for the postcodes and codes it is for. The
@@ -2157,7 +2166,7 @@ textarea.rst-input, textarea[rst-input] { min-height: 5rem; resize: vertical; }
   .rst-textarea, [rst-textarea] { font-size: max(1rem, 1em); }
 }
 /* Sunk and focused as .rst-input is, for the reason given there. */
-.rst-textarea:focus-visible, [rst-textarea]:focus-visible { border-color: var(--rst-focus-edge, var(--rst-line-strong)); box-shadow: inset 0 1px 1px var(--rst-depth-ambient, transparent), 0 0 0 3px var(--rst-focus-halo, transparent); outline: 2px solid var(--rst-accent); outline-offset: 2px; }
+.rst-textarea:focus-visible, [rst-textarea]:focus-visible { border-color: var(--rst-focus-edge, var(--rst-accent)); box-shadow: inset 0 1px 1px var(--rst-depth-ambient, transparent), 0 0 0 5px var(--rst-focus-halo, transparent); outline: 2px solid var(--rst-accent); outline-offset: 0; }
 /* The textarea grows with its text: field-sizing: content, from the
    5rem minimum above (which the touch query leaves alone, so a phone
    keeps it too) to half the viewport, past which it scrolls. Half,
@@ -3740,6 +3749,78 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
    flex-start keeps it the width of its words, so the empty line beside
    it is not a hidden part of the link. */
 .rst-signin__providers > a, [rst-signin-providers] > a { align-items: center; align-self: flex-start; box-sizing: border-box; display: inline-flex; min-block-size: var(--rst-target); min-inline-size: var(--rst-target); }
+
+/* ── The one-way door: one way in, and the rest behind a quiet control ─
+   rst-signin-door="one-way" is the door that offers a single way in
+   (the primary), then "Other ways to sign in", which opens the chooser
+   (rst-signin-ways). Every rule here needs that token or the chooser,
+   so the classic door above draws as it always has. The pill is the
+   door's, not every button's (Paul, 2026-11-19).
+
+   Every button on the door is a pill, lit from above (a white inner
+   top edge), at the lg step's height: on the door a button is the
+   page, not a toolbar control. The primary's shadow takes its own
+   fill's colour, deep in light and faint in dark, where a bright glow
+   would read as a halo. The press rules (0,4,0) outweigh these, so a
+   pill still sinks. An icon in a door button is 16px, as in any
+   control; a glyph that is not one of the icon set (a provider's own
+   mark, in currentColor) is 20px. */
+.rst-signin__door--one-way .rst-btn--block, [rst-signin-door~="one-way"] [rst-btn~="block"] { border-radius: 999px; font-size: var(--rst-fs-base); min-block-size: max(2.625rem, var(--rst-target)); padding-block: 0.5rem; }
+.rst-signin__door--one-way .rst-btn--primary, [rst-signin-door~="one-way"] [rst-btn~="primary"] { box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.22), 0 8px 18px -8px light-dark(color-mix(in srgb, var(--rst-accent-fill, var(--rst-accent)) 80%, transparent), color-mix(in srgb, var(--rst-accent-fill, var(--rst-accent)) 30%, transparent)); }
+.rst-signin__door--one-way .rst-btn > svg:not(.icon), [rst-signin-door~="one-way"] [rst-btn] > svg:not(.icon) { block-size: 1.25rem; flex: none; inline-size: 1.25rem; }
+/* What the door says under its button (the remembered address under
+   Keymail's one tap, the passkey's status line) is that button's
+   caption: centred under it, a step smaller. */
+.rst-signin__door--one-way .rst-signin__remembered, [rst-signin-door~="one-way"] [rst-signin-remembered], .rst-signin__door--one-way .rst-signin__passkey-msg, [rst-signin-door~="one-way"] [rst-signin-passkey-msg] { font-size: var(--rst-fs-sm); text-align: center; }
+
+/* The small controls are the door's ghosts: Other ways to sign in and
+   Back (links, children of the door) and Use a different email (the
+   button of a Forget form). They are text buttons a clear step below
+   the primary: medium weight, the muted ink that darkens on hover, a
+   touch smaller than body text, and a soft pill under them on hover
+   and focus. Semibold in full ink was tried and was too bold. The
+   focus ring is the page's 2px outline, which follows the pill. */
+.rst-signin__door--one-way .rst-btn--ghost, [rst-signin-door~="one-way"] [rst-btn~="ghost"] { align-self: center; border-radius: 999px; border-color: transparent; color: var(--rst-text-muted); font-size: calc(var(--rst-fs-base) * 0.9375); font-weight: 500; inline-size: auto; min-block-size: max(2.5rem, var(--rst-target)); padding: 0 0.875rem; }
+.rst-signin__door--one-way .rst-btn--ghost:hover, [rst-signin-door~="one-way"] [rst-btn~="ghost"]:hover, .rst-signin__door--one-way .rst-btn--ghost:focus-visible, [rst-signin-door~="one-way"] [rst-btn~="ghost"]:focus-visible { background-color: var(--rst-ghost-face-hover, var(--rst-surface-2)); color: var(--rst-text); }
+
+/* The chooser: one row per way, in a rounded box with hairlines
+   between the rows. A row is a link, or the button of a form (Use a
+   different email posts to Forget), so it keeps rst-btn for the busy
+   spinner and its press; here it is drawn as a row: no edge or fill of
+   its own, the row tint on hover, and a press that darkens in place
+   rather than dropping, since the box clips. 48px for one line,
+   border-box as every button is, so that is the row's height. The
+   glyph leads, one colour whatever the way, the name follows, then the
+   chevron, both glyphs in the muted ink. The leading glyph is 16px,
+   as an icon in any control is, a provider's own mark included, so
+   the names line up. The email row's second line
+   is the remembered address, the <bdi> in its name, at the row's start
+   edge whatever direction the address itself runs. The focus ring is
+   drawn inside the row, because the box clips at its corners. The
+   name is the row's <span>, never the busy spinner in either spelling:
+   busy.js puts a <span rst-spin aria-hidden="true"> first in the
+   button whichever spelling the page writes, so the rule passes over a
+   hidden span as well as its own spelling's spinner (a spinner is
+   always hidden; the name never is), which would otherwise grow to fill
+   the row where it is not centred over the label: under reduced
+   motion and forced colours. */
+.rst-signin__ways, [rst-signin-ways] { background: var(--rst-surface); border: 1px solid var(--rst-line); border-radius: var(--rst-radius); display: flex; flex-direction: column; overflow: hidden; }
+.rst-signin__ways .rst-btn, [rst-signin-ways] [rst-btn] { --rst-press-drop: 0px; background-color: transparent; border: 0; border-radius: 0; box-shadow: none; color: var(--rst-text); font-size: var(--rst-fs-base); font-weight: 550; gap: 0.75rem; justify-content: flex-start; min-block-size: 3rem; padding: 0.5625rem 0.875rem; text-align: start; }
+/* The hairline is on the row (a link) or its form, after the row rule,
+   which takes a row's own border away. */
+.rst-signin__ways > :not(:first-child), [rst-signin-ways] > :not(:first-child) { border-block-start: 1px solid var(--rst-line); }
+.rst-signin__ways .rst-btn:hover, [rst-signin-ways] [rst-btn]:hover { --rst-btn-sheen: none; background-color: var(--rst-row-tint-hover, var(--rst-surface-2)); color: var(--rst-text); }
+.rst-signin__ways .rst-btn:focus-visible, [rst-signin-ways] [rst-btn]:focus-visible { outline: 2px solid var(--rst-accent); outline-offset: -2px; }
+.rst-signin__ways .rst-btn > svg, [rst-signin-ways] [rst-btn] > svg { color: var(--rst-text-muted); }
+.rst-signin__ways .rst-btn > svg:first-child, [rst-signin-ways] [rst-btn] > svg:first-child { block-size: 1rem; flex: none; inline-size: 1rem; }
+.rst-signin__ways .rst-btn > span:not(.rst-spin, [aria-hidden]), [rst-signin-ways] [rst-btn] > span:not([rst-spin], [aria-hidden]) { display: grid; flex: 1; min-inline-size: 0; }
+.rst-signin__ways .rst-btn bdi, [rst-signin-ways] [rst-btn] bdi { color: var(--rst-text-muted); font-size: var(--rst-fs-sm); font-weight: 400; justify-self: start; }
+
+/* A chevron points the way the reader reads: onward toward the line's
+   end and Back toward its start, so in a right-to-left page both are
+   mirrored, as the pagination's are. A ghost on the door holds only a
+   chevron, and a chooser row's last glyph is its chevron. */
+[dir="rtl"] .rst-signin__door--one-way .rst-btn--ghost > svg, [dir="rtl"] [rst-signin-door~="one-way"] [rst-btn~="ghost"] > svg, [dir="rtl"] .rst-signin__ways .rst-btn > svg:last-child, [dir="rtl"] [rst-signin-ways] [rst-btn] > svg:last-child { transform: scaleX(-1); }
 
 /* ── rst-stage: the stage shell (layouts/stage.html) ─────────────────
    One card centred on a full-page backdrop. [rst-stage] is <body> in

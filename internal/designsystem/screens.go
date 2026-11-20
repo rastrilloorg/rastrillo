@@ -69,8 +69,11 @@ type screenDoc struct {
 // IS a page and buildFamilies refuses a partial no page claims; the
 // sign-in partials belong here, on the page about whole screens, and
 // this is that claim. live-head is here too: every shell calls it in its
-// head, and a meta tag has nothing a preview could show.
-var screenPartials = []string{"signin", "signin-title", "live-head"}
+// head, and a meta tag has nothing a preview could show. The signin-
+// helpers are the one-way screen's parts, which only signin calls.
+var screenPartials = []string{"signin", "signin-title", "live-head",
+	"signin-one-way", "signin-app-problem", "signin-forget-way",
+	"signin-glyph"}
 
 // screenPartialView is one of screenPartials as the page shows it: its
 // name under the page's lead, carrying the marker the coverage gates

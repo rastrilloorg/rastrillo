@@ -56,8 +56,10 @@ func TestFlatThemesFollowAnAppsOverrides(t *testing.T) {
 			ctx, cancel := context.WithTimeout(rig.Context(), 300*time.Second)
 			defer cancel()
 			for _, scheme := range []string{"light", "dark"} {
-				old := matrixShots(t, ctx, rig.Origin, "/old/", scheme)
-				now := matrixShots(t, ctx, rig.Origin, "/new/", scheme)
+				old, oldBoxes := matrixShotsBoxes(t, ctx, rig.Origin,
+					"/old/", scheme)
+				now, nowBoxes := matrixShotsBoxes(t, ctx, rig.Origin,
+					"/new/", scheme)
 				// The override reached the page: the primary button is
 				// the app's accent, or the comparison is between two
 				// stock renders and proves nothing.
@@ -68,6 +70,9 @@ func TestFlatThemesFollowAnAppsOverrides(t *testing.T) {
 				if got := computed(t, ctx, "#b-primary", "background-color"); got != want {
 					t.Fatalf("%s: the primary button is %s, want the app's accent %s; the override did not reach the page", scheme, got, want)
 				}
+				// The one ring follows the app: a focused field's edge
+				// and its outline are the overridden accent.
+				ringFollowsAccent(t, ctx, scheme, want)
 				keys := make([]string, 0, len(old))
 				for key := range old {
 					keys = append(keys, key)
@@ -83,6 +88,21 @@ func TestFlatThemesFollowAnAppsOverrides(t *testing.T) {
 				// before the aliases, 70 of 95 crops failed in light.
 				var differ []string
 				for _, key := range keys {
+					if isFocusRingCrop(key) {
+						// Fiesta 1.5's one focus ring, in its band only;
+						// the band follows the app's accent, read above.
+						ok, why, changed := sameExceptRing(t, old[key],
+							now[key], oldBoxes[key], nowBoxes[key], 40)
+						if !ok {
+							differ = append(differ,
+								key+" outside the focus ring: "+why)
+						} else if !changed {
+							t.Errorf("%s: %s renders as the old pair did; "+
+								"the one focus ring should have changed it",
+								scheme, key)
+						}
+						continue
+					}
 					if ok, why := samePixelsWithin(t, old[key], now[key], 40); !ok {
 						differ = append(differ, key+": "+why)
 					}

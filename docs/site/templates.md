@@ -221,9 +221,14 @@ confirm-form  field-select     locale-menu         signin-title
 detail-list   field-text       media-grid          stat
 dropdown      field-textarea   meter               status-pill
 empty-state   field-time       notice
-error-page    field-url        page-header
-              form-error
+error-page    field-url        page-header      signin-app-problem
+              form-error                        signin-forget-way
+                                                signin-glyph
+                                                signin-one-way
 ```
+
+`signin-one-way`, `signin-app-problem`, `signin-forget-way` and
+`signin-glyph` are parts of `signin`. Call `signin`, not them.
 
 `locale-menu` is the language switcher; see
 [Localization](/docs/localization). `scheme-menu` is the colour-scheme
