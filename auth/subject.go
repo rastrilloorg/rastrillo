@@ -18,6 +18,9 @@ func (auth *Auth) subjectFor(
 		if err != nil {
 			return "", err
 		}
+		if user.Suspended {
+			return "", sessions.ErrNoUser
+		}
 		return user.ID, nil
 	}
 	if auth.cfg.SubjectFor != nil {

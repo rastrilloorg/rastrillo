@@ -1,16 +1,3 @@
-// Package provisiontest is a fake Carlos console and edge for testing code
-// that creates instances and publishes path maps through them.
-//
-// Every rule it applies was read from the platform's handlers at platform
-// commit 04819f9b, and the plan's table (docs/superpowers/plans/
-// 2026-10-17-provision.md, Task 2) cites the file and lines of each. A fake
-// that guessed would let a readiness or routing bug in a caller pass, so
-// when the platform changes, change that table, the rules here and this
-// comment together.
-//
-// The fake is an http.RoundTripper that routes on the request's host: the
-// console's origin goes to the console half, every other host to the edge
-// half. There are no sockets and no TLS.
 package provisiontest
 
 import (
@@ -76,6 +63,8 @@ type Platform struct {
 	claims      map[string]*claim
 	otherBox    map[string]bool
 	unready     int
+	catchAlls   map[string]appKey
+	listReply   []Reply
 	createReply []Reply
 	pathsReply  []Reply
 	calls       []string
@@ -99,6 +88,8 @@ type instance struct {
 	rec     record
 	key     appKey
 	pending int // requests still to answer with the pending page
+	asleep  bool
+	failed  bool
 }
 
 type claim struct {
@@ -114,12 +105,15 @@ func New() *Platform {
 		instances: map[string]*instance{},
 		claims:    map[string]*claim{},
 		otherBox:  map[string]bool{},
+		catchAlls: map[string]appKey{},
 	}
 	// The platform's own patterns (authcli.go:696-697, 826), and its own
 	// roles at each door: a publish credential cannot create.
 	p.mux = http.NewServeMux()
 	p.mux.HandleFunc("POST /api/cli/apps/{account}/{app}/instances",
 		p.door([]string{"instance"}, &p.createReply, p.create))
+	p.mux.HandleFunc("GET /api/cli/apps/{account}/{app}/instances",
+		p.door([]string{"instance", "deploy"}, &p.listReply, p.list))
 	p.mux.HandleFunc("GET /api/cli/apps/{account}/{app}/instances/{host}",
 		p.door([]string{"instance"}, nil, p.get))
 	p.mux.HandleFunc("PUT /api/cli/apps/{account}/{app}/domains/{host}/paths",
@@ -678,6 +672,7 @@ type route struct {
 	as      string // the host the handler is told it serves
 	version string
 	pending bool
+	failed  bool
 	known   bool // some route answers; false is an unknown host
 }
 
@@ -692,6 +687,8 @@ func (p *Platform) roundTripEdge(req *http.Request) (*http.Response, error) {
 	switch {
 	case rt.pending:
 		pendingPage(rec, req)
+	case rt.failed:
+		http.Error(rec, "bad gateway", http.StatusBadGateway)
 	case !rt.known:
 		http.Error(rec, "unknown host", http.StatusNotFound)
 	default:
@@ -721,11 +718,7 @@ func (p *Platform) resolve(host, urlPath string) route {
 		// stopped answering the host would make a tenant on another box look
 		// unready, and hide the difference between "not up" and "up but not
 		// reachable by the product path" that a caller's routing check reads.
-		if in.pending > 0 {
-			in.pending--
-			return route{pending: true}
-		}
-		return p.routeOf(in.key, host)
+		return p.instanceRoute(in, host)
 	}
 	if c, ok := p.claims[host]; ok {
 		// Path routing (edge.go:1281-1371, aliases.go:395-408): the target
@@ -740,6 +733,10 @@ func (p *Platform) resolve(host, urlPath string) route {
 			}
 		}
 		return p.routeOf(c.key, host)
+	}
+	// A catch-all answers only a name nothing else holds.
+	if in, ok := p.catchAllInstance(host); ok {
+		return p.instanceRoute(in, in.rec.Host)
 	}
 	if underAppsDomain(host) {
 		return route{pending: true}

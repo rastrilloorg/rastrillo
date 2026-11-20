@@ -19,12 +19,15 @@ import (
 // users/<uid>.json. ID is the session subject. Email is empty in blind
 // mode, where EH is all the store knows of the address. Epoch is what
 // every session cookie for this user carries; EndSessions moves it.
+// Suspended people cannot sign in and their cookies stop refreshing.
 type User struct {
 	ID      string    `json:"uid"`
 	Email   string    `json:"email,omitempty"`
 	EH      string    `json:"eh"`
 	Created time.Time `json:"created"`
 	Epoch   int64     `json:"epoch"`
+	// Suspended is set by SetSuspended and read wherever a user is let in.
+	Suspended bool `json:"suspended,omitempty"`
 }
 
 // emailClaim is emails/<eh>.json: which user owns an address. It is
@@ -225,6 +228,11 @@ func (u *users) epoch(ctx context.Context, uid string) (int64, error) {
 	}
 	if err != nil {
 		return 0, err
+	}
+	// A suspended person's cookies end at the next refresh, the same
+	// outcome as after EndSessions.
+	if usr.Suspended {
+		return 0, sessions.ErrNoUser
 	}
 	return usr.Epoch, nil
 }

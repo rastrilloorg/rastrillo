@@ -507,7 +507,7 @@ func (a *Auth) admit(w http.ResponseWriter, r *http.Request, id Identity) {
 		return
 	}
 	subject, err := a.subjectFor(r.Context(), id.Address)
-	if a.cfg.BlindLinks != nil && errors.Is(err, sessions.ErrNoUser) {
+	if errors.Is(err, sessions.ErrNoUser) {
 		a.refuseAdmission(w, r, id)
 		return
 	}

@@ -177,6 +177,21 @@ func (s *Sessions) signedCookie(r *http.Request) (Session, cookieState) {
 	return sess, cookieValid
 }
 
+// CookieEpoch is the epoch a valid signed cookie on r carries, for a
+// caller that compares it with the subject's current one. It reports
+// false in row mode and for a cookie that is absent, expired or invalid.
+func (sessions *Sessions) CookieEpoch(request *http.Request) (int64, bool) {
+	if sessions.cfg.Signed == nil || basepath.OnDirectHost(request) {
+		return 0, false
+	}
+	cookie, err := request.Cookie(sessions.CookieName())
+	if err != nil {
+		return 0, false
+	}
+	claims, state := verifyCookie(sessions.keys, cookie.Value, sessions.now())
+	return claims.Epoch, state == cookieValid
+}
+
 // RefreshIfExpired sends a request whose signed cookie has expired to
 // the hub's refresh route and reports whether it wrote that redirect.
 // In row mode it does nothing and returns false.

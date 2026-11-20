@@ -937,8 +937,8 @@ columns auth/auth.go e29553cd014f 1
 columns auth/auth.go ec14109dd65b 1
 columns auth/auth.go eda525fa5bef 1
 columns auth/auth.go edb224703a41 1
-file auth/auth.go - 646 Config.Reader for the session lookups (#241); Config.SigninOneWay, the smart door
-func auth/auth.go New 152
+file auth/auth.go - 658 Config.Reader for the session lookups (#241); Config.SigninOneWay, the smart door; Config.Now and ErrNoUser refusal docs, raised from 646 when plaza-core's suspension work met main's one-way sign-in
+func auth/auth.go New 155 Config.Now default, raised from 152 when plaza-core's suspension work met main's one-way sign-in
 names auth/auth.go -/d 1
 names auth/auth.go -/r 3
 names auth/auth.go -/w 3
@@ -17130,7 +17130,6 @@ names provision/probe_test.go rig.publish/r 1
 names provision/probe_test.go rig.ready/a 1
 names provision/probe_test.go rig.ready/r 1
 names provision/probe_test.go tenantAtPrefix/w 1
-columns provision/provision.go 2b144bf45406 1
 columns provision/provision.go 432c96fb4ee3 1
 columns provision/provision.go 45f47aee2098 1
 columns provision/provision.go 4e6803fef9b5 1
@@ -17144,7 +17143,6 @@ names provision/provision.go APIError.Error/e 1
 names provision/provision.go APIError.Is/e 1
 names provision/provision.go Console.appPath/c 1
 names provision/provision.go Console.appPath/s 1
-names provision/provision.go Console.call/b 1
 names provision/provision.go Console.call/c 1
 names provision/provision.go New/f 1
 names provision/provision.go New/u 1
@@ -17184,7 +17182,7 @@ columns provision/provisiontest/platform.go d8a848a269dd 1
 columns provision/provisiontest/platform.go e3f298c5e9a9 1
 columns provision/provisiontest/platform.go eb36905a73e0 1
 columns provision/provisiontest/platform.go f2574c1472ec 1
-file provision/provisiontest/platform.go - 839
+file provision/provisiontest/platform.go - 836 the list, catch-all and failure rules live in list.go; this is the citation table and the edge hooks
 func provision/provisiontest/platform.go Platform.create 46
 func provision/provisiontest/platform.go Platform.putPaths 53
 names provision/provisiontest/platform.go New/p 1

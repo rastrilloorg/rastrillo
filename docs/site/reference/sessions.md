@@ -232,6 +232,7 @@ func ParseSigningKey(s string) (*SigningKey, error)
 func (k *SigningKey) KeyID() string
 func (k *SigningKey) Secret() string
 func (k *SigningKey) Public() string
+func (k *SigningKey) Keypair() *crypto.Keypair
 func ParsePublicKeys(s string) (map[string][]byte, error)
 ```
 
@@ -242,6 +243,8 @@ A hub signs session cookies with a P-256 `SigningKey`. Its apps verify them with
 `Secret` returns `<kid>.<base64url of the 32-byte private scalar>`. `ParseSigningKey` reads it back. Keep it secret: only the hub holds it.
 
 `Public` returns `<kid>.<base64url of the 65-byte uncompressed point>`. `ParsePublicKeys` reads one or two of these, separated by a comma. Use two while you rotate keys. Each needs its own key id.
+
+`Keypair` returns the key to sign with, for a root app that signs assertions as well as cookies. It has no box half.
 
 `rastrillo session-key <kid>` prints a new key in both forms. See [the CLI](/docs/cli#rastrillo-session-key).
 
@@ -264,6 +267,7 @@ var ErrNoUser = errors.New("rastrillo/sessions: no such subject")
 
 func (s *Sessions) RefreshIfExpired(w http.ResponseWriter, r *http.Request) bool
 func (s *Sessions) Refresh(w http.ResponseWriter, r *http.Request)
+func (s *Sessions) CookieEpoch(r *http.Request) (int64, bool)
 ```
 
 In signed mode there are no session rows. The session is a cookie signed with P-256 that lasts 15 minutes, and the hub reissues it at `RefreshPath`. A hub and the apps under it on the same origin share the one cookie. The hub sets `Key` and signs. Each app under it sets only `Keys` and verifies.
@@ -280,6 +284,8 @@ Rules `New` checks:
 `New` keeps its own copy of `Signed`, so changing your map afterwards changes nothing.
 
 `Epoch` returns the subject's current epoch, or `ErrNoUser` when the subject no longer exists. Each cookie carries the epoch it was signed with. Change the epoch to end every session the subject holds at its next refresh.
+
+`CookieEpoch` returns the epoch a valid signed cookie on the request carries, so you can compare it with the subject's current one. It reports false in row mode and for a cookie that is absent, expired or invalid.
 
 A cookie expires 15 minutes after it was signed, or at the end of the session's `TTL` if that comes first.
 

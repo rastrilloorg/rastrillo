@@ -38,6 +38,18 @@ Set `Config.Observe` to log every console call. It never sees the token.
 
 `provision` cannot delete an instance. A person deletes one with `carlos instances delete`.
 
+## Listing instances
+
+`List` reads one page of the app's instances, each with the console's health word: `Setting up`, `Running`, `Serving`, `Asleep`, `Failed`, `Not responding`, `No readings` or `Can't tell right now`. The console also has `Waking`, `Crashed` and `Never started` for sidecar instances, and adds words over time, so show a word you do not know as `HealthUnknown`. The console works the word out from its own readings, so a list never touches an instance and never wakes a sleeping one. Use it to show a fleet; use `Ready` to ask whether one instance answers.
+
+```go
+page, err := console.List(ctx, provision.ListRequest{Query: "acme", Limit: 100})
+```
+
+`Limit` is 1 to 499, and 0 lets the console choose. When `page.Next` is not empty, pass it as `Cursor` for the next page. The credential needs the `instance` or `deploy` role.
+
+`List` never retries. A 429, a 5xx or no answer is a `*RetryError`, and the credential's 60 calls a minute are shared with `Create`, so a caller that retries blindly can starve a signup. Back off by `After`, and ask again no more often than a person looks at the page. An answer over 4 MiB is an error, not a short page.
+
 ## Telling when it is ready
 
 `Ready` asks the tenant's own host for `/api/version`. It is true only for a 200 whose `Rastrillo-Host` header names that host. The platform's setting-up page, a redirect and every other answer are not ready. An error also means not ready yet.
@@ -103,6 +115,17 @@ const MaxRelabels = 2
 const MaxPaths = 10000
 const ProbeTimeout = 5 * time.Second
 
+const (
+	HealthSettingUp     = "Setting up"
+	HealthRunning       = "Running"
+	HealthServing       = "Serving"
+	HealthAsleep        = "Asleep"
+	HealthFailed        = "Failed"
+	HealthNotResponding = "Not responding"
+	HealthNoReadings    = "No readings"
+	HealthUnknown       = "Can't tell right now"
+)
+
 var ErrSlug, ErrEmptyMap error
 var ErrHostTaken, ErrConflict, ErrNotFound, ErrUnauthorized, ErrForbidden, ErrBadRequest error
 var ErrFellThrough, ErrNoBasePath, ErrNotRouted error
@@ -136,6 +159,20 @@ type Instance struct {
 	CreatedAt                                     time.Time
 	ServedBy                                      []Box
 	Gated                                         bool
+}
+type ListRequest struct {
+	Query, Cursor string
+	Limit         int
+}
+type Listed struct {
+	Instance
+	PublicHost, Health string
+}
+type ListPage struct {
+	Instances []Listed
+	Total     int
+	Next      string
+	Truncated bool
 }
 type Published struct {
 	Prefixes int
@@ -172,6 +209,7 @@ func WaitRouted(ctx context.Context, hc *http.Client, product, slug, host string
 
 func (c *Console) Create(ctx context.Context, req CreateRequest) (Created, error)
 func (c *Console) Instance(ctx context.Context, host string) (Instance, error)
+func (c *Console) List(ctx context.Context, request ListRequest) (ListPage, error)
 func (c *Console) PublishPaths(ctx context.Context, product string,
 	build func(context.Context) (map[string]string, error)) (Published, error)
 func (s RouteState) String() string

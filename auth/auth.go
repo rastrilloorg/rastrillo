@@ -174,7 +174,9 @@ type Config struct {
 	// an encrypted address, may be stored.
 	//
 	// An error refuses the sign-in — no session is minted and no
-	// address is written as a fallback.
+	// address is written as a fallback. sessions.ErrNoUser is the
+	// refusal that reaches Refused, in every mode, as an unadmitted
+	// address does.
 	SubjectFor func(address string) (string, error)
 
 	// SecondFactor is the sign-in-time 2FA seam: called at the exact
@@ -198,8 +200,10 @@ type Config struct {
 	// the whole response; no session is minted, and the attempt is
 	// already over. Only someone who has just proved they hold the
 	// address reaches it, so saying "not admitted" here is no oracle.
-	// With BlindLinks, ResolveSubject can refuse with sessions.ErrNoUser.
-	// The identity’s Address then holds the verified lookup key.
+	// It is also called when the subject lookup answers sessions.ErrNoUser,
+	// in every mode: a suspended person in records mode, or SubjectFor
+	// or (with BlindLinks) ResolveSubject refusing. With BlindLinks the
+	// identity’s Address then holds the verified lookup key.
 	Refused func(w http.ResponseWriter, r *http.Request, id Identity)
 
 	// TrustedProxyHops is how many proxies you run in front of the app,
@@ -220,6 +224,11 @@ type Config struct {
 	// SigninPath is the app's sign-in page, the target of outcome
 	// redirects. Default "/signin".
 	SigninPath string
+
+	// Now is the clock for links, signed sessions and refresh. Default
+	// time.Now. A test that must move time, here or in an app built on
+	// this package, sets it rather than reaching for private state.
+	Now func() time.Time
 
 	// SignedInPath is where a fresh session lands. Default "/".
 	SignedInPath string
@@ -456,6 +465,9 @@ func New(cfg Config) (*Auth, error) {
 	if cfg.SignedInPath == "" {
 		cfg.SignedInPath = "/"
 	}
+	if cfg.Now == nil {
+		cfg.Now = time.Now
+	}
 	if cfg.Subject == "" {
 		cfg.Subject = "Your sign-in link"
 	}
@@ -474,7 +486,7 @@ func New(cfg Config) (*Auth, error) {
 
 	a := &Auth{
 		cfg: cfg, hops: trustedHops(cfg.TrustedProxyHops, carlos.Running()),
-		now:         time.Now,
+		now:         cfg.Now,
 		attemptKey:  crypto.Derive([]byte(cfg.InstanceKey), "rastrillo/auth/attempt/v1"),
 		continueKey: crypto.Derive([]byte(cfg.InstanceKey), "rastrillo/auth/continue/v1"),
 	}

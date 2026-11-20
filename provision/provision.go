@@ -220,42 +220,60 @@ func (c *Console) appPath(rest ...string) string {
 // call makes one console attempt under its own deadline. err is non-nil
 // when there was no answer or its body could not be read; status is then
 // whatever arrived, and the caller must treat the outcome as unknown.
-func (c *Console) call(ctx context.Context, method, path string, body any) (status int, hdr http.Header, msg string, raw []byte, err error) {
-	ex := Exchange{Method: method, Path: path}
+func (c *Console) call(
+	ctx context.Context, method, path string, body any,
+) (int, http.Header, string, []byte, error) {
+	status, header, text, raw, err := c.callWithin(
+		ctx, method, path, body, maxBody)
+	if len(raw) > maxBody {
+		raw = raw[:maxBody]
+	}
+	return status, header, text, raw, err
+}
+
+// callWithin is call with its own read limit. It reads one byte more than
+// limit, so a caller that must not act on a cut-off body can tell one from
+// a body of exactly limit bytes.
+func (console *Console) callWithin(
+	ctx context.Context, method, path string, body any, limit int64,
+) (status int, header http.Header, text string, raw []byte, err error) {
+	exchange := Exchange{Method: method, Path: path}
 	defer func() {
-		if c.cfg.Observe != nil {
-			ex.Status, ex.Header, ex.Message, ex.Err = status, hdr, msg, err
-			c.cfg.Observe(ex)
+		if console.cfg.Observe != nil {
+			exchange.Status, exchange.Header = status, header
+			exchange.Message, exchange.Err = text, err
+			console.cfg.Observe(exchange)
 		}
 	}()
-	var rd io.Reader
+	var reader io.Reader
 	if body != nil {
-		b, merr := json.Marshal(body)
-		if merr != nil {
-			return 0, nil, "", nil, merr
+		encoded, encodeErr := json.Marshal(body)
+		if encodeErr != nil {
+			return 0, nil, "", nil, encodeErr
 		}
-		rd = bytes.NewReader(b)
+		reader = bytes.NewReader(encoded)
 	}
-	actx, cancel := context.WithTimeout(ctx, c.cfg.Timeout)
+	attempt, cancel := context.WithTimeout(ctx, console.cfg.Timeout)
 	defer cancel()
-	req, err := http.NewRequestWithContext(actx, method, c.cfg.Console+path, rd)
+	request, err := http.NewRequestWithContext(
+		attempt, method, console.cfg.Console+path, reader)
 	if err != nil {
 		return 0, nil, "", nil, err
 	}
-	req.Header.Set("Authorization", "Bearer "+c.cfg.Token)
-	req.Header.Set("Accept", "application/json")
+	request.Header.Set("Authorization", "Bearer "+console.cfg.Token)
+	request.Header.Set("Accept", "application/json")
 	if body != nil {
 		// The console refuses a body without it (415), so a cross-site
 		// form cannot drive its doors.
-		req.Header.Set("Content-Type", "application/json")
+		request.Header.Set("Content-Type", "application/json")
 	}
-	resp, err := c.hc.Do(req)
+	response, err := console.hc.Do(request)
 	if err != nil {
 		return 0, nil, "", nil, err
 	}
-	defer resp.Body.Close()
-	raw, err = io.ReadAll(io.LimitReader(resp.Body, maxBody))
-	return resp.StatusCode, resp.Header, message(raw), raw, err
+	defer response.Body.Close()
+	raw, err = io.ReadAll(io.LimitReader(response.Body, limit+1))
+	return response.StatusCode, response.Header, message(raw), raw, err
 }
 
 // message is the console's {"error"} sentence or, for a body without one

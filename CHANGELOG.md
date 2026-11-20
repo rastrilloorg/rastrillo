@@ -10,6 +10,20 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+### Added: suspending people in records mode
+
+- `auth` can suspend and resume a person (`SetSuspended`), look one up by address (`UserByEmail`), create one ahead of sign-in (`EnsureUser`) and page through all of them (`Users`). A suspended person cannot sign in and their cookies stop refreshing.
+- `SessionCurrent` checks a session against the user's current epoch and suspension, for callers that cannot wait out a cookie's 15 minutes.
+- `Config.Now` sets the clock `auth` uses for links and signed sessions.
+- Behaviour change: a `SubjectFor` that returns `sessions.ErrNoUser` now reaches `Refused` in every mode, as `ResolveSubject` already did with `BlindLinks`. Before, it was a 500 outside `BlindLinks`.
+- `sessions.Sessions.CookieEpoch` reports the epoch a valid signed cookie carries.
+
+### Added: listing instances with their health
+
+- `provision.Console.List` reads a page of the app's instances with the console's health word for each, without probing any. It never retries; a 429 or 5xx is a `RetryError`.
+- `provisiontest` gains the list route, `Sleep`, `Fail`, `CatchAll`, `ScriptList` and `MakeReady`.
+- `sessions.SigningKey.Keypair` returns the key for signing assertions.
+
 ### Added: `HideBrand` on the `signin` partial
 
 Pass `HideBrand: true` to the `signin` partial to leave out its brand

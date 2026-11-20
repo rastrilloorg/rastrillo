@@ -18,6 +18,10 @@ To test what can go wrong, `Script` queues answers for the next creates, and `Sc
 
 `Unready(n)` makes each new instance answer its first n requests with the setting-up page. `OtherBox` moves an instance to another box, so a path to it falls through to the hub.
 
+To test a list, `ScriptList` queues answers for the next lists. `Sleep` makes an instance's health `Asleep`, `Fail` makes it `Failed` and its edge answer 502, and `MakeReady` ends the pending answers of an instance that exists. `Unready` only affects instances created after it. `CatchAll(account, app, parent)` makes `<label>.<parent>` serve the app's instance whose host starts with that label, and tells the app the instance's own host. A real route or an exact claim on the same name wins over it.
+
+The list, like the platform's, reads at most 500 instances before it filters and pages, and answers `truncated` when there are more. Known differences: `Sleep` never clears when a request reaches the instance, a path target ignores `Fail`, the cursor is the host itself where the platform's is a JSON object, and the role gate is the platform's at commit 5b4c2f64, so `publish` is refused where current main admits it.
+
 `Instances`, `Paths` and `Calls` show what your code did. `Calls` leaves out query strings.
 
 ## API
@@ -47,6 +51,11 @@ func (p *Platform) Serve(account, app string, h func(host string) http.Handler)
 func (p *Platform) Attach(account, app, host string)
 func (p *Platform) OtherBox(host string)
 func (p *Platform) Unready(n int)
+func (p *Platform) MakeReady(host string)
+func (p *Platform) Sleep(host string)
+func (p *Platform) Fail(host string)
+func (p *Platform) CatchAll(account, app, parent string)
+func (p *Platform) ScriptList(replies ...Reply)
 func (p *Platform) Script(replies ...Reply)
 func (p *Platform) ScriptPaths(replies ...Reply)
 func (p *Platform) Instances(account, app string) []string

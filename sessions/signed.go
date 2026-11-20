@@ -86,6 +86,10 @@ func ParseSigningKey(s string) (*SigningKey, error) {
 	return &SigningKey{kid: kid, kp: &crypto.Keypair{SignPriv: priv}}, nil
 }
 
+// Keypair is the key to sign with, for a root app that signs assertions
+// as well as cookies. It has no box half.
+func (key *SigningKey) Keypair() *crypto.Keypair { return key.kp }
+
 // KeyID names the key in every cookie it signs, so a verifier holding
 // two keys during a rotation knows which one to try.
 func (k *SigningKey) KeyID() string { return k.kid }

@@ -462,9 +462,16 @@ type User struct {
 	EH      string    `json:"eh"`
 	Created time.Time `json:"created"`
 	Epoch   int64     `json:"epoch"`
+
+	Suspended bool `json:"suspended,omitempty"`
 }
 
 func (a *Auth) User(ctx context.Context, uid string) (User, error)
+func (a *Auth) UserByEmail(ctx context.Context, address string) (User, error)
+func (a *Auth) EnsureUser(ctx context.Context, address string) (User, error)
+func (a *Auth) Users(ctx context.Context, cursor string, limit int) ([]User, string, error)
+func (a *Auth) SetSuspended(ctx context.Context, uid string, suspended bool) error
+func (a *Auth) SessionCurrent(r *http.Request) (Identity, error)
 func (a *Auth) EndSessions(ctx context.Context, uid string) error
 func (a *Auth) SignoutEverywhere(w http.ResponseWriter, r *http.Request)
 func (a *Auth) Refresh(w http.ResponseWriter, r *http.Request)
@@ -475,6 +482,14 @@ var ErrRecords error
 The first sign-in creates the user. After that, `Identity.Address` (from `From` and `SessionFrom`) is the user id, not the address. Read the address with `User`, whose `Email` is empty in blind mode. `User` returns an error wrapping `objrec.ErrNotFound` for an unknown id.
 
 `EndSessions` ends every session of a user: it adds one to the user's epoch, and the refresh route signs out any cookie that carries the old one. It returns `sessions.ErrNoUser` for a user with no record, and writes nothing.
+
+`SetSuspended` suspends or resumes a user. Suspending adds one to the epoch, so cookies already out stop refreshing within 15 minutes. A suspended person's sign-in goes the way of an address `Authorize` refused: `Refused` is called and no cookie is set. It returns `sessions.ErrNoUser` for an unknown id.
+
+`UserByEmail` finds the user for an address and never creates one; with none it returns an error wrapping `objrec.ErrNotFound`. `EnsureUser` creates the user as a first sign-in would, which an invitation needs. Both lowercase and trim the address. `Users` pages through every user in key order: pass `""` for the first page, then the cursor it returns, which is `""` after the last.
+
+`SessionCurrent` is `SessionFrom` plus one read of the user. It refuses a session whose epoch is no longer the user's, or whose user is suspended, with `sessions.ErrNoUser`. A signed cookie is otherwise trusted for up to 15 minutes without a read, so call this before anything that mints a longer-lived credential or acts with authority.
+
+These all return an error on an `Auth` built with a database. `Config.Now` sets the clock for links, signed sessions and refresh. It defaults to `time.Now`.
 
 `SignoutEverywhere` is POST only and same-origin only. It calls `EndSessions` for the signed-in user, clears the cookie and redirects to `SigninPath`. An expired cookie is sent to refresh first. With no session it redirects to `SigninPath` and ends nothing. If the store fails it answers 503 and keeps the cookie.
 
