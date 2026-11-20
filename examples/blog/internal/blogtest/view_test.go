@@ -103,8 +103,8 @@ func TestLayoutWrapsEveryPage(t *testing.T) {
 			t.Errorf("missing a stylesheet link matching %s in:\n%s", re, html)
 		}
 	}
-	wantContains(t, html, `<div rst-page>`)
-	wantContains(t, html, `<footer class="blog-footer">`)
+	wantContains(t, html, `<div rst-shell-topbar="page">`)
+	wantContains(t, html, `<main rst-page id="main">`)
 	wantNotContains(t, html, "<script")
 }
 

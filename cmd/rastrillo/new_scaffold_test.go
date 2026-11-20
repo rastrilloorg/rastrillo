@@ -826,6 +826,53 @@ func TestScaffoldMagicAuthFitsEveryShell(t *testing.T) {
 	scaffoldGate(t, "--auth=magic", "--shell=stage", "authapp")
 }
 
+// The topbar under --auth=magic passes its whole gate with no budget
+// exception: its Menu page is the heaviest a new app starts with, and
+// stays under 16 kB because the account card's sign-out opts out of
+// the busy rule, so the page loads no busy.js. The sign-in screen's
+// form still loads it.
+func TestScaffoldMagicTopbarGatePassesOffline(t *testing.T) {
+	if testing.Short() {
+		t.Skip("runs a scaffolded app's whole gate")
+	}
+	output := scaffoldGate(t, "--auth=magic", "--shell=topbar", "authapp")
+	if !strings.Contains(output, "perf: GET /menu: median") {
+		t.Errorf("the perf lane did not measure /menu:\n%s", output)
+	}
+	budgets := readScaffold(t, "authapp", ".rastrillo", "budgets.txt")
+	if strings.Contains(budgets, "\nweight ") {
+		t.Errorf("a fresh scaffold records a page weight:\n%s", budgets)
+	}
+	mustWrite(t, filepath.Join("authapp", "internal", "authapp",
+		"busy_extra_test.go"), busyExtraTest)
+	tests, err := goTestIn("authapp", "-v", "-run", "TestBusyJSLoads",
+		"./internal/authapp/")
+	if err != nil || !strings.Contains(tests, "--- PASS: TestBusyJSLoads") {
+		t.Errorf("the auth topbar's pages and busy.js: %v\n%s", err, tests)
+	}
+}
+
+// busyExtraTest is written into the auth topbar scaffold: the Menu page
+// loads no busy.js, and the sign-in screen, an ordinary form, does.
+const busyExtraTest = `package authapp_test
+
+import (
+	"strings"
+	"testing"
+)
+
+func TestBusyJSLoads(t *testing.T) {
+	handler := newApp(t)
+	for path, loads := range map[string]bool{"/menu": false, "/signin": true} {
+		body := get(t, handler, path).Body.String()
+		if strings.Contains(body, "/static/busy.") != loads {
+			t.Errorf("GET %s loads busy.js: %v, want %v:\n%s", path,
+				!loads, loads, body)
+		}
+	}
+}
+`
+
 // A new app declares one locale and already links its pack, so it
 // builds and boots before its first rastrillo generate; and --check
 // agrees the packs file matches app.toml from the start.
@@ -1018,7 +1065,7 @@ func TestScaffoldServesItsLocales(t *testing.T) {
 	if rec.Code != http.StatusSeeOther || cookie == "" {
 		t.Fatalf("POST /_theme: status %d cookie %q", rec.Code, cookie)
 	}
-	const dark = ` + "`" + `value="dark"><input type="hidden" name="return" value="/"><button type="submit" aria-current="true">` + "`" + `
+	const dark = ` + "`" + `value="dark"><input type="hidden" name="return" value="/"><button type="submit" aria-label="Dark" aria-current="true">` + "`" + `
 	if b := get("/", map[string]string{"Cookie": cookie}); !strings.Contains(b, ` + "`" + `data-theme="dark"` + "`" + `) || !strings.Contains(b, dark) {
 		t.Errorf("reload with the scheme cookie does not stay Dark:\n%s", b)
 	}

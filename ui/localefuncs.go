@@ -13,8 +13,8 @@ import (
 
 // LocaleFuncs are the template functions whose output depends on the
 // locale, and so take the request's localizer first.
-var LocaleFuncs = []string{"T", "Tf", "Tbdi", "number", "displayValue",
-	"dateWords", "money", "actor", "date"}
+var LocaleFuncs = []string{"T", "Tf", "Tbdi", "Taround", "number",
+	"displayValue", "dateWords", "money", "actor", "date"}
 
 // Appendix C.2 of the multi-currency money spec, verbatim: op.funcs.arity,
 // op.funcs.arg_type, op.money.first_arg and op.money.arity.
@@ -90,12 +90,7 @@ func (c localeCall) key() (string, error) {
 // otherwise, so a legacy template, and a migrated one reached by an app
 // that still renders through ui.Funcs, render exactly as before.
 func localeFuncs(o config) template.FuncMap {
-	t := func(c localeCall) func(string, ...any) string {
-		if c.l != nil {
-			return c.l.t
-		}
-		return o.t
-	}
+	t := o.translator
 	format := func(c localeCall) string {
 		if c.l != nil {
 			return c.l.format
@@ -136,6 +131,7 @@ func localeFuncs(o config) template.FuncMap {
 			}
 			return tbdi(t(c))(k, c.rest[1:]...), nil
 		},
+		"Taround":      taroundFunc(t),
 		"date":         localeCallOf("date", format, dateCall),
 		"number":       number("number", true),
 		"displayValue": number("displayValue", false),

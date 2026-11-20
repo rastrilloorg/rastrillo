@@ -290,6 +290,7 @@ var readOnlyHooks = map[string][]string{
 		"rst-switch",              // the label that holds a track
 		"rst-tblock-head",         // the toggle block's head, a track's label
 		"rst-tblock__head",        // the class form
+		"rst-locale",              // MENUS: an open language sheet keeps Escape
 	},
 	"copy.js": {
 		"rst-snippet",         // BOX: the snippet whose code it copies
@@ -312,10 +313,21 @@ var readOnlyHooks = map[string][]string{
 		"rst-shell-console--page",  // PAGE: likewise
 		"rst-shell-back",           // BACK: the back strip's link; also a
 		// sessionStorage key (WENT_BACK), which is no hook at all
-		"rst-shell__back",  // BACK: the class form
-		"rst-shell-nav",    // NAV: the index's rows
-		"rst-shell__nav",   // NAV: the class form
-		"rst-shell-return", // RETURN: a sessionStorage key
+		"rst-shell__back",         // BACK: the class form
+		"rst-shell-nav",           // NAV: the index's rows
+		"rst-shell__nav",          // NAV: the class form
+		"rst-shell-return",        // RETURN: a sessionStorage key
+		"rst-shell-topbar",        // ROOT, INDEX, PAGE: the topbar form
+		"rst-shell-topbar--index", // INDEX: the class forms of the above
+		"rst-shell-topbar--page",  // PAGE: likewise
+		"rst-shell-up",            // UP: the link that goes one level up
+		"rst-shell__up",           // UP: the class form
+		"rst-shell-title",         // TITLE: the bar's title, clear of up
+		"rst-shell-brand",         // TITLE: the brand form of the title
+		"rst-shell__title",        // TITLE: the class form
+		"rst-shell__brand",        // TITLE: the class form of the brand
+		"rst-shell-rail",          // RAIL: the sidebar's rail, with up in it
+		"rst-shell__rail",         // RAIL: the class form
 	},
 	"light.js": {
 		"rst-btn",   // BTN: the buttons it lights

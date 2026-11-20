@@ -226,24 +226,23 @@
 //	<label rst-selbox><input type="checkbox" aria-label="Select order AB3PX"></label>
 //
 // shell — the page frame's own chrome. rst-shell-topbar wraps a
-// rst-shell-bar holding rst-shell-brand, rst-shell-nav,
-// rst-shell-account and, below the page, rst-shell-foot;
-// rst-shell-sidebar wraps a rst-shell-rail of rst-shell-group-labelled
-// nav beside rst-shell-main. Below 800px it shows each URL in one of
-// two ways, named by the page's view block: the index
-// (rst-shell-sidebar="index"), where the rail is the whole page under
-// its rst-shell-title, and a content page (rst-shell-sidebar="page",
-// the default), which carries a rst-shell-back link to the page's up
-// block. No JavaScript; shell.js adds a slide, history reuse and focus
-// return. rst-shell-console is both at once: its bar's tail folds
-// behind the one <details rst-shell-menu> as a card over the page, and
-// its rail is an index like the sidebar's. rst-stage has no chrome at
-// all: one card over a rst-stage-scene backdrop, for a screen that
-// stands alone. All five carry rst-skip, the skip link — column and
-// stage included. The canonical markup is Styleguide's "shell-topbar"
-// and "shell-sidebar", and an app does not usually write any of it by
-// hand: Layout ships the five shells as whole templates and rastrillo
-// new writes the chosen one as templates/layout.html.
+// rst-shell-bar holding rst-shell-brand, rst-shell-nav and
+// rst-shell-account, the account card, and below the page
+// rst-shell-foot; rst-shell-sidebar wraps a rst-shell-rail of
+// rst-shell-group-labelled nav beside rst-shell-main; rst-shell-console
+// is both at once. Below 800px each shows a URL in one of two ways,
+// named by the page's view block: the index (="index"), where the nav
+// is the whole page under its rst-shell-title, and a content page
+// (="page", the default). Every page has one header row: rst-shell-up,
+// the link to the page's up block labelled by its upLabel block, then
+// the app's name, then the avatar that opens the account card, which
+// holds the person, the scheme control and the language. No
+// JavaScript; shell.js adds a slide, history reuse and focus return.
+// rst-stage has no chrome at all: one card over a rst-stage-scene
+// backdrop, for a screen that stands alone. All five carry rst-skip,
+// the skip link. The canonical markup is Styleguide's "shell-topbar"
+// and "shell-sidebar"; an app rarely writes any of it by hand: Layout
+// ships the five shells, and rastrillo new writes one as layout.html.
 package ui
 
 import (
@@ -403,13 +402,13 @@ func DatetimeJS() []byte { return fiestaScript("datetime.js") }
 // the calendar button falls back to the browser's own picker.
 func CalendarJS() []byte { return fiestaScript("calendar.js") }
 
-// ShellJS returns Fiesta's shell.js: the sidebar and console shells'
-// phone navigation. It types the slide between pages, makes the back
-// control reuse history when it can prove what is behind it, and returns
+// ShellJS returns Fiesta's shell.js: the topbar, sidebar and console
+// shells' phone navigation. It types the slide between pages, makes the
+// up link reuse history when it can prove what is behind it, and returns
 // focus to the section the reader left. Delivered once by rastrillo new
-// like ShimJS and app-owned from then on. Only the sidebar and console
-// layouts link it, and it is optional there: without it the index and
-// the back control are ordinary pages and links.
+// like ShimJS and app-owned from then on. Only those three layouts link
+// it, and it is optional there: without it the index and the up link
+// are ordinary pages and links.
 func ShellJS() []byte { return fiestaScript("shell.js") }
 
 // ShellCSS returns Fiesta's shell.css: the slide between the index and a

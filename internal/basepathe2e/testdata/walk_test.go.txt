@@ -225,14 +225,21 @@ func landsOn(t *testing.T, rig *harness.Rig, want string) {
 	t.Fatalf("location.pathname is %q, want %q", got, want)
 }
 
-// chooseSpanish opens the profile menu, then the language menu inside
-// it, and presses Español, as a reader does.
+// chooseSpanish opens the profile menu, then its Language row, and
+// presses Español, as a reader does. The row's button opens the list
+// as a popover sheet; an engine without popovers shows the row's
+// <details> instead, and the same list opens under it.
 func chooseSpanish(t *testing.T, rig *harness.Rig) {
 	t.Helper()
+	opener := `[rst-menu-row] > button[popovertarget="rst-language"]`
+	if !eval[bool](rig, `"showPopover" in HTMLElement.prototype`) {
+		opener = `[rst-menu-row] > details[rst-dropdown] > summary`
+	}
 	act(t, rig, "choosing Español in the profile menu",
 		chromedp.Click(chromedp.CSS(`details[rst-shell-profile] > summary`)),
-		chromedp.Click(chromedp.CSS(`details[rst-locale] > summary`)),
-		chromedp.Click(chromedp.CSS(`details[rst-locale] button[lang="es"]`)),
+		chromedp.Click(chromedp.CSS(opener)),
+		chromedp.WaitVisible(chromedp.CSS(`[rst-locale] button[lang="es"]`)),
+		chromedp.Click(chromedp.CSS(`[rst-locale] button[lang="es"]`)),
 	)
 }
 

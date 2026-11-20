@@ -42,7 +42,7 @@ checkbox and kebab a list row carries. See
 func Funcs(opts ...Option) template.FuncMap
 ```
 
-The function map the partials need, for an app that renders through its own template tree instead of [`ui.Pages`](#pages). It holds twenty-nine: `dict`, `list`, `menuGroup`, `searchClear`, `icon`, `iconAssets`, `opt`, `stageArt`, `displayURL`, `safeHref`, `rowMenuItems`, `paginationItems`, `localizer`, `withL`, `strong`, `path`, `needs`, `neededScripts`, `pageStylesheet`, `pageScripts`, and the locale functions `T`, `Tf`, `Tbdi`, `number`, `displayValue`, `dateWords`, `money`, `actor` and `date`. Add your own on top; do not drop any. `rowMenuItems` checks `row-menu`'s items and stops the render on one it cannot show. Outside `ui.Pages`, `pageStylesheet` links the whole `tokens.css` at `/static/tokens.css`, without a hash, `pageScripts` gives every optional script, and `neededScripts` gives the three component scripts; bind your own `pageStylesheet` to link the hashed file or a slice from `Assets.Stylesheet`.
+The function map the partials need, for an app that renders through its own template tree instead of [`ui.Pages`](#pages). It holds thirty: `dict`, `list`, `menuGroup`, `searchClear`, `icon`, `iconAssets`, `opt`, `stageArt`, `displayURL`, `safeHref`, `rowMenuItems`, `paginationItems`, `localizer`, `withL`, `strong`, `path`, `needs`, `neededScripts`, `pageStylesheet`, `pageScripts`, and the locale functions `T`, `Tf`, `Tbdi`, `Taround`, `number`, `displayValue`, `dateWords`, `money`, `actor` and `date`. Add your own on top; do not drop any. `rowMenuItems` checks `row-menu`'s items and stops the render on one it cannot show. Outside `ui.Pages`, `pageStylesheet` links the whole `tokens.css` at `/static/tokens.css`, without a hash, `pageScripts` gives every optional script, and `neededScripts` gives the three component scripts; bind your own `pageStylesheet` to link the hashed file or a slice from `Assets.Stylesheet`.
 
 `opt` reads an optional key off a partial's data, whether it is a map or
 a struct, and gives nil when it is missing. `Tbdi` is `Tf` for a
@@ -202,7 +202,7 @@ func ForRequest(r *http.Request) Localized
 func (l Localized) Localizer() *Localizer
 func (l Localized) Request() Localized
 
-var LocaleFuncs = []string{"T", "Tf", "Tbdi", "number", "displayValue", "dateWords", "money", "actor", "date"}
+var LocaleFuncs = []string{"T", "Tf", "Tbdi", "Taround", "number", "displayValue", "dateWords", "money", "actor", "date"}
 var ErrNoLocalizer = errors.New(noLocalizerMsg)
 var ErrLegacyCall = errors.New(legacyCallMsg)
 ```
@@ -226,6 +226,7 @@ functions that take `$L` first:
 | `{{T $L "key" args…}}` | `*Localizer`, key, optional name and value pairs | |
 | `{{Tf $L "key" "name" v …}}` | the same | |
 | `{{Tbdi $L "key" "name" v …}}` | the same | the values are escaped and wrapped in `<bdi>` |
+| `{{Taround $L "key" "name"}}` | `*Localizer`, key, a placeholder's name | the catalog string cut at `{name}`, as `.Before` and `.After`: put a block's output between them, which `Tf` cannot take |
 | `{{number $L v}}`, `{{displayValue $L v}}` | `*Localizer`, any value | a nil value renders as before; `number` also takes `"plain"`, `"grouped"`, `"percent"` and `"places" n` after the value, and writes a `number.Decimal` exactly |
 | `{{dateWords $L}}` | `*Localizer` | |
 | `{{money $L amount code}}` | `*Localizer`, an integer amount or a pointer to one, an ISO code | a nil amount writes nothing; there is no form without `$L` |
@@ -371,12 +372,13 @@ It is one `:root` block under `color-scheme: light dark`, with every
 colour declared once as `light-dark(<light>, <dark>)` and two toggle
 rules at the foot setting nothing but `color-scheme`, so an explicit
 `[data-theme]` choice wins in both directions without restating a
-colour. The switch that sets it ships with the shells: the
-`scheme-menu` partial posts Light, Dark or System to `/_theme`, every
-layout writes `data-theme` on `<html>` from the cookie
-(`Localized.Scheme`) so the first paint is right, `fiesta.js` applies
-a choice in place, and `rastrillo.js` writes the cookie for it. No
-attribute is System, the OS deciding.
+colour. The switch that sets it ships with the shells. The
+`scheme-menu` partial provides three icon buttons in the account card
+(beside the language menu in `column`). They post Light, Dark or System
+to `/_theme`. Every layout writes `data-theme` on `<html>` from the
+cookie (`Localized.Scheme`) so the first paint is right; `fiesta.js`
+applies a choice in place, and `rastrillo.js` writes the cookie for it.
+No attribute is System, the OS deciding.
 The switch picks the scheme only; which theme an app wears is the
 app's choice. Each file carries its own measured WCAG 2.2 AA contrast table in
 its header comment, for both schemes; `ui`'s `contrast_test.go` splits
@@ -627,12 +629,15 @@ func Layout(name string) ([]byte, bool)
 ```
 
 The five shipped page frames, `column` first: `column` is the plain
-centred page, `topbar` adds a header bar with nav and an account menu,
-`sidebar` a left rail that collapses to a `<details>` chrome bar below
-800px, and `console` is both at once — a brand-and-account bar across
-the top with the navigation rail beneath it down the side, which is the
-shape most admin consoles are. `Layout` returns one shell's complete
-`layout.html` text and reports `false` for a name that is not shipped.
+centred page, `topbar` adds a bar across the top with the nav and the
+account card, `sidebar` a rail down the side, and `console` is both at
+once, a bar across the top with the navigation rail beneath it down the
+side, which is the shape most admin consoles are. On a phone, `topbar`,
+`sidebar` and `console` show the sections as an index page under one
+header row; see
+[Templates](/docs/templates#on-a-phone-an-index-and-a-way-back).
+`Layout` returns one shell's complete `layout.html` text and reports
+`false` for a name that is not shipped.
 
 `stage` is one card centred over a full-page backdrop, for a page that
 stands alone, such as the sign-in screen. Its blocks are `title`,
@@ -640,9 +645,10 @@ stands alone, such as the sign-in screen. Its blocks are `title`,
 
 A shell executes `{{template "content" .}}` for the page body and wraps
 it in chrome made of blocks with working defaults: `title`, `lang`,
-`dir` and `head` in all five, plus `brand`, `nav`, `account` and
-`locale` in the three chrome shells, `profile`, `view` and `up` in
-`sidebar` and `console`, and `foot` in `topbar` and `console`. A shell
+`dir` and `head` in all five; `brand`, `nav`, `account`, `profile`,
+`locale`, `scheme`, `view`, `up` and `upLabel` in the three chrome
+shells; `locale` and `scheme` in `column`; and `foot` in `topbar` and
+`console`. A shell
 reads `L` from the data, and the chrome shells read `Locales` and
 `Return` for the language switcher if they are there. So a shell renders
 whether a handler passes a struct or a `dict`-built map, as long as it
@@ -658,6 +664,19 @@ the ties it should against `tokens.css` and the theme.
 pin, no vendoring test — so overriding a block, or rewriting the file
 outright, is expected on day one. [Templates](/docs/templates) has the
 block contract with a worked override.
+
+## Attributes
+
+```go
+type Attribute struct{ Name, Value string }
+func Attributes(src string) []Attribute
+```
+
+`Attributes` reads the attributes of every start tag in a template's
+text, in order. HTML and Go template comments are left out, and a name
+inside a quoted value is not read as an attribute. A tag cut short by a
+template action ends where the action starts. `rastrillo doctor` uses it
+to tell a layout with the old phone menu from a new one.
 
 ## The sign-in screen
 
@@ -736,15 +755,15 @@ cookie when `fiesta.js` applies a colour-scheme choice in place.
 closes an open `<details>` menu on an outside click or Escape, which is
 the one part of the menu idiom the native element cannot express. It
 also lets a switch's knob be dragged, gives iOS its pressed state, and
-applies the colour-scheme menu's choice without a reload. `copy.js`
+applies the colour-scheme control's choice without a reload. `copy.js`
 runs the Copy button on `rst-snippet`, and loads only on a page that
 shows one.
 
-`ShellJS` is `shell.js` and `ShellCSS` is `shell.css`: the sidebar and
-console shells' phone navigation, with the slide between pages, a back
-control that uses the browser's history when it can, and focus returned
-to the section you left. Only those two layouts link them, and both are
-optional.
+`ShellJS` is `shell.js` and `ShellCSS` is `shell.css`: the phone
+navigation of the topbar, sidebar and console shells, with the slide
+between pages, a way back that uses the browser's history when it can,
+and focus returned to the section you left. Only those three layouts
+link them, and both are optional.
 
 `AnchorJS` is `anchor.js`: in a browser without CSS anchor positioning
 it opens a dropdown's menu from its summary's other edge when the menu

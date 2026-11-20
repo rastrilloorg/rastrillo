@@ -32,32 +32,42 @@
 <body>
 {{/* The console shell — a brand-and-account bar across the top AND a
      navigation rail down the side, which is the shape most admin
-     consoles are and the one the other three shells could not make.
-     topbar is this without the rail; sidebar is this without the bar.
+     consoles are and the one the other shells could not make. topbar
+     is this without the rail; sidebar is this without the bar.
 
-     THE TWO CHROMES, ONE PATTERN EACH. Below 800px the bar's tail (the
-     account and language menus) folds behind the one <details
-     rst-shell-menu>, which opens as a card over the page, like the
-     topbar's. The rail is an index page, like the sidebar's: the page
-     says which view it is with the view block and names its way back
-     with up, and the back strip sits under the bar. The rail used to be
-     gated on the same [open] as the tail through :has(); tokens.css keeps
-     that rule for old layouts, scoped to a root with no view.
+     ON A PHONE, ONE HEADER ROW. The rail is an index page, like the
+     sidebar's: the page says which view it is with the view block and
+     names its way back with up and upLabel. The bar is the one row
+     above every view: the up link at the inline start, the app's name
+     at the centre and the account's avatar at the end. The way back
+     used to be a strip of its own under the bar, and the account and
+     language a Menu card in it; two rows of chrome before the page,
+     and a Menu that was not navigation. Now the up link sits in the
+     bar and the avatar opens the card, so a phone shows one row.
+     Fiesta's tokens.css draws the one row only for a root that holds
+     [rst-shell-up], so a console layout written before it, with its
+     Menu disclosure and back strip, still draws as it did.
 
-     NOTHING MOVES. The DOM order here — bar, then back strip, then rail,
-     then main — is the order at 320px and the order at 1280px. Grid
-     places the bar across the top and the rail beside the page at
-     width; below 800px each view shows a subset of that order, never a
-     reordering of it, and the open card follows its Menu summary in
-     the bar where the tail already is. So focus order matches
-     visual order at every width and in both directions of the
+     NOTHING MOVES. The DOM order here, bar, then rail, then main, is
+     the order at 320px and the order at 1280px. Grid places the bar
+     across the top and the rail beside the page at width; below 800px
+     each view shows a subset of that order, never a reordering of it,
+     and the open card follows its avatar in the bar. So focus order
+     matches visual order at every width and in both directions of the
      language, which is the thing an `order` or a `grid-row` shuffle
      would have quietly cost. */}}
 <div rst-shell-console="{{block "view" .}}page{{end}}">
 <a rst-skip href="#main">{{T $L "rastrillo.ui.shell_skip"}}</a>
 <header rst-shell-bar>
+{{/* The up link, first in the row: a link, not a script; rel="up" for
+     tools that read it. Its accessible name says it goes back and
+     contains the label it shows (WCAG 2.5.3), in each language's own
+     word order: Taround cuts "Back to {name}" around the label, which
+     a block cannot hand Tf. upLabel is executed again in the name, so
+     keep it plain text. Hidden on the index, the top of the app. */}}
+{{$up := Taround $L "rastrillo.ui.shell_up" "name"}}<a rst-shell-up href="{{block "up" .}}{{path $ "/"}}{{end}}" rel="up" aria-label="{{$up.Before}}{{template "upLabel" .}}{{$up.After}}">{{icon "chevron-left"}}{{block "upLabel" .}}{{$L := localizer $}}{{T $L "rastrillo.ui.shell_up_label"}}{{end}}</a>
 {{/* The phone index's heading, in the bar because on the index the bar
-     is the header row: the app's name at the start, the avatar at the
+     is the header row: the app's name at the centre, the avatar at the
      end. The brand, then the page's title for an app that blanks its
      brand (tokens.css shows the title only when the brand's span is
      :empty). Executed again rather than redefined, so an id inside the
@@ -65,54 +75,39 @@
      bar's own brand gives way to it, so no page exposes two h1s. */}}
 <h1 rst-shell-title><span>{{template "brand" .}}</span><span>{{template "title" .}}</span></h1>
 {{block "brand" .}}{{$L := localizer $}}<a rst-shell-brand href="{{path $ "/"}}">{{T $L "rastrillo.ui.shell_home"}}</a>{{end}}
-{{/* name="rst-shell-menu", and NOT rst-menus — the same group the
-     topbar's disclosure is in, for the same reason. <details name>
-     exclusivity is DOCUMENT-WIDE rather than sibling-scoped: a
-     disclosure in the menus' group would be closed by the account menu
-     it just revealed, and the card would close under the reader's
-     finger. Read this as the reason for the gates rather than as advice
-     to change the line below. */}}
-{{/* On the phone index the Menu is the profile menu: its summary shows
-     the person's avatar (the profile block, the same avatar the
-     sidebar's rail foot opens) instead of its label, and its card is
-     headed by the person's name. The account and language are already
-     in this card, so the index needs no second menu. Both spans are
-     always in the markup and tokens.css shows one: the label is
-     display: contents everywhere else, so a content page and a desktop
-     lay out exactly as they did before the avatar existed. */}}
-<details rst-shell-menu name="rst-shell-menu"><summary><span rst-shell-menu-label>{{icon "menu"}}{{T $L "rastrillo.ui.shell_menu"}}</span><span rst-shell-avatar>{{block "profile" .}}{{$L := localizer $}}<span rst-person-av="empty placeholder" aria-hidden="true"></span><span rst-person-name>{{T $L "rastrillo.ui.shell_account"}}</span>{{end}}</span></summary></details>
-{{/* The tail is a SIBLING of the disclosure, not its content: a closed
-     <details> hides its own content and no CSS reliably un-hides it,
-     so the wide layout could not be recovered from inside one. Above
-     800px tokens.css gives it display: contents and the account and
-     locale menus become flex items of the bar itself.
+{{/* The account card. Its summary is the person's avatar (the profile
+     block, the same avatar the sidebar's rail foot opens) on a phone
+     and "Account" with a caret at 800px and up; both are always in the
+     markup and tokens.css shows the right one. The card holds the
+     person, the colour scheme (Appearance), the language and the
+     account's links, in that order, at every width, as the sidebar's
+     profile card does.
 
-     account here is the DROPDOWN'S MENU BODY, exactly as in topbar:
-     the layout owns the details/summary and an override supplies only
-     the links inside [rst-dropdown-menu]. The sidebar's account block
-     is the same links, inside its profile card, so a screen's account
-     block moves between the three shells unedited.
+     name="rst-shell-menu", and NOT rst-menus: the language row's
+     fallback inside the card is in rst-menus, and a details element's
+     exclusivity by name is DOCUMENT-WIDE rather than sibling-scoped, so
+     sharing its group would close the card under the reader's finger. Read
+     this as the reason for the gates rather than as advice to change
+     the line below.
 
-     rst-shell-who is the card's head on the phone index, the person's
-     name and email; tokens.css hides it everywhere else, including at
-     800px and up, where display: contents would otherwise make it a
-     flex item of the bar.
+     account here is the card's links, exactly as in topbar: the layout
+     owns the details/summary and an override supplies only the links.
+     The sidebar's account block is the same links, inside its profile
+     card, so a screen's account block moves between the three shells
+     unedited.
 
-     The language comes before the account, in the DOM and so in the
-     reading order, because the card reads as the sidebar's profile
-     card does: the person, the language, then the account's links,
-     which on the phone index are laid out flat. tokens.css keeps the
-     wide bar's two menus at its inline end. */}}
-<div rst-shell-tail>
+     locale and scheme are the card's rows: an override writes its own
+     rows, or nothing. */}}
+<details rst-dropdown rst-shell-account name="rst-shell-menu">
+<summary><span rst-shell-avatar>{{block "profile" .}}{{$L := localizer $}}<span rst-person-av="empty placeholder" aria-hidden="true"></span><span rst-person-name>{{T $L "rastrillo.ui.shell_account"}}</span>{{end}}</span><span rst-shell-account-label>{{T $L "rastrillo.ui.shell_account"}}</span><span rst-caret aria-hidden="true">{{icon "chevron-down"}}</span></summary>
+<div rst-dropdown-menu>
 <div rst-shell-who>{{template "profile" .}}</div>
-{{block "locale" .}}{{$L := localizer $}}{{template "locale-menu" dict "L" $L "Items" (opt $ "Locales") "Return" (opt $ "Return") "Action" (path $ "/_locale")}}{{end}}{{block "scheme" .}}{{$L := localizer $}}{{template "scheme-menu" dict "L" $L "Scheme" (opt $ "Scheme") "Return" (opt $ "Return") "Action" (path $ "/_theme")}}{{end}}
-<details rst-dropdown rst-shell-account name="rst-menus">
-<summary>{{T $L "rastrillo.ui.shell_account"}}<span rst-caret aria-hidden="true">{{icon "chevron-down"}}</span></summary>
-<div rst-dropdown-menu>{{block "account" .}}{{end}}</div>
-</details>
+{{block "scheme" .}}{{$L := localizer $}}{{template "scheme-menu" dict "L" $L "Scheme" (opt $ "Scheme") "Return" (opt $ "Return") "Action" (path $ "/_theme") "Card" true}}{{end}}
+{{block "locale" .}}{{$L := localizer $}}{{template "locale-menu" dict "L" $L "Items" (opt $ "Locales") "Return" (opt $ "Return") "Action" (path $ "/_locale") "Card" true}}{{end}}
+{{block "account" .}}{{end}}
 </div>
+</details>
 </header>
-<div rst-shell-back><a href="{{block "up" .}}{{path $ "/"}}{{end}}" rel="up" aria-label="{{Tf $L "rastrillo.ui.shell_up" "name" (T $L "rastrillo.ui.shell_up_label")}}">{{T $L "rastrillo.ui.shell_up_label"}}</a></div>
 {{/* The rail carries navigation and nothing else — the language
      switcher and the person are up on the bar, which is what makes
      this shell a console rather than a sidebar with a strip above it.

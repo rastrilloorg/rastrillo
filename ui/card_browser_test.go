@@ -17,9 +17,11 @@ import (
 	"amadan.net/rastrillo/rastrillo/harness"
 )
 
-// topbarPage renders the real topbar layout with a nav whose current
-// item is Posts, an account menu, a language menu, and a link in the
-// page far enough down that the card never covers it.
+// topbarPage renders the topbar layout as 0.37 shipped it, with its
+// Menu card (oldLayout: an app's own layout.html still has it, and
+// Fiesta still draws it), with a nav whose current item is Posts, an
+// account menu, a language menu, and a link in the page far enough
+// down that the card never covers it.
 func topbarPage(t *testing.T, dir string) string {
 	t.Helper()
 	return topbarPageWith(t, dir, `<h1>Posts</h1><div class="spacer"></div><p><a id="main-link" href="/go/main">A link in the page</a></p><div class="spacer"></div>`)
@@ -28,10 +30,7 @@ func topbarPage(t *testing.T, dir string) string {
 // topbarPageWith is topbarPage with content of the caller's choosing.
 func topbarPageWith(t *testing.T, dir, content string) string {
 	t.Helper()
-	src, ok := Layout("topbar")
-	if !ok {
-		t.Fatal("no topbar layout")
-	}
+	src := oldLayout(t, "topbar")
 	tmpl := template.Must(template.New("layout").Funcs(Funcs()).
 		Funcs(fixtureFuncs()).Parse(string(src)))
 	// ui's partials, as an app parses them: the locale block calls locale-menu.
@@ -272,9 +271,10 @@ func TestTheCardSurvivesAResize(t *testing.T) {
 	}
 }
 
-// TestTheCardsControlsAreTaps: the Menu summary, the nav rows and the
-// account, language and colour-scheme summaries in the open card, at
-// 44px.
+// TestTheCardsControlsAreTaps: the Menu summary, the nav rows, the
+// account and language summaries and the scheme control's three icon
+// buttons in the open card, at 44px. A 0.37 layout's scheme dropdown is
+// the icon control now (TestAnOldLayoutGetsTheIconControl).
 func TestTheCardsControlsAreTaps(t *testing.T) {
 	rig, ctx, cancel := cardRig(t, map[string]string{"/": topbarPage(t, "ltr")}, true)
 	defer cancel()
@@ -285,8 +285,10 @@ func TestTheCardsControlsAreTaps(t *testing.T) {
 	// the brand is under the outside-tap layer on purpose, so a tap there
 	// closes the card instead of following it.
 	got := readTargets(t, ctx, `(() => { `+measureFn+`; return JSON.stringify([...measure(document.querySelector("[rst-shell-menu]")), ...measure(document.querySelector("[rst-shell-tail]"))]); })()`)
-	if len(got) != 7 {
-		t.Fatalf("measured %d controls in the open card, want exactly 7: the Menu summary, three nav rows, the account, language and colour-scheme summaries", len(got))
+	if len(got) != 9 {
+		t.Fatalf("measured %d controls in the open card, want exactly 9: "+
+			"the Menu summary, three nav rows, the account and language "+
+			"summaries, and the three scheme buttons", len(got))
 	}
 	assertTargets(t, "390 touch, the open card", got)
 }
@@ -323,10 +325,7 @@ func TestAModalCoversTheTopbarOnAPhone(t *testing.T) {
 	})
 	for _, name := range []string{"sidebar", "console"} {
 		t.Run(name+" content page", func(t *testing.T) {
-			src, ok := Layout(name)
-			if !ok {
-				t.Fatalf("no %s layout", name)
-			}
+			src := oldLayout(t, name)
 			pages := map[string]string{"/": shellLayoutPage(t, src, "ltr", `{{define "up"}}/#nav-invoices{{end}}`,
 				`{{define "content"}}`+Styleguide()["modal"]+`{{end}}`)}
 			rig := harness.New(t, func(string) http.Handler { return shellAssets(t, pages) }, harness.WithCoarsePointer())
@@ -391,7 +390,7 @@ func TestTheCardFitsTheSmallestPhone(t *testing.T) {
 // inline end, an outside tap closes it with and without scripts, and
 // one Escape from inside its account menu closes both.
 func TestTheConsoleBarIsTheSameCard(t *testing.T) {
-	src, _ := Layout("console")
+	src := oldLayout(t, "console")
 	for _, c := range []struct {
 		dir     string
 		scripts bool

@@ -163,7 +163,7 @@ func NewPages(cfg PagesConfig) (*Pages, error) {
 		if reservedFunc(name) {
 			return nil, fmt.Errorf(reservedFuncMsg, name)
 		}
-		funcs[name] = cfg.Funcs[name]
+		funcs[name] = appFunc(name, cfg.Funcs[name])
 	}
 	funcs["pageStylesheet"] = wholeStylesheet(cfg.Funcs, p.logger)
 	if p.compat {

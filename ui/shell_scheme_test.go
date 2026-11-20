@@ -40,11 +40,13 @@ func TestShellsWriteDataThemeFromTheScheme(t *testing.T) {
 	}
 }
 
-// The scheme menu sits beside the language menu in every shell that
+// The scheme control sits beside the language menu in every shell that
 // has one, in the same block pattern, so an app that moved or
 // replaced its locale block finds the scheme block in the same place.
 // Unlike the language menu it always renders: there are always three
-// schemes to choose from.
+// schemes to choose from. In an account card it comes first, as
+// Appearance then Language (Fiesta's card); in column's footer it
+// follows the language menu (Fiesta's layout-column).
 func TestShellsOfferTheSchemeMenuBesideTheLanguageMenu(t *testing.T) {
 	two := []rastrillo.LocaleItem{{Code: "en", Name: "English", Href: "/en/"}, {Code: "ga", Name: "Gaeilge", Href: "/ga/", Current: true}}
 	for _, shell := range LayoutNames() {
@@ -60,43 +62,88 @@ func TestShellsOfferTheSchemeMenuBesideTheLanguageMenu(t *testing.T) {
 			t.Errorf("%s: no scheme menu in\n%s", shell, out)
 			continue
 		}
-		if li, si := strings.Index(out, "rst-locale"), strings.Index(out, "rst-scheme"); li < 0 || si < li {
-			t.Errorf("%s: the scheme menu does not follow the language menu (locale at %d, scheme at %d)", shell, li, si)
+		language := strings.Index(out, "rst-locale")
+		scheme := strings.Index(out, "rst-scheme")
+		schemeFirst := shell != "column"
+		if language < 0 || (scheme < language) != schemeFirst {
+			t.Errorf("%s: the scheme control is at %d and the language "+
+				"menu at %d; want the scheme first %v",
+				shell, scheme, language, schemeFirst)
 		}
-		if !strings.Contains(out, `name="scheme" value="dark"><input type="hidden" name="return" value="/x?y=1"><button type="submit" aria-current="true">`) {
-			t.Errorf("%s: Dark is not the current choice carrying Return:\n%s", shell, out)
+		dark := `name="scheme" value="dark">` +
+			`<input type="hidden" name="return" value="/x?y=1">` +
+			`<button type="submit" aria-label="Dark" aria-current="true">`
+		if !strings.Contains(out, dark) {
+			t.Errorf("%s: Dark is not the current choice carrying "+
+				"Return:\n%s", shell, out)
 		}
 	}
 }
 
-// The partial itself: one form per scheme posting to /_theme, Light,
-// Dark and System in that order, aria-current on the choice in force,
-// and System current when no cookie has chosen. No script anywhere.
+// The partial itself: Fiesta's icon control, a group named Appearance
+// holding one form per scheme posting to /_theme, Light, Dark and
+// System in that order, each button an icon named by its choice,
+// aria-current on the choice in force, and System current when no
+// cookie has chosen. No dropdown, and no script anywhere.
 func TestSchemeMenuPartial(t *testing.T) {
 	out := render(t, "scheme-menu", map[string]any{"Return": "/orders"})
 	for _, want := range []string{
-		`<details rst-dropdown rst-scheme name="rst-menus">`,
-		`<summary>Colour scheme<`,
-		`<div rst-dropdown-menu role="group" aria-label="Colour scheme">`,
-		`<form method="post" action="/_theme"><input type="hidden" name="scheme" value="light"><input type="hidden" name="return" value="/orders"><button type="submit">Light</button></form>`,
-		`<input type="hidden" name="scheme" value="dark"><input type="hidden" name="return" value="/orders"><button type="submit">Dark</button>`,
-		`<input type="hidden" name="scheme" value="system"><input type="hidden" name="return" value="/orders"><button type="submit" aria-current="true">System</button>`,
+		`<div rst-scheme="icons" role="group" aria-label="Appearance">` +
+			"\n  <form",
+		`<form method="post" action="/_theme">` +
+			`<input type="hidden" name="scheme" value="light">` +
+			`<input type="hidden" name="return" value="/orders">` +
+			`<button type="submit" aria-label="Light"><svg`,
+		`<input type="hidden" name="scheme" value="dark">` +
+			`<input type="hidden" name="return" value="/orders">` +
+			`<button type="submit" aria-label="Dark"><svg`,
+		`<input type="hidden" name="scheme" value="system">` +
+			`<input type="hidden" name="return" value="/orders">` +
+			`<button type="submit" aria-label="System" ` +
+			`aria-current="true"><svg`,
 	} {
 		if !strings.Contains(out, want) {
 			t.Errorf("missing %s in\n%s", want, out)
 		}
 	}
-	if strings.Contains(out, "<script") {
-		t.Error("the switch must work with scripts off and carry none")
+	gones := []string{"<details", "<summary", "rst-menu-row", "<script"}
+	for _, gone := range gones {
+		if strings.Contains(out, gone) {
+			t.Errorf("the control carries %s; it is three buttons, works "+
+				"with scripts off and sits in a row only in a card:\n%s",
+				gone, out)
+		}
 	}
 	if i, j := strings.Index(out, `value="light"`), strings.Index(out, `value="dark"`); i < 0 || j < i || strings.Index(out, `value="system"`) < j {
 		t.Errorf("order is not Light, Dark, System:\n%s", out)
 	}
-	if got := render(t, "scheme-menu", map[string]any{"Scheme": "light"}); !strings.Contains(got, `value="light"><button type="submit" aria-current="true">`) || strings.Contains(got, `name="return"`) {
-		t.Errorf("Scheme light without Return:\n%s", got)
+	light := render(t, "scheme-menu", map[string]any{"Scheme": "light"})
+	lightCurrent := `value="light">` +
+		`<button type="submit" aria-label="Light" aria-current="true">`
+	if !strings.Contains(light, lightCurrent) ||
+		strings.Contains(light, `name="return"`) {
+		t.Errorf("Scheme light without Return:\n%s", light)
 	}
-	if got := render(t, "scheme-menu", map[string]any{"Action": "/x/_theme", "MenuGroup": "g"}); !strings.Contains(got, `action="/x/_theme"`) || !strings.Contains(got, `name="g"`) {
-		t.Errorf("Action and MenuGroup are not honoured:\n%s", got)
+	moved := render(t, "scheme-menu", map[string]any{"Action": "/x/_theme"})
+	if !strings.Contains(moved, `action="/x/_theme"`) {
+		t.Errorf("Action is not honoured:\n%s", moved)
+	}
+}
+
+// In an account card the control is a labelled row, as Fiesta's
+// icons-in-a-card example writes it: Appearance, then the icons.
+func TestTheSchemeMenuInACardIsARow(t *testing.T) {
+	out := render(t, "scheme-menu",
+		map[string]any{"Scheme": "dark", "Card": true})
+	want := `<div rst-menu-row><span rst-menu-row-label>Appearance</span>` +
+		`<div rst-scheme="icons" role="group" aria-label="Appearance">`
+	if !strings.HasPrefix(out, want) ||
+		!strings.HasSuffix(out, "</div></div>") {
+		t.Errorf("the card's scheme row is\n%s\nwant it to open %s and "+
+			"close the row after the group", out, want)
+	}
+	if !strings.Contains(out, `aria-label="Dark" aria-current="true"`) {
+		t.Errorf("Dark is not current in the card's row:\n%s", out)
 	}
 }
 
@@ -194,17 +241,29 @@ func TestTheSchemeSwitchRoundTripsWithoutScripts(t *testing.T) {
 		}
 		t.Fatalf("the page offers no %s form:\n%s", scheme, page)
 	}
+	// current is the form for scheme, carrying Return, marked current.
+	current := func(scheme, label string) string {
+		return `value="` + scheme + `">` +
+			`<input type="hidden" name="return" value="/orders?page=2">` +
+			`<button type="submit" aria-label="` + label +
+			`" aria-current="true">`
+	}
 	first := get()
-	if strings.Contains(first, "data-theme") || !strings.Contains(first, `value="system"><input type="hidden" name="return" value="/orders?page=2"><button type="submit" aria-current="true">`) {
-		t.Fatalf("first visit: want no data-theme and System current:\n%s", first)
+	if strings.Contains(first, "data-theme") ||
+		!strings.Contains(first, current("system", "System")) {
+		t.Fatalf("first visit: want no data-theme and System current:\n%s",
+			first)
 	}
 	post(first, "dark")
 	dark := get()
-	if !strings.Contains(dark, `data-theme="dark"`) || !strings.Contains(dark, `value="dark"><input type="hidden" name="return" value="/orders?page=2"><button type="submit" aria-current="true">`) {
+	if !strings.Contains(dark, `data-theme="dark"`) ||
+		!strings.Contains(dark, current("dark", "Dark")) {
 		t.Fatalf("after choosing Dark:\n%s", dark)
 	}
 	post(dark, "system")
-	if again := get(); strings.Contains(again, "data-theme") || !strings.Contains(again, `value="system"><input type="hidden" name="return" value="/orders?page=2"><button type="submit" aria-current="true">`) {
+	again := get()
+	if strings.Contains(again, "data-theme") ||
+		!strings.Contains(again, current("system", "System")) {
 		t.Fatalf("after choosing System:\n%s", again)
 	}
 }

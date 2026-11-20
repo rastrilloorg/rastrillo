@@ -185,18 +185,99 @@ func (reading *pageReading) readCommand(
 var menuTemplates = map[string]bool{"locale-menu": true, "scheme-menu": true}
 
 // readMarkup reads a run of the page's markup, in the template named
-// template. Any "<form" outside the menus loads busy.js; text that only
-// looks like one costs a script, never a feature.
+// template. Any "<form" outside the menus loads busy.js unless it opts
+// out; text that only looks like one costs a script, never a feature.
 func (reading *pageReading) readMarkup(template string, text []byte) {
 	reading.addHooks(text)
 	reading.readValues(text)
 	reading.readClasses(text)
 	reading.scripts.readText(template, text)
 	reading.live = markupNeeds(text, reading.wanted) || reading.live
-	form := bytes.Contains(bytes.ToLower(text), []byte("<form"))
-	if form && !menuTemplates[template] {
+	if guardedForm(text) && !menuTemplates[template] {
 		reading.wanted["busy.js"] = true
 	}
+}
+
+// guardedForm reports whether text opens a form busy.js would guard:
+// a "<form" whose own tag does not opt out with data-busy="false", as
+// the account card's sign-out does (a POST that redirects: a spinner
+// adds nothing). The tag is read up to its ">" or the end of this run
+// of markup, so an opt-out after an action in the tag is not seen and
+// the form counts as guarded.
+func guardedForm(text []byte) bool {
+	rest := text
+	for {
+		at := bytes.Index(bytes.ToLower(rest), []byte("<form"))
+		if at < 0 {
+			return false
+		}
+		optedOut, after, closed := readFormTag(rest[at+len("<form"):])
+		if !optedOut {
+			return true
+		}
+		if !closed {
+			return false
+		}
+		rest = after
+	}
+}
+
+// readFormTag reads a form's start tag attribute by attribute, as HTML
+// does, and reports whether its first data-busy attribute is busy.js's
+// opt-out (the name in any case, the value exactly "false", as busy.js
+// compares it), the markup after the tag, and whether the tag closed
+// in this run. An attribute it cannot read to its end, such as a value
+// cut by a template action, ends the reading with what was settled.
+func readFormTag(tag []byte) (optedOut bool, after []byte, closed bool) {
+	settled := false
+	for {
+		tag = bytes.TrimLeft(tag, htmlSpace+"/")
+		if len(tag) == 0 {
+			return optedOut, nil, false
+		}
+		if tag[0] == '>' {
+			return optedOut, tag[1:], true
+		}
+		name, value, rest, complete := readAttribute(tag)
+		if !complete {
+			return optedOut, nil, false
+		}
+		if !settled && strings.EqualFold(name, "data-busy") {
+			settled, optedOut = true, value == "false"
+		}
+		tag = rest
+	}
+}
+
+// htmlSpace is what separates attributes in a tag.
+const htmlSpace = " \t\n\r\f"
+
+// readAttribute reads one attribute from the start of tag: its name,
+// its value (empty when it has none) and what follows. complete is
+// false when the run ends before the attribute does.
+func readAttribute(tag []byte) (name, value string, rest []byte,
+	complete bool) {
+	end := bytes.IndexAny(tag, htmlSpace+"/>=")
+	if end < 0 {
+		return "", "", nil, false
+	}
+	name, rest = string(tag[:end]), bytes.TrimLeft(tag[end:], htmlSpace)
+	if len(rest) == 0 {
+		return name, "", nil, false
+	}
+	if rest[0] != '=' {
+		return name, "", rest, true
+	}
+	rest = bytes.TrimLeft(rest[1:], htmlSpace)
+	if len(rest) > 0 && (rest[0] == '"' || rest[0] == '\'') {
+		value, after, found := bytes.Cut(rest[1:], rest[:1])
+		return name, string(value), after, found
+	}
+	end = bytes.IndexAny(rest, htmlSpace+">")
+	if end < 0 {
+		return name, "", nil, false
+	}
+	return name, string(rest[:end]), rest[end:], true
 }
 
 // addHooks reads text for hooks. Attribute values count: a class list,

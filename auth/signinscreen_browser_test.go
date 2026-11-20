@@ -824,17 +824,25 @@ func TestSigninScreenInTheBrowser(t *testing.T) {
 	signOut(t, rig)
 	run(t, rig, chromedp.EmulateViewport(320, 640))
 	continueAs := catalog["rastrillo.ui.signin_continue_as"]
+	// Each step logs first: a run here fails at the caller's line.
 	atNarrowest := func(address string) {
 		t.Helper()
+		step := func(what string) {
+			t.Logf("at 320px, %d-byte address: %s", len(address), what)
+		}
+		step("asking for a link")
 		run(t, rig, chromedp.Navigate(rig.Origin+"/signin"), chromedp.WaitVisible(chromedp.CSS("#rst-signin-email")),
 			chromedp.SetValue(chromedp.CSS("#rst-signin-email"), address),
 			chromedp.Click(chromedp.CSS(`form[action="/signin"] button[type="submit"]`)))
+		step("waiting for Sent")
 		if s = awaitSent(t, rig); s != address {
 			t.Fatalf("Sent names %q", s)
 		}
 		requireReflow(t, rig, "the Sent page with "+address)
+		step("opening the link and signing out")
 		openLink(t, rig, app)
 		signOut(t, rig)
+		step("waiting for the Returning one-tap (button[autofocus])")
 		run(t, rig, chromedp.Navigate(rig.Origin+"/signin"), chromedp.WaitVisible(chromedp.CSS(`form[action="/signin"] button[autofocus]`)))
 		eval(t, rig, `document.querySelector("form[action='/signin'] button[autofocus]").textContent.replace(/\s+/g, " ").trim()`, &s)
 		if want := strings.Replace(continueAs, "{address}", address, 1); s != want {

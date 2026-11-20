@@ -231,9 +231,7 @@ func TestAnUneditedLayoutStillLoadsEveryComponentScript(t *testing.T) {
 }
 
 func TestNonTransitionLayoutsObserveBeforeStylesLoad(t *testing.T) {
-	for _, shell := range []string{
-		"column", "topbar", "stage",
-	} {
+	for _, shell := range []string{"column", "stage"} {
 		page := renderShellLayout(t, shell)
 		script := `<script src="/static/transition.js"></script>`
 		scriptAt := strings.Index(page, script)
@@ -249,7 +247,7 @@ func TestNonTransitionLayoutsObserveBeforeStylesLoad(t *testing.T) {
 }
 
 func TestNonTransitionLayoutsDoNotLoadShellJS(t *testing.T) {
-	for _, shell := range []string{"column", "topbar", "stage"} {
+	for _, shell := range []string{"column", "stage"} {
 		if strings.Contains(renderShellLayout(t, shell), "/static/shell.js") {
 			t.Errorf("%s loads shell.js without phone shell navigation", shell)
 		}
@@ -304,11 +302,9 @@ func TestEveryPageLoadsFiestaJS(t *testing.T) {
 }
 
 // transitionShells are the layouts that load transition.js; the
-// sidebar and the console have shell.js, which handles their skipped
-// transitions itself.
-var transitionShells = map[string]bool{
-	"column": true, "topbar": true, "stage": true,
-}
+// topbar, the sidebar and the console have shell.js, which handles
+// their skipped transitions itself.
+var transitionShells = map[string]bool{"column": true, "stage": true}
 
 // transition.js has to observe before the stylesheets load, which a
 // deferred script cannot: it stays out of pageScripts on every page,

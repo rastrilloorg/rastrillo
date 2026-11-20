@@ -1,0 +1,119 @@
+//go:build browser
+
+// The auth topbar app's scriptless sign-out, copied in by rastrillo's
+// internal/scaffoldcheck. The card's sign-out opts out of busy.js, so
+// it must work as a plain form: with scripts off in the engine, the
+// account card opens as a <details> and its Sign out button posts.
+package signoutapp_test
+
+import (
+	"context"
+	"io"
+	"log/slog"
+	"net/http"
+	"path/filepath"
+	"testing"
+
+	"amadan.net/rastrillo/rastrillo/background"
+	"amadan.net/rastrillo/rastrillo/db"
+	"amadan.net/rastrillo/rastrillo/harness"
+	"github.com/chromedp/cdproto/cdp"
+	"github.com/chromedp/cdproto/emulation"
+	"github.com/chromedp/cdproto/network"
+	"github.com/chromedp/chromedp"
+
+	"signoutapp/internal/signoutapp"
+)
+
+const (
+	card       = `[rst-shell-account]`
+	signOut    = card + ` form[action="/signout"] button`
+	signInLink = card + ` a[href="/signin"]`
+)
+
+func TestSignOutWorksWithScriptsOff(t *testing.T) {
+	box := &outbox{}
+	var app http.Handler
+	rig := harness.New(t, func(origin string) http.Handler {
+		logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+		path := filepath.Join(t.TempDir(), "app.db")
+		database, err := db.Open(path, logger)
+		if err != nil {
+			t.Fatalf("db.Open: %v", err)
+		}
+		t.Cleanup(func() { database.Close() })
+		group := &background.Group{}
+		t.Cleanup(group.Stop)
+		mux, _, err := signoutapp.New(database, origin, group, box, logger)
+		if err != nil {
+			t.Fatalf("New: %v", err)
+		}
+		app = mux
+		return mux
+	})
+	// Signed in through the real screen and link, in process, presenting
+	// the browser's origin, then handed to the browser as its cookie.
+	session := signIn(t, fromOrigin(app, rig.Origin), box, "ada@example.com")
+	rig.Run(
+		call(emulation.SetScriptExecutionDisabled,
+			emulation.SetScriptExecutionDisabledParams{Value: true}),
+		call(network.SetCookies, network.SetCookiesParams{
+			Cookies: []*network.CookieParam{{
+				Name: session.Name, Value: session.Value,
+				URL: rig.Origin + "/", Path: "/",
+				Secure: session.Secure, HTTPOnly: true,
+			}},
+		}),
+		chromedp.EmulateViewport(1280, 900),
+		chromedp.Navigate(rig.Origin+"/"),
+	)
+	rig.Screen(card+" > summary", "the home page, signed in")
+	// Evaluate runs with scripts off; the mark tells this document from
+	// the one Sign out lands on.
+	rig.Run(
+		chromedp.Click(chromedp.CSS(card+" > summary")),
+		chromedp.WaitVisible(chromedp.CSS(signOut)),
+		chromedp.Evaluate[chromedp.Void](`window.signedInPage = true`),
+		chromedp.Click(chromedp.CSS(signOut)),
+	)
+	settle(t, rig, `!window.signedInPage && document.readyState === "complete"`)
+	rig.Screen("body", "the page Sign out lands on")
+	if recorder := getAs(t, app, "/account", session); recorder.Code !=
+		http.StatusSeeOther {
+		t.Errorf("the old session still opens /account: %d, want 303",
+			recorder.Code)
+	}
+	rig.Run(chromedp.Navigate(rig.Origin + "/"))
+	rig.Screen(card+" > summary", "the home page, signed out")
+	var offers string
+	rig.Run(harness.Into(&offers, chromedp.Evaluate[string](
+		`[...document.querySelectorAll('`+signInLink+`, `+signOut+`')]`+
+			`.map(control => control.textContent).join()`)))
+	if offers != "Sign in" {
+		t.Errorf("signed out, the card offers %q; want Sign in alone",
+			offers)
+	}
+}
+
+// fromOrigin presents origin, the browser's, in place of testOrigin,
+// which the sign-in helpers send and an app on the rig's origin refuses.
+func fromOrigin(next http.Handler, origin string) http.Handler {
+	return http.HandlerFunc(func(
+		writer http.ResponseWriter, request *http.Request,
+	) {
+		if request.Header.Get("Origin") == testOrigin {
+			request.Header.Set("Origin", origin)
+		}
+		next.ServeHTTP(writer, request)
+	})
+}
+
+func call[P any](
+	command cdp.Command[P, cdp.Empty], params P,
+) chromedp.Action[chromedp.Void] {
+	return chromedp.Func(
+		func(ctx context.Context, target *chromedp.Target) error {
+			_, err := cdp.Call(ctx, target, command, params)
+			return err
+		})
+}

@@ -1054,6 +1054,120 @@ func TestNewCompilesTheAppsTemplates(t *testing.T) {
 	}
 }
 
+// The topbar opens on its home page, a content page whose way up is the
+// Menu page at /menu: the index, whose rows on a phone are the bar's
+// nav and whose list on a desktop is the page's own content. Its
+// scaffold passes its whole gate, and its own test of the Menu page.
+func TestNewTopbarWritesAMenuPage(t *testing.T) {
+	t.Chdir(t.TempDir())
+	if err := runNew([]string{"--shell=topbar", "menuapp"}); err != nil {
+		t.Fatalf("runNew: %v", err)
+	}
+	read := func(parts ...string) string {
+		return readScaffold(t, append([]string{"menuapp", "internal"},
+			parts...)...)
+	}
+	home := read("menuapp", "templates", "index.html")
+	menu := read("menuapp", "templates", "menu.html")
+	brand := `{{define "brand"}}<a rst-shell-brand href="{{path $ "/"}}">` +
+		`menuapp</a>{{end}}`
+	row := `<a id="nav-home" href="{{path $ "/"}}"`
+	listed := "<div rst-row><span rst-row-main><a class=\"rst-nm\"\n" +
+		`     href="{{path $ "/"}}">` + scaffoldHome + `</a></span></div>`
+	for _, check := range []struct{ file, got, want string }{
+		{"index.html", home,
+			`{{define "up"}}{{path $ "/menu#nav-home"}}{{end}}`},
+		{"index.html", home, brand},
+		{"index.html", home,
+			row + ` aria-current="page">` + scaffoldHome + "</a>"},
+		{"index.html", home, "this is a rastrillo app"},
+		{"menu.html", menu, `{{define "view"}}index{{end}}`},
+		{"menu.html", menu, brand},
+		{"menu.html", menu, row + ">" + scaffoldHome + "</a>"},
+		{"menu.html", menu, "<h1>" + scaffoldMenu + "</h1>"},
+		{"menu.html", menu, listed},
+		{"routes.go", read("menuapp", "routes.go"),
+			`const menuPage action.Path = "/menu"`},
+		{"routes.go", read("menuapp", "routes.go"),
+			"guarded.Get(menuPage, app.menu)"},
+		{"handlers.go", read("menuapp", "handlers.go"),
+			"func (app *App) menu(visit *action.Visit) {\n" +
+				"\tvisit.Render(\"menu\", http.StatusOK, nil)"},
+		{"render.go", read("menuapp", "render.go"),
+			`[]string{"index", "menu", "errors", "tokens"}`},
+		{"index_test.go", read("menuapp", "index_test.go"),
+			"func TestMenuRenders(t *testing.T) {"},
+	} {
+		if !strings.Contains(check.got, check.want) {
+			t.Errorf("%s lacks %q:\n%s", check.file, check.want, check.got)
+		}
+	}
+	for file, source := range map[string]string{
+		"index.html": home, "menu.html": menu,
+	} {
+		if strings.Contains(source, "style=") {
+			t.Errorf("%s has a style attribute, which the CSP drops", file)
+		}
+	}
+	if testing.Short() {
+		return
+	}
+	scaffoldGate(t, "--shell=topbar", "menuapp")
+	output, err := goTestIn("menuapp", "-v", "-run", "TestMenuRenders",
+		"./internal/menuapp/")
+	if err != nil || !strings.Contains(output, "--- PASS: TestMenuRenders") {
+		t.Errorf("the topbar app's Menu page test: %v\n%s", err, output)
+	}
+}
+
+// Under --auth=magic, Sign in or Sign out is the account card's last
+// link in the shells with a card: after the Appearance and Language
+// rows and the app's own account links, a plain menu item and not a
+// button, whose sign-out opts out of busy.js. The column shell, with no
+// card, keeps its button, busy rule and all, by the scheme control, and
+// the stage shell has no chrome for one.
+func TestTheSignInControlIsTheAccountCardsLastLink(t *testing.T) {
+	for _, shell := range ui.LayoutNames() {
+		directory, err := runNewInTemp(t, "--auth=magic",
+			"--shell="+shell, "authapp")
+		if err != nil {
+			t.Fatalf("%s: runNew: %v", shell, err)
+		}
+		layout := readScaffold(t, directory, "authapp", "internal",
+			"authapp", "templates", "layout.html")
+		signouts := strings.Count(layout, `action="/signout"`)
+		account := strings.Index(layout, accountBlock)
+		switch {
+		case shell == "stage":
+			if signouts != 0 {
+				t.Errorf("stage: a sign-out form in a shell with no chrome")
+			}
+		case account < 0:
+			end := schemeMenuEnd(layout)
+			if signouts != 1 || end < 0 ||
+				!strings.HasPrefix(layout[end:], accountControl) ||
+				strings.Contains(layout, `data-busy="false"`) {
+				t.Errorf("%s: want one busy-guarded sign-out button after the "+
+					"scheme control:\n%s", shell, layout)
+			}
+		default:
+			card, _, _ := strings.Cut(layout[account+len(accountBlock):],
+				"</div>")
+			locale := strings.Index(layout, `{{block "locale" .}}`)
+			if signouts != 1 || locale < 0 || locale > account ||
+				!strings.Contains(card, `action="/signout"`) ||
+				!strings.Contains(card, `href="/signin"`) ||
+				!strings.Contains(card, `data-busy="false"`) ||
+				strings.Contains(card, "rst-btn") {
+				t.Errorf("%s: want Sign in and Sign out as plain items "+
+					"after the Language row and the account block, "+
+					"before the card closes; the card ends:\n%s",
+					shell, card)
+			}
+		}
+	}
+}
+
 // New apps read sessions on the writer: Reader cut toggles 2-6x (#241).
 func TestAuthLeavesSessionsOnTheWriter(t *testing.T) {
 	auth := scaffoldFile("auth.go.tmpl")

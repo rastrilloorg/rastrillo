@@ -129,10 +129,9 @@ func bareReplacer(
 
 // bareDesign is what the design system gives a bare app: the files that
 // make its pages (frame, index, error page, static files, icons and an
-// icon licence's attribution), and the pages' names. The sidebar and
-// console shells open on a phone to the index, with its content hidden
-// there (ui's phone layout), so those two alone get a second page to
-// hold it, plus the route, handler and test that go with it.
+// icon licence's attribution), and the pages' names. A shell with a
+// phone index (twoPageShells) gets the same second page single does,
+// plus the route, handler and test that go with it.
 type bareDesign struct {
 	files                   map[string]string
 	pages                   []string
@@ -154,16 +153,15 @@ func bareDesignSystem(
 		inApp("templates", "errors.html"): errorsTemplate,
 		inApp("icons", "icons.go"):        string(choices.rendered.Source),
 	}}
-	if twoPageShells[options.Shell] {
-		brand := html.EscapeString(options.Name)
-		design.files[inApp("templates", "index.html")] = fmt.Sprintf(
-			sectionsIndexTemplate, scaffoldOverview, brand)
-		design.files[inApp("templates", "overview.html")] = fmt.Sprintf(
-			overviewTemplate, scaffoldOverview, brand)
-		design.pages = append(design.pages, "overview")
-		design.routes, design.handlers = bareOverviewRoute,
-			bareOverviewHandler
-		design.tests = overviewTest
+	pages := pagesFor(options.Shell, html.EscapeString(options.Name))
+	if pages.file != "" {
+		second := strings.TrimSuffix(pages.file, ".html")
+		design.files[inApp("templates", "index.html")] = pages.index
+		design.files[inApp("templates", pages.file)] = pages.second
+		design.pages = append(design.pages, second)
+		design.routes = fmt.Sprintf(bareSecondRoute, second)
+		design.handlers = fmt.Sprintf(bareSecondHandler, second)
+		design.tests = pages.test
 	}
 	// Some licences oblige the app, not the framework. Writing the file
 	// is the only way that obligation travels with the code.
@@ -178,13 +176,14 @@ func bareDesignSystem(
 	return design
 }
 
-// The two-page shells' extra route and handler in a bare app, whose
-// handlers are plain funcs on its own route table.
+// The two-page shells' second route and handler in a bare app, whose
+// handlers are plain funcs on its own route table. %[1]s is the page's
+// name, which is also its path and its handler's.
 const (
-	bareOverviewRoute   = "\n\t\t{\"GET /overview\", overview},"
-	bareOverviewHandler = `
-func overview(response http.ResponseWriter, request *http.Request) {
-	render(response, request, "overview", nil)
+	bareSecondRoute   = "\n\t\t{\"GET /%[1]s\", %[1]s},"
+	bareSecondHandler = `
+func %[1]s(response http.ResponseWriter, request *http.Request) {
+	render(response, request, "%[1]s", nil)
 }
 `
 )

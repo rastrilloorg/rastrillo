@@ -206,6 +206,51 @@ func TestBusyLoadsOnlyWithTheAppsOwnForm(t *testing.T) {
 	requireLoads(t, layout, content(`{{needs "busy.js"}}`), "busy.js", true)
 }
 
+// A form whose own tag opts out of the busy rule, as the account card's
+// sign-out does, gives busy.js nothing to do, so it loads no busy.js.
+// Every other form still loads it: one beside an opted-out form, one
+// with only a button opted out, and one whose opt-out is not busy.js's
+// own ("FALSE", a bare attribute) or comes after an action in its tag,
+// where the reader cannot see it.
+func TestAFormThatOptsOutOfTheBusyRuleLoadsNoBusyJS(t *testing.T) {
+	layout := columnLayout(t)
+	for _, check := range []struct {
+		form  string
+		loads bool
+	}{
+		{`<form method="post" action="/signout" data-busy="false">` +
+			`<button>Sign out</button></form>`, false},
+		{`<form data-busy='false'></form>`, false},
+		{`<form DATA-BUSY="false"></form>`, false},
+		{`<form data-busy="false" action="{{.Action}}"></form>`, false},
+		{`<form data-busy="false"></form><form method="post"></form>`,
+			true},
+		{`<form method="post"><button data-busy="false">Go</button>` +
+			`</form>`, true},
+		{`<form data-busy="FALSE"></form>`, true},
+		{`<form data-busy></form>`, true},
+		{`<form action="{{.Action}}" data-busy="false"></form>`, true},
+		// Read as HTML reads attributes: the opt-out is an attribute of
+		// its own, its value is exactly false, and the first data-busy
+		// wins. Anything the reader cannot finish reading loads busy.js.
+		{`<form data-busy=false></form>`, false},
+		{`<form data-busy = "false"></form>`, false},
+		{`<form title="a > b" data-busy="false"></form>`, false},
+		{`<form data-busy="false" title="{{.Title}}"></form>`, false},
+		{`<form title='Set data-busy="false" to disable busy ` +
+			`feedback'></form>`, true},
+		{`<form title="x data-busy=false"></form>`, true},
+		{`<form data-busy=false/></form>`, true},
+		{`<form data-busy="true" data-busy="false"></form>`, true},
+		{`<form title="{{.Title}}" data-busy="false"></form>`, true},
+		{`<form data-busy=false{{.Rest}}></form>`, true},
+		{`<form data-busy-label="false"></form>`, true},
+	} {
+		requireLoads(t, layout, content(check.form), "busy.js",
+			check.loads)
+	}
+}
+
 func TestLiveLoadsOnLivePages(t *testing.T) {
 	region := content(`<h1>Jobs</h1>`) + `{{define "region:items"}}{{end}}`
 	polling := content(`<div data-poll="/jobs/1"></div>`)

@@ -10,14 +10,19 @@ import (
 	"amadan.net/rastrillo/rastrillo/locales"
 )
 
-// localeBlock is the locale block every shell but stage declares: its
-// default is the switcher over the page data's Locales and Return,
-// posting under the base path.
-const localeBlock = `{{block "locale" .}}{{$L := localizer $}}{{template "locale-menu" dict "L" $L "Items" (opt $ "Locales") "Return" (opt $ "Return") "Action" (path $ "/_locale")}}{{end}}`
-
-// schemeBlock follows it in the same shells: the colour-scheme switch
-// over the page data's Scheme and Return, posting under the base path.
-const schemeBlock = `{{block "scheme" .}}{{$L := localizer $}}{{template "scheme-menu" dict "L" $L "Scheme" (opt $ "Scheme") "Return" (opt $ "Return") "Action" (path $ "/_theme")}}{{end}}`
+// cardSchemeBlock and cardLocaleBlock are the scheme and locale blocks
+// in the account card of topbar, console and sidebar, Appearance
+// first: each partial writes its card row.
+const (
+	cardSchemeBlock = `{{block "scheme" .}}{{$L := localizer $}}` +
+		`{{template "scheme-menu" dict "L" $L "Scheme" (opt $ "Scheme") ` +
+		`"Return" (opt $ "Return") "Action" (path $ "/_theme") ` +
+		`"Card" true}}{{end}}`
+	cardLocaleBlock = `{{block "locale" .}}{{$L := localizer $}}` +
+		`{{template "locale-menu" dict "L" $L "Items" (opt $ "Locales") ` +
+		`"Return" (opt $ "Return") "Action" (path $ "/_locale") ` +
+		`"Card" true}}{{end}}`
+)
 
 // A second locale turns on the /xx/ prefixes, so a shell that still
 // said lang="en" dir="ltr" and rendered no switcher would leave a
@@ -75,7 +80,7 @@ func TestTheColumnMenusSitInTheFooterRow(t *testing.T) {
 	out := renderShell(t, "column", "es", map[string]any{"Locales": two})
 	inOrder := []string{
 		`<main rst-page id="main">`, "<p>x</p>", "<footer rst-page-foot>",
-		"<details rst-dropdown rst-locale", "<details rst-dropdown rst-scheme",
+		"<details rst-dropdown rst-locale", `<div rst-scheme="icons"`,
 		"</footer>", "</main>",
 	}
 	from := 0
@@ -86,6 +91,72 @@ func TestTheColumnMenusSitInTheFooterRow(t *testing.T) {
 				want, out[:from], out)
 		}
 		from += at + len(want)
+	}
+}
+
+// In an account card the language menu is Fiesta's Language row
+// (task-A8): the label, a button that opens the list as a popover
+// sheet, a <details> fallback for an engine without popover, then the
+// sheet, in that order and adjacent, because Fiesta's CSS joins them
+// with +. Both faces name the current language in its own lang.
+func TestTheLocaleMenuInACardIsTheLanguageRow(t *testing.T) {
+	out := render(t, "locale-menu", map[string]any{
+		"Items": threeLocales, "Return": "/x", "Card": true,
+	})
+	chevron := string(rastrillo.Icon("chevron-down"))
+	caret := `<span rst-caret aria-hidden="true">` + chevron + `</span>`
+	face := `<span lang="ga">Gaeilge</span>` + caret
+	inOrder := []string{
+		`<div rst-menu-row><span rst-menu-row-label>Language</span>`,
+		`<button type="button" popovertarget="rst-language">` + face +
+			`</button>`,
+		`<details rst-dropdown name="rst-menus"><summary>` + face +
+			`</summary></details>`,
+		`<div rst-locale popover id="rst-language">`,
+		`<div rst-menu-row><h2>Language</h2><button type="button" ` +
+			`popovertarget="rst-language" popovertargetaction="hide">` +
+			`Close</button></div>`,
+		`<form method="post" action="/_locale">` +
+			`<input type="hidden" name="locale" value="en">` +
+			`<input type="hidden" name="return" value="/x">` +
+			`<button type="submit" lang="en">English</button></form>`,
+		`<button type="submit" lang="ga" aria-current="true">` +
+			`Gaeilge</button>`,
+		`</div></div>`,
+	}
+	squeeze := func(text string) string {
+		return strings.Join(strings.Fields(text), " ")
+	}
+	joined := squeeze(out)
+	from := 0
+	for index, want := range inOrder {
+		at := strings.Index(joined[from:], squeeze(want))
+		// The button, the fallback and the sheet touch: Fiesta joins
+		// them with +.
+		adjacent := index > 0 && index < 4
+		if at < 0 || (adjacent && at != 0) {
+			t.Fatalf("the Language row has no %s right after %q:\n%s",
+				want, joined[:from], out)
+		}
+		from += at + len(squeeze(want))
+	}
+	if ids := strings.Count(out, `id="rst-language"`); ids != 1 {
+		t.Errorf("the sheet's id is written %d times; want one", ids)
+	}
+	alone := render(t, "locale-menu", map[string]any{"Card": true})
+	if alone != "" {
+		t.Errorf("a one-locale app's card has a Language row: %q", alone)
+	}
+}
+
+// Outside a card (column's footer, an old layout) the language menu is
+// the dropdown it always was: nothing there is nested in a menu.
+func TestTheLocaleMenuOutsideACardIsADropdown(t *testing.T) {
+	out := render(t, "locale-menu", map[string]any{"Items": threeLocales})
+	const dropdown = `<details rst-dropdown rst-locale name="rst-menus">`
+	if !strings.HasPrefix(out, dropdown) ||
+		strings.Contains(out, "popover") {
+		t.Errorf("the plain language menu is\n%s", out)
 	}
 }
 

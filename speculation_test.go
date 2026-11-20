@@ -44,9 +44,10 @@ func TestEveryResponseNamesTheSpeculationRules(t *testing.T) {
 
 // The file: 200, the one content type browsers accept for a ruleset,
 // cached a day, and document rules scoped by selector in both spellings
-// to shell navigation and the back control, inside a root that names
-// its view. A bare root is an app's layout copied before the phone
-// index, whose pages may run startup scripts nobody wrote to run early.
+// to shell navigation and the back control, inside a sidebar, console
+// or topbar root that names its view. A bare root is an app's layout
+// copied before the phone index, whose pages may run startup scripts
+// nobody wrote to run early.
 func TestTheSpeculationRulesFileIsServed(t *testing.T) {
 	for _, o := range []Options{
 		{Mux: helloMux(&captured{})},
@@ -81,12 +82,20 @@ func TestTheSpeculationRulesFileIsServed(t *testing.T) {
 		for _, want := range []string{
 			"[rst-shell-sidebar~=page]", "[rst-shell-sidebar~=index]", "[rst-shell-console~=page]", "[rst-shell-console~=index]",
 			".rst-shell-sidebar--page", ".rst-shell-sidebar--index", ".rst-shell-console--page", ".rst-shell-console--index",
-			"[rst-shell-nav]", ".rst-shell__nav", "[rst-shell-back]", ".rst-shell__back", "a[href]"} {
+			"[rst-shell-topbar~=page]", "[rst-shell-topbar~=index]",
+			".rst-shell-topbar--page", ".rst-shell-topbar--index",
+			"[rst-shell-nav]", ".rst-shell__nav", "[rst-shell-back]",
+			".rst-shell__back", "a[href]",
+			"a[href]:is([rst-shell-up],.rst-shell__up)"} {
 			if !strings.Contains(sel, want) {
 				t.Errorf("the selector %q does not name %q", sel, want)
 			}
 		}
-		for _, bare := range []string{"[rst-shell-sidebar]", "[rst-shell-console]", ".rst-shell-sidebar,", ".rst-shell-console,", ".rst-shell-console)"} {
+		for _, bare := range []string{
+			"[rst-shell-sidebar]", "[rst-shell-console]",
+			"[rst-shell-topbar]", ".rst-shell-sidebar,",
+			".rst-shell-console,", ".rst-shell-console)",
+			".rst-shell-topbar,", ".rst-shell-topbar)"} {
 			if strings.Contains(sel, bare) {
 				t.Errorf("the selector %q names the bare root %q, which an old layout matches", sel, bare)
 			}

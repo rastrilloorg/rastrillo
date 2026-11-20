@@ -103,6 +103,12 @@ func TestFiestaJSKeepsTheOldShimsContract(t *testing.T) {
 		`[rst-shell-topbar] [rst-shell-menu][open],[rst-shell-console~=page] [rst-shell-menu][open],[rst-shell-console~=index] [rst-shell-menu][open]`,
 		`.rst-shell-topbar .rst-shell__menu[open],.rst-shell-console--page .rst-shell__menu[open],.rst-shell-console--index .rst-shell__menu[open]`,
 		`TAIL = "[rst-shell-tail],.rst-shell__tail"`, "menuAround", "getClientRects().length",
+		// The account card's Language sheet takes Escape alone: while
+		// Fiesta's own language list is an open popover, Escape is the
+		// browser's, which shuts the sheet and leaves the card open. Keyed
+		// on rst-locale, so an app's popover never holds a menu open.
+		`try { if (document.querySelector("[rst-locale]:popover-open,` +
+			`.rst-locale:popover-open")) return; } catch (x) {}`,
 		// The switch's drag, on a switch and on a toggle block's head.
 		`TRACK = "[rst-switch-track],.rst-switch__track"`,
 		"[rst-tblock-head],.rst-tblock__head",

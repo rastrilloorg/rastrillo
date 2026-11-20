@@ -65,7 +65,7 @@ func Icon(slug string) template.HTML { return icons[slug] }
 // IconSlugs lists every slug Icon answers, sorted.
 //
 // These names are Fiesta's vocabulary and rastrillo's, not any
-// vendor's: five of the twelve differ from the names lucide.dev
+// vendor's: five of the sixteen differ from the names lucide.dev
 // publishes. "kebab" is Lucide's ellipsis-vertical, and v1 renamed the
 // other four (check-circle, alert-triangle, x-circle, help-circle).
 // "menu" is NOT one of them — that is Lucide's own slug, and it is Font

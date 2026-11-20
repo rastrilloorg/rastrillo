@@ -89,21 +89,49 @@ docs/site/localization.md
 
 ## Shells and colour scheme
 
-`rastrillo new --theme=day|plain|signal
---shell=column|topbar|sidebar|console|stage`: the theme lands as
-`static/theme.css`, the shell as `templates/layout.html`, both
-app-owned from then on. Shells on a phone: `topbar` and `console` put
-their narrow chrome in the Menu card. `sidebar` and `console` rails
-become an index page: mark it `{{define "view"}}index{{end}}`; every
-other page names its way back with `{{define "up"}}/#nav-x{{end}}` and
-the nav link gets `id="nav-x"`. Never build a hamburger drawer.
-`profile` holds who is signed in (avatar, name, email); `account` holds
-only links.
+**Pick the shell by the app's shape.** A single list and its detail
+pages: `column`. Sections a person moves between: `sidebar`, `topbar`
+or `console` (`topbar` for a few sections and a home page of its own,
+`sidebar` for more or grouped sections, `console` for a tool with a bar
+over its rail). A sign-in page: `stage`.
 
-Colour scheme: every shell offers Light, Dark and System beside the
-language menu (`scheme-menu` posts to `/_theme`; cookie
-`rastrillo_scheme`; `ui.ForRequest` carries `Scheme`; the layout
-writes `data-theme`). Do not hand-roll a toggle. docs/site/reference/ui.md
+`rastrillo new --theme=day|plain|signal --shell=<shell>` writes
+`static/theme.css` and `templates/layout.html`, app-owned from then on.
+To change an existing app's shell, start from
+`$(go list -m -f '{{.Dir}}' amadan.net/rastrillo/rastrillo)/ui/layouts/<shell>.html`
+and carry the app's own edits in `layout.html` across; copied over
+unread, they are lost. A `--auth=magic` app's Sign in/Sign out control
+(`{{if not (opt $ "Base")}}…{{end}}`) moves into the account card,
+right after `{{block "account" .}}{{end}}`, as its last item, with
+`rst-btn` dropped and `data-busy="false"` on the sign-out form; in
+`column` it follows the scheme block. The rest of the move (the Menu
+page, `view`, `up`): "Upgrading to one header row" in
+docs/site/templates.md. Never scaffold one with
+a `rastrillo` from your PATH: an older one writes the old Menu card and
+back strip.
+
+**On a phone all three show the sections as an index page**, under one
+header row: the way up, the app's name, the person's avatar. The index
+is the home page in `sidebar` and `console`, and `/menu` in `topbar`
+(`menu.html` with the `nav` and, for a desktop, a list of the same
+links; a `GET /menu` route and action; `"menu"` in `render.go`'s list).
+Mark it `{{define "view"}}index{{end}}`. Each section's nav link gets
+`id="nav-x"` (on a phone the index's rows are the nav), and every other
+page names its way back: `{{define "up"}}{{path $ "/#nav-x"}}{{end}}`
+(`topbar`: `/menu#nav-x`). A page whose parent is not the index points
+`up` at that parent and names it, `{{define "upLabel"}}Events{{end}}`,
+plain text. **Never add a Menu button, hamburger or drawer**, and never
+a second header row: the index is the phone's navigation.
+
+`profile` holds who is signed in (avatar, name, email); `account` holds
+only the card's links.
+
+Colour scheme: the shells already offer Light, Dark and System
+(`scheme-menu`, three icon buttons posting to `/_theme`; cookie
+`rastrillo_scheme`; `ui.ForRequest` carries `Scheme`; the layout writes
+`data-theme`), in the account card beside the language row (`column`:
+beside the language menu). Never hand-roll a scheme control or move it
+out of the card. docs/site/templates.md
 
 ## The CSS floor
 

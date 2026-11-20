@@ -86,13 +86,23 @@ func underBase(t *testing.T, origin string) http.Handler {
 	return handler
 }
 
+// escapeCloses opens the home page's dropdown and leaves it with
+// Escape. (It drove the layout's scheme menu once; that is three icon
+// buttons now, with no menu.) Each wait has a deadline: a menu the page
+// never renders fails the drive here instead of holding it until the
+// package times out.
 func escapeCloses(t *testing.T, rig *harness.Rig, page string) {
-	const menu = "details[rst-scheme]"
-	rig.Run(chromedp.Navigate(page),
+	const menu = "details[rst-dropdown]"
+	opening, cancelOpening := context.WithTimeout(rig.Context(),
+		30*time.Second)
+	defer cancelOpening()
+	if err := chromedp.Do(opening, chromedp.Navigate(page),
 		chromedp.Click(chromedp.CSS(menu+" > summary")),
-		chromedp.WaitVisible(chromedp.CSS(menu+"[open] button")),
-		chromedp.Focus(chromedp.CSS(menu+" button")),
-		chromedp.KeyEvent(kb.Escape))
+		chromedp.WaitVisible(chromedp.CSS(menu+"[open] a")),
+		chromedp.Focus(chromedp.CSS(menu+" a")),
+		chromedp.KeyEvent(kb.Escape)); err != nil {
+		t.Fatalf("opening the menu at %s: %v", page, err)
+	}
 	ctx, cancel := context.WithTimeout(rig.Context(), 10*time.Second)
 	defer cancel()
 	closed := chromedp.WaitNotPresent(chromedp.CSS(menu + "[open]"))

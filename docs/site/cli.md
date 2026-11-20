@@ -67,7 +67,12 @@ icons do not render at all without JavaScript.
 that moment — the theme like `tokens.css`, the layout like every other
 template. Every value is checked before a single file is created, so a
 typo fails with your working directory still clean.
-[Templates](/docs/templates) describes each one.
+[Templates](/docs/templates) describes each theme and shell.
+
+The shells with navigation start with two pages, because on a phone
+their sections are an index page. `sidebar` and `console` write an
+index and an Overview section. `topbar` writes a home page and its Menu
+page at `/menu`, with the route and action that serve it.
 
 `--icons=font-awesome` also writes the CC BY 4.0 attribution the licence
 requires, because that obligation is the app's and has to travel with

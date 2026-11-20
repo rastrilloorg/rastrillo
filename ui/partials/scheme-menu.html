@@ -1,16 +1,23 @@
-{{/* scheme-menu — the colour-scheme switch, built as locale-menu is:
-     POST forms to /_theme for Light, Dark and System, storing the
-     choice in a cookie and returning to the same page. No JavaScript;
-     fiesta.js applies a choice in place when it is there, and
-     rastrillo.js writes the same cookie.
+{{/* scheme-menu — the colour-scheme control: three icon buttons, Light
+     (sun), Dark (moon) and System (monitor), each a one-field POST
+     form to /_theme that stores the choice in a cookie and returns to
+     the same page. No JavaScript; fiesta.js applies a choice in place
+     when it is there, and rastrillo.js writes the same cookie.
 
-     Unlike locale-menu it always renders — there are always three
-     schemes — and the menu body is a role="group" named after the
-     summary, so a screen reader announces what the three buttons
-     choose between. The choice in force is aria-current and still a
-     button, so the list is uniform for keyboard users; submitting it
-     is a harmless no-op. With no cookie System is current, which is
-     what no data-theme on <html> means.
+     It always renders, since there are always three schemes. The
+     buttons are a role="group" named Appearance, so a screen reader
+     announces what they choose between, and each is named by its
+     choice, since it shows only an icon. The choice in force is
+     aria-current and still a button, so the group is uniform for
+     keyboard users; submitting it is a harmless no-op. With no cookie
+     System is current, which is what no data-theme on <html> means.
+
+     It is Fiesta's [rst-scheme="icons"] control and has no dropdown
+     form: a layout written before the account card held it calls this
+     with no Card and gets the three icons where its dropdown of words
+     was. In a card, a switch leaves the card open, so the reader sees
+     the change and can switch back: fiesta.js closes the [rst-scheme]
+     element after a choice, and on this <div> that does nothing.
 
      Keys:
        Scheme  string, optional — "light" or "dark" from
@@ -18,14 +25,14 @@
        Return  string, optional — current path+query to come back to;
                omit and the switch lands on the home page
        Action  string, optional — default /_theme (rastrillo.SchemeSwitchPath)
-       MenuGroup  string, optional — the <details name> exclusivity
-               group, default "rst-menus" (see dropdown) */}}
-{{define "scheme-menu"}}{{$L := localizer $}}<details rst-dropdown rst-scheme name="{{menuGroup .}}">
-  <summary>{{T $L "rastrillo.ui.shell_scheme"}}<span rst-caret aria-hidden="true">{{icon "chevron-down"}}</span></summary>
-  <div rst-dropdown-menu role="group" aria-label="{{T $L "rastrillo.ui.shell_scheme"}}">
+       Card    bool, optional — true inside an account card: the
+               control sits in a menu row labelled Appearance */}}
+{{define "scheme-menu"}}{{$L := localizer $}}{{$name := T $L "rastrillo.ui.shell_appearance"}}
+{{- if opt . "Card"}}<div rst-menu-row><span rst-menu-row-label>{{$name}}</span>{{end -}}
+<div rst-scheme="icons" role="group" aria-label="{{$name}}">
   {{- $action := or .Action "/_theme"}}{{$return := .Return}}{{$cur := or .Scheme "system"}}
-    <form method="post" action="{{$action}}"><input type="hidden" name="scheme" value="light">{{if $return}}<input type="hidden" name="return" value="{{$return}}">{{end}}<button type="submit"{{if eq $cur "light"}} aria-current="true"{{end}}>{{T $L "rastrillo.ui.scheme_light"}}</button></form>
-    <form method="post" action="{{$action}}"><input type="hidden" name="scheme" value="dark">{{if $return}}<input type="hidden" name="return" value="{{$return}}">{{end}}<button type="submit"{{if eq $cur "dark"}} aria-current="true"{{end}}>{{T $L "rastrillo.ui.scheme_dark"}}</button></form>
-    <form method="post" action="{{$action}}"><input type="hidden" name="scheme" value="system">{{if $return}}<input type="hidden" name="return" value="{{$return}}">{{end}}<button type="submit"{{if eq $cur "system"}} aria-current="true"{{end}}>{{T $L "rastrillo.ui.scheme_system"}}</button></form>
-  </div>
-</details>{{end}}
+  <form method="post" action="{{$action}}"><input type="hidden" name="scheme" value="light">{{if $return}}<input type="hidden" name="return" value="{{$return}}">{{end}}<button type="submit" aria-label="{{T $L "rastrillo.ui.scheme_light"}}"{{if eq $cur "light"}} aria-current="true"{{end}}>{{icon "sun"}}</button></form>
+  <form method="post" action="{{$action}}"><input type="hidden" name="scheme" value="dark">{{if $return}}<input type="hidden" name="return" value="{{$return}}">{{end}}<button type="submit" aria-label="{{T $L "rastrillo.ui.scheme_dark"}}"{{if eq $cur "dark"}} aria-current="true"{{end}}>{{icon "moon"}}</button></form>
+  <form method="post" action="{{$action}}"><input type="hidden" name="scheme" value="system">{{if $return}}<input type="hidden" name="return" value="{{$return}}">{{end}}<button type="submit" aria-label="{{T $L "rastrillo.ui.scheme_system"}}"{{if eq $cur "system"}} aria-current="true"{{end}}>{{icon "monitor"}}</button></form>
+</div>
+{{- if opt . "Card"}}</div>{{end}}{{end}}

@@ -469,12 +469,14 @@ func TestTheSidebarRailPutsThePersonAtItsFootAndTheProfileMenuOpensUpward(t *tes
 		t.Errorf("the profile card ends %dpx BELOW the avatar's top edge: it is a dropdown, not the dropup a menu at the foot of the rail has to be", -got.MenuLift)
 	}
 
-	// And the phone index, which replaced the drawer. The rail IS the
-	// page there, at least the height of the window, and the profile
-	// menu is lifted to its top, beside the heading: at the foot of a
-	// long index it would be out of reach. So the foot's distance from
-	// the rail's top is the measurement, and the card, language open,
-	// is asserted to be on screen.
+	// And the phone index, which replaced the drawer. The profile menu
+	// is placed in the header row at the top, beside the app's name: at
+	// the foot of a long index it would be out of reach. So the foot's
+	// distance from the top is the measurement, and the card, language
+	// open, is asserted to be on screen. In the one-row sidebar the rail
+	// is laid out into the shell's grid on a phone and has no box of its
+	// own (its top is the window's); the row and the index rows are
+	// measured by TestThePhoneShowsOneHeaderRow and the index drives.
 	var narrow string
 	if err := chromedp.Do(ctx,
 		chromedp.EmulateViewport(390, 780),
@@ -493,9 +495,6 @@ func TestTheSidebarRailPutsThePersonAtItsFootAndTheProfileMenuOpensUpward(t *tes
 		t.Fatalf("reading the index measurement (%q): %v", narrow, err)
 	}
 	t.Logf("index: rail %dpx in a %dpx viewport, foot %dpx from the rail's top", small.RailHeight, small.Viewport, small.FootFromTop)
-	if small.RailHeight < small.Viewport-1 {
-		t.Errorf("the phone index's rail is %dpx in a %dpx window; the rail is the page there", small.RailHeight, small.Viewport)
-	}
 	if small.FootFromTop < 0 || small.FootFromTop > 32 {
 		t.Errorf("the profile menu is %dpx from the top of the index's rail; it belongs in the header row, by the rail's padding", small.FootFromTop)
 	}
@@ -632,10 +631,9 @@ type barReading struct {
 // leaves them. So everything here is <details>, a media query and two
 // display rules, which is the claim §9 makes.
 func TestTheTopbarCollapsesItsTailBehindOneDisclosure(t *testing.T) {
-	src, ok := Layout("topbar")
-	if !ok {
-		t.Fatal("no topbar layout")
-	}
+	// The topbar as 0.37 shipped it: an app's own layout.html still has
+	// the Menu disclosure, and Fiesta still draws it.
+	src := oldLayout(t, "topbar")
 	tmpl := template.Must(template.New("layout").Funcs(Funcs()).
 		Funcs(fixtureFuncs()).Parse(string(src)))
 	// ui's partials, as an app parses them: the locale block calls locale-menu.

@@ -149,6 +149,9 @@ func TestChecks(t *testing.T) {
 		{"scheme comment after a regex following return", "scheme", map[string]string{
 			"internal/app/static/u.js": "function q(s) { return /\"/.test(s); } // do not use localStorage\n",
 		}, true},
+		{"scheme passed beside Base, as the scaffold does", "scheme",
+			map[string]string{"internal/app/render.go": schemeBesideBase},
+			true},
 		{"scheme passed in a map literal", "scheme", map[string]string{
 			"internal/app/render.go": "package app\n\nfunc render() { page := map[string]any{\"Scheme\": req.Scheme} }\n",
 		}, true},
@@ -210,6 +213,50 @@ func TestChecks(t *testing.T) {
 		{"scheme data-theme traded for a toggle", "scheme", map[string]string{
 			"internal/app/templates/layout.html": "<html>\n{{template \"scheme-menu\" .}}\n<script>localStorage.setItem('t','dark')</script>\n</html>\n",
 		}, false},
+		// The phone shells: three sections on a shell with an index,
+		// and none behind a Menu button.
+		{"sections on the topbar with its Menu page", "sections",
+			sectionsOn(topbarLayout, viewIndex), true},
+		{"sections on the sidebar, a second layout beside it", "sections",
+			map[string]string{
+				"internal/app/templates/layout.html": sidebarLayout,
+				"internal/app/templates/stage.html":  stageLayout,
+				"internal/app/templates/index.html":  trimmedViewIndex,
+			}, true},
+		{"sections behind the old Menu card", "sections",
+			sectionsOn(menuCardLayout, viewIndex), false},
+		{"sections under a back strip", "sections",
+			sectionsOn(backStripLayout, viewIndex), false},
+		{"sections with a hamburger of their own", "sections",
+			sectionsOn(hamburgerLayout, viewIndex), false},
+		{"sections on the column", "sections", map[string]string{
+			"internal/app/templates/events.html": columnNav,
+		}, false},
+		{"sections whose index is only a comment", "sections",
+			sectionsOn(sidebarLayout, commentedViewIndex), false},
+		{"sections whose shell is only a selector", "sections",
+			map[string]string{
+				"internal/app/static/app.css":       sidebarSelector,
+				"internal/app/templates/index.html": viewIndex,
+			}, false},
+		{"sections with the scheme control outside the card", "sections",
+			sectionsOn(schemeOutsideCard, viewIndex), false},
+		{"sections in .htm templates", "sections", map[string]string{
+			"internal/app/templates/layout.htm": topbarLayout,
+			"internal/app/templates/menu.htm":   viewIndex,
+		}, true},
+		{"sections with a spaced end tag, then a footer control", "sections",
+			sectionsOn(spacedEndTag, viewIndex), false},
+		{"sections whose card opens across lines", "sections",
+			sectionsOn(multiLineCard, viewIndex), true},
+		{"sections without the scheme control", "sections",
+			sectionsOn(schemelessLayout, viewIndex), false},
+		{"sections with a hand-rolled toggle", "sections",
+			map[string]string{
+				"internal/app/templates/layout.html": sidebarLayout,
+				"internal/app/templates/index.html":  viewIndex,
+				"internal/app/static/theme.js":       mediaToggle,
+			}, false},
 	}
 	tasks, err := filepath.Abs("tasks")
 	if err != nil {
@@ -240,7 +287,9 @@ func TestChecks(t *testing.T) {
 			write(work, tc.change)
 			cmd := exec.Command("sh", filepath.Join(tasks, tc.task+".check.sh"))
 			cmd.Dir = work
-			cmd.Env = append(os.Environ(), "SKILLEVAL_BASE_DIR="+base)
+			// The test binary answers incard too: see incard.go's init.
+			cmd.Env = append(os.Environ(), "SKILLEVAL_BASE_DIR="+base,
+				"SKILLEVAL_BIN="+os.Args[0])
 			out, err := cmd.CombinedOutput()
 			if passed := err == nil; passed != tc.pass {
 				t.Errorf("pass = %v, want %v\n%s", passed, tc.pass, out)
@@ -248,3 +297,95 @@ func TestChecks(t *testing.T) {
 		})
 	}
 }
+
+// sectionsOn is a sections answer: the layout, and the index page that
+// marks itself with view.
+func sectionsOn(layout, index string) map[string]string {
+	return map[string]string{
+		"internal/app/templates/layout.html": layout,
+		"internal/app/templates/menu.html":   index,
+	}
+}
+
+// The sections task's layouts and pages, cut to what its check reads.
+// The new account card is named rst-shell-menu, as the shipped layouts
+// name it; the old Menu card carries the attribute.
+const (
+	topbarLayout = `<div rst-shell-topbar="{{block "view" .}}page{{end}}">
+<details rst-dropdown rst-shell-account name="rst-shell-menu">
+{{template "scheme-menu" .}}
+</details>
+</div>
+`
+	sidebarLayout = `<html data-theme="{{.Scheme}}">
+<div rst-shell-sidebar="{{block "view" .}}page{{end}}">
+<div rst-shell-rail-foot><details rst-shell-profile name="rst-shell-menu">
+<summary>Account</summary>{{template "scheme-menu" .}}</details></div>
+</div>
+</html>
+`
+	schemeOutsideCard = `<div rst-shell-topbar="{{block "view" .}}page{{end}}">
+<details rst-dropdown rst-shell-account name="rst-shell-menu">
+<details rst-dropdown name="rst-menus"></details>
+</details>
+<footer>{{template "scheme-menu" .}}</footer>
+</div>
+`
+	stageLayout = `<html data-theme="{{.Scheme}}">
+<div rst-stage></div>
+</html>
+`
+	menuCardLayout = `<div rst-shell-topbar>
+<details rst-shell-menu name="rst-shell-menu">
+<summary>{{icon "menu"}}Menu</summary>
+{{template "scheme-menu" .}}
+</details>
+</div>
+`
+	backStripLayout = `<div rst-shell-console="{{block "view" .}}page{{end}}">
+<div rst-shell-back><a href="/">Sections</a></div>
+{{template "scheme-menu" .}}
+</div>
+`
+	hamburgerLayout = `<div rst-shell-topbar="{{block "view" .}}page{{end}}">
+<button>{{icon "menu"}}</button>
+{{template "scheme-menu" .}}
+</div>
+`
+	schemelessLayout = `<div rst-shell-sidebar="{{block "view" .}}page{{end}}">
+</div>
+`
+	spacedEndTag = `<div rst-shell-topbar="{{block "view" .}}page{{end}}">
+<details rst-dropdown rst-shell-account name="rst-shell-menu">
+<summary>Account</summary>
+</details >
+<footer>{{template "scheme-menu" .}}</footer>
+</div>
+`
+	multiLineCard = `<div rst-shell-console="{{block "view" .}}page{{end}}">
+<details
+  rst-dropdown rst-shell-account
+  name="rst-shell-menu">
+<summary>{{template "profile" .}}</summary>
+<div rst-dropdown-menu>
+{{block "scheme" .}}{{template "scheme-menu" dict "Card" true}}{{end}}
+</div>
+</details>
+</div>
+`
+	viewIndex          = "{{define \"view\"}}index{{end}}\n"
+	trimmedViewIndex   = "{{- define \"view\" -}} index {{- end}}\n"
+	commentedViewIndex = "{{/* {{define \"view\"}}index{{end}} */}}\n"
+	columnNav          = "<nav><a href=\"/events\">Events</a></nav>\n"
+	sidebarSelector    = "[rst-shell-sidebar] { gap: 0; }\n"
+	mediaToggle        = "matchMedia('(prefers-color-scheme: dark)')\n"
+)
+
+// schemeBesideBase is render.go's line from rastrillo new since the
+// base path joined the page data.
+const schemeBesideBase = `package app
+
+func render() {
+	values["Scheme"], values["Base"] = localized.Scheme, localized.Base
+}
+`

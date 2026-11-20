@@ -126,10 +126,10 @@ type layoutReading struct {
 // details' toggle event is queued and the scripts that place a menu
 // answer it.
 //
-// "Whatever else it takes" is the case a DOM walk misses. A phone
-// topbar's account menu sits in [rst-shell-tail], which is display: none
-// until the shell's Menu, a SIBLING of the tail, is open, so opening the
-// account menu and its ancestors leaves it unseen. When the chosen
+// "Whatever else it takes" is the case a DOM walk misses: a menu whose
+// box depends on a SIBLING disclosure being open, as a 0.37 phone
+// topbar's account menu did inside the tail its Menu showed, so opening
+// the menu and its ancestors leaves it unseen. When the chosen
 // disclosure has no box, the others are tried one at a time, each with
 // its own ancestors and never one that would close a disclosure already
 // open through a shared name, and kept if the chosen one then shows.
@@ -221,13 +221,10 @@ func TestTheHTMLTabRendersExactlyLikeThePreview(t *testing.T) {
 	// drive that opens the menu catches the space.
 	hidden := `<style>details:not([open]) + div { display: none; }</style><details><summary>More</summary></details><div><p>Read the <abbr title="frequently asked questions">FAQ</abbr>first.</p></div>`
 	docs["/fmt/hidden-raw.html"] = previewDoc(mountPath, RootTheme(), "en", "hidden control", hidden)
-	// The third is that space inside the topbar's account menu at a
-	// phone's width, where the account menu is inside [rst-shell-tail]
-	// and the tail is shown only while its SIBLING, the shell's Menu, is
-	// open. Opening the account menu and the disclosures it sits in is
-	// not enough to see it. The words are in a <span> because at that
-	// width the menu's links are flex, and between a link's own flex
-	// items a space would not show either way.
+	// The third is that space inside the topbar's account card, whose
+	// links are on screen only while the card is open. The words are in
+	// a <span> because the card's links are flex, and between a link's
+	// own flex items a space would not show either way.
 	for _, p := range formatPairs(t, "en") {
 		if p.name != "idiom shell-topbar" {
 			continue
@@ -238,8 +235,8 @@ func TestTheHTMLTabRendersExactlyLikeThePreview(t *testing.T) {
 		}
 		// Chromium lays out a closed <details>'s content, boxes and all,
 		// where other engines give it none; this rule gives the control
-		// the other engines' behaviour, so only the account menu being
-		// open, with the tail shown, puts the words on screen.
+		// the other engines' behaviour, so only the account card being
+		// open puts the words on screen.
 		marked = `<style>details:not([open]) > :not(summary) { display: none; }</style>` + marked
 		docs["/fmt/account-raw.html"] = previewDoc(mountPath, RootTheme(), "en", p.name, marked)
 		docs["/fmt/account.html"] = previewDoc(mountPath, RootTheme(), "en", p.name, strings.Replace(marked, "</b>tings", "</b>\ntings", 1))

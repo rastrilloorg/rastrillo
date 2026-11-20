@@ -168,7 +168,9 @@ func (edit *magicAuth) app() {
 }
 
 // layout: every page offers Sign out to a signed-in visitor and Sign in
-// to anyone else; renderPage tells it which.
+// to anyone else; renderPage tells it which. In a shell with an account
+// card it is the card's last link, after the app's own; in the column
+// shell's footer it is a button beside the scheme control.
 func (edit *magicAuth) layout() {
 	scheme := "\tvalues[\"Scheme\"], values[\"Base\"] = " +
 		"localized.Scheme, localized.Base\n"
@@ -178,6 +180,11 @@ func (edit *magicAuth) layout() {
 	layout := filepath.Join(edit.appDir, "templates", "layout.html")
 	source, ok := edit.files[layout]
 	if !ok {
+		return
+	}
+	if card := strings.Index(source, accountBlock); card >= 0 {
+		card += len(accountBlock)
+		edit.files[layout] = source[:card] + accountItem + source[card:]
 		return
 	}
 	end := schemeMenuEnd(source)
@@ -220,6 +227,17 @@ const accountControl = `{{if not (opt $ "Base")}}{{$authL := localizer $}}` +
 	`<button rst-btn>{{T $authL "rastrillo.ui.account_signout"}}</button>` +
 	`</form>{{else}}<a href="/signin" rst-btn>` +
 	`{{T $authL "rastrillo.ui.account_signin"}}</a>{{end}}{{end}}`
+
+// accountBlock is where a layout's account card takes its links, and
+// accountItem is accountControl as one of them: a plain menu item, whose
+// sign-out opts out of busy.js. It is a POST that redirects, so a
+// spinner adds nothing, and without it no page loads busy.js for the
+// card alone.
+const accountBlock = `{{block "account" .}}{{end}}`
+
+var accountItem = strings.NewReplacer(" rst-btn", "",
+	`action="/signout"`, `action="/signout" data-busy="false"`,
+).Replace(accountControl)
 
 // signoutCheck is the sign-in test's check for the layout's sign-out
 // form, which the stage shell has no header for.

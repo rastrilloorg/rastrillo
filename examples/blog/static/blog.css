@@ -10,8 +10,8 @@
  *
  * Form controls used to live here (friction finding F2, now fixed by
  * those partials); what's left is page styling the library deliberately
- * leaves to the app: error/note lines, the status strip, the article
- * measure, and the footer.
+ * leaves to the app: error/note lines, the status strip and the article
+ * measure. The footer's two links are the topbar's nav now.
  */
 
 .blog-error { color: var(--rst-tone-negative-fg); font-weight: 600; margin: 0 0 var(--rst-sp-3); }
@@ -21,12 +21,3 @@
 
 .blog-article { color: var(--rst-text); line-height: 1.7; max-inline-size: 34rem; }
 .blog-article p { margin: 0 0 var(--rst-sp-4); }
-
-.blog-footer {
-  border-block-start: 1px solid var(--rst-line);
-  color: var(--rst-text-muted);
-  display: flex;
-  gap: var(--rst-sp-4);
-  margin-block-start: var(--rst-sp-6);
-  padding-block-start: var(--rst-sp-3);
-}

@@ -196,8 +196,8 @@ func TestAPrefetchedIndexStillReturnsFocus(t *testing.T) {
 	ctx, done, thrown := tab(t, rig, "")
 	defer done()
 	visit(t, ctx, rig.Origin+"/invoices")
-	settleUntil(t, ctx, `!!document.querySelector("[rst-shell-back] a")`)
-	x, y := centre(t, ctx, "[rst-shell-back] a")
+	settleUntil(t, ctx, `!!document.querySelector("`+upLinkCSS+`")`)
+	x, y := centre(t, ctx, upLinkCSS)
 	mustRun(t, ctx, chromedp.MouseEvent(chromedp.MousePressed, x, y,
 		chromedp.ButtonLeft, chromedp.ClickCount(1)))
 	if h := waitFor(hits, "/", 4*time.Second); !strings.Contains(h, "prerender") {
@@ -221,5 +221,102 @@ func TestAPrefetchedIndexStillReturnsFocus(t *testing.T) {
 	errs, _ := scriptErrors(t, thrown())
 	if len(errs) > 0 {
 		t.Errorf("uncaught: %v", errs)
+	}
+}
+
+// topbarPrerenderSite is prerenderSite's topbar: a content page, the
+// Menu page, and a page in the topbar layout as 0.37 shipped it, whose
+// bare root names no view.
+func topbarPrerenderSite(
+	t *testing.T, hits chan<- string,
+) func(string) http.Handler {
+	return func(string) http.Handler {
+		source, _ := Layout("topbar")
+		pages := map[string]string{
+			"/menu": shellLayoutPage(t, source, "ltr",
+				`{{define "view"}}index{{end}}`),
+			"/invoices": shellLayoutPage(t, source, "ltr",
+				`{{define "up"}}/menu#nav-invoices{{end}}`),
+			"/orders": shellLayoutPage(t, source, "ltr",
+				`{{define "up"}}/menu#nav-orders{{end}}`),
+			"/team": shellLayoutPage(t, source, "ltr",
+				`{{define "up"}}/menu#nav-team{{end}}`),
+			"/legacy": shellLayoutPage(t, oldLayout(t, "topbar"), "ltr"),
+		}
+		mux := shellAssets(t, pages)
+		handler, closeAll, err := rastrillo.Handler(
+			rastrillo.Options{Mux: recordDocuments(mux, hits)})
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Cleanup(func() { closeAll() })
+		return handler
+	}
+}
+
+// TestTopbarNavigationIsPrerendered: the topbar's nav, its Menu rows
+// and its up link start a prerender as the sidebar's and console's do,
+// on a desktop hover and on a phone's press, and the nav of a topbar
+// layout from 0.37 starts none.
+func TestTopbarNavigationIsPrerendered(t *testing.T) {
+	hits := make(chan string, 64)
+	rig := harness.New(t, topbarPrerenderSite(t, hits))
+	ctx, cancel := context.WithTimeout(rig.Context(), 90*time.Second)
+	defer cancel()
+	rig.Run(chromedp.EmulateViewport(1280, 900),
+		chromedp.Navigate(rig.Origin+"/invoices"))
+	rig.Screen("[rst-shell-nav]", "a topbar content page")
+	drain(hits)
+	pointX, pointY := landsOn(t, ctx, "#nav-orders", "nav-orders")
+	mustRun(t, ctx, chromedp.MouseEvent(chromedp.MouseMoved, pointX, pointY))
+	hit := waitFor(hits, "/orders", 4*time.Second)
+	if !strings.Contains(hit, "prerender") {
+		t.Errorf("a hover on a topbar nav link started no prerender "+
+			"(got %q)", hit)
+	}
+	rig.Run(chromedp.Navigate(rig.Origin + "/legacy"))
+	rig.Screen("[rst-shell-nav]", "a topbar layout as 0.37 shipped it")
+	drain(hits)
+	pointX, pointY = landsOn(t, ctx, "#nav-team", "nav-team")
+	mustRun(t, ctx, chromedp.MouseEvent(chromedp.MouseMoved, pointX, pointY))
+	if hit := waitFor(hits, "/team", 3*time.Second); hit != "" {
+		t.Errorf("a topbar layout from 0.37 prerendered %q; only a "+
+			"root that names its view may", hit)
+	}
+
+	phoneHits := make(chan string, 64)
+	phone := harness.New(t, topbarPrerenderSite(t, phoneHits),
+		harness.WithCoarsePointer())
+	phoneContext, phoneCancel := context.WithTimeout(phone.Context(),
+		60*time.Second)
+	defer phoneCancel()
+	phone.Run(chromedp.EmulateViewport(390, 844),
+		chromedp.Navigate(phone.Origin+"/invoices"))
+	phone.Screen("[rst-shell-up]", "a topbar content page on a phone")
+	requirePointer(t, phoneContext, true)
+	// A phone's walk: up to the Menu, then down one of its rows. Each
+	// tap's own navigation is waited out before the next press.
+	for _, press := range []struct{ page, control, target string }{
+		{"/invoices", "[rst-shell-up]", "/menu"},
+		{"/menu", "#nav-orders", "/orders"},
+	} {
+		settleUntil(t, phoneContext, `location.pathname === "`+
+			press.page+`" && document.readyState === "complete" && `+
+			`!document.activeViewTransition`)
+		mustRun(t, phoneContext, chromedp.WaitVisible(
+			chromedp.CSS(press.control)))
+		drain(phoneHits)
+		pointX, pointY := centre(t, phoneContext, press.control)
+		mustRun(t, phoneContext, chromedp.MouseEvent(chromedp.MousePressed,
+			pointX, pointY, chromedp.ButtonLeft, chromedp.ClickCount(1)))
+		hit := waitFor(phoneHits, press.target, 4*time.Second)
+		if !strings.Contains(hit, "prerender") {
+			t.Errorf("on a phone, a press on %s at %s started no "+
+				"prerender of %s (got %q)", press.control, press.page,
+				press.target, hit)
+		}
+		mustRun(t, phoneContext, chromedp.MouseEvent(
+			chromedp.MouseReleased, pointX, pointY, chromedp.ButtonLeft,
+			chromedp.ClickCount(1)))
 	}
 }

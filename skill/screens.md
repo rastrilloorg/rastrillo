@@ -15,8 +15,10 @@ first screen of a new app or a port, send them one message that asks:
 3. **A screenshot of one key flow** as it should work: the old app's
    screen when porting, or any product they admire.
 4. **With no screenshot, a base to start from.** A shipped theme
-   (`day`, `plain`, `signal`) and shell (`column`, `topbar`, `sidebar`,
-   `console`, `stage`), with a link to the
+   (`day`, `plain`, `signal`) and the shell the app's shape asks for
+   (skill/design.md: `column` for one list, `sidebar`, `topbar` or
+   `console` for sections, each an index page on a phone), with a link
+   to the
    [Fiesta gallery](https://fiesta.rastrillo.org) and the practices you
    will apply, all of which ship: a dashboard opening with stat cells;
    empty states that say what a screen is for; whole-row links with row

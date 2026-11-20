@@ -555,9 +555,11 @@ ds-s { color: var(--rst-tone-warning-fg); }
      and transformed frames included) but below the skip link's 60. */
   .ds-top { align-self: start; background: var(--rst-bg); block-size: var(--ds-bar-h); box-sizing: border-box; grid-column: 2; grid-row: 1 / -1; inset-block-start: 0; position: sticky; z-index: 10; }
   body > [rst-shell-sidebar] > [rst-shell-main] { grid-column: 2; grid-row: 2; }
+  /* The name the phone row shows; the pinned bar carries it here. */
+  body > [rst-shell-sidebar] > .ds-rail > [rst-shell-brand] { display: none; }
   /* Fragments and focus stop below the pinned bar (WCAG technique C43).
-     Only here: below 800px what is pinned is the framework's back
-     strip, and its clearance is tokens.css's to set; a rule on html at
+     Only here: below 800px what is pinned is the framework's header
+     row, and its clearance is tokens.css's to set; a rule on html at
      every width would override that. */
   html { scroll-padding-block-start: calc(var(--ds-bar-h) + var(--rst-sp-2)); }
 }
@@ -569,8 +571,16 @@ ds-s { color: var(--rst-tone-warning-fg); }
 @media (max-width: 799.98px) {
   /* On a phone a section page is the way back and the content, and the
      controls are in the display settings menu at the top of every page
-     (below). */
-  .ds-top { display: none; }
+     (below). The shell's layout puts the rail's pieces in its grid; on
+     a content page the filter is the index's, so it goes with the nav. */
+  .ds-top, body > [rst-shell-sidebar~="page"] > .ds-rail > .ds-search { display: none; }
+  /* The index's pieces under its row, in the rail's order, the width of
+     the screen less the shell's gutters, where the shell puts its one
+     nav: the lead, the filter, then the rows (or the tree a query
+     filters). Contained, as the shell's nav is, so a long line takes
+     the row's width rather than lending the grid its own. */
+  body > [rst-shell-sidebar~="index"]:has([rst-shell-up]) > .ds-rail > :is(.ds-index-lead, .ds-search, .ds-nav__empty, [rst-shell-nav]) { contain: inline-size; grid-column: 1 / -1; grid-row: auto; margin-inline: var(--rst-sp-4); min-inline-size: 0; }
+  body > [rst-shell-sidebar~="index"]:has([rst-shell-up]) > .ds-rail > .ds-index-lead { margin-block-start: var(--rst-sp-4); }
   [rst-shell-sidebar~="index"] .ds-index-lead { color: var(--rst-text-muted); display: block; margin: 0 0 var(--rst-sp-4); padding-inline: 0.25rem; }
   [rst-shell-sidebar~="index"] > .ds-rail > .ds-index { display: flex; }
   /* The rail on the index has no gap of its own (the rows sit flush
@@ -599,9 +609,8 @@ ds-s { color: var(--rst-tone-warning-fg); }
 
 /* ── Display settings, on a phone ────────────────────────────────────
    Below 800px the pinned bar is gone, and the theme, scheme and language
-   controls are one menu at the top of every page: in the index's header
-   row beside the heading, where the framework's own profile menu sits,
-   and at the inline end of a content page's back strip. It is an
+   controls are one menu at the inline end of every page's header row,
+   where an app's avatar sits. It is an
    rst-dropdown, so rastrillo.js closes it on an outside click and on
    Escape, and its card is the framework's anchored panel. At 800px and
    up the bar has the controls and the menu is not drawn. */
@@ -628,10 +637,10 @@ ds-s { color: var(--rst-tone-warning-fg); }
    scheme buttons out of their segmented group. */
 .ds-prefs .ds-scheme button { border-radius: 0; inline-size: auto; }
 @media (max-width: 799.98px) {
-  .ds-prefs { display: block; }
-  /* Lifted into the index's header row, the place and size of the
-     framework's profile menu: the rail is positioned on the index, and
-     the heading keeps that corner clear. */
-  [rst-shell-sidebar~="index"] > .ds-rail > .ds-prefs { align-items: center; block-size: var(--rst-shell-strip); display: flex; inset-block-start: 0; inset-inline-end: var(--rst-sp-4); position: absolute; }
-  [rst-shell-back] > .ds-prefs { margin-inline-start: auto; }
+  /* At the row's inline end, as far in as the up link is, where the
+     shell puts a rail foot's avatar; on a content page it sticks at the
+     top with the row, as the avatar does, and is lifted while open. */
+  body > [rst-shell-sidebar] > .ds-rail > .ds-prefs { align-self: center; display: block; grid-column: 3; grid-row: 1; justify-self: end; margin-inline-end: var(--rst-sp-1); }
+  body > [rst-shell-sidebar~="page"] > .ds-rail > .ds-prefs { align-self: start; grid-row: 1 / -1; inset-block-start: calc((var(--rst-shell-strip) - 2.75rem) / 2); margin-block-start: calc((var(--rst-shell-strip) - 2.75rem) / 2); position: sticky; z-index: 9; }
+  body > [rst-shell-sidebar~="page"] > .ds-rail > .ds-prefs[open] { z-index: 45; }
 }

@@ -1127,10 +1127,12 @@ func TestTheDemoApplicationWorksWithNoScript(t *testing.T) {
 		t.Errorf("demo.html at 390 is not the index (rail shown %v, main shown %v)", shown("#nav-requests"), shown("[rst-shell-main]"))
 	}
 	goTo("#nav-requests", "demo-requests.html", "#view-requests")
-	if !shown("[rst-shell-back] a") || shown("#nav-requests") {
-		t.Errorf("the list at 390: back control shown %v, rail shown %v; want the back control and no rail", shown("[rst-shell-back] a"), shown("#nav-requests"))
+	if !shown("[rst-shell-up]") || shown("#nav-requests") {
+		t.Errorf("the list at 390: up link shown %v, rail shown %v; "+
+			"want the up link and no rail",
+			shown("[rst-shell-up]"), shown("#nav-requests"))
 	}
-	goTo("[rst-shell-back] a", "demo.html", "#view-dashboard")
+	goTo("[rst-shell-up]", "demo.html", "#view-dashboard")
 	var target bool
 	run("reading the target", harness.Into(&target, chromedp.Evaluate[bool](
 		`document.getElementById("nav-requests").matches(":target")`)))

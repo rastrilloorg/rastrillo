@@ -21,7 +21,8 @@ import (
 
 // prefsJS reads the display settings menu on a phone: where its button
 // sits (measured against the root's box, since tokens.css reserves a
-// stable scrollbar gutter that RTL puts on the left), whether the card
+// stable scrollbar gutter that RTL puts on the left, and against the
+// header row's bar), whether the card
 // is open and shown, and for every theme link, scheme button, the
 // language summary and, once that is open, every language, whether it
 // can be brought on screen inside the card and is then the topmost
@@ -37,10 +38,13 @@ const prefsJS = `(() => {
       return {Text: el.textContent.trim(), On: b.top >= 0 && b.bottom <= innerHeight && b.left >= h.left && b.right <= h.right,
         Top: !!hit && (hit === el || el.contains(hit)), H: Math.round(b.height)};
     });
-  const strip = q("[rst-shell-back]"), sr = strip && strip.checkVisibility() ? strip.getBoundingClientRect() : null;
+  const strip = q("[rst-shell-bar]");
+  const sr = strip && strip.checkVisibility()
+    ? strip.getBoundingClientRect() : null;
   return JSON.stringify({Open: d.open, Shown: card.checkVisibility(), Top: Math.round(r.top), Mid: r.top + r.height / 2,
     StripH: sr ? sr.height : 0, StripMid: sr ? sr.top + sr.height / 2 : 0, End: Math.round(rtl ? r.left - h.left : h.right - r.right),
-    W: Math.round(r.width), H: Math.round(r.height), InStrip: !!strip && strip.contains(d), Controls: controls,
+    W: Math.round(r.width), H: Math.round(r.height), Controls: controls,
+    InStrip: !!sr && r.top >= sr.top - 0.5 && r.bottom <= sr.bottom + 0.5,
     Themes: card.querySelectorAll("[rst-seg-tabs] a").length, Locales: card.querySelectorAll("[rst-locale] [rst-dropdown-menu] a").length,
     Focus: document.activeElement === s, Path: location.pathname, Hash: location.hash});
 })()`
@@ -120,13 +124,14 @@ func axNameOf(t *testing.T, ctx context.Context, where, sel string) string {
 }
 
 // TestTheDisplaySettingsMenuOnAPhone is the phone's theme, scheme and
-// language controls: one menu at the top of every page, in the index's
-// header row and at the inline end of a content page's back strip, in
-// English and Arabic, scripts on and off, at 390 on a coarse pointer.
-// Its button is a 44px icon named with the approved string. Opened,
-// every theme link, scheme button (scripts on; with scripts off they are
-// not drawn, as on a desktop) and language can be brought on screen in
-// the card and is above the page. An outside tap closes it and reaches
+// language controls: one menu at the top of every page, at the inline
+// end of the header row, where an app's avatar sits, on the index and
+// on a content page, in English and Arabic, scripts on and off, at 390
+// on a coarse pointer. Its button is a 44px icon named with the
+// approved string, centred in the 56px row. Opened, every theme link,
+// scheme button (scripts on; with scripts off they are not drawn, as on
+// a desktop) and language can be brought on screen in the card and is
+// above the page. An outside tap closes it and reaches
 // nothing under it; with scripts on, Escape closes it and hands focus
 // back to the button.
 func TestTheDisplaySettingsMenuOnAPhone(t *testing.T) {
@@ -154,17 +159,24 @@ func TestTheDisplaySettingsMenuOnAPhone(t *testing.T) {
 				}
 				settleMotion(t, c, where)
 				p := readPrefs(t, c, where)
-				index := file == "index.html"
-				if p.Open || p.Shown || p.W < 44 || p.H < 44 || p.End > 24 || index && p.Top > 32 || !index && !p.InStrip {
-					t.Errorf("%s: closed %v shown %v, a %dx%dpx button %dpx from the top and %dpx from the inline end, in the back strip %v; want a closed 44px button at the top inline-end (in the strip on a content page)",
+				if p.Open || p.Shown || p.W < 44 || p.H < 44 ||
+					p.End > 24 || p.Top > 32 || !p.InStrip {
+					t.Errorf("%s: closed %v shown %v, a %dx%dpx button "+
+						"%dpx from the top and %dpx from the inline end, in "+
+						"the header row %v; want a closed 44px button at "+
+						"the row's inline end",
 						where, !p.Open, p.Shown, p.W, p.H, p.Top, p.End, p.InStrip)
 				}
-				// The phone header is 56px, the index's row and a content
-				// page's back strip alike, and the button sits on its centre
-				// line: at the top edge of the taller strip it left a band
-				// under it that looked like part of the button and was not.
-				if index && math.Abs(p.Mid-28) > 1 || !index && (math.Abs(p.StripH-56) > 0.5 || math.Abs(p.Mid-p.StripMid) > 1) {
-					t.Errorf("%s: the button's centre line is at %.1fpx; the back strip is %.1fpx tall with its centre at %.1fpx; want the button centred in a 56px header strip", where, p.Mid, p.StripH, p.StripMid)
+				// The phone header is one 56px row on every page, and the
+				// button sits on its centre line: at the top edge of a
+				// taller strip it left a band under it that looked like
+				// part of the button and was not.
+				if math.Abs(p.StripH-56) > 0.5 ||
+					math.Abs(p.Mid-p.StripMid) > 1 {
+					t.Errorf("%s: the button's centre line is at %.1fpx; "+
+						"the header row is %.1fpx tall with its centre at "+
+						"%.1fpx; want the button centred in the 56px row",
+						where, p.Mid, p.StripH, p.StripMid)
 				}
 				if name, want := axNameOf(t, c, where, ".ds-prefs > summary"), proseIn(locale, "Display settings"); name != want {
 					t.Errorf("%s: the button is named %q, want %q", where, name, want)

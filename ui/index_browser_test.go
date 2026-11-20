@@ -39,6 +39,10 @@ func legacyLayout(t *testing.T, name string) []byte {
 	return bytes.Replace(b, []byte(shim), []byte(shim+fiesta+"</script>"), 1)
 }
 
+// upLinkCSS is a content page's way back: the up link in the header
+// row, or the back strip's link in a layout from before it.
+const upLinkCSS = "[rst-shell-up], [rst-shell-back] a"
+
 // shellLayoutPage renders a layout's source with a nav of three
 // sections (ids, so the scriptless focus return has fragments to use),
 // a title, a language menu, and the given extra defines.
@@ -84,7 +88,9 @@ func shellAssets(t *testing.T, pages map[string]string) *http.ServeMux {
 // so the viewport's edge is not the page's.
 const viewJS = `(() => {
   const shown = el => !!el && el.getClientRects().length > 0 && el.getBoundingClientRect().width > 0;
-  const q = s => document.querySelector(s), back = q("[rst-shell-back] a"), br = back ? back.getBoundingClientRect() : null;
+  const q = s => document.querySelector(s);
+  const back = q("[rst-shell-up], [rst-shell-back] a");
+  const br = back ? back.getBoundingClientRect() : null;
   const title = q("[rst-shell-title]"), hr = document.documentElement.getBoundingClientRect();
   return JSON.stringify({Rail: shown(q("[rst-shell-rail] [rst-shell-nav]")), Main: shown(q("[rst-shell-main]")),
     SkipDisplay: getComputedStyle(q("[rst-skip]")).display, Title: shown(title) ? title.innerText.trim() : "",
@@ -181,7 +187,9 @@ func TestThePhoneIndexWorksWithNoScript(t *testing.T) {
 					t.Errorf("the sidebar's back control is %dpx from the top; want it centred in the strip at the top of the screen, 6px down", pg.BackTop)
 				}
 				// And the rail's nav is shown only on the index.
-				mustRun(t, ctx, chromedp.Click(chromedp.CSS("[rst-shell-back] a")), chromedp.WaitVisible(chromedp.CSS("[rst-shell-rail] [rst-shell-nav]")))
+				mustRun(t, ctx, chromedp.Click(chromedp.CSS(upLinkCSS)),
+					chromedp.WaitVisible(
+						chromedp.CSS("[rst-shell-rail] [rst-shell-nav]")))
 				settled(t, ctx)
 				at(t, ctx, viewJS, &back)
 				var target bool
@@ -228,10 +236,13 @@ func TestThePhoneIndexWorksWithScripts(t *testing.T) {
 				visit(t, ctx, rig.Origin+"/")
 				requirePointer(t, ctx, true)
 				settled(t, ctx)
-				follow(t, ctx, "#nav-invoices", `location.pathname === "/invoices" && document.querySelector("[rst-shell-back] a").checkVisibility()`)
+				follow(t, ctx, "#nav-invoices",
+					`location.pathname === "/invoices" && document`+
+						`.querySelector("`+upLinkCSS+`").checkVisibility()`)
 				settled(t, ctx)
 				before := state(t, ctx)
-				follow(t, ctx, "[rst-shell-back] a", `location.pathname === "/" && document.activeElement.id === "nav-invoices"`)
+				follow(t, ctx, upLinkCSS, `location.pathname === "/" && `+
+					`document.activeElement.id === "nav-invoices"`)
 				settled(t, ctx)
 				if after := state(t, ctx); after.Len != before.Len {
 					t.Errorf("the back control grew history %d -> %d; with scripts it reuses the entry behind it", before.Len, after.Len)
@@ -248,7 +259,8 @@ func TestThePhoneIndexWorksWithScripts(t *testing.T) {
 				visit(t, deep, rig.Origin+"/orders")
 				settled(t, deep)
 				before = state(t, deep)
-				follow(t, deep, "[rst-shell-back] a", `location.pathname === "/" && document.activeElement.id === "nav-orders"`)
+				follow(t, deep, upLinkCSS, `location.pathname === "/" && `+
+					`document.activeElement.id === "nav-orders"`)
 				settled(t, deep)
 				if after := state(t, deep); after.Len != before.Len+1 {
 					t.Errorf("a deep link's back control: history %d -> %d, want the link followed (+1)", before.Len, after.Len)
@@ -263,19 +275,25 @@ func TestThePhoneIndexWorksWithScripts(t *testing.T) {
 					t.Errorf("every one of the drive's 3 navigations skipped its transition (%d skips); the slide never ran", skipped+deepSkipped)
 				}
 
-				// The console's index with rastrillo.js loaded: the card
-				// opens over the rail and an outside tap closes it, and
-				// the rail, which no longer follows the Menu, stays.
+				// The console's index with rastrillo.js loaded: the
+				// account card opens over the rail and an outside tap
+				// closes it, and the rail, which never follows the card,
+				// stays.
 				if shell == "console" {
 					idx, doneIdx, _ := tab(t, rig, "")
 					defer doneIdx()
 					visit(t, idx, rig.Origin+"/")
 					settled(t, idx)
-					mustRun(t, idx, chromedp.Click(chromedp.CSS("[rst-shell-menu] > summary")),
-						chromedp.WaitVisible(chromedp.CSS("[rst-shell-tail] #rail-locale > summary")))
+					const card = "[rst-shell-account]"
+					mustRun(t, idx,
+						chromedp.Click(chromedp.CSS(card+" > summary")),
+						chromedp.WaitVisible(
+							chromedp.CSS(card+" #rail-locale > summary")))
 					rail := probe(t, idx, "[rst-shell-rail]", 0.5, 0.8, 0, 0)
 					clickAndStay(t, rig, idx, rail, "",
-						`!document.querySelector("[rst-shell-menu]").open && document.querySelector("#nav-team").checkVisibility()`)
+						`!document.querySelector("`+card+`").open && `+
+							`document.querySelector("#nav-team")`+
+							`.checkVisibility()`)
 				}
 			})
 		}
@@ -564,7 +582,9 @@ func TestAnOldConsoleLayoutKeepsItsRailOpen(t *testing.T) {
 // for an element the page does not have, which the narrow leg's content
 // page always does and the wide leg's assertion never looks at.
 const backStripJS = `(() => {
-  const back = document.querySelector("[rst-shell-back]"), target = document.getElementById("target");
+  const back = document.querySelector("[rst-shell-back]") ||
+    document.querySelector("[rst-shell-bar]:has([rst-shell-up])");
+  const target = document.getElementById("target");
   return JSON.stringify({
     BackBottom: back ? Math.round(back.getBoundingClientRect().bottom) : -1,
     TargetTop: target ? Math.round(target.getBoundingClientRect().top) : -1,
@@ -577,20 +597,22 @@ type backStripReading struct {
 	ScrollPadding         string
 }
 
-// TestAFragmentLinkLandsBelowTheBackStrip: the back strip is sticky at
-// the top of a phone content page (tokens.css, just above), so the
+// TestAFragmentLinkLandsBelowTheBackStrip: the header row (the back
+// strip, in a layout from before it) is sticky at the top of a phone
+// content page, so the
 // browser's native landing scroll for a #fragment link parks the
 // target's top edge at the document root's scroll origin — which a
 // sticky strip then covers, because a sticky element is not part of the
 // flow a plain scroll-to-element measures against. A reader who follows
 // a link to a heading finds the heading hidden under Back.
 //
-// Both shells, at 390 with a coarse pointer; and, because the fix must
-// not reach past the media query that gates the strip itself, a second
-// leg per shell at 1280 holding the root's scroll-padding unchanged.
+// The three phone shells, at 390 with a coarse pointer; and, because
+// the fix must not reach past the media query that gates the row
+// itself, a second leg per shell at 1280 holding the root's
+// scroll-padding unchanged.
 func TestAFragmentLinkLandsBelowTheBackStrip(t *testing.T) {
 	content := `{{define "content"}}<h1>Invoices</h1><div style="block-size: 150vh"></div><h2 id="target">Target</h2><div style="block-size: 150vh"></div>{{end}}`
-	for _, shell := range []string{"sidebar", "console"} {
+	for _, shell := range phoneShells {
 		src, _ := Layout(shell)
 		pages := map[string]string{"/page": shellLayoutPage(t, src, "ltr", content)}
 
@@ -648,27 +670,29 @@ type headerStripReading struct {
 	Off             float64
 }
 
-// TestThePhoneHeaderStripIs56Pixels: on a phone every strip a shell
-// puts at the top of the screen is 56px, the height of a mobile app's
-// top bar. At 44px the back strip was the bare tap target with no room
-// round it, and read as cramped next to every native app's header. The
-// tap target inside stays 44px and sits on the strip's centre line: a
-// taller strip with the control at its top edge would make the strip's
-// lower part a dead zone that looks tappable. The index's header row
-// and a content page's back strip are both checked, so going from one
-// to the other does not change the header's height under the slide.
+// TestThePhoneHeaderStripIs56Pixels: on a phone every shell's header
+// row is 56px, the height of a mobile app's top bar. At 44px the old
+// back strip was the bare tap target with no room round it, and read as
+// cramped next to every native app's header. The tap targets inside
+// stay 44px and sit on the row's centre line: a taller row with a
+// control at its top edge would make the row's lower part a dead zone
+// that looks tappable. The index's row and a content page's are both
+// checked, so going from one to the other does not change the header's
+// height under the slide.
 func TestThePhoneHeaderStripIs56Pixels(t *testing.T) {
 	type strip struct{ where, page, strip, target string }
-	shells := map[string][]strip{
-		"sidebar": {
-			{"the back strip", "/page", "[rst-shell-back]", "[rst-shell-back] > a"},
-			{"the index's header row", "/", "[rst-shell-title]", "[rst-shell-profile] > summary"},
-		},
-		"console": {
-			{"the bar over a page", "/page", "[rst-shell-bar]", "[rst-shell-menu] > summary"},
-			{"the back strip", "/page", "[rst-shell-back]", "[rst-shell-back] > a"},
-			{"the index's header row", "/", "[rst-shell-bar]", "[rst-shell-menu] > summary"},
-		},
+	shells := map[string][]strip{}
+	for shell, avatar := range map[string]string{
+		"topbar":  "[rst-shell-account] > summary",
+		"console": "[rst-shell-account] > summary",
+		"sidebar": "[rst-shell-profile] > summary",
+	} {
+		const row = "[rst-shell-bar]"
+		shells[shell] = []strip{
+			{"the up link in a page's row", "/page", row, "[rst-shell-up]"},
+			{"the avatar in a page's row", "/page", row, avatar},
+			{"the avatar in the index's row", "/", row, avatar},
+		}
 	}
 	for shell, strips := range shells {
 		src, _ := Layout(shell)

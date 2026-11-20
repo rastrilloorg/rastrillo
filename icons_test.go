@@ -30,16 +30,22 @@ func TestVendoredIconsAreSelfContained(t *testing.T) {
 		}
 		// Real vector content, not an empty shell -- most icons draw in
 		// <path>, but kebab (Lucide's three-dot "more-vertical") is drawn
-		// entirely in <circle>, so either primitive satisfies this.
-		if !strings.Contains(s, "<path") && !strings.Contains(s, "<circle") {
-			t.Errorf("icon %q has no drawing primitive (<path> or <circle>): %s", slug, s)
+		// entirely in <circle>, and monitor in <rect> and <line>, so any
+		// of these primitives satisfies this.
+		if !strings.Contains(s, "<path") && !strings.Contains(s, "<circle") &&
+			!strings.Contains(s, "<rect") && !strings.Contains(s, "<line") {
+			t.Errorf("icon %q has no drawing primitive "+
+				"(<path>, <circle>, <rect> or <line>): %s", slug, s)
 		}
 		for _, bad := range []string{"http://", "https://", "<image", "xlink:href", "url("} {
 			if strings.Contains(s, bad) {
 				t.Errorf("icon %q reaches outside the page (%q): %s", slug, bad, s)
 			}
 		}
-		if strings.Contains(s, " width=") || strings.Contains(s, " height=") {
+		// Only the <svg> tag: a <rect> inside it (monitor) has its own width.
+		openTag, _, _ := strings.Cut(s, ">")
+		if strings.Contains(openTag, " width=") ||
+			strings.Contains(openTag, " height=") {
 			t.Errorf("icon %q hardcodes a size instead of sizing from the caller's CSS: %s", slug, s)
 		}
 	}
@@ -53,12 +59,12 @@ func TestIconUnknownSlugRendersNothing(t *testing.T) {
 	}
 }
 
-// All twelve expected icon slugs are registered and non-empty.
+// All expected icon slugs are registered and non-empty.
 func TestExpectedIconSlugsRegistered(t *testing.T) {
 	expected := []string{
 		"chevron-down", "check", "plus", "search",
 		"kebab", "x", "info", "check-circle", "alert-triangle", "x-circle", "help-circle",
-		"menu",
+		"menu", "chevron-left", "monitor", "moon", "sun",
 	}
 	for _, slug := range expected {
 		if got := Icon(slug); got == "" {

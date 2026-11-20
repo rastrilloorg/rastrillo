@@ -1,0 +1,56 @@
+//go:build browser
+
+// The topbar app's phone walk, copied in by rastrillo's
+// internal/scaffoldcheck: the home page's way up reaches the Menu page
+// at the home row, and that row leads home again.
+package walktopbarapp_test
+
+import (
+	"io"
+	"log/slog"
+	"net/http"
+	"path/filepath"
+	"testing"
+
+	"amadan.net/rastrillo/rastrillo/db"
+	"amadan.net/rastrillo/rastrillo/harness"
+	"github.com/chromedp/chromedp"
+
+	"walktopbarapp/internal/walktopbarapp"
+)
+
+// The Menu page is the bar's index view; the home page is a content
+// page, whose nav is hidden on a phone and whose up link shows.
+const (
+	menuRows = `[rst-shell-topbar="index"] [rst-shell-nav] #nav-home`
+	upLink   = `[rst-shell-topbar="page"] [rst-shell-up]`
+)
+
+func TestPhoneWalksToTheMenuAndBack(t *testing.T) {
+	rig := harness.New(t, func(origin string) http.Handler {
+		logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+		path := filepath.Join(t.TempDir(), "app.db")
+		database, err := db.Open(path, logger)
+		if err != nil {
+			t.Fatalf("db.Open: %v", err)
+		}
+		t.Cleanup(func() { database.Close() })
+		mux, _, err := walktopbarapp.New(database, origin, logger)
+		if err != nil {
+			t.Fatalf("New: %v", err)
+		}
+		return mux
+	}, harness.WithCoarsePointer())
+	rig.Run(chromedp.EmulateViewport(390, 844),
+		chromedp.Navigate(rig.Origin+"/"))
+	rig.Screen(upLink, "the home page on a phone")
+	settle(t, rig, `document.readyState === "complete"`)
+	rig.Run(chromedp.Click(chromedp.CSS(upLink)))
+	settle(t, rig, `location.pathname === "/menu" && `+
+		`location.hash === "#nav-home" && !document.activeViewTransition`)
+	rig.Screen(menuRows, "the Menu page, its rows the bar's nav")
+	rig.Run(chromedp.Click(chromedp.CSS(menuRows)))
+	settle(t, rig, `location.pathname === "/" && `+
+		`!document.activeViewTransition`)
+	rig.Screen(upLink, "the home page again")
+}

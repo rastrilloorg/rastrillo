@@ -19,6 +19,7 @@ import (
 	act_admin_posts_index_post "blog/gen/actions/admin/posts/index_post"
 	act_admin_posts_new_get "blog/gen/actions/admin/posts/new_get"
 	act_index_get "blog/gen/actions/index_get"
+	act_menu_get "blog/gen/actions/menu_get"
 	act_posts_id_index_get "blog/gen/actions/posts/id/index_get"
 )
 
@@ -86,6 +87,11 @@ func Router(b Booted, ctxFactory func(*http.Request) *rastrillo.Ctx) *http.Serve
 	mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
 		if c := handle(w, r); c != nil {
 			act_index_get.Handle(c, w, r)
+		}
+	})
+	mux.HandleFunc("GET /menu", func(w http.ResponseWriter, r *http.Request) {
+		if c := handle(w, r); c != nil {
+			act_menu_get.Handle(c, w, r)
 		}
 	})
 	mux.HandleFunc("GET /posts/{id}", func(w http.ResponseWriter, r *http.Request) {

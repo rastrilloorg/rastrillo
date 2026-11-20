@@ -136,18 +136,8 @@ func writeSingle(options newOpts) error {
 	}
 	env, prefix := strings.ToUpper(pkg), apitoken.DerivePrefix(name)
 
-	// The sidebar and console shells open on a phone to the index, whose
-	// content is hidden there, so they alone get a second page to hold
-	// it, with its path, route, action and test.
-	indexHTML, pages := indexTemplate, `"index", "errors", "tokens"`
-	var paths, routes, actions, extraTests string
-	if twoPageShells[options.Shell] {
-		indexHTML = fmt.Sprintf(sectionsIndexTemplate, scaffoldOverview,
-			html.EscapeString(name))
-		pages = `"index", "overview", "errors", "tokens"`
-		paths, routes = overviewPath, overviewRoute
-		actions, extraTests = overviewAction, overviewTest
-	}
+	// The shells with a phone index start with a second page.
+	pages := pagesFor(options.Shell, html.EscapeString(name))
 
 	files := map[string]string{}
 	files[atRoot("go.mod")] = fmt.Sprintf(goModTemplate,
@@ -155,16 +145,19 @@ func writeSingle(options newOpts) error {
 	files[atRoot("cmd", name, "main.go")] = fmt.Sprintf(mainTemplate,
 		name, pkg, env)
 	files[inApp("app.go")] = fmt.Sprintf(appTemplate, pkg, name)
-	files[inApp("routes.go")] = fmt.Sprintf(routesTemplate, pkg, paths, routes)
+	files[inApp("routes.go")] = fmt.Sprintf(routesTemplate, pkg,
+		pages.path, pages.route)
 	files[inApp("models.go")] = fmt.Sprintf(modelsTemplate, pkg)
 	files[inApp("migrations.go")] = fmt.Sprintf(migrationsTemplate, pkg)
-	files[inApp("handlers.go")] = fmt.Sprintf(handlersTemplate, pkg, actions)
-	files[inApp("render.go")] = fmt.Sprintf(renderTemplate, name, pkg, pages)
+	files[inApp("handlers.go")] = fmt.Sprintf(handlersTemplate, pkg,
+		pages.action)
+	files[inApp("render.go")] = fmt.Sprintf(renderTemplate, name, pkg,
+		pages.names)
 	files[inApp("api.go")] = fmt.Sprintf(apiTemplate, pkg, name, prefix)
 	files[inApp("tokens.go")] = fmt.Sprintf(tokensTemplate, pkg)
 	files[inApp("templates", "tokens.html")] = scaffoldFile("tokens.html")
 	files[inApp("templates", "layout.html")] = string(layoutHTML)
-	files[inApp("templates", "index.html")] = indexHTML
+	files[inApp("templates", "index.html")] = pages.index
 	files[inApp("templates", "errors.html")] = errorsTemplate
 	files[inApp("migrations", "0001_init.sql")] = initMigrationTemplate
 	files[inApp("migrations", "schema.sql")] = schemaSQLTemplate
@@ -175,7 +168,7 @@ func writeSingle(options newOpts) error {
 	files[inApp("vendored_test.go")] = fmt.Sprintf(vendoredTestTemplate,
 		pkg, options.Theme)
 	files[inApp("index_test.go")] = fmt.Sprintf(indexTestTemplate,
-		name, pkg, extraTests)
+		name, pkg, pages.test)
 	files[inApp("browser_test.go")] = fmt.Sprintf(browserTestTemplate,
 		name, pkg)
 	files[inApp("perf_test.go")] = fmt.Sprintf(perfTestTemplate, name, pkg)
@@ -197,8 +190,8 @@ func writeSingle(options newOpts) error {
 		string(conventions)
 	files[atRoot("CLAUDE.md")] = claudeMDPointer
 	// The vendored static files: see the list below writeSingle.
-	if twoPageShells[options.Shell] {
-		files[filepath.Join(appDir, "templates", "overview.html")] = fmt.Sprintf(overviewTemplate, scaffoldOverview, html.EscapeString(name))
+	if pages.file != "" {
+		files[inApp("templates", pages.file)] = pages.second
 	}
 
 	for name, content := range vendored {
@@ -306,8 +299,8 @@ func writeSingle(options newOpts) error {
 //	theme.css      the colour, type family and shape tokens
 //	               tokens.css paints its classes with; swap it for
 //	               another of ui.ThemeNames() or edit it freely
-//	shell.css      the sidebar and console shells' slide between
-//	               the index and a page on a phone
+//	shell.css      the sidebar, console and topbar shells' slide
+//	               between the index and a page on a phone
 //	rastrillo.js   data-poll's fragment shim, and the scheme cookie
 //	live.js        live pages: inert until a page carries the
 //	               rastrillo-live meta
@@ -318,11 +311,11 @@ func writeSingle(options newOpts) error {
 //	anchor.js      a dropdown's menu kept on the screen where CSS anchor
 //	               positioning is missing; inert where it is not, and
 //	               deletable once every browser the app supports has it
-//	shell.js       the same two shells' phone navigation: the slide's
-//	               direction, a back control that reuses history,
+//	shell.js       the same three shells' phone navigation: the slide's
+//	               direction, an up link that reuses history,
 //	               focus returned to the section the reader left
-//	transition.js  observes skipped incoming transitions on column, stage
-//	               and topbar pages before styles opt them out
+//	transition.js  observes skipped incoming transitions on column and
+//	               stage pages before styles opt them out
 //	copy.js        rst-snippet's Copy button, inert without a snippet
 //	select.js      field-select's searchable enhancement, inert
 //	               until a <select> opts in with data-rst-select
@@ -416,20 +409,12 @@ const indexTemplate = `{{define "content"}}
 {{end}}
 `
 
-// twoPageShells are the shells whose phone layout is an index page and a
-// back control. A scaffold of one of them with a single page would open
-// on a phone to a title and an empty list, because that page is the
-// index and its content is hidden there, so these get an index with one
-// section and the page it opens.
-var twoPageShells = map[string]bool{"sidebar": true, "console": true}
-
 // scaffoldOverview is the one section's name. It is user-facing copy, so
 // a change to it goes through the copy review.
 const scaffoldOverview = "Overview"
 
-// sectionsIndexTemplate is templates/index.html for the two-page shells.
-// %[1]s is the section's name and %[2]s the app's, which is the brand:
-// the layout's default brand, Home, would title the app "Home" on a phone.
+// sectionsIndexTemplate is templates/index.html for the sidebar and
+// console. %[1]s is the section's name and %[2]s the app's, the brand.
 const sectionsIndexTemplate = `{{/* The home page, and on a phone the list
      of sections. Give each section a nav link with an id, and its page
      an up block naming {{path $ "/#<that id>"}}, so a phone comes back
@@ -455,7 +440,7 @@ const overviewTemplate = `{{/* A section. up is its way back: the
 {{end}}
 `
 
-// The two-page shells' extra path, route and action.
+// The sidebar's and console's section: its path, route and action.
 const (
 	overviewPath   = "\nconst overviewPage action.Path = \"/overview\""
 	overviewRoute  = "\n\t\tguarded.Get(overviewPage, app.overview)"
@@ -466,8 +451,8 @@ func (app *App) overview(visit *action.Visit) {
 `
 )
 
-// overviewTest is appended to index_test.go for the two-page shells: the
-// section page renders, and its back control goes to the index's row.
+// overviewTest is appended to index_test.go for the sidebar and console:
+// the section page renders, and its up link goes to the index's row.
 const overviewTest = `
 func TestOverviewRenders(t *testing.T) {
 	t.Parallel()

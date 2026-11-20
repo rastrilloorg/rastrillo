@@ -3,14 +3,19 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width">
-{{/* The browser rejects a skipped incoming transition before
-     pagereveal; a deferred observer misses it. */}}
-<script src="{{path $ (asset "static/transition.js")}}"></script>
 <title>{{block "title" .}}Hello{{end}}</title>
 <link rel="stylesheet" href="{{path $ pageStylesheet}}">
 <link rel="stylesheet" href="{{path $ (asset "static/theme.css")}}">
+{{/* shell.css is the slide between the Menu page and a page on a
+     phone; the three shells with an index link it, because the opt-in
+     it holds cannot be scoped from tokens.css. */}}
+<link rel="stylesheet" href="{{path $ (asset "static/shell.css")}}">
 <script defer src="{{path $ (asset "static/rastrillo.js")}}"></script>
 {{template "live-head" .}}
+{{/* blocking="render": shell.js types the slide in pagereveal, at the
+     first render, and a plain deferred script can run after it. An
+     engine that ignores the attribute gets an untyped cross-fade. */}}
+<script defer blocking="render" src="{{path $ (asset "static/shell.js")}}"></script>
 {{iconAssets}}
 {{/* Loads the scripts this page uses, by what its templates show: a
      form, a menu, a field, a lit component. A live page loads them all,
@@ -21,64 +26,96 @@
 {{/* head is the app's own slot in <head>: a favicon, a meta tag, one
      more stylesheet. Empty by default, last in the head so an app's
      own CSS wins over the framework's, and the only block in the
-     three shells that is not chrome. */}}
+     shells that is not chrome. */}}
 {{block "head" .}}{{end}}
 </head>
 <body>
-<div rst-shell-topbar>
+{{/* The topbar shell: links in a bar across the top, the account at
+     its end. On a desktop that is all it is.
+
+     ON A PHONE IT IS A HIERARCHY, as the sidebar and the console are.
+     The app's sections are one level up from every page, on the Menu
+     page at /menu, which defines the view block as index; there the
+     bar's own nav is laid out as the index's rows. Every other page is
+     a content page (the default, so a page that forgets still has a
+     way back) whose bar is ONE ROW: the up link at the inline start,
+     the app's name at the centre and the account's avatar at the end.
+     Links in a bar make sense on a desktop. On a phone they break the
+     hierarchy, because every page would float the sections above
+     itself instead of sitting one level below them, and a second row
+     under the bar (a Menu card, a back strip) is the thing this shape
+     replaces. Fiesta's tokens.css draws the one row only for a root
+     that holds [rst-shell-up], so a topbar layout written before it,
+     with its Menu disclosure, still draws as it did.
+
+     up is where the up link goes: by default the Menu page, and a page
+     names its own row there as the fragment, /menu#nav-home, so focus
+     comes back to it with scripts off. upLabel is what the link says:
+     Menu by default, the parent's name on a deeper page ("‹ Posts").
+     Two blocks and not one, for the reason the sidebar's view and up
+     are two: a template cannot capture a block's output to derive one
+     from the other.
+
+     NOTHING MOVES. The DOM order here, the up link, the name, the nav
+     and the account card, is the reading order at every width.
+     tokens.css shows a subset below 800px, never a reordering, so
+     focus order matches visual order. The one recorded exception is
+     the Menu page, whose rows are the bar's nav and so are read before
+     the avatar. */}}
+<div rst-shell-topbar="{{block "view" .}}page{{end}}">
 <a rst-skip href="#main">{{T $L "rastrillo.ui.shell_skip"}}</a>
 <header rst-shell-bar>
+{{/* The up link: a link, not a script; rel="up" for tools that read
+     it. Its accessible name says it goes back and contains the label
+     it shows (WCAG 2.5.3), in each language's own word order: Taround
+     cuts "Back to {name}" around the label, which a block cannot hand
+     Tf. upLabel is executed again in the name, so keep it plain text.
+     Hidden on the Menu page, which is the top of the app. */}}
+{{$up := Taround $L "rastrillo.ui.shell_up" "name"}}<a rst-shell-up href="{{block "up" .}}{{path $ "/menu"}}{{end}}" rel="up" aria-label="{{$up.Before}}{{template "upLabel" .}}{{$up.After}}">{{icon "chevron-left"}}{{block "upLabel" .}}{{$L := localizer $}}{{T $L "rastrillo.ui.shell_menu"}}{{end}}</a>
+{{/* The Menu page's heading, in the bar because on that page the bar
+     is the header row: the brand, then the page's title for an app
+     that blanks its brand (tokens.css shows the title only when the
+     brand's span is :empty). Executed again rather than redefined, so
+     an id inside the brand would appear twice. Shown only on the Menu
+     page on a phone, where the bar's own brand gives way to it, so no
+     page exposes two h1s. */}}
+<h1 rst-shell-title><span>{{template "brand" .}}</span><span>{{template "title" .}}</span></h1>
 {{block "brand" .}}{{$L := localizer $}}<a rst-shell-brand href="{{path $ "/"}}">{{T $L "rastrillo.ui.shell_home"}}</a>{{end}}
-{{/* The narrow layout. Below 800px the bar's tail — nav, account,
-     locale — hides behind this disclosure; above it, tokens.css hides
-     the summary and gives [rst-shell-tail] display: contents, so the
-     three blocks generate no box of their own and lay out as flex
-     items of the bar, exactly as they did before this element existed.
-     Laid out as direct children, not made into them: see the depth
-     note at the foot of this comment. Below 800px the open tail is a
-     card over the page (tokens.css) that closes on an outside tap,
-     scripts or not, and on Escape through fiesta.js; the sidebar has
-     no such control, its phone navigation is an index page.
-
-     name="rst-shell-menu" — a group of its own, and NOT rst-menus,
-     which is exactly the group this must not join. <details name>
-     exclusivity is document-wide, so a disclosure in the menus' group
-     would be closed by the account menu it just revealed: on a phone,
-     opening the account would take the navigation away with it. Two
-     gates hold the name (TestEveryMenuDefaultsToTheSharedExclusivityGroup
-     reads it off the layout, and the browser drive opens the account
-     menu inside the collapsed tail and asserts this is still open), so
-     read this paragraph as the reason for them rather than as advice
-     to change the attribute below.
-
-     The tail is also a SIBLING rather than this element's content: a
-     closed <details> hides its own content, and the wide layout cannot
-     be recovered from inside one.
-
-     The three block names below are unchanged — nav, account, locale.
-     Apps override them, and that contract is gated. What DID change is
-     depth: nav, account and locale are now grandchildren of
-     [rst-shell-bar] through [rst-shell-tail]. display: contents gives
-     their boxes back above 800px; it does not give the selector back,
-     so an app stylesheet or script written as
-     `[rst-shell-bar] > [rst-shell-nav]` stops matching at every width.
-     Use a descendant selector, or target [rst-shell-nav] directly.
-     docs/site/templates.md says the same thing where an upgrader will
-     meet it. */}}
-<details rst-shell-menu name="rst-shell-menu"><summary>{{icon "menu"}}{{T $L "rastrillo.ui.shell_menu"}}</summary></details>
-<div rst-shell-tail>
 <nav rst-shell-nav>{{block "nav" .}}{{end}}</nav>
-<details rst-dropdown rst-shell-account name="rst-menus">
-<summary>{{T $L "rastrillo.ui.shell_account"}}<span rst-caret aria-hidden="true">{{icon "chevron-down"}}</span></summary>
-{{/* account here is the dropdown's MENU BODY, not the whole menu: the
-     layout owns the details/summary, so an override supplies only the
-     links that sit inside [rst-dropdown-menu]. Sidebar's account block
-     is the other shape — a bare slot in the rail — so moving a block
-     between the two shells needs an edit. */}}
-<div rst-dropdown-menu>{{block "account" .}}{{end}}</div>
-</details>
-{{block "locale" .}}{{$L := localizer $}}{{template "locale-menu" dict "L" $L "Items" (opt $ "Locales") "Return" (opt $ "Return") "Action" (path $ "/_locale")}}{{end}}{{block "scheme" .}}{{$L := localizer $}}{{template "scheme-menu" dict "L" $L "Scheme" (opt $ "Scheme") "Return" (opt $ "Return") "Action" (path $ "/_theme")}}{{end}}
+{{/* The account card. Its summary is the person's avatar (the profile
+     block) on a phone and "Account" with a caret at 800px and up; both
+     are always in the markup and tokens.css shows the right one. The
+     card holds the person, the colour scheme (Appearance), the
+     language and the account's links, in that order, at every width.
+
+     name="rst-shell-menu", and NOT rst-menus: the language row's
+     fallback inside the card is in rst-menus, and a details element's
+     exclusivity by name is document-wide, so sharing its group would
+     close the card the moment that row opened.
+
+     profile is the person, as the avatar and the name: an
+     [rst-person-av] and an [rst-person-name] (and an [rst-person-email]
+     if there is one), the inside of the person partial without its
+     link, since a link cannot sit in a summary. The default is the
+     empty avatar named Account, so a signed-out reader still gets a
+     named button that opens the scheme and language.
+
+     account here is the card's links, not the whole card: the layout
+     owns the details/summary, so an override supplies only the links,
+     as in the console and the sidebar. A screen's account block moves
+     between the three shells unedited.
+
+     locale and scheme are the card's rows: an override writes its own
+     rows, or nothing. */}}
+<details rst-dropdown rst-shell-account name="rst-shell-menu">
+<summary><span rst-shell-avatar>{{block "profile" .}}{{$L := localizer $}}<span rst-person-av="empty placeholder" aria-hidden="true"></span><span rst-person-name>{{T $L "rastrillo.ui.shell_account"}}</span>{{end}}</span><span rst-shell-account-label>{{T $L "rastrillo.ui.shell_account"}}</span><span rst-caret aria-hidden="true">{{icon "chevron-down"}}</span></summary>
+<div rst-dropdown-menu>
+<div rst-shell-who>{{template "profile" .}}</div>
+{{block "scheme" .}}{{$L := localizer $}}{{template "scheme-menu" dict "L" $L "Scheme" (opt $ "Scheme") "Return" (opt $ "Return") "Action" (path $ "/_theme") "Card" true}}{{end}}
+{{block "locale" .}}{{$L := localizer $}}{{template "locale-menu" dict "L" $L "Items" (opt $ "Locales") "Return" (opt $ "Return") "Action" (path $ "/_locale") "Card" true}}{{end}}
+{{block "account" .}}{{end}}
 </div>
+</details>
 </header>
 <main rst-page id="main">
 {{template "region:notice" .}}

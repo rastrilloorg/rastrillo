@@ -11,6 +11,7 @@ import (
 	"strings"
 	"testing"
 
+	"amadan.net/rastrillo/rastrillo"
 	"amadan.net/rastrillo/rastrillo/currency"
 )
 
@@ -103,6 +104,8 @@ func TestEveryLocaleFuncUsesTheLocalizer(t *testing.T) {
 		{"T", `{{T $L "app.hello"}}`, "Hola"},
 		{"Tf", `{{Tf $L "app.ref" "ref" .Evil}}`, "Referencia: &lt;b&gt;x&lt;/b&gt;"},
 		{"Tbdi", `{{Tbdi $L "app.ref" "ref" .Evil}}`, "Referencia: <bdi>&lt;b&gt;x&lt;/b&gt;</bdi>"},
+		{"Taround", `{{$a := Taround $L "app.ref" "ref"}}` +
+			`[{{$a.Before}}|{{$a.After}}]`, "[Referencia: |]"},
 		{"number", `{{number $L .N}}`, "1.234.567"},
 		{"displayValue", `{{displayValue $L .F}}`, "1234,5"},
 		{"dateWords", `{{dateWords $L}}`, `&#34;today&#34;:&#34;hoy&#34;`},
@@ -117,6 +120,47 @@ func TestEveryLocaleFuncUsesTheLocalizer(t *testing.T) {
 		}
 		if got != c.want {
 			t.Errorf("%s: %q, want %q", c.name, got, c.want)
+		}
+	}
+}
+
+// Taround cuts a catalog string at one placeholder so a template can put
+// a block's output where the value goes, keeping each language's word
+// order: the up link's name is "Back to Posts" in English and
+// "Postsに戻る" in Japanese. A string with no such placeholder is all
+// Before, and a bad call stops the template rather than printing it.
+func TestTaroundKeepsEachLanguagesWordOrder(t *testing.T) {
+	const posts = `{{$a.Before}}Posts{{$a.After}}`
+	source := `{{$L := localizer $}}` +
+		`{{$a := Taround $L "rastrillo.ui.shell_up" "name"}}` + posts
+	for identity, want := range map[string]string{
+		"en": "Back to Posts", "ja": "Postsに戻る", "hi": "Posts पर वापस जाएँ",
+	} {
+		catalog := rastrillo.BaseCatalogs()[identity]
+		lookup := func(key string, _ ...any) string { return catalog[key] }
+		localizer := NewLocalizer(identity, identity, lookup)
+		data := map[string]any{"L": localizer}
+		if got := execTmpl(t, Funcs(), source, data); got != want {
+			t.Errorf("%s: %q, want %q", identity, got, want)
+		}
+	}
+	legacy := `{{$a := Taround "rastrillo.ui.shell_up" "name"}}` + posts
+	if got := execTmpl(t, Funcs(), legacy, nil); got != "Back to Posts" {
+		t.Errorf("the legacy form: %q, want the default English", got)
+	}
+	home := `{{$a := Taround "rastrillo.ui.shell_home" "name"}}` +
+		`[{{$a.Before}}|{{$a.After}}]`
+	if got := execTmpl(t, Funcs(), home, nil); got != "[Home|]" {
+		t.Errorf("no placeholder: %q, want it all Before", got)
+	}
+	for _, bad := range []string{
+		`{{Taround "rastrillo.ui.shell_up"}}`,
+		`{{Taround "rastrillo.ui.shell_up" 5}}`,
+	} {
+		tmpl := template.Must(template.New("bad").Funcs(Funcs()).Parse(bad))
+		err := tmpl.Execute(&strings.Builder{}, nil)
+		if err == nil || !strings.Contains(err.Error(), "Taround") {
+			t.Errorf("%s: err = %v, want one naming Taround", bad, err)
 		}
 	}
 }

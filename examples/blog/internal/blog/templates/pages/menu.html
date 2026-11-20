@@ -1,0 +1,12 @@
+{{/* The Menu page, one level up from every page: on a phone the bar's
+     nav is its rows, and on a desktop, where the shell draws nothing
+     special here, the list below. A new section gets a nav link with an
+     id in layout.html, a row here, and a Chrome in chrome.go's chromeFor
+     whose Up is /menu#<that id>. */}}
+{{define "content"}}{{$L := localizer $}}
+{{template "page-header" dict "L" $L "Title" (T $L "rastrillo.ui.shell_menu")}}
+<div rst-list>
+<div rst-row><span rst-row-main><a class="rst-nm" href="/">Blog</a></span></div>
+<div rst-row><span rst-row-main><a class="rst-nm" href="/admin/posts">Posts admin</a></span></div>
+</div>
+{{end}}

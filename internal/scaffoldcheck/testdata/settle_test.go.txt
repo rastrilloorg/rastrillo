@@ -1,0 +1,35 @@
+//go:build browser
+
+// The polling helper every drive in testdata/ shares, copied in beside
+// each by rastrillo's internal/scaffoldcheck (addDrive), which names
+// the app's test package in place of this clause's.
+package drivetest
+
+import (
+	"context"
+	"testing"
+	"time"
+
+	"amadan.net/rastrillo/rastrillo/harness"
+	"github.com/chromedp/chromedp"
+)
+
+// settle waits until expression is true in the page. An evaluation
+// that lands while a document is swapped in fails, and the next one
+// reads the new page.
+func settle(t *testing.T, rig *harness.Rig, expression string) {
+	t.Helper()
+	deadline := time.Now().Add(10 * time.Second)
+	for time.Now().Before(deadline) {
+		var done bool
+		read := harness.Into(&done, chromedp.Evaluate[bool](expression))
+		ctx, cancel := context.WithTimeout(rig.Context(), time.Second)
+		err := chromedp.Do(ctx, read)
+		cancel()
+		if err == nil && done {
+			return
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+	t.Fatalf("never true within 10s: %s", expression)
+}
