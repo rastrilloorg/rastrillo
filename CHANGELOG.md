@@ -8,15 +8,19 @@ This file starts at v0.23.0. Earlier releases are in the git history and their
 tags; nothing has been reconstructed for them, because a changelog written
 backwards from commits is a guess wearing a date.
 
-## Unreleased
+## v0.41.0
+
+Apps can stop `Serve` and `Run` themselves with `Options.Stop`, and `handoff`
+can map the root's subject to the one the app's sessions use with
+`Config.SubjectFor`. Both are additions: leave them nil and nothing changes.
 
 ### Added: `Options.Stop`
 
-- `Options.Stop` lets an app stop `Serve` and `Run` itself. Closing the channel shuts the server down as SIGTERM does, with the same drain. `Serve` returns nil when the drain finishes in time, and `context.DeadlineExceeded` when a request outlives it. A nil channel leaves SIGTERM and SIGINT as the only ways to stop `Serve`. The instance and roster guides now show how to use it to restart on a new custom origin.
+- `Options.Stop` lets an app stop `Serve` and `Run` itself. Closing the channel shuts the server down as SIGTERM does: it waits up to 10 seconds for in-flight requests to finish. `Serve` returns nil when they finish in time, and `context.DeadlineExceeded` when a request outlives the wait. With a nil channel, SIGTERM and SIGINT remain the only signals that request a graceful shutdown. The instance and roster guides now show how to use it to restart on a new custom origin.
 
 ### Added: `handoff.Config.SubjectFor`
 
-- `handoff.Config.SubjectFor` maps the root's subject to the one the app's sessions carry, such as a row ID that `sessions.UserID` reads. `Consume` calls it after every check passes and before it spends the assertion. An error or an empty subject shows the refusal page but does not spend the assertion or clear the nonce cookie, so the person can retry while the assertion is valid. A spent assertion is refused before `SubjectFor` runs, but two first uses can race and both call it, so `SubjectFor` must be idempotent. Nil keeps the root's subject.
+- `handoff.Config.SubjectFor` maps the root's subject to the one the app's sessions carry, such as a row ID that `sessions.UserID` reads. `Consume` calls it after the checks pass and before it marks the assertion as used. If `SubjectFor` returns an error or an empty subject, `Consume` shows the refusal page without marking the assertion as used or clearing the nonce cookie. The person can retry while the assertion is valid. A used assertion is refused before `SubjectFor` runs, but two first uses can race and both call it, so `SubjectFor` must be idempotent. Nil keeps the root's subject.
 
 ## v0.40.0
 
