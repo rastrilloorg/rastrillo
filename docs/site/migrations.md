@@ -21,6 +21,12 @@ var Schema = migrate.MustFromFS(migrationFS, "notes")
 var BootSchema = migrate.Merge(sessions.Schema, Schema)
 ```
 
+The `rastrillo migration` commands find your app's package by the
+package-level `Schema`, `BootSchema` and `Models` variables. Other
+packages under `internal/`, such as end-to-end test packages, can sit
+beside it. If detection cannot choose a package, name its directory
+with `-package <name>`; see [the CLI](/docs/cli#rastrillo-migration).
+
 `migrate.Merge`'s argument order is apply order. That is how a package
 which must run after another says so at the call site instead of in a
 comment: `auth` after `sessions`, because auth's tables reference

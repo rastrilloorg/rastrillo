@@ -185,10 +185,30 @@ it. `baseline` is the one exception, and it is manual by design.
 
 [Migrations](/docs/migrations) is the guide; these are the commands.
 
+Each command works on the package under `internal/` that declares
+`Schema`, `BootSchema` and `Models`, which is where `rastrillo new` puts
+them. It reads the non-test files selected for each package under the
+build settings `go list` reports. Build tags in `GOFLAGS` affect
+detection. `_test.go` files are excluded, and errors in them are
+ignored. A package with a non-test file that imports `C` is treated as
+unreadable, so detection cannot choose the app's package. Use
+`-package` to name it instead. Other packages there, such as end-to-end test
+packages, don't get in the way. If detection finds more than one
+candidate, or cannot read a package's non-test files, the command lists
+the candidates or package errors and stops. Use `-package <name>` to choose
+the app's package directory under `internal/`:
+
+```sh
+rastrillo migration check -package notes
+```
+
+Every migration command takes `-package`, and flags can go before or
+after `[dir]`.
+
 ### migration generate
 
 ```sh
-rastrillo migration generate [--allow-destructive] [dir]
+rastrillo migration generate [--allow-destructive] [-package <name>] [dir]
 ```
 
 Diffs your models against your migrations and writes the delta as a new
@@ -206,7 +226,7 @@ from a drop plus an add to any tool — write those by hand with
 ### migration check
 
 ```sh
-rastrillo migration check [dir]
+rastrillo migration check [-package <name>] [dir]
 ```
 
 Exits non-zero when models and migrations disagree, listing the SQL
@@ -218,7 +238,7 @@ runs the same check as a test, `TestModelsMatchMigrations`, so
 ### migration new
 
 ```sh
-rastrillo migration new <name> [dir]
+rastrillo migration new <name> [-package <name>] [dir]
 ```
 
 Writes a numbered stub migration for a change you will write by hand —
@@ -228,7 +248,7 @@ must be lowercase letters, digits and underscores.
 ### migration status
 
 ```sh
-rastrillo migration status --db <path> [dir]
+rastrillo migration status --db <path> [-package <name>] [dir]
 ```
 
 What a real database's ledger has applied, plus any pending drift.
@@ -239,7 +259,7 @@ yet" line rather than an error.
 ### migration baseline
 
 ```sh
-rastrillo migration baseline --db <path> [--through <id>] [dir]
+rastrillo migration baseline --db <path> [--through <id>] [-package <name>] [dir]
 ```
 
 Stamps a ledger by hand, for the case where boot refuses to adopt an

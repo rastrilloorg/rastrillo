@@ -55,7 +55,7 @@ func driftMessage(sqls []string) string {
 // rebuild that triggered it, and a drift check that failed the loop
 // would make the dev experience worse than the problem it reports.
 func computeDrift(dir string) string {
-	p, err := loadPayload(dir)
+	p, err := loadPayload(dir, "")
 	if err != nil {
 		return ""
 	}

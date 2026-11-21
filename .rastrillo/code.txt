@@ -3726,6 +3726,7 @@ columns cmd/rastrillo/generate_test.go fb2f13703d12 1
 names cmd/rastrillo/generate_test.go TestGenerateCheckPassesOnACompleteCatalog/k 1
 names cmd/rastrillo/generate_test.go TestGenerateWatchesLocalesAndTemplates/d 1
 columns cmd/rastrillo/main.go 0da45b2bd1d8 1
+columns cmd/rastrillo/main.go 40300edf31c1 1 the usage table's migration line gained [-package <name>]; the table's lines are all wider than 80
 columns cmd/rastrillo/main.go 46880c115b15 1
 columns cmd/rastrillo/main.go 46e26e7b2358 1
 columns cmd/rastrillo/main.go 487fa387cf97 1
@@ -3752,7 +3753,6 @@ columns cmd/rastrillo/main.go dc8566fe76d1 1
 columns cmd/rastrillo/main.go e30fba5f11e3 1
 columns cmd/rastrillo/main.go e53e472ece62 1
 columns cmd/rastrillo/main.go e675e10f5c0e 1
-columns cmd/rastrillo/main.go f60f7f249a22 1
 columns cmd/rastrillo/main.go fa00bb11c6c3 1
 columns cmd/rastrillo/main.go fd28fc33ba18 1
 columns cmd/rastrillo/markup.go 0fcd0e222862 1
@@ -3823,7 +3823,6 @@ columns cmd/rastrillo/migration.go 1b2adf16b082 1
 columns cmd/rastrillo/migration.go 24a11220569c 1
 columns cmd/rastrillo/migration.go 270c04c2599d 1
 columns cmd/rastrillo/migration.go 2c438fd655ed 1
-columns cmd/rastrillo/migration.go 2cb99bff2a6c 1
 columns cmd/rastrillo/migration.go 387da845d14d 1
 columns cmd/rastrillo/migration.go 3d5a47d7604f 1
 columns cmd/rastrillo/migration.go 4389268d2234 1
@@ -3831,7 +3830,6 @@ columns cmd/rastrillo/migration.go 50af61360325 1
 columns cmd/rastrillo/migration.go 53445766f788 1
 columns cmd/rastrillo/migration.go 544067587474 1
 columns cmd/rastrillo/migration.go 68ab7212053e 1
-columns cmd/rastrillo/migration.go 71c240220825 1
 columns cmd/rastrillo/migration.go 8c5d4879e47c 1
 columns cmd/rastrillo/migration.go 96cf65e2bd00 1
 columns cmd/rastrillo/migration.go 978167753f44 1
@@ -3842,9 +3840,9 @@ columns cmd/rastrillo/migration.go a4a79e1d6b67 1
 columns cmd/rastrillo/migration.go bd801a75f715 1
 columns cmd/rastrillo/migration.go cca31be52958 1
 columns cmd/rastrillo/migration.go fafe6a1b8033 1
-file cmd/rastrillo/migration.go - 667 raised from 662 by scaffold shapes' tests beside the code: appPackage skips an internal/<x>test only when internal/<x> is beside it, so an app whose own name ends in test is still found
+file cmd/rastrillo/migration.go - 644 lowered from 667 when finding the app package moved to migration_package.go
 func cmd/rastrillo/migration.go migrationBaseline 53
-func cmd/rastrillo/migration.go migrationGenerate 73
+func cmd/rastrillo/migration.go migrationGenerate 71
 func cmd/rastrillo/migration.go migrationStatus 121
 names cmd/rastrillo/migration.go describe/c 2
 names cmd/rastrillo/migration.go describe/u 1

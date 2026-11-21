@@ -90,7 +90,7 @@ Usage:
   rastrillo new [--locale=<code>] <name>        scaffold a new app in ./<name>, offering one language (default en)
   rastrillo generate [--check] [DIR]    write gen/ from manifest/; --check verifies without writing
   rastrillo dev [dir] [-- app args]             watch + regenerate + rebuild + restart (default dir: .)
-  rastrillo migration <cmd> [dir]                schema changes (generate, new, status, check, baseline)
+  rastrillo migration <cmd> [-package <name>] [dir]  schema changes (generate, new, status, check, baseline)
        generate [--allow-destructive]            diff models against migrations, write the delta
        check                                     CI gate: models and migrations agree (no database)
        new <name>                                write a numbered stub migration (for a hand-written change, e.g. a rename)

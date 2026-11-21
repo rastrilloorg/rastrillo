@@ -18,7 +18,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
-	"sort"
 	"strings"
 
 	"amadan.net/rastrillo/rastrillo/db"
@@ -29,7 +28,8 @@ import (
 
 func runMigration(args []string) error {
 	if len(args) == 0 {
-		return errors.New("usage: rastrillo migration <generate|new|status|check|baseline> [dir]")
+		return errors.New("usage: rastrillo migration " +
+			"<generate|new|status|check|baseline> [-package name] [dir]")
 	}
 	sub, rest := args[0], args[1:]
 	switch sub {
@@ -46,37 +46,6 @@ func runMigration(args []string) error {
 	default:
 		return fmt.Errorf("unknown migration subcommand %q (generate, check, new, status, baseline are available)", sub)
 	}
-}
-
-// appPackage locates the app's package: the single directory under
-// internal/ that is not an older app's separate <name>test package.
-// rastrillo new scaffolds exactly one, and dev.go already assumes the
-// same single-app shape for cmd/.
-func appPackage(dir string) (importPath, pkgName string, err error) {
-	mod, err := modulePath(dir)
-	if err != nil {
-		return "", "", err
-	}
-	entries, err := os.ReadDir(filepath.Join(dir, "internal"))
-	if err != nil {
-		return "", "", fmt.Errorf("no internal/ directory in %s: %w", dir, err)
-	}
-	directories := map[string]bool{}
-	for _, entry := range entries {
-		directories[entry.Name()] = entry.IsDir()
-	}
-	var found []string
-	for name, isDirectory := range directories {
-		tested, isTests := strings.CutSuffix(name, "test")
-		if isDirectory && !(isTests && directories[tested]) {
-			found = append(found, name)
-		}
-	}
-	sort.Strings(found)
-	if len(found) != 1 {
-		return "", "", fmt.Errorf("expected exactly one app package under %s/internal, found %v", dir, found)
-	}
-	return mod + "/internal/" + found[0], found[0], nil
 }
 
 // loaderDir is the throwaway package `loadPayload` writes into the
@@ -107,9 +76,9 @@ func main() { dump.Main(app.Schema.All(), app.BootSchema.All(), app.Models) }
 // real module cache, and hardcoding proxy/sum settings here would
 // only be right for this repo's sandboxed tests, which set them on
 // their own exec.Command instead (see migration_test.go).
-func loadPayload(dir string) (dump.Payload, error) {
+func loadPayload(dir, override string) (dump.Payload, error) {
 	var p dump.Payload
-	importPath, _, err := appPackage(dir)
+	importPath, _, err := appPackage(dir, override)
 	if err != nil {
 		return p, err
 	}
@@ -159,12 +128,15 @@ func openExistingDB(path string) (*db.DB, error) {
 	return db.Open(path, nil)
 }
 
-func migrationsDir(dir string) (string, error) {
-	_, pkg, err := appPackage(dir)
+// makeMigrationsDir returns the app package's migrations directory,
+// creating it if this is the app's first migration.
+func makeMigrationsDir(dir, override string) (string, error) {
+	_, pkg, err := appPackage(dir, override)
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(dir, "internal", pkg, "migrations"), nil
+	migrations := filepath.Join(dir, "internal", pkg, "migrations")
+	return migrations, os.MkdirAll(migrations, 0o755)
 }
 
 func dirArg(args []string) string {
@@ -177,8 +149,12 @@ func dirArg(args []string) string {
 }
 
 func migrationCheck(args []string) error {
-	dir := dirArg(args)
-	p, err := loadPayload(dir)
+	flags := flag.NewFlagSet("check", flag.ContinueOnError)
+	positional, override, err := parseMigrationArgs(flags, args)
+	if err != nil {
+		return err
+	}
+	p, err := loadPayload(dirArg(positional), override)
 	if err != nil {
 		return err
 	}
@@ -205,11 +181,12 @@ func migrationGenerate(args []string) error {
 	fs := flag.NewFlagSet("generate", flag.ContinueOnError)
 	allowDestructive := fs.Bool("allow-destructive", false,
 		"write the migration even though it drops data")
-	if err := fs.Parse(args); err != nil {
+	positional, override, err := parseMigrationArgs(fs, args)
+	if err != nil {
 		return err
 	}
-	dir := dirArg(fs.Args())
-	p, err := loadPayload(dir)
+	dir := dirArg(positional)
+	p, err := loadPayload(dir, override)
 	if err != nil {
 		return err
 	}
@@ -234,11 +211,8 @@ func migrationGenerate(args []string) error {
 			strings.Join(destructive, "\n  "))
 	}
 
-	mdir, err := migrationsDir(dir)
+	mdir, err := makeMigrationsDir(dir, override)
 	if err != nil {
-		return err
-	}
-	if err := os.MkdirAll(mdir, 0o755); err != nil {
 		return err
 	}
 	name, err := nextMigrationName(mdir, describe(p.Changes))
@@ -260,7 +234,7 @@ func migrationGenerate(args []string) error {
 	// the app module — go:embed captures the migrations directory at
 	// compile time, so the first loader's build can't have seen a file
 	// that didn't exist yet.
-	p2, err := loadPayload(dir)
+	p2, err := loadPayload(dir, override)
 	if err != nil {
 		return err
 	}
@@ -365,19 +339,22 @@ var migrationNameOK = regexp.MustCompile(`^[a-z0-9_]+$`)
 // the case `generate` cannot cover because a rename is
 // indistinguishable, at the SQL-diff level, from a drop plus an add.
 func migrationNew(args []string) error {
-	if len(args) == 0 {
-		return errors.New("usage: rastrillo migration new <name> [dir]")
-	}
-	name := args[0]
-	if !migrationNameOK.MatchString(name) {
-		return fmt.Errorf("migration name %q must be lowercase letters, digits and underscores", name)
-	}
-	dir := dirArg(args[1:])
-	mdir, err := migrationsDir(dir)
+	flags := flag.NewFlagSet("new", flag.ContinueOnError)
+	positional, override, err := parseMigrationArgs(flags, args)
 	if err != nil {
 		return err
 	}
-	if err := os.MkdirAll(mdir, 0o755); err != nil {
+	if len(positional) == 0 {
+		return errors.New("usage: rastrillo migration new <name> " +
+			"[-package name] [dir]")
+	}
+	name := positional[0]
+	if !migrationNameOK.MatchString(name) {
+		return fmt.Errorf("migration name %q must be lowercase letters, digits and underscores", name)
+	}
+	dir := dirArg(positional[1:])
+	mdir, err := makeMigrationsDir(dir, override)
+	if err != nil {
 		return err
 	}
 	file, err := nextMigrationName(mdir, name)
@@ -414,14 +391,14 @@ func migrationNew(args []string) error {
 func migrationStatus(args []string) error {
 	fs := flag.NewFlagSet("status", flag.ContinueOnError)
 	dbPath := fs.String("db", "", "path to the app's SQLite database")
-	if err := fs.Parse(args); err != nil {
+	positional, override, err := parseMigrationArgs(fs, args)
+	if err != nil {
 		return err
 	}
 	if *dbPath == "" {
 		return errors.New("rastrillo migration status needs --db <path>: it reports what a real database has applied")
 	}
-	dir := dirArg(fs.Args())
-	p, err := loadPayload(dir)
+	p, err := loadPayload(dirArg(positional), override)
 	if err != nil {
 		return err
 	}
@@ -614,15 +591,15 @@ func migrationBaseline(args []string) error {
 	fs := flag.NewFlagSet("baseline", flag.ContinueOnError)
 	dbPath := fs.String("db", "", "path to the app's SQLite database")
 	through := fs.String("through", "", "stop stamping after this migration ID")
-	if err := fs.Parse(args); err != nil {
+	positional, override, err := parseMigrationArgs(fs, args)
+	if err != nil {
 		return err
 	}
 	if *dbPath == "" {
 		return errors.New("rastrillo migration baseline needs --db <path>")
 	}
-	dir := dirArg(fs.Args())
 
-	p, err := loadPayload(dir)
+	p, err := loadPayload(dirArg(positional), override)
 	if err != nil {
 		return err
 	}

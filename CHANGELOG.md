@@ -8,6 +8,18 @@ This file starts at v0.23.0. Earlier releases are in the git history and their
 tags; nothing has been reconstructed for them, because a changelog written
 backwards from commits is a guess wearing a date.
 
+## Unreleased
+
+### Fixed
+
+- `rastrillo migration` finds the app's package by the package-level
+  `Schema`, `BootSchema` and `Models` variables. Other packages under
+  `internal/`, such as end-to-end test packages, no longer make it
+  refuse to run. When it can't choose the app's package, it lists the
+  candidates. Every migration command takes `-package <name>` to choose
+  a package, and flags can now go after `[dir]` too. `rastrillo dev`'s
+  drift warning uses the same package detection rule (discussion #326).
+
 ## v0.41.0
 
 Apps can stop `Serve` and `Run` themselves with `Options.Stop`, and `handoff`

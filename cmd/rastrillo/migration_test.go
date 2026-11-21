@@ -106,27 +106,6 @@ func TestDescribeFallsBackToSchema(t *testing.T) {
 	}
 }
 
-// The migration commands find the app beside an older app's separate
-// internal/<pkg>test, and find an app whose own name ends in test,
-// which keeps its tests beside the code.
-func TestAppPackageSkipsOnlyAnOlderAppsTests(t *testing.T) {
-	for _, internal := range [][]string{
-		{"notes"}, {"notes", "notestest"}, {"contest"},
-		{"contest", "contesttest"},
-	} {
-		dir := t.TempDir()
-		mustWrite(t, filepath.Join(dir, "go.mod"), "module demo\n")
-		for _, name := range internal {
-			mustWrite(t, filepath.Join(dir, "internal", name, "a.go"), "")
-		}
-		_, pkg, err := appPackage(dir)
-		if err != nil || pkg != internal[0] {
-			t.Errorf("internal/%v: found %q, %v; want %s", internal, pkg,
-				err, internal[0])
-		}
-	}
-}
-
 // --- fixture: a minimal app module, built by hand rather than via
 // runNew (rastrillo new's scaffold doesn't grow a Models var, a
 // migrations.go or a Schema until Task 12 — using it here would be
@@ -224,10 +203,8 @@ var BootSchema = migrate.Merge(Schema)
 `
 
 // fixtureSubsystemGo stands in for a framework subsystem package
-// (sessions, auth, ...): a top-level package, not under internal/ —
-// appPackage requires exactly one non-test directory under internal/,
-// so a second one there would break it, same as it would for a real
-// app that put a subsystem inside internal/ by mistake.
+// (sessions, auth, ...): a top-level package, where the framework's
+// subsystems live, rather than a second package under internal/.
 const fixtureSubsystemGo = `package subsystem
 
 import (
@@ -516,7 +493,7 @@ func TestMigrationGenerateNeverDropsLedgerTable(t *testing.T) {
 		"0001_init.sql": init,
 	})
 
-	p, err := loadPayload(appDir)
+	p, err := loadPayload(appDir, "")
 	if err != nil {
 		t.Fatal(err)
 	}
