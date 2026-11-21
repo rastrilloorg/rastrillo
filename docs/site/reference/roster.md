@@ -16,7 +16,8 @@ receiver, err := roster.New(roster.Config{
 	Store:    store,
 	DB:       db,
 	Roles:    []string{"owner", "member"},
-	OnOrigin: func(previous, next string) { go shutdown() },
+	// stop cancels the context whose Done() is rastrillo.Options.Stop.
+	OnOrigin: func(previous, next string) { stop() },
 })
 // ...
 mux.Handle(roster.Path, receiver)
@@ -59,7 +60,7 @@ A time-limited database lock allows only one apply at a time, even when several 
 
 A snapshot can carry the account's custom origin, such as `https://blog.example.org`. The receiver stores it with the sequence. `Origin` returns the stored origin, or `""` when the instance serves on its own host. `StoredOrigin` reads the same value from the database before any receiver exists, which is what boot needs: see [`instance.ServingOrigin`](/docs/reference/instance).
 
-The app fixes its origin at boot, so a change needs a restart. Set `Config.OnOrigin`, which receives the previous and next origin. The receiver calls it after it has applied a snapshot that changes the origin and sent the 204. A snapshot that repeats the origin does not call it, and neither does the root's retry. `OnOrigin` runs inside the roster request. Start a graceful shutdown from it in a goroutine; waiting for the server to stop would wait for this request.
+The app fixes its origin at boot, so a change needs a restart. Set `Config.OnOrigin`, which receives the previous and next origin. The receiver calls it after it has applied a snapshot that changes the origin and sent the 204. A snapshot that repeats the origin does not call it, and neither does the root's retry. `OnOrigin` runs inside the roster request. From it, cancel the context whose `Done()` you passed as `rastrillo.Options.Stop`, and `Serve` shuts down gracefully. Do not wait there for the server to stop: the shutdown waits for this request. [`instance`](/docs/reference/instance) shows the wiring.
 
 Make the verifier's audience the instance's platform host, `https://` and `carlos.Host()`, not the custom origin. The root always delivers to the platform host, so a custom domain that stops working cannot cut the root off.
 

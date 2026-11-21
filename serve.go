@@ -153,6 +153,17 @@ type Options struct {
 	Socket string
 	Addr   string
 
+	// Stop, if set, lets the app stop Serve itself. Closing it shuts the server
+	// down as SIGTERM does: the same 10-second drain, then Background and the
+	// database. Serve returns nil when the drain finishes in time, and
+	// context.DeadlineExceeded when a request outlives it, after the same
+	// cleanup. An app that must restart, such as on
+	// roster.Config.OnOrigin, cancels the context whose Done channel it passed.
+	// Pass a context's Done channel and call its cancel func, which is safe to
+	// call twice, where closing a channel twice panics. Nil leaves SIGTERM and
+	// SIGINT as the only ways to stop.
+	Stop <-chan struct{}
+
 	// NextDue, if set, answers the platform's scheduled-wake poll: the
 	// activator asks a running instance GET /api/next-due (bearer
 	// $CARLOS_ADMIN_TOKEN) and hibernates knowing when to wake it —
@@ -302,61 +313,11 @@ type Options struct {
 	WriteTimeout time.Duration
 }
 
-// Default server timeouts. Both bound connection-level behaviour that no
-// legitimate request depends on, which is what makes them safe to apply
-// to every rastrillo app without an opt-out.
-const (
-	defaultReadHeaderTimeout = 20 * time.Second
-	defaultIdleTimeout       = 120 * time.Second
-)
-
-// newServer builds the http.Server Serve runs.
-//
-// It exists because the zero-value &http.Server{Handler: handler} this
-// replaced set no timeouts at all: a peer that stopped reading, or that
-// vanished without a FIN, tied up a connection — and whatever the handler
-// held — for as long as the process lived, with nothing anywhere in the
-// stack able to fire.
-//
-// What this does and does not buy is worth being precise about, because
-// the gap is where the real incidents live. It bounds two things at the
-// connection level: a client that never finishes its headers, and an idle
-// keep-alive connection. It does NOT bound a peer that stalls midway
-// through a request body or a response — that needs an idle deadline
-// around the streaming span itself, which only the handler can place,
-// because only the handler knows where that span is. See ReadTimeout's
-// doc comment for why the total-deadline fields are not that tool.
-func newServer(opts Options, handler http.Handler) *http.Server {
-	readHeader := opts.ReadHeaderTimeout
-	if readHeader == 0 {
-		readHeader = defaultReadHeaderTimeout
-	}
-	idle := opts.IdleTimeout
-	if idle == 0 {
-		idle = defaultIdleTimeout
-	}
-	srv := &http.Server{
-		Handler:           handler,
-		ReadHeaderTimeout: readHeader,
-		IdleTimeout:       idle,
-		ReadTimeout:       opts.ReadTimeout,
-		WriteTimeout:      opts.WriteTimeout,
-	}
-	// Registered here, with the server it belongs to, so Serve and the
-	// tests that drive its shutdown cannot differ. Shutdown runs this
-	// before it starts waiting, which is what keeps open streams from
-	// eating the drain. Skipped without a hub: an app without live
-	// pays nothing.
-	if opts.Live != nil {
-		srv.RegisterOnShutdown(opts.Live.Close)
-	}
-	return srv
-}
-
 // Serve opens the database (if configured), applies migrations, resolves
 // the platform's activation contract for a listener, and serves until the
-// process receives SIGTERM/SIGINT. It always answers GET /healthz itself
-// — the manifest/action layer never has to remember to.
+// process receives SIGTERM/SIGINT or Options.Stop closes. It always
+// answers GET /healthz itself — the manifest/action layer never has to
+// remember to.
 //
 // # Timeouts
 //
@@ -401,15 +362,7 @@ func Serve(opts Options) error {
 	if path := os.Getenv(tmpl.CaptureEnv); path != "" {
 		return captureAndExit(path, closeDB)
 	}
-	defer closeDB()
-
-	ln, err := listen(opts.Socket, opts.Addr)
-	if err != nil {
-		return fmt.Errorf("rastrillo: listen: %w", err)
-	}
-	logger.Info("rastrillo: serving", "addr", ln.Addr().String(), "version", BuildVersion)
-
-	return serveUntilStopped(newServer(opts, handler), ln, logger)
+	return serveThenClose(opts, handler, closeDB, logger)
 }
 
 // Handler is everything Serve builds short of the listener and the

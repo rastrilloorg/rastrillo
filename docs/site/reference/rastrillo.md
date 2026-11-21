@@ -101,6 +101,17 @@ when it is not a port; otherwise on `:8080`.
 [Hosting elsewhere](/docs/hosting-elsewhere#where-the-app-listens) has
 the order.
 
+**`Stop`** — lets your app stop `Serve` itself. When the channel
+closes, `Serve` shuts down as it does on SIGTERM: the same 10-second
+drain, then `Background` and the database. It returns nil when the
+drain finishes in time, and `context.DeadlineExceeded` when a request
+outlives the 10 seconds. A SIGTERM that arrives while `Background`
+drains does not cut the cleanup short. Use it
+when the app must restart, as on a new custom origin. Pass a context's
+`Done()` and call its cancel func, which is safe to call twice; closing
+a channel twice panics. If `Stop` is nil, only SIGTERM and SIGINT stop
+`Serve`.
+
 **`Locales`**, **`DefaultLocale`**, **`LocaleFS`** — the locale set and
 its catalogs.
 

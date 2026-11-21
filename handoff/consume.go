@@ -27,6 +27,7 @@ var (
 	errSuspended = errors.New("handoff: account suspended")
 	errReplay    = errors.New("handoff: replayed assertion")
 	errInternal  = errors.New("handoff: internal")
+	errNoSubject = errors.New("handoff: SubjectFor returned an empty subject")
 )
 
 // Consume finishes a handoff: it checks the root's assertion against the
@@ -85,13 +86,22 @@ func (handoff *Handoff) admit(
 	if err != nil {
 		return assertion.Claims{}, "", err
 	}
-	next, err := handoff.matchNonce(response, request, claims.Nonce)
+	next, err := handoff.matchNonce(request, claims.Nonce)
 	if err != nil {
 		return assertion.Claims{}, "", err
 	}
 	if err := handoff.checkSuspended(request.Context()); err != nil {
+		clearNonceCookie(response)
 		return assertion.Claims{}, "", err
 	}
+	// A refusal here leaves the cookie in place and does not spend the
+	// assertion, so the browser can send the same POST again if
+	// SubjectFor succeeds.
+	claims.Subject, err = handoff.sessionSubject(request.Context(), claims)
+	if err != nil {
+		return assertion.Claims{}, "", err
+	}
+	clearNonceCookie(response)
 	if err := handoff.spend(request.Context(), claims); err != nil {
 		return assertion.Claims{}, "", err
 	}
@@ -99,11 +109,10 @@ func (handoff *Handoff) admit(
 }
 
 // matchNonce compares the assertion's nonce with this browser's and
-// returns the page to land on. A match has served the cookie's one
-// purpose, so it is cleared then, whatever follows. A mismatch leaves it:
+// returns the page to land on. A mismatch leaves the cookie alone:
 // someone else's assertion must not cancel this browser's own handoff.
 func (handoff *Handoff) matchNonce(
-	response http.ResponseWriter, request *http.Request, signed string,
+	request *http.Request, signed string,
 ) (string, error) {
 	cookie, err := request.Cookie(nonceCookie)
 	if err != nil {
@@ -113,8 +122,28 @@ func (handoff *Handoff) matchNonce(
 	if !ok || subtle.ConstantTimeCompare([]byte(nonce), []byte(signed)) != 1 {
 		return "", errNonce
 	}
-	clearNonceCookie(response)
 	return next, nil
+}
+
+// sessionSubject returns the subject for the session: the root's
+// subject, or the value returned by the app's SubjectFor.
+func (handoff *Handoff) sessionSubject(
+	ctx context.Context, claims assertion.Claims,
+) (string, error) {
+	if handoff.subjectFor == nil {
+		return claims.Subject, nil
+	}
+	if err := handoff.checkUnspent(ctx, claims); err != nil {
+		return "", err
+	}
+	subject, err := handoff.subjectFor(ctx, claims.Subject)
+	if err != nil {
+		return "", fmt.Errorf("handoff: SubjectFor: %w", err)
+	}
+	if subject == "" {
+		return "", errNoSubject
+	}
+	return subject, nil
 }
 
 func (handoff *Handoff) checkSuspended(ctx context.Context) error {
@@ -127,6 +156,25 @@ func (handoff *Handoff) checkSuspended(ctx context.Context) error {
 	}
 	if suspended {
 		return errSuspended
+	}
+	return nil
+}
+
+// checkUnspent refuses an assertion already spent, so a replay never
+// runs the app's SubjectFor again. It is only a read: two first uses at
+// once both pass it, and spend's insert is what refuses the second.
+func (handoff *Handoff) checkUnspent(
+	ctx context.Context, claims assertion.Claims,
+) error {
+	var spent bool
+	err := handoff.db.QueryRowContext(ctx,
+		`SELECT EXISTS (SELECT 1 FROM handoff_used WHERE jti = ?)`,
+		claims.ID).Scan(&spent)
+	if err != nil {
+		return fmt.Errorf("%w: check spent: %w", errInternal, err)
+	}
+	if spent {
+		return errReplay
 	}
 	return nil
 }

@@ -43,6 +43,7 @@ type Config struct {
 	Now           func() time.Time
 	Logger        *slog.Logger
 	RenderRefusal func(http.ResponseWriter, *http.Request, RefusalPage)
+	SubjectFor    func(ctx context.Context, rootSubject string) (string, error)
 }
 
 func New(config Config) (*Handoff, error)
@@ -51,6 +52,8 @@ func New(config Config) (*Handoff, error)
 `Root` and `Keys` come from the `instance.Setup`. `Keys` is the root's public keys, read from `RASTRILLO_ROOT_KEYS`: one or two comma-separated `<kid>.<base64url>` values with distinct kids. `Origin` is this instance's own origin. `New` returns `ErrConfig` if `Sessions` or `DB` is missing, if `Root` or `Origin` is malformed, if `Root` equals `Origin`, if `Keys` is empty or has more than 8 keys, or if `Sessions` is in signed mode. Path tenants use the hub's session instead of handoff.
 
 `MaxAge` is how long a handoff session lasts before it goes back through the root. It defaults to one hour. `Suspended` is optional: pass `receiver.Suspended` from [`roster`](/docs/reference/roster), and a suspended account is refused at sign-in. `Now` and `Logger` default to `time.Now` and `slog.Default()`.
+
+`SubjectFor` is optional too. Without it, the session's subject is the root's. Set it when your sessions carry your own ID, such as a row ID that `sessions.UserID` parses: it receives the root's subject and returns yours. `Consume` calls it after every check passes and before it spends the assertion. An error or an empty subject shows the refusal page but does not spend the assertion or clear the nonce cookie, so the person can reload the page to retry while the assertion is valid, for at most two minutes. A spent assertion is refused before `SubjectFor` runs. Two first uses of the same assertion can race and both call it, though only one signs in, so `SubjectFor` must be idempotent.
 
 ## Enter and Consume
 
@@ -64,7 +67,7 @@ func (h *Handoff) Consume(w http.ResponseWriter, r *http.Request)
 
 `Enter` answers GET and HEAD. It sets a short-lived nonce cookie for this browser and sends it to the root with a 303. `?next=` says where to land afterwards, and only a local path is kept. A `next` that would make the nonce cookie longer than 2048 bytes becomes `/`, because browsers drop a cookie that is too large.
 
-`Consume` answers POST. It checks the root's signed assertion, that the nonce is this browser's, that the account is not suspended, and that the assertion has not been used before. Then it signs the person in with `Method` `"handoff"` and sends them to `next`. A check that fails never spends the assertion.
+`Consume` answers POST. It checks the root's signed assertion, that the nonce is this browser's, that the account is not suspended, and that the assertion has not been used before. Then it signs the person in with `Method` `"handoff"`, using the subject returned by `SubjectFor` if it is set, and sends them to `next`. If a check fails or `SubjectFor` returns an error or an empty subject, `Consume` does not spend the assertion.
 
 Both answer only on the instance's own origin. A path-routed request (`basepath.PathRouted`) gets a 404. On any other host, `Enter` sends the browser to the same URL on `Origin` with a 303 and sets no cookie, and `Consume` answers 404 and changes nothing. Hosts are compared as `basepath.SameHost` compares them.
 

@@ -55,7 +55,21 @@ An account can serve its instance on its own domain. The root sends that origin 
 1. After migrations, and before you build handlers, call `ServingOrigin(ctx, db, fallback)`. It returns the stored origin, or `fallback` when there is none. Pass as `fallback` the public origin the root sends members to, such as `https://<slug>.<parent>` under a catch-all. That is `https://` and `carlos.Host()` only when the instance has no parent. Use the result as the app's origin, for handoff, sessions, CSRF and emailed links.
 2. Wrap the app's handler in `RedirectToOrigin(origin, handler)`. Requests on any other host go to the same path and query on `origin`. The platform's own paths are answered on every host: `/_carlos/*`, `/api/version` and `/healthz`. An empty `origin` redirects nothing. Any other `origin` must be `https://` and a lower-case host with no path, or `RedirectToOrigin` returns an error. In local development, pass a real `https://` origin, or `""` to leave every host alone. For a path-routed tenant, wrap `RedirectToOrigin` inside `basepath`'s handler.
 3. Build the roster verifier with the platform host, `https://` and `carlos.Host()`, as its audience, never the serving origin. Roster delivery then keeps working when the custom domain does not.
-4. Set `roster.Config.OnOrigin` to shut the server down gracefully, so the platform starts the app again on the new origin. Start the shutdown in its own goroutine: `OnOrigin` runs inside the roster request, which the shutdown waits for.
+4. Make `roster.Config.OnOrigin` stop the server, so the platform starts the app again on the new origin. Create a context with `context.WithCancel`, pass its `Done()` as `rastrillo.Options.Stop`, and call its cancel func from `OnOrigin`. `Serve` then drains and returns as it does on SIGTERM. Calling cancel returns immediately, so `OnOrigin` can return while shutdown waits for the roster request to finish.
+
+```go
+stopping, stop := context.WithCancel(context.Background())
+defer stop()
+receiver, err := roster.New(roster.Config{
+	// ...
+	OnOrigin: func(previous, next string) { stop() },
+})
+// ...
+return rastrillo.Run(rastrillo.Options{
+	// ...
+	Stop: stopping.Done(),
+})
+```
 
 The redirect is a 307 with `Cache-Control: no-store`. A 301 or 308 would stay in visitors' browsers and keep sending them to the custom domain after the owner goes back to the default address. A 307 also keeps a POST's method and body. Sessions do not move with the origin, so people sign in again on the new one.
 

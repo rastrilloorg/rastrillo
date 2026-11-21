@@ -55,6 +55,16 @@ type Config struct {
 	// can brand it. It must answer with http.StatusForbidden; the
 	// Cache-Control header is already set. Nil gets a plain page.
 	RenderRefusal func(http.ResponseWriter, *http.Request, RefusalPage)
+
+	// SubjectFor, if set, turns the root's subject into the one this
+	// app's sessions carry, such as a row ID that sessions.UserID can
+	// parse. Consume calls it once every check has passed and before it
+	// spends the assertion, so an error or an empty subject refuses the
+	// handoff and leaves the assertion and the nonce cookie for a retry.
+	// A spent assertion is refused before SubjectFor runs, but two first
+	// uses can race and both call it, so it must be idempotent. Nil keeps
+	// the root's subject.
+	SubjectFor func(ctx context.Context, rootSubject string) (string, error)
 }
 
 // RefusalPage is what a refused handoff tells the person. LinkText and
@@ -77,6 +87,7 @@ type Handoff struct {
 	now           func() time.Time
 	logger        *slog.Logger
 	renderRefusal func(http.ResponseWriter, *http.Request, RefusalPage)
+	subjectFor    func(context.Context, string) (string, error)
 }
 
 func New(config Config) (*Handoff, error) {
@@ -105,6 +116,7 @@ func New(config Config) (*Handoff, error) {
 		now:           config.Now,
 		logger:        config.Logger,
 		renderRefusal: config.RenderRefusal,
+		subjectFor:    config.SubjectFor,
 	}
 	if handoff.renderRefusal == nil {
 		handoff.renderRefusal = renderDefaultRefusal

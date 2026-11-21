@@ -3,6 +3,7 @@ package handoff_test
 import (
 	"bytes"
 	"context"
+	"errors"
 	"html"
 	"log/slog"
 	"net/http"
@@ -385,4 +386,122 @@ func TestConsumeIsNotFoundOnAnotherHost(t *testing.T) {
 	}
 	// Nothing was spent, so the same assertion still works on the origin.
 	assertSignedIn(t, instance, instance.post(token, cookie))
+}
+
+func TestConsumeSignsInWithTheSubjectSubjectForReturns(t *testing.T) {
+	var rootSubjects []string
+	instance := newConsumer(t, func(config *handoff.Config) {
+		config.SubjectFor = func(
+			_ context.Context, rootSubject string,
+		) (string, error) {
+			rootSubjects = append(rootSubjects, rootSubject)
+			return "42", nil
+		}
+	})
+	cookie, nonce := instance.start(t, "/")
+	recorder := instance.post(instance.sign(t, nonce, nil), cookie)
+	assertSignedIn(t, instance, recorder)
+	sessionCookie, _ := instance.sessionCookie(recorder)
+	if got := instance.sessionFrom(t, sessionCookie).Subject; got != "42" {
+		t.Errorf("session subject = %q, want 42", got)
+	}
+	if len(rootSubjects) != 1 || rootSubjects[0] != "u1" {
+		t.Errorf("SubjectFor got %q, want [u1]", rootSubjects)
+	}
+}
+
+// A lookup that fails, say because the roster has not delivered the
+// member yet, must not cost the person their handoff: the same POST
+// works once the lookup does.
+func TestConsumeRefusesWhenSubjectForFailsAndLeavesTheAssertion(
+	t *testing.T,
+) {
+	failure := errors.New("member not in the roster yet")
+	instance := newConsumer(t, func(config *handoff.Config) {
+		config.SubjectFor = func(context.Context, string) (string, error) {
+			if failure != nil {
+				return "", failure
+			}
+			return "42", nil
+		}
+	})
+	cookie, nonce := instance.start(t, "/")
+	token := instance.sign(t, nonce, nil)
+	recorder := instance.post(token, cookie)
+	assertRefused(t, instance, recorder, refusalTitle, refusalText)
+	if !strings.Contains(instance.log.String(), failure.Error()) {
+		t.Errorf("log lacks the SubjectFor error: %s", instance.log)
+	}
+	for _, set := range recorder.Result().Cookies() {
+		if set.Name == "__Host-carlos-enter" {
+			t.Errorf("the refusal changed the nonce cookie: %+v", set)
+		}
+	}
+
+	failure = nil
+	retry := instance.post(token, cookie)
+	assertSignedIn(t, instance, retry)
+	sessionCookie, _ := instance.sessionCookie(retry)
+	if got := instance.sessionFrom(t, sessionCookie).Subject; got != "42" {
+		t.Errorf("session subject = %q, want 42", got)
+	}
+	assertNonceCleared(t, retry)
+}
+
+func TestConsumeRefusesAnEmptySubjectFromSubjectFor(t *testing.T) {
+	instance := newConsumer(t, func(config *handoff.Config) {
+		config.SubjectFor = func(context.Context, string) (string, error) {
+			return "", nil
+		}
+	})
+	cookie, nonce := instance.start(t, "/")
+	recorder := instance.post(instance.sign(t, nonce, nil), cookie)
+	assertRefused(t, instance, recorder, refusalTitle, refusalText)
+	if !strings.Contains(instance.log.String(), "empty subject") {
+		t.Errorf("refused for another reason; log: %s", instance.log)
+	}
+}
+
+// SubjectFor may touch the app's own tables, so a handoff the checks
+// refuse never reaches it.
+func TestConsumeCallsSubjectForOnlyAfterTheChecksPass(t *testing.T) {
+	called := false
+	instance := newConsumer(t, func(config *handoff.Config) {
+		config.Suspended = func(context.Context) (bool, error) {
+			return true, nil
+		}
+		config.SubjectFor = func(context.Context, string) (string, error) {
+			called = true
+			return "42", nil
+		}
+	})
+	cookie, nonce := instance.start(t, "/")
+	recorder := instance.post(instance.sign(t, nonce, nil), cookie)
+	assertRefused(t, instance, recorder, suspendedTitle, suspendedText)
+	if called {
+		t.Error("SubjectFor ran for a suspended account")
+	}
+}
+
+// SubjectFor is app code, so a replayed assertion is refused before it
+// runs again.
+func TestConsumeRefusesAReplayWithoutCallingSubjectFor(t *testing.T) {
+	calls := 0
+	instance := newConsumer(t, func(config *handoff.Config) {
+		config.SubjectFor = func(context.Context, string) (string, error) {
+			calls++
+			return "42", nil
+		}
+	})
+	cookie, nonce := instance.start(t, "/")
+	token := instance.sign(t, nonce, nil)
+	assertSignedIn(t, instance, instance.post(token, cookie))
+	again := instance.post(token, cookie)
+	assertRefused(t, instance, again, refusalTitle, refusalText)
+	if !strings.Contains(instance.log.String(), "replay") {
+		t.Errorf("refused for another reason; log: %s", instance.log)
+	}
+	if calls != 1 {
+		t.Errorf("SubjectFor ran %d times, want once", calls)
+	}
 }
