@@ -18,6 +18,8 @@ const (
 		`Use a pointer for a value that may be null`
 	msgCycle = `type %s contains itself, ` +
 		`which a JSON Schema here can't describe. Break the cycle with an ID`
+	msgNestedNone = `field %s.%s holds op.None, ` +
+		`which can only be a whole result. Remove the field`
 )
 
 // Define's refusals. Define prefixes each but msgBadID with "op: <id>: ",
@@ -40,4 +42,9 @@ const (
 		`Remove it, or set Access to rastrillo.Read`
 	msgQueryNotFlat = `InQuery needs every input field to be a string, ` +
 		`number or bool, but %s is not. Remove InQuery to take a JSON body`
+	msgInputNotObject = `the input type %s is not a JSON object ` +
+		`on the wire. Use a struct whose fields have JSON names`
+	msgResultNotObject = `the result type %s is not a JSON object ` +
+		`on the wire. Use a struct whose fields have JSON names, ` +
+		`or op.None when there is nothing to return`
 )

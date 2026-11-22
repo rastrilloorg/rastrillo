@@ -204,7 +204,9 @@ type None struct{}
 
 `None` is the result of an operation that has nothing to return. Its
 result schema is `{"type":"null"}`. As an input it is an empty object,
-for an operation that takes no arguments.
+for an operation that takes no arguments. It can only be a whole input
+or result. `Define` refuses a field of type `op.None`, because JSON
+writes that field as `{}`, not `null`.
 
 ## Define, Spec and Named
 
@@ -231,9 +233,10 @@ func (named *Named[In, Out]) Call(ctx context.Context, rc *rastrillo.Ctx, input 
 
 `Define` declares a hand-written operation that the page, the API and
 MCP all serve from one function. The page calls `Call` with typed input.
-The API and MCP call `Descriptor.Invoke`, which decodes the JSON with
-`DecodeInput` into a fresh `In` and then calls `Call`. `Call` runs
-`Check` before `run`, so a caller who is refused never reaches it.
+The API and MCP call `Descriptor.Invoke`, which runs `Check`, then
+decodes the JSON with `DecodeInput` into a fresh `In`, then calls `run`.
+`Call` runs `Check` before `run` too. A refused caller never reaches
+`run`; the refusal comes before any input error.
 
 ```go
 var Publish = op.Define("posts.publish", op.Spec{
@@ -255,6 +258,8 @@ would fail at a door. It panics when:
 - `Description` is empty, `Access` is not `rastrillo.Read` or
   `rastrillo.Write`, or `run` is nil;
 - `In` is not a struct, or `Out` is not a struct or `None`;
+- `In` or `Out` is a struct that JSON doesn't write as an object, such
+  as `time.Time`;
 - a field's JSON name or type can't be described, or `CheckFlags`
   refuses the flags;
 - `InQuery` is set on a write, or on an input with a field that is not a

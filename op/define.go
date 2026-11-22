@@ -60,6 +60,7 @@ func Define[In, Out any](
 	named.Descriptor = describeSpec(id, spec)
 	named.Descriptor.Input = schemaOrPanic(id, inputType, input)
 	named.Descriptor.Result = schemaOrPanic(id, resultType, output)
+	checkObjects(id, named.Descriptor, inputType, resultType)
 	named.Descriptor.Invoke = named.invoke
 	// CheckFlags's message already starts "op: <id>", so it is not
 	// prefixed again.
@@ -148,6 +149,28 @@ func validateSpec(id string, spec Spec, inputType reflect.Type) {
 	case spec.InQuery && spec.Access != rastrillo.Read:
 		panic(defineFailure(id, msgQueryWrite))
 	}
+}
+
+// checkObjects refuses a struct the codec writes as something else, such
+// as time.Time's string: DecodeInput takes only an object, and MCP
+// serves only an object or a whole None's null.
+func checkObjects(
+	id string, descriptor Descriptor, inputType, resultType reflect.Type,
+) {
+	if !isObject(descriptor.Input) {
+		panic(defineFailure(id, fmt.Sprintf(msgInputNotObject, inputType)))
+	}
+	if resultType != noneType && !isObject(descriptor.Result) {
+		panic(defineFailure(id,
+			fmt.Sprintf(msgResultNotObject, resultType)))
+	}
+}
+
+func isObject(described []byte) bool {
+	var kind struct {
+		Type any `json:"type"`
+	}
+	return json.Unmarshal(described, &kind) == nil && kind.Type == "object"
 }
 
 func schemaOrPanic(id string, goType reflect.Type, way direction) []byte {

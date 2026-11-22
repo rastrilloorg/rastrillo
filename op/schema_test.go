@@ -430,6 +430,10 @@ func conforms(t *testing.T, schema, document []byte) error {
 }
 
 func conformsAt(path string, described map[string]any, value any) error {
+	excluded, hasNot := described["not"].(map[string]any)
+	if hasNot && conformsAt(path, excluded, value) == nil {
+		return fmt.Errorf("%s: %v is %v", path, value, excluded)
+	}
 	if !typeAllows(described["type"], value) {
 		return fmt.Errorf("%s: %v is not %v", path, value, described["type"])
 	}
@@ -499,4 +503,110 @@ func typeAllows(declared, value any) bool {
 	}
 	return slices.Contains(names, any(kind)) ||
 		kind == "integer" && slices.Contains(names, any("number"))
+}
+
+type noneInside struct {
+	Empty None `json:"empty"`
+}
+
+type noneInList struct {
+	Empties []None `json:"empties"`
+}
+
+type noneInMap struct {
+	Empties map[string]None `json:"empties"`
+}
+
+type noneBehindPointer struct {
+	Empty *None `json:"empty"`
+}
+
+// TestNoneIsNullOnlyAsAWholeResult: invoke turns a None result into
+// nil, which the doors answer as nothing, but a None inside a result
+// still encodes as {}, so null there would describe what is never
+// written. Nested anywhere, in either direction, it is refused.
+func TestNoneIsNullOnlyAsAWholeResult(t *testing.T) {
+	cases := []struct {
+		goType reflect.Type
+		owner  string
+	}{
+		{reflect.TypeFor[noneInside](), "noneInside"},
+		{reflect.TypeFor[noneInList](), "noneInList"},
+		{reflect.TypeFor[noneInMap](), "noneInMap"},
+		{reflect.TypeFor[noneBehindPointer](), "noneBehindPointer"},
+	}
+	for _, each := range cases {
+		for _, way := range []direction{input, output} {
+			if way == input && each.owner == "noneBehindPointer" {
+				continue // a pointer in an input is refused for that
+			}
+			field := "Empty"
+			if each.owner == "noneInList" || each.owner == "noneInMap" {
+				field = "Empties"
+			}
+			want := fmt.Sprintf(msgNestedNone, each.owner, field)
+			described, err := schemaFor(each.goType, way)
+			if err == nil || err.Error() != want {
+				t.Errorf("schemaFor(%s, %d) = %s, %v\nwant error %q",
+					each.goType, way, described, err, want)
+			}
+		}
+	}
+	sameJSON(t, mustSchema(t, reflect.TypeFor[None](), output),
+		`{"type":"null"}`)
+}
+
+// ownDecoder reads itself, so its Go kind says nothing about its JSON.
+type ownDecoder struct{}
+
+func (*ownDecoder) UnmarshalJSON([]byte) error { return nil }
+
+type anythingInput struct {
+	Payload any                     `json:"payload"`
+	Raw     encodingjson.RawMessage `json:"raw"`
+	Own     ownDecoder              `json:"own"`
+	Maybe   Nullable[any]           `json:"maybe"`
+}
+
+// TestAnInputOfAnythingStillExcludesNull: DecodeInput refuses null for
+// any, raw JSON and a type that decodes itself, so their schemas say
+// so; Nullable still lets null through, and an output stays {}.
+func TestAnInputOfAnythingStillExcludesNull(t *testing.T) {
+	described := mustSchema(t, reflect.TypeFor[anythingInput](), input)
+	notNull := `{"not":{"type":"null"}}`
+	sameJSON(t, described, `{
+		"type":"object",
+		"properties":{
+			"payload":`+notNull+`,
+			"raw":`+notNull+`,
+			"own":`+notNull+`,
+			"maybe":{}
+		},
+		"required":["payload","raw","own"],
+		"additionalProperties":false
+	}`)
+	const filled = `"payload":1,"raw":[2],"own":"3"`
+	for _, sent := range []struct {
+		document string
+		accepted bool
+	}{
+		{`{` + filled + `}`, true},
+		{`{` + filled + `,"maybe":null}`, true},
+		{`{"payload":null,"raw":[2],"own":"3"}`, false},
+		{`{"payload":1,"raw":null,"own":"3"}`, false},
+		{`{"payload":1,"raw":[2],"own":null}`, false},
+	} {
+		schemaErr := conforms(t, described, []byte(sent.document))
+		var decoded anythingInput
+		decodeErr := DecodeInput([]byte(sent.document), &decoded)
+		if (schemaErr == nil) != sent.accepted {
+			t.Errorf("conforms(%s) = %v, want accepted %v",
+				sent.document, schemaErr, sent.accepted)
+		}
+		if (decodeErr == nil) != sent.accepted {
+			t.Errorf("DecodeInput(%s) = %v, want accepted %v",
+				sent.document, decodeErr, sent.accepted)
+		}
+	}
+	sameJSON(t, mustSchema(t, reflect.TypeFor[any](), output), `{}`)
 }

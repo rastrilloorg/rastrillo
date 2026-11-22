@@ -8,6 +8,7 @@ import (
 	"slices"
 	"strings"
 	"testing"
+	"time"
 
 	json "github.com/go-json-experiment/json"
 
@@ -222,6 +223,11 @@ type untitled struct {
 	Title string
 }
 
+// ownWriter writes itself, so its schema can't promise an object.
+type ownWriter struct{}
+
+func (ownWriter) MarshalJSON() ([]byte, error) { return []byte(`1`), nil }
+
 func TestDefineRefusesWhatWouldFailAtADoor(t *testing.T) {
 	write := Spec{Description: "Create a note.", Access: rastrillo.Write}
 	read := Spec{Description: "List notes.", Access: rastrillo.Read}
@@ -271,6 +277,29 @@ func TestDefineRefusesWhatWouldFailAtADoor(t *testing.T) {
 			})
 		}, prefixed("notes.create",
 			fmt.Sprintf(msgResultNotStruct, "int"))},
+		{"a time input", func() {
+			Define("notes.create", write, func(
+				context.Context, *rastrillo.Ctx, time.Time) (note, error) {
+				return note{}, nil
+			})
+		}, prefixed("notes.create",
+			fmt.Sprintf(msgInputNotObject, "time.Time"))},
+		{"a time result", func() {
+			Define("notes.create", write, func(
+				context.Context, *rastrillo.Ctx, noteInput) (time.Time,
+				error) {
+				return time.Time{}, nil
+			})
+		}, prefixed("notes.create",
+			fmt.Sprintf(msgResultNotObject, "time.Time"))},
+		{"a result that writes itself", func() {
+			Define("notes.create", write, func(
+				context.Context, *rastrillo.Ctx, noteInput) (ownWriter,
+				error) {
+				return ownWriter{}, nil
+			})
+		}, prefixed("notes.create",
+			fmt.Sprintf(msgResultNotObject, "op.ownWriter"))},
 		{"an untagged input field", func() {
 			Define("notes.create", write, func(
 				context.Context, *rastrillo.Ctx, untitled) (note, error) {

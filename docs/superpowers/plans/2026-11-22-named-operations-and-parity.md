@@ -299,6 +299,38 @@ string's constant. Skipped, with reasons:
 - **`rastrillo routes --check`** [`unmarkedRoutes`]:
   `This app declares operations. Each route must name one or explain why it has none. These routes don't:\n\n%s\nUse route.Operation to name each route's operation. Use route.PageOnly for routes agents should not use.`
 
+### Added in the final review's fix wave
+
+Reviewed by Luna (gpt-6-luna) on 2026-11-22, with the docs prose for
+the same fixes. Skipped, with reasons:
+
+- `msgEmptyToolError`: Luna's "; include error content" names a fix the
+  developer cannot make (`mcp.New` builds the tool error), so the draft
+  stands.
+- `msgListUnread`: Luna's "; return a list of tools" likewise names a
+  fix the developer cannot make (`mcp.New` builds the list; the cause is
+  the mount or the token), so the draft stands.
+
+- **`schemaFor` error** for a nested `op.None` [`msgNestedNone`]:
+  `field %s.%s holds op.None, which can only be a whole result. Remove the field`
+- **`op.Define` panics** for a struct JSON doesn't write as an object:
+  - [`msgInputNotObject`]: `the input type %s is not a JSON object on the wire. Use a struct whose fields have JSON names`
+  - [`msgResultNotObject`]: `the result type %s is not a JSON object on the wire. Use a struct whose fields have JSON names, or op.None when there is nothing to return`
+- **`api` 422 `invalid` for arguments sent where the operation doesn't
+  read them:**
+  - [`msgQueryOnPost`]: `Send the arguments in the JSON body, not in the query string.`
+  - [`msgBodyOnGet`] (Luna: "request body" for "a body"):
+    `Send the arguments in the query string, not in the request body.`
+- **`paritytest` failures for an answer it can't read:**
+  - [`msgNoBody`]: `%s answered %s with no body for its result; return the result`
+  - [`msgNotJSON`]: `%s answered %s with a body that isn't one JSON value: %v; return one JSON value`
+  - [`msgNotObject`]: `%s answered %s with %s, not a JSON object; return an object`
+  - [`msgEmptyToolError`]: `MCP answered %s with a tool error that has no content`
+  - [`msgListUnread`]: `the MCP tool list for Surface.Token answered %d with %s, not a list of tools`
+- **`paritytest.Run` failure** for field messages that differ
+  [`msgFieldsDiffer`]:
+  `step %q: API refused fields with %v; MCP refused fields with %v; make both doors refuse the same fields with the same messages`
+
 ---
 
 ### Task 1: Human-only comes first, at every door

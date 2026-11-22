@@ -60,6 +60,8 @@ the same field as `published_at`.
 ### Input and output types
 
 - The input is a struct, and the result is a struct or `op.None`.
+  Structs must be JSON objects on the wire, so `time.Time` is refused. A
+  field can't hold `op.None`.
 - A required input field is a plain value. A field a caller may leave
   out is `op.Opt[T]`, and one that may be `null` is `op.Nullable[T]`.
   A pointer in an input is refused.
@@ -70,6 +72,9 @@ the same field as `published_at`.
   `op.Opt` or `op.Nullable`.
 - Strings, numbers, bools, structs, slices and maps with string keys
   are allowed. A type that contains itself is refused.
+- A field of type `any`, raw JSON, or a type with its own JSON methods
+  may hold any JSON value except `null`. Use `op.Nullable` to allow
+  `null`.
 
 `Input` and `Result` on the descriptor are JSON Schema that `Define`
 derives from these types, so they can't drift from the code.

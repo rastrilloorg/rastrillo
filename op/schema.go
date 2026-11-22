@@ -29,6 +29,11 @@ const (
 func schemaFor(
 	goType reflect.Type, way direction,
 ) (encodingjson.RawMessage, error) {
+	// None is null only as a whole result, which invoke turns into nil;
+	// inside a value it would encode as {}, so describe refuses it there.
+	if goType == noneType {
+		return json.Marshal(noneSchema[way], json.Deterministic(true))
+	}
 	walk := walk{way: way, path: map[reflect.Type]bool{}}
 	described, err := walk.describe(goType,
 		place{owner: typeName(goType), declared: goType})
@@ -78,12 +83,28 @@ var fixed = map[reflect.Type]schema{
 			{"amount", typed("integer")}, {"currency", typed("string")}}},
 		{"required", []string{"amount"}},
 		{"additionalProperties", false}},
-	reflect.TypeFor[encodingjson.RawMessage](): {},
-	reflect.TypeFor[jsontext.Value]():          {},
+}
+
+// anything is the schema of a value whose Go type says nothing about
+// its JSON: any, raw JSON, a type that reads or writes itself. In an
+// input it still excludes null, which DecodeInput refuses there.
+var anything = [...]schema{
+	input:  {{"not", typed("null")}},
+	output: {},
+}
+
+// noneSchema is a whole None: an input with nothing in it, because MCP
+// needs an object for a tool's input, and a result of null.
+var noneSchema = [...]schema{
+	input: {{"type", "object"}, {"properties", schema{}},
+		{"additionalProperties", false}},
+	output: typed("null"),
 }
 
 var (
 	durationType = reflect.TypeFor[time.Duration]()
+	rawType      = reflect.TypeFor[encodingjson.RawMessage]()
+	valueType    = reflect.TypeFor[jsontext.Value]()
 	numberType   = reflect.TypeFor[encodingjson.Number]()
 	noneType     = reflect.TypeFor[None]()
 	optionalType = reflect.TypeFor[interface{ optional() }]()
@@ -133,8 +154,10 @@ func (walk *walk) describe(goType reflect.Type, at place) (schema, error) {
 		return known, nil
 	}
 	switch {
-	case goType == noneType && walk.way == output:
-		return typed("null"), nil
+	case goType == noneType:
+		return nil, fmt.Errorf(msgNestedNone, at.owner, at.field)
+	case goType == rawType || goType == valueType:
+		return anything[walk.way], nil
 	case goType == numberType && walk.way == output:
 		// api.Encode writes a Number as the number it holds.
 		return typed("number"), nil
@@ -147,11 +170,11 @@ func (walk *walk) describe(goType reflect.Type, at place) (schema, error) {
 		if goType.NumMethod() > 0 {
 			return nil, at.unsupported()
 		}
-		return schema{}, nil
+		return anything[walk.way], nil
 	case presence(goType):
 		return walk.present(goType, at)
 	case implementsAny(goType, ownJSON[walk.way]):
-		return schema{}, nil
+		return anything[walk.way], nil
 	case implementsAny(goType, ownText[walk.way]):
 		return typed("string"), nil
 	}
@@ -253,11 +276,15 @@ func (walk *walk) dictionary(goType reflect.Type, at place) (schema, error) {
 }
 
 // withNull widens a schema's type to admit null. A schema with no type
-// admits null already.
+// admits null already, unless it is anything's input schema, which
+// excludes only null.
 func withNull(described schema) schema {
 	index := slices.IndexFunc(described, func(each entry) bool {
 		return each.name == "type"
 	})
+	if index < 0 && len(described) == 1 && described[0].name == "not" {
+		return schema{}
+	}
 	if index < 0 {
 		return described
 	}
