@@ -1,7 +1,7 @@
 # Agent parity: every Patrix and dashboard action through an API and MCP
 
 **Date:** 2026-11-22
-**Status:** draft for Paul's approval, with the decisions of 2026-11-22 folded in
+**Status:** approved by Paul 2026-11-22
 **Builds on:**
 - the JSON API spec: `docs/superpowers/specs/2026-10-05-json-api-design.md`
 - the MCP spec, which describes spec 3: `docs/superpowers/specs/2026-10-25-mcp-design.md`
