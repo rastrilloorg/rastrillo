@@ -323,7 +323,9 @@ it. `ErrUnauthorized` is 401 with
 `WWW-Authenticate: Bearer`, and `ErrUnavailable` is 503. Any other error
 is a 500: the error text goes to the log under a fresh ref, and the
 response carries only the ref. `op.Forbidden.Reason` is logged and never
-sent.
+sent. `op.HumanOnly` is 403 `human_only`. Both doors log it at Info after
+applying `Config.Redact`, with the operation's ID and the caller, so an
+agent's attempt leaves a record.
 
 ```go
 var ErrUnauthorized = errors.New("rastrillo/api: unauthorized")

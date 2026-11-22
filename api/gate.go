@@ -255,7 +255,7 @@ func (gate Gate) admitting(
 		}
 		if admit != nil {
 			if err := admit(actor); err != nil {
-				Refuse(response, request, err)
+				Refuse(response, rastrillo.WithActor(request, actor), err)
 				return
 			}
 		}

@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	encodingjson "encoding/json"
+	"log/slog"
 	"maps"
 	"net/http"
 	"net/http/httptest"
@@ -455,5 +456,37 @@ func TestArgumentsInTheUnusedPlaceAreRefusedBeforeInvoke(t *testing.T) {
 	}
 	if calls != 0 {
 		t.Fatalf("Invoke ran %d times, want 0", calls)
+	}
+}
+
+// A human-only refusal leaves an audit line, as a policy's Forbidden
+// does: admission refuses before the request line, and an agent trying
+// a person's operation should leave a trace.
+func TestAHumanOnlyRefusalIsLogged(t *testing.T) {
+	var calls int
+	var logs strings.Builder
+	audited := config()
+	audited.Logger = slog.New(slog.NewTextHandler(&logs, nil))
+	audited.Redact = func(text string) string {
+		return strings.ReplaceAll(text, "aw000000000a", "aw-[redacted]")
+	}
+	tree := mustNew(t, audited, Operations(handPurge(&calls))...)
+	recorder := serve(tree, http.MethodPost, "/api/v1/notes/purge",
+		"agent-write", `{}`)
+	assertCode(t, recorder, http.StatusForbidden, "human_only")
+	var lines []string
+	for line := range strings.Lines(logs.String()) {
+		if strings.Contains(line, `msg="api: human_only"`) {
+			lines = append(lines, line)
+		}
+	}
+	if len(lines) != 1 {
+		t.Fatalf("%d human_only lines, want 1: %s", len(lines), &logs)
+	}
+	if !strings.Contains(lines[0], "operation=notes.purge") ||
+		!strings.Contains(lines[0], "aw-[redacted]") ||
+		strings.Contains(lines[0], "aw000000000a") {
+		t.Errorf("the line does not name the operation and the redacted "+
+			"actor: %s", lines[0])
 	}
 }

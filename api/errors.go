@@ -179,6 +179,7 @@ func Refusal(request *http.Request, err error) (int, Error) {
 	)
 	switch {
 	case errors.As(err, &humanOnly):
+		logHumanOnly(request, humanOnly.ID)
 		return tableRefusal("human_only")
 	case errors.Is(err, errAgentSession):
 		return codes["invalid"].status,
@@ -231,6 +232,27 @@ func logForbidden(request *http.Request, reason string) {
 	loggerFrom(request).Info("api: forbidden",
 		"reason", redactorFrom(request)(reason),
 		"method", method(request), "path", path(request))
+}
+
+// logHumanOnly is the audit line for an agent refused a person's
+// operation. Admission refuses before the request line, so without it
+// the attempt would leave no trace. Every value but the method goes
+// through the redactor, as in the request line.
+func logHumanOnly(request *http.Request, id string) {
+	redact, ctx := redactorFrom(request), context.Background()
+	attributes := []slog.Attr{slog.String("operation", id),
+		slog.String("method", method(request)),
+		slog.String("path", path(request))}
+	if request != nil {
+		ctx = request.Context()
+		actor, _ := rastrillo.ActorFromContext(ctx)
+		for _, each := range actor.LogAttrs() {
+			attributes = append(attributes,
+				slog.String(each.Key, redact(each.Value.String())))
+		}
+	}
+	loggerFrom(request).LogAttrs(ctx, slog.LevelInfo, "api: human_only",
+		attributes...)
 }
 
 // logInternal logs err under a fresh ref and returns the ref, the only

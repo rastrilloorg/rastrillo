@@ -645,3 +645,37 @@ func TestCallingAHumanOnlyToolAnswersHumanOnlyWhateverElseIsWrong(
 		})
 	}
 }
+
+// TestAHumanOnlyCallIsLogged: the API's audit line for a human-only
+// refusal, written for a tool call too.
+func TestAHumanOnlyCallIsLogged(t *testing.T) {
+	config := testConfig()
+	logged := &lockedBuffer{}
+	config.Gate.Logger = slog.New(slog.NewTextHandler(logged, nil))
+	config.Gate.Redact = func(text string) string {
+		return strings.ReplaceAll(text, "tok-writer", "tok-[redacted]")
+	}
+	var invokes atomic.Int64
+	url := serve(t, config, withTokensCreate(&invokes)...)
+	session, _ := connect(t, url, writerToken, "")
+	refused := refusalOf(t, callTool(t, session, "tokens_create", nil))
+	if refused.Code != "human_only" {
+		t.Fatalf("tokens_create answered %+v, want human_only", refused)
+	}
+	var lines []string
+	for line := range strings.Lines(logged.String()) {
+		if strings.Contains(line, `msg="api: human_only"`) {
+			lines = append(lines, line)
+		}
+	}
+	if len(lines) != 1 {
+		t.Fatalf("%d human_only lines, want 1: %s",
+			len(lines), logged.String())
+	}
+	if !strings.Contains(lines[0], "operation=tokens.create") ||
+		!strings.Contains(lines[0], "tok-[redacted]") ||
+		strings.Contains(lines[0], "tok-writer") {
+		t.Errorf("the line does not name the operation and the redacted "+
+			"actor: %s", lines[0])
+	}
+}
