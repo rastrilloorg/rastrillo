@@ -176,14 +176,15 @@ func TestTheOneTapNamesTheRememberedMethod(t *testing.T) {
 	for _, want := range []string{
 		`<input type="hidden" name="address" value="kay@example.org">`,
 		`<input type="hidden" name="expect" value="keymail">`,
-		`aria-describedby="rst-signin-remembered"`,
-		`id="rst-signin-remembered"`,
 		`<bdi>kay@example.org</bdi>`,
-		html.EscapeString(defaultT("rastrillo.ui.signin_to_keymail")),
 	} {
 		if !strings.Contains(km, want) {
 			t.Errorf("keymail one-tap lacks %s:\n%s", want, km)
 		}
+	}
+
+	if strings.Contains(km, "rst-signin-remembered") {
+		t.Errorf("the keymail one-tap keeps a remembered line:\n%s", km)
 	}
 
 	ml := render(t, "signin", signinData(byName["returning magic link"]))

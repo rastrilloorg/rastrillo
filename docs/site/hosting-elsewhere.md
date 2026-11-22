@@ -67,7 +67,7 @@ it: an app called `notes` reads `NOTES_ORIGIN`.
 | Variable | What it is | When it is unset |
 |---|---|---|
 | `<APP>_ORIGIN` | The public `https://` address. The CSRF check and emailed sign-in links use it. | `http://localhost:8080`, with a warning. Emailed links point there, and the CSRF check compares posts with the wrong address. |
-| `<APP>_INSTANCE_KEY` | A long random secret, for apps with sign-in. Keep it out of the repository. | A new key at every start, so pending sign-in links stop working after a restart. |
+| `<APP>_INSTANCE_KEY` | A long random secret, for apps with sign-in. Keep it out of the repository. | A new key at every start, so pending sign-in links stop working after a restart, and sign-in by authenticator app is off. |
 | `<APP>_SMTP_HOST`, `<APP>_SMTP_FROM` | Your SMTP relay and the sender address. Both are required to send. | Mail is written to the log, not sent. |
 | `<APP>_SMTP_PORT`, `<APP>_SMTP_USER`, `<APP>_SMTP_PASS` | The relay's port, username and password. | |
 | `CARLOS_STORE_BUCKET`, `_REGION`, `_ENDPOINT`, `_ACCESS_KEY`, `_SECRET_KEY` | Your S3-compatible bucket, for an app that stores files with [`blobs.S3FromEnv`](/docs/reference/blobs). | No bucket: `S3FromEnv` returns no store. |

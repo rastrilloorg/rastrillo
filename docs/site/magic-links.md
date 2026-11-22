@@ -7,7 +7,7 @@ It is the framework's turnkey option. You get the whole flow (link
 minting, single-use redemption, rate limiting, sessions and CSRF) and a
 sign-in screen to use as it is or replace with your own.
 
-Starting a new app? `rastrillo new --scaffold accounts <name>` sets all of this up. This page is for adding it to an app you already have, and for how it works.
+Starting a new app? `rastrillo new --scaffold accounts <name>` sets all of this up, along with the passkey, authenticator app and passphrase people can add later: see [The default sign-in](/docs/signin). This page is for adding links to an app you already have, and for how they work.
 
 If you read nothing else on this page, read
 [the trap](#the-trap-do-not-use-sessions-userid-here). It costs people
@@ -398,4 +398,18 @@ reach your sign-in page — `?err=keymail` when an approval fails, and
 `Config.Origin` doubles as the OAuth `client_id` that keymail validates
 redirects against.
 
-By default any keymail server an address's own domain names is trusted. That is keymail's design: whoever controls a domain chooses its server, the same person who controls its mail and could receive a link anyway, and a server cannot vouch for anyone else's address, because the address it returns must match the one that was typed. To trust a closed set instead, list them in `KeymailServers` (host or host:port). An address whose server is not listed gets an ordinary link, and its server is never contacted, either to check the address or to finish a sign-in. The list applies with the screen on or off.
+Keymail is on by default, in a new app as in `auth.New`. Your server
+connects to the keymail server an address's domain names, to check the
+address and to finish the sign-in, and every one of those connections
+may only reach a public address. Loopback, private and link-local
+addresses are refused, and so are 100.64.0.0/10 (carrier-grade NAT, and
+Tailscale's range), multicast and unspecified addresses. The check runs
+as each connection opens, after DNS has answered, so a name that
+resolves somewhere private, or changes its answer between lookups,
+cannot get past it, and it applies to every redirect too. A
+`KeymailServers` list, below, replaces the rule with the list. The
+visitor's own browser going to the server is not limited: the domain's
+owner sends it there, the same party that decides where a link to that
+address is delivered.
+
+Any keymail server an address's own domain names is trusted. That is keymail's design: whoever controls a domain chooses its server, the same person who controls its mail and could receive a link anyway, and a server cannot vouch for anyone else's address, because the address it returns must match the one that was typed. To trust a closed set instead, list them in `KeymailServers` (host or host:port). An address whose server is not listed gets an ordinary link, and its server is never contacted, either to check the address or to finish a sign-in. The list applies with the screen on or off.

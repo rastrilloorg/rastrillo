@@ -102,6 +102,16 @@ func (a *Auth) noteAttempt(w http.ResponseWriter, kind, address string, expected
 	return id
 }
 
+// NoteProblem keeps address as this browser's latest attempt, as Begin
+// does when it answers with a problem, so the screen another way in
+// sends the browser back to prefills what was typed. The address rides
+// the sealed cookie, never the URL.
+func (auth *Auth) NoteProblem(
+	response http.ResponseWriter, address string,
+) {
+	auth.noteAttempt(response, attemptProblem, address, false)
+}
+
 // openAttempt reads this browser's attempt. Invalid means present and
 // not to be believed; SigninState marks it for deletion.
 func (a *Auth) openAttempt(r *http.Request) (attempt, cookieState) {

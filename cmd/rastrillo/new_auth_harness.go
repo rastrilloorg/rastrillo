@@ -7,7 +7,8 @@ import "path/filepath"
 
 // harness: every caller in the tests passes a group it stops and a
 // mailer: the harness an outbox a test can open links from, the rest
-// the logger.
+// the logger. The tests run with an instance key, without which the
+// app leaves the authenticator way off.
 func (edit *magicAuth) harness() {
 	harness := filepath.Join(edit.appDir, "harness_test.go")
 	edit.swap(harness, "func newApp(t *testing.T) http.Handler {\n"+
@@ -25,6 +26,11 @@ func (edit *magicAuth) harness() {
 			edit.filled("\tmux, _, err := %s.New(\n"+
 				"\t\tdatabase, testOrigin, group, box, logger)\n"))
 	edit.swap(harness, "\treturn mux\n}", "\treturn mux, box\n}")
+	edit.swap(harness, "func TestMain(suite *testing.M) {\n",
+		edit.fill("func TestMain(suite *testing.M) {\n"+
+			"\t// A lasting key, as a deployment sets, turns every way on.\n"+
+			"\tos.Setenv(\"__ENV___INSTANCE_KEY\",\n"+
+			"\t\t\"a key for tests, not a secret\")\n"))
 	edit.importAfter(harness, `"amadan.net/rastrillo/rastrillo/db"`,
 		"background")
 	browser := filepath.Join(edit.appDir, "browser_test.go")

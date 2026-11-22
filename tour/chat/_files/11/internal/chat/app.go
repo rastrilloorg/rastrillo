@@ -17,6 +17,7 @@ import (
 	"amadan.net/rastrillo/rastrillo/mail"
 	"amadan.net/rastrillo/rastrillo/migrate"
 	"amadan.net/rastrillo/rastrillo/perf"
+	"amadan.net/rastrillo/rastrillo/signin"
 
 	// Here, not in main, so the app's tests link the packs too.
 	_ "chat/gen/locales"
@@ -30,6 +31,7 @@ type App struct {
 	mcp      http.Handler
 	live     *live.Hub
 	auth     *auth.Auth
+	signins  *signin.Signins
 }
 
 // New migrates the database and builds the app, as one router inside the

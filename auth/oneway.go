@@ -27,29 +27,14 @@ type SigninWay string
 const (
 	WayEmail   SigninWay = "email"
 	WayPasskey SigninWay = "passkey"
+	// The secret doors (SecretDoor): an authenticator app's code, or a
+	// passphrase, each typed with the address it belongs to.
+	WayAuthenticator SigninWay = "authenticator"
+	WayPassphrase    SigninWay = "passphrase"
 )
 
 // A federated way is its provider's name, one lastsignin.Provider
 // accepts: ?way=oficina.
-
-// FederatedDoor is a sign-in another service runs, which the page
-// supplies as it supplies Passkey: auth knows nothing of where the app
-// mounted it.
-type FederatedDoor struct {
-	// Provider is the lastsignin provider this door's sign-in is
-	// remembered under (lastsignin.ProviderOficina), and the ?way= that
-	// picks it.
-	Provider string
-	// Href is where the button goes, by GET. The screen adds the page's
-	// return_to to it.
-	Href string
-	// Label is the provider's name, "Oficina ID": the button reads
-	// "Continue with" it, and the chooser's row reads it alone.
-	Label string
-	// Icon is optional: the provider's glyph as inline SVG drawn in
-	// currentColor and marked aria-hidden, which lands as written.
-	Icon template.HTML
-}
 
 // AppProblem is a problem the app found, which auth cannot name: an app
 // that refuses a verified sign-in (Config.Refused) redirects back to the
@@ -78,9 +63,9 @@ type SigninWayRow struct {
 // must still offer local ways only. An err the screen does not know is
 // the generic problem here, so it too falls to the email field. It sets
 // nothing unless OneWay is set, and never turns a problem, Sent or
-// Continue into the chooser: problems are drawn on the email door, and
-// those steps have no chooser. Home, which fills a SigninState without
-// auth, calls it too.
+// Continue into the chooser: problems are drawn on a door (the email
+// door, or a secret door for its own), and those steps have no
+// chooser. Home, which fills a SigninState without auth, calls it too.
 func (st *SigninState) ChooseWay(query url.Values) {
 	if !st.OneWay {
 		return
@@ -102,7 +87,8 @@ func (st *SigninState) ChooseWay(query url.Values) {
 // else.
 func ParseWay(value string) SigninWay {
 	switch way := SigninWay(value); {
-	case way == WayEmail, way == WayPasskey:
+	case way == WayEmail, way == WayPasskey, way == WayAuthenticator,
+		way == WayPassphrase:
 		return way
 	case lastsignin.Provider(value):
 		return way
@@ -119,6 +105,10 @@ func (st SigninState) offers(way SigninWay) bool {
 		return true
 	case WayPasskey:
 		return st.Passkey != nil
+	case WayAuthenticator:
+		return st.Authenticator != nil
+	case WayPassphrase:
+		return st.Passphrase != nil
 	}
 	return st.Federated != nil && !st.reauth() &&
 		string(way) == st.Federated.Provider
@@ -149,6 +139,12 @@ func (st SigninState) rememberedWay() SigninWay {
 		return SigninWay(rem.Provider)
 	case rem.Method == lastsignin.MethodPasskey && st.offers(WayPasskey):
 		return WayPasskey
+	case rem.Method == lastsignin.MethodTOTP &&
+		st.offers(WayAuthenticator):
+		return WayAuthenticator
+	case rem.Method == lastsignin.MethodPassphrase &&
+		st.offers(WayPassphrase):
+		return WayPassphrase
 	}
 	return WayEmail
 }
@@ -172,11 +168,11 @@ func (st SigninState) oneWayDoor() string {
 	case st.Step == StepWays:
 		return "ways"
 	}
-	switch st.currentWay() {
+	switch way := st.currentWay(); way {
 	case WayEmail:
 		return st.emailDoor()
-	case WayPasskey:
-		return "passkey"
+	case WayPasskey, WayAuthenticator, WayPassphrase:
+		return string(way)
 	}
 	return "federated"
 }
@@ -200,9 +196,9 @@ func (st SigninState) emailDoor() string {
 // shownWay is the way the drawn door belongs to, which the chooser
 // leaves out and Back returns to.
 func (st SigninState) shownWay() SigninWay {
-	switch st.Door() {
-	case "passkey":
-		return WayPasskey
+	switch door := st.Door(); door {
+	case "passkey", "authenticator", "passphrase":
+		return SigninWay(door)
 	case "federated", "ways":
 		return st.currentWay()
 	}
@@ -210,9 +206,10 @@ func (st SigninState) shownWay() SigninWay {
 }
 
 // Ways is the chooser's rows, every way but the one shown, in a fixed
-// order: the federated door, email, a passkey. "Use a different email"
-// is not a row here: it posts to Forget, and the partial draws it last
-// whenever something is remembered. Nil off the one-way screen.
+// order: the federated door, email, a passkey, an authenticator app, a
+// passphrase. "Use a different email" is not a row here: it posts to
+// Forget, and the partial draws it last whenever something is
+// remembered. Nil off the one-way screen.
 func (st SigninState) Ways() []SigninWayRow {
 	if !st.OneWay || st.Unavailable {
 		return nil
@@ -231,9 +228,13 @@ func (st SigninState) Ways() []SigninWayRow {
 		rows = append(rows, SigninWayRow{Way: WayEmail,
 			Href: st.signinHref("way", string(WayEmail)), Detail: st.address()})
 	}
-	if shown != WayPasskey && st.offers(WayPasskey) {
-		rows = append(rows, SigninWayRow{Way: WayPasskey,
-			Href: st.signinHref("way", string(WayPasskey))})
+	for _, way := range []SigninWay{
+		WayPasskey, WayAuthenticator, WayPassphrase,
+	} {
+		if way != shown && st.offers(way) {
+			rows = append(rows, SigninWayRow{Way: way,
+				Href: st.signinHref("way", string(way))})
+		}
 	}
 	return rows
 }

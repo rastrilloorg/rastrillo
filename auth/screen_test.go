@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"html"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -476,4 +477,92 @@ func TestAdmitRemembersTheWayInAndEndsTheAttempt(t *testing.T) {
 			t.Fatalf("guarded GET with only a remembered cookie: %d → %q", w.Code, w.Header().Get("Location"))
 		}
 	})
+}
+
+// invisibleTags removes every tag with its attributes, which leaves only
+// what a person reads: the hidden expect input and the URLs in
+// attributes are not text on the page.
+var invisibleTags = regexp.MustCompile(`(?s)<[^>]*>`)
+
+var oneTapLabel = regexp.MustCompile(
+	`(?s)<button rst-btn="primary block" type="submit"[^>]*>(.*?)</button>`)
+
+const expectKeymail = `<input type="hidden" name="expect" value="keymail">`
+
+func readable(page string) string {
+	return html.UnescapeString(invisibleTags.ReplaceAllString(page, " "))
+}
+
+// oneLine is readable text with its runs of space made single.
+func oneLine(page string) string {
+	return strings.Join(strings.Fields(readable(page)), " ")
+}
+
+// Keymail is detected from the typed address and never named: no door,
+// problem or answer says the word, and the remembered one-tap reads as
+// the magic-link one does.
+func TestNoKeymailInWhatPeopleRead(t *testing.T) {
+	address := "kay@example.org"
+	doors := map[string]SigninState{
+		"ask":     {Step: StepAsk},
+		"keymail": {Step: StepReturning, Remembered: byKeymail},
+		"link":    {Step: StepReturning, Remembered: byLink},
+		"continue": {Step: StepContinue,
+			ContinueURL: "https://keymail.test/authorize?state=s"},
+		"sent": {Step: StepSent, SentTo: address, SentInstead: true},
+		"keymail problem": {Step: StepAsk, Problem: ProblemKeymail,
+			Address: address},
+	}
+	for screen, oneWayScreen := range map[string]bool{
+		"classic": false, "one-way": true,
+	} {
+		for door, state := range doors {
+			state.OneWay, state.SigninPath = oneWayScreen, "/signin"
+			if oneWayScreen {
+				state.Federated = oficinaDoor
+			}
+			page := renderSignin(t, state)
+			if strings.Contains(strings.ToLower(readable(page)), "keymail") {
+				t.Errorf("%s %s door says Keymail:\n%s",
+					screen, door, readable(page))
+			}
+			if door == "keymail" {
+				checkKeymailOneTap(t, screen, page)
+			}
+		}
+	}
+}
+
+// The remembered Keymail one-tap reads like the magic-link one, and
+// still posts the hidden expect that Begin uses.
+func checkKeymailOneTap(t *testing.T, screen, page string) {
+	t.Helper()
+	label := oneTapLabel.FindStringSubmatch(page)
+	want := "Continue as kay@example.org"
+	if label == nil || oneLine(label[1]) != want {
+		t.Errorf("%s one-tap label is %q, want %q", screen, label, want)
+	}
+	if strings.Contains(page, "rst-signin-remembered") {
+		t.Errorf("%s one-tap still has the remembered line", screen)
+	}
+	if !strings.Contains(page, expectKeymail) {
+		t.Errorf("%s one-tap lost the expect input Begin needs", screen)
+	}
+}
+
+// A different address from Keymail is a hard stop, and the page that
+// says so does not name the provider either.
+func TestAKeymailMismatchDoesNotNameKeymail(t *testing.T) {
+	auth, fake := newKeymailScreen(t, nil)
+	browser := newBrowser()
+	_, state := startKeymail(t, auth, browser)
+	fake.address = "someone@example.org"
+	response := callback(auth, browser, state)
+	if response.Code != http.StatusForbidden {
+		t.Fatalf("a mismatch answered %d, want 403", response.Code)
+	}
+	body := response.Body.String()
+	if strings.Contains(strings.ToLower(body), "keymail") {
+		t.Errorf("the mismatch answer names Keymail: %q", body)
+	}
 }

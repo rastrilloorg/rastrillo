@@ -34,8 +34,8 @@ import (
 // numeric type); Method names how the credential was verified (a
 // plugin's own vocabulary — "password", "keymail", ...); AuthTime is
 // when the underlying credential was verified (zero if the plugin
-// doesn't track it — a magic link, say); At is when this session row
-// was created.
+// doesn't know it — a Keymail server that reports none, say); At is
+// when this session row was created.
 type Session struct {
 	Subject  string
 	Method   string
@@ -480,8 +480,8 @@ func (s *Sessions) Require(next http.Handler) http.Handler {
 // reference is AuthTime when the plugin recorded one (keymail's
 // auth_time), else the session row's own creation time — a session is
 // only ever minted at credential verification, so At is an honest
-// lower bound, and plugins that never set AuthTime (the magic link)
-// still converge instead of redirect-looping.
+// lower bound, and sessions with no AuthTime (Keymail whose server
+// reports none) still converge instead of redirect-looping.
 //
 // A stale-but-valid GET/HEAD redirects to SigninPath with return_to
 // plus reauth=1, so the sign-in page can say "confirm it's you" —

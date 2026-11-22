@@ -95,8 +95,8 @@ instead of a full re-sign-in.
 Freshness is measured from `AuthTime` when the plugin records one, and
 from the session row's creation time otherwise. A session is only ever
 minted at credential verification, so that fallback is an honest lower
-bound, and it is what stops a plugin that never sets `AuthTime` — the
-magic link, for one — from redirect-looping forever.
+bound, and it is what stops a session with no `AuthTime` (a Keymail
+server that reports none, for one) from redirect-looping forever.
 
 `sessions.Fresh(sess, maxAge, now)` answers the same question directly,
 if you want to step up in a handler rather than per route.

@@ -15,7 +15,7 @@ Call one as `{{template "name" dict "L" $L "Key" value ...}}`; `L` is the locali
 - **dropdown**: A zero-JS disclosure: a summary button that opens a panel of plain links. Keys: `Aria`, `Items[]` (Current, Href, Label), `Label`.
 - **empty-state**: The blank-state card: a heading, one specific sentence, and at most one call to action. Keys: `ActionHref`, `ActionLabel`, `Body`, `Hidden[]`, `PostAction`, `Title`.
 - **error-page**: The whole body of an error response: the status, one honest sentence about what happened, a way back to somewhere real, and (for a 500) the reference an operator can grep for. Keys: `BackHref`, `Body`, `HomeHref`, `Ref`, `Status`, `Title`.
-- **field**: Label + input + optional hint/help/error, the one text-like control. Keys: `Autocomplete`, `Autofocus`, `Error`, `Help`, `Hint`, `ID`, `Inputmode`, `Label`, `Max`, `Maxlength`, `Min`, `Name`, `Pattern`, `Placeholder`, `Primary`, `QuietError`, `Required`, `Short`, `Type`, `Value`.
+- **field**: Label + input + optional hint/help/error, the one text-like control. Keys: `Autocomplete`, `Autofocus`, `Error`, `Help`, `Hint`, `ID`, `Inputmode`, `Label`, `Max`, `Maxlength`, `Min`, `Minlength`, `Name`, `Pattern`, `Placeholder`, `Primary`, `QuietError`, `Required`, `Short`, `Type`, `Value`.
 - **field-check**: The one toggle mechanism: a real checkbox skinned as a switch. Keys: `Checked`, `Disabled`, `Label`, `Name`, `Value`.
 - **field-date**: One labelled date input. Keys: `Error`, `Hint`, `Label`, `Max`, `Min`, `Name`, `Plain`, `Required`, `Value`.
 - **field-daterange**: A start and an end as one labelled group: a fieldset for the pair, two of the singular date partials inside a rst-field-row, and the data-rst-range marker that tells datetime.js the two inputs belong together. Keys: `End`, `Kind`, `LegendHidden`, `Legend`, `Seed`, `Start`.
@@ -47,10 +47,17 @@ Call one as `{{template "name" dict "L" $L "Key" value ...}}`; `L` is the locali
 - **scheme-menu**: The colour-scheme control: three icon buttons, Light (sun), Dark (moon) and System (monitor), each a one-field POST form to /_theme that stores the choice in a cookie and returns to the same page. Keys: `Action`, `Card`, `Return`, `Scheme`.
 - **seg-tabs**: A segmented control of server-rendered links: edit-form Basics/Advanced (each tab its own form, so one tab's save can never clobber the other's fields) and list scope-switching. Keys: `Items[]` (Current, Href, Label), `Label`.
 - **signin**: The shipped sign-in screen: one card, brand at the start and the way in at the end. Keys: `Brand`, `HideBrand`, `Preview`, `State`.
+- **signin-add**: Part of signin-view. Keys: `Add`, `Brand`, `HideBrand`, `Preview`.
 - **signin-app-problem**: Part of signin. Keys: `Focus`, `State`.
+- **signin-brand**: Part of signin-view. Keys: `Brand`.
 - **signin-forget-way**: Part of signin. Keys: `State`.
 - **signin-glyph**: Part of signin. Keys: `Glyph`.
+- **signin-offer**: Part of signin-view. Keys: `Brand`, `HideBrand`, `Offer`.
 - **signin-one-way**: Part of signin. Keys: `Door`, `Focus`, `Gated`, `Name`, `Preview`, `Proof`, `State`.
+- **signin-options**: Part of signin-view. Keys: `Brand`, `HideBrand`, `Options`.
+- **signin-secret-door**: Part of signin. Keys: `Autocomplete`, `Door`, `Focus`, `Gated`, `ID`, `Inputmode`, `Label`, `Name`, `Proof`, `State`, `Type`.
 - **signin-title**: The document title for the same state, for the page's title block: every state has one heading and a title that says the same thing, so a screen-reader user who lands on the page hears where they are. Keys: `Brand`, `State`.
+- **signin-view**: Every page of the signin package, from its View. Keys: `Brand`, `HideBrand`, `Preview`, `View`.
+- **signin-view-title**: The title for the same page. Keys: `Brand`, `View`.
 - **stat**: One reading in a stat band: a label over a number, with an optional change under it. Keys: `Delta`, `Exact`, `Label`, `Lead`, `Note`, `Tone`, `Value`.
 - **status-pill**: A status as a tinted pill. Keys: `Label`, `Tone`.

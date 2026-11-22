@@ -385,8 +385,8 @@ type Auth struct {
 	// checks it again.
 	servers map[string]bool
 	guard   *hostGuard
-	// exchangeHTTP is the token-exchange client: nil — the library's own
-	// default — unless KeymailServers asked for a guard.
+	// exchangeHTTP is the token-exchange client: guarded when
+	// KeymailServers lists servers, public-addresses-only when nil.
 	exchangeHTTP *http.Client
 	// users and links are records mode's stores; both nil with a
 	// database.
@@ -557,6 +557,9 @@ func New(cfg Config) (*Auth, error) {
 			// matter.
 			classifier.LookupTXT = neverDelegates
 		}
+	} else {
+		classifier.HTTP = publicOnlyClient(classifyTimeout)
+		a.exchangeHTTP = publicOnlyClient(exchangeTimeout)
 	}
 
 	a.flow = &signin.Flow{

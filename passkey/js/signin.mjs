@@ -94,7 +94,9 @@ export async function ceremony({ post, authenticate, begin, finish, rpId, legacy
   }
 }
 
-function busy(btn, on) {
+// busy draws a button as busy, or not; the add page's register.mjs
+// draws its button the same way.
+export function busy(btn, on) {
   let spin = btn.querySelector("[rst-spin]");
   if (!on) {
     btn.removeAttribute("aria-busy");

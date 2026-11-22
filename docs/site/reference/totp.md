@@ -19,8 +19,24 @@ guide.
 
 ## The trust boundary
 
-Nobody is signed in from nothing: `Handlers.SignIn` demands a live
-half-session, `Handlers.StepUp` demands a session.
+Nobody is signed in from nothing by this package's own handlers:
+`Handlers.SignIn` demands a live half-session, `Handlers.StepUp`
+demands a session. The [signin](/docs/reference/signin) package does
+sign people in by address and code alone, through the calls below and
+behind its own limiter.
+
+```go
+func (h *Handlers) Check(subject, submitted string) (bool, error)
+func (h *Handlers) NewDecoy() ([]byte, error)
+func (h *Handlers) CheckDecoy(decoy []byte, submitted string) error
+```
+
+`Check` spends the subject's current code: true means a live step was
+spent, so the same code never works twice. It has no budget of its own,
+so bring a limiter. For an address with no authenticator, run
+`CheckDecoy` against a decoy made once at boot with `NewDecoy`: it does
+the same work and matches nothing, so the time an answer takes says
+nothing about who has enrolled.
 
 ## New, Config and Schema
 
@@ -56,6 +72,7 @@ it beside the data it seals. Losing it loses every enrolment.
 |---|---|
 | `Handlers.Begin` | Mints a secret and returns what to show. An unconfirmed secret from an abandoned attempt is replaced; a confirmed one is `ErrEnrolled`. |
 | `Handlers.Pending` | The enrolment `Begin` started and nobody has confirmed yet, so a set-up page can be a GET that shows the same QR after a refresh. |
+| `Handlers.PendingOrBegin` | The pending enrolment, or a new one when there is none, in one write that never replaces a pending secret: two tabs opening the set-up page at once both show the secret stored first. `ErrEnrolled` once confirmed. |
 | `Handlers.Confirm` | Checks one code against the unconfirmed secret and, if it verifies, makes the factor live. |
 | `Handlers.Disable` | Removes the authenticator, confirmed or not. |
 

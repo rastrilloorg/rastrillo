@@ -7,6 +7,7 @@ import (
 
 	"amadan.net/rastrillo/rastrillo/auth"
 	"amadan.net/rastrillo/rastrillo/internal/codeview"
+	"amadan.net/rastrillo/rastrillo/signin"
 )
 
 // The Screens page: whole screens rather than pieces of them.
@@ -63,6 +64,9 @@ type screenDoc struct {
 	// is rendered from the partial itself, in a stage frame, so this page
 	// cannot show a sign-in screen the framework does not produce.
 	Signin *auth.SigninState
+	// View is a page of the signin package, rendered from signin-view
+	// in the same frame.
+	View *signin.View
 }
 
 // screenPartials are the partials the Screens page documents. A family
@@ -72,8 +76,10 @@ type screenDoc struct {
 // head, and a meta tag has nothing a preview could show. The signin-
 // helpers are the one-way screen's parts, which only signin calls.
 var screenPartials = []string{"signin", "signin-title", "live-head",
-	"signin-one-way", "signin-app-problem", "signin-forget-way",
-	"signin-glyph"}
+	"signin-one-way", "signin-secret-door", "signin-app-problem",
+	"signin-forget-way", "signin-glyph", "signin-view",
+	"signin-view-title", "signin-offer", "signin-add", "signin-options",
+	"signin-brand"}
 
 // screenPartialView is one of screenPartials as the page shows it: its
 // name under the page's lead, carrying the marker the coverage gates
@@ -137,12 +143,23 @@ const signinSource = `{{define "title"}}{{template "signin-title" (dict "State" 
 // Only the first frame draws the backdrop: it is the same picture in
 // every frame, and nine more escaped copies of it would add some 16 KB,
 // near a quarter of the page, saying nothing new.
-const screenFrame = `{{define "ds-screen-stage"}}<div rst-stage><div rst-stage-scene aria-hidden="true">{{if .Art}}{{stageArt "rastrillo"}}{{end}}</div><div rst-page>{{template "signin" .}}</div></div>{{end}}`
+const screenFrame = `{{define "ds-screen-stage"}}<div rst-stage>` +
+	`<div rst-stage-scene aria-hidden="true">` +
+	`{{if .Art}}{{stageArt "rastrillo"}}{{end}}</div><div rst-page>` +
+	`{{if .View}}{{template "signin-view" .}}` +
+	`{{else}}{{template "signin" .}}{{end}}</div></div>{{end}}`
+
+// signinViewSource is the Template tab for the signin package's pages,
+// which an app draws through signin-view.
+const signinViewSource = `{{define "title"}}` +
+	`{{template "signin-view-title" (dict "View" .View "Brand" .Brand)}}` +
+	"{{end}}\n" + `{{define "content"}}` +
+	`{{template "signin-view" (dict "View" .View "Brand" .Brand)}}{{end}}`
 
 // screenDocs is the page's content, in page order.
 func screenDocs() []screenDoc {
 	kay := &auth.Remembered{Method: "keymail", Address: "kay@example.org"}
-	return []screenDoc{
+	docs := []screenDoc{
 		{Key: "signin-ask", Name: "Asking for an address",
 			Blurb:  "One field and one button. Nothing to remember and nothing to steal. Rastrillo does this out of the box.",
 			Signin: signinScreen(func(s *auth.SigninState) { s.Passkey = galleryPasskey })},
@@ -187,18 +204,28 @@ func screenDocs() []screenDoc {
 			Signin: signinScreen(func(s *auth.SigninState) {
 				s.Problem, s.Address = auth.ProblemKeymail, kay.Address
 			})},
-		{
-			Key:   "signin-social",
-			Name:  "Google, Apple and the rest",
-			Blurb: "We give you the buttons, drawn the way each company requires. We do not give you the sign-in itself: you wire that up to whichever provider you use.",
-			// The Google G keeps its four colours as fill literals, which
-			// nothing else in the gallery may carry: Google's branding
-			// rules require the multicolour mark, so a theme-following G
-			// would be the button drawn the way the company forbids.
-			// Apple's mark is the opposite case, one path in
-			// currentColor, so it follows the button's text in every
-			// theme and scheme instead of going black on a dark one.
-			Markup: `<section rst-box>
+	}
+	docs = append(append(docs, secretScreenDocs()...), offerScreenDocs()...)
+	return append(docs, socialScreenDoc(), passwordScreenDoc())
+}
+
+// socialScreenDoc and passwordScreenDoc are the two screens ui does not
+// ship, as markup to copy.
+func socialScreenDoc() screenDoc {
+	return screenDoc{
+		Key:  "signin-social",
+		Name: "Google, Apple and the rest",
+		Blurb: "We give you the buttons, drawn the way each company " +
+			"requires. We do not give you the sign-in itself: you wire " +
+			"that up to whichever provider you use.",
+		// The Google G keeps its four colours as fill literals, which
+		// nothing else in the gallery may carry: Google's branding
+		// rules require the multicolour mark, so a theme-following G
+		// would be the button drawn the way the company forbids.
+		// Apple's mark is the opposite case, one path in
+		// currentColor, so it follows the button's text in every
+		// theme and scheme instead of going black on a dark one.
+		Markup: `<section rst-box>
   <h1>Sign in</h1>
   <div rst-signin-providers>
     <form method="post" action="/auth/google"><button rst-btn="block" type="submit"><svg aria-hidden="true" focusable="false" width="1.1em" height="1.1em" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>Continue with Google</button></form>
@@ -206,16 +233,25 @@ func screenDocs() []screenDoc {
     <a href="/signin">Use your email instead</a>
   </div>
 </section>`,
-		},
-		{
-			Key:          "signin-password",
-			Name:         "Email and password",
-			Blurb:        "If you do use passwords, use the same one-way-in layout, and put a way to reset directly under the button rather than hiding it.",
-			WarningTitle: "We do not recommend passwords",
-			WarningBody:  "Rastrillo does not ship this screen. People reuse passwords, they leak, and you inherit the job of storing them safely. Use a link in your email plus a passkey, or passkeys on their own. The markup is here because some products still need it.",
-			// name="email", not address: this form posts to the password
-			// plugin, whose handler reads email (password/handlers.go).
-			Markup: `<section rst-box>
+	}
+}
+
+func passwordScreenDoc() screenDoc {
+	return screenDoc{
+		Key:  "signin-password",
+		Name: "Email and password",
+		Blurb: "If you do use passwords, use the same one-way-in " +
+			"layout, and put a way to reset directly under the button " +
+			"rather than hiding it.",
+		WarningTitle: "We do not recommend passwords",
+		WarningBody: "Rastrillo does not ship this screen. People reuse " +
+			"passwords, they leak, and you inherit the job of storing " +
+			"them safely. Use a link in your email plus a passkey, or " +
+			"passkeys on their own. The markup is here because some " +
+			"products still need it.",
+		// name="email", not address: this form posts to the password
+		// plugin, whose handler reads email (password/handlers.go).
+		Markup: `<section rst-box>
   <h1>Sign in</h1>
   <form rst-form method="post" action="/signin">
     <div rst-field>
@@ -229,7 +265,6 @@ func screenDocs() []screenDoc {
     <button rst-btn="primary" type="submit">Continue</button>
   </form>
 </section>`,
-		},
 	}
 }
 
@@ -259,7 +294,7 @@ func buildScreens(mount, theme, locale string, tmpl *template.Template, files pr
 			view.Warning = template.HTML(buf.String())
 		}
 		title := previewTitle(locale, doc.Key, "Screens")
-		if doc.Signin == nil {
+		if doc.Signin == nil && doc.View == nil {
 			markup := localMarkup(locale, doc.Markup)
 			preview, file := newPreview(mount, theme, locale, "screens", id+"-0", title, markup, markup, id)
 			if err := files.add(file); err != nil {
@@ -269,23 +304,43 @@ func buildScreens(mount, theme, locale string, tmpl *template.Template, files pr
 			out = append(out, view)
 			continue
 		}
-		var buf strings.Builder
-		err := tmpl.ExecuteTemplate(&buf, "ds-screen-stage", map[string]any{
-			"State": *doc.Signin, "Brand": localData(locale, galleryBrand), "Preview": true, "Art": first,
-		})
+		staged, source, err := stageScreen(tmpl, doc, locale, first)
 		if err != nil {
-			return nil, fmt.Errorf("screen %s: %w", doc.Key, err)
+			return nil, err
 		}
 		first = false
-		preview, file := newPreview(mount, theme, locale, "screens", id+"-0", title, buf.String(), "", id)
+		preview, file := newPreview(mount, theme, locale, "screens",
+			id+"-0", title, staged, "", id)
 		if err := files.add(file); err != nil {
 			return nil, err
 		}
 		view.Preview = preview
-		view.Preview.Call = codeview.Highlight(signinSource)
+		view.Preview.Call = codeview.Highlight(source)
 		out = append(out, view)
 	}
 	return out, nil
+}
+
+// stageScreen renders doc's sign-in state or signin page in a stage
+// frame, with the art in the first frame only, and returns it with the
+// template source an app writes for it.
+func stageScreen(
+	tmpl *template.Template, doc screenDoc, locale string, art bool,
+) (string, string, error) {
+	data := map[string]any{"Brand": localData(locale, galleryBrand),
+		"Preview": true, "Art": art}
+	source := signinSource
+	if doc.View != nil {
+		data["View"], source = *doc.View, signinViewSource
+	} else {
+		data["State"] = *doc.Signin
+	}
+	var staged strings.Builder
+	if err := tmpl.ExecuteTemplate(&staged, "ds-screen-stage",
+		data); err != nil {
+		return "", "", fmt.Errorf("screen %s: %w", doc.Key, err)
+	}
+	return staged.String(), source, nil
 }
 
 // screenNav is the Screens page's rail entries: the partials first,

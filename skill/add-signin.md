@@ -1,7 +1,8 @@
 # Add email-and-password sign-in to a single app
 
 A new app with sign-in starts from `rastrillo new --scaffold accounts`,
-which signs people in by emailed link. These steps add password sign-in
+which signs people in by emailed link and lets them add a passkey, an
+authenticator app or a passphrase. These steps add password sign-in
 to an existing `single` app (`rastrillo new` alone, which has no
 sign-in); applied to a fresh one, they pass its `make ci` (`<app>` is
 the app's name). Sessions, traps and other plugins: skill/signin.md.

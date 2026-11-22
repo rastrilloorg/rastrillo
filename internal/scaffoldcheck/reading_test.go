@@ -16,19 +16,30 @@ import (
 // prose. Neither total may grow again: Task 4's manifest recipe pays for
 // any bytes it adds by trimming elsewhere.
 //
-// migrationCheck is the one allowance on top of the cut: the migration
+// migrationCheck is the first allowance on top of the cut: the migration
 // check moved from the Makefile into the app's own test,
 // migrations_test.go (scaffold-shapes spec §4.2 item 3), which adds 549
 // bytes to either app. Each allowance is the part of those 549 that did
 // not fit under the old limit, and no more.
+//
+// defaultSignin is the second: the default sign-in (default-signin
+// branch) gives --auth=magic's app a passkey, an authenticator app and
+// a passphrase through signin, which adds 3,934 bytes, magicapp being
+// exactly at its limit before: signin.New, the sweep and the page that
+// draws every signin View in auth.go (1,305), the chooser, offer and
+// account-page tests in signin_test.go (1,945), and the schemas, gate,
+// Sign-in options links and AGENTS.md line elsewhere (684). The final
+// review added 1,118 more: with no instance key the app leaves the
+// authenticator off and says so, and a test checks it, while the
+// tests' TestMain sets a key (5,052 in all).
 var before = map[string]struct {
-	total, agents, cutPercent, migrationCheck int
+	total, agents, cutPercent, migrationCheck, defaultSignin int
 }{
 	// plainapp was 41 bytes under its limit, so 508 of the 549 went over.
-	"plainapp": {73438, 6536, 25, 508},
+	"plainapp": {73438, 6536, 25, 508, 0},
 	// magicapp was already 495 bytes under its limit, so only 54 of the
 	// 549 went over.
-	"magicapp": {91400, 7360, 19, 54},
+	"magicapp": {91400, 7360, 19, 54, 5052},
 }
 
 // iconGrowth is the code, not prose, that Fiesta 1.4.0's icons added to
@@ -47,12 +58,13 @@ func TestNewAppsReadInFewerBytes(t *testing.T) {
 		was := before[variant.name]
 		total := bytesToRead(t, directory)
 		limit := was.total*(100-was.cutPercent)/100 + iconGrowth +
-			was.migrationCheck
+			was.migrationCheck + was.defaultSignin
 		if total > limit {
 			t.Errorf("%s: %d bytes outside gen/ and static/, over %d, "+
-				"%d%% less than %d and %d for the migration check",
-				variant.name, total, limit, was.cutPercent, was.total,
-				was.migrationCheck)
+				"%d%% less than %d, %d for the migration check and %d "+
+				"for the default sign-in", variant.name, total, limit,
+				was.cutPercent, was.total, was.migrationCheck,
+				was.defaultSignin)
 		}
 		agents := len(readFile(t, filepath.Join(directory, "AGENTS.md")))
 		if limit := was.agents + 1000; agents > limit {

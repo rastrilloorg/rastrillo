@@ -935,8 +935,8 @@ columns auth/auth.go e29553cd014f 1
 columns auth/auth.go ec14109dd65b 1
 columns auth/auth.go eda525fa5bef 1
 columns auth/auth.go edb224703a41 1
-file auth/auth.go - 658 Config.Reader for the session lookups (#241); Config.SigninOneWay, the smart door; Config.Now and ErrNoUser refusal docs, raised from 646 when plaza-core's suspension work met main's one-way sign-in
-func auth/auth.go New 155 Config.Now default, raised from 152 when plaza-core's suspension work met main's one-way sign-in
+file auth/auth.go - 661 the public-only keymail client branch in New; Config.Reader for the session lookups (#241); Config.SigninOneWay, the smart door; Config.Now and ErrNoUser refusal docs, raised from 646 when plaza-core's suspension work met main's one-way sign-in
+func auth/auth.go New 158 the public-only keymail client branch; Config.Now default, raised from 152 when plaza-core's suspension work met main's one-way sign-in
 names auth/auth.go -/d 1
 names auth/auth.go -/r 3
 names auth/auth.go -/w 3
@@ -990,7 +990,6 @@ columns auth/auth_test.go 6768e71cd9a8 1
 columns auth/auth_test.go 6a3451c1db72 1
 columns auth/auth_test.go 73483a22ca97 1
 columns auth/auth_test.go 7348f39ad9f7 1
-columns auth/auth_test.go 76d70d156e34 1
 columns auth/auth_test.go 7948ef7adc96 1
 columns auth/auth_test.go 7abb3eeb38bc 2
 columns auth/auth_test.go 7bb77ca84cf4 1
@@ -1465,7 +1464,6 @@ names auth/continuation_test.go startKeymail/u 1
 names auth/continuation_test.go startKeymail/w 1
 names auth/csrf.go Auth.sameOrigin/a 1
 names auth/csrf.go Auth.sameOrigin/r 1
-columns auth/handlers.go 0167d0fa3acb 1
 columns auth/handlers.go 456987aed287 1
 columns auth/handlers.go 4d122101ede6 1
 columns auth/handlers.go 65b9ad82110f 1
@@ -1475,7 +1473,6 @@ columns auth/handlers.go 7dd126002eb8 1
 columns auth/handlers.go 8b4ab195544a 1
 columns auth/handlers.go 8e338501af06 1
 columns auth/handlers.go aba3d494fe13 1
-columns auth/handlers.go b72fa08b3fd4 1
 columns auth/handlers.go bc32614b3d1a 1
 columns auth/handlers.go cba9cabbe3eb 1
 columns auth/handlers.go cef48805190e 1
@@ -1484,9 +1481,8 @@ columns auth/handlers.go e2126f7ef8d1 5
 columns auth/handlers.go e6a5dac583f8 1
 columns auth/handlers.go fb732dda3cb5 1
 columns auth/handlers.go ffb560e2308f 1
-file auth/handlers.go - 678
+file auth/handlers.go - 608
 func auth/handlers.go Auth.Begin 55
-func auth/handlers.go Auth.admit 61
 names auth/handlers.go Auth.AnswerAsSent/a 1
 names auth/handlers.go Auth.AnswerAsSent/r 1
 names auth/handlers.go Auth.AnswerAsSent/w 1
@@ -1520,9 +1516,6 @@ names auth/handlers.go Auth.SignoutEverywhere/w 1
 names auth/handlers.go Auth.Verify/a 1
 names auth/handlers.go Auth.Verify/r 1
 names auth/handlers.go Auth.Verify/w 1
-names auth/handlers.go Auth.admit/a 1
-names auth/handlers.go Auth.admit/r 1
-names auth/handlers.go Auth.admit/w 1
 names auth/handlers.go Auth.continueKeymail/a 1
 names auth/handlers.go Auth.continueKeymail/r 1
 names auth/handlers.go Auth.continueKeymail/w 1
@@ -1575,7 +1568,6 @@ columns auth/keymail_test.go 0b62618c9e0f 1
 columns auth/keymail_test.go 1484cc2b9f36 1
 columns auth/keymail_test.go 1999988fab45 1
 columns auth/keymail_test.go 1daae17d6f98 1
-columns auth/keymail_test.go 1ea2f4500320 1
 columns auth/keymail_test.go 2a148b37bb0b 1
 columns auth/keymail_test.go 31a437498ec8 1
 columns auth/keymail_test.go 352577bbca18 1
@@ -1600,18 +1592,15 @@ columns auth/keymail_test.go afc20fdfcba9 1
 columns auth/keymail_test.go b224a29288c4 1
 columns auth/keymail_test.go b867a665d412 1
 columns auth/keymail_test.go b990b8ecb5c6 1
-columns auth/keymail_test.go be57889349a9 1
 columns auth/keymail_test.go bffd667067b6 1
 columns auth/keymail_test.go c19d60524f66 1
 columns auth/keymail_test.go c831dd9bada5 1
 columns auth/keymail_test.go c90ad911cbe5 1
-columns auth/keymail_test.go d12c6324aa65 1
 columns auth/keymail_test.go d253e486b142 1
 columns auth/keymail_test.go d41163edc83e 1
 columns auth/keymail_test.go deed82ff82d2 1
 columns auth/keymail_test.go e4c420104a3c 1
 columns auth/keymail_test.go e5a22bf9548c 1
-columns auth/keymail_test.go e74995823db6 1
 columns auth/keymail_test.go ec9ed57c0c04 1
 columns auth/keymail_test.go f1e5f5c537a2 1
 columns auth/keymail_test.go f1f286c75ddb 1
@@ -1648,8 +1637,6 @@ names auth/keymail_test.go TestKeymailServersMatchOneServerHoweverItIsSpelled/a 
 names auth/keymail_test.go TestKeymailServersMatchOneServerHoweverItIsSpelled/c 1
 names auth/keymail_test.go TestKeymailServersMatchOneServerHoweverItIsSpelled/u 1
 names auth/keymail_test.go TestKeymailServersRefusesWhatIsNotAHost/d 2
-names auth/keymail_test.go TestWithoutKeymailServersBothClientsAreToday/a 1
-names auth/keymail_test.go TestWithoutKeymailServersBothClientsAreToday/k 1
 names auth/keymail_test.go beginKeymail/a 1
 names auth/keymail_test.go beginKeymail/b 1
 names auth/keymail_test.go listed/c 1
@@ -6821,7 +6808,6 @@ columns internal/designsystem/a11y_test.go 3e4d3a796541 1 rewritten by the chrom
 columns internal/designsystem/a11y_test.go 3f8bde5dc80e 1
 columns internal/designsystem/a11y_test.go 4020f622210c 1
 columns internal/designsystem/a11y_test.go 433c5a943ec4 1
-columns internal/designsystem/a11y_test.go 451d5ff66e86 1
 columns internal/designsystem/a11y_test.go 49918e29df2a 1
 columns internal/designsystem/a11y_test.go 49adc9a48d48 1
 columns internal/designsystem/a11y_test.go 49c72f1dca2f 1
@@ -6880,7 +6866,6 @@ columns internal/designsystem/a11y_test.go ad780b9bc17f 1
 columns internal/designsystem/a11y_test.go ae0d2e261720 1
 columns internal/designsystem/a11y_test.go ae5dd369f253 1
 columns internal/designsystem/a11y_test.go aefaa6fbb97d 1
-columns internal/designsystem/a11y_test.go afed050c5ad8 1
 columns internal/designsystem/a11y_test.go b22ad879c32e 1
 columns internal/designsystem/a11y_test.go b52e24cc3932 1 rewritten by the chromedp v0.21 port, no wider than the recorded line it replaced
 columns internal/designsystem/a11y_test.go b6065d2c4d99 1
@@ -8496,7 +8481,7 @@ columns internal/designsystem/page.go fa7c5352e30d 1
 columns internal/designsystem/page.go fdc97acb2e04 1 the rail template line, edited in place for Fiesta's links (rastrillo-components Task 1); a template line is written whole like its neighbours
 columns internal/designsystem/page.go fe44bdea88a0 1
 columns internal/designsystem/page.go ffcdcfbc1ea4 1
-file internal/designsystem/page.go - 2882 galleryTitle, one call for the gallery's name in every document title, and the Russian topbar shell's Mobile height for its longer back-link (rastrillo-components Task 2)
+file internal/designsystem/page.go - 2953 galleryTitle, one call for the gallery's name in every document title, and the Russian topbar shell's Mobile height for its longer back-link (rastrillo-components Task 2); the five preview heights of the signin package's pages on the Screens page (default-signin Task 10); their measured Desktop, Mobile and per-language Mobile heights, with the four secret-door screens' (default-signin Task 14)
 func internal/designsystem/page.go buildFamilies 97 the stat band stays on Display as four stat calls, a sample of its own (rastrillo-components Task 1, review fix)
 func internal/designsystem/page.go previewDocStyled 49
 func internal/designsystem/page.go renderDemo 54
@@ -8914,7 +8899,6 @@ names internal/designsystem/samples.go mediaSelectable/t 1
 names internal/designsystem/samples.go mediaTile/t 1
 names internal/designsystem/samples.go selectOptions/i 1
 columns internal/designsystem/screens.go 001a0606d125 1
-columns internal/designsystem/screens.go 0c9e037e4073 1
 columns internal/designsystem/screens.go 0ec0c4c4cacb 1
 columns internal/designsystem/screens.go 133ca0c65e96 1
 columns internal/designsystem/screens.go 15e089799093 1
@@ -8926,15 +8910,11 @@ columns internal/designsystem/screens.go 2e4bb0ec1fc3 1
 columns internal/designsystem/screens.go 3400e2fde02d 1
 columns internal/designsystem/screens.go 394909766353 1
 columns internal/designsystem/screens.go 44eb82f648e6 1
-columns internal/designsystem/screens.go 48a976e97486 1
-columns internal/designsystem/screens.go 50b551314ced 1
 columns internal/designsystem/screens.go 610786d4fbc7 1
 columns internal/designsystem/screens.go 651b59dfd1a0 1
 columns internal/designsystem/screens.go 6aeb83382df6 1
 columns internal/designsystem/screens.go 6d306bd5cba9 1
 columns internal/designsystem/screens.go 70b41ac179d1 1
-columns internal/designsystem/screens.go 7159c098c2ab 1
-columns internal/designsystem/screens.go 735799b4e001 1
 columns internal/designsystem/screens.go 87f409890997 1
 columns internal/designsystem/screens.go 960bc25be2ac 1
 columns internal/designsystem/screens.go 9940843b6bdd 1
@@ -8954,14 +8934,13 @@ columns internal/designsystem/screens.go d62248c783a3 1
 columns internal/designsystem/screens.go d6832027a557 1
 columns internal/designsystem/screens.go d6ff99637f53 1
 columns internal/designsystem/screens.go d97bdd08dfc0 1
-columns internal/designsystem/screens.go e50c8c7d059d 1
 columns internal/designsystem/screens.go e9704b41b833 1
 columns internal/designsystem/screens.go ec7776f51d71 1
 columns internal/designsystem/screens.go f01c399e632d 1
 columns internal/designsystem/screens.go f07a7778f1f3 1
 columns internal/designsystem/screens.go fb7757287a26 1
-func internal/designsystem/screens.go buildScreens 51
-func internal/designsystem/screens.go screenDocs 90
+func internal/designsystem/screens.go buildScreens 49
+func internal/designsystem/screens.go screenDocs 49
 names internal/designsystem/screens.go screenDocs/s 10
 names internal/designsystem/screens.go screenNav/p 1
 names internal/designsystem/screens.go screenNav/s 1
@@ -19012,9 +18991,10 @@ columns totp/handlers.go e69c3766b97c 1
 columns totp/handlers.go ef58e83e9dbb 1
 columns totp/handlers.go f21bf420dd3b 1
 columns totp/handlers.go f3a489d88785 1
-file totp/handlers.go - 408
+file totp/handlers.go - 417 Check is the one export signin needs over verify
 func totp/handlers.go Handlers.StepUp 41
 names totp/handlers.go Handlers.Begin/h 1
+names totp/handlers.go Handlers.Check/h 1 receiver matches the other Handlers methods
 names totp/handlers.go Handlers.Confirm/h 1
 names totp/handlers.go Handlers.Disable/h 1
 names totp/handlers.go Handlers.Enrolled/h 1

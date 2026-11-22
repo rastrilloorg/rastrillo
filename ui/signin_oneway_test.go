@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+	"time"
 
 	"amadan.net/rastrillo/rastrillo/auth"
 	"amadan.net/rastrillo/rastrillo/lastsignin"
@@ -112,7 +113,32 @@ func oneWayStates() []struct {
 		{"email only, Keymail", oneWayState(func(st *auth.SigninState) {
 			st.Federated, st.Remembered = nil, kay
 		})},
+		{"app, an authenticator", oneWayState(func(state *auth.SigninState) {
+			secretDoors(state)
+			state.Remembered = remembered("totp", "ada@example.com")
+			state.Address = "ada@example.com"
+		})},
+		{"app, a passphrase", oneWayState(func(state *auth.SigninState) {
+			secretDoors(state)
+			state.Remembered = remembered("passphrase", "ada@example.com")
+			state.Address = "ada@example.com"
+		})},
+		{"app, a wrong code", oneWayState(func(state *auth.SigninState) {
+			secretDoors(state)
+			state.Problem, state.Way = auth.ProblemCode, auth.WayAuthenticator
+			state.Address = "ada@example.com"
+		})},
+		{"id, paused", oneWayState(func(state *auth.SigninState) {
+			idStar(state)
+			secretDoors(state)
+			state.Problem, state.Way = auth.ProblemPaused, auth.WayPassphrase
+		})},
 	}
+}
+
+func secretDoors(state *auth.SigninState) {
+	state.Authenticator = &auth.SecretDoor{Path: "/signin/code"}
+	state.Passphrase = &auth.SecretDoor{Path: "/signin/passphrase"}
 }
 
 var anchors = regexp.MustCompile(`(?s)<a\b([^>]*)>(.*?)</a>`)
@@ -421,5 +447,100 @@ func TestTheOneWayDoorCarriesFiestasHooks(t *testing.T) {
 		`</button>`).FindStringSubmatch(sent)
 	if button == nil || !strings.Contains(button[1], `d="m9 18 6-6-6-6"`) {
 		t.Errorf("Sent's Use a different email has no chevron:\n%s", sent)
+	}
+}
+
+func inputNamed(out, name string) string {
+	return regexp.MustCompile(`<input[^>]*\sname="` + name + `"[^>]*>`).
+		FindString(out)
+}
+
+// The two secret doors are one form each: the address, prefilled, the
+// code or passphrase in the field a password manager or a phone's
+// keyboard expects, posted to the door's Path with where the visitor
+// was going and the step-up. Each offers a link instead and the
+// chooser.
+func TestSecretDoorsRender(t *testing.T) {
+	byName := oneWayByName()
+	for name, want := range map[string]struct {
+		action, field string
+		attrs         []string
+	}{
+		"app, an authenticator": {"/signin/code", "code", []string{
+			`inputmode="numeric"`, `autocomplete="one-time-code"`,
+			`required`}},
+		"app, a passphrase": {"/signin/passphrase", "passphrase",
+			[]string{`type="password"`, `autocomplete="current-password"`,
+				`required`}},
+	} {
+		state := byName[name]
+		state.ReturnTo, state.Reauth = "/docs/7", true
+		out := render(t, "signin", signinData(state))
+		form := regexp.MustCompile(`(?s)<form rst-signin-form ` +
+			`method="post" action="` + want.action + `"[^>]*>.*?</form>`).
+			FindString(out)
+		if form == "" {
+			t.Fatalf("%s: no form posting to %s:\n%s", name, want.action,
+				out)
+		}
+		for _, hidden := range []string{
+			`<input type="hidden" name="return_to" value="/docs/7">`,
+			`<input type="hidden" name="reauth" value="1">`,
+		} {
+			if !strings.Contains(form, hidden) {
+				t.Errorf("%s: the form lacks %s:\n%s", name, hidden, form)
+			}
+		}
+		address := inputNamed(form, "address")
+		for _, attr := range []string{`type="email"`,
+			`value="ada@example.com"`, `autocomplete="username"`} {
+			if !strings.Contains(address, attr) {
+				t.Errorf("%s: the address field lacks %s: %s", name, attr,
+					address)
+			}
+		}
+		secret := inputNamed(form, want.field)
+		for _, attr := range want.attrs {
+			if !strings.Contains(secret, attr) {
+				t.Errorf("%s: the secret field lacks %s: %s", name, attr,
+					secret)
+			}
+		}
+		instead := `<a rst-btn="ghost" href="` +
+			html.EscapeString(state.EmailHref()) + `"><span>` +
+			html.EscapeString(defaultT("rastrillo.ui.signin_email_instead"))
+		if !strings.Contains(out, instead) {
+			t.Errorf("%s: no %s:\n%s", name, instead, out)
+		}
+		other := `href="` + html.EscapeString(state.WaysHref()) + `"><span>` +
+			html.EscapeString(defaultT("rastrillo.ui.signin_ways"))
+		if !strings.Contains(out, other) {
+			t.Errorf("%s: no %s:\n%s", name, other, out)
+		}
+	}
+}
+
+// A secret door's form carries the page's proof of work as the email
+// form does, and the page loads the proof script once.
+func TestSecretDoorsCarryTheProof(t *testing.T) {
+	guard := proofGuard(t, 12)
+	for _, name := range []string{"app, an authenticator",
+		"app, a passphrase", "app, a wrong code"} {
+		state := oneWayByName()[name]
+		form := guard.Form(time.Unix(1_800_000_000, 0), auth.ProofScope)
+		state.Proof = &form
+		out := render(t, "signin", signinData(state))
+		door := regexp.MustCompile(`(?s)<form rst-signin-form ` +
+			`method="post" action="/signin/(?:code|passphrase)"[^>]*>` +
+			`.*?</form>`).FindString(out)
+		for _, want := range []string{"data-pow-form", `name="pow_`,
+			"disabled data-pow-submit", "<noscript>"} {
+			if !strings.Contains(door, want) {
+				t.Errorf("%s: the form lacks %s:\n%s", name, want, door)
+			}
+		}
+		if got := strings.Count(out, `src="/pow/pow.js"`); got != 1 {
+			t.Errorf("%s: the proof script %d times:\n%s", name, got, out)
+		}
 	}
 }

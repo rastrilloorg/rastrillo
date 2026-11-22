@@ -29,6 +29,11 @@ func (auth *Auth) subjectFor(
 	return address, nil
 }
 
+// Sessions is the session store this Auth mints into and reads from.
+// Give it to signin.Config.Sessions, so the ways signin adds share
+// auth's cookie, lifetime and table instead of a second store's.
+func (auth *Auth) Sessions() *sessions.Sessions { return auth.sessions }
+
 func (auth *Auth) sessionFrom(request *http.Request) (sessions.Session, bool) {
 	session, ok := auth.sessions.From(request)
 	// Refuse old subjects without rewriting plaintext into WAL frames.

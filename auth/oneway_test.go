@@ -528,3 +528,153 @@ func TestAFailedKeymailCallbackIsUnchangedWithTheOptionOff(t *testing.T) {
 		t.Errorf("with the option off the callback went to %q", got)
 	}
 }
+
+var (
+	byTOTP = &Remembered{Method: lastsignin.MethodTOTP,
+		Address: "ada@example.com"}
+	byPassphrase = &Remembered{Method: lastsignin.MethodPassphrase,
+		Address: "ada@example.com"}
+)
+
+func withSecretDoors(state SigninState) SigninState {
+	state.Authenticator = &SecretDoor{Path: "/signin/code"}
+	state.Passphrase = &SecretDoor{Path: "/signin/passphrase"}
+	return state
+}
+
+func wayNames(state SigninState) []SigninWay {
+	var ways []SigninWay
+	for _, row := range state.Ways() {
+		ways = append(ways, row.Way)
+	}
+	return ways
+}
+
+// A browser that last signed in with an authenticator code is offered
+// the code door, with its remembered address in the field.
+func TestRememberedTOTPLeadsWithTheCodeDoor(t *testing.T) {
+	auth, _ := newScreenAuth(t, func(cfg *Config) { cfg.SigninOneWay = true })
+	browser := newBrowser()
+	rememberAs(auth, browser, lastsignin.MethodTOTP, "ada@example.com")
+	state := stateAt(auth, browser, "/signin")
+	state.Authenticator = &SecretDoor{Path: "/signin/code"}
+	if door := state.Door(); door != "authenticator" {
+		t.Errorf("door %q, want authenticator", door)
+	}
+	if state.Address != "ada@example.com" {
+		t.Errorf("Address %q, want the remembered one", state.Address)
+	}
+	passphrase := withSecretDoors(oneWay(byPassphrase, false))
+	if door := passphrase.Door(); door != "passphrase" {
+		t.Errorf("a remembered passphrase: door %q", door)
+	}
+}
+
+// Without the door the app once offered, a remembered code or
+// passphrase is the email way's one-tap for its address.
+func TestRememberedTOTPWithoutTheDoorFallsToEmail(t *testing.T) {
+	for name, state := range map[string]SigninState{
+		"totp":       noFederated(oneWay(byTOTP, false)),
+		"passphrase": noFederated(oneWay(byPassphrase, false)),
+	} {
+		if door := state.Door(); door != "link" {
+			t.Errorf("%s: door %q, want link", name, door)
+		}
+	}
+}
+
+// The chooser's order is email, passkey, authenticator, passphrase,
+// leaving out the way shown.
+func TestChooserOrder(t *testing.T) {
+	all := noFederated(withSecretDoors(oneWay(byLink, true)))
+	want := []SigninWay{WayPasskey, WayAuthenticator, WayPassphrase}
+	if got := wayNames(all); !reflect.DeepEqual(got, want) {
+		t.Errorf("from the email way: %v, want %v", got, want)
+	}
+	phrase := withWay(all, WayPassphrase)
+	want = []SigninWay{WayEmail, WayPasskey, WayAuthenticator}
+	if got := wayNames(phrase); !reflect.DeepEqual(got, want) {
+		t.Errorf("from the passphrase way: %v, want %v", got, want)
+	}
+	if !strings.Contains(phrase.WaysHref(), "way=passphrase") {
+		t.Errorf("Other ways from the passphrase door: %q",
+			phrase.WaysHref())
+	}
+}
+
+func TestParseWayKnowsTheNewWays(t *testing.T) {
+	for value, want := range map[string]SigninWay{
+		"authenticator": WayAuthenticator, "passphrase": WayPassphrase,
+		"totp": "", "code": "",
+	} {
+		if got := ParseWay(value); got != want {
+			t.Errorf("ParseWay(%q) = %q, want %q", value, got, want)
+		}
+	}
+}
+
+// A step-up offers every local way: the two new ways are checked here,
+// so they are as fresh as a link or a passkey.
+func TestReauthOffersAllLocalWays(t *testing.T) {
+	state := withSecretDoors(problem(oneWay(byOficinaAs, true),
+		ProblemReauth))
+	want := []SigninWay{WayPasskey, WayAuthenticator, WayPassphrase}
+	if got := wayNames(state); !reflect.DeepEqual(got, want) {
+		t.Errorf("a step-up's chooser: %v, want %v", got, want)
+	}
+	code := withWay(state, WayAuthenticator)
+	if door := code.Door(); door != "authenticator" {
+		t.Errorf("a step-up picking the code: door %q", door)
+	}
+}
+
+// A wrong code, a wrong passphrase and a paused address come back to
+// the door they were typed on, so the visitor retypes the secret and
+// not the address, which comes from this browser, never the query.
+func TestASecretProblemKeepsItsDoor(t *testing.T) {
+	auth, _ := newScreenAuth(t, func(cfg *Config) { cfg.SigninOneWay = true })
+	for query, want := range map[string]struct {
+		problem SigninProblem
+		door    string
+	}{
+		"?err=code&way=authenticator":    {ProblemCode, "authenticator"},
+		"?err=passphrase&way=passphrase": {ProblemPassphrase, "passphrase"},
+		"?err=paused&way=passphrase":     {ProblemPaused, "passphrase"},
+		"?err=paused&way=authenticator":  {ProblemPaused, "authenticator"},
+		"?err=code&way=authenticator&ways=1": {ProblemCode,
+			"authenticator"},
+		"?err=code":           {ProblemCode, "ask"},
+		"?err=code&way=email": {ProblemCode, "ask"},
+	} {
+		browser := newBrowser()
+		rememberAs(auth, browser, lastsignin.MethodMagicLink,
+			"ada@example.com")
+		state := withSecretDoors(stateAt(auth, browser,
+			"/signin"+query+"&address=eve@example.com"))
+		if state.Problem != want.problem || state.Door() != want.door {
+			t.Errorf("%s: problem %q, door %q; want %q on %q", query,
+				state.Problem, state.Door(), want.problem, want.door)
+		}
+		if state.Address != "ada@example.com" {
+			t.Errorf("%s: Address %q, want the remembered one", query,
+				state.Address)
+		}
+		if state.Focus() != "callout" {
+			t.Errorf("%s: focus %q, want the callout", query, state.Focus())
+		}
+	}
+}
+
+// The code or passphrase field takes focus when the address is already
+// there, and the address field when it is not.
+func TestASecretDoorFocusesWhatIsLeftToType(t *testing.T) {
+	remembered := withSecretDoors(oneWay(byTOTP, false))
+	remembered.Address = byTOTP.Address
+	if got := remembered.Focus(); got != "secret" {
+		t.Errorf("with an address: focus %q, want secret", got)
+	}
+	fresh := withWay(withSecretDoors(oneWay(nil, false)), WayPassphrase)
+	if got := fresh.Focus(); got != "field" {
+		t.Errorf("with no address: focus %q, want field", got)
+	}
+}

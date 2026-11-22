@@ -23,6 +23,8 @@ func Routes(routes *action.Routes, app *App) {
 		guarded.Guard("csrf", csrf.Protect(app.origin))
 		guarded.Guard("pages", pages.Middleware)
 		guarded.Guard("signedIn", app.signedIn)
+		// After a first link, the offer of a faster way in, once.
+		guarded.Guard("signinGate", app.signins.Gate)
 		app.mountAuth(guarded)
 		guarded.Get(homePage, app.home)
 		// Owned pages and the stream: a visitor signs in first.

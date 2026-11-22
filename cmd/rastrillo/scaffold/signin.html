@@ -1,2 +1,2 @@
-{{define "title"}}{{$L := localizer $}}{{template "signin-title" (dict "L" $L "State" .Signin "Brand" .Brand)}}{{end}}
-{{define "content"}}{{$L := localizer $}}{{template "signin" (dict "L" $L "State" .Signin "Brand" .Brand)}}{{end}}
+{{define "title"}}{{$L := localizer $}}{{template "signin-view-title" (dict "L" $L "View" .View "Brand" .Brand)}}{{end}}
+{{define "content"}}{{$L := localizer $}}{{template "signin-view" (dict "L" $L "View" .View "Brand" .Brand)}}{{end}}

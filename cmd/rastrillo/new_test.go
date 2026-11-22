@@ -1120,12 +1120,12 @@ func TestNewTopbarWritesAMenuPage(t *testing.T) {
 	}
 }
 
-// Under --auth=magic, Sign in or Sign out is the account card's last
-// link in the shells with a card: after the Appearance and Language
-// rows and the app's own account links, a plain menu item and not a
-// button, whose sign-out opts out of busy.js. The column shell, with no
-// card, keeps its button, busy rule and all, by the scheme control, and
-// the stage shell has no chrome for one.
+// Under --auth=magic, Sign in, or Sign-in options and Sign out, are the
+// account card's last links in the shells with a card: after the
+// Appearance and Language rows and the app's own account links, plain
+// menu items and not buttons, whose sign-out opts out of busy.js. The
+// column shell, with no card, keeps its buttons, busy rule and all, by
+// the scheme control, and the stage shell has no chrome for them.
 func TestTheSignInControlIsTheAccountCardsLastLink(t *testing.T) {
 	for _, shell := range ui.LayoutNames() {
 		directory, err := runNewInTemp(t, "--auth=magic",
@@ -1157,6 +1157,7 @@ func TestTheSignInControlIsTheAccountCardsLastLink(t *testing.T) {
 			if signouts != 1 || locale < 0 || locale > account ||
 				!strings.Contains(card, `action="/signout"`) ||
 				!strings.Contains(card, `href="/signin"`) ||
+				!strings.Contains(card, `href="/account/signin"`) ||
 				!strings.Contains(card, `data-busy="false"`) ||
 				strings.Contains(card, "rst-btn") {
 				t.Errorf("%s: want Sign in and Sign out as plain items "+
@@ -1175,5 +1176,40 @@ func TestAuthLeavesSessionsOnTheWriter(t *testing.T) {
 	config, _, _ = strings.Cut(config, "\n\t})")
 	if !found || strings.Contains(config, "Reader:") {
 		t.Errorf("newAuth's auth.Config sets Reader or is gone:\n%s", config)
+	}
+}
+
+// --auth=magic starts an app on the default sign-in: the one-way
+// screen, Keymail on (no KeymailServers list switching it off), and a
+// passkey, an authenticator app and a passphrase beside the link.
+func TestMagicAuthTurnsOnTheDefaultSignin(t *testing.T) {
+	auth := scaffoldFile("auth.go.tmpl")
+	_, config, found := strings.Cut(auth, "auth.New(auth.Config{")
+	config, _, _ = strings.Cut(config, "\n\t})")
+	if !found || !strings.Contains(config, "SigninOneWay: true") ||
+		strings.Contains(config, "KeymailServers") {
+		t.Errorf("newAuth's auth.Config does not turn on the one-way "+
+			"screen with Keymail on:\n%s", config)
+	}
+	ways := "ways:=signin.Passkey|signin.Authenticator|signin.Passphrase"
+	if !strings.Contains(strings.Join(strings.Fields(auth), ""), ways) {
+		t.Errorf("auth.go does not call signin.New with all three ways")
+	}
+}
+
+// The signed-in account page links to Sign-in options on every shell,
+// the stage shell too, whose layout has no account controls to hold it.
+func TestMagicAuthAccountPageLinksToSigninOptions(t *testing.T) {
+	if testing.Short() {
+		t.Skip("scaffolds, tidies and tests an app per shell")
+	}
+	for _, shell := range ui.LayoutNames() {
+		app := scaffoldApp(t, "authapp", "--auth=magic", "--shell="+shell)
+		output, err := goTestIn(app, "-run", "^TestSignInByEmailedLink$",
+			"./internal/authapp/")
+		if err != nil {
+			t.Errorf("%s: the account page's test: %v\n%s", shell, err,
+				output)
+		}
 	}
 }

@@ -11,6 +11,7 @@ import (
 	"amadan.net/rastrillo/rastrillo/passkey"
 	"amadan.net/rastrillo/rastrillo/secondfactor"
 	"amadan.net/rastrillo/rastrillo/sessions"
+	"amadan.net/rastrillo/rastrillo/signin"
 	"amadan.net/rastrillo/rastrillo/totp"
 )
 
@@ -72,6 +73,10 @@ var frozenChecksums = map[string]string{
 	// frozen by the same rule; the ledger simply cannot see it.
 	"secondfactor/0002_adopt_passkey": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
 	"totp/0001_init":                  "4a473153c05278f96b8f55a8612acdd84576f46788d0f2d7406a56fdbb2d62bd",
+	// Re-pinned once before any release, when review added the attempt
+	// column: no deployed ledger holds the earlier value.
+	"signin/0001_init": "54bd5d7a79daf05ac3787b78c9ac8ae7" +
+		"94219746df8e2b9987d58088673957e7",
 }
 
 func TestFrameworkMigrationsAreFrozen(t *testing.T) {
@@ -79,6 +84,7 @@ func TestFrameworkMigrationsAreFrozen(t *testing.T) {
 	for _, s := range []*migrate.Set{
 		sessions.Schema, auth.Schema, blobs.Schema, eventlog.Schema, eventlog.MoneySchema,
 		passkey.Schema, secondfactor.Schema, totp.Schema, apitoken.Schema,
+		signin.Schema,
 	} {
 		for _, m := range s.All() {
 			seen[m.ID] = true

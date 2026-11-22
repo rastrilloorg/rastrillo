@@ -23,6 +23,26 @@ Adding sign-in to an app that has none, step by step: skill/add-signin.md.
   (`g.SignInRecovery`), minted by `g.RegenerateRecoveryCodes` behind
   `RequireFresh`. docs/site/second-factors.md
 
+## The default sign-in (`signin`)
+
+An `--auth=magic` app's `newSignins` calls `signin.New(signin.Config{
+Auth, Sessions: app.auth.Sessions(), DB, Origin, Key (crypto.Derive of
+the instance key), Proof, Ways: signin.Passkey | signin.Authenticator |
+signin.Passphrase, Render, Steps})`; routes get `app.signins.Mount`
+beside auth's and `Gate` as a guard before them; the screen handler
+calls `app.signins.Fill(&state)`. The authenticator and passphrase sign
+in through `auth.Admit`, a passkey through passkey's discovery, which
+asks `Authorize`; the email link is always a way in. After a link
+sign-in, a person with no added way gets "Sign in faster next time"
+until they add one or press Not now (Keymail sign-ins skip it). The
+screen leads with the way the browser used last; Sign-in options is
+`/account/signin`. Sign-up details are a `signin.Step{Path, Needed:
+func(ctx, subject) (bool, error)}`: mount the page in the owned group
+and, once saved, call `app.signins.Next(response, request)` (it reads
+`return_to`). `Ways: 0` is link only. `New` refuses records mode,
+`BlindLinks` and `SecondFactor`; with `SubjectFor`, set `Lookup`. Merge
+`signin.Schema` after `totp.Schema`. docs/site/signin.md
+
 ## Password plugin traps
 
 `password.New` needs `Sessions`, `Lookup`, `RenderSignin`; nil `Create`
@@ -79,4 +99,6 @@ origin appended: `default-src 'self'; style-src 'self' 'unsafe-hashes'
 'sha256-81gZUb3tp60YCqhJ0dItBPh5hRQiGbfst4gpwCNPTfI='; img-src 'self'
 data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
 https://keymail.dev`. `auth.Config.KeymailServers` limits which keymail
-servers are trusted; other addresses get a link.
+servers are trusted; other addresses get a link. Nil (the default)
+trusts any delegated server but dials public addresses only;
+`[]string{}` turns Keymail off.

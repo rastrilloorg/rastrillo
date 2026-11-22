@@ -128,7 +128,7 @@ you set always wins, 0 included. See
 
 `Records`, `Signed`, `Pepper` and `Blind` are records mode, for a centre with no database. See [Records mode](#records-mode).
 
-`KeymailServers` limits keymail to the servers you list, both when an address is checked and when a sign-in finishes; an unlisted server's addresses get a link. See [Magic links](/docs/magic-links#aside-the-keymail-upgrade).
+`KeymailServers` limits keymail to the servers you list, both when an address is checked and when a sign-in finishes; an unlisted server's addresses get a link. Left nil, any server an address's domain names is used, and every connection auth makes to it may only reach a public address: no loopback, private, link-local, 100.64.0.0/10, multicast or unspecified address, checked as each connection opens. An empty, non-nil list turns Keymail off. See [Magic links](/docs/magic-links#aside-the-keymail-upgrade).
 
 ## Blind link storage
 
@@ -205,6 +205,7 @@ func (a *Auth) PrepareSigninResponse(w http.ResponseWriter, st SigninState)
 func (a *Auth) Forget(w http.ResponseWriter, r *http.Request)
 func (a *Auth) AnswerAsSent(w http.ResponseWriter, r *http.Request)
 func (a *Auth) RememberJar() *lastsignin.Jar
+func (a *Auth) Sessions() *sessions.Sessions
 ```
 
 `SigninState` reads the query and this browser's own cookies and returns what the page shows, as plain data. It consults nothing else, so the page cannot reveal whether an address is known. Set `Passkey` on the result if you mounted passkey discovery. `PrepareSigninResponse` writes what goes with it: `Cache-Control: no-store`, `Referrer-Policy: no-referrer` on the page that moves on to Keymail, and deletions for any cookie that could not be trusted. Call it before rendering. With `SigninScreen` off, `SigninState` reads only the query and logs one warning per process. On the request `RenderConfirm` is given, `SigninState` answers `StepConfirm` with `Confirm` set and nothing else from the browser, and the partial draws the Sign in button.
@@ -213,26 +214,29 @@ func (a *Auth) RememberJar() *lastsignin.Jar
 
 ```go
 type SigninState struct {
-	Step        SigninStep
-	Problem     SigninProblem
-	Address     string
-	SentTo      string
-	SentInstead bool
-	Remembered  *Remembered
-	ContinueURL string
-	Confirm     *ConfirmPageData
-	BeginPath   string
-	ForgetPath  string
-	Force       bool
-	ReturnTo    string
-	Proof       *pow.Form
-	Passkey     *PasskeyDoor
-	Unavailable bool
-	OneWay      bool
-	Way         SigninWay
-	SigninPath  string
-	Federated   *FederatedDoor
-	AppProblem  *AppProblem
+	Step          SigninStep
+	Problem       SigninProblem
+	Address       string
+	SentTo        string
+	SentInstead   bool
+	Remembered    *Remembered
+	ContinueURL   string
+	Confirm       *ConfirmPageData
+	BeginPath     string
+	ForgetPath    string
+	Force         bool
+	ReturnTo      string
+	Proof         *pow.Form
+	Passkey       *PasskeyDoor
+	Unavailable   bool
+	OneWay        bool
+	Way           SigninWay
+	SigninPath    string
+	Reauth        bool
+	Federated     *FederatedDoor
+	Authenticator *SecretDoor
+	Passphrase    *SecretDoor
+	AppProblem    *AppProblem
 }
 func (s SigninState) Door() string
 func (s SigninState) Focus() string
@@ -257,19 +261,25 @@ const (
 	StepWays      SigninStep = "ways" // the one-way screen's chooser
 )
 
-type SigninWay string // WayEmail, WayPasskey, or a provider's name
+type SigninWay string // WayEmail, WayPasskey, WayAuthenticator,
+                       // WayPassphrase, or a provider's name
 
 type SigninProblem string
 
 const (
-	ProblemNone    SigninProblem = ""
-	ProblemRate    SigninProblem = "rate"
-	ProblemAddress SigninProblem = "address"
-	ProblemExpired SigninProblem = "expired"
-	ProblemKeymail SigninProblem = "keymail"
-	ProblemGeneric SigninProblem = "generic"
-	ProblemReauth  SigninProblem = "reauth"
-	ProblemCheck   SigninProblem = "check"
+	ProblemNone       SigninProblem = ""
+	ProblemRate       SigninProblem = "rate"
+	ProblemAddress    SigninProblem = "address"
+	ProblemExpired    SigninProblem = "expired"
+	ProblemKeymail    SigninProblem = "keymail"
+	ProblemGeneric    SigninProblem = "generic"
+	ProblemReauth     SigninProblem = "reauth"
+	ProblemCheck      SigninProblem = "check"
+	// The secret doors' own: a wrong code, a wrong passphrase, and an
+	// address resting after too many of either.
+	ProblemCode       SigninProblem = "code"
+	ProblemPassphrase SigninProblem = "passphrase"
+	ProblemPaused     SigninProblem = "paused"
 )
 
 type Remembered struct{ Method, Address, Provider string }
@@ -295,7 +305,18 @@ type PasskeyDoor struct {
 	ModuleURL, ScriptURL  string
 	LegacyRPID            string
 }
+
+type SecretDoor struct{ Path string }
 ```
+
+`Authenticator` and `Passphrase` are the secret doors, set by the page
+like `Passkey`: each draws the address and the secret, posted together
+to `Path`. Only the one-way screen draws them, and a browser that last
+signed in with one is shown it again with the address filled in. Their
+problems, `ProblemCode`, `ProblemPassphrase` and `ProblemPaused`, stay
+on the door they came from. The [signin](/docs/reference/signin)
+package fills all three doors with `Signins.Fill`; `Reauth` is a
+step-up kept apart from `Problem`, so an error does not lose it.
 
 On the one-way screen, set `Federated` for a sign-in another service
 runs, such as Oficina ID: `Provider` is the `lastsignin` provider you
@@ -314,7 +335,44 @@ draws the email field instead of a one-tap for the refused address. It
 works with the option on or off. A page that is not `auth`'s can fill a
 `SigninState` itself and call `ChooseWay` with the query.
 
-`Forget` is the Use a different email button: POST only, same-origin only, it forgets the remembered way in and redirects to `SigninPath`. On the one-way screen it opens the email way. `AnswerAsSent` is `Begin`'s answer for a sent link, without the link, for an admission check in front of `Begin`; see [Magic links](/docs/magic-links#an-admission-check-in-front-of-begin). `RememberJar` is the jar that remembers the way in; give it to `passkey.Config.Remember`.
+`Forget` is the Use a different email button: POST only, same-origin only, it forgets the remembered way in and redirects to `SigninPath`. On the one-way screen it opens the email way. `AnswerAsSent` is `Begin`'s answer for a sent link, without the link, for an admission check in front of `Begin`; see [Magic links](/docs/magic-links#an-admission-check-in-front-of-begin). `RememberJar` is the jar that remembers the way in; give it to `passkey.Config.Remember`. `Sessions` is the session store auth mints into; give it to `signin.Config.Sessions`, so the ways signin adds share auth's sessions.
+
+## Other ways in
+
+```go
+func (auth *Auth) Admit(w http.ResponseWriter, r *http.Request,
+	identity Identity, subject string)
+func (auth *Auth) Subject(ctx context.Context, address string) (string, error)
+func (auth *Auth) Authorized(address string) bool
+func (auth *Auth) Assembles() error
+func (auth *Auth) SigninPath() string
+func (auth *Auth) NoteProblem(w http.ResponseWriter, address string)
+var ErrNeedsLookup error
+```
+
+These are for a way in that `auth` does not run itself, such as the
+[signin](/docs/reference/signin) package's authenticator and passphrase.
+Verify the credential, then call `Admit` with the `Identity` (its
+`Method` names the way, such as `"totp"`) and the subject the
+credential belongs to. `Admit` runs `Authorize`, remembers the way,
+offers the session to `SecondFactor`, mints it and lands on `return_to`,
+exactly as a link does. It records the sign-in's time as the session's
+`AuthTime` unless the identity carries one; Keymail's stays as its
+server reported it, none included. If the address now resolves to a different
+subject than the one you checked, it refuses.
+
+`Subject` finds the subject an address signs in as without creating
+anything. Only a plain database configuration can answer: with
+`Records`, `BlindLinks` or `SubjectFor` it returns `ErrNeedsLookup`,
+and the caller brings its own lookup. `Authorized` is `Authorize`'s
+answer for an address, true when there is no hook, so a way auth does
+not run admits whom auth's own ways would. `Assembles` reports the
+first setting signin cannot build on (records mode, `BlindLinks`, a
+`SecondFactor`), and `SigninPath` is where another way in sends a
+visitor back with its problem in the query. `NoteProblem` keeps the
+address that visitor typed in the screen's sealed attempt cookie, as
+`Begin` does after a problem, so the field is filled again without the
+address going in the URL.
 
 ## Guarding and reading
 

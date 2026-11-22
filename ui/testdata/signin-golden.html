@@ -168,8 +168,7 @@ Sign in to Harbour
 <form rst-signin-form method="post" action="/signin">
 <input type="hidden" name="address" value="kay@example.org">
 <input type="hidden" name="expect" value="keymail">
-<button rst-btn="primary block" type="submit" aria-describedby="rst-signin-remembered" autofocus>Continue to Keymail</button>
-<p rst-signin-remembered id="rst-signin-remembered">as <bdi>kay@example.org</bdi></p>
+<button rst-btn="primary block" type="submit" autofocus><span>Continue as <bdi>kay@example.org</bdi></span></button>
 </form>
 <form rst-signin-form method="post" action="/signin/forget"><button rst-btn="ghost block" type="submit">Use a different email</button></form>
 </div>
@@ -185,8 +184,7 @@ Sign in to Harbour
 <input type="hidden" name="return_to" value="/docs/7?tab=a&amp;b=c">
 <input type="hidden" name="address" value="kay@example.org">
 <input type="hidden" name="expect" value="keymail">
-<button rst-btn="primary block" type="submit" aria-describedby="rst-signin-remembered" autofocus>Continue to Keymail</button>
-<p rst-signin-remembered id="rst-signin-remembered">as <bdi>kay@example.org</bdi></p>
+<button rst-btn="primary block" type="submit" autofocus><span>Continue as <bdi>kay@example.org</bdi></span></button>
 </form>
 <form rst-signin-form method="post" action="/signin/forget"><input type="hidden" name="return_to" value="/docs/7?tab=a&amp;b=c">
 <button rst-btn="ghost block" type="submit">Use a different email</button></form>
@@ -211,9 +209,8 @@ Sign in to Harbour
 
 <input type="hidden" name="address" value="kay@example.org">
 <input type="hidden" name="expect" value="keymail">
-<button rst-btn="primary block" type="submit" aria-describedby="rst-signin-remembered" autofocus disabled data-pow-submit>Continue to Keymail</button>
+<button rst-btn="primary block" type="submit" autofocus disabled data-pow-submit><span>Continue as <bdi>kay@example.org</bdi></span></button>
 <p data-pow-status>If this form doesn&#39;t respond, reload the page.</p><noscript><p>This form needs JavaScript to work.</p></noscript>
-<p rst-signin-remembered id="rst-signin-remembered">as <bdi>kay@example.org</bdi></p>
 </form>
 <form rst-signin-form method="post" action="/signin/forget"><button rst-btn="ghost block" type="submit">Use a different email</button></form>
 <script type="module" src="/pow/pow.js"></script></div>
@@ -228,8 +225,7 @@ Sign in to Harbour
 <form rst-signin-form method="post" action="/signin">
 <input type="hidden" name="address" value="kay@example.org">
 <input type="hidden" name="expect" value="keymail">
-<button rst-btn="primary block" type="submit" aria-describedby="rst-signin-remembered" autofocus>Continue to Keymail</button>
-<p rst-signin-remembered id="rst-signin-remembered">as <bdi>kay@example.org</bdi></p>
+<button rst-btn="primary block" type="submit" autofocus><span>Continue as <bdi>kay@example.org</bdi></span></button>
 </form>
 <form rst-signin-form method="post" action="/signin/forget"><button rst-btn="ghost block" type="submit">Use a different email</button></form>
 </div>
@@ -614,48 +610,48 @@ Check your email to sign in to Harbour
 <div rst-signin-brand><p rst-signin-name>Harbour</p></div>
 <div rst-signin-door>
 <meta http-equiv="refresh" content="0;url=https://keymail.test/oauth/authorize?client_id=https%3A%2F%2Fapp.test&amp;code_challenge=cccc&amp;code_challenge_method=S256&amp;redirect_uri=https%3A%2F%2Fapp.test%2Fauth%2Fcallback&amp;scope=identify&amp;state=ssss">
-<h1 id="rst-signin-heading">Taking you to Keymail</h1>
-<p>Taking you to Keymail to confirm it&#39;s you.</p>
-<a rst-btn="primary block" href="https://keymail.test/oauth/authorize?client_id=https%3A%2F%2Fapp.test&amp;code_challenge=cccc&amp;code_challenge_method=S256&amp;redirect_uri=https%3A%2F%2Fapp.test%2Fauth%2Fcallback&amp;scope=identify&amp;state=ssss">Continue to Keymail</a>
+<h1 id="rst-signin-heading">Signing you in</h1>
+<p>Taking you to confirm it&#39;s you.</p>
+<a rst-btn="primary block" href="https://keymail.test/oauth/authorize?client_id=https%3A%2F%2Fapp.test&amp;code_challenge=cccc&amp;code_challenge_method=S256&amp;redirect_uri=https%3A%2F%2Fapp.test%2Fauth%2Fcallback&amp;scope=identify&amp;state=ssss">Continue</a>
 </div>
 </section>
-Taking you to Keymail to sign in to Harbour
+Signing in to Harbour
 
 <!-- case continue, return -->
 <section rst-signin aria-labelledby="rst-signin-heading">
 <div rst-signin-brand><p rst-signin-name>Harbour</p></div>
 <div rst-signin-door>
 <meta http-equiv="refresh" content="0;url=https://keymail.test/oauth/authorize?client_id=https%3A%2F%2Fapp.test&amp;code_challenge=cccc&amp;code_challenge_method=S256&amp;redirect_uri=https%3A%2F%2Fapp.test%2Fauth%2Fcallback&amp;scope=identify&amp;state=ssss">
-<h1 id="rst-signin-heading">Taking you to Keymail</h1>
-<p>Taking you to Keymail to confirm it&#39;s you.</p>
-<a rst-btn="primary block" href="https://keymail.test/oauth/authorize?client_id=https%3A%2F%2Fapp.test&amp;code_challenge=cccc&amp;code_challenge_method=S256&amp;redirect_uri=https%3A%2F%2Fapp.test%2Fauth%2Fcallback&amp;scope=identify&amp;state=ssss">Continue to Keymail</a>
+<h1 id="rst-signin-heading">Signing you in</h1>
+<p>Taking you to confirm it&#39;s you.</p>
+<a rst-btn="primary block" href="https://keymail.test/oauth/authorize?client_id=https%3A%2F%2Fapp.test&amp;code_challenge=cccc&amp;code_challenge_method=S256&amp;redirect_uri=https%3A%2F%2Fapp.test%2Fauth%2Fcallback&amp;scope=identify&amp;state=ssss">Continue</a>
 </div>
 </section>
-Taking you to Keymail to sign in to Harbour
+Signing in to Harbour
 
 <!-- case continue, proof -->
 <section rst-signin aria-labelledby="rst-signin-heading">
 <div rst-signin-brand><p rst-signin-name>Harbour</p></div>
 <div rst-signin-door>
 <meta http-equiv="refresh" content="0;url=https://keymail.test/oauth/authorize?client_id=https%3A%2F%2Fapp.test&amp;code_challenge=cccc&amp;code_challenge_method=S256&amp;redirect_uri=https%3A%2F%2Fapp.test%2Fauth%2Fcallback&amp;scope=identify&amp;state=ssss">
-<h1 id="rst-signin-heading">Taking you to Keymail</h1>
-<p>Taking you to Keymail to confirm it&#39;s you.</p>
-<a rst-btn="primary block" href="https://keymail.test/oauth/authorize?client_id=https%3A%2F%2Fapp.test&amp;code_challenge=cccc&amp;code_challenge_method=S256&amp;redirect_uri=https%3A%2F%2Fapp.test%2Fauth%2Fcallback&amp;scope=identify&amp;state=ssss">Continue to Keymail</a>
+<h1 id="rst-signin-heading">Signing you in</h1>
+<p>Taking you to confirm it&#39;s you.</p>
+<a rst-btn="primary block" href="https://keymail.test/oauth/authorize?client_id=https%3A%2F%2Fapp.test&amp;code_challenge=cccc&amp;code_challenge_method=S256&amp;redirect_uri=https%3A%2F%2Fapp.test%2Fauth%2Fcallback&amp;scope=identify&amp;state=ssss">Continue</a>
 </div>
 </section>
-Taking you to Keymail to sign in to Harbour
+Signing in to Harbour
 
 <!-- case continue, preview -->
 <section rst-signin aria-labelledby="rst-signin-heading">
 <div rst-signin-brand><p rst-signin-name>Harbour</p></div>
 <div rst-signin-door>
 
-<h1 id="rst-signin-heading">Taking you to Keymail</h1>
-<p>Taking you to Keymail to confirm it&#39;s you.</p>
-<a rst-btn="primary block" href="#">Continue to Keymail</a>
+<h1 id="rst-signin-heading">Signing you in</h1>
+<p>Taking you to confirm it&#39;s you.</p>
+<a rst-btn="primary block" href="#">Continue</a>
 </div>
 </section>
-Taking you to Keymail to sign in to Harbour
+Signing in to Harbour
 
 <!-- case confirm, bare -->
 <section rst-signin aria-labelledby="rst-signin-heading">
@@ -939,7 +935,7 @@ Problem signing in to Harbour
 <div rst-signin-brand><p rst-signin-name>Harbour</p></div>
 <div rst-signin-door>
 <h1 id="rst-signin-heading">Sign in to Harbour</h1>
-<div rst-callout id="rst-signin-problem" rst-tone="negative" tabindex="-1" autofocus><span rst-callout-ic aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg></span><div rst-callout-body><p>Keymail couldn&#39;t confirm it&#39;s you.</p></div></div>
+<div rst-callout id="rst-signin-problem" rst-tone="negative" tabindex="-1" autofocus><span rst-callout-ic aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg></span><div rst-callout-body><p>We couldn&#39;t confirm it&#39;s you. Try again, or email yourself a sign-in link.</p></div></div>
 <form rst-signin-form method="post" action="/signin">
 <div rst-field><label rst-field-label for="rst-signin-email">Email</label>
 <input rst-input type="email" id="rst-signin-email" name="address" value="kay@example.org" required autocomplete="email">
@@ -956,7 +952,7 @@ Problem signing in to Harbour
 <div rst-signin-brand><p rst-signin-name>Harbour</p></div>
 <div rst-signin-door>
 <h1 id="rst-signin-heading">Sign in to Harbour</h1>
-<div rst-callout id="rst-signin-problem" rst-tone="negative" tabindex="-1" autofocus><span rst-callout-ic aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg></span><div rst-callout-body><p>Keymail couldn&#39;t confirm it&#39;s you.</p></div></div>
+<div rst-callout id="rst-signin-problem" rst-tone="negative" tabindex="-1" autofocus><span rst-callout-ic aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg></span><div rst-callout-body><p>We couldn&#39;t confirm it&#39;s you. Try again, or email yourself a sign-in link.</p></div></div>
 <form rst-signin-form method="post" action="/signin">
 <input type="hidden" name="return_to" value="/docs/7?tab=a&amp;b=c">
 <div rst-field><label rst-field-label for="rst-signin-email">Email</label>
@@ -974,7 +970,7 @@ Problem signing in to Harbour
 <div rst-signin-brand><p rst-signin-name>Harbour</p></div>
 <div rst-signin-door>
 <h1 id="rst-signin-heading">Sign in to Harbour</h1>
-<div rst-callout id="rst-signin-problem" rst-tone="negative" tabindex="-1" autofocus><span rst-callout-ic aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg></span><div rst-callout-body><p>Keymail couldn&#39;t confirm it&#39;s you.</p></div></div>
+<div rst-callout id="rst-signin-problem" rst-tone="negative" tabindex="-1" autofocus><span rst-callout-ic aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg></span><div rst-callout-body><p>We couldn&#39;t confirm it&#39;s you. Try again, or email yourself a sign-in link.</p></div></div>
 <form rst-signin-form method="post" action="/signin" data-pow-form data-pow-nonce="…" data-pow-difficulty="12" data-pow-worker="/pow/pow-worker.js" data-pow-min-age="3000"><input type="hidden" name="pow_scope" value="…">
 <input type="hidden" name="pow_nonce" value="…">
 <input type="hidden" name="pow_issued" value="…">
@@ -1001,7 +997,7 @@ Problem signing in to Harbour
 <div rst-signin-brand><p rst-signin-name>Harbour</p></div>
 <div rst-signin-door>
 <h1 id="rst-signin-heading">Sign in to Harbour</h1>
-<div rst-callout id="rst-signin-problem" rst-tone="negative" tabindex="-1" autofocus><span rst-callout-ic aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg></span><div rst-callout-body><p>Keymail couldn&#39;t confirm it&#39;s you.</p></div></div>
+<div rst-callout id="rst-signin-problem" rst-tone="negative" tabindex="-1" autofocus><span rst-callout-ic aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg></span><div rst-callout-body><p>We couldn&#39;t confirm it&#39;s you. Try again, or email yourself a sign-in link.</p></div></div>
 <form rst-signin-form method="post" action="/signin">
 <div rst-field><label rst-field-label for="rst-signin-email">Email</label>
 <input rst-input type="email" id="rst-signin-email" name="address" value="kay@example.org" required autocomplete="email">
@@ -1172,8 +1168,7 @@ Sign in to Harbour
 <form rst-signin-form method="post" action="/signin">
 <input type="hidden" name="address" value="kay@example.org">
 <input type="hidden" name="expect" value="keymail">
-<button rst-btn="primary block" type="submit" aria-describedby="rst-signin-remembered" autofocus>Continue to Keymail</button>
-<p rst-signin-remembered id="rst-signin-remembered">as <bdi>kay@example.org</bdi></p>
+<button rst-btn="primary block" type="submit" autofocus><span>Continue as <bdi>kay@example.org</bdi></span></button>
 </form>
 <form rst-signin-form method="post" action="/signin/forget"><button rst-btn="ghost block" type="submit">Use a different email</button></form>
 </div>
@@ -1190,8 +1185,7 @@ Sign in to Harbour
 <input type="hidden" name="return_to" value="/docs/7?tab=a&amp;b=c">
 <input type="hidden" name="address" value="kay@example.org">
 <input type="hidden" name="expect" value="keymail">
-<button rst-btn="primary block" type="submit" aria-describedby="rst-signin-remembered" autofocus>Continue to Keymail</button>
-<p rst-signin-remembered id="rst-signin-remembered">as <bdi>kay@example.org</bdi></p>
+<button rst-btn="primary block" type="submit" autofocus><span>Continue as <bdi>kay@example.org</bdi></span></button>
 </form>
 <form rst-signin-form method="post" action="/signin/forget"><input type="hidden" name="return_to" value="/docs/7?tab=a&amp;b=c">
 <button rst-btn="ghost block" type="submit">Use a different email</button></form>
@@ -1217,9 +1211,8 @@ Sign in to Harbour
 
 <input type="hidden" name="address" value="kay@example.org">
 <input type="hidden" name="expect" value="keymail">
-<button rst-btn="primary block" type="submit" aria-describedby="rst-signin-remembered" autofocus disabled data-pow-submit>Continue to Keymail</button>
+<button rst-btn="primary block" type="submit" autofocus disabled data-pow-submit><span>Continue as <bdi>kay@example.org</bdi></span></button>
 <p data-pow-status>If this form doesn&#39;t respond, reload the page.</p><noscript><p>This form needs JavaScript to work.</p></noscript>
-<p rst-signin-remembered id="rst-signin-remembered">as <bdi>kay@example.org</bdi></p>
 </form>
 <form rst-signin-form method="post" action="/signin/forget"><button rst-btn="ghost block" type="submit">Use a different email</button></form>
 <script type="module" src="/pow/pow.js"></script></div>
@@ -1235,8 +1228,7 @@ Sign in to Harbour
 <form rst-signin-form method="post" action="/signin">
 <input type="hidden" name="address" value="kay@example.org">
 <input type="hidden" name="expect" value="keymail">
-<button rst-btn="primary block" type="submit" aria-describedby="rst-signin-remembered" autofocus>Continue to Keymail</button>
-<p rst-signin-remembered id="rst-signin-remembered">as <bdi>kay@example.org</bdi></p>
+<button rst-btn="primary block" type="submit" autofocus><span>Continue as <bdi>kay@example.org</bdi></span></button>
 </form>
 <form rst-signin-form method="post" action="/signin/forget"><button rst-btn="ghost block" type="submit">Use a different email</button></form>
 </div>

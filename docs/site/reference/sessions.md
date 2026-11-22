@@ -57,7 +57,8 @@ type Session struct {
 so plugins never have to agree on a numeric type. `Method` names how the
 credential was verified, in the plugin's vocabulary — `"password"`,
 `"magiclink"`, `"magiclink+passkey"`. `AuthTime` is when the credential
-was verified, zero if the plugin does not track it. `At` is when this
+was verified, zero if the plugin does not know it (`auth` stamps every
+way but a Keymail server that reports none). `At` is when this
 row was created.
 
 ## Signing in and out
@@ -126,9 +127,9 @@ rather than per route.
 
 Freshness is measured from `AuthTime` when set and from `At` otherwise.
 A session is only ever minted at credential verification, so `At` is an
-honest lower bound, and the fallback is what stops a plugin that never
-sets `AuthTime` — the magic link, for one — from redirect-looping
-forever.
+honest lower bound, and the fallback is what stops a session with no
+`AuthTime` (a Keymail server that reports none, for one) from
+redirect-looping forever.
 
 ## Reading the viewer
 

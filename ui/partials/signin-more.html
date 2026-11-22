@@ -1,0 +1,99 @@
+{{/* signin-view — every page of the signin package, from its View.
+     It draws the sign-in screen (signin), the offer of a faster way in
+     (signin-offer), a way's add page (signin-add) or the sign-in
+     options (signin-options), whichever View carries. An app's sign-in
+     page template is this one call, in the stage shell
+     (ui.Layout("stage")) or any other.
+
+     Keys:
+       View     signin.View, required
+       Brand    required, as signin's: Name, optional Pitch and Mark
+       Preview  bool, optional — gallery use only, as signin's: no
+                script, and the passkey button drawn as the enhanced
+                page draws it
+       HideBrand  bool, optional — as signin's */}}
+{{define "signin-view"}}{{$L := localizer $}}{{$v := .View}}{{$preview := opt . "Preview"}}{{$hide := opt . "HideBrand"}}{{if $v.Offer}}{{template "signin-offer" (dict "L" $L "Offer" $v.Offer "Brand" .Brand "HideBrand" $hide)}}{{else if $v.Add}}{{template "signin-add" (dict "L" $L "Add" $v.Add "Brand" .Brand "Preview" $preview "HideBrand" $hide)}}{{else if $v.Options}}{{template "signin-options" (dict "L" $L "Options" $v.Options "Brand" .Brand "HideBrand" $hide)}}{{else if $v.Signin}}{{template "signin" (dict "L" $L "State" $v.Signin "Brand" .Brand "Preview" $preview "HideBrand" $hide)}}{{end}}{{end}}
+{{/* signin-view-title — the title for the same page. It goes in the
+     page's title block and says what the page's heading says. Keys:
+     View, Brand (as signin-view). */}}
+{{define "signin-view-title"}}{{$L := localizer $}}{{$v := .View}}{{$n := .Brand.Name}}{{if $v.Offer}}{{Tf $L "rastrillo.ui.signin_offer_title" "name" $n}}{{else if $v.Add}}{{T $L (printf "rastrillo.ui.signin_add_%s_heading" $v.Add.Way.Name)}}{{else if $v.Options}}{{Tf $L "rastrillo.ui.signin_options_title" "name" $n}}{{else if $v.Signin}}{{template "signin-title" (dict "L" $L "State" $v.Signin "Brand" .Brand)}}{{end}}{{end}}
+{{/* signin-offer — part of signin-view. It draws "Sign in faster next
+     time", shown once after a sign-in by emailed link: one row per way the app turns on, passkey
+     first and marked recommended, each a link to that way's add page,
+     then "Not now", a POST the signin package remembers for good.
+     Keys: Offer (signin.Offer), Brand, HideBrand. */}}
+{{define "signin-offer"}}{{$L := localizer $}}{{$o := .Offer}}<section rst-signin aria-labelledby="rst-signin-heading">
+{{if not (opt . "HideBrand")}}{{template "signin-brand" (dict "L" $L "Brand" .Brand)}}{{end}}<div rst-signin-door="one-way">
+<h1 id="rst-signin-heading">{{T $L "rastrillo.ui.signin_offer_heading"}}</h1>
+<p>{{T $L "rastrillo.ui.signin_offer_body"}}</p>
+<div rst-signin-ways>
+{{range $o.Choices}}<a rst-btn="block" href="{{.Href}}">{{if eq .Way "passkey"}}{{template "signin-glyph" (dict "L" $L "Glyph" "key")}}<span><span>{{T $L "rastrillo.ui.signin_offer_passkey"}} {{template "badge" (dict "L" $L "Label" (T $L "rastrillo.ui.signin_offer_recommended") "Tone" "positive")}}</span><bdi>{{T $L "rastrillo.ui.signin_offer_passkey_detail"}}</bdi></span>{{else if eq .Way "authenticator"}}{{template "signin-glyph" (dict "L" $L "Glyph" "shield")}}<span><span>{{T $L "rastrillo.ui.signin_offer_authenticator"}}</span><bdi>{{T $L "rastrillo.ui.signin_offer_authenticator_detail"}}</bdi></span>{{else}}{{template "signin-glyph" (dict "L" $L "Glyph" "lock")}}<span><span>{{T $L "rastrillo.ui.signin_offer_passphrase"}}</span><bdi>{{T $L "rastrillo.ui.signin_offer_passphrase_detail"}}</bdi></span>{{end}}{{template "signin-glyph" (dict "L" $L "Glyph" "next")}}</a>
+{{end}}</div>
+<form rst-signin-form method="post" action="{{$o.LaterPath}}">{{with $o.ReturnTo}}<input type="hidden" name="return_to" value="{{.}}">
+{{end}}<button rst-btn="ghost" type="submit"><span>{{T $L "rastrillo.ui.signin_offer_later"}}</span></button></form>
+</div>
+</section>{{end}}
+{{/* signin-add — part of signin-view. It draws one way's add page, on
+     the same card: the passkey's
+     button, which register.mjs (Add.Passkey.ScriptURL) enables where a
+     passkey can be made; the authenticator's QR, key and one code to
+     confirm; or the passphrase, with the address as a username a
+     password manager saves it under. With Add.Done it says the way
+     works and links on to Add.ReturnTo. Add.Problem, a locale key, is
+     drawn on the field, where focus starts.
+     Keys: Add (signin.Add), Brand, Preview, HideBrand. */}}
+{{define "signin-add"}}{{$L := localizer $}}{{$a := .Add}}{{$way := $a.Way.Name}}{{$preview := opt . "Preview"}}{{$err := ""}}{{with $a.Problem}}{{$err = T $L .}}{{end}}<section rst-signin aria-labelledby="rst-signin-heading">
+{{if not (opt . "HideBrand")}}{{template "signin-brand" (dict "L" $L "Brand" .Brand)}}{{end}}<div rst-signin-door="one-way">
+<h1 id="rst-signin-heading">{{T $L (printf "rastrillo.ui.signin_add_%s_heading" $way)}}</h1>
+{{if $a.Done}}<p>{{T $L "rastrillo.ui.signin_added"}}</p>
+<a rst-btn="primary block" href="{{$a.ReturnTo}}" autofocus>{{T $L "rastrillo.ui.signin_added_continue"}}</a>
+{{else if eq $way "passkey"}}<p>{{T $L "rastrillo.ui.signin_add_passkey_body"}}</p>
+<div rst-signin-passkey><button rst-btn="primary block" type="button"{{if not $preview}} disabled data-rst-passkey-register data-rst-passkey-begin="{{$a.Passkey.BeginPath}}" data-rst-passkey-finish="{{$a.Passkey.FinishPath}}" data-rst-passkey-module="{{$a.Passkey.ModuleURL}}" data-rst-passkey-user="{{$a.Address}}" data-rst-passkey-rp-name="{{.Brand.Name}}" data-rst-passkey-failed="{{T $L "rastrillo.ui.signin_add_passkey_failed"}}"{{end}} aria-describedby="rst-signin-passkey-msg">{{template "signin-glyph" (dict "L" $L "Glyph" "key")}}<span>{{T $L "rastrillo.ui.signin_add_passkey_submit"}}</span></button>
+<p rst-signin-passkey-msg id="rst-signin-passkey-msg" aria-live="polite"></p>
+</div>
+{{if not $preview}}<noscript><p>{{T $L "rastrillo.ui.signin_passkey_noscript"}}</p></noscript>
+<script type="module" src="{{$a.Passkey.ScriptURL}}"></script>
+{{end}}{{else if eq $way "authenticator"}}<p>{{T $L "rastrillo.ui.signin_add_authenticator_body"}}</p>
+{{$a.QR}}
+<p>{{T $L "rastrillo.ui.signin_add_authenticator_key"}} <code>{{$a.Key}}</code></p>
+<form rst-signin-form method="post" action="{{$a.Action}}">{{with $a.ReturnTo}}<input type="hidden" name="return_to" value="{{.}}">
+{{end}}{{template "field" (dict "L" $L "ID" "rst-signin-code" "Name" "code" "Label" (T $L "rastrillo.ui.signin_code") "Type" "text" "Inputmode" "numeric" "Autocomplete" "one-time-code" "Required" true "Autofocus" (ne $err "") "Error" $err "QuietError" true)}}
+<button rst-btn="primary block" type="submit">{{T $L "rastrillo.ui.signin_add_authenticator_submit"}}</button></form>
+{{else}}<p>{{T $L "rastrillo.ui.signin_add_passphrase_body"}}</p>
+<form rst-signin-form method="post" action="{{$a.Action}}">{{with $a.ReturnTo}}<input type="hidden" name="return_to" value="{{.}}">
+{{end}}{{with $a.Address}}<input type="email" name="username" autocomplete="username" value="{{.}}" hidden>
+{{end}}{{/* No maxlength: the browser counts UTF-16 units and the
+     server runes, so 129 emoji would be refused here and accepted
+     there. The server re-renders the page when a phrase is too long. */}}{{template "field" (dict "L" $L "ID" "rst-signin-passphrase" "Name" "passphrase" "Label" (T $L "rastrillo.ui.signin_passphrase") "Type" "password" "Autocomplete" "new-password" "Minlength" "15" "Required" true "Autofocus" true "Error" $err "QuietError" true)}}
+{{/* The switch sends nothing and only the reveal module can work it,
+     so it ships hidden and the module shows it; a div carries hidden
+     because rst-switch's own display would override it. */}}<div data-rst-reveal-row{{if not $preview}} hidden{{end}}><label rst-switch><input type="checkbox" data-rst-reveal aria-controls="rst-signin-passphrase"><span rst-switch-track aria-hidden="true"></span> {{T $L "rastrillo.ui.signin_add_passphrase_show"}}</label></div>
+<button rst-btn="primary block" type="submit">{{T $L "rastrillo.ui.signin_add_passphrase_submit"}}</button></form>
+{{if and (not $preview) $a.RevealURL}}<script type="module" src="{{$a.RevealURL}}"></script>
+{{end}}{{end}}</div>
+</section>{{end}}
+{{/* signin-options — part of signin-view. It draws the Sign-in options
+     page, on the same card: the email link first, always on and with
+     nothing to remove, then a row for each way the app turns on. A way
+     the person has is a Remove button, a POST of way (and, for a
+     passkey, its id) to Options.RemovePath; one they lack is a link to
+     its add page. Options.Removed says one was just taken off.
+     Keys: Options (signin.Options), Brand, HideBrand. */}}
+{{define "signin-options"}}{{$L := localizer $}}{{$o := .Options}}<section rst-signin aria-labelledby="rst-signin-heading">
+{{if not (opt . "HideBrand")}}{{template "signin-brand" (dict "L" $L "Brand" .Brand)}}{{end}}<div rst-signin-door="one-way">
+<h1 id="rst-signin-heading">{{T $L "rastrillo.ui.signin_options_heading"}}</h1>
+{{if $o.Removed}}<p role="status">{{T $L "rastrillo.ui.signin_options_removed"}}</p>
+{{end}}<div rst-signin-ways>
+<div rst-btn="block">{{template "signin-glyph" (dict "L" $L "Glyph" "mail")}}<span><span>{{T $L "rastrillo.ui.signin_options_email"}}</span>{{with $o.Address}}<bdi>{{Tf $L "rastrillo.ui.signin_options_email_detail" "address" .}}</bdi>{{end}}</span></div>
+{{range $o.Ways}}{{$glyph := "lock"}}{{$name := T $L "rastrillo.ui.signin_way_passphrase"}}{{if eq .Way.Name "passkey"}}{{$glyph = "key"}}{{$name = or .Label (T $L "rastrillo.ui.signin_offer_passkey")}}{{else if eq .Way.Name "authenticator"}}{{$glyph = "shield"}}{{$name = T $L "rastrillo.ui.signin_way_authenticator"}}{{end}}{{if .Have}}<form method="post" action="{{$o.RemovePath}}"><input type="hidden" name="way" value="{{.Way.Name}}">
+{{with .ID}}<input type="hidden" name="id" value="{{.}}">
+{{end}}<button rst-btn="block" type="submit">{{template "signin-glyph" (dict "L" $L "Glyph" $glyph)}}<span><span>{{$name}}</span><bdi>{{T $L "rastrillo.ui.signin_options_remove"}}</bdi></span></button></form>
+{{else}}<a rst-btn="block" href="{{.AddPath}}">{{template "signin-glyph" (dict "L" $L "Glyph" $glyph)}}<span><span>{{$name}}</span><bdi>{{T $L "rastrillo.ui.signin_options_add"}}</bdi></span>{{template "signin-glyph" (dict "L" $L "Glyph" "next")}}</a>
+{{end}}{{end}}</div>
+</div>
+</section>{{end}}
+{{/* signin-brand — part of signin-view. It draws the brand column
+     signin draws, Mark, Name and Pitch, for signin-offer, signin-add
+     and signin-options. Keys: L, Brand. */}}
+{{define "signin-brand"}}{{$b := .Brand}}<div rst-signin-brand>{{with opt $b "Mark"}}<div rst-signin-mark>{{.}}</div>{{end}}<p rst-signin-name>{{$b.Name}}</p>{{with opt $b "Pitch"}}<p rst-signin-pitch>{{.}}</p>{{end}}</div>
+{{end}}

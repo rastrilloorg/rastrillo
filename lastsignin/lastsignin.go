@@ -1,7 +1,8 @@
 // Package lastsignin remembers, in this browser only, which way in it
-// last used — keymail, a magic link, a passkey or a federated provider —
-// and the address of the person who used it, when the caller has one, so
-// the sign-in screen can offer a one-tap.
+// last used — keymail, a magic link, a passkey, an authenticator app, a
+// passphrase or a federated provider — and the address of the person who
+// used it, when the caller has one, so the sign-in screen can offer a
+// one-tap.
 //
 // It also owns the one seam every sign-in path calls when an attempt
 // ends, EndAttempt, so auth and passkey clear the screen's attempt
@@ -47,10 +48,12 @@ const (
 // The methods a record may name — the Identity methods auth mints,
 // passkey discovery's, and a sign-in another service vouched for.
 const (
-	MethodKeymail   = "keymail"
-	MethodMagicLink = "magiclink"
-	MethodPasskey   = "passkey"
-	MethodFederated = "federated"
+	MethodKeymail    = "keymail"
+	MethodMagicLink  = "magiclink"
+	MethodPasskey    = "passkey"
+	MethodFederated  = "federated"
+	MethodTOTP       = "totp"
+	MethodPassphrase = "passphrase"
 )
 
 // ProviderOficina is the one federated provider a record may name:
@@ -250,7 +253,7 @@ func (j *Jar) Clear(w http.ResponseWriter) {
 // back forgets them rather than misreading them.
 func validRecord(rec Record) bool {
 	switch rec.Method {
-	case MethodKeymail, MethodMagicLink:
+	case MethodKeymail, MethodMagicLink, MethodTOTP, MethodPassphrase:
 		return rec.Provider == "" && validAddress(rec.Address)
 	case MethodPasskey:
 		return rec.Provider == "" && optionalAddress(rec.Address)

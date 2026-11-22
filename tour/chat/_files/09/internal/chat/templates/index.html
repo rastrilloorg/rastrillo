@@ -1,6 +1,7 @@
 {{define "title"}}Chat{{end}}
 {{define "content"}}{{$L := localizer $}}
 {{template "page-header" dict "Title" "Rooms"}}
+{{if and (opt $ "Address") (not (opt $ "Base"))}}<p><a href="/account/signin">{{T $L "rastrillo.ui.signin_options_heading"}}</a></p>{{end}}
 {{if .Rooms}}<div rst-list>
 {{range .Rooms}}{{template "list-row-action" dict "L" $L "Href" (path $ (printf "/rooms/%d" .ID)) "Main" .Name}}
 {{end}}</div>

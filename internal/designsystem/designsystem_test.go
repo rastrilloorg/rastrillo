@@ -3565,6 +3565,10 @@ func TestTheSigninScreensAreThePartial(t *testing.T) {
 		"signin-ask", "signin-returning-keymail", "signin-returning-link", "signin-returning-passkey",
 		"signin-sent", "signin-sent-unbound", "signin-sent-instead", "signin-continue",
 		"signin-problem-address", "signin-problem-keymail",
+		"signin-authenticator", "signin-problem-code",
+		"signin-passphrase", "signin-problem-passphrase",
+		"signin-offer", "signin-add-passkey", "signin-add-authenticator",
+		"signin-add-passphrase", "signin-added",
 	}
 	for _, key := range signinKeys {
 		i := strings.Index(page, `id="`+anchorID("screen", key)+`"`)
@@ -3609,7 +3613,8 @@ func TestTheSigninScreensAreThePartial(t *testing.T) {
 	}
 	// Previews load nothing: the door's module is for a live page.
 	for name, body := range files {
-		for _, module := range []string{"passkey-signin.mjs", "webauthn.mjs"} {
+		for _, module := range []string{"passkey-signin.mjs",
+			"webauthn.mjs", "register.mjs"} {
 			if strings.Contains(string(body), module) {
 				t.Errorf("%s names %s; a Preview must not load the passkey door", name, module)
 			}
@@ -3701,7 +3706,10 @@ func TestTheTextOnScreenIsTheTextCopied(t *testing.T) {
 			}
 		}
 		for _, doc := range screenDocs() {
-			if doc.Signin != nil {
+			if doc.View != nil {
+				want["screens"] = append(want["screens"],
+					signinViewSource)
+			} else if doc.Signin != nil {
 				want["screens"] = append(want["screens"], signinSource)
 			} else {
 				want["screens"] = append(want["screens"], codeview.Format(localMarkup(locale, doc.Markup)))
