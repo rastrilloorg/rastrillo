@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"reflect"
 	"slices"
 	"strings"
 	"testing"
@@ -119,6 +120,10 @@ func TestToolNamesReportsAListItCannotRead(t *testing.T) {
 		{"a refusal", http.StatusUnauthorized, `{"error":{}}`},
 		{"not JSON", http.StatusOK, `<html>`},
 		{"a JSON-RPC error", http.StatusOK, refused},
+		{"a result with no tools", http.StatusOK,
+			`{"jsonrpc":"2.0","id":1,"result":{}}`},
+		{"a result whose tools are null", http.StatusOK,
+			`{"jsonrpc":"2.0","id":1,"result":{"tools":null}}`},
 	}
 	for _, each := range cases {
 		t.Run(each.name, func(t *testing.T) {
@@ -133,5 +138,29 @@ func TestToolNamesReportsAListItCannotRead(t *testing.T) {
 				t.Errorf("ToolNames = %v, want none", names)
 			}
 		})
+	}
+}
+
+func TestToolNamesReadsAnEmptyList(t *testing.T) {
+	recorder := &spy{TB: t}
+	names := ToolNames(recorder, answering(http.StatusOK,
+		`{"jsonrpc":"2.0","id":1,"result":{"tools":[]}}`))
+	if len(recorder.failures) > 0 || names == nil || len(names) != 0 {
+		t.Errorf("ToolNames = %#v, reported %v; want an empty list and "+
+			"nothing reported", names, recorder.failures)
+	}
+}
+
+// A number past float64's range is still one JSON value, kept as
+// written, so reading the body whole must not convert it.
+func TestABodyKeepsANumberPastFloatRange(t *testing.T) {
+	recorder := &spy{TB: t}
+	outcome := CallAPI(recorder, answering(http.StatusOK,
+		`{"amount":1e400}`), named.create.Descriptor, nil)
+	want := map[string]any{"amount": json.Number("1e400")}
+	if len(recorder.failures) > 0 || outcome.Kind != "ok" ||
+		!reflect.DeepEqual(outcome.Body, want) {
+		t.Errorf("CallAPI = %+v, reported %v; want ok with %v",
+			outcome, recorder.failures, want)
 	}
 }

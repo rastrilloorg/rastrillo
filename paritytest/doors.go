@@ -83,20 +83,23 @@ func toolNames(t testing.TB, surface Surface) ([]string, bool) {
 	answer := send(t, surface.Handler, http.MethodPost, mcpPath,
 		mcpHeader(lister.header()),
 		[]byte(`{"jsonrpc":"2.0","id":1,"method":"tools/list"}`))
+	// Tools is a pointer, so a list left out or null is told apart from
+	// an empty one.
 	var listed struct {
 		Result *struct {
-			Tools []struct {
+			Tools *[]struct {
 				Name string `json:"name"`
 			} `json:"tools"`
 		} `json:"result"`
 	}
 	err := json.Unmarshal(answer.body, &listed)
-	if answer.status/100 != 2 || err != nil || listed.Result == nil {
+	if answer.status/100 != 2 || err != nil || listed.Result == nil ||
+		listed.Result.Tools == nil {
 		t.Errorf(msgListUnread, answer.status, answer.body)
 		return nil, false
 	}
 	names := []string{}
-	for _, tool := range listed.Result.Tools {
+	for _, tool := range *listed.Result.Tools {
 		names = append(names, tool.Name)
 	}
 	slices.Sort(names)
@@ -253,8 +256,9 @@ func objectOf(
 		return nil, false
 	}
 	// Unmarshal for its error, because it also refuses what follows the
-	// value, which a Decoder leaves unread.
-	if err := json.Unmarshal(encoded, new(any)); err != nil {
+	// value, which a Decoder leaves unread. Into a RawMessage, so a
+	// number past float64's range is checked as JSON, not converted.
+	if err := json.Unmarshal(encoded, new(json.RawMessage)); err != nil {
 		t.Errorf(msgNotJSON, door, id, err)
 		return nil, false
 	}
