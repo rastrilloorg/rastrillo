@@ -634,3 +634,28 @@ func (call rawCall) refusal(t *testing.T) api.Error {
 	}
 	return envelope.Error
 }
+
+// withTokensCreate is bookmarks() plus tokens.create, an operation only a
+// person may call. Its Invoke counts calls in invokes, then checks and
+// decodes as a generated one does, so arguments it would refuse show.
+func withTokensCreate(invokes *atomic.Int64) []op.Descriptor {
+	tokensCreate := bookmark("create", rastrillo.Write, false, false,
+		"Create an API token.", "")
+	tokensCreate.ID, tokensCreate.Resource = "tokens.create", "tokens"
+	tokensCreate.HumanOnly = "an agent must not raise its own access"
+	operation := tokensCreate.Operation
+	tokensCreate.Invoke = func(
+		ctx context.Context, rc *rastrillo.Ctx, raw json.RawMessage,
+	) (any, error) {
+		invokes.Add(1)
+		if err := op.Check(ctx, rc, operation); err != nil {
+			return nil, err
+		}
+		var input struct{}
+		if err := op.DecodeInput(raw, &input); err != nil {
+			return nil, err
+		}
+		return map[string]any{}, nil
+	}
+	return append(bookmarks(), tokensCreate)
+}

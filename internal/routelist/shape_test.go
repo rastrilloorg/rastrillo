@@ -17,7 +17,8 @@ func parsed(t *testing.T, source string) []sourceFile {
 		t.Fatal(err)
 	}
 	return []sourceFile{{
-		syntax: syntax, fileSet: fileSet, actionNames: actionNames(syntax),
+		syntax: syntax, fileSet: fileSet,
+		actionNames: importNames(syntax, actionPackage),
 	}}
 }
 

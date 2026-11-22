@@ -79,9 +79,9 @@ every request the same `Ctx`: one person's actor never reaches the next
 request.
 
 ```go
-func (routes *Routes) Get(path Path, handler Handler)
-func (routes *Routes) Post(path Path, handler Handler)
-func (routes *Routes) Handle(method string, path Path, handler http.Handler, name string)
+func (routes *Routes) Get(path Path, handler Handler, marks ...route.Mark)
+func (routes *Routes) Post(path Path, handler Handler, marks ...route.Mark)
+func (routes *Routes) Handle(method string, path Path, handler http.Handler, name string, marks ...route.Mark)
 func (routes *Routes) Mount(prefix Path, handler http.Handler, name string)
 ```
 
@@ -91,6 +91,21 @@ your API, to its own handler. `Handle` and `Mount` take a `name`, because
 a handler of that kind has no function name worth showing in the list.
 Every path is the full path from the root. A quoted string such as
 `"/tags/{id}"` works where a `Path` is asked for.
+
+`Get`, `Post` and `Handle` take at most one mark from the
+[route](/docs/reference/route) package, and more than one panics.
+`route.Operation` names the operations the page serves, and
+`route.PageOnly` says why an agent has no use for the route. The mark
+is recorded with the route. Once your app declares a named operation,
+[`rastrillo routes --check`](/docs/cli#rastrillo-routes) fails a route
+with no mark.
+
+```go
+routes.Post("/notes", app.noteCreate,
+	route.Operation(notes.Create.Descriptor))
+routes.Get("/style.css", app.stylesheet,
+	route.PageOnly("the stylesheet"))
+```
 
 ```go
 func (routes *Routes) Guard(name string, middleware func(http.Handler) http.Handler)
@@ -132,6 +147,9 @@ type Route struct {
 	Handler string
 	Action  string
 	Guards  []string
+
+	Operations []string
+	PageOnly   string
 }
 
 func (routes *Routes) List() []Route
@@ -140,11 +158,13 @@ func (routes *Routes) List() []Route
 `List` returns every route mounted so far, in the order it was mounted.
 Each `Path` is the path as you wrote it, and `Guards` names the guards
 that apply. A `Get` or `Post` is listed by its function's name, so a
-method value such as `app.tagRename` appears as `tagRename`. Its `Action`
-is the full name, such as `example.com/app/internal/app.(*App).tagRename`.
-Compare `Action`, not `Handler`, to tell two methods called `Show` apart.
-`Action` is empty for `Handle` and `Mount`. A `Mount` is one line, `*`
-with the path `<prefix>/*`. Read `List` in a test to check that an admin
+method value such as `app.tagRename` appears as `tagRename`. Its
+`Action` is the full name, such as
+`example.com/app/internal/app.(*App).tagRename`. Compare `Action`, not
+`Handler`, to tell two methods called `Show` apart. `Action` is empty
+for `Handle` and `Mount`. A `Mount` is one line, `*` with the path
+`<prefix>/*`. `Operations` and `PageOnly` hold the route's mark, and
+both are empty without one. Read `List` in a test to check that an admin
 route has its guard, without serving a request.
 
 ## Naming a path

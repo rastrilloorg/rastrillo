@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"slices"
 
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
@@ -97,7 +98,41 @@ func New(config Config, descriptors ...op.Descriptor) (http.Handler, error) {
 	if _, err := served.build(listing{served: served}); err != nil {
 		return nil, err
 	}
-	return served.gate.Wrap(refusingStreams(served)), nil
+	inventory := make([]op.Descriptor, len(tools))
+	for index, tool := range tools {
+		inventory[index] = byName[tool.Name]
+	}
+	return endpoint{
+		Handler:     served.gate.Wrap(refusingStreams(served)),
+		descriptors: inventory,
+	}, nil
+}
+
+// endpoint is the handler New returns. It keeps the descriptors the
+// server registered, schemas cloned by toolsFor, so that Served says
+// what the door offers rather than what the caller's bytes now hold.
+type endpoint struct {
+	http.Handler
+	descriptors []op.Descriptor
+}
+
+// Served returns the descriptors mcp.New took, in order: the inventory a
+// parity check compares with the declared operations. Each holds its
+// own copy of the schemas, so a caller can't change what the endpoint
+// reports. It errors when handler is not a value New returned.
+func Served(handler http.Handler) ([]op.Descriptor, error) {
+	served, isEndpoint := handler.(endpoint)
+	if !isEndpoint {
+		return nil, fmt.Errorf("mcp: Served needs the handler mcp.New "+
+			"returned, not a %T", handler)
+	}
+	inventory := make([]op.Descriptor, len(served.descriptors))
+	for index, descriptor := range served.descriptors {
+		descriptor.Input = slices.Clone(descriptor.Input)
+		descriptor.Result = slices.Clone(descriptor.Result)
+		inventory[index] = descriptor
+	}
+	return inventory, nil
 }
 
 // gateMaxResponse is what the gate means by a MaxResponse of zero.

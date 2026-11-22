@@ -98,10 +98,14 @@ func (caller listing) narrow(
 	return listed, nil
 }
 
+// refused counts human-only as a refusal, so its tool is hidden from
+// every token's list but stays registered, and a call is told why.
 func refused(err error) bool {
 	var forbidden op.Forbidden
 	var notFound op.NotFound
-	return errors.As(err, &forbidden) || errors.As(err, &notFound)
+	var humanOnly op.HumanOnly
+	return errors.As(err, &forbidden) || errors.As(err, &notFound) ||
+		errors.As(err, &humanOnly)
 }
 
 // allows is Admit and op.Check, less the agent-session refusal: a list

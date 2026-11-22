@@ -608,3 +608,74 @@ func TestCallLogsOneLine(t *testing.T) {
 			"actor: %s", lines[0])
 	}
 }
+
+// Every other refusal tells the agent what to change, and no change
+// makes an agent a person, so human_only answers ahead of them all.
+func TestCallingAHumanOnlyToolAnswersHumanOnlyWhateverElseIsWrong(
+	t *testing.T,
+) {
+	tests := []struct {
+		name      string
+		session   bool // the gate requires an agent session
+		token     string
+		arguments string
+	}{
+		{"as_the_read_only_token", false, readerToken, `{}`},
+		{"as_a_writer_with_no_session", true, writerToken, `{}`},
+		{"with_an_unknown_null_member", false, writerToken, `{"x": null}`},
+		{"with_a_lone_surrogate", false, writerToken,
+			`{"x":"` + escape("d83d") + `"}`},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			var invokes atomic.Int64
+			config := testConfig()
+			config.Gate.RequireAgentSession = test.session
+			url := serve(t, config, withTokensCreate(&invokes)...)
+			answer := post(t, http.MethodPost, url, test.token,
+				"2025-06-18", callBody("tokens_create", test.arguments))
+			refused := answer.call(t).refusal(t)
+			if refused.Code != "human_only" {
+				t.Errorf("code %q, want human_only: %+v",
+					refused.Code, refused)
+			}
+			if invokes.Load() != 0 {
+				t.Errorf("Invoke ran %d times, want 0", invokes.Load())
+			}
+		})
+	}
+}
+
+// TestAHumanOnlyCallIsLogged: the API's audit line for a human-only
+// refusal, written for a tool call too.
+func TestAHumanOnlyCallIsLogged(t *testing.T) {
+	config := testConfig()
+	logged := &lockedBuffer{}
+	config.Gate.Logger = slog.New(slog.NewTextHandler(logged, nil))
+	config.Gate.Redact = func(text string) string {
+		return strings.ReplaceAll(text, "tok-writer", "tok-[redacted]")
+	}
+	var invokes atomic.Int64
+	url := serve(t, config, withTokensCreate(&invokes)...)
+	session, _ := connect(t, url, writerToken, "")
+	refused := refusalOf(t, callTool(t, session, "tokens_create", nil))
+	if refused.Code != "human_only" {
+		t.Fatalf("tokens_create answered %+v, want human_only", refused)
+	}
+	var lines []string
+	for line := range strings.Lines(logged.String()) {
+		if strings.Contains(line, `msg="api: human_only"`) {
+			lines = append(lines, line)
+		}
+	}
+	if len(lines) != 1 {
+		t.Fatalf("%d human_only lines, want 1: %s",
+			len(lines), logged.String())
+	}
+	if !strings.Contains(lines[0], "operation=tokens.create") ||
+		!strings.Contains(lines[0], "tok-[redacted]") ||
+		strings.Contains(lines[0], "tok-writer") {
+		t.Errorf("the line does not name the operation and the redacted "+
+			"actor: %s", lines[0])
+	}
+}

@@ -46,7 +46,8 @@ missing, or if a route:
 
 - has no `Op.ID`, `Op.Input`, `Op.Result` or `Handle`;
 - has an `Op.Access` that does not match its method: GET and HEAD must
-  be `Read`, and POST, PUT, PATCH and DELETE must be `Write`;
+  be `Read`, and POST, PUT, PATCH and DELETE must be `Write`, except a
+  POST read from [Operations](#operations);
 - has the same method and pattern as another route.
 
 Every answer is JSON with `Cache-Control: no-store`. A request goes
@@ -57,10 +58,12 @@ through these steps in order, and the first one that refuses answers:
 2. `Config.Before`, such as a rate limiter.
 3. `Verify`: 401 or 503.
 4. The agent headers: 422.
-5. With `RequireAgentSession`, an agent's write with no
-   `Agent-Session`: 422.
+5. Any token on a route whose operation has `HumanOnly` set: 403
+   `human_only`.
 6. A read-only token on a `Write` route: 403.
-7. `Config.After`, then the route's `Handle`.
+7. With `RequireAgentSession`, an agent's write with no
+   `Agent-Session`: 422.
+8. `Config.After`, then the route's `Handle`.
 
 The answer is held until `Handle` returns, then sent, and with a
 `Rechecker` it is checked again on the way out. See [Gate](#gate).
@@ -90,6 +93,63 @@ If a handler panics before writing, the answer is 500 with a `ref`. If
 it panics after, the connection is closed. Either way the panic is
 logged to `Config.Logger` under the ref, after `Config.Redact`.
 
+## Operations
+
+```go
+func Operations(descriptors ...op.Descriptor) []Route
+```
+
+`Operations` builds one route for each named operation, such as one
+from `op.Define`. Pass the routes to `New`, beside any you build by
+hand. `notes.create` is served at `POST /api/v1/notes/create`. A read
+with `InQuery` set is a GET instead, such as `GET /api/v1/notes/list`.
+
+Each route runs `op.Check` before it reads any input, even when the
+descriptor's `Invoke` does not call it. If the check refuses the caller,
+the route answers with that refusal and the operation never runs.
+
+A POST takes its input as a JSON body:
+
+- With `Content-Length: 0`, it runs with `{}`. A body sent without a
+  length, such as a chunked one, is read as a body even when it is
+  empty.
+- A body needs `Content-Type: application/json`, or the answer is 415.
+- A body over the cap is 413.
+- Otherwise the body goes to `Invoke` as sent. A bad body gets the
+  answer MCP gives for the same arguments: 422 `invalid`, with `fields`
+  naming the member when there is one.
+
+A GET reads its query string as that JSON object, one member per
+parameter. A parameter whose input field is a number is sent as a
+number when it is a valid one, and one whose field is a bool as `true`
+or `false`. Everything else is a string. So `?limit=five`,
+`?limit=1&limit=2` and an unknown parameter are each 422, with `fields`
+naming that parameter, as they would be in a body. A query string that
+does not parse, such as `?search=100%` or a pair with a `;`, is 422 with
+no `fields`.
+
+The answer is 200 with the result, 204 when the operation returns
+`op.None`, or the refusal its error maps to under [Errors](#errors).
+
+A read served by POST takes a read-only token. Only a route from
+`Operations` can be one: a POST route you build yourself must be
+`Write`.
+
+## Served
+
+```go
+func Served(handler http.Handler) ([]Route, error)
+```
+
+`Served` returns the routes `New` registered in `handler`, in order,
+with `Handle` nil. It returns an error when `handler` is not a value
+`New` returned.
+
+Every answer to a request that matches one of the routes carries
+`Rastrillo-Operation: <Op.ID>`, a 401 included. A 405 for another
+method matched no route, so it has no such header. Requests that match
+no route have no header either.
+
 ## Errors
 
 ```go
@@ -108,6 +168,7 @@ not on `Message`: each code maps to one status, and the prose may change.
 |---|---|---|
 | `unauthorized` | 401 | the token is missing or does not work |
 | `forbidden` | 403 | the token may not do this |
+| `human_only` | 403 | only a person may do this, in the app; no token can |
 | `not_found` | 404 | no such row, or not the caller's; no such path |
 | `method_not_allowed` | 405 | a known path, wrong method |
 | `conflict` | 409 | the write lost a race |
@@ -155,10 +216,12 @@ and checked, with the actor on the request's context. It panics if a
 `Before` or `After` returns nil. It doesn't call `Admit`; the handler
 calls it once it knows the operation.
 
-`Admit` is the per-operation half, in the tree's order. With
-`RequireAgentSession` set, it refuses an agent's write that came with
-no `Agent-Session`. Then it refuses a read-only token on anything but a
-`Read` operation, as `op.Forbidden`.
+`Admit` is the per-operation half, in the tree's order. First it
+refuses any token or agent on an operation with `HumanOnly` set, as
+`op.HumanOnly`, a person's own token included. Then it refuses a
+read-only token on anything but a `Read` operation, as `op.Forbidden`.
+Then, with `RequireAgentSession` set, it refuses an agent's write that
+came with no `Agent-Session`.
 
 `MaxBody` caps a request body, and zero or less means 1 MiB.
 `MaxResponse` caps an answer, which is held whole until it has been
@@ -261,7 +324,9 @@ it. `ErrUnauthorized` is 401 with
 `WWW-Authenticate: Bearer`, and `ErrUnavailable` is 503. Any other error
 is a 500: the error text goes to the log under a fresh ref, and the
 response carries only the ref. `op.Forbidden.Reason` is logged and never
-sent.
+sent. `op.HumanOnly` is 403 `human_only`. Both doors log it at Info after
+applying `Config.Redact`, with the operation's ID and the caller, so an
+agent's attempt leaves a record.
 
 ```go
 var ErrUnauthorized = errors.New("rastrillo/api: unauthorized")

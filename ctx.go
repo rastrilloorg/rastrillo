@@ -44,6 +44,11 @@ type Operation struct {
 	Resource string // "bookmarks"
 	Scoped   bool   // the resource is scope = "user": each row belongs to one person
 	Access   Access // Read or Write
+	// HumanOnly is why only a person may call the operation, and empty
+	// when an agent may call it too. Every token is refused it, a
+	// person's own included: a token can be handed to an agent, and
+	// nothing in a request tells who is holding it.
+	HumanOnly string
 }
 
 // Actor identifies who is calling: the person, and the agent acting for

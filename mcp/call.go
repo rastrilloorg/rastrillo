@@ -42,13 +42,16 @@ func (caller listing) call(
 		}
 	}()
 	caller.logCall(descriptor)
-	raw := argumentsOf(arguments)
-	if !argumentBytesValid(raw) {
-		return toolError(api.Error{Code: "invalid", Message: msgArgumentBytes})
-	}
+	// Admission before any look at the arguments, as the API tree admits
+	// before it reads a body: a caller who may not call the tool at all
+	// is told that, not what is wrong with what it sent.
 	appContext := caller.appContext
 	if err := caller.admit(ctx, &appContext, descriptor); err != nil {
 		return caller.refusal(err)
+	}
+	raw := argumentsOf(arguments)
+	if !argumentBytesValid(raw) {
+		return toolError(api.Error{Code: "invalid", Message: msgArgumentBytes})
 	}
 	// Kept apart, so the guard reads the arguments as sent even if the
 	// operation reuses the bytes it was given.

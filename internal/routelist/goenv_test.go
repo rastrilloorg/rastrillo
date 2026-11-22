@@ -117,7 +117,7 @@ func TestListUsesTheAppsVendoredCode(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	named := `Handler: identity[strings.LastIndex(identity, ".")+1:],`
+	named := `Handler:    identity[strings.LastIndex(identity, ".")+1:],`
 	if !bytes.Contains(source, []byte(named)) {
 		t.Fatalf("the vendored action package no longer has %s", named)
 	}

@@ -78,6 +78,13 @@ type Route struct {
 	// agree with Method.
 	Op     op.Descriptor
 	Handle func(ctx context.Context, rc *rastrillo.Ctx, w http.ResponseWriter, r *http.Request)
+
+	// readByPost lets a POST route declare Read, for a read whose input
+	// is a JSON body. Only Operations sets it: there the access comes
+	// from the operation's declaration, which Admit and op.Check both
+	// enforce, so a read-only token may call it and still can't write.
+	// A hand-built route keeps the stricter rule that POST is Write.
+	readByPost bool
 }
 
 // methodAccess is the access each method must declare. GET and HEAD
@@ -97,14 +104,17 @@ var methodAccess = map[string]rastrillo.Access{
 var allowOrder = []string{http.MethodGet, http.MethodHead, http.MethodPost, http.MethodPut, http.MethodPatch, http.MethodDelete}
 
 type tree struct {
-	cfg  Config
-	gate Gate
-	mux  *http.ServeMux
+	// routes is what New registered, in order, for Served.
+	routes []Route
+	cfg    Config
+	gate   Gate
+	mux    *http.ServeMux
 	// patterns is every pattern string the tree registered. The inner
 	// mux can match a request and still hand back something that is not
 	// one of them (a redirect it made up); only a registered pattern
 	// counts as a match.
-	patterns map[string]bool
+	patterns  map[string]bool
+	byPattern map[string]Route
 }
 
 // New builds the /api/v1 handler tree. It checks every route here, at
@@ -131,8 +141,12 @@ func New(cfg Config, routes ...Route) (http.Handler, error) {
 		return nil, errors.New("api: Config.Authorize is required; name op.DefaultPolicy to keep the default")
 	}
 	t := &tree{cfg: cfg, gate: gate, mux: http.NewServeMux(),
-		patterns: make(map[string]bool, len(routes))}
+		patterns:  make(map[string]bool, len(routes)),
+		byPattern: make(map[string]Route, len(routes))}
 	for _, rt := range routes {
+		// The tree's own copy, so Served reports what was registered
+		// whatever the caller does with its bytes afterwards.
+		rt.Op = ownSchemas(rt.Op)
 		if err := t.add(rt); err != nil {
 			return nil, err
 		}
@@ -142,7 +156,7 @@ func New(cfg Config, routes ...Route) (http.Handler, error) {
 
 func (t *tree) add(rt Route) error {
 	name := rt.Method + " " + rt.Pattern
-	want, known := methodAccess[rt.Method]
+	want, known := accessFor(rt)
 	switch {
 	case !known:
 		return fmt.Errorf("api: route %s: method must be one of GET, HEAD, POST, PUT, PATCH, DELETE", name)
@@ -176,7 +190,21 @@ func (t *tree) add(rt Route) error {
 		return fmt.Errorf("api: route %s (%s): %v", name, rt.Op.ID, err)
 	}
 	t.patterns[name] = true
+	t.routes = append(t.routes, rt)
+	t.byPattern[name] = rt
 	return nil
+}
+
+// accessFor is the Access a route's method must declare, and whether the
+// tree serves that method at all.
+func accessFor(route Route) (rastrillo.Access, bool) {
+	postedRead := route.Method == http.MethodPost &&
+		route.Op.Access == rastrillo.Read
+	if postedRead && route.readByPost {
+		return rastrillo.Read, true
+	}
+	want, known := methodAccess[route.Method]
+	return want, known
 }
 
 func register(mux *http.ServeMux, pattern string, h http.Handler) (err error) {
@@ -189,7 +217,35 @@ func register(mux *http.ServeMux, pattern string, h http.Handler) (err error) {
 	return nil
 }
 
+// operationHeader names the operation a matched request reached.
+const operationHeader = "Rastrillo-Operation"
+
+// Served returns the routes api.New registered in handler, in order,
+// with Handle nil: the inventory a parity check compares with the
+// declared operations. Each holds its own copy of the schemas, so a
+// caller can't change what the tree reports. It errors when handler is
+// not a value New returned.
+func Served(handler http.Handler) ([]Route, error) {
+	served, isTree := handler.(*tree)
+	if !isTree {
+		return nil, fmt.Errorf("api: Served needs the handler api.New "+
+			"returned, not a %T", handler)
+	}
+	routes := make([]Route, len(served.routes))
+	for index, route := range served.routes {
+		route.Handle, route.Op = nil, ownSchemas(route.Op)
+		routes[index] = route
+	}
+	return routes, nil
+}
+
 func (t *tree) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	// Before the gate, so a 401 and every refusal carry it. Only a
+	// request that matches a registered route gets it, so an outer
+	// catch-all can't fake a match; a 405 matched none, so has none.
+	if route, found := t.matched(r); found {
+		w.Header().Set(operationHeader, route.Op.ID)
+	}
 	t.gate.serve(w, r, http.HandlerFunc(t.route))
 }
 
@@ -218,11 +274,19 @@ func (tree *tree) route(
 // outer ServeMux has already cleaned the path when the tree is mounted
 // as the scaffold mounts it, so an unclean path here is a 404.
 func (t *tree) matches(r *http.Request) bool {
-	if p := r.URL.EscapedPath(); p != cleanPath(p) {
-		return false
+	_, found := t.matched(r)
+	return found
+}
+
+// matched is the route request reaches, if any.
+func (tree *tree) matched(request *http.Request) (Route, bool) {
+	escaped := request.URL.EscapedPath()
+	if escaped != cleanPath(escaped) {
+		return Route{}, false
 	}
-	_, pattern := t.mux.Handler(r)
-	return t.patterns[pattern]
+	_, pattern := tree.mux.Handler(request)
+	route, found := tree.byPattern[pattern]
+	return route, found
 }
 
 // allowed lists the methods the path answers to, for a 405's Allow

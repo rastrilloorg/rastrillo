@@ -10,8 +10,8 @@ import (
 	"amadan.net/rastrillo/rastrillo/internal/routelist"
 )
 
-// runRoutes prints the app's route table, and with --check fails an
-// action no route mounts. A signal stops the listing, which cleans up,
+// runRoutes prints the app's route table, and with --check fails on
+// what routelist.Check finds. A signal stops the listing, which cleans up,
 // and then ends the command as the signal would have.
 func runRoutes(args []string, out io.Writer) error {
 	chosen, check, dir, err := routesArguments(args)
@@ -45,12 +45,12 @@ func listRoutes(
 	if !check {
 		return nil
 	}
-	unmounted, err := routelist.Unmounted(ctx, target, routes)
+	failure, err := routelist.Check(ctx, target, routes)
 	if err != nil {
 		return err
 	}
-	if len(unmounted) > 0 {
-		return exitError{code: 1, msg: routelist.FormatUnmounted(unmounted)}
+	if failure != "" {
+		return exitError{code: 1, msg: failure}
 	}
 	return nil
 }

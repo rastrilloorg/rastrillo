@@ -124,6 +124,11 @@
           "blurb": "Serve the same operations as MCP tools at /api/v1/mcp, for Claude Code, Codex and other agents."
         },
         {
+          "slug": "operations",
+          "label": "Named operations and parity",
+          "blurb": "Declare an operation once, serve it to pages, the API and MCP, and test that all three agree."
+        },
+        {
           "slug": "agents",
           "label": "Agents",
           "blurb": "Agents act for a person: who the token names, what the audit trail records, and the sidecar loop."
@@ -182,6 +187,16 @@
           "slug": "reference/mcp",
           "label": "mcp",
           "blurb": "The MCP endpoint: one tool per operation, behind the API's gate."
+        },
+        {
+          "slug": "reference/route",
+          "label": "route",
+          "blurb": "Register page routes on chi or ServeMux, each with its operation."
+        },
+        {
+          "slug": "reference/paritytest",
+          "label": "paritytest",
+          "blurb": "Check that pages, the API and MCP offer the same operations."
         },
         {
           "slug": "reference/apitoken",

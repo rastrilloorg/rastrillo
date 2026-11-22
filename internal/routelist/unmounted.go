@@ -25,16 +25,7 @@ func Unmounted(
 	for _, route := range routes {
 		mounted[route.Action] = true
 	}
-	modFlag, err := goSettings(ctx, target.ModuleDir)
-	var packages []listedPackage
-	if err == nil {
-		packages, err = goList(ctx, target.ModuleDir, modFlag, "./...")
-	}
-	if ctx.Err() != nil {
-		// The table is already printed, so goList's message, that the
-		// routes were not listed, would be wrong.
-		return nil, stopped{stoppedBeforeChecking, ctx.Err()}
-	}
+	packages, err := modulePackages(ctx, target)
 	if err != nil {
 		return nil, err
 	}
@@ -51,6 +42,24 @@ func Unmounted(
 		}
 	}
 	return unmounted, nil
+}
+
+// modulePackages is every package go list ./... finds in the app's
+// module: what --check reads, after the table is printed.
+func modulePackages(
+	ctx context.Context, target Target,
+) ([]listedPackage, error) {
+	modFlag, err := goSettings(ctx, target.ModuleDir)
+	var packages []listedPackage
+	if err == nil {
+		packages, err = goList(ctx, target.ModuleDir, modFlag, "./...")
+	}
+	if ctx.Err() != nil {
+		// The table is already printed, so goList's message, that the
+		// routes were not listed, would be wrong.
+		return nil, stopped{stoppedBeforeChecking, ctx.Err()}
+	}
+	return packages, err
 }
 
 // actionsIn names each action as runtime.FuncForPC names the function

@@ -37,7 +37,7 @@ Read the topic before you start work it covers, not after the source:
 | run work in the background, poll for progress, schedule | `skill/background.md` |
 | update parts of a page when data changes: live regions, forms that swap in place | `skill/live.md` |
 | use the CLI beyond `new`, manifests, doctor, pins, native or PWA | `skill/tooling.md` |
-| serve JSON at `/api/v1` or MCP at `/api/v1/mcp`, mint tokens, let an agent act for a person, write `Authorize`, hand-write an operation | `skill/api.md`, `skill/mcp.md` |
+| serve JSON or MCP, mint tokens, give an agent access, write `Authorize`, declare an `op.Define` operation, test parity | `skill/api.md`, `skill/mcp.md`, `skill/operations.md` |
 
 ## Pick a shape
 

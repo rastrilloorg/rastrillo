@@ -74,6 +74,25 @@ func TestRoutesPrintsTheTableAndChecksEveryActionIsMounted(t *testing.T) {
 	}
 }
 
+// undeclared marks no route and calls no op.Define, as apps did before
+// operations, so the rule does not apply to it.
+func TestRoutesCheckAppliesTheRuleOnlyWhereOperationsAreDeclared(t *testing.T) {
+	binary := buildRastrillo(t)
+	unmarked := routelist.FormatUnmarked(
+		[]action.Route{{Method: "GET", Path: "/notes"}})
+	status, _, stderr := routesRun(t, binary, "--check",
+		routesFixture(t, "declares"))
+	if status != 1 || !strings.Contains(stderr, unmarked) {
+		t.Errorf("declares: exit %d, stderr:\n%s\nwant 1 and:\n%s",
+			status, stderr, unmarked)
+	}
+	status, _, stderr = routesRun(t, binary, "--check",
+		routesFixture(t, "undeclared"))
+	if status != 0 {
+		t.Errorf("undeclared: exit %d, want 0:\n%s", status, stderr)
+	}
+}
+
 // processesUnder counts the running processes whose command line names
 // a path under scratch, and those that start there: the go build and
 // its compiler and linker work there; the listing program and the copy

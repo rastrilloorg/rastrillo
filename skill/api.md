@@ -23,9 +23,12 @@ never inside it: `csrf.Protect` refuses a write with no browser headers, and
 
 **One policy for both doors.** Pass the same `authorize` as
 `api.Config.Authorize` and as `Ctx.Authorize` in the page ctx factory;
-generated page actions call it too. `op.Check` order: a read-only token
-on a `Write` op is `op.Forbidden`; a scoped op with empty `Subject` is
-`op.Forbidden`; then `Ctx.Authorize` (nil means `op.DefaultPolicy`).
+generated page actions call it too. `op.Check` order: any token or
+agent on an op with `Operation.HumanOnly` set is `op.HumanOnly` (a
+person's own token too); a read-only token on a `Write` op is
+`op.Forbidden`; a scoped op with empty `Subject` is `op.Forbidden`; then
+`Ctx.Authorize` (nil means `op.DefaultPolicy`). `Admit` runs human-only,
+then read-only, then `RequireAgentSession`.
 `nil` allows; refuse with `op.Forbidden{Reason}` (logged, never sent)
 or `op.NotFound` (403 or 404 on both doors). The error comes back
 unchanged, so the API maps any refusal it knows (`op.Conflict` is 409)
@@ -98,8 +101,8 @@ DELETE is 204 and takes no body. A body needs
 `Content-Type: application/json` (415) and fits 1 MiB (413); an
 unknown or repeated member, or `null` elsewhere, is 422. Errors are
 `{"error": {"code", "message", "fields", "ref"}}`; branch on `code`:
-unauthorized 401, forbidden 403, not_found 404 (another person's row
-too), method_not_allowed 405, conflict 409, too_large 413,
+unauthorized 401, forbidden 403, human_only 403 (a person only), not_found
+404 (another person's row too), method_not_allowed 405, conflict 409, too_large 413,
 unsupported_media_type 415, invalid 422, response_too_large 422 (an
 answer over 2 MiB: ask for a smaller result), rate_limited 429, internal
 500, unavailable 503. A handler you write uses `api.Decode`,

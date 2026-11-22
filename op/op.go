@@ -53,6 +53,11 @@ type Forbidden struct{ Reason string }
 // crossing a currency change. Message is safe to show.
 type Conflict struct{ Message string }
 
+// HumanOnly refuses a token on an operation only a person may call. It
+// is its own type, not a Forbidden, so a door can tell the agent that
+// no token will do and that the person must act in the app.
+type HumanOnly struct{ ID string }
+
 // Error names the fields, sorted so a log line is stable, but not the
 // messages: those are for the response, and a log that repeats them
 // says nothing the field names do not.
@@ -71,6 +76,9 @@ func (e Invalid) Error() string {
 func (NotFound) Error() string    { return "not found" }
 func (e Forbidden) Error() string { return "forbidden: " + e.Reason }
 func (e Conflict) Error() string  { return "conflict: " + e.Message }
+func (refused HumanOnly) Error() string {
+	return "human only: " + refused.ID
+}
 
 // Money is an amount on the wire: minor units and an ISO 4217 code.
 // Currency may be empty on input; the operation fills the manifest's
@@ -80,6 +88,11 @@ type Money struct {
 	Amount   int64  `json:"amount"`
 	Currency string `json:"currency"`
 }
+
+// None is the result of an operation that returns nothing. Its result
+// schema is null, so a client is told there is nothing to read rather
+// than an object with no members.
+type None struct{}
 
 // Descriptor names one operation, independent of transport. It is what
 // the MCP spec will list as tools and what the skill spec will describe,
@@ -99,6 +112,9 @@ type Descriptor struct {
 	// Idempotent means calling twice with the same input leaves the
 	// same state as calling once. MCP's idempotentHint.
 	Idempotent bool
+	// InQuery means the API serves this read at GET, with its input in
+	// the query string rather than a body.
+	InQuery bool
 	// Input and Result are JSON Schema. Both are required: api.New
 	// refuses a route whose descriptor leaves either empty, so a
 	// hand-written operation must describe itself too.

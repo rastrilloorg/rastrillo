@@ -282,3 +282,17 @@ func TestRefusalLogsTheInternalRef(t *testing.T) {
 		t.Fatalf("log %q lacks the ref %s and the cause", line, refused.Ref)
 	}
 }
+
+// Not forbidden: forbidden says this token can't, where human_only says
+// that no token can, so the agent asks its person rather than retrying.
+func TestHumanOnlyIsA403WithItsOwnCode(t *testing.T) {
+	request := WithLogger(
+		httptest.NewRequest(http.MethodPost, "/api/v1/tokens", nil),
+		slog.New(slog.DiscardHandler))
+	status, refused := Refusal(request, op.HumanOnly{ID: "tokens.create"})
+	if status != http.StatusForbidden || refused.Code != "human_only" ||
+		refused.Message != codes["human_only"].message {
+		t.Fatalf("Refusal = %d %+v, want 403 human_only %q",
+			status, refused, codes["human_only"].message)
+	}
+}

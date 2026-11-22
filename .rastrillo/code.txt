@@ -44,7 +44,6 @@ names amadan_ci_test.go amadanCIDTargets/m 1
 columns api/decode.go 1ea156369a9f 1
 columns api/decode.go 8ba2223418cb 1
 columns api/decode.go e51d78dd9e5f 1
-func api/decode.go Decode 43
 names api/decode.go Decode/r 1
 names api/decode.go Decode/v 1
 names api/decode.go Decode/w 1
@@ -206,7 +205,6 @@ names api/tree.go tree.handle/c 1
 names api/tree.go tree.handle/r 1
 names api/tree.go tree.handle/t 1
 names api/tree.go tree.handle/w 1
-names api/tree.go tree.matches/p 1
 names api/tree.go tree.matches/r 1
 names api/tree.go tree.matches/t 1
 columns api/tree_test.go 03d9d53ab319 1

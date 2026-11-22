@@ -100,6 +100,13 @@ const unmountedActions = "No route mounts these actions:\n\n%s\n" +
 	"through an interface value counts as not mounted: mount the " +
 	"method on its type instead."
 
+// unmarkedRoutes is what --check says, once the app declares an
+// operation, about each route that names none and gives no reason.
+const unmarkedRoutes = "This app declares operations. Each route " +
+	"must name one or explain why it has none. These routes don't:" +
+	"\n\n%s\nUse route.Operation to name each route's operation. " +
+	"Use route.PageOnly for routes agents should not use."
+
 // problem is an error whose text is a whole message for a person, in
 // sentences. An error meant to be wrapped starts in lower case with no
 // full stop, and staticcheck holds errors.New and fmt.Errorf to that;

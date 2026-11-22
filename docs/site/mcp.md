@@ -69,10 +69,12 @@ bearer_token_env_var = "NOTES_TOKEN"
 ```
 
 If the app sets `RequireAgentSession` and the token was made for an
-agent, the client must also send an `Agent-Session` header. Without
-one, the agent still sees the write tools, but each write call is
-refused as `invalid`, with a message telling it to send the header. In
-Claude Code, add `--header "Agent-Session: <id>"`.
+agent, the client must also send an `Agent-Session` header. Without one,
+the agent still sees the write tools, but each write call is refused as
+`invalid`, with a message telling it to send the header. A read-only
+token sees no write tools, and its write call is refused as `forbidden`
+whether or not it sent the header. In Claude Code, add
+`--header "Agent-Session: <id>"`.
 
 ChatGPT and claude.ai connect through OAuth, which Rastrillo doesn't
 serve yet. A request with no token gets 401 with
@@ -98,13 +100,14 @@ the agent to fill in. The input and output schemas are the descriptor's
 such as every generated delete, has no output schema.
 
 The tool list is per caller. A tool is listed only when `op.Check` and
-the gate allow this caller to use it, so a read-only token sees no write
-tools. `api/v1.json` lists each operation's id, method, path, access,
-destructive and idempotent flags, and input and result field kinds. It
-does not list tool names or JSON schemas. A tool's name is its
-operation id with `.` replaced by `_`. A call to a tool the list left
-out is refused the way the API would refuse it, usually with
-`forbidden`.
+the gate allow this caller to use it, so a read-only token sees only the
+read tools. A human-only operation is never listed for a token, and a
+call to it is refused as `human_only`. `api/v1.json` lists each
+operation's id, method, path, access, destructive and idempotent flags,
+and input and result field kinds. It does not list tool names or JSON
+schemas. A tool's name is its operation id with `.` replaced by `_`. A
+call to a tool the list left out is refused the way the API would refuse
+it, usually with `forbidden`.
 
 ## The flags
 
@@ -143,7 +146,9 @@ Set the flag, or rename the operation if the verb is wrong.
 ## Writing descriptors by hand
 
 `mcp.New` serves exactly the descriptors you give it, so an app without
-manifests can write its own:
+manifests can write its own. Most should use `op.Define`, which writes
+the descriptor, its schemas and its checks for you: [Named operations
+and parity](/docs/operations). To write one by hand:
 
 ```go
 search := op.Descriptor{
@@ -171,11 +176,11 @@ endpoints accept and refuse the same things. A hand-written `Invoke`
 validates its own input. MCP refuses arguments that aren't valid UTF-8,
 or that hold an unpaired surrogate escape, before `Invoke` sees them.
 
-Before `Invoke` runs, MCP runs the gate's `Admit` and `op.Check` for the
-operation, so your policy decides every call, even one to a
-hand-written `Invoke` that skips `op.Check`. Still begin the operation
-with `op.Check`, as a generated one does. The API and your pages call it
-without that step.
+Before `Invoke` runs, and before MCP reads the arguments, it runs the
+gate's `Admit` and `op.Check` for the operation, so your policy decides
+every call, even one to a hand-written `Invoke` that skips `op.Check`.
+Still begin the operation with `op.Check`, as a generated one does. The
+API and your pages call it without that step.
 
 Put a check that depends on the input inside `Invoke`, before the
 operation does anything. `Authorize` sees the operation but not its
@@ -206,10 +211,10 @@ API's code and message:
 ```
 
 The codes are the API's: `invalid` with its `fields`, `forbidden`,
-`not_found`, `conflict`, `response_too_large`, and `internal` with a
-`ref` that the log line shares. A panic anywhere in a call answers an
-`internal` tool error, and the app keeps running. A call to a tool that
-doesn't exist is the SDK's protocol error.
+`human_only`, `not_found`, `conflict`, `response_too_large`, and
+`internal` with a `ref` that the log line shares. A panic anywhere in a
+call answers an `internal` tool error, and the app keeps running. A call
+to a tool that doesn't exist is the SDK's protocol error.
 
 Each call logs one line, `mcp: call`, with the tool name and the actor,
 redacted like the API's `api: request` line.

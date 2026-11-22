@@ -19,9 +19,10 @@ type Invalid struct {
 type NotFound struct{}
 type Forbidden struct{ Reason string }
 type Conflict struct{ Message string }
+type HumanOnly struct{ ID string }
 ```
 
-An operation returns one of these to refuse a call. All four are values,
+An operation returns one of these to refuse a call. All five are values,
 so match them with `errors.As`:
 
 ```go
@@ -37,12 +38,14 @@ key into its wire name. When `AsSent` is true, the API and MCP report
 the keys under the names the client sent. `NotFound` is the answer both
 for a row that does not exist and for one that is not the caller's.
 `Forbidden.Reason` is for your logs and never reaches the response.
-`Conflict.Message` is safe to show.
+`Conflict.Message` is safe to show. `HumanOnly` is what `Check` returns
+when a token or an agent calls an operation only a person may call; the
+API and MCP answer it as `human_only`.
 
-`Invalid.Error`, `NotFound.Error`, `Forbidden.Error` and `Conflict.Error`
-are for log lines: `invalid: Amount, Title` (the field names, sorted,
-never the messages), `not found`, `forbidden: <reason>` and
-`conflict: <message>`.
+`Invalid.Error`, `NotFound.Error`, `Forbidden.Error`, `Conflict.Error`
+and `HumanOnly.Error` are for log lines: `invalid: Amount, Title` (the
+field names, sorted, never the messages), `not found`,
+`forbidden: <reason>`, `conflict: <message>` and `human only: <id>`.
 
 ## Check and DefaultPolicy
 
@@ -54,18 +57,22 @@ func DefaultPolicy(ctx context.Context, a rastrillo.Actor, o rastrillo.Operation
 `Check` is the one place both doors ask who may do what. Call it first in
 any operation you write by hand. It asks, in order:
 
-1. A read-only token on a `Write` operation is refused.
-2. A scoped operation with no `Subject` is refused.
-3. If `rc.Authorize` is set, its error is the answer. Return `nil` to
+1. An operation with `HumanOnly` set is refused, as `HumanOnly`, for
+   any token or agent. A person's own token is refused too, since an
+   agent may be holding it.
+2. A read-only token on a `Write` operation is refused.
+3. A scoped operation with no `Subject` is refused.
+4. If `rc.Authorize` is set, its error is the answer. Return `nil` to
    allow, or `Forbidden` or `NotFound` to refuse. `Check` returns your
    error unchanged, and the door that called it answers it the way it
    answers the same error from an operation: the API by its errors
    table, a page with its 403 or 404 page. An error neither recognises
    is a 500.
-4. Otherwise `DefaultPolicy` decides.
+5. Otherwise `DefaultPolicy` decides.
 
-The first two run before your policy, so no policy can let a read-only
-token write or let a caller with no subject reach a scoped row.
+The first three run before your policy, so no policy can let an agent
+call a human-only operation, let a read-only token write, or let a
+caller with no subject reach a scoped row.
 
 `DefaultPolicy` allows a scoped operation, because the owner filter keeps
 the caller to their own rows. It allows an unscoped operation for a
@@ -168,6 +175,7 @@ type Descriptor struct {
 	Confirm     string
 	Destructive bool
 	Idempotent  bool
+	InQuery     bool
 	Input       json.RawMessage
 	Result      json.RawMessage
 	Invoke      func(ctx context.Context, rc *rastrillo.Ctx, input json.RawMessage) (any, error)
@@ -175,17 +183,87 @@ type Descriptor struct {
 ```
 
 `Descriptor` names one operation for any transport. The embedded
-`rastrillo.Operation` gives its ID, resource, scope and access. `Exposed`
-says whether the resource is on the API. `Confirm` is the sentence an
-agent shows before a write. `Input` and `Result` are JSON Schema, and
-both are required. `Invoke` decodes `input` with the API door's rules and
-calls the operation.
+`rastrillo.Operation` gives its ID, resource, scope and access.
+`Exposed` says whether the resource is on the API. `Confirm` is the
+sentence an agent shows before a write. `InQuery` means the API serves
+the read at GET, with its input in the query string. `Input` and
+`Result` are JSON Schema, and both are required. `Invoke` decodes
+`input` with the API door's rules and calls the operation.
 
 `Destructive` means a call may change or remove what is already there;
 false means it does not. `Idempotent` means two calls with the same
 input leave the state one call would. MCP sends both to clients as
 hints, and `rastrillo generate` sets them: see
 [MCP](/docs/mcp#the-flags).
+
+## None
+
+```go
+type None struct{}
+```
+
+`None` is the result of an operation that has nothing to return. Its
+result schema is `{"type":"null"}`. As an input it is an empty object,
+for an operation that takes no arguments. It can only be a whole input
+or result. `Define` refuses a field of type `op.None`, because JSON
+writes that field as `{}`, not `null`.
+
+## Define, Spec and Named
+
+```go
+type Spec struct {
+	Description string // first sentence is MCP's title
+	Confirm     string
+	Access      rastrillo.Access
+	Destructive bool
+	Idempotent  bool
+	Scoped      bool   // rows belong to one person: Check needs a subject
+	InQuery     bool   // a read the API serves at GET, input in the query
+	HumanOnly   string // why only a person may call it
+}
+
+type Named[In, Out any] struct {
+	Descriptor Descriptor
+}
+
+func Define[In, Out any](id string, spec Spec, run func(context.Context, *rastrillo.Ctx, In) (Out, error)) *Named[In, Out]
+
+func (named *Named[In, Out]) Call(ctx context.Context, rc *rastrillo.Ctx, input In) (Out, error)
+```
+
+`Define` declares a hand-written operation that the page, the API and
+MCP all serve from one function. The page calls `Call` with typed input.
+The API and MCP call `Descriptor.Invoke`, which runs `Check`, then
+decodes the JSON with `DecodeInput` into a fresh `In`, then calls `run`.
+`Call` runs `Check` before `run` too. A refused caller never reaches
+`run`; the refusal comes before any input error.
+
+```go
+var Publish = op.Define("posts.publish", op.Spec{
+	Description: "Publish a draft post.",
+	Access:      rastrillo.Write,
+	Scoped:      true,
+}, publish)
+```
+
+The descriptor's ID is `id`, its resource is the part before the dot,
+and `Exposed` is true. `Input` and `Result` are derived from `In` and
+`Out`. A result of `None` makes `Invoke` return nil.
+
+`Define` panics, as `regexp.MustCompile` does, when the declaration
+would fail at a door. It panics when:
+
+- the ID is not `<area>.<verb>` in lowercase letters, digits and
+  underscores, or its tool name `<area>_<verb>` is over 64 characters;
+- `Description` is empty, `Access` is not `rastrillo.Read` or
+  `rastrillo.Write`, or `run` is nil;
+- `In` is not a struct, or `Out` is not a struct or `None`;
+- `In` or `Out` is a struct that JSON doesn't write as an object, such
+  as `time.Time`;
+- a field's JSON name or type can't be described, or `CheckFlags`
+  refuses the flags;
+- `InQuery` is set on a write, or on an input with a field that is not a
+  string, number or bool.
 
 ## CheckFlags and FenceVerbs
 
