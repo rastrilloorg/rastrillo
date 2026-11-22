@@ -429,6 +429,11 @@
           "blurb": "The root package: entrypoints, Options, Ctx, locales, assets, icons, agents, manifest types."
         },
         {
+          "slug": "reference/rootcall",
+          "label": "rootcall",
+          "blurb": "Let the root app call an instance with a signed request that the instance accepts only once."
+        },
+        {
           "slug": "reference/roster",
           "label": "roster",
           "blurb": "Keep an instance's members in step with the root's signed snapshots."

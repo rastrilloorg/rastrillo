@@ -3,6 +3,9 @@
 package handofftest
 
 import (
+	"bufio"
+	"bytes"
+	"context"
 	"net/http"
 	"net/url"
 	"testing"
@@ -11,6 +14,7 @@ import (
 	"amadan.net/rastrillo/rastrillo/assertion"
 	"amadan.net/rastrillo/rastrillo/crypto"
 	"amadan.net/rastrillo/rastrillo/instance"
+	"amadan.net/rastrillo/rastrillo/rootcall"
 	"amadan.net/rastrillo/rastrillo/roster"
 )
 
@@ -122,4 +126,32 @@ func (root *Root) RosterOrigin(
 		t.Fatalf("handofftest: sign roster: %v", err)
 	}
 	return token
+}
+
+// Call signs a root call to target, an https:// URL on the instance's
+// platform host. It returns the request as the instance's server reads
+// it, ready for a handler behind rootcall's Guard. body may be nil.
+func (root *Root) Call(
+	t testing.TB, method, target string, body []byte,
+) *http.Request {
+	t.Helper()
+	caller := rootcall.Caller{
+		Origin: root.Origin, Key: root.Key, KeyID: root.KeyID, Now: root.now,
+	}
+	request, err := caller.NewRequest(
+		context.Background(), method, target, body)
+	if err != nil {
+		t.Fatalf("handofftest: sign call: %v", err)
+	}
+	// Through the wire format, so RequestURI and Host are what a server
+	// parses off the connection.
+	var wire bytes.Buffer
+	if err := request.Write(&wire); err != nil {
+		t.Fatalf("handofftest: write call: %v", err)
+	}
+	received, err := http.ReadRequest(bufio.NewReader(&wire))
+	if err != nil {
+		t.Fatalf("handofftest: read call: %v", err)
+	}
+	return received
 }

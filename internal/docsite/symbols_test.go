@@ -85,6 +85,7 @@ var referencePages = map[string]string{
 	"handoff":       "reference/handoff",
 	"instance":      "reference/instance",
 	"roster":        "reference/roster",
+	"rootcall":      "reference/rootcall",
 	".":             "reference/rastrillo",
 
 	// Its own gofmt block: a key this long would realign every line above.

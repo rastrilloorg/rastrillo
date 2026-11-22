@@ -57,7 +57,7 @@ test it with `provisiontest`. docs/site/reference/provision.md
 
 A tenant served under `/<slug>` on a hub's origin sets `Options.BasePath` from `basepath.FromEnv`. Links in a body go through `{{path $ "/x"}}` or `basepath.Path`; redirect plain paths. No sign-in runs there. docs/site/reference/basepath.md
 
-For an instance under a root app, call `instance.FromEnv`, use `handoff` to sign members in, and use `roster` to keep the member list in sync. Test with `handofftest`. docs/site/reference/instance.md, handoff.md, roster.md, handofftest.md
+For an instance under a root app, call `instance.FromEnv`, use `handoff` to sign members in, and use `roster` to keep the member list in sync. To let the root call the instance, for example to update its plan, wrap the handler with `rootcall.Guard.Wrap`. Test with `handofftest`. docs/site/reference/instance.md, handoff.md, roster.md, rootcall.md, handofftest.md
 
 ## Migrations
 

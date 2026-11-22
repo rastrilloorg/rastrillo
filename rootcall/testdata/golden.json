@@ -1,0 +1,11 @@
+{
+  "now": 1700000000,
+  "publicKey": "BAQQWhn90eoU17MnMXbnpOBc2IbmIJ_YTq4v-QfQOvXxuOp3nd0WYufgFrQ7gskehXLN-JIgcoCuIhkl5wnt22s",
+  "request": {
+    "method": "POST",
+    "target": "/_carlos/slopbox/plan?box=b%2F1",
+    "body": "{\"plan\":\"paid\",\"seq\":3}"
+  },
+  "payload": "{\"v\":1,\"iss\":\"https://root.example.com\",\"aud\":\"https://box1.example.net\",\"kid\":\"key_1\",\"jti\":\"AAECAwQFBgcICQoLDA0ODw\",\"iat\":1700000000,\"exp\":1700000060,\"method\":\"POST\",\"target\":\"/_carlos/slopbox/plan?box=b%2F1\",\"body\":\"mSdkSvsVQpKQ1J4zHcNQMksizYwHaW0xXeZpbs38BoM\"}",
+  "token": "eyJ2IjoxLCJpc3MiOiJodHRwczovL3Jvb3QuZXhhbXBsZS5jb20iLCJhdWQiOiJodHRwczovL2JveDEuZXhhbXBsZS5uZXQiLCJraWQiOiJrZXlfMSIsImp0aSI6IkFBRUNBd1FGQmdjSUNRb0xEQTBPRHciLCJpYXQiOjE3MDAwMDAwMDAsImV4cCI6MTcwMDAwMDA2MCwibWV0aG9kIjoiUE9TVCIsInRhcmdldCI6Ii9fY2FybG9zL3Nsb3Bib3gvcGxhbj9ib3g9YiUyRjEiLCJib2R5IjoibVNka1N2c1ZRcEtRMUo0ekhjTlFNa3Npell3SGFXMHhYZVpwYnMzOEJvTSJ9.nvOPUAT2MT86AQlVuqhsmlOLTS1BJHgZxE2M9SLIm9quey28esgf6xij0_ld4LsBvDTKpkWRwWnv9ZrZrDZw4w"
+}

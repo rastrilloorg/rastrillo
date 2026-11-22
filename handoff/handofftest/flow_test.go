@@ -2,6 +2,7 @@ package handofftest_test
 
 import (
 	"context"
+	"io"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
@@ -17,6 +18,7 @@ import (
 	"amadan.net/rastrillo/rastrillo/handoff"
 	"amadan.net/rastrillo/rastrillo/handoff/handofftest"
 	"amadan.net/rastrillo/rastrillo/migrate"
+	"amadan.net/rastrillo/rastrillo/rootcall"
 	"amadan.net/rastrillo/rastrillo/roster"
 	"amadan.net/rastrillo/rastrillo/sessions"
 )
@@ -24,7 +26,7 @@ import (
 const instanceOrigin = "https://acme.test"
 
 var schema = dbtest.FromSet(migrate.Merge(
-	sessions.Schema, handoff.Schema, roster.Schema))
+	sessions.Schema, handoff.Schema, roster.Schema, rootcall.Schema))
 
 func TestMain(tests *testing.M) {
 	code := tests.Run()
@@ -222,4 +224,39 @@ func readBody(t *testing.T, response *http.Response) string {
 		}
 	}
 	return builder.String()
+}
+
+func TestTheFakeRootCallsAGuardedHandlerOnce(t *testing.T) {
+	root := handofftest.New(t)
+	setup := root.Setup()
+	guard, err := rootcall.New(rootcall.Config{
+		Root: setup.Root, Keys: setup.Keys, Audience: instanceOrigin,
+		DB: schema.Open(t),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var plans []string
+	handler := guard.Wrap(http.HandlerFunc(
+		func(response http.ResponseWriter, request *http.Request) {
+			body, _ := io.ReadAll(request.Body)
+			plans = append(plans, string(body))
+			response.WriteHeader(http.StatusNoContent)
+		}))
+	call := root.Call(t, http.MethodPost,
+		instanceOrigin+"/_carlos/plan", []byte(`{"plan":"paid"}`))
+	again := call.Clone(context.Background())
+	again.Body = io.NopCloser(strings.NewReader(`{"plan":"paid"}`))
+	wants := []int{http.StatusNoContent, http.StatusForbidden}
+	for index, request := range []*http.Request{call, again} {
+		response := httptest.NewRecorder()
+		handler.ServeHTTP(response, request)
+		if response.Code != wants[index] {
+			t.Fatalf("call %d: status = %d, want %d",
+				index+1, response.Code, wants[index])
+		}
+	}
+	if len(plans) != 1 || plans[0] != `{"plan":"paid"}` {
+		t.Fatalf("handler read %q, want the plan once", plans)
+	}
 }

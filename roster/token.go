@@ -5,9 +5,6 @@
 package roster
 
 import (
-	"crypto/ecdsa"
-	"crypto/elliptic"
-	"encoding/base64"
 	"errors"
 	"strings"
 	"time"
@@ -106,8 +103,7 @@ func Sign(key *crypto.Keypair, snapshot Snapshot) (string, error) {
 	if err != nil {
 		return "", ErrSigning
 	}
-	token := base64.RawURLEncoding.EncodeToString(payload) + "." +
-		base64.RawURLEncoding.EncodeToString(signature)
+	token := wire.Join(payload, signature)
 	if len(token) > maxToken {
 		return "", ErrMalformed
 	}
@@ -125,26 +121,12 @@ type Verifier struct {
 func NewVerifier(
 	issuer, audience string, keys map[string][]byte,
 ) (*Verifier, error) {
-	if !wire.Origin(issuer) || !wire.Origin(audience) ||
-		issuer == audience || len(keys) < 1 || len(keys) > 8 {
+	trusted, ok := wire.TrustSet(keys)
+	if !ok || !wire.Origin(issuer) || !wire.Origin(audience) ||
+		issuer == audience {
 		return nil, ErrConfig
 	}
-	verifier := &Verifier{
-		issuer:   issuer,
-		audience: audience,
-		keys:     make(map[string][]byte, len(keys)),
-	}
-	for keyID, public := range keys {
-		if !wire.Identifier(keyID, 64) || len(public) != 65 {
-			return nil, ErrConfig
-		}
-		_, err := ecdsa.ParseUncompressedPublicKey(elliptic.P256(), public)
-		if err != nil {
-			return nil, ErrConfig
-		}
-		verifier.keys[keyID] = append([]byte(nil), public...)
-	}
-	return verifier, nil
+	return &Verifier{issuer: issuer, audience: audience, keys: trusted}, nil
 }
 
 // Verify returns a zero Snapshot on any failure. It does not compare
@@ -156,11 +138,11 @@ func (verifier *Verifier) Verify(
 	if verifier == nil || len(verifier.keys) == 0 {
 		return Snapshot{}, ErrConfig
 	}
-	payload, signature, err := decodeToken(token)
-	if err != nil {
-		return Snapshot{}, err
+	payload, signature, ok := wire.Split(token, maxToken)
+	if !ok {
+		return Snapshot{}, ErrMalformed
 	}
-	err = verifier.checkSignature(payload, signature)
+	err := verifier.checkSignature(payload, signature)
 	if err != nil {
 		return Snapshot{}, err
 	}
@@ -173,25 +155,6 @@ func (verifier *Verifier) Verify(
 		return Snapshot{}, err
 	}
 	return snapshot, nil
-}
-
-func decodeToken(token string) (payload, signature []byte, err error) {
-	if len(token) > maxToken || strings.Count(token, ".") != 1 {
-		return nil, nil, ErrMalformed
-	}
-	encodedPayload, encodedSignature, _ := strings.Cut(token, ".")
-	if len(encodedSignature) != 86 {
-		return nil, nil, ErrMalformed
-	}
-	payload, ok := wire.Decode(encodedPayload, maxToken)
-	if !ok {
-		return nil, nil, ErrMalformed
-	}
-	signature, ok = wire.Decode(encodedSignature, maxToken)
-	if !ok || len(signature) != 64 {
-		return nil, nil, ErrMalformed
-	}
-	return payload, signature, nil
 }
 
 func (verifier *Verifier) checkSignature(payload, signature []byte) error {
